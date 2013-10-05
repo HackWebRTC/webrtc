@@ -118,45 +118,31 @@ def on_message(room, user, message):
     new_message.put()
     logging.info('Saved message for user ' + user)
 
-def make_media_constraints(audio, video, min_resolution, max_resolution):
-  if not audio or audio.lower() == 'true':
-    audio_constraints = True
-  elif audio.lower() == 'false':
-    audio_constraints = False
+def make_media_track_constraints(constraints_string):
+  if not constraints_string or constraints_string.lower() == 'true':
+    track_constraints = True
+  elif constraints_string.lower() == 'false':
+    track_constraints = False
   else:
-    audio_constraints = { 'mandatory': {}, 'optional': [] }
-    if audio:
-      for constraint in audio.split(','):
-        # TODO(ajm): We should probably be using the optional list here, but
-        # Chrome M31 won't override its default settings unless the constraints
-        # are mandatory. Chrome M32+, however, won't override optional settings.
-        if constraint.startswith('-'):
-          audio_constraints['mandatory'][constraint[1:]] = False
-        else:
-          audio_constraints['mandatory'][constraint] = True
-
-  if not video or video.lower() == 'true':
-    video_constraints = True
-  elif video.lower() == 'false':
-    video_constraints = False
-  else:
-    video_constraints = { 'mandatory': {}, 'optional': [] }
-    if min_resolution:
-      min_sizes = min_resolution.split('x')
-      if len(min_sizes) == 2:
-        video_constraints['mandatory']['minWidth'] = min_sizes[0]
-        video_constraints['mandatory']['minHeight'] = min_sizes[1]
+    track_constraints = {'mandatory': {}, 'optional': []}
+    for constraint_string in constraints_string.split(','):
+      constraint = constraint_string.split('=')
+      if len(constraint) != 2:
+        logging.error('Ignoring malformed constraint: ' + constraint_string)
+        continue
+      if constraint[0].startswith('goog'):
+        track_constraints['optional'].append({constraint[0]: constraint[1]})
       else:
-        logging.info('Ignored invalid minre: ' + min_resolution)
-    if max_resolution:
-      max_sizes = max_resolution.split('x')
-      if len(max_sizes) == 2:
-        video_constraints['mandatory']['maxWidth'] = max_sizes[0]
-        video_constraints['mandatory']['maxHeight'] = max_sizes[1]
-      else:
-        logging.info('Ignored invalid maxre: ' + max_resolution)
+        track_constraints['mandatory'][constraint[0]] = constraint[1]
 
-  return { 'audio': audio_constraints, 'video': video_constraints }
+  return track_constraints
+
+def make_media_stream_constraints(audio, video):
+  stream_constraints = (
+      {'audio': make_media_track_constraints(audio),
+       'video': make_media_track_constraints(video)})
+  logging.info('Applying media constraints: ' + str(stream_constraints))
+  return stream_constraints
 
 def make_pc_constraints(compat):
   constraints = { 'optional': [] }
@@ -316,6 +302,10 @@ class MainPage(webapp2.RequestHandler):
   def get(self):
     """Renders the main page. When this page is shown, we create a new
     channel to push asynchronous updates to the client."""
+
+    # Append strings to this list to have them thrown up in message boxes. This
+    # will also cause the app to fail.
+    error_messages = []
     # Get the base url without arguments.
     base_url = self.request.path_url
     user_agent = self.request.headers['User-Agent']
@@ -327,32 +317,45 @@ class MainPage(webapp2.RequestHandler):
 
     ts_pwd = self.request.get('tp')
 
-    # Use "audio" and "video" to set the media stream constraints. "true" and
-    # "false" are recognized and interpreted as bools, for example:
-    #   "?audio=true&video=false" (start an audio-only call).
-    #   "?audio=false" (start a video-only call)
-    # If unspecified, the constraint defaults to True.
+    # Use "audio" and "video" to set the media stream constraints. Defined here:
+    # http://dev.w3.org/2011/webrtc/editor/getusermedia.html#idl-def-MediaStreamConstraints
     #
-    # audio-specific parsing:
-    # To set certain constraints, pass in a comma-separated list of audio
-    # constraint strings. If preceded by a "-", the constraint will be set to
-    # False, and otherwise to True. There is no validation of constraint
-    # strings. Examples:
-    #   "?audio=googEchoCancellation" (enables echo cancellation)
-    #   "?audio=-googEchoCancellation,googAutoGainControl" (disables echo
-    #       cancellation and enables gain control)
-    # The strings are defined here:
+    # "true" and "false" are recognized and interpreted as bools, for example:
+    #   "?audio=true&video=false" (Start an audio-only call.)
+    #   "?audio=false" (Start a video-only call.)
+    # If unspecified, the stream constraint defaults to True.
+    #
+    # To specify media track constraints, pass in a comma-separated list of
+    # key/value pairs, separated by a "=". Examples:
+    #   "?audio=googEchoCancellation=false,googAutoGainControl=true"
+    #   (Disable echo cancellation and enable gain control.)
+    #
+    #   "?video=minWidth=1280,minHeight=720,googNoiseReduction=true"
+    #   (Set the minimum resolution to 1280x720 and enable noise reduction.)
+    #
+    # Keys starting with "goog" will be added to the "optional" key; all others
+    # will be added to the "mandatory" key.
+    #
+    # The audio keys are defined here:
     # https://code.google.com/p/webrtc/source/browse/trunk/talk/app/webrtc/localaudiosource.cc
     #
-    # TODO(ajm): There is currently no video functionality beyond True/False.
-    # Move the resolution settings here instead?
+    # The video keys are defined here:
+    # https://code.google.com/p/webrtc/source/browse/trunk/talk/app/webrtc/videosource.cc
     audio = self.request.get('audio')
     video = self.request.get('video')
-    min_resolution = self.request.get('minre')
-    max_resolution = self.request.get('maxre')
-    hd_video = self.request.get('hd')
-    if hd_video.lower() == 'true':
-      min_resolution = '1280x720'
+
+    if self.request.get('hd').lower() == 'true':
+      if video:
+        message = 'The "hd" parameter has overridden video=' + str(video)
+        logging.error(message)
+        error_messages.append(message)
+      video = 'minWidth=1280,minHeight=720'
+
+    if self.request.get('minre') or self.request.get('maxre'):
+      message = ('The "minre" and "maxre" parameters are no longer supported. '
+                 'Use "video" instead.')
+      logging.error(message)
+      error_messages.append(message)
 
     audio_send_codec = self.request.get('asc')
     if not audio_send_codec:
@@ -430,9 +433,9 @@ class MainPage(webapp2.RequestHandler):
     pc_config = make_pc_config(stun_server, turn_server, ts_pwd)
     pc_constraints = make_pc_constraints(compat)
     offer_constraints = make_offer_constraints()
-    media_constraints = make_media_constraints(audio, video, min_resolution,
-                                               max_resolution)
-    template_values = {'token': token,
+    media_constraints = make_media_stream_constraints(audio, video)
+    template_values = {'error_messages': error_messages,
+                       'token': token,
                        'me': user,
                        'room_key': room_key,
                        'room_link': room_link,

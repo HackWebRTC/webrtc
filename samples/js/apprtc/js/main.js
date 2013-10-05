@@ -22,6 +22,13 @@ var isAudioMuted = false;
 var gatheredIceCandidateTypes = { Local: {}, Remote: {} };
 
 function initialize() {
+  if (errorMessages.length > 0) {
+    for (i = 0; i < errorMessages.length; ++i) {
+      window.alert(errorMessages[i]);
+    }
+    return;
+  }
+
   console.log('Initializing; room=' + roomKey + '.');
   card = document.getElementById('card');
   localVideo = document.getElementById('localVideo');
