@@ -26,11 +26,14 @@
 
 namespace webrtc {
 
+struct CodecInst;
 class CriticalSectionWrapper;
 class RWLockWrapper;
 class NetEq;
+
+namespace acm2 {
+
 class Nack;
-struct CodecInst;
 
 class AcmReceiver {
  public:
@@ -359,6 +362,8 @@ class AcmReceiver {
   scoped_ptr<InitialDelayManager::SyncStream> missing_packets_sync_stream_;
   scoped_ptr<InitialDelayManager::SyncStream> late_packets_sync_stream_;
 };
+
+}  // namespace acm2
 
 }  // namespace webrtc
 

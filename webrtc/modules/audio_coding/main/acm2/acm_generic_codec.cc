@@ -21,6 +21,8 @@
 
 namespace webrtc {
 
+namespace acm2 {
+
 // Enum for CNG
 enum {
   kMaxPLCParamsCNG = WEBRTC_CNG_MAX_LPC_ORDER,
@@ -1001,5 +1003,7 @@ int16_t ACMGenericCodec::REDPayloadISAC(const int32_t /* isac_rate */,
                "Error: REDPayloadISAC is an iSAC specific function");
   return -1;
 }
+
+}  // namespace acm2
 
 }  // namespace webrtc

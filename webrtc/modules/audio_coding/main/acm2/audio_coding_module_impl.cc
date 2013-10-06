@@ -27,6 +27,8 @@
 
 namespace webrtc {
 
+namespace acm2 {
+
 enum {
   kACMToneEnd = 999
 };
@@ -1973,5 +1975,7 @@ std::vector<uint16_t> AudioCodingModuleImpl::GetNackList(
 int AudioCodingModuleImpl::LeastRequiredDelayMs() const {
   return receiver_.LeastRequiredDelayMs();
 }
+
+}  // namespace acm2
 
 }  // namespace webrtc

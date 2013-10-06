@@ -28,7 +28,10 @@ struct WebRtcACMCodecParams;
 class CriticalSectionWrapper;
 class RWLockWrapper;
 class Clock;
+
+namespace acm2 {
 class Nack;
+}
 
 namespace acm1 {
 
@@ -437,7 +440,7 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   int64_t last_receive_timestamp_;
 
   Clock* clock_;
-  scoped_ptr<Nack> nack_;
+  scoped_ptr<acm2::Nack> nack_;
   bool nack_enabled_;
 };
 

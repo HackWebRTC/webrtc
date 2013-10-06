@@ -12,6 +12,8 @@
 
 namespace webrtc {
 
+namespace acm2 {
+
 InitialDelayManager::InitialDelayManager(int initial_delay_ms,
                                          int late_packet_threshold)
     : last_packet_type_(kUndefinedPacket),
@@ -226,5 +228,7 @@ void InitialDelayManager::UpdatePlayoutTimestamp(
   playout_timestamp_ = current_header.timestamp - static_cast<uint32_t>(
       initial_delay_ms_ * sample_rate_hz / 1000);
 }
+
+}  // namespace acm2
 
 }  // namespace webrtc

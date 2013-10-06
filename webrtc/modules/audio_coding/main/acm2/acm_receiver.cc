@@ -30,6 +30,8 @@
 
 namespace webrtc {
 
+namespace acm2 {
+
 namespace {
 
 const int kNeteqInitSampleRateHz = 16000;
@@ -828,5 +830,7 @@ void AcmReceiver::InsertStreamOfSyncPackets(
     sync_stream->receive_timestamp += sync_stream->timestamp_step;
   }
 }
+
+}  // namespace acm2
 
 }  // namespace webrtc

@@ -23,6 +23,8 @@
 #include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
+
+namespace acm2 {
 namespace {
 
 bool CodecsEqual(const CodecInst& codec_a, const CodecInst& codec_b) {
@@ -417,5 +419,7 @@ TEST_F(AcmReceiverTest, DISABLED_ON_ANDROID(LastAudioCodec)) {
     ++n;
   }
 }
+
+}  // namespace acm2
 
 }  // namespace webrtc

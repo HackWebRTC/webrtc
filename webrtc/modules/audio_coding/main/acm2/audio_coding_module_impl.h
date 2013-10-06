@@ -22,10 +22,13 @@
 
 namespace webrtc {
 
-class ACMDTMFDetection;
-class ACMGenericCodec;
 class CriticalSectionWrapper;
 class RWLockWrapper;
+
+namespace acm2 {
+
+class ACMDTMFDetection;
+class ACMGenericCodec;
 
 class AudioCodingModuleImpl : public AudioCodingModule {
  public:
@@ -348,6 +351,8 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   uint32_t codec_timestamp_;
   bool first_10ms_data_;
 };
+
+}  // namespace acm2
 
 }  // namespace webrtc
 
