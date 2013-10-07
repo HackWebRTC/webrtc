@@ -23,7 +23,7 @@ const int kDefaultTransmissionTimeOffsetExtensionId = 2;
 
 int main(int argc, char** argv) {
   if (argc < 2) {
-    printf("Usage: rtp_to_text <input_file.rtp> <output_file.rtp>\n")
+    printf("Usage: rtp_to_text <input_file.rtp> <output_file.rtp>\n");
     return -1;
   }
   webrtc::scoped_ptr<RtpPacketSourceInterface> rtp_reader(
