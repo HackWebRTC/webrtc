@@ -85,6 +85,7 @@ const char* kRtcpFbCcmParamFir = "fir";
 const char* kCodecParamMaxBitrate = "x-google-max-bitrate";
 const char* kCodecParamMinBitrate = "x-google-min-bitrate";
 const char* kCodecParamMaxQuantization = "x-google-max-quantization";
+const char* kCodecParamPort = "x-google-port";
 
 const int kGoogleRtpDataCodecId = 101;
 const char kGoogleRtpDataCodecName[] = "google-data";

@@ -67,6 +67,9 @@ class LateBindingSymbolTable {
   bool LoadFromPath(const char *dll_path);
   void Unload();
 
+  // Gets the raw OS handle to the DLL. Be careful what you do with it.
+  DllHandle GetDllHandle() const { return handle_; }
+
  private:
   void ClearSymbols();
 

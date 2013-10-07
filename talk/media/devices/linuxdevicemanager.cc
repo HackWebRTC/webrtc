@@ -306,8 +306,9 @@ bool LinuxDeviceWatcher::Start() {
   // We deliberately return true in the failure paths here because libudev is
   // not a critical component of a Linux system so it may not be present/usable,
   // and we don't want to halt LinuxDeviceManager initialization in such a case.
-  if (!libudev_.Load()) {
-    LOG(LS_WARNING) << "libudev not present/usable; LinuxDeviceWatcher disabled";
+  if (!libudev_.Load() || IsWrongLibUDevAbiVersion(libudev_.GetDllHandle())) {
+    LOG(LS_WARNING)
+        << "libudev not present/usable; LinuxDeviceWatcher disabled";
     return true;
   }
   udev_ = libudev_.udev_new()();

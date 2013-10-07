@@ -837,6 +837,9 @@ class FakeVideoEngine : public FakeBaseEngine {
     default_encoder_config_ = config;
     return true;
   }
+  VideoEncoderConfig GetDefaultEncoderConfig() const {
+    return default_encoder_config_;
+  }
   const VideoEncoderConfig& default_encoder_config() const {
     return default_encoder_config_;
   }

@@ -599,6 +599,7 @@ static bool UpdateCryptoParamsForBundle(const ContentGroup& bundle_group,
     return false;
   }
 
+  bool common_cryptos_needed = false;
   // Get the common cryptos.
   const ContentNames& content_names = bundle_group.content_names();
   CryptoParamsVec common_cryptos;
@@ -606,6 +607,11 @@ static bool UpdateCryptoParamsForBundle(const ContentGroup& bundle_group,
        it != content_names.end(); ++it) {
     if (!IsRtpContent(sdesc, *it)) {
       continue;
+    }
+    // The common cryptos are needed if any of the content does not have DTLS
+    // enabled.
+    if (!sdesc->GetTransportInfoByName(*it)->description.secure()) {
+      common_cryptos_needed = true;
     }
     if (it == content_names.begin()) {
       // Initial the common_cryptos with the first content in the bundle group.
@@ -625,7 +631,7 @@ static bool UpdateCryptoParamsForBundle(const ContentGroup& bundle_group,
     }
   }
 
-  if (common_cryptos.empty()) {
+  if (common_cryptos.empty() && common_cryptos_needed) {
     return false;
   }
 

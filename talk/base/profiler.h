@@ -164,6 +164,9 @@ class ProfilerScope {
   DISALLOW_COPY_AND_ASSIGN(ProfilerScope);
 };
 
+std::ostream& operator<<(std::ostream& stream,
+                         const ProfilerEvent& profiler_event);
+
 }  // namespace talk_base
 
 #endif  // TALK_BASE_PROFILER_H_

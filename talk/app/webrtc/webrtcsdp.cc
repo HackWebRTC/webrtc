@@ -145,6 +145,7 @@ static const char kAttributeFingerprint[] = "fingerprint";
 static const char kAttributeSetup[] = "setup";
 static const char kAttributeFmtp[] = "fmtp";
 static const char kAttributeRtpmap[] = "rtpmap";
+static const char kAttributeSctpmap[] = "sctpmap";
 static const char kAttributeRtcp[] = "rtcp";
 static const char kAttributeIceUfrag[] = "ice-ufrag";
 static const char kAttributeIcePwd[] = "ice-pwd";
@@ -210,7 +211,7 @@ static const int kIsacWbDefaultRate = 32000;  // From acm_common_defs.h
 static const int kIsacSwbDefaultRate = 56000;  // From acm_common_defs.h
 
 static const int kDefaultSctpFmt = 5000;
-static const char kDefaultSctpFmtProtocol[] = "webrtc-datachannel";
+static const char kDefaultSctpmapProtocol[] = "webrtc-datachannel";
 
 struct SsrcInfo {
   SsrcInfo()
@@ -1268,10 +1269,14 @@ void BuildMediaDescription(const ContentInfo* content_info,
 }
 
 void BuildSctpContentAttributes(std::string* message) {
-  cricket::DataCodec sctp_codec(kDefaultSctpFmt, kDefaultSctpFmtProtocol, 0);
-  sctp_codec.SetParam(kCodecParamSctpProtocol, kDefaultSctpFmtProtocol);
-  sctp_codec.SetParam(kCodecParamSctpStreams, cricket::kMaxSctpSid + 1);
-  AddFmtpLine(sctp_codec, message);
+  // draft-ietf-mmusic-sctp-sdp-04
+  // a=sctpmap:sctpmap-number  protocol  [streams]
+  std::ostringstream os;
+  InitAttrLine(kAttributeSctpmap, &os);
+  os << kSdpDelimiterColon << kDefaultSctpFmt << kSdpDelimiterSpace
+     << kDefaultSctpmapProtocol << kSdpDelimiterSpace
+     << (cricket::kMaxSctpSid + 1);
+  AddLine(os.str(), message);
 }
 
 void BuildRtpContentAttributes(
@@ -2111,10 +2116,25 @@ bool ParseMediaDescription(const std::string& message,
           codec_preference,
           static_cast<AudioContentDescription*>(content.get()));
     } else if (HasAttribute(line, kMediaTypeData)) {
-      content.reset(ParseContentDescription<DataContentDescription>(
+      DataContentDescription* desc =
+          ParseContentDescription<DataContentDescription>(
                     message, cricket::MEDIA_TYPE_DATA, mline_index, protocol,
                     codec_preference, pos, &content_name,
-                    &transport, candidates, error));
+                    &transport, candidates, error);
+
+      if (protocol == cricket::kMediaProtocolDtlsSctp) {
+        // Add the SCTP Port number as a pseudo-codec "port" parameter
+        cricket::DataCodec codec_port(
+            cricket::kGoogleSctpDataCodecId, cricket::kGoogleSctpDataCodecName,
+            0);
+        codec_port.SetParam(cricket::kCodecParamPort, fields[3]);
+        LOG(INFO) << "ParseMediaDescription: Got SCTP Port Number "
+                  << fields[3];
+        desc->AddCodec(codec_port);
+      }
+
+      content.reset(desc);
+
       // We should always use the default bandwidth for RTP-based data
       // channels.  Don't allow SDP to set the bandwidth, because that
       // would give JS the opportunity to "break the Internet".

@@ -99,7 +99,8 @@ class WebRtcSession : public cricket::BaseSession,
                       public AudioProviderInterface,
                       public DataChannelFactory,
                       public VideoProviderInterface,
-                      public DtmfProviderInterface {
+                      public DtmfProviderInterface,
+                      public DataChannelProviderInterface {
  public:
   WebRtcSession(cricket::ChannelManager* channel_manager,
                 talk_base::Thread* signaling_thread,
@@ -180,6 +181,14 @@ class WebRtcSession : public cricket::BaseSession,
   virtual bool InsertDtmf(const std::string& track_id,
                           int code, int duration);
   virtual sigslot::signal0<>* GetOnDestroyedSignal();
+
+  // Implements DataChannelProviderInterface.
+  virtual bool SendData(const cricket::SendDataParams& params,
+                        const talk_base::Buffer& payload,
+                        cricket::SendDataResult* result) OVERRIDE;
+  virtual bool ConnectDataChannel(DataChannel* webrtc_data_channel) OVERRIDE;
+  virtual void DisconnectDataChannel(DataChannel* webrtc_data_channel) OVERRIDE;
+
 
   talk_base::scoped_refptr<DataChannel> CreateDataChannel(
       const std::string& label,

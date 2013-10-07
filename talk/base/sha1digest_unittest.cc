@@ -38,7 +38,7 @@ std::string Sha1(const std::string& input) {
 
 TEST(Sha1DigestTest, TestSize) {
   Sha1Digest sha1;
-  EXPECT_EQ(20U, Sha1Digest::kSize);
+  EXPECT_EQ(20, static_cast<int>(Sha1Digest::kSize));
   EXPECT_EQ(20U, sha1.Size());
 }
 

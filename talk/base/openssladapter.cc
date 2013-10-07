@@ -234,7 +234,7 @@ bool OpenSSLAdapter::InitializeSSL(VerificationCallback callback) {
   if (!InitializeSSLThread() || !SSL_library_init())
       return false;
 #if !defined(ADDRESS_SANITIZER) || !defined(OSX)
-  // Loading the error strings crashed mac_asan. Omit this debugging aid there.
+  // Loading the error strings crashes mac_asan.  Omit this debugging aid there.
   SSL_load_error_strings();
 #endif
   ERR_load_BIO_strings();

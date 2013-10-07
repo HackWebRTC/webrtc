@@ -411,6 +411,7 @@ BaseChannel::BaseChannel(talk_base::Thread* thread,
 
 BaseChannel::~BaseChannel() {
   ASSERT(worker_thread_ == talk_base::Thread::Current());
+  Deinit();
   StopConnectionMonitor();
   FlushRtcpMessages();  // Send any outstanding RTCP packets.
   Clear();  // eats any outstanding messages or packets
@@ -453,6 +454,10 @@ bool BaseChannel::Init(TransportChannel* transport_channel,
 
   set_rtcp_transport_channel(rtcp_transport_channel);
   return true;
+}
+
+void BaseChannel::Deinit() {
+  media_channel_->SetInterface(NULL);
 }
 
 // Can be called from thread other than worker thread
@@ -1466,6 +1471,7 @@ VoiceChannel::~VoiceChannel() {
   StopMediaMonitor();
   // this can't be done in the base class, since it calls a virtual
   DisableMedia_w();
+  Deinit();
 }
 
 bool VoiceChannel::Init() {
@@ -1961,6 +1967,8 @@ VideoChannel::~VideoChannel() {
   StopMediaMonitor();
   // this can't be done in the base class, since it calls a virtual
   DisableMedia_w();
+
+  Deinit();
 }
 
 bool VideoChannel::SetRenderer(uint32 ssrc, VideoRenderer* renderer) {
@@ -2464,6 +2472,8 @@ DataChannel::~DataChannel() {
   StopMediaMonitor();
   // this can't be done in the base class, since it calls a virtual
   DisableMedia_w();
+
+  Deinit();
 }
 
 bool DataChannel::Init() {

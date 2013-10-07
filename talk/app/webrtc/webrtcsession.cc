@@ -927,9 +927,43 @@ sigslot::signal0<>* WebRtcSession::GetOnDestroyedSignal() {
   return &SignalVoiceChannelDestroyed;
 }
 
+bool WebRtcSession::SendData(const cricket::SendDataParams& params,
+                             const talk_base::Buffer& payload,
+                             cricket::SendDataResult* result) {
+  if (!data_channel_.get()) {
+    LOG(LS_ERROR) << "SendData called when data_channel_ is NULL.";
+    return false;
+  }
+  return data_channel_->SendData(params, payload, result);
+}
+
+bool WebRtcSession::ConnectDataChannel(DataChannel* webrtc_data_channel) {
+  if (!data_channel_.get()) {
+    LOG(LS_ERROR) << "ConnectDataChannel called when data_channel_ is NULL.";
+    return false;
+  }
+
+  data_channel_->SignalReadyToSendData.connect(webrtc_data_channel,
+                                               &DataChannel::OnChannelReady);
+  data_channel_->SignalDataReceived.connect(webrtc_data_channel,
+                                            &DataChannel::OnDataReceived);
+  cricket::StreamParams params =
+      cricket::StreamParams::CreateLegacy(webrtc_data_channel->id());
+  data_channel_->AddRecvStream(params);
+  data_channel_->AddSendStream(params);
+  return true;
+}
+
+void WebRtcSession::DisconnectDataChannel(DataChannel* webrtc_data_channel) {
+  data_channel_->RemoveSendStream(webrtc_data_channel->id());
+  data_channel_->RemoveRecvStream(webrtc_data_channel->id());
+  data_channel_->SignalReadyToSendData.disconnect(webrtc_data_channel);
+  data_channel_->SignalDataReceived.disconnect(webrtc_data_channel);
+}
+
 talk_base::scoped_refptr<DataChannel> WebRtcSession::CreateDataChannel(
-      const std::string& label,
-      const DataChannelInit* config) {
+    const std::string& label,
+    const DataChannelInit* config) {
   if (state() == STATE_RECEIVEDTERMINATE) {
     return NULL;
   }
@@ -953,7 +987,7 @@ talk_base::scoped_refptr<DataChannel> WebRtcSession::CreateDataChannel(
   }
 
   talk_base::scoped_refptr<DataChannel> channel(
-      DataChannel::Create(this, label, &new_config));
+      DataChannel::Create(this, data_channel_type_, label, &new_config));
   if (channel == NULL)
     return NULL;
   if (!mediastream_signaling_->AddDataChannel(channel))

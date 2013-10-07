@@ -26,118 +26,78 @@
  */
 
 #include "talk/app/webrtc/datachannel.h"
-#include "talk/app/webrtc/jsep.h"
-#include "talk/app/webrtc/mediastreamsignaling.h"
-#include "talk/app/webrtc/test/fakeconstraints.h"
-#include "talk/app/webrtc/test/fakedtlsidentityservice.h"
-#include "talk/app/webrtc/webrtcsession.h"
 #include "talk/base/gunit.h"
-#include "talk/media/base/fakemediaengine.h"
-#include "talk/media/devices/fakedevicemanager.h"
-#include "talk/session/media/channelmanager.h"
 
-using webrtc::CreateSessionDescriptionObserver;
-using webrtc::MediaConstraintsInterface;
-using webrtc::SessionDescriptionInterface;
+using webrtc::DataChannel;
 
-const uint32 kFakeSsrc = 1;
-
-class CreateSessionDescriptionObserverForTest
-    : public talk_base::RefCountedObject<CreateSessionDescriptionObserver> {
+class FakeDataChannelClient : public webrtc::DataChannelProviderInterface {
  public:
-  virtual void OnSuccess(SessionDescriptionInterface* desc) {
-    description_.reset(desc);
+  FakeDataChannelClient() : send_blocked_(false) {}
+  virtual ~FakeDataChannelClient() {}
+
+  virtual bool SendData(const cricket::SendDataParams& params,
+                        const talk_base::Buffer& payload,
+                        cricket::SendDataResult* result) OVERRIDE {
+    if (send_blocked_) {
+      *result = cricket::SDR_BLOCK;
+      return false;
+    }
+    last_send_data_params_ = params;
+    return true;
   }
-  virtual void OnFailure(const std::string& error) {}
-
-  SessionDescriptionInterface* description() { return description_.get(); }
-
-  SessionDescriptionInterface* ReleaseDescription() {
-    return description_.release();
+  virtual bool ConnectDataChannel(DataChannel* data_channel) OVERRIDE {
+    return true;
   }
+  virtual void DisconnectDataChannel(DataChannel* data_channel) OVERRIDE {}
 
- protected:
-  ~CreateSessionDescriptionObserverForTest() {}
+  void set_send_blocked(bool blocked) { send_blocked_ = blocked; }
+  cricket::SendDataParams last_send_data_params() {
+      return last_send_data_params_;
+  }
 
  private:
-  talk_base::scoped_ptr<SessionDescriptionInterface> description_;
+  cricket::SendDataParams last_send_data_params_;
+  bool send_blocked_;
 };
 
 class SctpDataChannelTest : public testing::Test {
  protected:
   SctpDataChannelTest()
-      : media_engine_(new cricket::FakeMediaEngine),
-        data_engine_(new cricket::FakeDataEngine),
-        channel_manager_(
-            new cricket::ChannelManager(media_engine_,
-                                        data_engine_,
-                                        new cricket::FakeDeviceManager(),
-                                        new cricket::CaptureManager(),
-                                        talk_base::Thread::Current())),
-        media_stream_signaling_(
-            new webrtc::MediaStreamSignaling(talk_base::Thread::Current(),
-                                             NULL, channel_manager_.get())),
-        session_(channel_manager_.get(),
-                 talk_base::Thread::Current(),
-                 talk_base::Thread::Current(),
-                 NULL,
-                 media_stream_signaling_.get()),
-        webrtc_data_channel_(NULL) {}
-
-  virtual void SetUp() {
-    if (!talk_base::SSLStreamAdapter::HaveDtlsSrtp()) {
-      return;
-    }
-    channel_manager_->Init();
-    webrtc::FakeConstraints constraints;
-    constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp, true);
-    constraints.AddMandatory(MediaConstraintsInterface::kEnableSctpDataChannels,
-                             true);
-    ASSERT_TRUE(session_.Initialize(&constraints,
-                                    new FakeIdentityService()));
-    webrtc_data_channel_ = webrtc::DataChannel::Create(&session_, "test", NULL);
-    ASSERT_TRUE(media_stream_signaling_->AddDataChannel(webrtc_data_channel_));
-
-    talk_base::scoped_refptr<CreateSessionDescriptionObserverForTest> observer
-        = new CreateSessionDescriptionObserverForTest();
-    session_.CreateOffer(observer.get(), NULL);
-    EXPECT_TRUE_WAIT(observer->description() != NULL, 2000);
-    ASSERT_TRUE(observer->description() != NULL);
-    ASSERT_TRUE(session_.SetLocalDescription(observer->ReleaseDescription(),
-                                             NULL));
-    // Connect to the media channel.
-    webrtc_data_channel_->SetSendSsrc(kFakeSsrc);
-    webrtc_data_channel_->SetReceiveSsrc(kFakeSsrc);
-    session_.data_channel()->SignalReadyToSendData(true);
+      : webrtc_data_channel_(
+          DataChannel::Create(&client_, cricket::DCT_SCTP, "test", &init_)) {
   }
 
-  void SetSendBlocked(bool blocked) {
-    bool was_blocked = data_engine_->GetChannel(0)->is_send_blocked();
-    data_engine_->GetChannel(0)->set_send_blocked(blocked);
-    if (!blocked && was_blocked) {
-      session_.data_channel()->SignalReadyToSendData(true);
-    }
+  void SetChannelReady() {
+    webrtc_data_channel_->OnChannelReady(true);
   }
-  cricket::FakeMediaEngine* media_engine_;
-  cricket::FakeDataEngine* data_engine_;
-  talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;
-  talk_base::scoped_ptr<webrtc::MediaStreamSignaling> media_stream_signaling_;
-  webrtc::WebRtcSession session_;
-  talk_base::scoped_refptr<webrtc::DataChannel> webrtc_data_channel_;
+
+  webrtc::DataChannelInit init_;
+  FakeDataChannelClient client_;
+  talk_base::scoped_refptr<DataChannel> webrtc_data_channel_;
 };
+
+// Tests the state of the data channel.
+TEST_F(SctpDataChannelTest, StateTransition) {
+  EXPECT_EQ(webrtc::DataChannelInterface::kConnecting,
+            webrtc_data_channel_->state());
+  SetChannelReady();
+  EXPECT_EQ(webrtc::DataChannelInterface::kOpen, webrtc_data_channel_->state());
+  webrtc_data_channel_->Close();
+  EXPECT_EQ(webrtc::DataChannelInterface::kClosed,
+            webrtc_data_channel_->state());
+}
 
 // Tests that DataChannel::buffered_amount() is correct after the channel is
 // blocked.
 TEST_F(SctpDataChannelTest, BufferedAmountWhenBlocked) {
-  if (!talk_base::SSLStreamAdapter::HaveDtlsSrtp()) {
-    return;
-  }
+  SetChannelReady();
   webrtc::DataBuffer buffer("abcd");
   EXPECT_TRUE(webrtc_data_channel_->Send(buffer));
 
   EXPECT_EQ(0U, webrtc_data_channel_->buffered_amount());
 
-  SetSendBlocked(true);
+  client_.set_send_blocked(true);
+
   const int number_of_packets = 3;
   for (int i = 0; i < number_of_packets; ++i) {
     EXPECT_TRUE(webrtc_data_channel_->Send(buffer));
@@ -149,13 +109,20 @@ TEST_F(SctpDataChannelTest, BufferedAmountWhenBlocked) {
 // Tests that the queued data are sent when the channel transitions from blocked
 // to unblocked.
 TEST_F(SctpDataChannelTest, QueuedDataSentWhenUnblocked) {
-  if (!talk_base::SSLStreamAdapter::HaveDtlsSrtp()) {
-    return;
-  }
+  SetChannelReady();
   webrtc::DataBuffer buffer("abcd");
-  SetSendBlocked(true);
+  client_.set_send_blocked(true);
   EXPECT_TRUE(webrtc_data_channel_->Send(buffer));
 
-  SetSendBlocked(false);
+  client_.set_send_blocked(false);
+  SetChannelReady();
   EXPECT_EQ(0U, webrtc_data_channel_->buffered_amount());
+}
+
+// Tests that the queued control message is sent when channel is ready.
+TEST_F(SctpDataChannelTest, QueuedControlMessageSent) {
+  talk_base::Buffer* buffer = new talk_base::Buffer("abcd", 4);
+  EXPECT_TRUE(webrtc_data_channel_->SendControl(buffer));
+  SetChannelReady();
+  EXPECT_EQ(cricket::DMT_CONTROL, client_.last_send_data_params().type);
 }

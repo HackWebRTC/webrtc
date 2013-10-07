@@ -123,8 +123,6 @@ LogMessage::LogMessage(const char* file, int line, LoggingSeverity sev,
                        LogErrorContext err_ctx, int err, const char* module)
     : severity_(sev),
       warn_slow_logs_delay_(WARN_SLOW_LOGS_DELAY) {
-  // Android's logging facility keeps track of timestamp and thread.
-#ifndef ANDROID
   if (timestamp_) {
     uint32 time = TimeSince(LogStartTime());
     // Also ensure WallClockStartTime is initialized, so that it matches
@@ -141,7 +139,6 @@ LogMessage::LogMessage(const char* file, int line, LoggingSeverity sev,
     print_stream_ << "[" << std::hex << id << std::dec << "] ";
 #endif  // WIN32
   }
-#endif  // !ANDROID
 
   if (severity_ >= ctx_sev_) {
     print_stream_ << Describe(sev) << "(" << DescribeFile(file)

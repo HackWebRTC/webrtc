@@ -130,12 +130,7 @@ void Profiler::ReportToLog(const char* file, int line,
   for (iterator it = events_.begin(); it != events_.end(); ++it) {
     if (event_prefix.empty() || it->first.find(event_prefix) == 0) {
       LogMessage(file, line, severity_to_use).stream()
-          << it->first << " count=" << it->second.event_count()
-          << " total=" << FormattedTime(it->second.total_time())
-          << " mean=" << FormattedTime(it->second.mean())
-          << " min=" << FormattedTime(it->second.minimum())
-          << " max=" << FormattedTime(it->second.maximum())
-          << " sd=" << it->second.standard_deviation();
+          << it->first << " " << it->second;
     }
   }
   LogMessage(file, line, severity_to_use).stream()
@@ -166,6 +161,17 @@ bool Profiler::Clear() {
     }
   }
   return result;
+}
+
+std::ostream& operator<<(std::ostream& stream,
+                         const ProfilerEvent& profiler_event) {
+  stream << "count=" << profiler_event.event_count()
+         << " total=" << FormattedTime(profiler_event.total_time())
+         << " mean=" << FormattedTime(profiler_event.mean())
+         << " min=" << FormattedTime(profiler_event.minimum())
+         << " max=" << FormattedTime(profiler_event.maximum())
+         << " sd=" << profiler_event.standard_deviation();
+  return stream;
 }
 
 }  // namespace talk_base

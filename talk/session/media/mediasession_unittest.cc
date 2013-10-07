@@ -536,8 +536,8 @@ TEST_F(MediaSessionDescriptionFactoryTest,
   ASSERT_CRYPTO(dcd, 1U, CS_AES_CM_128_HMAC_SHA1_80);
   EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), dcd->protocol());
 }
-// Create a typical data offer, and ensure it matches what we expect.
-TEST_F(MediaSessionDescriptionFactoryTest, TestCreateDataOffer) {
+// Create a RTP data offer, and ensure it matches what we expect.
+TEST_F(MediaSessionDescriptionFactoryTest, TestCreateRtpDataOffer) {
   MediaSessionOptions opts;
   opts.data_channel_type = cricket::DCT_RTP;
   f1_.set_secure(SEC_ENABLED);
@@ -569,6 +569,18 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateDataOffer) {
   EXPECT_TRUE(dcd->rtcp_mux());                 // rtcp-mux defaults on
   ASSERT_CRYPTO(dcd, 1U, CS_AES_CM_128_HMAC_SHA1_80);
   EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), dcd->protocol());
+}
+
+// Create an SCTP data offer with bundle without error.
+TEST_F(MediaSessionDescriptionFactoryTest, TestCreateSctpDataOffer) {
+  MediaSessionOptions opts;
+  opts.has_audio = false;
+  opts.bundle_enabled = true;
+  opts.data_channel_type = cricket::DCT_SCTP;
+  f1_.set_secure(SEC_ENABLED);
+  talk_base::scoped_ptr<SessionDescription> offer(f1_.CreateOffer(opts, NULL));
+  EXPECT_TRUE(offer.get() != NULL);
+  EXPECT_TRUE(offer->GetContentByName("data") != NULL);
 }
 
 // Create an audio, video offer without legacy StreamParams.

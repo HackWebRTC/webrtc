@@ -52,7 +52,8 @@ class ScopedLibUdev {
   ScopedLibUdev() {}
 
   bool Init() {
-    return libudev_.Load();
+    return libudev_.Load() &&
+           !IsWrongLibUDevAbiVersion(libudev_.GetDllHandle());
   }
 
   LibUDevSymbolTable libudev_;

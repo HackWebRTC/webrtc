@@ -381,6 +381,7 @@ class WebRtcVoiceMediaChannel
   bool ChangeSend(SendFlags send);
   bool ChangeSend(int channel, SendFlags send);
   void ConfigureSendChannel(int channel);
+  bool ConfigureRecvChannel(int channel);
   bool DeleteChannel(int channel);
   bool InConferenceMode() const {
     return options_.conference_mode.GetWithDefaultIfUnset(false);

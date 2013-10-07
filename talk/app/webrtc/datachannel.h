@@ -35,11 +35,24 @@
 #include "talk/app/webrtc/proxy.h"
 #include "talk/base/scoped_ref_ptr.h"
 #include "talk/base/sigslot.h"
+#include "talk/media/base/mediachannel.h"
 #include "talk/session/media/channel.h"
 
 namespace webrtc {
 
-class WebRtcSession;
+class DataChannel;
+
+class DataChannelProviderInterface {
+ public:
+  virtual bool SendData(const cricket::SendDataParams& params,
+                        const talk_base::Buffer& payload,
+                        cricket::SendDataResult* result) = 0;
+  virtual bool ConnectDataChannel(DataChannel* data_channel) = 0;
+  virtual void DisconnectDataChannel(DataChannel* data_channel) = 0;
+
+ protected:
+  virtual ~DataChannelProviderInterface() {}
+};
 
 // DataChannel is a an implementation of the DataChannelInterface based on
 // libjingle's data engine. It provides an implementation of unreliable data
@@ -60,7 +73,8 @@ class DataChannel : public DataChannelInterface,
                     public sigslot::has_slots<> {
  public:
   static talk_base::scoped_refptr<DataChannel> Create(
-      WebRtcSession* session,
+      DataChannelProviderInterface* client,
+      cricket::DataChannelType dct,
       const std::string& label,
       const DataChannelInit* config);
 
@@ -105,24 +119,26 @@ class DataChannel : public DataChannelInterface,
   // underlying DataMediaChannel becomes ready, or when this channel is a new
   // stream on an existing DataMediaChannel, and we've finished negotiation.
   void OnChannelReady(bool writable);
- protected:
-  DataChannel(WebRtcSession* session, const std::string& label);
-  virtual ~DataChannel();
-
-  bool Init(const DataChannelInit* config);
-  bool HasNegotiationCompleted();
 
   // Sigslots from cricket::DataChannel
   void OnDataReceived(cricket::DataChannel* channel,
                       const cricket::ReceiveDataParams& params,
                       const talk_base::Buffer& payload);
 
+ protected:
+  DataChannel(DataChannelProviderInterface* client,
+              cricket::DataChannelType dct,
+              const std::string& label);
+  virtual ~DataChannel();
+
+  bool Init(const DataChannelInit* config);
+  bool HasNegotiationCompleted();
+
  private:
   void DoClose();
   void UpdateState();
   void SetState(DataState state);
   void DisconnectFromDataSession();
-  bool IsConnectedToDataSession() { return data_session_ != NULL; }
   void DeliverQueuedControlData();
   void QueueControl(const talk_base::Buffer* buffer);
   void ClearQueuedControlData();
@@ -139,8 +155,9 @@ class DataChannel : public DataChannelInterface,
   DataChannelObserver* observer_;
   DataState state_;
   bool was_ever_writable_;
-  WebRtcSession* session_;
-  cricket::DataChannel* data_session_;
+  bool connected_to_provider_;
+  cricket::DataChannelType data_channel_type_;
+  DataChannelProviderInterface* provider_;
   bool send_ssrc_set_;
   uint32 send_ssrc_;
   bool receive_ssrc_set_;

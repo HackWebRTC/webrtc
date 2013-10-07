@@ -27,6 +27,10 @@
 
 #include "talk/media/devices/libudevsymboltable.h"
 
+#include <dlfcn.h>
+
+#include "talk/base/logging.h"
+
 namespace cricket {
 
 #define LATE_BINDING_SYMBOL_TABLE_CLASS_NAME LIBUDEV_SYMBOLS_CLASS_NAME
@@ -36,5 +40,31 @@ namespace cricket {
 #undef LATE_BINDING_SYMBOL_TABLE_CLASS_NAME
 #undef LATE_BINDING_SYMBOL_TABLE_SYMBOLS_LIST
 #undef LATE_BINDING_SYMBOL_TABLE_DLL_NAME
+
+bool IsWrongLibUDevAbiVersion(talk_base::DllHandle libudev_0) {
+  talk_base::DllHandle libudev_1 = dlopen("libudev.so.1", RTLD_NOW|RTLD_NOLOAD);
+  bool unsafe_symlink = (libudev_0 == libudev_1);
+  if (unsafe_symlink) {
+    // .0 and .1 are distinct ABIs, so if they point to the same thing then one
+    // of them must be wrong. Probably the old has been symlinked to the new in
+    // a misguided attempt at backwards compatibility.
+    LOG(LS_ERROR) << "libudev.so.0 and libudev.so.1 unsafely point to the"
+                     " same thing; not using libudev";
+  } else if (libudev_1) {
+    // If libudev.so.1 is resident but distinct from libudev.so.0, then some
+    // system library loaded the new ABI separately. This is not a problem for
+    // LateBindingSymbolTable because its symbol look-ups are restricted to its
+    // DllHandle, but having libudev.so.0 resident may cause problems for that
+    // system library because symbol names are not namespaced by DLL.
+    LOG(LS_WARNING)
+        << "libudev.so.1 is resident but distinct from libudev.so.0";
+  }
+  if (libudev_1) {
+    // Release the refcount that we acquired above. (Does not unload the DLL;
+    // whoever loaded it still needs it.)
+    dlclose(libudev_1);
+  }
+  return unsafe_symlink;
+}
 
 }  // namespace cricket

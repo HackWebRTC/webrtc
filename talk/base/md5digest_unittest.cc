@@ -38,7 +38,7 @@ std::string Md5(const std::string& input) {
 
 TEST(Md5DigestTest, TestSize) {
   Md5Digest md5;
-  EXPECT_EQ(16U, Md5Digest::kSize);
+  EXPECT_EQ(16, static_cast<int>(Md5Digest::kSize));
   EXPECT_EQ(16U, md5.Size());
 }
 

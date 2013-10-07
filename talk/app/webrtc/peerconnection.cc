@@ -172,8 +172,10 @@ bool ParseIceServers(const PeerConnectionInterface::IceServers& configuration,
     }
     std::string address = tokens[1];
     int port = kDefaultStunPort;
-    if (service_type == TURNS)
+    if (service_type == TURNS) {
       port = kDefaultStunTlsPort;
+      turn_transport_type = kTcpTransportType;
+    }
 
     if (tokens.size() > kMinIceUriTokens) {
       if (!talk_base::FromString(tokens[2], &port)) {

@@ -98,6 +98,10 @@ class MediaEngineInterface {
   // and encode video.
   virtual bool SetDefaultVideoEncoderConfig(const VideoEncoderConfig& config)
       = 0;
+  // Gets the default (maximum) codec/resolution and encoder option used to
+  // capture and encode video, as set by SetDefaultVideoEncoderConfig or the
+  // default from the video engine if not previously set.
+  virtual VideoEncoderConfig GetDefaultVideoEncoderConfig() const = 0;
 
   // Device selection
   // TODO(tschmelcher): Add method for selecting the soundclip device.
@@ -202,6 +206,9 @@ class CompositeMediaEngine : public MediaEngineInterface {
   }
   virtual bool SetDefaultVideoEncoderConfig(const VideoEncoderConfig& config) {
     return video_.SetDefaultEncoderConfig(config);
+  }
+  virtual VideoEncoderConfig GetDefaultVideoEncoderConfig() const {
+    return video_.GetDefaultEncoderConfig();
   }
 
   virtual bool SetSoundDevices(const Device* in_device,
@@ -327,6 +334,9 @@ class NullVideoEngine {
     return NULL;
   }
   bool SetOptions(const VideoOptions& options) { return true; }
+  VideoEncoderConfig GetDefaultEncoderConfig() const {
+    return VideoEncoderConfig();
+  }
   bool SetDefaultEncoderConfig(const VideoEncoderConfig& config) {
     return true;
   }

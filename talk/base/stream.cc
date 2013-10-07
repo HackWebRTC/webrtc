@@ -523,6 +523,106 @@ void FileStream::DoClose() {
   fclose(file_);
 }
 
+CircularFileStream::CircularFileStream(size_t max_size)
+  : max_write_size_(max_size),
+    position_(0),
+    marked_position_(max_size / 2),
+    last_write_position_(0),
+    read_segment_(READ_LATEST),
+    read_segment_available_(0) {
+}
+
+bool CircularFileStream::Open(
+    const std::string& filename, const char* mode, int* error) {
+  if (!FileStream::Open(filename.c_str(), mode, error))
+    return false;
+
+  if (strchr(mode, "r") != NULL) {  // Opened in read mode.
+    // Check if the buffer has been overwritten and determine how to read the
+    // log in time sequence.
+    size_t file_size;
+    GetSize(&file_size);
+    if (file_size == position_) {
+      // The buffer has not been overwritten yet. Read 0 .. file_size
+      read_segment_ = READ_LATEST;
+      read_segment_available_ = file_size;
+    } else {
+      // The buffer has been over written. There are three segments: The first
+      // one is 0 .. marked_position_, which is the marked earliest log. The
+      // second one is position_ .. file_size, which is the middle log. The
+      // last one is marked_position_ .. position_, which is the latest log.
+      read_segment_ = READ_MARKED;
+      read_segment_available_ = marked_position_;
+      last_write_position_ = position_;
+    }
+
+    // Read from the beginning.
+    position_ = 0;
+    SetPosition(position_);
+  }
+
+  return true;
+}
+
+StreamResult CircularFileStream::Read(void* buffer, size_t buffer_len,
+                                      size_t* read, int* error) {
+  if (read_segment_available_ == 0) {
+    size_t file_size;
+    switch (read_segment_) {
+      case READ_MARKED:  // Finished READ_MARKED and start READ_MIDDLE.
+        read_segment_ = READ_MIDDLE;
+        position_ = last_write_position_;
+        SetPosition(position_);
+        GetSize(&file_size);
+        read_segment_available_ = file_size - position_;
+        break;
+
+      case READ_MIDDLE:  // Finished READ_MIDDLE and start READ_LATEST.
+        read_segment_ = READ_LATEST;
+        position_ = marked_position_;
+        SetPosition(position_);
+        read_segment_available_ = last_write_position_ - position_;
+        break;
+
+      default:  // Finished READ_LATEST and return EOS.
+        return talk_base::SR_EOS;
+    }
+  }
+
+  size_t local_read;
+  if (!read) read = &local_read;
+
+  size_t to_read = talk_base::_min(buffer_len, read_segment_available_);
+  talk_base::StreamResult result
+    = talk_base::FileStream::Read(buffer, to_read, read, error);
+  if (result == talk_base::SR_SUCCESS) {
+    read_segment_available_ -= *read;
+    position_ += *read;
+  }
+  return result;
+}
+
+StreamResult CircularFileStream::Write(const void* data, size_t data_len,
+                                       size_t* written, int* error) {
+  if (position_ >= max_write_size_) {
+    ASSERT(position_ == max_write_size_);
+    position_ = marked_position_;
+    SetPosition(position_);
+  }
+
+  size_t local_written;
+  if (!written) written = &local_written;
+
+  size_t to_eof = max_write_size_ - position_;
+  size_t to_write = talk_base::_min(data_len, to_eof);
+  talk_base::StreamResult result
+    = talk_base::FileStream::Write(data, to_write, written, error);
+  if (result == talk_base::SR_SUCCESS) {
+    position_ += *written;
+  }
+  return result;
+}
+
 AsyncWriteStream::~AsyncWriteStream() {
   write_thread_->Clear(this, 0, NULL);
   ClearBufferAndWrite();

@@ -242,8 +242,8 @@ DataMediaChannel* SctpDataEngine::CreateChannel(
 
 SctpDataMediaChannel::SctpDataMediaChannel(talk_base::Thread* thread)
     : worker_thread_(thread),
-      local_port_(kSctpDefaultPort),
-      remote_port_(kSctpDefaultPort),
+      local_port_(-1),
+      remote_port_(-1),
       sock_(NULL),
       sending_(false),
       receiving_(false),
@@ -344,6 +344,12 @@ void SctpDataMediaChannel::CloseSctpSocket() {
 
 bool SctpDataMediaChannel::Connect() {
   LOG(LS_VERBOSE) << debug_name_ << "->Connect().";
+  if (remote_port_ < 0) {
+    remote_port_ = kSctpDefaultPort;
+  }
+  if (local_port_ < 0) {
+    local_port_ = kSctpDefaultPort;
+  }
 
   // If we already have a socket connection, just return.
   if (sock_) {
@@ -677,6 +683,38 @@ void SctpDataMediaChannel::OnNotificationAssocChange(
   }
 }
 
+// Puts the specified |param| from the codec identified by |id| into |dest|
+// and returns true.  Or returns false if it wasn't there, leaving |dest|
+// untouched.
+static bool GetCodecIntParameter(const std::vector<DataCodec>& codecs,
+                                 int id, const std::string& name,
+                                 const std::string& param, int* dest) {
+  std::string value;
+  Codec match_pattern;
+  match_pattern.id = id;
+  match_pattern.name = name;
+  for (size_t i = 0; i < codecs.size(); ++i) {
+    if (codecs[i].Matches(match_pattern)) {
+      if (codecs[i].GetParam(param, &value)) {
+        *dest = talk_base::FromString<int>(value);
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool SctpDataMediaChannel::SetSendCodecs(const std::vector<DataCodec>& codecs) {
+  return GetCodecIntParameter(
+      codecs, kGoogleSctpDataCodecId, kGoogleSctpDataCodecName, kCodecParamPort,
+      &remote_port_);
+}
+
+bool SctpDataMediaChannel::SetRecvCodecs(const std::vector<DataCodec>& codecs) {
+  return GetCodecIntParameter(
+      codecs, kGoogleSctpDataCodecId, kGoogleSctpDataCodecName, kCodecParamPort,
+      &local_port_);
+}
 
 void SctpDataMediaChannel::OnPacketFromSctpToNetwork(
     talk_base::Buffer* buffer) {

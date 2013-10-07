@@ -2158,6 +2158,11 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
     return false;
   uint32 ssrc = sp.first_ssrc();
 
+  if (ssrc == 0) {
+    LOG(LS_WARNING) << "AddRecvStream with 0 ssrc is not supported.";
+    return false;
+  }
+
   if (receive_channels_.find(ssrc) != receive_channels_.end()) {
     LOG(LS_ERROR) << "Stream already exists with ssrc " << ssrc;
     return false;
@@ -2181,6 +2186,21 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
     return false;
   }
 
+  if (!ConfigureRecvChannel(channel)) {
+    DeleteChannel(channel);
+    return false;
+  }
+
+  receive_channels_.insert(
+      std::make_pair(ssrc, WebRtcVoiceChannelInfo(channel, NULL)));
+
+  LOG(LS_INFO) << "New audio stream " << ssrc
+               << " registered to VoiceEngine channel #"
+               << channel << ".";
+  return true;
+}
+
+bool WebRtcVoiceMediaChannel::ConfigureRecvChannel(int channel) {
   // Configure to use external transport, like our default channel.
   if (engine()->voe()->network()->RegisterExternalTransport(
           channel, *this) == -1) {
@@ -2237,13 +2257,6 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
   }
   SetNack(channel, nack_enabled_);
 
-  receive_channels_.insert(
-      std::make_pair(ssrc, WebRtcVoiceChannelInfo(channel, NULL)));
-
-  // TODO(juberti): We should rollback the add if SetPlayout fails.
-  LOG(LS_INFO) << "New audio stream " << ssrc
-            << " registered to VoiceEngine channel #"
-            << channel << ".";
   return SetPlayout(channel, playout_);
 }
 

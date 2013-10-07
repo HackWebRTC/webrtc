@@ -2044,6 +2044,26 @@ TEST_F(WebRtcVoiceEngineTestFake, StreamCleanup) {
   EXPECT_EQ(0, voe_.GetNumChannels());
 }
 
+TEST_F(WebRtcVoiceEngineTestFake, TestAddRecvStreamFailWithZeroSsrc) {
+  EXPECT_TRUE(SetupEngine());
+  EXPECT_FALSE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(0)));
+}
+
+TEST_F(WebRtcVoiceEngineTestFake, TestNoLeakingWhenAddRecvStreamFail) {
+  EXPECT_TRUE(SetupEngine());
+  // Stream 1 reuses default channel.
+  EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(1)));
+  // Manually delete default channel to simulate a failure.
+  int default_channel = voe_.GetLastChannel();
+  EXPECT_EQ(0, voe_.DeleteChannel(default_channel));
+  // Add recv stream 2 should fail because default channel is gone.
+  EXPECT_FALSE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(2)));
+  int new_channel = voe_.GetLastChannel();
+  EXPECT_NE(default_channel, new_channel);
+  // The last created channel should have already been deleted.
+  EXPECT_EQ(-1, voe_.DeleteChannel(new_channel));
+}
+
 // Test the InsertDtmf on default send stream as caller.
 TEST_F(WebRtcVoiceEngineTestFake, InsertDtmfOnDefaultSendStreamAsCaller) {
   TestInsertDtmf(0, true);

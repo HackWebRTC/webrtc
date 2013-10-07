@@ -66,6 +66,12 @@ enum SinkType {
 // BaseChannel contains logic common to voice and video, including
 // enable/mute, marshaling calls to a worker thread, and
 // connection and media monitors.
+//
+// WARNING! SUBCLASSES MUST CALL Deinit() IN THEIR DESTRUCTORS!
+// This is required to avoid a data race between the destructor modifying the
+// vtable, and the media channel's thread using BaseChannel as the
+// NetworkInterface.
+
 class BaseChannel
     : public talk_base::MessageHandler, public sigslot::has_slots<>,
       public MediaChannel::NetworkInterface {
@@ -76,6 +82,9 @@ class BaseChannel
   virtual ~BaseChannel();
   bool Init(TransportChannel* transport_channel,
             TransportChannel* rtcp_transport_channel);
+  // Deinit may be called multiple times and is simply ignored if it's alreay
+  // done.
+  void Deinit();
 
   talk_base::Thread* worker_thread() const { return worker_thread_; }
   BaseSession* session() const { return session_; }

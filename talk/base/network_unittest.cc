@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2004--2011, Google Inc.
+ * Copyright 2004 Google Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -37,6 +37,9 @@
 #endif
 #endif
 #include "talk/base/gunit.h"
+#ifdef WIN32
+#include "talk/base/logging.h"  // For LOG_GLE
+#endif
 
 namespace talk_base {
 
@@ -130,7 +133,7 @@ TEST_F(NetworkTest, TestCreateNetworks) {
     IPAddress ip = (*it)->ip();
     SocketAddress bindaddress(ip, 0);
     bindaddress.SetScopeID((*it)->scope_id());
-    // TODO: Make this use talk_base::AsyncSocket once it supports IPv6.
+    // TODO(thaloun): Use talk_base::AsyncSocket once it supports IPv6.
     int fd = static_cast<int>(socket(ip.family(), SOCK_STREAM, IPPROTO_TCP));
     if (fd > 0) {
       size_t ipsize = bindaddress.ToSockAddrStorage(&storage);
@@ -138,6 +141,9 @@ TEST_F(NetworkTest, TestCreateNetworks) {
       int success = ::bind(fd,
                            reinterpret_cast<sockaddr*>(&storage),
                            static_cast<int>(ipsize));
+#ifdef WIN32
+      if (success) LOG_GLE(LS_ERROR) << "Socket bind failed.";
+#endif
       EXPECT_EQ(0, success);
 #ifdef WIN32
       closesocket(fd);
@@ -486,7 +492,7 @@ TEST_F(NetworkTest, TestIPv6Toggle) {
   NetworkManager::NetworkList list;
 #ifndef WIN32
   // There should be at least one IPv6 network (fe80::/64 should be in there).
-  // TODO: Disabling this test on windows for the moment as the test
+  // TODO(thaloun): Disabling this test on windows for the moment as the test
   // machines don't seem to have IPv6 installed on them at all.
   manager.set_ipv6_enabled(true);
   list = GetNetworks(manager, true);
@@ -534,5 +540,49 @@ TEST_F(NetworkTest, TestConvertIfAddrsNoAddress) {
 }
 #endif  // defined(POSIX)
 
+#if defined(LINUX)
+// If you want to test non-default routes, you can do the following on a linux
+// machine:
+// 1) Load the dummy network driver:
+// sudo modprobe dummy
+// sudo ifconfig dummy0 127.0.0.1
+// 2) Run this test and confirm the output says it found a dummy route (and
+// passes).
+// 3) When done:
+// sudo rmmmod dummy
+TEST_F(NetworkTest, TestIgnoreNonDefaultRoutes) {
+  BasicNetworkManager manager;
+  NetworkManager::NetworkList list;
+  list = GetNetworks(manager, false);
+  bool found_dummy = false;
+  LOG(LS_INFO) << "Looking for dummy network: ";
+  for (NetworkManager::NetworkList::iterator it = list.begin();
+       it != list.end(); ++it) {
+    LOG(LS_INFO) << "  Network name: " << (*it)->name();
+    found_dummy |= (*it)->name().find("dummy0") != std::string::npos;
+  }
+  for (NetworkManager::NetworkList::iterator it = list.begin();
+       it != list.end(); ++it) {
+    delete (*it);
+  }
+  if (!found_dummy) {
+    LOG(LS_INFO) << "No dummy found, quitting.";
+    return;
+  }
+  LOG(LS_INFO) << "Found dummy, running again while ignoring non-default "
+               << "routes.";
+  manager.set_ignore_non_default_routes(true);
+  list = GetNetworks(manager, false);
+  for (NetworkManager::NetworkList::iterator it = list.begin();
+       it != list.end(); ++it) {
+    LOG(LS_INFO) << "  Network name: " << (*it)->name();
+    EXPECT_TRUE((*it)->name().find("dummy0") == std::string::npos);
+  }
+  for (NetworkManager::NetworkList::iterator it = list.begin();
+       it != list.end(); ++it) {
+    delete (*it);
+  }
+}
+#endif
 
 }  // namespace talk_base
