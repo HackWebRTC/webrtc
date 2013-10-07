@@ -133,7 +133,8 @@ void usage() {
   printf("\n");
   printf("Modifiers:\n");
   printf("  --noasm            Disable SSE optimization.\n");
-  printf("  --delay DELAY      Add DELAY ms to input value.\n");
+  printf("  --add_delay DELAY  Add DELAY ms to input value.\n");
+  printf("  --delay DELAY      Override input delay with DELAY ms.\n");
   printf("  --perf             Measure performance.\n");
   printf("  --quiet            Suppress text output.\n");
   printf("  --no_progress      Suppress progress.\n");
@@ -194,6 +195,7 @@ void void_main(int argc, char* argv[]) {
   bool verbose = true;
   bool progress = true;
   int extra_delay_ms = 0;
+  int override_delay_ms = 0;
   //bool interleaved = true;
 
   ASSERT_EQ(apm->kNoError, apm->level_estimator()->Enable(true));
@@ -430,9 +432,13 @@ void void_main(int argc, char* argv[]) {
       // We need to reinitialize here if components have already been enabled.
       ASSERT_EQ(apm->kNoError, apm->Initialize());
 
-    } else if (strcmp(argv[i], "--delay") == 0) {
+    } else if (strcmp(argv[i], "--add_delay") == 0) {
       i++;
       ASSERT_EQ(1, sscanf(argv[i], "%d", &extra_delay_ms));
+
+    } else if (strcmp(argv[i], "--delay") == 0) {
+      i++;
+      ASSERT_EQ(1, sscanf(argv[i], "%d", &override_delay_ms));
 
     } else if (strcmp(argv[i], "--perf") == 0) {
       perf_testing = true;
@@ -715,8 +721,12 @@ void void_main(int argc, char* argv[]) {
 
         ASSERT_EQ(apm->kNoError,
                   apm->gain_control()->set_stream_analog_level(msg.level()));
+        delay_ms = msg.delay() + extra_delay_ms;
+        if (override_delay_ms) {
+          delay_ms = override_delay_ms;
+        }
         ASSERT_EQ(apm->kNoError,
-                  apm->set_stream_delay_ms(msg.delay() + extra_delay_ms));
+                  apm->set_stream_delay_ms(delay_ms));
         apm->echo_cancellation()->set_stream_drift_samples(msg.drift());
 
         int err = apm->ProcessStream(&near_frame);
@@ -918,8 +928,12 @@ void void_main(int argc, char* argv[]) {
         const int capture_level_in = capture_level;
         ASSERT_EQ(apm->kNoError,
                   apm->gain_control()->set_stream_analog_level(capture_level));
+        delay_ms += extra_delay_ms;
+        if (override_delay_ms) {
+          delay_ms = override_delay_ms;
+        }
         ASSERT_EQ(apm->kNoError,
-                  apm->set_stream_delay_ms(delay_ms + extra_delay_ms));
+                  apm->set_stream_delay_ms(delay_ms));
         apm->echo_cancellation()->set_stream_drift_samples(drift_samples);
 
         int err = apm->ProcessStream(&near_frame);
