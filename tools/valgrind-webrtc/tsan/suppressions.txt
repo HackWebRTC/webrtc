@@ -47,6 +47,27 @@
   fun:webrtc::ThreadPosix::Run
   fun:webrtc::StartThread
 }
+{
+  bug_2461_1
+  ThreadSanitizer:Race
+  fun:webrtc::voe::Channel::SetChannelOutputVolumeScaling
+  fun:webrtc::VoEVolumeControlImpl::SetChannelOutputVolumeScaling
+  fun:cricket::WebRtcVoiceMediaChannel::SetOutputScaling
+  fun:cricket::VoiceChannel::SetOutputScaling_w
+  fun:cricket::VoiceChannel::OnMessage
+  ...
+}
+{
+  bug_2461_2
+  ThreadSanitizer:Race
+  fun:webrtc::voe::Channel::SetOutputVolumePan
+  fun:webrtc::VoEVolumeControlImpl::SetOutputVolumePan
+  fun:cricket::WebRtcVoiceMediaChannel::SetOutputScaling
+  fun:cricket::VoiceChannel::SetOutputScaling_w
+  fun:cricket::VoiceChannel::OnMessage
+  ...
+}
+
 
 #-----------------------------------------------------------------------
 # 2. libjingle stuff (talk folder)
@@ -60,17 +81,6 @@
   fun:webrtc::ProcessThreadImpl::Run
   fun:webrtc::ThreadPosix::Run
   fun:StartThread
-}
-{
-  bug_1205_6
-  ThreadSanitizer:Race
-  fun:std::__detail::_List_node_base::_M_hook
-  fun:std::list::_M_insert
-  fun:std::list::push_back
-  fun:webrtc::ModuleRtpRtcpImpl::RegisterChildModule
-  fun:webrtc::ModuleRtpRtcpImpl::ModuleRtpRtcpImpl
-  fun:webrtc::RtpRtcp::CreateRtpRtcp
-  ...
 }
 {
   bug_1205_7
@@ -160,37 +170,6 @@
   fun:cricket::VideoChannel::~VideoChannel
   fun:cricket::VideoChannel::~VideoChannel
   fun:cricket::ChannelManager::DestroyVideoChannel_w
-  ...
-}
-{
-  bug_1205_16
-  ThreadSanitizer:Race
-  fun:std::__detail::_List_node_base::_M_unhook
-  fun:std::list::_M_erase
-  fun:std::list::erase
-  fun:webrtc::ModuleRtpRtcpImpl::DeRegisterChildModule
-  fun:webrtc::ModuleRtpRtcpImpl::~ModuleRtpRtcpImpl
-  fun:webrtc::ModuleRtpRtcpImpl::~ModuleRtpRtcpImpl
-  ...
-}
-{
-  bug_1205_18
-  ThreadSanitizer:Race
-  fun:webrtc::voe::Channel::SetChannelOutputVolumeScaling
-  fun:webrtc::VoEVolumeControlImpl::SetChannelOutputVolumeScaling
-  fun:cricket::WebRtcVoiceMediaChannel::SetOutputScaling
-  fun:cricket::VoiceChannel::SetOutputScaling_w
-  fun:cricket::VoiceChannel::OnMessage
-  ...
-}
-{
-  bug_1205_19
-  ThreadSanitizer:Race
-  fun:webrtc::voe::Channel::SetOutputVolumePan
-  fun:webrtc::VoEVolumeControlImpl::SetOutputVolumePan
-  fun:cricket::WebRtcVoiceMediaChannel::SetOutputScaling
-  fun:cricket::VoiceChannel::SetOutputScaling_w
-  fun:cricket::VoiceChannel::OnMessage
   ...
 }
 {
