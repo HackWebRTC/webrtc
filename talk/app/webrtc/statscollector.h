@@ -75,6 +75,14 @@ class StatsCollector {
  private:
   bool CopySelectedReports(const std::string& selector, StatsReports* reports);
 
+  // Helper method for AddCertificateReports.
+  std::string AddOneCertificateReport(
+      const talk_base::SSLCertificate* cert, const std::string& issuer_id);
+
+  // Adds a report for this certificate and every certificate in its chain, and
+  // returns the leaf certificate's report's ID.
+  std::string AddCertificateReports(const talk_base::SSLCertificate* cert);
+
   void ExtractSessionInfo();
   void ExtractVoiceInfo();
   void ExtractVideoInfo();

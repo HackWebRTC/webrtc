@@ -127,6 +127,15 @@ class P2PTransportChannel : public TransportChannelImpl,
     return false;
   }
 
+  // Returns false because the channel is not encrypted by default.
+  virtual bool GetLocalIdentity(talk_base::SSLIdentity** identity) const {
+    return false;
+  }
+
+  virtual bool GetRemoteCertificate(talk_base::SSLCertificate** cert) const {
+    return false;
+  }
+
   // Allows key material to be extracted for external encryption.
   virtual bool ExportKeyingMaterial(
       const std::string& label,

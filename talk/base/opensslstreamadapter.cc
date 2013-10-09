@@ -217,6 +217,14 @@ void OpenSSLStreamAdapter::SetPeerCertificate(SSLCertificate* cert) {
   peer_certificate_.reset(static_cast<OpenSSLCertificate*>(cert));
 }
 
+bool OpenSSLStreamAdapter::GetPeerCertificate(SSLCertificate** cert) const {
+  if (!peer_certificate_)
+    return false;
+
+  *cert = peer_certificate_->GetReference();
+  return true;
+}
+
 bool OpenSSLStreamAdapter::SetPeerCertificateDigest(const std::string
                                                     &digest_alg,
                                                     const unsigned char*
@@ -857,6 +865,9 @@ int OpenSSLStreamAdapter::SSLVerifyCallback(int ok, X509_STORE_CTX* store) {
           LOG(LS_INFO) <<
               "Accepted self-signed peer certificate authority";
           ok = 1;
+
+          // Record the peer's certificate.
+          stream->peer_certificate_.reset(new OpenSSLCertificate(cert));
         }
       }
     }

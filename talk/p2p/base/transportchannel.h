@@ -101,11 +101,17 @@ class TransportChannel : public sigslot::has_slots<> {
   // Default implementation.
   virtual bool GetSslRole(talk_base::SSLRole* role) const = 0;
 
-  // Set up the ciphers to use for DTLS-SRTP.
+  // Sets up the ciphers to use for DTLS-SRTP.
   virtual bool SetSrtpCiphers(const std::vector<std::string>& ciphers) = 0;
 
-  // Find out which DTLS-SRTP cipher was negotiated
+  // Finds out which DTLS-SRTP cipher was negotiated
   virtual bool GetSrtpCipher(std::string* cipher) = 0;
+
+  // Gets a copy of the local SSL identity, owned by the caller.
+  virtual bool GetLocalIdentity(talk_base::SSLIdentity** identity) const = 0;
+
+  // Gets a copy of the remote side's SSL certificate, owned by the caller.
+  virtual bool GetRemoteCertificate(talk_base::SSLCertificate** cert) const = 0;
 
   // Allows key material to be extracted for external encryption.
   virtual bool ExportKeyingMaterial(const std::string& label,

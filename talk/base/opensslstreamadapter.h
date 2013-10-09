@@ -86,6 +86,8 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
                                         const unsigned char* digest_val,
                                         size_t digest_len);
 
+  virtual bool GetPeerCertificate(SSLCertificate** cert) const;
+
   virtual int StartSSLWithServer(const char* server_name);
   virtual int StartSSLWithPeer();
   virtual void SetMode(SSLMode mode);
@@ -190,8 +192,8 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   // in traditional mode, the server name that the server's certificate
   // must specify. Empty in peer-to-peer mode.
   std::string ssl_server_name_;
-  // In peer-to-peer mode, the certificate that the peer must
-  // present. Empty in traditional mode.
+  // The certificate that the peer must present or did present. Initially
+  // null in traditional mode, until the connection is established.
   scoped_ptr<OpenSSLCertificate> peer_certificate_;
   // In peer-to-peer mode, the digest of the certificate that
   // the peer must present.

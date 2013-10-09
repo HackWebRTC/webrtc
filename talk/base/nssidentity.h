@@ -66,7 +66,10 @@ class NSSKeyPair {
 class NSSCertificate : public SSLCertificate {
  public:
   static NSSCertificate* FromPEMString(const std::string& pem_string);
-  explicit NSSCertificate(CERTCertificate* cert) : certificate_(cert) {}
+  // The caller retains ownership of the argument to all the constructors,
+  // and the constructor makes a copy.
+  explicit NSSCertificate(CERTCertificate* cert);
+  explicit NSSCertificate(CERTCertList* cert_list);
   virtual ~NSSCertificate() {
     if (certificate_)
       CERT_DestroyCertificate(certificate_);
@@ -76,9 +79,13 @@ class NSSCertificate : public SSLCertificate {
 
   virtual std::string ToPEMString() const;
 
+  virtual void ToDER(Buffer* der_buffer) const;
+
   virtual bool ComputeDigest(const std::string& algorithm,
                              unsigned char* digest, std::size_t size,
                              std::size_t* length) const;
+
+  virtual bool GetChain(SSLCertChain** chain) const;
 
   CERTCertificate* certificate() { return certificate_; }
 
@@ -86,14 +93,16 @@ class NSSCertificate : public SSLCertificate {
   static bool GetDigestLength(const std::string& algorithm,
                               std::size_t* length);
 
-  // Comparison
+  // Comparison.  Only the certificate itself is considered, not the chain.
   bool Equals(const NSSCertificate* tocompare) const;
 
  private:
+  NSSCertificate(CERTCertificate* cert, SSLCertChain* chain);
   static bool GetDigestObject(const std::string& algorithm,
                               const SECHashObject** hash_object);
 
   CERTCertificate* certificate_;
+  scoped_ptr<SSLCertChain> chain_;
 
   DISALLOW_EVIL_CONSTRUCTORS(NSSCertificate);
 };

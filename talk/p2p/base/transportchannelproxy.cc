@@ -180,6 +180,24 @@ bool TransportChannelProxy::GetSrtpCipher(std::string* cipher) {
   return impl_->GetSrtpCipher(cipher);
 }
 
+bool TransportChannelProxy::GetLocalIdentity(
+    talk_base::SSLIdentity** identity) const {
+  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  if (!impl_) {
+    return false;
+  }
+  return impl_->GetLocalIdentity(identity);
+}
+
+bool TransportChannelProxy::GetRemoteCertificate(
+    talk_base::SSLCertificate** cert) const {
+  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  if (!impl_) {
+    return false;
+  }
+  return impl_->GetRemoteCertificate(cert);
+}
+
 bool TransportChannelProxy::ExportKeyingMaterial(const std::string& label,
                                                  const uint8* context,
                                                  size_t context_len,

@@ -30,10 +30,17 @@
 #ifndef TALK_BASE_SSLIDENTITY_H_
 #define TALK_BASE_SSLIDENTITY_H_
 
+#include <algorithm>
 #include <string>
+#include <vector>
+
+#include "talk/base/buffer.h"
 #include "talk/base/messagedigest.h"
 
 namespace talk_base {
+
+// Forward declaration due to circular dependency with SSLCertificate.
+class SSLCertChain;
 
 // Abstract interface overridden by SSL library specific
 // implementations.
@@ -55,17 +62,70 @@ class SSLCertificate {
   virtual ~SSLCertificate() {}
 
   // Returns a new SSLCertificate object instance wrapping the same
-  // underlying certificate.
+  // underlying certificate, including its chain if present.
   // Caller is responsible for freeing the returned object.
   virtual SSLCertificate* GetReference() const = 0;
 
+  // Provides the cert chain, or returns false.  The caller owns the chain.
+  // The chain includes a copy of each certificate, excluding the leaf.
+  virtual bool GetChain(SSLCertChain** chain) const = 0;
+
   // Returns a PEM encoded string representation of the certificate.
   virtual std::string ToPEMString() const = 0;
+
+  // Provides a DER encoded binary representation of the certificate.
+  virtual void ToDER(Buffer* der_buffer) const = 0;
 
   // Compute the digest of the certificate given algorithm
   virtual bool ComputeDigest(const std::string &algorithm,
                              unsigned char* digest, std::size_t size,
                              std::size_t* length) const = 0;
+};
+
+// SSLCertChain is a simple wrapper for a vector of SSLCertificates. It serves
+// primarily to ensure proper memory management (especially deletion) of the
+// SSLCertificate pointers.
+class SSLCertChain {
+ public:
+  // These constructors copy the provided SSLCertificate(s), so the caller
+  // retains ownership.
+  explicit SSLCertChain(const std::vector<SSLCertificate*>& certs) {
+    ASSERT(!certs.empty());
+    certs_.resize(certs.size());
+    std::transform(certs.begin(), certs.end(), certs_.begin(), DupCert);
+  }
+  explicit SSLCertChain(const SSLCertificate* cert) {
+    certs_.push_back(cert->GetReference());
+  }
+
+  ~SSLCertChain() {
+    std::for_each(certs_.begin(), certs_.end(), DeleteCert);
+  }
+
+  // Vector access methods.
+  size_t GetSize() const { return certs_.size(); }
+
+  // Returns a temporary reference, only valid until the chain is destroyed.
+  const SSLCertificate& Get(size_t pos) const { return *(certs_[pos]); }
+
+  // Returns a new SSLCertChain object instance wrapping the same underlying
+  // certificate chain.  Caller is responsible for freeing the returned object.
+  SSLCertChain* Copy() const {
+    return new SSLCertChain(certs_);
+  }
+
+ private:
+  // Helper function for duplicating a vector of certificates.
+  static SSLCertificate* DupCert(const SSLCertificate* cert) {
+    return cert->GetReference();
+  }
+
+  // Helper function for deleting a vector of certificates.
+  static void DeleteCert(SSLCertificate* cert) { delete cert; }
+
+  std::vector<SSLCertificate*> certs_;
+
+  DISALLOW_COPY_AND_ASSIGN(SSLCertChain);
 };
 
 // Our identity in an SSL negotiation: a keypair and certificate (both
@@ -108,4 +168,4 @@ extern const char kPemTypeRsaPrivateKey[];
 
 }  // namespace talk_base
 
-#endif  // TALK_BASE_SSLIDENTITY_H__
+#endif  // TALK_BASE_SSLIDENTITY_H_

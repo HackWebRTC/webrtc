@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_BASE_OPENSSLIDENTITY_H__
-#define TALK_BASE_OPENSSLIDENTITY_H__
+#ifndef TALK_BASE_OPENSSLIDENTITY_H_
+#define TALK_BASE_OPENSSLIDENTITY_H_
 
 #include <openssl/evp.h>
 #include <openssl/x509.h>
@@ -72,6 +72,11 @@ class OpenSSLKeyPair {
 // which is also reference counted inside the OpenSSL library.
 class OpenSSLCertificate : public SSLCertificate {
  public:
+  // Caller retains ownership of the X509 object.
+  explicit OpenSSLCertificate(X509* x509) : x509_(x509) {
+    AddReference();
+  }
+
   static OpenSSLCertificate* Generate(OpenSSLKeyPair* key_pair,
                                       const std::string& common_name);
   static OpenSSLCertificate* FromPEMString(const std::string& pem_string);
@@ -79,13 +84,14 @@ class OpenSSLCertificate : public SSLCertificate {
   virtual ~OpenSSLCertificate();
 
   virtual OpenSSLCertificate* GetReference() const {
-    AddReference();
     return new OpenSSLCertificate(x509_);
   }
 
   X509* x509() const { return x509_; }
 
   virtual std::string ToPEMString() const;
+
+  virtual void ToDER(Buffer* der_buffer) const;
 
   // Compute the digest of the certificate given algorithm
   virtual bool ComputeDigest(const std::string &algorithm,
@@ -99,10 +105,14 @@ class OpenSSLCertificate : public SSLCertificate {
                             std::size_t size,
                             std::size_t *length);
 
- private:
-  explicit OpenSSLCertificate(X509* x509) : x509_(x509) {
-    ASSERT(x509_ != NULL);
+  virtual bool GetChain(SSLCertChain** chain) const {
+    // Chains are not yet supported when using OpenSSL.
+    // OpenSSLStreamAdapter::SSLVerifyCallback currently requires the remote
+    // certificate to be self-signed.
+    return false;
   }
+
+ private:
   void AddReference() const;
 
   X509* x509_;
@@ -148,4 +158,4 @@ class OpenSSLIdentity : public SSLIdentity {
 
 }  // namespace talk_base
 
-#endif  // TALK_BASE_OPENSSLIDENTITY_H__
+#endif  // TALK_BASE_OPENSSLIDENTITY_H_

@@ -40,6 +40,7 @@
 #include <openssl/rsa.h>
 #include <openssl/crypto.h>
 
+#include "talk/base/checks.h"
 #include "talk/base/helpers.h"
 #include "talk/base/logging.h"
 #include "talk/base/openssldigest.h"
@@ -211,7 +212,9 @@ OpenSSLCertificate* OpenSSLCertificate::Generate(
 #ifdef _DEBUG
   PrintCert(x509);
 #endif
-  return new OpenSSLCertificate(x509);
+  OpenSSLCertificate* ret = new OpenSSLCertificate(x509);
+  X509_free(x509);
+  return ret;
 }
 
 OpenSSLCertificate* OpenSSLCertificate::FromPEMString(
@@ -224,10 +227,12 @@ OpenSSLCertificate* OpenSSLCertificate::FromPEMString(
   X509 *x509 = PEM_read_bio_X509(bio, NULL, NULL,
                                  const_cast<char*>("\0"));
   BIO_free(bio);
-  if (x509)
-    return new OpenSSLCertificate(x509);
-  else
+  if (!x509)
     return NULL;
+
+  OpenSSLCertificate* ret = new OpenSSLCertificate(x509);
+  X509_free(x509);
+  return ret;
 }
 
 bool OpenSSLCertificate::ComputeDigest(const std::string &algorithm,
@@ -264,11 +269,14 @@ OpenSSLCertificate::~OpenSSLCertificate() {
 
 std::string OpenSSLCertificate::ToPEMString() const {
   BIO* bio = BIO_new(BIO_s_mem());
-  if (!bio)
-    return NULL;
+  if (!bio) {
+    UNREACHABLE();
+    return std::string();
+  }
   if (!PEM_write_bio_X509(bio, x509_)) {
     BIO_free(bio);
-    return NULL;
+    UNREACHABLE();
+    return std::string();
   }
   BIO_write(bio, "\0", 1);
   char* buffer;
@@ -278,7 +286,29 @@ std::string OpenSSLCertificate::ToPEMString() const {
   return ret;
 }
 
+void OpenSSLCertificate::ToDER(Buffer* der_buffer) const {
+  // In case of failure, make sure to leave the buffer empty.
+  der_buffer->SetData(NULL, 0);
+
+  // Calculates the DER representation of the certificate, from scratch.
+  BIO* bio = BIO_new(BIO_s_mem());
+  if (!bio) {
+    UNREACHABLE();
+    return;
+  }
+  if (!i2d_X509_bio(bio, x509_)) {
+    BIO_free(bio);
+    UNREACHABLE();
+    return;
+  }
+  char* data;
+  size_t length = BIO_get_mem_data(bio, &data);
+  der_buffer->SetData(data, length);
+  BIO_free(bio);
+}
+
 void OpenSSLCertificate::AddReference() const {
+  ASSERT(x509_ != NULL);
   CRYPTO_add(&x509_->references, 1, CRYPTO_LOCK_X509);
 }
 

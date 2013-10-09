@@ -128,6 +128,7 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
     return channel_->GetIceRole();
   }
   virtual bool SetLocalIdentity(talk_base::SSLIdentity *identity);
+  virtual bool GetLocalIdentity(talk_base::SSLIdentity** identity) const;
 
   virtual bool SetRemoteFingerprint(const std::string& digest_alg,
                                     const uint8* digest,
@@ -163,6 +164,10 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
 
   virtual bool GetSslRole(talk_base::SSLRole* role) const;
   virtual bool SetSslRole(talk_base::SSLRole role);
+
+  // Once DTLS has been established, this method retrieves the certificate in
+  // use by the remote peer, for use in external identity verification.
+  virtual bool GetRemoteCertificate(talk_base::SSLCertificate** cert) const;
 
   // Once DTLS has established (i.e., this channel is writable), this method
   // extracts the keys negotiated during the DTLS handshake, for use in external

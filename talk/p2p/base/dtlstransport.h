@@ -58,6 +58,13 @@ class DtlsTransport : public Base {
   virtual void SetIdentity_w(talk_base::SSLIdentity* identity) {
     identity_ = identity;
   }
+  virtual bool GetIdentity_w(talk_base::SSLIdentity** identity) {
+    if (!identity_)
+      return false;
+
+    *identity = identity_->GetReference();
+    return true;
+  }
 
   virtual bool ApplyLocalTransportDescription_w(TransportChannelImpl*
                                                 channel) {

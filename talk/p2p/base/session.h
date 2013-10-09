@@ -350,7 +350,7 @@ class BaseSession : public sigslot::has_slots<>,
 
   // Returns the transport that has been negotiated or NULL if
   // negotiation is still in progress.
-  Transport* GetTransport(const std::string& content_name);
+  virtual Transport* GetTransport(const std::string& content_name);
 
   // Creates a new channel with the given names.  This method may be called
   // immediately after creating the session.  However, the actual

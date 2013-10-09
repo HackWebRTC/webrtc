@@ -93,7 +93,10 @@ class TransportChannelImpl : public TransportChannel {
   virtual void OnCandidate(const Candidate& candidate) = 0;
 
   // DTLS methods
-  // Set DTLS local identity.
+  // Set DTLS local identity.  The identity object is not copied, but the caller
+  // retains ownership and must delete it after this TransportChannelImpl is
+  // destroyed.
+  // TODO(bemasc): Fix the ownership semantics of this method.
   virtual bool SetLocalIdentity(talk_base::SSLIdentity* identity) = 0;
 
   // Set DTLS Remote fingerprint. Must be after local identity set.

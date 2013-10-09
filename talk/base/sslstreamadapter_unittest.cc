@@ -33,6 +33,7 @@
 
 #include "talk/base/gunit.h"
 #include "talk/base/helpers.h"
+#include "talk/base/scoped_ptr.h"
 #include "talk/base/ssladapter.h"
 #include "talk/base/sslconfig.h"
 #include "talk/base/sslidentity.h"
@@ -386,6 +387,13 @@ class SSLStreamAdapterTestBase : public testing::Test,
       return client_ssl_->GetDtlsSrtpCipher(retval);
     else
       return server_ssl_->GetDtlsSrtpCipher(retval);
+  }
+
+  bool GetPeerCertificate(bool client, talk_base::SSLCertificate** cert) {
+    if (client)
+      return client_ssl_->GetPeerCertificate(cert);
+    else
+      return server_ssl_->GetPeerCertificate(cert);
   }
 
   bool ExportKeyingMaterial(const char *label,
@@ -884,4 +892,43 @@ TEST_F(SSLStreamAdapterTestDTLSFromPEMStrings, TestTransfer) {
   MAYBE_SKIP_TEST(HaveDtls);
   TestHandshake();
   TestTransfer(100);
+}
+
+// Test getting the remote certificate.
+TEST_F(SSLStreamAdapterTestDTLSFromPEMStrings, TestDTLSGetPeerCertificate) {
+  MAYBE_SKIP_TEST(HaveDtls);
+
+  // Peer certificates haven't been received yet.
+  talk_base::scoped_ptr<talk_base::SSLCertificate> client_peer_cert;
+  ASSERT_FALSE(GetPeerCertificate(true, client_peer_cert.accept()));
+  ASSERT_FALSE(client_peer_cert != NULL);
+
+  talk_base::scoped_ptr<talk_base::SSLCertificate> server_peer_cert;
+  ASSERT_FALSE(GetPeerCertificate(false, server_peer_cert.accept()));
+  ASSERT_FALSE(server_peer_cert != NULL);
+
+  TestHandshake();
+
+  // The client should have a peer certificate after the handshake.
+  ASSERT_TRUE(GetPeerCertificate(true, client_peer_cert.accept()));
+  ASSERT_TRUE(client_peer_cert != NULL);
+
+  // It's not kCERT_PEM.
+  std::string client_peer_string = client_peer_cert->ToPEMString();
+  ASSERT_NE(kCERT_PEM, client_peer_string);
+
+  // It must not have a chain, because the test certs are self-signed.
+  talk_base::SSLCertChain* client_peer_chain;
+  ASSERT_FALSE(client_peer_cert->GetChain(&client_peer_chain));
+
+  // The server should have a peer certificate after the handshake.
+  ASSERT_TRUE(GetPeerCertificate(false, server_peer_cert.accept()));
+  ASSERT_TRUE(server_peer_cert != NULL);
+
+  // It's kCERT_PEM
+  ASSERT_EQ(kCERT_PEM, server_peer_cert->ToPEMString());
+
+  // It must not have a chain, because the test certs are self-signed.
+  talk_base::SSLCertChain* server_peer_chain;
+  ASSERT_FALSE(server_peer_cert->GetChain(&server_peer_chain));
 }

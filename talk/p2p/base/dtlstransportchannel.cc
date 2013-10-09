@@ -173,6 +173,15 @@ bool DtlsTransportChannelWrapper::SetLocalIdentity(
   return true;
 }
 
+bool DtlsTransportChannelWrapper::GetLocalIdentity(
+    talk_base::SSLIdentity** identity) const {
+  if (!local_identity_)
+    return false;
+
+  *identity = local_identity_->GetReference();
+  return true;
+}
+
 bool DtlsTransportChannelWrapper::SetSslRole(talk_base::SSLRole role) {
   if (dtls_state_ == STATE_OPEN) {
     if (ssl_role_ != role) {
@@ -228,6 +237,14 @@ bool DtlsTransportChannelWrapper::SetRemoteFingerprint(
 
   dtls_state_ = STATE_ACCEPTED;
   return true;
+}
+
+bool DtlsTransportChannelWrapper::GetRemoteCertificate(
+    talk_base::SSLCertificate** cert) const {
+  if (!dtls_)
+    return false;
+
+  return dtls_->GetPeerCertificate(cert);
 }
 
 bool DtlsTransportChannelWrapper::SetupDtls() {

@@ -26,6 +26,10 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
+#include <string>
+#include <vector>
+
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif  // HAVE_CONFIG_H
@@ -33,8 +37,6 @@
 #if HAVE_NSS_SSL_H
 
 #include "talk/base/nssidentity.h"
-
-#include <string>
 
 #include "cert.h"
 #include "cryptohi.h"
@@ -90,6 +92,43 @@ NSSKeyPair *NSSKeyPair::GetReference() {
   return new NSSKeyPair(privkey, pubkey);
 }
 
+NSSCertificate::NSSCertificate(CERTCertificate* cert)
+    : certificate_(CERT_DupCertificate(cert)) {
+  ASSERT(certificate_ != NULL);
+}
+
+static void DeleteCert(SSLCertificate* cert) {
+  delete cert;
+}
+
+NSSCertificate::NSSCertificate(CERTCertList* cert_list) {
+  // Copy the first cert into certificate_.
+  CERTCertListNode* node = CERT_LIST_HEAD(cert_list);
+  certificate_ = CERT_DupCertificate(node->cert);
+
+  // Put any remaining certificates into the chain.
+  node = CERT_LIST_NEXT(node);
+  std::vector<SSLCertificate*> certs;
+  for (; !CERT_LIST_END(node, cert_list); node = CERT_LIST_NEXT(node)) {
+    certs.push_back(new NSSCertificate(node->cert));
+  }
+
+  if (!certs.empty())
+    chain_.reset(new SSLCertChain(certs));
+
+  // The SSLCertChain constructor copies its input, so now we have to delete
+  // the originals.
+  std::for_each(certs.begin(), certs.end(), DeleteCert);
+}
+
+NSSCertificate::NSSCertificate(CERTCertificate* cert, SSLCertChain* chain)
+    : certificate_(CERT_DupCertificate(cert)) {
+  ASSERT(certificate_ != NULL);
+  if (chain)
+    chain_.reset(chain->Copy());
+}
+
+
 NSSCertificate *NSSCertificate::FromPEMString(const std::string &pem_string) {
   std::string der;
   if (!SSLIdentity::PemToDer(kPemTypeCertificate, pem_string, &der))
@@ -105,21 +144,23 @@ NSSCertificate *NSSCertificate::FromPEMString(const std::string &pem_string) {
   if (!cert)
     return NULL;
 
-  return new NSSCertificate(cert);
+  NSSCertificate* ret = new NSSCertificate(cert);
+  CERT_DestroyCertificate(cert);
+  return ret;
 }
 
 NSSCertificate *NSSCertificate::GetReference() const {
-  CERTCertificate *certificate = CERT_DupCertificate(certificate_);
-  if (!certificate)
-    return NULL;
-
-  return new NSSCertificate(certificate);
+  return new NSSCertificate(certificate_, chain_.get());
 }
 
 std::string NSSCertificate::ToPEMString() const {
   return SSLIdentity::DerToPem(kPemTypeCertificate,
                                certificate_->derCert.data,
                                certificate_->derCert.len);
+}
+
+void NSSCertificate::ToDER(Buffer* der_buffer) const {
+  der_buffer->SetData(certificate_->derCert.data, certificate_->derCert.len);
 }
 
 bool NSSCertificate::GetDigestLength(const std::string &algorithm,
@@ -153,6 +194,14 @@ bool NSSCertificate::ComputeDigest(const std::string &algorithm,
 
   *length = ho->length;
 
+  return true;
+}
+
+bool NSSCertificate::GetChain(SSLCertChain** chain) const {
+  if (!chain_)
+    return false;
+
+  *chain = chain_->Copy();
   return true;
 }
 
@@ -301,9 +350,9 @@ NSSIdentity *NSSIdentity::Generate(const std::string &common_name) {
 
  fail:
   delete keypair;
-  CERT_DestroyCertificate(certificate);
 
  done:
+  if (certificate) CERT_DestroyCertificate(certificate);
   if (subject_name) CERT_DestroyName(subject_name);
   if (spki) SECKEY_DestroySubjectPublicKeyInfo(spki);
   if (certreq) CERT_DestroyCertificateRequest(certreq);

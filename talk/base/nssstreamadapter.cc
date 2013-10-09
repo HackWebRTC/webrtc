@@ -821,6 +821,13 @@ SECStatus NSSStreamAdapter::AuthCertificateHook(void *arg,
 
   if (ok) {
     stream->cert_ok_ = true;
+
+    // Record the peer's certificate chain.
+    CERTCertList* cert_list = SSL_PeerCertificateChain(fd);
+    ASSERT(cert_list != NULL);
+
+    stream->peer_certificate_.reset(new NSSCertificate(cert_list));
+    CERT_DestroyCertList(cert_list);
     return SECSuccess;
   }
 

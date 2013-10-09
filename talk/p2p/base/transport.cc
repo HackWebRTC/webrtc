@@ -107,6 +107,29 @@ void Transport::SetIdentity(talk_base::SSLIdentity* identity) {
   worker_thread_->Invoke<void>(Bind(&Transport::SetIdentity_w, this, identity));
 }
 
+bool Transport::GetIdentity(talk_base::SSLIdentity** identity) {
+  // The identity is set on the worker thread, so for safety it must also be
+  // acquired on the worker thread.
+  return worker_thread_->Invoke<bool>(
+      Bind(&Transport::GetIdentity_w, this, identity));
+}
+
+bool Transport::GetRemoteCertificate(talk_base::SSLCertificate** cert) {
+  // Channels can be deleted on the worker thread, so for safety the remote
+  // certificate is acquired on the worker thread.
+  return worker_thread_->Invoke<bool>(
+      Bind(&Transport::GetRemoteCertificate_w, this, cert));
+}
+
+bool Transport::GetRemoteCertificate_w(talk_base::SSLCertificate** cert) {
+  ASSERT(worker_thread()->IsCurrent());
+  if (channels_.empty())
+    return false;
+
+  ChannelMap::iterator iter = channels_.begin();
+  return iter->second->GetRemoteCertificate(cert);
+}
+
 bool Transport::SetLocalTransportDescription(
     const TransportDescription& description, ContentAction action) {
   return worker_thread_->Invoke<bool>(Bind(

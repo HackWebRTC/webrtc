@@ -247,6 +247,12 @@ class Transport : public talk_base::MessageHandler,
   // Must be called before applying local session description.
   void SetIdentity(talk_base::SSLIdentity* identity);
 
+  // Get a copy of the local identity provided by SetIdentity.
+  bool GetIdentity(talk_base::SSLIdentity** identity);
+
+  // Get a copy of the remote certificate in use by the specified channel.
+  bool GetRemoteCertificate(talk_base::SSLCertificate** cert);
+
   TransportProtocol protocol() const { return protocol_; }
 
   // Create, destroy, and lookup the channels of this type by their components.
@@ -348,6 +354,10 @@ class Transport : public talk_base::MessageHandler,
   }
 
   virtual void SetIdentity_w(talk_base::SSLIdentity* identity) {}
+
+  virtual bool GetIdentity_w(talk_base::SSLIdentity** identity) {
+    return false;
+  }
 
   // Pushes down the transport parameters from the local description, such
   // as the ICE ufrag and pwd.
@@ -462,6 +472,8 @@ class Transport : public talk_base::MessageHandler,
   bool SetRemoteTransportDescription_w(const TransportDescription& desc,
                                        ContentAction action);
   bool GetStats_w(TransportStats* infos);
+  bool GetRemoteCertificate_w(talk_base::SSLCertificate** cert);
+
 
   talk_base::Thread* signaling_thread_;
   talk_base::Thread* worker_thread_;

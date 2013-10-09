@@ -30,6 +30,8 @@
 #include <utility>
 #include <vector>
 
+#include "talk/base/base64.h"
+#include "talk/base/scoped_ptr.h"
 #include "talk/session/media/channel.h"
 
 namespace webrtc {
@@ -52,6 +54,7 @@ const char StatsReport::kStatsValueNameChannelId[] = "googChannelId";
 const char StatsReport::kStatsValueNameCodecName[] = "googCodecName";
 const char StatsReport::kStatsValueNameComponent[] = "googComponent";
 const char StatsReport::kStatsValueNameContentName[] = "googContentName";
+const char StatsReport::kStatsValueNameDer[] = "googDerBase64";
 // Echo metrics from the audio processing module.
 const char StatsReport::kStatsValueNameEchoCancellationQualityMin[] =
     "googEchoCancellationQualityMin";
@@ -64,6 +67,7 @@ const char StatsReport::kStatsValueNameEchoReturnLoss[] =
 const char StatsReport::kStatsValueNameEchoReturnLossEnhancement[] =
     "googEchoCancellationReturnLossEnhancement";
 
+const char StatsReport::kStatsValueNameFingerprint[] = "googFingerprint";
 const char StatsReport::kStatsValueNameFirsReceived[] = "googFirsReceived";
 const char StatsReport::kStatsValueNameFirsSent[] = "googFirsSent";
 const char StatsReport::kStatsValueNameFrameHeightReceived[] =
@@ -82,8 +86,11 @@ const char StatsReport::kStatsValueNameFrameWidthReceived[] =
     "googFrameWidthReceived";
 const char StatsReport::kStatsValueNameFrameWidthSent[] = "googFrameWidthSent";
 const char StatsReport::kStatsValueNameInitiator[] = "googInitiator";
+const char StatsReport::kStatsValueNameIssuerId[] = "googIssuerId";
 const char StatsReport::kStatsValueNameJitterReceived[] = "googJitterReceived";
 const char StatsReport::kStatsValueNameLocalAddress[] = "googLocalAddress";
+const char StatsReport::kStatsValueNameLocalCertificateId[] =
+    "googLocalCertificateId";
 const char StatsReport::kStatsValueNameNacksReceived[] = "googNacksReceived";
 const char StatsReport::kStatsValueNameNacksSent[] = "googNacksSent";
 const char StatsReport::kStatsValueNamePacketsReceived[] = "packetsReceived";
@@ -91,6 +98,8 @@ const char StatsReport::kStatsValueNamePacketsSent[] = "packetsSent";
 const char StatsReport::kStatsValueNamePacketsLost[] = "packetsLost";
 const char StatsReport::kStatsValueNameReadable[] = "googReadable";
 const char StatsReport::kStatsValueNameRemoteAddress[] = "googRemoteAddress";
+const char StatsReport::kStatsValueNameRemoteCertificateId[] =
+    "googRemoteCertificateId";
 const char StatsReport::kStatsValueNameRetransmitBitrate[] =
     "googRetransmitBitrate";
 const char StatsReport::kStatsValueNameRtt[] = "googRtt";
@@ -114,6 +123,7 @@ const char StatsReport::kStatsReportTypeIceCandidate[] = "iceCandidate";
 const char StatsReport::kStatsReportTypeTransport[] = "googTransport";
 const char StatsReport::kStatsReportTypeComponent[] = "googComponent";
 const char StatsReport::kStatsReportTypeCandidatePair[] = "googCandidatePair";
+const char StatsReport::kStatsReportTypeCertificate[] = "googCertificate";
 
 const char StatsReport::kStatsReportVideoBweId[] = "bweforvideo";
 
@@ -434,6 +444,58 @@ StatsReport* StatsCollector::PrepareReport(uint32 ssrc,
   return report;
 }
 
+std::string StatsCollector::AddOneCertificateReport(
+    const talk_base::SSLCertificate* cert, const std::string& issuer_id) {
+  // TODO(bemasc): Move this computation to a helper class that caches these
+  // values to reduce CPU use in GetStats.  This will require adding a fast
+  // SSLCertificate::Equals() method to detect certificate changes.
+  talk_base::scoped_ptr<talk_base::SSLFingerprint> ssl_fingerprint(
+      talk_base::SSLFingerprint::Create(talk_base::DIGEST_SHA_256, cert));
+  std::string fingerprint = ssl_fingerprint->GetRfc4572Fingerprint();
+
+  talk_base::Buffer der_buffer;
+  cert->ToDER(&der_buffer);
+  std::string der_base64;
+  talk_base::Base64::EncodeFromArray(
+      der_buffer.data(), der_buffer.length(), &der_base64);
+
+  StatsReport report;
+  report.type = StatsReport::kStatsReportTypeCertificate;
+  report.id = StatsId(report.type, fingerprint);
+  report.timestamp = stats_gathering_started_;
+  report.AddValue(StatsReport::kStatsValueNameFingerprint, fingerprint);
+  report.AddValue(StatsReport::kStatsValueNameDer, der_base64);
+  if (!issuer_id.empty())
+    report.AddValue(StatsReport::kStatsValueNameIssuerId, issuer_id);
+  reports_[report.id] = report;
+  return report.id;
+}
+
+std::string StatsCollector::AddCertificateReports(
+    const talk_base::SSLCertificate* cert) {
+  // Produces a chain of StatsReports representing this certificate and the rest
+  // of its chain, and adds those reports to |reports_|.  The return value is
+  // the id of the leaf report.  The provided cert must be non-null, so at least
+  // one report will always be provided and the returned string will never be
+  // empty.
+  ASSERT(cert != NULL);
+
+  std::string issuer_id;
+  talk_base::scoped_ptr<talk_base::SSLCertChain> chain;
+  if (cert->GetChain(chain.accept())) {
+    // This loop runs in reverse, i.e. from root to leaf, so that each
+    // certificate's issuer's report ID is known before the child certificate's
+    // report is generated.  The root certificate does not have an issuer ID
+    // value.
+    for (ptrdiff_t i = chain->GetSize() - 1; i >= 0; --i) {
+      const talk_base::SSLCertificate& cert_i = chain->Get(i);
+      issuer_id = AddOneCertificateReport(&cert_i, issuer_id);
+    }
+  }
+  // Add the leaf certificate.
+  return AddOneCertificateReport(cert, issuer_id);
+}
+
 void StatsCollector::ExtractSessionInfo() {
   // Extract information from the base session.
   StatsReport report;
@@ -454,6 +516,22 @@ void StatsCollector::ExtractSessionInfo() {
     for (cricket::TransportStatsMap::iterator transport_iter
              = stats.transport_stats.begin();
          transport_iter != stats.transport_stats.end(); ++transport_iter) {
+      // Attempt to get a copy of the certificates from the transport and
+      // expose them in stats reports.  All channels in a transport share the
+      // same local and remote certificates.
+      std::string local_cert_report_id, remote_cert_report_id;
+      cricket::Transport* transport =
+          session_->GetTransport(transport_iter->second.content_name);
+      if (transport) {
+        talk_base::scoped_ptr<talk_base::SSLIdentity> identity;
+        if (transport->GetIdentity(identity.accept()))
+          local_cert_report_id = AddCertificateReports(
+              &(identity->certificate()));
+
+        talk_base::scoped_ptr<talk_base::SSLCertificate> cert;
+        if (transport->GetRemoteCertificate(cert.accept()))
+          remote_cert_report_id = AddCertificateReports(cert.get());
+      }
       for (cricket::TransportChannelStatsList::iterator channel_iter
                = transport_iter->second.channel_stats.begin();
            channel_iter != transport_iter->second.channel_stats.end();
@@ -467,6 +545,14 @@ void StatsCollector::ExtractSessionInfo() {
         channel_report.timestamp = stats_gathering_started_;
         channel_report.AddValue(StatsReport::kStatsValueNameComponent,
                                 channel_iter->component);
+        if (!local_cert_report_id.empty())
+          channel_report.AddValue(
+              StatsReport::kStatsValueNameLocalCertificateId,
+              local_cert_report_id);
+        if (!remote_cert_report_id.empty())
+          channel_report.AddValue(
+              StatsReport::kStatsValueNameRemoteCertificateId,
+              remote_cert_report_id);
         reports_[channel_report.id] = channel_report;
         for (size_t i = 0;
              i < channel_iter->connection_infos.size();

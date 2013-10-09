@@ -294,7 +294,8 @@ TEST_F(WebRtcVoiceEngineTestFake, StartupShutdown) {
   EXPECT_FALSE(voe_sc_.IsInited());
   EXPECT_TRUE(engine_.Init(talk_base::Thread::Current()));
   EXPECT_TRUE(voe_.IsInited());
-  EXPECT_TRUE(voe_sc_.IsInited());
+  // The soundclip engine is lazily initialized.
+  EXPECT_FALSE(voe_sc_.IsInited());
   engine_.Terminate();
   EXPECT_FALSE(voe_.IsInited());
   EXPECT_FALSE(voe_sc_.IsInited());
@@ -2142,7 +2143,9 @@ TEST_F(WebRtcVoiceEngineTestFake, PlayRingbackWithMultipleStreams) {
 // Tests creating soundclips, and make sure they come from the right engine.
 TEST_F(WebRtcVoiceEngineTestFake, CreateSoundclip) {
   EXPECT_TRUE(engine_.Init(talk_base::Thread::Current()));
+  EXPECT_FALSE(voe_sc_.IsInited());
   soundclip_ = engine_.CreateSoundclip();
+  EXPECT_TRUE(voe_sc_.IsInited());
   ASSERT_TRUE(soundclip_ != NULL);
   EXPECT_EQ(0, voe_.GetNumChannels());
   EXPECT_EQ(1, voe_sc_.GetNumChannels());
@@ -2151,6 +2154,10 @@ TEST_F(WebRtcVoiceEngineTestFake, CreateSoundclip) {
   delete soundclip_;
   soundclip_ = NULL;
   EXPECT_EQ(0, voe_sc_.GetNumChannels());
+  // Make sure the soundclip engine is uninitialized on shutdown, now that
+  // we've initialized it by creating a soundclip.
+  engine_.Terminate();
+  EXPECT_FALSE(voe_sc_.IsInited());
 }
 
 // Tests playing out a fake sound.

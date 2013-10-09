@@ -99,6 +99,14 @@ class StatsReport {
   // The id of StatsReport of type VideoBWE.
   static const char kStatsReportVideoBweId[];
 
+  // A StatsReport of |type| = "googCertificate" contains an SSL certificate
+  // transmitted by one of the endpoints of this connection.  The |id| is
+  // controlled by the fingerprint, and is used to identify the certificate in
+  // the Channel stats (as "googLocalCertificateId" or
+  // "googRemoteCertificateId") and in any child certificates (as
+  // "googIssuerId").
+  static const char kStatsReportTypeCertificate[];
+
   // StatsValue names
   static const char kStatsValueNameAudioOutputLevel[];
   static const char kStatsValueNameAudioInputLevel[];
@@ -152,6 +160,11 @@ class StatsReport {
   static const char kStatsValueNameTrackId[];
   static const char kStatsValueNameSsrc[];
   static const char kStatsValueNameTypingNoiseState[];
+  static const char kStatsValueNameDer[];
+  static const char kStatsValueNameFingerprint[];
+  static const char kStatsValueNameIssuerId[];
+  static const char kStatsValueNameLocalCertificateId[];
+  static const char kStatsValueNameRemoteCertificateId[];
 };
 
 typedef std::vector<StatsReport> StatsReports;

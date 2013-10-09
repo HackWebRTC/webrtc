@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_BASE_SSLSTREAMADAPTER_H__
-#define TALK_BASE_SSLSTREAMADAPTER_H__
+#ifndef TALK_BASE_SSLSTREAMADAPTER_H_
+#define TALK_BASE_SSLSTREAMADAPTER_H_
 
 #include <string>
 #include <vector>
@@ -111,9 +111,9 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   // mode.
   // Generally, SetIdentity() and possibly SetServerRole() should have
   // been called before this.
-  // SetPeerCertificate() must also be called. It may be called after
-  // StartSSLWithPeer() but must be called before the underlying
-  // stream opens.
+  // SetPeerCertificate() or SetPeerCertificateDigest() must also be called.
+  // It may be called after StartSSLWithPeer() but must be called before the
+  // underlying stream opens.
   virtual int StartSSLWithPeer() = 0;
 
   // Specify the certificate that our peer is expected to use in
@@ -137,6 +137,13 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   virtual bool SetPeerCertificateDigest(const std::string& digest_alg,
                                         const unsigned char* digest_val,
                                         size_t digest_len) = 0;
+
+  // Retrieves the peer's X.509 certificate, if a certificate has been
+  // provided by SetPeerCertificate or a connection has been established. If
+  // a connection has been established, this returns the
+  // certificate transmitted over SSL, including the entire chain.
+  // The returned certificate is owned by the caller.
+  virtual bool GetPeerCertificate(SSLCertificate** cert) const = 0;
 
   // Key Exporter interface from RFC 5705
   // Arguments are:
@@ -182,4 +189,4 @@ class SSLStreamAdapter : public StreamAdapterInterface {
 
 }  // namespace talk_base
 
-#endif  // TALK_BASE_SSLSTREAMADAPTER_H__
+#endif  // TALK_BASE_SSLSTREAMADAPTER_H_

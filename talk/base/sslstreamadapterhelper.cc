@@ -87,6 +87,14 @@ void SSLStreamAdapterHelper::SetPeerCertificate(SSLCertificate* cert) {
   peer_certificate_.reset(cert);
 }
 
+bool SSLStreamAdapterHelper::GetPeerCertificate(SSLCertificate** cert) const {
+  if (!peer_certificate_)
+    return false;
+
+  *cert = peer_certificate_->GetReference();
+  return true;
+}
+
 bool SSLStreamAdapterHelper::SetPeerCertificateDigest(
     const std::string &digest_alg,
     const unsigned char* digest_val,
