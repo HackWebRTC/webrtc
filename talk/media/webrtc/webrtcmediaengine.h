@@ -103,6 +103,9 @@ class WebRtcMediaEngine : public cricket::MediaEngineInterface {
       const VideoEncoderConfig& config) OVERRIDE {
     return delegate_->SetDefaultVideoEncoderConfig(config);
   }
+  virtual VideoEncoderConfig GetDefaultVideoEncoderConfig() const OVERRIDE {
+    return delegate_->GetDefaultVideoEncoderConfig();
+  }
   virtual bool SetSoundDevices(
       const Device* in_device, const Device* out_device) OVERRIDE {
     return delegate_->SetSoundDevices(in_device, out_device);
