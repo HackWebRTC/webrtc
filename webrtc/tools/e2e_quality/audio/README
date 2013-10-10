@@ -22,6 +22,6 @@ regular expression to extract the quality metric.
 
 An example command-line, run from trunk/
 
-tools/e2e_quality/audio/run_audio_test.py \
+webrtc/tools/e2e_quality/audio/run_audio_test.py \
 --input=data/voice_engine/audio_short16.pcm --output=e2e_audio_out.pcm \
 --codec=L16 --compare="comparison-tool" --regexp="(\d\.\d{3})"

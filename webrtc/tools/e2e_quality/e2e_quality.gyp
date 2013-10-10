@@ -7,7 +7,7 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
-  'includes': ['../../webrtc/build/common.gypi'],
+  'includes': ['../../build/common.gypi'],
   'targets': [
     {
       'target_name': 'audio_e2e_harness',

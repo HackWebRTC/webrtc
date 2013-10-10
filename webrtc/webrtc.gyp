@@ -33,10 +33,9 @@
             'test/metrics.gyp:*',
             'test/test.gyp:*',
             'tools/tools.gyp:*',
-            '../tools/e2e_quality/e2e_quality.gyp:*',
           ],
         }],
-        ['OS=="android"', {
+        ['build_with_chromium==0 and OS=="android"', {
           'dependencies': [
             '../tools/android/android_tools_precompiled.gyp:*',
           ],
