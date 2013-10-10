@@ -134,6 +134,10 @@ deps_os = {
     # NSS, for SSLClientSocketNSS.
     "third_party/nss":
       From("chromium_deps", "src/third_party/nss"),
+
+    # SyzyASan to make it possible to run tests under ASan on Windows.
+    "third_party/syzygy/binaries":
+      From("chromium_deps", "src/third_party/syzygy/binaries"),
   },
 
   "mac": {
