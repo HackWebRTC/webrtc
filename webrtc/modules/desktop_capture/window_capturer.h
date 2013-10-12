@@ -20,6 +20,8 @@
 
 namespace webrtc {
 
+class DesktopCaptureOptions;
+
 class WindowCapturer : public DesktopCapturer {
  public:
   typedef intptr_t WindowId;
@@ -33,6 +35,9 @@ class WindowCapturer : public DesktopCapturer {
 
   typedef std::vector<Window> WindowList;
 
+  static WindowCapturer* Create(const DesktopCaptureOptions& options);
+
+  // TODO(sergeyu): Remove this method. crbug.com/172183
   static WindowCapturer* Create();
 
   virtual ~WindowCapturer() {}

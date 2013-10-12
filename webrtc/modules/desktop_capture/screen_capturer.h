@@ -17,6 +17,7 @@
 
 namespace webrtc {
 
+class DesktopCaptureOptions;
 struct MouseCursorShape;
 
 // Class used to capture video frames asynchronously.
@@ -57,6 +58,10 @@ class ScreenCapturer : public DesktopCapturer {
   virtual ~ScreenCapturer() {}
 
   // Creates platform-specific capturer.
+  //
+  // TODO(sergeyu): Remove all Create() methods except the first one.
+  // crbug.com/172183
+  static ScreenCapturer* Create(const DesktopCaptureOptions& options);
   static ScreenCapturer* Create();
 
 #if defined(WEBRTC_LINUX)

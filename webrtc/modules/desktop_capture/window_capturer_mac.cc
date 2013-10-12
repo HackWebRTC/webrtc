@@ -196,7 +196,7 @@ void WindowCapturerMac::Capture(const DesktopRegion& region) {
 }  // namespace
 
 // static
-WindowCapturer* WindowCapturer::Create() {
+WindowCapturer* WindowCapturer::Create(const DesktopCaptureOptions& options) {
   return new WindowCapturerMac();
 }
 

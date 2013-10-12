@@ -12,6 +12,7 @@
 
 #include <windows.h>
 
+#include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_frame_win.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
@@ -43,7 +44,7 @@ const wchar_t kDwmapiLibraryName[] = L"dwmapi.dll";
 // ScreenCapturerWin is double-buffered as required by ScreenCapturer.
 class ScreenCapturerWin : public ScreenCapturer {
  public:
-  ScreenCapturerWin(bool disable_aero);
+  ScreenCapturerWin(const DesktopCaptureOptions& options);
   virtual ~ScreenCapturerWin();
 
   // Overridden from ScreenCapturer:
@@ -98,7 +99,7 @@ class ScreenCapturerWin : public ScreenCapturer {
   DISALLOW_COPY_AND_ASSIGN(ScreenCapturerWin);
 };
 
-ScreenCapturerWin::ScreenCapturerWin(bool disable_aero)
+ScreenCapturerWin::ScreenCapturerWin(const DesktopCaptureOptions& options)
     : callback_(NULL),
       mouse_shape_observer_(NULL),
       desktop_dc_(NULL),
@@ -106,7 +107,7 @@ ScreenCapturerWin::ScreenCapturerWin(bool disable_aero)
       dwmapi_library_(NULL),
       composition_func_(NULL),
       set_thread_execution_state_failed_(false) {
-  if (disable_aero) {
+  if (options.disable_effects()) {
     // Load dwmapi.dll dynamically since it is not available on XP.
     if (!dwmapi_library_)
       dwmapi_library_ = LoadLibrary(kDwmapiLibraryName);
@@ -353,13 +354,8 @@ void ScreenCapturerWin::CaptureCursor() {
 }  // namespace
 
 // static
-ScreenCapturer* ScreenCapturer::Create() {
-  return CreateWithDisableAero(true);
-}
-
-// static
-ScreenCapturer* ScreenCapturer::CreateWithDisableAero(bool disable_aero) {
-  return new ScreenCapturerWin(disable_aero);
+ScreenCapturer* ScreenCapturer::Create(const DesktopCaptureOptions& options) {
+  return new ScreenCapturerWin(options);
 }
 
 }  // namespace webrtc

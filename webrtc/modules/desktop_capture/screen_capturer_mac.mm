@@ -21,6 +21,7 @@
 #include <OpenGL/OpenGL.h>
 #include <sys/utsname.h>
 
+#include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
@@ -895,7 +896,7 @@ void ScreenCapturerMac::DisplaysReconfiguredCallback(
 }  // namespace
 
 // static
-ScreenCapturer* ScreenCapturer::Create() {
+ScreenCapturer* ScreenCapturer::Create(const DesktopCaptureOptions& context) {
   scoped_ptr<ScreenCapturerMac> capturer(new ScreenCapturerMac());
   if (!capturer->Init())
     capturer.reset();
