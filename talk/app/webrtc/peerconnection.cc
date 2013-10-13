@@ -545,6 +545,7 @@ void PeerConnection::OnSessionStateChange(cricket::BaseSession* /*session*/,
   switch (state) {
     case cricket::BaseSession::STATE_INIT:
       ChangeSignalingState(PeerConnectionInterface::kStable);
+      break;
     case cricket::BaseSession::STATE_SENTINITIATE:
       ChangeSignalingState(PeerConnectionInterface::kHaveLocalOffer);
       break;

@@ -168,12 +168,29 @@ void CheckCertChainReports(const webrtc::StatsReports& reports,
   while (true) {
     const webrtc::StatsReport* report = FindReportById(reports, certificate_id);
     ASSERT_TRUE(report != NULL);
+
     std::string der_base64;
     EXPECT_TRUE(GetValue(
         report, webrtc::StatsReport::kStatsValueNameDer, &der_base64));
     std::string der = talk_base::Base64::Decode(der_base64,
                                                 talk_base::Base64::DO_STRICT);
     EXPECT_EQ(ders[i], der);
+
+    std::string fingerprint_algorithm;
+    EXPECT_TRUE(GetValue(
+        report,
+        webrtc::StatsReport::kStatsValueNameFingerprintAlgorithm,
+        &fingerprint_algorithm));
+    // The digest algorithm for a FakeSSLCertificate is always SHA-1.
+    std::string sha_1_str = talk_base::DIGEST_SHA_1;
+    EXPECT_EQ(sha_1_str, fingerprint_algorithm);
+
+    std::string dummy_fingerprint;  // Value is not checked.
+    EXPECT_TRUE(GetValue(
+        report,
+        webrtc::StatsReport::kStatsValueNameFingerprint,
+        &dummy_fingerprint));
+
     ++i;
     if (!GetValue(
         report, webrtc::StatsReport::kStatsValueNameIssuerId, &certificate_id))
@@ -560,7 +577,7 @@ TEST_F(StatsCollectorTest, TransportObjectLinkedFromSsrcObject) {
 
 // This test verifies that all chained certificates are correctly
 // reported
-TEST_F(StatsCollectorTest, DISABLED_ChainedCertificateReportsCreated) {
+TEST_F(StatsCollectorTest, ChainedCertificateReportsCreated) {
   // Build local certificate chain.
   std::vector<std::string> local_ders(5);
   local_ders[0] = "These";
@@ -583,7 +600,7 @@ TEST_F(StatsCollectorTest, DISABLED_ChainedCertificateReportsCreated) {
 
 // This test verifies that all certificates without chains are correctly
 // reported.
-TEST_F(StatsCollectorTest, DISABLED_ChainlessCertificateReportsCreated) {
+TEST_F(StatsCollectorTest, ChainlessCertificateReportsCreated) {
   // Build local certificate.
   std::string local_der = "This is the local der.";
   talk_base::FakeSSLCertificate local_cert(DerToPem(local_der));
@@ -598,7 +615,7 @@ TEST_F(StatsCollectorTest, DISABLED_ChainlessCertificateReportsCreated) {
 
 // This test verifies that the stats are generated correctly when no
 // transport is present.
-TEST_F(StatsCollectorTest, DISABLED_NoTransport) {
+TEST_F(StatsCollectorTest, NoTransport) {
   webrtc::StatsCollector stats;  // Implementation under test.
   webrtc::StatsReports reports;  // returned values.
   stats.set_session(&session_);
@@ -644,7 +661,7 @@ TEST_F(StatsCollectorTest, DISABLED_NoTransport) {
 
 // This test verifies that the stats are generated correctly when the transport
 // does not have any certificates.
-TEST_F(StatsCollectorTest, DISABLED_NoCertificates) {
+TEST_F(StatsCollectorTest, NoCertificates) {
   webrtc::StatsCollector stats;  // Implementation under test.
   webrtc::StatsReports reports;  // returned values.
   stats.set_session(&session_);

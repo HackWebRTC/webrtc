@@ -58,6 +58,12 @@ class FakeSSLCertificate : public talk_base::SSLCertificate {
     VERIFY(SSLIdentity::PemToDer(kPemTypeCertificate, data_, &der_string));
     der_buffer->SetData(der_string.c_str(), der_string.size());
   }
+  virtual bool GetSignatureDigestAlgorithm(std::string* algorithm) const {
+    // SHA-1 is chosen because it is available in all build configurations
+    // used for unit testing.
+    *algorithm = DIGEST_SHA_1;
+    return true;
+  }
   virtual bool ComputeDigest(const std::string &algorithm,
                              unsigned char *digest, std::size_t size,
                              std::size_t *length) const {

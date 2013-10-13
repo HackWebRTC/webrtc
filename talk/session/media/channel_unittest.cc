@@ -233,6 +233,10 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
         this, &ChannelTest<T>::OnMediaChannelError);
     channel1_->SignalAutoMuted.connect(
         this, &ChannelTest<T>::OnMediaMuted);
+    if ((flags1 & DTLS) && (flags2 & DTLS)) {
+      flags1 = (flags1 & ~SECURE);
+      flags2 = (flags2 & ~SECURE);
+    }
     CreateContent(flags1, kPcmuCodec, kH264Codec,
                   &local_media_content1_);
     CreateContent(flags2, kPcmuCodec, kH264Codec,

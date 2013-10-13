@@ -39,16 +39,11 @@ using cricket::TransportDescriptionFactory;
 using cricket::TransportDescription;
 using cricket::TransportOptions;
 
-// TODO(juberti): Change this to SHA-256 once we have Win32 using OpenSSL.
-static const char* kDefaultDigestAlg = talk_base::DIGEST_SHA_1;
-
 class TransportDescriptionFactoryTest : public testing::Test {
  public:
   TransportDescriptionFactoryTest()
       : id1_(new talk_base::FakeSSLIdentity("User1")),
         id2_(new talk_base::FakeSSLIdentity("User2")) {
-    f1_.set_digest_algorithm(kDefaultDigestAlg);
-    f2_.set_digest_algorithm(kDefaultDigestAlg);
   }
   void CheckDesc(const TransportDescription* desc, const std::string& type,
                  const std::string& opt, const std::string& ice_ufrag,
@@ -167,15 +162,17 @@ TEST_F(TransportDescriptionFactoryTest, TestOfferHybridDtls) {
   f1_.set_protocol(cricket::ICEPROTO_HYBRID);
   f1_.set_secure(cricket::SEC_ENABLED);
   f1_.set_identity(id1_.get());
+  std::string digest_alg;
+  ASSERT_TRUE(id1_->certificate().GetSignatureDigestAlgorithm(&digest_alg));
   scoped_ptr<TransportDescription> desc(f1_.CreateOffer(
       TransportOptions(), NULL));
   CheckDesc(desc.get(), cricket::NS_JINGLE_ICE_UDP, "google-ice", "", "",
-            kDefaultDigestAlg);
+            digest_alg);
   // Ensure it also works with SEC_REQUIRED.
   f1_.set_secure(cricket::SEC_REQUIRED);
   desc.reset(f1_.CreateOffer(TransportOptions(), NULL));
   CheckDesc(desc.get(), cricket::NS_JINGLE_ICE_UDP, "google-ice", "", "",
-            kDefaultDigestAlg);
+            digest_alg);
 }
 
 // Test generating a hybrid offer with DTLS fails with no identity.
@@ -187,23 +184,14 @@ TEST_F(TransportDescriptionFactoryTest, TestOfferHybridDtlsWithNoIdentity) {
   ASSERT_TRUE(desc.get() == NULL);
 }
 
-// Test generating a hybrid offer with DTLS fails with an unsupported digest.
-TEST_F(TransportDescriptionFactoryTest, TestOfferHybridDtlsWithBadDigestAlg) {
-  f1_.set_protocol(cricket::ICEPROTO_HYBRID);
-  f1_.set_secure(cricket::SEC_ENABLED);
-  f1_.set_identity(id1_.get());
-  f1_.set_digest_algorithm("bogus");
-  scoped_ptr<TransportDescription> desc(f1_.CreateOffer(
-      TransportOptions(), NULL));
-  ASSERT_TRUE(desc.get() == NULL);
-}
-
 // Test updating a hybrid offer with DTLS to pick ICE.
 // The ICE credentials should stay the same in the new offer.
 TEST_F(TransportDescriptionFactoryTest, TestOfferHybridDtlsReofferIceDtls) {
   f1_.set_protocol(cricket::ICEPROTO_HYBRID);
   f1_.set_secure(cricket::SEC_ENABLED);
   f1_.set_identity(id1_.get());
+  std::string digest_alg;
+  ASSERT_TRUE(id1_->certificate().GetSignatureDigestAlgorithm(&digest_alg));
   scoped_ptr<TransportDescription> old_desc(f1_.CreateOffer(
       TransportOptions(), NULL));
   ASSERT_TRUE(old_desc.get() != NULL);
@@ -211,7 +199,7 @@ TEST_F(TransportDescriptionFactoryTest, TestOfferHybridDtlsReofferIceDtls) {
   scoped_ptr<TransportDescription> desc(
       f1_.CreateOffer(TransportOptions(), old_desc.get()));
   CheckDesc(desc.get(), cricket::NS_JINGLE_ICE_UDP, "",
-            old_desc->ice_ufrag, old_desc->ice_pwd, kDefaultDigestAlg);
+            old_desc->ice_ufrag, old_desc->ice_pwd, digest_alg);
 }
 
 // Test that we can answer a GICE offer with GICE.
@@ -358,21 +346,25 @@ TEST_F(TransportDescriptionFactoryTest, TestAnswerHybridDtlsToHybridDtls) {
   f1_.set_protocol(cricket::ICEPROTO_HYBRID);
   f1_.set_secure(cricket::SEC_ENABLED);
   f1_.set_identity(id1_.get());
+
   f2_.set_protocol(cricket::ICEPROTO_HYBRID);
   f2_.set_secure(cricket::SEC_ENABLED);
   f2_.set_identity(id2_.get());
+  // f2_ produces the answer that is being checked in this test, so the
+  // answer must contain fingerprint lines with id2_'s digest algorithm.
+  std::string digest_alg2;
+  ASSERT_TRUE(id2_->certificate().GetSignatureDigestAlgorithm(&digest_alg2));
+
   scoped_ptr<TransportDescription> offer(
       f1_.CreateOffer(TransportOptions(), NULL));
   ASSERT_TRUE(offer.get() != NULL);
   scoped_ptr<TransportDescription> desc(
       f2_.CreateAnswer(offer.get(), TransportOptions(), NULL));
-  CheckDesc(desc.get(), cricket::NS_JINGLE_ICE_UDP, "", "", "",
-            kDefaultDigestAlg);
+  CheckDesc(desc.get(), cricket::NS_JINGLE_ICE_UDP, "", "", "", digest_alg2);
   f2_.set_secure(cricket::SEC_REQUIRED);
   desc.reset(f2_.CreateAnswer(offer.get(), TransportOptions(),
                               NULL));
-  CheckDesc(desc.get(), cricket::NS_JINGLE_ICE_UDP, "", "", "",
-            kDefaultDigestAlg);
+  CheckDesc(desc.get(), cricket::NS_JINGLE_ICE_UDP, "", "", "", digest_alg2);
 }
 
 // Test that ice ufrag and password is changed in an updated offer and answer

@@ -175,6 +175,54 @@ bool NSSCertificate::GetDigestLength(const std::string &algorithm,
   return true;
 }
 
+bool NSSCertificate::GetSignatureDigestAlgorithm(std::string* algorithm) const {
+  // The function sec_DecodeSigAlg in NSS provides this mapping functionality.
+  // Unfortunately it is private, so the functionality must be duplicated here.
+  // See https://bugzilla.mozilla.org/show_bug.cgi?id=925165 .
+  SECOidTag sig_alg = SECOID_GetAlgorithmTag(&certificate_->signature);
+  switch (sig_alg) {
+    case SEC_OID_PKCS1_MD5_WITH_RSA_ENCRYPTION:
+      *algorithm = DIGEST_MD5;
+      break;
+    case SEC_OID_PKCS1_SHA1_WITH_RSA_ENCRYPTION:
+    case SEC_OID_ISO_SHA_WITH_RSA_SIGNATURE:
+    case SEC_OID_ISO_SHA1_WITH_RSA_SIGNATURE:
+    case SEC_OID_ANSIX9_DSA_SIGNATURE_WITH_SHA1_DIGEST:
+    case SEC_OID_BOGUS_DSA_SIGNATURE_WITH_SHA1_DIGEST:
+    case SEC_OID_ANSIX962_ECDSA_SHA1_SIGNATURE:
+    case SEC_OID_MISSI_DSS:
+    case SEC_OID_MISSI_KEA_DSS:
+    case SEC_OID_MISSI_KEA_DSS_OLD:
+    case SEC_OID_MISSI_DSS_OLD:
+      *algorithm = DIGEST_SHA_1;
+      break;
+    case SEC_OID_ANSIX962_ECDSA_SHA224_SIGNATURE:
+    case SEC_OID_PKCS1_SHA224_WITH_RSA_ENCRYPTION:
+    case SEC_OID_NIST_DSA_SIGNATURE_WITH_SHA224_DIGEST:
+      *algorithm = DIGEST_SHA_224;
+      break;
+    case SEC_OID_ANSIX962_ECDSA_SHA256_SIGNATURE:
+    case SEC_OID_PKCS1_SHA256_WITH_RSA_ENCRYPTION:
+    case SEC_OID_NIST_DSA_SIGNATURE_WITH_SHA256_DIGEST:
+      *algorithm = DIGEST_SHA_256;
+      break;
+    case SEC_OID_ANSIX962_ECDSA_SHA384_SIGNATURE:
+    case SEC_OID_PKCS1_SHA384_WITH_RSA_ENCRYPTION:
+      *algorithm = DIGEST_SHA_384;
+      break;
+    case SEC_OID_ANSIX962_ECDSA_SHA512_SIGNATURE:
+    case SEC_OID_PKCS1_SHA512_WITH_RSA_ENCRYPTION:
+      *algorithm = DIGEST_SHA_512;
+      break;
+    default:
+      // Unknown algorithm.  There are several unhandled options that are less
+      // common and more complex.
+      algorithm->clear();
+      return false;
+  }
+  return true;
+}
+
 bool NSSCertificate::ComputeDigest(const std::string &algorithm,
                                    unsigned char *digest, std::size_t size,
                                    std::size_t *length) const {

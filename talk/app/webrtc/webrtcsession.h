@@ -69,6 +69,7 @@ extern const char kInvalidSdp[];
 extern const char kMlineMismatch[];
 extern const char kSdpWithoutCrypto[];
 extern const char kSdpWithoutSdesAndDtlsDisabled[];
+extern const char kSdpWithoutIceUfragPwd[];
 extern const char kSessionError[];
 extern const char kUpdateStateFailed[];
 extern const char kPushDownOfferTDFailed[];

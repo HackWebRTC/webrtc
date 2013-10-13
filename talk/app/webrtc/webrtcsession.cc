@@ -85,7 +85,9 @@ const char kMlineMismatch[] =
     "Rejecting answer.";
 const char kSdpWithoutCrypto[] = "Called with a SDP without crypto enabled.";
 const char kSdpWithoutSdesAndDtlsDisabled[] =
-    "Called with a SDP without SDES crypto and DTLS disabled locally.";
+    "Called with an SDP without SDES crypto and DTLS disabled locally.";
+const char kSdpWithoutIceUfragPwd[] =
+    "Called with an SDP without ice-ufrag and ice-pwd.";
 const char kSessionError[] = "Session error code: ";
 const char kUpdateStateFailed[] = "Failed to update session state: ";
 const char kPushDownOfferTDFailed[] =
@@ -151,6 +153,31 @@ static bool VerifyCrypto(const SessionDescription* desc,
     }
   }
 
+  return true;
+}
+
+// Checks that each non-rejected content has ice-ufrag and ice-pwd set.
+static bool VerifyIceUfragPwdPresent(const SessionDescription* desc) {
+  const ContentInfos& contents = desc->contents();
+  for (size_t index = 0; index < contents.size(); ++index) {
+    const ContentInfo* cinfo = &contents[index];
+    if (cinfo->rejected) {
+      continue;
+    }
+
+    // If the content isn't rejected, ice-ufrag and ice-pwd must be present.
+    const TransportInfo* tinfo = desc->GetTransportInfoByName(cinfo->name);
+    if (!tinfo) {
+      // Something is not right.
+      LOG(LS_ERROR) << kInvalidSdp;
+      return false;
+    }
+    if (tinfo->description.ice_ufrag.empty() ||
+        tinfo->description.ice_pwd.empty()) {
+      LOG(LS_ERROR) << "Session description must have ice ufrag and pwd.";
+      return false;
+    }
+  }
   return true;
 }
 
@@ -1444,6 +1471,11 @@ bool WebRtcSession::ValidateSessionDescription(
   if (webrtc_session_desc_factory_->secure() == cricket::SEC_REQUIRED &&
       !VerifyCrypto(sdesc->description(), dtls_enabled_, &crypto_error)) {
     return BadSdp(source, crypto_error, error_desc);
+  }
+
+  // Verify ice-ufrag and ice-pwd.
+  if (!VerifyIceUfragPwdPresent(sdesc->description())) {
+    return BadSdp(source, kSdpWithoutIceUfragPwd, error_desc);
   }
 
   if (!ValidateBundleSettings(sdesc->description())) {

@@ -162,6 +162,7 @@ class StatsReport {
   static const char kStatsValueNameTypingNoiseState[];
   static const char kStatsValueNameDer[];
   static const char kStatsValueNameFingerprint[];
+  static const char kStatsValueNameFingerprintAlgorithm[];
   static const char kStatsValueNameIssuerId[];
   static const char kStatsValueNameLocalCertificateId[];
   static const char kStatsValueNameRemoteCertificateId[];

@@ -318,6 +318,7 @@ class BaseChannel
   virtual bool SetRemoteContent_w(const MediaContentDescription* content,
                                   ContentAction action) = 0;
 
+  bool CheckSrtpConfig(const std::vector<CryptoParams>& cryptos, bool* dtls);
   bool SetSrtp_w(const std::vector<CryptoParams>& params, ContentAction action,
                  ContentSource src);
   bool SetRtcpMux_w(bool enable, ContentAction action, ContentSource src);

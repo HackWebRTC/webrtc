@@ -68,6 +68,8 @@ const char StatsReport::kStatsValueNameEchoReturnLossEnhancement[] =
     "googEchoCancellationReturnLossEnhancement";
 
 const char StatsReport::kStatsValueNameFingerprint[] = "googFingerprint";
+const char StatsReport::kStatsValueNameFingerprintAlgorithm[] =
+    "googFingerprintAlgorithm";
 const char StatsReport::kStatsValueNameFirsReceived[] = "googFirsReceived";
 const char StatsReport::kStatsValueNameFirsSent[] = "googFirsSent";
 const char StatsReport::kStatsValueNameFrameHeightReceived[] =
@@ -449,8 +451,13 @@ std::string StatsCollector::AddOneCertificateReport(
   // TODO(bemasc): Move this computation to a helper class that caches these
   // values to reduce CPU use in GetStats.  This will require adding a fast
   // SSLCertificate::Equals() method to detect certificate changes.
+
+  std::string digest_algorithm;
+  if (!cert->GetSignatureDigestAlgorithm(&digest_algorithm))
+    return std::string();
+
   talk_base::scoped_ptr<talk_base::SSLFingerprint> ssl_fingerprint(
-      talk_base::SSLFingerprint::Create(talk_base::DIGEST_SHA_256, cert));
+      talk_base::SSLFingerprint::Create(digest_algorithm, cert));
   std::string fingerprint = ssl_fingerprint->GetRfc4572Fingerprint();
 
   talk_base::Buffer der_buffer;
@@ -464,6 +471,8 @@ std::string StatsCollector::AddOneCertificateReport(
   report.id = StatsId(report.type, fingerprint);
   report.timestamp = stats_gathering_started_;
   report.AddValue(StatsReport::kStatsValueNameFingerprint, fingerprint);
+  report.AddValue(StatsReport::kStatsValueNameFingerprintAlgorithm,
+                  digest_algorithm);
   report.AddValue(StatsReport::kStatsValueNameDer, der_base64);
   if (!issuer_id.empty())
     report.AddValue(StatsReport::kStatsValueNameIssuerId, issuer_id);

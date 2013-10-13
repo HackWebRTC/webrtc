@@ -105,6 +105,8 @@ class OpenSSLCertificate : public SSLCertificate {
                             std::size_t size,
                             std::size_t *length);
 
+  virtual bool GetSignatureDigestAlgorithm(std::string* algorithm) const;
+
   virtual bool GetChain(SSLCertChain** chain) const {
     // Chains are not yet supported when using OpenSSL.
     // OpenSSLStreamAdapter::SSLVerifyCallback currently requires the remote

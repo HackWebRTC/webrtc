@@ -81,6 +81,8 @@ class NSSCertificate : public SSLCertificate {
 
   virtual void ToDER(Buffer* der_buffer) const;
 
+  virtual bool GetSignatureDigestAlgorithm(std::string* algorithm) const;
+
   virtual bool ComputeDigest(const std::string& algorithm,
                              unsigned char* digest, std::size_t size,
                              std::size_t* length) const;

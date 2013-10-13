@@ -83,6 +83,22 @@ class SSLIdentityTest : public testing::Test {
     ASSERT_TRUE(test_cert_);
   }
 
+  void TestGetSignatureDigestAlgorithm() {
+    std::string digest_algorithm;
+    // Both NSSIdentity::Generate and OpenSSLIdentity::Generate are
+    // hard-coded to generate RSA-SHA1 certificates.
+    ASSERT_TRUE(identity1_->certificate().GetSignatureDigestAlgorithm(
+        &digest_algorithm));
+    ASSERT_EQ(talk_base::DIGEST_SHA_1, digest_algorithm);
+    ASSERT_TRUE(identity2_->certificate().GetSignatureDigestAlgorithm(
+        &digest_algorithm));
+    ASSERT_EQ(talk_base::DIGEST_SHA_1, digest_algorithm);
+
+    // The test certificate has an MD5-based signature.
+    ASSERT_TRUE(test_cert_->GetSignatureDigestAlgorithm(&digest_algorithm));
+    ASSERT_EQ(talk_base::DIGEST_MD5, digest_algorithm);
+  }
+
   void TestDigest(const std::string &algorithm, size_t expected_len,
                   const unsigned char *expected_digest = NULL) {
     unsigned char digest1[64];
@@ -202,4 +218,8 @@ TEST_F(SSLIdentityTest, PemDerConversion) {
   EXPECT_EQ(kTestCertificate, SSLIdentity::DerToPem(
       "CERTIFICATE",
       reinterpret_cast<const unsigned char*>(der.data()), der.length()));
+}
+
+TEST_F(SSLIdentityTest, GetSignatureDigestAlgorithm) {
+  TestGetSignatureDigestAlgorithm();
 }

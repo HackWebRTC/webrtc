@@ -37,13 +37,11 @@
 namespace cricket {
 
 static TransportProtocol kDefaultProtocol = ICEPROTO_GOOGLE;
-static const char* kDefaultDigestAlg = talk_base::DIGEST_SHA_1;
 
 TransportDescriptionFactory::TransportDescriptionFactory()
     : protocol_(kDefaultProtocol),
       secure_(SEC_DISABLED),
-      identity_(NULL),
-      digest_alg_(kDefaultDigestAlg) {
+      identity_(NULL) {
 }
 
 TransportDescription* TransportDescriptionFactory::CreateOffer(
@@ -153,10 +151,20 @@ bool TransportDescriptionFactory::SetSecurityInfo(
     return false;
   }
 
+  // This digest algorithm is used to produce the a=fingerprint lines in SDP.
+  // RFC 4572 Section 5 requires that those lines use the same hash function as
+  // the certificate's signature.
+  std::string digest_alg;
+  if (!identity_->certificate().GetSignatureDigestAlgorithm(&digest_alg)) {
+    LOG(LS_ERROR) << "Failed to retrieve the certificate's digest algorithm";
+    return false;
+  }
+
   desc->identity_fingerprint.reset(
-      talk_base::SSLFingerprint::Create(digest_alg_, identity_));
+      talk_base::SSLFingerprint::Create(digest_alg, identity_));
   if (!desc->identity_fingerprint.get()) {
-    LOG(LS_ERROR) << "Failed to create identity digest, alg=" << digest_alg_;
+    LOG(LS_ERROR) << "Failed to create identity fingerprint, alg="
+                  << digest_alg;
     return false;
   }
 

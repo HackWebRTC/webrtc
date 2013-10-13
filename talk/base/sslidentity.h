@@ -76,6 +76,10 @@ class SSLCertificate {
   // Provides a DER encoded binary representation of the certificate.
   virtual void ToDER(Buffer* der_buffer) const = 0;
 
+  // Gets the name of the digest algorithm that was used to compute this
+  // certificate's signature.
+  virtual bool GetSignatureDigestAlgorithm(std::string* algorithm) const = 0;
+
   // Compute the digest of the certificate given algorithm
   virtual bool ComputeDigest(const std::string &algorithm,
                              unsigned char* digest, std::size_t size,

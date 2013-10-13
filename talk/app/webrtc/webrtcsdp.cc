@@ -1241,12 +1241,9 @@ void BuildMediaDescription(const ContentInfo* content_info,
         // Making sure we are not using "passive" mode.
         cricket::ConnectionRole role =
             transport_info->description.connection_role;
-        ASSERT(role == cricket::CONNECTIONROLE_ACTIVE ||
-               role == cricket::CONNECTIONROLE_ACTPASS);
+        std::string dtls_role_str;
+        VERIFY(cricket::ConnectionRoleToString(role, &dtls_role_str));
         InitAttrLine(kAttributeSetup, &os);
-        std::string dtls_role_str = role == cricket::CONNECTIONROLE_ACTPASS ?
-            cricket::CONNECTIONROLE_ACTPASS_STR :
-            cricket::CONNECTIONROLE_ACTIVE_STR;
         os << kSdpDelimiterColon << dtls_role_str;
         AddLine(os.str(), message);
       }

@@ -98,6 +98,34 @@ bool OpenSSLDigest::GetDigestEVP(const std::string& algorithm,
   return true;
 }
 
+bool OpenSSLDigest::GetDigestName(const EVP_MD* md,
+                                  std::string* algorithm) {
+  ASSERT(md != NULL);
+  ASSERT(algorithm != NULL);
+
+  int md_type = EVP_MD_type(md);
+  if (md_type == NID_md5) {
+    *algorithm = DIGEST_MD5;
+  } else if (md_type == NID_sha1) {
+    *algorithm = DIGEST_SHA_1;
+#if OPENSSL_VERSION_NUMBER >= 0x00908000L
+  } else if (md_type == NID_sha224) {
+    *algorithm = DIGEST_SHA_224;
+  } else if (md_type == NID_sha256) {
+    *algorithm = DIGEST_SHA_256;
+  } else if (md_type == NID_sha384) {
+    *algorithm = DIGEST_SHA_384;
+  } else if (md_type == NID_sha512) {
+    *algorithm = DIGEST_SHA_512;
+#endif
+  } else {
+    algorithm->clear();
+    return false;
+  }
+
+  return true;
+}
+
 bool OpenSSLDigest::GetDigestSize(const std::string& algorithm,
                                   size_t* length) {
   const EVP_MD *md;

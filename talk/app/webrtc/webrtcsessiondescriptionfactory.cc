@@ -438,7 +438,6 @@ void WebRtcSessionDescriptionFactory::SetIdentity(
   SignalIdentityReady(identity);
 
   transport_desc_factory_.set_identity(identity);
-  transport_desc_factory_.set_digest_algorithm(talk_base::DIGEST_SHA_256);
   transport_desc_factory_.set_secure(cricket::SEC_ENABLED);
 
   while (!create_session_description_requests_.empty()) {

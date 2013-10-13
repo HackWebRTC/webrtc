@@ -1095,7 +1095,7 @@ TEST_F(PeerConnectionInterfaceTest, TestRejectDataChannelInAnswer) {
 // Test that we can create a session description from an SDP string from
 // FireFox, use it as a remote session description, generate an answer and use
 // the answer as a local description.
-TEST_F(PeerConnectionInterfaceTest, ReceiveFireFoxOffer) {
+TEST_F(PeerConnectionInterfaceTest, DISABLED_ReceiveFireFoxOffer) {
   MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
   FakeConstraints constraints;
   constraints.AddMandatory(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,

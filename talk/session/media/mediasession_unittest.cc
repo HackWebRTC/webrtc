@@ -1814,6 +1814,26 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCryptoDtls) {
   ASSERT_TRUE(video_trans_desc != NULL);
   ASSERT_TRUE(audio_trans_desc->identity_fingerprint.get() != NULL);
   ASSERT_TRUE(video_trans_desc->identity_fingerprint.get() != NULL);
+
+  // Try creating offer again. DTLS enabled now, crypto's should be empty
+  // in new offer.
+  offer.reset(f1_.CreateOffer(options, offer.get()));
+  ASSERT_TRUE(offer.get() != NULL);
+  audio_media_desc = static_cast<const cricket::MediaContentDescription*>(
+      offer->GetContentDescriptionByName("audio"));
+  ASSERT_TRUE(audio_media_desc != NULL);
+  video_media_desc = static_cast<const cricket::MediaContentDescription*>(
+      offer->GetContentDescriptionByName("video"));
+  ASSERT_TRUE(video_media_desc != NULL);
+  EXPECT_TRUE(audio_media_desc->cryptos().empty());
+  EXPECT_TRUE(video_media_desc->cryptos().empty());
+
+  audio_trans_desc = offer->GetTransportDescriptionByName("audio");
+  ASSERT_TRUE(audio_trans_desc != NULL);
+  video_trans_desc = offer->GetTransportDescriptionByName("video");
+  ASSERT_TRUE(video_trans_desc != NULL);
+  ASSERT_TRUE(audio_trans_desc->identity_fingerprint.get() != NULL);
+  ASSERT_TRUE(video_trans_desc->identity_fingerprint.get() != NULL);
 }
 
 // Test that an answer can't be created if cryptos are required but the offer is

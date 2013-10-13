@@ -48,5 +48,25 @@ bool StringToConnectionRole(const std::string& role_str, ConnectionRole* role) {
   return false;
 }
 
+bool ConnectionRoleToString(const ConnectionRole& role, std::string* role_str) {
+  switch (role) {
+    case cricket::CONNECTIONROLE_ACTIVE:
+      *role_str = cricket::CONNECTIONROLE_ACTIVE_STR;
+      break;
+    case cricket::CONNECTIONROLE_ACTPASS:
+      *role_str = cricket::CONNECTIONROLE_ACTPASS_STR;
+      break;
+    case cricket::CONNECTIONROLE_PASSIVE:
+      *role_str = cricket::CONNECTIONROLE_PASSIVE_STR;
+      break;
+    case cricket::CONNECTIONROLE_HOLDCONN:
+      *role_str = cricket::CONNECTIONROLE_HOLDCONN_STR;
+      break;
+    default:
+      return false;
+  }
+  return true;
+}
+
 }  // namespace cricket
 

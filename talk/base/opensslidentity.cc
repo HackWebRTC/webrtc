@@ -235,6 +235,14 @@ OpenSSLCertificate* OpenSSLCertificate::FromPEMString(
   return ret;
 }
 
+// NOTE: This implementation only functions correctly after InitializeSSL
+// and before CleanupSSL.
+bool OpenSSLCertificate::GetSignatureDigestAlgorithm(
+    std::string* algorithm) const {
+  return OpenSSLDigest::GetDigestName(
+      EVP_get_digestbyobj(x509_->sig_alg->algorithm), algorithm);
+}
+
 bool OpenSSLCertificate::ComputeDigest(const std::string &algorithm,
                                        unsigned char *digest,
                                        std::size_t size,

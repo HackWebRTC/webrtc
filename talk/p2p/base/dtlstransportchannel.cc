@@ -42,6 +42,7 @@ namespace cricket {
 static const size_t kDtlsRecordHeaderLen = 13;
 static const size_t kMaxDtlsPacketLen = 2048;
 static const size_t kMinRtpPacketLen = 12;
+static const size_t kDefaultVideoAndDataCryptos = 1;
 
 static bool IsDtlsPacket(const char* data, size_t len) {
   const uint8* u = reinterpret_cast<const uint8*>(data);
@@ -286,14 +287,37 @@ bool DtlsTransportChannelWrapper::SetupDtls() {
   return true;
 }
 
-bool DtlsTransportChannelWrapper::SetSrtpCiphers(const std::vector<std::string>&
-                                                 ciphers) {
-  // SRTP ciphers must be set before the DTLS handshake starts.
-  // TODO(juberti): In multiplex situations, we may end up calling this function
-  // once for each muxed channel. Depending on the order of calls, this may
-  // result in slightly undesired results, e.g. 32 vs 80-bit MAC. The right way to
-  // fix this would be for the TransportProxyChannels to intersect the ciphers
-  // instead of overwriting, so that "80" followed by "32, 80" results in "80".
+bool DtlsTransportChannelWrapper::SetSrtpCiphers(
+    const std::vector<std::string>& ciphers) {
+  if (srtp_ciphers_ == ciphers)
+    return true;
+
+  if (dtls_state_ == STATE_OPEN) {
+    // We don't support DTLS renegotiation currently. If new set of srtp ciphers
+    // are different than what's being used currently, we will not use it.
+    // So for now, let's be happy (or sad) with a warning message.
+    std::string current_srtp_cipher;
+    if (!dtls_->GetDtlsSrtpCipher(&current_srtp_cipher)) {
+      LOG(LS_ERROR) << "Failed to get the current SRTP cipher for DTLS channel";
+      return false;
+    }
+    const std::vector<std::string>::const_iterator iter =
+        std::find(ciphers.begin(), ciphers.end(), current_srtp_cipher);
+    if (iter == ciphers.end()) {
+      std::string requested_str;
+      for (size_t i = 0; i < ciphers.size(); ++i) {
+        requested_str.append(" ");
+        requested_str.append(ciphers[i]);
+        requested_str.append(" ");
+      }
+      LOG(LS_WARNING) << "Ignoring new set of SRTP ciphers, as DTLS "
+                      << "renegotiation is not supported currently "
+                      << "current cipher = " << current_srtp_cipher << " and "
+                      << "requested = " << "[" << requested_str << "]";
+    }
+    return true;
+  }
+
   if (dtls_state_ != STATE_NONE &&
       dtls_state_ != STATE_OFFERED &&
       dtls_state_ != STATE_ACCEPTED) {

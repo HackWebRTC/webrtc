@@ -94,6 +94,7 @@ extern const char CONNECTIONROLE_ACTPASS_STR[];
 extern const char CONNECTIONROLE_HOLDCONN_STR[];
 
 bool StringToConnectionRole(const std::string& role_str, ConnectionRole* role);
+bool ConnectionRoleToString(const ConnectionRole& role, std::string* role_str);
 
 typedef std::vector<Candidate> Candidates;
 
@@ -159,7 +160,7 @@ struct TransportDescription {
   void AddOption(const std::string& option) {
     transport_options.push_back(option);
   }
-  bool secure() { return identity_fingerprint != NULL; }
+  bool secure() const { return identity_fingerprint != NULL; }
 
   static talk_base::SSLFingerprint* CopyFingerprint(
       const talk_base::SSLFingerprint* from) {

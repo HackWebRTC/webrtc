@@ -411,11 +411,15 @@ void Thread::Send(MessageHandler *phandler, uint32 id, MessageData *pdata) {
   ss_->WakeUp();
 
   bool waited = false;
+  crit_.Enter();
   while (!ready) {
+    crit_.Leave();
     current_thread->ReceiveSends();
     current_thread->socketserver()->Wait(kForever, false);
     waited = true;
+    crit_.Enter();
   }
+  crit_.Leave();
 
   // Our Wait loop above may have consumed some WakeUp events for this
   // MessageQueue, that weren't relevant to this Send.  Losing these WakeUps can
