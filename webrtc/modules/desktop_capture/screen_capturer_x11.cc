@@ -41,7 +41,8 @@ namespace webrtc {
 namespace {
 
 // A class to perform video frame capturing for Linux.
-class ScreenCapturerLinux : public ScreenCapturer {
+class ScreenCapturerLinux : public ScreenCapturer,
+                            public SharedXDisplay::XEventHandler {
  public:
   ScreenCapturerLinux();
   virtual ~ScreenCapturerLinux();
@@ -60,21 +61,17 @@ class ScreenCapturerLinux : public ScreenCapturer {
  private:
   Display* display() { return options_.x_display()->display(); }
 
-  void InitXDamage();
+  // SharedXDisplay::XEventHandler interface.
+  virtual bool HandleXEvent(const XEvent& event) OVERRIDE;
 
-  // Read and handle all currently-pending XEvents.
-  // In the DAMAGE case, process the XDamage events and store the resulting
-  // damage rectangles in the ScreenCapturerHelper.
-  // In all cases, call ScreenConfigurationChanged() in response to any
-  // ConfigNotify events.
-  void ProcessPendingXEvents();
+  void InitXDamage();
 
   // Capture the cursor image and notify the delegate if it was captured.
   void CaptureCursor();
 
   // Capture screen pixels to the current buffer in the queue. In the DAMAGE
   // case, the ScreenCapturerHelper already holds the list of invalid rectangles
-  // from ProcessPendingXEvents(). In the non-DAMAGE case, this captures the
+  // from HandleXEvent(). In the non-DAMAGE case, this captures the
   // whole screen, then calculates some invalid rectangles that include any
   // differences between this and the previous capture.
   DesktopFrame* CaptureScreen();
@@ -149,6 +146,15 @@ ScreenCapturerLinux::ScreenCapturerLinux()
 }
 
 ScreenCapturerLinux::~ScreenCapturerLinux() {
+  options_.x_display()->RemoveEventHandler(ConfigureNotify, this);
+  if (use_damage_) {
+    options_.x_display()->RemoveEventHandler(
+        damage_event_base_ + XDamageNotify, this);
+  }
+  if (has_xfixes_) {
+    options_.x_display()->RemoveEventHandler(
+        xfixes_event_base_ + XFixesCursorNotify, this);
+  }
   DeinitXlib();
 }
 
@@ -168,6 +174,8 @@ bool ScreenCapturerLinux::Init(const DesktopCaptureOptions& options) {
     DeinitXlib();
     return false;
   }
+
+  options_.x_display()->AddEventHandler(ConfigureNotify, this);
 
   // Check for XFixes extension. This is required for cursor shape
   // notifications, and for our use of XDamage.
@@ -190,6 +198,8 @@ bool ScreenCapturerLinux::Init(const DesktopCaptureOptions& options) {
     // Register for changes to the cursor shape.
     XFixesSelectCursorInput(display(), root_window_,
                             XFixesDisplayCursorNotifyMask);
+    options_.x_display()->AddEventHandler(
+        xfixes_event_base_ + XFixesCursorNotify, this);
   }
 
   if (options_.use_update_notifications()) {
@@ -233,6 +243,9 @@ void ScreenCapturerLinux::InitXDamage() {
     return;
   }
 
+  options_.x_display()->AddEventHandler(
+      damage_event_base_ + XDamageNotify, this);
+
   use_damage_ = true;
   LOG(LS_INFO) << "Using XDamage extension.";
 }
@@ -250,7 +263,7 @@ void ScreenCapturerLinux::Capture(const DesktopRegion& region) {
   queue_.MoveToNextFrame();
 
   // Process XEvents for XDamage and cursor shape tracking.
-  ProcessPendingXEvents();
+  options_.x_display()->ProcessPendingXEvents();
 
   // ProcessPendingXEvents() may call ScreenConfigurationChanged() which
   // reinitializes |x_server_pixel_buffer_|. Check if the pixel buffer is still
@@ -297,30 +310,30 @@ void ScreenCapturerLinux::SetMouseShapeObserver(
   mouse_shape_observer_ = mouse_shape_observer;
 }
 
-void ScreenCapturerLinux::ProcessPendingXEvents() {
-  // Find the number of events that are outstanding "now."  We don't just loop
-  // on XPending because we want to guarantee this terminates.
-  int events_to_process = XPending(display());
-  XEvent e;
-
-  for (int i = 0; i < events_to_process; i++) {
-    XNextEvent(display(), &e);
-    if (use_damage_ && (e.type == damage_event_base_ + XDamageNotify)) {
-      XDamageNotifyEvent* event = reinterpret_cast<XDamageNotifyEvent*>(&e);
-      DCHECK(event->level == XDamageReportNonEmpty);
-    } else if (e.type == ConfigureNotify) {
-      ScreenConfigurationChanged();
-    } else if (has_xfixes_ &&
-               e.type == xfixes_event_base_ + XFixesCursorNotify) {
-      XFixesCursorNotifyEvent* cne;
-      cne = reinterpret_cast<XFixesCursorNotifyEvent*>(&e);
-      if (cne->subtype == XFixesDisplayCursorNotify) {
-        CaptureCursor();
-      }
-    } else {
-      LOG(LS_WARNING) << "Got unknown event type: " << e.type;
+bool ScreenCapturerLinux::HandleXEvent(const XEvent& event) {
+  if (use_damage_ && (event.type == damage_event_base_ + XDamageNotify)) {
+    const XDamageNotifyEvent* damage_event =
+        reinterpret_cast<const XDamageNotifyEvent*>(&event);
+    if (damage_event->damage != damage_handle_)
+      return false;
+    DCHECK(damage_event->level == XDamageReportNonEmpty);
+    return true;
+  } else if (event.type == ConfigureNotify) {
+    ScreenConfigurationChanged();
+    return true;
+  } else if (has_xfixes_ &&
+             event.type == xfixes_event_base_ + XFixesCursorNotify) {
+    const XFixesCursorNotifyEvent* cursor_event =
+        reinterpret_cast<const XFixesCursorNotifyEvent*>(&event);
+    if (cursor_event->window == root_window_ &&
+        cursor_event->subtype == XFixesDisplayCursorNotify) {
+      CaptureCursor();
     }
+    // Always return false for cursor notifications, because there might be
+    // other listeners for these for the same window.
+    return false;
   }
+  return false;
 }
 
 void ScreenCapturerLinux::CaptureCursor() {
