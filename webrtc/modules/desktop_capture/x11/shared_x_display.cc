@@ -48,7 +48,6 @@ void SharedXDisplay::AddEventHandler(int type, XEventHandler* handler) {
 }
 
 void SharedXDisplay::RemoveEventHandler(int type, XEventHandler* handler) {
-
   EventHandlersMap::iterator handlers = event_handlers_.find(type);
   if (handlers == event_handlers_.end())
     return;
