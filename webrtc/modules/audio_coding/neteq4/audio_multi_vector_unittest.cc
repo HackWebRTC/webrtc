@@ -89,7 +89,7 @@ TEST_P(AudioMultiVectorTest, SubscriptOperator) {
     for (size_t i = 0; i < array_length(); ++i) {
       vec[channel][i] = static_cast<int16_t>(i);
       // Make sure to use the const version.
-      const AudioVector<int16_t>& audio_vec = vec[channel];
+      const AudioVector& audio_vec = vec[channel];
       EXPECT_EQ(static_cast<int16_t>(i), audio_vec[i]);
     }
   }

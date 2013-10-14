@@ -119,11 +119,11 @@ class AudioMultiVector {
 
   // Accesses and modifies a channel (i.e., an AudioVector object) of this
   // AudioMultiVector.
-  const AudioVector<int16_t>& operator[](size_t index) const;
-  AudioVector<int16_t>& operator[](size_t index);
+  const AudioVector& operator[](size_t index) const;
+  AudioVector& operator[](size_t index);
 
  protected:
-  std::vector<AudioVector<int16_t>*> channels_;
+  std::vector<AudioVector*> channels_;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(AudioMultiVector);

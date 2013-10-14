@@ -22,7 +22,7 @@ AudioMultiVector::AudioMultiVector(size_t N) {
   assert(N > 0);
   if (N < 1) N = 1;
   for (size_t n = 0; n < N; ++n) {
-    channels_.push_back(new AudioVector<int16_t>);
+    channels_.push_back(new AudioVector);
   }
 }
 
@@ -30,12 +30,12 @@ AudioMultiVector::AudioMultiVector(size_t N, size_t initial_size) {
   assert(N > 0);
   if (N < 1) N = 1;
   for (size_t n = 0; n < N; ++n) {
-    channels_.push_back(new AudioVector<int16_t>(initial_size));
+    channels_.push_back(new AudioVector(initial_size));
   }
 }
 
 AudioMultiVector::~AudioMultiVector() {
-  std::vector<AudioVector<int16_t>*>::iterator it = channels_.begin();
+  std::vector<AudioVector*>::iterator it = channels_.begin();
   while (it != channels_.end()) {
     delete (*it);
     ++it;
@@ -196,11 +196,11 @@ bool AudioMultiVector::Empty() const {
   return channels_[0]->Empty();
 }
 
-const AudioVector<int16_t>& AudioMultiVector::operator[](size_t index) const {
+const AudioVector& AudioMultiVector::operator[](size_t index) const {
   return *(channels_[index]);
 }
 
-AudioVector<int16_t>& AudioMultiVector::operator[](size_t index) {
+AudioVector& AudioMultiVector::operator[](size_t index) {
   return *(channels_[index]);
 }
 

@@ -39,19 +39,19 @@ class AudioVectorTest : public ::testing::Test {
 // Create and destroy AudioVector objects, both empty and with a predefined
 // length.
 TEST_F(AudioVectorTest, CreateAndDestroy) {
-  AudioVector<int16_t> vec1;
+  AudioVector vec1;
   EXPECT_TRUE(vec1.Empty());
   EXPECT_EQ(0u, vec1.Size());
 
   size_t initial_size = 17;
-  AudioVector<int16_t> vec2(initial_size);
+  AudioVector vec2(initial_size);
   EXPECT_FALSE(vec2.Empty());
   EXPECT_EQ(initial_size, vec2.Size());
 }
 
 // Test the subscript operator [] for getting and setting.
 TEST_F(AudioVectorTest, SubscriptOperator) {
-  AudioVector<int16_t> vec(array_length());
+  AudioVector vec(array_length());
   for (size_t i = 0; i < array_length(); ++i) {
     vec[i] = static_cast<int16_t>(i);
     const int16_t& value = vec[i];  // Make sure to use the const version.
@@ -62,8 +62,8 @@ TEST_F(AudioVectorTest, SubscriptOperator) {
 // Test the PushBack method and the CopyFrom method. The Clear method is also
 // invoked.
 TEST_F(AudioVectorTest, PushBackAndCopy) {
-  AudioVector<int16_t> vec;
-  AudioVector<int16_t> vec_copy;
+  AudioVector vec;
+  AudioVector vec_copy;
   vec.PushBack(array_, array_length());
   vec.CopyFrom(&vec_copy);  // Copy from |vec| to |vec_copy|.
   ASSERT_EQ(array_length(), vec.Size());
@@ -84,8 +84,8 @@ TEST_F(AudioVectorTest, PushBackAndCopy) {
 
 // Try to copy to a NULL pointer. Nothing should happen.
 TEST_F(AudioVectorTest, CopyToNull) {
-  AudioVector<int16_t> vec;
-  AudioVector<int16_t>* vec_copy = NULL;
+  AudioVector vec;
+  AudioVector* vec_copy = NULL;
   vec.PushBack(array_, array_length());
   vec.CopyFrom(vec_copy);
 }
@@ -93,8 +93,8 @@ TEST_F(AudioVectorTest, CopyToNull) {
 // Test the PushBack method with another AudioVector as input argument.
 TEST_F(AudioVectorTest, PushBackVector) {
   static const size_t kLength = 10;
-  AudioVector<int16_t> vec1(kLength);
-  AudioVector<int16_t> vec2(kLength);
+  AudioVector vec1(kLength);
+  AudioVector vec2(kLength);
   // Set the first vector to [0, 1, ..., kLength - 1].
   // Set the second vector to [kLength, kLength + 1, ..., 2 * kLength - 1].
   for (size_t i = 0; i < kLength; ++i) {
@@ -111,7 +111,7 @@ TEST_F(AudioVectorTest, PushBackVector) {
 
 // Test the PushFront method.
 TEST_F(AudioVectorTest, PushFront) {
-  AudioVector<int16_t> vec;
+  AudioVector vec;
   vec.PushFront(array_, array_length());
   ASSERT_EQ(array_length(), vec.Size());
   for (size_t i = 0; i < array_length(); ++i) {
@@ -122,8 +122,8 @@ TEST_F(AudioVectorTest, PushFront) {
 // Test the PushFront method with another AudioVector as input argument.
 TEST_F(AudioVectorTest, PushFrontVector) {
   static const size_t kLength = 10;
-  AudioVector<int16_t> vec1(kLength);
-  AudioVector<int16_t> vec2(kLength);
+  AudioVector vec1(kLength);
+  AudioVector vec2(kLength);
   // Set the first vector to [0, 1, ..., kLength - 1].
   // Set the second vector to [kLength, kLength + 1, ..., 2 * kLength - 1].
   for (size_t i = 0; i < kLength; ++i) {
@@ -140,7 +140,7 @@ TEST_F(AudioVectorTest, PushFrontVector) {
 
 // Test the PopFront method.
 TEST_F(AudioVectorTest, PopFront) {
-  AudioVector<int16_t> vec;
+  AudioVector vec;
   vec.PushBack(array_, array_length());
   vec.PopFront(1);  // Remove one element.
   EXPECT_EQ(array_length() - 1u, vec.Size());
@@ -153,7 +153,7 @@ TEST_F(AudioVectorTest, PopFront) {
 
 // Test the PopBack method.
 TEST_F(AudioVectorTest, PopBack) {
-  AudioVector<int16_t> vec;
+  AudioVector vec;
   vec.PushBack(array_, array_length());
   vec.PopBack(1);  // Remove one element.
   EXPECT_EQ(array_length() - 1u, vec.Size());
@@ -166,7 +166,7 @@ TEST_F(AudioVectorTest, PopBack) {
 
 // Test the Extend method.
 TEST_F(AudioVectorTest, Extend) {
-  AudioVector<int16_t> vec;
+  AudioVector vec;
   vec.PushBack(array_, array_length());
   vec.Extend(5);  // Extend with 5 elements, which should all be zeros.
   ASSERT_EQ(array_length() + 5u, vec.Size());
@@ -178,7 +178,7 @@ TEST_F(AudioVectorTest, Extend) {
 
 // Test the InsertAt method with an insert position in the middle of the vector.
 TEST_F(AudioVectorTest, InsertAt) {
-  AudioVector<int16_t> vec;
+  AudioVector vec;
   vec.PushBack(array_, array_length());
   static const int kNewLength = 5;
   int16_t new_array[kNewLength];
@@ -209,8 +209,8 @@ TEST_F(AudioVectorTest, InsertAt) {
 // Test the InsertZerosAt method with an insert position in the middle of the
 // vector. Use the InsertAt method as reference.
 TEST_F(AudioVectorTest, InsertZerosAt) {
-  AudioVector<int16_t> vec;
-  AudioVector<int16_t> vec_ref;
+  AudioVector vec;
+  AudioVector vec_ref;
   vec.PushBack(array_, array_length());
   vec_ref.PushBack(array_, array_length());
   static const int kNewLength = 5;
@@ -227,7 +227,7 @@ TEST_F(AudioVectorTest, InsertZerosAt) {
 
 // Test the InsertAt method with an insert position at the start of the vector.
 TEST_F(AudioVectorTest, InsertAtBeginning) {
-  AudioVector<int16_t> vec;
+  AudioVector vec;
   vec.PushBack(array_, array_length());
   static const int kNewLength = 5;
   int16_t new_array[kNewLength];
@@ -253,7 +253,7 @@ TEST_F(AudioVectorTest, InsertAtBeginning) {
 
 // Test the InsertAt method with an insert position at the end of the vector.
 TEST_F(AudioVectorTest, InsertAtEnd) {
-  AudioVector<int16_t> vec;
+  AudioVector vec;
   vec.PushBack(array_, array_length());
   static const int kNewLength = 5;
   int16_t new_array[kNewLength];
@@ -282,7 +282,7 @@ TEST_F(AudioVectorTest, InsertAtEnd) {
 // input position. That is, the input position should be capped at the maximum
 // allowed value.
 TEST_F(AudioVectorTest, InsertBeyondEnd) {
-  AudioVector<int16_t> vec;
+  AudioVector vec;
   vec.PushBack(array_, array_length());
   static const int kNewLength = 5;
   int16_t new_array[kNewLength];
@@ -308,7 +308,7 @@ TEST_F(AudioVectorTest, InsertBeyondEnd) {
 // Test the OverwriteAt method with a position such that all of the new values
 // fit within the old vector.
 TEST_F(AudioVectorTest, OverwriteAt) {
-  AudioVector<int16_t> vec;
+  AudioVector vec;
   vec.PushBack(array_, array_length());
   static const int kNewLength = 5;
   int16_t new_array[kNewLength];
@@ -338,7 +338,7 @@ TEST_F(AudioVectorTest, OverwriteAt) {
 // extend beyond the end of the current vector. This is valid, and the vector is
 // expected to expand to accommodate the new values.
 TEST_F(AudioVectorTest, OverwriteBeyondEnd) {
-  AudioVector<int16_t> vec;
+  AudioVector vec;
   vec.PushBack(array_, array_length());
   static const int kNewLength = 5;
   int16_t new_array[kNewLength];
@@ -367,8 +367,8 @@ TEST_F(AudioVectorTest, OverwriteBeyondEnd) {
 TEST_F(AudioVectorTest, CrossFade) {
   static const size_t kLength = 100;
   static const size_t kFadeLength = 10;
-  AudioVector<int16_t> vec1(kLength);
-  AudioVector<int16_t> vec2(kLength);
+  AudioVector vec1(kLength);
+  AudioVector vec2(kLength);
   // Set all vector elements to 0 in |vec1| and 100 in |vec2|.
   for (size_t i = 0; i < kLength; ++i) {
     vec1[i] = 0;

@@ -78,7 +78,7 @@ class SyncBuffer : public AudioMultiVector {
   // created.
   void Flush();
 
-  const AudioVector<int16_t>& Channel(size_t n) { return *channels_[n]; }
+  const AudioVector& Channel(size_t n) { return *channels_[n]; }
 
   // Accessors and mutators.
   size_t next_index() const { return next_index_; }
