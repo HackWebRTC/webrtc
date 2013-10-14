@@ -15,8 +15,6 @@ import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.media.AudioManager;
 import android.os.Bundle;
-import android.os.PowerManager;
-import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -27,20 +25,12 @@ public class OpenSlDemo extends Activity implements View.OnClickListener {
   private Button btStartStopCall;
   private boolean isRunning = false;
 
-  private WakeLock wakeLock;
-
   private OpenSlRunner runner;
 
   // Called when activity is created.
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-
-    PowerManager pm = (PowerManager)this.getSystemService(
-        Context.POWER_SERVICE);
-    wakeLock = pm.newWakeLock(
-        PowerManager.SCREEN_DIM_WAKE_LOCK, TAG);
-    wakeLock.acquire(); // Keep screen on until app terminates.
 
     setContentView(R.layout.open_sl_demo);
 
@@ -61,7 +51,6 @@ public class OpenSlDemo extends Activity implements View.OnClickListener {
   @Override
   public void onDestroy() {
     Log.d(TAG, "onDestroy");
-    wakeLock.release();
     super.onDestroy();
   }
 
