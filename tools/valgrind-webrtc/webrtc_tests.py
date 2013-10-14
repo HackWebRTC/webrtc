@@ -93,6 +93,7 @@ def main(_):
   parser.add_option('-b', '--build_dir',
                     help=('Location of the compiler output. Can only be used '
                           'when the test argument does not contain this path.'))
+  parser.add_option("--target", help="Debug or Release")
   parser.add_option('-t', '--test', help='Test to run.')
   parser.add_option('', '--baseline', action='store_true', default=False,
                     help='Generate baseline data instead of validating')
@@ -120,6 +121,11 @@ def main(_):
 
   if not options.test:
     parser.error('--test not specified')
+
+  # Support build dir both with and without the target.
+  if (options.target and options.build_dir and
+      not options.build_dir.endswith(options.target)):
+    options.build_dir = os.path.join(options.build_dir, options.target)
 
   # If --build_dir is provided, prepend it to the test executable if needed.
   test_executable = options.test
