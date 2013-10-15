@@ -10,9 +10,6 @@
 
 #include "webrtc/video_engine/test/common/frame_generator_capturer.h"
 
-#include <math.h>
-#include <string.h>
-
 #include "webrtc/common_video/test/frame_generator.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -23,36 +20,6 @@
 
 namespace webrtc {
 namespace test {
-namespace {
-class ChromaGenerator : public FrameGenerator {
- public:
-  ChromaGenerator(size_t width, size_t height, Clock* clock) : clock_(clock) {
-    assert(width > 0);
-    assert(height > 0);
-    frame_.CreateEmptyFrame(static_cast<int>(width),
-                            static_cast<int>(height),
-                            static_cast<int>(width),
-                            static_cast<int>((width + 1) / 2),
-                            static_cast<int>((width + 1) / 2));
-    memset(frame_.buffer(kYPlane), 0x80, frame_.allocated_size(kYPlane));
-  }
-
-  virtual I420VideoFrame& NextFrame() OVERRIDE {
-    double angle =
-        static_cast<double>(clock_->CurrentNtpInMilliseconds()) / 1000.0;
-    uint8_t u = fabs(sin(angle)) * 0xFF;
-    uint8_t v = fabs(cos(angle)) * 0xFF;
-
-    memset(frame_.buffer(kUPlane), u, frame_.allocated_size(kUPlane));
-    memset(frame_.buffer(kVPlane), v, frame_.allocated_size(kVPlane));
-    return frame_;
-  }
-
- private:
-  Clock* clock_;
-  I420VideoFrame frame_;
-};
-}  // namespace
 
 FrameGeneratorCapturer* FrameGeneratorCapturer::Create(
     VideoSendStreamInput* input,
@@ -61,7 +28,7 @@ FrameGeneratorCapturer* FrameGeneratorCapturer::Create(
     int target_fps,
     Clock* clock) {
   FrameGeneratorCapturer* capturer = new FrameGeneratorCapturer(
-      clock, input, new ChromaGenerator(width, height, clock), target_fps);
+      clock, input, FrameGenerator::Create(width, height), target_fps);
   if (!capturer->Init()) {
     delete capturer;
     return NULL;

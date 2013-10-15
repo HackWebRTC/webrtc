@@ -24,6 +24,7 @@ class FrameGenerator {
   // Returns video frame that remains valid until next call.
   virtual I420VideoFrame& NextFrame() = 0;
 
+  static FrameGenerator* Create(size_t width, size_t height);
   static FrameGenerator* CreateFromYuvFile(const char* file,
                                            size_t width,
                                            size_t height);

@@ -9,13 +9,43 @@
  */
 #include "webrtc/common_video/test/frame_generator.h"
 
+#include <math.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 
 namespace webrtc {
 namespace test {
 namespace {
+
+class ChromaGenerator : public FrameGenerator {
+ public:
+  ChromaGenerator(size_t width, size_t height) : angle_(0.0) {
+    assert(width > 0);
+    assert(height > 0);
+    frame_.CreateEmptyFrame(static_cast<int>(width),
+                            static_cast<int>(height),
+                            static_cast<int>(width),
+                            static_cast<int>((width + 1) / 2),
+                            static_cast<int>((width + 1) / 2));
+    memset(frame_.buffer(kYPlane), 0x80, frame_.allocated_size(kYPlane));
+  }
+
+  virtual I420VideoFrame& NextFrame() OVERRIDE {
+    angle_ += 30.0;
+    uint8_t u = fabs(sin(angle_)) * 0xFF;
+    uint8_t v = fabs(cos(angle_)) * 0xFF;
+
+    memset(frame_.buffer(kUPlane), u, frame_.allocated_size(kUPlane));
+    memset(frame_.buffer(kVPlane), v, frame_.allocated_size(kVPlane));
+    return frame_;
+  }
+
+ private:
+  double angle_;
+  I420VideoFrame frame_;
+};
 
 class YuvFileGenerator : public FrameGenerator {
  public:
@@ -67,6 +97,10 @@ class YuvFileGenerator : public FrameGenerator {
   I420VideoFrame frame_;
 };
 }  // namespace
+
+FrameGenerator* FrameGenerator::Create(size_t width, size_t height) {
+  return new ChromaGenerator(width, height);
+}
 
 FrameGenerator* FrameGenerator::CreateFromYuvFile(const char* file,
                                                   size_t width,
