@@ -1061,7 +1061,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestDtls) {
 
 // This test sets up a audio call initially and then upgrades to audio/video,
 // using DTLS.
-TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestDtlsRenegotiate) {
+TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTestDtlsRenegotiate) {
   MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
   FakeConstraints setup_constraints;
   setup_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
