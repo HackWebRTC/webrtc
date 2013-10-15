@@ -80,7 +80,9 @@ static const int kFixedDelayMs = 20;
 #else
 static const int kFixedDelayMs = 50;
 #endif
+#if !defined(WEBRTC_UNTRUSTED_DELAY)
 static const int kMinTrustedDelayMs = 20;
+#endif
 static const int kMaxTrustedDelayMs = 500;
 
 // Maximum length of resampled signal. Must be an integer multiple of frames
