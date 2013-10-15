@@ -311,6 +311,12 @@
            }],
          ],
       }],
+      ['clang==1', {
+        'cflags!': [
+          # TODO(kjellander): Remove when Chromium's common.gypi enables it.
+          '-Wno-unused-const-variable',
+        ],
+      }],
     ], # conditions
     'direct_dependent_settings': {
       'include_dirs': [

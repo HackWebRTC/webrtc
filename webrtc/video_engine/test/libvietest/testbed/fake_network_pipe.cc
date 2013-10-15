@@ -19,7 +19,6 @@
 
 namespace webrtc {
 
-const int kNetworkProcessMaxWaitTime = 10;
 const double kPi = 3.14159265;
 
 static int GaussianRandom(int mean_delay_ms, int standard_deviation_ms) {

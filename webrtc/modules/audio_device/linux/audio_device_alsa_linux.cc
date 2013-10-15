@@ -55,7 +55,6 @@ static const unsigned int ALSA_PLAYOUT_LATENCY = 40*1000; // in us
 static const unsigned int ALSA_CAPTURE_FREQ = 48000;
 static const unsigned int ALSA_CAPTURE_CH = 2;
 static const unsigned int ALSA_CAPTURE_LATENCY = 40*1000; // in us
-static const unsigned int ALSA_PLAYOUT_WAIT_TIMEOUT = 5; // in ms
 static const unsigned int ALSA_CAPTURE_WAIT_TIMEOUT = 5; // in ms
 
 #define FUNC_GET_NUM_OF_DEVICE 0

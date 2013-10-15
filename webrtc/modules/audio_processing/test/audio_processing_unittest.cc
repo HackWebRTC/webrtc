@@ -55,12 +55,12 @@ namespace {
 // be set to true with the command-line switch --write_ref_data.
 #ifdef WEBRTC_AUDIOPROC_BIT_EXACT
 bool write_ref_data = false;
+const int kChannels[] = {1, 2};
+const size_t kChannelsSize = sizeof(kChannels) / sizeof(*kChannels);
 #endif
 
 const int kSampleRates[] = {8000, 16000, 32000};
 const size_t kSampleRatesSize = sizeof(kSampleRates) / sizeof(*kSampleRates);
-const int kChannels[] = {1, 2};
-const size_t kChannelsSize = sizeof(kChannels) / sizeof(*kChannels);
 
 #if defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
 // AECM doesn't support super-wb.

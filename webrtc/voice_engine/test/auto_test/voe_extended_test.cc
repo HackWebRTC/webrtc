@@ -29,16 +29,6 @@ using namespace test;
 
 namespace voetest {
 
-// Set this flag to ensure that test packets are transmitted to
-// RemoteIP::RemotePort during tests of SetSendToS and SetSendGQos. Requires
-// receiver at the remote side and Wireshark with a proper ip.src filter.
-#define _SEND_TO_REMOTE_IP_
-
-#ifdef _SEND_TO_REMOTE_IP_
-const int RemotePort = 12345; // transmit to this UDP port
-const char* RemoteIP = "192.168.200.1"; // transmit to this IP address
-#endif
-
 #ifdef WEBRTC_ANDROID
 // Global pointers
 extern void* globalJavaVM;

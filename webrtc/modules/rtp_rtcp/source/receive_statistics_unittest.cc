@@ -20,7 +20,6 @@ const int kPacketSize1 = 100;
 const int kPacketSize2 = 300;
 const uint32_t kSsrc1 = 1;
 const uint32_t kSsrc2 = 2;
-const uint32_t kSsrc3 = 3;
 
 class ReceiveStatisticsTest : public ::testing::Test {
  public:
