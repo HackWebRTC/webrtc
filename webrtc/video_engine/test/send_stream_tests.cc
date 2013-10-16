@@ -105,6 +105,7 @@ TEST_F(VideoSendStreamTest, SendsSetSsrc) {
   scoped_ptr<Call> call(Call::Create(call_config));
 
   VideoSendStream::Config send_config = GetSendTestConfig(call.get());
+  send_config.rtp.max_packet_size = 128;
 
   RunSendTest(call.get(), send_config, &observer);
 }
@@ -429,6 +430,51 @@ TEST_F(VideoSendStreamTest, RetransmitsNack) {
 TEST_F(VideoSendStreamTest, RetransmitsNackOverRtx) {
   // NACKs over RTX should use a separate SSRC.
   TestNackRetransmission(kSendRtxSsrc);
+}
+
+TEST_F(VideoSendStreamTest, MaxPacketSize) {
+  class PacketSizeObserver : public SendTransportObserver {
+   public:
+    PacketSizeObserver(size_t max_length) : SendTransportObserver(30 * 1000),
+      max_length_(max_length), accumulated_size_(0) {}
+
+    virtual bool SendRTP(const uint8_t* packet, size_t length) OVERRIDE {
+      RTPHeader header;
+      EXPECT_TRUE(
+          rtp_header_parser_->Parse(packet, static_cast<int>(length), &header));
+
+      EXPECT_TRUE(length <= max_length_);
+
+      accumulated_size_ += length;
+
+      // Marker bit set indicates last fragment of a packet
+      if (header.markerBit) {
+        if (accumulated_size_ + length > max_length_) {
+          // The packet was fragmented, total size was larger than max size,
+          // but size of individual fragments were within size limit => pass!
+          send_test_complete_->Set();
+        }
+        accumulated_size_ = 0; // Last fragment, reset packet size
+      }
+
+      return true;
+    }
+
+   private:
+    size_t max_length_;
+    size_t accumulated_size_;
+  };
+
+  static const uint32_t kMaxPacketSize = 128;
+
+  PacketSizeObserver observer(kMaxPacketSize);
+  Call::Config call_config(&observer);
+  scoped_ptr<Call> call(Call::Create(call_config));
+
+  VideoSendStream::Config send_config = GetSendTestConfig(call.get());
+  send_config.rtp.max_packet_size = kMaxPacketSize;
+
+  RunSendTest(call.get(), send_config, &observer);
 }
 
 }  // namespace webrtc
