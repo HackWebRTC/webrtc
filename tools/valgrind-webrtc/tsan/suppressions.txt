@@ -146,15 +146,6 @@
   ...
 }
 {
-  bug_1205_13
-  ThreadSanitizer:Race
-  fun:talk_base::Thread::ReceiveSends
-  fun:talk_base::MessageQueue::Get
-  fun:talk_base::Thread::ProcessMessages
-  fun:talk_base::Thread::Run
-  fun:talk_base::Thread::PreRun
-}
-{
   bug_1205_22
   ThreadSanitizer:Race
   fun:webrtc::EventPosix::Process
@@ -635,15 +626,6 @@
   ...
 }
 {
-  bug_2079_4
-  ThreadSanitizer:Race
-  fun:talk_base::Thread::ReceiveSends
-  fun:talk_base::MessageQueue::Get
-  fun:talk_base::Thread::ProcessMessages
-  fun:talk_base::Thread::Run
-  fun:talk_base::Thread::PreRun
-}
-{
   bug_2079_5
   ThreadSanitizer:Race
   fun:talk_base::Thread::Send
@@ -716,15 +698,6 @@
   fun:talk_base::Thread::~Thread
   fun:talk_base::LogThread::~LogThread
   ...
-}
-{
-  bug_2080_5
-  ThreadSanitizer:Race
-  fun:talk_base::Thread::ReceiveSends
-  fun:talk_base::MessageQueue::Get
-  fun:talk_base::Thread::ProcessMessages
-  fun:talk_base::Thread::Run
-  fun:talk_base::Thread::PreRun
 }
 {
   bug_2080_6
