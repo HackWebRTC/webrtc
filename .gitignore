@@ -89,6 +89,9 @@
 /tools/swarm_client
 /tools/valgrind
 /tools/win
+/webrtc/modules/audio_device/android/test/bin/
+/webrtc/modules/audio_device/android/test/gen/
+/webrtc/modules/audio_device/android/test/libs/
 /webrtc/supplement.gypi
 /webrtc/video_engine/test/android/bin
 /webrtc/video_engine/test/android/gen
