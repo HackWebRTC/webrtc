@@ -1,4 +1,5 @@
 # Too slow to run with TSan on Windows.
+ApmTest.EchoCancellationReportsCorrectDelays
 VideoProcessingModuleTest.Denoising
 
 # https://code.google.com/p/webrtc/issues/detail?id=1938

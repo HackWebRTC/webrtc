@@ -59,3 +59,32 @@ drmemorylib.dll!replace_operator_new
 *!webrtc::test::UdpSocketWrapper::CreateSocket
 *!webrtc::test::UdpSocketManager_AddAndRemoveSocketDoesNotLeakMemory_Test::TestBody
 *!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>
+
+INVALID HEAP ARGUMENT
+name=https://code.google.com/p/webrtc/issues/detail?id=2515 (1)
+drmemorylib.dll!replace_operator_delete_nothrow
+*!webrtc::scoped_array<short>::~scoped_array<short>
+*!webrtc::NetEqImpl::~NetEqImpl
+*!webrtc::NetEqImpl::`scalar deleting destructor'
+...
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>
+
+INVALID HEAP ARGUMENT
+name=https://code.google.com/p/webrtc/issues/detail?id=2515 (2)
+drmemorylib.dll!replace_operator_delete_nothrow
+*!webrtc::scoped_array<short>::reset
+*!webrtc::NetEqImpl::SetSampleRateAndChannels
+*!webrtc::NetEqImpl::InsertPacketInternal
+*!webrtc::NetEqImpl::InsertPacket
+...
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>
+
+UNINITIALIZED READ
+name=https://code.google.com/p/webrtc/issues/detail?id=2516
+system call NtUserGetThreadDesktop parameter value #1
+*!webrtc::Desktop::GetThreadDesktop
+*!webrtc::ScopedThreadDesktop::ScopedThreadDesktop
+*!webrtc::`anonymous namespace'::ScreenCapturerWin::ScreenCapturerWin
+*!webrtc::ScreenCapturer::Create
+*!webrtc::ScreenCapturerTest::SetUp
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>
