@@ -156,6 +156,7 @@
             'audio_processing/utility/delay_estimator_unittest.cc',
             'audio_processing/utility/ring_buffer_unittest.cc',
             'bitrate_controller/bitrate_controller_unittest.cc',
+            'desktop_capture/mouse_cursor_monitor_unittest.cc',
             'desktop_capture/desktop_region_unittest.cc',
             'desktop_capture/differ_block_unittest.cc',
             'desktop_capture/differ_unittest.cc',
@@ -237,6 +238,7 @@
             # supported.
             ['desktop_capture_supported==0', {
               'sources!': [
+                'desktop_capture/mouse_cursor_monitor_unittest.cc',
                 'desktop_capture/screen_capturer_helper_unittest.cc',
                 'desktop_capture/screen_capturer_mac_unittest.cc',
                 'desktop_capture/screen_capturer_mock_objects.h',

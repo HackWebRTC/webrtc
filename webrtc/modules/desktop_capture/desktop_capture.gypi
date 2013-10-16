@@ -15,6 +15,7 @@
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'sources': [
+        "desktop_capture_types.h",
         "desktop_capturer.h",
         "desktop_frame.cc",
         "desktop_frame.h",
@@ -35,6 +36,12 @@
         "mac/desktop_configuration.mm",
         "mac/scoped_pixel_buffer_object.cc",
         "mac/scoped_pixel_buffer_object.h",
+        "mouse_cursor.cc",
+        "mouse_cursor.h",
+        "mouse_cursor_monitor.h",
+        "mouse_cursor_monitor_mac.mm",
+        "mouse_cursor_monitor_win.cc",
+        "mouse_cursor_monitor_x11.cc",
         "mouse_cursor_shape.h",
         "screen_capture_frame_queue.cc",
         "screen_capture_frame_queue.h",
@@ -88,6 +95,7 @@
         }],
         ['OS!="win" and OS!="mac" and use_x11==0', {
           'sources': [
+            "mouse_cursor_monitor_null.cc",
             "screen_capturer_null.cc",
             "window_capturer_null.cc",
           ],

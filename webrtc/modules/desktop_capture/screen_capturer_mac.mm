@@ -896,7 +896,7 @@ void ScreenCapturerMac::DisplaysReconfiguredCallback(
 }  // namespace
 
 // static
-ScreenCapturer* ScreenCapturer::Create(const DesktopCaptureOptions& context) {
+ScreenCapturer* ScreenCapturer::Create(const DesktopCaptureOptions& options) {
   scoped_ptr<ScreenCapturerMac> capturer(new ScreenCapturerMac());
   if (!capturer->Init())
     capturer.reset();
