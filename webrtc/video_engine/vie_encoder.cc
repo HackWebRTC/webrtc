@@ -1051,22 +1051,33 @@ void ViEEncoder::OnNetworkChanged(const uint32_t bitrate_bps,
   // point, based on which streams are currently active and what our current
   // available bandwidth is.
   int max_padding_bitrate_kbps = 0;
-  int i = send_codec.numberOfSimulcastStreams - 1;
-  for (std::vector<uint32_t>::reverse_iterator it = stream_bitrates.rbegin();
-       it != stream_bitrates.rend(); ++it) {
-    if (*it > 0) {
-      max_padding_bitrate_kbps = std::min((*it + 500) / 1000,
-                                          stream_configs[i].minBitrate);
-      break;
+  int pad_up_to_bitrate_kbps = 0;
+  if (send_codec.numberOfSimulcastStreams == 0) {
+    max_padding_bitrate_kbps = send_codec.minBitrate;
+    pad_up_to_bitrate_kbps = send_codec.minBitrate;
+  } else {
+    int i = send_codec.numberOfSimulcastStreams - 1;
+    for (std::vector<uint32_t>::reverse_iterator it = stream_bitrates.rbegin();
+        it != stream_bitrates.rend(); ++it) {
+      if (*it > 0) {
+        max_padding_bitrate_kbps = std::min((*it + 500) / 1000,
+                                            stream_configs[i].minBitrate);
+        break;
+      }
+      --i;
     }
-    --i;
+    pad_up_to_bitrate_kbps =
+        stream_configs[send_codec.numberOfSimulcastStreams - 1].minBitrate;
+    for (int i = 0; i < send_codec.numberOfSimulcastStreams - 1; ++i) {
+      pad_up_to_bitrate_kbps += stream_configs[i].targetBitrate;
+    }
   }
-  int pad_up_to_bitrate_kbps =
-      stream_configs[send_codec.numberOfSimulcastStreams - 1].minBitrate;
-  for (int i = 0; i < send_codec.numberOfSimulcastStreams - 1; ++i) {
-    pad_up_to_bitrate_kbps += stream_configs[i].targetBitrate;
+  if (video_is_muted || send_codec.numberOfSimulcastStreams > 1) {
+    pad_up_to_bitrate_kbps = std::min(bitrate_kbps, pad_up_to_bitrate_kbps);
+  } else {
+    // Disable padding if only sending one stream and video isn't muted.
+    pad_up_to_bitrate_kbps = 0;
   }
-  pad_up_to_bitrate_kbps = std::min(bitrate_kbps, pad_up_to_bitrate_kbps);
   paced_sender_->UpdateBitrate(bitrate_kbps,
                                max_padding_bitrate_kbps,
                                pad_up_to_bitrate_kbps);
