@@ -204,11 +204,30 @@ static bool FindCodec(const std::vector<AudioCodec>& codecs,
   }
   return false;
 }
+
 static bool IsNackEnabled(const AudioCodec& codec) {
   return codec.HasFeedbackParam(FeedbackParam(kRtcpFbParamNack,
                                               kParamValueEmpty));
 }
 
+// Gets the default set of options applied to the engine. Historically, these
+// were supplied as a combination of flags from the channel manager (ec, agc,
+// ns, and highpass) and the rest hardcoded in InitInternal.
+static AudioOptions GetDefaultEngineOptions() {
+  AudioOptions options;
+  options.echo_cancellation.Set(true);
+  options.auto_gain_control.Set(true);
+  options.noise_suppression.Set(true);
+  options.highpass_filter.Set(true);
+  options.stereo_swapping.Set(false);
+  options.typing_detection.Set(true);
+  options.conference_mode.Set(false);
+  options.adjust_agc_delta.Set(0);
+  options.experimental_agc.Set(false);
+  options.experimental_aec.Set(false);
+  options.aec_dump.Set(false);
+  return options;
+}
 
 class WebRtcSoundclipMedia : public SoundclipMedia {
  public:
@@ -353,6 +372,7 @@ void WebRtcVoiceEngine::Construct() {
   rtp_header_extensions_.push_back(
       RtpHeaderExtension(kRtpAudioLevelHeaderExtension,
                          kRtpAudioLevelHeaderExtensionId));
+  options_ = GetDefaultEngineOptions();
 }
 
 static bool IsOpus(const AudioCodec& codec) {
@@ -480,24 +500,6 @@ bool WebRtcVoiceEngine::Init(talk_base::Thread* worker_thread) {
     Terminate();
   }
   return res;
-}
-
-// Gets the default set of optoins applied to the engine. Historically, these
-// were supplied as a combination of flags from the channel manager (ec, agc,
-// ns, and highpass) and the rest hardcoded in InitInternal.
-static AudioOptions GetDefaultEngineOptions() {
-  AudioOptions options;
-  options.echo_cancellation.Set(true);
-  options.auto_gain_control.Set(true);
-  options.noise_suppression.Set(true);
-  options.highpass_filter.Set(true);
-  options.typing_detection.Set(true);
-  options.conference_mode.Set(false);
-  options.adjust_agc_delta.Set(0);
-  options.experimental_agc.Set(false);
-  options.experimental_aec.Set(false);
-  options.aec_dump.Set(false);
-  return options;
 }
 
 bool WebRtcVoiceEngine::InitInternal() {
@@ -1524,6 +1526,9 @@ WebRtcVoiceMediaChannel::WebRtcVoiceMediaChannel(WebRtcVoiceEngine *engine)
     : WebRtcMediaChannel<VoiceMediaChannel, WebRtcVoiceEngine>(
           engine,
           engine->voe()->base()->CreateChannel()),
+      send_bw_setting_(false),
+      send_autobw_(false),
+      send_bw_bps_(0),
       options_(),
       dtmf_allowed_(false),
       desired_playout_(false),
@@ -1827,6 +1832,10 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
 
   // Always update the |send_codec_| to the currently set send codec.
   send_codec_.reset(new webrtc::CodecInst(send_codec));
+
+  if (send_bw_setting_) {
+    SetSendBandwidthInternal(send_autobw_, send_bw_bps_);
+  }
 
   return true;
 }
@@ -2731,9 +2740,20 @@ bool WebRtcVoiceMediaChannel::MuteStream(uint32 ssrc, bool muted) {
 bool WebRtcVoiceMediaChannel::SetSendBandwidth(bool autobw, int bps) {
   LOG(LS_INFO) << "WebRtcVoiceMediaChanne::SetSendBandwidth.";
 
+  send_bw_setting_ = true;
+  send_autobw_ = autobw;
+  send_bw_bps_ = bps;
+
+  return SetSendBandwidthInternal(send_autobw_, send_bw_bps_);
+}
+
+bool WebRtcVoiceMediaChannel::SetSendBandwidthInternal(bool autobw, int bps) {
+  LOG(LS_INFO) << "WebRtcVoiceMediaChanne::SetSendBandwidthInternal.";
+
   if (!send_codec_) {
-    LOG(LS_INFO) << "The send codec has not been set up yet.";
-    return false;
+    LOG(LS_INFO) << "The send codec has not been set up yet. "
+                 << "The send bandwidth setting will be applied later.";
+    return true;
   }
 
   // Bandwidth is auto by default.

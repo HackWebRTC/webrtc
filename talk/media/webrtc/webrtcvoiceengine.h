@@ -392,12 +392,16 @@ class WebRtcVoiceMediaChannel
     return channel_id == voe_channel();
   }
   bool SetSendCodecs(int channel, const std::vector<AudioCodec>& codecs);
+  bool SetSendBandwidthInternal(bool autobw, int bps);
 
   talk_base::scoped_ptr<WebRtcSoundclipStream> ringback_tone_;
   std::set<int> ringback_channels_;  // channels playing ringback
   std::vector<AudioCodec> recv_codecs_;
   std::vector<AudioCodec> send_codecs_;
   talk_base::scoped_ptr<webrtc::CodecInst> send_codec_;
+  bool send_bw_setting_;
+  bool send_autobw_;
+  int send_bw_bps_;
   AudioOptions options_;
   bool dtmf_allowed_;
   bool desired_playout_;

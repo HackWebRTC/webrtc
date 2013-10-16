@@ -154,7 +154,7 @@ TEST_F(ChannelManagerTest, CreateDestroyChannelsOnThread) {
   EXPECT_TRUE(cm_->set_worker_thread(&worker_));
   EXPECT_TRUE(cm_->Init());
   delete session_;
-  session_ = new cricket::FakeSession(true, &worker_);
+  session_ = new cricket::FakeSession(&worker_, true);
   cricket::VoiceChannel* voice_channel = cm_->CreateVoiceChannel(
       session_, cricket::CN_AUDIO, false);
   EXPECT_TRUE(voice_channel != NULL);

@@ -212,13 +212,10 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     codecs.push_back(codec);
     EXPECT_TRUE(channel_->SetSendCodecs(codecs));
 
-    webrtc::CodecInst temp_codec;
-    EXPECT_FALSE(voe_.GetSendCodec(channel_num, temp_codec));
-    EXPECT_EQ(default_bitrate, temp_codec.rate);
-
     bool result = channel_->SetSendBandwidth(auto_bitrate, desired_bitrate);
     EXPECT_EQ(expected_result, result);
 
+    webrtc::CodecInst temp_codec;
     EXPECT_FALSE(voe_.GetSendCodec(channel_num, temp_codec));
 
     if (result) {
@@ -589,7 +586,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendBandwidthAuto) {
   TestSendBandwidth(kOpusCodec, 64000, true, 96000, true);
 }
 
-TEST_F(WebRtcVoiceEngineTestFake, SetSendBandwidthFixedMultiRate) {
+TEST_F(WebRtcVoiceEngineTestFake, SetSendBandwidthFixedMultiRateAsCaller) {
   EXPECT_TRUE(SetupEngine());
   EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
 
@@ -604,6 +601,24 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendBandwidthFixedMultiRate) {
 
   // opus, default bitrate == 64000.
   TestSendBandwidth(kOpusCodec, 64000, false, 96000, true);
+}
+
+TEST_F(WebRtcVoiceEngineTestFake, SetSendBandwidthFixedMultiRateAsCallee) {
+  EXPECT_TRUE(engine_.Init(talk_base::Thread::Current()));
+  channel_ = engine_.CreateChannel();
+  EXPECT_TRUE(channel_ != NULL);
+  EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
+
+  int desired_bitrate = 128000;
+  EXPECT_TRUE(channel_->SetSendBandwidth(false, desired_bitrate));
+
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::StreamParams::CreateLegacy(kSsrc1)));
+
+  int channel_num = voe_.GetLastChannel();
+  webrtc::CodecInst codec;
+  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, codec));
+  EXPECT_EQ(desired_bitrate, codec.rate);
 }
 
 // Test that bitrate cannot be set for CBR codecs.
@@ -2604,6 +2619,16 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
   EXPECT_TRUE(ec_enabled);
   EXPECT_FALSE(agc_enabled);
   EXPECT_FALSE(ns_enabled);
+}
+
+TEST(WebRtcVoiceEngineTest, TestDefaultOptionsBeforeInit) {
+  cricket::WebRtcVoiceEngine engine;
+  cricket::AudioOptions options = engine.GetOptions();
+  // The default options should have at least a few things set. We purposefully
+  // don't check the option values here, though.
+  EXPECT_TRUE(options.echo_cancellation.IsSet());
+  EXPECT_TRUE(options.auto_gain_control.IsSet());
+  EXPECT_TRUE(options.noise_suppression.IsSet());
 }
 
 // Test that GetReceiveChannelNum returns the default channel for the first

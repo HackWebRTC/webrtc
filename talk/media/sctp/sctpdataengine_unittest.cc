@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <string>
 
+#include "talk/app/webrtc/datachannelinterface.h"
 #include "talk/base/buffer.h"
 #include "talk/base/criticalsection.h"
 #include "talk/base/gunit.h"
@@ -41,6 +42,7 @@
 #include "talk/media/base/constants.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/sctp/sctpdataengine.h"
+#include "talk/media/sctp/sctputils.h"
 
 enum {
   MSG_PACKET = 1,
@@ -161,7 +163,8 @@ class SignalReadyToSendObserver : public sigslot::has_slots<> {
 };
 
 // SCTP Data Engine testing framework.
-class SctpDataMediaChannelTest : public testing::Test {
+class SctpDataMediaChannelTest : public testing::Test,
+                                 public sigslot::has_slots<> {
  protected:
   virtual void SetUp() {
     engine_.reset(new cricket::SctpDataEngine());
@@ -212,6 +215,8 @@ class SctpDataMediaChannelTest : public testing::Test {
     // When data is received, pass it to the SctpFakeDataReceiver.
     channel->SignalDataReceived.connect(
         recv, &SctpFakeDataReceiver::OnDataReceived);
+    channel->SignalNewStreamReceived.connect(
+        this, &SctpDataMediaChannelTest::OnNewStreamReceived);
     return channel;
   }
 
@@ -246,6 +251,14 @@ class SctpDataMediaChannelTest : public testing::Test {
   SctpFakeDataReceiver* receiver1() { return recv1_.get(); }
   SctpFakeDataReceiver* receiver2() { return recv2_.get(); }
 
+  void OnNewStreamReceived(const std::string& label,
+                           const webrtc::DataChannelInit& init) {
+    last_label_ = label;
+    last_dc_init_ = init;
+  }
+  std::string last_label() { return last_label_; }
+  webrtc::DataChannelInit last_dc_init() { return last_dc_init_; }
+
  private:
   talk_base::scoped_ptr<cricket::SctpDataEngine> engine_;
   talk_base::scoped_ptr<SctpFakeNetworkInterface> net1_;
@@ -254,6 +267,8 @@ class SctpDataMediaChannelTest : public testing::Test {
   talk_base::scoped_ptr<SctpFakeDataReceiver> recv2_;
   talk_base::scoped_ptr<cricket::SctpDataMediaChannel> chan1_;
   talk_base::scoped_ptr<cricket::SctpDataMediaChannel> chan2_;
+  std::string last_label_;
+  webrtc::DataChannelInit last_dc_init_;
 };
 
 // Verifies that SignalReadyToSend is fired.
@@ -315,4 +330,31 @@ TEST_F(SctpDataMediaChannelTest, SendData) {
   channel1()->SetSend(false);
   channel2()->SetSend(false);
   LOG(LS_VERBOSE) << "Cleaning up. -----------------------------";
+}
+
+TEST_F(SctpDataMediaChannelTest, SendReceiveOpenMessage) {
+  SetupConnectedChannels();
+
+  std::string label("x");
+  webrtc::DataChannelInit config;
+  config.id = 10;
+
+  // Send the OPEN message on a unknown ssrc.
+  channel1()->AddSendStream(cricket::StreamParams::CreateLegacy(config.id));
+  cricket::SendDataParams params;
+  params.ssrc = config.id;
+  params.type = cricket::DMT_CONTROL;
+  cricket::SendDataResult result;
+  talk_base::Buffer buffer;
+  ASSERT_TRUE(cricket::WriteDataChannelOpenMessage(label, config, &buffer));
+  ASSERT_TRUE(channel1()->SendData(params, buffer, &result));
+  // Send data on the new ssrc immediately after sending the OPEN message.
+  ASSERT_TRUE(SendData(channel1(), config.id, "hi chan2", &result));
+
+  // Verifies the received OPEN message.
+  EXPECT_TRUE_WAIT(last_label() == label, 1000);
+  EXPECT_EQ(config.id, last_dc_init().id);
+  EXPECT_EQ(true, last_dc_init().negotiated);
+  // Verifies the received data.
+  EXPECT_TRUE_WAIT(ReceivedData(receiver2(), config.id, "hi chan2"), 1000);
 }

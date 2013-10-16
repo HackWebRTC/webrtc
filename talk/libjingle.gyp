@@ -841,6 +841,8 @@
         # TODO(ronghuawu): Enable when SCTP is ready.
         # 'media/sctp/sctpdataengine.cc',
         # 'media/sctp/sctpdataengine.h',
+        'media/sctp/sctputils.cc',
+        'media/sctp/sctputils.h',
         'media/webrtc/webrtccommon.h',
         'media/webrtc/webrtcexport.h',
         'media/webrtc/webrtcmediaengine.h',

@@ -81,6 +81,7 @@ enum {
   MSG_SETSCREENCASTFACTORY,
   MSG_FIRSTPACKETRECEIVED,
   MSG_SESSION_ERROR,
+  MSG_NEWSTREAMRECEIVED,
 };
 
 // Value specified in RFC 5764.
@@ -2500,6 +2501,8 @@ bool DataChannel::Init() {
       this, &DataChannel::OnDataChannelError);
   media_channel()->SignalReadyToSend.connect(
       this, &DataChannel::OnDataChannelReadyToSend);
+  media_channel()->SignalNewStreamReceived.connect(
+      this, &DataChannel::OnDataChannelNewStreamReceived);
   srtp_filter()->SignalSrtpError.connect(
       this, &DataChannel::OnSrtpError);
   return true;
@@ -2722,6 +2725,13 @@ void DataChannel::OnMessage(talk_base::Message *pmsg) {
       delete data;
       break;
     }
+    case MSG_NEWSTREAMRECEIVED: {
+      DataChannelNewStreamReceivedMessageData* data =
+          static_cast<DataChannelNewStreamReceivedMessageData*>(pmsg->pdata);
+      SignalNewStreamReceived(data->label, data->init);
+      delete data;
+      break;
+    }
     default:
       BaseChannel::OnMessage(pmsg);
       break;
@@ -2775,6 +2785,14 @@ void DataChannel::OnDataChannelReadyToSend(bool writable) {
   // that the transport channel is ready.
   signaling_thread()->Post(this, MSG_READYTOSENDDATA,
                            new DataChannelReadyToSendMessageData(writable));
+}
+
+void DataChannel::OnDataChannelNewStreamReceived(
+    const std::string& label, const webrtc::DataChannelInit& init) {
+  signaling_thread()->Post(
+      this,
+      MSG_NEWSTREAMRECEIVED,
+      new DataChannelNewStreamReceivedMessageData(label, init));
 }
 
 void DataChannel::OnSrtpError(uint32 ssrc, SrtpFilter::Mode mode,

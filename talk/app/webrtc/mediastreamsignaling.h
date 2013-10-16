@@ -196,12 +196,6 @@ class MediaStreamSignaling {
   // After we receive an OPEN message, create a data channel and add it.
   bool AddDataChannelFromOpenMessage(
       const std::string& label, const DataChannelInit& config);
-  bool ParseDataChannelOpenMessage(
-      const talk_base::Buffer& payload, std::string* label,
-      DataChannelInit* config);
-  bool WriteDataChannelOpenMessage(
-      const std::string& label, const DataChannelInit& config,
-      talk_base::Buffer* payload);
 
   // Returns a MediaSessionOptions struct with options decided by |constraints|,
   // the local MediaStreams and DataChannels.

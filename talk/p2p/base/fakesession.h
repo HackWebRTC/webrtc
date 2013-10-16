@@ -424,7 +424,7 @@ class FakeSession : public BaseSession {
                     NULL, "", "", initiator),
       fail_create_channel_(false) {
   }
-  FakeSession(bool initiator, talk_base::Thread* worker_thread)
+  FakeSession(talk_base::Thread* worker_thread, bool initiator)
       : BaseSession(talk_base::Thread::Current(),
                     worker_thread,
                     NULL, "", "", initiator),

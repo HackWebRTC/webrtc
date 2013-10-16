@@ -42,6 +42,7 @@
 #include "talk/base/stringencode.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/videocapturer.h"
+#include "talk/media/sctp/sctputils.h"
 #include "talk/session/media/channel.h"
 #include "talk/session/media/channelmanager.h"
 #include "talk/session/media/mediasession.h"
@@ -1031,8 +1032,7 @@ talk_base::scoped_refptr<DataChannel> WebRtcSession::CreateDataChannel(
     }
     if (!config->negotiated) {
       talk_base::Buffer *payload = new talk_base::Buffer;
-      if (!mediastream_signaling_->WriteDataChannelOpenMessage(
-              label, *config, payload)) {
+      if (!cricket::WriteDataChannelOpenMessage(label, *config, payload)) {
         LOG(LS_WARNING) << "Could not write data channel OPEN message";
       }
       // SendControl may queue the message until the data channel's set up,
@@ -1368,8 +1368,8 @@ bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content) {
   if (!data_channel_.get()) {
     return false;
   }
-  data_channel_->SignalDataReceived.connect(
-      this, &WebRtcSession::OnDataReceived);
+  data_channel_->SignalNewStreamReceived.connect(
+      this, &WebRtcSession::OnNewDataChannelReceived);
   return true;
 }
 
@@ -1386,27 +1386,11 @@ void WebRtcSession::CopySavedCandidates(
   saved_candidates_.clear();
 }
 
-// Look for OPEN messages and set up data channels in response.
-void WebRtcSession::OnDataReceived(
-    cricket::DataChannel* channel,
-    const cricket::ReceiveDataParams& params,
-    const talk_base::Buffer& payload) {
-  if (params.type != cricket::DMT_CONTROL) {
-    return;
-  }
-
-  std::string label;
-  DataChannelInit config;
-  if (!mediastream_signaling_->ParseDataChannelOpenMessage(
-          payload, &label, &config)) {
-    LOG(LS_WARNING) << "Failed to parse data channel OPEN message.";
-    return;
-  }
-
-  config.negotiated = true;  // This is the negotiation.
-
+void WebRtcSession::OnNewDataChannelReceived(
+    const std::string& label, const DataChannelInit& init) {
+  ASSERT(data_channel_type_ == cricket::DCT_SCTP);
   if (!mediastream_signaling_->AddDataChannelFromOpenMessage(
-          label, config)) {
+          label, init)) {
     LOG(LS_WARNING) << "Failed to create data channel from OPEN message.";
     return;
   }

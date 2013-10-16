@@ -31,12 +31,14 @@
 #include <stdio.h>
 #include <vector>
 
+#include "talk/app/webrtc/datachannelinterface.h"
 #include "talk/base/buffer.h"
 #include "talk/base/helpers.h"
 #include "talk/base/logging.h"
 #include "talk/media/base/codec.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/streamparams.h"
+#include "talk/media/sctp/sctputils.h"
 #include "usrsctplib/usrsctp.h"
 
 namespace cricket {
@@ -584,7 +586,23 @@ void SctpDataMediaChannel::OnDataFromSctpToChannel(
   StreamParams found_stream;
   if (!GetStreamBySsrc(streams_, params.ssrc, &found_stream)) {
     if (params.type == DMT_CONTROL) {
-      SignalDataReceived(params, buffer->data(), buffer->length());
+      std::string label;
+      webrtc::DataChannelInit config;
+      if (ParseDataChannelOpenMessage(*buffer, &label, &config)) {
+        config.id = params.ssrc;
+        // Do not send the OPEN message for this data channel.
+        config.negotiated = true;
+        SignalNewStreamReceived(label, config);
+
+        // Add the stream immediately.
+        cricket::StreamParams sparams =
+            cricket::StreamParams::CreateLegacy(params.ssrc);
+        AddSendStream(sparams);
+        AddRecvStream(sparams);
+      } else {
+        LOG(LS_ERROR) << debug_name_ << "->OnDataFromSctpToChannel(...): "
+                      << "Received malformed control message";
+      }
     } else {
       LOG(LS_WARNING) << debug_name_ << "->OnDataFromSctpToChannel(...): "
                       << "Received packet for unknown ssrc: " << params.ssrc;

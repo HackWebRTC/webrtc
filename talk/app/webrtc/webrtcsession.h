@@ -271,10 +271,8 @@ class WebRtcSession : public cricket::BaseSession,
   // The |saved_candidates_| will be cleared after this function call.
   void CopySavedCandidates(SessionDescriptionInterface* dest_desc);
 
-  void OnDataReceived(
-      cricket::DataChannel* channel,
-      const cricket::ReceiveDataParams& params,
-      const talk_base::Buffer& payload);
+  void OnNewDataChannelReceived(const std::string& label,
+                                const DataChannelInit& init);
 
   bool GetLocalTrackId(uint32 ssrc, std::string* track_id);
   bool GetRemoteTrackId(uint32 ssrc, std::string* track_id);
