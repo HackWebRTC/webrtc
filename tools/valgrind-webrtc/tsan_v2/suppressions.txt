@@ -1,3 +1,32 @@
 # False positive in system wrappers.
 # See https://code.google.com/p/webrtc/issues/detail?id=300 for details.
 race:webrtc/system_wrappers/source/thread_posix.cc
+
+# libjingle_peerconnection_unittest
+# See https://code.google.com/p/webrtc/issues/detail?id=1205
+race:talk/app/webrtc/test/fakeaudiocapturemodule.cc
+race:webrtc/modules/audio_processing/aec/aec_core.c
+race:webrtc/modules/audio_processing/aec/aec_rdft.c
+race:webrtc/modules/video_coding/codecs/vp8/vp8_impl.cc
+
+# libjingle_media_unittest
+# See https://code.google.com/p/webrtc/issues/detail?id=2078
+race:talk/media/base/filemediaengine.cc
+race:talk/media/devices/filevideocapturer.cc
+
+# libjingle_p2p_unittest
+# See https://code.google.com/p/webrtc/issues/detail?id=2079
+race:talk/base/messagequeue.cc
+race:talk/base/testclient.cc
+race:talk/base/virtualsocketserver.cc
+race:talk/p2p/base/stunserver_unittest.cc
+
+# libjingle_unittest
+# See https://code.google.com/p/webrtc/issues/detail?id=2080
+race:talk/base/asyncudpsocket.cc
+race:talk/base/logging.cc
+race:talk/base/natserver.cc
+race:talk/base/physicalsocketserver.cc
+race:talk/base/sharedexclusivelock_unittest.cc
+race:talk/base/signalthread_unittest.cc
+race:talk/base/thread.cc
