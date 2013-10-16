@@ -15,6 +15,8 @@
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'sources': [
+        "desktop_and_cursor_composer.cc",
+        "desktop_and_cursor_composer.h",
         "desktop_capture_types.h",
         "desktop_capturer.h",
         "desktop_frame.cc",
