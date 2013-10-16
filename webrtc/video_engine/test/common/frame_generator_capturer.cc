@@ -82,6 +82,11 @@ FrameGeneratorCapturer::~FrameGeneratorCapturer() {
 }
 
 bool FrameGeneratorCapturer::Init() {
+  // This check is added because frame_generator_ might be file based and should
+  // not crash because a file moved.
+  if (frame_generator_.get() == NULL)
+    return false;
+
   if (!tick_->StartTimer(true, 1000 / target_fps_))
     return false;
   thread_.reset(ThreadWrapper::CreateThread(FrameGeneratorCapturer::Run,
