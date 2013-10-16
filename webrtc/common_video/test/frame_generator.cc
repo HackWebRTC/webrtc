@@ -105,7 +105,7 @@ FrameGenerator* FrameGenerator::Create(size_t width, size_t height) {
 FrameGenerator* FrameGenerator::CreateFromYuvFile(const char* file,
                                                   size_t width,
                                                   size_t height) {
-  FILE* file_handle = fopen(file, "r");
+  FILE* file_handle = fopen(file, "rb");
   assert(file_handle);
   return new YuvFileGenerator(file_handle, width, height);
 }
