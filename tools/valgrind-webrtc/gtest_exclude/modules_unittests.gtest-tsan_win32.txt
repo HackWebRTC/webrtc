@@ -1,6 +1,12 @@
 # Too slow to run with TSan on Windows.
 ApmTest.EchoCancellationReportsCorrectDelays
+ApmTest.IdenticalInputChannelsResultInIdenticalOutputChannels
+RingBufferTest.RandomStressTest
+RingBufferTest.RandomStressTestWithNullPtr
+VideoProcessingModuleTest.ContentAnalysis
+VideoProcessingModuleTest.Deflickering
 VideoProcessingModuleTest.Denoising
+TestVideoSenderWithVp8.*
 
 # https://code.google.com/p/webrtc/issues/detail?id=1938
 MouseCursorShapeTest.MatchCursors
