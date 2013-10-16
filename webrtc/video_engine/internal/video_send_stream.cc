@@ -166,8 +166,8 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
   assert(network_ != NULL);
 
   network_->RegisterSendTransport(channel_, transport_adapter_);
-  network_->SetMTU(channel_, config_.rtp.max_packet_size +
-                   VideoSendStream::Config::kDefaultPacketOverheader);
+  // 28 to match packet overhead in ModuleRtpRtcpImpl.
+  network_->SetMTU(channel_, config_.rtp.max_packet_size + 28);
 
   if (config.encoder) {
     external_codec_ = ViEExternalCodec::GetInterface(video_engine);

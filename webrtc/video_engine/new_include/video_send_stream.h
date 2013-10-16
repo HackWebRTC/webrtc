@@ -84,8 +84,7 @@ class VideoSendStream {
           start_state(NULL) {}
     VideoCodec codec;
 
-    static const size_t kDefaultPacketOverheader = 20 + 20; // IPv4 + TCP
-    static const size_t kDefaultMaxPacketSize = 1500 - kDefaultPacketOverheader;
+    static const size_t kDefaultMaxPacketSize = 1500 - 40;  // TCP over IPv4.
     struct Rtp {
       Rtp() : mode(newapi::kRtcpReducedSize),
               max_packet_size(kDefaultMaxPacketSize) {}

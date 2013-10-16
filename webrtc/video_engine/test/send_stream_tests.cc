@@ -443,7 +443,7 @@ TEST_F(VideoSendStreamTest, MaxPacketSize) {
       EXPECT_TRUE(
           rtp_header_parser_->Parse(packet, static_cast<int>(length), &header));
 
-      EXPECT_TRUE(length <= max_length_);
+      EXPECT_LE(length, max_length_);
 
       accumulated_size_ += length;
 
