@@ -2,12 +2,18 @@
 # See https://code.google.com/p/webrtc/issues/detail?id=300 for details.
 race:webrtc/system_wrappers/source/thread_posix.cc
 
+# Audio processing
+# See https://code.google.com/p/webrtc/issues/detail?id=2521 for details.
+race:webrtc/modules/audio_processing/aec/aec_core.c
+race:webrtc/modules/audio_processing/aec/aec_rdft.c
+
+# Video coding
+# See https://code.google.com/p/webrtc/issues/detail?id=2484 for details.
+# race:webrtc/modules/video_coding/codecs/vp8/vp8_impl.cc
+
 # libjingle_peerconnection_unittest
 # See https://code.google.com/p/webrtc/issues/detail?id=1205
 race:talk/app/webrtc/test/fakeaudiocapturemodule.cc
-race:webrtc/modules/audio_processing/aec/aec_core.c
-race:webrtc/modules/audio_processing/aec/aec_rdft.c
-race:webrtc/modules/video_coding/codecs/vp8/vp8_impl.cc
 
 # libjingle_media_unittest
 # See https://code.google.com/p/webrtc/issues/detail?id=2078
