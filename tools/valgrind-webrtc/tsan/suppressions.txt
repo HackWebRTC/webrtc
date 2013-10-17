@@ -67,7 +67,18 @@
   fun:cricket::VoiceChannel::OnMessage
   ...
 }
-
+{
+  bug_2497
+  ThreadSanitizer:Race
+  fun:webrtc::VCMJitterBuffer::RecycleFramesUntilKeyFrame
+  ...
+}
+{
+  bug_2497_2
+  ThreadSanitizer:Race
+  fun:webrtc::VideoEngine::SetTraceFilter
+  ...
+}
 
 #-----------------------------------------------------------------------
 # 2. libjingle stuff (talk folder)
