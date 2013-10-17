@@ -3,3 +3,23 @@
 # More info about LSan on
 # http://www.chromium.org/developers/testing/leaksanitizer
 
+# libjingle_peerconnection_unittest
+# https://code.google.com/p/webrtc/issues/detail?id=2528
+leak:webrtc::WebRtcIdentityRequestObserver::OnSuccess
+
+# libjingle_unittest
+# https://code.google.com/p/webrtc/issues/detail?id=2527
+leak:buzz::XmppTask::XmppTask
+leak:talk_base::TaskParent::TaskParent
+leak:MucRoomUniqueHangoutIdTaskTest::SetUp
+leak:buzz::FakeXmppClient::SendStanza
+leak:PingXmppClient::SendStanza
+leak:talk_base::IdTimeoutTask::IdTimeoutTask
+leak:talk_base::HttpData::changeHeader
+leak:PubSubClientTest::PubSubClientTest
+leak:HangoutPubSubClientTest::HangoutPubSubClientTest
+
+# modules_tests
+# https://code.google.com/p/webrtc/issues/detail?id=2515
+leak:AudioCodingModuleTest_TestIsac_Test::TestBody
+
