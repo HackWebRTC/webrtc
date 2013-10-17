@@ -22,6 +22,15 @@
 
 namespace webrtc {
 
+namespace newapi {
+// RTCP mode to use. Compound mode is described by RFC 4585 and reduced-size
+// RTCP mode is described by RFC 5506.
+enum RtcpMode {
+  kRtcpCompound,
+  kRtcpReducedSize
+};
+}  // namespace newapi
+
 class VideoDecoder;
 
 // TODO(mflodman) Move all these settings to VideoDecoder and move the
@@ -96,10 +105,14 @@ class VideoReceiveStream {
 
     // Receive-stream specific RTP settings.
     struct Rtp {
-      Rtp() : ssrc(0) {}
+      Rtp() : ssrc(0), rtcp_mode(newapi::kRtcpReducedSize) {}
+
       // TODO(mflodman) Do we require a set ssrc? What happens if the ssrc
       // changes?
       uint32_t ssrc;
+
+      // See RtcpMode for description.
+      newapi::RtcpMode rtcp_mode;
 
       // See NackConfig for description.
       NackConfig nack;

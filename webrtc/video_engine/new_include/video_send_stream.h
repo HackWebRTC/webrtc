@@ -86,9 +86,7 @@ class VideoSendStream {
 
     static const size_t kDefaultMaxPacketSize = 1500 - 40;  // TCP over IPv4.
     struct Rtp {
-      Rtp() : mode(newapi::kRtcpReducedSize),
-              max_packet_size(kDefaultMaxPacketSize) {}
-      newapi::RtcpMode mode;
+      Rtp() : max_packet_size(kDefaultMaxPacketSize) {}
 
       std::vector<uint32_t> ssrcs;
 

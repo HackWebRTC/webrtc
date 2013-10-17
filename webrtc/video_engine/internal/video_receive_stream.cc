@@ -42,6 +42,14 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
   // TODO(pbos): This is not fine grained enough...
   rtp_rtcp_->SetNACKStatus(channel_, config_.rtp.nack.rtp_history_ms > 0);
   rtp_rtcp_->SetKeyFrameRequestMethod(channel_, kViEKeyFrameRequestPliRtcp);
+  switch (config_.rtp.rtcp_mode) {
+    case newapi::kRtcpCompound:
+      rtp_rtcp_->SetRTCPStatus(channel_, kRtcpCompound_RFC4585);
+      break;
+    case newapi::kRtcpReducedSize:
+      rtp_rtcp_->SetRTCPStatus(channel_, kRtcpNonCompound_RFC5506);
+      break;
+  }
 
   assert(config_.rtp.ssrc != 0);
 

@@ -28,6 +28,9 @@
 
 namespace webrtc {
 
+static unsigned int kDefaultTimeoutMs = 30 * 1000;
+static unsigned int kLongTimeoutMs = 120 * 1000;
+
 class CallTest : public ::testing::Test {
  public:
   CallTest()
@@ -106,6 +109,7 @@ class CallTest : public ::testing::Test {
   }
 
   void ReceivesPliAndRecovers(int rtp_history_ms);
+  void RespectsRtcpMode(newapi::RtcpMode rtcp_mode);
 
   scoped_ptr<Call> sender_call_;
   scoped_ptr<Call> receiver_call_;
@@ -131,7 +135,7 @@ class NackObserver : public test::RtpRtcpObserver {
 
  public:
   NackObserver()
-      : test::RtpRtcpObserver(120 * 1000),
+      : test::RtpRtcpObserver(kLongTimeoutMs),
         rtp_parser_(RtpHeaderParser::Create()),
         drop_burst_count_(0),
         sent_rtp_packets_(0),
@@ -242,7 +246,7 @@ TEST_F(CallTest, UsesTraceCallback) {
         done_->Set();
     }
 
-    EventTypeWrapper Wait() { return done_->Wait(30 * 1000); }
+    EventTypeWrapper Wait() { return done_->Wait(kDefaultTimeoutMs); }
 
    private:
     unsigned int filter_;
@@ -315,7 +319,7 @@ class PliObserver : public test::RtpRtcpObserver, public VideoRenderer {
 
  public:
   explicit PliObserver(bool nack_enabled)
-      : test::RtpRtcpObserver(120 * 1000),
+      : test::RtpRtcpObserver(kLongTimeoutMs),
         rtp_header_parser_(RtpHeaderParser::Create()),
         nack_enabled_(nack_enabled),
         first_retransmitted_timestamp_(0),
@@ -428,7 +432,9 @@ TEST_F(CallTest, SurvivesIncomingRtpPacketsToDestroyedReceiveStream) {
     explicit PacketInputObserver(PacketReceiver* receiver)
         : receiver_(receiver), delivered_packet_(EventWrapper::Create()) {}
 
-    EventTypeWrapper Wait() { return delivered_packet_->Wait(30 * 1000); }
+    EventTypeWrapper Wait() {
+      return delivered_packet_->Wait(kDefaultTimeoutMs);
+    }
 
    private:
     virtual bool DeliverPacket(const uint8_t* packet, size_t length) {
@@ -474,6 +480,100 @@ TEST_F(CallTest, SurvivesIncomingRtpPacketsToDestroyedReceiveStream) {
   receive_transport.StopSending();
 }
 
+void CallTest::RespectsRtcpMode(newapi::RtcpMode rtcp_mode) {
+  static const int kRtpHistoryMs = 1000;
+  static const int kNumCompoundRtcpPacketsToObserve = 10;
+  class RtcpModeObserver : public test::RtpRtcpObserver {
+   public:
+    RtcpModeObserver(newapi::RtcpMode rtcp_mode)
+        : test::RtpRtcpObserver(kDefaultTimeoutMs),
+          rtcp_mode_(rtcp_mode),
+          sent_rtp_(0),
+          sent_rtcp_(0) {}
+
+   private:
+    virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
+      if (++sent_rtp_ % 3 == 0)
+        return DROP_PACKET;
+
+      return SEND_PACKET;
+    }
+
+    virtual Action OnReceiveRtcp(const uint8_t* packet,
+                                 size_t length) OVERRIDE {
+      ++sent_rtcp_;
+      RTCPUtility::RTCPParserV2 parser(packet, length, true);
+      EXPECT_TRUE(parser.IsValid());
+
+      RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
+      bool has_report_block = false;
+      while (packet_type != RTCPUtility::kRtcpNotValidCode) {
+        EXPECT_NE(RTCPUtility::kRtcpSrCode, packet_type);
+        if (packet_type == RTCPUtility::kRtcpRrCode) {
+          has_report_block = true;
+          break;
+        }
+        packet_type = parser.Iterate();
+      }
+
+      switch (rtcp_mode_) {
+        case newapi::kRtcpCompound:
+          if (!has_report_block) {
+            ADD_FAILURE() << "Received RTCP packet without receiver report for "
+                             "kRtcpCompound.";
+            observation_complete_->Set();
+          }
+
+          if (sent_rtcp_ >= kNumCompoundRtcpPacketsToObserve)
+            observation_complete_->Set();
+
+          break;
+        case newapi::kRtcpReducedSize:
+          if (!has_report_block)
+            observation_complete_->Set();
+          break;
+      }
+
+      return SEND_PACKET;
+    }
+
+    newapi::RtcpMode rtcp_mode_;
+    int sent_rtp_;
+    int sent_rtcp_;
+  } observer(rtcp_mode);
+
+  CreateCalls(Call::Config(observer.SendTransport()),
+              Call::Config(observer.ReceiveTransport()));
+
+  observer.SetReceivers(receiver_call_->Receiver(), sender_call_->Receiver());
+
+  CreateTestConfigs();
+  send_config_.rtp.nack.rtp_history_ms = kRtpHistoryMs;
+  receive_config_.rtp.nack.rtp_history_ms = kRtpHistoryMs;
+  receive_config_.rtp.rtcp_mode = rtcp_mode;
+
+  CreateStreams();
+  CreateFrameGenerator();
+  StartSending();
+
+  EXPECT_EQ(kEventSignaled, observer.Wait())
+      << (rtcp_mode == newapi::kRtcpCompound
+              ? "Timed out before observing enough compound packets."
+              : "Timed out before receiving a non-compound RTCP packet.");
+
+  StopSending();
+  observer.StopSending();
+  DestroyStreams();
+}
+
+TEST_F(CallTest, UsesRtcpCompoundMode) {
+  RespectsRtcpMode(newapi::kRtcpCompound);
+}
+
+TEST_F(CallTest, UsesRtcpReducedSizeMode) {
+  RespectsRtcpMode(newapi::kRtcpReducedSize);
+}
+
 // Test sets up a Call multiple senders with different resolutions and SSRCs.
 // Another is set up to receive all three of these with different renderers.
 // Each renderer verifies that it receives the expected resolution, and as soon
@@ -493,7 +593,7 @@ TEST_F(CallTest, SendsAndReceivesMultipleStreams) {
       done_->Set();
     }
 
-    void Wait() { done_->Wait(30 * 1000); }
+    void Wait() { done_->Wait(kDefaultTimeoutMs); }
 
    private:
     int width_;

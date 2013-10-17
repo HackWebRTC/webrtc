@@ -29,15 +29,6 @@ struct RtpStatistics {
   std::string c_name;
 };
 
-namespace newapi {
-// RTCP mode to use. Compound mode is described by RFC 4585 and reduced-size
-// RTCP mode is described by RFC 5506.
-enum RtcpMode {
-  kRtcpCompound,
-  kRtcpReducedSize
-};
-}  // namespace newapi
-
 // Settings for NACK, see RFC 4585 for details.
 struct NackConfig {
   NackConfig() : rtp_history_ms(0) {}
