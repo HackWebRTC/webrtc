@@ -3,21 +3,40 @@
 # More info about LSan on
 # http://www.chromium.org/developers/testing/leaksanitizer
 
+#### Third-party leaks ####
+
+# Leak reported in libstdc++
+leak:std::string::_Rep::_S_create
+
+
+#### Actual bugs in WebRTC code ####
+
 # libjingle_peerconnection_unittest
 # https://code.google.com/p/webrtc/issues/detail?id=2528
+leak:webrtc::AudioDeviceLinuxALSA::InitSpeaker
 leak:webrtc::WebRtcIdentityRequestObserver::OnSuccess
 
 # libjingle_unittest
 # https://code.google.com/p/webrtc/issues/detail?id=2527
-leak:buzz::XmppTask::XmppTask
-leak:talk_base::TaskParent::TaskParent
-leak:MucRoomUniqueHangoutIdTaskTest::SetUp
 leak:buzz::FakeXmppClient::SendStanza
-leak:PingXmppClient::SendStanza
-leak:talk_base::IdTimeoutTask::IdTimeoutTask
-leak:talk_base::HttpData::changeHeader
-leak:PubSubClientTest::PubSubClientTest
+leak:buzz::XmppTask::XmppTask
 leak:HangoutPubSubClientTest::HangoutPubSubClientTest
+leak:MucRoomConfigTaskTest::SetUp
+leak:MucRoomDiscoveryTaskTest::SetUp
+leak:MucRoomLookupTaskTest::SetUp
+leak:MucRoomUniqueHangoutIdTaskTest::SetUp
+leak:PingTaskTest::SetUp
+leak:PingXmppClient::SendStanza
+leak:PubSubClientTest::PubSubClientTest
+leak:PubSubTasksTest::PubSubTasksTest
+leak:talk_base::HttpData::changeHeader
+leak:talk_base::HttpParser::ProcessLine
+leak:talk_base::HttpServer::Connection::BeginProcess
+leak:talk_base::IdTimeoutTask::IdTimeoutTask
+leak:talk_base::OpenSSLCertificate::FromPEMString
+leak:talk_base::OpenSSLIdentity::FromPEMStrings
+leak:talk_base::TaskParent::TaskParent
+leak:talk_base::unstarted_task_test_DoNotDeleteTask2_Test::TestBody
 
 # modules_tests
 # https://code.google.com/p/webrtc/issues/detail?id=2515
