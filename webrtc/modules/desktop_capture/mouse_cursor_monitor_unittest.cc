@@ -46,8 +46,11 @@ class MouseCursorMonitorTest : public testing::Test,
   bool position_received_;
 };
 
-// TODO(sergeyu): Enable tests on all platforms.
-#if defined(USE_X11)
+// TODO(sergeyu): On Mac we need to initialize NSApplication before running the
+// tests. Figure out how to do that without breaking other tests in
+// modules_unittests and enable these tests on Mac.
+// https://code.google.com/p/webrtc/issues/detail?id=2532
+#if !defined(WEBRTC_MAC)
 #define MAYBE(x) x
 #else
 #define MAYBE(x) DISABLED_##x

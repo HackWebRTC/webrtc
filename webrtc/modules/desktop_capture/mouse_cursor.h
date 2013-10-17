@@ -25,8 +25,10 @@ class MouseCursor {
   MouseCursor(DesktopFrame* image, const DesktopVector& hotspot);
   ~MouseCursor();
 
-  const DesktopFrame& image() { return *image_; }
-  const DesktopVector& hotspot() { return hotspot_; }
+  static MouseCursor* CopyOf(const MouseCursor& cursor);
+
+  const DesktopFrame& image() const { return *image_; }
+  const DesktopVector& hotspot() const { return hotspot_; }
 
  private:
   scoped_ptr<DesktopFrame> image_;

@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 
+#include <string.h>
+
 namespace webrtc {
 
 DesktopFrame::DesktopFrame(DesktopSize size,
@@ -34,6 +36,20 @@ BasicDesktopFrame::BasicDesktopFrame(DesktopSize size)
 BasicDesktopFrame::~BasicDesktopFrame() {
   delete[] data_;
 }
+
+DesktopFrame* BasicDesktopFrame::CopyOf(const DesktopFrame& frame) {
+  DesktopFrame* result = new BasicDesktopFrame(frame.size());
+  for (int y = 0; y < frame.size().height(); ++y) {
+    memcpy(result->data() + y * result->stride(),
+           frame.data() + y * frame.stride(),
+           frame.size().width() * kBytesPerPixel);
+  }
+  result->set_dpi(frame.dpi());
+  result->set_capture_time_ms(frame.capture_time_ms());
+  *result->mutable_updated_region() = frame.updated_region();
+  return result;
+}
+
 
 SharedMemoryDesktopFrame::SharedMemoryDesktopFrame(
     DesktopSize size,

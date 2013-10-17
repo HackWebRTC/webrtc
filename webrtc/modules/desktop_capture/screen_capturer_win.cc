@@ -17,6 +17,7 @@
 #include "webrtc/modules/desktop_capture/desktop_frame_win.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
 #include "webrtc/modules/desktop_capture/differ.h"
+#include "webrtc/modules/desktop_capture/mouse_cursor.h"
 #include "webrtc/modules/desktop_capture/mouse_cursor_shape.h"
 #include "webrtc/modules/desktop_capture/screen_capture_frame_queue.h"
 #include "webrtc/modules/desktop_capture/screen_capturer_helper.h"
@@ -328,10 +329,18 @@ void ScreenCapturerWin::CaptureCursor() {
   }
 
   // Note that |cursor_info.hCursor| does not need to be freed.
-  scoped_ptr<MouseCursorShape> cursor(
-      CreateMouseCursorShapeFromCursor(desktop_dc_, cursor_info.hCursor));
-  if (!cursor.get())
+  scoped_ptr<MouseCursor> cursor_image(
+      CreateMouseCursorFromHCursor(desktop_dc_, cursor_info.hCursor));
+  if (!cursor_image.get())
     return;
+
+  scoped_ptr<MouseCursorShape> cursor(new MouseCursorShape);
+  cursor->hotspot = cursor_image->hotspot();
+  cursor->size = cursor_image->image().size();
+  cursor->data.assign(
+    cursor_image->image().data(),
+    cursor_image->image().data() +
+        cursor_image->image().stride() * DesktopFrame::kBytesPerPixel);
 
   // Compare the current cursor with the last one we sent to the client. If
   // they're the same, then don't bother sending the cursor again.

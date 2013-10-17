@@ -23,4 +23,10 @@ MouseCursor::MouseCursor(DesktopFrame* image, const DesktopVector& hotspot)
 
 MouseCursor::~MouseCursor() {}
 
+// static
+MouseCursor* MouseCursor::CopyOf(const MouseCursor& cursor) {
+  return new MouseCursor(BasicDesktopFrame::CopyOf(cursor.image()),
+                         cursor.hotspot());
+}
+
 }  // namespace webrtc

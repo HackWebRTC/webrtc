@@ -83,6 +83,9 @@ class BasicDesktopFrame : public DesktopFrame {
   explicit BasicDesktopFrame(DesktopSize size);
   virtual ~BasicDesktopFrame();
 
+  // Creates a BasicDesktopFrame that contains copy of |frame|.
+  static DesktopFrame* CopyOf(const DesktopFrame& frame);
+
  private:
   DISALLOW_COPY_AND_ASSIGN(BasicDesktopFrame);
 };
