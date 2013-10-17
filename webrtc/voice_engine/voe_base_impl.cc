@@ -999,7 +999,7 @@ int32_t VoEBaseImpl::StopPlayout() {
                VoEId(_shared->instance_id(), -1),
                "VoEBaseImpl::StopPlayout()");
   // Stop audio-device playing if no channel is playing out
-  if (_shared->NumOfSendingChannels() == 0) {
+  if (_shared->NumOfPlayingChannels() == 0) {
     if (_shared->audio_device()->StopPlayout() != 0) {
       _shared->SetLastError(VE_CANNOT_STOP_PLAYOUT,
                             kTraceError,
