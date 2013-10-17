@@ -703,16 +703,26 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame& audioFrame)
         ApmProcessRx(audioFrame);
     }
 
-    // Output volume scaling
-    if (_outputGain < 0.99f || _outputGain > 1.01f)
+    float output_gain = 1.0f;
+    float left_pan =  1.0f;
+    float right_pan =  1.0f;
     {
-        AudioFrameOperations::ScaleWithSat(_outputGain, audioFrame);
+      CriticalSectionScoped cs(&volume_settings_critsect_);
+      output_gain = _outputGain;
+      left_pan = _panLeft;
+      right_pan= _panRight;
+    }
+
+    // Output volume scaling
+    if (output_gain < 0.99f || output_gain > 1.01f)
+    {
+        AudioFrameOperations::ScaleWithSat(output_gain, audioFrame);
     }
 
     // Scale left and/or right channel(s) if stereo and master balance is
     // active
 
-    if (_panLeft != 1.0f || _panRight != 1.0f)
+    if (left_pan != 1.0f || right_pan != 1.0f)
     {
         if (audioFrame.num_channels_ == 1)
         {
@@ -725,7 +735,7 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame& audioFrame)
 
         // Do the panning operation (the audio frame contains stereo at this
         // stage)
-        AudioFrameOperations::Scale(_panLeft, _panRight, audioFrame);
+        AudioFrameOperations::Scale(left_pan, right_pan, audioFrame);
     }
 
     // Mix decoded PCM output with file if file mixing is enabled
@@ -905,6 +915,7 @@ Channel::Channel(int32_t channelId,
                  const Config& config) :
     _fileCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _callbackCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
+    volume_settings_critsect_(*CriticalSectionWrapper::CreateCriticalSection()),
     _instanceId(instanceId),
     _channelId(channelId),
     rtp_header_parser_(RtpHeaderParser::Create()),
@@ -1103,6 +1114,7 @@ Channel::~Channel()
     delete [] _decryptionRTCPBufferPtr;
     delete &_callbackCritSect;
     delete &_fileCritSect;
+    delete &volume_settings_critsect_;
 }
 
 int32_t
@@ -2957,6 +2969,7 @@ Channel::GetSpeechOutputLevelFullRange(uint32_t& level) const
 int
 Channel::SetMute(bool enable)
 {
+    CriticalSectionScoped cs(&volume_settings_critsect_);
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                "Channel::SetMute(enable=%d)", enable);
     _mute = enable;
@@ -2966,12 +2979,14 @@ Channel::SetMute(bool enable)
 bool
 Channel::Mute() const
 {
+    CriticalSectionScoped cs(&volume_settings_critsect_);
     return _mute;
 }
 
 int
 Channel::SetOutputVolumePan(float left, float right)
 {
+    CriticalSectionScoped cs(&volume_settings_critsect_);
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                "Channel::SetOutputVolumePan()");
     _panLeft = left;
@@ -2982,6 +2997,7 @@ Channel::SetOutputVolumePan(float left, float right)
 int
 Channel::GetOutputVolumePan(float& left, float& right) const
 {
+    CriticalSectionScoped cs(&volume_settings_critsect_);
     left = _panLeft;
     right = _panRight;
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
@@ -2993,6 +3009,7 @@ Channel::GetOutputVolumePan(float& left, float& right) const
 int
 Channel::SetChannelOutputVolumeScaling(float scaling)
 {
+    CriticalSectionScoped cs(&volume_settings_critsect_);
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                "Channel::SetChannelOutputVolumeScaling()");
     _outputGain = scaling;
@@ -3002,6 +3019,7 @@ Channel::SetChannelOutputVolumeScaling(float scaling)
 int
 Channel::GetChannelOutputVolumeScaling(float& scaling) const
 {
+    CriticalSectionScoped cs(&volume_settings_critsect_);
     scaling = _outputGain;
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
                VoEId(_instanceId,_channelId),
@@ -4397,7 +4415,7 @@ Channel::PrepareEncodeAndSend(int mixingFrequency)
         MixOrReplaceAudioWithFile(mixingFrequency);
     }
 
-    if (_mute)
+    if (Mute())
     {
         AudioFrameOperations::Mute(_audioFrame);
     }

@@ -48,26 +48,6 @@
   fun:webrtc::StartThread
 }
 {
-  bug_2461_1
-  ThreadSanitizer:Race
-  fun:webrtc::voe::Channel::SetChannelOutputVolumeScaling
-  fun:webrtc::VoEVolumeControlImpl::SetChannelOutputVolumeScaling
-  fun:cricket::WebRtcVoiceMediaChannel::SetOutputScaling
-  fun:cricket::VoiceChannel::SetOutputScaling_w
-  fun:cricket::VoiceChannel::OnMessage
-  ...
-}
-{
-  bug_2461_2
-  ThreadSanitizer:Race
-  fun:webrtc::voe::Channel::SetOutputVolumePan
-  fun:webrtc::VoEVolumeControlImpl::SetOutputVolumePan
-  fun:cricket::WebRtcVoiceMediaChannel::SetOutputScaling
-  fun:cricket::VoiceChannel::SetOutputScaling_w
-  fun:cricket::VoiceChannel::OnMessage
-  ...
-}
-{
   bug_2497
   ThreadSanitizer:Race
   fun:webrtc::VCMJitterBuffer::RecycleFramesUntilKeyFrame
@@ -147,39 +127,12 @@
   fun:StartThread
 }
 {
-  bug_1205_12
-  ThreadSanitizer:Race
-  fun:webrtc::voe::Channel::GetAudioFrame
-  fun:webrtc::AudioConferenceMixerImpl::UpdateToMix
-  fun:webrtc::AudioConferenceMixerImpl::Process
-  fun:webrtc::voe::OutputMixer::MixActiveChannels
-  fun:webrtc::VoEBaseImpl::NeedMorePlayData
-  ...
-}
-{
   bug_1205_22
   ThreadSanitizer:Race
   fun:webrtc::EventPosix::Process
   fun:webrtc::EventPosix::Run
   fun:webrtc::ThreadPosix::Run
   fun:StartThread
-}
-{
-  bug_1205_25
-  ThreadSanitizer:Race
-  fun:webrtc::AudioCodingModuleImpl::PlayoutData10Ms
-  fun:webrtc::voe::Channel::GetAudioFrame
-  fun:webrtc::AudioConferenceMixerImpl::UpdateToMix
-  fun:webrtc::AudioConferenceMixerImpl::Process
-  fun:webrtc::voe::OutputMixer::MixActiveChannels
-  fun:webrtc::VoEBaseImpl::NeedMorePlayData
-  fun:FakeAudioCaptureModule::ReceiveFrameP
-  fun:FakeAudioCaptureModule::ProcessFrameP
-  fun:FakeAudioCaptureModule::OnMessage
-  fun:talk_base::MessageQueue::Dispatch
-  fun:talk_base::Thread::ProcessMessages
-  fun:talk_base::Thread::Run
-  fun:talk_base::Thread::PreRun
 }
 {
   bug_1205_26

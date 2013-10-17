@@ -447,6 +447,7 @@ private:
 
     CriticalSectionWrapper& _fileCritSect;
     CriticalSectionWrapper& _callbackCritSect;
+    CriticalSectionWrapper& volume_settings_critsect_;
     uint32_t _instanceId;
     int32_t _channelId;
 
