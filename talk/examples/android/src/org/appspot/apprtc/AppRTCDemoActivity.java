@@ -34,7 +34,6 @@ import android.content.Intent;
 import android.graphics.Point;
 import android.media.AudioManager;
 import android.os.Bundle;
-import android.os.PowerManager;
 import android.util.Log;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
@@ -88,7 +87,6 @@ public class AppRTCDemoActivity extends Activity
   // Synchronize on quit[0] to avoid teardown-related crashes.
   private final Boolean[] quit = new Boolean[] { false };
   private MediaConstraints sdpMediaConstraints;
-  private PowerManager.WakeLock wakeLock;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -547,7 +545,6 @@ public class AppRTCDemoActivity extends Activity
         factory.dispose();
         factory = null;
       }
-      wakeLock.release();
       finish();
     }
   }
