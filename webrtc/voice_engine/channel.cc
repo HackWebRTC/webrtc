@@ -121,6 +121,8 @@ Channel::SendPacket(int channel, const void *data, int len)
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SendPacket(channel=%d, len=%d)", channel, len);
 
+    CriticalSectionScoped cs(&_callbackCritSect);
+
     if (_transportPtr == NULL)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId,_channelId),
@@ -158,8 +160,6 @@ Channel::SendPacket(int channel, const void *data, int len)
     // SRTP or External encryption
     if (_encrypting)
     {
-        CriticalSectionScoped cs(&_callbackCritSect);
-
         if (_encryptionPtr)
         {
             if (!_encryptionRTPBufferPtr)
@@ -192,39 +192,18 @@ Channel::SendPacket(int channel, const void *data, int len)
         }
     }
 
-    // Packet transmission using WebRtc socket transport
-    if (!_externalTransport)
-    {
-        int n = _transportPtr->SendPacket(channel, bufferToSendPtr,
-                                          bufferLength);
-        if (n < 0)
-        {
-            WEBRTC_TRACE(kTraceError, kTraceVoice,
-                         VoEId(_instanceId,_channelId),
-                         "Channel::SendPacket() RTP transmission using WebRtc"
-                         " sockets failed");
-            return -1;
-        }
-        return n;
+    int n = _transportPtr->SendPacket(channel, bufferToSendPtr,
+                                      bufferLength);
+    if (n < 0) {
+      std::string transport_name =
+          _externalTransport ? "external transport" : "WebRtc sockets";
+      WEBRTC_TRACE(kTraceError, kTraceVoice,
+                   VoEId(_instanceId,_channelId),
+                   "Channel::SendPacket() RTP transmission using %s failed",
+                   transport_name.c_str());
+      return -1;
     }
-
-    // Packet transmission using external transport transport
-    {
-        CriticalSectionScoped cs(&_callbackCritSect);
-
-        int n = _transportPtr->SendPacket(channel,
-                                          bufferToSendPtr,
-                                          bufferLength);
-        if (n < 0)
-        {
-            WEBRTC_TRACE(kTraceError, kTraceVoice,
-                         VoEId(_instanceId,_channelId),
-                         "Channel::SendPacket() RTP transmission using external"
-                         " transport failed");
-            return -1;
-        }
-        return n;
-    }
+    return n;
 }
 
 int
@@ -236,16 +215,14 @@ Channel::SendRTCPPacket(int channel, const void *data, int len)
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SendRTCPPacket(channel=%d, len=%d)", channel, len);
 
+    CriticalSectionScoped cs(&_callbackCritSect);
+    if (_transportPtr == NULL)
     {
-        CriticalSectionScoped cs(&_callbackCritSect);
-        if (_transportPtr == NULL)
-        {
-            WEBRTC_TRACE(kTraceError, kTraceVoice,
-                         VoEId(_instanceId,_channelId),
-                         "Channel::SendRTCPPacket() failed to send RTCP packet"
-                         " due to invalid transport object");
-            return -1;
-        }
+        WEBRTC_TRACE(kTraceError, kTraceVoice,
+                     VoEId(_instanceId,_channelId),
+                     "Channel::SendRTCPPacket() failed to send RTCP packet"
+                     " due to invalid transport object");
+        return -1;
     }
 
     uint8_t* bufferToSendPtr = (uint8_t*)data;
@@ -262,8 +239,6 @@ Channel::SendRTCPPacket(int channel, const void *data, int len)
     // SRTP or External encryption
     if (_encrypting)
     {
-        CriticalSectionScoped cs(&_callbackCritSect);
-
         if (_encryptionPtr)
         {
             if (!_encryptionRTCPBufferPtr)
@@ -294,45 +269,19 @@ Channel::SendRTCPPacket(int channel, const void *data, int len)
         }
     }
 
-    // Packet transmission using WebRtc socket transport
-    if (!_externalTransport)
-    {
-        int n = _transportPtr->SendRTCPPacket(channel,
-                                              bufferToSendPtr,
-                                              bufferLength);
-        if (n < 0)
-        {
-            WEBRTC_TRACE(kTraceInfo, kTraceVoice,
-                         VoEId(_instanceId,_channelId),
-                         "Channel::SendRTCPPacket() transmission using WebRtc"
-                         " sockets failed");
-            return -1;
-        }
-        return n;
+    int n = _transportPtr->SendRTCPPacket(channel,
+                                          bufferToSendPtr,
+                                          bufferLength);
+    if (n < 0) {
+      std::string transport_name =
+          _externalTransport ? "external transport" : "WebRtc sockets";
+      WEBRTC_TRACE(kTraceInfo, kTraceVoice,
+                   VoEId(_instanceId,_channelId),
+                   "Channel::SendRTCPPacket() transmission using %s failed",
+                   transport_name.c_str());
+      return -1;
     }
-
-    // Packet transmission using external transport transport
-    {
-        CriticalSectionScoped cs(&_callbackCritSect);
-        if (_transportPtr == NULL)
-        {
-            return -1;
-        }
-        int n = _transportPtr->SendRTCPPacket(channel,
-                                              bufferToSendPtr,
-                                              bufferLength);
-        if (n < 0)
-        {
-            WEBRTC_TRACE(kTraceInfo, kTraceVoice,
-                         VoEId(_instanceId,_channelId),
-                         "Channel::SendRTCPPacket() transmission using external"
-                         " transport failed");
-            return -1;
-        }
-        return n;
-    }
-
-    return len;
+    return n;
 }
 
 void
@@ -5071,6 +5020,7 @@ Channel::GetDeadOrAliveCounters(int& countDead, int& countAlive) const
 int32_t
 Channel::SendPacketRaw(const void *data, int len, bool RTCP)
 {
+    CriticalSectionScoped cs(&_callbackCritSect);
     if (_transportPtr == NULL)
     {
         return -1;
