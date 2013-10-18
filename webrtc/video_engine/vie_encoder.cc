@@ -55,6 +55,8 @@ static const int kMinPacingDelayMs = 200;
 // VideoEngine API and remove the kTransmissionMaxBitrateMultiplier.
 static const int kTransmissionMaxBitrateMultiplier = 2;
 
+static const float kStopPaddingThresholdMs = 2000;
+
 std::vector<uint32_t> AllocateStreamBitrates(
     uint32_t total_bitrate,
     const SimulcastStream* stream_configs,
@@ -142,6 +144,7 @@ ViEEncoder::ViEEncoder(int32_t engine_id,
     callback_cs_(CriticalSectionWrapper::CreateCriticalSection()),
     data_cs_(CriticalSectionWrapper::CreateCriticalSection()),
     bitrate_controller_(bitrate_controller),
+    time_of_last_incoming_frame_ms_(0),
     send_padding_(false),
     target_delay_ms_(0),
     network_is_transmitting_(true),
@@ -559,6 +562,7 @@ void ViEEncoder::DeliverFrame(int id,
                video_frame->timestamp());
   {
     CriticalSectionScoped cs(data_cs_.get());
+    time_of_last_incoming_frame_ms_ = TickTime::MillisecondTimestamp();
     if (default_rtp_rtcp_->SendingMedia() == false) {
       // We've paused or we have no channels attached, don't encode.
       return;
@@ -1078,6 +1082,16 @@ void ViEEncoder::OnNetworkChanged(const uint32_t bitrate_bps,
     // Disable padding if only sending one stream and video isn't muted.
     pad_up_to_bitrate_kbps = 0;
   }
+
+  {
+    // The amount of padding should decay to zero if no frames are being
+    // captured.
+    CriticalSectionScoped cs(data_cs_.get());
+    int64_t now_ms = TickTime::MillisecondTimestamp();
+    if (now_ms - time_of_last_incoming_frame_ms_ > kStopPaddingThresholdMs)
+      max_padding_bitrate_kbps = 0;
+  }
+
   paced_sender_->UpdateBitrate(bitrate_kbps,
                                max_padding_bitrate_kbps,
                                pad_up_to_bitrate_kbps);

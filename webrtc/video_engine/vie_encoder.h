@@ -197,6 +197,7 @@ class ViEEncoder
 
   BitrateController* bitrate_controller_;
 
+  int64_t time_of_last_incoming_frame_ms_;
   bool send_padding_;
   int target_delay_ms_;
   bool network_is_transmitting_;
