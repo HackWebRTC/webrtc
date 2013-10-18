@@ -9,8 +9,7 @@
  */
 
 /* Resamples a signal to an arbitrary rate. Used by the AEC to compensate for
- * clock
- * skew by resampling the farend signal.
+ * clock skew by resampling the farend signal.
  */
 
 #include "webrtc/modules/audio_processing/aec/aec_resampler.h"
