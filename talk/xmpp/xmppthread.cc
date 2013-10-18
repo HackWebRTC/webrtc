@@ -50,6 +50,7 @@ XmppThread::XmppThread() {
 }
 
 XmppThread::~XmppThread() {
+  Stop();
   delete pump_;
 }
 

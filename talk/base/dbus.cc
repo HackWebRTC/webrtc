@@ -158,6 +158,10 @@ class DBusMonitor::DBusMonitoringThread : public talk_base::Thread {
     ASSERT(filter_list_);
   }
 
+  virtual ~DBusMonitoringThread() {
+    Stop();
+  }
+
   // Override virtual method of Thread. Context: worker-thread.
   virtual void Run() {
     ASSERT(NULL == connection_);

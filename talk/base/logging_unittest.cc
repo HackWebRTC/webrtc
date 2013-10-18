@@ -87,6 +87,12 @@ TEST(LogTest, MultipleStreams) {
 // Ensure we don't crash when adding/removing streams while threads are going.
 // We should restore the correct global state at the end.
 class LogThread : public Thread {
+ public:
+  virtual ~LogThread() {
+    Stop();
+  }
+
+ private:
   void Run() {
     // LS_SENSITIVE to avoid cluttering up any real logging going on
     LOG(LS_SENSITIVE) << "LOG";

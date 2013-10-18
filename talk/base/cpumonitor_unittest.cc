@@ -54,6 +54,9 @@ class BusyThread : public talk_base::Thread {
   BusyThread(double load, double duration, double interval) :
     load_(load), duration_(duration), interval_(interval) {
   }
+  virtual ~BusyThread() {
+    Stop();
+  }
   void Run() {
     Timing time;
     double busy_time = interval_ * load_ / 100.0;

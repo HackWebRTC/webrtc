@@ -69,6 +69,10 @@ class GdiVideoRenderer::VideoWindow : public talk_base::Win32Window {
    public:
     explicit WindowThread(VideoWindow* window) : window_(window) {}
 
+    virtual ~WindowThread() {
+      Stop();
+    }
+
     // Override virtual method of talk_base::Thread. Context: worker Thread.
     virtual void Run() {
       // Initialize the window

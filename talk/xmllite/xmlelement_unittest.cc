@@ -235,6 +235,10 @@ class XmlElementCreatorThread : public talk_base::Thread {
   XmlElementCreatorThread(int count, buzz::QName qname) :
       count_(count), qname_(qname) {}
 
+  virtual ~XmlElementCreatorThread() {
+    Stop();
+  }
+
   virtual void Run() {
     std::vector<buzz::XmlElement*> elems;
     for (int i = 0; i < count_; i++) {

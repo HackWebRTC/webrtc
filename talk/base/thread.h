@@ -111,9 +111,15 @@ class Runnable {
   DISALLOW_COPY_AND_ASSIGN(Runnable);
 };
 
+// WARNING! SUBCLASSES MUST CALL Stop() IN THEIR DESTRUCTORS!  See ~Thread().
+
 class Thread : public MessageQueue {
  public:
   explicit Thread(SocketServer* ss = NULL);
+  // NOTE: ALL SUBCLASSES OF Thread MUST CALL Stop() IN THEIR DESTRUCTORS (or
+  // guarantee Stop() is explicitly called before the subclass is destroyed).
+  // This is required to avoid a data race between the destructor modifying the
+  // vtable, and the Thread::PreRun calling the virtual method Run().
   virtual ~Thread();
 
   static Thread* Current();
@@ -291,6 +297,7 @@ class AutoThread : public Thread {
 class ComThread : public Thread {
  public:
   ComThread() {}
+  virtual ~ComThread() { Stop(); }
 
  protected:
   virtual void Run();

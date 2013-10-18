@@ -125,6 +125,7 @@ class RtpSenderReceiver
   RtpSenderReceiver(MediaChannel* channel,
                     talk_base::StreamInterface* input_file_stream,
                     talk_base::StreamInterface* output_file_stream);
+  virtual ~RtpSenderReceiver();
 
   // Called by media channel. Context: media channel thread.
   bool SetSend(bool send);
@@ -181,6 +182,10 @@ RtpSenderReceiver::RtpSenderReceiver(
   if (output_stream_) {
     rtp_dump_writer_.reset(new RtpDumpWriter(output_stream_.get()));
   }
+}
+
+RtpSenderReceiver::~RtpSenderReceiver() {
+  Stop();
 }
 
 bool RtpSenderReceiver::SetSend(bool send) {

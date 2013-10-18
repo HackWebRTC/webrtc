@@ -557,6 +557,7 @@ AutoThread::AutoThread(SocketServer* ss) : Thread(ss) {
 }
 
 AutoThread::~AutoThread() {
+  Stop();
   if (ThreadManager::Instance()->CurrentThread() == this) {
     ThreadManager::Instance()->SetCurrentThread(NULL);
   }

@@ -156,6 +156,7 @@ class Win32Thread : public Thread {
     set_socketserver(&ss_);
   }
   virtual ~Win32Thread() {
+    Stop();
     set_socketserver(NULL);
   }
   virtual void Run() {

@@ -122,7 +122,7 @@ class MessageClient : public MessageHandler, public TestGenerator {
 class CustomThread : public talk_base::Thread {
  public:
   CustomThread() {}
-  virtual ~CustomThread() {}
+  virtual ~CustomThread() { Stop(); }
   bool Start() { return false; }
 };
 
@@ -136,6 +136,7 @@ class SignalWhenDestroyedThread : public Thread {
   }
 
   virtual ~SignalWhenDestroyedThread() {
+    Stop();
     event_->Set();
   }
 

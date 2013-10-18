@@ -37,6 +37,9 @@ class WakeThread : public Thread {
  public:
   WakeThread(SocketServer* ss) : ss_(ss) {
   }
+  virtual ~WakeThread() {
+    Stop();
+  }
   void Run() {
     ss_->WakeUp();
   }

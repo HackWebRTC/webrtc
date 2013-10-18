@@ -120,6 +120,10 @@ class OwnerThread : public Thread, public sigslot::has_slots<> {
         has_run_(false) {
   }
 
+  virtual ~OwnerThread() {
+    Stop();
+  }
+
   virtual void Run() {
     SignalThreadTest::SlowSignalThread* signal_thread =
         new SignalThreadTest::SlowSignalThread(harness_);

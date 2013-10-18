@@ -316,15 +316,6 @@
   ...
 }
 {
-  bug_2078_1
-  ThreadSanitizer:Race
-  fun:talk_base::Thread::~Thread
-  fun:cricket::RtpSenderReceiver::~RtpSenderReceiver
-  fun:cricket::RtpSenderReceiver::~RtpSenderReceiver
-  fun:talk_base::scoped_ptr::~scoped_ptr
-  ...
-}
-{
   bug_2078_2
   ThreadSanitizer:Race
   ...
@@ -657,13 +648,6 @@
   ...
 }
 {
-  bug_2080_4
-  ThreadSanitizer:Race
-  fun:talk_base::Thread::~Thread
-  fun:talk_base::LogThread::~LogThread
-  ...
-}
-{
   bug_2080_6
   ThreadSanitizer:Race
   ...
@@ -847,16 +831,6 @@
   fun:OwnerThread::~OwnerThread
   fun:talk_base::scoped_ptr::~scoped_ptr
   ...
-}
-{
-  bug_2080_28
-  ThreadSanitizer:Race
-  fun:talk_base::Thread::~Thread
-  fun:OwnerThread::~OwnerThread
-  fun:OwnerThread::~OwnerThread
-  fun:talk_base::scoped_ptr::~scoped_ptr
-  fun:SignalThreadTest_OwnerThreadGoesAway_Test::TestBody
-  fun:testing::internal::HandleSehExceptionsInMethodIfSupported
 }
 {
   bug_2080_29

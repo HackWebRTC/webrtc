@@ -108,6 +108,10 @@ class FileVideoCapturer::FileReadThread
         finished_(false) {
   }
 
+  virtual ~FileReadThread() {
+    Stop();
+  }
+
   // Override virtual method of parent Thread. Context: Worker Thread.
   virtual void Run() {
     // Read the first frame and start the message pump. The pump runs until

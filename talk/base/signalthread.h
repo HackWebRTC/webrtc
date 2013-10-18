@@ -123,6 +123,7 @@ class SignalThread
   class Worker : public Thread {
    public:
     explicit Worker(SignalThread* parent) : parent_(parent) {}
+    virtual ~Worker() { Stop(); }
     virtual void Run() { parent_->Run(); }
 
    private:
