@@ -12,6 +12,19 @@
   ],
   'targets': [
     {
+      'target_name': 'audio_e2e_harness',
+      'type': 'executable',
+      'dependencies': [
+        '<(webrtc_root)/test/test.gyp:channel_transport',
+        '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+      ],
+      'sources': [
+        'e2e_quality/audio/audio_e2e_harness.cc',
+      ],
+    }, # audio_e2e_harness
+    {
       'target_name': 'video_quality_analysis',
       'type': 'static_library',
       'dependencies': [
