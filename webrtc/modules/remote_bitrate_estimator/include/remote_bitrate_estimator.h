@@ -72,7 +72,8 @@ struct RemoteBitrateEstimatorFactory {
       Clock* clock) const;
 };
 
-struct AbsoluteSendTimeRemoteBitrateEstimatorFactory {
+struct AbsoluteSendTimeRemoteBitrateEstimatorFactory
+    : public RemoteBitrateEstimatorFactory {
   AbsoluteSendTimeRemoteBitrateEstimatorFactory() {}
   virtual ~AbsoluteSendTimeRemoteBitrateEstimatorFactory() {}
 
