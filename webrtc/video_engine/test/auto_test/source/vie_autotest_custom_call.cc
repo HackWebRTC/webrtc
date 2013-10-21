@@ -73,7 +73,7 @@ class ViEAutotestEncoderObserver : public webrtc::ViEEncoderObserver {
               << " BR: " << bitrate << std::endl;
   }
 
-  virtual void VideoAutoMuted(bool is_muted) {
+  virtual void VideoAutoMuted(int video_channel, bool is_muted) {
     std::cout << "VideoAutoMuted: " << is_muted << std::endl;
   }
 };

@@ -1113,7 +1113,7 @@ void ViEEncoder::OnNetworkChanged(const uint32_t bitrate_bps,
                    ViEId(engine_id_, channel_id_),
                    "%s: video_auto_muted_ changed to %i",
                    __FUNCTION__, video_auto_muted_);
-      codec_observer_->VideoAutoMuted(video_auto_muted_);
+      codec_observer_->VideoAutoMuted(channel_id_, video_auto_muted_);
     }
   }
 }

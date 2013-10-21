@@ -88,7 +88,7 @@ class TestCodecObserver
     last_outgoing_bitrate_ += bitrate;
   }
 
-  virtual void VideoAutoMuted(bool is_muted) {
+  virtual void VideoAutoMuted(int video_channel, bool is_muted) {
     video_auto_muted_called_++;
   }
 

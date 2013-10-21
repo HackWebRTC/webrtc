@@ -39,7 +39,7 @@ class WEBRTC_DLLEXPORT ViEEncoderObserver {
   // This method is called whenever the state of the AutoMuter changes, i.e.,
   // when |is_muted| toggles.
   // TODO(hlundin): Remove the default implementation when possible.
-  virtual void VideoAutoMuted(bool is_muted) {}
+  virtual void VideoAutoMuted(int video_channel, bool is_muted) {}
 
  protected:
   virtual ~ViEEncoderObserver() {}
