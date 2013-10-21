@@ -164,7 +164,7 @@ VideoCaptureImpl::VideoCaptureImpl(const int32_t id)
       _captureCallBack(NULL),
       _lastProcessFrameCount(TickTime::Now()),
       _rotateFrame(kRotateNone),
-      last_capture_time_(TickTime::MillisecondTimestamp()),
+      last_capture_time_(0),
       delta_ntp_internal_ms_(
           Clock::GetRealTimeClock()->CurrentNtpInMilliseconds() -
           TickTime::MillisecondTimestamp()) {

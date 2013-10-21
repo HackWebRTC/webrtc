@@ -13,6 +13,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/common_video/test/frame_generator.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -88,11 +89,13 @@ class CallTest : public ::testing::Test {
   void StartSending() {
     receive_stream_->StartReceive();
     send_stream_->StartSend();
-    frame_generator_capturer_->Start();
+    if (frame_generator_capturer_.get() != NULL)
+      frame_generator_capturer_->Start();
   }
 
   void StopSending() {
-    frame_generator_capturer_->Stop();
+    if (frame_generator_capturer_.get() != NULL)
+      frame_generator_capturer_->Stop();
     if (send_stream_ != NULL)
       send_stream_->StopSend();
     if (receive_stream_ != NULL)
@@ -283,6 +286,50 @@ TEST_F(CallTest, UsesTraceCallback) {
   // The TraceCallback instance MUST outlive Calls, destroy Calls explicitly.
   sender_call_.reset();
   receiver_call_.reset();
+}
+
+TEST_F(CallTest, TransmitsFirstFrame) {
+  class Renderer : public VideoRenderer {
+   public:
+    Renderer() : event_(EventWrapper::Create()) {}
+
+    virtual void RenderFrame(const I420VideoFrame& video_frame,
+                             int /*time_to_render_ms*/) OVERRIDE {
+      event_->Set();
+    }
+
+    EventTypeWrapper Wait() { return event_->Wait(kDefaultTimeoutMs); }
+
+    scoped_ptr<EventWrapper> event_;
+  } renderer;
+
+  test::DirectTransport sender_transport, receiver_transport;
+
+  CreateCalls(Call::Config(&sender_transport),
+              Call::Config(&receiver_transport));
+
+  sender_transport.SetReceiver(receiver_call_->Receiver());
+  receiver_transport.SetReceiver(sender_call_->Receiver());
+
+  CreateTestConfigs();
+  receive_config_.renderer = &renderer;
+
+  CreateStreams();
+  StartSending();
+
+  scoped_ptr<test::FrameGenerator> frame_generator(test::FrameGenerator::Create(
+      send_config_.codec.width, send_config_.codec.height));
+  send_stream_->Input()->PutFrame(frame_generator->NextFrame(), 0);
+
+  EXPECT_EQ(kEventSignaled, renderer.Wait())
+      << "Timed out while waiting for the frame to render.";
+
+  StopSending();
+
+  sender_transport.StopSending();
+  receiver_transport.StopSending();
+
+  DestroyStreams();
 }
 
 TEST_F(CallTest, ReceivesAndRetransmitsNack) {
