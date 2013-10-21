@@ -108,7 +108,7 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
 ChannelGroup::ChannelGroup(ProcessThread* process_thread,
                            const Config& config)
     : remb_(new VieRemb()),
-      bitrate_controller_(BitrateController::CreateBitrateController()),
+      bitrate_controller_(BitrateController::CreateBitrateController(true)),
       call_stats_(new CallStats()),
       remote_bitrate_estimator_(new WrappingBitrateEstimator(remb_.get(),
                                 Clock::GetRealTimeClock(), process_thread)),

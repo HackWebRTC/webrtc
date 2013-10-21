@@ -43,7 +43,12 @@ class BitrateController {
  * BitrateObservers.
  */
  public:
-  static BitrateController* CreateBitrateController();
+  // The argument |enforce_min_bitrate| controls the behavior when the available
+  // bitrate is lower than the minimum bitrate, or the sum of minimum bitrates.
+  // When true, the bitrate will never be set lower than the minimum bitrate(s).
+  // When false, the bitrate observers will be allocated rates up to their
+  // respective minimum bitrate, satisfying one observer after the other.
+  static BitrateController* CreateBitrateController(bool enforce_min_bitrate);
   virtual ~BitrateController() {}
 
   virtual RtcpBandwidthObserver* CreateRtcpBandwidthObserver() = 0;

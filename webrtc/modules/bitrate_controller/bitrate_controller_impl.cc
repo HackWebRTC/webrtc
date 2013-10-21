@@ -11,6 +11,7 @@
 
 #include "webrtc/modules/bitrate_controller/bitrate_controller_impl.h"
 
+#include <algorithm>
 #include <utility>
 
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
@@ -69,13 +70,58 @@ class RtcpBandwidthObserverImpl : public RtcpBandwidthObserver {
     owner_->OnReceivedRtcpReceiverReport(fraction_lost_aggregate, rtt,
                                          total_number_of_packets, now_ms);
   }
+
  private:
   std::map<uint32_t, uint32_t> ssrc_to_last_received_extended_high_seq_num_;
   BitrateControllerImpl* owner_;
 };
 
-BitrateController* BitrateController::CreateBitrateController() {
-  return new BitrateControllerImpl();
+class BitrateControllerEnforceMinRate : public BitrateControllerImpl {
+ private:
+  void LowRateAllocation(uint32_t bitrate,
+                         uint8_t fraction_loss,
+                         uint32_t rtt,
+                         uint32_t sum_min_bitrates) {
+    // Min bitrate to all observers.
+    BitrateObserverConfList::iterator it;
+    for (it = bitrate_observers_.begin(); it != bitrate_observers_.end();
+        ++it) {
+      it->first->OnNetworkChanged(it->second->min_bitrate_, fraction_loss,
+                                  rtt);
+    }
+    // Set sum of min to current send bitrate.
+    bandwidth_estimation_.SetSendBitrate(sum_min_bitrates);
+  }
+};
+
+class BitrateControllerNoEnforceMinRate : public BitrateControllerImpl {
+ private:
+  void LowRateAllocation(uint32_t bitrate,
+                         uint8_t fraction_loss,
+                         uint32_t rtt,
+                         uint32_t sum_min_bitrates) {
+    // Allocate up to |min_bitrate_| to one observer at a time, until
+    // |bitrate| is depleted.
+    uint32_t remainder = bitrate;
+    BitrateObserverConfList::iterator it;
+    for (it = bitrate_observers_.begin(); it != bitrate_observers_.end();
+        ++it) {
+      uint32_t allocation = std::min(remainder, it->second->min_bitrate_);
+      it->first->OnNetworkChanged(allocation, fraction_loss, rtt);
+      remainder -= allocation;
+    }
+    // Set |bitrate| to current send bitrate.
+    bandwidth_estimation_.SetSendBitrate(bitrate);
+  }
+};
+
+BitrateController* BitrateController::CreateBitrateController(
+    bool enforce_min_bitrate) {
+  if (enforce_min_bitrate) {
+    return new BitrateControllerEnforceMinRate();
+  } else {
+    return new BitrateControllerNoEnforceMinRate();
+  }
 }
 
 BitrateControllerImpl::BitrateControllerImpl()
@@ -201,15 +247,7 @@ void BitrateControllerImpl::OnNetworkChanged(const uint32_t bitrate,
     sum_min_bitrates += it->second->min_bitrate_;
   }
   if (bitrate <= sum_min_bitrates) {
-    // Min bitrate to all observers.
-    for (it = bitrate_observers_.begin(); it != bitrate_observers_.end();
-        ++it) {
-      it->first->OnNetworkChanged(it->second->min_bitrate_, fraction_loss,
-                                  rtt);
-    }
-    // Set sum of min to current send bitrate.
-    bandwidth_estimation_.SetSendBitrate(sum_min_bitrates);
-    return;
+    return LowRateAllocation(bitrate, fraction_loss, rtt, sum_min_bitrates);
   }
   uint32_t bitrate_per_observer = (bitrate - sum_min_bitrates) /
       number_of_observers;
@@ -248,4 +286,5 @@ void BitrateControllerImpl::OnNetworkChanged(const uint32_t bitrate,
 bool BitrateControllerImpl::AvailableBandwidth(uint32_t* bandwidth) const {
   return bandwidth_estimation_.AvailableBandwidth(bandwidth);
 }
+
 }  // namespace webrtc

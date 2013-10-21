@@ -19,6 +19,7 @@
 
 #include <list>
 #include <map>
+#include <utility>
 
 #include "webrtc/modules/bitrate_controller/send_side_bandwidth_estimation.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -67,6 +68,9 @@ class BitrateControllerImpl : public BitrateController {
     BitrateObserver* observer_;
     uint32_t min_bitrate_;
   };
+  typedef std::pair<BitrateObserver*, BitrateConfiguration*>
+      BitrateObserverConfiguration;
+  typedef std::list<BitrateObserverConfiguration> BitrateObserverConfList;
 
   // Called by BitrateObserver's direct from the RTCP module.
   void OnReceivedEstimatedBitrate(const uint32_t bitrate);
@@ -76,21 +80,24 @@ class BitrateControllerImpl : public BitrateController {
                                     const int number_of_packets,
                                     const uint32_t now_ms);
 
+  SendSideBandwidthEstimation bandwidth_estimation_;
+  BitrateObserverConfList bitrate_observers_;
+
  private:
   typedef std::multimap<uint32_t, ObserverConfiguration*> ObserverSortingMap;
-  typedef std::pair<BitrateObserver*, BitrateConfiguration*>
-      BitrateObserverConfiguration;
-  typedef std::list<BitrateObserverConfiguration> BitrateObserverConfList;
 
   BitrateObserverConfList::iterator
       FindObserverConfigurationPair(const BitrateObserver* observer);
   void OnNetworkChanged(const uint32_t bitrate,
                         const uint8_t fraction_loss,  // 0 - 255.
                         const uint32_t rtt);
+  // Derived classes must implement this strategy method.
+  virtual void LowRateAllocation(uint32_t bitrate,
+                                 uint8_t fraction_loss,
+                                 uint32_t rtt,
+                                 uint32_t sum_min_bitrates) = 0;
 
   CriticalSectionWrapper* critsect_;
-  SendSideBandwidthEstimation bandwidth_estimation_;
-  BitrateObserverConfList bitrate_observers_;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_BITRATE_CONTROLLER_BITRATE_CONTROLLER_IMPL_H_
