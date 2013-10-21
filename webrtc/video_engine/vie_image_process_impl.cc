@@ -269,4 +269,35 @@ int ViEImageProcessImpl::EnableColorEnhancement(const int video_channel,
   return 0;
 }
 
+void ViEImageProcessImpl::RegisterPreEncodeCallback(
+    int video_channel,
+    I420FrameCallback* pre_encode_callback) {
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
+  vie_encoder->RegisterPreEncodeCallback(pre_encode_callback);
+}
+
+void ViEImageProcessImpl::DeRegisterPreEncodeCallback(int video_channel) {
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
+  assert(vie_encoder != NULL);
+  vie_encoder->DeRegisterPreEncodeCallback();
+}
+
+void ViEImageProcessImpl::RegisterPreRenderCallback(
+    int video_channel,
+    I420FrameCallback* pre_render_callback) {
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  assert(vie_channel != NULL);
+  vie_channel->RegisterPreRenderCallback(pre_render_callback);
+}
+
+void ViEImageProcessImpl::DeRegisterPreRenderCallback(int video_channel) {
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  assert(vie_channel != NULL);
+  vie_channel->RegisterPreRenderCallback(NULL);
+}
+
 }  // namespace webrtc

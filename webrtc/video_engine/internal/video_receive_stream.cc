@@ -19,6 +19,7 @@
 #include "webrtc/video_engine/include/vie_capture.h"
 #include "webrtc/video_engine/include/vie_codec.h"
 #include "webrtc/video_engine/include/vie_external_codec.h"
+#include "webrtc/video_engine/include/vie_image_process.h"
 #include "webrtc/video_engine/include/vie_network.h"
 #include "webrtc/video_engine/include/vie_render.h"
 #include "webrtc/video_engine/include/vie_rtp_rtcp.h"
@@ -86,21 +87,28 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
   render_ = webrtc::ViERender::GetInterface(video_engine);
   assert(render_ != NULL);
 
-  if (render_->AddRenderer(channel_, kVideoI420, this) != 0) {
-    abort();
-  }
+  render_->AddRenderer(channel_, kVideoI420, this);
+
+  image_process_ = ViEImageProcess::GetInterface(video_engine);
+  image_process_->RegisterPreRenderCallback(channel_,
+                                            config_.pre_render_callback);
 
   clock_ = Clock::GetRealTimeClock();
 }
 
 VideoReceiveStream::~VideoReceiveStream() {
+  image_process_->DeRegisterPreEncodeCallback(channel_);
+
   render_->RemoveRenderer(channel_);
+
   for (size_t i = 0; i < config_.external_decoders.size(); ++i) {
     external_codec_->DeRegisterExternalReceiveCodec(
         channel_, config_.external_decoders[i].payload_type);
   }
+
   network_->DeregisterSendTransport(channel_);
 
+  image_process_->Release();
   video_engine_base_->Release();
   external_codec_->Release();
   codec_->Release();
@@ -170,15 +178,8 @@ int VideoReceiveStream::DeliverFrame(uint8_t* frame,
   video_frame.set_timestamp(timestamp);
   video_frame.set_render_time_ms(render_time);
 
-  if (config_.post_decode_callback != NULL) {
-    config_.post_decode_callback->FrameCallback(&video_frame);
-  }
-
-  if (config_.renderer != NULL) {
-    // TODO(pbos): Add timing to RenderFrame call
-    config_.renderer->RenderFrame(video_frame,
-                                  render_time - clock_->TimeInMilliseconds());
-  }
+  config_.renderer->RenderFrame(video_frame,
+                                render_time - clock_->TimeInMilliseconds());
 
   return 0;
 }

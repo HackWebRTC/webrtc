@@ -21,6 +21,7 @@
 #include "webrtc/modules/video_processing/main/interface/video_processing.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
+#include "webrtc/video_engine/new_include/frame_callback.h"
 #include "webrtc/video_engine/vie_defines.h"
 #include "webrtc/video_engine/vie_frame_provider_base.h"
 
@@ -167,6 +168,10 @@ class ViEEncoder
   // |threshold_bps| + |window_bps|.
   virtual void EnableAutoMuting(int threshold_bps, int window_bps);
 
+  // New-style callback, used by VideoSendStream.
+  void RegisterPreEncodeCallback(I420FrameCallback* pre_encode_callback);
+  void DeRegisterPreEncodeCallback();
+
   int channel_id() const { return channel_id_; }
  protected:
   // Called by BitrateObserver.
@@ -178,7 +183,6 @@ class ViEEncoder
   bool TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
                         int64_t capture_time_ms);
   int TimeToSendPadding(int bytes);
-
  private:
   bool EncoderPaused() const;
 
@@ -223,6 +227,7 @@ class ViEEncoder
   // Quality modes callback
   QMVideoSettingsCallback* qm_callback_;
   bool video_auto_muted_;
+  I420FrameCallback* pre_encode_callback_;
 };
 
 }  // namespace webrtc

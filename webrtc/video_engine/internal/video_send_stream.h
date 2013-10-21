@@ -26,6 +26,7 @@ class ViECapture;
 class ViECodec;
 class ViEExternalCapture;
 class ViEExternalCodec;
+class ViEImageProcess;
 class ViENetwork;
 class ViERTP_RTCP;
 
@@ -72,6 +73,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
   ViEExternalCodec* external_codec_;
   ViENetwork* network_;
   ViERTP_RTCP* rtp_rtcp_;
+  ViEImageProcess* image_process_;
 
   int channel_;
   int capture_id_;

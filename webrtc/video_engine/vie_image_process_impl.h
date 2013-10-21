@@ -38,6 +38,15 @@ class ViEImageProcessImpl
   virtual int EnableDenoising(const int capture_id, const bool enable);
   virtual int EnableColorEnhancement(const int video_channel,
                                      const bool enable);
+  virtual void RegisterPreEncodeCallback(
+      int video_channel,
+      I420FrameCallback* pre_encode_callback) OVERRIDE;
+  virtual void DeRegisterPreEncodeCallback(int video_channel) OVERRIDE;
+
+  virtual void RegisterPreRenderCallback(
+      int video_channel,
+      I420FrameCallback* pre_render_callback) OVERRIDE;
+  virtual void DeRegisterPreRenderCallback(int video_channel) OVERRIDE;
 
  protected:
   explicit ViEImageProcessImpl(ViESharedData* shared_data);

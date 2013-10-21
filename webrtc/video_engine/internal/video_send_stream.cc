@@ -19,6 +19,7 @@
 #include "webrtc/video_engine/include/vie_capture.h"
 #include "webrtc/video_engine/include/vie_codec.h"
 #include "webrtc/video_engine/include/vie_external_codec.h"
+#include "webrtc/video_engine/include/vie_image_process.h"
 #include "webrtc/video_engine/include/vie_network.h"
 #include "webrtc/video_engine/include/vie_rtp_rtcp.h"
 #include "webrtc/video_engine/new_include/video_send_stream.h"
@@ -190,11 +191,16 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
     video_engine_base_->RegisterCpuOveruseObserver(channel_,
                                                    overuse_observer_.get());
   }
+
+  image_process_ = ViEImageProcess::GetInterface(video_engine);
+  image_process_->RegisterPreEncodeCallback(channel_,
+                                            config_.pre_encode_callback);
 }
 
 VideoSendStream::~VideoSendStream() {
+  image_process_->DeRegisterPreEncodeCallback(channel_);
+
   network_->DeregisterSendTransport(channel_);
-  video_engine_base_->DeleteChannel(channel_);
 
   capture_->DisconnectCaptureDevice(channel_);
   capture_->ReleaseCaptureDevice(capture_id_);
@@ -204,6 +210,9 @@ VideoSendStream::~VideoSendStream() {
                                                  config_.codec.plType);
   }
 
+  video_engine_base_->DeleteChannel(channel_);
+
+  image_process_->Release();
   video_engine_base_->Release();
   capture_->Release();
   codec_->Release();
@@ -219,10 +228,6 @@ void VideoSendStream::PutFrame(const I420VideoFrame& frame,
   //             resized the frame.
   I420VideoFrame frame_copy;
   frame_copy.CopyFrame(frame);
-
-  if (config_.pre_encode_callback != NULL) {
-    config_.pre_encode_callback->FrameCallback(&frame_copy);
-  }
 
   ViEVideoFrameI420 vf;
 

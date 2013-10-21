@@ -25,6 +25,7 @@ class VideoEngine;
 class ViEBase;
 class ViECodec;
 class ViEExternalCodec;
+class ViEImageProcess;
 class ViENetwork;
 class ViERender;
 class ViERTP_RTCP;
@@ -66,6 +67,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   ViENetwork* network_;
   ViERender* render_;
   ViERTP_RTCP* rtp_rtcp_;
+  ViEImageProcess* image_process_;
 
   int channel_;
 

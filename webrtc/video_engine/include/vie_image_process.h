@@ -22,6 +22,8 @@
 
 namespace webrtc {
 
+class I420FrameCallback;
+
 class VideoEngine;
 
 // This class declares an abstract interface for a user defined effect filter.
@@ -89,6 +91,17 @@ class WEBRTC_DLLEXPORT ViEImageProcess {
   // default.
   virtual int EnableColorEnhancement(const int video_channel,
                                      const bool enable) = 0;
+
+  // New-style callbacks, used by VideoSendStream/VideoReceiveStream.
+  virtual void RegisterPreEncodeCallback(
+      int video_channel,
+      I420FrameCallback* pre_encode_callback) = 0;
+  virtual void DeRegisterPreEncodeCallback(int video_channel) = 0;
+
+  virtual void RegisterPreRenderCallback(
+      int video_channel,
+      I420FrameCallback* pre_render_callback) = 0;
+  virtual void DeRegisterPreRenderCallback(int video_channel) = 0;
 
  protected:
   ViEImageProcess() {}

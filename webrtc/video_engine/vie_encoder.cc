@@ -28,6 +28,7 @@
 #include "webrtc/system_wrappers/interface/trace_event.h"
 #include "webrtc/video_engine/include/vie_codec.h"
 #include "webrtc/video_engine/include/vie_image_process.h"
+#include "webrtc/video_engine/new_include/frame_callback.h"
 #include "webrtc/video_engine/vie_defines.h"
 
 namespace webrtc {
@@ -162,7 +163,8 @@ ViEEncoder::ViEEncoder(int32_t engine_id,
     has_received_rpsi_(false),
     picture_id_rpsi_(0),
     qm_callback_(NULL),
-    video_auto_muted_(false) {
+    video_auto_muted_(false),
+    pre_encode_callback_(NULL) {
   WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo,
                ViEId(engine_id, channel_id),
                "%s(engine_id: %d) 0x%p - Constructor", __FUNCTION__, engine_id,
@@ -650,6 +652,13 @@ void ViEEncoder::DeliverFrame(int id,
   if (decimated_frame == NULL)  {
     decimated_frame = video_frame;
   }
+
+  {
+    CriticalSectionScoped cs(callback_cs_.get());
+    if (pre_encode_callback_)
+      pre_encode_callback_->FrameCallback(decimated_frame);
+  }
+
 #ifdef VIDEOCODEC_VP8
   if (vcm_.SendCodec() == webrtc::kVideoCodecVP8) {
     webrtc::CodecSpecificInfo codec_specific_info;
@@ -1150,6 +1159,17 @@ int ViEEncoder::StopDebugRecording() {
 
 void ViEEncoder::EnableAutoMuting(int threshold_bps, int window_bps) {
   vcm_.EnableAutoMuting(threshold_bps, window_bps);
+}
+
+void ViEEncoder::RegisterPreEncodeCallback(
+    I420FrameCallback* pre_encode_callback) {
+  CriticalSectionScoped cs(callback_cs_.get());
+  pre_encode_callback_ = pre_encode_callback;
+}
+
+void ViEEncoder::DeRegisterPreEncodeCallback() {
+  CriticalSectionScoped cs(callback_cs_.get());
+  pre_encode_callback_ = NULL;
 }
 
 QMVideoSettingsCallback::QMVideoSettingsCallback(VideoProcessingModule* vpm)

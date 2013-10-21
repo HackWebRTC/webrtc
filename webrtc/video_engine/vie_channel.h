@@ -34,6 +34,7 @@ class ChannelStatsObserver;
 class Config;
 class CriticalSectionWrapper;
 class Encryption;
+class I420FrameCallback;
 class PacedSender;
 class ProcessThread;
 class RtcpRttObserver;
@@ -308,6 +309,9 @@ class ViEChannel
 
   int32_t RegisterEffectFilter(ViEEffectFilter* effect_filter);
 
+  // New-style callback, used by VideoReceiveStream.
+  void RegisterPreRenderCallback(I420FrameCallback* pre_render_callback);
+
  protected:
   static bool ChannelDecodeThreadFunction(void* obj);
   bool ChannelDecodeProcess();
@@ -384,6 +388,7 @@ class ViEChannel
 
   int nack_history_size_sender_;
   int max_nack_reordering_threshold_;
+  I420FrameCallback* pre_render_callback_;
 };
 
 }  // namespace webrtc

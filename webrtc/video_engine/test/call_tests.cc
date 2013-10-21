@@ -236,7 +236,7 @@ class NackObserver : public test::RtpRtcpObserver {
 TEST_F(CallTest, UsesTraceCallback) {
   const unsigned int kSenderTraceFilter = kTraceDebug;
   const unsigned int kReceiverTraceFilter = kTraceDefault & (~kTraceDebug);
-  class TraceObserver: public TraceCallback {
+  class TraceObserver : public TraceCallback {
    public:
     TraceObserver(unsigned int filter)
         : filter_(filter), messages_left_(50), done_(EventWrapper::Create()) {}
@@ -347,7 +347,6 @@ TEST_F(CallTest, ReceivesAndRetransmitsNack) {
 
   CreateStreams();
   CreateFrameGenerator();
-
   StartSending();
 
   // Wait() waits for an event triggered when NACKs have been received, NACKed
@@ -357,6 +356,103 @@ TEST_F(CallTest, ReceivesAndRetransmitsNack) {
   StopSending();
 
   observer.StopSending();
+
+  DestroyStreams();
+}
+
+TEST_F(CallTest, UsesFrameCallbacks) {
+  static const int kWidth = 320;
+  static const int kHeight = 240;
+
+  class Renderer : public VideoRenderer {
+   public:
+    Renderer() : event_(EventWrapper::Create()) {}
+
+    virtual void RenderFrame(const I420VideoFrame& video_frame,
+                             int /*time_to_render_ms*/) OVERRIDE {
+      EXPECT_EQ(0, *video_frame.buffer(kYPlane))
+          << "Rendered frame should have zero luma which is applied by the "
+             "pre-render callback.";
+      event_->Set();
+    }
+
+    EventTypeWrapper Wait() { return event_->Wait(kDefaultTimeoutMs); }
+    scoped_ptr<EventWrapper> event_;
+  } renderer;
+
+  class TestFrameCallback : public I420FrameCallback {
+   public:
+    TestFrameCallback(int expected_luma_byte, int next_luma_byte)
+        : event_(EventWrapper::Create()),
+          expected_luma_byte_(expected_luma_byte),
+          next_luma_byte_(next_luma_byte) {}
+
+    EventTypeWrapper Wait() { return event_->Wait(kDefaultTimeoutMs); }
+
+   private:
+    virtual void FrameCallback(I420VideoFrame* frame) {
+      EXPECT_EQ(kWidth, frame->width())
+          << "Width not as expected, callback done before resize?";
+      EXPECT_EQ(kHeight, frame->height())
+          << "Height not as expected, callback done before resize?";
+
+      // Previous luma specified, observed luma should be fairly close.
+      if (expected_luma_byte_ != -1) {
+        EXPECT_NEAR(expected_luma_byte_, *frame->buffer(kYPlane), 10);
+      }
+
+      memset(frame->buffer(kYPlane),
+             next_luma_byte_,
+             frame->allocated_size(kYPlane));
+
+      event_->Set();
+    }
+
+    scoped_ptr<EventWrapper> event_;
+    int expected_luma_byte_;
+    int next_luma_byte_;
+  };
+
+  TestFrameCallback pre_encode_callback(-1, 255);  // Changes luma to 255.
+  TestFrameCallback pre_render_callback(255, 0);  // Changes luma from 255 to 0.
+
+  test::DirectTransport sender_transport, receiver_transport;
+
+  CreateCalls(Call::Config(&sender_transport),
+              Call::Config(&receiver_transport));
+
+  sender_transport.SetReceiver(receiver_call_->Receiver());
+  receiver_transport.SetReceiver(sender_call_->Receiver());
+
+  CreateTestConfigs();
+  send_config_.encoder = NULL;
+  send_config_.codec = sender_call_->GetVideoCodecs()[0];
+  send_config_.codec.width = kWidth;
+  send_config_.codec.height = kHeight;
+  send_config_.pre_encode_callback = &pre_encode_callback;
+  receive_config_.pre_render_callback = &pre_render_callback;
+  receive_config_.renderer = &renderer;
+
+  CreateStreams();
+  StartSending();
+
+  // Create frames that are smaller than the send width/height, this is done to
+  // check that the callbacks are done after processing video.
+  scoped_ptr<test::FrameGenerator> frame_generator(
+      test::FrameGenerator::Create(kWidth / 2, kHeight / 2));
+  send_stream_->Input()->PutFrame(frame_generator->NextFrame(), 0);
+
+  EXPECT_EQ(kEventSignaled, pre_encode_callback.Wait())
+      << "Timed out while waiting for pre-encode callback.";
+  EXPECT_EQ(kEventSignaled, pre_render_callback.Wait())
+      << "Timed out while waiting for pre-render callback.";
+  EXPECT_EQ(kEventSignaled, renderer.Wait())
+      << "Timed out while waiting for the frame to render.";
+
+  StopSending();
+
+  sender_transport.StopSending();
+  receiver_transport.StopSending();
 
   DestroyStreams();
 }
@@ -450,7 +546,6 @@ void CallTest::ReceivesPliAndRecovers(int rtp_history_ms) {
 
   CreateStreams();
   CreateFrameGenerator();
-
   StartSending();
 
   // Wait() waits for an event triggered when Pli has been received and frames
@@ -510,7 +605,6 @@ TEST_F(CallTest, SurvivesIncomingRtpPacketsToDestroyedReceiveStream) {
 
   CreateStreams();
   CreateFrameGenerator();
-
   StartSending();
 
   receiver_call_->DestroyReceiveStream(receive_stream_);

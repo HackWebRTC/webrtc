@@ -98,7 +98,7 @@ class VideoReceiveStream {
           render_delay_ms(0),
           audio_channel_id(0),
           pre_decode_callback(NULL),
-          post_decode_callback(NULL),
+          pre_render_callback(NULL),
           target_delay_ms(0) {}
     // Codecs the receive stream can receive.
     std::vector<VideoCodec> codecs;
@@ -150,7 +150,7 @@ class VideoReceiveStream {
     // Called for each decoded frame. E.g. used when adding effects to the
     // decoded
     // stream. 'NULL' disables the callback.
-    I420FrameCallback* post_decode_callback;
+    I420FrameCallback* pre_render_callback;
 
     // External video decoders to be used if incoming payload type matches the
     // registered type for an external decoder.
