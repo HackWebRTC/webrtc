@@ -189,7 +189,7 @@ class RealTimeTemporalLayers : public TemporalLayers {
     return encode_flags_[index];
   }
 
-  unsigned int CurrentLayerId() const {
+  virtual int CurrentLayerId() const {
     assert(layer_ids_length_ > 0 && layer_ids_ != NULL);
     int index = frame_counter_ % layer_ids_length_;
     assert(index >= 0 && index < layer_ids_length_);

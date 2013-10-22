@@ -49,6 +49,8 @@ class TemporalLayers {
                                      uint32_t timestamp) = 0;
 
   virtual void FrameEncoded(unsigned int size, uint32_t timestamp) = 0;
+
+  virtual int CurrentLayerId() const = 0;
 };
 
 // Factory for a temporal layers strategy that adaptively changes the number of
