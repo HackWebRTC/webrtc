@@ -6,6 +6,9 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+import re
+
+
 def _CheckNoIOStreamInHeaders(input_api, output_api):
   """Checks to make sure no .h files include <iostream>."""
   files = []
@@ -150,3 +153,42 @@ def CheckChangeOnCommit(input_api, output_api):
   results.extend(input_api.canned_checks.CheckChangeHasTestField(
       input_api, output_api))
   return results
+
+# pylint: disable=W0613
+def GetPreferredTrySlaves(project, change):
+  files = change.LocalPaths()
+
+  ios_bots = [
+      'ios',
+      'ios_rel',
+  ]
+  linux_bots = [
+      'linux',
+      'linux_asan',
+      'linux_memcheck',
+      'linux_rel',
+      'linux_tsan',
+  ]
+  mac_bots = [
+      'mac',
+      'mac_asan',
+      'mac_rel',
+      'mac_x64_rel',
+  ]
+  win_bots = [
+      'win',
+      'win_rel',
+      'win_x64_rel',
+  ]
+
+  if not files or all(re.search(r'[\\/]OWNERS$', f) for f in files):
+    return []
+
+  if all(re.search('[/_]ios[/_.]', f) for f in files):
+    return ios_bots
+  if all(re.search('\.(m|mm)$|(^|[/_])mac[/_.]', f) for f in files):
+    return mac_bots
+  if all(re.search('(^|[/_])win[/_.]', f) for f in files):
+    return win_bots
+
+  return ['android_ndk'] + ios_bots + linux_bots + mac_bots + win_bots
