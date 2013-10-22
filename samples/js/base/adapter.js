@@ -19,7 +19,7 @@ if (navigator.mozGetUserMedia) {
   webrtcDetectedBrowser = "firefox";
 
   webrtcDetectedVersion =
-                  parseInt(navigator.userAgent.match(/Firefox\/([0-9]+)\./)[1]);
+           parseInt(navigator.userAgent.match(/Firefox\/([0-9]+)\./)[1], 10);
 
   // The RTCPeerConnection object.
   RTCPeerConnection = mozRTCPeerConnection;
@@ -80,7 +80,7 @@ if (navigator.mozGetUserMedia) {
 
   webrtcDetectedBrowser = "chrome";
   webrtcDetectedVersion =
-             parseInt(navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)[2]);
+         parseInt(navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)[2], 10);
 
   // Creates iceServer from the url for Chrome.
   createIceServer = function(url, username, password) {
