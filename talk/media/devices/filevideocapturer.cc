@@ -28,6 +28,7 @@
 #include "talk/media/devices/filevideocapturer.h"
 
 #include "talk/base/bytebuffer.h"
+#include "talk/base/criticalsection.h"
 #include "talk/base/logging.h"
 #include "talk/base/thread.h"
 
@@ -121,6 +122,8 @@ class FileVideoCapturer::FileReadThread
       PostDelayed(waiting_time_ms, this);
       Thread::Run();
     }
+
+    talk_base::CritScope cs(&crit_);
     finished_ = true;
   }
 
@@ -135,10 +138,14 @@ class FileVideoCapturer::FileReadThread
   }
 
   // Check if Run() is finished.
-  bool Finished() const { return finished_; }
+  bool Finished() const {
+    talk_base::CritScope cs(&crit_);
+    return finished_;
+  }
 
  private:
   FileVideoCapturer* capturer_;
+  mutable talk_base::CriticalSection crit_;
   bool finished_;
 
   DISALLOW_COPY_AND_ASSIGN(FileReadThread);
@@ -228,9 +235,9 @@ CaptureState FileVideoCapturer::Start(const VideoFormat& capture_format) {
   SetCaptureFormat(&capture_format);
   // Create a thread to read the file.
   file_read_thread_ = new FileReadThread(this);
-  bool ret = file_read_thread_->Start();
   start_time_ns_ = kNumNanoSecsPerMilliSec *
       static_cast<int64>(talk_base::Time());
+  bool ret = file_read_thread_->Start();
   if (ret) {
     LOG(LS_INFO) << "File video capturer '" << GetId() << "' started";
     return CS_RUNNING;
