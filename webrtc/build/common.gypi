@@ -311,14 +311,6 @@
            }],
          ],
       }],
-      ['clang==1', {
-        # TODO(kjellander): Remove when Chromium's common.gypi enables this
-        # warning by default (http://crbug.com/307668).
-        'cflags!': ['-Wno-unused-const-variable',],
-        'xcode_settings': {
-          'WARNING_CFLAGS!': ['-Wno-unused-const-variable',],
-        },
-      }],
     ], # conditions
     'direct_dependent_settings': {
       'include_dirs': [
