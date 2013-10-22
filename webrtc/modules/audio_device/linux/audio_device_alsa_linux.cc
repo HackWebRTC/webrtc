@@ -1177,7 +1177,7 @@ int32_t AudioDeviceLinuxALSA::InitPlayout()
 
     _playoutFramesIn10MS = _playoutFreq/100;
     if ((errVal = LATE(snd_pcm_set_params)( _handlePlayout,
-#if defined(WEBRTC_BIG_ENDIAN)
+#if defined(WEBRTC_ARCH_BIG_ENDIAN)
         SND_PCM_FORMAT_S16_BE,
 #else
         SND_PCM_FORMAT_S16_LE, //format
@@ -1333,7 +1333,7 @@ int32_t AudioDeviceLinuxALSA::InitRecording()
 
     _recordingFramesIn10MS = _recordingFreq/100;
     if ((errVal = LATE(snd_pcm_set_params)(_handleRecord,
-#if defined(WEBRTC_BIG_ENDIAN)
+#if defined(WEBRTC_ARCH_BIG_ENDIAN)
         SND_PCM_FORMAT_S16_BE, //format
 #else
         SND_PCM_FORMAT_S16_LE, //format
@@ -1352,7 +1352,7 @@ int32_t AudioDeviceLinuxALSA::InitRecording()
            _recChannels = 1;
 
          if ((errVal = LATE(snd_pcm_set_params)(_handleRecord,
-#if defined(WEBRTC_BIG_ENDIAN)
+#if defined(WEBRTC_ARCH_BIG_ENDIAN)
              SND_PCM_FORMAT_S16_BE, //format
 #else
              SND_PCM_FORMAT_S16_LE, //format

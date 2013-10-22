@@ -638,7 +638,7 @@ int AudioProcessingImpl::WriteMessageToDebugFile() {
   if (size <= 0) {
     return kUnspecifiedError;
   }
-#if defined(WEBRTC_BIG_ENDIAN)
+#if defined(WEBRTC_ARCH_BIG_ENDIAN)
   // TODO(ajm): Use little-endian "on the wire". For the moment, we can be
   //            pretty safe in assuming little-endian.
 #endif
