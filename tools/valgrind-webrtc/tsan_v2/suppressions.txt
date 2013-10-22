@@ -11,10 +11,6 @@ race:webrtc/modules/audio_processing/aec/aec_rdft.c
 # See https://code.google.com/p/webrtc/issues/detail?id=2484 for details.
 # race:webrtc/modules/video_coding/codecs/vp8/vp8_impl.cc
 
-# libjingle_peerconnection_unittest
-# See https://code.google.com/p/webrtc/issues/detail?id=1205
-race:talk/app/webrtc/test/fakeaudiocapturemodule.cc
-
 # libjingle_p2p_unittest
 # See https://code.google.com/p/webrtc/issues/detail?id=2079
 race:talk/base/messagequeue.cc

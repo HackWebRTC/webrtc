@@ -52,6 +52,7 @@ static const int kClockDriftMs = 0;
 static const uint32_t kMaxVolume = 14392;
 
 enum {
+  MSG_START_PROCESS,
   MSG_RUN_PROCESS,
   MSG_STOP_PROCESS,
 };
@@ -89,6 +90,7 @@ talk_base::scoped_refptr<FakeAudioCaptureModule> FakeAudioCaptureModule::Create(
 }
 
 int FakeAudioCaptureModule::frames_received() const {
+  talk_base::CritScope cs(&crit_);
   return frames_received_;
 }
 
@@ -142,6 +144,7 @@ int32_t FakeAudioCaptureModule::RegisterEventObserver(
 
 int32_t FakeAudioCaptureModule::RegisterAudioCallback(
     webrtc::AudioTransport* audio_callback) {
+  talk_base::CritScope cs(&crit_callback_);
   audio_callback_ = audio_callback;
   return 0;
 }
@@ -245,18 +248,28 @@ int32_t FakeAudioCaptureModule::StartPlayout() {
   if (!play_is_initialized_) {
     return -1;
   }
-  playing_ = true;
-  UpdateProcessing();
+  {
+    talk_base::CritScope cs(&crit_);
+    playing_ = true;
+  }
+  bool start = true;
+  UpdateProcessing(start);
   return 0;
 }
 
 int32_t FakeAudioCaptureModule::StopPlayout() {
-  playing_ = false;
-  UpdateProcessing();
+  bool start = false;
+  {
+    talk_base::CritScope cs(&crit_);
+    playing_ = false;
+    start = ShouldStartProcessing();
+  }
+  UpdateProcessing(start);
   return 0;
 }
 
 bool FakeAudioCaptureModule::Playing() const {
+  talk_base::CritScope cs(&crit_);
   return playing_;
 }
 
@@ -264,18 +277,28 @@ int32_t FakeAudioCaptureModule::StartRecording() {
   if (!rec_is_initialized_) {
     return -1;
   }
-  recording_ = true;
-  UpdateProcessing();
+  {
+    talk_base::CritScope cs(&crit_);
+    recording_ = true;
+  }
+  bool start = true;
+  UpdateProcessing(start);
   return 0;
 }
 
 int32_t FakeAudioCaptureModule::StopRecording() {
-  recording_ = false;
-  UpdateProcessing();
+  bool start = false;
+  {
+    talk_base::CritScope cs(&crit_);
+    recording_ = false;
+    start = ShouldStartProcessing();
+  }
+  UpdateProcessing(start);
   return 0;
 }
 
 bool FakeAudioCaptureModule::Recording() const {
+  talk_base::CritScope cs(&crit_);
   return recording_;
 }
 
@@ -373,12 +396,14 @@ int32_t FakeAudioCaptureModule::MicrophoneVolumeIsAvailable(
   return 0;
 }
 
-int32_t FakeAudioCaptureModule::SetMicrophoneVolume(uint32_t /*volume*/) {
-  ASSERT(false);
+int32_t FakeAudioCaptureModule::SetMicrophoneVolume(uint32_t volume) {
+  talk_base::CritScope cs(&crit_);
+  current_mic_level_ = volume;
   return 0;
 }
 
 int32_t FakeAudioCaptureModule::MicrophoneVolume(uint32_t* volume) const {
+  talk_base::CritScope cs(&crit_);
   *volume = current_mic_level_;
   return 0;
 }
@@ -594,6 +619,9 @@ int32_t FakeAudioCaptureModule::GetLoudspeakerStatus(bool* /*enabled*/) const {
 
 void FakeAudioCaptureModule::OnMessage(talk_base::Message* msg) {
   switch (msg->message_id) {
+    case MSG_START_PROCESS:
+      StartProcessP();
+      break;
     case MSG_RUN_PROCESS:
       ProcessFrameP();
       break;
@@ -640,17 +668,25 @@ bool FakeAudioCaptureModule::CheckRecBuffer(int value) {
   return false;
 }
 
-void FakeAudioCaptureModule::UpdateProcessing() {
-  const bool process = recording_ || playing_;
-  if (process) {
-    if (started_) {
-      // Already started.
-      return;
-    }
-    process_thread_->Post(this, MSG_RUN_PROCESS);
+bool FakeAudioCaptureModule::ShouldStartProcessing() {
+  return recording_ || playing_;
+}
+
+void FakeAudioCaptureModule::UpdateProcessing(bool start) {
+  if (start) {
+    process_thread_->Post(this, MSG_START_PROCESS);
   } else {
     process_thread_->Send(this, MSG_STOP_PROCESS);
   }
+}
+
+void FakeAudioCaptureModule::StartProcessP() {
+  ASSERT(talk_base::Thread::Current() == process_thread_);
+  if (started_) {
+    // Already started.
+    return;
+  }
+  ProcessFrameP();
 }
 
 void FakeAudioCaptureModule::ProcessFrameP() {
@@ -659,14 +695,21 @@ void FakeAudioCaptureModule::ProcessFrameP() {
     next_frame_time_ = talk_base::Time();
     started_ = true;
   }
+
+  bool playing;
+  bool recording;
+  {
+    talk_base::CritScope cs(&crit_);
+    playing = playing_;
+    recording = recording_;
+  }
+
   // Receive and send frames every kTimePerFrameMs.
-  if (audio_callback_ != NULL) {
-    if (playing_) {
-      ReceiveFrameP();
-    }
-    if (recording_) {
-      SendFrameP();
-    }
+  if (playing) {
+    ReceiveFrameP();
+  }
+  if (recording) {
+    SendFrameP();
   }
 
   next_frame_time_ += kTimePerFrameMs;
@@ -678,35 +721,51 @@ void FakeAudioCaptureModule::ProcessFrameP() {
 
 void FakeAudioCaptureModule::ReceiveFrameP() {
   ASSERT(talk_base::Thread::Current() == process_thread_);
-  ResetRecBuffer();
-  uint32_t nSamplesOut = 0;
-  if (audio_callback_->NeedMorePlayData(kNumberSamples, kNumberBytesPerSample,
-                                       kNumberOfChannels, kSamplesPerSecond,
-                                       rec_buffer_, nSamplesOut) != 0) {
-    ASSERT(false);
+  {
+    talk_base::CritScope cs(&crit_callback_);
+    if (!audio_callback_) {
+      return;
+    }
+    ResetRecBuffer();
+    uint32_t nSamplesOut = 0;
+    if (audio_callback_->NeedMorePlayData(kNumberSamples, kNumberBytesPerSample,
+                                         kNumberOfChannels, kSamplesPerSecond,
+                                         rec_buffer_, nSamplesOut) != 0) {
+      ASSERT(false);
+    }
+    ASSERT(nSamplesOut == kNumberSamples);
   }
-  ASSERT(nSamplesOut == kNumberSamples);
   // The SetBuffer() function ensures that after decoding, the audio buffer
   // should contain samples of similar magnitude (there is likely to be some
   // distortion due to the audio pipeline). If one sample is detected to
   // have the same or greater magnitude somewhere in the frame, an actual frame
   // has been received from the remote side (i.e. faked frames are not being
   // pulled).
-  if (CheckRecBuffer(kHighSampleValue)) ++frames_received_;
+  if (CheckRecBuffer(kHighSampleValue)) {
+    talk_base::CritScope cs(&crit_);
+    ++frames_received_;
+  }
 }
 
 void FakeAudioCaptureModule::SendFrameP() {
   ASSERT(talk_base::Thread::Current() == process_thread_);
+  talk_base::CritScope cs(&crit_callback_);
+  if (!audio_callback_) {
+    return;
+  }
   bool key_pressed = false;
+  uint32_t current_mic_level = 0;
+  MicrophoneVolume(&current_mic_level);
   if (audio_callback_->RecordedDataIsAvailable(send_buffer_, kNumberSamples,
                                               kNumberBytesPerSample,
                                               kNumberOfChannels,
                                               kSamplesPerSecond, kTotalDelayMs,
-                                              kClockDriftMs, current_mic_level_,
+                                              kClockDriftMs, current_mic_level,
                                               key_pressed,
-                                              current_mic_level_) != 0) {
+                                              current_mic_level) != 0) {
     ASSERT(false);
   }
+  SetMicrophoneVolume(current_mic_level);
 }
 
 void FakeAudioCaptureModule::StopProcessP() {

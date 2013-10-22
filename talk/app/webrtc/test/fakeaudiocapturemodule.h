@@ -38,6 +38,7 @@
 #define TALK_APP_WEBRTC_TEST_FAKEAUDIOCAPTUREMODULE_H_
 
 #include "talk/base/basictypes.h"
+#include "talk/base/criticalsection.h"
 #include "talk/base/messagehandler.h"
 #include "talk/base/scoped_ref_ptr.h"
 #include "webrtc/common_types.h"
@@ -88,6 +89,7 @@ class FakeAudioCaptureModule
   virtual int32_t RegisterEventObserver(
       webrtc::AudioDeviceObserver* event_callback);
 
+  // Note: Calling this method from a callback may result in deadlock.
   virtual int32_t RegisterAudioCallback(webrtc::AudioTransport* audio_callback);
 
   virtual int32_t Init();
@@ -225,10 +227,15 @@ class FakeAudioCaptureModule
   // equal to |value|.
   bool CheckRecBuffer(int value);
 
-  // Starts or stops the pushing and pulling of audio frames depending on if
-  // recording or playback has been enabled/started.
-  void UpdateProcessing();
+  // Returns true/false depending on if recording or playback has been
+  // enabled/started.
+  bool ShouldStartProcessing();
 
+  // Starts or stops the pushing and pulling of audio frames.
+  void UpdateProcessing(bool start);
+
+  // Starts the periodic calling of ProcessFrame() in a thread safe way.
+  void StartProcessP();
   // Periodcally called function that ensures that frames are pulled and pushed
   // periodically if enabled/started.
   void ProcessFrameP();
@@ -275,6 +282,13 @@ class FakeAudioCaptureModule
   // indicate that the frames are not faked somewhere in the audio pipeline
   // (e.g. by a jitter buffer).
   int frames_received_;
+
+  // Protects variables that are accessed from process_thread_ and
+  // the main thread.
+  mutable talk_base::CriticalSection crit_;
+  // Protects |audio_callback_| that is accessed from process_thread_ and
+  // the main thread.
+  talk_base::CriticalSection crit_callback_;
 };
 
 #endif  // TALK_APP_WEBRTC_TEST_FAKEAUDIOCAPTUREMODULE_H_
