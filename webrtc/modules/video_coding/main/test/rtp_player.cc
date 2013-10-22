@@ -326,7 +326,6 @@ class RtpPlayerImpl : public RtpPlayerInterface {
       float loss_rate, uint32_t rtt_ms, bool reordering)
     : ssrc_handlers_(payload_sink_factory, payload_types),
       clock_(clock),
-      packet_source_(NULL),
       next_rtp_time_(0),
       first_packet_(true),
       first_packet_rtp_time_(0),

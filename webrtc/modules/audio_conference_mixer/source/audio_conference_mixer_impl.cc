@@ -124,8 +124,6 @@ AudioConferenceMixerImpl::AudioConferenceMixerImpl(int id)
       _scratchMixedParticipants(),
       _scratchVadPositiveParticipantsAmount(0),
       _scratchVadPositiveParticipants(),
-      _crit(NULL),
-      _cbCrit(NULL),
       _id(id),
       _minimumMixingFreq(kLowestPossible),
       _mixReceiver(NULL),
@@ -142,8 +140,7 @@ AudioConferenceMixerImpl::AudioConferenceMixerImpl(int id)
       _timeStamp(0),
       _timeScheduler(kProcessPeriodicityInMs),
       _mixedAudioLevel(),
-      _processCalls(0),
-      _limiter(NULL)
+      _processCalls(0)
 {}
 
 bool AudioConferenceMixerImpl::Init()

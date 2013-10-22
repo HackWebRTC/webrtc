@@ -140,7 +140,6 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(int id)
       receiver_initialized_(false),
       callback_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       secondary_send_codec_inst_(),
-      secondary_encoder_(NULL),
       codec_timestamp_(expected_codec_ts_),
       first_10ms_data_(false) {
 

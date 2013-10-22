@@ -154,7 +154,6 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(const int32_t id, Clock* clock)
       last_detected_tone_(kACMToneEnd),
       callback_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       secondary_send_codec_inst_(),
-      secondary_encoder_(NULL),
       initial_delay_ms_(0),
       num_packets_accumulated_(0),
       num_bytes_accumulated_(0),

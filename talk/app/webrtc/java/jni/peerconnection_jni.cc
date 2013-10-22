@@ -72,6 +72,7 @@
 #include "talk/media/devices/videorendererfactory.h"
 #include "talk/media/webrtc/webrtcvideocapturer.h"
 #include "third_party/icu/source/common/unicode/unistr.h"
+#include "webrtc/system_wrappers/interface/compile_assert.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/voice_engine/include/voe_base.h"
@@ -134,12 +135,6 @@ using webrtc::VideoTrackVector;
     }                                                             \
     CHECK(!count, "Unexpected refcount");                         \
   } while (0)
-
-// Lifted from chromium's base/basictypes.h.
-template <bool>
-struct CompileAssert {};
-#define COMPILE_ASSERT(expr, msg) \
-  typedef CompileAssert<(bool(expr))> msg[bool(expr) ? 1 : -1]
 
 namespace {
 

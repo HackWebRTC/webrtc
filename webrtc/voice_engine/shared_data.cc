@@ -29,7 +29,6 @@ SharedData::SharedData(const Config& config) :
     _channelManager(_gInstanceCounter, config),
     _engineStatistics(_gInstanceCounter),
     _audioDevicePtr(NULL),
-    audioproc_(NULL),
     _moduleProcessThreadPtr(ProcessThread::CreateProcessThread()),
     _externalRecording(false),
     _externalPlayout(false)

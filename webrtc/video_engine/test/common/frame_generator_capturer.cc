@@ -66,7 +66,6 @@ FrameGeneratorCapturer::FrameGeneratorCapturer(Clock* clock,
       sending_(false),
       tick_(EventWrapper::Create()),
       lock_(CriticalSectionWrapper::CreateCriticalSection()),
-      thread_(NULL),
       frame_generator_(frame_generator),
       target_fps_(target_fps) {
   assert(input != NULL);
