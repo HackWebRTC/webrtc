@@ -1864,7 +1864,6 @@ int RTCPSender::PrepareRTCP(const FeedbackState& feedback_state,
       if (_IJ && !statisticians.empty()) {
         rtcpPacketTypeFlags |= kRtcpTransmissionTimeOffset;
       }
-      _lastRTCPTime[0] = Clock::NtpToMs(NTPsec, NTPfrac);
     }
   }
 

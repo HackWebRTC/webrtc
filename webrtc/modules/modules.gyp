@@ -198,6 +198,7 @@
             'rtp_rtcp/source/rtp_format_vp8_test_helper.h',
             'rtp_rtcp/source/rtp_packet_history_unittest.cc',
             'rtp_rtcp/source/rtp_payload_registry_unittest.cc',
+            'rtp_rtcp/source/rtp_rtcp_impl_unittest.cc',
             'rtp_rtcp/source/rtp_utility_unittest.cc',
             'rtp_rtcp/source/rtp_header_extension_unittest.cc',
             'rtp_rtcp/source/rtp_sender_unittest.cc',
