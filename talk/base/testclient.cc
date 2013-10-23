@@ -80,13 +80,20 @@ TestClient::Packet* TestClient::NextPacket() {
   // the wrong thread to non-thread-safe objects.
 
   uint32 end = TimeAfter(kTimeout);
-  while (packets_->size() == 0 && TimeUntil(end) > 0)
+  while (TimeUntil(end) > 0) {
+    {
+      CritScope cs(&crit_);
+      if (packets_->size() != 0) {
+        break;
+      }
+    }
     Thread::Current()->ProcessMessages(1);
+  }
 
   // Return the first packet placed in the queue.
   Packet* packet = NULL;
+  CritScope cs(&crit_);
   if (packets_->size() > 0) {
-    CritScope cs(&crit_);
     packet = packets_->front();
     packets_->erase(packets_->begin());
   }

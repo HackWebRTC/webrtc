@@ -20,10 +20,7 @@ race:talk/p2p/base/stunserver_unittest.cc
 
 # libjingle_unittest
 # See https://code.google.com/p/webrtc/issues/detail?id=2080
-race:talk/base/asyncudpsocket.cc
 race:talk/base/logging.cc
-race:talk/base/natserver.cc
-race:talk/base/physicalsocketserver.cc
 race:talk/base/sharedexclusivelock_unittest.cc
 race:talk/base/signalthread_unittest.cc
 race:talk/base/thread.cc

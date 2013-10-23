@@ -222,7 +222,7 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
     UpdateLastError();
     if (err == 0) {
       state_ = CS_CONNECTED;
-    } else if (IsBlockingError(error_)) {
+    } else if (IsBlockingError(GetError())) {
       state_ = CS_CONNECTING;
       enabled_events_ |= DE_CONNECT;
     } else {
@@ -234,10 +234,12 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
   }
 
   int GetError() const {
+    CritScope cs(&crit_);
     return error_;
   }
 
   void SetError(int error) {
+    CritScope cs(&crit_);
     error_ = error;
   }
 
@@ -290,7 +292,7 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
     MaybeRemapSendError();
     // We have seen minidumps where this may be false.
     ASSERT(sent <= static_cast<int>(cb));
-    if ((sent < 0) && IsBlockingError(error_)) {
+    if ((sent < 0) && IsBlockingError(GetError())) {
       enabled_events_ |= DE_WRITE;
     }
     return sent;
@@ -312,7 +314,7 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
     MaybeRemapSendError();
     // We have seen minidumps where this may be false.
     ASSERT(sent <= static_cast<int>(length));
-    if ((sent < 0) && IsBlockingError(error_)) {
+    if ((sent < 0) && IsBlockingError(GetError())) {
       enabled_events_ |= DE_WRITE;
     }
     return sent;
@@ -329,16 +331,17 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
       // Must turn this back on so that the select() loop will notice the close
       // event.
       enabled_events_ |= DE_READ;
-      error_ = EWOULDBLOCK;
+      SetError(EWOULDBLOCK);
       return SOCKET_ERROR;
     }
     UpdateLastError();
-    bool success = (received >= 0) || IsBlockingError(error_);
+    int error = GetError();
+    bool success = (received >= 0) || IsBlockingError(error);
     if (udp_ || success) {
       enabled_events_ |= DE_READ;
     }
     if (!success) {
-      LOG_F(LS_VERBOSE) << "Error = " << error_;
+      LOG_F(LS_VERBOSE) << "Error = " << error;
     }
     return received;
   }
@@ -352,12 +355,13 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
     UpdateLastError();
     if ((received >= 0) && (out_addr != NULL))
       SocketAddressFromSockAddrStorage(addr_storage, out_addr);
-    bool success = (received >= 0) || IsBlockingError(error_);
+    int error = GetError();
+    bool success = (received >= 0) || IsBlockingError(error);
     if (udp_ || success) {
       enabled_events_ |= DE_READ;
     }
     if (!success) {
-      LOG_F(LS_VERBOSE) << "Error = " << error_;
+      LOG_F(LS_VERBOSE) << "Error = " << error;
     }
     return received;
   }
@@ -408,7 +412,7 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
   int EstimateMTU(uint16* mtu) {
     SocketAddress addr = GetRemoteAddress();
     if (addr.IsAny()) {
-      error_ = ENOTCONN;
+      SetError(ENOTCONN);
       return -1;
     }
 
@@ -416,7 +420,7 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
     // Gets the interface MTU (TTL=1) for the interface used to reach |addr|.
     WinPing ping;
     if (!ping.IsValid()) {
-      error_ = EINVAL; // can't think of a better error ID
+      SetError(EINVAL);  // can't think of a better error ID
       return -1;
     }
     int header_size = ICMP_HEADER_SIZE;
@@ -432,7 +436,7 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
                                              ICMP_PING_TIMEOUT_MILLIS,
                                              1, false);
       if (result == WinPing::PING_FAIL) {
-        error_ = EINVAL; // can't think of a better error ID
+        SetError(EINVAL);  // can't think of a better error ID
         return -1;
       } else if (result != WinPing::PING_TOO_LARGE) {
         *mtu = PACKET_MAXIMUMS[level];
@@ -447,7 +451,7 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
     // SIOCGIFMTU would work if we knew which interface would be used, but
     // figuring that out is pretty complicated. For now we'll return an error
     // and let the caller pick a default MTU.
-    error_ = EINVAL;
+    SetError(EINVAL);
     return -1;
 #elif defined(LINUX) || defined(ANDROID)
     // Gets the path MTU.
@@ -481,13 +485,13 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
     }
 
     if (error) {
-      error_ = error;
-      SignalCloseEvent(this, error_);
+      SetError(error);
+      SignalCloseEvent(this, error);
     }
   }
 
   void UpdateLastError() {
-    error_ = LAST_SYSTEM_ERROR;
+    SetError(LAST_SYSTEM_ERROR);
   }
 
   void MaybeRemapSendError() {
@@ -497,8 +501,8 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
     // ENOBUFS - The output queue for a network interface is full.
     // This generally indicates that the interface has stopped sending,
     // but may be caused by transient congestion.
-    if (error_ == ENOBUFS) {
-      error_ = EWOULDBLOCK;
+    if (GetError() == ENOBUFS) {
+      SetError(EWOULDBLOCK);
     }
 #endif
   }
@@ -542,6 +546,8 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
   uint8 enabled_events_;
   bool udp_;
   int error_;
+  // Protects |error_| that is accessed from different threads.
+  mutable CriticalSection crit_;
   ConnState state_;
   AsyncResolver* resolver_;
 

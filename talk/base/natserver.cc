@@ -123,7 +123,7 @@ void NATServer::OnInternalPacket(
   ASSERT(iter != int_map_->end());
 
   // Allow the destination to send packets back to the source.
-  iter->second->whitelist->insert(dest_addr);
+  iter->second->WhitelistInsert(dest_addr);
 
   // Send the packet to its intended destination.
   iter->second->socket->SendTo(buf + length, size - length, dest_addr,
@@ -141,7 +141,7 @@ void NATServer::OnExternalPacket(
   ASSERT(iter != ext_map_->end());
 
   // Allow the NAT to reject this packet.
-  if (Filter(iter->second, remote_addr)) {
+  if (ShouldFilterOut(iter->second, remote_addr)) {
     LOG(LS_INFO) << "Packet from " << remote_addr.ToSensitiveString()
                  << " was filtered out by the NAT.";
     return;
@@ -173,8 +173,9 @@ void NATServer::Translate(const SocketAddressPair& route) {
   socket->SignalReadPacket.connect(this, &NATServer::OnExternalPacket);
 }
 
-bool NATServer::Filter(TransEntry* entry, const SocketAddress& ext_addr) {
-  return entry->whitelist->find(ext_addr) == entry->whitelist->end();
+bool NATServer::ShouldFilterOut(TransEntry* entry,
+                                const SocketAddress& ext_addr) {
+  return entry->WhitelistContains(ext_addr);
 }
 
 NATServer::TransEntry::TransEntry(
@@ -186,6 +187,16 @@ NATServer::TransEntry::TransEntry(
 NATServer::TransEntry::~TransEntry() {
   delete whitelist;
   delete socket;
+}
+
+void NATServer::TransEntry::WhitelistInsert(const SocketAddress& addr) {
+  CritScope cs(&crit_);
+  whitelist->insert(addr);
+}
+
+bool NATServer::TransEntry::WhitelistContains(const SocketAddress& ext_addr) {
+  CritScope cs(&crit_);
+  return whitelist->find(ext_addr) == whitelist->end();
 }
 
 }  // namespace talk_base
