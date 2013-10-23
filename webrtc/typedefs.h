@@ -95,10 +95,14 @@ typedef unsigned __int64    uint64_t;
 // Annotate a function indicating the caller must examine the return value.
 // Use like:
 //   int foo() WARN_UNUSED_RESULT;
+// TODO(ajm): Hack to avoid multiple definitions until the base/ of webrtc and
+// libjingle are merged.
+#if !defined(WARN_UNUSED_RESULT)
 #if defined(__GNUC__)
 #define WARN_UNUSED_RESULT __attribute__((warn_unused_result))
 #else
 #define WARN_UNUSED_RESULT
 #endif
+#endif  // WARN_UNUSED_RESULT
 
 #endif  // WEBRTC_TYPEDEFS_H_
