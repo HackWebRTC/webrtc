@@ -17,6 +17,7 @@
 
 #include <algorithm>
 
+#include "webrtc/common.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
@@ -34,6 +35,8 @@
 
 using webrtc::AudioFrame;
 using webrtc::AudioProcessing;
+using webrtc::Config;
+using webrtc::DelayCorrection;
 using webrtc::EchoCancellation;
 using webrtc::GainControl;
 using webrtc::NoiseSuppression;
@@ -106,6 +109,7 @@ void usage() {
   printf("  --no_echo_metrics\n");
   printf("  --no_delay_logging\n");
   printf("  --aec_suppression_level LEVEL  [0 - 2]\n");
+  printf("  --extended_filter\n");
   printf("\n  -aecm    Echo control mobile\n");
   printf("  --aecm_echo_path_in_file FILE\n");
   printf("  --aecm_echo_path_out_file FILE\n");
@@ -290,6 +294,11 @@ void void_main(int argc, char* argv[]) {
                 apm->echo_cancellation()->set_suppression_level(
                     static_cast<webrtc::EchoCancellation::SuppressionLevel>(
                         suppression_level)));
+
+    } else if (strcmp(argv[i], "--extended_filter") == 0) {
+      Config config;
+      config.Set<DelayCorrection>(new DelayCorrection(true));
+      apm->SetExtraOptions(config);
 
     } else if (strcmp(argv[i], "-aecm") == 0) {
       ASSERT_EQ(apm->kNoError, apm->echo_control_mobile()->Enable(true));
