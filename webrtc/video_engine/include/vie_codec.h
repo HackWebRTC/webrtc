@@ -62,6 +62,18 @@ class WEBRTC_DLLEXPORT ViEDecoderObserver {
                             const unsigned int framerate,
                             const unsigned int bitrate) = 0;
 
+  // Called periodically with decoder timing information.  All values are
+  // "current" snapshots unless decorated with a min_/max_ prefix.
+  // TODO(fischman): drop the do-nothing default impl. when
+  // WebRtcDecoderObserver is updated.
+  virtual void DecoderTiming(int decode_ms,
+                             int max_decode_ms,
+                             int current_delay_ms,
+                             int target_delay_ms,
+                             int jitter_buffer_ms,
+                             int min_playout_delay_ms,
+                             int render_delay_ms) {}
+
   // This method is called when the decoder needs a new key frame from encoder
   // on the sender.
   virtual void RequestNewKeyFrame(const int video_channel) = 0;

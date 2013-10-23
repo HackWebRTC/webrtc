@@ -188,7 +188,17 @@ class VideoCallbackAndroid: public ViEDecoderObserver,
                                  packetLossRate, _frameRateO, _bitRateO);
         webrtcGlobalVM->DetachCurrentThread();
     }
-    ;
+
+    virtual void DecoderTiming(int decode_ms,
+                               int max_decode_ms,
+                               int current_delay_ms,
+                               int target_delay_ms,
+                               int jitter_buffer_ms,
+                               int min_playout_delay_ms,
+                               int render_delay_ms)
+    {
+        // TODO(fischman): consider plumbing this through to Java.
+    }
 
     virtual void IncomingCodecChanged(const int videoChannel,
                                       const webrtc::VideoCodec& videoCodec)
@@ -207,12 +217,10 @@ class VideoCallbackAndroid: public ViEDecoderObserver,
                                  videoCodec.width, videoCodec.height);
         webrtcGlobalVM->DetachCurrentThread();
     }
-    ;
 
     virtual void RequestNewKeyFrame(const int videoChannel)
     {
     }
-    ;
 
     virtual void OutgoingRate(const int videoChannel,
                               const unsigned int framerate,
@@ -223,7 +231,6 @@ class VideoCallbackAndroid: public ViEDecoderObserver,
         //__android_log_print(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG,
         // "SendRate frameRate %d bitrate %d\n",frameRate,bitrate);
     }
-    ;
 
 public:
   VideoEngineData& _vieData;

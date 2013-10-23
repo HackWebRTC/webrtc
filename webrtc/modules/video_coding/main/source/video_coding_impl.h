@@ -137,6 +137,8 @@ class VideoReceiver {
   int32_t RegisterReceiveCallback(VCMReceiveCallback* receiveCallback);
   int32_t RegisterReceiveStatisticsCallback(
       VCMReceiveStatisticsCallback* receiveStats);
+  int32_t RegisterDecoderTimingCallback(
+      VCMDecoderTimingCallback* decoderTiming);
   int32_t RegisterFrameTypeCallback(VCMFrameTypeCallback* frameTypeCallback);
   int32_t RegisterPacketRequestCallback(VCMPacketRequestCallback* callback);
   int RegisterRenderBufferSizeCallback(VCMRenderBufferSizeCallback* callback);
@@ -200,6 +202,7 @@ class VideoReceiver {
   VCMDecodedFrameCallback _dualDecodedFrameCallback;
   VCMFrameTypeCallback* _frameTypeCallback;
   VCMReceiveStatisticsCallback* _receiveStatsCallback;
+  VCMDecoderTimingCallback* _decoderTimingCallback;
   VCMPacketRequestCallback* _packetRequestCallback;
   VCMRenderBufferSizeCallback* render_buffer_callback_;
   VCMGenericDecoder* _decoder;

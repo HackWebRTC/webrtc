@@ -53,6 +53,7 @@ class ViEChannel
     : public VCMFrameTypeCallback,
       public VCMReceiveCallback,
       public VCMReceiveStatisticsCallback,
+      public VCMDecoderTimingCallback,
       public VCMPacketRequestCallback,
       public RtcpFeedback,
       public RtpFeedback,
@@ -282,9 +283,18 @@ class ViEChannel
   // Implements VCMReceiveCallback.
   virtual void IncomingCodecChanged(const VideoCodec& codec);
 
-  // Implements VideoReceiveStatisticsCallback.
+  // Implements VCMReceiveStatisticsCallback.
   virtual int32_t OnReceiveStatisticsUpdate(const uint32_t bit_rate,
                                     const uint32_t frame_rate);
+
+  // Implements VCMDecoderTimingCallback.
+  virtual void OnDecoderTiming(int decode_ms,
+                               int max_decode_ms,
+                               int current_delay_ms,
+                               int target_delay_ms,
+                               int jitter_buffer_ms,
+                               int min_playout_delay_ms,
+                               int render_delay_ms);
 
   // Implements VideoFrameTypeCallback.
   virtual int32_t RequestKeyFrame();

@@ -237,6 +237,11 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return receiver_->RegisterReceiveStatisticsCallback(receiveStats);
   }
 
+  virtual int32_t RegisterDecoderTimingCallback(
+      VCMDecoderTimingCallback* decoderTiming) OVERRIDE {
+    return receiver_->RegisterDecoderTimingCallback(decoderTiming);
+  }
+
   virtual int32_t RegisterFrameTypeCallback(
       VCMFrameTypeCallback* frameTypeCallback) OVERRIDE {
     return receiver_->RegisterFrameTypeCallback(frameTypeCallback);

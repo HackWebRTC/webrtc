@@ -28,12 +28,12 @@
 #include "webrtc/video_engine/test/libvietest/include/tb_video_channel.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 
-class TestCodecObserver
-    : public webrtc::ViEEncoderObserver,
-    public webrtc::ViEDecoderObserver {
-     public:
+class TestCodecObserver : public webrtc::ViEEncoderObserver,
+                          public webrtc::ViEDecoderObserver {
+ public:
   int incoming_codec_called_;
   int incoming_rate_called_;
+  int decoder_timing_called_;
   int outgoing_rate_called_;
 
   unsigned char last_payload_type_;
@@ -51,6 +51,7 @@ class TestCodecObserver
   TestCodecObserver()
       : incoming_codec_called_(0),
         incoming_rate_called_(0),
+        decoder_timing_called_(0),
         outgoing_rate_called_(0),
         last_payload_type_(0),
         last_width_(0),
@@ -78,6 +79,17 @@ class TestCodecObserver
     incoming_rate_called_++;
     last_incoming_framerate_ += framerate;
     last_incoming_bitrate_ += bitrate;
+  }
+
+  virtual void DecoderTiming(int decode_ms,
+                             int max_decode_ms,
+                             int current_delay_ms,
+                             int target_delay_ms,
+                             int jitter_buffer_ms,
+                             int min_playout_delay_ms,
+                             int render_delay_ms) {
+    ++decoder_timing_called_;
+    // TODO(fischman): anything useful to be done with the data here?
   }
 
   virtual void OutgoingRate(const int video_channel,
@@ -257,6 +269,7 @@ void ViEAutoTest::ViECodecStandardTest() {
 
   EXPECT_GT(codec_observer.incoming_codec_called_, 0);
   EXPECT_GT(codec_observer.incoming_rate_called_, 0);
+  EXPECT_GT(codec_observer.decoder_timing_called_, 0);
   EXPECT_GT(codec_observer.outgoing_rate_called_, 0);
 
   EXPECT_EQ(0, base->StopReceive(video_channel));

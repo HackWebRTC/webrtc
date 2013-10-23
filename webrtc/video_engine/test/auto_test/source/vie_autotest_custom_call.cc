@@ -89,6 +89,23 @@ class ViEAutotestDecoderObserver : public webrtc::ViEDecoderObserver {
     std::cout << "Received FR: " << framerate
               << " BR: " << bitrate << std::endl;
   }
+
+  virtual void DecoderTiming(int decode_ms,
+                             int max_decode_ms,
+                             int current_delay_ms,
+                             int target_delay_ms,
+                             int jitter_buffer_ms,
+                             int min_playout_delay_ms,
+                             int render_delay_ms) {
+    std::cout << "Decoder timing: DecodeMS: " << decode_ms
+              << ", MaxDecodeMS: " << max_decode_ms
+              << ", CurrentDelayMS: " << current_delay_ms
+              << ", TargetDelayMS: " << target_delay_ms
+              << ", JitterBufferMS: " << jitter_buffer_ms
+              << ", MinPlayoutDelayMS: " << min_playout_delay_ms
+              << ", RenderDelayMS: " << render_delay_ms;
+  }
+
   void IncomingCodecChanged(const int video_channel,
                             const webrtc::VideoCodec& codec) {}
   void RequestNewKeyFrame(const int video_channel) {

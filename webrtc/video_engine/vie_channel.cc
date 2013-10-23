@@ -189,6 +189,11 @@ int32_t ViEChannel::Init() {
                  "%s: VCM::RegisterReceiveStatisticsCallback failure",
                  __FUNCTION__);
   }
+  if (vcm_.RegisterDecoderTimingCallback(this) != 0) {
+    WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, channel_id_),
+                 "%s: VCM::RegisterDecoderTimingCallback failure",
+                 __FUNCTION__);
+  }
   if (vcm_.SetRenderDelay(kViEDefaultRenderDelayMs) != 0) {
     WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: VCM::SetRenderDelay failure", __FUNCTION__);
@@ -1649,6 +1654,25 @@ int32_t ViEChannel::OnReceiveStatisticsUpdate(const uint32_t bit_rate,
     codec_observer_->IncomingRate(channel_id_, frame_rate, bit_rate);
   }
   return 0;
+}
+
+void ViEChannel::OnDecoderTiming(int decode_ms,
+                                 int max_decode_ms,
+                                 int current_delay_ms,
+                                 int target_delay_ms,
+                                 int jitter_buffer_ms,
+                                 int min_playout_delay_ms,
+                                 int render_delay_ms) {
+  CriticalSectionScoped cs(callback_cs_.get());
+  if (!codec_observer_)
+    return;
+  codec_observer_->DecoderTiming(decode_ms,
+                                 max_decode_ms,
+                                 current_delay_ms,
+                                 target_delay_ms,
+                                 jitter_buffer_ms,
+                                 min_playout_delay_ms,
+                                 render_delay_ms);
 }
 
 int32_t ViEChannel::RequestKeyFrame() {
