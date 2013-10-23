@@ -62,16 +62,11 @@ bool AudioDeviceModuleImpl::Destroy(AudioDeviceModuleImpl* adm) {
   }
 }
 
-AudioDeviceModuleImpl::AudioDeviceModuleImpl() :
-  _ref_count(0) {
-}
+AudioDeviceModuleImpl::AudioDeviceModuleImpl() : _ref_count(0) {}
 
-AudioDeviceModuleImpl::~AudioDeviceModuleImpl() {
-}
+AudioDeviceModuleImpl::~AudioDeviceModuleImpl() {}
 
-int32_t AudioDeviceModuleImpl::AddRef() {
-  return ++_ref_count;
-}
+int32_t AudioDeviceModuleImpl::AddRef() { return ++_ref_count; }
 
 int32_t AudioDeviceModuleImpl::Release() {
   // Avoid self destruction in this mock implementation.
@@ -83,9 +78,13 @@ int32_t AudioDeviceModuleImpl::Release() {
 //  External transport (Transport) implementations:
 // ----------------------------------------------------------------------------
 
-ExtendedTestTransport::ExtendedTestTransport(VoENetwork* ptr) :
-  myNetw(ptr), _thread(NULL), _lock(NULL), _event(NULL), _length(0),
-  _channel(0) {
+ExtendedTestTransport::ExtendedTestTransport(VoENetwork* ptr)
+    : myNetw(ptr),
+      _thread(NULL),
+      _lock(NULL),
+      _event(NULL),
+      _length(0),
+      _channel(0) {
   const char* threadName = "voe_extended_test_external_thread";
   _lock = CriticalSectionWrapper::CreateCriticalSection();
   _event = EventWrapper::Create();
@@ -112,7 +111,7 @@ ExtendedTestTransport::~ExtendedTestTransport() {
 }
 
 bool ExtendedTestTransport::Run(void* ptr) {
-  return static_cast<ExtendedTestTransport*> (ptr)->Process();
+  return static_cast<ExtendedTestTransport*>(ptr)->Process();
 }
 
 bool ExtendedTestTransport::Process() {
@@ -130,19 +129,21 @@ bool ExtendedTestTransport::Process() {
   return true;
 }
 
-int ExtendedTestTransport::SendPacket(int channel, const void *data, int len) {
+int ExtendedTestTransport::SendPacket(int channel, const void* data, int len) {
   _lock->Enter();
   if (len < 1612) {
-    memcpy(_packetBuffer, (const unsigned char*) data, len);
+    memcpy(_packetBuffer, (const unsigned char*)data, len);
     _length = len;
     _channel = channel;
   }
   _lock->Leave();
-  _event->Set(); // triggers ReceivedRTPPacket() from worker thread
+  _event->Set();  // triggers ReceivedRTPPacket() from worker thread
   return len;
 }
 
-int ExtendedTestTransport::SendRTCPPacket(int channel, const void *data, int len) {
+int ExtendedTestTransport::SendRTCPPacket(int channel,
+                                          const void* data,
+                                          int len) {
   myNetw->ReceivedRTCPPacket(channel, data, len);
   return len;
 }
@@ -151,25 +152,22 @@ int ExtendedTestTransport::SendRTCPPacket(int channel, const void *data, int len
 //  VoERTPObserver
 // ----------------------------------------------------------------------------
 
-XRTPObserver::XRTPObserver() :
-  _SSRC(0) {
-}
+XRTPObserver::XRTPObserver() : _SSRC(0) {}
 
-XRTPObserver::~XRTPObserver() {
-}
+XRTPObserver::~XRTPObserver() {}
 
-void XRTPObserver::OnIncomingCSRCChanged(const int /*channel*/, const unsigned int /*CSRC*/,
-                                         const bool /*added*/) {
-}
+void XRTPObserver::OnIncomingCSRCChanged(const int /*channel*/,
+                                         const unsigned int /*CSRC*/,
+                                         const bool /*added*/) {}
 
-void XRTPObserver::OnIncomingSSRCChanged(const int /*channel*/, unsigned int SSRC) {
+void XRTPObserver::OnIncomingSSRCChanged(const int /*channel*/,
+                                         unsigned int SSRC) {
   // char msg[128];
   // sprintf(msg, "OnIncomingSSRCChanged(channel=%d, SSRC=%lu)\n",
   //        channel, SSRC);
   // TEST_LOG(msg);
 
-  _SSRC = SSRC; // skip channel dependency for simplicty
-
+  _SSRC = SSRC;  // skip channel dependency for simplicty
 }
 
 // ----------------------------------------------------------------------------
@@ -209,8 +207,7 @@ void VoEExtendedTest::CallbackOnError(int errCode, int) {
   TEST_LOG("************************\n");
 }
 
-VoEExtendedTest::VoEExtendedTest(VoETestManager& mgr) :
-  _mgr(mgr) {
+VoEExtendedTest::VoEExtendedTest(VoETestManager& mgr) : _mgr(mgr) {
   for (int i = 0; i < 32; i++) {
     _listening[i] = false;
     _playing[i] = false;
@@ -218,11 +215,13 @@ VoEExtendedTest::VoEExtendedTest(VoETestManager& mgr) :
   }
 }
 
-VoEExtendedTest::~VoEExtendedTest() {
-}
+VoEExtendedTest::~VoEExtendedTest() {}
 
-void VoEExtendedTest::StartMedia(int channel, int rtpPort, bool listen,
-                                 bool playout, bool send) {
+void VoEExtendedTest::StartMedia(int channel,
+                                 int rtpPort,
+                                 bool listen,
+                                 bool playout,
+                                 bool send) {
   VoEBase* voe_base_ = _mgr.BasePtr();
 
   _listening[channel] = false;
@@ -231,8 +230,8 @@ void VoEExtendedTest::StartMedia(int channel, int rtpPort, bool listen,
 
   VoENetwork* voe_network = _mgr.NetworkPtr();
 
-  voice_channel_transports_[channel].reset(
-      new VoiceChannelTransport(voe_network, channel));
+  voice_channel_transports_[channel]
+      .reset(new VoiceChannelTransport(voe_network, channel));
 
   voice_channel_transports_[channel]->SetSendDestination("127.0.0.1", rtpPort);
   voice_channel_transports_[channel]->SetLocalReceiver(rtpPort);
@@ -269,7 +268,9 @@ void VoEExtendedTest::StopMedia(int channel) {
   voice_channel_transports_[channel].reset(NULL);
 }
 
-void VoEExtendedTest::Play(int channel, unsigned int timeMillisec, bool addFileAsMicrophone,
+void VoEExtendedTest::Play(int channel,
+                           unsigned int timeMillisec,
+                           bool addFileAsMicrophone,
                            bool addTimeMarker) {
   VoEBase* voe_base_ = _mgr.BasePtr();
   VoEFile* file = _mgr.FilePtr();
@@ -278,14 +279,15 @@ void VoEExtendedTest::Play(int channel, unsigned int timeMillisec, bool addFileA
   TEST_LOG("[playing]");
   fflush(NULL);
   if (addFileAsMicrophone) {
-    file->StartPlayingFileAsMicrophone(channel, _mgr.AudioFilename(), true, true);
+    file->StartPlayingFileAsMicrophone(
+        channel, _mgr.AudioFilename(), true, true);
     TEST_LOG("[file as mic]");
     fflush(NULL);
   }
   if (addTimeMarker) {
-    float dtSec = (float) ((float) timeMillisec / 1000.0);
+    float dtSec = (float)((float)timeMillisec / 1000.0);
     TEST_LOG("[dT=%.1f]", dtSec);
-    fflush(NULL); // print sleep time in seconds
+    fflush(NULL);  // print sleep time in seconds
   }
   SleepMs(timeMillisec);
   voe_base_->StopPlayout(channel);
@@ -294,15 +296,15 @@ void VoEExtendedTest::Play(int channel, unsigned int timeMillisec, bool addFileA
 
 void VoEExtendedTest::Sleep(unsigned int timeMillisec, bool addMarker) {
   if (addMarker) {
-    float dtSec = (float) ((float) timeMillisec / 1000.0);
-    TEST_LOG("[dT=%.1f]", dtSec); // print sleep time in seconds
+    float dtSec = (float)((float)timeMillisec / 1000.0);
+    TEST_LOG("[dT=%.1f]", dtSec);  // print sleep time in seconds
   }
   webrtc::SleepMs(timeMillisec);
 }
 
 int VoEExtendedTest::TestBase() {
 #ifndef _WIN32
-  // Sleep a bit instead when pause not supported
+// Sleep a bit instead when pause not supported
 #undef PAUSE
 #define PAUSE SleepMs(2000);
 #endif
@@ -319,16 +321,19 @@ int VoEExtendedTest::TestBase() {
   VoERTP_RTCP* rtp = _mgr.RTP_RTCPPtr();
 #endif
 
-  //////////////////////////
-  // SetTraceFileName
+//////////////////////////
+// SetTraceFileName
 
 #ifdef _USE_EXTENDED_TRACE_
-  TEST(SetTraceFileName - SetDebugTraceFileName); ANL();
-  TEST_MUSTPASS(VoiceEngine::SetTraceFile(NULL)); MARK();
+  TEST(SetTraceFileName - SetDebugTraceFileName);
+  ANL();
+  TEST_MUSTPASS(VoiceEngine::SetTraceFile(NULL));
+  MARK();
   // don't use these files
   std::string output_path = webrtc::test::OutputPath();
   TEST_MUSTPASS(VoiceEngine::SetTraceFile(
-              (output_path + "VoEBase_trace_dont_use.txt").c_str())); MARK();
+      (output_path + "VoEBase_trace_dont_use.txt").c_str()));
+  MARK();
   // use these instead
   TEST_MUSTPASS(VoiceEngine::SetTraceFile(GetFilename(""
               (output_path + "VoEBase_trace.txt").c_str())); MARK();
@@ -847,9 +852,9 @@ int VoEExtendedTest::TestBase() {
   // Full duplex tests
 
   ch = voe_base_->CreateChannel(); // We must delete this channel first to be able
-  // to reuse port 12345
+                                   // to reuse port 12345
 
-  // start with default case, also test non-default RTCP port
+// start with default case, also test non-default RTCP port
 #ifdef _TEST_RTP_RTCP_
   TEST_MUSTPASS(rtp->SetRTCP_CNAME(ch, "Johnny"));
 #endif
@@ -867,7 +872,7 @@ int VoEExtendedTest::TestBase() {
   SleepMs(7000); // Make sure we get RTCP packet
   PAUSE;
 
-  // Verify that we got RTCP packet from correct source port
+// Verify that we got RTCP packet from correct source port
 #ifdef _TEST_RTP_RTCP_
   char tmpStr[64] = { 0 };
   TEST_MUSTPASS(rtp->GetRemoteRTCP_CNAME(ch, tmpStr));
@@ -960,8 +965,8 @@ int VoEExtendedTest::TestBase() {
   ANL();
   ANL();
 
-  //////////////////////
-  // Trace filter tests
+//////////////////////
+// Trace filter tests
 
 #ifdef _USE_EXTENDED_TRACE_
   TEST(SetTraceFilter); ANL();
@@ -1068,14 +1073,9 @@ int VoEExtendedTest::TestCallReport() {
 #ifdef _USE_EXTENDED_TRACE_
   TEST_MUSTPASS(VoiceEngine::SetTraceFile(
       GetFilename("VoECallReport_trace.txt").c_str()));
-  TEST_MUSTPASS(VoiceEngine::SetTraceFilter(kTraceStateInfo |
-          kTraceStateInfo |
-          kTraceWarning |
-          kTraceError |
-          kTraceCritical |
-          kTraceApiCall |
-          kTraceMemory |
-          kTraceInfo));
+  TEST_MUSTPASS(VoiceEngine::SetTraceFilter(
+      kTraceStateInfo | kTraceStateInfo | kTraceWarning | kTraceError |
+      kTraceCritical | kTraceApiCall | kTraceMemory | kTraceInfo));
 #endif
 
   TEST_MUSTPASS(voe_base_->Init());
@@ -1087,21 +1087,21 @@ int VoEExtendedTest::TestCallReport() {
   TEST_MUSTPASS(voe_base_->StartReceive(0));
   TEST_MUSTPASS(voe_base_->StartSend(0));
   TEST_MUSTPASS(voe_base_->StartPlayout(0));
-  TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, _mgr.AudioFilename(),
-          true, true));
+  TEST_MUSTPASS(
+      file->StartPlayingFileAsMicrophone(0, _mgr.AudioFilename(), true, true));
 
   ///////////////////////////
   // Actual test starts here
   TEST(ResetCallReportStatistics);
   ANL();
   TEST_MUSTPASS(!report->ResetCallReportStatistics(-2));
-  MARK(); // not OK
+  MARK();  // not OK
   TEST_MUSTPASS(!report->ResetCallReportStatistics(1));
-  MARK(); // not OK
+  MARK();  // not OK
   TEST_MUSTPASS(report->ResetCallReportStatistics(0));
-  MARK(); // OK
+  MARK();  // OK
   TEST_MUSTPASS(report->ResetCallReportStatistics(-1));
-  MARK(); // OK
+  MARK();  // OK
   AOK();
   ANL();
 
@@ -1112,7 +1112,7 @@ int VoEExtendedTest::TestCallReport() {
   TEST_MUSTPASS(apm->GetEcMetricsStatus(enabled));
   TEST_MUSTPASS(enabled != false);
   TEST_MUSTPASS(apm->SetEcMetricsStatus(true));
-  TEST_MUSTPASS(report->GetEchoMetricSummary(echo)); // all outputs will be
+  TEST_MUSTPASS(report->GetEchoMetricSummary(echo));  // all outputs will be
   // -100 in loopback (skip further tests)
   AOK();
   ANL();
@@ -1146,14 +1146,14 @@ int VoEExtendedTest::TestCallReport() {
   // Greek and Coptic (see http://www.utf8-chartable.de/unicode-utf8-table.pl)
   char fileNameUTF8[64];
 
-  fileNameUTF8[0] = (char) 0xce;
-  fileNameUTF8[1] = (char) 0xba;
-  fileNameUTF8[2] = (char) 0xce;
-  fileNameUTF8[3] = (char) 0xbb;
-  fileNameUTF8[4] = (char) 0xce;
-  fileNameUTF8[5] = (char) 0xbd;
-  fileNameUTF8[6] = (char) 0xce;
-  fileNameUTF8[7] = (char) 0xbe;
+  fileNameUTF8[0] = (char)0xce;
+  fileNameUTF8[1] = (char)0xba;
+  fileNameUTF8[2] = (char)0xce;
+  fileNameUTF8[3] = (char)0xbb;
+  fileNameUTF8[4] = (char)0xce;
+  fileNameUTF8[5] = (char)0xbd;
+  fileNameUTF8[6] = (char)0xce;
+  fileNameUTF8[7] = (char)0xbe;
   fileNameUTF8[8] = '.';
   fileNameUTF8[9] = 't';
   fileNameUTF8[10] = 'x';
@@ -1165,7 +1165,7 @@ int VoEExtendedTest::TestCallReport() {
   TEST_MUSTPASS(report->WriteReportToFile("call_report.txt"));
   MARK();
   TEST_MUSTPASS(report->WriteReportToFile(fileNameUTF8));
-  MARK(); // should work with UTF-8 as well (κλνξ.txt)
+  MARK();  // should work with UTF-8 as well (κλνξ.txt)
   AOK();
   ANL();
 
@@ -1192,25 +1192,24 @@ int VoEExtendedTest::TestCodec() {
   VoENetwork* voe_network = _mgr.NetworkPtr();
 
 #ifdef _USE_EXTENDED_TRACE_
-  TEST_MUSTPASS(VoiceEngine::SetTraceFile(
-      GetFilename("VoECodec_trace.txt").c_str()));
-  TEST_MUSTPASS(VoiceEngine::SetTraceFilter(kTraceStateInfo |
-          kTraceStateInfo |
-          kTraceWarning |
-          kTraceError |
-          kTraceCritical |
-          kTraceApiCall |
-          kTraceMemory |
-          kTraceInfo));
+  TEST_MUSTPASS(
+      VoiceEngine::SetTraceFile(GetFilename("VoECodec_trace.txt").c_str()));
+  TEST_MUSTPASS(VoiceEngine::SetTraceFilter(
+      kTraceStateInfo | kTraceStateInfo | kTraceWarning | kTraceError |
+      kTraceCritical | kTraceApiCall | kTraceMemory | kTraceInfo));
 #endif
 
+  int channel_id;
   TEST_MUSTPASS(voe_base_->Init());
-  TEST_MUSTPASS(voe_base_->CreateChannel());
+  channel_id = voe_base_->CreateChannel();
+  TEST_MUSTPASS(channel_id == -1);
+
   ExtendedTestTransport* ptrTransport = new ExtendedTestTransport(voe_network);
-  TEST_MUSTPASS(voe_network ->RegisterExternalTransport(0, *ptrTransport));
-  TEST_MUSTPASS(voe_base_->StartReceive(0));
-  TEST_MUSTPASS(voe_base_->StartSend(0));
-  TEST_MUSTPASS(voe_base_->StartPlayout(0));
+  TEST_MUSTPASS(
+      voe_network->RegisterExternalTransport(channel_id, *ptrTransport));
+  TEST_MUSTPASS(voe_base_->StartReceive(channel_id));
+  TEST_MUSTPASS(voe_base_->StartSend(channel_id));
+  TEST_MUSTPASS(voe_base_->StartPlayout(channel_id));
 
   ///////////////////////////
   // Actual test starts here
@@ -1242,8 +1241,14 @@ int VoEExtendedTest::TestCodec() {
   nCodecs = codec->NumOfCodecs();
   for (int index = 0; index < nCodecs; index++) {
     TEST_MUSTPASS(codec->GetCodec(index, cinst));
-    TEST_LOG("[%2d] %16s: fs=%6d, pt=%4d, rate=%7d, ch=%2d, size=%5d", index, cinst.plname,
-             cinst.plfreq, cinst.pltype, cinst.rate, cinst.channels, cinst.pacsize);
+    TEST_LOG("[%2d] %16s: fs=%6d, pt=%4d, rate=%7d, ch=%2d, size=%5d",
+             index,
+             cinst.plname,
+             cinst.plfreq,
+             cinst.pltype,
+             cinst.rate,
+             cinst.channels,
+             cinst.pacsize);
     if (cinst.pltype == -1) {
       TEST_LOG(" <= NOTE pt=-1\n");
     } else {
@@ -1270,22 +1275,22 @@ int VoEExtendedTest::TestCodec() {
   CodecInst defaultCodec;
 
   // check the channel parameter
-  TEST_MUSTPASS(-1 != codec->GetSendCodec(kTestMaxNumChannels-1, cinst));
-  MARK(); // not created
+  TEST_MUSTPASS(-1 != codec->GetSendCodec(kTestMaxNumChannels - 1, cinst));
+  MARK();  // not created
   TEST_MUSTPASS(-1 != codec->GetSendCodec(kTestMaxNumChannels, cinst));
-  MARK(); // out of range
+  MARK();  // out of range
   TEST_MUSTPASS(-1 != codec->GetSendCodec(-1, cinst));
-  MARK(); // out of range
-  TEST_MUSTPASS(codec->GetSendCodec(0, cinst));
-  MARK(); // OK
+  MARK();  // out of range
+  TEST_MUSTPASS(codec->GetSendCodec(channel_id, cinst));
+  MARK();  // OK
 
   nCodecs = codec->NumOfCodecs();
   for (int index = 0; index < nCodecs; index++) {
     TEST_MUSTPASS(codec->GetCodec(index, defaultCodec));
-    if (codec->SetSendCodec(0, defaultCodec) == 0) {
-      TEST_MUSTPASS(codec->GetSendCodec(0, cinst));
+    if (codec->SetSendCodec(channel_id, defaultCodec) == 0) {
+      TEST_MUSTPASS(codec->GetSendCodec(channel_id, cinst));
       MARK();
-      //TEST_LOG("[%2d] %s: fs=%d, pt=%d, rate=%d, ch=%d, size=%d\n",
+      // TEST_LOG("[%2d] %s: fs=%d, pt=%d, rate=%d, ch=%d, size=%d\n",
       // index, cinst.plname, cinst.plfreq, cinst.pltype, cinst.rate,
       // cinst.channels, cinst.pacsize);
       TEST_MUSTPASS(cinst.pacsize != defaultCodec.pacsize);
@@ -1313,16 +1318,21 @@ int VoEExtendedTest::TestCodec() {
     TEST_MUSTPASS(codec->GetCodec(index, cinst));
     defaultCodec = cinst;
     TEST_LOG("[%2d] %s (default): fs=%d, pt=%d, rate=%d, ch=%d, size=%d\n",
-             index, cinst.plname, cinst.plfreq, cinst.pltype, cinst.rate,
-             cinst.channels, cinst.pacsize);
+             index,
+             cinst.plname,
+             cinst.plfreq,
+             cinst.pltype,
+             cinst.rate,
+             cinst.channels,
+             cinst.pacsize);
 
     // Verify invalid codec names
-    if (!_stricmp("CN", cinst.plname) || !_stricmp("telephone-event",
-                                                   cinst.plname)
-        || !_stricmp("red", cinst.plname)) {
+    if (!_stricmp("CN", cinst.plname) ||
+        !_stricmp("telephone-event", cinst.plname) ||
+        !_stricmp("red", cinst.plname)) {
       // default settings for invalid payload names (should give
       // VE_INVALID_PLNAME)
-      TEST_MUSTPASS(!codec->SetSendCodec(0, cinst));
+      TEST_MUSTPASS(!codec->SetSendCodec(channel_id, cinst));
       err = voe_base_->LastError();
       TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
       continue;
@@ -1336,14 +1346,14 @@ int VoEExtendedTest::TestCodec() {
     }
 
     // --- Default settings
-    TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+    TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
 
     // --- Packet size
     TEST_LOG("\npacsize : ");
 
     for (int pacsize = 80; pacsize < 1440; pacsize += 80) {
       cinst.pacsize = pacsize;
-      if (-1 != codec->SetSendCodec(0, cinst)) {
+      if (-1 != codec->SetSendCodec(channel_id, cinst)) {
         // log valid packet size
         TEST_LOG("%d ", pacsize);
       } else {
@@ -1357,7 +1367,7 @@ int VoEExtendedTest::TestCodec() {
     TEST_LOG("\nchannels: ");
     for (int channels = 1; channels < 4; channels++) {
       cinst.channels = channels;
-      if (-1 != codec->SetSendCodec(0, cinst)) {
+      if (-1 != codec->SetSendCodec(channel_id, cinst)) {
         // Valid channels currently.
         // 1 should always be OK for all codecs.
         // 2 is OK for stereo codecs and some of mono codecs.
@@ -1367,7 +1377,7 @@ int VoEExtendedTest::TestCodec() {
         // 2 would fail to some mono codecs with VE_CANNOT_SET_SEND_CODEC;
         // 3(and higher) should always fail with VE_INVALID_ARGUMENT.
         err = voe_base_->LastError();
-        ASSERT_TRUE((err == VE_INVALID_ARGUMENT)||
+        ASSERT_TRUE((err == VE_INVALID_ARGUMENT) ||
                     (err == VE_CANNOT_SET_SEND_CODEC));
       }
     }
@@ -1376,14 +1386,13 @@ int VoEExtendedTest::TestCodec() {
     // --- Payload frequency
     TEST_LOG("\nplfreq  : ");
     cinst.plfreq = defaultCodec.plfreq;
-    TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+    TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
     TEST_LOG("%d ", cinst.plfreq);
 
     // --- Payload name
 
     strcpy(cinst.plname, "INVALID");
-    TEST_MUSTPASS(-1 != codec->SetSendCodec(0, cinst))
-    {
+    TEST_MUSTPASS(-1 != codec->SetSendCodec(channel_id, cinst)) {
       // ensure that error code is VE_INVALID_PLNAME
       err = voe_base_->LastError();
       TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
@@ -1396,15 +1405,16 @@ int VoEExtendedTest::TestCodec() {
     TEST_LOG("\npltype  : ");
     // All PT should be OK, test a few different
     cinst.pltype = defaultCodec.pltype;
-    TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+    TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
     TEST_LOG("%d ", cinst.pltype);
     cinst.pltype = defaultCodec.pltype + 1;
-    TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+    TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
     TEST_LOG("%d ", cinst.pltype);
-    const int valid_pltypes[4] = { 0, 96, 117, 127 };
-    for (i = 0; i < static_cast<int> (sizeof(valid_pltypes) / sizeof(int)); i++) {
+    const int valid_pltypes[4] = {0, 96, 117, 127};
+    for (i = 0; i < static_cast<int>(sizeof(valid_pltypes) / sizeof(int));
+         i++) {
       cinst.pltype = valid_pltypes[i];
-      TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+      TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
       TEST_LOG("%d ", cinst.pltype);
     }
     // Restore default
@@ -1415,35 +1425,37 @@ int VoEExtendedTest::TestCodec() {
     if (_stricmp("isac", cinst.plname) == 0) {
       // ISAC
       if (cinst.plfreq == 16000) {
-        int valid_rates[3] = { -1, 10000, 32000 };
+        int valid_rates[3] = {-1, 10000, 32000};
         // failed in RegisterPayload when rate is 32000
-        for (i = 0; i < static_cast<int> (sizeof(valid_rates) / sizeof(int)); i++) {
+        for (i = 0; i < static_cast<int>(sizeof(valid_rates) / sizeof(int));
+             i++) {
           cinst.rate = valid_rates[i];
-          TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+          TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
           TEST_LOG("%d ", cinst.rate);
         }
-        cinst.rate = 0; // invalid
-        TEST_MUSTPASS(-1 != codec->SetSendCodec(0, cinst))
-        {
+        cinst.rate = 0;  // invalid
+        TEST_MUSTPASS(-1 != codec->SetSendCodec(channel_id, cinst)) {
           // ensure that error code is VE_CANNOT_SET_SEND_CODEC
           err = voe_base_->LastError();
           TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
         }
         ANL();
-      } else //ISACSWB
+      } else  // ISACSWB
       {
         // rate changing fails in RegisterPayload
-        int valid_rates[8] = { -1, 10000, 25000, 32000, 35000, 45000, 50000, 52000 };
-        for (i = 0; i < static_cast<int> (sizeof(valid_rates) / sizeof(int)); i++) {
+        int valid_rates[8] = {-1,    10000, 25000, 32000,
+                              35000, 45000, 50000, 52000};
+        for (i = 0; i < static_cast<int>(sizeof(valid_rates) / sizeof(int));
+             i++) {
           cinst.rate = valid_rates[i];
-          TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+          TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
           TEST_LOG("%d ", cinst.rate);
         }
-        int invalid_rates[3] = { 0, 5000, 57000 }; // invalid
-        for (i = 0; i < static_cast<int> (sizeof(invalid_rates) / sizeof(int)); i++) {
+        int invalid_rates[3] = {0, 5000, 57000};  // invalid
+        for (i = 0; i < static_cast<int>(sizeof(invalid_rates) / sizeof(int));
+             i++) {
           cinst.rate = invalid_rates[i];
-          TEST_MUSTPASS(-1 != codec->SetSendCodec(0, cinst))
-          {
+          TEST_MUSTPASS(-1 != codec->SetSendCodec(channel_id, cinst)) {
             // ensure that error code is VE_CANNOT_SET_SEND_CODEC
             err = voe_base_->LastError();
             TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
@@ -1452,75 +1464,87 @@ int VoEExtendedTest::TestCodec() {
         ANL();
       }
     } else if (_stricmp("amr", cinst.plname) == 0) {
-      int valid_rates[8] = { 4750, 5150, 5900, 6700, 7400, 7950, 10200, 12200 };
-      for (i = 0;
-          i < static_cast<int> (sizeof(valid_rates) / sizeof(int));
-          i++) {
+      int valid_rates[8] = {4750, 5150, 5900, 6700, 7400, 7950, 10200, 12200};
+      for (i = 0; i < static_cast<int>(sizeof(valid_rates) / sizeof(int));
+           i++) {
         cinst.rate = valid_rates[i];
-        TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+        TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
         TEST_LOG("%d ", cinst.rate);
       }
       ANL();
     } else if (_stricmp("g7291", cinst.plname) == 0) {
-      int valid_rates[12] = { 8000, 12000, 14000, 16000, 18000, 20000, 22000,
-                              24000, 26000, 28000, 30000, 32000 };
-      for (i = 0;
-          i < static_cast<int> (sizeof(valid_rates) / sizeof(int));
-          i++) {
+      int valid_rates[12] = {8000,  12000, 14000, 16000, 18000, 20000,
+                             22000, 24000, 26000, 28000, 30000, 32000};
+      for (i = 0; i < static_cast<int>(sizeof(valid_rates) / sizeof(int));
+           i++) {
         cinst.rate = valid_rates[i];
-        TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+        TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
         TEST_LOG("%d ", cinst.rate);
       }
       ANL();
     } else if (_stricmp("amr-wb", cinst.plname) == 0) {
-      int valid_rates[9] = { 7000, 9000, 12000, 14000, 16000, 18000, 20000,
-                             23000, 24000 };
-      for (i = 0;
-          i < static_cast<int> (sizeof(valid_rates) / sizeof(int));
-          i++) {
+      int valid_rates[9] = {7000,  9000,  12000, 14000, 16000,
+                            18000, 20000, 23000, 24000};
+      for (i = 0; i < static_cast<int>(sizeof(valid_rates) / sizeof(int));
+           i++) {
         cinst.rate = valid_rates[i];
-        TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+        TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
         TEST_LOG("%d ", cinst.rate);
       }
       TEST_LOG(" <=> ");
       ANL();
     } else if (_stricmp("speex", cinst.plname) == 0) {
       // Valid speex rates are > 2000, testing some of them here
-      int valid_rates[9] = { 2001, 4000, 7000, 11000, 15000, 20000, 25000,
-          33000, 46000 };
-      for (i = 0;
-          i < static_cast<int> (sizeof(valid_rates) / sizeof(int));
-          i++) {
+      int valid_rates[9] = {2001,  4000,  7000,  11000, 15000,
+                            20000, 25000, 33000, 46000};
+      for (i = 0; i < static_cast<int>(sizeof(valid_rates) / sizeof(int));
+           i++) {
         cinst.rate = valid_rates[i];
-        TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+        TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
         TEST_LOG("%d ", cinst.rate);
       }
-      cinst.rate = 2000; // invalid
-      TEST_MUSTPASS(-1 != codec->SetSendCodec(0, cinst))
-      {
+      cinst.rate = 2000;  // invalid
+      TEST_MUSTPASS(-1 != codec->SetSendCodec(channel_id, cinst)) {
         err = voe_base_->LastError();
         TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
       }
       ANL();
     } else if (_stricmp("silk", cinst.plname) == 0) {
       // Valid Silk rates are 6000 - 40000, listing some of them here
-      int valid_rates[7] = { 6000, 10000, 15000, 20000, 25000, 32000, 40000 };
-      for (i = 0;
-          i < static_cast<int> (sizeof(valid_rates) / sizeof(int));
-          i++) {
+      int valid_rates[7] = {6000, 10000, 15000, 20000, 25000, 32000, 40000};
+      for (i = 0; i < static_cast<int>(sizeof(valid_rates) / sizeof(int));
+           i++) {
         cinst.rate = valid_rates[i];
-        TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+        TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
         TEST_LOG("%d ", cinst.rate);
       }
-      cinst.rate = 5999; // invalid
-      TEST_MUSTPASS(-1 != codec->SetSendCodec(0, cinst))
-      {
+      cinst.rate = 5999;  // invalid
+      TEST_MUSTPASS(-1 != codec->SetSendCodec(channel_id, cinst)) {
         err = voe_base_->LastError();
         TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
       }
-      cinst.rate = 40001; // invalid
-      TEST_MUSTPASS(-1 != codec->SetSendCodec(0, cinst))
-      {
+      cinst.rate = 40001;  // invalid
+      TEST_MUSTPASS(-1 != codec->SetSendCodec(channel_id, cinst)) {
+        err = voe_base_->LastError();
+        TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
+      }
+      ANL();
+    } else if (STR_CASE_CMP("opus", cinst.plname) == 0) {
+      // Valid Opus rates are 6000 - 510000, listing some of them here
+      int valid_rates[7] = {6000, 24000, 36000, 48000, 64000, 120000, 400000};
+      for (i = 0; i < static_cast<int>(sizeof(valid_rates) / sizeof(int));
+           i++) {
+        cinst.rate = valid_rates[i];
+        TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
+        TEST_LOG("%d ", cinst.rate);
+      }
+      cinst.rate = 5999;  // invalid
+      TEST_MUSTPASS(-1 != codec->SetSendCodec(channel_id, cinst)) {
+        err = voe_base_->LastError();
+        TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
+      }
+      cinst.rate = 511000;  // invalid
+      TEST_MUSTPASS(-1 != codec->SetSendCodec(channel_id, cinst)) {
         err = voe_base_->LastError();
         TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
       }
@@ -1528,10 +1552,10 @@ int VoEExtendedTest::TestCodec() {
     } else {
       // Use default rate for all other codecs.
       cinst.rate = defaultCodec.rate;
-      TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+      TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
       TEST_LOG("%d ", cinst.rate);
       cinst.rate = defaultCodec.rate + 17;
-      TEST_MUSTPASS(!codec->SetSendCodec(0, cinst));
+      TEST_MUSTPASS(!codec->SetSendCodec(channel_id, cinst));
       err = voe_base_->LastError();
       TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
       ANL();
@@ -1542,22 +1566,22 @@ int VoEExtendedTest::TestCodec() {
     if (_stricmp("l16", cinst.plname) == 0) {
       if (8000 == cinst.plfreq) {
         // valid pacsizes: 80, 160, 240, 320
-        cinst.pacsize = 480; // only supported in combination with 16kHz
-        TEST_MUSTPASS(-1 != codec->SetSendCodec(0, cinst));
+        cinst.pacsize = 480;  // only supported in combination with 16kHz
+        TEST_MUSTPASS(-1 != codec->SetSendCodec(channel_id, cinst));
         err = voe_base_->LastError();
         TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
-        cinst.pacsize = 640; // only supported in combination with 16kHz
-        TEST_MUSTPASS(-1 != codec->SetSendCodec(0, cinst));
+        cinst.pacsize = 640;  // only supported in combination with 16kHz
+        TEST_MUSTPASS(-1 != codec->SetSendCodec(channel_id, cinst));
         err = voe_base_->LastError();
         TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
       } else {
         // valid pacsizes: 160, 320, 480, 640
-        cinst.pacsize = 80; // only supported in combination with 8kHz
-        TEST_MUSTPASS(-1 != codec->SetSendCodec(0, cinst));
+        cinst.pacsize = 80;  // only supported in combination with 8kHz
+        TEST_MUSTPASS(-1 != codec->SetSendCodec(channel_id, cinst));
         err = voe_base_->LastError();
         TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
-        cinst.pacsize = 240; // only supported in combination with 8kHz
-        TEST_MUSTPASS(-1 != codec->SetSendCodec(0, cinst));
+        cinst.pacsize = 240;  // only supported in combination with 8kHz
+        TEST_MUSTPASS(-1 != codec->SetSendCodec(channel_id, cinst));
         err = voe_base_->LastError();
         TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
       }
@@ -1566,8 +1590,8 @@ int VoEExtendedTest::TestCodec() {
   }  // for (int index = 0; index < nCodecs; index++)
 
   // restore PCMU
-  const CodecInst tmp = { 0, "PCMU", 8000, 160, 1, 64000 };
-  TEST_MUSTPASS(codec->SetSendCodec(0, tmp));
+  const CodecInst tmp = {0, "PCMU", 8000, 160, 1, 64000};
+  TEST_MUSTPASS(codec->SetSendCodec(channel_id, tmp));
 
   ANL();
   AOK();
@@ -1583,85 +1607,86 @@ int VoEExtendedTest::TestCodec() {
   bool enabled;
 
   // verify default settings (should be OFF, kVadConventional and DTX enabled)
-  TEST_MUSTPASS(codec->GetVADStatus(0, enabled, mode, disabledDTX));
-  TEST_LOG("VAD: enabled=%d, mode=%d, disabledDTX=%d\n", enabled, mode,
-           disabledDTX);
+  TEST_MUSTPASS(codec->GetVADStatus(channel_id, enabled, mode, disabledDTX));
+  TEST_LOG(
+      "VAD: enabled=%d, mode=%d, disabledDTX=%d\n", enabled, mode, disabledDTX);
   TEST_MUSTPASS(enabled != false);
   TEST_MUSTPASS(mode != kVadConventional);
   TEST_MUSTPASS(disabledDTX != true);
 
   // enable default VAD settings
-  TEST_MUSTPASS(codec->SetVADStatus(0, true));
-  TEST_MUSTPASS(codec->GetVADStatus(0, enabled, mode, disabledDTX));
-  TEST_LOG("VAD: enabled=%d, mode=%d, disabledDTX=%d\n", enabled, mode,
-           disabledDTX);
+  TEST_MUSTPASS(codec->SetVADStatus(channel_id, true));
+  TEST_MUSTPASS(codec->GetVADStatus(channel_id, enabled, mode, disabledDTX));
+  TEST_LOG(
+      "VAD: enabled=%d, mode=%d, disabledDTX=%d\n", enabled, mode, disabledDTX);
   TEST_MUSTPASS(enabled != true);
   TEST_MUSTPASS(mode != kVadConventional);
   TEST_MUSTPASS(disabledDTX != false);
   SleepMs(VADSleep);
 
   // set kVadConventional mode
-  TEST_MUSTPASS(codec->SetVADStatus(0, true, kVadConventional));
-  TEST_MUSTPASS(codec->GetVADStatus(0, enabled, mode, disabledDTX));
-  TEST_LOG("VAD: enabled=%d, mode=%d, disabledDTX=%d\n", enabled, mode,
-           disabledDTX);
+  TEST_MUSTPASS(codec->SetVADStatus(channel_id, true, kVadConventional));
+  TEST_MUSTPASS(codec->GetVADStatus(channel_id, enabled, mode, disabledDTX));
+  TEST_LOG(
+      "VAD: enabled=%d, mode=%d, disabledDTX=%d\n", enabled, mode, disabledDTX);
   TEST_MUSTPASS(mode != kVadConventional);
   SleepMs(VADSleep);
 
   // set kVadAggressiveLow mode
-  TEST_MUSTPASS(codec->SetVADStatus(0, true, kVadAggressiveLow));
-  TEST_MUSTPASS(codec->GetVADStatus(0, enabled, mode, disabledDTX));
-  TEST_LOG("VAD: enabled=%d, mode=%d, disabledDTX=%d\n", enabled, mode,
-           disabledDTX);
+  TEST_MUSTPASS(codec->SetVADStatus(channel_id, true, kVadAggressiveLow));
+  TEST_MUSTPASS(codec->GetVADStatus(channel_id, enabled, mode, disabledDTX));
+  TEST_LOG(
+      "VAD: enabled=%d, mode=%d, disabledDTX=%d\n", enabled, mode, disabledDTX);
   TEST_MUSTPASS(mode != kVadAggressiveLow);
   SleepMs(VADSleep);
 
   // set kVadAggressiveMid mode
-  TEST_MUSTPASS(codec->SetVADStatus(0, true, kVadAggressiveMid));
-  TEST_MUSTPASS(codec->GetVADStatus(0, enabled, mode, disabledDTX));
-  TEST_LOG("VAD: enabled=%d, mode=%d, disabledDTX=%d\n", enabled, mode,
-           disabledDTX);
+  TEST_MUSTPASS(codec->SetVADStatus(channel_id, true, kVadAggressiveMid));
+  TEST_MUSTPASS(codec->GetVADStatus(channel_id, enabled, mode, disabledDTX));
+  TEST_LOG(
+      "VAD: enabled=%d, mode=%d, disabledDTX=%d\n", enabled, mode, disabledDTX);
   TEST_MUSTPASS(mode != kVadAggressiveMid);
   SleepMs(VADSleep);
 
   // set kVadAggressiveMid mode
-  TEST_MUSTPASS(codec->SetVADStatus(0, true, kVadAggressiveHigh));
-  TEST_MUSTPASS(codec->GetVADStatus(0, enabled, mode, disabledDTX));
-  TEST_LOG("VAD: enabled=%d, mode=%d, disabledDTX=%d\n", enabled, mode,
-           disabledDTX);
+  TEST_MUSTPASS(codec->SetVADStatus(channel_id, true, kVadAggressiveHigh));
+  TEST_MUSTPASS(codec->GetVADStatus(channel_id, enabled, mode, disabledDTX));
+  TEST_LOG(
+      "VAD: enabled=%d, mode=%d, disabledDTX=%d\n", enabled, mode, disabledDTX);
   TEST_MUSTPASS(mode != kVadAggressiveHigh);
   SleepMs(VADSleep);
 
   // turn DTX OFF (audio should not be affected by VAD decisions)
-  TEST_MUSTPASS(codec->SetVADStatus(0, true, kVadConventional, true));
-  TEST_MUSTPASS(codec->GetVADStatus(0, enabled, mode, disabledDTX));
-  TEST_LOG("VAD: enabled=%d, mode=%d, disabledDTX=%d\n", enabled, mode,
-           disabledDTX);
+  TEST_MUSTPASS(codec->SetVADStatus(channel_id, true, kVadConventional, true));
+  TEST_MUSTPASS(codec->GetVADStatus(channel_id, enabled, mode, disabledDTX));
+  TEST_LOG(
+      "VAD: enabled=%d, mode=%d, disabledDTX=%d\n", enabled, mode, disabledDTX);
   TEST_MUSTPASS(disabledDTX != true);
   SleepMs(VADSleep);
 
   // try to enable DTX again (should fail since VAD is disabled)
-  TEST_MUSTPASS(codec->SetVADStatus(0, false, kVadConventional, false));
-  TEST_MUSTPASS(codec->GetVADStatus(0, enabled, mode, disabledDTX));
-  TEST_LOG("VAD: enabled=%d, mode=%d, disabledDTX=%d\n", enabled, mode,
-           disabledDTX);
+  TEST_MUSTPASS(
+      codec->SetVADStatus(channel_id, false, kVadConventional, false));
+  TEST_MUSTPASS(codec->GetVADStatus(channel_id, enabled, mode, disabledDTX));
+  TEST_LOG(
+      "VAD: enabled=%d, mode=%d, disabledDTX=%d\n", enabled, mode, disabledDTX);
   TEST_MUSTPASS(disabledDTX == false);
   SleepMs(VADSleep);
 
   // disable VAD
-  TEST_MUSTPASS(codec->SetVADStatus(0, false));
-  TEST_MUSTPASS(codec->GetVADStatus(0, enabled, mode, disabledDTX));
-  TEST_LOG("VAD: enabled=%d, mode=%d, disabledDTX=%d\n", enabled, mode,
-           disabledDTX);
+  TEST_MUSTPASS(codec->SetVADStatus(channel_id, false));
+  TEST_MUSTPASS(codec->GetVADStatus(channel_id, enabled, mode, disabledDTX));
+  TEST_LOG(
+      "VAD: enabled=%d, mode=%d, disabledDTX=%d\n", enabled, mode, disabledDTX);
   TEST_MUSTPASS(enabled != false);
   SleepMs(VADSleep);
 
   // restore default VAD
-  TEST_MUSTPASS(codec->SetVADStatus(0, true));
-  TEST_MUSTPASS(codec->SetVADStatus(0, false));
-  TEST_MUSTPASS(codec->GetVADStatus(0, enabled, mode, disabledDTX));
-  TEST_LOG("VAD: enabled=%d, mode=%d, disabledDTX=%d\n", enabled, mode,
-           disabledDTX);
+  TEST_MUSTPASS(codec->SetVADStatus(channel_id, true));
+  TEST_MUSTPASS(codec->SetVADStatus(channel_id, false));
+  TEST_MUSTPASS(codec->GetVADStatus(channel_id, enabled, mode, disabledDTX));
+  TEST_LOG(
+      "VAD: enabled=%d, mode=%d, disabledDTX=%d\n", enabled, mode, disabledDTX);
   TEST_MUSTPASS(enabled != false);
   TEST_MUSTPASS(mode != kVadConventional);
   TEST_MUSTPASS(disabledDTX != true);
@@ -1677,29 +1702,29 @@ int VoEExtendedTest::TestCodec() {
   ANL();
 
   // stop all streaming first
-  TEST_MUSTPASS(voe_base_->StopPlayout(0));
-  TEST_MUSTPASS(voe_base_->StopSend(0));
-  TEST_MUSTPASS(voe_base_->StopReceive(0));
+  TEST_MUSTPASS(voe_base_->StopPlayout(channel_id));
+  TEST_MUSTPASS(voe_base_->StopSend(channel_id));
+  TEST_MUSTPASS(voe_base_->StopReceive(channel_id));
 
   // start loopback streaming (PCMU is default)
-  TEST_MUSTPASS(voe_base_->StartReceive(0));
-  TEST_MUSTPASS(voe_base_->StartPlayout(0));
-  TEST_MUSTPASS(voe_base_->StartSend(0));
-  SleepMs(100); // ensure that at least one packets is received
+  TEST_MUSTPASS(voe_base_->StartReceive(channel_id));
+  TEST_MUSTPASS(voe_base_->StartPlayout(channel_id));
+  TEST_MUSTPASS(voe_base_->StartSend(channel_id));
+  SleepMs(100);  // ensure that at least one packets is received
 
   // scan all supported and valid codecs
   CodecInst newCodec;
   for (i = 0; i < codec->NumOfCodecs(); i++) {
     TEST_MUSTPASS(codec->GetCodec(i, newCodec));
     // test all valid send codecs
-    if (!_stricmp("red", newCodec.plname) || !_stricmp("cn", newCodec.plname)
-        || !_stricmp("telephone-event", newCodec.plname)) {
-      continue; // Ignore these
+    if (!_stricmp("red", newCodec.plname) || !_stricmp("cn", newCodec.plname) ||
+        !_stricmp("telephone-event", newCodec.plname)) {
+      continue;  // Ignore these
     }
-    if (-1 != codec->SetSendCodec(0, newCodec)) {
+    if (-1 != codec->SetSendCodec(channel_id, newCodec)) {
       SleepMs(150);
       // verify correct detection
-      TEST_MUSTPASS(codec->GetRecCodec(0, cinst));
+      TEST_MUSTPASS(codec->GetRecCodec(channel_id, cinst));
       TEST_LOG("%s %s ", newCodec.plname, cinst.plname);
       TEST_MUSTPASS(_stricmp(newCodec.plname, cinst.plname) != 0);
       TEST_MUSTPASS(cinst.pltype != newCodec.pltype);
@@ -1708,9 +1733,9 @@ int VoEExtendedTest::TestCodec() {
   }
 
   // stop streaming
-  TEST_MUSTPASS(voe_base_->StopPlayout(0));
-  TEST_MUSTPASS(voe_base_->StopSend(0));
-  TEST_MUSTPASS(voe_base_->StopReceive(0));
+  TEST_MUSTPASS(voe_base_->StopPlayout(channel_id));
+  TEST_MUSTPASS(voe_base_->StopSend(channel_id));
+  TEST_MUSTPASS(voe_base_->StopReceive(channel_id));
 
   ANL();
   AOK();
@@ -1722,35 +1747,46 @@ int VoEExtendedTest::TestCodec() {
   // SetAMREncFormat
 
   // Fresh channel
-  TEST_MUSTPASS(voe_base_->DeleteChannel(0));
+  TEST_MUSTPASS(voe_base_->DeleteChannel(channel_id));
   TEST_MUSTPASS(voe_base_->CreateChannel());
 
-  TEST(SetAMREncFormat); ANL();
+  TEST(SetAMREncFormat);
+  ANL();
 
-  //set another codec which is not AMR
-  TEST_MUSTPASS(codec->GetCodec(0, cinst));
-  TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
-  //try to change the encode format, tests should fail
-  TEST_MUSTPASS(-1 != codec->SetAMREncFormat(0)); MARK();
-  TEST_MUSTPASS(-1 != codec->SetAMREncFormat(0, kRfc3267BwEfficient));
+  // set another codec which is not AMR
+  TEST_MUSTPASS(codec->GetCodec(channel_id, cinst));
+  TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
+  // try to change the encode format, tests should fail
+  TEST_MUSTPASS(-1 != codec->SetAMREncFormat(channel_id));
   MARK();
-  TEST_MUSTPASS(-1 != codec->SetAMREncFormat(0, kRfc3267OctetAligned));
+  TEST_MUSTPASS(-1 != codec->SetAMREncFormat(channel_id, kRfc3267BwEfficient));
   MARK();
-  TEST_MUSTPASS(-1 != codec->SetAMREncFormat(0, kRfc3267FileStorage));
+  TEST_MUSTPASS(-1 != codec->SetAMREncFormat(channel_id, kRfc3267OctetAligned));
+  MARK();
+  TEST_MUSTPASS(-1 != codec->SetAMREncFormat(channel_id, kRfc3267FileStorage));
   MARK();
 
-  //set AMR as encoder
-  strcpy(cinst.plname,"AMR");
-  cinst.channels=1; cinst.plfreq=8000; cinst.rate=12200; cinst.pltype=112;
-  cinst.pacsize=160;
-  TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
-  //try to change the encode format, tests should pass
-  TEST_MUSTPASS(codec->SetAMREncFormat(0)); MARK();
-  TEST_MUSTPASS(codec->SetAMREncFormat(0, kRfc3267BwEfficient)); MARK();
-  TEST_MUSTPASS(codec->SetAMREncFormat(0, kRfc3267OctetAligned)); MARK();
-  TEST_MUSTPASS(codec->SetAMREncFormat(0, kRfc3267FileStorage)); MARK();
-  TEST_MUSTPASS(-1 != codec->SetAMREncFormat(-1)); MARK();
-  TEST_MUSTPASS(codec->SetAMREncFormat(0)); MARK(); // restore default
+  // set AMR as encoder
+  strcpy(cinst.plname, "AMR");
+  cinst.channels = 1;
+  cinst.plfreq = 8000;
+  cinst.rate = 12200;
+  cinst.pltype = 112;
+  cinst.pacsize = 160;
+  TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
+  // try to change the encode format, tests should pass
+  TEST_MUSTPASS(codec->SetAMREncFormat(channel_id));
+  MARK();
+  TEST_MUSTPASS(codec->SetAMREncFormat(channel_id, kRfc3267BwEfficient));
+  MARK();
+  TEST_MUSTPASS(codec->SetAMREncFormat(channel_id, kRfc3267OctetAligned));
+  MARK();
+  TEST_MUSTPASS(codec->SetAMREncFormat(channel_id, kRfc3267FileStorage));
+  MARK();
+  TEST_MUSTPASS(-1 != codec->SetAMREncFormat(-1));
+  MARK();
+  TEST_MUSTPASS(codec->SetAMREncFormat(channel_id));
+  MARK();  // restore default
 
   ANL();
   AOK();
@@ -1759,63 +1795,85 @@ int VoEExtendedTest::TestCodec() {
   //////////////////////////
   // SetAMRDecFormat
 
-  TEST(SetAMRDecFormat); ANL();
+  TEST(SetAMRDecFormat);
+  ANL();
 
   // It should not be possible to set AMR dec format before valid AMR decoder
   // is registered
-  TEST_MUSTPASS(!codec->SetAMRDecFormat(0)); MARK();
+  TEST_MUSTPASS(!codec->SetAMRDecFormat(channel_id));
+  MARK();
   err = voe_base_->LastError();
   TEST_MUSTPASS(err != VE_AUDIO_CODING_MODULE_ERROR);
 
   // Ensure that ACM::RegisterReceiveCodec(AMR) is called
-  TEST_MUSTPASS(codec->SetRecPayloadType(0, cinst));
+  TEST_MUSTPASS(codec->SetRecPayloadType(channel_id, cinst));
 
   // All these tests should now pass
-  TEST_MUSTPASS(codec->SetAMRDecFormat(0)); MARK();
-  TEST_MUSTPASS(codec->SetAMRDecFormat(0, kRfc3267BwEfficient)); MARK();
-  TEST_MUSTPASS(codec->SetAMRDecFormat(0, kRfc3267OctetAligned)); MARK();
-  TEST_MUSTPASS(codec->SetAMRDecFormat(0, kRfc3267FileStorage)); MARK();
-  TEST_MUSTPASS(-1 != codec->SetAMRDecFormat(-1)); MARK();
-  TEST_MUSTPASS(codec->SetAMRDecFormat(0)); MARK(); // restore default
+  TEST_MUSTPASS(codec->SetAMRDecFormat(channel_id));
+  MARK();
+  TEST_MUSTPASS(codec->SetAMRDecFormat(channel_id, kRfc3267BwEfficient));
+  MARK();
+  TEST_MUSTPASS(codec->SetAMRDecFormat(channel_id, kRfc3267OctetAligned));
+  MARK();
+  TEST_MUSTPASS(codec->SetAMRDecFormat(channel_id, kRfc3267FileStorage));
+  MARK();
+  TEST_MUSTPASS(-1 != codec->SetAMRDecFormat(-1));
+  MARK();
+  TEST_MUSTPASS(codec->SetAMRDecFormat(channel_id));
+  MARK();  // restore default
 
   ANL();
   AOK();
   ANL();
-#endif // #ifdef WEBRTC_CODEC_AMR
+#endif  // #ifdef WEBRTC_CODEC_AMR
 #ifdef WEBRTC_CODEC_AMRWB
   //////////////////////////
   // SetAMRWbEncFormat
 
   // Fresh channel
-  TEST_MUSTPASS(voe_base_->DeleteChannel(0));
+  TEST_MUSTPASS(voe_base_->DeleteChannel(channel_id));
   TEST_MUSTPASS(voe_base_->CreateChannel());
 
-  TEST(SetAMRWbEncFormat); ANL();
+  TEST(SetAMRWbEncFormat);
+  ANL();
 
-  //set another codec which is not AMR-wb
-  TEST_MUSTPASS(codec->GetCodec(0, cinst));
-  TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
-  //try to change the encode format, tests should fail
-  TEST_MUSTPASS(-1 != codec->SetAMRWbEncFormat(0)); MARK();
-  TEST_MUSTPASS(-1 != codec->SetAMRWbEncFormat(0, kRfc3267BwEfficient));
+  // set another codec which is not AMR-wb
+  TEST_MUSTPASS(codec->GetCodec(channel_id, cinst));
+  TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
+  // try to change the encode format, tests should fail
+  TEST_MUSTPASS(-1 != codec->SetAMRWbEncFormat(channel_id));
   MARK();
-  TEST_MUSTPASS(-1 != codec->SetAMRWbEncFormat(0, kRfc3267OctetAligned));
+  TEST_MUSTPASS(-1 !=
+                codec->SetAMRWbEncFormat(channel_id, kRfc3267BwEfficient));
   MARK();
-  TEST_MUSTPASS(-1 != codec->SetAMRWbEncFormat(0, kRfc3267FileStorage));
+  TEST_MUSTPASS(-1 !=
+                codec->SetAMRWbEncFormat(channel_id, kRfc3267OctetAligned));
+  MARK();
+  TEST_MUSTPASS(-1 !=
+                codec->SetAMRWbEncFormat(channel_id, kRfc3267FileStorage));
   MARK();
 
-  //set AMR-wb as encoder
-  strcpy(cinst.plname,"AMR-WB");
-  cinst.channels=1; cinst.plfreq=16000; cinst.rate=20000;
-  cinst.pltype=112; cinst.pacsize=320;
-  TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
-  //try to change the encode format, tests should pass
-  TEST_MUSTPASS(codec->SetAMRWbEncFormat(0)); MARK();
-  TEST_MUSTPASS(codec->SetAMRWbEncFormat(0, kRfc3267BwEfficient)); MARK();
-  TEST_MUSTPASS(codec->SetAMRWbEncFormat(0, kRfc3267OctetAligned)); MARK();
-  TEST_MUSTPASS(codec->SetAMRWbEncFormat(0, kRfc3267FileStorage)); MARK();
-  TEST_MUSTPASS(-1 != codec->SetAMRWbEncFormat(-1)); MARK();
-  TEST_MUSTPASS(codec->SetAMRWbEncFormat(0)); MARK(); // restore default
+  // set AMR-wb as encoder
+  strcpy(cinst.plname, "AMR-WB");
+  cinst.channels = 1;
+  cinst.plfreq = 16000;
+  cinst.rate = 20000;
+  cinst.pltype = 112;
+  cinst.pacsize = 320;
+  TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
+  // try to change the encode format, tests should pass
+  TEST_MUSTPASS(codec->SetAMRWbEncFormat(channel_id));
+  MARK();
+  TEST_MUSTPASS(codec->SetAMRWbEncFormat(channel_id, kRfc3267BwEfficient));
+  MARK();
+  TEST_MUSTPASS(codec->SetAMRWbEncFormat(channel_id, kRfc3267OctetAligned));
+  MARK();
+  TEST_MUSTPASS(codec->SetAMRWbEncFormat(channel_id, kRfc3267FileStorage));
+  MARK();
+  TEST_MUSTPASS(-1 != codec->SetAMRWbEncFormat(-1));
+  MARK();
+  TEST_MUSTPASS(codec->SetAMRWbEncFormat(channel_id));
+  MARK();  // restore default
 
   ANL();
   AOK();
@@ -1824,63 +1882,71 @@ int VoEExtendedTest::TestCodec() {
   //////////////////////////
   // SetAMRDecFormat
 
-  TEST(SetAMRWbDecFormat); ANL();
+  TEST(SetAMRWbDecFormat);
+  ANL();
 
   // It should not be possible to set AMR dec format before valid AMR decoder
   // is registered
-  TEST_MUSTPASS(!codec->SetAMRWbDecFormat(0)); MARK();
+  TEST_MUSTPASS(!codec->SetAMRWbDecFormat(channel_id));
+  MARK();
   err = voe_base_->LastError();
   TEST_MUSTPASS(err != VE_AUDIO_CODING_MODULE_ERROR);
 
   // Ensure that ACM::RegisterReceiveCodec(AMR) is called
-  TEST_MUSTPASS(codec->SetRecPayloadType(0, cinst));
+  TEST_MUSTPASS(codec->SetRecPayloadType(channel_id, cinst));
 
   // All these tests should now pass
-  TEST_MUSTPASS(codec->SetAMRWbDecFormat(0)); MARK();
-  TEST_MUSTPASS(codec->SetAMRWbDecFormat(0, kRfc3267BwEfficient)); MARK();
-  TEST_MUSTPASS(codec->SetAMRWbDecFormat(0, kRfc3267OctetAligned)); MARK();
-  TEST_MUSTPASS(codec->SetAMRWbDecFormat(0, kRfc3267FileStorage)); MARK();
-  TEST_MUSTPASS(-1 != codec->SetAMRWbDecFormat(-1)); MARK();
-  TEST_MUSTPASS(codec->SetAMRWbDecFormat(0)); MARK(); // restore default
+  TEST_MUSTPASS(codec->SetAMRWbDecFormat(channel_id));
+  MARK();
+  TEST_MUSTPASS(codec->SetAMRWbDecFormat(channel_id, kRfc3267BwEfficient));
+  MARK();
+  TEST_MUSTPASS(codec->SetAMRWbDecFormat(channel_id, kRfc3267OctetAligned));
+  MARK();
+  TEST_MUSTPASS(codec->SetAMRWbDecFormat(channel_id, kRfc3267FileStorage));
+  MARK();
+  TEST_MUSTPASS(-1 != codec->SetAMRWbDecFormat(-1));
+  MARK();
+  TEST_MUSTPASS(codec->SetAMRWbDecFormat(channel_id));
+  MARK();  // restore default
 
   ANL();
   AOK();
   ANL();
-#endif // #ifdef WEBRTC_CODEC_AMRWB
-  ///////////////////////////////
+#endif  // #ifdef WEBRTC_CODEC_AMRWB
+        ///////////////////////////////
   // SetSendCNPayloadType
   TEST(SetSendCNPayloadType);
   ANL();
 
   TEST_MUSTPASS(-1 != codec->SetSendCNPayloadType(-1, 0));
-  MARK(); // invalid channel
+  MARK();  // invalid channel
 
   // Invalid payload range (only dynamic range [96,127]
-  TEST_MUSTPASS(-1 != codec->SetSendCNPayloadType(0, 0));
-  MARK(); // invalid PT
-  TEST_MUSTPASS(-1 != codec->SetSendCNPayloadType(0, 95));
-  MARK(); // invalid PT
-  TEST_MUSTPASS(-1 != codec->SetSendCNPayloadType(0, 128));
-  MARK(); // invalid PT
-  TEST_MUSTPASS(-1 != codec->SetSendCNPayloadType(0, -1));
-  MARK(); // invalid PT
+  TEST_MUSTPASS(-1 != codec->SetSendCNPayloadType(channel_id, 0));
+  MARK();  // invalid PT
+  TEST_MUSTPASS(-1 != codec->SetSendCNPayloadType(channel_id, 95));
+  MARK();  // invalid PT
+  TEST_MUSTPASS(-1 != codec->SetSendCNPayloadType(channel_id, 128));
+  MARK();  // invalid PT
+  TEST_MUSTPASS(-1 != codec->SetSendCNPayloadType(channel_id, -1));
+  MARK();  // invalid PT
 
   // Not possible to change PT for 8000
-  TEST_MUSTPASS(!codec->SetSendCNPayloadType(0, 96, kFreq8000Hz));
+  TEST_MUSTPASS(!codec->SetSendCNPayloadType(channel_id, 96, kFreq8000Hz));
   MARK();
   err = voe_base_->LastError();
   TEST_MUSTPASS(err != VE_INVALID_PLFREQ);
 
   // Try some dynamic for 16000 and 32000 as well
-  TEST_MUSTPASS(codec->SetSendCNPayloadType(0, 96, kFreq16000Hz));
+  TEST_MUSTPASS(codec->SetSendCNPayloadType(channel_id, 96, kFreq16000Hz));
   MARK();
-  TEST_MUSTPASS(codec->SetSendCNPayloadType(0, 96, kFreq32000Hz));
-  MARK(); // same should work
-  TEST_MUSTPASS(codec->SetSendCNPayloadType(0, 127, kFreq16000Hz));
+  TEST_MUSTPASS(codec->SetSendCNPayloadType(channel_id, 96, kFreq32000Hz));
+  MARK();  // same should work
+  TEST_MUSTPASS(codec->SetSendCNPayloadType(channel_id, 127, kFreq16000Hz));
   MARK();
-  TEST_MUSTPASS(codec->SetSendCNPayloadType(0, 127, kFreq32000Hz));
+  TEST_MUSTPASS(codec->SetSendCNPayloadType(channel_id, 127, kFreq32000Hz));
   MARK();
-  TEST_MUSTPASS(codec->SetSendCNPayloadType(0, 100, kFreq32000Hz));
+  TEST_MUSTPASS(codec->SetSendCNPayloadType(channel_id, 100, kFreq32000Hz));
   MARK();
 
   ANL();
@@ -1900,14 +1966,14 @@ int VoEExtendedTest::TestCodec() {
     if (-1 == newCodec.pltype) {
       newCodec.pltype = 127;
     }
-    TEST_MUSTPASS(codec->SetRecPayloadType(0, newCodec));
-    MARK(); // use default
+    TEST_MUSTPASS(codec->SetRecPayloadType(channel_id, newCodec));
+    MARK();  // use default
     newCodec.pltype = 99;
-    TEST_MUSTPASS(codec->SetRecPayloadType(0, newCodec));
-    MARK(); // use same PT on all
+    TEST_MUSTPASS(codec->SetRecPayloadType(channel_id, newCodec));
+    MARK();  // use same PT on all
     newCodec.pltype = -1;
-    TEST_MUSTPASS(codec->SetRecPayloadType(0, newCodec));
-    MARK(); // deregister all PTs
+    TEST_MUSTPASS(codec->SetRecPayloadType(channel_id, newCodec));
+    MARK();  // deregister all PTs
   }
 
   ANL();
@@ -1927,18 +1993,18 @@ int VoEExtendedTest::TestCodec() {
     if (-1 == newCodec.pltype) {
       newCodec.pltype = 127;
     }
-    TEST_MUSTPASS(codec->SetRecPayloadType(0, newCodec));
-    //TEST_LOG("[%2d] %s (SetRec): fs=%d, pt=%d, rate=%d, ch=%d, size=%d\n",
+    TEST_MUSTPASS(codec->SetRecPayloadType(channel_id, newCodec));
+    // TEST_LOG("[%2d] %s (SetRec): fs=%d, pt=%d, rate=%d, ch=%d, size=%d\n",
     //  i, newCodec.plname, newCodec.plfreq, newCodec.pltype, newCodec.rate,
     // newCodec.channels, newCodec.pacsize);
-    extraCodec.pltype = -1; // don't know this yet
+    extraCodec.pltype = -1;  // don't know this yet
     extraCodec.plfreq = newCodec.plfreq;
     extraCodec.rate = newCodec.rate;
     extraCodec.channels = newCodec.channels;
     strcpy(extraCodec.plname, newCodec.plname);
     // Verfify that setting is OK
-    TEST_MUSTPASS(codec->GetRecPayloadType(0, extraCodec));
-    //TEST_LOG("[%2d] %s (GetRec): fs=%d, pt=%d, rate=%d, ch=%d, size=%d\n",
+    TEST_MUSTPASS(codec->GetRecPayloadType(channel_id, extraCodec));
+    // TEST_LOG("[%2d] %s (GetRec): fs=%d, pt=%d, rate=%d, ch=%d, size=%d\n",
     //  i, extraCodec.plname, extraCodec.plfreq, extraCodec.pltype,
     // extraCodec.rate, extraCodec.channels, extraCodec.pacsize);
     TEST_MUSTPASS(newCodec.pltype != extraCodec.pltype);
@@ -1954,10 +2020,10 @@ int VoEExtendedTest::TestCodec() {
   TEST(SetRecPayloadType - removing receive codecs);
   ANL();
 
-  TEST_MUSTPASS(voe_base_->StartSend(0));
+  TEST_MUSTPASS(voe_base_->StartSend(channel_id));
   if (file) {
     TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(
-        0, _mgr.AudioFilename(), true, true));
+        channel_id, _mgr.AudioFilename(), true, true));
   }
 
   // Scan all supported and valid codecs and remove from receiving db, then
@@ -1965,9 +2031,9 @@ int VoEExtendedTest::TestCodec() {
   nCodecs = codec->NumOfCodecs();
   for (i = 0; i < nCodecs; i++) {
     TEST_MUSTPASS(codec->GetCodec(i, cinst));
-    if (!_stricmp("red", cinst.plname) || !_stricmp("cn", cinst.plname)
-        || !_stricmp("telephone-event", cinst.plname)) {
-      continue; // Ignore these
+    if (!_stricmp("red", cinst.plname) || !_stricmp("cn", cinst.plname) ||
+        !_stricmp("telephone-event", cinst.plname)) {
+      continue;  // Ignore these
     }
     TEST_LOG("Testing codec: %s", cinst.plname);
     fflush(NULL);
@@ -1980,39 +2046,39 @@ int VoEExtendedTest::TestCodec() {
       // Remove codec
       memcpy(&extraCodec, &cinst, sizeof(CodecInst));
       extraCodec.pltype = -1;
-      TEST_MUSTPASS(codec->SetRecPayloadType(0, extraCodec));
+      TEST_MUSTPASS(codec->SetRecPayloadType(channel_id, extraCodec));
     }
 
     // Set send codec
-    TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+    TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
 
     // Verify no audio
-    TEST_MUSTPASS(voe_base_->StartReceive(0));
-    TEST_MUSTPASS(voe_base_->StartPlayout(0));
+    TEST_MUSTPASS(voe_base_->StartReceive(channel_id));
+    TEST_MUSTPASS(voe_base_->StartPlayout(channel_id));
     TEST_LOG("  silence");
     fflush(NULL);
     SleepMs(800);
-    TEST_MUSTPASS(voe_base_->StopPlayout(0));
-    TEST_MUSTPASS(voe_base_->StopReceive(0));
+    TEST_MUSTPASS(voe_base_->StopPlayout(channel_id));
+    TEST_MUSTPASS(voe_base_->StopReceive(channel_id));
 
     // Restore codec
-    TEST_MUSTPASS(codec->SetRecPayloadType(0, cinst));
+    TEST_MUSTPASS(codec->SetRecPayloadType(channel_id, cinst));
 
     // Verify audio
-    TEST_MUSTPASS(voe_base_->StartReceive(0));
-    TEST_MUSTPASS(voe_base_->StartPlayout(0));
+    TEST_MUSTPASS(voe_base_->StartReceive(channel_id));
+    TEST_MUSTPASS(voe_base_->StartPlayout(channel_id));
     TEST_LOG("  audio");
     fflush(NULL);
     SleepMs(800);
-    TEST_MUSTPASS(voe_base_->StopPlayout(0));
-    TEST_MUSTPASS(voe_base_->StopReceive(0));
+    TEST_MUSTPASS(voe_base_->StopPlayout(channel_id));
+    TEST_MUSTPASS(voe_base_->StopReceive(channel_id));
 
     if (127 == cinst.pltype) {
       // If no default payload type is defined, i.e. we have set pt to
-      //127 above,
+      // 127 above,
       // make sure we remove codec from receiving
       cinst.pltype = -1;
-      TEST_MUSTPASS(codec->SetRecPayloadType(0, cinst));
+      TEST_MUSTPASS(codec->SetRecPayloadType(channel_id, cinst));
     }
 
     ANL();
@@ -2022,27 +2088,27 @@ int VoEExtendedTest::TestCodec() {
   TEST_LOG("Removing receive codecs:");
   for (i = 0; i < nCodecs; i++) {
     TEST_MUSTPASS(codec->GetCodec(i, cinst));
-    if (!_stricmp("ipcmwb", cinst.plname) || !_stricmp("pcmu", cinst.plname)
-        || !_stricmp("eg711a", cinst.plname)) {
+    if (!_stricmp("ipcmwb", cinst.plname) || !_stricmp("pcmu", cinst.plname) ||
+        !_stricmp("eg711a", cinst.plname)) {
       TEST_LOG(" %s", cinst.plname);
       memcpy(&extraCodec, &cinst, sizeof(CodecInst));
       extraCodec.pltype = -1;
-      TEST_MUSTPASS(codec->SetRecPayloadType(0, extraCodec));
+      TEST_MUSTPASS(codec->SetRecPayloadType(channel_id, extraCodec));
     }
   }
   ANL();
 
-  TEST_MUSTPASS(voe_base_->StartReceive(0));
-  TEST_MUSTPASS(voe_base_->StartPlayout(0));
+  TEST_MUSTPASS(voe_base_->StartReceive(channel_id));
+  TEST_MUSTPASS(voe_base_->StartPlayout(channel_id));
 
   // Test sending all codecs - verify audio/no audio depending on codec
   TEST_LOG("Looping through send codecs \n");
   TEST_LOG("Verify that removed codecs are not audible and the other are \n");
   for (i = 0; i < nCodecs; i++) {
     TEST_MUSTPASS(codec->GetCodec(i, cinst));
-    if (!_stricmp("red", cinst.plname) || !_stricmp("cn", cinst.plname)
-        || !_stricmp("telephone-event", cinst.plname)) {
-      continue; // Ignore these
+    if (!_stricmp("red", cinst.plname) || !_stricmp("cn", cinst.plname) ||
+        !_stricmp("telephone-event", cinst.plname)) {
+      continue;  // Ignore these
     }
     TEST_LOG("Testing codec: %s \n", cinst.plname);
 
@@ -2050,47 +2116,47 @@ int VoEExtendedTest::TestCodec() {
     // payload type
     if (-1 == cinst.pltype) {
       cinst.pltype = 127;
-      TEST_MUSTPASS(voe_base_->StopPlayout(0));
-      TEST_MUSTPASS(voe_base_->StopReceive(0));
-      TEST_MUSTPASS(codec->SetRecPayloadType(0, cinst));
-      TEST_MUSTPASS(voe_base_->StartReceive(0));
-      TEST_MUSTPASS(voe_base_->StartPlayout(0));
+      TEST_MUSTPASS(voe_base_->StopPlayout(channel_id));
+      TEST_MUSTPASS(voe_base_->StopReceive(channel_id));
+      TEST_MUSTPASS(codec->SetRecPayloadType(channel_id, cinst));
+      TEST_MUSTPASS(voe_base_->StartReceive(channel_id));
+      TEST_MUSTPASS(voe_base_->StartPlayout(channel_id));
     }
 
     // Set send codec
-    TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+    TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
 
     // Verify audio/no audio
     SleepMs(800);
   }
 
-  TEST_MUSTPASS(voe_base_->StopPlayout(0));
-  TEST_MUSTPASS(voe_base_->StopReceive(0));
+  TEST_MUSTPASS(voe_base_->StopPlayout(channel_id));
+  TEST_MUSTPASS(voe_base_->StopReceive(channel_id));
 
   // Restore codecs
   TEST_LOG("Restoring receive codecs:");
   for (i = 0; i < nCodecs; i++) {
     TEST_MUSTPASS(codec->GetCodec(i, cinst));
-    if (!_stricmp("ipcmwb", cinst.plname) || !_stricmp("pcmu", cinst.plname)
-        || !_stricmp("eg711a", cinst.plname)) {
+    if (!_stricmp("ipcmwb", cinst.plname) || !_stricmp("pcmu", cinst.plname) ||
+        !_stricmp("eg711a", cinst.plname)) {
       TEST_LOG(" %s", cinst.plname);
       memcpy(&extraCodec, &cinst, sizeof(CodecInst));
-      TEST_MUSTPASS(codec->SetRecPayloadType(0, cinst));
+      TEST_MUSTPASS(codec->SetRecPayloadType(channel_id, cinst));
     }
   }
   ANL();
 
-  TEST_MUSTPASS(voe_base_->StartReceive(0));
-  TEST_MUSTPASS(voe_base_->StartPlayout(0));
+  TEST_MUSTPASS(voe_base_->StartReceive(channel_id));
+  TEST_MUSTPASS(voe_base_->StartPlayout(channel_id));
 
   // Test sending all codecs - verify audio
   TEST_LOG("Looping through send codecs \n");
   TEST_LOG("Verify that all codecs are audible \n");
   for (i = 0; i < nCodecs; i++) {
     TEST_MUSTPASS(codec->GetCodec(i, cinst));
-    if (!_stricmp("red", cinst.plname) || !_stricmp("cn", cinst.plname)
-        || !_stricmp("telephone-event", cinst.plname)) {
-      continue; // Ignore these
+    if (!_stricmp("red", cinst.plname) || !_stricmp("cn", cinst.plname) ||
+        !_stricmp("telephone-event", cinst.plname)) {
+      continue;  // Ignore these
     }
     TEST_LOG("Testing codec: %s \n", cinst.plname);
 
@@ -2098,27 +2164,28 @@ int VoEExtendedTest::TestCodec() {
     // payload type
     if (-1 == cinst.pltype) {
       cinst.pltype = 127;
-      TEST_MUSTPASS(voe_base_->StopPlayout(0));
-      TEST_MUSTPASS(voe_base_->StopReceive(0));
-      TEST_MUSTPASS(codec->SetRecPayloadType(0, cinst));
-      TEST_MUSTPASS(voe_base_->StartReceive(0));
-      TEST_MUSTPASS(voe_base_->StartPlayout(0));
+      TEST_MUSTPASS(voe_base_->StopPlayout(channel_id));
+      TEST_MUSTPASS(voe_base_->StopReceive(channel_id));
+      TEST_MUSTPASS(codec->SetRecPayloadType(channel_id, cinst));
+      TEST_MUSTPASS(voe_base_->StartReceive(channel_id));
+      TEST_MUSTPASS(voe_base_->StartPlayout(channel_id));
     }
 
     // Set send codec
-    TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+    TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
 
     // Verify audio/no audio
     SleepMs(800);
   }
 
-  TEST_MUSTPASS(voe_base_->StopPlayout(0));
-  TEST_MUSTPASS(voe_base_->StopSend(0));
-  TEST_MUSTPASS(voe_base_->StopReceive(0));
+  TEST_MUSTPASS(voe_base_->StopPlayout(channel_id));
+  TEST_MUSTPASS(voe_base_->StopSend(channel_id));
+  TEST_MUSTPASS(voe_base_->StopReceive(channel_id));
 
   // Fresh channel
-  TEST_MUSTPASS(voe_base_->DeleteChannel(0));
-  TEST_MUSTPASS(voe_base_->CreateChannel());
+  TEST_MUSTPASS(voe_base_->DeleteChannel(channel_id));
+  channel_id = voe_base_->CreateChannel();
+  TEST_MUSTPASS(channel_id == -1);
 
 #if defined(WEBRTC_CODEC_ISAC)
 
@@ -2134,10 +2201,10 @@ int VoEExtendedTest::TestCodec() {
   strcpy(cinst.plname, "PCMU");
   cinst.pltype = 0;
   cinst.rate = 64000;
-  TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+  TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
 
-  TEST_MUSTPASS(!codec->SetISACInitTargetRate(0, 10000));
-  MARK(); // should fail since iSAC is not active
+  TEST_MUSTPASS(!codec->SetISACInitTargetRate(channel_id, 10000));
+  MARK();  // should fail since iSAC is not active
   err = voe_base_->LastError();
   TEST_MUSTPASS(err != VE_CODEC_ERROR);
 
@@ -2146,52 +2213,52 @@ int VoEExtendedTest::TestCodec() {
   cinst.plfreq = 16000;
   strcpy(cinst.plname, "ISAC");
   cinst.pltype = 103;
-  cinst.rate = -1; // adaptive rate
-  cinst.pacsize = 480; // 30ms
-  TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+  cinst.rate = -1;      // adaptive rate
+  cinst.pacsize = 480;  // 30ms
+  TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
 
-  TEST_MUSTPASS(!codec->SetISACInitTargetRate(1, 10000));
-  MARK(); // invalid channel
+  TEST_MUSTPASS(!codec->SetISACInitTargetRate(channel_id + 1, 10000));
+  MARK();  // invalid channel
   err = voe_base_->LastError();
   TEST_MUSTPASS(err != VE_CHANNEL_NOT_VALID);
 
-  TEST_MUSTPASS(!codec->SetISACInitTargetRate(0, 500));
-  MARK(); // invalid target rates (too small)
+  TEST_MUSTPASS(!codec->SetISACInitTargetRate(channel_id, 500));
+  MARK();  // invalid target rates (too small)
   err = voe_base_->LastError();
   TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
 
-  TEST_MUSTPASS(!codec->SetISACInitTargetRate(0, 33000));
-  MARK(); // invalid target rates (too large)
+  TEST_MUSTPASS(!codec->SetISACInitTargetRate(channel_id, 33000));
+  MARK();  // invalid target rates (too large)
   err = voe_base_->LastError();
   TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
 
-  TEST_MUSTPASS(codec->SetISACInitTargetRate(0, 10000));
-  MARK(); // life is good now
-  TEST_MUSTPASS(codec->SetISACInitTargetRate(0, 0));
-  MARK(); // 0 is a valid rate
-  TEST_MUSTPASS(codec->SetISACInitTargetRate(0, 32000));
-  MARK(); // try max as well
-  TEST_MUSTPASS(codec->SetISACInitTargetRate(0, 32000, true));
+  TEST_MUSTPASS(codec->SetISACInitTargetRate(channel_id, 10000));
+  MARK();  // life is good now
+  TEST_MUSTPASS(codec->SetISACInitTargetRate(channel_id, 0));
+  MARK();  // 0 is a valid rate
+  TEST_MUSTPASS(codec->SetISACInitTargetRate(channel_id, 32000));
+  MARK();  // try max as well
+  TEST_MUSTPASS(codec->SetISACInitTargetRate(channel_id, 32000, true));
   MARK();
-  TEST_MUSTPASS(codec->SetISACInitTargetRate(0, 32000, false));
+  TEST_MUSTPASS(codec->SetISACInitTargetRate(channel_id, 32000, false));
   MARK();
 
-  cinst.pacsize = 960; // 60ms
-  TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
-  TEST_MUSTPASS(codec->SetISACInitTargetRate(0, 32000, false));
+  cinst.pacsize = 960;  // 60ms
+  TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
+  TEST_MUSTPASS(codec->SetISACInitTargetRate(channel_id, 32000, false));
   MARK();
 
   cinst.rate = 20000;
-  TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
-  TEST_MUSTPASS(!codec->SetISACInitTargetRate(0, 32000));
-  MARK(); // only works in adaptive mode
+  TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
+  TEST_MUSTPASS(!codec->SetISACInitTargetRate(channel_id, 32000));
+  MARK();  // only works in adaptive mode
   err = voe_base_->LastError();
   TEST_MUSTPASS(err != VE_AUDIO_CODING_MODULE_ERROR);
 
   cinst.rate = -1;
-  TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
-  TEST_MUSTPASS(codec->SetISACInitTargetRate(0, 32000));
-  MARK(); // back to adaptive mode
+  TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
+  TEST_MUSTPASS(codec->SetISACInitTargetRate(channel_id, 32000));
+  MARK();  // back to adaptive mode
 
   ANL();
   AOK();
@@ -2207,44 +2274,44 @@ int VoEExtendedTest::TestCodec() {
   cinst.plfreq = 32000;
   strcpy(cinst.plname, "ISAC");
   cinst.pltype = 104;
-  cinst.rate = -1; // default rate
-  cinst.pacsize = 960; // 30ms
-  TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+  cinst.rate = -1;      // default rate
+  cinst.pacsize = 960;  // 30ms
+  TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
 
-  TEST_MUSTPASS(!codec->SetISACInitTargetRate(1, 10000));
-  MARK(); // invalid channel
+  TEST_MUSTPASS(!codec->SetISACInitTargetRate(channel_id + 1, 10000));
+  MARK();  // invalid channel
   err = voe_base_->LastError();
   TEST_MUSTPASS(err != VE_CHANNEL_NOT_VALID);
 
-  TEST_MUSTPASS(!codec->SetISACInitTargetRate(0, -1));
-  MARK(); // invalid target rates (too small)
+  TEST_MUSTPASS(!codec->SetISACInitTargetRate(channel_id, -1));
+  MARK();  // invalid target rates (too small)
   err = voe_base_->LastError();
   TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
-  TEST_MUSTPASS(!codec->SetISACInitTargetRate(0, -1));
-  MARK(); // invalid target rates (too small)
-  err = voe_base_->LastError();
-  TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
-
-  TEST_MUSTPASS(!codec->SetISACInitTargetRate(0, 500));
-  MARK(); // invalid target rates (too small)
+  TEST_MUSTPASS(!codec->SetISACInitTargetRate(channel_id, -1));
+  MARK();  // invalid target rates (too small)
   err = voe_base_->LastError();
   TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
 
-  TEST_MUSTPASS(!codec->SetISACInitTargetRate(0, 57000));
-  MARK(); // invalid target rates (valid range is [10000, 56000])
+  TEST_MUSTPASS(!codec->SetISACInitTargetRate(channel_id, 500));
+  MARK();  // invalid target rates (too small)
+  err = voe_base_->LastError();
+  TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
+
+  TEST_MUSTPASS(!codec->SetISACInitTargetRate(channel_id, 57000));
+  MARK();  // invalid target rates (valid range is [10000, 56000])
 
   err = voe_base_->LastError();
   TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
 
-  TEST_MUSTPASS(codec->SetISACInitTargetRate(0, 10000));
+  TEST_MUSTPASS(codec->SetISACInitTargetRate(channel_id, 10000));
   MARK();
-  TEST_MUSTPASS(codec->SetISACInitTargetRate(0, 0));
+  TEST_MUSTPASS(codec->SetISACInitTargetRate(channel_id, 0));
   MARK();
-  TEST_MUSTPASS(codec->SetISACInitTargetRate(0, 56000));
-  MARK(); // try max as well
-  TEST_MUSTPASS(codec->SetISACInitTargetRate(0, 56000, true));
+  TEST_MUSTPASS(codec->SetISACInitTargetRate(channel_id, 56000));
+  MARK();  // try max as well
+  TEST_MUSTPASS(codec->SetISACInitTargetRate(channel_id, 56000, true));
   MARK();
-  TEST_MUSTPASS(codec->SetISACInitTargetRate(0, 56000, false));
+  TEST_MUSTPASS(codec->SetISACInitTargetRate(channel_id, 56000, false));
   MARK();
 
   ANL();
@@ -2263,10 +2330,10 @@ int VoEExtendedTest::TestCodec() {
   strcpy(cinst.plname, "PCMU");
   cinst.pltype = 0;
   cinst.rate = 64000;
-  TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+  TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
 
-  TEST_MUSTPASS(!codec->SetISACMaxRate(0, 48000));
-  MARK(); // should fail since iSAC is not active
+  TEST_MUSTPASS(!codec->SetISACMaxRate(channel_id, 48000));
+  MARK();  // should fail since iSAC is not active
   TEST_MUSTPASS(voe_base_->LastError() != VE_CODEC_ERROR);
 
   // set iSAC as sending codec
@@ -2274,40 +2341,40 @@ int VoEExtendedTest::TestCodec() {
   cinst.plfreq = 16000;
   strcpy(cinst.plname, "ISAC");
   cinst.pltype = 103;
-  cinst.rate = -1; // adaptive rate
-  cinst.pacsize = 480; // 30ms
-  TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+  cinst.rate = -1;      // adaptive rate
+  cinst.pacsize = 480;  // 30ms
+  TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
 
-  TEST_MUSTPASS(!codec->SetISACMaxRate(1, 48000));
-  MARK(); // invalid channel
+  TEST_MUSTPASS(!codec->SetISACMaxRate(channel_id + 1, 48000));
+  MARK();  // invalid channel
   TEST_MUSTPASS(voe_base_->LastError() != VE_CHANNEL_NOT_VALID);
 
-  TEST_MUSTPASS(!codec->SetISACMaxRate(0, 31900));
-  MARK(); // invalid target rates (too small)
+  TEST_MUSTPASS(!codec->SetISACMaxRate(channel_id, 31900));
+  MARK();  // invalid target rates (too small)
   TEST_MUSTPASS(voe_base_->LastError() != VE_INVALID_ARGUMENT);
 
-  TEST_MUSTPASS(!codec->SetISACMaxRate(0, 53500));
-  MARK(); // invalid target rates (too large)
+  TEST_MUSTPASS(!codec->SetISACMaxRate(channel_id, 53500));
+  MARK();  // invalid target rates (too large)
   TEST_MUSTPASS(voe_base_->LastError() != VE_INVALID_ARGUMENT);
 
-  TEST_MUSTPASS(codec->SetISACMaxRate(0, 32000));
-  MARK(); // life is good now
-  TEST_MUSTPASS(codec->SetISACMaxRate(0, 40000));
+  TEST_MUSTPASS(codec->SetISACMaxRate(channel_id, 32000));
+  MARK();  // life is good now
+  TEST_MUSTPASS(codec->SetISACMaxRate(channel_id, 40000));
   MARK();
-  TEST_MUSTPASS(codec->SetISACMaxRate(0, 48000));
+  TEST_MUSTPASS(codec->SetISACMaxRate(channel_id, 48000));
   MARK();
-  TEST_MUSTPASS(codec->SetISACMaxRate(0, 53400));
-  MARK(); // try max as well (default)
+  TEST_MUSTPASS(codec->SetISACMaxRate(channel_id, 53400));
+  MARK();  // try max as well (default)
 
-  cinst.pacsize = 960; // 60ms
-  TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
-  TEST_MUSTPASS(codec->SetISACMaxRate(0, 48000));
+  cinst.pacsize = 960;  // 60ms
+  TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
+  TEST_MUSTPASS(codec->SetISACMaxRate(channel_id, 48000));
   MARK();
 
   cinst.rate = 20000;
-  TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
-  TEST_MUSTPASS(codec->SetISACMaxRate(0, 40000));
-  MARK(); // also works in non-adaptive mode
+  TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
+  TEST_MUSTPASS(codec->SetISACMaxRate(channel_id, 40000));
+  MARK();  // also works in non-adaptive mode
 
   ANL();
   AOK();
@@ -2320,60 +2387,59 @@ int VoEExtendedTest::TestCodec() {
   cinst.plfreq = 32000;
   strcpy(cinst.plname, "ISAC");
   cinst.pltype = 104;
-  cinst.rate = 45000; // instantaneous mode
-  cinst.pacsize = 960; // 30ms
-  TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+  cinst.rate = 45000;   // instantaneous mode
+  cinst.pacsize = 960;  // 30ms
+  TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
 
-  TEST_MUSTPASS(!codec->SetISACMaxRate(1, 48000));
-  MARK(); // invalid channel
+  TEST_MUSTPASS(!codec->SetISACMaxRate(channel_id + 1, 48000));
+  MARK();  // invalid channel
   TEST_MUSTPASS(voe_base_->LastError() != VE_CHANNEL_NOT_VALID);
 
-  TEST_MUSTPASS(!codec->SetISACMaxRate(0, 31900));
-  MARK(); // invalid target rates (too small)
+  TEST_MUSTPASS(!codec->SetISACMaxRate(channel_id, 31900));
+  MARK();  // invalid target rates (too small)
   TEST_MUSTPASS(voe_base_->LastError() != VE_INVALID_ARGUMENT);
 
-  TEST_MUSTPASS(!codec->SetISACMaxRate(0, 107500));
-  MARK(); // invalid target rates (too large)
+  TEST_MUSTPASS(!codec->SetISACMaxRate(channel_id, 107500));
+  MARK();  // invalid target rates (too large)
   TEST_MUSTPASS(voe_base_->LastError() != VE_INVALID_ARGUMENT);
 
-  TEST_MUSTPASS(codec->SetISACMaxRate(0, 32000));
-  MARK(); // life is good now
-  TEST_MUSTPASS(codec->SetISACMaxRate(0, 40000));
+  TEST_MUSTPASS(codec->SetISACMaxRate(channel_id, 32000));
+  MARK();  // life is good now
+  TEST_MUSTPASS(codec->SetISACMaxRate(channel_id, 40000));
   MARK();
-  TEST_MUSTPASS(codec->SetISACMaxRate(0, 55000));
+  TEST_MUSTPASS(codec->SetISACMaxRate(channel_id, 55000));
   MARK();
-  TEST_MUSTPASS(codec->SetISACMaxRate(0, 80000));
+  TEST_MUSTPASS(codec->SetISACMaxRate(channel_id, 80000));
   MARK();
-  TEST_MUSTPASS(codec->SetISACMaxRate(0, 107000));
-  MARK(); // try max as well (default)
+  TEST_MUSTPASS(codec->SetISACMaxRate(channel_id, 107000));
+  MARK();  // try max as well (default)
 
+  cinst.rate = -1;      // adaptive mode
+  cinst.pacsize = 960;  // 30ms
+  TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
 
-  cinst.rate = -1; // adaptive mode
-  cinst.pacsize = 960; // 30ms
-  TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
-
-  TEST_MUSTPASS(!codec->SetISACMaxRate(1, 48000));
-  MARK(); // invalid channel
+  TEST_MUSTPASS(!codec->SetISACMaxRate(channel_id + 1, 48000));
+  MARK();  // invalid channel
   TEST_MUSTPASS(voe_base_->LastError() != VE_CHANNEL_NOT_VALID);
 
-  TEST_MUSTPASS(!codec->SetISACMaxRate(0, 31900));
-  MARK(); // invalid target rates (too small)
+  TEST_MUSTPASS(!codec->SetISACMaxRate(channel_id, 31900));
+  MARK();  // invalid target rates (too small)
   TEST_MUSTPASS(voe_base_->LastError() != VE_INVALID_ARGUMENT);
 
-  TEST_MUSTPASS(!codec->SetISACMaxRate(0, 107500));
-  MARK(); // invalid target rates (too large)
+  TEST_MUSTPASS(!codec->SetISACMaxRate(channel_id, 107500));
+  MARK();  // invalid target rates (too large)
   TEST_MUSTPASS(voe_base_->LastError() != VE_INVALID_ARGUMENT);
 
-  TEST_MUSTPASS(codec->SetISACMaxRate(0, 32000));
-  MARK(); // life is good now
-  TEST_MUSTPASS(codec->SetISACMaxRate(0, 40000));
+  TEST_MUSTPASS(codec->SetISACMaxRate(channel_id, 32000));
+  MARK();  // life is good now
+  TEST_MUSTPASS(codec->SetISACMaxRate(channel_id, 40000));
   MARK();
-  TEST_MUSTPASS(codec->SetISACMaxRate(0, 55000));
+  TEST_MUSTPASS(codec->SetISACMaxRate(channel_id, 55000));
   MARK();
-  TEST_MUSTPASS(codec->SetISACMaxRate(0, 80000));
+  TEST_MUSTPASS(codec->SetISACMaxRate(channel_id, 80000));
   MARK();
-  TEST_MUSTPASS(codec->SetISACMaxRate(0, 107000));
-  MARK(); // try max as well (default)
+  TEST_MUSTPASS(codec->SetISACMaxRate(channel_id, 107000));
+  MARK();  // try max as well (default)
 
   ANL();
   AOK();
@@ -2391,10 +2457,10 @@ int VoEExtendedTest::TestCodec() {
   strcpy(cinst.plname, "PCMU");
   cinst.pltype = 0;
   cinst.rate = 64000;
-  TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+  TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
 
-  TEST_MUSTPASS(!codec->SetISACMaxPayloadSize(0, 120));
-  MARK(); // should fail since iSAC is not active
+  TEST_MUSTPASS(!codec->SetISACMaxPayloadSize(channel_id, 120));
+  MARK();  // should fail since iSAC is not active
   err = voe_base_->LastError();
   TEST_MUSTPASS(err != VE_CODEC_ERROR);
 
@@ -2403,30 +2469,30 @@ int VoEExtendedTest::TestCodec() {
   cinst.plfreq = 16000;
   strcpy(cinst.plname, "ISAC");
   cinst.pltype = 103;
-  cinst.rate = -1; // adaptive rate
-  cinst.pacsize = 480; // 30ms
-  TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+  cinst.rate = -1;      // adaptive rate
+  cinst.pacsize = 480;  // 30ms
+  TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
 
-  TEST_MUSTPASS(!codec->SetISACMaxPayloadSize(1, 120));
-  MARK(); // invalid channel
+  TEST_MUSTPASS(!codec->SetISACMaxPayloadSize(channel_id + 1, 120));
+  MARK();  // invalid channel
   err = voe_base_->LastError();
   TEST_MUSTPASS(err != VE_CHANNEL_NOT_VALID);
 
-  TEST_MUSTPASS(!codec->SetISACMaxPayloadSize(0, 100));
-  MARK(); // invalid size (too small)
+  TEST_MUSTPASS(!codec->SetISACMaxPayloadSize(channel_id, 100));
+  MARK();  // invalid size (too small)
   err = voe_base_->LastError();
   TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
 
-  TEST_MUSTPASS(!codec->SetISACMaxPayloadSize(0, 410));
-  MARK(); // invalid size (too large)
+  TEST_MUSTPASS(!codec->SetISACMaxPayloadSize(channel_id, 410));
+  MARK();  // invalid size (too large)
   err = voe_base_->LastError();
   TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
 
-  TEST_MUSTPASS(codec->SetISACMaxPayloadSize(0, 200));
-  MARK(); // life is good now
-  TEST_MUSTPASS(codec->SetISACMaxPayloadSize(0, 120));
+  TEST_MUSTPASS(codec->SetISACMaxPayloadSize(channel_id, 200));
+  MARK();  // life is good now
+  TEST_MUSTPASS(codec->SetISACMaxPayloadSize(channel_id, 120));
   MARK();
-  TEST_MUSTPASS(codec->SetISACMaxPayloadSize(0, 400));
+  TEST_MUSTPASS(codec->SetISACMaxPayloadSize(channel_id, 400));
   MARK();
 
   ANL();
@@ -2440,30 +2506,30 @@ int VoEExtendedTest::TestCodec() {
   cinst.plfreq = 32000;
   strcpy(cinst.plname, "ISAC");
   cinst.pltype = 104;
-  cinst.rate = 45000; // default rate
-  cinst.pacsize = 960; // 30ms
-  TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+  cinst.rate = 45000;   // default rate
+  cinst.pacsize = 960;  // 30ms
+  TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
 
-  TEST_MUSTPASS(!codec->SetISACMaxPayloadSize(1, 100));
-  MARK(); // invalid channel
+  TEST_MUSTPASS(!codec->SetISACMaxPayloadSize(channel_id + 1, 100));
+  MARK();  // invalid channel
   err = voe_base_->LastError();
   TEST_MUSTPASS(err != VE_CHANNEL_NOT_VALID);
 
-  TEST_MUSTPASS(!codec->SetISACMaxPayloadSize(0, 100));
-  MARK(); // invalid size (too small)
+  TEST_MUSTPASS(!codec->SetISACMaxPayloadSize(channel_id, 100));
+  MARK();  // invalid size (too small)
   err = voe_base_->LastError();
   TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
 
-  TEST_MUSTPASS(!codec->SetISACMaxPayloadSize(0, 610));
-  MARK(); // invalid size (too large)
+  TEST_MUSTPASS(!codec->SetISACMaxPayloadSize(channel_id, 610));
+  MARK();  // invalid size (too large)
   err = voe_base_->LastError();
   TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
 
-  TEST_MUSTPASS(codec->SetISACMaxPayloadSize(0, 200));
-  MARK(); // life is good now
-  TEST_MUSTPASS(codec->SetISACMaxPayloadSize(0, 120));
+  TEST_MUSTPASS(codec->SetISACMaxPayloadSize(channel_id, 200));
+  MARK();  // life is good now
+  TEST_MUSTPASS(codec->SetISACMaxPayloadSize(channel_id, 120));
   MARK();
-  TEST_MUSTPASS(codec->SetISACMaxPayloadSize(0, 600));
+  TEST_MUSTPASS(codec->SetISACMaxPayloadSize(channel_id, 600));
   MARK();
 
   ANL();
@@ -2472,56 +2538,59 @@ int VoEExtendedTest::TestCodec() {
 
   // set iSAC as sending codec
   // set iSAC-wb as sending codec
-  TEST_MUSTPASS(voe_network ->RegisterExternalTransport(0, *ptrTransport));
-  TEST_MUSTPASS(voe_base_->StartPlayout(0));
-  TEST_MUSTPASS(voe_base_->StartSend(0));
-  TEST_MUSTPASS(voe_base_->StartReceive(0));
-  std::string output_path = webrtc::test::OutputPath();
+  TEST_MUSTPASS(
+      voe_network->RegisterExternalTransport(channel_id, *ptrTransport));
+  TEST_MUSTPASS(voe_base_->StartPlayout(channel_id));
+  TEST_MUSTPASS(voe_base_->StartSend(channel_id));
+  TEST_MUSTPASS(voe_base_->StartReceive(channel_id));
+  std::string file_audio_long16 =
+      webrtc::test::ResourcePath("voice_engine/audio_long16", "pcm");
   TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(
-          0, (output_path + "audio_long16.pcm").c_str(), true , true));
+      channel_id, file_audio_long16.c_str(), true, true));
   cinst.channels = 1;
   TEST_LOG("Testing codec: Switch between iSAC-wb and iSAC-swb \n");
   TEST_LOG("Testing codec: iSAC wideband \n");
   strcpy(cinst.plname, "ISAC");
   cinst.pltype = 103;
-  cinst.rate = -1; // default rate
-  cinst.pacsize = 480; // 30ms
+  cinst.rate = -1;      // default rate
+  cinst.pacsize = 480;  // 30ms
   cinst.plfreq = 16000;
-  TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+  TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
   SleepMs(2000);
   TEST_LOG("             : iSAC superwideband \n");
   cinst.pltype = 104;
-  cinst.rate = -1; // default rate
-  cinst.pacsize = 960; // 30ms
+  cinst.rate = -1;      // default rate
+  cinst.pacsize = 960;  // 30ms
   cinst.plfreq = 32000;
-  TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+  TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
   SleepMs(2000);
   TEST_LOG("             : iSAC wideband \n");
   strcpy(cinst.plname, "ISAC");
   cinst.pltype = 103;
-  cinst.rate = -1; // default rate
-  cinst.pacsize = 480; // 30ms
+  cinst.rate = -1;      // default rate
+  cinst.pacsize = 480;  // 30ms
   cinst.plfreq = 16000;
-  TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+  TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
   SleepMs(2000);
   TEST_LOG("             : iSAC superwideband \n");
   cinst.pltype = 104;
-  cinst.rate = -1; // default rate
-  cinst.pacsize = 960; // 30ms
+  cinst.rate = -1;      // default rate
+  cinst.pacsize = 960;  // 30ms
   cinst.plfreq = 32000;
-  TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
+  TEST_MUSTPASS(codec->SetSendCodec(channel_id, cinst));
   SleepMs(2000);
-  TEST_MUSTPASS(voe_base_->StopPlayout(0));
-  TEST_MUSTPASS(voe_base_->StopReceive(0));
-  TEST_MUSTPASS(voe_base_->StopSend(0));
+  TEST_MUSTPASS(voe_base_->StopPlayout(channel_id));
+  TEST_MUSTPASS(voe_base_->StopReceive(channel_id));
+  TEST_MUSTPASS(voe_base_->StopSend(channel_id));
 #else
-  TEST_LOG("Skipping extended iSAC API tests - "
+  TEST_LOG(
+      "Skipping extended iSAC API tests - "
       "WEBRTC_CODEC_ISAC not defined\n");
-#endif // #if defined(WEBRTC_CODEC_ISAC)
-  TEST_MUSTPASS(voe_network ->DeRegisterExternalTransport(0));
+#endif  // #if defined(WEBRTC_CODEC_ISAC)
+  TEST_MUSTPASS(voe_network->DeRegisterExternalTransport(channel_id));
   delete ptrTransport;
 
-  TEST_MUSTPASS(voe_base_->DeleteChannel(0));
+  TEST_MUSTPASS(voe_base_->DeleteChannel(channel_id));
   TEST_MUSTPASS(voe_base_->Terminate());
 
   return 0;
@@ -2541,16 +2610,11 @@ int VoEExtendedTest::TestDtmf() {
   VoENetwork* voe_network = _mgr.NetworkPtr();
 
   std::string output_path = webrtc::test::OutputPath();
-  TEST_MUSTPASS(VoiceEngine::SetTraceFile(
-      (output_path + "VoEDtmf_trace.txt").c_str()));
-  TEST_MUSTPASS(VoiceEngine::SetTraceFilter(kTraceStateInfo |
-          kTraceStateInfo |
-          kTraceWarning |
-          kTraceError |
-          kTraceCritical |
-          kTraceApiCall |
-          kTraceMemory |
-          kTraceInfo));
+  TEST_MUSTPASS(
+      VoiceEngine::SetTraceFile((output_path + "VoEDtmf_trace.txt").c_str()));
+  TEST_MUSTPASS(VoiceEngine::SetTraceFilter(
+      kTraceStateInfo | kTraceStateInfo | kTraceWarning | kTraceError |
+      kTraceCritical | kTraceApiCall | kTraceMemory | kTraceInfo));
   //#endif
   TEST_MUSTPASS(voe_base_->Init());
   TEST_MUSTPASS(voe_base_->CreateChannel());
@@ -2569,8 +2633,7 @@ int VoEExtendedTest::TestDtmf() {
   TEST(SetDtmfFeedbackStatus & GetDtmfFeedbackStatus);
   ANL();
   bool dtmfFeedback = false, dtmfDirectFeedback = true;
-  TEST_MUSTPASS(dtmf->GetDtmfFeedbackStatus(dtmfFeedback,
-          dtmfDirectFeedback));
+  TEST_MUSTPASS(dtmf->GetDtmfFeedbackStatus(dtmfFeedback, dtmfDirectFeedback));
   TEST_MUSTPASS(!dtmfFeedback);
   TEST_MUSTPASS(dtmfDirectFeedback);
   TEST_MUSTPASS(dtmf->SendTelephoneEvent(0, 0));
@@ -2578,8 +2641,7 @@ int VoEExtendedTest::TestDtmf() {
   SleepMs(500);
 
   TEST_MUSTPASS(dtmf->SetDtmfFeedbackStatus(false, false));
-  TEST_MUSTPASS(dtmf->GetDtmfFeedbackStatus(dtmfFeedback,
-          dtmfDirectFeedback));
+  TEST_MUSTPASS(dtmf->GetDtmfFeedbackStatus(dtmfFeedback, dtmfDirectFeedback));
   TEST_MUSTPASS(dtmfFeedback);
   TEST_MUSTPASS(dtmfDirectFeedback);
   TEST_MUSTPASS(dtmf->SendTelephoneEvent(0, 0));
@@ -2587,8 +2649,7 @@ int VoEExtendedTest::TestDtmf() {
   SleepMs(500);
 
   TEST_MUSTPASS(dtmf->SetDtmfFeedbackStatus(false, true));
-  TEST_MUSTPASS(dtmf->GetDtmfFeedbackStatus(dtmfFeedback,
-          dtmfDirectFeedback));
+  TEST_MUSTPASS(dtmf->GetDtmfFeedbackStatus(dtmfFeedback, dtmfDirectFeedback));
   TEST_MUSTPASS(dtmfFeedback);
   TEST_MUSTPASS(!dtmfDirectFeedback);
   TEST_MUSTPASS(dtmf->SendTelephoneEvent(0, 0));
@@ -2596,8 +2657,7 @@ int VoEExtendedTest::TestDtmf() {
   SleepMs(500);
 
   TEST_MUSTPASS(dtmf->SetDtmfFeedbackStatus(true, false));
-  TEST_MUSTPASS(dtmf->GetDtmfFeedbackStatus(dtmfFeedback,
-          dtmfDirectFeedback));
+  TEST_MUSTPASS(dtmf->GetDtmfFeedbackStatus(dtmfFeedback, dtmfDirectFeedback));
   TEST_MUSTPASS(!dtmfFeedback);
   TEST_MUSTPASS(dtmfDirectFeedback);
   TEST_MUSTPASS(dtmf->SendTelephoneEvent(0, 0));
@@ -2605,8 +2665,7 @@ int VoEExtendedTest::TestDtmf() {
   SleepMs(500);
 
   TEST_MUSTPASS(dtmf->SetDtmfFeedbackStatus(true, true));
-  TEST_MUSTPASS(dtmf->GetDtmfFeedbackStatus(dtmfFeedback,
-          dtmfDirectFeedback));
+  TEST_MUSTPASS(dtmf->GetDtmfFeedbackStatus(dtmfFeedback, dtmfDirectFeedback));
   TEST_MUSTPASS(!dtmfFeedback);
   TEST_MUSTPASS(!dtmfDirectFeedback);
   TEST_MUSTPASS(dtmf->SendTelephoneEvent(0, 0));
@@ -2661,7 +2720,7 @@ int VoEExtendedTest::TestDtmf() {
   SleepMs(500);
   TEST_MUSTPASS(dtmf->SendTelephoneEvent(0, 16, true));
   MARK();
-  SleepMs(500); // Flash, not audible
+  SleepMs(500);  // Flash, not audible
   TEST_MUSTPASS(dtmf->SendTelephoneEvent(0, 0, true, 100, 10));
   MARK();
   SleepMs(500);
@@ -2842,7 +2901,7 @@ int VoEExtendedTest::TestDtmf() {
   TEST_MUSTPASS(dtmf->SetSendTelephoneEventPayloadType(0, 127));
   MARK();
   TEST_MUSTPASS(dtmf->SetSendTelephoneEventPayloadType(0, 106));
-  MARK(); // restore default
+  MARK();  // restore default
 
   AOK();
   ANL();
@@ -2870,15 +2929,10 @@ int VoEExtendedTest::TestEncryption() {
 
 #ifdef _USE_EXTENDED_TRACE_
   TEST_MUSTPASS(VoiceEngine::SetTraceFile(
-          GetFilename("VoEEncryption_trace.txt").c_str()));
-  TEST_MUSTPASS(VoiceEngine::SetTraceFilter(kTraceStateInfo |
-          kTraceStateInfo |
-          kTraceWarning |
-          kTraceError |
-          kTraceCritical |
-          kTraceApiCall |
-          kTraceMemory |
-          kTraceInfo));
+      GetFilename("VoEEncryption_trace.txt").c_str()));
+  TEST_MUSTPASS(VoiceEngine::SetTraceFilter(
+      kTraceStateInfo | kTraceStateInfo | kTraceWarning | kTraceError |
+      kTraceCritical | kTraceApiCall | kTraceMemory | kTraceInfo));
 #endif
   TEST_MUSTPASS(voe_base_->Init());
   TEST_MUSTPASS(voe_base_->CreateChannel());
@@ -2889,8 +2943,8 @@ int VoEExtendedTest::TestEncryption() {
   TEST_MUSTPASS(voe_base_->StartReceive(0));
   TEST_MUSTPASS(voe_base_->StartSend(0));
   TEST_MUSTPASS(voe_base_->StartPlayout(0));
-  TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, _mgr.AudioFilename(),
-          true, true));
+  TEST_MUSTPASS(
+      file->StartPlayingFileAsMicrophone(0, _mgr.AudioFilename(), true, true));
 
   ///////////////////////////
   // Actual test starts here
@@ -2933,11 +2987,10 @@ int VoEExtendedTest::TestExternalMedia() {
 
 #ifdef _USE_EXTENDED_TRACE_
   TEST_MUSTPASS(VoiceEngine::SetTraceFile(
-          GetFilename("VoEExternalMedia_trace.txt").c_str()));
+      GetFilename("VoEExternalMedia_trace.txt").c_str()));
   TEST_MUSTPASS(VoiceEngine::SetTraceFilter(
-          kTraceStateInfo | kTraceStateInfo | kTraceWarning |
-          kTraceError | kTraceCritical | kTraceApiCall |
-          kTraceMemory | kTraceInfo));
+      kTraceStateInfo | kTraceStateInfo | kTraceWarning | kTraceError |
+      kTraceCritical | kTraceApiCall | kTraceMemory | kTraceInfo));
 #endif
   TEST_MUSTPASS(voe_base_->Init());
   TEST_MUSTPASS(voe_base_->CreateChannel());
@@ -3017,7 +3070,7 @@ int VoEExtendedTest::TestExternalMedia() {
   TEST_MUSTPASS(xmedia->SetExternalRecordingStatus(false));
   TEST_MUSTPASS(voe_base_->StartSend(0));
 
-#else // #ifdef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
+#else  // #ifdef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
   TEST_MUSTPASS(!xmedia->SetExternalPlayoutStatus(true));
   TEST_MUSTPASS(VE_FUNC_NOT_SUPPORTED != voe_base_->LastError());
   TEST_MUSTPASS(!xmedia->ExternalPlayoutGetData(vector, 16000, 100, getLen));
@@ -3027,7 +3080,7 @@ int VoEExtendedTest::TestExternalMedia() {
   TEST_MUSTPASS(!xmedia->ExternalRecordingInsertData(vector, 160, 16000, 20));
   TEST_MUSTPASS(VE_FUNC_NOT_SUPPORTED != voe_base_->LastError());
 
-#endif // #ifdef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
+#endif  // #ifdef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
   TEST_MUSTPASS(voe_base_->StopSend(0));
   TEST_MUSTPASS(voe_base_->StopPlayout(0));
   TEST_MUSTPASS(voe_base_->StopReceive(0));
@@ -3052,16 +3105,12 @@ int VoEExtendedTest::TestFile() {
   VoENetwork* voe_network = _mgr.NetworkPtr();
 
 #ifdef _USE_EXTENDED_TRACE_
-  TEST_MUSTPASS(VoiceEngine::SetTraceFile(
-          GetFilename("VoEFile_trace.txt").c_str())); MARK();
-  TEST_MUSTPASS(VoiceEngine::SetTraceFilter(kTraceStateInfo |
-          kTraceStateInfo |
-          kTraceWarning |
-          kTraceError |
-          kTraceCritical |
-          kTraceApiCall |
-          kTraceMemory |
-          kTraceInfo));
+  TEST_MUSTPASS(
+      VoiceEngine::SetTraceFile(GetFilename("VoEFile_trace.txt").c_str()));
+  MARK();
+  TEST_MUSTPASS(VoiceEngine::SetTraceFilter(
+      kTraceStateInfo | kTraceStateInfo | kTraceWarning | kTraceError |
+      kTraceCritical | kTraceApiCall | kTraceMemory | kTraceInfo));
 #endif
 
   TEST_MUSTPASS(voe_base_->Init());
@@ -3086,47 +3135,51 @@ int VoEExtendedTest::TestFile() {
 
   voe_base_->StopPlayout(0);
   std::string output_path = webrtc::test::OutputPath();
-  TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, (output_path + "audio_long16.pcm").c_str()));MARK();
+  std::string file_audio_long16 =
+      webrtc::test::ResourcePath("voice_engine/audio_long16", "pcm");
+  std::string file_audio_long16_wav =
+      webrtc::test::ResourcePath("voice_engine/audio_long16", "wav");
+  std::string file_audio_long8 =
+      webrtc::test::ResourcePath("voice_engine/audio_long8", "pcm");
+  std::string file_audio_long8_mulaw =
+      webrtc::test::ResourcePath("voice_engine/audio_long8mulaw", "wav");
+  std::string file_audio_short16 =
+      webrtc::test::ResourcePath("voice_engine/audio_short16", "pcm");
+  TEST_MUSTPASS(file->StartPlayingFileLocally(0, file_audio_long16.c_str()));
+  MARK();
   voe_base_->StartPlayout(0);
-  MARK(); // file should be mixed in and played out
+  MARK();  // file should be mixed in and played out
   SleepMs(dT);
-  TEST_MUSTPASS(!file->StartPlayingFileLocally(
-          0, (output_path + "audio_long16.pcm").c_str()));
-  MARK(); // should fail (must stop first)
+  TEST_MUSTPASS(!file->StartPlayingFileLocally(0, file_audio_long16.c_str()));
+  MARK();  // should fail (must stop first)
   TEST_MUSTPASS(voe_base_->LastError() != VE_ALREADY_PLAYING);
   TEST_MUSTPASS(file->StopPlayingFileLocally(0));
   MARK();
-  TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, (output_path + "audio_long16.pcm").c_str()));
-  MARK(); // should work again (restarts file)
+  TEST_MUSTPASS(file->StartPlayingFileLocally(0, file_audio_long16.c_str()));
+  MARK();  // should work again (restarts file)
   SleepMs(dT);
   TEST_MUSTPASS(file->StopPlayingFileLocally(0));
   MARK();
   TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, (output_path + "audio_long16.pcm").c_str(),
-          false, kFileFormatPcm16kHzFile));
-  MARK();
-  SleepMs(dT);
-  TEST_MUSTPASS(file->StopPlayingFileLocally(0));
-  MARK();
-  TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, (output_path + "audio_long8.pcm").c_str(),
-          false, kFileFormatPcm8kHzFile));
+      0, file_audio_long16.c_str(), false, kFileFormatPcm16kHzFile));
   MARK();
   SleepMs(dT);
   TEST_MUSTPASS(file->StopPlayingFileLocally(0));
   MARK();
   TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, (output_path + "audio_long16.wav").c_str(),
-          false, kFileFormatPcm8kHzFile));
+      0, file_audio_long8.c_str(), false, kFileFormatPcm8kHzFile));
   MARK();
   SleepMs(dT);
   TEST_MUSTPASS(file->StopPlayingFileLocally(0));
   MARK();
   TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, (output_path + "audio_long8mulaw.wav").c_str(), false,
-          kFileFormatPcm8kHzFile));
+      0, file_audio_long16_wav.c_str(), false, kFileFormatPcm8kHzFile));
+  MARK();
+  SleepMs(dT);
+  TEST_MUSTPASS(file->StopPlayingFileLocally(0));
+  MARK();
+  TEST_MUSTPASS(file->StartPlayingFileLocally(
+      0, file_audio_long8_mulaw.c_str(), false, kFileFormatPcm8kHzFile));
   MARK();
   SleepMs(dT);
 
@@ -3134,39 +3187,54 @@ int VoEExtendedTest::TestFile() {
 
   // TEST_MUSTPASS(file->StopPlayingFileLocally(0)); MARK();
   // TEST_MUSTPASS(file->StartPlayingFileLocally(
-  //   0, (output_path + "audio_short16.pcm").c_str(), true,
+  //   0, file_audio_short16.c_str(), true,
   //   kFileFormatPcm16kHzFile)); MARK(); // loop
   TEST_MUSTPASS(file->StopPlayingFileLocally(0));
   MARK();
-  TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, (output_path + "audio_short16.pcm").c_str(), false,
-          kFileFormatPcm16kHzFile, 1.0, 0, 2000));
-  MARK(); // play segment
+  TEST_MUSTPASS(file->StartPlayingFileLocally(0,
+                                              file_audio_short16.c_str(),
+                                              false,
+                                              kFileFormatPcm16kHzFile,
+                                              1.0,
+                                              0,
+                                              2000));
+  MARK();  // play segment
   SleepMs(2500);
   TEST_MUSTPASS(file->StopPlayingFileLocally(0));
   MARK();
-  TEST_MUSTPASS(!file->StartPlayingFileLocally(
-          0, (output_path + "audio_short16.pcm").c_str(), false,
-          kFileFormatPcm16kHzFile, 1.0, 2000, 1000));
-  MARK(); // invalid segment
+  TEST_MUSTPASS(!file->StartPlayingFileLocally(0,
+                                               file_audio_short16.c_str(),
+                                               false,
+                                               kFileFormatPcm16kHzFile,
+                                               1.0,
+                                               2000,
+                                               1000));
+  MARK();  // invalid segment
   TEST_MUSTPASS(voe_base_->LastError() != VE_BAD_FILE);
-  TEST_MUSTPASS(!file->StartPlayingFileLocally(
-          0, (output_path + "audio_short16.pcm").c_str(), false,
-          kFileFormatPcm16kHzFile, 1.0, 21000, 30000));
-  MARK(); // start > file size
+  TEST_MUSTPASS(!file->StartPlayingFileLocally(0,
+                                               file_audio_short16.c_str(),
+                                               false,
+                                               kFileFormatPcm16kHzFile,
+                                               1.0,
+                                               21000,
+                                               30000));
+  MARK();  // start > file size
   TEST_MUSTPASS(voe_base_->LastError() != VE_BAD_FILE);
-  TEST_MUSTPASS(!file->StartPlayingFileLocally(
-          0, (output_path + "audio_short16.pcm").c_str(), false,
-          kFileFormatPcm16kHzFile, 1.0, 100, 100));
-  MARK(); // invalid segment
+  TEST_MUSTPASS(!file->StartPlayingFileLocally(0,
+                                               file_audio_short16.c_str(),
+                                               false,
+                                               kFileFormatPcm16kHzFile,
+                                               1.0,
+                                               100,
+                                               100));
+  MARK();  // invalid segment
   TEST_MUSTPASS(voe_base_->LastError() != VE_BAD_FILE);
-  TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, (output_path + "audio_long16.pcm").c_str()));
-  MARK(); // should work again (restarts file)
+  TEST_MUSTPASS(file->StartPlayingFileLocally(0, file_audio_long16.c_str()));
+  MARK();  // should work again (restarts file)
   TEST_MUSTPASS(file->StopPlayingFileLocally(0));
   MARK();
   TEST_MUSTPASS(!file->StartPlayingFileLocally(0, (InStream*)NULL));
-  MARK(); // just do it
+  MARK();  // just do it
   TEST_MUSTPASS(voe_base_->LastError() != VE_BAD_FILE);
 
   AOK();
@@ -3176,12 +3244,11 @@ int VoEExtendedTest::TestFile() {
   ANL();
 
   TEST_MUSTPASS(0 != file->IsPlayingFileLocally(0));
-  MARK(); // inactive
-  TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, (output_path + "audio_long16.pcm").c_str()));
+  MARK();  // inactive
+  TEST_MUSTPASS(file->StartPlayingFileLocally(0, file_audio_long16.c_str()));
   MARK();
   TEST_MUSTPASS(1 != file->IsPlayingFileLocally(0));
-  MARK(); // active
+  MARK();  // active
   AOK();
   ANL();
 
@@ -3214,13 +3281,13 @@ int VoEExtendedTest::TestFile() {
   TEST(ScaleFileAsMicrophonePlayout);
   ANL();
   CodecInst tempCodec;
-  for (int ch = -1; ch < 1; ++ch) // Channel -1 and 0
+  for (int ch = -1; ch < 1; ++ch)  // Channel -1 and 0
   {
     TEST_LOG("Testing channel = %d \n", ch);
-    for (int fs = 1; fs < 4; ++fs) // nb, wb and swb codecs
+    for (int fs = 1; fs < 4; ++fs)  // nb, wb and swb codecs
     {
       switch (fs) {
-        case 1: // nb
+        case 1:  // nb
           TEST_LOG("Testing with nb codec \n");
           tempCodec.channels = 1;
           tempCodec.pacsize = 160;
@@ -3229,7 +3296,7 @@ int VoEExtendedTest::TestFile() {
           tempCodec.pltype = 0;
           tempCodec.rate = 64000;
           break;
-        case 2: // wb
+        case 2:  // wb
 #ifdef WEBRTC_CODEC_ISAC
           TEST_LOG("Testing with wb codec \n");
           tempCodec.channels = 1;
@@ -3240,11 +3307,12 @@ int VoEExtendedTest::TestFile() {
           tempCodec.rate = 32000;
           break;
 #else
-          TEST_LOG("NOT testing with wb codec - "
+          TEST_LOG(
+              "NOT testing with wb codec - "
               "WEBRTC_CODEC_ISAC not defined \n");
           continue;
 #endif
-        case 3: // swb
+        case 3:  // swb
 #ifdef WEBRTC_CODEC_PCM16
           TEST_LOG("Testing with swb codec \n");
           tempCodec.channels = 1;
@@ -3255,7 +3323,8 @@ int VoEExtendedTest::TestFile() {
           tempCodec.rate = 512000;
           break;
 #else
-          TEST_LOG("NOT testing with swb codec -"
+          TEST_LOG(
+              "NOT testing with swb codec -"
               " WEBRTC_CODEC_PCM16 not defined \n");
           continue;
 #endif
@@ -3269,52 +3338,49 @@ int VoEExtendedTest::TestFile() {
       TEST_MUSTPASS(voe_base_->StartSend(0));
       TEST_MUSTPASS(codec->SetSendCodec(0, tempCodec));
 
-      TEST_LOG("File 1 in 16 kHz no mix, 2 in 16 kHz mix,"
-        " 3 in 8 kHz no mix, 4 in 8 kHz mix \n");
+      TEST_LOG(
+          "File 1 in 16 kHz no mix, 2 in 16 kHz mix,"
+          " 3 in 8 kHz no mix, 4 in 8 kHz mix \n");
 
-      TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(
-              ch, (output_path + "audio_long16.pcm").c_str()));
-      MARK(); // don't mix
+      TEST_MUSTPASS(
+          file->StartPlayingFileAsMicrophone(ch, file_audio_long16.c_str()));
+      MARK();  // don't mix
       SleepMs(2000);
       TEST_MUSTPASS(file->StopPlayingFileAsMicrophone(ch));
       MARK();
       TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(
-              ch, (output_path + "audio_long16.wav").c_str(), false, true,
-              kFileFormatWavFile));
-      MARK(); // mix
+          ch, file_audio_long16_wav.c_str(), false, true, kFileFormatWavFile));
+      MARK();  // mix
       SleepMs(2000);
       TEST_MUSTPASS(file->StopPlayingFileAsMicrophone(ch));
       MARK();
       TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(
-              ch, (output_path + "audio_long8.pcm").c_str(), false, false,
-              kFileFormatPcm8kHzFile));
-      MARK(); // don't mix
+          ch, file_audio_long8.c_str(), false, false, kFileFormatPcm8kHzFile));
+      MARK();  // don't mix
       SleepMs(2000);
       TEST_MUSTPASS(file->StopPlayingFileAsMicrophone(ch));
       MARK();
       TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(
-              ch, (output_path + "audio_long8.pcm").c_str(), false, true,
-              kFileFormatPcm8kHzFile));
-      MARK(); // mix
+          ch, file_audio_long8.c_str(), false, true, kFileFormatPcm8kHzFile));
+      MARK();  // mix
       SleepMs(2000);
       TEST_MUSTPASS(file->StopPlayingFileAsMicrophone(ch));
       MARK();
-      TEST_MUSTPASS(!file->StartPlayingFileAsMicrophone(
-              ch, (InStream*)NULL));
-      MARK(); // force error
+      TEST_MUSTPASS(!file->StartPlayingFileAsMicrophone(ch, (InStream*)NULL));
+      MARK();  // force error
       AOK();
       ANL();
 
-      TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(
-              ch, (output_path + "audio_long16.pcm").c_str()));
+      TEST_MUSTPASS(
+          file->StartPlayingFileAsMicrophone(ch, file_audio_long16.c_str()));
       TEST_MUSTPASS(1 != file->IsPlayingFileAsMicrophone(ch));
       TEST_MUSTPASS(file->StopPlayingFileAsMicrophone(ch));
       TEST_MUSTPASS(0 != file->IsPlayingFileAsMicrophone(ch));
       AOK();
       ANL();
 
-      TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(
-              ch, (output_path + "audio_long16.pcm").c_str()));
+      TEST_MUSTPASS(
+          file->StartPlayingFileAsMicrophone(ch, file_audio_long16.c_str()));
       TEST_MUSTPASS(file->ScaleFileAsMicrophonePlayout(ch, 1.0));
       MARK();
       SleepMs(1000);
@@ -3336,15 +3402,15 @@ int VoEExtendedTest::TestFile() {
 
   // Record speaker signal to file
 
-  CodecInst fcomp = { 0, "L16", 8000, 80, 1, 128000 };
+  CodecInst fcomp = {0, "L16", 8000, 80, 1, 128000};
 
   TEST(StartRecordingPlayout);
   ANL();
   TEST(StopRecordingPlayout);
   ANL();
 
-  TEST_MUSTPASS(file->StartRecordingPlayout(0,
-          (output_path + "rec_play16.pcm").c_str()));
+  TEST_MUSTPASS(
+      file->StartRecordingPlayout(0, (output_path + "rec_play16.pcm").c_str()));
   MARK();
   SleepMs(1000);
   TEST_MUSTPASS(file->StopRecordingPlayout(0));
@@ -3352,16 +3418,16 @@ int VoEExtendedTest::TestFile() {
 
   fcomp.plfreq = 8000;
   strcpy(fcomp.plname, "L16");
-  TEST_MUSTPASS(file->StartRecordingPlayout(0,
-      (output_path + "rec_play8.wav").c_str(), &fcomp));
+  TEST_MUSTPASS(file->StartRecordingPlayout(
+      0, (output_path + "rec_play8.wav").c_str(), &fcomp));
   SleepMs(1000);
   TEST_MUSTPASS(file->StopRecordingPlayout(0));
   MARK();
 
-    fcomp.plfreq = 16000;
+  fcomp.plfreq = 16000;
   strcpy(fcomp.plname, "L16");
-  TEST_MUSTPASS(file->StartRecordingPlayout(0,
-      (output_path + "rec_play16.wav").c_str(), &fcomp));
+  TEST_MUSTPASS(file->StartRecordingPlayout(
+      0, (output_path + "rec_play16.wav").c_str(), &fcomp));
   SleepMs(1000);
   TEST_MUSTPASS(file->StopRecordingPlayout(0));
   MARK();
@@ -3373,9 +3439,8 @@ int VoEExtendedTest::TestFile() {
   fcomp.pacsize = 160;
   fcomp.channels = 1;
 
-  TEST_MUSTPASS(file->StartRecordingPlayout(0,
-          (output_path + "rec_play_pcmu.wav").c_str(),
-          &fcomp));
+  TEST_MUSTPASS(file->StartRecordingPlayout(
+      0, (output_path + "rec_play_pcmu.wav").c_str(), &fcomp));
   SleepMs(1000);
   TEST_MUSTPASS(file->StopRecordingPlayout(0));
   MARK();
@@ -3383,9 +3448,8 @@ int VoEExtendedTest::TestFile() {
   fcomp.pltype = 8;
   fcomp.plfreq = 8000;
   strcpy(fcomp.plname, "PCMA");
-  TEST_MUSTPASS(file->StartRecordingPlayout(0,
-          (output_path + "rec_play_pcma.wav").c_str(),
-          &fcomp));
+  TEST_MUSTPASS(file->StartRecordingPlayout(
+      0, (output_path + "rec_play_pcma.wav").c_str(), &fcomp));
   SleepMs(1000);
   TEST_MUSTPASS(file->StopRecordingPlayout(0));
   MARK();
@@ -3395,15 +3459,14 @@ int VoEExtendedTest::TestFile() {
   fcomp.rate = 13300;
   fcomp.plfreq = 8000;
   strcpy(fcomp.plname, "ILBC");
-  TEST_MUSTPASS(file->StartRecordingPlayout(0,
-          (output_path + "rec_play.ilbc").c_str(),
-          &fcomp));
+  TEST_MUSTPASS(file->StartRecordingPlayout(
+      0, (output_path + "rec_play.ilbc").c_str(), &fcomp));
   SleepMs(1000);
   TEST_MUSTPASS(file->StopRecordingPlayout(0));
   MARK();
 
   TEST_MUSTPASS(file->StartRecordingPlayout(
-          -1, (output_path + "rec_play16_mixed.pcm").c_str()));
+      -1, (output_path + "rec_play16_mixed.pcm").c_str()));
   MARK();
   SleepMs(1000);
   TEST_MUSTPASS(file->StopRecordingPlayout(-1));
@@ -3411,9 +3474,11 @@ int VoEExtendedTest::TestFile() {
 
   // TEST_MUSTPASS(file->StopPlayingFileLocally(0)); // Why should this work?
   TEST_LOG("\nplaying out...\n");
-  TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, (output_path + "rec_play.ilbc").c_str(), false,
-          kFileFormatCompressedFile));
+  TEST_MUSTPASS(
+      file->StartPlayingFileLocally(0,
+                                    (output_path + "rec_play.ilbc").c_str(),
+                                    false,
+                                    kFileFormatCompressedFile));
   MARK();
   SleepMs(2000);
 
@@ -3426,26 +3491,26 @@ int VoEExtendedTest::TestFile() {
   TEST(StopRecordingMicrophone);
   ANL();
 
-  TEST_MUSTPASS(file->StartRecordingMicrophone(
-      (output_path + "rec_mic16.pcm").c_str()));
+  TEST_MUSTPASS(
+      file->StartRecordingMicrophone((output_path + "rec_mic16.pcm").c_str()));
   MARK();
   SleepMs(1000);
   TEST_MUSTPASS(file->StopRecordingMicrophone());
   MARK();
 
   voe_base_->StopSend(0);
-  TEST_MUSTPASS(file->StartRecordingMicrophone(
-      (output_path + "rec_mic16.pcm").c_str()));
-  MARK(); // record without sending as well
+  TEST_MUSTPASS(
+      file->StartRecordingMicrophone((output_path + "rec_mic16.pcm").c_str()));
+  MARK();  // record without sending as well
   SleepMs(1000);
   TEST_MUSTPASS(file->StopRecordingMicrophone());
   MARK();
-  voe_base_->StartSend(0); // restore sending
+  voe_base_->StartSend(0);  // restore sending
 
   fcomp.plfreq = 8000;
   strcpy(fcomp.plname, "L16");
   TEST_MUSTPASS(file->StartRecordingMicrophone(
-          (output_path + "rec_play8.wav").c_str(), &fcomp));
+      (output_path + "rec_play8.wav").c_str(), &fcomp));
   SleepMs(1000);
   TEST_MUSTPASS(file->StopRecordingMicrophone());
   MARK();
@@ -3453,15 +3518,16 @@ int VoEExtendedTest::TestFile() {
   fcomp.plfreq = 16000;
   strcpy(fcomp.plname, "L16");
   TEST_MUSTPASS(file->StartRecordingMicrophone(
-          (output_path + "rec_play16.wav").c_str(), &fcomp));
+      (output_path + "rec_play16.wav").c_str(), &fcomp));
   SleepMs(1000);
   TEST_MUSTPASS(file->StopRecordingMicrophone());
   MARK();
 
   // FT#1810, the following test is to make sure StartRecordingCall will
   // record both mic and file
-  TEST_LOG("StartRecordingCall, record both mic and file in specific"
-    " channels \n");
+  TEST_LOG(
+      "StartRecordingCall, record both mic and file in specific"
+      " channels \n");
   TEST_LOG("Create maxnumofchannels \n");
   for (int i = 1; i < kTestMaxNumChannels; i++) {
     int ch = voe_base_->CreateChannel();
@@ -3477,15 +3543,16 @@ int VoEExtendedTest::TestFile() {
   TEST_MUSTPASS(voe_base_->StartSend(1));
   TEST_MUSTPASS(voe_base_->StartPlayout(1));
 
-  TEST_LOG("ALways playing audio_long16.pcm for "
-    "channel 0 in background \n");
+  TEST_LOG(
+      "ALways playing audio_long16.pcm for "
+      "channel 0 in background \n");
   fcomp.plfreq = 16000;
   strcpy(fcomp.plname, "L16");
   TEST_LOG("Recording microphone to L16, please speak \n");
   TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(
-          0, (output_path + "audio_long16.pcm").c_str(), true , true));
+      0, file_audio_long16.c_str(), true, true));
   TEST_MUSTPASS(file->StartRecordingMicrophone(
-          (output_path + "rec_play_ch.wav").c_str(), &fcomp));
+      (output_path + "rec_play_ch.wav").c_str(), &fcomp));
   MARK();
   SleepMs(3000);
   TEST_MUSTPASS(file->StopRecordingMicrophone());
@@ -3493,25 +3560,27 @@ int VoEExtendedTest::TestFile() {
   TEST_MUSTPASS(file->StopPlayingFileAsMicrophone(0));
   TEST_LOG("Playing recording file, you should only hear what you said \n");
   TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, (output_path + "rec_play_ch.wav").c_str(),
-          false, kFileFormatWavFile));
+      0, (output_path + "rec_play_ch.wav").c_str(), false, kFileFormatWavFile));
   SleepMs(2500);
   TEST_MUSTPASS(file->StopPlayingFileLocally(0));
   TEST_LOG("Recording microphone 0 to L16, please speak \n");
   TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(
-          -1, (output_path + "audio_long16.pcm").c_str(), true , true));
+      -1, file_audio_long16.c_str(), true, true));
   TEST_MUSTPASS(file->StartRecordingMicrophone(
-          (output_path + "rec_play_ch_0.wav").c_str(), &fcomp));
+      (output_path + "rec_play_ch_0.wav").c_str(), &fcomp));
   MARK();
   SleepMs(3000);
   TEST_MUSTPASS(file->StopRecordingMicrophone());
   MARK();
   TEST_MUSTPASS(file->StopPlayingFileAsMicrophone(-1));
-  TEST_LOG("Playing recording file, you should hear what you said and"
-    " audio_long16.pcm \n");
-  TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, (output_path + "rec_play_ch_0.wav").c_str(),
-          false, kFileFormatWavFile));
+  TEST_LOG(
+      "Playing recording file, you should hear what you said and"
+      " audio_long16.pcm \n");
+  TEST_MUSTPASS(
+      file->StartPlayingFileLocally(0,
+                                    (output_path + "rec_play_ch_0.wav").c_str(),
+                                    false,
+                                    kFileFormatWavFile));
   SleepMs(2500);
   TEST_MUSTPASS(file->StopPlayingFileLocally(0));
   TEST_LOG("Recording microphone to ilbc, please speak \n");
@@ -3522,9 +3591,9 @@ int VoEExtendedTest::TestFile() {
   fcomp.channels = 1;
   fcomp.pltype = 97;
   TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(
-          0, (output_path + "audio_long16.pcm").c_str(), true , true));
+      0, file_audio_long16.c_str(), true, true));
   TEST_MUSTPASS(file->StartRecordingMicrophone(
-          (output_path + "rec_play_ch_0.ilbc").c_str(), &fcomp));
+      (output_path + "rec_play_ch_0.ilbc").c_str(), &fcomp));
   MARK();
   SleepMs(3000);
   TEST_MUSTPASS(file->StopRecordingMicrophone());
@@ -3532,8 +3601,10 @@ int VoEExtendedTest::TestFile() {
   TEST_MUSTPASS(file->StopPlayingFileAsMicrophone(0));
   TEST_LOG("Playing recording file, you should only hear what you said \n");
   TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, (output_path + "rec_play_ch_0.ilbc").c_str(), false,
-          kFileFormatCompressedFile));
+      0,
+      (output_path + "rec_play_ch_0.ilbc").c_str(),
+      false,
+      kFileFormatCompressedFile));
   SleepMs(2500);
   TEST_MUSTPASS(file->StopPlayingFileLocally(0));
   for (int i = 1; i < kTestMaxNumChannels; i++) {
@@ -3543,8 +3614,7 @@ int VoEExtendedTest::TestFile() {
   AOK();
   ANL();
 
-  // Record mixed (speaker + microphone) signal to file
-
+// Record mixed (speaker + microphone) signal to file
 
 #if !defined(WEBRTC_IOS) && !defined(WEBRTC_ANDROID)
   TEST(StartRecordingSpeakerStereo);
@@ -3582,10 +3652,11 @@ int VoEExtendedTest::TestFile() {
   AOK();
   ANL();
 #else
-  TEST_LOG("Skipping stereo record tests -"
+  TEST_LOG(
+      "Skipping stereo record tests -"
       " WEBRTC_IOS or WEBRTC_ANDROID is defined \n");
-#endif // #if !defined(WEBRTC_IOS) && !defined(WEBRTC_ANDROID)
-  // Conversion between different file formats
+#endif  // #if !defined(WEBRTC_IOS) && !defined(WEBRTC_ANDROID)
+        // Conversion between different file formats
 
 #if defined(WEBRTC_IOS) || defined(WEBRTC_ANDROID)
   TEST_MUSTPASS(voe_base_->StopPlayout(0));
@@ -3595,24 +3666,24 @@ int VoEExtendedTest::TestFile() {
   TEST(ConvertPCMToWAV);
   ANL();
 
-  TEST_MUSTPASS(file->ConvertPCMToWAV(
-          (output_path + "audio_long16.pcm").c_str(),
-          (output_path + "singleUserDemoConv.wav").c_str()));
+  TEST_MUSTPASS(
+      file->ConvertPCMToWAV(file_audio_long16.c_str(),
+                            (output_path + "singleUserDemoConv.wav").c_str()));
   MARK();
-  TEST_MUSTPASS(!file->ConvertPCMToWAV((InStream*)NULL,
-          (OutStream*)NULL));MARK(); // invalid stream handles
+  TEST_MUSTPASS(!file->ConvertPCMToWAV((InStream*)NULL, (OutStream*)NULL));
+  MARK();  // invalid stream handles
   AOK();
   ANL();
 
   TEST(ConvertWAVToPCM);
   ANL();
 
-  TEST_MUSTPASS(file->ConvertWAVToPCM(
-          (output_path + "audio_long16.wav").c_str(),
-          (output_path + "singleUserDemoConv.pcm").c_str()));
+  TEST_MUSTPASS(
+      file->ConvertWAVToPCM(file_audio_long16_wav.c_str(),
+                            (output_path + "singleUserDemoConv.pcm").c_str()));
   MARK();
   TEST_MUSTPASS(!file->ConvertWAVToPCM((InStream*)NULL, (OutStream*)NULL));
-  MARK(); // invalid stream handles
+  MARK();  // invalid stream handles
   AOK();
   ANL();
 
@@ -3622,9 +3693,10 @@ int VoEExtendedTest::TestFile() {
   fcomp.plfreq = 16000;
   strcpy(fcomp.plname, "L16");
   TEST_MUSTPASS(!file->ConvertPCMToCompressed(
-          (output_path + "audio_long16.pcm").c_str(),
-          (output_path + "singleUserDemoConv16_dummy.wav").c_str(), &fcomp));
-  MARK(); // should not be supported
+                     file_audio_long16.c_str(),
+                     (output_path + "singleUserDemoConv16_dummy.wav").c_str(),
+                     &fcomp));
+  MARK();  // should not be supported
 
   fcomp.plfreq = 8000;
   strcpy(fcomp.plname, "ilbc");
@@ -3633,20 +3705,26 @@ int VoEExtendedTest::TestFile() {
   fcomp.pltype = 97;
   fcomp.channels = 1;
   TEST_MUSTPASS(file->ConvertPCMToCompressed(
-          (output_path + "audio_long16.pcm").c_str(),
-          (output_path + "singleUserDemoConv.ilbc").c_str(), &fcomp));MARK();
-  AOK();ANL();
+      file_audio_long16.c_str(),
+      (output_path + "singleUserDemoConv.ilbc").c_str(),
+      &fcomp));
+  MARK();
+  AOK();
+  ANL();
 
   TEST(ConvertCompressedToPCM);
   ANL();
 
   TEST_MUSTPASS(file->ConvertCompressedToPCM(
-          (output_path + "singleUserDemoConv.ilbc").c_str(),
-          (output_path + "singleUserDemoConv_ilbc.pcm").c_str()));MARK();
+      (output_path + "singleUserDemoConv.ilbc").c_str(),
+      (output_path + "singleUserDemoConv_ilbc.pcm").c_str()));
+  MARK();
   TEST_MUSTPASS(!file->ConvertCompressedToPCM(
-          (output_path + "audio_long16.pcm").c_str(),
-          (output_path + "singleUserDemoConv_dummy.pcm").c_str()));MARK();
-  AOK();ANL();
+                     file_audio_long16.c_str(),
+                     (output_path + "singleUserDemoConv_dummy.pcm").c_str()));
+  MARK();
+  AOK();
+  ANL();
 
 #if defined(WEBRTC_IOS) || defined(WEBRTC_ANDROID)
   TEST_MUSTPASS(voe_base_->StartPlayout(0));
@@ -3659,20 +3737,17 @@ int VoEExtendedTest::TestFile() {
 
   int dur;
 
+  TEST_MUSTPASS(file->GetFileDuration(file_audio_long16.c_str(), dur));
   TEST_MUSTPASS(file->GetFileDuration(
-          (output_path + "audio_long16.pcm").c_str(), dur));
+      file_audio_long8.c_str(), dur, kFileFormatPcm8kHzFile));
   TEST_MUSTPASS(file->GetFileDuration(
-          (output_path + "audio_long8.pcm").c_str(),
-          dur, kFileFormatPcm8kHzFile));
+      file_audio_long16.c_str(), dur, kFileFormatPcm16kHzFile));
   TEST_MUSTPASS(file->GetFileDuration(
-          (output_path + "audio_long16.pcm").c_str(),
-          dur, kFileFormatPcm16kHzFile));
-  TEST_MUSTPASS(file->GetFileDuration(
-          (output_path + "audio_long16.wav").c_str(),
-          dur, kFileFormatPcm8kHzFile));
-  TEST_MUSTPASS(file->GetFileDuration(
-          (output_path + "singleUserDemoConv.ilbc").c_str(), dur,
-          kFileFormatCompressedFile));
+      file_audio_long16_wav.c_str(), dur, kFileFormatPcm8kHzFile));
+  TEST_MUSTPASS(
+      file->GetFileDuration((output_path + "singleUserDemoConv.ilbc").c_str(),
+                            dur,
+                            kFileFormatCompressedFile));
 
   AOK();
   ANL();
@@ -3682,16 +3757,15 @@ int VoEExtendedTest::TestFile() {
 
   int pos;
 
-  TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, (output_path + "audio_long16.pcm").c_str()));
+  TEST_MUSTPASS(file->StartPlayingFileLocally(0, file_audio_long16.c_str()));
   SleepMs(1000);
   TEST_MUSTPASS(file->GetPlaybackPosition(0, pos));
-  MARK(); // position should be ~1000
+  MARK();  // position should be ~1000
   SleepMs(1000);
   TEST_MUSTPASS(file->GetPlaybackPosition(0, pos));
-  MARK(); // position should be ~2000
-  // SleepMs(70*1000);
-  // file is no longer playing
+  MARK();  // position should be ~2000
+           // SleepMs(70*1000);
+           // file is no longer playing
   // TEST_MUSTPASS(file->GetPlaybackPosition(0, pos)); MARK();
   TEST_MUSTPASS(file->StopPlayingFileLocally(0));
   AOK();
@@ -3699,17 +3773,23 @@ int VoEExtendedTest::TestFile() {
 
   // These tests are related to defect 5136
   // They play .wav files with different sample freq for 5s
-  char localFiles[7][50] = { "audio_tiny8.wav", "audio_tiny11.wav",
-      "audio_tiny16.wav", "audio_tiny22.wav", "audio_tiny32.wav",
-      "audio_tiny44.wav", "audio_tiny48.wav" };
-  char freq[7][5] = { "8", "11", "16", "22", "32", "44.1", "48" };
+  char localFiles[7][50] = {"audio_tiny8.wav",  "audio_tiny11.wav",
+                            "audio_tiny16.wav", "audio_tiny22.wav",
+                            "audio_tiny32.wav", "audio_tiny44.wav",
+                            "audio_tiny48.wav"};
+  char freq[7][5] = {"8", "11", "16", "22", "32", "44.1", "48"};
+  std::string resource_path =
+      webrtc::test::ProjectRootPath() + "resources/voice_engine/";
   TEST_MUSTPASS(voe_base_->StopReceive(0));
   for (int i = 0; i < 7; i++) {
     TEST_LOG("Playing file %s, in %s KHz \n", localFiles[i], freq[i]);
-    TEST_MUSTPASS(file->StartPlayingFileLocally(
-            0, (output_path + localFiles[i]).c_str(),
-            false, kFileFormatWavFile, 1));
-    SleepMs(4500); // The file should not end
+    TEST_MUSTPASS(
+        file->StartPlayingFileLocally(0,
+                                      (resource_path + localFiles[i]).c_str(),
+                                      false,
+                                      kFileFormatWavFile,
+                                      1));
+    SleepMs(4500);  // The file should not end
     TEST_MUSTPASS(file->StopPlayingFileLocally(0));
   }
 
@@ -3737,20 +3817,15 @@ int VoEExtendedTest::TestHardware() {
   VoEHardware* hardware = _mgr.HardwarePtr();
 
 #ifdef _USE_EXTENDED_TRACE_
-  TEST_MUSTPASS(VoiceEngine::SetTraceFile((output_path +
-              "VoEHardware_trace.txt").c_str()));
-  TEST_MUSTPASS(VoiceEngine::SetTraceFilter(kTraceStateInfo |
-          kTraceStateInfo |
-          kTraceWarning |
-          kTraceError |
-          kTraceCritical |
-          kTraceApiCall |
-          kTraceMemory |
-          kTraceInfo));
+  TEST_MUSTPASS(VoiceEngine::SetTraceFile(
+      (output_path + "VoEHardware_trace.txt").c_str()));
+  TEST_MUSTPASS(VoiceEngine::SetTraceFilter(
+      kTraceStateInfo | kTraceStateInfo | kTraceWarning | kTraceError |
+      kTraceCritical | kTraceApiCall | kTraceMemory | kTraceInfo));
 #endif
 
   // Set/GetAudioDeviceLayer
-  TEST(Set/GetAudioDeviceLayer);
+  TEST(Set / GetAudioDeviceLayer);
   ANL();
   AudioLayers wantedLayer = kAudioPlatformDefault;
   AudioLayers givenLayer;
@@ -3758,21 +3833,20 @@ int VoEExtendedTest::TestHardware() {
 #if defined(_WIN32)
   wantedLayer = kAudioWindowsCore;
   hardware->SetAudioDeviceLayer(wantedLayer);
-  TEST_LOG("If you run on XP or below, CoreAudio "
+  TEST_LOG(
+      "If you run on XP or below, CoreAudio "
       "should not be able to set.\n");
-  TEST_LOG("If you run on Vista or above, CoreAudio "
+  TEST_LOG(
+      "If you run on Vista or above, CoreAudio "
       "should be able to set.\n");
   TEST_LOG("Verify that this is the case.\n");
 
   TEST_MUSTPASS(voe_base_->Init());
 
   TEST_MUSTPASS(hardware->GetAudioDeviceLayer(givenLayer));
-  if(givenLayer == kAudioWindowsCore)
-  {
+  if (givenLayer == kAudioWindowsCore) {
     TEST_LOG("CoreAudio was set\n");
-  }
-  else
-  {
+  } else {
     TEST_LOG("CoreAudio was *not* set\n");
   }
 
@@ -3785,35 +3859,31 @@ int VoEExtendedTest::TestHardware() {
   TEST_MUSTPASS(voe_base_->Init());
 
   TEST_MUSTPASS(hardware->GetAudioDeviceLayer(givenLayer));
-  if(givenLayer == kAudioWindowsWave)
-  {
+  if (givenLayer == kAudioWindowsWave) {
     TEST_LOG("Wave audio was set\n");
-  }
-  else
-  {
+  } else {
     TEST_LOG("Wave audio was not set\n");
   }
 
   TEST_MUSTPASS(voe_base_->Terminate());
-  // end _WIN32
+// end _WIN32
 #elif defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
   wantedLayer = kAudioLinuxPulse;
   TEST_MUSTPASS(hardware->SetAudioDeviceLayer(wantedLayer));
-  TEST_LOG("If you run on Linux with no/unsupported PA version, PulseAudio "
+  TEST_LOG(
+      "If you run on Linux with no/unsupported PA version, PulseAudio "
       "7should not be able to set.\n");
-  TEST_LOG("If you run on Linux with supported PA version running, PulseAudio"
+  TEST_LOG(
+      "If you run on Linux with supported PA version running, PulseAudio"
       " should be able to set.\n");
   TEST_LOG("Verify that this is the case.\n");
 
   TEST_MUSTPASS(voe_base_->Init());
 
   TEST_MUSTPASS(hardware->GetAudioDeviceLayer(givenLayer));
-  if(givenLayer == kAudioLinuxPulse)
-  {
+  if (givenLayer == kAudioLinuxPulse) {
     TEST_LOG("\nPulseAudio was set\n");
-  }
-  else
-  {
+  } else {
     TEST_LOG("\nPulseAudio was not set\n");
   }
 
@@ -3826,19 +3896,16 @@ int VoEExtendedTest::TestHardware() {
   TEST_MUSTPASS(voe_base_->Init());
 
   TEST_MUSTPASS(hardware->GetAudioDeviceLayer(givenLayer));
-  if(givenLayer == kAudioLinuxAlsa)
-  {
+  if (givenLayer == kAudioLinuxAlsa) {
     TEST_LOG("\nALSA audio was set\n");
-  }
-  else
-  {
+  } else {
     TEST_LOG("\nALSA audio was not set\n");
   }
 
   TEST_MUSTPASS(voe_base_->Terminate());
-#endif // defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
+#endif  // defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
   // Invalid arguments should be ignored.
-  wantedLayer = (AudioLayers) 17;
+  wantedLayer = (AudioLayers)17;
   TEST_MUSTPASS(hardware->SetAudioDeviceLayer(wantedLayer));
   TEST_MUSTPASS(hardware->GetAudioDeviceLayer(givenLayer));
   ASSERT_TRUE(givenLayer == kAudioPlatformDefault);
@@ -3884,7 +3951,7 @@ int VoEExtendedTest::TestHardware() {
 
 #if !defined(WEBRTC_IOS) && !defined(WEBRTC_ANDROID)
   // GetRecording/PlayoutDeviceStatus
-  TEST(Getrecording/PlayoutDeviceStatus);
+  TEST(Getrecording / PlayoutDeviceStatus);
   ANL();
   bool isRecAvailable = false;
   bool isPlayAvailable = false;
@@ -3907,15 +3974,14 @@ int VoEExtendedTest::TestHardware() {
   // GetPlayoutDeviceName
   TEST(GetPlayoutDeviceName);
   ANL();
-  TEST_MUSTPASS(-1 != hardware->GetPlayoutDeviceName(nPlay, devName,
-          guidName));
+  TEST_MUSTPASS(-1 != hardware->GetPlayoutDeviceName(nPlay, devName, guidName));
   TEST_MUSTPASS(VE_CANNOT_RETRIEVE_DEVICE_NAME != voe_base_->LastError());
   MARK();
   TEST_MUSTPASS(-1 != hardware->GetPlayoutDeviceName(-2, devName, guidName));
   TEST_MUSTPASS(VE_CANNOT_RETRIEVE_DEVICE_NAME != voe_base_->LastError());
   MARK();
-  TEST_MUSTPASS(-1 != hardware->GetPlayoutDeviceName(nPlay+1, devName,
-          guidName));
+  TEST_MUSTPASS(-1 !=
+                hardware->GetPlayoutDeviceName(nPlay + 1, devName, guidName));
   TEST_MUSTPASS(VE_CANNOT_RETRIEVE_DEVICE_NAME != voe_base_->LastError());
   MARK();
   TEST_MUSTPASS(-1 != hardware->GetPlayoutDeviceName(0, NULL, guidName));
@@ -3937,15 +4003,15 @@ int VoEExtendedTest::TestHardware() {
   // GetRecordingDeviceName
   TEST(GetRecordingDeviceName);
   ANL();
-  TEST_MUSTPASS(-1 != hardware->GetRecordingDeviceName(nRec, devName,
-          guidName));
+  TEST_MUSTPASS(-1 !=
+                hardware->GetRecordingDeviceName(nRec, devName, guidName));
   TEST_MUSTPASS(VE_CANNOT_RETRIEVE_DEVICE_NAME != voe_base_->LastError());
   MARK();
   TEST_MUSTPASS(-1 != hardware->GetRecordingDeviceName(-2, devName, guidName));
   TEST_MUSTPASS(VE_CANNOT_RETRIEVE_DEVICE_NAME != voe_base_->LastError());
   MARK();
-  TEST_MUSTPASS(-1 != hardware->GetRecordingDeviceName(nRec+1, devName,
-          guidName));
+  TEST_MUSTPASS(-1 !=
+                hardware->GetRecordingDeviceName(nRec + 1, devName, guidName));
   TEST_MUSTPASS(VE_CANNOT_RETRIEVE_DEVICE_NAME != voe_base_->LastError());
   MARK();
   TEST_MUSTPASS(-1 != hardware->GetRecordingDeviceName(0, NULL, guidName));
@@ -3961,7 +4027,7 @@ int VoEExtendedTest::TestHardware() {
   }
   ANL();
 
-    // // SetRecordingDevice
+  // // SetRecordingDevice
   TEST(SetRecordingDevice);
   ANL();
   TEST_MUSTPASS(hardware->SetRecordingDevice(0));
@@ -3976,22 +4042,23 @@ int VoEExtendedTest::TestHardware() {
   TEST(SetPlayoutDevice);
   ANL();
 #if defined(_WIN32)
-  TEST_MUSTPASS(hardware->SetPlayoutDevice(-1)); MARK();
+  TEST_MUSTPASS(hardware->SetPlayoutDevice(-1));
+  MARK();
 #else
   TEST_MUSTPASS(hardware->SetPlayoutDevice(0));
   MARK();
 #endif
   ANL();
-#endif // #if !defined(WEBRTC_IOS) && !defined(WEBRTC_ANDROID)
+#endif  // #if !defined(WEBRTC_IOS) && !defined(WEBRTC_ANDROID)
 #if defined(WEBRTC_IOS)
-  TEST(ResetSoundDevice); ANL();
+  TEST(ResetSoundDevice);
+  ANL();
 
-  for (int p=0; p<=60; p+=20)
-  {
+  for (int p = 0; p <= 60; p += 20) {
     TEST_LOG("Resetting sound device several times with pause %d ms\n", p);
-    for (int l=0; l<50; ++l)
-    {
-      TEST_MUSTPASS(hardware->ResetAudioDevice()); MARK();
+    for (int l = 0; l < 50; ++l) {
+      TEST_MUSTPASS(hardware->ResetAudioDevice());
+      MARK();
       SleepMs(p);
     }
     ANL();
@@ -3999,19 +4066,18 @@ int VoEExtendedTest::TestHardware() {
 
   TEST_LOG("Start streaming - verify the audio after each batch of resets \n");
   TEST_MUSTPASS(voe_base_->SetSendDestination(0, 8000, "127.0.0.1"));
-  TEST_MUSTPASS(voe_base_->SetLocalReceiver(0,8000));
+  TEST_MUSTPASS(voe_base_->SetLocalReceiver(0, 8000));
   TEST_MUSTPASS(voe_base_->StartReceive(0));
   TEST_MUSTPASS(voe_base_->StartPlayout(0));
   TEST_MUSTPASS(voe_base_->StartSend(0));
   SleepMs(2000);
 
   SleepMs(2000);
-  for (int p=0; p<=60; p+=20)
-  {
+  for (int p = 0; p <= 60; p += 20) {
     TEST_LOG("Resetting sound device several time with pause %d ms\n", p);
-    for (int l=0; l<20; ++l)
-    {
-      TEST_MUSTPASS(hardware->ResetAudioDevice()); MARK();
+    for (int l = 0; l < 20; ++l) {
+      TEST_MUSTPASS(hardware->ResetAudioDevice());
+      MARK();
       SleepMs(p);
     }
     ANL();
@@ -4022,9 +4088,10 @@ int VoEExtendedTest::TestHardware() {
   TEST_MUSTPASS(voe_base_->StartSend(0));
   TEST_MUSTPASS(voe_base_->StartPlayout(0));
   TEST_MUSTPASS(voe_base_->StartReceive(0));
-#endif // defined(WEBRTC_IOS))
+#endif  // defined(WEBRTC_IOS))
 #ifdef WEBRTC_IOS
-  TEST_LOG("\nNOTE: Always run hardware tests also without extended tests "
+  TEST_LOG(
+      "\nNOTE: Always run hardware tests also without extended tests "
       "enabled,\nsince the extended tests are pre-streaming tests only.\n");
 #endif
 
@@ -4062,16 +4129,11 @@ int VoEExtendedTest::TestNetwork() {
   VoENetwork* voe_network = _mgr.NetworkPtr();
 
 #ifdef _USE_EXTENDED_TRACE_
-  TEST_MUSTPASS(VoiceEngine::SetTraceFile((output_path +
-              "VoENetwork_trace.txt").c_str()));
-  TEST_MUSTPASS(VoiceEngine::SetTraceFilter(kTraceStateInfo |
-          kTraceStateInfo |
-          kTraceWarning |
-          kTraceError |
-          kTraceCritical |
-          kTraceApiCall |
-          kTraceMemory |
-          kTraceInfo));
+  TEST_MUSTPASS(VoiceEngine::SetTraceFile(
+      (output_path + "VoENetwork_trace.txt").c_str()));
+  TEST_MUSTPASS(VoiceEngine::SetTraceFilter(
+      kTraceStateInfo | kTraceStateInfo | kTraceWarning | kTraceError |
+      kTraceCritical | kTraceApiCall | kTraceMemory | kTraceInfo));
 #endif
 
   TEST_MUSTPASS(voe_base_->Init());
@@ -4089,24 +4151,24 @@ int VoEExtendedTest::TestNetwork() {
   ExtendedTestTransport* ptrTransport = new ExtendedTestTransport(voe_network);
 
   // call without valid channel
-  TEST_MUSTPASS(!voe_network ->DeRegisterExternalTransport(0));
+  TEST_MUSTPASS(!voe_network->DeRegisterExternalTransport(0));
   MARK();
   TEST_ERROR(VE_CHANNEL_NOT_VALID);
 
   TEST_MUSTPASS(voe_base_->CreateChannel());
 
   // different valid call combinations
-  TEST_MUSTPASS(voe_network ->RegisterExternalTransport(0, *ptrTransport));
+  TEST_MUSTPASS(voe_network->RegisterExternalTransport(0, *ptrTransport));
   MARK();
-  TEST_MUSTPASS(voe_network ->DeRegisterExternalTransport(0));
+  TEST_MUSTPASS(voe_network->DeRegisterExternalTransport(0));
   MARK();
-  TEST_MUSTPASS(voe_network ->DeRegisterExternalTransport(0));
+  TEST_MUSTPASS(voe_network->DeRegisterExternalTransport(0));
   MARK();
-  TEST_MUSTPASS(voe_network ->RegisterExternalTransport(0, *ptrTransport));
+  TEST_MUSTPASS(voe_network->RegisterExternalTransport(0, *ptrTransport));
   MARK();
-  TEST_MUSTPASS(!voe_network ->RegisterExternalTransport(0, *ptrTransport));
-  MARK(); // must deregister first
-  TEST_MUSTPASS(voe_network ->DeRegisterExternalTransport(0));
+  TEST_MUSTPASS(!voe_network->RegisterExternalTransport(0, *ptrTransport));
+  MARK();  // must deregister first
+  TEST_MUSTPASS(voe_network->DeRegisterExternalTransport(0));
   MARK();
 
   // STATE: external transport is disabled
@@ -4114,17 +4176,17 @@ int VoEExtendedTest::TestNetwork() {
   TEST_MUSTPASS(voe_base_->CreateChannel());
 
   // enable external transport and verify that "emulated loopback" works
-  TEST_MUSTPASS(voe_network ->RegisterExternalTransport(0, *ptrTransport));
+  TEST_MUSTPASS(voe_network->RegisterExternalTransport(0, *ptrTransport));
   MARK();
-  TEST_MUSTPASS(voe_base_->StartSend(0)); // should only start recording
-  TEST_MUSTPASS(!voe_network ->RegisterExternalTransport(0, *ptrTransport));
-  MARK(); // should fail
-  TEST_MUSTPASS(voe_network ->DeRegisterExternalTransport(0));
+  TEST_MUSTPASS(voe_base_->StartSend(0));  // should only start recording
+  TEST_MUSTPASS(!voe_network->RegisterExternalTransport(0, *ptrTransport));
+  MARK();  // should fail
+  TEST_MUSTPASS(voe_network->DeRegisterExternalTransport(0));
   MARK();
-  TEST_MUSTPASS(voe_network ->RegisterExternalTransport(0, *ptrTransport));
+  TEST_MUSTPASS(voe_network->RegisterExternalTransport(0, *ptrTransport));
   MARK();
-  Play(0, 2000, true, true); // play file as mic and verify loopback audio
-  TEST_MUSTPASS(voe_network ->DeRegisterExternalTransport(0));
+  Play(0, 2000, true, true);  // play file as mic and verify loopback audio
+  TEST_MUSTPASS(voe_network->DeRegisterExternalTransport(0));
   MARK();
 
   // modified i VoE 3.4 (can be called also for external transport)
@@ -4133,7 +4195,7 @@ int VoEExtendedTest::TestNetwork() {
 
   // always disable external transport before deleting the Transport object;
   // will lead to crash for RTCP transmission otherwise
-  TEST_MUSTPASS(voe_network ->DeRegisterExternalTransport(0));
+  TEST_MUSTPASS(voe_network->DeRegisterExternalTransport(0));
   MARK();
   delete ptrTransport;
 
@@ -4154,29 +4216,22 @@ int VoEExtendedTest::TestNetwork() {
 // ----------------------------------------------------------------------------
 
 // Used to validate packets during the RTP audio level indication test.
-class RTPAudioTransport: public Transport {
+class RTPAudioTransport : public Transport {
  public:
-  RTPAudioTransport() :
-    mute_(false) {
-  }
+  RTPAudioTransport() : mute_(false) {}
 
-  virtual ~RTPAudioTransport() {
-  }
+  virtual ~RTPAudioTransport() {}
 
-  void set_mute(bool mute) {
-    mute_ = mute;
-  }
-  bool mute() const {
-    return mute_;
-  }
+  void set_mute(bool mute) { mute_ = mute; }
+  bool mute() const { return mute_; }
 
   // TODO(andrew): use proper error checks here rather than asserts.
   virtual int SendPacket(int channel, const void* data, int length) {
-    const uint8_t* packet = static_cast<const uint8_t*> (data);
+    const uint8_t* packet = static_cast<const uint8_t*>(data);
 
     // Extension bit.
     assert(packet[0] & 0x10);
-    int index = 12; // Assume standard RTP header.
+    int index = 12;  // Assume standard RTP header.
     // Header extension ID
     assert(packet[index++] == 0xBE);
     assert(packet[index++] == 0xDE);
@@ -4209,7 +4264,8 @@ class RTPAudioTransport: public Transport {
     return 0;
   }
 
-  virtual int SendRTCPPacket(int /*channel*/, const void* /*data*/,
+  virtual int SendRTCPPacket(int /*channel*/,
+                             const void* /*data*/,
                              int /*length*/) {
     return 0;
   }
@@ -4237,16 +4293,11 @@ int VoEExtendedTest::TestRTP_RTCP() {
 #endif
 
 #ifdef _USE_EXTENDED_TRACE_
-  TEST_MUSTPASS(VoiceEngine::SetTraceFile((output_path +
-              "VoERTP_RTCP_trace.txt").c_str()));
-  TEST_MUSTPASS(VoiceEngine::SetTraceFilter(kTraceStateInfo |
-          kTraceStateInfo |
-          kTraceWarning |
-          kTraceError |
-          kTraceCritical |
-          kTraceApiCall |
-          kTraceMemory |
-          kTraceInfo));
+  TEST_MUSTPASS(VoiceEngine::SetTraceFile(
+      (output_path + "VoERTP_RTCP_trace.txt").c_str()));
+  TEST_MUSTPASS(VoiceEngine::SetTraceFilter(
+      kTraceStateInfo | kTraceStateInfo | kTraceWarning | kTraceError |
+      kTraceCritical | kTraceApiCall | kTraceMemory | kTraceInfo));
 #endif
 
   TEST_MUSTPASS(voe_base_->Init());
@@ -4292,14 +4343,14 @@ int VoEExtendedTest::TestRTP_RTCP() {
   for (int id = 1; id < 15; id++) {
     TEST_MUSTPASS(rtp_rtcp->SetRTPAudioLevelIndicationStatus(0, true, id));
     MARK();
-    TEST_MUSTPASS(rtp_rtcp->GetRTPAudioLevelIndicationStatus(
-            0, audioLevelEnabled, ID));
+    TEST_MUSTPASS(
+        rtp_rtcp->GetRTPAudioLevelIndicationStatus(0, audioLevelEnabled, ID));
     MARK();
     TEST_MUSTPASS(audioLevelEnabled != true);
     TEST_MUSTPASS(rtp_rtcp->SetRTPAudioLevelIndicationStatus(0, false, id));
     MARK();
-    TEST_MUSTPASS(rtp_rtcp->GetRTPAudioLevelIndicationStatus(
-            0, audioLevelEnabled, ID));
+    TEST_MUSTPASS(
+        rtp_rtcp->GetRTPAudioLevelIndicationStatus(0, audioLevelEnabled, ID));
     MARK();
     TEST_MUSTPASS(audioLevelEnabled != false);
     TEST_MUSTPASS(ID != id);
@@ -4336,8 +4387,8 @@ int VoEExtendedTest::TestRTP_RTCP() {
   printf("\nReceiving packets from file (expect mostly VAD = 1)...\n");
   printf("VAD  Level [dbFS]\n");
   SleepMs(2000);
-  TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, _mgr.AudioFilename(),
-          true, true));
+  TEST_MUSTPASS(
+      file->StartPlayingFileAsMicrophone(0, _mgr.AudioFilename(), true, true));
   TEST_MUSTPASS(voe_base_->StartSend(0));
   SleepMs(5000);
   TEST_MUSTPASS(voe_base_->StopSend(0));
@@ -4384,33 +4435,33 @@ int VoEExtendedTest::TestRTP_RTCP() {
   MARK();
   TEST_MUSTPASS(VE_ALREADY_SENDING != voe_base_->LastError());
   TEST_MUSTPASS(voe_base_->StopSend(0));
-  TEST_MUSTPASS(rtp_rtcp->SetLocalSSRC(0, 5678)); // force send SSRC to 5678
+  TEST_MUSTPASS(rtp_rtcp->SetLocalSSRC(0, 5678));  // force send SSRC to 5678
   TEST_MUSTPASS(voe_base_->StartSend(0));
   MARK();
   ANL();
 
-  TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, _mgr.AudioFilename(),
-          true, true));
+  TEST_MUSTPASS(
+      file->StartPlayingFileAsMicrophone(0, _mgr.AudioFilename(), true, true));
 
   // ------------------------------------------------------------------------
   // >> RTP dump APIs
-  TEST(Start/StopRtpDump);
+  TEST(Start / StopRtpDump);
   ANL();
-  TEST(Start/RTPDumpIsActive);
+  TEST(Start / RTPDumpIsActive);
 
   TEST_MUSTPASS(-1 != rtp_rtcp->RTPDumpIsActive(-1, kRtpIncoming));
-  MARK(); // invalid channel
+  MARK();  // invalid channel
   TEST_ERROR(VE_CHANNEL_NOT_VALID);
   TEST_MUSTPASS(false != rtp_rtcp->RTPDumpIsActive(0, kRtpIncoming));
-  MARK(); // should be off by default
+  MARK();  // should be off by default
   TEST_MUSTPASS(false != rtp_rtcp->RTPDumpIsActive(0, kRtpOutgoing));
-  MARK(); // should be off by default
+  MARK();  // should be off by default
 
   TEST_MUSTPASS(-1 != rtp_rtcp->StartRTPDump(-1, NULL));
-  MARK(); // invalid channel
+  MARK();  // invalid channel
   TEST_ERROR(VE_CHANNEL_NOT_VALID);
   TEST_MUSTPASS(-1 != rtp_rtcp->StartRTPDump(0, NULL));
-  MARK(); // invalid file name
+  MARK();  // invalid file name
   TEST_ERROR(VE_BAD_FILE);
 
   // Create two RTP dump files:
@@ -4443,8 +4494,8 @@ int VoEExtendedTest::TestRTP_RTCP() {
   // - only one file (called dump_in_200ms.rtp) should exist after this test
   //
   for (i = 0; i < 10; i++) {
-    TEST_MUSTPASS(rtp_rtcp->StartRTPDump(0,
-            (output_path + "dump_in_200ms.rtp").c_str()));
+    TEST_MUSTPASS(
+        rtp_rtcp->StartRTPDump(0, (output_path + "dump_in_200ms.rtp").c_str()));
     MARK();
     SleepMs(200);
     TEST_MUSTPASS(rtp_rtcp->StopRTPDump(0));
@@ -4460,7 +4511,7 @@ int VoEExtendedTest::TestRTP_RTCP() {
   TEST_MUSTPASS(!rtp_rtcp->GetRTCPStatus(-1, enabled));
   MARK();
   TEST_MUSTPASS(rtp_rtcp->GetRTCPStatus(0, enabled));
-  MARK(); // should be on by default
+  MARK();  // should be on by default
   TEST_MUSTPASS(enabled != true);
   ANL();
 
@@ -4476,7 +4527,7 @@ int VoEExtendedTest::TestRTP_RTCP() {
   TEST_MUSTPASS(rtp_rtcp->GetRTCPStatus(0, enabled));
   TEST_MUSTPASS(enabled != true);
   MARK();
-  SleepMs(6000); // Make sure we get an RTCP packet
+  SleepMs(6000);  // Make sure we get an RTCP packet
   ANL();
 
   TEST(CNAME);
@@ -4497,14 +4548,14 @@ int VoEExtendedTest::TestRTP_RTCP() {
   TEST_MUSTPASS(ssrc != 5678);
   ANL();
 
-  TEST(GetRemoteCSRC); // only trivial tests added
+  TEST(GetRemoteCSRC);  // only trivial tests added
   unsigned int csrcs[2];
   int n(0);
   TEST_MUSTPASS(!rtp_rtcp->GetRemoteCSRCs(1, csrcs));
   MARK();
   n = rtp_rtcp->GetRemoteCSRCs(0, csrcs);
   MARK();
-  TEST_MUSTPASS(n != 0); // should be empty
+  TEST_MUSTPASS(n != 0);  // should be empty
   ANL();
 
   TEST(SetRTPObserver);
@@ -4512,7 +4563,7 @@ int VoEExtendedTest::TestRTP_RTCP() {
   TEST_MUSTPASS(rtp_rtcp->RegisterRTPObserver(0, rtpObserver));
   TEST_MUSTPASS(rtp_rtcp->DeRegisterRTPObserver(0));
   TEST_MUSTPASS(rtp_rtcp->RegisterRTPObserver(0, rtpObserver));
-  TEST_MUSTPASS(rtp_rtcp->SetLocalSSRC(0, 7777)); // force send SSRC to 7777
+  TEST_MUSTPASS(rtp_rtcp->SetLocalSSRC(0, 7777));  // force send SSRC to 7777
   TEST_MUSTPASS(voe_base_->StartSend(0));
   SleepMs(sleepTime);
   // verify that the new SSRC has been detected by the observer
@@ -4539,8 +4590,8 @@ int VoEExtendedTest::TestRTP_RTCP() {
   TEST_MUSTPASS(voe_base_->StartReceive(0));
   TEST_MUSTPASS(voe_base_->StartSend(0));
   TEST_MUSTPASS(voe_base_->StartPlayout(0));
-  TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, _mgr.AudioFilename(),
-          true, true));
+  TEST_MUSTPASS(
+      file->StartPlayingFileAsMicrophone(0, _mgr.AudioFilename(), true, true));
 
   SleepMs(8000);
 
@@ -4550,43 +4601,72 @@ int VoEExtendedTest::TestRTP_RTCP() {
   unsigned int NTPHigh(0), NTPLow(0), timestamp(0), playoutTimestamp(0),
       jitter(0);
   unsigned short fractionLost(0);
-  TEST_MUSTPASS(rtp_rtcp->GetRemoteRTCPData(0, NTPHigh, NTPLow,
-          timestamp, playoutTimestamp));
-  TEST_LOG("\n    NTPHigh = %u \n    NTPLow = %u \n    timestamp = %u \n  "
-    "  playoutTimestamp = %u \n    jitter = %u \n    fractionLost = %hu \n",
-    NTPHigh, NTPLow, timestamp, playoutTimestamp, jitter, fractionLost);
+  TEST_MUSTPASS(rtp_rtcp->GetRemoteRTCPData(
+      0, NTPHigh, NTPLow, timestamp, playoutTimestamp));
+  TEST_LOG(
+      "\n    NTPHigh = %u \n    NTPLow = %u \n    timestamp = %u \n  "
+      "  playoutTimestamp = %u \n    jitter = %u \n    fractionLost = %hu \n",
+      NTPHigh,
+      NTPLow,
+      timestamp,
+      playoutTimestamp,
+      jitter,
+      fractionLost);
 
   unsigned int NTPHigh2(0), NTPLow2(0), timestamp2(0);
   unsigned int playoutTimestamp2(0), jitter2(0);
   unsigned short fractionLost2(0);
 
-  TEST_LOG("take a new sample and ensure that the playout timestamp is "
-    "maintained");
+  TEST_LOG(
+      "take a new sample and ensure that the playout timestamp is "
+      "maintained");
   SleepMs(100);
-  TEST_MUSTPASS(rtp_rtcp->GetRemoteRTCPData(0, NTPHigh2, NTPLow2, timestamp2,
-          playoutTimestamp2, &jitter2,
-          &fractionLost2));
-  TEST_LOG("\n    NTPHigh = %u \n    NTPLow = %u \n    timestamp = %u \n  "
-    "  playoutTimestamp = %u \n    jitter = %u \n    fractionLost = %hu \n",
-    NTPHigh2, NTPLow2, timestamp2, playoutTimestamp2, jitter2, fractionLost2);
+  TEST_MUSTPASS(rtp_rtcp->GetRemoteRTCPData(0,
+                                            NTPHigh2,
+                                            NTPLow2,
+                                            timestamp2,
+                                            playoutTimestamp2,
+                                            &jitter2,
+                                            &fractionLost2));
+  TEST_LOG(
+      "\n    NTPHigh = %u \n    NTPLow = %u \n    timestamp = %u \n  "
+      "  playoutTimestamp = %u \n    jitter = %u \n    fractionLost = %hu \n",
+      NTPHigh2,
+      NTPLow2,
+      timestamp2,
+      playoutTimestamp2,
+      jitter2,
+      fractionLost2);
   TEST_MUSTPASS(playoutTimestamp != playoutTimestamp2);
 
-  TEST_LOG("wait for 8 seconds and ensure that the RTCP statistics is"
-    " updated...");
+  TEST_LOG(
+      "wait for 8 seconds and ensure that the RTCP statistics is"
+      " updated...");
   SleepMs(8000);
-  TEST_MUSTPASS(rtp_rtcp->GetRemoteRTCPData(0, NTPHigh2, NTPLow2,
-          timestamp2, playoutTimestamp2,
-          &jitter2, &fractionLost2));
-  TEST_LOG("\n    NTPHigh = %u \n    NTPLow = %u \n    timestamp = %u \n  "
-    "  playoutTimestamp = %u \n    jitter = %u \n    fractionLost = %hu \n",
-    NTPHigh2, NTPLow2, timestamp2, playoutTimestamp2, jitter2, fractionLost2);
+  TEST_MUSTPASS(rtp_rtcp->GetRemoteRTCPData(0,
+                                            NTPHigh2,
+                                            NTPLow2,
+                                            timestamp2,
+                                            playoutTimestamp2,
+                                            &jitter2,
+                                            &fractionLost2));
+  TEST_LOG(
+      "\n    NTPHigh = %u \n    NTPLow = %u \n    timestamp = %u \n  "
+      "  playoutTimestamp = %u \n    jitter = %u \n    fractionLost = %hu \n",
+      NTPHigh2,
+      NTPLow2,
+      timestamp2,
+      playoutTimestamp2,
+      jitter2,
+      fractionLost2);
   TEST_MUSTPASS((NTPHigh == NTPHigh2) && (NTPLow == NTPLow2));
   TEST_MUSTPASS(timestamp == timestamp2);
   TEST_MUSTPASS(playoutTimestamp == playoutTimestamp2);
   CodecInst cinst;
 #ifdef WEBRTC_CODEC_RED
-  TEST_LOG("Turn FEC and VAD on and wait for 4 seconds and ensure that "
-    "the jitter is still small...");
+  TEST_LOG(
+      "Turn FEC and VAD on and wait for 4 seconds and ensure that "
+      "the jitter is still small...");
 #if (!defined(WEBRTC_IOS) && !defined(WEBRTC_ANDROID))
   cinst.pltype = 104;
   strcpy(cinst.plname, "isac");
@@ -4612,18 +4692,28 @@ int VoEExtendedTest::TestRTP_RTCP() {
   TEST_MUSTPASS(voe_base_->StartPlayout(0));
   TEST_MUSTPASS(rtp_rtcp->SetFECStatus(0, true, 126));
   MARK();
-  TEST_MUSTPASS(codec->SetVADStatus(0,true));
+  TEST_MUSTPASS(codec->SetVADStatus(0, true));
   SleepMs(4000);
-  TEST_MUSTPASS(rtp_rtcp->GetRemoteRTCPData(0, NTPHigh2, NTPLow2, timestamp2,
-          playoutTimestamp2, &jitter2,
-          &fractionLost2));
-  TEST_LOG("\n    NTPHigh = %u \n    NTPLow = %u \n    timestamp = %u \n "
-    "   playoutTimestamp = %u \n    jitter = %u \n   fractionLost = %hu \n",
-    NTPHigh2, NTPLow2, timestamp2, playoutTimestamp2, jitter2, fractionLost2);
+  TEST_MUSTPASS(rtp_rtcp->GetRemoteRTCPData(0,
+                                            NTPHigh2,
+                                            NTPLow2,
+                                            timestamp2,
+                                            playoutTimestamp2,
+                                            &jitter2,
+                                            &fractionLost2));
+  TEST_LOG(
+      "\n    NTPHigh = %u \n    NTPLow = %u \n    timestamp = %u \n "
+      "   playoutTimestamp = %u \n    jitter = %u \n   fractionLost = %hu \n",
+      NTPHigh2,
+      NTPLow2,
+      timestamp2,
+      playoutTimestamp2,
+      jitter2,
+      fractionLost2);
   TEST_MUSTPASS(jitter2 > 1000)
   TEST_MUSTPASS(rtp_rtcp->SetFECStatus(0, false));
   MARK();
-#endif // #ifdef WEBRTC_CODEC_RED
+#endif  // #ifdef WEBRTC_CODEC_RED
 
   TEST(GetRTPStatistics);
   ANL();
@@ -4634,12 +4724,15 @@ int VoEExtendedTest::TestRTP_RTCP() {
   unsigned int averageJitterMs, maxJitterMs, discardedPackets;
   SleepMs(1000);
   for (i = 0; i < 8; i++) {
-    TEST_MUSTPASS(rtp_rtcp->GetRTPStatistics(0, averageJitterMs,
-            maxJitterMs,
-            discardedPackets));
-    TEST_LOG("    %i) averageJitterMs = %u \n    maxJitterMs = %u \n  "
-      "  discardedPackets = %u \n", i, averageJitterMs, maxJitterMs,
-      discardedPackets);
+    TEST_MUSTPASS(rtp_rtcp->GetRTPStatistics(
+        0, averageJitterMs, maxJitterMs, discardedPackets));
+    TEST_LOG(
+        "    %i) averageJitterMs = %u \n    maxJitterMs = %u \n  "
+        "  discardedPackets = %u \n",
+        i,
+        averageJitterMs,
+        maxJitterMs,
+        discardedPackets);
     SleepMs(1000);
   }
 
@@ -4647,19 +4740,25 @@ int VoEExtendedTest::TestRTP_RTCP() {
   ANL();
   unsigned int packetsSent(0);
   unsigned int packetsReceived(0);
-  for (i = 0; i < 8; i++)
-  {
+  for (i = 0; i < 8; i++) {
     TEST_MUSTPASS(rtp_rtcp->GetRTCPStatistics(0, stats));
-    TEST_LOG("    %i) fractionLost = %hu \n    cumulativeLost = %u \n  "
+    TEST_LOG(
+        "    %i) fractionLost = %hu \n    cumulativeLost = %u \n  "
         "  extendedMax = %u \n    jitterSamples = %u \n    rttMs = %d \n",
-        i, stats.fractionLost, stats.cumulativeLost,
-        stats.extendedMax, stats.jitterSamples, stats.rttMs);
-    TEST_LOG( "    bytesSent = %d \n    packetsSent = %d \n   "
+        i,
+        stats.fractionLost,
+        stats.cumulativeLost,
+        stats.extendedMax,
+        stats.jitterSamples,
+        stats.rttMs);
+    TEST_LOG(
+        "    bytesSent = %d \n    packetsSent = %d \n   "
         " bytesReceived = %d \n    packetsReceived = %d \n",
-        stats.bytesSent, stats.packetsSent, stats.bytesReceived,
+        stats.bytesSent,
+        stats.packetsSent,
+        stats.bytesReceived,
         stats.packetsReceived);
-    if (i > 0)
-    {
+    if (i > 0) {
       TEST_LOG("    diff sent packets    : %u (~50)\n",
                stats.packetsSent - packetsSent);
       TEST_LOG("    diff received packets: %u (~50)\n",
@@ -4675,15 +4774,22 @@ int VoEExtendedTest::TestRTP_RTCP() {
   TEST_LOG("restart sending and ensure that the statistics is reset");
   TEST_MUSTPASS(voe_base_->StopSend(0));
   TEST_MUSTPASS(voe_base_->StartSend(0));
-  SleepMs(50); // ensures approx. two received packets
+  SleepMs(50);  // ensures approx. two received packets
   TEST_MUSTPASS(rtp_rtcp->GetRTCPStatistics(0, stats));
-  TEST_LOG("\n    fractionLost = %hu \n    cumulativeLost = %u \n  "
+  TEST_LOG(
+      "\n    fractionLost = %hu \n    cumulativeLost = %u \n  "
       "  extendedMax = %u \n    jitterSamples = %u \n    rttMs = %d \n",
-      stats.fractionLost, stats.cumulativeLost,
-      stats.extendedMax, stats.jitterSamples, stats.rttMs);
-  TEST_LOG( "    bytesSent = %d \n    packetsSent = %d \n   "
+      stats.fractionLost,
+      stats.cumulativeLost,
+      stats.extendedMax,
+      stats.jitterSamples,
+      stats.rttMs);
+  TEST_LOG(
+      "    bytesSent = %d \n    packetsSent = %d \n   "
       " bytesReceived = %d \n    packetsReceived = %d \n",
-      stats.bytesSent, stats.packetsSent, stats.bytesReceived,
+      stats.bytesSent,
+      stats.packetsSent,
+      stats.bytesReceived,
       stats.packetsReceived);
 
   TEST(RTCPStatistics #3);
@@ -4692,14 +4798,21 @@ int VoEExtendedTest::TestRTP_RTCP() {
   TEST_MUSTPASS(rtp_rtcp->SetRTCPStatus(0, false));
   SleepMs(250);
   TEST_MUSTPASS(rtp_rtcp->GetRTCPStatistics(0, stats));
-  TEST_LOG("\n    fractionLost = %hu \n    cumulativeLost = %u \n   "
+  TEST_LOG(
+      "\n    fractionLost = %hu \n    cumulativeLost = %u \n   "
       " extendedMax = %u \n    jitterSamples = %u \n    rttMs = %d \n",
-      stats.fractionLost, stats.cumulativeLost,
-      stats.extendedMax, stats.jitterSamples, stats.rttMs);
-  TEST_LOG("    bytesSent = %d \n    packetsSent = %d \n    "
+      stats.fractionLost,
+      stats.cumulativeLost,
+      stats.extendedMax,
+      stats.jitterSamples,
+      stats.rttMs);
+  TEST_LOG(
+      "    bytesSent = %d \n    packetsSent = %d \n    "
       "bytesReceived = %d \n    packetsReceived = %d \n",
-      stats.bytesSent, stats.packetsSent,
-      stats.bytesReceived, stats.packetsReceived);
+      stats.bytesSent,
+      stats.packetsSent,
+      stats.bytesReceived,
+      stats.packetsReceived);
   TEST_MUSTPASS(rtp_rtcp->SetRTCPStatus(0, true));
 
   TEST(RTCPStatistics #4);
@@ -4707,24 +4820,30 @@ int VoEExtendedTest::TestRTP_RTCP() {
   TEST_LOG("restart receiving and check RX statistics");
   TEST_MUSTPASS(voe_base_->StopReceive(0));
   TEST_MUSTPASS(voe_base_->StartReceive(0));
-  SleepMs(50); // ensures approx. two received packets
+  SleepMs(50);  // ensures approx. two received packets
   TEST_MUSTPASS(rtp_rtcp->GetRTCPStatistics(0, stats));
-  TEST_LOG("\n    fractionLost = %hu \n    cumulativeLost = %u \n   "
+  TEST_LOG(
+      "\n    fractionLost = %hu \n    cumulativeLost = %u \n   "
       " extendedMax = %u \n    jitterSamples = %u \n    rttMs = %d \n",
-      stats.fractionLost, stats.cumulativeLost,
-      stats.extendedMax, stats.jitterSamples,
+      stats.fractionLost,
+      stats.cumulativeLost,
+      stats.extendedMax,
+      stats.jitterSamples,
       stats.rttMs);
-  TEST_LOG("    bytesSent = %d \n    packetsSent = %d \n   "
+  TEST_LOG(
+      "    bytesSent = %d \n    packetsSent = %d \n   "
       " bytesReceived = %d \n    packetsReceived = %d \n",
-      stats.bytesSent, stats.packetsSent,
-      stats.bytesReceived, stats.packetsReceived);
+      stats.bytesSent,
+      stats.packetsSent,
+      stats.bytesReceived,
+      stats.packetsReceived);
 
   TEST(SendApplicationDefinedRTCPPacket);
   // just do some fail tests here
   TEST_MUSTPASS(voe_base_->StopSend(0));
   // should fail since sending is off
   TEST_MUSTPASS(!rtp_rtcp->SendApplicationDefinedRTCPPacket(
-      0, 0, 0, "abcdabcdabcdabcdabcdabcdabcdabcd", 32));
+                     0, 0, 0, "abcdabcdabcdabcdabcdabcdabcdabcd", 32));
   MARK();
   TEST_MUSTPASS(voe_base_->StartSend(0));
   TEST_MUSTPASS(rtp_rtcp->SendApplicationDefinedRTCPPacket(
@@ -4733,7 +4852,7 @@ int VoEExtendedTest::TestRTP_RTCP() {
   TEST_MUSTPASS(rtp_rtcp->SetRTCPStatus(0, false));
   // should fail since RTCP is off
   TEST_MUSTPASS(!rtp_rtcp->SendApplicationDefinedRTCPPacket(
-      0, 0, 0, "abcdabcdabcdabcdabcdabcdabcdabcd", 32));
+                     0, 0, 0, "abcdabcdabcdabcdabcdabcdabcdabcd", 32));
   MARK();
   TEST_MUSTPASS(rtp_rtcp->SetRTCPStatus(0, true));
   TEST_MUSTPASS(rtp_rtcp->SendApplicationDefinedRTCPPacket(
@@ -4741,7 +4860,7 @@ int VoEExtendedTest::TestRTP_RTCP() {
   MARK();
   // invalid data length
   TEST_MUSTPASS(!rtp_rtcp->SendApplicationDefinedRTCPPacket(
-      0, 0, 0, "abcdabcdabcdabcdabcdabcdabcdabc", 31));
+                     0, 0, 0, "abcdabcdabcdabcdabcdabcdabcdabc", 31));
   MARK();
   // invalid data vector
   TEST_MUSTPASS(!rtp_rtcp->SendApplicationDefinedRTCPPacket(0, 0, 0, NULL, 0));
@@ -4789,15 +4908,15 @@ int VoEExtendedTest::TestRTP_RTCP() {
   TEST_MUSTPASS(voe_base_->StartReceive(0));
   TEST_MUSTPASS(voe_base_->StartSend(0));
   TEST_LOG("Start playing a file as microphone again \n");
-  TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, _mgr.AudioFilename(),
-                                                   true, true));
+  TEST_MUSTPASS(
+      file->StartPlayingFileAsMicrophone(0, _mgr.AudioFilename(), true, true));
   TEST_MUSTPASS(rtp_rtcp->SetFECStatus(0, true, 126));
   MARK();
   TEST_LOG("Should sound OK with FEC enabled\n");
   SleepMs(4000);
   TEST_MUSTPASS(rtp_rtcp->SetFECStatus(0, false));
   MARK();
-#endif // #ifdef WEBRTC_CODEC_RED
+#endif  // #ifdef WEBRTC_CODEC_RED
   TEST_MUSTPASS(file->StopPlayingFileAsMicrophone(0));
   TEST_MUSTPASS(voe_base_->StopSend(0));
   TEST_MUSTPASS(voe_base_->StopPlayout(0));
@@ -4814,8 +4933,7 @@ int VoEExtendedTest::TestRTP_RTCP() {
 //  VoEExtendedTest::TestVideoSync
 // ----------------------------------------------------------------------------
 
-int VoEExtendedTest::TestVideoSync()
-{
+int VoEExtendedTest::TestVideoSync() {
   PrepareTest("VideoSync");
 
   VoEBase* voe_base_ = _mgr.BasePtr();
@@ -4823,23 +4941,17 @@ int VoEExtendedTest::TestVideoSync()
   VoENetwork* network = _mgr.NetworkPtr();
 
   // check if this interface is supported
-  if (!vsync)
-  {
+  if (!vsync) {
     TEST_LOG("VoEVideoSync is not supported!");
     return -1;
   }
 
 #ifdef _USE_EXTENDED_TRACE_
-  TEST_MUSTPASS(VoiceEngine::SetTraceFile((output_path +
-      "VoEVideoSync_trace.txt").c_str()));
-  TEST_MUSTPASS(VoiceEngine::SetTraceFilter(kTraceStateInfo |
-                                            kTraceStateInfo |
-                                            kTraceWarning |
-                                            kTraceError |
-                                            kTraceCritical |
-                                            kTraceApiCall |
-                                            kTraceMemory |
-                                            kTraceInfo));
+  TEST_MUSTPASS(VoiceEngine::SetTraceFile(
+      (output_path + "VoEVideoSync_trace.txt").c_str()));
+  TEST_MUSTPASS(VoiceEngine::SetTraceFilter(
+      kTraceStateInfo | kTraceStateInfo | kTraceWarning | kTraceError |
+      kTraceCritical | kTraceApiCall | kTraceMemory | kTraceInfo));
 #endif
 
   TEST_MUSTPASS(voe_base_->Init());
@@ -4922,8 +5034,7 @@ int VoEExtendedTest::TestVideoSync()
 //  VoEExtendedTest::TestVolumeControl
 // ----------------------------------------------------------------------------
 
-int VoEExtendedTest::TestVolumeControl()
-{
+int VoEExtendedTest::TestVolumeControl() {
   PrepareTest("TestVolumeControl");
 
   VoEBase* voe_base_ = _mgr.BasePtr();
@@ -4939,14 +5050,9 @@ int VoEExtendedTest::TestVolumeControl()
 #ifdef _USE_EXTENDED_TRACE_
   TEST_MUSTPASS(VoiceEngine::SetTraceFile(
       (output_path + "VoEVolumeControl_trace.txt").c_str()));
-  TEST_MUSTPASS(VoiceEngine::SetTraceFilter(kTraceStateInfo |
-                                            kTraceStateInfo |
-                                            kTraceWarning |
-                                            kTraceError |
-                                            kTraceCritical |
-                                            kTraceApiCall |
-                                            kTraceMemory |
-                                            kTraceInfo));
+  TEST_MUSTPASS(VoiceEngine::SetTraceFilter(
+      kTraceStateInfo | kTraceStateInfo | kTraceWarning | kTraceError |
+      kTraceCritical | kTraceApiCall | kTraceMemory | kTraceInfo));
 #endif
 
   TEST_MUSTPASS(voe_base_->Init());
@@ -4968,12 +5074,12 @@ int VoEExtendedTest::TestVolumeControl()
   TEST_MUSTPASS(voe_base_->StartPlayout(0));
   TEST_MUSTPASS(voe_base_->StartSend(0));
 #ifdef _TEST_FILE_
-  TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, _mgr.AudioFilename(),
-                                                   true, true));
+  TEST_MUSTPASS(
+      file->StartPlayingFileAsMicrophone(0, _mgr.AudioFilename(), true, true));
 #endif
 
-  ////////////////////////////
-  // Actual test starts here
+////////////////////////////
+// Actual test starts here
 
 #if !defined(WEBRTC_IOS)
   TEST(SetSpeakerVolume);
@@ -4982,14 +5088,16 @@ int VoEExtendedTest::TestVolumeControl()
   MARK();
   TEST_MUSTPASS(VE_INVALID_ARGUMENT != voe_base_->LastError());
   ANL();
-#endif // #if !defined(WEBRTC_IOS)
+#endif  // #if !defined(WEBRTC_IOS)
 
 #if (!defined(WEBRTC_IOS) && !defined(WEBRTC_ANDROID))
-  TEST(SetMicVolume); ANL();
-  TEST_MUSTPASS(-1 != volume->SetMicVolume(256)); MARK();
+  TEST(SetMicVolume);
+  ANL();
+  TEST_MUSTPASS(-1 != volume->SetMicVolume(256));
+  MARK();
   TEST_MUSTPASS(VE_INVALID_ARGUMENT != voe_base_->LastError());
   ANL();
-#endif // #if (!defined(WEBRTC_IOS) && !defined(WEBRTC_ANDROID))
+#endif  // #if (!defined(WEBRTC_IOS) && !defined(WEBRTC_ANDROID))
 
 #if !defined(WEBRTC_IOS)
   TEST(SetChannelOutputVolumeScaling);
@@ -5001,48 +5109,40 @@ int VoEExtendedTest::TestVolumeControl()
   MARK();
   TEST_MUSTPASS(VE_INVALID_ARGUMENT != voe_base_->LastError());
   ANL();
-#endif // #if !defined(WEBRTC_IOS)
+#endif  // #if !defined(WEBRTC_IOS)
 #if (!defined(WEBRTC_IOS) && !defined(WEBRTC_ANDROID))
   TEST(SetOutputVolumePan);
   ANL();
-  TEST_MUSTPASS(-1 != volume->SetOutputVolumePan(-1, (float)-0.1,
-                                                 (float)1.0));
+  TEST_MUSTPASS(-1 != volume->SetOutputVolumePan(-1, (float)-0.1, (float)1.0));
   MARK();
   TEST_MUSTPASS(VE_INVALID_ARGUMENT != voe_base_->LastError());
-  TEST_MUSTPASS(-1 != volume->SetOutputVolumePan(-1, (float)1.1,
-                                                 (float)1.0));
+  TEST_MUSTPASS(-1 != volume->SetOutputVolumePan(-1, (float)1.1, (float)1.0));
   MARK();
   TEST_MUSTPASS(VE_INVALID_ARGUMENT != voe_base_->LastError());
-  TEST_MUSTPASS(-1 != volume->SetOutputVolumePan(-1, (float)1.0,
-                                                 (float)-0.1));
+  TEST_MUSTPASS(-1 != volume->SetOutputVolumePan(-1, (float)1.0, (float)-0.1));
   MARK();
   TEST_MUSTPASS(VE_INVALID_ARGUMENT != voe_base_->LastError());
-  TEST_MUSTPASS(-1 != volume->SetOutputVolumePan(-1, (float)1.0,
-                                                 (float)1.1));
+  TEST_MUSTPASS(-1 != volume->SetOutputVolumePan(-1, (float)1.0, (float)1.1));
   MARK();
   TEST_MUSTPASS(VE_INVALID_ARGUMENT != voe_base_->LastError());
   ANL();
 
   TEST(SetChannelOutputVolumePan);
   ANL();
-  TEST_MUSTPASS(-1 != volume->SetOutputVolumePan(0, (float)-0.1,
-                                                 (float)1.0));
+  TEST_MUSTPASS(-1 != volume->SetOutputVolumePan(0, (float)-0.1, (float)1.0));
   MARK();
   TEST_MUSTPASS(VE_INVALID_ARGUMENT != voe_base_->LastError());
-  TEST_MUSTPASS(-1 != volume->SetOutputVolumePan(0, (float)1.1,
-                                                 (float)1.0));
+  TEST_MUSTPASS(-1 != volume->SetOutputVolumePan(0, (float)1.1, (float)1.0));
   MARK();
   TEST_MUSTPASS(VE_INVALID_ARGUMENT != voe_base_->LastError());
-  TEST_MUSTPASS(-1 != volume->SetOutputVolumePan(0, (float)1.0,
-                                                 (float)-0.1));
+  TEST_MUSTPASS(-1 != volume->SetOutputVolumePan(0, (float)1.0, (float)-0.1));
   MARK();
   TEST_MUSTPASS(VE_INVALID_ARGUMENT != voe_base_->LastError());
-  TEST_MUSTPASS(-1 != volume->SetOutputVolumePan(0, (float)1.0,
-                                                 (float)1.1));
+  TEST_MUSTPASS(-1 != volume->SetOutputVolumePan(0, (float)1.0, (float)1.1));
   MARK();
   TEST_MUSTPASS(VE_INVALID_ARGUMENT != voe_base_->LastError());
   ANL();
-#endif // #if (!defined(WEBRTC_IOS) && !defined(WEBRTC_ANDROID))
+#endif  // #if (!defined(WEBRTC_IOS) && !defined(WEBRTC_ANDROID))
 #ifdef _TEST_FILE_
   TEST_MUSTPASS(file->StopPlayingFileAsMicrophone(0));
 #endif
