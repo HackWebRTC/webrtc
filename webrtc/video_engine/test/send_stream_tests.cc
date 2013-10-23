@@ -8,15 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/video_engine/internal/transport_adapter.h"
 #include "webrtc/video_engine/new_include/call.h"
+#include "webrtc/video_engine/new_include/frame_callback.h"
 #include "webrtc/video_engine/new_include/video_send_stream.h"
 #include "webrtc/video_engine/test/common/direct_transport.h"
 #include "webrtc/video_engine/test/common/fake_encoder.h"
@@ -178,7 +181,7 @@ TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
   static const uint8_t kTOffsetExtensionId = 13;
   class DelayedEncoder : public test::FakeEncoder {
    public:
-    DelayedEncoder(Clock* clock) : test::FakeEncoder(clock) {}
+    explicit DelayedEncoder(Clock* clock) : test::FakeEncoder(clock) {}
     virtual int32_t Encode(
         const I420VideoFrame& input_image,
         const CodecSpecificInfo* codec_specific_info,
@@ -220,12 +223,12 @@ TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
   RunSendTest(call.get(), send_config, &observer);
 }
 
-class LossyReceiveStatistics : public NullReceiveStatistics {
+class FakeReceiveStatistics : public NullReceiveStatistics {
  public:
-  LossyReceiveStatistics(uint32_t send_ssrc,
-                         uint32_t last_sequence_number,
-                         uint32_t cumulative_lost,
-                         uint8_t fraction_lost)
+  FakeReceiveStatistics(uint32_t send_ssrc,
+                        uint32_t last_sequence_number,
+                        uint32_t cumulative_lost,
+                        uint8_t fraction_lost)
       : lossy_stats_(new LossyStatistician(last_sequence_number,
                                            cumulative_lost,
                                            fraction_lost)) {
@@ -300,7 +303,7 @@ TEST_F(VideoSendStreamTest, SupportsFec) {
       // Send lossy receive reports to trigger FEC enabling.
       if (send_count_++ % 2 != 0) {
         // Receive statistics reporting having lost 50% of the packets.
-        LossyReceiveStatistics lossy_receive_stats(
+        FakeReceiveStatistics lossy_receive_stats(
             kSendSsrc, header.sequenceNumber, send_count_ / 2, 127);
         RTCPSender rtcp_sender(
             0, false, Clock::GetRealTimeClock(), &lossy_receive_stats);
@@ -353,7 +356,7 @@ TEST_F(VideoSendStreamTest, SupportsFec) {
 void VideoSendStreamTest::TestNackRetransmission(uint32_t retransmit_ssrc) {
   class NackObserver : public SendTransportObserver {
    public:
-    NackObserver(uint32_t retransmit_ssrc)
+    explicit NackObserver(uint32_t retransmit_ssrc)
         : SendTransportObserver(30 * 1000),
           transport_adapter_(&transport_),
           send_count_(0),
@@ -402,6 +405,7 @@ void VideoSendStreamTest::TestNackRetransmission(uint32_t retransmit_ssrc) {
 
       return true;
     }
+
    private:
     internal::TransportAdapter transport_adapter_;
     test::DirectTransport transport_;
@@ -473,6 +477,124 @@ TEST_F(VideoSendStreamTest, MaxPacketSize) {
 
   VideoSendStream::Config send_config = GetSendTestConfig(call.get());
   send_config.rtp.max_packet_size = kMaxPacketSize;
+
+  RunSendTest(call.get(), send_config, &observer);
+}
+
+// The test will go through a number of phases.
+// 1. Start sending packets.
+// 2. As soon as the RTP stream has been detected, signal a low REMB value to
+//    activate the auto muter.
+// 3. Wait until |kMuteTimeFrames| have been captured without seeing any RTP
+//    packets.
+// 4. Signal a high REMB and the wait for the RTP stream to start again.
+//    When the stream is detected again, the test ends.
+TEST_F(VideoSendStreamTest, AutoMute) {
+  static const int kMuteTimeFrames = 60;  // Mute for 2 seconds @ 30 fps.
+  static const int kMuteThresholdBps = 70000;
+  static const int kMuteWindowBps = 10000;
+  // Let the low REMB value be 10 kbps lower than the muter threshold, and the
+  // high REMB value be 5 kbps higher than the re-enabling threshold.
+  static const int kLowRembBps = kMuteThresholdBps - 10000;
+  static const int kHighRembBps = kMuteThresholdBps + kMuteWindowBps + 5000;
+
+  class RembObserver : public SendTransportObserver, public I420FrameCallback {
+   public:
+    RembObserver()
+        : SendTransportObserver(30 * 1000),  // Timeout after 30 seconds.
+          transport_adapter_(&transport_),
+          clock_(Clock::GetRealTimeClock()),
+          test_state_(kBeforeMute),
+          rtp_count_(0),
+          last_sequence_number_(0),
+          mute_frame_count_(0),
+          crit_sect_(CriticalSectionWrapper::CreateCriticalSection()) {}
+
+    void SetReceiver(PacketReceiver* receiver) {
+      transport_.SetReceiver(receiver);
+    }
+
+    virtual bool SendRTCP(const uint8_t* packet, size_t length) OVERRIDE {
+      // Receive statistics reporting having lost 0% of the packets.
+      // This is needed for the send-side bitrate controller to work properly.
+      CriticalSectionScoped lock(crit_sect_.get());
+      SendRtcpFeedback(0);  // REMB is only sent if value is > 0.
+      return true;
+    }
+
+    virtual bool SendRTP(const uint8_t* packet, size_t length) OVERRIDE {
+      CriticalSectionScoped lock(crit_sect_.get());
+      ++rtp_count_;
+      RTPHeader header;
+      EXPECT_TRUE(
+          rtp_header_parser_->Parse(packet, static_cast<int>(length), &header));
+      last_sequence_number_ = header.sequenceNumber;
+
+      if (test_state_ == kBeforeMute) {
+        // The stream has started. Try to mute it.
+        SendRtcpFeedback(kLowRembBps);
+        test_state_ = kDuringMute;
+      } else if (test_state_ == kDuringMute) {
+        mute_frame_count_ = 0;
+      } else if (test_state_ == kWaitingForPacket) {
+        send_test_complete_->Set();
+      }
+
+      return true;
+    }
+
+    // This method implements the I420FrameCallback.
+    void FrameCallback(I420VideoFrame* video_frame) OVERRIDE {
+      CriticalSectionScoped lock(crit_sect_.get());
+      if (test_state_ == kDuringMute && ++mute_frame_count_ > kMuteTimeFrames) {
+        SendRtcpFeedback(kHighRembBps);
+        test_state_ = kWaitingForPacket;
+      }
+    }
+
+   private:
+    enum TestState {
+      kBeforeMute,
+      kDuringMute,
+      kWaitingForPacket,
+      kAfterMute
+    };
+
+    virtual void SendRtcpFeedback(int remb_value) {
+      FakeReceiveStatistics receive_stats(
+          kSendSsrc, last_sequence_number_, rtp_count_, 0);
+      RTCPSender rtcp_sender(0, false, clock_, &receive_stats);
+      EXPECT_EQ(0, rtcp_sender.RegisterSendTransport(&transport_adapter_));
+
+      rtcp_sender.SetRTCPStatus(kRtcpNonCompound);
+      rtcp_sender.SetRemoteSSRC(kSendSsrc);
+      if (remb_value > 0) {
+        rtcp_sender.SetREMBStatus(true);
+        rtcp_sender.SetREMBData(remb_value, 0, NULL);
+      }
+      RTCPSender::FeedbackState feedback_state;
+      EXPECT_EQ(0, rtcp_sender.SendRTCP(feedback_state, kRtcpRr));
+    }
+
+    internal::TransportAdapter transport_adapter_;
+    test::DirectTransport transport_;
+    Clock* clock_;
+    TestState test_state_;
+    int rtp_count_;
+    int last_sequence_number_;
+    int mute_frame_count_;
+    scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  } observer;
+
+  Call::Config call_config(&observer);
+  scoped_ptr<Call> call(Call::Create(call_config));
+  observer.SetReceiver(call->Receiver());
+
+  VideoSendStream::Config send_config = GetSendTestConfig(call.get());
+  send_config.rtp.nack.rtp_history_ms = 1000;
+  send_config.auto_muter.threshold_bps = kMuteThresholdBps;
+  send_config.auto_muter.window_bps = kMuteWindowBps;
+  send_config.pre_encode_callback = &observer;
 
   RunSendTest(call.get(), send_config, &observer);
 }

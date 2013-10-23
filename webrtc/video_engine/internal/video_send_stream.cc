@@ -12,6 +12,7 @@
 
 #include <string.h>
 
+#include <string>
 #include <vector>
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
@@ -195,6 +196,13 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
   image_process_ = ViEImageProcess::GetInterface(video_engine);
   image_process_->RegisterPreEncodeCallback(channel_,
                                             config_.pre_encode_callback);
+
+  if (config.auto_muter.threshold_bps > 0) {
+    assert(config.auto_muter.window_bps >= 0);
+    codec_->EnableAutoMuting(channel_,
+                             config.auto_muter.threshold_bps,
+                             config.auto_muter.window_bps);
+  }
 }
 
 VideoSendStream::~VideoSendStream() {

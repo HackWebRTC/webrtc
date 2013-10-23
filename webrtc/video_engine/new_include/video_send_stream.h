@@ -146,6 +146,16 @@ class VideoSendStream {
 
     // Set to resume a previously destroyed send stream.
     SendStreamState* start_state;
+
+    // Parameters for auto muter. If threshold_bps > 0, video will be muted when
+    // the bandwidth estimate drops below this limit, and enabled again when the
+    // bandwidth estimate goes above threshold_bps + window_bps. Setting the
+    // threshold to zero disables the auto muter.
+    struct AutoMuter {
+      AutoMuter() : threshold_bps(0), window_bps(0) {}
+      int threshold_bps;
+      int window_bps;
+    } auto_muter;
   };
 
   // Gets interface used to insert captured frames. Valid as long as the

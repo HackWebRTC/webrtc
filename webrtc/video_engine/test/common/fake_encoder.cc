@@ -100,9 +100,8 @@ int32_t FakeEncoder::Encode(
     int stream_bits = (bits_available > max_stream_bits) ? max_stream_bits :
         bits_available;
     int stream_bytes = (stream_bits + 7) / 8;
-    EXPECT_LT(static_cast<size_t>(stream_bytes), sizeof(encoded_buffer_));
     if (static_cast<size_t>(stream_bytes) > sizeof(encoded_buffer_))
-      return -1;
+      stream_bytes = sizeof(encoded_buffer_);
 
     EncodedImage encoded(
         encoded_buffer_, stream_bytes, sizeof(encoded_buffer_));
