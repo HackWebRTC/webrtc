@@ -76,26 +76,56 @@ class RtcpBandwidthObserverImpl : public RtcpBandwidthObserver {
   BitrateControllerImpl* owner_;
 };
 
-class BitrateControllerEnforceMinRate : public BitrateControllerImpl {
- private:
+class LowRateStrategy {
+ public:
+  LowRateStrategy(
+      SendSideBandwidthEstimation* bandwidth_estimation,
+      BitrateControllerImpl::BitrateObserverConfList* bitrate_observers)
+      : bandwidth_estimation_(bandwidth_estimation),
+        bitrate_observers_(bitrate_observers) {}
+
+  virtual ~LowRateStrategy() {}
+
+  virtual void LowRateAllocation(uint32_t bitrate,
+                                 uint8_t fraction_loss,
+                                 uint32_t rtt,
+                                 uint32_t sum_min_bitrates) = 0;
+
+ protected:
+  SendSideBandwidthEstimation* bandwidth_estimation_;
+  BitrateControllerImpl::BitrateObserverConfList* bitrate_observers_;
+};
+
+class EnforceMinRateStrategy : public LowRateStrategy {
+ public:
+  EnforceMinRateStrategy(
+      SendSideBandwidthEstimation* bandwidth_estimation,
+      BitrateControllerImpl::BitrateObserverConfList* bitrate_observers)
+      : LowRateStrategy(bandwidth_estimation, bitrate_observers) {}
+
   void LowRateAllocation(uint32_t bitrate,
                          uint8_t fraction_loss,
                          uint32_t rtt,
                          uint32_t sum_min_bitrates) {
     // Min bitrate to all observers.
-    BitrateObserverConfList::iterator it;
-    for (it = bitrate_observers_.begin(); it != bitrate_observers_.end();
+    BitrateControllerImpl::BitrateObserverConfList::iterator it;
+    for (it = bitrate_observers_->begin(); it != bitrate_observers_->end();
         ++it) {
       it->first->OnNetworkChanged(it->second->min_bitrate_, fraction_loss,
                                   rtt);
     }
     // Set sum of min to current send bitrate.
-    bandwidth_estimation_.SetSendBitrate(sum_min_bitrates);
+    bandwidth_estimation_->SetSendBitrate(sum_min_bitrates);
   }
 };
 
-class BitrateControllerNoEnforceMinRate : public BitrateControllerImpl {
- private:
+class NoEnforceMinRateStrategy : public LowRateStrategy {
+ public:
+  NoEnforceMinRateStrategy(
+      SendSideBandwidthEstimation* bandwidth_estimation,
+      BitrateControllerImpl::BitrateObserverConfList* bitrate_observers)
+      : LowRateStrategy(bandwidth_estimation, bitrate_observers) {}
+
   void LowRateAllocation(uint32_t bitrate,
                          uint8_t fraction_loss,
                          uint32_t rtt,
@@ -103,29 +133,32 @@ class BitrateControllerNoEnforceMinRate : public BitrateControllerImpl {
     // Allocate up to |min_bitrate_| to one observer at a time, until
     // |bitrate| is depleted.
     uint32_t remainder = bitrate;
-    BitrateObserverConfList::iterator it;
-    for (it = bitrate_observers_.begin(); it != bitrate_observers_.end();
+    BitrateControllerImpl::BitrateObserverConfList::iterator it;
+    for (it = bitrate_observers_->begin(); it != bitrate_observers_->end();
         ++it) {
       uint32_t allocation = std::min(remainder, it->second->min_bitrate_);
       it->first->OnNetworkChanged(allocation, fraction_loss, rtt);
       remainder -= allocation;
     }
     // Set |bitrate| to current send bitrate.
-    bandwidth_estimation_.SetSendBitrate(bitrate);
+    bandwidth_estimation_->SetSendBitrate(bitrate);
   }
 };
 
 BitrateController* BitrateController::CreateBitrateController(
     bool enforce_min_bitrate) {
-  if (enforce_min_bitrate) {
-    return new BitrateControllerEnforceMinRate();
-  } else {
-    return new BitrateControllerNoEnforceMinRate();
-  }
+  return new BitrateControllerImpl(enforce_min_bitrate);
 }
 
-BitrateControllerImpl::BitrateControllerImpl()
+BitrateControllerImpl::BitrateControllerImpl(bool enforce_min_bitrate)
     : critsect_(CriticalSectionWrapper::CreateCriticalSection()) {
+  if (enforce_min_bitrate) {
+    low_rate_strategy_.reset(new EnforceMinRateStrategy(
+        &bandwidth_estimation_, &bitrate_observers_));
+  } else {
+    low_rate_strategy_.reset(new NoEnforceMinRateStrategy(
+        &bandwidth_estimation_, &bitrate_observers_));
+  }
 }
 
 BitrateControllerImpl::~BitrateControllerImpl() {
@@ -205,6 +238,17 @@ void BitrateControllerImpl::RemoveBitrateObserver(BitrateObserver* observer) {
   }
 }
 
+void BitrateControllerImpl::EnforceMinBitrate(bool enforce_min_bitrate) {
+  CriticalSectionScoped cs(critsect_);
+  if (enforce_min_bitrate) {
+    low_rate_strategy_.reset(new EnforceMinRateStrategy(
+        &bandwidth_estimation_, &bitrate_observers_));
+  } else {
+    low_rate_strategy_.reset(new NoEnforceMinRateStrategy(
+        &bandwidth_estimation_, &bitrate_observers_));
+  }
+}
+
 void BitrateControllerImpl::OnReceivedEstimatedBitrate(const uint32_t bitrate) {
   uint32_t new_bitrate = 0;
   uint8_t fraction_lost = 0;
@@ -247,7 +291,8 @@ void BitrateControllerImpl::OnNetworkChanged(const uint32_t bitrate,
     sum_min_bitrates += it->second->min_bitrate_;
   }
   if (bitrate <= sum_min_bitrates) {
-    return LowRateAllocation(bitrate, fraction_loss, rtt, sum_min_bitrates);
+    return low_rate_strategy_->LowRateAllocation(bitrate, fraction_loss, rtt,
+                                                 sum_min_bitrates);
   }
   uint32_t bitrate_per_observer = (bitrate - sum_min_bitrates) /
       number_of_observers;

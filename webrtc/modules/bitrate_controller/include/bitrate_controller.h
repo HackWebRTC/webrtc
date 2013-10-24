@@ -70,6 +70,9 @@ class BitrateController {
                                   const uint32_t max_bitrate) = 0;
 
   virtual void RemoveBitrateObserver(BitrateObserver* observer) = 0;
+
+  // Changes the mode that was set in the constructor.
+  virtual void EnforceMinBitrate(bool enforce_min_bitrate) = 0;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_BITRATE_CONTROLLER_INCLUDE_BITRATE_CONTROLLER_H_
