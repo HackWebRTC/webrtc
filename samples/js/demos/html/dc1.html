@@ -72,21 +72,31 @@ function enableStartButton() {
   startButton.disabled = false;
 }
 
+function disableSendButton() {
+  sendButton.disabled = true;
+}
+
+rtp_select.onclick = sctp_select.onclick = function() {
+  dataChannelReceive.value = '';
+  dataChannelSend.value = '';
+  disableSendButton();
+  enableStartButton();
+};
+
 function createConnection() {
   dataChannelSendId.placeholder = "";
   var servers = null;
-  pcConstraint = {optional: [{RtpDataChannels: true}]};
-  dataConstraint = {reliable: false};
+  pcConstraint = null;
+  dataConstraint = null;
   if (sctp_select.checked &&
       webrtcDetectedBrowser === 'chrome' &&
       webrtcDetectedVersion >= 31) {
-    // SCTP is supported from Chrome M31. In current canary builds,
-    // you might need to enable it through flag #enable-sctp-data-channels.
-    // Use SCTP with reliable set to true.
-    pcConstraint = {optional: [{DtlsSrtpKeyAgreement: true}]};
-    dataConstraint = {reliable: true};
+    // SCTP is supported from Chrome M31.
+    // No need to pass DTLS constraint as it is on by default in Chrome M31.
+    // For SCTP, reliable and ordered is true by default.
     trace('Using SCTP based Data Channels');
   } else {
+    pcConstraint = {optional: [{RtpDataChannels: true}]};
     if (!rtp_select.checked) {
       // Use rtp data channels for chrome versions older than M31.
       trace('Using RTP based Data Channels,' +
