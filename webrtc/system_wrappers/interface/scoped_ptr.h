@@ -106,8 +106,8 @@
 
 #include "webrtc/system_wrappers/interface/compile_assert.h"
 #include "webrtc/system_wrappers/interface/constructor_magic.h"
-#include "webrtc/system_wrappers/interface/move.h"
 #include "webrtc/system_wrappers/interface/template_util.h"
+#include "webrtc/system_wrappers/source/move.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -302,7 +302,7 @@ class scoped_ptr_impl {
 // types.
 template <class T, class D = webrtc::DefaultDeleter<T> >
 class scoped_ptr {
-  MOVE_ONLY_TYPE_FOR_CPP_03(scoped_ptr, RValue)
+  WEBRTC_MOVE_ONLY_TYPE_FOR_CPP_03(scoped_ptr, RValue)
 
  public:
   // The element and deleter types.
@@ -436,7 +436,7 @@ class scoped_ptr {
 
 template <class T, class D>
 class scoped_ptr<T[], D> {
-  MOVE_ONLY_TYPE_FOR_CPP_03(scoped_ptr, RValue)
+  WEBRTC_MOVE_ONLY_TYPE_FOR_CPP_03(scoped_ptr, RValue)
 
  public:
   // The element and deleter types.

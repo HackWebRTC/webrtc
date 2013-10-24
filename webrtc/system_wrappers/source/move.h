@@ -199,7 +199,7 @@
 //
 // The workaround is to explicitly declare your copy constructor.
 //
-#define MOVE_ONLY_TYPE_FOR_CPP_03(type, rvalue_type) \
+#define WEBRTC_MOVE_ONLY_TYPE_FOR_CPP_03(type, rvalue_type) \
  private: \
   struct rvalue_type { \
     explicit rvalue_type(type* object) : object(object) {} \
