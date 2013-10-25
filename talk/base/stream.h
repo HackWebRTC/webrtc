@@ -691,7 +691,7 @@ class FifoBuffer : public StreamInterface {
                                  size_t offset, size_t* bytes_written);
 
   StreamState state_;  // keeps the opened/closed state of the stream
-  scoped_array<char> buffer_;  // the allocated buffer
+  scoped_ptr<char[]> buffer_;  // the allocated buffer
   size_t buffer_length_;  // size of the allocated buffer
   size_t data_length_;  // amount of readable data in the buffer
   size_t read_position_;  // offset to the readable data

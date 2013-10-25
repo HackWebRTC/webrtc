@@ -239,7 +239,7 @@ bool CreateRandomString(size_t len,
                         const char* table, int table_size,
                         std::string* str) {
   str->clear();
-  scoped_array<uint8> bytes(new uint8[len]);
+  scoped_ptr<uint8[]> bytes(new uint8[len]);
   if (!Rng().Generate(bytes.get(), len)) {
     LOG(LS_ERROR) << "Failed to generate random string!";
     return false;

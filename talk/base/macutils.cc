@@ -43,7 +43,7 @@ bool ToUtf8(const CFStringRef str16, std::string* str8) {
   size_t maxlen = CFStringGetMaximumSizeForEncoding(CFStringGetLength(str16),
                                                     kCFStringEncodingUTF8)
                   + 1;
-  scoped_array<char> buffer(new char[maxlen]);
+  scoped_ptr<char[]> buffer(new char[maxlen]);
   if (!buffer || !CFStringGetCString(str16, buffer.get(), maxlen,
                                      kCFStringEncodingUTF8))
     return false;

@@ -53,7 +53,9 @@ const char MediaConstraintsInterface::kHighpassFilter[] =
     "googHighpassFilter";
 const char MediaConstraintsInterface::kTypingNoiseDetection[] =
     "googTypingNoiseDetection";
-const char MediaConstraintsInterface::kInternalAecDump[] = "internalAecDump";
+const char MediaConstraintsInterface::kAudioMirroring[] = "googAudioMirroring";
+// TODO(perkj): Remove kInternalAecDump once its not used by Chrome.
+const char MediaConstraintsInterface::kInternalAecDump[] = "deprecatedAecDump";
 
 namespace {
 
@@ -90,10 +92,10 @@ bool FromConstraints(const MediaConstraintsInterface::Constraints& constraints,
       options->noise_suppression.Set(value);
     else if (iter->key == MediaConstraintsInterface::kHighpassFilter)
       options->highpass_filter.Set(value);
-    else if (iter->key == MediaConstraintsInterface::kInternalAecDump)
-      options->aec_dump.Set(value);
     else if (iter->key == MediaConstraintsInterface::kTypingNoiseDetection)
       options->typing_detection.Set(value);
+    else if (iter->key == MediaConstraintsInterface::kAudioMirroring)
+      options->stereo_swapping.Set(value);
     else
       success = false;
   }
@@ -103,14 +105,16 @@ bool FromConstraints(const MediaConstraintsInterface::Constraints& constraints,
 }  // namespace
 
 talk_base::scoped_refptr<LocalAudioSource> LocalAudioSource::Create(
+    const PeerConnectionFactoryInterface::Options& options,
     const MediaConstraintsInterface* constraints) {
   talk_base::scoped_refptr<LocalAudioSource> source(
       new talk_base::RefCountedObject<LocalAudioSource>());
-  source->Initialize(constraints);
+  source->Initialize(options, constraints);
   return source;
 }
 
 void LocalAudioSource::Initialize(
+    const PeerConnectionFactoryInterface::Options& options,
     const MediaConstraintsInterface* constraints) {
   if (!constraints)
     return;
@@ -119,12 +123,14 @@ void LocalAudioSource::Initialize(
   // constraints.
   FromConstraints(constraints->GetOptional(), &options_);
 
-  cricket::AudioOptions options;
-  if (!FromConstraints(constraints->GetMandatory(), &options)) {
+  cricket::AudioOptions audio_options;
+  if (!FromConstraints(constraints->GetMandatory(), &audio_options)) {
     source_state_ = kEnded;
     return;
   }
-  options_.SetAll(options);
+  options_.SetAll(audio_options);
+  if (options.enable_aec_dump)
+    options_.aec_dump.Set(true);
   source_state_ = kLive;
 }
 

@@ -57,6 +57,11 @@ static const int kOnlyLocalPorts = cricket::PORTALLOCATOR_DISABLE_STUN |
 // Addresses on the public internet.
 static const SocketAddress kPublicAddrs[2] =
     { SocketAddress("11.11.11.11", 0), SocketAddress("22.22.22.22", 0) };
+// IPv6 Addresses on the public internet.
+static const SocketAddress kIPv6PublicAddrs[2] = {
+    SocketAddress("2400:4030:1:2c00:be30:abcd:efab:cdef", 0),
+    SocketAddress("2620:0:1000:1b03:2e41:38ff:fea6:f2a4", 0)
+};
 // For configuring multihomed clients.
 static const SocketAddress kAlternateAddrs[2] =
     { SocketAddress("11.11.11.101", 0), SocketAddress("22.22.22.202", 0) };
@@ -1411,6 +1416,34 @@ TEST_F(P2PTransportChannelTest, TestDefaultDscpValue) {
             GetEndpoint(0)->cd1_.ch_->DefaultDscpValue());
   EXPECT_EQ(talk_base::DSCP_AF41,
             GetEndpoint(1)->cd1_.ch_->DefaultDscpValue());
+}
+
+// Verify IPv6 connection is preferred over IPv4.
+TEST_F(P2PTransportChannelTest, TestIPv6Connections) {
+  AddAddress(0, kIPv6PublicAddrs[0]);
+  AddAddress(0, kPublicAddrs[0]);
+  AddAddress(1, kIPv6PublicAddrs[1]);
+  AddAddress(1, kPublicAddrs[1]);
+
+  SetAllocationStepDelay(0, kMinimumStepDelay);
+  SetAllocationStepDelay(1, kMinimumStepDelay);
+
+  // Enable IPv6
+  SetAllocatorFlags(0, cricket::PORTALLOCATOR_ENABLE_IPV6);
+  SetAllocatorFlags(1, cricket::PORTALLOCATOR_ENABLE_IPV6);
+
+  CreateChannels(1);
+
+  EXPECT_TRUE_WAIT(ep1_ch1()->readable() && ep1_ch1()->writable() &&
+                   ep2_ch1()->readable() && ep2_ch1()->writable(),
+                   1000);
+  EXPECT_TRUE(
+      ep1_ch1()->best_connection() && ep2_ch1()->best_connection() &&
+      LocalCandidate(ep1_ch1())->address().EqualIPs(kIPv6PublicAddrs[0]) &&
+      RemoteCandidate(ep1_ch1())->address().EqualIPs(kIPv6PublicAddrs[1]));
+
+  TestSendRecv(1);
+  DestroyChannels();
 }
 
 // Test what happens when we have 2 users behind the same NAT. This can lead

@@ -160,7 +160,7 @@ HRESULT RegKey::GetValue(const wchar_t* full_key_name,
   ASSERT(full_key_name != NULL);
 
   DWORD byte_count = 0;
-  scoped_array<byte> buffer;
+  scoped_ptr<byte[]> buffer;
   HRESULT hr = GetValueStaticHelper(full_key_name, value_name,
                                     REG_BINARY, buffer.accept(), &byte_count);
   if (SUCCEEDED(hr)) {
@@ -179,7 +179,7 @@ HRESULT RegKey::GetValue(const wchar_t* full_key_name,
   ASSERT(full_key_name != NULL);
 
   DWORD byte_count = 0;
-  scoped_array<byte> buffer;
+  scoped_ptr<byte[]> buffer;
   HRESULT hr = GetValueStaticHelper(full_key_name, value_name,
                                     REG_BINARY, buffer.accept(), &byte_count);
   if (SUCCEEDED(hr)) {
@@ -206,7 +206,7 @@ HRESULT RegKey::GetValue(const wchar_t* full_key_name,
   ASSERT(full_key_name != NULL);
   ASSERT(value != NULL);
 
-  scoped_array<wchar_t> buffer;
+  scoped_ptr<wchar_t[]> buffer;
   HRESULT hr = RegKey::GetValue(full_key_name, value_name, buffer.accept());
   if (SUCCEEDED(hr)) {
     value->assign(buffer.get());

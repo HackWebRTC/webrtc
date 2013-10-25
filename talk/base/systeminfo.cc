@@ -74,7 +74,7 @@ static void GetProcessorInformation(int* physical_cpus, int* cache_size) {
   // Determine buffer size, allocate and get processor information.
   // Size can change between calls (unlikely), so a loop is done.
   DWORD return_length = 0;
-  scoped_array<SYSTEM_LOGICAL_PROCESSOR_INFORMATION> infos;
+  scoped_ptr<SYSTEM_LOGICAL_PROCESSOR_INFORMATION[]> infos;
   while (!glpi(infos.get(), &return_length)) {
     if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
       infos.reset(new SYSTEM_LOGICAL_PROCESSOR_INFORMATION[
@@ -183,6 +183,8 @@ SystemInfo::SystemInfo()
   if (!sysctlbyname("machdep.cpu.stepping", &sysctl_value, &length, NULL, 0)) {
     cpu_stepping_ = static_cast<int>(sysctl_value);
   }
+#elif defined(__native_client__)
+  // TODO(ryanpetrie): Implement this via PPAPI when it's available.
 #else  // LINUX || ANDROID
   ProcCpuInfo proc_info;
   if (proc_info.LoadFromSystem()) {

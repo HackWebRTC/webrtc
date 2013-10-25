@@ -153,12 +153,15 @@ void ComputeScale(int frame_width, int frame_height, int fps,
 
 // Compute size to crop video frame to.
 // If cropped_format_* is 0, return the frame_* size as is.
-void ComputeCrop(int cropped_format_width,
-                 int cropped_format_height,
+void ComputeCrop(int cropped_format_width, int cropped_format_height,
                  int frame_width, int frame_height,
                  int pixel_width, int pixel_height,
                  int rotation,
                  int* cropped_width, int* cropped_height) {
+  // Transform screen crop to camera space if rotated.
+  if (rotation == 90 || rotation == 270) {
+    std::swap(cropped_format_width, cropped_format_height);
+  }
   ASSERT(cropped_format_width >= 0);
   ASSERT(cropped_format_height >= 0);
   ASSERT(frame_width > 0);
@@ -182,39 +185,26 @@ void ComputeCrop(int cropped_format_width,
       static_cast<float>(frame_height * pixel_height);
   float crop_aspect = static_cast<float>(cropped_format_width) /
       static_cast<float>(cropped_format_height);
-  int new_frame_width = frame_width;
-  int new_frame_height = frame_height;
-  if (rotation == 90 || rotation == 270) {
-    frame_aspect = 1.0f / frame_aspect;
-    new_frame_width = frame_height;
-    new_frame_height = frame_width;
-  }
-
   // kAspectThresh is the maximum aspect ratio difference that we'll accept
-  // for cropping.  The value 1.33 is based on 4:3 being cropped to 16:9.
+  // for cropping.  The value 1.34 allows cropping from 4:3 to 16:9.
   // Set to zero to disable cropping entirely.
   // TODO(fbarchard): crop to multiple of 16 width for better performance.
-  const float kAspectThresh = 16.f / 9.f / (4.f / 3.f) + 0.01f;  // 1.33
+  const float kAspectThresh = 1.34f;
   // Wide aspect - crop horizontally
   if (frame_aspect > crop_aspect &&
       frame_aspect < crop_aspect * kAspectThresh) {
     // Round width down to multiple of 4 to avoid odd chroma width.
     // Width a multiple of 4 allows a half size image to have chroma channel
-    // that avoids rounding errors.  lmi and webrtc have odd width limitations.
-    new_frame_width = static_cast<int>((crop_aspect * frame_height *
+    // that avoids rounding errors.
+    frame_width = static_cast<int>((crop_aspect * frame_height *
         pixel_height) / pixel_width + 0.5f) & ~3;
-  } else if (crop_aspect > frame_aspect &&
-             crop_aspect < frame_aspect * kAspectThresh) {
-    new_frame_height = static_cast<int>((frame_width * pixel_width) /
+  } else if (frame_aspect < crop_aspect &&
+             frame_aspect > crop_aspect / kAspectThresh) {
+    frame_height = static_cast<int>((frame_width * pixel_width) /
         (crop_aspect * pixel_height) + 0.5f) & ~1;
   }
-
-  *cropped_width = new_frame_width;
-  *cropped_height = new_frame_height;
-  if (rotation == 90 || rotation == 270) {
-    *cropped_width = new_frame_height;
-    *cropped_height = new_frame_width;
-  }
+  *cropped_width = frame_width;
+  *cropped_height = frame_height;
 }
 
 // Compute the frame size that makes pixels square pixel aspect ratio.

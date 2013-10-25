@@ -39,6 +39,7 @@
 using webrtc::LocalAudioSource;
 using webrtc::MediaConstraintsInterface;
 using webrtc::MediaSourceInterface;
+using webrtc::PeerConnectionFactoryInterface;
 
 TEST(LocalAudioSourceTest, SetValidOptions) {
   webrtc::FakeConstraints constraints;
@@ -52,7 +53,8 @@ TEST(LocalAudioSourceTest, SetValidOptions) {
   constraints.AddOptional(MediaConstraintsInterface::kHighpassFilter, true);
 
   talk_base::scoped_refptr<LocalAudioSource> source =
-      LocalAudioSource::Create(&constraints);
+      LocalAudioSource::Create(PeerConnectionFactoryInterface::Options(),
+                               &constraints);
 
   bool value;
   EXPECT_TRUE(source->options().echo_cancellation.Get(&value));
@@ -72,7 +74,8 @@ TEST(LocalAudioSourceTest, SetValidOptions) {
 TEST(LocalAudioSourceTest, OptionNotSet) {
   webrtc::FakeConstraints constraints;
   talk_base::scoped_refptr<LocalAudioSource> source =
-      LocalAudioSource::Create(&constraints);
+      LocalAudioSource::Create(PeerConnectionFactoryInterface::Options(),
+                               &constraints);
   bool value;
   EXPECT_FALSE(source->options().highpass_filter.Get(&value));
 }
@@ -83,7 +86,8 @@ TEST(LocalAudioSourceTest, MandatoryOverridesOptional) {
   constraints.AddOptional(MediaConstraintsInterface::kEchoCancellation, true);
 
   talk_base::scoped_refptr<LocalAudioSource> source =
-      LocalAudioSource::Create(&constraints);
+      LocalAudioSource::Create(PeerConnectionFactoryInterface::Options(),
+                               &constraints);
 
   bool value;
   EXPECT_TRUE(source->options().echo_cancellation.Get(&value));
@@ -96,7 +100,8 @@ TEST(LocalAudioSourceTest, InvalidOptional) {
   constraints.AddOptional("invalidKey", false);
 
   talk_base::scoped_refptr<LocalAudioSource> source =
-      LocalAudioSource::Create(&constraints);
+      LocalAudioSource::Create(PeerConnectionFactoryInterface::Options(),
+                               &constraints);
 
   EXPECT_EQ(MediaSourceInterface::kLive, source->state());
   bool value;
@@ -110,7 +115,8 @@ TEST(LocalAudioSourceTest, InvalidMandatory) {
   constraints.AddMandatory("invalidKey", false);
 
   talk_base::scoped_refptr<LocalAudioSource> source =
-      LocalAudioSource::Create(&constraints);
+      LocalAudioSource::Create(PeerConnectionFactoryInterface::Options(),
+                               &constraints);
 
   EXPECT_EQ(MediaSourceInterface::kEnded, source->state());
   bool value;

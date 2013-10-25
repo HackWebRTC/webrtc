@@ -110,7 +110,8 @@ class WebRtcSession : public cricket::BaseSession,
                 MediaStreamSignaling* mediastream_signaling);
   virtual ~WebRtcSession();
 
-  bool Initialize(const MediaConstraintsInterface* constraints,
+  bool Initialize(const PeerConnectionFactoryInterface::Options& options,
+                  const MediaConstraintsInterface* constraints,
                   DTLSIdentityServiceInterface* dtls_identity_service);
   // Deletes the voice, video and data channel and changes the session state
   // to STATE_RECEIVEDTERMINATE.

@@ -317,7 +317,8 @@ bool PeerConnection::DoInitialize(
   stats_.set_session(session_.get());
 
   // Initialize the WebRtcSession. It creates transport channels etc.
-  if (!session_->Initialize(constraints, dtls_identity_service))
+  if (!session_->Initialize(factory_->options(), constraints,
+                            dtls_identity_service))
     return false;
 
   // Register PeerConnection as receiver of local ice candidates.

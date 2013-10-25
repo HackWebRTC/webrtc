@@ -210,7 +210,7 @@ float CpuSampler::GetSystemLoad() {
   } else {
     if (nt_query_system_information) {
       ULONG returned_length = 0;
-      scoped_array<SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION> processor_info(
+      scoped_ptr<SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION[]> processor_info(
           new SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION[cpus_]);
       nt_query_system_information(
           ::SystemProcessorPerformanceInformation,
@@ -281,6 +281,13 @@ float CpuSampler::GetSystemLoad() {
   const uint64 cpu_times = nice + system + user;
   const uint64 total_times = cpu_times + idle;
 #endif  // defined(LINUX) || defined(ANDROID)
+
+#if defined(__native_client__)
+  // TODO(ryanpetrie): Implement this via PPAPI when it's available.
+  const uint64 cpu_times = 0;
+  const uint64 total_times = 0;
+#endif  // defined(__native_client__)
+
   system_.prev_load_time_ = timenow;
   system_.prev_load_ = UpdateCpuLoad(total_times,
                                      cpu_times * cpus_,
@@ -359,6 +366,12 @@ float CpuSampler::GetProcessLoad() {
       (usage.ru_utime.tv_sec + usage.ru_stime.tv_sec) * kNumMicrosecsPerSec +
       usage.ru_utime.tv_usec + usage.ru_stime.tv_usec;
 #endif  // defined(LINUX) || defined(ANDROID)
+
+#if defined(__native_client__)
+  // TODO(ryanpetrie): Implement this via PPAPI when it's available.
+  const uint64 cpu_times = 0;
+#endif  // defined(__native_client__)
+
   process_.prev_load_time_ = timenow;
   process_.prev_load_ = UpdateCpuLoad(total_times,
                                      cpu_times,

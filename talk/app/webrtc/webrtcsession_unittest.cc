@@ -81,6 +81,7 @@ using webrtc::FakeConstraints;
 using webrtc::IceCandidateCollection;
 using webrtc::JsepIceCandidate;
 using webrtc::JsepSessionDescription;
+using webrtc::PeerConnectionFactoryInterface;
 using webrtc::PeerConnectionInterface;
 using webrtc::SessionDescriptionInterface;
 using webrtc::StreamCollection;
@@ -317,7 +318,8 @@ class WebRtcSessionTest : public testing::Test {
     EXPECT_EQ(PeerConnectionInterface::kIceGatheringNew,
         observer_.ice_gathering_state_);
 
-    EXPECT_TRUE(session_->Initialize(constraints_.get(), identity_service));
+    EXPECT_TRUE(session_->Initialize(options_, constraints_.get(),
+                                     identity_service));
   }
 
   void InitWithDtmfCodec() {
@@ -919,6 +921,7 @@ class WebRtcSessionTest : public testing::Test {
   cricket::TestStunServer stun_server_;
   talk_base::FakeNetworkManager network_manager_;
   cricket::BasicPortAllocator allocator_;
+  PeerConnectionFactoryInterface::Options options_;
   talk_base::scoped_ptr<FakeConstraints> constraints_;
   FakeMediaStreamSignaling mediastream_signaling_;
   talk_base::scoped_ptr<WebRtcSessionForTest> session_;
@@ -1932,9 +1935,7 @@ TEST_F(WebRtcSessionTest, VerifyCryptoParamsInSDP) {
 }
 
 TEST_F(WebRtcSessionTest, VerifyNoCryptoParamsInSDP) {
-  constraints_.reset(new FakeConstraints());
-  constraints_->AddOptional(
-      webrtc::MediaConstraintsInterface::kInternalDisableEncryption, true);
+  options_.disable_encryption = true;
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream1();
   scoped_ptr<SessionDescriptionInterface> offer(
@@ -2424,9 +2425,7 @@ TEST_F(WebRtcSessionTest, TestCryptoAfterSetLocalDescription) {
 
 // This test verifies the crypto parameter when security is disabled.
 TEST_F(WebRtcSessionTest, TestCryptoAfterSetLocalDescriptionWithDisabled) {
-  constraints_.reset(new FakeConstraints());
-  constraints_->AddOptional(
-      webrtc::MediaConstraintsInterface::kInternalDisableEncryption, true);
+  options_.disable_encryption = true;
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream1();
   talk_base::scoped_ptr<SessionDescriptionInterface> offer(
@@ -2567,8 +2566,8 @@ TEST_F(WebRtcSessionTest, TestRtpDataChannelConstraintTakesPrecedence) {
   constraints_.reset(new FakeConstraints());
   constraints_->AddOptional(
       webrtc::MediaConstraintsInterface::kEnableRtpDataChannels, true);
-  constraints_->AddOptional(
-    webrtc::MediaConstraintsInterface::kEnableSctpDataChannels, true);
+  options_.disable_sctp_data_channels = false;
+
   InitWithDtls(false);
 
   SetLocalDescriptionWithDataChannel();
@@ -2578,9 +2577,6 @@ TEST_F(WebRtcSessionTest, TestRtpDataChannelConstraintTakesPrecedence) {
 TEST_F(WebRtcSessionTest, TestCreateOfferWithSctpEnabledWithoutStreams) {
   MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
 
-  constraints_.reset(new FakeConstraints());
-  constraints_->AddOptional(
-      webrtc::MediaConstraintsInterface::kEnableSctpDataChannels, true);
   InitWithDtls(false);
 
   talk_base::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer(NULL));
@@ -2591,9 +2587,6 @@ TEST_F(WebRtcSessionTest, TestCreateOfferWithSctpEnabledWithoutStreams) {
 TEST_F(WebRtcSessionTest, TestCreateAnswerWithSctpInOfferAndNoStreams) {
   MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
   SetFactoryDtlsSrtp();
-  constraints_.reset(new FakeConstraints());
-  constraints_->AddOptional(
-      webrtc::MediaConstraintsInterface::kEnableSctpDataChannels, true);
   InitWithDtls(false);
 
   // Create remote offer with SCTP.
@@ -2613,8 +2606,6 @@ TEST_F(WebRtcSessionTest, TestCreateAnswerWithSctpInOfferAndNoStreams) {
 TEST_F(WebRtcSessionTest, TestSctpDataChannelWithoutDtls) {
   constraints_.reset(new FakeConstraints());
   constraints_->AddOptional(
-      webrtc::MediaConstraintsInterface::kEnableSctpDataChannels, true);
-  constraints_->AddOptional(
       webrtc::MediaConstraintsInterface::kEnableDtlsSrtp, false);
   InitWithDtls(false);
 
@@ -2625,23 +2616,25 @@ TEST_F(WebRtcSessionTest, TestSctpDataChannelWithoutDtls) {
 TEST_F(WebRtcSessionTest, TestSctpDataChannelWithDtls) {
   MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
 
-  constraints_.reset(new FakeConstraints());
-  constraints_->AddOptional(
-      webrtc::MediaConstraintsInterface::kEnableSctpDataChannels, true);
   InitWithDtls(false);
 
   SetLocalDescriptionWithDataChannel();
   EXPECT_EQ(cricket::DCT_SCTP, data_engine_->last_channel_type());
 }
 
+TEST_F(WebRtcSessionTest, TestDisableSctpDataChannels) {
+  MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
+  options_.disable_sctp_data_channels = true;
+  InitWithDtls(false);
+
+  SetLocalDescriptionWithDataChannel();
+  EXPECT_EQ(cricket::DCT_NONE, data_engine_->last_channel_type());
+}
+
 TEST_F(WebRtcSessionTest, TestSctpDataChannelSendPortParsing) {
   MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
   const int new_send_port = 9998;
   const int new_recv_port = 7775;
-
-  constraints_.reset(new FakeConstraints());
-  constraints_->AddOptional(
-      webrtc::MediaConstraintsInterface::kEnableSctpDataChannels, true);
 
   InitWithDtls(false);
   SetFactoryDtlsSrtp();

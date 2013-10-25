@@ -120,7 +120,7 @@ static bool GetAudioDeviceIDs(bool input,
   }
 
   size_t num_devices = propsize / sizeof(AudioDeviceID);
-  talk_base::scoped_array<AudioDeviceID> device_ids(
+  talk_base::scoped_ptr<AudioDeviceID[]> device_ids(
       new AudioDeviceID[num_devices]);
 
   err = AudioHardwareGetProperty(kAudioHardwarePropertyDevices,

@@ -110,7 +110,7 @@ class GtkMainWnd : public MainWindow {
     }
 
    protected:
-    talk_base::scoped_array<uint8> image_;
+    talk_base::scoped_ptr<uint8[]> image_;
     int width_;
     int height_;
     GtkMainWnd* main_wnd_;

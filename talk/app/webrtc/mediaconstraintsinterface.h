@@ -81,6 +81,7 @@ class MediaConstraintsInterface {
   static const char kNoiseSuppression[];  // googNoiseSuppression
   static const char kHighpassFilter[];  // googHighpassFilter
   static const char kTypingNoiseDetection[];  // googTypingNoiseDetection
+  static const char kAudioMirroring[];  // googAudioMirroring
 
   // Google-specific constraint keys for a local video source
   static const char kNoiseReduction[];  // googNoiseReduction
@@ -106,6 +107,8 @@ class MediaConstraintsInterface {
   static const char kEnableDtlsSrtp[];  // Enable DTLS-SRTP
   // Temporary pseudo-constraints used to enable DataChannels
   static const char kEnableRtpDataChannels[];  // Enable RTP DataChannels
+  // TODO(perkj): Remove kEnableSctpDataChannels once Chrome use
+  // PeerConnectionFactory::SetOptions.
   static const char kEnableSctpDataChannels[];  // Enable SCTP DataChannels
 
   // The prefix of internal-only constraints whose JS set values should be
@@ -116,9 +119,8 @@ class MediaConstraintsInterface {
   // line flags. So they are prefixed with "internal" so JS values will be
   // removed.
   // Used by a local audio source.
+  // TODO(perkj): Remove once Chrome use PeerConnectionFactory::SetOptions.
   static const char kInternalAecDump[];  // internalAecDump
-  // Used for disabling security and use plain RTP.
-  static const char kInternalDisableEncryption[];  // internalDisableEncryption
 
  protected:
   // Dtor protected as objects shouldn't be deleted via this interface

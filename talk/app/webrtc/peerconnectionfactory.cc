@@ -261,7 +261,7 @@ talk_base::scoped_refptr<AudioSourceInterface>
 PeerConnectionFactory::CreateAudioSource_s(
     const MediaConstraintsInterface* constraints) {
   talk_base::scoped_refptr<LocalAudioSource> source(
-      LocalAudioSource::Create(constraints));
+      LocalAudioSource::Create(options_, constraints));
   return source;
 }
 

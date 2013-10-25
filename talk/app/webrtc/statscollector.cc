@@ -82,6 +82,15 @@ const char StatsReport::kStatsValueNameFrameRateDecoded[] =
     "googFrameRateDecoded";
 const char StatsReport::kStatsValueNameFrameRateOutput[] =
     "googFrameRateOutput";
+const char StatsReport::kStatsValueNameDecodeMs[] = "googDecodeMs";
+const char StatsReport::kStatsValueNameMaxDecodeMs[] = "googMaxDecodeMs";
+const char StatsReport::kStatsValueNameCurrentDelayMs[] = "googCurrentDelayMs";
+const char StatsReport::kStatsValueNameTargetDelayMs[] = "googTargetDelayMs";
+const char StatsReport::kStatsValueNameJitterBufferMs[] = "googJitterBufferMs";
+const char StatsReport::kStatsValueNameMinPlayoutDelayMs[] =
+    "googMinPlayoutDelayMs";
+const char StatsReport::kStatsValueNameRenderDelayMs[] = "googRenderDelayMs";
+
 const char StatsReport::kStatsValueNameFrameRateInput[] = "googFrameRateInput";
 const char StatsReport::kStatsValueNameFrameRateSent[] = "googFrameRateSent";
 const char StatsReport::kStatsValueNameFrameWidthReceived[] =
@@ -119,6 +128,7 @@ const char StatsReport::kStatsValueNameWritable[] = "googWritable";
 
 const char StatsReport::kStatsReportTypeSession[] = "googLibjingleSession";
 const char StatsReport::kStatsReportTypeBwe[] = "VideoBwe";
+const char StatsReport::kStatsReportTypeRemoteSsrc[] = "remoteSsrc";
 const char StatsReport::kStatsReportTypeSsrc[] = "ssrc";
 const char StatsReport::kStatsReportTypeTrack[] = "googTrack";
 const char StatsReport::kStatsReportTypeIceCandidate[] = "iceCandidate";
@@ -241,6 +251,21 @@ void ExtractStats(const cricket::VideoReceiverInfo& info, StatsReport* report) {
                    info.framerate_decoded);
   report->AddValue(StatsReport::kStatsValueNameFrameRateOutput,
                    info.framerate_output);
+
+  report->AddValue(StatsReport::kStatsValueNameDecodeMs,
+                   info.decode_ms);
+  report->AddValue(StatsReport::kStatsValueNameMaxDecodeMs,
+                   info.max_decode_ms);
+  report->AddValue(StatsReport::kStatsValueNameCurrentDelayMs,
+                   info.current_delay_ms);
+  report->AddValue(StatsReport::kStatsValueNameTargetDelayMs,
+                   info.target_delay_ms);
+  report->AddValue(StatsReport::kStatsValueNameJitterBufferMs,
+                   info.jitter_buffer_ms);
+  report->AddValue(StatsReport::kStatsValueNameMinPlayoutDelayMs,
+                   info.min_playout_delay_ms);
+  report->AddValue(StatsReport::kStatsValueNameRenderDelayMs,
+                   info.render_delay_ms);
 }
 
 void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {
@@ -293,6 +318,18 @@ void ExtractStats(const cricket::BandwidthEstimationInfo& info,
                    info.bucket_delay);
 }
 
+void ExtractRemoteStats(const cricket::MediaSenderInfo& info,
+                        StatsReport* report) {
+  report->timestamp = info.remote_stats[0].timestamp;
+  // TODO(hta): Extract some stats here.
+}
+
+void ExtractRemoteStats(const cricket::MediaReceiverInfo& info,
+                        StatsReport* report) {
+  report->timestamp = info.remote_stats[0].timestamp;
+  // TODO(hta): Extract some stats here.
+}
+
 uint32 ExtractSsrc(const cricket::VoiceReceiverInfo& info) {
   return info.ssrc;
 }
@@ -319,11 +356,20 @@ void ExtractStatsFromList(const std::vector<T>& data,
   for (; it != data.end(); ++it) {
     std::string id;
     uint32 ssrc = ExtractSsrc(*it);
-    StatsReport* report = collector->PrepareReport(ssrc, transport_id);
+    // Each object can result in 2 objects, a local and a remote object.
+    // TODO(hta): Handle the case of multiple SSRCs per object.
+    StatsReport* report = collector->PrepareLocalReport(ssrc, transport_id);
     if (!report) {
       continue;
     }
     ExtractStats(*it, report);
+    if (it->remote_stats.size() > 0) {
+      report = collector->PrepareRemoteReport(ssrc, transport_id);
+      if (!report) {
+        continue;
+      }
+      ExtractRemoteStats(*it, report);
+    }
   }
 };
 
@@ -406,8 +452,9 @@ void StatsCollector::UpdateStats() {
   }
 }
 
-StatsReport* StatsCollector::PrepareReport(uint32 ssrc,
-                                           const std::string& transport_id) {
+StatsReport* StatsCollector::PrepareLocalReport(
+    uint32 ssrc,
+    const std::string& transport_id) {
   std::string ssrc_id = talk_base::ToString<uint32>(ssrc);
   StatsMap::iterator it = reports_.find(StatsId(
       StatsReport::kStatsReportTypeSsrc, ssrc_id));
@@ -427,16 +474,52 @@ StatsReport* StatsCollector::PrepareReport(uint32 ssrc,
                            &track_id);
   }
 
-  StatsReport* report = &reports_[
-      StatsId(StatsReport::kStatsReportTypeSsrc, ssrc_id)];
-  report->id = StatsId(StatsReport::kStatsReportTypeSsrc, ssrc_id);
-  report->type = StatsReport::kStatsReportTypeSsrc;
+  StatsReport* report = GetOrCreateReport(StatsReport::kStatsReportTypeSsrc,
+                                          ssrc_id);
 
   // Clear out stats from previous GatherStats calls if any.
   if (report->timestamp != stats_gathering_started_) {
     report->values.clear();
     report->timestamp = stats_gathering_started_;
   }
+
+  report->AddValue(StatsReport::kStatsValueNameSsrc, ssrc_id);
+  report->AddValue(StatsReport::kStatsValueNameTrackId, track_id);
+  // Add the mapping of SSRC to transport.
+  report->AddValue(StatsReport::kStatsValueNameTransportId,
+                   transport_id);
+  return report;
+}
+
+StatsReport* StatsCollector::PrepareRemoteReport(
+    uint32 ssrc,
+    const std::string& transport_id) {
+  std::string ssrc_id = talk_base::ToString<uint32>(ssrc);
+  StatsMap::iterator it = reports_.find(StatsId(
+      StatsReport::kStatsReportTypeRemoteSsrc, ssrc_id));
+
+  std::string track_id;
+  if (it == reports_.end()) {
+    if (!session()->GetTrackIdBySsrc(ssrc, &track_id)) {
+      LOG(LS_WARNING) << "The SSRC " << ssrc
+                      << " is not associated with a track";
+      return NULL;
+    }
+  } else {
+    // Keeps the old track id since we want to report the stats for inactive
+    // tracks.
+    ExtractValueFromReport(it->second,
+                           StatsReport::kStatsValueNameTrackId,
+                           &track_id);
+  }
+
+  StatsReport* report = GetOrCreateReport(
+      StatsReport::kStatsReportTypeRemoteSsrc, ssrc_id);
+
+  // Clear out stats from previous GatherStats calls if any.
+  // The timestamp will be added later. Zero it for debugging.
+  report->values.clear();
+  report->timestamp = 0;
 
   report->AddValue(StatsReport::kStatsValueNameSsrc, ssrc_id);
   report->AddValue(StatsReport::kStatsValueNameTrackId, track_id);
@@ -592,6 +675,9 @@ void StatsCollector::ExtractSessionInfo() {
                           info.local_candidate.address().ToString());
           report.AddValue(StatsReport::kStatsValueNameRemoteAddress,
                           info.remote_candidate.address().ToString());
+          report.AddValue(StatsReport::kStatsValueNameRtt, info.rtt);
+          report.AddValue(StatsReport::kStatsValueNameTransportType,
+                          info.local_candidate.protocol());
           reports_[report.id] = report;
         }
       }
@@ -666,6 +752,21 @@ bool StatsCollector::GetTransportIdFromProxy(const std::string& proxy,
   ost << "Channel-" << proxy_to_transport_[proxy] << "-1";
   *transport = ost.str();
   return true;
+}
+
+StatsReport* StatsCollector::GetOrCreateReport(const std::string& type,
+                                               const std::string& id) {
+  std::string statsid = StatsId(type, id);
+  StatsReport* report = NULL;
+  std::map<std::string, StatsReport>::iterator it = reports_.find(statsid);
+  if (it == reports_.end()) {
+    report = &reports_[statsid];  // Create new element.
+    report->id = statsid;
+    report->type = type;
+  } else {
+    report = &reports_[statsid];
+  }
+  return report;
 }
 
 }  // namespace webrtc

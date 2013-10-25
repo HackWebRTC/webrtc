@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_BASE_COMMON_H_
+#ifndef TALK_BASE_COMMON_H_  // NOLINT
 #define TALK_BASE_COMMON_H_
 
 #include "talk/base/basictypes.h"
@@ -64,7 +64,7 @@ inline void Unused(const void*) {}
 #define strnicmp(x, y, n) strncasecmp(x, y, n)
 #define stricmp(x, y) strcasecmp(x, y)
 
-// TODO: Remove this. std::max should be used everywhere in the code.
+// TODO(fbarchard): Remove this. std::max should be used everywhere in the code.
 // NOMINMAX must be defined where we include <windows.h>.
 #define stdmax(x, y) std::max(x, y)
 #else
@@ -181,9 +181,28 @@ inline bool ImplicitCastToBool(bool result) { return result; }
 #if defined(WIN32)
 #define OVERRIDE override
 #elif defined(__clang__)
+// Clang defaults to C++03 and warns about using override. Squelch that.
+// Intentionally no push/pop here so all users of OVERRIDE ignore the warning
+// too. This is like passing -Wno-c++11-extensions, except that GCC won't die
+// (because it won't see this pragma).
+#pragma clang diagnostic ignored "-Wc++11-extensions"
 #define OVERRIDE override
 #else
 #define OVERRIDE
 #endif
 
-#endif  // TALK_BASE_COMMON_H_
+// Annotate a function indicating the caller must examine the return value.
+// Use like:
+//   int foo() WARN_UNUSED_RESULT;
+// To explicitly ignore a result, see |ignore_result()| in <base/basictypes.h>.
+// TODO(ajm): Hack to avoid multiple definitions until the base/ of webrtc and
+// libjingle are merged.
+#if !defined(WARN_UNUSED_RESULT)
+#if defined(COMPILER_GCC)
+#define WARN_UNUSED_RESULT __attribute__((warn_unused_result))
+#else
+#define WARN_UNUSED_RESULT
+#endif
+#endif  // WARN_UNUSED_RESULT
+
+#endif  // TALK_BASE_COMMON_H_    // NOLINT

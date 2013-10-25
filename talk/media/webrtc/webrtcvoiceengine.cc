@@ -528,7 +528,7 @@ bool WebRtcVoiceEngine::InitInternal() {
   // Save the default AGC configuration settings. This must happen before
   // calling SetOptions or the default will be overwritten.
   if (voe_wrapper_->processing()->GetAgcConfig(default_agc_config_) == -1) {
-    LOG_RTCERR0(GetAGCConfig);
+    LOG_RTCERR0(GetAgcConfig);
     return false;
   }
 
@@ -686,6 +686,10 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   webrtc::AgcModes agc_mode = webrtc::kAgcAdaptiveAnalog;
   webrtc::NsModes ns_mode = webrtc::kNsHighSuppression;
   bool aecm_comfort_noise = false;
+  if (options.aecm_generate_comfort_noise.Get(&aecm_comfort_noise)) {
+    LOG(LS_VERBOSE) << "Comfort noise explicitly set to "
+                    << aecm_comfort_noise << " (default is false).";
+  }
 
 #if defined(IOS)
   // On iOS, VPIO provides built-in EC and AGC.
@@ -713,6 +717,9 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     if (voep->SetEcStatus(echo_cancellation, ec_mode) == -1) {
       LOG_RTCERR2(SetEcStatus, echo_cancellation, ec_mode);
       return false;
+    } else {
+      LOG(LS_VERBOSE) << "Echo control set to " << echo_cancellation
+                      << " with mode " << ec_mode;
     }
 #if !defined(ANDROID)
     // TODO(ajm): Remove the error return on Android from webrtc.
@@ -734,6 +741,38 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     if (voep->SetAgcStatus(auto_gain_control, agc_mode) == -1) {
       LOG_RTCERR2(SetAgcStatus, auto_gain_control, agc_mode);
       return false;
+    } else {
+      LOG(LS_VERBOSE) << "Auto gain set to " << auto_gain_control
+                      << " with mode " << agc_mode;
+    }
+  }
+
+  if (options.tx_agc_target_dbov.IsSet() ||
+      options.tx_agc_digital_compression_gain.IsSet() ||
+      options.tx_agc_limiter.IsSet()) {
+    // Override default_agc_config_. Generally, an unset option means "leave
+    // the VoE bits alone" in this function, so we want whatever is set to be
+    // stored as the new "default". If we didn't, then setting e.g.
+    // tx_agc_target_dbov would reset digital compression gain and limiter
+    // settings.
+    // Also, if we don't update default_agc_config_, then adjust_agc_delta
+    // would be an offset from the original values, and not whatever was set
+    // explicitly.
+    default_agc_config_.targetLeveldBOv =
+        options.tx_agc_target_dbov.GetWithDefaultIfUnset(
+            default_agc_config_.targetLeveldBOv);
+    default_agc_config_.digitalCompressionGaindB =
+        options.tx_agc_digital_compression_gain.GetWithDefaultIfUnset(
+            default_agc_config_.digitalCompressionGaindB);
+    default_agc_config_.limiterEnable =
+        options.tx_agc_limiter.GetWithDefaultIfUnset(
+            default_agc_config_.limiterEnable);
+    if (voe_wrapper_->processing()->SetAgcConfig(default_agc_config_) == -1) {
+      LOG_RTCERR3(SetAgcConfig,
+                  default_agc_config_.targetLeveldBOv,
+                  default_agc_config_.digitalCompressionGaindB,
+                  default_agc_config_.limiterEnable);
+      return false;
     }
   }
 
@@ -742,6 +781,9 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     if (voep->SetNsStatus(noise_suppression, ns_mode) == -1) {
       LOG_RTCERR2(SetNsStatus, noise_suppression, ns_mode);
       return false;
+    } else {
+      LOG(LS_VERBOSE) << "Noise suppression set to " << noise_suppression
+                      << " with mode " << ns_mode;
     }
   }
 
@@ -796,6 +838,20 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
       config.Set<webrtc::DelayCorrection>(
           new webrtc::DelayCorrection(experimental_aec));
       audioproc->SetExtraOptions(config);
+    }
+  }
+
+  uint32 recording_sample_rate;
+  if (options.recording_sample_rate.Get(&recording_sample_rate)) {
+    if (voe_wrapper_->hw()->SetRecordingSampleRate(recording_sample_rate)) {
+      LOG_RTCERR1(SetRecordingSampleRate, recording_sample_rate);
+    }
+  }
+
+  uint32 playout_sample_rate;
+  if (options.playout_sample_rate.Get(&playout_sample_rate)) {
+    if (voe_wrapper_->hw()->SetPlayoutSampleRate(playout_sample_rate)) {
+      LOG_RTCERR1(SetPlayoutSampleRate, playout_sample_rate);
     }
   }
 
@@ -1133,6 +1189,18 @@ void WebRtcVoiceEngine::SetTraceOptions(const std::string& options) {
     // EncryptedTraceFile no longer supported.
     if (tracing_->SetTraceFile(tracefile->c_str()) == -1) {
       LOG_RTCERR1(SetTraceFile, *tracefile);
+    }
+  }
+
+  // Allow trace options to override the trace filter. We default
+  // it to log_filter_ (as a translation of libjingle log levels)
+  // elsewhere, but this allows clients to explicitly set webrtc
+  // log levels.
+  std::vector<std::string>::iterator tracefilter =
+      std::find(opts.begin(), opts.end(), "tracefilter");
+  if (tracefilter != opts.end() && ++tracefilter != opts.end()) {
+    if (!tracing_->SetTraceFilter(talk_base::FromString<int>(*tracefilter))) {
+      LOG_RTCERR1(SetTraceFilter, *tracefilter);
     }
   }
 
@@ -1585,6 +1653,56 @@ bool WebRtcVoiceMediaChannel::SetOptions(const AudioOptions& options) {
     }
   } else {
     // Will be interpreted when appropriate.
+  }
+
+  // Receiver-side auto gain control happens per channel, so set it here from
+  // options. Note that, like conference mode, setting it on the engine won't
+  // have the desired effect, since voice channels don't inherit options from
+  // the media engine when those options are applied per-channel.
+  bool rx_auto_gain_control;
+  if (options.rx_auto_gain_control.Get(&rx_auto_gain_control)) {
+    if (engine()->voe()->processing()->SetRxAgcStatus(
+            voe_channel(), rx_auto_gain_control,
+            webrtc::kAgcFixedDigital) == -1) {
+      LOG_RTCERR1(SetRxAgcStatus, rx_auto_gain_control);
+      return false;
+    } else {
+      LOG(LS_VERBOSE) << "Rx auto gain set to " << rx_auto_gain_control
+                      << " with mode " << webrtc::kAgcFixedDigital;
+    }
+  }
+  if (options.rx_agc_target_dbov.IsSet() ||
+      options.rx_agc_digital_compression_gain.IsSet() ||
+      options.rx_agc_limiter.IsSet()) {
+    webrtc::AgcConfig config;
+    // If only some of the options are being overridden, get the current
+    // settings for the channel and bail if they aren't available.
+    if (!options.rx_agc_target_dbov.IsSet() ||
+        !options.rx_agc_digital_compression_gain.IsSet() ||
+        !options.rx_agc_limiter.IsSet()) {
+      if (engine()->voe()->processing()->GetRxAgcConfig(
+              voe_channel(), config) != 0) {
+        LOG(LS_ERROR) << "Failed to get default rx agc configuration for "
+                      << "channel " << voe_channel() << ". Since not all rx "
+                      << "agc options are specified, unable to safely set rx "
+                      << "agc options.";
+        return false;
+      }
+    }
+    config.targetLeveldBOv =
+        options.rx_agc_target_dbov.GetWithDefaultIfUnset(
+            config.targetLeveldBOv);
+    config.digitalCompressionGaindB =
+        options.rx_agc_digital_compression_gain.GetWithDefaultIfUnset(
+            config.digitalCompressionGaindB);
+    config.limiterEnable = options.rx_agc_limiter.GetWithDefaultIfUnset(
+        config.limiterEnable);
+    if (engine()->voe()->processing()->SetRxAgcConfig(
+            voe_channel(), config) == -1) {
+      LOG_RTCERR4(SetRxAgcConfig, voe_channel(), config.targetLeveldBOv,
+                  config.digitalCompressionGaindB, config.limiterEnable);
+      return false;
+    }
   }
 
   LOG(LS_INFO) << "Set voice channel options.  Current options: "

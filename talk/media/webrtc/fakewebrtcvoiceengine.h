@@ -87,6 +87,8 @@ class FakeWebRtcVoiceEngine
           fec(false),
           nack(false),
           media_processor_registered(false),
+          rx_agc_enabled(false),
+          rx_agc_mode(webrtc::kAgcDefault),
           cn8_type(13),
           cn16_type(105),
           dtmf_type(106),
@@ -95,6 +97,7 @@ class FakeWebRtcVoiceEngine
           send_ssrc(0),
           level_header_ext_(-1) {
       memset(&send_codec, 0, sizeof(send_codec));
+      memset(&rx_agc_config, 0, sizeof(rx_agc_config));
     }
     bool external_transport;
     bool send;
@@ -107,6 +110,9 @@ class FakeWebRtcVoiceEngine
     bool fec;
     bool nack;
     bool media_processor_registered;
+    bool rx_agc_enabled;
+    webrtc::AgcModes rx_agc_mode;
+    webrtc::AgcConfig rx_agc_config;
     int cn8_type;
     int cn16_type;
     int dtmf_type;
@@ -144,6 +150,8 @@ class FakeWebRtcVoiceEngine
         send_fail_channel_(-1),
         fail_start_recording_microphone_(false),
         recording_microphone_(false),
+        recording_sample_rate_(-1),
+        playout_sample_rate_(-1),
         media_processor_(NULL) {
     memset(&agc_config_, 0, sizeof(agc_config_));
   }
@@ -584,10 +592,22 @@ class FakeWebRtcVoiceEngine
   WEBRTC_STUB(AudioDeviceControl, (unsigned int, unsigned int, unsigned int));
   WEBRTC_STUB(SetLoudspeakerStatus, (bool enable));
   WEBRTC_STUB(GetLoudspeakerStatus, (bool& enabled));
-  WEBRTC_STUB(SetRecordingSampleRate, (unsigned int samples_per_sec));
-  WEBRTC_STUB_CONST(RecordingSampleRate, (unsigned int* samples_per_sec));
-  WEBRTC_STUB(SetPlayoutSampleRate, (unsigned int samples_per_sec));
-  WEBRTC_STUB_CONST(PlayoutSampleRate, (unsigned int* samples_per_sec));
+  WEBRTC_FUNC(SetRecordingSampleRate, (unsigned int samples_per_sec)) {
+    recording_sample_rate_ = samples_per_sec;
+    return 0;
+  }
+  WEBRTC_FUNC_CONST(RecordingSampleRate, (unsigned int* samples_per_sec)) {
+    *samples_per_sec = recording_sample_rate_;
+    return 0;
+  }
+  WEBRTC_FUNC(SetPlayoutSampleRate, (unsigned int samples_per_sec)) {
+    playout_sample_rate_ = samples_per_sec;
+    return 0;
+  }
+  WEBRTC_FUNC_CONST(PlayoutSampleRate, (unsigned int* samples_per_sec)) {
+    *samples_per_sec = playout_sample_rate_;
+    return 0;
+  }
   WEBRTC_STUB(EnableBuiltInAEC, (bool enable));
   virtual bool BuiltInAECIsEnabled() const { return true; }
 
@@ -841,12 +861,27 @@ class FakeWebRtcVoiceEngine
   WEBRTC_STUB(SetRxNsStatus, (int channel, bool enable, webrtc::NsModes mode));
   WEBRTC_STUB(GetRxNsStatus, (int channel, bool& enabled,
                               webrtc::NsModes& mode));
-  WEBRTC_STUB(SetRxAgcStatus, (int channel, bool enable,
-                               webrtc::AgcModes mode));
-  WEBRTC_STUB(GetRxAgcStatus, (int channel, bool& enabled,
-                               webrtc::AgcModes& mode));
-  WEBRTC_STUB(SetRxAgcConfig, (int channel, webrtc::AgcConfig config));
-  WEBRTC_STUB(GetRxAgcConfig, (int channel, webrtc::AgcConfig& config));
+  WEBRTC_FUNC(SetRxAgcStatus, (int channel, bool enable,
+                               webrtc::AgcModes mode)) {
+    channels_[channel]->rx_agc_enabled = enable;
+    channels_[channel]->rx_agc_mode = mode;
+    return 0;
+  }
+  WEBRTC_FUNC(GetRxAgcStatus, (int channel, bool& enabled,
+                               webrtc::AgcModes& mode)) {
+    enabled = channels_[channel]->rx_agc_enabled;
+    mode = channels_[channel]->rx_agc_mode;
+    return 0;
+  }
+
+  WEBRTC_FUNC(SetRxAgcConfig, (int channel, webrtc::AgcConfig config)) {
+    channels_[channel]->rx_agc_config = config;
+    return 0;
+  }
+  WEBRTC_FUNC(GetRxAgcConfig, (int channel, webrtc::AgcConfig& config)) {
+    config = channels_[channel]->rx_agc_config;
+    return 0;
+  }
 
   WEBRTC_STUB(RegisterRxVadObserver, (int, webrtc::VoERxVadCallback&));
   WEBRTC_STUB(DeRegisterRxVadObserver, (int channel));
@@ -996,6 +1031,8 @@ class FakeWebRtcVoiceEngine
   int send_fail_channel_;
   bool fail_start_recording_microphone_;
   bool recording_microphone_;
+  int recording_sample_rate_;
+  int playout_sample_rate_;
   DtmfInfo dtmf_info_;
   webrtc::VoEMediaProcess* media_processor_;
 };

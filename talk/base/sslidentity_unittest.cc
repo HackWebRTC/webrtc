@@ -57,7 +57,7 @@ const unsigned char kTestCertSha1[] = {0xA6, 0xC8, 0x59, 0xEA,
 class SSLIdentityTest : public testing::Test {
  public:
   SSLIdentityTest() :
-      identity1_(NULL), identity2_(NULL) {
+      identity1_(), identity2_() {
   }
 
   ~SSLIdentityTest() {

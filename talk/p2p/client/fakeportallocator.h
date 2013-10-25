@@ -32,7 +32,7 @@ class FakePortAllocatorSession : public PortAllocatorSession {
         factory_(factory),
         network_("network", "unittest",
                  talk_base::IPAddress(INADDR_LOOPBACK), 8),
-        port_(NULL), running_(false),
+        port_(), running_(false),
         port_config_count_(0) {
     network_.AddIP(talk_base::IPAddress(INADDR_LOOPBACK));
   }

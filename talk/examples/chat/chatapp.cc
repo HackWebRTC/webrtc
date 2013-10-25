@@ -38,10 +38,10 @@
 
 ChatApp::ChatApp(buzz::XmppClient* xmpp_client, talk_base::Thread* main_thread)
   : xmpp_client_(xmpp_client),
-    presence_out_task_(NULL),
-    presence_receive_task_(NULL),
-    message_send_task_(NULL),
-    message_received_task_(NULL),
+    presence_out_task_(),
+    presence_receive_task_(),
+    message_send_task_(),
+    message_received_task_(),
     console_task_(new buzz::ConsoleTask(main_thread)),
     ui_state_(STATE_BASE) {
   xmpp_client_->SignalStateChange.connect(this, &ChatApp::OnStateChange);

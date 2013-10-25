@@ -46,8 +46,8 @@ public:
 
   explicit Private(XmppClient* client) :
     client_(client),
-    socket_(NULL),
-    engine_(NULL),
+    socket_(),
+    engine_(),
     proxy_port_(0),
     pre_engine_error_(XmppEngine::ERROR_NONE),
     pre_engine_subcode_(0),

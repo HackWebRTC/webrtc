@@ -267,6 +267,10 @@ bool MediaStreamSignaling::AddDataChannelFromOpenMessage(
   }
   scoped_refptr<DataChannel> channel(
       data_channel_factory_->CreateDataChannel(label, &config));
+  if (!channel.get()) {
+    LOG(LS_ERROR) << "Failed to create DataChannel from the OPEN message.";
+    return false;
+  }
   data_channels_[label] = channel;
   stream_observer_->OnAddDataChannel(channel);
   // It's immediately ready to use.

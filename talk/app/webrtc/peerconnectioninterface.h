@@ -390,6 +390,19 @@ class DTLSIdentityServiceInterface {
 // argument.
 class PeerConnectionFactoryInterface : public talk_base::RefCountInterface {
  public:
+  class Options {
+   public:
+    Options() :
+      enable_aec_dump(false),
+      disable_encryption(false),
+      disable_sctp_data_channels(false) {
+    }
+    bool enable_aec_dump;
+    bool disable_encryption;
+    bool disable_sctp_data_channels;
+  };
+
+  virtual void SetOptions(const Options& options) = 0;
   virtual talk_base::scoped_refptr<PeerConnectionInterface>
      CreatePeerConnection(
          const PeerConnectionInterface::IceServers& configuration,

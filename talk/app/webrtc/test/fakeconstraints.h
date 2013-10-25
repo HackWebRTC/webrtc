@@ -119,7 +119,6 @@ class FakeConstraints : public webrtc::MediaConstraintsInterface {
   }
 
   void SetAllowDtlsSctpDataChannels() {
-    SetMandatory(MediaConstraintsInterface::kEnableSctpDataChannels, true);
     SetMandatory(MediaConstraintsInterface::kEnableDtlsSrtp, true);
   }
 

@@ -157,7 +157,7 @@ class VideoFrameTest : public testing::Test {
                         prefix.c_str(), frame.GetWidth(), frame.GetHeight());
     size_t out_size = cricket::VideoFrame::SizeOf(frame.GetWidth(),
                                                   frame.GetHeight());
-    talk_base::scoped_array<uint8> out(new uint8[out_size]);
+    talk_base::scoped_ptr<uint8[]> out(new uint8[out_size]);
     frame.CopyToBuffer(out.get(), out_size);
     return DumpSample(filename, out.get(), out_size);
   }
@@ -514,7 +514,7 @@ class VideoFrameTest : public testing::Test {
     T frame1, frame2;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
     size_t buf_size = kWidth * kHeight * 2;
-    talk_base::scoped_array<uint8> buf(new uint8[buf_size + kAlignment]);
+    talk_base::scoped_ptr<uint8[]> buf(new uint8[buf_size + kAlignment]);
     uint8* y = ALIGNP(buf.get(), kAlignment);
     uint8* u = y + kWidth * kHeight;
     uint8* v = u + (kWidth / 2) * kHeight;
@@ -535,7 +535,7 @@ class VideoFrameTest : public testing::Test {
     T frame1, frame2;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
     size_t buf_size = kWidth * kHeight * 2;
-    talk_base::scoped_array<uint8> buf(new uint8[buf_size + kAlignment]);
+    talk_base::scoped_ptr<uint8[]> buf(new uint8[buf_size + kAlignment]);
     uint8* yuy2 = ALIGNP(buf.get(), kAlignment);
     EXPECT_EQ(0, libyuv::I420ToYUY2(frame1.GetYPlane(), frame1.GetYPitch(),
                                     frame1.GetUPlane(), frame1.GetUPitch(),
@@ -552,7 +552,7 @@ class VideoFrameTest : public testing::Test {
     T frame1, frame2;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
     size_t buf_size = kWidth * kHeight * 2;
-    talk_base::scoped_array<uint8> buf(new uint8[buf_size + kAlignment + 1]);
+    talk_base::scoped_ptr<uint8[]> buf(new uint8[buf_size + kAlignment + 1]);
     uint8* yuy2 = ALIGNP(buf.get(), kAlignment) + 1;
     EXPECT_EQ(0, libyuv::I420ToYUY2(frame1.GetYPlane(), frame1.GetYPitch(),
                                     frame1.GetUPlane(), frame1.GetUPitch(),
@@ -718,7 +718,7 @@ class VideoFrameTest : public testing::Test {
   void ConstructRGB565() {
     T frame1, frame2;
     size_t out_size = kWidth * kHeight * 2;
-    talk_base::scoped_array<uint8> outbuf(new uint8[out_size + kAlignment]);
+    talk_base::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment]);
     uint8 *out = ALIGNP(outbuf.get(), kAlignment);
     T frame;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
@@ -734,7 +734,7 @@ class VideoFrameTest : public testing::Test {
   void ConstructARGB1555() {
     T frame1, frame2;
     size_t out_size = kWidth * kHeight * 2;
-    talk_base::scoped_array<uint8> outbuf(new uint8[out_size + kAlignment]);
+    talk_base::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment]);
     uint8 *out = ALIGNP(outbuf.get(), kAlignment);
     T frame;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
@@ -750,7 +750,7 @@ class VideoFrameTest : public testing::Test {
   void ConstructARGB4444() {
     T frame1, frame2;
     size_t out_size = kWidth * kHeight * 2;
-    talk_base::scoped_array<uint8> outbuf(new uint8[out_size + kAlignment]);
+    talk_base::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment]);
     uint8 *out = ALIGNP(outbuf.get(), kAlignment);
     T frame;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
@@ -769,7 +769,7 @@ class VideoFrameTest : public testing::Test {
   #define TEST_BYR(NAME, BAYER)                                                \
   void NAME() {                                                                \
     size_t bayer_size = kWidth * kHeight;                                      \
-    talk_base::scoped_array<uint8> bayerbuf(new uint8[                         \
+    talk_base::scoped_ptr<uint8[]> bayerbuf(new uint8[                         \
         bayer_size + kAlignment]);                                             \
     uint8 *bayer = ALIGNP(bayerbuf.get(), kAlignment);                         \
     T frame1, frame2;                                                          \
@@ -994,7 +994,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     }
     // Convert back to ARGB.
     size_t out_size = 4;
-    talk_base::scoped_array<uint8> outbuf(new uint8[out_size + kAlignment]);
+    talk_base::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment]);
     uint8 *out = ALIGNP(outbuf.get(), kAlignment);
 
     EXPECT_EQ(out_size, frame.ConvertToRgbBuffer(cricket::FOURCC_ARGB,
@@ -1031,7 +1031,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     }
     // Convert back to ARGB
     size_t out_size = 10 * 4;
-    talk_base::scoped_array<uint8> outbuf(new uint8[out_size + kAlignment]);
+    talk_base::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment]);
     uint8 *out = ALIGNP(outbuf.get(), kAlignment);
 
     EXPECT_EQ(out_size, frame.ConvertToRgbBuffer(cricket::FOURCC_ARGB,
@@ -1162,7 +1162,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
 
     // Allocate a buffer with end page aligned.
     const int kPadToHeapSized = 16 * 1024 * 1024;
-    talk_base::scoped_array<uint8> page_buffer(
+    talk_base::scoped_ptr<uint8[]> page_buffer(
         new uint8[((data_size + kPadToHeapSized + 4095) & ~4095)]);
     uint8* data_ptr = page_buffer.get();
     if (!data_ptr) {
@@ -1427,7 +1427,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
 
     int astride = kWidth * bpp + rowpad;
     size_t out_size = astride * kHeight;
-    talk_base::scoped_array<uint8> outbuf(new uint8[out_size + kAlignment + 1]);
+    talk_base::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment + 1]);
     memset(outbuf.get(), 0, out_size + kAlignment + 1);
     uint8 *outtop = ALIGNP(outbuf.get(), kAlignment);
     uint8 *out = outtop;
@@ -1841,7 +1841,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
   void ConvertToI422Buffer() {
     T frame1, frame2;
     size_t out_size = kWidth * kHeight * 2;
-    talk_base::scoped_array<uint8> buf(new uint8[out_size + kAlignment]);
+    talk_base::scoped_ptr<uint8[]> buf(new uint8[out_size + kAlignment]);
     uint8* y = ALIGNP(buf.get(), kAlignment);
     uint8* u = y + kWidth * kHeight;
     uint8* v = u + (kWidth / 2) * kHeight;
@@ -1865,7 +1865,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
   #define TEST_TOBYR(NAME, BAYER)                                              \
   void NAME() {                                                                \
     size_t bayer_size = kWidth * kHeight;                                      \
-    talk_base::scoped_array<uint8> bayerbuf(new uint8[                         \
+    talk_base::scoped_ptr<uint8[]> bayerbuf(new uint8[                         \
         bayer_size + kAlignment]);                                             \
     uint8 *bayer = ALIGNP(bayerbuf.get(), kAlignment);                         \
     T frame;                                                                   \
@@ -1894,7 +1894,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
   }                                                                            \
   void NAME##Unaligned() {                                                     \
     size_t bayer_size = kWidth * kHeight;                                      \
-    talk_base::scoped_array<uint8> bayerbuf(new uint8[                         \
+    talk_base::scoped_ptr<uint8[]> bayerbuf(new uint8[                         \
         bayer_size + 1 + kAlignment]);                                         \
     uint8 *bayer = ALIGNP(bayerbuf.get(), kAlignment) + 1;                     \
     T frame;                                                                   \
@@ -1931,7 +1931,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
   #define TEST_BYRTORGB(NAME, BAYER)                                           \
   void NAME() {                                                                \
     size_t bayer_size = kWidth * kHeight;                                      \
-    talk_base::scoped_array<uint8> bayerbuf(new uint8[                         \
+    talk_base::scoped_ptr<uint8[]> bayerbuf(new uint8[                         \
         bayer_size + kAlignment]);                                             \
     uint8 *bayer1 = ALIGNP(bayerbuf.get(), kAlignment);                        \
     for (int i = 0; i < kWidth * kHeight; ++i) {                               \
@@ -1947,7 +1947,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
                              kWidth * 4,                                       \
                              kWidth, kHeight);                                 \
     }                                                                          \
-    talk_base::scoped_array<uint8> bayer2buf(new uint8[                        \
+    talk_base::scoped_ptr<uint8[]> bayer2buf(new uint8[                        \
         bayer_size + kAlignment]);                                             \
     uint8 *bayer2 = ALIGNP(bayer2buf.get(), kAlignment);                       \
     libyuv::ARGBToBayer##BAYER(reinterpret_cast<uint8*>(ms->GetBuffer()),      \
@@ -2010,7 +2010,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     ASSERT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_I420, kWidth, kHeight,
                           &frame));
     size_t out_size = kWidth * kHeight * 3 / 2;
-    talk_base::scoped_array<uint8> out(new uint8[out_size]);
+    talk_base::scoped_ptr<uint8[]> out(new uint8[out_size]);
     for (int i = 0; i < repeat_; ++i) {
       EXPECT_EQ(out_size, frame.CopyToBuffer(out.get(), out_size));
     }
@@ -2056,7 +2056,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
 
   void CopyToBuffer1Pixel() {
     size_t out_size = 3;
-    talk_base::scoped_array<uint8> out(new uint8[out_size + 1]);
+    talk_base::scoped_ptr<uint8[]> out(new uint8[out_size + 1]);
     memset(out.get(), 0xfb, out_size + 1);  // Fill buffer
     uint8 pixel[3] = { 1, 2, 3 };
     T frame;

@@ -45,6 +45,7 @@
 #include "webrtc/video_engine/include/vie_network.h"
 #include "webrtc/video_engine/include/vie_render.h"
 #include "webrtc/video_engine/include/vie_rtp_rtcp.h"
+#include "webrtc/video_engine/new_include/frame_callback.h"
 
 namespace cricket {
 

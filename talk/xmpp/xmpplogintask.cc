@@ -66,11 +66,11 @@ XmppLoginTask::XmppLoginTask(XmppEngineImpl * pctx) :
   pelStanza_(NULL),
   isStart_(false),
   iqId_(STR_EMPTY),
-  pelFeatures_(NULL),
+  pelFeatures_(),
   fullJid_(STR_EMPTY),
   streamId_(STR_EMPTY),
   pvecQueuedStanzas_(new std::vector<XmlElement *>()),
-  sasl_mech_(NULL) {
+  sasl_mech_() {
 }
 
 XmppLoginTask::~XmppLoginTask() {

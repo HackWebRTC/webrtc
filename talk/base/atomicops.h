@@ -79,7 +79,7 @@ class FixedSizeLockFreeQueue {
   FixedSizeLockFreeQueue() : pushed_count_(0),
                              popped_count_(0),
                              capacity_(0),
-                             data_(NULL) {}
+                             data_() {}
   // Constructs an empty queue with the given capacity.
   FixedSizeLockFreeQueue(size_t capacity) : pushed_count_(0),
                                             popped_count_(0),
@@ -157,7 +157,7 @@ class FixedSizeLockFreeQueue {
   volatile Atomic32 pushed_count_;
   volatile Atomic32 popped_count_;
   size_t capacity_;
-  talk_base::scoped_array<T> data_;
+  talk_base::scoped_ptr<T[]> data_;
   DISALLOW_COPY_AND_ASSIGN(FixedSizeLockFreeQueue);
 };
 

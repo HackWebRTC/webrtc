@@ -162,29 +162,51 @@ struct AudioOptions {
   void SetAll(const AudioOptions& change) {
     echo_cancellation.SetFrom(change.echo_cancellation);
     auto_gain_control.SetFrom(change.auto_gain_control);
+    rx_auto_gain_control.SetFrom(change.rx_auto_gain_control);
     noise_suppression.SetFrom(change.noise_suppression);
     highpass_filter.SetFrom(change.highpass_filter);
     stereo_swapping.SetFrom(change.stereo_swapping);
     typing_detection.SetFrom(change.typing_detection);
+    aecm_generate_comfort_noise.SetFrom(change.aecm_generate_comfort_noise);
     conference_mode.SetFrom(change.conference_mode);
     adjust_agc_delta.SetFrom(change.adjust_agc_delta);
     experimental_agc.SetFrom(change.experimental_agc);
     experimental_aec.SetFrom(change.experimental_aec);
     aec_dump.SetFrom(change.aec_dump);
+    tx_agc_target_dbov.SetFrom(change.tx_agc_target_dbov);
+    tx_agc_digital_compression_gain.SetFrom(
+        change.tx_agc_digital_compression_gain);
+    tx_agc_limiter.SetFrom(change.tx_agc_limiter);
+    rx_agc_target_dbov.SetFrom(change.rx_agc_target_dbov);
+    rx_agc_digital_compression_gain.SetFrom(
+        change.rx_agc_digital_compression_gain);
+    rx_agc_limiter.SetFrom(change.rx_agc_limiter);
+    recording_sample_rate.SetFrom(change.recording_sample_rate);
+    playout_sample_rate.SetFrom(change.playout_sample_rate);
   }
 
   bool operator==(const AudioOptions& o) const {
     return echo_cancellation == o.echo_cancellation &&
         auto_gain_control == o.auto_gain_control &&
+        rx_auto_gain_control == o.rx_auto_gain_control &&
         noise_suppression == o.noise_suppression &&
         highpass_filter == o.highpass_filter &&
         stereo_swapping == o.stereo_swapping &&
         typing_detection == o.typing_detection &&
+        aecm_generate_comfort_noise == o.aecm_generate_comfort_noise &&
         conference_mode == o.conference_mode &&
         experimental_agc == o.experimental_agc &&
         experimental_aec == o.experimental_aec &&
         adjust_agc_delta == o.adjust_agc_delta &&
-        aec_dump == o.aec_dump;
+        aec_dump == o.aec_dump &&
+        tx_agc_target_dbov == o.tx_agc_target_dbov &&
+        tx_agc_digital_compression_gain == o.tx_agc_digital_compression_gain &&
+        tx_agc_limiter == o.tx_agc_limiter &&
+        rx_agc_target_dbov == o.rx_agc_target_dbov &&
+        rx_agc_digital_compression_gain == o.rx_agc_digital_compression_gain &&
+        rx_agc_limiter == o.rx_agc_limiter &&
+        recording_sample_rate == o.recording_sample_rate &&
+        playout_sample_rate == o.playout_sample_rate;
   }
 
   std::string ToString() const {
@@ -192,15 +214,27 @@ struct AudioOptions {
     ost << "AudioOptions {";
     ost << ToStringIfSet("aec", echo_cancellation);
     ost << ToStringIfSet("agc", auto_gain_control);
+    ost << ToStringIfSet("rx_agc", rx_auto_gain_control);
     ost << ToStringIfSet("ns", noise_suppression);
     ost << ToStringIfSet("hf", highpass_filter);
     ost << ToStringIfSet("swap", stereo_swapping);
     ost << ToStringIfSet("typing", typing_detection);
+    ost << ToStringIfSet("comfort_noise", aecm_generate_comfort_noise);
     ost << ToStringIfSet("conference", conference_mode);
     ost << ToStringIfSet("agc_delta", adjust_agc_delta);
     ost << ToStringIfSet("experimental_agc", experimental_agc);
     ost << ToStringIfSet("experimental_aec", experimental_aec);
     ost << ToStringIfSet("aec_dump", aec_dump);
+    ost << ToStringIfSet("tx_agc_target_dbov", tx_agc_target_dbov);
+    ost << ToStringIfSet("tx_agc_digital_compression_gain",
+        tx_agc_digital_compression_gain);
+    ost << ToStringIfSet("tx_agc_limiter", tx_agc_limiter);
+    ost << ToStringIfSet("rx_agc_target_dbov", rx_agc_target_dbov);
+    ost << ToStringIfSet("rx_agc_digital_compression_gain",
+        rx_agc_digital_compression_gain);
+    ost << ToStringIfSet("rx_agc_limiter", rx_agc_limiter);
+    ost << ToStringIfSet("recording_sample_rate", recording_sample_rate);
+    ost << ToStringIfSet("playout_sample_rate", playout_sample_rate);
     ost << "}";
     return ost.str();
   }
@@ -210,6 +244,8 @@ struct AudioOptions {
   Settable<bool> echo_cancellation;
   // Audio processing to adjust the sensitivity of the local mic dynamically.
   Settable<bool> auto_gain_control;
+  // Audio processing to apply gain to the remote audio.
+  Settable<bool> rx_auto_gain_control;
   // Audio processing to filter out background noise.
   Settable<bool> noise_suppression;
   // Audio processing to remove background noise of lower frequencies.
@@ -218,11 +254,21 @@ struct AudioOptions {
   Settable<bool> stereo_swapping;
   // Audio processing to detect typing.
   Settable<bool> typing_detection;
+  Settable<bool> aecm_generate_comfort_noise;
   Settable<bool> conference_mode;
   Settable<int> adjust_agc_delta;
   Settable<bool> experimental_agc;
   Settable<bool> experimental_aec;
   Settable<bool> aec_dump;
+  // Note that tx_agc_* only applies to non-experimental AGC.
+  Settable<uint16> tx_agc_target_dbov;
+  Settable<uint16> tx_agc_digital_compression_gain;
+  Settable<bool> tx_agc_limiter;
+  Settable<uint16> rx_agc_target_dbov;
+  Settable<uint16> rx_agc_digital_compression_gain;
+  Settable<bool> rx_agc_limiter;
+  Settable<uint32> recording_sample_rate;
+  Settable<uint32> playout_sample_rate;
 };
 
 // Options that can be applied to a VideoMediaChannel or a VideoMediaEngine.
@@ -244,12 +290,13 @@ struct VideoOptions {
     video_adapt_third.SetFrom(change.video_adapt_third);
     video_noise_reduction.SetFrom(change.video_noise_reduction);
     video_three_layers.SetFrom(change.video_three_layers);
-    video_enable_camera_list.SetFrom(change.video_enable_camera_list);
     video_one_layer_screencast.SetFrom(change.video_one_layer_screencast);
     video_high_bitrate.SetFrom(change.video_high_bitrate);
     video_watermark.SetFrom(change.video_watermark);
     video_temporal_layer_screencast.SetFrom(
         change.video_temporal_layer_screencast);
+    video_temporal_layer_realtime.SetFrom(
+        change.video_temporal_layer_realtime);
     video_leaky_bucket.SetFrom(change.video_leaky_bucket);
     cpu_overuse_detection.SetFrom(change.cpu_overuse_detection);
     conference_mode.SetFrom(change.conference_mode);
@@ -269,11 +316,11 @@ struct VideoOptions {
         video_adapt_third == o.video_adapt_third &&
         video_noise_reduction == o.video_noise_reduction &&
         video_three_layers == o.video_three_layers &&
-        video_enable_camera_list == o.video_enable_camera_list &&
         video_one_layer_screencast == o.video_one_layer_screencast &&
         video_high_bitrate == o.video_high_bitrate &&
         video_watermark == o.video_watermark &&
         video_temporal_layer_screencast == o.video_temporal_layer_screencast &&
+        video_temporal_layer_realtime == o.video_temporal_layer_realtime &&
         video_leaky_bucket == o.video_leaky_bucket &&
         cpu_overuse_detection == o.cpu_overuse_detection &&
         conference_mode == o.conference_mode &&
@@ -295,12 +342,13 @@ struct VideoOptions {
     ost << ToStringIfSet("video adapt third", video_adapt_third);
     ost << ToStringIfSet("noise reduction", video_noise_reduction);
     ost << ToStringIfSet("3 layers", video_three_layers);
-    ost << ToStringIfSet("camera list", video_enable_camera_list);
     ost << ToStringIfSet("1 layer screencast", video_one_layer_screencast);
     ost << ToStringIfSet("high bitrate", video_high_bitrate);
     ost << ToStringIfSet("watermark", video_watermark);
     ost << ToStringIfSet("video temporal layer screencast",
                          video_temporal_layer_screencast);
+    ost << ToStringIfSet("video temporal layer realtime",
+                         video_temporal_layer_realtime);
     ost << ToStringIfSet("leaky bucket", video_leaky_bucket);
     ost << ToStringIfSet("cpu overuse detection", cpu_overuse_detection);
     ost << ToStringIfSet("conference mode", conference_mode);
@@ -326,8 +374,6 @@ struct VideoOptions {
   Settable<bool> video_noise_reduction;
   // Experimental: Enable multi layer?
   Settable<bool> video_three_layers;
-  // Experimental: Enable camera list?
-  Settable<bool> video_enable_camera_list;
   // Experimental: Enable one layer screencast?
   Settable<bool> video_one_layer_screencast;
   // Experimental: Enable WebRtc higher bitrate?
@@ -336,6 +382,8 @@ struct VideoOptions {
   Settable<bool> video_watermark;
   // Experimental: Enable WebRTC layered screencast.
   Settable<bool> video_temporal_layer_screencast;
+  // Experimental: Enable WebRTC temporal layer strategy for realtime video.
+  Settable<bool> video_temporal_layer_realtime;
   // Enable WebRTC leaky bucket when sending media packets.
   Settable<bool> video_leaky_bucket;
   // Enable WebRTC Cpu Overuse Detection, which is a new version of the CPU
@@ -513,15 +561,68 @@ enum SendFlags {
   SEND_MICROPHONE
 };
 
-struct VoiceSenderInfo {
-  VoiceSenderInfo()
+// The stats information is structured as follows:
+// Media are represented by either MediaSenderInfo or MediaReceiverInfo.
+// Media contains a vector of SSRC infos that are exclusively used by this
+// media. (SSRCs shared between media streams can't be represented.)
+
+// Information about an SSRC.
+// This data may be locally recorded, or received in an RTCP SR or RR.
+struct SsrcSenderInfo {
+  SsrcSenderInfo()
       : ssrc(0),
-        bytes_sent(0),
+    timestamp(0) {
+  }
+  uint32 ssrc;
+  double timestamp;  // NTP timestamp, represented as seconds since epoch.
+};
+
+struct SsrcReceiverInfo {
+  SsrcReceiverInfo()
+      : ssrc(0),
+        timestamp(0) {
+  }
+  uint32 ssrc;
+  double timestamp;
+};
+
+struct MediaSenderInfo {
+  MediaSenderInfo()
+      : bytes_sent(0),
         packets_sent(0),
         packets_lost(0),
         fraction_lost(0.0),
+        rtt_ms(0) {
+  }
+  int64 bytes_sent;
+  int packets_sent;
+  int packets_lost;
+  float fraction_lost;
+  int rtt_ms;
+  std::string codec_name;
+  std::vector<SsrcSenderInfo> local_stats;
+  std::vector<SsrcReceiverInfo> remote_stats;
+};
+
+struct MediaReceiverInfo {
+  MediaReceiverInfo()
+      : bytes_rcvd(0),
+        packets_rcvd(0),
+        packets_lost(0),
+        fraction_lost(0.0) {
+  }
+  int64 bytes_rcvd;
+  int packets_rcvd;
+  int packets_lost;
+  float fraction_lost;
+  std::vector<SsrcReceiverInfo> local_stats;
+  std::vector<SsrcSenderInfo> remote_stats;
+};
+
+struct VoiceSenderInfo : public MediaSenderInfo {
+  VoiceSenderInfo()
+      : ssrc(0),
         ext_seqnum(0),
-        rtt_ms(0),
         jitter_ms(0),
         audio_level(0),
         aec_quality_min(0.0),
@@ -533,13 +634,7 @@ struct VoiceSenderInfo {
   }
 
   uint32 ssrc;
-  std::string codec_name;
-  int64 bytes_sent;
-  int packets_sent;
-  int packets_lost;
-  float fraction_lost;
   int ext_seqnum;
-  int rtt_ms;
   int jitter_ms;
   int audio_level;
   float aec_quality_min;
@@ -550,13 +645,9 @@ struct VoiceSenderInfo {
   bool typing_noise_detected;
 };
 
-struct VoiceReceiverInfo {
+struct VoiceReceiverInfo : public MediaReceiverInfo {
   VoiceReceiverInfo()
       : ssrc(0),
-        bytes_rcvd(0),
-        packets_rcvd(0),
-        packets_lost(0),
-        fraction_lost(0.0),
         ext_seqnum(0),
         jitter_ms(0),
         jitter_buffer_ms(0),
@@ -567,10 +658,6 @@ struct VoiceReceiverInfo {
   }
 
   uint32 ssrc;
-  int64 bytes_rcvd;
-  int packets_rcvd;
-  int packets_lost;
-  float fraction_lost;
   int ext_seqnum;
   int jitter_ms;
   int jitter_buffer_ms;
@@ -581,16 +668,11 @@ struct VoiceReceiverInfo {
   float expand_rate;
 };
 
-struct VideoSenderInfo {
+struct VideoSenderInfo : public MediaSenderInfo {
   VideoSenderInfo()
-      : bytes_sent(0),
-        packets_sent(0),
-        packets_cached(0),
-        packets_lost(0),
-        fraction_lost(0.0),
+      : packets_cached(0),
         firs_rcvd(0),
         nacks_rcvd(0),
-        rtt_ms(0),
         frame_width(0),
         frame_height(0),
         framerate_input(0),
@@ -602,15 +684,9 @@ struct VideoSenderInfo {
 
   std::vector<uint32> ssrcs;
   std::vector<SsrcGroup> ssrc_groups;
-  std::string codec_name;
-  int64 bytes_sent;
-  int packets_sent;
   int packets_cached;
-  int packets_lost;
-  float fraction_lost;
   int firs_rcvd;
   int nacks_rcvd;
-  int rtt_ms;
   int frame_width;
   int frame_height;
   int framerate_input;
@@ -620,13 +696,9 @@ struct VideoSenderInfo {
   int adapt_reason;
 };
 
-struct VideoReceiverInfo {
+struct VideoReceiverInfo : public MediaReceiverInfo {
   VideoReceiverInfo()
-      : bytes_rcvd(0),
-        packets_rcvd(0),
-        packets_lost(0),
-        packets_concealed(0),
-        fraction_lost(0.0),
+      : packets_concealed(0),
         firs_sent(0),
         nacks_sent(0),
         frame_width(0),
@@ -635,17 +707,19 @@ struct VideoReceiverInfo {
         framerate_decoded(0),
         framerate_output(0),
         framerate_render_input(0),
-        framerate_render_output(0) {
+        framerate_render_output(0),
+        decode_ms(0),
+        max_decode_ms(0),
+        jitter_buffer_ms(0),
+        min_playout_delay_ms(0),
+        render_delay_ms(0),
+        target_delay_ms(0),
+        current_delay_ms(0) {
   }
 
   std::vector<uint32> ssrcs;
   std::vector<SsrcGroup> ssrc_groups;
-  int64 bytes_rcvd;
-  // vector<int> layer_bytes_rcvd;
-  int packets_rcvd;
-  int packets_lost;
   int packets_concealed;
-  float fraction_lost;
   int firs_sent;
   int nacks_sent;
   int frame_width;
@@ -657,31 +731,42 @@ struct VideoReceiverInfo {
   int framerate_render_input;
   // Framerate that the renderer reports.
   int framerate_render_output;
+
+  // All stats below are gathered per-VideoReceiver, but some will be correlated
+  // across MediaStreamTracks.  NOTE(hta): when sinking stats into per-SSRC
+  // structures, reflect this in the new layout.
+
+  // Current frame decode latency.
+  int decode_ms;
+  // Maximum observed frame decode latency.
+  int max_decode_ms;
+  // Jitter (network-related) latency.
+  int jitter_buffer_ms;
+  // Requested minimum playout latency.
+  int min_playout_delay_ms;
+  // Requested latency to account for rendering delay.
+  int render_delay_ms;
+  // Target overall delay: network+decode+render, accounting for
+  // min_playout_delay_ms.
+  int target_delay_ms;
+  // Current overall delay, possibly ramping towards target_delay_ms.
+  int current_delay_ms;
 };
 
-struct DataSenderInfo {
+struct DataSenderInfo : public MediaSenderInfo {
   DataSenderInfo()
-      : ssrc(0),
-        bytes_sent(0),
-        packets_sent(0) {
+      : ssrc(0) {
   }
 
   uint32 ssrc;
-  std::string codec_name;
-  int64 bytes_sent;
-  int packets_sent;
 };
 
-struct DataReceiverInfo {
+struct DataReceiverInfo : public MediaReceiverInfo {
   DataReceiverInfo()
-      : ssrc(0),
-        bytes_rcvd(0),
-        packets_rcvd(0) {
+      : ssrc(0) {
   }
 
   uint32 ssrc;
-  int64 bytes_rcvd;
-  int packets_rcvd;
 };
 
 struct BandwidthEstimationInfo {

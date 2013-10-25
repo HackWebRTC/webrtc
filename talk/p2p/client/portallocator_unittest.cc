@@ -50,6 +50,8 @@ using talk_base::SocketAddress;
 using talk_base::Thread;
 
 static const SocketAddress kClientAddr("11.11.11.11", 0);
+static const SocketAddress kClientIPv6Addr(
+    "2401:fa00:4:1000:be30:5bff:fee5:c3", 0);
 static const SocketAddress kNatAddr("77.77.77.77", talk_base::NAT_SERVER_PORT);
 static const SocketAddress kRemoteClientAddr("22.22.22.22", 0);
 static const SocketAddress kStunAddr("99.99.99.1", cricket::STUN_SERVER_PORT);
@@ -738,6 +740,36 @@ TEST_F(PortAllocatorTest, TestEnableSharedSocketNoUdpAllowed) {
   // STUN timeout is 9sec. We need to wait to get candidate done signal.
   EXPECT_TRUE_WAIT(candidate_allocation_done_, 10000);
   EXPECT_EQ(1U, candidates_.size());
+}
+
+// This test verifies allocator can use IPv6 addresses along with IPv4.
+TEST_F(PortAllocatorTest, TestEnableIPv6Addresses) {
+  allocator().set_flags(allocator().flags() |
+                        cricket::PORTALLOCATOR_DISABLE_RELAY |
+                        cricket::PORTALLOCATOR_ENABLE_IPV6 |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
+  AddInterface(kClientIPv6Addr);
+  AddInterface(kClientAddr);
+  allocator_->set_step_delay(cricket::kMinimumStepDelay);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  ASSERT_EQ_WAIT(4U, ports_.size(), kDefaultAllocationTimeout);
+  EXPECT_EQ(4U, candidates_.size());
+  EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
+  EXPECT_PRED5(CheckCandidate, candidates_[0],
+      cricket::ICE_CANDIDATE_COMPONENT_RTP, "local", "udp",
+      kClientIPv6Addr);
+  EXPECT_PRED5(CheckCandidate, candidates_[1],
+      cricket::ICE_CANDIDATE_COMPONENT_RTP, "local", "udp",
+      kClientAddr);
+  EXPECT_PRED5(CheckCandidate, candidates_[2],
+      cricket::ICE_CANDIDATE_COMPONENT_RTP, "local", "tcp",
+      kClientIPv6Addr);
+  EXPECT_PRED5(CheckCandidate, candidates_[3],
+      cricket::ICE_CANDIDATE_COMPONENT_RTP, "local", "tcp",
+      kClientAddr);
+  EXPECT_EQ(4U, candidates_.size());
 }
 
 // Test that the httpportallocator correctly maintains its lists of stun and

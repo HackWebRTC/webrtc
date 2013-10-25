@@ -35,7 +35,7 @@
 namespace cricket {
 
 // Format defined at
-// http://tools.ietf.org/html/draft-jesup-rtcweb-data-protocol-04
+// http://tools.ietf.org/html/draft-ietf-rtcweb-data-protocol-00#section-6.1
 
 static const uint8 DATA_CHANNEL_OPEN_MESSAGE_TYPE = 0x03;
 
@@ -73,14 +73,15 @@ bool ParseDataChannelOpenMessage(
     LOG(LS_WARNING) << "Could not read OPEN message channel type.";
     return false;
   }
-  uint16 reliability_param;
-  if (!buffer.ReadUInt16(&reliability_param)) {
-    LOG(LS_WARNING) << "Could not read OPEN message reliabilility param.";
-    return false;
-  }
+
   uint16 priority;
   if (!buffer.ReadUInt16(&priority)) {
     LOG(LS_WARNING) << "Could not read OPEN message reliabilility prioirty.";
+    return false;
+  }
+  uint32 reliability_param;
+  if (!buffer.ReadUInt32(&reliability_param)) {
+    LOG(LS_WARNING) << "Could not read OPEN message reliabilility param.";
     return false;
   }
   uint16 label_length;
@@ -116,10 +117,11 @@ bool ParseDataChannelOpenMessage(
     case DCOMCT_ORDERED_PARTIAL_RTXS:
     case DCOMCT_UNORDERED_PARTIAL_RTXS:
       config->maxRetransmits = reliability_param;
-
+      break;
     case DCOMCT_ORDERED_PARTIAL_TIME:
     case DCOMCT_UNORDERED_PARTIAL_TIME:
       config->maxRetransmitTime = reliability_param;
+      break;
   }
 
   return true;
@@ -130,11 +132,9 @@ bool WriteDataChannelOpenMessage(
     const webrtc::DataChannelInit& config,
     talk_base::Buffer* payload) {
   // Format defined at
-  // http://tools.ietf.org/html/draft-jesup-rtcweb-data-protocol-04
-  // TODO(pthatcher)
-
+  // http://tools.ietf.org/html/draft-ietf-rtcweb-data-protocol-00#section-6.1
   uint8 channel_type = 0;
-  uint16 reliability_param = 0;
+  uint32 reliability_param = 0;
   uint16 priority = 0;
   if (config.ordered) {
     if (config.maxRetransmits > -1) {
@@ -163,8 +163,8 @@ bool WriteDataChannelOpenMessage(
       talk_base::ByteBuffer::ORDER_NETWORK);
   buffer.WriteUInt8(DATA_CHANNEL_OPEN_MESSAGE_TYPE);
   buffer.WriteUInt8(channel_type);
-  buffer.WriteUInt16(reliability_param);
   buffer.WriteUInt16(priority);
+  buffer.WriteUInt32(reliability_param);
   buffer.WriteUInt16(static_cast<uint16>(label.length()));
   buffer.WriteUInt16(static_cast<uint16>(config.protocol.length()));
   buffer.WriteString(label);

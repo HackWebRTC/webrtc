@@ -47,8 +47,7 @@ class TestTurnServer : public TurnAuthInterface {
                  const talk_base::SocketAddress& udp_int_addr,
                  const talk_base::SocketAddress& udp_ext_addr)
       : server_(thread) {
-    server_.AddInternalSocket(talk_base::AsyncUDPSocket::Create(
-        thread->socketserver(), udp_int_addr), PROTO_UDP);
+    AddInternalSocket(udp_int_addr, cricket::PROTO_UDP);
     server_.SetExternalSocketFactory(new talk_base::BasicPacketSocketFactory(),
         udp_ext_addr);
     server_.set_realm(kTestRealm);
@@ -61,6 +60,23 @@ class TestTurnServer : public TurnAuthInterface {
   }
 
   TurnServer* server() { return &server_; }
+
+  void AddInternalSocket(const talk_base::SocketAddress& int_addr,
+                         ProtocolType proto) {
+    talk_base::Thread* thread = talk_base::Thread::Current();
+    if (proto == cricket::PROTO_UDP) {
+      server_.AddInternalSocket(talk_base::AsyncUDPSocket::Create(
+          thread->socketserver(), int_addr), proto);
+    } else if (proto == cricket::PROTO_TCP) {
+      // For TCP we need to create a server socket which can listen for incoming
+      // new connections.
+      talk_base::AsyncSocket* socket =
+          thread->socketserver()->CreateAsyncSocket(SOCK_STREAM);
+      socket->Bind(int_addr);
+      socket->Listen(5);
+      server_.AddInternalServerSocket(socket, proto);
+    }
+  }
 
  private:
   // For this test server, succeed if the password is the same as the username.

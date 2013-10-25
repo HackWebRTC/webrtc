@@ -166,7 +166,7 @@ StreamAdapterInterface::~StreamAdapterInterface() {
 ///////////////////////////////////////////////////////////////////////////////
 
 StreamTap::StreamTap(StreamInterface* stream, StreamInterface* tap)
-    : StreamAdapterInterface(stream), tap_(NULL), tap_result_(SR_SUCCESS),
+    : StreamAdapterInterface(stream), tap_(), tap_result_(SR_SUCCESS),
         tap_error_(0) {
   AttachTap(tap);
 }

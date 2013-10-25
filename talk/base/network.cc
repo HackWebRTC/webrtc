@@ -316,7 +316,7 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
   NetworkMap current_networks;
   // MSDN recommends a 15KB buffer for the first try at GetAdaptersAddresses.
   size_t buffer_size = 16384;
-  scoped_array<char> adapter_info(new char[buffer_size]);
+  scoped_ptr<char[]> adapter_info(new char[buffer_size]);
   PIP_ADAPTER_ADDRESSES adapter_addrs =
       reinterpret_cast<PIP_ADAPTER_ADDRESSES>(adapter_info.get());
   int adapter_flags = (GAA_FLAG_SKIP_DNS_SERVER | GAA_FLAG_SKIP_ANYCAST |

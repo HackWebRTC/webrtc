@@ -882,8 +882,8 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateVideoAnswerRtcpMux) {
   answer_opts.data_channel_type = cricket::DCT_RTP;
   offer_opts.data_channel_type = cricket::DCT_RTP;
 
-  talk_base::scoped_ptr<SessionDescription> offer(NULL);
-  talk_base::scoped_ptr<SessionDescription> answer(NULL);
+  talk_base::scoped_ptr<SessionDescription> offer;
+  talk_base::scoped_ptr<SessionDescription> answer;
 
   offer_opts.rtcp_mux_enabled = true;
   answer_opts.rtcp_mux_enabled = true;

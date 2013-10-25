@@ -373,7 +373,7 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
   // TODO(fbarchard): Avoid scale and convert if muted.
   // Temporary buffer is scoped here so it will persist until i420_frame.Init()
   // makes a copy of the frame, converting to I420.
-  talk_base::scoped_array<uint8> temp_buffer;
+  talk_base::scoped_ptr<uint8[]> temp_buffer;
   // YUY2 can be scaled vertically using an ARGB scaler.  Aspect ratio is only
   // a problem on OSX.  OSX always converts webcams to YUY2 or UYVY.
   bool can_scale =

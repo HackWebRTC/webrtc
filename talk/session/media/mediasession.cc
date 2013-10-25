@@ -46,7 +46,7 @@
 #ifdef HAVE_SCTP
 #include "talk/media/sctp/sctpdataengine.h"
 #else
-static const uint32 kMaxSctpSid = USHRT_MAX;
+static const uint32 kMaxSctpSid = 1023;
 #endif
 
 namespace {

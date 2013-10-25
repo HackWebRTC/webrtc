@@ -55,9 +55,10 @@ class FakeVoEWrapper : public cricket::VoEWrapper {
   }
 };
 
-class NullVoETraceWrapper : public cricket::VoETraceWrapper {
+class FakeVoETraceWrapper : public cricket::VoETraceWrapper {
  public:
   virtual int SetTraceFilter(const unsigned int filter) {
+    filter_ = filter;
     return 0;
   }
   virtual int SetTraceFile(const char* fileNameUTF8) {
@@ -66,6 +67,7 @@ class NullVoETraceWrapper : public cricket::VoETraceWrapper {
   virtual int SetTraceCallback(webrtc::TraceCallback* callback) {
     return 0;
   }
+  unsigned int filter_;
 };
 
 class WebRtcVoiceEngineTestFake : public testing::Test {
@@ -102,9 +104,10 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
   WebRtcVoiceEngineTestFake()
       : voe_(kAudioCodecs, ARRAY_SIZE(kAudioCodecs)),
         voe_sc_(kAudioCodecs, ARRAY_SIZE(kAudioCodecs)),
+        trace_wrapper_(new FakeVoETraceWrapper()),
         engine_(new FakeVoEWrapper(&voe_),
                 new FakeVoEWrapper(&voe_sc_),
-                new NullVoETraceWrapper()),
+                trace_wrapper_),
         channel_(NULL), soundclip_(NULL) {
     options_conference_.conference_mode.Set(true);
     options_adjust_agc_.adjust_agc_delta.Set(-10);
@@ -277,6 +280,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
  protected:
   cricket::FakeWebRtcVoiceEngine voe_;
   cricket::FakeWebRtcVoiceEngine voe_sc_;
+  FakeVoETraceWrapper* trace_wrapper_;
   cricket::WebRtcVoiceEngine engine_;
   cricket::VoiceMediaChannel* channel_;
   cricket::SoundclipMedia* soundclip_;
@@ -1871,6 +1875,84 @@ TEST_F(WebRtcVoiceEngineTestFake, CodianSendAndPlayout) {
   EXPECT_EQ(0, agc_config.targetLeveldBOv);  // level was restored
   EXPECT_TRUE(channel_->SetPlayout(false));
   EXPECT_FALSE(voe_.GetPlayout(channel_num));
+}
+
+TEST_F(WebRtcVoiceEngineTestFake, TxAgcConfigViaOptions) {
+  EXPECT_TRUE(SetupEngine());
+  webrtc::AgcConfig agc_config;
+  EXPECT_EQ(0, voe_.GetAgcConfig(agc_config));
+  EXPECT_EQ(0, agc_config.targetLeveldBOv);
+
+  cricket::AudioOptions options;
+  options.tx_agc_target_dbov.Set(3);
+  options.tx_agc_digital_compression_gain.Set(9);
+  options.tx_agc_limiter.Set(true);
+  options.auto_gain_control.Set(true);
+  EXPECT_TRUE(engine_.SetOptions(options));
+
+  EXPECT_EQ(0, voe_.GetAgcConfig(agc_config));
+  EXPECT_EQ(3, agc_config.targetLeveldBOv);
+  EXPECT_EQ(9, agc_config.digitalCompressionGaindB);
+  EXPECT_TRUE(agc_config.limiterEnable);
+
+  // Check interaction with adjust_agc_delta. Both should be respected, for
+  // backwards compatibility.
+  options.adjust_agc_delta.Set(-10);
+  EXPECT_TRUE(engine_.SetOptions(options));
+
+  EXPECT_EQ(0, voe_.GetAgcConfig(agc_config));
+  EXPECT_EQ(13, agc_config.targetLeveldBOv);
+}
+
+TEST_F(WebRtcVoiceEngineTestFake, RxAgcConfigViaOptions) {
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = voe_.GetLastChannel();
+  cricket::AudioOptions options;
+  options.rx_agc_target_dbov.Set(6);
+  options.rx_agc_digital_compression_gain.Set(0);
+  options.rx_agc_limiter.Set(true);
+  options.rx_auto_gain_control.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+
+  webrtc::AgcConfig agc_config;
+  EXPECT_EQ(0, engine_.voe()->processing()->GetRxAgcConfig(
+      channel_num, agc_config));
+  EXPECT_EQ(6, agc_config.targetLeveldBOv);
+  EXPECT_EQ(0, agc_config.digitalCompressionGaindB);
+  EXPECT_TRUE(agc_config.limiterEnable);
+}
+
+TEST_F(WebRtcVoiceEngineTestFake, SampleRatesViaOptions) {
+  EXPECT_TRUE(SetupEngine());
+  cricket::AudioOptions options;
+  options.recording_sample_rate.Set(48000u);
+  options.playout_sample_rate.Set(44100u);
+  EXPECT_TRUE(engine_.SetOptions(options));
+
+  unsigned int recording_sample_rate, playout_sample_rate;
+  EXPECT_EQ(0, voe_.RecordingSampleRate(&recording_sample_rate));
+  EXPECT_EQ(0, voe_.PlayoutSampleRate(&playout_sample_rate));
+  EXPECT_EQ(48000u, recording_sample_rate);
+  EXPECT_EQ(44100u, playout_sample_rate);
+}
+
+TEST_F(WebRtcVoiceEngineTestFake, TraceFilterViaTraceOptions) {
+  EXPECT_TRUE(SetupEngine());
+  engine_.SetLogging(talk_base::LS_INFO, "");
+  EXPECT_EQ(
+      // Info:
+      webrtc::kTraceStateInfo | webrtc::kTraceInfo |
+      // Warning:
+      webrtc::kTraceTerseInfo | webrtc::kTraceWarning |
+      // Error:
+      webrtc::kTraceError | webrtc::kTraceCritical,
+      static_cast<int>(trace_wrapper_->filter_));
+  // Now set it explicitly
+  std::string filter =
+      "tracefilter " + talk_base::ToString(webrtc::kTraceDefault);
+  engine_.SetLogging(talk_base::LS_VERBOSE, filter.c_str());
+  EXPECT_EQ(static_cast<unsigned int>(webrtc::kTraceDefault),
+            trace_wrapper_->filter_);
 }
 
 // Test that we can set the outgoing SSRC properly.

@@ -708,7 +708,7 @@ AllocationSequence::AllocationSequence(BasicPortAllocatorSession* session,
       config_(config),
       state_(kInit),
       flags_(flags),
-      udp_socket_(NULL),
+      udp_socket_(),
       phase_(0) {
 }
 

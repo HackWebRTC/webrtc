@@ -399,7 +399,6 @@ BaseChannel::BaseChannel(talk_base::Thread* thread,
       writable_(false),
       rtp_ready_to_send_(false),
       rtcp_ready_to_send_(false),
-      optimistic_data_send_(false),
       was_ever_writable_(false),
       local_content_direction_(MD_INACTIVE),
       remote_content_direction_(MD_INACTIVE),
@@ -670,7 +669,7 @@ bool BaseChannel::SendPacket(bool rtcp, talk_base::Buffer* packet,
   // transport.
   TransportChannel* channel = (!rtcp || rtcp_mux_filter_.IsActive()) ?
       transport_channel_ : rtcp_transport_channel_;
-  if (!channel || (!optimistic_data_send_ && !channel->writable())) {
+  if (!channel || !channel->writable()) {
     return false;
   }
 

@@ -693,8 +693,8 @@ void SocketTest::TcpInternal(const IPAddress& loopback) {
 
   // Create test data.
   const size_t kDataSize = 1024 * 1024;
-  scoped_array<char> send_buffer(new char[kDataSize]);
-  scoped_array<char> recv_buffer(new char[kDataSize]);
+  scoped_ptr<char[]> send_buffer(new char[kDataSize]);
+  scoped_ptr<char[]> recv_buffer(new char[kDataSize]);
   size_t send_pos = 0, recv_pos = 0;
   for (size_t i = 0; i < kDataSize; ++i) {
     send_buffer[i] = static_cast<char>(i % 256);
@@ -934,7 +934,7 @@ void SocketTest::UdpReadyToSend(const IPAddress& loopback) {
   scoped_ptr<TestClient> client(
       new TestClient(AsyncUDPSocket::Create(ss_, empty)));
   int test_packet_size = 1200;
-  talk_base::scoped_array<char> test_packet(new char[test_packet_size]);
+  talk_base::scoped_ptr<char[]> test_packet(new char[test_packet_size]);
   // Init the test packet just to avoid memcheck warning.
   memset(test_packet.get(), 0, test_packet_size);
   // Set the send buffer size to the same size as the test packet to have a

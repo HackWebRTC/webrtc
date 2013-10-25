@@ -342,7 +342,7 @@ class AlsaInputStream :
   }
 
   AlsaStream stream_;
-  talk_base::scoped_array<char> buffer_;
+  talk_base::scoped_ptr<char[]> buffer_;
   size_t buffer_size_;
 
   DISALLOW_COPY_AND_ASSIGN(AlsaInputStream);

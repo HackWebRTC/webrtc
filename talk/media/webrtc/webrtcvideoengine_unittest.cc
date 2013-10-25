@@ -118,7 +118,7 @@ class WebRtcVideoEngineTestFake : public testing::Test,
     }
     cricket::WebRtcVideoFrame frame;
     size_t size = width * height * 3 / 2;  // I420
-    talk_base::scoped_array<uint8> pixel(new uint8[size]);
+    talk_base::scoped_ptr<uint8[]> pixel(new uint8[size]);
     if (!frame.Init(cricket::FOURCC_I420,
                     width, height, width, height,
                     pixel.get(), size, 1, 1, 0, 0, 0)) {
@@ -138,7 +138,7 @@ class WebRtcVideoEngineTestFake : public testing::Test,
     }
     cricket::WebRtcVideoFrame frame;
     size_t size = width * height * 3 / 2;  // I420
-    talk_base::scoped_array<uint8> pixel(new uint8[size]);
+    talk_base::scoped_ptr<uint8[]> pixel(new uint8[size]);
     if (!frame.Init(cricket::FOURCC_I420,
                     width, height, width, height,
                     pixel.get(), size, 1, 1, 0, timestamp, 0)) {
@@ -1161,7 +1161,8 @@ TEST_F(WebRtcVideoEngineTestFake, SetOptionsWithDenoising) {
 }
 
 
-TEST_F(WebRtcVideoEngineTestFake, SendReceiveBitratesStats) {
+// Disabled since its flaky: b/11288120
+TEST_F(WebRtcVideoEngineTestFake, DISABLED_SendReceiveBitratesStats) {
   EXPECT_TRUE(SetupEngine());
   cricket::VideoOptions options;
   options.conference_mode.Set(true);

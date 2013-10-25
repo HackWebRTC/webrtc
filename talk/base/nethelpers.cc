@@ -109,7 +109,7 @@ bool HasIPv6Enabled() {
     return false;
   }
   DWORD protbuff_size = 4096;
-  scoped_array<char> protocols;
+  scoped_ptr<char[]> protocols;
   LPWSAPROTOCOL_INFOW protocol_infos = NULL;
   int requested_protocols[2] = {AF_INET6, 0};
 

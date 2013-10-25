@@ -101,7 +101,7 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
     frame.time_stamp = initial_unix_timestamp_ + next_timestamp_;
     next_timestamp_ += 33333333;  // 30 fps
 
-    talk_base::scoped_array<char> data(new char[size]);
+    talk_base::scoped_ptr<char[]> data(new char[size]);
     frame.data = data.get();
     // Copy something non-zero into the buffer so Validate wont complain that
     // the frame is all duplicate.

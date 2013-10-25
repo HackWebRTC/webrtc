@@ -157,8 +157,8 @@ class PeerConnectionTestClientBase
       // Disable highpass filter so that we can get all the test audio frames.
       constraints.AddMandatory(
           MediaConstraintsInterface::kHighpassFilter, false);
-      talk_base::scoped_refptr<webrtc::LocalAudioSource> source =
-          webrtc::LocalAudioSource::Create(&constraints);
+      talk_base::scoped_refptr<webrtc::AudioSourceInterface> source =
+          peer_connection_factory_->CreateAudioSource(&constraints);
       // TODO(perkj): Test audio source when it is implemented. Currently audio
       // always use the default input.
       talk_base::scoped_refptr<webrtc::AudioTrackInterface> audio_track(

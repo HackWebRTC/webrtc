@@ -154,7 +154,7 @@ class NATSocket : public AsyncSocket, public sigslot::has_slots<> {
       return socket_->SendTo(data, size, addr);
     }
     // This array will be too large for IPv4 packets, but only by 12 bytes.
-    scoped_array<char> buf(new char[size + kNATEncodedIPv6AddressSize]);
+    scoped_ptr<char[]> buf(new char[size + kNATEncodedIPv6AddressSize]);
     size_t addrlength = PackAddressForNAT(buf.get(),
                                           size + kNATEncodedIPv6AddressSize,
                                           addr);

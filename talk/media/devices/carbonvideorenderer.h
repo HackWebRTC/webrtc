@@ -57,7 +57,7 @@ class CarbonVideoRenderer : public VideoRenderer {
   static OSStatus DrawEventHandler(EventHandlerCallRef handler,
                                    EventRef event,
                                    void* data);
-  talk_base::scoped_array<uint8> image_;
+  talk_base::scoped_ptr<uint8[]> image_;
   talk_base::CriticalSection image_crit_;
   int image_width_;
   int image_height_;

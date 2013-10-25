@@ -53,7 +53,7 @@ class WebRtcVideoFrameTest : public VideoFrameTest<cricket::WebRtcVideoFrame> {
     captured_frame.height = frame_height;
     captured_frame.data_size = (frame_width * frame_height) +
         ((frame_width + 1) / 2) * ((frame_height + 1) / 2) * 2;
-    talk_base::scoped_array<uint8> captured_frame_buffer(
+    talk_base::scoped_ptr<uint8[]> captured_frame_buffer(
         new uint8[captured_frame.data_size]);
     captured_frame.data = captured_frame_buffer.get();
 

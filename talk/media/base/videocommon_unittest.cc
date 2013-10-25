@@ -276,6 +276,15 @@ TEST(VideoCommonTest, TestComputeCrop) {
   EXPECT_EQ(640, cropped_width);
   EXPECT_EQ(480, cropped_height);
 
+  // Request 9:16 from VGA rotated (portrait).  Expect crop.
+  ComputeCrop(360, 640,  // Crop size 9:16
+              640, 480,  // Frame is 3:4 portrait
+              1, 1,  // Normal 1:1 pixels
+              90,
+              &cropped_width, &cropped_height);
+  EXPECT_EQ(640, cropped_width);
+  EXPECT_EQ(360, cropped_height);
+
   // Cropped size 0x0.  Expect no cropping.
   // This is used when adding multiple capturers
   ComputeCrop(0, 0,  // Crop size 0x0

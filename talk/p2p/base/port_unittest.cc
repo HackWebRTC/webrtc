@@ -215,7 +215,7 @@ class TestChannel : public sigslot::has_slots<> {
  public:
   TestChannel(Port* p1, Port* p2)
       : ice_mode_(ICEMODE_FULL), src_(p1), dst_(p2), complete_count_(0),
-	conn_(NULL), remote_request_(NULL), nominated_(false) {
+	conn_(NULL), remote_request_(), nominated_(false) {
     src_->SignalPortComplete.connect(
         this, &TestChannel::OnPortComplete);
     src_->SignalUnknownAddress.connect(this, &TestChannel::OnUnknownAddress);

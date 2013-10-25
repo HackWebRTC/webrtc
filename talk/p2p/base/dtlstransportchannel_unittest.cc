@@ -233,7 +233,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
 
   void SendPackets(size_t channel, size_t size, size_t count, bool srtp) {
     ASSERT(channel < channels_.size());
-    talk_base::scoped_array<char> packet(new char[size]);
+    talk_base::scoped_ptr<char[]> packet(new char[size]);
     size_t sent = 0;
     do {
       // Fill the packet with a known value and a sequence number to check

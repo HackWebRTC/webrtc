@@ -68,10 +68,7 @@ const char MediaConstraintsInterface::kEnableRtpDataChannels[] =
 // line flag. So it is prefixed with kInternalConstraintPrefix so JS values
 // will be removed.
 const char MediaConstraintsInterface::kEnableSctpDataChannels[] =
-    "internalSctpDataChannels";
-
-const char MediaConstraintsInterface::kInternalDisableEncryption[] =
-    "internalDisableEncryption";
+    "deprecatedSctpDataChannels";
 
 // Error messages
 const char kSetLocalSdpFailed[] = "SetLocalDescription failed: ";
@@ -458,6 +455,7 @@ WebRtcSession::~WebRtcSession() {
 }
 
 bool WebRtcSession::Initialize(
+    const PeerConnectionFactoryInterface::Options& options,
     const MediaConstraintsInterface* constraints,
     DTLSIdentityServiceInterface* dtls_identity_service) {
   // TODO(perkj): Take |constraints| into consideration. Return false if not all
@@ -476,19 +474,16 @@ bool WebRtcSession::Initialize(
   }
 
   // Enable creation of RTP data channels if the kEnableRtpDataChannels is set.
-  // It takes precendence over the kEnableSctpDataChannels constraint.
+  // It takes precendence over the disable_sctp_data_channels
+  // PeerConnectionFactoryInterface::Options.
   if (FindConstraint(
       constraints, MediaConstraintsInterface::kEnableRtpDataChannels,
       &value, NULL) && value) {
     LOG(LS_INFO) << "Allowing RTP data engine.";
     data_channel_type_ = cricket::DCT_RTP;
   } else {
-    bool sctp_enabled = FindConstraint(
-        constraints,
-        MediaConstraintsInterface::kEnableSctpDataChannels,
-        &value, NULL) && value;
     // DTLS has to be enabled to use SCTP.
-    if (sctp_enabled && dtls_enabled_) {
+    if (!options.disable_sctp_data_channels && dtls_enabled_) {
       LOG(LS_INFO) << "Allowing SCTP data engine.";
       data_channel_type_ = cricket::DCT_SCTP;
     }
@@ -520,11 +515,7 @@ bool WebRtcSession::Initialize(
   webrtc_session_desc_factory_->SignalIdentityReady.connect(
       this, &WebRtcSession::OnIdentityReady);
 
-  // Disable encryption if kDisableEncryption is set.
-  if (FindConstraint(
-         constraints,
-         MediaConstraintsInterface::kInternalDisableEncryption,
-         &value, NULL) && value) {
+  if (options.disable_encryption) {
     webrtc_session_desc_factory_->set_secure(cricket::SEC_DISABLED);
   }
 

@@ -396,7 +396,7 @@ CallClient::CallClient(buzz::XmppClient* xmpp_client,
       transport_protocol_(cricket::ICEPROTO_HYBRID),
       sdes_policy_(cricket::SEC_DISABLED),
       dtls_policy_(cricket::SEC_DISABLED),
-      ssl_identity_(NULL),
+      ssl_identity_(),
       show_roster_messages_(false) {
   xmpp_client_->SignalStateChange.connect(this, &CallClient::OnStateChange);
   my_status_.set_caps_node(caps_node);

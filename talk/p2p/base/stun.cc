@@ -188,7 +188,7 @@ bool StunMessage::ValidateMessageIntegrity(const char* data, size_t size,
 
   // Getting length of the message to calculate Message Integrity.
   size_t mi_pos = current_pos;
-  talk_base::scoped_array<char> temp_data(new char[current_pos]);
+  talk_base::scoped_ptr<char[]> temp_data(new char[current_pos]);
   memcpy(temp_data.get(), data, current_pos);
   if (size > mi_pos + kStunAttributeHeaderSize + kStunMessageIntegritySize) {
     // Stun message has other attributes after message integrity.

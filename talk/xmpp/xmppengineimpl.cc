@@ -58,12 +58,12 @@ XmppEngineImpl::XmppEngineImpl()
       encrypted_(false),
       error_code_(ERROR_NONE),
       subcode_(0),
-      stream_error_(NULL),
+      stream_error_(),
       raised_reset_(false),
       output_handler_(NULL),
       session_handler_(NULL),
       iq_entries_(new IqEntryVector()),
-      sasl_handler_(NULL),
+      sasl_handler_(),
       output_(new std::stringstream()) {
   for (int i = 0; i < HL_COUNT; i+= 1) {
     stanza_handlers_[i].reset(new StanzaHandlerVector());

@@ -37,7 +37,7 @@ namespace buzz {
 
 XmlBuilder::XmlBuilder() :
   pelCurrent_(NULL),
-  pelRoot_(NULL),
+  pelRoot_(),
   pvParents_(new std::vector<XmlElement *>()) {
 }
 

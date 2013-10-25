@@ -539,7 +539,7 @@ IPseudoTcpNotify::WriteResult PseudoTcp::packet(uint32 seq, uint8 flags,
 
   uint32 now = Now();
 
-  talk_base::scoped_array<uint8> buffer(new uint8[MAX_PACKET]);
+  talk_base::scoped_ptr<uint8[]> buffer(new uint8[MAX_PACKET]);
   long_to_bytes(m_conv, buffer.get());
   long_to_bytes(seq, buffer.get() + 4);
   long_to_bytes(m_rcv_nxt, buffer.get() + 8);

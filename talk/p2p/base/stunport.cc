@@ -287,8 +287,13 @@ void UDPPort::SendStunBindingRequest() {
   if (server_addr_.IsUnresolved()) {
     ResolveStunAddress();
   } else if (socket_->GetState() == talk_base::AsyncPacketSocket::STATE_BOUND) {
-    if (server_addr_.family() == ip().family()) {
+    // Check if |server_addr_| is compatible with the port's ip.
+    if (IsCompatibleAddress(server_addr_)) {
       requests_.Send(new StunBindingRequest(this, true, server_addr_));
+    } else {
+      // Since we can't send stun messages to the server, we should mark this
+      // port ready.
+      OnStunBindingOrResolveRequestFailed();
     }
   }
 }

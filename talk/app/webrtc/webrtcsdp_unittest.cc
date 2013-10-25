@@ -282,7 +282,7 @@ static const char kSdpSctpDataChannelString[] =
     "a=ice-ufrag:ufrag_data\r\n"
     "a=ice-pwd:pwd_data\r\n"
     "a=mid:data_content_name\r\n"
-    "a=sctpmap:5000 webrtc-datachannel 65536\r\n";
+    "a=sctpmap:5000 webrtc-datachannel 1024\r\n";
 
 static const char kSdpSctpDataChannelWithCandidatesString[] =
     "m=application 2345 DTLS/SCTP 5000\r\n"
@@ -297,7 +297,7 @@ static const char kSdpSctpDataChannelWithCandidatesString[] =
     "a=ice-ufrag:ufrag_data\r\n"
     "a=ice-pwd:pwd_data\r\n"
     "a=mid:data_content_name\r\n"
-    "a=sctpmap:5000 webrtc-datachannel 65536\r\n";
+    "a=sctpmap:5000 webrtc-datachannel 1024\r\n";
 
 
 // One candidate reference string as per W3c spec.

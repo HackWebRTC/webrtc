@@ -147,7 +147,7 @@ class MainWnd : public MainWindow {
 
     HWND wnd_;
     BITMAPINFO bmi_;
-    talk_base::scoped_array<uint8> image_;
+    talk_base::scoped_ptr<uint8[]> image_;
     CRITICAL_SECTION buffer_lock_;
     talk_base::scoped_refptr<webrtc::VideoTrackInterface> rendered_track_;
   };

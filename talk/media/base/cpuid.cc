@@ -51,8 +51,8 @@ void CpuInfo::MaskCpuFlagsForTest(int enable_flags) {
 bool IsCoreIOrBetter() {
 #if !defined(DISABLE_YUV) && (defined(__i386__) || defined(__x86_64__) || \
     defined(_M_IX86) || defined(_M_X64))
-  int cpu_info[4];
-  libyuv::CpuId(cpu_info, 0);  // Function 0: Vendor ID
+  uint32 cpu_info[4];
+  libyuv::CpuId(0, 0, &cpu_info[0]);  // Function 0: Vendor ID
   if (cpu_info[1] == 0x756e6547 && cpu_info[3] == 0x49656e69 &&
       cpu_info[2] == 0x6c65746e) {  // GenuineIntel
     // Detect CPU Family and Model
@@ -62,7 +62,7 @@ bool IsCoreIOrBetter() {
     // 13:12 - Processor Type
     // 19:16 - Extended Model
     // 27:20 - Extended Family
-    libyuv::CpuId(cpu_info, 1);  // Function 1: Family and Model
+    libyuv::CpuId(1, 0, &cpu_info[0]);  // Function 1: Family and Model
     int family = ((cpu_info[0] >> 8) & 0x0f) | ((cpu_info[0] >> 16) & 0xff0);
     int model = ((cpu_info[0] >> 4) & 0x0f) | ((cpu_info[0] >> 12) & 0xf0);
     // CpuFamily | CpuModel |  Name

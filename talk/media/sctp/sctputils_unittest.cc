@@ -37,7 +37,7 @@ class SctpUtilsTest : public testing::Test {
                                const webrtc::DataChannelInit& config) {
     uint8 message_type;
     uint8 channel_type;
-    uint16 reliability;
+    uint32 reliability;
     uint16 priority;
     uint16 label_length;
     uint16 protocol_length;
@@ -57,14 +57,14 @@ class SctpUtilsTest : public testing::Test {
                 channel_type);
     }
 
-    ASSERT_TRUE(buffer.ReadUInt16(&reliability));
+    ASSERT_TRUE(buffer.ReadUInt16(&priority));
+
+    ASSERT_TRUE(buffer.ReadUInt32(&reliability));
     if (config.maxRetransmits > -1 || config.maxRetransmitTime > -1) {
       EXPECT_EQ(config.maxRetransmits > -1 ?
                     config.maxRetransmits : config.maxRetransmitTime,
-                reliability);
+                static_cast<int>(reliability));
     }
-
-    ASSERT_TRUE(buffer.ReadUInt16(&priority));
 
     ASSERT_TRUE(buffer.ReadUInt16(&label_length));
     ASSERT_TRUE(buffer.ReadUInt16(&protocol_length));
@@ -86,13 +86,14 @@ TEST_F(SctpUtilsTest, WriteParseMessageWithOrderedReliable) {
   config.protocol = "y";
 
   talk_base::Buffer packet;
-  ASSERT(cricket::WriteDataChannelOpenMessage(input_label, config, &packet));
+  ASSERT_TRUE(
+      cricket::WriteDataChannelOpenMessage(input_label, config, &packet));
 
   VerifyOpenMessageFormat(packet, input_label, config);
 
   std::string output_label;
   webrtc::DataChannelInit output_config;
-  ASSERT(cricket::ParseDataChannelOpenMessage(
+  ASSERT_TRUE(cricket::ParseDataChannelOpenMessage(
       packet, &output_label, &output_config));
 
   EXPECT_EQ(input_label, output_label);
@@ -110,19 +111,21 @@ TEST_F(SctpUtilsTest, WriteParseOpenMessageWithMaxRetransmitTime) {
   config.protocol = "y";
 
   talk_base::Buffer packet;
-  ASSERT(cricket::WriteDataChannelOpenMessage(input_label, config, &packet));
+  ASSERT_TRUE(
+      cricket::WriteDataChannelOpenMessage(input_label, config, &packet));
 
   VerifyOpenMessageFormat(packet, input_label, config);
 
   std::string output_label;
   webrtc::DataChannelInit output_config;
-  ASSERT(cricket::ParseDataChannelOpenMessage(
+  ASSERT_TRUE(cricket::ParseDataChannelOpenMessage(
       packet, &output_label, &output_config));
 
   EXPECT_EQ(input_label, output_label);
   EXPECT_EQ(config.protocol, output_config.protocol);
   EXPECT_EQ(config.ordered, output_config.ordered);
   EXPECT_EQ(config.maxRetransmitTime, output_config.maxRetransmitTime);
+  EXPECT_EQ(-1, output_config.maxRetransmits);
 }
 
 TEST_F(SctpUtilsTest, WriteParseOpenMessageWithMaxRetransmits) {
@@ -132,17 +135,19 @@ TEST_F(SctpUtilsTest, WriteParseOpenMessageWithMaxRetransmits) {
   config.protocol = "y";
 
   talk_base::Buffer packet;
-  ASSERT(cricket::WriteDataChannelOpenMessage(input_label, config, &packet));
+  ASSERT_TRUE(
+      cricket::WriteDataChannelOpenMessage(input_label, config, &packet));
 
   VerifyOpenMessageFormat(packet, input_label, config);
 
   std::string output_label;
   webrtc::DataChannelInit output_config;
-  ASSERT(cricket::ParseDataChannelOpenMessage(
+  ASSERT_TRUE(cricket::ParseDataChannelOpenMessage(
       packet, &output_label, &output_config));
 
   EXPECT_EQ(input_label, output_label);
   EXPECT_EQ(config.protocol, output_config.protocol);
   EXPECT_EQ(config.ordered, output_config.ordered);
   EXPECT_EQ(config.maxRetransmits, output_config.maxRetransmits);
+  EXPECT_EQ(-1, output_config.maxRetransmitTime);
 }

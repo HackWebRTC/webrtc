@@ -53,11 +53,17 @@ using cricket::UDPPort;
 
 static const SocketAddress kLocalAddr1("11.11.11.11", 0);
 static const SocketAddress kLocalAddr2("22.22.22.22", 0);
+static const SocketAddress kLocalIPv6Addr(
+    "2401:fa00:4:1000:be30:5bff:fee5:c3", 0);
 static const SocketAddress kTurnUdpIntAddr("99.99.99.3",
                                            cricket::TURN_SERVER_PORT);
 static const SocketAddress kTurnTcpIntAddr("99.99.99.4",
                                            cricket::TURN_SERVER_PORT);
 static const SocketAddress kTurnUdpExtAddr("99.99.99.5", 0);
+static const SocketAddress kTurnUdpIPv6IntAddr(
+    "2400:4030:1:2c00:be30:abcd:efab:cdef", cricket::TURN_SERVER_PORT);
+static const SocketAddress kTurnUdpIPv6ExtAddr(
+  "2620:0:1000:1b03:2e41:38ff:fea6:f2a4", 0);
 
 static const char kIceUfrag1[] = "TESTICEUFRAG0001";
 static const char kIceUfrag2[] = "TESTICEUFRAG0002";
@@ -71,6 +77,8 @@ static const cricket::ProtocolAddress kTurnUdpProtoAddr(
     kTurnUdpIntAddr, cricket::PROTO_UDP);
 static const cricket::ProtocolAddress kTurnTcpProtoAddr(
     kTurnTcpIntAddr, cricket::PROTO_TCP);
+static const cricket::ProtocolAddress kTurnUdpIPv6ProtoAddr(
+    kTurnUdpIPv6IntAddr, cricket::PROTO_UDP);
 
 class TurnPortTest : public testing::Test,
                      public sigslot::has_slots<> {
@@ -130,9 +138,15 @@ class TurnPortTest : public testing::Test,
   void CreateTurnPort(const std::string& username,
                       const std::string& password,
                       const cricket::ProtocolAddress& server_address) {
+    CreateTurnPort(kLocalAddr1, username, password, server_address);
+  }
+  void CreateTurnPort(const talk_base::SocketAddress& local_address,
+                      const std::string& username,
+                      const std::string& password,
+                      const cricket::ProtocolAddress& server_address) {
     cricket::RelayCredentials credentials(username, password);
     turn_port_.reset(TurnPort::Create(main_, &socket_factory_, &network_,
-                                 kLocalAddr1.ipaddr(), 0, 0,
+                                 local_address.ipaddr(), 0, 0,
                                  kIceUfrag1, kIcePwd1,
                                  server_address, credentials));
     turn_port_->SignalPortComplete.connect(this,
@@ -265,10 +279,7 @@ TEST_F(TurnPortTest, TestTurnAllocate) {
 }
 
 TEST_F(TurnPortTest, TestTurnTcpAllocate) {
-  talk_base::AsyncSocket* tcp_server_socket =
-      CreateServerSocket(kTurnTcpIntAddr);
-  turn_server_.server()->AddInternalServerSocket(
-      tcp_server_socket, cricket::PROTO_TCP);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, cricket::PROTO_TCP);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
   EXPECT_EQ(0, turn_port_->SetOption(talk_base::Socket::OPT_SNDBUF, 10*1024));
   turn_port_->PrepareAddress();
@@ -298,10 +309,7 @@ TEST_F(TurnPortTest, TestTurnConnection) {
 
 // Test that we can establish a TCP connection with TURN server.
 TEST_F(TurnPortTest, TestTurnTcpConnection) {
-  talk_base::AsyncSocket* tcp_server_socket =
-      CreateServerSocket(kTurnTcpIntAddr);
-  turn_server_.server()->AddInternalServerSocket(
-      tcp_server_socket, cricket::PROTO_TCP);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, cricket::PROTO_TCP);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
   TestTurnConnection();
 }
@@ -327,19 +335,44 @@ TEST_F(TurnPortTest, TestTurnConnectionUsingOTUNonce) {
   TestTurnConnection();
 }
 
-// Do a TURN allocation, establish a connection, and send some data.
+// Do a TURN allocation, establish a UDP connection, and send some data.
 TEST_F(TurnPortTest, TestTurnSendDataTurnUdpToUdp) {
   // Create ports and prepare addresses.
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
   TestTurnSendData();
 }
 
+// Do a TURN allocation, establish a TCP connection, and send some data.
 TEST_F(TurnPortTest, TestTurnSendDataTurnTcpToUdp) {
-  talk_base::AsyncSocket* tcp_server_socket =
-      CreateServerSocket(kTurnTcpIntAddr);
-  turn_server_.server()->AddInternalServerSocket(
-      tcp_server_socket, cricket::PROTO_TCP);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, cricket::PROTO_TCP);
   // Create ports and prepare addresses.
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
   TestTurnSendData();
 }
+
+// Test TURN fails to make a connection from IPv6 address to a server which has
+// IPv4 address.
+TEST_F(TurnPortTest, TestTurnLocalIPv6AddressServerIPv4) {
+  turn_server_.AddInternalSocket(kTurnUdpIPv6IntAddr, cricket::PROTO_UDP);
+  CreateTurnPort(kLocalIPv6Addr, kTurnUsername, kTurnPassword,
+                 kTurnUdpProtoAddr);
+  turn_port_->PrepareAddress();
+  ASSERT_TRUE_WAIT(turn_error_, kTimeout);
+  EXPECT_TRUE(turn_port_->Candidates().empty());
+}
+
+// Test TURN make a connection from IPv6 address to a server which has
+// IPv6 intenal address. But in this test external address is a IPv4 address,
+// hence allocated address will be a IPv4 address.
+TEST_F(TurnPortTest, TestTurnLocalIPv6AddressServerIPv6ExtenalIPv4) {
+  turn_server_.AddInternalSocket(kTurnUdpIPv6IntAddr, cricket::PROTO_UDP);
+  CreateTurnPort(kLocalIPv6Addr, kTurnUsername, kTurnPassword,
+                 kTurnUdpIPv6ProtoAddr);
+  turn_port_->PrepareAddress();
+  EXPECT_TRUE_WAIT(turn_ready_, kTimeout);
+  ASSERT_EQ(1U, turn_port_->Candidates().size());
+  EXPECT_EQ(kTurnUdpExtAddr.ipaddr(),
+            turn_port_->Candidates()[0].address().ipaddr());
+  EXPECT_NE(0, turn_port_->Candidates()[0].address().port());
+}
+

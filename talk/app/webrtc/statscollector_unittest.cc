@@ -58,6 +58,10 @@ namespace {
 const char kNotFound[] = "NOT FOUND";
 const char kNoReports[] = "NO REPORTS";
 
+// Constant names for track identification.
+const char kTrackId[] = "somename";
+const uint32 kSsrcOfTrack = 1234;
+
 class MockWebRtcSession : public webrtc::WebRtcSession {
  public:
   explicit MockWebRtcSession(cricket::ChannelManager* channel_manager)
@@ -207,9 +211,35 @@ class StatsCollectorTest : public testing::Test {
           new cricket::ChannelManager(media_engine_,
                                       new cricket::FakeDeviceManager(),
                                       talk_base::Thread::Current())),
-      session_(channel_manager_.get()) {
+      session_(channel_manager_.get()),
+      track_id_(kTrackId) {
     // By default, we ignore session GetStats calls.
     EXPECT_CALL(session_, GetStats(_)).WillRepeatedly(Return(false));
+  }
+
+  // This creates a standard setup with a transport called "trspname"
+  // having one transport channel
+  // and the specified virtual connection name.
+  void InitSessionStats(const std::string vc_name) {
+    const std::string kTransportName("trspname");
+    cricket::TransportStats transport_stats;
+    cricket::TransportChannelStats channel_stats;
+    channel_stats.component = 1;
+    transport_stats.content_name = kTransportName;
+    transport_stats.channel_stats.push_back(channel_stats);
+
+    session_stats_.transport_stats[kTransportName] = transport_stats;
+    session_stats_.proxy_to_transport[vc_name] = kTransportName;
+  }
+
+  // Adds a track with a given SSRC into the stats.
+  void AddVideoTrackStats() {
+    stream_ = webrtc::MediaStream::Create("streamlabel");
+    track_= webrtc::VideoTrack::Create(kTrackId, NULL);
+    stream_->AddTrack(track_);
+    EXPECT_CALL(session_, GetTrackIdBySsrc(kSsrcOfTrack, _))
+      .WillRepeatedly(DoAll(SetArgPointee<1>(track_id_),
+                            Return(true)));
   }
 
   void TestCertificateReports(const talk_base::FakeSSLCertificate& local_cert,
@@ -283,9 +313,14 @@ class StatsCollectorTest : public testing::Test {
     EXPECT_NE(kNotFound, remote_certificate_id);
     CheckCertChainReports(reports, remote_ders, remote_certificate_id);
   }
+
   cricket::FakeMediaEngine* media_engine_;
   talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;
   MockWebRtcSession session_;
+  cricket::SessionStats session_stats_;
+  talk_base::scoped_refptr<webrtc::MediaStream> stream_;
+  talk_base::scoped_refptr<webrtc::VideoTrack> track_;
+  std::string track_id_;
 };
 
 // This test verifies that 64-bit counters are passed successfully.
@@ -297,17 +332,13 @@ TEST_F(StatsCollectorTest, BytesCounterHandles64Bits) {
   webrtc::StatsReports reports;  // returned values.
   cricket::VideoSenderInfo video_sender_info;
   cricket::VideoMediaInfo stats_read;
-  const uint32 kSsrcOfTrack = 1234;
-  const std::string kNameOfTrack("somename");
   // The number of bytes must be larger than 0xFFFFFFFF for this test.
   const int64 kBytesSent = 12345678901234LL;
   const std::string kBytesSentString("12345678901234");
 
   stats.set_session(&session_);
-  talk_base::scoped_refptr<webrtc::MediaStream> stream(
-      webrtc::MediaStream::Create("streamlabel"));
-  stream->AddTrack(webrtc::VideoTrack::Create(kNameOfTrack, NULL));
-  stats.AddStream(stream);
+  AddVideoTrackStats();
+  stats.AddStream(stream_);
 
   // Construct a stats value to read.
   video_sender_info.ssrcs.push_back(1234);
@@ -318,9 +349,6 @@ TEST_F(StatsCollectorTest, BytesCounterHandles64Bits) {
     .WillRepeatedly(Return(&video_channel));
   EXPECT_CALL(*media_channel, GetStats(_))
     .WillOnce(DoAll(SetArgPointee<0>(stats_read),
-                    Return(true)));
-  EXPECT_CALL(session_, GetTrackIdBySsrc(kSsrcOfTrack, _))
-    .WillOnce(DoAll(SetArgPointee<1>(kNameOfTrack),
                     Return(true)));
   stats.UpdateStats();
   stats.GetStats(NULL, &reports);
@@ -339,16 +367,12 @@ TEST_F(StatsCollectorTest, BandwidthEstimationInfoIsReported) {
   cricket::VideoMediaInfo stats_read;
   // Set up an SSRC just to test that we get both kinds of stats back: SSRC and
   // BWE.
-  const uint32 kSsrcOfTrack = 1234;
-  const std::string kNameOfTrack("somename");
   const int64 kBytesSent = 12345678901234LL;
   const std::string kBytesSentString("12345678901234");
 
   stats.set_session(&session_);
-  talk_base::scoped_refptr<webrtc::MediaStream> stream(
-      webrtc::MediaStream::Create("streamlabel"));
-  stream->AddTrack(webrtc::VideoTrack::Create(kNameOfTrack, NULL));
-  stats.AddStream(stream);
+  AddVideoTrackStats();
+  stats.AddStream(stream_);
 
   // Construct a stats value to read.
   video_sender_info.ssrcs.push_back(1234);
@@ -365,9 +389,7 @@ TEST_F(StatsCollectorTest, BandwidthEstimationInfoIsReported) {
   EXPECT_CALL(*media_channel, GetStats(_))
     .WillOnce(DoAll(SetArgPointee<0>(stats_read),
                     Return(true)));
-  EXPECT_CALL(session_, GetTrackIdBySsrc(kSsrcOfTrack, _))
-    .WillOnce(DoAll(SetArgPointee<1>(kNameOfTrack),
-                    Return(true)));
+
   stats.UpdateStats();
   stats.GetStats(NULL, &reports);
   std::string result = ExtractSsrcStatsValue(reports, "bytesSent");
@@ -417,13 +439,8 @@ TEST_F(StatsCollectorTest, TrackObjectExistsWithoutUpdateStats) {
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel;
   cricket::VideoChannel video_channel(talk_base::Thread::Current(),
       media_engine_, media_channel, &session_, "", false, NULL);
-  const std::string kTrackId("somename");
-  talk_base::scoped_refptr<webrtc::MediaStream> stream(
-      webrtc::MediaStream::Create("streamlabel"));
-  talk_base::scoped_refptr<webrtc::VideoTrack> track =
-      webrtc::VideoTrack::Create(kTrackId, NULL);
-  stream->AddTrack(track);
-  stats.AddStream(stream);
+  AddVideoTrackStats();
+  stats.AddStream(stream_);
 
   stats.set_session(&session_);
 
@@ -449,13 +466,8 @@ TEST_F(StatsCollectorTest, TrackAndSsrcObjectExistAfterUpdateSsrcStats) {
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel;
   cricket::VideoChannel video_channel(talk_base::Thread::Current(),
       media_engine_, media_channel, &session_, "", false, NULL);
-  const std::string kTrackId("somename");
-  talk_base::scoped_refptr<webrtc::MediaStream> stream(
-      webrtc::MediaStream::Create("streamlabel"));
-  talk_base::scoped_refptr<webrtc::VideoTrack> track =
-      webrtc::VideoTrack::Create(kTrackId, NULL);
-  stream->AddTrack(track);
-  stats.AddStream(stream);
+  AddVideoTrackStats();
+  stats.AddStream(stream_);
 
   stats.set_session(&session_);
 
@@ -464,7 +476,6 @@ TEST_F(StatsCollectorTest, TrackAndSsrcObjectExistAfterUpdateSsrcStats) {
   // Constructs an ssrc stats update.
   cricket::VideoSenderInfo video_sender_info;
   cricket::VideoMediaInfo stats_read;
-  const uint32 kSsrcOfTrack = 1234;
   const int64 kBytesSent = 12345678901234LL;
 
   // Construct a stats value to read.
@@ -477,23 +488,20 @@ TEST_F(StatsCollectorTest, TrackAndSsrcObjectExistAfterUpdateSsrcStats) {
   EXPECT_CALL(*media_channel, GetStats(_))
     .WillOnce(DoAll(SetArgPointee<0>(stats_read),
                     Return(true)));
-  EXPECT_CALL(session_, GetTrackIdBySsrc(kSsrcOfTrack, _))
-    .WillOnce(DoAll(SetArgPointee<1>(kTrackId),
-                    Return(true)));
 
   stats.UpdateStats();
   stats.GetStats(NULL, &reports);
-  // |reports| should contain one session report, one track report, and one ssrc
-  // report.
-  EXPECT_EQ((size_t)3, reports.size());
+  // |reports| should contain at least one session report, one track report,
+  // and one ssrc report.
+  EXPECT_LE((size_t)3, reports.size());
   const webrtc::StatsReport* track_report = FindNthReportByType(
       reports, webrtc::StatsReport::kStatsReportTypeTrack, 1);
   EXPECT_FALSE(track_report == NULL);
 
-  stats.GetStats(track, &reports);
-  // |reports| should contain one session report, one track report, and one ssrc
-  // report.
-  EXPECT_EQ((size_t)3, reports.size());
+  stats.GetStats(track_, &reports);
+  // |reports| should contain at least one session report, one track report,
+  // and one ssrc report.
+  EXPECT_LE((size_t)3, reports.size());
   track_report = FindNthReportByType(
       reports, webrtc::StatsReport::kStatsReportTypeTrack, 1);
   EXPECT_FALSE(track_report == NULL);
@@ -516,13 +524,8 @@ TEST_F(StatsCollectorTest, TransportObjectLinkedFromSsrcObject) {
   const std::string kVcName("vcname");
   cricket::VideoChannel video_channel(talk_base::Thread::Current(),
       media_engine_, media_channel, &session_, kVcName, false, NULL);
-  const std::string kTrackId("somename");
-  talk_base::scoped_refptr<webrtc::MediaStream> stream(
-      webrtc::MediaStream::Create("streamlabel"));
-  talk_base::scoped_refptr<webrtc::VideoTrack> track =
-      webrtc::VideoTrack::Create(kTrackId, NULL);
-  stream->AddTrack(track);
-  stats.AddStream(stream);
+  AddVideoTrackStats();
+  stats.AddStream(stream_);
 
   stats.set_session(&session_);
 
@@ -531,7 +534,6 @@ TEST_F(StatsCollectorTest, TransportObjectLinkedFromSsrcObject) {
   // Constructs an ssrc stats update.
   cricket::VideoSenderInfo video_sender_info;
   cricket::VideoMediaInfo stats_read;
-  const uint32 kSsrcOfTrack = 1234;
   const int64 kBytesSent = 12345678901234LL;
 
   // Construct a stats value to read.
@@ -544,23 +546,10 @@ TEST_F(StatsCollectorTest, TransportObjectLinkedFromSsrcObject) {
   EXPECT_CALL(*media_channel, GetStats(_))
     .WillRepeatedly(DoAll(SetArgPointee<0>(stats_read),
                           Return(true)));
-  EXPECT_CALL(session_, GetTrackIdBySsrc(kSsrcOfTrack, _))
-    .WillOnce(DoAll(SetArgPointee<1>(kTrackId),
-                    Return(true)));
 
-  // Instruct the session to return stats containing the transport channel.
-  const std::string kTransportName("trspname");
-  cricket::SessionStats session_stats;
-  cricket::TransportStats transport_stats;
-  cricket::TransportChannelStats channel_stats;
-  channel_stats.component = 1;
-  transport_stats.content_name = kTransportName;
-  transport_stats.channel_stats.push_back(channel_stats);
-
-  session_stats.transport_stats[kTransportName] = transport_stats;
-  session_stats.proxy_to_transport[kVcName] = kTransportName;
+  InitSessionStats(kVcName);
   EXPECT_CALL(session_, GetStats(_))
-    .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats),
+    .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
                           Return(true)));
 
   stats.UpdateStats();
@@ -573,6 +562,78 @@ TEST_F(StatsCollectorTest, TransportObjectLinkedFromSsrcObject) {
   const webrtc::StatsReport* transport_report = FindReportById(reports,
                                                                transport_id);
   ASSERT_FALSE(transport_report == NULL);
+}
+
+// This test verifies that a remote stats object will not be created for
+// an outgoing SSRC where remote stats are not returned.
+TEST_F(StatsCollectorTest, RemoteSsrcInfoIsAbsent) {
+  webrtc::StatsCollector stats;  // Implementation under test.
+  MockVideoMediaChannel* media_channel = new MockVideoMediaChannel;
+  // The content_name known by the video channel.
+  const std::string kVcName("vcname");
+  cricket::VideoChannel video_channel(talk_base::Thread::Current(),
+      media_engine_, media_channel, &session_, kVcName, false, NULL);
+  AddVideoTrackStats();
+  stats.AddStream(stream_);
+
+  stats.set_session(&session_);
+
+  EXPECT_CALL(session_, video_channel())
+    .WillRepeatedly(ReturnNull());
+
+  stats.UpdateStats();
+  webrtc::StatsReports reports;
+  stats.GetStats(NULL, &reports);
+  const webrtc::StatsReport* remote_report = FindNthReportByType(reports,
+      webrtc::StatsReport::kStatsReportTypeRemoteSsrc, 1);
+  EXPECT_TRUE(remote_report == NULL);
+}
+
+// This test verifies that a remote stats object will be created for
+// an outgoing SSRC where stats are returned.
+TEST_F(StatsCollectorTest, RemoteSsrcInfoIsPresent) {
+  webrtc::StatsCollector stats;  // Implementation under test.
+  MockVideoMediaChannel* media_channel = new MockVideoMediaChannel;
+  // The content_name known by the video channel.
+  const std::string kVcName("vcname");
+  cricket::VideoChannel video_channel(talk_base::Thread::Current(),
+      media_engine_, media_channel, &session_, kVcName, false, NULL);
+  AddVideoTrackStats();
+  stats.AddStream(stream_);
+
+  stats.set_session(&session_);
+
+  webrtc::StatsReports reports;
+
+  // Instruct the session to return stats containing the transport channel.
+  InitSessionStats(kVcName);
+  EXPECT_CALL(session_, GetStats(_))
+    .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
+                          Return(true)));
+
+  // Constructs an ssrc stats update.
+  cricket::VideoMediaInfo stats_read;
+
+  cricket::SsrcReceiverInfo remote_ssrc_stats;
+  remote_ssrc_stats.timestamp = 12345.678;
+  remote_ssrc_stats.ssrc = kSsrcOfTrack;
+  cricket::VideoSenderInfo video_sender_info;
+  video_sender_info.ssrcs.push_back(kSsrcOfTrack);
+  video_sender_info.remote_stats.push_back(remote_ssrc_stats);
+  stats_read.senders.push_back(video_sender_info);
+
+  EXPECT_CALL(session_, video_channel())
+    .WillRepeatedly(Return(&video_channel));
+  EXPECT_CALL(*media_channel, GetStats(_))
+    .WillRepeatedly(DoAll(SetArgPointee<0>(stats_read),
+                          Return(true)));
+
+  stats.UpdateStats();
+  stats.GetStats(NULL, &reports);
+  const webrtc::StatsReport* remote_report = FindNthReportByType(reports,
+      webrtc::StatsReport::kStatsReportTypeRemoteSsrc, 1);
+  EXPECT_FALSE(remote_report == NULL);
+  EXPECT_NE(0, remote_report->timestamp);
 }
 
 // This test verifies that all chained certificates are correctly
@@ -638,6 +699,7 @@ TEST_F(StatsCollectorTest, NoTransport) {
   EXPECT_CALL(session_, GetStats(_))
     .WillOnce(DoAll(SetArgPointee<0>(session_stats),
                     Return(true)));
+
   EXPECT_CALL(session_, video_channel())
     .WillRepeatedly(ReturnNull());
 
@@ -711,6 +773,5 @@ TEST_F(StatsCollectorTest, NoCertificates) {
       webrtc::StatsReport::kStatsValueNameRemoteCertificateId);
   ASSERT_EQ(kNotFound, remote_certificate_id);
 }
-
 
 }  // namespace

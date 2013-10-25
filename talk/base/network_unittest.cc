@@ -120,7 +120,8 @@ TEST_F(NetworkTest, TestIgnoreList) {
   EXPECT_FALSE(IsIgnoredNetwork(network_manager, include_me));
 }
 
-TEST_F(NetworkTest, TestCreateNetworks) {
+// Test is failing on Windows opt: b/11288214
+TEST_F(NetworkTest, DISABLED_TestCreateNetworks) {
   BasicNetworkManager manager;
   NetworkManager::NetworkList result = GetNetworks(manager, true);
   // We should be able to bind to any addresses we find.

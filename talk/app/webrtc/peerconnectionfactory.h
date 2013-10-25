@@ -40,6 +40,10 @@ namespace webrtc {
 class PeerConnectionFactory : public PeerConnectionFactoryInterface,
                               public talk_base::MessageHandler {
  public:
+  virtual void SetOptions(const Options& options) {
+    options_ = options;
+  }
+
   virtual talk_base::scoped_refptr<PeerConnectionInterface>
       CreatePeerConnection(
           const PeerConnectionInterface::IceServers& configuration,
@@ -77,6 +81,7 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface,
   virtual cricket::ChannelManager* channel_manager();
   virtual talk_base::Thread* signaling_thread();
   virtual talk_base::Thread* worker_thread();
+  const Options& options() const { return options_; }
 
  protected:
   PeerConnectionFactory();
@@ -109,6 +114,7 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface,
   bool owns_ptrs_;
   talk_base::Thread* signaling_thread_;
   talk_base::Thread* worker_thread_;
+  Options options_;
   talk_base::scoped_refptr<PortAllocatorFactoryInterface> allocator_factory_;
   // External Audio device used for audio playback.
   talk_base::scoped_refptr<AudioDeviceModule> default_adm_;

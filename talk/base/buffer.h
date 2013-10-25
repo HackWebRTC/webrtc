@@ -88,7 +88,7 @@ class Buffer {
   }
   void SetCapacity(size_t capacity) {
     if (capacity > capacity_) {
-      talk_base::scoped_array<char> data(new char[capacity]);
+      talk_base::scoped_ptr<char[]> data(new char[capacity]);
       memcpy(data.get(), data_.get(), length_);
       data_.swap(data);
       capacity_ = capacity;
@@ -109,7 +109,7 @@ class Buffer {
     SetData(data, length);
   }
 
-  scoped_array<char> data_;
+  scoped_ptr<char[]> data_;
   size_t length_;
   size_t capacity_;
 };

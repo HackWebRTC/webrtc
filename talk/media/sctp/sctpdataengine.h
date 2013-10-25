@@ -56,7 +56,7 @@ struct socket;
 namespace cricket {
 // The highest stream ID (Sid) that SCTP allows, and the number of streams we
 // tell SCTP we're going to use.
-const uint32 kMaxSctpSid = USHRT_MAX;
+const uint32 kMaxSctpSid = 1023;
 
 // A DataEngine that interacts with usrsctp.
 //

@@ -55,7 +55,7 @@ class FrameBuffer {
   const webrtc::VideoFrame* frame() const;
 
  private:
-  talk_base::scoped_array<char> data_;
+  talk_base::scoped_ptr<char[]> data_;
   size_t length_;
   webrtc::VideoFrame video_frame_;
 };
