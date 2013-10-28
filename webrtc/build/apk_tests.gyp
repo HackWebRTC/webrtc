@@ -180,7 +180,7 @@
         'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)video_engine_tests<(SHARED_LIB_SUFFIX)',
       },
       'dependencies': [
-        '<(webrtc_root)/video_engine/video_engine.gyp:video_engine_tests',
+        '<(webrtc_root)/webrtc.gyp:video_engine_tests',
       ],
       'includes': [
         '../../../build/apk_test.gypi',
