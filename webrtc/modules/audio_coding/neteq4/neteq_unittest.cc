@@ -149,7 +149,8 @@ void RefFiles::WriteToFile(const RtcpStatistics& stats) {
                          output_fp_));
     ASSERT_EQ(1u, fwrite(&(stats.cumulative_lost),
                          sizeof(stats.cumulative_lost), 1, output_fp_));
-    ASSERT_EQ(1u, fwrite(&(stats.extended_max), sizeof(stats.extended_max), 1,
+    ASSERT_EQ(1u, fwrite(&(stats.extended_max_sequence_number),
+                         sizeof(stats.extended_max_sequence_number), 1,
                          output_fp_));
     ASSERT_EQ(1u, fwrite(&(stats.jitter), sizeof(stats.jitter), 1,
                          output_fp_));
@@ -165,14 +166,16 @@ void RefFiles::ReadFromFileAndCompare(
                         sizeof(ref_stats.fraction_lost), 1, input_fp_));
     ASSERT_EQ(1u, fread(&(ref_stats.cumulative_lost),
                         sizeof(ref_stats.cumulative_lost), 1, input_fp_));
-    ASSERT_EQ(1u, fread(&(ref_stats.extended_max),
-                        sizeof(ref_stats.extended_max), 1, input_fp_));
+    ASSERT_EQ(1u, fread(&(ref_stats.extended_max_sequence_number),
+                        sizeof(ref_stats.extended_max_sequence_number), 1,
+                        input_fp_));
     ASSERT_EQ(1u, fread(&(ref_stats.jitter), sizeof(ref_stats.jitter), 1,
                         input_fp_));
     // Compare
     EXPECT_EQ(ref_stats.fraction_lost, stats.fraction_lost);
     EXPECT_EQ(ref_stats.cumulative_lost, stats.cumulative_lost);
-    EXPECT_EQ(ref_stats.extended_max, stats.extended_max);
+    EXPECT_EQ(ref_stats.extended_max_sequence_number,
+              stats.extended_max_sequence_number);
     EXPECT_EQ(ref_stats.jitter, stats.jitter);
   }
 }

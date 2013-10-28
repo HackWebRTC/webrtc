@@ -15,6 +15,7 @@
 
 #include <vector>
 
+#include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/neteq4/interface/audio_decoder.h"
 #include "webrtc/system_wrappers/interface/constructor_magic.h"
 #include "webrtc/typedefs.h"
@@ -23,14 +24,6 @@ namespace webrtc {
 
 // Forward declarations.
 struct WebRtcRTPHeader;
-
-// RTCP statistics.
-struct RtcpStatistics {
-  uint16_t fraction_lost;
-  uint32_t cumulative_lost;
-  uint32_t extended_max;
-  uint32_t jitter;
-};
 
 struct NetEqNetworkStatistics {
   uint16_t current_buffer_size_ms;  // Current jitter buffer size in ms.
