@@ -70,7 +70,7 @@
             'video_engine_tests',
           ],
           'includes': [
-            '../build/isolate.gypi',
+            'build/isolate.gypi',
             'video_engine_tests.isolate',
           ],
           'sources': [
