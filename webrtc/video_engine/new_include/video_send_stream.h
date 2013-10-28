@@ -81,7 +81,8 @@ class VideoSendStream {
           target_delay_ms(0),
           pacing(false),
           stats_callback(NULL),
-          start_state(NULL) {}
+          start_state(NULL),
+          auto_mute(false) {}
     VideoCodec codec;
 
     static const size_t kDefaultMaxPacketSize = 1500 - 40;  // TCP over IPv4.
@@ -147,15 +148,10 @@ class VideoSendStream {
     // Set to resume a previously destroyed send stream.
     SendStreamState* start_state;
 
-    // Parameters for auto muter. If threshold_bps > 0, video will be muted when
-    // the bandwidth estimate drops below this limit, and enabled again when the
-    // bandwidth estimate goes above threshold_bps + window_bps. Setting the
-    // threshold to zero disables the auto muter.
-    struct AutoMuter {
-      AutoMuter() : threshold_bps(0), window_bps(0) {}
-      int threshold_bps;
-      int window_bps;
-    } auto_muter;
+    // True if video should be muted when video goes under the minimum video
+    // bitrate. Unless muted, video will be sent at a bitrate higher than
+    // estimated available.
+    bool auto_mute;
   };
 
   // Gets interface used to insert captured frames. Valid as long as the

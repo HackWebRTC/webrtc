@@ -7,6 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include <algorithm>  // max
+
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
@@ -491,12 +493,6 @@ TEST_F(VideoSendStreamTest, MaxPacketSize) {
 //    When the stream is detected again, the test ends.
 TEST_F(VideoSendStreamTest, AutoMute) {
   static const int kMuteTimeFrames = 60;  // Mute for 2 seconds @ 30 fps.
-  static const int kMuteThresholdBps = 70000;
-  static const int kMuteWindowBps = 10000;
-  // Let the low REMB value be 10 kbps lower than the muter threshold, and the
-  // high REMB value be 5 kbps higher than the re-enabling threshold.
-  static const int kLowRembBps = kMuteThresholdBps - 10000;
-  static const int kHighRembBps = kMuteThresholdBps + kMuteWindowBps + 5000;
 
   class RembObserver : public SendTransportObserver, public I420FrameCallback {
    public:
@@ -508,6 +504,8 @@ TEST_F(VideoSendStreamTest, AutoMute) {
           rtp_count_(0),
           last_sequence_number_(0),
           mute_frame_count_(0),
+          low_remb_bps_(0),
+          high_remb_bps_(0),
           crit_sect_(CriticalSectionWrapper::CreateCriticalSection()) {}
 
     void SetReceiver(PacketReceiver* receiver) {
@@ -532,7 +530,7 @@ TEST_F(VideoSendStreamTest, AutoMute) {
 
       if (test_state_ == kBeforeMute) {
         // The stream has started. Try to mute it.
-        SendRtcpFeedback(kLowRembBps);
+        SendRtcpFeedback(low_remb_bps_);
         test_state_ = kDuringMute;
       } else if (test_state_ == kDuringMute) {
         mute_frame_count_ = 0;
@@ -547,10 +545,14 @@ TEST_F(VideoSendStreamTest, AutoMute) {
     void FrameCallback(I420VideoFrame* video_frame) OVERRIDE {
       CriticalSectionScoped lock(crit_sect_.get());
       if (test_state_ == kDuringMute && ++mute_frame_count_ > kMuteTimeFrames) {
-        SendRtcpFeedback(kHighRembBps);
+        SendRtcpFeedback(high_remb_bps_);
         test_state_ = kWaitingForPacket;
       }
     }
+
+    void set_low_remb_bps(int value) { low_remb_bps_ = value; }
+
+    void set_high_remb_bps(int value) { high_remb_bps_ = value; }
 
    private:
     enum TestState {
@@ -583,6 +585,8 @@ TEST_F(VideoSendStreamTest, AutoMute) {
     int rtp_count_;
     int last_sequence_number_;
     int mute_frame_count_;
+    int low_remb_bps_;
+    int high_remb_bps_;
     scoped_ptr<CriticalSectionWrapper> crit_sect_;
   } observer;
 
@@ -592,9 +596,15 @@ TEST_F(VideoSendStreamTest, AutoMute) {
 
   VideoSendStream::Config send_config = GetSendTestConfig(call.get());
   send_config.rtp.nack.rtp_history_ms = 1000;
-  send_config.auto_muter.threshold_bps = kMuteThresholdBps;
-  send_config.auto_muter.window_bps = kMuteWindowBps;
   send_config.pre_encode_callback = &observer;
+  send_config.auto_mute = true;
+  unsigned int min_bitrate_bps =
+      send_config.codec.simulcastStream[0].minBitrate * 1000;
+  observer.set_low_remb_bps(min_bitrate_bps - 10000);
+  unsigned int threshold_window = std::max(min_bitrate_bps / 10, 10000u);
+  ASSERT_GT(send_config.codec.simulcastStream[0].maxBitrate * 1000,
+            min_bitrate_bps + threshold_window + 5000);
+  observer.set_high_remb_bps(min_bitrate_bps + threshold_window + 5000);
 
   RunSendTest(call.get(), send_config, &observer);
 }

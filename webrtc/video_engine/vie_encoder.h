@@ -166,7 +166,7 @@ class ViEEncoder
   // Enables AutoMuter to turn off video when the rate drops below
   // |threshold_bps|, and turns back on when the rate goes back up above
   // |threshold_bps| + |window_bps|.
-  virtual void EnableAutoMuting(int threshold_bps, int window_bps);
+  virtual void EnableAutoMuting();
 
   // New-style callback, used by VideoSendStream.
   void RegisterPreEncodeCallback(I420FrameCallback* pre_encode_callback);

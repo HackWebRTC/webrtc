@@ -197,8 +197,8 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return sender_->StopDebugRecording();
   }
 
-  virtual void EnableAutoMuting(int threshold_bps, int window_bps) {
-    return sender_->EnableAutoMuting(threshold_bps, window_bps);
+  virtual void EnableAutoMuting() {
+    return sender_->EnableAutoMuting();
   }
 
   virtual void DisableAutoMuting() {

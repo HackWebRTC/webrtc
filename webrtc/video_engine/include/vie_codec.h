@@ -200,8 +200,7 @@ class WEBRTC_DLLEXPORT ViECodec {
   // |threshold_bps| + |window_bps|.
   // This is under development; not tested.
   // TODO(hlundin): Remove the default implementation when possible.
-  virtual void EnableAutoMuting(int video_channel, int threshold_bps,
-                                int window_bps) {}
+  virtual void EnableAutoMuting(int video_channel) {}
 
  protected:
   ViECodec() {}

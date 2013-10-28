@@ -1156,8 +1156,9 @@ int ViEEncoder::StopDebugRecording() {
   return vcm_.StopDebugRecording();
 }
 
-void ViEEncoder::EnableAutoMuting(int threshold_bps, int window_bps) {
-  vcm_.EnableAutoMuting(threshold_bps, window_bps);
+void ViEEncoder::EnableAutoMuting() {
+  vcm_.EnableAutoMuting();
+  bitrate_controller_->EnforceMinBitrate(false);
 }
 
 void ViEEncoder::RegisterPreEncodeCallback(

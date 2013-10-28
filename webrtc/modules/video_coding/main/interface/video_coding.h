@@ -595,7 +595,7 @@ public:
     // Enables AutoMuter to turn off video when the rate drops below
     // |threshold_bps|, and turns back on when the rate goes back up above
     // |threshold_bps| + |window_bps|.
-    virtual void EnableAutoMuting(int threshold_bps, int window_bps) = 0;
+    virtual void EnableAutoMuting() = 0;
 
     // Disables AutoMuter.
     virtual void DisableAutoMuting() = 0;
