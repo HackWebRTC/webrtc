@@ -33,6 +33,10 @@
 
 @implementation APPRTCViewController
 
+@synthesize textField = _textField;
+@synthesize textInstructions = _textInstructions;
+@synthesize textOutput = _textOutput;
+
 - (void)viewDidLoad {
   [super viewDidLoad];
   self.textField.delegate = self;

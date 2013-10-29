@@ -33,6 +33,10 @@
 
 @implementation RTCICEServer
 
+@synthesize URI = _URI;
+@synthesize username = _username;
+@synthesize password = _password;
+
 - (id)initWithURI:(NSURL *)URI
          username:(NSString *)username
          password:(NSString *)password {

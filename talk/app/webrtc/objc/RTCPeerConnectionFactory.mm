@@ -64,6 +64,8 @@
 
 @implementation RTCPeerConnectionFactory
 
+@synthesize nativeFactory = _nativeFactory;
+
 + (void)initializeSSL {
   BOOL initialized = talk_base::InitializeSSL();
   NSAssert(initialized, @"Failed to initialize SSL library");

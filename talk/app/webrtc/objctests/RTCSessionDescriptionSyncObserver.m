@@ -44,6 +44,12 @@
 
 @implementation RTCSessionDescriptionSyncObserver
 
+@synthesize error = _error;
+@synthesize sessionDescription = _sessionDescription;
+@synthesize success = _success;
+@synthesize condition = _condition;
+@synthesize signaled = _signaled;
+
 - (id)init {
   if ((self = [super init])) {
     if (!(_condition = [[NSCondition alloc] init]))

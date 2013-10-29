@@ -38,6 +38,9 @@
 
 @implementation GAEChannelClient
 
+@synthesize delegate = _delegate;
+@synthesize webView = _webView;
+
 - (id)initWithToken:(NSString *)token delegate:(id<GAEMessageHandler>)delegate {
   self = [super init];
   if (self) {

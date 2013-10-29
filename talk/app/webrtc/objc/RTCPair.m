@@ -29,6 +29,9 @@
 
 @implementation RTCPair
 
+@synthesize key = _key;
+@synthesize value = _value;
+
 - (id)initWithKey:(NSString *)key value:(NSString *)value {
   if ((self = [super init])) {
     _key = [key copy];

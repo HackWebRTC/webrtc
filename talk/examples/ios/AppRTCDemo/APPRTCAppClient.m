@@ -49,6 +49,19 @@
 
 @implementation APPRTCAppClient
 
+@synthesize ICEServerDelegate = _ICEServerDelegate;
+@synthesize messageHandler = _messageHandler;
+
+@synthesize backgroundQueue = _backgroundQueue;
+@synthesize baseURL = _baseURL;
+@synthesize gaeChannel = _gaeChannel;
+@synthesize postMessageUrl = _postMessageUrl;
+@synthesize pcConfig = _pcConfig;
+@synthesize roomHtml = _roomHtml;
+@synthesize sendQueue = _sendQueue;
+@synthesize token = _token;
+@synthesize verboseLogging = _verboseLogging;
+
 - (id)init {
   if (self = [super init]) {
     _backgroundQueue = dispatch_queue_create("RTCBackgroundQueue", NULL);

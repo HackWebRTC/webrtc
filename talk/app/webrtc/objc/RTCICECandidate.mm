@@ -31,11 +31,11 @@
 
 #import "RTCICECandidate+internal.h"
 
-@implementation RTCICECandidate {
-  NSString *_sdpMid;
-  NSInteger _sdpMLineIndex;
-  NSString *_sdp;
-}
+@implementation RTCICECandidate
+
+@synthesize sdpMid = _sdpMid;
+@synthesize sdpMLineIndex = _sdpMLineIndex;
+@synthesize sdp = _sdp;
 
 - (id)initWithMid:(NSString *)sdpMid
             index:(NSInteger)sdpMLineIndex

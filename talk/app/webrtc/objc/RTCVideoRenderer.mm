@@ -40,6 +40,8 @@
 
 @implementation RTCVideoRenderer
 
+@synthesize delegate = _delegate;
+
 + (RTCVideoRenderer *)videoRenderGUIWithFrame:(CGRect)frame {
   // TODO (hughv): Implement.
   return nil;

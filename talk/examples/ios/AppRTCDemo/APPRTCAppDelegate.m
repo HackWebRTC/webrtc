@@ -142,6 +142,14 @@
 
 @implementation APPRTCAppDelegate
 
+@synthesize window = _window;
+@synthesize viewController = _viewController;
+@synthesize client = _client;
+@synthesize pcObserver = _pcObserver;
+@synthesize peerConnection = _peerConnection;
+@synthesize peerConnectionFactory = _peerConnectionFactory;
+@synthesize queuedRemoteCandidates = _queuedRemoteCandidates;
+
 #pragma mark - UIApplicationDelegate methods
 
 - (BOOL)application:(UIApplication *)application
