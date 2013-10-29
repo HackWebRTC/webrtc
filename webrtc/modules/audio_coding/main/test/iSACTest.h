@@ -20,6 +20,7 @@
 #include "webrtc/modules/audio_coding/main/test/Channel.h"
 #include "webrtc/modules/audio_coding/main/test/PCMFile.h"
 #include "webrtc/modules/audio_coding/main/test/utility.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 #define MAX_FILE_NAME_LENGTH_BYTE 500
 #define NO_OF_CLIENTS             15
@@ -55,11 +56,11 @@ class ISACTest : public ACMTest {
 
   void SwitchingSamplingRate(int testNr, int maxSampRateChange);
 
-  AudioCodingModule* _acmA;
-  AudioCodingModule* _acmB;
+  scoped_ptr<AudioCodingModule> _acmA;
+  scoped_ptr<AudioCodingModule> _acmB;
 
-  Channel* _channel_A2B;
-  Channel* _channel_B2A;
+  scoped_ptr<Channel> _channel_A2B;
+  scoped_ptr<Channel> _channel_B2A;
 
   PCMFile _inFileA;
   PCMFile _inFileB;

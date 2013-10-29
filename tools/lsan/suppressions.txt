@@ -44,7 +44,3 @@ leak:talk_base::OpenSSLIdentity::FromPEMStrings
 leak:talk_base::TaskParent::TaskParent
 leak:talk_base::unstarted_task_test_DoNotDeleteTask2_Test::TestBody
 
-# modules_tests
-# https://code.google.com/p/webrtc/issues/detail?id=2515
-leak:AudioCodingModuleTest_TestIsac_Test::TestBody
-
