@@ -8,7 +8,7 @@
 {
   'variables': {
     'webrtc_video_dependencies': [
-      '<(webrtc_root)/video_engine/video_engine.gyp:*',
+      '<(webrtc_root)/video_engine/video_engine.gyp:video_engine_core',
     ],
     'webrtc_video_sources': [
       'video/transport_adapter.cc',
