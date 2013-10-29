@@ -40,6 +40,8 @@ class SendTransportObserver : public test::NullTransport {
 
   EventTypeWrapper Wait() { return send_test_complete_->Wait(timeout_ms_); }
 
+  virtual void Stop() {}
+
  protected:
   scoped_ptr<RtpHeaderParser> rtp_header_parser_;
   scoped_ptr<EventWrapper> send_test_complete_;
@@ -65,6 +67,7 @@ class VideoSendStreamTest : public ::testing::Test {
 
     EXPECT_EQ(kEventSignaled, observer->Wait());
 
+    observer->Stop();
     frame_generator_capturer->Stop();
     send_stream->StopSend();
     call->DestroySendStream(send_stream);
@@ -336,6 +339,8 @@ TEST_F(VideoSendStreamTest, SupportsFec) {
       return true;
     }
 
+    virtual void Stop() OVERRIDE { transport_.StopSending(); }
+
    private:
     internal::TransportAdapter transport_adapter_;
     test::DirectTransport transport_;
@@ -408,6 +413,8 @@ void VideoSendStreamTest::TestNackRetransmission(uint32_t retransmit_ssrc) {
 
       return true;
     }
+
+    virtual void Stop() OVERRIDE { transport_.StopSending(); }
 
    private:
     internal::TransportAdapter transport_adapter_;
@@ -554,6 +561,8 @@ TEST_F(VideoSendStreamTest, AutoMute) {
     void set_low_remb_bps(int value) { low_remb_bps_ = value; }
 
     void set_high_remb_bps(int value) { high_remb_bps_ = value; }
+
+    virtual void Stop() OVERRIDE { transport_.StopSending(); }
 
    private:
     enum TestState {
