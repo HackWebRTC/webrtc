@@ -563,14 +563,6 @@ bool operator!=(T* p1, const webrtc::scoped_ptr<T, D>& p2) {
   return p1 != p2.get();
 }
 
-// A function to convert T* into webrtc::scoped_ptr<T>
-// Doing e.g. make_scoped_ptr(new FooBarBaz<type>(arg)) is a shorter notation
-// for webrtc::scoped_ptr<FooBarBaz<type> >(new FooBarBaz<type>(arg))
-template <typename T>
-webrtc::scoped_ptr<T> make_scoped_ptr(T* ptr) {
-  return webrtc::scoped_ptr<T>(ptr);
-}
-
 namespace webrtc {
 
 // DEPRECATED: Use scoped_ptr<T[]> instead.
