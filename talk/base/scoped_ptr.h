@@ -95,7 +95,7 @@
 
 #include "talk/base/common.h"  // for ASSERT
 #include "talk/base/compile_assert.h"  // for COMPILE_ASSERT
-#include "talk/base/move.h"    // for MOVE_ONLY_TYPE_FOR_CPP_03
+#include "talk/base/move.h"    // for TALK_MOVE_ONLY_TYPE_FOR_CPP_03
 #include "talk/base/template_util.h"    // for is_convertible, is_array
 
 #ifdef _WIN32
@@ -304,7 +304,7 @@ class scoped_ptr_impl {
 // types.
 template <class T, class D = talk_base::DefaultDeleter<T> >
 class scoped_ptr {
-  MOVE_ONLY_TYPE_FOR_CPP_03(scoped_ptr, RValue)
+  TALK_MOVE_ONLY_TYPE_FOR_CPP_03(scoped_ptr, RValue)
 
  public:
   // The element and deleter types.
@@ -449,7 +449,7 @@ class scoped_ptr {
 
 template <class T, class D>
 class scoped_ptr<T[], D> {
-  MOVE_ONLY_TYPE_FOR_CPP_03(scoped_ptr, RValue)
+  TALK_MOVE_ONLY_TYPE_FOR_CPP_03(scoped_ptr, RValue)
 
  public:
   // The element and deleter types.
@@ -585,14 +585,6 @@ bool operator==(T* p1, const talk_base::scoped_ptr<T, D>& p2) {
 template <class T, class D>
 bool operator!=(T* p1, const talk_base::scoped_ptr<T, D>& p2) {
   return p1 != p2.get();
-}
-
-// A function to convert T* into talk_base::scoped_ptr<T>
-// Doing e.g. make_scoped_ptr(new FooBarBaz<type>(arg)) is a shorter notation
-// for talk_base::scoped_ptr<FooBarBaz<type> >(new FooBarBaz<type>(arg))
-template <typename T>
-talk_base::scoped_ptr<T> make_scoped_ptr(T* ptr) {
-  return talk_base::scoped_ptr<T>(ptr);
 }
 
 #endif  // #ifndef TALK_BASE_SCOPED_PTR_H__

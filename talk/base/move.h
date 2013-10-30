@@ -26,7 +26,7 @@
 //
 //  template <typename T>
 //  class scoped_ptr {
-//     MOVE_ONLY_TYPE_FOR_CPP_03(scoped_ptr, RValue)
+//     TALK_MOVE_ONLY_TYPE_FOR_CPP_03(scoped_ptr, RValue)
 //   public:
 //    scoped_ptr(RValue& other) : ptr_(other.release()) { }
 //    scoped_ptr& operator=(RValue& other) {
@@ -88,7 +88,7 @@
 // Here's an example with comments explaining what gets triggered where:
 //
 //    class Foo {
-//      MOVE_ONLY_TYPE_FOR_CPP_03(Foo, RValue);
+//      TALK_MOVE_ONLY_TYPE_FOR_CPP_03(Foo, RValue);
 //
 //     public:
 //       ... API ...
@@ -191,7 +191,7 @@
 //
 // The workaround is to explicitly declare your copy constructor.
 //
-#define MOVE_ONLY_TYPE_FOR_CPP_03(type, rvalue_type) \
+#define TALK_MOVE_ONLY_TYPE_FOR_CPP_03(type, rvalue_type) \
  private: \
   struct rvalue_type { \
     explicit rvalue_type(type* object) : object(object) {} \

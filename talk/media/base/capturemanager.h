@@ -67,19 +67,19 @@ class CaptureManager : public sigslot::has_slots<> {
   CaptureManager() {}
   virtual ~CaptureManager();
 
-  bool StartVideoCapture(VideoCapturer* video_capturer,
-                         const VideoFormat& desired_format);
-  bool StopVideoCapture(VideoCapturer* video_capturer,
-                        const VideoFormat& format);
+  virtual bool StartVideoCapture(VideoCapturer* video_capturer,
+                                 const VideoFormat& desired_format);
+  virtual bool StopVideoCapture(VideoCapturer* video_capturer,
+                                const VideoFormat& format);
 
   // Possibly restarts the capturer. If |options| is set to kRequestRestart,
   // the CaptureManager chooses whether this request can be handled with the
   // current state or if a restart is actually needed. If |options| is set to
   // kForceRestart, the capturer is restarted.
-  bool RestartVideoCapture(VideoCapturer* video_capturer,
-                           const VideoFormat& previous_format,
-                           const VideoFormat& desired_format,
-                           RestartOptions options);
+  virtual bool RestartVideoCapture(VideoCapturer* video_capturer,
+                                   const VideoFormat& previous_format,
+                                   const VideoFormat& desired_format,
+                                   RestartOptions options);
 
   virtual bool AddVideoRenderer(VideoCapturer* video_capturer,
                                 VideoRenderer* video_renderer);
