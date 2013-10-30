@@ -9,7 +9,7 @@
  */
 
 #include "gtest/gtest.h"
-#include "webrtc/modules/remote_bitrate_estimator/bwe_test_framework.h"
+#include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_framework.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/constructor_magic.h"
@@ -69,11 +69,14 @@ class TestedEstimator : public RemoteBitrateObserver {
   }
 
   void EatPacket(const BwePacket& packet) {
+    BWE_TEST_LOGGING_CONTEXT(debug_name_);
+
     latest_estimate_kbps_ = -1.0;
 
     // We're treating the send time (from previous filter) as the arrival
     // time once packet reaches the estimator.
     int64_t packet_time_ms = (packet.send_time_us() + 500) / 1000;
+    BWE_TEST_LOGGING_TIME(packet_time_ms);
 
     int64_t step_ms = estimator_->TimeUntilNextProcess();
     while ((clock_.TimeInMilliseconds() + step_ms) < packet_time_ms) {
@@ -90,9 +93,12 @@ class TestedEstimator : public RemoteBitrateObserver {
   }
 
   void CheckEstimate() {
+    BWE_TEST_LOGGING_CONTEXT(debug_name_);
     double estimated_kbps = 0.0;
     if (LatestEstimate(&estimated_kbps)) {
       stats_.Push(estimated_kbps);
+      BWE_TEST_LOGGING_PLOT("Estimate", clock_.TimeInMilliseconds(),
+                            estimated_kbps / 100);
       double relative_estimate_kbps = 0.0;
       if (relative_estimator_ &&
           relative_estimator_->LatestEstimate(&relative_estimate_kbps)) {
@@ -102,13 +108,12 @@ class TestedEstimator : public RemoteBitrateObserver {
   }
 
   void LogStats() {
-    printf("%s Mean ", debug_name_.c_str());
+    BWE_TEST_LOGGING_CONTEXT(debug_name_);
+    BWE_TEST_LOGGING_CONTEXT("Mean");
     stats_.Log("kbps");
-    printf("\n");
     if (relative_estimator_) {
-      printf("%s Diff ", debug_name_.c_str());
+      BWE_TEST_LOGGING_CONTEXT("Diff");
       relative_estimator_stats_.Log("kbps");
-      printf("\n");
     }
   }
 
@@ -229,7 +234,7 @@ class RemoteBitrateEstimatorsTest : public ::testing::Test {
       processors_.push_back(video_senders_.back());
       total_capacity += configs[i].kbps;
     }
-    printf("RequiredLinkCapacity %d kbps\n", total_capacity);
+    BWE_TEST_LOGGING_LOG1("RequiredLinkCapacity", "%d kbps", total_capacity)
   }
 
   void LogStats() {
@@ -306,8 +311,8 @@ class RemoteBitrateEstimatorsTest : public ::testing::Test {
     RateCounterFilter counter;
     processors_.push_back(&jitter);
     processors_.push_back(&counter);
-    jitter.SetJitter(120);
-    RunFor(10 * 60 * 1000);
+    jitter.SetJitter(20);
+    RunFor(2 * 60 * 1000);
   }
   void IncreasingJitter1Test() {
     JitterFilter jitter;
@@ -407,37 +412,39 @@ class RemoteBitrateEstimatorsTest : public ::testing::Test {
   DISALLOW_COPY_AND_ASSIGN(RemoteBitrateEstimatorsTest);
 };
 
-#define SINGLE_TEST(enabled, test_name, video_senders)\
+#define SINGLE_TEST(enabled, test_name, video_senders, log)\
     TEST_F(RemoteBitrateEstimatorsTest, test_name##_##video_senders##Sender) {\
+      BWE_TEST_LOGGING_ENABLE(log);\
       if (enabled) {\
+        BWE_TEST_LOGGING_CONTEXT(#test_name);\
         AddVideoSenders(video_senders);\
         test_name##Test();\
         LogStats();\
       }\
     }
 
-#define MULTI_TEST(enabled, test_name)\
-    SINGLE_TEST((enabled) && ENABLE_1_SENDER, test_name, 1)\
-    SINGLE_TEST((enabled) && ENABLE_3_SENDERS, test_name, 3)\
-    SINGLE_TEST((enabled) && ENABLE_10_SENDERS, test_name, 10)
+#define MULTI_TEST(enabled, test_name, log)\
+    SINGLE_TEST((enabled) && ENABLE_1_SENDER, test_name, 1, log)\
+    SINGLE_TEST((enabled) && ENABLE_3_SENDERS, test_name, 3, log)\
+    SINGLE_TEST((enabled) && ENABLE_10_SENDERS, test_name, 10, log)
 
-MULTI_TEST(ENABLE_BASIC_TESTS, UnlimitedSpeed)
-MULTI_TEST(ENABLE_LOSS_TESTS, SteadyLoss)
-MULTI_TEST(ENABLE_LOSS_TESTS, IncreasingLoss1)
-MULTI_TEST(ENABLE_DELAY_TESTS, SteadyDelay)
-MULTI_TEST(ENABLE_DELAY_TESTS, IncreasingDelay1)
-MULTI_TEST(ENABLE_DELAY_TESTS, IncreasingDelay2)
-MULTI_TEST(ENABLE_DELAY_TESTS, JumpyDelay1)
-MULTI_TEST(ENABLE_JITTER_TESTS, SteadyJitter)
-MULTI_TEST(ENABLE_JITTER_TESTS, IncreasingJitter1)
-MULTI_TEST(ENABLE_JITTER_TESTS, IncreasingJitter2)
-MULTI_TEST(ENABLE_REORDER_TESTS, SteadyReorder)
-MULTI_TEST(ENABLE_REORDER_TESTS, IncreasingReorder1)
-MULTI_TEST(ENABLE_CHOKE_TESTS, SteadyChoke)
-MULTI_TEST(ENABLE_CHOKE_TESTS, IncreasingChoke1)
-MULTI_TEST(ENABLE_CHOKE_TESTS, IncreasingChoke2)
-MULTI_TEST(ENABLE_MULTI_TESTS, Multi1)
-MULTI_TEST(ENABLE_MULTI_TESTS, Multi2)
+MULTI_TEST(ENABLE_BASIC_TESTS, UnlimitedSpeed, true)
+MULTI_TEST(ENABLE_LOSS_TESTS, SteadyLoss, true)
+MULTI_TEST(ENABLE_LOSS_TESTS, IncreasingLoss1, true)
+MULTI_TEST(ENABLE_DELAY_TESTS, SteadyDelay, true)
+MULTI_TEST(ENABLE_DELAY_TESTS, IncreasingDelay1, true)
+MULTI_TEST(ENABLE_DELAY_TESTS, IncreasingDelay2, true)
+MULTI_TEST(ENABLE_DELAY_TESTS, JumpyDelay1, true)
+MULTI_TEST(ENABLE_JITTER_TESTS, SteadyJitter, true)
+MULTI_TEST(ENABLE_JITTER_TESTS, IncreasingJitter1, true)
+MULTI_TEST(ENABLE_JITTER_TESTS, IncreasingJitter2, true)
+MULTI_TEST(ENABLE_REORDER_TESTS, SteadyReorder, true)
+MULTI_TEST(ENABLE_REORDER_TESTS, IncreasingReorder1, true)
+MULTI_TEST(ENABLE_CHOKE_TESTS, SteadyChoke, true)
+MULTI_TEST(ENABLE_CHOKE_TESTS, IncreasingChoke1, true)
+MULTI_TEST(ENABLE_CHOKE_TESTS, IncreasingChoke2, true)
+MULTI_TEST(ENABLE_MULTI_TESTS, Multi1, true)
+MULTI_TEST(ENABLE_MULTI_TESTS, Multi2, true)
 
 }  // namespace bwe
 }  // namespace testing

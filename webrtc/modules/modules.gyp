@@ -174,14 +174,16 @@
             'pacing/paced_sender_unittest.cc',
             'remote_bitrate_estimator/include/mock/mock_remote_bitrate_observer.h',
             'remote_bitrate_estimator/bitrate_estimator_unittest.cc',
-            'remote_bitrate_estimator/bwe_test_framework.cc',
-            'remote_bitrate_estimator/bwe_test_framework.h',
-            'remote_bitrate_estimator/bwe_test_framework_unittest.cc',
             'remote_bitrate_estimator/remote_bitrate_estimator_single_stream_unittest.cc',
             'remote_bitrate_estimator/remote_bitrate_estimator_unittest_helper.cc',
             'remote_bitrate_estimator/remote_bitrate_estimator_unittest_helper.h',
             'remote_bitrate_estimator/remote_bitrate_estimators_test.cc',
             'remote_bitrate_estimator/rtp_to_ntp_unittest.cc',
+            'remote_bitrate_estimator/test/bwe_test_framework.cc',
+            'remote_bitrate_estimator/test/bwe_test_framework.h',
+            'remote_bitrate_estimator/test/bwe_test_framework_unittest.cc',
+            'remote_bitrate_estimator/test/bwe_test_logging.cc',
+            'remote_bitrate_estimator/test/bwe_test_logging.h',
             'rtp_rtcp/source/mock/mock_rtp_payload_strategy.h',
             'rtp_rtcp/source/fec_receiver_unittest.cc',
             'rtp_rtcp/source/fec_test_helper.cc',
@@ -240,6 +242,14 @@
             'video_processing/main/test/unit_test/video_processing_unittest.h',
           ],
           'conditions': [
+            ['enable_bwe_test_logging==1', {
+              'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=1' ],
+            }, {
+              'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0' ],
+              'sources!': [
+                'remote_bitrate_estimator/test/bwe_test_logging.cc'
+              ],
+            }],
             # Run screen/window capturer tests only on platforms where they are
             # supported.
             ['desktop_capture_supported==0', {

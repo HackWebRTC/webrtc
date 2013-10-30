@@ -61,6 +61,9 @@
     # third party code will still have the reduced warning settings.
     'chromium_code': 1,
 
+    # Remote bitrate estimator logging/plotting.
+    'enable_bwe_test_logging%': 0,
+
     # Adds video support to dependencies shared by voice and video engine.
     # This should normally be enabled; the intended use is to disable only
     # when building voice engine exclusively.

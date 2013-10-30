@@ -8,20 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_BWE_TEST_FRAMEWORK_H_
-#define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_BWE_TEST_FRAMEWORK_H_
+#ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_BWE_TEST_FRAMEWORK_H_
+#define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_BWE_TEST_FRAMEWORK_H_
 
 #include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <cstdio>
 #include <list>
 #include <numeric>
 #include <string>
 #include <vector>
 
 #include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/system_wrappers/interface/constructor_magic.h"
+#include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 
 namespace webrtc {
 namespace testing {
@@ -119,7 +118,7 @@ template<typename T> class Stats {
   }
 
   void Log(const std::string& units) {
-    printf("%f %s\t+/-%f\t[%f,%f]",
+    BWE_TEST_LOGGING_LOG5("", "%f %s\t+/-%f\t[%f,%f]",
         GetMean(), units.c_str(), GetStdDev(), GetMin(), GetMax());
   }
 
@@ -290,12 +289,9 @@ class RateCounterFilter : public PacketProcessorInterface {
   uint32_t bits_per_second() const { return bytes_per_second_ * 8; }
 
   void LogStats() {
-    printf("RateCounterFilter ");
+    BWE_TEST_LOGGING_CONTEXT("RateCounterFilter");
     pps_stats_.Log("pps");
-    printf("\n");
-    printf("RateCounterFilter ");
     kbps_stats_.Log("kbps");
-    printf("\n");
   }
 
   virtual void RunFor(int64_t /*time_ms*/, Packets* in_out) {
@@ -339,6 +335,8 @@ class LossFilter : public PacketProcessorInterface {
   virtual ~LossFilter() {}
 
   void SetLoss(float loss_percent) {
+    BWE_TEST_LOGGING_ENABLE(false);
+    BWE_TEST_LOGGING_LOG1("Loss", "%f%%", loss_percent);
     assert(loss_percent >= 0.0f);
     assert(loss_percent <= 100.0f);
     loss_fraction_ = loss_percent * 0.01f;
@@ -368,6 +366,8 @@ class DelayFilter : public PacketProcessorInterface {
   virtual ~DelayFilter() {}
 
   void SetDelay(int64_t delay_ms) {
+    BWE_TEST_LOGGING_ENABLE(false);
+    BWE_TEST_LOGGING_LOG1("Delay", "%d ms", static_cast<int>(delay_ms));
     assert(delay_ms >= 0);
     delay_us_ = delay_ms * 1000;
   }
@@ -398,6 +398,9 @@ class JitterFilter : public PacketProcessorInterface {
   virtual ~JitterFilter() {}
 
   void SetJitter(int64_t stddev_jitter_ms) {
+    BWE_TEST_LOGGING_ENABLE(false);
+    BWE_TEST_LOGGING_LOG1("Jitter", "%d ms",
+                          static_cast<int>(stddev_jitter_ms));
     assert(stddev_jitter_ms >= 0);
     stddev_jitter_us_ = stddev_jitter_ms * 1000;
   }
@@ -426,6 +429,8 @@ class ReorderFilter : public PacketProcessorInterface {
   virtual ~ReorderFilter() {}
 
   void SetReorder(float reorder_percent) {
+    BWE_TEST_LOGGING_ENABLE(false);
+    BWE_TEST_LOGGING_LOG1("Reordering", "%f%%", reorder_percent);
     assert(reorder_percent >= 0.0f);
     assert(reorder_percent <= 100.0f);
     reorder_fraction_ = reorder_percent * 0.01f;
@@ -463,6 +468,8 @@ class ChokeFilter : public PacketProcessorInterface {
   virtual ~ChokeFilter() {}
 
   void SetCapacity(uint32_t kbps) {
+    BWE_TEST_LOGGING_ENABLE(false);
+    BWE_TEST_LOGGING_LOG1("BitrateChoke", "%d kbps", kbps);
     kbps_ = kbps;
   }
 
@@ -486,4 +493,4 @@ class ChokeFilter : public PacketProcessorInterface {
 }  // namespace testing
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_BWE_TEST_FRAMEWORK_H_
+#endif  // WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_BWE_TEST_FRAMEWORK_H_
