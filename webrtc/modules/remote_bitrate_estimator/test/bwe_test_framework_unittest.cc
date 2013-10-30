@@ -727,13 +727,16 @@ class BweTestFramework_ChokeFilterTest : public ::testing::Test {
     : filter_(),
       now_ms_(0),
       sequence_number_(0),
-      output_packets_() {
+      output_packets_(),
+      send_times_us_() {
   }
   virtual ~BweTestFramework_ChokeFilterTest() {}
 
  protected:
+  ChokeFilter filter_;
+
   void TestChoke(int64_t run_for_ms, uint32_t packets_to_generate,
-                 uint32_t choke_kbps, uint32_t expected_kbit_transmitted) {
+                 uint32_t expected_kbit_transmitted) {
     // Generate a bunch of packets, apply choke, verify output is ordered.
     Packets packets;
     RTPHeader header = {0};
@@ -742,9 +745,9 @@ class BweTestFramework_ChokeFilterTest : public ::testing::Test {
       header.sequenceNumber = sequence_number_++;
       // Payload is 1000 bits.
       packets.push_back(BwePacket(send_time_ms * 1000, 125, header));
+      send_times_us_.push_back(send_time_ms * 1000);
     }
     ASSERT_TRUE(IsTimeSorted(packets));
-    filter_.SetCapacity(choke_kbps);
     filter_.RunFor(run_for_ms, &packets);
     now_ms_ += run_for_ms;
     output_packets_.splice(output_packets_.end(), packets);
@@ -764,11 +767,21 @@ class BweTestFramework_ChokeFilterTest : public ::testing::Test {
     EXPECT_EQ(expected_kbit_transmitted, (bytes_transmitted * 8) / 1000);
   }
 
+  void CheckMaxDelay(int64_t max_delay_ms) {
+    for (PacketsIt it = output_packets_.begin(); it != output_packets_.end();
+        ++it) {
+      const BwePacket& packet = *it;
+      int64_t delay_us = packet.send_time_us() -
+          send_times_us_[packet.header().sequenceNumber];
+      EXPECT_GE(max_delay_ms * 1000, delay_us);
+    }
+  }
+
  private:
-  ChokeFilter filter_;
   int64_t now_ms_;
   uint32_t sequence_number_;
   Packets output_packets_;
+  std::vector<int64_t> send_times_us_;
 
   DISALLOW_COPY_AND_ASSIGN(BweTestFramework_ChokeFilterTest);
 };
@@ -777,38 +790,69 @@ TEST_F(BweTestFramework_ChokeFilterTest, Short) {
   // 100ms, 100 packets, 10 kbps choke -> 1 kbit of data should have propagated.
   // That is actually just a single packet, since each packet has 1000 bits of
   // payload.
-  TestChoke(100, 100, 10, 1);
+  filter_.SetCapacity(10);
+  TestChoke(100, 100, 1);
 }
 
 TEST_F(BweTestFramework_ChokeFilterTest, Medium) {
   // 100ms, 10 packets, 10 kbps choke -> 1 packet through, or 1 kbit.
-  TestChoke(100, 10, 10, 1);
-  // 200ms, no new packets, same choke -> another packet through.
-  TestChoke(100, 0, 10, 1);
-  // 1000ms, no new packets, same choke -> 8 more packets.
-  TestChoke(800, 0, 10, 8);
-  // 2000ms, no new packets, same choke -> queue is empty so no output.
-  TestChoke(1000, 0, 10, 0);
+  filter_.SetCapacity(10);
+  TestChoke(100, 10, 1);
+  // 200ms, no new packets -> another packet through.
+  TestChoke(100, 0, 1);
+  // 1000ms, no new packets -> 8 more packets.
+  TestChoke(800, 0, 8);
+  // 2000ms, no new packets -> queue is empty so no output.
+  TestChoke(1000, 0, 0);
 }
 
 TEST_F(BweTestFramework_ChokeFilterTest, Long) {
   // 100ms, 100 packets in queue, 10 kbps choke -> 1 packet through, or 1 kbit.
-  TestChoke(100, 100, 10, 1);
+  filter_.SetCapacity(10);
+  TestChoke(100, 100, 1);
   // 200ms, no input, another packet through.
-  TestChoke(100, 0, 10, 1);
+  TestChoke(100, 0, 1);
   // 1000ms, no input, 8 packets through.
-  TestChoke(800, 0, 10, 8);
+  TestChoke(800, 0, 8);
   // 10000ms, no input, raise choke to 100 kbps. Remaining 90 packets in queue
   // should be propagated, for a total of 90 kbps.
-  TestChoke(9000, 0, 100, 90);
-  // 10100ms, 20 more packets, 100 kbps choke -> 10 packets or 10 kbit through.
-  TestChoke(100, 20, 100, 10);
-  // 10300ms, 10 more packets, same choke -> 20 packets out.
-  TestChoke(200, 10, 100, 20);
+  filter_.SetCapacity(100);
+  TestChoke(9000, 0, 90);
+  // 10100ms, 20 more packets -> 10 packets or 10 kbit through.
+  TestChoke(100, 20, 10);
+  // 10300ms, 10 more packets -> 20 packets out.
+  TestChoke(200, 10, 20);
   // 11300ms, no input, queue should be empty.
-  TestChoke(1000, 0, 10, 0);
+  filter_.SetCapacity(10);
+  TestChoke(1000, 0, 0);
 }
 
+TEST_F(BweTestFramework_ChokeFilterTest, MaxDelay) {
+  // 10 kbps choke, 500 ms delay cap
+  filter_.SetCapacity(10);
+  filter_.SetMaxDelay(500);
+  // 100ms, 100 packets in queue, 10 kbps choke -> 1 packet through, or 1 kbit.
+  TestChoke(100, 100, 1);
+  CheckMaxDelay(500);
+  // 500ms, no input, 4 more packets through.
+  TestChoke(400, 0, 4);
+  // 10000ms, no input, remaining packets should have been dropped.
+  TestChoke(9500, 0, 0);
+
+  // 100 ms delay cap
+  filter_.SetMaxDelay(100);
+  // 10100ms, 50 more packets -> 2 packets or 2 kbit through.
+  TestChoke(100, 50, 2);
+  CheckMaxDelay(100);
+  // 20000ms, no input, remaining packets in queue should have been dropped.
+  TestChoke(9900, 0, 0);
+
+  // Reset delay cap (0 is no cap) and verify no packets are dropped.
+  filter_.SetCapacity(10);
+  filter_.SetMaxDelay(0);
+  TestChoke(100, 100, 2);
+  TestChoke(9900, 0, 98);
+}
 }  // namespace bwe
 }  // namespace testing
 }  // namespace webrtc

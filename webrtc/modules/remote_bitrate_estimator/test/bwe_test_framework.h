@@ -464,7 +464,7 @@ class ReorderFilter : public PacketProcessorInterface {
 // Apply a bitrate choke with an infinite queue on the packet stream.
 class ChokeFilter : public PacketProcessorInterface {
  public:
-  ChokeFilter() : kbps_(1200), last_send_time_us_(0) {}
+  ChokeFilter() : kbps_(1200), max_delay_us_(0), last_send_time_us_(0) {}
   virtual ~ChokeFilter() {}
 
   void SetCapacity(uint32_t kbps) {
@@ -473,18 +473,34 @@ class ChokeFilter : public PacketProcessorInterface {
     kbps_ = kbps;
   }
 
+  void SetMaxDelay(int64_t max_delay_ms) {
+    BWE_TEST_LOGGING_ENABLE(false);
+    BWE_TEST_LOGGING_LOG1("Max Delay", "%d ms", static_cast<int>(max_delay_ms));
+    assert(max_delay_ms >= 0);
+    max_delay_us_ = max_delay_ms * 1000;
+  }
+
   virtual void RunFor(int64_t /*time_ms*/, Packets* in_out) {
     assert(in_out);
-    for (PacketsIt it = in_out->begin(); it != in_out->end(); ++it) {
+    for (PacketsIt it = in_out->begin(); it != in_out->end(); ) {
       int64_t earliest_send_time_us = last_send_time_us_ +
           (it->payload_size() * 8 * 1000 + kbps_ / 2) / kbps_;
-      last_send_time_us_ = std::max(it->send_time_us(), earliest_send_time_us);
-      it->set_send_time_us(last_send_time_us_);
+      int64_t new_send_time_us = std::max(it->send_time_us(),
+                                          earliest_send_time_us);
+      if (max_delay_us_ == 0 ||
+          max_delay_us_ >= (new_send_time_us - it->send_time_us())) {
+        it->set_send_time_us(new_send_time_us);
+        last_send_time_us_ = new_send_time_us;
+        ++it;
+      } else {
+        it = in_out->erase(it);
+      }
     }
   }
 
  private:
   uint32_t kbps_;
+  int64_t max_delay_us_;
   int64_t last_send_time_us_;
 
   DISALLOW_COPY_AND_ASSIGN(ChokeFilter);
