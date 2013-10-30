@@ -32,6 +32,7 @@
 #include "talk/app/webrtc/mediastreamsignaling.h"
 #include "talk/app/webrtc/streamcollection.h"
 #include "talk/app/webrtc/test/fakeconstraints.h"
+#include "talk/app/webrtc/test/fakedatachannelprovider.h"
 #include "talk/app/webrtc/videotrack.h"
 #include "talk/base/gunit.h"
 #include "talk/base/scoped_ptr.h"
@@ -127,7 +128,7 @@ static const char kSdpStringWithMsidWithoutStreams[] =
     "o=- 0 0 IN IP4 127.0.0.1\r\n"
     "s=-\r\n"
     "t=0 0\r\n"
-    "a:msid-semantic: WMS\r\n"
+    "a=msid-semantic: WMS\r\n"
     "m=audio 1 RTP/AVPF 103\r\n"
     "a=mid:audio\r\n"
     "a=rtpmap:103 ISAC/16000\r\n"
@@ -1012,4 +1013,43 @@ TEST_F(MediaStreamSignalingTest, ChangeSsrcOnTrackInLocalSessionDescription) {
   observer_->VerifyLocalVideoTrack(kStreams[0], kVideoTracks[0], 98);
 }
 
+// Verifies that an even SCTP id is allocated for SSL_CLIENT and an odd id for
+// SSL_SERVER.
+TEST_F(MediaStreamSignalingTest, SctpIdAllocationBasedOnRole) {
+  int id;
+  ASSERT_TRUE(signaling_->AllocateSctpSid(talk_base::SSL_SERVER, &id));
+  EXPECT_EQ(1, id);
+  ASSERT_TRUE(signaling_->AllocateSctpSid(talk_base::SSL_CLIENT, &id));
+  EXPECT_EQ(0, id);
+  ASSERT_TRUE(signaling_->AllocateSctpSid(talk_base::SSL_SERVER, &id));
+  EXPECT_EQ(3, id);
+  ASSERT_TRUE(signaling_->AllocateSctpSid(talk_base::SSL_CLIENT, &id));
+  EXPECT_EQ(2, id);
+}
 
+// Verifies that SCTP ids of existing DataChannels are not reused.
+TEST_F(MediaStreamSignalingTest, SctpIdAllocationNoReuse) {
+  talk_base::scoped_ptr<FakeDataChannelProvider> provider(
+      new FakeDataChannelProvider());
+  // Creates a DataChannel with id 1.
+  webrtc::DataChannelInit config;
+  config.id = 1;
+  talk_base::scoped_refptr<webrtc::DataChannel> data_channel(
+      webrtc::DataChannel::Create(
+          provider.get(), cricket::DCT_SCTP, "a", &config));
+  ASSERT_TRUE(data_channel.get() != NULL);
+  ASSERT_TRUE(signaling_->AddDataChannel(data_channel.get()));
+
+  int new_id;
+  ASSERT_TRUE(signaling_->AllocateSctpSid(talk_base::SSL_SERVER, &new_id));
+  EXPECT_NE(config.id, new_id);
+
+  // Creates a DataChannel with id 0.
+  config.id = 0;
+  data_channel = webrtc::DataChannel::Create(
+      provider.get(), cricket::DCT_SCTP, "b", &config);
+  ASSERT_TRUE(data_channel.get() != NULL);
+  ASSERT_TRUE(signaling_->AddDataChannel(data_channel.get()));
+  ASSERT_TRUE(signaling_->AllocateSctpSid(talk_base::SSL_CLIENT, &new_id));
+  EXPECT_NE(config.id, new_id);
+}

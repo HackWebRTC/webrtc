@@ -105,7 +105,17 @@ struct MediaSessionOptions {
   void AddStream(MediaType type,
                  const std::string& id,
                  const std::string& sync_label);
+  void AddVideoStream(const std::string& id,
+                      const std::string& sync_label,
+                      int num_sim_layers);
   void RemoveStream(MediaType type, const std::string& id);
+
+
+  // Helper function.
+  void AddStreamInternal(MediaType type,
+                         const std::string& id,
+                         const std::string& sync_label,
+                         int num_sim_layers);
 
   bool has_audio;
   bool has_video;
@@ -122,12 +132,15 @@ struct MediaSessionOptions {
   struct Stream {
     Stream(MediaType type,
            const std::string& id,
-           const std::string& sync_label)
-        : type(type), id(id), sync_label(sync_label) {
+           const std::string& sync_label,
+           int num_sim_layers)
+        : type(type), id(id), sync_label(sync_label),
+          num_sim_layers(num_sim_layers) {
     }
     MediaType type;
     std::string id;
     std::string sync_label;
+    int num_sim_layers;
   };
 
   typedef std::vector<Stream> Streams;

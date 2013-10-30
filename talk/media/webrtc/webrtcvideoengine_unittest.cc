@@ -380,6 +380,25 @@ TEST_F(WebRtcVideoEngineTestFake, SetOptionsWithMaxBitrate) {
       channel_num, kVP8Codec.width, kVP8Codec.height, 0, 20, 10, 20);
 }
 
+TEST_F(WebRtcVideoEngineTestFake, SetOptionsWithLoweredBitrate) {
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = vie_.GetLastChannel();
+  std::vector<cricket::VideoCodec> codecs(engine_.codecs());
+  codecs[0].params[cricket::kCodecParamMinBitrate] = "50";
+  codecs[0].params[cricket::kCodecParamMaxBitrate] = "100";
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+
+  VerifyVP8SendCodec(
+      channel_num, kVP8Codec.width, kVP8Codec.height, 0, 100, 50, 100);
+
+  // Verify that min bitrate changes after SetOptions().
+  cricket::VideoOptions options;
+  options.lower_min_bitrate.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  VerifyVP8SendCodec(
+      channel_num, kVP8Codec.width, kVP8Codec.height, 0, 100, 30, 100);
+}
+
 TEST_F(WebRtcVideoEngineTestFake, MaxBitrateResetWithConferenceMode) {
   EXPECT_TRUE(SetupEngine());
   int channel_num = vie_.GetLastChannel();

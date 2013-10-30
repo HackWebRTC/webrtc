@@ -885,7 +885,7 @@ struct ResumeEntry {
 // soundclip device. At that time, reinstate the soundclip pause/resume code.
 bool WebRtcVoiceEngine::SetDevices(const Device* in_device,
                                    const Device* out_device) {
-#if !defined(IOS) && !defined(ANDROID)
+#if !defined(IOS)
   int in_id = in_device ? talk_base::FromString<int>(in_device->id) :
       kDefaultAudioDeviceId;
   int out_id = out_device ? talk_base::FromString<int>(out_device->id) :
@@ -982,13 +982,13 @@ bool WebRtcVoiceEngine::SetDevices(const Device* in_device,
   return ret;
 #else
   return true;
-#endif  // !IOS && !ANDROID
+#endif  // !IOS
 }
 
 bool WebRtcVoiceEngine::FindWebRtcAudioDeviceId(
   bool is_input, const std::string& dev_name, int dev_id, int* rtc_id) {
   // In Linux, VoiceEngine uses the same device dev_id as the device manager.
-#ifdef LINUX
+#if defined(LINUX) || defined(ANDROID)
   *rtc_id = dev_id;
   return true;
 #else

@@ -31,6 +31,14 @@
 // described by one StreamParams object
 // SsrcGroup is used to describe the relationship between the SSRCs that
 // are used for this media source.
+// E.x: Consider a source that is sent as 3 simulcast streams
+// Let the simulcast elements have SSRC 10, 20, 30.
+// Let each simulcast element use FEC and let the protection packets have
+// SSRC 11,21,31.
+// To describe this 4 SsrcGroups are needed,
+// StreamParams would then contain ssrc = {10,11,20,21,30,31} and
+// ssrc_groups = {{SIM,{10,20,30}, {FEC,{10,11}, {FEC, {20,21}, {FEC {30,31}}}
+// Please see RFC 5576.
 
 #ifndef TALK_MEDIA_BASE_STREAMPARAMS_H_
 #define TALK_MEDIA_BASE_STREAMPARAMS_H_
@@ -46,6 +54,7 @@ namespace cricket {
 
 extern const char kFecSsrcGroupSemantics[];
 extern const char kFidSsrcGroupSemantics[];
+extern const char kSimSsrcGroupSemantics[];
 
 struct SsrcGroup {
   SsrcGroup(const std::string& usage, const std::vector<uint32>& ssrcs)

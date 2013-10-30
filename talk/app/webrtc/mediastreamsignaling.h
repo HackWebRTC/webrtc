@@ -174,11 +174,11 @@ class MediaStreamSignaling {
   }
 
   // Checks if |id| is available to be assigned to a new SCTP data channel.
-  bool IsSctpIdAvailable(int id) const;
+  bool IsSctpSidAvailable(int sid) const;
 
   // Gets the first available SCTP id that is not assigned to any existing
   // data channels.
-  bool AllocateSctpId(int* id);
+  bool AllocateSctpSid(talk_base::SSLRole role, int* sid);
 
   // Adds |local_stream| to the collection of known MediaStreams that will be
   // offered in a SessionDescription.
@@ -249,8 +249,8 @@ class MediaStreamSignaling {
   StreamCollectionInterface* remote_streams() const {
     return remote_streams_.get();
   }
-  void UpdateLocalSctpDataChannels();
-  void UpdateRemoteSctpDataChannels();
+  void OnDataTransportCreatedForSctp();
+  void OnDtlsRoleReadyForSctp(talk_base::SSLRole role);
 
  private:
   struct RemotePeerInfo {
@@ -380,7 +380,9 @@ class MediaStreamSignaling {
   TrackInfos local_audio_tracks_;
   TrackInfos local_video_tracks_;
 
-  int last_allocated_sctp_id_;
+  int last_allocated_sctp_even_sid_;
+  int last_allocated_sctp_odd_sid_;
+
   typedef std::map<std::string, talk_base::scoped_refptr<DataChannel> >
       DataChannels;
   DataChannels data_channels_;

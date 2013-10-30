@@ -44,24 +44,35 @@ class DataChannel;
 
 class DataChannelProviderInterface {
  public:
+  // Sends the data to the transport.
   virtual bool SendData(const cricket::SendDataParams& params,
                         const talk_base::Buffer& payload,
                         cricket::SendDataResult* result) = 0;
+  // Connects to the transport signals.
   virtual bool ConnectDataChannel(DataChannel* data_channel) = 0;
+  // Disconnects from the transport signals.
   virtual void DisconnectDataChannel(DataChannel* data_channel) = 0;
+  // Adds the send and receive stream ssrc to the transport for RTP.
+  virtual void AddRtpDataStream(uint32 send_ssrc, uint32 recv_ssrc) = 0;
+  // Adds the data channel SID to the transport for SCTP.
+  virtual void AddSctpDataStream(uint32 sid) = 0;
+  // Removes the data channel ssrcs from the transport for RTP.
+  virtual void RemoveRtpDataStream(uint32 send_ssrc, uint32 recv_ssrc) = 0;
+  // Removes the data channel SID from the transport for SCTP.
+  virtual void RemoveSctpDataStream(uint32 sid) = 0;
 
  protected:
   virtual ~DataChannelProviderInterface() {}
 };
 
 // DataChannel is a an implementation of the DataChannelInterface based on
-// libjingle's data engine. It provides an implementation of unreliable data
-// channels. Currently this class is specifically designed to use RtpDataEngine,
-// and will changed to use SCTP in the future.
+// libjingle's data engine. It provides an implementation of unreliable or
+// reliabledata channels. Currently this class is specifically designed to use
+// both RtpDataEngine and SctpDataEngine.
 
 // DataChannel states:
-// kConnecting: The channel has been created but SSRC for sending and receiving
-//              has not yet been set and the transport might not yet be ready.
+// kConnecting: The channel has been created the transport might not yet be
+//              ready.
 // kOpen: The channel have a local SSRC set by a call to UpdateSendSsrc
 //        and a remote SSRC set by call to UpdateReceiveSsrc and the transport
 //        has been writable once.
@@ -73,7 +84,7 @@ class DataChannel : public DataChannelInterface,
                     public sigslot::has_slots<> {
  public:
   static talk_base::scoped_refptr<DataChannel> Create(
-      DataChannelProviderInterface* client,
+      DataChannelProviderInterface* provider,
       cricket::DataChannelType dct,
       const std::string& label,
       const DataChannelInit* config);
@@ -97,20 +108,6 @@ class DataChannel : public DataChannelInterface,
   virtual void Close();
   virtual DataState state() const { return state_; }
   virtual bool Send(const DataBuffer& buffer);
-  // Send a control message right now, or queue for later.
-  virtual bool SendControl(const talk_base::Buffer* buffer);
-  void ConnectToDataSession();
-
-  // Set the SSRC this channel should use to receive data from the
-  // underlying data engine.
-  void SetReceiveSsrc(uint32 receive_ssrc);
-  // The remote peer request that this channel should be closed.
-  void RemotePeerRequestClose();
-
-  // Set the SSRC this channel should use to send data on the
-  // underlying data engine. |send_ssrc| == 0 means that the channel is no
-  // longer part of the session negotiation.
-  void SetSendSsrc(uint32 send_ssrc);
 
   // Called if the underlying data engine is closing.
   void OnDataEngineClose();
@@ -125,20 +122,38 @@ class DataChannel : public DataChannelInterface,
                       const cricket::ReceiveDataParams& params,
                       const talk_base::Buffer& payload);
 
+  // The remote peer request that this channel should be closed.
+  void RemotePeerRequestClose();
+
+  // The following methods are for SCTP only.
+
+  // Sets the SCTP sid and adds to transport layer if not set yet.
+  void SetSctpSid(int sid);
+  // Called when the transport channel is created.
+  void OnTransportChannelCreated();
+
+  // The following methods are for RTP only.
+
+  // Set the SSRC this channel should use to send data on the
+  // underlying data engine. |send_ssrc| == 0 means that the channel is no
+  // longer part of the session negotiation.
+  void SetSendSsrc(uint32 send_ssrc);
+  // Set the SSRC this channel should use to receive data from the
+  // underlying data engine.
+  void SetReceiveSsrc(uint32 receive_ssrc);
+
  protected:
   DataChannel(DataChannelProviderInterface* client,
               cricket::DataChannelType dct,
               const std::string& label);
   virtual ~DataChannel();
 
-  bool Init(const DataChannelInit* config);
-  bool HasNegotiationCompleted();
-
  private:
+  bool Init(const DataChannelInit* config);
   void DoClose();
   void UpdateState();
   void SetState(DataState state);
-  void DisconnectFromDataSession();
+  void DisconnectFromTransport();
   void DeliverQueuedControlData();
   void QueueControl(const talk_base::Buffer* buffer);
   void ClearQueuedControlData();
@@ -149,6 +164,8 @@ class DataChannel : public DataChannelInterface,
   bool InternalSendWithoutQueueing(const DataBuffer& buffer,
                                    cricket::SendDataResult* send_result);
   bool QueueSendData(const DataBuffer& buffer);
+  bool SendOpenMessage(const talk_base::Buffer* buffer);
+
 
   std::string label_;
   DataChannelInit config_;

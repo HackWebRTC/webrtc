@@ -20,7 +20,6 @@
 
 #include "talk/base/common.h"
 
-using std::string;
 using std::vector;
 
 namespace talk_base {
@@ -96,7 +95,8 @@ bool Base64::IsBase64Encoded(const std::string& str) {
   return true;
 }
 
-void Base64::EncodeFromArray(const void* data, size_t len, string* result) {
+void Base64::EncodeFromArray(const void* data, size_t len,
+                             std::string* result) {
   ASSERT(NULL != result);
   result->clear();
   result->resize(((len + 2) / 3) * 4);
@@ -190,8 +190,9 @@ size_t Base64::GetNextQuantum(DecodeFlags parse_flags, bool illegal_pads,
 }
 
 bool Base64::DecodeFromArray(const char* data, size_t len, DecodeFlags flags,
-                             string* result, size_t* data_used) {
-  return DecodeFromArrayTemplate<string>(data, len, flags, result, data_used);
+                             std::string* result, size_t* data_used) {
+  return DecodeFromArrayTemplate<std::string>(
+      data, len, flags, result, data_used);
 }
 
 bool Base64::DecodeFromArray(const char* data, size_t len, DecodeFlags flags,

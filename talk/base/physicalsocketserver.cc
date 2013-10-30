@@ -466,6 +466,10 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
     ASSERT((0 <= value) && (value <= 65536));
     *mtu = value;
     return 0;
+#elif defined(__native_client__)
+    // Most socket operations, including this, will fail in NaCl's sandbox.
+    error_ = EACCES;
+    return -1;
 #endif
   }
 

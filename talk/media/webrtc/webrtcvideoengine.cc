@@ -93,6 +93,9 @@ static const int kStartVideoBitrate = 300;
 static const int kMaxVideoBitrate = 2000;
 static const int kDefaultConferenceModeMaxVideoBitrate = 500;
 
+// Controlled by exp, try a super low minimum bitrate for poor connections.
+static const int kLowerMinBitrate = 30;
+
 static const int kVideoMtu = 1200;
 
 static const int kVideoRtpBufferSize = 65536;
@@ -2568,7 +2571,7 @@ bool WebRtcVideoMediaChannel::SetSendBandwidth(bool autobw, int bps) {
   int max_bitrate;
   if (autobw) {
     // Use the default values for min bitrate.
-    min_bitrate = kMinVideoBitrate;
+    min_bitrate = send_min_bitrate_;
     // Use the default value or the bps for the max
     max_bitrate = (bps <= 0) ? send_max_bitrate_ : (bps / 1000);
     // Maximum start bitrate can be kStartVideoBitrate.
@@ -2631,6 +2634,17 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
   // Adjust send codec bitrate if needed.
   int conf_max_bitrate = kDefaultConferenceModeMaxVideoBitrate;
 
+  // Save altered min_bitrate level and apply if necessary.
+  bool adjusted_min_bitrate = false;
+  if (options.lower_min_bitrate.IsSet()) {
+    bool lower;
+    options.lower_min_bitrate.Get(&lower);
+
+    int new_send_min_bitrate = lower ? kLowerMinBitrate : kMinVideoBitrate;
+    adjusted_min_bitrate = (new_send_min_bitrate != send_min_bitrate_);
+    send_min_bitrate_ = new_send_min_bitrate;
+  }
+
   int expected_bitrate = send_max_bitrate_;
   if (InConferenceMode()) {
     expected_bitrate = conf_max_bitrate;
@@ -2642,7 +2656,8 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
   }
 
   if (send_codec_ &&
-      (send_max_bitrate_ != expected_bitrate || denoiser_changed)) {
+      (send_max_bitrate_ != expected_bitrate || denoiser_changed ||
+       adjusted_min_bitrate)) {
     // On success, SetSendCodec() will reset send_max_bitrate_ to
     // expected_bitrate.
     if (!SetSendCodec(*send_codec_,

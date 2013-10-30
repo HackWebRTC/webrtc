@@ -278,18 +278,14 @@ VideoCapturer* DeviceManager::CreateDesktopCapturer(
 bool DeviceManager::GetAudioDevices(bool input,
                                     std::vector<Device>* devs) {
   devs->clear();
-#if defined(IOS) || defined(ANDROID)
-  // Under Android, we don't access the device file directly.
-  // Arbitrary use 0 for the mic and 1 for the output.
-  // These ids are used in MediaEngine::SetSoundDevices(in, out);
-  // The strings are for human consumption.
-  if (input) {
-      devs->push_back(Device("audiorecord", 0));
-  } else {
-      devs->push_back(Device("audiotrack", 1));
-  }
+#if defined(ANDROID)
+  // Under Android, 0 is always required for the playout device and 0 is the
+  // default for the recording device.
+  devs->push_back(Device("default-device", 0));
   return true;
 #else
+  // Other platforms either have their own derived class implementation
+  // (desktop) or don't use device manager for audio devices (iOS).
   return false;
 #endif
 }

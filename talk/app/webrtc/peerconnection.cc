@@ -427,14 +427,6 @@ PeerConnection::CreateDataChannel(
   if (!channel.get())
     return NULL;
 
-  // If we've already passed the underlying channel's setup phase, have the
-  // MediaStreamSignaling update data channels manually.
-  if (session_->data_channel() != NULL &&
-      session_->data_channel_type() == cricket::DCT_SCTP) {
-    mediastream_signaling_->UpdateLocalSctpDataChannels();
-    mediastream_signaling_->UpdateRemoteSctpDataChannels();
-  }
-
   observer_->OnRenegotiationNeeded();
 
   return DataChannelProxy::Create(signaling_thread(), channel.get());

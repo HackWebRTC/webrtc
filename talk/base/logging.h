@@ -312,8 +312,10 @@ class LogMessageVoidify {
 // The _F version prefixes the message with the current function name.
 #if (defined(__GNUC__) && defined(_DEBUG)) || defined(WANT_PRETTY_LOG_F)
 #define LOG_F(sev) LOG(sev) << __PRETTY_FUNCTION__ << ": "
+#define LOG_T_F(sev) LOG(sev) << this << ": " << __PRETTY_FUNCTION__ << ": "
 #else
 #define LOG_F(sev) LOG(sev) << __FUNCTION__ << ": "
+#define LOG_T_F(sev) LOG(sev) << this << ": " << __FUNCTION__ << ": "
 #endif
 
 #define LOG_CHECK_LEVEL(sev) \
@@ -331,7 +333,6 @@ inline bool LogCheckLevel(LoggingSeverity sev) {
         .stream()
 
 #define LOG_T(sev) LOG(sev) << this << ": "
-#define LOG_T_F(level) LOG_F(level) << this << ": "
 
 #else  // !LOGGING
 
@@ -354,7 +355,7 @@ inline bool LogCheckLevel(LoggingSeverity sev) {
       .stream()
 
 #define LOG_T(sev) LOG(sev) << this << ": "
-#define LOG_T_F(level) LOG_F(level) << this << " "
+#define LOG_T_F(sev) LOG(sev) << this << ": " << __FUNCTION__ <<
 #endif  // !LOGGING
 
 #define LOG_ERRNO_EX(sev, err) \

@@ -31,6 +31,7 @@
 #include "talk/app/webrtc/mediastreamprovider.h"
 #include "talk/base/logging.h"
 #include "talk/base/refcount.h"
+#include "talk/media/sctp/sctputils.h"
 
 namespace webrtc {
 
@@ -68,36 +69,35 @@ DataChannel::DataChannel(
 }
 
 bool DataChannel::Init(const DataChannelInit* config) {
-  if (config) {
-    if (data_channel_type_ == cricket::DCT_RTP &&
-        (config->reliable ||
-         config->id != -1 ||
-         config->maxRetransmits != -1 ||
-         config->maxRetransmitTime != -1)) {
-      LOG(LS_ERROR) << "Failed to initialize the RTP data channel due to "
+  if (data_channel_type_ == cricket::DCT_RTP &&
+      (config->reliable ||
+       config->id != -1 ||
+       config->maxRetransmits != -1 ||
+       config->maxRetransmitTime != -1)) {
+    LOG(LS_ERROR) << "Failed to initialize the RTP data channel due to "
+                  << "invalid DataChannelInit.";
+    return false;
+  } else if (data_channel_type_ == cricket::DCT_SCTP) {
+    if (config->id < -1 ||
+        config->maxRetransmits < -1 ||
+        config->maxRetransmitTime < -1) {
+      LOG(LS_ERROR) << "Failed to initialize the SCTP data channel due to "
                     << "invalid DataChannelInit.";
       return false;
-    } else if (data_channel_type_ == cricket::DCT_SCTP) {
-      if (config->id < -1 ||
-          config->maxRetransmits < -1 ||
-          config->maxRetransmitTime < -1) {
-        LOG(LS_ERROR) << "Failed to initialize the SCTP data channel due to "
-                      << "invalid DataChannelInit.";
-        return false;
-      }
-      if (config->maxRetransmits != -1 && config->maxRetransmitTime != -1) {
-        LOG(LS_ERROR) <<
-            "maxRetransmits and maxRetransmitTime should not be both set.";
-        return false;
-      }
+    }
+    if (config->maxRetransmits != -1 && config->maxRetransmitTime != -1) {
+      LOG(LS_ERROR) <<
+          "maxRetransmits and maxRetransmitTime should not be both set.";
+      return false;
     }
     config_ = *config;
-  }
-  return true;
-}
 
-bool DataChannel::HasNegotiationCompleted() {
-  return send_ssrc_set_ == receive_ssrc_set_;
+    // Try to connect to the transport in case the transport channel already
+    // exists.
+    OnTransportChannelCreated();
+  }
+
+  return true;
 }
 
 DataChannel::~DataChannel() {
@@ -169,16 +169,13 @@ void DataChannel::QueueControl(const talk_base::Buffer* buffer) {
   queued_control_data_.push(buffer);
 }
 
-bool DataChannel::SendControl(const talk_base::Buffer* buffer) {
-  if (data_channel_type_ == cricket::DCT_RTP) {
-    delete buffer;
-    return false;
-  }
+bool DataChannel::SendOpenMessage(const talk_base::Buffer* raw_buffer) {
+  ASSERT(data_channel_type_ == cricket::DCT_SCTP &&
+         was_ever_writable_ &&
+         config_.id >= 0 &&
+         !config_.negotiated);
 
-  if (state_ != kOpen) {
-    QueueControl(buffer);
-    return true;
-  }
+  talk_base::scoped_ptr<const talk_base::Buffer> buffer(raw_buffer);
 
   cricket::SendDataParams send_params;
   send_params.ssrc = config_.id;
@@ -189,18 +186,15 @@ bool DataChannel::SendControl(const talk_base::Buffer* buffer) {
   bool retval = provider_->SendData(send_params, *buffer, &send_result);
   if (!retval && send_result == cricket::SDR_BLOCK) {
     // Link is congested.  Queue for later.
-    QueueControl(buffer);
-  } else {
-    delete buffer;
+    QueueControl(buffer.release());
   }
   return retval;
 }
 
 void DataChannel::SetReceiveSsrc(uint32 receive_ssrc) {
+  ASSERT(data_channel_type_ == cricket::DCT_RTP);
+
   if (receive_ssrc_set_) {
-    ASSERT(data_channel_type_ == cricket::DCT_RTP ||
-           !send_ssrc_set_ ||
-           receive_ssrc_ == send_ssrc_);
     return;
   }
   receive_ssrc_ = receive_ssrc;
@@ -214,10 +208,8 @@ void DataChannel::RemotePeerRequestClose() {
 }
 
 void DataChannel::SetSendSsrc(uint32 send_ssrc) {
+  ASSERT(data_channel_type_ == cricket::DCT_RTP);
   if (send_ssrc_set_) {
-    ASSERT(data_channel_type_ == cricket::DCT_RTP ||
-           !receive_ssrc_set_ ||
-           receive_ssrc_ == send_ssrc_);
     return;
   }
   send_ssrc_ = send_ssrc;
@@ -263,8 +255,18 @@ void DataChannel::OnChannelReady(bool writable) {
   // for sending and now unblocked, so send the queued data now.
   if (!was_ever_writable_) {
     was_ever_writable_ = true;
+
+    if (data_channel_type_ == cricket::DCT_SCTP && !config_.negotiated) {
+      talk_base::Buffer* payload = new talk_base::Buffer;
+      if (!cricket::WriteDataChannelOpenMessage(label_, config_, payload)) {
+        // TODO(jiayl): close the data channel on this error.
+        LOG(LS_ERROR) << "Could not write data channel OPEN message";
+        return;
+      }
+      SendOpenMessage(payload);
+    }
+
     UpdateState();
-    DeliverQueuedControlData();
     ASSERT(queued_send_data_.empty());
   } else if (state_ == kOpen) {
     DeliverQueuedSendData();
@@ -281,11 +283,15 @@ void DataChannel::DoClose() {
 void DataChannel::UpdateState() {
   switch (state_) {
     case kConnecting: {
-      if (HasNegotiationCompleted()) {
-        if (!connected_to_provider_) {
-          ConnectToDataSession();
+      if (send_ssrc_set_ == receive_ssrc_set_) {
+        if (data_channel_type_ == cricket::DCT_RTP && !connected_to_provider_) {
+          connected_to_provider_ = provider_->ConnectDataChannel(this);
+          provider_->AddRtpDataStream(send_ssrc_, receive_ssrc_);
         }
         if (was_ever_writable_) {
+          // TODO(jiayl): Do not transition to kOpen if we failed to send the
+          // OPEN message.
+          DeliverQueuedControlData();
           SetState(kOpen);
           // If we have received buffers before the channel got writable.
           // Deliver them now.
@@ -298,10 +304,9 @@ void DataChannel::UpdateState() {
       break;
     }
     case kClosing: {
-      if (connected_to_provider_) {
-        DisconnectFromDataSession();
-      }
-      if (HasNegotiationCompleted()) {
+      DisconnectFromTransport();
+
+      if (!send_ssrc_set_ && !receive_ssrc_set_) {
         SetState(kClosed);
       }
       break;
@@ -318,13 +323,18 @@ void DataChannel::SetState(DataState state) {
   }
 }
 
-void DataChannel::ConnectToDataSession() {
-  connected_to_provider_ = provider_->ConnectDataChannel(this);
-}
+void DataChannel::DisconnectFromTransport() {
+  if (!connected_to_provider_)
+    return;
 
-void DataChannel::DisconnectFromDataSession() {
   provider_->DisconnectDataChannel(this);
   connected_to_provider_ = false;
+
+  if (data_channel_type_ == cricket::DCT_RTP) {
+    provider_->RemoveRtpDataStream(send_ssrc_, receive_ssrc_);
+  } else {
+    provider_->RemoveSctpDataStream(config_.id);
+  }
 }
 
 void DataChannel::DeliverQueuedReceivedData() {
@@ -349,10 +359,12 @@ void DataChannel::ClearQueuedReceivedData() {
 }
 
 void DataChannel::DeliverQueuedSendData() {
+  ASSERT(was_ever_writable_ && state_ == kOpen);
+
+  // TODO(jiayl): Sending OPEN message here contradicts with the pre-condition
+  // that the readyState is open. According to the standard, the channel should
+  // not become open before the OPEN message is sent.
   DeliverQueuedControlData();
-  if (!was_ever_writable_) {
-    return;
-  }
 
   while (!queued_send_data_.empty()) {
     DataBuffer* buffer = queued_send_data_.front();
@@ -376,12 +388,11 @@ void DataChannel::ClearQueuedControlData() {
 }
 
 void DataChannel::DeliverQueuedControlData() {
-  if (was_ever_writable_) {
-    while (!queued_control_data_.empty()) {
-      const talk_base::Buffer *buf = queued_control_data_.front();
-      queued_control_data_.pop();
-      SendControl(buf);
-    }
+  ASSERT(was_ever_writable_);
+  while (!queued_control_data_.empty()) {
+    const talk_base::Buffer* buf = queued_control_data_.front();
+    queued_control_data_.pop();
+    SendOpenMessage(buf);
   }
 }
 
@@ -415,6 +426,24 @@ bool DataChannel::QueueSendData(const DataBuffer& buffer) {
   }
   queued_send_data_.push_back(new DataBuffer(buffer));
   return true;
+}
+
+void DataChannel::SetSctpSid(int sid) {
+  ASSERT(config_.id < 0 && sid >= 0 && data_channel_type_ == cricket::DCT_SCTP);
+  config_.id = sid;
+  provider_->AddSctpDataStream(sid);
+}
+
+void DataChannel::OnTransportChannelCreated() {
+  ASSERT(data_channel_type_ == cricket::DCT_SCTP);
+  if (!connected_to_provider_) {
+    connected_to_provider_ = provider_->ConnectDataChannel(this);
+  }
+  // The sid may have been unassigned when provider_->ConnectDataChannel was
+  // done. So always add the streams even if connected_to_provider_ is true.
+  if (config_.id >= 0) {
+    provider_->AddSctpDataStream(config_.id);
+  }
 }
 
 }  // namespace webrtc

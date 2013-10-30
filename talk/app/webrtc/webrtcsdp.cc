@@ -2188,6 +2188,12 @@ bool ParseMediaDescription(const std::string& message,
       return ParseFailed("", description.str(), error);
     }
   }
+
+  size_t end_of_message = message.size();
+  if (mline_index == -1 && *pos != end_of_message) {
+    ParseFailed(message, *pos, "Expects m line.", error);
+    return false;
+  }
   return true;
 }
 

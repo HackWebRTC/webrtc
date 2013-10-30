@@ -1484,6 +1484,19 @@ TEST_F(WebRtcSdpTest, DeserializeSessionDescription) {
   EXPECT_TRUE(CompareSessionDescription(jdesc_, jdesc));
 }
 
+TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithoutMline) {
+  JsepSessionDescription jdesc(kDummyString);
+  const char kSdpWithoutMline[] =
+    "v=0\r\n"
+    "o=- 18446744069414584320 18446462598732840960 IN IP4 127.0.0.1\r\n"
+    "s=-\r\n"
+    "t=0 0\r\n"
+    "a=msid-semantic: WMS local_stream_1 local_stream_2\r\n";
+  // Deserialize
+  EXPECT_TRUE(SdpDeserialize(kSdpWithoutMline, &jdesc));
+  EXPECT_EQ(0u, jdesc.description()->contents().size());
+}
+
 TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithoutCarriageReturn) {
   JsepSessionDescription jdesc(kDummyString);
   std::string sdp_without_carriage_return = kSdpFullString;
@@ -1886,6 +1899,7 @@ TEST_F(WebRtcSdpTest, DeserializeBrokenSdp) {
   ReplaceAndTryToParse("t=", kSdpDestroyer);
 
   // Broken media description
+  ReplaceAndTryToParse("m=audio", "c=IN IP4 74.125.224.39");
   ReplaceAndTryToParse("m=video", kSdpDestroyer);
 
   // Invalid lines

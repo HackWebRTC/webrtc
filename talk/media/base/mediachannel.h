@@ -306,6 +306,7 @@ struct VideoOptions {
     system_high_adaptation_threshhold.SetFrom(
         change.system_high_adaptation_threshhold);
     buffered_mode_latency.SetFrom(change.buffered_mode_latency);
+    lower_min_bitrate.SetFrom(change.lower_min_bitrate);
   }
 
   bool operator==(const VideoOptions& o) const {
@@ -329,7 +330,8 @@ struct VideoOptions {
             o.system_low_adaptation_threshhold &&
         system_high_adaptation_threshhold ==
             o.system_high_adaptation_threshhold &&
-        buffered_mode_latency == o.buffered_mode_latency;
+        buffered_mode_latency == o.buffered_mode_latency &&
+        lower_min_bitrate == o.lower_min_bitrate;
   }
 
   std::string ToString() const {
@@ -356,6 +358,7 @@ struct VideoOptions {
     ost << ToStringIfSet("low", system_low_adaptation_threshhold);
     ost << ToStringIfSet("high", system_high_adaptation_threshhold);
     ost << ToStringIfSet("buffered mode latency", buffered_mode_latency);
+    ost << ToStringIfSet("lower min bitrate", lower_min_bitrate);
     ost << "}";
     return ost.str();
   }
@@ -400,6 +403,8 @@ struct VideoOptions {
   SettablePercent system_high_adaptation_threshhold;
   // Specify buffered mode latency in milliseconds.
   Settable<int> buffered_mode_latency;
+  // Make minimum configured send bitrate even lower than usual, at 30kbit.
+  Settable<bool> lower_min_bitrate;
 };
 
 // A class for playing out soundclips.

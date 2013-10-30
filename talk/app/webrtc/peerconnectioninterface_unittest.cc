@@ -981,31 +981,6 @@ TEST_F(PeerConnectionInterfaceTest,
   EXPECT_TRUE(channel == NULL);
 }
 
-// The test verifies that the first id not used by existing data channels is
-// assigned to a new data channel if no id is specified.
-TEST_F(PeerConnectionInterfaceTest, AssignSctpDataChannelId) {
-  FakeConstraints constraints;
-  constraints.SetAllowDtlsSctpDataChannels();
-  CreatePeerConnection(&constraints);
-
-  webrtc::DataChannelInit config;
-
-  scoped_refptr<DataChannelInterface> channel =
-      pc_->CreateDataChannel("1", &config);
-  EXPECT_TRUE(channel != NULL);
-  EXPECT_EQ(1, channel->id());
-
-  config.id = 4;
-  channel = pc_->CreateDataChannel("4", &config);
-  EXPECT_TRUE(channel != NULL);
-  EXPECT_EQ(config.id, channel->id());
-
-  config.id = -1;
-  channel = pc_->CreateDataChannel("2", &config);
-  EXPECT_TRUE(channel != NULL);
-  EXPECT_EQ(2, channel->id());
-}
-
 // The test verifies that creating a SCTP data channel with an id already in use
 // or out of range should fail.
 TEST_F(PeerConnectionInterfaceTest,
@@ -1015,13 +990,13 @@ TEST_F(PeerConnectionInterfaceTest,
   CreatePeerConnection(&constraints);
 
   webrtc::DataChannelInit config;
+  scoped_refptr<DataChannelInterface> channel;
 
-  scoped_refptr<DataChannelInterface> channel =
-      pc_->CreateDataChannel("1", &config);
+  config.id = 1;
+  channel = pc_->CreateDataChannel("1", &config);
   EXPECT_TRUE(channel != NULL);
   EXPECT_EQ(1, channel->id());
 
-  config.id = 1;
   channel = pc_->CreateDataChannel("x", &config);
   EXPECT_TRUE(channel == NULL);
 
@@ -1095,6 +1070,8 @@ TEST_F(PeerConnectionInterfaceTest, TestRejectDataChannelInAnswer) {
 // Test that we can create a session description from an SDP string from
 // FireFox, use it as a remote session description, generate an answer and use
 // the answer as a local description.
+// TODO(mallinath): re-enable per
+// https://code.google.com/p/webrtc/issues/detail?id=2574
 TEST_F(PeerConnectionInterfaceTest, DISABLED_ReceiveFireFoxOffer) {
   MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
   FakeConstraints constraints;

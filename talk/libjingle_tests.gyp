@@ -391,6 +391,7 @@
         'app/webrtc/test/fakeaudiocapturemodule.h',
         'app/webrtc/test/fakeaudiocapturemodule_unittest.cc',
         'app/webrtc/test/fakeconstraints.h',
+        'app/webrtc/test/fakedatachannelprovider.h',
         'app/webrtc/test/fakedtlsidentityservice.h',
         'app/webrtc/test/fakemediastreamsignaling.h',
         'app/webrtc/test/fakeperiodicvideocapturer.h',

@@ -37,7 +37,7 @@
 //   }
 // Another example:
 //   void StartAsyncProcess() {
-//     PROFILE_START("My event");
+//     PROFILE_START("My async event");
 //     DoSomethingAsyncAndThenCall(&Callback);
 //   }
 //   void Callback() {
@@ -54,6 +54,7 @@
 #include "talk/base/basictypes.h"
 #include "talk/base/common.h"
 #include "talk/base/logging.h"
+#include "talk/base/sharedexclusivelock.h"
 
 // Profiling could be switched via a build flag, but for now, it's always on.
 #define ENABLE_PROFILING
@@ -105,6 +106,7 @@ class ProfilerEvent {
   ProfilerEvent();
   void Start();
   void Stop();
+  void Stop(uint64 stop_time);
   double standard_deviation() const;
   double total_time() const { return total_time_; }
   double mean() const { return mean_; }
@@ -142,7 +144,9 @@ class Profiler {
  private:
   Profiler() {}
 
-  std::map<std::string, ProfilerEvent> events_;
+  typedef std::map<std::string, ProfilerEvent> EventMap;
+  EventMap events_;
+  mutable SharedExclusiveLock lock_;
 
   DISALLOW_COPY_AND_ASSIGN(Profiler);
 };

@@ -242,13 +242,12 @@ static bool GenerateCname(const StreamParamsVec& params_vec,
 }
 
 // Generate random SSRC values that are not already present in |params_vec|.
-// Either 2 or 1 ssrcs will be generated based on |include_rtx_stream| being
-// true or false. The generated values are added to |ssrcs|.
+// The generated values are added to |ssrcs|.
+// |num_ssrcs| is the number of the SSRC will be generated.
 static void GenerateSsrcs(const StreamParamsVec& params_vec,
-                          bool include_rtx_stream,
+                          int num_ssrcs,
                           std::vector<uint32>* ssrcs) {
-  unsigned int num_ssrcs = include_rtx_stream ? 2 : 1;
-  for (unsigned int i = 0; i < num_ssrcs; i++) {
+  for (int i = 0; i < num_ssrcs; i++) {
     uint32 candidate;
     do {
       candidate = talk_base::CreateRandomNonZeroId();
@@ -428,7 +427,8 @@ static bool AddStreamParams(
     if (IsSctp(content_description)) {
       GenerateSctpSids(*current_streams, &ssrcs);
     } else {
-      GenerateSsrcs(*current_streams, include_rtx_stream, &ssrcs);
+      int num_ssrcs = include_rtx_stream ? 2 : 1;
+      GenerateSsrcs(*current_streams, num_ssrcs, &ssrcs);
     }
     if (include_rtx_stream) {
       content_description->AddLegacyStream(ssrcs[0], ssrcs[1]);
@@ -462,13 +462,23 @@ static bool AddStreamParams(
       if (IsSctp(content_description)) {
         GenerateSctpSids(*current_streams, &ssrcs);
       } else {
-        GenerateSsrcs(*current_streams, include_rtx_stream, &ssrcs);
+        GenerateSsrcs(*current_streams, stream_it->num_sim_layers, &ssrcs);
       }
       StreamParams stream_param;
       stream_param.id = stream_it->id;
-      stream_param.ssrcs.push_back(ssrcs[0]);
+      // Add the generated ssrc.
+      for (size_t i = 0; i < ssrcs.size(); ++i) {
+        stream_param.ssrcs.push_back(ssrcs[i]);
+      }
+      if (stream_it->num_sim_layers > 1) {
+        SsrcGroup group(kSimSsrcGroupSemantics, stream_param.ssrcs);
+        stream_param.ssrc_groups.push_back(group);
+      }
+      // Generate an extra ssrc for include_rtx_stream case.
       if (include_rtx_stream) {
-        stream_param.AddFidSsrc(ssrcs[0], ssrcs[1]);
+        std::vector<uint32> rtx_ssrc;
+        GenerateSsrcs(*current_streams, 1, &rtx_ssrc);
+        stream_param.AddFidSsrc(ssrcs[0], rtx_ssrc[0]);
         content_description->set_multistream(true);
       }
       stream_param.cname = cname;
@@ -1017,7 +1027,22 @@ static bool IsDtlsActive(
 void MediaSessionOptions::AddStream(MediaType type,
                                     const std::string& id,
                                     const std::string& sync_label) {
-  streams.push_back(Stream(type, id, sync_label));
+  AddStreamInternal(type, id, sync_label, 1);
+}
+
+void MediaSessionOptions::AddVideoStream(
+    const std::string& id,
+    const std::string& sync_label,
+    int num_sim_layers) {
+  AddStreamInternal(MEDIA_TYPE_VIDEO, id, sync_label, num_sim_layers);
+}
+
+void MediaSessionOptions::AddStreamInternal(
+    MediaType type,
+    const std::string& id,
+    const std::string& sync_label,
+    int num_sim_layers) {
+  streams.push_back(Stream(type, id, sync_label, num_sim_layers));
 
   if (type == MEDIA_TYPE_VIDEO)
     has_video = true;

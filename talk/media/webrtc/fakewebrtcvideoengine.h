@@ -1046,14 +1046,12 @@ class FakeWebRtcVideoEngine
     return 0;
   }
   WEBRTC_STUB(EnableColorEnhancement, (const int, const bool));
-#ifdef USE_WEBRTC_DEV_BRANCH
   WEBRTC_VOID_STUB(RegisterPreEncodeCallback,
                    (int, webrtc::I420FrameCallback*));
   WEBRTC_VOID_STUB(DeRegisterPreEncodeCallback, (int));
   WEBRTC_VOID_STUB(RegisterPreRenderCallback,
                    (int, webrtc::I420FrameCallback*));
   WEBRTC_VOID_STUB(DeRegisterPreRenderCallback, (int));
-#endif
   // webrtc::ViEExternalCodec
   WEBRTC_FUNC(RegisterExternalSendCodec,
       (const int channel, const unsigned char pl_type, webrtc::VideoEncoder*,

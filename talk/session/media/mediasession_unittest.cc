@@ -1162,6 +1162,28 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateMultiStreamVideoOffer) {
   EXPECT_EQ(updated_data_streams[0].cname, updated_data_streams[1].cname);
 }
 
+// Create an offer with simulcast video stream.
+TEST_F(MediaSessionDescriptionFactoryTest, TestCreateSimulcastVideoOffer) {
+  MediaSessionOptions opts;
+  const int num_sim_layers = 3;
+  opts.AddVideoStream(kVideoTrack1, kMediaStream1, num_sim_layers);
+  talk_base::scoped_ptr<SessionDescription> offer(f1_.CreateOffer(opts, NULL));
+
+  ASSERT_TRUE(offer.get() != NULL);
+  const ContentInfo* vc = offer->GetContentByName("video");
+  ASSERT_TRUE(vc != NULL);
+  const VideoContentDescription* vcd =
+      static_cast<const VideoContentDescription*>(vc->description);
+
+  const StreamParamsVec& video_streams = vcd->streams();
+  ASSERT_EQ(1U, video_streams.size());
+  EXPECT_EQ(kVideoTrack1, video_streams[0].id);
+  const SsrcGroup* sim_ssrc_group =
+      video_streams[0].get_ssrc_group(cricket::kSimSsrcGroupSemantics);
+  ASSERT_TRUE(sim_ssrc_group != NULL);
+  EXPECT_EQ(static_cast<size_t>(num_sim_layers), sim_ssrc_group->ssrcs.size());
+}
+
 // Create an audio and video answer to a standard video offer with:
 // - one video track
 // - two audio tracks
