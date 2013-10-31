@@ -58,6 +58,23 @@ int I420VideoFrame::CreateFrame(int size_y, const uint8_t* buffer_y,
   return 0;
 }
 
+int I420VideoFrame::AliasBuffers(int size_y, uint8_t* buffer_y,
+                                 int size_u, uint8_t* buffer_u,
+                                 int size_v, uint8_t* buffer_v,
+                                 int width, int height,
+                                 int stride_y, int stride_u, int stride_v) {
+  if (size_y < 1 || size_u < 1 || size_v < 1)
+    return -1;
+  if (CheckDimensions(width, height, stride_y, stride_u, stride_v) < 0)
+    return -1;
+  y_plane_.Alias(size_y, stride_y, buffer_y);
+  u_plane_.Alias(size_u, stride_u, buffer_u);
+  v_plane_.Alias(size_v, stride_v, buffer_v);
+  width_ = width;
+  height_ = height;
+  return 0;
+}
+
 int I420VideoFrame::CopyFrame(const I420VideoFrame& videoFrame) {
   int ret = CreateFrame(videoFrame.allocated_size(kYPlane),
                         videoFrame.buffer(kYPlane),
