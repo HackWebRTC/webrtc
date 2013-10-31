@@ -459,6 +459,11 @@ TEST(RtcpUtilityTest, MidNtp) {
   EXPECT_EQ(kNtpMid, RTCPUtility::MidNtp(kNtpSec, kNtpFrac));
 }
 
+TEST_F(RtcpReceiverTest, TestXrRrRttInitiallyFalse) {
+  uint16_t rtt_ms;
+  EXPECT_FALSE(rtcp_receiver_->GetAndResetXrRrRtt(&rtt_ms));
+}
+
 TEST_F(RtcpReceiverTest, LastReceivedXrReferenceTimeInfoInitiallyFalse) {
   RtcpReceiveTimeInfo info;
   EXPECT_FALSE(rtcp_receiver_->LastReceivedXrReferenceTimeInfo(&info));

@@ -18,6 +18,17 @@
 namespace webrtc {
 namespace {
 
+class RtcpRttStatsTestImpl : public RtcpRttObserver {
+ public:
+  RtcpRttStatsTestImpl() : rtt_ms_(0) {}
+  virtual ~RtcpRttStatsTestImpl() {}
+
+  virtual void OnRttUpdate(uint32_t rtt_ms) {
+    rtt_ms_ = rtt_ms;
+  }
+  uint32_t rtt_ms_;
+};
+
 class SendTransport : public Transport,
                       public NullRtpData {
  public:
@@ -59,6 +70,7 @@ class RtpRtcpImplTest : public ::testing::Test {
     configuration.clock = &clock_;
     configuration.outgoing_transport = &transport_;
     configuration.receive_statistics = receive_statistics_.get();
+    configuration.rtt_observer = &rtt_stats_;
 
     rtp_rtcp_impl_.reset(new ModuleRtpRtcpImpl(configuration));
     transport_.SetRtpRtcpModule(rtp_rtcp_impl_.get());
@@ -68,6 +80,7 @@ class RtpRtcpImplTest : public ::testing::Test {
   scoped_ptr<ReceiveStatistics> receive_statistics_;
   scoped_ptr<ModuleRtpRtcpImpl> rtp_rtcp_impl_;
   SendTransport transport_;
+  RtcpRttStatsTestImpl rtt_stats_;
 };
 
 TEST_F(RtpRtcpImplTest, Rtt) {
@@ -106,6 +119,27 @@ TEST_F(RtpRtcpImplTest, Rtt) {
   // No RTT from other ssrc.
   EXPECT_EQ(-1,
       rtp_rtcp_impl_->RTT(kSsrc + 1, &rtt, &avg_rtt, &min_rtt, &max_rtt));
+}
+
+TEST_F(RtpRtcpImplTest, RttForReceiverOnly) {
+  rtp_rtcp_impl_->SetRtcpXrRrtrStatus(true);
+  EXPECT_EQ(0, rtp_rtcp_impl_->SetSendingStatus(false));
+  EXPECT_EQ(0, rtp_rtcp_impl_->SetRTCPStatus(kRtcpCompound));
+  EXPECT_EQ(0, rtp_rtcp_impl_->SetSSRC(0x12345));
+
+  // A Receiver time reference report (RTRR) should be sent and received.
+  EXPECT_EQ(0, rtp_rtcp_impl_->SendRTCP(kRtcpReport));
+
+  // Send new RTRR. A response to the last RTRR should be sent.
+  clock_.AdvanceTimeMilliseconds(1000);
+  transport_.SimulateNetworkDelay(100, &clock_);
+  EXPECT_EQ(0, rtp_rtcp_impl_->SendRTCP(kRtcpReport));
+
+  // Verify RTT.
+  EXPECT_EQ(0U, rtt_stats_.rtt_ms_);
+
+  rtp_rtcp_impl_->Process();
+  EXPECT_EQ(100U, rtt_stats_.rtt_ms_);
 }
 
 }  // namespace webrtc

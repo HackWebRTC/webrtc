@@ -255,6 +255,9 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   // (XR) VOIP metric.
   virtual int32_t SetRTCPVoIPMetrics(const RTCPVoIPMetric* VoIPMetric) OVERRIDE;
 
+  // (XR) Receiver reference time report.
+  virtual void SetRtcpXrRrtrStatus(bool enable) OVERRIDE;
+
   // Audio part.
 
   // Set audio packet size, used to determine when it's time to send a DTMF

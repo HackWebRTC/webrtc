@@ -50,6 +50,7 @@ RTCPReceiver::RTCPReceiver(const int32_t id, Clock* clock,
     _lastReceivedSRNTPfrac(0),
     _lastReceivedXRNTPsecs(0),
     _lastReceivedXRNTPfrac(0),
+    xr_rr_rtt_ms_(0),
     _receivedInfoMap(),
     _packetTimeOutMS(0),
     _lastReceivedRrMs(0),
@@ -214,6 +215,17 @@ int32_t RTCPReceiver::RTT(uint32_t remoteSSRC,
     *maxRTT = reportBlock->maxRTT;
   }
   return 0;
+}
+
+bool RTCPReceiver::GetAndResetXrRrRtt(uint16_t* rtt_ms) {
+  assert(rtt_ms);
+  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  if (xr_rr_rtt_ms_ == 0) {
+    return false;
+  }
+  *rtt_ms = xr_rr_rtt_ms_;
+  xr_rr_rtt_ms_ = 0;
+  return true;
 }
 
 uint16_t RTCPReceiver::RTT() const {
@@ -897,6 +909,7 @@ void RTCPReceiver::HandleBYE(RTCPUtility::RTCPParserV2& rtcpParser) {
     delete cnameInfoIt->second;
     _receivedCnameMap.erase(cnameInfoIt);
   }
+  xr_rr_rtt_ms_ = 0;
   rtcpParser.Iterate();
 }
 
@@ -968,13 +981,13 @@ void RTCPReceiver::HandleXrDlrrReportBlockItem(
   }
 
   // The DelayLastRR field is in units of 1/65536 sec.
-// uint32_t delay_rr_ms =
-//    (((packet.XRDLRRReportBlockItem.DelayLastRR & 0x0000ffff) * 1000) >> 16) +
-//    (((packet.XRDLRRReportBlockItem.DelayLastRR & 0xffff0000) >> 16) * 1000);
+  uint32_t delay_rr_ms =
+      (((packet.XRDLRRReportBlockItem.DelayLastRR & 0x0000ffff) * 1000) >> 16) +
+      (((packet.XRDLRRReportBlockItem.DelayLastRR & 0xffff0000) >> 16) * 1000);
 
-  // TODO(asapersson): Not yet used.
-// int32_t rtt =_clock->CurrentNtpInMilliseconds() - delay_rr_ms - send_time_ms;
-// rtt = std::max(rtt, 1);
+  int32_t rtt = _clock->CurrentNtpInMilliseconds() - delay_rr_ms - send_time_ms;
+
+  xr_rr_rtt_ms_ = static_cast<uint16_t>(std::max(rtt, 1));
 
   rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpXrDlrrReportBlock;
 }

@@ -510,6 +510,11 @@ class RtpRtcp : public Module {
         const RTCPVoIPMetric* VoIPMetric) = 0;
 
     /*
+    *   (XR) Receiver Reference Time Report
+    */
+    virtual void SetRtcpXrRrtrStatus(bool enable) = 0;
+
+    /*
     *  (REMB) Receiver Estimated Max Bitrate
     */
     virtual bool REMB() const = 0;

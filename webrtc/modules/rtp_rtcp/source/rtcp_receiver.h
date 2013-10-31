@@ -86,6 +86,8 @@ public:
 
     int32_t SenderInfoReceived(RTCPSenderInfo* senderInfo) const;
 
+    bool GetAndResetXrRrRtt(uint16_t* rtt_ms);
+
     // get statistics
     int32_t StatisticsReceived(
         std::vector<RTCPReportBlock>* receiveBlocks) const;
@@ -245,6 +247,8 @@ protected:
   // Time when the report was received.
   uint32_t _lastReceivedXRNTPsecs;
   uint32_t _lastReceivedXRNTPfrac;
+  // Estimated rtt, zero when there is no valid estimate.
+  uint16_t xr_rr_rtt_ms_;
 
   // Received report blocks.
   std::map<uint32_t, RTCPHelp::RTCPReportBlockInformation*>

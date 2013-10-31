@@ -196,13 +196,12 @@ int32_t ModuleRtpRtcpImpl::Process() {
       default_instance = true;
   }
   if (!default_instance) {
+    bool process_rtt = now >= last_rtt_process_time_ + kRtpRtcpRttProcessTimeMs;
     if (rtcp_sender_.Sending()) {
       // Process RTT if we have received a receiver report and we haven't
       // processed RTT for at least |kRtpRtcpRttProcessTimeMs| milliseconds.
       if (rtcp_receiver_.LastReceivedReceiverReport() >
-          last_rtt_process_time_ && now >= last_rtt_process_time_ +
-          kRtpRtcpRttProcessTimeMs) {
-        last_rtt_process_time_ = now;
+          last_rtt_process_time_ && process_rtt) {
         std::vector<RTCPReportBlock> receive_blocks;
         rtcp_receiver_.StatisticsReceived(&receive_blocks);
         uint16_t max_rtt = 0;
@@ -237,7 +236,20 @@ int32_t ModuleRtpRtcpImpl::Process() {
           rtcp_sender_.SetTargetBitrate(target_bitrate);
         }
       }
+    } else {
+      // Report rtt from receiver.
+      if (process_rtt) {
+         uint16_t rtt_ms;
+         if (rtt_observer_ && rtcp_receiver_.GetAndResetXrRrRtt(&rtt_ms)) {
+           rtt_observer_->OnRttUpdate(rtt_ms);
+         }
+      }
     }
+
+    if (process_rtt) {
+      last_rtt_process_time_ = now;
+    }
+
     if (rtcp_sender_.TimeToSendRTCPReport()) {
       RTCPSender::FeedbackState feedback_state(this);
       rtcp_sender_.SendRTCP(feedback_state, kRtcpReport);
@@ -939,6 +951,12 @@ int32_t ModuleRtpRtcpImpl::SetRTCPVoIPMetrics(
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "SetRTCPVoIPMetrics()");
 
   return  rtcp_sender_.SetRTCPVoIPMetrics(voip_metric);
+}
+
+void ModuleRtpRtcpImpl::SetRtcpXrRrtrStatus(bool enable) {
+  WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_,
+               "SetRtcpXrRrtrStatus(%s)", enable ? "true" : "false");
+  return rtcp_sender_.SendRtcpXrReceiverReferenceTime(enable);
 }
 
 int32_t ModuleRtpRtcpImpl::DataCountersRTP(
