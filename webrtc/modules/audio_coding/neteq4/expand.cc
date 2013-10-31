@@ -415,9 +415,11 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
 
   // Calculate correlation in downsampled domain (4 kHz sample rate).
   int16_t correlation_scale;
-  int correlation_length = Correlation(audio_history, signal_length,
-                                       correlation_vector, &correlation_scale);
-  correlation_length = 51;  // TODO(hlundin): Legacy bit-exactness.
+  int correlation_length = 51;  // TODO(hlundin): Legacy bit-exactness.
+  // If it is decided to break bit-exactness |correlation_length| should be
+  // initialized to the return value of Correlation().
+  Correlation(audio_history, signal_length, correlation_vector,
+              &correlation_scale);
 
   // Find peaks in correlation vector.
   DspHelper::PeakDetection(correlation_vector, correlation_length,
@@ -449,7 +451,7 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
 
   // Find the maximizing index |i| of the cost function
   // f[i] = best_correlation[i] / best_distortion[i].
-  int32_t best_ratio = -1;
+  int32_t best_ratio = std::numeric_limits<int32_t>::min();
   int best_index = -1;
   for (int i = 0; i < kNumCorrelationCandidates; ++i) {
     int32_t ratio;

@@ -331,7 +331,6 @@ void PayloadSplitter::SplitBySamples(const Packet* packet,
     new_packet->primary = packet->primary;
     new_packet->payload = new uint8_t[len];
     memcpy(new_packet->payload, payload_ptr, len);
-    payload_ptr += len;
     new_packets->push_back(new_packet);
   }
 }

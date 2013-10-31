@@ -1259,6 +1259,7 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, Operations* operation,
 
     delete[] packet->payload;
     delete packet;
+    packet = NULL;
     if (decode_length > 0) {
       *decoded_length += decode_length;
       // Update |decoder_frame_length_| with number of samples per channel.
@@ -1287,10 +1288,10 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, Operations* operation,
     }
   }  // End of decode loop.
 
-  // If the list is not empty at this point, it must hold exactly one CNG
-  // packet.
-  assert(packet_list->empty() ||
-         (packet_list->size() == 1 &&
+  // If the list is not empty at this point, either a decoding error terminated
+  // the while-loop, or list must hold exactly one CNG packet.
+  assert(packet_list->empty() || *decoded_length < 0 ||
+         (packet_list->size() == 1 && packet &&
              decoder_database_->IsComfortNoise(packet->header.payloadType)));
   return 0;
 }

@@ -330,7 +330,7 @@ void NetEqDecodingTest::DecodeAndCompare(const std::string &rtp_file,
     std::ostringstream ss;
     ss << "Lap number " << i++ << " in DecodeAndCompare while loop";
     SCOPED_TRACE(ss.str());  // Print out the parameter values on failure.
-    int out_len;
+    int out_len = 0;
     ASSERT_NO_FATAL_FAILURE(Process(&rtp, &out_len));
     ASSERT_NO_FATAL_FAILURE(ref_files.ProcessReference(out_data_, out_len));
   }
@@ -583,7 +583,6 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(TestFrameWaitingTimeStatistics)) {
 
   std::vector<int> waiting_times;
   neteq_->WaitingTimes(&waiting_times);
-  int len = waiting_times.size();
   EXPECT_EQ(num_frames, waiting_times.size());
   // Since all frames are dumped into NetEQ at once, but pulled out with 10 ms
   // spacing (per definition), we expect the delay to increase with 10 ms for
@@ -594,7 +593,7 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(TestFrameWaitingTimeStatistics)) {
 
   // Check statistics again and make sure it's been reset.
   neteq_->WaitingTimes(&waiting_times);
-  len = waiting_times.size();
+  int len = waiting_times.size();
   EXPECT_EQ(0, len);
 
   // Process > 100 frames, and make sure that that we get statistics
