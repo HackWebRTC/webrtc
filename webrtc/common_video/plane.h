@@ -25,26 +25,23 @@ class Plane {
   // CreateEmptyPlane - set allocated size, actual plane size and stride:
   // If current size is smaller than current size, then a buffer of sufficient
   // size will be allocated.
-  // Return value: 0 on success, -1 on error.
+  // Return value: 0 on success ,-1 on error.
   int CreateEmptyPlane(int allocated_size, int stride, int plane_size);
 
   // Copy the entire plane data.
-  // Return value: 0 on success, -1 on error.
+  // Return value: 0 on success ,-1 on error.
   int Copy(const Plane& plane);
 
   // Copy buffer: If current size is smaller
   // than current size, then a buffer of sufficient size will be allocated.
-  // Return value: 0 on success, -1 on error.
+  // Return value: 0 on success ,-1 on error.
   int Copy(int size, int stride, const uint8_t* buffer);
-
-  // Make this plane refer to a memory buffer. Plane will not own buffer.
-  void Alias(int size, int stride, uint8_t* buffer);
 
   // Swap plane data.
   void Swap(Plane& plane);
 
   // Get allocated size.
-  int allocated_size() const { return allocated_size_; }
+  int allocated_size() const {return allocated_size_;}
 
   // Set actual size.
   void ResetSize() {plane_size_ = 0;}
@@ -53,21 +50,20 @@ class Plane {
   bool IsZeroSize() const {return plane_size_ == 0;}
 
   // Get stride value.
-  int stride() const { return stride_; }
+  int stride() const {return stride_;}
 
   // Return data pointer.
-  const uint8_t* buffer() const { return pointer_; }
+  const uint8_t* buffer() const {return buffer_.get();}
   // Overloading with non-const.
-  uint8_t* buffer() { return pointer_; }
+  uint8_t* buffer() {return buffer_.get();}
 
  private:
-  // Reallocate when needed: If current allocated size is less than new_size,
-  // buffer will be updated. In any case, old data becomes undefined.
-  // Return value: 0 on success, -1 on error.
-  int Reallocate(int new_size);
+  // Resize when needed: If current allocated size is less than new_size, buffer
+  // will be updated. Old data will be copied to new buffer.
+  // Return value: 0 on success ,-1 on error.
+  int MaybeResize(int new_size);
 
-  uint8_t* pointer_;
-  Allocator<uint8_t>::scoped_ptr_aligned allocation_;
+  Allocator<uint8_t>::scoped_ptr_aligned buffer_;
   int allocated_size_;
   int plane_size_;
   int stride_;

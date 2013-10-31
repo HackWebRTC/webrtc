@@ -62,15 +62,6 @@ class I420VideoFrame {
                           int width, int height,
                           int stride_y, int stride_u, int stride_v);
 
-  // AliasBuffers: Sets the frame's members and buffers from a set of buffers.
-  // The buffers are not copied, only the pointers, and the frame does not take
-  // ownership of the buffers (i.e.: the buffers must outlive the frame).
-  virtual int AliasBuffers(int size_y, uint8_t* buffer_y,
-                           int size_u, uint8_t* buffer_u,
-                           int size_v, uint8_t* buffer_v,
-                           int width, int height,
-                           int stride_y, int stride_u, int stride_v);
-
   // Copy frame: If required size is bigger than allocated one, new buffers of
   // adequate size will be allocated.
   // Return value: 0 on success ,-1 on error.
