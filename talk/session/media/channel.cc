@@ -439,7 +439,6 @@ bool BaseChannel::Init(TransportChannel* transport_channel,
     return false;
   }
 
-  media_channel_->SetInterface(this);
   transport_channel_->SignalWritableState.connect(
       this, &BaseChannel::OnWritableState);
   transport_channel_->SignalReadPacket.connect(
@@ -453,6 +452,9 @@ bool BaseChannel::Init(TransportChannel* transport_channel,
       this, &BaseChannel::OnNewRemoteDescription);
 
   set_rtcp_transport_channel(rtcp_transport_channel);
+  // Both RTP and RTCP channels are set, we can call SetInterface on
+  // media channel and it can set network options.
+  media_channel_->SetInterface(this);
   return true;
 }
 

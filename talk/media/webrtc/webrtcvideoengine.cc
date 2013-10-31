@@ -156,6 +156,11 @@ static const int kRtpTimeOffsetExtensionId = 2;
 static const char kRtpAbsoluteSendTimeHeaderExtension[] =
     "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
 static const int kRtpAbsoluteSendTimeExtensionId = 3;
+// Default video dscp value.
+// See http://tools.ietf.org/html/rfc2474 for details
+// See also http://tools.ietf.org/html/draft-jennings-rtcweb-qos-00
+static const talk_base::DiffServCodePoint kVideoDscpValue =
+    talk_base::DSCP_AF41;
 
 static bool IsNackEnabled(const VideoCodec& codec) {
   return codec.HasFeedbackParam(FeedbackParam(kRtcpFbParamNack,
@@ -2612,6 +2617,8 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
   bool cpu_overuse_detection_changed = options.cpu_overuse_detection.IsSet() &&
       (options_.cpu_overuse_detection != options.cpu_overuse_detection);
 
+  bool dscp_option_changed = (options_.dscp != options.dscp);
+
   bool conference_mode_turned_off = false;
   if (options_.conference_mode.IsSet() && options.conference_mode.IsSet() &&
       options_.conference_mode.GetWithDefaultIfUnset(false) &&
@@ -2708,6 +2715,14 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
          iter != send_channels_.end(); ++iter) {
       WebRtcVideoChannelSendInfo* send_channel = iter->second;
       send_channel->SetCpuOveruseDetection(cpu_overuse_detection);
+    }
+  }
+  if (dscp_option_changed) {
+    talk_base::DiffServCodePoint dscp = talk_base::DSCP_DEFAULT;
+    if (options.dscp.GetWithDefaultIfUnset(false))
+      dscp = kVideoDscpValue;
+    if (MediaChannel::SetDscp(dscp) != 0) {
+      LOG(LS_WARNING) << "Failed to set DSCP settings for video channel";
     }
   }
   return true;

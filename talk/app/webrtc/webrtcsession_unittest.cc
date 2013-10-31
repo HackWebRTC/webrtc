@@ -2791,6 +2791,32 @@ TEST_F(WebRtcSessionTest, TestSetRemoteOfferFailIfDtlsDisabledAndNoCrypto) {
                                   offer);
 }
 
+// This test verifies DSCP is properly applied on the media channels.
+TEST_F(WebRtcSessionTest, TestDscpConstraint) {
+  constraints_.reset(new FakeConstraints());
+  constraints_->AddOptional(
+      webrtc::MediaConstraintsInterface::kEnableDscp, true);
+  Init(NULL);
+  mediastream_signaling_.SendAudioVideoStream1();
+  SessionDescriptionInterface* offer = CreateOffer(NULL);
+
+  SetLocalDescriptionWithoutError(offer);
+
+  video_channel_ = media_engine_->GetVideoChannel(0);
+  voice_channel_ = media_engine_->GetVoiceChannel(0);
+
+  ASSERT_TRUE(video_channel_ != NULL);
+  ASSERT_TRUE(voice_channel_ != NULL);
+  cricket::AudioOptions audio_options;
+  EXPECT_TRUE(voice_channel_->GetOptions(&audio_options));
+  cricket::VideoOptions video_options;
+  EXPECT_TRUE(video_channel_->GetOptions(&video_options));
+  EXPECT_TRUE(audio_options.dscp.IsSet());
+  EXPECT_TRUE(audio_options.dscp.GetWithDefaultIfUnset(false));
+  EXPECT_TRUE(video_options.dscp.IsSet());
+  EXPECT_TRUE(video_options.dscp.GetWithDefaultIfUnset(false));
+}
+
 // TODO(bemasc): Add a TestIceStatesBundle with BUNDLE enabled.  That test
 // currently fails because upon disconnection and reconnection OnIceComplete is
 // called more than once without returning to IceGatheringGathering.

@@ -110,6 +110,8 @@ class MediaConstraintsInterface {
   // TODO(perkj): Remove kEnableSctpDataChannels once Chrome use
   // PeerConnectionFactory::SetOptions.
   static const char kEnableSctpDataChannels[];  // Enable SCTP DataChannels
+  // Temporary pseudo-constraint for enabling DSCP through JS.
+  static const char kEnableDscp[];
 
   // The prefix of internal-only constraints whose JS set values should be
   // stripped by Chrome before passed down to Libjingle.

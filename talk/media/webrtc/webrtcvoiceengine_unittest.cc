@@ -12,6 +12,7 @@
 #include "talk/media/base/constants.h"
 #include "talk/media/base/fakemediaengine.h"
 #include "talk/media/base/fakemediaprocessor.h"
+#include "talk/media/base/fakenetworkinterface.h"
 #include "talk/media/base/fakertp.h"
 #include "talk/media/webrtc/fakewebrtcvoiceengine.h"
 #include "talk/media/webrtc/webrtcvoiceengine.h"
@@ -2701,6 +2702,23 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
   EXPECT_TRUE(ec_enabled);
   EXPECT_FALSE(agc_enabled);
   EXPECT_FALSE(ns_enabled);
+}
+
+// This test verifies DSCP settings are properly applied on voice media channel.
+TEST_F(WebRtcVoiceEngineTestFake, TestSetDscpOptions) {
+  EXPECT_TRUE(SetupEngine());
+  talk_base::scoped_ptr<cricket::VoiceMediaChannel> channel(
+      engine_.CreateChannel());
+  talk_base::scoped_ptr<cricket::FakeNetworkInterface> network_interface(
+      new cricket::FakeNetworkInterface);
+  channel->SetInterface(network_interface.get());
+  cricket::AudioOptions options;
+  options.dscp.Set(true);
+  EXPECT_TRUE(channel->SetOptions(options));
+  EXPECT_EQ(talk_base::DSCP_EF, network_interface->dscp());
+  options.dscp.Set(false);
+  EXPECT_TRUE(channel->SetOptions(options));
+  EXPECT_EQ(talk_base::DSCP_DEFAULT, network_interface->dscp());
 }
 
 TEST(WebRtcVoiceEngineTest, TestDefaultOptionsBeforeInit) {

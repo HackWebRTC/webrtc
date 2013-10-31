@@ -800,6 +800,7 @@ int P2PTransportChannel::SendPacket(const char *data, size_t len,
     error_ = EWOULDBLOCK;
     return -1;
   }
+
   int sent = best_connection_->Send(data, len, dscp);
   if (sent <= 0) {
     ASSERT(sent < 0);

@@ -183,6 +183,7 @@ struct AudioOptions {
     rx_agc_limiter.SetFrom(change.rx_agc_limiter);
     recording_sample_rate.SetFrom(change.recording_sample_rate);
     playout_sample_rate.SetFrom(change.playout_sample_rate);
+    dscp.SetFrom(change.dscp);
   }
 
   bool operator==(const AudioOptions& o) const {
@@ -206,7 +207,8 @@ struct AudioOptions {
         rx_agc_digital_compression_gain == o.rx_agc_digital_compression_gain &&
         rx_agc_limiter == o.rx_agc_limiter &&
         recording_sample_rate == o.recording_sample_rate &&
-        playout_sample_rate == o.playout_sample_rate;
+        playout_sample_rate == o.playout_sample_rate &&
+        dscp == o.dscp;
   }
 
   std::string ToString() const {
@@ -235,6 +237,7 @@ struct AudioOptions {
     ost << ToStringIfSet("rx_agc_limiter", rx_agc_limiter);
     ost << ToStringIfSet("recording_sample_rate", recording_sample_rate);
     ost << ToStringIfSet("playout_sample_rate", playout_sample_rate);
+    ost << ToStringIfSet("dscp", dscp);
     ost << "}";
     return ost.str();
   }
@@ -269,6 +272,8 @@ struct AudioOptions {
   Settable<bool> rx_agc_limiter;
   Settable<uint32> recording_sample_rate;
   Settable<uint32> playout_sample_rate;
+  // Set DSCP value for packet sent from audio channel.
+  Settable<bool> dscp;
 };
 
 // Options that can be applied to a VideoMediaChannel or a VideoMediaEngine.
@@ -307,6 +312,7 @@ struct VideoOptions {
         change.system_high_adaptation_threshhold);
     buffered_mode_latency.SetFrom(change.buffered_mode_latency);
     lower_min_bitrate.SetFrom(change.lower_min_bitrate);
+    dscp.SetFrom(change.dscp);
   }
 
   bool operator==(const VideoOptions& o) const {
@@ -331,7 +337,8 @@ struct VideoOptions {
         system_high_adaptation_threshhold ==
             o.system_high_adaptation_threshhold &&
         buffered_mode_latency == o.buffered_mode_latency &&
-        lower_min_bitrate == o.lower_min_bitrate;
+        lower_min_bitrate == o.lower_min_bitrate &&
+        dscp == o.dscp;
   }
 
   std::string ToString() const {
@@ -359,6 +366,7 @@ struct VideoOptions {
     ost << ToStringIfSet("high", system_high_adaptation_threshhold);
     ost << ToStringIfSet("buffered mode latency", buffered_mode_latency);
     ost << ToStringIfSet("lower min bitrate", lower_min_bitrate);
+    ost << ToStringIfSet("dscp", dscp);
     ost << "}";
     return ost.str();
   }
@@ -405,6 +413,8 @@ struct VideoOptions {
   Settable<int> buffered_mode_latency;
   // Make minimum configured send bitrate even lower than usual, at 30kbit.
   Settable<bool> lower_min_bitrate;
+  // Set DSCP value for packet sent from video channel.
+  Settable<bool> dscp;
 };
 
 // A class for playing out soundclips.
@@ -541,6 +551,21 @@ class MediaChannel : public sigslot::has_slots<> {
       return -1;
 
     return network_interface_->SetOption(type, opt, option);
+  }
+
+ protected:
+  // This method sets DSCP |value| on both RTP and RTCP channels.
+  int SetDscp(talk_base::DiffServCodePoint value) {
+    int ret;
+    ret = SetOption(NetworkInterface::ST_RTP,
+                    talk_base::Socket::OPT_DSCP,
+                    value);
+    if (ret == 0) {
+      ret = SetOption(NetworkInterface::ST_RTCP,
+                      talk_base::Socket::OPT_DSCP,
+                      value);
+    }
+    return ret;
   }
 
  private:

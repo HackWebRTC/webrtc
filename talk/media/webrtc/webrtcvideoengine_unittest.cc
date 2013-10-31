@@ -1508,6 +1508,21 @@ TEST_F(WebRtcVideoMediaChannelTest, AddRemoveCapturerMultipleSources) {
   Base::AddRemoveCapturerMultipleSources();
 }
 
+// This test verifies DSCP settings are properly applied on video media channel.
+TEST_F(WebRtcVideoMediaChannelTest, TestSetDscpOptions) {
+  talk_base::scoped_ptr<cricket::FakeNetworkInterface> network_interface(
+      new cricket::FakeNetworkInterface);
+  channel_->SetInterface(network_interface.get());
+  cricket::VideoOptions options;
+  options.dscp.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  EXPECT_EQ(talk_base::DSCP_AF41, network_interface->dscp());
+  options.dscp.Set(false);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  EXPECT_EQ(talk_base::DSCP_DEFAULT, network_interface->dscp());
+  channel_->SetInterface(NULL);
+}
+
 
 TEST_F(WebRtcVideoMediaChannelTest, SetOptionsSucceedsWhenSending) {
   cricket::VideoOptions options;

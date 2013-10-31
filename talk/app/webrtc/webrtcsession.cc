@@ -57,6 +57,8 @@ namespace webrtc {
 const char MediaConstraintsInterface::kInternalConstraintPrefix[] = "internal";
 
 // Supported MediaConstraints.
+// DSCP constraints.
+const char MediaConstraintsInterface::kEnableDscp[] = "googDscp";
 // DTLS-SRTP pseudo-constraints.
 const char MediaConstraintsInterface::kEnableDtlsSrtp[] =
     "DtlsSrtpKeyAgreement";
@@ -430,6 +432,7 @@ WebRtcSession::WebRtcSession(
       ice_connection_state_(PeerConnectionInterface::kIceConnectionNew),
       older_version_remote_peer_(false),
       dtls_enabled_(false),
+      dscp_enabled_(false),
       data_channel_type_(cricket::DCT_NONE),
       ice_restart_latch_(new IceRestartAnswerLatch) {
 }
@@ -489,6 +492,14 @@ bool WebRtcSession::Initialize(
   }
   if (data_channel_type_ != cricket::DCT_NONE) {
     mediastream_signaling_->SetDataChannelFactory(this);
+  }
+
+  // Find DSCP constraint.
+  if (FindConstraint(
+        constraints,
+        MediaConstraintsInterface::kEnableDscp,
+        &value, NULL)) {
+    dscp_enabled_ = value;
   }
 
   const cricket::VideoCodec default_codec(
@@ -1357,13 +1368,29 @@ bool WebRtcSession::CreateChannels(const SessionDescription* desc) {
 bool WebRtcSession::CreateVoiceChannel(const cricket::ContentInfo* content) {
   voice_channel_.reset(channel_manager_->CreateVoiceChannel(
       this, content->name, true));
-  return (voice_channel_ != NULL);
+  if (!voice_channel_.get())
+    return false;
+
+  if (dscp_enabled_) {
+    cricket::AudioOptions options;
+    options.dscp.Set(true);
+    voice_channel_->SetChannelOptions(options);
+  }
+  return true;
 }
 
 bool WebRtcSession::CreateVideoChannel(const cricket::ContentInfo* content) {
   video_channel_.reset(channel_manager_->CreateVideoChannel(
       this, content->name, true, voice_channel_.get()));
-  return (video_channel_ != NULL);
+  if (!video_channel_.get())
+    return false;
+
+  if (dscp_enabled_) {
+    cricket::VideoOptions options;
+    options.dscp.Set(true);
+    video_channel_->SetChannelOptions(options);
+  }
+  return true;
 }
 
 bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content) {

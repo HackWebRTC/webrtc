@@ -42,45 +42,38 @@ static const int kWatermarkOffsetFromLeft = 8;
 static const int kWatermarkOffsetFromBottom = 8;
 static const unsigned char kWatermarkMaxYValue = 64;
 
-FrameBuffer::FrameBuffer() : length_(0) {}
+FrameBuffer::FrameBuffer() {}
 
-FrameBuffer::FrameBuffer(size_t length) : length_(0) {
+FrameBuffer::FrameBuffer(size_t length) {
   char* buffer = new char[length];
   SetData(buffer, length);
 }
 
-FrameBuffer::~FrameBuffer() {
-  // Make sure that the video_frame_ doesn't delete the buffer as it may be
-  // shared between multiple WebRtcVideoFrame.
-  uint8_t* new_memory = NULL;
-  uint32_t new_length = 0;
-  uint32_t new_size = 0;
-  video_frame_.Swap(new_memory, new_length, new_size);
-}
+FrameBuffer::~FrameBuffer() {}
 
 void FrameBuffer::SetData(char* data, size_t length) {
-  data_.reset(data);
-  length_ = length;
   uint8_t* new_memory = reinterpret_cast<uint8_t*>(data);
-  uint32_t new_length = static_cast<int>(length);
-  uint32_t new_size = static_cast<int>(length);
+  uint32_t new_length = static_cast<uint32_t>(length);
+  uint32_t new_size = static_cast<uint32_t>(length);
   video_frame_.Swap(new_memory, new_length, new_size);
 }
 
 void FrameBuffer::ReturnData(char** data, size_t* length) {
-  uint8_t* old_memory = NULL;
+  *data = NULL;
   uint32_t old_length = 0;
   uint32_t old_size = 0;
-  video_frame_.Swap(old_memory, old_length, old_size);
-  data_.release();
-  length_ = 0;
+  video_frame_.Swap(reinterpret_cast<uint8_t*&>(*data),
+                    old_length, old_size);
   *length = old_length;
-  *data = reinterpret_cast<char*>(old_memory);
 }
 
-char* FrameBuffer::data() { return data_.get(); }
+char* FrameBuffer::data() {
+  return reinterpret_cast<char*>(video_frame_.Buffer());
+}
 
-size_t FrameBuffer::length() const { return length_; }
+size_t FrameBuffer::length() const {
+  return static_cast<size_t>(video_frame_.Length());
+}
 
 webrtc::VideoFrame* FrameBuffer::frame() { return &video_frame_; }
 

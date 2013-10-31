@@ -313,6 +313,8 @@ class WebRtcSession : public cricket::BaseSession,
   // If the remote peer is using a older version of implementation.
   bool older_version_remote_peer_;
   bool dtls_enabled_;
+  // Flag will be set based on the constraint value.
+  bool dscp_enabled_;
   // Specifies which kind of data channel is allowed. This is controlled
   // by the chrome command-line flag and constraints:
   // 1. If chrome command-line switch 'enable-sctp-data-channels' is enabled,

@@ -125,6 +125,10 @@ static const int kOpusStereoBitrate = 64000;
 // Opus bitrate should be in the range between 6000 and 510000.
 static const int kOpusMinBitrate = 6000;
 static const int kOpusMaxBitrate = 510000;
+// Default audio dscp value.
+// See http://tools.ietf.org/html/rfc2474 for details.
+// See also http://tools.ietf.org/html/draft-jennings-rtcweb-qos-00
+static const talk_base::DiffServCodePoint kAudioDscpValue = talk_base::DSCP_EF;
 
 // Ensure we open the file in a writeable path on ChromeOS and Android. This
 // workaround can be removed when it's possible to specify a filename for audio
@@ -1637,6 +1641,9 @@ bool WebRtcVoiceMediaChannel::SetOptions(const AudioOptions& options) {
   LOG(LS_INFO) << "Setting voice channel options: "
                << options.ToString();
 
+  // Check if DSCP value is changed from previous.
+  bool dscp_option_changed = (options_.dscp != options.dscp);
+
   // TODO(xians): Add support to set different options for different send
   // streams after we support multiple APMs.
 
@@ -1702,6 +1709,14 @@ bool WebRtcVoiceMediaChannel::SetOptions(const AudioOptions& options) {
       LOG_RTCERR4(SetRxAgcConfig, voe_channel(), config.targetLeveldBOv,
                   config.digitalCompressionGaindB, config.limiterEnable);
       return false;
+    }
+  }
+  if (dscp_option_changed) {
+    talk_base::DiffServCodePoint dscp = talk_base::DSCP_DEFAULT;
+    if (options.dscp.GetWithDefaultIfUnset(false))
+      dscp = kAudioDscpValue;
+    if (MediaChannel::SetDscp(dscp) != 0) {
+      LOG(LS_WARNING) << "Failed to set DSCP settings for audio channel";
     }
   }
 
