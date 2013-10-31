@@ -314,9 +314,10 @@ int32_t VideoCaptureImpl::IncomingFrame(
         // Setting absolute height (in case it was negative).
         // In Windows, the image starts bottom left, instead of top left.
         // Setting a negative source height, inverts the image (within LibYuv).
-        I420VideoFrame captureFrame;
-        int ret = captureFrame.CreateEmptyFrame(
-            target_width, abs(target_height), stride_y, stride_uv, stride_uv);
+        int ret = _captureFrame.CreateEmptyFrame(target_width,
+                                                 abs(target_height),
+                                                 stride_y,
+                                                 stride_uv, stride_uv);
         if (ret < 0)
         {
             WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
@@ -329,7 +330,7 @@ int32_t VideoCaptureImpl::IncomingFrame(
                                                    width, height,
                                                    videoFrameLength,
                                                    _rotateFrame,
-                                                   &captureFrame);
+                                                   &_captureFrame);
         if (conversionResult < 0)
         {
             WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
@@ -337,7 +338,7 @@ int32_t VideoCaptureImpl::IncomingFrame(
                        frameInfo.rawType);
             return -1;
         }
-        DeliverCapturedFrame(captureFrame, captureTime);
+        DeliverCapturedFrame(_captureFrame, captureTime);
     }
     else // Encoded format
     {
@@ -364,8 +365,8 @@ int32_t VideoCaptureImpl::IncomingFrameI420(
   int size_y = video_frame.height * video_frame.y_pitch;
   int size_u = video_frame.u_pitch * ((video_frame.height + 1) / 2);
   int size_v =  video_frame.v_pitch * ((video_frame.height + 1) / 2);
-  I420VideoFrame captureFrame;
-  int ret = captureFrame.AliasBuffers(size_y, video_frame.y_plane,
+  // TODO(mikhal): Can we use Swap here? This will do a memcpy.
+  int ret = _captureFrame.CreateFrame(size_y, video_frame.y_plane,
                                       size_u, video_frame.u_plane,
                                       size_v, video_frame.v_plane,
                                       video_frame.width, video_frame.height,
@@ -373,11 +374,11 @@ int32_t VideoCaptureImpl::IncomingFrameI420(
                                       video_frame.v_pitch);
   if (ret < 0) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
-                 "Failed to alias I420VideoFrame");
+                 "Failed to create I420VideoFrame");
     return -1;
   }
 
-  DeliverCapturedFrame(captureFrame, captureTime);
+  DeliverCapturedFrame(_captureFrame, captureTime);
 
   return 0;
 }

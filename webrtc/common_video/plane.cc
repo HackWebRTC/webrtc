@@ -17,75 +17,65 @@
 namespace webrtc {
 
 // Aligning pointer to 64 bytes for improved performance, e.g. use SIMD.
-static const size_t kBufferAlignment = 64;
+static const int kBufferAlignment =  64;
 
 Plane::Plane()
-    : pointer_(NULL),
-      allocation_(NULL),
+    : buffer_(NULL),
       allocated_size_(0),
       plane_size_(0),
       stride_(0) {}
 
 Plane::~Plane() {}
 
-int Plane::CreateEmptyPlane(size_t allocated_size,
-                            size_t stride,
-                            size_t plane_size) {
+int Plane::CreateEmptyPlane(int allocated_size, int stride, int plane_size) {
   if (allocated_size < 1 || stride < 1 || plane_size < 1)
     return -1;
   stride_ = stride;
-  if (Reallocate(allocated_size) < 0)
+  if (MaybeResize(allocated_size) < 0)
     return -1;
   plane_size_ = plane_size;
   return 0;
 }
 
-int Plane::Reallocate(size_t new_size) {
+int Plane::MaybeResize(int new_size) {
   if (new_size <= 0)
     return -1;
   if (new_size <= allocated_size_)
     return 0;
   Allocator<uint8_t>::scoped_ptr_aligned new_buffer(
     AlignedMalloc<uint8_t>(new_size, kBufferAlignment));
-  allocation_.reset(new_buffer.release());
-  pointer_ = allocation_.get();
+  if (buffer_.get()) {
+    memcpy(new_buffer.get(), buffer_.get(), plane_size_);
+  }
+  buffer_.reset(new_buffer.release());
   allocated_size_ = new_size;
   return 0;
 }
 
 int Plane::Copy(const Plane& plane) {
-  if (Reallocate(plane.allocated_size_) < 0)
+  if (MaybeResize(plane.allocated_size_) < 0)
     return -1;
-  if (plane.pointer_)
-    memcpy(pointer_, plane.pointer_, plane.plane_size_);
+  if (plane.buffer_.get())
+    memcpy(buffer_.get(), plane.buffer_.get(), plane.plane_size_);
   stride_ = plane.stride_;
   plane_size_ = plane.plane_size_;
   return 0;
 }
 
-int Plane::Copy(size_t size, size_t stride, const uint8_t* buffer) {
-  if (Reallocate(size) < 0)
+int Plane::Copy(int size, int stride, const uint8_t* buffer) {
+  if (MaybeResize(size) < 0)
     return -1;
-  memcpy(pointer_, buffer, size);
+  memcpy(buffer_.get(), buffer, size);
   plane_size_ = size;
   stride_ = stride;
   return 0;
 }
 
-void Plane::Alias(size_t size, size_t stride, uint8_t* buffer) {
-  allocation_.reset();
-  allocated_size_ = 0;
-  pointer_ = buffer;
-  stride_ = stride;
-  plane_size_ = size;
-}
-
 void Plane::Swap(Plane& plane) {
-  std::swap(pointer_, plane.pointer_);
-  allocation_.swap(plane.allocation_);
+  std::swap(stride_, plane.stride_);
   std::swap(allocated_size_, plane.allocated_size_);
   std::swap(plane_size_, plane.plane_size_);
-  std::swap(stride_, plane.stride_);
+  buffer_.swap(plane.buffer_);
 }
 
 }  // namespace webrtc

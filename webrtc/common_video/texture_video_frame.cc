@@ -60,21 +60,6 @@ int TextureVideoFrame::CreateFrame(int size_y,
   return -1;
 }
 
-int TextureVideoFrame::AliasBuffers(int size_y,
-                                    uint8_t* buffer_y,
-                                    int size_u,
-                                    uint8_t* buffer_u,
-                                    int size_v,
-                                    uint8_t* buffer_v,
-                                    int width,
-                                    int height,
-                                    int stride_y,
-                                    int stride_u,
-                                    int stride_v) {
-  NOTREACHED();
-  return -1;
-}
-
 int TextureVideoFrame::CopyFrame(const I420VideoFrame& videoFrame) {
   NOTREACHED();
   return -1;

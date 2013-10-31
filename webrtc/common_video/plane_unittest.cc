@@ -19,9 +19,9 @@ namespace webrtc {
 
 TEST(TestPlane, CreateEmptyPlaneValues) {
   Plane plane;
-  size_t size, stride;
-  EXPECT_EQ(0U, plane.allocated_size());
-  EXPECT_EQ(0U, plane.stride());
+  int size, stride;
+  EXPECT_EQ(0, plane.allocated_size());
+  EXPECT_EQ(0, plane.stride());
   EXPECT_TRUE(plane.IsZeroSize());
   size = 0;
   stride = 20;
@@ -40,8 +40,8 @@ TEST(TestPlane, CreateEmptyPlaneValues) {
 TEST(TestPlane, ResetSize) {
   Plane plane;
   EXPECT_TRUE(plane.IsZeroSize());
-  size_t allocated_size, plane_size, stride;
-  EXPECT_EQ(0U, plane.allocated_size());
+  int allocated_size, plane_size, stride;
+  EXPECT_EQ(0, plane.allocated_size());
   allocated_size = 30;
   plane_size = 20;
   stride = 10;
@@ -56,11 +56,11 @@ TEST(TestPlane, PlaneCopy) {
   Plane plane1, plane2;
   // Copy entire plane.
   plane1.CreateEmptyPlane(100, 10, 100);
-  size_t size1 = plane1.allocated_size();
-  size_t size2 = 30;
+  int size1 = plane1.allocated_size();
+  int size2 = 30;
   plane2.CreateEmptyPlane(50, 15, size2);
-  size_t stride1 = plane1.stride();
-  size_t stride2 = plane2.stride();
+  int stride1 = plane1.stride();
+  int stride2 = plane2.stride();
   plane1.Copy(plane2);
   // Smaller size - keep buffer size as is.
   EXPECT_EQ(size1, plane1.allocated_size());
@@ -78,18 +78,9 @@ TEST(TestPlane, PlaneCopy) {
   EXPECT_EQ(0, memcmp(buffer1, plane2.buffer(), size1));
 }
 
-TEST(TestPlane, PlaneAlias) {
-  Plane plane;
-  plane.CreateEmptyPlane(100, 10, 100);
-  uint8_t buffer[256];
-  plane.Alias(sizeof(buffer), sizeof(buffer) / 16, buffer);
-  EXPECT_EQ(buffer, plane.buffer());
-  EXPECT_EQ(0U, plane.allocated_size());
-}
-
 TEST(TestPlane, PlaneSwap) {
   Plane plane1, plane2;
-  size_t size1, size2, stride1, stride2;
+  int size1, size2, stride1, stride2;
   plane1.CreateEmptyPlane(100, 10, 100);
   plane2.CreateEmptyPlane(50, 15, 50);
   size1 = plane1.allocated_size();
