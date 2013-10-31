@@ -78,6 +78,15 @@ TEST(TestPlane, PlaneCopy) {
   EXPECT_EQ(0, memcmp(buffer1, plane2.buffer(), size1));
 }
 
+TEST(TestPlane, PlaneAlias) {
+  Plane plane;
+  plane.CreateEmptyPlane(100, 10, 100);
+  uint8_t buffer[256];
+  plane.Alias(sizeof(buffer), sizeof(buffer) / 16, buffer);
+  EXPECT_EQ(buffer, plane.buffer());
+  EXPECT_EQ(0, plane.allocated_size());
+}
+
 TEST(TestPlane, PlaneSwap) {
   Plane plane1, plane2;
   int size1, size2, stride1, stride2;

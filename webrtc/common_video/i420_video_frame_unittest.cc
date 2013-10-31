@@ -118,7 +118,7 @@ TEST(TestI420VideoFrame, CopyFrame) {
   EXPECT_TRUE(EqualFrames(frame1, frame2));
 }
 
-TEST(TestI420VideoFrame, CopyBuffer) {
+TEST(TestI420VideoFrame, CreateFrame) {
   I420VideoFrame frame1, frame2;
   int width = 15;
   int height = 15;
@@ -146,6 +146,34 @@ TEST(TestI420VideoFrame, CopyBuffer) {
   EXPECT_LE(kSizeY, frame2.allocated_size(kYPlane));
   EXPECT_LE(kSizeUv, frame2.allocated_size(kUPlane));
   EXPECT_LE(kSizeUv, frame2.allocated_size(kVPlane));
+}
+
+TEST(TestI420VideoFrame, AliasBuffers) {
+  I420VideoFrame frame;
+  int width = 15;
+  int height = 15;
+  int stride_y = 15;
+  int stride_uv = 10;
+  const int kSizeY = 225;
+  const int kSizeUv = 80;
+  EXPECT_EQ(
+      0, frame.CreateEmptyFrame(width, height, stride_y, stride_uv, stride_uv));
+  uint8_t buffer_y[kSizeY];
+  uint8_t buffer_u[kSizeUv];
+  uint8_t buffer_v[kSizeUv];
+  memset(buffer_y, 16, kSizeY);
+  memset(buffer_u, 8, kSizeUv);
+  memset(buffer_v, 4, kSizeUv);
+  frame.AliasBuffers(kSizeY, buffer_y,
+                     kSizeUv, buffer_u,
+                     kSizeUv, buffer_v,
+                     width, height, stride_y, stride_uv, stride_uv);
+  EXPECT_EQ(buffer_y, frame.buffer(kYPlane));
+  EXPECT_EQ(buffer_u, frame.buffer(kUPlane));
+  EXPECT_EQ(buffer_v, frame.buffer(kVPlane));
+  EXPECT_EQ(0, frame.allocated_size(kYPlane));
+  EXPECT_EQ(0, frame.allocated_size(kUPlane));
+  EXPECT_EQ(0, frame.allocated_size(kVPlane));
 }
 
 TEST(TestI420VideoFrame, FrameSwap) {
