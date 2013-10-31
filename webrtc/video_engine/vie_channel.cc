@@ -1332,6 +1332,7 @@ void ViEChannel::GetBandwidthUsage(uint32_t* total_bitrate_sent,
     RtpRtcp* rtp_rtcp = *it;
     rtp_rtcp->BitrateSent(&stream_rate, &video_rate, &fec_rate, &nackRate);
     *total_bitrate_sent += stream_rate;
+    *video_bitrate_sent += video_rate;
     *fec_bitrate_sent += fec_rate;
     *nackBitrateSent += nackRate;
   }
