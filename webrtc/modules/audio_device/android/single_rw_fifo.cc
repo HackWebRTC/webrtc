@@ -10,11 +10,6 @@
 
 #include "webrtc/modules/audio_device/android/single_rw_fifo.h"
 
-#if !defined(__ARMEL__)
-// ARM specific due to the implementation of MemoryBarrier.
-#error trying to compile ARM code for non-ARM target
-#endif
-
 static int UpdatePos(int pos, int capacity) {
   return (pos + 1) % capacity;
 }
@@ -23,6 +18,7 @@ namespace webrtc {
 
 namespace subtle {
 
+#if defined(__ARMEL__)
 // From http://src.chromium.org/viewvc/chrome/trunk/src/base/atomicops_internals_arm_gcc.h
 // Note that it is only the MemoryBarrier function that makes this class arm
 // specific. Borrowing other MemoryBarrier implementations, this class could
@@ -33,6 +29,20 @@ inline void MemoryBarrier() {
   typedef void (*KernelMemoryBarrierFunc)();
   ((KernelMemoryBarrierFunc)0xffff0fa0)();
 }
+
+#elif defined(__x86_64__) || defined (__i386__)
+// From http://src.chromium.org/viewvc/chrome/trunk/src/base/atomicops_internals_x86_gcc.h
+// mfence exists on x64 and x86 platforms containing SSE2.
+// x86 platforms that don't have SSE2 will crash with SIGILL.
+// If this code needs to run on such platforms in the future,
+// add runtime CPU detection here.
+inline void MemoryBarrier() {
+  __asm__ __volatile__("mfence" : : : "memory");
+}
+
+#else
+#error Add an implementation of MemoryBarrier() for this platform!
+#endif
 
 }  // namespace subtle
 
