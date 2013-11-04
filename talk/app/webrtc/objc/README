@@ -52,16 +52,16 @@ Example of building & using the unittest & app:
       ./out_sim/Debug/iossim out_sim/Debug/AppRTCDemo.app
 
 - To build & sign the sample app for an iOS device:
-  wrios && gclient runhooks && ninja -C out_ios/Debug AppRTCDemo
+  wrios && gclient runhooks && ninja -C out_ios/Debug-iphoneos AppRTCDemo
 
 - To install the sample app on an iOS device:
-  ideviceinstaller -i out_ios/Debug/AppRTCDemo.app
+  ideviceinstaller -i out_ios/Debug-iphoneos/AppRTCDemo.app
   (if installing ideviceinstaller from brew, use --HEAD to get support
   for .app directories)
 - Alternatively, use iPhone Configuration Utility:
   - Open "iPhone Configuration Utility" (http://support.apple.com/kb/DL1465)
   - Click the "Add" icon (command-o)
-  - Open the app under out_ios/Debug/AppRTCDemo (should be added to the Applications tab)
+  - Open the app under out_ios/Debug-iphoneos/AppRTCDemo (should be added to the Applications tab)
   - Click the device's name in the left-hand panel and select the Applications tab
   - Click Install on the AppRTCDemo line.
       (If you have any problems deploying for the first time, check
