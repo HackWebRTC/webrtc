@@ -171,8 +171,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   // Reset RoundTripTime statistics.
   virtual int32_t ResetRTT(const uint32_t remote_ssrc) OVERRIDE;
 
-  virtual void SetRtt(uint32_t rtt) OVERRIDE;
-
   // Force a send of an RTCP packet.
   // Normal SR and RR are triggered via the process function.
   virtual int32_t SendRTCP(uint32_t rtcp_packet_type = kRtcpReport) OVERRIDE;

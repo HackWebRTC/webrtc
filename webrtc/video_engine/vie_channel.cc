@@ -1711,8 +1711,6 @@ bool ViEChannel::ChannelDecodeProcess() {
 
 void ViEChannel::OnRttUpdate(uint32_t rtt) {
   vcm_.SetReceiveChannelParameters(rtt);
-  if (!sender_)
-    rtp_rtcp_->SetRtt(rtt);
 }
 
 int32_t ViEChannel::StartDecodeThread() {

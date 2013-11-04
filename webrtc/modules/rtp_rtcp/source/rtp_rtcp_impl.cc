@@ -910,11 +910,6 @@ int32_t ModuleRtpRtcpImpl::ResetRTT(const uint32_t remote_ssrc) {
   return rtcp_receiver_.ResetRTT(remote_ssrc);
 }
 
-void ModuleRtpRtcpImpl:: SetRtt(uint32_t rtt) {
-  WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "SetRtt(rtt: %u)", rtt);
-  rtcp_receiver_.SetRTT(static_cast<uint16_t>(rtt));
-}
-
 // Reset RTP data counters for the sending side.
 int32_t ModuleRtpRtcpImpl::ResetSendDataCountersRTP() {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_,

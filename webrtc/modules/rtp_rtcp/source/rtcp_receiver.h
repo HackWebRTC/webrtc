@@ -78,10 +78,6 @@ public:
                 uint16_t* minRTT,
                 uint16_t* maxRTT) const;
 
-    uint16_t RTT() const;
-
-    int SetRTT(uint16_t rtt);
-
     int32_t ResetRTT(const uint32_t remoteSSRC);
 
     int32_t SenderInfoReceived(RTCPSenderInfo* senderInfo) const;
@@ -265,10 +261,6 @@ protected:
   // The time we last received an RTCP RR telling we have ssuccessfully
   // delivered RTP packet to the remote side.
   int64_t _lastIncreasedSequenceNumberMs;
-
-  // Externally set RTT. This value can only be used if there are no valid
-  // RTT estimates.
-  uint16_t _rtt;
 
 };
 }  // namespace webrtc
