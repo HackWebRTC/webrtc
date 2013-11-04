@@ -221,12 +221,14 @@ hooks = [
                "--win-only"],
   },
   {
-    # Download test resources, i.e. video and audio files. If the latest
-    # version is already downloaded, this takes zero seconds to run.
-    # If a newer version or no current download exists, it will download
-    # the resources and extract them.
-    "pattern": ".",
-    "action": ["python", Var("root_dir") + "/webrtc/tools/update_resources.py"],
+    # Download test resources, i.e. video and audio files from Google Storage.
+    "pattern": "\\.sha1",
+    "action": ["download_from_google_storage",
+               "--directory",
+               "--recursive",
+               "--num_threads=10",
+               "--bucket", "chromium-webrtc-resources",
+               Var("root_dir") + "/resources"],
   },
   {
     # A change to a .gyp, .gypi, or to GYP itself should run the generator.

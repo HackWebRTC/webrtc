@@ -40,7 +40,8 @@
 /gyp-mac-tool
 /net/third_party/nss/
 /out
-/resources
+/resources/*.*
+/resources/*/*.*
 /talk/examples/android/bin
 /talk/examples/android/gen
 /talk/examples/android/libs
@@ -99,3 +100,5 @@
 /webrtc/video_engine/test/android/obj
 /x86-generic_out/
 /xcodebuild
+!*.sha1
+
