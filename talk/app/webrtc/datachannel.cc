@@ -38,6 +38,10 @@ namespace webrtc {
 static size_t kMaxQueuedReceivedDataPackets = 100;
 static size_t kMaxQueuedSendDataPackets = 100;
 
+enum {
+  MSG_CHANNELREADY,
+};
+
 talk_base::scoped_refptr<DataChannel> DataChannel::Create(
     DataChannelProviderInterface* provider,
     cricket::DataChannelType dct,
@@ -95,6 +99,15 @@ bool DataChannel::Init(const DataChannelInit* config) {
     // Try to connect to the transport in case the transport channel already
     // exists.
     OnTransportChannelCreated();
+
+    // Checks if the transport is ready to send because the initial channel
+    // ready signal may have been sent before the DataChannel creation.
+    // This has to be done async because the upper layer objects (e.g.
+    // Chrome glue and WebKit) are not wired up properly until after this
+    // function returns.
+    if (provider_->ReadyToSendData()) {
+      talk_base::Thread::Current()->Post(this, MSG_CHANNELREADY, NULL);
+    }
   }
 
   return true;
@@ -215,6 +228,14 @@ void DataChannel::SetSendSsrc(uint32 send_ssrc) {
   send_ssrc_ = send_ssrc;
   send_ssrc_set_ = true;
   UpdateState();
+}
+
+void DataChannel::OnMessage(talk_base::Message* msg) {
+  switch (msg->message_id) {
+    case MSG_CHANNELREADY:
+      OnChannelReady(true);
+      break;
+  }
 }
 
 // The underlaying data engine is closing.

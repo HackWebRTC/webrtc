@@ -2477,7 +2477,8 @@ DataChannel::DataChannel(talk_base::Thread* thread,
                          bool rtcp)
     // MediaEngine is NULL
     : BaseChannel(thread, NULL, media_channel, session, content_name, rtcp),
-      data_channel_type_(cricket::DCT_NONE) {
+      data_channel_type_(cricket::DCT_NONE),
+      ready_to_send_data_(false) {
 }
 
 DataChannel::~DataChannel() {
@@ -2701,7 +2702,8 @@ void DataChannel::OnMessage(talk_base::Message *pmsg) {
     case MSG_READYTOSENDDATA: {
       DataChannelReadyToSendMessageData* data =
           static_cast<DataChannelReadyToSendMessageData*>(pmsg->pdata);
-      SignalReadyToSendData(data->data());
+      ready_to_send_data_ = data->data();
+      SignalReadyToSendData(ready_to_send_data_);
       delete data;
       break;
     }

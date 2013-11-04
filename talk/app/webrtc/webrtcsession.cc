@@ -1024,6 +1024,10 @@ void WebRtcSession::RemoveSctpDataStream(uint32 sid) {
   RemoveRtpDataStream(sid, sid);
 }
 
+bool WebRtcSession::ReadyToSendData() const {
+  return data_channel_.get() && data_channel_->ready_to_send_data();
+}
+
 talk_base::scoped_refptr<DataChannel> WebRtcSession::CreateDataChannel(
     const std::string& label,
     const DataChannelInit* config) {

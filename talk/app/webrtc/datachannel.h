@@ -33,6 +33,7 @@
 
 #include "talk/app/webrtc/datachannelinterface.h"
 #include "talk/app/webrtc/proxy.h"
+#include "talk/base/messagehandler.h"
 #include "talk/base/scoped_ref_ptr.h"
 #include "talk/base/sigslot.h"
 #include "talk/media/base/mediachannel.h"
@@ -60,6 +61,8 @@ class DataChannelProviderInterface {
   virtual void RemoveRtpDataStream(uint32 send_ssrc, uint32 recv_ssrc) = 0;
   // Removes the data channel SID from the transport for SCTP.
   virtual void RemoveSctpDataStream(uint32 sid) = 0;
+  // Returns true if the transport channel is ready to send data.
+  virtual bool ReadyToSendData() const = 0;
 
  protected:
   virtual ~DataChannelProviderInterface() {}
@@ -81,7 +84,8 @@ class DataChannelProviderInterface {
 // kClosed: Both UpdateReceiveSsrc and UpdateSendSsrc has been called with
 //          SSRC==0.
 class DataChannel : public DataChannelInterface,
-                    public sigslot::has_slots<> {
+                    public sigslot::has_slots<>,
+                    public talk_base::MessageHandler {
  public:
   static talk_base::scoped_refptr<DataChannel> Create(
       DataChannelProviderInterface* provider,
@@ -108,6 +112,9 @@ class DataChannel : public DataChannelInterface,
   virtual void Close();
   virtual DataState state() const { return state_; }
   virtual bool Send(const DataBuffer& buffer);
+
+  // talk_base::MessageHandler override.
+  virtual void OnMessage(talk_base::Message* msg);
 
   // Called if the underlying data engine is closing.
   void OnDataEngineClose();

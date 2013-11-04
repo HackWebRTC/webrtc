@@ -194,6 +194,7 @@ class WebRtcSession : public cricket::BaseSession,
   virtual void AddSctpDataStream(uint32 sid) OVERRIDE;
   virtual void RemoveRtpDataStream(uint32 send_ssrc, uint32 recv_ssrc) OVERRIDE;
   virtual void RemoveSctpDataStream(uint32 sid) OVERRIDE;
+  virtual bool ReadyToSendData() const OVERRIDE;
 
   talk_base::scoped_refptr<DataChannel> CreateDataChannel(
       const std::string& label,

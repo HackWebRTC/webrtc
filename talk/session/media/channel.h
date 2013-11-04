@@ -610,6 +610,11 @@ class DataChannel : public BaseChannel {
   void StartMediaMonitor(int cms);
   void StopMediaMonitor();
 
+  // Should be called on the signaling thread only.
+  bool ready_to_send_data() const {
+    return ready_to_send_data_;
+  }
+
   sigslot::signal2<DataChannel*, const DataMediaInfo&> SignalMediaMonitor;
   sigslot::signal2<DataChannel*, const std::vector<ConnectionInfo>&>
       SignalConnectionMonitor;
@@ -714,6 +719,7 @@ class DataChannel : public BaseChannel {
   // TODO(pthatcher): Make a separate SctpDataChannel and
   // RtpDataChannel instead of using this.
   DataChannelType data_channel_type_;
+  bool ready_to_send_data_;
 };
 
 }  // namespace cricket

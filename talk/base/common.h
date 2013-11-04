@@ -198,7 +198,7 @@ inline bool ImplicitCastToBool(bool result) { return result; }
 // TODO(ajm): Hack to avoid multiple definitions until the base/ of webrtc and
 // libjingle are merged.
 #if !defined(WARN_UNUSED_RESULT)
-#if defined(COMPILER_GCC)
+#if defined(__GNUC__)
 #define WARN_UNUSED_RESULT __attribute__((warn_unused_result))
 #else
 #define WARN_UNUSED_RESULT

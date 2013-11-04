@@ -39,11 +39,12 @@ class SctpDataChannelTest : public testing::Test {
   }
 
   void SetChannelReady() {
+    provider_.set_transport_available(true);
     webrtc_data_channel_->OnTransportChannelCreated();
     if (webrtc_data_channel_->id() < 0) {
       webrtc_data_channel_->SetSctpSid(0);
     }
-    webrtc_data_channel_->OnChannelReady(true);
+    provider_.set_ready_to_send(true);
   }
 
   webrtc::DataChannelInit init_;
@@ -53,27 +54,28 @@ class SctpDataChannelTest : public testing::Test {
 
 // Verifies that the data channel is connected to the transport after creation.
 TEST_F(SctpDataChannelTest, ConnectedToTransportOnCreated) {
-  EXPECT_TRUE(provider_.IsConnected(webrtc_data_channel_.get()));
-  // The sid is not set yet, so it should not have added the streams.
-  EXPECT_FALSE(provider_.IsSendStreamAdded(webrtc_data_channel_->id()));
-  EXPECT_FALSE(provider_.IsRecvStreamAdded(webrtc_data_channel_->id()));
+  provider_.set_transport_available(true);
+  talk_base::scoped_refptr<DataChannel> dc = DataChannel::Create(
+      &provider_, cricket::DCT_SCTP, "test1", &init_);
 
-  webrtc_data_channel_->SetSctpSid(0);
-  EXPECT_TRUE(provider_.IsSendStreamAdded(webrtc_data_channel_->id()));
-  EXPECT_TRUE(provider_.IsRecvStreamAdded(webrtc_data_channel_->id()));
+  EXPECT_TRUE(provider_.IsConnected(dc.get()));
+  // The sid is not set yet, so it should not have added the streams.
+  EXPECT_FALSE(provider_.IsSendStreamAdded(dc->id()));
+  EXPECT_FALSE(provider_.IsRecvStreamAdded(dc->id()));
+
+  dc->SetSctpSid(0);
+  EXPECT_TRUE(provider_.IsSendStreamAdded(dc->id()));
+  EXPECT_TRUE(provider_.IsRecvStreamAdded(dc->id()));
 }
 
 // Verifies that the data channel is connected to the transport if the transport
 // is not available initially and becomes available later.
 TEST_F(SctpDataChannelTest, ConnectedAfterTransportBecomesAvailable) {
-  provider_.set_transport_available(false);
-  talk_base::scoped_refptr<DataChannel> dc = DataChannel::Create(
-      &provider_, cricket::DCT_SCTP, "test1", &init_);
-  EXPECT_FALSE(provider_.IsConnected(dc.get()));
+  EXPECT_FALSE(provider_.IsConnected(webrtc_data_channel_.get()));
 
   provider_.set_transport_available(true);
-  dc->OnTransportChannelCreated();
-  EXPECT_TRUE(provider_.IsConnected(dc.get()));
+  webrtc_data_channel_->OnTransportChannelCreated();
+  EXPECT_TRUE(provider_.IsConnected(webrtc_data_channel_.get()));
 }
 
 // Tests the state of the data channel.
@@ -81,6 +83,7 @@ TEST_F(SctpDataChannelTest, StateTransition) {
   EXPECT_EQ(webrtc::DataChannelInterface::kConnecting,
             webrtc_data_channel_->state());
   SetChannelReady();
+
   EXPECT_EQ(webrtc::DataChannelInterface::kOpen, webrtc_data_channel_->state());
   webrtc_data_channel_->Close();
   EXPECT_EQ(webrtc::DataChannelInterface::kClosed,
@@ -131,4 +134,17 @@ TEST_F(SctpDataChannelTest, OpenMessageSent) {
   EXPECT_EQ(cricket::DMT_CONTROL, provider_.last_send_data_params().type);
   EXPECT_EQ(provider_.last_send_data_params().ssrc,
             static_cast<uint32>(webrtc_data_channel_->id()));
+}
+
+// Tests that the DataChannel created after transport gets ready can enter OPEN
+// state.
+TEST_F(SctpDataChannelTest, LateCreatedChannelTransitionToOpen) {
+  SetChannelReady();
+  webrtc::DataChannelInit init;
+  init.id = 1;
+  talk_base::scoped_refptr<DataChannel> dc =
+      DataChannel::Create(&provider_, cricket::DCT_SCTP, "test1", &init);
+  EXPECT_EQ(webrtc::DataChannelInterface::kConnecting, dc->state());
+  EXPECT_TRUE_WAIT(webrtc::DataChannelInterface::kOpen == dc->state(),
+                   1000);
 }

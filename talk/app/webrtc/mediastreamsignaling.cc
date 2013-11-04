@@ -276,8 +276,6 @@ bool MediaStreamSignaling::AddDataChannelFromOpenMessage(
   }
   data_channels_[label] = channel;
   stream_observer_->OnAddDataChannel(channel);
-  // It's immediately ready to use.
-  channel->OnChannelReady(true);
   return true;
 }
 
