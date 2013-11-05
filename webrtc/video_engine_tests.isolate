@@ -25,6 +25,9 @@
           '<(PRODUCT_DIR)/video_engine_tests<(EXECUTABLE_SUFFIX)',
         ],
         'isolate_dependency_tracked': [
+          '../DEPS',
+          '../resources/foreman_cif.yuv',
+          '../resources/paris_qcif.yuv',
           '../testing/test_env.py',
           '<(PRODUCT_DIR)/video_engine_tests<(EXECUTABLE_SUFFIX)',
         ],

@@ -26,6 +26,7 @@
         ],
         'isolate_dependency_tracked': [
           '../../DEPS',
+          '../../data/audio_processing/output_data_float.pb',
           '../../data/voice_engine/audio_tiny48.wav',
           '../../resources/audio_coding/neteq4_network_stats.dat',
           '../../resources/audio_coding/neteq4_rtcp_stats.dat',
