@@ -1154,6 +1154,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
                      int size_adjust, bool expected_result) {
     T frame;
     talk_base::scoped_ptr<talk_base::MemoryStream> ms(LoadSample(name));
+    ASSERT_TRUE(ms.get() != NULL);
     const uint8* sample = reinterpret_cast<const uint8*>(ms.get()->GetBuffer());
     size_t sample_size;
     ms->GetSize(&sample_size);
@@ -1393,6 +1394,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     T frame1, frame2;
     talk_base::scoped_ptr<talk_base::MemoryStream> ms(
         LoadSample(kImageFilename));
+    ASSERT_TRUE(ms.get() != NULL);
     size_t data_size;
     ms->GetSize(&data_size);
     EXPECT_TRUE(frame1.InitToBlack(kWidth, kHeight, 1, 1, 0, 0));
@@ -2007,6 +2009,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     T frame;
     talk_base::scoped_ptr<talk_base::MemoryStream> ms(
         LoadSample(kImageFilename));
+    ASSERT_TRUE(ms.get() != NULL);
     ASSERT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_I420, kWidth, kHeight,
                           &frame));
     size_t out_size = kWidth * kHeight * 3 / 2;
@@ -2021,6 +2024,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     T source;
     talk_base::scoped_ptr<talk_base::MemoryStream> ms(
         LoadSample(kImageFilename));
+    ASSERT_TRUE(ms.get() != NULL);
     ASSERT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_I420, kWidth, kHeight,
                           &source));
 
@@ -2039,6 +2043,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     T frame;
     talk_base::scoped_ptr<talk_base::MemoryStream> ms(
         LoadSample(kImageFilename));
+    ASSERT_TRUE(ms.get() != NULL);
     talk_base::MemoryStream ms2;
     size_t size;
     ASSERT_TRUE(ms->GetSize(&size));

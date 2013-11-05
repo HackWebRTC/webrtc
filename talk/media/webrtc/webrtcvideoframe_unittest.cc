@@ -264,35 +264,16 @@ TEST_WEBRTCVIDEOFRAME(CopyIsRef)
 TEST_WEBRTCVIDEOFRAME(MakeExclusive)
 
 // These functions test implementation-specific details.
-TEST_F(WebRtcVideoFrameTest, AttachAndRelease) {
+TEST_F(WebRtcVideoFrameTest, Alias) {
   cricket::WebRtcVideoFrame frame1, frame2;
   ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
-  const int64 time_stamp = 0x7FFFFFFFFFFFFFF0LL;
+  const int64 time_stamp = INT64_C(0x7FFFFFFFFFFFFFF0);
   frame1.SetTimeStamp(time_stamp);
   EXPECT_EQ(time_stamp, frame1.GetTimeStamp());
-  frame2.Attach(frame1.frame()->Buffer(), frame1.frame()->Size(),
-                kWidth, kHeight, 1, 1,
-                frame1.GetElapsedTime(), frame1.GetTimeStamp(), 0);
+  frame2.Alias(frame1.frame()->Buffer(), frame1.frame()->Size(),
+               kWidth, kHeight, 1, 1,
+               frame1.GetElapsedTime(), frame1.GetTimeStamp(), 0);
   EXPECT_TRUE(IsEqual(frame1, frame2, 0));
-  uint8* buffer;
-  size_t size;
-  frame2.Detach(&buffer, &size);
-  EXPECT_EQ(frame1.frame()->Buffer(), buffer);
-  EXPECT_EQ(frame1.frame()->Size(), size);
-  EXPECT_TRUE(IsNull(frame2));
-  EXPECT_TRUE(IsSize(frame1, kWidth, kHeight));
-}
-
-TEST_F(WebRtcVideoFrameTest, Transfer) {
-  cricket::WebRtcVideoFrame frame1, frame2;
-  ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
-  uint8* buffer;
-  size_t size;
-  frame1.Detach(&buffer, &size);
-  frame2.Attach(buffer, size, kWidth, kHeight, 1, 1,
-                frame1.GetElapsedTime(), frame1.GetTimeStamp(), 0);
-  EXPECT_TRUE(IsNull(frame1));
-  EXPECT_TRUE(IsSize(frame2, kWidth, kHeight));
 }
 
 // Tests the Init function with different cropped size.

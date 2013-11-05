@@ -328,14 +328,10 @@ void WebRtcVideoCapturer::OnIncomingCapturedFrame(const int32_t id,
   // to one block for it.
   int length = webrtc::CalcBufferSize(webrtc::kI420,
                                       sample.width(), sample.height());
-  if (!captured_frame_.get() ||
-      captured_frame_->length() != static_cast<size_t>(length)) {
-    captured_frame_.reset(new FrameBuffer(length));
-  }
-  // TODO(ronghuawu): Refactor the WebRtcVideoFrame to avoid memory copy.
-  webrtc::ExtractBuffer(sample, length,
-                        reinterpret_cast<uint8_t*>(captured_frame_->data()));
-  WebRtcCapturedFrame frame(sample, captured_frame_->data(), length);
+  capture_buffer_.resize(length);
+  // TODO(ronghuawu): Refactor the WebRtcCapturedFrame to avoid memory copy.
+  webrtc::ExtractBuffer(sample, length, &capture_buffer_[0]);
+  WebRtcCapturedFrame frame(sample, &capture_buffer_[0], length);
   SignalFrameCaptured(this, &frame);
 }
 

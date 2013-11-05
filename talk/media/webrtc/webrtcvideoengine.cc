@@ -258,8 +258,8 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
   int DeliverBufferFrame(unsigned char* buffer, int buffer_size,
                          int64 elapsed_time, int64 time_stamp) {
     WebRtcVideoFrame video_frame;
-    video_frame.Attach(buffer, buffer_size, width_, height_,
-                       1, 1, elapsed_time, time_stamp, 0);
+    video_frame.Alias(buffer, buffer_size, width_, height_,
+                      1, 1, elapsed_time, time_stamp, 0);
 
 
     // Sanity check on decoded frame size.
@@ -269,9 +269,6 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
     }
 
     int ret = renderer_->RenderFrame(&video_frame) ? 0 : -1;
-    uint8* buffer_temp;
-    size_t buffer_size_temp;
-    video_frame.Detach(&buffer_temp, &buffer_size_temp);
     return ret;
   }
 

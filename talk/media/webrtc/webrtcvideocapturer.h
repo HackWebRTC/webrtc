@@ -88,7 +88,7 @@ class WebRtcVideoCapturer : public VideoCapturer,
   talk_base::scoped_ptr<WebRtcVcmFactoryInterface> factory_;
   webrtc::VideoCaptureModule* module_;
   int captured_frames_;
-  talk_base::scoped_ptr<FrameBuffer> captured_frame_;
+  std::vector<uint8_t> capture_buffer_;
 };
 
 struct WebRtcCapturedFrame : public CapturedFrame {

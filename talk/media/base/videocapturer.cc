@@ -468,7 +468,7 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
   }
 
   VIDEO_FRAME_NAME i420_frame;
-  if (!i420_frame.Init(captured_frame, desired_width, desired_height)) {
+  if (!i420_frame.Alias(captured_frame, desired_width, desired_height)) {
     // TODO(fbarchard): LOG more information about captured frame attributes.
     LOG(LS_ERROR) << "Couldn't convert to I420! "
                   << "From " << ToString(captured_frame) << " To "
