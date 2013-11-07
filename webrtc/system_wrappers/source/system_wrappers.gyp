@@ -85,7 +85,6 @@
         'list_no_stl.cc',
         'logcat_trace_context.cc',
         'logging.cc',
-        'logging_no_op.cc',
         'rw_lock.cc',
         'rw_lock_generic.cc',
         'rw_lock_generic.h',
@@ -104,7 +103,6 @@
         'thread_win.h',
         'trace_impl.cc',
         'trace_impl.h',
-        'trace_impl_no_op.cc',
         'trace_posix.cc',
         'trace_posix.h',
         'trace_win.cc',
@@ -116,22 +114,6 @@
         }, {
           'sources!': [ 'data_log.cc', ],
         },],
-        ['enable_tracing==1', {
-          'sources!': [
-            'logging_no_op.cc',
-            'trace_impl_no_op.cc',
-          ],
-        }, {
-          'sources!': [
-            'logging.cc',
-            'trace_impl.cc',
-            'trace_impl.h',
-            'trace_posix.cc',
-            'trace_posix.h',
-            'trace_win.cc',
-            'trace_win.h',
-          ],
-        }],
         ['OS=="android"', {
           'defines': [
             'WEBRTC_THREAD_RR',

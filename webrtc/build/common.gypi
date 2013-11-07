@@ -127,10 +127,10 @@
       }],
       ['build_with_libjingle==1', {
         'include_tests%': 0,
-        'enable_tracing%': 0,
+        'restrict_webrtc_logging%': 1,
       }, {
         'include_tests%': 1,
-        'enable_tracing%': 1,
+        'restrict_webrtc_logging%': 0,
       }],
       ['OS=="ios"', {
         'build_libjpeg%': 0,
@@ -160,8 +160,8 @@
       #'WEBRTC_SVNREVISION="<!(python <(webrtc_root)/build/version.py)"',
     ],
     'conditions': [
-      ['enable_tracing==1', {
-        'defines': ['WEBRTC_LOGGING',],
+      ['restrict_webrtc_logging==1', {
+        'defines': ['WEBRTC_RESTRICT_LOGGING',],
       }],
       ['build_with_mozilla==1', {
         'defines': [
