@@ -24,21 +24,6 @@
         '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
-      'include_dirs': [
-        '../interface',
-        'aec/include',
-        'aecm/include',
-        'agc/include',
-        'include',
-        'ns/include',
-        'utility',
-      ],
-      'direct_dependent_settings': {
-        'include_dirs': [
-          '../interface',
-          'include',
-        ],
-      },
       'sources': [
         'aec/include/echo_cancellation.h',
         'aec/echo_cancellation.c',
