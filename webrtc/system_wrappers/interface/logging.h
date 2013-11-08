@@ -110,7 +110,7 @@ class LogMessageVoidify {
 #if defined(WEBRTC_RESTRICT_LOGGING)
 // This should compile away logs matching the following condition.
 #define RESTRICT_LOGGING_PRECONDITION(sev)  \
-  sev < LS_INFO ? (void) 0 :
+  sev < webrtc::LS_INFO ? (void) 0 :
 #else
 #define RESTRICT_LOGGING_PRECONDITION(sev)
 #endif
