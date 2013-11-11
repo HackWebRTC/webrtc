@@ -120,6 +120,15 @@
         ['(target_arch=="arm" and armv7==1) or target_arch=="armv7"', {
           'dependencies': ['audio_processing_neon',],
         }],
+        ['target_arch=="mipsel"', {
+          'sources': [
+            'aecm/aecm_core_mips.c',
+          ],
+        }, {
+          'sources': [
+            'aecm/aecm_core_c.c',
+          ],
+        }],
       ],
       # TODO(jschuh): Bug 1348: fix size_t to int truncations.
       'msvs_disabled_warnings': [ 4267, ],
