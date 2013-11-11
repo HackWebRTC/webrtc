@@ -21,10 +21,12 @@
       ],
       'include_dirs': [
         'interface',
+        '<(webrtc_root)',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
           'interface',
+          '<(webrtc_root)',
         ],
       },
       'sources': [

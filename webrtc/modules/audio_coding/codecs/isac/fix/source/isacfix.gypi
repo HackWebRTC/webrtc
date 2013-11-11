@@ -17,10 +17,12 @@
       ],
       'include_dirs': [
         '../interface',
+        '<(webrtc_root)'
       ],
       'direct_dependent_settings': {
         'include_dirs': [
           '../interface',
+          '<(webrtc_root)',
         ],
       },
       'sources': [
@@ -95,6 +97,9 @@
           'includes': ['../../../../../../build/arm_neon.gypi',],
           'dependencies': [
             '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
+          ],
+          'include_dirs': [
+            '<(webrtc_root)',
           ],
           'sources': [
             'entropy_coding_neon.c',

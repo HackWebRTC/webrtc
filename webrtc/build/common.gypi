@@ -144,8 +144,6 @@
   },
   'target_defaults': {
     'include_dirs': [
-      # TODO(andrew): Remove '..' when we've added webrtc/ to include paths.
-      '..',
       # Allow includes to be prefixed with webrtc/ in case it is not an
       # immediate subdirectory of <(DEPTH).
       '../..',
