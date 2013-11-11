@@ -7,6 +7,12 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
+  'variables': {
+    'audio_processing_dependencies': [
+      '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
+      '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+    ],
+  },
   'targets': [
     {
       'target_name': 'audio_processing',
@@ -21,8 +27,7 @@
         'aec_untrusted_delay_for_testing%': 0,
       },
       'dependencies': [
-        '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
-        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        '<@(audio_processing_dependencies)',
       ],
       'sources': [
         'aec/include/echo_cancellation.h',
