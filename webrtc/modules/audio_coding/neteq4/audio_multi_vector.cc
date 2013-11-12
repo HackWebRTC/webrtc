@@ -24,6 +24,7 @@ AudioMultiVector::AudioMultiVector(size_t N) {
   for (size_t n = 0; n < N; ++n) {
     channels_.push_back(new AudioVector);
   }
+  num_channels_ = N;
 }
 
 AudioMultiVector::AudioMultiVector(size_t N, size_t initial_size) {
@@ -32,6 +33,7 @@ AudioMultiVector::AudioMultiVector(size_t N, size_t initial_size) {
   for (size_t n = 0; n < N; ++n) {
     channels_.push_back(new AudioVector(initial_size));
   }
+  num_channels_ = N;
 }
 
 AudioMultiVector::~AudioMultiVector() {
@@ -43,13 +45,13 @@ AudioMultiVector::~AudioMultiVector() {
 }
 
 void AudioMultiVector::Clear() {
-  for (size_t i = 0; i < Channels(); ++i) {
+  for (size_t i = 0; i < num_channels_; ++i) {
     channels_[i]->Clear();
   }
 }
 
 void AudioMultiVector::Zeros(size_t length) {
-  for (size_t i = 0; i < Channels(); ++i) {
+  for (size_t i = 0; i < num_channels_; ++i) {
     channels_[i]->Clear();
     channels_[i]->Extend(length);
   }
@@ -57,7 +59,7 @@ void AudioMultiVector::Zeros(size_t length) {
 
 void AudioMultiVector::CopyFrom(AudioMultiVector* copy_to) const {
   if (copy_to) {
-    for (size_t i = 0; i < Channels(); ++i) {
+    for (size_t i = 0; i < num_channels_; ++i) {
       channels_[i]->CopyFrom(&(*copy_to)[i]);
     }
   }
@@ -65,22 +67,22 @@ void AudioMultiVector::CopyFrom(AudioMultiVector* copy_to) const {
 
 void AudioMultiVector::PushBackInterleaved(const int16_t* append_this,
                                            size_t length) {
-  assert(length % Channels() == 0);
-  if (Channels() == 1) {
+  assert(length % num_channels_ == 0);
+  if (num_channels_ == 1) {
     // Special case to avoid extra allocation and data shuffling.
     channels_[0]->PushBack(append_this, length);
     return;
   }
-  size_t length_per_channel = length / Channels();
+  size_t length_per_channel = length / num_channels_;
   int16_t* temp_array =
       new int16_t[length_per_channel];  // Intermediate storage.
-  for (size_t channel = 0; channel < Channels(); ++channel) {
+  for (size_t channel = 0; channel < num_channels_; ++channel) {
     // Copy elements to |temp_array|.
     // Set |source_ptr| to first element of this channel.
     const int16_t* source_ptr = &append_this[channel];
     for (size_t i = 0; i < length_per_channel; ++i) {
       temp_array[i] = *source_ptr;
-      source_ptr += Channels();  // Jump to next element of this channel.
+      source_ptr += num_channels_;  // Jump to next element of this channel.
     }
     channels_[channel]->PushBack(temp_array, length_per_channel);
   }
@@ -88,9 +90,9 @@ void AudioMultiVector::PushBackInterleaved(const int16_t* append_this,
 }
 
 void AudioMultiVector::PushBack(const AudioMultiVector& append_this) {
-  assert(Channels() == append_this.Channels());
-  if (Channels() == append_this.Channels()) {
-    for (size_t i = 0; i < Channels(); ++i) {
+  assert(num_channels_ == append_this.num_channels_);
+  if (num_channels_ == append_this.num_channels_) {
+    for (size_t i = 0; i < num_channels_; ++i) {
       channels_[i]->PushBack(append_this[i]);
     }
   }
@@ -101,22 +103,22 @@ void AudioMultiVector::PushBackFromIndex(const AudioMultiVector& append_this,
   assert(index < append_this.Size());
   index = std::min(index, append_this.Size() - 1);
   size_t length = append_this.Size() - index;
-  assert(Channels() == append_this.Channels());
-  if (Channels() == append_this.Channels()) {
-    for (size_t i = 0; i < Channels(); ++i) {
+  assert(num_channels_ == append_this.num_channels_);
+  if (num_channels_ == append_this.num_channels_) {
+    for (size_t i = 0; i < num_channels_; ++i) {
       channels_[i]->PushBack(&append_this[i][index], length);
     }
   }
 }
 
 void AudioMultiVector::PopFront(size_t length) {
-  for (size_t i = 0; i < Channels(); ++i) {
+  for (size_t i = 0; i < num_channels_; ++i) {
     channels_[i]->PopFront(length);
   }
 }
 
 void AudioMultiVector::PopBack(size_t length) {
-  for (size_t i = 0; i < Channels(); ++i) {
+  for (size_t i = 0; i < num_channels_; ++i) {
     channels_[i]->PopBack(length);
   }
 }
@@ -138,8 +140,13 @@ size_t AudioMultiVector::ReadInterleavedFromIndex(size_t start_index,
   if (length + start_index > Size()) {
     length = Size() - start_index;
   }
+  if (num_channels_ == 1) {
+    // Special case to avoid the nested for loop below.
+    memcpy(destination, &(*this)[0][start_index], length * sizeof(int16_t));
+    return length;
+  }
   for (size_t i = 0; i < length; ++i) {
-    for (size_t channel = 0; channel < Channels(); ++channel) {
+    for (size_t channel = 0; channel < num_channels_; ++channel) {
       destination[index] = (*this)[channel][i + start_index];
       ++index;
     }
@@ -156,12 +163,12 @@ size_t AudioMultiVector::ReadInterleavedFromEnd(size_t length,
 void AudioMultiVector::OverwriteAt(const AudioMultiVector& insert_this,
                                    size_t length,
                                    size_t position) {
-  assert(Channels() == insert_this.Channels());
+  assert(num_channels_ == insert_this.num_channels_);
   // Cap |length| at the length of |insert_this|.
   assert(length <= insert_this.Size());
   length = std::min(length, insert_this.Size());
-  if (Channels() == insert_this.Channels()) {
-    for (size_t i = 0; i < Channels(); ++i) {
+  if (num_channels_ == insert_this.num_channels_) {
+    for (size_t i = 0; i < num_channels_; ++i) {
       channels_[i]->OverwriteAt(&insert_this[i][0], length, position);
     }
   }
@@ -169,9 +176,9 @@ void AudioMultiVector::OverwriteAt(const AudioMultiVector& insert_this,
 
 void AudioMultiVector::CrossFade(const AudioMultiVector& append_this,
                                  size_t fade_length) {
-  assert(Channels() == append_this.Channels());
-  if (Channels() == append_this.Channels()) {
-    for (size_t i = 0; i < Channels(); ++i) {
+  assert(num_channels_ == append_this.num_channels_);
+  if (num_channels_ == append_this.num_channels_) {
+    for (size_t i = 0; i < num_channels_; ++i) {
       channels_[i]->CrossFade(append_this[i], fade_length);
     }
   }
@@ -185,7 +192,7 @@ size_t AudioMultiVector::Size() const {
 void AudioMultiVector::AssertSize(size_t required_size) {
   if (Size() < required_size) {
     size_t extend_length = required_size - Size();
-    for (size_t channel = 0; channel < Channels(); ++channel) {
+    for (size_t channel = 0; channel < num_channels_; ++channel) {
       channels_[channel]->Extend(extend_length);
     }
   }

@@ -106,7 +106,7 @@ class AudioMultiVector {
                          size_t fade_length);
 
   // Returns the number of channels.
-  virtual size_t Channels() const { return channels_.size(); }
+  virtual size_t Channels() const { return num_channels_; }
 
   // Returns the number of elements per channel in this AudioMultiVector.
   virtual size_t Size() const;
@@ -124,6 +124,7 @@ class AudioMultiVector {
 
  protected:
   std::vector<AudioVector*> channels_;
+  size_t num_channels_;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(AudioMultiVector);

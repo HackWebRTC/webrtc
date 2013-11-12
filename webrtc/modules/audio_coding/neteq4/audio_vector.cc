@@ -19,18 +19,24 @@
 namespace webrtc {
 
 void AudioVector::Clear() {
-  vector_.clear();
+  first_free_ix_ = 0;
 }
 
 void AudioVector::CopyFrom(AudioVector* copy_to) const {
   if (copy_to) {
-    copy_to->vector_.assign(vector_.begin(), vector_.end());
+    copy_to->Reserve(Size());
+    assert(copy_to->capacity_ >= Size());
+    memcpy(copy_to->array_.get(), array_.get(), Size() * sizeof(int16_t));
+    copy_to->first_free_ix_ = first_free_ix_;
   }
 }
 
 void AudioVector::PushFront(const AudioVector& prepend_this) {
-  vector_.insert(vector_.begin(), prepend_this.vector_.begin(),
-                 prepend_this.vector_.end());
+  size_t insert_length = prepend_this.Size();
+  Reserve(Size() + insert_length);
+  memmove(&array_[insert_length], &array_[0], Size() * sizeof(int16_t));
+  memcpy(&array_[0], &prepend_this.array_[0], insert_length * sizeof(int16_t));
+  first_free_ix_ += insert_length;
 }
 
 void AudioVector::PushFront(const int16_t* prepend_this, size_t length) {
@@ -39,83 +45,77 @@ void AudioVector::PushFront(const int16_t* prepend_this, size_t length) {
 }
 
 void AudioVector::PushBack(const AudioVector& append_this) {
-  vector_.reserve(vector_.size() + append_this.Size());
-  for (size_t i = 0; i < append_this.Size(); ++i) {
-    vector_.push_back(append_this[i]);
-  }
+  PushBack(append_this.array_.get(), append_this.Size());
 }
 
 void AudioVector::PushBack(const int16_t* append_this, size_t length) {
-  vector_.reserve(vector_.size() + length);
-  for (size_t i = 0; i < length; ++i) {
-    vector_.push_back(append_this[i]);
-  }
+  Reserve(Size() + length);
+  memcpy(&array_[first_free_ix_], append_this, length * sizeof(int16_t));
+  first_free_ix_ += length;
 }
 
 void AudioVector::PopFront(size_t length) {
-  if (length >= vector_.size()) {
+  if (length >= Size()) {
     // Remove all elements.
-    vector_.clear();
+    Clear();
   } else {
-    std::vector<int16_t>::iterator end_range = vector_.begin();
-    end_range += length;
-    // Erase all elements in range vector_.begin() and |end_range| (not
-    // including |end_range|).
-    vector_.erase(vector_.begin(), end_range);
+    size_t remaining_samples = Size() - length;
+    memmove(&array_[0], &array_[length], remaining_samples * sizeof(int16_t));
+    first_free_ix_ -= length;
   }
 }
 
 void AudioVector::PopBack(size_t length) {
-  // Make sure that new_size is never negative (which causes wrap-around).
-  size_t new_size = vector_.size() - std::min(length, vector_.size());
-  vector_.resize(new_size);
+  // Never remove more than what is in the array.
+  length = std::min(length, Size());
+  first_free_ix_ -= length;
 }
 
 void AudioVector::Extend(size_t extra_length) {
-  vector_.insert(vector_.end(), extra_length, 0);
+  Reserve(Size() + extra_length);
+  memset(&array_[first_free_ix_], 0, extra_length * sizeof(int16_t));
+  first_free_ix_ += extra_length;
 }
 
 void AudioVector::InsertAt(const int16_t* insert_this,
                            size_t length,
                            size_t position) {
-  std::vector<int16_t>::iterator insert_position = vector_.begin();
+  Reserve(Size() + length);
   // Cap the position at the current vector length, to be sure the iterator
   // does not extend beyond the end of the vector.
-  position = std::min(vector_.size(), position);
-  insert_position += position;
-  // First, insert zeros at the position. This makes the vector longer (and
-  // invalidates the iterator |insert_position|.
-  vector_.insert(insert_position, length, 0);
-  // Write the new values into the vector.
-  for (size_t i = 0; i < length; ++i) {
-    vector_[position + i] = insert_this[i];
-  }
+  position = std::min(Size(), position);
+  int16_t* insert_position_ptr = &array_[position];
+  size_t samples_to_move = Size() - position;
+  memmove(insert_position_ptr + length, insert_position_ptr,
+          samples_to_move * sizeof(int16_t));
+  memcpy(insert_position_ptr, insert_this, length * sizeof(int16_t));
+  first_free_ix_ += length;
 }
 
 void AudioVector::InsertZerosAt(size_t length,
                                 size_t position) {
-  std::vector<int16_t>::iterator insert_position = vector_.begin();
+  Reserve(Size() + length);
   // Cap the position at the current vector length, to be sure the iterator
   // does not extend beyond the end of the vector.
-  position = std::min(vector_.size(), position);
-  insert_position += position;
-  // Insert zeros at the position. This makes the vector longer (and
-  // invalidates the iterator |insert_position|.
-  vector_.insert(insert_position, length, 0);
+  position = std::min(capacity_, position);
+  int16_t* insert_position_ptr = &array_[position];
+  size_t samples_to_move = Size() - position;
+  memmove(insert_position_ptr + length, insert_position_ptr,
+          samples_to_move * sizeof(int16_t));
+  memset(insert_position_ptr, 0, length * sizeof(int16_t));
+  first_free_ix_ += length;
 }
 
 void AudioVector::OverwriteAt(const int16_t* insert_this,
                               size_t length,
                               size_t position) {
-  // Cap the insert position at the current vector length.
-  position = std::min(vector_.size(), position);
-  // Extend the vector if needed. (It is valid to overwrite beyond the current
-  // end of the vector.)
-  if (position + length > vector_.size()) {
-    Extend(position + length - vector_.size());
-  }
-  for (size_t i = 0; i < length; ++i) {
-    vector_[position + i] = insert_this[i];
+  // Cap the insert position at the current array length.
+  position = std::min(Size(), position);
+  Reserve(position + length);
+  memcpy(&array_[position], insert_this, length * sizeof(int16_t));
+  if (position + length > Size()) {
+    // Array was expanded.
+    first_free_ix_ += position + length - Size();
   }
 }
 
@@ -135,7 +135,7 @@ void AudioVector::CrossFade(const AudioVector& append_this,
   int alpha = 16384;
   for (size_t i = 0; i < fade_length; ++i) {
     alpha -= alpha_step;
-    vector_[position + i] = (alpha * vector_[position + i] +
+    array_[position + i] = (alpha * array_[position + i] +
         (16384 - alpha) * append_this[i] + 8192) >> 14;
   }
   assert(alpha >= 0);  // Verify that the slope was correct.
@@ -146,11 +146,20 @@ void AudioVector::CrossFade(const AudioVector& append_this,
 }
 
 const int16_t& AudioVector::operator[](size_t index) const {
-  return vector_[index];
+  return array_[index];
 }
 
 int16_t& AudioVector::operator[](size_t index) {
-  return vector_[index];
+  return array_[index];
+}
+
+void AudioVector::Reserve(size_t n) {
+  if (capacity_ < n) {
+    scoped_ptr<int16_t[]> temp_array(new int16_t[n]);
+    memcpy(temp_array.get(), array_.get(), Size() * sizeof(int16_t));
+    array_.swap(temp_array);
+    capacity_ = n;
+  }
 }
 
 }  // namespace webrtc
