@@ -335,6 +335,13 @@ namespace RTCPUtility {
         PT_XR    = 207
     };
 
+    // Extended report blocks, RFC 3611.
+    enum RtcpXrBlockType {
+      kBtReceiverReferenceTime = 4,
+      kBtDlrr = 5,
+      kBtVoipMetric = 7
+    };
+
     bool RTCPParseCommonHeader( const uint8_t* ptrDataBegin,
                                 const uint8_t* ptrDataEnd,
                                 RTCPCommonHeader& parsedHeader);
@@ -413,11 +420,13 @@ namespace RTCPUtility {
         bool ParseIJ();
         bool ParseIJItem();
 
-        bool ParseXR();
-        bool ParseXRItem();
-        bool ParseXRReceiverReferenceTimeItem();
-        bool ParseXRDLRRReportBlockItem();
-        bool ParseXRVOIPMetricItem();
+        bool ParseXr();
+        bool ParseXrItem();
+        bool ParseXrReceiverReferenceTimeItem(int block_length_4bytes);
+        bool ParseXrDlrr(int block_length_4bytes);
+        bool ParseXrDlrrItem();
+        bool ParseXrVoipMetricItem(int block_length_4bytes);
+        bool ParseXrUnsupportedBlockType(int block_length_4bytes);
 
         bool ParseFBCommon(const RTCPCommonHeader& header);
         bool ParseNACKItem();

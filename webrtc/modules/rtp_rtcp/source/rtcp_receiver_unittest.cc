@@ -162,6 +162,17 @@ class PacketBuilder {
     }
   }
 
+  void AddXrUnknownBlock() {
+    Add8(6);             // Block type.
+    Add8(0);             // Reserved.
+    Add16(9);            // Length.
+    Add32(0);            // Receiver SSRC.
+    Add64(0, 0);         // Remaining fields (RFC 3611) are set to zero.
+    Add64(0, 0);
+    Add64(0, 0);
+    Add64(0, 0);
+  }
+
   void AddXrVoipBlock(uint32_t remote_ssrc, uint8_t loss) {
     Add8(7);             // Block type.
     Add8(0);             // Reserved.
@@ -450,6 +461,27 @@ TEST_F(RtcpReceiverTest, InjectXrPacketWithMultipleReportBlocks) {
   // The parser should note the DLRR report block item, but not flag the packet
   // since the RTT is not estimated.
   EXPECT_TRUE(rtcp_packet_info_.xr_dlrr_item);
+}
+
+TEST_F(RtcpReceiverTest, InjectXrPacketWithUnknownReportBlock) {
+  const uint8_t kLossRate = 123;
+  const uint32_t kSourceSsrc = 0x123456;
+  std::set<uint32_t> ssrcs;
+  ssrcs.insert(kSourceSsrc);
+  rtcp_receiver_->SetSsrcs(kSourceSsrc, ssrcs);
+  std::vector<uint32_t> remote_ssrcs;
+  remote_ssrcs.push_back(kSourceSsrc);
+
+  PacketBuilder p;
+  p.AddXrHeader(0x2345);
+  p.AddXrVoipBlock(kSourceSsrc, kLossRate);
+  p.AddXrUnknownBlock();
+  p.AddXrReceiverReferenceTimeBlock(0x10203, 0x40506);
+
+  EXPECT_EQ(0, InjectRtcpPacket(p.packet(), p.length()));
+  EXPECT_EQ(static_cast<unsigned int>(kRtcpXrReceiverReferenceTime +
+                                      kRtcpXrVoipMetric),
+            rtcp_packet_info_.rtcpPacketTypeFlags);
 }
 
 TEST(RtcpUtilityTest, MidNtp) {
