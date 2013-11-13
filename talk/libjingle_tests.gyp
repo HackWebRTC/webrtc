@@ -375,7 +375,7 @@
       ],
       # TODO(ronghuawu): Reenable below unit tests that require gmock.
       'sources': [
-        'app/webrtc/datachannel_unittest.cc',
+        # 'app/webrtc/datachannel_unittest.cc',
         'app/webrtc/dtmfsender_unittest.cc',
         'app/webrtc/jsepsessiondescription_unittest.cc',
         'app/webrtc/localaudiosource_unittest.cc',
