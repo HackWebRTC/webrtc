@@ -28,8 +28,15 @@
 #include "talk/app/webrtc/datachannel.h"
 #include "talk/app/webrtc/test/fakedatachannelprovider.h"
 #include "talk/base/gunit.h"
+#include "testing/base/public/gmock.h"
 
 using webrtc::DataChannel;
+
+class FakeDataChannelObserver : public webrtc::DataChannelObserver {
+ public:
+  MOCK_METHOD0(OnStateChange, void());
+  MOCK_METHOD1(OnMessage, void(const webrtc::DataBuffer& buffer));
+};
 
 class SctpDataChannelTest : public testing::Test {
  protected:
@@ -47,8 +54,14 @@ class SctpDataChannelTest : public testing::Test {
     provider_.set_ready_to_send(true);
   }
 
+  void AddObserver() {
+    observer_.reset(new FakeDataChannelObserver());
+    webrtc_data_channel_->RegisterObserver(observer_.get());
+  }
+
   webrtc::DataChannelInit init_;
   FakeDataChannelProvider provider_;
+  talk_base::scoped_ptr<FakeDataChannelObserver> observer_;
   talk_base::scoped_refptr<DataChannel> webrtc_data_channel_;
 };
 
@@ -147,4 +160,42 @@ TEST_F(SctpDataChannelTest, LateCreatedChannelTransitionToOpen) {
   EXPECT_EQ(webrtc::DataChannelInterface::kConnecting, dc->state());
   EXPECT_TRUE_WAIT(webrtc::DataChannelInterface::kOpen == dc->state(),
                    1000);
+}
+
+// Tests that messages are sent with the right ssrc.
+TEST_F(SctpDataChannelTest, SendDataSsrc) {
+  webrtc_data_channel_->SetSctpSid(1);
+  SetChannelReady();
+  webrtc::DataBuffer buffer("data");
+  EXPECT_TRUE(webrtc_data_channel_->Send(buffer));
+  EXPECT_EQ(1U, provider_.last_send_data_params().ssrc);
+}
+
+// Tests that the incoming messages with wrong ssrcs are rejected.
+TEST_F(SctpDataChannelTest, ReceiveDataWithInvalidSsrc) {
+  webrtc_data_channel_->SetSctpSid(1);
+  SetChannelReady();
+
+  AddObserver();
+  EXPECT_CALL(*(observer_.get()), OnMessage(testing::_)).Times(0);
+
+  cricket::ReceiveDataParams params;
+  params.ssrc = 0;
+  webrtc::DataBuffer buffer("abcd");
+  webrtc_data_channel_->OnDataReceived(NULL, params, buffer.data);
+}
+
+// Tests that the incoming messages with right ssrcs are acceted.
+TEST_F(SctpDataChannelTest, ReceiveDataWithValidSsrc) {
+  webrtc_data_channel_->SetSctpSid(1);
+  SetChannelReady();
+
+  AddObserver();
+  EXPECT_CALL(*(observer_.get()), OnMessage(testing::_)).Times(1);
+
+  cricket::ReceiveDataParams params;
+  params.ssrc = 1;
+  webrtc::DataBuffer buffer("abcd");
+
+  webrtc_data_channel_->OnDataReceived(NULL, params, buffer.data);
 }

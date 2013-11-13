@@ -30,6 +30,9 @@
 #include "talk/base/asyncudpsocket.h"
 #include "talk/base/asynctcpsocket.h"
 #include "talk/base/logging.h"
+#include "talk/base/nethelpers.h"
+#include "talk/base/physicalsocketserver.h"
+#include "talk/base/scoped_ptr.h"
 #include "talk/base/socketadapters.h"
 #include "talk/base/thread.h"
 #include "talk/p2p/base/asyncstuntcpsocket.h"
@@ -172,6 +175,10 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
   tcp_socket->SetOption(talk_base::Socket::OPT_NODELAY, 1);
 
   return tcp_socket;
+}
+
+AsyncResolverInterface* BasicPacketSocketFactory::CreateAsyncResolver() {
+  return new talk_base::AsyncResolver();
 }
 
 int BasicPacketSocketFactory::BindSocket(

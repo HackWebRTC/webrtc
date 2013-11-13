@@ -248,7 +248,9 @@ void DataChannel::OnDataEngineClose() {
 void DataChannel::OnDataReceived(cricket::DataChannel* channel,
                                  const cricket::ReceiveDataParams& params,
                                  const talk_base::Buffer& payload) {
-  if (params.ssrc != receive_ssrc_) {
+  uint32 expected_ssrc =
+      (data_channel_type_ == cricket::DCT_RTP) ? receive_ssrc_ : config_.id;
+  if (params.ssrc != expected_ssrc) {
     return;
   }
 
@@ -307,7 +309,6 @@ void DataChannel::UpdateState() {
       if (send_ssrc_set_ == receive_ssrc_set_) {
         if (data_channel_type_ == cricket::DCT_RTP && !connected_to_provider_) {
           connected_to_provider_ = provider_->ConnectDataChannel(this);
-          provider_->AddRtpDataStream(send_ssrc_, receive_ssrc_);
         }
         if (was_ever_writable_) {
           // TODO(jiayl): Do not transition to kOpen if we failed to send the
@@ -351,9 +352,7 @@ void DataChannel::DisconnectFromTransport() {
   provider_->DisconnectDataChannel(this);
   connected_to_provider_ = false;
 
-  if (data_channel_type_ == cricket::DCT_RTP) {
-    provider_->RemoveRtpDataStream(send_ssrc_, receive_ssrc_);
-  } else {
+  if (data_channel_type_ == cricket::DCT_SCTP) {
     provider_->RemoveSctpDataStream(config_.id);
   }
 }
@@ -429,11 +428,13 @@ bool DataChannel::InternalSendWithoutQueueing(
     const DataBuffer& buffer, cricket::SendDataResult* send_result) {
   cricket::SendDataParams send_params;
 
-  send_params.ssrc = send_ssrc_;
   if (data_channel_type_ == cricket::DCT_SCTP) {
     send_params.ordered = config_.ordered;
     send_params.max_rtx_count = config_.maxRetransmits;
     send_params.max_rtx_ms = config_.maxRetransmitTime;
+    send_params.ssrc = config_.id;
+  } else {
+    send_params.ssrc = send_ssrc_;
   }
   send_params.type = buffer.binary ? cricket::DMT_BINARY : cricket::DMT_TEXT;
 

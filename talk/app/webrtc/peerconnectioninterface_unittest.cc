@@ -37,6 +37,7 @@
 #include "talk/app/webrtc/videosource.h"
 #include "talk/base/gunit.h"
 #include "talk/base/scoped_ptr.h"
+#include "talk/base/ssladapter.h"
 #include "talk/base/sslstreamadapter.h"
 #include "talk/base/stringutils.h"
 #include "talk/base/thread.h"
@@ -227,10 +228,15 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
 class PeerConnectionInterfaceTest : public testing::Test {
  protected:
   virtual void SetUp() {
+    talk_base::InitializeSSL(NULL);
     pc_factory_ = webrtc::CreatePeerConnectionFactory(
         talk_base::Thread::Current(), talk_base::Thread::Current(), NULL, NULL,
         NULL);
     ASSERT_TRUE(pc_factory_.get() != NULL);
+  }
+
+  virtual void TearDown() {
+    talk_base::CleanupSSL();
   }
 
   void CreatePeerConnection() {
@@ -1070,9 +1076,7 @@ TEST_F(PeerConnectionInterfaceTest, TestRejectDataChannelInAnswer) {
 // Test that we can create a session description from an SDP string from
 // FireFox, use it as a remote session description, generate an answer and use
 // the answer as a local description.
-// TODO(mallinath): re-enable per
-// https://code.google.com/p/webrtc/issues/detail?id=2574
-TEST_F(PeerConnectionInterfaceTest, DISABLED_ReceiveFireFoxOffer) {
+TEST_F(PeerConnectionInterfaceTest, ReceiveFireFoxOffer) {
   MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
   FakeConstraints constraints;
   constraints.AddMandatory(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
@@ -1096,11 +1100,12 @@ TEST_F(PeerConnectionInterfaceTest, DISABLED_ReceiveFireFoxOffer) {
       cricket::GetFirstVideoContent(pc_->local_description()->description());
   ASSERT_TRUE(content != NULL);
   EXPECT_FALSE(content->rejected);
-
+#ifdef HAVE_SCTP
   content =
       cricket::GetFirstDataContent(pc_->local_description()->description());
   ASSERT_TRUE(content != NULL);
   EXPECT_TRUE(content->rejected);
+#endif
 }
 
 // Test that we can create an audio only offer and receive an answer with a

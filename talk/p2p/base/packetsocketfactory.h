@@ -33,6 +33,7 @@
 namespace talk_base {
 
 class AsyncPacketSocket;
+class AsyncResolverInterface;
 
 class PacketSocketFactory {
  public:
@@ -56,6 +57,8 @@ class PacketSocketFactory {
   virtual AsyncPacketSocket* CreateClientTcpSocket(
       const SocketAddress& local_address, const SocketAddress& remote_address,
       const ProxyInfo& proxy_info, const std::string& user_agent, int opts) = 0;
+
+  virtual AsyncResolverInterface* CreateAsyncResolver() = 0;
 
  private:
   DISALLOW_EVIL_CONSTRUCTORS(PacketSocketFactory);

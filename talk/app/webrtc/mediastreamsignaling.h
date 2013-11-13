@@ -384,8 +384,10 @@ class MediaStreamSignaling {
   int last_allocated_sctp_odd_sid_;
 
   typedef std::map<std::string, talk_base::scoped_refptr<DataChannel> >
-      DataChannels;
-  DataChannels data_channels_;
+      RtpDataChannels;
+  typedef std::vector<talk_base::scoped_refptr<DataChannel> > SctpDataChannels;
+  RtpDataChannels rtp_data_channels_;
+  SctpDataChannels sctp_data_channels_;
 };
 
 }  // namespace webrtc

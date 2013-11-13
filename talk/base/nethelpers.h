@@ -37,24 +37,29 @@
 
 #include <list>
 
+#include "talk/base/asyncresolverinterface.h"
 #include "talk/base/signalthread.h"
 #include "talk/base/sigslot.h"
 #include "talk/base/socketaddress.h"
 
 namespace talk_base {
 
+class AsyncResolverTest;
+
 // AsyncResolver will perform async DNS resolution, signaling the result on
-// the inherited SignalWorkDone when the operation completes.
-class AsyncResolver : public SignalThread {
+// the SignalDone from AsyncResolverInterface when the operation completes.
+class AsyncResolver : public SignalThread, public AsyncResolverInterface {
  public:
   AsyncResolver();
+  virtual ~AsyncResolver() {}
 
-  const SocketAddress& address() const { return addr_; }
+  virtual void Start(const SocketAddress& addr);
+  virtual bool GetResolvedAddress(int family, SocketAddress* addr) const;
+  virtual int GetError() const { return error_; }
+  virtual void Destroy(bool wait) { SignalThread::Destroy(wait); }
+
   const std::vector<IPAddress>& addresses() const { return addresses_; }
-  void set_address(const SocketAddress& addr) { addr_ = addr; }
-  int error() const { return error_; }
   void set_error(int error) { error_ = error; }
-
 
  protected:
   virtual void DoWork();

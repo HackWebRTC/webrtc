@@ -109,7 +109,23 @@ bool LateBindingSymbolTable::LoadFromPath(const char *dll_path) {
   }
 
 #ifdef POSIX
-  handle_ = dlopen(dll_path, RTLD_NOW);
+  handle_ = dlopen(dll_path,
+                   // RTLD_NOW front-loads symbol resolution so that errors are
+                   // caught early instead of causing a process abort later.
+                   // RTLD_LOCAL prevents other modules from automatically
+                   // seeing symbol definitions in the newly-loaded tree. This
+                   // is necessary for same-named symbols in different ABI
+                   // versions of the same library to not explode.
+                   RTLD_NOW|RTLD_LOCAL
+#ifdef LINUX
+                   // RTLD_DEEPBIND makes symbol dependencies in the
+                   // newly-loaded tree prefer to resolve to definitions within
+                   // that tree (the default on OS X). This is necessary for
+                   // same-named symbols in different ABI versions of the same
+                   // library to not explode.
+                   |RTLD_DEEPBIND
+#endif
+                   );  // NOLINT
 #else
 #error Not implemented
 #endif

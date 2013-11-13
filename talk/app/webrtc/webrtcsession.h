@@ -190,9 +190,7 @@ class WebRtcSession : public cricket::BaseSession,
                         cricket::SendDataResult* result) OVERRIDE;
   virtual bool ConnectDataChannel(DataChannel* webrtc_data_channel) OVERRIDE;
   virtual void DisconnectDataChannel(DataChannel* webrtc_data_channel) OVERRIDE;
-  virtual void AddRtpDataStream(uint32 send_ssrc, uint32 recv_ssrc) OVERRIDE;
   virtual void AddSctpDataStream(uint32 sid) OVERRIDE;
-  virtual void RemoveRtpDataStream(uint32 send_ssrc, uint32 recv_ssrc) OVERRIDE;
   virtual void RemoveSctpDataStream(uint32 sid) OVERRIDE;
   virtual bool ReadyToSendData() const OVERRIDE;
 

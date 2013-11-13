@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2011, Google Inc.
+ * Copyright 2013, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,44 +25,40 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_BASE_BASICPACKETSOCKETFACTORY_H_
-#define TALK_BASE_BASICPACKETSOCKETFACTORY_H_
+#ifndef TALK_BASE_ASYNCRESOLVERINTERFACE_H_
+#define TALK_BASE_ASYNCRESOLVERINTERFACE_H_
 
-#include "talk/p2p/base/packetsocketfactory.h"
+#include "talk/base/sigslot.h"
+#include "talk/base/socketaddress.h"
 
 namespace talk_base {
 
-class AsyncSocket;
-class SocketFactory;
-class Thread;
-
-class BasicPacketSocketFactory : public PacketSocketFactory {
+// This interface defines the methods to resolve the address asynchronously.
+class AsyncResolverInterface {
  public:
-  BasicPacketSocketFactory();
-  explicit BasicPacketSocketFactory(Thread* thread);
-  explicit BasicPacketSocketFactory(SocketFactory* socket_factory);
-  virtual ~BasicPacketSocketFactory();
+  AsyncResolverInterface() {}
+  virtual ~AsyncResolverInterface() {}
 
-  virtual AsyncPacketSocket* CreateUdpSocket(
-      const SocketAddress& local_address, int min_port, int max_port);
-  virtual AsyncPacketSocket* CreateServerTcpSocket(
-      const SocketAddress& local_address, int min_port, int max_port, int opts);
-  virtual AsyncPacketSocket* CreateClientTcpSocket(
-      const SocketAddress& local_address, const SocketAddress& remote_address,
-      const ProxyInfo& proxy_info, const std::string& user_agent, int opts);
+  // Start address resolve process.
+  virtual void Start(const SocketAddress& addr) = 0;
+  // Returns top most resolved address of |family|
+  virtual bool GetResolvedAddress(int family, SocketAddress* addr) const = 0;
+  // Returns error from resolver.
+  virtual int GetError() const = 0;
+  // Delete the resolver.
+  virtual void Destroy(bool wait) = 0;
+  // Returns top most resolved IPv4 address if address is resolved successfully.
+  // Otherwise returns address set in SetAddress.
+  SocketAddress address() const {
+    SocketAddress addr;
+    GetResolvedAddress(AF_INET, &addr);
+    return addr;
+  }
 
-  virtual AsyncResolverInterface* CreateAsyncResolver();
-
- private:
-  int BindSocket(AsyncSocket* socket, const SocketAddress& local_address,
-                 int min_port, int max_port);
-
-  SocketFactory* socket_factory();
-
-  Thread* thread_;
-  SocketFactory* socket_factory_;
+  // This signal is fired when address resolve process is completed.
+  sigslot::signal1<AsyncResolverInterface*> SignalDone;
 };
 
 }  // namespace talk_base
 
-#endif  // TALK_BASE_BASICPACKETSOCKETFACTORY_H_
+#endif

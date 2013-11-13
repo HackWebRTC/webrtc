@@ -3065,9 +3065,12 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
             static_cast<float>(ns.currentExpandRate) / (1 << 14);
       }
       if (engine()->voe()->sync()) {
+        int jitter_buffer_delay_ms = 0;
         int playout_buffer_delay_ms = 0;
         engine()->voe()->sync()->GetDelayEstimate(
-            *it, &rinfo.delay_estimate_ms, &playout_buffer_delay_ms);
+            *it, &jitter_buffer_delay_ms, &playout_buffer_delay_ms);
+        rinfo.delay_estimate_ms = jitter_buffer_delay_ms +
+            playout_buffer_delay_ms;
       }
 
       // Get speech level.

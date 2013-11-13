@@ -997,31 +997,23 @@ void WebRtcSession::DisconnectDataChannel(DataChannel* webrtc_data_channel) {
   data_channel_->SignalDataReceived.disconnect(webrtc_data_channel);
 }
 
-void WebRtcSession::AddRtpDataStream(uint32 send_ssrc, uint32 recv_ssrc) {
+void WebRtcSession::AddSctpDataStream(uint32 sid) {
   if (!data_channel_.get()) {
     LOG(LS_ERROR) << "AddDataChannelStreams called when data_channel_ is NULL.";
     return;
   }
-  data_channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(recv_ssrc));
-  data_channel_->AddSendStream(cricket::StreamParams::CreateLegacy(send_ssrc));
+  data_channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(sid));
+  data_channel_->AddSendStream(cricket::StreamParams::CreateLegacy(sid));
 }
 
-void WebRtcSession::AddSctpDataStream(uint32 sid) {
-  AddRtpDataStream(sid, sid);
-}
-
-void WebRtcSession::RemoveRtpDataStream(uint32 send_ssrc, uint32 recv_ssrc) {
+void WebRtcSession::RemoveSctpDataStream(uint32 sid) {
   if (!data_channel_.get()) {
     LOG(LS_ERROR) << "RemoveDataChannelStreams called when data_channel_ is "
                   << "NULL.";
     return;
   }
-  data_channel_->RemoveRecvStream(recv_ssrc);
-  data_channel_->RemoveSendStream(send_ssrc);
-}
-
-void WebRtcSession::RemoveSctpDataStream(uint32 sid) {
-  RemoveRtpDataStream(sid, sid);
+  data_channel_->RemoveRecvStream(sid);
+  data_channel_->RemoveSendStream(sid);
 }
 
 bool WebRtcSession::ReadyToSendData() const {

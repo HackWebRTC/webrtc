@@ -121,7 +121,7 @@ class PeerConnectionClient : public sigslot::has_slots<>,
 
   void OnClose(talk_base::AsyncSocket* socket, int err);
 
-  void OnResolveResult(talk_base::SignalThread *t);
+  void OnResolveResult(talk_base::AsyncResolverInterface* resolver);
 
   PeerConnectionClientObserver* callback_;
   talk_base::SocketAddress server_address_;

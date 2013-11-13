@@ -766,6 +766,9 @@ class FakePacketSocketFactory : public talk_base::PacketSocketFactory {
   void set_next_client_tcp_socket(AsyncPacketSocket* next_client_tcp_socket) {
     next_client_tcp_socket_ = next_client_tcp_socket;
   }
+  talk_base::AsyncResolverInterface* CreateAsyncResolver() {
+    return NULL;
+  }
 
  private:
   AsyncPacketSocket* next_udp_socket_;

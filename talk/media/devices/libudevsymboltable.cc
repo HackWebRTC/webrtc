@@ -42,7 +42,8 @@ namespace cricket {
 #undef LATE_BINDING_SYMBOL_TABLE_DLL_NAME
 
 bool IsWrongLibUDevAbiVersion(talk_base::DllHandle libudev_0) {
-  talk_base::DllHandle libudev_1 = dlopen("libudev.so.1", RTLD_NOW|RTLD_NOLOAD);
+  talk_base::DllHandle libudev_1 = dlopen("libudev.so.1",
+                                          RTLD_NOW|RTLD_LOCAL|RTLD_NOLOAD);
   bool unsafe_symlink = (libudev_0 == libudev_1);
   if (unsafe_symlink) {
     // .0 and .1 are distinct ABIs, so if they point to the same thing then one
@@ -55,7 +56,8 @@ bool IsWrongLibUDevAbiVersion(talk_base::DllHandle libudev_0) {
     // system library loaded the new ABI separately. This is not a problem for
     // LateBindingSymbolTable because its symbol look-ups are restricted to its
     // DllHandle, but having libudev.so.0 resident may cause problems for that
-    // system library because symbol names are not namespaced by DLL.
+    // system library because symbol names are not namespaced by DLL. (Although
+    // our use of RTLD_LOCAL should avoid most problems.)
     LOG(LS_WARNING)
         << "libudev.so.1 is resident but distinct from libudev.so.0";
   }

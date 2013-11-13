@@ -69,6 +69,15 @@ static const char kTurnPassword[] = "turnpassword";
 static const int kDefaultStunPort = 3478;
 static const int kDefaultStunTlsPort = 5349;
 static const char kTurnUsername[] = "test";
+static const char kStunIceServerWithIPv4Address[] = "stun:1.2.3.4:1234";
+static const char kStunIceServerWithIPv4AddressWithoutPort[] = "stun:1.2.3.4";
+static const char kStunIceServerWithIPv6Address[] = "stun:[2401:fa00:4::]:1234";
+static const char kStunIceServerWithIPv6AddressWithoutPort[] =
+    "stun:[2401:fa00:4::]";
+static const char kStunIceServerWithInvalidIPv6Address[] =
+    "stun:[2401:fa00:4:::3478";
+static const char kTurnIceServerWithIPv6Address[] =
+    "turn:test@[2401:fa00:4::]:1234";
 
 class NullPeerConnectionObserver : public PeerConnectionObserver {
  public:
@@ -262,6 +271,51 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingSecureTurnUrl) {
       "hello.com", kDefaultStunTlsPort, "test_no_transport",
       kTurnPassword, "tcp", true);
   turn_configs.push_back(turn2);
+  VerifyTurnConfigurations(turn_configs);
+}
+
+TEST_F(PeerConnectionFactoryTest, CreatePCUsingIPLiteralAddress) {
+  webrtc::PeerConnectionInterface::IceServers ice_servers;
+  webrtc::PeerConnectionInterface::IceServer ice_server;
+  ice_server.uri = kStunIceServerWithIPv4Address;
+  ice_servers.push_back(ice_server);
+  ice_server.uri = kStunIceServerWithIPv4AddressWithoutPort;
+  ice_servers.push_back(ice_server);
+  ice_server.uri = kStunIceServerWithIPv6Address;
+  ice_servers.push_back(ice_server);
+  ice_server.uri = kStunIceServerWithIPv6AddressWithoutPort;
+  ice_servers.push_back(ice_server);
+  ice_server.uri = kStunIceServerWithInvalidIPv6Address;
+  ice_servers.push_back(ice_server);
+  ice_server.uri = kTurnIceServerWithIPv6Address;
+  ice_server.password = kTurnPassword;
+  ice_servers.push_back(ice_server);
+  talk_base::scoped_refptr<PeerConnectionInterface> pc(
+      factory_->CreatePeerConnection(ice_servers, NULL,
+                                     allocator_factory_.get(),
+                                     NULL,
+                                     &observer_));
+  EXPECT_TRUE(pc.get() != NULL);
+  StunConfigurations stun_configs;
+  webrtc::PortAllocatorFactoryInterface::StunConfiguration stun1(
+      "1.2.3.4", 1234);
+  stun_configs.push_back(stun1);
+  webrtc::PortAllocatorFactoryInterface::StunConfiguration stun2(
+      "1.2.3.4", 3478);
+  stun_configs.push_back(stun2);  // Default port
+  webrtc::PortAllocatorFactoryInterface::StunConfiguration stun3(
+      "2401:fa00:4::", 1234);
+  stun_configs.push_back(stun3);
+  webrtc::PortAllocatorFactoryInterface::StunConfiguration stun4(
+      "2401:fa00:4::", 3478);
+  stun_configs.push_back(stun4);  // Default port
+  // Turn Address has the same host information as |stun3|.
+  stun_configs.push_back(stun3);
+  VerifyStunConfigurations(stun_configs);
+  TurnConfigurations turn_configs;
+  webrtc::PortAllocatorFactoryInterface::TurnConfiguration turn1(
+      "2401:fa00:4::", 1234, "test", kTurnPassword, "udp", false);
+  turn_configs.push_back(turn1);
   VerifyTurnConfigurations(turn_configs);
 }
 

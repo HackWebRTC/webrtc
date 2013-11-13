@@ -33,7 +33,7 @@ namespace talk_base {
 
 #define LATE_BINDING_SYMBOL_TABLE_CLASS_NAME LIBDBUS_GLIB_CLASS_NAME
 #define LATE_BINDING_SYMBOL_TABLE_SYMBOLS_LIST LIBDBUS_GLIB_SYMBOLS_LIST
-#define LATE_BINDING_SYMBOL_TABLE_DLL_NAME "libdbus-glib-1.so"
+#define LATE_BINDING_SYMBOL_TABLE_DLL_NAME "libdbus-glib-1.so.2"
 #include "talk/base/latebindingsymboltable.cc.def"
 
 }  // namespace talk_base

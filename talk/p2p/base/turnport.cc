@@ -399,22 +399,21 @@ void TurnPort::ResolveTurnAddress(const talk_base::SocketAddress& address) {
   if (resolver_)
     return;
 
-  resolver_ = new talk_base::AsyncResolver();
-  resolver_->SignalWorkDone.connect(this, &TurnPort::OnResolveResult);
-  resolver_->set_address(address);
-  resolver_->Start();
+  resolver_ = socket_factory()->CreateAsyncResolver();
+  resolver_->SignalDone.connect(this, &TurnPort::OnResolveResult);
+  resolver_->Start(address);
 }
 
-void TurnPort::OnResolveResult(talk_base::SignalThread* signal_thread) {
-  ASSERT(signal_thread == resolver_);
-  if (resolver_->error() != 0) {
+void TurnPort::OnResolveResult(talk_base::AsyncResolverInterface* resolver) {
+  ASSERT(resolver == resolver_);
+  if (resolver_->GetError() != 0 ||
+      !resolver_->GetResolvedAddress(ip().family(), &server_address_.address)) {
     LOG_J(LS_WARNING, this) << "TURN host lookup received error "
-                            << resolver_->error();
+                            << resolver_->GetError();
     OnAllocateError();
     return;
   }
 
-  server_address_.address = resolver_->address();
   PrepareAddress();
 }
 

@@ -27,7 +27,10 @@
 
 #include "talk/base/gunit.h"
 #include "talk/base/helpers.h"
+#include "talk/base/physicalsocketserver.h"
+#include "talk/base/scoped_ptr.h"
 #include "talk/base/socketaddress.h"
+#include "talk/base/virtualsocketserver.h"
 #include "talk/p2p/base/basicpacketsocketfactory.h"
 #include "talk/p2p/base/stunport.h"
 #include "talk/p2p/base/teststunserver.h"
@@ -48,7 +51,10 @@ class StunPortTest : public testing::Test,
                      public sigslot::has_slots<> {
  public:
   StunPortTest()
-      : network_("unittest", "unittest", talk_base::IPAddress(INADDR_ANY), 32),
+      : pss_(new talk_base::PhysicalSocketServer),
+        ss_(new talk_base::VirtualSocketServer(pss_.get())),
+        ss_scope_(ss_.get()),
+        network_("unittest", "unittest", talk_base::IPAddress(INADDR_ANY), 32),
         socket_factory_(talk_base::Thread::Current()),
         stun_server_(new cricket::TestStunServer(
           talk_base::Thread::Current(), kStunAddr)),
@@ -77,7 +83,8 @@ class StunPortTest : public testing::Test,
     ASSERT_TRUE(socket_ != NULL);
     socket_->SignalReadPacket.connect(this, &StunPortTest::OnReadPacket);
     stun_port_.reset(cricket::UDPPort::Create(
-        talk_base::Thread::Current(), &network_, socket_.get(),
+        talk_base::Thread::Current(), &socket_factory_,
+        &network_, socket_.get(),
         talk_base::CreateRandomString(16), talk_base::CreateRandomString(22)));
     ASSERT_TRUE(stun_port_ != NULL);
     stun_port_->set_server_addr(server_addr);
@@ -120,6 +127,9 @@ class StunPortTest : public testing::Test,
   }
 
  private:
+  talk_base::scoped_ptr<talk_base::PhysicalSocketServer> pss_;
+  talk_base::scoped_ptr<talk_base::VirtualSocketServer> ss_;
+  talk_base::SocketServerScope ss_scope_;
   talk_base::Network network_;
   talk_base::BasicPacketSocketFactory socket_factory_;
   talk_base::scoped_ptr<cricket::UDPPort> stun_port_;

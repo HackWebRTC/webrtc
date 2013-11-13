@@ -857,7 +857,8 @@ void AllocationSequence::CreateUDPPorts() {
   // is enabled completely.
   UDPPort* port = NULL;
   if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET) && udp_socket_) {
-    port = UDPPort::Create(session_->network_thread(), network_,
+    port = UDPPort::Create(session_->network_thread(),
+                           session_->socket_factory(), network_,
                            udp_socket_.get(),
                            session_->username(), session_->password());
   } else {

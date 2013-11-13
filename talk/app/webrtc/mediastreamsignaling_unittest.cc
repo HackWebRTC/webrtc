@@ -238,6 +238,23 @@ static bool CompareStreamCollections(StreamCollectionInterface* s1,
   return true;
 }
 
+class FakeDataChannelFactory : public webrtc::DataChannelFactory {
+ public:
+  FakeDataChannelFactory(FakeDataChannelProvider* provider,
+                         cricket::DataChannelType dct)
+      : provider_(provider), type_(dct) {}
+
+  virtual talk_base::scoped_refptr<webrtc::DataChannel> CreateDataChannel(
+      const std::string& label,
+      const webrtc::DataChannelInit* config) {
+    return webrtc::DataChannel::Create(provider_, type_, label, config);
+  }
+
+ private:
+  FakeDataChannelProvider* provider_;
+  cricket::DataChannelType type_;
+};
+
 class MockSignalingObserver : public webrtc::MediaStreamSignalingObserver {
  public:
   MockSignalingObserver()
@@ -418,6 +435,7 @@ class MediaStreamSignalingTest: public testing::Test {
                                     talk_base::Thread::Current()));
     signaling_.reset(new MediaStreamSignalingForTest(observer_.get(),
                                                      channel_manager_.get()));
+    data_channel_provider_.reset(new FakeDataChannelProvider());
   }
 
   // Create a collection of streams.
@@ -508,12 +526,25 @@ class MediaStreamSignalingTest: public testing::Test {
     ASSERT_TRUE(stream->AddTrack(video_track));
   }
 
+  talk_base::scoped_refptr<webrtc::DataChannel> AddDataChannel(
+      cricket::DataChannelType type, const std::string& label, int id) {
+    webrtc::DataChannelInit config;
+    config.id = id;
+    talk_base::scoped_refptr<webrtc::DataChannel> data_channel(
+        webrtc::DataChannel::Create(
+            data_channel_provider_.get(), type, label, &config));
+    EXPECT_TRUE(data_channel.get() != NULL);
+    EXPECT_TRUE(signaling_->AddDataChannel(data_channel.get()));
+    return data_channel;
+  }
+
   // ChannelManager is used by VideoSource, so it should be released after all
   // the video tracks. Put it as the first private variable should ensure that.
   talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;
   talk_base::scoped_refptr<StreamCollection> reference_collection_;
   talk_base::scoped_ptr<MockSignalingObserver> observer_;
   talk_base::scoped_ptr<MediaStreamSignalingForTest> signaling_;
+  talk_base::scoped_ptr<FakeDataChannelProvider> data_channel_provider_;
 };
 
 // Test that a MediaSessionOptions is created for an offer if
@@ -1029,27 +1060,46 @@ TEST_F(MediaStreamSignalingTest, SctpIdAllocationBasedOnRole) {
 
 // Verifies that SCTP ids of existing DataChannels are not reused.
 TEST_F(MediaStreamSignalingTest, SctpIdAllocationNoReuse) {
-  talk_base::scoped_ptr<FakeDataChannelProvider> provider(
-      new FakeDataChannelProvider());
-  // Creates a DataChannel with id 1.
-  webrtc::DataChannelInit config;
-  config.id = 1;
-  talk_base::scoped_refptr<webrtc::DataChannel> data_channel(
-      webrtc::DataChannel::Create(
-          provider.get(), cricket::DCT_SCTP, "a", &config));
-  ASSERT_TRUE(data_channel.get() != NULL);
-  ASSERT_TRUE(signaling_->AddDataChannel(data_channel.get()));
+  int old_id = 1;
+  AddDataChannel(cricket::DCT_SCTP, "a", old_id);
 
   int new_id;
   ASSERT_TRUE(signaling_->AllocateSctpSid(talk_base::SSL_SERVER, &new_id));
-  EXPECT_NE(config.id, new_id);
+  EXPECT_NE(old_id, new_id);
 
   // Creates a DataChannel with id 0.
-  config.id = 0;
-  data_channel = webrtc::DataChannel::Create(
-      provider.get(), cricket::DCT_SCTP, "b", &config);
-  ASSERT_TRUE(data_channel.get() != NULL);
-  ASSERT_TRUE(signaling_->AddDataChannel(data_channel.get()));
+  old_id = 0;
+  AddDataChannel(cricket::DCT_SCTP, "a", old_id);
   ASSERT_TRUE(signaling_->AllocateSctpSid(talk_base::SSL_CLIENT, &new_id));
-  EXPECT_NE(config.id, new_id);
+  EXPECT_NE(old_id, new_id);
+}
+
+// Verifies that duplicated label is not allowed for RTP data channel.
+TEST_F(MediaStreamSignalingTest, RtpDuplicatedLabelNotAllowed) {
+  AddDataChannel(cricket::DCT_RTP, "a", -1);
+
+  webrtc::DataChannelInit config;
+  talk_base::scoped_refptr<webrtc::DataChannel> data_channel =
+      webrtc::DataChannel::Create(
+          data_channel_provider_.get(), cricket::DCT_RTP, "a", &config);
+  ASSERT_TRUE(data_channel.get() != NULL);
+  EXPECT_FALSE(signaling_->AddDataChannel(data_channel.get()));
+}
+
+// Verifies that duplicated label is allowed for SCTP data channel.
+TEST_F(MediaStreamSignalingTest, SctpDuplicatedLabelAllowed) {
+  AddDataChannel(cricket::DCT_SCTP, "a", -1);
+  AddDataChannel(cricket::DCT_SCTP, "a", -1);
+}
+
+// Verifies that duplicated label from OPEN message is allowed.
+TEST_F(MediaStreamSignalingTest, DuplicatedLabelFromOpenMessageAllowed) {
+  AddDataChannel(cricket::DCT_SCTP, "a", -1);
+
+  FakeDataChannelFactory fake_factory(data_channel_provider_.get(),
+                                      cricket::DCT_SCTP);
+  signaling_->SetDataChannelFactory(&fake_factory);
+  webrtc::DataChannelInit config;
+  config.id = 0;
+  EXPECT_TRUE(signaling_->AddDataChannelFromOpenMessage("a", config));
 }

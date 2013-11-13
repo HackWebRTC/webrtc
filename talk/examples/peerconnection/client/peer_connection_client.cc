@@ -134,17 +134,16 @@ void PeerConnectionClient::Connect(const std::string& server, int port,
   if (server_address_.IsUnresolved()) {
     state_ = RESOLVING;
     resolver_ = new talk_base::AsyncResolver();
-    resolver_->SignalWorkDone.connect(this,
-                                      &PeerConnectionClient::OnResolveResult);
-    resolver_->set_address(server_address_);
-    resolver_->Start();
+    resolver_->SignalDone.connect(this, &PeerConnectionClient::OnResolveResult);
+    resolver_->Start(server_address_);
   } else {
     DoConnect();
   }
 }
 
-void PeerConnectionClient::OnResolveResult(talk_base::SignalThread *t) {
-  if (resolver_->error() != 0) {
+void PeerConnectionClient::OnResolveResult(
+    talk_base::AsyncResolverInterface* resolver) {
+  if (resolver_->GetError() != 0) {
     callback_->OnServerConnectionFailure();
     resolver_->Destroy(false);
     resolver_ = NULL;

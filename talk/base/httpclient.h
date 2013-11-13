@@ -175,7 +175,7 @@ protected:
   HttpError OnHeaderAvailable(bool ignore_data, bool chunked, size_t data_size);
 
   void StartDNSLookup();
-  void OnResolveResult(SignalThread* thread);
+  void OnResolveResult(AsyncResolverInterface* resolver);
 
   // IHttpNotify Interface
   virtual HttpError onHttpHeaderComplete(bool chunked, size_t& data_size);
@@ -199,7 +199,7 @@ private:
   scoped_ptr<HttpAuthContext> context_;
   DiskCache* cache_;
   CacheState cache_state_;
-  AsyncResolver* resolver_;
+  AsyncResolverInterface* resolver_;
 };
 
 //////////////////////////////////////////////////////////////////////

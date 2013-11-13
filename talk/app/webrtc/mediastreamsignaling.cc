@@ -208,10 +208,10 @@ void MediaStreamSignaling::TearDown() {
 bool MediaStreamSignaling::IsSctpSidAvailable(int sid) const {
   if (sid < 0 || sid > static_cast<int>(cricket::kMaxSctpSid))
     return false;
-  for (DataChannels::const_iterator iter = data_channels_.begin();
-       iter != data_channels_.end();
+  for (SctpDataChannels::const_iterator iter = sctp_data_channels_.begin();
+       iter != sctp_data_channels_.end();
        ++iter) {
-    if (iter->second->id() == sid) {
+    if ((*iter)->id() == sid) {
       return false;
     }
   }
@@ -240,17 +240,23 @@ bool MediaStreamSignaling::AllocateSctpSid(talk_base::SSLRole role, int* sid) {
 }
 
 bool MediaStreamSignaling::HasDataChannels() const {
-  return !data_channels_.empty();
+  return !rtp_data_channels_.empty() || !sctp_data_channels_.empty();
 }
 
 bool MediaStreamSignaling::AddDataChannel(DataChannel* data_channel) {
   ASSERT(data_channel != NULL);
-  if (data_channels_.find(data_channel->label()) != data_channels_.end()) {
-    LOG(LS_ERROR) << "DataChannel with label " << data_channel->label()
-                  << " already exists.";
-    return false;
+  if (data_channel->data_channel_type() == cricket::DCT_RTP) {
+    if (rtp_data_channels_.find(data_channel->label()) !=
+        rtp_data_channels_.end()) {
+      LOG(LS_ERROR) << "DataChannel with label " << data_channel->label()
+                    << " already exists.";
+      return false;
+    }
+    rtp_data_channels_[data_channel->label()] = data_channel;
+  } else {
+    ASSERT(data_channel->data_channel_type() == cricket::DCT_SCTP);
+    sctp_data_channels_.push_back(data_channel);
   }
-  data_channels_[data_channel->label()] = data_channel;
   return true;
 }
 
@@ -262,19 +268,13 @@ bool MediaStreamSignaling::AddDataChannelFromOpenMessage(
                     << "are not supported.";
     return false;
   }
-
-  if (data_channels_.find(label) != data_channels_.end()) {
-    LOG(LS_ERROR) << "DataChannel with label " << label
-                  << " already exists.";
-    return false;
-  }
   scoped_refptr<DataChannel> channel(
       data_channel_factory_->CreateDataChannel(label, &config));
   if (!channel.get()) {
     LOG(LS_ERROR) << "Failed to create DataChannel from the OPEN message.";
     return false;
   }
-  data_channels_[label] = channel;
+  sctp_data_channels_.push_back(channel);
   stream_observer_->OnAddDataChannel(channel);
   return true;
 }
@@ -464,10 +464,13 @@ void MediaStreamSignaling::OnVideoChannelClose() {
 }
 
 void MediaStreamSignaling::OnDataChannelClose() {
-  DataChannels::iterator it = data_channels_.begin();
-  for (; it != data_channels_.end(); ++it) {
-    DataChannel* data_channel = it->second;
-    data_channel->OnDataEngineClose();
+  RtpDataChannels::iterator it1 = rtp_data_channels_.begin();
+  for (; it1 != rtp_data_channels_.end(); ++it1) {
+    it1->second->OnDataEngineClose();
+  }
+  SctpDataChannels::iterator it2 = sctp_data_channels_.begin();
+  for (; it2 != sctp_data_channels_.end(); ++it2) {
+    (*it2)->OnDataEngineClose();
   }
 }
 
@@ -525,8 +528,8 @@ void MediaStreamSignaling::UpdateSessionOptions() {
   }
 
   // Check for data channels.
-  DataChannels::const_iterator data_channel_it = data_channels_.begin();
-  for (; data_channel_it != data_channels_.end(); ++data_channel_it) {
+  RtpDataChannels::const_iterator data_channel_it = rtp_data_channels_.begin();
+  for (; data_channel_it != rtp_data_channels_.end(); ++data_channel_it) {
     const DataChannel* channel = data_channel_it->second;
     if (channel->state() == DataChannel::kConnecting ||
         channel->state() == DataChannel::kOpen) {
@@ -843,8 +846,9 @@ void MediaStreamSignaling::UpdateLocalRtpDataChannels(
     // For MediaStreams, the sync_label is the MediaStream label and the
     // track label is the same as |streamid|.
     const std::string& channel_label = it->sync_label;
-    DataChannels::iterator data_channel_it = data_channels_.find(channel_label);
-    if (!VERIFY(data_channel_it != data_channels_.end())) {
+    RtpDataChannels::iterator data_channel_it =
+        rtp_data_channels_.find(channel_label);
+    if (!VERIFY(data_channel_it != rtp_data_channels_.end())) {
       continue;
     }
     // Set the SSRC the data channel should use for sending.
@@ -866,9 +870,9 @@ void MediaStreamSignaling::UpdateRemoteRtpDataChannels(
     // does not exist. Ex a=ssrc:444330170 mslabel:test1.
     std::string label = it->sync_label.empty() ?
         talk_base::ToString(it->first_ssrc()) : it->sync_label;
-    DataChannels::iterator data_channel_it =
-        data_channels_.find(label);
-    if (data_channel_it == data_channels_.end()) {
+    RtpDataChannels::iterator data_channel_it =
+        rtp_data_channels_.find(label);
+    if (data_channel_it == rtp_data_channels_.end()) {
       // This is a new data channel.
       CreateRemoteDataChannel(label, it->first_ssrc());
     } else {
@@ -882,8 +886,8 @@ void MediaStreamSignaling::UpdateRemoteRtpDataChannels(
 
 void MediaStreamSignaling::UpdateClosingDataChannels(
     const std::vector<std::string>& active_channels, bool is_local_update) {
-  DataChannels::iterator it = data_channels_.begin();
-  while (it != data_channels_.end()) {
+  RtpDataChannels::iterator it = rtp_data_channels_.begin();
+  while (it != rtp_data_channels_.end()) {
     DataChannel* data_channel = it->second;
     if (std::find(active_channels.begin(), active_channels.end(),
                   data_channel->label()) != active_channels.end()) {
@@ -897,8 +901,8 @@ void MediaStreamSignaling::UpdateClosingDataChannels(
       data_channel->RemotePeerRequestClose();
 
     if (data_channel->state() == DataChannel::kClosed) {
-      data_channels_.erase(it);
-      it = data_channels_.begin();
+      rtp_data_channels_.erase(it);
+      it = rtp_data_channels_.begin();
     } else {
       ++it;
     }
@@ -914,29 +918,32 @@ void MediaStreamSignaling::CreateRemoteDataChannel(const std::string& label,
   }
   scoped_refptr<DataChannel> channel(
       data_channel_factory_->CreateDataChannel(label, NULL));
+  if (!channel.get()) {
+    LOG(LS_WARNING) << "Remote peer requested a DataChannel but"
+                    << "CreateDataChannel failed.";
+    return;
+  }
   channel->SetReceiveSsrc(remote_ssrc);
   stream_observer_->OnAddDataChannel(channel);
 }
 
 void MediaStreamSignaling::OnDataTransportCreatedForSctp() {
-  DataChannels::iterator it = data_channels_.begin();
-  for (; it != data_channels_.end(); ++it) {
-    DataChannel* data_channel = it->second;
-    data_channel->OnTransportChannelCreated();
+  SctpDataChannels::iterator it = sctp_data_channels_.begin();
+  for (; it != sctp_data_channels_.end(); ++it) {
+    (*it)->OnTransportChannelCreated();
   }
 }
 
 void MediaStreamSignaling::OnDtlsRoleReadyForSctp(talk_base::SSLRole role) {
-  DataChannels::iterator it = data_channels_.begin();
-  for (; it != data_channels_.end(); ++it) {
-    DataChannel* data_channel = it->second;
-    if (data_channel->id() < 0) {
+  SctpDataChannels::iterator it = sctp_data_channels_.begin();
+  for (; it != sctp_data_channels_.end(); ++it) {
+    if ((*it)->id() < 0) {
       int sid;
       if (!AllocateSctpSid(role, &sid)) {
         LOG(LS_ERROR) << "Failed to allocate SCTP sid.";
         continue;
       }
-      data_channel->SetSctpSid(sid);
+      (*it)->SetSctpSid(sid);
     }
   }
 }

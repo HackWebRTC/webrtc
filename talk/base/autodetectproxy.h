@@ -42,7 +42,7 @@ namespace talk_base {
 // AutoDetectProxy
 ///////////////////////////////////////////////////////////////////////////////
 
-class AsyncResolver;
+class AsyncResolverInterface;
 class AsyncSocket;
 
 class AutoDetectProxy : public SignalThread {
@@ -72,6 +72,7 @@ class AutoDetectProxy : public SignalThread {
     return GetProxySettingsForUrl(agent, url, proxy, true);
   }
   enum { MSG_TIMEOUT = SignalThread::ST_MSG_FIRST_AVAILABLE,
+         MSG_UNRESOLVABLE,
          ADP_MSG_FIRST_AVAILABLE};
 
  protected:
@@ -87,14 +88,14 @@ class AutoDetectProxy : public SignalThread {
   void OnConnectEvent(AsyncSocket * socket);
   void OnReadEvent(AsyncSocket * socket);
   void OnCloseEvent(AsyncSocket * socket, int error);
-  void OnResolveResult(SignalThread* thread);
-  void DoConnect();
+  void OnResolveResult(AsyncResolverInterface* resolver);
+  bool DoConnect();
 
  private:
   std::string agent_;
   std::string server_url_;
   ProxyInfo proxy_;
-  AsyncResolver* resolver_;
+  AsyncResolverInterface* resolver_;
   AsyncSocket* socket_;
   int next_;
 

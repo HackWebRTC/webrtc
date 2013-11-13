@@ -64,29 +64,17 @@ class FakeDataChannelProvider : public webrtc::DataChannelProviderInterface {
     connected_channels_.erase(data_channel);
   }
 
-  virtual void AddRtpDataStream(uint32 send_ssrc, uint32 recv_ssrc) OVERRIDE {
-    if (!transport_available_) {
-      return;
-    }
-    send_ssrcs_.insert(send_ssrc);
-    recv_ssrcs_.insert(recv_ssrc);
-  }
-
   virtual void AddSctpDataStream(uint32 sid) OVERRIDE {
     if (!transport_available_) {
       return;
     }
-    AddRtpDataStream(sid, sid);
-  }
-
-  virtual void RemoveRtpDataStream(
-      uint32 send_ssrc, uint32 recv_ssrc) OVERRIDE {
-    send_ssrcs_.erase(send_ssrc);
-    recv_ssrcs_.erase(recv_ssrc);
+    send_ssrcs_.insert(sid);
+    recv_ssrcs_.insert(sid);
   }
 
   virtual void RemoveSctpDataStream(uint32 sid) OVERRIDE {
-    RemoveRtpDataStream(sid, sid);
+    send_ssrcs_.erase(sid);
+    recv_ssrcs_.erase(sid);
   }
 
   virtual bool ReadyToSendData() const OVERRIDE {

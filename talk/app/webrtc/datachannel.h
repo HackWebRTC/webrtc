@@ -53,12 +53,8 @@ class DataChannelProviderInterface {
   virtual bool ConnectDataChannel(DataChannel* data_channel) = 0;
   // Disconnects from the transport signals.
   virtual void DisconnectDataChannel(DataChannel* data_channel) = 0;
-  // Adds the send and receive stream ssrc to the transport for RTP.
-  virtual void AddRtpDataStream(uint32 send_ssrc, uint32 recv_ssrc) = 0;
   // Adds the data channel SID to the transport for SCTP.
   virtual void AddSctpDataStream(uint32 sid) = 0;
-  // Removes the data channel ssrcs from the transport for RTP.
-  virtual void RemoveRtpDataStream(uint32 send_ssrc, uint32 recv_ssrc) = 0;
   // Removes the data channel SID from the transport for SCTP.
   virtual void RemoveSctpDataStream(uint32 sid) = 0;
   // Returns true if the transport channel is ready to send data.
@@ -148,6 +144,10 @@ class DataChannel : public DataChannelInterface,
   // Set the SSRC this channel should use to receive data from the
   // underlying data engine.
   void SetReceiveSsrc(uint32 receive_ssrc);
+
+  cricket::DataChannelType data_channel_type() const {
+    return data_channel_type_;
+  }
 
  protected:
   DataChannel(DataChannelProviderInterface* client,

@@ -200,9 +200,8 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
     if (addr.IsUnresolved()) {
       LOG(LS_VERBOSE) << "Resolving addr in PhysicalSocket::Connect";
       resolver_ = new AsyncResolver();
-      resolver_->set_address(addr);
-      resolver_->SignalWorkDone.connect(this, &PhysicalSocket::OnResolveResult);
-      resolver_->Start();
+      resolver_->SignalDone.connect(this, &PhysicalSocket::OnResolveResult);
+      resolver_->Start(addr);
       state_ = CS_CONNECTING;
       return 0;
     }
@@ -476,12 +475,12 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
   SocketServer* socketserver() { return ss_; }
 
  protected:
-  void OnResolveResult(SignalThread* thread) {
-    if (thread != resolver_) {
+  void OnResolveResult(AsyncResolverInterface* resolver) {
+    if (resolver != resolver_) {
       return;
     }
 
-    int error = resolver_->error();
+    int error = resolver_->GetError();
     if (error == 0) {
       error = DoConnect(resolver_->address());
     } else {

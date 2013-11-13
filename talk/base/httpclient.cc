@@ -316,11 +316,11 @@ void HttpClient::reset() {
   base_.abort(HE_OPERATION_CANCELLED);
 }
 
-void HttpClient::OnResolveResult(SignalThread* thread) {
-  if (thread != resolver_) {
+void HttpClient::OnResolveResult(AsyncResolverInterface* resolver) {
+  if (resolver != resolver_) {
     return;
   }
-  int error = resolver_->error();
+  int error = resolver_->GetError();
   server_ = resolver_->address();
   resolver_->Destroy(false);
   resolver_ = NULL;
@@ -335,9 +335,8 @@ void HttpClient::OnResolveResult(SignalThread* thread) {
 
 void HttpClient::StartDNSLookup() {
   resolver_ = new AsyncResolver();
-  resolver_->set_address(server_);
-  resolver_->SignalWorkDone.connect(this, &HttpClient::OnResolveResult);
-  resolver_->Start();
+  resolver_->SignalDone.connect(this, &HttpClient::OnResolveResult);
+  resolver_->Start(server_);
 }
 
 void HttpClient::set_server(const SocketAddress& address) {

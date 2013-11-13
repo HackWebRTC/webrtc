@@ -123,7 +123,7 @@ class TurnPort : public Port {
   }
 
   void ResolveTurnAddress(const talk_base::SocketAddress& address);
-  void OnResolveResult(talk_base::SignalThread* signal_thread);
+  void OnResolveResult(talk_base::AsyncResolverInterface* resolver);
 
   void AddRequestAuthInfo(StunMessage* msg);
   void OnSendStunPacket(const void* data, size_t size, StunRequest* request);
@@ -157,7 +157,7 @@ class TurnPort : public Port {
 
   talk_base::scoped_ptr<talk_base::AsyncPacketSocket> socket_;
   SocketOptionsMap socket_options_;
-  talk_base::AsyncResolver* resolver_;
+  talk_base::AsyncResolverInterface* resolver_;
   int error_;
 
   StunRequestManager request_manager_;

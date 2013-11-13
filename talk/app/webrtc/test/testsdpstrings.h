@@ -75,6 +75,7 @@ static const char kFireFoxSdpOffer[] =
     "a=candidate:4 2 UDP 2113667326 10.0.254.2 58890 typ host\r\n"
     "a=candidate:5 2 UDP 1694302206 74.95.2.170 33611 typ srflx raddr"
     " 10.0.254.2 rport 58890\r\n"
+#ifdef HAVE_SCTP
     "m=application 45536 SCTP/DTLS 5000\r\n"
     "c=IN IP4 74.95.2.170\r\n"
     "a=fmtp:5000 protocol=webrtc-datachannel;streams=16\r\n"
@@ -88,7 +89,9 @@ static const char kFireFoxSdpOffer[] =
     "a=candidate:2 2 UDP 2112487678 172.16.131.1 59635 typ host\r\n"
     "a=candidate:4 2 UDP 2113667326 10.0.254.2 61232 typ host\r\n"
     "a=candidate:5 2 UDP 1694302206 74.95.2.170 45468 typ srflx raddr"
-    " 10.0.254.2 rport 61232\r\n";
+    " 10.0.254.2 rport 61232\r\n"
+#endif
+    ;
 
 // Audio SDP with a limited set of audio codecs.
 static const char kAudioSdp[] =

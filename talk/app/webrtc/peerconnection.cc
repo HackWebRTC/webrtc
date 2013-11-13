@@ -42,8 +42,6 @@ namespace {
 
 using webrtc::PeerConnectionInterface;
 
-// The min number of tokens in the ice uri.
-static const size_t kMinIceUriTokens = 2;
 // The min number of tokens must present in Turn host uri.
 // e.g. user@turn.example.org
 static const size_t kTurnHostTokensNum = 2;
@@ -103,6 +101,73 @@ struct GetStatsMsg : public talk_base::MessageData {
   talk_base::scoped_refptr<webrtc::StatsObserver> observer;
 };
 
+// |in_str| should be of format
+// stunURI       = scheme ":" stun-host [ ":" stun-port ]
+// scheme        = "stun" / "stuns"
+// stun-host     = IP-literal / IPv4address / reg-name
+// stun-port     = *DIGIT
+
+// draft-petithuguenin-behave-turn-uris-01
+// turnURI       = scheme ":" turn-host [ ":" turn-port ]
+// turn-host     = username@IP-literal / IPv4address / reg-name
+bool GetServiceTypeAndHostnameFromUri(const std::string& in_str,
+                                      ServiceType* service_type,
+                                      std::string* hostname) {
+  std::string::size_type colonpos = in_str.find(':');
+  if (colonpos == std::string::npos) {
+    return false;
+  }
+  std::string type = in_str.substr(0, colonpos);
+  for (size_t i = 0; i < ARRAY_SIZE(kValidIceServiceTypes); ++i) {
+    if (type.compare(kValidIceServiceTypes[i]) == 0) {
+      *service_type = static_cast<ServiceType>(i);
+      break;
+    }
+  }
+  if (*service_type == INVALID) {
+    return false;
+  }
+  *hostname = in_str.substr(colonpos + 1, std::string::npos);
+  return true;
+}
+
+// This method parses IPv6 and IPv4 literal strings, along with hostnames in
+// standard hostname:port format.
+// Consider following formats as correct.
+// |hostname:port|, |[IPV6 address]:port|, |IPv4 address|:port,
+// |hostname|, |[IPv6 address]|, |IPv4 address|
+bool ParseHostnameAndPortFromString(const std::string& in_str,
+                                    std::string* host,
+                                    int* port) {
+  if (in_str.at(0) == '[') {
+    std::string::size_type closebracket = in_str.rfind(']');
+    if (closebracket != std::string::npos) {
+      *host = in_str.substr(1, closebracket - 1);
+      std::string::size_type colonpos = in_str.find(':', closebracket);
+      if (std::string::npos != colonpos) {
+        if (!talk_base::FromString(
+            in_str.substr(closebracket + 2, std::string::npos), port)) {
+          return false;
+        }
+      }
+    } else {
+      return false;
+    }
+  } else {
+    std::string::size_type colonpos = in_str.find(':');
+    if (std::string::npos != colonpos) {
+      *host = in_str.substr(0, colonpos);
+      if (!talk_base::FromString(
+          in_str.substr(colonpos + 1, std::string::npos), port)) {
+        return false;
+      }
+    } else {
+      *host = in_str;
+    }
+  }
+  return true;
+}
+
 typedef webrtc::PortAllocatorFactoryInterface::StunConfiguration
     StunConfiguration;
 typedef webrtc::PortAllocatorFactoryInterface::TurnConfiguration
@@ -125,8 +190,6 @@ bool ParseIceServers(const PeerConnectionInterface::IceServers& configuration,
   // transport-ext = 1*unreserved
   // turn-host     = IP-literal / IPv4address / reg-name
   // turn-port     = *DIGIT
-
-  // TODO(ronghuawu): Handle IPV6 address
   for (size_t i = 0; i < configuration.size(); ++i) {
     webrtc::PeerConnectionInterface::IceServer server = configuration[i];
     if (server.uri.empty()) {
@@ -152,41 +215,40 @@ bool ParseIceServers(const PeerConnectionInterface::IceServers& configuration,
       }
     }
 
-    tokens.clear();
-    talk_base::tokenize(uri_without_transport, ':', &tokens);
-    if (tokens.size() < kMinIceUriTokens) {
-      LOG(WARNING) << "Invalid uri: " << server.uri;
-      continue;
-    }
+    std::string hoststring;
     ServiceType service_type = INVALID;
-    const std::string& type = tokens[0];
-    for (size_t i = 0; i < ARRAY_SIZE(kValidIceServiceTypes); ++i) {
-      if (type.compare(kValidIceServiceTypes[i]) == 0) {
-        service_type = static_cast<ServiceType>(i);
-        break;
-      }
-    }
-    if (service_type == INVALID) {
-      LOG(WARNING) << "Invalid service type: " << type;
+    if (!GetServiceTypeAndHostnameFromUri(uri_without_transport,
+                                         &service_type,
+                                         &hoststring)) {
+      LOG(LS_WARNING) << "Invalid transport parameter in ICE URI: "
+                      << uri_without_transport;
       continue;
     }
-    std::string address = tokens[1];
+
+    // Let's break hostname.
+    tokens.clear();
+    talk_base::tokenize(hoststring, '@', &tokens);
+    hoststring = tokens[0];
+    if (tokens.size() == kTurnHostTokensNum) {
+      server.username = talk_base::s_url_decode(tokens[0]);
+      hoststring = tokens[1];
+    }
+
     int port = kDefaultStunPort;
+    std::string address;
+    if (!ParseHostnameAndPortFromString(hoststring, &address, &port)) {
+      LOG(WARNING) << "Invalid Hostname format: " << uri_without_transport;
+      continue;
+    }
+
     if (service_type == TURNS) {
       port = kDefaultStunTlsPort;
       turn_transport_type = kTcpTransportType;
     }
 
-    if (tokens.size() > kMinIceUriTokens) {
-      if (!talk_base::FromString(tokens[2], &port)) {
-        LOG(LS_WARNING)  << "Failed to parse port string: " << tokens[2];
-        continue;
-      }
-
-      if (port <= 0 || port > 0xffff) {
-        LOG(WARNING) << "Invalid port: " << port;
-        continue;
-      }
+    if (port <= 0 || port > 0xffff) {
+      LOG(WARNING) << "Invalid port: " << port;
+      continue;
     }
 
     switch (service_type) {

@@ -125,10 +125,11 @@ class StunBindingRequest : public StunRequest {
 };
 
 UDPPort::UDPPort(talk_base::Thread* thread,
+                 talk_base::PacketSocketFactory* factory,
                  talk_base::Network* network,
                  talk_base::AsyncPacketSocket* socket,
                  const std::string& username, const std::string& password)
-    : Port(thread, network, socket->GetLocalAddress().ipaddr(),
+    : Port(thread, factory, network, socket->GetLocalAddress().ipaddr(),
            username, password),
       requests_(thread),
       socket_(socket),
@@ -139,10 +140,10 @@ UDPPort::UDPPort(talk_base::Thread* thread,
 }
 
 UDPPort::UDPPort(talk_base::Thread* thread,
-                   talk_base::PacketSocketFactory* factory,
-                   talk_base::Network* network,
-                   const talk_base::IPAddress& ip, int min_port, int max_port,
-                   const std::string& username, const std::string& password)
+                 talk_base::PacketSocketFactory* factory,
+                 talk_base::Network* network,
+                 const talk_base::IPAddress& ip, int min_port, int max_port,
+                 const std::string& username, const std::string& password)
     : Port(thread, LOCAL_PORT_TYPE, factory, network, ip, min_port, max_port,
            username, password),
       requests_(thread),
@@ -302,21 +303,21 @@ void UDPPort::ResolveStunAddress() {
   if (resolver_)
     return;
 
-  resolver_ = new talk_base::AsyncResolver();
-  resolver_->SignalWorkDone.connect(this, &UDPPort::OnResolveResult);
-  resolver_->set_address(server_addr_);
-  resolver_->Start();
+  resolver_ = socket_factory()->CreateAsyncResolver();
+  resolver_->SignalDone.connect(this, &UDPPort::OnResolveResult);
+  resolver_->Start(server_addr_);
 }
 
-void UDPPort::OnResolveResult(talk_base::SignalThread* t) {
-  ASSERT(t == resolver_);
-  if (resolver_->error() != 0) {
+void UDPPort::OnResolveResult(talk_base::AsyncResolverInterface* resolver) {
+  ASSERT(resolver == resolver_);
+  if (resolver_->GetError() != 0 ||
+      !resolver_->GetResolvedAddress(ip().family(), &server_addr_))  {
     LOG_J(LS_WARNING, this) << "StunPort: stun host lookup received error "
-                            << resolver_->error();
+                            << resolver_->GetError();
     OnStunBindingOrResolveRequestFailed();
+    return;
   }
 
-  server_addr_ = resolver_->address();
   SendStunBindingRequest();
 }
 

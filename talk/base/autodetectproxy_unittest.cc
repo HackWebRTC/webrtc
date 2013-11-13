@@ -37,9 +37,16 @@ static const char kPath[] = "/";
 static const char kHost[] = "relay.google.com";
 static const uint16 kPort = 443;
 static const bool kSecure = true;
-// Each of the two stages in AutoDetectProxy has a 2-second time-out, so 5
-// seconds total should be enough.
-static const int kTimeoutMs = 5000;
+// At most, AutoDetectProxy should take ~6 seconds. Each connect step is
+// allotted 2 seconds, with the initial resolution + connect given an
+// extra 2 seconds. The slowest case is:
+// 1) Resolution + HTTPS takes full 4 seconds and fails (but resolution
+// succeeds).
+// 2) SOCKS5 takes the full 2 seconds.
+// Socket creation time seems unbounded, and has been observed to take >1 second
+// on a linux machine under load. As such, we allow for 10 seconds for timeout,
+// though could still end up with some flakiness.
+static const int kTimeoutMs = 10000;
 
 class AutoDetectProxyTest : public testing::Test, public sigslot::has_slots<> {
  public:

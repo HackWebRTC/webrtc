@@ -162,11 +162,11 @@ static std::string ComputeFoundation(
   return talk_base::ToString<uint32>(talk_base::ComputeCrc32(ost.str()));
 }
 
-Port::Port(talk_base::Thread* thread, talk_base::Network* network,
-           const talk_base::IPAddress& ip,
+Port::Port(talk_base::Thread* thread, talk_base::PacketSocketFactory* factory,
+           talk_base::Network* network, const talk_base::IPAddress& ip,
            const std::string& username_fragment, const std::string& password)
     : thread_(thread),
-      factory_(NULL),
+      factory_(factory),
       send_retransmit_count_attribute_(false),
       network_(network),
       ip_(ip),

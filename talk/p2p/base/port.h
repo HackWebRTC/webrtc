@@ -118,8 +118,8 @@ struct ProtocolAddress {
 class Port : public PortInterface, public talk_base::MessageHandler,
              public sigslot::has_slots<> {
  public:
-  Port(talk_base::Thread* thread, talk_base::Network* network,
-       const talk_base::IPAddress& ip,
+  Port(talk_base::Thread* thread, talk_base::PacketSocketFactory* factory,
+       talk_base::Network* network, const talk_base::IPAddress& ip,
        const std::string& username_fragment, const std::string& password);
   Port(talk_base::Thread* thread, const std::string& type,
        talk_base::PacketSocketFactory* factory,

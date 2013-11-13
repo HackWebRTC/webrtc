@@ -87,7 +87,7 @@ void MacAsyncSocket::OnResolveResult(SignalThread* thread) {
   if (thread != resolver_) {
     return;
   }
-  int error = resolver_->error();
+  int error = resolver_->GetError();
   if (error == 0) {
     error = DoConnect(resolver_->address());
   } else {
@@ -109,10 +109,9 @@ int MacAsyncSocket::Connect(const SocketAddress& addr) {
   if (addr.IsUnresolved()) {
     LOG(LS_VERBOSE) << "Resolving addr in MacAsyncSocket::Connect";
     resolver_ = new AsyncResolver();
-    resolver_->set_address(addr);
     resolver_->SignalWorkDone.connect(this,
                                       &MacAsyncSocket::OnResolveResult);
-    resolver_->Start();
+    resolver_->Start(addr);
     state_ = CS_CONNECTING;
     return 0;
   }

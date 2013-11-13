@@ -257,6 +257,7 @@
         'base/asynchttprequest.cc',
         'base/asynchttprequest.h',
         'base/asyncpacketsocket.h',
+        'base/asyncresolverinterface.h',
         'base/asyncsocket.cc',
         'base/asyncsocket.h',
         'base/asynctcpsocket.cc',

@@ -3219,7 +3219,8 @@ bool WebRtcVideoMediaChannel::SetNackFec(int channel_id,
       LOG_RTCERR1(SetNACKStatus, channel_id);
       return false;
     }
-    LOG(LS_INFO) << "NACK enabled for channel " << channel_id;
+    std::string enabled = nack_enabled ? "enabled" : "disabled";
+    LOG(LS_INFO) << "NACK " << enabled << " for channel " << channel_id;
   }
   return true;
 }
