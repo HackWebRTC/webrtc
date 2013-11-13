@@ -36,16 +36,18 @@ namespace webrtc {
 namespace paced_sender {
 struct Packet {
   Packet(uint32_t ssrc, uint16_t seq_number, int64_t capture_time_ms,
-         int length_in_bytes)
+         int length_in_bytes, bool retransmission)
       : ssrc_(ssrc),
         sequence_number_(seq_number),
         capture_time_ms_(capture_time_ms),
-        bytes_(length_in_bytes) {
+        bytes_(length_in_bytes),
+        retransmission_(retransmission) {
   }
   uint32_t ssrc_;
   uint16_t sequence_number_;
   int64_t capture_time_ms_;
   int bytes_;
+  bool retransmission_;
 };
 
 // STL list style class which prevents duplicates in the list.
@@ -170,7 +172,8 @@ void PacedSender::UpdateBitrate(int target_bitrate_kbps,
 }
 
 bool PacedSender::SendPacket(Priority priority, uint32_t ssrc,
-    uint16_t sequence_number, int64_t capture_time_ms, int bytes) {
+    uint16_t sequence_number, int64_t capture_time_ms, int bytes,
+    bool retransmission) {
   CriticalSectionScoped cs(critsect_.get());
 
   if (!enabled_) {
@@ -198,7 +201,8 @@ bool PacedSender::SendPacket(Priority priority, uint32_t ssrc,
       break;
   }
   packet_list->push_back(paced_sender::Packet(ssrc, sequence_number,
-                                              capture_time_ms, bytes));
+                                              capture_time_ms, bytes,
+                                              retransmission));
   return false;
 }
 
@@ -253,14 +257,16 @@ int32_t PacedSender::Process() {
     uint32_t ssrc;
     uint16_t sequence_number;
     int64_t capture_time_ms;
+    bool retransmission;
     paced_sender::PacketList* packet_list;
     while (ShouldSendNextPacket(&packet_list)) {
       GetNextPacketFromList(packet_list, &ssrc, &sequence_number,
-                            &capture_time_ms);
+                            &capture_time_ms, &retransmission);
       critsect_->Leave();
 
       const bool success = callback_->TimeToSendPacket(ssrc, sequence_number,
-                                                       capture_time_ms);
+                                                       capture_time_ms,
+                                                       retransmission);
       critsect_->Enter();
       // If packet cannot be sent then keep it in packet list and exit early.
       // There's no need to send more packets.
@@ -339,12 +345,14 @@ bool PacedSender::ShouldSendNextPacket(paced_sender::PacketList** packet_list) {
 }
 
 void PacedSender::GetNextPacketFromList(paced_sender::PacketList* packets,
-    uint32_t* ssrc, uint16_t* sequence_number, int64_t* capture_time_ms) {
+    uint32_t* ssrc, uint16_t* sequence_number, int64_t* capture_time_ms,
+    bool* retransmission) {
   paced_sender::Packet packet = packets->front();
   UpdateMediaBytesSent(packet.bytes_);
   *sequence_number = packet.sequence_number_;
   *ssrc = packet.ssrc_;
   *capture_time_ms = packet.capture_time_ms_;
+  *retransmission = packet.retransmission_;
 }
 
 // MUST have critsect_ when calling.

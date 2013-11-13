@@ -181,7 +181,7 @@ class ViEEncoder
 
   // Called by PacedSender.
   bool TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
-                        int64_t capture_time_ms);
+                        int64_t capture_time_ms, bool retransmission);
   int TimeToSendPadding(int bytes);
  private:
   bool EncoderPaused() const;

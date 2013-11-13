@@ -126,8 +126,10 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
       const RTPFragmentationHeader* fragmentation = NULL,
       const RTPVideoHeader* rtp_video_hdr = NULL) OVERRIDE;
 
-  virtual bool TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
-                                int64_t capture_time_ms) OVERRIDE;
+  virtual bool TimeToSendPacket(uint32_t ssrc,
+                                uint16_t sequence_number,
+                                int64_t capture_time_ms,
+                                bool retransmission) OVERRIDE;
   // Returns the number of padding bytes actually sent, which can be more or
   // less than |bytes|.
   virtual int TimeToSendPadding(int bytes) OVERRIDE;

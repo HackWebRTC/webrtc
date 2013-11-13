@@ -532,16 +532,6 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
     return 0;
   }
 
-  uint8_t data_buffer_rtx[IP_PACKET_SIZE];
-  if (rtx_ != kRtxOff) {
-    BuildRtxPacket(data_buffer, &length, data_buffer_rtx);
-    buffer_to_send_ptr = data_buffer_rtx;
-  }
-
-  ModuleRTPUtility::RTPHeaderParser rtp_parser(data_buffer, length);
-  RTPHeader header;
-  rtp_parser.Parse(header);
-
   // Store the time when the packet was last sent or added to pacer.
   packet_history_->UpdateResendTime(packet_id);
 
@@ -554,6 +544,10 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
     // re-transmit and not new payload data.
   }
 
+
+  ModuleRTPUtility::RTPHeaderParser rtp_parser(data_buffer, length);
+  RTPHeader header;
+  rtp_parser.Parse(header);
   TRACE_EVENT_INSTANT2("webrtc_rtp", "RTPSender::ReSendPacket",
                        "timestamp", header.timestamp,
                        "seqnum", header.sequenceNumber);
@@ -563,11 +557,18 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
                                    header.ssrc,
                                    header.sequenceNumber,
                                    capture_time_ms,
-                                   length - header.headerLength)) {
+                                   length - header.headerLength,
+                                   true)) {
       // We can't send the packet right now.
       // We will be called when it is time.
       return length;
     }
+  }
+
+  uint8_t data_buffer_rtx[IP_PACKET_SIZE];
+  if (rtx_ != kRtxOff) {
+    BuildRtxPacket(data_buffer, &length, data_buffer_rtx);
+    buffer_to_send_ptr = data_buffer_rtx;
   }
 
   if (SendPacketToNetwork(buffer_to_send_ptr, length)) {
@@ -710,11 +711,13 @@ void RTPSender::UpdateNACKBitRate(const uint32_t bytes,
 
 // Called from pacer when we can send the packet.
 bool RTPSender::TimeToSendPacket(uint16_t sequence_number,
-                                 int64_t capture_time_ms) {
+                                 int64_t capture_time_ms,
+                                 bool retransmission) {
   StorageType type;
   uint16_t length = IP_PACKET_SIZE;
   uint8_t data_buffer[IP_PACKET_SIZE];
   int64_t stored_time_ms;
+  uint8_t *buffer_to_send_ptr = data_buffer;
 
   if (packet_history_ == NULL) {
     // Packet cannot be found. Allow sending to continue.
@@ -734,19 +737,26 @@ bool RTPSender::TimeToSendPacket(uint16_t sequence_number,
                        "timestamp", rtp_header.timestamp,
                        "seqnum", sequence_number);
 
+  uint8_t data_buffer_rtx[IP_PACKET_SIZE];
+  if (retransmission && rtx_ != kRtxOff) {
+    BuildRtxPacket(data_buffer, &length, data_buffer_rtx);
+    buffer_to_send_ptr = data_buffer_rtx;
+  }
+
   int64_t now_ms = clock_->TimeInMilliseconds();
   int64_t diff_ms = now_ms - capture_time_ms;
   bool updated_transmission_time_offset =
-      UpdateTransmissionTimeOffset(data_buffer, length, rtp_header, diff_ms);
+      UpdateTransmissionTimeOffset(buffer_to_send_ptr, length, rtp_header,
+                                   diff_ms);
   bool updated_abs_send_time =
-      UpdateAbsoluteSendTime(data_buffer, length, rtp_header, now_ms);
+      UpdateAbsoluteSendTime(buffer_to_send_ptr, length, rtp_header, now_ms);
   if (updated_transmission_time_offset || updated_abs_send_time) {
     // Update stored packet in case of receiving a re-transmission request.
-    packet_history_->ReplaceRTPHeader(data_buffer,
+    packet_history_->ReplaceRTPHeader(buffer_to_send_ptr,
                                       rtp_header.sequenceNumber,
                                       rtp_header.headerLength);
   }
-  return SendPacketToNetwork(data_buffer, length);
+  return SendPacketToNetwork(buffer_to_send_ptr, length);
 }
 
 int RTPSender::TimeToSendPadding(int bytes) {
@@ -822,7 +832,7 @@ int32_t RTPSender::SendToNetwork(
   if (paced_sender_ && storage != kDontStore) {
     if (!paced_sender_->SendPacket(priority, rtp_header.ssrc,
                                    rtp_header.sequenceNumber, capture_time_ms,
-                                   payload_length)) {
+                                   payload_length, false)) {
       // We can't send the packet right now.
       // We will be called when it is time.
       return 0;

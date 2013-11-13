@@ -82,7 +82,7 @@ class RtpSenderTest : public ::testing::Test {
       transport_(),
       kMarkerBit(true) {
     EXPECT_CALL(mock_paced_sender_,
-        SendPacket(_, _, _, _, _)).WillRepeatedly(testing::Return(true));
+        SendPacket(_, _, _, _, _, _)).WillRepeatedly(testing::Return(true));
   }
 
   virtual void SetUp() {
@@ -344,7 +344,7 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithHeaderExtensions) {
 
 TEST_F(RtpSenderTest, TrafficSmoothingWithExtensions) {
   EXPECT_CALL(mock_paced_sender_,
-              SendPacket(PacedSender::kNormalPriority, _, kSeqNum, _, _)).
+              SendPacket(PacedSender::kNormalPriority, _, kSeqNum, _, _, _)).
                   WillOnce(testing::Return(false));
 
   rtp_sender_->SetStorePacketsStatus(true, 10);
@@ -373,7 +373,7 @@ TEST_F(RtpSenderTest, TrafficSmoothingWithExtensions) {
   const int kStoredTimeInMs = 100;
   fake_clock_.AdvanceTimeMilliseconds(kStoredTimeInMs);
 
-  rtp_sender_->TimeToSendPacket(kSeqNum, capture_time_ms);
+  rtp_sender_->TimeToSendPacket(kSeqNum, capture_time_ms, false);
 
   // Process send bucket. Packet should now be sent.
   EXPECT_EQ(1, transport_.packets_sent_);
@@ -398,7 +398,7 @@ TEST_F(RtpSenderTest, TrafficSmoothingWithExtensions) {
 
 TEST_F(RtpSenderTest, TrafficSmoothingRetransmits) {
   EXPECT_CALL(mock_paced_sender_,
-              SendPacket(PacedSender::kNormalPriority, _, kSeqNum, _, _)).
+              SendPacket(PacedSender::kNormalPriority, _, kSeqNum, _, _, _)).
                   WillOnce(testing::Return(false));
 
   rtp_sender_->SetStorePacketsStatus(true, 10);
@@ -425,7 +425,7 @@ TEST_F(RtpSenderTest, TrafficSmoothingRetransmits) {
   EXPECT_EQ(0, transport_.packets_sent_);
 
   EXPECT_CALL(mock_paced_sender_,
-              SendPacket(PacedSender::kHighPriority, _, kSeqNum, _, _)).
+              SendPacket(PacedSender::kHighPriority, _, kSeqNum, _, _, _)).
                   WillOnce(testing::Return(false));
 
   const int kStoredTimeInMs = 100;
@@ -434,7 +434,7 @@ TEST_F(RtpSenderTest, TrafficSmoothingRetransmits) {
   EXPECT_EQ(rtp_length, rtp_sender_->ReSendPacket(kSeqNum));
   EXPECT_EQ(0, transport_.packets_sent_);
 
-  rtp_sender_->TimeToSendPacket(kSeqNum, capture_time_ms);
+  rtp_sender_->TimeToSendPacket(kSeqNum, capture_time_ms, false);
 
   // Process send bucket. Packet should now be sent.
   EXPECT_EQ(1, transport_.packets_sent_);

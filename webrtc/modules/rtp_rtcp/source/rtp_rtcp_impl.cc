@@ -660,7 +660,8 @@ int32_t ModuleRtpRtcpImpl::SendOutgoingData(
 
 bool ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
                                          uint16_t sequence_number,
-                                         int64_t capture_time_ms) {
+                                         int64_t capture_time_ms,
+                                         bool retransmission) {
   WEBRTC_TRACE(
     kTraceStream,
     kTraceRtpRtcp,
@@ -676,7 +677,8 @@ bool ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
   if (no_child_modules) {
     // Don't send from default module.
     if (SendingMedia() && ssrc == rtp_sender_.SSRC()) {
-      return rtp_sender_.TimeToSendPacket(sequence_number, capture_time_ms);
+      return rtp_sender_.TimeToSendPacket(sequence_number, capture_time_ms,
+                                          retransmission);
     }
   } else {
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
@@ -684,7 +686,8 @@ bool ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
     while (it != child_modules_.end()) {
       if ((*it)->SendingMedia() && ssrc == (*it)->rtp_sender_.SSRC()) {
         return (*it)->rtp_sender_.TimeToSendPacket(sequence_number,
-                                                   capture_time_ms);
+                                                   capture_time_ms,
+                                                   retransmission);
       }
       ++it;
     }

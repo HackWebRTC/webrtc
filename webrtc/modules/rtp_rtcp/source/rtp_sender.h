@@ -167,7 +167,8 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
                               const RTPHeader &rtp_header,
                               const int64_t now_ms) const;
 
-  bool TimeToSendPacket(uint16_t sequence_number, int64_t capture_time_ms);
+  bool TimeToSendPacket(uint16_t sequence_number, int64_t capture_time_ms,
+                        bool retransmission);
   int TimeToSendPadding(int bytes);
 
   // NACK.
