@@ -49,7 +49,7 @@ int ViEAutoTestMain::RunTests(int argc, char** argv) {
   int result;
   if (FLAGS_automated) {
     // Run in automated mode.
-#if defined(OS_LINUX)
+#if defined(WEBRTC_LINUX)
     // All window-related tests are disabled on Linux for now.
     // See https://code.google.com/p/chromium/issues/detail?id=318760
     return 0;
