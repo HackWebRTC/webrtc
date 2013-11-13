@@ -133,7 +133,10 @@ public:
     virtual int Terminate() = 0;
 
     // Creates a new channel and allocates the required resources for it.
+    // One can use |config| to configure the channel. Currently that is used for
+    // choosing between ACM1 and ACM2, when creating Audio Coding Module.
     virtual int CreateChannel() = 0;
+    virtual int CreateChannel(const Config& config) = 0;
 
     // Deletes an existing channel and releases the utilized resources.
     virtual int DeleteChannel(int channel) = 0;

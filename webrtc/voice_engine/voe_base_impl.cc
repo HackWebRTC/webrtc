@@ -10,6 +10,7 @@
 
 #include "webrtc/voice_engine/voe_base_impl.h"
 
+#include "webrtc/common.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
@@ -520,22 +521,34 @@ int VoEBaseImpl::Terminate()
     return TerminateInternal();
 }
 
-int VoEBaseImpl::CreateChannel()
+int VoEBaseImpl::CreateChannel() {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+               "CreateChannel()");
+  CriticalSectionScoped cs(_shared->crit_sec());
+  if (!_shared->statistics().Initialized()) {
+      _shared->SetLastError(VE_NOT_INITED, kTraceError);
+      return -1;
+  }
+
+  voe::ChannelOwner channel_owner = _shared->channel_manager().CreateChannel();
+
+  return InitializeChannel(&channel_owner);
+}
+
+int VoEBaseImpl::CreateChannel(const Config& config) {
+  CriticalSectionScoped cs(_shared->crit_sec());
+  if (!_shared->statistics().Initialized()) {
+      _shared->SetLastError(VE_NOT_INITED, kTraceError);
+      return -1;
+  }
+  voe::ChannelOwner channel_owner = _shared->channel_manager().CreateChannel(
+      config);
+  return InitializeChannel(&channel_owner);
+}
+
+int VoEBaseImpl::InitializeChannel(voe::ChannelOwner* channel_owner)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "CreateChannel()");
-    CriticalSectionScoped cs(_shared->crit_sec());
-
-    if (!_shared->statistics().Initialized())
-    {
-        _shared->SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-
-    voe::ChannelOwner channel_owner =
-        _shared->channel_manager().CreateChannel();
-
-    if (channel_owner.channel()->SetEngineInformation(
+    if (channel_owner->channel()->SetEngineInformation(
             _shared->statistics(),
             *_shared->output_mixer(),
             *_shared->transmit_mixer(),
@@ -549,23 +562,23 @@ int VoEBaseImpl::CreateChannel()
           "CreateChannel() failed to associate engine and channel."
           " Destroying channel.");
       _shared->channel_manager()
-          .DestroyChannel(channel_owner.channel()->ChannelId());
+          .DestroyChannel(channel_owner->channel()->ChannelId());
       return -1;
-    } else if (channel_owner.channel()->Init() != 0) {
+    } else if (channel_owner->channel()->Init() != 0) {
       _shared->SetLastError(
           VE_CHANNEL_NOT_CREATED,
           kTraceError,
           "CreateChannel() failed to initialize channel. Destroying"
           " channel.");
       _shared->channel_manager()
-          .DestroyChannel(channel_owner.channel()->ChannelId());
+          .DestroyChannel(channel_owner->channel()->ChannelId());
       return -1;
     }
 
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
         VoEId(_shared->instance_id(), -1),
-        "CreateChannel() => %d", channel_owner.channel()->ChannelId());
-    return channel_owner.channel()->ChannelId();
+        "CreateChannel() => %d", channel_owner->channel()->ChannelId());
+    return channel_owner->channel()->ChannelId();
 }
 
 int VoEBaseImpl::DeleteChannel(int channel)

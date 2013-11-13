@@ -39,6 +39,7 @@ public:
     virtual int Terminate();
 
     virtual int CreateChannel();
+    virtual int CreateChannel(const Config& config);
 
     virtual int DeleteChannel(int channel);
 
@@ -133,6 +134,10 @@ private:
 
     int32_t AddBuildInfo(char* str) const;
     int32_t AddVoEVersion(char* str) const;
+
+    // Initialize channel by setting Engine Information then initializing
+    // channel.
+    int InitializeChannel(voe::ChannelOwner* channel_owner);
 #ifdef WEBRTC_EXTERNAL_TRANSPORT
     int32_t AddExternalTransportBuild(char* str) const;
 #endif
