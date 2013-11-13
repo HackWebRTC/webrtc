@@ -49,6 +49,11 @@ int ViEAutoTestMain::RunTests(int argc, char** argv) {
   int result;
   if (FLAGS_automated) {
     // Run in automated mode.
+#if defined(OS_LINUX)
+    // All window-related tests are disabled on Linux for now.
+    // See https://code.google.com/p/chromium/issues/detail?id=318760
+    return 0;
+#endif
     result = RUN_ALL_TESTS();
   } else if (FLAGS_auto_custom_call) {
     // Run automated custom call.
