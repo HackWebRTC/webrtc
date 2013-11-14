@@ -82,14 +82,10 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
                                  bool overuse_detection,
                                  webrtc::VideoEngine* video_engine,
                                  const VideoSendStream::Config& config)
-    : transport_adapter_(transport), config_(config), external_codec_(NULL) {
-
-  if (config_.codec.numberOfSimulcastStreams > 0) {
-    assert(config_.rtp.ssrcs.size() == config_.codec.numberOfSimulcastStreams);
-  } else {
-    assert(config_.rtp.ssrcs.size() == 1);
-  }
-
+    : transport_adapter_(transport),
+      codec_lock_(CriticalSectionWrapper::CreateCriticalSection()),
+      config_(config),
+      external_codec_(NULL) {
   video_engine_base_ = ViEBase::GetInterface(video_engine);
   video_engine_base_->CreateChannel(channel_);
   assert(channel_ != -1);
@@ -97,6 +93,7 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
   rtp_rtcp_ = ViERTP_RTCP::GetInterface(video_engine);
   assert(rtp_rtcp_ != NULL);
 
+  assert(config_.rtp.ssrcs.size() > 0);
   if (config_.rtp.ssrcs.size() == 1) {
     rtp_rtcp_->SetLocalSSRC(channel_, config_.rtp.ssrcs[0]);
   } else {
@@ -186,9 +183,8 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
   }
 
   codec_ = ViECodec::GetInterface(video_engine);
-  if (codec_->SetSendCodec(channel_, config_.codec) != 0) {
+  if (!SetCodec(config_.codec))
     abort();
-  }
 
   if (overuse_detection) {
     overuse_observer_.reset(
@@ -275,15 +271,21 @@ void VideoSendStream::StopSend() {
     abort();
 }
 
-bool VideoSendStream::SetTargetBitrate(
-    int min_bitrate,
-    int max_bitrate,
-    const std::vector<SimulcastStream>& streams) {
-  return false;
+bool VideoSendStream::SetCodec(const VideoCodec& codec) {
+  if (codec.numberOfSimulcastStreams > 0)
+    assert(config_.rtp.ssrcs.size() >= codec.numberOfSimulcastStreams);
+
+  CriticalSectionScoped crit(codec_lock_.get());
+  if (codec_->SetSendCodec(channel_, codec) != 0)
+    return false;
+
+  config_.codec = codec;
+  return true;
 }
 
-void VideoSendStream::GetSendCodec(VideoCodec* send_codec) {
-  *send_codec = config_.codec;
+VideoCodec VideoSendStream::GetCodec() {
+  CriticalSectionScoped crit(codec_lock_.get());
+  return config_.codec;
 }
 
 bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {

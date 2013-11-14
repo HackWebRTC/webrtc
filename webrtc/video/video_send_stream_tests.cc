@@ -38,7 +38,9 @@ class SendTransportObserver : public test::NullTransport {
         send_test_complete_(EventWrapper::Create()),
         timeout_ms_(timeout_ms) {}
 
-  EventTypeWrapper Wait() { return send_test_complete_->Wait(timeout_ms_); }
+  virtual EventTypeWrapper Wait() {
+    return send_test_complete_->Wait(timeout_ms_);
+  }
 
   virtual void Stop() {}
 
@@ -58,19 +60,19 @@ class VideoSendStreamTest : public ::testing::Test {
   void RunSendTest(Call* call,
                    const VideoSendStream::Config& config,
                    SendTransportObserver* observer) {
-    VideoSendStream* send_stream = call->CreateSendStream(config);
+    send_stream_ = call->CreateSendStream(config);
     scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer(
         test::FrameGeneratorCapturer::Create(
-            send_stream->Input(), 320, 240, 30, Clock::GetRealTimeClock()));
-    send_stream->StartSend();
+            send_stream_->Input(), 320, 240, 30, Clock::GetRealTimeClock()));
+    send_stream_->StartSend();
     frame_generator_capturer->Start();
 
     EXPECT_EQ(kEventSignaled, observer->Wait());
 
     observer->Stop();
     frame_generator_capturer->Stop();
-    send_stream->StopSend();
-    call->DestroySendStream(send_stream);
+    send_stream_->StopSend();
+    call->DestroySendStream(send_stream_);
   }
 
   VideoSendStream::Config GetSendTestConfig(Call* call) {
@@ -87,6 +89,7 @@ class VideoSendStreamTest : public ::testing::Test {
   static const uint32_t kSendSsrc;
   static const uint32_t kSendRtxSsrc;
 
+  VideoSendStream* send_stream_;
   test::FakeEncoder fake_encoder_;
 };
 
@@ -487,6 +490,71 @@ TEST_F(VideoSendStreamTest, MaxPacketSize) {
 
   VideoSendStream::Config send_config = GetSendTestConfig(call.get());
   send_config.rtp.max_packet_size = kMaxPacketSize;
+
+  RunSendTest(call.get(), send_config, &observer);
+}
+
+TEST_F(VideoSendStreamTest, CanChangeSendCodec) {
+  static const uint8_t kFirstPayloadType = 121;
+  static const uint8_t kSecondPayloadType = 122;
+
+  class CodecChangeObserver : public SendTransportObserver {
+   public:
+    CodecChangeObserver(VideoSendStream** send_stream_ptr)
+        : SendTransportObserver(30 * 1000),
+          received_first_payload_(EventWrapper::Create()),
+          send_stream_ptr_(send_stream_ptr) {}
+
+    virtual bool SendRTP(const uint8_t* packet, size_t length) OVERRIDE {
+      RTPHeader header;
+      EXPECT_TRUE(
+          rtp_header_parser_->Parse(packet, static_cast<int>(length), &header));
+
+      if (header.payloadType == kFirstPayloadType) {
+        received_first_payload_->Set();
+      } else if (header.payloadType == kSecondPayloadType) {
+        send_test_complete_->Set();
+      }
+
+      return true;
+    }
+
+    virtual EventTypeWrapper Wait() OVERRIDE {
+      EXPECT_EQ(kEventSignaled, received_first_payload_->Wait(30 * 1000))
+          << "Timed out while waiting for first payload.";
+
+      EXPECT_TRUE((*send_stream_ptr_)->SetCodec(second_codec_));
+
+      EXPECT_EQ(kEventSignaled, SendTransportObserver::Wait())
+          << "Timed out while waiting for second payload type.";
+
+      // Return OK regardless, prevents double error reporting.
+      return kEventSignaled;
+    }
+
+    void SetSecondCodec(const VideoCodec& codec) {
+      second_codec_ = codec;
+    }
+
+   private:
+    scoped_ptr<EventWrapper> received_first_payload_;
+    VideoSendStream** send_stream_ptr_;
+    VideoCodec second_codec_;
+  } observer(&send_stream_);
+
+  Call::Config call_config(&observer);
+  scoped_ptr<Call> call(Call::Create(call_config));
+
+  std::vector<VideoCodec> codecs = call->GetVideoCodecs();
+  ASSERT_GE(codecs.size(), 2u)
+      << "Test needs at least 2 separate codecs to work.";
+  codecs[0].plType = kFirstPayloadType;
+  codecs[1].plType = kSecondPayloadType;
+  observer.SetSecondCodec(codecs[1]);
+
+  VideoSendStream::Config send_config = GetSendTestConfig(call.get());
+  send_config.codec = codecs[0];
+  send_config.encoder = NULL;
 
   RunSendTest(call.get(), send_config, &observer);
 }

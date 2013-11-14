@@ -41,8 +41,7 @@ class Call : public webrtc::Call, public PacketReceiver {
   virtual VideoSendStream* CreateSendStream(
       const VideoSendStream::Config& config) OVERRIDE;
 
-  virtual SendStreamState* DestroySendStream(
-      webrtc::VideoSendStream* send_stream) OVERRIDE;
+  virtual void DestroySendStream(webrtc::VideoSendStream* send_stream) OVERRIDE;
 
   virtual VideoReceiveStream::Config GetDefaultReceiveConfig() OVERRIDE;
 
@@ -228,7 +227,7 @@ VideoSendStream* Call::CreateSendStream(const VideoSendStream::Config& config) {
   return send_stream;
 }
 
-SendStreamState* Call::DestroySendStream(webrtc::VideoSendStream* send_stream) {
+void Call::DestroySendStream(webrtc::VideoSendStream* send_stream) {
   assert(send_stream != NULL);
 
   VideoSendStream* send_stream_impl = NULL;
@@ -248,9 +247,6 @@ SendStreamState* Call::DestroySendStream(webrtc::VideoSendStream* send_stream) {
 
   assert(send_stream_impl != NULL);
   delete send_stream_impl;
-
-  // TODO(pbos): Return its previous state
-  return NULL;
 }
 
 VideoReceiveStream::Config Call::GetDefaultReceiveConfig() {

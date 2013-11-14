@@ -23,8 +23,6 @@ namespace webrtc {
 
 class VideoEncoder;
 
-struct SendStreamState;
-
 // Class to deliver captured frame to the video send stream.
 class VideoSendStreamInput {
  public:
@@ -81,7 +79,6 @@ class VideoSendStream {
           target_delay_ms(0),
           pacing(false),
           stats_callback(NULL),
-          start_state(NULL),
           auto_mute(false) {}
     VideoCodec codec;
 
@@ -145,9 +142,6 @@ class VideoSendStream {
     // Callback for periodically receiving send stats.
     StatsCallback* stats_callback;
 
-    // Set to resume a previously destroyed send stream.
-    SendStreamState* start_state;
-
     // True if video should be muted when video goes under the minimum video
     // bitrate. Unless muted, video will be sent at a bitrate higher than
     // estimated available.
@@ -161,12 +155,8 @@ class VideoSendStream {
   virtual void StartSend() = 0;
   virtual void StopSend() = 0;
 
-  // TODO(mflodman) Change VideoCodec struct and use here.
-  virtual bool SetTargetBitrate(
-      int min_bitrate, int max_bitrate,
-      const std::vector<SimulcastStream>& streams) = 0;
-
-  virtual void GetSendCodec(VideoCodec* send_codec) = 0;
+  virtual bool SetCodec(const VideoCodec& codec) = 0;
+  virtual VideoCodec GetCodec() = 0;
 
  protected:
   virtual ~VideoSendStream() {}
