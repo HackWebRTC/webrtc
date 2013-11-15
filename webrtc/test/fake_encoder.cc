@@ -57,7 +57,6 @@ void FakeEncoder::SetCodecSettings(VideoCodec* codec,
 
   codec->codecType = kVideoCodecGeneric;
   strcpy(codec->plName, "FAKE");
-  codec->plType = 125;
 }
 
 int32_t FakeEncoder::InitEncode(const VideoCodec* config,

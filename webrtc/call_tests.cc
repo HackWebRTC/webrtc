@@ -31,6 +31,7 @@ namespace webrtc {
 
 static unsigned int kDefaultTimeoutMs = 30 * 1000;
 static unsigned int kLongTimeoutMs = 120 * 1000;
+static const uint8_t kSendPayloadType = 125;
 
 class CallTest : public ::testing::Test {
  public:
@@ -59,6 +60,7 @@ class CallTest : public ::testing::Test {
     send_config_.encoder = &fake_encoder_;
     send_config_.internal_source = false;
     test::FakeEncoder::SetCodecSettings(&send_config_.codec, 1);
+    send_config_.codec.plType = kSendPayloadType;
 
     receive_config_.codecs.clear();
     receive_config_.codecs.push_back(send_config_.codec);

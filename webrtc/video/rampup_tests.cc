@@ -152,6 +152,7 @@ TEST_P(RampUpTest, RampUpWithPadding) {
   send_config.encoder = &encoder;
   send_config.internal_source = false;
   test::FakeEncoder::SetCodecSettings(&send_config.codec, 3);
+  send_config.codec.plType = 125;
   send_config.pacing = GetParam();
   send_config.rtp.extensions.push_back(
       RtpExtension("toffset", kTOffsetExtensionId));

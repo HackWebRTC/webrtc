@@ -13,6 +13,7 @@
 #include <map>
 #include <vector>
 
+#include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_send_stream.h"
 
@@ -40,12 +41,15 @@ class RtpRtcpObserver {
     receive_transport_.StopSending();
   }
 
-  EventTypeWrapper Wait() { return observation_complete_->Wait(timeout_ms_); }
+  virtual EventTypeWrapper Wait() {
+    return observation_complete_->Wait(timeout_ms_);
+  }
 
  protected:
   RtpRtcpObserver(unsigned int event_timeout_ms)
       : lock_(CriticalSectionWrapper::CreateCriticalSection()),
         observation_complete_(EventWrapper::Create()),
+        parser_(RtpHeaderParser::Create()),
         send_transport_(lock_.get(),
                         this,
                         &RtpRtcpObserver::OnSendRtp,
@@ -135,6 +139,7 @@ class RtpRtcpObserver {
  protected:
   scoped_ptr<CriticalSectionWrapper> lock_;
   scoped_ptr<EventWrapper> observation_complete_;
+  scoped_ptr<RtpHeaderParser> parser_;
 
  private:
   PacketTransport send_transport_, receive_transport_;

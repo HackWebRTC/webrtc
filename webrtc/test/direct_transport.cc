@@ -62,7 +62,8 @@ DirectTransport::Packet::Packet(const uint8_t* data, size_t length)
 
 void DirectTransport::QueuePacket(const uint8_t* data, size_t length) {
   CriticalSectionScoped crit(lock_.get());
-  EXPECT_TRUE(receiver_ != NULL);
+  if (receiver_ == NULL)
+    return;
   packet_queue_.push_back(Packet(data, length));
   packet_event_->Set();
 }
