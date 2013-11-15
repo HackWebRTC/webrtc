@@ -60,9 +60,9 @@ RTPSender::RTPSender(const int32_t id, const bool audio, Clock *clock,
       packets_sent_(0), payload_bytes_sent_(0), start_time_stamp_forced_(false),
       start_time_stamp_(0), ssrc_db_(*SSRCDatabase::GetSSRCDatabase()),
       remote_ssrc_(0), sequence_number_forced_(false), ssrc_forced_(false),
-      timestamp_(0), capture_time_ms_(0), last_packet_marker_bit_(false),
-      num_csrcs_(0), csrcs_(), include_csrcs_(true),
-      rtx_(kRtxOff), payload_type_rtx_(-1) {
+      timestamp_(0), capture_time_ms_(0), last_timestamp_time_ms_(0),
+      last_packet_marker_bit_(false), num_csrcs_(0), csrcs_(),
+      include_csrcs_(true), rtx_(kRtxOff), payload_type_rtx_(-1) {
   memset(nack_byte_count_times_, 0, sizeof(nack_byte_count_times_));
   memset(nack_byte_count_, 0, sizeof(nack_byte_count_));
   memset(csrcs_, 0, sizeof(csrcs_));
@@ -419,6 +419,7 @@ bool RTPSender::SendPaddingAccordingToBitrate(
     timestamp = start_time_stamp_ + capture_timestamp;
     timestamp_ = timestamp;
     capture_time_ms_ = capture_time_ms;
+    last_timestamp_time_ms_ = clock_->TimeInMilliseconds();
   }
   int bytes_sent = SendPadData(payload_type, timestamp, capture_time_ms,
                                bytes, kDontRetransmit, false, false);
@@ -771,6 +772,12 @@ int RTPSender::TimeToSendPadding(int bytes) {
     payload_type = (rtx_ == kRtxOff) ? payload_type_ : payload_type_rtx_;
     timestamp = timestamp_;
     capture_time_ms = capture_time_ms_;
+    if (last_timestamp_time_ms_ > 0) {
+      timestamp +=
+          (clock_->TimeInMilliseconds() - last_timestamp_time_ms_) * 90;
+      capture_time_ms +=
+          (clock_->TimeInMilliseconds() - last_timestamp_time_ms_);
+    }
   }
   return SendPadData(payload_type, timestamp, capture_time_ms, bytes,
                      kDontStore, true, true);
@@ -941,6 +948,7 @@ int32_t RTPSender::BuildRTPheader(
     // timing.
     timestamp_++;
   }
+  last_timestamp_time_ms_ = clock_->TimeInMilliseconds();
   uint32_t sequence_number = sequence_number_++;
   capture_time_ms_ = capture_time_ms;
   last_packet_marker_bit_ = marker_bit;

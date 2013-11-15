@@ -331,6 +331,7 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
   uint32_t ssrc_;
   uint32_t timestamp_;
   int64_t capture_time_ms_;
+  int64_t last_timestamp_time_ms_;
   bool last_packet_marker_bit_;
   uint8_t num_csrcs_;
   uint32_t csrcs_[kRtpCsrcSize];

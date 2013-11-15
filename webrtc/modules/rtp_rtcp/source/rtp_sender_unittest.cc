@@ -15,6 +15,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/modules/pacing/include/mock/mock_paced_sender.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_video_generic.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
@@ -50,6 +51,10 @@ uint16_t GetPayloadDataLength(const RTPHeader& rtp_header,
   uint16_t length = packet_length - rtp_header.headerLength -
       rtp_header.paddingLength;
   return static_cast<uint16_t>(length);
+}
+
+uint64_t ConvertMsToAbsSendTime(int64_t time_ms) {
+  return 0x00fffffful & ((time_ms << 18) / 1000);
 }
 
 class LoopbackTransportTest : public webrtc::Transport {
@@ -392,7 +397,7 @@ TEST_F(RtpSenderTest, TrafficSmoothingWithExtensions) {
   // Verify transmission time offset.
   EXPECT_EQ(kStoredTimeInMs * 90, rtp_header.extension.transmissionTimeOffset);
   uint64_t expected_send_time =
-      0x00fffffful & ((fake_clock_.TimeInMilliseconds() << 18) / 1000);
+      ConvertMsToAbsSendTime(fake_clock_.TimeInMilliseconds());
   EXPECT_EQ(expected_send_time, rtp_header.extension.absoluteSendTime);
 }
 
@@ -454,7 +459,126 @@ TEST_F(RtpSenderTest, TrafficSmoothingRetransmits) {
   // Verify transmission time offset.
   EXPECT_EQ(kStoredTimeInMs * 90, rtp_header.extension.transmissionTimeOffset);
   uint64_t expected_send_time =
-      0x00fffffful & ((fake_clock_.TimeInMilliseconds() << 18) / 1000);
+      ConvertMsToAbsSendTime(fake_clock_.TimeInMilliseconds());
+  EXPECT_EQ(expected_send_time, rtp_header.extension.absoluteSendTime);
+}
+
+// This test sends 1 regular video packet, then 4 padding packets, and then
+// 1 more regular packet.
+TEST_F(RtpSenderTest, SendPadding) {
+  // Make all (non-padding) packets go to send queue.
+  EXPECT_CALL(mock_paced_sender_,
+              SendPacket(PacedSender::kNormalPriority, _, _, _, _, _)).
+                  WillRepeatedly(testing::Return(false));
+
+  uint16_t seq_num = kSeqNum;
+  uint32_t timestamp = kTimestamp;
+  rtp_sender_->SetStorePacketsStatus(true, 10);
+  int rtp_header_len = 12;
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+      kRtpExtensionTransmissionTimeOffset, kTransmissionTimeOffsetExtensionId));
+  rtp_header_len += 4;  // 4 bytes extension.
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+      kRtpExtensionAbsoluteSendTime, kAbsoluteSendTimeExtensionId));
+  rtp_header_len += 4;  // 4 bytes extension.
+  rtp_header_len += 4;  // 4 extra bytes common to all extension headers.
+
+  // Create and set up parser.
+  scoped_ptr<webrtc::RtpHeaderParser> rtp_parser(
+      webrtc::RtpHeaderParser::Create());
+  ASSERT_TRUE(rtp_parser.get() != NULL);
+  rtp_parser->RegisterRtpHeaderExtension(kRtpExtensionTransmissionTimeOffset,
+                                         kTransmissionTimeOffsetExtensionId);
+  rtp_parser->RegisterRtpHeaderExtension(kRtpExtensionAbsoluteSendTime,
+                                         kAbsoluteSendTimeExtensionId);
+  webrtc::RTPHeader rtp_header;
+
+  rtp_sender_->SetTargetSendBitrate(300000);
+  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
+  int32_t rtp_length = rtp_sender_->BuildRTPheader(packet_,
+                                                   kPayload,
+                                                   kMarkerBit,
+                                                   timestamp,
+                                                   capture_time_ms);
+
+  // Packet should be stored in a send bucket.
+  EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_,
+                                          0,
+                                          rtp_length,
+                                          capture_time_ms,
+                                          kAllowRetransmission,
+                                          PacedSender::kNormalPriority));
+
+  int total_packets_sent = 0;
+  EXPECT_EQ(total_packets_sent, transport_.packets_sent_);
+
+  const int kStoredTimeInMs = 100;
+  fake_clock_.AdvanceTimeMilliseconds(kStoredTimeInMs);
+  rtp_sender_->TimeToSendPacket(seq_num++, capture_time_ms, false);
+  // Packet should now be sent. This test doesn't verify the regular video
+  // packet, since it is tested in another test.
+  EXPECT_EQ(++total_packets_sent, transport_.packets_sent_);
+  timestamp += 90 * kStoredTimeInMs;
+
+  // Send padding 4 times, waiting 50 ms between each.
+  for (int i = 0; i < 4; ++i) {
+    const int kPaddingPeriodMs = 50;
+    const int kPaddingBytes = 100;
+    const int kMaxPaddingLength = 224;  // Value taken from rtp_sender.cc.
+    // Padding will be forced to full packets.
+    EXPECT_EQ(kMaxPaddingLength, rtp_sender_->TimeToSendPadding(kPaddingBytes));
+
+    // Process send bucket. Padding should now be sent.
+    EXPECT_EQ(++total_packets_sent, transport_.packets_sent_);
+    EXPECT_EQ(kMaxPaddingLength + rtp_header_len,
+              transport_.last_sent_packet_len_);
+    // Parse sent packet.
+    ASSERT_TRUE(rtp_parser->Parse(transport_.last_sent_packet_, kPaddingBytes,
+                                  &rtp_header));
+
+    // Verify sequence number and timestamp.
+    EXPECT_EQ(seq_num++, rtp_header.sequenceNumber);
+    EXPECT_EQ(timestamp, rtp_header.timestamp);
+    // Verify transmission time offset.
+    EXPECT_EQ(0, rtp_header.extension.transmissionTimeOffset);
+    uint64_t expected_send_time =
+        ConvertMsToAbsSendTime(fake_clock_.TimeInMilliseconds());
+    EXPECT_EQ(expected_send_time, rtp_header.extension.absoluteSendTime);
+    fake_clock_.AdvanceTimeMilliseconds(kPaddingPeriodMs);
+    timestamp += 90 * kPaddingPeriodMs;
+  }
+
+  // Send a regular video packet again.
+  capture_time_ms = fake_clock_.TimeInMilliseconds();
+  rtp_length = rtp_sender_->BuildRTPheader(packet_,
+                                           kPayload,
+                                           kMarkerBit,
+                                           timestamp,
+                                           capture_time_ms);
+
+  // Packet should be stored in a send bucket.
+  EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_,
+                                          0,
+                                          rtp_length,
+                                          capture_time_ms,
+                                          kAllowRetransmission,
+                                          PacedSender::kNormalPriority));
+
+  rtp_sender_->TimeToSendPacket(seq_num, capture_time_ms, false);
+  // Process send bucket.
+  EXPECT_EQ(++total_packets_sent, transport_.packets_sent_);
+  EXPECT_EQ(rtp_length, transport_.last_sent_packet_len_);
+  // Parse sent packet.
+  ASSERT_TRUE(rtp_parser->Parse(transport_.last_sent_packet_, rtp_length,
+                                &rtp_header));
+
+  // Verify sequence number and timestamp.
+  EXPECT_EQ(seq_num, rtp_header.sequenceNumber);
+  EXPECT_EQ(timestamp, rtp_header.timestamp);
+  // Verify transmission time offset. This packet is sent without delay.
+  EXPECT_EQ(0, rtp_header.extension.transmissionTimeOffset);
+  uint64_t expected_send_time =
+      ConvertMsToAbsSendTime(fake_clock_.TimeInMilliseconds());
   EXPECT_EQ(expected_send_time, rtp_header.extension.absoluteSendTime);
 }
 
