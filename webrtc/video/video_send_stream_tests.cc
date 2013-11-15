@@ -617,7 +617,7 @@ TEST_F(VideoSendStreamTest, AutoMute) {
 
     void set_high_remb_bps(int value) { high_remb_bps_ = value; }
 
-    virtual void Stop() OVERRIDE { transport_.StopSending(); }
+    virtual void Stop() { transport_.StopSending(); }
 
    private:
     enum TestState {
