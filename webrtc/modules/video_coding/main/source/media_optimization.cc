@@ -47,10 +47,10 @@ MediaOptimization::MediaOptimization(int32_t id, Clock* clock)
       last_qm_update_time_(0),
       last_change_time_(0),
       num_layers_(0),
-      muting_enabled_(false),
-      video_muted_(false),
-      muter_threshold_bps_(0),
-      muter_window_bps_(0) {
+      suspension_enabled_(false),
+      video_suspended_(false),
+      suspension_threshold_bps_(0),
+      suspension_window_bps_(0) {
   memset(send_statistics_, 0, sizeof(send_statistics_));
   memset(incoming_frame_times_, -1, sizeof(incoming_frame_times_));
 }
@@ -193,7 +193,7 @@ uint32_t MediaOptimization::SetTargetRates(uint32_t target_bitrate,
     content_->ResetShortTermAvgData();
   }
 
-  CheckAutoMuteConditions();
+  CheckSuspendConditions();
 
   return target_bit_rate_;
 }
@@ -351,7 +351,7 @@ void MediaOptimization::EnableFrameDropper(bool enable) {
 bool MediaOptimization::DropFrame() {
   // Leak appropriate number of bytes.
   frame_dropper_->Leak((uint32_t)(InputFrameRate() + 0.5f));
-  if (video_muted_) {
+  if (video_suspended_) {
     return true;  // Drop all frames when muted.
   }
   return frame_dropper_->DropFrame();
@@ -418,17 +418,13 @@ int32_t MediaOptimization::SelectQuality() {
   return VCM_OK;
 }
 
-void MediaOptimization::EnableAutoMuting(int threshold_bps, int window_bps) {
+void MediaOptimization::SuspendBelowMinBitrate(int threshold_bps,
+                                               int window_bps) {
   assert(threshold_bps > 0 && window_bps >= 0);
-  muter_threshold_bps_ = threshold_bps;
-  muter_window_bps_ = window_bps;
-  muting_enabled_ = true;
-  video_muted_ = false;
-}
-
-void MediaOptimization::DisableAutoMuting() {
-  muting_enabled_ = false;
-  video_muted_ = false;
+  suspension_threshold_bps_ = threshold_bps;
+  suspension_window_bps_ = window_bps;
+  suspension_enabled_ = true;
+  video_suspended_ = false;
 }
 
 // Private methods below this line.
@@ -605,19 +601,20 @@ void MediaOptimization::ProcessIncomingFrameRate(int64_t now) {
   }
 }
 
-void MediaOptimization::CheckAutoMuteConditions() {
-  // Check conditions for AutoMute. |target_bit_rate_| is in bps.
-  if (muting_enabled_) {
-    if (!video_muted_) {
+void MediaOptimization::CheckSuspendConditions() {
+  // Check conditions for SuspendBelowMinBitrate. |target_bit_rate_| is in bps.
+  if (suspension_enabled_) {
+    if (!video_suspended_) {
       // Check if we just went below the threshold.
-      if (target_bit_rate_ < muter_threshold_bps_) {
-        video_muted_ = true;
+      if (target_bit_rate_ < suspension_threshold_bps_) {
+        video_suspended_ = true;
       }
     } else {
-      // Video is already muted. Check if we just went over the threshold
+      // Video is already suspended. Check if we just went over the threshold
       // with a margin.
-      if (target_bit_rate_ > muter_threshold_bps_ + muter_window_bps_) {
-        video_muted_ = false;
+      if (target_bit_rate_ >
+          suspension_threshold_bps_ + suspension_window_bps_) {
+        video_suspended_ = false;
       }
     }
   }

@@ -79,7 +79,7 @@ class VideoSendStream {
           target_delay_ms(0),
           pacing(false),
           stats_callback(NULL),
-          auto_mute(false) {}
+          suspend_below_min_bitrate(false) {}
     VideoCodec codec;
 
     static const size_t kDefaultMaxPacketSize = 1500 - 40;  // TCP over IPv4.
@@ -142,10 +142,10 @@ class VideoSendStream {
     // Callback for periodically receiving send stats.
     StatsCallback* stats_callback;
 
-    // True if video should be muted when video goes under the minimum video
-    // bitrate. Unless muted, video will be sent at a bitrate higher than
-    // estimated available.
-    bool auto_mute;
+    // True if the stream should be suspended when the available bitrate fall
+    // below the minimum configured bitrate. If this variable is false, the
+    // stream may send at a rate higher than the estimated available bitrate.
+    bool suspend_below_min_bitrate;
   };
 
   // Gets interface used to insert captured frames. Valid as long as the

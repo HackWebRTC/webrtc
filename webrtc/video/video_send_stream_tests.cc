@@ -550,13 +550,13 @@ TEST_F(VideoSendStreamTest, CanChangeSendCodec) {
 // The test will go through a number of phases.
 // 1. Start sending packets.
 // 2. As soon as the RTP stream has been detected, signal a low REMB value to
-//    activate the auto muter.
-// 3. Wait until |kMuteTimeFrames| have been captured without seeing any RTP
+//    suspend the stream.
+// 3. Wait until |kSuspendTimeFrames| have been captured without seeing any RTP
 //    packets.
-// 4. Signal a high REMB and the wait for the RTP stream to start again.
+// 4. Signal a high REMB and then wait for the RTP stream to start again.
 //    When the stream is detected again, the test ends.
-TEST_F(VideoSendStreamTest, AutoMute) {
-  static const int kMuteTimeFrames = 60;  // Mute for 2 seconds @ 30 fps.
+TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
+  static const int kSuspendTimeFrames = 60;  // Suspend for 2 seconds @ 30 fps.
 
   class RembObserver : public test::RtpRtcpObserver, public I420FrameCallback {
    public:
@@ -564,10 +564,10 @@ TEST_F(VideoSendStreamTest, AutoMute) {
         : RtpRtcpObserver(30 * 1000),  // Timeout after 30 seconds.
           transport_adapter_(&transport_),
           clock_(Clock::GetRealTimeClock()),
-          test_state_(kBeforeMute),
+          test_state_(kBeforeSuspend),
           rtp_count_(0),
           last_sequence_number_(0),
-          mute_frame_count_(0),
+          suspended_frame_count_(0),
           low_remb_bps_(0),
           high_remb_bps_(0),
           crit_sect_(CriticalSectionWrapper::CreateCriticalSection()) {}
@@ -591,12 +591,12 @@ TEST_F(VideoSendStreamTest, AutoMute) {
       EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
       last_sequence_number_ = header.sequenceNumber;
 
-      if (test_state_ == kBeforeMute) {
-        // The stream has started. Try to mute it.
+      if (test_state_ == kBeforeSuspend) {
+        // The stream has started. Try to suspend it.
         SendRtcpFeedback(low_remb_bps_);
-        test_state_ = kDuringMute;
-      } else if (test_state_ == kDuringMute) {
-        mute_frame_count_ = 0;
+        test_state_ = kDuringSuspend;
+      } else if (test_state_ == kDuringSuspend) {
+        suspended_frame_count_ = 0;
       } else if (test_state_ == kWaitingForPacket) {
         observation_complete_->Set();
       }
@@ -607,7 +607,8 @@ TEST_F(VideoSendStreamTest, AutoMute) {
     // This method implements the I420FrameCallback.
     void FrameCallback(I420VideoFrame* video_frame) OVERRIDE {
       CriticalSectionScoped lock(crit_sect_.get());
-      if (test_state_ == kDuringMute && ++mute_frame_count_ > kMuteTimeFrames) {
+      if (test_state_ == kDuringSuspend &&
+          ++suspended_frame_count_ > kSuspendTimeFrames) {
         SendRtcpFeedback(high_remb_bps_);
         test_state_ = kWaitingForPacket;
       }
@@ -621,10 +622,10 @@ TEST_F(VideoSendStreamTest, AutoMute) {
 
    private:
     enum TestState {
-      kBeforeMute,
-      kDuringMute,
+      kBeforeSuspend,
+      kDuringSuspend,
       kWaitingForPacket,
-      kAfterMute
+      kAfterSuspend
     };
 
     virtual void SendRtcpFeedback(int remb_value) {
@@ -649,7 +650,7 @@ TEST_F(VideoSendStreamTest, AutoMute) {
     TestState test_state_;
     int rtp_count_;
     int last_sequence_number_;
-    int mute_frame_count_;
+    int suspended_frame_count_;
     int low_remb_bps_;
     int high_remb_bps_;
     scoped_ptr<CriticalSectionWrapper> crit_sect_;
@@ -662,7 +663,7 @@ TEST_F(VideoSendStreamTest, AutoMute) {
   VideoSendStream::Config send_config = GetSendTestConfig(call.get());
   send_config.rtp.nack.rtp_history_ms = 1000;
   send_config.pre_encode_callback = &observer;
-  send_config.auto_mute = true;
+  send_config.suspend_below_min_bitrate = true;
   unsigned int min_bitrate_bps =
       send_config.codec.simulcastStream[0].minBitrate * 1000;
   observer.set_low_remb_bps(min_bitrate_bps - 10000);

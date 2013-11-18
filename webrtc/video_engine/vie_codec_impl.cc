@@ -715,7 +715,7 @@ int ViECodecImpl::StopDebugRecording(int video_channel) {
   return vie_encoder->StopDebugRecording();
 }
 
-void ViECodecImpl::EnableAutoMuting(int video_channel) {
+void ViECodecImpl::SuspendBelowMinBitrate(int video_channel) {
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEEncoder* vie_encoder = cs.Encoder(video_channel);
   if (!vie_encoder) {
@@ -724,7 +724,7 @@ void ViECodecImpl::EnableAutoMuting(int video_channel) {
                  "%s: No encoder %d", __FUNCTION__, video_channel);
     return;
   }
-  return vie_encoder->EnableAutoMuting();
+  return vie_encoder->SuspendBelowMinBitrate();
 }
 
 bool ViECodecImpl::CodecValid(const VideoCodec& video_codec) {

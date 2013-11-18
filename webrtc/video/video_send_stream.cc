@@ -198,8 +198,8 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
   image_process_->RegisterPreEncodeCallback(channel_,
                                             config_.pre_encode_callback);
 
-  if (config.auto_mute) {
-    codec_->EnableAutoMuting(channel_);
+  if (config.suspend_below_min_bitrate) {
+    codec_->SuspendBelowMinBitrate(channel_);
   }
 }
 

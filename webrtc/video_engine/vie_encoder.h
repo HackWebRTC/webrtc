@@ -163,10 +163,10 @@ class ViEEncoder
   // Disables recording of debugging information.
   virtual int StopDebugRecording();
 
-  // Enables AutoMuter to turn off video when the rate drops below
+  // Lets the sender suspend video when the rate drops below
   // |threshold_bps|, and turns back on when the rate goes back up above
   // |threshold_bps| + |window_bps|.
-  virtual void EnableAutoMuting();
+  virtual void SuspendBelowMinBitrate();
 
   // New-style callback, used by VideoSendStream.
   void RegisterPreEncodeCallback(I420FrameCallback* pre_encode_callback);
@@ -226,7 +226,7 @@ class ViEEncoder
 
   // Quality modes callback
   QMVideoSettingsCallback* qm_callback_;
-  bool video_auto_muted_;
+  bool video_suspended_;
   I420FrameCallback* pre_encode_callback_;
 };
 

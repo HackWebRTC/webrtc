@@ -163,7 +163,7 @@ ViEEncoder::ViEEncoder(int32_t engine_id,
     has_received_rpsi_(false),
     picture_id_rpsi_(0),
     qm_callback_(NULL),
-    video_auto_muted_(false),
+    video_suspended_(false),
     pre_encode_callback_(NULL) {
   WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo,
                ViEId(engine_id, channel_id),
@@ -1050,7 +1050,7 @@ void ViEEncoder::OnNetworkChanged(const uint32_t bitrate_bps,
                __FUNCTION__, bitrate_bps, fraction_lost, round_trip_time_ms);
 
   vcm_.SetChannelParameters(bitrate_bps, fraction_lost, round_trip_time_ms);
-  bool video_is_muted = vcm_.VideoMuted();
+  bool video_is_suspended = vcm_.VideoSuspended();
   int bitrate_kbps = bitrate_bps / 1000;
   VideoCodec send_codec;
   if (vcm_.SendCodec(&send_codec) != 0) {
@@ -1087,10 +1087,10 @@ void ViEEncoder::OnNetworkChanged(const uint32_t bitrate_bps,
       pad_up_to_bitrate_kbps += stream_configs[i].targetBitrate;
     }
   }
-  if (video_is_muted || send_codec.numberOfSimulcastStreams > 1) {
+  if (video_is_suspended || send_codec.numberOfSimulcastStreams > 1) {
     pad_up_to_bitrate_kbps = std::min(bitrate_kbps, pad_up_to_bitrate_kbps);
   } else {
-    // Disable padding if only sending one stream and video isn't muted.
+    // Disable padding if only sending one stream and video isn't suspended.
     pad_up_to_bitrate_kbps = 0;
   }
 
@@ -1107,15 +1107,15 @@ void ViEEncoder::OnNetworkChanged(const uint32_t bitrate_bps,
                                max_padding_bitrate_kbps,
                                pad_up_to_bitrate_kbps);
   default_rtp_rtcp_->SetTargetSendBitrate(stream_bitrates);
-  if (video_is_muted != video_auto_muted_) {
+  if (video_is_suspended != video_suspended_) {
     // State changed now. Send callback to inform about that.
-    video_auto_muted_ = video_is_muted;
+    video_suspended_ = video_is_suspended;
     if (codec_observer_) {
       WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
                    ViEId(engine_id_, channel_id_),
-                   "%s: video_auto_muted_ changed to %i",
-                   __FUNCTION__, video_auto_muted_);
-      codec_observer_->VideoAutoMuted(channel_id_, video_auto_muted_);
+                   "%s: video_suspended_ changed to %i",
+                   __FUNCTION__, video_suspended_);
+      codec_observer_->VideoSuspended(channel_id_, video_suspended_);
     }
   }
 }
@@ -1159,8 +1159,8 @@ int ViEEncoder::StopDebugRecording() {
   return vcm_.StopDebugRecording();
 }
 
-void ViEEncoder::EnableAutoMuting() {
-  vcm_.EnableAutoMuting();
+void ViEEncoder::SuspendBelowMinBitrate() {
+  vcm_.SuspendBelowMinBitrate();
   bitrate_controller_->EnforceMinBitrate(false);
 }
 

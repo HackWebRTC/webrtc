@@ -592,17 +592,14 @@ public:
     // Disables recording of debugging information.
     virtual int StopDebugRecording() = 0;
 
-    // Enables AutoMuter to turn off video when the rate drops below
+    // Lets the sender suspend video when the rate drops below
     // |threshold_bps|, and turns back on when the rate goes back up above
     // |threshold_bps| + |window_bps|.
-    virtual void EnableAutoMuting() = 0;
+    virtual void SuspendBelowMinBitrate() = 0;
 
-    // Disables AutoMuter.
-    virtual void DisableAutoMuting() = 0;
-
-    // Returns true if AutoMuter is engaged and the video has been muted due to
-    // bandwidth limitations; otherwise false.
-    virtual bool VideoMuted() const = 0;
+    // Returns true if SuspendBelowMinBitrate is engaged and the video has been
+    // suspended due to bandwidth limitations; otherwise false.
+    virtual bool VideoSuspended() const = 0;
 };
 
 }  // namespace webrtc

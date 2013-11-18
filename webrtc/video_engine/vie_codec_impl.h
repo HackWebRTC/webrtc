@@ -70,7 +70,7 @@ class ViECodecImpl
   virtual int StartDebugRecording(int video_channel,
                                   const char* file_name_utf8);
   virtual int StopDebugRecording(int video_channel);
-  virtual void EnableAutoMuting(int video_channel);
+  virtual void SuspendBelowMinBitrate(int video_channel);
 
  protected:
   explicit ViECodecImpl(ViESharedData* shared_data);

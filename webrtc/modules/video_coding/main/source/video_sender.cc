@@ -422,11 +422,11 @@ int VideoSender::StopDebugRecording() {
   return VCM_OK;
 }
 
-void VideoSender::EnableAutoMuting() {
+void VideoSender::SuspendBelowMinBitrate() {
   CriticalSectionScoped cs(_sendCritSect);
   VideoCodec current_send_codec;
   if (SendCodec(&current_send_codec) != 0) {
-    assert(false);  // Must set a send codec before enabling auto-mute.
+    assert(false);  // Must set a send codec before SuspendBelowMinBitrate.
     return;
   }
   int threshold_bps;
@@ -438,17 +438,12 @@ void VideoSender::EnableAutoMuting() {
   // Set the hysteresis window to be at 10% of the threshold, but at least
   // 10 kbps.
   int window_bps = std::max(threshold_bps / 10, 10000);
-  _mediaOpt.EnableAutoMuting(threshold_bps, window_bps);
+  _mediaOpt.SuspendBelowMinBitrate(threshold_bps, window_bps);
 }
 
-void VideoSender::DisableAutoMuting() {
+bool VideoSender::VideoSuspended() const {
   CriticalSectionScoped cs(_sendCritSect);
-  _mediaOpt.DisableAutoMuting();
-}
-
-bool VideoSender::VideoMuted() const {
-  CriticalSectionScoped cs(_sendCritSect);
-  return _mediaOpt.video_muted();
+  return _mediaOpt.video_suspended();
 }
 
 }  // namespace vcm
