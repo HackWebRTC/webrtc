@@ -22,6 +22,7 @@
 
 namespace webrtc {
 
+class Clock;
 class PacketReceiver;
 
 namespace test {
@@ -29,6 +30,7 @@ namespace test {
 class DirectTransport : public newapi::Transport {
  public:
   DirectTransport();
+  explicit DirectTransport(int delay_ms);
   ~DirectTransport();
 
   virtual void StopSending();
@@ -40,13 +42,16 @@ class DirectTransport : public newapi::Transport {
  private:
   struct Packet {
     Packet();
-    Packet(const uint8_t* data, size_t length);
+    Packet(const uint8_t* data, size_t length, int64_t delivery_time_ms);
 
     uint8_t data[1500];
     size_t length;
+    int64_t delivery_time_ms;
   };
 
-  void QueuePacket(const uint8_t* data, size_t length);
+  void QueuePacket(const uint8_t* data,
+                   size_t length,
+                   int64_t delivery_time_ms);
 
   static bool NetworkProcess(void* transport);
   bool SendPackets();
@@ -54,11 +59,14 @@ class DirectTransport : public newapi::Transport {
   scoped_ptr<CriticalSectionWrapper> lock_;
   scoped_ptr<EventWrapper> packet_event_;
   scoped_ptr<ThreadWrapper> thread_;
+  Clock* clock_;
 
   bool shutting_down_;
 
   std::deque<Packet> packet_queue_;
   PacketReceiver* receiver_;
+  // TODO(stefan): Replace this with FakeNetworkPipe.
+  const int delay_ms_;
 };
 }  // namespace test
 }  // namespace webrtc

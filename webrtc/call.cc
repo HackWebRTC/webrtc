@@ -255,8 +255,8 @@ VideoReceiveStream::Config Call::GetDefaultReceiveConfig() {
 
 VideoReceiveStream* Call::CreateReceiveStream(
     const VideoReceiveStream::Config& config) {
-  VideoReceiveStream* receive_stream =
-      new VideoReceiveStream(video_engine_, config, config_.send_transport);
+  VideoReceiveStream* receive_stream = new VideoReceiveStream(
+      video_engine_, config, config_.send_transport, config_.voice_engine);
 
   WriteLockScoped write_lock(*receive_lock_);
   assert(receive_ssrcs_.find(config.rtp.ssrc) == receive_ssrcs_.end());

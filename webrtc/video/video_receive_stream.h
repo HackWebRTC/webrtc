@@ -29,6 +29,7 @@ class ViEImageProcess;
 class ViENetwork;
 class ViERender;
 class ViERTP_RTCP;
+class VoiceEngine;
 
 namespace internal {
 
@@ -37,7 +38,8 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
  public:
   VideoReceiveStream(webrtc::VideoEngine* video_engine,
                      const VideoReceiveStream::Config& config,
-                     newapi::Transport* transport);
+                     newapi::Transport* transport,
+                     webrtc::VoiceEngine* voice_engine);
   virtual ~VideoReceiveStream();
 
   virtual void StartReceive() OVERRIDE;

@@ -26,6 +26,9 @@
           '../interface',
           '../../interface',
         ],
+        'defines': [
+          'WEBRTC_MODULE_UTILITY_VIDEO',
+        ],
       },
       'sources': [
         '../interface/media_file.h',

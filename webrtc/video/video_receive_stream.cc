@@ -30,7 +30,8 @@ namespace internal {
 
 VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
                                        const VideoReceiveStream::Config& config,
-                                       newapi::Transport* transport)
+                                       newapi::Transport* transport,
+                                       webrtc::VoiceEngine* voice_engine)
     : transport_adapter_(transport), config_(config), channel_(-1) {
   video_engine_base_ = ViEBase::GetInterface(video_engine);
   // TODO(mflodman): Use the other CreateChannel method.
@@ -89,6 +90,11 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
 
   render_->AddRenderer(channel_, kVideoI420, this);
 
+  if (voice_engine) {
+    video_engine_base_->SetVoiceEngine(voice_engine);
+    video_engine_base_->ConnectAudioChannel(channel_, config_.audio_channel_id);
+  }
+
   image_process_ = ViEImageProcess::GetInterface(video_engine);
   image_process_->RegisterPreRenderCallback(channel_,
                                             config_.pre_render_callback);
@@ -108,6 +114,7 @@ VideoReceiveStream::~VideoReceiveStream() {
 
   network_->DeregisterSendTransport(channel_);
 
+  video_engine_base_->SetVoiceEngine(NULL);
   image_process_->Release();
   video_engine_base_->Release();
   external_codec_->Release();

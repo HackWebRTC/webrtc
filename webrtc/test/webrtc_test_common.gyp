@@ -16,6 +16,8 @@
       'sources': [
         'direct_transport.cc',
         'direct_transport.h',
+        'fake_audio_device.cc',
+        'fake_audio_device.h',
         'fake_decoder.cc',
         'fake_decoder.h',
         'fake_encoder.cc',
@@ -115,6 +117,7 @@
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
         '<(webrtc_root)/modules/modules.gyp:video_capture_module',
+        '<(webrtc_root)/modules/modules.gyp:media_file',
         '<(webrtc_root)/test/test.gyp:test_support',
         '<(webrtc_root)/common_video/common_video.gyp:frame_generator',
       ],
