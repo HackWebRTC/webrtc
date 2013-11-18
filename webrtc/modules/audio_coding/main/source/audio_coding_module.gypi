@@ -117,7 +117,7 @@
           'dependencies': [
             'audio_coding_module',
             '<(DEPTH)/testing/gtest.gyp:gtest',
-            '<(webrtc_root)/test/test.gyp:test_support_main',
+            '<(webrtc_root)/test/test.gyp:test_support',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
           ],
@@ -125,6 +125,7 @@
              '../test/delay_test.cc',
              '../test/Channel.cc',
              '../test/PCMFile.cc',
+             '../test/utility.cc',
            ],
         }, # delay_test
         {
@@ -133,7 +134,7 @@
           'dependencies': [
             'audio_coding_module',
             '<(DEPTH)/testing/gtest.gyp:gtest',
-            '<(webrtc_root)/test/test.gyp:test_support_main',
+            '<(webrtc_root)/test/test.gyp:test_support',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
           ],
