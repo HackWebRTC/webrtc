@@ -65,6 +65,7 @@ class RtpRtcpObserver {
   explicit RtpRtcpObserver(unsigned int event_timeout_ms)
       : lock_(CriticalSectionWrapper::CreateCriticalSection()),
         observation_complete_(EventWrapper::Create()),
+        parser_(RtpHeaderParser::Create()),
         send_transport_(lock_.get(),
                         this,
                         &RtpRtcpObserver::OnSendRtp,
