@@ -1,2 +1,3 @@
 # Tests that are too slow.
+CallTest.PlaysOutAudioAndVideoInSync
 FullStack/*
