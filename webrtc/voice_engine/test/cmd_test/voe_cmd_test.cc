@@ -23,6 +23,7 @@
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/channel_transport/include/channel_transport.h"
 #include "webrtc/test/testsupport/fileutils.h"
@@ -242,6 +243,7 @@ void RunTest(std::string out_path) {
   bool muted = false;
   bool on_hold = false;
   bool opus_stereo = false;
+  bool experimental_ns_enabled = false;
 
 #if defined(WEBRTC_ANDROID)
   std::string resource_path = "/sdcard/";
@@ -432,6 +434,7 @@ void RunTest(std::string out_path) {
       printf("%i. Toggle CNG\n", option_index++);
       printf("%i. Toggle AGC\n", option_index++);
       printf("%i. Toggle NS\n", option_index++);
+      printf("%i. Toggle experimental NS\n", option_index++);
       printf("%i. Toggle EC\n", option_index++);
       printf("%i. Select AEC\n", option_index++);
       printf("%i. Select AECM\n", option_index++);
@@ -496,6 +499,16 @@ void RunTest(std::string out_path) {
           printf("\n NS is now on! \n");
         else
           printf("\n NS is now off! \n");
+      } else if (option_selection == option_index++) {
+        experimental_ns_enabled = !experimental_ns_enabled;
+        res = base1->audio_processing()->EnableExperimentalNs(
+            experimental_ns_enabled);
+        VALIDATE;
+        if (experimental_ns_enabled) {
+          printf("\n Experimental NS is now on!\n");
+        } else {
+          printf("\n Experimental NS is now off!\n");
+        }
       } else if (option_selection == option_index++) {
         enable_aec = !enable_aec;
         res = apm->SetEcStatus(enable_aec, kEcUnchanged);
