@@ -91,6 +91,10 @@ class DesktopRect {
                               int32_t right, int32_t bottom) {
     return DesktopRect(left, top, right, bottom);
   }
+  static DesktopRect MakeOriginSize(const DesktopVector& origin,
+                                    const DesktopSize& size) {
+    return MakeXYWH(origin.x(), origin.y(), size.width(), size.height());
+  }
 
   DesktopRect() : left_(0), top_(0), right_(0), bottom_(0) {}
 
@@ -113,6 +117,9 @@ class DesktopRect {
 
   // Returns true if |point| lies within the rectangle boundaries.
   bool Contains(const DesktopVector& point) const;
+
+  // Returns true if |rect| lies within the boundaries of this rectangle.
+  bool ContainsRect(const DesktopRect& rect) const;
 
   // Finds intersection with |rect|.
   void IntersectWith(const DesktopRect& rect);

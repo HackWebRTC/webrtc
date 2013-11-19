@@ -14,6 +14,7 @@
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/mouse_cursor.h"
+#include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
 #include "webrtc/modules/desktop_capture/window_capturer.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
@@ -74,11 +75,19 @@ class FakeScreenCapturer : public DesktopCapturer {
         *(data++) = GetFakeFramePixelValue(DesktopVector(x, y));
       }
     }
-    callback_->OnCaptureCompleted(frame);
+
+    last_frame_.reset(SharedDesktopFrame::Wrap(frame));
+
+    callback_->OnCaptureCompleted(last_frame_->Share());
   }
+
+  // Returns last fake captured frame.
+  SharedDesktopFrame* last_frame() { return last_frame_.get(); }
 
  private:
   Callback* callback_;
+
+  scoped_ptr<SharedDesktopFrame> last_frame_;
 };
 
 class FakeMouseMonitor : public MouseCursorMonitor {
@@ -155,8 +164,9 @@ class DesktopAndCursorComposerTest : public testing::Test,
                                      public DesktopCapturer::Callback {
  public:
   DesktopAndCursorComposerTest()
-      : fake_cursor_(new FakeMouseMonitor()),
-        blender_(new FakeScreenCapturer(), fake_cursor_) {
+      : fake_screen_(new FakeScreenCapturer()),
+        fake_cursor_(new FakeMouseMonitor()),
+        blender_(fake_screen_, fake_cursor_) {
   }
 
   // DesktopCapturer::Callback interface
@@ -170,7 +180,9 @@ class DesktopAndCursorComposerTest : public testing::Test,
 
  protected:
   // Owned by |blender_|.
+  FakeScreenCapturer* fake_screen_;
   FakeMouseMonitor* fake_cursor_;
+
   DesktopAndCursorComposer blender_;
   scoped_ptr<DesktopFrame> frame_;
 };
@@ -213,6 +225,13 @@ TEST_F(DesktopAndCursorComposerTest, Blend) {
     blender_.Capture(DesktopRegion());
 
     VerifyFrame(*frame_, state, pos);
+
+    // Verify that the cursor is erased before the frame buffer is returned to
+    // the screen capturer.
+    frame_.reset();
+    VerifyFrame(*fake_screen_->last_frame(),
+                MouseCursorMonitor::OUTSIDE,
+                DesktopVector());
   }
 }
 

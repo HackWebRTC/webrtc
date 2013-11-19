@@ -51,6 +51,73 @@ void AlphaBlend(uint8_t* dest, int dest_stride,
   }
 }
 
+// DesktopFrame wrapper that draws mouse on a frame and restores original
+// content before releasing the underlying frame.
+class DesktopFrameWithCursor : public DesktopFrame {
+ public:
+  // Takes ownership of |frame|.
+  DesktopFrameWithCursor(DesktopFrame* frame,
+                         const MouseCursor& cursor,
+                         const DesktopVector& position);
+  virtual ~DesktopFrameWithCursor();
+
+ private:
+  scoped_ptr<DesktopFrame> original_frame_;
+
+  DesktopVector restore_position_;
+  scoped_ptr<DesktopFrame> restore_frame_;
+
+  DISALLOW_COPY_AND_ASSIGN(DesktopFrameWithCursor);
+};
+
+DesktopFrameWithCursor::DesktopFrameWithCursor(DesktopFrame* frame,
+                                               const MouseCursor& cursor,
+                                               const DesktopVector& position)
+    : DesktopFrame(frame->size(), frame->stride(),
+                   frame->data(), frame->shared_memory()),
+      original_frame_(frame) {
+  set_dpi(frame->dpi());
+  set_capture_time_ms(frame->capture_time_ms());
+  mutable_updated_region()->Swap(frame->mutable_updated_region());
+
+  DesktopVector image_pos = position.subtract(cursor.hotspot());
+  DesktopRect target_rect = DesktopRect::MakeSize(cursor.image().size());
+  target_rect.Translate(image_pos);
+  DesktopVector target_origin = target_rect.top_left();
+  target_rect.IntersectWith(DesktopRect::MakeSize(size()));
+
+  if (target_rect.is_empty())
+    return;
+
+  // Copy original screen content under cursor to |restore_frame_|.
+  restore_position_ = target_rect.top_left();
+  restore_frame_.reset(new BasicDesktopFrame(target_rect.size()));
+  restore_frame_->CopyPixelsFrom(*this, target_rect.top_left(),
+                                 DesktopRect::MakeSize(restore_frame_->size()));
+
+  // Blit the cursor.
+  uint8_t* target_rect_data = reinterpret_cast<uint8_t*>(data()) +
+                              target_rect.top() * stride() +
+                              target_rect.left() * DesktopFrame::kBytesPerPixel;
+  DesktopVector origin_shift = target_rect.top_left().subtract(target_origin);
+  AlphaBlend(target_rect_data, stride(),
+             cursor.image().data() +
+                 origin_shift.y() * cursor.image().stride() +
+                 origin_shift.x() * DesktopFrame::kBytesPerPixel,
+             cursor.image().stride(),
+             target_rect.size());
+}
+
+DesktopFrameWithCursor::~DesktopFrameWithCursor() {
+  // Restore original content of the frame.
+  if (restore_frame_.get()) {
+    DesktopRect target_rect = DesktopRect::MakeSize(restore_frame_->size());
+    target_rect.Translate(restore_position_);
+    CopyPixelsFrom(restore_frame_->data(), restore_frame_->stride(),
+                   target_rect);
+  }
+}
+
 }  // namespace
 
 DesktopAndCursorComposer::DesktopAndCursorComposer(
@@ -81,22 +148,9 @@ SharedMemory* DesktopAndCursorComposer::CreateSharedMemory(size_t size) {
 
 void DesktopAndCursorComposer::OnCaptureCompleted(DesktopFrame* frame) {
   if (cursor_.get() && cursor_state_ == MouseCursorMonitor::INSIDE) {
-    DesktopVector image_pos = cursor_position_.subtract(cursor_->hotspot());
-    DesktopRect target_rect = DesktopRect::MakeSize(cursor_->image().size());
-    target_rect.Translate(image_pos);
-    DesktopVector target_origin = target_rect.top_left();
-    target_rect.IntersectWith(DesktopRect::MakeSize(frame->size()));
-    DesktopVector origin_shift = target_rect.top_left().subtract(target_origin);
-    int cursor_width = cursor_->image().size().width();
-    AlphaBlend(reinterpret_cast<uint8_t*>(frame->data()) +
-                   target_rect.top() * frame->stride() +
-                   target_rect.left() * DesktopFrame::kBytesPerPixel,
-               frame->stride(),
-               cursor_->image().data() +
-                   (origin_shift.y() * cursor_width + origin_shift.x()) *
-                       DesktopFrame::kBytesPerPixel,
-               cursor_width * DesktopFrame::kBytesPerPixel,
-               target_rect.size());
+    DesktopFrameWithCursor* frame_with_cursor =
+        new DesktopFrameWithCursor(frame, *cursor_, cursor_position_);
+    frame = frame_with_cursor;
   }
 
   callback_->OnCaptureCompleted(frame);

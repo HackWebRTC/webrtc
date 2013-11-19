@@ -462,14 +462,7 @@ void ScreenCapturerLinux::SynchronizeFrame() {
   DCHECK(current != last);
   for (DesktopRegion::Iterator it(last_invalid_region_);
        !it.IsAtEnd(); it.Advance()) {
-    const DesktopRect& r = it.rect();
-    int offset = r.top() * current->stride() +
-        r.left() * DesktopFrame::kBytesPerPixel;
-    for (int i = 0; i < r.height(); ++i) {
-      memcpy(current->data() + offset, last->data() + offset,
-             r.width() * DesktopFrame::kBytesPerPixel);
-      offset += current->size().width() * DesktopFrame::kBytesPerPixel;
-    }
+    current->CopyPixelsFrom(*last, it.rect().top_left(), it.rect());
   }
 }
 

@@ -53,6 +53,14 @@ class DesktopFrame {
   int32_t capture_time_ms() const { return capture_time_ms_; }
   void set_capture_time_ms(int32_t time_ms) { capture_time_ms_ = time_ms; }
 
+  // Copies pixels from a buffer or another frame. |dest_rect| rect must lay
+  // within bounds of this frame.
+  void CopyPixelsFrom(uint8_t* src_buffer, int src_stride,
+                      const DesktopRect& dest_rect);
+  void CopyPixelsFrom(const DesktopFrame& src_frame,
+                      const DesktopVector& src_pos,
+                      const DesktopRect& dest_rect);
+
  protected:
   DesktopFrame(DesktopSize size,
                int stride,
