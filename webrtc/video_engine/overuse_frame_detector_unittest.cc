@@ -95,4 +95,10 @@ TEST_F(OveruseFrameDetectorTest, ConstantOveruseGivesNoNormalUsage) {
     TriggerOveruse();
 }
 
+TEST_F(OveruseFrameDetectorTest, LastCaptureJitter) {
+  EXPECT_EQ(-1, overuse_detector_->last_capture_jitter_ms());
+  TriggerOveruse();
+  EXPECT_GT(overuse_detector_->last_capture_jitter_ms(), 0);
+}
+
 }  // namespace webrtc

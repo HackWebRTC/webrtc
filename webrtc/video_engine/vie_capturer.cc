@@ -266,6 +266,10 @@ void ViECapturer::RegisterCpuOveruseObserver(CpuOveruseObserver* observer) {
   overuse_detector_->SetObserver(observer);
 }
 
+int ViECapturer::CpuOveruseMeasure() {
+  return overuse_detector_->last_capture_jitter_ms();
+}
+
 int32_t ViECapturer::SetCaptureDelay(int32_t delay_ms) {
   return capture_module_->SetCaptureDelay(delay_ms);
 }

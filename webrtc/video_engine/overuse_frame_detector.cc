@@ -116,7 +116,8 @@ OveruseFrameDetector::OveruseFrameDetector(Clock* clock,
       last_rampup_time_(0),
       in_quick_rampup_(false),
       current_rampup_delay_ms_(kStandardRampUpDelayMs),
-      num_pixels_(0) {}
+      num_pixels_(0),
+      last_capture_jitter_ms_(-1) {}
 
 OveruseFrameDetector::~OveruseFrameDetector() {
 }
@@ -142,6 +143,11 @@ void OveruseFrameDetector::FrameCaptured(int width, int height) {
     capture_deltas_.AddSample(time - last_capture_time_);
   }
   last_capture_time_ = time;
+}
+
+int OveruseFrameDetector::last_capture_jitter_ms() {
+  CriticalSectionScoped cs(crit_.get());
+  return last_capture_jitter_ms_;
 }
 
 int32_t OveruseFrameDetector::TimeUntilNextProcess() {
@@ -208,6 +214,7 @@ int32_t OveruseFrameDetector::Process() {
       overuse_stddev_ms_,
       normaluse_stddev_ms_);
 
+  last_capture_jitter_ms_ = static_cast<int>(capture_deltas_.StdDev());
   return 0;
 }
 

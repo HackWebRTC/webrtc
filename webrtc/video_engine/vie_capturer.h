@@ -104,6 +104,8 @@ class ViECapturer
 
   void RegisterCpuOveruseObserver(CpuOveruseObserver* observer);
 
+  int CpuOveruseMeasure();
+
  protected:
   ViECapturer(int capture_id,
               int engine_id,
