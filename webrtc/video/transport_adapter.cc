@@ -19,7 +19,7 @@ TransportAdapter::TransportAdapter(newapi::Transport* transport)
 int TransportAdapter::SendPacket(int /*channel*/,
                                  const void* packet,
                                  int length) {
-  bool success = transport_->SendRTP(static_cast<const uint8_t*>(packet),
+  bool success = transport_->SendRtp(static_cast<const uint8_t*>(packet),
                                      static_cast<size_t>(length));
   return success ? length : -1;
 }
@@ -27,7 +27,7 @@ int TransportAdapter::SendPacket(int /*channel*/,
 int TransportAdapter::SendRTCPPacket(int /*channel*/,
                                      const void* packet,
                                      int length) {
-  bool success = transport_->SendRTCP(static_cast<const uint8_t*>(packet),
+  bool success = transport_->SendRtcp(static_cast<const uint8_t*>(packet),
                                       static_cast<size_t>(length));
   return success ? length : -1;
 }

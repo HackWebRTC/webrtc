@@ -57,12 +57,12 @@ void DirectTransport::SetReceiver(PacketReceiver* receiver) {
   receiver_ = receiver;
 }
 
-bool DirectTransport::SendRTP(const uint8_t* data, size_t length) {
+bool DirectTransport::SendRtp(const uint8_t* data, size_t length) {
   QueuePacket(data, length, clock_->TimeInMilliseconds() + delay_ms_);
   return true;
 }
 
-bool DirectTransport::SendRTCP(const uint8_t* data, size_t length) {
+bool DirectTransport::SendRtcp(const uint8_t* data, size_t length) {
   QueuePacket(data, length, clock_->TimeInMilliseconds() + delay_ms_);
   return true;
 }

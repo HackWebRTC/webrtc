@@ -36,8 +36,8 @@ class DirectTransport : public newapi::Transport {
   virtual void StopSending();
   virtual void SetReceiver(PacketReceiver* receiver);
 
-  virtual bool SendRTP(const uint8_t* data, size_t length) OVERRIDE;
-  virtual bool SendRTCP(const uint8_t* data, size_t length) OVERRIDE;
+  virtual bool SendRtp(const uint8_t* data, size_t length) OVERRIDE;
+  virtual bool SendRtcp(const uint8_t* data, size_t length) OVERRIDE;
 
  private:
   struct Packet {

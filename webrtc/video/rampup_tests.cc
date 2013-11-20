@@ -27,6 +27,7 @@
 #include "webrtc/test/fake_encoder.h"
 #include "webrtc/test/frame_generator_capturer.h"
 #include "webrtc/test/generate_ssrcs.h"
+#include "webrtc/video/transport_adapter.h"
 
 namespace webrtc {
 
@@ -43,7 +44,7 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
       : critical_section_(CriticalSectionWrapper::CreateCriticalSection()),
         all_ssrcs_sent_(EventWrapper::Create()),
         rtp_parser_(RtpHeaderParser::Create()),
-        feedback_transport_(new TransportWrapper(feedback_transport)),
+        feedback_transport_(feedback_transport),
         receive_stats_(ReceiveStatistics::Create(clock)),
         clock_(clock),
         num_expected_ssrcs_(num_expected_ssrcs) {
@@ -53,7 +54,7 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
     // be able to produce an RTCP with REMB.
     RtpRtcp::Configuration config;
     config.receive_statistics = receive_stats_.get();
-    config.outgoing_transport = feedback_transport_.get();
+    config.outgoing_transport = &feedback_transport_;
     rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(config));
     rtp_rtcp_->SetREMBStatus(true);
     rtp_rtcp_->SetRTCPStatus(kRtcpNonCompound);
@@ -73,7 +74,7 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
     rtp_rtcp_->Process();
   }
 
-  virtual bool SendRTP(const uint8_t* packet, size_t length) OVERRIDE {
+  virtual bool SendRtp(const uint8_t* packet, size_t length) OVERRIDE {
     CriticalSectionScoped lock(critical_section_.get());
     RTPHeader header;
     EXPECT_TRUE(rtp_parser_->Parse(packet, static_cast<int>(length), &header));
@@ -87,43 +88,20 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
     return true;
   }
 
-  virtual bool SendRTCP(const uint8_t* packet, size_t length) OVERRIDE {
+  virtual bool SendRtcp(const uint8_t* packet, size_t length) OVERRIDE {
     return true;
   }
 
   EventTypeWrapper Wait() { return all_ssrcs_sent_->Wait(120 * 1000); }
 
  private:
-  class TransportWrapper : public webrtc::Transport {
-   public:
-    explicit TransportWrapper(newapi::Transport* new_transport)
-        : new_transport_(new_transport) {}
-
-    virtual int SendPacket(int channel, const void* data, int len) OVERRIDE {
-      return new_transport_->SendRTP(static_cast<const uint8_t*>(data), len)
-                 ? len
-                 : -1;
-    }
-
-    virtual int SendRTCPPacket(int channel,
-                               const void* data,
-                               int len) OVERRIDE {
-      return new_transport_->SendRTCP(static_cast<const uint8_t*>(data), len)
-                 ? len
-                 : -1;
-    }
-
-   private:
-    newapi::Transport* new_transport_;
-  };
-
   static const unsigned int kExpectedBitrateBps = 1200000;
 
   scoped_ptr<CriticalSectionWrapper> critical_section_;
   scoped_ptr<EventWrapper> all_ssrcs_sent_;
   scoped_ptr<RtpHeaderParser> rtp_parser_;
   scoped_ptr<RtpRtcp> rtp_rtcp_;
-  scoped_ptr<TransportWrapper> feedback_transport_;
+  internal::TransportAdapter feedback_transport_;
   scoped_ptr<ReceiveStatistics> receive_stats_;
   scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
   Clock* clock_;

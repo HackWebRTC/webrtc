@@ -149,7 +149,7 @@ class VideoAnalyzer : public PacketReceiver,
     input_->PutFrame(video_frame, delta_capture_ms);
   }
 
-  virtual bool SendRTP(const uint8_t* packet, size_t length) OVERRIDE {
+  virtual bool SendRtp(const uint8_t* packet, size_t length) OVERRIDE {
     scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
     RTPHeader header;
     parser->Parse(packet, static_cast<int>(length), &header);
@@ -165,11 +165,11 @@ class VideoAnalyzer : public PacketReceiver,
           Clock::GetRealTimeClock()->CurrentNtpInMilliseconds();
     }
 
-    return transport_->SendRTP(packet, length);
+    return transport_->SendRtp(packet, length);
   }
 
-  virtual bool SendRTCP(const uint8_t* packet, size_t length) OVERRIDE {
-    return transport_->SendRTCP(packet, length);
+  virtual bool SendRtcp(const uint8_t* packet, size_t length) OVERRIDE {
+    return transport_->SendRtcp(packet, length);
   }
 
   virtual void RenderFrame(const I420VideoFrame& video_frame,

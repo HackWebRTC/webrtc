@@ -20,8 +20,8 @@ namespace newapi {
 
 class Transport {
  public:
-  virtual bool SendRTP(const uint8_t* packet, size_t length) = 0;
-  virtual bool SendRTCP(const uint8_t* packet, size_t length) = 0;
+  virtual bool SendRtp(const uint8_t* packet, size_t length) = 0;
+  virtual bool SendRtcp(const uint8_t* packet, size_t length) = 0;
 
  protected:
   virtual ~Transport() {}

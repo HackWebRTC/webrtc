@@ -118,7 +118,7 @@ class RtpRtcpObserver {
           on_rtcp_(on_rtcp) {}
 
   private:
-    virtual bool SendRTP(const uint8_t* packet, size_t length) OVERRIDE {
+    virtual bool SendRtp(const uint8_t* packet, size_t length) OVERRIDE {
       Action action;
       {
         CriticalSectionScoped crit_(lock_);
@@ -129,12 +129,12 @@ class RtpRtcpObserver {
           // Drop packet silently.
           return true;
         case SEND_PACKET:
-          return test::DirectTransport::SendRTP(packet, length);
+          return test::DirectTransport::SendRtp(packet, length);
       }
       return true;  // Will never happen, makes compiler happy.
     }
 
-    virtual bool SendRTCP(const uint8_t* packet, size_t length) OVERRIDE {
+    virtual bool SendRtcp(const uint8_t* packet, size_t length) OVERRIDE {
       Action action;
       {
         CriticalSectionScoped crit_(lock_);
@@ -145,7 +145,7 @@ class RtpRtcpObserver {
           // Drop packet silently.
           return true;
         case SEND_PACKET:
-          return test::DirectTransport::SendRTCP(packet, length);
+          return test::DirectTransport::SendRtcp(packet, length);
       }
       return true;  // Will never happen, makes compiler happy.
     }
