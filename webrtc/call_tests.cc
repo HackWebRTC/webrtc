@@ -102,8 +102,8 @@ class CallTest : public ::testing::Test {
   }
 
   void StartSending() {
-    receive_stream_->StartReceive();
-    send_stream_->StartSend();
+    receive_stream_->StartReceiving();
+    send_stream_->StartSending();
     if (frame_generator_capturer_.get() != NULL)
       frame_generator_capturer_->Start();
   }
@@ -112,9 +112,9 @@ class CallTest : public ::testing::Test {
     if (frame_generator_capturer_.get() != NULL)
       frame_generator_capturer_->Stop();
     if (send_stream_ != NULL)
-      send_stream_->StopSend();
+      send_stream_->StopSending();
     if (receive_stream_ != NULL)
-      receive_stream_->StopReceive();
+      receive_stream_->StopReceiving();
   }
 
   void DestroyStreams() {
@@ -789,14 +789,14 @@ TEST_F(CallTest, SendsAndReceivesMultipleStreams) {
     receive_config.rtp.ssrc = ssrc;
     receive_streams[i] =
         receiver_call->CreateVideoReceiveStream(receive_config);
-    receive_streams[i]->StartReceive();
+    receive_streams[i]->StartReceiving();
 
     VideoSendStream::Config send_config = sender_call->GetDefaultSendConfig();
     send_config.rtp.ssrcs.push_back(ssrc);
     send_config.codec.width = width;
     send_config.codec.height = height;
     send_streams[i] = sender_call->CreateVideoSendStream(send_config);
-    send_streams[i]->StartSend();
+    send_streams[i]->StartSending();
 
     frame_generators[i] = test::FrameGeneratorCapturer::Create(
         send_streams[i]->Input(), width, height, 30, Clock::GetRealTimeClock());

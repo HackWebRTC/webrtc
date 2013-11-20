@@ -44,14 +44,14 @@ class VideoSendStreamTest : public ::testing::Test {
     scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer(
         test::FrameGeneratorCapturer::Create(
             send_stream_->Input(), 320, 240, 30, Clock::GetRealTimeClock()));
-    send_stream_->StartSend();
+    send_stream_->StartSending();
     frame_generator_capturer->Start();
 
     EXPECT_EQ(kEventSignaled, observer->Wait());
 
     observer->StopSending();
     frame_generator_capturer->Stop();
-    send_stream_->StopSend();
+    send_stream_->StopSending();
     call->DestroySendStream(send_stream_);
   }
 

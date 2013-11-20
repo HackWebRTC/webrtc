@@ -257,14 +257,14 @@ void VideoSendStream::PutFrame(const I420VideoFrame& frame,
 
 VideoSendStreamInput* VideoSendStream::Input() { return this; }
 
-void VideoSendStream::StartSend() {
+void VideoSendStream::StartSending() {
   if (video_engine_base_->StartSend(channel_) != 0)
     abort();
   if (video_engine_base_->StartReceive(channel_) != 0)
     abort();
 }
 
-void VideoSendStream::StopSend() {
+void VideoSendStream::StopSending() {
   if (video_engine_base_->StopSend(channel_) != 0)
     abort();
   if (video_engine_base_->StopReceive(channel_) != 0)

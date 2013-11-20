@@ -174,15 +174,15 @@ TEST_P(RampUpTest, RampUpWithPadding) {
                                            30,
                                            Clock::GetRealTimeClock()));
 
-  receive_stream->StartReceive();
-  send_stream->StartSend();
+  receive_stream->StartReceiving();
+  send_stream->StartSending();
   frame_generator_capturer->Start();
 
   EXPECT_EQ(kEventSignaled, stream_observer.Wait());
 
   frame_generator_capturer->Stop();
-  send_stream->StopSend();
-  receive_stream->StopReceive();
+  send_stream->StopSending();
+  receive_stream->StopReceiving();
 
   call->DestroyReceiveStream(receive_stream);
   call->DestroySendStream(send_stream);

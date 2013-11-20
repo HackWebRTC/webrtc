@@ -152,8 +152,8 @@ class VideoSendStream {
   // VideoSendStream is valid.
   virtual VideoSendStreamInput* Input() = 0;
 
-  virtual void StartSend() = 0;
-  virtual void StopSend() = 0;
+  virtual void StartSending() = 0;
+  virtual void StopSending() = 0;
 
   virtual bool SetCodec(const VideoCodec& codec) = 0;
   virtual VideoCodec GetCodec() = 0;

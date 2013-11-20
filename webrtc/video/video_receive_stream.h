@@ -42,8 +42,8 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                      webrtc::VoiceEngine* voice_engine);
   virtual ~VideoReceiveStream();
 
-  virtual void StartReceive() OVERRIDE;
-  virtual void StopReceive() OVERRIDE;
+  virtual void StartReceiving() OVERRIDE;
+  virtual void StopReceiving() OVERRIDE;
 
   virtual void GetCurrentReceiveCodec(VideoCodec* receive_codec) OVERRIDE;
 

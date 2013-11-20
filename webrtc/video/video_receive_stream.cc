@@ -124,7 +124,7 @@ VideoReceiveStream::~VideoReceiveStream() {
   rtp_rtcp_->Release();
 }
 
-void VideoReceiveStream::StartReceive() {
+void VideoReceiveStream::StartReceiving() {
   if (render_->StartRender(channel_)) {
     abort();
   }
@@ -133,7 +133,7 @@ void VideoReceiveStream::StartReceive() {
   }
 }
 
-void VideoReceiveStream::StopReceive() {
+void VideoReceiveStream::StopReceiving() {
   if (render_->StopRender(channel_)) {
     abort();
   }
