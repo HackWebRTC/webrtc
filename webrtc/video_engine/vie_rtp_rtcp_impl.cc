@@ -823,11 +823,8 @@ int ViERTP_RTCPImpl::SetTransmissionSmoothingStatus(int video_channel,
   return 0;
 }
 
-int ViERTP_RTCPImpl::GetReceivedRTCPStatistics(const int video_channel,
-                                               uint16_t& fraction_lost,
-                                               unsigned int& cumulative_lost,
-                                               unsigned int& extended_max,
-                                               unsigned int& jitter,
+int ViERTP_RTCPImpl::GetReceiveChannelRtcpStatistics(const int video_channel,
+                                               RtcpStatistics& basic_stats,
                                                int& rtt_ms) const {
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
                ViEId(shared_data_->instance_id(), video_channel),
@@ -841,22 +838,22 @@ int ViERTP_RTCPImpl::GetReceivedRTCPStatistics(const int video_channel,
     shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
     return -1;
   }
-  if (vie_channel->GetReceivedRtcpStatistics(&fraction_lost,
-                                             &cumulative_lost,
-                                             &extended_max,
-                                             &jitter,
-                                             &rtt_ms) != 0) {
+
+  // TODO(sprang): Clean this up when stats struct is propagated all the way.
+  uint16_t frac_loss;
+  if (vie_channel->GetReceivedRtcpStatistics(
+      &frac_loss, &basic_stats.cumulative_lost,
+      &basic_stats.extended_max_sequence_number, &basic_stats.jitter,
+      &rtt_ms) != 0) {
+    basic_stats.fraction_lost = frac_loss;
     shared_data_->SetLastError(kViERtpRtcpUnknownError);
     return -1;
   }
   return 0;
 }
 
-int ViERTP_RTCPImpl::GetSentRTCPStatistics(const int video_channel,
-                                           uint16_t& fraction_lost,
-                                           unsigned int& cumulative_lost,
-                                           unsigned int& extended_max,
-                                           unsigned int& jitter,
+int ViERTP_RTCPImpl::GetSendChannelRtcpStatistics(const int video_channel,
+                                           RtcpStatistics& basic_stats,
                                            int& rtt_ms) const {
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
                ViEId(shared_data_->instance_id(), video_channel),
@@ -871,20 +868,22 @@ int ViERTP_RTCPImpl::GetSentRTCPStatistics(const int video_channel,
     return -1;
   }
 
-  if (vie_channel->GetSendRtcpStatistics(&fraction_lost, &cumulative_lost,
-                                         &extended_max, &jitter,
-                                         &rtt_ms) != 0) {
+  // TODO(sprang): Clean this up when stats struct is propagated all the way.
+  uint16_t frac_loss;
+  if (vie_channel->GetSendRtcpStatistics(
+      &frac_loss, &basic_stats.cumulative_lost,
+      &basic_stats.extended_max_sequence_number, &basic_stats.jitter,
+      &rtt_ms) != 0) {
+    basic_stats.fraction_lost = frac_loss;
     shared_data_->SetLastError(kViERtpRtcpUnknownError);
     return -1;
   }
   return 0;
 }
 
-int ViERTP_RTCPImpl::GetRTPStatistics(const int video_channel,
-                                      unsigned int& bytes_sent,
-                                      unsigned int& packets_sent,
-                                      unsigned int& bytes_received,
-                                      unsigned int& packets_received) const {
+int ViERTP_RTCPImpl::GetRtpStatistics(const int video_channel,
+                                      StreamDataCounters& sent,
+                                      StreamDataCounters& received) const {
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
                ViEId(shared_data_->instance_id(), video_channel),
                "%s(channel: %d)", __FUNCTION__, video_channel);
@@ -897,10 +896,10 @@ int ViERTP_RTCPImpl::GetRTPStatistics(const int video_channel,
     shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
     return -1;
   }
-  if (vie_channel->GetRtpStatistics(&bytes_sent,
-                                    &packets_sent,
-                                    &bytes_received,
-                                    &packets_received) != 0) {
+  if (vie_channel->GetRtpStatistics(&sent.bytes,
+                                    &sent.packets,
+                                    &received.bytes,
+                                    &received.packets) != 0) {
     shared_data_->SetLastError(kViERtpRtcpUnknownError);
     return -1;
   }
@@ -1099,5 +1098,77 @@ int ViERTP_RTCPImpl::DeregisterRTCPObserver(const int video_channel) {
   }
   return 0;
 }
+
+int ViERTP_RTCPImpl::RegisterSendChannelRtcpStatisticsCallback(
+    int channel, RtcpStatisticsCallback* callback) {
+  // TODO(sprang): Implement
+  return -1;
+}
+
+int ViERTP_RTCPImpl::DeregisterSendChannelRtcpStatisticsCallback(
+    int channel, RtcpStatisticsCallback* callback) {
+  // TODO(sprang): Implement
+  return -1;
+}
+
+int ViERTP_RTCPImpl::RegisterReceiveChannelRtcpStatisticsCallback(
+    int channel, RtcpStatisticsCallback* callback) {
+  // TODO(sprang): Implement
+  return -1;
+}
+
+int ViERTP_RTCPImpl::DeregisterReceiveChannelRtcpStatisticsCallback(
+    int channel, RtcpStatisticsCallback* callback) {
+  // TODO(sprang): Implement
+  return -1;
+}
+
+int ViERTP_RTCPImpl::RegisterSendChannelRtpStatisticsCallback(
+    int channel, StreamDataCountersCallback* callback) {
+  // TODO(sprang): Implement
+  return -1;
+}
+
+int ViERTP_RTCPImpl::DeregisterSendChannelRtpStatisticsCallback(
+    int channel, StreamDataCountersCallback* callback) {
+  // TODO(sprang): Implement
+  return -1;
+}
+
+int ViERTP_RTCPImpl::RegisterReceiveChannelRtpStatisticsCallback(
+    int channel, StreamDataCountersCallback* callback) {
+  // TODO(sprang): Implement
+  return -1;
+}
+
+int ViERTP_RTCPImpl::DeregisterReceiveChannelRtpStatisticsCallback(
+    int channel, StreamDataCountersCallback* callback) {
+  // TODO(sprang): Implement
+  return -1;
+}
+int ViERTP_RTCPImpl::RegisterSendBitrateObserver(
+    int channel, BitrateStatisticsObserver* callback) {
+  // TODO(sprang): Implement
+  return -1;
+}
+
+int ViERTP_RTCPImpl::DeregisterSendBitrateObserver(
+    int channel, BitrateStatisticsObserver* callback) {
+  // TODO(sprang): Implement
+  return -1;
+}
+
+int ViERTP_RTCPImpl::RegisterSendFrameCountObserver(
+    int channel, FrameCountObserver* callback) {
+  // TODO(sprang): Implement
+  return -1;
+}
+
+int ViERTP_RTCPImpl::DeregisterSendFrameCountObserver(
+    int channel, FrameCountObserver* callback) {
+  // TODO(sprang): Implement
+  return -1;
+}
+
 
 }  // namespace webrtc

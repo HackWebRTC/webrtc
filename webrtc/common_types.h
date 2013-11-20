@@ -225,6 +225,7 @@ protected:
     Transport() {}
 };
 
+// Statistics for an RTCP channel
 struct RtcpStatistics {
  public:
   RtcpStatistics()
@@ -239,6 +240,71 @@ struct RtcpStatistics {
   uint32_t extended_max_sequence_number;
   uint32_t jitter;
   uint32_t max_jitter;
+};
+
+// Callback, called whenever a new rtcp report block is transmitted.
+class RtcpStatisticsCallback {
+ public:
+  virtual ~RtcpStatisticsCallback() {}
+
+  virtual void StatisticsUpdated(const RtcpStatistics& statistics,
+                                 uint32_t ssrc) = 0;
+};
+
+// Data usage statistics for a (rtp) stream
+struct StreamDataCounters {
+ public:
+  StreamDataCounters()
+   : bytes(0),
+     padding_bytes(0),
+     packets(0),
+     retransmitted_packets(0),
+     fec_packets(0) {}
+
+  uint32_t bytes;
+  uint32_t padding_bytes;
+  uint32_t packets;
+  uint32_t retransmitted_packets;
+  uint32_t fec_packets;
+};
+
+// Callback, called whenever byte/packet counts have been updated.
+class StreamDataCountersCallback {
+ public:
+  virtual ~StreamDataCountersCallback() {}
+
+  virtual void DataCountersUpdated(const StreamDataCounters& counters,
+                                   uint32_t ssrc) = 0;
+};
+
+// Rate statistics for a stream
+struct BitrateStatistics {
+ public:
+  BitrateStatistics()
+    : bitrate_(0),
+      packet_rate(0),
+      now(0) {}
+
+  uint32_t bitrate_;
+  uint32_t packet_rate;
+  uint64_t now;
+};
+
+// Callback, used to notify an observer whenever new rates have been estimated.
+class BitrateStatisticsObserver {
+ public:
+  virtual ~BitrateStatisticsObserver() {}
+
+  virtual void Notify(const BitrateStatistics& stats, uint32_t ssrc) = 0;
+};
+
+// Callback, used to notify an observer whenever frame counts have been updated
+class FrameCountObserver {
+ public:
+  ~FrameCountObserver() {}
+  virtual void Notify(const unsigned int key_frames,
+                      const unsigned int delta_frames,
+                      const unsigned int ssrc) = 0;
 };
 
 // ==================================================================

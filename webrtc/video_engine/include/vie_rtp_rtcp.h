@@ -262,29 +262,97 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
 
   // This function returns our locally created statistics of the received RTP
   // stream.
-  virtual int GetReceivedRTCPStatistics(
-      const int video_channel,
-      unsigned short& fraction_lost,
-      unsigned int& cumulative_lost,
-      unsigned int& extended_max,
-      unsigned int& jitter,
-      int& rtt_ms) const = 0;
+  virtual int GetReceiveChannelRtcpStatistics(const int video_channel,
+                                              RtcpStatistics& basic_stats,
+                                              int& rtt_ms) const = 0;
 
   // This function returns statistics reported by the remote client in a RTCP
   // packet.
+  virtual int GetSendChannelRtcpStatistics(const int video_channel,
+                                           RtcpStatistics& basic_stats,
+                                           int& rtt_ms) const = 0;
+
+  // TODO(sprang): Temporary hacks to prevent libjingle build from failing,
+  // remove when libjingle has been lifted to support webrtc issue 2589
+  virtual int GetReceivedRTCPStatistics(const int video_channel,
+                                unsigned short& fraction_lost,
+                                unsigned int& cumulative_lost,
+                                unsigned int& extended_max,
+                                unsigned int& jitter,
+                                int& rtt_ms) const {
+    RtcpStatistics stats;
+    int ret_code = GetReceiveChannelRtcpStatistics(video_channel,
+                                             stats,
+                                             rtt_ms);
+    fraction_lost = stats.fraction_lost;
+    cumulative_lost = stats.cumulative_lost;
+    extended_max = stats.extended_max_sequence_number;
+    jitter = stats.jitter;
+    return ret_code;
+  }
   virtual int GetSentRTCPStatistics(const int video_channel,
-                                    unsigned short& fraction_lost,
-                                    unsigned int& cumulative_lost,
-                                    unsigned int& extended_max,
-                                    unsigned int& jitter,
-                                    int& rtt_ms) const = 0;
+                            unsigned short& fraction_lost,
+                            unsigned int& cumulative_lost,
+                            unsigned int& extended_max,
+                            unsigned int& jitter,
+                            int& rtt_ms) const {
+    RtcpStatistics stats;
+    int ret_code = GetSendChannelRtcpStatistics(video_channel,
+                                                stats,
+                                                rtt_ms);
+    fraction_lost = stats.fraction_lost;
+    cumulative_lost = stats.cumulative_lost;
+    extended_max = stats.extended_max_sequence_number;
+    jitter = stats.jitter;
+    return ret_code;
+  }
+
+
+  virtual int RegisterSendChannelRtcpStatisticsCallback(
+      const int video_channel, RtcpStatisticsCallback* callback) = 0;
+
+  virtual int DeregisterSendChannelRtcpStatisticsCallback(
+      const int video_channel, RtcpStatisticsCallback* callback) = 0;
+
+  virtual int RegisterReceiveChannelRtcpStatisticsCallback(
+      const int video_channel, RtcpStatisticsCallback* callback) = 0;
+
+  virtual int DeregisterReceiveChannelRtcpStatisticsCallback(
+      const int video_channel, RtcpStatisticsCallback* callback) = 0;
 
   // The function gets statistics from the sent and received RTP streams.
+  virtual int GetRtpStatistics(const int video_channel,
+                               StreamDataCounters& sent,
+                               StreamDataCounters& received) const = 0;
+
+  // TODO(sprang): Temporary hacks to prevent libjingle build from failing,
+  // remove when libjingle has been lifted to support webrtc issue 2589
   virtual int GetRTPStatistics(const int video_channel,
-                               unsigned int& bytes_sent,
-                               unsigned int& packets_sent,
-                               unsigned int& bytes_received,
-                               unsigned int& packets_received) const = 0;
+                       unsigned int& bytes_sent,
+                       unsigned int& packets_sent,
+                       unsigned int& bytes_received,
+                       unsigned int& packets_received) const {
+    StreamDataCounters sent;
+    StreamDataCounters received;
+    int ret_code = GetRtpStatistics(video_channel, sent, received);
+    bytes_sent = sent.bytes;
+    packets_sent = sent.packets;
+    bytes_received = received.bytes;
+    packets_received = received.packets;
+    return ret_code;
+  }
+
+  virtual int RegisterSendChannelRtpStatisticsCallback(
+      const int video_channel, StreamDataCountersCallback* callback) = 0;
+
+  virtual int DeregisterSendChannelRtpStatisticsCallback(
+      const int video_channel, StreamDataCountersCallback* callback) = 0;
+
+  virtual int RegisterReceiveChannelRtpStatisticsCallback(
+      const int video_channel, StreamDataCountersCallback* callback) = 0;
+
+  virtual int DeregisterReceiveChannelRtpStatisticsCallback(
+      const int video_channel, StreamDataCountersCallback* callback) = 0;
 
   // The function gets bandwidth usage statistics from the sent RTP streams in
   // bits/s.
@@ -293,6 +361,15 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
                                 unsigned int& video_bitrate_sent,
                                 unsigned int& fec_bitrate_sent,
                                 unsigned int& nackBitrateSent) const = 0;
+
+  // (De)Register an observer, called whenever the send bitrate is updated
+  virtual int RegisterSendBitrateObserver(
+      const int video_channel,
+      BitrateStatisticsObserver* observer) = 0;
+
+  virtual int DeregisterSendBitrateObserver(
+      const int video_channel,
+      BitrateStatisticsObserver* observer) = 0;
 
   // This function gets the send-side estimated bandwidth available for video,
   // including overhead, in bits/s.
@@ -334,8 +411,15 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
   // Removes a registered instance of ViERTCPObserver.
   virtual int DeregisterRTCPObserver(const int video_channel) = 0;
 
+  // Registers and instance of a user implementation of ViEFrameCountObserver
+  virtual int RegisterSendFrameCountObserver(
+      const int video_channel, FrameCountObserver* observer) = 0;
+
+  // Removes a registered instance of a ViEFrameCountObserver
+  virtual int DeregisterSendFrameCountObserver(
+      const int video_channel, FrameCountObserver* observer) = 0;
+
  protected:
-  ViERTP_RTCP() {}
   virtual ~ViERTP_RTCP() {}
 };
 
