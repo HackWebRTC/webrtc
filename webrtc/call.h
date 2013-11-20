@@ -60,7 +60,7 @@ class Call {
 
   virtual VideoSendStream::Config GetDefaultSendConfig() = 0;
 
-  virtual VideoSendStream* CreateSendStream(
+  virtual VideoSendStream* CreateVideoSendStream(
       const VideoSendStream::Config& config) = 0;
 
   // Returns the internal state of the send stream, for resume sending with a
@@ -70,7 +70,7 @@ class Call {
 
   virtual VideoReceiveStream::Config GetDefaultReceiveConfig() = 0;
 
-  virtual VideoReceiveStream* CreateReceiveStream(
+  virtual VideoReceiveStream* CreateVideoReceiveStream(
       const VideoReceiveStream::Config& config) = 0;
   virtual void DestroyReceiveStream(VideoReceiveStream* receive_stream) = 0;
 

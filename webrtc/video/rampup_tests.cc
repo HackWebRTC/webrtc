@@ -159,13 +159,13 @@ TEST_P(RampUpTest, RampUpWithPadding) {
 
   test::GenerateRandomSsrcs(&send_config, &reserved_ssrcs_);
 
-  VideoSendStream* send_stream = call->CreateSendStream(send_config);
+  VideoSendStream* send_stream = call->CreateVideoSendStream(send_config);
 
   VideoReceiveStream::Config receive_config;
   receive_config.rtp.ssrc = send_config.rtp.ssrcs[0];
   receive_config.rtp.nack.rtp_history_ms = send_config.rtp.nack.rtp_history_ms;
   VideoReceiveStream* receive_stream =
-      call->CreateReceiveStream(receive_config);
+      call->CreateVideoReceiveStream(receive_config);
 
   scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer(
       test::FrameGeneratorCapturer::Create(send_stream->Input(),

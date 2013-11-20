@@ -88,8 +88,8 @@ class CallTest : public ::testing::Test {
     assert(send_stream_ == NULL);
     assert(receive_stream_ == NULL);
 
-    send_stream_ = sender_call_->CreateSendStream(send_config_);
-    receive_stream_ = receiver_call_->CreateReceiveStream(receive_config_);
+    send_stream_ = sender_call_->CreateVideoSendStream(send_config_);
+    receive_stream_ = receiver_call_->CreateVideoReceiveStream(receive_config_);
   }
 
   void CreateFrameGenerator() {
@@ -787,14 +787,15 @@ TEST_F(CallTest, SendsAndReceivesMultipleStreams) {
         receiver_call->GetDefaultReceiveConfig();
     receive_config.renderer = observers[i];
     receive_config.rtp.ssrc = ssrc;
-    receive_streams[i] = receiver_call->CreateReceiveStream(receive_config);
+    receive_streams[i] =
+        receiver_call->CreateVideoReceiveStream(receive_config);
     receive_streams[i]->StartReceive();
 
     VideoSendStream::Config send_config = sender_call->GetDefaultSendConfig();
     send_config.rtp.ssrcs.push_back(ssrc);
     send_config.codec.width = width;
     send_config.codec.height = height;
-    send_streams[i] = sender_call->CreateSendStream(send_config);
+    send_streams[i] = sender_call->CreateVideoSendStream(send_config);
     send_streams[i]->StartSend();
 
     frame_generators[i] = test::FrameGeneratorCapturer::Create(

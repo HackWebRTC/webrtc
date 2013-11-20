@@ -40,7 +40,7 @@ class VideoSendStreamTest : public ::testing::Test {
   void RunSendTest(Call* call,
                    const VideoSendStream::Config& config,
                    test::RtpRtcpObserver* observer) {
-    send_stream_ = call->CreateSendStream(config);
+    send_stream_ = call->CreateVideoSendStream(config);
     scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer(
         test::FrameGeneratorCapturer::Create(
             send_stream_->Input(), 320, 240, 30, Clock::GetRealTimeClock()));

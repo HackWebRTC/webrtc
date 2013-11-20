@@ -402,7 +402,7 @@ TEST_P(FullStackTest, NoPacketLoss) {
   send_config.codec.startBitrate = params.bitrate;
   send_config.codec.maxBitrate = params.bitrate;
 
-  VideoSendStream* send_stream = call->CreateSendStream(send_config);
+  VideoSendStream* send_stream = call->CreateVideoSendStream(send_config);
   analyzer.input_ = send_stream->Input();
 
   scoped_ptr<test::FrameGeneratorCapturer> file_capturer(
@@ -422,7 +422,7 @@ TEST_P(FullStackTest, NoPacketLoss) {
   receive_config.renderer = &analyzer;
 
   VideoReceiveStream* receive_stream =
-      call->CreateReceiveStream(receive_config);
+      call->CreateVideoReceiveStream(receive_config);
 
   receive_stream->StartReceive();
   send_stream->StartSend();

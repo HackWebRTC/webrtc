@@ -38,14 +38,14 @@ class Call : public webrtc::Call, public PacketReceiver {
 
   virtual VideoSendStream::Config GetDefaultSendConfig() OVERRIDE;
 
-  virtual VideoSendStream* CreateSendStream(
+  virtual VideoSendStream* CreateVideoSendStream(
       const VideoSendStream::Config& config) OVERRIDE;
 
   virtual void DestroySendStream(webrtc::VideoSendStream* send_stream) OVERRIDE;
 
   virtual VideoReceiveStream::Config GetDefaultReceiveConfig() OVERRIDE;
 
-  virtual VideoReceiveStream* CreateReceiveStream(
+  virtual VideoReceiveStream* CreateVideoReceiveStream(
       const VideoReceiveStream::Config& config) OVERRIDE;
 
   virtual void DestroyReceiveStream(
@@ -211,7 +211,8 @@ VideoSendStream::Config Call::GetDefaultSendConfig() {
   return config;
 }
 
-VideoSendStream* Call::CreateSendStream(const VideoSendStream::Config& config) {
+VideoSendStream* Call::CreateVideoSendStream(
+    const VideoSendStream::Config& config) {
   assert(config.rtp.ssrcs.size() > 0);
   assert(config.codec.numberOfSimulcastStreams == 0 ||
          config.codec.numberOfSimulcastStreams == config.rtp.ssrcs.size());
@@ -253,7 +254,7 @@ VideoReceiveStream::Config Call::GetDefaultReceiveConfig() {
   return VideoReceiveStream::Config();
 }
 
-VideoReceiveStream* Call::CreateReceiveStream(
+VideoReceiveStream* Call::CreateVideoReceiveStream(
     const VideoReceiveStream::Config& config) {
   VideoReceiveStream* receive_stream = new VideoReceiveStream(
       video_engine_, config, config_.send_transport, config_.voice_engine);
