@@ -46,6 +46,9 @@ class ViERenderImpl
   virtual int AddRenderer(const int render_id, RawVideoType video_input_format,
                           ExternalRenderer* renderer);
 
+  virtual int AddRenderCallback(int render_id,
+                                VideoRenderCallback* callback) OVERRIDE;
+
  protected:
   explicit ViERenderImpl(ViESharedData* shared_data);
   virtual ~ViERenderImpl();

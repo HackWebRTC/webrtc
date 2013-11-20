@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/modules/video_render/include/video_render_defines.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/video/transport_adapter.h"
 #include "webrtc/video_engine/include/vie_render.h"
@@ -34,7 +35,7 @@ class VoiceEngine;
 namespace internal {
 
 class VideoReceiveStream : public webrtc::VideoReceiveStream,
-                           public webrtc::ExternalRenderer {
+                           public VideoRenderCallback {
  public:
   VideoReceiveStream(webrtc::VideoEngine* video_engine,
                      const VideoReceiveStream::Config& config,
@@ -47,12 +48,8 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   virtual void GetCurrentReceiveCodec(VideoCodec* receive_codec) OVERRIDE;
 
-  virtual int FrameSizeChange(unsigned int width, unsigned int height,
-                              unsigned int /*number_of_streams*/) OVERRIDE;
-  virtual int DeliverFrame(uint8_t* frame, int buffer_size, uint32_t timestamp,
-                           int64_t render_time, void* /*handle*/) OVERRIDE;
-
-  virtual bool IsTextureSupported() OVERRIDE;
+  virtual int32_t RenderFrame(const uint32_t stream_id,
+                              I420VideoFrame& video_frame) OVERRIDE;
 
  public:
   virtual bool DeliverRtcp(const uint8_t* packet, size_t length);
@@ -72,10 +69,6 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   ViEImageProcess* image_process_;
 
   int channel_;
-
-  // TODO(pbos): Remove VideoReceiveStream can operate on I420 frames directly.
-  unsigned int height_;
-  unsigned int width_;
 };
 }  // internal
 }  // webrtc
