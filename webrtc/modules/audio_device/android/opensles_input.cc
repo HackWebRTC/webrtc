@@ -126,7 +126,6 @@ int32_t OpenSlesInput::RecordingIsAvailable(bool& available) {  // NOLINT
 
 int32_t OpenSlesInput::InitRecording() {
   assert(initialized_);
-  assert(!rec_initialized_);
   rec_initialized_ = true;
   return 0;
 }
@@ -165,6 +164,7 @@ int32_t OpenSlesInput::StartRecording() {
 int32_t OpenSlesInput::StopRecording() {
   StopCbThreads();
   DestroyAudioRecorder();
+  recording_ = false;
   return 0;
 }
 

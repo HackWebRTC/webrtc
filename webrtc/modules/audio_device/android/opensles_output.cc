@@ -139,7 +139,6 @@ int32_t OpenSlesOutput::PlayoutIsAvailable(bool& available) {  // NOLINT
 
 int32_t OpenSlesOutput::InitPlayout() {
   assert(initialized_);
-  assert(!play_initialized_);
   play_initialized_ = true;
   return 0;
 }
@@ -176,6 +175,7 @@ int32_t OpenSlesOutput::StartPlayout() {
 int32_t OpenSlesOutput::StopPlayout() {
   StopCbThreads();
   DestroyAudioPlayer();
+  playing_ = false;
   return 0;
 }
 

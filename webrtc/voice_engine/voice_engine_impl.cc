@@ -149,7 +149,11 @@ int VoiceEngine::SetAndroidObjects(void* javaVM, void* env, void* context)
 {
 #ifdef WEBRTC_ANDROID
 #ifdef WEBRTC_ANDROID_OPENSLES
-  AudioManagerJni::SetAndroidAudioDeviceObjects(javaVM, env, context);
+  if (javaVM && env && context) {
+    AudioManagerJni::SetAndroidAudioDeviceObjects(javaVM, env, context);
+  } else {
+    AudioManagerJni::ClearAndroidAudioDeviceObjects();
+  }
   return 0;
 #else
   return AudioDeviceAndroidJni::SetAndroidAudioDeviceObjects(
