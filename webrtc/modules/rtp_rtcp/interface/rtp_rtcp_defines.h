@@ -288,11 +288,13 @@ class RtcpBandwidthObserver {
   virtual ~RtcpBandwidthObserver() {}
 };
 
-class RtcpRttObserver {
+class RtcpRttStats {
  public:
   virtual void OnRttUpdate(uint32_t rtt) = 0;
 
-  virtual ~RtcpRttObserver() {};
+  virtual uint32_t LastProcessedRtt() const = 0;
+
+  virtual ~RtcpRttStats() {};
 };
 
 // Null object version of RtpFeedback.

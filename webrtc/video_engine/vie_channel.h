@@ -37,7 +37,7 @@ class Encryption;
 class I420FrameCallback;
 class PacedSender;
 class ProcessThread;
-class RtcpRttObserver;
+class RtcpRttStats;
 class RtpRtcp;
 class ThreadWrapper;
 class ViEDecoderObserver;
@@ -69,7 +69,7 @@ class ViEChannel
              RtcpIntraFrameObserver* intra_frame_observer,
              RtcpBandwidthObserver* bandwidth_observer,
              RemoteBitrateEstimator* remote_bitrate_estimator,
-             RtcpRttObserver* rtt_observer,
+             RtcpRttStats* rtt_stats,
              PacedSender* paced_sender,
              RtpRtcp* default_rtp_rtcp,
              bool sender);
@@ -370,7 +370,7 @@ class ViEChannel
   ViERTPObserver* rtp_observer_;
   ViERTCPObserver* rtcp_observer_;
   RtcpIntraFrameObserver* intra_frame_observer_;
-  RtcpRttObserver* rtt_observer_;
+  RtcpRttStats* rtt_stats_;
   PacedSender* paced_sender_;
 
   scoped_ptr<RtcpBandwidthObserver> bandwidth_observer_;

@@ -18,13 +18,16 @@
 namespace webrtc {
 namespace {
 
-class RtcpRttStatsTestImpl : public RtcpRttObserver {
+class RtcpRttStatsTestImpl : public RtcpRttStats {
  public:
   RtcpRttStatsTestImpl() : rtt_ms_(0) {}
   virtual ~RtcpRttStatsTestImpl() {}
 
   virtual void OnRttUpdate(uint32_t rtt_ms) {
     rtt_ms_ = rtt_ms;
+  }
+  virtual uint32_t LastProcessedRtt() const {
+    return rtt_ms_;
   }
   uint32_t rtt_ms_;
 };
@@ -70,7 +73,7 @@ class RtpRtcpImplTest : public ::testing::Test {
     configuration.clock = &clock_;
     configuration.outgoing_transport = &transport_;
     configuration.receive_statistics = receive_statistics_.get();
-    configuration.rtt_observer = &rtt_stats_;
+    configuration.rtt_stats = &rtt_stats_;
 
     rtp_rtcp_impl_.reset(new ModuleRtpRtcpImpl(configuration));
     transport_.SetRtpRtcpModule(rtp_rtcp_impl_.get());
@@ -136,10 +139,12 @@ TEST_F(RtpRtcpImplTest, RttForReceiverOnly) {
   EXPECT_EQ(0, rtp_rtcp_impl_->SendRTCP(kRtcpReport));
 
   // Verify RTT.
-  EXPECT_EQ(0U, rtt_stats_.rtt_ms_);
+  EXPECT_EQ(0U, rtt_stats_.LastProcessedRtt());
+  EXPECT_EQ(0U, rtp_rtcp_impl_->rtt_ms());
 
   rtp_rtcp_impl_->Process();
-  EXPECT_EQ(100U, rtt_stats_.rtt_ms_);
+  EXPECT_EQ(100U, rtt_stats_.LastProcessedRtt());
+  EXPECT_EQ(100U, rtp_rtcp_impl_->rtt_ms());
 }
 
 }  // namespace webrtc

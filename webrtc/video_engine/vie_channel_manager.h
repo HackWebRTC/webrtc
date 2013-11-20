@@ -28,7 +28,7 @@ namespace webrtc {
 class Config;
 class CriticalSectionWrapper;
 class ProcessThread;
-class RtcpRttObserver;
+class RtcpRttStats;
 class ViEChannel;
 class ViEEncoder;
 class VoEVideoSync;
@@ -89,7 +89,7 @@ class ViEChannelManager: private ViEManagerBase {
                            ViEEncoder* vie_encoder,
                            RtcpBandwidthObserver* bandwidth_observer,
                            RemoteBitrateEstimator* remote_bitrate_estimator,
-                           RtcpRttObserver* rtcp_rtt_observer,
+                           RtcpRttStats* rtcp_rtt_stats,
                            RtcpIntraFrameObserver* intra_frame_observer,
                            bool sender);
 
