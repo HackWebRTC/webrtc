@@ -16,6 +16,8 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/typedefs.h"
+
 namespace webrtc {
 
 struct RtpStatistics {
@@ -67,6 +69,8 @@ struct RtxConfig {
 
 // RTP header extension to use for the video stream, see RFC 5285.
 struct RtpExtension {
+  static const char* kTOffset;
+  static const char* kAbsSendTime;
   RtpExtension(const char* name, int id) : name(name), id(id) {}
   // TODO(mflodman) Add API to query supported extensions.
   std::string name;

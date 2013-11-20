@@ -155,7 +155,7 @@ TEST_P(RampUpTest, RampUpWithPadding) {
   send_config.codec.plType = 125;
   send_config.pacing = GetParam();
   send_config.rtp.extensions.push_back(
-      RtpExtension("toffset", kTOffsetExtensionId));
+      RtpExtension(RtpExtension::kTOffset, kTOffsetExtensionId));
 
   test::GenerateRandomSsrcs(&send_config, &reserved_ssrcs_);
 

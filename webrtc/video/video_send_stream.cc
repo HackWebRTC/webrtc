@@ -123,10 +123,10 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
   for (size_t i = 0; i < config_.rtp.extensions.size(); ++i) {
     const std::string& extension = config_.rtp.extensions[i].name;
     int id = config_.rtp.extensions[i].id;
-    if (extension == "toffset") {
+    if (extension == RtpExtension::kTOffset) {
       if (rtp_rtcp_->SetSendTimestampOffsetStatus(channel_, true, id) != 0)
         abort();
-    } else if (extension == "abs-send-time") {
+    } else if (extension == RtpExtension::kAbsSendTime) {
       if (rtp_rtcp_->SetSendAbsoluteSendTimeStatus(channel_, true, id) != 0)
         abort();
     } else {

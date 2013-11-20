@@ -61,6 +61,7 @@
       'sources': [
         'call.cc',
         'call.h',
+        'config.cc',
         'config.h',
         'frame_callback.h',
         'transport.h',

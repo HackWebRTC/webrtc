@@ -170,7 +170,7 @@ TEST_F(VideoSendStreamTest, SupportsAbsoluteSendTime) {
 
   VideoSendStream::Config send_config = GetSendTestConfig(call.get());
   send_config.rtp.extensions.push_back(
-      RtpExtension("abs-send-time", kAbsSendTimeExtensionId));
+      RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeExtensionId));
 
   RunSendTest(call.get(), send_config, &observer);
 }
@@ -216,7 +216,7 @@ TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
   VideoSendStream::Config send_config = GetSendTestConfig(call.get());
   send_config.encoder = &encoder;
   send_config.rtp.extensions.push_back(
-      RtpExtension("toffset", kTOffsetExtensionId));
+      RtpExtension(RtpExtension::kTOffset, kTOffsetExtensionId));
 
   RunSendTest(call.get(), send_config, &observer);
 }
