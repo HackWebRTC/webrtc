@@ -33,10 +33,10 @@
 #include "talk/app/webrtc/mediastreamsignaling.h"
 #include "talk/app/webrtc/webrtcsession.h"
 
+using cricket::MediaSessionOptions;
+
 namespace webrtc {
-
 namespace {
-
 static const char kFailedDueToIdentityFailed[] =
     " failed because DTLS identity request failed";
 
@@ -46,25 +46,24 @@ static const char kWebRTCIdentityName[] = "WebRTC";
 
 static const uint64 kInitSessionVersion = 2;
 
-typedef cricket::MediaSessionOptions::Stream Stream;
-typedef cricket::MediaSessionOptions::Streams Streams;
-
-static bool CompareStream(const Stream& stream1, const Stream& stream2) {
-  return (stream1.id < stream2.id);
+static bool CompareStream(const MediaSessionOptions::Stream& stream1,
+                          const MediaSessionOptions::Stream& stream2) {
+  return stream1.id < stream2.id;
 }
 
-static bool SameId(const Stream& stream1, const Stream& stream2) {
-  return (stream1.id == stream2.id);
+static bool SameId(const MediaSessionOptions::Stream& stream1,
+                   const MediaSessionOptions::Stream& stream2) {
+  return stream1.id == stream2.id;
 }
 
 // Checks if each Stream within the |streams| has unique id.
-static bool ValidStreams(const Streams& streams) {
-  Streams sorted_streams = streams;
+static bool ValidStreams(const MediaSessionOptions::Streams& streams) {
+  MediaSessionOptions::Streams sorted_streams = streams;
   std::sort(sorted_streams.begin(), sorted_streams.end(), CompareStream);
-  Streams::iterator it =
+  MediaSessionOptions::Streams::iterator it =
       std::adjacent_find(sorted_streams.begin(), sorted_streams.end(),
                          SameId);
-  return (it == sorted_streams.end());
+  return it == sorted_streams.end();
 }
 
 enum {
@@ -83,7 +82,6 @@ struct CreateSessionDescriptionMsg : public talk_base::MessageData {
   std::string error;
   talk_base::scoped_ptr<webrtc::SessionDescriptionInterface> description;
 };
-
 }  // namespace
 
 // static
@@ -130,33 +128,35 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
   transport_desc_factory_.set_protocol(cricket::ICEPROTO_HYBRID);
   session_desc_factory_.set_add_legacy_streams(false);
   // By default SRTP-SDES is enabled in WebRtc.
-  set_secure(cricket::SEC_REQUIRED);
+  SetSecure(cricket::SEC_REQUIRED);
 
-  if (dtls_enabled) {
-    if (identity_service_.get()) {
-      identity_request_observer_ =
-        new talk_base::RefCountedObject<WebRtcIdentityRequestObserver>();
+  if (!dtls_enabled) {
+    return;
+  }
 
-      identity_request_observer_->SignalRequestFailed.connect(
-          this, &WebRtcSessionDescriptionFactory::OnIdentityRequestFailed);
-      identity_request_observer_->SignalIdentityReady.connect(
-          this, &WebRtcSessionDescriptionFactory::OnIdentityReady);
+  if (identity_service_.get()) {
+    identity_request_observer_ =
+      new talk_base::RefCountedObject<WebRtcIdentityRequestObserver>();
 
-      if (identity_service_->RequestIdentity(kWebRTCIdentityName,
-                                             kWebRTCIdentityName,
-                                             identity_request_observer_)) {
-        LOG(LS_VERBOSE) << "DTLS-SRTP enabled; sent DTLS identity request.";
-        identity_request_state_ = IDENTITY_WAITING;
-      } else {
-        LOG(LS_ERROR) << "Failed to send DTLS identity request.";
-        identity_request_state_ = IDENTITY_FAILED;
-      }
-    } else {
+    identity_request_observer_->SignalRequestFailed.connect(
+        this, &WebRtcSessionDescriptionFactory::OnIdentityRequestFailed);
+    identity_request_observer_->SignalIdentityReady.connect(
+        this, &WebRtcSessionDescriptionFactory::OnIdentityReady);
+
+    if (identity_service_->RequestIdentity(kWebRTCIdentityName,
+                                           kWebRTCIdentityName,
+                                           identity_request_observer_)) {
+      LOG(LS_VERBOSE) << "DTLS-SRTP enabled; sent DTLS identity request.";
       identity_request_state_ = IDENTITY_WAITING;
-      // Do not generate the identity in the constructor since the caller has
-      // not got a chance to connect to SignalIdentityReady.
-      signaling_thread_->Post(this, MSG_GENERATE_IDENTITY, NULL);
+    } else {
+      LOG(LS_ERROR) << "Failed to send DTLS identity request.";
+      identity_request_state_ = IDENTITY_FAILED;
     }
+  } else {
+    identity_request_state_ = IDENTITY_WAITING;
+    // Do not generate the identity in the constructor since the caller has
+    // not got a chance to connect to SignalIdentityReady.
+    signaling_thread_->Post(this, MSG_GENERATE_IDENTITY, NULL);
   }
 }
 
@@ -261,17 +261,13 @@ void WebRtcSessionDescriptionFactory::CreateAnswer(
   }
 }
 
-void WebRtcSessionDescriptionFactory::set_secure(
+void WebRtcSessionDescriptionFactory::SetSecure(
     cricket::SecureMediaPolicy secure_policy) {
   session_desc_factory_.set_secure(secure_policy);
 }
 
-cricket::SecureMediaPolicy WebRtcSessionDescriptionFactory::secure() const {
+cricket::SecureMediaPolicy WebRtcSessionDescriptionFactory::Secure() const {
   return session_desc_factory_.secure();
-}
-
-bool WebRtcSessionDescriptionFactory::waiting_for_identity() const {
-  return identity_request_state_ == IDENTITY_WAITING;
 }
 
 void WebRtcSessionDescriptionFactory::OnMessage(talk_base::Message* msg) {
@@ -450,5 +446,4 @@ void WebRtcSessionDescriptionFactory::SetIdentity(
     create_session_description_requests_.pop();
   }
 }
-
 }  // namespace webrtc

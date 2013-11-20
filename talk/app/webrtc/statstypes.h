@@ -177,6 +177,8 @@ class StatsReport {
   static const char kStatsValueNameIssuerId[];
   static const char kStatsValueNameLocalCertificateId[];
   static const char kStatsValueNameRemoteCertificateId[];
+  static const char kStatsValueNameLocalCandidateType[];
+  static const char kStatsValueNameRemoteCandidateType[];
 };
 
 typedef std::vector<StatsReport> StatsReports;

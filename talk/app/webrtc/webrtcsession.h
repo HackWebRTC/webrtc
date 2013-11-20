@@ -42,20 +42,17 @@
 #include "talk/session/media/mediasession.h"
 
 namespace cricket {
-
+class BaseChannel;
 class ChannelManager;
 class DataChannel;
 class StatsReport;
 class Transport;
 class VideoCapturer;
-class BaseChannel;
 class VideoChannel;
 class VoiceChannel;
-
 }  // namespace cricket
 
 namespace webrtc {
-
 class IceRestartAnswerLatch;
 class MediaStreamSignaling;
 class WebRtcSessionDescriptionFactory;
@@ -79,6 +76,7 @@ extern const char kPushDownAnswerTDFailed[];
 // ICE state callback interface.
 class IceObserver {
  public:
+  IceObserver() {}
   // Called any time the IceConnectionState changes
   virtual void OnIceConnectionChange(
       PeerConnectionInterface::IceConnectionState new_state) {}
@@ -94,6 +92,9 @@ class IceObserver {
 
  protected:
   ~IceObserver() {}
+
+ private:
+  DISALLOW_COPY_AND_ASSIGN(IceObserver);
 };
 
 class WebRtcSession : public cricket::BaseSession,
@@ -131,8 +132,8 @@ class WebRtcSession : public cricket::BaseSession,
     return data_channel_.get();
   }
 
-  void set_secure_policy(cricket::SecureMediaPolicy secure_policy);
-  cricket::SecureMediaPolicy secure_policy() const;
+  void SetSecurePolicy(cricket::SecureMediaPolicy secure_policy);
+  cricket::SecureMediaPolicy SecurePolicy() const;
 
   // Get current ssl role from transport.
   bool GetSslRole(talk_base::SSLRole* role);
@@ -330,8 +331,9 @@ class WebRtcSession : public cricket::BaseSession,
   sigslot::signal0<> SignalVoiceChannelDestroyed;
   sigslot::signal0<> SignalVideoChannelDestroyed;
   sigslot::signal0<> SignalDataChannelDestroyed;
-};
 
+  DISALLOW_COPY_AND_ASSIGN(WebRtcSession);
+};
 }  // namespace webrtc
 
 #endif  // TALK_APP_WEBRTC_WEBRTCSESSION_H_

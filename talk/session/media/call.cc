@@ -186,7 +186,7 @@ bool Call::SendViewRequest(Session* session,
     return false;
   }
 
-  return session->SendInfoMessage(elems);
+  return session->SendInfoMessage(elems, session->remote_name());
 }
 
 void Call::SetLocalRenderer(VideoRenderer* renderer) {

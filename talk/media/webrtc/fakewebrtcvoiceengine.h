@@ -252,6 +252,19 @@ class FakeWebRtcVoiceEngine
                                 true);
     }
   }
+  int AddChannel() {
+    if (fail_create_channel_) {
+      return -1;
+    }
+    Channel* ch = new Channel();
+    for (int i = 0; i < NumOfCodecs(); ++i) {
+      webrtc::CodecInst codec;
+      GetCodec(i, codec);
+      ch->recv_codecs.push_back(codec);
+    }
+    channels_[++last_channel_] = ch;
+    return last_channel_;
+  }
 
   WEBRTC_STUB(Release, ());
 
@@ -275,18 +288,13 @@ class FakeWebRtcVoiceEngine
     return NULL;
   }
   WEBRTC_FUNC(CreateChannel, ()) {
-    if (fail_create_channel_) {
-      return -1;
-    }
-    Channel* ch = new Channel();
-    for (int i = 0; i < NumOfCodecs(); ++i) {
-      webrtc::CodecInst codec;
-      GetCodec(i, codec);
-      ch->recv_codecs.push_back(codec);
-    }
-    channels_[++last_channel_] = ch;
-    return last_channel_;
+    return AddChannel();
   }
+#ifdef USE_WEBRTC_DEV_BRANCH
+  WEBRTC_FUNC(CreateChannel, (const webrtc::Config& /*config*/)) {
+    return AddChannel();
+  }
+#endif
   WEBRTC_FUNC(DeleteChannel, (int channel)) {
     WEBRTC_CHECK_CHANNEL(channel);
     delete channels_[channel];

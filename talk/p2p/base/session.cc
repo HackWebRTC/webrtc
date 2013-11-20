@@ -998,10 +998,11 @@ bool Session::TerminateWithReason(const std::string& reason) {
   return true;
 }
 
-bool Session::SendInfoMessage(const XmlElements& elems) {
+bool Session::SendInfoMessage(const XmlElements& elems,
+                              const std::string& remote_name) {
   ASSERT(signaling_thread()->IsCurrent());
   SessionError error;
-  if (!SendMessage(ACTION_SESSION_INFO, elems, &error)) {
+  if (!SendMessage(ACTION_SESSION_INFO, elems, remote_name, &error)) {
     LOG(LS_ERROR) << "Could not send info message " << error.text;
     return false;
   }
@@ -1644,11 +1645,16 @@ bool Session::SendAllUnsentTransportInfoMessages(SessionError* error) {
 
 bool Session::SendMessage(ActionType type, const XmlElements& action_elems,
                           SessionError* error) {
+    return SendMessage(type, action_elems, remote_name(), error);
+}
+
+bool Session::SendMessage(ActionType type, const XmlElements& action_elems,
+                          const std::string& remote_name, SessionError* error) {
   talk_base::scoped_ptr<buzz::XmlElement> stanza(
       new buzz::XmlElement(buzz::QN_IQ));
 
   SessionMessage msg(current_protocol_, type, id(), initiator_name());
-  msg.to = remote_name();
+  msg.to = remote_name;
   WriteSessionMessage(msg, action_elems, stanza.get());
 
   SignalOutgoingMessage(this, stanza.get());

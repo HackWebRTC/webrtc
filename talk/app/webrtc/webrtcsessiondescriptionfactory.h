@@ -34,20 +34,16 @@
 #include "talk/session/media/mediasession.h"
 
 namespace cricket {
-
 class ChannelManager;
 class TransportDescriptionFactory;
-
 }  // namespace cricket
 
 namespace webrtc {
-
 class CreateSessionDescriptionObserver;
 class MediaConstraintsInterface;
 class MediaStreamSignaling;
 class SessionDescriptionInterface;
 class WebRtcSession;
-
 
 // DTLS identity request callback class.
 class WebRtcIdentityRequestObserver : public DTLSIdentityRequestObserver,
@@ -116,13 +112,15 @@ class WebRtcSessionDescriptionFactory : public talk_base::MessageHandler,
       CreateSessionDescriptionObserver* observer,
       const MediaConstraintsInterface* constraints);
 
-  void set_secure(cricket::SecureMediaPolicy secure_policy);
-  cricket::SecureMediaPolicy secure() const;
+  void SetSecure(cricket::SecureMediaPolicy secure_policy);
+  cricket::SecureMediaPolicy Secure() const;
 
   sigslot::signal1<talk_base::SSLIdentity*> SignalIdentityReady;
 
   // For testing.
-  bool waiting_for_identity() const;
+  bool waiting_for_identity() const {
+    return identity_request_state_ == IDENTITY_WAITING;
+  }
 
  private:
   enum IdentityRequestState {
@@ -166,7 +164,6 @@ class WebRtcSessionDescriptionFactory : public talk_base::MessageHandler,
 
   DISALLOW_COPY_AND_ASSIGN(WebRtcSessionDescriptionFactory);
 };
-
 }  // namespace webrtc
 
 #endif  // TALK_APP_WEBRTC_WEBRTCSESSIONDESCRIPTIONFACTORY_H_

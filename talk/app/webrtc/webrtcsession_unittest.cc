@@ -86,20 +86,21 @@ using webrtc::PeerConnectionInterface;
 using webrtc::SessionDescriptionInterface;
 using webrtc::StreamCollection;
 using webrtc::WebRtcSession;
+using webrtc::kBundleWithoutRtcpMux;
 using webrtc::kMlineMismatch;
+using webrtc::kPushDownAnswerTDFailed;
+using webrtc::kPushDownPranswerTDFailed;
 using webrtc::kSdpWithoutCrypto;
-using webrtc::kSdpWithoutSdesAndDtlsDisabled;
 using webrtc::kSdpWithoutIceUfragPwd;
+using webrtc::kSdpWithoutSdesAndDtlsDisabled;
 using webrtc::kSessionError;
 using webrtc::kSetLocalSdpFailed;
 using webrtc::kSetRemoteSdpFailed;
-using webrtc::kPushDownAnswerTDFailed;
-using webrtc::kPushDownPranswerTDFailed;
-using webrtc::kBundleWithoutRtcpMux;
 
-static const SocketAddress kClientAddr1("11.11.11.11", 0);
-static const SocketAddress kClientAddr2("22.22.22.22", 0);
-static const SocketAddress kStunAddr("99.99.99.1", cricket::STUN_SERVER_PORT);
+static const int kClientAddrPort = 0;
+static const char kClientAddrHost1[] = "11.11.11.11";
+static const char kClientAddrHost2[] = "22.22.22.22";
+static const char kStunAddrHost[] = "99.99.99.1";
 
 static const char kSessionVersion[] = "1";
 
@@ -112,11 +113,6 @@ static const int kMediaContentIndex1 = 1;
 static const char kMediaContentName1[] = "video";
 
 static const int kIceCandidatesTimeout = 10000;
-
-static const cricket::AudioCodec
-    kTelephoneEventCodec(106, "telephone-event", 8000, 0, 1, 0);
-static const cricket::AudioCodec kCNCodec1(102, "CN", 8000, 0, 1, 0);
-static const cricket::AudioCodec kCNCodec2(103, "CN", 16000, 0, 1, 0);
 
 static const char kFakeDtlsFingerprint[] =
     "BB:CD:72:F7:2F:D0:BA:43:F3:68:B1:0C:23:72:B6:4A:"
@@ -159,11 +155,17 @@ class MockIceObserver : public webrtc::IceObserver {
 
   // Found a new candidate.
   virtual void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
-    if (candidate->sdp_mline_index() == kMediaContentIndex0) {
-      mline_0_candidates_.push_back(candidate->candidate());
-    } else if (candidate->sdp_mline_index() == kMediaContentIndex1) {
-      mline_1_candidates_.push_back(candidate->candidate());
+    switch (candidate->sdp_mline_index()) {
+      case kMediaContentIndex0:
+        mline_0_candidates_.push_back(candidate->candidate());
+        break;
+      case kMediaContentIndex1:
+        mline_1_candidates_.push_back(candidate->candidate());
+        break;
+      default:
+        ASSERT(false);
     }
+
     // The ICE gathering state should always be Gathering when a candidate is
     // received (or possibly Completed in the case of the final candidate).
     EXPECT_NE(PeerConnectionInterface::kIceGatheringNew, ice_gathering_state_);
@@ -281,8 +283,10 @@ class WebRtcSessionTest : public testing::Test {
       vss_(new talk_base::VirtualSocketServer(pss_.get())),
       fss_(new talk_base::FirewallSocketServer(vss_.get())),
       ss_scope_(fss_.get()),
-      stun_server_(talk_base::Thread::Current(), kStunAddr),
-      allocator_(&network_manager_, kStunAddr,
+      stun_socket_addr_(talk_base::SocketAddress(kStunAddrHost,
+                                                 cricket::STUN_SERVER_PORT)),
+      stun_server_(talk_base::Thread::Current(), stun_socket_addr_),
+      allocator_(&network_manager_, stun_socket_addr_,
                  SocketAddress(), SocketAddress(), SocketAddress()),
       mediastream_signaling_(channel_manager_.get()) {
     tdesc_factory_->set_protocol(cricket::ICEPROTO_HYBRID);
@@ -324,6 +328,8 @@ class WebRtcSessionTest : public testing::Test {
 
   void InitWithDtmfCodec() {
     // Add kTelephoneEventCodec for dtmf test.
+    const cricket::AudioCodec kTelephoneEventCodec(
+        106, "telephone-event", 8000, 0, 1, 0);
     std::vector<cricket::AudioCodec> codecs;
     codecs.push_back(kTelephoneEventCodec);
     media_engine_->SetAudioCodecs(codecs);
@@ -370,12 +376,12 @@ class WebRtcSessionTest : public testing::Test {
     return observer->ReleaseDescription();
   }
 
-  bool ChannelsExist() {
+  bool ChannelsExist() const {
     return (session_->voice_channel() != NULL &&
             session_->video_channel() != NULL);
   }
 
-  void CheckTransportChannels() {
+  void CheckTransportChannels() const {
     EXPECT_TRUE(session_->GetChannel(cricket::CN_AUDIO, 1) != NULL);
     EXPECT_TRUE(session_->GetChannel(cricket::CN_AUDIO, 2) != NULL);
     EXPECT_TRUE(session_->GetChannel(cricket::CN_VIDEO, 1) != NULL);
@@ -710,7 +716,7 @@ class WebRtcSessionTest : public testing::Test {
   }
 
   void TestSessionCandidatesWithBundleRtcpMux(bool bundle, bool rtcp_mux) {
-    AddInterface(kClientAddr1);
+    AddInterface(talk_base::SocketAddress(kClientAddrHost1, kClientAddrPort));
     Init(NULL);
     mediastream_signaling_.SendAudioVideoStream1();
     FakeConstraints constraints;
@@ -780,7 +786,7 @@ class WebRtcSessionTest : public testing::Test {
   // New -> Checking -> Connected -> Disconnected -> Connected.
   // The Gathering state should go: New -> Gathering -> Completed.
   void TestLoopbackCall() {
-    AddInterface(kClientAddr1);
+    AddInterface(talk_base::SocketAddress(kClientAddrHost1, kClientAddrPort));
     Init(NULL);
     mediastream_signaling_.SendAudioVideoStream1();
     SessionDescriptionInterface* offer = CreateOffer(NULL);
@@ -815,7 +821,10 @@ class WebRtcSessionTest : public testing::Test {
 
     // Adding firewall rule to block ping requests, which should cause
     // transport channel failure.
-    fss_->AddRule(false, talk_base::FP_ANY, talk_base::FD_ANY, kClientAddr1);
+    fss_->AddRule(false,
+                  talk_base::FP_ANY,
+                  talk_base::FD_ANY,
+                  talk_base::SocketAddress(kClientAddrHost1, kClientAddrPort));
     EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionDisconnected,
                    observer_.ice_connection_state_,
                    kIceCandidatesTimeout);
@@ -840,7 +849,10 @@ class WebRtcSessionTest : public testing::Test {
 
   // Adds CN codecs to FakeMediaEngine and MediaDescriptionFactory.
   void AddCNCodecs() {
-    // Add kTelephoneEventCodec for dtmf test.
+    const cricket::AudioCodec kCNCodec1(102, "CN", 8000, 0, 1, 0);
+    const cricket::AudioCodec kCNCodec2(103, "CN", 16000, 0, 1, 0);
+
+    // Add kCNCodec for dtmf test.
     std::vector<cricket::AudioCodec> codecs = media_engine_->audio_codecs();;
     codecs.push_back(kCNCodec1);
     codecs.push_back(kCNCodec2);
@@ -918,6 +930,7 @@ class WebRtcSessionTest : public testing::Test {
   talk_base::scoped_ptr<talk_base::VirtualSocketServer> vss_;
   talk_base::scoped_ptr<talk_base::FirewallSocketServer> fss_;
   talk_base::SocketServerScope ss_scope_;
+  talk_base::SocketAddress stun_socket_addr_;
   cricket::TestStunServer stun_server_;
   talk_base::FakeNetworkManager network_manager_;
   cricket::BasicPortAllocator allocator_;
@@ -941,7 +954,7 @@ TEST_F(WebRtcSessionTest, TestInitializeWithDtls) {
 // Verifies that WebRtcSession uses SEC_REQUIRED by default.
 TEST_F(WebRtcSessionTest, TestDefaultSetSecurePolicy) {
   Init(NULL);
-  EXPECT_EQ(cricket::SEC_REQUIRED, session_->secure_policy());
+  EXPECT_EQ(cricket::SEC_REQUIRED, session_->SecurePolicy());
 }
 
 TEST_F(WebRtcSessionTest, TestSessionCandidates) {
@@ -959,8 +972,8 @@ TEST_F(WebRtcSessionTest, TestSessionCandidatesWithBundleRtcpMux) {
 }
 
 TEST_F(WebRtcSessionTest, TestMultihomeCandidates) {
-  AddInterface(kClientAddr1);
-  AddInterface(kClientAddr2);
+  AddInterface(talk_base::SocketAddress(kClientAddrHost1, kClientAddrPort));
+  AddInterface(talk_base::SocketAddress(kClientAddrHost2, kClientAddrPort));
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream1();
   InitiateCall();
@@ -970,13 +983,16 @@ TEST_F(WebRtcSessionTest, TestMultihomeCandidates) {
 }
 
 TEST_F(WebRtcSessionTest, TestStunError) {
-  AddInterface(kClientAddr1);
-  AddInterface(kClientAddr2);
-  fss_->AddRule(false, talk_base::FP_UDP, talk_base::FD_ANY, kClientAddr1);
+  AddInterface(talk_base::SocketAddress(kClientAddrHost1, kClientAddrPort));
+  AddInterface(talk_base::SocketAddress(kClientAddrHost2, kClientAddrPort));
+  fss_->AddRule(false,
+                talk_base::FP_UDP,
+                talk_base::FD_ANY,
+                talk_base::SocketAddress(kClientAddrHost1, kClientAddrPort));
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream1();
   InitiateCall();
-  // Since kClientAddr1 is blocked, not expecting stun candidates for it.
+  // Since kClientAddrHost1 is blocked, not expecting stun candidates for it.
   EXPECT_TRUE_WAIT(observer_.oncandidatesready_, kIceCandidatesTimeout);
   EXPECT_EQ(6u, observer_.mline_0_candidates_.size());
   EXPECT_EQ(6u, observer_.mline_1_candidates_.size());
@@ -1420,7 +1436,7 @@ TEST_F(WebRtcSessionTest, TestRemoteCandidatesAddedToSessionDescription) {
 // Test that local candidates are added to the local session description and
 // that they are retained if the local session description is changed.
 TEST_F(WebRtcSessionTest, TestLocalCandidatesAddedToSessionDescription) {
-  AddInterface(kClientAddr1);
+  AddInterface(talk_base::SocketAddress(kClientAddrHost1, kClientAddrPort));
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream1();
   CreateAndSetRemoteOfferAndLocalAnswer();
@@ -1484,7 +1500,7 @@ TEST_F(WebRtcSessionTest, TestSetRemoteSessionDescriptionWithCandidates) {
 // Test that offers and answers contains ice candidates when Ice candidates have
 // been gathered.
 TEST_F(WebRtcSessionTest, TestSetLocalAndRemoteDescriptionWithCandidates) {
-  AddInterface(kClientAddr1);
+  AddInterface(talk_base::SocketAddress(kClientAddrHost1, kClientAddrPort));
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream1();
   // Ice is started but candidates are not provided until SetLocalDescription

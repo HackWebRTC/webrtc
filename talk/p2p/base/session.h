@@ -584,7 +584,8 @@ class Session : public BaseSession {
   // arbitrary XML messages, which are called "info" messages. Sending
   // takes ownership of the given elements.  The signal does not; the
   // parent element will be deleted after the signal.
-  bool SendInfoMessage(const XmlElements& elems);
+  bool SendInfoMessage(const XmlElements& elems,
+                       const std::string& remote_name);
   bool SendDescriptionInfoMessage(const ContentInfos& contents);
   sigslot::signal2<Session*, const buzz::XmlElement*> SignalInfoMessage;
 
@@ -638,7 +639,7 @@ class Session : public BaseSession {
   bool ResendAllTransportInfoMessages(SessionError* error);
   bool SendAllUnsentTransportInfoMessages(SessionError* error);
 
-  // Both versions of SendMessage send a message of the given type to
+  // All versions of SendMessage send a message of the given type to
   // the other client.  Can pass either a set of elements or an
   // "action", which must have a WriteSessionAction method to go along
   // with it.  Sending with an action supports sending a "hybrid"
@@ -647,6 +648,10 @@ class Session : public BaseSession {
   // When passing elems, must be either Jingle or Gingle protocol.
   // Takes ownership of action_elems.
   bool SendMessage(ActionType type, const XmlElements& action_elems,
+                   SessionError* error);
+  // Sends a messge, but overrides the remote name.
+  bool SendMessage(ActionType type, const XmlElements& action_elems,
+                   const std::string& remote_name,
                    SessionError* error);
   // When passing an action, may be Hybrid protocol.
   template <typename Action>

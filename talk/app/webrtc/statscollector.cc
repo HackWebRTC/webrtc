@@ -100,6 +100,8 @@ const char StatsReport::kStatsValueNameInitiator[] = "googInitiator";
 const char StatsReport::kStatsValueNameIssuerId[] = "googIssuerId";
 const char StatsReport::kStatsValueNameJitterReceived[] = "googJitterReceived";
 const char StatsReport::kStatsValueNameLocalAddress[] = "googLocalAddress";
+const char StatsReport::kStatsValueNameLocalCandidateType[] =
+    "googLocalCandidateType";
 const char StatsReport::kStatsValueNameLocalCertificateId[] =
     "googLocalCertificateId";
 const char StatsReport::kStatsValueNameNacksReceived[] = "googNacksReceived";
@@ -109,6 +111,8 @@ const char StatsReport::kStatsValueNamePacketsSent[] = "packetsSent";
 const char StatsReport::kStatsValueNamePacketsLost[] = "packetsLost";
 const char StatsReport::kStatsValueNameReadable[] = "googReadable";
 const char StatsReport::kStatsValueNameRemoteAddress[] = "googRemoteAddress";
+const char StatsReport::kStatsValueNameRemoteCandidateType[] =
+    "googRemoteCandidateType";
 const char StatsReport::kStatsValueNameRemoteCertificateId[] =
     "googRemoteCertificateId";
 const char StatsReport::kStatsValueNameRetransmitBitrate[] =
@@ -678,6 +682,10 @@ void StatsCollector::ExtractSessionInfo() {
           report.AddValue(StatsReport::kStatsValueNameRtt, info.rtt);
           report.AddValue(StatsReport::kStatsValueNameTransportType,
                           info.local_candidate.protocol());
+          report.AddValue(StatsReport::kStatsValueNameLocalCandidateType,
+                          info.local_candidate.type());
+          report.AddValue(StatsReport::kStatsValueNameRemoteCandidateType,
+                          info.remote_candidate.type());
           reports_[report.id] = report;
         }
       }

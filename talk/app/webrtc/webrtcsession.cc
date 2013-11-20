@@ -526,7 +526,7 @@ bool WebRtcSession::Initialize(
       this, &WebRtcSession::OnIdentityReady);
 
   if (options.disable_encryption) {
-    webrtc_session_desc_factory_->set_secure(cricket::SEC_DISABLED);
+    webrtc_session_desc_factory_->SetSecure(cricket::SEC_DISABLED);
   }
 
   return true;
@@ -554,13 +554,13 @@ bool WebRtcSession::StartCandidatesAllocation() {
   return true;
 }
 
-void WebRtcSession::set_secure_policy(
+void WebRtcSession::SetSecurePolicy(
     cricket::SecureMediaPolicy secure_policy) {
-  webrtc_session_desc_factory_->set_secure(secure_policy);
+  webrtc_session_desc_factory_->SetSecure(secure_policy);
 }
 
-cricket::SecureMediaPolicy WebRtcSession::secure_policy() const {
-  return webrtc_session_desc_factory_->secure();
+cricket::SecureMediaPolicy WebRtcSession::SecurePolicy() const {
+  return webrtc_session_desc_factory_->Secure();
 }
 
 bool WebRtcSession::GetSslRole(talk_base::SSLRole* role) {
@@ -610,7 +610,7 @@ bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,
   }
 
   cricket::SecureMediaPolicy secure_policy =
-      webrtc_session_desc_factory_->secure();
+      webrtc_session_desc_factory_->Secure();
   // Update the MediaContentDescription crypto settings as per the policy set.
   UpdateSessionDescriptionSecurePolicy(secure_policy, desc->description());
 
@@ -1483,7 +1483,7 @@ bool WebRtcSession::ValidateSessionDescription(
 
   // Verify crypto settings.
   std::string crypto_error;
-  if (webrtc_session_desc_factory_->secure() == cricket::SEC_REQUIRED &&
+  if (webrtc_session_desc_factory_->Secure() == cricket::SEC_REQUIRED &&
       !VerifyCrypto(sdesc->description(), dtls_enabled_, &crypto_error)) {
     return BadSdp(source, crypto_error, error_desc);
   }

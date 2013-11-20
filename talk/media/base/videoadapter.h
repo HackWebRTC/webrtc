@@ -109,7 +109,7 @@ class CoordinatedVideoAdapter
     : public VideoAdapter, public sigslot::has_slots<>  {
  public:
   enum AdaptRequest { UPGRADE, KEEP, DOWNGRADE };
-  enum {
+  enum AdaptReasonEnum {
     ADAPTREASON_CPU = 1,
     ADAPTREASON_BANDWIDTH = 2,
     ADAPTREASON_VIEW = 4
