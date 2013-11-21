@@ -22,6 +22,7 @@ namespace test {
 
 class RtpRtcpObserver {
  public:
+  virtual ~RtpRtcpObserver() {}
   newapi::Transport* SendTransport() {
     return &send_transport_;
   }

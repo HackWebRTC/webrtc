@@ -183,6 +183,7 @@
               '-Wno-missing-field-initializers',
             ],
             'cflags_cc': [
+              '-Wnon-virtual-dtor',
               # This is enabled for clang; enable for gcc as well.
               '-Woverloaded-virtual',
             ],
