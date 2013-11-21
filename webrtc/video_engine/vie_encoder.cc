@@ -1112,19 +1112,19 @@ void ViEEncoder::OnNetworkChanged(const uint32_t bitrate_bps,
                                max_padding_bitrate_kbps,
                                pad_up_to_bitrate_kbps);
   default_rtp_rtcp_->SetTargetSendBitrate(stream_bitrates);
-  if (video_is_suspended != video_suspended_) {
-    // State changed now. Send callback to inform about that.
-    {
-      CriticalSectionScoped cs(data_cs_.get());
-      video_suspended_ = video_is_suspended;
-    }
-    if (codec_observer_) {
-      WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
-                   ViEId(engine_id_, channel_id_),
-                   "%s: video_suspended_ changed to %i",
-                   __FUNCTION__, video_suspended_);
-      codec_observer_->VideoSuspended(channel_id_, video_suspended_);
-    }
+  {
+    CriticalSectionScoped cs(data_cs_.get());
+    if (video_suspended_ == video_is_suspended)
+      return;
+    video_suspended_ = video_is_suspended;
+  }
+  // State changed, inform codec observer.
+  if (codec_observer_) {
+    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
+                 ViEId(engine_id_, channel_id_),
+                 "%s: video_suspended_ changed to %i",
+                 __FUNCTION__, video_is_suspended);
+    codec_observer_->VideoSuspended(channel_id_, video_is_suspended);
   }
 }
 
