@@ -124,6 +124,12 @@ TEST_F(RtpRtcpImplTest, Rtt) {
       rtp_rtcp_impl_->RTT(kSsrc + 1, &rtt, &avg_rtt, &min_rtt, &max_rtt));
 }
 
+TEST_F(RtpRtcpImplTest, SetRtcpXrRrtrStatus) {
+  EXPECT_FALSE(rtp_rtcp_impl_->RtcpXrRrtrStatus());
+  rtp_rtcp_impl_->SetRtcpXrRrtrStatus(true);
+  EXPECT_TRUE(rtp_rtcp_impl_->RtcpXrRrtrStatus());
+}
+
 TEST_F(RtpRtcpImplTest, RttForReceiverOnly) {
   rtp_rtcp_impl_->SetRtcpXrRrtrStatus(true);
   EXPECT_EQ(0, rtp_rtcp_impl_->SetSendingStatus(false));

@@ -125,6 +125,7 @@ class ViEChannel
   int SetSendAbsoluteSendTimeStatus(bool enable, int id);
   int SetReceiveAbsoluteSendTimeStatus(bool enable, int id);
   bool GetReceiveAbsoluteSendTimeStatus() const;
+  void SetRtcpXrRrtrStatus(bool enable);
   void SetTransmissionSmoothingStatus(bool enable);
   int32_t EnableTMMBR(const bool enable);
   int32_t EnableKeyFrameRequestCallback(const bool enable);

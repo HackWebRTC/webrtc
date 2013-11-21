@@ -963,6 +963,10 @@ void ModuleRtpRtcpImpl::SetRtcpXrRrtrStatus(bool enable) {
   return rtcp_sender_.SendRtcpXrReceiverReferenceTime(enable);
 }
 
+bool ModuleRtpRtcpImpl::RtcpXrRrtrStatus() const {
+  return rtcp_sender_.RtcpXrReceiverReferenceTime();
+}
+
 int32_t ModuleRtpRtcpImpl::DataCountersRTP(
     uint32_t* bytes_sent,
     uint32_t* packets_sent) const {

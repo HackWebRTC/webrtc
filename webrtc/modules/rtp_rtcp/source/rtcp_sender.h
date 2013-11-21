@@ -171,6 +171,8 @@ public:
 
     void SendRtcpXrReceiverReferenceTime(bool enable);
 
+    bool RtcpXrReceiverReferenceTime() const;
+
     int32_t SetCSRCs(const uint32_t arrOfCSRC[kRtpCsrcSize],
                      const uint8_t arrLength);
 

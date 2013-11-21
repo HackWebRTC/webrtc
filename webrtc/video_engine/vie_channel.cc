@@ -406,6 +406,7 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
         rtp_rtcp->DeregisterSendRtpHeaderExtension(
             kRtpExtensionAbsoluteSendTime);
       }
+      rtp_rtcp->SetRtcpXrRrtrStatus(rtp_rtcp_->RtcpXrRrtrStatus());
     }
     // |RegisterSimulcastRtpRtcpModules| resets all old weak pointers and old
     // modules can be deleted after this step.
@@ -920,6 +921,15 @@ int ViEChannel::SetReceiveAbsoluteSendTimeStatus(bool enable, int id) {
 
 bool ViEChannel::GetReceiveAbsoluteSendTimeStatus() const {
   return receive_absolute_send_time_enabled_;
+}
+
+void ViEChannel::SetRtcpXrRrtrStatus(bool enable) {
+  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
+  rtp_rtcp_->SetRtcpXrRrtrStatus(enable);
+  for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
+       it != simulcast_rtp_rtcp_.end(); it++) {
+    (*it)->SetRtcpXrRrtrStatus(enable);
+  }
 }
 
 void ViEChannel::SetTransmissionSmoothingStatus(bool enable) {

@@ -170,6 +170,8 @@ class MockRtpRtcp : public RtpRtcp {
       int32_t(const RTCPVoIPMetric* VoIPMetric));
   MOCK_METHOD1(SetRtcpXrRrtrStatus,
       void(bool enable));
+  MOCK_CONST_METHOD0(RtcpXrRrtrStatus,
+      bool());
   MOCK_CONST_METHOD0(REMB,
       bool());
   MOCK_METHOD1(SetREMBStatus,

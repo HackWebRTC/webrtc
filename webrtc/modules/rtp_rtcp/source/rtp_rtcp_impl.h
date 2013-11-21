@@ -259,6 +259,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   // (XR) Receiver reference time report.
   virtual void SetRtcpXrRrtrStatus(bool enable) OVERRIDE;
 
+  virtual bool RtcpXrRrtrStatus() const OVERRIDE;
+
   // Audio part.
 
   // Set audio packet size, used to determine when it's time to send a DTMF

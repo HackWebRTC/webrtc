@@ -2182,6 +2182,11 @@ void RTCPSender::SendRtcpXrReceiverReferenceTime(bool enable) {
   xrSendReceiverReferenceTimeEnabled_ = enable;
 }
 
+bool RTCPSender::RtcpXrReceiverReferenceTime() const {
+  CriticalSectionScoped lock(_criticalSectionRTCPSender);
+  return xrSendReceiverReferenceTimeEnabled_;
+}
+
 // called under critsect _criticalSectionRTCPSender
 int32_t RTCPSender::WriteAllReportBlocksToBuffer(
     uint8_t* rtcpbuffer,

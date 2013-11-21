@@ -510,6 +510,8 @@ class RtpRtcp : public Module {
     */
     virtual void SetRtcpXrRrtrStatus(bool enable) = 0;
 
+    virtual bool RtcpXrRrtrStatus() const = 0;
+
     /*
     *  (REMB) Receiver Estimated Max Bitrate
     */
