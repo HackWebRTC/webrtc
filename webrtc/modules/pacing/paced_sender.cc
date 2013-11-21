@@ -107,7 +107,7 @@ class IntervalBudget {
 
   void UseBudget(int bytes) {
     bytes_remaining_ = std::max(bytes_remaining_ - bytes,
-                                -100 * target_rate_kbps_ / 8);
+                                -500 * target_rate_kbps_ / 8);
   }
 
   int bytes_remaining() const { return bytes_remaining_; }
