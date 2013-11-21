@@ -301,7 +301,7 @@ class BitrateStatisticsObserver {
 // Callback, used to notify an observer whenever frame counts have been updated
 class FrameCountObserver {
  public:
-  ~FrameCountObserver() {}
+  virtual ~FrameCountObserver() {}
   virtual void Notify(const unsigned int key_frames,
                       const unsigned int delta_frames,
                       const unsigned int ssrc) = 0;
