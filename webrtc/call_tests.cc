@@ -119,9 +119,9 @@ class CallTest : public ::testing::Test {
 
   void DestroyStreams() {
     if (send_stream_ != NULL)
-      sender_call_->DestroySendStream(send_stream_);
+      sender_call_->DestroyVideoSendStream(send_stream_);
     if (receive_stream_ != NULL)
-      receiver_call_->DestroyReceiveStream(receive_stream_);
+      receiver_call_->DestroyVideoReceiveStream(receive_stream_);
     send_stream_ = NULL;
     receive_stream_ = NULL;
   }
@@ -623,7 +623,7 @@ TEST_F(CallTest, SurvivesIncomingRtpPacketsToDestroyedReceiveStream) {
   CreateFrameGenerator();
   StartSending();
 
-  receiver_call_->DestroyReceiveStream(receive_stream_);
+  receiver_call_->DestroyVideoReceiveStream(receive_stream_);
   receive_stream_ = NULL;
 
   // Wait() waits for a received packet.
@@ -810,8 +810,8 @@ TEST_F(CallTest, SendsAndReceivesMultipleStreams) {
   for (size_t i = 0; i < kNumStreams; ++i) {
     frame_generators[i]->Stop();
     delete frame_generators[i];
-    sender_call->DestroySendStream(send_streams[i]);
-    receiver_call->DestroyReceiveStream(receive_streams[i]);
+    sender_call->DestroyVideoSendStream(send_streams[i]);
+    receiver_call->DestroyVideoReceiveStream(receive_streams[i]);
     delete observers[i];
   }
 

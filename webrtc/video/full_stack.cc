@@ -435,8 +435,8 @@ TEST_P(FullStackTest, NoPacketLoss) {
   send_stream->StopSending();
   receive_stream->StopReceiving();
 
-  call->DestroyReceiveStream(receive_stream);
-  call->DestroySendStream(send_stream);
+  call->DestroyVideoReceiveStream(receive_stream);
+  call->DestroyVideoSendStream(send_stream);
 
   transport.StopSending();
 }

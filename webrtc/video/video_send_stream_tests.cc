@@ -52,7 +52,7 @@ class VideoSendStreamTest : public ::testing::Test {
     observer->StopSending();
     frame_generator_capturer->Stop();
     send_stream_->StopSending();
-    call->DestroySendStream(send_stream_);
+    call->DestroyVideoSendStream(send_stream_);
   }
 
   VideoSendStream::Config GetSendTestConfig(Call* call) {

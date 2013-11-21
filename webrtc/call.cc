@@ -41,14 +41,15 @@ class Call : public webrtc::Call, public PacketReceiver {
   virtual VideoSendStream* CreateVideoSendStream(
       const VideoSendStream::Config& config) OVERRIDE;
 
-  virtual void DestroySendStream(webrtc::VideoSendStream* send_stream) OVERRIDE;
+  virtual void DestroyVideoSendStream(webrtc::VideoSendStream* send_stream)
+      OVERRIDE;
 
   virtual VideoReceiveStream::Config GetDefaultReceiveConfig() OVERRIDE;
 
   virtual VideoReceiveStream* CreateVideoReceiveStream(
       const VideoReceiveStream::Config& config) OVERRIDE;
 
-  virtual void DestroyReceiveStream(
+  virtual void DestroyVideoReceiveStream(
       webrtc::VideoReceiveStream* receive_stream) OVERRIDE;
 
   virtual uint32_t SendBitrateEstimate() OVERRIDE;
@@ -228,7 +229,7 @@ VideoSendStream* Call::CreateVideoSendStream(
   return send_stream;
 }
 
-void Call::DestroySendStream(webrtc::VideoSendStream* send_stream) {
+void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
   assert(send_stream != NULL);
 
   VideoSendStream* send_stream_impl = NULL;
@@ -265,7 +266,8 @@ VideoReceiveStream* Call::CreateVideoReceiveStream(
   return receive_stream;
 }
 
-void Call::DestroyReceiveStream(webrtc::VideoReceiveStream* receive_stream) {
+void Call::DestroyVideoReceiveStream(
+    webrtc::VideoReceiveStream* receive_stream) {
   assert(receive_stream != NULL);
 
   VideoReceiveStream* receive_stream_impl = NULL;

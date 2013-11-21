@@ -162,8 +162,8 @@ TEST_P(RampUpTest, RampUpWithPadding) {
   send_stream->StopSending();
   receive_stream->StopReceiving();
 
-  call->DestroyReceiveStream(receive_stream);
-  call->DestroySendStream(send_stream);
+  call->DestroyVideoReceiveStream(receive_stream);
+  call->DestroyVideoSendStream(send_stream);
 }
 
 INSTANTIATE_TEST_CASE_P(RampUpTest, RampUpTest, ::testing::Bool());

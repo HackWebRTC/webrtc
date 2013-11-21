@@ -66,13 +66,14 @@ class Call {
   // Returns the internal state of the send stream, for resume sending with a
   // new stream with different settings.
   // Note: Only the last returned send-stream state is valid.
-  virtual void DestroySendStream(VideoSendStream* send_stream) = 0;
+  virtual void DestroyVideoSendStream(VideoSendStream* send_stream) = 0;
 
   virtual VideoReceiveStream::Config GetDefaultReceiveConfig() = 0;
 
   virtual VideoReceiveStream* CreateVideoReceiveStream(
       const VideoReceiveStream::Config& config) = 0;
-  virtual void DestroyReceiveStream(VideoReceiveStream* receive_stream) = 0;
+  virtual void DestroyVideoReceiveStream(
+      VideoReceiveStream* receive_stream) = 0;
 
   // All received RTP and RTCP packets for the call should be inserted to this
   // PacketReceiver. The PacketReceiver pointer is valid as long as the
