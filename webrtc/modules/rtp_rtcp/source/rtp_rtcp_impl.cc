@@ -352,7 +352,12 @@ int32_t ModuleRtpRtcpImpl::RegisterSendPayload(
                video_codec.plType);
 
   send_video_codec_ = video_codec;
-  simulcast_ = (video_codec.numberOfSimulcastStreams > 1) ? true : false;
+  {
+    // simulcast_ is accessed when accessing child_modules_, so this write needs
+    // to be protected by the same lock.
+    CriticalSectionScoped lock(critical_section_module_ptrs_.get());
+    simulcast_ = video_codec.numberOfSimulcastStreams > 1;
+  }
   return rtp_sender_.RegisterPayload(video_codec.plName,
                                      video_codec.plType,
                                      90000,
@@ -606,12 +611,12 @@ int32_t ModuleRtpRtcpImpl::SendOutgoingData(
                                         &(rtp_video_hdr->codecHeader));
   }
   int32_t ret_val = -1;
+  CriticalSectionScoped lock(critical_section_module_ptrs_.get());
   if (simulcast_) {
     if (rtp_video_hdr == NULL) {
       return -1;
     }
     int idx = 0;
-    CriticalSectionScoped lock(critical_section_module_ptrs_.get());
     std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
     for (; idx < rtp_video_hdr->simulcastIdx; ++it) {
       if (it == child_modules_.end()) {
@@ -644,7 +649,6 @@ int32_t ModuleRtpRtcpImpl::SendOutgoingData(
                                    fragmentation,
                                    rtp_video_hdr);
   } else {
-    CriticalSectionScoped lock(critical_section_module_ptrs_.get());
     std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
     // Send to all "child" modules
     while (it != child_modules_.end()) {
