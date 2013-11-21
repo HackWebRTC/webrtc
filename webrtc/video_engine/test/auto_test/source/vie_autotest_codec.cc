@@ -44,7 +44,7 @@ class TestCodecObserver : public webrtc::ViEEncoderObserver,
   unsigned int last_outgoing_bitrate_;
   unsigned int last_incoming_framerate_;
   unsigned int last_incoming_bitrate_;
-  unsigned int video_suspended_called_;
+  unsigned int suspend_change_called_;
 
   webrtc::VideoCodec incoming_codec_;
 
@@ -60,7 +60,7 @@ class TestCodecObserver : public webrtc::ViEEncoderObserver,
         last_outgoing_bitrate_(0),
         last_incoming_framerate_(0),
         last_incoming_bitrate_(0),
-        video_suspended_called_(0) {
+        suspend_change_called_(0) {
     memset(&incoming_codec_, 0, sizeof(incoming_codec_));
   }
   virtual void IncomingCodecChanged(const int video_channel,
@@ -100,8 +100,8 @@ class TestCodecObserver : public webrtc::ViEEncoderObserver,
     last_outgoing_bitrate_ += bitrate;
   }
 
-  virtual void VideoSuspended(int video_channel, bool is_suspended) OVERRIDE {
-    video_suspended_called_++;
+  virtual void SuspendChange(int video_channel, bool is_suspended) OVERRIDE {
+    suspend_change_called_++;
   }
 
   virtual void RequestNewKeyFrame(const int video_channel) {

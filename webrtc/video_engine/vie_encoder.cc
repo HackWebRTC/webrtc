@@ -1124,7 +1124,7 @@ void ViEEncoder::OnNetworkChanged(const uint32_t bitrate_bps,
                  ViEId(engine_id_, channel_id_),
                  "%s: video_suspended_ changed to %i",
                  __FUNCTION__, video_is_suspended);
-    codec_observer_->VideoSuspended(channel_id_, video_is_suspended);
+    codec_observer_->SuspendChange(channel_id_, video_is_suspended);
   }
 }
 

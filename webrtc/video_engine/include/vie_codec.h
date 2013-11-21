@@ -39,7 +39,7 @@ class WEBRTC_DLLEXPORT ViEEncoderObserver {
   // This method is called whenever the state of the SuspendBelowMinBitrate
   // changes, i.e., when |is_suspended| toggles.
   // TODO(hlundin): Remove the default implementation when possible.
-  virtual void VideoSuspended(int video_channel, bool is_suspended) {}
+  virtual void SuspendChange(int video_channel, bool is_suspended) {}
 
  protected:
   virtual ~ViEEncoderObserver() {}
