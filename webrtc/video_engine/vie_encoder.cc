@@ -525,7 +525,12 @@ bool ViEEncoder::TimeToSendPacket(uint32_t ssrc,
 }
 
 int ViEEncoder::TimeToSendPadding(int bytes) {
-  if (send_padding_) {
+  bool send_padding;
+  {
+    CriticalSectionScoped cs(data_cs_.get());
+    send_padding = send_padding_ || video_suspended_;
+  }
+  if (send_padding) {
     return default_rtp_rtcp_->TimeToSendPadding(bytes);
   }
   return 0;
@@ -1109,7 +1114,10 @@ void ViEEncoder::OnNetworkChanged(const uint32_t bitrate_bps,
   default_rtp_rtcp_->SetTargetSendBitrate(stream_bitrates);
   if (video_is_suspended != video_suspended_) {
     // State changed now. Send callback to inform about that.
-    video_suspended_ = video_is_suspended;
+    {
+      CriticalSectionScoped cs(data_cs_.get());
+      video_suspended_ = video_is_suspended;
+    }
     if (codec_observer_) {
       WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
                    ViEId(engine_id_, channel_id_),

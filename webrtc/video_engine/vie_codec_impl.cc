@@ -724,7 +724,18 @@ void ViECodecImpl::SuspendBelowMinBitrate(int video_channel) {
                  "%s: No encoder %d", __FUNCTION__, video_channel);
     return;
   }
-  return vie_encoder->SuspendBelowMinBitrate();
+  vie_encoder->SuspendBelowMinBitrate();
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(shared_data_->instance_id(), video_channel),
+                 "%s: No channel %d", __FUNCTION__, video_channel);
+    return;
+  }
+  // Must enable pacing when enabling SuspendBelowMinBitrate. Otherwise, no
+  // padding will be sent when the video is suspended so the video will be
+  // unable to recover.
+  vie_channel->SetTransmissionSmoothingStatus(true);
 }
 
 bool ViECodecImpl::CodecValid(const VideoCodec& video_codec) {

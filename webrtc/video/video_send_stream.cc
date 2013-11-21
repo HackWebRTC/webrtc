@@ -104,6 +104,8 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
                               static_cast<unsigned char>(i));
     }
   }
+  if (config_.suspend_below_min_bitrate)
+    config_.pacing = true;
   rtp_rtcp_->SetTransmissionSmoothingStatus(channel_, config_.pacing);
   if (!config_.rtp.rtx.ssrcs.empty()) {
     assert(config_.rtp.rtx.ssrcs.size() == config_.rtp.ssrcs.size());

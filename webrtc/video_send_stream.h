@@ -145,6 +145,8 @@ class VideoSendStream {
     // True if the stream should be suspended when the available bitrate fall
     // below the minimum configured bitrate. If this variable is false, the
     // stream may send at a rate higher than the estimated available bitrate.
+    // Enabling suspend_below_min_bitrate will also enable pacing and padding,
+    // otherwise, the video will be unable to recover from suspension.
     bool suspend_below_min_bitrate;
   };
 
