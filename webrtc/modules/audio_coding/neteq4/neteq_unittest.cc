@@ -18,6 +18,7 @@
 #include <string.h>  // memset
 
 #include <cmath>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -213,6 +214,10 @@ class NetEqDecodingTest : public ::testing::Test {
                           int* payload_len);
 
   void CheckBgnOff(int sampling_rate, NetEqBackgroundNoiseMode bgn_mode);
+
+  void WrapTest(uint16_t start_seq_no, uint32_t start_timestamp,
+                const std::set<uint16_t>& drop_seq_numbers,
+                bool expect_seq_no_wrap, bool expect_timestamp_wrap);
 
   NetEq* neteq_;
   FILE* rtp_fp_;
@@ -1102,6 +1107,111 @@ TEST_F(NetEqDecodingTest,
     ASSERT_EQ(1, num_channels);
     EXPECT_TRUE(IsAllNonZero(decoded, samples_per_channel * num_channels));
   }
+}
+
+void NetEqDecodingTest::WrapTest(uint16_t start_seq_no,
+                                 uint32_t start_timestamp,
+                                 const std::set<uint16_t>& drop_seq_numbers,
+                                 bool expect_seq_no_wrap,
+                                 bool expect_timestamp_wrap) {
+  uint16_t seq_no = start_seq_no;
+  uint32_t timestamp = start_timestamp;
+  const int kBlocksPerFrame = 3;  // Number of 10 ms blocks per frame.
+  const int kFrameSizeMs = kBlocksPerFrame * kTimeStepMs;
+  const int kSamples = kBlockSize16kHz * kBlocksPerFrame;
+  const int kPayloadBytes = kSamples * sizeof(int16_t);
+  double next_input_time_ms = 0.0;
+  int16_t decoded[kBlockSize16kHz];
+  int num_channels;
+  int samples_per_channel;
+  NetEqOutputType output_type;
+  uint32_t receive_timestamp = 0;
+
+  // Insert speech for 1 second.
+  const int kSpeechDurationMs = 2000;
+  int packets_inserted = 0;
+  uint16_t last_seq_no;
+  uint32_t last_timestamp;
+  bool timestamp_wrapped = false;
+  bool seq_no_wrapped = false;
+  for (double t_ms = 0; t_ms < kSpeechDurationMs; t_ms += 10) {
+    // Each turn in this for loop is 10 ms.
+    while (next_input_time_ms <= t_ms) {
+      // Insert one 30 ms speech frame.
+      uint8_t payload[kPayloadBytes] = {0};
+      WebRtcRTPHeader rtp_info;
+      PopulateRtpInfo(seq_no, timestamp, &rtp_info);
+      if (drop_seq_numbers.find(seq_no) == drop_seq_numbers.end()) {
+        // This sequence number was not in the set to drop. Insert it.
+        ASSERT_EQ(0,
+                  neteq_->InsertPacket(rtp_info, payload, kPayloadBytes,
+                                       receive_timestamp));
+        ++packets_inserted;
+      }
+      NetEqNetworkStatistics network_stats;
+      ASSERT_EQ(0, neteq_->NetworkStatistics(&network_stats));
+
+      // Due to internal NetEq logic, preferred buffer-size is about 4 times the
+      // packet size for first few packets. Therefore we refrain from checking
+      // the criteria.
+      if (packets_inserted > 4) {
+        // Expect preferred and actual buffer size to be no more than 2 frames.
+        EXPECT_LE(network_stats.preferred_buffer_size_ms, kFrameSizeMs * 2);
+        EXPECT_LE(network_stats.current_buffer_size_ms, kFrameSizeMs * 2);
+      }
+      last_seq_no = seq_no;
+      last_timestamp = timestamp;
+
+      ++seq_no;
+      timestamp += kSamples;
+      receive_timestamp += kSamples;
+      next_input_time_ms += static_cast<double>(kFrameSizeMs);
+
+      seq_no_wrapped |= seq_no < last_seq_no;
+      timestamp_wrapped |= timestamp < last_timestamp;
+    }
+    // Pull out data once.
+    ASSERT_EQ(0, neteq_->GetAudio(kBlockSize16kHz, decoded,
+                                  &samples_per_channel, &num_channels,
+                                  &output_type));
+    ASSERT_EQ(kBlockSize16kHz, samples_per_channel);
+    ASSERT_EQ(1, num_channels);
+
+    // Expect delay (in samples) to be less than 2 packets.
+    EXPECT_LE(timestamp - neteq_->PlayoutTimestamp(),
+              static_cast<uint32_t>(kSamples * 2));
+
+  }
+  // Make sure we have actually tested wrap-around.
+  ASSERT_EQ(expect_seq_no_wrap, seq_no_wrapped);
+  ASSERT_EQ(expect_timestamp_wrap, timestamp_wrapped);
+}
+
+TEST_F(NetEqDecodingTest, SequenceNumberWrap) {
+  // Start with a sequence number that will soon wrap.
+  std::set<uint16_t> drop_seq_numbers;  // Don't drop any packets.
+  WrapTest(0xFFFF - 10, 0, drop_seq_numbers, true, false);
+}
+
+TEST_F(NetEqDecodingTest, SequenceNumberWrapAndDrop) {
+  // Start with a sequence number that will soon wrap.
+  std::set<uint16_t> drop_seq_numbers;
+  drop_seq_numbers.insert(0xFFFF);
+  drop_seq_numbers.insert(0x0);
+  WrapTest(0xFFFF - 10, 0, drop_seq_numbers, true, false);
+}
+
+TEST_F(NetEqDecodingTest, TimestampWrap) {
+  // Start with a timestamp that will soon wrap.
+  std::set<uint16_t> drop_seq_numbers;
+  WrapTest(0, 0xFFFFFFFF - 3000, drop_seq_numbers, false, true);
+}
+
+TEST_F(NetEqDecodingTest, TimestampAndSequenceNumberWrap) {
+  // Start with a timestamp and a sequence number that will wrap at the same
+  // time.
+  std::set<uint16_t> drop_seq_numbers;
+  WrapTest(0xFFFF - 10, 0xFFFFFFFF - 5000, drop_seq_numbers, true, true);
 }
 
 }  // namespace
