@@ -19,6 +19,9 @@
 
 namespace webrtc {
 
+const char kLegacyAcmVersion[] = "acm1";
+const char kExperimentalAcmVersion[] = "acm2";
+
 // Create module
 AudioCodingModule* AudioCodingModule::Create(int id) {
   return new acm1::AudioCodingModuleImpl(id, Clock::GetRealTimeClock());

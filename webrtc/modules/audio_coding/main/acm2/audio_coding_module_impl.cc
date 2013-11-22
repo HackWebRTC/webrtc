@@ -1975,6 +1975,10 @@ int AudioCodingModuleImpl::LeastRequiredDelayMs() const {
   return receiver_.LeastRequiredDelayMs();
 }
 
+const char* AudioCodingModuleImpl::Version() const {
+  return kExperimentalAcmVersion;
+}
+
 }  // namespace acm2
 
 }  // namespace webrtc

@@ -3026,6 +3026,10 @@ void AudioCodingModuleImpl::DisableNack() {
   nack_enabled_ = false;
 }
 
+const char* AudioCodingModuleImpl::Version() const {
+  return kLegacyAcmVersion;
+}
+
 }  // namespace acm1
 
 }  // namespace webrtc
