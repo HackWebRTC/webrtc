@@ -20,6 +20,7 @@ import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceView;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
 
@@ -245,7 +246,7 @@ class ViEMediaCodecDecoder {
 
     private Thread mLooperThread;
 
-    public void configure(SurfaceView surfaceView, int width, int height) {
+    public boolean configure(SurfaceView surfaceView, int width, int height) {
         mSurfaceView = surfaceView;
         Log.d(TAG, "configure " + "width" + width + "height" + height + mSurfaceView.toString());
 
@@ -253,18 +254,30 @@ class ViEMediaCodecDecoder {
         format.setString(MediaFormat.KEY_MIME, "video/x-vnd.on2.vp8");
         format.setInteger(MediaFormat.KEY_WIDTH, width);
         format.setInteger(MediaFormat.KEY_HEIGHT, height);
-        MediaCodec codec = MediaCodec.createDecoderByType("video/x-vnd.on2.vp8");
-        // SW VP8 decoder
-        // MediaCodec codec = MediaCodec.createByCodecName("OMX.google.vpx.decoder");
-        // Nexus10 HW VP8 decoder
-        // MediaCodec codec = MediaCodec.createByCodecName("OMX.Exynos.VP8.Decoder");
+
         Surface surface = mSurfaceView.getHolder().getSurface();
         Log.d(TAG, "Surface " + surface.isValid());
-        codec.configure(
-                format, surface, null, 0);
-        mCodecState = new CodecState(this, format, codec);
+        MediaCodec codec;
+        try {
+            codec = MediaCodec.createDecoderByType("video/x-vnd.on2.vp8");
+            // SW VP8 decoder
+            // codec = MediaCodec.createByCodecName("OMX.google.vpx.decoder");
+            // Nexus10 HW VP8 decoder
+            // codec = MediaCodec.createByCodecName("OMX.Exynos.VP8.Decoder");
+        } catch (Exception e) {
+            // TODO(dwkang): replace this instanceof/throw with a narrower catch clause
+            // once the SDK advances.
+            if (e instanceof IOException) {
+                Log.e(TAG, "Failed to create MediaCodec for VP8.", e);
+                return false;
+            }
+            throw new RuntimeException(e);
+        }
 
+        codec.configure(format, surface, null, 0);
+        mCodecState = new CodecState(this, format, codec);
         initMediaCodecView();
+        return true;
     }
 
     public void setEncodedImage(ByteBuffer buffer, long renderTimeMs) {

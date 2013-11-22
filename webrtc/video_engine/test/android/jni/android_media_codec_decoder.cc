@@ -58,7 +58,7 @@ int32_t AndroidMediaCodecDecoder::InitDecode(
       __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG,
                           "Could not attach thread to JVM (%d, %p)", ret,
                           env_);
-      return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
+      return WEBRTC_VIDEO_CODEC_ERROR;
   } else {
     vm_attached_ = true;
   }
@@ -68,9 +68,13 @@ int32_t AndroidMediaCodecDecoder::InitDecode(
   mediaCodecDecoder_ = env_->NewGlobalRef(env_->NewObject(decoderClass_, mid));
 
   mid = env_->GetMethodID(
-      decoderClass_, "configure", "(Landroid/view/SurfaceView;II)V");
-  env_->CallVoidMethod(mediaCodecDecoder_, mid, surface_,
-                       codecSettings->width, codecSettings->height);
+      decoderClass_, "configure", "(Landroid/view/SurfaceView;II)Z");
+  bool success = env_->CallBooleanMethod(
+      mediaCodecDecoder_, mid, surface_, codecSettings->width,
+      codecSettings->height);
+  if (!success) {
+      return WEBRTC_VIDEO_CODEC_ERROR;
+  }
 
   setEncodedImageID_ = env_->GetMethodID(
       decoderClass_, "setEncodedImage", "(Ljava/nio/ByteBuffer;J)V");
