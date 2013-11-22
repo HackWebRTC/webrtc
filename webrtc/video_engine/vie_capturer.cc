@@ -327,17 +327,31 @@ int ViECapturer::IncomingFrameI420(const ViEVideoFrameI420& video_frame,
     return -1;
   }
 
-  VideoFrameI420 frame;
-  frame.width = video_frame.width;
-  frame.height = video_frame.height;
-  frame.y_plane = video_frame.y_plane;
-  frame.u_plane = video_frame.u_plane;
-  frame.v_plane = video_frame.v_plane;
-  frame.y_pitch = video_frame.y_pitch;
-  frame.u_pitch = video_frame.u_pitch;
-  frame.v_pitch = video_frame.v_pitch;
+  int size_y = video_frame.height * video_frame.y_pitch;
+  int size_u = video_frame.u_pitch * ((video_frame.height + 1) / 2);
+  int size_v = video_frame.v_pitch * ((video_frame.height + 1) / 2);
+  int ret = capture_frame_.CreateFrame(size_y,
+                                       video_frame.y_plane,
+                                       size_u,
+                                       video_frame.u_plane,
+                                       size_v,
+                                       video_frame.v_plane,
+                                       video_frame.width,
+                                       video_frame.height,
+                                       video_frame.y_pitch,
+                                       video_frame.u_pitch,
+                                       video_frame.v_pitch);
 
-  return external_capture_module_->IncomingFrameI420(frame, capture_time);
+  if (ret < 0) {
+    WEBRTC_TRACE(kTraceError,
+                 kTraceVideo,
+                 ViEId(engine_id_, capture_id_),
+                 "Failed to create I420VideoFrame");
+    return -1;
+  }
+
+  return external_capture_module_->IncomingI420VideoFrame(&capture_frame_,
+                                                          capture_time);
 }
 
 void ViECapturer::OnIncomingCapturedFrame(const int32_t capture_id,

@@ -180,7 +180,7 @@ class ViECapturer
 
   CaptureCapability requested_capability_;
 
-  I420VideoFrame capture_device_image_;
+  I420VideoFrame capture_frame_;
 
   scoped_ptr<OveruseFrameDetector> overuse_detector_;
 };

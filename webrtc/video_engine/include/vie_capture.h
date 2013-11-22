@@ -114,6 +114,7 @@ class WEBRTC_DLLEXPORT ViEExternalCapture {
   // This method is specifically for delivering a new captured I420 frame to
   // VideoEngine.
   // |capture_time| must be specified in the NTP time format in milliseconds.
+  // This method uses an internal buffer and must be called sequentially.
   virtual int IncomingFrameI420(
       const ViEVideoFrameI420& video_frame,
       unsigned long long capture_time = 0) = 0;

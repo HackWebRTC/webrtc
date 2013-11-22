@@ -86,9 +86,9 @@ public:
                                   int32_t videoFrameLength,
                                   const VideoCaptureCapability& frameInfo,
                                   int64_t captureTime = 0);
-    virtual int32_t IncomingFrameI420(
-        const VideoFrameI420& video_frame,
-        int64_t captureTime = 0);
+
+    virtual int32_t IncomingI420VideoFrame(I420VideoFrame* video_frame,
+                                           int64_t captureTime = 0);
 
     // Platform dependent
     virtual int32_t StartCapture(const VideoCaptureCapability& capability)
