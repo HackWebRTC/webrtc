@@ -198,6 +198,10 @@ class PeerConnectionEndToEndTest
   talk_base::scoped_refptr<PeerConnectionTestWrapper> callee_;
 };
 
+// Disable for TSan v2, see
+// https://code.google.com/p/webrtc/issues/detail?id=1205 for details.
+#if !defined(THREAD_SANITIZER)
+
 TEST_F(PeerConnectionEndToEndTest, Call) {
   CreatePcs();
   GetAndAddUserMedia();
@@ -216,3 +220,5 @@ TEST_F(PeerConnectionEndToEndTest, CallWithLegacySdp) {
   Negotiate();
   WaitForCallEstablished();
 }
+
+#endif // if !defined(THREAD_SANITIZER)
