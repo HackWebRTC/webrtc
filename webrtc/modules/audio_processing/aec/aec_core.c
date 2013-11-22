@@ -1156,9 +1156,11 @@ static void NonLinearProcessing(AecCore* aec, short* output, short* outputH) {
     memcpy(efw, dfw, sizeof(efw));
   }
 
-  // Reset if error is significantly larger than nearend (13 dB).
-  if (seSum > (19.95f * sdSum)) {
-    memset(aec->wfBuf, 0, sizeof(aec->wfBuf));
+  if (!aec->extended_filter_enabled) {
+    // Reset if error is significantly larger than nearend (13 dB).
+    if (seSum > (19.95f * sdSum)) {
+      memset(aec->wfBuf, 0, sizeof(aec->wfBuf));
+    }
   }
 
   // Subband coherence
