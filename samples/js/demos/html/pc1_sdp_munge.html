@@ -197,16 +197,38 @@ function createPC() {
   trace("Adding Local Stream to peer connection");
 }
 
+function onSetSessionDescriptionSuccess() {
+  trace('Set session description success.');
+}
+
+function onSetSessionDescriptionError(error) {
+  trace('Failed to set session description: ' + error.toString());
+}
+
+// Workaround for crbug/322756.
+function maybeAddLineBreakToEnd(sdp) {
+  var endWithLineBreak = new RegExp(/\n$/);
+  if (!endWithLineBreak.test(sdp)) {
+    return sdp + '\n';
+  }
+  return sdp;
+}
+
 function createOffer(){
   pc1.createOffer(gotDescription1,null,null);
 }
 
 function setOffer(){
   var sdp = document.getElementById("offerSdp").value;
+  sdp = maybeAddLineBreakToEnd(sdp);
   var offer = new RTCSessionDescription({type:'offer',sdp:sdp});
-  pc1.setLocalDescription(offer);
+  pc1.setLocalDescription(offer,
+                          onSetSessionDescriptionSuccess,
+                          onSetSessionDescriptionError);
   trace("Modified Offer from pc1 \n" + sdp);
-  pc2.setRemoteDescription(offer);
+  pc2.setRemoteDescription(offer,
+                           onSetSessionDescriptionSuccess,
+                           onSetSessionDescriptionError);
 }
 
 function gotDescription1(desc) {
@@ -223,10 +245,15 @@ function createAnswer(){
 
 function setAnswer(){
   var sdp = document.getElementById("answerSdp").value;
+  sdp = maybeAddLineBreakToEnd(sdp);
   var answer = new RTCSessionDescription({type:'answer',sdp:sdp});
-  pc2.setLocalDescription(answer);
+  pc2.setLocalDescription(answer,
+                          onSetSessionDescriptionSuccess,
+                          onSetSessionDescriptionError);
   trace("Modified Answer from pc2 \n" + sdp);
-  pc1.setRemoteDescription(answer);
+  pc1.setRemoteDescription(answer,
+                           onSetSessionDescriptionSuccess,
+                           onSetSessionDescriptionError);
 }
 
 function gotDescription2(desc) {
