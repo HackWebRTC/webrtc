@@ -39,20 +39,6 @@ system call NtUserGetThreadDesktop parameter value #1
 ...
 *!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>
 
-UNINITIALIZED READ
-name=https://code.google.com/p/libyuv/issues/detail?id=263
-*!ScaleAddRows_SSE2
-...
-*!ScalePlaneDown
-*!ScalePlane
-*!I420Scale
-*!webrtc::Scaler::Scale
-*!webrtc::VPMSimpleSpatialResampler::ResampleFrame
-*!webrtc::VPMFramePreprocessor::PreprocessFrame
-*!webrtc::VideoProcessingModuleImpl::PreprocessFrame
-*!webrtc::VideoProcessingModuleTest_PreprocessorLogic_Test::TestBody
-*!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>
-
 LEAK
 name=https://code.google.com/p/webrtc/issues/detail?id=2333
 drmemorylib.dll!replace_operator_new

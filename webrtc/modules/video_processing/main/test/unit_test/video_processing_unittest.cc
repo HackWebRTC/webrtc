@@ -45,7 +45,10 @@ void VideoProcessingModuleTest::SetUp() {
 
   ASSERT_EQ(0, video_frame_.CreateEmptyFrame(width_, height_, width_,
                                             half_width_, half_width_));
-
+  // Clear video frame so DrMemory/Valgrind will allow reads of the buffer.
+  memset(video_frame_.buffer(kYPlane), 0, video_frame_.allocated_size(kYPlane));
+  memset(video_frame_.buffer(kUPlane), 0, video_frame_.allocated_size(kUPlane));
+  memset(video_frame_.buffer(kVPlane), 0, video_frame_.allocated_size(kVPlane));
   const std::string video_file =
       webrtc::test::ResourcePath("foreman_cif", "yuv");
   source_file_  = fopen(video_file.c_str(),"rb");
