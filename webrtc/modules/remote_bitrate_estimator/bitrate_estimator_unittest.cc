@@ -17,7 +17,7 @@ using webrtc::BitRateStats;
 
 class BitRateStatsTest : public ::testing::Test {
  protected:
-  BitRateStatsTest() {};
+  BitRateStatsTest() {}
   BitRateStats stats_;
 };
 
@@ -46,5 +46,52 @@ TEST_F(BitRateStatsTest, TestStrictMode) {
   // The window is 2 seconds. If nothing has been received for that time
   // the estimate should be 0.
   EXPECT_EQ(0u, stats_.BitRate(now_ms));
+}
+
+TEST_F(BitRateStatsTest, IncreasingThenDecreasingBitrate) {
+  int64_t now_ms = 0;
+  stats_.Init();
+  // Expecting 0 after init.
+  uint32_t bitrate = stats_.BitRate(now_ms);
+  EXPECT_EQ(0u, bitrate);
+  // 1000 bytes per millisecond until plateau is reached.
+  while (++now_ms < 10000) {
+    stats_.Update(1000, now_ms);
+    uint32_t new_bitrate = stats_.BitRate(now_ms);
+    if (new_bitrate != bitrate) {
+      // New bitrate must be higher than previous one.
+      EXPECT_GT(new_bitrate, bitrate);
+    } else {
+      // Plateau reached, 8000 kbps expected.
+      EXPECT_NEAR(8000000u, bitrate, 80000u);
+      break;
+    }
+    bitrate = new_bitrate;
+  }
+  // 1000 bytes per millisecond until 10-second mark, 8000 kbps expected.
+  while (++now_ms < 10000) {
+    stats_.Update(1000, now_ms);
+    bitrate = stats_.BitRate(now_ms);
+    EXPECT_NEAR(8000000u, bitrate, 80000u);
+  }
+  // Zero bytes per millisecond until 0 is reached.
+  while (++now_ms < 20000) {
+    stats_.Update(0, now_ms);
+    uint32_t new_bitrate = stats_.BitRate(now_ms);
+    if (new_bitrate != bitrate) {
+      // New bitrate must be lower than previous one.
+      EXPECT_LT(new_bitrate, bitrate);
+    } else {
+      // 0 kbps expected.
+      EXPECT_EQ(0u, bitrate);
+      break;
+    }
+    bitrate = new_bitrate;
+  }
+  // Zero bytes per millisecond until 20-second mark, 0 kbps expected.
+  while (++now_ms < 20000) {
+    stats_.Update(0, now_ms);
+    EXPECT_EQ(0u, stats_.BitRate(now_ms));
+  }
 }
 }  // namespace

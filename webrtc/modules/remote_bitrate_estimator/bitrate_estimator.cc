@@ -12,52 +12,73 @@
 
 namespace webrtc {
 
-const float kBitrateAverageWindowMs = 500.0f;
+const int kBitrateAverageWindowMs = 500;
 
 BitRateStats::BitRateStats()
-    : data_samples_(),
-      accumulated_bytes_(0) {
+    : num_buckets_(kBitrateAverageWindowMs + 1),  // N ms in (N+1) buckets.
+      buckets_(new uint32_t[num_buckets_]()),
+      accumulated_bytes_(0),
+      oldest_time_(0),
+      oldest_index_(0),
+      bps_coefficient_(8.f * 1000.f / (num_buckets_ - 1)) {
 }
 
 BitRateStats::~BitRateStats() {
-  Init();
 }
 
 void BitRateStats::Init() {
   accumulated_bytes_ = 0;
-  while (data_samples_.size() > 0) {
-    delete data_samples_.front();
-    data_samples_.pop_front();
+  oldest_time_ = 0;
+  oldest_index_ = 0;
+  for (int i = 0; i < num_buckets_; i++) {
+    buckets_[i] = 0;
   }
 }
 
 void BitRateStats::Update(uint32_t packet_size_bytes, int64_t now_ms) {
-  // Find an empty slot for storing the new sample and at the same time
-  // accumulate the history.
-  data_samples_.push_back(new DataTimeSizeTuple(packet_size_bytes, now_ms));
-  accumulated_bytes_ += packet_size_bytes;
-  EraseOld(now_ms);
-}
-
-void BitRateStats::EraseOld(int64_t now_ms) {
-  while (data_samples_.size() > 0) {
-    if (now_ms - data_samples_.front()->time_complete_ms >
-        kBitrateAverageWindowMs) {
-      // Delete old sample
-      accumulated_bytes_ -= data_samples_.front()->size_bytes;
-      delete data_samples_.front();
-      data_samples_.pop_front();
-    } else {
-      break;
-    }
+  if (now_ms < oldest_time_) {
+    // Too old data is ignored.
+    return;
   }
+
+  EraseOld(now_ms);
+
+  int now_offset = static_cast<int>(now_ms - oldest_time_);
+  assert(now_offset < num_buckets_);
+  int index = oldest_index_ + now_offset;
+  if (index >= num_buckets_) {
+    index -= num_buckets_;
+  }
+  buckets_[index] += packet_size_bytes;
+  accumulated_bytes_ += packet_size_bytes;
 }
 
 uint32_t BitRateStats::BitRate(int64_t now_ms) {
-  // Calculate the average bit rate the past BITRATE_AVERAGE_WINDOW ms.
-  // Removes any old samples from the list.
   EraseOld(now_ms);
-  return static_cast<uint32_t>(accumulated_bytes_ * 8.0f * 1000.0f /
-                     kBitrateAverageWindowMs + 0.5f);
+  return static_cast<uint32_t>(accumulated_bytes_ * bps_coefficient_ + 0.5f);
+}
+
+void BitRateStats::EraseOld(int64_t now_ms) {
+  int64_t new_oldest_time = now_ms - num_buckets_ + 1;
+  if (new_oldest_time <= oldest_time_) {
+    return;
+  }
+
+  while (oldest_time_ < new_oldest_time) {
+    uint32_t num_bytes_in_oldest_bucket = buckets_[oldest_index_];
+    assert(accumulated_bytes_ >= num_bytes_in_oldest_bucket);
+    accumulated_bytes_ -= num_bytes_in_oldest_bucket;
+    buckets_[oldest_index_] = 0;
+    if (++oldest_index_ >= num_buckets_) {
+      oldest_index_ = 0;
+    }
+    ++oldest_time_;
+    if (accumulated_bytes_ == 0) {
+      // This guarantees we go through all the buckets at most once, even if
+      // |new_oldest_time| is far greater than |oldest_time_|.
+      break;
+    }
+  }
+  oldest_time_ = new_oldest_time;
 }
 }  // namespace webrtc

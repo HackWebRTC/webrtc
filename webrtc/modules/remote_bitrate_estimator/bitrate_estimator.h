@@ -11,8 +11,7 @@
 #ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_BITRATE_ESTIMATOR_H_
 #define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_BITRATE_ESTIMATOR_H_
 
-#include <list>
-
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -27,20 +26,24 @@ class BitRateStats {
   uint32_t BitRate(int64_t now_ms);
 
  private:
-  struct DataTimeSizeTuple {
-    DataTimeSizeTuple(uint32_t size_bytes_in, int64_t time_complete_ms_in)
-        : size_bytes(size_bytes_in),
-          time_complete_ms(time_complete_ms_in) {
-    }
-
-    uint32_t size_bytes;
-    int64_t time_complete_ms;
-  };
-
   void EraseOld(int64_t now_ms);
 
-  std::list<DataTimeSizeTuple*> data_samples_;
+  // Numbers of bytes are kept in buckets (circular buffer), with one bucket
+  // per millisecond.
+  const int num_buckets_;
+  scoped_array<uint32_t> buckets_;
+
+  // Total number of bytes recorded in buckets.
   uint32_t accumulated_bytes_;
+
+  // Oldest time recorded in buckets.
+  int64_t oldest_time_;
+
+  // Bucket index of oldest bytes recorded in buckets.
+  int oldest_index_;
+
+  // To convert number of bytes in bits/second.
+  const float bps_coefficient_;
 };
 }  // namespace webrtc
 
