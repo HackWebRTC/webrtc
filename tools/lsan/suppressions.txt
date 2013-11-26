@@ -14,11 +14,16 @@ leak:std::string::_Rep::_S_create
 # libjingle_peerconnection_unittest
 # https://code.google.com/p/webrtc/issues/detail?id=2528
 leak:cricket::FakeVideoMediaChannel::~FakeVideoMediaChannel
+leak:cricket::MediaSessionDescriptionFactory::CreateAnswer
+leak:cricket::MediaSessionDescriptionFactory::CreateOffer
 leak:testing::internal::CmpHelperEQ
 leak:webrtc::AudioDeviceLinuxALSA::InitMicrophone
 leak:webrtc::AudioDeviceLinuxALSA::InitSpeaker
+leak:webrtc::CreateIceCandidate
 leak:webrtc::FakeConstraints::AddOptional
 leak:webrtc::WebRtcIdentityRequestObserver::OnSuccess
+leak:webrtc::WebRtcSessionDescriptionFactory::InternalCreateAnswer
+leak:webrtc::WebRtcSessionDescriptionFactory::InternalCreateOffer
 leak:WebRtcSdpTest::TestDeserializeRtcpFb
 leak:WebRtcSessionTest_TestAVOfferWithAudioOnlyAnswer_Test::TestBody
 
