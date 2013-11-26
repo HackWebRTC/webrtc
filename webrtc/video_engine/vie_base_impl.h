@@ -33,7 +33,9 @@ class ViEBaseImpl
   virtual int SetVoiceEngine(VoiceEngine* voice_engine);
   virtual int RegisterCpuOveruseObserver(int channel,
                                          CpuOveruseObserver* observer);
-  virtual int CpuOveruseMeasure(int channel, int* capture_jitter_ms);
+  virtual int CpuOveruseMeasures(int channel,
+                                 int* capture_jitter_ms,
+                                 int* avg_encode_time_ms);
   virtual int CreateChannel(int& video_channel);  // NOLINT
   virtual int CreateChannel(int& video_channel,  // NOLINT
                             int original_channel);

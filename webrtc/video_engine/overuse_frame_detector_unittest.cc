@@ -96,9 +96,17 @@ TEST_F(OveruseFrameDetectorTest, ConstantOveruseGivesNoNormalUsage) {
 }
 
 TEST_F(OveruseFrameDetectorTest, LastCaptureJitter) {
-  EXPECT_EQ(-1, overuse_detector_->last_capture_jitter_ms());
+  EXPECT_EQ(0, overuse_detector_->last_capture_jitter_ms());
   TriggerOveruse();
   EXPECT_GT(overuse_detector_->last_capture_jitter_ms(), 0);
+}
+
+TEST_F(OveruseFrameDetectorTest, EncodedFrame) {
+  const int kInitialAvgEncodeTimeInMs = 5;
+  EXPECT_EQ(kInitialAvgEncodeTimeInMs, overuse_detector_->avg_encode_time_ms());
+  for (int i = 0; i < 30; i++)
+    overuse_detector_->FrameEncoded(2);
+  EXPECT_EQ(2, overuse_detector_->avg_encode_time_ms());
 }
 
 }  // namespace webrtc

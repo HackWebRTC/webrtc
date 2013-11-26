@@ -117,7 +117,9 @@ int ViEBaseImpl::RegisterCpuOveruseObserver(int video_channel,
   return 0;
 }
 
-int ViEBaseImpl::CpuOveruseMeasure(int video_channel, int* capture_jitter_ms) {
+int ViEBaseImpl::CpuOveruseMeasures(int video_channel,
+                                    int* capture_jitter_ms,
+                                    int* avg_encode_time_ms) {
   ViEChannelManagerScoped cs(*(shared_data_.channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
@@ -138,7 +140,7 @@ int ViEBaseImpl::CpuOveruseMeasure(int video_channel, int* capture_jitter_ms) {
   if (provider) {
     ViECapturer* capturer = is.Capture(provider->Id());
     if (capturer) {
-      *capture_jitter_ms = capturer->CpuOveruseMeasure();
+      capturer->CpuOveruseMeasures(capture_jitter_ms, avg_encode_time_ms);
       return 0;
     }
   }

@@ -122,8 +122,9 @@ class WEBRTC_DLLEXPORT ViEBase {
 
   // Gets the last cpu overuse measure.
   // TODO(asapersson): Remove default implementation.
-  virtual int CpuOveruseMeasure(int channel,
-                                int* capture_jitter_ms) { return -1; }
+  virtual int CpuOveruseMeasures(int channel,
+                                 int* capture_jitter_ms,
+                                 int* avg_encode_time_ms) { return -1; }
 
   // Specifies the VoiceEngine and VideoEngine channel pair to use for
   // audio/video synchronization.

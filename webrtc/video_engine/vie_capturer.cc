@@ -266,8 +266,10 @@ void ViECapturer::RegisterCpuOveruseObserver(CpuOveruseObserver* observer) {
   overuse_detector_->SetObserver(observer);
 }
 
-int ViECapturer::CpuOveruseMeasure() {
-  return overuse_detector_->last_capture_jitter_ms();
+void ViECapturer::CpuOveruseMeasures(int* capture_jitter_ms,
+                                     int* avg_encode_time_ms) const {
+  *capture_jitter_ms = overuse_detector_->last_capture_jitter_ms();
+  *avg_encode_time_ms = overuse_detector_->avg_encode_time_ms();
 }
 
 int32_t ViECapturer::SetCaptureDelay(int32_t delay_ms) {
@@ -530,8 +532,10 @@ bool ViECapturer::ViECaptureThreadFunction(void* obj) {
 
 bool ViECapturer::ViECaptureProcess() {
   if (capture_event_.Wait(kThreadWaitTimeMs) == kEventSignaled) {
+    int64_t encode_start_time = -1;
     deliver_cs_->Enter();
     if (SwapCapturedAndDeliverFrameIfAvailable()) {
+      encode_start_time = Clock::GetRealTimeClock()->TimeInMilliseconds();
       DeliverI420Frame(&deliver_frame_);
     }
     deliver_cs_->Leave();
@@ -541,6 +545,11 @@ bool ViECapturer::ViECaptureProcess() {
         observer_->BrightnessAlarm(id_, current_brightness_level_);
         reported_brightness_level_ = current_brightness_level_;
       }
+    }
+    // Update the overuse detector with the duration.
+    if (encode_start_time != -1) {
+      overuse_detector_->FrameEncoded(
+          Clock::GetRealTimeClock()->TimeInMilliseconds() - encode_start_time);
     }
   }
   // We're done!
