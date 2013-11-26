@@ -18,6 +18,7 @@
 
 #include "webrtc/call.h"
 #include "webrtc/common_video/test/frame_generator.h"
+#include "webrtc/frame_callback.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/rtp_to_ntp.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
@@ -1040,4 +1041,77 @@ TEST_F(CallTest, PlaysOutAudioAndVideoInSync) {
   VoiceEngine::Delete(voice_engine);
 }
 
+TEST_F(CallTest, ObserversEncodedFrames) {
+  class EncodedFrameTestObserver : public EncodedFrameObserver {
+   public:
+    EncodedFrameTestObserver() : length_(0),
+                                 frame_type_(kFrameEmpty),
+                                 called_(EventWrapper::Create()) {}
+    virtual ~EncodedFrameTestObserver() {}
+
+    virtual void EncodedFrameCallback(const EncodedFrame& encoded_frame) {
+      frame_type_ = encoded_frame.frame_type_;
+      length_ = encoded_frame.length_;
+      buffer_.reset(new uint8_t[length_]);
+      memcpy(buffer_.get(), encoded_frame.data_, length_);
+      called_->Set();
+    }
+
+    EventTypeWrapper Wait() {
+      return called_->Wait(kDefaultTimeoutMs);
+    }
+
+    void ExpectEqualFrames(const EncodedFrameTestObserver& observer) {
+      ASSERT_EQ(length_, observer.length_)
+          << "Observed frames are of different lengths.";
+      EXPECT_EQ(frame_type_, observer.frame_type_)
+          << "Observed frames have different frame types.";
+      EXPECT_EQ(0, memcmp(buffer_.get(), observer.buffer_.get(), length_))
+          << "Observed encoded frames have different content.";
+    }
+
+   private:
+    scoped_ptr<uint8_t[]> buffer_;
+    size_t length_;
+    FrameType frame_type_;
+    scoped_ptr<EventWrapper> called_;
+  };
+
+  EncodedFrameTestObserver post_encode_observer;
+  EncodedFrameTestObserver pre_decode_observer;
+
+  test::DirectTransport sender_transport, receiver_transport;
+
+  CreateCalls(Call::Config(&sender_transport),
+              Call::Config(&receiver_transport));
+
+  sender_transport.SetReceiver(receiver_call_->Receiver());
+  receiver_transport.SetReceiver(sender_call_->Receiver());
+
+  CreateTestConfigs();
+  send_config_.post_encode_callback = &post_encode_observer;
+  receive_config_.pre_decode_callback = &pre_decode_observer;
+
+  CreateStreams();
+  StartSending();
+
+  scoped_ptr<test::FrameGenerator> frame_generator(test::FrameGenerator::Create(
+      send_config_.codec.width, send_config_.codec.height));
+  send_stream_->Input()->PutFrame(frame_generator->NextFrame(), 0);
+
+  EXPECT_EQ(kEventSignaled, post_encode_observer.Wait())
+      << "Timed out while waiting for send-side encoded-frame callback.";
+
+  EXPECT_EQ(kEventSignaled, pre_decode_observer.Wait())
+      << "Timed out while waiting for pre-decode encoded-frame callback.";
+
+  post_encode_observer.ExpectEqualFrames(pre_decode_observer);
+
+  StopSending();
+
+  sender_transport.StopSending();
+  receiver_transport.StopSending();
+
+  DestroyStreams();
+}
 }  // namespace webrtc

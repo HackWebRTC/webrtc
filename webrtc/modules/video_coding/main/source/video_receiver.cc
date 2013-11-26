@@ -52,6 +52,7 @@ VideoReceiver::VideoReceiver(const int32_t id,
       _keyRequestMode(kKeyOnError),
       _scheduleKeyRequest(false),
       max_nack_list_size_(0),
+      pre_decode_image_callback_(NULL),
       _codecDataBase(id),
       _receiveStatsTimer(1000, clock_),
       _retransmissionTimer(10, clock_),
@@ -399,6 +400,11 @@ int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
     // If this frame was too late, we should adjust the delay accordingly
     _timing.UpdateCurrentDelay(frame->RenderTimeMs(),
                                clock_->TimeInMilliseconds());
+
+    if (pre_decode_image_callback_) {
+      EncodedImage encoded_image(frame->EncodedImage());
+      pre_decode_image_callback_->Encoded(encoded_image);
+    }
 
 #ifdef DEBUG_DECODER_BIT_STREAM
     if (_bitStreamBeforeDecoder != NULL) {
@@ -813,6 +819,12 @@ void VideoReceiver::SetNackSettings(size_t max_nack_list_size,
 
 int VideoReceiver::SetMinReceiverDelay(int desired_delay_ms) {
   return _receiver.SetMinReceiverDelay(desired_delay_ms);
+}
+
+void VideoReceiver::RegisterPreDecodeImageCallback(
+    EncodedImageCallback* observer) {
+  CriticalSectionScoped cs(_receiveCritSect);
+  pre_decode_image_callback_ = observer;
 }
 
 }  // namespace vcm

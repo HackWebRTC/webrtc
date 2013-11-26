@@ -71,7 +71,7 @@ class VideoSendStream {
   struct Config {
     Config()
         : pre_encode_callback(NULL),
-          encoded_callback(NULL),
+          post_encode_callback(NULL),
           local_renderer(NULL),
           render_delay_ms(0),
           encoder(NULL),
@@ -113,7 +113,7 @@ class VideoSendStream {
 
     // Called for each encoded frame, e.g. used for file storage. 'NULL'
     // disables the callback.
-    EncodedFrameObserver* encoded_callback;
+    EncodedFrameObserver* post_encode_callback;
 
     // Renderer for local preview. The local renderer will be called even if
     // sending hasn't started. 'NULL' disables local rendering.

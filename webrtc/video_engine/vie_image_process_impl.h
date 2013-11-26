@@ -43,6 +43,16 @@ class ViEImageProcessImpl
       I420FrameCallback* pre_encode_callback) OVERRIDE;
   virtual void DeRegisterPreEncodeCallback(int video_channel) OVERRIDE;
 
+  virtual void RegisterPostEncodeImageCallback(
+      int video_channel,
+      EncodedImageCallback* post_encode_callback) OVERRIDE;
+  virtual void DeRegisterPostEncodeCallback(int video_channel) OVERRIDE;
+
+  virtual void RegisterPreDecodeImageCallback(
+        int video_channel,
+        EncodedImageCallback* post_encode_callback) OVERRIDE;
+  virtual void DeRegisterPreDecodeCallback(int video_channel) OVERRIDE;
+
   virtual void RegisterPreRenderCallback(
       int video_channel,
       I420FrameCallback* pre_render_callback) OVERRIDE;

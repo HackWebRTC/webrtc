@@ -15,8 +15,12 @@
 
 #include <stdio.h>
 
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+
 namespace webrtc
 {
+
+class CriticalSectionWrapper;
 
 namespace media_optimization {
 class MediaOptimization;
@@ -55,6 +59,8 @@ public:
     void SetCodecType(VideoCodecType codecType) {_codecType = codecType;};
     void SetInternalSource(bool internalSource) { _internalSource = internalSource; };
 
+    void RegisterPostEncodeImageCallback(EncodedImageCallback* callback);
+
 private:
     /*
      * Map information from info into rtp. If no relevant information is found
@@ -69,6 +75,10 @@ private:
     uint8_t _payloadType;
     VideoCodecType _codecType;
     bool _internalSource;
+
+    scoped_ptr<CriticalSectionWrapper> post_encode_callback_lock_;
+    EncodedImageCallback* post_encode_callback_;
+
 #ifdef DEBUG_ENCODER_BIT_STREAM
     FILE* _bitStreamAfterEncoder;
 #endif

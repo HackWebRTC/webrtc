@@ -446,5 +446,11 @@ bool VideoSender::VideoSuspended() const {
   return _mediaOpt.video_suspended();
 }
 
+void VideoSender::RegisterPostEncodeImageCallback(
+    EncodedImageCallback* observer) {
+  CriticalSectionScoped cs(_sendCritSect);
+  _encodedFrameCallback.RegisterPostEncodeImageCallback(observer);
+}
+
 }  // namespace vcm
 }  // namespace webrtc

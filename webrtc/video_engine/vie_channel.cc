@@ -1870,6 +1870,12 @@ void ViEChannel::RegisterPreRenderCallback(
   pre_render_callback_ = pre_render_callback;
 }
 
+void ViEChannel::RegisterPreDecodeImageCallback(
+    EncodedImageCallback* pre_decode_callback) {
+  CriticalSectionScoped cs(callback_cs_.get());
+  vcm_.RegisterPreDecodeImageCallback(pre_decode_callback);
+}
+
 void ViEChannel::OnApplicationDataReceived(const int32_t id,
                                            const uint8_t sub_type,
                                            const uint32_t name,

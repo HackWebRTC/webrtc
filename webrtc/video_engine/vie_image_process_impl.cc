@@ -284,6 +284,36 @@ void ViEImageProcessImpl::DeRegisterPreEncodeCallback(int video_channel) {
   vie_encoder->DeRegisterPreEncodeCallback();
 }
 
+void ViEImageProcessImpl::RegisterPostEncodeImageCallback(
+    int video_channel,
+    EncodedImageCallback* post_encode_callback) {
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
+  assert(vie_encoder != NULL);
+  vie_encoder->RegisterPostEncodeImageCallback(post_encode_callback);
+}
+
+void ViEImageProcessImpl::DeRegisterPostEncodeCallback(int video_channel) {
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
+  assert(vie_encoder != NULL);
+  vie_encoder->DeRegisterPostEncodeImageCallback();
+}
+
+void ViEImageProcessImpl::RegisterPreDecodeImageCallback(
+    int video_channel,
+    EncodedImageCallback* pre_decode_callback) {
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEChannel* channel = cs.Channel(video_channel);
+  channel->RegisterPreDecodeImageCallback(pre_decode_callback);
+}
+
+void ViEImageProcessImpl::DeRegisterPreDecodeCallback(int video_channel) {
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEChannel* channel = cs.Channel(video_channel);
+  channel->RegisterPreDecodeImageCallback(NULL);
+}
+
 void ViEImageProcessImpl::RegisterPreRenderCallback(
     int video_channel,
     I420FrameCallback* pre_render_callback) {

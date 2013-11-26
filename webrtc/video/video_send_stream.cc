@@ -83,6 +83,7 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
                                  webrtc::VideoEngine* video_engine,
                                  const VideoSendStream::Config& config)
     : transport_adapter_(transport),
+      encoded_frame_proxy_(config.post_encode_callback),
       codec_lock_(CriticalSectionWrapper::CreateCriticalSection()),
       config_(config),
       external_codec_(NULL) {
@@ -199,6 +200,10 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
   image_process_ = ViEImageProcess::GetInterface(video_engine);
   image_process_->RegisterPreEncodeCallback(channel_,
                                             config_.pre_encode_callback);
+  if (config_.post_encode_callback) {
+    image_process_->RegisterPostEncodeImageCallback(channel_,
+                                                    &encoded_frame_proxy_);
+  }
 
   if (config.suspend_below_min_bitrate) {
     codec_->SuspendBelowMinBitrate(channel_);
@@ -294,6 +299,5 @@ bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   return network_->ReceivedRTCPPacket(
              channel_, packet, static_cast<int>(length)) == 0;
 }
-
 }  // namespace internal
 }  // namespace webrtc

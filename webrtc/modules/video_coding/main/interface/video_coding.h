@@ -21,6 +21,7 @@ namespace webrtc
 {
 
 class Clock;
+class EncodedImageCallback;
 class VideoEncoder;
 class VideoDecoder;
 struct CodecSpecificInfo;
@@ -600,6 +601,11 @@ public:
     // Returns true if SuspendBelowMinBitrate is engaged and the video has been
     // suspended due to bandwidth limitations; otherwise false.
     virtual bool VideoSuspended() const = 0;
+
+    virtual void RegisterPreDecodeImageCallback(
+        EncodedImageCallback* observer) = 0;
+    virtual void RegisterPostEncodeImageCallback(
+        EncodedImageCallback* post_encode_callback) = 0;
 };
 
 }  // namespace webrtc

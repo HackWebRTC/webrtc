@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/video/encoded_frame_callback_adapter.h"
 #include "webrtc/video/transport_adapter.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
@@ -62,6 +63,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
 
  private:
   TransportAdapter transport_adapter_;
+  EncodedFrameCallbackAdapter encoded_frame_proxy_;
   scoped_ptr<CriticalSectionWrapper> codec_lock_;
   VideoSendStream::Config config_;
 

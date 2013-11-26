@@ -32,7 +32,10 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
                                        const VideoReceiveStream::Config& config,
                                        newapi::Transport* transport,
                                        webrtc::VoiceEngine* voice_engine)
-    : transport_adapter_(transport), config_(config), channel_(-1) {
+    : transport_adapter_(transport),
+      encoded_frame_proxy_(config.pre_decode_callback),
+      config_(config),
+      channel_(-1) {
   video_engine_base_ = ViEBase::GetInterface(video_engine);
   // TODO(mflodman): Use the other CreateChannel method.
   video_engine_base_->CreateChannel(channel_);
@@ -96,6 +99,10 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
   }
 
   image_process_ = ViEImageProcess::GetInterface(video_engine);
+  if (config.pre_decode_callback) {
+    image_process_->RegisterPreDecodeImageCallback(channel_,
+                                                   &encoded_frame_proxy_);
+  }
   image_process_->RegisterPreRenderCallback(channel_,
                                             config_.pre_render_callback);
 
@@ -103,7 +110,8 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
 }
 
 VideoReceiveStream::~VideoReceiveStream() {
-  image_process_->DeRegisterPreEncodeCallback(channel_);
+  image_process_->DeRegisterPreRenderCallback(channel_);
+  image_process_->DeRegisterPreDecodeCallback(channel_);
 
   render_->RemoveRenderer(channel_);
 
@@ -161,6 +169,5 @@ int32_t VideoReceiveStream::RenderFrame(const uint32_t stream_id,
       video_frame, video_frame.render_time_ms() - clock_->TimeInMilliseconds());
   return 0;
 }
-
 }  // internal
 }  // webrtc

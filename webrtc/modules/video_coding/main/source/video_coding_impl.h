@@ -27,6 +27,9 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 namespace webrtc {
+
+class EncodedFrameObserver;
+
 namespace vcm {
 
 class VCMProcessTimer {
@@ -97,6 +100,9 @@ class VideoSender {
 
   void SuspendBelowMinBitrate();
   bool VideoSuspended() const;
+
+  void RegisterPostEncodeImageCallback(
+      EncodedImageCallback* post_encode_callback);
 
   int32_t TimeUntilNextProcess();
   int32_t Process();
@@ -173,6 +179,8 @@ class VideoReceiver {
   int32_t TimeUntilNextProcess();
   int32_t Process();
 
+  void RegisterPreDecodeImageCallback(EncodedImageCallback* observer);
+
  protected:
   int32_t Decode(const webrtc::VCMEncodedFrame& frame);
   int32_t RequestKeyFrame();
@@ -213,6 +221,7 @@ class VideoReceiver {
   VCMKeyRequestMode _keyRequestMode;
   bool _scheduleKeyRequest;
   size_t max_nack_list_size_;
+  EncodedImageCallback* pre_decode_image_callback_;
 
   VCMCodecDataBase _codecDataBase;
   VCMProcessTimer _receiveStatsTimer;

@@ -20,13 +20,16 @@ FakeEncoder::FakeEncoder(Clock* clock)
       callback_(NULL),
       target_bitrate_kbps_(0),
       last_encode_time_ms_(0) {
-  memset(encoded_buffer_, 0, sizeof(encoded_buffer_));
+  // Generate some arbitrary not-all-zero data
+  for (size_t i = 0; i < sizeof(encoded_buffer_); ++i) {
+    encoded_buffer_[i] = static_cast<uint8_t>(i);
+  }
 }
 
 FakeEncoder::~FakeEncoder() {}
 
 void FakeEncoder::SetCodecSettings(VideoCodec* codec,
-                                         size_t num_streams) {
+                                   size_t num_streams) {
   assert(num_streams > 0);
   assert(num_streams <= kMaxSimulcastStreams);
 

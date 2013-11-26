@@ -319,6 +319,16 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return receiver_->SetReceiveChannelParameters(rtt);
   }
 
+  virtual void RegisterPreDecodeImageCallback(
+      EncodedImageCallback* observer) OVERRIDE {
+    receiver_->RegisterPreDecodeImageCallback(observer);
+  }
+
+  virtual void RegisterPostEncodeImageCallback(
+      EncodedImageCallback* observer) OVERRIDE {
+    sender_->RegisterPostEncodeImageCallback(observer);
+  }
+
  private:
   scoped_ptr<vcm::VideoSender> sender_;
   scoped_ptr<vcm::VideoReceiver> receiver_;

@@ -14,6 +14,7 @@
 
 #include <algorithm>
 
+#include "webrtc/common_video/interface/video_image.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/pacing/include/paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
@@ -21,6 +22,7 @@
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
+#include "webrtc/modules/video_coding/main/source/encoded_frame.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
@@ -1181,6 +1183,15 @@ void ViEEncoder::RegisterPreEncodeCallback(
 void ViEEncoder::DeRegisterPreEncodeCallback() {
   CriticalSectionScoped cs(callback_cs_.get());
   pre_encode_callback_ = NULL;
+}
+
+void ViEEncoder::RegisterPostEncodeImageCallback(
+      EncodedImageCallback* post_encode_callback) {
+  vcm_.RegisterPostEncodeImageCallback(post_encode_callback);
+}
+
+void ViEEncoder::DeRegisterPostEncodeImageCallback() {
+  vcm_.RegisterPostEncodeImageCallback(NULL);
 }
 
 QMVideoSettingsCallback::QMVideoSettingsCallback(VideoProcessingModule* vpm)

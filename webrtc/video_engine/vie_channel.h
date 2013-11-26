@@ -33,6 +33,7 @@ class CallStatsObserver;
 class ChannelStatsObserver;
 class Config;
 class CriticalSectionWrapper;
+class EncodedImageCallback;
 class Encryption;
 class I420FrameCallback;
 class PacedSender;
@@ -320,8 +321,10 @@ class ViEChannel
 
   int32_t RegisterEffectFilter(ViEEffectFilter* effect_filter);
 
-  // New-style callback, used by VideoReceiveStream.
+  // New-style callbacks, used by VideoReceiveStream.
   void RegisterPreRenderCallback(I420FrameCallback* pre_render_callback);
+  void RegisterPreDecodeImageCallback(
+      EncodedImageCallback* pre_decode_callback);
 
  protected:
   static bool ChannelDecodeThreadFunction(void* obj);

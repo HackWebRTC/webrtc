@@ -29,6 +29,7 @@ namespace webrtc {
 
 class Config;
 class CriticalSectionWrapper;
+class EncodedImageCallback;
 class PacedSender;
 class ProcessThread;
 class QMVideoSettingsCallback;
@@ -168,11 +169,15 @@ class ViEEncoder
   // |threshold_bps| + |window_bps|.
   virtual void SuspendBelowMinBitrate();
 
-  // New-style callback, used by VideoSendStream.
+  // New-style callbacks, used by VideoSendStream.
   void RegisterPreEncodeCallback(I420FrameCallback* pre_encode_callback);
   void DeRegisterPreEncodeCallback();
+  void RegisterPostEncodeImageCallback(
+        EncodedImageCallback* post_encode_callback);
+  void DeRegisterPostEncodeImageCallback();
 
   int channel_id() const { return channel_id_; }
+
  protected:
   // Called by BitrateObserver.
   void OnNetworkChanged(const uint32_t bitrate_bps,
