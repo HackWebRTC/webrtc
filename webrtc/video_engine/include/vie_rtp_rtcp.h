@@ -314,16 +314,16 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
 
 
   virtual int RegisterSendChannelRtcpStatisticsCallback(
-      const int video_channel, RtcpStatisticsCallback* callback) = 0;
+      int video_channel, RtcpStatisticsCallback* callback) = 0;
 
   virtual int DeregisterSendChannelRtcpStatisticsCallback(
-      const int video_channel, RtcpStatisticsCallback* callback) = 0;
+      int video_channel, RtcpStatisticsCallback* callback) = 0;
 
   virtual int RegisterReceiveChannelRtcpStatisticsCallback(
-      const int video_channel, RtcpStatisticsCallback* callback) = 0;
+      int video_channel, RtcpStatisticsCallback* callback) = 0;
 
   virtual int DeregisterReceiveChannelRtcpStatisticsCallback(
-      const int video_channel, RtcpStatisticsCallback* callback) = 0;
+      int video_channel, RtcpStatisticsCallback* callback) = 0;
 
   // The function gets statistics from the sent and received RTP streams.
   virtual int GetRtpStatistics(const int video_channel,
@@ -348,16 +348,16 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
   }
 
   virtual int RegisterSendChannelRtpStatisticsCallback(
-      const int video_channel, StreamDataCountersCallback* callback) = 0;
+      int video_channel, StreamDataCountersCallback* callback) = 0;
 
   virtual int DeregisterSendChannelRtpStatisticsCallback(
-      const int video_channel, StreamDataCountersCallback* callback) = 0;
+      int video_channel, StreamDataCountersCallback* callback) = 0;
 
   virtual int RegisterReceiveChannelRtpStatisticsCallback(
-      const int video_channel, StreamDataCountersCallback* callback) = 0;
+      int video_channel, StreamDataCountersCallback* callback) = 0;
 
   virtual int DeregisterReceiveChannelRtpStatisticsCallback(
-      const int video_channel, StreamDataCountersCallback* callback) = 0;
+      int video_channel, StreamDataCountersCallback* callback) = 0;
 
   // The function gets bandwidth usage statistics from the sent RTP streams in
   // bits/s.
@@ -369,11 +369,11 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
 
   // (De)Register an observer, called whenever the send bitrate is updated
   virtual int RegisterSendBitrateObserver(
-      const int video_channel,
+      int video_channel,
       BitrateStatisticsObserver* observer) = 0;
 
   virtual int DeregisterSendBitrateObserver(
-      const int video_channel,
+      int video_channel,
       BitrateStatisticsObserver* observer) = 0;
 
   // This function gets the send-side estimated bandwidth available for video,
@@ -418,11 +418,11 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
 
   // Registers and instance of a user implementation of ViEFrameCountObserver
   virtual int RegisterSendFrameCountObserver(
-      const int video_channel, FrameCountObserver* observer) = 0;
+      int video_channel, FrameCountObserver* observer) = 0;
 
   // Removes a registered instance of a ViEFrameCountObserver
   virtual int DeregisterSendFrameCountObserver(
-      const int video_channel, FrameCountObserver* observer) = 0;
+      int video_channel, FrameCountObserver* observer) = 0;
 
  protected:
   virtual ~ViERTP_RTCP() {}
