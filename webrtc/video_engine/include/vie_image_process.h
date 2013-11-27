@@ -99,12 +99,12 @@ class WEBRTC_DLLEXPORT ViEImageProcess {
 
   virtual void RegisterPostEncodeImageCallback(
       int video_channel,
-      EncodedImageCallback* post_encode_callback) = 0;
+      EncodedImageCallback* post_encode_callback) {}
   virtual void DeRegisterPostEncodeCallback(int video_channel) {}
 
   virtual void RegisterPreDecodeImageCallback(
       int video_channel,
-      EncodedImageCallback* pre_decode_callback) = 0;
+      EncodedImageCallback* pre_decode_callback) {}
   virtual void DeRegisterPreDecodeCallback(int video_channel) {}
 
   virtual void RegisterPreRenderCallback(
