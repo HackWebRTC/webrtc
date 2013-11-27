@@ -846,10 +846,15 @@ void ViEEncoder::SetSenderBufferingMode(int target_delay_ms) {
     // Disable external frame-droppers.
     vcm_.EnableFrameDropper(false);
     vpm_.EnableTemporalDecimation(false);
+    // We don't put any limits on the pacer queue when running in buffered mode
+    // since the encoder will be paused if the queue grow too large.
+    paced_sender_->set_max_queue_length_ms(-1);
   } else {
     // Real-time mode - enable frame droppers.
     vpm_.EnableTemporalDecimation(true);
     vcm_.EnableFrameDropper(true);
+    paced_sender_->set_max_queue_length_ms(
+        PacedSender::kDefaultMaxQueueLengthMs);
   }
 }
 
