@@ -318,7 +318,7 @@ class MainPage(webapp2.RequestHandler):
     ts_pwd = self.request.get('tp')
 
     # Use "audio" and "video" to set the media stream constraints. Defined here:
-    # http://dev.w3.org/2011/webrtc/editor/getusermedia.html#idl-def-MediaStreamConstraints
+    # http://goo.gl/V7cZg
     #
     # "true" and "false" are recognized and interpreted as bools, for example:
     #   "?audio=true&video=false" (Start an audio-only call.)
@@ -336,11 +336,8 @@ class MainPage(webapp2.RequestHandler):
     # Keys starting with "goog" will be added to the "optional" key; all others
     # will be added to the "mandatory" key.
     #
-    # The audio keys are defined here:
-    # https://code.google.com/p/webrtc/source/browse/trunk/talk/app/webrtc/localaudiosource.cc
-    #
-    # The video keys are defined here:
-    # https://code.google.com/p/webrtc/source/browse/trunk/talk/app/webrtc/videosource.cc
+    # The audio keys are defined here: talk/app/webrtc/localaudiosource.cc
+    # The video keys are defined here: talk/app/webrtc/videosource.cc
     audio = self.request.get('audio')
     video = self.request.get('video')
 
