@@ -95,33 +95,9 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
   assert(rtp_rtcp_ != NULL);
 
   assert(config_.rtp.ssrcs.size() > 0);
-  if (config_.rtp.ssrcs.size() == 1) {
-    rtp_rtcp_->SetLocalSSRC(channel_, config_.rtp.ssrcs[0]);
-  } else {
-    for (size_t i = 0; i < config_.rtp.ssrcs.size(); ++i) {
-      rtp_rtcp_->SetLocalSSRC(channel_,
-                              config_.rtp.ssrcs[i],
-                              kViEStreamTypeNormal,
-                              static_cast<unsigned char>(i));
-    }
-  }
   if (config_.suspend_below_min_bitrate)
     config_.pacing = true;
   rtp_rtcp_->SetTransmissionSmoothingStatus(channel_, config_.pacing);
-  if (!config_.rtp.rtx.ssrcs.empty()) {
-    assert(config_.rtp.rtx.ssrcs.size() == config_.rtp.ssrcs.size());
-    for (size_t i = 0; i < config_.rtp.rtx.ssrcs.size(); ++i) {
-      rtp_rtcp_->SetLocalSSRC(channel_,
-                              config_.rtp.rtx.ssrcs[i],
-                              kViEStreamTypeRtx,
-                              static_cast<unsigned char>(i));
-    }
-
-    if (config_.rtp.rtx.rtx_payload_type != 0) {
-      rtp_rtcp_->SetRtxSendPayloadType(channel_,
-                                       config_.rtp.rtx.rtx_payload_type);
-    }
-  }
 
   for (size_t i = 0; i < config_.rtp.extensions.size(); ++i) {
     const std::string& extension = config_.rtp.extensions[i].name;
@@ -279,14 +255,37 @@ void VideoSendStream::StopSending() {
 }
 
 bool VideoSendStream::SetCodec(const VideoCodec& codec) {
-  if (codec.numberOfSimulcastStreams > 0)
-    assert(config_.rtp.ssrcs.size() >= codec.numberOfSimulcastStreams);
+  assert(config_.rtp.ssrcs.size() >= codec.numberOfSimulcastStreams);
 
   CriticalSectionScoped crit(codec_lock_.get());
   if (codec_->SetSendCodec(channel_, codec) != 0)
     return false;
 
+  for (size_t i = 0; i < config_.rtp.ssrcs.size(); ++i) {
+    rtp_rtcp_->SetLocalSSRC(channel_,
+                            config_.rtp.ssrcs[i],
+                            kViEStreamTypeNormal,
+                            static_cast<unsigned char>(i));
+  }
+
   config_.codec = codec;
+  if (config_.rtp.rtx.ssrcs.empty())
+    return true;
+
+  // Set up RTX.
+  assert(config_.rtp.rtx.ssrcs.size() == config_.rtp.ssrcs.size());
+  for (size_t i = 0; i < config_.rtp.ssrcs.size(); ++i) {
+    rtp_rtcp_->SetLocalSSRC(channel_,
+                            config_.rtp.rtx.ssrcs[i],
+                            kViEStreamTypeRtx,
+                            static_cast<unsigned char>(i));
+  }
+
+  if (config_.rtp.rtx.rtx_payload_type != 0) {
+    rtp_rtcp_->SetRtxSendPayloadType(channel_,
+                                     config_.rtp.rtx.rtx_payload_type);
+  }
+
   return true;
 }
 

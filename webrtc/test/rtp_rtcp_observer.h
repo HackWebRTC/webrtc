@@ -43,7 +43,9 @@ class RtpRtcpObserver {
   }
 
   virtual EventTypeWrapper Wait() {
-    return observation_complete_->Wait(timeout_ms_);
+    EventTypeWrapper result = observation_complete_->Wait(timeout_ms_);
+    observation_complete_->Reset();
+    return result;
   }
 
  protected:

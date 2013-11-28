@@ -74,6 +74,8 @@ class VideoSendStreamTest : public ::testing::Test {
                               uint8_t retransmit_payload_type,
                               bool enable_pacing);
 
+  void SendsSetSsrcs(size_t num_ssrcs, bool send_single_ssrc_first);
+
   enum { kNumSendSsrcs = 3 };
   static const uint8_t kSendPayloadType;
   static const uint8_t kSendRtxPayloadType;
@@ -95,30 +97,104 @@ const uint32_t VideoSendStreamTest::kSendSsrcs[kNumSendSsrcs] = { 0xC0FFED,
 const uint32_t VideoSendStreamTest::kSendSsrc =
     VideoSendStreamTest::kSendSsrcs[0];
 
-TEST_F(VideoSendStreamTest, SendsSetSsrc) {
+void VideoSendStreamTest::SendsSetSsrcs(size_t num_ssrcs,
+                                        bool send_single_ssrc_first) {
   class SendSsrcObserver : public test::RtpRtcpObserver {
    public:
-    SendSsrcObserver() : RtpRtcpObserver(30 * 1000) {}
+    SendSsrcObserver(const uint32_t* ssrcs,
+                     size_t num_ssrcs,
+                     bool send_single_ssrc_first)
+        : RtpRtcpObserver(30 * 1000),
+          ssrcs_to_observe_(num_ssrcs),
+          expect_single_ssrc_(send_single_ssrc_first) {
+      for (size_t i = 0; i < num_ssrcs; ++i)
+        valid_ssrcs_[ssrcs[i]] = true;
+    }
 
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
       RTPHeader header;
-      EXPECT_TRUE(
-          parser_->Parse(packet, static_cast<int>(length), &header));
+      EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
 
-      if (header.ssrc == kSendSsrc)
+      EXPECT_TRUE(valid_ssrcs_[header.ssrc])
+          << "Received unknown SSRC: " << header.ssrc;
+
+      if (!valid_ssrcs_[header.ssrc])
+        observation_complete_->Set();
+
+      if (!is_observed_[header.ssrc]) {
+        is_observed_[header.ssrc] = true;
+        --ssrcs_to_observe_;
+        if (expect_single_ssrc_) {
+          expect_single_ssrc_ = false;
+          observation_complete_->Set();
+        }
+      }
+
+      if (ssrcs_to_observe_ == 0)
         observation_complete_->Set();
 
       return SEND_PACKET;
     }
-  } observer;
+
+   private:
+    std::map<uint32_t, bool> valid_ssrcs_;
+    std::map<uint32_t, bool> is_observed_;
+    size_t ssrcs_to_observe_;
+    bool expect_single_ssrc_;
+  } observer(kSendSsrcs, num_ssrcs, send_single_ssrc_first);
 
   Call::Config call_config(observer.SendTransport());
   scoped_ptr<Call> call(Call::Create(call_config));
 
-  VideoSendStream::Config send_config = GetSendTestConfig(call.get(), 1);
-  send_config.rtp.max_packet_size = 128;
+  VideoSendStream::Config send_config =
+      GetSendTestConfig(call.get(), num_ssrcs);
 
-  RunSendTest(call.get(), send_config, &observer);
+  if (num_ssrcs > 1) {
+    // Set low simulcast bitrates to not have to wait for bandwidth ramp-up.
+    for (size_t i = 0; i < num_ssrcs; ++i) {
+      send_config.codec.simulcastStream[i].minBitrate = 10;
+      send_config.codec.simulcastStream[i].targetBitrate = 10;
+      send_config.codec.simulcastStream[i].maxBitrate = 10;
+    }
+  }
+
+  if (send_single_ssrc_first)
+    send_config.codec.numberOfSimulcastStreams = 1;
+
+  send_stream_ = call->CreateVideoSendStream(send_config);
+  scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer(
+      test::FrameGeneratorCapturer::Create(
+          send_stream_->Input(), 320, 240, 30, Clock::GetRealTimeClock()));
+  send_stream_->StartSending();
+  frame_generator_capturer->Start();
+
+  EXPECT_EQ(kEventSignaled, observer.Wait())
+      << "Timed out while waiting for "
+      << (send_single_ssrc_first ? "first SSRC." : "SSRCs.");
+
+  if (send_single_ssrc_first) {
+    // Set full simulcast and continue with the rest of the SSRCs.
+    send_config.codec.numberOfSimulcastStreams =
+        static_cast<unsigned char>(num_ssrcs);
+    send_stream_->SetCodec(send_config.codec);
+    EXPECT_EQ(kEventSignaled, observer.Wait())
+        << "Timed out while waiting on additional SSRCs.";
+  }
+
+  observer.StopSending();
+  frame_generator_capturer->Stop();
+  send_stream_->StopSending();
+  call->DestroyVideoSendStream(send_stream_);
+}
+
+TEST_F(VideoSendStreamTest, SendsSetSsrc) { SendsSetSsrcs(1, false); }
+
+TEST_F(VideoSendStreamTest, SendsSetSimulcastSsrcs) {
+  SendsSetSsrcs(kNumSendSsrcs, false);
+}
+
+TEST_F(VideoSendStreamTest, CanSwitchToUseAllSsrcs) {
+  SendsSetSsrcs(kNumSendSsrcs, true);
 }
 
 TEST_F(VideoSendStreamTest, SupportsCName) {

@@ -215,8 +215,7 @@ VideoSendStream::Config Call::GetDefaultSendConfig() {
 VideoSendStream* Call::CreateVideoSendStream(
     const VideoSendStream::Config& config) {
   assert(config.rtp.ssrcs.size() > 0);
-  assert(config.codec.numberOfSimulcastStreams == 0 ||
-         config.codec.numberOfSimulcastStreams == config.rtp.ssrcs.size());
+  assert(config.rtp.ssrcs.size() >= config.codec.numberOfSimulcastStreams);
 
   VideoSendStream* send_stream = new VideoSendStream(
       config_.send_transport, config_.overuse_detection, video_engine_, config);
