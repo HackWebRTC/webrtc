@@ -51,6 +51,15 @@
 
 #if !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
 
+// Set a thread-global base logging context. This name will be prepended to all
+// hierarchical contexts.
+// |name| is a char*, std::string or uint32_t to name the context.
+#define BWE_TEST_LOGGING_GLOBAL_CONTEXT(name)
+
+// Thread-globally allow/disallow logging.
+// |enable| is expected to be a bool.
+#define BWE_TEST_LOGGING_GLOBAL_ENABLE(enabled)
+
 // Insert a (hierarchical) logging context.
 // |name| is a char*, std::string or uint32_t to name the context.
 #define BWE_TEST_LOGGING_CONTEXT(name)
@@ -92,6 +101,16 @@
 #include "webrtc/common_types.h"
 #include "webrtc/system_wrappers/interface/constructor_magic.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+
+#define BWE_TEST_LOGGING_GLOBAL_CONTEXT(name) \
+    do { \
+      webrtc::testing::bwe::Logging::GetInstance()->SetGlobalContext(name); \
+    } while (0);
+
+#define BWE_TEST_LOGGING_GLOBAL_ENABLE(enabled) \
+    do { \
+      webrtc::testing::bwe::Logging::GetInstance()->SetGlobalEnable(enabled); \
+    } while (0);
 
 #define __BWE_TEST_LOGGING_CONTEXT_NAME(ctx, line) ctx ## line
 #define __BWE_TEST_LOGGING_CONTEXT_DECLARE(ctx, line, name, time, enabled) \
@@ -162,24 +181,33 @@ class Logging {
   };
 
   static Logging* GetInstance();
+
+  void SetGlobalContext(uint32_t name);
+  void SetGlobalContext(const std::string& name);
+  void SetGlobalContext(const char* name);
+  void SetGlobalEnable(bool enabled);
+
   void Log(const char format[], ...);
   void Plot(double value);
 
  private:
   struct State {
-    State(const char new_tag[], int64_t timestamp_ms, bool enabled)
-        : tag(new_tag),
-          timestamp_ms(timestamp_ms),
-          enabled(enabled) {
-    }
+    State();
+    State(const std::string& new_tag, int64_t timestamp_ms, bool enabled);
+    void MergePrevious(const State& previous);
+
     std::string tag;
     int64_t timestamp_ms;
     bool enabled;
   };
-  typedef std::map<uint32_t, std::stack<State> > ThreadMap;
+  struct ThreadState {
+    State global_state;
+    std::stack<State> stack;
+  };
+  typedef std::map<uint32_t, ThreadState> ThreadMap;
 
   Logging();
-  void PushState(const char append_to_tag[], int64_t timestamp_ms,
+  void PushState(const std::string& append_to_tag, int64_t timestamp_ms,
                  bool enabled);
   void PopState();
 

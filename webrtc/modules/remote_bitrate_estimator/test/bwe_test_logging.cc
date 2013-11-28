@@ -25,20 +25,24 @@ namespace bwe {
 
 Logging Logging::g_Logging;
 
-Logging::Context::Context(uint32_t name, int64_t timestamp_ms, bool enabled) {
+static std::string ToString(uint32_t v) {
   const size_t kBufferSize = 16;
   char string_buffer[kBufferSize] = {0};
 #if defined(_MSC_VER) && defined(_WIN32)
-  _snprintf(string_buffer, kBufferSize - 1, "%08x", name);
+  _snprintf(string_buffer, kBufferSize - 1, "%08x", v);
 #else
-  snprintf(string_buffer, kBufferSize, "%08x", name);
+  snprintf(string_buffer, kBufferSize, "%08x", v);
 #endif
-  Logging::GetInstance()->PushState(string_buffer, timestamp_ms, enabled);
+  return string_buffer;
+}
+
+Logging::Context::Context(uint32_t name, int64_t timestamp_ms, bool enabled) {
+  Logging::GetInstance()->PushState(ToString(name), timestamp_ms, enabled);
 }
 
 Logging::Context::Context(const std::string& name, int64_t timestamp_ms,
                           bool enabled) {
-  Logging::GetInstance()->PushState(name.c_str(), timestamp_ms, enabled);
+  Logging::GetInstance()->PushState(name, timestamp_ms, enabled);
 }
 
 Logging::Context::Context(const char* name, int64_t timestamp_ms,
@@ -54,11 +58,31 @@ Logging* Logging::GetInstance() {
   return &g_Logging;
 }
 
+void Logging::SetGlobalContext(uint32_t name) {
+  CriticalSectionScoped cs(crit_sect_.get());
+  thread_map_[ThreadWrapper::GetThreadId()].global_state.tag = ToString(name);
+}
+
+void Logging::SetGlobalContext(const std::string& name) {
+  CriticalSectionScoped cs(crit_sect_.get());
+  thread_map_[ThreadWrapper::GetThreadId()].global_state.tag = name;
+}
+
+void Logging::SetGlobalContext(const char* name) {
+  CriticalSectionScoped cs(crit_sect_.get());
+  thread_map_[ThreadWrapper::GetThreadId()].global_state.tag = name;
+}
+
+void Logging::SetGlobalEnable(bool enabled) {
+  CriticalSectionScoped cs(crit_sect_.get());
+  thread_map_[ThreadWrapper::GetThreadId()].global_state.enabled = enabled;
+}
+
 void Logging::Log(const char format[], ...) {
   CriticalSectionScoped cs(crit_sect_.get());
   ThreadMap::iterator it = thread_map_.find(ThreadWrapper::GetThreadId());
   assert(it != thread_map_.end());
-  const State& state = it->second.top();
+  const State& state = it->second.stack.top();
   if (state.enabled) {
     printf("%s\t", state.tag.c_str());
     va_list args;
@@ -73,7 +97,7 @@ void Logging::Plot(double value) {
   CriticalSectionScoped cs(crit_sect_.get());
   ThreadMap::iterator it = thread_map_.find(ThreadWrapper::GetThreadId());
   assert(it != thread_map_.end());
-  const State& state = it->second.top();
+  const State& state = it->second.stack.top();
   if (state.enabled) {
     printf("PLOT\t%s\t%f\t%f\n", state.tag.c_str(), state.timestamp_ms * 0.001,
            value);
@@ -85,37 +109,48 @@ Logging::Logging()
       thread_map_() {
 }
 
-void Logging::PushState(const char append_to_tag[], int64_t timestamp_ms,
-                        bool enabled) {
-  assert(append_to_tag);
-  CriticalSectionScoped cs(crit_sect_.get());
-  std::stack<State>* stack = &thread_map_[ThreadWrapper::GetThreadId()];
-  if (stack->empty()) {
-    State new_state(append_to_tag, std::max(static_cast<int64_t>(0),
-                                            timestamp_ms), enabled);
-    stack->push(new_state);
-  } else {
-    stack->push(stack->top());
-    State* state = &stack->top();
-    if (state->tag != "" && std::string(append_to_tag) != "") {
-      state->tag.append("_");
-    }
-    state->tag.append(append_to_tag);
-    state->timestamp_ms = std::max(timestamp_ms, state->timestamp_ms);
-    state->enabled = enabled && state->enabled;
+Logging::State::State() : tag(""), timestamp_ms(0), enabled(true) {}
+
+Logging::State::State(const std::string& tag, int64_t timestamp_ms,
+                      bool enabled)
+    : tag(tag),
+      timestamp_ms(timestamp_ms),
+      enabled(enabled) {
+}
+
+void Logging::State::MergePrevious(const State& previous) {
+  if (tag == "") {
+    tag = previous.tag;
+  } else if (previous.tag != "") {
+    tag = previous.tag + "_" + tag;
   }
+  timestamp_ms = std::max(previous.timestamp_ms, timestamp_ms);
+  enabled = previous.enabled && enabled;
+}
+
+void Logging::PushState(const std::string& append_to_tag, int64_t timestamp_ms,
+                        bool enabled) {
+  CriticalSectionScoped cs(crit_sect_.get());
+  State new_state(append_to_tag, timestamp_ms, enabled);
+  ThreadState* thread_state = &thread_map_[ThreadWrapper::GetThreadId()];
+  std::stack<State>* stack = &thread_state->stack;
+  if (stack->empty()) {
+    new_state.MergePrevious(thread_state->global_state);
+  } else {
+    new_state.MergePrevious(stack->top());
+  }
+  stack->push(new_state);
 }
 
 void Logging::PopState() {
   CriticalSectionScoped cs(crit_sect_.get());
   ThreadMap::iterator it = thread_map_.find(ThreadWrapper::GetThreadId());
   assert(it != thread_map_.end());
-  int64_t newest_timestamp_ms = it->second.top().timestamp_ms;
-  it->second.pop();
-  if (it->second.empty()) {
-    thread_map_.erase(it);
-  } else {
-    State* state = &it->second.top();
+  std::stack<State>* stack = &it->second.stack;
+  int64_t newest_timestamp_ms = stack->top().timestamp_ms;
+  stack->pop();
+  if (!stack->empty()) {
+    State* state = &stack->top();
     // Update time so that next log/plot will use the latest time seen so far
     // in this call tree.
     state->timestamp_ms = std::max(state->timestamp_ms, newest_timestamp_ms);
