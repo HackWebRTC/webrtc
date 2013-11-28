@@ -326,6 +326,7 @@ void PacedSender::UpdateBytesPerInterval(uint32_t delta_time_ms) {
 
 // MUST have critsect_ when calling.
 bool PacedSender::ShouldSendNextPacket(paced_sender::PacketList** packet_list) {
+  *packet_list = NULL;
   if (media_budget_->bytes_remaining() <= 0) {
     // All bytes consumed for this interval.
     // Check if we have not sent in a too long time.
@@ -348,8 +349,9 @@ bool PacedSender::ShouldSendNextPacket(paced_sender::PacketList** packet_list) {
             high_priority_packets_->front().capture_time_ms_;
         *packet_list = high_priority_packets_.get();
       }
-      if (!normal_priority_packets_->empty() && high_priority_capture_time >
-          normal_priority_packets_->front().capture_time_ms_) {
+      if (!normal_priority_packets_->empty() &&
+          (high_priority_capture_time == -1 || high_priority_capture_time >
+          normal_priority_packets_->front().capture_time_ms_)) {
         *packet_list = normal_priority_packets_.get();
       }
       if (*packet_list)
