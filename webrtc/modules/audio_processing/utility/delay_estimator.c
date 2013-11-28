@@ -196,6 +196,8 @@ void WebRtc_InitBinaryDelayEstimator(BinaryDelayEstimator* self) {
 
   // Default return value if we're unable to estimate. -1 is used for errors.
   self->last_delay = -2;
+
+  self->robust_validation_enabled = 0;  // Disabled by default.
 }
 
 int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator* self,

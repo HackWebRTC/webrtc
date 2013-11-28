@@ -123,6 +123,18 @@ void* WebRtc_CreateDelayEstimator(void* farend_handle, int lookahead);
 //
 int WebRtc_InitDelayEstimator(void* handle);
 
+// TODO(bjornv): Implement this functionality.  Currently, enabling it has no
+// impact, hence this is an empty API.
+// Enables/Disables a robust validation functionality in the delay estimation.
+// This is by default disabled upon initialization.
+// Inputs:
+//      - handle        : Pointer to the delay estimation instance.
+//      - enable        : Enable (1) or disable (0) this feature.
+int WebRtc_enable_robust_validation(void* handle, int enable);
+
+// Returns 1 if robust validation is enabled and 0 if disabled.
+int WebRtc_is_robust_validation_enabled(void* handle);
+
 // Estimates and returns the delay between the far-end and near-end blocks. The
 // value will be offset by the lookahead (i.e. the lookahead should be
 // subtracted from the returned value).

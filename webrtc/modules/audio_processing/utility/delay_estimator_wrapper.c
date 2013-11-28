@@ -312,6 +312,30 @@ int WebRtc_InitDelayEstimator(void* handle) {
   return 0;
 }
 
+int WebRtc_enable_robust_validation(void* handle, int enable) {
+  DelayEstimator* self = (DelayEstimator*) handle;
+
+  if (self == NULL) {
+    return -1;
+  }
+  if ((enable < 0) || (enable > 1)) {
+    return -1;
+  }
+  assert(self->binary_handle != NULL);
+  self->binary_handle->robust_validation_enabled = enable;
+  return 0;
+}
+
+int WebRtc_is_robust_validation_enabled(void* handle) {
+  DelayEstimator* self = (DelayEstimator*) handle;
+
+  if (self == NULL) {
+    return -1;
+  }
+  assert(self->binary_handle != NULL);
+  return self->binary_handle->robust_validation_enabled;
+}
+
 int WebRtc_DelayEstimatorProcessFix(void* handle,
                                     uint16_t* near_spectrum,
                                     int spectrum_size,

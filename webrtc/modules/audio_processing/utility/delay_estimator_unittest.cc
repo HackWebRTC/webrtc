@@ -246,6 +246,17 @@ TEST_F(DelayEstimatorTest, CorrectErrorReturnsOfWrapper) {
   EXPECT_EQ(-1, WebRtc_AddFarSpectrumFix(farend_handle_, far_u16_,
                                          spectrum_size_, 16));
 
+  // WebRtc_enable_robust_validation() should return -1 if we have:
+  // 1) NULL pointer as |handle|.
+  // 2) Incorrect |enable| value (not 0 or 1).
+  EXPECT_EQ(-1, WebRtc_enable_robust_validation(NULL, 0));
+  EXPECT_EQ(-1, WebRtc_enable_robust_validation(handle_, -1));
+  EXPECT_EQ(-1, WebRtc_enable_robust_validation(handle_, 2));
+
+  // WebRtc_is_robust_validation_enabled() should return -1 if we have NULL
+  // pointer as |handle|.
+  EXPECT_EQ(-1, WebRtc_is_robust_validation_enabled(NULL));
+
   // WebRtc_DelayEstimatorProcessFloat() should return -1 if we have:
   // 1) NULL pointer as |handle|.
   // 2) NULL pointer as near-end spectrum.
@@ -281,6 +292,16 @@ TEST_F(DelayEstimatorTest, CorrectErrorReturnsOfWrapper) {
 
   // Free any local memory if needed.
   WebRtc_FreeDelayEstimator(handle);
+}
+
+TEST_F(DelayEstimatorTest, VerifyEnableRobustValidation) {
+  Init();
+  // Disabled by default.
+  EXPECT_EQ(0, WebRtc_is_robust_validation_enabled(handle_));
+  for (int i = 1; i >= 0; i--) {
+    EXPECT_EQ(0, WebRtc_enable_robust_validation(handle_, i));
+    EXPECT_EQ(i, WebRtc_is_robust_validation_enabled(handle_));
+  }
 }
 
 TEST_F(DelayEstimatorTest, InitializedSpectrumAfterProcess) {
