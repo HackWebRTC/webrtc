@@ -43,6 +43,7 @@ ViECapturer::ViECapturer(int capture_id,
       external_capture_module_(NULL),
       module_process_thread_(module_process_thread),
       capture_id_(capture_id),
+      incoming_frame_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       capture_thread_(*ThreadWrapper::CreateThread(ViECaptureThreadFunction,
                                                    this, kHighPriority,
                                                    "ViECaptureThread")),
@@ -332,7 +333,8 @@ int ViECapturer::IncomingFrameI420(const ViEVideoFrameI420& video_frame,
   int size_y = video_frame.height * video_frame.y_pitch;
   int size_u = video_frame.u_pitch * ((video_frame.height + 1) / 2);
   int size_v = video_frame.v_pitch * ((video_frame.height + 1) / 2);
-  int ret = capture_frame_.CreateFrame(size_y,
+  CriticalSectionScoped cs(incoming_frame_cs_.get());
+  int ret = incoming_frame_.CreateFrame(size_y,
                                        video_frame.y_plane,
                                        size_u,
                                        video_frame.u_plane,
@@ -352,7 +354,7 @@ int ViECapturer::IncomingFrameI420(const ViEVideoFrameI420& video_frame,
     return -1;
   }
 
-  return external_capture_module_->IncomingI420VideoFrame(&capture_frame_,
+  return external_capture_module_->IncomingI420VideoFrame(&incoming_frame_,
                                                           capture_time);
 }
 
