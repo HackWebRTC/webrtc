@@ -119,14 +119,16 @@ class AudioDecoderTest : public ::testing::Test {
       encoded_bytes_ += enc_len;
       processed_samples += frame_size_;
     }
-    // This test fails on Win x64, see issue webrtc:1459
-#if !(defined(_WIN32) && defined(WEBRTC_ARCH_64_BITS))
-    EXPECT_EQ(expected_bytes, encoded_bytes_);
+    // For some codecs it doesn't make sense to check expected number of bytes,
+    // since the number can vary for different platforms. Opus and iSAC are
+    // such codecs. In this case expected_bytes is set to 0.
+    if (expected_bytes) {
+      EXPECT_EQ(expected_bytes, encoded_bytes_);
+    }
     CompareInputOutput(processed_samples, tolerance, delay);
     if (channels_ == 2)
       CompareTwoChannels(processed_samples, channel_diff_tolerance);
     EXPECT_LE(MseInputOutput(processed_samples, delay), mse);
-#endif
   }
 
   // The absolute difference between the input and output (the first channel) is
@@ -733,7 +735,7 @@ TEST_F(AudioDecoderIsacFloatTest, EncodeDecode) {
   double mse = 434951.0;
   int delay = 48;  // Delay from input to output.
   EXPECT_TRUE(AudioDecoder::CodecSupported(kDecoderISAC));
-  EncodeDecodeTest(883, tolerance, mse, delay);
+  EncodeDecodeTest(0, tolerance, mse, delay);
   ReInitTest();
   EXPECT_TRUE(decoder_->HasDecodePlc());
   DecodePlcTest();
@@ -744,7 +746,7 @@ TEST_F(AudioDecoderIsacSwbTest, EncodeDecode) {
   double mse = 8.18e6;
   int delay = 160;  // Delay from input to output.
   EXPECT_TRUE(AudioDecoder::CodecSupported(kDecoderISACswb));
-  EncodeDecodeTest(853, tolerance, mse, delay);
+  EncodeDecodeTest(0, tolerance, mse, delay);
   ReInitTest();
   EXPECT_TRUE(decoder_->HasDecodePlc());
   DecodePlcTest();
@@ -755,7 +757,7 @@ TEST_F(AudioDecoderIsacFbTest, EncodeDecode) {
   double mse = 8.18e6;
   int delay = 160;  // Delay from input to output.
   EXPECT_TRUE(AudioDecoder::CodecSupported(kDecoderISACswb));
-  EncodeDecodeTest(853, tolerance, mse, delay);
+  EncodeDecodeTest(0, tolerance, mse, delay);
   ReInitTest();
   EXPECT_TRUE(decoder_->HasDecodePlc());
   DecodePlcTest();
@@ -801,7 +803,7 @@ TEST_F(AudioDecoderOpusTest, EncodeDecode) {
   double mse = 238630.0;
   int delay = 22;  // Delay from input to output.
   EXPECT_TRUE(AudioDecoder::CodecSupported(kDecoderOpus));
-  EncodeDecodeTest(731, tolerance, mse, delay);
+  EncodeDecodeTest(0, tolerance, mse, delay);
   ReInitTest();
   EXPECT_FALSE(decoder_->HasDecodePlc());
 }
@@ -812,7 +814,7 @@ TEST_F(AudioDecoderOpusStereoTest, EncodeDecode) {
   double mse = 238630.0;
   int delay = 22;  // Delay from input to output.
   EXPECT_TRUE(AudioDecoder::CodecSupported(kDecoderOpus_2ch));
-  EncodeDecodeTest(1383, tolerance, mse, delay, channel_diff_tolerance);
+  EncodeDecodeTest(0, tolerance, mse, delay, channel_diff_tolerance);
   ReInitTest();
   EXPECT_FALSE(decoder_->HasDecodePlc());
 }
