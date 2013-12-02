@@ -117,9 +117,9 @@ class RTCSetSessionDescriptionObserver : public SetSessionDescriptionObserver {
 }
 
 - (BOOL)addICECandidate:(RTCICECandidate *)candidate {
-  const webrtc::IceCandidateInterface *iceCandidate = candidate.candidate;
-  return self.peerConnection->AddIceCandidate(iceCandidate);
-  delete iceCandidate;
+  talk_base::scoped_ptr<const webrtc::IceCandidateInterface> iceCandidate(
+      candidate.candidate);
+  return self.peerConnection->AddIceCandidate(iceCandidate.get());
 }
 
 - (BOOL)addStream:(RTCMediaStream *)stream
