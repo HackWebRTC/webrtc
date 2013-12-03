@@ -23,14 +23,27 @@ namespace bwe {
 
 struct BweTestConfig {
   struct EstimatorConfig {
-    EstimatorConfig() : debug_name(), estimator_factory(NULL) {}
+    EstimatorConfig()
+        : debug_name(),
+          estimator_factory(NULL),
+          update_baseline(false) {
+    }
     EstimatorConfig(std::string debug_name,
                     const RemoteBitrateEstimatorFactory* estimator_factory)
         : debug_name(debug_name),
-          estimator_factory(estimator_factory) {
+          estimator_factory(estimator_factory),
+          update_baseline(false) {
+    }
+    EstimatorConfig(std::string debug_name,
+                    const RemoteBitrateEstimatorFactory* estimator_factory,
+                    bool update_baseline)
+        : debug_name(debug_name),
+          estimator_factory(estimator_factory),
+          update_baseline(update_baseline) {
     }
     std::string debug_name;
     const RemoteBitrateEstimatorFactory* estimator_factory;
+    bool update_baseline;
   };
 
   std::vector<const PacketSenderFactory*> sender_factories;
@@ -51,7 +64,6 @@ class BweTest : public ::testing::TestWithParam<BweTestConfig>,
  protected:
   void VerboseLogging(bool enable);
   void RunFor(int64_t time_ms);
-  void LogStats();
 
  private:
   class TestedEstimator;

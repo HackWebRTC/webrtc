@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test.h"
 
+#include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_baselinefile.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_framework.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/system_wrappers/interface/clock.h"
@@ -35,15 +36,19 @@ template<typename T> void DeleteElements(T* container) {
 
 class BweTest::TestedEstimator : public RemoteBitrateObserver {
  public:
-  explicit TestedEstimator(const BweTestConfig::EstimatorConfig& config)
+  TestedEstimator(const string& test_name,
+                  const BweTestConfig::EstimatorConfig& config)
       : debug_name_(config.debug_name),
         clock_(0),
         stats_(),
         relative_estimator_stats_(),
-        latest_estimate_kbps_(-1.0),
+        latest_estimate_bps_(-1),
         estimator_(config.estimator_factory->Create(this, &clock_)),
-        relative_estimator_(NULL) {
+        relative_estimator_(NULL),
+        baseline_(BaseLineFileInterface::Create(test_name + "_" + debug_name_,
+                                                config.update_baseline)) {
     assert(estimator_.get());
+    assert(baseline_.get());
     // Default RTT in RemoteRateControl is 200 ms ; 50 ms is more realistic.
     estimator_->OnRttUpdate(50);
   }
@@ -55,7 +60,7 @@ class BweTest::TestedEstimator : public RemoteBitrateObserver {
   void EatPacket(const Packet& packet) {
     BWE_TEST_LOGGING_CONTEXT(debug_name_);
 
-    latest_estimate_kbps_ = -1.0;
+    latest_estimate_bps_ = -1;
 
     // We're treating the send time (from previous filter) as the arrival
     // time once packet reaches the estimator.
@@ -79,17 +84,22 @@ class BweTest::TestedEstimator : public RemoteBitrateObserver {
   bool CheckEstimate(PacketSender::Feedback* feedback) {
     assert(feedback);
     BWE_TEST_LOGGING_CONTEXT(debug_name_);
-    double estimated_kbps = 0.0;
-    if (LatestEstimate(&estimated_kbps)) {
+    uint32_t estimated_bps = 0;
+    if (LatestEstimate(&estimated_bps)) {
+      feedback->estimated_bps = estimated_bps;
+      baseline_->Estimate(clock_.TimeInMilliseconds(), estimated_bps);
+
+      double estimated_kbps = static_cast<double>(estimated_bps) / 1000.0;
       stats_.Push(estimated_kbps);
       BWE_TEST_LOGGING_PLOT("Estimate", clock_.TimeInMilliseconds(),
-                            estimated_kbps / 100);
-      double relative_estimate_kbps = 0.0;
+                            estimated_kbps / 1000.0);
+      uint32_t relative_estimate_bps = 0;
       if (relative_estimator_ &&
-          relative_estimator_->LatestEstimate(&relative_estimate_kbps)) {
+          relative_estimator_->LatestEstimate(&relative_estimate_bps)) {
+        double relative_estimate_kbps =
+            static_cast<double>(relative_estimate_bps) / 1000.0;
         relative_estimator_stats_.Push(estimated_kbps - relative_estimate_kbps);
       }
-      feedback->estimated_kbps = estimated_kbps;
       return true;
     }
     return false;
@@ -105,32 +115,36 @@ class BweTest::TestedEstimator : public RemoteBitrateObserver {
     }
   }
 
+  void VerifyOrWriteBaseline() {
+    EXPECT_TRUE(baseline_->VerifyOrWrite());
+  }
+
   virtual void OnReceiveBitrateChanged(const vector<unsigned int>& ssrcs,
                                        unsigned int bitrate) {
   }
 
  private:
-  bool LatestEstimate(double* estimate_kbps) {
-    if (latest_estimate_kbps_ < 0.0) {
+  bool LatestEstimate(uint32_t* estimate_bps) {
+    if (latest_estimate_bps_ < 0) {
       vector<unsigned int> ssrcs;
       unsigned int bps = 0;
       if (!estimator_->LatestEstimate(&ssrcs, &bps)) {
         return false;
       }
-      latest_estimate_kbps_ = bps / 1000.0;
+      latest_estimate_bps_ = bps;
     }
-    *estimate_kbps = latest_estimate_kbps_;
+    *estimate_bps = latest_estimate_bps_;
     return true;
   }
 
   string debug_name_;
-  bool log_estimates_;
   SimulatedClock clock_;
   Stats<double> stats_;
   Stats<double> relative_estimator_stats_;
-  double latest_estimate_kbps_;
+  int64_t latest_estimate_bps_;
   scoped_ptr<RemoteBitrateEstimator> estimator_;
   TestedEstimator* relative_estimator_;
+  scoped_ptr<BaseLineFileInterface> baseline_;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(TestedEstimator);
 };
@@ -150,8 +164,11 @@ BweTest::~BweTest() {
 }
 
 void BweTest::SetUp() {
-  BWE_TEST_LOGGING_GLOBAL_CONTEXT(::testing::UnitTest::GetInstance()->
-      current_test_info()->test_case_name());
+  const ::testing::TestInfo* const test_info =
+      ::testing::UnitTest::GetInstance()->current_test_info();
+  string test_name =
+      string(test_info->test_case_name()) + "_" + string(test_info->name());
+  BWE_TEST_LOGGING_GLOBAL_CONTEXT(test_name);
 
   const BweTestConfig& config = GetParam();
 
@@ -175,7 +192,7 @@ void BweTest::SetUp() {
   for (vector<BweTestConfig::EstimatorConfig>:: const_iterator it =
       config.estimator_configs.begin(); it != config.estimator_configs.end();
       ++it) {
-    estimators_.push_back(new TestedEstimator(*it));
+    estimators_.push_back(new TestedEstimator(test_name, *it));
   }
   if (estimators_.size() > 1) {
     // Set all estimators as relative to the first one.
@@ -189,7 +206,13 @@ void BweTest::SetUp() {
 
 void BweTest::TearDown() {
   BWE_TEST_LOGGING_GLOBAL_ENABLE(true);
-  LogStats();
+
+  for (vector<TestedEstimator*>::iterator eit = estimators_.begin();
+      eit != estimators_.end(); ++eit) {
+    (*eit)->VerifyOrWriteBaseline();
+    (*eit)->LogStats();
+  }
+
   BWE_TEST_LOGGING_GLOBAL_CONTEXT("");
 }
 
@@ -249,13 +272,6 @@ void BweTest::RunFor(int64_t time_ms) {
         }
       }
     }
-  }
-}
-
-void BweTest::LogStats() {
-  for (vector<TestedEstimator*>::iterator eit = estimators_.begin();
-      eit != estimators_.end(); ++eit) {
-    (*eit)->LogStats();
   }
 }
 }  // namespace bwe

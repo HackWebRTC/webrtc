@@ -288,7 +288,7 @@ class ChokeFilter : public PacketProcessor {
 class PacketSender : public PacketProcessor {
  public:
   struct Feedback {
-    double estimated_kbps;
+    uint32_t estimated_bps;
   };
 
   explicit PacketSender(PacketProcessorListener* listener);
