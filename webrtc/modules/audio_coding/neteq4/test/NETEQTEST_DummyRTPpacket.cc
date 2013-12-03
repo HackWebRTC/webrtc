@@ -29,105 +29,109 @@ int NETEQTEST_DummyRTPpacket::readFromFile(FILE *fp)
 
     uint16_t length, plen;
     uint32_t offset;
+    int packetLen;
 
-    if (fread(&length, 2, 1, fp) == 0)
-    {
-        reset();
-        return -2;
-    }
-    length = ntohs(length);
+    bool readNextPacket = true;
+    while (readNextPacket) {
+        readNextPacket = false;
+        if (fread(&length, 2, 1, fp) == 0)
+        {
+            reset();
+            return -2;
+        }
+        length = ntohs(length);
 
-    if (fread(&plen, 2, 1, fp) == 0)
-    {
-        reset();
-        return -1;
-    }
-    int packetLen = ntohs(plen);
-
-    if (fread(&offset, 4, 1, fp) == 0)
-    {
-        reset();
-        return -1;
-    }
-    // Store in local variable until we have passed the reset below.
-    uint32_t receiveTime = ntohl(offset);
-
-    // Use length here because a plen of 0 specifies rtcp.
-    length = (uint16_t) (length - _kRDHeaderLen);
-
-    // check buffer size
-    if (_datagram && _memSize < length)
-    {
-        reset();
-    }
-
-    if (!_datagram)
-    {
-        _datagram = new uint8_t[length];
-        _memSize = length;
-    }
-    memset(_datagram, 0, length);
-
-    if (length == 0)
-    {
-        _datagramLen = 0;
-        _rtpParsed = false;
-        return packetLen;
-    }
-
-    // Read basic header
-    if (fread((unsigned short *) _datagram, 1, _kBasicHeaderLen, fp)
-        != (size_t)_kBasicHeaderLen)
-    {
-        reset();
-        return -1;
-    }
-    _receiveTime = receiveTime;
-    _datagramLen = _kBasicHeaderLen;
-
-    // Parse the basic header
-    webrtc::WebRtcRTPHeader tempRTPinfo;
-    int P, X, CC;
-    parseBasicHeader(&tempRTPinfo, &P, &X, &CC);
-
-    // Check if we have to extend the header
-    if (X != 0 || CC != 0)
-    {
-        int newLen = _kBasicHeaderLen + CC * 4 + X * 4;
-        assert(_memSize >= newLen);
-
-        // Read extension from file
-        size_t readLen = newLen - _kBasicHeaderLen;
-        if (fread((unsigned short *) _datagram + _kBasicHeaderLen, 1, readLen,
-            fp) != readLen)
+        if (fread(&plen, 2, 1, fp) == 0)
         {
             reset();
             return -1;
         }
-        _datagramLen = newLen;
+        packetLen = ntohs(plen);
 
-        if (X != 0)
+        if (fread(&offset, 4, 1, fp) == 0)
         {
-            int totHdrLen = calcHeaderLength(X, CC);
-            assert(_memSize >= totHdrLen);
+            reset();
+            return -1;
+        }
+        // Store in local variable until we have passed the reset below.
+        uint32_t receiveTime = ntohl(offset);
+
+        // Use length here because a plen of 0 specifies rtcp.
+        length = (uint16_t) (length - _kRDHeaderLen);
+
+        // check buffer size
+        if (_datagram && _memSize < length)
+        {
+            reset();
+        }
+
+        if (!_datagram)
+        {
+            _datagram = new uint8_t[length];
+            _memSize = length;
+        }
+        memset(_datagram, 0, length);
+
+        if (length == 0)
+        {
+            _datagramLen = 0;
+            _rtpParsed = false;
+            return packetLen;
+        }
+
+        // Read basic header
+        if (fread((unsigned short *) _datagram, 1, _kBasicHeaderLen, fp)
+            != (size_t)_kBasicHeaderLen)
+        {
+            reset();
+            return -1;
+        }
+        _receiveTime = receiveTime;
+        _datagramLen = _kBasicHeaderLen;
+
+        // Parse the basic header
+        webrtc::WebRtcRTPHeader tempRTPinfo;
+        int P, X, CC;
+        parseBasicHeader(&tempRTPinfo, &P, &X, &CC);
+
+        // Check if we have to extend the header
+        if (X != 0 || CC != 0)
+        {
+            int newLen = _kBasicHeaderLen + CC * 4 + X * 4;
+            assert(_memSize >= newLen);
 
             // Read extension from file
-            size_t readLen = totHdrLen - newLen;
-            if (fread((unsigned short *) _datagram + newLen, 1, readLen, fp)
-                != readLen)
+            size_t readLen = newLen - _kBasicHeaderLen;
+            if (fread((unsigned short *) _datagram + _kBasicHeaderLen, 1,
+                      readLen, fp) != readLen)
             {
                 reset();
                 return -1;
             }
-            _datagramLen = totHdrLen;
-        }
-    }
-    _datagramLen = length;
+            _datagramLen = newLen;
 
-    if (!_blockList.empty() && _blockList.count(payloadType()) > 0)
-    {
-        // discard this payload
-        return readFromFile(fp);
+            if (X != 0)
+            {
+                int totHdrLen = calcHeaderLength(X, CC);
+                assert(_memSize >= totHdrLen);
+
+                // Read extension from file
+                size_t readLen = totHdrLen - newLen;
+                if (fread((unsigned short *) _datagram + newLen, 1, readLen, fp)
+                    != readLen)
+                {
+                    reset();
+                    return -1;
+                }
+                _datagramLen = totHdrLen;
+            }
+        }
+        _datagramLen = length;
+
+        if (!_blockList.empty() && _blockList.count(payloadType()) > 0)
+        {
+            readNextPacket = true;
+        }
     }
 
     _rtpParsed = false;
