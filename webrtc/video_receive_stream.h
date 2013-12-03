@@ -105,11 +105,15 @@ class VideoReceiveStream {
 
     // Receive-stream specific RTP settings.
     struct Rtp {
-      Rtp() : ssrc(0), rtcp_mode(newapi::kRtcpReducedSize) {}
+      Rtp()
+          : remote_ssrc(0),
+            local_ssrc(0),
+            rtcp_mode(newapi::kRtcpReducedSize) {}
 
-      // TODO(mflodman) Do we require a set ssrc? What happens if the ssrc
-      // changes?
-      uint32_t ssrc;
+      // Synchronization source (stream identifier) to be received.
+      uint32_t remote_ssrc;
+      // Sender SSRC used for sending RTCP (such as receiver reports).
+      uint32_t local_ssrc;
 
       // See RtcpMode for description.
       newapi::RtcpMode rtcp_mode;

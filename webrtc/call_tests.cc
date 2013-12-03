@@ -37,7 +37,6 @@
 #include "webrtc/test/fake_decoder.h"
 #include "webrtc/test/fake_encoder.h"
 #include "webrtc/test/frame_generator_capturer.h"
-#include "webrtc/test/generate_ssrcs.h"
 #include "webrtc/test/rtp_rtcp_observer.h"
 #include "webrtc/test/testsupport/perf_test.h"
 
@@ -45,6 +44,8 @@ namespace webrtc {
 
 static unsigned int kDefaultTimeoutMs = 30 * 1000;
 static unsigned int kLongTimeoutMs = 120 * 1000;
+static const uint32_t kSendSsrc = 0x654321;
+static const uint32_t kReceiverLocalSsrc = 0x123456;
 static const uint8_t kSendPayloadType = 125;
 
 class CallTest : public ::testing::Test {
@@ -70,7 +71,7 @@ class CallTest : public ::testing::Test {
     send_config_ = sender_call_->GetDefaultSendConfig();
     receive_config_ = receiver_call_->GetDefaultReceiveConfig();
 
-    test::GenerateRandomSsrcs(&send_config_, &reserved_ssrcs_);
+    send_config_.rtp.ssrcs.push_back(kSendSsrc);
     send_config_.encoder = &fake_encoder_;
     send_config_.internal_source = false;
     test::FakeEncoder::SetCodecSettings(&send_config_.codec, 1);
@@ -82,7 +83,8 @@ class CallTest : public ::testing::Test {
     decoder.decoder = &fake_decoder_;
     decoder.payload_type = send_config_.codec.plType;
     receive_config_.external_decoders.push_back(decoder);
-    receive_config_.rtp.ssrc = send_config_.rtp.ssrcs[0];
+    receive_config_.rtp.remote_ssrc = send_config_.rtp.ssrcs[0];
+    receive_config_.rtp.local_ssrc = kReceiverLocalSsrc;
   }
 
   void CreateStreams() {
@@ -144,8 +146,6 @@ class CallTest : public ::testing::Test {
 
   test::FakeEncoder fake_encoder_;
   test::FakeDecoder fake_decoder_;
-
-  std::map<uint32_t, bool> reserved_ssrcs_;
 };
 
 class NackObserver : public test::RtpRtcpObserver {
@@ -345,6 +345,48 @@ TEST_F(CallTest, TransmitsFirstFrame) {
 
   sender_transport.StopSending();
   receiver_transport.StopSending();
+
+  DestroyStreams();
+}
+
+TEST_F(CallTest, ReceiverUsesLocalSsrc) {
+  class SyncRtcpObserver : public test::RtpRtcpObserver {
+   public:
+    SyncRtcpObserver() : test::RtpRtcpObserver(kDefaultTimeoutMs) {}
+
+    virtual Action OnReceiveRtcp(const uint8_t* packet,
+                                 size_t length) OVERRIDE {
+      RTCPUtility::RTCPParserV2 parser(packet, length, true);
+      EXPECT_TRUE(parser.IsValid());
+      uint32_t ssrc = 0;
+      ssrc |= static_cast<uint32_t>(packet[4]) << 24;
+      ssrc |= static_cast<uint32_t>(packet[5]) << 16;
+      ssrc |= static_cast<uint32_t>(packet[6]) << 8;
+      ssrc |= static_cast<uint32_t>(packet[7]) << 0;
+      EXPECT_EQ(kReceiverLocalSsrc, ssrc);
+      observation_complete_->Set();
+
+      return SEND_PACKET;
+    }
+  } observer;
+
+  CreateCalls(Call::Config(observer.SendTransport()),
+              Call::Config(observer.ReceiveTransport()));
+
+  observer.SetReceivers(receiver_call_->Receiver(), sender_call_->Receiver());
+
+  CreateTestConfigs();
+
+  CreateStreams();
+  CreateFrameGenerator();
+  StartSending();
+
+  EXPECT_EQ(kEventSignaled, observer.Wait())
+      << "Timed out while waiting for a receiver RTCP packet to be sent.";
+
+  StopSending();
+
+  observer.StopSending();
 
   DestroyStreams();
 }
@@ -787,7 +829,8 @@ TEST_F(CallTest, SendsAndReceivesMultipleStreams) {
     VideoReceiveStream::Config receive_config =
         receiver_call->GetDefaultReceiveConfig();
     receive_config.renderer = observers[i];
-    receive_config.rtp.ssrc = ssrc;
+    receive_config.rtp.remote_ssrc = ssrc;
+    receive_config.rtp.local_ssrc = kReceiverLocalSsrc;
     receive_streams[i] =
         receiver_call->CreateVideoReceiveStream(receive_config);
     receive_streams[i]->StartReceiving();

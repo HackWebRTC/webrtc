@@ -26,7 +26,6 @@
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/test/frame_generator_capturer.h"
-#include "webrtc/test/generate_ssrcs.h"
 #include "webrtc/test/statistics.h"
 #include "webrtc/test/video_renderer.h"
 #include "webrtc/typedefs.h"
@@ -34,6 +33,8 @@
 DEFINE_int32(seconds, 10, "Seconds to run each clip.");
 
 namespace webrtc {
+
+static const uint32_t kSendSsrc = 0x654321;
 
 struct FullStackTestParams {
   const char* test_label;
@@ -375,6 +376,7 @@ class VideoAnalyzer : public PacketReceiver,
 };
 
 TEST_P(FullStackTest, NoPacketLoss) {
+  static const uint32_t kReceiverLocalSsrc = 0x123456;
   FullStackTestParams params = GetParam();
 
   test::DirectTransport transport;
@@ -392,7 +394,7 @@ TEST_P(FullStackTest, NoPacketLoss) {
   transport.SetReceiver(&analyzer);
 
   VideoSendStream::Config send_config = call->GetDefaultSendConfig();
-  test::GenerateRandomSsrcs(&send_config, &reserved_ssrcs_);
+  send_config.rtp.ssrcs.push_back(kSendSsrc);
 
   // TODO(pbos): static_cast shouldn't be required after mflodman refactors the
   //             VideoCodec struct.
@@ -418,7 +420,8 @@ TEST_P(FullStackTest, NoPacketLoss) {
       << ".yuv. Is this resource file present?";
 
   VideoReceiveStream::Config receive_config = call->GetDefaultReceiveConfig();
-  receive_config.rtp.ssrc = send_config.rtp.ssrcs[0];
+  receive_config.rtp.remote_ssrc = send_config.rtp.ssrcs[0];
+  receive_config.rtp.local_ssrc = kReceiverLocalSsrc;
   receive_config.renderer = &analyzer;
 
   VideoReceiveStream* receive_stream =

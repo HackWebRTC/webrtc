@@ -19,7 +19,6 @@
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/test/flags.h"
-#include "webrtc/test/generate_ssrcs.h"
 #include "webrtc/test/run_loop.h"
 #include "webrtc/test/run_tests.h"
 #include "webrtc/test/video_capturer.h"
@@ -32,6 +31,9 @@ class LoopbackTest : public ::testing::Test {
  protected:
   std::map<uint32_t, bool> reserved_ssrcs_;
 };
+
+static const uint32_t kSendSsrc = 0x654321;
+static const uint32_t kReceiverLocalSsrc = 0x123456;
 
 TEST_F(LoopbackTest, Test) {
   scoped_ptr<test::VideoRenderer> local_preview(test::VideoRenderer::Create(
@@ -48,7 +50,7 @@ TEST_F(LoopbackTest, Test) {
   transport.SetReceiver(call->Receiver());
 
   VideoSendStream::Config send_config = call->GetDefaultSendConfig();
-  test::GenerateRandomSsrcs(&send_config, &reserved_ssrcs_);
+  send_config.rtp.ssrcs.push_back(kSendSsrc);
 
   send_config.local_renderer = local_preview.get();
 
@@ -75,7 +77,8 @@ TEST_F(LoopbackTest, Test) {
                                   test_clock));
 
   VideoReceiveStream::Config receive_config = call->GetDefaultReceiveConfig();
-  receive_config.rtp.ssrc = send_config.rtp.ssrcs[0];
+  receive_config.rtp.remote_ssrc = send_config.rtp.ssrcs[0];
+  receive_config.rtp.local_ssrc = kReceiverLocalSsrc;
   receive_config.renderer = loopback_video.get();
 
   VideoReceiveStream* receive_stream =

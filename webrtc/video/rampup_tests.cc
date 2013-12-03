@@ -26,7 +26,6 @@
 #include "webrtc/test/fake_decoder.h"
 #include "webrtc/test/fake_encoder.h"
 #include "webrtc/test/frame_generator_capturer.h"
-#include "webrtc/test/generate_ssrcs.h"
 #include "webrtc/video/transport_adapter.h"
 
 namespace webrtc {
@@ -117,9 +116,10 @@ class RampUpTest : public ::testing::TestWithParam<bool> {
 };
 
 TEST_P(RampUpTest, RampUpWithPadding) {
+  static const size_t kNumStreams = 3;
   test::DirectTransport receiver_transport;
   StreamObserver stream_observer(
-      3, &receiver_transport, Clock::GetRealTimeClock());
+      kNumStreams, &receiver_transport, Clock::GetRealTimeClock());
   Call::Config call_config(&stream_observer);
   scoped_ptr<Call> call(Call::Create(call_config));
   VideoSendStream::Config send_config = call->GetDefaultSendConfig();
@@ -129,21 +129,16 @@ TEST_P(RampUpTest, RampUpWithPadding) {
   test::FakeEncoder encoder(Clock::GetRealTimeClock());
   send_config.encoder = &encoder;
   send_config.internal_source = false;
-  test::FakeEncoder::SetCodecSettings(&send_config.codec, 3);
+  test::FakeEncoder::SetCodecSettings(&send_config.codec, kNumStreams);
   send_config.codec.plType = 125;
   send_config.pacing = GetParam();
   send_config.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kTOffset, kTOffsetExtensionId));
 
-  test::GenerateRandomSsrcs(&send_config, &reserved_ssrcs_);
+  for (size_t i = 0; i < kNumStreams; ++i)
+    send_config.rtp.ssrcs.push_back(static_cast<uint32_t>(i + 1));
 
   VideoSendStream* send_stream = call->CreateVideoSendStream(send_config);
-
-  VideoReceiveStream::Config receive_config;
-  receive_config.rtp.ssrc = send_config.rtp.ssrcs[0];
-  receive_config.rtp.nack.rtp_history_ms = send_config.rtp.nack.rtp_history_ms;
-  VideoReceiveStream* receive_stream =
-      call->CreateVideoReceiveStream(receive_config);
 
   scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer(
       test::FrameGeneratorCapturer::Create(send_stream->Input(),
@@ -152,7 +147,6 @@ TEST_P(RampUpTest, RampUpWithPadding) {
                                            30,
                                            Clock::GetRealTimeClock()));
 
-  receive_stream->StartReceiving();
   send_stream->StartSending();
   frame_generator_capturer->Start();
 
@@ -160,9 +154,7 @@ TEST_P(RampUpTest, RampUpWithPadding) {
 
   frame_generator_capturer->Stop();
   send_stream->StopSending();
-  receive_stream->StopReceiving();
 
-  call->DestroyVideoReceiveStream(receive_stream);
   call->DestroyVideoSendStream(send_stream);
 }
 

@@ -25,7 +25,6 @@
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/test/fake_encoder.h"
 #include "webrtc/test/frame_generator_capturer.h"
-#include "webrtc/test/generate_ssrcs.h"
 #include "webrtc/test/null_transport.h"
 #include "webrtc/test/rtp_rtcp_observer.h"
 #include "webrtc/video/transport_adapter.h"

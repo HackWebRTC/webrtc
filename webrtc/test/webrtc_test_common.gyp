@@ -26,8 +26,6 @@
         'flags.h',
         'frame_generator_capturer.cc',
         'frame_generator_capturer.h',
-        'generate_ssrcs.cc',
-        'generate_ssrcs.h',
         'gl/gl_renderer.cc',
         'gl/gl_renderer.h',
         'linux/glx_renderer.cc',

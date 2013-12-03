@@ -260,8 +260,8 @@ VideoReceiveStream* Call::CreateVideoReceiveStream(
       video_engine_, config, config_.send_transport, config_.voice_engine);
 
   WriteLockScoped write_lock(*receive_lock_);
-  assert(receive_ssrcs_.find(config.rtp.ssrc) == receive_ssrcs_.end());
-  receive_ssrcs_[config.rtp.ssrc] = receive_stream;
+  assert(receive_ssrcs_.find(config.rtp.remote_ssrc) == receive_ssrcs_.end());
+  receive_ssrcs_[config.rtp.remote_ssrc] = receive_stream;
   return receive_stream;
 }
 

@@ -56,7 +56,11 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
       break;
   }
 
-  assert(config_.rtp.ssrc != 0);
+  assert(config_.rtp.remote_ssrc != 0);
+  assert(config_.rtp.local_ssrc != 0);
+  assert(config_.rtp.remote_ssrc != config_.rtp.local_ssrc);
+
+  rtp_rtcp_->SetLocalSSRC(channel_, config_.rtp.local_ssrc);
 
   network_ = ViENetwork::GetInterface(video_engine);
   assert(network_ != NULL);
