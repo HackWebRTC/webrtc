@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2013 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,26 +8,24 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/remote_bitrate_estimator/bitrate_estimator.h"
+#include "webrtc/modules/remote_bitrate_estimator/rate_statistics.h"
 
 namespace webrtc {
 
-const int kBitrateAverageWindowMs = 500;
-
-BitRateStats::BitRateStats()
-    : num_buckets_(kBitrateAverageWindowMs + 1),  // N ms in (N+1) buckets.
+RateStatistics::RateStatistics(uint32_t window_size_ms, float scale)
+    : num_buckets_(window_size_ms + 1),  // N ms in (N+1) buckets.
       buckets_(new uint32_t[num_buckets_]()),
-      accumulated_bytes_(0),
+      accumulated_count_(0),
       oldest_time_(0),
       oldest_index_(0),
-      bps_coefficient_(8.f * 1000.f / (num_buckets_ - 1)) {
+      scale_(scale / (num_buckets_ - 1)) {
 }
 
-BitRateStats::~BitRateStats() {
+RateStatistics::~RateStatistics() {
 }
 
-void BitRateStats::Init() {
-  accumulated_bytes_ = 0;
+void RateStatistics::Reset() {
+  accumulated_count_ = 0;
   oldest_time_ = 0;
   oldest_index_ = 0;
   for (int i = 0; i < num_buckets_; i++) {
@@ -35,7 +33,7 @@ void BitRateStats::Init() {
   }
 }
 
-void BitRateStats::Update(uint32_t packet_size_bytes, int64_t now_ms) {
+void RateStatistics::Update(uint32_t count, int64_t now_ms) {
   if (now_ms < oldest_time_) {
     // Too old data is ignored.
     return;
@@ -49,31 +47,31 @@ void BitRateStats::Update(uint32_t packet_size_bytes, int64_t now_ms) {
   if (index >= num_buckets_) {
     index -= num_buckets_;
   }
-  buckets_[index] += packet_size_bytes;
-  accumulated_bytes_ += packet_size_bytes;
+  buckets_[index] += count;
+  accumulated_count_ += count;
 }
 
-uint32_t BitRateStats::BitRate(int64_t now_ms) {
+uint32_t RateStatistics::Rate(int64_t now_ms) {
   EraseOld(now_ms);
-  return static_cast<uint32_t>(accumulated_bytes_ * bps_coefficient_ + 0.5f);
+  return static_cast<uint32_t>(accumulated_count_ * scale_ + 0.5f);
 }
 
-void BitRateStats::EraseOld(int64_t now_ms) {
+void RateStatistics::EraseOld(int64_t now_ms) {
   int64_t new_oldest_time = now_ms - num_buckets_ + 1;
   if (new_oldest_time <= oldest_time_) {
     return;
   }
 
   while (oldest_time_ < new_oldest_time) {
-    uint32_t num_bytes_in_oldest_bucket = buckets_[oldest_index_];
-    assert(accumulated_bytes_ >= num_bytes_in_oldest_bucket);
-    accumulated_bytes_ -= num_bytes_in_oldest_bucket;
+    uint32_t count_in_oldest_bucket = buckets_[oldest_index_];
+    assert(accumulated_count_ >= count_in_oldest_bucket);
+    accumulated_count_ -= count_in_oldest_bucket;
     buckets_[oldest_index_] = 0;
     if (++oldest_index_ >= num_buckets_) {
       oldest_index_ = 0;
     }
     ++oldest_time_;
-    if (accumulated_bytes_ == 0) {
+    if (accumulated_count_ == 0) {
       // This guarantees we go through all the buckets at most once, even if
       // |new_oldest_time| is far greater than |oldest_time_|.
       break;
@@ -81,4 +79,5 @@ void BitRateStats::EraseOld(int64_t now_ms) {
   }
   oldest_time_ = new_oldest_time;
 }
+
 }  // namespace webrtc

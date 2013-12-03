@@ -22,8 +22,8 @@
         'include/bwe_defines.h',
         'include/remote_bitrate_estimator.h',
         'include/rtp_to_ntp.h',
-        'bitrate_estimator.cc',
-        'bitrate_estimator.h',
+        'rate_statistics.cc',
+        'rate_statistics.h',
         'rtp_to_ntp.cc',
       ], # source
     },

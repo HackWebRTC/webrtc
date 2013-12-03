@@ -10,7 +10,7 @@
 
 #include <map>
 
-#include "webrtc/modules/remote_bitrate_estimator/bitrate_estimator.h"
+#include "webrtc/modules/remote_bitrate_estimator/rate_statistics.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/overuse_detector.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_rate_control.h"
@@ -63,7 +63,7 @@ class RemoteBitrateEstimatorSingleStream : public RemoteBitrateEstimator {
 
   Clock* clock_;
   SsrcOveruseDetectorMap overuse_detectors_;
-  BitRateStats incoming_bitrate_;
+  RateStatistics incoming_bitrate_;
   RemoteRateControl remote_rate_;
   RemoteBitrateObserver* observer_;
   scoped_ptr<CriticalSectionWrapper> crit_sect_;
@@ -74,6 +74,7 @@ RemoteBitrateEstimatorSingleStream::RemoteBitrateEstimatorSingleStream(
     RemoteBitrateObserver* observer,
     Clock* clock)
     : clock_(clock),
+      incoming_bitrate_(500, 8000),
       observer_(observer),
       crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       last_process_time_(-1) {
@@ -106,7 +107,7 @@ void RemoteBitrateEstimatorSingleStream::IncomingPacket(
   const BandwidthUsage prior_state = overuse_detector->State();
   overuse_detector->Update(payload_size, -1, rtp_timestamp, arrival_time_ms);
   if (overuse_detector->State() == kBwOverusing) {
-    unsigned int incoming_bitrate = incoming_bitrate_.BitRate(arrival_time_ms);
+    unsigned int incoming_bitrate = incoming_bitrate_.Rate(arrival_time_ms);
     if (prior_state != kBwOverusing ||
         remote_rate_.TimeToReduceFurther(arrival_time_ms, incoming_bitrate)) {
       // The first overuse should immediately trigger a new estimate.
@@ -164,7 +165,7 @@ void RemoteBitrateEstimatorSingleStream::UpdateEstimate(int64_t time_now) {
   double mean_noise_var = sum_noise_var /
       static_cast<double>(overuse_detectors_.size());
   const RateControlInput input(bw_state,
-                               incoming_bitrate_.BitRate(time_now),
+                               incoming_bitrate_.Rate(time_now),
                                mean_noise_var);
   const RateControlRegion region = remote_rate_.Update(&input, time_now);
   unsigned int target_bitrate = remote_rate_.UpdateBandwidthEstimate(time_now);
