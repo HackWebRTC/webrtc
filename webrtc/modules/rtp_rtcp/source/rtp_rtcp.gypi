@@ -27,6 +27,7 @@
         '../interface/rtp_rtcp_defines.h',
         'bitrate.cc',
         'bitrate.h',
+        'byte_io.h',
         'fec_receiver_impl.cc',
         'fec_receiver_impl.h',
         'receive_statistics_impl.cc',

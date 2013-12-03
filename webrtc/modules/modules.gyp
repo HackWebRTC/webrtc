@@ -187,6 +187,7 @@
             'remote_bitrate_estimator/test/bwe_test.cc',
             'remote_bitrate_estimator/test/bwe_test.h',
             'rtp_rtcp/source/mock/mock_rtp_payload_strategy.h',
+            'rtp_rtcp/source/byte_io_unittest.cc',
             'rtp_rtcp/source/fec_receiver_unittest.cc',
             'rtp_rtcp/source/fec_test_helper.cc',
             'rtp_rtcp/source/fec_test_helper.h',
