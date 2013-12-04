@@ -268,9 +268,14 @@ void ViECapturer::RegisterCpuOveruseObserver(CpuOveruseObserver* observer) {
 }
 
 void ViECapturer::CpuOveruseMeasures(int* capture_jitter_ms,
-                                     int* avg_encode_time_ms) const {
+                                     int* avg_encode_time_ms,
+                                     int* encode_usage_percent,
+                                     int* capture_queue_delay_ms_per_s) const {
   *capture_jitter_ms = overuse_detector_->last_capture_jitter_ms();
-  *avg_encode_time_ms = overuse_detector_->avg_encode_time_ms();
+  *avg_encode_time_ms = overuse_detector_->AvgEncodeTimeMs();
+  *encode_usage_percent = overuse_detector_->EncodeUsagePercent();
+  *capture_queue_delay_ms_per_s =
+      overuse_detector_->AvgCaptureQueueDelayMsPerS();
 }
 
 int32_t ViECapturer::SetCaptureDelay(int32_t delay_ms) {
@@ -534,6 +539,7 @@ bool ViECapturer::ViECaptureThreadFunction(void* obj) {
 
 bool ViECapturer::ViECaptureProcess() {
   if (capture_event_.Wait(kThreadWaitTimeMs) == kEventSignaled) {
+    overuse_detector_->FrameProcessingStarted();
     int64_t encode_start_time = -1;
     deliver_cs_->Enter();
     if (SwapCapturedAndDeliverFrameIfAvailable()) {

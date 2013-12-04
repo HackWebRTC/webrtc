@@ -120,11 +120,29 @@ class WEBRTC_DLLEXPORT ViEBase {
   virtual int RegisterCpuOveruseObserver(int channel,
                                          CpuOveruseObserver* observer) = 0;
 
-  // Gets the last cpu overuse measure.
+  // Gets cpu overuse measures.
+  // capture_jitter_ms: The current estimated jitter in ms based on incoming
+  //                    captured frames.
+  // avg_encode_time_ms: The average encode time in ms.
+  // encode_usage_percent: The average encode time divided by the average time
+  //                       difference between incoming captured frames.
+  // capture_queue_delay_ms_per_s: The current time delay between an incoming
+  //                               captured frame until the frame is being
+  //                               processed. The delay is expressed in ms
+  //                               delay per second.
   // TODO(asapersson): Remove default implementation.
+  // TODO(asapersson): Remove this function.
   virtual int CpuOveruseMeasures(int channel,
                                  int* capture_jitter_ms,
                                  int* avg_encode_time_ms) { return -1; }
+
+  virtual int CpuOveruseMeasures(int channel,
+                                 int* capture_jitter_ms,
+                                 int* avg_encode_time_ms,
+                                 int* encode_usage_percent,
+                                 int* capture_queue_delay_ms_per_s) {
+    return -1;
+  }
 
   // Specifies the VoiceEngine and VideoEngine channel pair to use for
   // audio/video synchronization.

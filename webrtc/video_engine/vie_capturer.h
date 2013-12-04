@@ -105,7 +105,9 @@ class ViECapturer
   void RegisterCpuOveruseObserver(CpuOveruseObserver* observer);
 
   void CpuOveruseMeasures(int* capture_jitter_ms,
-                          int* avg_encode_time_ms) const;
+                          int* avg_encode_time_ms,
+                          int* encode_usage_percent,
+                          int* capture_queue_delay_ms_per_s) const;
 
  protected:
   ViECapturer(int capture_id,

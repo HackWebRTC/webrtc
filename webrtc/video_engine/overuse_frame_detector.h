@@ -71,19 +71,43 @@ class OveruseFrameDetector : public Module {
   // Called for each captured frame.
   void FrameCaptured(int width, int height);
 
+  // Called when the processing of a captured frame is started.
+  void FrameProcessingStarted();
+
+  // Called for each encoded frame.
   void FrameEncoded(int encode_time_ms);
 
+  // Accessors.
+  // The last estimated jitter based on the incoming captured frames.
   int last_capture_jitter_ms() const;
 
   // Running average of reported encode time (FrameEncoded()).
   // Only used for stats.
-  int avg_encode_time_ms() const;
+  int AvgEncodeTimeMs() const;
+
+  // The average encode time divided by the average time difference between
+  // incoming captured frames.
+  // This variable is currently only used for statistics.
+  int EncodeUsagePercent() const;
+
+  // The current time delay between an incoming captured frame (FrameCaptured())
+  // until the frame is being processed (FrameProcessingStarted()).
+  // (Note: if a new frame is received before an old frame has been processed,
+  // the old frame is skipped).
+  // The delay is returned as the delay in ms per second.
+  // This variable is currently only used for statistics.
+  int AvgCaptureQueueDelayMsPerS() const;
+  int CaptureQueueDelayMsPerS() const;
 
   // Implements Module.
   virtual int32_t TimeUntilNextProcess() OVERRIDE;
   virtual int32_t Process() OVERRIDE;
 
  private:
+  class EncodeTimeAvg;
+  class EncodeUsage;
+  class CaptureQueueDelay;
+
   bool IsOverusing();
   bool IsUnderusing(int64_t time_now);
 
@@ -113,7 +137,13 @@ class OveruseFrameDetector : public Module {
   // Number of pixels of last captured frame.
   int num_pixels_;
 
-  float avg_encode_time_ms_;
+  int last_capture_jitter_ms_;
+
+  int64_t last_encode_sample_ms_;
+  scoped_ptr<EncodeTimeAvg> encode_time_;
+  scoped_ptr<EncodeUsage> encode_usage_;
+
+  scoped_ptr<CaptureQueueDelay> capture_queue_delay_;
 
   DISALLOW_COPY_AND_ASSIGN(OveruseFrameDetector);
 };
