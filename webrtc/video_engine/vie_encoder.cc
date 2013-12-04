@@ -153,8 +153,6 @@ ViEEncoder::ViEEncoder(int32_t engine_id,
     network_is_transmitting_(true),
     encoder_paused_(false),
     encoder_paused_and_dropped_frame_(false),
-    channels_dropping_delta_frames_(0),
-    drop_next_frame_(false),
     fec_enabled_(false),
     nack_enabled_(false),
     codec_observer_(NULL),
@@ -313,27 +311,6 @@ void ViEEncoder::Restart() {
                "%s", __FUNCTION__);
   CriticalSectionScoped cs(data_cs_.get());
   encoder_paused_ = false;
-}
-
-int32_t ViEEncoder::DropDeltaAfterKey(bool enable) {
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
-               ViEId(engine_id_, channel_id_),
-               "%s(%d)", __FUNCTION__, enable);
-  CriticalSectionScoped cs(data_cs_.get());
-
-  if (enable) {
-    channels_dropping_delta_frames_++;
-  } else {
-    channels_dropping_delta_frames_--;
-    if (channels_dropping_delta_frames_ < 0) {
-      channels_dropping_delta_frames_ = 0;
-      WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
-                   ViEId(engine_id_, channel_id_),
-                   "%s: Called too many times", __FUNCTION__);
-      return -1;
-    }
-  }
-  return 0;
 }
 
 uint8_t ViEEncoder::NumberOfCodecs() {
@@ -589,20 +566,6 @@ void ViEEncoder::DeliverFrame(int id,
       TRACE_EVENT_ASYNC_END0("webrtc", "EncoderPaused", this);
     }
     encoder_paused_and_dropped_frame_ = false;
-
-    if (drop_next_frame_) {
-      // Drop this frame.
-      WEBRTC_TRACE(webrtc::kTraceStream,
-                   webrtc::kTraceVideo,
-                   ViEId(engine_id_, channel_id_),
-                   "%s: Dropping frame %llu after a key fame", __FUNCTION__,
-                   video_frame->timestamp());
-      TRACE_EVENT_INSTANT1("webrtc", "VE::EncoderDropFrame",
-                           "timestamp", video_frame->timestamp());
-
-      drop_next_frame_ = false;
-      return;
-    }
   }
 
   // Convert render time, in ms, to RTP timestamp.
@@ -867,17 +830,6 @@ int32_t ViEEncoder::SendData(
     const uint32_t payload_size,
     const webrtc::RTPFragmentationHeader& fragmentation_header,
     const RTPVideoHeader* rtp_video_hdr) {
-  {
-    CriticalSectionScoped cs(data_cs_.get());
-    if (channels_dropping_delta_frames_ &&
-        frame_type == webrtc::kVideoFrameKey) {
-      WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceVideo,
-                   ViEId(engine_id_, channel_id_),
-                   "%s: Sending key frame, drop next frame", __FUNCTION__);
-      drop_next_frame_ = true;
-    }
-  }
-
   // New encoded data, hand over to the rtp module.
   return default_rtp_rtcp_->SendOutgoingData(frame_type,
                                              payload_type,

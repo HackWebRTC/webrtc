@@ -69,8 +69,6 @@ class ViEEncoder
   void Pause();
   void Restart();
 
-  int32_t DropDeltaAfterKey(bool enable);
-
   // Codec settings.
   uint8_t NumberOfCodecs();
   int32_t GetCodec(uint8_t list_index, VideoCodec* video_codec);
@@ -213,8 +211,6 @@ class ViEEncoder
   bool encoder_paused_;
   bool encoder_paused_and_dropped_frame_;
   std::map<unsigned int, int64_t> time_last_intra_request_ms_;
-  int32_t channels_dropping_delta_frames_;
-  bool drop_next_frame_;
 
   bool fec_enabled_;
   bool nack_enabled_;
