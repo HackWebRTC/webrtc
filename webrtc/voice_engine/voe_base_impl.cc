@@ -867,7 +867,7 @@ int VoEBaseImpl::GetVersion(char version[1024])
 
 int32_t VoEBaseImpl::AddBuildInfo(char* str) const
 {
-    return sprintf(str, "Build: svn:%s %s\n", WEBRTC_SVNREVISION, BUILDINFO);
+    return sprintf(str, "Build: %s\n", BUILDINFO);
 }
 
 int32_t VoEBaseImpl::AddVoEVersion(char* str) const

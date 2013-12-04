@@ -151,12 +151,6 @@
       # use full paths (e.g. headers inside testing/ or third_party/).
       '<(DEPTH)',
     ],
-    'defines': [
-      # TODO(leozwang): Run this as a gclient hook rather than at build-time:
-      # http://code.google.com/p/webrtc/issues/detail?id=687
-      'WEBRTC_SVNREVISION="Unavailable(issue687)"',
-      #'WEBRTC_SVNREVISION="<!(python <(webrtc_root)/build/version.py)"',
-    ],
     'conditions': [
       ['restrict_webrtc_logging==1', {
         'defines': ['WEBRTC_RESTRICT_LOGGING',],
