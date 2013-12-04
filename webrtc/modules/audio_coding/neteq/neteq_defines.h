@@ -344,7 +344,7 @@
     /* Super wideband 48kHz codecs */
     #define NETEQ_48KHZ_WIDEBAND
     #define NETEQ_OPUS_CODEC
-    #define NETEQ_ISAC_FB
+    #define NETEQ_ISAC_FB_CODEC
 #endif
 
 /* Max output size from decoding one frame */
