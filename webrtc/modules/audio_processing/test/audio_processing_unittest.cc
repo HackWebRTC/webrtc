@@ -18,7 +18,6 @@
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
@@ -199,16 +198,6 @@ void ReadMessageLiteFromFile(const std::string filename,
   fclose(file);
 }
 #endif  // WEBRTC_AUDIOPROC_BIT_EXACT
-
-struct ThreadData {
-  ThreadData(int thread_num_, AudioProcessing* ap_)
-      : thread_num(thread_num_),
-        error(false),
-        ap(ap_) {}
-  int thread_num;
-  bool error;
-  AudioProcessing* ap;
-};
 
 class ApmTest : public ::testing::Test {
  protected:
