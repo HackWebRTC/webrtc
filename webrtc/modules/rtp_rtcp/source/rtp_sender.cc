@@ -560,7 +560,12 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
 
   ModuleRTPUtility::RTPHeaderParser rtp_parser(data_buffer, length);
   RTPHeader header;
-  rtp_parser.Parse(header);
+  if (!rtp_parser.Parse(header)) {
+    assert(false);
+    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, id_,
+                 "Failed to parse RTP header of packet to be retransmitted.");
+    return -1;
+  }
   TRACE_EVENT_INSTANT2("webrtc_rtp", "RTPSender::ReSendPacket",
                        "timestamp", header.timestamp,
                        "seqnum", header.sequenceNumber);

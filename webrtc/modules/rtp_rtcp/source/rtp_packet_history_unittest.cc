@@ -249,8 +249,7 @@ TEST_F(RtpPacketHistoryTest, MinResendTime) {
 
   // Time has not elapsed. Packet should be found, but no bytes copied.
   len = kMaxPacketLength;
-  EXPECT_TRUE(hist_->GetPacketAndSetSendTime(kSeqNum, 101, false, packet_, &len,
-                                             &time));
-  EXPECT_EQ(0, len);
+  EXPECT_FALSE(hist_->GetPacketAndSetSendTime(kSeqNum, 101, false, packet_,
+                                              &len, &time));
 }
 }  // namespace webrtc

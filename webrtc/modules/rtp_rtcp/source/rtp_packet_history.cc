@@ -254,12 +254,10 @@ bool RTPPacketHistory::GetPacketAndSetSendTime(uint16_t sequence_number,
       ((now - stored_send_times_.at(index)) < min_elapsed_time_ms)) {
     WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1, 
         "Skip getting packet %u, packet recently resent.", sequence_number);
-    *packet_length = 0;
-    return true;
+    return false;
   }
 
-  if (length == 0 ||
-      (retransmit && stored_types_.at(index) == kDontRetransmit)) {
+  if (retransmit && stored_types_.at(index) == kDontRetransmit) {
     // No bytes copied since this packet shouldn't be retransmitted or is
     // of zero size.
     return false;
