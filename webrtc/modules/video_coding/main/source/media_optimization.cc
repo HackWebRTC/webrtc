@@ -291,8 +291,7 @@ int32_t MediaOptimization::UpdateWithEncodedData(int encoded_length,
   UpdateSentBitrate(now_ms);
   UpdateSentFramerate();
   if (encoded_length > 0) {
-    const bool delta_frame = (encoded_frame_type != kVideoFrameKey &&
-                              encoded_frame_type != kVideoFrameGolden);
+    const bool delta_frame = (encoded_frame_type != kVideoFrameKey);
 
     frame_dropper_->Fill(encoded_length, delta_frame);
     if (max_payload_size_ > 0 && encoded_length > 0) {

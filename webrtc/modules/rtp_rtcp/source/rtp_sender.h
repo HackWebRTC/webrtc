@@ -260,6 +260,9 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
   int32_t SetFecParameters(const FecProtectionParams *delta_params,
                            const FecProtectionParams *key_params);
 
+  virtual void RegisterFrameCountObserver(FrameCountObserver* observer);
+  virtual FrameCountObserver* GetFrameCountObserver() const;
+
  protected:
   int32_t CheckPayloadType(const int8_t payload_type,
                            RtpVideoCodecTypes *video_type);
@@ -346,6 +349,8 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
   int rtx_;
   uint32_t ssrc_rtx_;
   int payload_type_rtx_;
+  std::map<FrameType, uint32_t> frame_counts_;
+  FrameCountObserver* frame_count_observer_;
 };
 
 }  // namespace webrtc

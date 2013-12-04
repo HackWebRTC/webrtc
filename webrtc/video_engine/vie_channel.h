@@ -326,6 +326,8 @@ class ViEChannel
   void RegisterPreDecodeImageCallback(
       EncodedImageCallback* pre_decode_callback);
 
+  void RegisterSendFrameCountObserver(FrameCountObserver* observer);
+
  protected:
   static bool ChannelDecodeThreadFunction(void* obj);
   bool ChannelDecodeProcess();

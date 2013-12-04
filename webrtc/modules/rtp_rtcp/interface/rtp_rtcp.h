@@ -331,6 +331,10 @@ class RtpRtcp : public Module {
 
     virtual int TimeToSendPadding(int bytes) = 0;
 
+    virtual void RegisterSendFrameCountObserver(
+        FrameCountObserver* observer) = 0;
+    virtual FrameCountObserver* GetSendFrameCountObserver() const = 0;
+
     /**************************************************************************
     *
     *   RTCP

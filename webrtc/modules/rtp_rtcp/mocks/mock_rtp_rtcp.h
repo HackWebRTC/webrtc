@@ -240,7 +240,10 @@ class MockRtpRtcp : public RtpRtcp {
         int32_t());
   MOCK_METHOD0(Process,
         int32_t());
-
+  MOCK_METHOD1(RegisterSendFrameCountObserver,
+      void(FrameCountObserver*));
+  MOCK_CONST_METHOD0(GetSendFrameCountObserver,
+      FrameCountObserver*(void));
   // Members.
   unsigned int remote_ssrc_;
 };

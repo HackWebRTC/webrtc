@@ -1645,4 +1645,13 @@ uint32_t ModuleRtpRtcpImpl::rtt_ms() const {
   return rtt_ms_;
 }
 
+void ModuleRtpRtcpImpl::RegisterSendFrameCountObserver(
+    FrameCountObserver* observer) {
+  rtp_sender_.RegisterFrameCountObserver(observer);
+}
+
+FrameCountObserver* ModuleRtpRtcpImpl::GetSendFrameCountObserver() const {
+  return rtp_sender_.GetFrameCountObserver();
+}
+
 }  // Namespace webrtc

@@ -32,8 +32,6 @@ const char* FrameTypeToString(const FrameType frame_type) {
     case kAudioFrameCN: return "audio_cn";
     case kVideoFrameKey: return "video_key";
     case kVideoFrameDelta: return "video_delta";
-    case kVideoFrameGolden: return "video_golden";
-    case kVideoFrameAltRef: return "video_altref";
   }
   return "";
 }
@@ -61,7 +59,8 @@ RTPSender::RTPSender(const int32_t id, const bool audio, Clock *clock,
       remote_ssrc_(0), sequence_number_forced_(false), ssrc_forced_(false),
       timestamp_(0), capture_time_ms_(0), last_timestamp_time_ms_(0),
       last_packet_marker_bit_(false), num_csrcs_(0), csrcs_(),
-      include_csrcs_(true), rtx_(kRtxOff), payload_type_rtx_(-1) {
+      include_csrcs_(true), rtx_(kRtxOff), payload_type_rtx_(-1),
+      frame_counts_(), frame_count_observer_(NULL) {
   memset(nack_byte_count_times_, 0, sizeof(nack_byte_count_times_));
   memset(nack_byte_count_, 0, sizeof(nack_byte_count_));
   memset(csrcs_, 0, sizeof(csrcs_));
@@ -359,14 +358,15 @@ int32_t RTPSender::SendOutgoingData(
     return -1;
   }
 
+  uint32_t ret_val;
   if (audio_configured_) {
     TRACE_EVENT_ASYNC_STEP1("webrtc", "Audio", capture_timestamp,
                             "Send", "type", FrameTypeToString(frame_type));
     assert(frame_type == kAudioFrameSpeech || frame_type == kAudioFrameCN ||
            frame_type == kFrameEmpty);
 
-    return audio_->SendAudio(frame_type, payload_type, capture_timestamp,
-                             payload_data, payload_size, fragmentation);
+    ret_val = audio_->SendAudio(frame_type, payload_type, capture_timestamp,
+                                payload_data, payload_size, fragmentation);
   } else {
     TRACE_EVENT_ASYNC_STEP1("webrtc", "Video", capture_time_ms,
                             "Send", "type", FrameTypeToString(frame_type));
@@ -380,11 +380,23 @@ int32_t RTPSender::SendOutgoingData(
       return SendPaddingAccordingToBitrate(payload_type, capture_timestamp,
                                            capture_time_ms) ? 0 : -1;
     }
-    return video_->SendVideo(video_type, frame_type, payload_type,
-                             capture_timestamp, capture_time_ms, payload_data,
-                             payload_size, fragmentation, codec_info,
-                             rtp_type_hdr);
+    ret_val = video_->SendVideo(video_type, frame_type, payload_type,
+                                capture_timestamp, capture_time_ms,
+                                payload_data, payload_size,
+                                fragmentation, codec_info,
+                                rtp_type_hdr);
+
   }
+
+  CriticalSectionScoped cs(statistics_crit_.get());
+  uint32_t frame_count = ++frame_counts_[frame_type];
+  if (frame_count_observer_) {
+    frame_count_observer_->FrameCountUpdated(frame_type,
+                                             frame_count,
+                                             ssrc_);
+  }
+
+  return ret_val;
 }
 
 int RTPSender::SendRedundantPayloads(int payload_type, int bytes_to_send) {
@@ -1476,6 +1488,18 @@ void RTPSender::BuildRtxPacket(uint8_t* buffer, uint16_t* length,
   memcpy(ptr, buffer + rtp_header.headerLength,
          *length - rtp_header.headerLength);
   *length += 2;
+}
+
+void RTPSender::RegisterFrameCountObserver(FrameCountObserver* observer) {
+  CriticalSectionScoped cs(statistics_crit_.get());
+  if (observer != NULL)
+    assert(frame_count_observer_ == NULL);
+  frame_count_observer_ = observer;
+}
+
+FrameCountObserver* RTPSender::GetFrameCountObserver() const {
+  CriticalSectionScoped cs(statistics_crit_.get());
+  return frame_count_observer_;
 }
 
 }  // namespace webrtc

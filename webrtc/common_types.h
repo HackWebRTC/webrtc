@@ -138,7 +138,6 @@ enum FileFormats
     kFileFormatPcm32kHzFile   = 9
 };
 
-
 enum ProcessingTypes
 {
     kPlaybackPerChannel = 0,
@@ -146,6 +145,15 @@ enum ProcessingTypes
     kRecordingPerChannel,
     kRecordingAllChannelsMixed,
     kRecordingPreprocessing
+};
+
+enum FrameType
+{
+    kFrameEmpty            = 0,
+    kAudioFrameSpeech      = 1,
+    kAudioFrameCN          = 2,
+    kVideoFrameKey         = 3,    // independent frame
+    kVideoFrameDelta       = 4,    // depends on the previus frame
 };
 
 // Interface for encrypting and decrypting regular data and rtp/rtcp packets.
@@ -302,9 +310,9 @@ class BitrateStatisticsObserver {
 class FrameCountObserver {
  public:
   virtual ~FrameCountObserver() {}
-  virtual void Notify(const unsigned int key_frames,
-                      const unsigned int delta_frames,
-                      const unsigned int ssrc) = 0;
+  virtual void FrameCountUpdated(FrameType frame_type,
+                                 uint32_t frame_count,
+                                 const unsigned int ssrc) = 0;
 };
 
 // ==================================================================
@@ -320,17 +328,6 @@ struct CodecInst
     int pacsize;
     int channels;
     int rate;  // bits/sec unlike {start,min,max}Bitrate elsewhere in this file!
-};
-
-enum FrameType
-{
-    kFrameEmpty            = 0,
-    kAudioFrameSpeech      = 1,
-    kAudioFrameCN          = 2,
-    kVideoFrameKey         = 3,    // independent frame
-    kVideoFrameDelta       = 4,    // depends on the previus frame
-    kVideoFrameGolden      = 5,    // depends on a old known previus frame
-    kVideoFrameAltRef      = 6
 };
 
 // RTP

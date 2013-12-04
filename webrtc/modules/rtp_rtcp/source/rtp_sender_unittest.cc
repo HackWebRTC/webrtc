@@ -717,6 +717,68 @@ TEST_F(RtpSenderTest, SendGenericVideo) {
   EXPECT_EQ(0, memcmp(payload, payload_data, sizeof(payload)));
 }
 
+TEST_F(RtpSenderTest, FrameCountCallbacks) {
+  class TestCallback : public FrameCountObserver {
+   public:
+    TestCallback()
+      : FrameCountObserver(), num_calls_(0), ssrc_(0),
+        key_frames_(0), delta_frames_(0) {}
+    virtual ~TestCallback() {}
+
+    virtual void FrameCountUpdated(FrameType frame_type,
+                                   uint32_t frame_count,
+                                   const unsigned int ssrc) {
+      ++num_calls_;
+      ssrc_ = ssrc;
+      switch (frame_type) {
+        case kVideoFrameDelta:
+          delta_frames_ = frame_count;
+          break;
+        case kVideoFrameKey:
+          key_frames_ = frame_count;
+          break;
+        default:
+          break;
+      }
+    }
+
+    uint32_t num_calls_;
+    uint32_t ssrc_;
+    uint32_t key_frames_;
+    uint32_t delta_frames_;
+  } callback;
+
+  char payload_name[RTP_PAYLOAD_NAME_SIZE] = "GENERIC";
+  const uint8_t payload_type = 127;
+  ASSERT_EQ(0, rtp_sender_->RegisterPayload(payload_name, payload_type, 90000,
+                                            0, 1500));
+  uint8_t payload[] = {47, 11, 32, 93, 89};
+  rtp_sender_->SetStorePacketsStatus(true, 1);
+  uint32_t ssrc = rtp_sender_->SSRC();
+
+  rtp_sender_->RegisterFrameCountObserver(&callback);
+
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kVideoFrameKey, payload_type, 1234,
+                                             4321, payload, sizeof(payload),
+                                             NULL));
+
+  EXPECT_EQ(1U, callback.num_calls_);
+  EXPECT_EQ(ssrc, callback.ssrc_);
+  EXPECT_EQ(1U, callback.key_frames_);
+  EXPECT_EQ(0U, callback.delta_frames_);
+
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kVideoFrameDelta,
+                                             payload_type, 1234, 4321, payload,
+                                             sizeof(payload), NULL));
+
+  EXPECT_EQ(2U, callback.num_calls_);
+  EXPECT_EQ(ssrc, callback.ssrc_);
+  EXPECT_EQ(1U, callback.key_frames_);
+  EXPECT_EQ(1U, callback.delta_frames_);
+
+  rtp_sender_->RegisterFrameCountObserver(NULL);
+}
+
 class RtpSenderAudioTest : public RtpSenderTest {
  protected:
   RtpSenderAudioTest() {}
