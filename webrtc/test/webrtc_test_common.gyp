@@ -34,6 +34,7 @@
         'mac/run_tests.mm',
         'mac/video_renderer_mac.h',
         'mac/video_renderer_mac.mm',
+        'mock_transport.h',
         'null_platform_renderer.cc',
         'null_transport.cc',
         'null_transport.h',

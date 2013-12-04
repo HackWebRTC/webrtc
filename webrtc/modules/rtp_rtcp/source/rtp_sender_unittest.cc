@@ -21,6 +21,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/test/mock_transport.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -112,6 +113,23 @@ class RtpSenderTest : public ::testing::Test {
     EXPECT_EQ(rtp_sender_->SSRC(), rtp_header.ssrc);
     EXPECT_EQ(0, rtp_header.numCSRCs);
     EXPECT_EQ(0, rtp_header.paddingLength);
+  }
+
+  void SendPacket(int64_t capture_time_ms, int payload_length) {
+    uint32_t timestamp = capture_time_ms * 90;
+    int32_t rtp_length = rtp_sender_->BuildRTPheader(packet_,
+                                                     kPayload,
+                                                     kMarkerBit,
+                                                     timestamp,
+                                                     capture_time_ms);
+
+    // Packet should be stored in a send bucket.
+    EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_,
+                                            payload_length,
+                                            rtp_length,
+                                            capture_time_ms,
+                                            kAllowRetransmission,
+                                            PacedSender::kNormalPriority));
   }
 };
 
@@ -580,6 +598,69 @@ TEST_F(RtpSenderTest, SendPadding) {
   uint64_t expected_send_time =
       ConvertMsToAbsSendTime(fake_clock_.TimeInMilliseconds());
   EXPECT_EQ(expected_send_time, rtp_header.extension.absoluteSendTime);
+}
+
+TEST_F(RtpSenderTest, SendRedundantPayloads) {
+  MockTransport transport;
+  rtp_sender_.reset(new RTPSender(0, false, &fake_clock_, &transport, NULL,
+                                  &mock_paced_sender_));
+  rtp_sender_->SetSequenceNumber(kSeqNum);
+  // Make all packets go through the pacer.
+  EXPECT_CALL(mock_paced_sender_,
+              SendPacket(PacedSender::kNormalPriority, _, _, _, _, _)).
+                  WillRepeatedly(testing::Return(false));
+
+  uint16_t seq_num = kSeqNum;
+  rtp_sender_->SetStorePacketsStatus(true, 10);
+  int rtp_header_len = 12;
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+      kRtpExtensionAbsoluteSendTime, kAbsoluteSendTimeExtensionId));
+  rtp_header_len += 4;  // 4 bytes extension.
+  rtp_header_len += 4;  // 4 extra bytes common to all extension headers.
+
+  rtp_sender_->SetRTXStatus(kRtxRetransmitted | kRtxRedundantPayloads, true,
+                            1234);
+
+  // Create and set up parser.
+  scoped_ptr<webrtc::RtpHeaderParser> rtp_parser(
+      webrtc::RtpHeaderParser::Create());
+  ASSERT_TRUE(rtp_parser.get() != NULL);
+  rtp_parser->RegisterRtpHeaderExtension(kRtpExtensionTransmissionTimeOffset,
+                                         kTransmissionTimeOffsetExtensionId);
+  rtp_parser->RegisterRtpHeaderExtension(kRtpExtensionAbsoluteSendTime,
+                                         kAbsoluteSendTimeExtensionId);
+  rtp_sender_->SetTargetSendBitrate(300000);
+  const size_t kNumPayloadSizes = 10;
+  const int kPayloadSizes[kNumPayloadSizes] = {500, 550, 600, 650, 700, 750,
+      800, 850, 900, 950};
+  // Send 10 packets of increasing size.
+  for (size_t i = 0; i < kNumPayloadSizes; ++i) {
+    int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
+    EXPECT_CALL(transport, SendPacket(_, _, _))
+        .WillOnce(testing::ReturnArg<2>());
+    SendPacket(capture_time_ms, kPayloadSizes[i]);
+    rtp_sender_->TimeToSendPacket(seq_num++, capture_time_ms, false);
+    fake_clock_.AdvanceTimeMilliseconds(33);
+  }
+  const int kPaddingPayloadSize = 224;
+  // The amount of padding to send it too small to send a payload packet.
+  EXPECT_CALL(transport, SendPacket(_, _, kPaddingPayloadSize + rtp_header_len))
+      .WillOnce(testing::ReturnArg<2>());
+  EXPECT_EQ(kPaddingPayloadSize, rtp_sender_->TimeToSendPadding(49));
+
+  const int kRtxHeaderSize = 2;
+  EXPECT_CALL(transport, SendPacket(_, _, kPayloadSizes[0] +
+                                    rtp_header_len + kRtxHeaderSize))
+      .WillOnce(testing::ReturnArg<2>());
+  EXPECT_EQ(kPayloadSizes[0], rtp_sender_->TimeToSendPadding(500));
+
+  EXPECT_CALL(transport, SendPacket(_, _, kPayloadSizes[kNumPayloadSizes - 1] +
+                                    rtp_header_len + kRtxHeaderSize))
+      .WillOnce(testing::ReturnArg<2>());
+  EXPECT_CALL(transport, SendPacket(_, _, kPaddingPayloadSize + rtp_header_len))
+      .WillOnce(testing::ReturnArg<2>());
+  EXPECT_EQ(kPayloadSizes[kNumPayloadSizes - 1] + kPaddingPayloadSize,
+            rtp_sender_->TimeToSendPadding(999));
 }
 
 TEST_F(RtpSenderTest, SendGenericVideo) {

@@ -95,11 +95,11 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   virtual uint32_t ByteCountSent() const;
 
-  virtual int32_t SetRTXSendStatus(const RtxMode mode,
+  virtual int32_t SetRTXSendStatus(const int mode,
                                    const bool set_ssrc,
                                    const uint32_t ssrc) OVERRIDE;
 
-  virtual int32_t RTXSendStatus(RtxMode* mode, uint32_t* ssrc,
+  virtual int32_t RTXSendStatus(int* mode, uint32_t* ssrc,
                                 int* payloadType) const OVERRIDE;
 
 

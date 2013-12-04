@@ -21,6 +21,7 @@
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/bitrate.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_packet_history.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "webrtc/modules/rtp_rtcp/source/ssrc_database.h"
 #include "webrtc/modules/rtp_rtcp/source/video_codec_information.h"
@@ -30,7 +31,6 @@
 namespace webrtc {
 
 class CriticalSectionWrapper;
-class RTPPacketHistory;
 class RTPSenderAudio;
 class RTPSenderVideo;
 
@@ -134,10 +134,6 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
       VideoCodecInformation *codec_info = NULL,
       const RTPVideoTypeHeader * rtp_type_hdr = NULL);
 
-  int BuildPaddingPacket(uint8_t* packet, int header_length, int32_t bytes);
-  int SendPadData(int payload_type, uint32_t timestamp, int64_t capture_time_ms,
-                  int32_t bytes, StorageType store,
-                  bool force_full_size_packets, bool only_pad_after_markerbit);
   // RTP header extension
   int32_t SetTransmissionTimeOffset(
       const int32_t transmission_time_offset);
@@ -187,9 +183,9 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
   bool ProcessNACKBitRate(const uint32_t now);
 
   // RTX.
-  void SetRTXStatus(RtxMode mode, bool set_ssrc, uint32_t ssrc);
+  void SetRTXStatus(int mode, bool set_ssrc, uint32_t ssrc);
 
-  void RTXStatus(RtxMode* mode, uint32_t* ssrc, int* payload_type) const;
+  void RTXStatus(int* mode, uint32_t* ssrc, int* payload_type) const;
 
   void SetRtxPayloadType(int payloadType);
 
@@ -276,9 +272,20 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
 
   void UpdateNACKBitRate(const uint32_t bytes, const uint32_t now);
 
+  bool PrepareAndSendPacket(uint8_t* buffer,
+                            uint16_t length,
+                            int64_t capture_time_ms,
+                            bool send_over_rtx);
+
+  int SendRedundantPayloads(int payload_type, int bytes);
+
   bool SendPaddingAccordingToBitrate(int8_t payload_type,
                                      uint32_t capture_timestamp,
                                      int64_t capture_time_ms);
+  int BuildPaddingPacket(uint8_t* packet, int header_length, int32_t bytes);
+  int SendPadData(int payload_type, uint32_t timestamp, int64_t capture_time_ms,
+                  int32_t bytes, StorageType store,
+                  bool force_full_size_packets, bool only_pad_after_markerbit);
 
   void BuildRtxPacket(uint8_t* buffer, uint16_t* length,
                       uint8_t* buffer_rtx);
@@ -312,7 +319,7 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
   int32_t nack_byte_count_[NACK_BYTECOUNT_SIZE];
   Bitrate nack_bitrate_;
 
-  RTPPacketHistory *packet_history_;
+  RTPPacketHistory packet_history_;
 
   // Statistics
   scoped_ptr<CriticalSectionWrapper> statistics_crit_;
@@ -336,7 +343,7 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
   uint8_t num_csrcs_;
   uint32_t csrcs_[kRtpCsrcSize];
   bool include_csrcs_;
-  RtxMode rtx_;
+  int rtx_;
   uint32_t ssrc_rtx_;
   int payload_type_rtx_;
 };

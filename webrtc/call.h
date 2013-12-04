@@ -38,11 +38,14 @@ class Call {
  public:
   struct Config {
     explicit Config(newapi::Transport* send_transport)
-        : send_transport(send_transport),
+        : webrtc_config(NULL),
+          send_transport(send_transport),
           overuse_detection(false),
           voice_engine(NULL),
           trace_callback(NULL),
           trace_filter(kTraceDefault) {}
+
+    webrtc::Config* webrtc_config;
 
     newapi::Transport* send_transport;
     bool overuse_detection;
@@ -55,6 +58,9 @@ class Call {
   };
 
   static Call* Create(const Call::Config& config);
+
+  static Call* Create(const Call::Config& config,
+                      const webrtc::Config& webrtc_config);
 
   virtual std::vector<VideoCodec> GetVideoCodecs() = 0;
 

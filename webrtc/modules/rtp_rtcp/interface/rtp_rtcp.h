@@ -251,7 +251,7 @@ class RtpRtcp : public Module {
     /*
     * Turn on/off sending RTX (RFC 4588) on a specific SSRC.
     */
-    virtual int32_t SetRTXSendStatus(RtxMode mode, bool set_ssrc,
+    virtual int32_t SetRTXSendStatus(int modes, bool set_ssrc,
                                      uint32_t ssrc) = 0;
 
     // Sets the payload type to use when sending RTX packets. Note that this
@@ -261,7 +261,7 @@ class RtpRtcp : public Module {
     /*
     * Get status of sending RTX (RFC 4588) on a specific SSRC.
     */
-    virtual int32_t RTXSendStatus(RtxMode* mode, uint32_t* ssrc,
+    virtual int32_t RTXSendStatus(int* modes, uint32_t* ssrc,
                                   int* payloadType) const = 0;
 
     /*
