@@ -358,6 +358,7 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       rtp_rtcp->SetSendingMediaStatus(false);
       rtp_rtcp->RegisterSendFrameCountObserver(NULL);
       rtp_rtcp->RegisterSendChannelRtcpStatisticsCallback(NULL);
+      rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(NULL);
       simulcast_rtp_rtcp_.pop_back();
       removed_rtp_rtcp_.push_front(rtp_rtcp);
     }
@@ -416,6 +417,8 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
           rtp_rtcp_->GetSendFrameCountObserver());
       rtp_rtcp->RegisterSendChannelRtcpStatisticsCallback(
           rtp_rtcp_->GetSendChannelRtcpStatisticsCallback());
+      rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(
+          rtp_rtcp_->GetSendChannelRtpStatisticsCallback());
     }
     // |RegisterSimulcastRtpRtcpModules| resets all old weak pointers and old
     // modules can be deleted after this step.
@@ -428,6 +431,7 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       rtp_rtcp->SetSendingMediaStatus(false);
       rtp_rtcp->RegisterSendFrameCountObserver(NULL);
       rtp_rtcp->RegisterSendChannelRtcpStatisticsCallback(NULL);
+      rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(NULL);
       simulcast_rtp_rtcp_.pop_back();
       removed_rtp_rtcp_.push_front(rtp_rtcp);
     }
@@ -1347,6 +1351,21 @@ int32_t ViEChannel::GetRtpStatistics(uint32_t* bytes_sent,
     packets_sent += packets_sent_temp;
   }
   return 0;
+}
+
+void ViEChannel::RegisterSendChannelRtpStatisticsCallback(
+      StreamDataCountersCallback* callback) {
+  WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
+                 __FUNCTION__);
+  rtp_rtcp_->RegisterSendChannelRtpStatisticsCallback(callback);
+  {
+    CriticalSectionScoped cs(rtp_rtcp_cs_.get());
+    for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
+         it != simulcast_rtp_rtcp_.end();
+         it++) {
+      (*it)->RegisterSendChannelRtpStatisticsCallback(callback);
+    }
+  }
 }
 
 void ViEChannel::GetBandwidthUsage(uint32_t* total_bitrate_sent,

@@ -357,6 +357,11 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   virtual int32_t SendRTCPReferencePictureSelection(
       const uint64_t picture_id) OVERRIDE;
 
+  virtual void RegisterSendChannelRtpStatisticsCallback(
+      StreamDataCountersCallback* callback);
+  virtual StreamDataCountersCallback*
+      GetSendChannelRtpStatisticsCallback() const;
+
   void OnReceivedTMMBR();
 
   // Bad state of RTP receiver request a keyframe.

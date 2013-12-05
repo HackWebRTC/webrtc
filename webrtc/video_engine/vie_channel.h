@@ -190,6 +190,11 @@ class ViEChannel
                            uint32_t* packets_sent,
                            uint32_t* bytes_received,
                            uint32_t* packets_received) const;
+
+  // Called on update of RTP statistics.
+  void RegisterSendChannelRtpStatisticsCallback(
+      StreamDataCountersCallback* callback);
+
   void GetBandwidthUsage(uint32_t* total_bitrate_sent,
                          uint32_t* video_bitrate_sent,
                          uint32_t* fec_bitrate_sent,

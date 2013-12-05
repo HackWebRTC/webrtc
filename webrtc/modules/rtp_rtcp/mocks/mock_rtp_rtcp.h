@@ -250,6 +250,10 @@ class MockRtpRtcp : public RtpRtcp {
       void(FrameCountObserver*));
   MOCK_CONST_METHOD0(GetSendFrameCountObserver,
       FrameCountObserver*(void));
+  MOCK_METHOD1(RegisterSendChannelRtpStatisticsCallback,
+      void(StreamDataCountersCallback*));
+  MOCK_CONST_METHOD0(GetSendChannelRtpStatisticsCallback,
+      StreamDataCountersCallback*(void));
   // Members.
   unsigned int remote_ssrc_;
 };

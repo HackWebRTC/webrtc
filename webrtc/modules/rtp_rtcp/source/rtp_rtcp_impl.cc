@@ -1667,6 +1667,16 @@ uint32_t ModuleRtpRtcpImpl::rtt_ms() const {
   return rtt_ms_;
 }
 
+void ModuleRtpRtcpImpl::RegisterSendChannelRtpStatisticsCallback(
+    StreamDataCountersCallback* callback) {
+  rtp_sender_.RegisterRtpStatisticsCallback(callback);
+}
+
+StreamDataCountersCallback*
+    ModuleRtpRtcpImpl::GetSendChannelRtpStatisticsCallback() const {
+  return rtp_sender_.GetRtpStatisticsCallback();
+}
+
 void ModuleRtpRtcpImpl::RegisterSendFrameCountObserver(
     FrameCountObserver* observer) {
   rtp_sender_.RegisterFrameCountObserver(observer);

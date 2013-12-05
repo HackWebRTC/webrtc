@@ -55,13 +55,14 @@ RTPSender::RTPSender(const int32_t id, const bool audio, Clock *clock,
       packet_history_(clock),
       // Statistics
       statistics_crit_(CriticalSectionWrapper::CreateCriticalSection()),
-      packets_sent_(0), payload_bytes_sent_(0), start_time_stamp_forced_(false),
+      frame_count_observer_(NULL), rtp_stats_callback_(NULL),
+      // RTP variables
+      start_time_stamp_forced_(false),
       start_time_stamp_(0), ssrc_db_(*SSRCDatabase::GetSSRCDatabase()),
       remote_ssrc_(0), sequence_number_forced_(false), ssrc_forced_(false),
       timestamp_(0), capture_time_ms_(0), last_timestamp_time_ms_(0),
       last_packet_marker_bit_(false), num_csrcs_(0), csrcs_(),
-      include_csrcs_(true), rtx_(kRtxOff), payload_type_rtx_(-1),
-      frame_counts_(), frame_count_observer_(NULL) {
+      include_csrcs_(true), rtx_(kRtxOff), payload_type_rtx_(-1) {
   memset(nack_byte_count_times_, 0, sizeof(nack_byte_count_times_));
   memset(nack_byte_count_, 0, sizeof(nack_byte_count_));
   memset(csrcs_, 0, sizeof(csrcs_));
@@ -578,16 +579,6 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
     return 0;
   }
 
-  {
-    // Update send statistics prior to pacer.
-    CriticalSectionScoped lock(statistics_crit_.get());
-    Bitrate::Update(length);
-    ++packets_sent_;
-    // We on purpose don't add to payload_bytes_sent_ since this is a
-    // re-transmit and not new payload data.
-  }
-
-
   ModuleRTPUtility::RTPHeaderParser rtp_parser(data_buffer, length);
   RTPHeader header;
   if (!rtp_parser.Parse(header)) {
@@ -620,6 +611,7 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
   }
 
   if (SendPacketToNetwork(buffer_to_send_ptr, length)) {
+    UpdateRtpStats(buffer_to_send_ptr, length, header, rtx_ != kRtxOff, true);
     return length;
   }
   return -1;
@@ -813,7 +805,59 @@ bool RTPSender::PrepareAndSendPacket(uint8_t* buffer,
                                      rtp_header.sequenceNumber,
                                      rtp_header.headerLength);
   }
-  return SendPacketToNetwork(buffer_to_send_ptr, length);
+
+  bool ret = SendPacketToNetwork(buffer_to_send_ptr, length);
+  UpdateRtpStats(buffer_to_send_ptr, length, rtp_header, false, false);
+  return ret;
+}
+
+void RTPSender::UpdateRtpStats(const uint8_t* buffer,
+                               uint32_t size,
+                               const RTPHeader& header,
+                               bool is_rtx,
+                               bool is_retransmit) {
+  CriticalSectionScoped lock(statistics_crit_.get());
+  StreamDataCounters* counters;
+  uint32_t ssrc;
+  if (is_rtx) {
+    counters = &rtx_rtp_stats_;
+    ssrc = ssrc_rtx_;
+  } else {
+    counters = &rtp_stats_;
+    ssrc = ssrc_;
+  }
+
+  Bitrate::Update(size);
+  ++counters->packets;
+  if (IsFecPacket(buffer, header)) {
+    ++counters->fec_packets;
+  }
+
+  if (is_retransmit) {
+    ++counters->retransmitted_packets;
+  } else {
+    counters->bytes += size - (header.headerLength + header.paddingLength);
+    counters->header_bytes += header.headerLength;
+    counters->padding_bytes += header.paddingLength;
+  }
+
+  if (rtp_stats_callback_) {
+    rtp_stats_callback_->DataCountersUpdated(*counters, ssrc);
+  }
+}
+
+bool RTPSender::IsFecPacket(const uint8_t* buffer,
+                            const RTPHeader& header) const {
+  if (!video_) {
+    return false;
+  }
+  bool fec_enabled;
+  uint8_t pt_red;
+  uint8_t pt_fec;
+  video_->GenericFECStatus(fec_enabled, pt_red, pt_fec);
+  return fec_enabled &&
+      header.payloadType == pt_red &&
+      buffer[header.headerLength] == pt_fec;
 }
 
 int RTPSender::TimeToSendPadding(int bytes) {
@@ -875,13 +919,6 @@ int32_t RTPSender::SendToNetwork(
                                    storage) != 0) {
     return -1;
   }
-  {
-    // Update send statistics prior to pacer.
-    CriticalSectionScoped lock(statistics_crit_.get());
-    Bitrate::Update(payload_length + rtp_header_length);
-    ++packets_sent_;
-    payload_bytes_sent_ += payload_length;
-  }
 
   if (paced_sender_ && storage != kDontStore) {
     if (!paced_sender_->SendPacket(priority, rtp_header.ssrc,
@@ -895,10 +932,11 @@ int32_t RTPSender::SendToNetwork(
   if (capture_time_ms > 0) {
     UpdateDelayStatistics(capture_time_ms, now_ms);
   }
-  if (SendPacketToNetwork(buffer, payload_length + rtp_header_length)) {
-    return 0;
-  }
-  return -1;
+  uint32_t length = payload_length + rtp_header_length;
+  if (!SendPacketToNetwork(buffer, length))
+    return -1;
+  UpdateRtpStats(buffer, length, rtp_header, false, false);
+  return 0;
 }
 
 void RTPSender::UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms) {
@@ -934,19 +972,23 @@ uint16_t RTPSender::IncrementSequenceNumber() {
 
 void RTPSender::ResetDataCounters() {
   CriticalSectionScoped lock(statistics_crit_.get());
-  packets_sent_ = 0;
-  payload_bytes_sent_ = 0;
+  rtp_stats_ = StreamDataCounters();
+  rtx_rtp_stats_ = StreamDataCounters();
+  if (rtp_stats_callback_) {
+    rtp_stats_callback_->DataCountersUpdated(rtp_stats_, ssrc_);
+    rtp_stats_callback_->DataCountersUpdated(rtx_rtp_stats_, ssrc_rtx_);
+  }
 }
 
 uint32_t RTPSender::Packets() const {
   CriticalSectionScoped lock(statistics_crit_.get());
-  return packets_sent_;
+  return rtp_stats_.packets + rtx_rtp_stats_.packets;
 }
 
 // Number of sent RTP bytes.
 uint32_t RTPSender::Bytes() const {
   CriticalSectionScoped lock(statistics_crit_.get());
-  return payload_bytes_sent_;
+  return rtp_stats_.bytes + rtx_rtp_stats_.bytes;
 }
 
 int RTPSender::CreateRTPHeader(
@@ -1531,6 +1573,19 @@ void RTPSender::RegisterFrameCountObserver(FrameCountObserver* observer) {
 FrameCountObserver* RTPSender::GetFrameCountObserver() const {
   CriticalSectionScoped cs(statistics_crit_.get());
   return frame_count_observer_;
+}
+
+void RTPSender::RegisterRtpStatisticsCallback(
+    StreamDataCountersCallback* callback) {
+  CriticalSectionScoped cs(statistics_crit_.get());
+  if (callback != NULL)
+    assert(rtp_stats_callback_ == NULL);
+  rtp_stats_callback_ = callback;
+}
+
+StreamDataCountersCallback* RTPSender::GetRtpStatisticsCallback() const {
+  CriticalSectionScoped cs(statistics_crit_.get());
+  return rtp_stats_callback_;
 }
 
 }  // namespace webrtc

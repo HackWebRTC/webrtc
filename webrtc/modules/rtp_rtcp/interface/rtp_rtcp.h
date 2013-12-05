@@ -338,6 +338,12 @@ class RtpRtcp : public Module {
     virtual bool GetSendSideDelay(int* avg_send_delay_ms,
                                   int* max_send_delay_ms) const = 0;
 
+    // Called on generation of new statistics after an RTP send.
+    virtual void RegisterSendChannelRtpStatisticsCallback(
+        StreamDataCountersCallback* callback) = 0;
+    virtual StreamDataCountersCallback*
+        GetSendChannelRtpStatisticsCallback() const = 0;
+
     /**************************************************************************
     *
     *   RTCP

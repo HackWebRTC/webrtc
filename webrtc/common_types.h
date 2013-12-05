@@ -235,7 +235,6 @@ protected:
 
 // Statistics for an RTCP channel
 struct RtcpStatistics {
- public:
   RtcpStatistics()
     : fraction_lost(0),
       cumulative_lost(0),
@@ -259,19 +258,20 @@ class RtcpStatisticsCallback {
 
 // Data usage statistics for a (rtp) stream
 struct StreamDataCounters {
- public:
   StreamDataCounters()
    : bytes(0),
+     header_bytes(0),
      padding_bytes(0),
      packets(0),
      retransmitted_packets(0),
      fec_packets(0) {}
 
-  uint32_t bytes;
-  uint32_t padding_bytes;
-  uint32_t packets;
-  uint32_t retransmitted_packets;
-  uint32_t fec_packets;
+  uint32_t bytes;  // Payload bytes, excluding RTP headers and padding.
+  uint32_t header_bytes;  // Number of bytes used by RTP headers.
+  uint32_t padding_bytes;  // Number of padding bytes.
+  uint32_t packets;  // Number of packets.
+  uint32_t retransmitted_packets;  // Number of retransmitted packets.
+  uint32_t fec_packets;  // Number of redundancy packets.
 };
 
 // Callback, called whenever byte/packet counts have been updated.
@@ -285,7 +285,6 @@ class StreamDataCountersCallback {
 
 // Rate statistics for a stream
 struct BitrateStatistics {
- public:
   BitrateStatistics()
     : bitrate_(0),
       packet_rate(0),

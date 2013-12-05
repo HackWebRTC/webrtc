@@ -791,6 +791,85 @@ class RtpSenderAudioTest : public RtpSenderTest {
   }
 };
 
+TEST_F(RtpSenderTest, StreamDataCountersCallbacks) {
+  class TestCallback : public StreamDataCountersCallback {
+   public:
+    TestCallback()
+      : StreamDataCountersCallback(), ssrc_(0), counters_() {}
+    virtual ~TestCallback() {}
+
+    virtual void DataCountersUpdated(const StreamDataCounters& counters,
+                                     uint32_t ssrc) {
+      ssrc_ = ssrc;
+      counters_ = counters;
+    }
+
+    uint32_t ssrc_;
+    StreamDataCounters counters_;
+    bool Matches(uint32_t ssrc, uint32_t bytes, uint32_t header_bytes,
+                 uint32_t padding, uint32_t packets, uint32_t retransmits,
+                 uint32_t fec) {
+      return ssrc_ == ssrc &&
+          counters_.bytes == bytes &&
+          counters_.header_bytes == header_bytes &&
+          counters_.padding_bytes == padding &&
+          counters_.packets == packets &&
+          counters_.retransmitted_packets == retransmits &&
+          counters_.fec_packets == fec;
+    }
+
+  } callback;
+
+  const uint8_t kRedPayloadType = 96;
+  const uint8_t kUlpfecPayloadType = 97;
+  const uint32_t kMaxPaddingSize = 224;
+  char payload_name[RTP_PAYLOAD_NAME_SIZE] = "GENERIC";
+  const uint8_t payload_type = 127;
+  ASSERT_EQ(0, rtp_sender_->RegisterPayload(payload_name, payload_type, 90000,
+                                            0, 1500));
+  uint8_t payload[] = {47, 11, 32, 93, 89};
+  rtp_sender_->SetStorePacketsStatus(true, 1);
+  uint32_t ssrc = rtp_sender_->SSRC();
+
+  rtp_sender_->RegisterRtpStatisticsCallback(&callback);
+
+  // Send a frame.
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kVideoFrameKey, payload_type, 1234,
+                                             4321, payload, sizeof(payload),
+                                             NULL));
+
+  // {bytes = 6, header = 12, padding = 0, packets = 1, retrans = 0, fec = 0}
+  EXPECT_TRUE(callback.Matches(ssrc, 6, 12, 0, 1, 0, 0));
+
+  // Retransmit a frame.
+  uint16_t seqno = rtp_sender_->SequenceNumber() - 1;
+  rtp_sender_->ReSendPacket(seqno, 0);
+
+  // bytes = 6, header = 12, padding = 0, packets = 2, retrans = 1, fec = 0}
+  EXPECT_TRUE(callback.Matches(ssrc, 6, 12, 0, 2, 1, 0));
+
+  // Send padding.
+  rtp_sender_->TimeToSendPadding(kMaxPaddingSize);
+  // {bytes = 6, header = 24, padding = 224, packets = 3, retrans = 1, fec = 0}
+  EXPECT_TRUE(callback.Matches(ssrc, 6, 24, 224, 3, 1, 0));
+
+  // Send FEC.
+  rtp_sender_->SetGenericFECStatus(true, kRedPayloadType, kUlpfecPayloadType);
+  FecProtectionParams fec_params;
+  fec_params.fec_mask_type = kFecMaskRandom;
+  fec_params.fec_rate = 1;
+  fec_params.max_fec_frames = 1;
+  rtp_sender_->SetFecParameters(&fec_params, &fec_params);
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kVideoFrameDelta, payload_type,
+                                             1234, 4321, payload,
+                                             sizeof(payload), NULL));
+
+  // {bytes = 34, header = 48, padding = 224, packets = 5, retrans = 1, fec = 1}
+  EXPECT_TRUE(callback.Matches(ssrc, 34, 48, 224, 5, 1, 1));
+
+  rtp_sender_->RegisterRtpStatisticsCallback(NULL);
+}
+
 TEST_F(RtpSenderAudioTest, BuildRTPPacketWithAudioLevelExtension) {
   EXPECT_EQ(0, rtp_sender_->SetAudioLevelIndicationStatus(true,
       kAudioLevelExtensionId));

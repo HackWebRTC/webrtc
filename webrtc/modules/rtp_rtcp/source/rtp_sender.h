@@ -271,6 +271,10 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
                   int32_t bytes, StorageType store,
                   bool force_full_size_packets, bool only_pad_after_markerbit);
 
+  // Called on update of RTP statistics.
+  void RegisterRtpStatisticsCallback(StreamDataCountersCallback* callback);
+  StreamDataCountersCallback* GetRtpStatisticsCallback() const;
+
  protected:
   int32_t CheckPayloadType(const int8_t payload_type,
                            RtpVideoCodecTypes *video_type);
@@ -307,6 +311,13 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
 
   void UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms);
 
+  void UpdateRtpStats(const uint8_t* buffer,
+                      uint32_t size,
+                      const RTPHeader& header,
+                      bool is_rtx,
+                      bool is_retransmit);
+  bool IsFecPacket(const uint8_t* buffer, const RTPHeader& header) const;
+
   int32_t id_;
   const bool audio_configured_;
   RTPSenderAudio *audio_;
@@ -338,9 +349,12 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
 
   // Statistics
   scoped_ptr<CriticalSectionWrapper> statistics_crit_;
-  uint32_t packets_sent_;
-  uint32_t payload_bytes_sent_;
   SendDelayMap send_delays_;
+  std::map<FrameType, uint32_t> frame_counts_;
+  FrameCountObserver* frame_count_observer_;
+  StreamDataCounters rtp_stats_;
+  StreamDataCounters rtx_rtp_stats_;
+  StreamDataCountersCallback* rtp_stats_callback_;
 
   // RTP variables
   bool start_time_stamp_forced_;
@@ -362,8 +376,6 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
   int rtx_;
   uint32_t ssrc_rtx_;
   int payload_type_rtx_;
-  std::map<FrameType, uint32_t> frame_counts_;
-  FrameCountObserver* frame_count_observer_;
 };
 
 }  // namespace webrtc
