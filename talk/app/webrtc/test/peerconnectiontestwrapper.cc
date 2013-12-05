@@ -119,6 +119,8 @@ void PeerConnectionTestWrapper::OnIceCandidate(
 }
 
 void PeerConnectionTestWrapper::OnSuccess(SessionDescriptionInterface* desc) {
+  // This callback should take the ownership of |desc|.
+  talk_base::scoped_ptr<SessionDescriptionInterface> owned_desc(desc);
   std::string sdp;
   EXPECT_TRUE(desc->ToString(&sdp));
 
@@ -183,9 +185,9 @@ void PeerConnectionTestWrapper::SetRemoteDescription(const std::string& type,
 void PeerConnectionTestWrapper::AddIceCandidate(const std::string& sdp_mid,
                                                 int sdp_mline_index,
                                                 const std::string& candidate) {
-  EXPECT_TRUE(peer_connection_->AddIceCandidate(
-                  webrtc::CreateIceCandidate(sdp_mid, sdp_mline_index,
-                                             candidate, NULL)));
+  talk_base::scoped_ptr<webrtc::IceCandidateInterface> owned_candidate(
+      webrtc::CreateIceCandidate(sdp_mid, sdp_mline_index, candidate, NULL));
+  EXPECT_TRUE(peer_connection_->AddIceCandidate(owned_candidate.get()));
 }
 
 void PeerConnectionTestWrapper::WaitForCallEstablished() {

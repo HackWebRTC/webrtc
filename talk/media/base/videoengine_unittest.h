@@ -69,11 +69,13 @@ inline bool IsEqualCodec(const cricket::VideoCodec& a,
       IsEqualRes(a, b.width, b.height, b.framerate);
 }
 
+namespace std {
 inline std::ostream& operator<<(std::ostream& s, const cricket::VideoCodec& c) {
   s << "{" << c.name << "(" << c.id << "), "
     << c.width << "x" << c.height << "x" << c.framerate << "}";
   return s;
 }
+}  // namespace std
 
 inline int TimeBetweenSend(const cricket::VideoCodec& codec) {
   return static_cast<int>(
@@ -788,9 +790,9 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_GT(info.senders[0].framerate_sent, 0);
 
     ASSERT_EQ(1U, info.receivers.size());
-    EXPECT_EQ(1U, info.senders[0].ssrcs.size());
-    EXPECT_EQ(1U, info.receivers[0].ssrcs.size());
-    EXPECT_EQ(info.senders[0].ssrcs[0], info.receivers[0].ssrcs[0]);
+    EXPECT_EQ(1U, info.senders[0].ssrcs().size());
+    EXPECT_EQ(1U, info.receivers[0].ssrcs().size());
+    EXPECT_EQ(info.senders[0].ssrcs()[0], info.receivers[0].ssrcs()[0]);
     EXPECT_EQ(NumRtpBytes(), info.receivers[0].bytes_rcvd);
     EXPECT_EQ(NumRtpPackets(), info.receivers[0].packets_rcvd);
     EXPECT_EQ(0.0, info.receivers[0].fraction_lost);
@@ -847,8 +849,8 @@ class VideoMediaChannelTest : public testing::Test,
 
     ASSERT_EQ(2U, info.receivers.size());
     for (size_t i = 0; i < info.receivers.size(); ++i) {
-      EXPECT_EQ(1U, info.receivers[i].ssrcs.size());
-      EXPECT_EQ(i + 1, info.receivers[i].ssrcs[0]);
+      EXPECT_EQ(1U, info.receivers[i].ssrcs().size());
+      EXPECT_EQ(i + 1, info.receivers[i].ssrcs()[0]);
       EXPECT_EQ(NumRtpBytes(), info.receivers[i].bytes_rcvd);
       EXPECT_EQ(NumRtpPackets(), info.receivers[i].packets_rcvd);
       EXPECT_EQ(0.0, info.receivers[i].fraction_lost);
@@ -903,12 +905,12 @@ class VideoMediaChannelTest : public testing::Test,
     ASSERT_EQ(2U, info.senders.size());
     EXPECT_EQ(NumRtpPackets(),
         info.senders[0].packets_sent + info.senders[1].packets_sent);
-    EXPECT_EQ(1U, info.senders[0].ssrcs.size());
-    EXPECT_EQ(1234U, info.senders[0].ssrcs[0]);
+    EXPECT_EQ(1U, info.senders[0].ssrcs().size());
+    EXPECT_EQ(1234U, info.senders[0].ssrcs()[0]);
     EXPECT_EQ(DefaultCodec().width, info.senders[0].frame_width);
     EXPECT_EQ(DefaultCodec().height, info.senders[0].frame_height);
-    EXPECT_EQ(1U, info.senders[1].ssrcs.size());
-    EXPECT_EQ(5678U, info.senders[1].ssrcs[0]);
+    EXPECT_EQ(1U, info.senders[1].ssrcs().size());
+    EXPECT_EQ(5678U, info.senders[1].ssrcs()[0]);
     EXPECT_EQ(1024, info.senders[1].frame_width);
     EXPECT_EQ(768, info.senders[1].frame_height);
     // The capturer must be unregistered here as it runs out of it's scope next.

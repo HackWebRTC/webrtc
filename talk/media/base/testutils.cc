@@ -336,4 +336,30 @@ bool VideoFrameEqual(const VideoFrame* frame0, const VideoFrame* frame1) {
   return true;
 }
 
+cricket::StreamParams CreateSimStreamParams(
+    const std::string& cname, const std::vector<uint32>& ssrcs) {
+  cricket::StreamParams sp;
+  cricket::SsrcGroup sg(cricket::kSimSsrcGroupSemantics, ssrcs);
+  sp.ssrcs = ssrcs;
+  sp.ssrc_groups.push_back(sg);
+  sp.cname = cname;
+  return sp;
+}
+
+// There should be an rtx_ssrc per ssrc.
+cricket::StreamParams CreateSimWithRtxStreamParams(
+    const std::string& cname, const std::vector<uint32>& ssrcs,
+    const std::vector<uint32>& rtx_ssrcs) {
+  cricket::StreamParams sp = CreateSimStreamParams(cname, ssrcs);
+  for (size_t i = 0; i < ssrcs.size(); ++i) {
+    sp.ssrcs.push_back(rtx_ssrcs[i]);
+    std::vector<uint32> fid_ssrcs;
+    fid_ssrcs.push_back(ssrcs[i]);
+    fid_ssrcs.push_back(rtx_ssrcs[i]);
+    cricket::SsrcGroup fid_group(cricket::kFidSsrcGroupSemantics, fid_ssrcs);
+    sp.ssrc_groups.push_back(fid_group);
+  }
+  return sp;
+}
+
 }  // namespace cricket

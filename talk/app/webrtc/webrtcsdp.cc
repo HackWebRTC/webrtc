@@ -341,13 +341,15 @@ static bool ParseFailed(const std::string& message,
                         const std::string& description,
                         SdpParseError* error) {
   // Get the first line of |message| from |line_start|.
-  std::string first_line = message;
+  std::string first_line;
   size_t line_end = message.find(kNewLine, line_start);
   if (line_end != std::string::npos) {
     if (line_end > 0 && (message.at(line_end - 1) == kReturn)) {
       --line_end;
     }
     first_line = message.substr(line_start, (line_end - line_start));
+  } else {
+    first_line = message.substr(line_start);
   }
 
   if (error) {
@@ -2387,7 +2389,7 @@ bool ParseContent(const std::string& message,
       if (*pos >= message.size()) {
         break;  // Done parsing
       } else {
-        return ParseFailed(message, *pos, "Can't find valid SDP line.", error);
+        return ParseFailed(message, *pos, "Invalid SDP line.", error);
       }
     }
 

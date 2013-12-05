@@ -58,6 +58,7 @@ SSLAdapter::Create(AsyncSocket* socket) {
 #elif SSL_USE_OPENSSL  // && !SSL_USE_SCHANNEL
   return new OpenSSLAdapter(socket);
 #else  // !SSL_USE_OPENSSL && !SSL_USE_SCHANNEL
+  delete socket;
   return NULL;
 #endif  // !SSL_USE_OPENSSL && !SSL_USE_SCHANNEL
 }

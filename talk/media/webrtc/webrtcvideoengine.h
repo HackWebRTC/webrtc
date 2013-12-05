@@ -180,6 +180,9 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   struct VideoCodecPref {
     const char* name;
     int payload_type;
+    // For RTX, this field is the payload-type that RTX applies to.
+    // For other codecs, it should be set to -1.
+    int associated_payload_type;
     int pref;
   };
 
@@ -356,9 +359,6 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   bool StopSend(WebRtcVideoChannelSendInfo* send_channel);
   bool SendIntraFrame(int channel_id);
 
-  // Send with one local SSRC. Normal case.
-  bool IsOneSsrcStream(const StreamParams& sp);
-
   bool HasReadySendChannels();
 
   // Send channel key returns the key corresponding to the provided local SSRC
@@ -400,6 +400,10 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   // Signal when cpu adaptation has no further scope to adapt.
   void OnCpuAdaptationUnable();
 
+  // Set the local (send-side) RTX SSRC corresponding to primary_ssrc.
+  bool SetLocalRtxSsrc(int channel_id, const StreamParams& send_params,
+                       uint32 primary_ssrc, int stream_idx);
+
   // Global state.
   WebRtcVideoEngine* engine_;
   VoiceMediaChannel* voice_channel_;
@@ -423,6 +427,7 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   // Global send side state.
   SendChannelMap send_channels_;
   talk_base::scoped_ptr<webrtc::VideoCodec> send_codec_;
+  int send_rtx_type_;
   int send_red_type_;
   int send_fec_type_;
   int send_min_bitrate_;

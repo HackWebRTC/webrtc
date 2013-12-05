@@ -47,9 +47,12 @@ const char StatsReport::kStatsValueNameAvailableReceiveBandwidth[] =
     "googAvailableReceiveBandwidth";
 const char StatsReport::kStatsValueNameAvailableSendBandwidth[] =
     "googAvailableSendBandwidth";
+const char StatsReport::kStatsValueNameAvgEncodeMs[] = "googAvgEncodeMs";
 const char StatsReport::kStatsValueNameBucketDelay[] = "googBucketDelay";
 const char StatsReport::kStatsValueNameBytesReceived[] = "bytesReceived";
 const char StatsReport::kStatsValueNameBytesSent[] = "bytesSent";
+const char StatsReport::kStatsValueNameCaptureJitterMs[] =
+    "googCaptureJitterMs";
 const char StatsReport::kStatsValueNameChannelId[] = "googChannelId";
 const char StatsReport::kStatsValueNameCodecName[] = "googCodecName";
 const char StatsReport::kStatsValueNameComponent[] = "googComponent";
@@ -292,6 +295,9 @@ void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {
                    info.framerate_sent);
   report->AddValue(StatsReport::kStatsValueNameRtt, info.rtt_ms);
   report->AddValue(StatsReport::kStatsValueNameCodecName, info.codec_name);
+  report->AddValue(StatsReport::kStatsValueNameAvgEncodeMs, info.avg_encode_ms);
+  report->AddValue(StatsReport::kStatsValueNameCaptureJitterMs,
+                   info.capture_jitter_ms);
 }
 
 void ExtractStats(const cricket::BandwidthEstimationInfo& info,
@@ -334,24 +340,10 @@ void ExtractRemoteStats(const cricket::MediaReceiverInfo& info,
   // TODO(hta): Extract some stats here.
 }
 
-uint32 ExtractSsrc(const cricket::VoiceReceiverInfo& info) {
-  return info.ssrc;
-}
-
-uint32 ExtractSsrc(const cricket::VoiceSenderInfo& info) {
-  return info.ssrc;
-}
-
-uint32 ExtractSsrc(const cricket::VideoReceiverInfo& info) {
-  return info.ssrcs[0];
-}
-
-uint32 ExtractSsrc(const cricket::VideoSenderInfo& info) {
-  return info.ssrcs[0];
-}
-
 // Template to extract stats from a data vector.
-// ExtractSsrc and ExtractStats must be defined and overloaded for each type.
+// In order to use the template, the functions that are called from it,
+// ExtractStats and ExtractRemoteStats, must be defined and overloaded
+// for each type.
 template<typename T>
 void ExtractStatsFromList(const std::vector<T>& data,
                           const std::string& transport_id,
@@ -359,7 +351,7 @@ void ExtractStatsFromList(const std::vector<T>& data,
   typename std::vector<T>::const_iterator it = data.begin();
   for (; it != data.end(); ++it) {
     std::string id;
-    uint32 ssrc = ExtractSsrc(*it);
+    uint32 ssrc = it->ssrc();
     // Each object can result in 2 objects, a local and a remote object.
     // TODO(hta): Handle the case of multiple SSRCs per object.
     StatsReport* report = collector->PrepareLocalReport(ssrc, transport_id);
@@ -772,7 +764,7 @@ StatsReport* StatsCollector::GetOrCreateReport(const std::string& type,
     report->id = statsid;
     report->type = type;
   } else {
-    report = &reports_[statsid];
+    report = &(it->second);
   }
   return report;
 }

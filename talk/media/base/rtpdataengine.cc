@@ -259,10 +259,12 @@ void RtpDataMediaChannel::OnPacketReceived(talk_base::Buffer* packet) {
 
   DataCodec codec;
   if (!FindCodecById(recv_codecs_, header.payload_type, &codec)) {
-    LOG(LS_WARNING) << "Not receiving packet "
-                    << header.ssrc << ":" << header.seq_num
-                    << " (" << data_len << ")"
-                    << " because unknown payload id: " << header.payload_type;
+    // For bundling, this will be logged for every message.
+    // So disable this logging.
+    // LOG(LS_WARNING) << "Not receiving packet "
+    //                << header.ssrc << ":" << header.seq_num
+    //                << " (" << data_len << ")"
+    //                << " because unknown payload id: " << header.payload_type;
     return;
   }
 

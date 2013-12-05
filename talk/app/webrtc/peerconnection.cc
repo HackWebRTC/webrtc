@@ -235,16 +235,17 @@ bool ParseIceServers(const PeerConnectionInterface::IceServers& configuration,
     }
 
     int port = kDefaultStunPort;
+    if (service_type == TURNS) {
+      port = kDefaultStunTlsPort;
+      turn_transport_type = kTcpTransportType;
+    }
+
     std::string address;
     if (!ParseHostnameAndPortFromString(hoststring, &address, &port)) {
       LOG(WARNING) << "Invalid Hostname format: " << uri_without_transport;
       continue;
     }
 
-    if (service_type == TURNS) {
-      port = kDefaultStunTlsPort;
-      turn_transport_type = kTcpTransportType;
-    }
 
     if (port <= 0 || port > 0xffff) {
       LOG(WARNING) << "Invalid port: " << port;

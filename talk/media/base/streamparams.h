@@ -213,6 +213,16 @@ bool RemoveStreamByIds(StreamParamsVec* streams,
                        const std::string& groupid,
                        const std::string& id);
 
+// Checks if |sp| defines parameters for a single primary stream. There may
+// be an RTX stream associated with the primary stream. Leaving as non-static so
+// we can test this function.
+bool IsOneSsrcStream(const StreamParams& sp);
+
+// Checks if |sp| defines parameters for one Simulcast stream. There may be RTX
+// streams associated with the simulcast streams. Leaving as non-static so we
+// can test this function.
+bool IsSimulcastStream(const StreamParams& sp);
+
 }  // namespace cricket
 
 #endif  // TALK_MEDIA_BASE_STREAMPARAMS_H_

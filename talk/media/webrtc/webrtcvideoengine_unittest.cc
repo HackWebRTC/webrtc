@@ -656,6 +656,45 @@ TEST_F(WebRtcVideoEngineTestFake, RembEnabledOnReceiveChannels) {
   EXPECT_TRUE(vie_.GetRembStatusContribute(new_channel_num));
 }
 
+TEST_F(WebRtcVideoEngineTestFake, RecvStreamWithRtx) {
+  EXPECT_TRUE(SetupEngine());
+  int default_channel = vie_.GetLastChannel();
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::CreateSimWithRtxStreamParams("cname",
+                                            MAKE_VECTOR(kSsrcs3),
+                                            MAKE_VECTOR(kRtxSsrcs3))));
+  EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
+  EXPECT_TRUE(channel_->SetSend(true));
+  EXPECT_TRUE(channel_->AddRecvStream(
+      cricket::CreateSimWithRtxStreamParams("cname",
+                                            MAKE_VECTOR(kSsrcs1),
+                                            MAKE_VECTOR(kRtxSsrc1))));
+  int new_channel_num = vie_.GetLastChannel();
+  EXPECT_NE(default_channel, new_channel_num);
+  EXPECT_EQ(4, vie_.GetRemoteRtxSsrc(new_channel_num));
+}
+
+TEST_F(WebRtcVideoEngineTestFake, RecvStreamNoRtx) {
+  EXPECT_TRUE(SetupEngine());
+  int default_channel = vie_.GetLastChannel();
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::CreateSimWithRtxStreamParams("cname",
+                                            MAKE_VECTOR(kSsrcs3),
+                                            MAKE_VECTOR(kRtxSsrcs3))));
+  EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
+  EXPECT_TRUE(channel_->SetSend(true));
+  EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(1)));
+  int new_channel_num = vie_.GetLastChannel();
+  EXPECT_NE(default_channel, new_channel_num);
+  EXPECT_EQ(-1, vie_.GetRemoteRtxSsrc(new_channel_num));
+}
+
 // Test support for RTP timestamp offset header extension.
 TEST_F(WebRtcVideoEngineTestFake, RtpTimestampOffsetHeaderExtensions) {
   EXPECT_TRUE(SetupEngine());
@@ -1319,7 +1358,7 @@ TEST_F(WebRtcVideoEngineTestFake, TestSetInvalidCpuThreshold) {
 TEST_F(WebRtcVideoEngineTest, FindCodec) {
   // We should not need to init engine in order to get codecs.
   const std::vector<cricket::VideoCodec>& c = engine_.codecs();
-  EXPECT_EQ(3U, c.size());
+  EXPECT_EQ(4U, c.size());
 
   cricket::VideoCodec vp8(104, "VP8", 320, 200, 30, 0);
   EXPECT_TRUE(engine_.FindCodec(vp8));
@@ -1354,6 +1393,24 @@ TEST_F(WebRtcVideoEngineTest, FindCodec) {
 
   cricket::VideoCodec fec_ci(102, "ulpfec", 0, 0, 30, 0);
   EXPECT_TRUE(engine_.FindCodec(fec));
+
+  cricket::VideoCodec rtx(96, "rtx", 0, 0, 30, 0);
+  EXPECT_TRUE(engine_.FindCodec(rtx));
+}
+
+TEST_F(WebRtcVideoEngineTest, RtxCodecHasAptSet) {
+  std::vector<cricket::VideoCodec>::const_iterator it;
+  bool apt_checked = false;
+  for (it = engine_.codecs().begin(); it != engine_.codecs().end(); ++it) {
+    if (_stricmp(cricket::kRtxCodecName, it->name.c_str()) && it->id != 96) {
+      continue;
+    }
+    int apt;
+    EXPECT_TRUE(it->GetParam("apt", &apt));
+    EXPECT_EQ(100, apt);
+    apt_checked = true;
+  }
+  EXPECT_TRUE(apt_checked);
 }
 
 TEST_F(WebRtcVideoEngineTest, StartupShutdown) {

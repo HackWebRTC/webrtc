@@ -206,14 +206,6 @@ void TurnPort::PrepareAddress() {
     return;
   }
 
-  // If protocol family of server address doesn't match with local, return.
-  if (!IsCompatibleAddress(server_address_.address)) {
-    LOG(LS_ERROR) << "Server IP address family does not match with "
-                  << "local host address family type";
-    OnAllocateError();
-    return;
-  }
-
   if (!server_address_.address.port()) {
     // We will set default TURN port, if no port is set in the address.
     server_address_.address.SetPort(TURN_DEFAULT_PORT);
@@ -222,6 +214,14 @@ void TurnPort::PrepareAddress() {
   if (server_address_.address.IsUnresolved()) {
     ResolveTurnAddress(server_address_.address);
   } else {
+    // If protocol family of server address doesn't match with local, return.
+    if (!IsCompatibleAddress(server_address_.address)) {
+      LOG(LS_ERROR) << "Server IP address family does not match with "
+                    << "local host address family type";
+      OnAllocateError();
+      return;
+    }
+
     LOG_J(LS_INFO, this) << "Trying to connect to TURN server via "
                          << ProtoToString(server_address_.proto) << " @ "
                          << server_address_.address.ToSensitiveString();

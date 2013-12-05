@@ -27,6 +27,7 @@
 
 #include "talk/media/base/streamparams.h"
 
+#include <list>
 #include <sstream>
 
 namespace cricket {
@@ -178,6 +179,51 @@ bool RemoveStreamByIds(StreamParamsVec* streams,
                        const std::string& groupid,
                        const std::string& id) {
   return RemoveStream(streams, StreamSelector(groupid, id));
+}
+
+bool IsOneSsrcStream(const StreamParams& sp) {
+  if (sp.ssrcs.size() == 1 && sp.ssrc_groups.empty()) {
+    return true;
+  }
+  if (sp.ssrcs.size() == 2) {
+    const SsrcGroup* fid_group = sp.get_ssrc_group(kFidSsrcGroupSemantics);
+    if (fid_group != NULL) {
+      return (sp.ssrcs == fid_group->ssrcs);
+    }
+  }
+  return false;
+}
+
+static void RemoveFirst(std::list<uint32>* ssrcs, uint32 value) {
+  std::list<uint32>::iterator it =
+      std::find(ssrcs->begin(), ssrcs->end(), value);
+  if (it != ssrcs->end()) {
+    ssrcs->erase(it);
+  }
+}
+
+bool IsSimulcastStream(const StreamParams& sp) {
+  const SsrcGroup* const sg = sp.get_ssrc_group(kSimSsrcGroupSemantics);
+  if (sg == NULL || sg->ssrcs.size() < 2) {
+    return false;
+  }
+  // Start with all StreamParams SSRCs. Remove simulcast SSRCs (from sg) and
+  // RTX SSRCs. If we still have SSRCs left, we don't know what they're for.
+  // Also we remove first-found SSRCs only. So duplicates should lead to errors.
+  std::list<uint32> sp_ssrcs(sp.ssrcs.begin(), sp.ssrcs.end());
+  for (size_t i = 0; i < sg->ssrcs.size(); ++i) {
+    RemoveFirst(&sp_ssrcs, sg->ssrcs[i]);
+  }
+  for (size_t i = 0; i < sp.ssrc_groups.size(); ++i) {
+    const SsrcGroup& group = sp.ssrc_groups[i];
+    if (group.semantics.compare(kFidSsrcGroupSemantics) != 0 ||
+        group.ssrcs.size() != 2) {
+      continue;
+    }
+    RemoveFirst(&sp_ssrcs, group.ssrcs[1]);
+  }
+  // If there's SSRCs left that we don't know how to handle, we bail out.
+  return sp_ssrcs.size() == 0;
 }
 
 }  // namespace cricket

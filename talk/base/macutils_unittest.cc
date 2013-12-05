@@ -30,12 +30,14 @@
 
 TEST(MacUtilsTest, GetOsVersionName) {
   talk_base::MacOSVersionName ver = talk_base::GetOSVersionName();
+  LOG(LS_INFO) << "GetOsVersionName " << ver;
   EXPECT_NE(talk_base::kMacOSUnknown, ver);
 }
 
 TEST(MacUtilsTest, GetQuickTimeVersion) {
   std::string version;
   EXPECT_TRUE(talk_base::GetQuickTimeVersion(&version));
+  LOG(LS_INFO) << "GetQuickTimeVersion " << version;
 }
 
 TEST(MacUtilsTest, RunAppleScriptCompileError) {

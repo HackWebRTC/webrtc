@@ -62,6 +62,8 @@ static const char kTurnIceServerWithTransport[] =
 static const char kSecureTurnIceServer[] =
     "turns:test@hello.com?transport=tcp";
 static const char kSecureTurnIceServerWithoutTransportParam[] =
+    "turns:test_no_transport@hello.com:443";
+static const char kSecureTurnIceServerWithoutTransportAndPortParam[] =
     "turns:test_no_transport@hello.com";
 static const char kTurnIceServerWithNoUsernameInUri[] =
     "turn:test.com:1234";
@@ -256,6 +258,9 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingSecureTurnUrl) {
   ice_server.uri = kSecureTurnIceServerWithoutTransportParam;
   ice_server.password = kTurnPassword;
   ice_servers.push_back(ice_server);
+  ice_server.uri = kSecureTurnIceServerWithoutTransportAndPortParam;
+  ice_server.password = kTurnPassword;
+  ice_servers.push_back(ice_server);
   talk_base::scoped_refptr<PeerConnectionInterface> pc(
       factory_->CreatePeerConnection(ice_servers, NULL,
                                      allocator_factory_.get(),
@@ -268,9 +273,12 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingSecureTurnUrl) {
   turn_configs.push_back(turn1);
   // TURNS with transport param should be default to tcp.
   webrtc::PortAllocatorFactoryInterface::TurnConfiguration turn2(
+      "hello.com", 443, "test_no_transport", kTurnPassword, "tcp", true);
+  turn_configs.push_back(turn2);
+  webrtc::PortAllocatorFactoryInterface::TurnConfiguration turn3(
       "hello.com", kDefaultStunTlsPort, "test_no_transport",
       kTurnPassword, "tcp", true);
-  turn_configs.push_back(turn2);
+  turn_configs.push_back(turn3);
   VerifyTurnConfigurations(turn_configs);
 }
 

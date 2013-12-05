@@ -237,6 +237,16 @@ bool ContainsMatchingCodec(const std::vector<C>& codecs, const C& codec) {
   }
   return false;
 }
+
+// Create Simulcast StreamParams with given |ssrcs| and |cname|.
+cricket::StreamParams CreateSimStreamParams(
+    const std::string& cname, const std::vector<uint32>& ssrcs);
+// Create Simulcast stream with given |ssrcs| and |rtx_ssrcs|.
+// The number of |rtx_ssrcs| must match number of |ssrcs|.
+cricket::StreamParams CreateSimWithRtxStreamParams(
+    const std::string& cname, const std::vector<uint32>& ssrcs,
+    const std::vector<uint32>& rtx_ssrcs);
+
 }  // namespace cricket
 
 #endif  // TALK_MEDIA_BASE_TESTUTILS_H_

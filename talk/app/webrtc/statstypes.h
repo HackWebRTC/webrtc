@@ -128,6 +128,8 @@ class StatsReport {
 
 
   // Internal StatsValue names
+  static const char kStatsValueNameAvgEncodeMs[];
+  static const char kStatsValueNameCaptureJitterMs[];
   static const char kStatsValueNameCodecName[];
   static const char kStatsValueNameEchoCancellationQualityMin[];
   static const char kStatsValueNameEchoDelayMedian[];

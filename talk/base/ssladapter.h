@@ -47,7 +47,9 @@ class SSLAdapter : public AsyncSocketAdapter {
   // negotiation will begin as soon as the socket connects.
   virtual int StartSSL(const char* hostname, bool restartable) = 0;
 
-  // Create the default SSL adapter for this platform
+  // Create the default SSL adapter for this platform. On failure, returns NULL
+  // and deletes |socket|. Otherwise, the returned SSLAdapter takes ownership
+  // of |socket|.
   static SSLAdapter* Create(AsyncSocket* socket);
 
  private:

@@ -43,6 +43,8 @@
 #include "talk/media/webrtc/webrtcexport.h"
 #include "talk/media/webrtc/webrtcvoe.h"
 #include "talk/session/media/channel.h"
+#include "webrtc/common.h"
+#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 
 #if !defined(LIBPEERCONNECTION_LIB) && \
     !defined(LIBPEERCONNECTION_IMPLEMENTATION)
@@ -175,6 +177,10 @@ class WebRtcVoiceEngine
   // Check whether the supplied trace should be ignored.
   bool ShouldIgnoreTrace(const std::string& trace);
 
+  // Create a VoiceEngine Channel.
+  int CreateMediaVoiceChannel();
+  int CreateSoundclipVoiceChannel();
+
  private:
   typedef std::vector<WebRtcSoundclipMedia *> SoundclipList;
   typedef std::vector<WebRtcVoiceMediaChannel *> ChannelList;
@@ -192,6 +198,9 @@ class WebRtcVoiceEngine
   // allows us to selectively turn on and off different options easily
   // at any time.
   bool ApplyOptions(const AudioOptions& options);
+  // Configure for using ACM2, if |enable| is true, otherwise configure for
+  // ACM1.
+  void EnableExperimentalAcm(bool enable);
   virtual void Print(webrtc::TraceLevel level, const char* trace, int length);
   virtual void CallbackOnError(int channel, int errCode);
   // Given the device type, name, and id, find device id. Return true and
@@ -215,6 +224,7 @@ class WebRtcVoiceEngine
 
   void StartAecDump(const std::string& filename);
   void StopAecDump();
+  int CreateVoiceChannel(VoEWrapper* voe);
 
   // When a voice processor registers with the engine, it is connected
   // to either the Rx or Tx signals, based on the direction parameter.
@@ -246,6 +256,10 @@ class WebRtcVoiceEngine
   // callback as well as the RegisterChannel/UnregisterChannel.
   talk_base::CriticalSection channels_cs_;
   webrtc::AgcConfig default_agc_config_;
+
+  webrtc::Config voe_config_;
+  bool use_experimental_acm_;
+
   bool initialized_;
   // See SetOptions and SetOptionOverrides for a description of the
   // difference between options and overrides.

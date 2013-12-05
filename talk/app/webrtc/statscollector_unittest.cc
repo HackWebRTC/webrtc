@@ -341,7 +341,7 @@ TEST_F(StatsCollectorTest, BytesCounterHandles64Bits) {
   stats.AddStream(stream_);
 
   // Construct a stats value to read.
-  video_sender_info.ssrcs.push_back(1234);
+  video_sender_info.add_ssrc(1234);
   video_sender_info.bytes_sent = kBytesSent;
   stats_read.senders.push_back(video_sender_info);
 
@@ -375,7 +375,7 @@ TEST_F(StatsCollectorTest, BandwidthEstimationInfoIsReported) {
   stats.AddStream(stream_);
 
   // Construct a stats value to read.
-  video_sender_info.ssrcs.push_back(1234);
+  video_sender_info.add_ssrc(1234);
   video_sender_info.bytes_sent = kBytesSent;
   stats_read.senders.push_back(video_sender_info);
   cricket::BandwidthEstimationInfo bwe;
@@ -479,7 +479,7 @@ TEST_F(StatsCollectorTest, TrackAndSsrcObjectExistAfterUpdateSsrcStats) {
   const int64 kBytesSent = 12345678901234LL;
 
   // Construct a stats value to read.
-  video_sender_info.ssrcs.push_back(1234);
+  video_sender_info.add_ssrc(1234);
   video_sender_info.bytes_sent = kBytesSent;
   stats_read.senders.push_back(video_sender_info);
 
@@ -537,7 +537,7 @@ TEST_F(StatsCollectorTest, TransportObjectLinkedFromSsrcObject) {
   const int64 kBytesSent = 12345678901234LL;
 
   // Construct a stats value to read.
-  video_sender_info.ssrcs.push_back(1234);
+  video_sender_info.add_ssrc(1234);
   video_sender_info.bytes_sent = kBytesSent;
   stats_read.senders.push_back(video_sender_info);
 
@@ -618,7 +618,7 @@ TEST_F(StatsCollectorTest, RemoteSsrcInfoIsPresent) {
   remote_ssrc_stats.timestamp = 12345.678;
   remote_ssrc_stats.ssrc = kSsrcOfTrack;
   cricket::VideoSenderInfo video_sender_info;
-  video_sender_info.ssrcs.push_back(kSsrcOfTrack);
+  video_sender_info.add_ssrc(kSsrcOfTrack);
   video_sender_info.remote_stats.push_back(remote_ssrc_stats);
   stats_read.senders.push_back(video_sender_info);
 

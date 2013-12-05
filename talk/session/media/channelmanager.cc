@@ -939,4 +939,12 @@ VideoFormat ChannelManager::GetStartCaptureFormat() {
       Bind(&MediaEngineInterface::GetStartCaptureFormat, media_engine_.get()));
 }
 
+bool ChannelManager::SetAudioOptions(const AudioOptions& options) {
+  if (!media_engine_->SetAudioOptions(options)) {
+    return false;
+  }
+  audio_options_ = options;
+  return true;
+}
+
 }  // namespace cricket

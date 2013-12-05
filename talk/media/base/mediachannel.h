@@ -173,6 +173,7 @@ struct AudioOptions {
     experimental_agc.SetFrom(change.experimental_agc);
     experimental_aec.SetFrom(change.experimental_aec);
     aec_dump.SetFrom(change.aec_dump);
+    experimental_acm.SetFrom(change.experimental_acm);
     tx_agc_target_dbov.SetFrom(change.tx_agc_target_dbov);
     tx_agc_digital_compression_gain.SetFrom(
         change.tx_agc_digital_compression_gain);
@@ -200,6 +201,7 @@ struct AudioOptions {
         experimental_aec == o.experimental_aec &&
         adjust_agc_delta == o.adjust_agc_delta &&
         aec_dump == o.aec_dump &&
+        experimental_acm == o.experimental_acm &&
         tx_agc_target_dbov == o.tx_agc_target_dbov &&
         tx_agc_digital_compression_gain == o.tx_agc_digital_compression_gain &&
         tx_agc_limiter == o.tx_agc_limiter &&
@@ -227,6 +229,7 @@ struct AudioOptions {
     ost << ToStringIfSet("experimental_agc", experimental_agc);
     ost << ToStringIfSet("experimental_aec", experimental_aec);
     ost << ToStringIfSet("aec_dump", aec_dump);
+    ost << ToStringIfSet("experimental_acm", experimental_acm);
     ost << ToStringIfSet("tx_agc_target_dbov", tx_agc_target_dbov);
     ost << ToStringIfSet("tx_agc_digital_compression_gain",
         tx_agc_digital_compression_gain);
@@ -263,6 +266,7 @@ struct AudioOptions {
   Settable<bool> experimental_agc;
   Settable<bool> experimental_aec;
   Settable<bool> aec_dump;
+  Settable<bool> experimental_acm;
   // Note that tx_agc_* only applies to non-experimental AGC.
   Settable<uint16> tx_agc_target_dbov;
   Settable<uint16> tx_agc_digital_compression_gain;
@@ -313,6 +317,7 @@ struct VideoOptions {
     buffered_mode_latency.SetFrom(change.buffered_mode_latency);
     lower_min_bitrate.SetFrom(change.lower_min_bitrate);
     dscp.SetFrom(change.dscp);
+    suspend_below_min_bitrate.SetFrom(change.suspend_below_min_bitrate);
   }
 
   bool operator==(const VideoOptions& o) const {
@@ -338,7 +343,8 @@ struct VideoOptions {
             o.system_high_adaptation_threshhold &&
         buffered_mode_latency == o.buffered_mode_latency &&
         lower_min_bitrate == o.lower_min_bitrate &&
-        dscp == o.dscp;
+        dscp == o.dscp &&
+        suspend_below_min_bitrate == o.suspend_below_min_bitrate;
   }
 
   std::string ToString() const {
@@ -367,6 +373,8 @@ struct VideoOptions {
     ost << ToStringIfSet("buffered mode latency", buffered_mode_latency);
     ost << ToStringIfSet("lower min bitrate", lower_min_bitrate);
     ost << ToStringIfSet("dscp", dscp);
+    ost << ToStringIfSet("suspend below min bitrate",
+                         suspend_below_min_bitrate);
     ost << "}";
     return ost.str();
   }
@@ -415,6 +423,9 @@ struct VideoOptions {
   Settable<bool> lower_min_bitrate;
   // Set DSCP value for packet sent from video channel.
   Settable<bool> dscp;
+  // Enable WebRTC suspension of video. No video frames will be sent when the
+  // bitrate is below the configured minimum bitrate.
+  Settable<bool> suspend_below_min_bitrate;
 };
 
 // A class for playing out soundclips.
@@ -624,6 +635,35 @@ struct MediaSenderInfo {
         fraction_lost(0.0),
         rtt_ms(0) {
   }
+  void add_ssrc(const SsrcSenderInfo& stat) {
+    local_stats.push_back(stat);
+  }
+  // Temporary utility function for call sites that only provide SSRC.
+  // As more info is added into SsrcSenderInfo, this function should go away.
+  void add_ssrc(uint32 ssrc) {
+    SsrcSenderInfo stat;
+    stat.ssrc = ssrc;
+    add_ssrc(stat);
+  }
+  // Utility accessor for clients that are only interested in ssrc numbers.
+  std::vector<uint32> ssrcs() const {
+    std::vector<uint32> retval;
+    for (std::vector<SsrcSenderInfo>::const_iterator it = local_stats.begin();
+         it != local_stats.end(); ++it) {
+      retval.push_back(it->ssrc);
+    }
+    return retval;
+  }
+  // Utility accessor for clients that make the assumption only one ssrc
+  // exists per media.
+  // This will eventually go away.
+  uint32 ssrc() const {
+    if (local_stats.size() > 0) {
+      return local_stats[0].ssrc;
+    } else {
+      return 0;
+    }
+  }
   int64 bytes_sent;
   int packets_sent;
   int packets_lost;
@@ -641,6 +681,35 @@ struct MediaReceiverInfo {
         packets_lost(0),
         fraction_lost(0.0) {
   }
+  void add_ssrc(const SsrcReceiverInfo& stat) {
+    local_stats.push_back(stat);
+  }
+  // Temporary utility function for call sites that only provide SSRC.
+  // As more info is added into SsrcSenderInfo, this function should go away.
+  void add_ssrc(uint32 ssrc) {
+    SsrcReceiverInfo stat;
+    stat.ssrc = ssrc;
+    add_ssrc(stat);
+  }
+  std::vector<uint32> ssrcs() const {
+    std::vector<uint32> retval;
+    for (std::vector<SsrcReceiverInfo>::const_iterator it = local_stats.begin();
+         it != local_stats.end(); ++it) {
+      retval.push_back(it->ssrc);
+    }
+    return retval;
+  }
+  // Utility accessor for clients that make the assumption only one ssrc
+  // exists per media.
+  // This will eventually go away.
+  uint32 ssrc() const {
+    if (local_stats.size() > 0) {
+      return local_stats[0].ssrc;
+    } else {
+      return 0;
+    }
+  }
+
   int64 bytes_rcvd;
   int packets_rcvd;
   int packets_lost;
@@ -651,8 +720,7 @@ struct MediaReceiverInfo {
 
 struct VoiceSenderInfo : public MediaSenderInfo {
   VoiceSenderInfo()
-      : ssrc(0),
-        ext_seqnum(0),
+      : ext_seqnum(0),
         jitter_ms(0),
         audio_level(0),
         aec_quality_min(0.0),
@@ -663,7 +731,6 @@ struct VoiceSenderInfo : public MediaSenderInfo {
         typing_noise_detected(false) {
   }
 
-  uint32 ssrc;
   int ext_seqnum;
   int jitter_ms;
   int audio_level;
@@ -677,8 +744,7 @@ struct VoiceSenderInfo : public MediaSenderInfo {
 
 struct VoiceReceiverInfo : public MediaReceiverInfo {
   VoiceReceiverInfo()
-      : ssrc(0),
-        ext_seqnum(0),
+      : ext_seqnum(0),
         jitter_ms(0),
         jitter_buffer_ms(0),
         jitter_buffer_preferred_ms(0),
@@ -687,7 +753,6 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
         expand_rate(0) {
   }
 
-  uint32 ssrc;
   int ext_seqnum;
   int jitter_ms;
   int jitter_buffer_ms;
@@ -709,10 +774,11 @@ struct VideoSenderInfo : public MediaSenderInfo {
         framerate_sent(0),
         nominal_bitrate(0),
         preferred_bitrate(0),
-        adapt_reason(0) {
+        adapt_reason(0),
+        capture_jitter_ms(0),
+        avg_encode_ms(0) {
   }
 
-  std::vector<uint32> ssrcs;
   std::vector<SsrcGroup> ssrc_groups;
   int packets_cached;
   int firs_rcvd;
@@ -724,6 +790,8 @@ struct VideoSenderInfo : public MediaSenderInfo {
   int nominal_bitrate;
   int preferred_bitrate;
   int adapt_reason;
+  int capture_jitter_ms;
+  int avg_encode_ms;
 };
 
 struct VideoReceiverInfo : public MediaReceiverInfo {
@@ -747,7 +815,6 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
         current_delay_ms(0) {
   }
 
-  std::vector<uint32> ssrcs;
   std::vector<SsrcGroup> ssrc_groups;
   int packets_concealed;
   int firs_sent;

@@ -1852,6 +1852,18 @@ TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithInvalidExtmap) {
   TestDeserializeExtmap(true, true);
 }
 
+TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithoutEndLineBreak) {
+  JsepSessionDescription jdesc(kDummyString);
+  std::string sdp = kSdpFullString;
+  sdp = sdp.substr(0, sdp.size() - 2);  // Remove \r\n at the end.
+  // Deserialize
+  SdpParseError error;
+  EXPECT_FALSE(webrtc::SdpDeserialize(sdp, &jdesc, &error));
+  const std::string lastline = "a=ssrc:6 label:video_track_id_3";
+  EXPECT_EQ(lastline, error.line);
+  EXPECT_EQ("Invalid SDP line.", error.description);
+}
+
 TEST_F(WebRtcSdpTest, DeserializeCandidateWithDifferentTransport) {
   JsepIceCandidate jcandidate(kDummyMid, kDummyIndex);
   std::string new_sdp = kSdpOneCandidate;

@@ -225,6 +225,11 @@ class ChannelManager : public talk_base::MessageHandler,
   // TODO(hellner): Remove this function once the engine capturer has been
   // removed.
   VideoFormat GetStartCaptureFormat();
+
+  // TODO(turajs): Remove this function when ACM2 is in use. Used mainly to
+  // choose between ACM1 and ACM2.
+  bool SetAudioOptions(const AudioOptions& options);
+
  protected:
   // Adds non-transient parameters which can only be changed through the
   // options store.

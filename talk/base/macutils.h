@@ -56,7 +56,8 @@ enum MacOSVersionName {
   kMacOSSnowLeopard,   // 10.6
   kMacOSLion,          // 10.7
   kMacOSMountainLion,  // 10.8
-  kMacOSNewer,         // 10.9+
+  kMacOSMavericks,     // 10.9
+  kMacOSNewer,         // 10.10+
 };
 
 bool GetOSVersion(int* major, int* minor, int* bugfix);
