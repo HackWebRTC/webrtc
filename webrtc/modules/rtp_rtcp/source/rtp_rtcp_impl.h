@@ -405,6 +405,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   Clock*                    clock_;
 
  private:
+  FRIEND_TEST_ALL_PREFIXES(RtpRtcpImplTest, Rtt);
   FRIEND_TEST_ALL_PREFIXES(RtpRtcpImplTest, RttForReceiverOnly);
   int64_t RtcpReportInterval();
   void SetRtcpReceiverSsrcs(uint32_t main_ssrc);

@@ -1135,10 +1135,13 @@ int32_t ModuleRtpRtcpImpl::SendNACK(const uint16_t* nack_list,
                id_,
                "SendNACK(size:%u)", size);
 
-  uint16_t avg_rtt = 0;
-  rtcp_receiver_.RTT(rtcp_receiver_.RemoteSSRC(), NULL, &avg_rtt, NULL, NULL);
+  // Use RTT from RtcpRttStats class if provided.
+  uint16_t rtt = rtt_ms();
+  if (rtt == 0) {
+    rtcp_receiver_.RTT(rtcp_receiver_.RemoteSSRC(), NULL, &rtt, NULL, NULL);
+  }
 
-  int64_t wait_time = 5 + ((avg_rtt * 3) >> 1);  // 5 + RTT * 1.5.
+  int64_t wait_time = 5 + ((rtt * 3) >> 1);  // 5 + RTT * 1.5.
   if (wait_time == 5) {
     wait_time = 100;  // During startup we don't have an RTT.
   }
@@ -1597,9 +1600,12 @@ void ModuleRtpRtcpImpl::OnReceivedNACK(
       nack_sequence_numbers.size() == 0) {
     return;
   }
-  uint16_t avg_rtt = 0;
-  rtcp_receiver_.RTT(rtcp_receiver_.RemoteSSRC(), NULL, &avg_rtt, NULL, NULL);
-  rtp_sender_.OnReceivedNACK(nack_sequence_numbers, avg_rtt);
+  // Use RTT from RtcpRttStats class if provided.
+  uint16_t rtt = rtt_ms();
+  if (rtt == 0) {
+    rtcp_receiver_.RTT(rtcp_receiver_.RemoteSSRC(), NULL, &rtt, NULL, NULL);
+  }
+  rtp_sender_.OnReceivedNACK(nack_sequence_numbers, rtt);
 }
 
 int32_t ModuleRtpRtcpImpl::LastReceivedNTP(
