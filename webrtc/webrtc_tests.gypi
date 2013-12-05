@@ -36,8 +36,6 @@
         'video/full_stack.cc',
         'video/rampup_tests.cc',
         'video/video_send_stream_tests.cc',
-        'voice_engine/test/auto_test/resource_manager.cc',
-        'voice_engine/test/auto_test/resource_manager.h',
         'test/common_unittest.cc',
         'test/test_main.cc',
       ],

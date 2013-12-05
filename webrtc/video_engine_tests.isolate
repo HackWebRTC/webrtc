@@ -26,9 +26,9 @@
         ],
         'isolate_dependency_tracked': [
           '../DEPS',
-          '../data/voice_engine/audio_long16.pcm',
           '../resources/foreman_cif.yuv',
           '../resources/paris_qcif.yuv',
+          '../resources/voice_engine/audio_long16.pcm',
           '../testing/test_env.py',
           '<(PRODUCT_DIR)/video_engine_tests<(EXECUTABLE_SUFFIX)',
         ],

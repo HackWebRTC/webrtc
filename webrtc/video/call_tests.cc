@@ -31,13 +31,13 @@
 #include "webrtc/voice_engine/include/voe_network.h"
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
 #include "webrtc/voice_engine/include/voe_video_sync.h"
-#include "webrtc/voice_engine/test/auto_test/resource_manager.h"
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/test/fake_audio_device.h"
 #include "webrtc/test/fake_decoder.h"
 #include "webrtc/test/fake_encoder.h"
 #include "webrtc/test/frame_generator_capturer.h"
 #include "webrtc/test/rtp_rtcp_observer.h"
+#include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/perf_test.h"
 
 namespace webrtc {
@@ -997,8 +997,8 @@ TEST_F(CallTest, PlaysOutAudioAndVideoInSync) {
   VoECodec* voe_codec = VoECodec::GetInterface(voice_engine);
   VoENetwork* voe_network = VoENetwork::GetInterface(voice_engine);
   VoEVideoSync* voe_sync = VoEVideoSync::GetInterface(voice_engine);
-  ResourceManager resource_manager;
-  const std::string audio_filename = resource_manager.long_audio_file_path();
+  const std::string audio_filename =
+      test::ResourcePath("voice_engine/audio_long16", "pcm");
   ASSERT_STRNE("", audio_filename.c_str());
   test::FakeAudioDevice fake_audio_device(Clock::GetRealTimeClock(),
                                           audio_filename);
