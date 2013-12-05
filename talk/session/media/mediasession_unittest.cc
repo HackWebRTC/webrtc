@@ -1492,7 +1492,7 @@ TEST_F(MediaSessionDescriptionFactoryTest,
       GetFirstVideoContentDescription(updated_answer.get());
 
   ASSERT_EQ("H264", updated_vcd->codecs()[0].name);
-  ASSERT_EQ(cricket::kRtxCodecName, updated_vcd->codecs()[1].name);
+  ASSERT_EQ(std::string(cricket::kRtxCodecName), updated_vcd->codecs()[1].name);
   int new_h264_pl_type =  updated_vcd->codecs()[0].id;
   EXPECT_NE(used_pl_type, new_h264_pl_type);
   VideoCodec rtx = updated_vcd->codecs()[1];
