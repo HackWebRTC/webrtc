@@ -232,6 +232,8 @@ class VideoCallbackAndroid: public ViEDecoderObserver,
         // "SendRate frameRate %d bitrate %d\n",frameRate,bitrate);
     }
 
+    virtual void SuspendChange(int video_channel, bool is_suspended) {}
+
 public:
   VideoEngineData& _vieData;
   JNIEnv * _env;
