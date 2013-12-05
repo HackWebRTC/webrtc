@@ -43,30 +43,30 @@ extern const float kHighSystemCpuThreshold;
 extern const float kLowSystemCpuThreshold;
 extern const float kProcessCpuThreshold;
 
-extern const char* kRtxCodecName;
+extern const char kRtxCodecName[];
 
 // Codec parameters
 extern const int kWildcardPayloadType;
-extern const char* kCodecParamAssociatedPayloadType;
+extern const char kCodecParamAssociatedPayloadType[];
 
-extern const char* kOpusCodecName;
+extern const char kOpusCodecName[];
 
 // Attribute parameters
-extern const char* kCodecParamPTime;
-extern const char* kCodecParamMaxPTime;
+extern const char kCodecParamPTime[];
+extern const char kCodecParamMaxPTime[];
 // fmtp parameters
-extern const char* kCodecParamMinPTime;
-extern const char* kCodecParamSPropStereo;
-extern const char* kCodecParamStereo;
-extern const char* kCodecParamUseInbandFec;
-extern const char* kCodecParamMaxAverageBitrate;
-extern const char* kCodecParamSctpProtocol;
-extern const char* kCodecParamSctpStreams;
+extern const char kCodecParamMinPTime[];
+extern const char kCodecParamSPropStereo[];
+extern const char kCodecParamStereo[];
+extern const char kCodecParamUseInbandFec[];
+extern const char kCodecParamMaxAverageBitrate[];
+extern const char kCodecParamSctpProtocol[];
+extern const char kCodecParamSctpStreams[];
 
-extern const char* kParamValueTrue;
+extern const char kParamValueTrue[];
 // Parameters are stored as parameter/value pairs. For parameters who do not
 // have a value, |kParamValueEmpty| should be used as value.
-extern const char* kParamValueEmpty;
+extern const char kParamValueEmpty[];
 
 // opus parameters.
 // Default value for maxptime according to
@@ -88,18 +88,18 @@ extern const int kPreferredStereo;
 extern const int kPreferredUseInbandFec;
 
 // rtcp-fb messages according to RFC 4585
-extern const char* kRtcpFbParamNack;
+extern const char kRtcpFbParamNack[];
 // rtcp-fb messages according to
 // http://tools.ietf.org/html/draft-alvestrand-rmcat-remb-00
-extern const char* kRtcpFbParamRemb;
+extern const char kRtcpFbParamRemb[];
 // ccm submessages according to RFC 5104
-extern const char* kRtcpFbParamCcm;
-extern const char* kRtcpFbCcmParamFir;
+extern const char kRtcpFbParamCcm[];
+extern const char kRtcpFbCcmParamFir[];
 // Google specific parameters
-extern const char* kCodecParamMaxBitrate;
-extern const char* kCodecParamMinBitrate;
-extern const char* kCodecParamMaxQuantization;
-extern const char* kCodecParamPort;
+extern const char kCodecParamMaxBitrate[];
+extern const char kCodecParamMinBitrate[];
+extern const char kCodecParamMaxQuantization[];
+extern const char kCodecParamPort[];
 
 // We put the data codec names here so callers of
 // DataEngine::CreateChannel don't have to import rtpdataengine.h or
