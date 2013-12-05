@@ -263,6 +263,10 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
   virtual void RegisterFrameCountObserver(FrameCountObserver* observer);
   virtual FrameCountObserver* GetFrameCountObserver() const;
 
+  int SendPadData(int payload_type, uint32_t timestamp, int64_t capture_time_ms,
+                  int32_t bytes, StorageType store,
+                  bool force_full_size_packets, bool only_pad_after_markerbit);
+
  protected:
   int32_t CheckPayloadType(const int8_t payload_type,
                            RtpVideoCodecTypes *video_type);
@@ -286,9 +290,6 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
                                      uint32_t capture_timestamp,
                                      int64_t capture_time_ms);
   int BuildPaddingPacket(uint8_t* packet, int header_length, int32_t bytes);
-  int SendPadData(int payload_type, uint32_t timestamp, int64_t capture_time_ms,
-                  int32_t bytes, StorageType store,
-                  bool force_full_size_packets, bool only_pad_after_markerbit);
 
   void BuildRtxPacket(uint8_t* buffer, uint16_t* length,
                       uint8_t* buffer_rtx);
