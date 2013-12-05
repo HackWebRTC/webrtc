@@ -201,6 +201,10 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD2(SetStorePacketsStatus,
       int32_t(const bool enable, const uint16_t numberToStore));
   MOCK_CONST_METHOD0(StorePackets, bool());
+  MOCK_METHOD1(RegisterSendChannelRtcpStatisticsCallback,
+               void(RtcpStatisticsCallback*));
+  MOCK_METHOD0(GetSendChannelRtcpStatisticsCallback,
+               RtcpStatisticsCallback*());
   MOCK_METHOD1(RegisterAudioCallback,
       int32_t(RtpAudioFeedback* messagesCallback));
   MOCK_METHOD1(SetAudioPacketSize,

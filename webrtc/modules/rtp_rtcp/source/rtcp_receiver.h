@@ -109,6 +109,9 @@ public:
 
     int32_t UpdateTMMBR();
 
+    void RegisterRtcpStatisticsCallback(RtcpStatisticsCallback* callback);
+    RtcpStatisticsCallback* GetRtcpStatisticsCallback();
+
 protected:
     RTCPHelp::RTCPReportBlockInformation* CreateReportBlockInformation(const uint32_t remoteSSRC);
     RTCPHelp::RTCPReportBlockInformation* GetReportBlockInformation(const uint32_t remoteSSRC) const;
@@ -262,6 +265,7 @@ protected:
   // delivered RTP packet to the remote side.
   int64_t _lastIncreasedSequenceNumberMs;
 
+  RtcpStatisticsCallback* stats_callback_;
 };
 }  // namespace webrtc
 #endif // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_H_

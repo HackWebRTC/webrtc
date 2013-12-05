@@ -54,7 +54,8 @@ RTCPReceiver::RTCPReceiver(const int32_t id, Clock* clock,
     _receivedInfoMap(),
     _packetTimeOutMS(0),
     _lastReceivedRrMs(0),
-    _lastIncreasedSequenceNumberMs(0) {
+    _lastIncreasedSequenceNumberMs(0),
+    stats_callback_(NULL) {
     memset(&_remoteSenderInfo, 0, sizeof(_remoteSenderInfo));
     WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, id, "%s created", __FUNCTION__);
 }
@@ -1359,6 +1360,19 @@ int32_t RTCPReceiver::UpdateTMMBR() {
   return 0;
 }
 
+void RTCPReceiver::RegisterRtcpStatisticsCallback(
+    RtcpStatisticsCallback* callback) {
+  CriticalSectionScoped cs(_criticalSectionFeedbacks);
+  if (callback != NULL)
+    assert(stats_callback_ == NULL);
+  stats_callback_ = callback;
+}
+
+RtcpStatisticsCallback* RTCPReceiver::GetRtcpStatisticsCallback() {
+  CriticalSectionScoped cs(_criticalSectionFeedbacks);
+  return stats_callback_;
+}
+
 // Holding no Critical section
 void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
     RTCPPacketInformation& rtcpPacketInformation) {
@@ -1450,6 +1464,24 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
             rtcpPacketInformation.applicationName,
             rtcpPacketInformation.applicationLength,
             rtcpPacketInformation.applicationData);
+      }
+    }
+  }
+
+  {
+    CriticalSectionScoped cs(_criticalSectionFeedbacks);
+    if (stats_callback_) {
+      for (ReportBlockList::const_iterator it =
+          rtcpPacketInformation.report_blocks.begin();
+          it != rtcpPacketInformation.report_blocks.end();
+          ++it) {
+        RtcpStatistics stats;
+        stats.cumulative_lost = it->cumulativeLost;
+        stats.extended_max_sequence_number = it->extendedHighSeqNum;
+        stats.fraction_lost = it->fractionLost;
+        stats.jitter = it->jitter;
+
+        stats_callback_->StatisticsUpdated(stats, local_ssrc);
       }
     }
   }

@@ -357,6 +357,7 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       rtp_rtcp->SetSendingStatus(false);
       rtp_rtcp->SetSendingMediaStatus(false);
       rtp_rtcp->RegisterSendFrameCountObserver(NULL);
+      rtp_rtcp->RegisterSendChannelRtcpStatisticsCallback(NULL);
       simulcast_rtp_rtcp_.pop_back();
       removed_rtp_rtcp_.push_front(rtp_rtcp);
     }
@@ -413,6 +414,8 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       rtp_rtcp->SetRtcpXrRrtrStatus(rtp_rtcp_->RtcpXrRrtrStatus());
       rtp_rtcp->RegisterSendFrameCountObserver(
           rtp_rtcp_->GetSendFrameCountObserver());
+      rtp_rtcp->RegisterSendChannelRtcpStatisticsCallback(
+          rtp_rtcp_->GetSendChannelRtcpStatisticsCallback());
     }
     // |RegisterSimulcastRtpRtcpModules| resets all old weak pointers and old
     // modules can be deleted after this step.
@@ -424,6 +427,7 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       rtp_rtcp->SetSendingStatus(false);
       rtp_rtcp->SetSendingMediaStatus(false);
       rtp_rtcp->RegisterSendFrameCountObserver(NULL);
+      rtp_rtcp->RegisterSendChannelRtcpStatisticsCallback(NULL);
       simulcast_rtp_rtcp_.pop_back();
       removed_rtp_rtcp_.push_front(rtp_rtcp);
     }
@@ -1262,6 +1266,19 @@ int32_t ViEChannel::GetSendRtcpStatistics(uint16_t* fraction_lost,
   }
   *rtt_ms = rtt;
   return 0;
+}
+
+void ViEChannel::RegisterSendChannelRtcpStatisticsCallback(
+    RtcpStatisticsCallback* callback) {
+  WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
+               __FUNCTION__);
+  rtp_rtcp_->RegisterSendChannelRtcpStatisticsCallback(callback);
+  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
+  for (std::list<RtpRtcp*>::const_iterator it = simulcast_rtp_rtcp_.begin();
+       it != simulcast_rtp_rtcp_.end();
+       ++it) {
+    (*it)->RegisterSendChannelRtcpStatisticsCallback(callback);
+  }
 }
 
 // TODO(holmer): This is a bad function name as it implies that it returns the

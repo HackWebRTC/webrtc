@@ -1189,6 +1189,16 @@ bool ModuleRtpRtcpImpl::StorePackets() const {
   return rtp_sender_.StorePackets();
 }
 
+void ModuleRtpRtcpImpl::RegisterSendChannelRtcpStatisticsCallback(
+    RtcpStatisticsCallback* callback) {
+  rtcp_receiver_.RegisterRtcpStatisticsCallback(callback);
+}
+
+RtcpStatisticsCallback* ModuleRtpRtcpImpl::
+        GetSendChannelRtcpStatisticsCallback() {
+  return rtcp_receiver_.GetRtcpStatisticsCallback();
+}
+
 // Send a TelephoneEvent tone using RFC 2833 (4733).
 int32_t ModuleRtpRtcpImpl::SendTelephoneEventOutband(
     const uint8_t key,

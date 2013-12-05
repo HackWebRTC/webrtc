@@ -174,6 +174,10 @@ class ViEChannel
                                 uint32_t* jitter_samples,
                                 int32_t* rtt_ms);
 
+  // Called on receipt of RTCP report block from remote side.
+  void RegisterSendChannelRtcpStatisticsCallback(
+      RtcpStatisticsCallback* callback);
+
   // Returns our localy created statistics of the received RTP stream.
   int32_t GetReceivedRtcpStatistics(uint16_t* fraction_lost,
                                     uint32_t* cumulative_lost,

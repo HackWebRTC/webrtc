@@ -590,6 +590,12 @@ class RtpRtcp : public Module {
     // Returns true if the module is configured to store packets.
     virtual bool StorePackets() const = 0;
 
+    // Called on receipt of RTCP report block from remote side.
+    virtual void RegisterSendChannelRtcpStatisticsCallback(
+        RtcpStatisticsCallback* callback) = 0;
+    virtual RtcpStatisticsCallback*
+        GetSendChannelRtcpStatisticsCallback() = 0;
+
     /**************************************************************************
     *
     *   Audio

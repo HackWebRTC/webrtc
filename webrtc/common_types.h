@@ -240,14 +240,12 @@ struct RtcpStatistics {
     : fraction_lost(0),
       cumulative_lost(0),
       extended_max_sequence_number(0),
-      jitter(0),
-      max_jitter(0) {}
+      jitter(0) {}
 
   uint8_t fraction_lost;
   uint32_t cumulative_lost;
   uint32_t extended_max_sequence_number;
   uint32_t jitter;
-  uint32_t max_jitter;
 };
 
 // Callback, called whenever a new rtcp report block is transmitted.
