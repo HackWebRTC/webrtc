@@ -59,9 +59,7 @@
       'target_name': 'webrtc',
       'type': 'static_library',
       'sources': [
-        'call.cc',
         'call.h',
-        'config.cc',
         'config.h',
         'experiments.h',
         'frame_callback.h',

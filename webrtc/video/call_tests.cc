@@ -255,7 +255,7 @@ TEST_F(CallTest, UsesTraceCallback) {
   const unsigned int kReceiverTraceFilter = kTraceDefault & (~kTraceDebug);
   class TraceObserver : public TraceCallback {
    public:
-    TraceObserver(unsigned int filter)
+    explicit TraceObserver(unsigned int filter)
         : filter_(filter), messages_left_(50), done_(EventWrapper::Create()) {}
 
     virtual void Print(TraceLevel level,
@@ -685,7 +685,7 @@ void CallTest::RespectsRtcpMode(newapi::RtcpMode rtcp_mode) {
   static const int kNumCompoundRtcpPacketsToObserve = 10;
   class RtcpModeObserver : public test::RtpRtcpObserver {
    public:
-    RtcpModeObserver(newapi::RtcpMode rtcp_mode)
+    explicit RtcpModeObserver(newapi::RtcpMode rtcp_mode)
         : test::RtpRtcpObserver(kDefaultTimeoutMs),
           rtcp_mode_(rtcp_mode),
           sent_rtp_(0),
@@ -865,7 +865,7 @@ TEST_F(CallTest, SendsAndReceivesMultipleStreams) {
 
 class SyncRtcpObserver : public test::RtpRtcpObserver {
  public:
-  SyncRtcpObserver(int delay_ms)
+  explicit SyncRtcpObserver(int delay_ms)
       : test::RtpRtcpObserver(kLongTimeoutMs, delay_ms),
         critical_section_(CriticalSectionWrapper::CreateCriticalSection()) {}
 

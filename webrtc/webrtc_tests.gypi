@@ -19,7 +19,7 @@
       'target_name': 'video_loopback',
       'type': 'executable',
       'sources': [
-        'loopback.cc',
+        'video/loopback.cc',
         'test/test_main.cc',
       ],
       'dependencies': [
@@ -32,12 +32,13 @@
       'target_name': 'video_engine_tests',
       'type': '<(gtest_target_type)',
       'sources': [
-        'call_tests.cc',
+        'video/call_tests.cc',
         'video/full_stack.cc',
         'video/rampup_tests.cc',
         'video/video_send_stream_tests.cc',
         'voice_engine/test/auto_test/resource_manager.cc',
         'voice_engine/test/auto_test/resource_manager.h',
+        'test/common_unittest.cc',
         'test/test_main.cc',
       ],
       'dependencies': [

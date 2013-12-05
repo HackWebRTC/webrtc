@@ -16,6 +16,7 @@
 
 #include "webrtc/call.h"
 #include "webrtc/common.h"
+#include "webrtc/config.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
@@ -28,6 +29,9 @@
 #include "webrtc/video_engine/include/vie_rtp_rtcp.h"
 
 namespace webrtc {
+const char* RtpExtension::kTOffset = "urn:ietf:params:rtp-hdrext:toffset";
+const char* RtpExtension::kAbsSendTime =
+    "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
 namespace internal {
 class Call : public webrtc::Call, public PacketReceiver {
  public:
@@ -80,7 +84,7 @@ class Call : public webrtc::Call, public PacketReceiver {
 
   DISALLOW_COPY_AND_ASSIGN(Call);
 };
-}  // internal
+}  // namespace internal
 
 class TraceDispatcher : public TraceCallback {
  public:

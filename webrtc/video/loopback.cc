@@ -99,4 +99,4 @@ TEST_F(LoopbackTest, Test) {
 
   transport.StopSending();
 }
-}  // webrtc
+}  // namespace webrtc
