@@ -198,6 +198,10 @@ class WEBRTC_DLLEXPORT ViECodec {
   // This is under development; not tested.
   virtual void SuspendBelowMinBitrate(int video_channel) = 0;
 
+  // TODO(holmer): Remove this default implementation when possible.
+  virtual bool GetSendSideDelay(int video_channel, int* avg_delay_ms,
+                                int* max_delay_ms) const { return false; }
+
  protected:
   ViECodec() {}
   virtual ~ViECodec() {}

@@ -1374,6 +1374,40 @@ void ViEChannel::GetBandwidthUsage(uint32_t* total_bitrate_sent,
   }
 }
 
+bool ViEChannel::GetSendSideDelay(int* avg_send_delay,
+                                  int* max_send_delay) const {
+  WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
+               __FUNCTION__);
+
+  *avg_send_delay = 0;
+  *max_send_delay = 0;
+  bool valid_estimate = false;
+  int num_send_delays = 0;
+  if (rtp_rtcp_->GetSendSideDelay(avg_send_delay, max_send_delay)) {
+    ++num_send_delays;
+    valid_estimate = true;
+  }
+  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
+  for (std::list<RtpRtcp*>::const_iterator it = simulcast_rtp_rtcp_.begin();
+       it != simulcast_rtp_rtcp_.end(); it++) {
+    RtpRtcp* rtp_rtcp = *it;
+    int sub_stream_avg_delay = 0;
+    int sub_stream_max_delay = 0;
+    if (rtp_rtcp->GetSendSideDelay(&sub_stream_avg_delay,
+                                   &sub_stream_max_delay)) {
+      *avg_send_delay += sub_stream_avg_delay;
+      *max_send_delay = std::max(*max_send_delay, sub_stream_max_delay);
+      ++num_send_delays;
+    }
+  }
+  if (num_send_delays > 0) {
+    valid_estimate = true;
+    *avg_send_delay = *avg_send_delay / num_send_delays;
+    *avg_send_delay = (*avg_send_delay + num_send_delays / 2) / num_send_delays;
+  }
+  return valid_estimate;
+}
+
 void ViEChannel::GetEstimatedReceiveBandwidth(
     uint32_t* estimated_bandwidth) const {
   vie_receiver_.EstimatedReceiveBandwidth(estimated_bandwidth);

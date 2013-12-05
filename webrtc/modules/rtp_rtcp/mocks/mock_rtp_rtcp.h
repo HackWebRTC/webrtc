@@ -116,6 +116,8 @@ class MockRtpRtcp : public RtpRtcp {
            bool retransmission));
   MOCK_METHOD1(TimeToSendPadding,
       int(int bytes));
+  MOCK_CONST_METHOD2(GetSendSideDelay,
+      bool(int* avg_send_delay_ms, int* max_send_delay_ms));
   MOCK_METHOD3(RegisterRtcpObservers,
       void(RtcpIntraFrameObserver* intraFrameCallback,
            RtcpBandwidthObserver* bandwidthCallback,

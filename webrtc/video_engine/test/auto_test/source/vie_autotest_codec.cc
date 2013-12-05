@@ -258,10 +258,16 @@ void ViEAutoTest::ViECodecStandardTest() {
   }
   AutoTestSleep(kAutoTestSleepTimeMs);
 
-  // Verify the delay estimate is larger than 0.
-  int delay_ms = 0;
-  EXPECT_EQ(0, codec->GetReceiveSideDelay(video_channel, &delay_ms));
-  EXPECT_GT(delay_ms, 0);
+  // Verify the delay estimates are larger than 0.
+  int avg_send_delay = 0;
+  int max_send_delay = 0;
+  EXPECT_TRUE(codec->GetSendSideDelay(video_channel, &avg_send_delay,
+                                      &max_send_delay));
+  EXPECT_GT(avg_send_delay, 0);
+  EXPECT_GE(max_send_delay, avg_send_delay);
+  int receive_delay_ms = 0;
+  EXPECT_EQ(0, codec->GetReceiveSideDelay(video_channel, &receive_delay_ms));
+  EXPECT_GT(receive_delay_ms, 0);
 
   EXPECT_EQ(0, base->StopSend(video_channel));
   EXPECT_EQ(0, codec->DeregisterEncoderObserver(video_channel));

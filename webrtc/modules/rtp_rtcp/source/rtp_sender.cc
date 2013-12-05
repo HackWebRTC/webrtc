@@ -22,6 +22,7 @@ namespace webrtc {
 
 // Max in the RFC 3550 is 255 bytes, we limit it to be modulus 32 for SRTP.
 const int kMaxPaddingLength = 224;
+const int kSendSideDelayWindowMs = 1000;
 
 namespace {
 
@@ -125,6 +126,23 @@ uint32_t RTPSender::FecOverheadRate() const {
 
 uint32_t RTPSender::NackOverheadRate() const {
   return nack_bitrate_.BitrateLast();
+}
+
+bool RTPSender::GetSendSideDelay(int* avg_send_delay_ms,
+                                 int* max_send_delay_ms) const {
+  CriticalSectionScoped cs(statistics_crit_.get());
+  SendDelayMap::const_iterator it = send_delays_.upper_bound(
+      clock_->TimeInMilliseconds() - kSendSideDelayWindowMs);
+  if (!sending_media_ || it == send_delays_.end())
+    return false;
+  int num_delays = 0;
+  for (; it != send_delays_.end(); ++it) {
+    *max_send_delay_ms = std::max(*max_send_delay_ms, it->second);
+    *avg_send_delay_ms += it->second;
+    ++num_delays;
+  }
+  *avg_send_delay_ms = (*avg_send_delay_ms + num_delays / 2) / num_delays;
+  return true;
 }
 
 int32_t RTPSender::SetTransmissionTimeOffset(
@@ -756,6 +774,9 @@ bool RTPSender::TimeToSendPacket(uint16_t sequence_number,
     // Packet cannot be found. Allow sending to continue.
     return true;
   }
+  if (!retransmission && capture_time_ms > 0) {
+    UpdateDelayStatistics(capture_time_ms, clock_->TimeInMilliseconds());
+  }
   return PrepareAndSendPacket(data_buffer, length, capture_time_ms,
                               retransmission && (rtx_ & kRtxRetransmitted) > 0);
 }
@@ -871,10 +892,20 @@ int32_t RTPSender::SendToNetwork(
       return 0;
     }
   }
+  if (capture_time_ms > 0) {
+    UpdateDelayStatistics(capture_time_ms, now_ms);
+  }
   if (SendPacketToNetwork(buffer, payload_length + rtp_header_length)) {
     return 0;
   }
   return -1;
+}
+
+void RTPSender::UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms) {
+  CriticalSectionScoped cs(statistics_crit_.get());
+  send_delays_[now_ms] = now_ms - capture_time_ms;
+  send_delays_.erase(send_delays_.begin(),
+                     send_delays_.lower_bound(now_ms - kSendSideDelayWindowMs));
 }
 
 void RTPSender::ProcessBitrate() {

@@ -732,6 +732,18 @@ int ModuleRtpRtcpImpl::TimeToSendPadding(int bytes) {
   return 0;
 }
 
+bool ModuleRtpRtcpImpl::GetSendSideDelay(int* avg_send_delay_ms,
+                                         int* max_send_delay_ms) const {
+  assert(avg_send_delay_ms);
+  assert(max_send_delay_ms);
+
+  if (!child_modules_.empty()) {
+    // This API is only supported for child modules.
+    return false;
+  }
+  return rtp_sender_.GetSendSideDelay(avg_send_delay_ms, max_send_delay_ms);
+}
+
 uint16_t ModuleRtpRtcpImpl::MaxPayloadLength() const {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "MaxPayloadLength()");
 

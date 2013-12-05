@@ -78,6 +78,10 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
   uint32_t FecOverheadRate() const;
   uint32_t NackOverheadRate() const;
 
+  // Returns true if the statistics have been calculated, and false if no frame
+  // was sent within the statistics window.
+  bool GetSendSideDelay(int* avg_send_delay_ms, int* max_send_delay_ms) const;
+
   void SetTargetSendBitrate(const uint32_t bits);
 
   virtual uint16_t MaxDataPayloadLength() const
@@ -272,6 +276,11 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
                            RtpVideoCodecTypes *video_type);
 
  private:
+  // Maps capture time in milliseconds to send-side delay in milliseconds.
+  // Send-side delay is the difference between transmission time and capture
+  // time.
+  typedef std::map<int64_t, int> SendDelayMap;
+
   int CreateRTPHeader(uint8_t* header, int8_t payload_type,
                       uint32_t ssrc, bool marker_bit,
                       uint32_t timestamp, uint16_t sequence_number,
@@ -295,6 +304,8 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
                       uint8_t* buffer_rtx);
 
   bool SendPacketToNetwork(const uint8_t *packet, uint32_t size);
+
+  void UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms);
 
   int32_t id_;
   const bool audio_configured_;
@@ -329,6 +340,7 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
   scoped_ptr<CriticalSectionWrapper> statistics_crit_;
   uint32_t packets_sent_;
   uint32_t payload_bytes_sent_;
+  SendDelayMap send_delays_;
 
   // RTP variables
   bool start_time_stamp_forced_;

@@ -335,6 +335,9 @@ class RtpRtcp : public Module {
         FrameCountObserver* observer) = 0;
     virtual FrameCountObserver* GetSendFrameCountObserver() const = 0;
 
+    virtual bool GetSendSideDelay(int* avg_send_delay_ms,
+                                  int* max_send_delay_ms) const = 0;
+
     /**************************************************************************
     *
     *   RTCP

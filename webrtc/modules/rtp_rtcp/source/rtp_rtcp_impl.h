@@ -134,6 +134,10 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   // Returns the number of padding bytes actually sent, which can be more or
   // less than |bytes|.
   virtual int TimeToSendPadding(int bytes) OVERRIDE;
+
+  virtual bool GetSendSideDelay(int* avg_send_delay_ms,
+                                int* max_send_delay_ms) const OVERRIDE;
+
   // RTCP part.
 
   // Get RTCP status.
