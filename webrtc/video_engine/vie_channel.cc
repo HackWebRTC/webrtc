@@ -1293,7 +1293,6 @@ int32_t ViEChannel::GetReceivedRtcpStatistics(uint16_t* fraction_lost,
                "%s", __FUNCTION__);
 
   uint32_t remote_ssrc = vie_receiver_.GetRemoteSsrc();
-  uint8_t frac_lost = 0;
   StreamStatistician* statistician =
       vie_receiver_.GetReceiveStatistics()->GetStatistician(remote_ssrc);
   StreamStatistician::Statistics receive_stats;
@@ -1307,7 +1306,6 @@ int32_t ViEChannel::GetReceivedRtcpStatistics(uint16_t* fraction_lost,
   *cumulative_lost = receive_stats.cumulative_lost;
   *extended_max = receive_stats.extended_max_sequence_number;
   *jitter_samples = receive_stats.jitter;
-  *fraction_lost = frac_lost;
 
   uint16_t dummy = 0;
   uint16_t rtt = 0;
