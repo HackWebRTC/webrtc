@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_PROCESSING_H_
 
 #include <stddef.h>  // size_t
+#include <stdio.h>  // FILE
 
 #include "webrtc/common.h"
 #include "webrtc/modules/interface/module.h"
@@ -233,6 +234,10 @@ class AudioProcessing : public Module {
   // An already existing file will be overwritten without warning.
   static const size_t kMaxFilenameSize = 1024;
   virtual int StartDebugRecording(const char filename[kMaxFilenameSize]) = 0;
+
+  // Same as above but uses an existing file handle. Takes ownership
+  // of |handle| and closes it at StopDebugRecording().
+  virtual int StartDebugRecording(FILE* handle) = 0;
 
   // Stops recording debugging information, and closes the file. Recording
   // cannot be resumed in the same file (without overwriting it).

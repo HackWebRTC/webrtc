@@ -540,6 +540,35 @@ int AudioProcessingImpl::StartDebugRecording(
 #endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
 }
 
+int AudioProcessingImpl::StartDebugRecording(FILE* handle) {
+  CriticalSectionScoped crit_scoped(crit_);
+
+  if (handle == NULL) {
+    return kNullPointerError;
+  }
+
+#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
+  // Stop any ongoing recording.
+  if (debug_file_->Open()) {
+    if (debug_file_->CloseFile() == -1) {
+      return kFileError;
+    }
+  }
+
+  if (debug_file_->OpenFromFileHandle(handle, true, false) == -1) {
+    return kFileError;
+  }
+
+  int err = WriteInitMessage();
+  if (err != kNoError) {
+    return err;
+  }
+  return kNoError;
+#else
+  return kUnsupportedFunctionError;
+#endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
+}
+
 int AudioProcessingImpl::StopDebugRecording() {
   CriticalSectionScoped crit_scoped(crit_);
 

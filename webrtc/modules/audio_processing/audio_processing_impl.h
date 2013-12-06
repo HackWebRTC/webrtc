@@ -79,6 +79,7 @@ class AudioProcessingImpl : public AudioProcessing {
   virtual int delay_offset_ms() const OVERRIDE;
   virtual int StartDebugRecording(
       const char filename[kMaxFilenameSize]) OVERRIDE;
+  virtual int StartDebugRecording(FILE* handle) OVERRIDE;
   virtual int StopDebugRecording() OVERRIDE;
   virtual EchoCancellation* echo_cancellation() const OVERRIDE;
   virtual EchoControlMobile* echo_control_mobile() const OVERRIDE;
