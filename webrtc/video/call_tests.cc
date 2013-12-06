@@ -783,19 +783,26 @@ TEST_F(CallTest, SendsAndReceivesMultipleStreams) {
 
   class VideoOutputObserver : public VideoRenderer {
    public:
-    VideoOutputObserver(int width, int height)
-        : width_(width), height_(height), done_(EventWrapper::Create()) {}
+    VideoOutputObserver(test::FrameGeneratorCapturer** capturer,
+                        int width,
+                        int height)
+        : capturer_(capturer),
+          width_(width),
+          height_(height),
+          done_(EventWrapper::Create()) {}
 
     virtual void RenderFrame(const I420VideoFrame& video_frame,
                              int time_to_render_ms) OVERRIDE {
       EXPECT_EQ(width_, video_frame.width());
       EXPECT_EQ(height_, video_frame.height());
+      (*capturer_)->Stop();
       done_->Set();
     }
 
     void Wait() { done_->Wait(kDefaultTimeoutMs); }
 
    private:
+    test::FrameGeneratorCapturer** capturer_;
     int width_;
     int height_;
     scoped_ptr<EventWrapper> done_;
@@ -824,7 +831,7 @@ TEST_F(CallTest, SendsAndReceivesMultipleStreams) {
     uint32_t ssrc = codec_settings[i].ssrc;
     int width = codec_settings[i].width;
     int height = codec_settings[i].height;
-    observers[i] = new VideoOutputObserver(width, height);
+    observers[i] = new VideoOutputObserver(&frame_generators[i], width, height);
 
     VideoReceiveStream::Config receive_config =
         receiver_call->GetDefaultReceiveConfig();
