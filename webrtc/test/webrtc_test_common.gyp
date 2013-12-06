@@ -14,8 +14,6 @@
       'target_name': 'webrtc_test_common',
       'type': 'static_library',
       'sources': [
-        'configurable_frame_size_encoder.cc',
-        'configurable_frame_size_encoder.h',
         'direct_transport.cc',
         'direct_transport.h',
         'fake_audio_device.cc',

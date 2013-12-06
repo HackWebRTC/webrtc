@@ -24,7 +24,6 @@
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/test/fake_encoder.h"
-#include "webrtc/test/configurable_frame_size_encoder.h"
 #include "webrtc/test/frame_generator_capturer.h"
 #include "webrtc/test/null_transport.h"
 #include "webrtc/test/rtp_rtcp_observer.h"
@@ -529,23 +528,11 @@ TEST_F(VideoSendStreamTest, RetransmitsNackOverRtxWithPacing) {
   TestNackRetransmission(kSendRtxSsrc, kSendRtxPayloadType, true);
 }
 
-TEST_F(VideoSendStreamTest, FragmentsAccordingToMaxPacketSize) {
-  // Observer that verifies that the expected number of packets and bytes
-  // arrive for each frame size, then increases frame size by one until
-  // stop_size has been reached.
-  class FrameFragmentationObserver : public test::RtpRtcpObserver {
+TEST_F(VideoSendStreamTest, MaxPacketSize) {
+  class PacketSizeObserver : public test::RtpRtcpObserver {
    public:
-    FrameFragmentationObserver(size_t max_length,
-                       uint32_t start_size,
-                       uint32_t stop_size,
-                       test::ConfigurableFrameSizeEncoder* encoder)
-        : RtpRtcpObserver(30 * 1000),
-          max_length_(max_length),
-          accumulated_size_(0),
-          accumulated_payload_(0),
-          stop_size_(stop_size),
-          current_size_(start_size),
-          encoder_(encoder) {}
+    PacketSizeObserver(size_t max_length) : RtpRtcpObserver(30 * 1000),
+      max_length_(max_length), accumulated_size_(0) {}
 
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
       RTPHeader header;
@@ -555,25 +542,15 @@ TEST_F(VideoSendStreamTest, FragmentsAccordingToMaxPacketSize) {
       EXPECT_LE(length, max_length_);
 
       accumulated_size_ += length;
-      // Payload size = packet size - minus RTP header, padding and one byte
-      // generic header.
-      accumulated_payload_ +=
-          length - (header.headerLength + header.paddingLength + 1);
 
-      // Marker bit set indicates last packet of a frame.
+      // Marker bit set indicates last fragment of a packet
       if (header.markerBit) {
-        EXPECT_GE(accumulated_size_, current_size_);
-        EXPECT_EQ(accumulated_payload_, current_size_);
-
-        if (current_size_ == stop_size_) {
-          EXPECT_GE(current_size_, max_length_);
+        if (accumulated_size_ + length > max_length_) {
+          // The packet was fragmented, total size was larger than max size,
+          // but size of individual fragments were within size limit => pass!
           observation_complete_->Set();
-        } else {
-          // Last packet of frame; reset and increase frame size.
-          accumulated_size_ = 0;
-          accumulated_payload_ = 0;
-          encoder_->SetFrameSize(++current_size_);
         }
+        accumulated_size_ = 0; // Last fragment, reset packet size
       }
 
       return SEND_PACKET;
@@ -582,28 +559,15 @@ TEST_F(VideoSendStreamTest, FragmentsAccordingToMaxPacketSize) {
    private:
     size_t max_length_;
     size_t accumulated_size_;
-    size_t accumulated_payload_;
-
-    uint32_t stop_size_;
-    uint32_t current_size_;
-    test::ConfigurableFrameSizeEncoder* encoder_;
   };
 
-  // Use a fake encoder to output a frame of every size in the range [90, 290],
-  // for each size making sure that the exact number of payload bytes received
-  // is correct and that packets are fragmented to respect max packet size.
   static const uint32_t kMaxPacketSize = 128;
-  static const uint32_t start = 90;
-  static const uint32_t stop = 290;
 
-  test::ConfigurableFrameSizeEncoder encoder(stop);
-  encoder.SetFrameSize(start);
-  FrameFragmentationObserver observer(kMaxPacketSize, start, stop, &encoder);
+  PacketSizeObserver observer(kMaxPacketSize);
   Call::Config call_config(observer.SendTransport());
   scoped_ptr<Call> call(Call::Create(call_config));
 
   VideoSendStream::Config send_config = GetSendTestConfig(call.get(), 1);
-  send_config.encoder = &encoder;
   send_config.rtp.max_packet_size = kMaxPacketSize;
 
   RunSendTest(call.get(), send_config, &observer);
