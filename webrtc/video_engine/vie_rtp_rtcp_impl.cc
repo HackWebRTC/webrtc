@@ -842,9 +842,10 @@ int ViERTP_RTCPImpl::SetTransmissionSmoothingStatus(int video_channel,
   return 0;
 }
 
-int ViERTP_RTCPImpl::GetReceiveChannelRtcpStatistics(const int video_channel,
-                                               RtcpStatistics& basic_stats,
-                                               int& rtt_ms) const {
+int ViERTP_RTCPImpl::GetReceiveChannelRtcpStatistics(
+    const int video_channel,
+    RtcpStatistics& basic_stats,
+    int& rtt_ms) const {
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
                ViEId(shared_data_->instance_id(), video_channel),
                "%s(channel: %d)", __FUNCTION__, video_channel);
@@ -859,21 +860,23 @@ int ViERTP_RTCPImpl::GetReceiveChannelRtcpStatistics(const int video_channel,
   }
 
   // TODO(sprang): Clean this up when stats struct is propagated all the way.
-  uint16_t frac_loss;
+  uint16_t frac_lost;
   if (vie_channel->GetReceivedRtcpStatistics(
-      &frac_loss, &basic_stats.cumulative_lost,
-      &basic_stats.extended_max_sequence_number, &basic_stats.jitter,
-      &rtt_ms) != 0) {
-    basic_stats.fraction_lost = frac_loss;
+          &frac_lost,
+          &basic_stats.cumulative_lost,
+          &basic_stats.extended_max_sequence_number,
+          &basic_stats.jitter,
+          &rtt_ms) != 0) {
     shared_data_->SetLastError(kViERtpRtcpUnknownError);
     return -1;
   }
+  basic_stats.fraction_lost = frac_lost;
   return 0;
 }
 
 int ViERTP_RTCPImpl::GetSendChannelRtcpStatistics(const int video_channel,
-                                           RtcpStatistics& basic_stats,
-                                           int& rtt_ms) const {
+                                                  RtcpStatistics& basic_stats,
+                                                  int& rtt_ms) const {
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
                ViEId(shared_data_->instance_id(), video_channel),
                "%s(channel: %d)", __FUNCTION__, video_channel);
@@ -888,15 +891,17 @@ int ViERTP_RTCPImpl::GetSendChannelRtcpStatistics(const int video_channel,
   }
 
   // TODO(sprang): Clean this up when stats struct is propagated all the way.
-  uint16_t frac_loss;
+  uint16_t frac_lost;
   if (vie_channel->GetSendRtcpStatistics(
-      &frac_loss, &basic_stats.cumulative_lost,
-      &basic_stats.extended_max_sequence_number, &basic_stats.jitter,
-      &rtt_ms) != 0) {
-    basic_stats.fraction_lost = frac_loss;
+          &frac_lost,
+          &basic_stats.cumulative_lost,
+          &basic_stats.extended_max_sequence_number,
+          &basic_stats.jitter,
+          &rtt_ms) != 0) {
     shared_data_->SetLastError(kViERtpRtcpUnknownError);
     return -1;
   }
+  basic_stats.fraction_lost = frac_lost;
   return 0;
 }
 

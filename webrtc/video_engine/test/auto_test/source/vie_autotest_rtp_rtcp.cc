@@ -286,10 +286,29 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     EXPECT_EQ(0, ViE.base->StartReceive(tbChannel.videoChannel));
     EXPECT_EQ(0, ViE.base->StartSend(tbChannel.videoChannel));
 
-    AutoTestSleep(kAutoTestSleepTimeMs);
-
     webrtc::RtcpStatistics sent;
     int sentRttMs = 0;
+
+    // Fraction lost is a transient value that can get reset after a new rtcp
+    // report block. Make regular polls to make sure it is propagated.
+    // TODO(sprang): Replace with callbacks, when those are fully implemented.
+    int time_to_sleep = kAutoTestSleepTimeMs;
+    bool got_send_channel_frac_lost = false;
+    bool got_receive_channel_frac_lost = false;
+    while (time_to_sleep > 0) {
+      AutoTestSleep(500);
+      time_to_sleep -= 500;
+      EXPECT_EQ(0,
+                ViE.rtp_rtcp->GetSendChannelRtcpStatistics(
+                    tbChannel.videoChannel, sent, sentRttMs));
+      got_send_channel_frac_lost |= sent.fraction_lost > 0;
+      EXPECT_EQ(0,
+                ViE.rtp_rtcp->GetReceiveChannelRtcpStatistics(
+                    tbChannel.videoChannel, received, recRttMs));
+      got_receive_channel_frac_lost |= received.fraction_lost > 0;
+    }
+    EXPECT_TRUE(got_send_channel_frac_lost);
+    EXPECT_TRUE(got_receive_channel_frac_lost);
 
     EXPECT_EQ(0, ViE.rtp_rtcp->GetBandwidthUsage(
         tbChannel.videoChannel, sentTotalBitrate, sentVideoBitrate,
