@@ -215,6 +215,8 @@ class MockAudioProcessing : public AudioProcessing {
       int());
   MOCK_METHOD1(StartDebugRecording,
       int(const char filename[kMaxFilenameSize]));
+  MOCK_METHOD1(StartDebugRecording,
+      int(FILE* handle));
   MOCK_METHOD0(StopDebugRecording,
       int());
   virtual MockEchoCancellation* echo_cancellation() const {
