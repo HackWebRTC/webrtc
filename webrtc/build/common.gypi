@@ -161,6 +161,9 @@
           'WEBRTC_MOZILLA_BUILD',
          ],
       }],
+      ['enable_video==1', {
+        'defines': ['WEBRTC_MODULE_UTILITY_VIDEO',],
+      }],
       ['build_with_chromium==1', {
         'defines': [
           # Changes settings for Chromium build.

@@ -39,10 +39,6 @@
       ],
       'conditions': [
         ['enable_video==1', {
-          # Adds support for video recording.
-          'defines': [
-            'WEBRTC_MODULE_UTILITY_VIDEO',
-          ],
           'dependencies': [
             'webrtc_video_coding',
           ],
