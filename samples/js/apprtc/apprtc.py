@@ -91,6 +91,9 @@ def handle_message(room, user, message):
       if other_user == user:
         message = make_loopback_answer(message)
     on_message(room, other_user, message)
+  else:
+    # For unittest
+    on_message(room, user, message)
 
 def get_saved_messages(client_id):
   return Message.gql("WHERE client_id = :id", id=client_id)
@@ -255,22 +258,27 @@ class Room(db.Model):
     if user == self.user2:
       return self.user2_connected
 
+@db.transactional
+def connect_user_to_room(room_key, user):
+  room = Room.get_by_key_name(room_key)
+  # Check if room has user in case that disconnect message comes before
+  # connect message with unknown reason, observed with local AppEngine SDK.
+  if room and room.has_user(user):
+    room.set_connected(user)
+    logging.info('User ' + user + ' connected to room ' + room_key)
+    logging.info('Room ' + room_key + ' has state ' + str(room))
+  else:
+    logging.warning('Unexpected Connect Message to room ' + room_key)
+  return room
+
 class ConnectPage(webapp2.RequestHandler):
   def post(self):
     key = self.request.get('from')
     room_key, user = key.split('/')
     with LOCK:
-      room = Room.get_by_key_name(room_key)
-      # Check if room has user in case that disconnect message comes before
-      # connect message with unknown reason, observed with local AppEngine SDK.
+      room = connect_user_to_room(room_key, user)
       if room and room.has_user(user):
-        room.set_connected(user)
         send_saved_messages(make_client_id(room, user))
-        logging.info('User ' + user + ' connected to room ' + room_key)
-        logging.info('Room ' + room_key + ' has state ' + str(room))
-      else:
-        logging.warning('Unexpected Connect Message to room ' + room_key)
-
 
 class DisconnectPage(webapp2.RequestHandler):
   def post(self):
