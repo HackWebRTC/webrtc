@@ -61,6 +61,7 @@
 #include <map>
 #include <sys/prctl.h>
 #include <sys/syscall.h>
+#include <unistd.h>
 
 #include "talk/app/webrtc/mediaconstraintsinterface.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
