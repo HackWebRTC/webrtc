@@ -299,14 +299,16 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
 #if defined(LINUX_PULSE)
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "attempting to use the Linux PulseAudio APIs...");
 
-        if (AudioDeviceLinuxPulse::PulseAudioIsSupported())
+        // create *Linux PulseAudio* implementation
+        AudioDeviceLinuxPulse* pulseDevice = new AudioDeviceLinuxPulse(Id());
+        if (pulseDevice->Init() != -1)
         {
-            // create *Linux PulseAudio* implementation
-            ptrAudioDevice = new AudioDeviceLinuxPulse(Id());
+            ptrAudioDevice = pulseDevice;
             WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "Linux PulseAudio APIs will be utilized");
         }
         else
         {
+            delete pulseDevice;
 #endif
 #if defined(LINUX_ALSA)
             // create *Linux ALSA Audio* implementation

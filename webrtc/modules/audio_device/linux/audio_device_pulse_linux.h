@@ -95,8 +95,6 @@ public:
     AudioDeviceLinuxPulse(const int32_t id);
     virtual ~AudioDeviceLinuxPulse();
 
-    static bool PulseAudioIsSupported();
-
     // Retrieve the currently utilized audio layer
     virtual int32_t ActiveAudioLayer(
         AudioDeviceModule::AudioLayer& audioLayer) const OVERRIDE;
