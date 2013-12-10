@@ -88,6 +88,10 @@ typedef unsigned __int64    uint64_t;
 // (because it won't see this pragma).
 #pragma clang diagnostic ignored "-Wc++11-extensions"
 #define OVERRIDE override
+#elif defined(__GNUC__) && __cplusplus >= 201103 && \
+    (__GNUC__ * 10000 + __GNUC_MINOR__ * 100) >= 40700
+// GCC 4.7 supports explicit virtual overrides when C++11 support is enabled.
+#define OVERRIDE override
 #else
 #define OVERRIDE
 #endif
