@@ -103,7 +103,7 @@
             'signal_processing/spl_sqrt_floor.c',
           ],
           'conditions': [
-            ['armv7==1', {
+            ['arm_version==7', {
               'dependencies': ['common_audio_neon',],
               'sources': [
                 'signal_processing/filter_ar_fast_q12_armv7.S',
@@ -161,7 +161,7 @@
         },
       ],  # targets
     }],
-    ['(target_arch=="arm" and armv7==1) or target_arch=="armv7"', {
+    ['(target_arch=="arm" and arm_version==7) or target_arch=="armv7"', {
       'targets': [
         {
           'target_name': 'common_audio_neon',

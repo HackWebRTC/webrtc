@@ -192,7 +192,7 @@
           'WEBRTC_ARCH_ARM',
         ],
         'conditions': [
-          ['armv7==1', {
+          ['arm_version==7', {
             'defines': ['WEBRTC_ARCH_ARM_V7',],
             'conditions': [
               ['arm_neon==1', {
