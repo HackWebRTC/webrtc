@@ -24,6 +24,7 @@
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/test/fake_encoder.h"
+#include "webrtc/test/configurable_frame_size_encoder.h"
 #include "webrtc/test/frame_generator_capturer.h"
 #include "webrtc/test/null_transport.h"
 #include "webrtc/test/rtp_rtcp_observer.h"
@@ -528,47 +529,99 @@ TEST_F(VideoSendStreamTest, RetransmitsNackOverRtxWithPacing) {
   TestNackRetransmission(kSendRtxSsrc, kSendRtxPayloadType, true);
 }
 
-TEST_F(VideoSendStreamTest, MaxPacketSize) {
-  class PacketSizeObserver : public test::RtpRtcpObserver {
+TEST_F(VideoSendStreamTest, FragmentsAccordingToMaxPacketSize) {
+  // Observer that verifies that the expected number of packets and bytes
+  // arrive for each frame size, from start_size to stop_size.
+  class FrameFragmentationObserver : public test::RtpRtcpObserver,
+                                     public EncodedFrameObserver {
    public:
-    PacketSizeObserver(size_t max_length) : RtpRtcpObserver(30 * 1000),
-      max_length_(max_length), accumulated_size_(0) {}
+    FrameFragmentationObserver(size_t max_packet_size,
+                               uint32_t start_size,
+                               uint32_t stop_size,
+                               test::ConfigurableFrameSizeEncoder* encoder)
+        : RtpRtcpObserver(30 * 1000),
+          max_packet_size_(max_packet_size),
+          accumulated_size_(0),
+          accumulated_payload_(0),
+          stop_size_(stop_size),
+          current_size_rtp_(start_size),
+          current_size_frame_(start_size),
+          encoder_(encoder) {
+      // Fragmentation required, this test doesn't make sense without it.
+      assert(stop_size > max_packet_size);
+    }
 
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
       RTPHeader header;
       EXPECT_TRUE(
           parser_->Parse(packet, static_cast<int>(length), &header));
 
-      EXPECT_LE(length, max_length_);
+      EXPECT_LE(length, max_packet_size_);
 
       accumulated_size_ += length;
+      // Payload size = packet size - minus RTP header, padding and one byte
+      // generic header.
+      accumulated_payload_ +=
+          length - (header.headerLength + header.paddingLength + 1);
 
-      // Marker bit set indicates last fragment of a packet
+      // Marker bit set indicates last packet of a frame.
       if (header.markerBit) {
-        if (accumulated_size_ + length > max_length_) {
-          // The packet was fragmented, total size was larger than max size,
-          // but size of individual fragments were within size limit => pass!
+        EXPECT_GE(accumulated_size_, current_size_rtp_);
+        EXPECT_EQ(accumulated_payload_, current_size_rtp_);
+
+        // Last packet of frame; reset counters.
+        accumulated_size_ = 0;
+        accumulated_payload_ = 0;
+        if (current_size_rtp_ == stop_size_) {
+          // Done! (Don't increase size again, might arrive more @ stop_size).
           observation_complete_->Set();
+        } else {
+          // Increase next expected frame size.
+          ++current_size_rtp_;
         }
-        accumulated_size_ = 0; // Last fragment, reset packet size
       }
 
       return SEND_PACKET;
     }
 
+    virtual void EncodedFrameCallback(const EncodedFrame& encoded_frame) {
+      // Increase frame size for next encoded frame, in the context of the
+      // encoder thread.
+      if (current_size_frame_ < stop_size_) {
+        ++current_size_frame_;
+      }
+      encoder_->SetFrameSize(current_size_frame_);
+    }
+
    private:
-    size_t max_length_;
+    size_t max_packet_size_;
     size_t accumulated_size_;
+    size_t accumulated_payload_;
+
+    uint32_t stop_size_;
+    uint32_t current_size_rtp_;
+    uint32_t current_size_frame_;
+    test::ConfigurableFrameSizeEncoder* encoder_;
   };
 
+  // Use a fake encoder to output a frame of every size in the range [90, 290],
+  // for each size making sure that the exact number of payload bytes received
+  // is correct and that packets are fragmented to respect max packet size.
   static const uint32_t kMaxPacketSize = 128;
+  static const uint32_t start = 90;
+  static const uint32_t stop = 290;
 
-  PacketSizeObserver observer(kMaxPacketSize);
+  test::ConfigurableFrameSizeEncoder encoder(stop);
+  encoder.SetFrameSize(start);
+
+  FrameFragmentationObserver observer(kMaxPacketSize, start, stop, &encoder);
   Call::Config call_config(observer.SendTransport());
   scoped_ptr<Call> call(Call::Create(call_config));
 
   VideoSendStream::Config send_config = GetSendTestConfig(call.get(), 1);
+  send_config.encoder = &encoder;
   send_config.rtp.max_packet_size = kMaxPacketSize;
+  send_config.post_encode_callback = &observer;
 
   RunSendTest(call.get(), send_config, &observer);
 }
