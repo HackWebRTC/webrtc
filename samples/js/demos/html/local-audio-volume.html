@@ -5,7 +5,6 @@
 <title>Local Audio Rendering Demo</title>
 <script type="text/javascript" src="../../base/adapter.js"></script>
 <script>
-  var audioElement;
   var buttonStart;
   var buttonStop;
   var localStream;
@@ -81,7 +80,6 @@
     if (audioTracks.length == 1 && videoTracks.length == 0) {
       console.log('gotStream({audio:true, video:false})');
       console.log('Using audio device: ' + audioTracks[0].label);
-      attachMediaStream(audioElement, stream);
       stream.onended = function() {
         console.log('stream.onended');
         buttonStart.disabled = false;
@@ -106,7 +104,7 @@
          paintMeter(meter_clip, soundMeter.clip);
       }, 200);
     } else {
-      alert('The media stream contains an invalid amount of tracks:'
+      alert('The media stream contains an invalid number of tracks:'
          + audioTracks.length + ' audio ' + videoTracks.length + ' video');
       stream.stop();
     }
@@ -125,7 +123,6 @@
     } catch(e) {
       alert('Web Audio API not found');
     }
-    audioElement = $('audio');
     buttonStart = $('start');
     buttonStop = $('stop');
     buttonStart.enabled = true;
@@ -158,7 +155,11 @@
      and see the numbers change as you speak.</p>
      The "instant" volume changes approximately every 50 ms; the "slow"
      volume approximates the average volume over about a second.
-  <audio id="audio" autoplay="autoplay" controls="controls"></audio><br><br>
+  <br>
+     Note that you will NOT hear your own voice; use the
+     <a href="local-audio-rendering.html">local audio rendering demo</a>
+     for that.
+  <p>
   <button id="start" onclick="start()">Start</button>
   <button id="stop" onclick="stop()">Stop</button><br><br>
   Volume (instant): <span id="volume">Not set</span><br>
