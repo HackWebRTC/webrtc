@@ -202,9 +202,6 @@ class ViEChannel
   bool GetSendSideDelay(int* avg_send_delay, int* max_send_delay) const;
   void GetEstimatedReceiveBandwidth(uint32_t* estimated_bandwidth) const;
 
-  // Called on any new send bitrate estimate.
-  void RegisterSendBitrateObserver(BitrateStatisticsObserver* observer);
-
   int32_t StartRTPDump(const char file_nameUTF8[1024],
                        RTPDirections direction);
   int32_t StopRTPDump(RTPDirections direction);

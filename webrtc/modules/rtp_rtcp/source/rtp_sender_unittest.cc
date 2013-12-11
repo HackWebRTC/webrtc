@@ -38,7 +38,6 @@ const uint32_t kAbsoluteSendTime = 0x00aabbcc;
 const uint8_t kAudioLevel = 0x5a;
 const uint8_t kAudioLevelExtensionId = 9;
 const int kAudioPayload = 103;
-const uint64_t kStartTime = 123456789;
 }  // namespace
 
 using testing::_;
@@ -82,12 +81,12 @@ class LoopbackTransportTest : public webrtc::Transport {
 class RtpSenderTest : public ::testing::Test {
  protected:
   RtpSenderTest()
-      : fake_clock_(kStartTime),
-        mock_paced_sender_(),
-        rtp_sender_(),
-        payload_(kPayload),
-        transport_(),
-        kMarkerBit(true) {
+    : fake_clock_(123456789),
+      mock_paced_sender_(),
+      rtp_sender_(),
+      payload_(kPayload),
+      transport_(),
+      kMarkerBit(true) {
     EXPECT_CALL(mock_paced_sender_,
         SendPacket(_, _, _, _, _, _)).WillRepeatedly(testing::Return(true));
   }
@@ -778,73 +777,6 @@ TEST_F(RtpSenderTest, FrameCountCallbacks) {
   EXPECT_EQ(1U, callback.delta_frames_);
 
   rtp_sender_->RegisterFrameCountObserver(NULL);
-}
-
-TEST_F(RtpSenderTest, BitrateCallbacks) {
-  class TestCallback : public BitrateStatisticsObserver {
-   public:
-    TestCallback()
-        : BitrateStatisticsObserver(), num_calls_(0), ssrc_(0), bitrate_() {}
-    virtual ~TestCallback() {}
-
-    virtual void Notify(const BitrateStatistics& stats, uint32_t ssrc) {
-      ++num_calls_;
-      ssrc_ = ssrc;
-      bitrate_ = stats;
-    }
-
-    uint32_t num_calls_;
-    uint32_t ssrc_;
-    BitrateStatistics bitrate_;
-  } callback;
-
-  // Simulate kNumPackets sent with kPacketInterval ms intervals.
-  const uint32_t kNumPackets = 15;
-  const uint32_t kPacketInterval = 20;
-  // Overhead = 12 bytes RTP header + 1 byte generic header.
-  const uint32_t kPacketOverhead = 13;
-
-  char payload_name[RTP_PAYLOAD_NAME_SIZE] = "GENERIC";
-  const uint8_t payload_type = 127;
-  ASSERT_EQ(
-      0,
-      rtp_sender_->RegisterPayload(payload_name, payload_type, 90000, 0, 1500));
-  uint8_t payload[] = {47, 11, 32, 93, 89};
-  rtp_sender_->SetStorePacketsStatus(true, 1);
-  uint32_t ssrc = rtp_sender_->SSRC();
-
-  rtp_sender_->RegisterBitrateObserver(&callback);
-
-  // Initial process call so we get a new time window.
-  rtp_sender_->ProcessBitrate();
-  uint64_t start_time = fake_clock_.CurrentNtpInMilliseconds();
-
-  // Send a few frames.
-  for (uint32_t i = 0; i < kNumPackets; ++i) {
-    ASSERT_EQ(0,
-              rtp_sender_->SendOutgoingData(kVideoFrameKey,
-                                            payload_type,
-                                            1234,
-                                            4321,
-                                            payload,
-                                            sizeof(payload),
-                                            0));
-    fake_clock_.AdvanceTimeMilliseconds(kPacketInterval);
-  }
-
-  rtp_sender_->ProcessBitrate();
-
-  const uint32_t expected_packet_rate = 1000 / kPacketInterval;
-
-  EXPECT_EQ(1U, callback.num_calls_);
-  EXPECT_EQ(ssrc, callback.ssrc_);
-  EXPECT_EQ(start_time + (kNumPackets * kPacketInterval),
-            callback.bitrate_.timestamp_ms);
-  EXPECT_EQ(expected_packet_rate, callback.bitrate_.packet_rate);
-  EXPECT_EQ((kPacketOverhead + sizeof(payload)) * 8 * expected_packet_rate,
-            callback.bitrate_.bitrate_bps);
-
-  rtp_sender_->RegisterBitrateObserver(NULL);
 }
 
 class RtpSenderAudioTest : public RtpSenderTest {

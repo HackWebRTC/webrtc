@@ -359,7 +359,6 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       rtp_rtcp->RegisterSendFrameCountObserver(NULL);
       rtp_rtcp->RegisterSendChannelRtcpStatisticsCallback(NULL);
       rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(NULL);
-      rtp_rtcp->RegisterVideoBitrateObserver(NULL);
       simulcast_rtp_rtcp_.pop_back();
       removed_rtp_rtcp_.push_front(rtp_rtcp);
     }
@@ -420,8 +419,6 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
           rtp_rtcp_->GetSendChannelRtcpStatisticsCallback());
       rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(
           rtp_rtcp_->GetSendChannelRtpStatisticsCallback());
-      rtp_rtcp->RegisterVideoBitrateObserver(
-          rtp_rtcp_->GetVideoBitrateObserver());
     }
     // |RegisterSimulcastRtpRtcpModules| resets all old weak pointers and old
     // modules can be deleted after this step.
@@ -435,7 +432,6 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       rtp_rtcp->RegisterSendFrameCountObserver(NULL);
       rtp_rtcp->RegisterSendChannelRtcpStatisticsCallback(NULL);
       rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(NULL);
-      rtp_rtcp->RegisterVideoBitrateObserver(NULL);
       simulcast_rtp_rtcp_.pop_back();
       removed_rtp_rtcp_.push_front(rtp_rtcp);
     }
@@ -1429,17 +1425,6 @@ bool ViEChannel::GetSendSideDelay(int* avg_send_delay,
     *avg_send_delay = (*avg_send_delay + num_send_delays / 2) / num_send_delays;
   }
   return valid_estimate;
-}
-
-void ViEChannel::RegisterSendBitrateObserver(
-    BitrateStatisticsObserver* observer) {
-  rtp_rtcp_->RegisterVideoBitrateObserver(observer);
-  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
-  for (std::list<RtpRtcp*>::const_iterator it = simulcast_rtp_rtcp_.begin();
-       it != simulcast_rtp_rtcp_.end();
-       it++) {
-    (*it)->RegisterVideoBitrateObserver(observer);
-  }
 }
 
 void ViEChannel::GetEstimatedReceiveBandwidth(

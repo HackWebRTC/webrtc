@@ -100,8 +100,6 @@ class MockRtpRtcp : public RtpRtcp {
       bool());
   MOCK_CONST_METHOD4(BitrateSent,
       void(uint32_t* totalRate, uint32_t* videoRate, uint32_t* fecRate, uint32_t* nackRate));
-  MOCK_METHOD1(RegisterVideoBitrateObserver, void(BitrateStatisticsObserver*));
-  MOCK_CONST_METHOD0(GetVideoBitrateObserver, BitrateStatisticsObserver*(void));
   MOCK_CONST_METHOD1(EstimatedReceiveBandwidth,
       int(uint32_t* available_bandwidth));
   MOCK_METHOD8(SendOutgoingData,

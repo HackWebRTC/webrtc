@@ -39,56 +39,30 @@ const char* FrameTypeToString(const FrameType frame_type) {
 
 }  // namespace
 
-RTPSender::RTPSender(const int32_t id,
-                     const bool audio,
-                     Clock* clock,
-                     Transport* transport,
-                     RtpAudioFeedback* audio_feedback,
-                     PacedSender* paced_sender)
-    : clock_(clock),
-      bitrate_sent_(clock, this),
-      id_(id),
-      audio_configured_(audio),
-      audio_(NULL),
-      video_(NULL),
-      paced_sender_(paced_sender),
+RTPSender::RTPSender(const int32_t id, const bool audio, Clock *clock,
+                     Transport *transport, RtpAudioFeedback *audio_feedback,
+                     PacedSender *paced_sender)
+    : Bitrate(clock), id_(id), audio_configured_(audio), audio_(NULL),
+      video_(NULL), paced_sender_(paced_sender),
       send_critsect_(CriticalSectionWrapper::CreateCriticalSection()),
-      transport_(transport),
-      sending_media_(true),                      // Default to sending media.
-      max_payload_length_(IP_PACKET_SIZE - 28),  // Default is IP-v4/UDP.
-      target_send_bitrate_(0),
-      packet_over_head_(28),
-      payload_type_(-1),
-      payload_type_map_(),
-      rtp_header_extension_map_(),
-      transmission_time_offset_(0),
-      absolute_send_time_(0),
+      transport_(transport), sending_media_(true),  // Default to sending media.
+      max_payload_length_(IP_PACKET_SIZE - 28),     // Default is IP-v4/UDP.
+      target_send_bitrate_(0), packet_over_head_(28), payload_type_(-1),
+      payload_type_map_(), rtp_header_extension_map_(),
+      transmission_time_offset_(0), absolute_send_time_(0),
       // NACK.
-      nack_byte_count_times_(),
-      nack_byte_count_(),
-      nack_bitrate_(clock, NULL),
+      nack_byte_count_times_(), nack_byte_count_(), nack_bitrate_(clock),
       packet_history_(clock),
       // Statistics
       statistics_crit_(CriticalSectionWrapper::CreateCriticalSection()),
-      frame_count_observer_(NULL),
-      rtp_stats_callback_(NULL),
-      bitrate_callback_(NULL),
+      frame_count_observer_(NULL), rtp_stats_callback_(NULL),
       // RTP variables
       start_time_stamp_forced_(false),
-      start_time_stamp_(0),
-      ssrc_db_(*SSRCDatabase::GetSSRCDatabase()),
-      remote_ssrc_(0),
-      sequence_number_forced_(false),
-      ssrc_forced_(false),
-      timestamp_(0),
-      capture_time_ms_(0),
-      last_timestamp_time_ms_(0),
-      last_packet_marker_bit_(false),
-      num_csrcs_(0),
-      csrcs_(),
-      include_csrcs_(true),
-      rtx_(kRtxOff),
-      payload_type_rtx_(-1) {
+      start_time_stamp_(0), ssrc_db_(*SSRCDatabase::GetSSRCDatabase()),
+      remote_ssrc_(0), sequence_number_forced_(false), ssrc_forced_(false),
+      timestamp_(0), capture_time_ms_(0), last_timestamp_time_ms_(0),
+      last_packet_marker_bit_(false), num_csrcs_(0), csrcs_(),
+      include_csrcs_(true), rtx_(kRtxOff), payload_type_rtx_(-1) {
   memset(nack_byte_count_times_, 0, sizeof(nack_byte_count_times_));
   memset(nack_byte_count_, 0, sizeof(nack_byte_count_));
   memset(csrcs_, 0, sizeof(csrcs_));
@@ -134,7 +108,7 @@ void RTPSender::SetTargetSendBitrate(const uint32_t bits) {
 }
 
 uint16_t RTPSender::ActualSendBitrateKbit() const {
-  return (uint16_t)(bitrate_sent_.BitrateNow() / 1000);
+  return (uint16_t)(Bitrate::BitrateNow() / 1000);
 }
 
 uint32_t RTPSender::VideoBitrateSent() const {
@@ -471,7 +445,7 @@ bool RTPSender::SendPaddingAccordingToBitrate(
     int64_t capture_time_ms) {
   // Current bitrate since last estimate(1 second) averaged with the
   // estimate since then, to get the most up to date bitrate.
-  uint32_t current_bitrate = bitrate_sent_.BitrateNow();
+  uint32_t current_bitrate = BitrateNow();
   int bitrate_diff = target_send_bitrate_ * 1000 - current_bitrate;
   if (bitrate_diff <= 0) {
     return true;
@@ -853,7 +827,7 @@ void RTPSender::UpdateRtpStats(const uint8_t* buffer,
     ssrc = ssrc_;
   }
 
-  bitrate_sent_.Update(size);
+  Bitrate::Update(size);
   ++counters->packets;
   if (IsFecPacket(buffer, header)) {
     ++counters->fec_packets;
@@ -974,7 +948,7 @@ void RTPSender::UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms) {
 
 void RTPSender::ProcessBitrate() {
   CriticalSectionScoped cs(send_critsect_);
-  bitrate_sent_.Process();
+  Bitrate::Process();
   nack_bitrate_.Process();
   if (audio_configured_) {
     return;
@@ -1614,24 +1588,4 @@ StreamDataCountersCallback* RTPSender::GetRtpStatisticsCallback() const {
   return rtp_stats_callback_;
 }
 
-void RTPSender::RegisterBitrateObserver(BitrateStatisticsObserver* observer) {
-  CriticalSectionScoped cs(statistics_crit_.get());
-  if (observer != NULL)
-    assert(bitrate_callback_ == NULL);
-  bitrate_callback_ = observer;
-}
-
-BitrateStatisticsObserver* RTPSender::GetBitrateObserver() const {
-  CriticalSectionScoped cs(statistics_crit_.get());
-  return bitrate_callback_;
-}
-
-uint32_t RTPSender::BitrateSent() const { return bitrate_sent_.BitrateLast(); }
-
-void RTPSender::BitrateUpdated(const BitrateStatistics& stats) {
-  CriticalSectionScoped cs(statistics_crit_.get());
-  if (bitrate_callback_) {
-    bitrate_callback_->Notify(stats, ssrc_);
-  }
-}
 }  // namespace webrtc

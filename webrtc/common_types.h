@@ -285,11 +285,14 @@ class StreamDataCountersCallback {
 
 // Rate statistics for a stream
 struct BitrateStatistics {
-  BitrateStatistics() : bitrate_bps(0), packet_rate(0), timestamp_ms(0) {}
+  BitrateStatistics()
+    : bitrate_(0),
+      packet_rate(0),
+      now(0) {}
 
-  uint32_t bitrate_bps;   // Bitrate in bits per second.
-  uint32_t packet_rate;   // Packet rate in packets per second.
-  uint64_t timestamp_ms;  // Ntp timestamp in ms at time of rate estimation.
+  uint32_t bitrate_;
+  uint32_t packet_rate;
+  uint64_t now;
 };
 
 // Callback, used to notify an observer whenever new rates have been estimated.

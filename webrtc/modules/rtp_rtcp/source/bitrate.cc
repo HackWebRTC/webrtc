@@ -15,7 +15,7 @@
 
 namespace webrtc {
 
-Bitrate::Bitrate(Clock* clock, Observer* observer)
+Bitrate::Bitrate(Clock* clock)
     : clock_(clock),
       crit_(CriticalSectionWrapper::CreateCriticalSection()),
       packet_rate_(0),
@@ -23,14 +23,11 @@ Bitrate::Bitrate(Clock* clock, Observer* observer)
       bitrate_next_idx_(0),
       time_last_rate_update_(0),
       bytes_count_(0),
-      packet_count_(0),
-      observer_(observer) {
+      packet_count_(0) {
   memset(packet_rate_array_, 0, sizeof(packet_rate_array_));
   memset(bitrate_diff_ms_, 0, sizeof(bitrate_diff_ms_));
   memset(bitrate_array_, 0, sizeof(bitrate_array_));
 }
-
-Bitrate::~Bitrate() {}
 
 void Bitrate::Update(const int32_t bytes) {
   CriticalSectionScoped cs(crit_.get());
@@ -74,7 +71,7 @@ int64_t Bitrate::time_last_rate_update() const {
 void Bitrate::Process() {
   // Triggered by timer.
   CriticalSectionScoped cs(crit_.get());
-  int64_t now = clock_->CurrentNtpInMilliseconds();
+  int64_t now = clock_->TimeInMilliseconds();
   int64_t diff_ms = now - time_last_rate_update_;
 
   if (diff_ms < 100) {
@@ -108,14 +105,6 @@ void Bitrate::Process() {
   packet_count_ = 0;
   packet_rate_ = static_cast<uint32_t>(sum_packetrateMS / sum_diffMS);
   bitrate_ = static_cast<uint32_t>(sum_bitrateMS / sum_diffMS);
-
-  if (observer_) {
-    BitrateStatistics stats;
-    stats.bitrate_bps = bitrate_;
-    stats.packet_rate = packet_rate_;
-    stats.timestamp_ms = now;
-    observer_->BitrateUpdated(stats);
-  }
 }
 
 }  // namespace webrtc
