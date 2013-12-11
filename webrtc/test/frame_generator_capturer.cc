@@ -10,7 +10,7 @@
 
 #include "webrtc/test/frame_generator_capturer.h"
 
-#include "webrtc/common_video/test/frame_generator.h"
+#include "webrtc/test/frame_generator.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
@@ -111,11 +111,9 @@ void FrameGeneratorCapturer::InsertFrame() {
   {
     CriticalSectionScoped cs(lock_.get());
     if (sending_) {
-      int64_t time_before = clock_->CurrentNtpInMilliseconds();
-      I420VideoFrame& frame = frame_generator_->NextFrame();
-      frame.set_render_time_ms(time_before);
-      int64_t time_after = clock_->CurrentNtpInMilliseconds();
-      input_->PutFrame(frame, static_cast<uint32_t>(time_after - time_before));
+      I420VideoFrame* frame = frame_generator_->NextFrame();
+      frame->set_render_time_ms(clock_->CurrentNtpInMilliseconds());
+      input_->SwapFrame(frame);
     }
   }
   tick_->Wait(WEBRTC_EVENT_INFINITE);

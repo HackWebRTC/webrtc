@@ -26,10 +26,11 @@ class VideoEncoder;
 // Class to deliver captured frame to the video send stream.
 class VideoSendStreamInput {
  public:
-  // TODO(mflodman) Replace time_since_capture_ms when I420VideoFrame uses NTP
-  // time.
-  virtual void PutFrame(const I420VideoFrame& video_frame,
-                        uint32_t time_since_capture_ms) = 0;
+  // These methods do not lock internally and must be called sequentially.
+  // If your application switches input sources synchronization must be done
+  // externally to make sure that any old frames are not delivered concurrently.
+  virtual void PutFrame(const I420VideoFrame& video_frame) = 0;
+  virtual void SwapFrame(I420VideoFrame* video_frame) = 0;
 
  protected:
   virtual ~VideoSendStreamInput() {}

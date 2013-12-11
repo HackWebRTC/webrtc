@@ -40,8 +40,6 @@ class VcmCapturer : public VideoCapturer, public VideoCaptureDataCallback {
   bool started_;
   VideoCaptureModule* vcm_;
   VideoCaptureCapability capability_;
-
-  uint32_t last_timestamp_;
 };
 }  // test
 }  // webrtc

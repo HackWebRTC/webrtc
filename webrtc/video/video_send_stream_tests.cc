@@ -368,6 +368,30 @@ class FakeReceiveStatistics : public NullReceiveStatistics {
   StatisticianMap stats_map_;
 };
 
+TEST_F(VideoSendStreamTest, SwapsI420VideoFrames) {
+  static const size_t kWidth = 320;
+  static const size_t kHeight = 240;
+
+  test::NullTransport transport;
+  Call::Config call_config(&transport);
+  scoped_ptr<Call> call(Call::Create(call_config));
+
+  VideoSendStream::Config send_config = GetSendTestConfig(call.get(), 1);
+  VideoSendStream* video_send_stream = call->CreateVideoSendStream(send_config);
+  video_send_stream->StartSending();
+
+  I420VideoFrame frame;
+  frame.CreateEmptyFrame(
+      kWidth, kHeight, kWidth, (kWidth + 1) / 2, (kWidth + 1) / 2);
+  uint8_t* old_y_buffer = frame.buffer(kYPlane);
+
+  video_send_stream->Input()->SwapFrame(&frame);
+
+  EXPECT_NE(frame.buffer(kYPlane), old_y_buffer);
+
+  call->DestroyVideoSendStream(video_send_stream);
+}
+
 TEST_F(VideoSendStreamTest, SupportsFec) {
   static const int kRedPayloadType = 118;
   static const int kUlpfecPayloadType = 119;

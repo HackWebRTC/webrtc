@@ -17,7 +17,7 @@ namespace webrtc {
 namespace test {
 
 VcmCapturer::VcmCapturer(webrtc::VideoSendStreamInput* input)
-    : VideoCapturer(input), started_(false), vcm_(NULL), last_timestamp_(0) {}
+    : VideoCapturer(input), started_(false), vcm_(NULL) {}
 
 bool VcmCapturer::Init(size_t width, size_t height, size_t target_fps) {
   VideoCaptureModule::DeviceInfo* device_info =
@@ -88,14 +88,8 @@ VcmCapturer::~VcmCapturer() { Destroy(); }
 
 void VcmCapturer::OnIncomingCapturedFrame(const int32_t id,
                                           I420VideoFrame& frame) {
-  if (last_timestamp_ == 0 || frame.timestamp() < last_timestamp_) {
-    last_timestamp_ = frame.timestamp();
-  }
-
-  if (started_) {
-    input_->PutFrame(frame, frame.timestamp() - last_timestamp_);
-  }
-  last_timestamp_ = frame.timestamp();
+  if (started_)
+    input_->SwapFrame(&frame);
 }
 
 void VcmCapturer::OnCaptureDelayChanged(const int32_t id, const int32_t delay) {

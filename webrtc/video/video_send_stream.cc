@@ -211,31 +211,24 @@ VideoSendStream::~VideoSendStream() {
   rtp_rtcp_->Release();
 }
 
-void VideoSendStream::PutFrame(const I420VideoFrame& frame,
-                               uint32_t time_since_capture_ms) {
-  // TODO(pbos): frame_copy should happen after the VideoProcessingModule has
-  //             resized the frame.
-  I420VideoFrame frame_copy;
-  frame_copy.CopyFrame(frame);
+void VideoSendStream::PutFrame(const I420VideoFrame& frame) {
+  input_frame_.CopyFrame(frame);
+  SwapFrame(&input_frame_);
+}
 
-  ViEVideoFrameI420 vf;
+void VideoSendStream::SwapFrame(I420VideoFrame* frame) {
+  // TODO(pbos): Warn if frame is "too far" into the future, or too old. This
+  //             would help detect if frame's being used without NTP.
+  //             TO REVIEWER: Is there any good check for this? Should it be
+  //             skipped?
+  if (frame != &input_frame_)
+    input_frame_.SwapFrame(frame);
 
-  // TODO(pbos): This represents a memcpy step and is only required because
-  //             external_capture_ only takes ViEVideoFrameI420s.
-  vf.y_plane = frame_copy.buffer(kYPlane);
-  vf.u_plane = frame_copy.buffer(kUPlane);
-  vf.v_plane = frame_copy.buffer(kVPlane);
-  vf.y_pitch = frame.stride(kYPlane);
-  vf.u_pitch = frame.stride(kUPlane);
-  vf.v_pitch = frame.stride(kVPlane);
-  vf.width = frame.width();
-  vf.height = frame.height();
+  // TODO(pbos): Local rendering should not be done on the capture thread.
+  if (config_.local_renderer != NULL)
+    config_.local_renderer->RenderFrame(input_frame_, 0);
 
-  external_capture_->IncomingFrameI420(vf, frame.render_time_ms());
-
-  if (config_.local_renderer != NULL) {
-    config_.local_renderer->RenderFrame(frame, 0);
-  }
+  external_capture_->SwapFrame(&input_frame_);
 }
 
 VideoSendStreamInput* VideoSendStream::Input() { return this; }

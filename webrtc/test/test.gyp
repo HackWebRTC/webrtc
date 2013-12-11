@@ -42,6 +42,17 @@
       ],
     },
     {
+      'target_name': 'frame_generator',
+      'type': 'static_library',
+      'sources': [
+        'frame_generator.cc',
+        'frame_generator.h',
+      ],
+      'dependencies': [
+        '<(webrtc_root)/common_video/common_video.gyp:common_video',
+      ],
+    },
+    {
       'target_name': 'test_support',
       'type': 'static_library',
       'dependencies': [

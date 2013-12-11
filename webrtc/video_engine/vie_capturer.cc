@@ -363,6 +363,11 @@ int ViECapturer::IncomingFrameI420(const ViEVideoFrameI420& video_frame,
                                                           capture_time);
 }
 
+void ViECapturer::SwapFrame(I420VideoFrame* frame) {
+  external_capture_module_->IncomingI420VideoFrame(frame,
+                                                   frame->render_time_ms());
+}
+
 void ViECapturer::OnIncomingCapturedFrame(const int32_t capture_id,
                                           I420VideoFrame& video_frame) {
   WEBRTC_TRACE(kTraceStream, kTraceVideo, ViEId(engine_id_, capture_id_),

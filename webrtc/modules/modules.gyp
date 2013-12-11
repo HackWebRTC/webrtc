@@ -98,7 +98,7 @@
             '<(webrtc_root)/modules/video_coding/codecs/vp8/vp8.gyp:webrtc_vp8',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             '<(webrtc_root)/test/test.gyp:test_support_main',
-            '<(webrtc_root)/common_video/common_video.gyp:frame_generator',
+            '<(webrtc_root)/test/test.gyp:frame_generator',
           ],
           'sources': [
             'audio_coding/main/acm2/acm_receiver_unittest.cc',

@@ -17,7 +17,6 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/call.h"
-#include "webrtc/common_video/test/frame_generator.h"
 #include "webrtc/frame_callback.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/rtp_to_ntp.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
@@ -25,20 +24,21 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/test/direct_transport.h"
+#include "webrtc/test/fake_audio_device.h"
+#include "webrtc/test/fake_decoder.h"
+#include "webrtc/test/fake_encoder.h"
+#include "webrtc/test/frame_generator.h"
+#include "webrtc/test/frame_generator_capturer.h"
+#include "webrtc/test/rtp_rtcp_observer.h"
+#include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/test/testsupport/perf_test.h"
 #include "webrtc/video/transport_adapter.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
 #include "webrtc/voice_engine/include/voe_network.h"
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
 #include "webrtc/voice_engine/include/voe_video_sync.h"
-#include "webrtc/test/direct_transport.h"
-#include "webrtc/test/fake_audio_device.h"
-#include "webrtc/test/fake_decoder.h"
-#include "webrtc/test/fake_encoder.h"
-#include "webrtc/test/frame_generator_capturer.h"
-#include "webrtc/test/rtp_rtcp_observer.h"
-#include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/test/testsupport/perf_test.h"
 
 namespace webrtc {
 
@@ -336,7 +336,7 @@ TEST_F(CallTest, TransmitsFirstFrame) {
 
   scoped_ptr<test::FrameGenerator> frame_generator(test::FrameGenerator::Create(
       send_config_.codec.width, send_config_.codec.height));
-  send_stream_->Input()->PutFrame(frame_generator->NextFrame(), 0);
+  send_stream_->Input()->SwapFrame(frame_generator->NextFrame());
 
   EXPECT_EQ(kEventSignaled, renderer.Wait())
       << "Timed out while waiting for the frame to render.";
@@ -499,7 +499,7 @@ TEST_F(CallTest, UsesFrameCallbacks) {
   // check that the callbacks are done after processing video.
   scoped_ptr<test::FrameGenerator> frame_generator(
       test::FrameGenerator::Create(kWidth / 2, kHeight / 2));
-  send_stream_->Input()->PutFrame(frame_generator->NextFrame(), 0);
+  send_stream_->Input()->SwapFrame(frame_generator->NextFrame());
 
   EXPECT_EQ(kEventSignaled, pre_encode_callback.Wait())
       << "Timed out while waiting for pre-encode callback.";
@@ -1147,7 +1147,7 @@ TEST_F(CallTest, ObserversEncodedFrames) {
 
   scoped_ptr<test::FrameGenerator> frame_generator(test::FrameGenerator::Create(
       send_config_.codec.width, send_config_.codec.height));
-  send_stream_->Input()->PutFrame(frame_generator->NextFrame(), 0);
+  send_stream_->Input()->SwapFrame(frame_generator->NextFrame());
 
   EXPECT_EQ(kEventSignaled, post_encode_observer.Wait())
       << "Timed out while waiting for send-side encoded-frame callback.";

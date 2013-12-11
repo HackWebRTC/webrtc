@@ -123,8 +123,11 @@ class VideoAnalyzer : public PacketReceiver,
     return receiver_->DeliverPacket(packet, length);
   }
 
-  virtual void PutFrame(const I420VideoFrame& video_frame,
-                        uint32_t delta_capture_ms) OVERRIDE {
+  virtual void PutFrame(const I420VideoFrame& video_frame) OVERRIDE {
+    ADD_FAILURE() << "PutFrame() should not have been called in this test.";
+  }
+
+  virtual void SwapFrame(I420VideoFrame* video_frame) OVERRIDE {
     I420VideoFrame* copy = NULL;
     {
       CriticalSectionScoped cs(crit_.get());
@@ -136,7 +139,7 @@ class VideoAnalyzer : public PacketReceiver,
     if (copy == NULL)
       copy = new I420VideoFrame();
 
-    copy->CopyFrame(video_frame);
+    copy->CopyFrame(*video_frame);
     copy->set_timestamp(copy->render_time_ms() * 90);
 
     {
@@ -147,7 +150,7 @@ class VideoAnalyzer : public PacketReceiver,
       frames_.push_back(copy);
     }
 
-    input_->PutFrame(video_frame, delta_capture_ms);
+    input_->SwapFrame(video_frame);
   }
 
   virtual bool SendRtp(const uint8_t* packet, size_t length) OVERRIDE {
