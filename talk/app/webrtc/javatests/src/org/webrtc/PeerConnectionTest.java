@@ -533,9 +533,11 @@ public class PeerConnectionTest extends TestCase {
         factory, offeringPC, videoSource, "oLMS", "oLMSv0", "oLMSa0",
         offeringExpectations);
 
-    offeringExpectations.setDataChannel(offeringPC.createDataChannel(
-        "offeringDC", new DataChannel.Init()));
+    DataChannel offeringDC = offeringPC.createDataChannel(
+        "offeringDC", new DataChannel.Init());
+    assertEquals("offeringDC", offeringDC.label());
 
+    offeringExpectations.setDataChannel(offeringDC);
     SdpObserverLatch sdpLatch = new SdpObserverLatch();
     offeringPC.createOffer(sdpLatch, new MediaConstraints());
     assertTrue(sdpLatch.await());

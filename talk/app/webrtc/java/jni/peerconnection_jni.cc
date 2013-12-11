@@ -195,22 +195,18 @@ static JNIEnv* AttachCurrentThreadIfNeeded() {
   return jni;
 }
 
-// Return a |jlong| that will automatically convert back to |ptr| when assigned
-// to a |uint64|
+// Return a |jlong| that will correctly convert back to |ptr|.  This is needed
+// because the alternative (of silently passing a 32-bit pointer to a vararg
+// function expecting a 64-bit param) picks up garbage in the high 32 bits.
 static jlong jlongFromPointer(void* ptr) {
-  COMPILE_ASSERT(sizeof(intptr_t) <= sizeof(uint64),
+  COMPILE_ASSERT(sizeof(intptr_t) <= sizeof(jlong),
                  Time_to_rethink_the_use_of_jlongs);
-  // Guaranteed to fit by the COMPILE_ASSERT above.
-  uint64 u64 = reinterpret_cast<intptr_t>(ptr);
-  // If the unsigned value fits in the signed type, return it directly.
-  if (u64 <= std::numeric_limits<int64>::max())
-    return u64;
-  // Otherwise, we need to get move u64 into the range of [int64min, -1] subject
-  // to the constraints of remaining equal to |u64| modulo |2^64|.
-  u64 = std::numeric_limits<uint64>::max() - u64;  // In [0,int64max].
-  int64 i64 = -u64; // In [-int64max, 0].
-  i64 -= 1; // In [int64min, -1], and i64+2^64==u64.
-  return i64;
+  // Going through intptr_t to be obvious about the definedness of the
+  // conversion from pointer to integral type.  intptr_t to jlong is a standard
+  // widening by the COMPILE_ASSERT above.
+  jlong ret = reinterpret_cast<intptr_t>(ptr);
+  assert(reinterpret_cast<void*>(ret) == ptr);
+  return ret;
 }
 
 // Android's FindClass() is trickier than usual because the app-specific
@@ -1104,7 +1100,7 @@ JOW(jlong, DataChannel_registerObserverNative)(
   talk_base::scoped_ptr<DataChannelObserverWrapper> observer(
       new DataChannelObserverWrapper(jni, j_observer));
   ExtractNativeDC(jni, j_dc)->RegisterObserver(observer.get());
-  return reinterpret_cast<jlong>(observer.release());
+  return jlongFromPointer(observer.release());
 }
 
 JOW(void, DataChannel_unregisterObserverNative)(

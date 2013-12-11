@@ -171,11 +171,26 @@ public class AppRTCDemoActivity extends Activity
     }
   }
 
+
+  // Just for fun (and to regression-test bug 2302) make sure that DataChannels
+  // can be created, queried, and disposed.
+  private static void createDataChannelToRegressionTestBug2302(
+      PeerConnection pc) {
+    DataChannel dc = pc.createDataChannel("dcLabel", new DataChannel.Init());
+    abortUnless("dcLabel".equals(dc.label()), "WTF?");
+    dc.dispose();
+  }
+
   @Override
   public void onIceServers(List<PeerConnection.IceServer> iceServers) {
     factory = new PeerConnectionFactory();
-    pc = factory.createPeerConnection(
-        iceServers, appRtcClient.pcConstraints(), pcObserver);
+
+    MediaConstraints pcConstraints = appRtcClient.pcConstraints();
+    pcConstraints.optional.add(
+        new MediaConstraints.KeyValuePair("RtpDataChannels", "true"));
+    pc = factory.createPeerConnection(iceServers, pcConstraints, pcObserver);
+
+    createDataChannelToRegressionTestBug2302(pc);  // See method comment.
 
     // Uncomment to get ALL WebRTC tracing and SENSITIVE libjingle logging.
     // NOTE: this _must_ happen while |factory| is alive!
