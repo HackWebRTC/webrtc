@@ -11,7 +11,7 @@ vars = {
   "googlecode_url": "http://%s.googlecode.com/svn",
   "sourceforge_url": "http://svn.code.sf.net/p/%(repo)s/code",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-  "chromium_revision": "232627",
+  "chromium_revision": "238260",
 
   # A small subset of WebKit is needed for the Android Python test framework.
   "webkit_trunk": "http://src.chromium.org/blink/trunk",
@@ -104,11 +104,8 @@ deps = {
   "tools/python":
     Var("chromium_trunk") + "/src/tools/python@" + Var("chromium_revision"),
 
-  "tools/sharding_supervisor":
-    Var("chromium_trunk") + "/src/tools/sharding_supervisor@" + Var("chromium_revision"),
-
-  "tools/swarm_client":
-    Var("chromium_trunk") + "/tools/swarm_client@" + Var("chromium_revision"),
+  "tools/swarming_client":
+    From("chromium_deps", "src/tools/swarming_client"),
 
   "tools/valgrind":
     Var("chromium_trunk") + "/src/tools/valgrind@" + Var("chromium_revision"),

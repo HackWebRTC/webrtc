@@ -86,8 +86,7 @@
 /tools/gyp
 /tools/protoc_wrapper
 /tools/python
-/tools/sharding_supervisor
-/tools/swarm_client
+/tools/swarming_client
 /tools/valgrind
 /tools/win
 /webrtc/modules/audio_device/android/test/bin/

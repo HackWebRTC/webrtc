@@ -52,9 +52,9 @@
       'extension': 'isolate',
       'inputs': [
         # Files that are known to be involved in this step.
-        '<(DEPTH)/tools/swarm_client/isolate.py',
-        '<(DEPTH)/tools/swarm_client/run_isolated.py',
-        '<(DEPTH)/tools/swarm_client/googletest/run_test_cases.py',
+        '<(DEPTH)/tools/swarming_client/isolate.py',
+        '<(DEPTH)/tools/swarming_client/run_isolated.py',
+        '<(DEPTH)/tools/swarming_client/googletest/run_test_cases.py',
 
         # Disable file tracking by the build driver for now. This means the
         # project must have the proper build-time dependency for their runtime
@@ -75,7 +75,7 @@
         ["test_isolation_outdir==''", {
           'action': [
             'python',
-            '<(DEPTH)/tools/swarm_client/isolate.py',
+            '<(DEPTH)/tools/swarming_client/isolate.py',
             '<(test_isolation_mode)',
             # GYP will eliminate duplicate arguments so '<(PRODUCT_DIR)' cannot
             # be provided twice. To work around this behavior, append '/'.
@@ -95,7 +95,7 @@
         }, {
           'action': [
             'python',
-            '<(DEPTH)/tools/swarm_client/isolate.py',
+            '<(DEPTH)/tools/swarming_client/isolate.py',
             '<(test_isolation_mode)',
             '--outdir', '<(test_isolation_outdir)',
             # See comment above.

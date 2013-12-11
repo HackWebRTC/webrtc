@@ -30,7 +30,6 @@
       'variables': {
         'command': [
           '../testing/test_env.py',
-          '../tools/swarm_client/googletest/run_test_cases.py',
           '<(PRODUCT_DIR)/libjingle_p2p_unittest<(EXECUTABLE_SUFFIX)',
         ],
         'isolate_dependency_tracked': [
@@ -38,7 +37,7 @@
           '<(PRODUCT_DIR)/libjingle_p2p_unittest<(EXECUTABLE_SUFFIX)',
         ],
         'isolate_dependency_untracked': [
-          '../tools/swarm_client/',
+          '../tools/swarming_client/',
         ],
       },
     }],

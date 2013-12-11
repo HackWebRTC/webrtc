@@ -21,7 +21,6 @@
       'variables': {
         'command': [
           '../../../../testing/test_env.py',
-          '../../../../tools/swarm_client/googletest/run_test_cases.py',
           '<(PRODUCT_DIR)/neteq_unittests<(EXECUTABLE_SUFFIX)',
         ],
         'isolate_dependency_touched': [
@@ -37,7 +36,7 @@
           '<(PRODUCT_DIR)/neteq_unittests<(EXECUTABLE_SUFFIX)',
         ],
         'isolate_dependency_untracked': [
-          '../../../../tools/swarm_client/',
+          '../../../../tools/swarming_client/',
         ],
       },
     }],

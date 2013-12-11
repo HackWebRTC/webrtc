@@ -178,6 +178,7 @@
               # that get overridden by -Wextra.
               '-Wno-unused-parameter',
               '-Wno-missing-field-initializers',
+              '-Wno-strict-overflow',
             ],
             'cflags_cc': [
               '-Wnon-virtual-dtor',
