@@ -54,7 +54,7 @@
         'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)common_video_unittests<(SHARED_LIB_SUFFIX)',
       },
       'dependencies': [
-        '<(webrtc_root)/common_video/common_video.gyp:common_video_unittests',
+        '<(webrtc_root)/common_video/common_video_unittests.gyp:common_video_unittests',
       ],
       'includes': [
         '../../../build/apk_test.gypi',
