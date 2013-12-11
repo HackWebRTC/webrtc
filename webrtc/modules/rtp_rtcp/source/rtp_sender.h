@@ -63,7 +63,7 @@ class RTPSenderInterface {
       PacedSender::Priority priority) = 0;
 };
 
-class RTPSender : public Bitrate, public RTPSenderInterface {
+class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
  public:
   RTPSender(const int32_t id, const bool audio, Clock *clock,
             Transport *transport, RtpAudioFeedback *audio_feedback,
@@ -275,6 +275,14 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
   void RegisterRtpStatisticsCallback(StreamDataCountersCallback* callback);
   StreamDataCountersCallback* GetRtpStatisticsCallback() const;
 
+  // Called on new send bitrate estimate.
+  void RegisterBitrateObserver(BitrateStatisticsObserver* observer);
+  BitrateStatisticsObserver* GetBitrateObserver() const;
+
+  uint32_t BitrateSent() const;
+
+  virtual void BitrateUpdated(const BitrateStatistics& stats) OVERRIDE;
+
  protected:
   int32_t CheckPayloadType(const int8_t payload_type,
                            RtpVideoCodecTypes *video_type);
@@ -318,6 +326,9 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
                       bool is_retransmit);
   bool IsFecPacket(const uint8_t* buffer, const RTPHeader& header) const;
 
+  Clock* clock_;
+  Bitrate bitrate_sent_;
+
   int32_t id_;
   const bool audio_configured_;
   RTPSenderAudio *audio_;
@@ -355,6 +366,7 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
   StreamDataCounters rtp_stats_;
   StreamDataCounters rtx_rtp_stats_;
   StreamDataCountersCallback* rtp_stats_callback_;
+  BitrateStatisticsObserver* bitrate_callback_;
 
   // RTP variables
   bool start_time_stamp_forced_;

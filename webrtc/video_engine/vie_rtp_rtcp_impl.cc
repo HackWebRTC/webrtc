@@ -1206,16 +1206,38 @@ int ViERTP_RTCPImpl::DeregisterReceiveChannelRtpStatisticsCallback(
   // TODO(sprang): Implement
   return -1;
 }
+
+// Called whenever the send bitrate is updated.
 int ViERTP_RTCPImpl::RegisterSendBitrateObserver(
-    int channel, BitrateStatisticsObserver* callback) {
-  // TODO(sprang): Implement
-  return -1;
+    const int video_channel,
+    BitrateStatisticsObserver* observer) {
+  WEBRTC_TRACE(kTraceApiCall,
+               kTraceVideo,
+               ViEId(shared_data_->instance_id(), video_channel),
+               "%s(channel: %d)",
+               __FUNCTION__,
+               video_channel);
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  assert(vie_channel != NULL);
+  vie_channel->RegisterSendBitrateObserver(observer);
+  return 0;
 }
 
 int ViERTP_RTCPImpl::DeregisterSendBitrateObserver(
-    int channel, BitrateStatisticsObserver* callback) {
-  // TODO(sprang): Implement
-  return -1;
+    const int video_channel,
+    BitrateStatisticsObserver* observer) {
+  WEBRTC_TRACE(kTraceApiCall,
+               kTraceVideo,
+               ViEId(shared_data_->instance_id(), video_channel),
+               "%s(channel: %d)",
+               __FUNCTION__,
+               video_channel);
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  assert(vie_channel != NULL);
+  vie_channel->RegisterSendBitrateObserver(NULL);
+  return 0;
 }
 
 int ViERTP_RTCPImpl::RegisterSendFrameCountObserver(
