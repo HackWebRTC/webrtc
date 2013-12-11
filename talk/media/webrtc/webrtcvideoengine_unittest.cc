@@ -69,6 +69,12 @@ static const unsigned int kMaxBandwidthKbps = 2000;
 
 static const unsigned int kNumberOfTemporalLayers = 1;
 
+static const uint32 kSsrcs1[] = {1};
+static const uint32 kSsrcs2[] = {1, 2};
+static const uint32 kSsrcs3[] = {1, 2, 3};
+static const uint32 kRtxSsrc1[] = {4};
+static const uint32 kRtxSsrcs3[] = {4, 5, 6};
+
 
 class FakeViEWrapper : public cricket::ViEWrapper {
  public:
@@ -117,11 +123,7 @@ class WebRtcVideoEngineTestFake : public testing::Test,
       return false;
     }
     cricket::WebRtcVideoFrame frame;
-    size_t size = width * height * 3 / 2;  // I420
-    talk_base::scoped_ptr<uint8[]> pixel(new uint8[size]);
-    if (!frame.Init(cricket::FOURCC_I420,
-                    width, height, width, height,
-                    pixel.get(), size, 1, 1, 0, 0, 0)) {
+    if (!frame.InitToBlack(width, height, 1, 1, 0, 0)) {
       return false;
     }
     cricket::FakeVideoCapturer capturer;
@@ -137,11 +139,7 @@ class WebRtcVideoEngineTestFake : public testing::Test,
       return false;
     }
     cricket::WebRtcVideoFrame frame;
-    size_t size = width * height * 3 / 2;  // I420
-    talk_base::scoped_ptr<uint8[]> pixel(new uint8[size]);
-    if (!frame.Init(cricket::FOURCC_I420,
-                    width, height, width, height,
-                    pixel.get(), size, 1, 1, 0, timestamp, 0)) {
+    if (!frame.InitToBlack(width, height, 1, 1, 0, 0)) {
       return false;
     }
     cricket::FakeVideoCapturer capturer;
@@ -1218,6 +1216,41 @@ TEST_F(WebRtcVideoEngineTestFake, SetOptionsWithDenoising) {
   EXPECT_FALSE(vie_.GetCaptureDenoising(capture_id));
 }
 
+TEST_F(WebRtcVideoEngineTestFake, MultipleSendStreamsWithOneCapturer) {
+  EXPECT_TRUE(SetupEngine());
+  cricket::FakeVideoCapturer capturer;
+  for (unsigned int i = 0; i < sizeof(kSsrcs2)/sizeof(kSsrcs2[0]); ++i) {
+    EXPECT_TRUE(channel_->AddSendStream(
+        cricket::StreamParams::CreateLegacy(kSsrcs2[i])));
+    // Register the capturer to the ssrc.
+    EXPECT_TRUE(channel_->SetCapturer(kSsrcs2[i], &capturer));
+  }
+
+  const int channel0 = vie_.GetChannelFromLocalSsrc(kSsrcs2[0]);
+  ASSERT_NE(-1, channel0);
+  const int channel1 = vie_.GetChannelFromLocalSsrc(kSsrcs2[1]);
+  ASSERT_NE(-1, channel1);
+  ASSERT_NE(channel0, channel1);
+
+  std::vector<cricket::VideoCodec> codecs;
+  codecs.push_back(kVP8Codec);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+
+  cricket::WebRtcVideoFrame frame;
+  const size_t pixel_width = 1;
+  const size_t pixel_height = 1;
+  const int64 elapsed_time = 0;
+  const int64 time_stamp = 0;
+  EXPECT_TRUE(frame.InitToBlack(kVP8Codec.width, kVP8Codec.height,
+                                pixel_width, pixel_height,
+                                elapsed_time, time_stamp));
+  channel_->SendFrame(&capturer, &frame);
+
+  // Both channels should have received the frame.
+  EXPECT_EQ(1, vie_.GetIncomingFrameNum(channel0));
+  EXPECT_EQ(1, vie_.GetIncomingFrameNum(channel1));
+}
+
 
 // Disabled since its flaky: b/11288120
 TEST_F(WebRtcVideoEngineTestFake, DISABLED_SendReceiveBitratesStats) {
@@ -1764,8 +1797,14 @@ TEST_F(WebRtcVideoEngineTestFake, RegisterEncoderIfFactoryIsGiven) {
   codecs.push_back(kVP8Codec);
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
 
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::StreamParams::CreateLegacy(kSsrc)));
+
   EXPECT_TRUE(vie_.ExternalEncoderRegistered(channel_num, 100));
   EXPECT_EQ(1, vie_.GetNumExternalEncoderRegistered(channel_num));
+
+  // Remove stream previously added to free the external encoder instance.
+  EXPECT_TRUE(channel_->RemoveSendStream(kSsrc));
 }
 
 TEST_F(WebRtcVideoEngineTestFake, DontRegisterEncoderMultipleTimes) {
@@ -1778,6 +1817,9 @@ TEST_F(WebRtcVideoEngineTestFake, DontRegisterEncoderMultipleTimes) {
   codecs.push_back(kVP8Codec);
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
 
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::StreamParams::CreateLegacy(kSsrc)));
+
   EXPECT_TRUE(vie_.ExternalEncoderRegistered(channel_num, 100));
   EXPECT_EQ(1, vie_.GetNumExternalEncoderRegistered(channel_num));
   EXPECT_EQ(1, encoder_factory_.GetNumCreatedEncoders());
@@ -1785,6 +1827,9 @@ TEST_F(WebRtcVideoEngineTestFake, DontRegisterEncoderMultipleTimes) {
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
   EXPECT_EQ(1, vie_.GetNumExternalEncoderRegistered(channel_num));
   EXPECT_EQ(1, encoder_factory_.GetNumCreatedEncoders());
+
+  // Remove stream previously added to free the external encoder instance.
+  EXPECT_TRUE(channel_->RemoveSendStream(kSsrc));
 }
 
 TEST_F(WebRtcVideoEngineTestFake, RegisterEncoderWithMultipleSendStreams) {
@@ -1916,9 +1961,15 @@ TEST_F(WebRtcVideoEngineTestFake, UpdateEncoderCodecsAfterSetFactory) {
   codecs.push_back(kVP8Codec);
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
 
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::StreamParams::CreateLegacy(kSsrc)));
+
   EXPECT_TRUE(vie_.ExternalEncoderRegistered(channel_num, 100));
   EXPECT_EQ(1, vie_.GetNumExternalEncoderRegistered(channel_num));
   EXPECT_EQ(1, encoder_factory_.GetNumCreatedEncoders());
+
+  // Remove stream previously added to free the external encoder instance.
+  EXPECT_TRUE(channel_->RemoveSendStream(kSsrc));
 }
 
 // Tests that OnReadyToSend will be propagated into ViE.

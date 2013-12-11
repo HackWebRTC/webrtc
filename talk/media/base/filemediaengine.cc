@@ -83,7 +83,8 @@ VoiceMediaChannel* FileMediaEngine::CreateChannel() {
     }
   }
 
-  return new FileVoiceChannel(input_file_stream, output_file_stream);
+  return new FileVoiceChannel(input_file_stream, output_file_stream,
+                              rtp_sender_thread_);
 }
 
 VideoMediaChannel* FileMediaEngine::CreateVideoChannel(
@@ -113,18 +114,19 @@ VideoMediaChannel* FileMediaEngine::CreateVideoChannel(
     }
   }
 
-  return new FileVideoChannel(input_file_stream, output_file_stream);
+  return new FileVideoChannel(input_file_stream, output_file_stream,
+                              rtp_sender_thread_);
 }
 
 ///////////////////////////////////////////////////////////////////////////
 // Definition of RtpSenderReceiver.
 ///////////////////////////////////////////////////////////////////////////
-class RtpSenderReceiver
-    : public talk_base::Thread, public talk_base::MessageHandler {
+class RtpSenderReceiver : public talk_base::MessageHandler {
  public:
   RtpSenderReceiver(MediaChannel* channel,
                     talk_base::StreamInterface* input_file_stream,
-                    talk_base::StreamInterface* output_file_stream);
+                    talk_base::StreamInterface* output_file_stream,
+                    talk_base::Thread* sender_thread);
   virtual ~RtpSenderReceiver();
 
   // Called by media channel. Context: media channel thread.
@@ -149,6 +151,8 @@ class RtpSenderReceiver
   talk_base::scoped_ptr<talk_base::StreamInterface> output_stream_;
   talk_base::scoped_ptr<RtpDumpLoopReader> rtp_dump_reader_;
   talk_base::scoped_ptr<RtpDumpWriter> rtp_dump_writer_;
+  talk_base::Thread* sender_thread_;
+  bool own_sender_thread_;
   // RTP dump packet read from the input stream.
   RtpDumpPacket rtp_dump_packet_;
   uint32 start_send_time_;
@@ -165,34 +169,48 @@ class RtpSenderReceiver
 RtpSenderReceiver::RtpSenderReceiver(
     MediaChannel* channel,
     talk_base::StreamInterface* input_file_stream,
-    talk_base::StreamInterface* output_file_stream)
+    talk_base::StreamInterface* output_file_stream,
+    talk_base::Thread* sender_thread)
     : media_channel_(channel),
+      input_stream_(input_file_stream),
+      output_stream_(output_file_stream),
       sending_(false),
       first_packet_(true) {
-  input_stream_.reset(input_file_stream);
+  if (sender_thread == NULL) {
+    sender_thread_ = new talk_base::Thread();
+    own_sender_thread_ = true;
+  } else {
+    sender_thread_ = sender_thread;
+    own_sender_thread_ = false;
+  }
+
   if (input_stream_) {
     rtp_dump_reader_.reset(new RtpDumpLoopReader(input_stream_.get()));
     // Start the sender thread, which reads rtp dump records, waits based on
     // the record timestamps, and sends the RTP packets to the network.
-    Thread::Start();
+    if (own_sender_thread_) {
+      sender_thread_->Start();
+    }
   }
 
   // Create a rtp dump writer for the output RTP dump stream.
-  output_stream_.reset(output_file_stream);
   if (output_stream_) {
     rtp_dump_writer_.reset(new RtpDumpWriter(output_stream_.get()));
   }
 }
 
 RtpSenderReceiver::~RtpSenderReceiver() {
-  Stop();
+  if (own_sender_thread_) {
+    sender_thread_->Stop();
+    delete sender_thread_;
+  }
 }
 
 bool RtpSenderReceiver::SetSend(bool send) {
   bool was_sending = sending_;
   sending_ = send;
   if (!was_sending && sending_) {
-    PostDelayed(0, this);  // Wake up the send thread.
+    sender_thread_->PostDelayed(0, this);  // Wake up the send thread.
     start_send_time_ = talk_base::Time();
   }
   return true;
@@ -216,7 +234,6 @@ void RtpSenderReceiver::OnMessage(talk_base::Message* pmsg) {
     // to sleep until SetSend(true) wakes it up.
     return;
   }
-
   if (!first_packet_) {
     // Send the previously read packet.
     SendRtpPacket(&rtp_dump_packet_.data[0], rtp_dump_packet_.data.size());
@@ -226,9 +243,9 @@ void RtpSenderReceiver::OnMessage(talk_base::Message* pmsg) {
     int wait = talk_base::TimeUntil(
         start_send_time_ + rtp_dump_packet_.elapsed_time);
     wait = talk_base::_max(0, wait);
-    PostDelayed(wait, this);
+    sender_thread_->PostDelayed(wait, this);
   } else {
-    Quit();
+    sender_thread_->Quit();
   }
 }
 
@@ -262,10 +279,12 @@ bool RtpSenderReceiver::SendRtpPacket(const void* data, size_t len) {
 ///////////////////////////////////////////////////////////////////////////
 FileVoiceChannel::FileVoiceChannel(
     talk_base::StreamInterface* input_file_stream,
-    talk_base::StreamInterface* output_file_stream)
+    talk_base::StreamInterface* output_file_stream,
+    talk_base::Thread* rtp_sender_thread)
     : send_ssrc_(0),
       rtp_sender_receiver_(new RtpSenderReceiver(this, input_file_stream,
-                                                 output_file_stream)) {}
+                                                 output_file_stream,
+                                                 rtp_sender_thread)) {}
 
 FileVoiceChannel::~FileVoiceChannel() {}
 
@@ -305,10 +324,12 @@ void FileVoiceChannel::OnPacketReceived(talk_base::Buffer* packet) {
 ///////////////////////////////////////////////////////////////////////////
 FileVideoChannel::FileVideoChannel(
     talk_base::StreamInterface* input_file_stream,
-    talk_base::StreamInterface* output_file_stream)
+    talk_base::StreamInterface* output_file_stream,
+    talk_base::Thread* rtp_sender_thread)
     : send_ssrc_(0),
       rtp_sender_receiver_(new RtpSenderReceiver(this, input_file_stream,
-                                                 output_file_stream)) {}
+                                                 output_file_stream,
+                                                 rtp_sender_thread)) {}
 
 FileVideoChannel::~FileVideoChannel() {}
 

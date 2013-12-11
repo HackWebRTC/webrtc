@@ -54,6 +54,12 @@
   EXPECT_EQ((h), (r).height()); \
   EXPECT_EQ(0, (r).errors()); \
 
+#define EXPECT_GT_FRAME_ON_RENDERER_WAIT(r, c, w, h, t) \
+  EXPECT_TRUE_WAIT((r).num_rendered_frames() >= (c) && \
+                   (w) == (r).width() && \
+                   (h) == (r).height(), (t)); \
+  EXPECT_EQ(0, (r).errors()); \
+
 static const uint32 kTimeout = 5000U;
 static const uint32 kSsrc = 1234u;
 static const uint32 kRtxSsrc = 4321u;
@@ -1002,7 +1008,8 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_GE(2, NumRtpPackets());
     uint32 ssrc = 0;
     size_t last_packet = NumRtpPackets() - 1;
-    talk_base::scoped_ptr<const talk_base::Buffer> p(GetRtpPacket(last_packet));
+    talk_base::scoped_ptr<const talk_base::Buffer>
+        p(GetRtpPacket(static_cast<int>(last_packet)));
     ParseRtpPacket(p.get(), NULL, NULL, NULL, NULL, &ssrc, NULL);
     EXPECT_EQ(kSsrc, ssrc);
 
@@ -1019,7 +1026,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE_WAIT(NumRtpPackets() > rtp_packets, kTimeout);
 
     last_packet = NumRtpPackets() - 1;
-    p.reset(GetRtpPacket(last_packet));
+    p.reset(GetRtpPacket(static_cast<int>(last_packet)));
     ParseRtpPacket(p.get(), NULL, NULL, NULL, NULL, &ssrc, NULL);
     EXPECT_EQ(789u, ssrc);
   }
@@ -1167,7 +1174,11 @@ class VideoMediaChannelTest : public testing::Test,
 
     EXPECT_TRUE(channel_->SetRenderer(kSsrc, &renderer1));
     EXPECT_TRUE(SendFrame());
-    EXPECT_FRAME_ON_RENDERER_WAIT(
+    // Because the default channel is used, RemoveRecvStream above is not going
+    // to delete the channel. As a result the engine will continue to receive
+    // and decode the 3 frames sent above. So it is possible we will receive
+    // some (e.g. 1) of these 3 frames after the renderer is set again.
+    EXPECT_GT_FRAME_ON_RENDERER_WAIT(
         renderer1, 2, DefaultCodec().width, DefaultCodec().height, kTimeout);
   }
 
@@ -1279,16 +1290,15 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_FRAME_WAIT(1, 640, 400, kTimeout);
     // Remove the capturer.
     EXPECT_TRUE(channel_->SetCapturer(kSsrc, NULL));
+    // Wait for one black frame for removing the capturer.
+    EXPECT_FRAME_WAIT(2, 640, 400, kTimeout);
+
     // No capturer was added, so this RemoveCapturer should
     // fail.
     EXPECT_FALSE(channel_->SetCapturer(kSsrc, NULL));
-    // Wait for frames to stop flowing.
     talk_base::Thread::Current()->ProcessMessages(300);
-    int num_frames = renderer_.num_rendered_frames();
-    // Wait to make sure no more frames are sent
-    WAIT(renderer_.num_rendered_frames() != num_frames, 300);
     // Verify no more frames were sent.
-    EXPECT_EQ(num_frames, renderer_.num_rendered_frames());
+    EXPECT_EQ(2, renderer_.num_rendered_frames());
   }
 
   // Tests that we can add and remove capturer as unique sources.
@@ -1375,10 +1385,8 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_EQ(0, renderer.num_rendered_frames());
 
     EXPECT_TRUE(SendFrame());
-    EXPECT_TRUE_WAIT(renderer.num_rendered_frames() >= 1 &&
-                     codec.width == renderer.width() &&
-                     codec.height == renderer.height(), kTimeout);
-    EXPECT_EQ(0, renderer.errors());
+    EXPECT_GT_FRAME_ON_RENDERER_WAIT(
+        renderer, 1, codec.width, codec.height, kTimeout);
 
     // Registering an external capturer is currently the same as screen casting
     // (update the test when this changes).
@@ -1396,9 +1404,8 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(capturer->CaptureCustomFrame(kWidth, kHeight,
                                              cricket::FOURCC_ARGB));
     EXPECT_TRUE(capturer->CaptureFrame());
-    EXPECT_TRUE_WAIT(renderer.num_rendered_frames() >= 2 &&
-                     kScaledWidth == renderer.width() &&
-                     kScaledHeight == renderer.height(), kTimeout);
+    EXPECT_GT_FRAME_ON_RENDERER_WAIT(
+        renderer, 2, kScaledWidth, kScaledHeight, kTimeout);
     EXPECT_TRUE(channel_->SetCapturer(kSsrc, NULL));
   }
 

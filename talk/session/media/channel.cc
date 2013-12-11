@@ -587,11 +587,16 @@ bool BaseChannel::SendRtcp(talk_base::Buffer* packet,
 
 int BaseChannel::SetOption(SocketType type, talk_base::Socket::Option opt,
                            int value) {
+  TransportChannel* channel = NULL;
   switch (type) {
-    case ST_RTP: return transport_channel_->SetOption(opt, value);
-    case ST_RTCP: return rtcp_transport_channel_->SetOption(opt, value);
-    default: return -1;
+    case ST_RTP:
+      channel = transport_channel_;
+      break;
+    case ST_RTCP:
+      channel = rtcp_transport_channel_;
+      break;
   }
+  return channel ? channel->SetOption(opt, value) : -1;
 }
 
 void BaseChannel::OnWritableState(TransportChannel* channel) {
@@ -2152,7 +2157,9 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
     // Tweak our video processing settings, if needed.
     VideoOptions video_options;
     media_channel()->GetOptions(&video_options);
-    video_options.conference_mode.Set(video->conference_mode());
+    if (video->conference_mode()) {
+      video_options.conference_mode.Set(true);
+    }
     video_options.buffered_mode_latency.Set(video->buffered_mode_latency());
 
     if (!media_channel()->SetOptions(video_options)) {

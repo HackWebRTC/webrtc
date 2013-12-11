@@ -2060,7 +2060,7 @@ TEST_F(WebRtcVoiceEngineTestFake, RecvWithMultipleStreams) {
   char packets[4][sizeof(kPcmuFrame)];
   for (size_t i = 0; i < ARRAY_SIZE(packets); ++i) {
     memcpy(packets[i], kPcmuFrame, sizeof(kPcmuFrame));
-    talk_base::SetBE32(packets[i] + 8, i);
+    talk_base::SetBE32(packets[i] + 8, static_cast<uint32>(i));
   }
   EXPECT_TRUE(voe_.CheckNoPacket(channel_num1));
   EXPECT_TRUE(voe_.CheckNoPacket(channel_num2));
@@ -2192,7 +2192,8 @@ TEST_F(WebRtcVoiceEngineTestFake, PlayRingback) {
   EXPECT_FALSE(channel_->PlayRingbackTone(0, true, true));
   EXPECT_EQ(0, voe_.IsPlayingFileLocally(channel_num));
   // Check we can set and play a ringback tone.
-  EXPECT_TRUE(channel_->SetRingbackTone(kRingbackTone, strlen(kRingbackTone)));
+  EXPECT_TRUE(channel_->SetRingbackTone(
+                  kRingbackTone, static_cast<int>(strlen(kRingbackTone))));
   EXPECT_TRUE(channel_->PlayRingbackTone(0, true, true));
   EXPECT_EQ(1, voe_.IsPlayingFileLocally(channel_num));
   // Check we can stop the tone manually.
@@ -2217,7 +2218,8 @@ TEST_F(WebRtcVoiceEngineTestFake, PlayRingbackWithMultipleStreams) {
   EXPECT_FALSE(channel_->PlayRingbackTone(2, true, true));
   EXPECT_EQ(0, voe_.IsPlayingFileLocally(channel_num));
   // Check we can set and play a ringback tone on the correct ssrc.
-  EXPECT_TRUE(channel_->SetRingbackTone(kRingbackTone, strlen(kRingbackTone)));
+  EXPECT_TRUE(channel_->SetRingbackTone(
+                  kRingbackTone, static_cast<int>(strlen(kRingbackTone))));
   EXPECT_FALSE(channel_->PlayRingbackTone(77, true, true));
   EXPECT_TRUE(channel_->PlayRingbackTone(2, true, true));
   EXPECT_EQ(1, voe_.IsPlayingFileLocally(channel_num));
@@ -2836,7 +2838,7 @@ TEST(WebRtcVoiceEngineTest, HasNoMonitorThread) {
   size_t size = 0;
   EXPECT_TRUE(stream->GetSize(&size));
   EXPECT_GT(size, 0U);
-  const std::string logs(stream->GetBuffer());
+  const std::string logs(stream->GetBuffer(), size);
   EXPECT_NE(std::string::npos, logs.find("ProcessThread"));
 }
 
@@ -2910,9 +2912,9 @@ TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
       EXPECT_EQ(127, it->id);
     } else if (it->name == "opus") {
       EXPECT_EQ(111, it->id);
-      ASSERT_NE(it->params.find("minptime"), it->params.end());
+      ASSERT_TRUE(it->params.find("minptime") != it->params.end());
       EXPECT_EQ("10", it->params.find("minptime")->second);
-      ASSERT_NE(it->params.find("maxptime"), it->params.end());
+      ASSERT_TRUE(it->params.find("maxptime") != it->params.end());
       EXPECT_EQ("60", it->params.find("maxptime")->second);
     }
   }
@@ -2994,7 +2996,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetExperimentalAcm) {
   ASSERT_GE(soundclip_channel, 0);
   EXPECT_FALSE(voe_sc_.IsUsingExperimentalAcm(soundclip_channel));
 
-#ifdef USE_WEBRTC_DEV_BRANCH
   // Set options to use experimental ACM.
   cricket::AudioOptions options;
   options.experimental_acm.Set(true);
@@ -3017,5 +3018,4 @@ TEST_F(WebRtcVoiceEngineTestFake, SetExperimentalAcm) {
   soundclip_channel = engine_.CreateSoundclipVoiceChannel();
   ASSERT_GE(soundclip_channel, 0);
   EXPECT_FALSE(voe_sc_.IsUsingExperimentalAcm(soundclip_channel));
-#endif
 }

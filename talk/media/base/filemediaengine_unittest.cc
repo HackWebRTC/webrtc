@@ -136,6 +136,7 @@ class FileMediaEngineTest : public testing::Test {
     engine_->set_voice_output_filename(voice_out);
     engine_->set_video_input_filename(video_in);
     engine_->set_video_output_filename(video_out);
+    engine_->set_rtp_sender_thread(talk_base::Thread::Current());
 
     voice_channel_.reset(engine_->CreateChannel());
     video_channel_.reset(engine_->CreateVideoChannel(NULL));

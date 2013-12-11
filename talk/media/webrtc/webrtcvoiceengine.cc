@@ -1609,11 +1609,7 @@ void WebRtcVoiceEngine::StopAecDump() {
 }
 
 int WebRtcVoiceEngine::CreateVoiceChannel(VoEWrapper* voice_engine_wrapper) {
-#ifdef USE_WEBRTC_DEV_BRANCH
   return voice_engine_wrapper->base()->CreateChannel(voe_config_);
-#else
-  return voice_engine_wrapper->base()->CreateChannel();
-#endif
 }
 
 int WebRtcVoiceEngine::CreateMediaVoiceChannel() {

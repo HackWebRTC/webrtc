@@ -165,8 +165,8 @@ VideoAdapter::VideoAdapter()
       frames_(0),
       adapted_frames_(0),
       adaption_changes_(0),
-      previous_width(0),
-      previous_height(0),
+      previous_width_(0),
+      previous_height_(0),
       black_output_(false),
       is_black_(false),
       interval_next_frame_(0) {
@@ -240,11 +240,11 @@ int VideoAdapter::GetOutputNumPixels() const {
 // TODO(fbarchard): Add AdaptFrameRate function that only drops frames but
 // not resolution.
 bool VideoAdapter::AdaptFrame(const VideoFrame* in_frame,
-                              const VideoFrame** out_frame) {
-  talk_base::CritScope cs(&critical_section_);
+                              VideoFrame** out_frame) {
   if (!in_frame || !out_frame) {
     return false;
   }
+  talk_base::CritScope cs(&critical_section_);
   ++frames_;
 
   // Update input to actual frame dimensions.
@@ -306,8 +306,8 @@ bool VideoAdapter::AdaptFrame(const VideoFrame* in_frame,
   // resolution changes as well.  Consider dropping the statistics into their
   // own class which could be queried publically.
   bool changed = false;
-  if (previous_width && (previous_width != (*out_frame)->GetWidth() ||
-      previous_height != (*out_frame)->GetHeight())) {
+  if (previous_width_ && (previous_width_ != (*out_frame)->GetWidth() ||
+      previous_height_ != (*out_frame)->GetHeight())) {
     show = true;
     ++adaption_changes_;
     changed = true;
@@ -325,8 +325,8 @@ bool VideoAdapter::AdaptFrame(const VideoFrame* in_frame,
                  << "x" << (*out_frame)->GetHeight()
                  << " Changed: " << (changed ? "true" : "false");
   }
-  previous_width = (*out_frame)->GetWidth();
-  previous_height = (*out_frame)->GetHeight();
+  previous_width_ = (*out_frame)->GetWidth();
+  previous_height_ = (*out_frame)->GetHeight();
 
   return true;
 }
@@ -376,7 +376,7 @@ bool VideoAdapter::StretchToOutputFrame(const VideoFrame* in_frame) {
 ///////////////////////////////////////////////////////////////////////
 // Implementation of CoordinatedVideoAdapter
 CoordinatedVideoAdapter::CoordinatedVideoAdapter()
-    : cpu_adaptation_(false),
+    : cpu_adaptation_(true),
       cpu_smoothing_(false),
       gd_adaptation_(true),
       view_adaptation_(true),

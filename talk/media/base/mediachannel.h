@@ -298,7 +298,6 @@ struct VideoOptions {
     adapt_view_switch.SetFrom(change.adapt_view_switch);
     video_adapt_third.SetFrom(change.video_adapt_third);
     video_noise_reduction.SetFrom(change.video_noise_reduction);
-    video_three_layers.SetFrom(change.video_three_layers);
     video_one_layer_screencast.SetFrom(change.video_one_layer_screencast);
     video_high_bitrate.SetFrom(change.video_high_bitrate);
     video_watermark.SetFrom(change.video_watermark);
@@ -327,7 +326,6 @@ struct VideoOptions {
         adapt_view_switch == o.adapt_view_switch &&
         video_adapt_third == o.video_adapt_third &&
         video_noise_reduction == o.video_noise_reduction &&
-        video_three_layers == o.video_three_layers &&
         video_one_layer_screencast == o.video_one_layer_screencast &&
         video_high_bitrate == o.video_high_bitrate &&
         video_watermark == o.video_watermark &&
@@ -356,7 +354,6 @@ struct VideoOptions {
     ost << ToStringIfSet("adapt view switch", adapt_view_switch);
     ost << ToStringIfSet("video adapt third", video_adapt_third);
     ost << ToStringIfSet("noise reduction", video_noise_reduction);
-    ost << ToStringIfSet("3 layers", video_three_layers);
     ost << ToStringIfSet("1 layer screencast", video_one_layer_screencast);
     ost << ToStringIfSet("high bitrate", video_high_bitrate);
     ost << ToStringIfSet("watermark", video_watermark);
@@ -391,8 +388,6 @@ struct VideoOptions {
   Settable<bool> video_adapt_third;
   // Enable denoising?
   Settable<bool> video_noise_reduction;
-  // Experimental: Enable multi layer?
-  Settable<bool> video_three_layers;
   // Experimental: Enable one layer screencast?
   Settable<bool> video_one_layer_screencast;
   // Experimental: Enable WebRtc higher bitrate?
@@ -776,7 +771,9 @@ struct VideoSenderInfo : public MediaSenderInfo {
         preferred_bitrate(0),
         adapt_reason(0),
         capture_jitter_ms(0),
-        avg_encode_ms(0) {
+        avg_encode_ms(0),
+        encode_usage_percent(0),
+        capture_queue_delay_ms_per_s(0) {
   }
 
   std::vector<SsrcGroup> ssrc_groups;
@@ -792,6 +789,8 @@ struct VideoSenderInfo : public MediaSenderInfo {
   int adapt_reason;
   int capture_jitter_ms;
   int avg_encode_ms;
+  int encode_usage_percent;
+  int capture_queue_delay_ms_per_s;
 };
 
 struct VideoReceiverInfo : public MediaReceiverInfo {

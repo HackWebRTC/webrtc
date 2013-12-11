@@ -527,7 +527,7 @@ class VideoFrameTest : public testing::Test {
                                     kWidth, kHeight));
     EXPECT_TRUE(LoadFrame(y, buf_size, cricket::FOURCC_I422,
                           kWidth, kHeight, &frame2));
-    EXPECT_TRUE(IsEqual(frame1, frame2, 0));
+    EXPECT_TRUE(IsEqual(frame1, frame2, 1));
   }
 
   // Test constructing an image from a YUY2 buffer.
@@ -1861,7 +1861,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
                             kWidth, kHeight, kWidth, kHeight,
                             y,
                             out_size,  1, 1, 0, 0, cricket::ROTATION_0));
-    EXPECT_TRUE(IsEqual(frame1, frame2, 0));
+    EXPECT_TRUE(IsEqual(frame1, frame2, 1));
   }
 
   #define TEST_TOBYR(NAME, BAYER)                                              \

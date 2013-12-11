@@ -50,7 +50,7 @@ namespace cricket {
 // only the RTP dump packets. TODO(whyuan): Enable RTCP packets.
 class FileMediaEngine : public MediaEngineInterface {
  public:
-  FileMediaEngine() {}
+  FileMediaEngine() : rtp_sender_thread_(NULL) {}
   virtual ~FileMediaEngine() {}
 
   // Set the file name of the input or output RTP dump for voice or video.
@@ -159,6 +159,10 @@ class FileMediaEngine : public MediaEngineInterface {
     return signal_state_change_;
   }
 
+  void set_rtp_sender_thread(talk_base::Thread* thread) {
+    rtp_sender_thread_ = thread;
+  }
+
  private:
   std::string voice_input_filename_;
   std::string voice_output_filename_;
@@ -170,6 +174,7 @@ class FileMediaEngine : public MediaEngineInterface {
   std::vector<RtpHeaderExtension> video_rtp_header_extensions_;
   sigslot::repeater2<VideoCapturer*, CaptureState>
      signal_state_change_;
+  talk_base::Thread* rtp_sender_thread_;
 
   DISALLOW_COPY_AND_ASSIGN(FileMediaEngine);
 };
@@ -179,7 +184,8 @@ class RtpSenderReceiver;  // Forward declaration. Defined in the .cc file.
 class FileVoiceChannel : public VoiceMediaChannel {
  public:
   FileVoiceChannel(talk_base::StreamInterface* input_file_stream,
-      talk_base::StreamInterface* output_file_stream);
+      talk_base::StreamInterface* output_file_stream,
+      talk_base::Thread* rtp_sender_thread);
   virtual ~FileVoiceChannel();
 
   // Implement pure virtual methods of VoiceMediaChannel.
@@ -255,7 +261,8 @@ class FileVoiceChannel : public VoiceMediaChannel {
 class FileVideoChannel : public VideoMediaChannel {
  public:
   FileVideoChannel(talk_base::StreamInterface* input_file_stream,
-      talk_base::StreamInterface* output_file_stream);
+      talk_base::StreamInterface* output_file_stream,
+      talk_base::Thread* rtp_sender_thread);
   virtual ~FileVideoChannel();
 
   // Implement pure virtual methods of VideoMediaChannel.

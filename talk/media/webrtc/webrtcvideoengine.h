@@ -290,8 +290,6 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   bool SendFrame(WebRtcVideoChannelSendInfo* channel_info,
                  const VideoFrame* frame, bool is_screencast);
 
-  void AdaptAndSendFrame(VideoCapturer* capturer, const VideoFrame* frame);
-
   // Thunk functions for use with HybridVideoEngine
   void OnLocalFrame(VideoCapturer* capturer, const VideoFrame* frame) {
     SendFrame(0u, frame, capturer->IsScreencast());
@@ -366,7 +364,6 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   // If the local ssrc correspond to that of the default channel the key is 0.
   // For all other channels the returned key will be the same as the local ssrc.
   bool GetSendChannelKey(uint32 local_ssrc, uint32* key);
-  WebRtcVideoChannelSendInfo* GetSendChannel(VideoCapturer* video_capturer);
   WebRtcVideoChannelSendInfo* GetSendChannel(uint32 local_ssrc);
   // Creates a new unique key that can be used for inserting a new send channel
   // into |send_channels_|

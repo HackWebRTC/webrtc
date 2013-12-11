@@ -34,6 +34,7 @@
 
 
 #include "talk/base/basictypes.h"
+#include "talk/base/gunit.h"
 #include "talk/base/stringutils.h"
 #include "talk/media/base/codec.h"
 #include "talk/media/base/voiceprocessor.h"
@@ -181,7 +182,7 @@ class FakeWebRtcVoiceEngine
     }
     return -1;
   }
-  int GetNumChannels() const { return channels_.size(); }
+  int GetNumChannels() const { return static_cast<int>(channels_.size()); }
   bool GetPlayout(int channel) {
     return channels_[channel]->playout;
   }
@@ -298,14 +299,12 @@ class FakeWebRtcVoiceEngine
   WEBRTC_FUNC(CreateChannel, ()) {
     return AddChannel(false);
   }
-#ifdef USE_WEBRTC_DEV_BRANCH
   WEBRTC_FUNC(CreateChannel, (const webrtc::Config& config)) {
     talk_base::scoped_ptr<webrtc::AudioCodingModule> acm(
         config.Get<webrtc::AudioCodingModuleFactory>().Create(0));
     return AddChannel(strcmp(acm->Version(), webrtc::kExperimentalAcmVersion)
                       == 0);
   }
-#endif
   WEBRTC_FUNC(DeleteChannel, (int channel)) {
     WEBRTC_CHECK_CHANNEL(channel);
     delete channels_[channel];
@@ -917,6 +916,9 @@ class FakeWebRtcVoiceEngine
   WEBRTC_STUB(GetEcDelayMetrics, (int& delay_median, int& delay_std));
 
   WEBRTC_STUB(StartDebugRecording, (const char* fileNameUTF8));
+#ifdef USE_WEBRTC_DEV_BRANCH
+  WEBRTC_STUB(StartDebugRecording, (FILE* handle));
+#endif
   WEBRTC_STUB(StopDebugRecording, ());
 
   WEBRTC_FUNC(SetTypingDetectionStatus, (bool enable)) {

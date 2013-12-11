@@ -53,6 +53,8 @@ const char StatsReport::kStatsValueNameBytesReceived[] = "bytesReceived";
 const char StatsReport::kStatsValueNameBytesSent[] = "bytesSent";
 const char StatsReport::kStatsValueNameCaptureJitterMs[] =
     "googCaptureJitterMs";
+const char StatsReport::kStatsValueNameCaptureQueueDelayMsPerS[] =
+    "googCaptureQueueDelayMsPerS";
 const char StatsReport::kStatsValueNameChannelId[] = "googChannelId";
 const char StatsReport::kStatsValueNameCodecName[] = "googCodecName";
 const char StatsReport::kStatsValueNameComponent[] = "googComponent";
@@ -70,6 +72,8 @@ const char StatsReport::kStatsValueNameEchoReturnLoss[] =
 const char StatsReport::kStatsValueNameEchoReturnLossEnhancement[] =
     "googEchoCancellationReturnLossEnhancement";
 
+const char StatsReport::kStatsValueNameEncodeUsagePercent[] =
+    "googEncodeUsagePercent";
 const char StatsReport::kStatsValueNameFingerprint[] = "googFingerprint";
 const char StatsReport::kStatsValueNameFingerprintAlgorithm[] =
     "googFingerprintAlgorithm";
@@ -298,6 +302,10 @@ void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {
   report->AddValue(StatsReport::kStatsValueNameAvgEncodeMs, info.avg_encode_ms);
   report->AddValue(StatsReport::kStatsValueNameCaptureJitterMs,
                    info.capture_jitter_ms);
+  report->AddValue(StatsReport::kStatsValueNameCaptureQueueDelayMsPerS,
+                   info.capture_queue_delay_ms_per_s);
+  report->AddValue(StatsReport::kStatsValueNameEncodeUsagePercent,
+                   info.encode_usage_percent);
 }
 
 void ExtractStats(const cricket::BandwidthEstimationInfo& info,

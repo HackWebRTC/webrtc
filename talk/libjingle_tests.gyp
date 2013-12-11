@@ -88,6 +88,7 @@
         'media/base/testutils.cc',
         'media/base/testutils.h',
         'media/devices/fakedevicemanager.h',
+        'media/webrtc/dummyinstantiation.cc',
         'media/webrtc/fakewebrtccommon.h',
         'media/webrtc/fakewebrtcdeviceinfo.h',
         'media/webrtc/fakewebrtcvcmfactory.h',
