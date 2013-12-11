@@ -304,6 +304,9 @@
               'outputs': [
                 '<(PRODUCT_DIR)/AppRTCDemo-debug.apk',
               ],
+              'variables': {
+                'ant_log': '<(INTERMEDIATE_DIR)/ant.log',
+              },
               'action': [
                 'bash', '-ec',
                 'rm -fr <(_outputs) examples/android/{bin,libs} && '
@@ -311,8 +314,10 @@
                 'cp <(PRODUCT_DIR)/libjingle_peerconnection.jar examples/android/libs/ &&'
                 '<(android_strip) -o examples/android/libs/<(android_app_abi)/libjingle_peerconnection_so.so  <(PRODUCT_DIR)/libjingle_peerconnection_so.so &&'
                 'cd examples/android && '
-                'ant debug && '
-                'cd - && '
+                'mkdir -p <(INTERMEDIATE_DIR) && '
+                '{ ant -q -l <(ant_log) debug || '
+                '  { cat <(ant_log) ; exit 1; } } && '
+                'cd - > /dev/null && '
                 'cp examples/android/bin/AppRTCDemo-debug.apk <(_outputs)'
               ],
             },
