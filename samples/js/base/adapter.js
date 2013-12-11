@@ -77,13 +77,17 @@ if (navigator.mozGetUserMedia) {
   };
 
   // Fake get{Video,Audio}Tracks
-  MediaStream.prototype.getVideoTracks = function() {
-    return [];
-  };
+  if (!MediaStream.prototype.getVideoTracks) {
+    MediaStream.prototype.getVideoTracks = function() {
+      return [];
+    };
+  }
 
-  MediaStream.prototype.getAudioTracks = function() {
-    return [];
-  };
+  if (!MediaStream.prototype.getAudioTracks) {
+    MediaStream.prototype.getAudioTracks = function() {
+      return [];
+    };
+  }
 } else if (navigator.webkitGetUserMedia) {
   console.log("This appears to be Chrome");
 
