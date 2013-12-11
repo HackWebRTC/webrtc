@@ -13,8 +13,7 @@
 #include <assert.h>
 
 #include "webrtc/modules/audio_device/android/opensles_common.h"
-
-using webrtc_opensl::kDefaultBufSizeInSamples;
+#include "webrtc/modules/audio_device/android/audio_common.h"
 
 namespace webrtc {
 
@@ -86,8 +85,7 @@ int32_t FakeAudioDeviceBuffer::GetPlayoutData(void* audioBuffer) {
 
 int FakeAudioDeviceBuffer::sample_rate() const {
   return audio_manager_.low_latency_supported() ?
-      audio_manager_.native_output_sample_rate() :
-      webrtc_opensl::kDefaultSampleRate;
+      audio_manager_.native_output_sample_rate() : kDefaultSampleRate;
 }
 
 int FakeAudioDeviceBuffer::buffer_size_samples() const {
@@ -95,7 +93,7 @@ int FakeAudioDeviceBuffer::buffer_size_samples() const {
 }
 
 int FakeAudioDeviceBuffer::buffer_size_bytes() const {
-  return buffer_size_samples() * webrtc_opensl::kNumChannels * sizeof(int16_t);
+  return buffer_size_samples() * kNumChannels * sizeof(int16_t);
 }
 
 

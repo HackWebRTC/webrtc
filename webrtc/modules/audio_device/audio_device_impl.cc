@@ -22,14 +22,14 @@
  #if defined(WEBRTC_WINDOWS_CORE_AUDIO_BUILD)
     #include "audio_device_core_win.h"
  #endif
-#elif defined(WEBRTC_ANDROID_OPENSLES)
-    #include <stdlib.h>
-    #include "audio_device_utility_android.h"
-    #include "audio_device_opensles_android.h"
 #elif defined(WEBRTC_ANDROID)
     #include <stdlib.h>
     #include "audio_device_utility_android.h"
-    #include "audio_device_jni_android.h"
+    #include "webrtc/modules/audio_device/android/audio_device_template.h"
+    #include "webrtc/modules/audio_device/android/audio_record_jni.h"
+    #include "webrtc/modules/audio_device/android/audio_track_jni.h"
+    #include "webrtc/modules/audio_device/android/opensles_input.h"
+    #include "webrtc/modules/audio_device/android/opensles_output.h"
 #elif defined(WEBRTC_LINUX)
     #include "audio_device_utility_linux.h"
  #if defined(LINUX_ALSA)
@@ -258,30 +258,17 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
 
     // Create the *Android OpenSLES* implementation of the Audio Device
     //
-#if defined(WEBRTC_ANDROID_OPENSLES)
+#if defined(WEBRTC_ANDROID)
     if (audioLayer == kPlatformDefaultAudio)
     {
-        // Create *Android OpenELSE Audio* implementation
-        ptrAudioDevice = new AudioDeviceAndroidOpenSLES(Id());
+        // AudioRecordJni provides hardware AEC and OpenSlesOutput low latency.
+#if defined(WEBRTC_ANDROID_OPENSLES)
+        ptrAudioDevice = new AudioDeviceTemplate<OpenSlesInput, OpenSlesOutput>(Id());
+#else
+        ptrAudioDevice = new AudioDeviceTemplate<AudioRecordJni, AudioTrackJni>(Id());
+#endif
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                      "Android OpenSLES Audio APIs will be utilized");
-    }
-
-    if (ptrAudioDevice != NULL)
-    {
-        // Create the Android implementation of the Device Utility.
-        ptrAudioDeviceUtility = new AudioDeviceUtilityAndroid(Id());
-    }
-    // END #if defined(WEBRTC_ANDROID_OPENSLES)
-
-    // Create the *Android Java* implementation of the Audio Device
-    //
-#elif defined(WEBRTC_ANDROID)
-    if (audioLayer == kPlatformDefaultAudio)
-    {
-        // Create *Android JNI Audio* implementation
-        ptrAudioDevice = new AudioDeviceAndroidJni(Id());
-        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "Android JNI Audio APIs will be utilized");
     }
 
     if (ptrAudioDevice != NULL)

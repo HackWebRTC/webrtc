@@ -12,15 +12,13 @@
 
 #include <assert.h>
 
+#include "webrtc/modules/audio_device/android/opensles_common.h"
 #include "webrtc/modules/audio_device/android/fine_audio_buffer.h"
 #include "webrtc/modules/audio_device/android/single_rw_fifo.h"
 #include "webrtc/modules/audio_device/audio_device_buffer.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
-
-using webrtc_opensl::kDefaultSampleRate;
-using webrtc_opensl::kNumChannels;
 
 #define VOID_RETURN
 #define OPENSL_RETURN_ON_FAILURE(op, ret_val)                    \
@@ -69,6 +67,13 @@ OpenSlesOutput::OpenSlesOutput(const int32_t id)
 }
 
 OpenSlesOutput::~OpenSlesOutput() {
+}
+
+int32_t OpenSlesOutput::SetAndroidAudioDeviceObjects(void* javaVM,
+                                                     void* env,
+                                                     void* context) {
+  AudioManagerJni::SetAndroidAudioDeviceObjects(javaVM, env, context);
+  return 0;
 }
 
 int32_t OpenSlesOutput::Init() {

@@ -110,8 +110,27 @@
             'win/audio_device_utility_win.h',
             'win/audio_mixer_manager_win.cc',
             'win/audio_mixer_manager_win.h',
+            'android/audio_device_template.h',
             'android/audio_device_utility_android.cc',
             'android/audio_device_utility_android.h',
+            'android/audio_manager_jni.cc',
+            'android/audio_manager_jni.h',
+            'android/audio_record_jni.cc',
+            'android/audio_record_jni.h',
+            'android/audio_track_jni.cc',
+            'android/audio_track_jni.h',
+            'android/fine_audio_buffer.cc',
+            'android/fine_audio_buffer.h',
+            'android/low_latency_event_posix.cc',
+            'android/low_latency_event.h',
+            'android/opensles_common.cc',
+            'android/opensles_common.h',
+            'android/opensles_input.cc',
+            'android/opensles_input.h',
+            'android/opensles_output.cc',
+            'android/opensles_output.h',
+            'android/single_rw_fifo.cc',
+            'android/single_rw_fifo.h',
           ],
           'conditions': [
             ['OS=="android"', {
@@ -121,33 +140,6 @@
                   '-lOpenSLES',
                 ],
               },
-              'conditions': [
-                ['enable_android_opensl==1', {
-                  'sources': [
-                    'android/audio_device_opensles_android.cc',
-                    'android/audio_device_opensles_android.h',
-                    'android/audio_manager_jni.cc',
-                    'android/audio_manager_jni.h',
-                    'android/fine_audio_buffer.cc',
-                    'android/fine_audio_buffer.h',
-                    'android/low_latency_event_posix.cc',
-                    'android/low_latency_event.h',
-                    'android/opensles_common.cc',
-                    'android/opensles_common.h',
-                    'android/opensles_input.cc',
-                    'android/opensles_input.h',
-                    'android/opensles_output.cc',
-                    'android/opensles_output.h',
-                    'android/single_rw_fifo.cc',
-                    'android/single_rw_fifo.h',
-                  ],
-                }, {
-                  'sources': [
-                    'android/audio_device_jni_android.cc',
-                    'android/audio_device_jni_android.h',
-                  ],
-                }],
-              ],
             }],
             ['OS=="linux"', {
               'defines': [
@@ -254,7 +246,7 @@
             },
           ],
         }],
-        ['OS=="android" and enable_android_opensl==1', {
+        ['OS=="android"', {
           'targets': [
             {
               'target_name': 'libopensl-demo-jni',

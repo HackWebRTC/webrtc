@@ -12,14 +12,13 @@
 
 #include <assert.h>
 
+#include "webrtc/modules/audio_device/android/audio_common.h"
+#include "webrtc/modules/audio_device/android/opensles_common.h"
 #include "webrtc/modules/audio_device/android/single_rw_fifo.h"
 #include "webrtc/modules/audio_device/audio_device_buffer.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
-
-using webrtc_opensl::kDefaultSampleRate;
-using webrtc_opensl::kNumChannels;
 
 #define VOID_RETURN
 #define OPENSL_RETURN_ON_FAILURE(op, ret_val)                    \
@@ -45,8 +44,7 @@ enum {
 namespace webrtc {
 
 OpenSlesInput::OpenSlesInput(
-    const int32_t id,
-    webrtc_opensl::PlayoutDelayProvider* delay_provider)
+    const int32_t id, PlayoutDelayProvider* delay_provider)
     : id_(id),
       delay_provider_(delay_provider),
       initialized_(false),
@@ -69,6 +67,12 @@ OpenSlesInput::OpenSlesInput(
 }
 
 OpenSlesInput::~OpenSlesInput() {
+}
+
+int32_t OpenSlesInput::SetAndroidAudioDeviceObjects(void* javaVM,
+                                                    void* env,
+                                                    void* context) {
+  return 0;
 }
 
 int32_t OpenSlesInput::Init() {
