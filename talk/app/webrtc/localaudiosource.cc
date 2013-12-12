@@ -54,6 +54,8 @@ const char MediaConstraintsInterface::kHighpassFilter[] =
 const char MediaConstraintsInterface::kTypingNoiseDetection[] =
     "googTypingNoiseDetection";
 const char MediaConstraintsInterface::kAudioMirroring[] = "googAudioMirroring";
+// TODO(perkj): Remove kInternalAecDump once its not used by Chrome.
+const char MediaConstraintsInterface::kInternalAecDump[] = "deprecatedAecDump";
 
 namespace {
 
@@ -127,6 +129,8 @@ void LocalAudioSource::Initialize(
     return;
   }
   options_.SetAll(audio_options);
+  if (options.enable_aec_dump)
+    options_.aec_dump.Set(true);
   source_state_ = kLive;
 }
 

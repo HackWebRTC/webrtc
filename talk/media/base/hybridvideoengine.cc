@@ -276,21 +276,19 @@ bool HybridVideoMediaChannel::GetStats(VideoMediaInfo* info) {
       active_channel_->GetStats(info);
 }
 
-void HybridVideoMediaChannel::OnPacketReceived(
-    talk_base::Buffer* packet, const talk_base::PacketTime& packet_time) {
+void HybridVideoMediaChannel::OnPacketReceived(talk_base::Buffer* packet) {
   // Eat packets until we have an active channel;
   if (active_channel_) {
-    active_channel_->OnPacketReceived(packet, packet_time);
+    active_channel_->OnPacketReceived(packet);
   } else {
     LOG(LS_INFO) << "HybridVideoChannel: Eating early RTP packet";
   }
 }
 
-void HybridVideoMediaChannel::OnRtcpReceived(
-    talk_base::Buffer* packet, const talk_base::PacketTime& packet_time) {
+void HybridVideoMediaChannel::OnRtcpReceived(talk_base::Buffer* packet) {
   // Eat packets until we have an active channel;
   if (active_channel_) {
-    active_channel_->OnRtcpReceived(packet, packet_time);
+    active_channel_->OnRtcpReceived(packet);
   } else {
     LOG(LS_INFO) << "HybridVideoChannel: Eating early RTCP packet";
   }

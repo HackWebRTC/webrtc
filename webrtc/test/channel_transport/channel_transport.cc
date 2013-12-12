@@ -105,8 +105,7 @@ void VideoChannelTransport::IncomingRTPPacket(
     const int32_t packet_length,
     const char* /*from_ip*/,
     const uint16_t /*from_port*/) {
-  vie_network_->ReceivedRTPPacket(
-      channel_, incoming_rtp_packet, packet_length, PacketTime());
+  vie_network_->ReceivedRTPPacket(channel_, incoming_rtp_packet, packet_length);
 }
 
 void VideoChannelTransport::IncomingRTCPPacket(

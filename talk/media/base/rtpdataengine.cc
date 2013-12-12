@@ -230,8 +230,7 @@ bool RtpDataMediaChannel::RemoveRecvStream(uint32 ssrc) {
   return true;
 }
 
-void RtpDataMediaChannel::OnPacketReceived(
-    talk_base::Buffer* packet, const talk_base::PacketTime& packet_time) {
+void RtpDataMediaChannel::OnPacketReceived(talk_base::Buffer* packet) {
   RtpHeader header;
   if (!GetRtpHeader(packet->data(), packet->length(), &header)) {
     // Don't want to log for every corrupt packet.

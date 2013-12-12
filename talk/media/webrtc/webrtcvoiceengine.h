@@ -174,9 +174,6 @@ class WebRtcVoiceEngine
   bool SetAudioDeviceModule(webrtc::AudioDeviceModule* adm,
                             webrtc::AudioDeviceModule* adm_sc);
 
-  // Starts AEC dump using existing file.
-  bool StartAecDump(FILE* file);
-
   // Check whether the supplied trace should be ignored.
   bool ShouldIgnoreTrace(const std::string& trace);
 
@@ -359,10 +356,8 @@ class WebRtcVoiceMediaChannel
   virtual bool CanInsertDtmf();
   virtual bool InsertDtmf(uint32 ssrc, int event, int duration, int flags);
 
-  virtual void OnPacketReceived(talk_base::Buffer* packet,
-                                const talk_base::PacketTime& packet_time);
-  virtual void OnRtcpReceived(talk_base::Buffer* packet,
-                              const talk_base::PacketTime& packet_time);
+  virtual void OnPacketReceived(talk_base::Buffer* packet);
+  virtual void OnRtcpReceived(talk_base::Buffer* packet);
   virtual void OnReadyToSend(bool ready) {}
   virtual bool MuteStream(uint32 ssrc, bool on);
   virtual bool SetSendBandwidth(bool autobw, int bps);

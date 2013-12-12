@@ -423,13 +423,13 @@ TEST_F(RtpDataMediaChannelTest, ReceiveData) {
   talk_base::scoped_ptr<cricket::RtpDataMediaChannel> dmc(CreateChannel());
 
   // SetReceived not called.
-  dmc->OnPacketReceived(&packet, talk_base::PacketTime());
+  dmc->OnPacketReceived(&packet);
   EXPECT_FALSE(HasReceivedData());
 
   dmc->SetReceive(true);
 
   // Unknown payload id
-  dmc->OnPacketReceived(&packet, talk_base::PacketTime());
+  dmc->OnPacketReceived(&packet);
   EXPECT_FALSE(HasReceivedData());
 
   cricket::DataCodec codec;
@@ -440,7 +440,7 @@ TEST_F(RtpDataMediaChannelTest, ReceiveData) {
   ASSERT_TRUE(dmc->SetRecvCodecs(codecs));
 
   // Unknown stream
-  dmc->OnPacketReceived(&packet, talk_base::PacketTime());
+  dmc->OnPacketReceived(&packet);
   EXPECT_FALSE(HasReceivedData());
 
   cricket::StreamParams stream;
@@ -448,7 +448,7 @@ TEST_F(RtpDataMediaChannelTest, ReceiveData) {
   ASSERT_TRUE(dmc->AddRecvStream(stream));
 
   // Finally works!
-  dmc->OnPacketReceived(&packet, talk_base::PacketTime());
+  dmc->OnPacketReceived(&packet);
   EXPECT_TRUE(HasReceivedData());
   EXPECT_EQ("abcde", GetReceivedData());
   EXPECT_EQ(5U, GetReceivedDataLen());
@@ -463,6 +463,6 @@ TEST_F(RtpDataMediaChannelTest, InvalidRtpPackets) {
   talk_base::scoped_ptr<cricket::RtpDataMediaChannel> dmc(CreateChannel());
 
   // Too short
-  dmc->OnPacketReceived(&packet, talk_base::PacketTime());
+  dmc->OnPacketReceived(&packet);
   EXPECT_FALSE(HasReceivedData());
 }

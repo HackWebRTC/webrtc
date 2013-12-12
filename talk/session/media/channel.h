@@ -265,11 +265,8 @@ class BaseChannel
 
   // From TransportChannel
   void OnWritableState(TransportChannel* channel);
-  virtual void OnChannelRead(TransportChannel* channel,
-                             const char* data,
-                             size_t len,
-                             const talk_base::PacketTime& packet_time,
-                             int flags);
+  virtual void OnChannelRead(TransportChannel* channel, const char* data,
+                             size_t len, int flags);
   void OnReadyToSend(TransportChannel* channel);
 
   bool PacketIsRtcp(const TransportChannel* channel, const char* data,
@@ -277,8 +274,7 @@ class BaseChannel
   bool SendPacket(bool rtcp, talk_base::Buffer* packet,
                   talk_base::DiffServCodePoint dscp);
   virtual bool WantsPacket(bool rtcp, talk_base::Buffer* packet);
-  void HandlePacket(bool rtcp, talk_base::Buffer* packet,
-                    const talk_base::PacketTime& packet_time);
+  void HandlePacket(bool rtcp, talk_base::Buffer* packet);
 
   // Apply the new local/remote session description.
   void OnNewLocalDescription(BaseSession* session, ContentAction action);
@@ -445,9 +441,7 @@ class VoiceChannel : public BaseChannel {
  private:
   // overrides from BaseChannel
   virtual void OnChannelRead(TransportChannel* channel,
-                             const char* data, size_t len,
-                             const talk_base::PacketTime& packet_time,
-                             int flags);
+                             const char* data, size_t len, int flags);
   virtual void ChangeState();
   virtual const ContentInfo* GetFirstContent(const SessionDescription* sdesc);
   virtual bool SetLocalContent_w(const MediaContentDescription* content,

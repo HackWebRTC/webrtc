@@ -42,8 +42,6 @@ static const int64 kNumMicrosecsPerMillisec = kNumMicrosecsPerSec /
     kNumMillisecsPerSec;
 static const int64 kNumNanosecsPerMillisec =  kNumNanosecsPerSec /
     kNumMillisecsPerSec;
-static const int64 kNumNanosecsPerMicrosec =  kNumNanosecsPerSec /
-    kNumMicrosecsPerSec;
 
 // January 1970, in NTP milliseconds.
 static const int64 kJan1970AsNtpMillisecs = INT64_C(2208988800000);
@@ -52,8 +50,6 @@ typedef uint32 TimeStamp;
 
 // Returns the current time in milliseconds.
 uint32 Time();
-// Returns the current time in microseconds.
-uint64 TimeMicros();
 // Returns the current time in nanoseconds.
 uint64 TimeNanos();
 

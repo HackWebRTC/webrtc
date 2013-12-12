@@ -2119,18 +2119,6 @@ bool WebRtcVideoMediaChannel::GetSendChannelKey(uint32 local_ssrc,
 }
 
 WebRtcVideoChannelSendInfo* WebRtcVideoMediaChannel::GetSendChannel(
-    VideoCapturer* video_capturer) {
-  for (SendChannelMap::iterator iter = send_channels_.begin();
-       iter != send_channels_.end(); ++iter) {
-    WebRtcVideoChannelSendInfo* send_channel = iter->second;
-    if (send_channel->video_capturer() == video_capturer) {
-      return send_channel;
-    }
-  }
-  return NULL;
-}
-
-WebRtcVideoChannelSendInfo* WebRtcVideoMediaChannel::GetSendChannel(
     uint32 local_ssrc) {
   uint32 key;
   if (!GetSendChannelKey(local_ssrc, &key)) {
@@ -2492,8 +2480,7 @@ bool WebRtcVideoMediaChannel::RequestIntraFrame() {
   return false;
 }
 
-void WebRtcVideoMediaChannel::OnPacketReceived(
-    talk_base::Buffer* packet, const talk_base::PacketTime& packet_time) {
+void WebRtcVideoMediaChannel::OnPacketReceived(talk_base::Buffer* packet) {
   // Pick which channel to send this packet to. If this packet doesn't match
   // any multiplexed streams, just send it to the default channel. Otherwise,
   // send it to the specific decoder instance for that stream.
@@ -2508,16 +2495,10 @@ void WebRtcVideoMediaChannel::OnPacketReceived(
   engine()->vie()->network()->ReceivedRTPPacket(
       which_channel,
       packet->data(),
-#ifdef USE_WEBRTC_DEV_BRANCH
-      static_cast<int>(packet->length()),
-      webrtc::PacketTime(packet_time.timestamp, packet_time.not_before));
-#else
       static_cast<int>(packet->length()));
-#endif
 }
 
-void WebRtcVideoMediaChannel::OnRtcpReceived(
-    talk_base::Buffer* packet, const talk_base::PacketTime& packet_time) {
+void WebRtcVideoMediaChannel::OnRtcpReceived(talk_base::Buffer* packet) {
 // Sending channels need all RTCP packets with feedback information.
 // Even sender reports can contain attached report blocks.
 // Receiving channels need sender reports in order to create
@@ -2865,20 +2846,23 @@ bool WebRtcVideoMediaChannel::GetRenderer(uint32 ssrc,
   return true;
 }
 
-// TODO(zhurunz): Add unittests to test this function.
-// TODO(thorcarpenter): This is broken. One capturer registered on two ssrc
-// will not send any video to the second ssrc send channel. We should remove
-// GetSendChannel(capturer) and pass in an ssrc here.
 void WebRtcVideoMediaChannel::SendFrame(VideoCapturer* capturer,
                                         const VideoFrame* frame) {
-  // If there's send channel registers to the |capturer|, then only send the
-  // frame to that channel and return. Otherwise send the frame to the default
-  // channel, which currently taking frames from the engine.
-  WebRtcVideoChannelSendInfo* send_channel = GetSendChannel(capturer);
-  if (send_channel) {
-    SendFrame(send_channel, frame, capturer->IsScreencast());
+  // If the |capturer| is registered to any send channel, then send the frame
+  // to those send channels.
+  bool capturer_is_channel_owned = false;
+  for (SendChannelMap::iterator iter = send_channels_.begin();
+       iter != send_channels_.end(); ++iter) {
+    WebRtcVideoChannelSendInfo* send_channel = iter->second;
+    if (send_channel->video_capturer() == capturer) {
+      SendFrame(send_channel, frame, capturer->IsScreencast());
+      capturer_is_channel_owned = true;
+    }
+  }
+  if (capturer_is_channel_owned) {
     return;
   }
+
   // TODO(hellner): Remove below for loop once the captured frame no longer
   // come from the engine, i.e. the engine no longer owns a capturer.
   for (SendChannelMap::iterator iter = send_channels_.begin();

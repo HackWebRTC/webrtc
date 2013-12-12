@@ -32,7 +32,6 @@
 #include <vector>
 #include <map>
 
-#include "talk/base/asyncpacketsocket.h"
 #include "talk/base/network.h"
 #include "talk/base/proxyinfo.h"
 #include "talk/base/ratetracker.h"
@@ -45,6 +44,10 @@
 #include "talk/p2p/base/stun.h"
 #include "talk/p2p/base/stunrequest.h"
 #include "talk/p2p/base/transport.h"
+
+namespace talk_base {
+class AsyncPacketSocket;
+}
 
 namespace cricket {
 
@@ -237,8 +240,7 @@ class Port : public PortInterface, public talk_base::MessageHandler,
   // TODO(mallinath) - Make it pure virtual.
   virtual bool HandleIncomingPacket(
       talk_base::AsyncPacketSocket* socket, const char* data, size_t size,
-      const talk_base::SocketAddress& remote_addr,
-      const talk_base::PacketTime& packet_time) {
+      const talk_base::SocketAddress& remote_addr) {
     ASSERT(false);
     return false;
   }
@@ -468,14 +470,12 @@ class Connection : public talk_base::MessageHandler,
   // Error if Send() returns < 0
   virtual int GetError() = 0;
 
-  sigslot::signal4<Connection*, const char*, size_t,
-                   const talk_base::PacketTime&> SignalReadPacket;
+  sigslot::signal3<Connection*, const char*, size_t> SignalReadPacket;
 
   sigslot::signal1<Connection*> SignalReadyToSend;
 
   // Called when a packet is received on this connection.
-  void OnReadPacket(const char* data, size_t size,
-                    const talk_base::PacketTime& packet_time);
+  void OnReadPacket(const char* data, size_t size);
 
   // Called when the socket is currently able to send.
   void OnReadyToSend();

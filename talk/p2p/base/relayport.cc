@@ -155,11 +155,10 @@ class RelayEntry : public talk_base::MessageHandler,
   void OnSocketClose(talk_base::AsyncPacketSocket* socket, int error);
 
   // Called when a packet is received on this socket.
-  void OnReadPacket(
-    talk_base::AsyncPacketSocket* socket,
-    const char* data, size_t size,
-    const talk_base::SocketAddress& remote_addr,
-    const talk_base::PacketTime& packet_time);
+  void OnReadPacket(talk_base::AsyncPacketSocket* socket,
+                    const char* data, size_t size,
+                    const talk_base::SocketAddress& remote_addr);
+
   // Called when the socket is currently able to send.
   void OnReadyToSend(talk_base::AsyncPacketSocket* socket);
 
@@ -394,11 +393,9 @@ int RelayPort::GetError() {
 
 void RelayPort::OnReadPacket(
     const char* data, size_t size,
-    const talk_base::SocketAddress& remote_addr,
-    ProtocolType proto,
-    const talk_base::PacketTime& packet_time) {
+    const talk_base::SocketAddress& remote_addr, ProtocolType proto) {
   if (Connection* conn = GetConnection(remote_addr)) {
-    conn->OnReadPacket(data, size, packet_time);
+    conn->OnReadPacket(data, size);
   } else {
     Port::OnReadPacket(data, size, remote_addr, proto);
   }
@@ -685,11 +682,9 @@ void RelayEntry::OnSocketClose(talk_base::AsyncPacketSocket* socket,
   HandleConnectFailure(socket);
 }
 
-void RelayEntry::OnReadPacket(
-    talk_base::AsyncPacketSocket* socket,
-    const char* data, size_t size,
-    const talk_base::SocketAddress& remote_addr,
-    const talk_base::PacketTime& packet_time) {
+void RelayEntry::OnReadPacket(talk_base::AsyncPacketSocket* socket,
+                              const char* data, size_t size,
+                              const talk_base::SocketAddress& remote_addr) {
   // ASSERT(remote_addr == port_->server_addr());
   // TODO: are we worried about this?
 
@@ -703,7 +698,7 @@ void RelayEntry::OnReadPacket(
   // by the server,  The actual remote address is the one we recorded.
   if (!port_->HasMagicCookie(data, size)) {
     if (locked_) {
-      port_->OnReadPacket(data, size, ext_addr_, PROTO_UDP, packet_time);
+      port_->OnReadPacket(data, size, ext_addr_, PROTO_UDP);
     } else {
       LOG(WARNING) << "Dropping packet: entry not locked";
     }
@@ -756,7 +751,7 @@ void RelayEntry::OnReadPacket(
 
   // Process the actual data and remote address in the normal manner.
   port_->OnReadPacket(data_attr->bytes(), data_attr->length(), remote_addr2,
-                      PROTO_UDP, packet_time);
+                      PROTO_UDP);
 }
 
 void RelayEntry::OnReadyToSend(talk_base::AsyncPacketSocket* socket) {

@@ -42,8 +42,7 @@ StunServer::~StunServer() {
 
 void StunServer::OnPacket(
     talk_base::AsyncPacketSocket* socket, const char* buf, size_t size,
-    const talk_base::SocketAddress& remote_addr,
-    const talk_base::PacketTime& packet_time) {
+    const talk_base::SocketAddress& remote_addr) {
   // Parse the STUN message; eat any messages that fail to parse.
   talk_base::ByteBuffer bbuf(buf, size);
   StunMessage msg;

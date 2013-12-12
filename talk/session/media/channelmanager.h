@@ -214,9 +214,6 @@ class ChannelManager : public talk_base::MessageHandler,
   void SetVideoCaptureDeviceMaxFormat(const std::string& usb_id,
                                       const VideoFormat& max_format);
 
-  // Starts AEC dump using existing file.
-  bool StartAecDump(FILE* file);
-
   sigslot::repeater0<> SignalDevicesChange;
   sigslot::signal2<VideoCapturer*, CaptureState> SignalVideoCaptureStateChange;
 

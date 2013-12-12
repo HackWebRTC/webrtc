@@ -135,8 +135,7 @@ bool TestClient::ready_to_send() const {
 }
 
 void TestClient::OnPacket(AsyncPacketSocket* socket, const char* buf,
-                          size_t size, const SocketAddress& remote_addr,
-                          const PacketTime& packet_time) {
+                          size_t size, const SocketAddress& remote_addr) {
   CritScope cs(&crit_);
   packets_->push_back(new Packet(remote_addr, buf, size));
 }

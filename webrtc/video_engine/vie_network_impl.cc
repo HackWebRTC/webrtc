@@ -141,8 +141,7 @@ int ViENetworkImpl::DeregisterSendTransport(const int video_channel) {
 }
 
 int ViENetworkImpl::ReceivedRTPPacket(const int video_channel, const void* data,
-                                      const int length,
-                                      const PacketTime& packet_time) {
+                                      const int length) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
                ViEId(shared_data_->instance_id(), video_channel),
                "%s(channel: %d, data: -, length: %d)", __FUNCTION__,
@@ -157,7 +156,7 @@ int ViENetworkImpl::ReceivedRTPPacket(const int video_channel, const void* data,
     shared_data_->SetLastError(kViENetworkInvalidChannelId);
     return -1;
   }
-  return vie_channel->ReceivedRTPPacket(data, length, packet_time);
+  return vie_channel->ReceivedRTPPacket(data, length);
 }
 
 int ViENetworkImpl::ReceivedRTCPPacket(const int video_channel,

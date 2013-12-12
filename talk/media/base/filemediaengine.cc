@@ -315,8 +315,7 @@ bool FileVoiceChannel::RemoveSendStream(uint32 ssrc) {
   return true;
 }
 
-void FileVoiceChannel::OnPacketReceived(
-    talk_base::Buffer* packet, const talk_base::PacketTime& packet_time) {
+void FileVoiceChannel::OnPacketReceived(talk_base::Buffer* packet) {
   rtp_sender_receiver_->OnPacketReceived(packet);
 }
 
@@ -361,8 +360,7 @@ bool FileVideoChannel::RemoveSendStream(uint32 ssrc) {
   return true;
 }
 
-void FileVideoChannel::OnPacketReceived(
-    talk_base::Buffer* packet, const talk_base::PacketTime& packet_time) {
+void FileVideoChannel::OnPacketReceived(talk_base::Buffer* packet) {
   rtp_sender_receiver_->OnPacketReceived(packet);
 }
 

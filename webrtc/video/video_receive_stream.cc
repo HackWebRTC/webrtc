@@ -161,8 +161,7 @@ bool VideoReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
 
 bool VideoReceiveStream::DeliverRtp(const uint8_t* packet, size_t length) {
   return network_->ReceivedRTPPacket(
-             channel_, packet, static_cast<int>(length),
-             PacketTime()) == 0;
+             channel_, packet, static_cast<int>(length)) == 0;
 }
 
 int32_t VideoReceiveStream::RenderFrame(const uint32_t stream_id,

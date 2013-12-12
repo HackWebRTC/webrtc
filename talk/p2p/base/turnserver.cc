@@ -109,8 +109,7 @@ class TurnServer::Allocation : public talk_base::MessageHandler,
 
   void OnExternalPacket(talk_base::AsyncPacketSocket* socket,
                         const char* data, size_t size,
-                        const talk_base::SocketAddress& addr,
-                        const talk_base::PacketTime& packet_time);
+                        const talk_base::SocketAddress& addr);
 
   static int ComputeLifetime(const TurnMessage* msg);
   bool HasPermission(const talk_base::IPAddress& addr);
@@ -281,8 +280,7 @@ void TurnServer::OnInternalSocketClose(talk_base::AsyncPacketSocket* socket,
 
 void TurnServer::OnInternalPacket(talk_base::AsyncPacketSocket* socket,
                                   const char* data, size_t size,
-                                  const talk_base::SocketAddress& addr,
-                                  const talk_base::PacketTime& packet_time) {
+                                  const talk_base::SocketAddress& addr) {
   // Fail if the packet is too small to even contain a channel header.
   if (size < TURN_CHANNEL_HEADER_SIZE) {
    return;
@@ -840,8 +838,7 @@ void TurnServer::Allocation::HandleChannelData(const char* data, size_t size) {
 void TurnServer::Allocation::OnExternalPacket(
     talk_base::AsyncPacketSocket* socket,
     const char* data, size_t size,
-    const talk_base::SocketAddress& addr,
-    const talk_base::PacketTime& packet_time) {
+    const talk_base::SocketAddress& addr) {
   ASSERT(external_socket_.get() == socket);
   Channel* channel = FindChannel(addr);
   if (channel) {

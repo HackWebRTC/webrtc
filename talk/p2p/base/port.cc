@@ -924,8 +924,7 @@ void Connection::OnSendStunPacket(const void* data, size_t size,
   }
 }
 
-void Connection::OnReadPacket(
-  const char* data, size_t size, const talk_base::PacketTime& packet_time) {
+void Connection::OnReadPacket(const char* data, size_t size) {
   talk_base::scoped_ptr<IceMessage> msg;
   std::string remote_ufrag;
   const talk_base::SocketAddress& addr(remote_candidate_.address());
@@ -939,7 +938,7 @@ void Connection::OnReadPacket(
 
       last_data_received_ = talk_base::Time();
       recv_rate_tracker_.Update(size);
-      SignalReadPacket(this, data, size, packet_time);
+      SignalReadPacket(this, data, size);
 
       // If timed out sending writability checks, start up again
       if (!pruned_ && (write_state_ == STATE_WRITE_TIMEOUT)) {

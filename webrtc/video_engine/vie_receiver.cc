@@ -177,10 +177,9 @@ bool ViEReceiver::SetReceiveAbsoluteSendTimeStatus(bool enable, int id) {
 }
 
 int ViEReceiver::ReceivedRTPPacket(const void* rtp_packet,
-                                   int rtp_packet_length,
-                                   const PacketTime& packet_time) {
+                                   int rtp_packet_length) {
   return InsertRTPPacket(static_cast<const int8_t*>(rtp_packet),
-                         rtp_packet_length, packet_time);
+                         rtp_packet_length);
 }
 
 int ViEReceiver::ReceivedRTCPPacket(const void* rtcp_packet,
@@ -212,8 +211,7 @@ bool ViEReceiver::OnRecoveredPacket(const uint8_t* rtp_packet,
 }
 
 int ViEReceiver::InsertRTPPacket(const int8_t* rtp_packet,
-                                 int rtp_packet_length,
-                                 const PacketTime& packet_time) {
+                                 int rtp_packet_length) {
   // TODO(mflodman) Change decrypt to get rid of this cast.
   int8_t* tmp_ptr = const_cast<int8_t*>(rtp_packet);
   unsigned char* received_packet = reinterpret_cast<unsigned char*>(tmp_ptr);
@@ -258,13 +256,7 @@ int ViEReceiver::InsertRTPPacket(const int8_t* rtp_packet,
     return -1;
   }
   int payload_length = received_packet_length - header.headerLength;
-  int64_t arrival_time_ms;
-  if (packet_time.timestamp != -1)
-    arrival_time_ms = (packet_time.timestamp + 500) / 1000;
-  else
-    arrival_time_ms = TickTime::MillisecondTimestamp();
-
-  remote_bitrate_estimator_->IncomingPacket(arrival_time_ms,
+  remote_bitrate_estimator_->IncomingPacket(TickTime::MillisecondTimestamp(),
                                             payload_length, header);
   header.payload_type_frequency = kVideoPayloadTypeFrequency;
 

@@ -191,12 +191,10 @@ template <class Base> class RtpHelper : public Base {
     return true;
   }
   void set_playout(bool playout) { playout_ = playout; }
-  virtual void OnPacketReceived(talk_base::Buffer* packet,
-                                const talk_base::PacketTime& packet_time) {
+  virtual void OnPacketReceived(talk_base::Buffer* packet) {
     rtp_packets_.push_back(std::string(packet->data(), packet->length()));
   }
-  virtual void OnRtcpReceived(talk_base::Buffer* packet,
-                              const talk_base::PacketTime& packet_time) {
+  virtual void OnRtcpReceived(talk_base::Buffer* packet) {
     rtcp_packets_.push_back(std::string(packet->data(), packet->length()));
   }
   virtual void OnReadyToSend(bool ready) {
@@ -777,8 +775,6 @@ class FakeVoiceEngine : public FakeBaseEngine {
   int GetInputLevel() { return 0; }
 
   bool SetLocalMonitor(bool enable) { return true; }
-
-  bool StartAecDump(FILE* file) { return false; }
 
   bool RegisterProcessor(uint32 ssrc, VoiceProcessor* voice_processor,
                          MediaProcessorDirection direction) {

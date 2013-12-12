@@ -33,13 +33,13 @@
 #include <set>
 #include <string>
 
-#include "talk/base/asyncpacketsocket.h"
 #include "talk/base/messagequeue.h"
 #include "talk/base/sigslot.h"
 #include "talk/base/socketaddress.h"
 #include "talk/p2p/base/portinterface.h"
 
 namespace talk_base {
+class AsyncPacketSocket;
 class ByteBuffer;
 class PacketSocketFactory;
 class Thread;
@@ -123,8 +123,7 @@ class TurnServer : public sigslot::has_slots<> {
   typedef std::map<Connection, Allocation*> AllocationMap;
 
   void OnInternalPacket(talk_base::AsyncPacketSocket* socket, const char* data,
-                        size_t size, const talk_base::SocketAddress& address,
-                        const talk_base::PacketTime& packet_time);
+                        size_t size, const talk_base::SocketAddress& address);
 
   void OnNewInternalConnection(talk_base::AsyncSocket* socket);
 

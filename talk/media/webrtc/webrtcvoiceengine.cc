@@ -1433,22 +1433,6 @@ bool WebRtcVoiceEngine::SetAudioDeviceModule(webrtc::AudioDeviceModule* adm,
   return true;
 }
 
-bool WebRtcVoiceEngine::StartAecDump(FILE* file) {
-#ifdef USE_WEBRTC_DEV_BRANCH
-  StopAecDump();
-  if (voe_wrapper_->processing()->StartDebugRecording(file) !=
-      webrtc::AudioProcessing::kNoError) {
-    LOG_RTCERR1(StartDebugRecording, "FILE*");
-    fclose(file);
-    return false;
-  }
-  is_dumping_aec_ = true;
-  return true;
-#else
-  return false;
-#endif
-}
-
 bool WebRtcVoiceEngine::RegisterProcessor(
     uint32 ssrc,
     VoiceProcessor* voice_processor,
@@ -1606,7 +1590,7 @@ void WebRtcVoiceEngine::StartAecDump(const std::string& filename) {
     // Start dumping AEC when we are not dumping.
     if (voe_wrapper_->processing()->StartDebugRecording(
         filename.c_str()) != webrtc::AudioProcessing::kNoError) {
-      LOG_RTCERR1(StartDebugRecording, filename.c_str());
+      LOG_RTCERR0(StartDebugRecording);
     } else {
       is_dumping_aec_ = true;
     }
@@ -2837,8 +2821,7 @@ bool WebRtcVoiceMediaChannel::InsertDtmf(uint32 ssrc, int event,
   return true;
 }
 
-void WebRtcVoiceMediaChannel::OnPacketReceived(
-    talk_base::Buffer* packet, const talk_base::PacketTime& packet_time) {
+void WebRtcVoiceMediaChannel::OnPacketReceived(talk_base::Buffer* packet) {
   // Pick which channel to send this packet to. If this packet doesn't match
   // any multiplexed streams, just send it to the default channel. Otherwise,
   // send it to the specific decoder instance for that stream.
@@ -2871,8 +2854,7 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(
       static_cast<unsigned int>(packet->length()));
 }
 
-void WebRtcVoiceMediaChannel::OnRtcpReceived(
-    talk_base::Buffer* packet, const talk_base::PacketTime& packet_time) {
+void WebRtcVoiceMediaChannel::OnRtcpReceived(talk_base::Buffer* packet) {
   // Sending channels need all RTCP packets with feedback information.
   // Even sender reports can contain attached report blocks.
   // Receiving channels need sender reports in order to create

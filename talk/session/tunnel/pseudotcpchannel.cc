@@ -340,9 +340,7 @@ void PseudoTcpChannel::OnChannelWritableState(TransportChannel* channel) {
 }
 
 void PseudoTcpChannel::OnChannelRead(TransportChannel* channel,
-                                     const char* data, size_t size,
-                                     const talk_base::PacketTime& packet_time,
-                                     int flags) {
+                                     const char* data, size_t size, int flags) {
   //LOG_F(LS_VERBOSE) << "(" << size << ")";
   ASSERT(worker_thread_->IsCurrent());
   CritScope lock(&cs_);

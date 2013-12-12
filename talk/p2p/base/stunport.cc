@@ -254,10 +254,9 @@ void UDPPort::OnLocalAddressReady(talk_base::AsyncPacketSocket* socket,
   MaybePrepareStunCandidate();
 }
 
-void UDPPort::OnReadPacket(
-  talk_base::AsyncPacketSocket* socket, const char* data, size_t size,
-  const talk_base::SocketAddress& remote_addr,
-  const talk_base::PacketTime& packet_time) {
+void UDPPort::OnReadPacket(talk_base::AsyncPacketSocket* socket,
+                           const char* data, size_t size,
+                           const talk_base::SocketAddress& remote_addr) {
   ASSERT(socket == socket_);
 
   // Look for a response from the STUN server.
@@ -270,7 +269,7 @@ void UDPPort::OnReadPacket(
   }
 
   if (Connection* conn = GetConnection(remote_addr)) {
-    conn->OnReadPacket(data, size, packet_time);
+    conn->OnReadPacket(data, size);
   } else {
     Port::OnReadPacket(data, size, remote_addr, PROTO_UDP);
   }

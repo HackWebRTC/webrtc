@@ -814,7 +814,7 @@ struct ChannelHandler : sigslot::has_slots<> {
   }
 
   void OnReadPacket(cricket::TransportChannel* p, const char* buf,
-                    size_t size, const talk_base::PacketTime& time, int flags) {
+                    size_t size, int flags) {
     if (memcmp(buf, name.c_str(), name.size()) != 0)
       return;  // drop packet if packet doesn't belong to this channel. This
                // can happen when transport channels are muxed together.

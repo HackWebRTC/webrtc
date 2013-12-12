@@ -149,8 +149,7 @@ class SctpDataMediaChannel : public DataMediaChannel,
                         const talk_base::Buffer& payload,
                         SendDataResult* result = NULL);
   // A packet is received from the network interface. Posted to OnMessage.
-  virtual void OnPacketReceived(talk_base::Buffer* packet,
-                                const talk_base::PacketTime& packet_time);
+  virtual void OnPacketReceived(talk_base::Buffer* packet);
 
   // Exposed to allow Post call from c-callbacks.
   talk_base::Thread* worker_thread() const { return worker_thread_; }
@@ -171,8 +170,7 @@ class SctpDataMediaChannel : public DataMediaChannel,
       const std::vector<RtpHeaderExtension>& extensions) { return true; }
   virtual bool SetSendCodecs(const std::vector<DataCodec>& codecs);
   virtual bool SetRecvCodecs(const std::vector<DataCodec>& codecs);
-  virtual void OnRtcpReceived(talk_base::Buffer* packet,
-                              const talk_base::PacketTime& packet_time) {}
+  virtual void OnRtcpReceived(talk_base::Buffer* packet) {}
   virtual void OnReadyToSend(bool ready) {}
 
   // Helper for debugging.

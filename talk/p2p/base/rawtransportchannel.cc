@@ -257,7 +257,7 @@ void RawTransportChannel::OnReadPacket(
     PortInterface* port, const char* data, size_t size,
     const talk_base::SocketAddress& addr) {
   ASSERT(port_ == port);
-  SignalReadPacket(this, data, size, talk_base::CreatePacketTime(0), 0);
+  SignalReadPacket(this, data, size, 0);
 }
 
 void RawTransportChannel::OnMessage(talk_base::Message* msg) {

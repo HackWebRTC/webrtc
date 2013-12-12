@@ -94,10 +94,6 @@ uint32 Time() {
   return static_cast<uint32>(TimeNanos() / kNumNanosecsPerMillisec);
 }
 
-uint64 TimeMicros() {
-  return static_cast<uint64>(TimeNanos() / kNumNanosecsPerMicrosec);
-}
-
 #if defined(WIN32)
 static const uint64 kFileTimeToUnixTimeEpochOffset = 116444736000000000ULL;
 

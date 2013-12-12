@@ -234,12 +234,12 @@ void TransportChannelProxy::OnWritableState(TransportChannel* channel) {
   // Note: SignalWritableState fired by set_readable.
 }
 
-void TransportChannelProxy::OnReadPacket(
-    TransportChannel* channel, const char* data, size_t size,
-    const talk_base::PacketTime& packet_time, int flags) {
+void TransportChannelProxy::OnReadPacket(TransportChannel* channel,
+                                         const char* data, size_t size,
+                                         int flags) {
   ASSERT(talk_base::Thread::Current() == worker_thread_);
   ASSERT(channel == impl_);
-  SignalReadPacket(this, data, size, packet_time, flags);
+  SignalReadPacket(this, data, size, flags);
 }
 
 void TransportChannelProxy::OnReadyToSend(TransportChannel* channel) {

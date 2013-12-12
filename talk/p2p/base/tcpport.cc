@@ -218,8 +218,7 @@ talk_base::AsyncPacketSocket* TCPPort::GetIncoming(
 
 void TCPPort::OnReadPacket(talk_base::AsyncPacketSocket* socket,
                            const char* data, size_t size,
-                           const talk_base::SocketAddress& remote_addr,
-                           const talk_base::PacketTime& packet_time) {
+                           const talk_base::SocketAddress& remote_addr) {
   Port::OnReadPacket(data, size, remote_addr, PROTO_TCP);
 }
 
@@ -311,12 +310,11 @@ void TCPConnection::OnClose(talk_base::AsyncPacketSocket* socket, int error) {
   set_write_state(STATE_WRITE_TIMEOUT);
 }
 
-void TCPConnection::OnReadPacket(
-  talk_base::AsyncPacketSocket* socket, const char* data, size_t size,
-  const talk_base::SocketAddress& remote_addr,
-  const talk_base::PacketTime& packet_time) {
+void TCPConnection::OnReadPacket(talk_base::AsyncPacketSocket* socket,
+                                 const char* data, size_t size,
+                                 const talk_base::SocketAddress& remote_addr) {
   ASSERT(socket == socket_);
-  Connection::OnReadPacket(data, size, packet_time);
+  Connection::OnReadPacket(data, size);
 }
 
 void TCPConnection::OnReadyToSend(talk_base::AsyncPacketSocket* socket) {

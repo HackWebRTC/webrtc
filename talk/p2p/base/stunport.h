@@ -97,10 +97,9 @@ class UDPPort : public Port {
 
   virtual bool HandleIncomingPacket(
       talk_base::AsyncPacketSocket* socket, const char* data, size_t size,
-      const talk_base::SocketAddress& remote_addr,
-      const talk_base::PacketTime& packet_time) {
+      const talk_base::SocketAddress& remote_addr) {
     // All packets given to UDP port will be consumed.
-    OnReadPacket(socket, data, size, remote_addr, packet_time);
+    OnReadPacket(socket, data, size, remote_addr);
     return true;
   }
 
@@ -132,9 +131,7 @@ class UDPPort : public Port {
                            const talk_base::SocketAddress& address);
   void OnReadPacket(talk_base::AsyncPacketSocket* socket,
                     const char* data, size_t size,
-                    const talk_base::SocketAddress& remote_addr,
-                    const talk_base::PacketTime& packet_time);
-
+                    const talk_base::SocketAddress& remote_addr);
   void OnReadyToSend(talk_base::AsyncPacketSocket* socket);
 
   // This method will send STUN binding request if STUN server address is set.

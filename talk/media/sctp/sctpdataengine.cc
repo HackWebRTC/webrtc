@@ -542,8 +542,7 @@ bool SctpDataMediaChannel::SendData(
 }
 
 // Called by network interface when a packet has been received.
-void SctpDataMediaChannel::OnPacketReceived(
-    talk_base::Buffer* packet, const talk_base::PacketTime& packet_time) {
+void SctpDataMediaChannel::OnPacketReceived(talk_base::Buffer* packet) {
   LOG(LS_VERBOSE) << debug_name_ << "->OnPacketReceived(...): " << " length="
                   << packet->length() << ", sending: " << sending_;
   // Only give receiving packets to usrsctp after if connected. This enables two

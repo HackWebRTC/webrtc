@@ -111,7 +111,7 @@ class PseudoTcpChannel
   // Worker thread methods
   void OnChannelWritableState(TransportChannel* channel);
   void OnChannelRead(TransportChannel* channel, const char* data, size_t size,
-                     const talk_base::PacketTime& packet_time, int flags);
+                     int flags);
   void OnChannelConnectionChanged(TransportChannel* channel,
                                   const Candidate& candidate);
 

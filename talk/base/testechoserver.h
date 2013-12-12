@@ -67,8 +67,7 @@ class TestEchoServer : public sigslot::has_slots<> {
     }
   }
   void OnPacket(AsyncPacketSocket* socket, const char* buf, size_t size,
-                const SocketAddress& remote_addr,
-                const PacketTime& packet_time) {
+                const SocketAddress& remote_addr) {
     socket->Send(buf, size, DSCP_NO_CHANGE);
   }
   void OnClose(AsyncPacketSocket* socket, int err) {

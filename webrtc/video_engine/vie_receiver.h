@@ -18,7 +18,6 @@
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video_engine/include/vie_network.h"
 #include "webrtc/video_engine/vie_defines.h"
 
 namespace webrtc {
@@ -71,8 +70,7 @@ class ViEReceiver : public RtpData {
   int StopRTPDump();
 
   // Receives packets from external transport.
-  int ReceivedRTPPacket(const void* rtp_packet, int rtp_packet_length,
-                        const PacketTime& packet_time);
+  int ReceivedRTPPacket(const void* rtp_packet, int rtp_packet_length);
   int ReceivedRTCPPacket(const void* rtcp_packet, int rtcp_packet_length);
   virtual bool OnRecoveredPacket(const uint8_t* packet,
                                  int packet_length) OVERRIDE;
@@ -88,8 +86,7 @@ class ViEReceiver : public RtpData {
   ReceiveStatistics* GetReceiveStatistics() const;
 
  private:
-  int InsertRTPPacket(const int8_t* rtp_packet, int rtp_packet_length,
-                      const PacketTime& packet_time);
+  int InsertRTPPacket(const int8_t* rtp_packet, int rtp_packet_length);
   bool ReceivePacket(const uint8_t* packet, int packet_length,
                      const RTPHeader& header, bool in_order);
   // Parses and handles for instance RTX and RED headers.

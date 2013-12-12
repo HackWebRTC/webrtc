@@ -99,8 +99,7 @@ class RelayPort : public Port {
   // Dispatches the given packet to the port or connection as appropriate.
   void OnReadPacket(const char* data, size_t size,
                     const talk_base::SocketAddress& remote_addr,
-                    ProtocolType proto,
-                    const talk_base::PacketTime& packet_time);
+                    ProtocolType proto);
 
  private:
   friend class RelayEntry;

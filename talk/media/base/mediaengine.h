@@ -135,9 +135,6 @@ class MediaEngineInterface {
   virtual void SetVoiceLogging(int min_sev, const char* filter) = 0;
   virtual void SetVideoLogging(int min_sev, const char* filter) = 0;
 
-  // Starts AEC dump using existing file.
-  virtual bool StartAecDump(FILE* file) = 0;
-
   // Voice processors for effects.
   virtual bool RegisterVoiceProcessor(uint32 ssrc,
                                       VoiceProcessor* video_processor,
@@ -254,10 +251,6 @@ class CompositeMediaEngine : public MediaEngineInterface {
   }
   virtual void SetVideoLogging(int min_sev, const char* filter) {
     video_.SetLogging(min_sev, filter);
-  }
-
-  virtual bool StartAecDump(FILE* file) {
-    return voice_.StartAecDump(file);
   }
 
   virtual bool RegisterVoiceProcessor(uint32 ssrc,

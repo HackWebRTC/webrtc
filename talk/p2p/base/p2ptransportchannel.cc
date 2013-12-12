@@ -1227,9 +1227,8 @@ void P2PTransportChannel::OnPortDestroyed(PortInterface* port) {
 }
 
 // We data is available, let listeners know
-void P2PTransportChannel::OnReadPacket(
-    Connection *connection, const char *data, size_t len,
-    const talk_base::PacketTime& packet_time) {
+void P2PTransportChannel::OnReadPacket(Connection *connection, const char *data,
+                                       size_t len) {
   ASSERT(worker_thread_ == talk_base::Thread::Current());
 
   // Do not deliver, if packet doesn't belong to the correct transport channel.
@@ -1237,7 +1236,7 @@ void P2PTransportChannel::OnReadPacket(
     return;
 
   // Let the client know of an incoming packet
-  SignalReadPacket(this, data, len, packet_time, 0);
+  SignalReadPacket(this, data, len, 0);
 }
 
 void P2PTransportChannel::OnReadyToSend(Connection* connection) {

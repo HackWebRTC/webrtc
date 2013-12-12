@@ -90,7 +90,7 @@ class TransportChannelProxy : public TransportChannel,
   void OnReadableState(TransportChannel* channel);
   void OnWritableState(TransportChannel* channel);
   void OnReadPacket(TransportChannel* channel, const char* data, size_t size,
-                    const talk_base::PacketTime& packet_time, int flags);
+                    int flags);
   void OnReadyToSend(TransportChannel* channel);
   void OnRouteChange(TransportChannel* channel, const Candidate& candidate);
 

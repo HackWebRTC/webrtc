@@ -105,21 +105,12 @@ struct CreateVideoSourceParams : public talk_base::MessageData {
   scoped_refptr<webrtc::VideoSourceInterface> source;
 };
 
-struct StartAecDumpParams : public talk_base::MessageData {
-  explicit StartAecDumpParams(FILE* aec_dump_file)
-      : aec_dump_file(aec_dump_file) {
-  }
-  FILE* aec_dump_file;
-  bool result;
-};
-
 enum {
   MSG_INIT_FACTORY = 1,
   MSG_TERMINATE_FACTORY,
   MSG_CREATE_PEERCONNECTION,
   MSG_CREATE_AUDIOSOURCE,
   MSG_CREATE_VIDEOSOURCE,
-  MSG_START_AEC_DUMP,
 };
 
 }  // namespace
@@ -232,12 +223,6 @@ void PeerConnectionFactory::OnMessage(talk_base::Message* msg) {
       pdata->source = CreateVideoSource_s(pdata->capturer, pdata->constraints);
       break;
     }
-    case MSG_START_AEC_DUMP: {
-      StartAecDumpParams* pdata =
-          static_cast<StartAecDumpParams*>(msg->pdata);
-      pdata->result = StartAecDump_s(pdata->aec_dump_file);
-      break;
-    }
   }
 }
 
@@ -287,10 +272,6 @@ PeerConnectionFactory::CreateVideoSource_s(
   talk_base::scoped_refptr<VideoSource> source(
       VideoSource::Create(channel_manager_.get(), capturer, constraints));
   return VideoSourceProxy::Create(signaling_thread_, source);
-}
-
-bool PeerConnectionFactory::StartAecDump_s(FILE* file) {
-  return channel_manager_->StartAecDump(file);
 }
 
 scoped_refptr<PeerConnectionInterface>
@@ -378,12 +359,6 @@ scoped_refptr<AudioTrackInterface> PeerConnectionFactory::CreateAudioTrack(
   talk_base::scoped_refptr<AudioTrackInterface> track(
       AudioTrack::Create(id, source));
   return AudioTrackProxy::Create(signaling_thread_, track);
-}
-
-bool PeerConnectionFactory::StartAecDump(FILE* file) {
-  StartAecDumpParams params(file);
-  signaling_thread_->Send(this, MSG_START_AEC_DUMP, &params);
-  return params.result;
 }
 
 cricket::ChannelManager* PeerConnectionFactory::channel_manager() {

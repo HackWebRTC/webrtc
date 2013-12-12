@@ -266,10 +266,8 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   virtual bool SendIntraFrame();
   virtual bool RequestIntraFrame();
 
-  virtual void OnPacketReceived(talk_base::Buffer* packet,
-                                const talk_base::PacketTime& packet_time);
-  virtual void OnRtcpReceived(talk_base::Buffer* packet,
-                              const talk_base::PacketTime& packet_time);
+  virtual void OnPacketReceived(talk_base::Buffer* packet);
+  virtual void OnRtcpReceived(talk_base::Buffer* packet);
   virtual void OnReadyToSend(bool ready);
   virtual bool MuteStream(uint32 ssrc, bool on);
   virtual bool SetRecvRtpHeaderExtensions(
@@ -366,7 +364,6 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   // If the local ssrc correspond to that of the default channel the key is 0.
   // For all other channels the returned key will be the same as the local ssrc.
   bool GetSendChannelKey(uint32 local_ssrc, uint32* key);
-  WebRtcVideoChannelSendInfo* GetSendChannel(VideoCapturer* video_capturer);
   WebRtcVideoChannelSendInfo* GetSendChannel(uint32 local_ssrc);
   // Creates a new unique key that can be used for inserting a new send channel
   // into |send_channels_|

@@ -32,8 +32,7 @@ class ViENetworkImpl
   virtual int DeregisterSendTransport(const int video_channel);
   virtual int ReceivedRTPPacket(const int video_channel,
                                 const void* data,
-                                const int length,
-                                const PacketTime& packet_time);
+                                const int length);
   virtual int ReceivedRTCPPacket(const int video_channel,
                                  const void* data,
                                  const int length);

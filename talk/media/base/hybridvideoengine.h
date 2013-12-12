@@ -87,10 +87,8 @@ class HybridVideoMediaChannel : public VideoMediaChannel {
 
   virtual bool GetStats(VideoMediaInfo* info);
 
-  virtual void OnPacketReceived(talk_base::Buffer* packet,
-                                const talk_base::PacketTime& packet_time);
-  virtual void OnRtcpReceived(talk_base::Buffer* packet,
-                              const talk_base::PacketTime& packet_time);
+  virtual void OnPacketReceived(talk_base::Buffer* packet);
+  virtual void OnRtcpReceived(talk_base::Buffer* packet);
   virtual void OnReadyToSend(bool ready);
 
   virtual void UpdateAspectRatio(int ratio_w, int ratio_h);

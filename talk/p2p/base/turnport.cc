@@ -356,10 +356,9 @@ int TurnPort::SendTo(const void* data, size_t size,
   return static_cast<int>(size);
 }
 
-void TurnPort::OnReadPacket(
-    talk_base::AsyncPacketSocket* socket, const char* data, size_t size,
-    const talk_base::SocketAddress& remote_addr,
-    const talk_base::PacketTime& packet_time) {
+void TurnPort::OnReadPacket(talk_base::AsyncPacketSocket* socket,
+                           const char* data, size_t size,
+                           const talk_base::SocketAddress& remote_addr) {
   ASSERT(socket == socket_.get());
   ASSERT(remote_addr == server_address_.address);
 
@@ -374,9 +373,9 @@ void TurnPort::OnReadPacket(
   // a response to a previous request.
   uint16 msg_type = talk_base::GetBE16(data);
   if (IsTurnChannelData(msg_type)) {
-    HandleChannelData(msg_type, data, size, packet_time);
+    HandleChannelData(msg_type, data, size);
   } else if (msg_type == TURN_DATA_INDICATION) {
-    HandleDataIndication(data, size, packet_time);
+    HandleDataIndication(data, size);
   } else {
     // This must be a response for one of our requests.
     // Check success responses, but not errors, for MESSAGE-INTEGRITY.
@@ -461,8 +460,7 @@ void TurnPort::OnAllocateRequestTimeout() {
   OnAllocateError();
 }
 
-void TurnPort::HandleDataIndication(const char* data, size_t size,
-                                    const talk_base::PacketTime& packet_time) {
+void TurnPort::HandleDataIndication(const char* data, size_t size) {
   // Read in the message, and process according to RFC5766, Section 10.4.
   talk_base::ByteBuffer buf(data, size);
   TurnMessage msg;
@@ -497,13 +495,11 @@ void TurnPort::HandleDataIndication(const char* data, size_t size,
     return;
   }
 
-  DispatchPacket(data_attr->bytes(), data_attr->length(), ext_addr,
-                 PROTO_UDP, packet_time);
+  DispatchPacket(data_attr->bytes(), data_attr->length(), ext_addr, PROTO_UDP);
 }
 
 void TurnPort::HandleChannelData(int channel_id, const char* data,
-                                 size_t size,
-                                 const talk_base::PacketTime& packet_time) {
+                                 size_t size) {
   // Read the message, and process according to RFC5766, Section 11.6.
   //    0                   1                   2                   3
   //    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -535,14 +531,13 @@ void TurnPort::HandleChannelData(int channel_id, const char* data,
   }
 
   DispatchPacket(data + TURN_CHANNEL_HEADER_SIZE, len, entry->address(),
-                 PROTO_UDP, packet_time);
+                 PROTO_UDP);
 }
 
 void TurnPort::DispatchPacket(const char* data, size_t size,
-    const talk_base::SocketAddress& remote_addr,
-    ProtocolType proto, const talk_base::PacketTime& packet_time) {
+    const talk_base::SocketAddress& remote_addr, ProtocolType proto) {
   if (Connection* conn = GetConnection(remote_addr)) {
-    conn->OnReadPacket(data, size, packet_time);
+    conn->OnReadPacket(data, size);
   } else {
     Port::OnReadPacket(data, size, remote_addr, proto);
   }

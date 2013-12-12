@@ -63,7 +63,7 @@ class FileNetworkInterface : public MediaChannel::NetworkInterface {
     if (!packet) return false;
 
     if (media_channel_) {
-      media_channel_->OnPacketReceived(packet, talk_base::PacketTime());
+      media_channel_->OnPacketReceived(packet);
     }
     if (dump_writer_.get() &&
         talk_base::SR_SUCCESS != dump_writer_->WriteRtpPacket(
