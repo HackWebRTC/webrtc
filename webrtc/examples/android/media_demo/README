@@ -1,0 +1,24 @@
+This directory contains a sample app for sending and receiving video and audio
+on Android. It further lets you enable and disable some call quality
+enhancements such as echo cancellation, noise suppression etc.
+
+Prerequisites:
+- Make sure gclient is checking out tools necessary to target Android: your
+  .gclient file should contain a line like:
+  target_os = ['android']
+  Make sure to re-run gclient sync after adding this to download the tools.
+- Env vars need to be set up to target Android; easiest way to do this is to run
+  (from the libjingle trunk directory):
+  . ./build/android/envsetup.sh
+  Note that this clobbers any previously-set $GYP_DEFINES so it must be done
+  before the next item.
+- Set up webrtc-related GYP variables:
+  export GYP_DEFINES="$GYP_DEFINES java_home=</path/to/JDK>"
+- Finally, run "gclient runhooks" to generate Android-targeting .ninja files.
+
+Example of building the app:
+cd <path/to/repository>/trunk
+ninja -C out/Debug WebRTCDemo
+
+It can then be installed and run on the device:
+adb install -r out/Debug/WebRTCDemo-debug.apk

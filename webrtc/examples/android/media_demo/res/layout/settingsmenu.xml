@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent"
+              android:layout_gravity="right"
+              android:orientation="vertical">
+  <TextView android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textSize="24dip"
+            android:text="@string/gSettings">
+  </TextView>
+  <LinearLayout android:orientation="horizontal"
+                android:layout_height="wrap_content"
+                android:layout_width="fill_parent">
+    <CheckBox android:id="@+id/cbVideoReceive"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="@string/enableVideoReceive">
+    </CheckBox>
+    <CheckBox android:id="@+id/cbVideoSend"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="@string/enableVideoSend">
+    </CheckBox>
+    <CheckBox android:id="@+id/cbAudio"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="@string/enableAudio">
+    </CheckBox>
+    <CheckBox android:id="@+id/cbLoopback"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="@string/loopback">
+    </CheckBox>
+  </LinearLayout>
+  <TextView android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/remoteIp">
+  </TextView>
+  <EditText android:id="@+id/etRemoteIp"
+            android:layout_height="wrap_content"
+            android:layout_width="fill_parent"
+            android:imeOptions="actionDone">
+  </EditText>
+  <LinearLayout android:orientation="horizontal"
+                android:layout_height="wrap_content"
+                android:layout_width="fill_parent">
+    <RadioGroup android:id="@+id/rRenderMechanism"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+      <RadioButton android:id="@+id/rOpenGl"
+                   android:layout_width="wrap_content"
+                   android:layout_height="wrap_content"
+                   android:text="OpenGL"
+                   android:checked="true"
+                   android:textColor="#fff"/>
+      <RadioButton android:id="@+id/rSurfaceView"
+                   android:layout_width="wrap_content"
+                   android:layout_height="wrap_content"
+                   android:text="SurfaceView"
+                   android:textColor="#fff" />
+      <RadioButton android:id="@+id/rMediaCodec"
+                   android:layout_width="wrap_content"
+                   android:layout_height="wrap_content"
+                   android:text="Android:MediaCodec"
+                   android:textColor="#fff" />
+    </RadioGroup>
+  </LinearLayout>
+</LinearLayout>

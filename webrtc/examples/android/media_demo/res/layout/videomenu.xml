@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent"
+              android:orientation="vertical">
+  <TextView android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textSize="24dip"
+            android:text="@string/vSettings">
+  </TextView>
+  <TextView android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/codecType">
+  </TextView>
+  <Spinner android:id="@+id/spCodecType"
+           android:layout_width="fill_parent"
+           android:layout_height="wrap_content">
+  </Spinner>
+  <TextView android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/codecSize">
+  </TextView>
+  <Spinner android:id="@+id/spCodecSize"
+           android:layout_height="wrap_content"
+           android:layout_width="fill_parent">
+  </Spinner>
+  <LinearLayout android:layout_height="wrap_content"
+                android:layout_width="fill_parent">
+    <TextView android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="@string/vTxPort">
+    </TextView>
+    <EditText android:id="@+id/etVTxPort"
+              android:layout_height="wrap_content"
+              android:layout_width="wrap_content"
+              android:imeOptions="actionDone"
+              android:inputType="number">
+    </EditText>
+    <TextView android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="@string/vRxPort">
+    </TextView>
+    <EditText android:id="@+id/etVRxPort"
+              android:layout_height="wrap_content"
+              android:layout_width="wrap_content"
+              android:imeOptions="actionDone"
+              android:inputType="number">
+    </EditText>
+  </LinearLayout>
+  <LinearLayout android:layout_height="wrap_content"
+                android:layout_width="fill_parent">
+    <CheckBox android:id="@+id/cbNack"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="@string/nack">
+    </CheckBox>
+    <CheckBox android:id="@+id/cbVideoRTPDump"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="@string/rtpDump">
+    </CheckBox>
+  </LinearLayout>
+</LinearLayout>

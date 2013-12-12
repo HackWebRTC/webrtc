@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="aRxPortDefault">11113</integer>
+    <integer name="aTxPortDefault">11113</integer>
+    <integer name="openGl">0</integer>
+    <integer name="surfaceView">1</integer>
+    <integer name="mediaCodec">2</integer>
+    <integer name="defaultView">0</integer>
+    <integer name="call_restart_periodicity_ms">0</integer>
+    <integer name="video_codec_default">0</integer>
+    <integer name="vRxPortDefault">11111</integer>
+    <integer name="vTxPortDefault">11111</integer>
+</resources>

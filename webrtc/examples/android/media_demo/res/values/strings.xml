@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="aecm">AECM</string>
+  <string name="appName">WebRTC Engine Demo</string>
+  <string name="aRxPort">Audio Rx Port</string>
+  <string name="aTxPort">Audio Tx Port</string>
+  <string name="autoGainControl">AGC</string>
+  <string name="backCamera">SwitchToBack</string>
+  <string name="codecSize">Codec Size</string>
+  <string name="codecType">Codec Type</string>
+  <string name="debugRecording">APMRecord</string>
+  <string name="demoTitle">Video Engine Android Demo</string>
+  <string name="enableVideoReceive">Video Receive</string>
+  <string name="enableVideoSend">Video Send</string>
+  <string name="enableAudio">Audio</string>
+  <string name="error">Error</string>
+  <string name="errorCamera">Camera Error</string>
+  <string name="exit">Exit</string>
+  <string name="frontCamera">SwitchToFront</string>
+  <string name="gSettings">Global Settings</string>
+  <string name="loopback">Loopback</string>
+  <string name="loopbackIp">127.0.0.1</string>
+  <string name="nack">NACK</string>
+  <string name="noiseSuppression">NS</string>
+  <string name="remoteIp">Remote IP address</string>
+  <string name="rtpDump">rtpdump</string>
+  <string name="speaker">Speaker</string>
+  <string name="startBoth">Start Both</string>
+  <string name="startCall">StartCall</string>
+  <string name="startListen">Start Listen</string>
+  <string name="startSend">Start Send</string>
+  <string name="stats">Stats</string>
+  <string name="statsOn">Stats on</string>
+  <string name="statsOff">Stats off</string>
+  <string name="stopCall">StopCall</string>
+  <string name="surfaceView">SurfaceView</string>
+  <string name="tag">WEBRTC</string>
+  <string name="vRxPort">Video Rx Port</string>
+  <string name="vSettings">Video Settings</string>
+  <string name="vTxPort">Video Tx Port</string>
+</resources>

@@ -18,6 +18,13 @@
         'talk/libjingle_examples.gyp:*',
         'talk/libjingle_tests.gyp:*',
       ],
+      'conditions': [
+        ['OS=="android"', {
+          'dependencies': [
+            'webrtc/webrtc_examples.gyp:*',
+          ],
+        }],
+      ],
     },
   ],
 }

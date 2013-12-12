@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent">
+  <LinearLayout
+      android:orientation="vertical"
+      android:layout_width="120dip"
+      android:layout_height="fill_parent">
+    <LinearLayout android:id="@+id/llLocalView"
+                  android:layout_width="fill_parent"
+                  android:layout_height="80dip">
+    </LinearLayout>
+    <TextView android:id="@+id/tvStats"
+              android:layout_width="fill_parent"
+              android:layout_height="60dip"
+              android:textSize="6sp"
+              android:text=""/>
+    <Button android:id="@+id/btStats"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:text="@string/stats"/>
+    <Button android:id="@+id/btSwitchCamera"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"/>
+    <Button android:id="@+id/btStartStopCall"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"/>
+  </LinearLayout>
+  <LinearLayout android:id="@+id/llRemoteView"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:layout_weight="1">
+  </LinearLayout>
+</LinearLayout>

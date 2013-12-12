@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent"
+              android:orientation="vertical">
+  <TextView android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textSize="24dip"
+            android:text="Audio Settings">
+  </TextView>
+  <TextView android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:layout_width="wrap_content"
+            android:text="@string/codecType">
+  </TextView>
+  <Spinner android:id="@+id/spAudioCodecType"
+           android:layout_height="wrap_content"
+           android:layout_width="fill_parent">
+  </Spinner>
+  <LinearLayout android:layout_height="wrap_content"
+                android:layout_width="fill_parent">
+    <TextView android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="@string/aTxPort">
+    </TextView>
+    <EditText android:id="@+id/etATxPort"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:imeOptions="actionDone"
+              android:inputType="number">
+    </EditText>
+    <TextView android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="@string/aRxPort">
+    </TextView>
+    <EditText android:id="@+id/etARxPort"
+              android:layout_height="wrap_content"
+              android:layout_width="wrap_content"
+              android:imeOptions="actionDone"
+              android:inputType="number">
+    </EditText>
+  </LinearLayout>
+  <LinearLayout android:layout_height="wrap_content"
+                android:layout_width="fill_parent">
+    <CheckBox android:id="@+id/cbAecm"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="@string/aecm">
+    </CheckBox>
+    <CheckBox android:id="@+id/cbNoiseSuppression"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="@string/noiseSuppression">
+    </CheckBox>
+    <CheckBox android:id="@+id/cbAutoGainControl"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="@string/autoGainControl">
+    </CheckBox>
+  </LinearLayout>
+  <LinearLayout android:layout_height="wrap_content"
+                android:layout_width="fill_parent">
+    <CheckBox android:id="@+id/cbSpeaker"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="@string/speaker">
+    </CheckBox>
+    <CheckBox android:id="@+id/cbDebugRecording"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="@string/debugRecording">
+    </CheckBox>
+    <CheckBox android:id="@+id/cbAudioRTPDump"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="@string/rtpDump">
+    </CheckBox>
+  </LinearLayout>
+</LinearLayout>

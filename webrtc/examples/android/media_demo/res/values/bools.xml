@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <bool name="apm_debug_enabled_default">false</bool>
+  <bool name="audio_enabled_default">true</bool>
+  <bool name="loopback_enabled_default">true</bool>
+  <bool name="nack_enabled_default">true</bool>
+  <bool name="opengl_enabled_default">true</bool>
+  <bool name="speaker_enabled_default">false</bool>
+  <bool name="stats_enabled_default">true</bool>
+  <bool name="trace_enabled_default">true</bool>
+  <bool name="video_receive_enabled_default">true</bool>
+  <bool name="video_send_enabled_default">true</bool>
+</resources>

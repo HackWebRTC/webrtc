@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="WebRTCDemo" default="help">
+    <property file="local.properties" />
+    <property environment="env" />
+    <condition property="sdk.dir" value="${env.ANDROID_SDK_ROOT}">
+        <isset property="env.ANDROID_SDK_ROOT" />
+    </condition>
+    <loadproperties srcFile="project.properties" />
+    <fail
+            message="sdk.dir is missing. Make sure to generate local.properties using 'android update project' or to inject it through the ANDROID_SDK_ROOT environment variable."
+            unless="sdk.dir"
+    />
+    <import file="custom_rules.xml" optional="true" />
+    <import file="${sdk.dir}/tools/ant/build.xml" />
+</project>
