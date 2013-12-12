@@ -47,7 +47,8 @@ class StunServer : public sigslot::has_slots<> {
   // Slot for AsyncSocket.PacketRead:
   void OnPacket(
       talk_base::AsyncPacketSocket* socket, const char* buf, size_t size,
-      const talk_base::SocketAddress& remote_addr);
+      const talk_base::SocketAddress& remote_addr,
+      const talk_base::PacketTime& packet_time);
 
   // Handlers for the different types of STUN/TURN requests:
   void OnBindingRequest(StunMessage* msg,

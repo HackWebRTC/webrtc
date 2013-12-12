@@ -981,7 +981,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(SetSend(true));
     EXPECT_TRUE(channel_->SetRender(true));
     EXPECT_EQ(0, renderer_.num_rendered_frames());
-    channel_->OnPacketReceived(&packet1);
+    channel_->OnPacketReceived(&packet1, talk_base::PacketTime());
     SetRendererAsDefault();
     EXPECT_TRUE(SendFrame());
     EXPECT_FRAME_WAIT(1, DefaultCodec().width, DefaultCodec().height, kTimeout);

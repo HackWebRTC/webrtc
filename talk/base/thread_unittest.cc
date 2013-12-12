@@ -81,7 +81,8 @@ class SocketClient : public TestGenerator, public sigslot::has_slots<> {
   SocketAddress address() const { return socket_->GetLocalAddress(); }
 
   void OnPacket(AsyncPacketSocket* socket, const char* buf, size_t size,
-                const SocketAddress& remote_addr) {
+                const SocketAddress& remote_addr,
+                const PacketTime& packet_time) {
     EXPECT_EQ(size, sizeof(uint32));
     uint32 prev = reinterpret_cast<const uint32*>(buf)[0];
     uint32 result = Next(prev);

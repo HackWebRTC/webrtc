@@ -107,7 +107,7 @@ NATServer::~NATServer() {
 
 void NATServer::OnInternalPacket(
     AsyncPacketSocket* socket, const char* buf, size_t size,
-    const SocketAddress& addr) {
+    const SocketAddress& addr, const PacketTime& packet_time) {
 
   // Read the intended destination from the wire.
   SocketAddress dest_addr;
@@ -132,7 +132,7 @@ void NATServer::OnInternalPacket(
 
 void NATServer::OnExternalPacket(
     AsyncPacketSocket* socket, const char* buf, size_t size,
-    const SocketAddress& remote_addr) {
+    const SocketAddress& remote_addr, const PacketTime& packet_time) {
 
   SocketAddress local_addr = socket->GetLocalAddress();
 

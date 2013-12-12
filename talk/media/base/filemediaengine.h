@@ -133,6 +133,7 @@ class FileMediaEngine : public MediaEngineInterface {
   virtual bool FindVideoCodec(const VideoCodec& codec) { return true; }
   virtual void SetVoiceLogging(int min_sev, const char* filter) {}
   virtual void SetVideoLogging(int min_sev, const char* filter) {}
+  virtual bool StartAecDump(FILE* file) { return false; }
 
   virtual bool RegisterVideoProcessor(VideoProcessor* processor) {
     return true;
@@ -232,8 +233,10 @@ class FileVoiceChannel : public VoiceMediaChannel {
   virtual bool GetStats(VoiceMediaInfo* info) { return true; }
 
   // Implement pure virtual methods of MediaChannel.
-  virtual void OnPacketReceived(talk_base::Buffer* packet);
-  virtual void OnRtcpReceived(talk_base::Buffer* packet) {}
+  virtual void OnPacketReceived(talk_base::Buffer* packet,
+                                const talk_base::PacketTime& packet_time);
+  virtual void OnRtcpReceived(talk_base::Buffer* packet,
+                              const talk_base::PacketTime& packet_time) {}
   virtual void OnReadyToSend(bool ready) {}
   virtual bool AddSendStream(const StreamParams& sp);
   virtual bool RemoveSendStream(uint32 ssrc);
@@ -298,8 +301,10 @@ class FileVideoChannel : public VideoMediaChannel {
   virtual bool RequestIntraFrame() { return false; }
 
   // Implement pure virtual methods of MediaChannel.
-  virtual void OnPacketReceived(talk_base::Buffer* packet);
-  virtual void OnRtcpReceived(talk_base::Buffer* packet) {}
+  virtual void OnPacketReceived(talk_base::Buffer* packet,
+                                const talk_base::PacketTime& packet_time);
+  virtual void OnRtcpReceived(talk_base::Buffer* packet,
+                              const talk_base::PacketTime& packet_time) {}
   virtual void OnReadyToSend(bool ready) {}
   virtual bool AddSendStream(const StreamParams& sp);
   virtual bool RemoveSendStream(uint32 ssrc);

@@ -94,7 +94,8 @@ class TestClient : public sigslot::has_slots<> {
   Socket::ConnState GetState();
   // Slot for packets read on the socket.
   void OnPacket(AsyncPacketSocket* socket, const char* buf, size_t len,
-                const SocketAddress& remote_addr);
+                const SocketAddress& remote_addr,
+                const PacketTime& packet_time);
   void OnReadyToSend(AsyncPacketSocket* socket);
 
   CriticalSection crit_;

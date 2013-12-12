@@ -32,11 +32,11 @@
 #include <string>
 #include <list>
 
+#include "talk/base/asyncpacketsocket.h"
 #include "talk/p2p/base/port.h"
 #include "talk/p2p/client/basicportallocator.h"
 
 namespace talk_base {
-class AsyncPacketSocket;
 class AsyncResolver;
 class SignalThread;
 }
@@ -79,9 +79,10 @@ class TurnPort : public Port {
   virtual int SetOption(talk_base::Socket::Option opt, int value);
   virtual int GetOption(talk_base::Socket::Option opt, int* value);
   virtual int GetError();
-  virtual void OnReadPacket(talk_base::AsyncPacketSocket* socket,
-                            const char* data, size_t size,
-                            const talk_base::SocketAddress& remote_addr);
+  virtual void OnReadPacket(
+      talk_base::AsyncPacketSocket* socket, const char* data, size_t size,
+      const talk_base::SocketAddress& remote_addr,
+      const talk_base::PacketTime& packet_time);
   virtual void OnReadyToSend(talk_base::AsyncPacketSocket* socket);
 
   void OnSocketConnect(talk_base::AsyncPacketSocket* socket);
@@ -134,10 +135,13 @@ class TurnPort : public Port {
   void OnAllocateError();
   void OnAllocateRequestTimeout();
 
-  void HandleDataIndication(const char* data, size_t size);
-  void HandleChannelData(int channel_id, const char* data, size_t size);
+  void HandleDataIndication(const char* data, size_t size,
+                            const talk_base::PacketTime& packet_time);
+  void HandleChannelData(int channel_id, const char* data, size_t size,
+                         const talk_base::PacketTime& packet_time);
   void DispatchPacket(const char* data, size_t size,
-      const talk_base::SocketAddress& remote_addr, ProtocolType proto);
+      const talk_base::SocketAddress& remote_addr,
+      ProtocolType proto, const talk_base::PacketTime& packet_time);
 
   bool ScheduleRefresh(int lifetime);
   void SendRequest(StunRequest* request, int delay);

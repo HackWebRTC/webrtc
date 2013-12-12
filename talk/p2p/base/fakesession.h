@@ -204,7 +204,8 @@ class FakeTransportChannel : public TransportChannelImpl,
     PacketMessageData* data = static_cast<PacketMessageData*>(
         msg->pdata);
     dest_->SignalReadPacket(dest_, data->packet.data(),
-                            data->packet.length(), 0);
+                            data->packet.length(),
+                            talk_base::CreatePacketTime(0), 0);
     delete data;
   }
 

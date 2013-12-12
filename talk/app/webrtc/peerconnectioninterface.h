@@ -393,11 +393,9 @@ class PeerConnectionFactoryInterface : public talk_base::RefCountInterface {
   class Options {
    public:
     Options() :
-      enable_aec_dump(false),
       disable_encryption(false),
       disable_sctp_data_channels(false) {
     }
-    bool enable_aec_dump;
     bool disable_encryption;
     bool disable_sctp_data_channels;
   };
@@ -441,6 +439,12 @@ class PeerConnectionFactoryInterface : public talk_base::RefCountInterface {
   virtual talk_base::scoped_refptr<AudioTrackInterface>
       CreateAudioTrack(const std::string& label,
                        AudioSourceInterface* source) = 0;
+
+  // Starts AEC dump using existing file. Takes ownership of |file| and passes
+  // it on to VoiceEngine (via other objects) immediately, which will take
+  // the ownerhip.
+  // TODO(grunell): Remove when Chromium has started to use AEC in each source.
+  virtual bool StartAecDump(FILE* file) = 0;
 
  protected:
   // Dtor and ctor protected as objects shouldn't be created or deleted via

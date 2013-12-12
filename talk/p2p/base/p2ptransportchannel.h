@@ -40,6 +40,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include "talk/base/asyncpacketsocket.h"
 #include "talk/base/sigslot.h"
 #include "talk/p2p/base/candidate.h"
 #include "talk/p2p/base/portinterface.h"
@@ -207,8 +208,9 @@ class P2PTransportChannel : public TransportChannelImpl,
   void OnPortDestroyed(PortInterface* port);
   void OnRoleConflict(PortInterface* port);
 
-  void OnConnectionStateChange(Connection *connection);
-  void OnReadPacket(Connection *connection, const char *data, size_t len);
+  void OnConnectionStateChange(Connection* connection);
+  void OnReadPacket(Connection *connection, const char *data, size_t len,
+                    const talk_base::PacketTime& packet_time);
   void OnReadyToSend(Connection* connection);
   void OnConnectionDestroyed(Connection *connection);
 

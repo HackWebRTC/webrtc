@@ -1049,7 +1049,8 @@ TEST_F(PortTest, TestLoopbackCallAsIce) {
   IceMessage* msg = lport->last_stun_msg();
   EXPECT_EQ(STUN_BINDING_REQUEST, msg->type());
   conn->OnReadPacket(lport->last_stun_buf()->Data(),
-                     lport->last_stun_buf()->Length());
+                     lport->last_stun_buf()->Length(),
+                     talk_base::PacketTime());
   ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, 1000);
   msg = lport->last_stun_msg();
   EXPECT_EQ(STUN_BINDING_RESPONSE, msg->type());
@@ -1082,7 +1083,7 @@ TEST_F(PortTest, TestLoopbackCallAsIce) {
   lport->Reset();
   talk_base::scoped_ptr<ByteBuffer> buf(new ByteBuffer());
   WriteStunMessage(modified_req.get(), buf.get());
-  conn1->OnReadPacket(buf->Data(), buf->Length());
+  conn1->OnReadPacket(buf->Data(), buf->Length(), talk_base::PacketTime());
   ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, 1000);
   msg = lport->last_stun_msg();
   EXPECT_EQ(STUN_BINDING_ERROR_RESPONSE, msg->type());
@@ -1120,7 +1121,8 @@ TEST_F(PortTest, TestIceRoleConflict) {
   EXPECT_EQ(STUN_BINDING_REQUEST, msg->type());
   // Send rport binding request to lport.
   lconn->OnReadPacket(rport->last_stun_buf()->Data(),
-                      rport->last_stun_buf()->Length());
+                      rport->last_stun_buf()->Length(),
+                      talk_base::PacketTime());
 
   ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, 1000);
   EXPECT_EQ(STUN_BINDING_RESPONSE, lport->last_stun_msg()->type());
@@ -1902,7 +1904,8 @@ TEST_F(PortTest, TestHandleStunBindingIndication) {
   EXPECT_EQ(STUN_BINDING_REQUEST, msg->type());
   // Send rport binding request to lport.
   lconn->OnReadPacket(rport->last_stun_buf()->Data(),
-                      rport->last_stun_buf()->Length());
+                      rport->last_stun_buf()->Length(),
+                      talk_base::PacketTime());
   ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, 1000);
   EXPECT_EQ(STUN_BINDING_RESPONSE, lport->last_stun_msg()->type());
   uint32 last_ping_received1 = lconn->last_ping_received();
@@ -1910,7 +1913,7 @@ TEST_F(PortTest, TestHandleStunBindingIndication) {
   // Adding a delay of 100ms.
   talk_base::Thread::Current()->ProcessMessages(100);
   // Pinging lconn using stun indication message.
-  lconn->OnReadPacket(buf->Data(), buf->Length());
+  lconn->OnReadPacket(buf->Data(), buf->Length(), talk_base::PacketTime());
   uint32 last_ping_received2 = lconn->last_ping_received();
   EXPECT_GT(last_ping_received2, last_ping_received1);
 }
@@ -2272,7 +2275,8 @@ TEST_F(PortTest, TestIceLiteConnectivity) {
 
   // Feeding the respone message from litemode to the full mode connection.
   ch1.conn()->OnReadPacket(ice_lite_port->last_stun_buf()->Data(),
-                           ice_lite_port->last_stun_buf()->Length());
+                           ice_lite_port->last_stun_buf()->Length(),
+                           talk_base::PacketTime());
   // Verifying full mode connection becomes writable from the response.
   EXPECT_EQ_WAIT(Connection::STATE_WRITABLE, ch1.conn()->write_state(),
                  kTimeout);

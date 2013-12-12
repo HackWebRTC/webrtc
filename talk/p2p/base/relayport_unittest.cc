@@ -78,7 +78,8 @@ class RelayPortTest : public testing::Test,
 
   void OnReadPacket(talk_base::AsyncPacketSocket* socket,
                     const char* data, size_t size,
-                    const talk_base::SocketAddress& remote_addr) {
+                    const talk_base::SocketAddress& remote_addr,
+                    const talk_base::PacketTime& packet_time) {
     received_packet_count_[socket]++;
   }
 

@@ -1612,14 +1612,16 @@ int32_t ViEChannel::DeregisterSendTransport() {
 }
 
 int32_t ViEChannel::ReceivedRTPPacket(
-    const void* rtp_packet, const int32_t rtp_packet_length) {
+    const void* rtp_packet, const int32_t rtp_packet_length,
+    const PacketTime& packet_time) {
   {
     CriticalSectionScoped cs(callback_cs_.get());
     if (!external_transport_) {
       return -1;
     }
   }
-  return vie_receiver_.ReceivedRTPPacket(rtp_packet, rtp_packet_length);
+  return vie_receiver_.ReceivedRTPPacket(
+      rtp_packet, rtp_packet_length, packet_time);
 }
 
 int32_t ViEChannel::ReceivedRTCPPacket(

@@ -262,7 +262,8 @@ class ViEChannel
 
   // Incoming packet from external transport.
   int32_t ReceivedRTPPacket(const void* rtp_packet,
-                            const int32_t rtp_packet_length);
+                            const int32_t rtp_packet_length,
+                            const PacketTime& packet_time);
 
   // Incoming packet from external transport.
   int32_t ReceivedRTCPPacket(const void* rtcp_packet,

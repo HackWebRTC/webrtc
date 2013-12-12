@@ -79,9 +79,11 @@ class NATServer : public sigslot::has_slots<> {
 
   // Packets received on one of the networks.
   void OnInternalPacket(AsyncPacketSocket* socket, const char* buf,
-                        size_t size, const SocketAddress& addr);
+                        size_t size, const SocketAddress& addr,
+                        const PacketTime& packet_time);
   void OnExternalPacket(AsyncPacketSocket* socket, const char* buf,
-                        size_t size, const SocketAddress& remote_addr);
+                        size_t size, const SocketAddress& remote_addr,
+                        const PacketTime& packet_time);
 
  private:
   typedef std::set<SocketAddress, AddrCmp> AddressSet;

@@ -97,7 +97,8 @@ struct Receiver : public MessageHandler, public sigslot::has_slots<> {
   }
 
   void OnReadPacket(AsyncPacketSocket* s, const char* data, size_t size,
-                    const SocketAddress& remote_addr) {
+                    const SocketAddress& remote_addr,
+                    const PacketTime& packet_time) {
     ASSERT_EQ(socket.get(), s);
     ASSERT_GE(size, 4U);
 
