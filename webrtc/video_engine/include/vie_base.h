@@ -131,11 +131,6 @@ class WEBRTC_DLLEXPORT ViEBase {
   //                               processed. The delay is expressed in ms
   //                               delay per second.
   // TODO(asapersson): Remove default implementation.
-  // TODO(asapersson): Remove this function.
-  virtual int CpuOveruseMeasures(int channel,
-                                 int* capture_jitter_ms,
-                                 int* avg_encode_time_ms) { return -1; }
-
   virtual int CpuOveruseMeasures(int channel,
                                  int* capture_jitter_ms,
                                  int* avg_encode_time_ms,

@@ -119,18 +119,6 @@ int ViEBaseImpl::RegisterCpuOveruseObserver(int video_channel,
 
 int ViEBaseImpl::CpuOveruseMeasures(int video_channel,
                                     int* capture_jitter_ms,
-                                    int* avg_encode_time_ms) {
-  int encode_usage_percent;
-  int capture_queue_delay_ms_per_s;
-  return CpuOveruseMeasures(video_channel,
-                            capture_jitter_ms,
-                            avg_encode_time_ms,
-                            &encode_usage_percent,
-                            &capture_queue_delay_ms_per_s);
-}
-
-int ViEBaseImpl::CpuOveruseMeasures(int video_channel,
-                                    int* capture_jitter_ms,
                                     int* avg_encode_time_ms,
                                     int* encode_usage_percent,
                                     int* capture_queue_delay_ms_per_s) {

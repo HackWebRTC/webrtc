@@ -35,9 +35,6 @@ class ViEBaseImpl
                                          CpuOveruseObserver* observer);
   virtual int CpuOveruseMeasures(int channel,
                                  int* capture_jitter_ms,
-                                 int* avg_encode_time_ms);
-  virtual int CpuOveruseMeasures(int channel,
-                                 int* capture_jitter_ms,
                                  int* avg_encode_time_ms,
                                  int* encode_usage_percent,
                                  int* capture_queue_delay_ms_per_s);
