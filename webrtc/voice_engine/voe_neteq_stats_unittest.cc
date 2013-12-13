@@ -11,17 +11,17 @@
 #include "webrtc/voice_engine/include/voe_neteq_stats.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/modules/audio_coding/main/acm2/audio_coding_module_impl.h"
+#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
+#include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
+#include "webrtc/modules/audio_coding/main/source/audio_coding_module_impl.h"
 #include "webrtc/modules/audio_device/include/fake_audio_device.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_hardware.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
-#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
-#include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
-#include "webrtc/modules/audio_coding/main/acm2/audio_coding_module_impl.h"
-#include "webrtc/modules/audio_coding/main/source/audio_coding_module_impl.h"
 
 namespace webrtc {
 namespace voe {
@@ -168,7 +168,7 @@ class VoENetEqStatsTest : public ::testing::Test {
 
 // Check if the statistics are initialized correctly. Before any call to ACM
 // all fields have to be zero.
-TEST_F(VoENetEqStatsTest, InitializedToZero) {
+TEST_F(VoENetEqStatsTest, DISABLED_ON_ANDROID(InitializedToZero)) {
   AudioDecodingCallStats stats;
   ASSERT_EQ(0,
             voe_neteq_stats_->GetDecodingCallStatistics(channel_acm1_, &stats));
@@ -191,7 +191,7 @@ TEST_F(VoENetEqStatsTest, InitializedToZero) {
 
 // Apply an initial playout delay. Calls to AudioCodingModule::PlayoutData10ms()
 // should result in generating silence, check the associated field.
-TEST_F(VoENetEqStatsTest, SilenceGeneratorCalled) {
+TEST_F(VoENetEqStatsTest, DISABLED_ON_ANDROID(SilenceGeneratorCalled)) {
   AudioDecodingCallStats stats;
   const int kInitialDelay = 100;
 
@@ -226,7 +226,7 @@ TEST_F(VoENetEqStatsTest, SilenceGeneratorCalled) {
 // Insert some packets and pull audio. Check statistics are valid. Then,
 // simulate packet loss and check if PLC and PLC-to-CNG statistics are
 // correctly updated.
-TEST_F(VoENetEqStatsTest, NetEqCalls) {
+TEST_F(VoENetEqStatsTest, DISABLED_ON_ANDROID(NetEqCalls)) {
   AudioDecodingCallStats stats;
   const int kNumNormalCalls = 10;
 
