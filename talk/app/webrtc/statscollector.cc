@@ -51,6 +51,8 @@ const char StatsReport::kStatsValueNameAvgEncodeMs[] = "googAvgEncodeMs";
 const char StatsReport::kStatsValueNameBucketDelay[] = "googBucketDelay";
 const char StatsReport::kStatsValueNameBytesReceived[] = "bytesReceived";
 const char StatsReport::kStatsValueNameBytesSent[] = "bytesSent";
+const char StatsReport::kStatsValueNameBandwidthLimitedResolution[] =
+    "googBandwidthLimitedResolution";
 const char StatsReport::kStatsValueNameCaptureJitterMs[] =
     "googCaptureJitterMs";
 const char StatsReport::kStatsValueNameCaptureQueueDelayMsPerS[] =
@@ -59,6 +61,8 @@ const char StatsReport::kStatsValueNameChannelId[] = "googChannelId";
 const char StatsReport::kStatsValueNameCodecName[] = "googCodecName";
 const char StatsReport::kStatsValueNameComponent[] = "googComponent";
 const char StatsReport::kStatsValueNameContentName[] = "googContentName";
+const char StatsReport::kStatsValueNameCpuLimitedResolution[] =
+    "googCpuLimitedResolution";
 const char StatsReport::kStatsValueNameDer[] = "googDerBase64";
 // Echo metrics from the audio processing module.
 const char StatsReport::kStatsValueNameEchoCancellationQualityMin[] =
@@ -135,6 +139,8 @@ const char StatsReport::kStatsValueNameTransportType[] = "googTransportType";
 const char StatsReport::kStatsValueNameTrackId[] = "googTrackId";
 const char StatsReport::kStatsValueNameTypingNoiseState[] =
     "googTypingNoiseState";
+const char StatsReport::kStatsValueNameViewLimitedResolution[] =
+    "googViewLimitedResolution";
 const char StatsReport::kStatsValueNameWritable[] = "googWritable";
 
 const char StatsReport::kStatsReportTypeSession[] = "googLibjingleSession";
@@ -299,6 +305,12 @@ void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {
                    info.framerate_sent);
   report->AddValue(StatsReport::kStatsValueNameRtt, info.rtt_ms);
   report->AddValue(StatsReport::kStatsValueNameCodecName, info.codec_name);
+  report->AddBoolean(StatsReport::kStatsValueNameCpuLimitedResolution,
+                     (info.adapt_reason & 0x1) > 0);
+  report->AddBoolean(StatsReport::kStatsValueNameBandwidthLimitedResolution,
+                     (info.adapt_reason & 0x2) > 0);
+  report->AddBoolean(StatsReport::kStatsValueNameViewLimitedResolution,
+                     (info.adapt_reason & 0x4) > 0);
   report->AddValue(StatsReport::kStatsValueNameAvgEncodeMs, info.avg_encode_ms);
   report->AddValue(StatsReport::kStatsValueNameCaptureJitterMs,
                    info.capture_jitter_ms);

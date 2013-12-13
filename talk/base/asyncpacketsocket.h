@@ -38,7 +38,7 @@ namespace talk_base {
 // This structure will have the information about when packet is actually
 // received by socket.
 struct PacketTime {
-  PacketTime() : timestamp(0), not_before(0) {}
+  PacketTime() : timestamp(-1), not_before(-1) {}
   PacketTime(int64 timestamp, int64 not_before)
       : timestamp(timestamp), not_before(not_before) {
   }

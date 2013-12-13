@@ -133,6 +133,9 @@ class StatsReport {
   static const char kStatsValueNameCaptureJitterMs[];
   static const char kStatsValueNameCaptureQueueDelayMsPerS[];
   static const char kStatsValueNameCodecName[];
+  static const char kStatsValueNameBandwidthLimitedResolution[];
+  static const char kStatsValueNameCpuLimitedResolution[];
+  static const char kStatsValueNameViewLimitedResolution[];
   static const char kStatsValueNameEchoCancellationQualityMin[];
   static const char kStatsValueNameEchoDelayMedian[];
   static const char kStatsValueNameEchoDelayStdDev[];
