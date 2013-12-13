@@ -122,13 +122,6 @@ TEST_F(RtpRtcpImplTest, Rtt) {
   // No RTT from other ssrc.
   EXPECT_EQ(-1,
       rtp_rtcp_impl_->RTT(kSsrc + 1, &rtt, &avg_rtt, &min_rtt, &max_rtt));
-
-  // Verify RTT from rtt_stats config.
-  EXPECT_EQ(0U, rtt_stats_.LastProcessedRtt());
-  EXPECT_EQ(0U, rtp_rtcp_impl_->rtt_ms());
-  rtp_rtcp_impl_->Process();
-  EXPECT_EQ(100U, rtt_stats_.LastProcessedRtt());
-  EXPECT_EQ(100U, rtp_rtcp_impl_->rtt_ms());
 }
 
 TEST_F(RtpRtcpImplTest, SetRtcpXrRrtrStatus) {
@@ -154,6 +147,7 @@ TEST_F(RtpRtcpImplTest, RttForReceiverOnly) {
   // Verify RTT.
   EXPECT_EQ(0U, rtt_stats_.LastProcessedRtt());
   EXPECT_EQ(0U, rtp_rtcp_impl_->rtt_ms());
+
   rtp_rtcp_impl_->Process();
   EXPECT_EQ(100U, rtt_stats_.LastProcessedRtt());
   EXPECT_EQ(100U, rtp_rtcp_impl_->rtt_ms());
