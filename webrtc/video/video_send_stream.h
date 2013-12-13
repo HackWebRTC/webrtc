@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIDEO_SEND_STREAM_IMPL_H_
-#define WEBRTC_VIDEO_ENGINE_VIDEO_SEND_STREAM_IMPL_H_
+#ifndef WEBRTC_VIDEO_VIDEO_SEND_STREAM_H_
+#define WEBRTC_VIDEO_VIDEO_SEND_STREAM_H_
 
 #include <vector>
 
@@ -42,7 +42,8 @@ class VideoSendStream : public webrtc::VideoSendStream,
   VideoSendStream(newapi::Transport* transport,
                   bool overuse_detection,
                   webrtc::VideoEngine* video_engine,
-                  const VideoSendStream::Config& config);
+                  const VideoSendStream::Config& config,
+                  int base_channel);
 
   virtual ~VideoSendStream();
 
@@ -85,4 +86,4 @@ class VideoSendStream : public webrtc::VideoSendStream,
 }  // namespace internal
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_INTERNAL_VIDEO_SEND_STREAM_H_
+#endif  // WEBRTC_VIDEO_VIDEO_SEND_STREAM_H_

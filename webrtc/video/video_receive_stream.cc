@@ -31,14 +31,14 @@ namespace internal {
 VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
                                        const VideoReceiveStream::Config& config,
                                        newapi::Transport* transport,
-                                       webrtc::VoiceEngine* voice_engine)
+                                       webrtc::VoiceEngine* voice_engine,
+                                       int base_channel)
     : transport_adapter_(transport),
       encoded_frame_proxy_(config.pre_decode_callback),
       config_(config),
       channel_(-1) {
   video_engine_base_ = ViEBase::GetInterface(video_engine);
-  // TODO(mflodman): Use the other CreateChannel method.
-  video_engine_base_->CreateChannel(channel_);
+  video_engine_base_->CreateReceiveChannel(channel_, base_channel);
   assert(channel_ != -1);
 
   rtp_rtcp_ = ViERTP_RTCP::GetInterface(video_engine);
@@ -174,5 +174,5 @@ int32_t VideoReceiveStream::RenderFrame(const uint32_t stream_id,
       video_frame, video_frame.render_time_ms() - clock_->TimeInMilliseconds());
   return 0;
 }
-}  // internal
-}  // webrtc
+}  // namespace internal
+}  // namespace webrtc

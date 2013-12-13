@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIDEO_RECEIVE_STREAM_IMPL_H_
-#define WEBRTC_VIDEO_ENGINE_VIDEO_RECEIVE_STREAM_IMPL_H_
+#ifndef WEBRTC_VIDEO_VIDEO_RECEIVE_STREAM_H_
+#define WEBRTC_VIDEO_VIDEO_RECEIVE_STREAM_H_
 
 #include <vector>
 
@@ -41,7 +41,8 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   VideoReceiveStream(webrtc::VideoEngine* video_engine,
                      const VideoReceiveStream::Config& config,
                      newapi::Transport* transport,
-                     webrtc::VoiceEngine* voice_engine);
+                     webrtc::VoiceEngine* voice_engine,
+                     int base_channel);
   virtual ~VideoReceiveStream();
 
   virtual void StartReceiving() OVERRIDE;
@@ -72,7 +73,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   int channel_;
 };
-}  // internal
-}  // webrtc
+}  // namespace internal
+}  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_INTERNAL_VIDEO_RECEIVE_STREAM_H_
+#endif  // WEBRTC_VIDEO_VIDEO_RECEIVE_STREAM_H_

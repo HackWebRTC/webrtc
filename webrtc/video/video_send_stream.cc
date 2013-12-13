@@ -81,14 +81,16 @@ class ResolutionAdaptor : public webrtc::CpuOveruseObserver {
 VideoSendStream::VideoSendStream(newapi::Transport* transport,
                                  bool overuse_detection,
                                  webrtc::VideoEngine* video_engine,
-                                 const VideoSendStream::Config& config)
+                                 const VideoSendStream::Config& config,
+                                 int base_channel)
     : transport_adapter_(transport),
       encoded_frame_proxy_(config.post_encode_callback),
       codec_lock_(CriticalSectionWrapper::CreateCriticalSection()),
       config_(config),
-      external_codec_(NULL) {
+      external_codec_(NULL),
+      channel_(-1) {
   video_engine_base_ = ViEBase::GetInterface(video_engine);
-  video_engine_base_->CreateChannel(channel_);
+  video_engine_base_->CreateChannel(channel_, base_channel);
   assert(channel_ != -1);
 
   rtp_rtcp_ = ViERTP_RTCP::GetInterface(video_engine);

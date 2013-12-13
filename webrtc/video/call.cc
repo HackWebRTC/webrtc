@@ -78,9 +78,11 @@ class Call : public webrtc::Call, public PacketReceiver {
 
   scoped_ptr<RtpHeaderParser> rtp_header_parser_;
 
-  webrtc::VideoEngine* video_engine_;
+  VideoEngine* video_engine_;
   ViERTP_RTCP* rtp_rtcp_;
   ViECodec* codec_;
+  ViEBase* base_;
+  int base_channel_id_;
 
   DISALLOW_COPY_AND_ASSIGN(Call);
 };
@@ -182,7 +184,8 @@ Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
       receive_lock_(RWLockWrapper::CreateRWLock()),
       send_lock_(RWLockWrapper::CreateRWLock()),
       rtp_header_parser_(RtpHeaderParser::Create()),
-      video_engine_(video_engine) {
+      video_engine_(video_engine),
+      base_channel_id_(-1) {
   assert(video_engine != NULL);
   assert(config.send_transport != NULL);
 
@@ -193,10 +196,20 @@ Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
 
   codec_ = ViECodec::GetInterface(video_engine_);
   assert(codec_ != NULL);
+
+  // As a workaround for non-existing calls in the old API, create a base
+  // channel used as default channel when creating send and receive streams.
+  base_ = ViEBase::GetInterface(video_engine_);
+  assert(base_ != NULL);
+
+  base_->CreateChannel(base_channel_id_);
+  assert(base_channel_id_ != -1);
 }
 
 Call::~Call() {
   global_trace_dispatcher->DeregisterCallback(this);
+  base_->DeleteChannel(base_channel_id_);
+  base_->Release();
   codec_->Release();
   rtp_rtcp_->Release();
   webrtc::VideoEngine::Delete(video_engine_);
@@ -227,8 +240,11 @@ VideoSendStream* Call::CreateVideoSendStream(
   assert(config.rtp.ssrcs.size() > 0);
   assert(config.rtp.ssrcs.size() >= config.codec.numberOfSimulcastStreams);
 
-  VideoSendStream* send_stream = new VideoSendStream(
-      config_.send_transport, config_.overuse_detection, video_engine_, config);
+  VideoSendStream* send_stream = new VideoSendStream(config_.send_transport,
+                                                     config_.overuse_detection,
+                                                     video_engine_,
+                                                     config,
+                                                     base_channel_id_);
 
   WriteLockScoped write_lock(*send_lock_);
   for (size_t i = 0; i < config.rtp.ssrcs.size(); ++i) {
@@ -266,8 +282,12 @@ VideoReceiveStream::Config Call::GetDefaultReceiveConfig() {
 
 VideoReceiveStream* Call::CreateVideoReceiveStream(
     const VideoReceiveStream::Config& config) {
-  VideoReceiveStream* receive_stream = new VideoReceiveStream(
-      video_engine_, config, config_.send_transport, config_.voice_engine);
+  VideoReceiveStream* receive_stream =
+      new VideoReceiveStream(video_engine_,
+                             config,
+                             config_.send_transport,
+                             config_.voice_engine,
+                             base_channel_id_);
 
   WriteLockScoped write_lock(*receive_lock_);
   assert(receive_ssrcs_.find(config.rtp.remote_ssrc) == receive_ssrcs_.end());
