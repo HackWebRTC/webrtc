@@ -13,6 +13,7 @@
       'dependencies': [
         'video_engine_tests',
         'video_loopback',
+        'webrtc_perf_tests',
       ],
     },
     {
@@ -33,11 +34,26 @@
       'type': '<(gtest_target_type)',
       'sources': [
         'video/call_tests.cc',
-        'video/full_stack.cc',
-        'video/rampup_tests.cc',
         'video/video_send_stream_tests.cc',
         'test/common_unittest.cc',
         'test/test_main.cc',
+      ],
+      'dependencies': [
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+        'modules/modules.gyp:rtp_rtcp',
+        'test/webrtc_test_common.gyp:webrtc_test_common',
+        'webrtc',
+      ],
+    },
+    {
+      'target_name': 'webrtc_perf_tests',
+      'type': '<(gtest_target_type)',
+      'sources': [
+        'test/test_main.cc',
+        'video/call_perf_tests.cc',
+        'video/full_stack.cc',
+        'video/rampup_tests.cc',
       ],
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
@@ -60,6 +76,13 @@
             '<(apk_tests_path):video_engine_tests_apk',
           ],
         },
+        {
+          'target_name': 'webrtc_perf_tests_apk_target',
+          'type': 'none',
+          'dependencies': [
+            '<(apk_tests_path):webrtc_perf_tests_apk',
+          ],
+        },
       ],
     }],
     ['test_isolation_mode != "noop"', {
@@ -76,6 +99,20 @@
           ],
           'sources': [
             'video_engine_tests.isolate',
+          ],
+        },
+        {
+          'target_name': 'webrtc_perf_tests_run',
+          'type': 'none',
+          'dependencies': [
+            'webrtc_perf_tests',
+          ],
+          'includes': [
+            'build/isolate.gypi',
+            'webrtc_perf_tests.isolate',
+          ],
+          'sources': [
+            'webrtc_perf_tests.isolate',
           ],
         },
       ],
