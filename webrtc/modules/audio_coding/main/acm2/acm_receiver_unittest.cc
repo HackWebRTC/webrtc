@@ -211,8 +211,8 @@ TEST_F(AcmReceiverTest, DISABLED_ON_ANDROID(AddCodecRemoveCodec)) {
   EXPECT_EQ(0, receiver_->AddCodec(codec_id, codec.pltype,
                                    codec.channels, NULL));
 
-  // Remove non-existing codec, must fail.
-  EXPECT_EQ(-1, receiver_->RemoveCodec(payload_type + 1));
+  // Remove non-existing codec should not fail. ACM1 legacy.
+  EXPECT_EQ(0, receiver_->RemoveCodec(payload_type + 1));
 
   // Remove an existing codec.
   EXPECT_EQ(0, receiver_->RemoveCodec(payload_type));

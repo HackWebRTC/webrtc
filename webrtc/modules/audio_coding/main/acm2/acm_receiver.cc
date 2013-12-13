@@ -122,7 +122,7 @@ AcmReceiver::AcmReceiver()
       last_audio_decoder_(-1),  // Invalid value.
       decode_lock_(RWLockWrapper::CreateRWLock()),
       neteq_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
-      vad_enabled_(false),
+      vad_enabled_(true),
       previous_audio_activity_(AudioFrame::kVadUnknown),
       current_sample_rate_hz_(kNeteqInitSampleRateHz),
       nack_(),
@@ -135,8 +135,9 @@ AcmReceiver::AcmReceiver()
     decoders_[n].registered = false;
   }
 
-  // Make sure we are on the same page as NetEq, although the default behavior
-  // for NetEq has been VAD disabled.
+  // Make sure we are on the same page as NetEq. Post-decode VAD is disabled by
+  // default in NetEq4, however, Audio Conference Mixer relies on VAD decision
+  // and fails if VAD decision is not provided.
   if (vad_enabled_)
     neteq_->EnableVad();
   else
@@ -554,9 +555,9 @@ int AcmReceiver::RemoveAllCodecs() {
 int AcmReceiver::RemoveCodec(uint8_t payload_type) {
   int codec_index = PayloadType2CodecIndex(payload_type);
   if (codec_index < 0) {  // Such a payload-type is not registered.
-    LOG(LS_ERROR) << "payload_type " << payload_type << " is not registered"
-        " to be removed.";
-    return -1;
+    LOG(LS_WARNING) << "payload_type " << payload_type << " is not registered,"
+        " no action is taken.";
+    return 0;
   }
   if (neteq_->RemovePayloadType(payload_type) != NetEq::kOK) {
     LOG_FERR1(LS_ERROR, "AcmReceiver::RemoveCodec", payload_type);
