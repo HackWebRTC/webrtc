@@ -84,6 +84,8 @@
         'audio_coding_module.cc',
         'audio_coding_module_impl.cc',
         'audio_coding_module_impl.h',
+        'call_statistics.cc',
+        'call_statistics.h',
         'initial_delay_manager.cc',
         'initial_delay_manager.h',
         'nack.cc',

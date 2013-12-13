@@ -1887,13 +1887,13 @@ NetEqOutputType NetEqImpl::LastOutputType() {
   assert(expand_.get());
   if (last_mode_ == kModeCodecInternalCng || last_mode_ == kModeRfc3389Cng) {
     return kOutputCNG;
-  } else if (vad_->running() && !vad_->active_speech()) {
-    return kOutputVADPassive;
   } else if (last_mode_ == kModeExpand && expand_->MuteFactor(0) == 0) {
     // Expand mode has faded down to background noise only (very long expand).
     return kOutputPLCtoCNG;
   } else if (last_mode_ == kModeExpand) {
     return kOutputPLC;
+  } else if (vad_->running() && !vad_->active_speech()) {
+    return kOutputVADPassive;
   } else {
     return kOutputNormal;
   }

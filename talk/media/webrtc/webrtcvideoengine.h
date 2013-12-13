@@ -366,11 +366,12 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   // If the local ssrc correspond to that of the default channel the key is 0.
   // For all other channels the returned key will be the same as the local ssrc.
   bool GetSendChannelKey(uint32 local_ssrc, uint32* key);
-  WebRtcVideoChannelSendInfo* GetSendChannel(VideoCapturer* video_capturer);
   WebRtcVideoChannelSendInfo* GetSendChannel(uint32 local_ssrc);
   // Creates a new unique key that can be used for inserting a new send channel
   // into |send_channels_|
   bool CreateSendChannelKey(uint32 local_ssrc, uint32* key);
+  // Get the number of the send channels |capturer| registered with.
+  int GetSendChannelNum(VideoCapturer* capturer);
 
   bool IsDefaultChannel(int channel_id) const {
     return channel_id == vie_channel_;
@@ -403,6 +404,13 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   // Set the local (send-side) RTX SSRC corresponding to primary_ssrc.
   bool SetLocalRtxSsrc(int channel_id, const StreamParams& send_params,
                        uint32 primary_ssrc, int stream_idx);
+
+  // Connect |capturer| to WebRtcVideoMediaChannel if it is only registered
+  // to one send channel, i.e. the first send channel.
+  void MaybeConnectCapturer(VideoCapturer* capturer);
+  // Disconnect |capturer| from WebRtcVideoMediaChannel if it is only registered
+  // to one send channel, i.e. the last send channel.
+  void MaybeDisconnectCapturer(VideoCapturer* capturer);
 
   // Global state.
   WebRtcVideoEngine* engine_;

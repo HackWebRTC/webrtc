@@ -339,12 +339,14 @@ class FakeWebRtcVideoEngine
   };
   class Capturer : public webrtc::ViEExternalCapture {
    public:
-    Capturer() : channel_id_(-1), denoising_(false), last_capture_time_(0) { }
+    Capturer() : channel_id_(-1), denoising_(false),
+                 last_capture_time_(0), incoming_frame_num_(0) { }
     int channel_id() const { return channel_id_; }
     void set_channel_id(int channel_id) { channel_id_ = channel_id; }
     bool denoising() const { return denoising_; }
     void set_denoising(bool denoising) { denoising_ = denoising; }
-    int64 last_capture_time() { return last_capture_time_; }
+    int64 last_capture_time() const { return last_capture_time_; }
+    int incoming_frame_num() const { return incoming_frame_num_; }
 
     // From ViEExternalCapture
     virtual int IncomingFrame(unsigned char* videoFrame,
@@ -359,6 +361,7 @@ class FakeWebRtcVideoEngine
         const webrtc::ViEVideoFrameI420& video_frame,
         unsigned long long captureTime) {
       last_capture_time_ = captureTime;
+      ++incoming_frame_num_;
       return 0;
     }
 
@@ -366,6 +369,7 @@ class FakeWebRtcVideoEngine
     int channel_id_;
     bool denoising_;
     int64 last_capture_time_;
+    int incoming_frame_num_;
   };
 
   FakeWebRtcVideoEngine(const cricket::VideoCodec* const* codecs,
@@ -408,6 +412,16 @@ class FakeWebRtcVideoEngine
 
   int GetLastCapturer() const { return last_capturer_; }
   int GetNumCapturers() const { return static_cast<int>(capturers_.size()); }
+  int GetIncomingFrameNum(int channel_id) const {
+    for (std::map<int, Capturer*>::const_iterator iter = capturers_.begin();
+         iter != capturers_.end(); ++iter) {
+      Capturer* capturer = iter->second;
+      if (capturer->channel_id() == channel_id) {
+        return capturer->incoming_frame_num();
+      }
+    }
+    return -1;
+  }
   void set_fail_alloc_capturer(bool fail_alloc_capturer) {
     fail_alloc_capturer_ = fail_alloc_capturer;
   }

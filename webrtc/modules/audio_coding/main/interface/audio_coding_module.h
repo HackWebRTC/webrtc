@@ -931,6 +931,9 @@ class AudioCodingModule: public Module {
   // is returned.
   //
   virtual std::vector<uint16_t> GetNackList(int round_trip_time_ms) const = 0;
+
+  virtual void GetDecodingCallStatistics(
+      AudioDecodingCallStats* call_stats) const = 0;
 };
 
 struct AudioCodingModuleFactory {

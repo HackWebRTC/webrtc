@@ -1216,6 +1216,53 @@ TEST_F(WebRtcVideoEngineTestFake, SetOptionsWithDenoising) {
   EXPECT_FALSE(vie_.GetCaptureDenoising(capture_id));
 }
 
+TEST_F(WebRtcVideoEngineTestFake, MultipleSendStreamsWithOneCapturer) {
+  EXPECT_TRUE(SetupEngine());
+
+  // Start the capturer
+  cricket::FakeVideoCapturer capturer;
+  cricket::VideoFormat capture_format_vga = cricket::VideoFormat(640, 480,
+        cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420);
+  EXPECT_EQ(cricket::CS_RUNNING, capturer.Start(capture_format_vga));
+
+  // Add send streams and connect the capturer
+  for (unsigned int i = 0; i < sizeof(kSsrcs2)/sizeof(kSsrcs2[0]); ++i) {
+    EXPECT_TRUE(channel_->AddSendStream(
+        cricket::StreamParams::CreateLegacy(kSsrcs2[i])));
+    // Register the capturer to the ssrc.
+    EXPECT_TRUE(channel_->SetCapturer(kSsrcs2[i], &capturer));
+  }
+
+  const int channel0 = vie_.GetChannelFromLocalSsrc(kSsrcs2[0]);
+  ASSERT_NE(-1, channel0);
+  const int channel1 = vie_.GetChannelFromLocalSsrc(kSsrcs2[1]);
+  ASSERT_NE(-1, channel1);
+  ASSERT_NE(channel0, channel1);
+
+  // Set send codec.
+  std::vector<cricket::VideoCodec> codecs;
+  cricket::VideoCodec send_codec(100, "VP8", 640, 480, 30, 0);
+  codecs.push_back(send_codec);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+
+  EXPECT_TRUE(capturer.CaptureFrame());
+  EXPECT_EQ(1, vie_.GetIncomingFrameNum(channel0));
+  EXPECT_EQ(1, vie_.GetIncomingFrameNum(channel1));
+
+  EXPECT_TRUE(channel_->RemoveSendStream(kSsrcs2[0]));
+  EXPECT_TRUE(capturer.CaptureFrame());
+  // channel0 is the default channel, so it won't be deleted.
+  // But it should be disconnected from the capturer.
+  EXPECT_EQ(1, vie_.GetIncomingFrameNum(channel0));
+  EXPECT_EQ(2, vie_.GetIncomingFrameNum(channel1));
+
+  EXPECT_TRUE(channel_->RemoveSendStream(kSsrcs2[1]));
+  EXPECT_TRUE(capturer.CaptureFrame());
+  EXPECT_EQ(1, vie_.GetIncomingFrameNum(channel0));
+  // channel1 has already been deleted.
+  EXPECT_EQ(-1, vie_.GetIncomingFrameNum(channel1));
+}
+
 
 // Disabled since its flaky: b/11288120
 TEST_F(WebRtcVideoEngineTestFake, DISABLED_SendReceiveBitratesStats) {

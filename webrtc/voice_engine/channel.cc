@@ -4619,6 +4619,10 @@ Channel::GetNetworkStatistics(NetworkStatistics& stats)
     return return_value;
 }
 
+void Channel::GetDecodingCallStatistics(AudioDecodingCallStats* stats) const {
+  audio_coding_->GetDecodingCallStatistics(stats);
+}
+
 bool Channel::GetDelayEstimate(int* jitter_buffer_delay_ms,
                                int* playout_buffer_delay_ms) const {
   if (_average_jitter_buffer_delay_us == 0) {

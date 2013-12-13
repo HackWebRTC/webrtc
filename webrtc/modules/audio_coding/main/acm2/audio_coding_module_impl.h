@@ -228,6 +228,8 @@ class AudioCodingModuleImpl : public AudioCodingModule {
 
   std::vector<uint16_t> GetNackList(int round_trip_time_ms) const;
 
+  void GetDecodingCallStatistics(AudioDecodingCallStats* stats) const;
+
  private:
   int UnregisterReceiveCodecSafe(int payload_type);
 

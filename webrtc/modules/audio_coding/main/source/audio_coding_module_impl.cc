@@ -18,6 +18,7 @@
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/main/source/acm_codec_database.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_common_defs.h"
+#include "webrtc/modules/audio_coding/main/acm2/call_statistics.h"
 #include "webrtc/modules/audio_coding/main/source/acm_dtmf_detection.h"
 #include "webrtc/modules/audio_coding/main/source/acm_generic_codec.h"
 #include "webrtc/modules/audio_coding/main/source/acm_resampler.h"
@@ -2273,6 +2274,9 @@ int32_t AudioCodingModuleImpl::PlayoutData10Ms(
   {
     CriticalSectionScoped lock(acm_crit_sect_);
 
+    // Update call statistics.
+    call_stats_.DecodedByNetEq(audio_frame->speech_type_);
+
     if (update_nack) {
       assert(nack_.get());
       nack_->UpdateLastDecodedPacket(decoded_seq_num, decoded_timestamp);
@@ -2879,6 +2883,9 @@ bool AudioCodingModuleImpl::GetSilence(int desired_sample_rate_hz,
     return false;
   }
 
+  // Record call to silence generator.
+  call_stats_.DecodedBySilenceGenerator();
+
   // We stop accumulating packets, if the number of packets or the total size
   // exceeds a threshold.
   int max_num_packets;
@@ -3028,6 +3035,12 @@ void AudioCodingModuleImpl::DisableNack() {
 
 const char* AudioCodingModuleImpl::Version() const {
   return kLegacyAcmVersion;
+}
+
+void AudioCodingModuleImpl::GetDecodingCallStatistics(
+      AudioDecodingCallStats* call_stats) const {
+  CriticalSectionScoped lock(acm_crit_sect_);
+  *call_stats = call_stats_.GetDecodingStatistics();
 }
 
 }  // namespace acm1

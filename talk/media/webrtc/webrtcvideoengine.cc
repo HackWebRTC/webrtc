@@ -2119,18 +2119,6 @@ bool WebRtcVideoMediaChannel::GetSendChannelKey(uint32 local_ssrc,
 }
 
 WebRtcVideoChannelSendInfo* WebRtcVideoMediaChannel::GetSendChannel(
-    VideoCapturer* video_capturer) {
-  for (SendChannelMap::iterator iter = send_channels_.begin();
-       iter != send_channels_.end(); ++iter) {
-    WebRtcVideoChannelSendInfo* send_channel = iter->second;
-    if (send_channel->video_capturer() == video_capturer) {
-      return send_channel;
-    }
-  }
-  return NULL;
-}
-
-WebRtcVideoChannelSendInfo* WebRtcVideoMediaChannel::GetSendChannel(
     uint32 local_ssrc) {
   uint32 key;
   if (!GetSendChannelKey(local_ssrc, &key)) {
@@ -2159,6 +2147,18 @@ bool WebRtcVideoMediaChannel::CreateSendChannelKey(uint32 local_ssrc,
   return true;
 }
 
+int WebRtcVideoMediaChannel::GetSendChannelNum(VideoCapturer* capturer) {
+  int num = 0;
+  for (SendChannelMap::iterator iter = send_channels_.begin();
+       iter != send_channels_.end(); ++iter) {
+    WebRtcVideoChannelSendInfo* send_channel = iter->second;
+    if (send_channel->video_capturer() == capturer) {
+      ++num;
+    }
+  }
+  return num;
+}
+
 uint32 WebRtcVideoMediaChannel::GetDefaultChannelSsrc() {
   WebRtcVideoChannelSendInfo* send_channel = send_channels_[0];
   const StreamParams* sp = send_channel->stream_params();
@@ -2174,11 +2174,8 @@ bool WebRtcVideoMediaChannel::DeleteSendChannel(uint32 ssrc_key) {
     return false;
   }
   WebRtcVideoChannelSendInfo* send_channel = send_channels_[ssrc_key];
-  VideoCapturer* capturer = send_channel->video_capturer();
-  if (capturer != NULL) {
-    capturer->SignalVideoFrame.disconnect(this);
-    send_channel->set_video_capturer(NULL);
-  }
+  MaybeDisconnectCapturer(send_channel->video_capturer());
+  send_channel->set_video_capturer(NULL);
 
   int channel_id = send_channel->channel_id();
   int capture_id = send_channel->capture_id();
@@ -2217,7 +2214,7 @@ bool WebRtcVideoMediaChannel::RemoveCapturer(uint32 ssrc) {
   if (capturer == NULL) {
     return false;
   }
-  capturer->SignalVideoFrame.disconnect(this);
+  MaybeDisconnectCapturer(capturer);
   send_channel->set_video_capturer(NULL);
   const int64 timestamp = send_channel->local_stream_info()->time_stamp();
   if (send_codec_) {
@@ -2468,14 +2465,10 @@ bool WebRtcVideoMediaChannel::SetCapturer(uint32 ssrc,
     return false;
   }
   VideoCapturer* old_capturer = send_channel->video_capturer();
-  if (old_capturer) {
-    old_capturer->SignalVideoFrame.disconnect(this);
-  }
+  MaybeDisconnectCapturer(old_capturer);
 
   send_channel->set_video_capturer(capturer);
-  capturer->SignalVideoFrame.connect(
-      this,
-      &WebRtcVideoMediaChannel::SendFrame);
+  MaybeConnectCapturer(capturer);
   if (!capturer->IsScreencast() && ratio_w_ != 0 && ratio_h_ != 0) {
     capturer->UpdateAspectRatio(ratio_w_, ratio_h_);
   }
@@ -2865,20 +2858,23 @@ bool WebRtcVideoMediaChannel::GetRenderer(uint32 ssrc,
   return true;
 }
 
-// TODO(zhurunz): Add unittests to test this function.
-// TODO(thorcarpenter): This is broken. One capturer registered on two ssrc
-// will not send any video to the second ssrc send channel. We should remove
-// GetSendChannel(capturer) and pass in an ssrc here.
 void WebRtcVideoMediaChannel::SendFrame(VideoCapturer* capturer,
                                         const VideoFrame* frame) {
-  // If there's send channel registers to the |capturer|, then only send the
-  // frame to that channel and return. Otherwise send the frame to the default
-  // channel, which currently taking frames from the engine.
-  WebRtcVideoChannelSendInfo* send_channel = GetSendChannel(capturer);
-  if (send_channel) {
-    SendFrame(send_channel, frame, capturer->IsScreencast());
+  // If the |capturer| is registered to any send channel, then send the frame
+  // to those send channels.
+  bool capturer_is_channel_owned = false;
+  for (SendChannelMap::iterator iter = send_channels_.begin();
+       iter != send_channels_.end(); ++iter) {
+    WebRtcVideoChannelSendInfo* send_channel = iter->second;
+    if (send_channel->video_capturer() == capturer) {
+      SendFrame(send_channel, frame, capturer->IsScreencast());
+      capturer_is_channel_owned = true;
+    }
+  }
+  if (capturer_is_channel_owned) {
     return;
   }
+
   // TODO(hellner): Remove below for loop once the captured frame no longer
   // come from the engine, i.e. the engine no longer owns a capturer.
   for (SendChannelMap::iterator iter = send_channels_.begin();
@@ -3752,6 +3748,19 @@ bool WebRtcVideoMediaChannel::SetLocalRtxSsrc(int channel_id,
     return false;
   }
   return true;
+}
+
+void WebRtcVideoMediaChannel::MaybeConnectCapturer(VideoCapturer* capturer) {
+  if (capturer != NULL && GetSendChannelNum(capturer) == 1) {
+    capturer->SignalVideoFrame.connect(this,
+                                       &WebRtcVideoMediaChannel::SendFrame);
+  }
+}
+
+void WebRtcVideoMediaChannel::MaybeDisconnectCapturer(VideoCapturer* capturer) {
+  if (capturer != NULL && GetSendChannelNum(capturer) == 1) {
+    capturer->SignalVideoFrame.disconnect(this);
+  }
 }
 
 }  // namespace cricket

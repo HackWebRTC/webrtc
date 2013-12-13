@@ -631,6 +631,13 @@ class FakeWebRtcVoiceEngine
 
   // webrtc::VoENetEqStats
   WEBRTC_STUB(GetNetworkStatistics, (int, webrtc::NetworkStatistics&));
+#ifdef USE_WEBRTC_DEV_BRANCH
+  WEBRTC_FUNC_CONST(GetDecodingCallStatistics, (int channel,
+      webrtc::AudioDecodingCallStats*)) {
+    WEBRTC_CHECK_CHANNEL(channel);
+    return 0;
+  }
+#endif
 
   // webrtc::VoENetwork
   WEBRTC_FUNC(RegisterExternalTransport, (int channel,

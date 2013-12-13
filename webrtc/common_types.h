@@ -382,6 +382,25 @@ struct NetworkStatistics           // NETEQ statistics
     int addedSamples;
 };
 
+// Statistics for calls to AudioCodingModule::PlayoutData10Ms().
+struct AudioDecodingCallStats {
+  AudioDecodingCallStats()
+      : calls_to_silence_generator(0),
+        calls_to_neteq(0),
+        decoded_normal(0),
+        decoded_plc(0),
+        decoded_cng(0),
+        decoded_plc_cng(0) {}
+
+  int calls_to_silence_generator;  // Number of calls where silence generated,
+                                   // and NetEq was disengaged from decoding.
+  int calls_to_neteq;  // Number of calls to NetEq.
+  int decoded_normal;  // Number of calls where audio RTP packet decoded.
+  int decoded_plc;  // Number of calls resulted in PLC.
+  int decoded_cng;  // Number of calls where comfort noise generated due to DTX.
+  int decoded_plc_cng;  // Number of calls resulted where PLC faded to CNG.
+};
+
 typedef struct
 {
     int min;              // minumum

@@ -201,6 +201,7 @@ public:
 
     // VoENetEqStats
     int GetNetworkStatistics(NetworkStatistics& stats);
+    void GetDecodingCallStatistics(AudioDecodingCallStats* stats) const;
 
     // VoEVideoSync
     bool GetDelayEstimate(int* jitter_buffer_delay_ms,

@@ -134,6 +134,7 @@
             'voe_audio_processing_unittest.cc',
             'voe_base_unittest.cc',
             'voe_codec_unittest.cc',
+            'voe_neteq_stats_unittest.cc',
           ],
           'conditions': [
             # TODO(henrike): remove build_with_chromium==1 when the bots are
