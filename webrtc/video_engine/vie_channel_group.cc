@@ -33,7 +33,9 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
         clock_(clock),
         process_thread_(process_thread),
         crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
-        rbe_(RemoteBitrateEstimatorFactory().Create(observer_, clock_)),
+        min_bitrate_bps_(30000),
+        rbe_(RemoteBitrateEstimatorFactory().Create(observer_, clock_,
+                                                    min_bitrate_bps_)),
         receive_absolute_send_time_(false) {
     assert(process_thread_ != NULL);
     process_thread_->RegisterModule(rbe_.get());
@@ -51,9 +53,10 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
     process_thread_->DeRegisterModule(rbe_.get());
     if (enable) {
       rbe_.reset(AbsoluteSendTimeRemoteBitrateEstimatorFactory().Create(
-          observer_, clock_));
+          observer_, clock_, min_bitrate_bps_));
     } else {
-      rbe_.reset(RemoteBitrateEstimatorFactory().Create(observer_, clock_));
+      rbe_.reset(RemoteBitrateEstimatorFactory().Create(observer_, clock_,
+                                                        min_bitrate_bps_));
     }
     process_thread_->RegisterModule(rbe_.get());
 
@@ -98,6 +101,7 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
   Clock* clock_;
   ProcessThread* process_thread_;
   scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  const uint32_t min_bitrate_bps_;
   scoped_ptr<RemoteBitrateEstimator> rbe_;
   bool receive_absolute_send_time_;
 

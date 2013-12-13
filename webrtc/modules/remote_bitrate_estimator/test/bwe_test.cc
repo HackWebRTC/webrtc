@@ -36,6 +36,8 @@ template<typename T> void DeleteElements(T* container) {
 
 class BweTest::TestedEstimator : public RemoteBitrateObserver {
  public:
+  static const uint32_t kRemoteBitrateEstimatorMinBitrateBps = 30000;
+
   TestedEstimator(const string& test_name,
                   const BweTestConfig::EstimatorConfig& config)
       : debug_name_(config.debug_name),
@@ -43,7 +45,8 @@ class BweTest::TestedEstimator : public RemoteBitrateObserver {
         stats_(),
         relative_estimator_stats_(),
         latest_estimate_bps_(-1),
-        estimator_(config.estimator_factory->Create(this, &clock_)),
+        estimator_(config.estimator_factory->Create(
+            this, &clock_, kRemoteBitrateEstimatorMinBitrateBps)),
         relative_estimator_(NULL),
         baseline_(BaseLineFileInterface::Create(test_name + "_" + debug_name_,
                                                 config.update_baseline)) {

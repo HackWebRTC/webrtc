@@ -77,7 +77,9 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
     rtp_parser_->RegisterRtpHeaderExtension(kRtpExtensionTransmissionTimeOffset,
                                             kTOffsetExtensionId);
     AbsoluteSendTimeRemoteBitrateEstimatorFactory rbe_factory;
-    remote_bitrate_estimator_.reset(rbe_factory.Create(this, clock));
+    const uint32_t kRemoteBitrateEstimatorMinBitrateBps = 30000;
+    remote_bitrate_estimator_.reset(
+        rbe_factory.Create(this, clock, kRemoteBitrateEstimatorMinBitrateBps));
   }
 
   virtual void OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,

@@ -24,7 +24,8 @@ namespace {
 class RemoteBitrateEstimatorSingleStream : public RemoteBitrateEstimator {
  public:
   RemoteBitrateEstimatorSingleStream(RemoteBitrateObserver* observer,
-                                     Clock* clock);
+                                     Clock* clock,
+                                     uint32_t min_bitrate_bps);
   virtual ~RemoteBitrateEstimatorSingleStream() {}
 
   // Called for each incoming packet. If this is a new SSRC, a new
@@ -72,9 +73,11 @@ class RemoteBitrateEstimatorSingleStream : public RemoteBitrateEstimator {
 
 RemoteBitrateEstimatorSingleStream::RemoteBitrateEstimatorSingleStream(
     RemoteBitrateObserver* observer,
-    Clock* clock)
+    Clock* clock,
+    uint32_t min_bitrate_bps)
     : clock_(clock),
       incoming_bitrate_(500, 8000),
+      remote_rate_(min_bitrate_bps),
       observer_(observer),
       crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       last_process_time_(-1) {
@@ -220,13 +223,17 @@ void RemoteBitrateEstimatorSingleStream::GetSsrcs(
 
 RemoteBitrateEstimator* RemoteBitrateEstimatorFactory::Create(
     RemoteBitrateObserver* observer,
-    Clock* clock) const {
-  return new RemoteBitrateEstimatorSingleStream(observer, clock);
+    Clock* clock,
+    uint32_t min_bitrate_bps) const {
+  return new RemoteBitrateEstimatorSingleStream(observer, clock,
+                                                min_bitrate_bps);
 }
 
 RemoteBitrateEstimator* AbsoluteSendTimeRemoteBitrateEstimatorFactory::Create(
     RemoteBitrateObserver* observer,
-    Clock* clock) const {
-  return new RemoteBitrateEstimatorSingleStream(observer, clock);
+    Clock* clock,
+    uint32_t min_bitrate_bps) const {
+  return new RemoteBitrateEstimatorSingleStream(observer, clock,
+                                                min_bitrate_bps);
 }
 }  // namespace webrtc

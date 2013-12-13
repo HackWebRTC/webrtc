@@ -69,7 +69,8 @@ struct RemoteBitrateEstimatorFactory {
 
   virtual RemoteBitrateEstimator* Create(
       RemoteBitrateObserver* observer,
-      Clock* clock) const;
+      Clock* clock,
+      uint32_t min_bitrate_bps) const;
 };
 
 struct AbsoluteSendTimeRemoteBitrateEstimatorFactory
@@ -79,7 +80,8 @@ struct AbsoluteSendTimeRemoteBitrateEstimatorFactory
 
   virtual RemoteBitrateEstimator* Create(
       RemoteBitrateObserver* observer,
-      Clock* clock) const;
+      Clock* clock,
+      uint32_t min_bitrate_bps) const;
 };
 }  // namespace webrtc
 

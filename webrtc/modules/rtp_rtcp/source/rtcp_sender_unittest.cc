@@ -272,6 +272,8 @@ class TestTransport : public Transport,
 
 class RtcpSenderTest : public ::testing::Test {
  protected:
+  static const uint32_t kRemoteBitrateEstimatorMinBitrateBps = 30000;
+
   RtcpSenderTest()
       : over_use_detector_options_(),
         clock_(1335900000),
@@ -281,7 +283,8 @@ class RtcpSenderTest : public ::testing::Test {
         remote_bitrate_estimator_(
             RemoteBitrateEstimatorFactory().Create(
                 &remote_bitrate_observer_,
-                &clock_)),
+                &clock_,
+                kRemoteBitrateEstimatorMinBitrateBps)),
         receive_statistics_(ReceiveStatistics::Create(&clock_)) {
     test_transport_ = new TestTransport();
 
