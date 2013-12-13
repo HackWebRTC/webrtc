@@ -936,4 +936,53 @@ TEST_F(CallTest, ObserversEncodedFrames) {
 
   DestroyStreams();
 }
+
+TEST_F(CallTest, ReceiveStreamSendsRemb) {
+  class RembObserver : public test::RtpRtcpObserver {
+   public:
+    RembObserver() : test::RtpRtcpObserver(kDefaultTimeoutMs) {}
+
+    virtual Action OnReceiveRtcp(const uint8_t* packet,
+                                 size_t length) OVERRIDE {
+      RTCPUtility::RTCPParserV2 parser(packet, length, true);
+      EXPECT_TRUE(parser.IsValid());
+
+      bool received_psfb = false;
+      bool received_remb = false;
+      RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
+      while (packet_type != RTCPUtility::kRtcpNotValidCode) {
+        if (packet_type == RTCPUtility::kRtcpPsfbRembCode) {
+          const RTCPUtility::RTCPPacket& packet = parser.Packet();
+          EXPECT_EQ(packet.PSFBAPP.SenderSSRC, kReceiverLocalSsrc);
+          received_psfb = true;
+        } else if (packet_type == RTCPUtility::kRtcpPsfbRembItemCode) {
+          const RTCPUtility::RTCPPacket& packet = parser.Packet();
+          EXPECT_GT(packet.REMBItem.BitRate, 0u);
+          EXPECT_EQ(packet.REMBItem.NumberOfSSRCs, 1u);
+          EXPECT_EQ(packet.REMBItem.SSRCs[0], kSendSsrc);
+          received_remb = true;
+        }
+        packet_type = parser.Iterate();
+      }
+      if (received_psfb && received_remb)
+        observation_complete_->Set();
+      return SEND_PACKET;
+    }
+  } observer;
+
+  CreateCalls(Call::Config(observer.SendTransport()),
+              Call::Config(observer.ReceiveTransport()));
+  observer.SetReceivers(receiver_call_->Receiver(), sender_call_->Receiver());
+  CreateTestConfigs();
+  CreateStreams();
+  CreateFrameGenerator();
+  StartSending();
+
+  EXPECT_EQ(kEventSignaled, observer.Wait())
+      << "Timed out while waiting for a receiver RTCP REMB packet to be sent.";
+
+  StopSending();
+  observer.StopSending();
+  DestroyStreams();
+}
 }  // namespace webrtc

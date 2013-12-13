@@ -115,6 +115,8 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
     }
   }
 
+  rtp_rtcp_->SetRembStatus(channel_, true, false);
+
   // Enable NACK, FEC or both.
   if (config_.rtp.fec.red_payload_type != -1) {
     assert(config_.rtp.fec.ulpfec_payload_type != -1);

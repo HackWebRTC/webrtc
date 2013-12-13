@@ -277,7 +277,9 @@ void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
 }
 
 VideoReceiveStream::Config Call::GetDefaultReceiveConfig() {
-  return VideoReceiveStream::Config();
+  VideoReceiveStream::Config config;
+  config.rtp.remb = true;
+  return config;
 }
 
 VideoReceiveStream* Call::CreateVideoReceiveStream(

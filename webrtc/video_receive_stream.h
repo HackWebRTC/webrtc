@@ -108,7 +108,8 @@ class VideoReceiveStream {
       Rtp()
           : remote_ssrc(0),
             local_ssrc(0),
-            rtcp_mode(newapi::kRtcpReducedSize) {}
+            rtcp_mode(newapi::kRtcpReducedSize),
+            remb(false) {}
 
       // Synchronization source (stream identifier) to be received.
       uint32_t remote_ssrc;
@@ -117,6 +118,9 @@ class VideoReceiveStream {
 
       // See RtcpMode for description.
       newapi::RtcpMode rtcp_mode;
+
+      // See draft-alvestrand-rmcat-remb for information.
+      bool remb;
 
       // See NackConfig for description.
       NackConfig nack;
