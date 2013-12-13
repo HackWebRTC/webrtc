@@ -906,6 +906,7 @@ Channel::Channel(int32_t channelId,
     _decryptionRTCPBufferPtr(NULL),
     _timeStamp(0), // This is just an offset, RTP module will add it's own random offset
     _sendTelephoneEventPayloadType(106),
+    jitter_buffer_playout_timestamp_(0),
     playout_timestamp_rtp_(0),
     playout_timestamp_rtcp_(0),
     _numberOfDiscardedPackets(0),
@@ -4718,6 +4719,8 @@ void Channel::UpdatePlayoutTimestamp(bool rtcp) {
     }
   }
 
+  jitter_buffer_playout_timestamp_ = playout_timestamp;
+
   // Remove the playout delay.
   playout_timestamp -= (delay_ms * (playout_frequency / 1000));
 
@@ -5071,10 +5074,10 @@ void Channel::UpdatePacketDelay(uint32_t rtp_timestamp,
     rtp_receive_frequency = 48000;
   }
 
-  // playout_timestamp_rtp_ updated in UpdatePlayoutTimestamp for every incoming
-  // packet.
-  uint32_t timestamp_diff_ms = (rtp_timestamp - playout_timestamp_rtp_) /
-      (rtp_receive_frequency / 1000);
+  // |jitter_buffer_playout_timestamp_| updated in UpdatePlayoutTimestamp for
+  // every incoming packet.
+  uint32_t timestamp_diff_ms = (rtp_timestamp -
+      jitter_buffer_playout_timestamp_) / (rtp_receive_frequency / 1000);
 
   uint16_t packet_delay_ms = (rtp_timestamp - _previousTimestamp) /
       (rtp_receive_frequency / 1000);

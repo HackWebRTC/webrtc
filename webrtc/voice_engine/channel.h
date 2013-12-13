@@ -489,6 +489,9 @@ private:
     uint8_t* _decryptionRTCPBufferPtr;
     uint32_t _timeStamp;
     uint8_t _sendTelephoneEventPayloadType;
+
+    // Timestamp of the audio pulled from NetEq.
+    uint32_t jitter_buffer_playout_timestamp_;
     uint32_t playout_timestamp_rtp_;
     uint32_t playout_timestamp_rtcp_;
     uint32_t playout_delay_ms_;
