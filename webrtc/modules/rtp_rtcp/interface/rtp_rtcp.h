@@ -301,6 +301,13 @@ class RtpRtcp : public Module {
                              uint32_t* nackRate) const = 0;
 
     /*
+    *   Called on any new send bitrate estimate.
+    */
+    virtual void RegisterVideoBitrateObserver(
+        BitrateStatisticsObserver* observer) = 0;
+    virtual BitrateStatisticsObserver* GetVideoBitrateObserver() const = 0;
+
+    /*
     *   Used by the codec module to deliver a video or audio frame for
     *   packetization.
     *

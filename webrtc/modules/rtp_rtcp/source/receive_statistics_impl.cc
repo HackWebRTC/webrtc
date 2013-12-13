@@ -27,7 +27,7 @@ StreamStatistician::~StreamStatistician() {}
 StreamStatisticianImpl::StreamStatisticianImpl(Clock* clock)
     : clock_(clock),
       crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
-      incoming_bitrate_(clock),
+      incoming_bitrate_(clock, NULL),
       ssrc_(0),
       max_reordering_threshold_(kDefaultMaxReorderingThreshold),
       jitter_q4_(0),

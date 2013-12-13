@@ -32,27 +32,26 @@ struct RtpPacket {
 
 RTPSenderVideo::RTPSenderVideo(const int32_t id,
                                Clock* clock,
-                               RTPSenderInterface* rtpSender) :
-    _id(id),
-    _rtpSender(*rtpSender),
-    _sendVideoCritsect(CriticalSectionWrapper::CreateCriticalSection()),
+                               RTPSenderInterface* rtpSender)
+    : _id(id),
+      _rtpSender(*rtpSender),
+      _sendVideoCritsect(CriticalSectionWrapper::CreateCriticalSection()),
+      _videoType(kRtpVideoGeneric),
+      _videoCodecInformation(NULL),
+      _maxBitrate(0),
+      _retransmissionSettings(kRetransmitBaseLayer),
 
-    _videoType(kRtpVideoGeneric),
-    _videoCodecInformation(NULL),
-    _maxBitrate(0),
-    _retransmissionSettings(kRetransmitBaseLayer),
-
-    // Generic FEC
-    _fec(id),
-    _fecEnabled(false),
-    _payloadTypeRED(-1),
-    _payloadTypeFEC(-1),
-    _numberFirstPartition(0),
-    delta_fec_params_(),
-    key_fec_params_(),
-    producer_fec_(&_fec),
-    _fecOverheadRate(clock),
-    _videoBitrate(clock) {
+      // Generic FEC
+      _fec(id),
+      _fecEnabled(false),
+      _payloadTypeRED(-1),
+      _payloadTypeFEC(-1),
+      _numberFirstPartition(0),
+      delta_fec_params_(),
+      key_fec_params_(),
+      producer_fec_(&_fec),
+      _fecOverheadRate(clock, NULL),
+      _videoBitrate(clock, NULL) {
   memset(&delta_fec_params_, 0, sizeof(delta_fec_params_));
   memset(&key_fec_params_, 0, sizeof(key_fec_params_));
   delta_fec_params_.max_fec_frames = key_fec_params_.max_fec_frames = 1;

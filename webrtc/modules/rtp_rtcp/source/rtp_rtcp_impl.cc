@@ -1559,13 +1559,38 @@ void ModuleRtpRtcpImpl::BitrateSent(uint32_t* total_rate,
     return;
   }
   if (total_rate != NULL)
-    *total_rate = rtp_sender_.BitrateLast();
+    *total_rate = rtp_sender_.BitrateSent();
   if (video_rate != NULL)
     *video_rate = rtp_sender_.VideoBitrateSent();
   if (fec_rate != NULL)
     *fec_rate = rtp_sender_.FecOverheadRate();
   if (nack_rate != NULL)
     *nack_rate = rtp_sender_.NackOverheadRate();
+}
+
+void ModuleRtpRtcpImpl::RegisterVideoBitrateObserver(
+    BitrateStatisticsObserver* observer) {
+  {
+    CriticalSectionScoped cs(critical_section_module_ptrs_.get());
+    if (!child_modules_.empty()) {
+      for (std::list<ModuleRtpRtcpImpl*>::const_iterator it =
+               child_modules_.begin();
+           it != child_modules_.end();
+           ++it) {
+        RtpRtcp* module = *it;
+        if (module)
+          module->RegisterVideoBitrateObserver(observer);
+        ++it;
+      }
+      return;
+    }
+  }
+
+  rtp_sender_.RegisterBitrateObserver(observer);
+}
+
+BitrateStatisticsObserver* ModuleRtpRtcpImpl::GetVideoBitrateObserver() const {
+  return rtp_sender_.GetBitrateObserver();
 }
 
 // Bad state of RTP receiver request a keyframe.
