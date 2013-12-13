@@ -458,7 +458,8 @@ bool TbExternalTransport::ViEExternalTransportProcess()
             }
             _vieNetwork.ReceivedRTPPacket(destination_channel,
                                           packet->packetBuffer,
-                                          packet->length);
+                                          packet->length,
+                                          webrtc::PacketTime());
             delete packet;
             packet = NULL;
         }

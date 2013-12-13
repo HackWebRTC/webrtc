@@ -31,6 +31,7 @@
 #include <string>
 #include <vector>
 
+#include "talk/base/asyncpacketsocket.h"
 #include "talk/base/basictypes.h"
 #include "talk/base/dscp.h"
 #include "talk/base/sigslot.h"
@@ -122,8 +123,8 @@ class TransportChannel : public sigslot::has_slots<> {
       size_t result_len) = 0;
 
   // Signalled each time a packet is received on this channel.
-  sigslot::signal4<TransportChannel*, const char*,
-                   size_t, int> SignalReadPacket;
+  sigslot::signal5<TransportChannel*, const char*,
+                   size_t, const talk_base::PacketTime&, int> SignalReadPacket;
 
   // This signal occurs when there is a change in the way that packets are
   // being routed, i.e. to a different remote location. The candidate

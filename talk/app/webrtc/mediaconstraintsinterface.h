@@ -117,13 +117,6 @@ class MediaConstraintsInterface {
   // stripped by Chrome before passed down to Libjingle.
   static const char kInternalConstraintPrefix[];
 
-  // These constraints are for internal use only, representing Chrome command
-  // line flags. So they are prefixed with "internal" so JS values will be
-  // removed.
-  // Used by a local audio source.
-  // TODO(perkj): Remove once Chrome use PeerConnectionFactory::SetOptions.
-  static const char kInternalAecDump[];  // internalAecDump
-
  protected:
   // Dtor protected as objects shouldn't be deleted via this interface
   virtual ~MediaConstraintsInterface() {}

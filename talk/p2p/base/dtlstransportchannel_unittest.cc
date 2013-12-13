@@ -307,6 +307,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
 
   void OnTransportChannelReadPacket(cricket::TransportChannel* channel,
                                     const char* data, size_t size,
+                                    const talk_base::PacketTime& packet_time,
                                     int flags) {
     uint32 packet_num = 0;
     ASSERT_TRUE(VerifyPacket(data, size, &packet_num));
@@ -320,6 +321,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
   // Hook into the raw packet stream to make sure DTLS packets are encrypted.
   void OnFakeTransportChannelReadPacket(cricket::TransportChannel* channel,
                                         const char* data, size_t size,
+                                        const talk_base::PacketTime& time,
                                         int flags) {
     // Flags shouldn't be set on the underlying TransportChannel packets.
     ASSERT_EQ(0, flags);

@@ -139,7 +139,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
   }
   void DeliverPacket(const void* data, int len) {
     talk_base::Buffer packet(data, len);
-    channel_->OnPacketReceived(&packet);
+    channel_->OnPacketReceived(&packet, talk_base::PacketTime());
   }
   virtual void TearDown() {
     delete soundclip_;

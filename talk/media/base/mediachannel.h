@@ -509,9 +509,11 @@ class MediaChannel : public sigslot::has_slots<> {
   }
 
   // Called when a RTP packet is received.
-  virtual void OnPacketReceived(talk_base::Buffer* packet) = 0;
+  virtual void OnPacketReceived(talk_base::Buffer* packet,
+                                const talk_base::PacketTime& packet_time) = 0;
   // Called when a RTCP packet is received.
-  virtual void OnRtcpReceived(talk_base::Buffer* packet) = 0;
+  virtual void OnRtcpReceived(talk_base::Buffer* packet,
+                              const talk_base::PacketTime& packet_time) = 0;
   // Called when the socket's ability to send has changed.
   virtual void OnReadyToSend(bool ready) = 0;
   // Creates a new outgoing media stream with SSRCs and CNAME as described
@@ -1131,25 +1133,15 @@ class DataMediaChannel : public MediaChannel {
 
   virtual ~DataMediaChannel() {}
 
-  virtual bool SetSendBandwidth(bool autobw, int bps) = 0;
   virtual bool SetSendCodecs(const std::vector<DataCodec>& codecs) = 0;
   virtual bool SetRecvCodecs(const std::vector<DataCodec>& codecs) = 0;
-  virtual bool SetRecvRtpHeaderExtensions(
-      const std::vector<RtpHeaderExtension>& extensions) = 0;
-  virtual bool SetSendRtpHeaderExtensions(
-      const std::vector<RtpHeaderExtension>& extensions) = 0;
-  virtual bool AddSendStream(const StreamParams& sp) = 0;
-  virtual bool RemoveSendStream(uint32 ssrc) = 0;
-  virtual bool AddRecvStream(const StreamParams& sp) = 0;
-  virtual bool RemoveRecvStream(uint32 ssrc) = 0;
+
   virtual bool MuteStream(uint32 ssrc, bool on) { return false; }
   // TODO(pthatcher): Implement this.
   virtual bool GetStats(DataMediaInfo* info) { return true; }
 
   virtual bool SetSend(bool send) = 0;
   virtual bool SetReceive(bool receive) = 0;
-  virtual void OnPacketReceived(talk_base::Buffer* packet) = 0;
-  virtual void OnRtcpReceived(talk_base::Buffer* packet) = 0;
 
   virtual bool SendData(
       const SendDataParams& params,

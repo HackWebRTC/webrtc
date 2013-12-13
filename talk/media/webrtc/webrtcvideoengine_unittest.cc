@@ -1216,41 +1216,6 @@ TEST_F(WebRtcVideoEngineTestFake, SetOptionsWithDenoising) {
   EXPECT_FALSE(vie_.GetCaptureDenoising(capture_id));
 }
 
-TEST_F(WebRtcVideoEngineTestFake, MultipleSendStreamsWithOneCapturer) {
-  EXPECT_TRUE(SetupEngine());
-  cricket::FakeVideoCapturer capturer;
-  for (unsigned int i = 0; i < sizeof(kSsrcs2)/sizeof(kSsrcs2[0]); ++i) {
-    EXPECT_TRUE(channel_->AddSendStream(
-        cricket::StreamParams::CreateLegacy(kSsrcs2[i])));
-    // Register the capturer to the ssrc.
-    EXPECT_TRUE(channel_->SetCapturer(kSsrcs2[i], &capturer));
-  }
-
-  const int channel0 = vie_.GetChannelFromLocalSsrc(kSsrcs2[0]);
-  ASSERT_NE(-1, channel0);
-  const int channel1 = vie_.GetChannelFromLocalSsrc(kSsrcs2[1]);
-  ASSERT_NE(-1, channel1);
-  ASSERT_NE(channel0, channel1);
-
-  std::vector<cricket::VideoCodec> codecs;
-  codecs.push_back(kVP8Codec);
-  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
-
-  cricket::WebRtcVideoFrame frame;
-  const size_t pixel_width = 1;
-  const size_t pixel_height = 1;
-  const int64 elapsed_time = 0;
-  const int64 time_stamp = 0;
-  EXPECT_TRUE(frame.InitToBlack(kVP8Codec.width, kVP8Codec.height,
-                                pixel_width, pixel_height,
-                                elapsed_time, time_stamp));
-  channel_->SendFrame(&capturer, &frame);
-
-  // Both channels should have received the frame.
-  EXPECT_EQ(1, vie_.GetIncomingFrameNum(channel0));
-  EXPECT_EQ(1, vie_.GetIncomingFrameNum(channel1));
-}
-
 
 // Disabled since its flaky: b/11288120
 TEST_F(WebRtcVideoEngineTestFake, DISABLED_SendReceiveBitratesStats) {

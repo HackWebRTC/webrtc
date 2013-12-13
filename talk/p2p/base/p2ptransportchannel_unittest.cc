@@ -613,7 +613,8 @@ class P2PTransportChannelTestBase : public testing::Test,
     rch->OnCandidate(c);
   }
   void OnReadPacket(cricket::TransportChannel* channel, const char* data,
-                    size_t len, int flags) {
+                    size_t len, const talk_base::PacketTime& packet_time,
+                    int flags) {
     std::list<std::string>& packets = GetPacketList(channel);
     packets.push_front(std::string(data, len));
   }

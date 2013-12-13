@@ -446,9 +446,9 @@ void DtlsTransportChannelWrapper::OnWritableState(TransportChannel* channel) {
   }
 }
 
-void DtlsTransportChannelWrapper::OnReadPacket(TransportChannel* channel,
-                                               const char* data, size_t size,
-                                               int flags) {
+void DtlsTransportChannelWrapper::OnReadPacket(
+    TransportChannel* channel, const char* data, size_t size,
+    const talk_base::PacketTime& packet_time, int flags) {
   ASSERT(talk_base::Thread::Current() == worker_thread_);
   ASSERT(channel == channel_);
   ASSERT(flags == 0);
@@ -456,7 +456,7 @@ void DtlsTransportChannelWrapper::OnReadPacket(TransportChannel* channel,
   switch (dtls_state_) {
     case STATE_NONE:
       // We are not doing DTLS
-      SignalReadPacket(this, data, size, 0);
+      SignalReadPacket(this, data, size, packet_time, 0);
       break;
 
     case STATE_OFFERED:
@@ -500,7 +500,7 @@ void DtlsTransportChannelWrapper::OnReadPacket(TransportChannel* channel,
         ASSERT(!srtp_ciphers_.empty());
 
         // Signal this upwards as a bypass packet.
-        SignalReadPacket(this, data, size, PF_SRTP_BYPASS);
+        SignalReadPacket(this, data, size, packet_time, PF_SRTP_BYPASS);
       }
       break;
     case STATE_CLOSED:
@@ -535,7 +535,7 @@ void DtlsTransportChannelWrapper::OnDtlsEvent(talk_base::StreamInterface* dtls,
     char buf[kMaxDtlsPacketLen];
     size_t read;
     if (dtls_->Read(buf, sizeof(buf), &read, NULL) == talk_base::SR_SUCCESS) {
-      SignalReadPacket(this, buf, read, 0);
+      SignalReadPacket(this, buf, read, talk_base::CreatePacketTime(0), 0);
     }
   }
   if (sig & talk_base::SE_CLOSE) {

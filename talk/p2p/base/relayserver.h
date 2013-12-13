@@ -104,10 +104,12 @@ class RelayServer : public talk_base::MessageHandler,
   // Called when a packet is received by the server on one of its sockets.
   void OnInternalPacket(talk_base::AsyncPacketSocket* socket,
                         const char* bytes, size_t size,
-                        const talk_base::SocketAddress& remote_addr);
+                        const talk_base::SocketAddress& remote_addr,
+                        const talk_base::PacketTime& packet_time);
   void OnExternalPacket(talk_base::AsyncPacketSocket* socket,
                         const char* bytes, size_t size,
-                        const talk_base::SocketAddress& remote_addr);
+                        const talk_base::SocketAddress& remote_addr,
+                        const talk_base::PacketTime& packet_time);
 
   void OnReadEvent(talk_base::AsyncSocket* socket);
 

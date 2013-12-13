@@ -225,7 +225,7 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   void OnReadableState(TransportChannel* channel);
   void OnWritableState(TransportChannel* channel);
   void OnReadPacket(TransportChannel* channel, const char* data, size_t size,
-                    int flags);
+                    const talk_base::PacketTime& packet_time, int flags);
   void OnReadyToSend(TransportChannel* channel);
   void OnDtlsEvent(talk_base::StreamInterface* stream_, int sig, int err);
   bool SetupDtls();

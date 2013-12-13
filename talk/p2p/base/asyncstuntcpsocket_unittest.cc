@@ -109,7 +109,8 @@ class AsyncStunTCPSocketTest : public testing::Test,
   }
 
   void OnReadPacket(talk_base::AsyncPacketSocket* socket, const char* data,
-                    size_t len, const talk_base::SocketAddress& remote_addr) {
+                    size_t len, const talk_base::SocketAddress& remote_addr,
+                    const talk_base::PacketTime& packet_time) {
     recv_packets_.push_back(std::string(data, len));
   }
 

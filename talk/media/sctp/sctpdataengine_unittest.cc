@@ -84,7 +84,7 @@ class SctpFakeNetworkInterface : public cricket::MediaChannel::NetworkInterface,
         static_cast<talk_base::TypedMessageData<talk_base::Buffer*>*>(
             msg->pdata)->data();
     if (dest_) {
-      dest_->OnPacketReceived(buffer);
+      dest_->OnPacketReceived(buffer, talk_base::PacketTime());
     }
     delete buffer;
   }

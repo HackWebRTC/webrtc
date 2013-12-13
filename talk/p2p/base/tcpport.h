@@ -102,7 +102,8 @@ class TCPPort : public Port {
   // Receives packet signal from the local TCP Socket.
   void OnReadPacket(talk_base::AsyncPacketSocket* socket,
                     const char* data, size_t size,
-                    const talk_base::SocketAddress& remote_addr);
+                    const talk_base::SocketAddress& remote_addr,
+                    const talk_base::PacketTime& packet_time);
 
   void OnReadyToSend(talk_base::AsyncPacketSocket* socket);
 
@@ -137,7 +138,8 @@ class TCPConnection : public Connection {
   void OnClose(talk_base::AsyncPacketSocket* socket, int error);
   void OnReadPacket(talk_base::AsyncPacketSocket* socket,
                     const char* data, size_t size,
-                    const talk_base::SocketAddress& remote_addr);
+                    const talk_base::SocketAddress& remote_addr,
+                    const talk_base::PacketTime& packet_time);
   void OnReadyToSend(talk_base::AsyncPacketSocket* socket);
 
   talk_base::AsyncPacketSocket* socket_;

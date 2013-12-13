@@ -118,13 +118,15 @@ class TurnPortTest : public testing::Test,
       turn_create_permission_success_ = true;
     }
   }
-  void OnTurnReadPacket(Connection* conn, const char* data, size_t size) {
+  void OnTurnReadPacket(Connection* conn, const char* data, size_t size,
+                        const talk_base::PacketTime& packet_time) {
     turn_packets_.push_back(talk_base::Buffer(data, size));
   }
   void OnUdpPortComplete(Port* port) {
     udp_ready_ = true;
   }
-  void OnUdpReadPacket(Connection* conn, const char* data, size_t size) {
+  void OnUdpReadPacket(Connection* conn, const char* data, size_t size,
+                       const talk_base::PacketTime& packet_time) {
     udp_packets_.push_back(talk_base::Buffer(data, size));
   }
 

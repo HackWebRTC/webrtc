@@ -201,9 +201,11 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
             msg->pdata);
     if (dest_) {
       if (msg->message_id == ST_RTP) {
-        dest_->OnPacketReceived(&msg_data->data());
+        dest_->OnPacketReceived(&msg_data->data(),
+                                talk_base::CreatePacketTime(0));
       } else {
-        dest_->OnRtcpReceived(&msg_data->data());
+        dest_->OnRtcpReceived(&msg_data->data(),
+                              talk_base::CreatePacketTime(0));
       }
     }
     delete msg_data;

@@ -149,7 +149,9 @@ class AllocationSequence : public talk_base::MessageHandler,
 
   void OnReadPacket(talk_base::AsyncPacketSocket* socket,
                     const char* data, size_t size,
-                    const talk_base::SocketAddress& remote_addr);
+                    const talk_base::SocketAddress& remote_addr,
+                    const talk_base::PacketTime& packet_time);
+
   void OnPortDestroyed(PortInterface* port);
 
   BasicPortAllocatorSession* session_;
@@ -1024,13 +1026,15 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
 
 void AllocationSequence::OnReadPacket(
     talk_base::AsyncPacketSocket* socket, const char* data, size_t size,
-    const talk_base::SocketAddress& remote_addr) {
+    const talk_base::SocketAddress& remote_addr,
+    const talk_base::PacketTime& packet_time) {
   ASSERT(socket == udp_socket_.get());
   for (std::deque<Port*>::iterator iter = ports.begin();
        iter != ports.end(); ++iter) {
     // We have only one port in the queue.
     // TODO(mallinath) - Add shared socket support to Relay and Turn ports.
-    if ((*iter)->HandleIncomingPacket(socket, data, size, remote_addr)) {
+    if ((*iter)->HandleIncomingPacket(
+        socket, data, size, remote_addr, packet_time)) {
       break;
     }
   }

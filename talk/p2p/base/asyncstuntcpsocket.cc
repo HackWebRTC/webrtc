@@ -126,7 +126,8 @@ void AsyncStunTCPSocket::ProcessInput(char* data, size_t* len) {
       return;
     }
 
-    SignalReadPacket(this, data, expected_pkt_len, remote_addr);
+    SignalReadPacket(this, data, expected_pkt_len, remote_addr,
+                     talk_base::CreatePacketTime(0));
 
     *len -= actual_length;
     if (*len > 0) {

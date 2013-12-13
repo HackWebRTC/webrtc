@@ -99,13 +99,16 @@ class StunPortTest : public testing::Test,
   }
 
   void OnReadPacket(talk_base::AsyncPacketSocket* socket, const char* data,
-                    size_t size, const talk_base::SocketAddress& remote_addr) {
-    stun_port_->HandleIncomingPacket(socket, data, size, remote_addr);
+                    size_t size, const talk_base::SocketAddress& remote_addr,
+                    const talk_base::PacketTime& packet_time) {
+    stun_port_->HandleIncomingPacket(
+        socket, data, size, remote_addr, talk_base::PacketTime());
   }
 
   void SendData(const char* data, size_t len) {
     stun_port_->HandleIncomingPacket(
-        socket_.get(), data, len, talk_base::SocketAddress("22.22.22.22", 0));
+        socket_.get(), data, len, talk_base::SocketAddress("22.22.22.22", 0),
+        talk_base::PacketTime());
   }
 
  protected:
