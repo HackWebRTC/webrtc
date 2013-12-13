@@ -368,8 +368,6 @@ TEST_F(PacedSenderTest, Pause) {
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
   int64_t capture_time_ms = TickTime::MillisecondTimestamp();
-  TickTime::AdvanceFakeClock(10000);
-  int64_t second_capture_time_ms = TickTime::MillisecondTimestamp();
 
   EXPECT_EQ(0, send_bucket_->QueueInMs());
 
@@ -384,16 +382,20 @@ TEST_F(PacedSenderTest, Pause) {
 
   send_bucket_->Pause();
 
-  // Expect everything to be queued.
-  EXPECT_FALSE(send_bucket_->SendPacket(PacedSender::kLowPriority,
-      ssrc_low_priority, sequence_number++, second_capture_time_ms, 250,
-      false));
   EXPECT_FALSE(send_bucket_->SendPacket(PacedSender::kNormalPriority,
       ssrc, sequence_number++, capture_time_ms, 250, false));
   EXPECT_FALSE(send_bucket_->SendPacket(PacedSender::kNormalPriority,
       ssrc, sequence_number++, capture_time_ms, 250, false));
   EXPECT_FALSE(send_bucket_->SendPacket(PacedSender::kHighPriority,
       ssrc, sequence_number++, capture_time_ms, 250, false));
+
+  TickTime::AdvanceFakeClock(10000);
+  int64_t second_capture_time_ms = TickTime::MillisecondTimestamp();
+
+  // Expect everything to be queued.
+  EXPECT_FALSE(send_bucket_->SendPacket(PacedSender::kLowPriority,
+      ssrc_low_priority, sequence_number++, second_capture_time_ms, 250,
+      false));
 
   EXPECT_EQ(TickTime::MillisecondTimestamp() - capture_time_ms,
             send_bucket_->QueueInMs());
@@ -441,13 +443,14 @@ TEST_F(PacedSenderTest, ResendPacket) {
                                         capture_time_ms,
                                         250,
                                         false));
+  TickTime::AdvanceFakeClock(1);
   EXPECT_FALSE(send_bucket_->SendPacket(PacedSender::kNormalPriority,
                                         ssrc,
                                         sequence_number + 1,
                                         capture_time_ms + 1,
                                         250,
                                         false));
-  TickTime::AdvanceFakeClock(10000);
+  TickTime::AdvanceFakeClock(9999);
   EXPECT_EQ(TickTime::MillisecondTimestamp() - capture_time_ms,
             send_bucket_->QueueInMs());
   // Fails to send first packet so only one call.
@@ -515,6 +518,25 @@ TEST_F(PacedSenderTest, MaxQueueLength) {
   EXPECT_EQ(0, send_bucket_->QueueInMs());
   TickTime::AdvanceFakeClock(31);
   send_bucket_->Process();
+}
+
+TEST_F(PacedSenderTest, QueueTimeGrowsOverTime) {
+  uint32_t ssrc = 12346;
+  uint16_t sequence_number = 1234;
+  EXPECT_EQ(0, send_bucket_->QueueInMs());
+
+  send_bucket_->UpdateBitrate(30, 0, 0);
+  SendAndExpectPacket(PacedSender::kNormalPriority,
+                      ssrc,
+                      sequence_number,
+                      TickTime::MillisecondTimestamp(),
+                      1200,
+                      false);
+
+  TickTime::AdvanceFakeClock(500);
+  EXPECT_EQ(500, send_bucket_->QueueInMs());
+  send_bucket_->Process();
+  EXPECT_EQ(0, send_bucket_->QueueInMs());
 }
 }  // namespace test
 }  // namespace webrtc

@@ -92,7 +92,7 @@ class PacedSender : public Module {
   // A negative queue size is interpreted as infinite.
   virtual void set_max_queue_length_ms(int max_queue_length_ms);
 
-  // Returns the time since the oldest queued packet was captured.
+  // Returns the time since the oldest queued packet was enqueued.
   virtual int QueueInMs() const;
 
   // Returns the number of milliseconds until the module want a worker thread
@@ -108,9 +108,7 @@ class PacedSender : public Module {
   bool ShouldSendNextPacket(paced_sender::PacketList** packet_list);
 
   // Local helper function to GetNextPacket.
-  void GetNextPacketFromList(paced_sender::PacketList* packets,
-      uint32_t* ssrc, uint16_t* sequence_number, int64_t* capture_time_ms,
-      bool* retransmission);
+  paced_sender::Packet GetNextPacketFromList(paced_sender::PacketList* packets);
 
   bool SendPacketFromList(paced_sender::PacketList* packet_list);
 
