@@ -36,7 +36,7 @@
 namespace webrtc {
 
 namespace {
-  static const int kAbsoluteSendTimeExtensionId = 7;
+  static const int kTOffsetExtensionId = 7;
   static const int kMaxPacketSize = 1500;
 }
 
@@ -74,8 +74,8 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
     rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(config));
     rtp_rtcp_->SetREMBStatus(true);
     rtp_rtcp_->SetRTCPStatus(kRtcpNonCompound);
-    rtp_parser_->RegisterRtpHeaderExtension(kRtpExtensionAbsoluteSendTime,
-                                            kAbsoluteSendTimeExtensionId);
+    rtp_parser_->RegisterRtpHeaderExtension(kRtpExtensionTransmissionTimeOffset,
+                                            kTOffsetExtensionId);
     AbsoluteSendTimeRemoteBitrateEstimatorFactory rbe_factory;
     const uint32_t kRemoteBitrateEstimatorMinBitrateBps = 30000;
     remote_bitrate_estimator_.reset(
@@ -220,7 +220,7 @@ class RampUpTest : public ::testing::TestWithParam<bool> {
                                        kRtxSsrcs + kNumberOfStreams);
     }
     send_config.rtp.extensions.push_back(
-        RtpExtension(RtpExtension::kAbsSendTime, kAbsoluteSendTimeExtensionId));
+        RtpExtension(RtpExtension::kTOffset, kTOffsetExtensionId));
 
     VideoSendStream* send_stream = call->CreateVideoSendStream(send_config);
 

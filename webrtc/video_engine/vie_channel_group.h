@@ -31,7 +31,7 @@ class VieRemb;
 // group are assumed to send/receive data to the same end-point.
 class ChannelGroup {
  public:
-  ChannelGroup(int engine_id, ProcessThread* process_thread,
+  ChannelGroup(ProcessThread* process_thread,
                const Config& config);
   ~ChannelGroup();
 
@@ -42,6 +42,7 @@ class ChannelGroup {
 
   bool SetChannelRembStatus(int channel_id, bool sender, bool receiver,
                             ViEChannel* channel);
+  void SetReceiveAbsoluteSendTimeStatus(bool enable);
 
   BitrateController* GetBitrateController();
   CallStats* GetCallStats();

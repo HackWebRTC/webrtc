@@ -190,7 +190,7 @@ void VideoSendStreamTest::SendsSetSsrcs(size_t num_ssrcs,
   frame_generator_capturer->Stop();
   send_stream_->StopSending();
   call->DestroyVideoSendStream(send_stream_);
-};
+}
 
 TEST_F(VideoSendStreamTest, SendsSetSsrc) { SendsSetSsrcs(1, false); }
 
@@ -249,11 +249,8 @@ TEST_F(VideoSendStreamTest, SupportsAbsoluteSendTime) {
       EXPECT_TRUE(
           parser_->Parse(packet, static_cast<int>(length), &header));
 
-      EXPECT_FALSE(header.extension.hasTransmissionTimeOffset);
-      EXPECT_TRUE(header.extension.hasAbsoluteSendTime);
-      EXPECT_EQ(header.extension.transmissionTimeOffset, 0);
-      EXPECT_GT(header.extension.absoluteSendTime, 0u);
-      observation_complete_->Set();
+      if (header.extension.absoluteSendTime > 0)
+        observation_complete_->Set();
 
       return SEND_PACKET;
     }
@@ -297,10 +294,7 @@ TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
       EXPECT_TRUE(
           parser_->Parse(packet, static_cast<int>(length), &header));
 
-      EXPECT_TRUE(header.extension.hasTransmissionTimeOffset);
-      EXPECT_FALSE(header.extension.hasAbsoluteSendTime);
       EXPECT_GT(header.extension.transmissionTimeOffset, 0);
-      EXPECT_EQ(header.extension.absoluteSendTime, 0u);
       observation_complete_->Set();
 
       return SEND_PACKET;

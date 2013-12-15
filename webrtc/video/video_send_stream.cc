@@ -10,6 +10,8 @@
 
 #include "webrtc/video/video_send_stream.h"
 
+#include <string.h>
+
 #include <string>
 #include <vector>
 

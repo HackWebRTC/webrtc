@@ -69,28 +69,27 @@ protected:
 
 enum TraceModule
 {
-    kTraceUndefined              = 0,
+    kTraceUndefined          = 0,
     // not a module, triggered from the engine code
-    kTraceVoice                  = 0x0001,
+    kTraceVoice              = 0x0001,
     // not a module, triggered from the engine code
-    kTraceVideo                  = 0x0002,
+    kTraceVideo              = 0x0002,
     // not a module, triggered from the utility code
-    kTraceUtility                = 0x0003,
-    kTraceRtpRtcp                = 0x0004,
-    kTraceTransport              = 0x0005,
-    kTraceSrtp                   = 0x0006,
-    kTraceAudioCoding            = 0x0007,
-    kTraceAudioMixerServer       = 0x0008,
-    kTraceAudioMixerClient       = 0x0009,
-    kTraceFile                   = 0x000a,
-    kTraceAudioProcessing        = 0x000b,
-    kTraceVideoCoding            = 0x0010,
-    kTraceVideoMixer             = 0x0011,
-    kTraceAudioDevice            = 0x0012,
-    kTraceVideoRenderer          = 0x0014,
-    kTraceVideoCapture           = 0x0015,
-    kTraceVideoPreocessing       = 0x0016,
-    kTraceRemoteBitrateEstimator = 0x0017,
+    kTraceUtility            = 0x0003,
+    kTraceRtpRtcp            = 0x0004,
+    kTraceTransport          = 0x0005,
+    kTraceSrtp               = 0x0006,
+    kTraceAudioCoding        = 0x0007,
+    kTraceAudioMixerServer   = 0x0008,
+    kTraceAudioMixerClient   = 0x0009,
+    kTraceFile               = 0x000a,
+    kTraceAudioProcessing    = 0x000b,
+    kTraceVideoCoding        = 0x0010,
+    kTraceVideoMixer         = 0x0011,
+    kTraceAudioDevice        = 0x0012,
+    kTraceVideoRenderer      = 0x0014,
+    kTraceVideoCapture       = 0x0015,
+    kTraceVideoPreocessing   = 0x0016
 };
 
 enum TraceLevel

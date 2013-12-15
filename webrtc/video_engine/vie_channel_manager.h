@@ -74,6 +74,10 @@ class ViEChannelManager: private ViEManagerBase {
   // Adds a channel to include when sending REMB.
   bool SetRembStatus(int channel_id, bool sender, bool receiver);
 
+  // Switches a channel and its associated group to use (or not) the absolute
+  // send time header extension with |id|.
+  bool SetReceiveAbsoluteSendTimeStatus(int channel_id, bool enable, int id);
+
   // Updates the SSRCs for a channel. If one of the SSRCs already is registered,
   // it will simply be ignored and no error is returned.
   void UpdateSsrcs(int channel_id, const std::list<unsigned int>& ssrcs);

@@ -796,16 +796,8 @@ int ViERTP_RTCPImpl::SetReceiveAbsoluteSendTimeStatus(int video_channel,
                ViEId(shared_data_->instance_id(), video_channel),
                "ViERTP_RTCPImpl::SetReceiveAbsoluteSendTimeStatus(%d, %d, %d)",
                video_channel, enable, id);
-  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
-  ViEChannel* vie_channel = cs.Channel(video_channel);
-  if (!vie_channel) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: Channel %d doesn't exist", __FUNCTION__, video_channel);
-    shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
-    return -1;
-  }
-  if (vie_channel->SetReceiveAbsoluteSendTimeStatus(enable, id) != 0) {
+  if (!shared_data_->channel_manager()->SetReceiveAbsoluteSendTimeStatus(
+      video_channel, enable, id)) {
     shared_data_->SetLastError(kViERtpRtcpUnknownError);
     return -1;
   }

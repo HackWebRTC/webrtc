@@ -391,11 +391,9 @@ bool RTPHeaderParser::Parse(RTPHeader& header,
 
   // If in effect, MAY be omitted for those packets for which the offset
   // is zero.
-  header.extension.hasTransmissionTimeOffset = false;
   header.extension.transmissionTimeOffset = 0;
 
   // May not be present in packet.
-  header.extension.hasAbsoluteSendTime = false;
   header.extension.absoluteSendTime = 0;
 
   if (X) {
@@ -492,7 +490,6 @@ void RTPHeaderParser::ParseOneByteExtensionHeader(
           // Negative offset, correct sign for Word24 to Word32.
           header.extension.transmissionTimeOffset |= 0xFF000000;
         }
-        header.extension.hasTransmissionTimeOffset = true;
         break;
       }
       case kRtpExtensionAudioLevel: {
@@ -527,7 +524,6 @@ void RTPHeaderParser::ParseOneByteExtensionHeader(
         absoluteSendTime += *ptr++ << 8;
         absoluteSendTime += *ptr++;
         header.extension.absoluteSendTime = absoluteSendTime;
-        header.extension.hasAbsoluteSendTime = true;
         break;
       }
       default: {

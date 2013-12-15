@@ -33,7 +33,6 @@
       'target_name': 'video_engine_tests',
       'type': '<(gtest_target_type)',
       'sources': [
-        'video/bitrate_estimator_tests.cc',
         'video/call_tests.cc',
         'video/video_send_stream_tests.cc',
         'test/common_unittest.cc',

@@ -63,20 +63,6 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
   rtp_rtcp_->SetLocalSSRC(channel_, config_.rtp.local_ssrc);
   rtp_rtcp_->SetRembStatus(channel_, false, config_.rtp.remb);
 
-  for (size_t i = 0; i < config_.rtp.extensions.size(); ++i) {
-    const std::string& extension = config_.rtp.extensions[i].name;
-    int id = config_.rtp.extensions[i].id;
-    if (extension == RtpExtension::kTOffset) {
-      if (rtp_rtcp_->SetReceiveTimestampOffsetStatus(channel_, true, id) != 0)
-        abort();
-    } else if (extension == RtpExtension::kAbsSendTime) {
-      if (rtp_rtcp_->SetReceiveAbsoluteSendTimeStatus(channel_, true, id) != 0)
-        abort();
-    } else {
-      abort();  // Unsupported extension.
-    }
-  }
-
   network_ = ViENetwork::GetInterface(video_engine);
   assert(network_ != NULL);
 
