@@ -23,6 +23,7 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/test/fake_audio_device.h"
 #include "webrtc/test/fake_decoder.h"
@@ -296,6 +297,78 @@ TEST_F(CallTest, UsesTraceCallback) {
   // The TraceCallback instance MUST outlive Calls, destroy Calls explicitly.
   sender_call_.reset();
   receiver_call_.reset();
+}
+
+TEST_F(CallTest, RendersSingleDelayedFrame) {
+  static const int kWidth = 320;
+  static const int kHeight = 240;
+  // This constant is chosen to be higher than the timeout in the video_render
+  // module. This makes sure that frames aren't dropped if there are no other
+  // frames in the queue.
+  static const int kDelayRenderCallbackMs = 1000;
+
+  class Renderer : public VideoRenderer {
+   public:
+    Renderer() : event_(EventWrapper::Create()) {}
+
+    virtual void RenderFrame(const I420VideoFrame& video_frame,
+                             int /*time_to_render_ms*/) OVERRIDE {
+      event_->Set();
+    }
+
+    EventTypeWrapper Wait() { return event_->Wait(kDefaultTimeoutMs); }
+
+    scoped_ptr<EventWrapper> event_;
+  } renderer;
+
+  class TestFrameCallback : public I420FrameCallback {
+   public:
+    TestFrameCallback() : event_(EventWrapper::Create()) {}
+
+    EventTypeWrapper Wait() { return event_->Wait(kDefaultTimeoutMs); }
+
+   private:
+    virtual void FrameCallback(I420VideoFrame* frame) {
+      SleepMs(kDelayRenderCallbackMs);
+      event_->Set();
+    }
+
+    scoped_ptr<EventWrapper> event_;
+  };
+
+  test::DirectTransport sender_transport, receiver_transport;
+
+  CreateCalls(Call::Config(&sender_transport),
+              Call::Config(&receiver_transport));
+
+  sender_transport.SetReceiver(receiver_call_->Receiver());
+  receiver_transport.SetReceiver(sender_call_->Receiver());
+
+  CreateTestConfigs();
+
+  TestFrameCallback pre_render_callback;
+  receive_config_.pre_render_callback = &pre_render_callback;
+  receive_config_.renderer = &renderer;
+
+  CreateStreams();
+  StartSending();
+
+  // Create frames that are smaller than the send width/height, this is done to
+  // check that the callbacks are done after processing video.
+  scoped_ptr<test::FrameGenerator> frame_generator(
+      test::FrameGenerator::Create(kWidth, kHeight));
+  send_stream_->Input()->SwapFrame(frame_generator->NextFrame());
+  EXPECT_EQ(kEventSignaled, pre_render_callback.Wait())
+      << "Timed out while waiting for pre-render callback.";
+  EXPECT_EQ(kEventSignaled, renderer.Wait())
+      << "Timed out while waiting for the frame to render.";
+
+  StopSending();
+
+  sender_transport.StopSending();
+  receiver_transport.StopSending();
+
+  DestroyStreams();
 }
 
 TEST_F(CallTest, TransmitsFirstFrame) {
