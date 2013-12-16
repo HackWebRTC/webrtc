@@ -44,6 +44,11 @@ typedef struct {
 
   // Robust validation
   int robust_validation_enabled;
+  int last_candidate_delay;
+  int compare_delay;
+  int candidate_hits;
+  float* histogram;
+  float last_delay_histogram;
 
   // Far-end binary spectrum history buffer etc.
   BinaryDelayEstimatorFarend* farend;
