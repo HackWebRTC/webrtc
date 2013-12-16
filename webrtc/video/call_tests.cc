@@ -853,9 +853,9 @@ TEST_F(CallTest, SendsAndReceivesMultipleStreams) {
 
   for (size_t i = 0; i < kNumStreams; ++i) {
     frame_generators[i]->Stop();
-    delete frame_generators[i];
     sender_call->DestroyVideoSendStream(send_streams[i]);
     receiver_call->DestroyVideoReceiveStream(receive_streams[i]);
+    delete frame_generators[i];
     delete observers[i];
   }
 
