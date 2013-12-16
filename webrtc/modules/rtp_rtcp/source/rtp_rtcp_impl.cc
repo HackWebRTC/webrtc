@@ -1577,7 +1577,6 @@ void ModuleRtpRtcpImpl::RegisterVideoBitrateObserver(
         RtpRtcp* module = *it;
         if (module)
           module->RegisterVideoBitrateObserver(observer);
-        ++it;
       }
       return;
     }
