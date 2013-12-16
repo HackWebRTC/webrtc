@@ -49,7 +49,7 @@ class CallTest : public ::testing::Test {
         receive_stream_(NULL),
         fake_encoder_(Clock::GetRealTimeClock()) {}
 
-  ~CallTest() {
+  virtual ~CallTest() {
     EXPECT_EQ(NULL, send_stream_);
     EXPECT_EQ(NULL, receive_stream_);
   }
@@ -861,7 +861,7 @@ TEST_F(CallTest, SendsAndReceivesMultipleStreams) {
 
   sender_transport.StopSending();
   receiver_transport.StopSending();
-}
+};
 
 TEST_F(CallTest, ObserversEncodedFrames) {
   class EncodedFrameTestObserver : public EncodedFrameObserver {

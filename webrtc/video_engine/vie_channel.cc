@@ -92,7 +92,6 @@ ViEChannel::ViEChannel(int32_t channel_id,
       bandwidth_observer_(bandwidth_observer),
       send_timestamp_extension_id_(kInvalidRtpExtensionId),
       absolute_send_time_extension_id_(kInvalidRtpExtensionId),
-      receive_absolute_send_time_enabled_(false),
       external_transport_(NULL),
       decoder_reset_(true),
       wait_for_key_frame_(false),
@@ -934,12 +933,7 @@ int ViEChannel::SetSendAbsoluteSendTimeStatus(bool enable, int id) {
 }
 
 int ViEChannel::SetReceiveAbsoluteSendTimeStatus(bool enable, int id) {
-  receive_absolute_send_time_enabled_ = enable;
   return vie_receiver_.SetReceiveAbsoluteSendTimeStatus(enable, id) ? 0 : -1;
-}
-
-bool ViEChannel::GetReceiveAbsoluteSendTimeStatus() const {
-  return receive_absolute_send_time_enabled_;
 }
 
 void ViEChannel::SetRtcpXrRrtrStatus(bool enable) {

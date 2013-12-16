@@ -28,7 +28,9 @@
 namespace webrtc {
 
 struct RTPHeaderExtension {
+  bool hasTransmissionTimeOffset;
   int32_t transmissionTimeOffset;
+  bool hasAbsoluteSendTime;
   uint32_t absoluteSendTime;
 };
 

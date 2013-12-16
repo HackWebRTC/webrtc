@@ -16,6 +16,7 @@
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/utility/interface/process_thread.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/video_engine/call_stats.h"
 #include "webrtc/video_engine/encoder_state_feedback.h"
 #include "webrtc/video_engine/vie_channel.h"
@@ -25,18 +26,22 @@
 namespace webrtc {
 namespace {
 
+static const uint32_t kTimeOffsetSwitchThreshold = 30;
+
 class WrappingBitrateEstimator : public RemoteBitrateEstimator {
  public:
-  WrappingBitrateEstimator(RemoteBitrateObserver* observer, Clock* clock,
-                           ProcessThread* process_thread)
+  WrappingBitrateEstimator(int engine_id, RemoteBitrateObserver* observer,
+                           Clock* clock, ProcessThread* process_thread)
       : observer_(observer),
         clock_(clock),
         process_thread_(process_thread),
         crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
+        engine_id_(engine_id),
         min_bitrate_bps_(30000),
         rbe_(RemoteBitrateEstimatorFactory().Create(observer_, clock_,
                                                     min_bitrate_bps_)),
-        receive_absolute_send_time_(false) {
+        using_absolute_send_time_(false),
+        packets_since_absolute_send_time_(0) {
     assert(process_thread_ != NULL);
     process_thread_->RegisterModule(rbe_.get());
   }
@@ -44,29 +49,11 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
     process_thread_->DeRegisterModule(rbe_.get());
   }
 
-  void SetReceiveAbsoluteSendTimeStatus(bool enable) {
-    CriticalSectionScoped cs(crit_sect_.get());
-    if (enable == receive_absolute_send_time_) {
-      return;
-    }
-
-    process_thread_->DeRegisterModule(rbe_.get());
-    if (enable) {
-      rbe_.reset(AbsoluteSendTimeRemoteBitrateEstimatorFactory().Create(
-          observer_, clock_, min_bitrate_bps_));
-    } else {
-      rbe_.reset(RemoteBitrateEstimatorFactory().Create(observer_, clock_,
-                                                        min_bitrate_bps_));
-    }
-    process_thread_->RegisterModule(rbe_.get());
-
-    receive_absolute_send_time_ = enable;
-  }
-
   virtual void IncomingPacket(int64_t arrival_time_ms,
                               int payload_size,
                               const RTPHeader& header) {
     CriticalSectionScoped cs(crit_sect_.get());
+    PickEstimator(header);
     rbe_->IncomingPacket(arrival_time_ms, payload_size, header);
   }
 
@@ -97,25 +84,60 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
   }
 
  private:
+  // Instantiate RBE for Time Offset or Absolute Send Time extensions.
+  void PickEstimator(const RTPHeader& header) {
+    if (header.extension.hasAbsoluteSendTime) {
+      // If we see AST in header, switch RBE strategy immediately.
+      if (!using_absolute_send_time_) {
+        process_thread_->DeRegisterModule(rbe_.get());
+        WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, ViEId(engine_id_),
+            "WrappingBitrateEstimator: Switching to absolute send time RBE.");
+        rbe_.reset(AbsoluteSendTimeRemoteBitrateEstimatorFactory().Create(
+            observer_, clock_, min_bitrate_bps_));
+        process_thread_->RegisterModule(rbe_.get());
+        using_absolute_send_time_ = true;
+      }
+      packets_since_absolute_send_time_ = 0;
+    } else {
+      // When we don't see AST, wait for a few packets before going back to TOF.
+      if (using_absolute_send_time_) {
+        ++packets_since_absolute_send_time_;
+        if (packets_since_absolute_send_time_ >= kTimeOffsetSwitchThreshold) {
+          process_thread_->DeRegisterModule(rbe_.get());
+          WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, ViEId(engine_id_),
+              "WrappingBitrateEstimator: Switching to transmission time offset "
+              "RBE.");
+          rbe_.reset(RemoteBitrateEstimatorFactory().Create(observer_, clock_,
+              min_bitrate_bps_));
+          process_thread_->RegisterModule(rbe_.get());
+          using_absolute_send_time_ = false;
+        }
+      }
+    }
+  }
+
   RemoteBitrateObserver* observer_;
   Clock* clock_;
   ProcessThread* process_thread_;
   scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  const int engine_id_;
   const uint32_t min_bitrate_bps_;
   scoped_ptr<RemoteBitrateEstimator> rbe_;
-  bool receive_absolute_send_time_;
+  bool using_absolute_send_time_;
+  uint32_t packets_since_absolute_send_time_;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(WrappingBitrateEstimator);
 };
 }  // namespace
 
-ChannelGroup::ChannelGroup(ProcessThread* process_thread,
+ChannelGroup::ChannelGroup(int engine_id, ProcessThread* process_thread,
                            const Config& config)
     : remb_(new VieRemb()),
       bitrate_controller_(BitrateController::CreateBitrateController(true)),
       call_stats_(new CallStats()),
-      remote_bitrate_estimator_(new WrappingBitrateEstimator(remb_.get(),
-                                Clock::GetRealTimeClock(), process_thread)),
+      remote_bitrate_estimator_(new WrappingBitrateEstimator(engine_id,
+                                remb_.get(), Clock::GetRealTimeClock(),
+                                process_thread)),
       encoder_state_feedback_(new EncoderStateFeedback()),
       process_thread_(process_thread) {
   call_stats_->RegisterStatsObserver(remote_bitrate_estimator_.get());
@@ -185,10 +207,5 @@ bool ChannelGroup::SetChannelRembStatus(int channel_id, bool sender,
     remb_->RemoveReceiveChannel(rtp_module);
   }
   return true;
-}
-
-void ChannelGroup::SetReceiveAbsoluteSendTimeStatus(bool enable) {
-  static_cast<WrappingBitrateEstimator*>(remote_bitrate_estimator_.get())->
-      SetReceiveAbsoluteSendTimeStatus(enable);
 }
 }  // namespace webrtc
