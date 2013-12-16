@@ -258,36 +258,6 @@ static int RobustValidation(const BinaryDelayEstimator* self,
   return is_robust;
 }
 
-// UpdatesMadeUponChange() makes two parameter updates only done when we have a
-// change/jump in delay.  For further description, see commented code.
-//
-// Inputs:
-//  - candidate_delay           : The delay to validate.
-static void UpdatesMadeUponChange(BinaryDelayEstimator* self,
-                                  int candidate_delay) {
-  int i = 0;
-
-  self->last_delay_histogram =
-      (self->histogram[candidate_delay] > kLastHistogramMax ?
-          kLastHistogramMax : self->histogram[candidate_delay]);
-  // TODO(bjornv): Investigate if we can simplify to only change
-  // self->histogram[self->last_delay] instead of looping through all histogram
-  // bins.  Looping through all bins is to ensure
-  // self->histogram[candidate_delay] is currently the most likely bin.
-  // Otherwise we might jump back too easy to a neighbor even for spurious
-  // changes.
-  // Since we may jump to a new delay even if it is not the most likely
-  // according to the histogram, we here adjust the histogram to make sure the
-  // |candidate_delay| now is the most likely one.
-  if (self->histogram[candidate_delay] < self->histogram[self->compare_delay]) {
-    for (i = 0; i < self->farend->history_size; ++i) {
-      if (self->histogram[i] > self->histogram[candidate_delay]) {
-        self->histogram[i] = self->histogram[candidate_delay];
-      }
-    }
-  }
-}
-
 void WebRtc_FreeBinaryDelayEstimatorFarend(BinaryDelayEstimatorFarend* self) {
 
   if (self == NULL) {
@@ -552,7 +522,15 @@ int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator* self,
   }
   if (valid_candidate) {
     if (candidate_delay != self->last_delay) {
-      UpdatesMadeUponChange(self, candidate_delay);
+      self->last_delay_histogram =
+          (self->histogram[candidate_delay] > kLastHistogramMax ?
+              kLastHistogramMax : self->histogram[candidate_delay]);
+      // Adjust the histogram if we made a change to |last_delay|, though it was
+      // not the most likely one according to the histogram.
+      if (self->histogram[candidate_delay] <
+          self->histogram[self->compare_delay]) {
+        self->histogram[self->compare_delay] = self->histogram[candidate_delay];
+      }
     }
     self->last_delay = candidate_delay;
     if (value_best_candidate < self->last_delay_probability) {
