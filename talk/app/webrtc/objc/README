@@ -7,8 +7,6 @@ Prerequisites:
   .gclient file should contain a line like:
   target_os = ['ios', 'mac']
   Make sure to re-run gclient sync after adding this to download the tools.
-  Note that until http://crbug.com/248168 is fixed one needs to do a gclient
-  sync with just 'mac' and then follow that with a sync with both.
 
 - Set up webrtc-related $GYP_DEFINES; example shell functions that set
   up for building for iOS-device, iOS-simulator, and Mac (resp) are:
