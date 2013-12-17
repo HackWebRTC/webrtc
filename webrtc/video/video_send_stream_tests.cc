@@ -802,7 +802,7 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
 
     void set_high_remb_bps(int value) { high_remb_bps_ = value; }
 
-    virtual void Stop() { transport_.StopSending(); }
+    void Stop() { transport_.StopSending(); }
 
    private:
     enum TestState {
@@ -857,6 +857,7 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
   observer.set_high_remb_bps(min_bitrate_bps + threshold_window + 5000);
 
   RunSendTest(call.get(), send_config, &observer);
+  observer.Stop();
 }
 
 TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
