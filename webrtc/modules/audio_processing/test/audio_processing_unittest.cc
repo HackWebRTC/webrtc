@@ -146,6 +146,7 @@ int16_t MaxAudioFrame(const AudioFrame& frame) {
   return max_data;
 }
 
+#if defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
 void TestStats(const AudioProcessing::Statistic& test,
                const webrtc::audioproc::Test::Statistic& reference) {
   EXPECT_EQ(reference.instant(), test.instant);
@@ -161,6 +162,7 @@ void WriteStatsMessage(const AudioProcessing::Statistic& output,
   message->set_maximum(output.maximum);
   message->set_minimum(output.minimum);
 }
+#endif
 
 void WriteMessageLiteToFile(const std::string filename,
                             const ::google::protobuf::MessageLite& message) {
