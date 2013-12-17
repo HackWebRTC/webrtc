@@ -133,7 +133,6 @@ class AudioRecordJni {
   static jclass globalScClass;
 
   JavaVM* _javaVM; // denotes a Java VM
-  JNIEnv* _jniEnvPlay; // The JNI env for playout thread
   JNIEnv* _jniEnvRec; // The JNI env for recording thread
   jclass _javaScClass; // AudioDeviceAndroid class
   jobject _javaScObj; // AudioDeviceAndroid object
