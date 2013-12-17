@@ -35,8 +35,8 @@
 @property(nonatomic, copy, readonly) NSString* username;
 @property(nonatomic, copy, readonly) NSString* password;
 
-// Initializer for RTCICEServer taking uri and password.
-- (id)initWithURI:(NSString*)URI
+// Initializer for RTCICEServer taking uri, username, and password.
+- (id)initWithURI:(NSURL*)URI
          username:(NSString*)username
          password:(NSString*)password;
 
