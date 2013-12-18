@@ -17,7 +17,6 @@
        '<(webrtc_root)/common_video/common_video.gyp:common_video',
 
         # ModulesShared
-        '<(webrtc_root)/modules/modules.gyp:media_file',
         '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
         '<(webrtc_root)/modules/modules.gyp:webrtc_utility',
 

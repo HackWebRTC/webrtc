@@ -61,7 +61,6 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../common_video/vplib/main/interface \
     $(LOCAL_PATH)/../modules/interface \
     $(LOCAL_PATH)/../modules/audio_coding/main/interface \
-    $(LOCAL_PATH)/../modules/media_file/interface \
     $(LOCAL_PATH)/../modules/rtp_rtcp/interface \
     $(LOCAL_PATH)/../modules/udp_transport/interface \
     $(LOCAL_PATH)/../modules/utility/interface \
