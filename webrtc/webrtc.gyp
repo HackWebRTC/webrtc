@@ -43,6 +43,7 @@
             'system_wrappers/source/system_wrappers_tests.gyp:*',
             'test/metrics.gyp:*',
             'test/test.gyp:*',
+            'test/webrtc_test_common.gyp:webrtc_test_common_unittests',
             'tools/tools.gyp:*',
             'webrtc_tests',
           ],

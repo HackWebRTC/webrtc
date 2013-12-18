@@ -24,6 +24,8 @@
         'fake_decoder.h',
         'fake_encoder.cc',
         'fake_encoder.h',
+        'fake_network_pipe.cc',
+        'fake_network_pipe.h',
         'flags.cc',
         'flags.h',
         'frame_generator_capturer.cc',
@@ -124,4 +126,23 @@
       ],
     },
   ],
+  'conditions': [
+    ['include_tests==1', {
+      'targets': [
+        {
+          'target_name': 'webrtc_test_common_unittests',
+          'type': '<(gtest_target_type)',
+          'dependencies': [
+            'webrtc_test_common',
+            '<(DEPTH)/testing/gtest.gyp:gtest',
+            '<(DEPTH)/testing/gmock.gyp:gmock',
+            '<(webrtc_root)/test/test.gyp:test_support_main',
+          ],
+          'sources': [
+            'fake_network_pipe_unittest.cc',
+          ],
+        },
+      ],  #targets
+    }],  # include_tests
+  ],  # conditions
 }

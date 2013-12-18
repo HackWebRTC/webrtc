@@ -49,8 +49,8 @@ class CallPerfTest : public ::testing::Test {
 
 class SyncRtcpObserver : public test::RtpRtcpObserver {
  public:
-  explicit SyncRtcpObserver(int delay_ms)
-      : test::RtpRtcpObserver(kLongTimeoutMs, delay_ms),
+  explicit SyncRtcpObserver(const FakeNetworkPipe::Config& config)
+      : test::RtpRtcpObserver(kLongTimeoutMs, config),
         critical_section_(CriticalSectionWrapper::CreateCriticalSection()) {}
 
   virtual Action OnSendRtcp(const uint8_t* packet, size_t length) OVERRIDE {
@@ -119,7 +119,7 @@ class VideoRtcpAndSyncObserver : public SyncRtcpObserver, public VideoRenderer {
                            int voe_channel,
                            VoEVideoSync* voe_sync,
                            SyncRtcpObserver* audio_observer)
-      : SyncRtcpObserver(0),
+      : SyncRtcpObserver(FakeNetworkPipe::Config()),
         clock_(clock),
         voe_channel_(voe_channel),
         voe_sync_(voe_sync),
@@ -189,8 +189,9 @@ TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSync) {
   EXPECT_EQ(0, voe_base->Init(&fake_audio_device, NULL));
   int channel = voe_base->CreateChannel();
 
-  const int kVoiceDelayMs = 500;
-  SyncRtcpObserver audio_observer(kVoiceDelayMs);
+  FakeNetworkPipe::Config net_config;
+  net_config.queue_delay_ms = 500;
+  SyncRtcpObserver audio_observer(net_config);
   VideoRtcpAndSyncObserver observer(
       Clock::GetRealTimeClock(), channel, voe_sync, &audio_observer);
 

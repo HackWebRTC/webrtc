@@ -11,9 +11,10 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/call.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
-#include "webrtc/video_engine/test/libvietest/include/fake_network_pipe.h"
+#include "webrtc/test/fake_network_pipe.h"
 
 using ::testing::_;
 using ::testing::AnyNumber;
@@ -27,12 +28,12 @@ class MockReceiver : public PacketReceiver {
   MockReceiver() {}
   virtual ~MockReceiver() {}
 
-  void IncomingPacket(uint8_t* data, int length) {
-    IncomingData(data, length);
+  void IncomingPacket(const uint8_t* data, size_t length) {
+    DeliverPacket(data, length);
     delete [] data;
   }
 
-  MOCK_METHOD2(IncomingData, void(uint8_t*, int));
+  MOCK_METHOD2(DeliverPacket, bool(const uint8_t*, size_t));
 };
 
 class FakeNetworkPipeTest : public ::testing::Test {
@@ -63,11 +64,11 @@ void DeleteMemory(uint8_t* data, int length) { delete [] data; }
 
 // Test the capacity link and verify we get as many packets as we expect.
 TEST_F(FakeNetworkPipeTest, CapacityTest) {
-  FakeNetworkPipe::Configuration config;
-  config.packet_receiver = receiver_.get();
+  FakeNetworkPipe::Config config;
   config.queue_length = 20;
   config.link_capacity_kbps = 80;
   scoped_ptr<FakeNetworkPipe> pipe(new FakeNetworkPipe(config));
+  pipe->SetReceiver(receiver_.get());
 
   // Add 10 packets of 1000 bytes, = 80 kb, and verify it takes one second to
   // get through the pipe.
@@ -80,37 +81,37 @@ TEST_F(FakeNetworkPipeTest, CapacityTest) {
                                          kPacketSize);
 
   // Time haven't increased yet, so we souldn't get any packets.
-  EXPECT_CALL(*receiver_, IncomingData(_, _))
+  EXPECT_CALL(*receiver_, DeliverPacket(_, _))
       .Times(0);
-  pipe->NetworkProcess();
+  pipe->Process();
 
   // Advance enough time to release one packet.
   TickTime::AdvanceFakeClock(kPacketTimeMs);
-  EXPECT_CALL(*receiver_, IncomingData(_, _))
+  EXPECT_CALL(*receiver_, DeliverPacket(_, _))
       .Times(1);
-  pipe->NetworkProcess();
+  pipe->Process();
 
   // Release all but one packet
   TickTime::AdvanceFakeClock(9 * kPacketTimeMs - 1);
-  EXPECT_CALL(*receiver_, IncomingData(_, _))
+  EXPECT_CALL(*receiver_, DeliverPacket(_, _))
       .Times(8);
-  pipe->NetworkProcess();
+  pipe->Process();
 
   // And the last one.
   TickTime::AdvanceFakeClock(1);
-  EXPECT_CALL(*receiver_, IncomingData(_, _))
+  EXPECT_CALL(*receiver_, DeliverPacket(_, _))
       .Times(1);
-  pipe->NetworkProcess();
+  pipe->Process();
 }
 
 // Test the extra network delay.
 TEST_F(FakeNetworkPipeTest, ExtraDelayTest) {
-  FakeNetworkPipe::Configuration config;
-  config.packet_receiver = receiver_.get();
+  FakeNetworkPipe::Config config;
   config.queue_length = 20;
   config.queue_delay_ms = 100;
   config.link_capacity_kbps = 80;
   scoped_ptr<FakeNetworkPipe> pipe(new FakeNetworkPipe(config));
+  pipe->SetReceiver(receiver_.get());
 
   const int kNumPackets = 2;
   const int kPacketSize = 1000;
@@ -122,31 +123,31 @@ TEST_F(FakeNetworkPipeTest, ExtraDelayTest) {
 
   // Increase more than kPacketTimeMs, but not more than the extra delay.
   TickTime::AdvanceFakeClock(kPacketTimeMs);
-  EXPECT_CALL(*receiver_, IncomingData(_, _))
+  EXPECT_CALL(*receiver_, DeliverPacket(_, _))
       .Times(0);
-  pipe->NetworkProcess();
+  pipe->Process();
 
   // Advance the network delay to get the first packet.
   TickTime::AdvanceFakeClock(config.queue_delay_ms);
-  EXPECT_CALL(*receiver_, IncomingData(_, _))
+  EXPECT_CALL(*receiver_, DeliverPacket(_, _))
       .Times(1);
-  pipe->NetworkProcess();
+  pipe->Process();
 
   // Advance one more kPacketTimeMs to get the last packet.
   TickTime::AdvanceFakeClock(kPacketTimeMs);
-  EXPECT_CALL(*receiver_, IncomingData(_, _))
+  EXPECT_CALL(*receiver_, DeliverPacket(_, _))
       .Times(1);
-  pipe->NetworkProcess();
+  pipe->Process();
 }
 
 // Test the number of buffers and packets are dropped when sending too many
 // packets too quickly.
 TEST_F(FakeNetworkPipeTest, QueueLengthTest) {
-  FakeNetworkPipe::Configuration config;
-  config.packet_receiver = receiver_.get();
+  FakeNetworkPipe::Config config;
   config.queue_length = 2;
   config.link_capacity_kbps = 80;
   scoped_ptr<FakeNetworkPipe> pipe(new FakeNetworkPipe(config));
+  pipe->SetReceiver(receiver_.get());
 
   const int kPacketSize = 1000;
   const int kPacketTimeMs = PacketTimeMs(config.link_capacity_kbps,
@@ -158,19 +159,19 @@ TEST_F(FakeNetworkPipeTest, QueueLengthTest) {
   // Increase time enough to deliver all three packets, verify only two are
   // delivered.
   TickTime::AdvanceFakeClock(3 * kPacketTimeMs);
-  EXPECT_CALL(*receiver_, IncomingData(_, _))
+  EXPECT_CALL(*receiver_, DeliverPacket(_, _))
       .Times(2);
-  pipe->NetworkProcess();
+  pipe->Process();
 }
 
 // Test we get statistics as expected.
 TEST_F(FakeNetworkPipeTest, StatisticsTest) {
-  FakeNetworkPipe::Configuration config;
-  config.packet_receiver = receiver_.get();
+  FakeNetworkPipe::Config config;
   config.queue_length = 2;
   config.queue_delay_ms = 20;
   config.link_capacity_kbps = 80;
   scoped_ptr<FakeNetworkPipe> pipe(new FakeNetworkPipe(config));
+  pipe->SetReceiver(receiver_.get());
 
   const int kPacketSize = 1000;
   const int kPacketTimeMs = PacketTimeMs(config.link_capacity_kbps,
@@ -180,15 +181,15 @@ TEST_F(FakeNetworkPipeTest, StatisticsTest) {
   SendPackets(pipe.get(), 3, kPacketSize);
   TickTime::AdvanceFakeClock(3 * kPacketTimeMs + config.queue_delay_ms);
 
-  EXPECT_CALL(*receiver_, IncomingData(_, _))
+  EXPECT_CALL(*receiver_, DeliverPacket(_, _))
       .Times(2);
-  pipe->NetworkProcess();
+  pipe->Process();
 
   // Packet 1: kPacketTimeMs + config.queue_delay_ms,
   // packet 2: 2 * kPacketTimeMs + config.queue_delay_ms => 170 ms average.
   EXPECT_EQ(pipe->AverageDelay(), 170);
-  EXPECT_EQ(pipe->sent_packets(), 2);
-  EXPECT_EQ(pipe->dropped_packets(), 1);
+  EXPECT_EQ(pipe->sent_packets(), 2u);
+  EXPECT_EQ(pipe->dropped_packets(), 1u);
   EXPECT_EQ(pipe->PercentageLoss(), 1/3.f);
 }
 
