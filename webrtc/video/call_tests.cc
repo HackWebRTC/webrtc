@@ -562,9 +562,8 @@ class PliObserver : public test::RtpRtcpObserver, public VideoRenderer {
       : test::RtpRtcpObserver(kLongTimeoutMs),
         rtp_header_parser_(RtpHeaderParser::Create()),
         nack_enabled_(nack_enabled),
-        first_retransmitted_timestamp_(0),
-        last_send_timestamp_(0),
-        rendered_frame_(false),
+        highest_dropped_timestamp_(0),
+        frames_to_drop_(0),
         received_pli_(false) {}
 
   virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
@@ -572,19 +571,16 @@ class PliObserver : public test::RtpRtcpObserver, public VideoRenderer {
     EXPECT_TRUE(
         rtp_header_parser_->Parse(packet, static_cast<int>(length), &header));
 
-    // Drop all NACK retransmissions. This is to force transmission of a PLI.
-    if (header.timestamp < last_send_timestamp_)
+    // Drop all retransmitted packets to force a PLI.
+    if (header.timestamp <= highest_dropped_timestamp_)
       return DROP_PACKET;
 
-    if (received_pli_) {
-      if (first_retransmitted_timestamp_ == 0) {
-        first_retransmitted_timestamp_ = header.timestamp;
-      }
-    } else if (rendered_frame_ && rand() % kInverseDropProbability == 0) {
+    if (frames_to_drop_ > 0) {
+      highest_dropped_timestamp_ = header.timestamp;
+      --frames_to_drop_;
       return DROP_PACKET;
     }
 
-    last_send_timestamp_ = header.timestamp;
     return SEND_PACKET;
   }
 
@@ -609,22 +605,20 @@ class PliObserver : public test::RtpRtcpObserver, public VideoRenderer {
   virtual void RenderFrame(const I420VideoFrame& video_frame,
                            int time_to_render_ms) OVERRIDE {
     CriticalSectionScoped crit_(lock_.get());
-    if (first_retransmitted_timestamp_ != 0 &&
-        video_frame.timestamp() > first_retransmitted_timestamp_) {
-      EXPECT_TRUE(received_pli_);
+    if (received_pli_ && video_frame.timestamp() > highest_dropped_timestamp_) {
       observation_complete_->Set();
     }
-    rendered_frame_ = true;
+    if (!received_pli_)
+      frames_to_drop_ = kPacketsToDrop;
   }
 
  private:
+  static const int kPacketsToDrop = 1;
+
   scoped_ptr<RtpHeaderParser> rtp_header_parser_;
   bool nack_enabled_;
-
-  uint32_t first_retransmitted_timestamp_;
-  uint32_t last_send_timestamp_;
-
-  bool rendered_frame_;
+  uint32_t highest_dropped_timestamp_;
+  int frames_to_drop_;
   bool received_pli_;
 };
 
