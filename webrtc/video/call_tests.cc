@@ -143,16 +143,16 @@ class CallTest : public ::testing::Test {
 };
 
 class NackObserver : public test::RtpRtcpObserver {
-  static const int kNumberOfNacksToObserve = 4;
-  static const int kInverseProbabilityToStartLossBurst = 20;
-  static const int kMaxLossBurst = 10;
+  static const int kNumberOfNacksToObserve = 2;
+  static const int kLossBurstSize = 2;
+  static const int kPacketsBetweenLossBursts = 9;
 
  public:
   NackObserver()
       : test::RtpRtcpObserver(kLongTimeoutMs),
         rtp_parser_(RtpHeaderParser::Create()),
-        drop_burst_count_(0),
         sent_rtp_packets_(0),
+        packets_left_to_drop_(0),
         nacks_left_(kNumberOfNacksToObserve) {}
 
  private:
@@ -166,31 +166,29 @@ class NackObserver : public test::RtpRtcpObserver {
     if (dropped_packets_.find(header.sequenceNumber) !=
         dropped_packets_.end()) {
       retransmitted_packets_.insert(header.sequenceNumber);
+      if (nacks_left_ == 0 &&
+          retransmitted_packets_.size() == dropped_packets_.size()) {
+        observation_complete_->Set();
+      }
       return SEND_PACKET;
-    }
-
-    // Enough NACKs received, stop dropping packets.
-    if (nacks_left_ == 0) {
-      ++sent_rtp_packets_;
-      return SEND_PACKET;
-    }
-
-    // Still dropping packets.
-    if (drop_burst_count_ > 0) {
-      --drop_burst_count_;
-      dropped_packets_.insert(header.sequenceNumber);
-      return DROP_PACKET;
-    }
-
-    // Should we start dropping packets?
-    if (sent_rtp_packets_ > 0 &&
-        rand() % kInverseProbabilityToStartLossBurst == 0) {
-      drop_burst_count_ = rand() % kMaxLossBurst;
-      dropped_packets_.insert(header.sequenceNumber);
-      return DROP_PACKET;
     }
 
     ++sent_rtp_packets_;
+
+    // Enough NACKs received, stop dropping packets.
+    if (nacks_left_ == 0)
+      return SEND_PACKET;
+
+    // Check if it's time for a new loss burst.
+    if (sent_rtp_packets_ % kPacketsBetweenLossBursts == 0)
+      packets_left_to_drop_ = kLossBurstSize;
+
+    if (packets_left_to_drop_ > 0) {
+      --packets_left_to_drop_;
+      dropped_packets_.insert(header.sequenceNumber);
+      return DROP_PACKET;
+    }
+
     return SEND_PACKET;
   }
 
@@ -198,50 +196,24 @@ class NackObserver : public test::RtpRtcpObserver {
     RTCPUtility::RTCPParserV2 parser(packet, length, true);
     EXPECT_TRUE(parser.IsValid());
 
-    bool received_nack = false;
     RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
     while (packet_type != RTCPUtility::kRtcpNotValidCode) {
-      if (packet_type == RTCPUtility::kRtcpRtpfbNackCode)
-        received_nack = true;
-
+      if (packet_type == RTCPUtility::kRtcpRtpfbNackCode) {
+        --nacks_left_;
+        break;
+      }
       packet_type = parser.Iterate();
-    }
-
-    if (received_nack) {
-      ReceivedNack();
-    } else {
-      RtcpWithoutNack();
     }
     return SEND_PACKET;
   }
 
  private:
-  void ReceivedNack() {
-    if (nacks_left_ > 0)
-      --nacks_left_;
-    rtcp_without_nack_count_ = 0;
-  }
-
-  void RtcpWithoutNack() {
-    if (nacks_left_ > 0)
-      return;
-    ++rtcp_without_nack_count_;
-
-    // All packets retransmitted and no recent NACKs.
-    if (dropped_packets_.size() == retransmitted_packets_.size() &&
-        rtcp_without_nack_count_ >= kRequiredRtcpsWithoutNack) {
-      observation_complete_->Set();
-    }
-  }
-
   scoped_ptr<RtpHeaderParser> rtp_parser_;
   std::set<uint16_t> dropped_packets_;
   std::set<uint16_t> retransmitted_packets_;
-  int drop_burst_count_;
   uint64_t sent_rtp_packets_;
+  int packets_left_to_drop_;
   int nacks_left_;
-  int rtcp_without_nack_count_;
-  static const int kRequiredRtcpsWithoutNack = 2;
 };
 
 TEST_F(CallTest, UsesTraceCallback) {
