@@ -13,6 +13,8 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include <string>
+
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/video_engine/include/vie_base.h"
