@@ -66,10 +66,10 @@ TEST_F(MouseCursorMonitorTest, MAYBE(FromScreen)) {
   EXPECT_TRUE(cursor_image_.get());
   EXPECT_GE(cursor_image_->hotspot().x(), 0);
   EXPECT_LE(cursor_image_->hotspot().x(),
-            cursor_image_->image().size().width());
+            cursor_image_->image()->size().width());
   EXPECT_GE(cursor_image_->hotspot().y(), 0);
   EXPECT_LE(cursor_image_->hotspot().y(),
-            cursor_image_->image().size().height());
+            cursor_image_->image()->size().height());
 
   EXPECT_TRUE(position_received_);
   EXPECT_EQ(MouseCursorMonitor::INSIDE, state_);

@@ -58,7 +58,7 @@ bool ConvertToMouseShapeAndCompare(unsigned left, unsigned right) {
 
   int width = bitmap_info.bmWidth;
   int height = bitmap_info.bmHeight;
-  EXPECT_TRUE(DesktopSize(width, height).equals(mouse_shape->image().size()));
+  EXPECT_TRUE(DesktopSize(width, height).equals(mouse_shape->image()->size()));
 
   // Get the pixels from |scoped_color|.
   int size = width * height;
@@ -66,7 +66,7 @@ bool ConvertToMouseShapeAndCompare(unsigned left, unsigned right) {
   EXPECT_TRUE(GetBitmapBits(scoped_color, size * sizeof(uint32_t), data.get()));
 
   // Compare the 32bpp image in |mouse_shape| with the one loaded from |right|.
-  return memcmp(data.get(), mouse_shape->image().data(),
+  return memcmp(data.get(), mouse_shape->image()->data(),
                 size * sizeof(uint32_t)) == 0;
 }
 

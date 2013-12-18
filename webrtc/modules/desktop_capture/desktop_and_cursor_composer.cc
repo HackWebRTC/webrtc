@@ -81,7 +81,7 @@ DesktopFrameWithCursor::DesktopFrameWithCursor(DesktopFrame* frame,
   mutable_updated_region()->Swap(frame->mutable_updated_region());
 
   DesktopVector image_pos = position.subtract(cursor.hotspot());
-  DesktopRect target_rect = DesktopRect::MakeSize(cursor.image().size());
+  DesktopRect target_rect = DesktopRect::MakeSize(cursor.image()->size());
   target_rect.Translate(image_pos);
   DesktopVector target_origin = target_rect.top_left();
   target_rect.IntersectWith(DesktopRect::MakeSize(size()));
@@ -101,10 +101,10 @@ DesktopFrameWithCursor::DesktopFrameWithCursor(DesktopFrame* frame,
                               target_rect.left() * DesktopFrame::kBytesPerPixel;
   DesktopVector origin_shift = target_rect.top_left().subtract(target_origin);
   AlphaBlend(target_rect_data, stride(),
-             cursor.image().data() +
-                 origin_shift.y() * cursor.image().stride() +
+             cursor.image()->data() +
+                 origin_shift.y() * cursor.image()->stride() +
                  origin_shift.x() * DesktopFrame::kBytesPerPixel,
-             cursor.image().stride(),
+             cursor.image()->stride(),
              target_rect.size());
 }
 

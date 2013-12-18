@@ -182,10 +182,10 @@ void MouseCursorMonitorMac::CaptureImage() {
 
   // Compare the cursor with the previous one.
   if (last_cursor_.get() &&
-      last_cursor_->image().size().equals(size) &&
+      last_cursor_->image()->size().equals(size) &&
       last_cursor_->hotspot().equals(hotspot) &&
-      memcmp(last_cursor_->image().data(), src_data,
-             last_cursor_->image().stride() * size.height()) == 0) {
+      memcmp(last_cursor_->image()->data(), src_data,
+             last_cursor_->image()->stride() * size.height()) == 0) {
     return;
   }
 

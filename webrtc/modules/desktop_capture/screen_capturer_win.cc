@@ -336,13 +336,13 @@ void ScreenCapturerWin::CaptureCursor() {
 
   scoped_ptr<MouseCursorShape> cursor(new MouseCursorShape);
   cursor->hotspot = cursor_image->hotspot();
-  cursor->size = cursor_image->image().size();
-  uint8_t* current_row = cursor_image->image().data();
-  for (int y = 0; y < cursor_image->image().size().height(); ++y) {
+  cursor->size = cursor_image->image()->size();
+  uint8_t* current_row = cursor_image->image()->data();
+  for (int y = 0; y < cursor_image->image()->size().height(); ++y) {
     cursor->data.append(current_row,
-                        current_row + cursor_image->image().size().width() *
+                        current_row + cursor_image->image()->size().width() *
                                         DesktopFrame::kBytesPerPixel);
-    current_row += cursor_image->image().stride();
+    current_row += cursor_image->image()->stride();
   }
 
   // Compare the current cursor with the last one we sent to the client. If
