@@ -35,7 +35,6 @@ class TestMediaOptimization : public ::testing::Test {
   // This method mimics what happens in VideoSender::AddVideoFrame.
   void AddFrameAndAdvanceTime(int bitrate_bps, bool expect_frame_drop) {
     ASSERT_GE(bitrate_bps, 0);
-    media_opt_.UpdateIncomingFrameRate();
     bool frame_dropped = media_opt_.DropFrame();
     EXPECT_EQ(expect_frame_drop, frame_dropped);
     if (!frame_dropped) {
@@ -63,12 +62,14 @@ TEST_F(TestMediaOptimization, VerifyMuting) {
   media_opt_.SuspendBelowMinBitrate(kThresholdBps, kWindowBps);
 
   // The video should not be suspended from the start.
-  EXPECT_FALSE(media_opt_.video_suspended());
+  EXPECT_FALSE(media_opt_.IsVideoSuspended());
 
   int target_bitrate_kbps = 100;
   media_opt_.SetTargetRates(target_bitrate_kbps * 1000,
                             0,  // Lossrate.
-                            100);  // RTT in ms.
+                            100,
+                            NULL,
+                            NULL);  // RTT in ms.
   media_opt_.EnableFrameDropper(true);
   for (int time = 0; time < 2000; time += frame_time_ms_) {
     ASSERT_NO_FATAL_FAILURE(AddFrameAndAdvanceTime(target_bitrate_kbps, false));
@@ -77,11 +78,13 @@ TEST_F(TestMediaOptimization, VerifyMuting) {
   // Set the target rate below the limit for muting.
   media_opt_.SetTargetRates(kThresholdBps - 1000,
                             0,  // Lossrate.
-                            100);  // RTT in ms.
+                            100,
+                            NULL,
+                            NULL);  // RTT in ms.
   // Expect the muter to engage immediately and stay muted.
   // Test during 2 seconds.
   for (int time = 0; time < 2000; time += frame_time_ms_) {
-    EXPECT_TRUE(media_opt_.video_suspended());
+    EXPECT_TRUE(media_opt_.IsVideoSuspended());
     ASSERT_NO_FATAL_FAILURE(AddFrameAndAdvanceTime(target_bitrate_kbps, true));
   }
 
@@ -89,22 +92,26 @@ TEST_F(TestMediaOptimization, VerifyMuting) {
   // limit + window.
   media_opt_.SetTargetRates(kThresholdBps + 1000,
                             0,  // Lossrate.
-                            100);  // RTT in ms.
-  // Expect the muter to stay muted.
+                            100,
+                            NULL,
+                            NULL);  // RTT in ms.
+                                    // Expect the muter to stay muted.
   // Test during 2 seconds.
   for (int time = 0; time < 2000; time += frame_time_ms_) {
-    EXPECT_TRUE(media_opt_.video_suspended());
+    EXPECT_TRUE(media_opt_.IsVideoSuspended());
     ASSERT_NO_FATAL_FAILURE(AddFrameAndAdvanceTime(target_bitrate_kbps, true));
   }
 
   // Set the target above limit + window.
   media_opt_.SetTargetRates(kThresholdBps + kWindowBps + 1000,
                             0,  // Lossrate.
-                            100);  // RTT in ms.
+                            100,
+                            NULL,
+                            NULL);  // RTT in ms.
   // Expect the muter to disengage immediately.
   // Test during 2 seconds.
   for (int time = 0; time < 2000; time += frame_time_ms_) {
-    EXPECT_FALSE(media_opt_.video_suspended());
+    EXPECT_FALSE(media_opt_.IsVideoSuspended());
     ASSERT_NO_FATAL_FAILURE(
         AddFrameAndAdvanceTime((kThresholdBps + kWindowBps) / 1000, false));
   }

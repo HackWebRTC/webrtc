@@ -68,7 +68,8 @@ class VideoSender {
                                   uint8_t payloadType,
                                   bool internalSource);
 
-  int32_t CodecConfigParameters(uint8_t* buffer, int32_t size);
+  int32_t CodecConfigParameters(uint8_t* buffer, int32_t size) const;
+  int32_t SentFrameCount(VCMFrameCount* frameCount);
   int Bitrate(unsigned int* bitrate) const;
   int FrameRate(unsigned int* framerate) const;
 
@@ -88,7 +89,6 @@ class VideoSender {
 
   int32_t IntraFrameRequest(int stream_index);
   int32_t EnableFrameDropper(bool enable);
-  int32_t SentFrameCount(VCMFrameCount* frameCount) const;
 
   int SetSenderNackMode(SenderNackMode mode);
   int SetSenderReferenceSelection(bool enable);
@@ -122,6 +122,9 @@ class VideoSender {
   VCMCodecDataBase _codecDataBase;
   bool frame_dropper_enabled_;
   VCMProcessTimer _sendStatsTimer;
+
+  VCMQMSettingsCallback* qm_settings_callback_;
+  VCMProtectionCallback* protection_callback_;
 };
 
 class VideoReceiver {

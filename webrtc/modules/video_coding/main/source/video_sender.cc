@@ -34,7 +34,9 @@ VideoSender::VideoSender(const int32_t id, Clock* clock)
       _encoderInputFile(NULL),
       _codecDataBase(id),
       frame_dropper_enabled_(true),
-      _sendStatsTimer(1000, clock_) {}
+      _sendStatsTimer(1000, clock_),
+      qm_settings_callback_(NULL),
+      protection_callback_(NULL) {}
 
 VideoSender::~VideoSender() {
   delete _sendCritSect;
@@ -70,8 +72,6 @@ int32_t VideoSender::InitializeSender() {
   _codecDataBase.ResetSender();
   _encoder = NULL;
   _encodedFrameCallback.SetTransportCallback(NULL);
-  // setting default bitRate and frameRate to 0
-  _mediaOpt.SetEncodingData(kVideoCodecUnknown, 0, 0, 0, 0, 0, 0);
   _mediaOpt.Reset();  // Resetting frame dropper
   return VCM_OK;
 }
@@ -125,9 +125,8 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
                             sendCodec->startBitrate * 1000,
                             sendCodec->width,
                             sendCodec->height,
-                            numLayers);
-  _mediaOpt.set_max_payload_size(maxPayloadSize);
-
+                            numLayers,
+                            maxPayloadSize);
   return VCM_OK;
 }
 
@@ -171,12 +170,21 @@ int32_t VideoSender::RegisterExternalEncoder(VideoEncoder* externalEncoder,
 }
 
 // Get codec config parameters
-int32_t VideoSender::CodecConfigParameters(uint8_t* buffer, int32_t size) {
+int32_t VideoSender::CodecConfigParameters(uint8_t* buffer,
+                                           int32_t size) const {
   CriticalSectionScoped cs(_sendCritSect);
   if (_encoder != NULL) {
     return _encoder->CodecConfigParameters(buffer, size);
   }
   return VCM_UNINITIALIZED;
+}
+
+// TODO(andresp): Make const once media_opt is thread-safe and this has a
+// pointer to it.
+int32_t VideoSender::SentFrameCount(VCMFrameCount* frameCount) {
+  CriticalSectionScoped cs(_sendCritSect);
+  *frameCount = _mediaOpt.SentFrameCount();
+  return VCM_OK;
 }
 
 // Get encode bitrate
@@ -208,8 +216,11 @@ int32_t VideoSender::SetChannelParameters(uint32_t target_bitrate,
   int32_t ret = 0;
   {
     CriticalSectionScoped sendCs(_sendCritSect);
-    uint32_t targetRate =
-        _mediaOpt.SetTargetRates(target_bitrate, lossRate, rtt);
+    uint32_t targetRate = _mediaOpt.SetTargetRates(target_bitrate,
+                                                   lossRate,
+                                                   rtt,
+                                                   protection_callback_,
+                                                   qm_settings_callback_);
     if (_encoder != NULL) {
       ret = _encoder->SetChannelParameters(lossRate, rtt);
       if (ret < 0) {
@@ -247,17 +258,19 @@ int32_t VideoSender::RegisterSendStatisticsCallback(
 // Register a video quality settings callback which will be called when frame
 // rate/dimensions need to be updated for video quality optimization
 int32_t VideoSender::RegisterVideoQMCallback(
-    VCMQMSettingsCallback* videoQMSettings) {
+    VCMQMSettingsCallback* qm_settings_callback) {
   CriticalSectionScoped cs(_sendCritSect);
-  return _mediaOpt.RegisterVideoQMCallback(videoQMSettings);
+  qm_settings_callback_ = qm_settings_callback;
+  _mediaOpt.EnableQM(qm_settings_callback_ != NULL);
+  return VCM_OK;
 }
 
 // Register a video protection callback which will be called to deliver the
 // requested FEC rate and NACK status (on/off).
 int32_t VideoSender::RegisterProtectionCallback(
-    VCMProtectionCallback* protection) {
+    VCMProtectionCallback* protection_callback) {
   CriticalSectionScoped cs(_sendCritSect);
-  _mediaOpt.RegisterProtectionCallback(protection);
+  protection_callback_ = protection_callback;
   return VCM_OK;
 }
 
@@ -314,8 +327,6 @@ int32_t VideoSender::AddVideoFrame(const I420VideoFrame& videoFrame,
   if (_nextFrameTypes[0] == kFrameEmpty) {
     return VCM_OK;
   }
-  _mediaOpt.UpdateIncomingFrameRate();
-
   if (_mediaOpt.DropFrame()) {
     WEBRTC_TRACE(webrtc::kTraceStream,
                  webrtc::kTraceVideoCoding,
@@ -367,11 +378,6 @@ int32_t VideoSender::EnableFrameDropper(bool enable) {
   frame_dropper_enabled_ = enable;
   _mediaOpt.EnableFrameDropper(enable);
   return VCM_OK;
-}
-
-int32_t VideoSender::SentFrameCount(VCMFrameCount* frameCount) const {
-  CriticalSectionScoped cs(_sendCritSect);
-  return _mediaOpt.SentFrameCount(frameCount);
 }
 
 int VideoSender::SetSenderNackMode(SenderNackMode mode) {
@@ -443,7 +449,7 @@ void VideoSender::SuspendBelowMinBitrate() {
 
 bool VideoSender::VideoSuspended() const {
   CriticalSectionScoped cs(_sendCritSect);
-  return _mediaOpt.video_suspended();
+  return _mediaOpt.IsVideoSuspended();
 }
 
 void VideoSender::RegisterPostEncodeImageCallback(
