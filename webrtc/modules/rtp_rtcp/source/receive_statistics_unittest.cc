@@ -131,4 +131,87 @@ TEST_F(ReceiveStatisticsTest, ActiveStatisticians) {
   EXPECT_EQ(200u, bytes_received);
   EXPECT_EQ(2u, packets_received);
 }
+
+TEST_F(ReceiveStatisticsTest, Callbacks) {
+  class TestCallback : public RtcpStatisticsCallback {
+   public:
+    TestCallback()
+        : RtcpStatisticsCallback(), num_calls_(0), ssrc_(0), stats_() {}
+    virtual ~TestCallback() {}
+
+    virtual void StatisticsUpdated(const RtcpStatistics& statistics,
+                                   uint32_t ssrc) {
+      ssrc_ = ssrc;
+      stats_ = statistics;
+      ++num_calls_;
+    }
+
+    uint32_t num_calls_;
+    uint32_t ssrc_;
+    RtcpStatistics stats_;
+  } callback;
+
+  receive_statistics_->RegisterRtcpStatisticsCallback(&callback);
+
+  // Add some arbitrary data, with loss and jitter.
+  header1_.sequenceNumber = 1;
+  clock_.AdvanceTimeMilliseconds(7);
+  header1_.timestamp += 3;
+  receive_statistics_->IncomingPacket(header1_, kPacketSize1, false);
+  header1_.sequenceNumber += 2;
+  clock_.AdvanceTimeMilliseconds(9);
+  header1_.timestamp += 9;
+  receive_statistics_->IncomingPacket(header1_, kPacketSize1, false);
+  --header1_.sequenceNumber;
+  clock_.AdvanceTimeMilliseconds(13);
+  header1_.timestamp += 47;
+  receive_statistics_->IncomingPacket(header1_, kPacketSize1, true);
+  header1_.sequenceNumber += 3;
+  clock_.AdvanceTimeMilliseconds(11);
+  header1_.timestamp += 17;
+  receive_statistics_->IncomingPacket(header1_, kPacketSize1, false);
+  ++header1_.sequenceNumber;
+
+  EXPECT_EQ(0u, callback.num_calls_);
+
+  // Call GetStatistics, simulating a timed rtcp sender thread.
+  RtcpStatistics statistics;
+  receive_statistics_->GetStatistician(kSsrc1)
+      ->GetStatistics(&statistics, true);
+
+  EXPECT_EQ(1u, callback.num_calls_);
+  EXPECT_EQ(callback.ssrc_, kSsrc1);
+  EXPECT_EQ(statistics.cumulative_lost, callback.stats_.cumulative_lost);
+  EXPECT_EQ(statistics.extended_max_sequence_number,
+            callback.stats_.extended_max_sequence_number);
+  EXPECT_EQ(statistics.fraction_lost, callback.stats_.fraction_lost);
+  EXPECT_EQ(statistics.jitter, callback.stats_.jitter);
+
+  receive_statistics_->RegisterRtcpStatisticsCallback(NULL);
+
+  // Add some more data.
+  header1_.sequenceNumber = 1;
+  clock_.AdvanceTimeMilliseconds(7);
+  header1_.timestamp += 3;
+  receive_statistics_->IncomingPacket(header1_, kPacketSize1, false);
+  header1_.sequenceNumber += 2;
+  clock_.AdvanceTimeMilliseconds(9);
+  header1_.timestamp += 9;
+  receive_statistics_->IncomingPacket(header1_, kPacketSize1, false);
+  --header1_.sequenceNumber;
+  clock_.AdvanceTimeMilliseconds(13);
+  header1_.timestamp += 47;
+  receive_statistics_->IncomingPacket(header1_, kPacketSize1, true);
+  header1_.sequenceNumber += 3;
+  clock_.AdvanceTimeMilliseconds(11);
+  header1_.timestamp += 17;
+  receive_statistics_->IncomingPacket(header1_, kPacketSize1, false);
+  ++header1_.sequenceNumber;
+
+  receive_statistics_->GetStatistician(kSsrc1)
+      ->GetStatistics(&statistics, true);
+
+  // Should not have been called after deregister.
+  EXPECT_EQ(1u, callback.num_calls_);
+}
 }  // namespace webrtc

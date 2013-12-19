@@ -348,7 +348,8 @@ class FakeReceiveStatistics : public NullReceiveStatistics {
       stats_.cumulative_lost = cumulative_lost;
       stats_.extended_max_sequence_number = extended_max_sequence_number;
     }
-    virtual bool GetStatistics(Statistics* statistics, bool reset) OVERRIDE {
+    virtual bool GetStatistics(RtcpStatistics* statistics,
+                               bool reset) OVERRIDE {
       *statistics = stats_;
       return true;
     }
@@ -367,7 +368,8 @@ class FakeReceiveStatistics : public NullReceiveStatistics {
     virtual bool IsPacketInOrder(uint16_t sequence_number) const OVERRIDE {
       return true;
     }
-    Statistics stats_;
+
+    RtcpStatistics stats_;
   };
 
   scoped_ptr<LossyStatistician> lossy_stats_;

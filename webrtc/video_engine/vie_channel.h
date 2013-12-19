@@ -185,6 +185,10 @@ class ViEChannel
                                     uint32_t* jitter_samples,
                                     int32_t* rtt_ms);
 
+  // Called on generation of RTCP stats
+  void RegisterReceiveChannelRtcpStatisticsCallback(
+      RtcpStatisticsCallback* callback);
+
   // Gets sent/received packets statistics.
   int32_t GetRtpStatistics(uint32_t* bytes_sent,
                            uint32_t* packets_sent,

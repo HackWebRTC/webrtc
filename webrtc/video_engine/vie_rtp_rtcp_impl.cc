@@ -1168,15 +1168,35 @@ int ViERTP_RTCPImpl::DeregisterSendChannelRtcpStatisticsCallback(
 }
 
 int ViERTP_RTCPImpl::RegisterReceiveChannelRtcpStatisticsCallback(
-    int channel, RtcpStatisticsCallback* callback) {
-  // TODO(sprang): Implement
-  return -1;
+    const int video_channel,
+    RtcpStatisticsCallback* callback) {
+  WEBRTC_TRACE(kTraceApiCall,
+               kTraceVideo,
+               ViEId(shared_data_->instance_id(), video_channel),
+               "%s(channel: %d)",
+               __FUNCTION__,
+               video_channel);
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  assert(vie_channel != NULL);
+  vie_channel->RegisterReceiveChannelRtcpStatisticsCallback(callback);
+  return 0;
 }
 
 int ViERTP_RTCPImpl::DeregisterReceiveChannelRtcpStatisticsCallback(
-    int channel, RtcpStatisticsCallback* callback) {
-  // TODO(sprang): Implement
-  return -1;
+    const int video_channel,
+    RtcpStatisticsCallback* callback) {
+  WEBRTC_TRACE(kTraceApiCall,
+               kTraceVideo,
+               ViEId(shared_data_->instance_id(), video_channel),
+               "%s(channel: %d)",
+               __FUNCTION__,
+               video_channel);
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  assert(vie_channel != NULL);
+  vie_channel->RegisterReceiveChannelRtcpStatisticsCallback(NULL);
+  return 0;
 }
 
 int ViERTP_RTCPImpl::RegisterSendChannelRtpStatisticsCallback(

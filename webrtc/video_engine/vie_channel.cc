@@ -345,6 +345,8 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       }
       rtp_rtcp->SetSendingStatus(rtp_rtcp_->Sending());
       rtp_rtcp->SetSendingMediaStatus(rtp_rtcp_->SendingMedia());
+      rtp_rtcp->RegisterSendChannelRtcpStatisticsCallback(
+          rtp_rtcp_->GetSendChannelRtcpStatisticsCallback());
       simulcast_rtp_rtcp_.push_back(rtp_rtcp);
     }
     // Remove last in list if we have too many.
@@ -1297,7 +1299,7 @@ int32_t ViEChannel::GetReceivedRtcpStatistics(uint16_t* fraction_lost,
   uint32_t remote_ssrc = vie_receiver_.GetRemoteSsrc();
   StreamStatistician* statistician =
       vie_receiver_.GetReceiveStatistics()->GetStatistician(remote_ssrc);
-  StreamStatistician::Statistics receive_stats;
+  RtcpStatistics receive_stats;
   if (!statistician || !statistician->GetStatistics(
       &receive_stats, rtp_rtcp_->RTCP() == kRtcpOff)) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
@@ -1317,6 +1319,17 @@ int32_t ViEChannel::GetReceivedRtcpStatistics(uint16_t* fraction_lost,
   }
   *rtt_ms = rtt;
   return 0;
+}
+
+void ViEChannel::RegisterReceiveChannelRtcpStatisticsCallback(
+    RtcpStatisticsCallback* callback) {
+  WEBRTC_TRACE(kTraceInfo,
+               kTraceVideo,
+               ViEId(engine_id_, channel_id_),
+               "%s",
+               __FUNCTION__);
+  vie_receiver_.GetReceiveStatistics()->RegisterRtcpStatisticsCallback(
+      callback);
 }
 
 int32_t ViEChannel::GetRtpStatistics(uint32_t* bytes_sent,

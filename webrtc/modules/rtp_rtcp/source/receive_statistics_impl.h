@@ -25,11 +25,10 @@ class CriticalSectionWrapper;
 
 class StreamStatisticianImpl : public StreamStatistician {
  public:
-  explicit StreamStatisticianImpl(Clock* clock);
-
+  StreamStatisticianImpl(Clock* clock, RtcpStatisticsCallback* rtcp_callback);
   virtual ~StreamStatisticianImpl() {}
 
-  virtual bool GetStatistics(Statistics* statistics, bool reset) OVERRIDE;
+  virtual bool GetStatistics(RtcpStatistics* statistics, bool reset) OVERRIDE;
   virtual void GetDataCounters(uint32_t* bytes_received,
                                uint32_t* packets_received) const OVERRIDE;
   virtual uint32_t BitrateReceived() const OVERRIDE;
@@ -55,7 +54,6 @@ class StreamStatisticianImpl : public StreamStatistician {
 
   // Stats on received RTP packets.
   uint32_t jitter_q4_;
-  uint32_t jitter_max_q4_;
   uint32_t cumulative_loss_;
   uint32_t jitter_q4_transmission_time_offset_;
 
@@ -79,10 +77,13 @@ class StreamStatisticianImpl : public StreamStatistician {
   uint32_t last_report_inorder_packets_;
   uint32_t last_report_old_packets_;
   uint16_t last_report_seq_max_;
-  Statistics last_reported_statistics_;
+  RtcpStatistics last_reported_statistics_;
+
+  RtcpStatisticsCallback* const rtcp_callback_;
 };
 
-class ReceiveStatisticsImpl : public ReceiveStatistics {
+class ReceiveStatisticsImpl : public ReceiveStatistics,
+                              public RtcpStatisticsCallback {
  public:
   explicit ReceiveStatisticsImpl(Clock* clock);
 
@@ -101,6 +102,12 @@ class ReceiveStatisticsImpl : public ReceiveStatistics {
 
   void ChangeSsrc(uint32_t from_ssrc, uint32_t to_ssrc);
 
+  virtual void RegisterRtcpStatisticsCallback(RtcpStatisticsCallback* callback)
+      OVERRIDE;
+
+  virtual void StatisticsUpdated(const RtcpStatistics& statistics,
+                                 uint32_t ssrc) OVERRIDE;
+
  private:
   typedef std::map<uint32_t, StreamStatisticianImpl*> StatisticianImplMap;
 
@@ -108,6 +115,8 @@ class ReceiveStatisticsImpl : public ReceiveStatistics {
   scoped_ptr<CriticalSectionWrapper> crit_sect_;
   int64_t last_rate_update_ms_;
   StatisticianImplMap statisticians_;
+
+  RtcpStatisticsCallback* rtcp_stats_callback_;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RECEIVE_STATISTICS_IMPL_H_

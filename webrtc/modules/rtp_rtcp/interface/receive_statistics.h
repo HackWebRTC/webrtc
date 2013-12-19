@@ -23,24 +23,9 @@ class Clock;
 
 class StreamStatistician {
  public:
-  struct Statistics {
-    Statistics()
-        : fraction_lost(0),
-          cumulative_lost(0),
-          extended_max_sequence_number(0),
-          jitter(0),
-          max_jitter(0) {}
-
-    uint8_t fraction_lost;
-    uint32_t cumulative_lost;
-    uint32_t extended_max_sequence_number;
-    uint32_t jitter;
-    uint32_t max_jitter;
-  };
-
   virtual ~StreamStatistician();
 
-  virtual bool GetStatistics(Statistics* statistics, bool reset) = 0;
+  virtual bool GetStatistics(RtcpStatistics* statistics, bool reset) = 0;
   virtual void GetDataCounters(uint32_t* bytes_received,
                                uint32_t* packets_received) const = 0;
   virtual uint32_t BitrateReceived() const = 0;
@@ -78,6 +63,10 @@ class ReceiveStatistics : public Module {
 
   // Sets the max reordering threshold in number of packets.
   virtual void SetMaxReorderingThreshold(int max_reordering_threshold) = 0;
+
+  // Called on new RTCP stats creation.
+  virtual void RegisterRtcpStatisticsCallback(
+      RtcpStatisticsCallback* callback) = 0;
 };
 
 class NullReceiveStatistics : public ReceiveStatistics {
@@ -89,6 +78,8 @@ class NullReceiveStatistics : public ReceiveStatistics {
   virtual int32_t TimeUntilNextProcess() OVERRIDE;
   virtual int32_t Process() OVERRIDE;
   virtual void SetMaxReorderingThreshold(int max_reordering_threshold) OVERRIDE;
+  virtual void RegisterRtcpStatisticsCallback(RtcpStatisticsCallback* callback)
+      OVERRIDE;
 };
 
 }  // namespace webrtc

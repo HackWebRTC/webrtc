@@ -38,6 +38,54 @@
 namespace webrtc {
 namespace voe {
 
+// Extend the default RTCP statistics struct with max_jitter, defined as the
+// maximum jitter value seen in an RTCP report block.
+struct ChannelStatistics : public RtcpStatistics {
+  ChannelStatistics() : rtcp(), max_jitter(0) {}
+
+  RtcpStatistics rtcp;
+  uint32_t max_jitter;
+};
+
+// Statistics callback, called at each generation of a new RTCP report block.
+class StatisticsProxy : public RtcpStatisticsCallback {
+ public:
+  StatisticsProxy(uint32_t ssrc)
+   : stats_lock_(CriticalSectionWrapper::CreateCriticalSection()),
+     ssrc_(ssrc) {}
+  virtual ~StatisticsProxy() {}
+
+  virtual void StatisticsUpdated(const RtcpStatistics& statistics,
+                                 uint32_t ssrc) OVERRIDE {
+    if (ssrc != ssrc_)
+      return;
+
+    CriticalSectionScoped cs(stats_lock_.get());
+    stats_.rtcp = statistics;
+    if (statistics.jitter > stats_.max_jitter) {
+      stats_.max_jitter = statistics.jitter;
+    }
+  }
+
+  void ResetStatistics() {
+    CriticalSectionScoped cs(stats_lock_.get());
+    stats_ = ChannelStatistics();
+  }
+
+  ChannelStatistics GetStats() {
+    CriticalSectionScoped cs(stats_lock_.get());
+    return stats_;
+  }
+
+ private:
+  // StatisticsUpdated calls are triggered from threads in the RTP module,
+  // while GetStats calls can be triggered from the public voice engine API,
+  // hence synchronization is needed.
+  scoped_ptr<CriticalSectionWrapper> stats_lock_;
+  const uint32_t ssrc_;
+  ChannelStatistics stats_;
+};
+
 int32_t
 Channel::SendData(FrameType frameType,
                   uint8_t   payloadType,
@@ -361,6 +409,7 @@ void Channel::ResetStatistics(uint32_t ssrc) {
   if (statistician) {
     statistician->ResetStatistics();
   }
+  statistics_proxy_->ResetStatistics();
 }
 
 void
@@ -883,6 +932,7 @@ Channel::Channel(int32_t channelId,
     _rtpDumpOut(*RtpDump::CreateRtpDump()),
     _outputAudioLevel(),
     _externalTransport(false),
+    _audioLevel_dBov(0),
     _inputFilePlayerPtr(NULL),
     _outputFilePlayerPtr(NULL),
     _outputFileRecorderPtr(NULL),
@@ -909,6 +959,7 @@ Channel::Channel(int32_t channelId,
     jitter_buffer_playout_timestamp_(0),
     playout_timestamp_rtp_(0),
     playout_timestamp_rtcp_(0),
+    playout_delay_ms_(0),
     _numberOfDiscardedPackets(0),
     send_sequence_number_(0),
     _engineStatisticsPtr(NULL),
@@ -984,10 +1035,15 @@ Channel::Channel(int32_t channelId,
     configuration.receive_statistics = rtp_receive_statistics_.get();
 
     _rtpRtcpModule.reset(RtpRtcp::CreateRtpRtcp(configuration));
+
+    statistics_proxy_.reset(new StatisticsProxy(_rtpRtcpModule->SSRC()));
+    rtp_receive_statistics_->RegisterRtcpStatisticsCallback(
+        statistics_proxy_.get());
 }
 
 Channel::~Channel()
 {
+    rtp_receive_statistics_->RegisterRtcpStatisticsCallback(NULL);
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::~Channel() - dtor");
 
@@ -3863,23 +3919,25 @@ Channel::GetRTPStatistics(
 {
     // The jitter statistics is updated for each received RTP packet and is
     // based on received packets.
-    StreamStatistician::Statistics statistics;
-    StreamStatistician* statistician =
-        rtp_receive_statistics_->GetStatistician(rtp_receiver_->SSRC());
-    if (!statistician || !statistician->GetStatistics(
-        &statistics, _rtpRtcpModule->RTCP() == kRtcpOff)) {
-      _engineStatisticsPtr->SetLastError(
-          VE_CANNOT_RETRIEVE_RTP_STAT, kTraceWarning,
-          "GetRTPStatistics() failed to read RTP statistics from the "
-          "RTP/RTCP module");
+    if (_rtpRtcpModule->RTCP() == kRtcpOff) {
+      // If RTCP is off, there is no timed thread in the RTCP module regularly
+      // generating new stats, trigger the update manually here instead.
+      StreamStatistician* statistician =
+          rtp_receive_statistics_->GetStatistician(rtp_receiver_->SSRC());
+      if (statistician) {
+        // Don't use returned statistics, use data from proxy instead so that
+        // max jitter can be fetched atomically.
+        RtcpStatistics s;
+        statistician->GetStatistics(&s, true);
+      }
     }
 
+    ChannelStatistics stats = statistics_proxy_->GetStats();
     const int32_t playoutFrequency = audio_coding_->PlayoutFrequency();
-    if (playoutFrequency > 0)
-    {
-        // Scale RTP statistics given the current playout frequency
-        maxJitterMs = statistics.max_jitter / (playoutFrequency / 1000);
-        averageJitterMs = statistics.jitter / (playoutFrequency / 1000);
+    if (playoutFrequency > 0) {
+      // Scale RTP statistics given the current playout frequency
+      maxJitterMs = stats.max_jitter / (playoutFrequency / 1000);
+      averageJitterMs = stats.rtcp.jitter / (playoutFrequency / 1000);
     }
 
     discardedPackets = _numberOfDiscardedPackets;
@@ -3959,7 +4017,7 @@ Channel::GetRTPStatistics(CallStatistics& stats)
 
     // The jitter statistics is updated for each received RTP packet and is
     // based on received packets.
-    StreamStatistician::Statistics statistics;
+    RtcpStatistics statistics;
     StreamStatistician* statistician =
         rtp_receive_statistics_->GetStatistician(rtp_receiver_->SSRC());
     if (!statistician || !statistician->GetStatistics(

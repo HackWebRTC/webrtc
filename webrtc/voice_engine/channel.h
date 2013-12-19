@@ -59,6 +59,7 @@ struct SenderInfo;
 namespace voe {
 
 class Statistics;
+class StatisticsProxy;
 class TransmitMixer;
 class OutputMixer;
 
@@ -455,6 +456,7 @@ private:
     scoped_ptr<RtpHeaderParser> rtp_header_parser_;
     scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
     scoped_ptr<ReceiveStatistics> rtp_receive_statistics_;
+    scoped_ptr<StatisticsProxy> statistics_proxy_;
     scoped_ptr<RtpReceiver> rtp_receiver_;
     TelephoneEventHandler* telephone_event_handler_;
     scoped_ptr<RtpRtcp> _rtpRtcpModule;
