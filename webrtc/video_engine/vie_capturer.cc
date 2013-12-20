@@ -638,6 +638,7 @@ bool ViECapturer::CaptureCapabilityFixed() {
 }
 
 int32_t ViECapturer::RegisterObserver(ViECaptureObserver* observer) {
+  CriticalSectionScoped cs(observer_cs_.get());
   if (observer_) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, capture_id_),
                  "%s Observer already registered", __FUNCTION__, capture_id_);
