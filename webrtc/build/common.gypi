@@ -186,6 +186,11 @@
               '-Woverloaded-virtual',
             ],
           }],
+          ['clang==1', {
+            'cflags': [
+              '-Wthread-safety',
+            ],
+          }],
         ],
       }],
       ['target_arch=="arm" or target_arch=="armv7"', {

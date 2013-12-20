@@ -404,7 +404,6 @@ bool TbExternalTransport::ViEExternalTransportProcess()
             {
                 waitTime = (unsigned int) timeToReceive;
             }
-            _crit.Leave();
             break;
         }
         _rtpPackets.pop_front();
@@ -488,7 +487,6 @@ bool TbExternalTransport::ViEExternalTransportProcess()
             {
                 waitTime = (unsigned int) timeToReceive;
             }
-            _crit.Leave();
             break;
         }
         _rtcpPackets.pop_front();

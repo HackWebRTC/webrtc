@@ -48,6 +48,7 @@
         '../interface/sort.h',
         '../interface/static_instance.h',
         '../interface/stringize_macros.h',
+        '../interface/thread_annotations.h',
         '../interface/thread_wrapper.h',
         '../interface/tick_util.h',
         '../interface/trace.h',

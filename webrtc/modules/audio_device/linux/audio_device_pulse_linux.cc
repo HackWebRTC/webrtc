@@ -2613,7 +2613,7 @@ int32_t AudioDeviceLinuxPulse::ReadRecordedData(const void* bufferData,
 int32_t AudioDeviceLinuxPulse::ProcessRecordedData(
     int8_t *bufferData,
     uint32_t bufferSizeInSamples,
-    uint32_t recDelay)
+    uint32_t recDelay) EXCLUSIVE_LOCKS_REQUIRED(_critSect)
 {
     uint32_t currentMicLevel(0);
     uint32_t newMicLevel(0);

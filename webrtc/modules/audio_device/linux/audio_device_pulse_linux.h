@@ -224,16 +224,12 @@ public:
     virtual void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) OVERRIDE;
 
 private:
-    void Lock()
-    {
+    void Lock() EXCLUSIVE_LOCK_FUNCTION(_critSect) {
         _critSect.Enter();
     }
-    ;
-    void UnLock()
-    {
+    void UnLock() UNLOCK_FUNCTION(_critSect) {
         _critSect.Leave();
     }
-    ;
     void WaitForOperationCompletion(pa_operation* paOperation) const;
     void WaitForSuccess(pa_operation* paOperation) const;
 

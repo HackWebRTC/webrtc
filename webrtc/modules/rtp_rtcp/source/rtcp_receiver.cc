@@ -480,11 +480,12 @@ RTCPReceiver::HandleSenderReceiverReport(RTCPUtility::RTCPParserV2& rtcpParser,
 }
 
 // no need for critsect we have _criticalSectionRTCPReceiver
-void
-RTCPReceiver::HandleReportBlock(const RTCPUtility::RTCPPacket& rtcpPacket,
-                                RTCPPacketInformation& rtcpPacketInformation,
-                                const uint32_t remoteSSRC,
-                                const uint8_t numberOfReportBlocks) {
+void RTCPReceiver::HandleReportBlock(
+    const RTCPUtility::RTCPPacket& rtcpPacket,
+    RTCPPacketInformation& rtcpPacketInformation,
+    const uint32_t remoteSSRC,
+    const uint8_t numberOfReportBlocks)
+    EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver) {
   // This will be called once per report block in the RTCP packet.
   // We filter out all report blocks that are not for us.
   // Each packet has max 31 RR blocks.
@@ -940,7 +941,8 @@ void RTCPReceiver::HandleXrDlrrReportBlock(
 
 void RTCPReceiver::HandleXrDlrrReportBlockItem(
     const RTCPUtility::RTCPPacket& packet,
-    RTCPPacketInformation& rtcpPacketInformation) {
+    RTCPPacketInformation& rtcpPacketInformation)
+    EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver) {
   if (registered_ssrcs_.find(packet.XRDLRRReportBlockItem.SSRC) ==
       registered_ssrcs_.end()) {
     // Not to us.
