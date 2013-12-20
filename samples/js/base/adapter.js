@@ -47,7 +47,8 @@ if (navigator.mozGetUserMedia) {
         // Ignore the transport parameter from TURN url for FF version <=27.
         var turn_url_parts = url.split("?");
         // Return null for createIceServer if transport=tcp.
-        if (turn_url_parts[1].indexOf('transport=udp') === 0) {
+        if (turn_url_parts.length === 1 ||
+            turn_url_parts[1].indexOf('transport=udp') === 0) {
           iceServer = { 'url': turn_url_parts[0],
                         'credential': password,
                         'username': username };
