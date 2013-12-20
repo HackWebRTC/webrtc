@@ -110,13 +110,12 @@ class AudioRecordJni {
   int32_t SetRecordingSampleRate(const uint32_t samplesPerSec);
 
  private:
-  // Lock
-  void Lock() {
+  void Lock() EXCLUSIVE_LOCK_FUNCTION(_critSect) {
     _critSect.Enter();
-  };
-  void UnLock() {
+  }
+  void UnLock() UNLOCK_FUNCTION(_critSect) {
     _critSect.Leave();
-  };
+  }
 
   int32_t InitJavaResources();
   int32_t InitSampleRate();

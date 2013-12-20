@@ -111,13 +111,12 @@ class AudioTrackJni : public PlayoutDelayProvider {
   virtual int PlayoutDelayMs() { return 0; }
 
  private:
-  // Lock
-  void Lock() {
+  void Lock() EXCLUSIVE_LOCK_FUNCTION(_critSect) {
     _critSect.Enter();
-  };
-  void UnLock() {
+  }
+  void UnLock() UNLOCK_FUNCTION(_critSect) {
     _critSect.Leave();
-  };
+  }
 
   int32_t InitJavaResources();
   int32_t InitSampleRate();
