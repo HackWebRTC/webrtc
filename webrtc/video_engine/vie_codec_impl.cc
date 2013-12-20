@@ -166,14 +166,14 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
                                        video_codec_internal.height *
                                        video_codec_internal.maxFramerate)
                                        / 1000;
-    if (video_codec_internal.startBitrate > video_codec_internal.maxBitrate) {
-      // Don't limit the set start bitrate.
-      video_codec_internal.maxBitrate = video_codec_internal.startBitrate;
-    }
     WEBRTC_TRACE(kTraceInfo, kTraceVideo,
                  ViEId(shared_data_->instance_id(), video_channel),
                  "%s: New max bitrate set to %d kbps", __FUNCTION__,
                  video_codec_internal.maxBitrate);
+  }
+
+  if (video_codec_internal.startBitrate > video_codec_internal.maxBitrate) {
+    video_codec_internal.startBitrate = video_codec_internal.maxBitrate;
   }
 
   VideoCodec encoder;
