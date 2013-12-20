@@ -158,6 +158,11 @@ def CheckChangeOnCommit(input_api, output_api):
 def GetPreferredTrySlaves(project, change):
   files = change.LocalPaths()
 
+  android_bots = [
+      'android',
+      'android_rel',
+      'android_clang',
+  ]
   ios_bots = [
       'ios',
       'ios_rel',
@@ -191,4 +196,4 @@ def GetPreferredTrySlaves(project, change):
   if all(re.search('(^|[/_])win[/_.]', f) for f in files):
     return win_bots
 
-  return ['android_ndk'] + ios_bots + linux_bots + mac_bots + win_bots
+  return android_bots + ios_bots + linux_bots + mac_bots + win_bots
