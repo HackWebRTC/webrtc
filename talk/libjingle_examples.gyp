@@ -305,16 +305,16 @@
                 '<(PRODUCT_DIR)/AppRTCDemo-debug.apk',
               ],
               'variables': {
-                'ant_log': '<(INTERMEDIATE_DIR)/ant.log',
+                'ant_log': '../../<(INTERMEDIATE_DIR)/ant.log', # ../.. to compensate for the cd examples/android below.
               },
               'action': [
                 'bash', '-ec',
                 'rm -fr <(_outputs) examples/android/{bin,libs} && '
+                'mkdir -p <(INTERMEDIATE_DIR) && ' # Must happen _before_ the cd below
                 'mkdir -p examples/android/libs/<(android_app_abi) && '
                 'cp <(PRODUCT_DIR)/libjingle_peerconnection.jar examples/android/libs/ &&'
                 '<(android_strip) -o examples/android/libs/<(android_app_abi)/libjingle_peerconnection_so.so  <(PRODUCT_DIR)/libjingle_peerconnection_so.so &&'
                 'cd examples/android && '
-                'mkdir -p <(INTERMEDIATE_DIR) && '
                 '{ ant -q -l <(ant_log) debug || '
                 '  { cat <(ant_log) ; exit 1; } } && '
                 'cd - > /dev/null && '

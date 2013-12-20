@@ -80,6 +80,7 @@
               'variables': {
                 'java_src_dir': 'app/webrtc/java/src',
                 'webrtc_modules_dir': '<(webrtc_root)/modules',
+                'build_jar_log': '<(INTERMEDIATE_DIR)/build_jar.log',
                 'peerconnection_java_files': [
                   'app/webrtc/java/src/org/webrtc/AudioSource.java',
                   'app/webrtc/java/src/org/webrtc/AudioTrack.java',
@@ -137,10 +138,13 @@
                 }],
               ],
               'action': [
-                'build/build_jar.sh', '<(java_home)', '<@(_outputs)',
-                '<(INTERMEDIATE_DIR)',
-                '<(build_classpath)',
-                '<@(java_files)'
+                'bash', '-ec',
+                'mkdir -p <(INTERMEDIATE_DIR) && '
+                '{ build/build_jar.sh <(java_home) <@(_outputs) '
+                '      <(INTERMEDIATE_DIR)/build_jar.tmp '
+                '      <(build_classpath) <@(java_files) '
+                '      > <(build_jar_log) 2>&1 || '
+                '  { cat <(build_jar_log) ; exit 1; } }'
               ],
             },
           ],

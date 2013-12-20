@@ -280,6 +280,7 @@
                   'action_name': 'build_opensldemo_apk',
                   'variables': {
                     'android_opensl_demo_root': '<(webrtc_root)/modules/audio_device/android/test',
+                    'ant_log': '../../../<(INTERMEDIATE_DIR)/ant.log', # ../../.. to compensate for the cd below.
                   },
                   'inputs' : [
                     '<(PRODUCT_DIR)/lib.java/audio_device_module_java.jar',
@@ -292,16 +293,19 @@
                     '<(android_opensl_demo_root)/project.properties',
                   ],
                   'outputs': ['<(PRODUCT_DIR)/OpenSlDemo-debug.apk'],
-                  'action': ['bash', '-ec',
-                             'rm -f <(_outputs) && '
-                             'mkdir -p <(android_opensl_demo_root)/libs/<(android_app_abi) && '
-                             '<(android_strip) -o <(android_opensl_demo_root)/libs/<(android_app_abi)/libopensl-demo-jni.so <(PRODUCT_DIR)/libopensl-demo-jni.so && '
-                             'cp <(PRODUCT_DIR)/lib.java/audio_device_module_java.jar <(android_opensl_demo_root)/libs/ &&'
-                             'cd <(android_opensl_demo_root) && '
-                             'ant debug && '
-                             'cd - && '
-                             'cp <(android_opensl_demo_root)/bin/OpenSlDemo-debug.apk <(_outputs)'
-                           ],
+                  'action': [
+                    'bash', '-ec',
+                    'rm -f <(_outputs) && '
+                    'mkdir -p <(android_opensl_demo_root)/libs/<(android_app_abi) && '
+                    'mkdir -p <(INTERMEDIATE_DIR) && ' # Must happen _before_ the cd below
+                    '<(android_strip) -o <(android_opensl_demo_root)/libs/<(android_app_abi)/libopensl-demo-jni.so <(PRODUCT_DIR)/libopensl-demo-jni.so && '
+                    'cp <(PRODUCT_DIR)/lib.java/audio_device_module_java.jar <(android_opensl_demo_root)/libs/ &&'
+                    'cd <(android_opensl_demo_root) && '
+                    '{ ant -q -l <(ant_log) debug || '
+                    '  { cat <(ant_log) ; exit 1; } } && '
+                    'cd - > /dev/null && '
+                    'cp <(android_opensl_demo_root)/bin/OpenSlDemo-debug.apk <(_outputs)'
+                  ],
                 },
               ],
             }],
