@@ -362,6 +362,7 @@ BinaryDelayEstimator* WebRtc_CreateBinaryDelayEstimator(
 
     self->farend = farend;
     self->near_history_size = lookahead + 1;
+    self->robust_validation_enabled = 0;  // Disabled by default.
 
     // Allocate memory for spectrum buffers.  The extra array element in
     // |mean_bit_counts| and |histogram| is a dummy element only used while
@@ -406,7 +407,6 @@ void WebRtc_InitBinaryDelayEstimator(BinaryDelayEstimator* self) {
   // Default return value if we're unable to estimate. -1 is used for errors.
   self->last_delay = -2;
 
-  self->robust_validation_enabled = 0;  // Disabled by default.
   self->last_candidate_delay = -2;
   self->compare_delay = self->farend->history_size;
   self->candidate_hits = 0;

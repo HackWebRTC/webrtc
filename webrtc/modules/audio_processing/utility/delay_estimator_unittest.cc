@@ -295,11 +295,13 @@ TEST_F(DelayEstimatorTest, CorrectErrorReturnsOfWrapper) {
 }
 
 TEST_F(DelayEstimatorTest, VerifyEnableRobustValidation) {
-  Init();
   // Disabled by default.
   EXPECT_EQ(0, WebRtc_is_robust_validation_enabled(handle_));
+  // Unaffected over a reset
   for (int i = 1; i >= 0; i--) {
     EXPECT_EQ(0, WebRtc_enable_robust_validation(handle_, i));
+    EXPECT_EQ(i, WebRtc_is_robust_validation_enabled(handle_));
+    Init();
     EXPECT_EQ(i, WebRtc_is_robust_validation_enabled(handle_));
   }
 }
