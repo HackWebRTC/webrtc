@@ -89,11 +89,11 @@ function call() {
   
   pc1_local.addStream(localstream);
   trace("Adding local stream to pc1_local");
-  pc1_local.createOffer(gotDescription1Local);
+  pc1_local.createOffer(gotDescription1Local, null, sdpConstraints);
 
   pc2_local.addStream(localstream);
   trace("Adding local stream to pc2_local");
-  pc2_local.createOffer(gotDescription2Local);
+  pc2_local.createOffer(gotDescription2Local, null, sdpConstraints);
 }
 
 function gotDescription1Local(desc) {

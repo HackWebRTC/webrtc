@@ -89,9 +89,9 @@ function createConnection() {
   pcConstraint = null;
   dataConstraint = null;
   if (sctp_select.checked &&
-      webrtcDetectedBrowser === 'chrome' &&
-      webrtcDetectedVersion >= 31) {
-    // SCTP is supported from Chrome M31.
+     (webrtcDetectedBrowser === 'chrome' && webrtcDetectedVersion >= 31) ||
+      webrtcDetectedBrowser === 'firefox'){
+    // SCTP is supported from Chrome M31 and is supported in FF.
     // No need to pass DTLS constraint as it is on by default in Chrome M31.
     // For SCTP, reliable and ordered is true by default.
     trace('Using SCTP based Data Channels');
@@ -129,7 +129,7 @@ function createConnection() {
   pc2.onicecandidate = iceCallback2;
   pc2.ondatachannel = receiveChannelCallback;
   
-  pc1.createOffer(gotDescription1);
+  pc1.createOffer(gotDescription1, null, null);
   startButton.disabled = true;
   closeButton.disabled = false;  
 }
@@ -163,7 +163,7 @@ function gotDescription1(desc) {
   pc1.setLocalDescription(desc);
   trace('Offer from pc1 \n' + desc.sdp);
   pc2.setRemoteDescription(desc);
-  pc2.createAnswer(gotDescription2);
+  pc2.createAnswer(gotDescription2, null, null);
 }
 
 function gotDescription2(desc) {

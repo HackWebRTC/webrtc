@@ -95,10 +95,10 @@ var sdpConstraints = {'mandatory': {
 refreshSources();
 
 function refreshSources() {
-  if (webrtcDetectedVersion >= 30) {
+  if (webrtcDetectedBrowser === 'chrome' && webrtcDetectedVersion >= 30) {
     MediaStreamTrack.getSources(gotSources);
   } else {
-    alert('Make sure that you have Chrome M30 to test device enumeration api.');
+    alert('Failed to enumerate devices, you need Chrome version 30 or higher');
   }
 }
 
@@ -215,7 +215,7 @@ function maybeAddLineBreakToEnd(sdp) {
 }
 
 function createOffer(){
-  pc1.createOffer(gotDescription1,null,null);
+  pc1.createOffer(gotDescription1, null, sdpConstraints);
 }
 
 function setOffer(){
