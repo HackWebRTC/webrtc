@@ -781,11 +781,26 @@ SECStatus NSSStreamAdapter::AuthCertificateHook(void *arg,
                                                 PRBool isServer) {
   LOG(LS_INFO) << "NSSStreamAdapter::AuthCertificateHook";
   NSSCertificate peer_cert(SSL_PeerCertificate(fd));
-  bool ok = false;
-
-  // TODO(ekr@rtfm.com): Should we be enforcing self-signed like
-  // the OpenSSL version?
   NSSStreamAdapter *stream = reinterpret_cast<NSSStreamAdapter *>(arg);
+  stream->cert_ok_ = false;
+
+  // Read the peer's certificate chain.
+  CERTCertList* cert_list = SSL_PeerCertificateChain(fd);
+  ASSERT(cert_list != NULL);
+
+  // If the peer provided multiple certificates, check that they form a valid
+  // chain as defined by RFC 5246 Section 7.4.2: "Each following certificate
+  // MUST directly certify the one preceding it.".  This check does NOT
+  // verify other requirements, such as whether the chain reaches a trusted
+  // root, self-signed certificates have valid signatures, certificates are not
+  // expired, etc.
+  // Even if the chain is valid, the leaf certificate must still match a
+  // provided certificate or digest.
+  if (!NSSCertificate::IsValidChain(cert_list)) {
+    CERT_DestroyCertList(cert_list);
+    PORT_SetError(SEC_ERROR_BAD_SIGNATURE);
+    return SECFailure;
+  }
 
   if (stream->peer_certificate_.get()) {
     LOG(LS_INFO) << "Checking against specified certificate";
@@ -794,7 +809,7 @@ SECStatus NSSStreamAdapter::AuthCertificateHook(void *arg,
     if (reinterpret_cast<NSSCertificate *>(stream->peer_certificate_.get())->
         Equals(&peer_cert)) {
       LOG(LS_INFO) << "Accepted peer certificate";
-      ok = true;
+      stream->cert_ok_ = true;
     }
   } else if (!stream->peer_certificate_digest_algorithm_.empty()) {
     LOG(LS_INFO) << "Checking against specified digest";
@@ -810,7 +825,7 @@ SECStatus NSSStreamAdapter::AuthCertificateHook(void *arg,
       Buffer computed_digest(digest, digest_length);
       if (computed_digest == stream->peer_certificate_digest_value_) {
         LOG(LS_INFO) << "Accepted peer certificate";
-        ok = true;
+        stream->cert_ok_ = true;
       }
     }
   } else {
@@ -819,23 +834,18 @@ SECStatus NSSStreamAdapter::AuthCertificateHook(void *arg,
     UNIMPLEMENTED;
   }
 
-  if (ok) {
-    stream->cert_ok_ = true;
-
-    // Record the peer's certificate chain.
-    CERTCertList* cert_list = SSL_PeerCertificateChain(fd);
-    ASSERT(cert_list != NULL);
-
-    stream->peer_certificate_.reset(new NSSCertificate(cert_list));
-    CERT_DestroyCertList(cert_list);
-    return SECSuccess;
-  }
-
-  if (!ok && stream->ignore_bad_cert()) {
+  if (!stream->cert_ok_ && stream->ignore_bad_cert()) {
     LOG(LS_WARNING) << "Ignoring cert error while verifying cert chain";
     stream->cert_ok_ = true;
-    return SECSuccess;
   }
+
+  if (stream->cert_ok_)
+    stream->peer_certificate_.reset(new NSSCertificate(cert_list));
+
+  CERT_DestroyCertList(cert_list);
+
+  if (stream->cert_ok_)
+    return SECSuccess;
 
   PORT_SetError(SEC_ERROR_UNTRUSTED_CERT);
   return SECFailure;

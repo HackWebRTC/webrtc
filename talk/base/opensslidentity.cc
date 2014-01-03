@@ -57,7 +57,7 @@ static const int KEY_LENGTH = 1024;
 static const int SERIAL_RAND_BITS = 64;
 
 // Certificate validity lifetime
-static const int CERTIFICATE_LIFETIME = 60*60*24*365;  // one year, arbitrarily
+static const int CERTIFICATE_LIFETIME = 60*60*24*30;  // 30 days, arbitrarily
 // Certificate validity window.
 // This is to compensate for slightly incorrect system clocks.
 static const int CERTIFICATE_WINDOW = -60*60*24;
@@ -96,8 +96,8 @@ static EVP_PKEY* MakeKey() {
 
 // Generate a self-signed certificate, with the public key from the
 // given key pair. Caller is responsible for freeing the returned object.
-static X509* MakeCertificate(EVP_PKEY* pkey, const char* common_name) {
-  LOG(LS_INFO) << "Making certificate for " << common_name;
+static X509* MakeCertificate(EVP_PKEY* pkey, const SSLIdentityParams& params) {
+  LOG(LS_INFO) << "Making certificate for " << params.common_name;
   X509* x509 = NULL;
   BIGNUM* serial_number = NULL;
   X509_NAME* name = NULL;
@@ -128,14 +128,15 @@ static X509* MakeCertificate(EVP_PKEY* pkey, const char* common_name) {
   // clear during SSL negotiation, so there may be a privacy issue in
   // putting anything recognizable here.
   if ((name = X509_NAME_new()) == NULL ||
-      !X509_NAME_add_entry_by_NID(name, NID_commonName, MBSTRING_UTF8,
-                                     (unsigned char*)common_name, -1, -1, 0) ||
+      !X509_NAME_add_entry_by_NID(
+          name, NID_commonName, MBSTRING_UTF8,
+          (unsigned char*)params.common_name.c_str(), -1, -1, 0) ||
       !X509_set_subject_name(x509, name) ||
       !X509_set_issuer_name(x509, name))
     goto error;
 
-  if (!X509_gmtime_adj(X509_get_notBefore(x509), CERTIFICATE_WINDOW) ||
-      !X509_gmtime_adj(X509_get_notAfter(x509), CERTIFICATE_LIFETIME))
+  if (!X509_gmtime_adj(X509_get_notBefore(x509), params.not_before) ||
+      !X509_gmtime_adj(X509_get_notAfter(x509), params.not_after))
     goto error;
 
   if (!X509_sign(x509, pkey, EVP_sha1()))
@@ -199,12 +200,13 @@ static void PrintCert(X509* x509) {
 #endif
 
 OpenSSLCertificate* OpenSSLCertificate::Generate(
-    OpenSSLKeyPair* key_pair, const std::string& common_name) {
-  std::string actual_common_name = common_name;
-  if (actual_common_name.empty())
+    OpenSSLKeyPair* key_pair, const SSLIdentityParams& params) {
+  SSLIdentityParams actual_params(params);
+  if (actual_params.common_name.empty()) {
     // Use a random string, arbitrarily 8chars long.
-    actual_common_name = CreateRandomString(8);
-  X509* x509 = MakeCertificate(key_pair->pkey(), actual_common_name.c_str());
+    actual_params.common_name = CreateRandomString(8);
+  }
+  X509* x509 = MakeCertificate(key_pair->pkey(), actual_params);
   if (!x509) {
     LogSSLErrors("Generating certificate");
     return NULL;
@@ -320,17 +322,31 @@ void OpenSSLCertificate::AddReference() const {
   CRYPTO_add(&x509_->references, 1, CRYPTO_LOCK_X509);
 }
 
-OpenSSLIdentity* OpenSSLIdentity::Generate(const std::string& common_name) {
+OpenSSLIdentity* OpenSSLIdentity::GenerateInternal(
+    const SSLIdentityParams& params) {
   OpenSSLKeyPair *key_pair = OpenSSLKeyPair::Generate();
   if (key_pair) {
-    OpenSSLCertificate *certificate =
-        OpenSSLCertificate::Generate(key_pair, common_name);
+    OpenSSLCertificate *certificate = OpenSSLCertificate::Generate(
+        key_pair, params);
     if (certificate)
       return new OpenSSLIdentity(key_pair, certificate);
     delete key_pair;
   }
   LOG(LS_INFO) << "Identity generation failed";
   return NULL;
+}
+
+OpenSSLIdentity* OpenSSLIdentity::Generate(const std::string& common_name) {
+  SSLIdentityParams params;
+  params.common_name = common_name;
+  params.not_before = CERTIFICATE_WINDOW;
+  params.not_after = CERTIFICATE_LIFETIME;
+  return GenerateInternal(params);
+}
+
+OpenSSLIdentity* OpenSSLIdentity::GenerateForTest(
+    const SSLIdentityParams& params) {
+  return GenerateInternal(params);
 }
 
 SSLIdentity* OpenSSLIdentity::FromPEMStrings(

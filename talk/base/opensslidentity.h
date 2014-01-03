@@ -78,7 +78,7 @@ class OpenSSLCertificate : public SSLCertificate {
   }
 
   static OpenSSLCertificate* Generate(OpenSSLKeyPair* key_pair,
-                                      const std::string& common_name);
+                                      const SSLIdentityParams& params);
   static OpenSSLCertificate* FromPEMString(const std::string& pem_string);
 
   virtual ~OpenSSLCertificate();
@@ -127,6 +127,7 @@ class OpenSSLCertificate : public SSLCertificate {
 class OpenSSLIdentity : public SSLIdentity {
  public:
   static OpenSSLIdentity* Generate(const std::string& common_name);
+  static OpenSSLIdentity* GenerateForTest(const SSLIdentityParams& params);
   static SSLIdentity* FromPEMStrings(const std::string& private_key,
                                      const std::string& certificate);
   virtual ~OpenSSLIdentity() { }
@@ -150,6 +151,8 @@ class OpenSSLIdentity : public SSLIdentity {
     ASSERT(key_pair != NULL);
     ASSERT(certificate != NULL);
   }
+
+  static OpenSSLIdentity* GenerateInternal(const SSLIdentityParams& params);
 
   scoped_ptr<OpenSSLKeyPair> key_pair_;
   scoped_ptr<OpenSSLCertificate> certificate_;

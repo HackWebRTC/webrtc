@@ -91,6 +91,11 @@ class NSSCertificate : public SSLCertificate {
 
   CERTCertificate* certificate() { return certificate_; }
 
+  // Performs minimal checks to determine if the list is a valid chain.  This
+  // only checks that each certificate certifies the preceding certificate,
+  // and ignores many other certificate features such as expiration dates.
+  static bool IsValidChain(const CERTCertList* cert_list);
+
   // Helper function to get the length of a digest
   static bool GetDigestLength(const std::string& algorithm,
                               std::size_t* length);
@@ -113,6 +118,7 @@ class NSSCertificate : public SSLCertificate {
 class NSSIdentity : public SSLIdentity {
  public:
   static NSSIdentity* Generate(const std::string& common_name);
+  static NSSIdentity* GenerateForTest(const SSLIdentityParams& params);
   static SSLIdentity* FromPEMStrings(const std::string& private_key,
                                      const std::string& certificate);
   virtual ~NSSIdentity() {
@@ -127,6 +133,8 @@ class NSSIdentity : public SSLIdentity {
  private:
   NSSIdentity(NSSKeyPair* keypair, NSSCertificate* cert) :
       keypair_(keypair), certificate_(cert) {}
+
+  static NSSIdentity* GenerateInternal(const SSLIdentityParams& params);
 
   talk_base::scoped_ptr<NSSKeyPair> keypair_;
   talk_base::scoped_ptr<NSSCertificate> certificate_;

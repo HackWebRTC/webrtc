@@ -210,13 +210,6 @@ void OpenSSLStreamAdapter::SetServerRole(SSLRole role) {
   role_ = role;
 }
 
-void OpenSSLStreamAdapter::SetPeerCertificate(SSLCertificate* cert) {
-  ASSERT(!peer_certificate_);
-  ASSERT(peer_certificate_digest_algorithm_.empty());
-  ASSERT(ssl_server_name_.empty());
-  peer_certificate_.reset(static_cast<OpenSSLCertificate*>(cert));
-}
-
 bool OpenSSLStreamAdapter::GetPeerCertificate(SSLCertificate** cert) const {
   if (!peer_certificate_)
     return false;
@@ -613,7 +606,6 @@ int OpenSSLStreamAdapter::BeginSSL() {
   // The underlying stream has open. If we are in peer-to-peer mode
   // then a peer certificate must have been specified by now.
   ASSERT(!ssl_server_name_.empty() ||
-         peer_certificate_ ||
          !peer_certificate_digest_algorithm_.empty());
   LOG(LS_INFO) << "BeginSSL: "
                << (!ssl_server_name_.empty() ? ssl_server_name_ :
@@ -661,9 +653,7 @@ int OpenSSLStreamAdapter::ContinueSSL() {
     case SSL_ERROR_NONE:
       LOG(LS_VERBOSE) << " -- success";
 
-      if (!SSLPostConnectionCheck(ssl_, ssl_server_name_.c_str(),
-                                  peer_certificate_ ?
-                                      peer_certificate_->x509() : NULL,
+      if (!SSLPostConnectionCheck(ssl_, ssl_server_name_.c_str(), NULL,
                                   peer_certificate_digest_algorithm_)) {
         LOG(LS_ERROR) << "TLS post connection check failed";
         return -1;
@@ -772,18 +762,6 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
     return NULL;
   }
 
-  if (!peer_certificate_) {  // traditional mode
-    // Add the root cert to the SSL context
-    if (!OpenSSLAdapter::ConfigureTrustedRootCertificates(ctx)) {
-      SSL_CTX_free(ctx);
-      return NULL;
-    }
-  }
-
-  if (peer_certificate_ && role_ == SSL_SERVER)
-    // we must specify which client cert to ask for
-    SSL_CTX_add_client_CA(ctx, peer_certificate_->x509());
-
 #ifdef _DEBUG
   SSL_CTX_set_info_callback(ctx, OpenSSLAdapter::SSLInfoCallback);
 #endif
@@ -806,88 +784,39 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
 }
 
 int OpenSSLStreamAdapter::SSLVerifyCallback(int ok, X509_STORE_CTX* store) {
-#if _DEBUG
-  if (!ok) {
-    char data[256];
-    X509* cert = X509_STORE_CTX_get_current_cert(store);
-    int depth = X509_STORE_CTX_get_error_depth(store);
-    int err = X509_STORE_CTX_get_error(store);
-
-    LOG(LS_INFO) << "Error with certificate at depth: " << depth;
-    X509_NAME_oneline(X509_get_issuer_name(cert), data, sizeof(data));
-    LOG(LS_INFO) << "  issuer  = " << data;
-    X509_NAME_oneline(X509_get_subject_name(cert), data, sizeof(data));
-    LOG(LS_INFO) << "  subject = " << data;
-    LOG(LS_INFO) << "  err     = " << err
-      << ":" << X509_verify_cert_error_string(err);
-  }
-#endif
-
   // Get our SSL structure from the store
   SSL* ssl = reinterpret_cast<SSL*>(X509_STORE_CTX_get_ex_data(
                                         store,
                                         SSL_get_ex_data_X509_STORE_CTX_idx()));
-
   OpenSSLStreamAdapter* stream =
     reinterpret_cast<OpenSSLStreamAdapter*>(SSL_get_app_data(ssl));
 
-  // In peer-to-peer mode, no root cert / certificate authority was
-  // specified, so the libraries knows of no certificate to accept,
-  // and therefore it will necessarily call here on the first cert it
-  // tries to verify.
-  if (!ok && stream->peer_certificate_) {
-    X509* cert = X509_STORE_CTX_get_current_cert(store);
-    int err = X509_STORE_CTX_get_error(store);
-    // peer-to-peer mode: allow the certificate to be self-signed,
-    // assuming it matches the cert that was specified.
-    if (err == X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT &&
-        X509_cmp(cert, stream->peer_certificate_->x509()) == 0) {
-      LOG(LS_INFO) << "Accepted self-signed peer certificate authority";
-      ok = 1;
-    }
-  } else if (!ok && !stream->peer_certificate_digest_algorithm_.empty()) {
-    X509* cert = X509_STORE_CTX_get_current_cert(store);
-    int err = X509_STORE_CTX_get_error(store);
-
-    // peer-to-peer mode: allow the certificate to be self-signed,
-    // assuming it matches the digest that was specified.
-    if (err == X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT) {
-      unsigned char digest[EVP_MAX_MD_SIZE];
-      std::size_t digest_length;
-
-      if (OpenSSLCertificate::
-         ComputeDigest(cert,
-                       stream->peer_certificate_digest_algorithm_,
-                       digest, sizeof(digest),
-                       &digest_length)) {
-        Buffer computed_digest(digest, digest_length);
-        if (computed_digest == stream->peer_certificate_digest_value_) {
-          LOG(LS_INFO) <<
-              "Accepted self-signed peer certificate authority";
-          ok = 1;
-
-          // Record the peer's certificate.
-          stream->peer_certificate_.reset(new OpenSSLCertificate(cert));
-        }
-      }
-    }
-  } else if (!ok && OpenSSLAdapter::custom_verify_callback_) {
-    // this applies only in traditional mode
-    void* cert =
-        reinterpret_cast<void*>(X509_STORE_CTX_get_current_cert(store));
-    if (OpenSSLAdapter::custom_verify_callback_(cert)) {
-      stream->custom_verification_succeeded_ = true;
-      LOG(LS_INFO) << "validated certificate using custom callback";
-      ok = 1;
-    }
+  if (stream->peer_certificate_digest_algorithm_.empty()) {
+    return 0;
   }
-
-  if (!ok && stream->ignore_bad_cert()) {
-    LOG(LS_WARNING) << "Ignoring cert error while verifying cert chain";
-    ok = 1;
+  X509* cert = X509_STORE_CTX_get_current_cert(store);
+  unsigned char digest[EVP_MAX_MD_SIZE];
+  std::size_t digest_length;
+  if (!OpenSSLCertificate::ComputeDigest(
+           cert,
+           stream->peer_certificate_digest_algorithm_,
+           digest, sizeof(digest),
+           &digest_length)) {
+    LOG(LS_WARNING) << "Failed to compute peer cert digest.";
+    return 0;
   }
-
-  return ok;
+  Buffer computed_digest(digest, digest_length);
+  if (computed_digest != stream->peer_certificate_digest_value_) {
+    LOG(LS_WARNING) << "Rejected peer certificate due to mismatched digest.";
+    return 0;
+  }
+  // Ignore any verification error if the digest matches, since there is no
+  // value in checking the validity of a self-signed cert issued by untrusted
+  // sources.
+  LOG(LS_INFO) << "Accepted peer certificate.";
+  // Record the peer's certificate.
+  stream->peer_certificate_.reset(new OpenSSLCertificate(cert));
+  return 1;
 }
 
 // This code is taken from the "Network Security with OpenSSL"

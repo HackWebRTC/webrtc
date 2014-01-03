@@ -38,7 +38,7 @@
 #if defined(ANDROID) || defined(LINUX)
 #include <linux/if.h>
 #include <linux/route.h>
-#else
+#elif !defined(__native_client__)
 #include <net/if.h>
 #endif
 #include <sys/socket.h>
@@ -46,11 +46,13 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <errno.h>
+
 #ifdef ANDROID
 #include "talk/base/ifaddrs-android.h"
-#else
+#elif !defined(__native_client__)
 #include <ifaddrs.h>
 #endif
+
 #endif  // POSIX
 
 #ifdef WIN32
@@ -188,7 +190,16 @@ BasicNetworkManager::BasicNetworkManager()
 BasicNetworkManager::~BasicNetworkManager() {
 }
 
-#if defined(POSIX)
+#if defined(__native_client__)
+
+bool BasicNetworkManager::CreateNetworks(bool include_ignored,
+                                         NetworkList* networks) const {
+  ASSERT(false);
+  LOG(LS_WARNING) << "BasicNetworkManager doesn't work on NaCl yet";
+  return false;
+}
+
+#elif defined(POSIX)
 void BasicNetworkManager::ConvertIfAddrs(struct ifaddrs* interfaces,
                                          bool include_ignored,
                                          NetworkList* networks) const {

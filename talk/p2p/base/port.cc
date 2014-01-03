@@ -176,7 +176,7 @@ Port::Port(talk_base::Thread* thread, talk_base::PacketSocketFactory* factory,
       generation_(0),
       ice_username_fragment_(username_fragment),
       password_(password),
-      lifetime_(LT_PRESTART),
+      timeout_delay_(kPortTimeoutDelay),
       enable_port_packets_(false),
       ice_protocol_(ICEPROTO_GOOGLE),
       ice_role_(ICEROLE_UNKNOWN),
@@ -203,7 +203,7 @@ Port::Port(talk_base::Thread* thread, const std::string& type,
       generation_(0),
       ice_username_fragment_(username_fragment),
       password_(password),
-      lifetime_(LT_PRESTART),
+      timeout_delay_(kPortTimeoutDelay),
       enable_port_packets_(false),
       ice_protocol_(ICEPROTO_GOOGLE),
       ice_role_(ICEROLE_UNKNOWN),
@@ -669,8 +669,6 @@ void Port::SendBindingErrorResponse(StunMessage* request,
 
 void Port::OnMessage(talk_base::Message *pmsg) {
   ASSERT(pmsg->message_id == MSG_CHECKTIMEOUT);
-  ASSERT(lifetime_ == LT_PRETIMEOUT);
-  lifetime_ = LT_POSTTIMEOUT;
   CheckTimeout();
 }
 
@@ -686,24 +684,18 @@ void Port::EnablePortPackets() {
   enable_port_packets_ = true;
 }
 
-void Port::Start() {
-  // The port sticks around for a minimum lifetime, after which
-  // we destroy it when it drops to zero connections.
-  if (lifetime_ == LT_PRESTART) {
-    lifetime_ = LT_PRETIMEOUT;
-    thread_->PostDelayed(kPortTimeoutDelay, this, MSG_CHECKTIMEOUT);
-  } else {
-    LOG_J(LS_WARNING, this) << "Port restart attempted";
-  }
-}
-
 void Port::OnConnectionDestroyed(Connection* conn) {
   AddressMap::iterator iter =
       connections_.find(conn->remote_candidate().address());
   ASSERT(iter != connections_.end());
   connections_.erase(iter);
 
-  CheckTimeout();
+  // On the controlled side, ports time out, but only after all connections
+  // fail.  Note: If a new connection is added after this message is posted,
+  // but it fails and is removed before kPortTimeoutDelay, then this message
+  //  will still cause the Port to be destroyed.
+  if (ice_role_ == ICEROLE_CONTROLLED)
+    thread_->PostDelayed(timeout_delay_, this, MSG_CHECKTIMEOUT);
 }
 
 void Port::Destroy() {
@@ -714,13 +706,13 @@ void Port::Destroy() {
 }
 
 void Port::CheckTimeout() {
+  ASSERT(ice_role_ == ICEROLE_CONTROLLED);
   // If this port has no connections, then there's no reason to keep it around.
   // When the connections time out (both read and write), they will delete
   // themselves, so if we have any connections, they are either readable or
   // writable (or still connecting).
-  if ((lifetime_ == LT_POSTTIMEOUT) && connections_.empty()) {
+  if (connections_.empty())
     Destroy();
-  }
 }
 
 const std::string Port::username_fragment() const {

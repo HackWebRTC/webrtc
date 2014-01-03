@@ -29,6 +29,7 @@
 
 #include <limits>
 
+#if defined(FEATURE_ENABLE_SSL)
 #include "talk/base/sslconfig.h"
 #if defined(SSL_USE_OPENSSL)
 #include <openssl/rand.h>
@@ -40,7 +41,8 @@
 #include <windows.h>
 #include <ntsecapi.h>
 #endif  // WIN32
-#endif
+#endif  // else
+#endif  // FEATURE_ENABLED_SSL
 
 #include "talk/base/base64.h"
 #include "talk/base/basictypes.h"
@@ -151,6 +153,28 @@ class SecureRandomGenerator : public RandomGenerator {
   typedef BOOL (WINAPI *RtlGenRandomProc)(PVOID, ULONG);
   HINSTANCE advapi32_;
   RtlGenRandomProc rtl_gen_random_;
+};
+
+#elif !defined(FEATURE_ENABLE_SSL)
+
+// No SSL implementation -- use rand()
+class SecureRandomGenerator : public RandomGenerator {
+ public:
+  virtual bool Init(const void* seed, size_t len) {
+    if (len >= 4) {
+      srand(*reinterpret_cast<const int*>(seed));
+    } else {
+      srand(*reinterpret_cast<const char*>(seed));
+    }
+    return true;
+  }
+  virtual bool Generate(void* buf, size_t len) {
+    char* bytes = reinterpret_cast<char*>(buf);
+    for (size_t i = 0; i < len; ++i) {
+      bytes[i] = static_cast<char>(rand());
+    }
+    return true;
+  }
 };
 
 #else

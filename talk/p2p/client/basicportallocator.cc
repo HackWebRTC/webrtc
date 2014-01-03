@@ -515,8 +515,6 @@ void BasicPortAllocatorSession::AddAllocatedPort(Port* port,
 
   if (prepare_address)
     port->PrepareAddress();
-  if (running_)
-    port->Start();
 }
 
 void BasicPortAllocatorSession::OnAllocationSequenceObjectsCreated() {

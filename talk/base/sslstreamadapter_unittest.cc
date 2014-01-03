@@ -215,6 +215,37 @@ class SSLStreamAdapterTestBase : public testing::Test,
     talk_base::InitializeSSL();
   }
 
+  // Recreate the client/server identities with the specified validity period.
+  // |not_before| and |not_after| are offsets from the current time in number
+  // of seconds.
+  void ResetIdentitiesWithValidity(int not_before, int not_after) {
+    client_stream_ =
+        new SSLDummyStream(this, "c2s", &client_buffer_, &server_buffer_);
+    server_stream_ =
+        new SSLDummyStream(this, "s2c", &server_buffer_, &client_buffer_);
+
+    client_ssl_.reset(talk_base::SSLStreamAdapter::Create(client_stream_));
+    server_ssl_.reset(talk_base::SSLStreamAdapter::Create(server_stream_));
+
+    client_ssl_->SignalEvent.connect(this, &SSLStreamAdapterTestBase::OnEvent);
+    server_ssl_->SignalEvent.connect(this, &SSLStreamAdapterTestBase::OnEvent);
+
+    talk_base::SSLIdentityParams client_params;
+    client_params.common_name = "client";
+    client_params.not_before = not_before;
+    client_params.not_after = not_after;
+    client_identity_ = talk_base::SSLIdentity::GenerateForTest(client_params);
+
+    talk_base::SSLIdentityParams server_params;
+    server_params.common_name = "server";
+    server_params.not_before = not_before;
+    server_params.not_after = not_after;
+    server_identity_ = talk_base::SSLIdentity::GenerateForTest(server_params);
+
+    client_ssl_->SetIdentity(client_identity_);
+    server_ssl_->SetIdentity(server_identity_);
+  }
+
   virtual void OnEvent(talk_base::StreamInterface *stream, int sig, int err) {
     LOG(LS_INFO) << "SSLStreamAdapterTestBase::OnEvent sig=" << sig;
 
@@ -227,24 +258,6 @@ class SSLStreamAdapterTestBase : public testing::Test,
     }
   }
 
-  void SetPeerIdentitiesByCertificate(bool correct) {
-    LOG(LS_INFO) << "Setting peer identities by certificate";
-
-    if (correct) {
-      client_ssl_->SetPeerCertificate(server_identity_->certificate().
-                                           GetReference());
-      server_ssl_->SetPeerCertificate(client_identity_->certificate().
-                                           GetReference());
-    } else {
-      // If incorrect, set up to expect our own certificate at the peer
-      client_ssl_->SetPeerCertificate(client_identity_->certificate().
-                                           GetReference());
-      server_ssl_->SetPeerCertificate(server_identity_->certificate().
-                                           GetReference());
-    }
-    identities_set_ = true;
-  }
-
   void SetPeerIdentitiesByDigest(bool correct) {
     unsigned char digest[20];
     size_t digest_len;
@@ -253,8 +266,8 @@ class SSLStreamAdapterTestBase : public testing::Test,
     LOG(LS_INFO) << "Setting peer identities by digest";
 
     rv = server_identity_->certificate().ComputeDigest(talk_base::DIGEST_SHA_1,
-                                                      digest, 20,
-                                                      &digest_len);
+                                                       digest, 20,
+                                                       &digest_len);
     ASSERT_TRUE(rv);
     if (!correct) {
       LOG(LS_INFO) << "Setting bogus digest for server cert";
@@ -266,7 +279,7 @@ class SSLStreamAdapterTestBase : public testing::Test,
 
 
     rv = client_identity_->certificate().ComputeDigest(talk_base::DIGEST_SHA_1,
-                                                      digest, 20, &digest_len);
+                                                       digest, 20, &digest_len);
     ASSERT_TRUE(rv);
     if (!correct) {
       LOG(LS_INFO) << "Setting bogus digest for client cert";
@@ -722,17 +735,6 @@ TEST_F(SSLStreamAdapterTestTLS, TestTLSBogusDigest) {
   TestHandshake(false);
 };
 
-// Test a handshake with a peer certificate
-TEST_F(SSLStreamAdapterTestTLS, TestTLSPeerCertificate) {
-  SetPeerIdentitiesByCertificate(true);
-  TestHandshake();
-};
-
-// Test a handshake with a bogus peer certificate
-TEST_F(SSLStreamAdapterTestTLS, TestTLSBogusPeerCertificate) {
-  SetPeerIdentitiesByCertificate(false);
-  TestHandshake(false);
-};
 // Test moving a bunch of data
 
 // Basic tests: DTLS
@@ -885,6 +887,24 @@ TEST_F(SSLStreamAdapterTestDTLS, TestDTLSExporter) {
   ASSERT_TRUE(result);
 
   ASSERT_TRUE(!memcmp(client_out, server_out, sizeof(client_out)));
+}
+
+// Test not yet valid certificates are not rejected.
+TEST_F(SSLStreamAdapterTestDTLS, TestCertNotYetValid) {
+  MAYBE_SKIP_TEST(HaveDtls);
+  long one_day = 60 * 60 * 24;
+  // Make the certificates not valid until one day later.
+  ResetIdentitiesWithValidity(one_day, one_day);
+  TestHandshake();
+}
+
+// Test expired certificates are not rejected.
+TEST_F(SSLStreamAdapterTestDTLS, TestCertExpired) {
+  MAYBE_SKIP_TEST(HaveDtls);
+  long one_day = 60 * 60 * 24;
+  // Make the certificates already expired.
+  ResetIdentitiesWithValidity(-one_day, -one_day);
+  TestHandshake();
 }
 
 // Test data transfer using certs created from strings.

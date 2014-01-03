@@ -32,6 +32,7 @@
 #endif
 
 #ifdef HAVE_WEBRTC_VIDEO
+#include "talk/base/criticalsection.h"
 #include "talk/base/logging.h"
 #include "talk/base/thread.h"
 #include "talk/base/timeutils.h"
@@ -278,7 +279,13 @@ CaptureState WebRtcVideoCapturer::Start(const VideoFormat& capture_format) {
   return CS_STARTING;
 }
 
+// Critical section blocks Stop from shutting down during callbacks from capture
+// thread to OnIncomingCapturedFrame. Note that the crit is try-locked in
+// OnFrameCaptured, as the lock ordering between this and the system component
+// controlling the camera is reversed: system frame -> OnIncomingCapturedFrame;
+// Stop -> system stop camera).
 void WebRtcVideoCapturer::Stop() {
+  talk_base::CritScope cs(&critical_section_stopping_);
   if (IsRunning()) {
     talk_base::Thread::Current()->Clear(this);
     module_->StopCapture();
@@ -313,7 +320,17 @@ bool WebRtcVideoCapturer::GetPreferredFourccs(
 
 void WebRtcVideoCapturer::OnIncomingCapturedFrame(const int32_t id,
     webrtc::I420VideoFrame& sample) {
-  ASSERT(IsRunning());
+  // This would be a normal CritScope, except that it's possible that:
+  // (1) whatever system component producing this frame has taken a lock, and
+  // (2) Stop() probably calls back into that system component, which may take
+  // the same lock. Due to the reversed order, we have to try-lock in order to
+  // avoid a potential deadlock. Besides, if we can't enter because we're
+  // stopping, we may as well drop the frame.
+  talk_base::TryCritScope cs(&critical_section_stopping_);
+  if (!cs.locked() || !IsRunning()) {
+    // Capturer has been stopped or is in the process of stopping.
+    return;
+  }
 
   ++captured_frames_;
   // Log the size and pixel aspect ratio of the first captured frame.

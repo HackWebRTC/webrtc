@@ -360,8 +360,8 @@ void SecureTunnelSession::OnAccept() {
   const std::string& cert_pem =
       role_ == INITIATOR ? remote_tunnel->server_pem_certificate :
                            remote_tunnel->client_pem_certificate;
-  talk_base::SSLCertificate* peer_cert =
-      ParseCertificate(cert_pem);
+  talk_base::scoped_ptr<talk_base::SSLCertificate> peer_cert(
+      ParseCertificate(cert_pem));
   if (peer_cert == NULL) {
     ASSERT(role_ == INITIATOR);  // when RESPONDER we validated it earlier
     LOG(LS_ERROR)
@@ -373,7 +373,17 @@ void SecureTunnelSession::OnAccept() {
   talk_base::SSLStreamAdapter* ssl_stream =
       static_cast<talk_base::SSLStreamAdapter*>(
           ssl_stream_reference_->GetStream());
-  ssl_stream->SetPeerCertificate(peer_cert);  // pass ownership of certificate.
+
+  std::string algorithm;
+  if (!peer_cert->GetSignatureDigestAlgorithm(&algorithm)) {
+    LOG(LS_ERROR) << "Failed to get the algorithm for the peer cert signature";
+    return;
+  }
+  unsigned char digest[talk_base::MessageDigest::kMaxSize];
+  size_t digest_len;
+  peer_cert->ComputeDigest(algorithm, digest, ARRAY_SIZE(digest), &digest_len);
+  ssl_stream->SetPeerCertificateDigest(algorithm, digest, digest_len);
+
   // We no longer need our handle to the ssl stream.
   ssl_stream_reference_.reset();
   LOG(LS_INFO) << "Connecting tunnel";

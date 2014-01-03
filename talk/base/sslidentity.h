@@ -132,6 +132,16 @@ class SSLCertChain {
   DISALLOW_COPY_AND_ASSIGN(SSLCertChain);
 };
 
+// Parameters for generating an identity for testing. If common_name is
+// non-empty, it will be used for the certificate's subject and issuer name,
+// otherwise a random string will be used. |not_before| and |not_after| are
+// offsets to the current time in number of seconds.
+struct SSLIdentityParams {
+  std::string common_name;
+  int not_before;  // in seconds.
+  int not_after;  // in seconds.
+};
+
 // Our identity in an SSL negotiation: a keypair and certificate (both
 // with the same public key).
 // This too is pretty much immutable once created.
@@ -143,6 +153,9 @@ class SSLIdentity {
   // Returns NULL on failure.
   // Caller is responsible for freeing the returned object.
   static SSLIdentity* Generate(const std::string& common_name);
+
+  // Generates an identity with the specified validity period.
+  static SSLIdentity* GenerateForTest(const SSLIdentityParams& params);
 
   // Construct an identity from a private key and a certificate.
   static SSLIdentity* FromPEMStrings(const std::string& private_key,

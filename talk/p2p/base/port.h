@@ -262,10 +262,6 @@ class Port : public PortInterface, public talk_base::MessageHandler,
 
   virtual void EnablePortPackets();
 
-  // Indicates to the port that its official use has now begun.  This will
-  // start the timer that checks to see if the port is being used.
-  void Start();
-
   // Called if the port has no connections and is no longer useful.
   void Destroy();
 
@@ -276,6 +272,9 @@ class Port : public PortInterface, public talk_base::MessageHandler,
   talk_base::IPAddress& ip() { return ip_; }
   int min_port() { return min_port_; }
   int max_port() { return max_port_; }
+
+  // Timeout shortening function to speed up unit tests.
+  void set_timeout_delay(int delay) { timeout_delay_ = delay; }
 
   // This method will return local and remote username fragements from the
   // stun username attribute if present.
@@ -379,7 +378,7 @@ class Port : public PortInterface, public talk_base::MessageHandler,
   std::string password_;
   std::vector<Candidate> candidates_;
   AddressMap connections_;
-  enum Lifetime { LT_PRESTART, LT_PRETIMEOUT, LT_POSTTIMEOUT } lifetime_;
+  int timeout_delay_;
   bool enable_port_packets_;
   IceProtocolType ice_protocol_;
   IceRole ice_role_;

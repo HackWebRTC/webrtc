@@ -28,7 +28,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <memory.h>
+#include <string.h>
 
 #if WIN32
 #define WIN32_LEAN_AND_MEAN

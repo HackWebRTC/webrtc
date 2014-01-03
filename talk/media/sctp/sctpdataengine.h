@@ -50,9 +50,9 @@ enum PreservedErrno {
 // Defined by "usrsctplib/usrsctp.h"
 struct sockaddr_conn;
 struct sctp_assoc_change;
+struct sctp_stream_reset_event;
 // Defined by <sys/socket.h>
 struct socket;
-
 namespace cricket {
 // The highest stream ID (Sid) that SCTP allows, and the number of streams we
 // tell SCTP we're going to use.
@@ -122,6 +122,8 @@ class SctpDataMediaChannel : public DataMediaChannel,
     PPID_TEXT_LAST = 51
   };
 
+  typedef std::set<uint32> StreamSet;
+
   // Given a thread which will be used to post messages (received data) to this
   // SctpDataMediaChannel instance.
   explicit SctpDataMediaChannel(talk_base::Thread* thread);
@@ -181,6 +183,9 @@ class SctpDataMediaChannel : public DataMediaChannel,
   }
   const std::string& debug_name() const { return debug_name_; }
 
+  // Called with the SSID of a remote stream that's been closed.
+  sigslot::signal1<int> SignalStreamClosed;
+
  private:
   sockaddr_conn GetSctpSockAddr(int port);
 
@@ -195,6 +200,14 @@ class SctpDataMediaChannel : public DataMediaChannel,
   // Sets sending_ to false and sock_ to NULL.
   void CloseSctpSocket();
 
+  // Sends a SCTP_RESET_STREAM for all streams in closing_ssids_.
+  bool SendQueuedStreamResets();
+
+  // Adds a stream.
+  bool AddStream(const StreamParams &sp);
+  // Queues a stream for reset.
+  bool ResetStream(uint32 ssrc);
+
   // Called by OnMessage to send packet on the network.
   void OnPacketFromSctpToNetwork(talk_base::Buffer* buffer);
   // Called by OnMessage to decide what to do with the packet.
@@ -203,6 +216,8 @@ class SctpDataMediaChannel : public DataMediaChannel,
                                talk_base::Buffer* buffer);
   void OnNotificationFromSctp(talk_base::Buffer* buffer);
   void OnNotificationAssocChange(const sctp_assoc_change& change);
+
+  void OnStreamResetEvent(const struct sctp_stream_reset_event* evt);
 
   // Responsible for marshalling incoming data to the channels listeners, and
   // outgoing data to the network interface.
@@ -219,8 +234,17 @@ class SctpDataMediaChannel : public DataMediaChannel,
   bool sending_;
   // receiving_ controls whether inbound packets are thrown away.
   bool receiving_;
-  // Unified send/receive streams, as each is bidirectional.
-  std::vector<StreamParams> streams_;
+
+  // When a data channel opens a stream, it goes into open_streams_.  When we
+  // want to close it, the stream's ID goes into queued_reset_streams_.  When
+  // we actually transmit a RE-CONFIG chunk with that stream ID, the ID goes
+  // into sent_reset_streams_.  When we get a response RE-CONFIG chunk back
+  // acknowledging the reset, we remove the stream ID from
+  // sent_reset_streams_.  We use sent_reset_streams_ to differentiate
+  // between acknowledgment RE-CONFIG and peer-initiated RE-CONFIGs.
+  StreamSet open_streams_;
+  StreamSet queued_reset_streams_;
+  StreamSet sent_reset_streams_;
 
   // A human-readable name for debugging messages.
   std::string debug_name_;

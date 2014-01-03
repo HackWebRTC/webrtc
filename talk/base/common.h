@@ -61,8 +61,14 @@ inline void Unused(const void*) {}
 #endif  // UNUSED
 
 #ifndef WIN32
+
+#ifndef strnicmp
 #define strnicmp(x, y, n) strncasecmp(x, y, n)
+#endif
+
+#ifndef stricmp
 #define stricmp(x, y) strcasecmp(x, y)
+#endif
 
 // TODO(fbarchard): Remove this. std::max should be used everywhere in the code.
 // NOMINMAX must be defined where we include <windows.h>.

@@ -32,7 +32,9 @@
 #ifdef OPENBSD
 #include <netinet/in_systm.h>
 #endif
+#ifndef __native_client__
 #include <netinet/ip.h>
+#endif
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h>

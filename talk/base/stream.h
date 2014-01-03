@@ -449,7 +449,7 @@ class FileStream : public StreamInterface {
 
   virtual bool Flush();
 
-#if defined(POSIX)
+#if defined(POSIX) && !defined(__native_client__)
   // Tries to aquire an exclusive lock on the file.
   // Use OpenShare(...) on win32 to get similar functionality.
   bool TryLock();

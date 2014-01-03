@@ -42,19 +42,24 @@
 
 #if defined(POSIX) && !defined(OSX)
 #include <sys/types.h>
-#ifdef ANDROID
+#if defined(ANDROID)
 #include <sys/statfs.h>
-#else
+#elif !defined(__native_client__)
 #include <sys/statvfs.h>
-#endif  // ANDROID
+#endif  //  !defined(__native_client__)
+#include <limits.h>
 #include <pwd.h>
 #include <stdio.h>
 #include <unistd.h>
 #endif  // POSIX && !OSX
 
-#ifdef LINUX
+#if defined(LINUX)
 #include <ctype.h>
 #include <algorithm>
+#endif
+
+#if defined(__native_client__) && !defined(__GLIBC__)
+#include <sys/syslimits.h>
 #endif
 
 #include "talk/base/fileutils.h"
@@ -489,6 +494,9 @@ bool UnixFilesystem::GetAppTempFolder(Pathname* path) {
 }
 
 bool UnixFilesystem::GetDiskFreeSpace(const Pathname& path, int64 *freebytes) {
+#ifdef __native_client__
+  return false;
+#else  // __native_client__
   ASSERT(NULL != freebytes);
   // TODO: Consider making relative paths absolute using cwd.
   // TODO: When popping off a symlink, push back on the components of the
@@ -515,6 +523,7 @@ bool UnixFilesystem::GetDiskFreeSpace(const Pathname& path, int64 *freebytes) {
 #endif
 
   return true;
+#endif  // !__native_client__
 }
 
 Pathname UnixFilesystem::GetCurrentDirectory() {

@@ -213,12 +213,14 @@ class TestPort : public Port {
 
 class TestChannel : public sigslot::has_slots<> {
  public:
+  // Takes ownership of |p1| (but not |p2|).
   TestChannel(Port* p1, Port* p2)
       : ice_mode_(ICEMODE_FULL), src_(p1), dst_(p2), complete_count_(0),
 	conn_(NULL), remote_request_(), nominated_(false) {
     src_->SignalPortComplete.connect(
         this, &TestChannel::OnPortComplete);
     src_->SignalUnknownAddress.connect(this, &TestChannel::OnUnknownAddress);
+    src_->SignalDestroyed.connect(this, &TestChannel::OnSrcPortDestroyed);
   }
 
   int complete_count() { return complete_count_; }
@@ -305,6 +307,11 @@ class TestChannel : public sigslot::has_slots<> {
     conn_ = NULL;
   }
 
+  void OnSrcPortDestroyed(PortInterface* port) {
+    Port* destroyed_src = src_.release();
+    ASSERT_EQ(destroyed_src, port);
+  }
+
   bool nominated() const { return nominated_; }
 
  private:
@@ -341,7 +348,8 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
         username_(talk_base::CreateRandomString(ICE_UFRAG_LENGTH)),
         password_(talk_base::CreateRandomString(ICE_PWD_LENGTH)),
         ice_protocol_(cricket::ICEPROTO_GOOGLE),
-        role_conflict_(false) {
+        role_conflict_(false),
+        destroyed_(false) {
     network_.AddIP(talk_base::IPAddress(INADDR_ANY));
   }
 
@@ -513,11 +521,16 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
 
   void TestCrossFamilyPorts(int type);
 
-  // this does all the work
+  // This does all the work and then deletes |port1| and |port2|.
   void TestConnectivity(const char* name1, Port* port1,
                         const char* name2, Port* port2,
                         bool accept, bool same_addr1,
                         bool same_addr2, bool possible);
+
+  // This connects and disconnects the provided channels in the same sequence as
+  // TestConnectivity with all options set to |true|.  It does not delete either
+  // channel.
+  void ConnectAndDisconnectChannels(TestChannel* ch1, TestChannel* ch2);
 
   void SetIceProtocolType(cricket::IceProtocolType protocol) {
     ice_protocol_ = protocol;
@@ -562,6 +575,15 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
   }
   bool role_conflict() const { return role_conflict_; }
 
+  void ConnectToSignalDestroyed(PortInterface* port) {
+    port->SignalDestroyed.connect(this, &PortTest::OnDestroyed);
+  }
+
+  void OnDestroyed(PortInterface* port) {
+    destroyed_ = true;
+  }
+  bool destroyed() const { return destroyed_; }
+
   talk_base::BasicPacketSocketFactory* nat_socket_factory1() {
     return &nat_socket_factory1_;
   }
@@ -586,6 +608,7 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
   std::string password_;
   cricket::IceProtocolType ice_protocol_;
   bool role_conflict_;
+  bool destroyed_;
 };
 
 void PortTest::TestConnectivity(const char* name1, Port* port1,
@@ -596,7 +619,7 @@ void PortTest::TestConnectivity(const char* name1, Port* port1,
   port1->set_component(cricket::ICE_CANDIDATE_COMPONENT_DEFAULT);
   port2->set_component(cricket::ICE_CANDIDATE_COMPONENT_DEFAULT);
 
-  // Set up channels.
+  // Set up channels and ensure both ports will be deleted.
   TestChannel ch1(port1, port2);
   TestChannel ch2(port2, port1);
   EXPECT_EQ(0, ch1.complete_count());
@@ -717,6 +740,29 @@ void PortTest::TestConnectivity(const char* name1, Port* port1,
   ch2.Stop();
   EXPECT_TRUE_WAIT(ch1.conn() == NULL, kTimeout);
   EXPECT_TRUE_WAIT(ch2.conn() == NULL, kTimeout);
+}
+
+void PortTest::ConnectAndDisconnectChannels(TestChannel* ch1,
+                                            TestChannel* ch2) {
+  // Acquire addresses.
+  ch1->Start();
+  ch2->Start();
+
+  // Send a ping from src to dst.
+  ch1->CreateConnection();
+  EXPECT_TRUE_WAIT(ch1->conn()->connected(), kTimeout);  // for TCP connect
+  ch1->Ping();
+  WAIT(!ch2->remote_address().IsNil(), kTimeout);
+
+  // Send a ping from dst to src.
+  ch2->AcceptConnection();
+  ch2->Ping();
+  EXPECT_EQ_WAIT(Connection::STATE_WRITABLE, ch2->conn()->write_state(),
+                 kTimeout);
+
+  // Destroy the connections.
+  ch1->Stop();
+  ch2->Stop();
 }
 
 class FakePacketSocketFactory : public talk_base::PacketSocketFactory {
@@ -2291,4 +2337,60 @@ TEST_F(PortTest, TestIceLiteConnectivity) {
   msg = ice_full_port->last_stun_msg();
   EXPECT_TRUE(msg->GetByteString(STUN_ATTR_USE_CANDIDATE) != NULL);
   ch1.Stop();
+}
+
+// This test case verifies that the CONTROLLING port does not time out.
+TEST_F(PortTest, TestControllingNoTimeout) {
+  SetIceProtocolType(cricket::ICEPROTO_RFC5245);
+  UDPPort* port1 = CreateUdpPort(kLocalAddr1);
+  ConnectToSignalDestroyed(port1);
+  port1->set_timeout_delay(10);  // milliseconds
+  port1->SetIceRole(cricket::ICEROLE_CONTROLLING);
+  port1->SetIceTiebreaker(kTiebreaker1);
+
+  UDPPort* port2 = CreateUdpPort(kLocalAddr2);
+  port2->SetIceRole(cricket::ICEROLE_CONTROLLED);
+  port2->SetIceTiebreaker(kTiebreaker2);
+
+  // Set up channels and ensure both ports will be deleted.
+  TestChannel ch1(port1, port2);
+  TestChannel ch2(port2, port1);
+
+  // Simulate a connection that succeeds, and then is destroyed.
+  ConnectAndDisconnectChannels(&ch1, &ch2);
+
+  // After the connection is destroyed, the port should not be destroyed.
+  talk_base::Thread::Current()->ProcessMessages(kTimeout);
+  EXPECT_FALSE(destroyed());
+}
+
+// This test case verifies that the CONTROLLED port does time out, but only
+// after connectivity is lost.
+TEST_F(PortTest, TestControlledTimeout) {
+  SetIceProtocolType(cricket::ICEPROTO_RFC5245);
+  UDPPort* port1 = CreateUdpPort(kLocalAddr1);
+  port1->SetIceRole(cricket::ICEROLE_CONTROLLING);
+  port1->SetIceTiebreaker(kTiebreaker1);
+
+  UDPPort* port2 = CreateUdpPort(kLocalAddr2);
+  ConnectToSignalDestroyed(port2);
+  port2->set_timeout_delay(10);  // milliseconds
+  port2->SetIceRole(cricket::ICEROLE_CONTROLLED);
+  port2->SetIceTiebreaker(kTiebreaker2);
+
+  // The connection must not be destroyed before a connection is attempted.
+  EXPECT_FALSE(destroyed());
+
+  port1->set_component(cricket::ICE_CANDIDATE_COMPONENT_DEFAULT);
+  port2->set_component(cricket::ICE_CANDIDATE_COMPONENT_DEFAULT);
+
+  // Set up channels and ensure both ports will be deleted.
+  TestChannel ch1(port1, port2);
+  TestChannel ch2(port2, port1);
+
+  // Simulate a connection that succeeds, and then is destroyed.
+  ConnectAndDisconnectChannels(&ch1, &ch2);
+
+  // The controlled port should be destroyed after 10 milliseconds.
+  EXPECT_TRUE_WAIT(destroyed(), kTimeout);
 }

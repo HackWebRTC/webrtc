@@ -115,6 +115,10 @@ SSLIdentity* SSLIdentity::Generate(const std::string& common_name) {
   return NULL;
 }
 
+SSLIdentity* GenerateForTest(const SSLIdentityParams& params) {
+  return NULL;
+}
+
 SSLIdentity* SSLIdentity::FromPEMStrings(const std::string& private_key,
                                          const std::string& certificate) {
   return NULL;
@@ -130,6 +134,10 @@ SSLIdentity* SSLIdentity::Generate(const std::string& common_name) {
   return OpenSSLIdentity::Generate(common_name);
 }
 
+SSLIdentity* SSLIdentity::GenerateForTest(const SSLIdentityParams& params) {
+  return OpenSSLIdentity::GenerateForTest(params);
+}
+
 SSLIdentity* SSLIdentity::FromPEMStrings(const std::string& private_key,
                                          const std::string& certificate) {
   return OpenSSLIdentity::FromPEMStrings(private_key, certificate);
@@ -143,6 +151,10 @@ SSLCertificate* SSLCertificate::FromPEMString(const std::string& pem_string) {
 
 SSLIdentity* SSLIdentity::Generate(const std::string& common_name) {
   return NSSIdentity::Generate(common_name);
+}
+
+SSLIdentity* SSLIdentity::GenerateForTest(const SSLIdentityParams& params) {
+  return NSSIdentity::GenerateForTest(params);
 }
 
 SSLIdentity* SSLIdentity::FromPEMStrings(const std::string& private_key,

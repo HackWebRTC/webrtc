@@ -495,7 +495,7 @@ bool FileStream::Flush() {
   return false;
 }
 
-#if defined(POSIX)
+#if defined(POSIX) && !defined(__native_client__)
 
 bool FileStream::TryLock() {
   if (file_ == NULL) {

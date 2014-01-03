@@ -62,9 +62,7 @@
   #define MUTEX_LOCK(x) WaitForSingleObject((x), INFINITE)
   #define MUTEX_UNLOCK(x) ReleaseMutex(x)
   #define THREAD_ID GetCurrentThreadId()
-#elif defined(_POSIX_THREADS)
-  // _POSIX_THREADS is normally defined in unistd.h if pthreads are available
-  // on your platform.
+#elif defined(POSIX)
   #define MUTEX_TYPE pthread_mutex_t
   #define MUTEX_SETUP(x) pthread_mutex_init(&(x), NULL)
   #define MUTEX_CLEANUP(x) pthread_mutex_destroy(&(x))

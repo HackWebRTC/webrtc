@@ -36,6 +36,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/time.h>
+#include <sys/select.h>
 #include <unistd.h>
 #include <signal.h>
 #endif
@@ -517,7 +518,7 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
         *slevel = IPPROTO_IP;
         *sopt = IP_DONTFRAGMENT;
         break;
-#elif defined(IOS) || defined(OSX) || defined(BSD)
+#elif defined(IOS) || defined(OSX) || defined(BSD) || defined(__native_client__)
         LOG(LS_WARNING) << "Socket::OPT_DONTFRAGMENT not supported.";
         return -1;
 #elif defined(POSIX)
@@ -1489,10 +1490,14 @@ bool PhysicalSocketServer::InstallSignal(int signum, void (*handler)(int)) {
     return false;
   }
   act.sa_handler = handler;
+#if !defined(__native_client__)
   // Use SA_RESTART so that our syscalls don't get EINTR, since we don't need it
   // and it's a nuisance. Though some syscalls still return EINTR and there's no
   // real standard for which ones. :(
   act.sa_flags = SA_RESTART;
+#else
+  act.sa_flags = 0;
+#endif
   if (sigaction(signum, &act, NULL) != 0) {
     LOG_ERR(LS_ERROR) << "Couldn't set sigaction";
     return false;
