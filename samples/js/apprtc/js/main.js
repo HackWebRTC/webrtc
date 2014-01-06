@@ -20,6 +20,7 @@ var isVideoMuted = false;
 var isAudioMuted = false;
 // Types of gathered ICE Candidates.
 var gatheredIceCandidateTypes = { Local: {}, Remote: {} };
+var infoDivErrors = [];
 
 function initialize() {
   if (errorMessages.length > 0) {
@@ -105,7 +106,12 @@ function onTurnResult() {
       }
     }
   } else {
-    console.log('Request for TURN server failed.');
+    var msg =
+        'No TURN server; unlikely that media will traverse networks.  ' +
+        'If this persists please report it to discuss-webrtc@googlegroups.com.';
+    console.log(msg);
+    infoDivErrors.push(msg);
+    updateInfoDiv();
   }
   // If TURN request failed, continue the call with default STUN.
   turnDone = true;
@@ -454,15 +460,27 @@ function updateInfoDiv() {
   }
   var div = getInfoDiv();
   div.innerHTML = contents + "</pre>";
+
+  for (var msg in infoDivErrors) {
+    div.innerHTML += '<p style="background-color: red; color: yellow;">' +
+                     infoDivErrors[msg] + '</p>';
+  }
+  if (infoDivErrors.length)
+    showInfoDiv();
 }
 
-function toggleInfoDivDisplay() {
+function toggleInfoDiv() {
   var div = getInfoDiv();
   if (div.style.display == "block") {
     div.style.display = "none";
   } else {
-    div.style.display = "block";
+    showInfoDiv();
   }
+}
+
+function showInfoDiv() {
+  var div = getInfoDiv();
+  div.style.display = "block";
 }
 
 function toggleVideoMute() {
@@ -533,7 +551,7 @@ document.onkeydown = function(event) {
       toggleVideoMute();
       return false;
     case 73:
-      toggleInfoDivDisplay();
+      toggleInfoDiv();
       return false;
     default:
       return;
