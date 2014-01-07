@@ -48,7 +48,7 @@ typedef cricket::SctpDataMediaChannel::StreamSet StreamSet;
 std::string ListStreams(const StreamSet& s) {
   std::stringstream result;
   bool first = true;
-  for (StreamSet::iterator it = s.begin(); it != s.end(); ++it) {
+  for (StreamSet::const_iterator it = s.begin(); it != s.end(); ++it) {
     if (!first) {
       result << ", " << *it;
     } else {
