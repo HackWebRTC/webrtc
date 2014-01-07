@@ -186,9 +186,32 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
   if (config.suspend_below_min_bitrate) {
     codec_->SuspendBelowMinBitrate(channel_);
   }
+
+  stats_proxy_.reset(
+      new SendStatisticsProxy(config, this));
+
+  rtp_rtcp_->RegisterSendChannelRtcpStatisticsCallback(channel_,
+                                                       stats_proxy_.get());
+  rtp_rtcp_->RegisterSendChannelRtpStatisticsCallback(channel_,
+                                                      stats_proxy_.get());
+  rtp_rtcp_->RegisterSendBitrateObserver(channel_, stats_proxy_.get());
+  rtp_rtcp_->RegisterSendFrameCountObserver(channel_, stats_proxy_.get());
+
+  codec_->RegisterEncoderObserver(channel_, *stats_proxy_);
+  capture_->RegisterObserver(capture_id_, *stats_proxy_);
 }
 
 VideoSendStream::~VideoSendStream() {
+  capture_->DeregisterObserver(capture_id_);
+  codec_->DeregisterEncoderObserver(channel_);
+
+  rtp_rtcp_->DeregisterSendFrameCountObserver(channel_, stats_proxy_.get());
+  rtp_rtcp_->DeregisterSendBitrateObserver(channel_, stats_proxy_.get());
+  rtp_rtcp_->DeregisterSendChannelRtpStatisticsCallback(channel_,
+                                                        stats_proxy_.get());
+  rtp_rtcp_->DeregisterSendChannelRtcpStatisticsCallback(channel_,
+                                                         stats_proxy_.get());
+
   image_process_->DeRegisterPreEncodeCallback(channel_);
 
   network_->DeregisterSendTransport(channel_);
@@ -293,5 +316,21 @@ bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   return network_->ReceivedRTCPPacket(
              channel_, packet, static_cast<int>(length)) == 0;
 }
+
+VideoSendStream::Stats VideoSendStream::GetStats() const {
+  return stats_proxy_->GetStats();
+}
+
+bool VideoSendStream::GetSendSideDelay(VideoSendStream::Stats* stats) {
+  return codec_->GetSendSideDelay(
+      channel_, &stats->avg_delay_ms, &stats->max_delay_ms);
+}
+
+std::string VideoSendStream::GetCName() {
+  char rtcp_cname[ViERTP_RTCP::KMaxRTCPCNameLength];
+  rtp_rtcp_->GetRTCPCName(channel_, rtcp_cname);
+  return rtcp_cname;
+}
+
 }  // namespace internal
 }  // namespace webrtc

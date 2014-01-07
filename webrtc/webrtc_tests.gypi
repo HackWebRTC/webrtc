@@ -35,6 +35,7 @@
       'sources': [
         'video/bitrate_estimator_tests.cc',
         'video/call_tests.cc',
+        'video/send_statistics_proxy_unittest.cc',
         'video/video_send_stream_tests.cc',
         'test/common_unittest.cc',
         'test/testsupport/metrics/video_metrics_unittest.cc',

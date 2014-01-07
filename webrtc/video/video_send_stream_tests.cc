@@ -35,7 +35,8 @@ namespace webrtc {
 
 class VideoSendStreamTest : public ::testing::Test {
  public:
-  VideoSendStreamTest() : fake_encoder_(Clock::GetRealTimeClock()) {}
+  VideoSendStreamTest()
+      : send_stream_(NULL), fake_encoder_(Clock::GetRealTimeClock()) {}
 
  protected:
   void RunSendTest(Call* call,
@@ -190,7 +191,7 @@ void VideoSendStreamTest::SendsSetSsrcs(size_t num_ssrcs,
   frame_generator_capturer->Stop();
   send_stream_->StopSending();
   call->DestroyVideoSendStream(send_stream_);
-};
+}
 
 TEST_F(VideoSendStreamTest, SendsSetSsrc) { SendsSetSsrcs(1, false); }
 
@@ -929,6 +930,66 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
 
   EXPECT_EQ(kEventSignaled, observer.Wait())
       << "Timed out while waiting for RTP packets to stop being sent.";
+
+  observer.StopSending();
+  frame_generator_capturer->Stop();
+  send_stream_->StopSending();
+  call->DestroyVideoSendStream(send_stream_);
+}
+
+TEST_F(VideoSendStreamTest, ProducesStats) {
+  static std::string kCName = "PjQatC14dGfbVwGPUOA9IH7RlsFDbWl4AhXEiDsBizo=";
+  class StatsObserver : public test::RtpRtcpObserver {
+   public:
+    StatsObserver() : RtpRtcpObserver(30 * 1000), stream_(NULL) {}
+
+    virtual Action OnSendRtcp(const uint8_t* packet, size_t length) OVERRIDE {
+      VideoSendStream::Stats stats = stream_->GetStats();
+      // Check that all applicable data sources have been used.
+      if (stats.input_frame_rate > 0 && stats.encode_frame_rate > 0 &&
+          stats.avg_delay_ms > 0 && stats.c_name == kCName &&
+          !stats.substreams.empty()) {
+        uint32_t ssrc = stats.substreams.begin()->first;
+        EXPECT_NE(
+            config_.rtp.ssrcs.end(),
+            std::find(
+                config_.rtp.ssrcs.begin(), config_.rtp.ssrcs.end(), ssrc));
+        // Check for data populated by various sources. RTCP excluded as this
+        // data is received from remote side. Tested in call tests instead.
+        StreamStats& entry = stats.substreams[ssrc];
+        if (entry.key_frames > 0u && entry.bitrate_bps > 0 &&
+            entry.rtp_stats.packets > 0u) {
+          observation_complete_->Set();
+        }
+      }
+
+      return SEND_PACKET;
+    }
+
+    void SetConfig(const VideoSendStream::Config& config) { config_ = config; }
+
+    void SetSendStream(VideoSendStream* stream) { stream_ = stream; }
+
+    VideoSendStream* stream_;
+    VideoSendStream::Config config_;
+  } observer;
+
+  Call::Config call_config(observer.SendTransport());
+  scoped_ptr<Call> call(Call::Create(call_config));
+
+  VideoSendStream::Config send_config = GetSendTestConfig(call.get(), 1);
+  send_config.rtp.c_name = kCName;
+  observer.SetConfig(send_config);
+
+  send_stream_ = call->CreateVideoSendStream(send_config);
+  observer.SetSendStream(send_stream_);
+  scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer(
+      test::FrameGeneratorCapturer::Create(
+          send_stream_->Input(), 320, 240, 30, Clock::GetRealTimeClock()));
+  send_stream_->StartSending();
+  frame_generator_capturer->Start();
+
+  EXPECT_EQ(kEventSignaled, observer.Wait());
 
   observer.StopSending();
   frame_generator_capturer->Stop();

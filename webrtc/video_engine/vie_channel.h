@@ -400,7 +400,6 @@ class ViEChannel
   scoped_ptr<RtcpBandwidthObserver> bandwidth_observer_;
   int send_timestamp_extension_id_;
   int absolute_send_time_extension_id_;
-  bool using_packet_spread_;
 
   Transport* external_transport_;
 

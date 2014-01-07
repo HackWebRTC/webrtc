@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/common_types.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -31,6 +32,22 @@ struct RtpStatistics {
   int cumulative_loss;
   int extended_max_sequence_number;
   std::string c_name;
+};
+
+struct StreamStats {
+  StreamStats() : key_frames(0), delta_frames(0), bitrate_bps(0) {}
+  uint32_t key_frames;
+  uint32_t delta_frames;
+  int32_t bitrate_bps;
+  StreamDataCounters rtp_stats;
+  RtcpStatistics rtcp_stats;
+
+  bool operator==(const StreamStats& other) const {
+    return key_frames == other.key_frames &&
+           delta_frames == other.delta_frames &&
+           bitrate_bps == other.bitrate_bps && rtp_stats == other.rtp_stats &&
+           rtcp_stats == other.rtcp_stats;
+  }
 };
 
 // Settings for NACK, see RFC 4585 for details.

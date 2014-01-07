@@ -11,8 +11,8 @@
 #ifndef WEBRTC_VIDEO_SEND_STREAM_H_
 #define WEBRTC_VIDEO_SEND_STREAM_H_
 
+#include <map>
 #include <string>
-#include <vector>
 
 #include "webrtc/common_types.h"
 #include "webrtc/config.h"
@@ -41,32 +41,28 @@ class VideoSendStream {
   struct Stats {
     Stats()
         : input_frame_rate(0),
-          encode_frame(0),
-          key_frames(0),
-          delta_frames(0),
-          video_packets(0),
-          retransmitted_packets(0),
-          fec_packets(0),
-          padding_packets(0),
-          send_bitrate_bps(0),
-          delay_ms(0) {}
-    RtpStatistics rtp;
-    int input_frame_rate;
-    int encode_frame;
-    uint32_t key_frames;
-    uint32_t delta_frames;
-    uint32_t video_packets;
-    uint32_t retransmitted_packets;
-    uint32_t fec_packets;
-    uint32_t padding_packets;
-    int32_t send_bitrate_bps;
-    int delay_ms;
-  };
+          encode_frame_rate(0),
+          avg_delay_ms(0),
+          max_delay_ms(0) {}
 
-  class StatsCallback {
-   public:
-    virtual ~StatsCallback() {}
-    virtual void ReceiveStats(const std::vector<Stats>& stats) = 0;
+    int input_frame_rate;
+    int encode_frame_rate;
+    int avg_delay_ms;
+    int max_delay_ms;
+    std::string c_name;
+    std::map<uint32_t, StreamStats> substreams;
+
+    bool operator==(const Stats& other) const {
+      if (input_frame_rate != other.input_frame_rate ||
+          encode_frame_rate != other.encode_frame_rate ||
+          avg_delay_ms != other.avg_delay_ms ||
+          max_delay_ms != other.max_delay_ms || c_name != other.c_name ||
+          substreams.size() != other.substreams.size()) {
+        return false;
+      }
+      return std::equal(
+          substreams.begin(), substreams.end(), other.substreams.begin());
+    }
   };
 
   struct Config {
@@ -79,7 +75,6 @@ class VideoSendStream {
           internal_source(false),
           target_delay_ms(0),
           pacing(false),
-          stats_callback(NULL),
           suspend_below_min_bitrate(false) {}
     VideoCodec codec;
 
@@ -140,9 +135,6 @@ class VideoSendStream {
     // packets onto the network.
     bool pacing;
 
-    // Callback for periodically receiving send stats.
-    StatsCallback* stats_callback;
-
     // True if the stream should be suspended when the available bitrate fall
     // below the minimum configured bitrate. If this variable is false, the
     // stream may send at a rate higher than the estimated available bitrate.
@@ -160,6 +152,8 @@ class VideoSendStream {
 
   virtual bool SetCodec(const VideoCodec& codec) = 0;
   virtual VideoCodec GetCodec() = 0;
+
+  virtual Stats GetStats() const = 0;
 
  protected:
   virtual ~VideoSendStream() {}

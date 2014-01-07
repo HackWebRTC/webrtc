@@ -11,10 +11,9 @@
 #ifndef WEBRTC_VIDEO_VIDEO_SEND_STREAM_H_
 #define WEBRTC_VIDEO_VIDEO_SEND_STREAM_H_
 
-#include <vector>
-
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/video/encoded_frame_callback_adapter.h"
+#include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video/transport_adapter.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
@@ -37,7 +36,8 @@ namespace internal {
 class ResolutionAdaptor;
 
 class VideoSendStream : public webrtc::VideoSendStream,
-                        public VideoSendStreamInput {
+                        public VideoSendStreamInput,
+                        public SendStatisticsProxy::StreamStatsProvider {
  public:
   VideoSendStream(newapi::Transport* transport,
                   bool overuse_detection,
@@ -47,12 +47,6 @@ class VideoSendStream : public webrtc::VideoSendStream,
 
   virtual ~VideoSendStream();
 
-  virtual void PutFrame(const I420VideoFrame& frame) OVERRIDE;
-
-  virtual void SwapFrame(I420VideoFrame* frame) OVERRIDE;
-
-  virtual VideoSendStreamInput* Input() OVERRIDE;
-
   virtual void StartSending() OVERRIDE;
 
   virtual void StopSending() OVERRIDE;
@@ -60,8 +54,21 @@ class VideoSendStream : public webrtc::VideoSendStream,
   virtual bool SetCodec(const VideoCodec& codec) OVERRIDE;
   virtual VideoCodec GetCodec() OVERRIDE;
 
- public:
+  virtual Stats GetStats() const OVERRIDE;
+
   bool DeliverRtcp(const uint8_t* packet, size_t length);
+
+  // From VideoSendStreamInput.
+  virtual void PutFrame(const I420VideoFrame& frame) OVERRIDE;
+  virtual void SwapFrame(I420VideoFrame* frame) OVERRIDE;
+
+  // From webrtc::VideoSendStream.
+  virtual VideoSendStreamInput* Input() OVERRIDE;
+
+ protected:
+  // From SendStatisticsProxy::StreamStatsProvider.
+  virtual bool GetSendSideDelay(VideoSendStream::Stats* stats) OVERRIDE;
+  virtual std::string GetCName() OVERRIDE;
 
  private:
   I420VideoFrame input_frame_;
@@ -82,6 +89,8 @@ class VideoSendStream : public webrtc::VideoSendStream,
   int channel_;
   int capture_id_;
   scoped_ptr<ResolutionAdaptor> overuse_observer_;
+
+  scoped_ptr<SendStatisticsProxy> stats_proxy_;
 };
 }  // namespace internal
 }  // namespace webrtc
