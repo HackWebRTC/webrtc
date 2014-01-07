@@ -269,7 +269,11 @@ void ApmTest::SetUp() {
   frame_ = new AudioFrame();
   revframe_ = new AudioFrame();
 
+#if defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
+  Init(16000, 2, 2, 2, false);
+#else
   Init(32000, 2, 2, 2, false);
+#endif
 }
 
 void ApmTest::TearDown() {
