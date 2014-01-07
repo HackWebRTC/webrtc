@@ -67,8 +67,6 @@
         'level_estimator_impl.h',
         'noise_suppression_impl.cc',
         'noise_suppression_impl.h',
-        'splitting_filter.cc',
-        'splitting_filter.h',
         'processing_component.cc',
         'processing_component.h',
         'utility/delay_estimator.c',

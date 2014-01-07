@@ -695,10 +695,12 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame& audioFrame)
     // Store speech type for dead-or-alive detection
     _outputSpeechType = audioFrame.speech_type_;
 
-    // Perform far-end AudioProcessing module processing on the received signal
-    if (_rxApmIsEnabled)
-    {
-        ApmProcessRx(audioFrame);
+    if (_rxApmIsEnabled) {
+      int err = rx_audioproc_->ProcessStream(&audioFrame);
+      if (err) {
+        LOG(LS_ERROR) << "ProcessStream() error: " << err;
+        assert(false);
+      }
     }
 
     float output_gain = 1.0f;
@@ -4446,29 +4448,13 @@ Channel::PrepareEncodeAndSend(int mixingFrequency)
 
     InsertInbandDtmfTone();
 
-    if (_includeAudioLevelIndication)
-    {
-        if (rtp_audioproc_->set_sample_rate_hz(_audioFrame.sample_rate_hz_) !=
-            AudioProcessing::kNoError)
-        {
-            WEBRTC_TRACE(kTraceWarning, kTraceVoice,
-                         VoEId(_instanceId, _channelId),
-                         "Error setting AudioProcessing sample rate");
-            return -1;
-        }
-
-        if (rtp_audioproc_->set_num_channels(_audioFrame.num_channels_,
-                                             _audioFrame.num_channels_) !=
-            AudioProcessing::kNoError)
-        {
-            WEBRTC_TRACE(kTraceWarning, kTraceVoice,
-                         VoEId(_instanceId, _channelId),
-                         "Error setting AudioProcessing channels");
-            return -1;
-        }
-
-        // Performs level analysis only; does not affect the signal.
-        rtp_audioproc_->ProcessStream(&_audioFrame);
+    if (_includeAudioLevelIndication) {
+      // Performs level analysis only; does not affect the signal.
+      int err = rtp_audioproc_->ProcessStream(&_audioFrame);
+      if (err) {
+        LOG(LS_ERROR) << "ProcessStream() error: " << err;
+        assert(false);
+      }
     }
 
     return 0;
@@ -5208,25 +5194,6 @@ Channel::RegisterReceiveCodecsToRTPModule()
                          codec.channels, codec.rate);
         }
     }
-}
-
-int Channel::ApmProcessRx(AudioFrame& frame) {
-  // Register the (possibly new) frame parameters.
-  if (rx_audioproc_->set_sample_rate_hz(frame.sample_rate_hz_) != 0) {
-    assert(false);
-    LOG_FERR1(LS_ERROR, set_sample_rate_hz, frame.sample_rate_hz_);
-  }
-  if (rx_audioproc_->set_num_channels(frame.num_channels_,
-                                      frame.num_channels_) != 0) {
-    assert(false);
-    LOG_FERR2(LS_ERROR, set_num_channels, frame.num_channels_,
-              frame.num_channels_);
-  }
-  if (rx_audioproc_->ProcessStream(&frame) != 0) {
-    assert(false);
-    LOG_FERR0(LS_ERROR, ProcessStream);
-  }
-  return 0;
 }
 
 int Channel::SetSecondarySendCodec(const CodecInst& codec,

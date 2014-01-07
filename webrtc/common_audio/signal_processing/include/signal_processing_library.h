@@ -996,12 +996,14 @@ void WebRtcSpl_UpsampleBy2(const int16_t* in, int16_t len,
  * END OF RESAMPLING FUNCTIONS
  ************************************************************/
 void WebRtcSpl_AnalysisQMF(const int16_t* in_data,
+                           int in_data_length,
                            int16_t* low_band,
                            int16_t* high_band,
                            int32_t* filter_state1,
                            int32_t* filter_state2);
 void WebRtcSpl_SynthesisQMF(const int16_t* low_band,
                             const int16_t* high_band,
+                            int band_length,
                             int16_t* out_data,
                             int32_t* filter_state1,
                             int32_t* filter_state2);

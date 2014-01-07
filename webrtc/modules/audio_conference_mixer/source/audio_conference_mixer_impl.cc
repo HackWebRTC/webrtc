@@ -165,10 +165,6 @@ bool AudioConferenceMixerImpl::Init()
     if(SetOutputFrequency(kDefaultFrequency) == -1)
         return false;
 
-    // Assume mono.
-    if (!SetNumLimiterChannels(1))
-        return false;
-
     if(_limiter->gain_control()->set_mode(GainControl::kFixedDigital) !=
         _limiter->kNoError)
         return false;
@@ -326,9 +322,6 @@ int32_t AudioConferenceMixerImpl::Process()
             std::max(MaxNumChannels(additionalFramesList),
                      MaxNumChannels(rampOutList)));
 
-        if (!SetNumLimiterChannels(num_mixed_channels))
-            retval = -1;
-
         mixedAudio->UpdateFrame(-1, _timeStamp, NULL, 0, _outputFrequency,
                                 AudioFrame::kNormalSpeech,
                                 AudioFrame::kVadPassive, num_mixed_channels);
@@ -434,13 +427,6 @@ int32_t AudioConferenceMixerImpl::SetOutputFrequency(
     const Frequency frequency)
 {
     CriticalSectionScoped cs(_crit.get());
-    const int error = _limiter->set_sample_rate_hz(frequency);
-    if(error != _limiter->kNoError)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioMixerServer, _id,
-                     "Error from AudioProcessing: %d", error);
-        return -1;
-    }
 
     _outputFrequency = frequency;
     _sampleSize = (_outputFrequency*kProcessPeriodicityInMs) / 1000;
@@ -453,24 +439,6 @@ AudioConferenceMixerImpl::OutputFrequency() const
 {
     CriticalSectionScoped cs(_crit.get());
     return _outputFrequency;
-}
-
-bool AudioConferenceMixerImpl::SetNumLimiterChannels(int numChannels)
-{
-    if(_limiter->num_input_channels() != numChannels)
-    {
-        const int error = _limiter->set_num_channels(numChannels,
-                                                     numChannels);
-        if(error != _limiter->kNoError)
-        {
-            WEBRTC_TRACE(kTraceError, kTraceAudioMixerServer, _id,
-                         "Error from AudioProcessing: %d", error);
-            assert(false);
-            return false;
-        }
-    }
-
-    return true;
 }
 
 int32_t AudioConferenceMixerImpl::RegisterMixerStatusCallback(

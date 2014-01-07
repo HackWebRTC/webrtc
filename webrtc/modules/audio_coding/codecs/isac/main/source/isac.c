@@ -552,8 +552,8 @@ int16_t WebRtcIsac_Encode(ISACStruct* ISAC_main_inst,
   }
 
   if (instISAC->encoderSamplingRateKHz == kIsacSuperWideband) {
-    WebRtcSpl_AnalysisQMF(speech_in_ptr, speechInLB, speechInUB,
-                          instISAC->analysisFBState1,
+    WebRtcSpl_AnalysisQMF(speech_in_ptr, SWBFRAMESAMPLES_10ms, speechInLB,
+                          speechInUB, instISAC->analysisFBState1,
                           instISAC->analysisFBState2);
 
     /* Convert from fixed to floating point. */
@@ -1314,7 +1314,7 @@ static int16_t Decode(ISACStruct* ISAC_main_inst,
     speechIdx = 0;
     while (speechIdx < numSamplesLB) {
       WebRtcSpl_SynthesisQMF(&outFrameLB[speechIdx], &outFrameUB[speechIdx],
-                             &decoded[(speechIdx << 1)],
+                             FRAMESAMPLES_10ms, &decoded[(speechIdx << 1)],
                              instISAC->synthesisFBState1,
                              instISAC->synthesisFBState2);
 

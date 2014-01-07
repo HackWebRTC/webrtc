@@ -232,9 +232,6 @@ void void_main(int argc, char* argv[]) {
       ASSERT_EQ(1, sscanf(argv[i], "%d", &sample_rate_hz));
       samples_per_channel = sample_rate_hz / 100;
 
-      ASSERT_EQ(apm->kNoError,
-                apm->set_sample_rate_hz(sample_rate_hz));
-
     } else if (strcmp(argv[i], "-ch") == 0) {
       i++;
       ASSERT_LT(i + 1, argc) << "Specify number of channels after -ch";
@@ -242,17 +239,10 @@ void void_main(int argc, char* argv[]) {
       i++;
       ASSERT_EQ(1, sscanf(argv[i], "%d", &num_capture_output_channels));
 
-      ASSERT_EQ(apm->kNoError,
-                apm->set_num_channels(num_capture_input_channels,
-                                      num_capture_output_channels));
-
     } else if (strcmp(argv[i], "-rch") == 0) {
       i++;
       ASSERT_LT(i, argc) << "Specify number of channels after -rch";
       ASSERT_EQ(1, sscanf(argv[i], "%d", &num_render_channels));
-
-      ASSERT_EQ(apm->kNoError,
-                apm->set_num_reverse_channels(num_render_channels));
 
     } else if (strcmp(argv[i], "-aec") == 0) {
       ASSERT_EQ(apm->kNoError, apm->echo_cancellation()->Enable(true));
@@ -637,9 +627,6 @@ void void_main(int argc, char* argv[]) {
         const Init msg = event_msg.init();
 
         ASSERT_TRUE(msg.has_sample_rate());
-        ASSERT_EQ(apm->kNoError,
-            apm->set_sample_rate_hz(msg.sample_rate()));
-
         ASSERT_TRUE(msg.has_device_sample_rate());
         ASSERT_EQ(apm->kNoError,
                   apm->echo_cancellation()->set_device_sample_rate_hz(
@@ -647,13 +634,7 @@ void void_main(int argc, char* argv[]) {
 
         ASSERT_TRUE(msg.has_num_input_channels());
         ASSERT_TRUE(msg.has_num_output_channels());
-        ASSERT_EQ(apm->kNoError,
-            apm->set_num_channels(msg.num_input_channels(),
-                                  msg.num_output_channels()));
-
         ASSERT_TRUE(msg.has_num_reverse_channels());
-        ASSERT_EQ(apm->kNoError,
-            apm->set_num_reverse_channels(msg.num_reverse_channels()));
 
         samples_per_channel = msg.sample_rate() / 100;
         far_frame.sample_rate_hz_ = msg.sample_rate();
@@ -832,9 +813,6 @@ void void_main(int argc, char* argv[]) {
                   sizeof(device_sample_rate_hz),
                   1,
                   event_file));
-
-        ASSERT_EQ(apm->kNoError,
-            apm->set_sample_rate_hz(sample_rate_hz));
 
         ASSERT_EQ(apm->kNoError,
                   apm->echo_cancellation()->set_device_sample_rate_hz(

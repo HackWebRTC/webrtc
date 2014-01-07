@@ -89,10 +89,6 @@ private:
     int32_t SetOutputFrequency(const Frequency frequency);
     Frequency OutputFrequency() const;
 
-    // Must be called whenever an audio frame indicates the number of channels
-    // has changed.
-    bool SetNumLimiterChannels(int numChannels);
-
     // Fills mixList with the AudioFrames pointers that should be used when
     // mixing. Fills mixParticipantList with ParticipantStatistics for the
     // participants who's AudioFrames are inside mixList.

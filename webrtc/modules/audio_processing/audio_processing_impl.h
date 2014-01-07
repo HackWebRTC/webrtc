@@ -47,7 +47,7 @@ class AudioProcessingImpl : public AudioProcessing {
     kSampleRate32kHz = 32000
   };
 
-  explicit AudioProcessingImpl(int id);
+  AudioProcessingImpl();
   virtual ~AudioProcessingImpl();
 
   CriticalSectionWrapper* crit() const;
@@ -57,7 +57,6 @@ class AudioProcessingImpl : public AudioProcessing {
 
   // AudioProcessing methods.
   virtual int Initialize() OVERRIDE;
-  virtual int InitializeLocked();
   virtual void SetExtraOptions(const Config& config) OVERRIDE;
   virtual int EnableExperimentalNs(bool enable) OVERRIDE;
   virtual bool experimental_ns_enabled() const OVERRIDE {
@@ -92,13 +91,16 @@ class AudioProcessingImpl : public AudioProcessing {
   // Module methods.
   virtual int32_t ChangeUniqueId(const int32_t id) OVERRIDE;
 
+ protected:
+  virtual int InitializeLocked();
+
  private:
+  int MaybeInitializeLocked(int sample_rate_hz, int num_input_channels,
+                            int num_output_channels, int num_reverse_channels);
   bool is_data_processed() const;
   bool interleave_needed(bool is_data_processed) const;
   bool synthesis_needed(bool is_data_processed) const;
   bool analysis_needed(bool is_data_processed) const;
-
-  int id_;
 
   EchoCancellationImplWrapper* echo_cancellation_;
   EchoControlMobileImpl* echo_control_mobile_;
@@ -118,8 +120,8 @@ class AudioProcessingImpl : public AudioProcessing {
   int WriteMessageToDebugFile();
   int WriteInitMessage();
   scoped_ptr<FileWrapper> debug_file_;
-  scoped_ptr<audioproc::Event> event_msg_; // Protobuf message.
-  std::string event_str_; // Memory for protobuf serialization.
+  scoped_ptr<audioproc::Event> event_msg_;  // Protobuf message.
+  std::string event_str_;  // Memory for protobuf serialization.
 #endif
 
   int sample_rate_hz_;

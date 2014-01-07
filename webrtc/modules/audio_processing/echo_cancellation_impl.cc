@@ -336,8 +336,6 @@ int EchoCancellationImpl::Initialize() {
     return err;
   }
 
-  was_stream_drift_set_ = false;
-
   return apm_->kNoError;
 }
 
