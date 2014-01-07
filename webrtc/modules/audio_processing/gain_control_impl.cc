@@ -302,6 +302,7 @@ int GainControlImpl::Initialize() {
     return err;
   }
 
+  capture_levels_.assign(num_handles(), analog_capture_level_);
   return apm_->kNoError;
 }
 
