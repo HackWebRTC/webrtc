@@ -103,7 +103,6 @@ def _decode_barcode_in_file(file_name, command_line_decoder):
   try:
     out = helper_functions.run_shell_command(
         command, fail_msg='Error during decoding of %s' % file_name)
-    print 'Image %s : decoded barcode: %s' % (file_name, out)
     text_file = open('%s.txt' % file_name[:-4], 'w')
     text_file.write(out)
     text_file.close()
