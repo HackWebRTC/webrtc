@@ -44,6 +44,7 @@ typedef struct {
 
   // Robust validation
   int robust_validation_enabled;
+  int allowed_offset;
   int last_candidate_delay;
   int compare_delay;
   int candidate_hits;

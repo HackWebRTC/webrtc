@@ -30,10 +30,6 @@ static const float kMinHistogramThreshold = 1.5f;
 static const int kMinRequiredHits = 10;
 static const int kMaxHitsWhenPossiblyNonCausal = 10;
 static const int kMaxHitsWhenPossiblyCausal = 1000;
-// TODO(bjornv): Make kMaxDelayDifference a configurable parameter, since it
-// corresponds to the filter length if the delay estimation is used in echo
-// control.
-static const int kMaxDelayDifference = 32;
 static const float kQ14Scaling = 1.f / (1 << 14);  // Scaling by 2^14 to get Q0.
 static const float kFractionSlope = 0.05f;
 static const float kMinFractionWhenPossiblyCausal = 0.5f;
@@ -195,8 +191,8 @@ static int HistogramBasedValidation(const BinaryDelayEstimator* self,
   // depending on the distance between the |candidate_delay| and |last_delay|.
   // TODO(bjornv): How much can we gain by turning the fraction calculation
   // into tables?
-  if (delay_difference >= kMaxDelayDifference) {
-    fraction = 1.f - kFractionSlope * (delay_difference - kMaxDelayDifference);
+  if (delay_difference > self->allowed_offset) {
+    fraction = 1.f - kFractionSlope * (delay_difference - self->allowed_offset);
     fraction = (fraction > kMinFractionWhenPossiblyCausal ? fraction :
         kMinFractionWhenPossiblyCausal);
   } else if (delay_difference < 0) {
@@ -363,6 +359,7 @@ BinaryDelayEstimator* WebRtc_CreateBinaryDelayEstimator(
     self->farend = farend;
     self->near_history_size = lookahead + 1;
     self->robust_validation_enabled = 0;  // Disabled by default.
+    self->allowed_offset = 0;
 
     // Allocate memory for spectrum buffers.  The extra array element in
     // |mean_bit_counts| and |histogram| is a dummy element only used while

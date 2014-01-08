@@ -246,6 +246,14 @@ TEST_F(DelayEstimatorTest, CorrectErrorReturnsOfWrapper) {
   EXPECT_EQ(-1, WebRtc_AddFarSpectrumFix(farend_handle_, far_u16_,
                                          spectrum_size_, 16));
 
+  // WebRtc_set_allowed_offset() should return -1 if we have:
+  // 1) NULL pointer as |handle|.
+  // 2) |allowed_offset| < 0.
+  EXPECT_EQ(-1, WebRtc_set_allowed_offset(NULL, 0));
+  EXPECT_EQ(-1, WebRtc_set_allowed_offset(handle_, -1));
+
+  EXPECT_EQ(-1, WebRtc_get_allowed_offset(NULL));
+
   // WebRtc_enable_robust_validation() should return -1 if we have:
   // 1) NULL pointer as |handle|.
   // 2) Incorrect |enable| value (not 0 or 1).
@@ -294,14 +302,26 @@ TEST_F(DelayEstimatorTest, CorrectErrorReturnsOfWrapper) {
   WebRtc_FreeDelayEstimator(handle);
 }
 
+TEST_F(DelayEstimatorTest, VerifyAllowedOffset) {
+  // Is set to zero by default.
+  EXPECT_EQ(0, WebRtc_get_allowed_offset(handle_));
+  for (int i = 1; i >= 0; i--) {
+    EXPECT_EQ(0, WebRtc_set_allowed_offset(handle_, i));
+    EXPECT_EQ(i, WebRtc_get_allowed_offset(handle_));
+    Init();
+    // Unaffected over a reset.
+    EXPECT_EQ(i, WebRtc_get_allowed_offset(handle_));
+  }
+}
+
 TEST_F(DelayEstimatorTest, VerifyEnableRobustValidation) {
   // Disabled by default.
   EXPECT_EQ(0, WebRtc_is_robust_validation_enabled(handle_));
-  // Unaffected over a reset
   for (int i = 1; i >= 0; i--) {
     EXPECT_EQ(0, WebRtc_enable_robust_validation(handle_, i));
     EXPECT_EQ(i, WebRtc_is_robust_validation_enabled(handle_));
     Init();
+    // Unaffected over a reset.
     EXPECT_EQ(i, WebRtc_is_robust_validation_enabled(handle_));
   }
 }
@@ -393,7 +413,7 @@ TEST_F(DelayEstimatorTest, CorrectErrorReturnsOfBinaryEstimator) {
 
   BinaryDelayEstimator* binary_handle = binary_;
   // WebRtc_CreateBinaryDelayEstimator() should return -1 if we have a NULL
-  // pointer as |binary_handle| or invalid input values. Upon failure, the
+  // pointer as |binary_farend| or invalid input values. Upon failure, the
   // |binary_handle| should be NULL.
   // Make sure we have a non-NULL value at start, so we can detect NULL after
   // create failure.
@@ -401,9 +421,6 @@ TEST_F(DelayEstimatorTest, CorrectErrorReturnsOfBinaryEstimator) {
   EXPECT_TRUE(binary_handle == NULL);
   binary_handle = binary_;
   binary_handle = WebRtc_CreateBinaryDelayEstimator(binary_farend_, -1);
-  EXPECT_TRUE(binary_handle == NULL);
-  binary_handle = binary_;
-  binary_handle = WebRtc_CreateBinaryDelayEstimator(0, 0);
   EXPECT_TRUE(binary_handle == NULL);
 }
 
