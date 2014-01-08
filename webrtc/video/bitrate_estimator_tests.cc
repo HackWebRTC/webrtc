@@ -236,6 +236,20 @@ TEST_F(BitrateEstimatorTest, InstantiatesTOFPerDefault) {
   EXPECT_EQ(kEventSignaled, receiver_trace_.Wait());
 }
 
+TEST_F(BitrateEstimatorTest, ImmediatelySwitchToAST) {
+  send_config_.rtp.extensions.push_back(
+      RtpExtension(RtpExtension::kAbsSendTime, kASTExtensionId));
+  receiver_trace_.PushExpectedLogLine(
+      "RemoteBitrateEstimatorFactory: Instantiating.");
+  receiver_trace_.PushExpectedLogLine(
+      "RemoteBitrateEstimatorFactory: Instantiating.");
+  receiver_trace_.PushExpectedLogLine("Switching to absolute send time RBE.");
+  receiver_trace_.PushExpectedLogLine(
+      "AbsoluteSendTimeRemoteBitrateEstimatorFactory: Instantiating.");
+  streams_.push_back(new Stream(this));
+  EXPECT_EQ(kEventSignaled, receiver_trace_.Wait());
+}
+
 TEST_F(BitrateEstimatorTest, SwitchesToAST) {
   send_config_.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kTOffset, kTOFExtensionId));
