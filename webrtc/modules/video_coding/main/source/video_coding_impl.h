@@ -32,6 +32,8 @@ class EncodedFrameObserver;
 
 namespace vcm {
 
+class DebugRecorder;
+
 class VCMProcessTimer {
  public:
   VCMProcessTimer(uint32_t periodMs, Clock* clock)
@@ -96,7 +98,7 @@ class VideoSender {
   int SetSenderKeyFramePeriod(int periodMs);
 
   int StartDebugRecording(const char* file_name_utf8);
-  int StopDebugRecording();
+  void StopDebugRecording();
 
   void SuspendBelowMinBitrate();
   bool VideoSuspended() const;
@@ -111,6 +113,8 @@ class VideoSender {
   int32_t _id;
   Clock* clock_;
 
+  scoped_ptr<DebugRecorder> recorder_;
+
   scoped_ptr<CriticalSectionWrapper> process_crit_sect_;
   CriticalSectionWrapper* _sendCritSect;
   VCMGenericEncoder* _encoder;
@@ -118,7 +122,6 @@ class VideoSender {
   std::vector<FrameType> _nextFrameTypes;
   media_optimization::MediaOptimization _mediaOpt;
   VCMSendStatisticsCallback* _sendStatsCallback;
-  FILE* _encoderInputFile;
   VCMCodecDataBase _codecDataBase;
   bool frame_dropper_enabled_;
   VCMProcessTimer _sendStatsTimer;

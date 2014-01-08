@@ -194,7 +194,8 @@ class VideoCodingModuleImpl : public VideoCodingModule {
   }
 
   virtual int StopDebugRecording() OVERRIDE {
-    return sender_->StopDebugRecording();
+    sender_->StopDebugRecording();
+    return VCM_OK;
   }
 
   virtual void SuspendBelowMinBitrate() {

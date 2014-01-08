@@ -21,9 +21,46 @@
 namespace webrtc {
 namespace vcm {
 
+class DebugRecorder {
+ public:
+  DebugRecorder()
+      : cs_(CriticalSectionWrapper::CreateCriticalSection()), file_(NULL) {}
+
+  ~DebugRecorder() { Stop(); }
+
+  int Start(const char* file_name_utf8) {
+    CriticalSectionScoped cs(cs_.get());
+    if (file_)
+      fclose(file_);
+    file_ = fopen(file_name_utf8, "wb");
+    if (!file_)
+      return VCM_GENERAL_ERROR;
+    return VCM_OK;
+  }
+
+  void Stop() {
+    CriticalSectionScoped cs(cs_.get());
+    if (file_) {
+      fclose(file_);
+      file_ = NULL;
+    }
+  }
+
+  void Add(const I420VideoFrame& frame) {
+    CriticalSectionScoped cs(cs_.get());
+    if (file_)
+      PrintI420VideoFrame(frame, file_);
+  }
+
+ private:
+  scoped_ptr<CriticalSectionWrapper> cs_;
+  FILE* file_ GUARDED_BY(cs_);
+};
+
 VideoSender::VideoSender(const int32_t id, Clock* clock)
     : _id(id),
       clock_(clock),
+      recorder_(new DebugRecorder()),
       process_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       _sendCritSect(CriticalSectionWrapper::CreateCriticalSection()),
       _encoder(),
@@ -31,7 +68,6 @@ VideoSender::VideoSender(const int32_t id, Clock* clock)
       _nextFrameTypes(1, kVideoFrameDelta),
       _mediaOpt(id, clock_),
       _sendStatsCallback(NULL),
-      _encoderInputFile(NULL),
       _codecDataBase(id),
       frame_dropper_enabled_(true),
       _sendStatsTimer(1000, clock_),
@@ -40,9 +76,6 @@ VideoSender::VideoSender(const int32_t id, Clock* clock)
 
 VideoSender::~VideoSender() {
   delete _sendCritSect;
-  if (_encoderInputFile != NULL) {
-    fclose(_encoderInputFile);
-  }
 }
 
 int32_t VideoSender::Process() {
@@ -336,11 +369,7 @@ int32_t VideoSender::AddVideoFrame(const I420VideoFrame& videoFrame,
     _mediaOpt.UpdateContentData(contentMetrics);
     int32_t ret =
         _encoder->Encode(videoFrame, codecSpecificInfo, _nextFrameTypes);
-    if (_encoderInputFile != NULL) {
-      if (PrintI420VideoFrame(videoFrame, _encoderInputFile) < 0) {
-        return -1;
-      }
-    }
+    recorder_->Add(videoFrame);
     if (ret < 0) {
       WEBRTC_TRACE(webrtc::kTraceError,
                    webrtc::kTraceVideoCoding,
@@ -412,20 +441,11 @@ int VideoSender::SetSenderKeyFramePeriod(int periodMs) {
 }
 
 int VideoSender::StartDebugRecording(const char* file_name_utf8) {
-  CriticalSectionScoped cs(_sendCritSect);
-  _encoderInputFile = fopen(file_name_utf8, "wb");
-  if (_encoderInputFile == NULL)
-    return VCM_GENERAL_ERROR;
-  return VCM_OK;
+  return recorder_->Start(file_name_utf8);
 }
 
-int VideoSender::StopDebugRecording() {
-  CriticalSectionScoped cs(_sendCritSect);
-  if (_encoderInputFile != NULL) {
-    fclose(_encoderInputFile);
-    _encoderInputFile = NULL;
-  }
-  return VCM_OK;
+void VideoSender::StopDebugRecording() {
+  recorder_->Stop();
 }
 
 void VideoSender::SuspendBelowMinBitrate() {
