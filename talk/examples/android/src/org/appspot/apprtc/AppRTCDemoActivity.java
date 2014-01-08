@@ -178,6 +178,7 @@ public class AppRTCDemoActivity extends Activity
       PeerConnection pc) {
     DataChannel dc = pc.createDataChannel("dcLabel", new DataChannel.Init());
     abortUnless("dcLabel".equals(dc.label()), "WTF?");
+    dc.close();
     dc.dispose();
   }
 
