@@ -999,7 +999,7 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(SyncPacketDecode)) {
     // Even if there is RTP packet in NetEq's buffer, the first frame pulled
     // from NetEq starts with few zero samples. Here we measure this delay.
     if (n == 0) {
-      while(decoded[delay_samples] == 0) delay_samples++;
+      while (decoded[delay_samples] == 0) delay_samples++;
     }
     rtp_info.header.sequenceNumber++;
     rtp_info.header.timestamp += kBlockSize16kHz;
@@ -1182,7 +1182,6 @@ void NetEqDecodingTest::WrapTest(uint16_t start_seq_no,
     // Expect delay (in samples) to be less than 2 packets.
     EXPECT_LE(timestamp - neteq_->PlayoutTimestamp(),
               static_cast<uint32_t>(kSamples * 2));
-
   }
   // Make sure we have actually tested wrap-around.
   ASSERT_EQ(expect_seq_no_wrap, seq_no_wrapped);
@@ -1216,4 +1215,4 @@ TEST_F(NetEqDecodingTest, TimestampAndSequenceNumberWrap) {
   WrapTest(0xFFFF - 10, 0xFFFFFFFF - 5000, drop_seq_numbers, true, true);
 }
 
-}  // namespace
+}  // namespace webrtc

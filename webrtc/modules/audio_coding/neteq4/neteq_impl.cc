@@ -143,12 +143,12 @@ int NetEqImpl::InsertSyncPacket(const WebRtcRTPHeader& rtp_header,
   int error = InsertPacketInternal(
       rtp_header, kSyncPayload, sizeof(kSyncPayload), receive_timestamp, true);
 
-   if (error != 0) {
-     LOG_FERR1(LS_WARNING, InsertPacketInternal, error);
-     error_code_ = error;
-     return kFail;
-   }
-   return kOK;
+  if (error != 0) {
+    LOG_FERR1(LS_WARNING, InsertPacketInternal, error);
+    error_code_ = error;
+    return kFail;
+  }
+  return kOK;
 }
 
 int NetEqImpl::GetAudio(size_t max_length, int16_t* output_audio,

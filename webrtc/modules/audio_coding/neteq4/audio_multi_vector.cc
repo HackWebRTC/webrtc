@@ -74,8 +74,7 @@ void AudioMultiVector::PushBackInterleaved(const int16_t* append_this,
     return;
   }
   size_t length_per_channel = length / num_channels_;
-  int16_t* temp_array =
-      new int16_t[length_per_channel];  // Intermediate storage.
+  int16_t* temp_array = new int16_t[length_per_channel];  // Temporary storage.
   for (size_t channel = 0; channel < num_channels_; ++channel) {
     // Copy elements to |temp_array|.
     // Set |source_ptr| to first element of this channel.

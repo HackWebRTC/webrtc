@@ -65,4 +65,4 @@ class Normal {
 };
 
 }  // namespace webrtc
-#endif  // SRC_MODULES_AUDIO_CODING_NETEQ4_NORMAL_H_
+#endif  // WEBRTC_MODULES_AUDIO_CODING_NETEQ4_NORMAL_H_

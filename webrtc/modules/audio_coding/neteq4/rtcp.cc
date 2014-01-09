@@ -10,8 +10,9 @@
 
 #include "webrtc/modules/audio_coding/neteq4/rtcp.h"
 
-#include <algorithm>
 #include <string.h>
+
+#include <algorithm>
 
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/interface/module_common_types.h"
