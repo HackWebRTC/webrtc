@@ -41,10 +41,6 @@ public:
         const CodecSpecificInfo* codecSpecificInfo = NULL,
         const RTPFragmentationHeader* fragmentationHeader = NULL);
     /*
-    * Get number of encoded bytes
-    */
-    uint32_t EncodedBytes();
-    /*
     * Callback implementation - generic encoder encode complete
     */
     int32_t SetTransportCallback(VCMPacketizationCallback* transport);
@@ -54,22 +50,12 @@ public:
     void SetMediaOpt (media_optimization::MediaOptimization* mediaOpt);
 
     void SetPayloadType(uint8_t payloadType) { _payloadType = payloadType; };
-    void SetCodecType(VideoCodecType codecType) {_codecType = codecType;};
     void SetInternalSource(bool internalSource) { _internalSource = internalSource; };
 
 private:
-    /*
-     * Map information from info into rtp. If no relevant information is found
-     * in info, rtp is set to NULL.
-     */
-    static void CopyCodecSpecific(const CodecSpecificInfo& info,
-                                  RTPVideoHeader** rtp);
-
     VCMPacketizationCallback* _sendCallback;
     media_optimization::MediaOptimization* _mediaOpt;
-    uint32_t _encodedBytes;
     uint8_t _payloadType;
-    VideoCodecType _codecType;
     bool _internalSource;
 
     EncodedImageCallback* post_encode_callback_;

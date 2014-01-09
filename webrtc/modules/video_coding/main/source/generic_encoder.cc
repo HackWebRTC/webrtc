@@ -15,6 +15,39 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 namespace webrtc {
+namespace {
+// Map information from info into rtp. If no relevant information is found
+// in info, rtp is set to NULL.
+void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader** rtp) {
+  if (!info) {
+    *rtp = NULL;
+    return;
+  }
+  switch (info->codecType) {
+    case kVideoCodecVP8: {
+      (*rtp)->codec = kRtpVideoVp8;
+      (*rtp)->codecHeader.VP8.InitRTPVideoHeaderVP8();
+      (*rtp)->codecHeader.VP8.pictureId = info->codecSpecific.VP8.pictureId;
+      (*rtp)->codecHeader.VP8.nonReference =
+          info->codecSpecific.VP8.nonReference;
+      (*rtp)->codecHeader.VP8.temporalIdx = info->codecSpecific.VP8.temporalIdx;
+      (*rtp)->codecHeader.VP8.layerSync = info->codecSpecific.VP8.layerSync;
+      (*rtp)->codecHeader.VP8.tl0PicIdx = info->codecSpecific.VP8.tl0PicIdx;
+      (*rtp)->codecHeader.VP8.keyIdx = info->codecSpecific.VP8.keyIdx;
+      (*rtp)->simulcastIdx = info->codecSpecific.VP8.simulcastIdx;
+      return;
+    }
+    case kVideoCodecGeneric:
+      (*rtp)->codec = kRtpVideoGeneric;
+      (*rtp)->simulcastIdx = info->codecSpecific.generic.simulcast_idx;
+      return;
+    default:
+      // No codec specific info. Change RTP header pointer to NULL.
+      *rtp = NULL;
+      return;
+  }
+}
+}  // namespace
 
 //#define DEBUG_ENCODER_BIT_STREAM
 
@@ -50,10 +83,6 @@ VCMGenericEncoder::InitEncode(const VideoCodec* settings,
     _bitRate = settings->startBitrate * 1000;
     _frameRate = settings->maxFramerate;
     _codecType = settings->codecType;
-    if (_VCMencodedFrameCallback != NULL)
-    {
-        _VCMencodedFrameCallback->SetCodecType(_codecType);
-    }
     return _encoder.InitEncode(settings, numberOfCores, maxPayloadSize);
 }
 
@@ -127,8 +156,6 @@ int32_t
 VCMGenericEncoder::RegisterEncodeCallback(VCMEncodedFrameCallback* VCMencodedFrameCallback)
 {
    _VCMencodedFrameCallback = VCMencodedFrameCallback;
-
-   _VCMencodedFrameCallback->SetCodecType(_codecType);
    _VCMencodedFrameCallback->SetInternalSource(_internalSource);
    return _encoder.RegisterEncodeCompleteCallback(_VCMencodedFrameCallback);
 }
@@ -146,9 +173,7 @@ VCMEncodedFrameCallback::VCMEncodedFrameCallback(
     EncodedImageCallback* post_encode_callback):
 _sendCallback(),
 _mediaOpt(NULL),
-_encodedBytes(0),
 _payloadType(0),
-_codecType(kVideoCodecUnknown),
 _internalSource(false),
 post_encode_callback_(post_encode_callback)
 #ifdef DEBUG_ENCODER_BIT_STREAM
@@ -198,14 +223,7 @@ VCMEncodedFrameCallback::Encoded(
 
         RTPVideoHeader rtpVideoHeader;
         RTPVideoHeader* rtpVideoHeaderPtr = &rtpVideoHeader;
-        if (codecSpecificInfo)
-        {
-            CopyCodecSpecific(*codecSpecificInfo, &rtpVideoHeaderPtr);
-        }
-        else
-        {
-            rtpVideoHeaderPtr = NULL;
-        }
+        CopyCodecSpecific(codecSpecificInfo, &rtpVideoHeaderPtr);
 
         int32_t callbackReturn = _sendCallback->SendData(
             frameType,
@@ -225,9 +243,8 @@ VCMEncodedFrameCallback::Encoded(
     {
         return VCM_UNINITIALIZED;
     }
-    _encodedBytes = encodedBytes;
     if (_mediaOpt != NULL) {
-      _mediaOpt->UpdateWithEncodedData(_encodedBytes, encodedImage._timeStamp,
+      _mediaOpt->UpdateWithEncodedData(encodedBytes, encodedImage._timeStamp,
                                        frameType);
       if (_internalSource)
       {
@@ -237,12 +254,6 @@ VCMEncodedFrameCallback::Encoded(
     return VCM_OK;
 }
 
-uint32_t
-VCMEncodedFrameCallback::EncodedBytes()
-{
-    return _encodedBytes;
-}
-
 void
 VCMEncodedFrameCallback::SetMediaOpt(
     media_optimization::MediaOptimization *mediaOpt)
@@ -250,30 +261,4 @@ VCMEncodedFrameCallback::SetMediaOpt(
     _mediaOpt = mediaOpt;
 }
 
-void VCMEncodedFrameCallback::CopyCodecSpecific(const CodecSpecificInfo& info,
-                                                RTPVideoHeader** rtp) {
-  switch (info.codecType) {
-    case kVideoCodecVP8: {
-      (*rtp)->codec = kRtpVideoVp8;
-      (*rtp)->codecHeader.VP8.InitRTPVideoHeaderVP8();
-      (*rtp)->codecHeader.VP8.pictureId = info.codecSpecific.VP8.pictureId;
-      (*rtp)->codecHeader.VP8.nonReference =
-          info.codecSpecific.VP8.nonReference;
-      (*rtp)->codecHeader.VP8.temporalIdx = info.codecSpecific.VP8.temporalIdx;
-      (*rtp)->codecHeader.VP8.layerSync = info.codecSpecific.VP8.layerSync;
-      (*rtp)->codecHeader.VP8.tl0PicIdx = info.codecSpecific.VP8.tl0PicIdx;
-      (*rtp)->codecHeader.VP8.keyIdx = info.codecSpecific.VP8.keyIdx;
-      (*rtp)->simulcastIdx = info.codecSpecific.VP8.simulcastIdx;
-      return;
-    }
-    case kVideoCodecGeneric:
-      (*rtp)->codec = kRtpVideoGeneric;
-      (*rtp)->simulcastIdx = info.codecSpecific.generic.simulcast_idx;
-      return;
-    default:
-      // No codec specific info. Change RTP header pointer to NULL.
-      *rtp = NULL;
-      return;
-  }
-}
 }  // namespace webrtc
