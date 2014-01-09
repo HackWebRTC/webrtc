@@ -173,7 +173,7 @@ class TestVideoSender : public ::testing::Test {
   TestVideoSender() : clock_(1000), packetization_callback_(&clock_) {}
 
   virtual void SetUp() {
-    sender_.reset(new VideoSender(0, &clock_));
+    sender_.reset(new VideoSender(0, &clock_, &post_encode_callback_));
     EXPECT_EQ(0, sender_->InitializeSender());
     EXPECT_EQ(0, sender_->RegisterTransportCallback(&packetization_callback_));
   }
@@ -185,6 +185,7 @@ class TestVideoSender : public ::testing::Test {
 
   SimulatedClock clock_;
   PacketizationCallback packetization_callback_;
+  MockEncodedImageCallback post_encode_callback_;
   scoped_ptr<VideoSender> sender_;
   scoped_ptr<FrameGenerator> generator_;
 };

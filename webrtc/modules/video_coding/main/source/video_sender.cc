@@ -57,14 +57,16 @@ class DebugRecorder {
   FILE* file_ GUARDED_BY(cs_);
 };
 
-VideoSender::VideoSender(const int32_t id, Clock* clock)
+VideoSender::VideoSender(const int32_t id,
+                         Clock* clock,
+                         EncodedImageCallback* post_encode_callback)
     : _id(id),
       clock_(clock),
       recorder_(new DebugRecorder()),
       process_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       _sendCritSect(CriticalSectionWrapper::CreateCriticalSection()),
       _encoder(),
-      _encodedFrameCallback(),
+      _encodedFrameCallback(post_encode_callback),
       _nextFrameTypes(1, kVideoFrameDelta),
       _mediaOpt(id, clock_),
       _sendStatsCallback(NULL),
@@ -471,12 +473,5 @@ bool VideoSender::VideoSuspended() const {
   CriticalSectionScoped cs(_sendCritSect);
   return _mediaOpt.IsVideoSuspended();
 }
-
-void VideoSender::RegisterPostEncodeImageCallback(
-    EncodedImageCallback* observer) {
-  CriticalSectionScoped cs(_sendCritSect);
-  _encodedFrameCallback.RegisterPostEncodeImageCallback(observer);
-}
-
 }  // namespace vcm
 }  // namespace webrtc

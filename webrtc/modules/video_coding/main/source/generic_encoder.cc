@@ -142,15 +142,15 @@ VCMGenericEncoder::InternalSource() const
  /***************************
   * Callback Implementation
   ***************************/
-VCMEncodedFrameCallback::VCMEncodedFrameCallback():
+VCMEncodedFrameCallback::VCMEncodedFrameCallback(
+    EncodedImageCallback* post_encode_callback):
 _sendCallback(),
 _mediaOpt(NULL),
 _encodedBytes(0),
 _payloadType(0),
 _codecType(kVideoCodecUnknown),
 _internalSource(false),
-post_encode_callback_lock_(CriticalSectionWrapper::CreateCriticalSection()),
-post_encode_callback_(NULL)
+post_encode_callback_(post_encode_callback)
 #ifdef DEBUG_ENCODER_BIT_STREAM
 , _bitStreamAfterEncoder(NULL)
 #endif
@@ -180,12 +180,8 @@ VCMEncodedFrameCallback::Encoded(
     const CodecSpecificInfo* codecSpecificInfo,
     const RTPFragmentationHeader* fragmentationHeader)
 {
-    {
-      CriticalSectionScoped cs(post_encode_callback_lock_.get());
-      if (post_encode_callback_) {
-        post_encode_callback_->Encoded(encodedImage);
-      }
-    }
+    post_encode_callback_->Encoded(encodedImage);
+
     FrameType frameType = VCMEncodedFrame::ConvertFrameType(encodedImage._frameType);
 
     uint32_t encodedBytes = 0;
@@ -279,11 +275,5 @@ void VCMEncodedFrameCallback::CopyCodecSpecific(const CodecSpecificInfo& info,
       *rtp = NULL;
       return;
   }
-}
-
-void VCMEncodedFrameCallback::RegisterPostEncodeImageCallback(
-    EncodedImageCallback* callback) {
-  CriticalSectionScoped cs(post_encode_callback_lock_.get());
-  post_encode_callback_ = callback;
 }
 }  // namespace webrtc

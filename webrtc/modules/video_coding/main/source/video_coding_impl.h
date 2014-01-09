@@ -54,7 +54,10 @@ class VideoSender {
  public:
   typedef VideoCodingModule::SenderNackMode SenderNackMode;
 
-  VideoSender(const int32_t id, Clock* clock);
+  VideoSender(const int32_t id,
+              Clock* clock,
+              EncodedImageCallback* post_encode_callback);
+
   ~VideoSender();
 
   int32_t InitializeSender();
@@ -102,9 +105,6 @@ class VideoSender {
 
   void SuspendBelowMinBitrate();
   bool VideoSuspended() const;
-
-  void RegisterPostEncodeImageCallback(
-      EncodedImageCallback* post_encode_callback);
 
   int32_t TimeUntilNextProcess();
   int32_t Process();
