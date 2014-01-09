@@ -34,6 +34,7 @@
 #endif
 
 #include "talk/base/byteorder.h"
+#include "talk/base/logging.h"
 #include "talk/base/signalthread.h"
 
 namespace talk_base {
