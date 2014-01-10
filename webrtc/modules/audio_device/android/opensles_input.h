@@ -41,6 +41,7 @@ class OpenSlesInput {
   static int32_t SetAndroidAudioDeviceObjects(void* javaVM,
                                               void* env,
                                               void* context);
+  static void ClearAndroidAudioDeviceObjects();
 
   // Main initializaton and termination
   int32_t Init();

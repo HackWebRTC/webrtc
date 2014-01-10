@@ -30,6 +30,12 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     }
     return InputType::SetAndroidAudioDeviceObjects(javaVM, env, context);
   }
+
+  static void ClearAndroidAudioDeviceObjects() {
+    OutputType::ClearAndroidAudioDeviceObjects();
+    InputType::ClearAndroidAudioDeviceObjects();
+  }
+
   explicit AudioDeviceTemplate(const int32_t id)
       : output_(id),
         input_(id, &output_) {

@@ -76,6 +76,10 @@ int32_t OpenSlesOutput::SetAndroidAudioDeviceObjects(void* javaVM,
   return 0;
 }
 
+void OpenSlesOutput::ClearAndroidAudioDeviceObjects() {
+  AudioManagerJni::ClearAndroidAudioDeviceObjects();
+}
+
 int32_t OpenSlesOutput::Init() {
   assert(!initialized_);
 

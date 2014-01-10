@@ -30,7 +30,7 @@ class AudioTrackJni : public PlayoutDelayProvider {
  public:
   static int32_t SetAndroidAudioDeviceObjects(void* javaVM, void* env,
                                               void* context);
-
+  static void ClearAndroidAudioDeviceObjects();
   explicit AudioTrackJni(const int32_t id);
   virtual ~AudioTrackJni();
 
