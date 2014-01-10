@@ -167,6 +167,7 @@
             'PCM16B',
             'neteq_unittest_tools',
             '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+            '<(webrtc_root)/test/test.gyp:test_support_main',
           ],
           'sources': [
             'test/neteq_speed_test.cc',
