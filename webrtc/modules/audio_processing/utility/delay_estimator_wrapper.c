@@ -323,7 +323,7 @@ int WebRtc_set_allowed_offset(void* handle, int allowed_offset) {
 }
 
 int WebRtc_get_allowed_offset(const void* handle) {
-  DelayEstimator* self = (DelayEstimator*) handle;
+  const DelayEstimator* self = (const DelayEstimator*) handle;
 
   if (self == NULL) {
     return -1;
@@ -345,7 +345,7 @@ int WebRtc_enable_robust_validation(void* handle, int enable) {
 }
 
 int WebRtc_is_robust_validation_enabled(const void* handle) {
-  DelayEstimator* self = (DelayEstimator*) handle;
+  const DelayEstimator* self = (const DelayEstimator*) handle;
 
   if (self == NULL) {
     return -1;
