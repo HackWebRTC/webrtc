@@ -94,6 +94,24 @@ ISACTest::ISACTest(int testMode, const Config& config)
 
 ISACTest::~ISACTest() {}
 
+void ISACTest::Run10ms() {
+  AudioFrame audioFrame;
+  EXPECT_GT(_inFileA.Read10MsData(audioFrame), 0);
+  EXPECT_EQ(0, _acmA->Add10MsData(audioFrame));
+  EXPECT_EQ(0, _acmB->Add10MsData(audioFrame));
+  EXPECT_GT(_acmA->Process(), -1);
+  EXPECT_GT(_acmB->Process(), -1);
+  EXPECT_EQ(0, _acmA->PlayoutData10Ms(32000, &audioFrame));
+  _outFileA.Write10MsData(audioFrame);
+  EXPECT_EQ(0, _acmB->PlayoutData10Ms(32000, &audioFrame));
+  _outFileB.Write10MsData(audioFrame);
+}
+
+
+#if (defined(WEBRTC_CODEC_ISAC))
+// Depending on whether the floating-point iSAC is activated the following
+// implementations would differ.
+
 void ISACTest::Setup() {
   int codecCntr;
   CodecInst codecParam;
@@ -244,19 +262,6 @@ void ISACTest::Perform() {
   }
 }
 
-void ISACTest::Run10ms() {
-  AudioFrame audioFrame;
-  EXPECT_GT(_inFileA.Read10MsData(audioFrame), 0);
-  EXPECT_EQ(0, _acmA->Add10MsData(audioFrame));
-  EXPECT_EQ(0, _acmB->Add10MsData(audioFrame));
-  EXPECT_GT(_acmA->Process(), -1);
-  EXPECT_GT(_acmB->Process(), -1);
-  EXPECT_EQ(0, _acmA->PlayoutData10Ms(32000, &audioFrame));
-  _outFileA.Write10MsData(audioFrame);
-  EXPECT_EQ(0, _acmB->PlayoutData10Ms(32000, &audioFrame));
-  _outFileB.Write10MsData(audioFrame);
-}
-
 void ISACTest::EncodeDecode(int testNr, ACMTestISACConfig& wbISACConfig,
                             ACMTestISACConfig& swbISACConfig) {
   // Files in Side A and B
@@ -316,9 +321,6 @@ void ISACTest::EncodeDecode(int testNr, ACMTestISACConfig& wbISACConfig,
     printf("\n\nSide B statistics\n\n");
     _channel_B2A->PrintStats(_paramISAC16kHz);
   }
-
-  _channel_A2B->ResetStats();
-  _channel_B2A->ResetStats();
 
   _outFileA.Close();
   _outFileB.Close();
@@ -392,5 +394,210 @@ void ISACTest::SwitchingSamplingRate(int testNr, int maxSampRateChange) {
   _inFileA.Close();
   _inFileB.Close();
 }
+#else  // Only iSAC fixed-point is defined.
+
+static int PayloadSizeToInstantaneousRate(int payload_size_bytes,
+                                          int frame_size_ms) {
+    return payload_size_bytes * 8 / frame_size_ms / 1000;
+}
+
+void ISACTest::Setup() {
+  CodecInst codec_param;
+  codec_param.plfreq = 0;  // Invalid value.
+  for (int n = 0; n < AudioCodingModule::NumberOfCodecs(); ++n) {
+    EXPECT_EQ(0, AudioCodingModule::Codec(n, &codec_param));
+    if (!STR_CASE_CMP(codec_param.plname, "ISAC")) {
+      ASSERT_EQ(16000, codec_param.plfreq);
+      memcpy(&_paramISAC16kHz, &codec_param, sizeof(codec_param));
+      _idISAC16kHz = n;
+      break;
+    }
+  }
+  EXPECT_GT(codec_param.plfreq, 0);
+
+  EXPECT_EQ(0, _acmA->RegisterReceiveCodec(_paramISAC16kHz));
+  EXPECT_EQ(0, _acmB->RegisterReceiveCodec(_paramISAC16kHz));
+
+  //--- Set A-to-B channel
+  _channel_A2B.reset(new Channel);
+  EXPECT_EQ(0, _acmA->RegisterTransportCallback(_channel_A2B.get()));
+  _channel_A2B->RegisterReceiverACM(_acmB.get());
+
+  //--- Set B-to-A channel
+  _channel_B2A.reset(new Channel);
+  EXPECT_EQ(0, _acmB->RegisterTransportCallback(_channel_B2A.get()));
+  _channel_B2A->RegisterReceiverACM(_acmA.get());
+
+  file_name_swb_ = webrtc::test::ResourcePath("audio_coding/testfile32kHz",
+                                              "pcm");
+
+  EXPECT_EQ(0, _acmB->RegisterSendCodec(_paramISAC16kHz));
+  EXPECT_EQ(0, _acmA->RegisterSendCodec(_paramISAC16kHz));
+}
+
+void ISACTest::EncodeDecode(int test_number, ACMTestISACConfig& isac_config_a,
+                            ACMTestISACConfig& isac_config_b) {
+  // Files in Side A and B
+  _inFileA.Open(file_name_swb_, 32000, "rb", true);
+  _inFileB.Open(file_name_swb_, 32000, "rb", true);
+
+  std::string file_name_out;
+  std::stringstream file_stream_a;
+  std::stringstream file_stream_b;
+  file_stream_a << webrtc::test::OutputPath();
+  file_stream_b << webrtc::test::OutputPath();
+  file_stream_a << "out_iSACTest_A_" << test_number << ".pcm";
+  file_stream_b << "out_iSACTest_B_" << test_number << ".pcm";
+  file_name_out = file_stream_a.str();
+  _outFileA.Open(file_name_out, 32000, "wb");
+  file_name_out = file_stream_b.str();
+  _outFileB.Open(file_name_out, 32000, "wb");
+
+  CodecInst codec;
+  EXPECT_EQ(0, _acmA->SendCodec(&codec));
+  EXPECT_EQ(0, _acmB->SendCodec(&codec));
+
+  // Set the configurations.
+  SetISAConfig(isac_config_a, _acmA.get(), _testMode);
+  SetISAConfig(isac_config_b, _acmB.get(), _testMode);
+
+  bool adaptiveMode = false;
+  if (isac_config_a.currentRateBitPerSec == -1 ||
+      isac_config_b.currentRateBitPerSec == -1) {
+    adaptiveMode = true;
+  }
+  _channel_A2B->ResetStats();
+  _channel_B2A->ResetStats();
+
+  EventWrapper* myEvent = EventWrapper::Create();
+  EXPECT_TRUE(myEvent->StartTimer(true, 10));
+  while (!(_inFileA.EndOfFile() || _inFileA.Rewinded())) {
+    Run10ms();
+    if (adaptiveMode && _testMode != 0) {
+      myEvent->Wait(5000);
+    }
+  }
+
+  if (_testMode != 0) {
+    printf("\n\nSide A statistics\n\n");
+    _channel_A2B->PrintStats(_paramISAC32kHz);
+
+    printf("\n\nSide B statistics\n\n");
+    _channel_B2A->PrintStats(_paramISAC16kHz);
+  }
+
+  _outFileA.Close();
+  _outFileB.Close();
+  _inFileA.Close();
+  _inFileB.Close();
+}
+
+void ISACTest::Perform() {
+  Setup();
+
+  int16_t test_number = 0;
+  ACMTestISACConfig isac_config_a;
+  ACMTestISACConfig isac_config_b;
+
+  SetISACConfigDefault(isac_config_a);
+  SetISACConfigDefault(isac_config_b);
+
+  // Instantaneous mode.
+  isac_config_a.currentRateBitPerSec = 32000;
+  isac_config_b.currentRateBitPerSec = 12000;
+  EncodeDecode(test_number, isac_config_a, isac_config_b);
+  test_number++;
+
+  SetISACConfigDefault(isac_config_a);
+  SetISACConfigDefault(isac_config_b);
+
+  // Channel adaptive.
+  isac_config_a.currentRateBitPerSec = -1;
+  isac_config_b.currentRateBitPerSec = -1;
+  isac_config_a.initRateBitPerSec = 13000;
+  isac_config_a.initFrameSizeInMsec = 60;
+  isac_config_a.enforceFrameSize = true;
+  isac_config_a.currentFrameSizeMsec = 60;
+  isac_config_b.initRateBitPerSec = 20000;
+  isac_config_b.initFrameSizeInMsec = 30;
+  EncodeDecode(test_number, isac_config_a, isac_config_b);
+  test_number++;
+
+  SetISACConfigDefault(isac_config_a);
+  SetISACConfigDefault(isac_config_b);
+  isac_config_a.currentRateBitPerSec = 32000;
+  isac_config_b.currentRateBitPerSec = 32000;
+  isac_config_a.currentFrameSizeMsec = 30;
+  isac_config_b.currentFrameSizeMsec = 60;
+
+  int user_input;
+  const int kMaxPayloadLenBytes30MSec = 110;
+  const int kMaxPayloadLenBytes60MSec = 160;
+  if ((_testMode == 0) || (_testMode == 1)) {
+    isac_config_a.maxPayloadSizeByte =
+        static_cast<uint16_t>(kMaxPayloadLenBytes30MSec);
+    isac_config_b.maxPayloadSizeByte =
+        static_cast<uint16_t>(kMaxPayloadLenBytes60MSec);
+  } else {
+    printf("Enter the max payload-size for side A: ");
+    CHECK_ERROR(scanf("%d", &user_input));
+    isac_config_a.maxPayloadSizeByte = (uint16_t) user_input;
+    printf("Enter the max payload-size for side B: ");
+    CHECK_ERROR(scanf("%d", &user_input));
+    isac_config_b.maxPayloadSizeByte = (uint16_t) user_input;
+  }
+  EncodeDecode(test_number, isac_config_a, isac_config_b);
+  test_number++;
+
+  ACMTestPayloadStats payload_stats;
+  _channel_A2B->Stats(_paramISAC16kHz, payload_stats);
+  EXPECT_GT(payload_stats.frameSizeStats[0].maxPayloadLen, 0);
+  EXPECT_LE(payload_stats.frameSizeStats[0].maxPayloadLen,
+            static_cast<int>(isac_config_a.maxPayloadSizeByte));
+  _channel_B2A->Stats(_paramISAC16kHz, payload_stats);
+  EXPECT_GT(payload_stats.frameSizeStats[0].maxPayloadLen, 0);
+  EXPECT_LE(payload_stats.frameSizeStats[0].maxPayloadLen,
+            static_cast<int>(isac_config_b.maxPayloadSizeByte));
+
+  _acmA->ResetEncoder();
+  _acmB->ResetEncoder();
+  SetISACConfigDefault(isac_config_a);
+  SetISACConfigDefault(isac_config_b);
+  isac_config_a.currentRateBitPerSec = 32000;
+  isac_config_b.currentRateBitPerSec = 32000;
+  isac_config_a.currentFrameSizeMsec = 30;
+  isac_config_b.currentFrameSizeMsec = 60;
+
+  const int kMaxEncodingRateBitsPerSec = 32000;
+  if ((_testMode == 0) || (_testMode == 1)) {
+    isac_config_a.maxRateBitPerSec =
+        static_cast<uint32_t>(kMaxEncodingRateBitsPerSec);
+    isac_config_b.maxRateBitPerSec =
+        static_cast<uint32_t>(kMaxEncodingRateBitsPerSec);
+  } else {
+    printf("Enter the max rate for side A: ");
+    CHECK_ERROR(scanf("%d", &user_input));
+    isac_config_a.maxRateBitPerSec = (uint32_t) user_input;
+    printf("Enter the max rate for side B: ");
+    CHECK_ERROR(scanf("%d", &user_input));
+    isac_config_b.maxRateBitPerSec = (uint32_t) user_input;
+  }
+  EncodeDecode(test_number, isac_config_a, isac_config_b);
+
+  _channel_A2B->Stats(_paramISAC16kHz, payload_stats);
+  EXPECT_GT(payload_stats.frameSizeStats[0].maxPayloadLen, 0);
+  EXPECT_LE(PayloadSizeToInstantaneousRate(
+      payload_stats.frameSizeStats[0].maxPayloadLen,
+      isac_config_a.currentFrameSizeMsec),
+      static_cast<int>(isac_config_a.maxRateBitPerSec));
+
+  _channel_B2A->Stats(_paramISAC16kHz, payload_stats);
+  EXPECT_GT(payload_stats.frameSizeStats[0].maxPayloadLen, 0);
+  EXPECT_LE(PayloadSizeToInstantaneousRate(
+      payload_stats.frameSizeStats[0].maxPayloadLen,
+      isac_config_b.currentFrameSizeMsec),
+      static_cast<int>(isac_config_b.maxRateBitPerSec));
+}
+#endif  // WEBRTC_CODEC_ISAC
 
 }  // namespace webrtc

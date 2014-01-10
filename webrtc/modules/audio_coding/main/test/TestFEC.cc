@@ -63,11 +63,11 @@ void TestFEC::Perform() {
   return;
 #endif
   char nameG722[] = "G722";
-  EXPECT_EQ(0, RegisterSendCodec('A', nameG722, 16000));
+  RegisterSendCodec('A', nameG722, 16000);
   char nameCN[] = "CN";
-  EXPECT_EQ(0, RegisterSendCodec('A', nameCN, 16000));
+  RegisterSendCodec('A', nameCN, 16000);
   char nameRED[] = "RED";
-  EXPECT_EQ(0, RegisterSendCodec('A', nameRED));
+  RegisterSendCodec('A', nameRED);
   OpenOutFile(_testCntr);
   EXPECT_EQ(0, SetVAD(true, true, VADAggr));
   EXPECT_EQ(0, _acmA->SetFECStatus(false));
@@ -81,6 +81,9 @@ void TestFEC::Perform() {
   Run();
   _outFileB.Close();
 
+  // FEC for iSAC is different that other codecs, therefore, we expect that iSAC
+  // be enabled for this test. The following is common for both floating-point
+  // and fixed-point implementations.
   char nameISAC[] = "iSAC";
   RegisterSendCodec('A', nameISAC, 16000);
   OpenOutFile(_testCntr);
@@ -96,6 +99,8 @@ void TestFEC::Perform() {
   Run();
   _outFileB.Close();
 
+#if (defined(WEBRTC_CODEC_ISAC))
+  // Only for floating-point implementation, where super-wideband is supported.
   RegisterSendCodec('A', nameISAC, 32000);
   OpenOutFile(_testCntr);
   EXPECT_EQ(0, SetVAD(true, true, VADVeryAggr));
@@ -129,11 +134,26 @@ void TestFEC::Perform() {
   EXPECT_TRUE(_acmA->FECStatus());
   Run();
   _outFileB.Close();
+#else
+  // For fixed-point implementation.
+  OpenOutFile(_testCntr);
+  EXPECT_EQ(0, SetVAD(false, false, VADVeryAggr));
+  EXPECT_EQ(0, _acmA->SetFECStatus(false));
+  EXPECT_FALSE(_acmA->FECStatus());
+  Run();
+  _outFileB.Close();
+
+  EXPECT_EQ(0, _acmA->SetFECStatus(true));
+  EXPECT_TRUE(_acmA->FECStatus());
+  OpenOutFile(_testCntr);
+  Run();
+  _outFileB.Close();
+#endif
 
   _channelA2B->SetFECTestWithPacketLoss(true);
 
-  EXPECT_EQ(0, RegisterSendCodec('A', nameG722));
-  EXPECT_EQ(0, RegisterSendCodec('A', nameCN, 16000));
+  RegisterSendCodec('A', nameG722);
+  RegisterSendCodec('A', nameCN, 16000);
   OpenOutFile(_testCntr);
   EXPECT_EQ(0, SetVAD(true, true, VADAggr));
   EXPECT_EQ(0, _acmA->SetFECStatus(false));
@@ -161,6 +181,8 @@ void TestFEC::Perform() {
   Run();
   _outFileB.Close();
 
+#if (defined(WEBRTC_CODEC_ISAC))
+  // Only for floating-point implementation, where super-wideband is supported.
   RegisterSendCodec('A', nameISAC, 32000);
   OpenOutFile(_testCntr);
   EXPECT_EQ(0, SetVAD(true, true, VADVeryAggr));
@@ -194,16 +216,31 @@ void TestFEC::Perform() {
   EXPECT_TRUE(_acmA->FECStatus());
   Run();
   _outFileB.Close();
+#else
+  // For fixed-point implementation.
+  OpenOutFile(_testCntr);
+  EXPECT_EQ(0, SetVAD(false, false, VADVeryAggr));
+  EXPECT_EQ(0, _acmA->SetFECStatus(false));
+  EXPECT_FALSE(_acmA->FECStatus());
+  Run();
+  _outFileB.Close();
+
+  EXPECT_EQ(0, _acmA->SetFECStatus(true));
+  EXPECT_TRUE(_acmA->FECStatus());
+  OpenOutFile(_testCntr);
+  Run();
+  _outFileB.Close();
+#endif
 }
 
 int32_t TestFEC::SetVAD(bool enableDTX, bool enableVAD, ACMVADMode vadMode) {
   return _acmA->SetVAD(enableDTX, enableVAD, vadMode);
 }
 
-int16_t TestFEC::RegisterSendCodec(char side, char* codecName,
+void TestFEC::RegisterSendCodec(char side, char* codecName,
                                    int32_t samplingFreqHz) {
   std::cout << std::flush;
-  AudioCodingModule* myACM;
+  AudioCodingModule* myACM = NULL;
   switch (side) {
     case 'A': {
       myACM = _acmA.get();
@@ -214,20 +251,15 @@ int16_t TestFEC::RegisterSendCodec(char side, char* codecName,
       break;
     }
     default:
-      return -1;
+      ASSERT_TRUE(false);
   }
 
-  if (myACM == NULL) {
-    assert(false);
-    return -1;
-  }
+  ASSERT_TRUE(myACM != NULL);
+
   CodecInst myCodecParam;
-  EXPECT_GT(AudioCodingModule::Codec(codecName, &myCodecParam,
+  ASSERT_GT(AudioCodingModule::Codec(codecName, &myCodecParam,
                                      samplingFreqHz, 1), -1);
-  EXPECT_GT(myACM->RegisterSendCodec(myCodecParam), -1);
-
-  // Initialization was successful.
-  return 0;
+  ASSERT_GT(myACM->RegisterSendCodec(myCodecParam), -1);
 }
 
 void TestFEC::Run() {
