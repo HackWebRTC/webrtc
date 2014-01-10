@@ -30,6 +30,7 @@
 #include "webrtc/test/fake_encoder.h"
 #include "webrtc/test/frame_generator.h"
 #include "webrtc/test/frame_generator_capturer.h"
+#include "webrtc/test/null_transport.h"
 #include "webrtc/test/rtp_rtcp_observer.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/perf_test.h"
@@ -269,6 +270,32 @@ TEST_F(CallTest, UsesTraceCallback) {
   // The TraceCallback instance MUST outlive Calls, destroy Calls explicitly.
   sender_call_.reset();
   receiver_call_.reset();
+}
+
+TEST_F(CallTest, ReceiverCanBeStartedTwice) {
+  test::NullTransport transport;
+  CreateCalls(Call::Config(&transport), Call::Config(&transport));
+
+  CreateTestConfigs();
+  CreateStreams();
+
+  receive_stream_->StartReceiving();
+  receive_stream_->StartReceiving();
+
+  DestroyStreams();
+}
+
+TEST_F(CallTest, ReceiverCanBeStoppedTwice) {
+  test::NullTransport transport;
+  CreateCalls(Call::Config(&transport), Call::Config(&transport));
+
+  CreateTestConfigs();
+  CreateStreams();
+
+  receive_stream_->StopReceiving();
+  receive_stream_->StopReceiving();
+
+  DestroyStreams();
 }
 
 TEST_F(CallTest, RendersSingleDelayedFrame) {

@@ -259,17 +259,13 @@ void VideoSendStream::SwapFrame(I420VideoFrame* frame) {
 VideoSendStreamInput* VideoSendStream::Input() { return this; }
 
 void VideoSendStream::StartSending() {
-  if (video_engine_base_->StartSend(channel_) != 0)
-    abort();
-  if (video_engine_base_->StartReceive(channel_) != 0)
-    abort();
+  video_engine_base_->StartSend(channel_);
+  video_engine_base_->StartReceive(channel_);
 }
 
 void VideoSendStream::StopSending() {
-  if (video_engine_base_->StopSend(channel_) != 0)
-    abort();
-  if (video_engine_base_->StopReceive(channel_) != 0)
-    abort();
+  video_engine_base_->StopSend(channel_);
+  video_engine_base_->StopReceive(channel_);
 }
 
 bool VideoSendStream::SetCodec(const VideoCodec& codec) {

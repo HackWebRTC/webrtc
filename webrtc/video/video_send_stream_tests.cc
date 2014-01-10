@@ -193,6 +193,30 @@ void VideoSendStreamTest::SendsSetSsrcs(size_t num_ssrcs,
   call->DestroyVideoSendStream(send_stream_);
 }
 
+TEST_F(VideoSendStreamTest, CanStartStartedStream) {
+  test::NullTransport transport;
+  Call::Config call_config(&transport);
+  scoped_ptr<Call> call(Call::Create(call_config));
+
+  VideoSendStream::Config config = GetSendTestConfig(call.get(), 1);
+  VideoSendStream* stream = call->CreateVideoSendStream(config);
+  stream->StartSending();
+  stream->StartSending();
+  call->DestroyVideoSendStream(stream);
+}
+
+TEST_F(VideoSendStreamTest, CanStopStoppedStream) {
+  test::NullTransport transport;
+  Call::Config call_config(&transport);
+  scoped_ptr<Call> call(Call::Create(call_config));
+
+  VideoSendStream::Config config = GetSendTestConfig(call.get(), 1);
+  VideoSendStream* stream = call->CreateVideoSendStream(config);
+  stream->StopSending();
+  stream->StopSending();
+  call->DestroyVideoSendStream(stream);
+}
+
 TEST_F(VideoSendStreamTest, SendsSetSsrc) { SendsSetSsrcs(1, false); }
 
 TEST_F(VideoSendStreamTest, SendsSetSimulcastSsrcs) {
