@@ -1150,17 +1150,11 @@ int VoEBaseImpl::ProcessRecordedDataWithAPM(
   assert(_shared->transmit_mixer() != NULL);
   assert(_shared->audio_device() != NULL);
 
-  bool is_analog_agc(false);
-  if (_shared->audio_processing() &&
-      _shared->audio_processing()->gain_control()->mode() ==
-          GainControl::kAdaptiveAnalog) {
-    is_analog_agc = true;
-  }
-
-  // Only deal with the volume in adaptive analog mode.
   uint32_t max_volume = 0;
   uint16_t current_voe_mic_level = 0;
-  if (is_analog_agc) {
+  // Check for zero to skip this calculation; the consumer may use this to
+  // indicate no volume is available.
+  if (current_volume != 0) {
     // Scale from ADM to VoE level range
     if (_shared->audio_device()->MaxMicrophoneVolume(&max_volume) == 0) {
       if (max_volume) {
@@ -1208,9 +1202,6 @@ int VoEBaseImpl::ProcessRecordedDataWithAPM(
     _shared->transmit_mixer()->EncodeAndSend(voe_channels,
                                              number_of_voe_channels);
   }
-
-  if (!is_analog_agc)
-    return 0;
 
   // Scale from VoE to ADM level range.
   uint32_t new_voe_mic_level = _shared->transmit_mixer()->CaptureLevel();

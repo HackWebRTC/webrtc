@@ -494,7 +494,6 @@ void TransmitMixer::EncodeAndSend(const int voe_channels[],
 
 uint32_t TransmitMixer::CaptureLevel() const
 {
-    CriticalSectionScoped cs(&_critSect);
     return _captureLevel;
 }
 
@@ -1341,11 +1340,10 @@ void TransmitMixer::ProcessAudio(int delay_ms, int clock_drift,
     assert(false);
   }
 
-  CriticalSectionScoped cs(&_critSect);
-
   // Store new capture level. Only updated when analog AGC is enabled.
   _captureLevel = agc->stream_analog_level();
 
+  CriticalSectionScoped cs(&_critSect);
   // Triggers a callback in OnPeriodicProcess().
   _saturationWarning |= agc->stream_is_saturated();
 }

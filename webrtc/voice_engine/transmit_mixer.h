@@ -70,6 +70,7 @@ public:
     // channels for encoding and sending to the network.
     void EncodeAndSend(const int voe_channels[], int number_of_voe_channels);
 
+    // Must be called on the same thread as PrepareDemux().
     uint32_t CaptureLevel() const;
 
     int32_t StopSend();
