@@ -30,7 +30,7 @@
 
 #include <errno.h>
 #include <string>
-#include <vector>
+#include <set>
 
 namespace cricket {
 // Some ERRNO values get re-#defined to WSA* equivalents in some talk/
@@ -216,7 +216,6 @@ class SctpDataMediaChannel : public DataMediaChannel,
                                talk_base::Buffer* buffer);
   void OnNotificationFromSctp(talk_base::Buffer* buffer);
   void OnNotificationAssocChange(const sctp_assoc_change& change);
-
   void OnStreamResetEvent(const struct sctp_stream_reset_event* evt);
 
   // Responsible for marshalling incoming data to the channels listeners, and

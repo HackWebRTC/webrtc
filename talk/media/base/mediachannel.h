@@ -50,10 +50,6 @@ class RateLimiter;
 class Timing;
 }
 
-namespace webrtc {
-struct DataChannelInit;
-}
-
 namespace cricket {
 
 class AudioRenderer;
@@ -1157,11 +1153,6 @@ class DataMediaChannel : public MediaChannel {
   // Signal when the media channel is ready to send the stream. Arguments are:
   //     writable(bool)
   sigslot::signal1<bool> SignalReadyToSend;
-  // Signal for notifying when a new stream is added from the remote side. Used
-  // for the in-band negotioation through the OPEN message for SCTP data
-  // channel.
-  sigslot::signal2<const std::string&, const webrtc::DataChannelInit&>
-      SignalNewStreamReceived;
 };
 
 }  // namespace cricket

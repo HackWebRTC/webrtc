@@ -27,6 +27,7 @@
 
 #ifndef TALK_BASE_ASYNCSOCKET_H_
 #define TALK_BASE_ASYNCSOCKET_H_
+#ifndef __native_client__
 
 #include "talk/base/common.h"
 #include "talk/base/sigslot.h"
@@ -138,4 +139,5 @@ class AsyncSocketAdapter : public AsyncSocket, public sigslot::has_slots<> {
 
 }  // namespace talk_base
 
+#endif  //  __native_client__
 #endif  // TALK_BASE_ASYNCSOCKET_H_

@@ -26,6 +26,7 @@
  */
 
 #include "talk/app/webrtc/datachannel.h"
+#include "talk/app/webrtc/sctputils.h"
 #include "talk/app/webrtc/test/fakedatachannelprovider.h"
 #include "talk/base/gunit.h"
 #include "testing/base/public/gmock.h"
@@ -42,7 +43,8 @@ class SctpDataChannelTest : public testing::Test {
  protected:
   SctpDataChannelTest()
       : webrtc_data_channel_(
-          DataChannel::Create(&provider_, cricket::DCT_SCTP, "test", &init_)) {
+          DataChannel::Create(
+              &provider_, cricket::DCT_SCTP, "test", init_)) {
   }
 
   void SetChannelReady() {
@@ -59,7 +61,7 @@ class SctpDataChannelTest : public testing::Test {
     webrtc_data_channel_->RegisterObserver(observer_.get());
   }
 
-  webrtc::DataChannelInit init_;
+  webrtc::InternalDataChannelInit init_;
   FakeDataChannelProvider provider_;
   talk_base::scoped_ptr<FakeDataChannelObserver> observer_;
   talk_base::scoped_refptr<DataChannel> webrtc_data_channel_;
@@ -69,7 +71,7 @@ class SctpDataChannelTest : public testing::Test {
 TEST_F(SctpDataChannelTest, ConnectedToTransportOnCreated) {
   provider_.set_transport_available(true);
   talk_base::scoped_refptr<DataChannel> dc = DataChannel::Create(
-      &provider_, cricket::DCT_SCTP, "test1", &init_);
+      &provider_, cricket::DCT_SCTP, "test1", init_);
 
   EXPECT_TRUE(provider_.IsConnected(dc.get()));
   // The sid is not set yet, so it should not have added the streams.
@@ -153,13 +155,67 @@ TEST_F(SctpDataChannelTest, OpenMessageSent) {
 // state.
 TEST_F(SctpDataChannelTest, LateCreatedChannelTransitionToOpen) {
   SetChannelReady();
-  webrtc::DataChannelInit init;
+  webrtc::InternalDataChannelInit init;
   init.id = 1;
-  talk_base::scoped_refptr<DataChannel> dc =
-      DataChannel::Create(&provider_, cricket::DCT_SCTP, "test1", &init);
+  talk_base::scoped_refptr<DataChannel> dc = DataChannel::Create(
+      &provider_, cricket::DCT_SCTP, "test1", init);
   EXPECT_EQ(webrtc::DataChannelInterface::kConnecting, dc->state());
   EXPECT_TRUE_WAIT(webrtc::DataChannelInterface::kOpen == dc->state(),
                    1000);
+}
+
+// Tests that an unordered DataChannel sends data as ordered until the OPEN_ACK
+// message is received.
+TEST_F(SctpDataChannelTest, SendUnorderedAfterReceivesOpenAck) {
+  SetChannelReady();
+  webrtc::InternalDataChannelInit init;
+  init.id = 1;
+  init.ordered = false;
+  talk_base::scoped_refptr<DataChannel> dc = DataChannel::Create(
+      &provider_, cricket::DCT_SCTP, "test1", init);
+
+  EXPECT_EQ_WAIT(webrtc::DataChannelInterface::kOpen, dc->state(), 1000);
+
+  // Sends a message and verifies it's ordered.
+  webrtc::DataBuffer buffer("some data");
+  ASSERT_TRUE(dc->Send(buffer));
+  EXPECT_TRUE(provider_.last_send_data_params().ordered);
+
+  // Emulates receiving an OPEN_ACK message.
+  cricket::ReceiveDataParams params;
+  params.ssrc = init.id;
+  params.type = cricket::DMT_CONTROL;
+  talk_base::Buffer payload;
+  webrtc::WriteDataChannelOpenAckMessage(&payload);
+  dc->OnDataReceived(NULL, params, payload);
+
+  // Sends another message and verifies it's unordered.
+  ASSERT_TRUE(dc->Send(buffer));
+  EXPECT_FALSE(provider_.last_send_data_params().ordered);
+}
+
+// Tests that an unordered DataChannel sends unordered data after any DATA
+// message is received.
+TEST_F(SctpDataChannelTest, SendUnorderedAfterReceiveData) {
+  SetChannelReady();
+  webrtc::InternalDataChannelInit init;
+  init.id = 1;
+  init.ordered = false;
+  talk_base::scoped_refptr<DataChannel> dc = DataChannel::Create(
+      &provider_, cricket::DCT_SCTP, "test1", init);
+
+  EXPECT_EQ_WAIT(webrtc::DataChannelInterface::kOpen, dc->state(), 1000);
+
+  // Emulates receiving a DATA message.
+  cricket::ReceiveDataParams params;
+  params.ssrc = init.id;
+  params.type = cricket::DMT_TEXT;
+  webrtc::DataBuffer buffer("data");
+  dc->OnDataReceived(NULL, params, buffer.data);
+
+  // Sends a message and verifies it's unordered.
+  ASSERT_TRUE(dc->Send(buffer));
+  EXPECT_FALSE(provider_.last_send_data_params().ordered);
 }
 
 // Tests that messages are sent with the right ssrc.
@@ -198,4 +254,51 @@ TEST_F(SctpDataChannelTest, ReceiveDataWithValidSsrc) {
   webrtc::DataBuffer buffer("abcd");
 
   webrtc_data_channel_->OnDataReceived(NULL, params, buffer.data);
+}
+
+// Tests that no CONTROL message is sent if the datachannel is negotiated and
+// not created from an OPEN message.
+TEST_F(SctpDataChannelTest, NoMsgSentIfNegotiatedAndNotFromOpenMsg) {
+  webrtc::InternalDataChannelInit config;
+  config.id = 1;
+  config.negotiated = true;
+  config.open_handshake_role = webrtc::InternalDataChannelInit::kNone;
+
+  SetChannelReady();
+  talk_base::scoped_refptr<DataChannel> dc = DataChannel::Create(
+      &provider_, cricket::DCT_SCTP, "test1", config);
+
+  EXPECT_EQ_WAIT(webrtc::DataChannelInterface::kOpen, dc->state(), 1000);
+  EXPECT_EQ(0U, provider_.last_send_data_params().ssrc);
+}
+
+// Tests that OPEN_ACK message is sent if the datachannel is created from an
+// OPEN message.
+TEST_F(SctpDataChannelTest, OpenAckSentIfCreatedFromOpenMessage) {
+  webrtc::InternalDataChannelInit config;
+  config.id = 1;
+  config.negotiated = true;
+  config.open_handshake_role = webrtc::InternalDataChannelInit::kAcker;
+
+  SetChannelReady();
+  talk_base::scoped_refptr<DataChannel> dc = DataChannel::Create(
+      &provider_, cricket::DCT_SCTP, "test1", config);
+
+  EXPECT_EQ_WAIT(webrtc::DataChannelInterface::kOpen, dc->state(), 1000);
+
+  EXPECT_EQ(static_cast<unsigned int>(config.id),
+            provider_.last_send_data_params().ssrc);
+  EXPECT_EQ(cricket::DMT_CONTROL, provider_.last_send_data_params().type);
+}
+
+// Tests the OPEN_ACK role assigned by InternalDataChannelInit.
+TEST_F(SctpDataChannelTest, OpenAckRoleInitialization) {
+  webrtc::InternalDataChannelInit init;
+  EXPECT_EQ(webrtc::InternalDataChannelInit::kOpener, init.open_handshake_role);
+  EXPECT_FALSE(init.negotiated);
+
+  webrtc::DataChannelInit base;
+  base.negotiated = true;
+  webrtc::InternalDataChannelInit init2(base);
+  EXPECT_EQ(webrtc::InternalDataChannelInit::kNone, init2.open_handshake_role);
 }

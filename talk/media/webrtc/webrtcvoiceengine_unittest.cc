@@ -2718,6 +2718,10 @@ TEST_F(WebRtcVoiceEngineTestFake, TestSetDscpOptions) {
   options.dscp.Set(true);
   EXPECT_TRUE(channel->SetOptions(options));
   EXPECT_EQ(talk_base::DSCP_EF, network_interface->dscp());
+  // Verify previous value is not modified if dscp option is not set.
+  cricket::AudioOptions options1;
+  EXPECT_TRUE(channel->SetOptions(options1));
+  EXPECT_EQ(talk_base::DSCP_EF, network_interface->dscp());
   options.dscp.Set(false);
   EXPECT_TRUE(channel->SetOptions(options));
   EXPECT_EQ(talk_base::DSCP_DEFAULT, network_interface->dscp());

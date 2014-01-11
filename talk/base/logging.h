@@ -376,6 +376,13 @@ inline bool LogCheckLevel(LoggingSeverity sev) {
   LOG_GLE(sev)
 #define LAST_SYSTEM_ERROR \
   (::GetLastError())
+#elif __native_client__
+#define LOG_ERR_EX(sev, err) \
+  LOG(sev)
+#define LOG_ERR(sev) \
+  LOG(sev)
+#define LAST_SYSTEM_ERROR \
+  (0)
 #elif POSIX
 #define LOG_ERR_EX(sev, err) \
   LOG_ERRNO_EX(sev, err)

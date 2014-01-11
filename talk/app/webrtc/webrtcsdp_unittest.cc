@@ -1172,6 +1172,7 @@ class WebRtcSdpTest : public testing::Test {
         "m=video 3457 RTP/SAVPF 101\r\n"
         "a=rtpmap:101 VP8/90000\r\n"
         "a=rtcp-fb:101 nack\r\n"
+        "a=rtcp-fb:101 nack pli\r\n"
         "a=rtcp-fb:101 goog-remb\r\n"
         "a=rtcp-fb:101 ccm fir\r\n";
     std::ostringstream os;
@@ -1203,6 +1204,9 @@ class WebRtcSdpTest : public testing::Test {
     EXPECT_TRUE(vp8.HasFeedbackParam(
         cricket::FeedbackParam(cricket::kRtcpFbParamNack,
                                cricket::kParamValueEmpty)));
+    EXPECT_TRUE(vp8.HasFeedbackParam(
+        cricket::FeedbackParam(cricket::kRtcpFbParamNack,
+                               cricket::kRtcpFbNackParamPli)));
     EXPECT_TRUE(vp8.HasFeedbackParam(
         cricket::FeedbackParam(cricket::kRtcpFbParamRemb,
                                cricket::kParamValueEmpty)));
@@ -1902,6 +1906,9 @@ TEST_F(WebRtcSdpTest, DeserializeBrokenSdp) {
   // Missing space.
   const char kSdpInvalidLine6[] = "a=fingerprint:sha-1"
       "4A:AD:B9:B1:3F:82:18:3B:54:02:12:DF:3E:5D:49:6B:19:E5:7C:AB";
+  // MD5 is not allowed in fingerprints.
+  const char kSdpInvalidLine7[] = "a=fingerprint:md5 "
+      "4A:AD:B9:B1:3F:82:18:3B:54:02:12:DF:3E:5D:49:6B";
 
   // Broken session description
   ReplaceAndTryToParse("v=", kSdpDestroyer);
@@ -1925,6 +1932,7 @@ TEST_F(WebRtcSdpTest, DeserializeBrokenSdp) {
   ReplaceAndTryToParse("a=sendrecv", kSdpInvalidLine4);
   ReplaceAndTryToParse("a=sendrecv", kSdpInvalidLine5);
   ReplaceAndTryToParse("a=sendrecv", kSdpInvalidLine6);
+  ReplaceAndTryToParse("a=sendrecv", kSdpInvalidLine7);
 }
 
 TEST_F(WebRtcSdpTest, DeserializeSdpWithReorderedPltypes) {

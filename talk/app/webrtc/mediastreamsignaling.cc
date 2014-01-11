@@ -34,6 +34,7 @@
 #include "talk/app/webrtc/mediaconstraintsinterface.h"
 #include "talk/app/webrtc/mediastreamtrackproxy.h"
 #include "talk/app/webrtc/remotevideocapturer.h"
+#include "talk/app/webrtc/sctputils.h"
 #include "talk/app/webrtc/videosource.h"
 #include "talk/app/webrtc/videotrack.h"
 #include "talk/base/bytebuffer.h"
@@ -48,18 +49,6 @@ namespace webrtc {
 
 using talk_base::scoped_ptr;
 using talk_base::scoped_refptr;
-
-// Supported MediaConstraints.
-const char MediaConstraintsInterface::kOfferToReceiveAudio[] =
-    "OfferToReceiveAudio";
-const char MediaConstraintsInterface::kOfferToReceiveVideo[] =
-    "OfferToReceiveVideo";
-const char MediaConstraintsInterface::kIceRestart[] =
-    "IceRestart";
-const char MediaConstraintsInterface::kUseRtpMux[] =
-    "googUseRtpMUX";
-const char MediaConstraintsInterface::kVoiceActivityDetection[] =
-    "VoiceActivityDetection";
 
 static bool ParseConstraints(
     const MediaConstraintsInterface* constraints,
@@ -261,13 +250,24 @@ bool MediaStreamSignaling::AddDataChannel(DataChannel* data_channel) {
 }
 
 bool MediaStreamSignaling::AddDataChannelFromOpenMessage(
-    const std::string& label,
-    const DataChannelInit& config) {
+    const cricket::ReceiveDataParams& params,
+    const talk_base::Buffer& payload) {
   if (!data_channel_factory_) {
     LOG(LS_WARNING) << "Remote peer requested a DataChannel but DataChannels "
                     << "are not supported.";
     return false;
   }
+
+  std::string label;
+  InternalDataChannelInit config;
+  config.id = params.ssrc;
+  if (!ParseDataChannelOpenMessage(payload, &label, &config)) {
+    LOG(LS_WARNING) << "Failed to parse the OPEN message for sid "
+                    << params.ssrc;
+    return false;
+  }
+  config.open_handshake_role = InternalDataChannelInit::kAcker;
+
   scoped_refptr<DataChannel> channel(
       data_channel_factory_->CreateDataChannel(label, &config));
   if (!channel.get()) {

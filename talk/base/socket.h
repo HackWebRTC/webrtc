@@ -28,6 +28,14 @@
 #ifndef TALK_BASE_SOCKET_H__
 #define TALK_BASE_SOCKET_H__
 
+#if defined(__native_client__)
+namespace talk_base {
+// These should never be defined or instantiated.
+class Socket;
+class AsyncSocket;
+}  // namespace talk_base
+#else
+
 #include <errno.h>
 
 #ifdef POSIX
@@ -199,4 +207,5 @@ class Socket {
 
 }  // namespace talk_base
 
+#endif  // !__native_client__
 #endif  // TALK_BASE_SOCKET_H__

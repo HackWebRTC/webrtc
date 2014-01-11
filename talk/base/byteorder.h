@@ -28,7 +28,7 @@
 #ifndef TALK_BASE_BYTEORDER_H_
 #define TALK_BASE_BYTEORDER_H_
 
-#ifdef POSIX
+#if defined(POSIX) && !defined(__native_client__)
 #include <arpa/inet.h>
 #endif
 

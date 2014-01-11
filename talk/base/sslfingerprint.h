@@ -65,7 +65,7 @@ struct SSLFingerprint {
 
   static SSLFingerprint* CreateFromRfc4572(const std::string& algorithm,
                                            const std::string& fingerprint) {
-    if (algorithm.empty())
+    if (algorithm.empty() || !talk_base::IsFips180DigestAlgorithm(algorithm))
       return NULL;
 
     if (fingerprint.empty())
