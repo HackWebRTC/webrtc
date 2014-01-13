@@ -54,6 +54,23 @@ using cricket::TransportInfo;
 
 namespace webrtc {
 
+const char MediaConstraintsInterface::kInternalConstraintPrefix[] = "internal";
+
+// Supported MediaConstraints.
+// DSCP constraints.
+const char MediaConstraintsInterface::kEnableDscp[] = "googDscp";
+// DTLS-SRTP pseudo-constraints.
+const char MediaConstraintsInterface::kEnableDtlsSrtp[] =
+    "DtlsSrtpKeyAgreement";
+// DataChannel pseudo constraints.
+const char MediaConstraintsInterface::kEnableRtpDataChannels[] =
+    "RtpDataChannels";
+// This constraint is for internal use only, representing the Chrome command
+// line flag. So it is prefixed with kInternalConstraintPrefix so JS values
+// will be removed.
+const char MediaConstraintsInterface::kEnableSctpDataChannels[] =
+    "deprecatedSctpDataChannels";
+
 // Error messages
 const char kSetLocalSdpFailed[] = "SetLocalDescription failed: ";
 const char kSetRemoteSdpFailed[] = "SetRemoteDescription failed: ";
@@ -1005,7 +1022,7 @@ bool WebRtcSession::ReadyToSendData() const {
 
 talk_base::scoped_refptr<DataChannel> WebRtcSession::CreateDataChannel(
     const std::string& label,
-    const InternalDataChannelInit* config) {
+    const DataChannelInit* config) {
   if (state() == STATE_RECEIVEDTERMINATE) {
     return NULL;
   }
@@ -1013,8 +1030,8 @@ talk_base::scoped_refptr<DataChannel> WebRtcSession::CreateDataChannel(
     LOG(LS_ERROR) << "CreateDataChannel: Data is not supported in this call.";
     return NULL;
   }
-  InternalDataChannelInit new_config =
-      config ? (*config) : InternalDataChannelInit();
+  DataChannelInit new_config = config ? (*config) : DataChannelInit();
+
   if (data_channel_type_ == cricket::DCT_SCTP) {
     if (new_config.id < 0) {
       talk_base::SSLRole role;
@@ -1030,8 +1047,8 @@ talk_base::scoped_refptr<DataChannel> WebRtcSession::CreateDataChannel(
     }
   }
 
-  talk_base::scoped_refptr<DataChannel> channel(DataChannel::Create(
-      this, data_channel_type_, label, new_config));
+  talk_base::scoped_refptr<DataChannel> channel(
+      DataChannel::Create(this, data_channel_type_, label, &new_config));
   if (channel && !mediastream_signaling_->AddDataChannel(channel))
     return NULL;
 
@@ -1381,8 +1398,8 @@ bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content) {
   }
   if (sctp) {
     mediastream_signaling_->OnDataTransportCreatedForSctp();
-    data_channel_->SignalDataReceived.connect(
-        this, &WebRtcSession::OnDataChannelMessageReceived);
+    data_channel_->SignalNewStreamReceived.connect(
+        this, &WebRtcSession::OnNewDataChannelReceived);
   }
   return true;
 }
@@ -1400,17 +1417,14 @@ void WebRtcSession::CopySavedCandidates(
   saved_candidates_.clear();
 }
 
-void WebRtcSession::OnDataChannelMessageReceived(
-    cricket::DataChannel* channel,
-    const cricket::ReceiveDataParams& params,
-    const talk_base::Buffer& payload) {
+void WebRtcSession::OnNewDataChannelReceived(
+    const std::string& label, const DataChannelInit& init) {
   ASSERT(data_channel_type_ == cricket::DCT_SCTP);
-  if (params.type == cricket::DMT_CONTROL &&
-      mediastream_signaling_->IsSctpSidAvailable(params.ssrc)) {
-    // Received CONTROL on unused sid, process as an OPEN message.
-    mediastream_signaling_->AddDataChannelFromOpenMessage(params, payload);
+  if (!mediastream_signaling_->AddDataChannelFromOpenMessage(
+          label, init)) {
+    LOG(LS_WARNING) << "Failed to create data channel from OPEN message.";
+    return;
   }
-  // otherwise ignore the message.
 }
 
 // Returns false if bundle is enabled and rtcp_mux is disabled.

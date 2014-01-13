@@ -874,7 +874,7 @@ class WebRtcSessionTest : public testing::Test {
   }
 
   void SetLocalDescriptionWithDataChannel() {
-    webrtc::InternalDataChannelInit dci;
+    webrtc::DataChannelInit dci;
     dci.reliable = false;
     session_->CreateDataChannel("datachannel", &dci);
     SessionDescriptionInterface* offer = CreateOffer(NULL);
@@ -2675,7 +2675,7 @@ TEST_F(WebRtcSessionTest, TestSctpDataChannelSendPortParsing) {
 
   // TEST PLAN: Set the port number to something new, set it in the SDP,
   // and pass it all the way down.
-  webrtc::InternalDataChannelInit dci;
+  webrtc::DataChannelInit dci;
   dci.reliable = true;
   EXPECT_EQ(cricket::DCT_SCTP, data_engine_->last_channel_type());
   talk_base::scoped_refptr<webrtc::DataChannel> dc =

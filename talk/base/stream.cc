@@ -711,7 +711,7 @@ void AsyncWriteStream::ClearBufferAndWrite() {
   }
 }
 
-#if defined(POSIX) && !defined(__native_client__)
+#ifdef POSIX
 
 // Have to identically rewrite the FileStream destructor or else it would call
 // the base class's Close() instead of the sub-class's.

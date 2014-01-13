@@ -32,7 +32,6 @@
 #include "talk/app/webrtc/dtmfsender.h"
 #include "talk/app/webrtc/jsepicecandidate.h"
 #include "talk/app/webrtc/jsepsessiondescription.h"
-#include "talk/app/webrtc/mediaconstraintsinterface.h"
 #include "talk/app/webrtc/mediastreamhandler.h"
 #include "talk/app/webrtc/streamcollection.h"
 #include "talk/base/logging.h"
@@ -360,21 +359,11 @@ bool PeerConnection::DoInitialize(
   observer_ = observer;
   port_allocator_.reset(
       allocator_factory->CreatePortAllocator(stun_config, turn_config));
-
   // To handle both internal and externally created port allocator, we will
-  // enable BUNDLE here.
-  int portallocator_flags = cricket::PORTALLOCATOR_ENABLE_BUNDLE |
-                            cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
-                            cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET;
-  bool value;
-  if (FindConstraint(
-        constraints,
-        MediaConstraintsInterface::kEnableIPv6,
-        &value, NULL) && value) {
-    portallocator_flags |= cricket::PORTALLOCATOR_ENABLE_IPV6;
-  }
-
-  port_allocator_->set_flags(portallocator_flags);
+  // enable BUNDLE here. Also enabling TURN and disable legacy relay service.
+  port_allocator_->set_flags(cricket::PORTALLOCATOR_ENABLE_BUNDLE |
+                             cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
+                             cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
   // No step delay is used while allocating ports.
   port_allocator_->set_step_delay(cricket::kMinimumStepDelay);
 
@@ -496,12 +485,8 @@ talk_base::scoped_refptr<DataChannelInterface>
 PeerConnection::CreateDataChannel(
     const std::string& label,
     const DataChannelInit* config) {
-  talk_base::scoped_ptr<InternalDataChannelInit> internal_config;
-  if (config) {
-    internal_config.reset(new InternalDataChannelInit(*config));
-  }
   talk_base::scoped_refptr<DataChannelInterface> channel(
-      session_->CreateDataChannel(label, internal_config.get()));
+      session_->CreateDataChannel(label, config));
   if (!channel.get())
     return NULL;
 

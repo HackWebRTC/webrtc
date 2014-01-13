@@ -25,12 +25,10 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_APP_WEBRTC_SCTPUTILS_H_
-#define TALK_APP_WEBRTC_SCTPUTILS_H_
+#ifndef TALK_MEDIA_BASE_SCTPUTILS_H_
+#define TALK_MEDIA_BASE_SCTPUTILS_H_
 
 #include <string>
-
-#include "talk/app/webrtc/datachannelinterface.h"
 
 namespace talk_base {
 class Buffer;
@@ -38,18 +36,18 @@ class Buffer;
 
 namespace webrtc {
 struct DataChannelInit;
+}  // namespace webrtc
+
+namespace cricket {
 
 bool ParseDataChannelOpenMessage(const talk_base::Buffer& payload,
                                  std::string* label,
-                                 DataChannelInit* config);
-
-bool ParseDataChannelOpenAckMessage(const talk_base::Buffer& payload);
+                                 webrtc::DataChannelInit* config);
 
 bool WriteDataChannelOpenMessage(const std::string& label,
-                                 const DataChannelInit& config,
+                                 const webrtc::DataChannelInit& config,
                                  talk_base::Buffer* payload);
 
-void WriteDataChannelOpenAckMessage(talk_base::Buffer* payload);
-}  // namespace webrtc
+}  // namespace cricket
 
-#endif  // TALK_APP_WEBRTC_SCTPUTILS_H_
+#endif  // TALK_MEDIA_BASE_SCTPUTILS_H_

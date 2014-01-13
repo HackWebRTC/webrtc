@@ -893,11 +893,8 @@ class VideoMediaChannelTest : public testing::Test,
     talk_base::scoped_ptr<cricket::FakeVideoCapturer> capturer(
       new cricket::FakeVideoCapturer);
     capturer->SetScreencast(true);
-    const int kTestWidth = 160;
-    const int kTestHeight = 120;
-    cricket::VideoFormat format(kTestWidth, kTestHeight,
-                                cricket::VideoFormat::FpsToInterval(5),
-                                cricket::FOURCC_I420);
+    cricket::VideoFormat format(1024, 768,
+                                cricket::VideoFormat::FpsToInterval(5), 0);
     EXPECT_EQ(cricket::CS_RUNNING, capturer->Start(format));
     EXPECT_TRUE(channel_->AddSendStream(
         cricket::StreamParams::CreateLegacy(5678)));
@@ -905,10 +902,8 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(channel_->AddRecvStream(
         cricket::StreamParams::CreateLegacy(5678)));
     EXPECT_TRUE(channel_->SetRenderer(5678, &renderer1));
-    EXPECT_TRUE(capturer->CaptureCustomFrame(
-        kTestWidth, kTestHeight, cricket::FOURCC_I420));
-    EXPECT_FRAME_ON_RENDERER_WAIT(
-        renderer1, 1, kTestWidth, kTestHeight, kTimeout);
+    EXPECT_TRUE(capturer->CaptureCustomFrame(1024, 768, cricket::FOURCC_I420));
+    EXPECT_FRAME_ON_RENDERER_WAIT(renderer1, 1, 1024, 768, kTimeout);
 
     // Get stats, and make sure they are correct for two senders.
     cricket::VideoMediaInfo info;
@@ -922,8 +917,8 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_EQ(DefaultCodec().height, info.senders[0].frame_height);
     EXPECT_EQ(1U, info.senders[1].ssrcs().size());
     EXPECT_EQ(5678U, info.senders[1].ssrcs()[0]);
-    EXPECT_EQ(kTestWidth, info.senders[1].frame_width);
-    EXPECT_EQ(kTestHeight, info.senders[1].frame_height);
+    EXPECT_EQ(1024, info.senders[1].frame_width);
+    EXPECT_EQ(768, info.senders[1].frame_height);
     // The capturer must be unregistered here as it runs out of it's scope next.
     EXPECT_TRUE(channel_->SetCapturer(5678, NULL));
   }
@@ -1226,11 +1221,9 @@ class VideoMediaChannelTest : public testing::Test,
 
   // Tests that we can add and remove capturers and frames are sent out properly
   void AddRemoveCapturer() {
-    cricket::VideoCodec codec = DefaultCodec();
-    codec.width = 320;
-    codec.height = 240;
+    const cricket::VideoCodec codec(DefaultCodec());
     const int time_between_send = TimeBetweenSend(codec);
-    EXPECT_TRUE(SetOneCodec(codec));
+    EXPECT_TRUE(SetDefaultCodec());
     EXPECT_TRUE(SetSend(true));
     EXPECT_TRUE(channel_->SetRender(true));
     EXPECT_EQ(0, renderer_.num_rendered_frames());
@@ -1239,9 +1232,8 @@ class VideoMediaChannelTest : public testing::Test,
     talk_base::scoped_ptr<cricket::FakeVideoCapturer> capturer(
         new cricket::FakeVideoCapturer);
     capturer->SetScreencast(true);
-    cricket::VideoFormat format(480, 360,
-                                cricket::VideoFormat::FpsToInterval(30),
-                                cricket::FOURCC_I420);
+    cricket::VideoFormat format(1024, 768,
+                                cricket::VideoFormat::FpsToInterval(30), 0);
     EXPECT_EQ(cricket::CS_RUNNING, capturer->Start(format));
     // All capturers start generating frames with the same timestamp. ViE does
     // not allow the same timestamp to be used. Capture one frame before
@@ -1313,6 +1305,11 @@ class VideoMediaChannelTest : public testing::Test,
   void AddRemoveCapturerMultipleSources() {
     // WebRTC implementation will drop frames if pushed to quickly. Wait the
     // interval time to avoid that.
+    const cricket::VideoFormat send_format(
+        1024,
+        768,
+        cricket::VideoFormat::FpsToInterval(30),
+        0);
     // WebRTC implementation will drop frames if pushed to quickly. Wait the
     // interval time to avoid that.
     // Set up the stream associated with the engine.
@@ -1355,17 +1352,11 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(SetSend(true));
     EXPECT_TRUE(channel_->SetRender(true));
     // Test capturer associated with engine.
-    const int kTestWidth = 160;
-    const int kTestHeight = 120;
-    EXPECT_TRUE(capturer1->CaptureCustomFrame(
-        kTestWidth, kTestHeight, cricket::FOURCC_I420));
-    EXPECT_FRAME_ON_RENDERER_WAIT(
-        renderer1, 1, kTestWidth, kTestHeight, kTimeout);
+    EXPECT_TRUE(capturer1->CaptureCustomFrame(1024, 768, cricket::FOURCC_I420));
+    EXPECT_FRAME_ON_RENDERER_WAIT(renderer1, 1, 1024, 768, kTimeout);
     // Capture a frame with additional capturer2, frames should be received
-    EXPECT_TRUE(capturer2->CaptureCustomFrame(
-        kTestWidth, kTestHeight, cricket::FOURCC_I420));
-    EXPECT_FRAME_ON_RENDERER_WAIT(
-        renderer2, 1, kTestWidth, kTestHeight, kTimeout);
+    EXPECT_TRUE(capturer2->CaptureCustomFrame(1024, 768, cricket::FOURCC_I420));
+    EXPECT_FRAME_ON_RENDERER_WAIT(renderer2, 1, 1024, 768, kTimeout);
     // Successfully remove the capturer.
     EXPECT_TRUE(channel_->SetCapturer(kSsrc, NULL));
     // Fail to re-remove the capturer.

@@ -349,9 +349,6 @@ void LogMessage::ConfigureLogging(const char* params, const char* filename) {
   }
 #endif  // WIN32
 
-  LogToDebug(debug_level);
-
-#if !defined(__native_client__)  // No logging to file in NaCl.
   scoped_ptr<FileStream> stream;
   if (NO_LOGGING != file_level) {
     stream.reset(new FileStream);
@@ -360,8 +357,8 @@ void LogMessage::ConfigureLogging(const char* params, const char* filename) {
     }
   }
 
+  LogToDebug(debug_level);
   LogToStream(stream.release(), file_level);
-#endif
 }
 
 int LogMessage::ParseLogSeverity(const std::string& value) {

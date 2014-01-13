@@ -70,19 +70,6 @@ MessageDigest* MessageDigestFactory::Create(const std::string& alg) {
 #endif
 }
 
-bool IsFips180DigestAlgorithm(const std::string& alg) {
-  // These are the FIPS 180 algorithms.  According to RFC 4572 Section 5,
-  // "Self-signed certificates (for which legacy certificates are not a
-  // consideration) MUST use one of the FIPS 180 algorithms (SHA-1,
-  // SHA-224, SHA-256, SHA-384, or SHA-512) as their signature algorithm,
-  // and thus also MUST use it to calculate certificate fingerprints."
-  return alg == DIGEST_SHA_1 ||
-         alg == DIGEST_SHA_224 ||
-         alg == DIGEST_SHA_256 ||
-         alg == DIGEST_SHA_384 ||
-         alg == DIGEST_SHA_512;
-}
-
 size_t ComputeDigest(MessageDigest* digest, const void* input, size_t in_len,
                      void* output, size_t out_len) {
   digest->Update(input, in_len);

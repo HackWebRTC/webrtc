@@ -65,6 +65,10 @@ const int PHASE_SSLTCP = 3;
 
 const int kNumPhases = 4;
 
+// Both these values are in bytes.
+const int kLargeSocketSendBufferSize = 128 * 1024;
+const int kNormalSocketSendBufferSize = 64 * 1024;
+
 const int SHAKE_MIN_DELAY = 45 * 1000;  // 45 seconds
 const int SHAKE_MAX_DELAY = 90 * 1000;  // 90 seconds
 
@@ -485,6 +489,16 @@ void BasicPortAllocatorSession::AddAllocatedPort(Port* port,
     port->set_proxy(allocator_->user_agent(), allocator_->proxy());
   port->set_send_retransmit_count_attribute((allocator_->flags() &
       PORTALLOCATOR_ENABLE_STUN_RETRANSMIT_ATTRIBUTE) != 0);
+
+  if (content_name().compare(CN_VIDEO) == 0 &&
+      component_ == cricket::ICE_CANDIDATE_COMPONENT_RTP) {
+    // For video RTP alone, we set send-buffer sizes. This used to be set in the
+    // engines/channels.
+    int sendBufSize = (flags() & PORTALLOCATOR_USE_LARGE_SOCKET_SEND_BUFFERS)
+                      ? kLargeSocketSendBufferSize
+                      : kNormalSocketSendBufferSize;
+    port->SetOption(talk_base::Socket::OPT_SNDBUF, sendBufSize);
+  }
 
   PortData data(port, seq);
   ports_.push_back(data);

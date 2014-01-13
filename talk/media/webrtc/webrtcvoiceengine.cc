@@ -1769,7 +1769,7 @@ bool WebRtcVoiceMediaChannel::SetOptions(const AudioOptions& options) {
   }
   if (dscp_option_changed) {
     talk_base::DiffServCodePoint dscp = talk_base::DSCP_DEFAULT;
-    if (options_.dscp.GetWithDefaultIfUnset(false))
+    if (options.dscp.GetWithDefaultIfUnset(false))
       dscp = kAudioDscpValue;
     if (MediaChannel::SetDscp(dscp) != 0) {
       LOG(LS_WARNING) << "Failed to set DSCP settings for audio channel";
@@ -1879,7 +1879,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
     // this, but double-check to be sure.
     webrtc::CodecInst voe_codec;
     if (!engine()->FindWebRtcCodec(*it, &voe_codec)) {
-      LOG(LS_WARNING) << "Unknown codec " << ToString(*it);
+      LOG(LS_WARNING) << "Unknown codec " << ToString(voe_codec);
       continue;
     }
 
@@ -2431,14 +2431,14 @@ bool WebRtcVoiceMediaChannel::ConfigureRecvChannel(int channel) {
   }
 
   // Use the same SSRC as our default channel (so the RTCP reports are correct).
-  unsigned int send_ssrc = 0;
+  unsigned int send_ssrc;
   webrtc::VoERTP_RTCP* rtp = engine()->voe()->rtp();
   if (rtp->GetLocalSSRC(voe_channel(), send_ssrc) == -1) {
-    LOG_RTCERR1(GetSendSSRC, channel);
+    LOG_RTCERR2(GetSendSSRC, channel, send_ssrc);
     return false;
   }
   if (rtp->SetLocalSSRC(channel, send_ssrc) == -1) {
-    LOG_RTCERR1(SetSendSSRC, channel);
+    LOG_RTCERR2(SetSendSSRC, channel, send_ssrc);
     return false;
   }
 

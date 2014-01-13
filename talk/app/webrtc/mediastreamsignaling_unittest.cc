@@ -30,7 +30,6 @@
 #include "talk/app/webrtc/audiotrack.h"
 #include "talk/app/webrtc/mediastream.h"
 #include "talk/app/webrtc/mediastreamsignaling.h"
-#include "talk/app/webrtc/sctputils.h"
 #include "talk/app/webrtc/streamcollection.h"
 #include "talk/app/webrtc/test/fakeconstraints.h"
 #include "talk/app/webrtc/test/fakedatachannelprovider.h"
@@ -247,19 +246,13 @@ class FakeDataChannelFactory : public webrtc::DataChannelFactory {
 
   virtual talk_base::scoped_refptr<webrtc::DataChannel> CreateDataChannel(
       const std::string& label,
-      const webrtc::InternalDataChannelInit* config) {
-    last_init_ = *config;
-    return webrtc::DataChannel::Create(provider_, type_, label, *config);
-  }
-
-  const webrtc::InternalDataChannelInit& last_init() const {
-      return last_init_;
+      const webrtc::DataChannelInit* config) {
+    return webrtc::DataChannel::Create(provider_, type_, label, config);
   }
 
  private:
   FakeDataChannelProvider* provider_;
   cricket::DataChannelType type_;
-  webrtc::InternalDataChannelInit last_init_;
 };
 
 class MockSignalingObserver : public webrtc::MediaStreamSignalingObserver {
@@ -535,11 +528,11 @@ class MediaStreamSignalingTest: public testing::Test {
 
   talk_base::scoped_refptr<webrtc::DataChannel> AddDataChannel(
       cricket::DataChannelType type, const std::string& label, int id) {
-    webrtc::InternalDataChannelInit config;
+    webrtc::DataChannelInit config;
     config.id = id;
     talk_base::scoped_refptr<webrtc::DataChannel> data_channel(
         webrtc::DataChannel::Create(
-            data_channel_provider_.get(), type, label, config));
+            data_channel_provider_.get(), type, label, &config));
     EXPECT_TRUE(data_channel.get() != NULL);
     EXPECT_TRUE(signaling_->AddDataChannel(data_channel.get()));
     return data_channel;
@@ -1085,10 +1078,10 @@ TEST_F(MediaStreamSignalingTest, SctpIdAllocationNoReuse) {
 TEST_F(MediaStreamSignalingTest, RtpDuplicatedLabelNotAllowed) {
   AddDataChannel(cricket::DCT_RTP, "a", -1);
 
-  webrtc::InternalDataChannelInit config;
+  webrtc::DataChannelInit config;
   talk_base::scoped_refptr<webrtc::DataChannel> data_channel =
       webrtc::DataChannel::Create(
-          data_channel_provider_.get(), cricket::DCT_RTP, "a", config);
+          data_channel_provider_.get(), cricket::DCT_RTP, "a", &config);
   ASSERT_TRUE(data_channel.get() != NULL);
   EXPECT_FALSE(signaling_->AddDataChannel(data_channel.get()));
 }
@@ -1097,25 +1090,6 @@ TEST_F(MediaStreamSignalingTest, RtpDuplicatedLabelNotAllowed) {
 TEST_F(MediaStreamSignalingTest, SctpDuplicatedLabelAllowed) {
   AddDataChannel(cricket::DCT_SCTP, "a", -1);
   AddDataChannel(cricket::DCT_SCTP, "a", -1);
-}
-
-// Verifies the correct configuration is used to create DataChannel from an OPEN
-// message.
-TEST_F(MediaStreamSignalingTest, CreateDataChannelFromOpenMessage) {
-  FakeDataChannelFactory fake_factory(data_channel_provider_.get(),
-                                      cricket::DCT_SCTP);
-  signaling_->SetDataChannelFactory(&fake_factory);
-  webrtc::DataChannelInit config;
-  config.id = 1;
-  talk_base::Buffer payload;
-  webrtc::WriteDataChannelOpenMessage("a", config, &payload);
-  cricket::ReceiveDataParams params;
-  params.ssrc = config.id;
-  EXPECT_TRUE(signaling_->AddDataChannelFromOpenMessage(params, payload));
-  EXPECT_EQ(config.id, fake_factory.last_init().id);
-  EXPECT_FALSE(fake_factory.last_init().negotiated);
-  EXPECT_EQ(webrtc::InternalDataChannelInit::kAcker,
-            fake_factory.last_init().open_handshake_role);
 }
 
 // Verifies that duplicated label from OPEN message is allowed.
@@ -1127,9 +1101,5 @@ TEST_F(MediaStreamSignalingTest, DuplicatedLabelFromOpenMessageAllowed) {
   signaling_->SetDataChannelFactory(&fake_factory);
   webrtc::DataChannelInit config;
   config.id = 0;
-  talk_base::Buffer payload;
-  webrtc::WriteDataChannelOpenMessage("a", config, &payload);
-  cricket::ReceiveDataParams params;
-  params.ssrc = config.id;
-  EXPECT_TRUE(signaling_->AddDataChannelFromOpenMessage(params, payload));
+  EXPECT_TRUE(signaling_->AddDataChannelFromOpenMessage("a", config));
 }

@@ -25,9 +25,10 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "talk/app/webrtc/datachannelinterface.h"
 #include "talk/base/bytebuffer.h"
 #include "talk/base/gunit.h"
-#include "talk/app/webrtc/sctputils.h"
+#include "talk/media/sctp/sctputils.h"
 
 class SctpUtilsTest : public testing::Test {
  public:
@@ -79,22 +80,23 @@ class SctpUtilsTest : public testing::Test {
   }
 };
 
-TEST_F(SctpUtilsTest, WriteParseOpenMessageWithOrderedReliable) {
+TEST_F(SctpUtilsTest, WriteParseMessageWithOrderedReliable) {
+  std::string input_label = "abc";
   webrtc::DataChannelInit config;
-  std::string label = "abc";
   config.protocol = "y";
 
   talk_base::Buffer packet;
-  ASSERT_TRUE(webrtc::WriteDataChannelOpenMessage(label, config, &packet));
+  ASSERT_TRUE(
+      cricket::WriteDataChannelOpenMessage(input_label, config, &packet));
 
-  VerifyOpenMessageFormat(packet, label, config);
+  VerifyOpenMessageFormat(packet, input_label, config);
 
   std::string output_label;
   webrtc::DataChannelInit output_config;
-  ASSERT_TRUE(webrtc::ParseDataChannelOpenMessage(
+  ASSERT_TRUE(cricket::ParseDataChannelOpenMessage(
       packet, &output_label, &output_config));
 
-  EXPECT_EQ(label, output_label);
+  EXPECT_EQ(input_label, output_label);
   EXPECT_EQ(config.protocol, output_config.protocol);
   EXPECT_EQ(config.ordered, output_config.ordered);
   EXPECT_EQ(config.maxRetransmitTime, output_config.maxRetransmitTime);
@@ -102,23 +104,24 @@ TEST_F(SctpUtilsTest, WriteParseOpenMessageWithOrderedReliable) {
 }
 
 TEST_F(SctpUtilsTest, WriteParseOpenMessageWithMaxRetransmitTime) {
+  std::string input_label = "abc";
   webrtc::DataChannelInit config;
-  std::string label = "abc";
   config.ordered = false;
   config.maxRetransmitTime = 10;
   config.protocol = "y";
 
   talk_base::Buffer packet;
-  ASSERT_TRUE(webrtc::WriteDataChannelOpenMessage(label, config, &packet));
+  ASSERT_TRUE(
+      cricket::WriteDataChannelOpenMessage(input_label, config, &packet));
 
-  VerifyOpenMessageFormat(packet, label, config);
+  VerifyOpenMessageFormat(packet, input_label, config);
 
   std::string output_label;
   webrtc::DataChannelInit output_config;
-  ASSERT_TRUE(webrtc::ParseDataChannelOpenMessage(
+  ASSERT_TRUE(cricket::ParseDataChannelOpenMessage(
       packet, &output_label, &output_config));
 
-  EXPECT_EQ(label, output_label);
+  EXPECT_EQ(input_label, output_label);
   EXPECT_EQ(config.protocol, output_config.protocol);
   EXPECT_EQ(config.ordered, output_config.ordered);
   EXPECT_EQ(config.maxRetransmitTime, output_config.maxRetransmitTime);
@@ -126,36 +129,25 @@ TEST_F(SctpUtilsTest, WriteParseOpenMessageWithMaxRetransmitTime) {
 }
 
 TEST_F(SctpUtilsTest, WriteParseOpenMessageWithMaxRetransmits) {
+  std::string input_label = "abc";
   webrtc::DataChannelInit config;
-  std::string label = "abc";
   config.maxRetransmits = 10;
   config.protocol = "y";
 
   talk_base::Buffer packet;
-  ASSERT_TRUE(webrtc::WriteDataChannelOpenMessage(label, config, &packet));
+  ASSERT_TRUE(
+      cricket::WriteDataChannelOpenMessage(input_label, config, &packet));
 
-  VerifyOpenMessageFormat(packet, label, config);
+  VerifyOpenMessageFormat(packet, input_label, config);
 
   std::string output_label;
   webrtc::DataChannelInit output_config;
-  ASSERT_TRUE(webrtc::ParseDataChannelOpenMessage(
+  ASSERT_TRUE(cricket::ParseDataChannelOpenMessage(
       packet, &output_label, &output_config));
 
-  EXPECT_EQ(label, output_label);
+  EXPECT_EQ(input_label, output_label);
   EXPECT_EQ(config.protocol, output_config.protocol);
   EXPECT_EQ(config.ordered, output_config.ordered);
   EXPECT_EQ(config.maxRetransmits, output_config.maxRetransmits);
   EXPECT_EQ(-1, output_config.maxRetransmitTime);
-}
-
-TEST_F(SctpUtilsTest, WriteParseAckMessage) {
-  talk_base::Buffer packet;
-  webrtc::WriteDataChannelOpenAckMessage(&packet);
-
-  uint8 message_type;
-  talk_base::ByteBuffer buffer(packet.data(), packet.length());
-  ASSERT_TRUE(buffer.ReadUInt8(&message_type));
-  EXPECT_EQ(0x02, message_type);
-
-  EXPECT_TRUE(webrtc::ParseDataChannelOpenAckMessage(packet));
 }

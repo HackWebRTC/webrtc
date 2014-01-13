@@ -36,6 +36,30 @@ using cricket::CaptureState;
 using webrtc::MediaConstraintsInterface;
 using webrtc::MediaSourceInterface;
 
+namespace webrtc {
+
+// Constraint keys. Specified by draft-alvestrand-constraints-resolution-00b
+// They are declared as static members in mediastreaminterface.h
+const char MediaConstraintsInterface::kMinAspectRatio[] = "minAspectRatio";
+const char MediaConstraintsInterface::kMaxAspectRatio[] = "maxAspectRatio";
+const char MediaConstraintsInterface::kMaxWidth[] = "maxWidth";
+const char MediaConstraintsInterface::kMinWidth[] = "minWidth";
+const char MediaConstraintsInterface::kMaxHeight[] = "maxHeight";
+const char MediaConstraintsInterface::kMinHeight[] = "minHeight";
+const char MediaConstraintsInterface::kMaxFrameRate[] = "maxFrameRate";
+const char MediaConstraintsInterface::kMinFrameRate[] = "minFrameRate";
+
+// Google-specific keys
+const char MediaConstraintsInterface::kNoiseReduction[] = "googNoiseReduction";
+const char MediaConstraintsInterface::kLeakyBucket[] = "googLeakyBucket";
+const char MediaConstraintsInterface::kTemporalLayeredScreencast[] =
+    "googTemporalLayeredScreencast";
+// TODO(ronghuawu): Remove once cpu overuse detection is stable.
+const char MediaConstraintsInterface::kCpuOveruseDetection[] =
+    "googCpuOveruseDetection";
+
+}  // namespace webrtc
+
 namespace {
 
 const double kRoundingTruncation = 0.0005;

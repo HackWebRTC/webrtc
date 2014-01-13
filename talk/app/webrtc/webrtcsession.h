@@ -195,10 +195,9 @@ class WebRtcSession : public cricket::BaseSession,
   virtual void RemoveSctpDataStream(uint32 sid) OVERRIDE;
   virtual bool ReadyToSendData() const OVERRIDE;
 
-  // Implements DataChannelFactory.
   talk_base::scoped_refptr<DataChannel> CreateDataChannel(
       const std::string& label,
-      const InternalDataChannelInit* config) OVERRIDE;
+      const DataChannelInit* config);
 
   cricket::DataChannelType data_channel_type() const;
 
@@ -276,11 +275,8 @@ class WebRtcSession : public cricket::BaseSession,
   // The |saved_candidates_| will be cleared after this function call.
   void CopySavedCandidates(SessionDescriptionInterface* dest_desc);
 
-  // Listens to SCTP CONTROL messages on unused SIDs and process them as OPEN
-  // messages.
-  void OnDataChannelMessageReceived(cricket::DataChannel* channel,
-                                    const cricket::ReceiveDataParams& params,
-                                    const talk_base::Buffer& payload);
+  void OnNewDataChannelReceived(const std::string& label,
+                                const DataChannelInit& init);
 
   bool GetLocalTrackId(uint32 ssrc, std::string* track_id);
   bool GetRemoteTrackId(uint32 ssrc, std::string* track_id);

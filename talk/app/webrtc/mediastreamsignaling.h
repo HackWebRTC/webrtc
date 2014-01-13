@@ -194,8 +194,8 @@ class MediaStreamSignaling {
   // be offered in a SessionDescription.
   bool AddDataChannel(DataChannel* data_channel);
   // After we receive an OPEN message, create a data channel and add it.
-  bool AddDataChannelFromOpenMessage(const cricket::ReceiveDataParams& params,
-                                     const talk_base::Buffer& payload);
+  bool AddDataChannelFromOpenMessage(
+      const std::string& label, const DataChannelInit& config);
 
   // Returns a MediaSessionOptions struct with options decided by |constraints|,
   // the local MediaStreams and DataChannels.
