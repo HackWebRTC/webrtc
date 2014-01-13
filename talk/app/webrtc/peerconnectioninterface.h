@@ -277,7 +277,7 @@ class PeerConnectionObserver {
   virtual void OnDataChannel(DataChannelInterface* data_channel) {}
 
   // Triggered when renegotation is needed, for example the ICE has restarted.
-  virtual void OnRenegotiationNeeded() {}
+  virtual void OnRenegotiationNeeded() = 0;
 
   // Called any time the IceConnectionState changes
   virtual void OnIceConnectionChange(

@@ -419,6 +419,11 @@ public class AppRTCDemoActivity extends Activity
           }
         });
     }
+
+    @Override public void onRenegotiationNeeded() {
+      // No need to do anything; AppRTC follows a pre-agreed-upon
+      // signaling/negotiation protocol.
+    }
   }
 
   // Implementation detail: handle offer creation/signaling and answer setting,

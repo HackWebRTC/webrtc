@@ -82,6 +82,9 @@ public class PeerConnection {
 
     /** Triggered when a remote peer opens a DataChannel. */
     public void onDataChannel(DataChannel dataChannel);
+
+    /** Triggered when renegotiation is necessary. */
+    public void onRenegotiationNeeded();
   }
 
   /** Java version of PeerConnectionInterface.IceServer. */
