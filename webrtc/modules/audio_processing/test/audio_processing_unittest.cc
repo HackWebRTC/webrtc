@@ -50,6 +50,8 @@ using webrtc::EchoControlMobile;
 using webrtc::VoiceDetection;
 
 namespace {
+// TODO(bjornv): This is not feasible until the functionality has been
+// re-implemented; see comment at the bottom of this file.
 // When false, this will compare the output data with the results stored to
 // file. This is the typical case. When the file should be updated, it can
 // be set to true with the command-line switch --write_ref_data.
@@ -469,10 +471,10 @@ void ApmTest::ProcessDelayVerificationTest(int delay_ms, int system_delay_ms,
     frame_queue.push(frame);
     frame_delay--;
   }
-  // Run for 4.5 seconds, skipping statistics from the first second. We need
-  // enough frames with audio to have reliable estimates, but as few as possible
-  // to keep processing time down. 4.5 seconds seemed to be a good compromise
-  // for this recording.
+  // Run for 4.5 seconds, skipping statistics from the first 2.5 seconds.  We
+  // need enough frames with audio to have reliable estimates, but as few as
+  // possible to keep processing time down.  4.5 seconds seemed to be a good
+  // compromise for this recording.
   for (int frame_count = 0; frame_count < 450; ++frame_count) {
     webrtc::AudioFrame* frame = new AudioFrame();
     frame->CopyFrom(tmp_frame);
@@ -496,7 +498,7 @@ void ApmTest::ProcessDelayVerificationTest(int delay_ms, int system_delay_ms,
     frame_queue.pop();
     delete frame;
 
-    if (frame_count == 100) {
+    if (frame_count == 250) {
       int median;
       int std;
       // Discard the first delay metrics to avoid convergence effects.

@@ -266,6 +266,9 @@ int WebRtcAecm_CreateCore(AecmCore_t **aecmInst)
       aecm = NULL;
       return -1;
     }
+    // TODO(bjornv): Explicitly disable robust delay validation until no
+    // performance regression has been established.  Then remove the line.
+    WebRtc_enable_robust_validation(aecm->delay_estimator, 0);
 
     aecm->real_fft = WebRtcSpl_CreateRealFFT(PART_LEN_SHIFT);
     if (aecm->real_fft == NULL) {

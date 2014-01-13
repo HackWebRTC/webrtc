@@ -475,6 +475,17 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   aec->extended_filter_enabled = 0;
   aec->num_partitions = kNormalNumPartitions;
 
+  // Update the delay estimator with filter length.  We use half the
+  // |num_partitions| to take the echo path into account.  In practice we say
+  // that the echo has a duration of maximum half |num_partitions|, which is not
+  // true, but serves as a crude measure.
+  WebRtc_set_allowed_offset(aec->delay_estimator, aec->num_partitions / 2);
+  // TODO(bjornv): I currently hard coded the enable.  Once we've established
+  // that AECM has no performance regression, robust_validation will be enabled
+  // all the time and the APIs to turn it on/off will be removed.  Hence, remove
+  // this line then.
+  WebRtc_enable_robust_validation(aec->delay_estimator, 1);
+
   // Default target suppression mode.
   aec->nlp_mode = 1;
 
@@ -771,6 +782,8 @@ void WebRtcAec_SetConfigCore(AecCore* self,
 void WebRtcAec_enable_delay_correction(AecCore* self, int enable) {
   self->extended_filter_enabled = enable;
   self->num_partitions = enable ? kExtendedNumPartitions : kNormalNumPartitions;
+  // Update the delay estimator with filter length.  See InitAEC() for details.
+  WebRtc_set_allowed_offset(self->delay_estimator, self->num_partitions / 2);
 }
 
 int WebRtcAec_delay_correction_enabled(AecCore* self) {
