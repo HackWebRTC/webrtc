@@ -531,7 +531,7 @@ void ApmTest::ProcessDelayVerificationTest(int delay_ms, int system_delay_ms,
   EXPECT_LE(expected_median_low, median);
 }
 
-TEST_F(ApmTest, StreamParameters) {
+TEST_F(ApmTest, DISABLED_StreamParameters) {
   // No errors when the components are disabled.
   EXPECT_EQ(apm_->kNoError,
             apm_->ProcessStream(frame_));
@@ -881,7 +881,7 @@ TEST_F(ApmTest, EchoControlMobile) {
   EXPECT_FALSE(apm_->echo_control_mobile()->is_enabled());
 }
 
-TEST_F(ApmTest, GainControl) {
+TEST_F(ApmTest, DISABLED_GainControl) {
   // Testing gain modes
   EXPECT_EQ(apm_->kNoError,
       apm_->gain_control()->set_mode(
@@ -1340,7 +1340,7 @@ TEST_F(ApmTest, DebugDumpFromFileHandle) {
 // TODO(andrew): Make this test more robust such that it can be run on multiple
 // platforms. It currently requires bit-exactness.
 #ifdef WEBRTC_AUDIOPROC_BIT_EXACT
-TEST_F(ApmTest, DISABLED_ON_ANDROID(Process)) {
+TEST_F(ApmTest, DISABLED_Process) {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
   webrtc::audioproc::OutputData ref_data;
 
