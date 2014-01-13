@@ -809,14 +809,7 @@ void TestStereo::Run(TestPackStereo* channel, int in_channels, int out_channels,
   channel->reset_payload_size();
   int error_count = 0;
 
-#ifdef WEBRTC_ARCH_ARM
-  const int kMaxNumProcessedFrames = 100;  // Limit to 1 second of audio.
-#else
-  const int kMaxNumProcessedFrames = 3000;  // Limit to 30 second of audio.
-#endif
-
-  int num_frames = 0;
-  while (num_frames < kMaxNumProcessedFrames) {
+  while (1) {
     // Simulate packet loss by setting |packet_loss_| to "true" in
     // |percent_loss| percent of the loops.
     if (percent_loss > 0) {
@@ -870,15 +863,16 @@ void TestStereo::Run(TestPackStereo* channel, int in_channels, int out_channels,
     out_file_.Write10MsData(
         audio_frame.data_,
         audio_frame.samples_per_channel_ * audio_frame.num_channels_);
-
-    ++num_frames;
   }
 
   EXPECT_EQ(0, error_count);
 
-  in_file_mono_->Rewind();
-  in_file_stereo_->Rewind();
-
+  if (in_file_mono_->EndOfFile()) {
+    in_file_mono_->Rewind();
+  }
+  if (in_file_stereo_->EndOfFile()) {
+    in_file_stereo_->Rewind();
+  }
   // Reset in case we ended with a lost packet
   channel->set_lost_packet(false);
 }

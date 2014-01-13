@@ -50,7 +50,7 @@ TEST(AudioCodingModuleTest, TestAllCodecs) {
   Trace::ReturnTrace();
 }
 
-TEST(AudioCodingModuleTest, TestEncodeDecode) {
+TEST(AudioCodingModuleTest, DISABLED_ON_ANDROID(TestEncodeDecode)) {
   Trace::CreateTrace();
   Trace::SetTraceFile((webrtc::test::OutputPath() +
       "acm_encodedecode_trace.txt").c_str());
@@ -65,7 +65,7 @@ TEST(AudioCodingModuleTest, TestEncodeDecode) {
   Trace::ReturnTrace();
 }
 
-TEST(AudioCodingModuleTest, TestFEC) {
+TEST(AudioCodingModuleTest, DISABLED_ON_ANDROID(TestFEC)) {
   Trace::CreateTrace();
   Trace::SetTraceFile((webrtc::test::OutputPath() +
       "acm_fec_trace.txt").c_str());
@@ -80,7 +80,7 @@ TEST(AudioCodingModuleTest, TestFEC) {
   Trace::ReturnTrace();
 }
 
-TEST(AudioCodingModuleTest, TestIsac) {
+TEST(AudioCodingModuleTest, DISABLED_ON_ANDROID(TestIsac)) {
   Trace::CreateTrace();
   Trace::SetTraceFile((webrtc::test::OutputPath() +
       "acm_isac_trace.txt").c_str());
@@ -95,7 +95,7 @@ TEST(AudioCodingModuleTest, TestIsac) {
   Trace::ReturnTrace();
 }
 
-TEST(AudioCodingModuleTest, TwoWayCommunication) {
+TEST(AudioCodingModuleTest, DISABLED_ON_ANDROID(TwoWayCommunication)) {
   Trace::CreateTrace();
   Trace::SetTraceFile((webrtc::test::OutputPath() +
       "acm_twowaycom_trace.txt").c_str());
@@ -110,7 +110,7 @@ TEST(AudioCodingModuleTest, TwoWayCommunication) {
   Trace::ReturnTrace();
 }
 
-TEST(AudioCodingModuleTest, TestStereo) {
+TEST(AudioCodingModuleTest, DISABLED_ON_ANDROID(TestStereo)) {
   Trace::CreateTrace();
   Trace::SetTraceFile((webrtc::test::OutputPath() +
       "acm_stereo_trace.txt").c_str());
@@ -125,7 +125,7 @@ TEST(AudioCodingModuleTest, TestStereo) {
   Trace::ReturnTrace();
 }
 
-TEST(AudioCodingModuleTest, TestVADDTX) {
+TEST(AudioCodingModuleTest, DISABLED_ON_ANDROID(TestVADDTX)) {
   Trace::CreateTrace();
   Trace::SetTraceFile((webrtc::test::OutputPath() +
       "acm_vaddtx_trace.txt").c_str());
