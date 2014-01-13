@@ -14,7 +14,7 @@
 #include "webrtc/typedefs.h"
 
 TEST(NetEqPerformanceTest, Run) {
-  const int kSimulationTimeMs = 1000000;
+  const int kSimulationTimeMs = 10000000;
   const int kLossPeriod = 10;  // Drop every 10th packet.
   const double kDriftFactor = 0.1;
   int64_t runtime = webrtc::test::NetEqPerformanceTest::Run(
