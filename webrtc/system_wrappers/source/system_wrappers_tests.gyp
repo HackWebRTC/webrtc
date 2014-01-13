@@ -23,7 +23,6 @@
         'condition_variable_unittest.cc',
         'critical_section_unittest.cc',
         'event_tracer_unittest.cc',
-        'list_unittest.cc',
         'logging_unittest.cc',
         'data_log_unittest.cc',
         'data_log_unittest_disabled.cc',
