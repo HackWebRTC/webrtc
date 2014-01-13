@@ -13,13 +13,13 @@
 
 #include "webrtc/modules/audio_device/audio_device_utility.h"
 
+#include <list>
 #include <string>
 
 #include "webrtc/common_audio/resampler/include/resampler.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/modules/audio_device/test/audio_device_test_defines.h"
 #include "webrtc/system_wrappers/interface/file_wrapper.h"
-#include "webrtc/system_wrappers/interface/list_wrapper.h"
 #include "webrtc/typedefs.h"
 
 #if defined(WEBRTC_IOS) || defined(ANDROID)
@@ -58,6 +58,15 @@ enum TestType
     TTDeviceRemoval = 13,
     TTMobileAPI = 14,
     TTTest = 66,
+};
+
+struct AudioPacket
+{
+    uint8_t dataBuffer[4 * 960];
+    uint16_t nSamples;
+    uint16_t nBytesPerSample;
+    uint8_t nChannels;
+    uint32_t samplesPerSec;
 };
 
 class ProcessThread;
@@ -165,6 +174,7 @@ public:
     ;
 
 private:
+    typedef std::list<AudioPacket*> AudioPacketList;
     AudioDeviceModule* _audioDevice;
 
     bool _playFromFile;
@@ -181,8 +191,7 @@ private:
 
     uint32_t _recCount;
     uint32_t _playCount;
-
-    ListWrapper _audioList;
+    AudioPacketList _audioList;
 
     Resampler _resampler;
 };
