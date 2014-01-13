@@ -76,41 +76,20 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
     alertDialog.show();
   }
 
-  // This class represent the cameras available on the device.
-  private class WebrtcCamera {
-    private final CameraInfo info;
-
-    WebrtcCamera(CameraInfo info) {
-      this.info = info;
+  // Converts device rotation to camera rotation. Rotation depends on if the
+  // camera is back facing and rotate with the device or front facing and
+  // rotating in the opposite direction of the device.
+  private static int rotationFromRealWorldUp(CameraInfo info,
+                                             int deviceRotation) {
+    int coarseDeviceOrientation =
+        (int)(Math.round((double)deviceRotation / 90) * 90) % 360;
+    if (info.facing == CameraInfo.CAMERA_FACING_FRONT) {
+      // The front camera rotates in the opposite direction of the
+      // device.
+      int inverseDeviceOrientation = 360 - coarseDeviceOrientation;
+      return (inverseDeviceOrientation + info.orientation) % 360;
     }
-
-    // Converts device rotation to camera rotation. Rotation depends on if the
-    // camera is back facing and rotate with the device or front facing and
-    // rotating in the opposite direction of the device.
-    public int rotationFromRealWorldUp(int deviceRotation) {
-      int coarseDeviceOrientation = roundRotation(deviceRotation);
-      if (frontFacing()) {
-        // The front camera rotates in the opposite direction of the
-        // device.
-        int inverseDeviceOrientation = 360 - coarseDeviceOrientation;
-        return (inverseDeviceOrientation + orientation()) % 360;
-      }
-      return (coarseDeviceOrientation + orientation()) % 360;
-    }
-
-    // Rounds rotation to the nearest 90 degree rotation.
-    private int roundRotation(int rotation) {
-      return (int)(Math.round((double)rotation / 90) * 90) % 360;
-    }
-
-    public boolean frontFacing() {
-      return info.facing == CameraInfo.CAMERA_FACING_FRONT;
-    }
-
-    // Rotation of camera with respect to device up.
-    private int orientation() {
-      return info.orientation;
-    }
+    return (coarseDeviceOrientation + info.orientation) % 360;
   }
 
   // Shared Audio/Video members.
@@ -149,7 +128,8 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
   private int videoTxPort;
   private int videoRxPort;
 
-  private WebrtcCamera cameras[];
+  // Indexed by CameraInfo.CAMERA_FACING_{BACK,FRONT}.
+  private CameraInfo cameras[];
   private boolean useFrontCamera;
   private int currentCameraHandle;
   private boolean enableNack;
@@ -185,11 +165,11 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
     check(vie.connectAudioChannel(videoChannel, audioChannel) == 0,
         "Failed ConnectAudioChannel");
 
-    cameras = new WebrtcCamera[Camera.getNumberOfCameras()];
+    cameras = new CameraInfo[2];
     CameraInfo info = new CameraInfo();
     for (int i = 0; i < Camera.getNumberOfCameras(); ++i) {
       Camera.getCameraInfo(i, info);
-      cameras[info.facing] = new WebrtcCamera(info);
+      cameras[info.facing] = info;
     }
     setDefaultCamera();
     check(voe.setSpeakerVolume(volumeLevel) == 0,
@@ -613,12 +593,7 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
   }
 
   private boolean hasFrontCamera() {
-    for (int i = 0; i < cameras.length; ++i) {
-      if (cameras[i].frontFacing()) {
-        return true;
-      }
-    }
-    return false;
+    return cameras[CameraInfo.CAMERA_FACING_FRONT] != null;
   }
 
   public SurfaceView getRemoteSurfaceView() {
@@ -727,9 +702,8 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
     if (deviceOrientation == OrientationEventListener.ORIENTATION_UNKNOWN) {
       return;
     }
-    int cameraRotation =
-        cameras[getCameraId()].rotationFromRealWorldUp(
-            deviceOrientation);
+    int cameraRotation = rotationFromRealWorldUp(
+        cameras[getCameraId()], deviceOrientation);
     // Egress streams should have real world up as up.
     check(
         vie.setRotateCapturedFrames(currentCameraHandle, cameraRotation) == 0,
