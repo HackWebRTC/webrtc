@@ -61,9 +61,7 @@ function openChannel() {
 }
 
 function maybeRequestTurn() {
-  // Skipping TURN Http request for Firefox version <=22.
-  // Firefox does not support TURN for version <=22.
-  if (webrtcDetectedBrowser === 'firefox' && webrtcDetectedVersion <=22) {
+  if (turnUrl == '') {
     turnDone = true;
     return;
   }

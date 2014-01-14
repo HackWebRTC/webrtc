@@ -327,7 +327,6 @@ class MainPage(webapp2.RequestHandler):
     if not stun_server:
       stun_server = get_default_stun_server(user_agent)
     turn_server = self.request.get('ts')
-
     ts_pwd = self.request.get('tp')
 
     # Use "audio" and "video" to set the media stream constraints. Defined here:
@@ -438,10 +437,15 @@ class MainPage(webapp2.RequestHandler):
         logging.info('Room ' + room_key + ' is full')
         return
 
+    if turn_server == 'false':
+      turn_server = None
+      turn_url = ''
+    else:
+      turn_url = 'https://computeengineondemand.appspot.com/'
+      turn_url = turn_url + 'turn?' + 'username=' + user + '&key=4080218913'
+
     room_link = base_url + '?r=' + room_key
     room_link = append_url_arguments(self.request, room_link)
-    turn_url = 'https://computeengineondemand.appspot.com/'
-    turn_url = turn_url + 'turn?' + 'username=' + user + '&key=4080218913'
     token = create_channel(room, user, token_timeout)
     pc_config = make_pc_config(stun_server, turn_server, ts_pwd)
     pc_constraints = make_pc_constraints(compat, dscp)
