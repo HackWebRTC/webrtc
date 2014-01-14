@@ -612,11 +612,6 @@ struct VideoCodecVP8
     int                  keyFrameInterval;
 };
 
-// Unknown specific
-struct VideoCodecGeneric
-{
-};
-
 // Video codec types
 enum VideoCodecType
 {
@@ -631,7 +626,6 @@ enum VideoCodecType
 union VideoCodecUnion
 {
     VideoCodecVP8       VP8;
-    VideoCodecGeneric   Generic;
 };
 
 
