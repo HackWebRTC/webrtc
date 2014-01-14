@@ -331,56 +331,7 @@ TEST_F(PortAllocatorTest, TestSetupVideoRtpPortsWithNormalSendBuffers) {
   // If we Stop gathering now, we shouldn't get a second "done" callback.
   session_->StopGettingPorts();
 
-  // All ports should have normal send-buffer sizes (64KB).
-  CheckSendBufferSizesOfAllPorts(64 * 1024);
-}
-
-TEST_F(PortAllocatorTest, TestSetupVideoRtpPortsWithLargeSendBuffers) {
-  AddInterface(kClientAddr);
-  allocator_->set_flags(allocator_->flags() |
-                        cricket::PORTALLOCATOR_USE_LARGE_SOCKET_SEND_BUFFERS);
-  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP,
-                            cricket::CN_VIDEO));
-  session_->StartGettingPorts();
-  ASSERT_EQ_WAIT(7U, candidates_.size(), kDefaultAllocationTimeout);
-  EXPECT_TRUE(candidate_allocation_done_);
-  // If we Stop gathering now, we shouldn't get a second "done" callback.
-  session_->StopGettingPorts();
-
-  // All ports should have large send-buffer sizes (128KB).
-  CheckSendBufferSizesOfAllPorts(128 * 1024);
-}
-
-TEST_F(PortAllocatorTest, TestSetupVideoRtcpPortsAndCheckSendBuffers) {
-  AddInterface(kClientAddr);
-  allocator_->set_flags(allocator_->flags() |
-                        cricket::PORTALLOCATOR_USE_LARGE_SOCKET_SEND_BUFFERS);
-  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTCP,
-                            cricket::CN_DATA));
-  session_->StartGettingPorts();
-  ASSERT_EQ_WAIT(7U, candidates_.size(), kDefaultAllocationTimeout);
-  EXPECT_TRUE(candidate_allocation_done_);
-  // If we Stop gathering now, we shouldn't get a second "done" callback.
-  session_->StopGettingPorts();
-
-  // No ports should have send-buffer size set.
-  CheckSendBufferSizesOfAllPorts(-1);
-}
-
-
-TEST_F(PortAllocatorTest, TestSetupNonVideoPortsAndCheckSendBuffers) {
-  AddInterface(kClientAddr);
-  allocator_->set_flags(allocator_->flags() |
-                        cricket::PORTALLOCATOR_USE_LARGE_SOCKET_SEND_BUFFERS);
-  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP,
-                            cricket::CN_DATA));
-  session_->StartGettingPorts();
-  ASSERT_EQ_WAIT(7U, candidates_.size(), kDefaultAllocationTimeout);
-  EXPECT_TRUE(candidate_allocation_done_);
-  // If we Stop gathering now, we shouldn't get a second "done" callback.
-  session_->StopGettingPorts();
-
-  // No ports should have send-buffer size set.
+  // All ports should have unset send-buffer sizes.
   CheckSendBufferSizesOfAllPorts(-1);
 }
 

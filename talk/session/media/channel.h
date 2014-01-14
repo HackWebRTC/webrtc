@@ -31,7 +31,6 @@
 #include <string>
 #include <vector>
 
-#include "talk/app/webrtc/datachannelinterface.h"
 #include "talk/base/asyncudpsocket.h"
 #include "talk/base/criticalsection.h"
 #include "talk/base/network.h"
@@ -634,11 +633,6 @@ class DataChannel : public BaseChannel {
   // That occurs when the channel is enabled, the transport is writable,
   // both local and remote descriptions are set, and the channel is unblocked.
   sigslot::signal1<bool> SignalReadyToSendData;
-  // Signal for notifying when a new stream is added from the remote side. Used
-  // for the in-band negotioation through the OPEN message for SCTP data
-  // channel.
-  sigslot::signal2<const std::string&, const webrtc::DataChannelInit&>
-      SignalNewStreamReceived;
 
  protected:
   // downcasts a MediaChannel.
@@ -678,17 +672,6 @@ class DataChannel : public BaseChannel {
 
   typedef talk_base::TypedMessageData<bool> DataChannelReadyToSendMessageData;
 
-  struct DataChannelNewStreamReceivedMessageData
-      : public talk_base::MessageData {
-    DataChannelNewStreamReceivedMessageData(
-        const std::string& label, const webrtc::DataChannelInit& init)
-        : label(label),
-          init(init) {
-    }
-    const std::string label;
-    const webrtc::DataChannelInit init;
-  };
-
   // overrides from BaseChannel
   virtual const ContentInfo* GetFirstContent(const SessionDescription* sdesc);
   // If data_channel_type_ is DCT_NONE, set it.  Otherwise, check that
@@ -717,8 +700,6 @@ class DataChannel : public BaseChannel {
       const ReceiveDataParams& params, const char* data, size_t len);
   void OnDataChannelError(uint32 ssrc, DataMediaChannel::Error error);
   void OnDataChannelReadyToSend(bool writable);
-  void OnDataChannelNewStreamReceived(const std::string& label,
-                                      const webrtc::DataChannelInit& init);
   void OnSrtpError(uint32 ssrc, SrtpFilter::Mode mode, SrtpFilter::Error error);
 
   talk_base::scoped_ptr<DataMediaMonitor> media_monitor_;

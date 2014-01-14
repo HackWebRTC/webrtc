@@ -34,6 +34,64 @@ namespace webrtc {
 const char MediaConstraintsInterface::kValueTrue[] = "true";
 const char MediaConstraintsInterface::kValueFalse[] = "false";
 
+// Constraints declared as static members in mediastreaminterface.h
+// Specified by draft-alvestrand-constraints-resolution-00b
+const char MediaConstraintsInterface::kMinAspectRatio[] = "minAspectRatio";
+const char MediaConstraintsInterface::kMaxAspectRatio[] = "maxAspectRatio";
+const char MediaConstraintsInterface::kMaxWidth[] = "maxWidth";
+const char MediaConstraintsInterface::kMinWidth[] = "minWidth";
+const char MediaConstraintsInterface::kMaxHeight[] = "maxHeight";
+const char MediaConstraintsInterface::kMinHeight[] = "minHeight";
+const char MediaConstraintsInterface::kMaxFrameRate[] = "maxFrameRate";
+const char MediaConstraintsInterface::kMinFrameRate[] = "minFrameRate";
+
+// Audio constraints.
+const char MediaConstraintsInterface::kEchoCancellation[] =
+    "googEchoCancellation";
+const char MediaConstraintsInterface::kExperimentalEchoCancellation[] =
+    "googEchoCancellation2";
+const char MediaConstraintsInterface::kAutoGainControl[] =
+    "googAutoGainControl";
+const char MediaConstraintsInterface::kExperimentalAutoGainControl[] =
+    "googAutoGainControl2";
+const char MediaConstraintsInterface::kNoiseSuppression[] =
+    "googNoiseSuppression";
+const char MediaConstraintsInterface::kHighpassFilter[] =
+    "googHighpassFilter";
+const char MediaConstraintsInterface::kTypingNoiseDetection[] =
+    "googTypingNoiseDetection";
+const char MediaConstraintsInterface::kAudioMirroring[] = "googAudioMirroring";
+
+// Google-specific constraint keys for a local video source (getUserMedia).
+const char MediaConstraintsInterface::kNoiseReduction[] = "googNoiseReduction";
+const char MediaConstraintsInterface::kLeakyBucket[] = "googLeakyBucket";
+const char MediaConstraintsInterface::kTemporalLayeredScreencast[] =
+    "googTemporalLayeredScreencast";
+// TODO(ronghuawu): Remove once cpu overuse detection is stable.
+const char MediaConstraintsInterface::kCpuOveruseDetection[] =
+    "googCpuOveruseDetection";
+
+// Constraint keys for CreateOffer / CreateAnswer defined in W3C specification.
+const char MediaConstraintsInterface::kOfferToReceiveAudio[] =
+    "OfferToReceiveAudio";
+const char MediaConstraintsInterface::kOfferToReceiveVideo[] =
+    "OfferToReceiveVideo";
+const char MediaConstraintsInterface::kVoiceActivityDetection[] =
+    "VoiceActivityDetection";
+const char MediaConstraintsInterface::kIceRestart[] =
+    "IceRestart";
+// Google specific constraint for BUNDLE enable/disable.
+const char MediaConstraintsInterface::kUseRtpMux[] =
+    "googUseRtpMUX";
+
+// Below constraints should be used during PeerConnection construction.
+const char MediaConstraintsInterface::kEnableDtlsSrtp[] =
+    "DtlsSrtpKeyAgreement";
+const char MediaConstraintsInterface::kEnableRtpDataChannels[] =
+    "RtpDataChannels";
+const char MediaConstraintsInterface::kEnableDscp[] = "googDscp";
+const char MediaConstraintsInterface::kEnableIPv6[] = "googIPv6";
+
 // Set |value| to the value associated with the first appearance of |key|, or
 // return false if |key| is not found.
 bool MediaConstraintsInterface::Constraints::FindFirst(

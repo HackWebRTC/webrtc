@@ -50,7 +50,6 @@
 #include <limits.h>
 #include <pwd.h>
 #include <stdio.h>
-#include <unistd.h>
 #endif  // POSIX && !OSX
 
 #if defined(LINUX)
@@ -368,6 +367,8 @@ bool UnixFilesystem::GetAppPathname(Pathname* path) {
   if (success)
     path->SetPathname(path8);
   return success;
+#elif defined(__native_client__)
+  return false;
 #else  // OSX
   char buffer[NAME_MAX+1];
   size_t len = readlink("/proc/self/exe", buffer, ARRAY_SIZE(buffer) - 1);
@@ -453,6 +454,7 @@ bool UnixFilesystem::GetAppDataFolder(Pathname* path, bool per_user) {
   if (!CreateFolder(*path, 0700)) {
     return false;
   }
+#if !defined(__native_client__)
   // If the folder already exists, it may have the wrong mode or be owned by
   // someone else, both of which are security problems. Setting the mode
   // avoids both issues since it will fail if the path is not owned by us.
@@ -460,6 +462,7 @@ bool UnixFilesystem::GetAppDataFolder(Pathname* path, bool per_user) {
     LOG_ERR(LS_ERROR) << "Can't set mode on " << path;
     return false;
   }
+#endif
   return true;
 }
 
@@ -553,3 +556,11 @@ char* UnixFilesystem::CopyString(const std::string& str) {
 }
 
 }  // namespace talk_base
+
+#if defined(__native_client__)
+extern "C" int __attribute__((weak))
+link(const char* oldpath, const char* newpath) {
+  errno = EACCES;
+  return -1;
+}
+#endif

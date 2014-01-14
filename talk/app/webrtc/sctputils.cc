@@ -25,19 +25,19 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/media/sctp/sctputils.h"
+#include "talk/app/webrtc/sctputils.h"
 
-#include "talk/app/webrtc/datachannelinterface.h"
 #include "talk/base/buffer.h"
 #include "talk/base/bytebuffer.h"
 #include "talk/base/logging.h"
 
-namespace cricket {
+namespace webrtc {
 
 // Format defined at
-// http://tools.ietf.org/html/draft-ietf-rtcweb-data-protocol-00#section-6.1
+// http://tools.ietf.org/html/draft-ietf-rtcweb-data-protocol-01#section
 
 static const uint8 DATA_CHANNEL_OPEN_MESSAGE_TYPE = 0x03;
+static const uint8 DATA_CHANNEL_OPEN_ACK_MESSAGE_TYPE = 0x02;
 
 enum DataChannelOpenMessageChannelType {
   DCOMCT_ORDERED_RELIABLE = 0x00,
@@ -48,10 +48,9 @@ enum DataChannelOpenMessageChannelType {
   DCOMCT_UNORDERED_PARTIAL_TIME = 0x82,
 };
 
-bool ParseDataChannelOpenMessage(
-    const talk_base::Buffer& payload,
-    std::string* label,
-    webrtc::DataChannelInit* config) {
+bool ParseDataChannelOpenMessage(const talk_base::Buffer& payload,
+                                 std::string* label,
+                                 DataChannelInit* config) {
   // Format defined at
   // http://tools.ietf.org/html/draft-jesup-rtcweb-data-protocol-04
 
@@ -123,14 +122,28 @@ bool ParseDataChannelOpenMessage(
       config->maxRetransmitTime = reliability_param;
       break;
   }
-
   return true;
 }
 
-bool WriteDataChannelOpenMessage(
-    const std::string& label,
-    const webrtc::DataChannelInit& config,
-    talk_base::Buffer* payload) {
+bool ParseDataChannelOpenAckMessage(const talk_base::Buffer& payload) {
+  talk_base::ByteBuffer buffer(payload.data(), payload.length());
+
+  uint8 message_type;
+  if (!buffer.ReadUInt8(&message_type)) {
+    LOG(LS_WARNING) << "Could not read OPEN_ACK message type.";
+    return false;
+  }
+  if (message_type != DATA_CHANNEL_OPEN_ACK_MESSAGE_TYPE) {
+    LOG(LS_WARNING) << "Data Channel OPEN_ACK message of unexpected type: "
+                    << message_type;
+    return false;
+  }
+  return true;
+}
+
+bool WriteDataChannelOpenMessage(const std::string& label,
+                                 const DataChannelInit& config,
+                                 talk_base::Buffer* payload) {
   // Format defined at
   // http://tools.ietf.org/html/draft-ietf-rtcweb-data-protocol-00#section-6.1
   uint8 channel_type = 0;
@@ -173,4 +186,9 @@ bool WriteDataChannelOpenMessage(
   return true;
 }
 
-}  // namespace cricket
+void WriteDataChannelOpenAckMessage(talk_base::Buffer* payload) {
+  talk_base::ByteBuffer buffer(talk_base::ByteBuffer::ORDER_NETWORK);
+  buffer.WriteUInt8(DATA_CHANNEL_OPEN_ACK_MESSAGE_TYPE);
+  payload->SetData(buffer.Data(), buffer.Length());
+}
+}  // namespace webrtc

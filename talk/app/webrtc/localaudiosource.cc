@@ -37,24 +37,6 @@ using webrtc::MediaSourceInterface;
 
 namespace webrtc {
 
-// Constraint keys.
-// They are declared as static members in mediaconstraintsinterface.h
-const char MediaConstraintsInterface::kEchoCancellation[] =
-    "googEchoCancellation";
-const char MediaConstraintsInterface::kExperimentalEchoCancellation[] =
-    "googEchoCancellation2";
-const char MediaConstraintsInterface::kAutoGainControl[] =
-    "googAutoGainControl";
-const char MediaConstraintsInterface::kExperimentalAutoGainControl[] =
-    "googAutoGainControl2";
-const char MediaConstraintsInterface::kNoiseSuppression[] =
-    "googNoiseSuppression";
-const char MediaConstraintsInterface::kHighpassFilter[] =
-    "googHighpassFilter";
-const char MediaConstraintsInterface::kTypingNoiseDetection[] =
-    "googTypingNoiseDetection";
-const char MediaConstraintsInterface::kAudioMirroring[] = "googAudioMirroring";
-
 namespace {
 
 // Convert constraints to audio options. Return false if constraints are

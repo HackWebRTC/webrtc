@@ -28,6 +28,8 @@
 #ifndef TALK_BASE_STREAM_H_
 #define TALK_BASE_STREAM_H_
 
+#include <stdio.h>
+
 #include "talk/base/basictypes.h"
 #include "talk/base/buffer.h"
 #include "talk/base/criticalsection.h"
@@ -497,7 +499,6 @@ class CircularFileStream : public FileStream {
   size_t read_segment_available_;
 };
 
-
 // A stream which pushes writes onto a separate thread and
 // returns from the write call immediately.
 class AsyncWriteStream : public StreamInterface {
@@ -539,7 +540,7 @@ class AsyncWriteStream : public StreamInterface {
 };
 
 
-#ifdef POSIX
+#if defined(POSIX) && !defined(__native_client__)
 // A FileStream that is actually not a file, but the output or input of a
 // sub-command. See "man 3 popen" for documentation of the underlying OS popen()
 // function.

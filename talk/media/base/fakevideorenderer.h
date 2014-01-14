@@ -48,6 +48,7 @@ class FakeVideoRenderer : public VideoRenderer {
   }
 
   virtual bool SetSize(int width, int height, int reserved) {
+    talk_base::CritScope cs(&crit_);
     width_ = width;
     height_ = height;
     ++num_set_sizes_;
@@ -56,6 +57,7 @@ class FakeVideoRenderer : public VideoRenderer {
   }
 
   virtual bool RenderFrame(const VideoFrame* frame) {
+    talk_base::CritScope cs(&crit_);
     // TODO(zhurunz) Check with VP8 team to see if we can remove this
     // tolerance on Y values.
     black_frame_ = CheckFrameColorYuv(6, 48, 128, 128, 128, 128, frame);
@@ -79,11 +81,26 @@ class FakeVideoRenderer : public VideoRenderer {
   }
 
   int errors() const { return errors_; }
-  int width() const { return width_; }
-  int height() const { return height_; }
-  int num_set_sizes() const { return num_set_sizes_; }
-  int num_rendered_frames() const { return num_rendered_frames_; }
-  bool black_frame() const { return black_frame_; }
+  int width() const {
+    talk_base::CritScope cs(&crit_);
+    return width_;
+  }
+  int height() const {
+    talk_base::CritScope cs(&crit_);
+    return height_;
+  }
+  int num_set_sizes() const {
+    talk_base::CritScope cs(&crit_);
+    return num_set_sizes_;
+  }
+  int num_rendered_frames() const {
+    talk_base::CritScope cs(&crit_);
+    return num_rendered_frames_;
+  }
+  bool black_frame() const {
+    talk_base::CritScope cs(&crit_);
+    return black_frame_;
+  }
 
   sigslot::signal3<int, int, int> SignalSetSize;
   sigslot::signal1<const VideoFrame*> SignalRenderFrame;
@@ -143,6 +160,7 @@ class FakeVideoRenderer : public VideoRenderer {
   int num_set_sizes_;
   int num_rendered_frames_;
   bool black_frame_;
+  mutable talk_base::CriticalSection crit_;
 };
 
 }  // namespace cricket
