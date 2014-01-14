@@ -39,15 +39,6 @@
   ...
 }
 {
-  Trace function
-  ThreadSanitizer:Race
-  fun:webrtc::TraceImpl::WriteToFile
-  fun:webrtc::TraceImpl::Process
-  fun:webrtc::TraceImpl::Run
-  fun:webrtc::ThreadPosix::Run
-  fun:StartThread
-}
-{
   Test posix socket HasIncoming
   ThreadSanitizer:Race
   fun:webrtc::test::UdpSocketPosix::HasIncoming

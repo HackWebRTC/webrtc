@@ -288,8 +288,8 @@
         # Disabled because some tests fail.
         # TODO(ronghuawu): Reenable these tests.
         # 'media/devices/devicemanager_unittest.cc',
-        'media/webrtc/webrtcvideoengine_unittest.cc',
-        'media/webrtc/webrtcvoiceengine_unittest.cc',
+        # 'media/webrtc/webrtcvideoengine_unittest.cc',
+        # 'media/webrtc/webrtcvoiceengine_unittest.cc',
       ],
       'conditions': [
         ['OS=="win"', {
