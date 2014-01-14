@@ -864,4 +864,14 @@ void Expand::UpdateLagIndex() {
   }
 }
 
+Expand* ExpandFactory::Create(BackgroundNoise* background_noise,
+                              SyncBuffer* sync_buffer,
+                              RandomVector* random_vector,
+                              int fs,
+                              size_t num_channels) const {
+  return new Expand(background_noise, sync_buffer, random_vector, fs,
+                    num_channels);
+}
+
+
 }  // namespace webrtc

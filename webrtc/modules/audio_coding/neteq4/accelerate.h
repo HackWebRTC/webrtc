@@ -64,5 +64,14 @@ class Accelerate : public TimeStretch {
   DISALLOW_COPY_AND_ASSIGN(Accelerate);
 };
 
+struct AccelerateFactory {
+  AccelerateFactory() {}
+  virtual ~AccelerateFactory() {}
+
+  virtual Accelerate* Create(int sample_rate_hz,
+                             size_t num_channels,
+                             const BackgroundNoise& background_noise) const;
+};
+
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_AUDIO_CODING_NETEQ4_ACCELERATE_H_

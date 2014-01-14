@@ -98,4 +98,11 @@ PreemptiveExpand::ReturnCodes PreemptiveExpand::CheckCriteriaAndStretch(
   }
 }
 
+PreemptiveExpand* PreemptiveExpandFactory::Create(
+    int sample_rate_hz,
+    size_t num_channels,
+    const BackgroundNoise& background_noise) const {
+  return new PreemptiveExpand(sample_rate_hz, num_channels, background_noise);
+}
+
 }  // namespace webrtc

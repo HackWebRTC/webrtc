@@ -58,7 +58,10 @@ NetEqImpl::NetEqImpl(int fs,
                      DtmfToneGenerator* dtmf_tone_generator,
                      PacketBuffer* packet_buffer,
                      PayloadSplitter* payload_splitter,
-                     TimestampScaler* timestamp_scaler)
+                     TimestampScaler* timestamp_scaler,
+                     AccelerateFactory* accelerate_factory,
+                     ExpandFactory* expand_factory,
+                     PreemptiveExpandFactory* preemptive_expand_factory)
     : buffer_level_filter_(buffer_level_filter),
       decoder_database_(decoder_database),
       delay_manager_(delay_manager),
@@ -69,6 +72,9 @@ NetEqImpl::NetEqImpl(int fs,
       payload_splitter_(payload_splitter),
       timestamp_scaler_(timestamp_scaler),
       vad_(new PostDecodeVad()),
+      expand_factory_(expand_factory),
+      accelerate_factory_(accelerate_factory),
+      preemptive_expand_factory_(preemptive_expand_factory),
       last_mode_(kModeNormal),
       mute_factor_array_(NULL),
       decoded_buffer_length_(kMaxFrameSize),
@@ -1853,8 +1859,9 @@ void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
   random_vector_.Reset();
 
   // Delete Expand object and create a new one.
-  expand_.reset(new Expand(background_noise_.get(), sync_buffer_.get(),
-                           &random_vector_, fs_hz, channels));
+  expand_.reset(expand_factory_->Create(background_noise_.get(),
+                                        sync_buffer_.get(), &random_vector_,
+                                        fs_hz, channels));
   // Move index so that we create a small set of future samples (all 0).
   sync_buffer_->set_next_index(sync_buffer_->next_index() -
                                expand_->overlap_length());
@@ -1862,9 +1869,10 @@ void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
   normal_.reset(new Normal(fs_hz, decoder_database_.get(), *background_noise_,
                            expand_.get()));
   merge_.reset(new Merge(fs_hz, channels, expand_.get(), sync_buffer_.get()));
-  accelerate_.reset(new Accelerate(fs_hz, channels, *background_noise_));
-  preemptive_expand_.reset(new PreemptiveExpand(fs_hz, channels,
-                                                *background_noise_));
+  accelerate_.reset(
+      accelerate_factory_->Create(fs_hz, channels, *background_noise_));
+  preemptive_expand_.reset(
+      preemptive_expand_factory_->Create(fs_hz, channels, *background_noise_));
 
   // Delete ComfortNoise object and create a new one.
   comfort_noise_.reset(new ComfortNoise(fs_hz, decoder_database_.get(),

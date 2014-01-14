@@ -153,5 +153,16 @@ class Expand {
   DISALLOW_COPY_AND_ASSIGN(Expand);
 };
 
+struct ExpandFactory {
+  ExpandFactory() {}
+  virtual ~ExpandFactory() {}
+
+  virtual Expand* Create(BackgroundNoise* background_noise,
+                         SyncBuffer* sync_buffer,
+                         RandomVector* random_vector,
+                         int fs,
+                         size_t num_channels) const;
+};
+
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_AUDIO_CODING_NETEQ4_EXPAND_H_

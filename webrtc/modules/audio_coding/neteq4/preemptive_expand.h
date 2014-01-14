@@ -70,5 +70,15 @@ class PreemptiveExpand : public TimeStretch {
   DISALLOW_COPY_AND_ASSIGN(PreemptiveExpand);
 };
 
+struct PreemptiveExpandFactory {
+  PreemptiveExpandFactory() {}
+  virtual ~PreemptiveExpandFactory() {}
+
+  virtual PreemptiveExpand* Create(
+      int sample_rate_hz,
+      size_t num_channels,
+      const BackgroundNoise& background_noise) const;
+};
+
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_AUDIO_CODING_NETEQ4_PREEMPTIVE_EXPAND_H_

@@ -48,7 +48,10 @@ class PreemptiveExpand;
 class RandomVector;
 class SyncBuffer;
 class TimestampScaler;
+struct AccelerateFactory;
 struct DtmfEvent;
+struct ExpandFactory;
+struct PreemptiveExpandFactory;
 
 class NetEqImpl : public webrtc::NetEq {
  public:
@@ -63,7 +66,10 @@ class NetEqImpl : public webrtc::NetEq {
             DtmfToneGenerator* dtmf_tone_generator,
             PacketBuffer* packet_buffer,
             PayloadSplitter* payload_splitter,
-            TimestampScaler* timestamp_scaler);
+            TimestampScaler* timestamp_scaler,
+            AccelerateFactory* accelerate_factory,
+            ExpandFactory* expand_factory,
+            PreemptiveExpandFactory* preemptive_expand_factory);
 
   virtual ~NetEqImpl();
 
@@ -315,10 +321,13 @@ class NetEqImpl : public webrtc::NetEq {
   scoped_ptr<AudioMultiVector> algorithm_buffer_;
   scoped_ptr<SyncBuffer> sync_buffer_;
   scoped_ptr<Expand> expand_;
+  scoped_ptr<ExpandFactory> expand_factory_;
   scoped_ptr<Normal> normal_;
   scoped_ptr<Merge> merge_;
   scoped_ptr<Accelerate> accelerate_;
+  scoped_ptr<AccelerateFactory> accelerate_factory_;
   scoped_ptr<PreemptiveExpand> preemptive_expand_;
+  scoped_ptr<PreemptiveExpandFactory> preemptive_expand_factory_;
   RandomVector random_vector_;
   scoped_ptr<ComfortNoise> comfort_noise_;
   Rtcp rtcp_;
