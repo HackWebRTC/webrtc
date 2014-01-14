@@ -26,6 +26,11 @@ typedef intptr_t WindowId;
 
 const WindowId kNullWindowId = 0;
 
+typedef int ScreenId;
+
+// The screen id corresponds to all screen combined together.
+const ScreenId kFullDesktopScreenId = -1;
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURE_TYPES_H_

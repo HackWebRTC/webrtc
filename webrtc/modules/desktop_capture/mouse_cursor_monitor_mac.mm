@@ -211,7 +211,8 @@ MouseCursorMonitor* MouseCursorMonitor::CreateForWindow(
 }
 
 MouseCursorMonitor* MouseCursorMonitor::CreateForScreen(
-    const DesktopCaptureOptions& options) {
+    const DesktopCaptureOptions& options,
+    ScreenId screen) {
   return new MouseCursorMonitorMac(kCGNullWindowID);
 }
 

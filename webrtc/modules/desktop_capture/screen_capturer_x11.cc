@@ -57,6 +57,8 @@ class ScreenCapturerLinux : public ScreenCapturer,
   // ScreenCapturer interface.
   virtual void SetMouseShapeObserver(
       MouseShapeObserver* mouse_shape_observer) OVERRIDE;
+  virtual bool GetScreenList(ScreenList* screens) OVERRIDE;
+  virtual bool SelectScreen(ScreenId id) OVERRIDE;
 
  private:
   Display* display() { return options_.x_display()->display(); }
@@ -308,6 +310,20 @@ void ScreenCapturerLinux::SetMouseShapeObserver(
   DCHECK(mouse_shape_observer);
 
   mouse_shape_observer_ = mouse_shape_observer;
+}
+
+bool ScreenCapturerLinux::GetScreenList(ScreenList* screens) {
+  DCHECK(screens->size() == 0);
+  // TODO(jiayl): implement screen enumeration.
+  Screen default_screen;
+  default_screen.id = 0;
+  screens->push_back(default_screen);
+  return true;
+}
+
+bool ScreenCapturerLinux::SelectScreen(ScreenId id) {
+  // TODO(jiayl): implement screen selection.
+  return true;
 }
 
 bool ScreenCapturerLinux::HandleXEvent(const XEvent& event) {

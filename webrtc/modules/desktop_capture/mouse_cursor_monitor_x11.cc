@@ -214,7 +214,8 @@ MouseCursorMonitor* MouseCursorMonitor::CreateForWindow(
 }
 
 MouseCursorMonitor* MouseCursorMonitor::CreateForScreen(
-    const DesktopCaptureOptions& options) {
+    const DesktopCaptureOptions& options,
+    ScreenId screen) {
   if (!options.x_display())
     return NULL;
   return new MouseCursorMonitorX11(

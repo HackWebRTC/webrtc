@@ -69,7 +69,8 @@ class MouseCursorMonitor {
   //
   // TODO(sergeyu): Provide a way to select a specific screen.
   static MouseCursorMonitor* CreateForScreen(
-      const DesktopCaptureOptions& options);
+      const DesktopCaptureOptions& options,
+      ScreenId screen);
 
   // Initializes the monitor with the |callback|, which must remain valid until
   // capturer is destroyed.

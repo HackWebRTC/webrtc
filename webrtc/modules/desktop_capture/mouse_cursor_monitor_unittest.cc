@@ -58,7 +58,7 @@ class MouseCursorMonitorTest : public testing::Test,
 
 TEST_F(MouseCursorMonitorTest, MAYBE(FromScreen)) {
   scoped_ptr<MouseCursorMonitor> capturer(MouseCursorMonitor::CreateForScreen(
-      DesktopCaptureOptions::CreateDefault()));
+      DesktopCaptureOptions::CreateDefault(), webrtc::kFullDesktopScreenId));
   assert(capturer.get());
   capturer->Init(this, MouseCursorMonitor::SHAPE_AND_POSITION);
   capturer->Capture();
@@ -109,7 +109,7 @@ TEST_F(MouseCursorMonitorTest, MAYBE(FromWindow)) {
 // Make sure that OnMouseCursorPosition() is not called in the SHAPE_ONLY mode.
 TEST_F(MouseCursorMonitorTest, MAYBE(ShapeOnly)) {
   scoped_ptr<MouseCursorMonitor> capturer(MouseCursorMonitor::CreateForScreen(
-      DesktopCaptureOptions::CreateDefault()));
+      DesktopCaptureOptions::CreateDefault(), webrtc::kFullDesktopScreenId));
   assert(capturer.get());
   capturer->Init(this, MouseCursorMonitor::SHAPE_ONLY);
   capturer->Capture();

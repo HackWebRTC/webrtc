@@ -53,6 +53,8 @@ class ScreenCapturerWin : public ScreenCapturer {
   virtual void Capture(const DesktopRegion& region) OVERRIDE;
   virtual void SetMouseShapeObserver(
       MouseShapeObserver* mouse_shape_observer) OVERRIDE;
+  virtual bool GetScreenList(ScreenList* screens) OVERRIDE;
+  virtual bool SelectScreen(ScreenId id) OVERRIDE;
 
  private:
   // Make sure that the device contexts match the screen configuration.
@@ -202,6 +204,20 @@ void ScreenCapturerWin::SetMouseShapeObserver(
   assert(mouse_shape_observer);
 
   mouse_shape_observer_ = mouse_shape_observer;
+}
+
+bool ScreenCapturerWin::GetScreenList(ScreenList* screens) {
+  assert(screens->size() == 0);
+  // TODO(jiayl): implement screen enumeration.
+  Screen default_screen;
+  default_screen.id = 0;
+  screens->push_back(default_screen);
+  return true;
+}
+
+bool ScreenCapturerWin::SelectScreen(ScreenId id) {
+  // TODO(jiayl): implement screen selection.
+  return true;
 }
 
 void ScreenCapturerWin::Start(Callback* callback) {
