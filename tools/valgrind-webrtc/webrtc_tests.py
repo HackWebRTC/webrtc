@@ -114,6 +114,10 @@ def main(_):
                           'instead of /tmp.\nThis can be useful for tool '
                           'developers/maintainers.\nPlease note that the <tool>'
                           '.logs directory will be clobbered on tool startup.'))
+  parser.add_option("--brave-new-test-launcher", action="store_true",
+                    help="run the tests with --brave-new-test-launcher")
+  parser.add_option("--test-launcher-bot-mode", action="store_true",
+                    help="run the tests with --test-launcher-bot-mode")
   options, args = parser.parse_args()
 
   if options.verbose:

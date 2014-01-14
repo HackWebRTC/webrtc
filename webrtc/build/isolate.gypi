@@ -87,8 +87,8 @@
             # Other variables should use the -V FOO=<(FOO) form so frequent
             # values, like '0' or '1', aren't stripped out by GYP.
             '--outdir', '<(PRODUCT_DIR)/ ',
-            '--variable', 'PRODUCT_DIR', '<(PRODUCT_DIR) ',
-            '--variable', 'OS=<(OS)',
+            '--path-variable', 'PRODUCT_DIR', '<(PRODUCT_DIR) ',
+            '--config-variable', 'OS=<(OS)',
             '--result', '<@(_outputs)',
             '--isolate', '<(RULE_INPUT_PATH)',
           ],
@@ -99,8 +99,8 @@
             '<(test_isolation_mode)',
             '--outdir', '<(test_isolation_outdir)',
             # See comment above.
-            '--variable', 'PRODUCT_DIR', '<(PRODUCT_DIR) ',
-            '--variable', 'OS=<(OS)',
+            '--path-variable', 'PRODUCT_DIR', '<(PRODUCT_DIR) ',
+            '--config-variable', 'OS=<(OS)',
             '--result', '<@(_outputs)',
             '--isolate', '<(RULE_INPUT_PATH)',
           ],

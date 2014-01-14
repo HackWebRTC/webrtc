@@ -31,7 +31,7 @@
           '<(PRODUCT_DIR)/vie_auto_test<(EXECUTABLE_SUFFIX)',
         ],
         'isolate_dependency_untracked': [
-          '../../tools/swarming_client/',
+          '../../../../tools/swarming_client/',
         ],
       },
     }],

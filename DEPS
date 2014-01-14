@@ -11,7 +11,7 @@ vars = {
   "googlecode_url": "http://%s.googlecode.com/svn",
   "sourceforge_url": "http://svn.code.sf.net/p/%(repo)s/code",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-  "chromium_revision": "238260",
+  "chromium_revision": "243863",
 
   # A small subset of WebKit is needed for the Android Python test framework.
   "webkit_trunk": "http://src.chromium.org/blink/trunk",
@@ -22,6 +22,9 @@ vars = {
 deps = {
   "../chromium_deps":
     File(Var("chromium_trunk") + "/src/DEPS@" + Var("chromium_revision")),
+
+  "../chromium_gn":
+    File(Var("chromium_trunk") + "/src/.gn@" + Var("chromium_revision")),
 
   "build":
     Var("chromium_trunk") + "/src/build@" + Var("chromium_revision"),
@@ -94,6 +97,9 @@ deps = {
 
   "tools/clang":
     Var("chromium_trunk") + "/src/tools/clang@" + Var("chromium_revision"),
+
+  "tools/gn":
+    Var("chromium_trunk") + "/src/tools/gn@" + Var("chromium_revision"),
 
   "tools/gyp":
     From("chromium_deps", "src/tools/gyp"),
@@ -194,6 +200,59 @@ deps_os = {
 }
 
 hooks = [
+  {
+    # Copy .gn from temporary place (../chromium_gn) to root_dir.
+    "name": "copy .gn",
+    "pattern": ".",
+    "action": ["python", Var("root_dir") + "/build/cp.py",
+               Var("root_dir") + "/../chromium_gn/.gn",
+               Var("root_dir")],
+  },
+  # Pull GN binaries. This needs to be before running GYP below.
+  {
+    "name": "gn_win",
+    "pattern": "tools/gn/bin/win/gn.exe.sha1",
+    "action": [ "download_from_google_storage",
+                "--no_resume",
+                "--platform=win32",
+                "--no_auth",
+                "--bucket", "chromium-gn",
+                "-s", Var("root_dir") + "/tools/gn/bin/win/gn.exe.sha1",
+    ],
+  },
+  {
+    "name": "gn_mac",
+    "pattern": "tools/gn/bin/mac/gn.sha1",
+    "action": [ "download_from_google_storage",
+                "--no_resume",
+                "--platform=darwin",
+                "--no_auth",
+                "--bucket", "chromium-gn",
+                "-s", Var("root_dir") + "/tools/gn/bin/mac/gn.sha1",
+    ],
+  },
+  {
+    "name": "gn_linux",
+    "pattern": "tools/gn/bin/linux/gn.sha1",
+    "action": [ "download_from_google_storage",
+                "--no_resume",
+                "--platform=linux*",
+                "--no_auth",
+                "--bucket", "chromium-gn",
+                "-s", Var("root_dir") + "/tools/gn/bin/linux/gn.sha1",
+    ],
+  },
+  {
+    "name": "gn_linux32",
+    "pattern": "tools/gn/bin/linux/gn32.sha1",
+    "action": [ "download_from_google_storage",
+                "--no_resume",
+                "--platform=linux*",
+                "--no_auth",
+                "--bucket", "chromium-gn",
+                "-s", Var("root_dir") + "/tools/gn/bin/linux/gn32.sha1",
+    ],
+  },
   {
     # Create a supplement.gypi file under trunk/webrtc. This file will be picked
     # up by gyp and used to enable the standalone build.
