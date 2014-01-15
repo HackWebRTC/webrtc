@@ -212,9 +212,15 @@ struct VideoFormat : VideoFormatPod {
   }
 
   static int IntervalToFps(int64 interval) {
-    // Normalize the interval first.
-    interval = talk_base::_max(interval, kMinimumInterval);
     return static_cast<int>(talk_base::kNumNanosecsPerSec / interval);
+  }
+
+  static float IntervalToFpsFloat(int64 interval) {
+    if (!interval) {
+      return 0.f;
+    }
+    return static_cast<float>(talk_base::kNumNanosecsPerSec) /
+        static_cast<float>(interval);
   }
 
   bool operator==(const VideoFormat& format) const {

@@ -276,7 +276,8 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
       const std::vector<RtpHeaderExtension>& extensions);
   virtual bool SetSendRtpHeaderExtensions(
       const std::vector<RtpHeaderExtension>& extensions);
-  virtual bool SetSendBandwidth(bool autobw, int bps);
+  virtual bool SetStartSendBandwidth(int bps);
+  virtual bool SetMaxSendBandwidth(int bps);
   virtual bool SetOptions(const VideoOptions &options);
   virtual bool GetOptions(VideoOptions *options) const {
     *options = options_;
@@ -291,6 +292,8 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   void SendFrame(VideoCapturer* capturer, const VideoFrame* frame);
   bool SendFrame(WebRtcVideoChannelSendInfo* channel_info,
                  const VideoFrame* frame, bool is_screencast);
+
+  void AdaptAndSendFrame(VideoCapturer* capturer, const VideoFrame* frame);
 
   // Thunk functions for use with HybridVideoEngine
   void OnLocalFrame(VideoCapturer* capturer, const VideoFrame* frame) {

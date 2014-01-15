@@ -111,10 +111,11 @@ class BaseChannel
 
   // Channel control
   bool SetLocalContent(const MediaContentDescription* content,
-                       ContentAction action);
+                       ContentAction action,
+                       std::string* error_desc);
   bool SetRemoteContent(const MediaContentDescription* content,
-                        ContentAction action);
-  bool SetMaxSendBandwidth(int max_bandwidth);
+                        ContentAction action,
+                        std::string* error_desc);
 
   bool Enable(bool enable);
   // Mute sending media on the stream with SSRC |ssrc|
@@ -306,24 +307,35 @@ class BaseChannel
   virtual const ContentInfo* GetFirstContent(
       const SessionDescription* sdesc) = 0;
   bool UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
-                            ContentAction action);
+                            ContentAction action,
+                            std::string* error_desc);
   bool UpdateRemoteStreams_w(const std::vector<StreamParams>& streams,
-                             ContentAction action);
+                             ContentAction action,
+                             std::string* error_desc);
   bool SetBaseLocalContent_w(const MediaContentDescription* content,
-                             ContentAction action);
+                             ContentAction action,
+                             std::string* error_desc);
   virtual bool SetLocalContent_w(const MediaContentDescription* content,
-                                 ContentAction action) = 0;
+                                 ContentAction action,
+                                 std::string* error_desc) = 0;
   bool SetBaseRemoteContent_w(const MediaContentDescription* content,
-                              ContentAction action);
+                              ContentAction action,
+                              std::string* error_desc);
   virtual bool SetRemoteContent_w(const MediaContentDescription* content,
-                                  ContentAction action) = 0;
+                                  ContentAction action,
+                                  std::string* error_desc) = 0;
 
-  bool CheckSrtpConfig(const std::vector<CryptoParams>& cryptos, bool* dtls);
-  bool SetSrtp_w(const std::vector<CryptoParams>& params, ContentAction action,
-                 ContentSource src);
-  bool SetRtcpMux_w(bool enable, ContentAction action, ContentSource src);
-
-  virtual bool SetMaxSendBandwidth_w(int max_bandwidth);
+  bool CheckSrtpConfig(const std::vector<CryptoParams>& cryptos,
+                       bool* dtls,
+                       std::string* error_desc);
+  bool SetSrtp_w(const std::vector<CryptoParams>& params,
+                 ContentAction action,
+                 ContentSource src,
+                 std::string* error_desc);
+  bool SetRtcpMux_w(bool enable,
+                    ContentAction action,
+                    ContentSource src,
+                    std::string* error_desc);
 
   // From MessageHandler
   virtual void OnMessage(talk_base::Message* pmsg);
@@ -450,9 +462,11 @@ class VoiceChannel : public BaseChannel {
   virtual void ChangeState();
   virtual const ContentInfo* GetFirstContent(const SessionDescription* sdesc);
   virtual bool SetLocalContent_w(const MediaContentDescription* content,
-                                 ContentAction action);
+                                 ContentAction action,
+                                 std::string* error_desc);
   virtual bool SetRemoteContent_w(const MediaContentDescription* content,
-                                  ContentAction action);
+                                  ContentAction action,
+                                  std::string* error_desc);
   bool SetRingbackTone_w(const void* buf, int len);
   bool PlayRingbackTone_w(uint32 ssrc, bool play, bool loop);
   void HandleEarlyMediaTimeout();
@@ -549,9 +563,11 @@ class VideoChannel : public BaseChannel {
   virtual void ChangeState();
   virtual const ContentInfo* GetFirstContent(const SessionDescription* sdesc);
   virtual bool SetLocalContent_w(const MediaContentDescription* content,
-                                 ContentAction action);
+                                 ContentAction action,
+                                 std::string* error_desc);
   virtual bool SetRemoteContent_w(const MediaContentDescription* content,
-                                  ContentAction action);
+                                  ContentAction action,
+                                  std::string* error_desc);
   void SendIntraFrame_w() {
     media_channel()->SendIntraFrame();
   }
@@ -677,15 +693,18 @@ class DataChannel : public BaseChannel {
   // If data_channel_type_ is DCT_NONE, set it.  Otherwise, check that
   // it's the same as what was set previously.  Returns false if it's
   // set to one type one type and changed to another type later.
-  bool SetDataChannelType(DataChannelType new_data_channel_type);
+  bool SetDataChannelType(DataChannelType new_data_channel_type,
+                          std::string* error_desc);
   // Same as SetDataChannelType, but extracts the type from the
   // DataContentDescription.
-  bool SetDataChannelTypeFromContent(const DataContentDescription* content);
-  virtual bool SetMaxSendBandwidth_w(int max_bandwidth);
+  bool SetDataChannelTypeFromContent(const DataContentDescription* content,
+                                     std::string* error_desc);
   virtual bool SetLocalContent_w(const MediaContentDescription* content,
-                                 ContentAction action);
+                                 ContentAction action,
+                                 std::string* error_desc);
   virtual bool SetRemoteContent_w(const MediaContentDescription* content,
-                                  ContentAction action);
+                                  ContentAction action,
+                                  std::string* error_desc);
   virtual void ChangeState();
   virtual bool WantsPacket(bool rtcp, talk_base::Buffer* packet);
 

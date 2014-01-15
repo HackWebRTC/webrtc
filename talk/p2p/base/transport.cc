@@ -73,6 +73,33 @@ struct ChannelParams : public talk_base::MessageData {
   Candidate* candidate;
 };
 
+static std::string IceProtoToString(TransportProtocol proto) {
+  std::string proto_str;
+  switch (proto) {
+    case ICEPROTO_GOOGLE:
+      proto_str = "gice";
+      break;
+    case ICEPROTO_HYBRID:
+      proto_str = "hybrid";
+      break;
+    case ICEPROTO_RFC5245:
+      proto_str = "ice";
+      break;
+    default:
+      ASSERT(false);
+      break;
+  }
+  return proto_str;
+}
+
+bool BadTransportDescription(const std::string& desc, std::string* err_desc) {
+  if (err_desc) {
+    *err_desc = desc;
+  }
+  LOG(LS_ERROR) << desc;
+  return false;
+}
+
 Transport::Transport(talk_base::Thread* signaling_thread,
                      talk_base::Thread* worker_thread,
                      const std::string& content_name,
@@ -131,15 +158,21 @@ bool Transport::GetRemoteCertificate_w(talk_base::SSLCertificate** cert) {
 }
 
 bool Transport::SetLocalTransportDescription(
-    const TransportDescription& description, ContentAction action) {
+    const TransportDescription& description,
+    ContentAction action,
+    std::string* error_desc) {
   return worker_thread_->Invoke<bool>(Bind(
-      &Transport::SetLocalTransportDescription_w, this, description, action));
+      &Transport::SetLocalTransportDescription_w, this,
+      description, action, error_desc));
 }
 
 bool Transport::SetRemoteTransportDescription(
-    const TransportDescription& description, ContentAction action) {
+    const TransportDescription& description,
+    ContentAction action,
+    std::string* error_desc) {
   return worker_thread_->Invoke<bool>(Bind(
-      &Transport::SetRemoteTransportDescription_w, this, description, action));
+      &Transport::SetRemoteTransportDescription_w, this,
+      description, action, error_desc));
 }
 
 TransportChannelImpl* Transport::CreateChannel(int component) {
@@ -176,10 +209,12 @@ TransportChannelImpl* Transport::CreateChannel_w(int component) {
   impl->SetIceRole(ice_role_);
   impl->SetIceTiebreaker(tiebreaker_);
   if (local_description_) {
-    ApplyLocalTransportDescription_w(impl);
+    // TODO(ronghuawu): Change CreateChannel_w to be able to return error since
+    // below Apply**Description_w calls can fail.
+    ApplyLocalTransportDescription_w(impl, NULL);
     if (remote_description_) {
-      ApplyRemoteTransportDescription_w(impl);
-      ApplyNegotiatedTransportDescription_w(impl);
+      ApplyRemoteTransportDescription_w(impl, NULL);
+      ApplyNegotiatedTransportDescription_w(impl, NULL);
     }
   }
 
@@ -276,7 +311,7 @@ void Transport::ConnectChannels_w() {
                               talk_base::CreateRandomString(ICE_PWD_LENGTH),
                               ICEMODE_FULL, CONNECTIONROLE_NONE, NULL,
                               Candidates());
-    SetLocalTransportDescription_w(desc, CA_OFFER);
+    SetLocalTransportDescription_w(desc, CA_OFFER, NULL);
   }
 
   CallChannels_w(&TransportChannelImpl::Connect);
@@ -606,63 +641,70 @@ void Transport::SetRemoteIceMode_w(IceMode mode) {
 }
 
 bool Transport::SetLocalTransportDescription_w(
-    const TransportDescription& desc, ContentAction action) {
+    const TransportDescription& desc,
+    ContentAction action,
+    std::string* error_desc) {
   bool ret = true;
   talk_base::CritScope cs(&crit_);
   local_description_.reset(new TransportDescription(desc));
 
   for (ChannelMap::iterator iter = channels_.begin();
        iter != channels_.end(); ++iter) {
-    ret &= ApplyLocalTransportDescription_w(iter->second.get());
+    ret &= ApplyLocalTransportDescription_w(iter->second.get(), error_desc);
   }
   if (!ret)
     return false;
 
   // If PRANSWER/ANSWER is set, we should decide transport protocol type.
   if (action == CA_PRANSWER || action == CA_ANSWER) {
-    ret &= NegotiateTransportDescription_w(action);
+    ret &= NegotiateTransportDescription_w(action, error_desc);
   }
   return ret;
 }
 
 bool Transport::SetRemoteTransportDescription_w(
-    const TransportDescription& desc, ContentAction action) {
+    const TransportDescription& desc,
+    ContentAction action,
+    std::string* error_desc) {
   bool ret = true;
   talk_base::CritScope cs(&crit_);
   remote_description_.reset(new TransportDescription(desc));
 
   for (ChannelMap::iterator iter = channels_.begin();
        iter != channels_.end(); ++iter) {
-    ret &= ApplyRemoteTransportDescription_w(iter->second.get());
+    ret &= ApplyRemoteTransportDescription_w(iter->second.get(), error_desc);
   }
 
   // If PRANSWER/ANSWER is set, we should decide transport protocol type.
   if (action == CA_PRANSWER || action == CA_ANSWER) {
-    ret = NegotiateTransportDescription_w(CA_OFFER);
+    ret = NegotiateTransportDescription_w(CA_OFFER, error_desc);
   }
   return ret;
 }
 
-bool Transport::ApplyLocalTransportDescription_w(TransportChannelImpl* ch) {
+bool Transport::ApplyLocalTransportDescription_w(TransportChannelImpl* ch,
+                                                 std::string* error_desc) {
   ch->SetIceCredentials(local_description_->ice_ufrag,
                         local_description_->ice_pwd);
   return true;
 }
 
-bool Transport::ApplyRemoteTransportDescription_w(TransportChannelImpl* ch) {
+bool Transport::ApplyRemoteTransportDescription_w(TransportChannelImpl* ch,
+                                                  std::string* error_desc) {
   ch->SetRemoteIceCredentials(remote_description_->ice_ufrag,
                               remote_description_->ice_pwd);
   return true;
 }
 
 bool Transport::ApplyNegotiatedTransportDescription_w(
-    TransportChannelImpl* channel) {
+    TransportChannelImpl* channel, std::string* error_desc) {
   channel->SetIceProtocolType(protocol_);
   channel->SetRemoteIceMode(remote_ice_mode_);
   return true;
 }
 
-bool Transport::NegotiateTransportDescription_w(ContentAction local_role) {
+bool Transport::NegotiateTransportDescription_w(ContentAction local_role,
+                                                std::string* error_desc) {
   // TODO(ekr@rtfm.com): This is ICE-specific stuff. Refactor into
   // P2PTransport.
   const TransportDescription* offer;
@@ -690,7 +732,12 @@ bool Transport::NegotiateTransportDescription_w(ContentAction local_role) {
   // answer must be treated as error.
   if ((offer_proto == ICEPROTO_GOOGLE || offer_proto == ICEPROTO_RFC5245) &&
       (offer_proto != answer_proto)) {
-    return false;
+    std::ostringstream desc;
+    desc << "Offer and answer protocol mismatch: "
+         << IceProtoToString(offer_proto)
+         << " vs "
+         << IceProtoToString(answer_proto);
+    return BadTransportDescription(desc.str(), error_desc);
   }
   protocol_ = answer_proto == ICEPROTO_HYBRID ? ICEPROTO_GOOGLE : answer_proto;
 
@@ -712,7 +759,7 @@ bool Transport::NegotiateTransportDescription_w(ContentAction local_role) {
   for (ChannelMap::iterator iter = channels_.begin();
        iter != channels_.end();
        ++iter) {
-    if (!ApplyNegotiatedTransportDescription_w(iter->second.get()))
+    if (!ApplyNegotiatedTransportDescription_w(iter->second.get(), error_desc))
       return false;
   }
   return true;

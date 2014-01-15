@@ -195,6 +195,9 @@ TurnPort::~TurnPort() {
   while (!entries_.empty()) {
     DestroyEntry(entries_.front()->address());
   }
+  if (resolver_) {
+    resolver_->Destroy(false);
+  }
 }
 
 void TurnPort::PrepareAddress() {

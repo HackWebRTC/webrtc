@@ -928,12 +928,11 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(channel_->SetCapturer(5678, NULL));
   }
 
-  // Test that we can set the bandwidth to auto or a specific value.
+  // Test that we can set the bandwidth.
   void SetSendBandwidth() {
-    EXPECT_TRUE(channel_->SetSendBandwidth(true, -1));
-    EXPECT_TRUE(channel_->SetSendBandwidth(true, 128 * 1024));
-    EXPECT_TRUE(channel_->SetSendBandwidth(false, -1));
-    EXPECT_TRUE(channel_->SetSendBandwidth(false, 128 * 1024));
+    EXPECT_TRUE(channel_->SetStartSendBandwidth(64 * 1024));
+    EXPECT_TRUE(channel_->SetMaxSendBandwidth(-1));  // <= 0 means unlimited.
+    EXPECT_TRUE(channel_->SetMaxSendBandwidth(128 * 1024));
   }
   // Test that we can set the SSRC for the default send source.
   void SetSendSsrc() {

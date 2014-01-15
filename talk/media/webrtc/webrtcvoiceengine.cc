@@ -1655,7 +1655,6 @@ WebRtcVoiceMediaChannel::WebRtcVoiceMediaChannel(WebRtcVoiceEngine *engine)
           engine,
           engine->CreateMediaVoiceChannel()),
       send_bw_setting_(false),
-      send_autobw_(false),
       send_bw_bps_(0),
       options_(),
       dtmf_allowed_(false),
@@ -2023,7 +2022,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
   send_codec_.reset(new webrtc::CodecInst(send_codec));
 
   if (send_bw_setting_) {
-    SetSendBandwidthInternal(send_autobw_, send_bw_bps_);
+    SetSendBandwidthInternal(send_bw_bps_);
   }
 
   return true;
@@ -2928,18 +2927,23 @@ bool WebRtcVoiceMediaChannel::MuteStream(uint32 ssrc, bool muted) {
   return true;
 }
 
-bool WebRtcVoiceMediaChannel::SetSendBandwidth(bool autobw, int bps) {
-  LOG(LS_INFO) << "WebRtcVoiceMediaChanne::SetSendBandwidth.";
-
-  send_bw_setting_ = true;
-  send_autobw_ = autobw;
-  send_bw_bps_ = bps;
-
-  return SetSendBandwidthInternal(send_autobw_, send_bw_bps_);
+bool WebRtcVoiceMediaChannel::SetStartSendBandwidth(int bps) {
+  // TODO(andresp): Add support for setting an independent start bandwidth when
+  // bandwidth estimation is enabled for voice engine.
+  return false;
 }
 
-bool WebRtcVoiceMediaChannel::SetSendBandwidthInternal(bool autobw, int bps) {
-  LOG(LS_INFO) << "WebRtcVoiceMediaChanne::SetSendBandwidthInternal.";
+bool WebRtcVoiceMediaChannel::SetMaxSendBandwidth(int bps) {
+  LOG(LS_INFO) << "WebRtcVoiceMediaChanne::SetSendBandwidth.";
+
+  return SetSendBandwidthInternal(bps);
+}
+
+bool WebRtcVoiceMediaChannel::SetSendBandwidthInternal(int bps) {
+  LOG(LS_INFO) << "WebRtcVoiceMediaChannel::SetSendBandwidthInternal.";
+
+  send_bw_setting_ = true;
+  send_bw_bps_ = bps;
 
   if (!send_codec_) {
     LOG(LS_INFO) << "The send codec has not been set up yet. "
@@ -2948,7 +2952,9 @@ bool WebRtcVoiceMediaChannel::SetSendBandwidthInternal(bool autobw, int bps) {
   }
 
   // Bandwidth is auto by default.
-  if (autobw || bps <= 0)
+  // TODO(bemasc): Fix this so that if SetMaxSendBandwidth(50) is followed by
+  // SetMaxSendBandwith(0), the second call removes the previous limit.
+  if (bps <= 0)
     return true;
 
   webrtc::CodecInst codec = *send_codec_;

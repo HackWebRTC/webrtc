@@ -55,29 +55,22 @@ using cricket::TransportInfo;
 namespace webrtc {
 
 // Error messages
-const char kSetLocalSdpFailed[] = "SetLocalDescription failed: ";
-const char kSetRemoteSdpFailed[] = "SetRemoteDescription failed: ";
-const char kCreateChannelFailed[] = "Failed to create channels.";
 const char kBundleWithoutRtcpMux[] = "RTCP-MUX must be enabled when BUNDLE "
                                      "is enabled.";
+const char kCreateChannelFailed[] = "Failed to create channels.";
 const char kInvalidCandidates[] = "Description contains invalid candidates.";
 const char kInvalidSdp[] = "Invalid session description.";
 const char kMlineMismatch[] =
-    "Offer and answer descriptions m-lines are not matching. "
-    "Rejecting answer.";
+    "Offer and answer descriptions m-lines are not matching. Rejecting answer.";
+const char kPushDownTDFailed[] =
+    "Failed to push down transport description:";
 const char kSdpWithoutCrypto[] = "Called with a SDP without crypto enabled.";
-const char kSdpWithoutSdesAndDtlsDisabled[] =
-    "Called with an SDP without SDES crypto and DTLS disabled locally.";
 const char kSdpWithoutIceUfragPwd[] =
-    "Called with an SDP without ice-ufrag and ice-pwd.";
+    "Called with a SDP without ice-ufrag and ice-pwd.";
+const char kSdpWithoutSdesAndDtlsDisabled[] =
+    "Called with a SDP without SDES crypto and DTLS disabled locally.";
 const char kSessionError[] = "Session error code: ";
-const char kUpdateStateFailed[] = "Failed to update session state: ";
-const char kPushDownOfferTDFailed[] =
-    "Failed to push down offer transport description.";
-const char kPushDownPranswerTDFailed[] =
-    "Failed to push down pranswer transport description.";
-const char kPushDownAnswerTDFailed[] =
-    "Failed to push down answer transport description.";
+const char kSessionErrorDesc[] = "Session error description: ";
 
 // Compares |answer| against |offer|. Comparision is done
 // for number of m-lines in answer against offer. If matches true will be
@@ -245,39 +238,60 @@ static bool GetTrackIdBySsrc(const SessionDescription* session_description,
   return false;
 }
 
-static bool BadSdp(const std::string& desc, std::string* err_desc) {
+static bool BadSdp(const std::string& source,
+                   const std::string& type,
+                   const std::string& reason,
+                   std::string* err_desc) {
+  std::ostringstream desc;
+  desc << "Failed to set " << source << " " << type << " sdp: " << reason;
+
   if (err_desc) {
-    *err_desc = desc;
+    *err_desc = desc.str();
   }
-  LOG(LS_ERROR) << desc;
+  LOG(LS_ERROR) << desc.str();
   return false;
 }
 
-static bool BadLocalSdp(const std::string& desc, std::string* err_desc) {
-  std::string set_local_sdp_failed = kSetLocalSdpFailed;
-  set_local_sdp_failed.append(desc);
-  return BadSdp(set_local_sdp_failed, err_desc);
-}
-
-static bool BadRemoteSdp(const std::string& desc, std::string* err_desc) {
-  std::string set_remote_sdp_failed = kSetRemoteSdpFailed;
-  set_remote_sdp_failed.append(desc);
-  return BadSdp(set_remote_sdp_failed, err_desc);
-}
-
 static bool BadSdp(cricket::ContentSource source,
-                   const std::string& desc, std::string* err_desc) {
+                   const std::string& type,
+                   const std::string& reason,
+                   std::string* err_desc) {
   if (source == cricket::CS_LOCAL) {
-    return BadLocalSdp(desc, err_desc);
+    return BadSdp("local", type, reason, err_desc);
   } else {
-    return BadRemoteSdp(desc, err_desc);
+    return BadSdp("remote", type, reason, err_desc);
   }
 }
 
-static std::string SessionErrorMsg(cricket::BaseSession::Error error) {
-  std::ostringstream desc;
-  desc << kSessionError << error;
-  return desc.str();
+static bool BadLocalSdp(const std::string& type,
+                        const std::string& reason,
+                        std::string* err_desc) {
+  return BadSdp(cricket::CS_LOCAL, type, reason, err_desc);
+}
+
+static bool BadRemoteSdp(const std::string& type,
+                         const std::string& reason,
+                         std::string* err_desc) {
+  return BadSdp(cricket::CS_REMOTE, type, reason, err_desc);
+}
+
+static bool BadOfferSdp(cricket::ContentSource source,
+                        const std::string& reason,
+                        std::string* err_desc) {
+  return BadSdp(source, SessionDescriptionInterface::kOffer, reason, err_desc);
+}
+
+static bool BadPranswerSdp(cricket::ContentSource source,
+                           const std::string& reason,
+                           std::string* err_desc) {
+  return BadSdp(source, SessionDescriptionInterface::kPrAnswer,
+                reason, err_desc);
+}
+
+static bool BadAnswerSdp(cricket::ContentSource source,
+                         const std::string& reason,
+                         std::string* err_desc) {
+  return BadSdp(source, SessionDescriptionInterface::kAnswer, reason, err_desc);
 }
 
 #define GET_STRING_OF_STATE(state)  \
@@ -311,20 +325,20 @@ static std::string GetStateString(cricket::BaseSession::State state) {
   return result;
 }
 
-#define GET_STRING_OF_ERROR(err)  \
+#define GET_STRING_OF_ERROR_CODE(err)  \
   case cricket::BaseSession::err:  \
     result = #err;  \
     break;
 
-static std::string GetErrorString(cricket::BaseSession::Error err) {
+static std::string GetErrorCodeString(cricket::BaseSession::Error err) {
   std::string result;
   switch (err) {
-    GET_STRING_OF_ERROR(ERROR_NONE)
-    GET_STRING_OF_ERROR(ERROR_TIME)
-    GET_STRING_OF_ERROR(ERROR_RESPONSE)
-    GET_STRING_OF_ERROR(ERROR_NETWORK)
-    GET_STRING_OF_ERROR(ERROR_CONTENT)
-    GET_STRING_OF_ERROR(ERROR_TRANSPORT)
+    GET_STRING_OF_ERROR_CODE(ERROR_NONE)
+    GET_STRING_OF_ERROR_CODE(ERROR_TIME)
+    GET_STRING_OF_ERROR_CODE(ERROR_RESPONSE)
+    GET_STRING_OF_ERROR_CODE(ERROR_NETWORK)
+    GET_STRING_OF_ERROR_CODE(ERROR_CONTENT)
+    GET_STRING_OF_ERROR_CODE(ERROR_TRANSPORT)
     default:
       ASSERT(false);
       break;
@@ -332,12 +346,15 @@ static std::string GetErrorString(cricket::BaseSession::Error err) {
   return result;
 }
 
-static bool SetSessionStateFailed(cricket::ContentSource source,
-                                  cricket::BaseSession::Error err,
-                                  std::string* err_desc) {
-  std::string set_state_err = kUpdateStateFailed;
-  set_state_err.append(GetErrorString(err));
-  return BadSdp(source, set_state_err, err_desc);
+static std::string MakeErrorString(const std::string& error,
+                                   const std::string& desc) {
+  std::ostringstream ret;
+  ret << error << " " << desc;
+  return ret.str();
+}
+
+static std::string MakeTdErrorString(const std::string& desc) {
+  return MakeErrorString(kPushDownTDFailed, desc);
 }
 
 // Help class used to remember if a a remote peer has requested ice restart by
@@ -604,15 +621,14 @@ bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,
   if (action == kOffer && !CreateChannels(local_desc_->description())) {
     // TODO(mallinath) - Handle CreateChannel failure, as new local description
     // is applied. Restore back to old description.
-    return BadLocalSdp(kCreateChannelFailed, err_desc);
+    return BadLocalSdp(desc->type(), kCreateChannelFailed, err_desc);
   }
 
   // Remove channel and transport proxies, if MediaContentDescription is
   // rejected.
   RemoveUnusedChannelsAndTransports(local_desc_->description());
 
-  if (!UpdateSessionState(action, cricket::CS_LOCAL,
-                          local_desc_->description(), err_desc)) {
+  if (!UpdateSessionState(action, cricket::CS_LOCAL, err_desc)) {
     return false;
   }
   // Kick starting the ice candidates allocation.
@@ -627,7 +643,7 @@ bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,
     mediastream_signaling_->OnDtlsRoleReadyForSctp(role);
   }
   if (error() != cricket::BaseSession::ERROR_NONE) {
-    return BadLocalSdp(SessionErrorMsg(error()), err_desc);
+    return BadLocalSdp(desc->type(), GetSessionErrorMsg(), err_desc);
   }
   return true;
 }
@@ -647,7 +663,7 @@ bool WebRtcSession::SetRemoteDescription(SessionDescriptionInterface* desc,
   if (action == kOffer && !CreateChannels(desc->description())) {
     // TODO(mallinath) - Handle CreateChannel failure, as new local description
     // is applied. Restore back to old description.
-    return BadRemoteSdp(kCreateChannelFailed, err_desc);
+    return BadRemoteSdp(desc->type(), kCreateChannelFailed, err_desc);
   }
 
   // Remove channel and transport proxies, if MediaContentDescription is
@@ -657,15 +673,14 @@ bool WebRtcSession::SetRemoteDescription(SessionDescriptionInterface* desc,
   // NOTE: Candidates allocation will be initiated only when SetLocalDescription
   // is called.
   set_remote_description(desc->description()->Copy());
-  if (!UpdateSessionState(action, cricket::CS_REMOTE,
-                          desc->description(), err_desc)) {
+  if (!UpdateSessionState(action, cricket::CS_REMOTE, err_desc)) {
     return false;
   }
 
   // Update remote MediaStreams.
   mediastream_signaling_->OnRemoteDescriptionChanged(desc);
   if (local_description() && !UseCandidatesInSessionDescription(desc)) {
-    return BadRemoteSdp(kInvalidCandidates, err_desc);
+    return BadRemoteSdp(desc->type(), kInvalidCandidates, err_desc);
   }
 
   // Copy all saved candidates.
@@ -685,47 +700,47 @@ bool WebRtcSession::SetRemoteDescription(SessionDescriptionInterface* desc,
   }
 
   if (error() != cricket::BaseSession::ERROR_NONE) {
-    return BadRemoteSdp(SessionErrorMsg(error()), err_desc);
+    return BadRemoteSdp(desc->type(), GetSessionErrorMsg(), err_desc);
   }
   return true;
 }
 
 bool WebRtcSession::UpdateSessionState(
     Action action, cricket::ContentSource source,
-    const cricket::SessionDescription* desc,
     std::string* err_desc) {
   // If there's already a pending error then no state transition should happen.
   // But all call-sites should be verifying this before calling us!
   ASSERT(error() == cricket::BaseSession::ERROR_NONE);
+  std::string td_err;
   if (action == kOffer) {
-    if (!PushdownTransportDescription(source, cricket::CA_OFFER)) {
-      return BadSdp(source, kPushDownOfferTDFailed, err_desc);
+    if (!PushdownTransportDescription(source, cricket::CA_OFFER, &td_err)) {
+      return BadOfferSdp(source, MakeTdErrorString(td_err), err_desc);
     }
     SetState(source == cricket::CS_LOCAL ?
         STATE_SENTINITIATE : STATE_RECEIVEDINITIATE);
     if (error() != cricket::BaseSession::ERROR_NONE) {
-      return SetSessionStateFailed(source, error(), err_desc);
+      return BadOfferSdp(source, GetSessionErrorMsg(), err_desc);
     }
   } else if (action == kPrAnswer) {
-    if (!PushdownTransportDescription(source, cricket::CA_PRANSWER)) {
-      return BadSdp(source, kPushDownPranswerTDFailed, err_desc);
+    if (!PushdownTransportDescription(source, cricket::CA_PRANSWER, &td_err)) {
+      return BadPranswerSdp(source, MakeTdErrorString(td_err), err_desc);
     }
     EnableChannels();
     SetState(source == cricket::CS_LOCAL ?
         STATE_SENTPRACCEPT : STATE_RECEIVEDPRACCEPT);
     if (error() != cricket::BaseSession::ERROR_NONE) {
-      return SetSessionStateFailed(source, error(), err_desc);
+      return BadPranswerSdp(source, GetSessionErrorMsg(), err_desc);
     }
   } else if (action == kAnswer) {
-    if (!PushdownTransportDescription(source, cricket::CA_ANSWER)) {
-      return BadSdp(source, kPushDownAnswerTDFailed, err_desc);
+    if (!PushdownTransportDescription(source, cricket::CA_ANSWER, &td_err)) {
+      return BadAnswerSdp(source, MakeTdErrorString(td_err), err_desc);
     }
     MaybeEnableMuxingSupport();
     EnableChannels();
     SetState(source == cricket::CS_LOCAL ?
         STATE_SENTACCEPT : STATE_RECEIVEDACCEPT);
     if (error() != cricket::BaseSession::ERROR_NONE) {
-      return SetSessionStateFailed(source, error(), err_desc);
+      return BadAnswerSdp(source, GetSessionErrorMsg(), err_desc);
     }
   }
   return true;
@@ -801,11 +816,9 @@ bool WebRtcSession::GetRemoteTrackId(uint32 ssrc, std::string* track_id) {
     BaseSession::remote_description(), ssrc, track_id);
 }
 
-std::string WebRtcSession::BadStateErrMsg(
-    const std::string& type, State state) {
+std::string WebRtcSession::BadStateErrMsg(State state) {
   std::ostringstream desc;
-  desc << "Called with type in wrong state, "
-       << "type: " << type << " state: " << GetStateString(state);
+  desc << "Called in wrong state: " << GetStateString(state);
   return desc.str();
 }
 
@@ -1447,40 +1460,40 @@ bool WebRtcSession::HasRtcpMuxEnabled(
 
 bool WebRtcSession::ValidateSessionDescription(
     const SessionDescriptionInterface* sdesc,
-    cricket::ContentSource source, std::string* error_desc) {
-
+    cricket::ContentSource source, std::string* err_desc) {
+  std::string type;
   if (error() != cricket::BaseSession::ERROR_NONE) {
-    return BadSdp(source, SessionErrorMsg(error()), error_desc);
+    return BadSdp(source, type, GetSessionErrorMsg(), err_desc);
   }
 
   if (!sdesc || !sdesc->description()) {
-    return BadSdp(source, kInvalidSdp, error_desc);
+    return BadSdp(source, type, kInvalidSdp, err_desc);
   }
 
-  std::string type = sdesc->type();
+  type = sdesc->type();
   Action action = GetAction(sdesc->type());
   if (source == cricket::CS_LOCAL) {
     if (!ExpectSetLocalDescription(action))
-      return BadSdp(source, BadStateErrMsg(type, state()), error_desc);
+      return BadLocalSdp(type, BadStateErrMsg(state()), err_desc);
   } else {
     if (!ExpectSetRemoteDescription(action))
-      return BadSdp(source, BadStateErrMsg(type, state()), error_desc);
+      return BadRemoteSdp(type, BadStateErrMsg(state()), err_desc);
   }
 
   // Verify crypto settings.
   std::string crypto_error;
   if (webrtc_session_desc_factory_->Secure() == cricket::SEC_REQUIRED &&
       !VerifyCrypto(sdesc->description(), dtls_enabled_, &crypto_error)) {
-    return BadSdp(source, crypto_error, error_desc);
+    return BadSdp(source, type, crypto_error, err_desc);
   }
 
   // Verify ice-ufrag and ice-pwd.
   if (!VerifyIceUfragPwdPresent(sdesc->description())) {
-    return BadSdp(source, kSdpWithoutIceUfragPwd, error_desc);
+    return BadSdp(source, type, kSdpWithoutIceUfragPwd, err_desc);
   }
 
   if (!ValidateBundleSettings(sdesc->description())) {
-    return BadSdp(source, kBundleWithoutRtcpMux, error_desc);
+    return BadSdp(source, type, kBundleWithoutRtcpMux, err_desc);
   }
 
   // Verify m-lines in Answer when compared against Offer.
@@ -1489,7 +1502,7 @@ bool WebRtcSession::ValidateSessionDescription(
         (source == cricket::CS_LOCAL) ? remote_description()->description() :
             local_description()->description();
     if (!VerifyMediaDescriptions(sdesc->description(), offer_desc)) {
-      return BadSdp(source, kMlineMismatch, error_desc);
+      return BadAnswerSdp(source, kMlineMismatch, err_desc);
     }
   }
 
@@ -1524,6 +1537,13 @@ bool WebRtcSession::ExpectSetRemoteDescription(Action action) {
           (action == kAnswer && state() == STATE_RECEIVEDPRACCEPT) ||
           (action == kPrAnswer && state() == STATE_SENTINITIATE) ||
           (action == kPrAnswer && state() == STATE_RECEIVEDPRACCEPT));
+}
+
+std::string WebRtcSession::GetSessionErrorMsg() {
+  std::ostringstream desc;
+  desc << kSessionError << GetErrorCodeString(error()) << ". ";
+  desc << kSessionErrorDesc << error_desc() << ".";
+  return desc.str();
 }
 
 }  // namespace webrtc

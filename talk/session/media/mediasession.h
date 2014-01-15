@@ -63,6 +63,8 @@ enum MediaType {
   MEDIA_TYPE_DATA
 };
 
+std::string MediaTypeToString(MediaType type);
+
 enum MediaContentDirection {
   MD_INACTIVE,
   MD_SENDONLY,

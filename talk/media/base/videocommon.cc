@@ -236,7 +236,8 @@ std::string VideoFormat::ToString() const {
   }
 
   std::ostringstream ss;
-  ss << fourcc_name << width << "x" << height << "x" << IntervalToFps(interval);
+  ss << fourcc_name << width << "x" << height << "x"
+     << IntervalToFpsFloat(interval);
   return ss.str();
 }
 

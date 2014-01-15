@@ -257,7 +257,7 @@ bool VideoCapturer::GetBestCaptureFormat(const VideoFormat& format,
     best_format->width = best->width;
     best_format->height = best->height;
     best_format->fourcc = best->fourcc;
-    best_format->interval = talk_base::_max(format.interval, best->interval);
+    best_format->interval = best->interval;
     LOG(LS_INFO) << " Best " << best_format->ToString() << " Interval "
                  << best_format->interval << " distance " << best_distance;
   }
@@ -301,7 +301,7 @@ std::string VideoCapturer::ToString(const CapturedFrame* captured_frame) const {
 
   std::ostringstream ss;
   ss << fourcc_name << captured_frame->width << "x" << captured_frame->height
-     << "x" << VideoFormat::IntervalToFps(captured_frame->elapsed_time);
+     << "x" << VideoFormat::IntervalToFpsFloat(captured_frame->elapsed_time);
   return ss.str();
 }
 
@@ -475,25 +475,14 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
                   << desired_width << " x " << desired_height;
     return;
   }
-
-  VideoFrame* adapted_frame = &i420_frame;
-  if (!SignalAdaptFrame.is_empty() && !IsScreencast()) {
-    VideoFrame* out_frame = NULL;
-    SignalAdaptFrame(this, adapted_frame, &out_frame);
-    if (!out_frame) {
-      return;  // VideoAdapter dropped the frame.
-    }
-    adapted_frame = out_frame;
-  }
-
-  if (!muted_ && !ApplyProcessors(adapted_frame)) {
+  if (!muted_ && !ApplyProcessors(&i420_frame)) {
     // Processor dropped the frame.
     return;
   }
   if (muted_) {
-    adapted_frame->SetToBlack();
+    i420_frame.SetToBlack();
   }
-  SignalVideoFrame(this, adapted_frame);
+  SignalVideoFrame(this, &i420_frame);
 #endif  // VIDEO_FRAME_NAME
 }
 
@@ -577,9 +566,9 @@ int64 VideoCapturer::GetFormatDistance(const VideoFormat& desired,
   int desired_width = desired.width;
   int desired_height = desired.height;
   int64 delta_w = supported.width - desired_width;
-  int64 supported_fps = VideoFormat::IntervalToFps(supported.interval);
-  int64 delta_fps =
-      supported_fps - VideoFormat::IntervalToFps(desired.interval);
+  float supported_fps = VideoFormat::IntervalToFpsFloat(supported.interval);
+  float delta_fps =
+      supported_fps - VideoFormat::IntervalToFpsFloat(desired.interval);
   // Check height of supported height compared to height we would like it to be.
   int64 aspect_h =
       desired_width ? supported.width * desired_height / desired_width
@@ -606,9 +595,9 @@ int64 VideoCapturer::GetFormatDistance(const VideoFormat& desired,
   // Require camera fps to be at least 96% of what is requested, or higher,
   // if resolution differs. 96% allows for slight variations in fps. e.g. 29.97
   if (delta_fps < 0) {
-    int64 min_desirable_fps = delta_w ?
-    VideoFormat::IntervalToFps(desired.interval) * 29 / 30 :
-    VideoFormat::IntervalToFps(desired.interval) * 24 / 30;
+    float min_desirable_fps = delta_w ?
+    VideoFormat::IntervalToFpsFloat(desired.interval) * 28.f / 30.f :
+    VideoFormat::IntervalToFpsFloat(desired.interval) * 23.f / 30.f;
     delta_fps = -delta_fps;
     if (supported_fps < min_desirable_fps) {
       distance |= static_cast<int64>(1) << 62;
@@ -616,10 +605,11 @@ int64 VideoCapturer::GetFormatDistance(const VideoFormat& desired,
       distance |= static_cast<int64>(1) << 15;
     }
   }
+  int64 idelta_fps = static_cast<int>(delta_fps);
 
   // 12 bits for width and height and 8 bits for fps and fourcc.
   distance |=
-      (delta_w << 28) | (delta_h << 16) | (delta_fps << 8) | delta_fourcc;
+      (delta_w << 28) | (delta_h << 16) | (idelta_fps << 8) | delta_fourcc;
 
   return distance;
 }

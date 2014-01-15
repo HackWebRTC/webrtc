@@ -1100,30 +1100,62 @@ TEST_F(WebRtcVideoEngineTestFake, SetBandwidthAuto) {
   EXPECT_TRUE(SetupEngine());
   int channel_num = vie_.GetLastChannel();
   EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
-  EXPECT_TRUE(channel_->SetSendBandwidth(true, cricket::kAutoBandwidth));
+  EXPECT_TRUE(channel_->SetMaxSendBandwidth(cricket::kAutoBandwidth));
   VerifyVP8SendCodec(channel_num, kVP8Codec.width, kVP8Codec.height);
 }
 
 // Test that we set bandwidth properly when using auto with upper bound.
-TEST_F(WebRtcVideoEngineTestFake, SetBandwidthAutoCapped) {
+TEST_F(WebRtcVideoEngineTestFake, SetBandwidthCapped) {
   EXPECT_TRUE(SetupEngine());
   int channel_num = vie_.GetLastChannel();
   EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
-  EXPECT_TRUE(channel_->SetSendBandwidth(true, 768000));
+  EXPECT_TRUE(channel_->SetMaxSendBandwidth(768000));
   VerifyVP8SendCodec(channel_num, kVP8Codec.width, kVP8Codec.height, 0, 768U);
 }
 
-// Test that we set bandwidth properly when using a fixed bandwidth.
-TEST_F(WebRtcVideoEngineTestFake, SetBandwidthFixed) {
+// Test that we reduce the start bandwidth when the requested max is less than
+// the default start bandwidth.
+TEST_F(WebRtcVideoEngineTestFake, SetMaxBandwidthBelowDefaultStart) {
   EXPECT_TRUE(SetupEngine());
   int channel_num = vie_.GetLastChannel();
   EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
-  EXPECT_TRUE(channel_->SetSendBandwidth(false, 768000));
+  int max_bandwidth_kbps = (kMinBandwidthKbps + kStartBandwidthKbps) / 2;
+  EXPECT_TRUE(channel_->SetMaxSendBandwidth(max_bandwidth_kbps * 1000));
   VerifyVP8SendCodec(channel_num, kVP8Codec.width, kVP8Codec.height, 0,
-                     768U, 768U, 768U);
+      max_bandwidth_kbps, kMinBandwidthKbps, max_bandwidth_kbps);
 }
 
-// Test that SetSendBandwidth is ignored in conference mode.
+// Test that we reduce the min bandwidth when the requested max is less than
+// the min bandwidth.
+TEST_F(WebRtcVideoEngineTestFake, SetMaxBandwidthBelowMin) {
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = vie_.GetLastChannel();
+  EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
+  int max_bandwidth_kbps = kMinBandwidthKbps / 2;
+  EXPECT_TRUE(channel_->SetMaxSendBandwidth(max_bandwidth_kbps * 1000));
+  VerifyVP8SendCodec(channel_num, kVP8Codec.width, kVP8Codec.height, 0,
+      max_bandwidth_kbps, max_bandwidth_kbps, max_bandwidth_kbps);
+}
+
+// Test that the start bandwidth can be controlled separately from the max
+// bandwidth.
+TEST_F(WebRtcVideoEngineTestFake, SetStartBandwidth) {
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = vie_.GetLastChannel();
+  EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
+  int start_bandwidth_kbps = kStartBandwidthKbps + 1;
+  EXPECT_TRUE(channel_->SetStartSendBandwidth(start_bandwidth_kbps * 1000));
+  VerifyVP8SendCodec(channel_num, kVP8Codec.width, kVP8Codec.height, 0,
+      kMaxBandwidthKbps, kMinBandwidthKbps, start_bandwidth_kbps);
+
+  // Check that SetMaxSendBandwidth doesn't overwrite the start bandwidth.
+  int max_bandwidth_kbps = kMaxBandwidthKbps + 1;
+  EXPECT_TRUE(channel_->SetMaxSendBandwidth(max_bandwidth_kbps * 1000));
+  VerifyVP8SendCodec(channel_num, kVP8Codec.width, kVP8Codec.height, 0,
+      max_bandwidth_kbps, kMinBandwidthKbps, start_bandwidth_kbps);
+}
+
+// Test that SetMaxSendBandwidth is ignored in conference mode.
 TEST_F(WebRtcVideoEngineTestFake, SetBandwidthInConference) {
   EXPECT_TRUE(SetupEngine());
   int channel_num = vie_.GetLastChannel();
@@ -1134,7 +1166,7 @@ TEST_F(WebRtcVideoEngineTestFake, SetBandwidthInConference) {
   VerifyVP8SendCodec(channel_num, kVP8Codec.width, kVP8Codec.height);
 
   // Set send bandwidth.
-  EXPECT_TRUE(channel_->SetSendBandwidth(false, 768000));
+  EXPECT_TRUE(channel_->SetMaxSendBandwidth(768000));
 
   // Verify bitrate not changed.
   webrtc::VideoCodec gcodec;
@@ -1159,12 +1191,11 @@ TEST_F(WebRtcVideoEngineTestFake, SetBandwidthScreencast) {
   EXPECT_TRUE(channel_->AddSendStream(
       cricket::StreamParams::CreateLegacy(123)));
   EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
-  EXPECT_TRUE(channel_->SetSendBandwidth(false, 111000));
+  EXPECT_TRUE(channel_->SetMaxSendBandwidth(111000));
   EXPECT_TRUE(channel_->SetSend(true));
 
   SendI420ScreencastFrame(kVP8Codec.width, kVP8Codec.height);
-  VerifyVP8SendCodec(channel_num, kVP8Codec.width, kVP8Codec.height, 0,
-                     111, 111, 111);
+  VerifyVP8SendCodec(channel_num, kVP8Codec.width, kVP8Codec.height, 0, 111);
 }
 
 
@@ -1243,7 +1274,11 @@ TEST_F(WebRtcVideoEngineTestFake, SetOptionsWithDenoising) {
   EXPECT_FALSE(vie_.GetCaptureDenoising(capture_id));
 }
 
-TEST_F(WebRtcVideoEngineTestFake, MultipleSendStreamsWithOneCapturer) {
+// Test disabled because it drops frames when adapt-before-effects is turned
+// off (turned off because it was exposing a crash - see bug 12250150). This is
+// safe for now because this test exercises an unused feature.
+// TODO(tpsiaki) reenable once adapt-before-effects is turned back on.
+TEST_F(WebRtcVideoEngineTestFake, DISABLED_MultipleSendStreamsWithOneCapturer) {
   EXPECT_TRUE(SetupEngine());
 
   // Start the capturer

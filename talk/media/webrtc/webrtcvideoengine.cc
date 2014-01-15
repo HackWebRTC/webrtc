@@ -632,6 +632,10 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
     }
   }
 
+  bool AdaptFrame(const VideoFrame* in_frame, const VideoFrame** out_frame) {
+    *out_frame = NULL;
+    return video_adapter_->AdaptFrame(in_frame, out_frame);
+  }
   int CurrentAdaptReason() const {
     return video_adapter_->adapt_reason();
   }
@@ -672,16 +676,7 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
         // video capturer.
         video_adapter_->SetInputFormat(*capture_format);
       }
-      // TODO(thorcarpenter): When the adapter supports "only frame dropping"
-      // mode, also hook it up to screencast capturers.
-      video_capturer->SignalAdaptFrame.connect(
-          this, &WebRtcVideoChannelSendInfo::AdaptFrame);
     }
-  }
-
-  void AdaptFrame(VideoCapturer* capturer, const VideoFrame* input,
-                  VideoFrame** adapted) {
-    video_adapter_->AdaptFrame(input, adapted);
   }
 
   void ApplyCpuOptions(const VideoOptions& options) {
@@ -2470,7 +2465,9 @@ bool WebRtcVideoMediaChannel::SetCapturer(uint32 ssrc,
   MaybeDisconnectCapturer(old_capturer);
 
   send_channel->set_video_capturer(capturer);
-  MaybeConnectCapturer(capturer);
+  capturer->SignalVideoFrame.connect(
+      this,
+      &WebRtcVideoMediaChannel::SendFrame);
   if (!capturer->IsScreencast() && ratio_w_ != 0 && ratio_h_ != 0) {
     capturer->UpdateAspectRatio(ratio_w_, ratio_h_);
   }
@@ -2624,11 +2621,27 @@ bool WebRtcVideoMediaChannel::SetSendRtpHeaderExtensions(
   return true;
 }
 
-bool WebRtcVideoMediaChannel::SetSendBandwidth(bool autobw, int bps) {
-  LOG(LS_INFO) << "WebRtcVideoMediaChanne::SetSendBandwidth";
+bool WebRtcVideoMediaChannel::SetStartSendBandwidth(int bps) {
+  LOG(LS_INFO) << "WebRtcVideoMediaChannel::SetStartSendBandwidth";
+
+  if (!send_codec_) {
+    LOG(LS_INFO) << "The send codec has not been set up yet";
+    return true;
+  }
+
+  // On success, SetSendCodec() will reset |send_start_bitrate_| to |bps/1000|,
+  // by calling MaybeChangeStartBitrate.  That method will also clamp the
+  // start bitrate between min and max, consistent with the override behavior
+  // in SetMaxSendBandwidth.
+  return SetSendCodec(*send_codec_,
+      send_min_bitrate_, bps / 1000, send_max_bitrate_);
+}
+
+bool WebRtcVideoMediaChannel::SetMaxSendBandwidth(int bps) {
+  LOG(LS_INFO) << "WebRtcVideoMediaChannel::SetMaxSendBandwidth";
 
   if (InConferenceMode()) {
-    LOG(LS_INFO) << "Conference mode ignores SetSendBandWidth";
+    LOG(LS_INFO) << "Conference mode ignores SetMaxSendBandwidth";
     return true;
   }
 
@@ -2637,28 +2650,17 @@ bool WebRtcVideoMediaChannel::SetSendBandwidth(bool autobw, int bps) {
     return true;
   }
 
-  int min_bitrate;
-  int start_bitrate;
-  int max_bitrate;
-  if (autobw) {
-    // Use the default values for min bitrate.
-    min_bitrate = send_min_bitrate_;
-    // Use the default value or the bps for the max
-    max_bitrate = (bps <= 0) ? send_max_bitrate_ : (bps / 1000);
-    // Maximum start bitrate can be kStartVideoBitrate.
-    start_bitrate = talk_base::_min(kStartVideoBitrate, max_bitrate);
-  } else {
-    // Use the default start or the bps as the target bitrate.
-    int target_bitrate = (bps <= 0) ? kStartVideoBitrate : (bps / 1000);
-    min_bitrate = target_bitrate;
-    start_bitrate = target_bitrate;
-    max_bitrate = target_bitrate;
-  }
+  // Use the default value or the bps for the max
+  int max_bitrate = (bps <= 0) ? send_max_bitrate_ : (bps / 1000);
+
+  // Reduce the current minimum and start bitrates if necessary.
+  int min_bitrate = talk_base::_min(send_min_bitrate_, max_bitrate);
+  int start_bitrate = talk_base::_min(send_start_bitrate_, max_bitrate);
 
   if (!SetSendCodec(*send_codec_, min_bitrate, start_bitrate, max_bitrate)) {
     return false;
   }
-  LogSendCodecChange("SetSendBandwidth()");
+  LogSendCodecChange("SetMaxSendBandwidth()");
 
   return true;
 }
@@ -2860,6 +2862,7 @@ bool WebRtcVideoMediaChannel::GetRenderer(uint32 ssrc,
   return true;
 }
 
+// TODO(zhurunz): Add unittests to test this function.
 void WebRtcVideoMediaChannel::SendFrame(VideoCapturer* capturer,
                                         const VideoFrame* frame) {
   // If the |capturer| is registered to any send channel, then send the frame

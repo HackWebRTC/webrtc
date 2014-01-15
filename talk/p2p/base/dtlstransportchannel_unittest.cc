@@ -185,14 +185,14 @@ class DtlsTestClient : public sigslot::has_slots<> {
     // content action is CA_ANSWER.
     if (action == cricket::CA_OFFER) {
       ASSERT_TRUE(transport_->SetLocalTransportDescription(
-          local_desc, cricket::CA_OFFER));
+          local_desc, cricket::CA_OFFER, NULL));
       ASSERT_EQ(expect_success, transport_->SetRemoteTransportDescription(
-          remote_desc, cricket::CA_ANSWER));
+          remote_desc, cricket::CA_ANSWER, NULL));
     } else {
       ASSERT_TRUE(transport_->SetRemoteTransportDescription(
-          remote_desc, cricket::CA_OFFER));
+          remote_desc, cricket::CA_OFFER, NULL));
       ASSERT_EQ(expect_success, transport_->SetLocalTransportDescription(
-          local_desc, cricket::CA_ANSWER));
+          local_desc, cricket::CA_ANSWER, NULL));
     }
     negotiated_dtls_ = (local_identity && remote_identity);
   }

@@ -70,7 +70,7 @@ TEST(VideoCommonTest, TestVideoFormatIsSize0x0) {
 // Test ToString: print fourcc when it is printable.
 TEST(VideoCommonTest, TestVideoFormatToString) {
   VideoFormat format;
-  EXPECT_EQ("0x0x10000", format.ToString());
+  EXPECT_EQ("0x0x0", format.ToString());
 
   format.fourcc = FOURCC_I420;
   format.width = 640;

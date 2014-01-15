@@ -145,7 +145,8 @@ class LinphoneVoiceChannel : public VoiceMediaChannel {
   virtual void SetSendSsrc(uint32 id) {}  // TODO: change RTP packet?
   virtual bool SetRtcpCName(const std::string& cname) { return true; }
   virtual bool Mute(bool on) { return mute_; }
-  virtual bool SetSendBandwidth(bool autobw, int bps) { return true; }
+  virtual bool SetStartSendBandwidth(int bps) { return true; }
+  virtual bool SetMaxSendBandwidth(int bps) { return true; }
   virtual bool SetOptions(int options) { return true; }
   virtual bool SetRecvRtpHeaderExtensions(
       const std::vector<RtpHeaderExtension>& extensions) { return true; }

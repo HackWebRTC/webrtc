@@ -147,7 +147,8 @@ TEST_F(TransportTest, TestChannelIceParameters) {
   cricket::TransportDescription local_desc(
       cricket::NS_JINGLE_ICE_UDP, kIceUfrag1, kIcePwd1);
   ASSERT_TRUE(transport_->SetLocalTransportDescription(local_desc,
-                                                       cricket::CA_OFFER));
+                                                       cricket::CA_OFFER,
+                                                       NULL));
   EXPECT_EQ(cricket::ICEROLE_CONTROLLING, transport_->ice_role());
   EXPECT_TRUE(SetupChannel());
   EXPECT_EQ(cricket::ICEROLE_CONTROLLING, channel_->GetIceRole());
@@ -158,7 +159,8 @@ TEST_F(TransportTest, TestChannelIceParameters) {
   cricket::TransportDescription remote_desc(
       cricket::NS_JINGLE_ICE_UDP, kIceUfrag1, kIcePwd1);
   ASSERT_TRUE(transport_->SetRemoteTransportDescription(remote_desc,
-                                                        cricket::CA_ANSWER));
+                                                        cricket::CA_ANSWER,
+                                                        NULL));
   EXPECT_EQ(cricket::ICEROLE_CONTROLLING, channel_->GetIceRole());
   EXPECT_EQ(99U, channel_->IceTiebreaker());
   EXPECT_EQ(cricket::ICEMODE_FULL, channel_->remote_ice_mode());
@@ -178,11 +180,13 @@ TEST_F(TransportTest, TestSetRemoteIceLiteInOffer) {
       kIceUfrag1, kIcePwd1, cricket::ICEMODE_LITE,
       cricket::CONNECTIONROLE_ACTPASS, NULL, cricket::Candidates());
   ASSERT_TRUE(transport_->SetRemoteTransportDescription(remote_desc,
-                                                        cricket::CA_OFFER));
+                                                        cricket::CA_OFFER,
+                                                        NULL));
   cricket::TransportDescription local_desc(
       cricket::NS_JINGLE_ICE_UDP, kIceUfrag1, kIcePwd1);
   ASSERT_TRUE(transport_->SetLocalTransportDescription(local_desc,
-                                                       cricket::CA_ANSWER));
+                                                       cricket::CA_ANSWER,
+                                                       NULL));
   EXPECT_EQ(cricket::ICEROLE_CONTROLLING, transport_->ice_role());
   EXPECT_TRUE(SetupChannel());
   EXPECT_EQ(cricket::ICEROLE_CONTROLLING, channel_->GetIceRole());
@@ -195,7 +199,8 @@ TEST_F(TransportTest, TestSetRemoteIceLiteInAnswer) {
   cricket::TransportDescription local_desc(
       cricket::NS_JINGLE_ICE_UDP, kIceUfrag1, kIcePwd1);
   ASSERT_TRUE(transport_->SetLocalTransportDescription(local_desc,
-                                                       cricket::CA_OFFER));
+                                                       cricket::CA_OFFER,
+                                                       NULL));
   EXPECT_EQ(cricket::ICEROLE_CONTROLLING, transport_->ice_role());
   EXPECT_TRUE(SetupChannel());
   EXPECT_EQ(cricket::ICEROLE_CONTROLLING, channel_->GetIceRole());
@@ -206,7 +211,8 @@ TEST_F(TransportTest, TestSetRemoteIceLiteInAnswer) {
       kIceUfrag1, kIcePwd1, cricket::ICEMODE_LITE,
       cricket::CONNECTIONROLE_NONE, NULL, cricket::Candidates());
   ASSERT_TRUE(transport_->SetRemoteTransportDescription(remote_desc,
-                                                        cricket::CA_ANSWER));
+                                                        cricket::CA_ANSWER,
+                                                        NULL));
   EXPECT_EQ(cricket::ICEROLE_CONTROLLING, channel_->GetIceRole());
   // After receiving remote description with ICEMODE_LITE, channel should
   // have mode set to ICEMODE_LITE.

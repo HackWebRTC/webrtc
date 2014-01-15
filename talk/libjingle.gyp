@@ -410,6 +410,7 @@
         'base/ssladapter.cc',
         'base/ssladapter.h',
         'base/sslconfig.h',
+        'base/sslfingerprint.cc',
         'base/sslfingerprint.h',
         'base/sslidentity.cc',
         'base/sslidentity.h',

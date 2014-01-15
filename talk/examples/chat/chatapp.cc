@@ -26,6 +26,7 @@
  */
 #include "talk/examples/chat/chatapp.h"
 
+#include "talk/base/stringencode.h"
 #include "talk/examples/chat/consoletask.h"
 #include "talk/examples/chat/textchatsendtask.h"
 #include "talk/examples/chat/textchatreceivetask.h"

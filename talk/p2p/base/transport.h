@@ -187,6 +187,8 @@ struct TransportStats {
   TransportChannelStatsList channel_stats;
 };
 
+bool BadTransportDescription(const std::string& desc, std::string* err_desc);
+
 class Transport : public talk_base::MessageHandler,
                   public sigslot::has_slots<> {
  public:
@@ -270,11 +272,13 @@ class Transport : public talk_base::MessageHandler,
   // Set the local TransportDescription to be used by TransportChannels.
   // This should be called before ConnectChannels().
   bool SetLocalTransportDescription(const TransportDescription& description,
-                                    ContentAction action);
+                                    ContentAction action,
+                                    std::string* error_desc);
 
   // Set the remote TransportDescription to be used by TransportChannels.
   bool SetRemoteTransportDescription(const TransportDescription& description,
-                                     ContentAction action);
+                                     ContentAction action,
+                                     std::string* error_desc);
 
   // Tells all current and future channels to start connecting.  When the first
   // channel begins connecting, the following signal is raised.
@@ -362,25 +366,27 @@ class Transport : public talk_base::MessageHandler,
   // Pushes down the transport parameters from the local description, such
   // as the ICE ufrag and pwd.
   // Derived classes can override, but must call the base as well.
-  virtual bool ApplyLocalTransportDescription_w(TransportChannelImpl*
-                                                channel);
+  virtual bool ApplyLocalTransportDescription_w(TransportChannelImpl* channel,
+                                                std::string* error_desc);
 
   // Pushes down remote ice credentials from the remote description to the
   // transport channel.
-  virtual bool ApplyRemoteTransportDescription_w(TransportChannelImpl* ch);
+  virtual bool ApplyRemoteTransportDescription_w(TransportChannelImpl* ch,
+                                                 std::string* error_desc);
 
   // Negotiates the transport parameters based on the current local and remote
   // transport description, such at the version of ICE to use, and whether DTLS
   // should be activated.
   // Derived classes can negotiate their specific parameters here, but must call
   // the base as well.
-  virtual bool NegotiateTransportDescription_w(ContentAction local_role);
+  virtual bool NegotiateTransportDescription_w(ContentAction local_role,
+                                               std::string* error_desc);
 
   // Pushes down the transport parameters obtained via negotiation.
   // Derived classes can set their specific parameters here, but must call the
   // base as well.
   virtual bool ApplyNegotiatedTransportDescription_w(
-      TransportChannelImpl* channel);
+      TransportChannelImpl* channel, std::string* error_desc);
 
   virtual bool GetSslRole_w(talk_base::SSLRole* ssl_role) const {
     return false;
@@ -468,9 +474,11 @@ class Transport : public talk_base::MessageHandler,
   void SetIceRole_w(IceRole role);
   void SetRemoteIceMode_w(IceMode mode);
   bool SetLocalTransportDescription_w(const TransportDescription& desc,
-                                      ContentAction action);
+                                      ContentAction action,
+                                      std::string* error_desc);
   bool SetRemoteTransportDescription_w(const TransportDescription& desc,
-                                       ContentAction action);
+                                       ContentAction action,
+                                       std::string* error_desc);
   bool GetStats_w(TransportStats* infos);
   bool GetRemoteCertificate_w(talk_base::SSLCertificate** cert);
 

@@ -66,8 +66,8 @@ class DtlsTransport : public Base {
     return true;
   }
 
-  virtual bool ApplyLocalTransportDescription_w(TransportChannelImpl*
-                                                channel) {
+  virtual bool ApplyLocalTransportDescription_w(TransportChannelImpl* channel,
+                                                std::string* error_desc) {
     talk_base::SSLFingerprint* local_fp =
         Base::local_description()->identity_fingerprint.get();
 
@@ -79,30 +79,36 @@ class DtlsTransport : public Base {
                                               identity_));
         ASSERT(local_fp_tmp.get() != NULL);
         if (!(*local_fp_tmp == *local_fp)) {
-          LOG(LS_WARNING) << "Local fingerprint does not match identity";
-          return false;
+          std::ostringstream desc;
+          desc << "Local fingerprint does not match identity. Expected: ";
+          desc << local_fp_tmp->ToString();
+          desc << " Got: " << local_fp->ToString();
+          return BadTransportDescription(desc.str(), error_desc);
         }
       } else {
-        LOG(LS_WARNING)
-            << "Local fingerprint provided but no identity available";
-        return false;
+        return BadTransportDescription(
+            "Local fingerprint provided but no identity available.",
+            error_desc);
       }
     } else {
       identity_ = NULL;
     }
 
-    if (!channel->SetLocalIdentity(identity_))
-      return false;
+    if (!channel->SetLocalIdentity(identity_)) {
+      return BadTransportDescription("Failed to set local identity.",
+                                     error_desc);
+    }
 
     // Apply the description in the base class.
-    return Base::ApplyLocalTransportDescription_w(channel);
+    return Base::ApplyLocalTransportDescription_w(channel, error_desc);
   }
 
-  virtual bool NegotiateTransportDescription_w(ContentAction local_role) {
+  virtual bool NegotiateTransportDescription_w(ContentAction local_role,
+                                               std::string* error_desc) {
     if (!Base::local_description() || !Base::remote_description()) {
-      LOG(LS_INFO) << "Local and Remote description must be set before "
-                   << "transport descriptions are negotiated";
-      return false;
+      const std::string msg = "Local and Remote description must be set before "
+                              "transport descriptions are negotiated";
+      return BadTransportDescription(msg, error_desc);
     }
 
     talk_base::SSLFingerprint* local_fp =
@@ -144,8 +150,9 @@ class DtlsTransport : public Base {
       bool is_remote_server = false;
       if (local_role == CA_OFFER) {
         if (local_connection_role != CONNECTIONROLE_ACTPASS) {
-          LOG(LS_ERROR) << "Offerer must use actpass value for setup attribute";
-          return false;
+          return BadTransportDescription(
+              "Offerer must use actpass value for setup attribute.",
+              error_desc);
         }
 
         if (remote_connection_role == CONNECTIONROLE_ACTIVE ||
@@ -153,25 +160,28 @@ class DtlsTransport : public Base {
             remote_connection_role == CONNECTIONROLE_NONE) {
           is_remote_server = (remote_connection_role == CONNECTIONROLE_PASSIVE);
         } else {
-          LOG(LS_ERROR) << "Answerer must use either active or passive value "
-                        << "for setup attribute";
-          return false;
+          const std::string msg =
+              "Answerer must use either active or passive value "
+              "for setup attribute.";
+          return BadTransportDescription(msg, error_desc);
         }
         // If remote is NONE or ACTIVE it will act as client.
       } else {
         if (remote_connection_role != CONNECTIONROLE_ACTPASS &&
             remote_connection_role != CONNECTIONROLE_NONE) {
-          LOG(LS_ERROR) << "Offerer must use actpass value for setup attribute";
-          return false;
+          return BadTransportDescription(
+              "Offerer must use actpass value for setup attribute.",
+              error_desc);
         }
 
         if (local_connection_role == CONNECTIONROLE_ACTIVE ||
             local_connection_role == CONNECTIONROLE_PASSIVE) {
           is_remote_server = (local_connection_role == CONNECTIONROLE_ACTIVE);
         } else {
-          LOG(LS_ERROR) << "Answerer must use either active or passive value "
-                        << "for setup attribute";
-          return false;
+          const std::string msg =
+              "Answerer must use either active or passive value "
+              "for setup attribute.";
+          return BadTransportDescription(msg, error_desc);
         }
 
         // If local is passive, local will act as server.
@@ -181,9 +191,9 @@ class DtlsTransport : public Base {
                                         talk_base::SSL_SERVER;
 
     } else if (local_fp && (local_role == CA_ANSWER)) {
-      LOG(LS_ERROR)
-          << "Local fingerprint supplied when caller didn't offer DTLS";
-      return false;
+      return BadTransportDescription(
+          "Local fingerprint supplied when caller didn't offer DTLS.",
+          error_desc);
     } else {
       // We are not doing DTLS
       remote_fingerprint_.reset(new talk_base::SSLFingerprint(
@@ -191,7 +201,7 @@ class DtlsTransport : public Base {
     }
 
     // Now run the negotiation for the base class.
-    return Base::NegotiateTransportDescription_w(local_role);
+    return Base::NegotiateTransportDescription_w(local_role, error_desc);
   }
 
   virtual DtlsTransportChannelWrapper* CreateTransportChannel(int component) {
@@ -216,12 +226,13 @@ class DtlsTransport : public Base {
 
  private:
   virtual bool ApplyNegotiatedTransportDescription_w(
-      TransportChannelImpl* channel) {
+      TransportChannelImpl* channel,
+      std::string* error_desc) {
     // Set ssl role. Role must be set before fingerprint is applied, which
     // initiates DTLS setup.
     if (!channel->SetSslRole(secure_role_)) {
-      LOG(LS_INFO) << "Failed to set ssl role for the channel.";
-      return false;
+      return BadTransportDescription("Failed to set ssl role for the channel.",
+                                     error_desc);
     }
     // Apply remote fingerprint.
     if (!channel->SetRemoteFingerprint(
@@ -229,9 +240,10 @@ class DtlsTransport : public Base {
         reinterpret_cast<const uint8 *>(remote_fingerprint_->
                                     digest.data()),
         remote_fingerprint_->digest.length())) {
-      return false;
+      return BadTransportDescription("Failed to apply remote fingerprint.",
+                                     error_desc);
     }
-    return Base::ApplyNegotiatedTransportDescription_w(channel);
+    return Base::ApplyNegotiatedTransportDescription_w(channel, error_desc);
   }
 
   talk_base::SSLIdentity* identity_;

@@ -183,9 +183,12 @@ bool HybridVideoMediaChannel::SetSendRtpHeaderExtensions(
       active_channel_->SetSendRtpHeaderExtensions(extensions);
 }
 
-bool HybridVideoMediaChannel::SetSendBandwidth(bool autobw, int bps) {
-  return active_channel_ &&
-      active_channel_->SetSendBandwidth(autobw, bps);
+bool HybridVideoMediaChannel::SetStartSendBandwidth(int bps) {
+  return active_channel_ && active_channel_->SetStartSendBandwidth(bps);
+}
+
+bool HybridVideoMediaChannel::SetMaxSendBandwidth(int bps) {
+  return active_channel_ && active_channel_->SetMaxSendBandwidth(bps);
 }
 
 bool HybridVideoMediaChannel::SetSend(bool send) {

@@ -535,8 +535,10 @@ class MediaChannel : public sigslot::has_slots<> {
       const std::vector<RtpHeaderExtension>& extensions) = 0;
   virtual bool SetSendRtpHeaderExtensions(
       const std::vector<RtpHeaderExtension>& extensions) = 0;
-  // Sets the rate control to use when sending data.
-  virtual bool SetSendBandwidth(bool autobw, int bps) = 0;
+  // Sets the initial bandwidth to use when sending starts.
+  virtual bool SetStartSendBandwidth(int bps) = 0;
+  // Sets the maximum allowed bandwidth to use when sending data.
+  virtual bool SetMaxSendBandwidth(int bps) = 0;
 
   // Base method to send packet using NetworkInterface.
   bool SendPacket(talk_base::Buffer* packet) {

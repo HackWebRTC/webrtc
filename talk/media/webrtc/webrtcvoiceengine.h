@@ -365,7 +365,8 @@ class WebRtcVoiceMediaChannel
                               const talk_base::PacketTime& packet_time);
   virtual void OnReadyToSend(bool ready) {}
   virtual bool MuteStream(uint32 ssrc, bool on);
-  virtual bool SetSendBandwidth(bool autobw, int bps);
+  virtual bool SetStartSendBandwidth(int bps);
+  virtual bool SetMaxSendBandwidth(int bps);
   virtual bool GetStats(VoiceMediaInfo* info);
   // Gets last reported error from WebRtc voice engine.  This should be only
   // called in response a failure.
@@ -411,7 +412,7 @@ class WebRtcVoiceMediaChannel
     return channel_id == voe_channel();
   }
   bool SetSendCodecs(int channel, const std::vector<AudioCodec>& codecs);
-  bool SetSendBandwidthInternal(bool autobw, int bps);
+  bool SetSendBandwidthInternal(int bps);
 
   talk_base::scoped_ptr<WebRtcSoundclipStream> ringback_tone_;
   std::set<int> ringback_channels_;  // channels playing ringback
@@ -419,7 +420,6 @@ class WebRtcVoiceMediaChannel
   std::vector<AudioCodec> send_codecs_;
   talk_base::scoped_ptr<webrtc::CodecInst> send_codec_;
   bool send_bw_setting_;
-  bool send_autobw_;
   int send_bw_bps_;
   AudioOptions options_;
   bool dtmf_allowed_;

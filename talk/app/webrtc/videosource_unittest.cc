@@ -238,7 +238,7 @@ TEST_F(VideoSourceTest, MandatoryConstraintCif5Fps) {
   ASSERT_TRUE(format != NULL);
   EXPECT_EQ(352, format->width);
   EXPECT_EQ(288, format->height);
-  EXPECT_EQ(5, format->framerate());
+  EXPECT_EQ(30, format->framerate());
 }
 
 // Test that the capture output is 720P if the camera support it and the
@@ -491,7 +491,7 @@ TEST_F(VideoSourceTest, MixedOptionsAndConstraints) {
   ASSERT_TRUE(format != NULL);
   EXPECT_EQ(352, format->width);
   EXPECT_EQ(288, format->height);
-  EXPECT_EQ(5, format->framerate());
+  EXPECT_EQ(30, format->framerate());
 
   bool value = true;
   EXPECT_TRUE(source_->options()->video_noise_reduction.Get(&value));
@@ -554,6 +554,6 @@ TEST_F(VideoSourceTest, OptionalSubOneFpsConstraints) {
                  kMaxWaitMs);
   const cricket::VideoFormat* format = capturer_->GetCaptureFormat();
   ASSERT_TRUE(format != NULL);
-  EXPECT_EQ(1, format->framerate());
+  EXPECT_EQ(30, format->framerate());
 }
 

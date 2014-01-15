@@ -62,7 +62,7 @@ class VideoAdapter {
   // successfully. Return false otherwise.
   // output_frame_ is owned by the VideoAdapter that has the best knowledge on
   // the output frame.
-  bool AdaptFrame(const VideoFrame* in_frame, VideoFrame** out_frame);
+  bool AdaptFrame(const VideoFrame* in_frame, const VideoFrame** out_frame);
 
   void set_scale_third(bool enable) {
     LOG(LS_INFO) << "Video Adapter third scaling is now "
@@ -90,8 +90,8 @@ class VideoAdapter {
   int frames_;  // Number of input frames.
   int adapted_frames_;  // Number of frames scaled.
   int adaption_changes_;  // Number of changes in scale factor.
-  size_t previous_width_;  // Previous adapter output width.
-  size_t previous_height_;  // Previous adapter output height.
+  size_t previous_width;  // Previous adapter output width.
+  size_t previous_height;  // Previous adapter output height.
   bool black_output_;  // Flag to tell if we need to black output_frame_.
   bool is_black_;  // Flag to tell if output_frame_ is currently black.
   int64 interval_next_frame_;

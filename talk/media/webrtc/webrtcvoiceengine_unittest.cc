@@ -201,39 +201,26 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
 
   // Test that send bandwidth is set correctly.
   // |codec| is the codec under test.
-  // |default_bitrate| is the default bitrate for the codec.
-  // |auto_bitrate| is a parameter to set to SetSendBandwidth().
-  // |desired_bitrate| is a parameter to set to SetSendBandwidth().
-  // |expected_result| is expected results from SetSendBandwidth().
+  // |max_bitrate| is a parameter to set to SetMaxSendBandwidth().
+  // |expected_result| is the expected result from SetMaxSendBandwidth().
+  // |expected_bitrate| is the expected audio bitrate afterward.
   void TestSendBandwidth(const cricket::AudioCodec& codec,
-                         int default_bitrate,
-                         bool auto_bitrate,
-                         int desired_bitrate,
-                         bool expected_result) {
+                         int max_bitrate,
+                         bool expected_result,
+                         int expected_bitrate) {
     int channel_num = voe_.GetLastChannel();
     std::vector<cricket::AudioCodec> codecs;
 
     codecs.push_back(codec);
     EXPECT_TRUE(channel_->SetSendCodecs(codecs));
 
-    bool result = channel_->SetSendBandwidth(auto_bitrate, desired_bitrate);
+    bool result = channel_->SetMaxSendBandwidth(max_bitrate);
     EXPECT_EQ(expected_result, result);
 
     webrtc::CodecInst temp_codec;
     EXPECT_FALSE(voe_.GetSendCodec(channel_num, temp_codec));
 
-    if (result) {
-      // If SetSendBandwidth() returns true then bitrate is set correctly.
-      if (auto_bitrate) {
-        EXPECT_EQ(default_bitrate, temp_codec.rate);
-      } else {
-        EXPECT_EQ(desired_bitrate, temp_codec.rate);
-      }
-    } else {
-      // If SetSendBandwidth() returns false then bitrate is set to the
-      // default value.
-      EXPECT_EQ(default_bitrate, temp_codec.rate);
-    }
+    EXPECT_EQ(expected_bitrate, temp_codec.rate);
   }
 
 
@@ -575,47 +562,67 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendBandwidthAuto) {
   EXPECT_TRUE(SetupEngine());
   EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
 
-  // Test that when autobw is true, bitrate is kept as the default
-  // value. autobw is true for the following tests.
+  // Test that when autobw is enabled, bitrate is kept as the default
+  // value. autobw is enabled for the following tests because the target
+  // bitrate is <= 0.
 
   // ISAC, default bitrate == 32000.
-  TestSendBandwidth(kIsacCodec, 32000, true, 96000, true);
+  TestSendBandwidth(kIsacCodec, 0, true, 32000);
 
   // PCMU, default bitrate == 64000.
-  TestSendBandwidth(kPcmuCodec, 64000, true, 96000, true);
+  TestSendBandwidth(kPcmuCodec, -1, true, 64000);
 
   // CELT, default bitrate == 64000.
-  TestSendBandwidth(kCeltCodec, 64000, true, 96000, true);
+  TestSendBandwidth(kCeltCodec, 0, true, 64000);
 
   // opus, default bitrate == 64000.
-  TestSendBandwidth(kOpusCodec, 64000, true, 96000, true);
+  TestSendBandwidth(kOpusCodec, -1, true, 64000);
 }
 
-TEST_F(WebRtcVoiceEngineTestFake, SetSendBandwidthFixedMultiRateAsCaller) {
+TEST_F(WebRtcVoiceEngineTestFake, SetMaxSendBandwidthMultiRateAsCaller) {
   EXPECT_TRUE(SetupEngine());
   EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
 
-  // Test that we can set bitrate if a multi-rate codec is used.
-  // autobw is false for the following tests.
+  // Test that the bitrate of a multi-rate codec is always the maximum.
 
   // ISAC, default bitrate == 32000.
-  TestSendBandwidth(kIsacCodec, 32000, false, 128000, true);
+  TestSendBandwidth(kIsacCodec, 128000, true, 128000);
+  TestSendBandwidth(kIsacCodec, 16000, true, 16000);
 
   // CELT, default bitrate == 64000.
-  TestSendBandwidth(kCeltCodec, 64000, false, 96000, true);
+  TestSendBandwidth(kCeltCodec, 96000, true, 96000);
+  TestSendBandwidth(kCeltCodec, 32000, true, 32000);
 
   // opus, default bitrate == 64000.
-  TestSendBandwidth(kOpusCodec, 64000, false, 96000, true);
+  TestSendBandwidth(kOpusCodec, 96000, true, 96000);
+  TestSendBandwidth(kOpusCodec, 48000, true, 48000);
 }
 
-TEST_F(WebRtcVoiceEngineTestFake, SetSendBandwidthFixedMultiRateAsCallee) {
+TEST_F(WebRtcVoiceEngineTestFake, SetMaxSendBandwidthFixedRateAsCaller) {
+  EXPECT_TRUE(SetupEngine());
+  EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
+
+  // Test that we can only set a maximum bitrate for a fixed-rate codec
+  // if it's bigger than the fixed rate.
+
+  // PCMU, fixed bitrate == 64000.
+  TestSendBandwidth(kPcmuCodec, 0, true, 64000);
+  TestSendBandwidth(kPcmuCodec, 1, false, 64000);
+  TestSendBandwidth(kPcmuCodec, 128000, true, 64000);
+  TestSendBandwidth(kPcmuCodec, 32000, false, 64000);
+  TestSendBandwidth(kPcmuCodec, 64000, true, 64000);
+  TestSendBandwidth(kPcmuCodec, 63999, false, 64000);
+  TestSendBandwidth(kPcmuCodec, 64001, true, 64000);
+}
+
+TEST_F(WebRtcVoiceEngineTestFake, SetMaxSendBandwidthMultiRateAsCallee) {
   EXPECT_TRUE(engine_.Init(talk_base::Thread::Current()));
   channel_ = engine_.CreateChannel();
   EXPECT_TRUE(channel_ != NULL);
   EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
 
   int desired_bitrate = 128000;
-  EXPECT_TRUE(channel_->SetSendBandwidth(false, desired_bitrate));
+  EXPECT_TRUE(channel_->SetMaxSendBandwidth(desired_bitrate));
 
   EXPECT_TRUE(channel_->AddSendStream(
       cricket::StreamParams::CreateLegacy(kSsrc1)));
@@ -629,7 +636,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendBandwidthFixedMultiRateAsCallee) {
 // Test that bitrate cannot be set for CBR codecs.
 // Bitrate is ignored if it is higher than the fixed bitrate.
 // Bitrate less then the fixed bitrate is an error.
-TEST_F(WebRtcVoiceEngineTestFake, SetSendBandwidthFixedCbr) {
+TEST_F(WebRtcVoiceEngineTestFake, SetMaxSendBandwidthCbr) {
   EXPECT_TRUE(SetupEngine());
   EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
 
@@ -642,10 +649,10 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendBandwidthFixedCbr) {
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
   EXPECT_EQ(0, voe_.GetSendCodec(channel_num, codec));
   EXPECT_EQ(64000, codec.rate);
-  EXPECT_TRUE(channel_->SetSendBandwidth(false, 128000));
+  EXPECT_TRUE(channel_->SetMaxSendBandwidth(128000));
   EXPECT_EQ(0, voe_.GetSendCodec(channel_num, codec));
   EXPECT_EQ(64000, codec.rate);
-  EXPECT_FALSE(channel_->SetSendBandwidth(false, 128));
+  EXPECT_FALSE(channel_->SetMaxSendBandwidth(128));
   EXPECT_EQ(0, voe_.GetSendCodec(channel_num, codec));
   EXPECT_EQ(64000, codec.rate);
 }

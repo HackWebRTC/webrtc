@@ -290,8 +290,8 @@ void RtpDataMediaChannel::OnPacketReceived(
   SignalDataReceived(params, data, data_len);
 }
 
-bool RtpDataMediaChannel::SetSendBandwidth(bool autobw, int bps) {
-  if (autobw || bps <= 0) {
+bool RtpDataMediaChannel::SetMaxSendBandwidth(int bps) {
+  if (bps <= 0) {
     bps = kDataMaxBandwidth;
   }
   send_limiter_.reset(new talk_base::RateLimiter(bps / 8, 1.0));

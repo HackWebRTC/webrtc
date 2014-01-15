@@ -29,81 +29,35 @@
 #ifndef TALK_BASE_SSLFINGERPRINT_H_
 #define TALK_BASE_SSLFINGERPRINT_H_
 
-#include <ctype.h>
 #include <string>
 
 #include "talk/base/buffer.h"
-#include "talk/base/helpers.h"
-#include "talk/base/messagedigest.h"
 #include "talk/base/sslidentity.h"
-#include "talk/base/stringencode.h"
 
 namespace talk_base {
 
+class SSLCertificate;
+
 struct SSLFingerprint {
   static SSLFingerprint* Create(const std::string& algorithm,
-                                const talk_base::SSLIdentity* identity) {
-    if (!identity) {
-      return NULL;
-    }
-
-    return Create(algorithm, &(identity->certificate()));
-  }
+                                const talk_base::SSLIdentity* identity);
 
   static SSLFingerprint* Create(const std::string& algorithm,
-                                const talk_base::SSLCertificate* cert) {
-    uint8 digest_val[64];
-    size_t digest_len;
-    bool ret = cert->ComputeDigest(
-        algorithm, digest_val, sizeof(digest_val), &digest_len);
-    if (!ret) {
-      return NULL;
-    }
-
-    return new SSLFingerprint(algorithm, digest_val, digest_len);
-  }
+                                const talk_base::SSLCertificate* cert);
 
   static SSLFingerprint* CreateFromRfc4572(const std::string& algorithm,
-                                           const std::string& fingerprint) {
-    if (algorithm.empty() || !talk_base::IsFips180DigestAlgorithm(algorithm))
-      return NULL;
-
-    if (fingerprint.empty())
-      return NULL;
-
-    size_t value_len;
-    char value[talk_base::MessageDigest::kMaxSize];
-    value_len = talk_base::hex_decode_with_delimiter(value, sizeof(value),
-                                                     fingerprint.c_str(),
-                                                     fingerprint.length(),
-                                                     ':');
-    if (!value_len)
-      return NULL;
-
-    return new SSLFingerprint(algorithm,
-                              reinterpret_cast<uint8*>(value),
-                              value_len);
-  }
+                                           const std::string& fingerprint);
 
   SSLFingerprint(const std::string& algorithm, const uint8* digest_in,
-                 size_t digest_len) : algorithm(algorithm) {
-    digest.SetData(digest_in, digest_len);
-  }
-  SSLFingerprint(const SSLFingerprint& from)
-      : algorithm(from.algorithm), digest(from.digest) {}
-  bool operator==(const SSLFingerprint& other) const {
-    return algorithm == other.algorithm &&
-           digest == other.digest;
-  }
+                 size_t digest_len);
 
-  std::string GetRfc4572Fingerprint() const {
-    std::string fingerprint =
-        talk_base::hex_encode_with_delimiter(
-            digest.data(), digest.length(), ':');
-    std::transform(fingerprint.begin(), fingerprint.end(),
-                   fingerprint.begin(), ::toupper);
-    return fingerprint;
-  }
+  SSLFingerprint(const SSLFingerprint& from);
+
+  bool operator==(const SSLFingerprint& other) const;
+
+  std::string GetRfc4572Fingerprint() const;
+
+  std::string ToString();
 
   std::string algorithm;
   talk_base::Buffer digest;

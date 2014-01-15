@@ -30,7 +30,7 @@
 
 #include <errno.h>
 #include <string>
-#include <set>
+#include <vector>
 
 namespace cricket {
 // Some ERRNO values get re-#defined to WSA* equivalents in some talk/
@@ -166,7 +166,8 @@ class SctpDataMediaChannel : public DataMediaChannel,
   // TODO(pthatcher): Cleanup MediaChannel interface, or at least
   // don't try calling these and return false.  Right now, things
   // don't work if we return false.
-  virtual bool SetSendBandwidth(bool autobw, int bps) { return true; }
+  virtual bool SetStartSendBandwidth(int bps) { return true; }
+  virtual bool SetMaxSendBandwidth(int bps) { return true; }
   virtual bool SetRecvRtpHeaderExtensions(
       const std::vector<RtpHeaderExtension>& extensions) { return true; }
   virtual bool SetSendRtpHeaderExtensions(
@@ -216,6 +217,7 @@ class SctpDataMediaChannel : public DataMediaChannel,
                                talk_base::Buffer* buffer);
   void OnNotificationFromSctp(talk_base::Buffer* buffer);
   void OnNotificationAssocChange(const sctp_assoc_change& change);
+
   void OnStreamResetEvent(const struct sctp_stream_reset_event* evt);
 
   // Responsible for marshalling incoming data to the channels listeners, and

@@ -523,7 +523,7 @@ bool Call::StartScreencast(Session* session,
   VideoContentDescription* video = CreateVideoStreamUpdate(stream);
 
   // TODO(pthatcher): Wait until view request before sending video.
-  video_channel->SetLocalContent(video, CA_UPDATE);
+  video_channel->SetLocalContent(video, CA_UPDATE, NULL);
   SendVideoStreamUpdate(session, video);
   return true;
 }
@@ -546,7 +546,7 @@ bool Call::StopScreencast(Session* session,
   // No ssrcs
   VideoContentDescription* video = CreateVideoStreamUpdate(stream);
 
-  video_channel->SetLocalContent(video, CA_UPDATE);
+  video_channel->SetLocalContent(video, CA_UPDATE, NULL);
   SendVideoStreamUpdate(session, video);
   return true;
 }
@@ -870,9 +870,11 @@ void Call::OnRemoteDescriptionUpdate(BaseSession* base_session,
 bool Call::UpdateVoiceChannelRemoteContent(
     Session* session, const AudioContentDescription* audio) {
   VoiceChannel* voice_channel = GetVoiceChannel(session);
-  if (!voice_channel->SetRemoteContent(audio, CA_UPDATE)) {
-    LOG(LS_ERROR) << "Failure in audio SetRemoteContent with CA_UPDATE";
-    session->SetError(BaseSession::ERROR_CONTENT);
+  if (!voice_channel->SetRemoteContent(audio, CA_UPDATE, NULL)) {
+    const std::string error_desc =
+        "Failure in audio SetRemoteContent with CA_UPDATE";
+    LOG(LS_ERROR) << error_desc;
+    session->SetError(BaseSession::ERROR_CONTENT, error_desc);
     return false;
   }
   return true;
@@ -881,9 +883,11 @@ bool Call::UpdateVoiceChannelRemoteContent(
 bool Call::UpdateVideoChannelRemoteContent(
     Session* session, const VideoContentDescription* video) {
   VideoChannel* video_channel = GetVideoChannel(session);
-  if (!video_channel->SetRemoteContent(video, CA_UPDATE)) {
-    LOG(LS_ERROR) << "Failure in video SetRemoteContent with CA_UPDATE";
-    session->SetError(BaseSession::ERROR_CONTENT);
+  if (!video_channel->SetRemoteContent(video, CA_UPDATE, NULL)) {
+    const std::string error_desc =
+        "Failure in video SetRemoteContent with CA_UPDATE";
+    LOG(LS_ERROR) << error_desc;
+    session->SetError(BaseSession::ERROR_CONTENT, error_desc);
     return false;
   }
   return true;
@@ -892,9 +896,11 @@ bool Call::UpdateVideoChannelRemoteContent(
 bool Call::UpdateDataChannelRemoteContent(
     Session* session, const DataContentDescription* data) {
   DataChannel* data_channel = GetDataChannel(session);
-  if (!data_channel->SetRemoteContent(data, CA_UPDATE)) {
-    LOG(LS_ERROR) << "Failure in data SetRemoteContent with CA_UPDATE";
-    session->SetError(BaseSession::ERROR_CONTENT);
+  if (!data_channel->SetRemoteContent(data, CA_UPDATE, NULL)) {
+    const std::string error_desc =
+        "Failure in data SetRemoteContent with CA_UPDATE";
+    LOG(LS_ERROR) << error_desc;
+    session->SetError(BaseSession::ERROR_CONTENT, error_desc);
     return false;
   }
   return true;

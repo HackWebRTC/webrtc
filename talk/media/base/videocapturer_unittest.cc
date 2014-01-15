@@ -507,23 +507,23 @@ TEST_F(VideoCapturerTest, TestFpsFormats) {
       cricket::VideoFormat::FpsToInterval(10), cricket::FOURCC_ANY));
   cricket::VideoFormat best;
 
-  // expect 30 fps to choose 30 fps format
+  // Expect 30 fps to choose 30 fps format.
   EXPECT_TRUE(capturer_.GetBestCaptureFormat(required_formats[0], &best));
   EXPECT_EQ(640, best.width);
   EXPECT_EQ(400, best.height);
   EXPECT_EQ(cricket::VideoFormat::FpsToInterval(30), best.interval);
 
-  // expect 20 fps to choose 20 fps format
+  // Expect 20 fps to choose 30 fps format.
   EXPECT_TRUE(capturer_.GetBestCaptureFormat(required_formats[1], &best));
   EXPECT_EQ(640, best.width);
   EXPECT_EQ(400, best.height);
-  EXPECT_EQ(cricket::VideoFormat::FpsToInterval(20), best.interval);
+  EXPECT_EQ(cricket::VideoFormat::FpsToInterval(30), best.interval);
 
-  // expect 10 fps to choose 15 fps format but set fps to 10
+  // Expect 10 fps to choose 15 fps format and set fps to 15.
   EXPECT_TRUE(capturer_.GetBestCaptureFormat(required_formats[2], &best));
   EXPECT_EQ(640, best.width);
   EXPECT_EQ(480, best.height);
-  EXPECT_EQ(cricket::VideoFormat::FpsToInterval(10), best.interval);
+  EXPECT_EQ(cricket::VideoFormat::FpsToInterval(15), best.interval);
 
   // We have VGA 60 fps and 15 fps. Choose best fps.
   supported_formats.clear();
@@ -539,23 +539,23 @@ TEST_F(VideoCapturerTest, TestFpsFormats) {
       cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
   capturer_.ResetSupportedFormats(supported_formats);
 
-  // expect 30 fps to choose 60 fps format, but will set best fps to 30
+  // Expect 30 fps to choose 60 fps format and will set best fps to 60.
   EXPECT_TRUE(capturer_.GetBestCaptureFormat(required_formats[0], &best));
   EXPECT_EQ(640, best.width);
   EXPECT_EQ(480, best.height);
-  EXPECT_EQ(cricket::VideoFormat::FpsToInterval(30), best.interval);
+  EXPECT_EQ(cricket::VideoFormat::FpsToInterval(60), best.interval);
 
-  // expect 20 fps to choose 60 fps format, but will set best fps to 20
+  // Expect 20 fps to choose 60 fps format, and will set best fps to 60.
   EXPECT_TRUE(capturer_.GetBestCaptureFormat(required_formats[1], &best));
   EXPECT_EQ(640, best.width);
   EXPECT_EQ(480, best.height);
-  EXPECT_EQ(cricket::VideoFormat::FpsToInterval(20), best.interval);
+  EXPECT_EQ(cricket::VideoFormat::FpsToInterval(60), best.interval);
 
-  // expect 10 fps to choose 10 fps
+  // Expect 10 fps to choose 15 fps.
   EXPECT_TRUE(capturer_.GetBestCaptureFormat(required_formats[2], &best));
   EXPECT_EQ(640, best.width);
   EXPECT_EQ(480, best.height);
-  EXPECT_EQ(cricket::VideoFormat::FpsToInterval(10), best.interval);
+  EXPECT_EQ(cricket::VideoFormat::FpsToInterval(15), best.interval);
 }
 
 TEST_F(VideoCapturerTest, TestRequest16x10_9) {

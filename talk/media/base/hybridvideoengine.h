@@ -75,7 +75,8 @@ class HybridVideoMediaChannel : public VideoMediaChannel {
   virtual bool SetSendStreamFormat(uint32 ssrc, const VideoFormat& format);
   virtual bool SetSendRtpHeaderExtensions(
       const std::vector<RtpHeaderExtension>& extensions);
-  virtual bool SetSendBandwidth(bool autobw, int bps);
+  virtual bool SetStartSendBandwidth(int bps);
+  virtual bool SetMaxSendBandwidth(int bps);
   virtual bool SetSend(bool send);
 
   virtual bool AddRecvStream(const StreamParams& sp);
