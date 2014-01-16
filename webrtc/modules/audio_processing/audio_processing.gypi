@@ -101,6 +101,17 @@
             'ns/nsx_core.h',
             'ns/nsx_defines.h',
           ],
+          'conditions': [
+            ['target_arch=="mipsel"', {
+              'sources': [
+                'ns/nsx_core_mips.c',
+              ],
+            }, {
+              'sources': [
+                'ns/nsx_core_c.c',
+              ],
+            }],
+          ],
         }, {
           'defines': ['WEBRTC_NS_FLOAT'],
           'sources': [
