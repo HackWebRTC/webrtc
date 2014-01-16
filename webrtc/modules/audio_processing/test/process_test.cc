@@ -627,6 +627,9 @@ void void_main(int argc, char* argv[]) {
         const Init msg = event_msg.init();
 
         ASSERT_TRUE(msg.has_sample_rate());
+        // TODO(bjornv): Replace set_sample_rate_hz() when we have a smarter
+        // AnalyzeReverseStream().
+        ASSERT_EQ(apm->kNoError, apm->set_sample_rate_hz(msg.sample_rate()));
         ASSERT_TRUE(msg.has_device_sample_rate());
         ASSERT_EQ(apm->kNoError,
                   apm->echo_cancellation()->set_device_sample_rate_hz(
@@ -813,6 +816,10 @@ void void_main(int argc, char* argv[]) {
                   sizeof(device_sample_rate_hz),
                   1,
                   event_file));
+
+        // TODO(bjornv): Replace set_sample_rate_hz() when we have a smarter
+        // AnalyzeReverseStream().
+        ASSERT_EQ(apm->kNoError, apm->set_sample_rate_hz(sample_rate_hz));
 
         ASSERT_EQ(apm->kNoError,
                   apm->echo_cancellation()->set_device_sample_rate_hz(
