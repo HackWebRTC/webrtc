@@ -63,14 +63,6 @@ class OpenSlRunnerTemplate {
     audio_buffer_.ClearBuffer();
   }
 
-  void RegisterApplicationContext(
-      JNIEnv* env,
-      jobject obj,
-      jobject context) {
-    OutputType::SetAndroidAudioDeviceObjects(env, obj, context);
-    InputType::SetAndroidAudioDeviceObjects(env, obj, context);
-  }
-
  private:
   OutputType output_;
   InputType input_;
@@ -92,6 +84,10 @@ class OpenSlRunner
       jobject obj,
       jobject context) {
     assert(!g_runner);  // Should only be called once.
+    // Register the application context in the superclass to avoid having to
+    // qualify the template instantiation again.
+    OpenSlesInput::SetAndroidAudioDeviceObjects(g_vm, env, context);
+    OpenSlesOutput::SetAndroidAudioDeviceObjects(g_vm, env, context);
     g_runner = new OpenSlRunner();
   }
 
