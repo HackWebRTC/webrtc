@@ -78,9 +78,11 @@ public class SettingsMenuFragment extends Fragment
         }
       });
     etRemoteIp = (EditText) v.findViewById(R.id.etRemoteIp);
-    etRemoteIp.setOnClickListener(new View.OnClickListener() {
-        public void onClick(View editText) {
-          getEngine().setRemoteIp(etRemoteIp.getText().toString());
+    etRemoteIp.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+        public void onFocusChange(View editText, boolean hasFocus) {
+          if (!hasFocus) {
+            getEngine().setRemoteIp(etRemoteIp.getText().toString());
+          }
         }
       });
     // Has to be after remote IP as loopback changes it.

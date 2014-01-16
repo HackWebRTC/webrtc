@@ -243,7 +243,10 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
     return voeRunning || vieRunning;
   }
 
-  public void setRemoteIp(String remoteIp) { this.remoteIp = remoteIp; }
+  public void setRemoteIp(String remoteIp) {
+    this.remoteIp = remoteIp;
+    UpdateSendDestination();
+  }
 
   public String remoteIp() { return remoteIp; }
 
@@ -331,10 +334,7 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
 
   public void setAudioTxPort(int audioTxPort) {
     this.audioTxPort = audioTxPort;
-    check(remoteIp != null,
-        "remoteIP must have been set before setting audio send port");
-    check(voe.setSendDestination(audioChannel, audioTxPort,
-            remoteIp) == 0, "VoE set send destination failed");
+    UpdateSendDestination();
   }
 
   public int audioTxPort() { return audioTxPort; }
@@ -539,10 +539,21 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
 
   public void setVideoTxPort(int videoTxPort) {
     this.videoTxPort = videoTxPort;
-    check(remoteIp != null,
-        "remoteIP must have been set before setting audio send port");
-    check(vie.setSendDestination(videoChannel, videoTxPort, remoteIp) == 0,
-        "Failed setSendDestination");
+    UpdateSendDestination();
+  }
+
+  private void UpdateSendDestination() {
+    if (remoteIp == null) {
+      return;
+    }
+    if (audioTxPort != 0) {
+      check(voe.setSendDestination(audioChannel, audioTxPort,
+              remoteIp) == 0, "VoE set send destination failed");
+    }
+    if (videoTxPort != 0) {
+      check(vie.setSendDestination(videoChannel, videoTxPort, remoteIp) == 0,
+          "Failed setSendDestination");
+    }
   }
 
   public int videoTxPort() {
