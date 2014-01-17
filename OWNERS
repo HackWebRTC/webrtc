@@ -9,3 +9,4 @@ per-file .gitignore=*
 per-file AUTHORS=*
 per-file DEPS=*
 per-file WATCHLISTS=*
+per-file webrtc_examples.gyp=*

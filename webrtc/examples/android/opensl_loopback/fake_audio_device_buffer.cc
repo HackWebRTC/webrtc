@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_device/android/test/fake_audio_device_buffer.h"
+#include "webrtc/examples/android/opensl_loopback/fake_audio_device_buffer.h"
 
 #include <assert.h>
 

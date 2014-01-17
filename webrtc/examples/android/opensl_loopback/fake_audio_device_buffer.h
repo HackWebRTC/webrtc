@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_FAKE_AUDIO_DEVICE_BUFFER_H_
-#define WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_FAKE_AUDIO_DEVICE_BUFFER_H_
+#ifndef WEBRTC_EXAMPLES_ANDROID_OPENSL_LOOPBACK_FAKE_AUDIO_DEVICE_BUFFER_H_
+#define WEBRTC_EXAMPLES_ANDROID_OPENSL_LOOPBACK_FAKE_AUDIO_DEVICE_BUFFER_H_
 
 #include "webrtc/modules/audio_device/android/audio_manager_jni.h"
 #include "webrtc/modules/audio_device/android/single_rw_fifo.h"
@@ -64,4 +64,4 @@ class FakeAudioDeviceBuffer : public AudioDeviceBuffer {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_FAKE_AUDIO_DEVICE_BUFFER_H_
+#endif  // WEBRTC_EXAMPLES_ANDROID_OPENSL_LOOPBACK_FAKE_AUDIO_DEVICE_BUFFER_H_

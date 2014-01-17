@@ -11,12 +11,12 @@
 #include <assert.h>
 #include <jni.h>
 
+#include "webrtc/examples/android/opensl_loopback/fake_audio_device_buffer.h"
 #include "webrtc/modules/audio_device/android/audio_device_template.h"
 #include "webrtc/modules/audio_device/android/audio_record_jni.h"
 #include "webrtc/modules/audio_device/android/audio_track_jni.h"
 #include "webrtc/modules/audio_device/android/opensles_input.h"
 #include "webrtc/modules/audio_device/android/opensles_output.h"
-#include "webrtc/modules/audio_device/android/test/fake_audio_device_buffer.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 // Java globals
@@ -84,8 +84,6 @@ class OpenSlRunner
       jobject obj,
       jobject context) {
     assert(!g_runner);  // Should only be called once.
-    // Register the application context in the superclass to avoid having to
-    // qualify the template instantiation again.
     OpenSlesInput::SetAndroidAudioDeviceObjects(g_vm, env, context);
     OpenSlesOutput::SetAndroidAudioDeviceObjects(g_vm, env, context);
     g_runner = new OpenSlRunner();
