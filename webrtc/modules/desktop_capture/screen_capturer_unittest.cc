@@ -59,6 +59,15 @@ SharedMemory* ScreenCapturerTest::CreateSharedMemory(size_t size) {
   return new FakeSharedMemory(new char[size], size);
 }
 
+TEST_F(ScreenCapturerTest, GetScreenListAndSelectScreen) {
+  webrtc::ScreenCapturer::ScreenList screens;
+  EXPECT_TRUE(capturer_->GetScreenList(&screens));
+  for(webrtc::ScreenCapturer::ScreenList::iterator it = screens.begin();
+      it != screens.end(); ++it) {
+    EXPECT_TRUE(capturer_->SelectScreen(it->id));
+  }
+}
+
 TEST_F(ScreenCapturerTest, StartCapturer) {
   capturer_->SetMouseShapeObserver(&mouse_observer_);
   capturer_->Start(&callback_);
