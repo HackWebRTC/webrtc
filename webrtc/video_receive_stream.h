@@ -119,6 +119,15 @@ class VideoReceiveStream {
       // See RtcpMode for description.
       newapi::RtcpMode rtcp_mode;
 
+      // Extended RTCP settings.
+      struct RtcpXr {
+        RtcpXr() : receiver_reference_time_report(false) {}
+
+        // True if RTCP Receiver Reference Time Report Block extension
+        // (RFC 3611) should be enabled.
+        bool receiver_reference_time_report;
+      } rtcp_xr;
+
       // See draft-alvestrand-rmcat-remb for information.
       bool remb;
 

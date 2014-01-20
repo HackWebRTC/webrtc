@@ -127,6 +127,10 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
   image_process_->RegisterPreRenderCallback(channel_,
                                             config_.pre_render_callback);
 
+  if (config.rtp.rtcp_xr.receiver_reference_time_report) {
+    rtp_rtcp_->SetRtcpXrRrtrStatus(channel_, true);
+  }
+
   clock_ = Clock::GetRealTimeClock();
 }
 

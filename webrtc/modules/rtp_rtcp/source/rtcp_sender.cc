@@ -1778,10 +1778,9 @@ int RTCPSender::PrepareRTCP(const FeedbackState& feedback_state,
       rtcpPacketTypeFlags |= kRtcpTmmbn;
       _sendTMMBN = false;
   }
-  if (xrSendReceiverReferenceTimeEnabled_ &&
-      (rtcpPacketTypeFlags & kRtcpReport))
+  if (rtcpPacketTypeFlags & kRtcpReport)
   {
-      if (!_sending)
+      if (xrSendReceiverReferenceTimeEnabled_ && !_sending)
       {
           rtcpPacketTypeFlags |= kRtcpXrReceiverReferenceTime;
       }

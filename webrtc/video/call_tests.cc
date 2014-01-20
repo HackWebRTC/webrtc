@@ -127,6 +127,7 @@ class CallTest : public ::testing::Test {
 
   void ReceivesPliAndRecovers(int rtp_history_ms);
   void RespectsRtcpMode(newapi::RtcpMode rtcp_mode);
+  void TestXrReceiverReferenceTimeReport(bool enable_rrtr);
 
   scoped_ptr<Call> sender_call_;
   scoped_ptr<Call> receiver_call_;
@@ -1050,5 +1051,101 @@ TEST_F(CallTest, ReceiveStreamSendsRemb) {
   StopSending();
   observer.StopSending();
   DestroyStreams();
+}
+
+void CallTest::TestXrReceiverReferenceTimeReport(bool enable_rrtr) {
+  static const int kNumRtcpReportPacketsToObserve = 5;
+  class RtcpXrObserver : public test::RtpRtcpObserver {
+   public:
+    explicit RtcpXrObserver(bool enable_rrtr)
+        : test::RtpRtcpObserver(kDefaultTimeoutMs),
+          enable_rrtr_(enable_rrtr),
+          sent_rtcp_sr_(0),
+          sent_rtcp_rr_(0),
+          sent_rtcp_rrtr_(0),
+          sent_rtcp_dlrr_(0) {}
+   private:
+    // Receive stream should send RR packets (and RRTR packets if enabled).
+    virtual Action OnReceiveRtcp(const uint8_t* packet,
+                                 size_t length) OVERRIDE {
+      RTCPUtility::RTCPParserV2 parser(packet, length, true);
+      EXPECT_TRUE(parser.IsValid());
+
+      RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
+      while (packet_type != RTCPUtility::kRtcpNotValidCode) {
+        if (packet_type == RTCPUtility::kRtcpRrCode) {
+          ++sent_rtcp_rr_;
+        } else if (
+            packet_type == RTCPUtility::kRtcpXrReceiverReferenceTimeCode) {
+          ++sent_rtcp_rrtr_;
+        }
+        EXPECT_NE(packet_type, RTCPUtility::kRtcpSrCode);
+        EXPECT_NE(packet_type, RTCPUtility::kRtcpXrDlrrReportBlockItemCode);
+        packet_type = parser.Iterate();
+      }
+      return SEND_PACKET;
+    }
+    // Send stream should send SR packets (and DLRR packets if enabled).
+    virtual Action OnSendRtcp(const uint8_t* packet, size_t length) {
+      RTCPUtility::RTCPParserV2 parser(packet, length, true);
+      EXPECT_TRUE(parser.IsValid());
+
+      RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
+      while (packet_type != RTCPUtility::kRtcpNotValidCode) {
+        if (packet_type == RTCPUtility::kRtcpSrCode) {
+          ++sent_rtcp_sr_;
+        } else if (packet_type == RTCPUtility::kRtcpXrDlrrReportBlockItemCode) {
+          ++sent_rtcp_dlrr_;
+        }
+        EXPECT_NE(packet_type, RTCPUtility::kRtcpXrReceiverReferenceTimeCode);
+        packet_type = parser.Iterate();
+      }
+      if (sent_rtcp_sr_ > kNumRtcpReportPacketsToObserve &&
+          sent_rtcp_rr_ > kNumRtcpReportPacketsToObserve) {
+        if (enable_rrtr_) {
+          EXPECT_GT(sent_rtcp_rrtr_, 0);
+          EXPECT_GT(sent_rtcp_dlrr_, 0);
+        } else {
+          EXPECT_EQ(0, sent_rtcp_rrtr_);
+          EXPECT_EQ(0, sent_rtcp_dlrr_);
+        }
+        observation_complete_->Set();
+      }
+      return SEND_PACKET;
+    }
+    bool enable_rrtr_;
+    int sent_rtcp_sr_;
+    int sent_rtcp_rr_;
+    int sent_rtcp_rrtr_;
+    int sent_rtcp_dlrr_;
+  } observer(enable_rrtr);
+
+  CreateCalls(Call::Config(observer.SendTransport()),
+              Call::Config(observer.ReceiveTransport()));
+  observer.SetReceivers(receiver_call_->Receiver(),
+                        sender_call_->Receiver());
+
+  CreateTestConfigs();
+  receive_config_.rtp.rtcp_mode = newapi::kRtcpReducedSize;
+  receive_config_.rtp.rtcp_xr.receiver_reference_time_report = enable_rrtr;
+
+  CreateStreams();
+  CreateFrameGenerator();
+  StartSending();
+
+  EXPECT_EQ(kEventSignaled, observer.Wait())
+      << "Timed out while waiting for RTCP SR/RR packets to be sent.";
+
+  StopSending();
+  observer.StopSending();
+  DestroyStreams();
+}
+
+TEST_F(CallTest, ReceiverReferenceTimeReportEnabled) {
+  TestXrReceiverReferenceTimeReport(true);
+}
+
+TEST_F(CallTest, ReceiverReferenceTimeReportDisabled) {
+  TestXrReceiverReferenceTimeReport(false);
 }
 }  // namespace webrtc
