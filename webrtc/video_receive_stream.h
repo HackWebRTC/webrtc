@@ -11,6 +11,7 @@
 #ifndef WEBRTC_VIDEO_RECEIVE_STREAM_H_
 #define WEBRTC_VIDEO_RECEIVE_STREAM_H_
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -137,9 +138,9 @@ class VideoReceiveStream {
       // See FecConfig for description.
       FecConfig fec;
 
-      // RTX settings for possible payloads. RTX is disabled if the vector is
-      // empty.
-      std::vector<RtxConfig> rtx;
+      // RTX settings for video payloads that may be received. RTX is disabled
+      // if there's no config present.
+      std::map<int, RtxConfig> rtx;
 
       // RTP header extensions used for the received stream.
       std::vector<RtpExtension> extensions;
