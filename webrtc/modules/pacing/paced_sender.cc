@@ -291,7 +291,7 @@ int32_t PacedSender::Process() {
 
 // MUST have critsect_ when calling.
 bool PacedSender::SendPacketFromList(paced_sender::PacketList* packet_list)
-    EXCLUSIVE_LOCKS_REQUIRED(critsect_) {
+    EXCLUSIVE_LOCKS_REQUIRED(critsect_.get()) {
   paced_sender::Packet packet = GetNextPacketFromList(packet_list);
   critsect_->Leave();
 
