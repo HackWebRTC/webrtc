@@ -27,6 +27,7 @@
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/channel_transport/include/channel_transport.h"
 #include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/test/testsupport/trace_to_stderr.h"
 #include "webrtc/voice_engine/include/voe_audio_processing.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
@@ -44,6 +45,8 @@
 
 DEFINE_bool(use_acm_version_2, false,
             "If true, we'll run the tests with Audio Coding Module version 2.");
+DEFINE_bool(use_log_file, false,
+    "Output logs to a file; by default they will be printed to stderr.");
 
 using namespace webrtc;
 using namespace test;
@@ -149,16 +152,18 @@ int main(int argc, char** argv) {
 
   MyObserver my_observer;
 
-  const std::string out_path = webrtc::test::OutputPath();
-  const std::string trace_filename = out_path + "webrtc_trace.txt";
-
-  printf("Set trace filenames (enable trace)\n");
-  VoiceEngine::SetTraceFilter(kTraceAll);
-  res = VoiceEngine::SetTraceFile(trace_filename.c_str());
-  VALIDATE;
-
-  res = VoiceEngine::SetTraceCallback(NULL);
-  VALIDATE;
+  scoped_ptr<test::TraceToStderr> trace_to_stderr;
+  if (!FLAGS_use_log_file) {
+    trace_to_stderr.reset(new test::TraceToStderr);
+  } else {
+    const std::string trace_filename = test::OutputPath() + "webrtc_trace.txt";
+    VoiceEngine::SetTraceFilter(kTraceAll);
+    res = VoiceEngine::SetTraceFile(trace_filename.c_str());
+    VALIDATE;
+    res = VoiceEngine::SetTraceCallback(NULL);
+    VALIDATE;
+    printf("Outputting logs to file: %s\n", trace_filename.c_str());
+  }
 
   printf("Init\n");
   res = base1->Init();
@@ -177,7 +182,7 @@ int main(int argc, char** argv) {
   VALIDATE;
   printf("%s\n", tmp);
 
-  RunTest(out_path);
+  RunTest(test::OutputPath());
 
   printf("Terminate \n");
 
