@@ -315,7 +315,7 @@
                 'cp <(PRODUCT_DIR)/libjingle_peerconnection.jar examples/android/libs/ &&'
                 '<(android_strip) -o examples/android/libs/<(android_app_abi)/libjingle_peerconnection_so.so  <(PRODUCT_DIR)/libjingle_peerconnection_so.so &&'
                 'cd examples/android && '
-                '{ ant -q -l <(ant_log) debug || '
+                '{ ant debug > <(ant_log) 2>&1 || '
                 '  { cat <(ant_log) ; exit 1; } } && '
                 'cd - > /dev/null && '
                 'cp examples/android/bin/AppRTCDemo-debug.apk <(_outputs)'
