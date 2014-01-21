@@ -45,9 +45,10 @@ class StreamStatisticianImpl : public StreamStatistician {
 
  private:
   bool InOrderPacketInternal(uint16_t sequence_number) const;
+  RtcpStatistics CalculateStatistics();
 
   Clock* clock_;
-  scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  scoped_ptr<CriticalSectionWrapper> stream_lock_;
   Bitrate incoming_bitrate_;
   uint32_t ssrc_;
   int max_reordering_threshold_;  // In number of packets or sequence numbers.
@@ -112,7 +113,7 @@ class ReceiveStatisticsImpl : public ReceiveStatistics,
   typedef std::map<uint32_t, StreamStatisticianImpl*> StatisticianImplMap;
 
   Clock* clock_;
-  scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  scoped_ptr<CriticalSectionWrapper> receive_statistics_lock_;
   int64_t last_rate_update_ms_;
   StatisticianImplMap statisticians_;
 
