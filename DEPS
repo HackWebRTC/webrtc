@@ -254,13 +254,6 @@ hooks = [
     ],
   },
   {
-    # Create a supplement.gypi file under trunk/webrtc. This file will be picked
-    # up by gyp and used to enable the standalone build.
-    "pattern": ".",
-    "action": ["python", Var("root_dir") + "/tools/create_supplement_gypi.py",
-               Var("root_dir") + "/webrtc/supplement.gypi"],
-  },
-  {
     # Pull clang on mac. If nothing changed, or on non-mac platforms, this takes
     # zero seconds to run. If something changed, it downloads a prebuilt clang.
     "pattern": ".",

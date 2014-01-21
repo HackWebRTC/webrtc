@@ -83,6 +83,7 @@
 /tools/android
 /tools/android-dummy-test
 /tools/clang
+/tools/gn
 /tools/grit
 /tools/gritsettings
 /tools/gyp
@@ -94,7 +95,6 @@
 /webrtc/modules/audio_device/android/test/bin/
 /webrtc/modules/audio_device/android/test/gen/
 /webrtc/modules/audio_device/android/test/libs/
-/webrtc/supplement.gypi
 /webrtc/video_engine/test/android/bin
 /webrtc/video_engine/test/android/gen
 /webrtc/video_engine/test/android/libs

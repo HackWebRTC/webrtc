@@ -14,8 +14,7 @@
     'variables': {
       'variables': {
         'variables': {
-          # This will be set to zero in the supplement.gypi triggered by a
-          # gclient hook in the standalone build.
+          # This will already be set to zero by supplement.gypi
           'build_with_chromium%': 1,
         },
         'build_with_chromium%': '<(build_with_chromium)',
