@@ -52,7 +52,7 @@
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
         removedStream:(RTCMediaStream *)stream;
 
-// Triggered when renegotation is needed, for example the ICE has restarted.
+// Triggered when renegotiation is needed, for example the ICE has restarted.
 - (void)peerConnectionOnRenegotiationNeeded:(RTCPeerConnection *)peerConnection;
 
 // Called any time the ICEConnectionState changes.

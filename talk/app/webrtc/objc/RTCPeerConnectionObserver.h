@@ -57,7 +57,7 @@ class RTCPeerConnectionObserver : public PeerConnectionObserver {
   // Triggered when a remote peer open a data channel.
   virtual void OnDataChannel(DataChannelInterface* data_channel) OVERRIDE;
 
-  // Triggered when renegotation is needed, for example the ICE has restarted.
+  // Triggered when renegotiation is needed, for example the ICE has restarted.
   virtual void OnRenegotiationNeeded() OVERRIDE;
 
   // Called any time the ICEConnectionState changes
