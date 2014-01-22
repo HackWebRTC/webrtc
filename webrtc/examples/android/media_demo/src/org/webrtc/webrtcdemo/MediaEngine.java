@@ -568,7 +568,7 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
     return useFrontCamera;
   }
 
-  // Set camera to front if one exists otherwise use back camera.
+  // Set default camera to front if there is a front camera.
   private void setDefaultCamera() {
     useFrontCamera = hasFrontCamera();
   }
@@ -584,7 +584,7 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
   }
 
   private void startCamera() {
-    CameraDesc cameraInfo = vie.getCaptureDevice(getCameraId());
+    CameraDesc cameraInfo = vie.getCaptureDevice(getCameraId(getCameraIndex()));
     currentCameraHandle = vie.allocateCaptureDevice(cameraInfo);
     cameraInfo.dispose();
     check(vie.connectCaptureDevice(currentCameraHandle, videoChannel) == 0,
@@ -700,9 +700,20 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
         "vie StartRtpDump");
   }
 
-  private int getCameraId() {
+  private int getCameraIndex() {
     return useFrontCamera ? Camera.CameraInfo.CAMERA_FACING_FRONT :
         Camera.CameraInfo.CAMERA_FACING_BACK;
+  }
+
+  private int getCameraId(int index) {
+    for (int i = Camera.getNumberOfCameras() - 1; i >= 0; --i) {
+      CameraInfo info = new CameraInfo();
+      Camera.getCameraInfo(i, info);
+      if (index == info.facing) {
+        return i;
+      }
+    }
+    throw new RuntimeException("Index does not match a camera");
   }
 
   private void compensateRotation() {
@@ -714,7 +725,7 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
       return;
     }
     int cameraRotation = rotationFromRealWorldUp(
-        cameras[getCameraId()], deviceOrientation);
+        cameras[getCameraIndex()], deviceOrientation);
     // Egress streams should have real world up as up.
     check(
         vie.setRotateCapturedFrames(currentCameraHandle, cameraRotation) == 0,
