@@ -507,7 +507,7 @@ void VideoSendStreamTest::TestNackRetransmission(
           send_count_(0),
           retransmit_ssrc_(retransmit_ssrc),
           retransmit_payload_type_(retransmit_payload_type),
-          nacked_sequence_number_(0) {}
+          nacked_sequence_number_(-1) {}
 
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
       RTPHeader header;
@@ -516,7 +516,8 @@ void VideoSendStreamTest::TestNackRetransmission(
 
       // Nack second packet after receiving the third one.
       if (++send_count_ == 3) {
-        nacked_sequence_number_ = header.sequenceNumber - 1;
+        uint16_t nack_sequence_number = header.sequenceNumber - 1;
+        nacked_sequence_number_ = nack_sequence_number;
         NullReceiveStatistics null_stats;
         RTCPSender rtcp_sender(
             0, false, Clock::GetRealTimeClock(), &null_stats);
@@ -529,7 +530,7 @@ void VideoSendStreamTest::TestNackRetransmission(
 
         EXPECT_EQ(0,
                   rtcp_sender.SendRTCP(
-                      feedback_state, kRtcpNack, 1, &nacked_sequence_number_));
+                      feedback_state, kRtcpNack, 1, &nack_sequence_number));
       }
 
       uint16_t sequence_number = header.sequenceNumber;
@@ -554,7 +555,7 @@ void VideoSendStreamTest::TestNackRetransmission(
     int send_count_;
     uint32_t retransmit_ssrc_;
     uint8_t retransmit_payload_type_;
-    uint16_t nacked_sequence_number_;
+    int nacked_sequence_number_;
   } observer(retransmit_ssrc, retransmit_payload_type);
 
   Call::Config call_config(observer.SendTransport());
