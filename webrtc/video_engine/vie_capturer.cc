@@ -279,7 +279,8 @@ void ViECapturer::CpuOveruseMeasures(int* capture_jitter_ms,
 }
 
 int32_t ViECapturer::SetCaptureDelay(int32_t delay_ms) {
-  return capture_module_->SetCaptureDelay(delay_ms);
+  capture_module_->SetCaptureDelay(delay_ms);
+  return 0;
 }
 
 int32_t ViECapturer::SetRotateCapturedFrames(
@@ -638,29 +639,31 @@ bool ViECapturer::CaptureCapabilityFixed() {
 }
 
 int32_t ViECapturer::RegisterObserver(ViECaptureObserver* observer) {
-  CriticalSectionScoped cs(observer_cs_.get());
-  if (observer_) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, capture_id_),
-                 "%s Observer already registered", __FUNCTION__, capture_id_);
-    return -1;
+  {
+    CriticalSectionScoped cs(observer_cs_.get());
+    if (observer_) {
+      WEBRTC_TRACE(kTraceError,
+                   kTraceVideo,
+                   ViEId(engine_id_, capture_id_),
+                   "%s Observer already registered",
+                   __FUNCTION__,
+                   capture_id_);
+      return -1;
+    }
+    observer_ = observer;
   }
-  if (capture_module_->RegisterCaptureCallback(*this) != 0) {
-    return -1;
-  }
+  capture_module_->RegisterCaptureCallback(*this);
   capture_module_->EnableFrameRateCallback(true);
   capture_module_->EnableNoPictureAlarm(true);
-  observer_ = observer;
   return 0;
 }
 
 int32_t ViECapturer::DeRegisterObserver() {
-  CriticalSectionScoped cs(observer_cs_.get());
-  if (!observer_) {
-    return 0;
-  }
   capture_module_->EnableFrameRateCallback(false);
   capture_module_->EnableNoPictureAlarm(false);
   capture_module_->DeRegisterCaptureCallback();
+
+  CriticalSectionScoped cs(observer_cs_.get());
   observer_ = NULL;
   return 0;
 }

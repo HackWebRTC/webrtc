@@ -20,6 +20,7 @@
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_processing/main/interface/video_processing.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/thread_annotations.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_engine/include/vie_capture.h"
 #include "webrtc/video_engine/vie_defines.h"
@@ -185,7 +186,7 @@ class ViECapturer
 
   // Statistics observer.
   scoped_ptr<CriticalSectionWrapper> observer_cs_;
-  ViECaptureObserver* observer_;
+  ViECaptureObserver* observer_ GUARDED_BY(observer_cs_.get());
 
   CaptureCapability requested_capability_;
 
