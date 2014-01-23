@@ -33,13 +33,13 @@ extern float rdft_w[64];
 extern float rdft_wk3ri_first[32];
 extern float rdft_wk3ri_second[32];
 // constants used by SSE2 but initialized in C path.
-extern float rdft_wk1r[32];
-extern float rdft_wk2r[32];
-extern float rdft_wk3r[32];
-extern float rdft_wk1i[32];
-extern float rdft_wk2i[32];
-extern float rdft_wk3i[32];
-extern float cftmdl_wk1r[4];
+extern ALIGN16_BEG float ALIGN16_END rdft_wk1r[32];
+extern ALIGN16_BEG float ALIGN16_END rdft_wk2r[32];
+extern ALIGN16_BEG float ALIGN16_END rdft_wk3r[32];
+extern ALIGN16_BEG float ALIGN16_END rdft_wk1i[32];
+extern ALIGN16_BEG float ALIGN16_END rdft_wk2i[32];
+extern ALIGN16_BEG float ALIGN16_END rdft_wk3i[32];
+extern ALIGN16_BEG float ALIGN16_END cftmdl_wk1r[4];
 
 // code path selection function pointers
 typedef void (*rft_sub_128_t)(float* a);
