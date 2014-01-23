@@ -238,10 +238,6 @@ class MediaStreamSignaling {
   // Called when the data channel closes.
   void OnDataChannelClose();
 
-  // Returns the SSRC for a given track.
-  bool GetRemoteAudioTrackSsrc(const std::string& track_id, uint32* ssrc) const;
-  bool GetRemoteVideoTrackSsrc(const std::string& track_id, uint32* ssrc) const;
-
   // Returns all current known local MediaStreams.
   StreamCollectionInterface* local_streams() const { return local_streams_;}
 
@@ -287,7 +283,7 @@ class MediaStreamSignaling {
     std::string track_id;
     uint32 ssrc;
   };
-  typedef std::map<std::string, TrackInfo> TrackInfos;
+  typedef std::vector<TrackInfo> TrackInfos;
 
   void UpdateSessionOptions();
 
@@ -365,6 +361,10 @@ class MediaStreamSignaling {
   void UpdateClosingDataChannels(
       const std::vector<std::string>& active_channels, bool is_local_update);
   void CreateRemoteDataChannel(const std::string& label, uint32 remote_ssrc);
+
+  const TrackInfo* FindTrackInfo(const TrackInfos& infos,
+                                 const std::string& stream_label,
+                                 const std::string track_id) const;
 
   RemotePeerInfo remote_info_;
   talk_base::Thread* signaling_thread_;

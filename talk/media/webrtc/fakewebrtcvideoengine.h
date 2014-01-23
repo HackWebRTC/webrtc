@@ -640,9 +640,7 @@ class FakeWebRtcVideoEngine
   }
   WEBRTC_STUB(RegisterCpuOveruseObserver,
       (int channel, webrtc::CpuOveruseObserver* observer));
-#ifdef USE_WEBRTC_DEV_BRANCH
   WEBRTC_STUB(CpuOveruseMeasures, (int, int*, int*, int*, int*));
-#endif
   WEBRTC_STUB(ConnectAudioChannel, (const int, const int));
   WEBRTC_STUB(DisconnectAudioChannel, (const int));
   WEBRTC_FUNC(StartSend, (const int channel)) {
@@ -827,12 +825,8 @@ class FakeWebRtcVideoEngine
   }
   WEBRTC_STUB(RegisterSendTransport, (const int, webrtc::Transport&));
   WEBRTC_STUB(DeregisterSendTransport, (const int));
-#ifdef USE_WEBRTC_DEV_BRANCH
   WEBRTC_STUB(ReceivedRTPPacket, (const int, const void*, const int,
       const webrtc::PacketTime&));
-#else
-  WEBRTC_STUB(ReceivedRTPPacket, (const int, const void*, const int));
-#endif
   WEBRTC_STUB(ReceivedRTCPPacket, (const int, const void*, const int));
   // Not using WEBRTC_STUB due to bool return value
   virtual bool IsIPv6Enabled(int channel) { return true; }
@@ -1040,9 +1034,7 @@ class FakeWebRtcVideoEngine
     channels_[channel]->rtp_absolute_send_time_receive_id_ = (enable) ? id : 0;
     return 0;
   }
-#ifdef USE_WEBRTC_DEV_BRANCH
   WEBRTC_STUB(SetRtcpXrRrtrStatus, (int, bool));
-#endif
   WEBRTC_FUNC(SetTransmissionSmoothingStatus, (int channel, bool enable)) {
     WEBRTC_CHECK_CHANNEL(channel);
     channels_[channel]->transmission_smoothing_ = enable;

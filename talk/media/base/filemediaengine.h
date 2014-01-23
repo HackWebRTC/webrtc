@@ -133,7 +133,7 @@ class FileMediaEngine : public MediaEngineInterface {
   virtual bool FindVideoCodec(const VideoCodec& codec) { return true; }
   virtual void SetVoiceLogging(int min_sev, const char* filter) {}
   virtual void SetVideoLogging(int min_sev, const char* filter) {}
-  virtual bool StartAecDump(FILE* file) { return false; }
+  virtual bool StartAecDump(talk_base::PlatformFile) { return false; }
 
   virtual bool RegisterVideoProcessor(VideoProcessor* processor) {
     return true;

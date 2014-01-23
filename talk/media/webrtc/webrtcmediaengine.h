@@ -145,7 +145,7 @@ class WebRtcMediaEngine : public cricket::MediaEngineInterface {
   virtual void SetVideoLogging(int min_sev, const char* filter) OVERRIDE {
     delegate_->SetVideoLogging(min_sev, filter);
   }
-  virtual bool StartAecDump(FILE* file) OVERRIDE {
+  virtual bool StartAecDump(talk_base::PlatformFile file) OVERRIDE {
     return delegate_->StartAecDump(file);
   }
   virtual bool RegisterVoiceProcessor(

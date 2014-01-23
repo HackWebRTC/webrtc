@@ -2300,7 +2300,6 @@ bool WebRtcVideoMediaChannel::GetStats(VideoMediaInfo* info) {
       sinfo.encode_usage_percent = -1;
       sinfo.capture_queue_delay_ms_per_s = -1;
 
-#ifdef USE_WEBRTC_DEV_BRANCH
       int capture_jitter_ms = 0;
       int avg_encode_time_ms = 0;
       int encode_usage_percent = 0;
@@ -2316,7 +2315,6 @@ bool WebRtcVideoMediaChannel::GetStats(VideoMediaInfo* info) {
         sinfo.encode_usage_percent = encode_usage_percent;
         sinfo.capture_queue_delay_ms_per_s = capture_queue_delay_ms_per_s;
       }
-#endif
 
       // Get received RTCP statistics for the sender (reported by the remote
       // client in a RTCP packet), if available.
@@ -2465,9 +2463,7 @@ bool WebRtcVideoMediaChannel::SetCapturer(uint32 ssrc,
   MaybeDisconnectCapturer(old_capturer);
 
   send_channel->set_video_capturer(capturer);
-  capturer->SignalVideoFrame.connect(
-      this,
-      &WebRtcVideoMediaChannel::SendFrame);
+  MaybeConnectCapturer(capturer);
   if (!capturer->IsScreencast() && ratio_w_ != 0 && ratio_h_ != 0) {
     capturer->UpdateAspectRatio(ratio_w_, ratio_h_);
   }
@@ -2500,12 +2496,8 @@ void WebRtcVideoMediaChannel::OnPacketReceived(
   engine()->vie()->network()->ReceivedRTPPacket(
       which_channel,
       packet->data(),
-#ifdef USE_WEBRTC_DEV_BRANCH
       static_cast<int>(packet->length()),
       webrtc::PacketTime(packet_time.timestamp, packet_time.not_before));
-#else
-      static_cast<int>(packet->length()));
-#endif
 }
 
 void WebRtcVideoMediaChannel::OnRtcpReceived(

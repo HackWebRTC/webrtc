@@ -134,4 +134,13 @@ void PubSubClient::OnRetractError(IqTask* task,
   SignalRetractError(this, retract_task->task_id(), stanza);
 }
 
+
+const std::string PubSubClient::GetPublisherNickFromPubSubItem(
+    const XmlElement* item_elem) {
+  if (item_elem == NULL) {
+    return "";
+  }
+
+  return Jid(item_elem->Attr(QN_ATTR_PUBLISHER)).resource();
+}
 }  // namespace buzz

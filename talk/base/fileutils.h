@@ -452,6 +452,21 @@ class FilesystemScope{
 // process).
 bool CreateUniqueFile(Pathname& path, bool create_empty);
 
+// Taken from Chromium's base/platform_file.h.
+// Don't use ClosePlatformFile to close a file opened with FdopenPlatformFile.
+// Use fclose instead.
+// TODO(grunell): Remove when Chromium has started to use AEC in each source.
+// http://crbug.com/264611.
+#if defined(WIN32)
+typedef HANDLE PlatformFile;
+const PlatformFile kInvalidPlatformFileValue = INVALID_HANDLE_VALUE;
+#elif defined(POSIX)
+typedef int PlatformFile;
+const PlatformFile kInvalidPlatformFileValue = -1;
+#endif
+FILE* FdopenPlatformFileForWriting(PlatformFile file);
+bool ClosePlatformFile(PlatformFile file);
+
 }  // namespace talk_base
 
 #endif  // TALK_BASE_FILEUTILS_H_

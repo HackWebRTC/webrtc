@@ -78,7 +78,7 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface,
       CreateAudioTrack(const std::string& id,
                        AudioSourceInterface* audio_source);
 
-  virtual bool StartAecDump(FILE* file);
+  virtual bool StartAecDump(talk_base::PlatformFile file);
 
   virtual cricket::ChannelManager* channel_manager();
   virtual talk_base::Thread* signaling_thread();
@@ -109,7 +109,7 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface,
       PortAllocatorFactoryInterface* allocator_factory,
       DTLSIdentityServiceInterface* dtls_identity_service,
       PeerConnectionObserver* observer);
-  bool StartAecDump_s(FILE* file);
+  bool StartAecDump_s(talk_base::PlatformFile file);
 
   // Implements talk_base::MessageHandler.
   void OnMessage(talk_base::Message* msg);

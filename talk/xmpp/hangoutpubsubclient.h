@@ -37,6 +37,7 @@
 #include "talk/base/sigslotrepeater.h"
 #include "talk/xmpp/jid.h"
 #include "talk/xmpp/pubsubclient.h"
+#include "talk/xmpp/pubsubstateclient.h"
 
 // Gives a high-level API for MUC call PubSub needs such as
 // presenter state, recording state, mute state, and remote mute.
@@ -46,30 +47,6 @@ namespace buzz {
 class Jid;
 class XmlElement;
 class XmppTaskParentInterface;
-
-// To handle retracts correctly, we need to remember certain details
-// about an item.  We could just cache the entire XML element, but
-// that would take more memory and require re-parsing.
-struct StateItemInfo {
-  std::string published_nick;
-  std::string publisher_nick;
-};
-
-// Represents a PubSub state change.  Usually, the key is the nick,
-// but not always.  It's a per-state-type thing.  Currently documented
-// at https://docs.google.com/a/google.com/document/d/
-// 1QyHu_ufyVdf0VICdfc_DtJbrOdrdIUm4eM73RZqnivI/edit?hl=en_US
-template <typename C>
-struct PubSubStateChange {
-  // The nick of the user changing the state.
-  std::string publisher_nick;
-  // The nick of the user whose state is changing.
-  std::string published_nick;
-  C old_state;
-  C new_state;
-};
-
-template <typename C> class PubSubStateClient;
 
 // A client tied to a specific MUC jid and local nick.  Provides ways
 // to get updates and publish state and events.  Must call

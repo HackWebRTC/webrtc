@@ -295,24 +295,24 @@ bool MediaStreamSignaling::AddLocalStream(MediaStreamInterface* local_stream) {
   AudioTrackVector audio_tracks = local_stream->GetAudioTracks();
   for (AudioTrackVector::const_iterator it = audio_tracks.begin();
        it != audio_tracks.end(); ++it) {
-    TrackInfos::const_iterator track_info_it =
-        local_audio_tracks_.find((*it)->id());
-    if (track_info_it != local_audio_tracks_.end()) {
-      const TrackInfo& info = track_info_it->second;
-      OnLocalTrackSeen(info.stream_label, info.track_id, info.ssrc,
-                       cricket::MEDIA_TYPE_AUDIO);
+    const TrackInfo* track_info = FindTrackInfo(local_audio_tracks_,
+                                                local_stream->label(),
+                                                (*it)->id());
+    if (track_info) {
+      OnLocalTrackSeen(track_info->stream_label, track_info->track_id,
+                       track_info->ssrc, cricket::MEDIA_TYPE_AUDIO);
     }
   }
 
   VideoTrackVector video_tracks = local_stream->GetVideoTracks();
   for (VideoTrackVector::const_iterator it = video_tracks.begin();
        it != video_tracks.end(); ++it) {
-    TrackInfos::const_iterator track_info_it =
-        local_video_tracks_.find((*it)->id());
-    if (track_info_it != local_video_tracks_.end()) {
-      const TrackInfo& info = track_info_it->second;
-      OnLocalTrackSeen(info.stream_label, info.track_id, info.ssrc,
-                       cricket::MEDIA_TYPE_VIDEO);
+    const TrackInfo* track_info = FindTrackInfo(local_video_tracks_,
+                                                local_stream->label(),
+                                                (*it)->id());
+    if (track_info) {
+      OnLocalTrackSeen(track_info->stream_label, track_info->track_id,
+                       track_info->ssrc, cricket::MEDIA_TYPE_VIDEO);
     }
   }
   return true;
@@ -321,6 +321,7 @@ bool MediaStreamSignaling::AddLocalStream(MediaStreamInterface* local_stream) {
 void MediaStreamSignaling::RemoveLocalStream(
     MediaStreamInterface* local_stream) {
   local_streams_->RemoveStream(local_stream);
+
   stream_observer_->OnRemoveLocalStream(local_stream);
 }
 
@@ -474,28 +475,6 @@ void MediaStreamSignaling::OnDataChannelClose() {
   }
 }
 
-bool MediaStreamSignaling::GetRemoteAudioTrackSsrc(
-    const std::string& track_id, uint32* ssrc) const {
-  TrackInfos::const_iterator it = remote_audio_tracks_.find(track_id);
-  if (it == remote_audio_tracks_.end()) {
-    return false;
-  }
-
-  *ssrc = it->second.ssrc;
-  return true;
-}
-
-bool MediaStreamSignaling::GetRemoteVideoTrackSsrc(
-    const std::string& track_id, uint32* ssrc) const {
-  TrackInfos::const_iterator it = remote_video_tracks_.find(track_id);
-  if (it == remote_video_tracks_.end()) {
-    return false;
-  }
-
-  *ssrc = it->second.ssrc;
-  return true;
-}
-
 void MediaStreamSignaling::UpdateSessionOptions() {
   options_.streams.clear();
   if (local_streams_ != NULL) {
@@ -554,12 +533,12 @@ void MediaStreamSignaling::UpdateRemoteStreamsList(
   // new StreamParam.
   TrackInfos::iterator track_it = current_tracks->begin();
   while (track_it != current_tracks->end()) {
-    TrackInfo info = track_it->second;
+    const TrackInfo& info = *track_it;
     cricket::StreamParams params;
     if (!cricket::GetStreamBySsrc(streams, info.ssrc, &params) ||
         params.id != info.track_id) {
       OnRemoteTrackRemoved(info.stream_label, info.track_id, media_type);
-      current_tracks->erase(track_it++);
+      track_it = current_tracks->erase(track_it);
     } else {
       ++track_it;
     }
@@ -583,10 +562,10 @@ void MediaStreamSignaling::UpdateRemoteStreamsList(
       new_streams->AddStream(stream);
     }
 
-    TrackInfos::iterator track_it = current_tracks->find(track_id);
-    if (track_it == current_tracks->end()) {
-      (*current_tracks)[track_id] =
-          TrackInfo(stream_label, track_id, ssrc);
+    const TrackInfo* track_info = FindTrackInfo(*current_tracks, stream_label,
+                                                track_id);
+    if (!track_info) {
+      current_tracks->push_back(TrackInfo(stream_label, track_id, ssrc));
       OnRemoteTrackSeen(stream_label, track_id, it->first_ssrc(), media_type);
     }
   }
@@ -642,7 +621,7 @@ void MediaStreamSignaling::RejectRemoteTracks(cricket::MediaType media_type) {
   TrackInfos* current_tracks = GetRemoteTracks(media_type);
   for (TrackInfos::iterator track_it = current_tracks->begin();
        track_it != current_tracks->end(); ++track_it) {
-    TrackInfo info = track_it->second;
+    const TrackInfo& info = *track_it;
     MediaStreamInterface* stream = remote_streams_->find(info.stream_label);
     if (media_type == cricket::MEDIA_TYPE_AUDIO) {
       AudioTrackInterface* track = stream->FindAudioTrack(info.track_id);
@@ -695,15 +674,16 @@ void MediaStreamSignaling::MaybeCreateDefaultStream() {
   }
   if (remote_info_.default_audio_track_needed &&
       default_remote_stream->GetAudioTracks().size() == 0) {
-    remote_audio_tracks_[kDefaultAudioTrackLabel] =
-        TrackInfo(kDefaultStreamLabel, kDefaultAudioTrackLabel, 0);
+    remote_audio_tracks_.push_back(TrackInfo(kDefaultStreamLabel,
+                                             kDefaultAudioTrackLabel, 0));
+
     OnRemoteTrackSeen(kDefaultStreamLabel, kDefaultAudioTrackLabel, 0,
                        cricket::MEDIA_TYPE_AUDIO);
   }
   if (remote_info_.default_video_track_needed &&
       default_remote_stream->GetVideoTracks().size() == 0) {
-    remote_video_tracks_[kDefaultVideoTrackLabel] =
-        TrackInfo(kDefaultStreamLabel, kDefaultVideoTrackLabel, 0);
+    remote_video_tracks_.push_back(TrackInfo(kDefaultStreamLabel,
+                                             kDefaultVideoTrackLabel, 0));
     OnRemoteTrackSeen(kDefaultStreamLabel, kDefaultVideoTrackLabel, 0,
                        cricket::MEDIA_TYPE_VIDEO);
   }
@@ -736,16 +716,16 @@ void MediaStreamSignaling::UpdateLocalTracks(
     cricket::MediaType media_type) {
   TrackInfos* current_tracks = GetLocalTracks(media_type);
 
-  // Find removed tracks. Ie tracks where the track id or ssrc don't match the
-  // new StreamParam.
+  // Find removed tracks. Ie tracks where the track id, stream label or ssrc
+  // don't match the new StreamParam.
   TrackInfos::iterator track_it = current_tracks->begin();
   while (track_it != current_tracks->end()) {
-    TrackInfo info = track_it->second;
+    const TrackInfo& info = *track_it;
     cricket::StreamParams params;
     if (!cricket::GetStreamBySsrc(streams, info.ssrc, &params) ||
-        params.id != info.track_id) {
+        params.id != info.track_id || params.sync_label != info.stream_label) {
       OnLocalTrackRemoved(info.stream_label, info.track_id, media_type);
-      current_tracks->erase(track_it++);
+      track_it = current_tracks->erase(track_it);
     } else {
       ++track_it;
     }
@@ -759,10 +739,11 @@ void MediaStreamSignaling::UpdateLocalTracks(
     const std::string& stream_label = it->sync_label;
     const std::string& track_id = it->id;
     uint32 ssrc = it->first_ssrc();
-    TrackInfos::iterator track_it =  current_tracks->find(track_id);
-    if (track_it == current_tracks->end()) {
-      (*current_tracks)[track_id] =
-          TrackInfo(stream_label, track_id, ssrc);
+    const TrackInfo* track_info = FindTrackInfo(*current_tracks,
+                                                stream_label,
+                                                track_id);
+    if (!track_info) {
+      current_tracks->push_back(TrackInfo(stream_label, track_id, ssrc));
       OnLocalTrackSeen(stream_label, track_id, it->first_ssrc(),
                        media_type);
     }
@@ -946,6 +927,20 @@ void MediaStreamSignaling::OnDtlsRoleReadyForSctp(talk_base::SSLRole role) {
       (*it)->SetSctpSid(sid);
     }
   }
+}
+
+const MediaStreamSignaling::TrackInfo*
+MediaStreamSignaling::FindTrackInfo(
+    const MediaStreamSignaling::TrackInfos& infos,
+    const std::string& stream_label,
+    const std::string track_id) const {
+
+  for (TrackInfos::const_iterator it = infos.begin();
+      it != infos.end(); ++it) {
+    if (it->stream_label == stream_label && it->track_id == track_id)
+      return &*it;
+  }
+  return NULL;
 }
 
 }  // namespace webrtc

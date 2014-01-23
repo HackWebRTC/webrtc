@@ -631,13 +631,11 @@ class FakeWebRtcVoiceEngine
 
   // webrtc::VoENetEqStats
   WEBRTC_STUB(GetNetworkStatistics, (int, webrtc::NetworkStatistics&));
-#ifdef USE_WEBRTC_DEV_BRANCH
   WEBRTC_FUNC_CONST(GetDecodingCallStatistics, (int channel,
       webrtc::AudioDecodingCallStats*)) {
     WEBRTC_CHECK_CHANNEL(channel);
     return 0;
   }
-#endif
 
   // webrtc::VoENetwork
   WEBRTC_FUNC(RegisterExternalTransport, (int channel,
@@ -923,9 +921,7 @@ class FakeWebRtcVoiceEngine
   WEBRTC_STUB(GetEcDelayMetrics, (int& delay_median, int& delay_std));
 
   WEBRTC_STUB(StartDebugRecording, (const char* fileNameUTF8));
-#ifdef USE_WEBRTC_DEV_BRANCH
   WEBRTC_STUB(StartDebugRecording, (FILE* handle));
-#endif
   WEBRTC_STUB(StopDebugRecording, ());
 
   WEBRTC_FUNC(SetTypingDetectionStatus, (bool enable)) {

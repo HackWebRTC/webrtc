@@ -1274,11 +1274,7 @@ TEST_F(WebRtcVideoEngineTestFake, SetOptionsWithDenoising) {
   EXPECT_FALSE(vie_.GetCaptureDenoising(capture_id));
 }
 
-// Test disabled because it drops frames when adapt-before-effects is turned
-// off (turned off because it was exposing a crash - see bug 12250150). This is
-// safe for now because this test exercises an unused feature.
-// TODO(tpsiaki) reenable once adapt-before-effects is turned back on.
-TEST_F(WebRtcVideoEngineTestFake, DISABLED_MultipleSendStreamsWithOneCapturer) {
+TEST_F(WebRtcVideoEngineTestFake, MultipleSendStreamsWithOneCapturer) {
   EXPECT_TRUE(SetupEngine());
 
   // Start the capturer

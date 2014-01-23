@@ -790,7 +790,7 @@ class FakeVoiceEngine : public FakeBaseEngine {
 
   bool SetLocalMonitor(bool enable) { return true; }
 
-  bool StartAecDump(FILE* file) { return false; }
+  bool StartAecDump(talk_base::PlatformFile file) { return false; }
 
   bool RegisterProcessor(uint32 ssrc, VoiceProcessor* voice_processor,
                          MediaProcessorDirection direction) {

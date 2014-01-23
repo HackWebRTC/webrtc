@@ -32,6 +32,7 @@
 #include <vector>
 
 #include "talk/base/criticalsection.h"
+#include "talk/base/fileutils.h"
 #include "talk/base/sigslotrepeater.h"
 #include "talk/base/thread.h"
 #include "talk/media/base/capturemanager.h"
@@ -215,7 +216,7 @@ class ChannelManager : public talk_base::MessageHandler,
                                       const VideoFormat& max_format);
 
   // Starts AEC dump using existing file.
-  bool StartAecDump(FILE* file);
+  bool StartAecDump(talk_base::PlatformFile file);
 
   sigslot::repeater0<> SignalDevicesChange;
   sigslot::signal2<VideoCapturer*, CaptureState> SignalVideoCaptureStateChange;

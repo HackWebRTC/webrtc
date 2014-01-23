@@ -44,53 +44,7 @@ const char kPresenting[] = "s";
 const char kNotPresenting[] = "o";
 const char kEmpty[] = "";
 
-const std::string GetPublisherNickFromPubSubItem(const XmlElement* item_elem) {
-  if (item_elem == NULL) {
-    return "";
-  }
-
-  return Jid(item_elem->Attr(QN_ATTR_PUBLISHER)).resource();
-}
-
 }  // namespace
-
-
-// Knows how to handle specific states and XML.
-template <typename C>
-class PubSubStateSerializer {
- public:
-  virtual ~PubSubStateSerializer() {}
-  virtual XmlElement* Write(const QName& state_name, const C& state) = 0;
-  virtual C Parse(const XmlElement* state_elem) = 0;
-};
-
-// Knows how to create "keys" for states, which determines their
-// uniqueness.  Most states are per-nick, but block is
-// per-blocker-and-blockee.  This is independent of itemid, especially
-// in the case of presenter state.
-class PubSubStateKeySerializer {
- public:
-  virtual ~PubSubStateKeySerializer() {}
-  virtual std::string GetKey(const std::string& publisher_nick,
-                             const std::string& published_nick) = 0;
-};
-
-class PublishedNickKeySerializer : public PubSubStateKeySerializer {
- public:
-  virtual std::string GetKey(const std::string& publisher_nick,
-                             const std::string& published_nick) {
-    return published_nick;
-  }
-};
-
-class PublisherAndPublishedNicksKeySerializer
-    : public PubSubStateKeySerializer {
- public:
-  virtual std::string GetKey(const std::string& publisher_nick,
-                             const std::string& published_nick) {
-    return publisher_nick + ":" + published_nick;
-  }
-};
 
 // A simple serialiazer where presence of item => true, lack of item
 // => false.
@@ -103,193 +57,9 @@ class BoolStateSerializer : public PubSubStateSerializer<bool> {
     return new XmlElement(state_name, true);
   }
 
-  virtual bool Parse(const XmlElement* state_elem) {
-    return state_elem != NULL;
+  virtual void Parse(const XmlElement* state_elem, bool *state_out) {
+    *state_out = state_elem != NULL;
   }
-};
-
-// Adapts PubSubClient to be specifically suited for pub sub call
-// states.  Signals state changes and keeps track of keys, which are
-// normally nicks.
-// TODO: Expose this as a generally useful class, not just
-// private to hangouts.
-template <typename C>
-class PubSubStateClient : public sigslot::has_slots<> {
- public:
-  // Gets ownership of the serializers, but not the client.
-  PubSubStateClient(const std::string& publisher_nick,
-                    PubSubClient* client,
-                    const QName& state_name,
-                    C default_state,
-                    PubSubStateKeySerializer* key_serializer,
-                    PubSubStateSerializer<C>* state_serializer)
-      : publisher_nick_(publisher_nick),
-        client_(client),
-        state_name_(state_name),
-        default_state_(default_state) {
-    key_serializer_.reset(key_serializer);
-    state_serializer_.reset(state_serializer);
-    client_->SignalItems.connect(
-        this, &PubSubStateClient<C>::OnItems);
-    client_->SignalPublishResult.connect(
-        this, &PubSubStateClient<C>::OnPublishResult);
-    client_->SignalPublishError.connect(
-        this, &PubSubStateClient<C>::OnPublishError);
-    client_->SignalRetractResult.connect(
-        this, &PubSubStateClient<C>::OnRetractResult);
-    client_->SignalRetractError.connect(
-        this, &PubSubStateClient<C>::OnRetractError);
-  }
-
-  virtual ~PubSubStateClient() {}
-
-  virtual void Publish(const std::string& published_nick,
-                       const C& state,
-                       std::string* task_id_out) {
-    std::string key = key_serializer_->GetKey(publisher_nick_, published_nick);
-    std::string itemid = state_name_.LocalPart() + ":" + key;
-    if (StatesEqual(state, default_state_)) {
-      client_->RetractItem(itemid, task_id_out);
-    } else {
-      XmlElement* state_elem = state_serializer_->Write(state_name_, state);
-      state_elem->AddAttr(QN_NICK, published_nick);
-      client_->PublishItem(itemid, state_elem, task_id_out);
-    }
-  };
-
-  sigslot::signal1<const PubSubStateChange<C>&> SignalStateChange;
-  // Signal (task_id, item).  item is NULL for retract.
-  sigslot::signal2<const std::string&,
-                   const XmlElement*> SignalPublishResult;
-  // Signal (task_id, item, error stanza).  item is NULL for retract.
-  sigslot::signal3<const std::string&,
-                   const XmlElement*,
-                   const XmlElement*> SignalPublishError;
-
- protected:
-  // return false if retracted item (no info or state given)
-  virtual bool ParseStateItem(const PubSubItem& item,
-                              StateItemInfo* info_out,
-                              bool* state_out) {
-    const XmlElement* state_elem = item.elem->FirstNamed(state_name_);
-    if (state_elem == NULL) {
-      return false;
-    }
-
-    info_out->publisher_nick = GetPublisherNickFromPubSubItem(item.elem);
-    info_out->published_nick = state_elem->Attr(QN_NICK);
-    *state_out = state_serializer_->Parse(state_elem);
-    return true;
-  };
-
-  virtual bool StatesEqual(C state1, C state2) {
-    return state1 == state2;
-  }
-
-  PubSubClient* client() { return client_; }
-
- private:
-  void OnItems(PubSubClient* pub_sub_client,
-               const std::vector<PubSubItem>& items) {
-    for (std::vector<PubSubItem>::const_iterator item = items.begin();
-         item != items.end(); ++item) {
-      OnItem(*item);
-    }
-  }
-
-  void OnItem(const PubSubItem& item) {
-    const std::string& itemid = item.itemid;
-    StateItemInfo info;
-    C new_state;
-
-    bool retracted = !ParseStateItem(item, &info, &new_state);
-    if (retracted) {
-      bool known_itemid =
-          (info_by_itemid_.find(itemid) != info_by_itemid_.end());
-      if (!known_itemid) {
-        // Nothing to retract, and nothing to publish.
-        // Probably a different state type.
-        return;
-      } else {
-        info = info_by_itemid_[itemid];
-        info_by_itemid_.erase(itemid);
-        new_state = default_state_;
-      }
-    } else {
-      // TODO: Assert new key matches the known key. It
-      // shouldn't change!
-      info_by_itemid_[itemid] = info;
-    }
-
-    std::string key = key_serializer_->GetKey(
-        info.publisher_nick, info.published_nick);
-    bool has_old_state = (state_by_key_.find(key) != state_by_key_.end());
-    C old_state = has_old_state ? state_by_key_[key] : default_state_;
-    if ((retracted && !has_old_state) || StatesEqual(new_state, old_state)) {
-      // Nothing change, so don't bother signalling.
-      return;
-    }
-
-    if (retracted || StatesEqual(new_state, default_state_)) {
-      // We treat a default state similar to a retract.
-      state_by_key_.erase(key);
-    } else {
-      state_by_key_[key] = new_state;
-    }
-
-    PubSubStateChange<C> change;
-    if (!retracted) {
-      // Retracts do not have publisher information.
-      change.publisher_nick = info.publisher_nick;
-    }
-    change.published_nick = info.published_nick;
-    change.old_state = old_state;
-    change.new_state = new_state;
-    SignalStateChange(change);
- }
-
-  void OnPublishResult(PubSubClient* pub_sub_client,
-                       const std::string& task_id,
-                       const XmlElement* item) {
-    SignalPublishResult(task_id, item);
-  }
-
-  void OnPublishError(PubSubClient* pub_sub_client,
-                      const std::string& task_id,
-                      const buzz::XmlElement* item,
-                      const buzz::XmlElement* stanza) {
-    SignalPublishError(task_id, item, stanza);
-  }
-
-  void OnRetractResult(PubSubClient* pub_sub_client,
-                       const std::string& task_id) {
-    // There's no point in differentiating between publish and retract
-    // errors, so we simplify by making them both signal a publish
-    // result.
-    const XmlElement* item = NULL;
-    SignalPublishResult(task_id, item);
-  }
-
-  void OnRetractError(PubSubClient* pub_sub_client,
-                      const std::string& task_id,
-                      const buzz::XmlElement* stanza) {
-    // There's no point in differentiating between publish and retract
-    // errors, so we simplify by making them both signal a publish
-    // error.
-    const XmlElement* item = NULL;
-    SignalPublishError(task_id, item, stanza);
-  }
-
-  std::string publisher_nick_;
-  PubSubClient* client_;
-  const QName state_name_;
-  C default_state_;
-  talk_base::scoped_ptr<PubSubStateKeySerializer> key_serializer_;
-  talk_base::scoped_ptr<PubSubStateSerializer<C> > state_serializer_;
-  // key => state
-  std::map<std::string, C> state_by_key_;
-  // itemid => StateItemInfo
-  std::map<std::string, StateItemInfo> info_by_itemid_;
 };
 
 class PresenterStateClient : public PubSubStateClient<bool> {
@@ -336,15 +106,17 @@ class PresenterStateClient : public PubSubStateClient<bool> {
       return false;
     }
 
-    info_out->publisher_nick = GetPublisherNickFromPubSubItem(item.elem);
+    info_out->publisher_nick =
+        client()->GetPublisherNickFromPubSubItem(item.elem);
     info_out->published_nick = presenter_elem->Attr(QN_NICK);
     *state_out = (presentation_item_elem->Attr(
         QN_PRESENTER_PRESENTATION_TYPE) != kNotPresenting);
     return true;
   }
 
-  virtual bool StatesEqual(bool state1, bool state2) {
-    return false;  // Make every item trigger an event, even if state doesn't change.
+  virtual bool StatesEqual(const bool& state1, const bool& state2) {
+    // Make every item trigger an event, even if state doesn't change.
+    return false;
   }
 };
 

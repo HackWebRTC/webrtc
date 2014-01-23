@@ -106,10 +106,10 @@ struct CreateVideoSourceParams : public talk_base::MessageData {
 };
 
 struct StartAecDumpParams : public talk_base::MessageData {
-  explicit StartAecDumpParams(FILE* aec_dump_file)
+  explicit StartAecDumpParams(talk_base::PlatformFile aec_dump_file)
       : aec_dump_file(aec_dump_file) {
   }
-  FILE* aec_dump_file;
+  talk_base::PlatformFile aec_dump_file;
   bool result;
 };
 
@@ -289,7 +289,7 @@ PeerConnectionFactory::CreateVideoSource_s(
   return VideoSourceProxy::Create(signaling_thread_, source);
 }
 
-bool PeerConnectionFactory::StartAecDump_s(FILE* file) {
+bool PeerConnectionFactory::StartAecDump_s(talk_base::PlatformFile file) {
   return channel_manager_->StartAecDump(file);
 }
 
@@ -380,7 +380,7 @@ scoped_refptr<AudioTrackInterface> PeerConnectionFactory::CreateAudioTrack(
   return AudioTrackProxy::Create(signaling_thread_, track);
 }
 
-bool PeerConnectionFactory::StartAecDump(FILE* file) {
+bool PeerConnectionFactory::StartAecDump(talk_base::PlatformFile file) {
   StartAecDumpParams params(file);
   signaling_thread_->Send(this, MSG_START_AEC_DUMP, &params);
   return params.result;

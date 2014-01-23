@@ -36,6 +36,7 @@
 #include <string>
 #include <vector>
 
+#include "talk/base/fileutils.h"
 #include "talk/base/sigslotrepeater.h"
 #include "talk/media/base/codec.h"
 #include "talk/media/base/mediachannel.h"
@@ -136,7 +137,7 @@ class MediaEngineInterface {
   virtual void SetVideoLogging(int min_sev, const char* filter) = 0;
 
   // Starts AEC dump using existing file.
-  virtual bool StartAecDump(FILE* file) = 0;
+  virtual bool StartAecDump(talk_base::PlatformFile file) = 0;
 
   // Voice processors for effects.
   virtual bool RegisterVoiceProcessor(uint32 ssrc,
@@ -256,7 +257,7 @@ class CompositeMediaEngine : public MediaEngineInterface {
     video_.SetLogging(min_sev, filter);
   }
 
-  virtual bool StartAecDump(FILE* file) {
+  virtual bool StartAecDump(talk_base::PlatformFile file) {
     return voice_.StartAecDump(file);
   }
 
@@ -316,7 +317,7 @@ class NullVoiceEngine {
     return rtp_header_extensions_;
   }
   void SetLogging(int min_sev, const char* filter) {}
-  bool StartAecDump(FILE* file) { return false; }
+  bool StartAecDump(talk_base::PlatformFile file) { return false; }
   bool RegisterProcessor(uint32 ssrc,
                          VoiceProcessor* voice_processor,
                          MediaProcessorDirection direction) { return true; }

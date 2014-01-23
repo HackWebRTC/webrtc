@@ -947,7 +947,7 @@ bool ChannelManager::SetAudioOptions(const AudioOptions& options) {
   return true;
 }
 
-bool ChannelManager::StartAecDump(FILE* file) {
+bool ChannelManager::StartAecDump(talk_base::PlatformFile file) {
   return worker_thread_->Invoke<bool>(
       Bind(&MediaEngineInterface::StartAecDump, media_engine_.get(), file));
 }

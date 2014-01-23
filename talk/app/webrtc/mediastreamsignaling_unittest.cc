@@ -26,6 +26,7 @@
  */
 
 #include <string>
+#include <vector>
 
 #include "talk/app/webrtc/audiotrack.h"
 #include "talk/app/webrtc/mediastream.h"
@@ -383,31 +384,48 @@ class MockSignalingObserver : public webrtc::MediaStreamSignalingObserver {
     std::string track_id;
     uint32 ssrc;
   };
-  typedef std::map<std::string, TrackInfo> TrackInfos;
+  typedef std::vector<TrackInfo> TrackInfos;
 
   void AddTrack(TrackInfos* track_infos, MediaStreamInterface* stream,
                 MediaStreamTrackInterface* track,
                 uint32 ssrc) {
-    (*track_infos)[track->id()] = TrackInfo(stream->label(), track->id(),
-                                            ssrc);
+    (*track_infos).push_back(TrackInfo(stream->label(), track->id(),
+                                       ssrc));
   }
 
   void RemoveTrack(TrackInfos* track_infos, MediaStreamInterface* stream,
                    MediaStreamTrackInterface* track) {
-    TrackInfos::iterator it = track_infos->find(track->id());
-    ASSERT_TRUE(it != track_infos->end());
-    ASSERT_EQ(it->second.stream_label, stream->label());
-    track_infos->erase(it);
+    for (TrackInfos::iterator it = track_infos->begin();
+         it != track_infos->end(); ++it) {
+      if (it->stream_label == stream->label() && it->track_id == track->id()) {
+        track_infos->erase(it);
+        return;
+      }
+    }
+    ADD_FAILURE();
   }
+
+  const TrackInfo* FindTrackInfo(const TrackInfos& infos,
+                                 const std::string& stream_label,
+                                 const std::string track_id) const {
+    for (TrackInfos::const_iterator it = infos.begin();
+        it != infos.end(); ++it) {
+      if (it->stream_label == stream_label && it->track_id == track_id)
+        return &*it;
+    }
+    return NULL;
+  }
+
 
   void VerifyTrack(const TrackInfos& track_infos,
                    const std::string& stream_label,
                    const std::string& track_id,
                    uint32 ssrc) {
-    TrackInfos::const_iterator it = track_infos.find(track_id);
-    ASSERT_TRUE(it != track_infos.end());
-    EXPECT_EQ(stream_label, it->second.stream_label);
-    EXPECT_EQ(ssrc, it->second.ssrc);
+    const TrackInfo* track_info = FindTrackInfo(track_infos,
+                                                stream_label,
+                                                track_id);
+    ASSERT_TRUE(track_info != NULL);
+    EXPECT_EQ(ssrc, track_info->ssrc);
   }
 
   TrackInfos remote_audio_tracks_;
@@ -1049,6 +1067,47 @@ TEST_F(MediaStreamSignalingTest, ChangeSsrcOnTrackInLocalSessionDescription) {
   EXPECT_EQ(1u, observer_->NumberOfLocalVideoTracks());
   observer_->VerifyLocalAudioTrack(kStreams[0], kAudioTracks[0], 97);
   observer_->VerifyLocalVideoTrack(kStreams[0], kVideoTracks[0], 98);
+}
+
+// This test that the correct MediaStreamSignalingObserver methods are called
+// if a new session description is set with the same tracks but they are now
+// sent on a another MediaStream.
+TEST_F(MediaStreamSignalingTest, SignalSameTracksInSeparateMediaStream) {
+  talk_base::scoped_ptr<SessionDescriptionInterface> desc;
+  CreateSessionDescriptionAndReference(1, 1, desc.use());
+
+  signaling_->AddLocalStream(reference_collection_->at(0));
+  signaling_->OnLocalDescriptionChanged(desc.get());
+  EXPECT_EQ(1u, observer_->NumberOfLocalAudioTracks());
+  EXPECT_EQ(1u, observer_->NumberOfLocalVideoTracks());
+
+  std::string stream_label_0 = kStreams[0];
+  observer_->VerifyLocalAudioTrack(stream_label_0, kAudioTracks[0], 1);
+  observer_->VerifyLocalVideoTrack(stream_label_0, kVideoTracks[0], 2);
+
+  // Add a new MediaStream but with the same tracks as in the first stream.
+  std::string stream_label_1 = kStreams[1];
+  talk_base::scoped_refptr<webrtc::MediaStreamInterface> stream_1(
+      webrtc::MediaStream::Create(kStreams[1]));
+  stream_1->AddTrack(reference_collection_->at(0)->GetVideoTracks()[0]);
+  stream_1->AddTrack(reference_collection_->at(0)->GetAudioTracks()[0]);
+  signaling_->AddLocalStream(stream_1);
+
+  // Replace msid in the original SDP.
+  std::string sdp;
+  desc->ToString(&sdp);
+  talk_base::replace_substrs(
+      kStreams[0], strlen(kStreams[0]), kStreams[1], strlen(kStreams[1]), &sdp);
+
+  talk_base::scoped_ptr<SessionDescriptionInterface> updated_desc(
+      webrtc::CreateSessionDescription(SessionDescriptionInterface::kOffer,
+                                       sdp, NULL));
+
+  signaling_->OnLocalDescriptionChanged(updated_desc.get());
+  observer_->VerifyLocalAudioTrack(kStreams[1], kAudioTracks[0], 1);
+  observer_->VerifyLocalVideoTrack(kStreams[1], kVideoTracks[0], 2);
+  EXPECT_EQ(1u, observer_->NumberOfLocalAudioTracks());
+  EXPECT_EQ(1u, observer_->NumberOfLocalVideoTracks());
 }
 
 // Verifies that an even SCTP id is allocated for SSL_CLIENT and an odd id for

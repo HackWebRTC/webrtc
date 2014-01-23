@@ -486,7 +486,7 @@ talk.App(env, name = "relayserver",
            "jingle",
          ],
          srcs = [
-           "p2p/base/relayserver_main.cc",
+           "examples/relayserver/relayserver_main.cc",
          ],
 )
 talk.App(env, name = "stunserver",
@@ -494,7 +494,7 @@ talk.App(env, name = "stunserver",
            "jingle",
          ],
          srcs = [
-           "p2p/base/stunserver_main.cc",
+           "examples/stunserver/stunserver_main.cc",
          ],
 )
 talk.App(env, name = "turnserver",
@@ -503,7 +503,7 @@ talk.App(env, name = "turnserver",
            "ssl",
          ],
          srcs = [
-           "p2p/base/turnserver_main.cc",
+           "examples/turnserver/turnserver_main.cc",
          ],
          libs = [
            "jingle",

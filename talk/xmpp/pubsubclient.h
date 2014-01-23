@@ -101,6 +101,9 @@ class PubSubClient : public sigslot::has_slots<> {
   void RetractItem(const std::string& itemid,
                    std::string* task_id_out);
 
+  // Get the publisher nick if it exists from the pubsub item.
+  const std::string GetPublisherNickFromPubSubItem(const XmlElement* item_elem);
+
  private:
   void OnRequestError(IqTask* task,
                       const XmlElement* stanza);

@@ -1433,20 +1433,23 @@ bool WebRtcVoiceEngine::SetAudioDeviceModule(webrtc::AudioDeviceModule* adm,
   return true;
 }
 
-bool WebRtcVoiceEngine::StartAecDump(FILE* file) {
-#ifdef USE_WEBRTC_DEV_BRANCH
+bool WebRtcVoiceEngine::StartAecDump(talk_base::PlatformFile file) {
+  FILE* aec_dump_file_stream = talk_base::FdopenPlatformFileForWriting(file);
+  if (!aec_dump_file_stream) {
+    LOG(LS_ERROR) << "Could not open AEC dump file stream.";
+    if (!talk_base::ClosePlatformFile(file))
+      LOG(LS_WARNING) << "Could not close file.";
+    return false;
+  }
   StopAecDump();
-  if (voe_wrapper_->processing()->StartDebugRecording(file) !=
+  if (voe_wrapper_->processing()->StartDebugRecording(aec_dump_file_stream) !=
       webrtc::AudioProcessing::kNoError) {
-    LOG_RTCERR1(StartDebugRecording, "FILE*");
-    fclose(file);
+    LOG_RTCERR0(StartDebugRecording);
+    fclose(aec_dump_file_stream);
     return false;
   }
   is_dumping_aec_ = true;
   return true;
-#else
-  return false;
-#endif
 }
 
 bool WebRtcVoiceEngine::RegisterProcessor(

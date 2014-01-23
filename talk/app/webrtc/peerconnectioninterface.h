@@ -76,6 +76,7 @@
 #include "talk/app/webrtc/jsep.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/statstypes.h"
+#include "talk/base/fileutils.h"
 #include "talk/base/socketaddress.h"
 
 namespace talk_base {
@@ -442,9 +443,10 @@ class PeerConnectionFactoryInterface : public talk_base::RefCountInterface {
 
   // Starts AEC dump using existing file. Takes ownership of |file| and passes
   // it on to VoiceEngine (via other objects) immediately, which will take
-  // the ownerhip.
+  // the ownerhip. If the operation fails, the file will be closed.
   // TODO(grunell): Remove when Chromium has started to use AEC in each source.
-  virtual bool StartAecDump(FILE* file) = 0;
+  // http://crbug.com/264611.
+  virtual bool StartAecDump(talk_base::PlatformFile file) = 0;
 
  protected:
   // Dtor and ctor protected as objects shouldn't be created or deleted via
