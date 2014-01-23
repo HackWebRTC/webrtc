@@ -1372,6 +1372,16 @@ void ViEChannel::RegisterSendChannelRtpStatisticsCallback(
   }
 }
 
+void ViEChannel::RegisterReceiveChannelRtpStatisticsCallback(
+    StreamDataCountersCallback* callback) {
+  WEBRTC_TRACE(kTraceInfo,
+               kTraceVideo,
+               ViEId(engine_id_, channel_id_),
+               "%s",
+               __FUNCTION__);
+  vie_receiver_.GetReceiveStatistics()->RegisterRtpStatisticsCallback(callback);
+}
+
 void ViEChannel::GetBandwidthUsage(uint32_t* total_bitrate_sent,
                                    uint32_t* video_bitrate_sent,
                                    uint32_t* fec_bitrate_sent,

@@ -199,6 +199,10 @@ class ViEChannel
   void RegisterSendChannelRtpStatisticsCallback(
       StreamDataCountersCallback* callback);
 
+  // Called on update of RTP statistics.
+  void RegisterReceiveChannelRtpStatisticsCallback(
+      StreamDataCountersCallback* callback);
+
   void GetBandwidthUsage(uint32_t* total_bitrate_sent,
                          uint32_t* video_bitrate_sent,
                          uint32_t* fec_bitrate_sent,

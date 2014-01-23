@@ -269,11 +269,13 @@ int ViEReceiver::InsertRTPPacket(const int8_t* rtp_packet,
   header.payload_type_frequency = kVideoPayloadTypeFrequency;
 
   bool in_order = IsPacketInOrder(header);
-  rtp_receive_statistics_->IncomingPacket(header, received_packet_length,
-      IsPacketRetransmitted(header, in_order));
+  rtp_receive_statistics_->IncomingPacket(
+      header, received_packet_length, IsPacketRetransmitted(header, in_order));
   rtp_payload_registry_->SetIncomingPayloadType(header);
-  return ReceivePacket(received_packet, received_packet_length, header,
-                       in_order) ? 0 : -1;
+  return ReceivePacket(
+             received_packet, received_packet_length, header, in_order)
+             ? 0
+             : -1;
 }
 
 bool ViEReceiver::ReceivePacket(const uint8_t* packet,
@@ -299,9 +301,11 @@ bool ViEReceiver::ParseAndHandleEncapsulatingHeader(const uint8_t* packet,
                                                     int packet_length,
                                                     const RTPHeader& header) {
   if (rtp_payload_registry_->IsRed(header)) {
+    int8_t ulpfec_pt = rtp_payload_registry_->ulpfec_payload_type();
+    if (packet[header.headerLength] == ulpfec_pt)
+      rtp_receive_statistics_->FecPacketReceived(header.ssrc);
     if (fec_receiver_->AddReceivedRedPacket(
-        header, packet, packet_length,
-        rtp_payload_registry_->ulpfec_payload_type()) != 0) {
+            header, packet, packet_length, ulpfec_pt) != 0) {
       WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideo, channel_id_,
                    "Incoming RED packet error");
       return false;

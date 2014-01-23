@@ -90,8 +90,10 @@ class ViEReceiver : public RtpData {
  private:
   int InsertRTPPacket(const int8_t* rtp_packet, int rtp_packet_length,
                       const PacketTime& packet_time);
-  bool ReceivePacket(const uint8_t* packet, int packet_length,
-                     const RTPHeader& header, bool in_order);
+  bool ReceivePacket(const uint8_t* packet,
+                     int packet_length,
+                     const RTPHeader& header,
+                     bool in_order);
   // Parses and handles for instance RTX and RED headers.
   // This function assumes that it's being called from only one thread.
   bool ParseAndHandleEncapsulatingHeader(const uint8_t* packet,

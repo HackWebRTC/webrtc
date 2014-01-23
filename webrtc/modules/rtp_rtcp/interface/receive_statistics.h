@@ -51,8 +51,12 @@ class ReceiveStatistics : public Module {
   static ReceiveStatistics* Create(Clock* clock);
 
   // Updates the receive statistics with this packet.
-  virtual void IncomingPacket(const RTPHeader& rtp_header, size_t bytes,
+  virtual void IncomingPacket(const RTPHeader& rtp_header,
+                              size_t bytes,
                               bool retransmitted) = 0;
+
+  // Increment counter for number of FEC packets received.
+  virtual void FecPacketReceived(uint32_t ssrc) = 0;
 
   // Returns a map of all statisticians which have seen an incoming packet
   // during the last two seconds.
@@ -67,12 +71,18 @@ class ReceiveStatistics : public Module {
   // Called on new RTCP stats creation.
   virtual void RegisterRtcpStatisticsCallback(
       RtcpStatisticsCallback* callback) = 0;
+
+  // Called on new RTP stats creation.
+  virtual void RegisterRtpStatisticsCallback(
+      StreamDataCountersCallback* callback) = 0;
 };
 
 class NullReceiveStatistics : public ReceiveStatistics {
  public:
-  virtual void IncomingPacket(const RTPHeader& rtp_header, size_t bytes,
+  virtual void IncomingPacket(const RTPHeader& rtp_header,
+                              size_t bytes,
                               bool retransmitted) OVERRIDE;
+  virtual void FecPacketReceived(uint32_t ssrc) OVERRIDE;
   virtual StatisticianMap GetActiveStatisticians() const OVERRIDE;
   virtual StreamStatistician* GetStatistician(uint32_t ssrc) const OVERRIDE;
   virtual int32_t TimeUntilNextProcess() OVERRIDE;
@@ -80,6 +90,8 @@ class NullReceiveStatistics : public ReceiveStatistics {
   virtual void SetMaxReorderingThreshold(int max_reordering_threshold) OVERRIDE;
   virtual void RegisterRtcpStatisticsCallback(RtcpStatisticsCallback* callback)
       OVERRIDE;
+  virtual void RegisterRtpStatisticsCallback(
+      StreamDataCountersCallback* callback) OVERRIDE;
 };
 
 }  // namespace webrtc
