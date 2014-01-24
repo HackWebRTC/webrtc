@@ -285,6 +285,28 @@ class ChokeFilter : public PacketProcessor {
   DISALLOW_IMPLICIT_CONSTRUCTORS(ChokeFilter);
 };
 
+class TraceBasedDeliveryFilter : public PacketProcessor {
+ public:
+  explicit TraceBasedDeliveryFilter(PacketProcessorListener* listener);
+  virtual ~TraceBasedDeliveryFilter() {}
+
+  // The file should contain nanosecond timestamps corresponding to the time
+  // when the network can accept another packet. The timestamps should be
+  // separated by new lines, e.g., "100000000\n125000000\n321000000\n..."
+  bool Init(const std::string& filename);
+  virtual void RunFor(int64_t time_ms, Packets* in_out);
+
+ private:
+  void ProceedToNextSlot();
+
+  typedef std::vector<int64_t> TimeList;
+  TimeList delivery_times_us_;
+  TimeList::const_iterator next_delivery_it_;
+  int64_t local_time_us_;
+
+  DISALLOW_COPY_AND_ASSIGN(TraceBasedDeliveryFilter);
+};
+
 class PacketSender : public PacketProcessor {
  public:
   struct Feedback {

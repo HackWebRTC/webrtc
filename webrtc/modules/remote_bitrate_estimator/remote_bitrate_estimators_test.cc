@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
 namespace testing {
@@ -226,6 +227,18 @@ TEST_P(BweTest, Multi2) {
   choke.SetCapacity(2000);
   jitter.SetJitter(120);
   RunFor(5 * 60 * 1000);
+}
+
+TEST_P(BweTest, SprintUplinkTest) {
+  TraceBasedDeliveryFilter filter(this);
+  ASSERT_TRUE(filter.Init(test::ResourcePath("sprint-uplink", "rx")));
+  RunFor(60 * 1000);
+}
+
+TEST_P(BweTest, Verizon4gDownlinkTest) {
+  TraceBasedDeliveryFilter filter(this);
+  ASSERT_TRUE(filter.Init(test::ResourcePath("verizon4g-downlink", "rx")));
+  RunFor(22 * 60 * 1000);
 }
 }  // namespace bwe
 }  // namespace testing

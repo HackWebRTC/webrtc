@@ -10,6 +10,9 @@
 
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_framework.h"
 
+#include <cstdio>
+#include <sstream>
+
 namespace webrtc {
 namespace testing {
 namespace bwe {
@@ -278,6 +281,66 @@ void ChokeFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
       it = in_out->erase(it);
     }
   }
+}
+
+TraceBasedDeliveryFilter::TraceBasedDeliveryFilter(
+    PacketProcessorListener* listener)
+    : PacketProcessor(listener),
+      delivery_times_us_(),
+      next_delivery_it_(),
+      local_time_us_(-1) {}
+
+bool TraceBasedDeliveryFilter::Init(const std::string& filename) {
+  FILE* trace_file = fopen(filename.c_str(), "r");
+  if (!trace_file) {
+    return false;
+  }
+  int64_t first_timestamp = -1;
+  while(!feof(trace_file)) {
+    const size_t kMaxLineLength = 100;
+    char line[kMaxLineLength];
+    if (fgets(line, kMaxLineLength, trace_file)) {
+      std::string line_string(line);
+      std::istringstream buffer(line_string);
+      int64_t timestamp;
+      buffer >> timestamp;
+      timestamp /= 1000;  // Convert to microseconds.
+      if (first_timestamp == -1)
+        first_timestamp = timestamp;
+      assert(delivery_times_us_.empty() ||
+             timestamp - first_timestamp - delivery_times_us_.back() >= 0);
+      delivery_times_us_.push_back(timestamp - first_timestamp);
+    }
+  }
+  assert(!delivery_times_us_.empty());
+  next_delivery_it_ = delivery_times_us_.begin();
+  fclose(trace_file);
+  return true;
+}
+
+void TraceBasedDeliveryFilter::RunFor(int64_t time_ms, Packets* in_out) {
+  assert(in_out);
+  for (PacketsIt it = in_out->begin(); it != in_out->end(); ++it) {
+    do {
+      ProceedToNextSlot();
+    } while (local_time_us_ < it->send_time_us());
+    it->set_send_time_us(local_time_us_);
+  }
+}
+
+void TraceBasedDeliveryFilter::ProceedToNextSlot() {
+  if (*next_delivery_it_ <= local_time_us_) {
+    ++next_delivery_it_;
+    if (next_delivery_it_ == delivery_times_us_.end()) {
+      // When the trace wraps we allow two packets to be sent back-to-back.
+      for (TimeList::iterator it = delivery_times_us_.begin();
+           it != delivery_times_us_.end(); ++it) {
+        *it += local_time_us_;
+      }
+      next_delivery_it_ = delivery_times_us_.begin();
+    }
+  }
+  local_time_us_ = *next_delivery_it_;
 }
 
 PacketSender::PacketSender(PacketProcessorListener* listener)
