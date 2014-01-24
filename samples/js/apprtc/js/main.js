@@ -1,6 +1,7 @@
 var localVideo;
 var miniVideo;
 var remoteVideo;
+var hasLocalStream;
 var localStream;
 var remoteStream;
 var channel;
@@ -43,9 +44,18 @@ function initialize() {
   // changing here.
   openChannel();
   maybeRequestTurn();
-  doGetUserMedia();
+
   // Caller is always ready to create peerConnection.
   signalingReady = initiator;
+
+  if (mediaConstraints.audio === false &&
+      mediaConstraints.video === false) {
+    hasLocalStream = false;
+    maybeStart();
+  } else {
+    hasLocalStream = true;
+    doGetUserMedia();
+  }
 }
 
 function openChannel() {
@@ -159,13 +169,18 @@ function createPeerConnection() {
 }
 
 function maybeStart() {
-  if (!started && signalingReady &&
-      localStream && channelReady && turnDone) {
+  if (!started && signalingReady && channelReady && turnDone &&
+      (localStream || !hasLocalStream)) {
     setStatus('Connecting...');
     console.log('Creating PeerConnection.');
     createPeerConnection();
-    console.log('Adding local stream.');
-    pc.addStream(localStream);
+
+    if (hasLocalStream) {
+      console.log('Adding local stream.');
+      pc.addStream(localStream);
+    } else {
+      console.log('Not sending any stream.');
+    }
     started = true;
 
     if (initiator)
@@ -222,7 +237,19 @@ function setRemote(message) {
     message.sdp = addStereo(message.sdp);
   message.sdp = maybePreferAudioSendCodec(message.sdp);
   pc.setRemoteDescription(new RTCSessionDescription(message),
-       onSetSessionDescriptionSuccess, onSetSessionDescriptionError);
+       onSetRemoteDescriptionSuccess, onSetSessionDescriptionError);
+
+  function onSetRemoteDescriptionSuccess() {
+    console.log("Set remote session description success.");
+    // By now all addstream events for the setRemoteDescription have fired.
+    // So we can know if the peer is sending any stream or is only receiving.
+    if (remoteStream) {
+      waitForRemoteVideo();
+    } else {
+      console.log("Not receiving any stream.");
+      transitionToActive();
+    }
+  }
 }
 
 function sendMessage(message) {
@@ -301,10 +328,13 @@ function onUserMediaSuccess(stream) {
 }
 
 function onUserMediaError(error) {
-  console.log('Failed to get access to local media. Error code was ' +
-              error.code);
-  alert('Failed to get access to local media. Error code was ' +
-        error.code + '.');
+  var msg = 'Failed to get access to local media. Error code was ' +
+             error.code + '. Continuing without sending a stream.';
+  console.log(msg);
+  alert(msg);
+
+  hasLocalStream = false;
+  maybeStart();
 }
 
 function onCreateSessionDescriptionError(error) {
@@ -343,10 +373,8 @@ function onIceCandidate(event) {
 
 function onRemoteStreamAdded(event) {
   console.log('Remote stream added.');
-  reattachMediaStream(miniVideo, localVideo);
   attachMediaStream(remoteVideo, event.stream);
   remoteStream = event.stream;
-  waitForRemoteVideo();
 }
 
 function onRemoteStreamRemoved(event) {
@@ -384,6 +412,7 @@ function stop() {
   isVideoMuted = false;
   pc.close();
   pc = null;
+  remoteStream = null;
   msgQueue.length = 0;
 }
 
@@ -398,6 +427,7 @@ function waitForRemoteVideo() {
 }
 
 function transitionToActive() {
+  reattachMediaStream(miniVideo, localVideo);
   remoteVideo.style.opacity = 1;
   card.style.webkitTransform = 'rotateY(180deg)';
   setTimeout(function() { localVideo.src = ''; }, 500);
