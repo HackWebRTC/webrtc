@@ -561,7 +561,7 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
   }
 
   public boolean hasMultipleCameras() {
-    return cameras.length > 1;
+    return Camera.getNumberOfCameras() > 1;
   }
 
   public boolean frontCameraIsSet() {
