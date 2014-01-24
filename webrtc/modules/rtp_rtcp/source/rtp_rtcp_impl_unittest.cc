@@ -17,6 +17,9 @@
 
 namespace webrtc {
 namespace {
+const uint32_t kSenderSsrc = 0x12345;
+const uint32_t kReceiverSsrc = 0x23456;
+const uint32_t kOneWayNetworkDelayMs = 100;
 
 class RtcpRttStatsTestImpl : public RtcpRttStats {
  public:
@@ -35,12 +38,12 @@ class RtcpRttStatsTestImpl : public RtcpRttStats {
 class SendTransport : public Transport,
                       public NullRtpData {
  public:
-  SendTransport() : rtp_rtcp_impl_(NULL), clock_(NULL), delay_ms_(0) {}
+  SendTransport() : receiver_(NULL), clock_(NULL), delay_ms_(0) {}
 
-  void SetRtpRtcpModule(ModuleRtpRtcpImpl* rtp_rtcp_impl) {
-    rtp_rtcp_impl_ = rtp_rtcp_impl;
+  void SetRtpRtcpModule(ModuleRtpRtcpImpl* receiver) {
+    receiver_ = receiver;
   }
-  void SimulateNetworkDelay(int delay_ms, SimulatedClock* clock) {
+  void SimulateNetworkDelay(uint32_t delay_ms, SimulatedClock* clock) {
     clock_ = clock;
     delay_ms_ = delay_ms;
   }
@@ -51,14 +54,36 @@ class SendTransport : public Transport,
     if (clock_) {
       clock_->AdvanceTimeMilliseconds(delay_ms_);
     }
-    EXPECT_TRUE(rtp_rtcp_impl_ != NULL);
-    EXPECT_EQ(0, rtp_rtcp_impl_->IncomingRtcpPacket(
+    EXPECT_TRUE(receiver_ != NULL);
+    EXPECT_EQ(0, receiver_->IncomingRtcpPacket(
         static_cast<const uint8_t*>(data), len));
     return len;
   }
-  ModuleRtpRtcpImpl* rtp_rtcp_impl_;
+  ModuleRtpRtcpImpl* receiver_;
   SimulatedClock* clock_;
-  int delay_ms_;
+  uint32_t delay_ms_;
+};
+
+class RtpRtcpModule {
+ public:
+  RtpRtcpModule(SimulatedClock* clock)
+      : receive_statistics_(ReceiveStatistics::Create(clock)) {
+    RtpRtcp::Configuration config;
+    config.audio = false;
+    config.clock = clock;
+    config.outgoing_transport = &transport_;
+    config.receive_statistics = receive_statistics_.get();
+    config.rtt_stats = &rtt_stats_;
+
+    impl_.reset(new ModuleRtpRtcpImpl(config));
+    EXPECT_EQ(0, impl_->SetRTCPStatus(kRtcpCompound));
+
+    transport_.SimulateNetworkDelay(kOneWayNetworkDelayMs, clock);
+  }
+  scoped_ptr<ReceiveStatistics> receive_statistics_;
+  SendTransport transport_;
+  RtcpRttStatsTestImpl rtt_stats_;
+  scoped_ptr<ModuleRtpRtcpImpl> impl_;
 };
 }  // namespace
 
@@ -66,97 +91,85 @@ class RtpRtcpImplTest : public ::testing::Test {
  protected:
   RtpRtcpImplTest()
       : clock_(1335900000),
-        receive_statistics_(ReceiveStatistics::Create(&clock_)) {
-    RtpRtcp::Configuration configuration;
-    configuration.id = 0;
-    configuration.audio = false;
-    configuration.clock = &clock_;
-    configuration.outgoing_transport = &transport_;
-    configuration.receive_statistics = receive_statistics_.get();
-    configuration.rtt_stats = &rtt_stats_;
-
-    rtp_rtcp_impl_.reset(new ModuleRtpRtcpImpl(configuration));
-    transport_.SetRtpRtcpModule(rtp_rtcp_impl_.get());
+        sender_(&clock_),
+        receiver_(&clock_) {
+    // Send module.
+    EXPECT_EQ(0, sender_.impl_->SetSendingStatus(true));
+    EXPECT_EQ(0, sender_.impl_->SetSSRC(kSenderSsrc));
+    sender_.impl_->SetRemoteSSRC(kReceiverSsrc);
+    // Receive module.
+    EXPECT_EQ(0, receiver_.impl_->SetSendingStatus(false));
+    EXPECT_EQ(0, receiver_.impl_->SetSSRC(kReceiverSsrc));
+    receiver_.impl_->SetRemoteSSRC(kSenderSsrc);
+    // Transport settings.
+    sender_.transport_.SetRtpRtcpModule(receiver_.impl_.get());
+    receiver_.transport_.SetRtpRtcpModule(sender_.impl_.get());
   }
-
   SimulatedClock clock_;
-  scoped_ptr<ReceiveStatistics> receive_statistics_;
-  scoped_ptr<ModuleRtpRtcpImpl> rtp_rtcp_impl_;
-  SendTransport transport_;
-  RtcpRttStatsTestImpl rtt_stats_;
+  RtpRtcpModule sender_;
+  RtpRtcpModule receiver_;
 };
 
 TEST_F(RtpRtcpImplTest, Rtt) {
-  const uint32_t kSsrc = 0x12345;
   RTPHeader header = {};
   header.timestamp = 1;
   header.sequenceNumber = 123;
-  header.ssrc = kSsrc;
+  header.ssrc = kSenderSsrc;
   header.headerLength = 12;
-  receive_statistics_->IncomingPacket(header, 100, false);
+  receiver_.receive_statistics_->IncomingPacket(header, 100, false);
 
-  rtp_rtcp_impl_->SetRemoteSSRC(kSsrc);
-  EXPECT_EQ(0, rtp_rtcp_impl_->SetSendingStatus(true));
-  EXPECT_EQ(0, rtp_rtcp_impl_->SetRTCPStatus(kRtcpCompound));
-  EXPECT_EQ(0, rtp_rtcp_impl_->SetSSRC(kSsrc));
+  // Sender module should send a SR.
+  EXPECT_EQ(0, sender_.impl_->SendRTCP(kRtcpReport));
 
-  // A SR should have been sent and received.
-  EXPECT_EQ(0, rtp_rtcp_impl_->SendRTCP(kRtcpReport));
-
-  // Send new SR. A response to the last SR should be sent.
+  // Receiver module should send a RR with a response to the last received SR.
   clock_.AdvanceTimeMilliseconds(1000);
-  transport_.SimulateNetworkDelay(100, &clock_);
-  EXPECT_EQ(0, rtp_rtcp_impl_->SendRTCP(kRtcpReport));
+  EXPECT_EQ(0, receiver_.impl_->SendRTCP(kRtcpReport));
 
   // Verify RTT.
   uint16_t rtt;
   uint16_t avg_rtt;
   uint16_t min_rtt;
   uint16_t max_rtt;
-  EXPECT_EQ(0, rtp_rtcp_impl_->RTT(kSsrc, &rtt, &avg_rtt, &min_rtt, &max_rtt));
-  EXPECT_EQ(100, rtt);
-  EXPECT_EQ(100, avg_rtt);
-  EXPECT_EQ(100, min_rtt);
-  EXPECT_EQ(100, max_rtt);
+  EXPECT_EQ(0,
+      sender_.impl_->RTT(kReceiverSsrc, &rtt, &avg_rtt, &min_rtt, &max_rtt));
+  EXPECT_EQ(2 * kOneWayNetworkDelayMs, rtt);
+  EXPECT_EQ(2 * kOneWayNetworkDelayMs, avg_rtt);
+  EXPECT_EQ(2 * kOneWayNetworkDelayMs, min_rtt);
+  EXPECT_EQ(2 * kOneWayNetworkDelayMs, max_rtt);
 
   // No RTT from other ssrc.
   EXPECT_EQ(-1,
-      rtp_rtcp_impl_->RTT(kSsrc + 1, &rtt, &avg_rtt, &min_rtt, &max_rtt));
+      sender_.impl_->RTT(kReceiverSsrc+1, &rtt, &avg_rtt, &min_rtt, &max_rtt));
 
   // Verify RTT from rtt_stats config.
-  EXPECT_EQ(0U, rtt_stats_.LastProcessedRtt());
-  EXPECT_EQ(0U, rtp_rtcp_impl_->rtt_ms());
-  rtp_rtcp_impl_->Process();
-  EXPECT_EQ(100U, rtt_stats_.LastProcessedRtt());
-  EXPECT_EQ(100U, rtp_rtcp_impl_->rtt_ms());
+  EXPECT_EQ(0U, sender_.rtt_stats_.LastProcessedRtt());
+  EXPECT_EQ(0U, sender_.impl_->rtt_ms());
+  sender_.impl_->Process();
+  EXPECT_EQ(2 * kOneWayNetworkDelayMs, sender_.rtt_stats_.LastProcessedRtt());
+  EXPECT_EQ(2 * kOneWayNetworkDelayMs, sender_.impl_->rtt_ms());
 }
 
 TEST_F(RtpRtcpImplTest, SetRtcpXrRrtrStatus) {
-  EXPECT_FALSE(rtp_rtcp_impl_->RtcpXrRrtrStatus());
-  rtp_rtcp_impl_->SetRtcpXrRrtrStatus(true);
-  EXPECT_TRUE(rtp_rtcp_impl_->RtcpXrRrtrStatus());
+  EXPECT_FALSE(receiver_.impl_->RtcpXrRrtrStatus());
+  receiver_.impl_->SetRtcpXrRrtrStatus(true);
+  EXPECT_TRUE(receiver_.impl_->RtcpXrRrtrStatus());
 }
 
 TEST_F(RtpRtcpImplTest, RttForReceiverOnly) {
-  rtp_rtcp_impl_->SetRtcpXrRrtrStatus(true);
-  EXPECT_EQ(0, rtp_rtcp_impl_->SetSendingStatus(false));
-  EXPECT_EQ(0, rtp_rtcp_impl_->SetRTCPStatus(kRtcpCompound));
-  EXPECT_EQ(0, rtp_rtcp_impl_->SetSSRC(0x12345));
+  receiver_.impl_->SetRtcpXrRrtrStatus(true);
 
-  // A Receiver time reference report (RTRR) should be sent and received.
-  EXPECT_EQ(0, rtp_rtcp_impl_->SendRTCP(kRtcpReport));
+  // Receiver module should send a Receiver time reference report (RTRR).
+  EXPECT_EQ(0, receiver_.impl_->SendRTCP(kRtcpReport));
 
-  // Send new RTRR. A response to the last RTRR should be sent.
+  // Sender module should send a response to the last received RTRR (DLRR).
   clock_.AdvanceTimeMilliseconds(1000);
-  transport_.SimulateNetworkDelay(100, &clock_);
-  EXPECT_EQ(0, rtp_rtcp_impl_->SendRTCP(kRtcpReport));
+  EXPECT_EQ(0, sender_.impl_->SendRTCP(kRtcpReport));
 
   // Verify RTT.
-  EXPECT_EQ(0U, rtt_stats_.LastProcessedRtt());
-  EXPECT_EQ(0U, rtp_rtcp_impl_->rtt_ms());
-  rtp_rtcp_impl_->Process();
-  EXPECT_EQ(100U, rtt_stats_.LastProcessedRtt());
-  EXPECT_EQ(100U, rtp_rtcp_impl_->rtt_ms());
+  EXPECT_EQ(0U, receiver_.rtt_stats_.LastProcessedRtt());
+  EXPECT_EQ(0U, receiver_.impl_->rtt_ms());
+  receiver_.impl_->Process();
+  EXPECT_EQ(2 * kOneWayNetworkDelayMs, receiver_.rtt_stats_.LastProcessedRtt());
+  EXPECT_EQ(2 * kOneWayNetworkDelayMs, receiver_.impl_->rtt_ms());
 }
-
 }  // namespace webrtc
