@@ -71,16 +71,6 @@ struct FecConfig {
   int red_payload_type;
 };
 
-// Settings for RTP retransmission payload format, see RFC 4588 for details.
-struct RtxConfig {
-  RtxConfig() : rtx_payload_type(0) {}
-  // SSRCs to use for the RTX streams.
-  std::vector<uint32_t> ssrcs;
-
-  // Payload type to use for the RTX stream.
-  int rtx_payload_type;
-};
-
 // RTP header extension to use for the video stream, see RFC 5285.
 struct RtpExtension {
   static const char* kTOffset;

@@ -156,9 +156,11 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
 
   if (config.encoder) {
     external_codec_ = ViEExternalCodec::GetInterface(video_engine);
-    if (external_codec_->RegisterExternalSendCodec(
-        channel_, config.codec.plType, config.encoder,
-        config.internal_source) != 0) {
+    if (external_codec_->RegisterExternalSendCodec(channel_,
+                                                   config.codec.plType,
+                                                   config.encoder,
+                                                   config.internal_source) !=
+        0) {
       abort();
     }
   }
@@ -168,9 +170,8 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
     abort();
 
   if (overuse_detection) {
-    overuse_observer_.reset(
-        new ResolutionAdaptor(codec_, channel_, config_.codec.width,
-                              config_.codec.height));
+    overuse_observer_.reset(new ResolutionAdaptor(
+        codec_, channel_, config_.codec.width, config_.codec.height));
     video_engine_base_->RegisterCpuOveruseObserver(channel_,
                                                    overuse_observer_.get());
   }
@@ -187,8 +188,7 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
     codec_->SuspendBelowMinBitrate(channel_);
   }
 
-  stats_proxy_.reset(
-      new SendStatisticsProxy(config, this));
+  stats_proxy_.reset(new SendStatisticsProxy(config, this));
 
   rtp_rtcp_->RegisterSendChannelRtcpStatisticsCallback(channel_,
                                                        stats_proxy_.get());
@@ -282,7 +282,9 @@ bool VideoSendStream::SetCodec(const VideoCodec& codec) {
                             static_cast<unsigned char>(i));
   }
 
-  config_.codec = codec;
+  if (&config_.codec != &codec)
+    config_.codec = codec;
+
   if (config_.rtp.rtx.ssrcs.empty())
     return true;
 
@@ -295,10 +297,8 @@ bool VideoSendStream::SetCodec(const VideoCodec& codec) {
                             static_cast<unsigned char>(i));
   }
 
-  if (config_.rtp.rtx.rtx_payload_type != 0) {
-    rtp_rtcp_->SetRtxSendPayloadType(channel_,
-                                     config_.rtp.rtx.rtx_payload_type);
-  }
+  if (config_.rtp.rtx.payload_type != 0)
+    rtp_rtcp_->SetRtxSendPayloadType(channel_, config_.rtp.rtx.payload_type);
 
   return true;
 }

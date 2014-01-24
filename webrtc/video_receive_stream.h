@@ -26,10 +26,7 @@ namespace webrtc {
 namespace newapi {
 // RTCP mode to use. Compound mode is described by RFC 4585 and reduced-size
 // RTCP mode is described by RFC 5506.
-enum RtcpMode {
-  kRtcpCompound,
-  kRtcpReducedSize
-};
+enum RtcpMode { kRtcpCompound, kRtcpReducedSize };
 }  // namespace newapi
 
 class VideoDecoder;
@@ -138,9 +135,21 @@ class VideoReceiveStream {
       // See FecConfig for description.
       FecConfig fec;
 
-      // RTX settings for video payloads that may be received. RTX is disabled
-      // if there's no config present.
-      std::map<int, RtxConfig> rtx;
+      // RTX settings for incoming video payloads that may be received. RTX is
+      // disabled if there's no config present.
+      struct Rtx {
+        Rtx() : ssrc(0), payload_type(0) {}
+
+        // SSRCs to use for the RTX streams.
+        uint32_t ssrc;
+
+        // Payload type to use for the RTX stream.
+        int payload_type;
+      };
+
+      // Map from video RTP payload type -> RTX config.
+      typedef std::map<int, Rtx> RtxMap;
+      RtxMap rtx;
 
       // RTP header extensions used for the received stream.
       std::vector<RtpExtension> extensions;

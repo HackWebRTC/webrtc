@@ -93,8 +93,8 @@ const uint8_t VideoSendStreamTest::kSendPayloadType = 100;
 const uint8_t VideoSendStreamTest::kFakeSendPayloadType = 125;
 const uint8_t VideoSendStreamTest::kSendRtxPayloadType = 98;
 const uint32_t VideoSendStreamTest::kSendRtxSsrc = 0xBADCAFE;
-const uint32_t VideoSendStreamTest::kSendSsrcs[kNumSendSsrcs] = { 0xC0FFED,
-    0xC0FFEE, 0xC0FFEF };
+const uint32_t VideoSendStreamTest::kSendSsrcs[kNumSendSsrcs] = {
+    0xC0FFED, 0xC0FFEE, 0xC0FFEF};
 const uint32_t VideoSendStreamTest::kSendSsrc =
     VideoSendStreamTest::kSendSsrcs[0];
 
@@ -121,10 +121,10 @@ void VideoSendStreamTest::SendsSetSsrcs(size_t num_ssrcs,
       //             to fail on TSan as the codec gets set before the SSRCs are
       //             set up and some frames are sent on a random-generated SSRC
       //             before the correct SSRC gets set.
-      //EXPECT_TRUE(valid_ssrcs_[header.ssrc])
+      // EXPECT_TRUE(valid_ssrcs_[header.ssrc])
       //    << "Received unknown SSRC: " << header.ssrc;
       //
-      //if (!valid_ssrcs_[header.ssrc])
+      // if (!valid_ssrcs_[header.ssrc])
       //  observation_complete_->Set();
 
       if (!is_observed_[header.ssrc]) {
@@ -271,8 +271,7 @@ TEST_F(VideoSendStreamTest, SupportsAbsoluteSendTime) {
 
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
       RTPHeader header;
-      EXPECT_TRUE(
-          parser_->Parse(packet, static_cast<int>(length), &header));
+      EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
 
       EXPECT_FALSE(header.extension.hasTransmissionTimeOffset);
       EXPECT_TRUE(header.extension.hasAbsoluteSendTime);
@@ -299,10 +298,10 @@ TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
   class DelayedEncoder : public test::FakeEncoder {
    public:
     explicit DelayedEncoder(Clock* clock) : test::FakeEncoder(clock) {}
-    virtual int32_t Encode(
-        const I420VideoFrame& input_image,
-        const CodecSpecificInfo* codec_specific_info,
-        const std::vector<VideoFrameType>* frame_types) OVERRIDE {
+    virtual int32_t Encode(const I420VideoFrame& input_image,
+                           const CodecSpecificInfo* codec_specific_info,
+                           const std::vector<VideoFrameType>* frame_types)
+        OVERRIDE {
       // A delay needs to be introduced to assure that we get a timestamp
       // offset.
       SleepMs(5);
@@ -319,8 +318,7 @@ TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
 
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
       RTPHeader header;
-      EXPECT_TRUE(
-          parser_->Parse(packet, static_cast<int>(length), &header));
+      EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
 
       EXPECT_TRUE(header.extension.hasTransmissionTimeOffset);
       EXPECT_FALSE(header.extension.hasAbsoluteSendTime);
@@ -439,8 +437,7 @@ TEST_F(VideoSendStreamTest, SupportsFec) {
 
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
       RTPHeader header;
-      EXPECT_TRUE(
-          parser_->Parse(packet, static_cast<int>(length), &header));
+      EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
 
       // Send lossy receive reports to trigger FEC enabling.
       if (send_count_++ % 2 != 0) {
@@ -511,8 +508,7 @@ void VideoSendStreamTest::TestNackRetransmission(
 
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
       RTPHeader header;
-      EXPECT_TRUE(
-          parser_->Parse(packet, static_cast<int>(length), &header));
+      EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
 
       // Nack second packet after receiving the third one.
       if (++send_count_ == 3) {
@@ -564,7 +560,7 @@ void VideoSendStreamTest::TestNackRetransmission(
 
   VideoSendStream::Config send_config = GetSendTestConfig(call.get(), 1);
   send_config.rtp.nack.rtp_history_ms = 1000;
-  send_config.rtp.rtx.rtx_payload_type = retransmit_payload_type;
+  send_config.rtp.rtx.payload_type = retransmit_payload_type;
   send_config.pacing = enable_pacing;
   if (retransmit_ssrc != kSendSsrc)
     send_config.rtp.rtx.ssrcs.push_back(retransmit_ssrc);
@@ -611,8 +607,7 @@ TEST_F(VideoSendStreamTest, FragmentsAccordingToMaxPacketSize) {
 
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
       RTPHeader header;
-      EXPECT_TRUE(
-          parser_->Parse(packet, static_cast<int>(length), &header));
+      EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
 
       EXPECT_LE(length, max_packet_size_);
 
@@ -721,9 +716,7 @@ TEST_F(VideoSendStreamTest, CanChangeSendCodec) {
       return kEventSignaled;
     }
 
-    void SetSecondCodec(const VideoCodec& codec) {
-      second_codec_ = codec;
-    }
+    void SetSecondCodec(const VideoCodec& codec) { second_codec_ = codec; }
 
    private:
     scoped_ptr<EventWrapper> received_first_payload_;
@@ -913,8 +906,9 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
     virtual Action OnSendRtcp(const uint8_t* packet, size_t length) OVERRIDE {
       CriticalSectionScoped lock(crit_sect_.get());
       const int kVideoMutedThresholdMs = 10000;
-      if (last_packet_time_ms_ > 0 && clock_->TimeInMilliseconds() -
-          last_packet_time_ms_ > kVideoMutedThresholdMs)
+      if (last_packet_time_ms_ > 0 &&
+          clock_->TimeInMilliseconds() - last_packet_time_ms_ >
+              kVideoMutedThresholdMs)
         observation_complete_->Set();
       // Receive statistics reporting having lost 50% of the packets.
       FakeReceiveStatistics receive_stats(kSendSsrcs[0], 1, 1, 0);

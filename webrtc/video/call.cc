@@ -170,8 +170,9 @@ void CreateTraceDispatcher() {
 Call* Call::Create(const Call::Config& config) {
   CreateTraceDispatcher();
 
-  VideoEngine* video_engine = config.webrtc_config != NULL ?
-      VideoEngine::Create(*config.webrtc_config) : VideoEngine::Create();
+  VideoEngine* video_engine = config.webrtc_config != NULL
+                                  ? VideoEngine::Create(*config.webrtc_config)
+                                  : VideoEngine::Create();
   assert(video_engine != NULL);
 
   return new internal::Call(video_engine, config);
@@ -294,6 +295,12 @@ VideoReceiveStream* Call::CreateVideoReceiveStream(
   WriteLockScoped write_lock(*receive_lock_);
   assert(receive_ssrcs_.find(config.rtp.remote_ssrc) == receive_ssrcs_.end());
   receive_ssrcs_[config.rtp.remote_ssrc] = receive_stream;
+  // TODO(pbos): Configure different RTX payloads per receive payload.
+  VideoReceiveStream::Config::Rtp::RtxMap::const_iterator it =
+      config.rtp.rtx.begin();
+  if (it != config.rtp.rtx.end())
+    receive_ssrcs_[it->second.ssrc] = receive_stream;
+
   return receive_stream;
 }
 
@@ -304,14 +311,16 @@ void Call::DestroyVideoReceiveStream(
   VideoReceiveStream* receive_stream_impl = NULL;
   {
     WriteLockScoped write_lock(*receive_lock_);
-    for (std::map<uint32_t, VideoReceiveStream*>::iterator it =
-             receive_ssrcs_.begin();
-         it != receive_ssrcs_.end();
-         ++it) {
+    // Remove all ssrcs pointing to a receive stream. As RTX retransmits on a
+    // separate SSRC there can be either one or two.
+    std::map<uint32_t, VideoReceiveStream*>::iterator it =
+        receive_ssrcs_.begin();
+    while (it != receive_ssrcs_.end()) {
       if (it->second == static_cast<VideoReceiveStream*>(receive_stream)) {
         receive_stream_impl = it->second;
-        receive_ssrcs_.erase(it);
-        break;
+        receive_ssrcs_.erase(it++);
+      } else {
+        ++it;
       }
     }
   }

@@ -96,8 +96,16 @@ class VideoSendStream {
       // See FecConfig for description.
       FecConfig fec;
 
-      // See RtxConfig for description.
-      RtxConfig rtx;
+      // Settings for RTP retransmission payload format, see RFC 4588 for
+      // details.
+      struct Rtx {
+        Rtx() : payload_type(0) {}
+        // SSRCs to use for the RTX streams.
+        std::vector<uint32_t> ssrcs;
+
+        // Payload type to use for the RTX stream.
+        int payload_type;
+      } rtx;
 
       // RTCP CNAME, see RFC 3550.
       std::string c_name;

@@ -36,8 +36,8 @@
 namespace webrtc {
 
 namespace {
-  static const int kAbsoluteSendTimeExtensionId = 7;
-  static const int kMaxPacketSize = 1500;
+static const int kAbsoluteSendTimeExtensionId = 7;
+static const int kMaxPacketSize = 1500;
 }
 
 class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
@@ -53,8 +53,9 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
         rtp_parser_(RtpHeaderParser::Create()),
         feedback_transport_(feedback_transport),
         receive_stats_(ReceiveStatistics::Create(clock)),
-        payload_registry_(new RTPPayloadRegistry(
-            -1, RTPPayloadStrategy::CreateStrategy(false))),
+        payload_registry_(
+            new RTPPayloadRegistry(-1,
+                                   RTPPayloadStrategy::CreateStrategy(false))),
         clock_(clock),
         num_expected_ssrcs_(num_expected_ssrcs),
         rtx_media_ssrcs_(rtx_media_ssrcs),
@@ -88,19 +89,39 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
     if (ssrcs.size() == num_expected_ssrcs_ && bitrate >= kExpectedBitrateBps) {
       if (rtx_media_ssrcs_.empty() || rtx_media_sent_ > 0) {
         const ::testing::TestInfo* const test_info =
-          ::testing::UnitTest::GetInstance()->current_test_info();
-        webrtc::test::PrintResult("total-sent", "", test_info->name(),
-                                  total_sent_, "bytes", false);
-        webrtc::test::PrintResult("padding-sent", "", test_info->name(),
-                                  padding_sent_, "bytes", false);
-        webrtc::test::PrintResult("rtx-media-sent", "", test_info->name(),
-                                  rtx_media_sent_, "bytes", false);
-        webrtc::test::PrintResult("total-packets-sent", "", test_info->name(),
-                                  total_packets_sent_, "packets", false);
-        webrtc::test::PrintResult("padding-packets-sent", "", test_info->name(),
-                                  padding_packets_sent_, "packets", false);
-        webrtc::test::PrintResult("rtx-packets-sent", "", test_info->name(),
-                                  rtx_media_packets_sent_, "packets", false);
+            ::testing::UnitTest::GetInstance()->current_test_info();
+        webrtc::test::PrintResult(
+            "total-sent", "", test_info->name(), total_sent_, "bytes", false);
+        webrtc::test::PrintResult("padding-sent",
+                                  "",
+                                  test_info->name(),
+                                  padding_sent_,
+                                  "bytes",
+                                  false);
+        webrtc::test::PrintResult("rtx-media-sent",
+                                  "",
+                                  test_info->name(),
+                                  rtx_media_sent_,
+                                  "bytes",
+                                  false);
+        webrtc::test::PrintResult("total-packets-sent",
+                                  "",
+                                  test_info->name(),
+                                  total_packets_sent_,
+                                  "packets",
+                                  false);
+        webrtc::test::PrintResult("padding-packets-sent",
+                                  "",
+                                  test_info->name(),
+                                  padding_packets_sent_,
+                                  "packets",
+                                  false);
+        webrtc::test::PrintResult("rtx-packets-sent",
+                                  "",
+                                  test_info->name(),
+                                  rtx_media_packets_sent_,
+                                  "packets",
+                                  false);
         all_ssrcs_sent_->Set();
       }
     }
@@ -132,13 +153,14 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
       uint8_t restored_packet[kMaxPacketSize];
       uint8_t* restored_packet_ptr = restored_packet;
       int restored_length = static_cast<int>(length);
-      payload_registry_->RestoreOriginalPacket(
-              &restored_packet_ptr, packet, &restored_length,
-              rtx_media_ssrcs_[header.ssrc],
-              header);
+      payload_registry_->RestoreOriginalPacket(&restored_packet_ptr,
+                                               packet,
+                                               &restored_length,
+                                               rtx_media_ssrcs_[header.ssrc],
+                                               header);
       length = restored_length;
-      EXPECT_TRUE(rtp_parser_->Parse(restored_packet, static_cast<int>(length),
-                                     &header));
+      EXPECT_TRUE(rtp_parser_->Parse(
+          restored_packet, static_cast<int>(length), &header));
     } else {
       rtp_rtcp_->SetRemoteSSRC(header.ssrc);
     }
@@ -191,9 +213,10 @@ class RampUpTest : public ::testing::TestWithParam<bool> {
     }
     test::DirectTransport receiver_transport;
     int num_expected_ssrcs = kNumberOfStreams + (rtx ? 1 : 0);
-    StreamObserver stream_observer(
-        num_expected_ssrcs, rtx_ssrc_map, &receiver_transport,
-        Clock::GetRealTimeClock());
+    StreamObserver stream_observer(num_expected_ssrcs,
+                                   rtx_ssrc_map,
+                                   &receiver_transport,
+                                   Clock::GetRealTimeClock());
 
     Call::Config call_config(&stream_observer);
     webrtc::Config webrtc_config;
@@ -211,10 +234,10 @@ class RampUpTest : public ::testing::TestWithParam<bool> {
     send_config.codec.plType = 125;
     send_config.pacing = pacing;
     send_config.rtp.nack.rtp_history_ms = 1000;
-    send_config.rtp.ssrcs.insert(send_config.rtp.ssrcs.begin(), ssrcs.begin(),
-                                 ssrcs.end());
+    send_config.rtp.ssrcs.insert(
+        send_config.rtp.ssrcs.begin(), ssrcs.begin(), ssrcs.end());
     if (rtx) {
-      send_config.rtp.rtx.rtx_payload_type = 96;
+      send_config.rtp.rtx.payload_type = 96;
       send_config.rtp.rtx.ssrcs.insert(send_config.rtp.rtx.ssrcs.begin(),
                                        kRtxSsrcs,
                                        kRtxSsrcs + kNumberOfStreams);
@@ -244,16 +267,10 @@ class RampUpTest : public ::testing::TestWithParam<bool> {
   std::map<uint32_t, bool> reserved_ssrcs_;
 };
 
-TEST_F(RampUpTest, WithoutPacing) {
-  RunRampUpTest(false, false);
-}
+TEST_F(RampUpTest, WithoutPacing) { RunRampUpTest(false, false); }
 
-TEST_F(RampUpTest, WithPacing) {
-  RunRampUpTest(true, false);
-}
+TEST_F(RampUpTest, WithPacing) { RunRampUpTest(true, false); }
 
-TEST_F(RampUpTest, WithPacingAndRtx) {
-  RunRampUpTest(true, true);
-}
+TEST_F(RampUpTest, WithPacingAndRtx) { RunRampUpTest(true, true); }
 
 }  // namespace webrtc
