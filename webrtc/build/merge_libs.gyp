@@ -10,7 +10,7 @@
   'includes': ['common.gypi',],
   'variables': {
     'merge_libs_dependencies': [
-      '../video_engine/video_engine.gyp:video_engine_core',
+      '../webrtc.gyp:webrtc',
     ],
   },
   'targets': [
