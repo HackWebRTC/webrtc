@@ -52,8 +52,6 @@
   ThreadSanitizer:Race
   fun:cricket::WebRtcVideoEngine::~WebRtcVideoEngine
   fun:VideoEngineOverride::~VideoEngineOverride
-  fun:VideoMediaChannelTest::~VideoMediaChannelTest
-  fun:WebRtcVideoMediaChannelTest::~WebRtcVideoMediaChannelTest
   ...
 }
 {
