@@ -39,6 +39,24 @@
   ...
 }
 {
+  Trace related 1
+  ThreadSanitizer:Race
+  fun:webrtc::TraceImpl::WriteToFile
+  fun:webrtc::TraceImpl::Process
+  fun:webrtc::TraceImpl::Run
+  fun:webrtc::ThreadPosix::Run
+  fun:StartThread
+}
+{
+  Trace related 2
+  ThreadSanitizer:Race
+  fun:cricket::WebRtcVideoEngine::~WebRtcVideoEngine
+  fun:VideoEngineOverride::~VideoEngineOverride
+  fun:VideoMediaChannelTest::~VideoMediaChannelTest
+  fun:WebRtcVideoMediaChannelTest::~WebRtcVideoMediaChannelTest
+  ...
+}
+{
   Test posix socket HasIncoming
   ThreadSanitizer:Race
   fun:webrtc::test::UdpSocketPosix::HasIncoming
