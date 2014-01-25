@@ -53,7 +53,16 @@ namespace webrtc {
 COMPILE_ASSERT(AudioProcessing::kNoError == 0, no_error_must_be_zero);
 
 AudioProcessing* AudioProcessing::Create(int id) {
-  AudioProcessingImpl* apm = new AudioProcessingImpl();
+  return Create();
+}
+
+AudioProcessing* AudioProcessing::Create() {
+  Config config;
+  return Create(config);
+}
+
+AudioProcessing* AudioProcessing::Create(const Config& config) {
+  AudioProcessingImpl* apm = new AudioProcessingImpl(config);
   if (apm->Initialize() != kNoError) {
     delete apm;
     apm = NULL;
@@ -65,7 +74,7 @@ AudioProcessing* AudioProcessing::Create(int id) {
 int32_t AudioProcessing::TimeUntilNextProcess() { return -1; }
 int32_t AudioProcessing::Process() { return -1; }
 
-AudioProcessingImpl::AudioProcessingImpl()
+AudioProcessingImpl::AudioProcessingImpl(const Config& config)
     : echo_cancellation_(NULL),
       echo_control_mobile_(NULL),
       gain_control_(NULL),
@@ -109,6 +118,8 @@ AudioProcessingImpl::AudioProcessingImpl()
 
   voice_detection_ = new VoiceDetectionImpl(this);
   component_list_.push_back(voice_detection_);
+
+  SetExtraOptions(config);
 }
 
 AudioProcessingImpl::~AudioProcessingImpl() {
@@ -193,6 +204,7 @@ int AudioProcessingImpl::InitializeLocked() {
 }
 
 void AudioProcessingImpl::SetExtraOptions(const Config& config) {
+  CriticalSectionScoped crit_scoped(crit_);
   std::list<ProcessingComponent*>::iterator it;
   for (it = component_list_.begin(); it != component_list_.end(); ++it)
     (*it)->SetExtraOptions(config);

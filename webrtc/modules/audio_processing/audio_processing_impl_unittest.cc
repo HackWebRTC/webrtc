@@ -22,13 +22,16 @@ namespace webrtc {
 
 class MockInitialize : public AudioProcessingImpl {
  public:
-  MOCK_METHOD0(InitializeLocked, int());
+  explicit MockInitialize(const Config& config) : AudioProcessingImpl(config) {
+  }
 
+  MOCK_METHOD0(InitializeLocked, int());
   int RealInitializeLocked() { return AudioProcessingImpl::InitializeLocked(); }
 };
 
 TEST(AudioProcessingImplTest, AudioParameterChangeTriggersInit) {
-  MockInitialize mock;
+  Config config;
+  MockInitialize mock(config);
   ON_CALL(mock, InitializeLocked())
       .WillByDefault(Invoke(&mock, &MockInitialize::RealInitializeLocked));
 

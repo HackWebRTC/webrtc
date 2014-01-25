@@ -134,6 +134,9 @@ class AudioProcessing : public Module {
   // typically be one instance for the near-end stream, and additional instances
   // for each far-end stream which requires processing. On the server-side,
   // this would typically be one instance for every incoming stream.
+  static AudioProcessing* Create();
+  static AudioProcessing* Create(const Config& config);
+  // TODO(ajm): Deprecated; remove all calls to it.
   static AudioProcessing* Create(int id);
   virtual ~AudioProcessing() {}
 

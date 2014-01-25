@@ -47,7 +47,7 @@ class AudioProcessingImpl : public AudioProcessing {
     kSampleRate32kHz = 32000
   };
 
-  AudioProcessingImpl();
+  explicit AudioProcessingImpl(const Config& config);
   virtual ~AudioProcessingImpl();
 
   CriticalSectionWrapper* crit() const;
