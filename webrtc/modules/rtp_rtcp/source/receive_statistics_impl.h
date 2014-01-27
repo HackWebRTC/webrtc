@@ -53,6 +53,11 @@ class StreamStatisticianImpl : public StreamStatistician {
   void UpdateJitter(const RTPHeader& header,
                     uint32_t receive_time_secs,
                     uint32_t receive_time_frac);
+  void UpdateCounters(const RTPHeader& rtp_header,
+                      size_t bytes,
+                      bool retransmitted);
+  void NotifyRtpCallback() LOCKS_EXCLUDED(stream_lock_.get());
+  void NotifyRtcpCallback() LOCKS_EXCLUDED(stream_lock_.get());
 
   Clock* clock_;
   scoped_ptr<CriticalSectionWrapper> stream_lock_;

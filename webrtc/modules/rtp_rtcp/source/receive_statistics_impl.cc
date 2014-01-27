@@ -69,6 +69,13 @@ void StreamStatisticianImpl::ResetStatistics() {
 void StreamStatisticianImpl::IncomingPacket(const RTPHeader& header,
                                             size_t bytes,
                                             bool retransmitted) {
+  UpdateCounters(header, bytes, retransmitted);
+  NotifyRtpCallback();
+}
+
+void StreamStatisticianImpl::UpdateCounters(const RTPHeader& header,
+                                            size_t bytes,
+                                            bool retransmitted) {
   CriticalSectionScoped cs(stream_lock_.get());
   bool in_order = InOrderPacketInternal(header.sequenceNumber);
   ssrc_ = header.ssrc;
@@ -121,8 +128,6 @@ void StreamStatisticianImpl::IncomingPacket(const RTPHeader& header,
   // Our measured overhead. Filter from RFC 5104 4.2.1.2:
   // avg_OH (new) = 15/16*avg_OH (old) + 1/16*pckt_OH,
   received_packet_overhead_ = (15 * received_packet_overhead_ + packet_oh) >> 4;
-
-  rtp_callback_->DataCountersUpdated(receive_counters_, ssrc_);
 }
 
 void StreamStatisticianImpl::UpdateJitter(const RTPHeader& header,
@@ -166,10 +171,34 @@ void StreamStatisticianImpl::UpdateJitter(const RTPHeader& header,
   }
 }
 
+void StreamStatisticianImpl::NotifyRtpCallback() {
+  StreamDataCounters data;
+  uint32_t ssrc;
+  {
+    CriticalSectionScoped cs(stream_lock_.get());
+    data = receive_counters_;
+    ssrc = ssrc_;
+  }
+  rtp_callback_->DataCountersUpdated(data, ssrc);
+}
+
+void StreamStatisticianImpl::NotifyRtcpCallback() {
+  RtcpStatistics data;
+  uint32_t ssrc;
+  {
+    CriticalSectionScoped cs(stream_lock_.get());
+    data = last_reported_statistics_;
+    ssrc = ssrc_;
+  }
+  rtcp_callback_->StatisticsUpdated(data, ssrc);
+}
+
 void StreamStatisticianImpl::FecPacketReceived() {
-  CriticalSectionScoped cs(stream_lock_.get());
-  ++receive_counters_.fec_packets;
-  rtp_callback_->DataCountersUpdated(receive_counters_, ssrc_);
+  {
+    CriticalSectionScoped cs(stream_lock_.get());
+    ++receive_counters_.fec_packets;
+  }
+  NotifyRtpCallback();
 }
 
 void StreamStatisticianImpl::SetMaxReorderingThreshold(
@@ -180,7 +209,6 @@ void StreamStatisticianImpl::SetMaxReorderingThreshold(
 
 bool StreamStatisticianImpl::GetStatistics(RtcpStatistics* statistics,
                                            bool reset) {
-  uint32_t ssrc;
   {
     CriticalSectionScoped cs(stream_lock_.get());
     if (received_seq_first_ == 0 && receive_counters_.bytes == 0) {
@@ -199,10 +227,9 @@ bool StreamStatisticianImpl::GetStatistics(RtcpStatistics* statistics,
     }
 
     *statistics = CalculateRtcpStatistics();
-    ssrc = ssrc_;
   }
 
-  rtcp_callback_->StatisticsUpdated(*statistics, ssrc);
+  NotifyRtcpCallback();
 
   return true;
 }
