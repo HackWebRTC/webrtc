@@ -126,14 +126,14 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
     }
     Throwable error = null;
     try {
+      camera.stopPreview();
+      camera.setPreviewCallbackWithBuffer(null);
       if (localPreview != null) {
         localPreview.removeCallback(this);
         camera.setPreviewDisplay(null);
       } else {
         camera.setPreviewTexture(null);
       }
-      camera.setPreviewCallbackWithBuffer(null);
-      camera.stopPreview();
       camera.release();
       camera = null;
       return true;
