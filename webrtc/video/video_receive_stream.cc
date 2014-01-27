@@ -168,6 +168,7 @@ VideoReceiveStream::~VideoReceiveStream() {
 }
 
 void VideoReceiveStream::StartReceiving() {
+  transport_adapter_.Enable();
   if (render_->StartRender(channel_) != 0)
     abort();
   if (video_engine_base_->StartReceive(channel_) != 0)
@@ -179,6 +180,7 @@ void VideoReceiveStream::StopReceiving() {
     abort();
   if (video_engine_base_->StopReceive(channel_) != 0)
     abort();
+  transport_adapter_.Disable();
 }
 
 void VideoReceiveStream::GetCurrentReceiveCodec(VideoCodec* receive_codec) {

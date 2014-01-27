@@ -433,7 +433,9 @@ TEST_F(VideoSendStreamTest, SupportsFec) {
           transport_adapter_(SendTransport()),
           send_count_(0),
           received_media_(false),
-          received_fec_(false) {}
+          received_fec_(false) {
+      transport_adapter_.Enable();
+    }
 
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
       RTPHeader header;
@@ -504,7 +506,9 @@ void VideoSendStreamTest::TestNackRetransmission(
           send_count_(0),
           retransmit_ssrc_(retransmit_ssrc),
           retransmit_payload_type_(retransmit_payload_type),
-          nacked_sequence_number_(-1) {}
+          nacked_sequence_number_(-1) {
+      transport_adapter_.Enable();
+    }
 
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
       RTPHeader header;
@@ -764,7 +768,9 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
           suspended_frame_count_(0),
           low_remb_bps_(0),
           high_remb_bps_(0),
-          crit_sect_(CriticalSectionWrapper::CreateCriticalSection()) {}
+          crit_sect_(CriticalSectionWrapper::CreateCriticalSection()) {
+      transport_adapter_.Enable();
+    }
 
     void SetReceiver(PacketReceiver* receiver) {
       transport_.SetReceiver(receiver);
@@ -890,7 +896,9 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
           last_packet_time_ms_(-1),
           transport_adapter_(ReceiveTransport()),
           capturer_(NULL),
-          crit_sect_(CriticalSectionWrapper::CreateCriticalSection()) {}
+          crit_sect_(CriticalSectionWrapper::CreateCriticalSection()) {
+      transport_adapter_.Enable();
+    }
 
     void SetCapturer(test::FrameGeneratorCapturer* capturer) {
       capturer_ = capturer;

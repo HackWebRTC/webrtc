@@ -11,6 +11,7 @@
 #define WEBRTC_VIDEO_ENGINE_INTERNAL_TRANSPORT_ADAPTER_H_
 
 #include "webrtc/common_types.h"
+#include "webrtc/system_wrappers/interface/atomic32.h"
 #include "webrtc/transport.h"
 
 namespace webrtc {
@@ -25,8 +26,12 @@ class TransportAdapter : public webrtc::Transport {
   virtual int SendRTCPPacket(int /*channel*/, const void* packet, int length)
       OVERRIDE;
 
+  void Enable();
+  void Disable();
+
  private:
   newapi::Transport *transport_;
+  Atomic32 enabled_;
 };
 }  // namespace internal
 }  // namespace webrtc

@@ -230,6 +230,7 @@ TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSync) {
   audio_observer.SetReceivers(&voe_packet_receiver, &voe_packet_receiver);
 
   internal::TransportAdapter transport_adapter(audio_observer.SendTransport());
+  transport_adapter.Enable();
   EXPECT_EQ(0,
             voe_network->RegisterExternalTransport(channel, transport_adapter));
 

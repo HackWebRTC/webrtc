@@ -71,6 +71,7 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
     // be able to produce an RTCP with REMB.
     RtpRtcp::Configuration config;
     config.receive_statistics = receive_stats_.get();
+    feedback_transport_.Enable();
     config.outgoing_transport = &feedback_transport_;
     rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(config));
     rtp_rtcp_->SetREMBStatus(true);
