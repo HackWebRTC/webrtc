@@ -114,12 +114,9 @@ function onTurnResult() {
       }
     }
   } else {
-    var msg =
-        'No TURN server; unlikely that media will traverse networks.  ' +
-        'If this persists please report it to discuss-webrtc@googlegroups.com.';
-    console.log(msg);
-    infoDivErrors.push(msg);
-    updateInfoDiv();
+    messageError('No TURN server; unlikely that media will traverse networks.  '
+                 + 'If this persists please report it to '
+                 + 'discuss-webrtc@googlegroups.com.');
   }
   // If TURN request failed, continue the call with default STUN.
   turnDone = true;
@@ -144,7 +141,7 @@ function doGetUserMedia() {
                 '  \'' + JSON.stringify(mediaConstraints) + '\'');
   } catch (e) {
     alert('getUserMedia() failed. Is this a WebRTC capable browser?');
-    console.log('getUserMedia failed with exception: ' + e.message);
+    messageError('getUserMedia failed with exception: ' + e.message);
   }
 }
 
@@ -157,10 +154,10 @@ function createPeerConnection() {
                 '  config: \'' + JSON.stringify(pcConfig) + '\';\n' +
                 '  constraints: \'' + JSON.stringify(pcConstraints) + '\'.');
   } catch (e) {
-    console.log('Failed to create PeerConnection, exception: ' + e.message);
+    messageError('Failed to create PeerConnection, exception: ' + e.message);
     alert('Cannot create RTCPeerConnection object; \
           WebRTC is not supported by this browser.');
-      return;
+    return;
   }
   pc.onaddstream = onRemoteStreamAdded;
   pc.onremovestream = onRemoteStreamRemoved;
@@ -265,7 +262,7 @@ function sendMessage(message) {
 
 function processSignalingMessage(message) {
   if (!started) {
-    console.log('peerConnection has not been created yet!');
+    messageError('peerConnection has not been created yet!');
     return;
   }
 
@@ -289,6 +286,7 @@ function onChannelOpened() {
   channelReady = true;
   maybeStart();
 }
+
 function onChannelMessage(message) {
   console.log('S->C: ' + message.data);
   var msg = JSON.parse(message.data);
@@ -310,11 +308,19 @@ function onChannelMessage(message) {
     processSignalingMessage(msg);
   }
 }
+
 function onChannelError() {
-  console.log('Channel error.');
+  messageError('Channel error.');
 }
+
 function onChannelClosed() {
   console.log('Channel closed.');
+}
+
+function messageError(msg) {
+  console.log(msg);
+  infoDivErrors.push(msg);
+  updateInfoDiv();
 }
 
 function onUserMediaSuccess(stream) {
@@ -328,17 +334,17 @@ function onUserMediaSuccess(stream) {
 }
 
 function onUserMediaError(error) {
-  var msg = 'Failed to get access to local media. Error code was ' +
-             error.code + '. Continuing without sending a stream.';
-  console.log(msg);
-  alert(msg);
+  messageError('Failed to get access to local media. Error code was ' +
+               error.code + '. Continuing without sending a stream.');
+  alert('Failed to get access to local media. Error code was ' +
+        error.code + '. Continuing without sending a stream.');
 
   hasLocalStream = false;
   maybeStart();
 }
 
 function onCreateSessionDescriptionError(error) {
-  console.log('Failed to create session description: ' + error.toString());
+  messageError('Failed to create session description: ' + error.toString());
 }
 
 function onSetSessionDescriptionSuccess() {
@@ -346,7 +352,7 @@ function onSetSessionDescriptionSuccess() {
 }
 
 function onSetSessionDescriptionError(error) {
-  console.log('Failed to set session description: ' + error.toString());
+  messageError('Failed to set session description: ' + error.toString());
 }
 
 function iceCandidateType(candidateSDP) {
