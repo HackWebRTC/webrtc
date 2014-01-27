@@ -49,7 +49,7 @@ class StreamStatisticianImpl : public StreamStatistician {
 
  private:
   bool InOrderPacketInternal(uint16_t sequence_number) const;
-  RtcpStatistics CalculateStatistics();
+  RtcpStatistics CalculateRtcpStatistics();
   void UpdateJitter(const RTPHeader& header,
                     uint32_t receive_time_secs,
                     uint32_t receive_time_frac);
