@@ -160,6 +160,8 @@ def GetPreferredTrySlaves(project, change):
 
   android_bots = [
       'android',
+      'android_apk',
+      'android_apk_rel',
       'android_rel',
       'android_clang',
   ]
