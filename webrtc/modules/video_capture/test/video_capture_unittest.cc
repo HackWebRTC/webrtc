@@ -252,7 +252,7 @@ class VideoCaptureTest : public testing::Test {
 
     EXPECT_FALSE(module->CaptureStarted());
 
-    module->RegisterCaptureDataCallback(*callback);
+    EXPECT_EQ(0, module->RegisterCaptureDataCallback(*callback));
     return module;
   }
 
@@ -408,10 +408,11 @@ class VideoCaptureExternalTest : public testing::Test {
     memset(test_frame_.buffer(webrtc::kVPlane), 127,
            ((kTestWidth + 1) / 2) * ((kTestHeight + 1) / 2));
 
-    capture_module_->RegisterCaptureDataCallback(capture_callback_);
-    capture_module_->RegisterCaptureCallback(capture_feedback_);
-    capture_module_->EnableFrameRateCallback(true);
-    capture_module_->EnableNoPictureAlarm(true);
+    EXPECT_EQ(0, capture_module_->RegisterCaptureDataCallback(
+        capture_callback_));
+    EXPECT_EQ(0, capture_module_->RegisterCaptureCallback(capture_feedback_));
+    EXPECT_EQ(0, capture_module_->EnableFrameRateCallback(true));
+    EXPECT_EQ(0, capture_module_->EnableNoPictureAlarm(true));
   }
 
   void TearDown() {

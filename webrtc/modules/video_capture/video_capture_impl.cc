@@ -187,33 +187,45 @@ VideoCaptureImpl::~VideoCaptureImpl()
         delete[] _deviceUniqueId;
 }
 
-void VideoCaptureImpl::RegisterCaptureDataCallback(
-    VideoCaptureDataCallback& dataCallBack) {
+int32_t VideoCaptureImpl::RegisterCaptureDataCallback(
+                                        VideoCaptureDataCallback& dataCallBack)
+{
     CriticalSectionScoped cs(&_apiCs);
     CriticalSectionScoped cs2(&_callBackCs);
     _dataCallBack = &dataCallBack;
+
+    return 0;
 }
 
-void VideoCaptureImpl::DeRegisterCaptureDataCallback() {
+int32_t VideoCaptureImpl::DeRegisterCaptureDataCallback()
+{
     CriticalSectionScoped cs(&_apiCs);
     CriticalSectionScoped cs2(&_callBackCs);
     _dataCallBack = NULL;
+    return 0;
 }
-void VideoCaptureImpl::RegisterCaptureCallback(VideoCaptureFeedBack& callBack) {
+int32_t VideoCaptureImpl::RegisterCaptureCallback(VideoCaptureFeedBack& callBack)
+{
 
     CriticalSectionScoped cs(&_apiCs);
     CriticalSectionScoped cs2(&_callBackCs);
     _captureCallBack = &callBack;
+    return 0;
 }
-void VideoCaptureImpl::DeRegisterCaptureCallback() {
+int32_t VideoCaptureImpl::DeRegisterCaptureCallback()
+{
 
     CriticalSectionScoped cs(&_apiCs);
     CriticalSectionScoped cs2(&_callBackCs);
     _captureCallBack = NULL;
+    return 0;
+
 }
-void VideoCaptureImpl::SetCaptureDelay(int32_t delayMS) {
+int32_t VideoCaptureImpl::SetCaptureDelay(int32_t delayMS)
+{
     CriticalSectionScoped cs(&_apiCs);
     _captureDelay = delayMS;
+    return 0;
 }
 int32_t VideoCaptureImpl::CaptureDelay()
 {
@@ -377,7 +389,8 @@ int32_t VideoCaptureImpl::SetCaptureRotation(VideoCaptureRotation rotation) {
   return 0;
 }
 
-void VideoCaptureImpl::EnableFrameRateCallback(const bool enable) {
+int32_t VideoCaptureImpl::EnableFrameRateCallback(const bool enable)
+{
     CriticalSectionScoped cs(&_apiCs);
     CriticalSectionScoped cs2(&_callBackCs);
     _frameRateCallBack = enable;
@@ -385,12 +398,15 @@ void VideoCaptureImpl::EnableFrameRateCallback(const bool enable) {
     {
         _lastFrameRateCallbackTime = TickTime::Now();
     }
+    return 0;
 }
 
-void VideoCaptureImpl::EnableNoPictureAlarm(const bool enable) {
+int32_t VideoCaptureImpl::EnableNoPictureAlarm(const bool enable)
+{
     CriticalSectionScoped cs(&_apiCs);
     CriticalSectionScoped cs2(&_callBackCs);
     _noPictureAlarmCallBack = enable;
+    return 0;
 }
 
 void VideoCaptureImpl::UpdateFrameCount()

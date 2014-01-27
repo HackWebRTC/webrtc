@@ -105,17 +105,18 @@ class VideoCaptureModule: public RefCountedModule {
   };
 
   //   Register capture data callback
-  virtual void RegisterCaptureDataCallback(
+  virtual int32_t RegisterCaptureDataCallback(
       VideoCaptureDataCallback& dataCallback) = 0;
 
   //  Remove capture data callback
-  virtual void DeRegisterCaptureDataCallback() = 0;
+  virtual int32_t DeRegisterCaptureDataCallback() = 0;
 
   // Register capture callback.
-  virtual void RegisterCaptureCallback(VideoCaptureFeedBack& callBack) = 0;
+  virtual int32_t RegisterCaptureCallback(
+      VideoCaptureFeedBack& callBack) = 0;
 
   //  Remove capture callback.
-  virtual void DeRegisterCaptureCallback() = 0;
+  virtual int32_t DeRegisterCaptureCallback() = 0;
 
   // Start capture device
   virtual int32_t StartCapture(
@@ -132,7 +133,7 @@ class VideoCaptureModule: public RefCountedModule {
   // Gets the current configuration.
   virtual int32_t CaptureSettings(VideoCaptureCapability& settings) = 0;
 
-  virtual void SetCaptureDelay(int32_t delayMS) = 0;
+  virtual int32_t SetCaptureDelay(int32_t delayMS) = 0;
 
   // Returns the current CaptureDelay. Only valid when the camera is running.
   virtual int32_t CaptureDelay() = 0;
@@ -148,8 +149,8 @@ class VideoCaptureModule: public RefCountedModule {
   virtual VideoCaptureEncodeInterface* GetEncodeInterface(
       const VideoCodec& codec) = 0;
 
-  virtual void EnableFrameRateCallback(const bool enable) = 0;
-  virtual void EnableNoPictureAlarm(const bool enable) = 0;
+  virtual int32_t EnableFrameRateCallback(const bool enable) = 0;
+  virtual int32_t EnableNoPictureAlarm(const bool enable) = 0;
 
 protected:
   virtual ~VideoCaptureModule() {};

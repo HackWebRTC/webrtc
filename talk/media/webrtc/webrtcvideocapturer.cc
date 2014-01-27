@@ -264,8 +264,8 @@ CaptureState WebRtcVideoCapturer::Start(const VideoFormat& capture_format) {
 
   std::string camera_id(GetId());
   uint32 start = talk_base::Time();
-  module_->RegisterCaptureDataCallback(*this);
-  if (module_->StartCapture(cap) != 0) {
+  if (module_->RegisterCaptureDataCallback(*this) != 0 ||
+      module_->StartCapture(cap) != 0) {
     LOG(LS_ERROR) << "Camera '" << camera_id << "' failed to start";
     return CS_FAILED;
   }

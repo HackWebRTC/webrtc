@@ -62,18 +62,17 @@ public:
     virtual int32_t ChangeUniqueId(const int32_t id);
 
     //Call backs
-    virtual void RegisterCaptureDataCallback(
-        VideoCaptureDataCallback& dataCallback);
-    virtual void DeRegisterCaptureDataCallback();
-    virtual void RegisterCaptureCallback(VideoCaptureFeedBack& callBack);
-    virtual void DeRegisterCaptureCallback();
+    virtual int32_t RegisterCaptureDataCallback(VideoCaptureDataCallback& dataCallback);
+    virtual int32_t DeRegisterCaptureDataCallback();
+    virtual int32_t RegisterCaptureCallback(VideoCaptureFeedBack& callBack);
+    virtual int32_t DeRegisterCaptureCallback();
 
-    virtual void SetCaptureDelay(int32_t delayMS);
+    virtual int32_t SetCaptureDelay(int32_t delayMS);
     virtual int32_t CaptureDelay();
     virtual int32_t SetCaptureRotation(VideoCaptureRotation rotation);
 
-    virtual void EnableFrameRateCallback(const bool enable);
-    virtual void EnableNoPictureAlarm(const bool enable);
+    virtual int32_t EnableFrameRateCallback(const bool enable);
+    virtual int32_t EnableNoPictureAlarm(const bool enable);
 
     virtual const char* CurrentDeviceName() const;
 
