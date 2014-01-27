@@ -91,21 +91,22 @@ class Call : public webrtc::Call, public PacketReceiver {
 class TraceDispatcher : public TraceCallback {
  public:
   TraceDispatcher()
-      : crit_(CriticalSectionWrapper::CreateCriticalSection()),
-        initialized_(false),
-        filter_(kTraceNone) {}
+      : lock_(CriticalSectionWrapper::CreateCriticalSection()),
+        filter_(kTraceNone) {
+    Trace::CreateTrace();
+    VideoEngine::SetTraceCallback(this);
+    VideoEngine::SetTraceFilter(kTraceNone);
+  }
 
   ~TraceDispatcher() {
-    if (initialized_) {
-      Trace::ReturnTrace();
-      VideoEngine::SetTraceCallback(NULL);
-    }
+    Trace::ReturnTrace();
+    VideoEngine::SetTraceCallback(NULL);
   }
 
   virtual void Print(TraceLevel level,
                      const char* message,
                      int length) OVERRIDE {
-    CriticalSectionScoped lock(crit_.get());
+    CriticalSectionScoped crit(lock_.get());
     for (std::map<Call*, Call::Config*>::iterator it = callbacks_.begin();
          it != callbacks_.end();
          ++it) {
@@ -118,20 +119,15 @@ class TraceDispatcher : public TraceCallback {
     if (config->trace_callback == NULL)
       return;
 
-    CriticalSectionScoped lock(crit_.get());
+    CriticalSectionScoped crit(lock_.get());
     callbacks_[call] = config;
 
     filter_ |= config->trace_filter;
-    if (filter_ != kTraceNone && !initialized_) {
-      initialized_ = true;
-      Trace::CreateTrace();
-      VideoEngine::SetTraceCallback(this);
-    }
     VideoEngine::SetTraceFilter(filter_);
   }
 
   void DeregisterCallback(Call* call) {
-    CriticalSectionScoped lock(crit_.get());
+    CriticalSectionScoped crit(lock_.get());
     callbacks_.erase(call);
 
     filter_ = kTraceNone;
@@ -145,8 +141,7 @@ class TraceDispatcher : public TraceCallback {
   }
 
  private:
-  scoped_ptr<CriticalSectionWrapper> crit_;
-  bool initialized_;
+  scoped_ptr<CriticalSectionWrapper> lock_;
   unsigned int filter_;
   std::map<Call*, Call::Config*> callbacks_;
 };
