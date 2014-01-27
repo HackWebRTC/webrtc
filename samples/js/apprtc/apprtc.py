@@ -147,19 +147,19 @@ def make_media_stream_constraints(audio, video):
   logging.info('Applying media constraints: ' + str(stream_constraints))
   return stream_constraints
 
-def make_pc_constraints(compat, dscp):
-  constraints = { 'optional': [] }
-  # For interop with FireFox. Enable DTLS in peerConnection ctor.
-  if compat.lower() == 'true':
-    constraints['optional'].append({'DtlsSrtpKeyAgreement': True})
-  # Disable DTLS in peerConnection ctor for loopback call. The value
-  # of compat is false for loopback mode.
-  else:
-    constraints['optional'].append({'DtlsSrtpKeyAgreement': False})
+def maybe_add_constraint(constraints, param, constraint):
+  if (param.lower() == 'true'):
+    constraints['optional'].append({constraint: True})
+  elif (param.lower() == 'false'):
+    constraints['optional'].append({constraint: False})
 
-  # DSCP for QoS support
-  if dscp.lower() == 'true':
-    constraints['optional'].append({'googDscp': True})
+  return constraints
+
+def make_pc_constraints(dtls, dscp, ipv6):
+  constraints = { 'optional': [] }
+  maybe_add_constraint(constraints, dtls, 'DtlsSrtpKeyAgreement')
+  maybe_add_constraint(constraints, dscp, 'googDscp')
+  maybe_add_constraint(constraints, ipv6, 'googIPv6')
 
   return constraints
 
@@ -379,23 +379,20 @@ class MainPage(webapp2.RequestHandler):
     if self.request.get('stereo'):
       stereo = self.request.get('stereo')
 
-    # Set compat to true by default.
-    compat = 'true'
-    if self.request.get('compat'):
-      compat = self.request.get('compat')
+    # Options for making pcConstraints
+    dtls = self.request.get('dtls')
+    dscp = self.request.get('dscp')
+    ipv6 = self.request.get('ipv6')
 
     debug = self.request.get('debug')
     if debug == 'loopback':
-      # Set compat to false as DTLS does not work for loopback.
-      compat = 'false'
+      # Set dtls to false as DTLS does not work for loopback.
+      dtls = 'false'
 
-    # Set DSCP for QoS support in WebRTC
-    dscp = self.request.get('dscp')
-
-    # token_timeout for channel creation, default 30min, max 2 days, min 3min.
+    # token_timeout for channel creation, default 30min, max 1 days, min 3min.
     token_timeout = self.request.get_range('tt',
                                            min_value = 3,
-                                           max_value = 3000,
+                                           max_value = 1440,
                                            default = 30)
 
     unittest = self.request.get('unittest')
@@ -448,7 +445,7 @@ class MainPage(webapp2.RequestHandler):
     room_link = append_url_arguments(self.request, room_link)
     token = create_channel(room, user, token_timeout)
     pc_config = make_pc_config(stun_server, turn_server, ts_pwd)
-    pc_constraints = make_pc_constraints(compat, dscp)
+    pc_constraints = make_pc_constraints(dtls, dscp, ipv6)
     offer_constraints = make_offer_constraints()
     media_constraints = make_media_stream_constraints(audio, video)
     template_values = {'error_messages': error_messages,
