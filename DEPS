@@ -276,6 +276,7 @@ hooks = [
                "--directory",
                "--recursive",
                "--num_threads=10",
+               "--no_auth",
                "--bucket", "chromium-webrtc-resources",
                Var("root_dir") + "/resources"],
   },
