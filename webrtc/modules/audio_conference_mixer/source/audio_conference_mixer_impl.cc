@@ -697,7 +697,7 @@ void AudioConferenceMixerImpl::UpdateToMix(
                     mixParticipantList->erase(replaceFrame->id_);
                     activeList.erase(replaceItem);
 
-                    activeList.push_front(*replaceItem);
+                    activeList.push_front(audioFrame);
                     (*mixParticipantList)[audioFrame->id_] = *participant;
                     assert(mixParticipantList->size() <=
                            kMaximumAmountOfMixedParticipants);
