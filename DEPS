@@ -78,10 +78,10 @@ deps = {
     (Var("googlecode_url") % "libyuv") + "/trunk@976",
 
   "third_party/opus":
-    Var("chromium_trunk") + "/src/third_party/opus@185405",
+    Var("chromium_trunk") + "/src/third_party/opus@245176",
 
   "third_party/opus/src":
-    Var("chromium_trunk") + "/deps/third_party/opus@185324",
+    Var("chromium_trunk") + "/deps/third_party/opus@239448",
 
   "third_party/protobuf":
     Var("chromium_trunk") + "/src/third_party/protobuf@" + Var("chromium_revision"),
