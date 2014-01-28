@@ -509,8 +509,6 @@
         'xmpp/pubsub_task.h',
         'xmpp/pubsubclient.cc',
         'xmpp/pubsubclient.h',
-        'xmpp/pubsubstateclient.cc',
-        'xmpp/pubsubstateclient.h',
         'xmpp/pubsubtasks.cc',
         'xmpp/pubsubtasks.h',
         'xmpp/receivetask.cc',

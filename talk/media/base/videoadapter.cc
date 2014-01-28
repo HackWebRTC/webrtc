@@ -36,9 +36,9 @@ namespace cricket {
 
 // TODO(fbarchard): Make downgrades settable
 static const int kMaxCpuDowngrades = 2;  // Downgrade at most 2 times for CPU.
-// The number of milliseconds of data to require before acting on cpu sampling
-// information.
-static const size_t kCpuLoadMinSampleTime = 5000;
+// The number of cpu samples to require before adapting. This value depends on
+// the cpu monitor sampling frequency being 2000ms.
+static const int kCpuLoadMinSamples = 3;
 // The amount of weight to give to each new cpu load sample. The lower the
 // value, the slower we'll adapt to changing cpu conditions.
 static const float kCpuLoadWeightCoefficient = 0.4f;
@@ -165,8 +165,8 @@ VideoAdapter::VideoAdapter()
       frames_(0),
       adapted_frames_(0),
       adaption_changes_(0),
-      previous_width(0),
-      previous_height(0),
+      previous_width_(0),
+      previous_height_(0),
       black_output_(false),
       is_black_(false),
       interval_next_frame_(0) {
@@ -240,7 +240,7 @@ int VideoAdapter::GetOutputNumPixels() const {
 // TODO(fbarchard): Add AdaptFrameRate function that only drops frames but
 // not resolution.
 bool VideoAdapter::AdaptFrame(const VideoFrame* in_frame,
-                              const VideoFrame** out_frame) {
+                              VideoFrame** out_frame) {
   talk_base::CritScope cs(&critical_section_);
   if (!in_frame || !out_frame) {
     return false;
@@ -306,8 +306,8 @@ bool VideoAdapter::AdaptFrame(const VideoFrame* in_frame,
   // resolution changes as well.  Consider dropping the statistics into their
   // own class which could be queried publically.
   bool changed = false;
-  if (previous_width && (previous_width != (*out_frame)->GetWidth() ||
-      previous_height != (*out_frame)->GetHeight())) {
+  if (previous_width_ && (previous_width_ != (*out_frame)->GetWidth() ||
+      previous_height_ != (*out_frame)->GetHeight())) {
     show = true;
     ++adaption_changes_;
     changed = true;
@@ -325,8 +325,8 @@ bool VideoAdapter::AdaptFrame(const VideoFrame* in_frame,
                  << "x" << (*out_frame)->GetHeight()
                  << " Changed: " << (changed ? "true" : "false");
   }
-  previous_width = (*out_frame)->GetWidth();
-  previous_height = (*out_frame)->GetHeight();
+  previous_width_ = (*out_frame)->GetWidth();
+  previous_height_ = (*out_frame)->GetHeight();
 
   return true;
 }
@@ -382,7 +382,8 @@ CoordinatedVideoAdapter::CoordinatedVideoAdapter()
       view_adaptation_(true),
       view_switch_(false),
       cpu_downgrade_count_(0),
-      cpu_adapt_wait_time_(0),
+      cpu_load_min_samples_(kCpuLoadMinSamples),
+      cpu_load_num_samples_(0),
       high_system_threshold_(kHighSystemCpuThreshold),
       low_system_threshold_(kLowSystemCpuThreshold),
       process_threshold_(kProcessCpuThreshold),
@@ -552,22 +553,18 @@ void CoordinatedVideoAdapter::OnCpuLoadUpdated(
   // we'll still calculate this information, in case smoothing is later enabled.
   system_load_average_ = kCpuLoadWeightCoefficient * system_load +
       (1.0f - kCpuLoadWeightCoefficient) * system_load_average_;
+  ++cpu_load_num_samples_;
   if (cpu_smoothing_) {
     system_load = system_load_average_;
-  }
-  // If we haven't started taking samples yet, wait until we have at least
-  // the correct number of samples per the wait time.
-  if (cpu_adapt_wait_time_ == 0) {
-    cpu_adapt_wait_time_ = talk_base::TimeAfter(kCpuLoadMinSampleTime);
   }
   AdaptRequest request = FindCpuRequest(current_cpus, max_cpus,
                                         process_load, system_load);
   // Make sure we're not adapting too quickly.
   if (request != KEEP) {
-    if (talk_base::TimeIsLater(talk_base::Time(),
-                               cpu_adapt_wait_time_)) {
+    if (cpu_load_num_samples_ < cpu_load_min_samples_) {
       LOG(LS_VERBOSE) << "VAdapt CPU load high/low but do not adapt until "
-                      << talk_base::TimeUntil(cpu_adapt_wait_time_) << " ms";
+                      << (cpu_load_min_samples_ - cpu_load_num_samples_)
+                      << " more samples";
       request = KEEP;
     }
   }
@@ -688,7 +685,7 @@ bool CoordinatedVideoAdapter::AdaptToMinimumFormat(int* new_width,
   if (changed) {
     // When any adaptation occurs, historic CPU load levels are no longer
     // accurate. Clear out our state so we can re-learn at the new normal.
-    cpu_adapt_wait_time_ = talk_base::TimeAfter(kCpuLoadMinSampleTime);
+    cpu_load_num_samples_ = 0;
     system_load_average_ = kCpuLoadInitialAverage;
   }
 
