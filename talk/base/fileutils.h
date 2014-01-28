@@ -458,18 +458,14 @@ bool CreateUniqueFile(Pathname& path, bool create_empty);
 // TODO(grunell): Remove when Chromium has started to use AEC in each source.
 // http://crbug.com/264611.
 #if defined(WIN32)
-#define HAS_PLATFORM_FILE 1
 typedef HANDLE PlatformFile;
 const PlatformFile kInvalidPlatformFileValue = INVALID_HANDLE_VALUE;
-#elif defined(POSIX) && !defined(__native_client__)
-#define HAS_PLATFORM_FILE 1
+#elif defined(POSIX)
 typedef int PlatformFile;
 const PlatformFile kInvalidPlatformFileValue = -1;
 #endif
-#ifdef HAS_PLATFORM_FILE
 FILE* FdopenPlatformFileForWriting(PlatformFile file);
 bool ClosePlatformFile(PlatformFile file);
-#endif
 
 }  // namespace talk_base
 

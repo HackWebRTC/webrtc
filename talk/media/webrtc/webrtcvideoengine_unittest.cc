@@ -36,7 +36,6 @@
 #include "talk/media/base/fakevideorenderer.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/testutils.h"
-#include "talk/media/base/videoadapter.h"
 #include "talk/media/base/videoengine_unittest.h"
 #include "talk/media/webrtc/fakewebrtcvideocapturemodule.h"
 #include "talk/media/webrtc/fakewebrtcvideoengine.h"

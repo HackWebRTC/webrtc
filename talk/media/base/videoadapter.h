@@ -62,7 +62,7 @@ class VideoAdapter {
   // successfully. Return false otherwise.
   // output_frame_ is owned by the VideoAdapter that has the best knowledge on
   // the output frame.
-  bool AdaptFrame(const VideoFrame* in_frame, VideoFrame** out_frame);
+  bool AdaptFrame(const VideoFrame* in_frame, const VideoFrame** out_frame);
 
   void set_scale_third(bool enable) {
     LOG(LS_INFO) << "Video Adapter third scaling is now "
@@ -90,8 +90,8 @@ class VideoAdapter {
   int frames_;  // Number of input frames.
   int adapted_frames_;  // Number of frames scaled.
   int adaption_changes_;  // Number of changes in scale factor.
-  size_t previous_width_;  // Previous adapter output width.
-  size_t previous_height_;  // Previous adapter output height.
+  size_t previous_width;  // Previous adapter output width.
+  size_t previous_height;  // Previous adapter output height.
   bool black_output_;  // Flag to tell if we need to black output_frame_.
   bool is_black_;  // Flag to tell if output_frame_ is currently black.
   int64 interval_next_frame_;
@@ -149,15 +149,14 @@ class CoordinatedVideoAdapter
 
   // When the video is decreased, set the waiting time for CPU adaptation to
   // decrease video again.
-  void set_cpu_load_min_samples(int cpu_load_min_samples) {
-    if (cpu_load_min_samples_ != cpu_load_min_samples) {
-      LOG(LS_INFO) << "VAdapt Change Cpu Adapt Min Samples from: "
-                   << cpu_load_min_samples_ << " to "
-                   << cpu_load_min_samples;
-      cpu_load_min_samples_ = cpu_load_min_samples;
+  void set_cpu_adapt_wait_time(uint32 cpu_adapt_wait_time) {
+    if (cpu_adapt_wait_time_ != static_cast<int>(cpu_adapt_wait_time)) {
+      LOG(LS_INFO) << "VAdapt Change Cpu Adapt Wait Time from: "
+                   << cpu_adapt_wait_time_ << " to "
+                   << cpu_adapt_wait_time;
+      cpu_adapt_wait_time_ = static_cast<int>(cpu_adapt_wait_time);
     }
   }
-  int cpu_load_min_samples() const { return cpu_load_min_samples_; }
   // CPU system load high threshold for reducing resolution.  e.g. 0.85f
   void set_high_system_threshold(float high_system_threshold) {
     ASSERT(high_system_threshold <= 1.0f);
@@ -221,8 +220,7 @@ class CoordinatedVideoAdapter
   bool view_adaptation_;  // True if view adaptation is enabled.
   bool view_switch_;  // True if view switch is enabled.
   int cpu_downgrade_count_;
-  int cpu_load_min_samples_;
-  int cpu_load_num_samples_;
+  int cpu_adapt_wait_time_;
   // cpu system load thresholds relative to max cpus.
   float high_system_threshold_;
   float low_system_threshold_;

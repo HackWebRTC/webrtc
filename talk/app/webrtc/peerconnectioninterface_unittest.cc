@@ -179,6 +179,7 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
     EXPECT_EQ(pc_->ice_gathering_state(), new_state);
   }
   virtual void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
+
     EXPECT_NE(PeerConnectionInterface::kIceGatheringNew,
               pc_->ice_gathering_state());
 

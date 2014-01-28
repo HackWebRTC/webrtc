@@ -475,25 +475,14 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
                   << desired_width << " x " << desired_height;
     return;
   }
-
-  VideoFrame* adapted_frame = &i420_frame;
-  if (!SignalAdaptFrame.is_empty() && !IsScreencast()) {
-    VideoFrame* out_frame = NULL;
-    SignalAdaptFrame(this, adapted_frame, &out_frame);
-    if (!out_frame) {
-      return;  // VideoAdapter dropped the frame.
-    }
-    adapted_frame = out_frame;
-  }
-
-  if (!muted_ && !ApplyProcessors(adapted_frame)) {
+  if (!muted_ && !ApplyProcessors(&i420_frame)) {
     // Processor dropped the frame.
     return;
   }
   if (muted_) {
-    adapted_frame->SetToBlack();
+    i420_frame.SetToBlack();
   }
-  SignalVideoFrame(this, adapted_frame);
+  SignalVideoFrame(this, &i420_frame);
 #endif  // VIDEO_FRAME_NAME
 }
 

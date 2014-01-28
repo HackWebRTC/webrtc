@@ -583,12 +583,13 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
         external_capture_(external_capture),
         capturer_updated_(false),
         interval_(0),
+        video_adapter_(new CoordinatedVideoAdapter),
         cpu_monitor_(cpu_monitor) {
-    overuse_observer_.reset(new WebRtcOveruseObserver(&video_adapter_));
-    SignalCpuAdaptationUnable.repeat(video_adapter_.SignalCpuAdaptationUnable);
+    overuse_observer_.reset(new WebRtcOveruseObserver(video_adapter_.get()));
+    SignalCpuAdaptationUnable.repeat(video_adapter_->SignalCpuAdaptationUnable);
     if (cpu_monitor) {
       cpu_monitor->SignalUpdate.connect(
-          &video_adapter_, &CoordinatedVideoAdapter::OnCpuLoadUpdated);
+          video_adapter_.get(), &CoordinatedVideoAdapter::OnCpuLoadUpdated);
     }
   }
 
@@ -598,7 +599,7 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
   bool sending() const { return sending_; }
   void set_muted(bool on) {
     // TODO(asapersson): add support.
-    // video_adapter_.SetBlackOutput(on);
+    // video_adapter_->SetBlackOutput(on);
     muted_ = on;
   }
   bool muted() {return muted_; }
@@ -613,7 +614,7 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
     if (video_format_ != cricket::VideoFormat()) {
       interval_ = video_format_.interval;
     }
-    video_adapter_.OnOutputFormatRequest(video_format_);
+    video_adapter_->OnOutputFormatRequest(video_format_);
   }
   void set_interval(int64 interval) {
     if (video_format() == cricket::VideoFormat()) {
@@ -626,13 +627,17 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
     VideoFormat format(codec.width, codec.height,
                        VideoFormat::FpsToInterval(codec.maxFramerate),
                        FOURCC_I420);
-    if (video_adapter_.output_format().IsSize0x0()) {
-      video_adapter_.SetOutputFormat(format);
+    if (video_adapter_->output_format().IsSize0x0()) {
+      video_adapter_->SetOutputFormat(format);
     }
   }
 
+  bool AdaptFrame(const VideoFrame* in_frame, const VideoFrame** out_frame) {
+    *out_frame = NULL;
+    return video_adapter_->AdaptFrame(in_frame, out_frame);
+  }
   int CurrentAdaptReason() const {
-    return video_adapter_.adapt_reason();
+    return video_adapter_->adapt_reason();
   }
   webrtc::CpuOveruseObserver* overuse_observer() {
     return overuse_observer_.get();
@@ -669,51 +674,40 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
         // be zero, and all frames may be dropped.
         // Consider fixing this by having video_adapter keep a pointer to the
         // video capturer.
-        video_adapter_.SetInputFormat(*capture_format);
+        video_adapter_->SetInputFormat(*capture_format);
       }
-      // TODO(thorcarpenter): When the adapter supports "only frame dropping"
-      // mode, also hook it up to screencast capturers.
-      video_capturer->SignalAdaptFrame.connect(
-          this, &WebRtcVideoChannelSendInfo::AdaptFrame);
     }
-  }
-
-  CoordinatedVideoAdapter* video_adapter() { return &video_adapter_; }
-
-  void AdaptFrame(VideoCapturer* capturer, const VideoFrame* input,
-                  VideoFrame** adapted) {
-    video_adapter_.AdaptFrame(input, adapted);
   }
 
   void ApplyCpuOptions(const VideoOptions& options) {
     bool cpu_adapt, cpu_smoothing, adapt_third;
     float low, med, high;
     if (options.adapt_input_to_cpu_usage.Get(&cpu_adapt)) {
-      video_adapter_.set_cpu_adaptation(cpu_adapt);
+      video_adapter_->set_cpu_adaptation(cpu_adapt);
     }
     if (options.adapt_cpu_with_smoothing.Get(&cpu_smoothing)) {
-      video_adapter_.set_cpu_smoothing(cpu_smoothing);
+      video_adapter_->set_cpu_smoothing(cpu_smoothing);
     }
     if (options.process_adaptation_threshhold.Get(&med)) {
-      video_adapter_.set_process_threshold(med);
+      video_adapter_->set_process_threshold(med);
     }
     if (options.system_low_adaptation_threshhold.Get(&low)) {
-      video_adapter_.set_low_system_threshold(low);
+      video_adapter_->set_low_system_threshold(low);
     }
     if (options.system_high_adaptation_threshhold.Get(&high)) {
-      video_adapter_.set_high_system_threshold(high);
+      video_adapter_->set_high_system_threshold(high);
     }
     if (options.video_adapt_third.Get(&adapt_third)) {
-      video_adapter_.set_scale_third(adapt_third);
+      video_adapter_->set_scale_third(adapt_third);
     }
   }
 
   void SetCpuOveruseDetection(bool enable) {
     if (cpu_monitor_ && enable) {
-      cpu_monitor_->SignalUpdate.disconnect(&video_adapter_);
+      cpu_monitor_->SignalUpdate.disconnect(video_adapter_.get());
     }
     overuse_observer_->Enable(enable);
-    video_adapter_.set_cpu_adaptation(enable);
+    video_adapter_->set_cpu_adaptation(enable);
   }
 
   void ProcessFrame(const VideoFrame& original_frame, bool mute,
@@ -767,7 +761,7 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
 
   int64 interval_;
 
-  CoordinatedVideoAdapter video_adapter_;
+  talk_base::scoped_ptr<CoordinatedVideoAdapter> video_adapter_;
   talk_base::CpuMonitor* cpu_monitor_;
   talk_base::scoped_ptr<WebRtcOveruseObserver> overuse_observer_;
 };
@@ -2860,16 +2854,7 @@ bool WebRtcVideoMediaChannel::GetRenderer(uint32 ssrc,
   return true;
 }
 
-bool WebRtcVideoMediaChannel::GetVideoAdapter(
-    uint32 ssrc, CoordinatedVideoAdapter** video_adapter) {
-  SendChannelMap::iterator it = send_channels_.find(ssrc);
-  if (it == send_channels_.end()) {
-    return false;
-  }
-  *video_adapter = it->second->video_adapter();
-  return true;
-}
-
+// TODO(zhurunz): Add unittests to test this function.
 void WebRtcVideoMediaChannel::SendFrame(VideoCapturer* capturer,
                                         const VideoFrame* frame) {
   // If the |capturer| is registered to any send channel, then send the frame

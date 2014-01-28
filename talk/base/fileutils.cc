@@ -297,7 +297,6 @@ bool CreateUniqueFile(Pathname& path, bool create_empty) {
   return true;
 }
 
-#ifdef HAS_PLATFORM_FILE
 // Taken from Chromium's base/platform_file_*.cc.
 // TODO(grunell): Remove when Chromium has started to use AEC in each source.
 // http://crbug.com/264611.
@@ -321,6 +320,5 @@ bool ClosePlatformFile(PlatformFile file) {
   return close(file);
 #endif
 }
-#endif  // HAS_PLATFORM_FILE
 
 }  // namespace talk_base
