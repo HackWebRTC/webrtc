@@ -32,7 +32,7 @@ class VieRemb;
 class ChannelGroup {
  public:
   ChannelGroup(int engine_id, ProcessThread* process_thread,
-               const Config& config);
+               const Config* config);
   ~ChannelGroup();
 
   void AddChannel(int channel_id);
@@ -57,6 +57,9 @@ class ChannelGroup {
   scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
   scoped_ptr<EncoderStateFeedback> encoder_state_feedback_;
   ChannelSet channels_;
+  const Config* config_;
+  // Placeholder for the case where this owns the config.
+  scoped_ptr<Config> own_config_;
 
   // Registered at construct time and assumed to outlive this class.
   ProcessThread* process_thread_;

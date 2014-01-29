@@ -10,6 +10,7 @@
 
 #include "webrtc/video_engine/vie_channel_manager.h"
 
+#include "webrtc/common.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/utility/interface/process_thread.h"
@@ -37,7 +38,7 @@ ViEChannelManager::ViEChannelManager(
       voice_sync_interface_(NULL),
       voice_engine_(NULL),
       module_process_thread_(NULL),
-      config_(config) {
+      engine_config_(config) {
   WEBRTC_TRACE(kTraceMemory, kTraceVideo, ViEId(engine_id),
                "ViEChannelManager::ViEChannelManager(engine_id: %d)",
                engine_id);
@@ -79,7 +80,8 @@ void ViEChannelManager::SetModuleProcessThread(
   module_process_thread_ = module_process_thread;
 }
 
-int ViEChannelManager::CreateChannel(int* channel_id) {
+int ViEChannelManager::CreateChannel(int* channel_id,
+                                     const Config* channel_group_config) {
   CriticalSectionScoped cs(channel_id_critsect_);
 
   // Get a new channel id.
@@ -90,11 +92,11 @@ int ViEChannelManager::CreateChannel(int* channel_id) {
 
   // Create a new channel group and add this channel.
   ChannelGroup* group = new ChannelGroup(engine_id_, module_process_thread_,
-                                         config_);
+                                         channel_group_config);
   BitrateController* bitrate_controller = group->GetBitrateController();
   ViEEncoder* vie_encoder = new ViEEncoder(engine_id_, new_channel_id,
                                            number_of_cores_,
-                                           config_,
+                                           engine_config_,
                                            *module_process_thread_,
                                            bitrate_controller);
 
@@ -163,7 +165,7 @@ int ViEChannelManager::CreateChannel(int* channel_id,
   if (sender) {
     // We need to create a new ViEEncoder.
     vie_encoder = new ViEEncoder(engine_id_, new_channel_id, number_of_cores_,
-                                 config_,
+                                 engine_config_,
                                  *module_process_thread_,
                                  bitrate_controller);
     if (!(vie_encoder->Init() &&
@@ -402,7 +404,7 @@ bool ViEChannelManager::CreateChannelObject(
 
   ViEChannel* vie_channel = new ViEChannel(channel_id, engine_id_,
                                            number_of_cores_,
-                                           config_,
+                                           engine_config_,
                                            *module_process_thread_,
                                            intra_frame_observer,
                                            bandwidth_observer,

@@ -40,6 +40,8 @@ class ViEBaseImpl
                                  int* capture_queue_delay_ms_per_s);
   virtual int CreateChannel(int& video_channel);  // NOLINT
   virtual int CreateChannel(int& video_channel,  // NOLINT
+                            const Config* config);
+  virtual int CreateChannel(int& video_channel,  // NOLINT
                             int original_channel);
   virtual int CreateReceiveChannel(int& video_channel,  // NOLINT
                                    int original_channel);

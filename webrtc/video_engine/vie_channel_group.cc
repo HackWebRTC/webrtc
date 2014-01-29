@@ -11,6 +11,7 @@
 #include "webrtc/video_engine/vie_channel_group.h"
 
 #include "webrtc/common.h"
+#include "webrtc/experiments.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
@@ -31,13 +32,14 @@ static const uint32_t kTimeOffsetSwitchThreshold = 30;
 class WrappingBitrateEstimator : public RemoteBitrateEstimator {
  public:
   WrappingBitrateEstimator(int engine_id, RemoteBitrateObserver* observer,
-                           Clock* clock, ProcessThread* process_thread)
+                           Clock* clock, ProcessThread* process_thread,
+                           const Config& config)
       : observer_(observer),
         clock_(clock),
         process_thread_(process_thread),
         crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
         engine_id_(engine_id),
-        min_bitrate_bps_(30000),
+        min_bitrate_bps_(config.Get<RemoteBitrateEstimatorMinRate>().min_rate),
         rbe_(RemoteBitrateEstimatorFactory().Create(observer_, clock_,
                                                     min_bitrate_bps_)),
         using_absolute_send_time_(false),
@@ -131,15 +133,23 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
 }  // namespace
 
 ChannelGroup::ChannelGroup(int engine_id, ProcessThread* process_thread,
-                           const Config& config)
+                           const Config* config)
     : remb_(new VieRemb()),
       bitrate_controller_(BitrateController::CreateBitrateController(true)),
       call_stats_(new CallStats()),
-      remote_bitrate_estimator_(new WrappingBitrateEstimator(engine_id,
-                                remb_.get(), Clock::GetRealTimeClock(),
-                                process_thread)),
       encoder_state_feedback_(new EncoderStateFeedback()),
+      config_(config),
+      own_config_(),
       process_thread_(process_thread) {
+  if (!config) {
+    own_config_.reset(new Config);
+    config_ = own_config_.get();
+  }
+  assert(config_);  // Must have a valid config pointer here.
+  remote_bitrate_estimator_.reset(
+      new WrappingBitrateEstimator(engine_id, remb_.get(),
+                                   Clock::GetRealTimeClock(), process_thread,
+                                   *config_)),
   call_stats_->RegisterStatsObserver(remote_bitrate_estimator_.get());
   process_thread->RegisterModule(call_stats_.get());
 }

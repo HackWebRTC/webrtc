@@ -50,7 +50,8 @@ class ViEChannelManager: private ViEManagerBase {
   void SetModuleProcessThread(ProcessThread* module_process_thread);
 
   // Creates a new channel. 'channel_id' will be the id of the created channel.
-  int CreateChannel(int* channel_id);
+  int CreateChannel(int* channel_id,
+                    const Config* config);
 
   // Creates a new channel grouped with |original_channel|. The new channel
   // will get its own |ViEEncoder| if |sender| is set to true. It will be a
@@ -131,7 +132,7 @@ class ViEChannelManager: private ViEManagerBase {
 
   VoiceEngine* voice_engine_;
   ProcessThread* module_process_thread_;
-  const Config& config_;
+  const Config& engine_config_;
 };
 
 class ViEChannelManagerScoped: private ViEManagerScopedBase {
