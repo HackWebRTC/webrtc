@@ -224,24 +224,31 @@ int VoEBaseImpl::OnDataAvailable(const int voe_channels[],
   // No need to go through the APM, demultiplex the data to each VoE channel,
   // encode and send to the network.
   for (int i = 0; i < number_of_voe_channels; ++i) {
-    voe::ChannelOwner ch =
-        _shared->channel_manager().GetChannel(voe_channels[i]);
-    voe::Channel* channel_ptr = ch.channel();
-    if (!channel_ptr)
-      continue;
-
-    if (channel_ptr->InputIsOnHold()) {
-      channel_ptr->UpdateLocalTimeStamp();
-    } else if (channel_ptr->Sending()) {
-      channel_ptr->Demultiplex(audio_data, sample_rate, number_of_frames,
-                               number_of_channels);
-      channel_ptr->PrepareEncodeAndSend(sample_rate);
-      channel_ptr->EncodeAndSend();
-    }
+    CaptureCallback(voe_channels[i], audio_data, 16, sample_rate,
+                    number_of_channels, number_of_frames);
   }
 
   // Return 0 to indicate no need to change the volume.
   return 0;
+}
+
+void VoEBaseImpl::CaptureCallback(int voe_channel, const void* audio_data,
+                                  int bits_per_sample, int sample_rate,
+                                  int number_of_channels,
+                                  int number_of_frames) {
+  voe::ChannelOwner ch = _shared->channel_manager().GetChannel(voe_channel);
+  voe::Channel* channel_ptr = ch.channel();
+  if (!channel_ptr)
+    return;
+
+  if (channel_ptr->InputIsOnHold()) {
+    channel_ptr->UpdateLocalTimeStamp();
+  } else if (channel_ptr->Sending()) {
+    channel_ptr->Demultiplex(static_cast<const int16_t*>(audio_data),
+                             sample_rate, number_of_frames, number_of_channels);
+    channel_ptr->PrepareEncodeAndSend(sample_rate);
+    channel_ptr->EncodeAndSend();
+  }
 }
 
 int VoEBaseImpl::RegisterVoiceEngineObserver(VoiceEngineObserver& observer)
