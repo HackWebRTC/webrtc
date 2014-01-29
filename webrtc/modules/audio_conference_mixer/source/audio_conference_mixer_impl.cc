@@ -145,8 +145,10 @@ bool AudioConferenceMixerImpl::Init() {
     if(_cbCrit.get() == NULL)
         return false;
 
-    _limiter.reset(AudioProcessing::Create(_id));
-    if(_limiter.get() == NULL)
+    Config config;
+    config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
+    _limiter.reset(AudioProcessing::Create(config));
+    if(!_limiter.get())
         return false;
 
     MemoryPool<AudioFrame>::CreateMemoryPool(_audioFramePool,

@@ -50,8 +50,15 @@ class VoiceDetection;
 //   except when really necessary.
 struct DelayCorrection {
   DelayCorrection() : enabled(false) {}
-  DelayCorrection(bool enabled) : enabled(enabled) {}
+  explicit DelayCorrection(bool enabled) : enabled(enabled) {}
+  bool enabled;
+};
 
+// Must be provided through AudioProcessing::Create(Confg&). It will have no
+// impact if used with AudioProcessing::SetExtraOptions().
+struct ExperimentalAgc {
+  ExperimentalAgc() : enabled(true) {}
+  explicit ExperimentalAgc(bool enabled) : enabled(enabled) {}
   bool enabled;
 };
 
