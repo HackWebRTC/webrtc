@@ -52,6 +52,9 @@ struct MacDesktopConfiguration {
   // increase as you move up the screen) or Carbon-style "top-down" coordinates.
   static MacDesktopConfiguration GetCurrent(Origin origin);
 
+  // Returns true if the given desktop configuration equals this one.
+  bool Equals(const MacDesktopConfiguration& other);
+
   // Bounds of the desktop in Density-Independent Pixels (DIPs).
   DesktopRect bounds;
 

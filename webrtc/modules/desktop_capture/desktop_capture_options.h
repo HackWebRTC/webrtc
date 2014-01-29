@@ -11,9 +11,14 @@
 #define WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURE_OPTIONS_H_
 
 #include "webrtc/system_wrappers/interface/constructor_magic.h"
+#include "webrtc/system_wrappers/interface/scoped_refptr.h"
 
 #if defined(USE_X11)
 #include "webrtc/modules/desktop_capture/x11/shared_x_display.h"
+#endif
+
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
+#include "webrtc/modules/desktop_capture/mac/desktop_configuration_monitor.h"
 #endif
 
 namespace webrtc {
@@ -38,6 +43,15 @@ class DesktopCaptureOptions {
   }
 #endif
 
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
+  DesktopConfigurationMonitor* configuration_monitor() const {
+    return configuration_monitor_;
+  }
+  void set_configuration_monitor(scoped_refptr<DesktopConfigurationMonitor> m) {
+    configuration_monitor_ = m;
+  }
+#endif
+
   // Flag indicating that the capturer should use screen change notifications.
   // Enables/disables use of XDAMAGE in the X11 capturer.
   bool use_update_notifications() const { return use_update_notifications_; }
@@ -55,6 +69,10 @@ class DesktopCaptureOptions {
  private:
 #if defined(USE_X11)
   scoped_refptr<SharedXDisplay> x_display_;
+#endif
+
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
+  scoped_refptr<DesktopConfigurationMonitor> configuration_monitor_;
 #endif
   bool use_update_notifications_;
   bool disable_effects_;

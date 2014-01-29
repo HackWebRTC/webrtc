@@ -36,6 +36,8 @@
         "differ_block.h",
         "mac/desktop_configuration.h",
         "mac/desktop_configuration.mm",
+        "mac/desktop_configuration_monitor.h",
+        "mac/desktop_configuration_monitor.cc",
         "mac/scoped_pixel_buffer_object.cc",
         "mac/scoped_pixel_buffer_object.h",
         "mouse_cursor.cc",

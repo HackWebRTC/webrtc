@@ -29,6 +29,9 @@ DesktopCaptureOptions DesktopCaptureOptions::CreateDefault() {
 #if defined(USE_X11)
   result.set_x_display(SharedXDisplay::CreateDefault());
 #endif
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
+  result.set_configuration_monitor(new DesktopConfigurationMonitor());
+#endif
   return result;
 }
 

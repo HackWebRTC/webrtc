@@ -143,4 +143,22 @@ MacDesktopConfiguration MacDesktopConfiguration::GetCurrent(Origin origin) {
   return desktop_config;
 }
 
+
+// For convenience of comparing MacDisplayConfigurations in
+// MacDesktopConfiguration::Equals.
+bool operator==(const MacDisplayConfiguration& left,
+                const MacDisplayConfiguration& right) {
+  return left.id == right.id &&
+      left.bounds.equals(right.bounds) &&
+      left.pixel_bounds.equals(right.pixel_bounds) &&
+      left.dip_to_pixel_scale == right.dip_to_pixel_scale;
+}
+
+bool MacDesktopConfiguration::Equals(const MacDesktopConfiguration& other) {
+  return bounds.equals(other.bounds) &&
+      pixel_bounds.equals(other.pixel_bounds) &&
+      dip_to_pixel_scale == other.dip_to_pixel_scale &&
+      displays == other.displays;
+}
+
 }  // namespace webrtc

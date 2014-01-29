@@ -26,11 +26,11 @@
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
 #include "webrtc/modules/desktop_capture/mac/desktop_configuration.h"
+#include "webrtc/modules/desktop_capture/mac/desktop_configuration_monitor.h"
 #include "webrtc/modules/desktop_capture/mac/scoped_pixel_buffer_object.h"
 #include "webrtc/modules/desktop_capture/mouse_cursor_shape.h"
 #include "webrtc/modules/desktop_capture/screen_capture_frame_queue.h"
 #include "webrtc/modules/desktop_capture/screen_capturer_helper.h"
-#include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
@@ -120,13 +120,11 @@ bool IsOSLionOrLater() {
   return darwin_version >= 11;
 }
 
-// The amount of time allowed for displays to reconfigure.
-const int64_t kDisplayConfigurationEventTimeoutMs = 10 * 1000;
-
 // A class to perform video frame capturing for mac.
 class ScreenCapturerMac : public ScreenCapturer {
  public:
-  ScreenCapturerMac();
+  explicit ScreenCapturerMac(
+      scoped_refptr<DesktopConfigurationMonitor> desktop_config_monitor);
   virtual ~ScreenCapturerMac();
 
   bool Init();
@@ -160,8 +158,6 @@ class ScreenCapturerMac : public ScreenCapturer {
   void ScreenUpdateMove(CGScreenUpdateMoveDelta delta,
                         size_t count,
                         const CGRect *rect_array);
-  void DisplaysReconfigured(CGDirectDisplayID display,
-                            CGDisplayChangeSummaryFlags flags);
   static void ScreenRefreshCallback(CGRectCount count,
                                     const CGRect *rect_array,
                                     void *user_parameter);
@@ -169,10 +165,6 @@ class ScreenCapturerMac : public ScreenCapturer {
                                        size_t count,
                                        const CGRect *rect_array,
                                        void *user_parameter);
-  static void DisplaysReconfiguredCallback(CGDirectDisplayID display,
-                                           CGDisplayChangeSummaryFlags flags,
-                                           void *user_parameter);
-
   void ReleaseBuffers();
 
   Callback* callback_;
@@ -184,9 +176,6 @@ class ScreenCapturerMac : public ScreenCapturer {
   // Queue of the frames buffers.
   ScreenCaptureFrameQueue queue_;
 
-  // Current display configuration.
-  MacDesktopConfiguration desktop_config_;
-
   // A thread-safe list of invalid rectangles, and the size of the most
   // recently captured screen.
   ScreenCapturerHelper helper_;
@@ -197,13 +186,12 @@ class ScreenCapturerMac : public ScreenCapturer {
   // Contains an invalid region from the previous capture.
   DesktopRegion last_invalid_region_;
 
-  // Used to ensure that frame captures do not take place while displays
-  // are being reconfigured.
-  scoped_ptr<EventWrapper> display_configuration_capture_event_;
+  // Monitoring display reconfiguration.
+  scoped_refptr<DesktopConfigurationMonitor> desktop_config_monitor_;
 
-  // Records the Ids of attached displays which are being reconfigured.
-  // Accessed on the thread on which we are notified of display events.
-  std::set<CGDirectDisplayID> reconfiguring_displays_;
+  // The desktop configuration obtained from desktop_config_monitor_ the last
+  // time of capturing.
+  MacDesktopConfiguration desktop_config_;
 
   // Power management assertion to prevent the screen from sleeping.
   IOPMAssertionID power_assertion_id_display_;
@@ -258,11 +246,12 @@ DesktopFrame* CreateFrame(
   return frame.release();
 }
 
-ScreenCapturerMac::ScreenCapturerMac()
+ScreenCapturerMac::ScreenCapturerMac(
+    scoped_refptr<DesktopConfigurationMonitor> desktop_config_monitor)
     : callback_(NULL),
       mouse_shape_observer_(NULL),
       cgl_context_(NULL),
-      display_configuration_capture_event_(EventWrapper::Create()),
+      desktop_config_monitor_(desktop_config_monitor),
       power_assertion_id_display_(kIOPMNullAssertionID),
       power_assertion_id_user_(kIOPMNullAssertionID),
       app_services_library_(NULL),
@@ -271,7 +260,6 @@ ScreenCapturerMac::ScreenCapturerMac()
       cg_display_bits_per_pixel_(NULL),
       opengl_library_(NULL),
       cgl_set_full_screen_(NULL) {
-  display_configuration_capture_event_->Set();
 }
 
 ScreenCapturerMac::~ScreenCapturerMac() {
@@ -286,11 +274,6 @@ ScreenCapturerMac::~ScreenCapturerMac() {
 
   ReleaseBuffers();
   UnregisterRefreshAndMoveHandlers();
-  CGError err = CGDisplayRemoveReconfigurationCallback(
-      ScreenCapturerMac::DisplaysReconfiguredCallback, this);
-  if (err != kCGErrorSuccess)
-    LOG(LS_ERROR) << "CGDisplayRemoveReconfigurationCallback " << err;
-
   dlclose(app_services_library_);
   dlclose(opengl_library_);
 }
@@ -299,14 +282,6 @@ bool ScreenCapturerMac::Init() {
   if (!RegisterRefreshAndMoveHandlers()) {
     return false;
   }
-
-  CGError err = CGDisplayRegisterReconfigurationCallback(
-      ScreenCapturerMac::DisplaysReconfiguredCallback, this);
-  if (err != kCGErrorSuccess) {
-    LOG(LS_ERROR) << "CGDisplayRegisterReconfigurationCallback " << err;
-    return false;
-  }
-
   ScreenConfigurationChanged();
   return true;
 }
@@ -351,14 +326,17 @@ void ScreenCapturerMac::Capture(
 
   queue_.MoveToNextFrame();
 
-  // Wait until the display configuration is stable. If one or more displays
-  // are reconfiguring then |display_configuration_capture_event_| will not be
-  // set until the reconfiguration completes.
-  // TODO(wez): Replace this with an early-exit (See crbug.com/104542).
-  if (!display_configuration_capture_event_->Wait(
-          kDisplayConfigurationEventTimeoutMs)) {
-    LOG_F(LS_ERROR) << "Event wait timed out.";
-    abort();
+  desktop_config_monitor_->Lock();
+  MacDesktopConfiguration new_config =
+      desktop_config_monitor_->desktop_configuration();
+  if (!desktop_config_.Equals(new_config)) {
+    desktop_config_ = new_config;
+    // If the display configuraiton has changed then refresh capturer data
+    // structures. Occasionally, the refresh and move handlers are lost when
+    // the screen mode changes, so re-register them here.
+    UnregisterRefreshAndMoveHandlers();
+    RegisterRefreshAndMoveHandlers();
+    ScreenConfigurationChanged();
   }
 
   DesktopRegion region;
@@ -400,7 +378,7 @@ void ScreenCapturerMac::Capture(
 
   // Signal that we are done capturing data from the display framebuffer,
   // and accessing display structures.
-  display_configuration_capture_event_->Set();
+  desktop_config_monitor_->Unlock();
 
   // Capture the current cursor shape and notify |callback_| if it has changed.
   CaptureCursor();
@@ -693,14 +671,8 @@ void ScreenCapturerMac::ScreenConfigurationChanged() {
   // Clear the dirty region, in case the display is down-sizing.
   helper_.ClearInvalidRegion();
 
-  // Refresh the cached desktop configuration.
-  desktop_config_ = MacDesktopConfiguration::GetCurrent(
-      MacDesktopConfiguration::TopLeftOrigin);
-
   // Re-mark the entire desktop as dirty.
-  helper_.InvalidateScreen(
-      DesktopSize(desktop_config_.pixel_bounds.width(),
-                          desktop_config_.pixel_bounds.height()));
+  helper_.InvalidateScreen(desktop_config_.pixel_bounds.size());
 
   // Make sure the frame buffers will be reallocated.
   queue_.Reset();
@@ -847,39 +819,6 @@ void ScreenCapturerMac::ScreenUpdateMove(CGScreenUpdateMoveDelta delta,
   ScreenRefresh(count, refresh_rects);
 }
 
-void ScreenCapturerMac::DisplaysReconfigured(
-    CGDirectDisplayID display,
-    CGDisplayChangeSummaryFlags flags) {
-  if (flags & kCGDisplayBeginConfigurationFlag) {
-    if (reconfiguring_displays_.empty()) {
-      // If this is the first display to start reconfiguring then wait on
-      // |display_configuration_capture_event_| to block the capture thread
-      // from accessing display memory until the reconfiguration completes.
-      if (!display_configuration_capture_event_->Wait(
-              kDisplayConfigurationEventTimeoutMs)) {
-        LOG_F(LS_ERROR) << "Event wait timed out.";
-        abort();
-      }
-    }
-
-    reconfiguring_displays_.insert(display);
-  } else {
-    reconfiguring_displays_.erase(display);
-
-    if (reconfiguring_displays_.empty()) {
-      // If no other displays are reconfiguring then refresh capturer data
-      // structures and un-block the capturer thread. Occasionally, the
-      // refresh and move handlers are lost when the screen mode changes,
-      // so re-register them here (the same does not appear to be true for
-      // the reconfiguration handler itself).
-      UnregisterRefreshAndMoveHandlers();
-      RegisterRefreshAndMoveHandlers();
-      ScreenConfigurationChanged();
-      display_configuration_capture_event_->Set();
-    }
-  }
-}
-
 void ScreenCapturerMac::ScreenRefreshCallback(CGRectCount count,
                                               const CGRect* rect_array,
                                               void* user_parameter) {
@@ -900,20 +839,15 @@ void ScreenCapturerMac::ScreenUpdateMoveCallback(
   capturer->ScreenUpdateMove(delta, count, rect_array);
 }
 
-void ScreenCapturerMac::DisplaysReconfiguredCallback(
-    CGDirectDisplayID display,
-    CGDisplayChangeSummaryFlags flags,
-    void* user_parameter) {
-  ScreenCapturerMac* capturer =
-      reinterpret_cast<ScreenCapturerMac*>(user_parameter);
-  capturer->DisplaysReconfigured(display, flags);
-}
-
 }  // namespace
 
 // static
 ScreenCapturer* ScreenCapturer::Create(const DesktopCaptureOptions& options) {
-  scoped_ptr<ScreenCapturerMac> capturer(new ScreenCapturerMac());
+  if (!options.configuration_monitor())
+    return NULL;
+
+  scoped_ptr<ScreenCapturerMac> capturer(
+      new ScreenCapturerMac(options.configuration_monitor()));
   if (!capturer->Init())
     capturer.reset();
   return capturer.release();
