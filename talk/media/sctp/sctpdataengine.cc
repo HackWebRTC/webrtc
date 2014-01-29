@@ -287,6 +287,7 @@ SctpDataEngine::~SctpDataEngine() {
   // TODO(ldixon): There is currently a bug in teardown of usrsctp that blocks
   // indefintely if a finish call made too soon after close calls. So teardown
   // has been skipped. Once the bug is fixed, retest and enable teardown.
+  // Tracked in webrtc issue 2749.
   //
   // usrsctp_engines_count--;
   // LOG(LS_VERBOSE) << "usrsctp_engines_count:" << usrsctp_engines_count;
