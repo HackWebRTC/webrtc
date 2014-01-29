@@ -39,6 +39,7 @@
 #include "talk/base/messagehandler.h"
 #include "talk/base/messagequeue.h"
 #include "talk/base/scoped_ptr.h"
+#include "talk/base/ssladapter.h"
 #include "talk/base/thread.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/mediachannel.h"
@@ -215,6 +216,16 @@ class SignalChannelClosedReopener : public sigslot::has_slots<> {
 class SctpDataMediaChannelTest : public testing::Test,
                                  public sigslot::has_slots<> {
  protected:
+  // usrsctp uses the NSS random number generator on non-Android platforms,
+  // so we need to initialize SSL.
+  static void SetUpTestCase() {
+    talk_base::InitializeSSL();
+  }
+
+  static void TearDownTestCase() {
+    talk_base::CleanupSSL();
+  }
+
   virtual void SetUp() {
     engine_.reset(new cricket::SctpDataEngine());
   }

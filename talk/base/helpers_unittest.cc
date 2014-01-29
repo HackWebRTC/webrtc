@@ -29,14 +29,26 @@
 
 #include "talk/base/gunit.h"
 #include "talk/base/helpers.h"
+#include "talk/base/ssladapter.h"
 
 namespace talk_base {
 
-TEST(RandomTest, TestCreateRandomId) {
+class RandomTest : public testing::Test {
+ public:
+  static void SetUpTestCase() {
+    talk_base::InitializeSSL();
+  }
+
+  static void TearDownTestCase() {
+    talk_base::CleanupSSL();
+  }
+};
+
+TEST_F(RandomTest, TestCreateRandomId) {
   CreateRandomId();
 }
 
-TEST(RandomTest, TestCreateRandomDouble) {
+TEST_F(RandomTest, TestCreateRandomDouble) {
   for (int i = 0; i < 100; ++i) {
     double r = CreateRandomDouble();
     EXPECT_GE(r, 0.0);
@@ -44,11 +56,11 @@ TEST(RandomTest, TestCreateRandomDouble) {
   }
 }
 
-TEST(RandomTest, TestCreateNonZeroRandomId) {
+TEST_F(RandomTest, TestCreateNonZeroRandomId) {
   EXPECT_NE(0U, CreateRandomNonZeroId());
 }
 
-TEST(RandomTest, TestCreateRandomString) {
+TEST_F(RandomTest, TestCreateRandomString) {
   std::string random = CreateRandomString(256);
   EXPECT_EQ(256U, random.size());
   std::string random2;
@@ -57,7 +69,7 @@ TEST(RandomTest, TestCreateRandomString) {
   EXPECT_EQ(256U, random2.size());
 }
 
-TEST(RandomTest, TestCreateRandomForTest) {
+TEST_F(RandomTest, TestCreateRandomForTest) {
   // Make sure we get the output we expect.
   SetRandomTestMode(true);
   EXPECT_EQ(2154761789U, CreateRandomId());

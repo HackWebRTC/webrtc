@@ -32,6 +32,7 @@
 #include "talk/base/gunit.h"
 #include "talk/base/helpers.h"
 #include "talk/base/scoped_ptr.h"
+#include "talk/base/ssladapter.h"
 #include "talk/base/stringencode.h"
 #include "talk/p2p/base/candidate.h"
 #include "talk/p2p/base/constants.h"
@@ -96,6 +97,14 @@ static cricket::SessionDescription* CreateCricketSessionDescription() {
 
 class JsepSessionDescriptionTest : public testing::Test {
  protected:
+  static void SetUpTestCase() {
+    talk_base::InitializeSSL();
+  }
+
+  static void TearDownTestCase() {
+    talk_base::CleanupSSL();
+  }
+
   virtual void SetUp() {
     int port = 1234;
     talk_base::SocketAddress address("127.0.0.1", port++);

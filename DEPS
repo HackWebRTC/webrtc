@@ -119,6 +119,15 @@ deps = {
   # Needed by build/common.gypi.
   "tools/win/supalink":
     Var("chromium_trunk") + "/src/tools/win/supalink@" + Var("chromium_revision"),
+
+  "net/third_party/nss":
+      Var("chromium_trunk") + "/src/net/third_party/nss@" + Var("chromium_revision"),
+
+  "third_party/usrsctp/":
+    Var("chromium_trunk") + "/src/third_party/usrsctp@" + Var("chromium_revision"),
+
+  "third_party/usrsctp/usrsctplib":
+    (Var("googlecode_url") % "sctp-refimpl") + "/trunk/KERN/usrsctp/usrsctplib@8723",
 }
 
 deps_os = {
@@ -147,21 +156,12 @@ deps_os = {
     # NSS, for SSLClientSocketNSS.
     "third_party/nss":
       From("chromium_deps", "src/third_party/nss"),
-
-    # TODO(fischman): delete this in favor of the copy in "ios" below, once the
-    # webrtc iOS bots are fixed to target_os=['ios'] in their .gclient
-    # https://code.google.com/p/webrtc/issues/detail?id=2152
-    "net/third_party/nss":
-      Var("chromium_trunk") + "/src/net/third_party/nss@" + Var("chromium_revision"),
   },
 
   "ios": {
     # NSS, for SSLClientSocketNSS.
     "third_party/nss":
       From("chromium_deps", "src/third_party/nss"),
-
-    "net/third_party/nss":
-      Var("chromium_trunk") + "/src/net/third_party/nss@" + Var("chromium_revision"),
 
     # class-dump utility to generate header files for undocumented SDKs.
     "testing/iossim/third_party/class-dump":
@@ -175,10 +175,8 @@ deps_os = {
   "unix": {
     "third_party/gold":
       From("chromium_deps", "src/third_party/gold"),
-
-    "third_party/openssl":
-      From("chromium_deps", "src/third_party/openssl"),
   },
+
   "android": {
     # Precompiled tools needed for Android test execution. Needed since we can't
     # compile them from source in WebRTC since they depend on Chromium's base.

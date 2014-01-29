@@ -39,6 +39,7 @@
 #import "RTCVideoTrack.h"
 
 #include "talk/base/gunit.h"
+#include "talk/base/ssladapter.h"
 
 #if !defined(__has_feature) || !__has_feature(objc_arc)
 #error "This file requires ARC support."
@@ -229,8 +230,12 @@
 
 @end
 
-
+// TODO(fischman): move {Initialize,Cleanup}SSL into alloc/dealloc of
+// RTCPeerConnectionTest and avoid the appearance of RTCPeerConnectionTest being
+// a TestBase since it's not.
 TEST(RTCPeerConnectionTest, SessionTest) {
+  talk_base::InitializeSSL();
   RTCPeerConnectionTest *pcTest = [[RTCPeerConnectionTest alloc] init];
   [pcTest testCompleteSession];
+  talk_base::CleanupSSL();
 }

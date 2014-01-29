@@ -32,6 +32,7 @@
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/app/webrtc/test/fakeconstraints.h"
+#include "talk/app/webrtc/test/fakedtlsidentityservice.h"
 #include "talk/app/webrtc/test/mockpeerconnectionobservers.h"
 #include "talk/app/webrtc/test/testsdpstrings.h"
 #include "talk/app/webrtc/videosource.h"
@@ -258,9 +259,20 @@ class PeerConnectionInterfaceTest : public testing::Test {
     servers.push_back(server);
 
     port_allocator_factory_ = FakePortAllocatorFactory::Create();
+
+    // TODO(jiayl): we should always pass a FakeIdentityService so that DTLS
+    // is enabled by default like in Chrome (issue 2838).
+    FakeIdentityService* dtls_service = NULL;
+    bool dtls;
+    if (FindConstraint(constraints,
+                       webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
+                       &dtls,
+                       NULL) && dtls) {
+      dtls_service = new FakeIdentityService();
+    }
     pc_ = pc_factory_->CreatePeerConnection(servers, constraints,
                                             port_allocator_factory_.get(),
-                                            NULL,
+                                            dtls_service,
                                             &observer_);
     ASSERT_TRUE(pc_.get() != NULL);
     observer_.SetPeerConnectionInterface(pc_.get());

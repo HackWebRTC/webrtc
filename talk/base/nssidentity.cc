@@ -48,6 +48,7 @@
 #include "talk/base/logging.h"
 #include "talk/base/helpers.h"
 #include "talk/base/nssstreamadapter.h"
+#include "talk/base/safe_conversions.h"
 
 namespace talk_base {
 
@@ -143,7 +144,7 @@ NSSCertificate *NSSCertificate::FromPEMString(const std::string &pem_string) {
   SECItem der_cert;
   der_cert.data = reinterpret_cast<unsigned char *>(const_cast<char *>(
       der.data()));
-  der_cert.len = der.size();
+  der_cert.len = checked_cast<unsigned int>(der.size());
   CERTCertificate *cert = CERT_NewTempCertificate(CERT_GetDefaultCertDB(),
       &der_cert, NULL, PR_FALSE, PR_TRUE);
 
@@ -472,10 +473,9 @@ SSLIdentity* NSSIdentity::FromPEMStrings(const std::string& private_key,
     return NULL;
 
   SECItem private_key_item;
-  private_key_item.data =
-      reinterpret_cast<unsigned char *>(
-          const_cast<char *>(private_key_der.c_str()));
-  private_key_item.len = private_key_der.size();
+  private_key_item.data = reinterpret_cast<unsigned char *>(
+      const_cast<char *>(private_key_der.c_str()));
+  private_key_item.len = checked_cast<unsigned int>(private_key_der.size());
 
   const unsigned int key_usage = KU_KEY_ENCIPHERMENT | KU_DATA_ENCIPHERMENT |
       KU_DIGITAL_SIGNATURE;

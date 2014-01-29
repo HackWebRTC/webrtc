@@ -31,6 +31,7 @@
 #include "talk/base/gunit.h"
 #include "talk/base/helpers.h"
 #include "talk/base/scoped_ptr.h"
+#include "talk/base/ssladapter.h"
 #include "talk/base/timing.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/fakenetworkinterface.h"
@@ -82,6 +83,14 @@ class FakeDataReceiver : public sigslot::has_slots<> {
 
 class RtpDataMediaChannelTest : public testing::Test {
  protected:
+  static void SetUpTestCase() {
+    talk_base::InitializeSSL();
+  }
+
+  static void TearDownTestCase() {
+    talk_base::CleanupSSL();
+  }
+
   virtual void SetUp() {
     // Seed needed for each test to satisfy expectations.
     iface_.reset(new cricket::FakeNetworkInterface());

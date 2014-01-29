@@ -93,6 +93,11 @@ inline void Unused(const void*) {}
 
 namespace talk_base {
 
+
+// If a debugger is attached, triggers a debugger breakpoint. If a debugger is
+// not attached, forces program termination.
+void Break();
+
 // LogAssert writes information about an assertion to the log. It's called by
 // Assert (and from the ASSERT macro in debug mode) before any other action
 // is taken (e.g. breaking the debugger, abort()ing, etc.).
@@ -113,14 +118,9 @@ void SetCustomAssertLogger(AssertLogger logger);
 
 }  // namespace talk_base
 
-
 #if ENABLE_DEBUG
 
 namespace talk_base {
-
-// If a debugger is attached, triggers a debugger breakpoint. If a debugger is
-// not attached, forces program termination.
-void Break();
 
 inline bool Assert(bool result, const char* function, const char* file,
                    int line, const char* expression) {

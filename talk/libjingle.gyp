@@ -27,7 +27,6 @@
 
 {
   'includes': ['build/common.gypi'],
-
   'conditions': [
     ['os_posix == 1 and OS != "mac" and OS != "ios"', {
      'conditions': [
@@ -546,13 +545,6 @@
         'xmpp/xmppthread.h',
       ],
       'conditions': [
-        ['OS=="mac" or OS=="ios" or OS=="win"', {
-          'dependencies': [
-            # The chromium copy of nss should NOT be used on platforms that
-            # have NSS as system libraries, such as linux.
-            '<(DEPTH)/third_party/nss/nss.gyp:nss',
-          ],
-        }],
         ['OS=="android"', {
           'sources': [
             'base/ifaddrs-android.cc',
@@ -713,11 +705,6 @@
             'base/unixfilesystem.h',
           ],
           'conditions': [
-            ['OS=="linux" or OS=="android"', {
-              'dependencies': [
-                '<(DEPTH)/third_party/openssl/openssl.gyp:openssl',
-              ],
-            }],
             ['OS!="ios"', {
               'sources': [
                 'base/openssladapter.cc',
@@ -779,8 +766,14 @@
     {
       'target_name': 'libjingle_media',
       'type': 'static_library',
+      'include_dirs': [
+        # TODO(jiayl): move this into the direct_dependent_settings of
+        # usrsctp.gyp.
+        '<(DEPTH)/third_party/usrsctp',
+      ],
       'dependencies': [
         '<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv',
+        '<(DEPTH)/third_party/usrsctp/usrsctp.gyp:usrsctplib',
         '<(webrtc_root)/modules/modules.gyp:video_capture_module',
         '<(webrtc_root)/modules/modules.gyp:video_render_module',
         '<(webrtc_root)/video_engine/video_engine.gyp:video_engine_core',
@@ -847,9 +840,8 @@
         'media/devices/filevideocapturer.h',
         'media/devices/videorendererfactory.h',
         'media/other/linphonemediaengine.h',
-        # TODO(ronghuawu): Enable when SCTP is ready.
-        # 'media/sctp/sctpdataengine.cc',
-        # 'media/sctp/sctpdataengine.h',
+        'media/sctp/sctpdataengine.cc',
+        'media/sctp/sctpdataengine.h',
         'media/webrtc/webrtccommon.h',
         'media/webrtc/webrtcexport.h',
         'media/webrtc/webrtcmediaengine.h',
@@ -965,6 +957,13 @@
             # libjpeg which pulls in libyuv which currently disabled.
             '../third_party/libyuv/include',
           ],
+          'dependencies!': [
+            '<(DEPTH)/third_party/usrsctp/usrsctp.gyp:usrsctplib',
+          ],
+          'sources!': [
+            'media/sctp/sctpdataengine.cc',
+            'media/sctp/sctpdataengine.h',
+          ],
         }],
         ['OS=="android"', {
           'sources': [
@@ -989,10 +988,6 @@
           '<(DEPTH)/testing/gtest/include',
         ],
       },
-      'defines': [
-        # TODO(ronghuawu): enable SCTP when it's ready.
-        # 'HAVE_SCTP',
-      ],
       'sources': [
         'p2p/base/asyncstuntcpsocket.cc',
         'p2p/base/asyncstuntcpsocket.h',

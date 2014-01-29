@@ -35,6 +35,7 @@
 #include "talk/base/buffer.h"
 #include "talk/base/helpers.h"
 #include "talk/base/logging.h"
+#include "talk/base/safe_conversions.h"
 #include "talk/media/base/codec.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/streamparams.h"
@@ -560,7 +561,7 @@ bool SctpDataMediaChannel::SendData(
   send_res = usrsctp_sendv(sock_, payload.data(),
                            static_cast<size_t>(payload.length()),
                            NULL, 0, &spa,
-                           static_cast<socklen_t>(sizeof(spa)),
+                           talk_base::checked_cast<socklen_t>(sizeof(spa)),
                            SCTP_SENDV_SPA, 0);
   if (send_res < 0) {
     if (errno == EWOULDBLOCK) {
@@ -919,15 +920,16 @@ bool SctpDataMediaChannel::SendQueuedStreamResets() {
       &reset_stream_buf[0]);
   resetp->srs_assoc_id = SCTP_ALL_ASSOC;
   resetp->srs_flags = SCTP_STREAM_RESET_INCOMING | SCTP_STREAM_RESET_OUTGOING;
-  resetp->srs_number_streams = num_streams;
+  resetp->srs_number_streams = talk_base::checked_cast<uint16_t>(num_streams);
   int result_idx = 0;
   for (StreamSet::iterator it = queued_reset_streams_.begin();
        it != queued_reset_streams_.end(); ++it) {
     resetp->srs_stream_list[result_idx++] = *it;
   }
 
-  int ret = usrsctp_setsockopt(sock_, IPPROTO_SCTP, SCTP_RESET_STREAMS, resetp,
-                               reset_stream_buf.size());
+  int ret = usrsctp_setsockopt(
+      sock_, IPPROTO_SCTP, SCTP_RESET_STREAMS, resetp,
+      talk_base::checked_cast<socklen_t>(reset_stream_buf.size()));
   if (ret < 0) {
     LOG_ERRNO(LS_ERROR) << debug_name_ << "Failed to send a stream reset for "
                         << num_streams << " streams";

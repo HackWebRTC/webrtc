@@ -101,11 +101,10 @@
       ['OS=="ios"', {
         'defines': [
           'IOS',
-          'HAVE_NSS_SSL_H=1',
-          'SSL_USE_NSS_RNG',
         ],
-        'defines!': [
-          'HAVE_OPENSSL_SSL_H=1',
+      }, {
+        'defines': [
+          'HAVE_SCTP',
         ],
       }],
       ['OS=="ios" or (OS=="mac" and target_arch!="ia32")', {
@@ -118,9 +117,39 @@
           'HASH_NAMESPACE=__gnu_cxx',
           'POSIX',
           'DISABLE_DYNAMIC_CAST',
-          'HAVE_OPENSSL_SSL_H=1',
           # The POSIX standard says we have to define this.
           '_REENTRANT',
+        ],
+      }],
+      # TODO(jiayl): collapse the following 5 defines into 2, one for NSS and
+      # one for OPENSSL, and update the relevant code.
+      ['use_openssl==1', {
+        'defines': [
+          'SSL_USE_OPENSSL',
+          'HAVE_OPENSSL_SSL_H',
+        ],
+        'dependencies': [
+          '<(DEPTH)/third_party/openssl/openssl.gyp:openssl',
+        ],
+      }, {
+        'defines': [
+          'SSL_USE_NSS',
+          'HAVE_NSS_SSL_H',
+          'SSL_USE_NSS_RNG',
+        ],
+        'conditions': [
+          ['os_posix == 1 and OS != "mac" and OS != "ios" and OS != "android"', {
+            'dependencies': [
+              '<(DEPTH)/build/linux/system.gyp:ssl',
+            ],
+          }],
+          ['OS == "mac" or OS == "ios" or OS == "win"', {
+            'dependencies': [
+              '<(DEPTH)/net/third_party/nss/ssl.gyp:libssl',
+              '<(DEPTH)/third_party/nss/nss.gyp:nspr',
+              '<(DEPTH)/third_party/nss/nss.gyp:nss',
+            ],
+          }],
         ],
       }],
     ],
