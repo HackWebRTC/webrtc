@@ -312,6 +312,8 @@ void Call::DestroyVideoReceiveStream(
         receive_ssrcs_.begin();
     while (it != receive_ssrcs_.end()) {
       if (it->second == static_cast<VideoReceiveStream*>(receive_stream)) {
+        assert(receive_stream_impl == NULL ||
+            receive_stream_impl == it->second);
         receive_stream_impl = it->second;
         receive_ssrcs_.erase(it++);
       } else {
@@ -365,19 +367,14 @@ bool Call::DeliverRtcp(const uint8_t* packet, size_t length) {
 bool Call::DeliverRtp(const RTPHeader& header,
                       const uint8_t* packet,
                       size_t length) {
-  VideoReceiveStream* receiver;
-  {
-    ReadLockScoped read_lock(*receive_lock_);
-    std::map<uint32_t, VideoReceiveStream*>::iterator it =
-        receive_ssrcs_.find(header.ssrc);
-    if (it == receive_ssrcs_.end()) {
-      // TODO(pbos): Log some warning, SSRC without receiver.
-      return false;
-    }
-
-    receiver = it->second;
+  ReadLockScoped read_lock(*receive_lock_);
+  std::map<uint32_t, VideoReceiveStream*>::iterator it =
+      receive_ssrcs_.find(header.ssrc);
+  if (it == receive_ssrcs_.end()) {
+    // TODO(pbos): Log some warning, SSRC without receiver.
+    return false;
   }
-  return receiver->DeliverRtp(static_cast<const uint8_t*>(packet), length);
+  return it->second->DeliverRtp(static_cast<const uint8_t*>(packet), length);
 }
 
 bool Call::DeliverPacket(const uint8_t* packet, size_t length) {
