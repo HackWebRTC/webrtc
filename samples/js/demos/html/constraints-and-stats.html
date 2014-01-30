@@ -27,15 +27,15 @@ function openCamera() {
   if (mystream) {
     mystream.stop();
   }
-  navigator.webkitGetUserMedia(cameraConstraints(), gotStream, function() {
+  navigator.getUserMedia(cameraConstraints(), gotStream, function() {
      log("GetUserMedia failed");
     });
-} 
+}
 
 function gotStream(stream) {
   log("GetUserMedia succeeded");
   mystream = stream;
-  $("local-video").src = webkitURL.createObjectURL(stream);
+  attachMediaStream($("local-video"), stream);
 }
 
 function cameraConstraints() {
@@ -73,8 +73,8 @@ function streamConstraints() {
 }
 
 function connect() {
-  pc1 = new webkitRTCPeerConnection(null);
-  pc2 = new webkitRTCPeerConnection(null);
+  pc1 = new RTCPeerConnection(null);
+  pc2 = new RTCPeerConnection(null);
   pc1.addStream(mystream, streamConstraints());
   log('PC1 creating offer');
   pc1.onnegotiationeeded = function() {
@@ -97,7 +97,7 @@ function connect() {
   }
   pc2.onaddstream = function(e) {
     log('PC2 got stream');
-    $('remote-video').src = webkitURL.createObjectURL(e.stream);
+    attachMediaStream($('remote-video'), e.stream);
     log('Remote video is ' + $('remote-video').src);
   }
   pc1.createOffer(function(desc) {
@@ -280,7 +280,7 @@ function dumpStats(obj) {
   }
   return statsString;
 }
-  
+
 
 // Utility to show the value of a field in a span called name+Display
 function showValue(name, value) {
