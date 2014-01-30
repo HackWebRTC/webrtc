@@ -83,6 +83,8 @@ void MyObserver::CallbackOnError(int channel, int err_code) {
   // Add printf for other error codes here
   if (err_code == VE_TYPING_NOISE_WARNING) {
     printf("  TYPING NOISE DETECTED \n");
+  } else if (err_code == VE_TYPING_NOISE_OFF_WARNING) {
+    printf("  TYPING NOISE OFF DETECTED \n");
   } else if (err_code == VE_RECEIVE_PACKET_TIMEOUT) {
     printf("  RECEIVE PACKET TIMEOUT \n");
   } else if (err_code == VE_PACKET_RECEIPT_RESTARTED) {
@@ -456,7 +458,7 @@ void RunTest(std::string out_path) {
       printf("%i. Toggle microphone mute \n", option_index++);
       printf("%i. Toggle on hold status \n", option_index++);
       printf("%i. Get last error code \n", option_index++);
-      printf("%i. Toggle typing detection (for Mac/Windows only) \n",
+      printf("%i. Toggle typing detection \n",
              option_index++);
       printf("%i. Record a PCM file \n", option_index++);
       printf("%i. Play a previously recorded PCM file locally \n",

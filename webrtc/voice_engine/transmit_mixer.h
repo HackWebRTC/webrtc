@@ -13,6 +13,7 @@
 
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_types.h"
+#include "webrtc/modules/audio_processing/typing_detection.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/utility/interface/file_player.h"
 #include "webrtc/modules/utility/interface/file_recorder.h"
@@ -186,7 +187,7 @@ private:
     void ProcessAudio(int delay_ms, int clock_drift, int current_mic_level);
 
 #ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
-    int TypingDetection(bool keyPressed);
+    void TypingDetection(bool keyPressed);
 #endif
 
     // uses
@@ -215,19 +216,9 @@ private:
     CriticalSectionWrapper& _callbackCritSect;
 
 #ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
-    int32_t _timeActive;
-    int32_t _timeSinceLastTyping;
-    int32_t _penaltyCounter;
+    webrtc::TypingDetection _typingDetection;
     bool _typingNoiseWarningPending;
     bool _typingNoiseDetected;
-
-    // Tunable treshold values
-    int _timeWindow; // nr of10ms slots accepted to count as a hit.
-    int _costPerTyping; // Penalty added for a typing + activity coincide.
-    int _reportingThreshold; // Threshold for _penaltyCounter.
-    int _penaltyDecay; // How much we reduce _penaltyCounter every 10 ms.
-    int _typeEventDelay; // How old typing events we allow
-
 #endif
     bool _saturationWarning;
 

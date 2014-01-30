@@ -69,6 +69,8 @@
         'noise_suppression_impl.h',
         'processing_component.cc',
         'processing_component.h',
+        'typing_detection.cc',
+        'typing_detection.h',
         'utility/delay_estimator.c',
         'utility/delay_estimator.h',
         'utility/delay_estimator_internal.h',
