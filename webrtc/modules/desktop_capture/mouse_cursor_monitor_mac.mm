@@ -15,15 +15,19 @@
 #include <Cocoa/Cocoa.h>
 #include <CoreFoundation/CoreFoundation.h>
 
+#include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
+#include "webrtc/modules/desktop_capture/mac/desktop_configuration_monitor.h"
 #include "webrtc/modules/desktop_capture/mouse_cursor.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/scoped_refptr.h"
 
 namespace webrtc {
 
 class MouseCursorMonitorMac : public MouseCursorMonitor {
  public:
-  MouseCursorMonitorMac(CGWindowID window_id);
+  MouseCursorMonitorMac(const DesktopCaptureOptions& options,
+                        CGWindowID window_id);
   virtual ~MouseCursorMonitorMac();
 
   virtual void Init(Callback* callback, Mode mode) OVERRIDE;
@@ -32,6 +36,7 @@ class MouseCursorMonitorMac : public MouseCursorMonitor {
  private:
   void CaptureImage();
 
+  scoped_refptr<DesktopConfigurationMonitor> configuration_monitor_;
   CGWindowID window_id_;
 
   Callback* callback_;
@@ -40,8 +45,11 @@ class MouseCursorMonitorMac : public MouseCursorMonitor {
   scoped_ptr<MouseCursor> last_cursor_;
 };
 
-MouseCursorMonitorMac::MouseCursorMonitorMac(CGWindowID window_id)
-    : window_id_(window_id),
+MouseCursorMonitorMac::MouseCursorMonitorMac(
+    const DesktopCaptureOptions& options,
+    CGWindowID window_id)
+    : configuration_monitor_(options.configuration_monitor()),
+      window_id_(window_id),
       callback_(NULL),
       mode_(SHAPE_AND_POSITION) {
 }
@@ -147,6 +155,15 @@ void MouseCursorMonitorMac::Capture() {
     }
   }
 
+  // Convert Density Independent Pixel to physical pixel.
+  configuration_monitor_->Lock();
+  float scale =
+      configuration_monitor_->desktop_configuration().dip_to_pixel_scale;
+  configuration_monitor_->Unlock();
+
+  position = DesktopVector(round(position.x() * scale),
+                           round(position.y() * scale));
+
   callback_->OnMouseCursorPosition(state, position);
 }
 
@@ -207,13 +224,13 @@ void MouseCursorMonitorMac::CaptureImage() {
 
 MouseCursorMonitor* MouseCursorMonitor::CreateForWindow(
     const DesktopCaptureOptions& options, WindowId window) {
-  return new MouseCursorMonitorMac(window);
+  return new MouseCursorMonitorMac(options, window);
 }
 
 MouseCursorMonitor* MouseCursorMonitor::CreateForScreen(
     const DesktopCaptureOptions& options,
     ScreenId screen) {
-  return new MouseCursorMonitorMac(kCGNullWindowID);
+  return new MouseCursorMonitorMac(options, kCGNullWindowID);
 }
 
 }  // namespace webrtc
