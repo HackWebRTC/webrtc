@@ -281,8 +281,7 @@ hooks = [
   {
     # A change to a .gyp, .gypi, or to GYP itself should run the generator.
     "pattern": ".",
-    "action": ["python", Var("root_dir") + "/build/gyp_chromium",
-               "--depth=" + Var("root_dir"), Var("root_dir") + "/all.gyp",
+    "action": ["python", Var("root_dir") + "/webrtc/build/gyp_webrtc",
                Var("extra_gyp_flag")],
   },
 ]
