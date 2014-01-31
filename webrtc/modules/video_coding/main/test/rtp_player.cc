@@ -203,7 +203,7 @@ class SsrcHandlers {
     }
   }
 
-  int RegisterSsrc(uint32_t ssrc, LostPackets* lost_packets) {
+  int RegisterSsrc(uint32_t ssrc, LostPackets* lost_packets, Clock* clock) {
     if (handlers_.count(ssrc) > 0) {
       return 0;
     }
@@ -217,6 +217,7 @@ class SsrcHandlers {
     }
 
     RtpRtcp::Configuration configuration;
+    configuration.clock = clock;
     configuration.id = 1;
     configuration.audio = false;
     handler->rtp_module_.reset(RtpReceiver::CreateVideoReceiver(
@@ -434,7 +435,7 @@ class RtpPlayerImpl : public RtpPlayerInterface {
         return -1;
       }
       uint32_t ssrc = header.ssrc;
-      if (ssrc_handlers_.RegisterSsrc(ssrc, &lost_packets_) < 0) {
+      if (ssrc_handlers_.RegisterSsrc(ssrc, &lost_packets_, clock_) < 0) {
         DEBUG_LOG1("Unable to register ssrc: %d", ssrc);
         return -1;
       }

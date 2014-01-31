@@ -27,5 +27,61 @@
         'rtp_to_ntp.cc',
       ], # source
     },
+    {
+      'target_name': 'bwe_tools_util',
+      'type': 'static_library',
+      'dependencies': [
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        'rtp_rtcp',
+      ],
+      'sources': [
+        'tools/bwe_rtp.cc',
+        'tools/bwe_rtp.h',
+      ],
+    },
+    {
+      'target_name': 'bwe_rtp_to_text',
+      'type': 'executable',
+      'includes': [
+        '../rtp_rtcp/source/rtp_rtcp.gypi',
+      ],
+      'dependencies': [
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        'bwe_tools_util',
+        'rtp_rtcp',
+      ],
+      'direct_dependent_settings': {
+        'include_dirs': [
+          'include',
+        ],
+      },
+      'sources': [
+        'tools/rtp_to_text.cc',
+        '<(webrtc_root)/modules/video_coding/main/test/rtp_file_reader.cc',
+        '<(webrtc_root)/modules/video_coding/main/test/rtp_file_reader.h',
+      ], # source
+    },
+    {
+      'target_name': 'bwe_rtp_play',
+      'type': 'executable',
+      'includes': [
+        '../rtp_rtcp/source/rtp_rtcp.gypi',
+      ],
+      'dependencies': [
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        'bwe_tools_util',
+        'rtp_rtcp',
+      ],
+      'direct_dependent_settings': {
+        'include_dirs': [
+          'include',
+        ],
+      },
+      'sources': [
+        'tools/bwe_rtp_play.cc',
+        '<(webrtc_root)/modules/video_coding/main/test/rtp_file_reader.cc',
+        '<(webrtc_root)/modules/video_coding/main/test/rtp_file_reader.h',
+      ], # source
+    },
   ], # targets
 }
