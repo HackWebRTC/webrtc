@@ -23,7 +23,7 @@ TEST(NetEqPerformanceTest, Run) {
       kSimulationTimeMs, kLossPeriod, kDriftFactor);
   ASSERT_GT(runtime, 0);
   webrtc::test::PrintResult(
-      "NetEq-performance", "", "10_pl_10_drift", runtime, "ms", true);
+      "neteq_performance", "", "10_pl_10_drift", runtime, "ms", true);
 }
 
 // Runs a test with neither packet losses nor clock drift, to put
@@ -37,5 +37,5 @@ TEST(NetEqPerformanceTest, RunClean) {
       kSimulationTimeMs, kLossPeriod, kDriftFactor);
   ASSERT_GT(runtime, 0);
   webrtc::test::PrintResult(
-      "NetEq-performance", "", "0_pl_0_drift", runtime, "ms", true);
+      "neteq_performance", "", "0_pl_0_drift", runtime, "ms", true);
 }
