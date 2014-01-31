@@ -31,6 +31,19 @@ class PacketReceiver {
   virtual ~PacketReceiver() {}
 };
 
+// Callback interface for reporting when a system overuse is detected.
+// The detection is based on the jitter of incoming captured frames.
+class OveruseCallback {
+ public:
+  // Called as soon as an overuse is detected.
+  virtual void OnOveruse() = 0;
+  // Called periodically when the system is not overused any longer.
+  virtual void OnNormalUse() = 0;
+
+ protected:
+  virtual ~OveruseCallback() {}
+};
+
 // A Call instance can contain several send and/or receive streams. All streams
 // are assumed to have the same remote endpoint and will share bitrate estimates
 // etc.
@@ -40,21 +53,24 @@ class Call {
     explicit Config(newapi::Transport* send_transport)
         : webrtc_config(NULL),
           send_transport(send_transport),
-          overuse_detection(false),
           voice_engine(NULL),
           trace_callback(NULL),
-          trace_filter(kTraceDefault) {}
+          trace_filter(kTraceDefault),
+          overuse_callback(NULL) {}
 
     webrtc::Config* webrtc_config;
 
     newapi::Transport* send_transport;
-    bool overuse_detection;
 
     // VoiceEngine used for audio/video synchronization for this Call.
     VoiceEngine* voice_engine;
 
     TraceCallback* trace_callback;
     uint32_t trace_filter;
+
+    // Callback for overuse and normal usage based on the jitter of incoming
+    // captured frames. 'NULL' disables the callback.
+    OveruseCallback* overuse_callback;
   };
 
   static Call* Create(const Call::Config& config);

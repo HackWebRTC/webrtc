@@ -33,6 +33,32 @@ const char* RtpExtension::kTOffset = "urn:ietf:params:rtp-hdrext:toffset";
 const char* RtpExtension::kAbsSendTime =
     "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
 namespace internal {
+
+class CpuOveruseObserverProxy : public webrtc::CpuOveruseObserver {
+ public:
+  CpuOveruseObserverProxy(OveruseCallback* overuse_callback)
+      : crit_(CriticalSectionWrapper::CreateCriticalSection()),
+        overuse_callback_(overuse_callback) {
+    assert(overuse_callback != NULL);
+  }
+
+  virtual ~CpuOveruseObserverProxy() {}
+
+  virtual void OveruseDetected() OVERRIDE {
+    CriticalSectionScoped cs(crit_.get());
+    overuse_callback_->OnOveruse();
+  }
+
+  virtual void NormalUsage() OVERRIDE {
+    CriticalSectionScoped cs(crit_.get());
+    overuse_callback_->OnNormalUse();
+  }
+
+ private:
+  scoped_ptr<CriticalSectionWrapper> crit_;
+  OveruseCallback* overuse_callback_;
+};
+
 class Call : public webrtc::Call, public PacketReceiver {
  public:
   Call(webrtc::VideoEngine* video_engine, const Call::Config& config);
@@ -77,6 +103,8 @@ class Call : public webrtc::Call, public PacketReceiver {
   scoped_ptr<RWLockWrapper> send_lock_;
 
   scoped_ptr<RtpHeaderParser> rtp_header_parser_;
+
+  scoped_ptr<CpuOveruseObserverProxy> overuse_observer_proxy_;
 
   VideoEngine* video_engine_;
   ViERTP_RTCP* rtp_rtcp_;
@@ -185,6 +213,11 @@ Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
   assert(video_engine != NULL);
   assert(config.send_transport != NULL);
 
+  if (config.overuse_callback) {
+    overuse_observer_proxy_.reset(
+        new CpuOveruseObserverProxy(config.overuse_callback));
+  }
+
   global_trace_dispatcher->RegisterCallback(this, &config_);
 
   rtp_rtcp_ = ViERTP_RTCP::GetInterface(video_engine_);
@@ -236,11 +269,12 @@ VideoSendStream* Call::CreateVideoSendStream(
   assert(config.rtp.ssrcs.size() > 0);
   assert(config.rtp.ssrcs.size() >= config.codec.numberOfSimulcastStreams);
 
-  VideoSendStream* send_stream = new VideoSendStream(config_.send_transport,
-                                                     config_.overuse_detection,
-                                                     video_engine_,
-                                                     config,
-                                                     base_channel_id_);
+  VideoSendStream* send_stream = new VideoSendStream(
+      config_.send_transport,
+      overuse_observer_proxy_.get(),
+      video_engine_,
+      config,
+      base_channel_id_);
 
   WriteLockScoped write_lock(*send_lock_);
   for (size_t i = 0; i < config.rtp.ssrcs.size(); ++i) {

@@ -43,7 +43,6 @@ TEST_F(LoopbackTest, Test) {
 
   test::DirectTransport transport;
   Call::Config call_config(&transport);
-  call_config.overuse_detection = true;
   scoped_ptr<Call> call(Call::Create(call_config));
 
   // Loopback, call sends to itself.

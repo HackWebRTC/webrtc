@@ -45,6 +45,39 @@ static const uint32_t kReceiverLocalSsrc = 0x123456;
 static const uint8_t kSendPayloadType = 125;
 
 class CallPerfTest : public ::testing::Test {
+ public:
+  CallPerfTest()
+      : send_stream_(NULL), fake_encoder_(Clock::GetRealTimeClock()) {}
+ protected:
+  VideoSendStream::Config GetSendTestConfig(Call* call) {
+    VideoSendStream::Config config = call->GetDefaultSendConfig();
+    config.encoder = &fake_encoder_;
+    config.internal_source = false;
+    config.rtp.ssrcs.push_back(kSendSsrc);
+    test::FakeEncoder::SetCodecSettings(&config.codec, 1);
+    config.codec.plType = kSendPayloadType;
+    return config;
+  }
+  void RunVideoSendTest(Call* call,
+                        const VideoSendStream::Config& config,
+                        test::RtpRtcpObserver* observer) {
+    send_stream_ = call->CreateVideoSendStream(config);
+    scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer(
+        test::FrameGeneratorCapturer::Create(
+            send_stream_->Input(), 320, 240, 30, Clock::GetRealTimeClock()));
+    send_stream_->StartSending();
+    frame_generator_capturer->Start();
+
+    EXPECT_EQ(kEventSignaled, observer->Wait());
+
+    observer->StopSending();
+    frame_generator_capturer->Stop();
+    send_stream_->StopSending();
+    call->DestroyVideoSendStream(send_stream_);
+  }
+
+  VideoSendStream* send_stream_;
+  test::FakeEncoder fake_encoder_;
 };
 
 class SyncRtcpObserver : public test::RtpRtcpObserver {
@@ -236,15 +269,9 @@ TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSync) {
 
   observer.SetReceivers(receiver_call->Receiver(), sender_call->Receiver());
 
-  test::FakeEncoder fake_encoder(Clock::GetRealTimeClock());
   test::FakeDecoder fake_decoder;
 
-  VideoSendStream::Config send_config = sender_call->GetDefaultSendConfig();
-  send_config.rtp.ssrcs.push_back(kSendSsrc);
-  send_config.encoder = &fake_encoder;
-  send_config.internal_source = false;
-  test::FakeEncoder::SetCodecSettings(&send_config.codec, 1);
-  send_config.codec.plType = kSendPayloadType;
+  VideoSendStream::Config send_config = GetSendTestConfig(sender_call.get());
 
   VideoReceiveStream::Config receive_config =
       receiver_call->GetDefaultReceiveConfig();
@@ -300,5 +327,29 @@ TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSync) {
   sender_call->DestroyVideoSendStream(send_stream);
   receiver_call->DestroyVideoReceiveStream(receive_stream);
   VoiceEngine::Delete(voice_engine);
+}
+
+TEST_F(CallPerfTest, RegisterCpuOveruseObserver) {
+  // Verifies that either a normal or overuse callback is triggered.
+  class OveruseCallbackObserver : public test::RtpRtcpObserver,
+                                  public webrtc::OveruseCallback {
+   public:
+    OveruseCallbackObserver() : RtpRtcpObserver(kLongTimeoutMs) {}
+
+    virtual void OnOveruse() OVERRIDE {
+      observation_complete_->Set();
+    }
+    virtual void OnNormalUse() OVERRIDE {
+      observation_complete_->Set();
+    }
+  };
+
+  OveruseCallbackObserver observer;
+  Call::Config call_config(observer.SendTransport());
+  call_config.overuse_callback = &observer;
+  scoped_ptr<Call> call(Call::Create(call_config));
+
+  VideoSendStream::Config send_config = GetSendTestConfig(call.get());
+  RunVideoSendTest(call.get(), send_config, &observer);
 }
 }  // namespace webrtc

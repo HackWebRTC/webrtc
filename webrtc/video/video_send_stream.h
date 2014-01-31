@@ -21,6 +21,7 @@
 
 namespace webrtc {
 
+class CpuOveruseObserver;
 class VideoEngine;
 class ViEBase;
 class ViECapture;
@@ -33,14 +34,12 @@ class ViERTP_RTCP;
 
 namespace internal {
 
-class ResolutionAdaptor;
-
 class VideoSendStream : public webrtc::VideoSendStream,
                         public VideoSendStreamInput,
                         public SendStatisticsProxy::StreamStatsProvider {
  public:
   VideoSendStream(newapi::Transport* transport,
-                  bool overuse_detection,
+                  CpuOveruseObserver* overuse_observer,
                   webrtc::VideoEngine* video_engine,
                   const VideoSendStream::Config& config,
                   int base_channel);
@@ -88,7 +87,6 @@ class VideoSendStream : public webrtc::VideoSendStream,
 
   int channel_;
   int capture_id_;
-  scoped_ptr<ResolutionAdaptor> overuse_observer_;
 
   scoped_ptr<SendStatisticsProxy> stats_proxy_;
 };
