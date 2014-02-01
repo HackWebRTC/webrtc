@@ -55,6 +55,10 @@ struct MacDesktopConfiguration {
   // Returns true if the given desktop configuration equals this one.
   bool Equals(const MacDesktopConfiguration& other);
 
+  // Returns the pointer to the display configuration with the specified id.
+  const MacDisplayConfiguration* FindDisplayConfigurationById(
+      CGDirectDisplayID id);
+
   // Bounds of the desktop in Density-Independent Pixels (DIPs).
   DesktopRect bounds;
 

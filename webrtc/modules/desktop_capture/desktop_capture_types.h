@@ -26,7 +26,11 @@ typedef intptr_t WindowId;
 
 const WindowId kNullWindowId = 0;
 
-typedef int ScreenId;
+// Type used to identify screens on the desktop. Values are platform-specific:
+//   - On Windows: integer display device index.
+//   - On OSX: CGDirectDisplayID cast to intptr_t.
+//   - On Linux (with X11): TBD.
+typedef intptr_t ScreenId;
 
 // The screen id corresponds to all screen combined together.
 const ScreenId kFullDesktopScreenId = -1;

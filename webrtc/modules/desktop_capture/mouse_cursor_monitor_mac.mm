@@ -17,8 +17,11 @@
 
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
+#include "webrtc/modules/desktop_capture/mac/desktop_configuration.h"
 #include "webrtc/modules/desktop_capture/mac/desktop_configuration_monitor.h"
+#include "webrtc/modules/desktop_capture/mac/osx_version.h"
 #include "webrtc/modules/desktop_capture/mouse_cursor.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/scoped_refptr.h"
 
@@ -27,31 +30,44 @@ namespace webrtc {
 class MouseCursorMonitorMac : public MouseCursorMonitor {
  public:
   MouseCursorMonitorMac(const DesktopCaptureOptions& options,
-                        CGWindowID window_id);
+                        CGWindowID window_id,
+                        ScreenId screen_id);
   virtual ~MouseCursorMonitorMac();
 
   virtual void Init(Callback* callback, Mode mode) OVERRIDE;
   virtual void Capture() OVERRIDE;
 
  private:
+  static void DisplaysReconfiguredCallback(CGDirectDisplayID display,
+                                           CGDisplayChangeSummaryFlags flags,
+                                           void *user_parameter);
+  void DisplaysReconfigured(CGDirectDisplayID display,
+                            CGDisplayChangeSummaryFlags flags);
+
   void CaptureImage();
 
   scoped_refptr<DesktopConfigurationMonitor> configuration_monitor_;
   CGWindowID window_id_;
-
+  ScreenId screen_id_;
   Callback* callback_;
   Mode mode_;
-
   scoped_ptr<MouseCursor> last_cursor_;
 };
 
 MouseCursorMonitorMac::MouseCursorMonitorMac(
     const DesktopCaptureOptions& options,
-    CGWindowID window_id)
+    CGWindowID window_id,
+    ScreenId screen_id)
     : configuration_monitor_(options.configuration_monitor()),
       window_id_(window_id),
+      screen_id_(screen_id),
       callback_(NULL),
       mode_(SHAPE_AND_POSITION) {
+  assert(window_id == kCGNullWindowID || screen_id == kInvalidScreenId);
+  if (screen_id != kInvalidScreenId && !IsOSLionOrLater()) {
+    // Single screen capture is not supported on pre OS X 10.7.
+    screen_id_ = kFullDesktopScreenId;
+  }
 }
 
 MouseCursorMonitorMac::~MouseCursorMonitorMac() {}
@@ -80,6 +96,21 @@ void MouseCursorMonitorMac::Capture() {
 
   DesktopVector position(gc_position.x, gc_position.y);
 
+  configuration_monitor_->Lock();
+  MacDesktopConfiguration configuration =
+      configuration_monitor_->desktop_configuration();
+  configuration_monitor_->Unlock();
+  float scale = 1.0f;
+
+  // Find the dpi to physical pixel scale for the screen where the mouse cursor
+  // is.
+  for (MacDisplayConfigurations::iterator it = configuration.displays.begin();
+      it != configuration.displays.end(); ++it) {
+    if (it->bounds.Contains(position)) {
+      scale = it->dip_to_pixel_scale;
+      break;
+    }
+  }
   // If we are capturing cursor for a specific window then we need to figure out
   // if the current mouse position is covered by another window and also adjust
   // |position| to make it relative to the window origin.
@@ -142,10 +173,8 @@ void MouseCursorMonitorMac::Capture() {
           }
         }
       }
-
       CFRelease(window_array);
     }
-
     if (!found_window) {
       // If we failed to get list of windows or the window wasn't in the list
       // pretend that the cursor is outside the window. This can happen, e.g. if
@@ -153,17 +182,32 @@ void MouseCursorMonitorMac::Capture() {
       state = OUTSIDE;
       position.set(-1, -1);
     }
+  } else {
+    assert(screen_id_ >= kFullDesktopScreenId);
+    if (screen_id_ != kFullDesktopScreenId) {
+      // For single screen capturing, convert the position to relative to the
+      // target screen.
+      const MacDisplayConfiguration* config =
+          configuration.FindDisplayConfigurationById(
+              static_cast<CGDirectDisplayID>(screen_id_));
+      if (config) {
+        if (!config->pixel_bounds.Contains(position))
+          state = OUTSIDE;
+        position = position.subtract(config->bounds.top_left());
+      } else {
+        // The target screen is no longer valid.
+        state = OUTSIDE;
+        position.set(-1, -1);
+      }
+    } else {
+      position.subtract(configuration.bounds.top_left());
+    }
   }
-
-  // Convert Density Independent Pixel to physical pixel.
-  configuration_monitor_->Lock();
-  float scale =
-      configuration_monitor_->desktop_configuration().dip_to_pixel_scale;
-  configuration_monitor_->Unlock();
-
-  position = DesktopVector(round(position.x() * scale),
-                           round(position.y() * scale));
-
+  if (state == INSIDE) {
+    // Convert Density Independent Pixel to physical pixel.
+    position = DesktopVector(round(position.x() * scale),
+                             round(position.y() * scale));
+  }
   callback_->OnMouseCursorPosition(state, position);
 }
 
@@ -221,16 +265,15 @@ void MouseCursorMonitorMac::CaptureImage() {
   callback_->OnMouseCursor(cursor.release());
 }
 
-
 MouseCursorMonitor* MouseCursorMonitor::CreateForWindow(
     const DesktopCaptureOptions& options, WindowId window) {
-  return new MouseCursorMonitorMac(options, window);
+  return new MouseCursorMonitorMac(options, window, kInvalidScreenId);
 }
 
 MouseCursorMonitor* MouseCursorMonitor::CreateForScreen(
     const DesktopCaptureOptions& options,
     ScreenId screen) {
-  return new MouseCursorMonitorMac(options, kCGNullWindowID);
+  return new MouseCursorMonitorMac(options, kCGNullWindowID, screen);
 }
 
 }  // namespace webrtc
