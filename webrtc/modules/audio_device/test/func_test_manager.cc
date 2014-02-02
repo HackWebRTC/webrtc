@@ -542,6 +542,12 @@ int AudioTransportImpl::OnDataAvailable(const int voe_channels[],
   return 0;
 }
 
+void AudioTransportImpl::OnData(int voe_channel,
+                                const void* audio_data,
+                                int bits_per_sample, int sample_rate,
+                                int number_of_channels,
+                                int number_of_frames) {}
+
 FuncTestManager::FuncTestManager() :
     _processThread(NULL),
     _audioDevice(NULL),

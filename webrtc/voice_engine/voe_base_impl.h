@@ -69,9 +69,7 @@ public:
 
     virtual int LastError();
 
-    virtual void CaptureCallback(int voe_channel, const void* audio_data,
-                                 int bits_per_sample, int sample_rate,
-                                 int number_of_channels, int number_of_frames);
+    virtual AudioTransport* audio_transport() { return this; }
 
     // AudioTransport
     virtual int32_t
@@ -103,6 +101,10 @@ public:
                                 int current_volume,
                                 bool key_pressed,
                                 bool need_audio_processing);
+
+    virtual void OnData(int voe_channel, const void* audio_data,
+                        int bits_per_sample, int sample_rate,
+                        int number_of_channels, int number_of_frames);
 
     // AudioDeviceObserver
     virtual void OnErrorIsReported(ErrorCode error);

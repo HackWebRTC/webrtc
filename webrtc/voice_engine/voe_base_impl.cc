@@ -224,18 +224,18 @@ int VoEBaseImpl::OnDataAvailable(const int voe_channels[],
   // No need to go through the APM, demultiplex the data to each VoE channel,
   // encode and send to the network.
   for (int i = 0; i < number_of_voe_channels; ++i) {
-    CaptureCallback(voe_channels[i], audio_data, 16, sample_rate,
-                    number_of_channels, number_of_frames);
+    OnData(voe_channels[i], audio_data, 16, sample_rate,
+           number_of_channels, number_of_frames);
   }
 
   // Return 0 to indicate no need to change the volume.
   return 0;
 }
 
-void VoEBaseImpl::CaptureCallback(int voe_channel, const void* audio_data,
-                                  int bits_per_sample, int sample_rate,
-                                  int number_of_channels,
-                                  int number_of_frames) {
+void VoEBaseImpl::OnData(int voe_channel, const void* audio_data,
+                         int bits_per_sample, int sample_rate,
+                         int number_of_channels,
+                         int number_of_frames) {
   voe::ChannelOwner ch = _shared->channel_manager().GetChannel(voe_channel);
   voe::Channel* channel_ptr = ch.channel();
   if (!channel_ptr)

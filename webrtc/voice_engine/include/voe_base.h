@@ -40,6 +40,7 @@ namespace webrtc {
 
 class AudioDeviceModule;
 class AudioProcessing;
+class AudioTransport;
 class Config;
 
 const int kVoEDefault = -1;
@@ -183,15 +184,10 @@ public:
     // Gets the NetEQ playout mode for a specified |channel| number.
     virtual int GetNetEQPlayoutMode(int channel, NetEqModes& mode) = 0;
 
-    // Method to pass the captured audio data to the specific VoE channel.
-    // |voe_channel| is the id of the VoE channel which is the sink to the
-    // capture data.
     // TODO(xians): Make the interface pure virtual after libjingle
     // implements the interface in its FakeWebRtcVoiceEngine.
-    virtual void CaptureCallback(int voe_channel, const void* audio_data,
-                                 int bits_per_sample, int sample_rate,
-                                 int number_of_channels,
-                                 int number_of_frames) {}
+    virtual AudioTransport* audio_transport() { return NULL; }
+
 protected:
     VoEBase() {}
     virtual ~VoEBase() {}
