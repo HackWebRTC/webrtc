@@ -37,6 +37,8 @@
 
 using webrtc::AudioProcessing;
 using webrtc::AudioFrame;
+using webrtc::Config;
+using webrtc::ExperimentalAgc;
 using webrtc::GainControl;
 using webrtc::NoiseSuppression;
 using webrtc::EchoCancellation;
@@ -258,12 +260,15 @@ ApmTest::ApmTest()
 #elif defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
       ref_filename_(ref_path_ + "output_data_float.pb"),
 #endif
-      apm_(AudioProcessing::Create(0)),
       frame_(NULL),
       revframe_(NULL),
       far_file_(NULL),
       near_file_(NULL),
-      out_file_(NULL) {}
+      out_file_(NULL) {
+  Config config;
+  config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
+  apm_.reset(AudioProcessing::Create(config));
+}
 
 void ApmTest::SetUp() {
   ASSERT_TRUE(apm_.get() != NULL);
@@ -531,7 +536,7 @@ void ApmTest::ProcessDelayVerificationTest(int delay_ms, int system_delay_ms,
   EXPECT_LE(expected_median_low, median);
 }
 
-TEST_F(ApmTest, DISABLED_StreamParameters) {
+TEST_F(ApmTest, StreamParameters) {
   // No errors when the components are disabled.
   EXPECT_EQ(apm_->kNoError,
             apm_->ProcessStream(frame_));
@@ -881,7 +886,7 @@ TEST_F(ApmTest, EchoControlMobile) {
   EXPECT_FALSE(apm_->echo_control_mobile()->is_enabled());
 }
 
-TEST_F(ApmTest, DISABLED_GainControl) {
+TEST_F(ApmTest, GainControl) {
   // Testing gain modes
   EXPECT_EQ(apm_->kNoError,
       apm_->gain_control()->set_mode(
@@ -1340,7 +1345,7 @@ TEST_F(ApmTest, DebugDumpFromFileHandle) {
 // TODO(andrew): Make this test more robust such that it can be run on multiple
 // platforms. It currently requires bit-exactness.
 #ifdef WEBRTC_AUDIOPROC_BIT_EXACT
-TEST_F(ApmTest, DISABLED_Process) {
+TEST_F(ApmTest, DISABLED_ON_ANDROID(Process)) {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
   webrtc::audioproc::OutputData ref_data;
 
