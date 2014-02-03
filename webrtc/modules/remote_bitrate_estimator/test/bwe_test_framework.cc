@@ -353,10 +353,10 @@ VideoSender::VideoSender(PacketProcessorListener* listener, float fps,
       kMaxPayloadSizeBytes(1000),
       kTimestampBase(0xff80ff00ul),
       frame_period_ms_(1000.0 / fps),
-      next_frame_ms_(frame_period_ms_ * first_frame_offset),
-      now_ms_(0.0),
       bytes_per_second_((1000 * kbps) / 8),
       frame_size_bytes_(bytes_per_second_ / fps),
+      next_frame_ms_(frame_period_ms_ * first_frame_offset),
+      now_ms_(0.0),
       prototype_header_() {
   assert(first_frame_offset >= 0.0f);
   assert(first_frame_offset < 1.0f);
@@ -397,6 +397,18 @@ void VideoSender::RunFor(int64_t time_ms, Packets* in_out) {
     next_frame_ms_ += frame_period_ms_;
   }
   in_out->merge(newPackets);
+}
+
+AdaptiveVideoSender::AdaptiveVideoSender(PacketProcessorListener* listener,
+                                         float fps,
+                                         uint32_t kbps,
+                                         uint32_t ssrc,
+                                         float first_frame_offset)
+    : VideoSender(listener, fps, kbps, ssrc, first_frame_offset) {}
+
+void AdaptiveVideoSender::GiveFeedback(const PacketSender::Feedback& feedback) {
+  bytes_per_second_ = feedback.estimated_bps / 8;
+  frame_size_bytes_ = (bytes_per_second_ * frame_period_ms_ + 500) / 1000;
 }
 }  // namespace bwe
 }  // namespace testing

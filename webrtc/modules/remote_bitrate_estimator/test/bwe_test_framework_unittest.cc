@@ -873,6 +873,37 @@ TEST(BweTestFramework_VideoSenderTest, TestAppendInOrder) {
   ASSERT_TRUE(IsTimeSorted(packets));
   EXPECT_EQ(60u, packets.size());
 }
+
+TEST(BweTestFramework_VideoSenderTest, FeedbackIneffective) {
+  VideoSender sender(NULL, 25.0f, 820, 0x1234, 0);
+  EXPECT_EQ(102500u, sender.bytes_per_second());
+  TestVideoSender(&sender, 9998, 1250, 100, 1025000);
+
+  // Make sure feedback has no effect on a regular video sender.
+  PacketSender::Feedback feedback = { 512000 };
+  sender.GiveFeedback(feedback);
+  EXPECT_EQ(102500u, sender.bytes_per_second());
+  TestVideoSender(&sender, 9998, 1250, 100, 1025000);
+}
+
+TEST(BweTestFramework_AdaptiveVideoSenderTest, FeedbackChangesBitrate) {
+  AdaptiveVideoSender sender(NULL, 25.0f, 820, 0x1234, 0);
+  EXPECT_EQ(102500u, sender.bytes_per_second());
+  TestVideoSender(&sender, 9998, 1250, 100, 1025000);
+
+  // Make sure we can reduce the bitrate.
+  PacketSender::Feedback feedback = { 512000 };
+  sender.GiveFeedback(feedback);
+  EXPECT_EQ(64000u, sender.bytes_per_second());
+  TestVideoSender(&sender, 9998, 750, 560, 640000);
+
+  // Increase the bitrate to the initial bitrate and verify that the output is
+  // the same.
+  feedback.estimated_bps = 820000;
+  sender.GiveFeedback(feedback);
+  EXPECT_EQ(102500u, sender.bytes_per_second());
+  TestVideoSender(&sender, 9998, 1250, 100, 1025000);
+}
 }  // namespace bwe
 }  // namespace testing
 }  // namespace webrtc

@@ -320,6 +320,9 @@ class PacketSender : public PacketProcessor {
 
   // Call GiveFeedback() with the returned interval in milliseconds, provided
   // there is a new estimate available.
+  // Note that changing the feedback interval affects the timing of when the
+  // output of the estimators is sampled and therefore the baseline files may
+  // have to be regenerated.
   virtual int64_t GetFeedbackIntervalMs() const { return 1000; }
   virtual void GiveFeedback(const Feedback& feedback) {}
 
@@ -344,21 +347,34 @@ class VideoSender : public PacketSender {
 
   virtual uint32_t GetCapacityKbps() const;
 
-  // TODO(solenberg): void SetFrameRate(float fps);
-  // TODO(solenberg): void SetRate(uint32_t kbps);
   virtual void RunFor(int64_t time_ms, Packets* in_out);
 
- private:
+ protected:
   const uint32_t kMaxPayloadSizeBytes;
   const uint32_t kTimestampBase;
-  double frame_period_ms_;
-  double next_frame_ms_;
-  double now_ms_;
+  const double frame_period_ms_;
   uint32_t bytes_per_second_;
   uint32_t frame_size_bytes_;
+
+ private:
+  double next_frame_ms_;
+  double now_ms_;
   RTPHeader prototype_header_;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(VideoSender);
+};
+
+class AdaptiveVideoSender : public VideoSender {
+ public:
+  AdaptiveVideoSender(PacketProcessorListener* listener, float fps,
+                      uint32_t kbps, uint32_t ssrc, float first_frame_offset);
+  virtual ~AdaptiveVideoSender() {}
+
+  virtual int64_t GetFeedbackIntervalMs() const { return 500; }
+  virtual void GiveFeedback(const Feedback& feedback);
+
+private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(AdaptiveVideoSender);
 };
 }  // namespace bwe
 }  // namespace testing
