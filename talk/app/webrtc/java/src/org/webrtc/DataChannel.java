@@ -39,7 +39,7 @@ public class DataChannel {
     // Optional unsigned short in WebIDL, -1 means unspecified.
     public int maxRetransmits = -1;
     public String protocol = "";
-    public boolean negotiated = true;
+    public boolean negotiated = false;
     // Optional unsigned short in WebIDL, -1 means unspecified.
     public int id = -1;
 
