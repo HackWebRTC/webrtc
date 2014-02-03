@@ -280,7 +280,8 @@ class Port : public PortInterface, public talk_base::MessageHandler,
   // stun username attribute if present.
   bool ParseStunUsername(const StunMessage* stun_msg,
                          std::string* local_username,
-                         std::string* remote_username) const;
+                         std::string* remote_username,
+                         IceProtocolType* remote_protocol_type) const;
   void CreateStunUsername(const std::string& remote_username,
                           std::string* stun_username_attr_str) const;
 
@@ -301,10 +302,8 @@ class Port : public PortInterface, public talk_base::MessageHandler,
   // Returns if Google ICE protocol is used.
   bool IsGoogleIce() const;
 
-  // Returns default DSCP value.
-  talk_base::DiffServCodePoint DefaultDscpValue() const {
-    return default_dscp_;
-  }
+  // Returns if Hybrid ICE protocol is used.
+  bool IsHybridIce() const;
 
  protected:
   enum {
@@ -341,9 +340,10 @@ class Port : public PortInterface, public talk_base::MessageHandler,
   // Checks if the address in addr is compatible with the port's ip.
   bool IsCompatibleAddress(const talk_base::SocketAddress& addr);
 
-  // Default DSCP value for this port. Set by TransportChannel.
-  void SetDefaultDscpValue(talk_base::DiffServCodePoint dscp) {
-    default_dscp_ = dscp;
+  // Returns default DSCP value.
+  talk_base::DiffServCodePoint DefaultDscpValue() const {
+    // No change from what MediaChannel set.
+    return talk_base::DSCP_NO_CHANGE;
   }
 
  private:
@@ -384,9 +384,6 @@ class Port : public PortInterface, public talk_base::MessageHandler,
   IceRole ice_role_;
   uint64 tiebreaker_;
   bool shared_socket_;
-  // DSCP value for ICE/STUN messages. Set by the P2PTransportChannel after
-  // port becomes ready.
-  talk_base::DiffServCodePoint default_dscp_;
   // Information to use when going through a proxy.
   std::string user_agent_;
   talk_base::ProxyInfo proxy_;

@@ -118,9 +118,6 @@ bool JsepSessionDescription::AddCandidate(
   }
   if (mediasection_index >= number_of_mediasections())
     return false;
-  if (candidate_collection_[mediasection_index].HasCandidate(candidate)) {
-    return true;  // Silently ignore this candidate if we already have it.
-  }
   const std::string content_name =
       description_->contents()[mediasection_index].name;
   const cricket::TransportInfo* transport_info =
@@ -137,10 +134,15 @@ bool JsepSessionDescription::AddCandidate(
     updated_candidate.set_password(transport_info->description.ice_pwd);
   }
 
-  candidate_collection_[mediasection_index].add(
-       new JsepIceCandidate(candidate->sdp_mid(),
-                            static_cast<int>(mediasection_index),
-                            updated_candidate));
+  scoped_ptr<JsepIceCandidate> updated_candidate_wrapper(
+      new JsepIceCandidate(candidate->sdp_mid(),
+                           static_cast<int>(mediasection_index),
+                           updated_candidate));
+  if (!candidate_collection_[mediasection_index].HasCandidate(
+          updated_candidate_wrapper.get()))
+    candidate_collection_[mediasection_index].add(
+        updated_candidate_wrapper.release());
+
   return true;
 }
 

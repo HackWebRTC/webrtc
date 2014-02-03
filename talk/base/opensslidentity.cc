@@ -224,11 +224,11 @@ OpenSSLCertificate* OpenSSLCertificate::FromPEMString(
   BIO* bio = BIO_new_mem_buf(const_cast<char*>(pem_string.c_str()), -1);
   if (!bio)
     return NULL;
-  (void)BIO_set_close(bio, BIO_NOCLOSE);
   BIO_set_mem_eof_return(bio, 0);
   X509 *x509 = PEM_read_bio_X509(bio, NULL, NULL,
                                  const_cast<char*>("\0"));
-  BIO_free(bio);
+  BIO_free(bio);  // Frees the BIO, but not the pointed-to string.
+
   if (!x509)
     return NULL;
 
@@ -364,11 +364,10 @@ SSLIdentity* OpenSSLIdentity::FromPEMStrings(
     LOG(LS_ERROR) << "Failed to create a new BIO buffer.";
     return NULL;
   }
-  (void)BIO_set_close(bio, BIO_NOCLOSE);
   BIO_set_mem_eof_return(bio, 0);
   EVP_PKEY *pkey = PEM_read_bio_PrivateKey(bio, NULL, NULL,
                                            const_cast<char*>("\0"));
-  BIO_free(bio);
+  BIO_free(bio);  // Frees the BIO, but not the pointed-to string.
 
   if (!pkey) {
     LOG(LS_ERROR) << "Failed to create the private key from PEM string.";
@@ -392,5 +391,3 @@ bool OpenSSLIdentity::ConfigureIdentity(SSL_CTX* ctx) {
 }  // namespace talk_base
 
 #endif  // HAVE_OPENSSL_SSL_H
-
-

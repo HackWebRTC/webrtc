@@ -37,6 +37,7 @@
 #include "talk/media/base/mediacommon.h"
 #include "talk/media/devices/deviceinfo.h"
 #include "talk/media/devices/filevideocapturer.h"
+#include "talk/media/devices/yuvframescapturer.h"
 
 #if !defined(IOS)
 
@@ -66,7 +67,6 @@ namespace cricket {
 
 // Initialize to empty string.
 const char DeviceManagerInterface::kDefaultDeviceName[] = "";
-
 
 class DefaultVideoCapturerFactory : public VideoCapturerFactory {
  public:
@@ -180,9 +180,24 @@ bool DeviceManager::GetVideoCaptureDevice(const std::string& name,
     }
   }
 
-  // If |name| is a valid name for a file, return a file video capturer device.
+  // If |name| is a valid name for a file or yuvframedevice,
+  // return a fake video capturer device.
+  if (GetFakeVideoCaptureDevice(name, out)) {
+    return true;
+  }
+
+  return false;
+}
+
+bool DeviceManager::GetFakeVideoCaptureDevice(const std::string& name,
+                                              Device* out) const {
   if (talk_base::Filesystem::IsFile(name)) {
     *out = FileVideoCapturer::CreateFileVideoCapturerDevice(name);
+    return true;
+  }
+
+  if (name == YuvFramesCapturer::kYuvFrameDeviceName) {
+    *out = YuvFramesCapturer::CreateYuvFramesCapturerDevice();
     return true;
   }
 
@@ -205,19 +220,12 @@ VideoCapturer* DeviceManager::CreateVideoCapturer(const Device& device) const {
   LOG_F(LS_ERROR) << " should never be called!";
   return NULL;
 #else
-  // TODO(hellner): Throw out the creation of a file video capturer once the
-  // refactoring is completed.
-  if (FileVideoCapturer::IsFileVideoCapturerDevice(device)) {
-    FileVideoCapturer* capturer = new FileVideoCapturer;
-    if (!capturer->Init(device)) {
-      delete capturer;
-      return NULL;
-    }
-    LOG(LS_INFO) << "Created file video capturer " << device.name;
-    capturer->set_repeat(talk_base::kForever);
+  VideoCapturer* capturer = ConstructFakeVideoCapturer(device);
+  if (capturer) {
     return capturer;
   }
-  VideoCapturer* capturer = device_video_capturer_factory_->Create(device);
+
+  capturer = device_video_capturer_factory_->Create(device);
   if (!capturer) {
     return NULL;
   }
@@ -230,6 +238,29 @@ VideoCapturer* DeviceManager::CreateVideoCapturer(const Device& device) const {
   }
   return capturer;
 #endif
+}
+
+VideoCapturer* DeviceManager::ConstructFakeVideoCapturer(
+    const Device& device) const {
+  // TODO(hellner): Throw out the creation of a file video capturer once the
+  // refactoring is completed.
+  if (FileVideoCapturer::IsFileVideoCapturerDevice(device)) {
+    FileVideoCapturer* capturer = new FileVideoCapturer;
+    if (!capturer->Init(device)) {
+      delete capturer;
+      return NULL;
+    }
+    LOG(LS_INFO) << "Created file video capturer " << device.name;
+    capturer->set_repeat(talk_base::kForever);
+    return capturer;
+  }
+
+  if (YuvFramesCapturer::IsYuvFramesCapturerDevice(device)) {
+    YuvFramesCapturer* capturer = new YuvFramesCapturer();
+    capturer->Init();
+    return capturer;
+  }
+  return NULL;
 }
 
 bool DeviceManager::GetWindows(

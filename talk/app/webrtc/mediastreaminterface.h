@@ -147,15 +147,33 @@ class VideoTrackInterface : public MediaStreamTrackInterface {
 class AudioSourceInterface : public MediaSourceInterface {
 };
 
+// Interface for receiving audio data from a AudioTrack.
+class AudioTrackSinkInterface {
+ public:
+  virtual void OnData(const void* audio_data,
+                      int bits_per_sample,
+                      int sample_rate,
+                      int number_of_channels,
+                      int number_of_frames) = 0;
+ protected:
+  virtual ~AudioTrackSinkInterface() {}
+};
+
 class AudioTrackInterface : public MediaStreamTrackInterface {
  public:
   // TODO(xians): Figure out if the following interface should be const or not.
   virtual AudioSourceInterface* GetSource() const =  0;
 
+  // Adds/Removes a sink that will receive the audio data from the track.
+  // TODO(xians): Make them pure virtual after Chrome implements these
+  // interfaces.
+  virtual void AddSink(AudioTrackSinkInterface* sink) {}
+  virtual void RemoveSink(AudioTrackSinkInterface* sink) {}
+
   // Gets a pointer to the audio renderer of this AudioTrack.
   // The pointer is valid for the lifetime of this AudioTrack.
-  // TODO(xians): Make the following interface pure virtual once Chrome has its
-  // implementation.
+  // TODO(xians): Remove the following interface after Chrome switches to
+  // AddSink() and RemoveSink() interfaces.
   virtual cricket::AudioRenderer* GetRenderer() { return NULL; }
 
  protected:

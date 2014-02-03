@@ -204,6 +204,28 @@ TEST_F(JsepSessionDescriptionTest, AddBadCandidate) {
   EXPECT_FALSE(jsep_desc_->AddCandidate(&bad_candidate2));
 }
 
+// Tests that repeatedly adding the same candidate, with or without credentials,
+// does not increase the number of candidates in the description.
+TEST_F(JsepSessionDescriptionTest, AddCandidateDuplicates) {
+  JsepIceCandidate jsep_candidate("", 0, candidate_);
+  EXPECT_TRUE(jsep_desc_->AddCandidate(&jsep_candidate));
+  EXPECT_EQ(1u, jsep_desc_->candidates(0)->count());
+
+  // Add the same candidate again.  It should be ignored.
+  EXPECT_TRUE(jsep_desc_->AddCandidate(&jsep_candidate));
+  EXPECT_EQ(1u, jsep_desc_->candidates(0)->count());
+
+  // Create a new candidate, identical except that the ufrag and pwd are now
+  // populated.
+  candidate_.set_username(kCandidateUfragVoice);
+  candidate_.set_password(kCandidatePwdVoice);
+  JsepIceCandidate jsep_candidate_with_credentials("", 0, candidate_);
+
+  // This should also be identified as redundant and ignored.
+  EXPECT_TRUE(jsep_desc_->AddCandidate(&jsep_candidate_with_credentials));
+  EXPECT_EQ(1u, jsep_desc_->candidates(0)->count());
+}
+
 // Test that we can serialize a JsepSessionDescription and deserialize it again.
 TEST_F(JsepSessionDescriptionTest, SerializeDeserialize) {
   std::string sdp = Serialize(jsep_desc_.get());

@@ -208,15 +208,14 @@ TransportChannelImpl* Transport::CreateChannel_w(int component) {
   // Push down our transport state to the new channel.
   impl->SetIceRole(ice_role_);
   impl->SetIceTiebreaker(tiebreaker_);
-  if (local_description_) {
-    // TODO(ronghuawu): Change CreateChannel_w to be able to return error since
-    // below Apply**Description_w calls can fail.
+  // TODO(ronghuawu): Change CreateChannel_w to be able to return error since
+  // below Apply**Description_w calls can fail.
+  if (local_description_)
     ApplyLocalTransportDescription_w(impl, NULL);
-    if (remote_description_) {
-      ApplyRemoteTransportDescription_w(impl, NULL);
-      ApplyNegotiatedTransportDescription_w(impl, NULL);
-    }
-  }
+  if (remote_description_)
+    ApplyRemoteTransportDescription_w(impl, NULL);
+  if (local_description_ && remote_description_)
+    ApplyNegotiatedTransportDescription_w(impl, NULL);
 
   impl->SignalReadableState.connect(this, &Transport::OnChannelReadableState);
   impl->SignalWritableState.connect(this, &Transport::OnChannelWritableState);
@@ -684,6 +683,21 @@ bool Transport::SetRemoteTransportDescription_w(
 
 bool Transport::ApplyLocalTransportDescription_w(TransportChannelImpl* ch,
                                                  std::string* error_desc) {
+  // If existing protocol_type is HYBRID, we may have not chosen the final
+  // protocol type, so update the channel protocol type from the
+  // local description. Otherwise, skip updating the protocol type.
+  // We check for HYBRID to avoid accidental changes; in the case of a
+  // session renegotiation, the new offer will have the google-ice ICE option,
+  // so we need to make sure we don't switch back from ICE mode to HYBRID
+  // when this happens.
+  // There are some other ways we could have solved this, but this is the
+  // simplest. The ultimate solution will be to get rid of GICE altogether.
+  IceProtocolType protocol_type;
+  if (ch->GetIceProtocolType(&protocol_type) &&
+      protocol_type == ICEPROTO_HYBRID) {
+    ch->SetIceProtocolType(
+        TransportProtocolFromDescription(local_description()));
+  }
   ch->SetIceCredentials(local_description_->ice_ufrag,
                         local_description_->ice_pwd);
   return true;

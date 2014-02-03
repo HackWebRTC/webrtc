@@ -786,7 +786,7 @@ bool WebRtcSession::ProcessIceMessage(const IceCandidateInterface* candidate) {
     return false;
   }
 
-  return UseCandidatesInSessionDescription(remote_desc_.get());
+  return UseCandidate(candidate);
 }
 
 bool WebRtcSession::GetTrackIdBySsrc(uint32 ssrc, std::string* id) {

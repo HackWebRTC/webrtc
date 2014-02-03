@@ -1421,10 +1421,12 @@ TEST_F(WebRtcSessionTest, TestAddRemoteCandidate) {
   EXPECT_EQ(1, candidates->at(0)->candidate().component());
   EXPECT_EQ(2, candidates->at(1)->candidate().component());
 
+  // |ice_candidate3| is identical to |ice_candidate2|.  It can be added
+  // successfully, but the total count of candidates will not increase.
   candidate.set_component(2);
   JsepIceCandidate ice_candidate3(kMediaContentName0, 0, candidate);
   EXPECT_TRUE(session_->ProcessIceMessage(&ice_candidate3));
-  ASSERT_EQ(3u, candidates->count());
+  ASSERT_EQ(2u, candidates->count());
 
   JsepIceCandidate bad_ice_candidate("bad content name", 99, candidate);
   EXPECT_FALSE(session_->ProcessIceMessage(&bad_ice_candidate));

@@ -56,14 +56,38 @@ void TrackHandler::OnChanged() {
   }
 }
 
+LocalAudioSinkAdapter::LocalAudioSinkAdapter() : sink_(NULL) {}
+
+LocalAudioSinkAdapter::~LocalAudioSinkAdapter() {}
+
+void LocalAudioSinkAdapter::OnData(const void* audio_data,
+                                   int bits_per_sample,
+                                   int sample_rate,
+                                   int number_of_channels,
+                                   int number_of_frames) {
+  talk_base::CritScope lock(&lock_);
+  if (sink_) {
+    sink_->OnData(audio_data, bits_per_sample, sample_rate,
+                  number_of_channels, number_of_frames);
+  }
+}
+
+void LocalAudioSinkAdapter::SetSink(cricket::AudioRenderer::Sink* sink) {
+  talk_base::CritScope lock(&lock_);
+  ASSERT(!sink || !sink_);
+  sink_ = sink;
+}
+
 LocalAudioTrackHandler::LocalAudioTrackHandler(
     AudioTrackInterface* track,
     uint32 ssrc,
     AudioProviderInterface* provider)
     : TrackHandler(track, ssrc),
       audio_track_(track),
-      provider_(provider) {
+      provider_(provider),
+      sink_adapter_(new LocalAudioSinkAdapter()) {
   OnEnabledChanged();
+  track->AddSink(sink_adapter_.get());
 }
 
 LocalAudioTrackHandler::~LocalAudioTrackHandler() {
@@ -74,6 +98,7 @@ void LocalAudioTrackHandler::OnStateChanged() {
 }
 
 void LocalAudioTrackHandler::Stop() {
+  audio_track_->RemoveSink(sink_adapter_.get());
   cricket::AudioOptions options;
   provider_->SetAudioSend(ssrc(), false, options, NULL);
 }
@@ -84,8 +109,13 @@ void LocalAudioTrackHandler::OnEnabledChanged() {
     options = static_cast<LocalAudioSource*>(
         audio_track_->GetSource())->options();
   }
-  provider_->SetAudioSend(ssrc(), audio_track_->enabled(), options,
-                          audio_track_->GetRenderer());
+
+  // Use the renderer if the audio track has one, otherwise use the sink
+  // adapter owned by this class.
+  cricket::AudioRenderer* renderer = audio_track_->GetRenderer() ?
+      audio_track_->GetRenderer() : sink_adapter_.get();
+  ASSERT(renderer);
+  provider_->SetAudioSend(ssrc(), audio_track_->enabled(), options, renderer);
 }
 
 RemoteAudioTrackHandler::RemoteAudioTrackHandler(

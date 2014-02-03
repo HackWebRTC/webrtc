@@ -101,6 +101,10 @@ class FakeTransportChannel : public TransportChannelImpl,
   virtual void SetIceRole(IceRole role) { role_ = role; }
   virtual IceRole GetIceRole() const { return role_; }
   virtual void SetIceTiebreaker(uint64 tiebreaker) { tiebreaker_ = tiebreaker; }
+  virtual bool GetIceProtocolType(IceProtocolType* type) const {
+    *type = ice_proto_;
+    return true;
+  }
   virtual void SetIceProtocolType(IceProtocolType type) { ice_proto_ = type; }
   virtual void SetIceCredentials(const std::string& ice_ufrag,
                                  const std::string& ice_pwd) {

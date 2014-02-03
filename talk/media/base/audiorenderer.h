@@ -30,18 +30,37 @@
 
 namespace cricket {
 
-// Abstract interface for holding the voice channel IDs.
+// Abstract interface for rendering the audio data.
 class AudioRenderer {
  public:
+  class Sink {
+   public:
+    virtual void OnData(const void* audio_data,
+                        int bits_per_sample,
+                        int sample_rate,
+                        int number_of_channels,
+                        int number_of_frames) = 0;
+   protected:
+    virtual ~Sink() {}
+  };
+
+  // Sets a sink to the AudioRenderer. There can be only one sink connected
+  // to the renderer at a time.
+  virtual void SetSink(Sink* sink) {}
+
   // Add the WebRtc VoE channel to the renderer.
   // For local stream, multiple WebRtc VoE channels can be connected to the
   // renderer. While for remote stream, only one WebRtc VoE channel can be
   // connected to the renderer.
-  virtual void AddChannel(int channel_id) = 0;
+  // TODO(xians): Remove this interface after Chrome switches to the
+  // AudioRenderer::Sink interface.
+  virtual void AddChannel(int channel_id) {}
 
   // Remove the WebRtc VoE channel from the renderer.
   // This method is called when the VoE channel is going away.
-  virtual void RemoveChannel(int channel_id) = 0;
+  // TODO(xians): Remove this interface after Chrome switches to the
+  // AudioRenderer::Sink interface.
+  virtual void RemoveChannel(int channel_id) {}
 
  protected:
   virtual ~AudioRenderer() {}

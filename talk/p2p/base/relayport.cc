@@ -359,14 +359,6 @@ int RelayPort::SendTo(const void* data, size_t size,
 
 int RelayPort::SetOption(talk_base::Socket::Option opt, int value) {
   int result = 0;
-  // DSCP option is not passed to the socket.
-  // TODO(mallinath) - After we have the support on socket,
-  // remove this specialization.
-  if (opt == talk_base::Socket::OPT_DSCP) {
-    SetDefaultDscpValue(static_cast<talk_base::DiffServCodePoint>(value));
-    return result;
-  }
-
   for (size_t i = 0; i < entries_.size(); ++i) {
     if (entries_[i]->SetSocketOption(opt, value) < 0) {
       result = -1;

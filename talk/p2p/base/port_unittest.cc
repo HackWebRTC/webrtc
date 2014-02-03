@@ -1280,21 +1280,37 @@ TEST_F(PortTest, TestSkipCrossFamilyUdp) {
 // This test verifies DSCP value set through SetOption interface can be
 // get through DefaultDscpValue.
 TEST_F(PortTest, TestDefaultDscpValue) {
+  int dscp;
   talk_base::scoped_ptr<UDPPort> udpport(CreateUdpPort(kLocalAddr1));
-  udpport->SetOption(talk_base::Socket::OPT_DSCP, talk_base::DSCP_CS6);
-  EXPECT_EQ(talk_base::DSCP_CS6, udpport->DefaultDscpValue());
+  EXPECT_EQ(0, udpport->SetOption(talk_base::Socket::OPT_DSCP,
+                                  talk_base::DSCP_CS6));
+  EXPECT_EQ(0, udpport->GetOption(talk_base::Socket::OPT_DSCP, &dscp));
   talk_base::scoped_ptr<TCPPort> tcpport(CreateTcpPort(kLocalAddr1));
-  tcpport->SetOption(talk_base::Socket::OPT_DSCP, talk_base::DSCP_AF31);
-  EXPECT_EQ(talk_base::DSCP_AF31, tcpport->DefaultDscpValue());
+  EXPECT_EQ(0, tcpport->SetOption(talk_base::Socket::OPT_DSCP,
+                                 talk_base::DSCP_AF31));
+  EXPECT_EQ(0, tcpport->GetOption(talk_base::Socket::OPT_DSCP, &dscp));
+  EXPECT_EQ(talk_base::DSCP_AF31, dscp);
   talk_base::scoped_ptr<StunPort> stunport(
       CreateStunPort(kLocalAddr1, nat_socket_factory1()));
-  stunport->SetOption(talk_base::Socket::OPT_DSCP, talk_base::DSCP_AF41);
-  EXPECT_EQ(talk_base::DSCP_AF41, stunport->DefaultDscpValue());
-  talk_base::scoped_ptr<TurnPort> turnport(CreateTurnPort(
+  EXPECT_EQ(0, stunport->SetOption(talk_base::Socket::OPT_DSCP,
+                                  talk_base::DSCP_AF41));
+  EXPECT_EQ(0, stunport->GetOption(talk_base::Socket::OPT_DSCP, &dscp));
+  EXPECT_EQ(talk_base::DSCP_AF41, dscp);
+  talk_base::scoped_ptr<TurnPort> turnport1(CreateTurnPort(
       kLocalAddr1, nat_socket_factory1(), PROTO_UDP, PROTO_UDP));
-  turnport->SetOption(talk_base::Socket::OPT_DSCP, talk_base::DSCP_CS7);
-  EXPECT_EQ(talk_base::DSCP_CS7, turnport->DefaultDscpValue());
-  // TODO(mallinath) - Test DSCP through GetOption.
+  // Socket is created in PrepareAddress.
+  turnport1->PrepareAddress();
+  EXPECT_EQ(0, turnport1->SetOption(talk_base::Socket::OPT_DSCP,
+                                  talk_base::DSCP_CS7));
+  EXPECT_EQ(0, turnport1->GetOption(talk_base::Socket::OPT_DSCP, &dscp));
+  EXPECT_EQ(talk_base::DSCP_CS7, dscp);
+  // This will verify correct value returned without the socket.
+  talk_base::scoped_ptr<TurnPort> turnport2(CreateTurnPort(
+      kLocalAddr1, nat_socket_factory1(), PROTO_UDP, PROTO_UDP));
+  EXPECT_EQ(0, turnport2->SetOption(talk_base::Socket::OPT_DSCP,
+                                  talk_base::DSCP_CS6));
+  EXPECT_EQ(0, turnport2->GetOption(talk_base::Socket::OPT_DSCP, &dscp));
+  EXPECT_EQ(talk_base::DSCP_CS6, dscp);
 }
 
 // Test sending STUN messages in GICE format.
@@ -1664,6 +1680,81 @@ TEST_F(PortTest, TestHandleStunMessageAsIce) {
   EXPECT_EQ(std::string(STUN_ERROR_REASON_SERVER_ERROR),
       out_msg->GetErrorCode()->reason());
 }
+
+// This test verifies port can handle ICE messages in Hybrid mode and switches
+// ICEPROTO_RFC5245 mode after successfully handling the message.
+TEST_F(PortTest, TestHandleStunMessageAsIceInHybridMode) {
+  // Our port will act as the "remote" port.
+  talk_base::scoped_ptr<TestPort> port(
+      CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
+  port->SetIceProtocolType(ICEPROTO_HYBRID);
+
+  talk_base::scoped_ptr<IceMessage> in_msg, out_msg;
+  talk_base::scoped_ptr<ByteBuffer> buf(new ByteBuffer());
+  talk_base::SocketAddress addr(kLocalAddr1);
+  std::string username;
+
+  // BINDING-REQUEST from local to remote with valid ICE username,
+  // MESSAGE-INTEGRITY, and FINGERPRINT.
+  in_msg.reset(CreateStunMessageWithUsername(STUN_BINDING_REQUEST,
+                                             "rfrag:lfrag"));
+  in_msg->AddMessageIntegrity("rpass");
+  in_msg->AddFingerprint();
+  WriteStunMessage(in_msg.get(), buf.get());
+  EXPECT_TRUE(port->GetStunMessage(buf->Data(), buf->Length(), addr,
+                                   out_msg.accept(), &username));
+  EXPECT_TRUE(out_msg.get() != NULL);
+  EXPECT_EQ("lfrag", username);
+  EXPECT_EQ(ICEPROTO_RFC5245, port->IceProtocol());
+}
+
+// This test verifies port can handle GICE messages in Hybrid mode and switches
+// ICEPROTO_GOOGLE mode after successfully handling the message.
+TEST_F(PortTest, TestHandleStunMessageAsGiceInHybridMode) {
+  // Our port will act as the "remote" port.
+  talk_base::scoped_ptr<TestPort> port(
+      CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
+  port->SetIceProtocolType(ICEPROTO_HYBRID);
+
+  talk_base::scoped_ptr<IceMessage> in_msg, out_msg;
+  talk_base::scoped_ptr<ByteBuffer> buf(new ByteBuffer());
+  talk_base::SocketAddress addr(kLocalAddr1);
+  std::string username;
+
+  // BINDING-REQUEST from local to remote with valid GICE username and no M-I.
+  in_msg.reset(CreateStunMessageWithUsername(STUN_BINDING_REQUEST,
+                                             "rfraglfrag"));
+  WriteStunMessage(in_msg.get(), buf.get());
+  EXPECT_TRUE(port->GetStunMessage(buf->Data(), buf->Length(), addr,
+                                   out_msg.accept(), &username));
+  EXPECT_TRUE(out_msg.get() != NULL);  // Succeeds, since this is GICE.
+  EXPECT_EQ("lfrag", username);
+  EXPECT_EQ(ICEPROTO_GOOGLE, port->IceProtocol());
+}
+
+// Verify port is not switched out of RFC5245 mode if GICE message is received
+// in that mode.
+TEST_F(PortTest, TestHandleStunMessageAsGiceInIceMode) {
+  // Our port will act as the "remote" port.
+  talk_base::scoped_ptr<TestPort> port(
+      CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
+  port->SetIceProtocolType(ICEPROTO_RFC5245);
+
+  talk_base::scoped_ptr<IceMessage> in_msg, out_msg;
+  talk_base::scoped_ptr<ByteBuffer> buf(new ByteBuffer());
+  talk_base::SocketAddress addr(kLocalAddr1);
+  std::string username;
+
+  // BINDING-REQUEST from local to remote with valid GICE username and no M-I.
+  in_msg.reset(CreateStunMessageWithUsername(STUN_BINDING_REQUEST,
+                                             "rfraglfrag"));
+  WriteStunMessage(in_msg.get(), buf.get());
+  // Should fail as there is no MI and fingerprint.
+  EXPECT_FALSE(port->GetStunMessage(buf->Data(), buf->Length(), addr,
+                                    out_msg.accept(), &username));
+  EXPECT_EQ(ICEPROTO_RFC5245, port->IceProtocol());
+}
+
 
 // Tests handling of GICE binding requests with missing or incorrect usernames.
 TEST_F(PortTest, TestHandleStunMessageAsGiceBadUsername) {

@@ -588,6 +588,46 @@ class P2PTransportChannelTestBase : public testing::Test,
     TestSendRecv(1);
   }
 
+  void TestHybridConnectivity(cricket::IceProtocolType proto) {
+    AddAddress(0, kPublicAddrs[0]);
+    AddAddress(1, kPublicAddrs[1]);
+
+    SetAllocationStepDelay(0, kMinimumStepDelay);
+    SetAllocationStepDelay(1, kMinimumStepDelay);
+
+    SetIceRole(0, cricket::ICEROLE_CONTROLLING);
+    SetIceProtocol(0, cricket::ICEPROTO_HYBRID);
+    SetIceTiebreaker(0, kTiebreaker1);
+    SetIceRole(1, cricket::ICEROLE_CONTROLLED);
+    SetIceProtocol(1, proto);
+    SetIceTiebreaker(1, kTiebreaker2);
+
+    CreateChannels(1);
+    // When channel is in hybrid and it's controlling agent, channel will
+    // receive ping request from the remote. Hence connection is readable.
+    // Since channel is in hybrid, it will not send any pings, so no writable
+    // connection. Since channel2 is in controlled state, it will not have
+    // any connections which are readable or writable, as it didn't received
+    // pings (or none) with USE-CANDIDATE attribute.
+    EXPECT_TRUE_WAIT(ep1_ch1()->readable(), 1000);
+
+    // Set real protocol type.
+    ep1_ch1()->SetIceProtocolType(proto);
+
+    // Channel should able to send ping requests and connections become writable
+    // in both directions.
+    EXPECT_TRUE_WAIT(ep1_ch1()->readable() && ep1_ch1()->writable() &&
+                     ep2_ch1()->readable() && ep2_ch1()->writable(),
+                     1000);
+    EXPECT_TRUE(
+        ep1_ch1()->best_connection() && ep2_ch1()->best_connection() &&
+        LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]) &&
+        RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
+
+    TestSendRecv(1);
+    DestroyChannels();
+  }
+
   void OnChannelRequestSignaling(cricket::TransportChannelImpl* channel) {
     channel->OnSignalingReady();
   }
@@ -1082,6 +1122,7 @@ TEST_F(P2PTransportChannelTest, HandleUfragPwdChangeAsIce) {
                      cricket::ICEPROTO_RFC5245);
   CreateChannels(1);
   TestHandleIceUfragPasswordChanged();
+  DestroyChannels();
 }
 
 // Test that we restart candidate allocation when local ufrag&pwd changed.
@@ -1097,6 +1138,7 @@ TEST_F(P2PTransportChannelTest, HandleUfragPwdChangeBundleAsIce) {
 
   CreateChannels(2);
   TestHandleIceUfragPasswordChanged();
+  DestroyChannels();
 }
 
 // Test that we restart candidate allocation when local ufrag&pwd changed.
@@ -1109,6 +1151,7 @@ TEST_F(P2PTransportChannelTest, HandleUfragPwdChangeAsGice) {
                      cricket::ICEPROTO_GOOGLE);
   CreateChannels(1);
   TestHandleIceUfragPasswordChanged();
+  DestroyChannels();
 }
 
 // Test that ICE restart works when bundle is enabled.
@@ -1124,6 +1167,7 @@ TEST_F(P2PTransportChannelTest, HandleUfragPwdChangeBundleAsGice) {
 
   CreateChannels(2);
   TestHandleIceUfragPasswordChanged();
+  DestroyChannels();
 }
 
 // Test the operation of GetStats.
@@ -1389,6 +1433,19 @@ TEST_F(P2PTransportChannelTest, TestIceConfigWillPassDownToPort) {
               ep2_ch1()->best_connection());
 
   TestSendRecv(1);
+  DestroyChannels();
+}
+
+// This test verifies channel can handle ice messages when channel is in
+// hybrid mode.
+TEST_F(P2PTransportChannelTest, TestConnectivityBetweenHybridandIce) {
+  TestHybridConnectivity(cricket::ICEPROTO_RFC5245);
+}
+
+// This test verifies channel can handle Gice messages when channel is in
+// hybrid mode.
+TEST_F(P2PTransportChannelTest, TestConnectivityBetweenHybridandGice) {
+  TestHybridConnectivity(cricket::ICEPROTO_GOOGLE);
 }
 
 // Verify that we can set DSCP value and retrieve properly from P2PTC.

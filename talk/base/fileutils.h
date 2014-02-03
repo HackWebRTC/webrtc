@@ -33,9 +33,10 @@
 #ifdef WIN32
 #include "talk/base/win32.h"
 #else
-#include <sys/types.h>
 #include <dirent.h>
+#include <stdio.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 #endif
 
@@ -463,7 +464,10 @@ const PlatformFile kInvalidPlatformFileValue = INVALID_HANDLE_VALUE;
 #elif defined(POSIX)
 typedef int PlatformFile;
 const PlatformFile kInvalidPlatformFileValue = -1;
+#else
+#error Unsupported platform
 #endif
+
 FILE* FdopenPlatformFileForWriting(PlatformFile file);
 bool ClosePlatformFile(PlatformFile file);
 

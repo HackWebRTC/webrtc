@@ -179,6 +179,12 @@ class TurnPortTest : public testing::Test,
                                  local_address.ipaddr(), 0, 0,
                                  kIceUfrag1, kIcePwd1,
                                  server_address, credentials));
+    // Set ICE protocol type to ICEPROTO_RFC5245, as port by default will be
+    // in Hybrid mode. Protocol type is necessary to send correct type STUN ping
+    // messages.
+    // This TURN port will be the controlling.
+    turn_port_->SetIceProtocolType(cricket::ICEPROTO_RFC5245);
+    turn_port_->SetIceRole(cricket::ICEROLE_CONTROLLING);
     turn_port_->SignalPortComplete.connect(this,
         &TurnPortTest::OnTurnPortComplete);
     turn_port_->SignalPortError.connect(this,
@@ -192,6 +198,10 @@ class TurnPortTest : public testing::Test,
     udp_port_.reset(UDPPort::Create(main_, &socket_factory_, &network_,
                                     kLocalAddr2.ipaddr(), 0, 0,
                                     kIceUfrag2, kIcePwd2));
+    // Set protocol type to RFC5245, as turn port is also in same mode.
+    // UDP port will be controlled.
+    udp_port_->SetIceProtocolType(cricket::ICEPROTO_RFC5245);
+    udp_port_->SetIceRole(cricket::ICEROLE_CONTROLLED);
     udp_port_->SignalPortComplete.connect(
         this, &TurnPortTest::OnUdpPortComplete);
   }

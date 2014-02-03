@@ -97,7 +97,10 @@ class RawTransportChannel : public TransportChannelImpl,
   virtual IceRole GetIceRole() const { return ICEROLE_UNKNOWN; }
   virtual void SetIceRole(IceRole role) {}
   virtual void SetIceTiebreaker(uint64 tiebreaker) {}
+
+  virtual bool GetIceProtocolType(IceProtocolType* type) const { return false; }
   virtual void SetIceProtocolType(IceProtocolType type) {}
+
   virtual void SetIceUfrag(const std::string& ice_ufrag) {}
   virtual void SetIcePwd(const std::string& ice_pwd) {}
   virtual void SetRemoteIceMode(IceMode mode) {}

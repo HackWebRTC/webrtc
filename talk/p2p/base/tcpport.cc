@@ -167,14 +167,6 @@ int TCPPort::GetOption(talk_base::Socket::Option opt, int* value) {
 }
 
 int TCPPort::SetOption(talk_base::Socket::Option opt, int value) {
-  // If we are setting DSCP value, pass value to base Port and return.
-  // TODO(mallinath) - After we have the support on socket,
-  // remove this specialization.
-  if (opt == talk_base::Socket::OPT_DSCP) {
-    SetDefaultDscpValue(static_cast<talk_base::DiffServCodePoint>(value));
-    return 0;
-  }
-
   if (socket_) {
     return socket_->SetOption(opt, value);
   } else {

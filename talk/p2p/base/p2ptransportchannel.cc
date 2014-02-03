@@ -167,7 +167,7 @@ P2PTransportChannel::P2PTransportChannel(const std::string& content_name,
     pending_best_connection_(NULL),
     sort_dirty_(false),
     was_writable_(false),
-    protocol_type_(ICEPROTO_GOOGLE),
+    protocol_type_(ICEPROTO_HYBRID),
     remote_ice_mode_(ICEMODE_FULL),
     ice_role_(ICEROLE_UNKNOWN),
     tiebreaker_(0),
@@ -235,6 +235,11 @@ void P2PTransportChannel::SetIceTiebreaker(uint64 tiebreaker) {
   }
 
   tiebreaker_ = tiebreaker;
+}
+
+bool P2PTransportChannel::GetIceProtocolType(IceProtocolType* type) const {
+  *type = protocol_type_;
+  return true;
 }
 
 void P2PTransportChannel::SetIceProtocolType(IceProtocolType type) {
@@ -467,7 +472,7 @@ void P2PTransportChannel::OnUnknownAddress(
     // Create a new candidate with this address.
 
     std::string type;
-    if (protocol_type_ == ICEPROTO_RFC5245) {
+    if (port->IceProtocol() == ICEPROTO_RFC5245) {
       type = PRFLX_PORT_TYPE;
     } else {
       // G-ICE doesn't support prflx candidate.
@@ -491,7 +496,7 @@ void P2PTransportChannel::OnUnknownAddress(
         new_remote_candidate.GetPriority(ICE_TYPE_PREFERENCE_SRFLX));
   }
 
-  if (protocol_type_ == ICEPROTO_RFC5245) {
+  if (port->IceProtocol() == ICEPROTO_RFC5245) {
     // RFC 5245
     // If the source transport address of the request does not match any
     // existing remote candidates, it represents a new peer reflexive remote
@@ -883,6 +888,15 @@ void P2PTransportChannel::SortConnections() {
   // Make sure the connection states are up-to-date since this affects how they
   // will be sorted.
   UpdateConnectionStates();
+
+  if (protocol_type_ == ICEPROTO_HYBRID) {
+    // If we are in hybrid mode, we are not sending any ping requests, so there
+    // is no point in sorting the connections. In hybrid state, ports can have
+    // different protocol than hybrid and protocol may differ from one another.
+    // Instead just update the state of this channel
+    UpdateChannelState();
+    return;
+  }
 
   // Any changes after this point will require a re-sort.
   sort_dirty_ = false;

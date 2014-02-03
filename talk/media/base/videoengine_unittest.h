@@ -1184,6 +1184,8 @@ class VideoMediaChannelTest : public testing::Test,
     // some (e.g. 1) of these 3 frames after the renderer is set again.
     EXPECT_GT_FRAME_ON_RENDERER_WAIT(
         renderer1, 2, DefaultCodec().width, DefaultCodec().height, kTimeout);
+    // Detach |renderer1| before exit as there might be frames come late.
+    EXPECT_TRUE(channel_->SetRenderer(kSsrc, NULL));
   }
 
   // Tests the behavior of incoming streams in a conference scenario.

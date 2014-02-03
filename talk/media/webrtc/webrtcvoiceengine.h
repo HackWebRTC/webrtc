@@ -392,8 +392,11 @@ class WebRtcVoiceMediaChannel
   static Error WebRtcErrorToChannelError(int err_code);
 
  private:
-  struct WebRtcVoiceChannelInfo;
-  typedef std::map<uint32, WebRtcVoiceChannelInfo> ChannelMap;
+  class WebRtcVoiceChannelRenderer;
+  // Map of ssrc to WebRtcVoiceChannelRenderer object.  A new object of
+  // WebRtcVoiceChannelRenderer will be created for every new stream and
+  // will be destroyed when the stream goes away.
+  typedef std::map<uint32, WebRtcVoiceChannelRenderer*> ChannelMap;
 
   void SetNack(int channel, bool nack_enabled);
   void SetNack(const ChannelMap& channels, bool nack_enabled);

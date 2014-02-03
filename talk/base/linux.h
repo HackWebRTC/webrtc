@@ -121,6 +121,11 @@ class ProcCpuInfo {
   ConfigParser::MapVector sections_;
 };
 
+#if !defined(GOOGLE_CHROME_BUILD) && !defined(CHROMIUM_BUILD)
+// Builds a string containing the info from lsb_release on a single line.
+std::string ReadLinuxLsbRelease();
+#endif
+
 // Returns the output of "uname".
 std::string ReadLinuxUname();
 

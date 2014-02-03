@@ -32,6 +32,8 @@
 
 #ifdef LINUX
 #include <X11/Xlib.h>
+#include <X11/extensions/Xrandr.h>
+
 // X defines a few macros that stomp on types that gunit.h uses.
 #undef None
 #undef Bool
@@ -599,6 +601,16 @@ inline bool IsScreencastingAvailable() {
   XDisplay display;
   if (!display.IsValid()) {
     LOG(LS_WARNING) << "No X Display available.";
+    return false;
+  }
+  int ignored_int, major_version, minor_version;
+  if (!XRRQueryExtension(display, &ignored_int, &ignored_int) ||
+      !XRRQueryVersion(display, &major_version, &minor_version) ||
+      major_version < 1 ||
+      (major_version < 2 && minor_version < 3)) {
+    LOG(LS_WARNING) << "XRandr version: " << major_version << "."
+                    << minor_version;
+    LOG(LS_WARNING) << "XRandr is not supported or is too old (pre 1.3).";
     return false;
   }
 #endif

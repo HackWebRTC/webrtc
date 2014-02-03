@@ -201,6 +201,8 @@ class DeviceManager : public DeviceManagerInterface {
   // The exclusion_list MUST be a NULL terminated list.
   static bool ShouldDeviceBeIgnored(const std::string& device_name,
       const char* const exclusion_list[]);
+  bool GetFakeVideoCaptureDevice(const std::string& name, Device* out) const;
+  VideoCapturer* ConstructFakeVideoCapturer(const Device& device) const;
 
   bool initialized_;
   talk_base::scoped_ptr<VideoCapturerFactory> device_video_capturer_factory_;

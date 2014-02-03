@@ -255,7 +255,14 @@ class VideoCapturer
   // Signal the captured frame to downstream.
   sigslot::signal2<VideoCapturer*, const CapturedFrame*,
                    sigslot::multi_threaded_local> SignalFrameCaptured;
-  // Signal the captured frame converted to I420 to downstream.
+  // A VideoAdapter should be hooked up to SignalAdaptFrame which will be
+  // called before forwarding the frame to SignalVideoFrame. The parameters
+  // are this capturer instance, the input video frame and output frame
+  // pointer, respectively.
+  sigslot::signal3<VideoCapturer*, const VideoFrame*, VideoFrame**,
+                   sigslot::multi_threaded_local> SignalAdaptFrame;
+  // Signal the captured and possibly adapted frame to downstream consumers
+  // such as the encoder.
   sigslot::signal2<VideoCapturer*, const VideoFrame*,
                    sigslot::multi_threaded_local> SignalVideoFrame;
 

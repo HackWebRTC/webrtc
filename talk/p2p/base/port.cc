@@ -178,11 +178,10 @@ Port::Port(talk_base::Thread* thread, talk_base::PacketSocketFactory* factory,
       password_(password),
       timeout_delay_(kPortTimeoutDelay),
       enable_port_packets_(false),
-      ice_protocol_(ICEPROTO_GOOGLE),
+      ice_protocol_(ICEPROTO_HYBRID),
       ice_role_(ICEROLE_UNKNOWN),
       tiebreaker_(0),
-      shared_socket_(true),
-      default_dscp_(talk_base::DSCP_NO_CHANGE) {
+      shared_socket_(true) {
   Construct();
 }
 
@@ -205,11 +204,10 @@ Port::Port(talk_base::Thread* thread, const std::string& type,
       password_(password),
       timeout_delay_(kPortTimeoutDelay),
       enable_port_packets_(false),
-      ice_protocol_(ICEPROTO_GOOGLE),
+      ice_protocol_(ICEPROTO_HYBRID),
       ice_role_(ICEROLE_UNKNOWN),
       tiebreaker_(0),
-      shared_socket_(false),
-      default_dscp_(talk_base::DSCP_NO_CHANGE) {
+      shared_socket_(false) {
   ASSERT(factory_ != NULL);
   Construct();
 }
@@ -341,6 +339,10 @@ bool Port::IsGoogleIce() const {
   return (ice_protocol_ == ICEPROTO_GOOGLE);
 }
 
+bool Port::IsHybridIce() const {
+  return (ice_protocol_ == ICEPROTO_HYBRID);
+}
+
 bool Port::GetStunMessage(const char* data, size_t size,
                           const talk_base::SocketAddress& addr,
                           IceMessage** out_msg, std::string* out_username) {
@@ -382,7 +384,9 @@ bool Port::GetStunMessage(const char* data, size_t size,
     // If the username is bad or unknown, fail with a 401 Unauthorized.
     std::string local_ufrag;
     std::string remote_ufrag;
-    if (!ParseStunUsername(stun_msg.get(), &local_ufrag, &remote_ufrag) ||
+    IceProtocolType remote_protocol_type;
+    if (!ParseStunUsername(stun_msg.get(), &local_ufrag, &remote_ufrag,
+                           &remote_protocol_type) ||
         local_ufrag != username_fragment()) {
       LOG_J(LS_ERROR, this) << "Received STUN request with bad local username "
                             << local_ufrag << " from "
@@ -390,6 +394,15 @@ bool Port::GetStunMessage(const char* data, size_t size,
       SendBindingErrorResponse(stun_msg.get(), addr, STUN_ERROR_UNAUTHORIZED,
                                STUN_ERROR_REASON_UNAUTHORIZED);
       return true;
+    }
+
+    // Port is initialized to GOOGLE-ICE protocol type. If pings from remote
+    // are received before the signal message, protocol type may be different.
+    // Based on the STUN username, we can determine what's the remote protocol.
+    // This also enables us to send the response back using the same protocol
+    // as the request.
+    if (IsHybridIce()) {
+      SetIceProtocolType(remote_protocol_type);
     }
 
     // If ICE, and the MESSAGE-INTEGRITY is bad, fail with a 401 Unauthorized
@@ -453,7 +466,8 @@ bool Port::IsCompatibleAddress(const talk_base::SocketAddress& addr) {
 
 bool Port::ParseStunUsername(const StunMessage* stun_msg,
                              std::string* local_ufrag,
-                             std::string* remote_ufrag) const {
+                             std::string* remote_ufrag,
+                             IceProtocolType* remote_protocol_type) const {
   // The packet must include a username that either begins or ends with our
   // fragment.  It should begin with our fragment if it is a request and it
   // should end with our fragment if it is a response.
@@ -465,8 +479,16 @@ bool Port::ParseStunUsername(const StunMessage* stun_msg,
     return false;
 
   const std::string username_attr_str = username_attr->GetString();
-  if (IsStandardIce()) {
-    size_t colon_pos = username_attr_str.find(":");
+  size_t colon_pos = username_attr_str.find(":");
+  // If we are in hybrid mode set the appropriate ice protocol type based on
+  // the username argument style.
+  if (IsHybridIce()) {
+    *remote_protocol_type = (colon_pos != std::string::npos) ?
+        ICEPROTO_RFC5245 : ICEPROTO_GOOGLE;
+  } else {
+    *remote_protocol_type = ice_protocol_;
+  }
+  if (*remote_protocol_type == ICEPROTO_RFC5245) {
     if (colon_pos != std::string::npos) {  // RFRAG:LFRAG
       *local_ufrag = username_attr_str.substr(0, colon_pos);
       *remote_ufrag = username_attr_str.substr(
@@ -474,7 +496,7 @@ bool Port::ParseStunUsername(const StunMessage* stun_msg,
     } else {
       return false;
     }
-  } else if (IsGoogleIce()) {
+  } else if (*remote_protocol_type == ICEPROTO_GOOGLE) {
     int remote_frag_len = static_cast<int>(username_attr_str.size());
     remote_frag_len -= static_cast<int>(username_fragment().size());
     if (remote_frag_len < 0)
@@ -716,7 +738,7 @@ void Port::CheckTimeout() {
 }
 
 const std::string Port::username_fragment() const {
-  if (IsGoogleIce() &&
+  if (!IsStandardIce() &&
       component_ == ICE_CANDIDATE_COMPONENT_RTCP) {
     // In GICE mode, we should adjust username fragment for rtcp component.
     return GetRtcpUfragFromRtpUfrag(ice_username_fragment_);
@@ -997,7 +1019,7 @@ void Connection::OnReadPacket(
       // id's match.
       case STUN_BINDING_RESPONSE:
       case STUN_BINDING_ERROR_RESPONSE:
-        if (port_->IceProtocol() == ICEPROTO_GOOGLE ||
+        if (port_->IsGoogleIce() ||
             msg->ValidateMessageIntegrity(
                 data, size, remote_candidate().password())) {
           requests_.CheckResponse(msg.get());

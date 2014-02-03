@@ -304,14 +304,6 @@ Connection* TurnPort::CreateConnection(const Candidate& address,
 }
 
 int TurnPort::SetOption(talk_base::Socket::Option opt, int value) {
-  // DSCP option is not passed to the socket.
-  // TODO(mallinath) - After we have the support on socket,
-  // remove this specialization.
-  if (opt == talk_base::Socket::OPT_DSCP) {
-    SetDefaultDscpValue(static_cast<talk_base::DiffServCodePoint>(value));
-    return 0;
-  }
-
   if (!socket_) {
     // If socket is not created yet, these options will be applied during socket
     // creation.
@@ -322,8 +314,14 @@ int TurnPort::SetOption(talk_base::Socket::Option opt, int value) {
 }
 
 int TurnPort::GetOption(talk_base::Socket::Option opt, int* value) {
-  if (!socket_)
-    return -1;
+  if (!socket_) {
+    SocketOptionsMap::const_iterator it = socket_options_.find(opt);
+    if (it == socket_options_.end()) {
+      return -1;
+    }
+    *value = it->second;
+    return 0;
+  }
 
   return socket_->GetOption(opt, value);
 }
