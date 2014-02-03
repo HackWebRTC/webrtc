@@ -203,8 +203,8 @@ public class PeerConnectionTest extends TestCase {
       assertEquals(expectedAddStreamLabels.removeFirst(), stream.label());
       assertEquals(1, stream.videoTracks.size());
       assertEquals(1, stream.audioTracks.size());
-      assertTrue(stream.videoTracks.get(0).id().endsWith("LMSv0"));
-      assertTrue(stream.audioTracks.get(0).id().endsWith("LMSa0"));
+      assertTrue(stream.videoTracks.get(0).id().endsWith("VideoTrack"));
+      assertTrue(stream.audioTracks.get(0).id().endsWith("AudioTrack"));
       assertEquals("video", stream.videoTracks.get(0).kind());
       assertEquals("audio", stream.audioTracks.get(0).kind());
       VideoRenderer renderer = createVideoRenderer(this);
@@ -533,16 +533,11 @@ public class PeerConnectionTest extends TestCase {
     VideoSource videoSource = factory.createVideoSource(
         VideoCapturer.create(""), new MediaConstraints());
 
-    // TODO(fischman): the track ids here and in the addTracksToPC() call
-    // below hard-code the <mediaStreamLabel>[av]<index> scheme used in the
-    // serialized SDP, because the C++ API doesn't auto-translate.
-    // Drop |label| params from {Audio,Video}Track-related APIs once
-    // https://code.google.com/p/webrtc/issues/detail?id=1253 is fixed.
     offeringExpectations.expectSetSize();
     offeringExpectations.expectRenegotiationNeeded();
     WeakReference<MediaStream> oLMS = addTracksToPC(
-        factory, offeringPC, videoSource, "oLMS", "oLMSv0", "oLMSa0",
-        offeringExpectations);
+        factory, offeringPC, videoSource, "offeredMediaStream",
+        "offeredVideoTrack", "offeredAudioTrack", offeringExpectations);
 
     offeringExpectations.expectRenegotiationNeeded();
     DataChannel offeringDC = offeringPC.createDataChannel(
@@ -560,7 +555,7 @@ public class PeerConnectionTest extends TestCase {
     sdpLatch = new SdpObserverLatch();
     answeringExpectations.expectSignalingChange(
         SignalingState.HAVE_REMOTE_OFFER);
-    answeringExpectations.expectAddStream("oLMS");
+    answeringExpectations.expectAddStream("offeredMediaStream");
     // SCTP DataChannels are announced via OPEN messages over the established
     // connection (not via SDP), so answeringExpectations can only register
     // expecting the channel during ICE, below.
@@ -573,8 +568,8 @@ public class PeerConnectionTest extends TestCase {
     answeringExpectations.expectSetSize();
     answeringExpectations.expectRenegotiationNeeded();
     WeakReference<MediaStream> aLMS = addTracksToPC(
-        factory, answeringPC, videoSource, "aLMS", "aLMSv0", "aLMSa0",
-        answeringExpectations);
+        factory, answeringPC, videoSource, "answeredMediaStream",
+        "answeredVideoTrack", "answeredAudioTrack", answeringExpectations);
 
     sdpLatch = new SdpObserverLatch();
     answeringPC.createAnswer(sdpLatch, new MediaConstraints());
@@ -602,7 +597,7 @@ public class PeerConnectionTest extends TestCase {
     assertNull(sdpLatch.getSdp());
     sdpLatch = new SdpObserverLatch();
     offeringExpectations.expectSignalingChange(SignalingState.STABLE);
-    offeringExpectations.expectAddStream("aLMS");
+    offeringExpectations.expectAddStream("answeredMediaStream");
     offeringPC.setRemoteDescription(sdpLatch, answerSdp);
     assertTrue(sdpLatch.await());
     assertNull(sdpLatch.getSdp());
