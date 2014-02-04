@@ -39,11 +39,11 @@ TEST_F(DtmfTest, DtmfFeedbackIsEnabledByDefaultButNotDirectFeedback) {
   EXPECT_FALSE(dtmf_direct_feedback);
 }
 
-TEST_F(DtmfTest, DISABLED_ManualSuccessfullySendsInBandTelephoneEvents) {
+TEST_F(DtmfTest, ManualSuccessfullySendsInBandTelephoneEvents) {
   RunSixteenDtmfEvents(false);
 }
 
-TEST_F(DtmfTest, DISABLED_ManualSuccessfullySendsOutOfBandTelephoneEvents) {
+TEST_F(DtmfTest, ManualSuccessfullySendsOutOfBandTelephoneEvents) {
   RunSixteenDtmfEvents(true);
 }
 
