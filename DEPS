@@ -42,6 +42,9 @@ deps = {
   "testing/gtest":
     From("chromium_deps", "src/testing/gtest"),
 
+  "third_party/clang_format":
+    Var("chromium_trunk") + "/src/third_party/clang_format@" + Var("chromium_revision"),
+
   "third_party/expat":
     Var("chromium_trunk") + "/src/third_party/expat@" + Var("chromium_revision"),
 
@@ -249,6 +252,40 @@ hooks = [
                 "--no_auth",
                 "--bucket", "chromium-gn",
                 "-s", Var("root_dir") + "/tools/gn/bin/linux/gn32.sha1",
+    ],
+  },
+  # Pull clang-format binaries using checked-in hashes.
+  {
+    "name": "clang_format_win",
+    "pattern": "third_party/clang_format/bin/win/clang-format.exe.sha1",
+    "action": [ "download_from_google_storage",
+                "--no_resume",
+                "--platform=win32",
+                "--no_auth",
+                "--bucket", "chromium-clang-format",
+                "-s", Var("root_dir") + "/third_party/clang_format/bin/win/clang-format.exe.sha1",
+    ],
+  },
+  {
+    "name": "clang_format_mac",
+    "pattern": "third_party/clang_format/bin/mac/clang-format.sha1",
+    "action": [ "download_from_google_storage",
+                "--no_resume",
+                "--platform=darwin",
+                "--no_auth",
+                "--bucket", "chromium-clang-format",
+                "-s", Var("root_dir") + "/third_party/clang_format/bin/mac/clang-format.sha1",
+    ],
+  },
+  {
+    "name": "clang_format_linux",
+    "pattern": "third_party/clang_format/bin/linux/clang-format.sha1",
+    "action": [ "download_from_google_storage",
+                "--no_resume",
+                "--platform=linux*",
+                "--no_auth",
+                "--bucket", "chromium-clang-format",
+                "-s", Var("root_dir") + "/third_party/clang_format/bin/linux/clang-format.sha1",
     ],
   },
   {
