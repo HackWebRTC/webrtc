@@ -1274,7 +1274,8 @@ void ModuleRtpRtcpImpl::SetTargetSendBitrate(
         }
       }
     } else {
-      assert(stream_bitrates.size() == 1);
+      if (stream_bitrates.size() > 1)
+        return;
       std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
       for (; it != child_modules_.end(); ++it) {
         RTPSender& rtp_sender = (*it)->rtp_sender_;
@@ -1282,7 +1283,8 @@ void ModuleRtpRtcpImpl::SetTargetSendBitrate(
       }
     }
   } else {
-    assert(stream_bitrates.size() == 1);
+    if (stream_bitrates.size() > 1)
+      return;
     rtp_sender_.SetTargetSendBitrate(stream_bitrates[0]);
   }
 }
