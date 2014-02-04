@@ -515,43 +515,44 @@ void NetEqDecodingTest::CheckBgnOff(int sampling_rate_hz,
 #endif
 
 TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(MAYBE_TestBitExactness)) {
-  const std::string kInputRtpFile = webrtc::test::ProjectRootPath() +
+  const std::string input_rtp_file = webrtc::test::ProjectRootPath() +
       "resources/audio_coding/neteq_universal_new.rtp";
 #if defined(_MSC_VER) && (_MSC_VER >= 1700)
   // For Visual Studio 2012 and later, we will have to use the generic reference
   // file, rather than the windows-specific one.
-  const std::string kInputRefFile = webrtc::test::ProjectRootPath() +
+  const std::string input_ref_file = webrtc::test::ProjectRootPath() +
       "resources/audio_coding/neteq4_universal_ref.pcm";
 #else
-  const std::string kInputRefFile =
+  const std::string input_ref_file =
       webrtc::test::ResourcePath("audio_coding/neteq4_universal_ref", "pcm");
 #endif
 
   if (FLAGS_gen_ref) {
-    DecodeAndCompare(kInputRtpFile, "");
+    DecodeAndCompare(input_rtp_file, "");
   } else {
-    DecodeAndCompare(kInputRtpFile, kInputRefFile);
+    DecodeAndCompare(input_rtp_file, input_ref_file);
   }
 }
 
 TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(TestNetworkStatistics)) {
-  const std::string kInputRtpFile = webrtc::test::ProjectRootPath() +
+  const std::string input_rtp_file = webrtc::test::ProjectRootPath() +
       "resources/audio_coding/neteq_universal_new.rtp";
 #if defined(_MSC_VER) && (_MSC_VER >= 1700)
   // For Visual Studio 2012 and later, we will have to use the generic reference
   // file, rather than the windows-specific one.
-  const std::string kNetworkStatRefFile = webrtc::test::ProjectRootPath() +
+  const std::string network_stat_ref_file = webrtc::test::ProjectRootPath() +
       "resources/audio_coding/neteq4_network_stats.dat";
 #else
-  const std::string kNetworkStatRefFile =
+  const std::string network_stat_ref_file =
       webrtc::test::ResourcePath("audio_coding/neteq4_network_stats", "dat");
 #endif
-  const std::string kRtcpStatRefFile =
+  const std::string rtcp_stat_ref_file =
       webrtc::test::ResourcePath("audio_coding/neteq4_rtcp_stats", "dat");
   if (FLAGS_gen_ref) {
-    DecodeAndCheckStats(kInputRtpFile, "", "");
+    DecodeAndCheckStats(input_rtp_file, "", "");
   } else {
-    DecodeAndCheckStats(kInputRtpFile, kNetworkStatRefFile, kRtcpStatRefFile);
+    DecodeAndCheckStats(input_rtp_file, network_stat_ref_file,
+                        rtcp_stat_ref_file);
   }
 }
 
