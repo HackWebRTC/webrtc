@@ -105,9 +105,12 @@ void MouseCursorMonitorWin::Capture() {
       position.set(0, 0);
       inside = false;
     } else {
+      if (inside) {
+        HWND windowUnderCursor = WindowFromPoint(cursor_info.ptScreenPos);
+        inside = windowUnderCursor ?
+            (window_ == GetAncestor(windowUnderCursor, GA_ROOT)) : false;
+      }
       position = position.subtract(DesktopVector(rect.left, rect.top));
-      if (inside)
-        inside = (window_ == WindowFromPoint(cursor_info.ptScreenPos));
     }
   } else {
     assert(screen_ != kInvalidScreenId);
