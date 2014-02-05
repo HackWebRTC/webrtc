@@ -60,17 +60,18 @@ int NETEQTEST_DummyRTPpacket::readFromFile(FILE *fp)
         length = (uint16_t) (length - _kRDHeaderLen);
 
         // check buffer size
-        if (_datagram && _memSize < length)
+        if (_datagram && _memSize < length + 1)
         {
             reset();
         }
 
         if (!_datagram)
         {
-            _datagram = new uint8_t[length];
-            _memSize = length;
+            // Add one extra byte, to be able to fake a dummy payload of 1 byte.
+            _datagram = new uint8_t[length + 1];
+            _memSize = length + 1;
         }
-        memset(_datagram, 0, length);
+        memset(_datagram, 0, length + 1);
 
         if (length == 0)
         {
@@ -102,8 +103,7 @@ int NETEQTEST_DummyRTPpacket::readFromFile(FILE *fp)
 
             // Read extension from file
             size_t readLen = newLen - _kBasicHeaderLen;
-            if (fread((unsigned short *) _datagram + _kBasicHeaderLen, 1,
-                      readLen, fp) != readLen)
+            if (fread(&_datagram[_kBasicHeaderLen], 1, readLen, fp) != readLen)
             {
                 reset();
                 return -1;
@@ -117,8 +117,7 @@ int NETEQTEST_DummyRTPpacket::readFromFile(FILE *fp)
 
                 // Read extension from file
                 size_t readLen = totHdrLen - newLen;
-                if (fread((unsigned short *) _datagram + newLen, 1, readLen, fp)
-                    != readLen)
+                if (fread(&_datagram[newLen], 1, readLen, fp) != readLen)
                 {
                     reset();
                     return -1;
@@ -135,6 +134,8 @@ int NETEQTEST_DummyRTPpacket::readFromFile(FILE *fp)
     }
 
     _rtpParsed = false;
+    assert(_memSize > _datagramLen);
+    _payloadLen = 1;  // Set the length to 1 byte.
     return packetLen;
 
 }
@@ -195,3 +196,9 @@ int NETEQTEST_DummyRTPpacket::writeToFile(FILE *fp)
 
 }
 
+void NETEQTEST_DummyRTPpacket::parseHeader() {
+  NETEQTEST_RTPpacket::parseHeader();
+  // Change _payloadLen to 1 byte. The memory should always be big enough.
+  assert(_memSize > _datagramLen);
+  _payloadLen = 1;
+}
