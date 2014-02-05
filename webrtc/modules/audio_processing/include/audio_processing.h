@@ -136,12 +136,13 @@ struct ExperimentalAgc {
 //
 class AudioProcessing : public Module {
  public:
-  // Creates a APM instance, with identifier |id|. Use one instance for every
-  // primary audio stream requiring processing. On the client-side, this would
-  // typically be one instance for the near-end stream, and additional instances
-  // for each far-end stream which requires processing. On the server-side,
-  // this would typically be one instance for every incoming stream.
+  // Creates an APM instance. Use one instance for every primary audio stream
+  // requiring processing. On the client-side, this would typically be one
+  // instance for the near-end stream, and additional instances for each far-end
+  // stream which requires processing. On the server-side, this would typically
+  // be one instance for every incoming stream.
   static AudioProcessing* Create();
+  // Allows passing in an optional configuration at create-time.
   static AudioProcessing* Create(const Config& config);
   // TODO(ajm): Deprecated; remove all calls to it.
   static AudioProcessing* Create(int id);
