@@ -190,34 +190,19 @@
     ['OS=="android"', {
       'targets': [
         {
-          'variables': {
-            # Treat this as third-party code.
-            'chromium_code': 0,
-          },
           'target_name': 'cpu_features_android',
           'type': 'static_library',
           'sources': [
-            # TODO(leozwang): Ideally we want to audomatically exclude .c files
-            # as with .cc files, gyp currently only excludes .cc files.
             'cpu_features_android.c',
           ],
           'conditions': [
-            ['include_ndk_cpu_features==1', {
-              'conditions': [
-                ['android_webview_build == 1', {
-                  'libraries': [
-                    'cpufeatures.a'
-                  ],
-                }, {
-                  'dependencies': [
-                    '<(android_ndk_root)/android_tools_ndk.gyp:cpu_features',
-                  ],
-                }],
+            ['android_webview_build == 1', {
+              'libraries': [
+                'cpufeatures.a'
               ],
             }, {
-              'sources': [
-                'android/cpu-features.c',
-                'android/cpu-features.h',
+              'dependencies': [
+                '<(android_ndk_root)/android_tools_ndk.gyp:cpu_features',
               ],
             }],
           ],

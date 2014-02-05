@@ -109,9 +109,6 @@
 
         # Exclude internal video render module in Chromium build.
         'include_internal_video_render%': 0,
-
-        # Include ndk cpu features in Chromium build.
-        'include_ndk_cpu_features%': 1,
       }, {  # Settings for the standalone (not-in-Chromium) build.
         # TODO(andrew): For now, disable the Chrome plugins, which causes a
         # flood of chromium-style warnings. Investigate enabling them:
@@ -122,7 +119,6 @@
         'include_internal_audio_device%': 1,
         'include_internal_video_capture%': 1,
         'include_internal_video_render%': 1,
-        'include_ndk_cpu_features%': 0,
       }],
       ['build_with_libjingle==1', {
         'include_tests%': 0,
