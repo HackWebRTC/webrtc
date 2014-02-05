@@ -135,17 +135,19 @@ class Packet {
  public:
   Packet();
   Packet(int64_t send_time_us, uint32_t payload_size,
-            const RTPHeader& header);
+         const RTPHeader& header);
   Packet(int64_t send_time_us, uint32_t sequence_number);
 
   bool operator<(const Packet& rhs) const;
 
+  int64_t creation_time_us() const { return creation_time_us_; }
   void set_send_time_us(int64_t send_time_us);
   int64_t send_time_us() const { return send_time_us_; }
   uint32_t payload_size() const { return payload_size_; }
   const RTPHeader& header() const { return header_; }
 
  private:
+  int64_t creation_time_us_;  // Time when the packet was created.
   int64_t send_time_us_;   // Time the packet left last processor touching it.
   uint32_t payload_size_;  // Size of the (non-existent, simulated) payload.
   RTPHeader header_;       // Actual contents.
@@ -172,6 +174,10 @@ class PacketProcessor {
   explicit PacketProcessor(PacketProcessorListener* listener);
   virtual ~PacketProcessor();
 
+  // Called after each simulation batch to allow the processor to plot any
+  // internal data.
+  virtual void Plot(int64_t timestamp_ms) {}
+
   // Run simulation for |time_ms| micro seconds, consuming packets from, and
   // producing packets into in_out. The outgoing packet list must be sorted on
   // |send_time_us_|. The simulation time |time_ms| is optional to use.
@@ -186,12 +192,15 @@ class PacketProcessor {
 class RateCounterFilter : public PacketProcessor {
  public:
   explicit RateCounterFilter(PacketProcessorListener* listener);
+  RateCounterFilter(PacketProcessorListener* listener,
+                    const std::string& context);
   virtual ~RateCounterFilter();
 
   uint32_t packets_per_second() const { return packets_per_second_; }
   uint32_t bits_per_second() const { return bytes_per_second_ * 8; }
 
   void LogStats();
+  virtual void Plot(int64_t timestamp_ms);
   virtual void RunFor(int64_t time_ms, Packets* in_out);
 
  private:
@@ -202,6 +211,7 @@ class RateCounterFilter : public PacketProcessor {
   Packets window_;
   Stats<double> pps_stats_;
   Stats<double> kbps_stats_;
+  std::string name_;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(RateCounterFilter);
 };
@@ -370,12 +380,44 @@ class AdaptiveVideoSender : public VideoSender {
                       uint32_t kbps, uint32_t ssrc, float first_frame_offset);
   virtual ~AdaptiveVideoSender() {}
 
-  virtual int64_t GetFeedbackIntervalMs() const { return 500; }
+  virtual int64_t GetFeedbackIntervalMs() const { return 100; }
   virtual void GiveFeedback(const Feedback& feedback);
 
 private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(AdaptiveVideoSender);
 };
+
+class VideoPacketSenderFactory : public PacketSenderFactory {
+ public:
+  VideoPacketSenderFactory(float fps, uint32_t kbps, uint32_t ssrc,
+                           float frame_offset)
+      : fps_(fps),
+        kbps_(kbps),
+        ssrc_(ssrc),
+        frame_offset_(frame_offset) {
+  }
+  virtual ~VideoPacketSenderFactory() {}
+  virtual PacketSender* Create() const {
+    return new VideoSender(NULL, fps_, kbps_, ssrc_, frame_offset_);
+  }
+ protected:
+  float fps_;
+  uint32_t kbps_;
+  uint32_t ssrc_;
+  float frame_offset_;
+};
+
+class AdaptiveVideoPacketSenderFactory : public VideoPacketSenderFactory {
+ public:
+  AdaptiveVideoPacketSenderFactory(float fps, uint32_t kbps, uint32_t ssrc,
+                                   float frame_offset)
+      : VideoPacketSenderFactory(fps, kbps, ssrc, frame_offset) {}
+  virtual ~AdaptiveVideoPacketSenderFactory() {}
+  virtual PacketSender* Create() const {
+    return new AdaptiveVideoSender(NULL, fps_, kbps_, ssrc_, frame_offset_);
+  }
+};
+
 }  // namespace bwe
 }  // namespace testing
 }  // namespace webrtc

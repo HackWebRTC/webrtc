@@ -69,6 +69,9 @@ class BweTest::TestedEstimator : public RemoteBitrateObserver {
     // time once packet reaches the estimator.
     int64_t packet_time_ms = (packet.send_time_us() + 500) / 1000;
     BWE_TEST_LOGGING_TIME(packet_time_ms);
+    BWE_TEST_LOGGING_PLOT("Delay_#2", clock_.TimeInMilliseconds(),
+                          packet_time_ms -
+                          (packet.creation_time_us() + 500) / 1000);
 
     int64_t step_ms = estimator_->TimeUntilNextProcess();
     while ((clock_.TimeInMilliseconds() + step_ms) < packet_time_ms) {
@@ -76,7 +79,6 @@ class BweTest::TestedEstimator : public RemoteBitrateObserver {
       estimator_->Process();
       step_ms = estimator_->TimeUntilNextProcess();
     }
-
     estimator_->IncomingPacket(packet_time_ms, packet.payload_size(),
                                packet.header());
     clock_.AdvanceTimeMilliseconds(packet_time_ms -
@@ -94,8 +96,8 @@ class BweTest::TestedEstimator : public RemoteBitrateObserver {
 
       double estimated_kbps = static_cast<double>(estimated_bps) / 1000.0;
       stats_.Push(estimated_kbps);
-      BWE_TEST_LOGGING_PLOT("Estimate", clock_.TimeInMilliseconds(),
-                            estimated_kbps / 1000.0);
+      BWE_TEST_LOGGING_PLOT("Estimate_#1", clock_.TimeInMilliseconds(),
+                            estimated_kbps);
       uint32_t relative_estimate_bps = 0;
       if (relative_estimator_ &&
           relative_estimator_->LatestEstimate(&relative_estimate_bps)) {
@@ -244,6 +246,7 @@ void BweTest::RunFor(int64_t time_ms) {
     for (vector<PacketProcessor*>::const_iterator it =
          processors_.begin(); it != processors_.end(); ++it) {
       (*it)->RunFor(simulation_interval_ms_, &packets);
+      (*it)->Plot((packets.back().send_time_us() + 500) / 1000);
     }
 
     // Verify packets are in order between batches.

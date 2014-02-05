@@ -45,20 +45,23 @@ int Random::Gaussian(int mean, int standard_deviation) {
 }
 
 Packet::Packet()
-    : send_time_us_(0),
+    : creation_time_us_(-1),
+      send_time_us_(-1),
       payload_size_(0) {
    memset(&header_, 0, sizeof(header_));
 }
 
 Packet::Packet(int64_t send_time_us, uint32_t payload_size,
-          const RTPHeader& header)
-  : send_time_us_(send_time_us),
+               const RTPHeader& header)
+  : creation_time_us_(send_time_us),
+    send_time_us_(send_time_us),
     payload_size_(payload_size),
     header_(header) {
 }
 
 Packet::Packet(int64_t send_time_us, uint32_t sequence_number)
-    : send_time_us_(send_time_us),
+    : creation_time_us_(send_time_us),
+      send_time_us_(send_time_us),
       payload_size_(0) {
    memset(&header_, 0, sizeof(header_));
    header_.sequenceNumber = sequence_number;
@@ -105,7 +108,21 @@ RateCounterFilter::RateCounterFilter(PacketProcessorListener* listener)
       last_accumulated_us_(0),
       window_(),
       pps_stats_(),
-      kbps_stats_() {
+      kbps_stats_(),
+      name_("") {
+}
+
+RateCounterFilter::RateCounterFilter(PacketProcessorListener* listener,
+                                     const std::string& name)
+    : PacketProcessor(listener),
+      kWindowSizeUs(1000000),
+      packets_per_second_(0),
+      bytes_per_second_(0),
+      last_accumulated_us_(0),
+      window_(),
+      pps_stats_(),
+      kbps_stats_(),
+      name_(name) {
 }
 
 RateCounterFilter::~RateCounterFilter() {
@@ -116,6 +133,12 @@ void RateCounterFilter::LogStats() {
   BWE_TEST_LOGGING_CONTEXT("RateCounterFilter");
   pps_stats_.Log("pps");
   kbps_stats_.Log("kbps");
+}
+
+void RateCounterFilter::Plot(int64_t timestamp_ms) {
+  BWE_TEST_LOGGING_CONTEXT(name_.c_str());
+  BWE_TEST_LOGGING_PLOT("Throughput_#1", timestamp_ms,
+                        (bytes_per_second_ * 8) / 1000.0);
 }
 
 void RateCounterFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {

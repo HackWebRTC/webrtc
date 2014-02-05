@@ -15,38 +15,6 @@
 namespace webrtc {
 namespace testing {
 namespace bwe {
-
-class VideoPacketSenderFactory : public PacketSenderFactory {
- public:
-  VideoPacketSenderFactory(float fps, uint32_t kbps, uint32_t ssrc,
-                           float frame_offset)
-      : fps_(fps),
-        kbps_(kbps),
-        ssrc_(ssrc),
-        frame_offset_(frame_offset) {
-  }
-  virtual ~VideoPacketSenderFactory() {}
-  virtual PacketSender* Create() const {
-    return new VideoSender(NULL, fps_, kbps_, ssrc_, frame_offset_);
-  }
- protected:
-  float fps_;
-  uint32_t kbps_;
-  uint32_t ssrc_;
-  float frame_offset_;
-  bool adaptive_;
-};
-
-class AdaptiveVideoPacketSenderFactory : public VideoPacketSenderFactory {
- public:
-  AdaptiveVideoPacketSenderFactory(float fps, uint32_t kbps, uint32_t ssrc,
-                                   float frame_offset)
-      : VideoPacketSenderFactory(fps, kbps, ssrc, frame_offset) {}
-  virtual PacketSender* Create() const {
-    return new AdaptiveVideoSender(NULL, fps_, kbps_, ssrc_, frame_offset_);
-  }
-};
-
 std::vector<const PacketSenderFactory*> VideoSenderFactories(uint32_t count) {
   static const VideoPacketSenderFactory factories[] = {
     VideoPacketSenderFactory(30.00f, 150, 0x1234, 0.13f),
@@ -71,23 +39,6 @@ std::vector<const PacketSenderFactory*> VideoSenderFactories(uint32_t count) {
   return result;
 }
 
-std::vector<const PacketSenderFactory*> AdaptiveVideoSenderFactories(
-    uint32_t count) {
-  static const VideoPacketSenderFactory factories[] = {
-    AdaptiveVideoPacketSenderFactory(30.00f, 150, 0x1234, 0.13f),
-    AdaptiveVideoPacketSenderFactory(30.00f, 300, 0x3456, 0.26f),
-    AdaptiveVideoPacketSenderFactory(15.00f, 600, 0x4567, 0.39f),
-  };
-
-  assert(count <= sizeof(factories) / sizeof(factories[0]));
-
-  std::vector<const PacketSenderFactory*> result;
-  for (uint32_t i = 0; i < count; ++i) {
-    result.push_back(&factories[i]);
-  }
-  return result;
-}
-
 std::vector<BweTestConfig::EstimatorConfig> EstimatorConfigs() {
   static const RemoteBitrateEstimatorFactory factories[] = {
     RemoteBitrateEstimatorFactory(),
@@ -103,13 +54,6 @@ std::vector<BweTestConfig::EstimatorConfig> EstimatorConfigs() {
 BweTestConfig MakeBweTestConfig(uint32_t sender_count) {
   BweTestConfig result = {
     VideoSenderFactories(sender_count), EstimatorConfigs()
-  };
-  return result;
-}
-
-BweTestConfig MakeAdaptiveBweTestConfig(uint32_t sender_count) {
-  BweTestConfig result = {
-    AdaptiveVideoSenderFactories(sender_count), EstimatorConfigs()
   };
   return result;
 }
@@ -264,34 +208,6 @@ TEST_P(BweTest, Multi2) {
   choke.SetCapacity(2000);
   jitter.SetJitter(120);
   RunFor(5 * 60 * 1000);
-}
-
-// This test fixture is used to instantiate tests running with adaptive video
-// senders.
-class AdaptiveBweTest : public BweTest {
- public:
-  AdaptiveBweTest() : BweTest() {}
-  virtual ~AdaptiveBweTest() {}
-
- private:
-
-  DISALLOW_COPY_AND_ASSIGN(AdaptiveBweTest);
-};
-
-INSTANTIATE_TEST_CASE_P(VideoSendersTest, AdaptiveBweTest,
-    ::testing::Values(MakeAdaptiveBweTestConfig(1),
-                      MakeAdaptiveBweTestConfig(3)));
-
-TEST_P(AdaptiveBweTest, SprintUplinkTest) {
-  TraceBasedDeliveryFilter filter(this);
-  ASSERT_TRUE(filter.Init(test::ResourcePath("sprint-uplink", "rx")));
-  RunFor(60 * 1000);
-}
-
-TEST_P(AdaptiveBweTest, Verizon4gDownlinkTest) {
-  TraceBasedDeliveryFilter filter(this);
-  ASSERT_TRUE(filter.Init(test::ResourcePath("verizon4g-downlink", "rx")));
-  RunFor(22 * 60 * 1000);
 }
 }  // namespace bwe
 }  // namespace testing

@@ -175,6 +175,7 @@
             'media_file/source/media_file_unittest.cc',
             'module_common_types_unittest.cc',
             'pacing/paced_sender_unittest.cc',
+            'remote_bitrate_estimator/bwe_simulations.cc',
             'remote_bitrate_estimator/include/mock/mock_remote_bitrate_observer.h',
             'remote_bitrate_estimator/rate_statistics_unittest.cc',
             'remote_bitrate_estimator/remote_bitrate_estimator_single_stream_unittest.cc',
