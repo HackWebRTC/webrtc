@@ -39,7 +39,11 @@
         '<(DEPTH)/testing/gtest/include',
         '<(DEPTH)/testing/gtest',
       ],
+      'defines': ['_VARIADIC_MAX=10'],
       'direct_dependent_settings': {
+        'defines': [
+          '_VARIADIC_MAX=10',
+        ],
         'include_dirs': [
           '<(DEPTH)/testing/gtest/include',
         ],
