@@ -275,10 +275,19 @@ function processSignalingMessage(message) {
     var candidate = new RTCIceCandidate({sdpMLineIndex: message.label,
                                          candidate: message.candidate});
     noteIceCandidate("Remote", iceCandidateType(message.candidate));
-    pc.addIceCandidate(candidate);
+    pc.addIceCandidate(candidate,
+                       onAddIceCandidateSuccess, onAddIceCandidateError);
   } else if (message.type === 'bye') {
     onRemoteHangup();
   }
+}
+
+function onAddIceCandidateSuccess() {
+  console.log('AddIceCandidate success.');
+}
+
+function onAddIceCandidateError(error) {
+  messageError('Failed to add Ice Candidate: ' + error.toString());
 }
 
 function onChannelOpened() {

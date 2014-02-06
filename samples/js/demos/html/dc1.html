@@ -175,7 +175,8 @@ function gotDescription2(desc) {
 function iceCallback1(event) { 
   trace('local ice callback');
   if (event.candidate) {
-    pc2.addIceCandidate(event.candidate);
+    pc2.addIceCandidate(event.candidate,
+                        onAddIceCandidateSuccess, onAddIceCandidateError);
     trace('Local ICE candidate: \n' + event.candidate.candidate);
   }
 }
@@ -183,9 +184,18 @@ function iceCallback1(event) {
 function iceCallback2(event) {
   trace('remote ice callback');
   if (event.candidate) {
-    pc1.addIceCandidate(event.candidate);
+    pc1.addIceCandidate(event.candidate,
+                        onAddIceCandidateSuccess, onAddIceCandidateError);
     trace('Remote ICE candidate: \n ' + event.candidate.candidate);
   }
+}
+
+function onAddIceCandidateSuccess() {
+  trace('AddIceCandidate success.');
+}
+
+function onAddIceCandidateError(error) {
+  trace('Failed to add Ice Candidate: ' + error.toString());
 }
 
 function receiveChannelCallback(event) {

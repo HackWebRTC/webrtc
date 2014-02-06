@@ -86,13 +86,15 @@ function connect() {
   pc1.onicecandidate = function(e) {
     log('Candidate PC1');
     if (e.candidate) {
-      pc2.addIceCandidate(new RTCIceCandidate(e.candidate));
+      pc2.addIceCandidate(new RTCIceCandidate(e.candidate),
+                          onAddIceCandidateSuccess, onAddIceCandidateError);
     }
   }
   pc2.onicecandidate = function(e) {
     log('Candidate PC2');
     if (e.candidate) {
-      pc1.addIceCandidate(new RTCIceCandidate(e.candidate));
+      pc1.addIceCandidate(new RTCIceCandidate(e.candidate),
+                          onAddIceCandidateSuccess, onAddIceCandidateError);
     }
   }
   pc2.onaddstream = function(e) {
@@ -110,6 +112,14 @@ function connect() {
       pc1.setRemoteDescription(desc2);
     });
   });
+}
+
+function onAddIceCandidateSuccess() {
+  trace("AddIceCandidate success.");
+}
+
+function onAddIceCandidateError(error) {
+  trace("Failed to add Ice Candidate: " + error.toString());
 }
 
 // Augumentation of stats entries with utility functions.

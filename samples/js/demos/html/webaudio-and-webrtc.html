@@ -174,18 +174,28 @@
 
   function iceCallback1(event){
     if (event.candidate) {
-      pc2.addIceCandidate(new RTCIceCandidate(event.candidate));
+      pc2.addIceCandidate(new RTCIceCandidate(event.candidate),
+                          onAddIceCandidateSuccess, onAddIceCandidateError);
       console.log('Local ICE candidate: \n' + event.candidate.candidate);
     }
   }
       
   function iceCallback2(event){
     if (event.candidate) {
-      pc1.addIceCandidate(new RTCIceCandidate(event.candidate));
+      pc1.addIceCandidate(new RTCIceCandidate(event.candidate),
+                          onAddIceCandidateSuccess, onAddIceCandidateError);
       console.log('Remote ICE candidate: \n ' + event.candidate.candidate);
     }
   }
-  
+
+  function onAddIceCandidateSuccess() {
+    trace("AddIceCandidate success.");
+  }
+
+  function onAddIceCandidateError(error) {
+    trace("Failed to add Ice Candidate: " + error.toString());
+  }
+
   function handleKeyDown(event) {
     var keyCode = event.keyCode;
     webAudio.addEffect();
