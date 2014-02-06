@@ -29,7 +29,7 @@ function gen_gnuplot_input {
   linetypes=($(echo "$data_sets" | cut -d '#' -f 2 | cut -d ' ' -f 1))
   echo -n "reset; "
   echo -n "set terminal wxt size 1440,900 font \"Arial,9\"; "
-  echo -n "set xtics 60; set xlabel \"Seconds\"; "
+  echo -n "set xlabel \"Seconds\"; "
   if [ -n $linetypes ]; then
     echo -n "set ylabel 'bitrate (kbps)';"
     echo -n "set ytics nomirror;"

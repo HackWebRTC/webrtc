@@ -67,7 +67,7 @@ INSTANTIATE_TEST_CASE_P(VideoSendersTest, BweSimulation,
 TEST_P(BweSimulation, SprintUplinkTest) {
   VerboseLogging(true);
   RateCounterFilter counter1(this, "sender_output");
-  TraceBasedDeliveryFilter filter(this);
+  TraceBasedDeliveryFilter filter(this, "link_capacity");
   RateCounterFilter counter2(this, "receiver_input");
   ASSERT_TRUE(filter.Init(test::ResourcePath("sprint-uplink", "rx")));
   RunFor(60 * 1000);
@@ -76,7 +76,7 @@ TEST_P(BweSimulation, SprintUplinkTest) {
 TEST_P(BweSimulation, Verizon4gDownlinkTest) {
   VerboseLogging(true);
   RateCounterFilter counter1(this, "sender_output");
-  TraceBasedDeliveryFilter filter(this);
+  TraceBasedDeliveryFilter filter(this, "link_capacity");
   RateCounterFilter counter2(this, "receiver_input");
   ASSERT_TRUE(filter.Init(test::ResourcePath("verizon4g-downlink", "rx")));
   RunFor(22 * 60 * 1000);

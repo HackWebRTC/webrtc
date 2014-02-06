@@ -21,10 +21,13 @@
 
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 namespace testing {
 namespace bwe {
+
+class RateCounter;
 
 template<typename T> class Stats {
  public:
@@ -193,22 +196,18 @@ class RateCounterFilter : public PacketProcessor {
  public:
   explicit RateCounterFilter(PacketProcessorListener* listener);
   RateCounterFilter(PacketProcessorListener* listener,
-                    const std::string& context);
+                    const std::string& name);
   virtual ~RateCounterFilter();
 
-  uint32_t packets_per_second() const { return packets_per_second_; }
-  uint32_t bits_per_second() const { return bytes_per_second_ * 8; }
+  uint32_t packets_per_second() const;
+  uint32_t bits_per_second() const;
 
   void LogStats();
   virtual void Plot(int64_t timestamp_ms);
   virtual void RunFor(int64_t time_ms, Packets* in_out);
 
  private:
-  const int64_t kWindowSizeUs;
-  uint32_t packets_per_second_;
-  uint32_t bytes_per_second_;
-  int64_t last_accumulated_us_;
-  Packets window_;
+  scoped_ptr<RateCounter> rate_counter_;
   Stats<double> pps_stats_;
   Stats<double> kbps_stats_;
   std::string name_;
@@ -298,12 +297,15 @@ class ChokeFilter : public PacketProcessor {
 class TraceBasedDeliveryFilter : public PacketProcessor {
  public:
   explicit TraceBasedDeliveryFilter(PacketProcessorListener* listener);
-  virtual ~TraceBasedDeliveryFilter() {}
+  TraceBasedDeliveryFilter(PacketProcessorListener* listener,
+                           const std::string& name);
+  virtual ~TraceBasedDeliveryFilter();
 
   // The file should contain nanosecond timestamps corresponding to the time
   // when the network can accept another packet. The timestamps should be
   // separated by new lines, e.g., "100000000\n125000000\n321000000\n..."
   bool Init(const std::string& filename);
+  virtual void Plot(int64_t timestamp_ms);
   virtual void RunFor(int64_t time_ms, Packets* in_out);
 
  private:
@@ -313,6 +315,8 @@ class TraceBasedDeliveryFilter : public PacketProcessor {
   TimeList delivery_times_us_;
   TimeList::const_iterator next_delivery_it_;
   int64_t local_time_us_;
+  scoped_ptr<RateCounter> rate_counter_;
+  std::string name_;
 
   DISALLOW_COPY_AND_ASSIGN(TraceBasedDeliveryFilter);
 };

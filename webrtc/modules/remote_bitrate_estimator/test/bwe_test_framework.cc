@@ -17,6 +17,48 @@ namespace webrtc {
 namespace testing {
 namespace bwe {
 
+class RateCounter {
+ public:
+  RateCounter()
+      : kWindowSizeUs(1000000),
+        packets_per_second_(0),
+        bytes_per_second_(0),
+        last_accumulated_us_(0),
+        window_() {}
+
+  void UpdateRates(int64_t send_time_us, uint32_t payload_size) {
+    packets_per_second_++;
+    bytes_per_second_ += payload_size;
+    last_accumulated_us_ = send_time_us;
+    window_.push_back(std::make_pair(send_time_us, payload_size));
+    while (!window_.empty()) {
+      const TimeSizePair& packet = window_.front();
+      if (packet.first > (last_accumulated_us_ - kWindowSizeUs)) {
+        break;
+      }
+      assert(packets_per_second_ >= 1);
+      assert(bytes_per_second_ >= packet.second);
+      packets_per_second_--;
+      bytes_per_second_ -= packet.second;
+      window_.pop_front();
+    }
+  }
+
+  uint32_t bits_per_second() const {
+    return bytes_per_second_ * 8;
+  }
+  uint32_t packets_per_second() const { return packets_per_second_; }
+
+ private:
+  typedef std::pair<int64_t, uint32_t> TimeSizePair;
+
+  const int64_t kWindowSizeUs;
+  uint32_t packets_per_second_;
+  uint32_t bytes_per_second_;
+  int64_t last_accumulated_us_;
+  std::list<TimeSizePair> window_;
+};
+
 Random::Random(uint32_t seed)
     : a_(0x531FDB97 ^ seed),
       b_(0x6420ECA8 + seed) {
@@ -102,31 +144,29 @@ PacketProcessor::~PacketProcessor() {
 
 RateCounterFilter::RateCounterFilter(PacketProcessorListener* listener)
     : PacketProcessor(listener),
-      kWindowSizeUs(1000000),
-      packets_per_second_(0),
-      bytes_per_second_(0),
-      last_accumulated_us_(0),
-      window_(),
+      rate_counter_(new RateCounter()),
       pps_stats_(),
       kbps_stats_(),
-      name_("") {
-}
+      name_("") {}
 
 RateCounterFilter::RateCounterFilter(PacketProcessorListener* listener,
                                      const std::string& name)
     : PacketProcessor(listener),
-      kWindowSizeUs(1000000),
-      packets_per_second_(0),
-      bytes_per_second_(0),
-      last_accumulated_us_(0),
-      window_(),
+      rate_counter_(new RateCounter()),
       pps_stats_(),
       kbps_stats_(),
-      name_(name) {
-}
+      name_(name) {}
 
 RateCounterFilter::~RateCounterFilter() {
   LogStats();
+}
+
+uint32_t RateCounterFilter::packets_per_second() const {
+  return rate_counter_->packets_per_second();
+}
+
+uint32_t RateCounterFilter::bits_per_second() const {
+  return rate_counter_->bits_per_second();
 }
 
 void RateCounterFilter::LogStats() {
@@ -138,30 +178,16 @@ void RateCounterFilter::LogStats() {
 void RateCounterFilter::Plot(int64_t timestamp_ms) {
   BWE_TEST_LOGGING_CONTEXT(name_.c_str());
   BWE_TEST_LOGGING_PLOT("Throughput_#1", timestamp_ms,
-                        (bytes_per_second_ * 8) / 1000.0);
+                        rate_counter_->bits_per_second() / 1000.0);
 }
 
 void RateCounterFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
   assert(in_out);
   for (PacketsConstIt it = in_out->begin(); it != in_out->end(); ++it) {
-    packets_per_second_++;
-    bytes_per_second_ += it->payload_size();
-    last_accumulated_us_ = it->send_time_us();
+    rate_counter_->UpdateRates(it->send_time_us(), it->payload_size());
   }
-  window_.insert(window_.end(), in_out->begin(), in_out->end());
-  while (!window_.empty()) {
-    const Packet& packet = window_.front();
-    if (packet.send_time_us() > (last_accumulated_us_ - kWindowSizeUs)) {
-      break;
-    }
-    assert(packets_per_second_ >= 1);
-    assert(bytes_per_second_ >= packet.payload_size());
-    packets_per_second_--;
-    bytes_per_second_ -= packet.payload_size();
-    window_.pop_front();
-  }
-  pps_stats_.Push(packets_per_second_);
-  kbps_stats_.Push((bytes_per_second_ * 8) / 1000.0);
+  pps_stats_.Push(rate_counter_->packets_per_second());
+  kbps_stats_.Push(rate_counter_->bits_per_second() / 1000.0);
 }
 
 LossFilter::LossFilter(PacketProcessorListener* listener)
@@ -311,7 +337,22 @@ TraceBasedDeliveryFilter::TraceBasedDeliveryFilter(
     : PacketProcessor(listener),
       delivery_times_us_(),
       next_delivery_it_(),
-      local_time_us_(-1) {}
+      local_time_us_(-1),
+      rate_counter_(new RateCounter),
+      name_("") {}
+
+TraceBasedDeliveryFilter::TraceBasedDeliveryFilter(
+    PacketProcessorListener* listener,
+    const std::string& name)
+    : PacketProcessor(listener),
+      delivery_times_us_(),
+      next_delivery_it_(),
+      local_time_us_(-1),
+      rate_counter_(new RateCounter),
+      name_(name) {}
+
+TraceBasedDeliveryFilter::~TraceBasedDeliveryFilter() {
+}
 
 bool TraceBasedDeliveryFilter::Init(const std::string& filename) {
   FILE* trace_file = fopen(filename.c_str(), "r");
@@ -341,11 +382,21 @@ bool TraceBasedDeliveryFilter::Init(const std::string& filename) {
   return true;
 }
 
+void TraceBasedDeliveryFilter::Plot(int64_t timestamp_ms) {
+  BWE_TEST_LOGGING_CONTEXT(name_.c_str());
+  // This plots the max possible throughput of the trace-based delivery filter,
+  // which will be reached if a packet sent on every packet slot of the trace.
+  BWE_TEST_LOGGING_PLOT("MaxThroughput_#1", timestamp_ms,
+                        rate_counter_->bits_per_second() / 1000.0);
+}
+
 void TraceBasedDeliveryFilter::RunFor(int64_t time_ms, Packets* in_out) {
   assert(in_out);
   for (PacketsIt it = in_out->begin(); it != in_out->end(); ++it) {
     do {
       ProceedToNextSlot();
+      const int kPayloadSize = 1240;
+      rate_counter_->UpdateRates(local_time_us_, kPayloadSize);
     } while (local_time_us_ < it->send_time_us());
     it->set_send_time_us(local_time_us_);
   }
