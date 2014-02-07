@@ -201,7 +201,7 @@ void WindowCapturerWin::Capture(const DesktopRegion& region) {
   }
 
   HDC mem_dc = CreateCompatibleDC(window_dc);
-  SelectObject(mem_dc, frame->bitmap());
+  HGDIOBJ previous_object = SelectObject(mem_dc, frame->bitmap());
   BOOL result = FALSE;
 
   // When desktop composition (Aero) is enabled each window is rendered to a
@@ -231,7 +231,7 @@ void WindowCapturerWin::Capture(const DesktopRegion& region) {
                     window_dc, 0, 0, SRCCOPY);
   }
 
-  SelectObject(mem_dc, NULL);
+  SelectObject(mem_dc, previous_object);
   DeleteDC(mem_dc);
   ReleaseDC(window_, window_dc);
 
