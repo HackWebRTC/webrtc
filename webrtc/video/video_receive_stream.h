@@ -51,7 +51,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   virtual void StartReceiving() OVERRIDE;
   virtual void StopReceiving() OVERRIDE;
-  virtual Stats GetStats() OVERRIDE;
+  virtual Stats GetStats() const OVERRIDE;
 
   virtual void GetCurrentReceiveCodec(VideoCodec* receive_codec) OVERRIDE;
 

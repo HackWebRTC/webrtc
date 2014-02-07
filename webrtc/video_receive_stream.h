@@ -173,7 +173,7 @@ class VideoReceiveStream {
 
   virtual void StartReceiving() = 0;
   virtual void StopReceiving() = 0;
-  virtual Stats GetStats() = 0;
+  virtual Stats GetStats() const = 0;
 
   // TODO(mflodman) Replace this with callback.
   virtual void GetCurrentReceiveCodec(VideoCodec* receive_codec) = 0;
