@@ -129,17 +129,22 @@ function call() {
   pc2.onaddstream = gotRemoteStream;
   pc1.addStream(localstream);
   trace("Adding Local Stream to peer connection");
-  pc1.createOffer(gotDescription1, null, null);
+  pc1.createOffer(gotDescription1, onCreateSessionDescriptionError);
 }
 
-function gotDescription1(desc){
+function onCreateSessionDescriptionError(error) {
+  trace('Failed to create session description: ' + error.toString());
+}
+
+function gotDescription1(desc) {
   pc1.setLocalDescription(desc);
   trace("Offer from pc1 \n" + desc.sdp);
   pc2.setRemoteDescription(desc);
-  pc2.createAnswer(gotDescription2, null, sdpConstraints);
+  pc2.createAnswer(gotDescription2, onCreateSessionDescriptionError,
+                   sdpConstraints);
 }
 
-function gotDescription2(desc){
+function gotDescription2(desc) {
   pc2.setLocalDescription(desc);
   trace("Answer from pc2 \n" + desc.sdp);
   pc1.setRemoteDescription(desc);

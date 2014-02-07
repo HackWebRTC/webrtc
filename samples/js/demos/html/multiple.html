@@ -89,11 +89,15 @@ function call() {
   
   pc1_local.addStream(localstream);
   trace("Adding local stream to pc1_local");
-  pc1_local.createOffer(gotDescription1Local, null, null);
+  pc1_local.createOffer(gotDescription1Local, onCreateSessionDescriptionError);
 
   pc2_local.addStream(localstream);
   trace("Adding local stream to pc2_local");
-  pc2_local.createOffer(gotDescription2Local, null, null);
+  pc2_local.createOffer(gotDescription2Local, onCreateSessionDescriptionError);
+}
+
+function onCreateSessionDescriptionError(error) {
+  trace('Failed to create session description: ' + error.toString());
 }
 
 function gotDescription1Local(desc) {
@@ -103,7 +107,8 @@ function gotDescription1Local(desc) {
   // Since the "remote" side has no media stream we need
   // to pass in the right constraints in order for it to
   // accept the incoming offer of audio and video.
-  pc1_remote.createAnswer(gotDescription1Remote, null, sdpConstraints);
+  pc1_remote.createAnswer(gotDescription1Remote,
+                          onCreateSessionDescriptionError, sdpConstraints);
 }
 
 function gotDescription1Remote(desc) {
@@ -119,7 +124,8 @@ function gotDescription2Local(desc) {
   // Since the "remote" side has no media stream we need
   // to pass in the right constraints in order for it to
   // accept the incoming offer of audio and video.
-  pc2_remote.createAnswer(gotDescription2Remote, null, sdpConstraints);
+  pc2_remote.createAnswer(gotDescription2Remote,
+                          onCreateSessionDescriptionError, sdpConstraints);
 }
 
 function gotDescription2Remote(desc) {

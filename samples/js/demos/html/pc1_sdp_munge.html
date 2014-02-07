@@ -215,7 +215,11 @@ function maybeAddLineBreakToEnd(sdp) {
 }
 
 function createOffer(){
-  pc1.createOffer(gotDescription1, null, null);
+  pc1.createOffer(gotDescription1, onCreateSessionDescriptionError);
+}
+
+function onCreateSessionDescriptionError(error) {
+  trace('Failed to create session description: ' + error.toString());
 }
 
 function setOffer(){
@@ -240,7 +244,8 @@ function createAnswer(){
   // Since the "remote" side has no media stream we need
   // to pass in the right constraints in order for it to
   // accept the incoming offer of audio and video.
-  pc2.createAnswer(gotDescription2, null, sdpConstraints);
+  pc2.createAnswer(gotDescription2, onCreateSessionDescriptionError,
+                   sdpConstraints);
 }
 
 function setAnswer(){

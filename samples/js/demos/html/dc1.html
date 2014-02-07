@@ -129,9 +129,13 @@ function createConnection() {
   pc2.onicecandidate = iceCallback2;
   pc2.ondatachannel = receiveChannelCallback;
   
-  pc1.createOffer(gotDescription1, null, null);
+  pc1.createOffer(gotDescription1, onCreateSessionDescriptionError);
   startButton.disabled = true;
   closeButton.disabled = false;  
+}
+
+function onCreateSessionDescriptionError(error) {
+  trace('Failed to create session description: ' + error.toString());
 }
  
 function sendData() {
@@ -163,7 +167,7 @@ function gotDescription1(desc) {
   pc1.setLocalDescription(desc);
   trace('Offer from pc1 \n' + desc.sdp);
   pc2.setRemoteDescription(desc);
-  pc2.createAnswer(gotDescription2, null, null);
+  pc2.createAnswer(gotDescription2, onCreateSessionDescriptionError);
 }
 
 function gotDescription2(desc) {
