@@ -30,17 +30,18 @@ class SendStatisticsProxy : public RtcpStatisticsCallback,
                             public ViEEncoderObserver,
                             public ViECaptureObserver {
  public:
-  class StreamStatsProvider {
-   public:
-    StreamStatsProvider() {}
-    virtual ~StreamStatsProvider() {}
+  class StatsProvider {
+   protected:
+    StatsProvider() {}
+    virtual ~StatsProvider() {}
 
+   public:
     virtual bool GetSendSideDelay(VideoSendStream::Stats* stats) = 0;
     virtual std::string GetCName() = 0;
   };
 
   SendStatisticsProxy(const VideoSendStream::Config& config,
-                      StreamStatsProvider* stats_provider);
+                      StatsProvider* stats_provider);
   virtual ~SendStatisticsProxy();
 
   VideoSendStream::Stats GetStats() const;
@@ -84,7 +85,7 @@ class SendStatisticsProxy : public RtcpStatisticsCallback,
   const VideoSendStream::Config config_;
   scoped_ptr<CriticalSectionWrapper> lock_;
   VideoSendStream::Stats stats_;
-  StreamStatsProvider* stats_provider_;
+  StatsProvider* stats_provider_;
 };
 
 }  // namespace webrtc

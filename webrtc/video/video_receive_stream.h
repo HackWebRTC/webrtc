@@ -16,7 +16,9 @@
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_render/include/video_render_defines.h"
 #include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/video/encoded_frame_callback_adapter.h"
+#include "webrtc/video/receive_statistics_proxy.h"
 #include "webrtc/video/transport_adapter.h"
 #include "webrtc/video_engine/include/vie_render.h"
 #include "webrtc/video_receive_stream.h"
@@ -36,7 +38,9 @@ class VoiceEngine;
 namespace internal {
 
 class VideoReceiveStream : public webrtc::VideoReceiveStream,
+                           public I420FrameCallback,
                            public VideoRenderCallback {
+
  public:
   VideoReceiveStream(webrtc::VideoEngine* video_engine,
                      const VideoReceiveStream::Config& config,
@@ -47,9 +51,14 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   virtual void StartReceiving() OVERRIDE;
   virtual void StopReceiving() OVERRIDE;
+  virtual Stats GetStats() OVERRIDE;
 
   virtual void GetCurrentReceiveCodec(VideoCodec* receive_codec) OVERRIDE;
 
+  // Overrides I420FrameCallback.
+  virtual void FrameCallback(I420VideoFrame* video_frame) OVERRIDE;
+
+  // Overrides VideoRenderCallback.
   virtual int32_t RenderFrame(const uint32_t stream_id,
                               I420VideoFrame& video_frame) OVERRIDE;
 
@@ -70,6 +79,8 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   ViERender* render_;
   ViERTP_RTCP* rtp_rtcp_;
   ViEImageProcess* image_process_;
+
+  scoped_ptr<ReceiveStatisticsProxy> stats_proxy_;
 
   int channel_;
 };

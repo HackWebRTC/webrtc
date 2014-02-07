@@ -41,13 +41,6 @@ struct StreamStats {
   int32_t bitrate_bps;
   StreamDataCounters rtp_stats;
   RtcpStatistics rtcp_stats;
-
-  bool operator==(const StreamStats& other) const {
-    return key_frames == other.key_frames &&
-           delta_frames == other.delta_frames &&
-           bitrate_bps == other.bitrate_bps && rtp_stats == other.rtp_stats &&
-           rtcp_stats == other.rtcp_stats;
-  }
 };
 
 // Settings for NACK, see RFC 4585 for details.

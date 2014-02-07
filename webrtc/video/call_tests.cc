@@ -1230,6 +1230,244 @@ void CallTest::TestXrReceiverReferenceTimeReport(bool enable_rrtr) {
   DestroyStreams();
 }
 
+class StatsObserver : public test::RtpRtcpObserver, public I420FrameCallback {
+ public:
+  StatsObserver()
+      : test::RtpRtcpObserver(kLongTimeoutMs),
+        receive_stream_(NULL),
+        send_stream_(NULL),
+        expected_receive_ssrc_(),
+        expected_send_ssrcs_(),
+        check_stats_event_(EventWrapper::Create()) {}
+
+  void SetExpectedReceiveSsrc(uint32_t ssrc) { expected_receive_ssrc_ = ssrc; }
+
+  void SetExpectedSendSsrcs(const std::vector<uint32_t>& ssrcs) {
+    for (std::vector<uint32_t>::const_iterator it = ssrcs.begin();
+         it != ssrcs.end();
+         ++it) {
+      expected_send_ssrcs_.insert(*it);
+    }
+  }
+
+  void SetExpectedCName(std::string cname) { expected_cname_ = cname; }
+
+  void SetReceiveStream(VideoReceiveStream* stream) {
+    receive_stream_ = stream;
+  }
+
+  void SetSendStream(VideoSendStream* stream) { send_stream_ = stream; }
+
+  void WaitForFilledStats() {
+    Clock* clock = Clock::GetRealTimeClock();
+    int64_t now = clock->TimeInMilliseconds();
+    int64_t stop_time = now + kLongTimeoutMs;
+    bool receive_ok = false;
+    bool send_ok = false;
+
+    while (now < stop_time) {
+      if (!receive_ok)
+        receive_ok = CheckReceiveStats();
+      if (!send_ok)
+        send_ok = CheckSendStats();
+
+      if (receive_ok && send_ok)
+        return;
+
+      int64_t time_until_timout_ = stop_time - now;
+      if (time_until_timout_ > 0)
+        check_stats_event_->Wait(time_until_timout_);
+      now = clock->TimeInMilliseconds();
+    }
+
+    ADD_FAILURE() << "Timed out waiting for filled stats.";
+    for (std::map<std::string, bool>::const_iterator it =
+             receive_stats_filled_.begin();
+         it != receive_stats_filled_.end();
+         ++it) {
+      if (!it->second) {
+        ADD_FAILURE() << "Missing receive stats: " << it->first;
+      }
+    }
+
+    for (std::map<std::string, bool>::const_iterator it =
+             send_stats_filled_.begin();
+         it != send_stats_filled_.end();
+         ++it) {
+      if (!it->second) {
+        ADD_FAILURE() << "Missing send stats: " << it->first;
+      }
+    }
+  }
+
+ private:
+  virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
+    check_stats_event_->Set();
+    return SEND_PACKET;
+  }
+
+  virtual Action OnSendRtcp(const uint8_t* packet, size_t length) OVERRIDE {
+    check_stats_event_->Set();
+    return SEND_PACKET;
+  }
+
+  virtual Action OnReceiveRtp(const uint8_t* packet, size_t length) OVERRIDE {
+    check_stats_event_->Set();
+    return SEND_PACKET;
+  }
+
+  virtual Action OnReceiveRtcp(const uint8_t* packet, size_t length) OVERRIDE {
+    check_stats_event_->Set();
+    return SEND_PACKET;
+  }
+
+  virtual void FrameCallback(I420VideoFrame* video_frame) OVERRIDE {
+    // Ensure that we have at least 5ms send side delay.
+    int64_t render_time = video_frame->render_time_ms();
+    if (render_time > 0)
+      video_frame->set_render_time_ms(render_time - 5);
+  }
+
+  bool CheckReceiveStats() {
+    assert(receive_stream_ != NULL);
+    VideoReceiveStream::Stats stats = receive_stream_->GetStats();
+    EXPECT_EQ(expected_receive_ssrc_, stats.ssrc);
+
+    // Make sure all fields have been populated.
+
+    receive_stats_filled_["IncomingRate"] |=
+        stats.network_frame_rate != 0 || stats.bitrate_bps != 0;
+
+    receive_stats_filled_["FrameCallback"] |= stats.decode_frame_rate != 0;
+
+    receive_stats_filled_["FrameRendered"] |= stats.render_frame_rate != 0;
+
+    receive_stats_filled_["StatisticsUpdated"] |=
+        stats.rtcp_stats.cumulative_lost != 0 ||
+        stats.rtcp_stats.extended_max_sequence_number != 0 ||
+        stats.rtcp_stats.fraction_lost != 0 || stats.rtcp_stats.jitter != 0;
+
+    receive_stats_filled_["DataCountersUpdated"] |=
+        stats.rtp_stats.bytes != 0 || stats.rtp_stats.fec_packets != 0 ||
+        stats.rtp_stats.header_bytes != 0 || stats.rtp_stats.packets != 0 ||
+        stats.rtp_stats.padding_bytes != 0 ||
+        stats.rtp_stats.retransmitted_packets != 0;
+
+    receive_stats_filled_["CodecStats"] |=
+        stats.avg_delay_ms != 0 || stats.discarded_packets != 0 ||
+        stats.key_frames != 0 || stats.delta_frames != 0;
+
+    receive_stats_filled_["CName"] |= stats.c_name == expected_cname_;
+
+    return AllStatsFilled(receive_stats_filled_);
+  }
+
+  bool CheckSendStats() {
+    assert(send_stream_ != NULL);
+    VideoSendStream::Stats stats = send_stream_->GetStats();
+
+    send_stats_filled_["NumStreams"] |=
+        stats.substreams.size() == expected_send_ssrcs_.size();
+
+    send_stats_filled_["Delay"] |=
+        stats.avg_delay_ms != 0 || stats.max_delay_ms != 0;
+
+    receive_stats_filled_["CName"] |= stats.c_name == expected_cname_;
+
+    for (std::map<uint32_t, StreamStats>::const_iterator it =
+             stats.substreams.begin();
+         it != stats.substreams.end();
+         ++it) {
+      EXPECT_TRUE(expected_send_ssrcs_.find(it->first) !=
+                  expected_send_ssrcs_.end());
+
+      send_stats_filled_[CompoundKey("IncomingRate", it->first)] |=
+          stats.input_frame_rate != 0;
+
+      const StreamStats& stream_stats = it->second;
+
+      send_stats_filled_[CompoundKey("StatisticsUpdated", it->first)] |=
+          stream_stats.rtcp_stats.cumulative_lost != 0 ||
+          stream_stats.rtcp_stats.extended_max_sequence_number != 0 ||
+          stream_stats.rtcp_stats.fraction_lost != 0;
+
+      send_stats_filled_[CompoundKey("DataCountersUpdated", it->first)] |=
+          stream_stats.rtp_stats.fec_packets != 0 ||
+          stream_stats.rtp_stats.padding_bytes != 0 ||
+          stream_stats.rtp_stats.retransmitted_packets != 0 ||
+          stream_stats.rtp_stats.packets != 0;
+
+      send_stats_filled_[CompoundKey("BitrateStatisticsObserver", it->first)] |=
+          stream_stats.bitrate_bps != 0;
+
+      send_stats_filled_[CompoundKey("FrameCountObserver", it->first)] |=
+          stream_stats.delta_frames != 0 || stream_stats.key_frames != 0;
+
+      send_stats_filled_[CompoundKey("OutgoingRate", it->first)] |=
+          stats.encode_frame_rate != 0;
+    }
+
+    return AllStatsFilled(send_stats_filled_);
+  }
+
+  std::string CompoundKey(const char* name, uint32_t ssrc) {
+    std::ostringstream oss;
+    oss << name << "_" << ssrc;
+    return oss.str();
+  }
+
+  bool AllStatsFilled(const std::map<std::string, bool>& stats_map) {
+    for (std::map<std::string, bool>::const_iterator it = stats_map.begin();
+         it != stats_map.end();
+         ++it) {
+      if (!it->second)
+        return false;
+    }
+    return true;
+  }
+
+  VideoReceiveStream* receive_stream_;
+  std::map<std::string, bool> receive_stats_filled_;
+
+  VideoSendStream* send_stream_;
+  std::map<std::string, bool> send_stats_filled_;
+
+  uint32_t expected_receive_ssrc_;
+  std::set<uint32_t> expected_send_ssrcs_;
+  std::string expected_cname_;
+
+  scoped_ptr<EventWrapper> check_stats_event_;
+};
+
+TEST_F(CallTest, GetStats) {
+  StatsObserver observer;
+
+  CreateCalls(Call::Config(observer.SendTransport()),
+              Call::Config(observer.ReceiveTransport()));
+
+  observer.SetReceivers(receiver_call_->Receiver(), sender_call_->Receiver());
+
+  CreateTestConfigs();
+  send_config_.pre_encode_callback = &observer;  // Used to inject delay.
+  send_config_.rtp.c_name = "SomeCName";
+
+  observer.SetExpectedReceiveSsrc(receive_config_.rtp.local_ssrc);
+  observer.SetExpectedSendSsrcs(send_config_.rtp.ssrcs);
+  observer.SetExpectedCName(send_config_.rtp.c_name);
+
+  CreateStreams();
+  observer.SetReceiveStream(receive_stream_);
+  observer.SetSendStream(send_stream_);
+  CreateFrameGenerator();
+  StartSending();
+
+  observer.WaitForFilledStats();
+
+  StopSending();
+  observer.StopSending();
+  DestroyStreams();
+}
+
 TEST_F(CallTest, ReceiverReferenceTimeReportEnabled) {
   TestXrReceiverReferenceTimeReport(true);
 }

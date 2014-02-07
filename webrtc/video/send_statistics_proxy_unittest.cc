@@ -19,9 +19,8 @@
 
 namespace webrtc {
 
-class SendStatisticsProxyTest
-    : public ::testing::Test,
-      protected SendStatisticsProxy::StreamStatsProvider {
+class SendStatisticsProxyTest : public ::testing::Test,
+                                protected SendStatisticsProxy::StatsProvider {
  public:
   SendStatisticsProxyTest() : avg_delay_ms_(0), max_delay_ms_(0) {}
   virtual ~SendStatisticsProxyTest() {}
@@ -48,6 +47,45 @@ class SendStatisticsProxyTest
   }
 
   virtual std::string GetCName() { return cname_; }
+
+  void ExpectEqual(VideoSendStream::Stats one, VideoSendStream::Stats other) {
+    EXPECT_EQ(one.avg_delay_ms, other.avg_delay_ms);
+    EXPECT_EQ(one.input_frame_rate, other.input_frame_rate);
+    EXPECT_EQ(one.encode_frame_rate, other.encode_frame_rate);
+    EXPECT_EQ(one.avg_delay_ms, other.avg_delay_ms);
+    EXPECT_EQ(one.max_delay_ms, other.max_delay_ms);
+    EXPECT_EQ(one.c_name, other.c_name);
+
+    EXPECT_EQ(one.substreams.size(), other.substreams.size());
+    for (std::map<uint32_t, StreamStats>::const_iterator it =
+             one.substreams.begin();
+         it != one.substreams.end();
+         ++it) {
+      std::map<uint32_t, StreamStats>::const_iterator corresponding_it =
+          other.substreams.find(it->first);
+      ASSERT_TRUE(corresponding_it != other.substreams.end());
+      const StreamStats& a = it->second;
+      const StreamStats& b = corresponding_it->second;
+
+      EXPECT_EQ(a.key_frames, b.key_frames);
+      EXPECT_EQ(a.delta_frames, b.delta_frames);
+      EXPECT_EQ(a.bitrate_bps, b.bitrate_bps);
+
+      EXPECT_EQ(a.rtp_stats.bytes, b.rtp_stats.bytes);
+      EXPECT_EQ(a.rtp_stats.header_bytes, b.rtp_stats.header_bytes);
+      EXPECT_EQ(a.rtp_stats.padding_bytes, b.rtp_stats.padding_bytes);
+      EXPECT_EQ(a.rtp_stats.packets, b.rtp_stats.packets);
+      EXPECT_EQ(a.rtp_stats.retransmitted_packets,
+                b.rtp_stats.retransmitted_packets);
+      EXPECT_EQ(a.rtp_stats.fec_packets, b.rtp_stats.fec_packets);
+
+      EXPECT_EQ(a.rtcp_stats.fraction_lost, b.rtcp_stats.fraction_lost);
+      EXPECT_EQ(a.rtcp_stats.cumulative_lost, b.rtcp_stats.cumulative_lost);
+      EXPECT_EQ(a.rtcp_stats.extended_max_sequence_number,
+                b.rtcp_stats.extended_max_sequence_number);
+      EXPECT_EQ(a.rtcp_stats.jitter, b.rtcp_stats.jitter);
+    }
+  }
 
   scoped_ptr<SendStatisticsProxy> statistics_proxy_;
   VideoSendStream::Config config_;
@@ -76,7 +114,7 @@ TEST_F(SendStatisticsProxyTest, RtcpStatistics) {
   }
 
   VideoSendStream::Stats stats = statistics_proxy_->GetStats();
-  EXPECT_EQ(expected_, stats);
+  ExpectEqual(expected_, stats);
 }
 
 TEST_F(SendStatisticsProxyTest, FrameRates) {
@@ -109,7 +147,7 @@ TEST_F(SendStatisticsProxyTest, FrameCounts) {
   }
 
   VideoSendStream::Stats stats = statistics_proxy_->GetStats();
-  EXPECT_EQ(expected_, stats);
+  ExpectEqual(expected_, stats);
 }
 
 TEST_F(SendStatisticsProxyTest, DataCounters) {
@@ -131,7 +169,7 @@ TEST_F(SendStatisticsProxyTest, DataCounters) {
   }
 
   VideoSendStream::Stats stats = statistics_proxy_->GetStats();
-  EXPECT_EQ(expected_, stats);
+  ExpectEqual(expected_, stats);
 }
 
 TEST_F(SendStatisticsProxyTest, Bitrate) {
@@ -147,7 +185,7 @@ TEST_F(SendStatisticsProxyTest, Bitrate) {
   }
 
   VideoSendStream::Stats stats = statistics_proxy_->GetStats();
-  EXPECT_EQ(expected_, stats);
+  ExpectEqual(expected_, stats);
 }
 
 TEST_F(SendStatisticsProxyTest, StreamStats) {

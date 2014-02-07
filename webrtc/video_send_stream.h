@@ -51,18 +51,6 @@ class VideoSendStream {
     int max_delay_ms;
     std::string c_name;
     std::map<uint32_t, StreamStats> substreams;
-
-    bool operator==(const Stats& other) const {
-      if (input_frame_rate != other.input_frame_rate ||
-          encode_frame_rate != other.encode_frame_rate ||
-          avg_delay_ms != other.avg_delay_ms ||
-          max_delay_ms != other.max_delay_ms || c_name != other.c_name ||
-          substreams.size() != other.substreams.size()) {
-        return false;
-      }
-      return std::equal(
-          substreams.begin(), substreams.end(), other.substreams.begin());
-    }
   };
 
   struct Config {

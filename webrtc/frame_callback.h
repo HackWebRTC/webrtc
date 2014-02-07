@@ -11,6 +11,8 @@
 #ifndef WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_FRAME_CALLBACK_H_
 #define WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_FRAME_CALLBACK_H_
 
+#include <stddef.h>
+
 #include "webrtc/common_types.h"
 
 namespace webrtc {

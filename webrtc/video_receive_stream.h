@@ -55,39 +55,22 @@ struct ExternalVideoDecoder {
 
 class VideoReceiveStream {
  public:
-  struct Stats {
+  struct Stats : public StreamStats {
     Stats()
         : network_frame_rate(0),
           decode_frame_rate(0),
           render_frame_rate(0),
-          key_frames(0),
-          delta_frames(0),
-          video_packets(0),
-          retransmitted_packets(0),
-          fec_packets(0),
-          padding_packets(0),
+          avg_delay_ms(0),
           discarded_packets(0),
-          received_bitrate_bps(0),
-          receive_side_delay_ms(0) {}
-    RtpStatistics rtp_stats;
+          ssrc(0) {}
+
     int network_frame_rate;
     int decode_frame_rate;
     int render_frame_rate;
-    uint32_t key_frames;
-    uint32_t delta_frames;
-    uint32_t video_packets;
-    uint32_t retransmitted_packets;
-    uint32_t fec_packets;
-    uint32_t padding_packets;
+    int avg_delay_ms;
     uint32_t discarded_packets;
-    int32_t received_bitrate_bps;
-    int receive_side_delay_ms;
-  };
-
-  class StatsCallback {
-   public:
-    virtual ~StatsCallback() {}
-    virtual void ReceiveStats(const Stats& stats) = 0;
+    uint32_t ssrc;
+    std::string c_name;
   };
 
   struct Config {
@@ -186,13 +169,11 @@ class VideoReceiveStream {
     // Target delay in milliseconds. A positive value indicates this stream is
     // used for streaming instead of a real-time call.
     int target_delay_ms;
-
-    // Callback for periodically receiving receiver stats.
-    StatsCallback* stats_callback;
   };
 
   virtual void StartReceiving() = 0;
   virtual void StopReceiving() = 0;
+  virtual Stats GetStats() = 0;
 
   // TODO(mflodman) Replace this with callback.
   virtual void GetCurrentReceiveCodec(VideoCodec* receive_codec) = 0;

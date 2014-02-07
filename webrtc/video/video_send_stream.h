@@ -36,7 +36,7 @@ namespace internal {
 
 class VideoSendStream : public webrtc::VideoSendStream,
                         public VideoSendStreamInput,
-                        public SendStatisticsProxy::StreamStatsProvider {
+                        public SendStatisticsProxy::StatsProvider {
  public:
   VideoSendStream(newapi::Transport* transport,
                   CpuOveruseObserver* overuse_observer,

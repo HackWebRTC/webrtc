@@ -18,7 +18,7 @@ namespace webrtc {
 
 SendStatisticsProxy::SendStatisticsProxy(
     const VideoSendStream::Config& config,
-    SendStatisticsProxy::StreamStatsProvider* stats_provider)
+    SendStatisticsProxy::StatsProvider* stats_provider)
     : config_(config),
       lock_(CriticalSectionWrapper::CreateCriticalSection()),
       stats_provider_(stats_provider) {}
@@ -39,8 +39,11 @@ void SendStatisticsProxy::CapturedFrameRate(const int capture_id,
 }
 
 VideoSendStream::Stats SendStatisticsProxy::GetStats() const {
-  VideoSendStream::Stats stats = stats_;
-  CriticalSectionScoped cs(lock_.get());
+  VideoSendStream::Stats stats;
+  {
+    CriticalSectionScoped cs(lock_.get());
+    stats = stats_;
+  }
   stats_provider_->GetSendSideDelay(&stats);
   stats.c_name = stats_provider_->GetCName();
   return stats;

@@ -17,6 +17,7 @@
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/video/receive_statistics_proxy.h"
 #include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/video_engine/include/vie_capture.h"
 #include "webrtc/video_engine/include/vie_codec.h"
@@ -38,6 +39,7 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
     : transport_adapter_(transport),
       encoded_frame_proxy_(config.pre_decode_callback),
       config_(config),
+      clock_(Clock::GetRealTimeClock()),
       channel_(-1) {
   video_engine_base_ = ViEBase::GetInterface(video_engine);
   video_engine_base_->CreateReceiveChannel(channel_, base_channel);
@@ -105,6 +107,20 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
     }
   }
 
+  stats_proxy_.reset(new ReceiveStatisticsProxy(
+      config_.rtp.local_ssrc, clock_, rtp_rtcp_, codec_, channel_));
+
+  if (rtp_rtcp_->RegisterReceiveChannelRtcpStatisticsCallback(
+          channel_, stats_proxy_.get()) != 0)
+    abort();
+
+  if (rtp_rtcp_->RegisterReceiveChannelRtpStatisticsCallback(
+          channel_, stats_proxy_.get()) != 0)
+    abort();
+
+  if (codec_->RegisterDecoderObserver(channel_, *stats_proxy_) != 0)
+    abort();
+
   external_codec_ = ViEExternalCodec::GetInterface(video_engine);
   for (size_t i = 0; i < config_.external_decoders.size(); ++i) {
     ExternalVideoDecoder* decoder = &config_.external_decoders[i];
@@ -134,14 +150,11 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
     image_process_->RegisterPreDecodeImageCallback(channel_,
                                                    &encoded_frame_proxy_);
   }
-  image_process_->RegisterPreRenderCallback(channel_,
-                                            config_.pre_render_callback);
+  image_process_->RegisterPreRenderCallback(channel_, this);
 
   if (config.rtp.rtcp_xr.receiver_reference_time_report) {
     rtp_rtcp_->SetRtcpXrRrtrStatus(channel_, true);
   }
-
-  clock_ = Clock::GetRealTimeClock();
 }
 
 VideoReceiveStream::~VideoReceiveStream() {
@@ -161,6 +174,11 @@ VideoReceiveStream::~VideoReceiveStream() {
   image_process_->Release();
   video_engine_base_->Release();
   external_codec_->Release();
+  codec_->DeregisterDecoderObserver(channel_);
+  rtp_rtcp_->DeregisterReceiveChannelRtpStatisticsCallback(channel_,
+                                                           stats_proxy_.get());
+  rtp_rtcp_->DeregisterReceiveChannelRtcpStatisticsCallback(channel_,
+                                                            stats_proxy_.get());
   codec_->Release();
   network_->Release();
   render_->Release();
@@ -183,6 +201,10 @@ void VideoReceiveStream::StopReceiving() {
   transport_adapter_.Disable();
 }
 
+VideoReceiveStream::Stats VideoReceiveStream::GetStats() {
+  return stats_proxy_->GetStats();
+}
+
 void VideoReceiveStream::GetCurrentReceiveCodec(VideoCodec* receive_codec) {
   // TODO(pbos): Implement
 }
@@ -197,13 +219,22 @@ bool VideoReceiveStream::DeliverRtp(const uint8_t* packet, size_t length) {
              channel_, packet, static_cast<int>(length), PacketTime()) == 0;
 }
 
+void VideoReceiveStream::FrameCallback(I420VideoFrame* video_frame) {
+  stats_proxy_->OnDecodedFrame();
+
+  if (config_.pre_render_callback)
+    config_.pre_render_callback->FrameCallback(video_frame);
+}
+
 int32_t VideoReceiveStream::RenderFrame(const uint32_t stream_id,
                                         I420VideoFrame& video_frame) {
-  if (config_.renderer == NULL)
-    return 0;
+  if (config_.renderer != NULL)
+    config_.renderer->RenderFrame(
+        video_frame,
+        video_frame.render_time_ms() - clock_->TimeInMilliseconds());
 
-  config_.renderer->RenderFrame(
-      video_frame, video_frame.render_time_ms() - clock_->TimeInMilliseconds());
+  stats_proxy_->OnRenderedFrame();
+
   return 0;
 }
 }  // namespace internal
