@@ -43,6 +43,10 @@ struct MethodBindTester {
   mutable int call_count;
 };
 
+int Return42() { return 42; }
+int Negate(int a) { return -a; }
+int Multiply(int a, int b) { return a * b; }
+
 }  // namespace
 
 TEST(BindTest, BindToMethod) {
@@ -69,6 +73,12 @@ TEST(BindTest, BindToMethod) {
   EXPECT_EQ(7, object.call_count);
   EXPECT_EQ(56, Bind(&MethodBindTester::Multiply, &object, 7, 8)());
   EXPECT_EQ(8, object.call_count);
+}
+
+TEST(BindTest, BindToFunction) {
+  EXPECT_EQ(42, Bind(&Return42)());
+  EXPECT_EQ(3, Bind(&Negate, -3)());
+  EXPECT_EQ(56, Bind(&Multiply, 8, 7)());
 }
 
 }  // namespace talk_base

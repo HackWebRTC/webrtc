@@ -27,6 +27,7 @@
 
 #include "talk/session/media/channel.h"
 
+#include "talk/base/bind.h"
 #include "talk/base/buffer.h"
 #include "talk/base/byteorder.h"
 #include "talk/base/common.h"
@@ -42,44 +43,17 @@
 
 namespace cricket {
 
+using talk_base::Bind;
+
 enum {
-  MSG_ENABLE = 1,
-  MSG_DISABLE,
-  MSG_MUTESTREAM,
-  MSG_ISSTREAMMUTED,
-  MSG_SETREMOTECONTENT,
-  MSG_SETLOCALCONTENT,
-  MSG_EARLYMEDIATIMEOUT,
-  MSG_CANINSERTDTMF,
-  MSG_INSERTDTMF,
-  MSG_GETSTATS,
-  MSG_SETRENDERER,
-  MSG_ADDRECVSTREAM,
-  MSG_REMOVERECVSTREAM,
-  MSG_ADDSENDSTREAM,
-  MSG_REMOVESENDSTREAM,
-  MSG_SETRINGBACKTONE,
-  MSG_PLAYRINGBACKTONE,
-  MSG_ADDSCREENCAST,
-  MSG_REMOVESCREENCAST,
-  MSG_SENDINTRAFRAME,
-  MSG_REQUESTINTRAFRAME,
+  MSG_EARLYMEDIATIMEOUT = 1,
   MSG_SCREENCASTWINDOWEVENT,
   MSG_RTPPACKET,
   MSG_RTCPPACKET,
   MSG_CHANNEL_ERROR,
-  MSG_SETCHANNELOPTIONS,
-  MSG_SCALEVOLUME,
-  MSG_HANDLEVIEWREQUEST,
   MSG_READYTOSENDDATA,
-  MSG_SENDDATA,
   MSG_DATARECEIVED,
-  MSG_SETCAPTURER,
-  MSG_ISSCREENCASTING,
-  MSG_GETSCREENCASTDETAILS,
-  MSG_SETSCREENCASTFACTORY,
   MSG_FIRSTPACKETRECEIVED,
-  MSG_SESSION_ERROR,
 };
 
 // Value specified in RFC 5764.
@@ -112,131 +86,9 @@ VideoChannel::ScreenCapturerFactory* CreateScreenCapturerFactory() {
   return new NullScreenCapturerFactory();
 }
 
-struct SetContentData : public talk_base::MessageData {
-  SetContentData(const MediaContentDescription* content,
-                 ContentAction action,
-                 std::string* error_desc)
-      : content(content),
-        action(action),
-        error_desc(error_desc),
-        result(false) {
-  }
-  const MediaContentDescription* content;
-  ContentAction action;
-  std::string* error_desc;
-  bool result;
-};
-
-struct SetBandwidthData : public talk_base::MessageData {
-  explicit SetBandwidthData(int value) : value(value), result(false) {}
-  int value;
-  bool result;
-};
-
-struct SetRingbackToneMessageData : public talk_base::MessageData {
-  SetRingbackToneMessageData(const void* b, int l)
-      : buf(b),
-        len(l),
-        result(false) {
-  }
-  const void* buf;
-  int len;
-  bool result;
-};
-
-struct PlayRingbackToneMessageData : public talk_base::MessageData {
-  PlayRingbackToneMessageData(uint32 s, bool p, bool l)
-      : ssrc(s),
-        play(p),
-        loop(l),
-        result(false) {
-  }
-  uint32 ssrc;
-  bool play;
-  bool loop;
-  bool result;
-};
-typedef talk_base::TypedMessageData<bool> BoolMessageData;
-struct DtmfMessageData : public talk_base::MessageData {
-  DtmfMessageData(uint32 ssrc, int event, int duration, int flags)
-      : ssrc(ssrc),
-        event(event),
-        duration(duration),
-        flags(flags),
-        result(false) {
-  }
-  uint32 ssrc;
-  int event;
-  int duration;
-  int flags;
-  bool result;
-};
-struct ScaleVolumeMessageData : public talk_base::MessageData {
-  ScaleVolumeMessageData(uint32 s, double l, double r)
-      : ssrc(s),
-        left(l),
-        right(r),
-        result(false) {
-  }
-  uint32 ssrc;
-  double left;
-  double right;
-  bool result;
-};
-
-struct VoiceStatsMessageData : public talk_base::MessageData {
-  explicit VoiceStatsMessageData(VoiceMediaInfo* stats)
-      : result(false),
-        stats(stats) {
-  }
-  bool result;
-  VoiceMediaInfo* stats;
-};
-
-struct VideoStatsMessageData : public talk_base::MessageData {
-  explicit VideoStatsMessageData(VideoMediaInfo* stats)
-      : result(false),
-        stats(stats) {
-  }
-  bool result;
-  VideoMediaInfo* stats;
-};
-
 struct PacketMessageData : public talk_base::MessageData {
   talk_base::Buffer packet;
   talk_base::DiffServCodePoint dscp;
-};
-
-struct AudioRenderMessageData: public talk_base::MessageData {
-  AudioRenderMessageData(uint32 s, AudioRenderer* r, bool l)
-      : ssrc(s), renderer(r), is_local(l), result(false) {}
-  uint32 ssrc;
-  AudioRenderer* renderer;
-  bool is_local;
-  bool result;
-};
-
-struct VideoRenderMessageData : public talk_base::MessageData {
-  VideoRenderMessageData(uint32 s, VideoRenderer* r) : ssrc(s), renderer(r) {}
-  uint32 ssrc;
-  VideoRenderer* renderer;
-};
-
-struct AddScreencastMessageData : public talk_base::MessageData {
-  AddScreencastMessageData(uint32 s, const ScreencastId& id)
-      : ssrc(s),
-        window_id(id),
-        result(NULL) {
-  }
-  uint32 ssrc;
-  ScreencastId window_id;
-  VideoCapturer* result;
-};
-
-struct RemoveScreencastMessageData : public talk_base::MessageData {
-  explicit RemoveScreencastMessageData(uint32 s) : ssrc(s), result(false) {}
-  uint32 ssrc;
-  bool result;
 };
 
 struct ScreencastEventMessageData : public talk_base::MessageData {
@@ -246,15 +98,6 @@ struct ScreencastEventMessageData : public talk_base::MessageData {
   }
   uint32 ssrc;
   talk_base::WindowEvent event;
-};
-
-struct ViewRequestMessageData : public talk_base::MessageData {
-  explicit ViewRequestMessageData(const ViewRequest& r)
-      : request(r),
-        result(false) {
-  }
-  ViewRequest request;
-  bool result;
 };
 
 struct VoiceChannelErrorMessageData : public talk_base::MessageData {
@@ -286,91 +129,14 @@ struct DataChannelErrorMessageData : public talk_base::MessageData {
   DataMediaChannel::Error error;
 };
 
-struct SessionErrorMessageData : public talk_base::MessageData {
-  SessionErrorMessageData(cricket::BaseSession::Error error,
-                          const std::string& error_desc)
-      : error_(error),
-        error_desc_(error_desc) {}
 
-  BaseSession::Error error_;
-  std::string error_desc_;
-};
-
-struct SsrcMessageData : public talk_base::MessageData {
-  explicit SsrcMessageData(uint32 ssrc) : ssrc(ssrc), result(false) {}
-  uint32 ssrc;
-  bool result;
-};
-
-struct StreamMessageData : public talk_base::MessageData {
-  explicit StreamMessageData(const StreamParams& in_sp)
-      : sp(in_sp),
-        result(false) {
-  }
-  StreamParams sp;
-  bool result;
-};
-
-struct MuteStreamData : public talk_base::MessageData {
-  MuteStreamData(uint32 ssrc, bool mute)
-      : ssrc(ssrc), mute(mute), result(false) {}
-  uint32 ssrc;
-  bool mute;
-  bool result;
-};
-
-struct AudioOptionsMessageData : public talk_base::MessageData {
-  explicit AudioOptionsMessageData(const AudioOptions& options)
-      : options(options),
-        result(false) {
-  }
-  AudioOptions options;
-  bool result;
-};
-
-struct VideoOptionsMessageData : public talk_base::MessageData {
-  explicit VideoOptionsMessageData(const VideoOptions& options)
-      : options(options),
-        result(false) {
-  }
-  VideoOptions options;
-  bool result;
-};
-
-struct SetCapturerMessageData : public talk_base::MessageData {
-  SetCapturerMessageData(uint32 s, VideoCapturer* c)
-      : ssrc(s),
-        capturer(c),
-        result(false) {
-  }
-  uint32 ssrc;
-  VideoCapturer* capturer;
-  bool result;
-};
-
-struct IsScreencastingMessageData : public talk_base::MessageData {
-  IsScreencastingMessageData()
-      : result(false) {
-  }
-  bool result;
-};
-
-struct VideoChannel::ScreencastDetailsMessageData :
-    public talk_base::MessageData {
-  explicit ScreencastDetailsMessageData(uint32 s)
+struct VideoChannel::ScreencastDetailsData {
+  explicit ScreencastDetailsData(uint32 s)
       : ssrc(s), fps(0), screencast_max_pixels(0) {
   }
   uint32 ssrc;
   int fps;
   int screencast_max_pixels;
-};
-
-struct SetScreenCaptureFactoryMessageData : public talk_base::MessageData {
-  explicit SetScreenCaptureFactoryMessageData(
-      VideoChannel::ScreenCapturerFactory* f)
-      : screencapture_factory(f) {
-  }
-  VideoChannel::ScreenCapturerFactory* screencapture_factory;
 };
 
 static const char* PacketType(bool rtcp) {
@@ -430,7 +196,7 @@ BaseChannel::~BaseChannel() {
   Deinit();
   StopConnectionMonitor();
   FlushRtcpMessages();  // Send any outstanding RTCP packets.
-  Clear();  // eats any outstanding messages or packets
+  worker_thread_->Clear(this);  // eats any outstanding messages or packets
   // We must destroy the media channel before the transport channel, otherwise
   // the media channel may try to send on the dead transport channel. NULLing
   // is not an effective strategy since the sends will come on another thread.
@@ -478,63 +244,51 @@ void BaseChannel::Deinit() {
   media_channel_->SetInterface(NULL);
 }
 
-// Can be called from thread other than worker thread
 bool BaseChannel::Enable(bool enable) {
-  Send(enable ? MSG_ENABLE : MSG_DISABLE);
+  worker_thread_->Invoke<void>(Bind(
+      enable ? &BaseChannel::EnableMedia_w : &BaseChannel::DisableMedia_w,
+      this));
   return true;
 }
 
-// Can be called from thread other than worker thread
 bool BaseChannel::MuteStream(uint32 ssrc, bool mute) {
-  MuteStreamData data(ssrc, mute);
-  Send(MSG_MUTESTREAM, &data);
-  return data.result;
+  return InvokeOnWorker(Bind(&BaseChannel::MuteStream_w, this, ssrc, mute));
 }
 
 bool BaseChannel::IsStreamMuted(uint32 ssrc) {
-  SsrcMessageData data(ssrc);
-  Send(MSG_ISSTREAMMUTED, &data);
-  return data.result;
+  return InvokeOnWorker(Bind(&BaseChannel::IsStreamMuted_w, this, ssrc));
 }
 
 bool BaseChannel::AddRecvStream(const StreamParams& sp) {
-  StreamMessageData data(sp);
-  Send(MSG_ADDRECVSTREAM, &data);
-  return data.result;
+  return InvokeOnWorker(Bind(&BaseChannel::AddRecvStream_w, this, sp));
 }
 
 bool BaseChannel::RemoveRecvStream(uint32 ssrc) {
-  SsrcMessageData data(ssrc);
-  Send(MSG_REMOVERECVSTREAM, &data);
-  return data.result;
+  return InvokeOnWorker(Bind(&BaseChannel::RemoveRecvStream_w, this, ssrc));
 }
 
 bool BaseChannel::AddSendStream(const StreamParams& sp) {
-  StreamMessageData data(sp);
-  Send(MSG_ADDSENDSTREAM, &data);
-  return data.result;
+  return InvokeOnWorker(
+      Bind(&MediaChannel::AddSendStream, media_channel(), sp));
 }
 
 bool BaseChannel::RemoveSendStream(uint32 ssrc) {
-  SsrcMessageData data(ssrc);
-  Send(MSG_REMOVESENDSTREAM, &data);
-  return data.result;
+  return InvokeOnWorker(
+      Bind(&MediaChannel::RemoveSendStream, media_channel(), ssrc));
 }
 
 bool BaseChannel::SetLocalContent(const MediaContentDescription* content,
                                   ContentAction action,
                                   std::string* error_desc) {
-  SetContentData data(content, action, error_desc);
-  Send(MSG_SETLOCALCONTENT, &data);
-  return data.result;
+  return InvokeOnWorker(Bind(&BaseChannel::SetLocalContent_w,
+                             this, content, action, error_desc));
 }
 
 bool BaseChannel::SetRemoteContent(const MediaContentDescription* content,
                                    ContentAction action,
                                    std::string* error_desc) {
-  SetContentData data(content, action, error_desc);
-  Send(MSG_SETREMOTECONTENT, &data);
-  return data.result;
+  return InvokeOnWorker(Bind(&BaseChannel::SetRemoteContent_w,
+                             this, content, action, error_desc));
 }
 
 void BaseChannel::StartConnectionMonitor(int cms) {
@@ -955,9 +709,12 @@ void BaseChannel::ChannelWritable_w() {
     if (!SetupDtlsSrtp(false)) {
       const std::string error_desc =
           "Couldn't set up DTLS-SRTP on RTP channel.";
-      SessionErrorMessageData data(BaseSession::ERROR_TRANSPORT, error_desc);
       // Sent synchronously.
-      signaling_thread()->Send(this, MSG_SESSION_ERROR, &data);
+      signaling_thread()->Invoke<void>(Bind(
+          &SetSessionError,
+          session_,
+          BaseSession::ERROR_TRANSPORT,
+          error_desc));
       return;
     }
 
@@ -965,9 +722,12 @@ void BaseChannel::ChannelWritable_w() {
       if (!SetupDtlsSrtp(true)) {
         const std::string error_desc =
             "Couldn't set up DTLS-SRTP on RTCP channel";
-        SessionErrorMessageData data(BaseSession::ERROR_TRANSPORT, error_desc);
         // Sent synchronously.
-        signaling_thread()->Send(this, MSG_SESSION_ERROR, &data);
+        signaling_thread()->Invoke<void>(Bind(
+            &SetSessionError,
+            session_,
+            BaseSession::ERROR_TRANSPORT,
+            error_desc));
         return;
       }
     }
@@ -1217,16 +977,6 @@ bool BaseChannel::RemoveRecvStream_w(uint32 ssrc) {
   return media_channel()->RemoveRecvStream(ssrc);
 }
 
-bool BaseChannel::AddSendStream_w(const StreamParams& sp) {
-  ASSERT(worker_thread() == talk_base::Thread::Current());
-  return media_channel()->AddSendStream(sp);
-}
-
-bool BaseChannel::RemoveSendStream_w(uint32 ssrc) {
-  ASSERT(worker_thread() == talk_base::Thread::Current());
-  return media_channel()->RemoveSendStream(ssrc);
-}
-
 bool BaseChannel::UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
                                        ContentAction action,
                                        std::string* error_desc) {
@@ -1435,57 +1185,6 @@ bool BaseChannel::SetBaseRemoteContent_w(const MediaContentDescription* content,
 
 void BaseChannel::OnMessage(talk_base::Message *pmsg) {
   switch (pmsg->message_id) {
-    case MSG_ENABLE:
-      EnableMedia_w();
-      break;
-    case MSG_DISABLE:
-      DisableMedia_w();
-      break;
-    case MSG_MUTESTREAM: {
-      MuteStreamData* data = static_cast<MuteStreamData*>(pmsg->pdata);
-      data->result = MuteStream_w(data->ssrc, data->mute);
-      break;
-    }
-    case MSG_ISSTREAMMUTED: {
-      SsrcMessageData* data = static_cast<SsrcMessageData*>(pmsg->pdata);
-      data->result = IsStreamMuted_w(data->ssrc);
-      break;
-    }
-    case MSG_SETLOCALCONTENT: {
-      SetContentData* data = static_cast<SetContentData*>(pmsg->pdata);
-      data->result = SetLocalContent_w(data->content,
-                                       data->action,
-                                       data->error_desc);
-      break;
-    }
-    case MSG_SETREMOTECONTENT: {
-      SetContentData* data = static_cast<SetContentData*>(pmsg->pdata);
-      data->result = SetRemoteContent_w(data->content,
-                                        data->action,
-                                        data->error_desc);
-      break;
-    }
-    case MSG_ADDRECVSTREAM: {
-      StreamMessageData* data = static_cast<StreamMessageData*>(pmsg->pdata);
-      data->result = AddRecvStream_w(data->sp);
-      break;
-    }
-    case MSG_REMOVERECVSTREAM: {
-      SsrcMessageData* data = static_cast<SsrcMessageData*>(pmsg->pdata);
-      data->result = RemoveRecvStream_w(data->ssrc);
-      break;
-    }
-    case MSG_ADDSENDSTREAM: {
-      StreamMessageData* data = static_cast<StreamMessageData*>(pmsg->pdata);
-      data->result = AddSendStream_w(data->sp);
-      break;
-    }
-    case MSG_REMOVESENDSTREAM: {
-      SsrcMessageData* data = static_cast<SsrcMessageData*>(pmsg->pdata);
-      data->result = RemoveSendStream_w(data->ssrc);
-      break;
-    }
-
     case MSG_RTPPACKET:
     case MSG_RTCPPACKET: {
       PacketMessageData* data = static_cast<PacketMessageData*>(pmsg->pdata);
@@ -1497,30 +1196,7 @@ void BaseChannel::OnMessage(talk_base::Message *pmsg) {
       SignalFirstPacketReceived(this);
       break;
     }
-    case MSG_SESSION_ERROR: {
-      SessionErrorMessageData* data = static_cast<SessionErrorMessageData*>
-          (pmsg->pdata);
-      SetSessionError(session_, data->error_, data->error_desc_);
-      break;
-    }
   }
-}
-
-void BaseChannel::Send(uint32 id, talk_base::MessageData *pdata) {
-  worker_thread_->Send(this, id, pdata);
-}
-
-void BaseChannel::Post(uint32 id, talk_base::MessageData *pdata) {
-  worker_thread_->Post(this, id, pdata);
-}
-
-void BaseChannel::PostDelayed(int cmsDelay, uint32 id,
-                              talk_base::MessageData *pdata) {
-  worker_thread_->PostDelayed(cmsDelay, this, id, pdata);
-}
-
-void BaseChannel::Clear(uint32 id, talk_base::MessageList* removed) {
-  worker_thread_->Clear(this, id, removed);
 }
 
 void BaseChannel::FlushRtcpMessages() {
@@ -1528,10 +1204,10 @@ void BaseChannel::FlushRtcpMessages() {
   // destructor.
   ASSERT(talk_base::Thread::Current() == worker_thread_);
   talk_base::MessageList rtcp_messages;
-  Clear(MSG_RTCPPACKET, &rtcp_messages);
+  worker_thread_->Clear(this, MSG_RTCPPACKET, &rtcp_messages);
   for (talk_base::MessageList::iterator it = rtcp_messages.begin();
        it != rtcp_messages.end(); ++it) {
-    Send(MSG_RTCPPACKET, it->pdata);
+    worker_thread_->Send(this, MSG_RTCPPACKET, it->pdata);
   }
 }
 
@@ -1570,21 +1246,17 @@ bool VoiceChannel::Init() {
 }
 
 bool VoiceChannel::SetRemoteRenderer(uint32 ssrc, AudioRenderer* renderer) {
-  AudioRenderMessageData data(ssrc, renderer, false);
-  Send(MSG_SETRENDERER, &data);
-  return data.result;
+  return InvokeOnWorker(Bind(&VoiceMediaChannel::SetRemoteRenderer,
+                             media_channel(), ssrc, renderer));
 }
 
 bool VoiceChannel::SetLocalRenderer(uint32 ssrc, AudioRenderer* renderer) {
-  AudioRenderMessageData data(ssrc, renderer, true);
-  Send(MSG_SETRENDERER, &data);
-  return data.result;
+  return InvokeOnWorker(Bind(&VoiceMediaChannel::SetLocalRenderer,
+                             media_channel(), ssrc, renderer));
 }
 
 bool VoiceChannel::SetRingbackTone(const void* buf, int len) {
-  SetRingbackToneMessageData data(buf, len);
-  Send(MSG_SETRINGBACKTONE, &data);
-  return data.result;
+  return InvokeOnWorker(Bind(&VoiceChannel::SetRingbackTone_w, this, buf, len));
 }
 
 // TODO(juberti): Handle early media the right way. We should get an explicit
@@ -1595,17 +1267,17 @@ bool VoiceChannel::SetRingbackTone(const void* buf, int len) {
 void VoiceChannel::SetEarlyMedia(bool enable) {
   if (enable) {
     // Start the early media timeout
-    PostDelayed(kEarlyMediaTimeout, MSG_EARLYMEDIATIMEOUT);
+    worker_thread()->PostDelayed(kEarlyMediaTimeout, this,
+                                MSG_EARLYMEDIATIMEOUT);
   } else {
     // Stop the timeout if currently going.
-    Clear(MSG_EARLYMEDIATIMEOUT);
+    worker_thread()->Clear(this, MSG_EARLYMEDIATIMEOUT);
   }
 }
 
 bool VoiceChannel::PlayRingbackTone(uint32 ssrc, bool play, bool loop) {
-  PlayRingbackToneMessageData data(ssrc, play, loop);
-  Send(MSG_PLAYRINGBACKTONE, &data);
-  return data.result;
+  return InvokeOnWorker(Bind(&VoiceChannel::PlayRingbackTone_w,
+                             this, ssrc, play, loop));
 }
 
 bool VoiceChannel::PressDTMF(int digit, bool playout) {
@@ -1618,27 +1290,24 @@ bool VoiceChannel::PressDTMF(int digit, bool playout) {
 }
 
 bool VoiceChannel::CanInsertDtmf() {
-  BoolMessageData data(false);
-  Send(MSG_CANINSERTDTMF, &data);
-  return data.data();
+  return InvokeOnWorker(Bind(&VoiceMediaChannel::CanInsertDtmf,
+                             media_channel()));
 }
 
 bool VoiceChannel::InsertDtmf(uint32 ssrc, int event_code, int duration,
                               int flags) {
-  DtmfMessageData data(ssrc, event_code, duration, flags);
-  Send(MSG_INSERTDTMF, &data);
-  return data.result;
+  return InvokeOnWorker(Bind(&VoiceChannel::InsertDtmf_w, this,
+                             ssrc, event_code, duration, flags));
 }
 
 bool VoiceChannel::SetOutputScaling(uint32 ssrc, double left, double right) {
-  ScaleVolumeMessageData data(ssrc, left, right);
-  Send(MSG_SCALEVOLUME, &data);
-  return data.result;
+  return InvokeOnWorker(Bind(&VoiceMediaChannel::SetOutputScaling,
+                             media_channel(), ssrc, left, right));
 }
+
 bool VoiceChannel::GetStats(VoiceMediaInfo* stats) {
-  VoiceStatsMessageData data(stats);
-  Send(MSG_GETSTATS, &data);
-  return data.result;
+  return InvokeOnWorker(Bind(&VoiceMediaChannel::GetStats,
+                             media_channel(), stats));
 }
 
 void VoiceChannel::StartMediaMonitor(int cms) {
@@ -1855,10 +1524,6 @@ void VoiceChannel::HandleEarlyMediaTimeout() {
   }
 }
 
-bool VoiceChannel::CanInsertDtmf_w() {
-  return media_channel()->CanInsertDtmf();
-}
-
 bool VoiceChannel::InsertDtmf_w(uint32 ssrc, int event, int duration,
                                 int flags) {
   if (!enabled()) {
@@ -1868,91 +1533,21 @@ bool VoiceChannel::InsertDtmf_w(uint32 ssrc, int event, int duration,
   return media_channel()->InsertDtmf(ssrc, event, duration, flags);
 }
 
-bool VoiceChannel::SetOutputScaling_w(uint32 ssrc, double left, double right) {
-  return media_channel()->SetOutputScaling(ssrc, left, right);
-}
-
-bool VoiceChannel::GetStats_w(VoiceMediaInfo* stats) {
-  return media_channel()->GetStats(stats);
-}
-
 bool VoiceChannel::SetChannelOptions(const AudioOptions& options) {
-  AudioOptionsMessageData data(options);
-  Send(MSG_SETCHANNELOPTIONS, &data);
-  return data.result;
-}
-
-bool VoiceChannel::SetChannelOptions_w(const AudioOptions& options) {
-  return media_channel()->SetOptions(options);
-}
-
-bool VoiceChannel::SetRenderer_w(uint32 ssrc, AudioRenderer* renderer,
-                                 bool is_local) {
-  if (is_local)
-    return media_channel()->SetLocalRenderer(ssrc, renderer);
-
-  return media_channel()->SetRemoteRenderer(ssrc, renderer);
+  return InvokeOnWorker(Bind(&VoiceMediaChannel::SetOptions,
+                             media_channel(), options));
 }
 
 void VoiceChannel::OnMessage(talk_base::Message *pmsg) {
   switch (pmsg->message_id) {
-    case MSG_SETRINGBACKTONE: {
-      SetRingbackToneMessageData* data =
-          static_cast<SetRingbackToneMessageData*>(pmsg->pdata);
-      data->result = SetRingbackTone_w(data->buf, data->len);
-      break;
-    }
-    case MSG_PLAYRINGBACKTONE: {
-      PlayRingbackToneMessageData* data =
-          static_cast<PlayRingbackToneMessageData*>(pmsg->pdata);
-      data->result = PlayRingbackTone_w(data->ssrc, data->play, data->loop);
-      break;
-    }
     case MSG_EARLYMEDIATIMEOUT:
       HandleEarlyMediaTimeout();
       break;
-    case MSG_CANINSERTDTMF: {
-      BoolMessageData* data =
-          static_cast<BoolMessageData*>(pmsg->pdata);
-      data->data() = CanInsertDtmf_w();
-      break;
-    }
-    case MSG_INSERTDTMF: {
-      DtmfMessageData* data =
-          static_cast<DtmfMessageData*>(pmsg->pdata);
-      data->result = InsertDtmf_w(data->ssrc, data->event, data->duration,
-                                  data->flags);
-      break;
-    }
-    case MSG_SCALEVOLUME: {
-      ScaleVolumeMessageData* data =
-          static_cast<ScaleVolumeMessageData*>(pmsg->pdata);
-      data->result = SetOutputScaling_w(data->ssrc, data->left, data->right);
-      break;
-    }
-    case MSG_GETSTATS: {
-      VoiceStatsMessageData* data =
-          static_cast<VoiceStatsMessageData*>(pmsg->pdata);
-      data->result = GetStats_w(data->stats);
-      break;
-    }
     case MSG_CHANNEL_ERROR: {
       VoiceChannelErrorMessageData* data =
           static_cast<VoiceChannelErrorMessageData*>(pmsg->pdata);
       SignalMediaError(this, data->ssrc, data->error);
       delete data;
-      break;
-    }
-    case MSG_SETCHANNELOPTIONS: {
-      AudioOptionsMessageData* data =
-          static_cast<AudioOptionsMessageData*>(pmsg->pdata);
-      data->result = SetChannelOptions_w(data->options);
-      break;
-    }
-    case MSG_SETRENDERER: {
-      AudioRenderMessageData* data =
-          static_cast<AudioRenderMessageData*>(pmsg->pdata);
-      data->result = SetRenderer_w(data->ssrc, data->renderer, data->is_local);
       break;
     }
     default:
@@ -2068,68 +1663,65 @@ VideoChannel::~VideoChannel() {
 }
 
 bool VideoChannel::SetRenderer(uint32 ssrc, VideoRenderer* renderer) {
-  VideoRenderMessageData data(ssrc, renderer);
-  Send(MSG_SETRENDERER, &data);
+  worker_thread()->Invoke<void>(Bind(
+      &VideoMediaChannel::SetRenderer, media_channel(), ssrc, renderer));
   return true;
 }
 
 bool VideoChannel::ApplyViewRequest(const ViewRequest& request) {
-  ViewRequestMessageData data(request);
-  Send(MSG_HANDLEVIEWREQUEST, &data);
-  return data.result;
+  return InvokeOnWorker(Bind(&VideoChannel::ApplyViewRequest_w, this, request));
 }
 
 VideoCapturer* VideoChannel::AddScreencast(
     uint32 ssrc, const ScreencastId& id) {
-  AddScreencastMessageData data(ssrc, id);
-  Send(MSG_ADDSCREENCAST, &data);
-  return data.result;
+  return worker_thread()->Invoke<VideoCapturer*>(Bind(
+      &VideoChannel::AddScreencast_w, this, ssrc, id));
 }
 
 bool VideoChannel::SetCapturer(uint32 ssrc, VideoCapturer* capturer) {
-  SetCapturerMessageData data(ssrc, capturer);
-  Send(MSG_SETCAPTURER, &data);
-  return data.result;
+  return InvokeOnWorker(Bind(&VideoMediaChannel::SetCapturer,
+                             media_channel(), ssrc, capturer));
 }
 
 bool VideoChannel::RemoveScreencast(uint32 ssrc) {
-  RemoveScreencastMessageData data(ssrc);
-  Send(MSG_REMOVESCREENCAST, &data);
-  return data.result;
+  return InvokeOnWorker(Bind(&VideoChannel::RemoveScreencast_w, this, ssrc));
 }
 
 bool VideoChannel::IsScreencasting() {
-  IsScreencastingMessageData data;
-  Send(MSG_ISSCREENCASTING, &data);
-  return data.result;
+  return InvokeOnWorker(Bind(&VideoChannel::IsScreencasting_w, this));
 }
 
 int VideoChannel::GetScreencastFps(uint32 ssrc) {
-  ScreencastDetailsMessageData data(ssrc);
-  Send(MSG_GETSCREENCASTDETAILS, &data);
+  ScreencastDetailsData data(ssrc);
+  worker_thread()->Invoke<void>(Bind(
+      &VideoChannel::GetScreencastDetails_w, this, &data));
   return data.fps;
 }
 
 int VideoChannel::GetScreencastMaxPixels(uint32 ssrc) {
-  ScreencastDetailsMessageData data(ssrc);
-  Send(MSG_GETSCREENCASTDETAILS, &data);
+  ScreencastDetailsData data(ssrc);
+  worker_thread()->Invoke<void>(Bind(
+      &VideoChannel::GetScreencastDetails_w, this, &data));
   return data.screencast_max_pixels;
 }
 
 bool VideoChannel::SendIntraFrame() {
-  Send(MSG_SENDINTRAFRAME);
+  worker_thread()->Invoke<void>(Bind(
+      &VideoMediaChannel::SendIntraFrame, media_channel()));
   return true;
 }
 
 bool VideoChannel::RequestIntraFrame() {
-  Send(MSG_REQUESTINTRAFRAME);
+  worker_thread()->Invoke<void>(Bind(
+      &VideoMediaChannel::RequestIntraFrame, media_channel()));
   return true;
 }
 
 void VideoChannel::SetScreenCaptureFactory(
     ScreenCapturerFactory* screencapture_factory) {
-  SetScreenCaptureFactoryMessageData data(screencapture_factory);
-  Send(MSG_SETSCREENCASTFACTORY, &data);
+  worker_thread()->Invoke<void>(Bind(
+      &VideoChannel::SetScreenCaptureFactory_w,
+      this, screencapture_factory));
 }
 
 void VideoChannel::ChangeState() {
@@ -2153,9 +1745,8 @@ void VideoChannel::ChangeState() {
 }
 
 bool VideoChannel::GetStats(VideoMediaInfo* stats) {
-  VideoStatsMessageData data(stats);
-  Send(MSG_GETSTATS, &data);
-  return data.result;
+  return InvokeOnWorker(Bind(&VideoMediaChannel::GetStats,
+                             media_channel(), stats));
 }
 
 void VideoChannel::StartMediaMonitor(int cms) {
@@ -2307,10 +1898,6 @@ bool VideoChannel::ApplyViewRequest_w(const ViewRequest& request) {
   return ret;
 }
 
-void VideoChannel::SetRenderer_w(uint32 ssrc, VideoRenderer* renderer) {
-  media_channel()->SetRenderer(ssrc, renderer);
-}
-
 VideoCapturer* VideoChannel::AddScreencast_w(
     uint32 ssrc, const ScreencastId& id) {
   if (screencast_capturers_.find(ssrc) != screencast_capturers_.end()) {
@@ -2325,10 +1912,6 @@ VideoCapturer* VideoChannel::AddScreencast_w(
                                              &VideoChannel::OnStateChange);
   screencast_capturers_[ssrc] = screen_capturer;
   return screen_capturer;
-}
-
-bool VideoChannel::SetCapturer_w(uint32 ssrc, VideoCapturer* capturer) {
-  return media_channel()->SetCapturer(ssrc, capturer);
 }
 
 bool VideoChannel::RemoveScreencast_w(uint32 ssrc) {
@@ -2346,8 +1929,8 @@ bool VideoChannel::IsScreencasting_w() const {
   return !screencast_capturers_.empty();
 }
 
-void VideoChannel::ScreencastDetails_w(
-    ScreencastDetailsMessageData* data) const {
+void VideoChannel::GetScreencastDetails_w(
+    ScreencastDetailsData* data) const {
   ScreencastMap::const_iterator iter = screencast_capturers_.find(data->ssrc);
   if (iter == screencast_capturers_.end()) {
     return;
@@ -2367,10 +1950,6 @@ void VideoChannel::SetScreenCaptureFactory_w(
   }
 }
 
-bool VideoChannel::GetStats_w(VideoMediaInfo* stats) {
-  return media_channel()->GetStats(stats);
-}
-
 void VideoChannel::OnScreencastWindowEvent_s(uint32 ssrc,
                                              talk_base::WindowEvent we) {
   ASSERT(signaling_thread() == talk_base::Thread::Current());
@@ -2378,41 +1957,12 @@ void VideoChannel::OnScreencastWindowEvent_s(uint32 ssrc,
 }
 
 bool VideoChannel::SetChannelOptions(const VideoOptions &options) {
-  VideoOptionsMessageData data(options);
-  Send(MSG_SETCHANNELOPTIONS, &data);
-  return data.result;
-}
-
-bool VideoChannel::SetChannelOptions_w(const VideoOptions &options) {
-  return media_channel()->SetOptions(options);
+  return InvokeOnWorker(Bind(&VideoMediaChannel::SetOptions,
+                             media_channel(), options));
 }
 
 void VideoChannel::OnMessage(talk_base::Message *pmsg) {
   switch (pmsg->message_id) {
-    case MSG_SETRENDERER: {
-      const VideoRenderMessageData* data =
-          static_cast<VideoRenderMessageData*>(pmsg->pdata);
-      SetRenderer_w(data->ssrc, data->renderer);
-      break;
-    }
-    case MSG_ADDSCREENCAST: {
-      AddScreencastMessageData* data =
-          static_cast<AddScreencastMessageData*>(pmsg->pdata);
-      data->result = AddScreencast_w(data->ssrc, data->window_id);
-      break;
-    }
-    case MSG_SETCAPTURER: {
-      SetCapturerMessageData* data =
-          static_cast<SetCapturerMessageData*>(pmsg->pdata);
-      data->result = SetCapturer_w(data->ssrc, data->capturer);
-      break;
-    }
-    case MSG_REMOVESCREENCAST: {
-      RemoveScreencastMessageData* data =
-          static_cast<RemoveScreencastMessageData*>(pmsg->pdata);
-      data->result = RemoveScreencast_w(data->ssrc);
-      break;
-    }
     case MSG_SCREENCASTWINDOWEVENT: {
       const ScreencastEventMessageData* data =
           static_cast<ScreencastEventMessageData*>(pmsg->pdata);
@@ -2420,55 +1970,11 @@ void VideoChannel::OnMessage(talk_base::Message *pmsg) {
       delete data;
       break;
     }
-    case  MSG_ISSCREENCASTING: {
-      IsScreencastingMessageData* data =
-          static_cast<IsScreencastingMessageData*>(pmsg->pdata);
-      data->result = IsScreencasting_w();
-      break;
-    }
-    case MSG_GETSCREENCASTDETAILS: {
-      ScreencastDetailsMessageData* data =
-          static_cast<ScreencastDetailsMessageData*>(pmsg->pdata);
-      ScreencastDetails_w(data);
-      break;
-    }
-    case MSG_SENDINTRAFRAME: {
-      SendIntraFrame_w();
-      break;
-    }
-    case MSG_REQUESTINTRAFRAME: {
-      RequestIntraFrame_w();
-      break;
-    }
-    case MSG_SETCHANNELOPTIONS: {
-      VideoOptionsMessageData* data =
-         static_cast<VideoOptionsMessageData*>(pmsg->pdata);
-      data->result = SetChannelOptions_w(data->options);
-      break;
-    }
     case MSG_CHANNEL_ERROR: {
       const VideoChannelErrorMessageData* data =
           static_cast<VideoChannelErrorMessageData*>(pmsg->pdata);
       SignalMediaError(this, data->ssrc, data->error);
       delete data;
-      break;
-    }
-    case MSG_HANDLEVIEWREQUEST: {
-      ViewRequestMessageData* data =
-          static_cast<ViewRequestMessageData*>(pmsg->pdata);
-      data->result = ApplyViewRequest_w(data->request);
-      break;
-    }
-    case MSG_SETSCREENCASTFACTORY: {
-      SetScreenCaptureFactoryMessageData* data =
-          static_cast<SetScreenCaptureFactoryMessageData*>(pmsg->pdata);
-      SetScreenCaptureFactory_w(data->screencapture_factory);
-      break;
-    }
-    case MSG_GETSTATS: {
-      VideoStatsMessageData* data =
-          static_cast<VideoStatsMessageData*>(pmsg->pdata);
-      data->result = GetStats_w(data->stats);
       break;
     }
     default:
@@ -2516,9 +2022,8 @@ void VideoChannel::OnStateChange(VideoCapturer* capturer, CaptureState ev) {
   if (!GetLocalSsrc(capturer, &ssrc)) {
     return;
   }
-  ScreencastEventMessageData* pdata =
-      new ScreencastEventMessageData(ssrc, we);
-  signaling_thread()->Post(this, MSG_SCREENCASTWINDOWEVENT, pdata);
+
+  OnScreencastWindowEvent(ssrc, we);
 }
 
 bool VideoChannel::GetLocalSsrc(const VideoCapturer* capturer, uint32* ssrc) {
@@ -2611,9 +2116,8 @@ bool DataChannel::Init() {
 bool DataChannel::SendData(const SendDataParams& params,
                            const talk_base::Buffer& payload,
                            SendDataResult* result) {
-  SendDataMessageData message_data(params, &payload, result);
-  Send(MSG_SENDDATA, &message_data);
-  return message_data.succeeded;
+  return InvokeOnWorker(Bind(&DataMediaChannel::SendData,
+                             media_channel(), params, payload, result));
 }
 
 const ContentInfo* DataChannel::GetFirstContent(
@@ -2810,9 +2314,8 @@ void DataChannel::ChangeState() {
     LOG(LS_ERROR) << "Failed to SetSend on data channel";
   }
 
-  // Post to trigger SignalReadyToSendData.
-  signaling_thread()->Post(this, MSG_READYTOSENDDATA,
-                           new DataChannelReadyToSendMessageData(send));
+  // Trigger SignalReadyToSendData asynchronously.
+  OnDataChannelReadyToSend(send);
 
   LOG(LS_INFO) << "Changing data state, recv=" << recv << " send=" << send;
 }
@@ -2825,13 +2328,6 @@ void DataChannel::OnMessage(talk_base::Message *pmsg) {
       ready_to_send_data_ = data->data();
       SignalReadyToSendData(ready_to_send_data_);
       delete data;
-      break;
-    }
-    case MSG_SENDDATA: {
-      SendDataMessageData* msg =
-          static_cast<SendDataMessageData*>(pmsg->pdata);
-      msg->succeeded = media_channel()->SendData(
-          msg->params, *(msg->payload), msg->result);
       break;
     }
     case MSG_DATARECEIVED: {

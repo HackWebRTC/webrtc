@@ -83,6 +83,8 @@ const char StatsReport::kStatsValueNameFingerprintAlgorithm[] =
     "googFingerprintAlgorithm";
 const char StatsReport::kStatsValueNameFirsReceived[] = "googFirsReceived";
 const char StatsReport::kStatsValueNameFirsSent[] = "googFirsSent";
+const char StatsReport::kStatsValueNameFrameHeightInput[] =
+    "googFrameHeightInput";
 const char StatsReport::kStatsValueNameFrameHeightReceived[] =
     "googFrameHeightReceived";
 const char StatsReport::kStatsValueNameFrameHeightSent[] =
@@ -104,6 +106,8 @@ const char StatsReport::kStatsValueNameRenderDelayMs[] = "googRenderDelayMs";
 
 const char StatsReport::kStatsValueNameFrameRateInput[] = "googFrameRateInput";
 const char StatsReport::kStatsValueNameFrameRateSent[] = "googFrameRateSent";
+const char StatsReport::kStatsValueNameFrameWidthInput[] =
+    "googFrameWidthInput";
 const char StatsReport::kStatsValueNameFrameWidthReceived[] =
     "googFrameWidthReceived";
 const char StatsReport::kStatsValueNameFrameWidthSent[] = "googFrameWidthSent";
@@ -117,6 +121,8 @@ const char StatsReport::kStatsValueNameLocalCertificateId[] =
     "googLocalCertificateId";
 const char StatsReport::kStatsValueNameNacksReceived[] = "googNacksReceived";
 const char StatsReport::kStatsValueNameNacksSent[] = "googNacksSent";
+const char StatsReport::kStatsValueNameNetEqExpandRate[] =
+    "googNetEqExpandRate";
 const char StatsReport::kStatsValueNamePacketsReceived[] = "packetsReceived";
 const char StatsReport::kStatsValueNamePacketsSent[] = "packetsSent";
 const char StatsReport::kStatsValueNamePacketsLost[] = "packetsLost";
@@ -215,6 +221,8 @@ void ExtractStats(const cricket::VoiceReceiverInfo& info, StatsReport* report) {
                    info.bytes_rcvd);
   report->AddValue(StatsReport::kStatsValueNameJitterReceived,
                    info.jitter_ms);
+  report->AddValue(StatsReport::kStatsValueNameNetEqExpandRate,
+                   talk_base::ToString<float>(info.expand_rate));
   report->AddValue(StatsReport::kStatsValueNamePacketsReceived,
                    info.packets_rcvd);
   report->AddValue(StatsReport::kStatsValueNamePacketsLost,
@@ -295,10 +303,14 @@ void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {
                    info.firs_rcvd);
   report->AddValue(StatsReport::kStatsValueNameNacksReceived,
                    info.nacks_rcvd);
+  report->AddValue(StatsReport::kStatsValueNameFrameWidthInput,
+                   info.input_frame_width);
+  report->AddValue(StatsReport::kStatsValueNameFrameHeightInput,
+                   info.input_frame_height);
   report->AddValue(StatsReport::kStatsValueNameFrameWidthSent,
-                   info.frame_width);
+                   info.send_frame_width);
   report->AddValue(StatsReport::kStatsValueNameFrameHeightSent,
-                   info.frame_height);
+                   info.send_frame_height);
   report->AddValue(StatsReport::kStatsValueNameFrameRateInput,
                    info.framerate_input);
   report->AddValue(StatsReport::kStatsValueNameFrameRateSent,

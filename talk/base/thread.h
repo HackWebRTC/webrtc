@@ -223,33 +223,6 @@ class Thread : public MessageQueue {
   void Join();
 
  private:
-  // Helper class to facilitate executing a functor on a thread.
-  template <class ReturnT, class FunctorT>
-  class FunctorMessageHandler : public MessageHandler {
-   public:
-    explicit FunctorMessageHandler(const FunctorT& functor)
-        : functor_(functor) {}
-    virtual void OnMessage(Message* msg) {
-      result_ = functor_();
-    }
-    const ReturnT& result() const { return result_; }
-   private:
-    FunctorT functor_;
-    ReturnT result_;
-  };
-
-  // Specialization for ReturnT of void.
-  template <class FunctorT>
-  class FunctorMessageHandler<void, FunctorT> : public MessageHandler {
-   public:
-    explicit FunctorMessageHandler(const FunctorT& functor)
-        : functor_(functor) {}
-    virtual void OnMessage(Message* msg) { functor_(); }
-    void result() const {}
-   private:
-    FunctorT functor_;
-  };
-
   static void *PreRun(void *pv);
 
   // ThreadManager calls this instead WrapCurrent() because

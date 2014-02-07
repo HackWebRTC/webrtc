@@ -114,7 +114,7 @@ void LocalAudioTrackHandler::OnEnabledChanged() {
   // adapter owned by this class.
   cricket::AudioRenderer* renderer = audio_track_->GetRenderer() ?
       audio_track_->GetRenderer() : sink_adapter_.get();
-  ASSERT(renderer);
+  ASSERT(renderer != NULL);
   provider_->SetAudioSend(ssrc(), audio_track_->enabled(), options, renderer);
 }
 

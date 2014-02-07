@@ -790,8 +790,8 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_EQ(0.0, info.senders[0].fraction_lost);
     EXPECT_EQ(0, info.senders[0].firs_rcvd);
     EXPECT_EQ(0, info.senders[0].nacks_rcvd);
-    EXPECT_EQ(DefaultCodec().width, info.senders[0].frame_width);
-    EXPECT_EQ(DefaultCodec().height, info.senders[0].frame_height);
+    EXPECT_EQ(DefaultCodec().width, info.senders[0].send_frame_width);
+    EXPECT_EQ(DefaultCodec().height, info.senders[0].send_frame_height);
     EXPECT_GT(info.senders[0].framerate_input, 0);
     EXPECT_GT(info.senders[0].framerate_sent, 0);
 
@@ -848,8 +848,8 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_EQ(0.0, info.senders[0].fraction_lost);
     EXPECT_EQ(0, info.senders[0].firs_rcvd);
     EXPECT_EQ(0, info.senders[0].nacks_rcvd);
-    EXPECT_EQ(DefaultCodec().width, info.senders[0].frame_width);
-    EXPECT_EQ(DefaultCodec().height, info.senders[0].frame_height);
+    EXPECT_EQ(DefaultCodec().width, info.senders[0].send_frame_width);
+    EXPECT_EQ(DefaultCodec().height, info.senders[0].send_frame_height);
     EXPECT_GT(info.senders[0].framerate_input, 0);
     EXPECT_GT(info.senders[0].framerate_sent, 0);
 
@@ -918,12 +918,12 @@ class VideoMediaChannelTest : public testing::Test,
         info.senders[0].packets_sent + info.senders[1].packets_sent);
     EXPECT_EQ(1U, info.senders[0].ssrcs().size());
     EXPECT_EQ(1234U, info.senders[0].ssrcs()[0]);
-    EXPECT_EQ(DefaultCodec().width, info.senders[0].frame_width);
-    EXPECT_EQ(DefaultCodec().height, info.senders[0].frame_height);
+    EXPECT_EQ(DefaultCodec().width, info.senders[0].send_frame_width);
+    EXPECT_EQ(DefaultCodec().height, info.senders[0].send_frame_height);
     EXPECT_EQ(1U, info.senders[1].ssrcs().size());
     EXPECT_EQ(5678U, info.senders[1].ssrcs()[0]);
-    EXPECT_EQ(kTestWidth, info.senders[1].frame_width);
-    EXPECT_EQ(kTestHeight, info.senders[1].frame_height);
+    EXPECT_EQ(kTestWidth, info.senders[1].send_frame_width);
+    EXPECT_EQ(kTestHeight, info.senders[1].send_frame_height);
     // The capturer must be unregistered here as it runs out of it's scope next.
     EXPECT_TRUE(channel_->SetCapturer(5678, NULL));
   }

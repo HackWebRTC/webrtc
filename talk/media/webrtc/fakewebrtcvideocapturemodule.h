@@ -83,13 +83,18 @@ class FakeWebRtcVideoCaptureModule : public webrtc::VideoCaptureModule {
   virtual int32_t RegisterCaptureDataCallback(
       webrtc::VideoCaptureDataCallback& callback) {
     callback_ = &callback;
+    return 0;
   }
-  virtual void DeRegisterCaptureDataCallback() { callback_ = NULL; }
-  virtual void RegisterCaptureCallback(webrtc::VideoCaptureFeedBack& callback) {
-    // Not implemented.
+  virtual int32_t DeRegisterCaptureDataCallback() {
+    callback_ = NULL;
+    return 0;
   }
-  virtual void DeRegisterCaptureCallback() {
-    // Not implemented.
+  virtual int32_t RegisterCaptureCallback(
+      webrtc::VideoCaptureFeedBack& callback) {
+    return -1;  // not implemented
+  }
+  virtual int32_t DeRegisterCaptureCallback() {
+    return 0;
   }
   virtual int32_t SetCaptureDelay(int32_t delay) {
     delay_ = delay;

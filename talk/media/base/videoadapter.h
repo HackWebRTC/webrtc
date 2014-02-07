@@ -87,8 +87,9 @@ class VideoAdapter {
   VideoFormat output_format_;
   int output_num_pixels_;
   bool scale_third_;  // True if adapter allows scaling to 1/3 and 2/3.
-  int frames_;  // Number of input frames.
-  int adapted_frames_;  // Number of frames scaled.
+  int frames_in_;  // Number of input frames.
+  int frames_out_;  // Number of output frames.
+  int frames_scaled_;  // Number of frames scaled.
   int adaption_changes_;  // Number of changes in scale factor.
   size_t previous_width_;  // Previous adapter output width.
   size_t previous_height_;  // Previous adapter output height.

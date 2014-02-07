@@ -84,6 +84,18 @@ class MethodFunctor0 {
   ObjectT* object_;
 };
 
+template <class FunctorT, class R>
+class Functor0 {
+ public:
+  explicit Functor0(const FunctorT& functor)
+      : functor_(functor) {}
+  R operator()() const {
+    return functor_(); }
+ private:
+  FunctorT functor_;
+};
+
+
 #define FP_T(x) R (ObjectT::*x)()
 
 template <class ObjectT, class R>
@@ -104,6 +116,16 @@ Bind(FP_T(method), const ObjectT* object) {
 }
 
 #undef FP_T
+#define FP_T(x) R (*x)()
+
+template <class R>
+Functor0<FP_T(NONAME), R>
+Bind(FP_T(function)) {
+  return Functor0<FP_T(NONAME), R>(
+      function);
+}
+
+#undef FP_T
 
 template <class ObjectT, class MethodT, class R,
           class P1>
@@ -120,6 +142,21 @@ class MethodFunctor1 {
   ObjectT* object_;
   P1 p1_;
 };
+
+template <class FunctorT, class R,
+          class P1>
+class Functor1 {
+ public:
+  Functor1(const FunctorT& functor, P1 p1)
+      : functor_(functor),
+      p1_(p1) {}
+  R operator()() const {
+    return functor_(p1_); }
+ private:
+  FunctorT functor_;
+  P1 p1_;
+};
+
 
 #define FP_T(x) R (ObjectT::*x)(P1)
 
@@ -145,6 +182,18 @@ Bind(FP_T(method), const ObjectT* object,
 }
 
 #undef FP_T
+#define FP_T(x) R (*x)(P1)
+
+template <class R,
+          class P1>
+Functor1<FP_T(NONAME), R, P1>
+Bind(FP_T(function),
+     typename detail::identity<P1>::type p1) {
+  return Functor1<FP_T(NONAME), R, P1>(
+      function, p1);
+}
+
+#undef FP_T
 
 template <class ObjectT, class MethodT, class R,
           class P1,
@@ -165,6 +214,24 @@ class MethodFunctor2 {
   P1 p1_;
   P2 p2_;
 };
+
+template <class FunctorT, class R,
+          class P1,
+          class P2>
+class Functor2 {
+ public:
+  Functor2(const FunctorT& functor, P1 p1, P2 p2)
+      : functor_(functor),
+      p1_(p1),
+      p2_(p2) {}
+  R operator()() const {
+    return functor_(p1_, p2_); }
+ private:
+  FunctorT functor_;
+  P1 p1_;
+  P2 p2_;
+};
+
 
 #define FP_T(x) R (ObjectT::*x)(P1, P2)
 
@@ -194,6 +261,20 @@ Bind(FP_T(method), const ObjectT* object,
 }
 
 #undef FP_T
+#define FP_T(x) R (*x)(P1, P2)
+
+template <class R,
+          class P1,
+          class P2>
+Functor2<FP_T(NONAME), R, P1, P2>
+Bind(FP_T(function),
+     typename detail::identity<P1>::type p1,
+     typename detail::identity<P2>::type p2) {
+  return Functor2<FP_T(NONAME), R, P1, P2>(
+      function, p1, p2);
+}
+
+#undef FP_T
 
 template <class ObjectT, class MethodT, class R,
           class P1,
@@ -218,6 +299,27 @@ class MethodFunctor3 {
   P2 p2_;
   P3 p3_;
 };
+
+template <class FunctorT, class R,
+          class P1,
+          class P2,
+          class P3>
+class Functor3 {
+ public:
+  Functor3(const FunctorT& functor, P1 p1, P2 p2, P3 p3)
+      : functor_(functor),
+      p1_(p1),
+      p2_(p2),
+      p3_(p3) {}
+  R operator()() const {
+    return functor_(p1_, p2_, p3_); }
+ private:
+  FunctorT functor_;
+  P1 p1_;
+  P2 p2_;
+  P3 p3_;
+};
+
 
 #define FP_T(x) R (ObjectT::*x)(P1, P2, P3)
 
@@ -251,6 +353,22 @@ Bind(FP_T(method), const ObjectT* object,
 }
 
 #undef FP_T
+#define FP_T(x) R (*x)(P1, P2, P3)
+
+template <class R,
+          class P1,
+          class P2,
+          class P3>
+Functor3<FP_T(NONAME), R, P1, P2, P3>
+Bind(FP_T(function),
+     typename detail::identity<P1>::type p1,
+     typename detail::identity<P2>::type p2,
+     typename detail::identity<P3>::type p3) {
+  return Functor3<FP_T(NONAME), R, P1, P2, P3>(
+      function, p1, p2, p3);
+}
+
+#undef FP_T
 
 template <class ObjectT, class MethodT, class R,
           class P1,
@@ -279,6 +397,30 @@ class MethodFunctor4 {
   P3 p3_;
   P4 p4_;
 };
+
+template <class FunctorT, class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4>
+class Functor4 {
+ public:
+  Functor4(const FunctorT& functor, P1 p1, P2 p2, P3 p3, P4 p4)
+      : functor_(functor),
+      p1_(p1),
+      p2_(p2),
+      p3_(p3),
+      p4_(p4) {}
+  R operator()() const {
+    return functor_(p1_, p2_, p3_, p4_); }
+ private:
+  FunctorT functor_;
+  P1 p1_;
+  P2 p2_;
+  P3 p3_;
+  P4 p4_;
+};
+
 
 #define FP_T(x) R (ObjectT::*x)(P1, P2, P3, P4)
 
@@ -316,6 +458,24 @@ Bind(FP_T(method), const ObjectT* object,
 }
 
 #undef FP_T
+#define FP_T(x) R (*x)(P1, P2, P3, P4)
+
+template <class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4>
+Functor4<FP_T(NONAME), R, P1, P2, P3, P4>
+Bind(FP_T(function),
+     typename detail::identity<P1>::type p1,
+     typename detail::identity<P2>::type p2,
+     typename detail::identity<P3>::type p3,
+     typename detail::identity<P4>::type p4) {
+  return Functor4<FP_T(NONAME), R, P1, P2, P3, P4>(
+      function, p1, p2, p3, p4);
+}
+
+#undef FP_T
 
 template <class ObjectT, class MethodT, class R,
           class P1,
@@ -348,6 +508,33 @@ class MethodFunctor5 {
   P4 p4_;
   P5 p5_;
 };
+
+template <class FunctorT, class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4,
+          class P5>
+class Functor5 {
+ public:
+  Functor5(const FunctorT& functor, P1 p1, P2 p2, P3 p3, P4 p4, P5 p5)
+      : functor_(functor),
+      p1_(p1),
+      p2_(p2),
+      p3_(p3),
+      p4_(p4),
+      p5_(p5) {}
+  R operator()() const {
+    return functor_(p1_, p2_, p3_, p4_, p5_); }
+ private:
+  FunctorT functor_;
+  P1 p1_;
+  P2 p2_;
+  P3 p3_;
+  P4 p4_;
+  P5 p5_;
+};
+
 
 #define FP_T(x) R (ObjectT::*x)(P1, P2, P3, P4, P5)
 
@@ -386,6 +573,26 @@ Bind(FP_T(method), const ObjectT* object,
      typename detail::identity<P5>::type p5) {
   return MethodFunctor5<const ObjectT, FP_T(NONAME), R, P1, P2, P3, P4, P5>(
       method, object, p1, p2, p3, p4, p5);
+}
+
+#undef FP_T
+#define FP_T(x) R (*x)(P1, P2, P3, P4, P5)
+
+template <class R,
+          class P1,
+          class P2,
+          class P3,
+          class P4,
+          class P5>
+Functor5<FP_T(NONAME), R, P1, P2, P3, P4, P5>
+Bind(FP_T(function),
+     typename detail::identity<P1>::type p1,
+     typename detail::identity<P2>::type p2,
+     typename detail::identity<P3>::type p3,
+     typename detail::identity<P4>::type p4,
+     typename detail::identity<P5>::type p5) {
+  return Functor5<FP_T(NONAME), R, P1, P2, P3, P4, P5>(
+      function, p1, p2, p3, p4, p5);
 }
 
 #undef FP_T

@@ -668,7 +668,7 @@ public class PeerConnectionTest extends TestCase {
     offeringExpectations.expectMessage(expectedBinaryMessage, true);
     assertTrue(answeringExpectations.dataChannel.send(
         new DataChannel.Buffer(
-            ByteBuffer.wrap(new byte[] { 1, 2, 3, 4, 5 } ), true)));
+            ByteBuffer.wrap(new byte[] { 1, 2, 3, 4, 5 }), true)));
     offeringExpectations.waitForAllExpectationsToBeSatisfied();
 
     offeringExpectations.expectStateChange(DataChannel.State.CLOSING);

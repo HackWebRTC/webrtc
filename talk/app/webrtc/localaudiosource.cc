@@ -70,6 +70,9 @@ bool FromConstraints(const MediaConstraintsInterface::Constraints& constraints,
       options->experimental_agc.Set(value);
     else if (iter->key == MediaConstraintsInterface::kNoiseSuppression)
       options->noise_suppression.Set(value);
+    else if (iter->key ==
+          MediaConstraintsInterface::kExperimentalNoiseSuppression)
+      options->experimental_ns.Set(value);
     else if (iter->key == MediaConstraintsInterface::kHighpassFilter)
       options->highpass_filter.Set(value);
     else if (iter->key == MediaConstraintsInterface::kTypingNoiseDetection)

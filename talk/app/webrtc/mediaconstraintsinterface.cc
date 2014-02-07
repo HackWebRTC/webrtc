@@ -56,6 +56,8 @@ const char MediaConstraintsInterface::kExperimentalAutoGainControl[] =
     "googAutoGainControl2";
 const char MediaConstraintsInterface::kNoiseSuppression[] =
     "googNoiseSuppression";
+const char MediaConstraintsInterface::kExperimentalNoiseSuppression[] =
+    "googNoiseSuppression2";
 const char MediaConstraintsInterface::kHighpassFilter[] =
     "googHighpassFilter";
 const char MediaConstraintsInterface::kTypingNoiseDetection[] =

@@ -91,6 +91,24 @@ class MethodFunctor$i {
 
 };
 
+template <class FunctorT, class R$for j [[,
+          class P$j]]>
+class Functor$i {
+ public:
+  $if i == 0 [[explicit ]]
+Functor$i(const FunctorT& functor$for j [[, P$j p$j]])
+      : functor_(functor)$for j [[,
+      p$(j)_(p$j)]] {}
+  R operator()() const {
+    return functor_($for j , [[p$(j)_]]); }
+ private:
+  FunctorT functor_;$for j [[
+
+  P$j p$(j)_;]]
+
+};
+
+
 #define FP_T(x) R (ObjectT::*x)($for j , [[P$j]])
 
 template <class ObjectT, class R$for j [[,
@@ -112,6 +130,18 @@ Bind(FP_T(method), const ObjectT* object$for j [[,
      typename detail::identity<P$j>::type p$j]]) {
   return MethodFunctor$i<const ObjectT, FP_T(NONAME), R$for j [[, P$j]]>(
       method, object$for j [[, p$j]]);
+}
+
+#undef FP_T
+#define FP_T(x) R (*x)($for j , [[P$j]])
+
+template <class R$for j [[,
+          class P$j]]>
+Functor$i<FP_T(NONAME), R$for j [[, P$j]]>
+Bind(FP_T(function)$for j [[,
+     typename detail::identity<P$j>::type p$j]]) {
+  return Functor$i<FP_T(NONAME), R$for j [[, P$j]]>(
+      function$for j [[, p$j]]);
 }
 
 #undef FP_T

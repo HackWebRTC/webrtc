@@ -328,7 +328,7 @@ void UDPPort::OnStunBindingRequestSucceeded(
     // related address is local socket address.
     set_related_address(socket_->GetLocalAddress());
     AddAddress(stun_addr, socket_->GetLocalAddress(), UDP_PROTOCOL_NAME,
-               STUN_PORT_TYPE, ICE_TYPE_PREFERENCE_PRFLX, false);
+               STUN_PORT_TYPE, ICE_TYPE_PREFERENCE_SRFLX, false);
   }
   SetResult(true);
 }

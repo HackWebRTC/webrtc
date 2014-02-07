@@ -168,6 +168,7 @@ struct AudioOptions {
     adjust_agc_delta.SetFrom(change.adjust_agc_delta);
     experimental_agc.SetFrom(change.experimental_agc);
     experimental_aec.SetFrom(change.experimental_aec);
+    experimental_ns.SetFrom(change.experimental_ns);
     aec_dump.SetFrom(change.aec_dump);
     experimental_acm.SetFrom(change.experimental_acm);
     tx_agc_target_dbov.SetFrom(change.tx_agc_target_dbov);
@@ -195,6 +196,7 @@ struct AudioOptions {
         conference_mode == o.conference_mode &&
         experimental_agc == o.experimental_agc &&
         experimental_aec == o.experimental_aec &&
+        experimental_ns == o.experimental_ns &&
         adjust_agc_delta == o.adjust_agc_delta &&
         aec_dump == o.aec_dump &&
         experimental_acm == o.experimental_acm &&
@@ -224,6 +226,7 @@ struct AudioOptions {
     ost << ToStringIfSet("agc_delta", adjust_agc_delta);
     ost << ToStringIfSet("experimental_agc", experimental_agc);
     ost << ToStringIfSet("experimental_aec", experimental_aec);
+    ost << ToStringIfSet("experimental_ns", experimental_ns);
     ost << ToStringIfSet("aec_dump", aec_dump);
     ost << ToStringIfSet("experimental_acm", experimental_acm);
     ost << ToStringIfSet("tx_agc_target_dbov", tx_agc_target_dbov);
@@ -261,6 +264,7 @@ struct AudioOptions {
   Settable<int> adjust_agc_delta;
   Settable<bool> experimental_agc;
   Settable<bool> experimental_aec;
+  Settable<bool> experimental_ns;
   Settable<bool> aec_dump;
   Settable<bool> experimental_acm;
   // Note that tx_agc_* only applies to non-experimental AGC.
@@ -763,8 +767,10 @@ struct VideoSenderInfo : public MediaSenderInfo {
       : packets_cached(0),
         firs_rcvd(0),
         nacks_rcvd(0),
-        frame_width(0),
-        frame_height(0),
+        input_frame_width(0),
+        input_frame_height(0),
+        send_frame_width(0),
+        send_frame_height(0),
         framerate_input(0),
         framerate_sent(0),
         nominal_bitrate(0),
@@ -780,8 +786,10 @@ struct VideoSenderInfo : public MediaSenderInfo {
   int packets_cached;
   int firs_rcvd;
   int nacks_rcvd;
-  int frame_width;
-  int frame_height;
+  int input_frame_width;
+  int input_frame_height;
+  int send_frame_width;
+  int send_frame_height;
   int framerate_input;
   int framerate_sent;
   int nominal_bitrate;

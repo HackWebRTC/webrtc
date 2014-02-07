@@ -162,8 +162,9 @@ float VideoAdapter::FindLowerScale(int width, int height,
 VideoAdapter::VideoAdapter()
     : output_num_pixels_(INT_MAX),
       scale_third_(false),
-      frames_(0),
-      adapted_frames_(0),
+      frames_in_(0),
+      frames_out_(0),
+      frames_scaled_(0),
       adaption_changes_(0),
       previous_width_(0),
       previous_height_(0),
@@ -177,9 +178,13 @@ VideoAdapter::~VideoAdapter() {
 
 void VideoAdapter::SetInputFormat(const VideoFormat& format) {
   talk_base::CritScope cs(&critical_section_);
+  int64 old_input_interval = input_format_.interval;
   input_format_ = format;
   output_format_.interval = talk_base::_max(
       output_format_.interval, input_format_.interval);
+  if (old_input_interval != input_format_.interval) {
+    LOG(LS_INFO) << "VAdapt Input Interval: " << input_format_.interval;
+  }
 }
 
 void CoordinatedVideoAdapter::SetInputFormat(const VideoFormat& format) {
@@ -207,10 +212,14 @@ void CoordinatedVideoAdapter::SetInputFormat(const VideoFormat& format) {
 
 void VideoAdapter::SetOutputFormat(const VideoFormat& format) {
   talk_base::CritScope cs(&critical_section_);
+  int64 old_output_interval = output_format_.interval;
   output_format_ = format;
   output_num_pixels_ = output_format_.width * output_format_.height;
   output_format_.interval = talk_base::_max(
       output_format_.interval, input_format_.interval);
+  if (old_output_interval != output_format_.interval) {
+    LOG(LS_INFO) << "VAdapt Output Interval: " << output_format_.interval;
+  }
 }
 
 const VideoFormat& VideoAdapter::input_format() {
@@ -245,7 +254,7 @@ bool VideoAdapter::AdaptFrame(const VideoFrame* in_frame,
   if (!in_frame || !out_frame) {
     return false;
   }
-  ++frames_;
+  ++frames_in_;
 
   // Update input to actual frame dimensions.
   VideoFormat format(static_cast<int>(in_frame->GetWidth()),
@@ -273,6 +282,23 @@ bool VideoAdapter::AdaptFrame(const VideoFrame* in_frame,
     }
   }
   if (should_drop) {
+    // Show VAdapt log every 90 frames dropped. (3 seconds)
+    // TODO(fbarchard): Consider GetLogSeverity() to change interval to less
+    // for LS_VERBOSE and more for LS_INFO.
+    bool show = (frames_in_ - frames_out_) % 90 == 0;
+
+    if (show) {
+      // TODO(fbarchard): Reduce to LS_VERBOSE when adapter info is not needed
+      // in default calls.
+      LOG(LS_INFO) << "VAdapt Drop Frame: " << frames_scaled_
+                   << " / " << frames_out_
+                   << " / " << frames_in_
+                   << " Changes: " << adaption_changes_
+                   << " Input: " << in_frame->GetWidth()
+                   << "x" << in_frame->GetHeight()
+                   << " i" << input_format_.interval
+                   << " Output: i" << output_format_.interval;
+    }
     *out_frame = NULL;
     return true;
   }
@@ -289,19 +315,22 @@ bool VideoAdapter::AdaptFrame(const VideoFrame* in_frame,
   }
 
   if (!StretchToOutputFrame(in_frame)) {
+    LOG(LS_VERBOSE) << "VAdapt Stretch Failed.";
     return false;
   }
 
   *out_frame = output_frame_.get();
 
-  // Show VAdapt log every 300 frames. (10 seconds)
-  // TODO(fbarchard): Consider GetLogSeverity() to change interval to less
-  // for LS_VERBOSE and more for LS_INFO.
-  bool show = frames_ % 300 == 0;
+  ++frames_out_;
   if (in_frame->GetWidth() != (*out_frame)->GetWidth() ||
       in_frame->GetHeight() != (*out_frame)->GetHeight()) {
-    ++adapted_frames_;
+    ++frames_scaled_;
   }
+  // Show VAdapt log every 90 frames output. (3 seconds)
+  // TODO(fbarchard): Consider GetLogSeverity() to change interval to less
+  // for LS_VERBOSE and more for LS_INFO.
+  bool show = (frames_out_) % 90 == 0;
+
   // TODO(fbarchard): LOG the previous output resolution and track input
   // resolution changes as well.  Consider dropping the statistics into their
   // own class which could be queried publically.
@@ -315,14 +344,17 @@ bool VideoAdapter::AdaptFrame(const VideoFrame* in_frame,
   if (show) {
     // TODO(fbarchard): Reduce to LS_VERBOSE when adapter info is not needed
     // in default calls.
-    LOG(LS_INFO) << "VAdapt Frame: " << adapted_frames_
-                 << " / " << frames_
+    LOG(LS_INFO) << "VAdapt Frame: " << frames_scaled_
+                 << " / " << frames_out_
+                 << " / " << frames_in_
                  << " Changes: " << adaption_changes_
                  << " Input: " << in_frame->GetWidth()
                  << "x" << in_frame->GetHeight()
+                 << " i" << input_format_.interval
                  << " Scale: " << scale
                  << " Output: " << (*out_frame)->GetWidth()
                  << "x" << (*out_frame)->GetHeight()
+                 << " i" << output_format_.interval
                  << " Changed: " << (changed ? "true" : "false");
   }
   previous_width_ = (*out_frame)->GetWidth();

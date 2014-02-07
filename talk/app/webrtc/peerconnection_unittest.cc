@@ -1269,7 +1269,12 @@ TEST_F(JsepPeerConnectionP2PTestClient, GetBytesSentStats) {
 }
 
 // This test sets up a call between two parties with audio, video and data.
+// TODO(jiayl): fix the flakiness on Windows and reenable. Issue 2891.
+#if defined(WIN32)
+TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTestDataChannel) {
+#else
 TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestDataChannel) {
+#endif
   FakeConstraints setup_constraints;
   setup_constraints.SetAllowRtpDataChannels();
   ASSERT_TRUE(CreateTestClients(&setup_constraints, &setup_constraints));

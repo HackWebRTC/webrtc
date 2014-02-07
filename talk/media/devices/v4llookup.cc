@@ -50,10 +50,10 @@ bool V4LLookup::CheckIsV4L2Device(const std::string& device_path) {
 
           is_v4l2 = true;
         } else {
-          LOG(LS_ERROR) << "VIDIOC_QUERYCAP failed for " << device_path;
+          LOG_ERRNO(LS_ERROR) << "VIDIOC_QUERYCAP failed for " << device_path;
         }
       } else {
-        LOG(LS_ERROR) << "Failed to open " << device_path;
+        LOG_ERRNO(LS_ERROR) << "Failed to open " << device_path;
       }
     }
   }

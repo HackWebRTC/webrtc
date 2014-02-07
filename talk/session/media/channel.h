@@ -248,12 +248,6 @@ class BaseChannel
   SrtpFilter* srtp_filter() { return &srtp_filter_; }
   bool rtcp() const { return rtcp_; }
 
-  void Send(uint32 id, talk_base::MessageData* pdata = NULL);
-  void Post(uint32 id, talk_base::MessageData* pdata = NULL);
-  void PostDelayed(int cmsDelay, uint32 id = 0,
-                   talk_base::MessageData* pdata = NULL);
-  void Clear(uint32 id = talk_base::MQID_ANY,
-             talk_base::MessageList* removed = NULL);
   void FlushRtcpMessages();
 
   // NetworkInterface implementation, called by MediaEngine
@@ -345,6 +339,12 @@ class BaseChannel
   virtual void GetSrtpCiphers(std::vector<std::string>* ciphers) const = 0;
   virtual void OnConnectionMonitorUpdate(SocketMonitor* monitor,
       const std::vector<ConnectionInfo>& infos) = 0;
+
+  // Helper function for invoking bool-returning methods on the worker thread.
+  template <class FunctorT>
+  bool InvokeOnWorker(const FunctorT& functor) {
+    return worker_thread_->Invoke<bool>(functor);
+  }
 
  private:
   sigslot::signal3<const void*, size_t, bool> SignalSendPacketPreCrypto;
@@ -470,7 +470,6 @@ class VoiceChannel : public BaseChannel {
   bool SetRingbackTone_w(const void* buf, int len);
   bool PlayRingbackTone_w(uint32 ssrc, bool play, bool loop);
   void HandleEarlyMediaTimeout();
-  bool CanInsertDtmf_w();
   bool InsertDtmf_w(uint32 ssrc, int event, int duration, int flags);
   bool SetOutputScaling_w(uint32 ssrc, double left, double right);
   bool GetStats_w(VoiceMediaInfo* stats);
@@ -485,9 +484,6 @@ class VoiceChannel : public BaseChannel {
   void OnVoiceChannelError(uint32 ssrc, VoiceMediaChannel::Error error);
   void SendLastMediaError();
   void OnSrtpError(uint32 ssrc, SrtpFilter::Mode mode, SrtpFilter::Error error);
-  // Configuration and setting.
-  bool SetChannelOptions_w(const AudioOptions& options);
-  bool SetRenderer_w(uint32 ssrc, AudioRenderer* renderer, bool is_local);
 
   static const int kEarlyMediaTimeout = 1000;
   bool received_media_;
@@ -557,7 +553,7 @@ class VideoChannel : public BaseChannel {
 
  private:
   typedef std::map<uint32, VideoCapturer*> ScreencastMap;
-  struct ScreencastDetailsMessageData;
+  struct ScreencastDetailsData;
 
   // overrides from BaseChannel
   virtual void ChangeState();
@@ -568,22 +564,13 @@ class VideoChannel : public BaseChannel {
   virtual bool SetRemoteContent_w(const MediaContentDescription* content,
                                   ContentAction action,
                                   std::string* error_desc);
-  void SendIntraFrame_w() {
-    media_channel()->SendIntraFrame();
-  }
-  void RequestIntraFrame_w() {
-    media_channel()->RequestIntraFrame();
-  }
-
   bool ApplyViewRequest_w(const ViewRequest& request);
-  void SetRenderer_w(uint32 ssrc, VideoRenderer* renderer);
 
   VideoCapturer* AddScreencast_w(uint32 ssrc, const ScreencastId& id);
-  bool SetCapturer_w(uint32 ssrc, VideoCapturer* capturer);
   bool RemoveScreencast_w(uint32 ssrc);
   void OnScreencastWindowEvent_s(uint32 ssrc, talk_base::WindowEvent we);
   bool IsScreencasting_w() const;
-  void ScreencastDetails_w(ScreencastDetailsMessageData* d) const;
+  void GetScreencastDetails_w(ScreencastDetailsData* d) const;
   void SetScreenCaptureFactory_w(
       ScreenCapturerFactory* screencapture_factory);
   bool GetStats_w(VideoMediaInfo* stats);
@@ -601,8 +588,6 @@ class VideoChannel : public BaseChannel {
 
   void OnVideoChannelError(uint32 ssrc, VideoMediaChannel::Error error);
   void OnSrtpError(uint32 ssrc, SrtpFilter::Mode mode, SrtpFilter::Error error);
-  // Configuration and setting.
-  bool SetChannelOptions_w(const VideoOptions& options);
 
   VoiceChannel* voice_channel_;
   VideoRenderer* renderer_;

@@ -229,6 +229,7 @@ static AudioOptions GetDefaultEngineOptions() {
   options.adjust_agc_delta.Set(0);
   options.experimental_agc.Set(false);
   options.experimental_aec.Set(false);
+  options.experimental_ns.Set(false);
   options.aec_dump.Set(false);
   options.experimental_acm.Set(false);
   return options;
@@ -717,6 +718,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   options.typing_detection.Set(false);
   options.experimental_agc.Set(false);
   options.experimental_aec.Set(false);
+  options.experimental_ns.Set(false);
 #endif
 
   LOG(LS_INFO) << "Applying audio options: " << options.ToString();
@@ -803,6 +805,25 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
                       << " with mode " << ns_mode;
     }
   }
+
+#ifdef USE_WEBRTC_DEV_BRANCH
+  bool experimental_ns;
+  if (options.experimental_ns.Get(&experimental_ns)) {
+    webrtc::AudioProcessing* audioproc =
+        voe_wrapper_->base()->audio_processing();
+    // We check audioproc for the benefit of tests, since FakeWebRtcVoiceEngine
+    // returns NULL on audio_processing().
+    if (audioproc) {
+      if (audioproc->EnableExperimentalNs(experimental_ns) == -1) {
+        LOG_RTCERR1(EnableExperimentalNs, experimental_ns);
+        return false;
+      }
+    } else {
+      LOG(LS_VERBOSE) << "Experimental noise suppression set to "
+                      << experimental_ns;
+    }
+  }
+#endif  // USE_WEBRTC_DEV_BRANCH
 
   bool highpass_filter;
   if (options.highpass_filter.Get(&highpass_filter)) {
