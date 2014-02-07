@@ -32,6 +32,7 @@
 #include "talk/base/logging.h"
 #include "talk/base/physicalsocketserver.h"
 #include "talk/base/socketaddress.h"
+#include "talk/base/ssladapter.h"
 #include "talk/base/testclient.h"
 #include "talk/base/thread.h"
 #include "talk/p2p/base/relayserver.h"
@@ -53,8 +54,13 @@ static const char* msg2 = "Lobster Thermidor a Crevette with a mornay sauce...";
 class RelayServerTest : public testing::Test {
  public:
   static void SetUpTestCase() {
-    talk_base::InitRandom(NULL, 0);
+    talk_base::InitializeSSL();
   }
+
+  static void TearDownTestCase() {
+    talk_base::CleanupSSL();
+  }
+
   RelayServerTest()
       : main_(talk_base::Thread::Current()), ss_(main_->socketserver()),
         username_(talk_base::CreateRandomString(12)),

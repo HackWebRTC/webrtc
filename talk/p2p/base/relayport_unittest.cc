@@ -32,6 +32,7 @@
 #include "talk/base/scoped_ptr.h"
 #include "talk/base/socketadapters.h"
 #include "talk/base/socketaddress.h"
+#include "talk/base/ssladapter.h"
 #include "talk/base/thread.h"
 #include "talk/base/virtualsocketserver.h"
 #include "talk/p2p/base/basicpacketsocketfactory.h"
@@ -93,9 +94,13 @@ class RelayPortTest : public testing::Test,
 
  protected:
   static void SetUpTestCase() {
-    // Ensure the RNG is inited.
-    talk_base::InitRandom(NULL, 0);
+    talk_base::InitializeSSL();
   }
+
+  static void TearDownTestCase() {
+    talk_base::CleanupSSL();
+  }
+
 
   virtual void SetUp() {
     // The relay server needs an external socket to work properly.

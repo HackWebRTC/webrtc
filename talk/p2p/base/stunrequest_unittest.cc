@@ -28,6 +28,7 @@
 #include "talk/base/gunit.h"
 #include "talk/base/helpers.h"
 #include "talk/base/logging.h"
+#include "talk/base/ssladapter.h"
 #include "talk/base/timeutils.h"
 #include "talk/p2p/base/stunrequest.h"
 
@@ -37,8 +38,13 @@ class StunRequestTest : public testing::Test,
                         public sigslot::has_slots<> {
  public:
   static void SetUpTestCase() {
-    talk_base::InitRandom(NULL, 0);
+    talk_base::InitializeSSL();
   }
+
+  static void TearDownTestCase() {
+    talk_base::CleanupSSL();
+  }
+
   StunRequestTest()
       : manager_(talk_base::Thread::Current()),
         request_count_(0), response_(NULL),

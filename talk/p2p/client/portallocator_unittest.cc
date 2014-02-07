@@ -35,6 +35,7 @@
 #include "talk/base/network.h"
 #include "talk/base/physicalsocketserver.h"
 #include "talk/base/socketaddress.h"
+#include "talk/base/ssladapter.h"
 #include "talk/base/thread.h"
 #include "talk/base/virtualsocketserver.h"
 #include "talk/p2p/base/basicpacketsocketfactory.h"
@@ -88,9 +89,13 @@ std::ostream& operator<<(std::ostream& os, const cricket::Candidate& c) {
 class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
  public:
   static void SetUpTestCase() {
-    // Ensure the RNG is inited.
-    talk_base::InitRandom(NULL, 0);
+    talk_base::InitializeSSL();
   }
+
+  static void TearDownTestCase() {
+    talk_base::CleanupSSL();
+  }
+
   PortAllocatorTest()
       : pss_(new talk_base::PhysicalSocketServer),
         vss_(new talk_base::VirtualSocketServer(pss_.get())),

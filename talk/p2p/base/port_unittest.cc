@@ -34,6 +34,7 @@
 #include "talk/base/physicalsocketserver.h"
 #include "talk/base/scoped_ptr.h"
 #include "talk/base/socketaddress.h"
+#include "talk/base/ssladapter.h"
 #include "talk/base/stringutils.h"
 #include "talk/base/thread.h"
 #include "talk/base/virtualsocketserver.h"
@@ -355,9 +356,13 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
 
  protected:
   static void SetUpTestCase() {
-    // Ensure the RNG is inited.
-    talk_base::InitRandom(NULL, 0);
+    talk_base::InitializeSSL();
   }
+
+  static void TearDownTestCase() {
+    talk_base::CleanupSSL();
+  }
+
 
   void TestLocalToLocal() {
     Port* port1 = CreateUdpPort(kLocalAddr1);

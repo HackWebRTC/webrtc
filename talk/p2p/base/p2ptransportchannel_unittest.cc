@@ -36,6 +36,7 @@
 #include "talk/base/physicalsocketserver.h"
 #include "talk/base/proxyserver.h"
 #include "talk/base/socketaddress.h"
+#include "talk/base/ssladapter.h"
 #include "talk/base/thread.h"
 #include "talk/base/virtualsocketserver.h"
 #include "talk/p2p/base/p2ptransportchannel.h"
@@ -354,8 +355,11 @@ class P2PTransportChannelTestBase : public testing::Test,
   static const Result kPrflxTcpToLocalTcp;
 
   static void SetUpTestCase() {
-    // Ensure the RNG is inited.
-    talk_base::InitRandom(NULL, 0);
+    talk_base::InitializeSSL();
+  }
+
+  static void TearDownTestCase() {
+    talk_base::CleanupSSL();
   }
 
   talk_base::NATSocketServer* nat() { return nss_.get(); }
