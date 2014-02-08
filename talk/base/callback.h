@@ -93,10 +93,8 @@ class Callback0 {
   template <class T> Callback0(const T& functor)
       : helper_(new RefCountedObject< HelperImpl<T> >(functor)) {}
   R operator()() {
-    if (empty()) {
-      LOG_F(LS_WARNING) << "Tried to execute an empty callback.";
+    if (empty())
       return R();
-    }
     return helper_->Run();
   }
   bool empty() const { return !helper_; }
@@ -125,10 +123,8 @@ class Callback1 {
   template <class T> Callback1(const T& functor)
       : helper_(new RefCountedObject< HelperImpl<T> >(functor)) {}
   R operator()(P1 p1) {
-    if (empty()) {
-      LOG_F(LS_WARNING) << "Tried to execute an empty callback.";
+    if (empty())
       return R();
-    }
     return helper_->Run(p1);
   }
   bool empty() const { return !helper_; }
@@ -158,10 +154,8 @@ class Callback2 {
   template <class T> Callback2(const T& functor)
       : helper_(new RefCountedObject< HelperImpl<T> >(functor)) {}
   R operator()(P1 p1, P2 p2) {
-    if (empty()) {
-      LOG_F(LS_WARNING) << "Tried to execute an empty callback.";
+    if (empty())
       return R();
-    }
     return helper_->Run(p1, p2);
   }
   bool empty() const { return !helper_; }
@@ -192,10 +186,8 @@ class Callback3 {
   template <class T> Callback3(const T& functor)
       : helper_(new RefCountedObject< HelperImpl<T> >(functor)) {}
   R operator()(P1 p1, P2 p2, P3 p3) {
-    if (empty()) {
-      LOG_F(LS_WARNING) << "Tried to execute an empty callback.";
+    if (empty())
       return R();
-    }
     return helper_->Run(p1, p2, p3);
   }
   bool empty() const { return !helper_; }
@@ -227,10 +219,8 @@ class Callback4 {
   template <class T> Callback4(const T& functor)
       : helper_(new RefCountedObject< HelperImpl<T> >(functor)) {}
   R operator()(P1 p1, P2 p2, P3 p3, P4 p4) {
-    if (empty()) {
-      LOG_F(LS_WARNING) << "Tried to execute an empty callback.";
+    if (empty())
       return R();
-    }
     return helper_->Run(p1, p2, p3, p4);
   }
   bool empty() const { return !helper_; }
@@ -263,10 +253,8 @@ class Callback5 {
   template <class T> Callback5(const T& functor)
       : helper_(new RefCountedObject< HelperImpl<T> >(functor)) {}
   R operator()(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5) {
-    if (empty()) {
-      LOG_F(LS_WARNING) << "Tried to execute an empty callback.";
+    if (empty())
       return R();
-    }
     return helper_->Run(p1, p2, p3, p4, p5);
   }
   bool empty() const { return !helper_; }
@@ -286,6 +274,5 @@ class Callback5 {
   scoped_refptr<Helper> helper_;
 };
 }  // namespace talk_base
-
 
 #endif  // TALK_BASE_CALLBACK_H_

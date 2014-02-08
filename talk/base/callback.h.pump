@@ -74,7 +74,6 @@
 #ifndef TALK_BASE_CALLBACK_H_
 #define TALK_BASE_CALLBACK_H_
 
-#include "talk/base/logging.h"
 #include "talk/base/refcount.h"
 #include "talk/base/scoped_ref_ptr.h"
 
@@ -94,10 +93,8 @@ class Callback$i {
   template <class T> Callback$i(const T& functor)
       : helper_(new RefCountedObject< HelperImpl<T> >(functor)) {}
   R operator()($for j , [[P$j p$j]]) {
-    if (empty()) {
-      LOG_F(LS_WARNING) << "Tried to execute an empty callback.";
+    if (empty())
       return R();
-    }
     return helper_->Run($for j , [[p$j]]);
   }
   bool empty() const { return !helper_; }
