@@ -363,7 +363,7 @@ TEST_F(AsyncInvokeTest, WithCallback) {
   EXPECT_EQ_WAIT(42, int_value_, kWaitTimeout);
 }
 
-TEST_F(AsyncInvokeTest, CancelInvoker) {
+TEST_F(AsyncInvokeTest, DISABLED_CancelInvoker) {
   // Create and start the thread.
   Thread thread;
   thread.Start();
