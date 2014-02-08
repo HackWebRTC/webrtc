@@ -727,3 +727,26 @@
   fun:talk_base::Thread::Run
   fun:talk_base::Thread::PreRun
 }
+{
+  bug_2080_35
+  ThreadSanitizer:UnlockNonLocked
+  fun:pthread_mutex_unlock
+  fun:talk_base::CriticalSection::Leave
+  fun:talk_base::CritScope::~CritScope
+  ...
+  fun:talk_base::AsyncFunctorMessageHandler::OnMessage
+  fun:talk_base::MessageQueue::Dispatch
+  fun:talk_base::Thread::ProcessMessages
+  fun:talk_base::Thread::Run
+  fun:talk_base::Thread::PreRun
+}
+{
+  bug_2080_36
+  ThreadSanitizer:Race
+  ...
+  fun:talk_base::FunctorMessageHandler::OnMessage
+  fun:talk_base::MessageQueue::Dispatch
+  fun:talk_base::Thread::ProcessMessages
+  fun:talk_base::Thread::Run
+  fun:talk_base::Thread::PreRun
+}

@@ -370,6 +370,29 @@
 #-----------------------------------------------------------------------
 # 2. libjingle stuff (talk folder)
 {
+   bug_1976_1
+   Memcheck:Unaddressable
+   fun:pthread_mutex_unlock
+   fun:_ZN9talk_base15CriticalSection5LeaveEv
+   fun:_ZN9talk_base9CritScopeD1Ev
+   ...
+   fun:_ZN9talk_base6Thread15ProcessMessagesEi
+   fun:_ZN9talk_base6Thread3RunEv
+   fun:_ZN9talk_base6Thread6PreRunEPv
+}
+{
+   bug_1976_2
+   Memcheck:Leak
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libnss3.so
+   ...
+   fun:NSS_NoDB_Init
+   fun:_ZN9talk_base10NSSContext13InitializeSSLEPFbPvE
+   fun:_ZN9talk_base13InitializeSSLEPFbPvE
+   fun:_ZN9talk_base10RandomTest13SetUpTestCaseEv
+   fun:_ZN7testing8TestCase16RunSetUpTestCaseEv
+}
+{
    bug_2056_1
    Memcheck:Leak
    fun:malloc
