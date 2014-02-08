@@ -25,7 +25,6 @@
 *_proto_cpp.xml
 *~
 .*.sw?
-.sw?
 .cproject
 .gdb_history
 .gdbinit
@@ -34,6 +33,7 @@
 .project
 .pydevproject
 .settings
+.sw?
 /Makefile
 /build
 /chromium_deps
@@ -92,6 +92,14 @@
 /tools/swarming_client
 /tools/valgrind
 /tools/win
+/webrtc/examples/android/media_demo/bin
+/webrtc/examples/android/media_demo/gen
+/webrtc/examples/android/media_demo/libs
+/webrtc/examples/android/media_demo/obj
+/webrtc/examples/android/opensl_loopback/bin
+/webrtc/examples/android/opensl_loopback/gen
+/webrtc/examples/android/opensl_loopback/libs
+/webrtc/examples/android/opensl_loopback/obj
 /webrtc/modules/audio_device/android/test/bin/
 /webrtc/modules/audio_device/android/test/gen/
 /webrtc/modules/audio_device/android/test/libs/
@@ -101,5 +109,5 @@
 /webrtc/video_engine/test/android/obj
 /x86-generic_out/
 /xcodebuild
-!*.sha1
 
+!*.sha1
