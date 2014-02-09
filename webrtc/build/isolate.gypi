@@ -12,6 +12,11 @@
 # build/common.gypi is different for the standalone and Chromium builds. Gyp
 # doesn't permit conditional inclusion or variable expansion in include paths.
 # http://code.google.com/p/gyp/wiki/InputFormatReference#Including_Other_Files
+#
+# Local modifications:
+# * Removed include of '../chrome/version.gypi'.
+# * Removal passing of version_full variable created in version.gypi:
+#   '--extra-variable', 'version_full=<(version_full)',
 
 # This file is meant to be included into a target to provide a rule
 # to "build" .isolate files into a .isolated file.
@@ -44,6 +49,9 @@
 #
 # The generated .isolated file will be:
 #   <(PRODUCT_DIR)/foo_test.isolated
+#
+# See http://dev.chromium.org/developers/testing/isolated-testing/for-swes
+# for more information.
 
 {
   'rules': [
@@ -54,7 +62,6 @@
         # Files that are known to be involved in this step.
         '<(DEPTH)/tools/swarming_client/isolate.py',
         '<(DEPTH)/tools/swarming_client/run_isolated.py',
-        '<(DEPTH)/tools/swarming_client/googletest/run_test_cases.py',
 
         # Disable file tracking by the build driver for now. This means the
         # project must have the proper build-time dependency for their runtime
@@ -71,47 +78,50 @@
       'outputs': [
         '<(PRODUCT_DIR)/<(RULE_INPUT_ROOT).isolated',
       ],
+      'action': [
+        'python',
+        '<(DEPTH)/tools/swarming_client/isolate.py',
+        '<(test_isolation_mode)',
+        '--result', '<@(_outputs)',
+        '--isolate', '<(RULE_INPUT_PATH)',
+
+        # Variables should use the -V FOO=<(FOO) form so frequent values,
+        # like '0' or '1', aren't stripped out by GYP. Run 'isolate.py help' for
+        # more details.
+        #
+        # This list needs to be kept in sync with the cmd line options
+        # in src/build/android/pylib/gtest/setup.py.
+
+        # Path variables are used to replace file paths when loading a .isolate
+        # file
+        '--path-variable', 'PRODUCT_DIR', '<(PRODUCT_DIR) ',
+
+        '--config-variable', 'OS=<(OS)',
+        '--config-variable', 'chromeos=<(chromeos)',
+        '--config-variable', 'component=<(component)',
+        # TODO(kbr): move this to chrome_tests.gypi:gles2_conform_tests_run
+        # once support for user-defined config variables is added.
+        '--config-variable',
+          'internal_gles2_conform_tests=<(internal_gles2_conform_tests)',
+        '--config-variable', 'icu_use_data_file_flag=<(icu_use_data_file_flag)',
+        '--config-variable', 'use_openssl=<(use_openssl)',
+      ],
       'conditions': [
-        ["test_isolation_outdir==''", {
+        # Note: When gyp merges lists, it appends them to the old value.
+        ['OS=="mac"', {
+          # <(mac_product_name) can contain a space, so don't use FOO=<(FOO)
+          # form.
           'action': [
-            'python',
-            '<(DEPTH)/tools/swarming_client/isolate.py',
-            '<(test_isolation_mode)',
-            # GYP will eliminate duplicate arguments so '<(PRODUCT_DIR)' cannot
-            # be provided twice. To work around this behavior, append '/'.
-            #
-            # Also have a space after <(PRODUCT_DIR) or visual studio will
-            # escape the argument wrappping " with the \ and merge it into
-            # the following arguments.
-            #
-            # Other variables should use the -V FOO=<(FOO) form so frequent
-            # values, like '0' or '1', aren't stripped out by GYP.
-            '--outdir', '<(PRODUCT_DIR)/ ',
-            '--path-variable', 'PRODUCT_DIR', '<(PRODUCT_DIR) ',
-            '--config-variable', 'OS=<(OS)',
-            '--result', '<@(_outputs)',
-            '--isolate', '<(RULE_INPUT_PATH)',
-          ],
-        }, {
-          'action': [
-            'python',
-            '<(DEPTH)/tools/swarming_client/isolate.py',
-            '<(test_isolation_mode)',
-            '--outdir', '<(test_isolation_outdir)',
-            # See comment above.
-            '--path-variable', 'PRODUCT_DIR', '<(PRODUCT_DIR) ',
-            '--config-variable', 'OS=<(OS)',
-            '--result', '<@(_outputs)',
-            '--isolate', '<(RULE_INPUT_PATH)',
+            '--extra-variable', 'mac_product_name', '<(mac_product_name)',
           ],
         }],
+        ["test_isolation_outdir!=''", {
+          'action': [ '--isolate-server', '<(test_isolation_outdir)' ],
+        }],
         ['test_isolation_fail_on_missing == 0', {
-            'action': ['--ignore_broken_items'],
-          },
-        ],
+          'action': ['--ignore_broken_items'],
+        }],
       ],
-
-      'msvs_cygwin_shell': 0,
     },
   ],
 }

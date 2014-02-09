@@ -11,7 +11,7 @@ vars = {
   "googlecode_url": "http://%s.googlecode.com/svn",
   "sourceforge_url": "http://svn.code.sf.net/p/%(repo)s/code",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-  "chromium_revision": "245382",
+  "chromium_revision": "249215",
 
   # A small subset of WebKit is needed for the Android Python test framework.
   "webkit_trunk": "http://src.chromium.org/blink/trunk",
@@ -44,6 +44,9 @@ deps = {
 
   "third_party/clang_format":
     Var("chromium_trunk") + "/src/third_party/clang_format@" + Var("chromium_revision"),
+
+  "third_party/clang_format/script":
+    From("chromium_deps", "src/third_party/clang_format/script"),
 
   "third_party/expat":
     Var("chromium_trunk") + "/src/third_party/expat@" + Var("chromium_revision"),
@@ -135,10 +138,6 @@ deps = {
 
 deps_os = {
   "win": {
-    # Use our own, stripped down, version of Cygwin (required by GYP).
-    "third_party/cygwin":
-      (Var("googlecode_url") % "webrtc") + "/deps/third_party/cygwin@2672",
-
     "third_party/winsdk_samples/src":
       (Var("googlecode_url") % "webrtc") + "/deps/third_party/winsdk_samples_v71@3145",
 
@@ -294,15 +293,6 @@ hooks = [
     "pattern": ".",
     "action": ["python", Var("root_dir") + "/tools/clang/scripts/update.py",
                "--mac-only"],
-  },
-  {
-    # Update the cygwin mount on Windows.
-    # This is necessary to get the correct mapping between e.g. /bin and the
-    # cygwin path on Windows. Without it we can't run bash scripts in actions.
-    # Ideally this should be solved in "pylib/gyp/msvs_emulation.py".
-    "pattern": ".",
-    "action": ["python", Var("root_dir") + "/build/win/setup_cygwin_mount.py",
-               "--win-only"],
   },
   {
     # Download test resources, i.e. video and audio files from Google Storage.
