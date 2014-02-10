@@ -1003,6 +1003,26 @@ int ViERTP_RTCPImpl::GetEstimatedReceiveBandwidth(
   return 0;
 }
 
+int ViERTP_RTCPImpl::GetReceiveBandwidthEstimatorStats(
+    const int video_channel,
+    ReceiveBandwidthEstimatorStats* output) const {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
+               ViEId(shared_data_->instance_id(), video_channel),
+               "%s(channel: %d)", __FUNCTION__, video_channel);
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(shared_data_->instance_id(), video_channel),
+                 "%s: Could not get channel %d", __FUNCTION__,
+                 video_channel);
+    shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
+    return -1;
+  }
+  vie_channel->GetReceiveBandwidthEstimatorStats(output);
+  return 0;
+}
+
 int ViERTP_RTCPImpl::StartRTPDump(const int video_channel,
                                   const char file_nameUTF8[1024],
                                   RTPDirections direction) {

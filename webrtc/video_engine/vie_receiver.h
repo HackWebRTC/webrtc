@@ -34,6 +34,7 @@ class RTPPayloadRegistry;
 class RtpReceiver;
 class RtpRtcp;
 class VideoCodingModule;
+struct ReceiveBandwidthEstimatorStats;
 
 class ViEReceiver : public RtpData {
  public:
@@ -84,6 +85,9 @@ class ViEReceiver : public RtpData {
       const WebRtcRTPHeader* rtp_header);
 
   void EstimatedReceiveBandwidth(unsigned int* available_bandwidth) const;
+
+  void GetReceiveBandwidthEstimatorStats(
+      ReceiveBandwidthEstimatorStats* output) const;
 
   ReceiveStatistics* GetReceiveStatistics() const;
 

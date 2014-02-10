@@ -27,6 +27,7 @@
 namespace webrtc {
 
 class VideoEngine;
+struct ReceiveBandwidthEstimatorStats;
 
 // This enumerator sets the RTCP mode.
 enum ViERTCPMode {
@@ -388,6 +389,13 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
   virtual int GetEstimatedReceiveBandwidth(
       const int video_channel,
       unsigned int* estimated_bandwidth) const = 0;
+
+  // This function gets the receive-side bandwidth esitmator statistics.
+  // TODO(jiayl): remove the default impl when libjingle's FakeWebRtcVideoEngine
+  // is updated.
+  virtual int GetReceiveBandwidthEstimatorStats(
+      const int video_channel,
+      ReceiveBandwidthEstimatorStats* output) const { return -1; }
 
   // This function enables capturing of RTP packets to a binary file on a
   // specific channel and for a given direction. The file can later be

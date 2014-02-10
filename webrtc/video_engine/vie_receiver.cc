@@ -458,6 +458,11 @@ void ViEReceiver::EstimatedReceiveBandwidth(
   }
 }
 
+void ViEReceiver::GetReceiveBandwidthEstimatorStats(
+    ReceiveBandwidthEstimatorStats* output) const {
+  remote_bitrate_estimator_->GetStats(output);
+}
+
 ReceiveStatistics* ViEReceiver::GetReceiveStatistics() const {
   return rtp_receive_statistics_.get();
 }

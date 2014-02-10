@@ -85,6 +85,11 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
     return rbe_->LatestEstimate(ssrcs, bitrate_bps);
   }
 
+  virtual bool GetStats(ReceiveBandwidthEstimatorStats* output) const {
+    CriticalSectionScoped cs(crit_sect_.get());
+    return rbe_->GetStats(output);
+  }
+
  private:
   // Instantiate RBE for Time Offset or Absolute Send Time extensions.
   void PickEstimator(const RTPHeader& header) {

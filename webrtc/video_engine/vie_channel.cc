@@ -1457,6 +1457,11 @@ void ViEChannel::GetEstimatedReceiveBandwidth(
   vie_receiver_.EstimatedReceiveBandwidth(estimated_bandwidth);
 }
 
+void ViEChannel::GetReceiveBandwidthEstimatorStats(
+    ReceiveBandwidthEstimatorStats* output) const {
+  vie_receiver_.GetReceiveBandwidthEstimatorStats(output);
+}
+
 int32_t ViEChannel::StartRTPDump(const char file_nameUTF8[1024],
                                        RTPDirections direction) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",

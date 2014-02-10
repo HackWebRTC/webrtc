@@ -55,6 +55,9 @@ class RemoteBitrateEstimatorSingleStream : public RemoteBitrateEstimator {
   virtual bool LatestEstimate(std::vector<unsigned int>* ssrcs,
                               unsigned int* bitrate_bps) const OVERRIDE;
 
+  virtual bool GetStats(
+      ReceiveBandwidthEstimatorStats* output) const OVERRIDE;
+
  private:
   typedef std::map<unsigned int, OveruseDetector> SsrcOveruseDetectorMap;
 
@@ -208,6 +211,12 @@ bool RemoteBitrateEstimatorSingleStream::LatestEstimate(
   else
     *bitrate_bps = remote_rate_.LatestEstimate();
   return true;
+}
+
+bool RemoteBitrateEstimatorSingleStream::GetStats(
+    ReceiveBandwidthEstimatorStats* output) const {
+  // Not implemented.
+  return false;
 }
 
 void RemoteBitrateEstimatorSingleStream::GetSsrcs(
