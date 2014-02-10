@@ -28,5 +28,14 @@ struct RemoteBitrateEstimatorMinRate {
 
   uint32_t min_rate;
 };
+
+struct SkipEncodingUnusedStreams {
+  SkipEncodingUnusedStreams() : enabled(false) {}
+  explicit SkipEncodingUnusedStreams(bool set_enabled)
+    : enabled(set_enabled) {}
+  virtual ~SkipEncodingUnusedStreams() {}
+
+  const bool enabled;
+};
 }  // namespace webrtc
 #endif  // WEBRTC_EXPERIMENTS_H_
