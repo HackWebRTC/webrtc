@@ -61,6 +61,7 @@
 @synthesize sendQueue = _sendQueue;
 @synthesize token = _token;
 @synthesize verboseLogging = _verboseLogging;
+@synthesize initiator = _initiator;
 
 - (id)init {
   if (self = [super init]) {
@@ -272,6 +273,7 @@
   [self maybeLogMessage:
       [NSString stringWithFormat:@"Base URL: %@", self.baseURL]];
 
+  self.initiator = [[self findVar:@"initiator" strippingQuotes:NO] boolValue];
   self.token = [self findVar:@"channelToken" strippingQuotes:YES];
   if (!self.token)
     return;

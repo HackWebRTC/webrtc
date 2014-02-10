@@ -47,6 +47,7 @@
 
 @property(nonatomic, assign) id<ICEServerDelegate> ICEServerDelegate;
 @property(nonatomic, assign) id<GAEMessageHandler> messageHandler;
+@property(nonatomic, assign) BOOL initiator;
 
 - (void)connectToRoom:(NSURL *)room;
 - (void)sendData:(NSData *)data;

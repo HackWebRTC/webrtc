@@ -229,6 +229,10 @@
 #pragma mark - GAEMessageHandler methods
 
 - (void)onOpen {
+  if (!self.client.initiator) {
+      [self displayLogMessage:@"Callee; waiting for remote offer"];
+      return;
+  }
   [self displayLogMessage:@"GAE onOpen - create offer."];
   RTCPair *audio =
       [[RTCPair alloc] initWithKey:@"OfferToReceiveAudio" value:@"true"];
@@ -400,10 +404,34 @@
 
   [self displayLogMessage:@"SDP onSuccess() - possibly drain candidates"];
   dispatch_async(dispatch_get_main_queue(), ^(void) {
-    // TODO(hughv): Handle non-initiator case.  http://s10/46622051
-    if (self.peerConnection.remoteDescription) {
-      [self displayLogMessage:@"SDP onSuccess - drain candidates"];
-      [self drainRemoteCandidates];
+    if (!self.client.initiator) {
+        if (self.peerConnection.remoteDescription
+                && !self.peerConnection.localDescription) {
+            [self displayLogMessage:@"Callee, setRemoteDescription succeeded"];
+            RTCPair *audio =
+                [[RTCPair alloc]
+                    initWithKey:@"OfferToReceiveAudio" value:@"true"];
+            // TODO(hughv): Add video.
+            // RTCPair *video =
+            //    [[RTCPair alloc]
+            //        initWithKey:@"OfferToReceiveVideo" value:@"true"];
+            NSArray *mandatory = @[ audio /*, video*/ ];
+            RTCMediaConstraints *constraints =
+                [[RTCMediaConstraints alloc]
+                    initWithMandatoryConstraints:mandatory
+                    optionalConstraints:nil];
+            [self.peerConnection
+                createAnswerWithDelegate:self constraints:constraints];
+            [self displayLogMessage:@"PC - createAnswer."];
+        } else {
+            [self displayLogMessage:@"SDP onSuccess - drain candidates"];
+            [self drainRemoteCandidates];
+        }
+    } else {
+        if (self.peerConnection.remoteDescription) {
+            [self displayLogMessage:@"SDP onSuccess - drain candidates"];
+            [self drainRemoteCandidates];
+        }
     }
   });
 }
