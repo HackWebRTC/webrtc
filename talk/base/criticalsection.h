@@ -29,6 +29,7 @@
 #define TALK_BASE_CRITICALSECTION_H__
 
 #include "talk/base/constructormagic.h"
+#include "webrtc/system_wrappers/interface/thread_annotations.h"
 
 #ifdef WIN32
 #include "talk/base/win32.h"
@@ -51,7 +52,7 @@
 namespace talk_base {
 
 #ifdef WIN32
-class CriticalSection {
+class LOCKABLE CriticalSection {
  public:
   CriticalSection() {
     InitializeCriticalSection(&crit_);
@@ -61,18 +62,18 @@ class CriticalSection {
   ~CriticalSection() {
     DeleteCriticalSection(&crit_);
   }
-  void Enter() {
+  void Enter() EXCLUSIVE_LOCK_FUNCTION() {
     EnterCriticalSection(&crit_);
     TRACK_OWNER(thread_ = GetCurrentThreadId());
   }
-  bool TryEnter() {
+  bool TryEnter() EXCLUSIVE_TRYLOCK_FUNCTION(true) {
     if (TryEnterCriticalSection(&crit_) != FALSE) {
       TRACK_OWNER(thread_ = GetCurrentThreadId());
       return true;
     }
     return false;
   }
-  void Leave() {
+  void Leave() UNLOCK_FUNCTION() {
     TRACK_OWNER(thread_ = 0);
     LeaveCriticalSection(&crit_);
   }
@@ -88,7 +89,7 @@ class CriticalSection {
 #endif // WIN32
 
 #ifdef POSIX
-class CriticalSection {
+class LOCKABLE CriticalSection {
  public:
   CriticalSection() {
     pthread_mutexattr_t mutex_attribute;
@@ -101,18 +102,18 @@ class CriticalSection {
   ~CriticalSection() {
     pthread_mutex_destroy(&mutex_);
   }
-  void Enter() {
+  void Enter() EXCLUSIVE_LOCK_FUNCTION()  {
     pthread_mutex_lock(&mutex_);
     TRACK_OWNER(thread_ = pthread_self());
   }
-  bool TryEnter() {
+  bool TryEnter() EXCLUSIVE_TRYLOCK_FUNCTION(true) {
     if (pthread_mutex_trylock(&mutex_) == 0) {
       TRACK_OWNER(thread_ = pthread_self());
       return true;
     }
     return false;
   }
-  void Leave() {
+  void Leave() UNLOCK_FUNCTION() {
     TRACK_OWNER(thread_ = 0);
     pthread_mutex_unlock(&mutex_);
   }
@@ -128,13 +129,13 @@ class CriticalSection {
 #endif // POSIX
 
 // CritScope, for serializing execution through a scope.
-class CritScope {
+class SCOPED_LOCKABLE CritScope {
  public:
-  explicit CritScope(CriticalSection *pcrit) {
+  explicit CritScope(CriticalSection *pcrit) EXCLUSIVE_LOCK_FUNCTION(pcrit) {
     pcrit_ = pcrit;
     pcrit_->Enter();
   }
-  ~CritScope() {
+  ~CritScope() UNLOCK_FUNCTION() {
     pcrit_->Leave();
   }
  private:
