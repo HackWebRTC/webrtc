@@ -36,14 +36,14 @@ namespace talk_base {
 
 // This class provides shared-exclusive lock. It can be used in cases like
 // multiple-readers/single-writer model.
-class LOCKABLE SharedExclusiveLock {
+class SharedExclusiveLock {
  public:
   SharedExclusiveLock();
 
   // Locking/unlocking methods. It is encouraged to use SharedScope or
   // ExclusiveScope for protection.
-  void LockExclusive() EXCLUSIVE_LOCK_FUNCTION();
-  void UnlockExclusive() UNLOCK_FUNCTION();
+  void LockExclusive();
+  void UnlockExclusive();
   void LockShared();
   void UnlockShared();
 
@@ -56,14 +56,13 @@ class LOCKABLE SharedExclusiveLock {
   DISALLOW_COPY_AND_ASSIGN(SharedExclusiveLock);
 };
 
-class SCOPED_LOCKABLE SharedScope {
+class SharedScope {
  public:
-  explicit SharedScope(SharedExclusiveLock* lock) SHARED_LOCK_FUNCTION(lock)
-      : lock_(lock) {
+  explicit SharedScope(SharedExclusiveLock* lock) : lock_(lock) {
     lock_->LockShared();
   }
 
-  ~SharedScope() UNLOCK_FUNCTION() {
+  ~SharedScope() {
     lock_->UnlockShared();
   }
 
@@ -73,15 +72,13 @@ class SCOPED_LOCKABLE SharedScope {
   DISALLOW_COPY_AND_ASSIGN(SharedScope);
 };
 
-class SCOPED_LOCKABLE ExclusiveScope {
+class ExclusiveScope {
  public:
-  explicit ExclusiveScope(SharedExclusiveLock* lock)
-      EXCLUSIVE_LOCK_FUNCTION(lock)
-      : lock_(lock) {
+  explicit ExclusiveScope(SharedExclusiveLock* lock) : lock_(lock) {
     lock_->LockExclusive();
   }
 
-  ~ExclusiveScope() UNLOCK_FUNCTION() {
+  ~ExclusiveScope() {
     lock_->UnlockExclusive();
   }
 

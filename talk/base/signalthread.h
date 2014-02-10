@@ -132,17 +132,16 @@ class SignalThread
     DISALLOW_IMPLICIT_CONSTRUCTORS(Worker);
   };
 
-  class SCOPED_LOCKABLE EnterExit {
+  class EnterExit {
    public:
-    explicit EnterExit(SignalThread* t) EXCLUSIVE_LOCK_FUNCTION(t->cs_)
-        : t_(t) {
+    explicit EnterExit(SignalThread* t) : t_(t) {
       t_->cs_.Enter();
       // If refcount_ is zero then the object has already been deleted and we
       // will be double-deleting it in ~EnterExit()! (shouldn't happen)
       ASSERT(t_->refcount_ != 0);
       ++t_->refcount_;
     }
-    ~EnterExit() UNLOCK_FUNCTION() {
+    ~EnterExit() {
       bool d = (0 == --t_->refcount_);
       t_->cs_.Leave();
       if (d)

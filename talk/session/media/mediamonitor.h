@@ -77,7 +77,7 @@ class MediaMonitorT : public MediaMonitor {
     media_info_.Clear();
     media_channel_->GetStats(&media_info_);
   }
-  virtual void Update() EXCLUSIVE_LOCKS_REQUIRED(crit_) {
+  virtual void Update() {
     MI stats(media_info_);
     crit_.Leave();
     SignalUpdate(media_channel_, stats);
