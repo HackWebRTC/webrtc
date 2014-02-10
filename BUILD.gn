@@ -7,10 +7,17 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 # This file is copied and modified from Chromium (src/BUILD.gn).
-
 group("root") {
   external = true
 
   deps = [
   ]
 }
+
+# A standard (non-group) target is required in the build to load any of the
+# configurations, which is in turn required to load all of the build parameters
+# (in build/config/BUILD.gn).
+executable("dummy") {
+  external = true
+}
+
