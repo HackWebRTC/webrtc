@@ -264,8 +264,6 @@ int32_t VideoCaptureImpl::IncomingFrame(
                "IncomingFrame width %d, height %d", (int) frameInfo.width,
                (int) frameInfo.height);
 
-    TickTime startProcessTime = TickTime::Now();
-
     CriticalSectionScoped cs(&_callBackCs);
 
     const int32_t width = frameInfo.width;
@@ -332,15 +330,6 @@ int32_t VideoCaptureImpl::IncomingFrame(
     {
         assert(false);
         return -1;
-    }
-
-    const uint32_t processTime =
-        (uint32_t)(TickTime::Now() - startProcessTime).Milliseconds();
-    if (processTime > 10) // If the process time is too long MJPG will not work well.
-    {
-        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideoCapture, _id,
-                   "Too long processing time of Incoming frame: %ums",
-                   (unsigned int) processTime);
     }
 
     return 0;
