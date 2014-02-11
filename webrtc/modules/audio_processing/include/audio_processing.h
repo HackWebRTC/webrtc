@@ -231,6 +231,11 @@ class AudioProcessing : public Module {
   virtual int set_stream_delay_ms(int delay) = 0;
   virtual int stream_delay_ms() const = 0;
 
+  // Call to signal that a key press occurred (true) or did not occur (false)
+  // with this chunk of audio.
+  virtual void set_stream_key_pressed(bool key_pressed) = 0;
+  virtual bool stream_key_pressed() const = 0;
+
   // Sets a delay |offset| in ms to add to the values passed in through
   // set_stream_delay_ms(). May be positive or negative.
   //

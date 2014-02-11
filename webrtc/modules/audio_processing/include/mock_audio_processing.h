@@ -209,6 +209,10 @@ class MockAudioProcessing : public AudioProcessing {
       int(int delay));
   MOCK_CONST_METHOD0(stream_delay_ms,
       int());
+  MOCK_METHOD1(set_stream_key_pressed,
+      void(bool key_pressed));
+  MOCK_CONST_METHOD0(stream_key_pressed,
+      bool());
   MOCK_METHOD1(set_delay_offset_ms,
       void(int offset));
   MOCK_CONST_METHOD0(delay_offset_ms,

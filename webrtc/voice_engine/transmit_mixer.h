@@ -184,7 +184,8 @@ private:
     int32_t MixOrReplaceAudioWithFile(
         int mixingFrequency);
 
-    void ProcessAudio(int delay_ms, int clock_drift, int current_mic_level);
+    void ProcessAudio(int delay_ms, int clock_drift, int current_mic_level,
+                      bool key_pressed);
 
 #ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
     void TypingDetection(bool keyPressed);

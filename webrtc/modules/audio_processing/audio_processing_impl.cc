@@ -568,6 +568,14 @@ int AudioProcessingImpl::delay_offset_ms() const {
   return delay_offset_ms_;
 }
 
+void AudioProcessingImpl::set_stream_key_pressed(bool key_pressed) {
+  key_pressed_ = key_pressed;
+}
+
+bool AudioProcessingImpl::stream_key_pressed() const {
+  return key_pressed_;
+}
+
 int AudioProcessingImpl::StartDebugRecording(
     const char filename[AudioProcessing::kMaxFilenameSize]) {
   CriticalSectionScoped crit_scoped(crit_);

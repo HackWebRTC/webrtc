@@ -362,7 +362,7 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
     }
 
     // --- Near-end audio processing.
-    ProcessAudio(totalDelayMS, clockDrift, currentMicLevel);
+    ProcessAudio(totalDelayMS, clockDrift, currentMicLevel, keyPressed);
 
     if (swap_stereo_channels_ && stereo_codec_)
       // Only bother swapping if we're using a stereo codec.
@@ -1309,7 +1309,7 @@ int32_t TransmitMixer::MixOrReplaceAudioWithFile(
 }
 
 void TransmitMixer::ProcessAudio(int delay_ms, int clock_drift,
-                                 int current_mic_level) {
+                                 int current_mic_level, bool key_pressed) {
   if (audioproc_->set_stream_delay_ms(delay_ms) != 0) {
     // A redundant warning is reported in AudioDevice, which we've throttled
     // to avoid flooding the logs. Relegate this one to LS_VERBOSE to avoid
@@ -1327,6 +1327,8 @@ void TransmitMixer::ProcessAudio(int delay_ms, int clock_drift,
   if (aec->is_drift_compensation_enabled()) {
     aec->set_stream_drift_samples(clock_drift);
   }
+
+  audioproc_->set_stream_key_pressed(key_pressed);
 
   int err = audioproc_->ProcessStream(&_audioFrame);
   if (err != 0) {
