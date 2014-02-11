@@ -34,7 +34,6 @@ class ChannelStatsObserver;
 class Config;
 class CriticalSectionWrapper;
 class EncodedImageCallback;
-class Encryption;
 class I420FrameCallback;
 class PacedSender;
 class ProcessThread;
@@ -333,9 +332,6 @@ class ViEChannel
   virtual int32_t ResendPackets(const uint16_t* sequence_numbers,
                                 uint16_t length);
 
-  int32_t RegisterExternalEncryption(Encryption* encryption);
-  int32_t DeRegisterExternalEncryption();
-
   int32_t SetVoiceChannel(int32_t ve_channel_id,
                           VoEVideoSync* ve_sync_interface);
   int32_t VoiceChannel();
@@ -414,8 +410,6 @@ class ViEChannel
   VideoCodec receive_codec_;
   bool wait_for_key_frame_;
   ThreadWrapper* decode_thread_;
-
-  Encryption* external_encryption_;
 
   ViEEffectFilter* effect_filter_;
   bool color_enhancement_;

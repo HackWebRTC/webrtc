@@ -62,10 +62,6 @@ int ViEAutoTestAndroid::RunAutotest(int testSelection, int subTestSelection,
           vieAutoTest.ViECodecStandardTest();
           break;
 
-        case 5: //encryption
-          vieAutoTest.ViEEncryptionStandardTest();
-          break;
-
         case 6: // image process
           vieAutoTest.ViEImageProcessStandardTest();
           break;
@@ -99,10 +95,6 @@ int ViEAutoTestAndroid::RunAutotest(int testSelection, int subTestSelection,
 
         case 3: // codec
           vieAutoTest.ViECodecAPITest();
-          break;
-
-        case 5: //encryption
-          vieAutoTest.ViEEncryptionAPITest();
           break;
 
         case 6: // image process
@@ -140,10 +132,6 @@ int ViEAutoTestAndroid::RunAutotest(int testSelection, int subTestSelection,
 
         case 3: // codec
           vieAutoTest.ViECodecExtendedTest();
-          break;
-
-        case 5: //encryption
-          vieAutoTest.ViEEncryptionExtendedTest();
           break;
 
         case 6: // image process

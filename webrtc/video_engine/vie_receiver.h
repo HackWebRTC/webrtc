@@ -24,7 +24,6 @@
 namespace webrtc {
 
 class CriticalSectionWrapper;
-class Encryption;
 class FecReceiver;
 class ReceiveStatistics;
 class RemoteBitrateEstimator;
@@ -52,9 +51,6 @@ class ViEReceiver : public RtpData {
 
   uint32_t GetRemoteSsrc() const;
   int GetCsrcs(uint32_t* csrcs) const;
-
-  int RegisterExternalDecryption(Encryption* decryption);
-  int DeregisterExternalDecryption();
 
   void SetRtpRtcpModule(RtpRtcp* module);
 
@@ -92,7 +88,7 @@ class ViEReceiver : public RtpData {
   ReceiveStatistics* GetReceiveStatistics() const;
 
  private:
-  int InsertRTPPacket(const int8_t* rtp_packet, int rtp_packet_length,
+  int InsertRTPPacket(const uint8_t* rtp_packet, int rtp_packet_length,
                       const PacketTime& packet_time);
   bool ReceivePacket(const uint8_t* packet,
                      int packet_length,
@@ -103,7 +99,7 @@ class ViEReceiver : public RtpData {
   bool ParseAndHandleEncapsulatingHeader(const uint8_t* packet,
                                          int packet_length,
                                          const RTPHeader& header);
-  int InsertRTCPPacket(const int8_t* rtcp_packet, int rtcp_packet_length);
+  int InsertRTCPPacket(const uint8_t* rtcp_packet, int rtcp_packet_length);
   bool IsPacketInOrder(const RTPHeader& header) const;
   bool IsPacketRetransmitted(const RTPHeader& header, bool in_order) const;
 
@@ -119,8 +115,6 @@ class ViEReceiver : public RtpData {
   VideoCodingModule* vcm_;
   RemoteBitrateEstimator* remote_bitrate_estimator_;
 
-  Encryption* external_decryption_;
-  uint8_t* decryption_buffer_;
   RtpDump* rtp_dump_;
   bool receiving_;
   uint8_t restored_packet_[kViEMaxMtu];

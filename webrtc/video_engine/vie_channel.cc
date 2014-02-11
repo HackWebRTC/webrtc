@@ -96,7 +96,6 @@ ViEChannel::ViEChannel(int32_t channel_id,
       decoder_reset_(true),
       wait_for_key_frame_(false),
       decode_thread_(NULL),
-      external_encryption_(NULL),
       effect_filter_(NULL),
       color_enhancement_(false),
       mtu_(0),
@@ -1880,48 +1879,6 @@ int32_t ViEChannel::StopDecodeThread() {
     assert(false && "could not stop decode thread");
   }
   decode_thread_ = NULL;
-  return 0;
-}
-
-int32_t ViEChannel::RegisterExternalEncryption(Encryption* encryption) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
-               __FUNCTION__);
-
-  CriticalSectionScoped cs(callback_cs_.get());
-  if (external_encryption_) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
-                 "%s: external encryption already registered", __FUNCTION__);
-    return -1;
-  }
-
-  external_encryption_ = encryption;
-
-  vie_receiver_.RegisterExternalDecryption(encryption);
-  vie_sender_.RegisterExternalEncryption(encryption);
-
-  WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
-               "%s", "external encryption object registerd with channel=%d",
-               channel_id_);
-  return 0;
-}
-
-int32_t ViEChannel::DeRegisterExternalEncryption() {
-  WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
-               __FUNCTION__);
-
-  CriticalSectionScoped cs(callback_cs_.get());
-  if (!external_encryption_) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
-                 "%s: external encryption is not registered", __FUNCTION__);
-    return -1;
-  }
-
-  external_transport_ = NULL;
-  vie_receiver_.DeregisterExternalDecryption();
-  vie_sender_.DeregisterExternalEncryption();
-  WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
-               "%s external encryption object de-registerd with channel=%d",
-               __FUNCTION__, channel_id_);
   return 0;
 }
 

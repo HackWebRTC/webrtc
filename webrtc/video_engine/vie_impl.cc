@@ -63,19 +63,11 @@ bool VideoEngine::Delete(VideoEngine*& video_engine) {
     return false;
   }
 #endif
-#ifdef WEBRTC_VIDEO_ENGINE_ENCRYPTION_API
-  ViEEncryptionImpl* vie_encryption = vie_impl;
-  if (vie_encryption->GetCount() > 0) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo, kModuleId,
-                 "ViEEncryption ref count: %d", vie_encryption->GetCount());
-    return false;
-  }
-#endif
 #ifdef WEBRTC_VIDEO_ENGINE_EXTERNAL_CODEC_API
   ViEExternalCodecImpl* vie_external_codec = vie_impl;
   if (vie_external_codec->GetCount() > 0) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, kModuleId,
-                 "ViEEncryption ref count: %d", vie_encryption->GetCount());
+        "ViEExternalCodec ref count: %d", vie_external_codec->GetCount());
     return false;
   }
 #endif

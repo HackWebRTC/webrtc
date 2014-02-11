@@ -20,7 +20,6 @@ LOCAL_SRC_FILES := \
     vie_base_impl.cc \
     vie_capture_impl.cc \
     vie_codec_impl.cc \
-    vie_encryption_impl.cc \
     vie_external_codec_impl.cc \
     vie_file_impl.cc \
     vie_image_process_impl.cc \

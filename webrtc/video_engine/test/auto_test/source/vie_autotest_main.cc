@@ -29,7 +29,7 @@ ViEAutoTestMain::ViEAutoTestMain() {
   index_to_test_method_map_[1] = "RunsBaseTestWithoutErrors";
   index_to_test_method_map_[2] = "RunsCaptureTestWithoutErrors";
   index_to_test_method_map_[3] = "RunsCodecTestWithoutErrors";
-  index_to_test_method_map_[4] = "RunsEncryptionTestWithoutErrors";
+  index_to_test_method_map_[4] = "[unused]";
   index_to_test_method_map_[5] = "RunsImageProcessTestWithoutErrors";
   index_to_test_method_map_[6] = "RunsNetworkTestWithoutErrors";
   index_to_test_method_map_[7] = "RunsRenderTestWithoutErrors";
