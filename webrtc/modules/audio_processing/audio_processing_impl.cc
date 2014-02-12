@@ -97,7 +97,8 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config)
       was_stream_delay_set_(false),
       num_reverse_channels_(1),
       num_input_channels_(1),
-      num_output_channels_(1) {
+      num_output_channels_(1),
+      key_pressed_(false) {
   echo_cancellation_ = EchoCancellationImplWrapper::Create(this);
   component_list_.push_back(echo_cancellation_);
 
