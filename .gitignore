@@ -53,6 +53,7 @@
 /third_party/android_testrunner
 /third_party/android_tools
 /third_party/asan
+/third_party/clang_format
 /third_party/cygwin
 /third_party/directxsdk
 /third_party/expat
@@ -77,6 +78,7 @@
 /third_party/opus
 /third_party/protobuf
 /third_party/sqlite
+/third_party/usrsctp
 /third_party/valgrind
 /third_party/winsdk_samples/src
 /third_party/yasm
