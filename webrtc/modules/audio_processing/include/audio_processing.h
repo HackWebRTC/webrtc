@@ -186,6 +186,13 @@ class AudioProcessing : public Module {
   virtual int set_num_reverse_channels(int channels) = 0;
   virtual int num_reverse_channels() const = 0;
 
+  // Set to true when the output of AudioProcessing will be muted or in some
+  // other way not used. Ideally, the captured audio would still be processed,
+  // but some components may change behavior based on this information.
+  // Default false.
+  virtual void set_output_will_be_muted(bool muted) = 0;
+  virtual bool output_will_be_muted() const = 0;
+
   // Processes a 10 ms |frame| of the primary audio stream. On the client-side,
   // this is the near-end (or captured) audio.
   //

@@ -297,6 +297,14 @@ int AudioProcessingImpl::num_output_channels() const {
   return num_output_channels_;
 }
 
+void AudioProcessingImpl::set_output_will_be_muted(bool muted) {
+  output_will_be_muted_ = muted;
+}
+
+bool AudioProcessingImpl::output_will_be_muted() const {
+  return output_will_be_muted_;
+}
+
 int AudioProcessingImpl::MaybeInitializeLocked(int sample_rate_hz,
     int num_input_channels, int num_output_channels, int num_reverse_channels) {
   if (sample_rate_hz == sample_rate_hz_ &&
