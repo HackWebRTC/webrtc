@@ -442,6 +442,9 @@ int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
                                           kTransmissionMaxBitrateMultiplier *
                                           video_codec.maxBitrate * 1000);
 
+  paced_sender_->UpdateBitrate(video_codec.startBitrate,
+                               video_codec.startBitrate,
+                               video_codec.startBitrate);
   return 0;
 }
 
