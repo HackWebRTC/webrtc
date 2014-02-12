@@ -365,6 +365,7 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
     msg->set_delay(stream_delay_ms_);
     msg->set_drift(echo_cancellation_->stream_drift_samples());
     msg->set_level(gain_control_->stream_analog_level());
+    msg->set_keypress(key_pressed_);
   }
 #endif
 
