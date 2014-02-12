@@ -28,6 +28,7 @@
 #include "talk/examples/peerconnection/client/conductor.h"
 #include "talk/examples/peerconnection/client/main_wnd.h"
 #include "talk/examples/peerconnection/client/peer_connection_client.h"
+#include "talk/base/ssladapter.h"
 #include "talk/base/win32socketinit.h"
 #include "talk/base/win32socketserver.h"
 
@@ -44,6 +45,7 @@ int PASCAL wWinMain(HINSTANCE instance, HINSTANCE prev_instance,
     return -1;
   }
 
+  talk_base::InitializeSSL();
   PeerConnectionClient client;
   talk_base::scoped_refptr<Conductor> conductor(
         new talk_base::RefCountedObject<Conductor>(&client, &wnd));
@@ -68,5 +70,6 @@ int PASCAL wWinMain(HINSTANCE instance, HINSTANCE prev_instance,
     }
   }
 
+  talk_base::CleanupSSL();
   return 0;
 }

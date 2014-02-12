@@ -32,6 +32,7 @@
 #include "talk/examples/peerconnection/client/linux/main_wnd.h"
 #include "talk/examples/peerconnection/client/peer_connection_client.h"
 
+#include "talk/base/ssladapter.h"
 #include "talk/base/thread.h"
 
 class CustomSocketServer : public talk_base::PhysicalSocketServer {
@@ -94,6 +95,7 @@ int main(int argc, char* argv[]) {
   CustomSocketServer socket_server(thread, &wnd);
   thread->set_socketserver(&socket_server);
 
+  talk_base::InitializeSSL();
   // Must be constructed after we set the socketserver.
   PeerConnectionClient client;
   talk_base::scoped_refptr<Conductor> conductor(
@@ -111,7 +113,7 @@ int main(int argc, char* argv[]) {
   //while (gtk_events_pending()) {
   //  gtk_main_iteration();
   //}
-
+  talk_base::CleanupSSL();
   return 0;
 }
 
