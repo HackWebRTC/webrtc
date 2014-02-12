@@ -197,8 +197,6 @@
             'test/auto_test/resource_manager.cc',
             'test/auto_test/voe_cpu_test.cc',
             'test/auto_test/voe_cpu_test.h',
-            'test/auto_test/voe_extended_test.cc',
-            'test/auto_test/voe_extended_test.h',
             'test/auto_test/voe_standard_test.cc',
             'test/auto_test/voe_standard_test.h',
             'test/auto_test/voe_stress_test.cc',

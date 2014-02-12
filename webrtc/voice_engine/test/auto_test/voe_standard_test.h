@@ -80,8 +80,7 @@ class SubAPIManager {
       _rtp_rtcp(false),
       _videoSync(false),
       _volumeControl(false),
-      _apm(false),
-      _xsel(XSEL_Invalid) {
+      _apm(false) {
 #ifdef WEBRTC_VOICE_ENGINE_CALL_REPORT_API
       _callReport = true;
 #endif
@@ -122,13 +121,11 @@ class SubAPIManager {
   }
 
   void DisplayStatus() const;
-  bool GetExtendedMenuSelection(ExtendedSelection& sel);
 
  private:
   bool _base, _callReport, _codec, _dtmf, _encryption;
   bool _externalMedia, _file, _hardware;
   bool _netEqStats, _network, _rtp_rtcp, _videoSync, _volumeControl, _apm;
-  ExtendedSelection _xsel;
 };
 
 class VoETestManager {
