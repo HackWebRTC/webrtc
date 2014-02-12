@@ -48,11 +48,11 @@ struct ReceiveBandwidthEstimatorStats {
   // |total_propagation_time_delta_ms| is the sum of the propagation_time_deltas
   // of all received frames, except that it's is adjusted to 0 when it becomes
   // negative.
-  int64_t total_propagation_time_delta_ms;
+  int total_propagation_time_delta_ms;
   // The propagation_time_deltas for the frames arrived in the last
   // kProcessIntervalMs using the clock passed to
   // RemoteBitrateEstimatorFactory::Create.
-  std::vector<int64_t> recent_propagation_time_delta_ms;
+  std::vector<int> recent_propagation_time_delta_ms;
   // The arrival times for the frames arrived in the last kProcessIntervalMs
   // using the clock passed to RemoteBitrateEstimatorFactory::Create.
   std::vector<int64_t> recent_arrival_time_ms;
