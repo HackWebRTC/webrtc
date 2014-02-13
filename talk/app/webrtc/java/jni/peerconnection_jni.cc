@@ -1971,12 +1971,25 @@ JOW(jlong, PeerConnectionFactory_nativeCreateVideoTrack)(
   return (jlong)track.release();
 }
 
-JOW(jlong, PeerConnectionFactory_nativeCreateAudioTrack)(
-    JNIEnv* jni, jclass, jlong native_factory, jstring id) {
+JOW(jlong, PeerConnectionFactory_nativeCreateAudioSource)(
+    JNIEnv* jni, jclass, jlong native_factory, jobject j_constraints) {
+  scoped_ptr<ConstraintsWrapper> constraints(
+      new ConstraintsWrapper(jni, j_constraints));
   talk_base::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
-  talk_base::scoped_refptr<AudioTrackInterface> track(
-      factory->CreateAudioTrack(JavaToStdString(jni, id), NULL));
+  talk_base::scoped_refptr<AudioSourceInterface> source(
+      factory->CreateAudioSource(constraints.get()));
+  return (jlong)source.release();
+}
+
+JOW(jlong, PeerConnectionFactory_nativeCreateAudioTrack)(
+    JNIEnv* jni, jclass, jlong native_factory, jstring id,
+    jlong native_source) {
+  talk_base::scoped_refptr<PeerConnectionFactoryInterface> factory(
+      factoryFromJava(native_factory));
+  talk_base::scoped_refptr<AudioTrackInterface> track(factory->CreateAudioTrack(
+      JavaToStdString(jni, id),
+      reinterpret_cast<AudioSourceInterface*>(native_source)));
   return (jlong)track.release();
 }
 

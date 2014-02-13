@@ -242,7 +242,9 @@ public class AppRTCDemoActivity extends Activity
         lMS.addTrack(videoTrack);
       }
       if (appRtcClient.audioConstraints() != null) {
-        lMS.addTrack(factory.createAudioTrack("ARDAMSa0"));
+        lMS.addTrack(factory.createAudioTrack(
+            "ARDAMSa0",
+            factory.createAudioSource(appRtcClient.audioConstraints())));
       }
       pc.addStream(lMS, new MediaConstraints());
     }

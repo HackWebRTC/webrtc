@@ -481,7 +481,8 @@ public class PeerConnectionTest extends TestCase {
     // Just for fun, let's remove and re-add the track.
     lMS.removeTrack(videoTrack);
     lMS.addTrack(videoTrack);
-    lMS.addTrack(factory.createAudioTrack(audioTrackId));
+    lMS.addTrack(factory.createAudioTrack(
+        audioTrackId, factory.createAudioSource(new MediaConstraints())));
     pc.addStream(lMS, new MediaConstraints());
     return new WeakReference<MediaStream>(lMS);
   }

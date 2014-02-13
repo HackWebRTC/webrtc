@@ -85,8 +85,13 @@ public class PeerConnectionFactory {
         nativeFactory, id, source.nativeSource));
   }
 
-  public AudioTrack createAudioTrack(String id) {
-    return new AudioTrack(nativeCreateAudioTrack(nativeFactory, id));
+  public AudioSource createAudioSource(MediaConstraints constraints) {
+    return new AudioSource(nativeCreateAudioSource(nativeFactory, constraints));
+  }
+
+  public AudioTrack createAudioTrack(String id, AudioSource source) {
+    return new AudioTrack(nativeCreateAudioTrack(
+        nativeFactory, id, source.nativeSource));
   }
 
   public void dispose() {
@@ -112,8 +117,11 @@ public class PeerConnectionFactory {
   private static native long nativeCreateVideoTrack(
       long nativeFactory, String id, long nativeVideoSource);
 
+  private static native long nativeCreateAudioSource(
+      long nativeFactory, MediaConstraints constraints);
+
   private static native long nativeCreateAudioTrack(
-      long nativeFactory, String id);
+      long nativeFactory, String id, long nativeSource);
 
   private static native void freeFactory(long nativeFactory);
 }
