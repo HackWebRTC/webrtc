@@ -152,6 +152,9 @@ def CheckChangeOnCommit(input_api, output_api):
       input_api, output_api))
   results.extend(input_api.canned_checks.CheckChangeHasTestField(
       input_api, output_api))
+  results.extend(input_api.canned_checks.CheckTreeIsOpen(
+      input_api, output_api,
+      json_url='http://webrtc-status.appspot.com/current?format=json'))
   return results
 
 # pylint: disable=W0613
