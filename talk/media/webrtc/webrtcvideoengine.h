@@ -258,7 +258,7 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   virtual bool AddRecvStream(const StreamParams& sp);
   virtual bool RemoveRecvStream(uint32 ssrc);
   virtual bool SetRenderer(uint32 ssrc, VideoRenderer* renderer);
-  virtual bool GetStats(VideoMediaInfo* info);
+  virtual bool GetStats(const StatsOptions& options, VideoMediaInfo* info);
   virtual bool SetCapturer(uint32 ssrc, VideoCapturer* capturer);
   virtual bool SendIntraFrame();
   virtual bool RequestIntraFrame();

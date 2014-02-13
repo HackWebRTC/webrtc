@@ -45,6 +45,9 @@ BEGIN_PROXY_MAP(PeerConnection)
   PROXY_METHOD1(talk_base::scoped_refptr<DtmfSenderInterface>,
                 CreateDtmfSender, AudioTrackInterface*)
   PROXY_METHOD2(bool, GetStats, StatsObserver*, MediaStreamTrackInterface*)
+  PROXY_METHOD3(bool, GetStats, StatsObserver*,
+                MediaStreamTrackInterface*,
+                StatsOutputLevel)
   PROXY_METHOD2(talk_base::scoped_refptr<DataChannelInterface>,
                 CreateDataChannel, const std::string&, const DataChannelInit*)
   PROXY_CONSTMETHOD0(const SessionDescriptionInterface*, local_description)

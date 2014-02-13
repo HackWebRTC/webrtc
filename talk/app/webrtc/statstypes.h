@@ -53,6 +53,8 @@ class StatsReport {
 
   void AddValue(const std::string& name, const std::string& value);
   void AddValue(const std::string& name, int64 value);
+  template <typename T>
+  void AddValue(const std::string& name, const std::vector<T>& value);
   void AddBoolean(const std::string& name, bool value);
 
   double timestamp;  // Time since 1970-01-01T00:00:00Z in milliseconds.
@@ -141,6 +143,7 @@ class StatsReport {
   static const char kStatsValueNameEchoDelayStdDev[];
   static const char kStatsValueNameEchoReturnLoss[];
   static const char kStatsValueNameEchoReturnLossEnhancement[];
+  static const char kStatsValueNameExpandRate[];
   static const char kStatsValueNameFirsReceived[];
   static const char kStatsValueNameFirsSent[];
   static const char kStatsValueNameFrameHeightInput[];
@@ -164,7 +167,6 @@ class StatsReport {
   static const char kStatsValueNameJitterReceived[];
   static const char kStatsValueNameNacksReceived[];
   static const char kStatsValueNameNacksSent[];
-  static const char kStatsValueNameNetEqExpandRate[];
   static const char kStatsValueNameRtt[];
   static const char kStatsValueNameAvailableSendBandwidth[];
   static const char kStatsValueNameAvailableReceiveBandwidth[];
@@ -189,6 +191,9 @@ class StatsReport {
   static const char kStatsValueNameRemoteCertificateId[];
   static const char kStatsValueNameLocalCandidateType[];
   static const char kStatsValueNameRemoteCandidateType[];
+  static const char kStatsValueNameRecvPacketGroupArrivalTimeDebug[];
+  static const char kStatsValueNameRecvPacketGroupPropagationDeltaDebug[];
+  static const char kStatsValueNameRecvPacketGroupPropagationDeltaSumDebug[];
 };
 
 typedef std::vector<StatsReport> StatsReports;

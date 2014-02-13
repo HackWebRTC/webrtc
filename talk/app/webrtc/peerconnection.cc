@@ -459,13 +459,19 @@ talk_base::scoped_refptr<DtmfSenderInterface> PeerConnection::CreateDtmfSender(
 }
 
 bool PeerConnection::GetStats(StatsObserver* observer,
-                              MediaStreamTrackInterface* track) {
+                              webrtc::MediaStreamTrackInterface* track) {
+  return GetStats(observer, track, kStatsOutputLevelStandard);
+}
+
+bool PeerConnection::GetStats(StatsObserver* observer,
+                              MediaStreamTrackInterface* track,
+                              StatsOutputLevel level) {
   if (!VERIFY(observer != NULL)) {
     LOG(LS_ERROR) << "GetStats - observer is NULL.";
     return false;
   }
 
-  stats_.UpdateStats();
+  stats_.UpdateStats(level);
   talk_base::scoped_ptr<GetStatsMsg> msg(new GetStatsMsg(observer));
   if (!stats_.GetStats(track, &(msg->reports))) {
     return false;
@@ -542,7 +548,7 @@ void PeerConnection::SetLocalDescription(
   }
   // Update stats here so that we have the most recent stats for tracks and
   // streams that might be removed by updating the session description.
-  stats_.UpdateStats();
+  stats_.UpdateStats(kStatsOutputLevelStandard);
   std::string error;
   if (!session_->SetLocalDescription(desc, &error)) {
     PostSetSessionDescriptionFailure(observer, error);
@@ -565,7 +571,7 @@ void PeerConnection::SetRemoteDescription(
   }
   // Update stats here so that we have the most recent stats for tracks and
   // streams that might be removed by updating the session description.
-  stats_.UpdateStats();
+  stats_.UpdateStats(kStatsOutputLevelStandard);
   std::string error;
   if (!session_->SetRemoteDescription(desc, &error)) {
     PostSetSessionDescriptionFailure(observer, error);
@@ -606,7 +612,7 @@ const SessionDescriptionInterface* PeerConnection::remote_description() const {
 void PeerConnection::Close() {
   // Update stats here so that we have the most recent stats for tracks and
   // streams before the channels are closed.
-  stats_.UpdateStats();
+  stats_.UpdateStats(kStatsOutputLevelStandard);
 
   session_->Terminate();
 }

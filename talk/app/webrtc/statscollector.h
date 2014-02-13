@@ -35,6 +35,7 @@
 #include <map>
 
 #include "talk/app/webrtc/mediastreaminterface.h"
+#include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/app/webrtc/statstypes.h"
 #include "talk/app/webrtc/webrtcsession.h"
 
@@ -57,13 +58,14 @@ class StatsCollector {
   void AddStream(MediaStreamInterface* stream);
 
   // Gather statistics from the session and store them for future use.
-  void UpdateStats();
+  void UpdateStats(PeerConnectionInterface::StatsOutputLevel level);
 
   // Gets a StatsReports of the last collected stats. Note that UpdateStats must
   // be called before this function to get the most recent stats. |selector| is
   // a track label or empty string. The most recent reports are stored in
   // |reports|.
-  bool GetStats(MediaStreamTrackInterface* track, StatsReports* reports);
+  bool GetStats(MediaStreamTrackInterface* track,
+                StatsReports* reports);
 
   // Prepare an SSRC report for the given ssrc. Used internally
   // in the ExtractStatsFromList template.
@@ -87,7 +89,7 @@ class StatsCollector {
 
   void ExtractSessionInfo();
   void ExtractVoiceInfo();
-  void ExtractVideoInfo();
+  void ExtractVideoInfo(PeerConnectionInterface::StatsOutputLevel level);
   double GetTimeNow();
   void BuildSsrcToTransportId();
   WebRtcSession* session() { return session_; }

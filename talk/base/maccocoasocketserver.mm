@@ -53,6 +53,25 @@
 - (void)timerFired:(NSTimer*)timer {
   socketServer_->WakeUp();
 }
+
+- (void)breakMainloop {
+  [NSApp stop:self];
+  // NSApp stop only exits after finishing processing of the
+  // current event.  Since we're potentially in a timer callback
+  // and not an NSEvent handler, we need to trigger a dummy one
+  // and turn the loop over.  We may be able to skip this if we're
+  // on the ss' thread and not inside the app loop already.
+  NSEvent* event = [NSEvent otherEventWithType:NSApplicationDefined
+                                      location:NSMakePoint(0,0)
+                                 modifierFlags:0
+                                     timestamp:0
+                                  windowNumber:0
+                                       context:nil
+                                       subtype:0
+                                         data1:0
+                                         data2:0];
+  [NSApp postEvent:event atStart:NO];
+}
 @end
 
 namespace talk_base {
@@ -60,6 +79,7 @@ namespace talk_base {
 MacCocoaSocketServer::MacCocoaSocketServer() {
   helper_ = [[MacCocoaSocketServerHelper alloc] initWithSocketServer:this];
   timer_ = nil;
+  run_count_ = 0;
 
   // Initialize the shared NSApplication
   [NSApplication sharedApplication];
@@ -71,11 +91,18 @@ MacCocoaSocketServer::~MacCocoaSocketServer() {
   [helper_ release];
 }
 
+// ::Wait is reentrant, for example when blocking on another thread while
+// responding to I/O. Calls to [NSApp] MUST be made from the main thread
+// only!
 bool MacCocoaSocketServer::Wait(int cms, bool process_io) {
   talk_base::ScopedAutoreleasePool pool;
   if (!process_io && cms == 0) {
     // No op.
     return true;
+  }
+  if ([NSApp isRunning]) {
+    // Only allow reentrant waiting if we're in a blocking send.
+    ASSERT(!process_io && cms == kForever);
   }
 
   if (!process_io) {
@@ -96,7 +123,9 @@ bool MacCocoaSocketServer::Wait(int cms, bool process_io) {
   }
 
   // Run until WakeUp is called, which will call stop and exit this loop.
+  run_count_++;
   [NSApp run];
+  run_count_--;
 
   if (!process_io) {
     // Reenable them.  Hopefully this won't cause spurious callbacks or
@@ -107,28 +136,22 @@ bool MacCocoaSocketServer::Wait(int cms, bool process_io) {
   return true;
 }
 
+// Can be called from any thread.  Post a message back to the main thread to
+// break out of the NSApp loop.
 void MacCocoaSocketServer::WakeUp() {
-  // Timer has either fired or shortcutted.
-  [timer_ invalidate];
-  [timer_ release];
-  timer_ = nil;
-  [NSApp stop:nil];
+  if (timer_ != nil) {
+    [timer_ invalidate];
+    [timer_ release];
+    timer_ = nil;
+  }
 
-  // NSApp stop only exits after finishing processing of the
-  // current event.  Since we're potentially in a timer callback
-  //  and not an NSEvent handler, we need to trigger a dummy one
-  // and turn the loop over.  We may be able to skip this if we're
-  // on the ss' thread and not inside the app loop already.
-  NSEvent *event = [NSEvent otherEventWithType:NSApplicationDefined
-                                      location:NSMakePoint(0,0)
-                                 modifierFlags:0
-                                     timestamp:0
-                                  windowNumber:0
-                                       context:nil
-                                       subtype:1
-                                         data1:1
-                                         data2:1];
-  [NSApp postEvent:event atStart:YES];
+  // [NSApp isRunning] returns unexpected results when called from another
+  // thread.  Maintain our own count of how many times to break the main loop.
+  if (run_count_ > 0) {
+    [helper_ performSelectorOnMainThread:@selector(breakMainloop)
+                              withObject:nil
+                           waitUntilDone:false];
+  }
 }
 
 }  // namespace talk_base

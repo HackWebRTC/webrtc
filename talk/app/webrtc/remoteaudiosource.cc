@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2007, Google Inc.
+ * Copyright 2014, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,41 +25,48 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// A libjingle compatible SocketServer for OSX/iOS/Cocoa.
+#include "talk/app/webrtc/remoteaudiosource.h"
 
-#ifndef TALK_BASE_MACCOCOASOCKETSERVER_H_
-#define TALK_BASE_MACCOCOASOCKETSERVER_H_
+#include <algorithm>
+#include <functional>
 
-#include "talk/base/macsocketserver.h"
+#include "talk/base/logging.h"
 
-#ifdef __OBJC__
-@class NSTimer, MacCocoaSocketServerHelper;
-#else
-class NSTimer;
-class MacCocoaSocketServerHelper;
-#endif
+namespace webrtc {
 
-namespace talk_base {
+talk_base::scoped_refptr<RemoteAudioSource> RemoteAudioSource::Create() {
+  return new talk_base::RefCountedObject<RemoteAudioSource>();
+}
 
-// A socketserver implementation that wraps the main cocoa
-// application loop accessed through [NSApp run].
-class MacCocoaSocketServer : public MacBaseSocketServer {
- public:
-  explicit MacCocoaSocketServer();
-  virtual ~MacCocoaSocketServer();
+RemoteAudioSource::RemoteAudioSource() {
+}
 
-  virtual bool Wait(int cms, bool process_io);
-  virtual void WakeUp();
+RemoteAudioSource::~RemoteAudioSource() {
+  ASSERT(audio_observers_.empty());
+}
 
- private:
-  MacCocoaSocketServerHelper* helper_;
-  NSTimer* timer_;  // Weak.
-  // The count of how many times we're inside the NSApplication main loop.
-  int run_count_;
+MediaSourceInterface::SourceState RemoteAudioSource::state() const {
+  return MediaSourceInterface::kLive;
+}
 
-  DISALLOW_EVIL_CONSTRUCTORS(MacCocoaSocketServer);
-};
+void RemoteAudioSource::SetVolume(double volume) {
+  ASSERT(volume >= 0 && volume <= 10);
+  for (AudioObserverList::iterator it = audio_observers_.begin();
+       it != audio_observers_.end(); ++it) {
+    (*it)->OnSetVolume(volume);
+  }
+}
 
-}  // namespace talk_base
+void RemoteAudioSource::RegisterAudioObserver(AudioObserver* observer) {
+  ASSERT(observer != NULL);
+  ASSERT(std::find(audio_observers_.begin(), audio_observers_.end(),
+                   observer) == audio_observers_.end());
+  audio_observers_.push_back(observer);
+}
 
-#endif  // TALK_BASE_MACCOCOASOCKETSERVER_H_
+void RemoteAudioSource::UnregisterAudioObserver(AudioObserver* observer) {
+  ASSERT(observer != NULL);
+  audio_observers_.remove(observer);
+}
+
+}  // namespace webrtc

@@ -781,7 +781,7 @@ class VideoMediaChannelTest : public testing::Test,
   void GetStats() {
     SendAndReceive(DefaultCodec());
     cricket::VideoMediaInfo info;
-    EXPECT_TRUE(channel_->GetStats(&info));
+    EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
 
     ASSERT_EQ(1U, info.senders.size());
     // TODO(whyuan): bytes_sent and bytes_rcvd are different. Are both payload?
@@ -839,7 +839,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_FRAME_ON_RENDERER_WAIT(
         renderer2, 1, DefaultCodec().width, DefaultCodec().height, kTimeout);
     cricket::VideoMediaInfo info;
-    EXPECT_TRUE(channel_->GetStats(&info));
+    EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
 
     ASSERT_EQ(1U, info.senders.size());
     // TODO(whyuan): bytes_sent and bytes_rcvd are different. Are both payload?
@@ -912,7 +912,7 @@ class VideoMediaChannelTest : public testing::Test,
 
     // Get stats, and make sure they are correct for two senders.
     cricket::VideoMediaInfo info;
-    EXPECT_TRUE(channel_->GetStats(&info));
+    EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
     ASSERT_EQ(2U, info.senders.size());
     EXPECT_EQ(NumRtpPackets(),
         info.senders[0].packets_sent + info.senders[1].packets_sent);

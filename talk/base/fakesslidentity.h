@@ -38,9 +38,12 @@ namespace talk_base {
 
 class FakeSSLCertificate : public talk_base::SSLCertificate {
  public:
-  explicit FakeSSLCertificate(const std::string& data) : data_(data) {}
+  // SHA-1 is the default digest algorithm because it is available in all build
+  // configurations used for unit testing.
+  explicit FakeSSLCertificate(const std::string& data)
+      : data_(data), digest_algorithm_(DIGEST_SHA_1) {}
   explicit FakeSSLCertificate(const std::vector<std::string>& certs)
-      : data_(certs.front()) {
+      : data_(certs.front()), digest_algorithm_(DIGEST_SHA_1) {
     std::vector<std::string>::const_iterator it;
     // Skip certs[0].
     for (it = certs.begin() + 1; it != certs.end(); ++it) {
@@ -58,10 +61,11 @@ class FakeSSLCertificate : public talk_base::SSLCertificate {
     VERIFY(SSLIdentity::PemToDer(kPemTypeCertificate, data_, &der_string));
     der_buffer->SetData(der_string.c_str(), der_string.size());
   }
+  void set_digest_algorithm(const std::string& algorithm) {
+    digest_algorithm_ = algorithm;
+  }
   virtual bool GetSignatureDigestAlgorithm(std::string* algorithm) const {
-    // SHA-1 is chosen because it is available in all build configurations
-    // used for unit testing.
-    *algorithm = DIGEST_SHA_1;
+    *algorithm = digest_algorithm_;
     return true;
   }
   virtual bool ComputeDigest(const std::string &algorithm,
@@ -86,6 +90,7 @@ class FakeSSLCertificate : public talk_base::SSLCertificate {
   }
   std::string data_;
   std::vector<FakeSSLCertificate> certs_;
+  std::string digest_algorithm_;
 };
 
 class FakeSSLIdentity : public talk_base::SSLIdentity {

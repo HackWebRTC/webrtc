@@ -79,16 +79,7 @@ const uint32 kSignalNetworksMessage = 2;
 // Fetch list of networks every two seconds.
 const int kNetworksUpdateIntervalMs = 2000;
 
-
-// Makes a string key for this network. Used in the network manager's maps.
-// Network objects are keyed on interface name, network prefix and the
-// length of that prefix.
-std::string MakeNetworkKey(const std::string& name, const IPAddress& prefix,
-                           int prefix_length) {
-  std::ostringstream ost;
-  ost << name << "%" << prefix.ToString() << "/" << prefix_length;
-  return ost.str();
-}
+const int kHighestNetworkPreference = 127;
 
 bool CompareNetworks(const Network* a, const Network* b) {
   if (a->prefix_length() == b->prefix_length()) {
@@ -99,8 +90,35 @@ bool CompareNetworks(const Network* a, const Network* b) {
   return a->name() < b->name();
 }
 
+bool SortNetworks(const Network* a, const Network* b) {
+  // Network types will be preferred above everything else while sorting
+  // Networks.
+
+  // Networks are sorted first by type.
+  if (a->type() != b->type()) {
+    return a->type() < b->type();
+  }
+
+  // After type, networks are sorted by IP address precedence values
+  // from RFC 3484-bis
+  if (IPAddressPrecedence(a->ip()) != IPAddressPrecedence(b->ip())) {
+    return IPAddressPrecedence(a->ip()) > IPAddressPrecedence(b->ip());
+  }
+
+  // TODO(mallinath) - Add VPN and Link speed conditions while sorting.
+
+  // Networks are sorted last by key.
+  return a->key() > b->key();
+}
 
 }  // namespace
+
+std::string MakeNetworkKey(const std::string& name, const IPAddress& prefix,
+                           int prefix_length) {
+  std::ostringstream ost;
+  ost << name << "%" << prefix.ToString() << "/" << prefix_length;
+  return ost.str();
+}
 
 NetworkManager::NetworkManager() {
 }
@@ -180,6 +198,29 @@ void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,
     }
   }
   networks_ = merged_list;
+
+  // If the network lists changes, we resort it.
+  if (changed) {
+    std::sort(networks_.begin(), networks_.end(), SortNetworks);
+    // Now network interfaces are sorted, we should set the preference value
+    // for each of the interfaces we are planning to use.
+    // Preference order of network interfaces might have changed from previous
+    // sorting due to addition of higher preference network interface.
+    // Since we have already sorted the network interfaces based on our
+    // requirements, we will just assign a preference value starting with 127,
+    // in decreasing order.
+    int pref = kHighestNetworkPreference;
+    for (NetworkList::const_iterator iter = networks_.begin();
+         iter != networks_.end(); ++iter) {
+      (*iter)->set_preference(pref);
+      if (pref > 0) {
+        --pref;
+      } else {
+        LOG(LS_ERROR) << "Too many network interfaces to handle!";
+        break;
+      }
+    }
+  }
 }
 
 BasicNetworkManager::BasicNetworkManager()
@@ -240,6 +281,7 @@ void BasicNetworkManager::ConvertIfAddrs(struct ifaddrs* interfaces,
         continue;
       }
     }
+
     int prefix_length = CountIPMaskBits(mask);
     prefix = TruncateIP(ip, prefix_length);
     std::string key = MakeNetworkKey(std::string(cursor->ifa_name),
@@ -249,7 +291,8 @@ void BasicNetworkManager::ConvertIfAddrs(struct ifaddrs* interfaces,
       scoped_ptr<Network> network(new Network(cursor->ifa_name,
                                               cursor->ifa_name,
                                               prefix,
-                                              prefix_length));
+                                              prefix_length,
+                                              key));
       network->set_scope_id(scope_id);
       network->AddIP(ip);
       bool ignored = ((cursor->ifa_flags & IFF_LOOPBACK) ||
@@ -386,6 +429,7 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
             continue;
           }
         }
+
         IPAddress prefix;
         int prefix_length = GetPrefix(prefixlist, ip, &prefix);
         std::string key = MakeNetworkKey(name, prefix, prefix_length);
@@ -394,7 +438,8 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
           scoped_ptr<Network> network(new Network(name,
                                                   description,
                                                   prefix,
-                                                  prefix_length));
+                                                  prefix_length,
+                                                  key));
           network->set_scope_id(scope_id);
           network->AddIP(ip);
           bool ignore = ((adapter_addrs->IfType == IF_TYPE_SOFTWARE_LOOPBACK) ||
@@ -562,11 +607,20 @@ void BasicNetworkManager::DumpNetworks(bool include_ignored) {
 }
 
 Network::Network(const std::string& name, const std::string& desc,
+                 const IPAddress& prefix, int prefix_length,
+                 const std::string& key)
+    : name_(name), description_(desc), prefix_(prefix),
+      prefix_length_(prefix_length), key_(key), scope_id_(0), ignored_(false),
+      uniform_numerator_(0), uniform_denominator_(0), exponential_numerator_(0),
+      exponential_denominator_(0), type_(ADAPTER_TYPE_UNKNOWN), preference_(0) {
+}
+
+Network::Network(const std::string& name, const std::string& desc,
                  const IPAddress& prefix, int prefix_length)
     : name_(name), description_(desc), prefix_(prefix),
       prefix_length_(prefix_length), scope_id_(0), ignored_(false),
       uniform_numerator_(0), uniform_denominator_(0), exponential_numerator_(0),
-      exponential_denominator_(0) {
+      exponential_denominator_(0), type_(ADAPTER_TYPE_UNKNOWN), preference_(0) {
 }
 
 std::string Network::ToString() const {
@@ -600,4 +654,5 @@ bool Network::SetIPs(const std::vector<IPAddress>& ips, bool changed) {
   ips_ = ips;
   return changed;
 }
+
 }  // namespace talk_base

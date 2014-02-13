@@ -86,7 +86,7 @@ class HybridVideoMediaChannel : public VideoMediaChannel {
   virtual bool SendIntraFrame();
   virtual bool RequestIntraFrame();
 
-  virtual bool GetStats(VideoMediaInfo* info);
+  virtual bool GetStats(const StatsOptions& options, VideoMediaInfo* info);
 
   virtual void OnPacketReceived(talk_base::Buffer* packet,
                                 const talk_base::PacketTime& packet_time);

@@ -1077,6 +1077,8 @@ TEST_F(WebRtcVideoEngineTestFake, SetRender) {
 TEST_F(WebRtcVideoEngineTestFake, SetSend) {
   EXPECT_TRUE(SetupEngine());
   int channel_num = vie_.GetLastChannel();
+  // Verify receiving is also started.
+  EXPECT_TRUE(vie_.GetReceive(channel_num));
 
   // Set send codecs on the channel.
   std::vector<cricket::VideoCodec> codecs;
@@ -1298,11 +1300,19 @@ TEST_F(WebRtcVideoEngineTestFake, MultipleSendStreamsWithOneCapturer) {
   ASSERT_NE(-1, channel1);
   ASSERT_NE(channel0, channel1);
 
+  // Both channels should have started receiving after created.
+  EXPECT_TRUE(vie_.GetReceive(channel0));
+  EXPECT_TRUE(vie_.GetReceive(channel1));
+
   // Set send codec.
   std::vector<cricket::VideoCodec> codecs;
   cricket::VideoCodec send_codec(100, "VP8", 640, 480, 30, 0);
   codecs.push_back(send_codec);
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+
+  EXPECT_TRUE(channel_->SetSend(true));
+  EXPECT_TRUE(vie_.GetSend(channel0));
+  EXPECT_TRUE(vie_.GetSend(channel1));
 
   EXPECT_TRUE(capturer.CaptureFrame());
   EXPECT_EQ(1, vie_.GetIncomingFrameNum(channel0));
@@ -1347,7 +1357,7 @@ TEST_F(WebRtcVideoEngineTestFake, DISABLED_SendReceiveBitratesStats) {
   EXPECT_NE(first_receive_channel, second_receive_channel);
 
   cricket::VideoMediaInfo info;
-  EXPECT_TRUE(channel_->GetStats(&info));
+  EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
   ASSERT_EQ(1U, info.bw_estimations.size());
   ASSERT_EQ(0, info.bw_estimations[0].actual_enc_bitrate);
   ASSERT_EQ(0, info.bw_estimations[0].transmit_bitrate);
@@ -1374,7 +1384,7 @@ TEST_F(WebRtcVideoEngineTestFake, DISABLED_SendReceiveBitratesStats) {
                                    first_channel_receive_bandwidth);
 
   info.Clear();
-  EXPECT_TRUE(channel_->GetStats(&info));
+  EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
   ASSERT_EQ(1U, info.bw_estimations.size());
   ASSERT_EQ(send_video_bitrate, info.bw_estimations[0].actual_enc_bitrate);
   ASSERT_EQ(send_total_bitrate, info.bw_estimations[0].transmit_bitrate);
@@ -1391,7 +1401,7 @@ TEST_F(WebRtcVideoEngineTestFake, DISABLED_SendReceiveBitratesStats) {
                                    second_channel_receive_bandwidth);
 
   info.Clear();
-  EXPECT_TRUE(channel_->GetStats(&info));
+  EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
   ASSERT_EQ(1U, info.bw_estimations.size());
   ASSERT_EQ(send_video_bitrate, info.bw_estimations[0].actual_enc_bitrate);
   ASSERT_EQ(send_total_bitrate, info.bw_estimations[0].transmit_bitrate);

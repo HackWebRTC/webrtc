@@ -39,11 +39,14 @@
 #include "talk/session/media/channelmanager.h"
 #include "testing/base/public/gmock.h"
 
+using cricket::StatsOptions;
 using testing::_;
 using testing::DoAll;
+using testing::Field;
 using testing::Return;
 using testing::ReturnNull;
 using testing::SetArgPointee;
+using webrtc::PeerConnectionInterface;
 
 namespace cricket {
 
@@ -80,7 +83,7 @@ class MockVideoMediaChannel : public cricket::FakeVideoMediaChannel {
     : cricket::FakeVideoMediaChannel(NULL) {
   }
   // MOCK_METHOD0(transport_channel, cricket::TransportChannel*());
-  MOCK_METHOD1(GetStats, bool(cricket::VideoMediaInfo*));
+  MOCK_METHOD2(GetStats, bool(const StatsOptions&, cricket::VideoMediaInfo*));
 };
 
 bool GetValue(const webrtc::StatsReport* report,
@@ -289,7 +292,7 @@ class StatsCollectorTest : public testing::Test {
     EXPECT_CALL(session_, video_channel())
       .WillRepeatedly(ReturnNull());
 
-    stats.UpdateStats();
+    stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
 
     stats.GetStats(NULL, &reports);
 
@@ -302,16 +305,24 @@ class StatsCollectorTest : public testing::Test {
         webrtc::StatsReport::kStatsReportTypeComponent,
         reports,
         webrtc::StatsReport::kStatsValueNameLocalCertificateId);
-    EXPECT_NE(kNotFound, local_certificate_id);
-    CheckCertChainReports(reports, local_ders, local_certificate_id);
+    if (local_ders.size() > 0) {
+      EXPECT_NE(kNotFound, local_certificate_id);
+      CheckCertChainReports(reports, local_ders, local_certificate_id);
+    } else {
+      EXPECT_EQ(kNotFound, local_certificate_id);
+    }
 
     // Check remote certificate chain.
     std::string remote_certificate_id = ExtractStatsValue(
         webrtc::StatsReport::kStatsReportTypeComponent,
         reports,
         webrtc::StatsReport::kStatsValueNameRemoteCertificateId);
-    EXPECT_NE(kNotFound, remote_certificate_id);
-    CheckCertChainReports(reports, remote_ders, remote_certificate_id);
+    if (remote_ders.size() > 0) {
+      EXPECT_NE(kNotFound, remote_certificate_id);
+      CheckCertChainReports(reports, remote_ders, remote_certificate_id);
+    } else {
+      EXPECT_EQ(kNotFound, remote_certificate_id);
+    }
   }
 
   cricket::FakeMediaEngine* media_engine_;
@@ -347,10 +358,10 @@ TEST_F(StatsCollectorTest, BytesCounterHandles64Bits) {
 
   EXPECT_CALL(session_, video_channel())
     .WillRepeatedly(Return(&video_channel));
-  EXPECT_CALL(*media_channel, GetStats(_))
-    .WillOnce(DoAll(SetArgPointee<0>(stats_read),
+  EXPECT_CALL(*media_channel, GetStats(_, _))
+    .WillOnce(DoAll(SetArgPointee<1>(stats_read),
                     Return(true)));
-  stats.UpdateStats();
+  stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.GetStats(NULL, &reports);
   std::string result = ExtractSsrcStatsValue(reports, "bytesSent");
   EXPECT_EQ(kBytesSentString, result);
@@ -386,11 +397,11 @@ TEST_F(StatsCollectorTest, BandwidthEstimationInfoIsReported) {
 
   EXPECT_CALL(session_, video_channel())
     .WillRepeatedly(Return(&video_channel));
-  EXPECT_CALL(*media_channel, GetStats(_))
-    .WillOnce(DoAll(SetArgPointee<0>(stats_read),
+  EXPECT_CALL(*media_channel, GetStats(_, _))
+    .WillOnce(DoAll(SetArgPointee<1>(stats_read),
                     Return(true)));
 
-  stats.UpdateStats();
+  stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.GetStats(NULL, &reports);
   std::string result = ExtractSsrcStatsValue(reports, "bytesSent");
   EXPECT_EQ(kBytesSentString, result);
@@ -406,7 +417,7 @@ TEST_F(StatsCollectorTest, SessionObjectExists) {
   stats.set_session(&session_);
   EXPECT_CALL(session_, video_channel())
     .WillRepeatedly(ReturnNull());
-  stats.UpdateStats();
+  stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.GetStats(NULL, &reports);
   const webrtc::StatsReport* session_report = FindNthReportByType(
       reports, webrtc::StatsReport::kStatsReportTypeSession, 1);
@@ -421,8 +432,8 @@ TEST_F(StatsCollectorTest, OnlyOneSessionObjectExists) {
   stats.set_session(&session_);
   EXPECT_CALL(session_, video_channel())
     .WillRepeatedly(ReturnNull());
-  stats.UpdateStats();
-  stats.UpdateStats();
+  stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
+  stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.GetStats(NULL, &reports);
   const webrtc::StatsReport* session_report = FindNthReportByType(
       reports, webrtc::StatsReport::kStatsReportTypeSession, 1);
@@ -485,11 +496,11 @@ TEST_F(StatsCollectorTest, TrackAndSsrcObjectExistAfterUpdateSsrcStats) {
 
   EXPECT_CALL(session_, video_channel())
     .WillRepeatedly(Return(&video_channel));
-  EXPECT_CALL(*media_channel, GetStats(_))
-    .WillOnce(DoAll(SetArgPointee<0>(stats_read),
+  EXPECT_CALL(*media_channel, GetStats(_, _))
+    .WillOnce(DoAll(SetArgPointee<1>(stats_read),
                     Return(true)));
 
-  stats.UpdateStats();
+  stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.GetStats(NULL, &reports);
   // |reports| should contain at least one session report, one track report,
   // and one ssrc report.
@@ -543,8 +554,8 @@ TEST_F(StatsCollectorTest, TransportObjectLinkedFromSsrcObject) {
 
   EXPECT_CALL(session_, video_channel())
     .WillRepeatedly(Return(&video_channel));
-  EXPECT_CALL(*media_channel, GetStats(_))
-    .WillRepeatedly(DoAll(SetArgPointee<0>(stats_read),
+  EXPECT_CALL(*media_channel, GetStats(_, _))
+    .WillRepeatedly(DoAll(SetArgPointee<1>(stats_read),
                           Return(true)));
 
   InitSessionStats(kVcName);
@@ -552,7 +563,7 @@ TEST_F(StatsCollectorTest, TransportObjectLinkedFromSsrcObject) {
     .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
                           Return(true)));
 
-  stats.UpdateStats();
+  stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.GetStats(NULL, &reports);
   std::string transport_id = ExtractStatsValue(
       webrtc::StatsReport::kStatsReportTypeSsrc,
@@ -581,7 +592,7 @@ TEST_F(StatsCollectorTest, RemoteSsrcInfoIsAbsent) {
   EXPECT_CALL(session_, video_channel())
     .WillRepeatedly(ReturnNull());
 
-  stats.UpdateStats();
+  stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   webrtc::StatsReports reports;
   stats.GetStats(NULL, &reports);
   const webrtc::StatsReport* remote_report = FindNthReportByType(reports,
@@ -624,11 +635,11 @@ TEST_F(StatsCollectorTest, RemoteSsrcInfoIsPresent) {
 
   EXPECT_CALL(session_, video_channel())
     .WillRepeatedly(Return(&video_channel));
-  EXPECT_CALL(*media_channel, GetStats(_))
-    .WillRepeatedly(DoAll(SetArgPointee<0>(stats_read),
+  EXPECT_CALL(*media_channel, GetStats(_, _))
+    .WillRepeatedly(DoAll(SetArgPointee<1>(stats_read),
                           Return(true)));
 
-  stats.UpdateStats();
+  stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.GetStats(NULL, &reports);
   const webrtc::StatsReport* remote_report = FindNthReportByType(reports,
       webrtc::StatsReport::kStatsReportTypeRemoteSsrc, 1);
@@ -703,7 +714,7 @@ TEST_F(StatsCollectorTest, NoTransport) {
   EXPECT_CALL(session_, video_channel())
     .WillRepeatedly(ReturnNull());
 
-  stats.UpdateStats();
+  stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.GetStats(NULL, &reports);
 
   // Check that the local certificate is absent.
@@ -756,7 +767,7 @@ TEST_F(StatsCollectorTest, NoCertificates) {
   EXPECT_CALL(session_, video_channel())
     .WillRepeatedly(ReturnNull());
 
-  stats.UpdateStats();
+  stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.GetStats(NULL, &reports);
 
   // Check that the local certificate is absent.
@@ -772,6 +783,65 @@ TEST_F(StatsCollectorTest, NoCertificates) {
       reports,
       webrtc::StatsReport::kStatsValueNameRemoteCertificateId);
   ASSERT_EQ(kNotFound, remote_certificate_id);
+}
+
+// This test verifies that a remote certificate with an unsupported digest
+// algorithm is correctly ignored.
+TEST_F(StatsCollectorTest, UnsupportedDigestIgnored) {
+  // Build a local certificate.
+  std::string local_der = "This is the local der.";
+  talk_base::FakeSSLCertificate local_cert(DerToPem(local_der));
+
+  // Build a remote certificate with an unsupported digest algorithm.
+  std::string remote_der = "This is somebody else's der.";
+  talk_base::FakeSSLCertificate remote_cert(DerToPem(remote_der));
+  remote_cert.set_digest_algorithm("foobar");
+
+  TestCertificateReports(local_cert, std::vector<std::string>(1, local_der),
+                         remote_cert, std::vector<std::string>());
+}
+
+// Verifies the correct optons are passed to the VideoMediaChannel when using
+// verbose output level.
+TEST_F(StatsCollectorTest, StatsOutputLevelVerbose) {
+  webrtc::StatsCollector stats;  // Implementation under test.
+  MockVideoMediaChannel* media_channel = new MockVideoMediaChannel;
+  cricket::VideoChannel video_channel(talk_base::Thread::Current(),
+      media_engine_, media_channel, &session_, "", false, NULL);
+  stats.set_session(&session_);
+
+  webrtc::StatsReports reports;  // returned values.
+  cricket::VideoMediaInfo stats_read;
+  cricket::BandwidthEstimationInfo bwe;
+  bwe.total_received_propagation_delta_ms = 10;
+  bwe.recent_received_propagation_delta_ms.push_back(100);
+  bwe.recent_received_propagation_delta_ms.push_back(200);
+  bwe.recent_received_packet_group_arrival_time_ms.push_back(1000);
+  bwe.recent_received_packet_group_arrival_time_ms.push_back(2000);
+  stats_read.bw_estimations.push_back(bwe);
+
+  EXPECT_CALL(session_, video_channel())
+    .WillRepeatedly(Return(&video_channel));
+
+  StatsOptions options;
+  options.include_received_propagation_stats = true;
+  EXPECT_CALL(*media_channel, GetStats(
+      Field(&StatsOptions::include_received_propagation_stats, true),
+      _))
+    .WillOnce(DoAll(SetArgPointee<1>(stats_read),
+                    Return(true)));
+
+  stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelDebug);
+  stats.GetStats(NULL, &reports);
+  std::string result = ExtractBweStatsValue(
+      reports, "googReceivedPacketGroupPropagationDeltaSumDebug");
+  EXPECT_EQ("10", result);
+  result = ExtractBweStatsValue(
+      reports, "googReceivedPacketGroupPropagationDeltaDebug");
+  EXPECT_EQ("[100, 200]", result);
+  result = ExtractBweStatsValue(
+      reports, "googReceivedPacketGroupArrivalTimeDebug");
+  EXPECT_EQ("[1000, 2000]", result);
 }
 
 }  // namespace

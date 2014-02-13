@@ -166,6 +166,15 @@ class PeerConnectionInterface : public talk_base::RefCountInterface {
   };
   typedef std::vector<IceServer> IceServers;
 
+  // Used by GetStats to decide which stats to include in the stats reports.
+  // |kStatsOutputLevelStandard| includes the standard stats for Javascript API;
+  // |kStatsOutputLevelDebug| includes both the standard stats and additional
+  // stats for debugging purposes.
+  enum StatsOutputLevel {
+    kStatsOutputLevelStandard,
+    kStatsOutputLevelDebug,
+  };
+
   // Accessor methods to active local streams.
   virtual talk_base::scoped_refptr<StreamCollectionInterface>
       local_streams() = 0;
@@ -190,8 +199,13 @@ class PeerConnectionInterface : public talk_base::RefCountInterface {
   virtual talk_base::scoped_refptr<DtmfSenderInterface> CreateDtmfSender(
       AudioTrackInterface* track) = 0;
 
+  // TODO(jiayl): remove the old API once all Chrome overrides are updated.
   virtual bool GetStats(StatsObserver* observer,
                         MediaStreamTrackInterface* track) = 0;
+
+  virtual bool GetStats(StatsObserver* observer,
+                        MediaStreamTrackInterface* track,
+                        StatsOutputLevel level) = 0;
 
   virtual talk_base::scoped_refptr<DataChannelInterface> CreateDataChannel(
       const std::string& label,

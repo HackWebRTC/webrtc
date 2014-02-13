@@ -60,6 +60,7 @@
 #include "talk/media/webrtc/webrtcvie.h"
 #include "talk/media/webrtc/webrtcvoe.h"
 #include "talk/media/webrtc/webrtcvoiceengine.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 
 #if !defined(LIBPEERCONNECTION_LIB)
 #ifndef HAVE_WEBRTC_VIDEO
@@ -2253,7 +2254,8 @@ bool WebRtcVideoMediaChannel::SetRenderer(uint32 ssrc,
   return true;
 }
 
-bool WebRtcVideoMediaChannel::GetStats(VideoMediaInfo* info) {
+bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
+                                       VideoMediaInfo* info) {
   // Get sender statistics and build VideoSenderInfo.
   unsigned int total_bitrate_sent = 0;
   unsigned int video_bitrate_sent = 0;
@@ -2453,10 +2455,28 @@ bool WebRtcVideoMediaChannel::GetStats(VideoMediaInfo* info) {
       LOG_RTCERR1(GetEstimatedReceiveBandwidth, channel->channel_id());
     }
   }
-
   // Build BandwidthEstimationInfo.
   // TODO(zhurunz): Add real unittest for this.
   BandwidthEstimationInfo bwe;
+
+  // TODO(jiayl): remove the condition when the necessary changes are available
+  // outside the dev branch.
+#ifdef USE_WEBRTC_DEV_BRANCH
+  if (options.include_received_propagation_stats) {
+    webrtc::ReceiveBandwidthEstimatorStats additional_stats;
+    // Only call for the default channel because the returned stats are
+    // collected for all the channels using the same estimator.
+    if (engine_->vie()->rtp()->GetReceiveBandwidthEstimatorStats(
+        recv_channels_[0]->channel_id(), &additional_stats)) {
+      bwe.total_received_propagation_delta_ms =
+          additional_stats.total_propagation_time_delta_ms;
+      bwe.recent_received_propagation_delta_ms.swap(
+          additional_stats.recent_propagation_time_delta_ms);
+      bwe.recent_received_packet_group_arrival_time_ms.swap(
+          additional_stats.recent_arrival_time_ms);
+    }
+  }
+#endif
 
   // Calculations done above per send/receive stream.
   bwe.actual_enc_bitrate = video_bitrate_sent;
@@ -2631,6 +2651,15 @@ bool WebRtcVideoMediaChannel::SetSendRtpHeaderExtensions(
         send_time_extension)) {
       return false;
     }
+  }
+
+  if (send_time_extension) {
+    // For video RTP packets, we would like to update AbsoluteSendTimeHeader
+    // Extension closer to the network, @ socket level before sending.
+    // Pushing the extension id to socket layer.
+    MediaChannel::SetOption(NetworkInterface::ST_RTP,
+                            talk_base::Socket::OPT_RTP_SENDTIME_EXTN_ID,
+                            send_time_extension->id);
   }
   return true;
 }
@@ -3083,6 +3112,13 @@ bool WebRtcVideoMediaChannel::ConfigureChannel(int channel_id,
     }
   }
 
+  // Start receiving for both receive and send channels so that we get incoming
+  // RTP (if receiving) as well as RTCP feedback (if sending).
+  if (engine()->vie()->base()->StartReceive(channel_id) != 0) {
+    LOG_RTCERR1(StartReceive, channel_id);
+    return false;
+  }
+
   return true;
 }
 
@@ -3530,14 +3566,6 @@ bool WebRtcVideoMediaChannel::SetReceiveCodecs(
           engine()->DestroyExternalDecoder(decoder);
         }
       }
-    }
-  }
-
-  // Start receiving packets if at least one receive codec has been set.
-  if (!receive_codecs_.empty()) {
-    if (engine()->vie()->base()->StartReceive(channel_id) != 0) {
-      LOG_RTCERR1(StartReceive, channel_id);
-      return false;
     }
   }
   return true;

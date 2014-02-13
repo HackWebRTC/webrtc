@@ -866,6 +866,18 @@ void WebRtcSession::SetAudioSend(uint32 ssrc, bool enable,
     voice_channel_->SetChannelOptions(options);
 }
 
+void WebRtcSession::SetAudioPlayoutVolume(uint32 ssrc, double volume) {
+  ASSERT(signaling_thread()->IsCurrent());
+  ASSERT(volume >= 0 && volume <= 10);
+  if (!voice_channel_) {
+    LOG(LS_ERROR) << "SetAudioPlayoutVolume: No audio channel exists.";
+    return;
+  }
+
+  if (!voice_channel_->SetOutputScaling(ssrc, volume, volume))
+    ASSERT(false);
+}
+
 bool WebRtcSession::SetCaptureDevice(uint32 ssrc,
                                      cricket::VideoCapturer* camera) {
   ASSERT(signaling_thread()->IsCurrent());

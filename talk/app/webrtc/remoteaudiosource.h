@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2007, Google Inc.
+ * Copyright 2014, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,41 +25,42 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// A libjingle compatible SocketServer for OSX/iOS/Cocoa.
+#ifndef TALK_APP_WEBRTC_REMOTEAUDIOSOURCE_H_
+#define TALK_APP_WEBRTC_REMOTEAUDIOSOURCE_H_
 
-#ifndef TALK_BASE_MACCOCOASOCKETSERVER_H_
-#define TALK_BASE_MACCOCOASOCKETSERVER_H_
+#include <list>
 
-#include "talk/base/macsocketserver.h"
+#include "talk/app/webrtc/mediastreaminterface.h"
+#include "talk/app/webrtc/notifier.h"
 
-#ifdef __OBJC__
-@class NSTimer, MacCocoaSocketServerHelper;
-#else
-class NSTimer;
-class MacCocoaSocketServerHelper;
-#endif
+namespace webrtc {
 
-namespace talk_base {
+using webrtc::AudioSourceInterface;
 
-// A socketserver implementation that wraps the main cocoa
-// application loop accessed through [NSApp run].
-class MacCocoaSocketServer : public MacBaseSocketServer {
+// This class implements the audio source used by the remote audio track.
+class RemoteAudioSource : public Notifier<AudioSourceInterface> {
  public:
-  explicit MacCocoaSocketServer();
-  virtual ~MacCocoaSocketServer();
+  // Creates an instance of RemoteAudioSource.
+  static talk_base::scoped_refptr<RemoteAudioSource> Create();
 
-  virtual bool Wait(int cms, bool process_io);
-  virtual void WakeUp();
+ protected:
+  RemoteAudioSource();
+  virtual ~RemoteAudioSource();
 
  private:
-  MacCocoaSocketServerHelper* helper_;
-  NSTimer* timer_;  // Weak.
-  // The count of how many times we're inside the NSApplication main loop.
-  int run_count_;
+  typedef std::list<AudioObserver*> AudioObserverList;
 
-  DISALLOW_EVIL_CONSTRUCTORS(MacCocoaSocketServer);
+  // MediaSourceInterface implementation.
+  virtual MediaSourceInterface::SourceState state() const OVERRIDE;
+
+  // AudioSourceInterface implementation.
+  virtual void SetVolume(double volume) OVERRIDE;
+  virtual void RegisterAudioObserver(AudioObserver* observer) OVERRIDE;
+  virtual void UnregisterAudioObserver(AudioObserver* observer) OVERRIDE;
+
+  AudioObserverList audio_observers_;
 };
 
-}  // namespace talk_base
+}  // namespace webrtc
 
-#endif  // TALK_BASE_MACCOCOASOCKETSERVER_H_
+#endif  // TALK_APP_WEBRTC_REMOTEAUDIOSOURCE_H_

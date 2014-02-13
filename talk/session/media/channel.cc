@@ -1744,9 +1744,10 @@ void VideoChannel::ChangeState() {
   LOG(LS_INFO) << "Changing video state, recv=" << recv << " send=" << send;
 }
 
-bool VideoChannel::GetStats(VideoMediaInfo* stats) {
+bool VideoChannel::GetStats(
+    const StatsOptions& options, VideoMediaInfo* stats) {
   return InvokeOnWorker(Bind(&VideoMediaChannel::GetStats,
-                             media_channel(), stats));
+                             media_channel(), options, stats));
 }
 
 void VideoChannel::StartMediaMonitor(int cms) {

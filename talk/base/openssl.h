@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2007, Google Inc.
+ * Copyright 2013, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,41 +25,13 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// A libjingle compatible SocketServer for OSX/iOS/Cocoa.
+#ifndef TALK_BASE_OPENSSL_H_
+#define TALK_BASE_OPENSSL_H_
 
-#ifndef TALK_BASE_MACCOCOASOCKETSERVER_H_
-#define TALK_BASE_MACCOCOASOCKETSERVER_H_
+#include <openssl/ssl.h>
 
-#include "talk/base/macsocketserver.h"
-
-#ifdef __OBJC__
-@class NSTimer, MacCocoaSocketServerHelper;
-#else
-class NSTimer;
-class MacCocoaSocketServerHelper;
+#if (OPENSSL_VERSION_NUMBER < 0x10001000L)
+#error OpenSSL is older than 1.0.1, which is the minimum supported version.
 #endif
 
-namespace talk_base {
-
-// A socketserver implementation that wraps the main cocoa
-// application loop accessed through [NSApp run].
-class MacCocoaSocketServer : public MacBaseSocketServer {
- public:
-  explicit MacCocoaSocketServer();
-  virtual ~MacCocoaSocketServer();
-
-  virtual bool Wait(int cms, bool process_io);
-  virtual void WakeUp();
-
- private:
-  MacCocoaSocketServerHelper* helper_;
-  NSTimer* timer_;  // Weak.
-  // The count of how many times we're inside the NSApplication main loop.
-  int run_count_;
-
-  DISALLOW_EVIL_CONSTRUCTORS(MacCocoaSocketServer);
-};
-
-}  // namespace talk_base
-
-#endif  // TALK_BASE_MACCOCOASOCKETSERVER_H_
+#endif  // TALK_BASE_OPENSSL_H_

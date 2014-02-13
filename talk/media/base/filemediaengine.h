@@ -297,7 +297,9 @@ class FileVideoChannel : public VideoMediaChannel {
   virtual bool SetCapturer(uint32 ssrc, VideoCapturer* capturer) {
     return false;
   }
-  virtual bool GetStats(VideoMediaInfo* info) { return true; }
+  virtual bool GetStats(const StatsOptions& options, VideoMediaInfo* info) {
+    return true;
+  }
   virtual bool SendIntraFrame() { return false; }
   virtual bool RequestIntraFrame() { return false; }
 

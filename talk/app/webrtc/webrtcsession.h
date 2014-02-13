@@ -165,6 +165,7 @@ class WebRtcSession : public cricket::BaseSession,
   virtual void SetAudioSend(uint32 ssrc, bool enable,
                             const cricket::AudioOptions& options,
                             cricket::AudioRenderer* renderer) OVERRIDE;
+  virtual void SetAudioPlayoutVolume(uint32 ssrc, double volume) OVERRIDE;
 
   // Implements VideoMediaProviderInterface.
   virtual bool SetCaptureDevice(uint32 ssrc,

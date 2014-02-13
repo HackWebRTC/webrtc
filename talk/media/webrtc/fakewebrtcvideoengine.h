@@ -447,6 +447,10 @@ class FakeWebRtcVideoEngine
     WEBRTC_ASSERT_CHANNEL(channel);
     return channels_.find(channel)->second->send;
   }
+  bool GetReceive(int channel) const {
+    WEBRTC_ASSERT_CHANNEL(channel);
+    return channels_.find(channel)->second->receive_;
+  }
   int GetCaptureChannelId(int capture_id) const {
     WEBRTC_ASSERT_CAPTURER(capture_id);
     return capturers_.find(capture_id)->second->channel_id();

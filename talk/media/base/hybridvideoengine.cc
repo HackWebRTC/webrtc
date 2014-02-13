@@ -273,10 +273,11 @@ bool HybridVideoMediaChannel::RequestIntraFrame() {
       active_channel_->RequestIntraFrame();
 }
 
-bool HybridVideoMediaChannel::GetStats(VideoMediaInfo* info) {
+bool HybridVideoMediaChannel::GetStats(
+    const StatsOptions& options, VideoMediaInfo* info) {
   // TODO(juberti): Ensure that returning no stats until SetSendCodecs is OK.
   return active_channel_ &&
-      active_channel_->GetStats(info);
+      active_channel_->GetStats(options, info);
 }
 
 void HybridVideoMediaChannel::OnPacketReceived(
