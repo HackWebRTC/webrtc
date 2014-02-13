@@ -75,6 +75,7 @@ public class AppRTCDemoActivity extends Activity
   private static final String TAG = "AppRTCDemoActivity";
   private PeerConnectionFactory factory;
   private VideoSource videoSource;
+  private boolean videoSourceStopped;
   private PeerConnection pc;
   private final PCObserver pcObserver = new PCObserver();
   private final SDPObserver sdpObserver = new SDPObserver();
@@ -159,6 +160,7 @@ public class AppRTCDemoActivity extends Activity
     vsv.onPause();
     if (videoSource != null) {
       videoSource.stop();
+      videoSourceStopped = true;
     }
   }
 
@@ -166,7 +168,7 @@ public class AppRTCDemoActivity extends Activity
   public void onResume() {
     super.onResume();
     vsv.onResume();
-    if (videoSource != null) {
+    if (videoSource != null && videoSourceStopped) {
       videoSource.restart();
     }
   }
@@ -239,7 +241,9 @@ public class AppRTCDemoActivity extends Activity
             vsv, VideoStreamsView.Endpoint.LOCAL)));
         lMS.addTrack(videoTrack);
       }
-      lMS.addTrack(factory.createAudioTrack("ARDAMSa0"));
+      if (appRtcClient.audioConstraints() != null) {
+        lMS.addTrack(factory.createAudioTrack("ARDAMSa0"));
+      }
       pc.addStream(lMS, new MediaConstraints());
     }
     logAndToast("Waiting for ICE candidates...");

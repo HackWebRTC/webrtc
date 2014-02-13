@@ -131,6 +131,10 @@ public class AppRTCClient {
     return appRTCSignalingParameters.videoConstraints;
   }
 
+  public MediaConstraints audioConstraints() {
+    return appRTCSignalingParameters.audioConstraints;
+  }
+
   // Struct holding the signaling parameters of an AppRTC room.
   private class AppRTCSignalingParameters {
     public final List<PeerConnection.IceServer> iceServers;
@@ -140,12 +144,13 @@ public class AppRTCClient {
     public final boolean initiator;
     public final MediaConstraints pcConstraints;
     public final MediaConstraints videoConstraints;
+    public final MediaConstraints audioConstraints;
 
     public AppRTCSignalingParameters(
         List<PeerConnection.IceServer> iceServers,
         String gaeBaseHref, String channelToken, String postMessageUrl,
         boolean initiator, MediaConstraints pcConstraints,
-        MediaConstraints videoConstraints) {
+        MediaConstraints videoConstraints, MediaConstraints audioConstraints) {
       this.iceServers = iceServers;
       this.gaeBaseHref = gaeBaseHref;
       this.channelToken = channelToken;
@@ -153,6 +158,7 @@ public class AppRTCClient {
       this.initiator = initiator;
       this.pcConstraints = pcConstraints;
       this.videoConstraints = videoConstraints;
+      this.audioConstraints = audioConstraints;
     }
   }
 
@@ -268,34 +274,40 @@ public class AppRTCClient {
       MediaConstraints pcConstraints = constraintsFromJSON(
           getVarValue(roomHtml, "pcConstraints", false));
       Log.d(TAG, "pcConstraints: " + pcConstraints);
-
       MediaConstraints videoConstraints = constraintsFromJSON(
-          getVideoConstraints(
+          getAVConstraints("video",
               getVarValue(roomHtml, "mediaConstraints", false)));
-
       Log.d(TAG, "videoConstraints: " + videoConstraints);
+      MediaConstraints audioConstraints = constraintsFromJSON(
+          getAVConstraints("audio",
+              getVarValue(roomHtml, "mediaConstraints", false)));
+      Log.d(TAG, "audioConstraints: " + audioConstraints);
 
       return new AppRTCSignalingParameters(
           iceServers, gaeBaseHref, token, postMessageUrl, initiator,
-          pcConstraints, videoConstraints);
+          pcConstraints, videoConstraints, audioConstraints);
     }
 
-    private String getVideoConstraints(String mediaConstraintsString) {
+    // Return the constraints specified for |type| of "audio" or "video" in
+    // |mediaConstraintsString|.
+    private String getAVConstraints(
+        String type, String mediaConstraintsString) {
       try {
         JSONObject json = new JSONObject(mediaConstraintsString);
         // Tricksy handling of values that are allowed to be (boolean or
         // MediaTrackConstraints) by the getUserMedia() spec.  There are three
         // cases below.
-        if (!json.has("video") || !json.optBoolean("video", true)) {
-          // Case 1: "video" is not present, or is an explicit "false" boolean.
+        if (!json.has(type) || !json.optBoolean(type, true)) {
+          // Case 1: "audio"/"video" is not present, or is an explicit "false"
+          // boolean.
           return null;
         }
-        if (json.optBoolean("video", false)) {
-          // Case 2: "video" is an explicit "true" boolean.
+        if (json.optBoolean(type, false)) {
+          // Case 2: "audio"/"video" is an explicit "true" boolean.
           return "{\"mandatory\": {}, \"optional\": []}";
         }
-        // Case 3: "video" is an object.
-        return json.getJSONObject("video").toString();
+        // Case 3: "audio"/"video" is an object.
+        return json.getJSONObject(type).toString();
       } catch (JSONException e) {
         throw new RuntimeException(e);
       }
