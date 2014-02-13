@@ -219,6 +219,8 @@ class NetEqDecodingTest : public ::testing::Test {
                 const std::set<uint16_t>& drop_seq_numbers,
                 bool expect_seq_no_wrap, bool expect_timestamp_wrap);
 
+  void LongCngWithClockDrift(double drift_factor);
+
   NetEq* neteq_;
   FILE* rtp_fp_;
   unsigned int sim_clock_;
@@ -695,14 +697,12 @@ TEST_F(NetEqDecodingTest,
   EXPECT_EQ(110946, network_stats.clockdrift_ppm);
 }
 
-TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(LongCngWithClockDrift)) {
+void NetEqDecodingTest::LongCngWithClockDrift(double drift_factor) {
   uint16_t seq_no = 0;
   uint32_t timestamp = 0;
   const int kFrameSizeMs = 30;
   const int kSamples = kFrameSizeMs * 16;
   const int kPayloadBytes = kSamples * 2;
-  // Apply a clock drift of -25 ms / s (sender faster than receiver).
-  const double kDriftFactor = 1000.0 / (1000.0 + 25.0);
   double next_input_time_ms = 0.0;
   double t_ms;
   NetEqOutputType type;
@@ -719,7 +719,7 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(LongCngWithClockDrift)) {
       ASSERT_EQ(0, neteq_->InsertPacket(rtp_info, payload, kPayloadBytes, 0));
       ++seq_no;
       timestamp += kSamples;
-      next_input_time_ms += static_cast<double>(kFrameSizeMs) * kDriftFactor;
+      next_input_time_ms += static_cast<double>(kFrameSizeMs) * drift_factor;
     }
     // Pull out data once.
     int out_len;
@@ -747,7 +747,7 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(LongCngWithClockDrift)) {
       ASSERT_EQ(0, neteq_->InsertPacket(rtp_info, payload, payload_len, 0));
       ++seq_no;
       timestamp += kCngPeriodSamples;
-      next_input_time_ms += static_cast<double>(kCngPeriodMs) * kDriftFactor;
+      next_input_time_ms += static_cast<double>(kCngPeriodMs) * drift_factor;
     }
     // Pull out data once.
     int out_len;
@@ -770,7 +770,7 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(LongCngWithClockDrift)) {
       ASSERT_EQ(0, neteq_->InsertPacket(rtp_info, payload, kPayloadBytes, 0));
       ++seq_no;
       timestamp += kSamples;
-      next_input_time_ms += static_cast<double>(kFrameSizeMs) * kDriftFactor;
+      next_input_time_ms += static_cast<double>(kFrameSizeMs) * drift_factor;
     }
     // Pull out data once.
     int out_len;
@@ -786,6 +786,20 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(LongCngWithClockDrift)) {
   // Compare delay before and after, and make sure it differs less than 20 ms.
   EXPECT_LE(delay_after, delay_before + 20 * 16);
   EXPECT_GE(delay_after, delay_before - 20 * 16);
+}
+
+TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(LongCngWithClockNegativeDrift)) {
+  // Apply a clock drift of -25 ms / s (sender faster than receiver).
+  const double kDriftFactor = 1000.0 / (1000.0 + 25.0);
+  LongCngWithClockDrift(kDriftFactor);
+}
+
+// TODO(hlundin): Re-enable this test and fix the issues to make it pass.
+TEST_F(NetEqDecodingTest,
+       DISABLED_ON_ANDROID(DISABLED_LongCngWithClockPositiveDrift)) {
+  // Apply a clock drift of +25 ms / s (sender slower than receiver).
+  const double kDriftFactor = 1000.0 / (1000.0 - 25.0);
+  LongCngWithClockDrift(kDriftFactor);
 }
 
 TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(UnknownPayloadType)) {
