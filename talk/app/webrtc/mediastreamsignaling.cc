@@ -33,6 +33,7 @@
 #include "talk/app/webrtc/mediastreamproxy.h"
 #include "talk/app/webrtc/mediaconstraintsinterface.h"
 #include "talk/app/webrtc/mediastreamtrackproxy.h"
+#include "talk/app/webrtc/remoteaudiosource.h"
 #include "talk/app/webrtc/remotevideocapturer.h"
 #include "talk/app/webrtc/sctputils.h"
 #include "talk/app/webrtc/videosource.h"
@@ -140,7 +141,7 @@ class RemoteMediaStreamFactory {
   AudioTrackInterface* AddAudioTrack(webrtc::MediaStreamInterface* stream,
                                      const std::string& track_id) {
     return AddTrack<AudioTrackInterface, AudioTrack, AudioTrackProxy>(
-        stream, track_id, static_cast<AudioSourceInterface*>(NULL));
+        stream, track_id, RemoteAudioSource::Create().get());
   }
 
   VideoTrackInterface* AddVideoTrack(webrtc::MediaStreamInterface* stream,

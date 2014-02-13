@@ -53,6 +53,10 @@ class AudioProviderInterface {
                             const cricket::AudioOptions& options,
                             cricket::AudioRenderer* renderer) = 0;
 
+  // Sets the audio playout volume of a remote audio track with |ssrc|.
+  // |volume| is in the range of [0, 10].
+  virtual void SetAudioPlayoutVolume(uint32 ssrc, double volume) = 0;
+
  protected:
   virtual ~AudioProviderInterface() {}
 };

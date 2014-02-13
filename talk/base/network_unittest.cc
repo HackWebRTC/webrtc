@@ -527,6 +527,33 @@ TEST_F(NetworkTest, TestIPv6Toggle) {
   }
 }
 
+TEST_F(NetworkTest, TestNetworkListSorting) {
+  BasicNetworkManager manager;
+  Network ipv4_network1("test_eth0", "Test Network Adapter 1",
+                        IPAddress(0x12345600U), 24);
+  ipv4_network1.AddIP(IPAddress(0x12345600U));
+
+  IPAddress ip;
+  IPAddress prefix;
+  EXPECT_TRUE(IPFromString("2400:4030:1:2c00:be30:abcd:efab:cdef", &ip));
+  prefix = TruncateIP(ip, 64);
+  Network ipv6_eth1_publicnetwork1_ip1("test_eth1", "Test NetworkAdapter 2",
+                                       prefix, 64);
+  ipv6_eth1_publicnetwork1_ip1.AddIP(ip);
+
+  NetworkManager::NetworkList list;
+  list.push_back(new Network(ipv4_network1));
+  list.push_back(new Network(ipv6_eth1_publicnetwork1_ip1));
+  Network* net1 = list[0];
+  Network* net2 = list[1];
+
+  bool changed = false;
+  MergeNetworkList(manager, list, &changed);
+  ASSERT_TRUE(changed);
+  // After sorting IPv6 network should be higher order than IPv4 networks.
+  EXPECT_TRUE(net1->preference() < net2->preference());
+}
+
 #if defined(POSIX)
 // Verify that we correctly handle interfaces with no address.
 TEST_F(NetworkTest, TestConvertIfAddrsNoAddress) {

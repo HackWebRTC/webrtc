@@ -715,6 +715,7 @@
           'conditions': [
             ['OS!="ios"', {
               'sources': [
+                'base/openssl.h',
                 'base/openssladapter.cc',
                 'base/openssladapter.h',
                 'base/openssldigest.cc',
@@ -1175,6 +1176,8 @@
         'app/webrtc/portallocatorfactory.cc',
         'app/webrtc/portallocatorfactory.h',
         'app/webrtc/proxy.h',
+        'app/webrtc/remoteaudiosource.cc',
+        'app/webrtc/remoteaudiosource.h',
         'app/webrtc/remotevideocapturer.cc',
         'app/webrtc/remotevideocapturer.h',
         'app/webrtc/sctputils.cc',

@@ -31,6 +31,7 @@
 
 #include "talk/app/webrtc/audiotrack.h"
 #include "talk/app/webrtc/mediastream.h"
+#include "talk/app/webrtc/remoteaudiosource.h"
 #include "talk/app/webrtc/streamcollection.h"
 #include "talk/app/webrtc/videosource.h"
 #include "talk/app/webrtc/videotrack.h"
@@ -59,6 +60,7 @@ class MockAudioProvider : public AudioProviderInterface {
   MOCK_METHOD4(SetAudioSend, void(uint32 ssrc, bool enable,
                                   const cricket::AudioOptions& options,
                                   cricket::AudioRenderer* renderer));
+  MOCK_METHOD2(SetAudioPlayoutVolume, void(uint32 ssrc, double volume));
 };
 
 // Helper class to test MediaStreamHandler.
@@ -110,12 +112,11 @@ class MediaStreamHandlerTest : public testing::Test {
         FakeVideoSource::Create());
     video_track_ = VideoTrack::Create(kVideoTrackId, source);
     EXPECT_TRUE(stream_->AddTrack(video_track_));
-    audio_track_ = AudioTrack::Create(kAudioTrackId,
-                                           NULL);
-    EXPECT_TRUE(stream_->AddTrack(audio_track_));
   }
 
   void AddLocalAudioTrack() {
+    audio_track_ = AudioTrack::Create(kAudioTrackId, NULL);
+    EXPECT_TRUE(stream_->AddTrack(audio_track_));
     EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, true, _, _));
     handlers_.AddLocalAudioTrack(stream_, stream_->GetAudioTracks()[0],
                                  kAudioSsrc);
@@ -144,6 +145,9 @@ class MediaStreamHandlerTest : public testing::Test {
   }
 
   void AddRemoteAudioTrack() {
+    audio_track_ = AudioTrack::Create(kAudioTrackId,
+                                      RemoteAudioSource::Create().get());
+    EXPECT_TRUE(stream_->AddTrack(audio_track_));
     EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, true, _));
     handlers_.AddRemoteAudioTrack(stream_, stream_->GetAudioTracks()[0],
                                   kAudioSsrc);
@@ -289,6 +293,29 @@ TEST_F(MediaStreamHandlerTest, RemoteVideoTrackDisable) {
   video_track_->set_enabled(true);
 
   RemoveRemoteVideoTrack();
+  handlers_.TearDown();
+}
+
+TEST_F(MediaStreamHandlerTest, RemoteAudioTrackSetVolume) {
+  AddRemoteAudioTrack();
+
+  double volume = 0.5;
+  EXPECT_CALL(audio_provider_, SetAudioPlayoutVolume(kAudioSsrc, volume));
+  audio_track_->GetSource()->SetVolume(volume);
+
+  // Disable the audio track, this should prevent setting the volume.
+  EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, false, _));
+  audio_track_->set_enabled(false);
+  audio_track_->GetSource()->SetVolume(1.0);
+
+  EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, true, _));
+  audio_track_->set_enabled(true);
+
+  double new_volume = 0.8;
+  EXPECT_CALL(audio_provider_, SetAudioPlayoutVolume(kAudioSsrc, new_volume));
+  audio_track_->GetSource()->SetVolume(new_volume);
+
+  RemoveRemoteAudioTrack();
   handlers_.TearDown();
 }
 

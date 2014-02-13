@@ -237,8 +237,10 @@ static int OnSctpInboundPacket(struct socket* sock, union sctp_sockstore addr,
 // Set the initial value of the static SCTP Data Engines reference count.
 int SctpDataEngine::usrsctp_engines_count = 0;
 
-SctpDataEngine::SctpDataEngine() {
+void SctpDataEngine::AddRefEngine() {
+  LOG(LS_VERBOSE) << "usrsctp_engines_count:" << usrsctp_engines_count;
   if (usrsctp_engines_count == 0) {
+    LOG(LS_INFO) << "SctpDataEngine: Initializing usrsctp";
     // First argument is udp_encapsulation_port, which is not releveant for our
     // AF_CONN use of sctp.
     usrsctp_init(0, cricket::OnSctpOutboundPacket, debug_sctp_printf);
@@ -276,26 +278,25 @@ SctpDataEngine::SctpDataEngine() {
         cricket::kMaxSctpSid);
   }
   usrsctp_engines_count++;
+}
 
-  // We don't put in a codec because we don't want one offered when we
-  // use the hybrid data engine.
-  // codecs_.push_back(cricket::DataCodec( kGoogleSctpDataCodecId,
-  // kGoogleSctpDataCodecName, 0));
+void SctpDataEngine::ReleaseEngine() {
+  usrsctp_engines_count--;
+  if (usrsctp_engines_count == 0) {
+    LOG(LS_INFO) << "SctpDataEngine: Shutting down";
+    if (usrsctp_finish() != 0) {
+      LOG_ERRNO(LS_ERROR) << "SctpDataEngine: usrsctp_finish failed: ";
+    }
+  }
+  LOG(LS_VERBOSE) << "usrsctp_engines_count:" << usrsctp_engines_count;
+}
+
+SctpDataEngine::SctpDataEngine() {
+  AddRefEngine();
 }
 
 SctpDataEngine::~SctpDataEngine() {
-  // TODO(ldixon): There is currently a bug in teardown of usrsctp that blocks
-  // indefintely if a finish call made too soon after close calls. So teardown
-  // has been skipped. Once the bug is fixed, retest and enable teardown.
-  // Tracked in webrtc issue 2749.
-  //
-  // usrsctp_engines_count--;
-  // LOG(LS_VERBOSE) << "usrsctp_engines_count:" << usrsctp_engines_count;
-  // if (usrsctp_engines_count == 0) {
-  //   if (usrsctp_finish() != 0) {
-  //     LOG(LS_WARNING) << "usrsctp_finish.";
-  //   }
-  // }
+  ReleaseEngine();
 }
 
 DataMediaChannel* SctpDataEngine::CreateChannel(
@@ -314,10 +315,12 @@ SctpDataMediaChannel::SctpDataMediaChannel(talk_base::Thread* thread)
       sending_(false),
       receiving_(false),
       debug_name_("SctpDataMediaChannel") {
+  SctpDataEngine::AddRefEngine();
 }
 
 SctpDataMediaChannel::~SctpDataMediaChannel() {
   CloseSctpSocket();
+  SctpDataEngine::ReleaseEngine();
 }
 
 sockaddr_conn SctpDataMediaChannel::GetSctpSockAddr(int port) {

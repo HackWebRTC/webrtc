@@ -141,6 +141,7 @@ class StatsReport {
   static const char kStatsValueNameEchoDelayStdDev[];
   static const char kStatsValueNameEchoReturnLoss[];
   static const char kStatsValueNameEchoReturnLossEnhancement[];
+  static const char kStatsValueNameExpandRate[];
   static const char kStatsValueNameFirsReceived[];
   static const char kStatsValueNameFirsSent[];
   static const char kStatsValueNameFrameHeightInput[];

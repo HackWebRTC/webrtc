@@ -106,6 +106,8 @@ void LocalAudioTrackHandler::Stop() {
 void LocalAudioTrackHandler::OnEnabledChanged() {
   cricket::AudioOptions options;
   if (audio_track_->enabled() && audio_track_->GetSource()) {
+    // TODO(xians): Remove this static_cast since we should be able to connect
+    // a remote audio track to peer connection.
     options = static_cast<LocalAudioSource*>(
         audio_track_->GetSource())->options();
   }
@@ -125,10 +127,12 @@ RemoteAudioTrackHandler::RemoteAudioTrackHandler(
     : TrackHandler(track, ssrc),
       audio_track_(track),
       provider_(provider) {
+  track->GetSource()->RegisterAudioObserver(this);
   OnEnabledChanged();
 }
 
 RemoteAudioTrackHandler::~RemoteAudioTrackHandler() {
+  audio_track_->GetSource()->UnregisterAudioObserver(this);
 }
 
 void RemoteAudioTrackHandler::Stop() {
@@ -141,6 +145,14 @@ void RemoteAudioTrackHandler::OnStateChanged() {
 void RemoteAudioTrackHandler::OnEnabledChanged() {
   provider_->SetAudioPlayout(ssrc(), audio_track_->enabled(),
                              audio_track_->GetRenderer());
+}
+
+void RemoteAudioTrackHandler::OnSetVolume(double volume) {
+  // When the track is disabled, the volume of the source, which is the
+  // corresponding WebRtc Voice Engine channel will be 0. So we do not allow
+  // setting the volume to the source when the track is disabled.
+  if (audio_track_->enabled())
+    provider_->SetAudioPlayoutVolume(ssrc(), volume);
 }
 
 LocalVideoTrackHandler::LocalVideoTrackHandler(

@@ -185,7 +185,10 @@ class Socket {
     OPT_SNDBUF,      // send buffer size
     OPT_NODELAY,     // whether Nagle algorithm is enabled
     OPT_IPV6_V6ONLY, // Whether the socket is IPv6 only.
-    OPT_DSCP         // DSCP code
+    OPT_DSCP,        // DSCP code
+    OPT_RTP_SENDTIME_EXTN_ID,  // This is a non-traditional socket option param.
+                               // This is specific to libjingle and will be used
+                               // if SendTime option is needed at socket level.
   };
   virtual int GetOption(Option opt, int* value) = 0;
   virtual int SetOption(Option opt, int value) = 0;

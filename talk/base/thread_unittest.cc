@@ -339,7 +339,7 @@ class AsyncInvokeTest : public testing::Test {
   Thread* expected_thread_;
 };
 
-TEST_F(AsyncInvokeTest, FireAndForget) {
+TEST_F(AsyncInvokeTest, DISABLED_FireAndForget) {
   AsyncInvoker invoker;
   // Create and start the thread.
   Thread thread;
@@ -350,7 +350,7 @@ TEST_F(AsyncInvokeTest, FireAndForget) {
   EXPECT_TRUE_WAIT(called, kWaitTimeout);
 }
 
-TEST_F(AsyncInvokeTest, WithCallback) {
+TEST_F(AsyncInvokeTest, DISABLED_WithCallback) {
   AsyncInvoker invoker;
   // Create and start the thread.
   Thread thread;
@@ -379,7 +379,7 @@ TEST_F(AsyncInvokeTest, DISABLED_CancelInvoker) {
   EXPECT_EQ(0, int_value_);
 }
 
-TEST_F(AsyncInvokeTest, CancelCallingThread) {
+TEST_F(AsyncInvokeTest, DISABLED_CancelCallingThread) {
   AsyncInvoker invoker;
   { // Create and start the thread.
     Thread thread;
@@ -396,7 +396,7 @@ TEST_F(AsyncInvokeTest, CancelCallingThread) {
   EXPECT_EQ(0, int_value_);
 }
 
-TEST_F(AsyncInvokeTest, KillInvokerBeforeExecute) {
+TEST_F(AsyncInvokeTest, DISABLED_KillInvokerBeforeExecute) {
   Thread thread;
   thread.Start();
   {
@@ -413,7 +413,7 @@ TEST_F(AsyncInvokeTest, KillInvokerBeforeExecute) {
   EXPECT_EQ(0, int_value_);
 }
 
-TEST_F(AsyncInvokeTest, Flush) {
+TEST_F(AsyncInvokeTest, DISABLED_Flush) {
   AsyncInvoker invoker;
   bool flag1 = false;
   bool flag2 = false;
@@ -431,7 +431,7 @@ TEST_F(AsyncInvokeTest, Flush) {
   EXPECT_TRUE(flag2);
 }
 
-TEST_F(AsyncInvokeTest, FlushWithIds) {
+TEST_F(AsyncInvokeTest, DISABLED_FlushWithIds) {
   AsyncInvoker invoker;
   bool flag1 = false;
   bool flag2 = false;

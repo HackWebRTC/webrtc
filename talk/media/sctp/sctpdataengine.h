@@ -91,6 +91,12 @@ class SctpDataEngine : public DataEngineInterface {
 
   virtual const std::vector<DataCodec>& data_codecs() { return codecs_; }
 
+  // Manages the lifetime of the usrsctp library data.  Each SctpDataEngine
+  // and SctpDataMediaChannel AddRefEngine the library at construction, and
+  // ReleaseEngine at shutdown.
+  static void AddRefEngine();
+  static void ReleaseEngine();
+
  private:
   static int usrsctp_engines_count;
   std::vector<DataCodec> codecs_;

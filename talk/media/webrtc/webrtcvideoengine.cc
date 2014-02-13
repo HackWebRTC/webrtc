@@ -2632,6 +2632,15 @@ bool WebRtcVideoMediaChannel::SetSendRtpHeaderExtensions(
       return false;
     }
   }
+
+  if (send_time_extension) {
+    // For video RTP packets, we would like to update AbsoluteSendTimeHeader
+    // Extension closer to the network, @ socket level before sending.
+    // Pushing the extension id to socket layer.
+    MediaChannel::SetOption(NetworkInterface::ST_RTP,
+                            talk_base::Socket::OPT_RTP_SENDTIME_EXTN_ID,
+                            send_time_extension->id);
+  }
   return true;
 }
 

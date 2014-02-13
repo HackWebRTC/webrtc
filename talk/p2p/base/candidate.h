@@ -33,6 +33,7 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+
 #include "talk/base/basictypes.h"
 #include "talk/base/socketaddress.h"
 #include "talk/p2p/base/constants.h"
@@ -163,13 +164,30 @@ class Candidate {
     return ToStringInternal(true);
   }
 
-  uint32 GetPriority(uint32 type_preference) const {
+  uint32 GetPriority(uint32 type_preference,
+                     int network_adapter_preference) const {
     // RFC 5245 - 4.1.2.1.
     // priority = (2^24)*(type preference) +
     //            (2^8)*(local preference) +
     //            (2^0)*(256 - component ID)
+
+    // |local_preference| length is 2 bytes, 0-65535 inclusive.
+    // In our implemenation we will partion local_preference into
+    //              0                 1
+    //       0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+    //      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //      |  NIC Pref     |    Addr Pref  |
+    //      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // NIC Type - Type of the network adapter e.g. 3G/Wifi/Wired.
+    // Addr Pref - Address preference value as per RFC 3484.
+    // local preference is calculated as - NIC Type << 8 | Addr_Pref.
+
     int addr_pref = IPAddressPrecedence(address_.ipaddr());
-    return (type_preference << 24) | (addr_pref << 8) | (256 - component_);
+    int local_preference = (network_adapter_preference << 8) | addr_pref;
+
+    return (type_preference << 24) |
+           (local_preference << 8) |
+           (256 - component_);
   }
 
  private:
@@ -177,9 +195,9 @@ class Candidate {
     std::ostringstream ost;
     std::string address = sensitive ? address_.ToSensitiveString() :
                                       address_.ToString();
-    ost << "Cand[" << id_ << ":" << component_ << ":"
-        << type_ << ":" << protocol_ << ":"
-        << network_name_ << ":" << address << ":"
+    ost << "Cand[" << foundation_ << ":" << component_ << ":"
+        << protocol_ << ":" << priority_ << ":"
+        << address << ":" << type_ << ":" << related_address_ << ":"
         << username_ << ":" << password_ << "]";
     return ost.str();
   }
