@@ -31,7 +31,6 @@ if env.Bit('have_webrtc_voice') and env.Bit('have_webrtc_video'):
       'peerconnectionfactory.cc',
       'peerconnection.cc',
       'portallocatorfactory.cc',
-      'remoteaudiosource.cc',
       'roapmessages.cc',
       'roapsession.cc',
       'roapsignaling.cc',

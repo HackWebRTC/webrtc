@@ -30,7 +30,6 @@
 #include "talk/base/openssldigest.h"
 
 #include "talk/base/common.h"
-#include "talk/base/openssl.h"
 
 namespace talk_base {
 
@@ -79,6 +78,7 @@ bool OpenSSLDigest::GetDigestEVP(const std::string& algorithm,
     md = EVP_md5();
   } else if (algorithm == DIGEST_SHA_1) {
     md = EVP_sha1();
+#if OPENSSL_VERSION_NUMBER >= 0x00908000L
   } else if (algorithm == DIGEST_SHA_224) {
     md = EVP_sha224();
   } else if (algorithm == DIGEST_SHA_256) {
@@ -87,6 +87,7 @@ bool OpenSSLDigest::GetDigestEVP(const std::string& algorithm,
     md = EVP_sha384();
   } else if (algorithm == DIGEST_SHA_512) {
     md = EVP_sha512();
+#endif
   } else {
     return false;
   }
@@ -107,6 +108,7 @@ bool OpenSSLDigest::GetDigestName(const EVP_MD* md,
     *algorithm = DIGEST_MD5;
   } else if (md_type == NID_sha1) {
     *algorithm = DIGEST_SHA_1;
+#if OPENSSL_VERSION_NUMBER >= 0x00908000L
   } else if (md_type == NID_sha224) {
     *algorithm = DIGEST_SHA_224;
   } else if (md_type == NID_sha256) {
@@ -115,6 +117,7 @@ bool OpenSSLDigest::GetDigestName(const EVP_MD* md,
     *algorithm = DIGEST_SHA_384;
   } else if (md_type == NID_sha512) {
     *algorithm = DIGEST_SHA_512;
+#endif
   } else {
     algorithm->clear();
     return false;

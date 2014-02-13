@@ -302,24 +302,16 @@ class StatsCollectorTest : public testing::Test {
         webrtc::StatsReport::kStatsReportTypeComponent,
         reports,
         webrtc::StatsReport::kStatsValueNameLocalCertificateId);
-    if (local_ders.size() > 0) {
-      EXPECT_NE(kNotFound, local_certificate_id);
-      CheckCertChainReports(reports, local_ders, local_certificate_id);
-    } else {
-      EXPECT_EQ(kNotFound, local_certificate_id);
-    }
+    EXPECT_NE(kNotFound, local_certificate_id);
+    CheckCertChainReports(reports, local_ders, local_certificate_id);
 
     // Check remote certificate chain.
     std::string remote_certificate_id = ExtractStatsValue(
         webrtc::StatsReport::kStatsReportTypeComponent,
         reports,
         webrtc::StatsReport::kStatsValueNameRemoteCertificateId);
-    if (remote_ders.size() > 0) {
-      EXPECT_NE(kNotFound, remote_certificate_id);
-      CheckCertChainReports(reports, remote_ders, remote_certificate_id);
-    } else {
-      EXPECT_EQ(kNotFound, remote_certificate_id);
-    }
+    EXPECT_NE(kNotFound, remote_certificate_id);
+    CheckCertChainReports(reports, remote_ders, remote_certificate_id);
   }
 
   cricket::FakeMediaEngine* media_engine_;
@@ -781,22 +773,5 @@ TEST_F(StatsCollectorTest, NoCertificates) {
       webrtc::StatsReport::kStatsValueNameRemoteCertificateId);
   ASSERT_EQ(kNotFound, remote_certificate_id);
 }
-
-// This test verifies that a remote certificate with an unsupported digest
-// algorithm is correctly ignored.
-TEST_F(StatsCollectorTest, UnsupportedDigestIgnored) {
-  // Build a local certificate.
-  std::string local_der = "This is the local der.";
-  talk_base::FakeSSLCertificate local_cert(DerToPem(local_der));
-
-  // Build a remote certificate with an unsupported digest algorithm.
-  std::string remote_der = "This is somebody else's der.";
-  talk_base::FakeSSLCertificate remote_cert(DerToPem(remote_der));
-  remote_cert.set_digest_algorithm("foobar");
-
-  TestCertificateReports(local_cert, std::vector<std::string>(1, local_der),
-                         remote_cert, std::vector<std::string>());
-}
-
 
 }  // namespace

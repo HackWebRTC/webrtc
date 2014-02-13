@@ -142,24 +142,9 @@ class VideoTrackInterface : public MediaStreamTrackInterface {
 
 // AudioSourceInterface is a reference counted source used for AudioTracks.
 // The same source can be used in multiple AudioTracks.
+// TODO(perkj): Extend this class with necessary methods to allow separate
+// sources for each audio track.
 class AudioSourceInterface : public MediaSourceInterface {
- public:
-  class AudioObserver {
-   public:
-    virtual void OnSetVolume(double volume) = 0;
-
-   protected:
-    virtual ~AudioObserver() {}
-  };
-
-  // TODO(xians): Makes all the interface pure virtual after Chrome has their
-  // implementations.
-  // Sets the volume to the source. |volume| is in  the range of [0, 10].
-  virtual void SetVolume(double volume) {}
-
-  // Registers/unregisters observer to the audio source.
-  virtual void RegisterAudioObserver(AudioObserver* observer) {}
-  virtual void UnregisterAudioObserver(AudioObserver* observer) {}
 };
 
 // Interface for receiving audio data from a AudioTrack.

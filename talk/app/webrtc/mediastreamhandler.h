@@ -118,8 +118,7 @@ class LocalAudioTrackHandler : public TrackHandler {
 // RemoteAudioTrackHandler listen to events on a remote AudioTrack instance
 // connected to a PeerConnection and orders the |provider| to executes the
 // requested change.
-class RemoteAudioTrackHandler : public AudioSourceInterface::AudioObserver,
-                                public TrackHandler {
+class RemoteAudioTrackHandler : public TrackHandler {
  public:
   RemoteAudioTrackHandler(AudioTrackInterface* track,
                           uint32 ssrc,
@@ -132,9 +131,6 @@ class RemoteAudioTrackHandler : public AudioSourceInterface::AudioObserver,
   virtual void OnEnabledChanged() OVERRIDE;
 
  private:
-  // AudioSourceInterface::AudioObserver implementation.
-  virtual void OnSetVolume(double volume) OVERRIDE;
-
   AudioTrackInterface* audio_track_;
   AudioProviderInterface* provider_;
 };

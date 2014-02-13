@@ -41,6 +41,7 @@
 #include <openssl/err.h>
 #include <openssl/opensslv.h>
 #include <openssl/rand.h>
+#include <openssl/ssl.h>
 #include <openssl/x509v3.h>
 
 #if HAVE_CONFIG_H
@@ -49,7 +50,6 @@
 
 #include "talk/base/common.h"
 #include "talk/base/logging.h"
-#include "talk/base/openssl.h"
 #include "talk/base/sslroots.h"
 #include "talk/base/stringutils.h"
 
@@ -688,7 +688,11 @@ bool OpenSSLAdapter::VerifyServerName(SSL* ssl, const char* host,
     int extension_nid = OBJ_obj2nid(X509_EXTENSION_get_object(extension));
 
     if (extension_nid == NID_subject_alt_name) {
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
       const X509V3_EXT_METHOD* meth = X509V3_EXT_get(extension);
+#else
+      X509V3_EXT_METHOD* meth = X509V3_EXT_get(extension);
+#endif
       if (!meth)
         break;
 
@@ -699,8 +703,12 @@ bool OpenSSLAdapter::VerifyServerName(SSL* ssl, const char* host,
       // See http://readlist.com/lists/openssl.org/openssl-users/0/4761.html.
       unsigned char* ext_value_data = extension->value->data;
 
+#if OPENSSL_VERSION_NUMBER >= 0x0090800fL
       const unsigned char **ext_value_data_ptr =
           (const_cast<const unsigned char **>(&ext_value_data));
+#else
+      unsigned char **ext_value_data_ptr = &ext_value_data;
+#endif
 
       if (meth->it) {
         ext_str = ASN1_item_d2i(NULL, ext_value_data_ptr,

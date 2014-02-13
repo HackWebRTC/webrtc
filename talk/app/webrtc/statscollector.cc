@@ -78,7 +78,6 @@ const char StatsReport::kStatsValueNameEchoReturnLossEnhancement[] =
 
 const char StatsReport::kStatsValueNameEncodeUsagePercent[] =
     "googEncodeUsagePercent";
-const char StatsReport::kStatsValueNameExpandRate[] = "googExpandRate";
 const char StatsReport::kStatsValueNameFingerprint[] = "googFingerprint";
 const char StatsReport::kStatsValueNameFingerprintAlgorithm[] =
     "googFingerprintAlgorithm";
@@ -222,7 +221,7 @@ void ExtractStats(const cricket::VoiceReceiverInfo& info, StatsReport* report) {
                    info.bytes_rcvd);
   report->AddValue(StatsReport::kStatsValueNameJitterReceived,
                    info.jitter_ms);
-  report->AddValue(StatsReport::kStatsValueNameExpandRate,
+  report->AddValue(StatsReport::kStatsValueNameNetEqExpandRate,
                    talk_base::ToString<float>(info.expand_rate));
   report->AddValue(StatsReport::kStatsValueNamePacketsReceived,
                    info.packets_rcvd);
@@ -570,14 +569,6 @@ std::string StatsCollector::AddOneCertificateReport(
 
   talk_base::scoped_ptr<talk_base::SSLFingerprint> ssl_fingerprint(
       talk_base::SSLFingerprint::Create(digest_algorithm, cert));
-
-  // SSLFingerprint::Create can fail if the algorithm returned by
-  // SSLCertificate::GetSignatureDigestAlgorithm is not supported by the
-  // implementation of SSLCertificate::ComputeDigest.  This currently happens
-  // with MD5- and SHA-224-signed certificates when linked to libNSS.
-  if (!ssl_fingerprint)
-    return std::string();
-
   std::string fingerprint = ssl_fingerprint->GetRfc4572Fingerprint();
 
   talk_base::Buffer der_buffer;

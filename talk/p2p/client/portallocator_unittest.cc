@@ -53,8 +53,8 @@ using talk_base::Thread;
 static const SocketAddress kClientAddr("11.11.11.11", 0);
 static const SocketAddress kClientIPv6Addr(
     "2401:fa00:4:1000:be30:5bff:fee5:c3", 0);
-static const SocketAddress kClientAddr2("22.22.22.22", 0);
 static const SocketAddress kNatAddr("77.77.77.77", talk_base::NAT_SERVER_PORT);
+static const SocketAddress kRemoteClientAddr("22.22.22.22", 0);
 static const SocketAddress kStunAddr("99.99.99.1", cricket::STUN_SERVER_PORT);
 static const SocketAddress kRelayUdpIntAddr("99.99.99.2", 5000);
 static const SocketAddress kRelayUdpExtAddr("99.99.99.3", 5001);
@@ -490,23 +490,6 @@ TEST_F(PortAllocatorTest, TestGetAllPortsNoUdpAllowed) {
       cricket::ICE_CANDIDATE_COMPONENT_RTP, "relay", "udp", kRelayUdpExtAddr);
   // Stun Timeout is 9sec.
   EXPECT_TRUE_WAIT(candidate_allocation_done_, 9000);
-}
-
-TEST_F(PortAllocatorTest, TestCandidatePriorityOfMultipleInterfaces) {
-  AddInterface(kClientAddr);
-  AddInterface(kClientAddr2);
-  // Allocating only host UDP ports. This is done purely for testing
-  // convenience.
-  allocator().set_flags(cricket::PORTALLOCATOR_DISABLE_TCP |
-                        cricket::PORTALLOCATOR_DISABLE_STUN |
-                        cricket::PORTALLOCATOR_DISABLE_RELAY);
-  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
-  session_->StartGettingPorts();
-  EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
-  ASSERT_EQ(2U, candidates_.size());
-  EXPECT_EQ(2U, ports_.size());
-  // Candidates priorities should be different.
-  EXPECT_NE(candidates_[0].priority(), candidates_[1].priority());
 }
 
 // Test to verify ICE restart process.

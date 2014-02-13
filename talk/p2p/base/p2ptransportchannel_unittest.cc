@@ -1559,11 +1559,8 @@ TEST_F(P2PTransportChannelMultihomedTest, DISABLED_TestBasic) {
 // Test that we can quickly switch links if an interface goes down.
 TEST_F(P2PTransportChannelMultihomedTest, TestFailover) {
   AddAddress(0, kPublicAddrs[0]);
-  // Adding alternate address will make sure |kPublicAddrs| has the higher
-  // priority than others. This is due to FakeNetwork::AddInterface method.
-  AddAddress(1, kAlternateAddrs[1]);
   AddAddress(1, kPublicAddrs[1]);
-
+  AddAddress(1, kAlternateAddrs[1]);
   // Use only local ports for simplicity.
   SetAllocatorFlags(0, kOnlyLocalPorts);
   SetAllocatorFlags(1, kOnlyLocalPorts);

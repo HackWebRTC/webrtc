@@ -183,8 +183,7 @@ void VideoAdapter::SetInputFormat(const VideoFormat& format) {
   output_format_.interval = talk_base::_max(
       output_format_.interval, input_format_.interval);
   if (old_input_interval != input_format_.interval) {
-    LOG(LS_INFO) << "VAdapt input interval changed from "
-      << old_input_interval << " to " << input_format_.interval;
+    LOG(LS_INFO) << "VAdapt Input Interval: " << input_format_.interval;
   }
 }
 
@@ -219,8 +218,7 @@ void VideoAdapter::SetOutputFormat(const VideoFormat& format) {
   output_format_.interval = talk_base::_max(
       output_format_.interval, input_format_.interval);
   if (old_output_interval != output_format_.interval) {
-    LOG(LS_INFO) << "VAdapt output interval changed from "
-      << old_output_interval << " to " << output_format_.interval;
+    LOG(LS_INFO) << "VAdapt Output Interval: " << output_format_.interval;
   }
 }
 
@@ -285,12 +283,16 @@ bool VideoAdapter::AdaptFrame(const VideoFrame* in_frame,
   }
   if (should_drop) {
     // Show VAdapt log every 90 frames dropped. (3 seconds)
-    if ((frames_in_ - frames_out_) % 90 == 0) {
+    // TODO(fbarchard): Consider GetLogSeverity() to change interval to less
+    // for LS_VERBOSE and more for LS_INFO.
+    bool show = (frames_in_ - frames_out_) % 90 == 0;
+
+    if (show) {
       // TODO(fbarchard): Reduce to LS_VERBOSE when adapter info is not needed
       // in default calls.
-      LOG(LS_INFO) << "VAdapt Drop Frame: scaled " << frames_scaled_
-                   << " / out " << frames_out_
-                   << " / in " << frames_in_
+      LOG(LS_INFO) << "VAdapt Drop Frame: " << frames_scaled_
+                   << " / " << frames_out_
+                   << " / " << frames_in_
                    << " Changes: " << adaption_changes_
                    << " Input: " << in_frame->GetWidth()
                    << "x" << in_frame->GetHeight()
@@ -342,9 +344,9 @@ bool VideoAdapter::AdaptFrame(const VideoFrame* in_frame,
   if (show) {
     // TODO(fbarchard): Reduce to LS_VERBOSE when adapter info is not needed
     // in default calls.
-    LOG(LS_INFO) << "VAdapt Frame: scaled " << frames_scaled_
-                 << " / out " << frames_out_
-                 << " / in " << frames_in_
+    LOG(LS_INFO) << "VAdapt Frame: " << frames_scaled_
+                 << " / " << frames_out_
+                 << " / " << frames_in_
                  << " Changes: " << adaption_changes_
                  << " Input: " << in_frame->GetWidth()
                  << "x" << in_frame->GetHeight()

@@ -541,8 +541,6 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
       case OPT_DSCP:
         LOG(LS_WARNING) << "Socket::OPT_DSCP not supported.";
         return -1;
-      case OPT_RTP_SENDTIME_EXTN_ID:
-        return -1;  // No logging is necessary as this not a OS socket option.
       default:
         ASSERT(false);
         return -1;

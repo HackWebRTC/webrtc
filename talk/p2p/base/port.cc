@@ -258,7 +258,7 @@ void Port::AddAddress(const talk_base::SocketAddress& address,
   c.set_type(type);
   c.set_protocol(protocol);
   c.set_address(address);
-  c.set_priority(c.GetPriority(type_preference, network_->preference()));
+  c.set_priority(c.GetPriority(type_preference));
   c.set_username(username_fragment());
   c.set_password(password_);
   c.set_network_name(network_->name());

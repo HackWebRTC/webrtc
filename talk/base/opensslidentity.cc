@@ -32,6 +32,7 @@
 // Must be included first before openssl headers.
 #include "talk/base/win32.h"  // NOLINT
 
+#include <openssl/ssl.h>
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/pem.h>
@@ -42,7 +43,6 @@
 #include "talk/base/checks.h"
 #include "talk/base/helpers.h"
 #include "talk/base/logging.h"
-#include "talk/base/openssl.h"
 #include "talk/base/openssldigest.h"
 
 namespace talk_base {
@@ -66,6 +66,15 @@ static const int CERTIFICATE_WINDOW = -60*60*24;
 static EVP_PKEY* MakeKey() {
   LOG(LS_INFO) << "Making key pair";
   EVP_PKEY* pkey = EVP_PKEY_new();
+#if OPENSSL_VERSION_NUMBER < 0x00908000l
+  // Only RSA_generate_key is available. Use that.
+  RSA* rsa = RSA_generate_key(KEY_LENGTH, 0x10001, NULL, NULL);
+  if (!EVP_PKEY_assign_RSA(pkey, rsa)) {
+    EVP_PKEY_free(pkey);
+    RSA_free(rsa);
+    return NULL;
+  }
+#else
   // RSA_generate_key is deprecated. Use _ex version.
   BIGNUM* exponent = BN_new();
   RSA* rsa = RSA_new();
@@ -80,6 +89,7 @@ static EVP_PKEY* MakeKey() {
   }
   // ownership of rsa struct was assigned, don't free it.
   BN_free(exponent);
+#endif
   LOG(LS_INFO) << "Returning key pair";
   return pkey;
 }

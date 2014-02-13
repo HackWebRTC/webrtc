@@ -109,12 +109,10 @@ class FakeNetworkManager : public NetworkManagerBase,
         prefix_length = kFakeIPv6NetworkPrefixLength;
       }
       IPAddress prefix = TruncateIP(it->ipaddr(), prefix_length);
-      std::string key = MakeNetworkKey(it->hostname(), prefix, prefix_length);
       scoped_ptr<Network> net(new Network(it->hostname(),
                                           it->hostname(),
                                           prefix,
-                                          prefix_length,
-                                          key));
+                                          prefix_length));
       net->AddIP(it->ipaddr());
       networks.push_back(net.release());
     }
