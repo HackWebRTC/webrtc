@@ -27,8 +27,8 @@ class VCMExpFilter;
 const float kOveruseStdDevMs = 15.0f;
 const float kNormalUseStdDevMs = 7.0f;
 #elif WEBRTC_MAC
-const float kOveruseStdDevMs = 22.0f;
-const float kNormalUseStdDevMs = 12.0f;
+const float kOveruseStdDevMs = 24.0f;
+const float kNormalUseStdDevMs = 14.0f;
 #else
 const float kOveruseStdDevMs = 17.0f;
 const float kNormalUseStdDevMs = 10.0f;
