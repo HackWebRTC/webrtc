@@ -143,9 +143,6 @@
 #define WEBRTC_SPL_RSHIFT_U32(x, c)     ((uint32_t)(x) >> (c))
 #define WEBRTC_SPL_LSHIFT_U32(x, c)     ((uint32_t)(x) << (c))
 
-#define WEBRTC_SPL_VNEW(t, n)           (t *) malloc (sizeof (t) * (n))
-#define WEBRTC_SPL_FREE                 free
-
 #define WEBRTC_SPL_RAND(a) \
     ((int16_t)(WEBRTC_SPL_MUL_16_16_RSFT((a), 18816, 7) & 0x00007fff))
 

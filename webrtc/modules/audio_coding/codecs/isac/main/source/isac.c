@@ -15,20 +15,21 @@
  *
  */
 
-#include "isac.h"
-#include "bandwidth_estimator.h"
-#include "crc.h"
-#include "entropy_coding.h"
-#include "codec.h"
-#include "structs.h"
-#include "signal_processing_library.h"
-#include "lpc_shape_swb16_tables.h"
-#include "os_specific_inline.h"
+#include "webrtc/modules/audio_coding/codecs/isac/main/interface/isac.h"
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/modules/audio_coding/codecs/isac/main/source/bandwidth_estimator.h"
+#include "webrtc/modules/audio_coding/codecs/isac/main/source/codec.h"
+#include "webrtc/modules/audio_coding/codecs/isac/main/source/crc.h"
+#include "webrtc/modules/audio_coding/codecs/isac/main/source/entropy_coding.h"
+#include "webrtc/modules/audio_coding/codecs/isac/main/source/lpc_shape_swb16_tables.h"
+#include "webrtc/modules/audio_coding/codecs/isac/main/source/os_specific_inline.h"
+#include "webrtc/modules/audio_coding/codecs/isac/main/source/structs.h"
 
 #define BIT_MASK_DEC_INIT 0x0001
 #define BIT_MASK_ENC_INIT 0x0002
@@ -273,7 +274,7 @@ int16_t WebRtcIsac_Create(ISACStruct** ISAC_main_inst) {
   ISACMainStruct* instISAC;
 
   if (ISAC_main_inst != NULL) {
-    instISAC = (ISACMainStruct*)WEBRTC_SPL_VNEW(ISACMainStruct, 1);
+    instISAC = (ISACMainStruct*)malloc(sizeof(ISACMainStruct));
     *ISAC_main_inst = (ISACStruct*)instISAC;
     if (*ISAC_main_inst != NULL) {
       instISAC->errorCode = 0;
@@ -306,7 +307,7 @@ int16_t WebRtcIsac_Create(ISACStruct** ISAC_main_inst) {
  */
 int16_t WebRtcIsac_Free(ISACStruct* ISAC_main_inst) {
   ISACMainStruct* instISAC = (ISACMainStruct*)ISAC_main_inst;
-  WEBRTC_SPL_FREE(instISAC);
+  free(instISAC);
   return 0;
 }
 
