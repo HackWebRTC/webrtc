@@ -141,12 +141,11 @@ void AsyncTCPSocketBase::SetError(int error) {
   return socket_->SetError(error);
 }
 
-// TODO(mallinath) - Add support of setting DSCP code on AsyncSocket.
 int AsyncTCPSocketBase::SendTo(const void *pv, size_t cb,
                                const SocketAddress& addr,
-                               DiffServCodePoint dscp) {
+                               const talk_base::PacketOptions& options) {
   if (addr == GetRemoteAddress())
-    return Send(pv, cb, dscp);
+    return Send(pv, cb, options);
 
   ASSERT(false);
   socket_->SetError(ENOTCONN);
@@ -263,8 +262,8 @@ AsyncTCPSocket::AsyncTCPSocket(AsyncSocket* socket, bool listen)
     : AsyncTCPSocketBase(socket, listen, kBufSize) {
 }
 
-// TODO(mallinath) - Add support of setting DSCP code on AsyncSocket.
-int AsyncTCPSocket::Send(const void *pv, size_t cb, DiffServCodePoint dscp) {
+int AsyncTCPSocket::Send(const void *pv, size_t cb,
+                         const talk_base::PacketOptions& options) {
   if (cb > kBufSize) {
     SetError(EMSGSIZE);
     return -1;

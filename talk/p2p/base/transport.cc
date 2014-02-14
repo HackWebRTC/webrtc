@@ -53,6 +53,8 @@ enum {
   MSG_CONNECTING,
   MSG_CANDIDATEALLOCATIONCOMPLETE,
   MSG_ROLECONFLICT,
+  MSG_COMPLETED,
+  MSG_FAILED,
 };
 
 struct ChannelParams : public talk_base::MessageData {
@@ -226,6 +228,8 @@ TransportChannelImpl* Transport::CreateChannel_w(int component) {
   impl->SignalCandidatesAllocationDone.connect(
       this, &Transport::OnChannelCandidatesAllocationDone);
   impl->SignalRoleConflict.connect(this, &Transport::OnRoleConflict);
+  impl->SignalConnectionRemoved.connect(
+      this, &Transport::OnChannelConnectionRemoved);
 
   if (connect_requested_) {
     impl->Connect();
@@ -620,6 +624,50 @@ void Transport::OnRoleConflict(TransportChannelImpl* channel) {
   signaling_thread_->Post(this, MSG_ROLECONFLICT);
 }
 
+void Transport::OnChannelConnectionRemoved(TransportChannelImpl* channel) {
+  ASSERT(worker_thread()->IsCurrent());
+  // Determine if the Transport should move to Completed or Failed.  These
+  // states are only available in the Controlling ICE role.
+  if (channel->GetIceRole() != ICEROLE_CONTROLLING) {
+    return;
+  }
+
+  ChannelMap::iterator iter = channels_.find(channel->component());
+  ASSERT(iter != channels_.end());
+  // Completed and Failed can only occur after candidate allocation has stopped.
+  if (!iter->second.candidates_allocated()) {
+    return;
+  }
+
+  size_t connections = channel->GetConnectionCount();
+  if (connections == 0) {
+    // A Transport has failed if any of its channels have no remaining
+    // connections.
+    signaling_thread_->Post(this, MSG_FAILED);
+  } else if (connections == 1 && completed()) {
+    signaling_thread_->Post(this, MSG_COMPLETED);
+  }
+}
+
+bool Transport::completed() const {
+  // A Transport's ICE process is completed if all of its channels are writable,
+  // have finished allocating candidates, and have pruned all but one of their
+  // connections.
+  if (!all_channels_writable())
+    return false;
+
+  ChannelMap::const_iterator iter;
+  for (iter = channels_.begin(); iter != channels_.end(); ++iter) {
+    const TransportChannelImpl* channel = iter->second.get();
+    if (!(channel->GetConnectionCount() == 1 &&
+          channel->GetIceRole() == ICEROLE_CONTROLLING &&
+          iter->second.candidates_allocated())) {
+      return false;
+    }
+  }
+  return true;
+}
+
 void Transport::SetIceRole_w(IceRole role) {
   talk_base::CritScope cs(&crit_);
   ice_role_ = role;
@@ -819,6 +867,12 @@ void Transport::OnMessage(talk_base::Message* msg) {
       break;
     case MSG_ROLECONFLICT:
       SignalRoleConflict();
+      break;
+    case MSG_COMPLETED:
+      SignalCompleted(this);
+      break;
+    case MSG_FAILED:
+      SignalFailed(this);
       break;
   }
 }

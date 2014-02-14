@@ -173,7 +173,7 @@ class TestPort : public Port {
   }
   virtual int SendTo(
       const void* data, size_t size, const talk_base::SocketAddress& addr,
-      talk_base::DiffServCodePoint dscp, bool payload) {
+      const talk_base::PacketOptions& options, bool payload) {
     if (!payload) {
       IceMessage* msg = new IceMessage;
       ByteBuffer* buf = new ByteBuffer(static_cast<const char*>(data), size);
@@ -842,11 +842,11 @@ class FakeAsyncPacketSocket : public AsyncPacketSocket {
 
   // Send a packet.
   virtual int Send(const void *pv, size_t cb,
-                   talk_base::DiffServCodePoint dscp) {
+                   const talk_base::PacketOptions& options) {
     return static_cast<int>(cb);
   }
   virtual int SendTo(const void *pv, size_t cb, const SocketAddress& addr,
-                     talk_base::DiffServCodePoint dscp) {
+                     const talk_base::PacketOptions& options) {
     return static_cast<int>(cb);
   }
   virtual int Close() {
@@ -2297,16 +2297,15 @@ TEST_F(PortTest, TestWritableState) {
   // Data should be unsendable until the connection is accepted.
   char data[] = "abcd";
   int data_size = ARRAY_SIZE(data);
-  EXPECT_EQ(SOCKET_ERROR,
-            ch1.conn()->Send(data, data_size, talk_base::DSCP_NO_CHANGE));
+  talk_base::PacketOptions options;
+  EXPECT_EQ(SOCKET_ERROR, ch1.conn()->Send(data, data_size, options));
 
   // Accept the connection to return the binding response, transition to
   // writable, and allow data to be sent.
   ch2.AcceptConnection();
   EXPECT_EQ_WAIT(Connection::STATE_WRITABLE, ch1.conn()->write_state(),
                  kTimeout);
-  EXPECT_EQ(data_size,
-            ch1.conn()->Send(data, data_size, talk_base::DSCP_NO_CHANGE));
+  EXPECT_EQ(data_size, ch1.conn()->Send(data, data_size, options));
 
   // Ask the connection to update state as if enough time has passed to lose
   // full writability and 5 pings went unresponded to. We'll accomplish the
@@ -2319,8 +2318,7 @@ TEST_F(PortTest, TestWritableState) {
   EXPECT_EQ(Connection::STATE_WRITE_UNRELIABLE, ch1.conn()->write_state());
 
   // Data should be able to be sent in this state.
-  EXPECT_EQ(data_size,
-            ch1.conn()->Send(data, data_size, talk_base::DSCP_NO_CHANGE));
+  EXPECT_EQ(data_size, ch1.conn()->Send(data, data_size, options));
 
   // And now allow the other side to process the pings and send binding
   // responses.
@@ -2337,8 +2335,7 @@ TEST_F(PortTest, TestWritableState) {
   EXPECT_EQ(Connection::STATE_WRITE_TIMEOUT, ch1.conn()->write_state());
 
   // Now that the connection has completely timed out, data send should fail.
-  EXPECT_EQ(SOCKET_ERROR,
-            ch1.conn()->Send(data, data_size, talk_base::DSCP_NO_CHANGE));
+  EXPECT_EQ(SOCKET_ERROR, ch1.conn()->Send(data, data_size, options));
 
   ch1.Stop();
   ch2.Stop();

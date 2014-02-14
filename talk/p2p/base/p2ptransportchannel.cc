@@ -795,7 +795,7 @@ int P2PTransportChannel::SetOption(talk_base::Socket::Option opt, int value) {
 
 // Send data to the other side, using our best connection.
 int P2PTransportChannel::SendPacket(const char *data, size_t len,
-                                    talk_base::DiffServCodePoint dscp,
+                                    const talk_base::PacketOptions& options,
                                     int flags) {
   ASSERT(worker_thread_ == talk_base::Thread::Current());
   if (flags != 0) {
@@ -807,7 +807,7 @@ int P2PTransportChannel::SendPacket(const char *data, size_t len,
     return -1;
   }
 
-  int sent = best_connection_->Send(data, len, dscp);
+  int sent = best_connection_->Send(data, len, options);
   if (sent <= 0) {
     ASSERT(sent < 0);
     error_ = best_connection_->GetError();
@@ -1010,8 +1010,10 @@ void P2PTransportChannel::UpdateChannelState() {
 
   bool readable = false;
   for (uint32 i = 0; i < connections_.size(); ++i) {
-    if (connections_[i]->read_state() == Connection::STATE_READABLE)
+    if (connections_[i]->read_state() == Connection::STATE_READABLE) {
       readable = true;
+      break;
+    }
   }
   set_readable(readable);
 }
@@ -1224,6 +1226,8 @@ void P2PTransportChannel::OnConnectionDestroyed(Connection* connection) {
     SwitchBestConnectionTo(NULL);
     RequestSort();
   }
+
+  SignalConnectionRemoved(this);
 }
 
 // When a port is destroyed remove it from our list of ports to use for

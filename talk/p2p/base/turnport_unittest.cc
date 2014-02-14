@@ -272,8 +272,8 @@ class TurnPortTest : public testing::Test,
       for (size_t j = 0; j < i + 1; ++j) {
         buf[j] = 0xFF - j;
       }
-      conn1->Send(buf, i + 1, talk_base::DSCP_NO_CHANGE);
-      conn2->Send(buf, i + 1, talk_base::DSCP_NO_CHANGE);
+      conn1->Send(buf, i + 1, options);
+      conn2->Send(buf, i + 1, options);
       main_->ProcessMessages(0);
     }
 
@@ -305,6 +305,7 @@ class TurnPortTest : public testing::Test,
   bool test_finish_;
   std::vector<talk_base::Buffer> turn_packets_;
   std::vector<talk_base::Buffer> udp_packets_;
+  talk_base::PacketOptions options;
 };
 
 // Do a normal TURN allocation.

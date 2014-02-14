@@ -25,7 +25,6 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/base/dscp.h"
 #include "talk/base/testclient.h"
 #include "talk/base/thread.h"
 #include "talk/base/timeutils.h"
@@ -59,12 +58,14 @@ bool TestClient::CheckConnState(AsyncPacketSocket::State state) {
 }
 
 int TestClient::Send(const char* buf, size_t size) {
-  return socket_->Send(buf, size, DSCP_NO_CHANGE);
+  talk_base::PacketOptions options;
+  return socket_->Send(buf, size, options);
 }
 
 int TestClient::SendTo(const char* buf, size_t size,
                        const SocketAddress& dest) {
-  return socket_->SendTo(buf, size, dest, DSCP_NO_CHANGE);
+  talk_base::PacketOptions options;
+  return socket_->SendTo(buf, size, dest, options);
 }
 
 TestClient::Packet* TestClient::NextPacket() {

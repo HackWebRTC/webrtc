@@ -1154,12 +1154,20 @@ void WebRtcSession::OnTransportWritable(cricket::Transport* transport) {
   // TODO(bemasc): Expose more API from Transport to detect when
   // candidate selection starts or stops, due to success or failure.
   if (transport->all_channels_writable()) {
+    // By the time |SignalTransportWritable| arrives, the excess channels may
+    // already have been pruned, so that the Transport is Completed.  The
+    // specification requires that transitions from Checking to Completed pass
+    // through Connected.  This check enforces that requirement.
+    // (Direct transitions from Connected and Disconnected to Completed are
+    // allowed.)
     if (ice_connection_state_ ==
-            PeerConnectionInterface::kIceConnectionChecking ||
-        ice_connection_state_ ==
-            PeerConnectionInterface::kIceConnectionDisconnected) {
+            PeerConnectionInterface::kIceConnectionChecking) {
       SetIceConnectionState(PeerConnectionInterface::kIceConnectionConnected);
     }
+
+    SetIceConnectionState(transport->completed() ?
+        PeerConnectionInterface::kIceConnectionCompleted :
+        PeerConnectionInterface::kIceConnectionConnected);
   } else if (transport->HasChannels()) {
     // If the current state is Connected or Completed, then there were writable
     // channels but now there are not, so the next state must be Disconnected.
@@ -1171,6 +1179,16 @@ void WebRtcSession::OnTransportWritable(cricket::Transport* transport) {
           PeerConnectionInterface::kIceConnectionDisconnected);
     }
   }
+}
+
+void WebRtcSession::OnTransportCompleted(cricket::Transport* transport) {
+  ASSERT(signaling_thread()->IsCurrent());
+  SetIceConnectionState(PeerConnectionInterface::kIceConnectionCompleted);
+}
+
+void WebRtcSession::OnTransportFailed(cricket::Transport* transport) {
+  ASSERT(signaling_thread()->IsCurrent());
+  SetIceConnectionState(PeerConnectionInterface::kIceConnectionFailed);
 }
 
 void WebRtcSession::OnTransportProxyCandidatesReady(

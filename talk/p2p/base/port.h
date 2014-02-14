@@ -459,7 +459,7 @@ class Connection : public talk_base::MessageHandler,
   // the interface of AsyncPacketSocket, which may use UDP or TCP under the
   // covers.
   virtual int Send(const void* data, size_t size,
-                   talk_base::DiffServCodePoint dscp) = 0;
+                   const talk_base::PacketOptions& options) = 0;
 
   // Error if Send() returns < 0
   virtual int GetError() = 0;
@@ -591,7 +591,7 @@ class ProxyConnection : public Connection {
   ProxyConnection(Port* port, size_t index, const Candidate& candidate);
 
   virtual int Send(const void* data, size_t size,
-                   talk_base::DiffServCodePoint dscp);
+                   const talk_base::PacketOptions& options);
   virtual int GetError() { return error_; }
 
  private:

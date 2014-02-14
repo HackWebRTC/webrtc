@@ -237,6 +237,10 @@ class Transport : public talk_base::MessageHandler,
   sigslot::signal1<Transport*> SignalReadableState;
   sigslot::signal1<Transport*> SignalWritableState;
 
+  bool completed() const;
+  sigslot::signal1<Transport*> SignalCompleted;
+  sigslot::signal1<Transport*> SignalFailed;
+
   // Returns whether the client has requested the channels to connect.
   bool connect_requested() const { return connect_requested_; }
 
@@ -441,6 +445,8 @@ class Transport : public talk_base::MessageHandler,
   void OnChannelCandidatesAllocationDone(TransportChannelImpl* channel);
   // Called when there is ICE role change.
   void OnRoleConflict(TransportChannelImpl* channel);
+  // Called when the channel removes a connection.
+  void OnChannelConnectionRemoved(TransportChannelImpl* channel);
 
   // Dispatches messages to the appropriate handler (below).
   void OnMessage(talk_base::Message* msg);

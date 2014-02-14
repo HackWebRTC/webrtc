@@ -32,7 +32,6 @@
 
 #include "talk/base/base64.h"
 #include "talk/base/common.h"
-#include "talk/base/dscp.h"
 #include "talk/base/gunit.h"
 #include "talk/base/helpers.h"
 #include "talk/base/logging.h"
@@ -828,10 +827,11 @@ struct ChannelHandler : sigslot::has_slots<> {
   }
 
   void Send(const char* data, size_t size) {
+    talk_base::PacketOptions options;
     std::string data_with_id(name);
     data_with_id += data;
     int result = channel->SendPacket(data_with_id.c_str(), data_with_id.size(),
-                                     talk_base::DSCP_NO_CHANGE, 0);
+                                     options, 0);
     EXPECT_EQ(static_cast<int>(data_with_id.size()), result);
   }
 

@@ -122,8 +122,9 @@ class AsyncStunTCPSocketTest : public testing::Test,
   }
 
   bool Send(const void* data, size_t len) {
+    talk_base::PacketOptions options;
     size_t ret = send_socket_->Send(
-        reinterpret_cast<const char*>(data), len, talk_base::DSCP_NO_CHANGE);
+        reinterpret_cast<const char*>(data), len, options);
     vss_->ProcessMessagesUntilIdle();
     return (ret == len);
   }

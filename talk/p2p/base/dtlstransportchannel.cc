@@ -71,8 +71,9 @@ talk_base::StreamResult StreamInterfaceChannel::Write(const void* data,
                                                       int* error) {
   // Always succeeds, since this is an unreliable transport anyway.
   // TODO: Should this block if channel_'s temporarily unwritable?
-  channel_->SendPacket(
-      static_cast<const char*>(data), data_len, talk_base::DSCP_NO_CHANGE);
+  talk_base::PacketOptions packet_options;
+  channel_->SendPacket(static_cast<const char*>(data), data_len,
+                       packet_options);
   if (written) {
     *written = data_len;
   }
@@ -124,6 +125,8 @@ DtlsTransportChannelWrapper::DtlsTransportChannelWrapper(
       &DtlsTransportChannelWrapper::OnRoleConflict);
   channel_->SignalRouteChange.connect(this,
       &DtlsTransportChannelWrapper::OnRouteChange);
+  channel_->SignalConnectionRemoved.connect(this,
+      &DtlsTransportChannelWrapper::OnConnectionRemoved);
 }
 
 DtlsTransportChannelWrapper::~DtlsTransportChannelWrapper() {
@@ -339,9 +342,9 @@ bool DtlsTransportChannelWrapper::GetSrtpCipher(std::string* cipher) {
 
 
 // Called from upper layers to send a media packet.
-int DtlsTransportChannelWrapper::SendPacket(const char* data, size_t size,
-                                            talk_base::DiffServCodePoint dscp,
-                                            int flags) {
+int DtlsTransportChannelWrapper::SendPacket(
+    const char* data, size_t size,
+    const talk_base::PacketOptions& options, int flags) {
   int result = -1;
 
   switch (dtls_state_) {
@@ -365,7 +368,7 @@ int DtlsTransportChannelWrapper::SendPacket(const char* data, size_t size,
           break;
         }
 
-        result = channel_->SendPacket(data, size, dscp);
+        result = channel_->SendPacket(data, size, options);
       } else {
         result = (dtls_->WriteAll(data, size, NULL, NULL) ==
           talk_base::SR_SUCCESS) ? static_cast<int>(size) : -1;
@@ -373,7 +376,7 @@ int DtlsTransportChannelWrapper::SendPacket(const char* data, size_t size,
       break;
       // Not doing DTLS.
     case STATE_NONE:
-      result = channel_->SendPacket(data, size, dscp);
+      result = channel_->SendPacket(data, size, options);
       break;
 
     case STATE_CLOSED:  // Can't send anything when we're closed.
@@ -619,6 +622,12 @@ void DtlsTransportChannelWrapper::OnRouteChange(
     TransportChannel* channel, const Candidate& candidate) {
   ASSERT(channel == channel_);
   SignalRouteChange(this, candidate);
+}
+
+void DtlsTransportChannelWrapper::OnConnectionRemoved(
+    TransportChannelImpl* channel) {
+  ASSERT(channel == channel_);
+  SignalConnectionRemoved(this);
 }
 
 }  // namespace cricket

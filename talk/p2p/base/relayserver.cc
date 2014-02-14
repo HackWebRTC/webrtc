@@ -51,7 +51,8 @@ static const uint32 kMessageAcceptConnection = 1;
 // Calls SendTo on the given socket and logs any bad results.
 void Send(talk_base::AsyncPacketSocket* socket, const char* bytes, size_t size,
           const talk_base::SocketAddress& addr) {
-  int result = socket->SendTo(bytes, size, addr, talk_base::DSCP_NO_CHANGE);
+  talk_base::PacketOptions options;
+  int result = socket->SendTo(bytes, size, addr, options);
   if (result < static_cast<int>(size)) {
     LOG(LS_ERROR) << "SendTo wrote only " << result << " of " << size
                   << " bytes";

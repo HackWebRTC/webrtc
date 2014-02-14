@@ -79,6 +79,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   virtual void SetIceRole(IceRole role);
   virtual IceRole GetIceRole() const { return ice_role_; }
   virtual void SetIceTiebreaker(uint64 tiebreaker);
+  virtual size_t GetConnectionCount() const { return connections_.size(); }
   virtual bool GetIceProtocolType(IceProtocolType* type) const;
   virtual void SetIceProtocolType(IceProtocolType type);
   virtual void SetIceCredentials(const std::string& ice_ufrag,
@@ -93,7 +94,7 @@ class P2PTransportChannel : public TransportChannelImpl,
 
   // From TransportChannel:
   virtual int SendPacket(const char *data, size_t len,
-                         talk_base::DiffServCodePoint dscp, int flags);
+                         const talk_base::PacketOptions& options, int flags);
   virtual int SetOption(talk_base::Socket::Option opt, int value);
   virtual int GetError() { return error_; }
   virtual bool GetStats(std::vector<ConnectionInfo>* stats);

@@ -48,7 +48,7 @@ class AsyncStunTCPSocket : public talk_base::AsyncTCPSocketBase {
   virtual ~AsyncStunTCPSocket() {}
 
   virtual int Send(const void* pv, size_t cb,
-                   talk_base::DiffServCodePoint dscp);
+                   const talk_base::PacketOptions& options);
   virtual void ProcessInput(char* data, size_t* len);
   virtual void HandleIncomingConnection(talk_base::AsyncSocket* socket);
 

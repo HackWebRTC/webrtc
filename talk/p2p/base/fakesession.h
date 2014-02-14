@@ -73,7 +73,8 @@ class FakeTransportChannel : public TransportChannelImpl,
         ice_proto_(ICEPROTO_HYBRID),
         remote_ice_mode_(ICEMODE_FULL),
         dtls_fingerprint_("", NULL, 0),
-        ssl_role_(talk_base::SSL_CLIENT) {
+        ssl_role_(talk_base::SSL_CLIENT),
+        connection_count_(0) {
   }
   ~FakeTransportChannel() {
     Reset();
@@ -100,6 +101,7 @@ class FakeTransportChannel : public TransportChannelImpl,
 
   virtual void SetIceRole(IceRole role) { role_ = role; }
   virtual IceRole GetIceRole() const { return role_; }
+  virtual size_t GetConnectionCount() const { return connection_count_; }
   virtual void SetIceTiebreaker(uint64 tiebreaker) { tiebreaker_ = tiebreaker; }
   virtual bool GetIceProtocolType(IceProtocolType* type) const {
     *type = ice_proto_;
@@ -174,8 +176,15 @@ class FakeTransportChannel : public TransportChannelImpl,
     }
   }
 
+  void SetConnectionCount(size_t connection_count) {
+    size_t old_connection_count = connection_count_;
+    connection_count_ = connection_count;
+    if (connection_count_ < old_connection_count)
+      SignalConnectionRemoved(this);
+  }
+
   virtual int SendPacket(const char* data, size_t len,
-                         talk_base::DiffServCodePoint dscp, int flags) {
+                         const talk_base::PacketOptions& options, int flags) {
     if (state_ != STATE_CONNECTED) {
       return -1;
     }
@@ -313,6 +322,7 @@ class FakeTransportChannel : public TransportChannelImpl,
   IceMode remote_ice_mode_;
   talk_base::SSLFingerprint dtls_fingerprint_;
   talk_base::SSLRole ssl_role_;
+  size_t connection_count_;
 };
 
 // Fake transport class, which can be passed to anything that needs a Transport.

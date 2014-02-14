@@ -969,12 +969,13 @@ class P2PTestConductor : public testing::Test {
     }
 
     if (audio_frame_count != -1 || video_frame_count != -1) {
-      // Audio or video is expected to flow, so both sides should get to the
-      // Connected state.
+      // Audio or video is expected to flow, so both clients should reach the
+      // Connected state, and the offerer (ICE controller) should proceed to
+      // Completed.
       // Note: These tests have been observed to fail under heavy load at
       // shorter timeouts, so they may be flaky.
       EXPECT_EQ_WAIT(
-          webrtc::PeerConnectionInterface::kIceConnectionConnected,
+          webrtc::PeerConnectionInterface::kIceConnectionCompleted,
           initiating_client_->ice_connection_state(),
           kMaxWaitForFramesMs);
       EXPECT_EQ_WAIT(

@@ -75,14 +75,14 @@ SocketAddress AsyncUDPSocket::GetRemoteAddress() const {
   return socket_->GetRemoteAddress();
 }
 
-// TODO(mallinath) - Add support of setting DSCP code on AsyncSocket.
-int AsyncUDPSocket::Send(const void *pv, size_t cb, DiffServCodePoint dscp) {
+int AsyncUDPSocket::Send(const void *pv, size_t cb,
+                         const talk_base::PacketOptions& options) {
   return socket_->Send(pv, cb);
 }
 
-// TODO(mallinath) - Add support of setting DSCP code on AsyncSocket.
 int AsyncUDPSocket::SendTo(const void *pv, size_t cb,
-                           const SocketAddress& addr, DiffServCodePoint dscp) {
+                           const SocketAddress& addr,
+                           const talk_base::PacketOptions& options) {
   return socket_->SendTo(pv, cb, addr);
 }
 

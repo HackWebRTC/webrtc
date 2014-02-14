@@ -566,8 +566,8 @@ void TurnServer::SendStun(Connection* conn, StunMessage* msg) {
 
 void TurnServer::Send(Connection* conn,
                       const talk_base::ByteBuffer& buf) {
-  conn->socket()->SendTo(buf.Data(), buf.Length(), conn->src(),
-                         talk_base::DSCP_NO_CHANGE);
+  talk_base::PacketOptions options;
+  conn->socket()->SendTo(buf.Data(), buf.Length(), conn->src(), options);
 }
 
 void TurnServer::OnAllocationDestroyed(Allocation* allocation) {
@@ -940,7 +940,8 @@ void TurnServer::Allocation::SendErrorResponse(const TurnMessage* req, int code,
 
 void TurnServer::Allocation::SendExternal(const void* data, size_t size,
                                   const talk_base::SocketAddress& peer) {
-  external_socket_->SendTo(data, size, peer, talk_base::DSCP_NO_CHANGE);
+  talk_base::PacketOptions options;
+  external_socket_->SendTo(data, size, peer, options);
 }
 
 void TurnServer::Allocation::OnMessage(talk_base::Message* msg) {

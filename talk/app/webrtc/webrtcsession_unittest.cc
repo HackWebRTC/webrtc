@@ -808,13 +808,15 @@ class WebRtcSessionTest : public testing::Test {
 
   // The method sets up a call from the session to itself, in a loopback
   // arrangement.  It also uses a firewall rule to create a temporary
-  // disconnection.  This code is placed as a method so that it can be invoked
+  // disconnection, and then a permanent disconnection.
+  // This code is placed in a method so that it can be invoked
   // by multiple tests with different allocators (e.g. with and without BUNDLE).
   // While running the call, this method also checks if the session goes through
   // the correct sequence of ICE states when a connection is established,
   // broken, and re-established.
   // The Connection state should go:
-  // New -> Checking -> Connected -> Disconnected -> Connected.
+  // New -> Checking -> (Connected) -> Completed -> Disconnected -> Completed
+  //     -> Failed.
   // The Gathering state should go: New -> Gathering -> Completed.
   void TestLoopbackCall() {
     AddInterface(talk_base::SocketAddress(kClientAddrHost1, kClientAddrPort));
@@ -845,10 +847,10 @@ class WebRtcSessionTest : public testing::Test {
     EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionChecking,
                    observer_.ice_connection_state_,
                    kIceCandidatesTimeout);
-    EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionConnected,
+    // The ice connection state is "Connected" too briefly to catch in a test.
+    EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
                    observer_.ice_connection_state_,
                    kIceCandidatesTimeout);
-    // TODO(bemasc): EXPECT(Completed) once the details are standardized.
 
     // Adding firewall rule to block ping requests, which should cause
     // transport channel failure.
@@ -865,10 +867,21 @@ class WebRtcSessionTest : public testing::Test {
     // Session is automatically calling OnSignalingReady after creation of
     // new portallocator session which will allocate new set of candidates.
 
-    // TODO(bemasc): Change this to Completed once the details are standardized.
-    EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionConnected,
+    EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
                    observer_.ice_connection_state_,
                    kIceCandidatesTimeout);
+
+    // Now we block ping requests and wait until the ICE connection transitions
+    // to the Failed state.  This will take at least 30 seconds because it must
+    // wait for the Port to timeout.
+    int port_timeout = 30000;
+    fss_->AddRule(false,
+                  talk_base::FP_ANY,
+                  talk_base::FD_ANY,
+                  talk_base::SocketAddress(kClientAddrHost1, kClientAddrPort));
+    EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionFailed,
+                   observer_.ice_connection_state_,
+                   kIceCandidatesTimeout + port_timeout);
   }
 
   void VerifyTransportType(const std::string& content_name,
@@ -2597,6 +2610,14 @@ TEST_F(WebRtcSessionTest, TestIceStatesBasic) {
   allocator_.set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                        cricket::PORTALLOCATOR_DISABLE_TCP |
                        cricket::PORTALLOCATOR_DISABLE_STUN |
+                       cricket::PORTALLOCATOR_DISABLE_RELAY);
+  TestLoopbackCall();
+}
+
+// Runs the loopback call test with BUNDLE, STUN, and TCP enabled.
+TEST_F(WebRtcSessionTest, TestIceStatesBundle) {
+  allocator_.set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
+                       cricket::PORTALLOCATOR_ENABLE_BUNDLE |
                        cricket::PORTALLOCATOR_DISABLE_RELAY);
   TestLoopbackCall();
 }

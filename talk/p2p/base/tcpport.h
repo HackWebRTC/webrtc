@@ -83,7 +83,7 @@ class TCPPort : public Port {
   // Handles sending using the local TCP socket.
   virtual int SendTo(const void* data, size_t size,
                      const talk_base::SocketAddress& addr,
-                     talk_base::DiffServCodePoint dscp,
+                     const talk_base::PacketOptions& options,
                      bool payload);
 
   // Accepts incoming TCP connection.
@@ -128,7 +128,7 @@ class TCPConnection : public Connection {
   virtual ~TCPConnection();
 
   virtual int Send(const void* data, size_t size,
-                   talk_base::DiffServCodePoint dscp);
+                   const talk_base::PacketOptions& options);
   virtual int GetError();
 
   talk_base::AsyncPacketSocket* socket() { return socket_; }

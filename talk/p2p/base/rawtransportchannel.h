@@ -65,7 +65,7 @@ class RawTransportChannel : public TransportChannelImpl,
 
   // Implementation of normal channel packet sending.
   virtual int SendPacket(const char *data, size_t len,
-                         talk_base::DiffServCodePoint dscp, int flags);
+                         const talk_base::PacketOptions& options, int flags);
   virtual int SetOption(talk_base::Socket::Option opt, int value);
   virtual int GetError();
 
@@ -104,6 +104,7 @@ class RawTransportChannel : public TransportChannelImpl,
   virtual void SetIceUfrag(const std::string& ice_ufrag) {}
   virtual void SetIcePwd(const std::string& ice_pwd) {}
   virtual void SetRemoteIceMode(IceMode mode) {}
+  virtual size_t GetConnectionCount() const { return 1; }
 
   virtual bool GetStats(ConnectionInfos* infos) {
     return false;

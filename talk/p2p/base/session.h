@@ -432,6 +432,14 @@ class BaseSession : public sigslot::has_slots<>,
   virtual void OnTransportReadable(Transport* transport) {
   }
 
+  // Called when a transport has found its steady-state connections.
+  virtual void OnTransportCompleted(Transport* transport) {
+  }
+
+  // Called when a transport has failed permanently.
+  virtual void OnTransportFailed(Transport* transport) {
+  }
+
   // Called when a transport signals that it has new candidates.
   virtual void OnTransportProxyCandidatesReady(TransportProxy* proxy,
                                                const Candidates& candidates) {

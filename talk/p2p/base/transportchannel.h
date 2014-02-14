@@ -83,7 +83,7 @@ class TransportChannel : public sigslot::has_slots<> {
   // Attempts to send the given packet.  The return value is < 0 on failure.
   // TODO: Remove the default argument once channel code is updated.
   virtual int SendPacket(const char* data, size_t len,
-                         talk_base::DiffServCodePoint dscp,
+                         const talk_base::PacketOptions& options,
                          int flags = 0) = 0;
 
   // Sets a socket option on this channel.  Note that not all options are

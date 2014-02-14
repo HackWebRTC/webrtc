@@ -204,7 +204,9 @@ void PeerConnectionTestWrapper::WaitForConnection() {
 
 bool PeerConnectionTestWrapper::CheckForConnection() {
   return (peer_connection_->ice_connection_state() ==
-          PeerConnectionInterface::kIceConnectionConnected);
+          PeerConnectionInterface::kIceConnectionConnected) ||
+         (peer_connection_->ice_connection_state() ==
+          PeerConnectionInterface::kIceConnectionCompleted);
 }
 
 void PeerConnectionTestWrapper::WaitForAudio() {

@@ -126,8 +126,8 @@ void NATServer::OnInternalPacket(
   iter->second->WhitelistInsert(dest_addr);
 
   // Send the packet to its intended destination.
-  iter->second->socket->SendTo(buf + length, size - length, dest_addr,
-                               DSCP_NO_CHANGE);
+  talk_base::PacketOptions options;
+  iter->second->socket->SendTo(buf + length, size - length, dest_addr, options);
 }
 
 void NATServer::OnExternalPacket(
@@ -154,9 +154,10 @@ void NATServer::OnExternalPacket(
                                         size + kNATEncodedIPv6AddressSize,
                                         remote_addr);
   // Copy the data part after the address.
+  talk_base::PacketOptions options;
   std::memcpy(real_buf.get() + addrlength, buf, size);
   server_socket_->SendTo(real_buf.get(), size + addrlength,
-                         iter->second->route.source(), DSCP_NO_CHANGE);
+                         iter->second->route.source(), options);
 }
 
 void NATServer::Translate(const SocketAddressPair& route) {

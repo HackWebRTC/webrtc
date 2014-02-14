@@ -671,7 +671,8 @@ class P2PTransportChannelTestBase : public testing::Test,
   }
   int SendData(cricket::TransportChannel* channel,
                const char* data, size_t len) {
-    return channel->SendPacket(data, len, talk_base::DSCP_NO_CHANGE, 0);
+    talk_base::PacketOptions options;
+    return channel->SendPacket(data, len, options, 0);
   }
   bool CheckDataOnChannel(cricket::TransportChannel* channel,
                           const char* data, int len) {

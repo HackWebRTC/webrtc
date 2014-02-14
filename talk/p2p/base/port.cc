@@ -630,7 +630,8 @@ void Port::SendBindingResponse(StunMessage* request,
   // Send the response message.
   talk_base::ByteBuffer buf;
   response.Write(&buf);
-  if (SendTo(buf.Data(), buf.Length(), addr, DefaultDscpValue(), false) < 0) {
+  talk_base::PacketOptions options(DefaultDscpValue());
+  if (SendTo(buf.Data(), buf.Length(), addr, options, false) < 0) {
     LOG_J(LS_ERROR, this) << "Failed to send STUN ping response to "
                           << addr.ToSensitiveString();
   }
@@ -684,7 +685,8 @@ void Port::SendBindingErrorResponse(StunMessage* request,
   // Send the response message.
   talk_base::ByteBuffer buf;
   response.Write(&buf);
-  SendTo(buf.Data(), buf.Length(), addr, DefaultDscpValue(), false);
+  talk_base::PacketOptions options(DefaultDscpValue());
+  SendTo(buf.Data(), buf.Length(), addr, options, false);
   LOG_J(LS_INFO, this) << "Sending STUN binding error: reason=" << reason
                        << " to " << addr.ToSensitiveString();
 }
@@ -932,8 +934,9 @@ void Connection::set_use_candidate_attr(bool enable) {
 
 void Connection::OnSendStunPacket(const void* data, size_t size,
                                   StunRequest* req) {
+  talk_base::PacketOptions options(port_->DefaultDscpValue());
   if (port_->SendTo(data, size, remote_candidate_.address(),
-                    port_->DefaultDscpValue(), false) < 0) {
+                    options, false) < 0) {
     LOG_J(LS_WARNING, this) << "Failed to send STUN ping " << req->id();
   }
 }
@@ -1408,12 +1411,13 @@ ProxyConnection::ProxyConnection(Port* port, size_t index,
 }
 
 int ProxyConnection::Send(const void* data, size_t size,
-                          talk_base::DiffServCodePoint dscp) {
+                          const talk_base::PacketOptions& options) {
   if (write_state_ == STATE_WRITE_INIT || write_state_ == STATE_WRITE_TIMEOUT) {
     error_ = EWOULDBLOCK;
     return SOCKET_ERROR;
   }
-  int sent = port_->SendTo(data, size, remote_candidate_.address(), dscp, true);
+  int sent = port_->SendTo(data, size, remote_candidate_.address(),
+                           options, true);
   if (sent <= 0) {
     ASSERT(sent < 0);
     error_ = port_->GetError();

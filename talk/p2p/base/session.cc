@@ -539,6 +539,10 @@ TransportProxy* BaseSession::GetOrCreateTransportProxy(
       this, &BaseSession::OnTransportCandidatesAllocationDone);
   transport->SignalRoleConflict.connect(
       this, &BaseSession::OnRoleConflict);
+  transport->SignalCompleted.connect(
+      this, &BaseSession::OnTransportCompleted);
+  transport->SignalFailed.connect(
+      this, &BaseSession::OnTransportFailed);
 
   transproxy = new TransportProxy(worker_thread_, sid_, content_name,
                                   new TransportWrapper(transport));

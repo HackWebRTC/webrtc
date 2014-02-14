@@ -245,8 +245,9 @@ class DtlsTestClient : public sigslot::has_slots<> {
 
       // Only set the bypass flag if we've activated DTLS.
       int flags = (identity_.get() && srtp) ? cricket::PF_SRTP_BYPASS : 0;
+      talk_base::PacketOptions packet_options;
       int rv = channels_[channel]->SendPacket(
-          packet.get(), size, talk_base::DSCP_NO_CHANGE, flags);
+          packet.get(), size, packet_options, flags);
       ASSERT_GT(rv, 0);
       ASSERT_EQ(size, static_cast<size_t>(rv));
       ++sent;

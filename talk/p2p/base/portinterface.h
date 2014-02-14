@@ -30,13 +30,12 @@
 
 #include <string>
 
-#include "talk/base/dscp.h"
 #include "talk/base/socketaddress.h"
 #include "talk/p2p/base/transport.h"
 
 namespace talk_base {
 class Network;
-class PacketSocketFactory;
+struct PacketOptions;
 }
 
 namespace cricket {
@@ -100,7 +99,7 @@ class PortInterface {
   // that of a connection or an address that has sent to us already.
   virtual int SendTo(const void* data, size_t size,
                      const talk_base::SocketAddress& addr,
-                     talk_base::DiffServCodePoint dscp, bool payload) = 0;
+                     const talk_base::PacketOptions& options, bool payload) = 0;
 
   // Indicates that we received a successful STUN binding request from an
   // address that doesn't correspond to any current connection.  To turn this

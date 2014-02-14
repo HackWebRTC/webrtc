@@ -127,6 +127,9 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   virtual IceRole GetIceRole() const {
     return channel_->GetIceRole();
   }
+  virtual size_t GetConnectionCount() const {
+    return channel_->GetConnectionCount();
+  }
   virtual bool SetLocalIdentity(talk_base::SSLIdentity *identity);
   virtual bool GetLocalIdentity(talk_base::SSLIdentity** identity) const;
 
@@ -137,7 +140,7 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
 
   // Called to send a packet (via DTLS, if turned on).
   virtual int SendPacket(const char* data, size_t size,
-                         talk_base::DiffServCodePoint dscp,
+                         const talk_base::PacketOptions& options,
                          int flags);
 
   // TransportChannel calls that we forward to the wrapped transport.
@@ -239,6 +242,7 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   void OnCandidatesAllocationDone(TransportChannelImpl* channel);
   void OnRoleConflict(TransportChannelImpl* channel);
   void OnRouteChange(TransportChannel* channel, const Candidate& candidate);
+  void OnConnectionRemoved(TransportChannelImpl* channel);
 
   Transport* transport_;  // The transport_ that created us.
   talk_base::Thread* worker_thread_;  // Everything should occur on this thread.

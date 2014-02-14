@@ -135,7 +135,7 @@ void TCPPort::PrepareAddress() {
 
 int TCPPort::SendTo(const void* data, size_t size,
                     const talk_base::SocketAddress& addr,
-                    talk_base::DiffServCodePoint dscp,
+                    const talk_base::PacketOptions& options,
                     bool payload) {
   talk_base::AsyncPacketSocket * socket = NULL;
   if (TCPConnection * conn = static_cast<TCPConnection*>(GetConnection(addr))) {
@@ -149,7 +149,7 @@ int TCPPort::SendTo(const void* data, size_t size,
     return -1;  // TODO: Set error_
   }
 
-  int sent = socket->Send(data, size, dscp);
+  int sent = socket->Send(data, size, options);
   if (sent < 0) {
     error_ = socket->GetError();
     LOG_J(LS_ERROR, this) << "TCP send of " << size
@@ -265,7 +265,7 @@ TCPConnection::~TCPConnection() {
 }
 
 int TCPConnection::Send(const void* data, size_t size,
-                        talk_base::DiffServCodePoint dscp) {
+                        const talk_base::PacketOptions& options) {
   if (!socket_) {
     error_ = ENOTCONN;
     return SOCKET_ERROR;
@@ -276,7 +276,7 @@ int TCPConnection::Send(const void* data, size_t size,
     error_ = EWOULDBLOCK;
     return SOCKET_ERROR;
   }
-  int sent = socket_->Send(data, size, dscp);
+  int sent = socket_->Send(data, size, options);
   if (sent < 0) {
     error_ = socket_->GetError();
   } else {
