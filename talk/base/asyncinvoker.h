@@ -30,6 +30,7 @@
 
 #include "talk/base/asyncinvoker-inl.h"
 #include "talk/base/bind.h"
+#include "talk/base/sigslot.h"
 #include "talk/base/scopedptrcollection.h"
 #include "talk/base/thread.h"
 
@@ -82,18 +83,20 @@ namespace talk_base {
 //     AsyncInvoker invoker_;
 //     int result_;
 //   };
-class AsyncInvoker {
+class AsyncInvoker : public MessageHandler {
  public:
+  AsyncInvoker();
+  virtual ~AsyncInvoker();
+
   // Call |functor| asynchronously on |thread|, with no callback upon
   // completion. Returns immediately.
   template <class ReturnT, class FunctorT>
   void AsyncInvoke(Thread* thread,
                    const FunctorT& functor,
                    uint32 id = 0) {
-    FunctorMessageHandler<ReturnT, FunctorT>* handler =
-        new FunctorMessageHandler<ReturnT, FunctorT>(functor);
-    handler->SetCallback(Bind(&AsyncInvoker::RemoveHandler, this, handler));
-    InvokeHandler(thread, handler, id);
+    AsyncClosure* closure =
+        new RefCountedObject<FireAndForgetAsyncClosure<FunctorT> >(functor);
+    DoInvoke(thread, closure, id);
   }
 
   // Call |functor| asynchronously on |thread|, calling |callback| when done.
@@ -103,12 +106,10 @@ class AsyncInvoker {
                    void (HostT::*callback)(ReturnT),
                    HostT* callback_host,
                    uint32 id = 0) {
-    AsyncFunctorMessageHandler<ReturnT, FunctorT>* handler =
-        new AsyncFunctorMessageHandler<ReturnT, FunctorT>(functor);
-    handler->WrapCallback(
-        Bind(&AsyncInvoker::OnAsyncCallCompleted<ReturnT, FunctorT, HostT>,
-             this, handler, callback, callback_host));
-    InvokeHandler(thread, handler, id);
+    AsyncClosure* closure =
+        new RefCountedObject<NotifyingAsyncClosure<ReturnT, FunctorT, HostT> >(
+            this, Thread::Current(), functor, callback, callback_host);
+    DoInvoke(thread, closure, id);
   }
 
   // Call |functor| asynchronously on |thread|, calling |callback| when done.
@@ -119,12 +120,10 @@ class AsyncInvoker {
                    void (HostT::*callback)(),
                    HostT* callback_host,
                    uint32 id = 0) {
-    AsyncFunctorMessageHandler<void, FunctorT>* handler =
-        new AsyncFunctorMessageHandler<ReturnT, FunctorT>(functor);
-    handler->WrapCallback(
-        Bind(&AsyncInvoker::OnAsyncVoidCallCompleted<FunctorT, HostT>,
-             this, handler, callback, callback_host));
-    InvokeHandler(thread, handler, id);
+    AsyncClosure* closure =
+        new RefCountedObject<NotifyingAsyncClosure<void, FunctorT, HostT> >(
+            this, Thread::Current(), functor, callback, callback_host);
+    DoInvoke(thread, closure, id);
   }
 
   // Synchronously execute on |thread| all outstanding calls we own
@@ -134,31 +133,16 @@ class AsyncInvoker {
   // behavior is desired, call Flush() before destroying this object.
   void Flush(Thread* thread, uint32 id = MQID_ANY);
 
+  // Signaled when this object is destructed.
+  sigslot::signal0<> SignalInvokerDestroyed;
+
  private:
-  void InvokeHandler(Thread* thread, MessageHandler* handler, uint32 id);
-  void RemoveHandler(MessageHandler* handler);
+  virtual void OnMessage(Message* msg);
+  void DoInvoke(Thread* thread, AsyncClosure* closure, uint32 id);
 
-  template <class ReturnT, class FunctorT, class HostT>
-  void OnAsyncCallCompleted(
-      AsyncFunctorMessageHandler<ReturnT, FunctorT>* handler,
-      void (HostT::*callback)(ReturnT),
-      HostT* callback_host) {
-    AsyncInvoke<void>(handler->thread(),
-                Bind(callback, callback_host, handler->result()));
-    RemoveHandler(handler);
-  }
+  bool destroying_;
 
-  template <class FunctorT, class HostT>
-  void OnAsyncVoidCallCompleted(
-      AsyncFunctorMessageHandler<void, FunctorT>* handler,
-      void (HostT::*callback)(),
-      HostT* callback_host) {
-    AsyncInvoke<void>(handler->thread(), Bind(callback, callback_host));
-    RemoveHandler(handler);
-  }
-
-  CriticalSection crit_;
-  ScopedPtrCollection<MessageHandler> handlers_;
+  DISALLOW_COPY_AND_ASSIGN(AsyncInvoker);
 };
 
 }  // namespace talk_base

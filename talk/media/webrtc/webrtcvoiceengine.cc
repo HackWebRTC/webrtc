@@ -3200,6 +3200,20 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
         rinfo.expand_rate =
             static_cast<float>(ns.currentExpandRate) / (1 << 14);
       }
+
+      webrtc::AudioDecodingCallStats ds;
+      if (engine()->voe()->neteq() &&
+          engine()->voe()->neteq()->GetDecodingCallStatistics(
+              *it, &ds) != -1) {
+        rinfo.decoding_calls_to_silence_generator =
+            ds.calls_to_silence_generator;
+        rinfo.decoding_calls_to_neteq = ds.calls_to_neteq;
+        rinfo.decoding_normal = ds.decoded_normal;
+        rinfo.decoding_plc = ds.decoded_plc;
+        rinfo.decoding_cng = ds.decoded_cng;
+        rinfo.decoding_plc_cng = ds.decoded_plc_cng;
+      }
+
       if (engine()->voe()->sync()) {
         int jitter_buffer_delay_ms = 0;
         int playout_buffer_delay_ms = 0;

@@ -28,74 +28,119 @@
 #ifndef TALK_BASE_ASYNCINVOKER_INL_H_
 #define TALK_BASE_ASYNCINVOKER_INL_H_
 
+#include "talk/base/bind.h"
+#include "talk/base/callback.h"
 #include "talk/base/criticalsection.h"
 #include "talk/base/messagehandler.h"
+#include "talk/base/refcount.h"
+#include "talk/base/scoped_ref_ptr.h"
 #include "talk/base/sigslot.h"
 #include "talk/base/thread.h"
 
 namespace talk_base {
 
-// Helper class for AsyncInvoker. Runs a functor on a message queue or thread
-// and doesn't execute the callback when finished if the calling thread ends.
-template <class ReturnT, class FunctorT>
-class AsyncFunctorMessageHandler
-    : public FunctorMessageHandler<ReturnT, FunctorT>,
-      public sigslot::has_slots<> {
-  typedef AsyncFunctorMessageHandler<ReturnT, FunctorT> ThisT;
+class AsyncInvoker;
+
+// Helper class for AsyncInvoker. Runs a task and triggers a callback
+// on the calling thread if necessary. Instances are ref-counted so their
+// lifetime can be independent of AsyncInvoker.
+class AsyncClosure : public RefCountInterface {
  public:
-  explicit AsyncFunctorMessageHandler(const FunctorT& functor)
-      : FunctorMessageHandler<ReturnT, FunctorT>(functor),
-        thread_(Thread::Current()),
-        shutting_down_(false) {
-    thread_->SignalQueueDestroyed.connect(this, &ThisT::OnThreadDestroyed);
-  }
+  virtual ~AsyncClosure() {}
+  // Runs the asynchronous task, and triggers a callback to the calling
+  // thread if needed. Should be called from the target thread.
+  virtual void Execute() = 0;
+};
 
-  virtual ~AsyncFunctorMessageHandler() {
-    CritScope cs(&running_crit_);
-    shutting_down_ = true;
+// Simple closure that doesn't trigger a callback for the calling thread.
+template <class FunctorT>
+class FireAndForgetAsyncClosure : public AsyncClosure {
+ public:
+  explicit FireAndForgetAsyncClosure(const FunctorT& functor)
+      : functor_(functor) {}
+  virtual void Execute() {
+    functor_();
   }
+ private:
+  FunctorT functor_;
+};
 
-  virtual void OnMessage(Message* msg) {
-    CritScope cs(&running_crit_);
-    if (!shutting_down_) {
-      FunctorMessageHandler<ReturnT, FunctorT>::OnMessage(msg);
+// Base class for closures that may trigger a callback for the calling thread.
+// Listens for the "destroyed" signals from the calling thread and the invoker,
+// and cancels the callback to the calling thread if either is destroyed.
+class NotifyingAsyncClosureBase : public AsyncClosure,
+                                  public sigslot::has_slots<> {
+ public:
+  virtual ~NotifyingAsyncClosureBase() { disconnect_all(); }
+
+ protected:
+  NotifyingAsyncClosureBase(AsyncInvoker* invoker, Thread* calling_thread);
+  void TriggerCallback();
+  void SetCallback(const Callback0<void>& callback) {
+    CritScope cs(&crit_);
+    callback_ = callback;
+  }
+  bool CallbackCanceled() const { return calling_thread_ == NULL; }
+
+ private:
+  Callback0<void> callback_;
+  CriticalSection crit_;
+  AsyncInvoker* invoker_;
+  Thread* calling_thread_;
+
+  void CancelCallback();
+};
+
+// Closures that have a non-void return value and require a callback.
+template <class ReturnT, class FunctorT, class HostT>
+class NotifyingAsyncClosure : public NotifyingAsyncClosureBase {
+ public:
+  NotifyingAsyncClosure(AsyncInvoker* invoker,
+                        Thread* calling_thread,
+                        const FunctorT& functor,
+                        void (HostT::*callback)(ReturnT),
+                        HostT* callback_host)
+      :  NotifyingAsyncClosureBase(invoker, calling_thread),
+         functor_(functor),
+         callback_(callback),
+         callback_host_(callback_host) {}
+  virtual void Execute() {
+    ReturnT result = functor_();
+    if (!CallbackCanceled()) {
+      SetCallback(Callback0<void>(Bind(callback_, callback_host_, result)));
+      TriggerCallback();
     }
-  }
-
-  // Returns the thread that initiated the async call.
-  Thread* thread() const { return thread_; }
-
-  // Wraps a callback so that it won't execute if |thread_| goes away.
-  void WrapCallback(Callback0<void> cb) {
-    this->SetCallback(
-        Callback0<void>(Bind(&ThisT::MaybeRunCallback, this, cb)));
   }
 
  private:
-  void OnThreadDestroyed() {
-    CritScope cs(&thread_crit_);
-    thread_ = NULL;
-    this->SetCallback(Callback0<void>());  // Clear out the callback.
-  }
-
-  void MaybeRunCallback(Callback0<void> cb) {
-#ifdef _DEBUG
-    ASSERT(running_crit_.CurrentThreadIsOwner());
-#endif
-    CritScope cs(&thread_crit_);
-    if (thread_ && !shutting_down_) {
-      cb();
-    }
-  }
-
   FunctorT functor_;
-  Thread* thread_;
-  CriticalSection thread_crit_;
-  CriticalSection running_crit_;
-  bool shutting_down_;
+  void (HostT::*callback_)(ReturnT);
+  HostT* callback_host_;
+};
+
+// Closures that have a void return value and require a callback.
+template <class FunctorT, class HostT>
+class NotifyingAsyncClosure<void, FunctorT, HostT>
+    : public NotifyingAsyncClosureBase {
+ public:
+  NotifyingAsyncClosure(AsyncInvoker* invoker,
+                        Thread* calling_thread,
+                        const FunctorT& functor,
+                        void (HostT::*callback)(),
+                        HostT* callback_host)
+      : NotifyingAsyncClosureBase(invoker, calling_thread),
+        functor_(functor) {
+    SetCallback(Callback0<void>(Bind(callback, callback_host)));
+  }
+  virtual void Execute() {
+    functor_();
+    TriggerCallback();
+  }
+
+ private:
+  FunctorT functor_;
 };
 
 }  // namespace talk_base
-
 
 #endif  // TALK_BASE_ASYNCINVOKER_INL_H_

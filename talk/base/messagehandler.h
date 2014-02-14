@@ -28,7 +28,6 @@
 #ifndef TALK_BASE_MESSAGEHANDLER_H_
 #define TALK_BASE_MESSAGEHANDLER_H_
 
-#include "talk/base/callback.h"
 #include "talk/base/constructormagic.h"
 
 namespace talk_base {
@@ -57,14 +56,12 @@ class FunctorMessageHandler : public MessageHandler {
       : functor_(functor) {}
   virtual void OnMessage(Message* msg) {
     result_ = functor_();
-    if (!callback_.empty()) callback_();
   }
   const ReturnT& result() const { return result_; }
-  void SetCallback(const Callback0<void>& callback) { callback_ = callback; }
+
  private:
   FunctorT functor_;
   ReturnT result_;
-  Callback0<void> callback_;
 };
 
 // Specialization for ReturnT of void.
@@ -75,13 +72,11 @@ class FunctorMessageHandler<void, FunctorT> : public MessageHandler {
       : functor_(functor) {}
   virtual void OnMessage(Message* msg) {
     functor_();
-    if (!callback_.empty()) callback_();
   }
   void result() const {}
-  void SetCallback(const Callback0<void>& callback) { callback_ = callback; }
+
  private:
   FunctorT functor_;
-  Callback0<void> callback_;
 };
 
 

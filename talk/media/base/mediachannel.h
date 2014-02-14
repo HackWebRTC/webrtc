@@ -749,7 +749,13 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
         jitter_buffer_preferred_ms(0),
         delay_estimate_ms(0),
         audio_level(0),
-        expand_rate(0) {
+        expand_rate(0),
+        decoding_calls_to_silence_generator(0),
+        decoding_calls_to_neteq(0),
+        decoding_normal(0),
+        decoding_plc(0),
+        decoding_cng(0),
+        decoding_plc_cng(0) {
   }
 
   int ext_seqnum;
@@ -760,6 +766,12 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
   int audio_level;
   // fraction of synthesized speech inserted through pre-emptive expansion
   float expand_rate;
+  int decoding_calls_to_silence_generator;
+  int decoding_calls_to_neteq;
+  int decoding_normal;
+  int decoding_plc;
+  int decoding_cng;
+  int decoding_plc_cng;
 };
 
 struct VideoSenderInfo : public MediaSenderInfo {
