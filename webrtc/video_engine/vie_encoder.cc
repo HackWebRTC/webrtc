@@ -426,7 +426,10 @@ int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
   uint16_t max_data_payload_length =
       default_rtp_rtcp_->MaxDataPayloadLength();
 
-  send_padding_ = video_codec.numberOfSimulcastStreams > 1;
+  {
+    CriticalSectionScoped cs(data_cs_.get());
+    send_padding_ = video_codec.numberOfSimulcastStreams > 1;
+  }
   if (vcm_.RegisterSendCodec(&video_codec, number_of_cores_,
                              max_data_payload_length) != VCM_OK) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
