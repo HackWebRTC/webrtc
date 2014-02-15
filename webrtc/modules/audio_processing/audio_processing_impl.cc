@@ -71,9 +71,6 @@ AudioProcessing* AudioProcessing::Create(const Config& config) {
   return apm;
 }
 
-int32_t AudioProcessing::TimeUntilNextProcess() { return -1; }
-int32_t AudioProcessing::Process() { return -1; }
-
 AudioProcessingImpl::AudioProcessingImpl(const Config& config)
     : echo_cancellation_(NULL),
       echo_control_mobile_(NULL),
@@ -690,10 +687,6 @@ NoiseSuppression* AudioProcessingImpl::noise_suppression() const {
 
 VoiceDetection* AudioProcessingImpl::voice_detection() const {
   return voice_detection_;
-}
-
-int32_t AudioProcessingImpl::ChangeUniqueId(const int32_t id) {
-  return kNoError;
 }
 
 bool AudioProcessingImpl::is_data_processed() const {

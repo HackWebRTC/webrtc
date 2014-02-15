@@ -92,9 +92,6 @@ class AudioProcessingImpl : public AudioProcessing {
   virtual NoiseSuppression* noise_suppression() const OVERRIDE;
   virtual VoiceDetection* voice_detection() const OVERRIDE;
 
-  // Module methods.
-  virtual int32_t ChangeUniqueId(const int32_t id) OVERRIDE;
-
  protected:
   virtual int InitializeLocked();
 

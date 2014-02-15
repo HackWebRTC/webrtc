@@ -15,7 +15,6 @@
 #include <stdio.h>  // FILE
 
 #include "webrtc/common.h"
-#include "webrtc/modules/interface/module.h"
 #include "webrtc/typedefs.h"
 
 struct AecCore;
@@ -134,7 +133,7 @@ struct ExperimentalAgc {
 // // Close the application...
 // delete apm;
 //
-class AudioProcessing : public Module {
+class AudioProcessing {
  public:
   // Creates an APM instance. Use one instance for every primary audio stream
   // requiring processing. On the client-side, this would typically be one
@@ -305,10 +304,6 @@ class AudioProcessing : public Module {
     // will continue, but the parameter may have been truncated.
     kBadStreamParameterWarning = -13
   };
-
-  // Inherited from Module.
-  virtual int32_t TimeUntilNextProcess() OVERRIDE;
-  virtual int32_t Process() OVERRIDE;
 };
 
 // The acoustic echo cancellation (AEC) component provides better performance
