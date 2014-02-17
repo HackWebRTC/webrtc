@@ -750,3 +750,35 @@
   fun:talk_base::Thread::Run
   fun:talk_base::Thread::PreRun
 }
+{
+  bug_2931_1
+  ThreadSanitizer:Race
+  ...
+  fun:talk_base::FireAndForgetAsyncClosure::Execute
+  fun:talk_base::AsyncInvoker::OnMessage
+  fun:talk_base::MessageQueue::Dispatch
+  fun:talk_base::Thread::ProcessMessages
+  fun:talk_base::Thread::Run
+  fun:talk_base::Thread::PreRun
+}
+{
+  bug_2931_2
+  ThreadSanitizer:Race
+  ...
+  fun:talk_base::Callback0::HelperImpl::~HelperImpl
+  fun:talk_base::RefCountedObject::~RefCountedObject
+  fun:talk_base::RefCountedObject::~RefCountedObject
+  fun:talk_base::RefCountedObject::Release
+  fun:talk_base::scoped_refptr::~scoped_refptr
+  fun:talk_base::Callback0::~Callback0
+  fun:talk_base::FireAndForgetAsyncClosure::~FireAndForgetAsyncClosure
+  fun:talk_base::RefCountedObject::~RefCountedObject
+  fun:talk_base::RefCountedObject::~RefCountedObject
+  fun:talk_base::RefCountedObject::Release
+  fun:talk_base::scoped_refptr::~scoped_refptr
+  fun:talk_base::AsyncInvoker::OnMessage
+  fun:talk_base::MessageQueue::Dispatch
+  fun:talk_base::Thread::ProcessMessages
+  fun:AsyncInvokeTest_WithCallback_Test::TestBody
+  ...
+}
