@@ -2467,7 +2467,7 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
     // Only call for the default channel because the returned stats are
     // collected for all the channels using the same estimator.
     if (engine_->vie()->rtp()->GetReceiveBandwidthEstimatorStats(
-        recv_channels_[0]->channel_id(), &additional_stats)) {
+        recv_channels_[0]->channel_id(), &additional_stats) == 0) {
       bwe.total_received_propagation_delta_ms =
           additional_stats.total_propagation_time_delta_ms;
       bwe.recent_received_propagation_delta_ms.swap(
@@ -2662,6 +2662,15 @@ bool WebRtcVideoMediaChannel::SetSendRtpHeaderExtensions(
                             send_time_extension->id);
   }
   return true;
+}
+
+int WebRtcVideoMediaChannel::GetRtpSendTimeExtnId() const {
+  const RtpHeaderExtension* send_time_extension = FindHeaderExtension(
+      send_extensions_, kRtpAbsoluteSendTimeHeaderExtension);
+  if (send_time_extension) {
+    return send_time_extension->id;
+  }
+  return -1;
 }
 
 bool WebRtcVideoMediaChannel::SetStartSendBandwidth(int bps) {

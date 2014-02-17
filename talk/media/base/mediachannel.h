@@ -539,6 +539,10 @@ class MediaChannel : public sigslot::has_slots<> {
       const std::vector<RtpHeaderExtension>& extensions) = 0;
   virtual bool SetSendRtpHeaderExtensions(
       const std::vector<RtpHeaderExtension>& extensions) = 0;
+  // Returns the absoulte sendtime extension id value from media channel.
+  virtual int GetRtpSendTimeExtnId() const {
+    return -1;
+  }
   // Sets the initial bandwidth to use when sending starts.
   virtual bool SetStartSendBandwidth(int bps) = 0;
   // Sets the maximum allowed bandwidth to use when sending data.

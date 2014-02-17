@@ -1886,6 +1886,18 @@ TEST_F(WebRtcVideoMediaChannelTest, SetRecvCodecsUnsupportedCodec) {
   EXPECT_FALSE(channel_->SetRecvCodecs(codecs));
 }
 
+TEST_F(WebRtcVideoMediaChannelTest, GetRtpSendTimeExtension) {
+  // Enable RTP timestamp extension.
+  const int id = 12;
+  std::vector<cricket::RtpHeaderExtension> extensions;
+  extensions.push_back(cricket::RtpHeaderExtension(
+      "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time", id));
+
+  // Verify the send extension id.
+  EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
+  EXPECT_EQ(id, channel_->GetRtpSendTimeExtnId());
+}
+
 TEST_F(WebRtcVideoMediaChannelTest, SetSend) {
   Base::SetSend();
 }

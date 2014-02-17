@@ -273,6 +273,7 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
       const std::vector<RtpHeaderExtension>& extensions);
   virtual bool SetSendRtpHeaderExtensions(
       const std::vector<RtpHeaderExtension>& extensions);
+  virtual int GetRtpSendTimeExtnId() const;
   virtual bool SetStartSendBandwidth(int bps);
   virtual bool SetMaxSendBandwidth(int bps);
   virtual bool SetOptions(const VideoOptions &options);
