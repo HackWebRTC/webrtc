@@ -14,6 +14,7 @@
 #include "webrtc/modules/interface/module.h"
 #include "webrtc/system_wrappers/interface/constructor_magic.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/test/testsupport/gtest_prod_util.h"
 
 namespace webrtc {
 
@@ -104,12 +105,27 @@ class OveruseFrameDetector : public Module {
   virtual int32_t Process() OVERRIDE;
 
  private:
+  FRIEND_TEST_ALL_PREFIXES(OveruseFrameDetectorTest, TriggerOveruse);
+  FRIEND_TEST_ALL_PREFIXES(OveruseFrameDetectorTest, OveruseAndRecover);
+  FRIEND_TEST_ALL_PREFIXES(OveruseFrameDetectorTest, DoubleOveruseAndRecover);
+  FRIEND_TEST_ALL_PREFIXES(
+      OveruseFrameDetectorTest, TriggerNormalUsageWithMinProcessCount);
+  FRIEND_TEST_ALL_PREFIXES(
+      OveruseFrameDetectorTest, ConstantOveruseGivesNoNormalUsage);
+  FRIEND_TEST_ALL_PREFIXES(OveruseFrameDetectorTest, LastCaptureJitter);
+
+  void set_min_process_count_before_reporting(int64_t count) {
+    min_process_count_before_reporting_ = count;
+  }
+
   class EncodeTimeAvg;
   class EncodeUsage;
   class CaptureQueueDelay;
 
   bool IsOverusing();
   bool IsUnderusing(int64_t time_now);
+
+  bool DetectFrameTimeout(int64_t now) const;
 
   // Protecting all members.
   scoped_ptr<CriticalSectionWrapper> crit_;
@@ -118,11 +134,14 @@ class OveruseFrameDetector : public Module {
   const float normaluse_stddev_ms_;
   const float overuse_stddev_ms_;
 
+  int64_t min_process_count_before_reporting_;
+
   // Observer getting overuse reports.
   CpuOveruseObserver* observer_;
 
   Clock* clock_;
   int64_t next_process_time_;
+  int64_t num_process_times_;
 
   Statistics capture_deltas_;
   int64_t last_capture_time_;

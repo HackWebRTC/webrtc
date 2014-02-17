@@ -29,11 +29,16 @@ namespace webrtc {
 namespace {
 const int64_t kProcessIntervalMs = 5000;
 
+// Number of initial process times before reporting.
+const int64_t kMinProcessCountBeforeReporting = 3;
+
+const int64_t kFrameTimeoutIntervalMs = 1500;
+
 // Consecutive checks above threshold to trigger overuse.
 const int kConsecutiveChecksAboveThreshold = 2;
 
 // Minimum samples required to perform a check.
-const size_t kMinFrameSampleCount = 15;
+const size_t kMinFrameSampleCount = 120;
 
 // Weight factor to apply to the standard deviation.
 const float kWeightFactor = 0.997f;
@@ -238,9 +243,11 @@ OveruseFrameDetector::OveruseFrameDetector(Clock* clock,
     : crit_(CriticalSectionWrapper::CreateCriticalSection()),
       normaluse_stddev_ms_(normaluse_stddev_ms),
       overuse_stddev_ms_(overuse_stddev_ms),
+      min_process_count_before_reporting_(kMinProcessCountBeforeReporting),
       observer_(NULL),
       clock_(clock),
       next_process_time_(clock_->TimeInMilliseconds()),
+      num_process_times_(0),
       last_capture_time_(0),
       last_overuse_time_(0),
       checks_above_threshold_(0),
@@ -288,26 +295,34 @@ int32_t OveruseFrameDetector::TimeUntilNextProcess() {
   return next_process_time_ - clock_->TimeInMilliseconds();
 }
 
+bool OveruseFrameDetector::DetectFrameTimeout(int64_t now) const {
+  if (last_capture_time_ == 0) {
+    return false;
+  }
+  return (now - last_capture_time_) > kFrameTimeoutIntervalMs;
+}
+
 void OveruseFrameDetector::FrameCaptured(int width, int height) {
   CriticalSectionScoped cs(crit_.get());
 
+  int64_t now = clock_->TimeInMilliseconds();
   int num_pixels = width * height;
-  if (num_pixels != num_pixels_) {
+  if (num_pixels != num_pixels_ || DetectFrameTimeout(now)) {
     // Frame size changed, reset statistics.
     num_pixels_ = num_pixels;
     capture_deltas_.Reset();
     last_capture_time_ = 0;
     capture_queue_delay_->ClearFrames();
+    num_process_times_ = 0;
   }
 
-  int64_t time = clock_->TimeInMilliseconds();
   if (last_capture_time_ != 0) {
-    capture_deltas_.AddSample(time - last_capture_time_);
-    encode_usage_->AddSample(time - last_capture_time_);
+    capture_deltas_.AddSample(now - last_capture_time_);
+    encode_usage_->AddSample(now - last_capture_time_);
   }
-  last_capture_time_ = time;
+  last_capture_time_ = now;
 
-  capture_queue_delay_->FrameCaptured(time);
+  capture_queue_delay_->FrameCaptured(now);
 }
 
 void OveruseFrameDetector::FrameProcessingStarted() {
@@ -342,12 +357,17 @@ int32_t OveruseFrameDetector::Process() {
 
   int64_t diff_ms = now - next_process_time_ + kProcessIntervalMs;
   next_process_time_ = now + kProcessIntervalMs;
+  ++num_process_times_;
 
   // Don't trigger overuse unless we've seen a certain number of frames.
   if (capture_deltas_.Count() < kMinFrameSampleCount)
     return 0;
 
   capture_queue_delay_->CalculateDelayChange(diff_ms);
+
+  if (num_process_times_ <= min_process_count_before_reporting_) {
+    return 0;
+  }
 
   if (IsOverusing()) {
     // If the last thing we did was going up, and now have to back down, we need

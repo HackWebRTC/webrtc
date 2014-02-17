@@ -50,11 +50,11 @@ class OveruseFrameDetectorTest : public ::testing::Test {
 
     EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(1);
 
-    InsertFramesWithInterval(50, regular_frame_interval_ms);
+    InsertFramesWithInterval(200, regular_frame_interval_ms);
     InsertFramesWithInterval(50, 110);
     overuse_detector_->Process();
 
-    InsertFramesWithInterval(50, regular_frame_interval_ms);
+    InsertFramesWithInterval(200, regular_frame_interval_ms);
     InsertFramesWithInterval(50, 110);
     overuse_detector_->Process();
   }
@@ -74,21 +74,35 @@ class OveruseFrameDetectorTest : public ::testing::Test {
 };
 
 TEST_F(OveruseFrameDetectorTest, TriggerOveruse) {
+  overuse_detector_->set_min_process_count_before_reporting(0);
   TriggerOveruse();
 }
 
 TEST_F(OveruseFrameDetectorTest, OveruseAndRecover) {
+  overuse_detector_->set_min_process_count_before_reporting(0);
   TriggerOveruse();
   TriggerNormalUsage();
 }
 
 TEST_F(OveruseFrameDetectorTest, DoubleOveruseAndRecover) {
+  overuse_detector_->set_min_process_count_before_reporting(0);
   TriggerOveruse();
   TriggerOveruse();
   TriggerNormalUsage();
 }
 
+TEST_F(OveruseFrameDetectorTest, TriggerNormalUsageWithMinProcessCount) {
+  overuse_detector_->set_min_process_count_before_reporting(1);
+  InsertFramesWithInterval(900, 33);
+  overuse_detector_->Process();
+  EXPECT_EQ(-1, overuse_detector_->last_capture_jitter_ms());
+  clock_->AdvanceTimeMilliseconds(5000);
+  overuse_detector_->Process();
+  EXPECT_GT(overuse_detector_->last_capture_jitter_ms(), 0);
+}
+
 TEST_F(OveruseFrameDetectorTest, ConstantOveruseGivesNoNormalUsage) {
+  overuse_detector_->set_min_process_count_before_reporting(0);
   EXPECT_CALL(*(observer_.get()), NormalUsage()).Times(0);
 
   for(size_t i = 0; i < 64; ++i)
@@ -96,6 +110,7 @@ TEST_F(OveruseFrameDetectorTest, ConstantOveruseGivesNoNormalUsage) {
 }
 
 TEST_F(OveruseFrameDetectorTest, LastCaptureJitter) {
+  overuse_detector_->set_min_process_count_before_reporting(0);
   EXPECT_EQ(-1, overuse_detector_->last_capture_jitter_ms());
   TriggerOveruse();
   EXPECT_GT(overuse_detector_->last_capture_jitter_ms(), 0);
