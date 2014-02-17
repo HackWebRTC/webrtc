@@ -139,9 +139,9 @@ class Expand {
   SyncBuffer* sync_buffer_;
   RandomVector* random_vector_;
   bool first_expand_;
-  int fs_hz_;
-  size_t num_channels_;
-  size_t overlap_length_;
+  const int fs_hz_;
+  const size_t num_channels_;
+  const size_t overlap_length_;
   int consecutive_expands_;
   int16_t max_lag_;
   size_t expand_lags_[kNumLags];

@@ -44,7 +44,7 @@ Operations DecisionLogicNormal::GetDecisionSpecialized(
 
   uint32_t target_timestamp = sync_buffer.end_timestamp();
   uint32_t available_timestamp = 0;
-  int is_cng_packet = 0;
+  bool is_cng_packet = false;
   if (packet_header) {
     available_timestamp = packet_header->timestamp;
     is_cng_packet =
