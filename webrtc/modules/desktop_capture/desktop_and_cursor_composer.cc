@@ -147,7 +147,7 @@ SharedMemory* DesktopAndCursorComposer::CreateSharedMemory(size_t size) {
 }
 
 void DesktopAndCursorComposer::OnCaptureCompleted(DesktopFrame* frame) {
-  if (cursor_.get() && cursor_state_ == MouseCursorMonitor::INSIDE) {
+  if (frame && cursor_.get() && cursor_state_ == MouseCursorMonitor::INSIDE) {
     DesktopFrameWithCursor* frame_with_cursor =
         new DesktopFrameWithCursor(frame, *cursor_, cursor_position_);
     frame = frame_with_cursor;

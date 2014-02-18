@@ -58,6 +58,18 @@ uint32_t BlendPixels(uint32_t dest, uint32_t src) {
   return b + (g << 8) + (r << 16) + 0xff000000;
 }
 
+DesktopFrame* CreateTestFrame() {
+  DesktopFrame* frame =
+      new BasicDesktopFrame(DesktopSize(kScreenWidth, kScreenHeight));
+  uint32_t* data = reinterpret_cast<uint32_t*>(frame->data());
+  for (int y = 0; y < kScreenHeight; ++y) {
+    for (int x = 0; x < kScreenWidth; ++x) {
+      *(data++) = GetFakeFramePixelValue(DesktopVector(x, y));
+    }
+  }
+  return frame;
+}
+
 class FakeScreenCapturer : public DesktopCapturer {
  public:
   FakeScreenCapturer() {}
@@ -67,27 +79,17 @@ class FakeScreenCapturer : public DesktopCapturer {
   }
 
   virtual void Capture(const DesktopRegion& region) OVERRIDE {
-    DesktopFrame* frame =
-        new BasicDesktopFrame(DesktopSize(kScreenWidth, kScreenHeight));
-    uint32_t* data = reinterpret_cast<uint32_t*>(frame->data());
-    for (int y = 0; y < kScreenHeight; ++y) {
-      for (int x = 0; x < kScreenWidth; ++x) {
-        *(data++) = GetFakeFramePixelValue(DesktopVector(x, y));
-      }
-    }
-
-    last_frame_.reset(SharedDesktopFrame::Wrap(frame));
-
-    callback_->OnCaptureCompleted(last_frame_->Share());
+    callback_->OnCaptureCompleted(next_frame_.release());
   }
 
-  // Returns last fake captured frame.
-  SharedDesktopFrame* last_frame() { return last_frame_.get(); }
+  void SetNextFrame(DesktopFrame* next_frame) {
+    next_frame_.reset(next_frame);
+  }
 
  private:
   Callback* callback_;
 
-  scoped_ptr<SharedDesktopFrame> last_frame_;
+  scoped_ptr<DesktopFrame> next_frame_;
 };
 
 class FakeMouseMonitor : public MouseCursorMonitor {
@@ -187,6 +189,20 @@ class DesktopAndCursorComposerTest : public testing::Test,
   scoped_ptr<DesktopFrame> frame_;
 };
 
+// Verify DesktopAndCursorComposer can handle the case when the screen capturer
+// fails.
+TEST_F(DesktopAndCursorComposerTest, Error) {
+  blender_.Start(this);
+
+  fake_cursor_->SetHotspot(DesktopVector());
+  fake_cursor_->SetState(MouseCursorMonitor::INSIDE, DesktopVector());
+  fake_screen_->SetNextFrame(NULL);
+
+  blender_.Capture(DesktopRegion());
+
+  EXPECT_EQ(frame_, static_cast<DesktopFrame*>(NULL));
+}
+
 TEST_F(DesktopAndCursorComposerTest, Blend) {
   struct {
     int x, y;
@@ -222,6 +238,10 @@ TEST_F(DesktopAndCursorComposerTest, Blend) {
     DesktopVector pos(tests[i].x, tests[i].y);
     fake_cursor_->SetState(state, pos);
 
+    scoped_ptr<SharedDesktopFrame> frame(
+        SharedDesktopFrame::Wrap(CreateTestFrame()));
+    fake_screen_->SetNextFrame(frame->Share());
+
     blender_.Capture(DesktopRegion());
 
     VerifyFrame(*frame_, state, pos);
@@ -229,9 +249,7 @@ TEST_F(DesktopAndCursorComposerTest, Blend) {
     // Verify that the cursor is erased before the frame buffer is returned to
     // the screen capturer.
     frame_.reset();
-    VerifyFrame(*fake_screen_->last_frame(),
-                MouseCursorMonitor::OUTSIDE,
-                DesktopVector());
+    VerifyFrame(*frame, MouseCursorMonitor::OUTSIDE, DesktopVector());
   }
 }
 
