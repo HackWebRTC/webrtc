@@ -37,7 +37,7 @@ RTPPacketHistory::~RTPPacketHistory() {
   delete critsect_;
 }
 
-void RTPPacketHistory::SetStorePacketsStatus(bool enable, 
+void RTPPacketHistory::SetStorePacketsStatus(bool enable,
                                              uint16_t number_to_store) {
   if (enable) {
     Allocate(number_to_store);
@@ -50,8 +50,11 @@ void RTPPacketHistory::Allocate(uint16_t number_to_store) {
   assert(number_to_store > 0);
   CriticalSectionScoped cs(critsect_);
   if (store_) {
-    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
-        "SetStorePacketsStatus already set, number: %d", number_to_store);
+    if (number_to_store != stored_packets_.size()) {
+      WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
+                   "SetStorePacketsStatus already set, number: %d",
+                   number_to_store);
+    }
     return;
   }
 
@@ -71,7 +74,7 @@ void RTPPacketHistory::Free() {
   }
 
   std::vector<std::vector<uint8_t> >::iterator it;
-  for (it = stored_packets_.begin(); it != stored_packets_.end(); ++it) {   
+  for (it = stored_packets_.begin(); it != stored_packets_.end(); ++it) {
     it->clear();
   }
 
@@ -207,7 +210,7 @@ bool RTPPacketHistory::HasRTPPacket(uint16_t sequence_number) const {
   if (!found) {
     return false;
   }
- 
+
   uint16_t length = stored_lengths_.at(index);
   if (length == 0 || length > max_packet_length_) {
     // Invalid length.
@@ -243,16 +246,16 @@ bool RTPPacketHistory::GetPacketAndSetSendTime(uint16_t sequence_number,
   }
 
   if (length > *packet_length) {
-    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1, 
+    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
                  "Input buffer too short for packet %u", sequence_number);
     return false;
   }
 
-  // Verify elapsed time since last retrieve. 
+  // Verify elapsed time since last retrieve.
   int64_t now = clock_->TimeInMilliseconds();
   if (min_elapsed_time_ms > 0 &&
       ((now - stored_send_times_.at(index)) < min_elapsed_time_ms)) {
-    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1, 
+    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1,
         "Skip getting packet %u, packet recently resent.", sequence_number);
     return false;
   }
