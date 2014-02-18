@@ -505,6 +505,28 @@ public class PeerConnectionTest extends TestCase {
 
   @Test
   public void testCompleteSession() throws Exception {
+    doTest();
+  }
+
+  @Test
+  public void testCompleteSessionOnNonMainThread() throws Exception {
+    final Exception[] exceptionHolder = new Exception[1];
+    Thread nonMainThread = new Thread("PeerConnectionTest-nonMainThread") {
+        @Override public void run() {
+          try {
+            doTest();
+          } catch (Exception e) {
+            exceptionHolder[0] = e;
+          }
+        }
+      };
+    nonMainThread.start();
+    nonMainThread.join();
+    if (exceptionHolder[0] != null)
+      throw exceptionHolder[0];
+  }
+
+  private void doTest() throws Exception {
     CountDownLatch testDone = new CountDownLatch(1);
     System.gc();  // Encourage any GC-related threads to start up.
     //TreeSet<String> threadsBeforeTest = allThreads();
