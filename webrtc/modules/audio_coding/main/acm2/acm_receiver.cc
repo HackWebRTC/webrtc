@@ -124,7 +124,7 @@ AcmReceiver::AcmReceiver()
       decode_lock_(RWLockWrapper::CreateRWLock()),
       neteq_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       vad_enabled_(true),
-      previous_audio_activity_(AudioFrame::kVadUnknown),
+      previous_audio_activity_(AudioFrame::kVadPassive),
       current_sample_rate_hz_(kNeteqInitSampleRateHz),
       nack_(),
       nack_enabled_(false),
@@ -557,8 +557,6 @@ int AcmReceiver::RemoveAllCodecs() {
 int AcmReceiver::RemoveCodec(uint8_t payload_type) {
   int codec_index = PayloadType2CodecIndex(payload_type);
   if (codec_index < 0) {  // Such a payload-type is not registered.
-    LOG(LS_WARNING) << "payload_type " << payload_type << " is not registered,"
-        " no action is taken.";
     return 0;
   }
   if (neteq_->RemovePayloadType(payload_type) != NetEq::kOK) {
@@ -612,7 +610,6 @@ int AcmReceiver::RedPayloadType() const {
 int AcmReceiver::LastAudioCodec(CodecInst* codec) const {
   CriticalSectionScoped lock(neteq_crit_sect_);
   if (last_audio_decoder_ < 0) {
-    LOG_F(LS_WARNING) << "No audio payload is received, yet.";
     return -1;
   }
   assert(decoders_[last_audio_decoder_].registered);
