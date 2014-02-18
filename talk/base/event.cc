@@ -103,10 +103,16 @@ bool Event::Wait(int cms) {
     // Converting from seconds and microseconds (1e-6) plus
     // milliseconds (1e-3) to seconds and nanoseconds (1e-9).
 
+    struct timespec ts;
+#if HAVE_PTHREAD_COND_TIMEDWAIT_RELATIVE
+    // Use relative time version, which tends to be more efficient for
+    // pthread implementations where provided (like on Android).
+    ts.tv_sec = cms / 1000;
+    ts.tv_nsec = (cms % 1000) * 1000000;
+#else
     struct timeval tv;
     gettimeofday(&tv, NULL);
 
-    struct timespec ts;
     ts.tv_sec = tv.tv_sec + (cms / 1000);
     ts.tv_nsec = tv.tv_usec * 1000 + (cms % 1000) * 1000000;
 
@@ -115,9 +121,16 @@ bool Event::Wait(int cms) {
       ts.tv_sec++;
       ts.tv_nsec -= 1000000000;
     }
+#endif
 
-    while (!event_status_ && error == 0)
+    while (!event_status_ && error == 0) {
+#if HAVE_PTHREAD_COND_TIMEDWAIT_RELATIVE
+      error = pthread_cond_timedwait_relative_np(
+          &event_cond_, &event_mutex_, &ts);
+#else
       error = pthread_cond_timedwait(&event_cond_, &event_mutex_, &ts);
+#endif
+    }
   } else {
     while (!event_status_ && error == 0)
       error = pthread_cond_wait(&event_cond_, &event_mutex_);
