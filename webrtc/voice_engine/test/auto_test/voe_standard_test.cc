@@ -21,7 +21,6 @@
 #include "webrtc/voice_engine/test/auto_test/voe_cpu_test.h"
 #include "webrtc/voice_engine/test/auto_test/voe_stress_test.h"
 #include "webrtc/voice_engine/test/auto_test/voe_test_defines.h"
-#include "webrtc/voice_engine/test/auto_test/voe_unit_test.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
 
 DEFINE_bool(include_timing_dependent_tests, true,
@@ -279,9 +278,6 @@ int run_auto_test(TestType test_type) {
   if (test_type == Stress) {
     VoEStressTest stressTest(test_manager);
     result = stressTest.DoTest();
-  } else if (test_type == Unit) {
-    VoEUnitTest unitTest(test_manager);
-    result = unitTest.DoTest();
   } else if (test_type == CPU) {
     VoECpuTest cpuTest(test_manager);
     result = cpuTest.DoTest();
@@ -317,7 +313,7 @@ int RunInManualMode() {
   printf(" (1)  Standard test\n");
   printf(" (2)  [OBSOLETE: Extended test(s)...]\n");
   printf(" (3)  Stress test(s)...\n");
-  printf(" (4)  Unit test(s)...\n");
+  printf(" (4)  [OBSOLETE: Unit test(s)...]\n");
   printf(" (5)  CPU & memory reference test [Windows]...\n");
   printf("\n: ");
 
@@ -337,7 +333,6 @@ int RunInManualMode() {
       test_type = Stress;
       break;
     case 4:
-      test_type = Unit;
       break;
     case 5:
       test_type = CPU;

@@ -197,8 +197,6 @@
             'test/auto_test/voe_stress_test.h',
             'test/auto_test/voe_test_defines.h',
             'test/auto_test/voe_test_interface.h',
-            'test/auto_test/voe_unit_test.cc',
-            'test/auto_test/voe_unit_test.h',
           ],
           'conditions': [
             ['OS=="android"', {
