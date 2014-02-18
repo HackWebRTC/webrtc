@@ -822,10 +822,16 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
 
     if (inMicLevelTmp != stt->micVol)
     {
-        // Incoming level mismatch; update our level.
-        // This could be the case if the volume is changed manually, or if the
-        // sound device has a low volume resolution.
-        stt->micVol = inMicLevelTmp;
+        if (inMicLevel == stt->lastInMicLevel) {
+            // We requested a volume adjustment, but it didn't occur. This is
+            // probably due to a coarse quantization of the volume slider.
+            // Restore the requested value to prevent getting stuck.
+            inMicLevelTmp = stt->micVol;
+        }
+        else {
+            // As long as the value changed, update to match.
+            stt->micVol = inMicLevelTmp;
+        }
     }
 
     if (inMicLevelTmp > stt->maxLevel)
@@ -835,6 +841,7 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
     }
 
     // Store last value here, after we've taken care of manual updates etc.
+    stt->lastInMicLevel = inMicLevel;
     lastMicVol = stt->micVol;
 
     /* Checks if the signal is saturated. Also a check if individual samples
@@ -1597,6 +1604,7 @@ int WebRtcAgc_Init(void *agcInst, int32_t minLevel, int32_t maxLevel,
     stt->maxInit = stt->maxLevel;
 
     stt->zeroCtrlMax = stt->maxAnalog;
+    stt->lastInMicLevel = 0;
 
     /* Initialize micVol parameter */
     stt->micVol = stt->maxAnalog;

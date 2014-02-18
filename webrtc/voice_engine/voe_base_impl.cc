@@ -49,8 +49,7 @@ VoEBase* VoEBase::GetInterface(VoiceEngine* voiceEngine)
 VoEBaseImpl::VoEBaseImpl(voe::SharedData* shared) :
     _voiceEngineObserverPtr(NULL),
     _callbackCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
-    _voiceEngineObserver(false), _oldVoEMicLevel(0), _oldMicLevel(0),
-    _shared(shared)
+    _voiceEngineObserver(false), _shared(shared)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "VoEBaseImpl() - ctor");
@@ -133,19 +132,19 @@ int32_t VoEBaseImpl::RecordedDataIsAvailable(
         uint32_t samplesPerSec,
         uint32_t totalDelayMS,
         int32_t clockDrift,
-        uint32_t currentMicLevel,
+        uint32_t micLevel,
         bool keyPressed,
         uint32_t& newMicLevel)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "VoEBaseImpl::RecordedDataIsAvailable(nSamples=%u, "
                      "nBytesPerSample=%u, nChannels=%u, samplesPerSec=%u, "
-                     "totalDelayMS=%u, clockDrift=%d, currentMicLevel=%u)",
+                     "totalDelayMS=%u, clockDrift=%d, micLevel=%u)",
                  nSamples, nBytesPerSample, nChannels, samplesPerSec,
-                 totalDelayMS, clockDrift, currentMicLevel);
+                 totalDelayMS, clockDrift, micLevel);
     newMicLevel = static_cast<uint32_t>(ProcessRecordedDataWithAPM(
         NULL, 0, audioSamples, samplesPerSec, nChannels, nSamples,
-        totalDelayMS, clockDrift, currentMicLevel, keyPressed));
+        totalDelayMS, clockDrift, micLevel, keyPressed));
 
     return 0;
 }
@@ -200,16 +199,16 @@ int VoEBaseImpl::OnDataAvailable(const int voe_channels[],
                                  int number_of_channels,
                                  int number_of_frames,
                                  int audio_delay_milliseconds,
-                                 int current_volume,
+                                 int volume,
                                  bool key_pressed,
                                  bool need_audio_processing) {
   WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "VoEBaseImpl::OnDataAvailable(number_of_voe_channels=%d, "
                "sample_rate=%d, number_of_channels=%d, number_of_frames=%d, "
-               "audio_delay_milliseconds=%d, current_volume=%d, "
+               "audio_delay_milliseconds=%d, volume=%d, "
                "key_pressed=%d, need_audio_processing=%d)",
                number_of_voe_channels, sample_rate, number_of_channels,
-               number_of_frames, audio_delay_milliseconds, current_volume,
+               number_of_frames, audio_delay_milliseconds, volume,
                key_pressed, need_audio_processing);
   if (number_of_voe_channels == 0)
     return 0;
@@ -218,7 +217,7 @@ int VoEBaseImpl::OnDataAvailable(const int voe_channels[],
     return ProcessRecordedDataWithAPM(
         voe_channels, number_of_voe_channels, audio_data, sample_rate,
         number_of_channels, number_of_frames, audio_delay_milliseconds,
-        0, current_volume, key_pressed);
+        0, volume, key_pressed);
   }
 
   // No need to go through the APM, demultiplex the data to each VoE channel,
@@ -1152,48 +1151,41 @@ int VoEBaseImpl::ProcessRecordedDataWithAPM(
     uint32_t number_of_frames,
     uint32_t audio_delay_milliseconds,
     int32_t clock_drift,
-    uint32_t current_volume,
+    uint32_t volume,
     bool key_pressed) {
   assert(_shared->transmit_mixer() != NULL);
   assert(_shared->audio_device() != NULL);
 
   uint32_t max_volume = 0;
-  uint16_t current_voe_mic_level = 0;
+  uint16_t voe_mic_level = 0;
   // Check for zero to skip this calculation; the consumer may use this to
   // indicate no volume is available.
-  if (current_volume != 0) {
+  if (volume != 0) {
     // Scale from ADM to VoE level range
     if (_shared->audio_device()->MaxMicrophoneVolume(&max_volume) == 0) {
       if (max_volume) {
-        current_voe_mic_level = static_cast<uint16_t>(
-            (current_volume * kMaxVolumeLevel +
+        voe_mic_level = static_cast<uint16_t>(
+            (volume * kMaxVolumeLevel +
                 static_cast<int>(max_volume / 2)) / max_volume);
       }
     }
-    // We learned that on certain systems (e.g Linux) the current_voe_mic_level
+    // We learned that on certain systems (e.g Linux) the voe_mic_level
     // can be greater than the maxVolumeLevel therefore
-    // we are going to cap the current_voe_mic_level to the maxVolumeLevel
-    // and change the maxVolume to current_volume if it turns out that
-    // the current_voe_mic_level is indeed greater than the maxVolumeLevel.
-    if (current_voe_mic_level > kMaxVolumeLevel) {
-      current_voe_mic_level = kMaxVolumeLevel;
-      max_volume = current_volume;
+    // we are going to cap the voe_mic_level to the maxVolumeLevel
+    // and change the maxVolume to volume if it turns out that
+    // the voe_mic_level is indeed greater than the maxVolumeLevel.
+    if (voe_mic_level > kMaxVolumeLevel) {
+      voe_mic_level = kMaxVolumeLevel;
+      max_volume = volume;
     }
   }
-
-  // Keep track if the MicLevel has been changed by the AGC, if not,
-  // use the old value AGC returns to let AGC continue its trend,
-  // so eventually the AGC is able to change the mic level. This handles
-  // issues with truncation introduced by the scaling.
-  if (_oldMicLevel == current_volume)
-    current_voe_mic_level = static_cast<uint16_t>(_oldVoEMicLevel);
 
   // Perform channel-independent operations
   // (APM, mix with file, record to file, mute, etc.)
   _shared->transmit_mixer()->PrepareDemux(
       audio_data, number_of_frames, number_of_channels, sample_rate,
       static_cast<uint16_t>(audio_delay_milliseconds), clock_drift,
-      current_voe_mic_level, key_pressed);
+      voe_mic_level, key_pressed);
 
   // Copy the audio frame to each sending channel and perform
   // channel-dependent operations (file mixing, mute, etc.), encode and
@@ -1213,11 +1205,7 @@ int VoEBaseImpl::ProcessRecordedDataWithAPM(
   // Scale from VoE to ADM level range.
   uint32_t new_voe_mic_level = _shared->transmit_mixer()->CaptureLevel();
 
-  // Keep track of the value AGC returns.
-  _oldVoEMicLevel = new_voe_mic_level;
-  _oldMicLevel = current_volume;
-
-  if (new_voe_mic_level != current_voe_mic_level) {
+  if (new_voe_mic_level != voe_mic_level) {
     // Return the new volume if AGC has changed the volume.
     return static_cast<int>(
         (new_voe_mic_level * max_volume +

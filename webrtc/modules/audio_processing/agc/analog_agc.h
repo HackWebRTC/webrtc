@@ -111,6 +111,7 @@ typedef struct
     int32_t             minLevel;           // Minimum possible volume level
     int32_t             minOutput;          // Minimum output volume level
     int32_t             zeroCtrlMax;        // Remember max gain => don't amp low input
+    int32_t             lastInMicLevel;
 
     int16_t             scale;              // Scale factor for internal volume levels
 #ifdef MIC_LEVEL_FEEDBACK

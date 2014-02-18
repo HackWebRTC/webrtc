@@ -80,7 +80,7 @@ public:
                                 uint32_t samplesPerSec,
                                 uint32_t totalDelayMS,
                                 int32_t clockDrift,
-                                uint32_t currentMicLevel,
+                                uint32_t micLevel,
                                 bool keyPressed,
                                 uint32_t& newMicLevel);
 
@@ -98,7 +98,7 @@ public:
                                 int number_of_channels,
                                 int number_of_frames,
                                 int audio_delay_milliseconds,
-                                int current_volume,
+                                int volume,
                                 bool key_pressed,
                                 bool need_audio_processing);
 
@@ -135,7 +135,7 @@ private:
                                    uint32_t number_of_frames,
                                    uint32_t audio_delay_milliseconds,
                                    int32_t clock_drift,
-                                   uint32_t current_volume,
+                                   uint32_t volume,
                                    bool key_pressed);
 
     int32_t AddBuildInfo(char* str) const;
@@ -154,8 +154,6 @@ private:
     CriticalSectionWrapper& _callbackCritSect;
 
     bool _voiceEngineObserver;
-    uint32_t _oldVoEMicLevel;
-    uint32_t _oldMicLevel;
     AudioFrame _audioFrame;
     voe::SharedData* _shared;
 };
