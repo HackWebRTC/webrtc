@@ -33,6 +33,8 @@
 
 namespace webrtc {
 
+enum VideoFormat { kGeneric, kVP8, };
+
 class VideoSendStreamTest : public ::testing::Test {
  public:
   VideoSendStreamTest()
@@ -74,6 +76,8 @@ class VideoSendStreamTest : public ::testing::Test {
   void TestNackRetransmission(uint32_t retransmit_ssrc,
                               uint8_t retransmit_payload_type,
                               bool enable_pacing);
+
+  void TestPacketFragmentationSize(VideoFormat format, bool with_fec);
 
   void SendsSetSsrcs(size_t num_ssrcs, bool send_single_ssrc_first);
 
@@ -587,44 +591,84 @@ TEST_F(VideoSendStreamTest, RetransmitsNackOverRtxWithPacing) {
   TestNackRetransmission(kSendRtxSsrc, kSendRtxPayloadType, true);
 }
 
-TEST_F(VideoSendStreamTest, FragmentsAccordingToMaxPacketSize) {
+void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
+                                                      bool with_fec) {
+  static const int kRedPayloadType = 118;
+  static const int kUlpfecPayloadType = 119;
   // Observer that verifies that the expected number of packets and bytes
   // arrive for each frame size, from start_size to stop_size.
   class FrameFragmentationObserver : public test::RtpRtcpObserver,
                                      public EncodedFrameObserver {
    public:
-    FrameFragmentationObserver(size_t max_packet_size,
+    FrameFragmentationObserver(uint32_t max_packet_size,
                                uint32_t start_size,
                                uint32_t stop_size,
-                               test::ConfigurableFrameSizeEncoder* encoder)
-        : RtpRtcpObserver(30 * 1000),
+                               test::ConfigurableFrameSizeEncoder* encoder,
+                               bool test_generic_packetization,
+                               bool use_fec)
+        : RtpRtcpObserver(120 * 1000),  // Timeout after two minutes.
+          transport_adapter_(SendTransport()),
+          encoder_(encoder),
           max_packet_size_(max_packet_size),
+          stop_size_(stop_size),
+          test_generic_packetization_(test_generic_packetization),
+          use_fec_(use_fec),
+          packet_count_(0),
           accumulated_size_(0),
           accumulated_payload_(0),
-          stop_size_(stop_size),
+          fec_packet_received_(false),
           current_size_rtp_(start_size),
-          current_size_frame_(start_size),
-          encoder_(encoder) {
+          current_size_frame_(start_size) {
       // Fragmentation required, this test doesn't make sense without it.
       assert(stop_size > max_packet_size);
+      transport_adapter_.Enable();
     }
 
-    virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
+    virtual Action OnSendRtp(const uint8_t* packet, size_t size) OVERRIDE {
+      uint32_t length = static_cast<int>(size);
       RTPHeader header;
-      EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
+      EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
       EXPECT_LE(length, max_packet_size_);
 
+      if (use_fec_) {
+        uint8_t payload_type = packet[header.headerLength];
+        bool is_fec = header.payloadType == kRedPayloadType &&
+                      payload_type == kUlpfecPayloadType;
+        if (is_fec) {
+          fec_packet_received_ = true;
+          return SEND_PACKET;
+        }
+      }
+
       accumulated_size_ += length;
-      // Payload size = packet size - minus RTP header, padding and one byte
-      // generic header.
-      accumulated_payload_ +=
-          length - (header.headerLength + header.paddingLength + 1);
+
+      if (use_fec_)
+        TriggerLossReport(header);
+
+      if (test_generic_packetization_) {
+        uint32_t overhead = header.headerLength + header.paddingLength +
+                          (1 /* Generic header */);
+        if (use_fec_)
+          overhead += 1;  // RED for FEC header.
+        accumulated_payload_ += length - overhead;
+      }
 
       // Marker bit set indicates last packet of a frame.
       if (header.markerBit) {
+        if (use_fec_ && accumulated_payload_ == current_size_rtp_ - 1) {
+          // With FEC enabled, frame size is incremented asynchronously, so
+          // "old" frames one byte too small may arrive. Accept, but don't
+          // increase expected frame size.
+          accumulated_size_ = 0;
+          accumulated_payload_ = 0;
+          return SEND_PACKET;
+        }
+
         EXPECT_GE(accumulated_size_, current_size_rtp_);
-        EXPECT_EQ(accumulated_payload_, current_size_rtp_);
+        if (test_generic_packetization_) {
+          EXPECT_EQ(current_size_rtp_, accumulated_payload_);
+        }
 
         // Last packet of frame; reset counters.
         accumulated_size_ = 0;
@@ -633,32 +677,68 @@ TEST_F(VideoSendStreamTest, FragmentsAccordingToMaxPacketSize) {
           // Done! (Don't increase size again, might arrive more @ stop_size).
           observation_complete_->Set();
         } else {
-          // Increase next expected frame size.
-          ++current_size_rtp_;
+          // Increase next expected frame size. If testing with FEC, make sure
+          // a FEC packet has been received for this frame size before
+          // proceeding, to make sure that redundancy packets don't exceed
+          // size limit.
+          if (!use_fec_) {
+            ++current_size_rtp_;
+          } else if (fec_packet_received_) {
+            fec_packet_received_ = false;
+            ++current_size_rtp_;
+            ++current_size_frame_;
+          }
         }
       }
 
       return SEND_PACKET;
     }
 
+    void TriggerLossReport(const RTPHeader& header) {
+      // Send lossy receive reports to trigger FEC enabling.
+      if (packet_count_++ % 2 != 0) {
+        // Receive statistics reporting having lost 50% of the packets.
+        FakeReceiveStatistics lossy_receive_stats(
+            kSendSsrc, header.sequenceNumber, packet_count_ / 2, 127);
+        RTCPSender rtcp_sender(
+            0, false, Clock::GetRealTimeClock(), &lossy_receive_stats);
+        EXPECT_EQ(0, rtcp_sender.RegisterSendTransport(&transport_adapter_));
+
+        rtcp_sender.SetRTCPStatus(kRtcpNonCompound);
+        rtcp_sender.SetRemoteSSRC(kSendSsrc);
+
+        RTCPSender::FeedbackState feedback_state;
+
+        EXPECT_EQ(0, rtcp_sender.SendRTCP(feedback_state, kRtcpRr));
+      }
+    }
+
     virtual void EncodedFrameCallback(const EncodedFrame& encoded_frame) {
       // Increase frame size for next encoded frame, in the context of the
       // encoder thread.
-      if (current_size_frame_ < stop_size_) {
+      if (!use_fec_ &&
+          current_size_frame_.Value() < static_cast<int32_t>(stop_size_)) {
         ++current_size_frame_;
       }
-      encoder_->SetFrameSize(current_size_frame_);
+      encoder_->SetFrameSize(current_size_frame_.Value());
     }
 
    private:
-    size_t max_packet_size_;
-    size_t accumulated_size_;
-    size_t accumulated_payload_;
+    internal::TransportAdapter transport_adapter_;
+    test::ConfigurableFrameSizeEncoder* const encoder_;
 
-    uint32_t stop_size_;
+    const uint32_t max_packet_size_;
+    const uint32_t stop_size_;
+    const bool test_generic_packetization_;
+    const bool use_fec_;
+
+    uint32_t packet_count_;
+    uint32_t accumulated_size_;
+    uint32_t accumulated_payload_;
+    bool fec_packet_received_;
+
     uint32_t current_size_rtp_;
-    uint32_t current_size_frame_;
-    test::ConfigurableFrameSizeEncoder* encoder_;
+    Atomic32 current_size_frame_;
   };
 
   // Use a fake encoder to output a frame of every size in the range [90, 290],
@@ -668,19 +748,57 @@ TEST_F(VideoSendStreamTest, FragmentsAccordingToMaxPacketSize) {
   static const uint32_t start = 90;
   static const uint32_t stop = 290;
 
+  // Don't auto increment if FEC is used; continue sending frame size until
+  // a FEC packet has been received.
   test::ConfigurableFrameSizeEncoder encoder(stop);
   encoder.SetFrameSize(start);
 
-  FrameFragmentationObserver observer(kMaxPacketSize, start, stop, &encoder);
+  FrameFragmentationObserver observer(
+      kMaxPacketSize, start, stop, &encoder, format == kGeneric, with_fec);
   Call::Config call_config(observer.SendTransport());
   scoped_ptr<Call> call(Call::Create(call_config));
 
+  observer.SetReceivers(call->Receiver(), NULL);
+
   VideoSendStream::Config send_config = GetSendTestConfig(call.get(), 1);
+  if (with_fec) {
+    send_config.rtp.fec.red_payload_type = kRedPayloadType;
+    send_config.rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+  }
+
+  if (format == kVP8) {
+    strcpy(send_config.codec.plName, "VP8");
+    send_config.codec.codecType = kVideoCodecVP8;
+  }
+  send_config.pacing = false;
   send_config.encoder = &encoder;
   send_config.rtp.max_packet_size = kMaxPacketSize;
   send_config.post_encode_callback = &observer;
 
+  // Add an extension header, to make the RTP header larger than the base
+  // length of 12 bytes.
+  static const uint8_t kAbsSendTimeExtensionId = 13;
+  send_config.rtp.extensions.push_back(
+      RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeExtensionId));
+
   RunSendTest(call.get(), send_config, &observer);
+}
+
+// TODO(sprang): Is there any way of speeding up these tests?
+TEST_F(VideoSendStreamTest, FragmentsGenericAccordingToMaxPacketSize) {
+  TestPacketFragmentationSize(kGeneric, false);
+}
+
+TEST_F(VideoSendStreamTest, FragmentsGenericAccordingToMaxPacketSizeWithFec) {
+  TestPacketFragmentationSize(kGeneric, true);
+}
+
+TEST_F(VideoSendStreamTest, FragmentsVp8AccordingToMaxPacketSize) {
+  TestPacketFragmentationSize(kVP8, false);
+}
+
+TEST_F(VideoSendStreamTest, FragmentsVp8AccordingToMaxPacketSizeWithFec) {
+  TestPacketFragmentationSize(kVP8, true);
 }
 
 TEST_F(VideoSendStreamTest, CanChangeSendCodec) {

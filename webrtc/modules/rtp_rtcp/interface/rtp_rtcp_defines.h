@@ -27,6 +27,9 @@ namespace webrtc {
 
 const int kVideoPayloadTypeFrequency = 90000;
 
+// Minimum RTP header size in bytes.
+const uint8_t kRtpHeaderSize = 12;
+
 struct AudioPayload
 {
     uint32_t    frequency;

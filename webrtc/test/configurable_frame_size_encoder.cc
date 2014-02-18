@@ -49,7 +49,9 @@ int32_t ConfigurableFrameSizeEncoder::Encode(
   encodedImage._timeStamp = inputImage.timestamp();
   encodedImage.capture_time_ms_ = inputImage.render_time_ms();
   RTPFragmentationHeader* fragmentation = NULL;
-  callback_->Encoded(encodedImage, codecSpecificInfo, fragmentation);
+  CodecSpecificInfo specific;
+  memset(&specific, 0, sizeof(specific));
+  callback_->Encoded(encodedImage, &specific, fragmentation);
 
   return WEBRTC_VIDEO_CODEC_OK;
 }
