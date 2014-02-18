@@ -1685,13 +1685,6 @@ MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory() {
   if (!is_platform_supported)
     return;
 
-  if (true) {
-    // TODO(fischman): re-enable once
-    // https://code.google.com/p/webrtc/issues/detail?id=2899 is fixed.  Until
-    // then the Android MediaCodec experience is too abysmal to turn on.
-    return;
-  }
-
   // Wouldn't it be nice if MediaCodec exposed the maximum capabilities of the
   // encoder?  Sure would be.  Too bad it doesn't.  So we hard-code some
   // reasonable defaults.
