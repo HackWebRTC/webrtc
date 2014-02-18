@@ -86,7 +86,6 @@
 
 #ifndef WEBRTC_CHROMIUM_BUILD
 #define WEBRTC_VOICE_ENGINE_CALL_REPORT_API
-#define WEBRTC_VOICE_ENGINE_ENCRYPTION_API
 #endif
 
 // ============================================================================

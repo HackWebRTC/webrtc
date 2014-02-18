@@ -53,119 +53,8 @@ namespace voetest {
 //
 const int dTBetweenEachTest = 4000;
 
-// ----------------------------------------------------------------------------
-//                                  Encrypt
-// ----------------------------------------------------------------------------
-
-void VoEUnitTest::encrypt(int channel_no, unsigned char * in_data,
-                          unsigned char * out_data, int bytes_in,
-                          int * bytes_out) {
-  int i;
-
-  if (!_extOnOff) {
-    // no stereo emulation <=> pure bypass
-    for (i = 0; i < bytes_in; i++)
-      out_data[i] = in_data[i];
-    *bytes_out = bytes_in;
-  } else if (_extOnOff && (_extBitsPerSample == 16)) {
-    // stereo emulation (sample based, 2 bytes per sample)
-
-    const int nBytesPayload = bytes_in - 12;
-
-    // RTP header (first 12 bytes)
-    memcpy(out_data, in_data, 12);
-
-    // skip RTP header
-    short* ptrIn = (short*) &in_data[12];
-    short* ptrOut = (short*) &out_data[12];
-
-    // network byte order
-    for (i = 0; i < nBytesPayload / 2; i++) {
-      // produce two output samples for each input sample
-      *ptrOut++ = *ptrIn; // left sample
-      *ptrOut++ = *ptrIn; // right sample
-      ptrIn++;
-    }
-
-    *bytes_out = 12 + 2 * nBytesPayload;
-  } else if (_extOnOff && (_extBitsPerSample == 8)) {
-    // stereo emulation (sample based, 1 bytes per sample)
-
-    const int nBytesPayload = bytes_in - 12;
-
-    // RTP header (first 12 bytes)
-    memcpy(out_data, in_data, 12);
-
-    // skip RTP header
-    unsigned char* ptrIn = (unsigned char*) &in_data[12];
-    unsigned char* ptrOut = (unsigned char*) &out_data[12];
-
-    // network byte order
-    for (i = 0; i < nBytesPayload; i++) {
-      // produce two output samples for each input sample
-      *ptrOut++ = *ptrIn; // left sample
-      *ptrOut++ = *ptrIn; // right sample
-      ptrIn++;
-    }
-
-    *bytes_out = 12 + 2 * nBytesPayload;
-  } else if (_extOnOff && (_extBitsPerSample == -1)) {
-    // stereo emulation (frame based)
-
-    const int nBytesPayload = bytes_in - 12;
-
-    // RTP header (first 12 bytes)
-    memcpy(out_data, in_data, 12);
-
-    // skip RTP header
-    unsigned char* ptrIn = (unsigned char*) &in_data[12];
-    unsigned char* ptrOut = (unsigned char*) &out_data[12];
-
-    // left channel
-    for (i = 0; i < nBytesPayload; i++) {
-      *ptrOut++ = *ptrIn++;
-    }
-
-    ptrIn = (unsigned char*) &in_data[12];
-
-    // right channel
-    for (i = 0; i < nBytesPayload; i++) {
-      *ptrOut++ = *ptrIn++;
-    }
-
-    *bytes_out = 12 + 2 * nBytesPayload;
-  }
-}
-
-void VoEUnitTest::decrypt(int channel_no, unsigned char * in_data,
-                          unsigned char * out_data, int bytes_in,
-                          int * bytes_out) {
-  int i;
-  for (i = 0; i < bytes_in; i++)
-    out_data[i] = in_data[i];
-  *bytes_out = bytes_in;
-}
-
-void VoEUnitTest::encrypt_rtcp(int channel_no, unsigned char * in_data,
-                               unsigned char * out_data, int bytes_in,
-                               int * bytes_out) {
-  int i;
-  for (i = 0; i < bytes_in; i++)
-    out_data[i] = in_data[i];
-  *bytes_out = bytes_in;
-}
-
-void VoEUnitTest::decrypt_rtcp(int channel_no, unsigned char * in_data,
-                               unsigned char * out_data, int bytes_in,
-                               int * bytes_out) {
-  int i;
-  for (i = 0; i < bytes_in; i++)
-    out_data[i] = in_data[i];
-  *bytes_out = bytes_in;
-}
-
 void VoEUnitTest::SetStereoExternalEncryption(int channel, bool onOff,
-                                              int bitsPerSample) {
+                                    int bitsPerSample) {
   _extOnOff = onOff;
   _extChannel = channel;
   _extBitsPerSample = bitsPerSample;
@@ -359,7 +248,6 @@ int VoEUnitTest::MixerTest() {
   VoECodec* codec = _mgr.CodecPtr();
   VoEFile* file = _mgr.FilePtr();
   VoEVolumeControl* volume = _mgr.VolumeControlPtr();
-  VoEEncryption* encrypt = _mgr.EncryptionPtr();
   VoEDtmf* dtmf = _mgr.DtmfPtr();
   VoEExternalMedia* xmedia = _mgr.ExternalMediaPtr();
 
@@ -554,10 +442,6 @@ int VoEUnitTest::MixerTest() {
 
   Test(">> Verify correct mixing in stereo using emulated stereo input:\n");
 
-  // enable external encryption
-  CHECK(encrypt->RegisterExternalEncryption(0, *this));
-  Test("(ch 0) External Encryption is now enabled:");
-
   Test("(ch 0) Sending file at 8kHz <=> mixing in mono @ 8kHz...");
   CHECK(StartMedia(0, 12345, true, true, true, true, false));
   Sleep(testTime);
@@ -621,8 +505,6 @@ int VoEUnitTest::MixerTest() {
   StopMedia(0);
   l16_32.channels = 1;
 
-  // disable external encryption
-  CHECK(encrypt->DeRegisterExternalEncryption(0));
   ANL();
 
   base->DeleteChannel(0);
@@ -988,10 +870,6 @@ int VoEUnitTest::MixerTest() {
 
   Test(">> Verify emulated stereo encoding for differenct codecs:\n");
 
-  // enable external encryption
-  CHECK(encrypt->RegisterExternalEncryption(0, *this));
-  Test("(ch 0) External Encryption is now enabled:");
-
   // register all codecs on the receiving side
   strcpy(PCMU.plname, "PCMU");
   PCMU.channels = 2;
@@ -1067,9 +945,6 @@ int VoEUnitTest::MixerTest() {
   Sleep(testTime);
 
   StopMedia(0);
-
-  // disable external encryption
-  CHECK(encrypt->DeRegisterExternalEncryption(0));
 
   base->DeleteChannel(0);
 

@@ -205,41 +205,6 @@ Channel::SendPacket(int channel, const void *data, int len)
                      "Channel::SendPacket() RTP dump to output file failed");
     }
 
-    // SRTP or External encryption
-    if (_encrypting)
-    {
-        if (_encryptionPtr)
-        {
-            if (!_encryptionRTPBufferPtr)
-            {
-                // Allocate memory for encryption buffer one time only
-                _encryptionRTPBufferPtr =
-                    new uint8_t[kVoiceEngineMaxIpPacketSizeBytes];
-                memset(_encryptionRTPBufferPtr, 0,
-                       kVoiceEngineMaxIpPacketSizeBytes);
-            }
-
-            // Perform encryption (SRTP or external)
-            int32_t encryptedBufferLength = 0;
-            _encryptionPtr->encrypt(_channelId,
-                                    bufferToSendPtr,
-                                    _encryptionRTPBufferPtr,
-                                    bufferLength,
-                                    (int*)&encryptedBufferLength);
-            if (encryptedBufferLength <= 0)
-            {
-                _engineStatisticsPtr->SetLastError(
-                    VE_ENCRYPTION_FAILED,
-                    kTraceError, "Channel::SendPacket() encryption failed");
-                return -1;
-            }
-
-            // Replace default data buffer with encrypted buffer
-            bufferToSendPtr = _encryptionRTPBufferPtr;
-            bufferLength = encryptedBufferLength;
-        }
-    }
-
     int n = _transportPtr->SendPacket(channel, bufferToSendPtr,
                                       bufferLength);
     if (n < 0) {
@@ -282,39 +247,6 @@ Channel::SendRTCPPacket(int channel, const void *data, int len)
         WEBRTC_TRACE(kTraceWarning, kTraceVoice,
                      VoEId(_instanceId,_channelId),
                      "Channel::SendPacket() RTCP dump to output file failed");
-    }
-
-    // SRTP or External encryption
-    if (_encrypting)
-    {
-        if (_encryptionPtr)
-        {
-            if (!_encryptionRTCPBufferPtr)
-            {
-                // Allocate memory for encryption buffer one time only
-                _encryptionRTCPBufferPtr =
-                    new uint8_t[kVoiceEngineMaxIpPacketSizeBytes];
-            }
-
-            // Perform encryption (SRTP or external).
-            int32_t encryptedBufferLength = 0;
-            _encryptionPtr->encrypt_rtcp(_channelId,
-                                         bufferToSendPtr,
-                                         _encryptionRTCPBufferPtr,
-                                         bufferLength,
-                                         (int*)&encryptedBufferLength);
-            if (encryptedBufferLength <= 0)
-            {
-                _engineStatisticsPtr->SetLastError(
-                    VE_ENCRYPTION_FAILED, kTraceError,
-                    "Channel::SendRTCPPacket() encryption failed");
-                return -1;
-            }
-
-            // Replace default data buffer with encrypted buffer
-            bufferToSendPtr = _encryptionRTCPBufferPtr;
-            bufferLength = encryptedBufferLength;
-        }
     }
 
     int n = _transportPtr->SendRTCPPacket(channel,
@@ -952,10 +884,6 @@ Channel::Channel(int32_t channelId,
     _outputExternalMedia(false),
     _inputExternalMediaCallbackPtr(NULL),
     _outputExternalMediaCallbackPtr(NULL),
-    _encryptionRTPBufferPtr(NULL),
-    _decryptionRTPBufferPtr(NULL),
-    _encryptionRTCPBufferPtr(NULL),
-    _decryptionRTCPBufferPtr(NULL),
     _timeStamp(0), // This is just an offset, RTP module will add it's own random offset
     _sendTelephoneEventPayloadType(106),
     jitter_buffer_playout_timestamp_(0),
@@ -972,7 +900,6 @@ Channel::Channel(int32_t channelId,
     _voiceEngineObserverPtr(NULL),
     _callbackCritSectPtr(NULL),
     _transportPtr(NULL),
-    _encryptionPtr(NULL),
     rx_audioproc_(AudioProcessing::Create(VoEModuleId(instanceId, channelId))),
     _rxVadObserverPtr(NULL),
     _oldVadDecision(-1),
@@ -993,8 +920,6 @@ Channel::Channel(int32_t channelId,
     _panLeft(1.0f),
     _panRight(1.0f),
     _outputGain(1.0f),
-    _encrypting(false),
-    _decrypting(false),
     _playOutbandDtmfEvent(false),
     _playInbandDtmfEvent(false),
     _extraPayloadType(0),
@@ -1115,10 +1040,6 @@ Channel::~Channel()
     // Delete other objects
     RtpDump::DestroyRtpDump(&_rtpDumpIn);
     RtpDump::DestroyRtpDump(&_rtpDumpOut);
-    delete [] _encryptionRTPBufferPtr;
-    delete [] _decryptionRTPBufferPtr;
-    delete [] _encryptionRTCPBufferPtr;
-    delete [] _decryptionRTCPBufferPtr;
     delete &_callbackCritSect;
     delete &_fileCritSect;
     delete &volume_settings_critsect_;
@@ -3032,54 +2953,6 @@ Channel::GetChannelOutputVolumeScaling(float& scaling) const
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
                VoEId(_instanceId,_channelId),
                "GetChannelOutputVolumeScaling() => scaling=%3.2f", scaling);
-    return 0;
-}
-
-int
-Channel::RegisterExternalEncryption(Encryption& encryption)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-               "Channel::RegisterExternalEncryption()");
-
-    CriticalSectionScoped cs(&_callbackCritSect);
-
-    if (_encryptionPtr)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_INVALID_OPERATION, kTraceError,
-            "RegisterExternalEncryption() encryption already enabled");
-        return -1;
-    }
-
-    _encryptionPtr = &encryption;
-
-    _decrypting = true;
-    _encrypting = true;
-
-    return 0;
-}
-
-int
-Channel::DeRegisterExternalEncryption()
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-               "Channel::DeRegisterExternalEncryption()");
-
-    CriticalSectionScoped cs(&_callbackCritSect);
-
-    if (!_encryptionPtr)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_INVALID_OPERATION, kTraceWarning,
-            "DeRegisterExternalEncryption() encryption already disabled");
-        return 0;
-    }
-
-    _decrypting = false;
-    _encrypting = false;
-
-    _encryptionPtr = NULL;
-
     return 0;
 }
 

@@ -32,7 +32,6 @@
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
 #include "webrtc/voice_engine/include/voe_dtmf.h"
-#include "webrtc/voice_engine/include/voe_encryption.h"
 #include "webrtc/voice_engine/include/voe_errors.h"
 #include "webrtc/voice_engine/include/voe_external_media.h"
 #include "webrtc/voice_engine/include/voe_file.h"
@@ -67,7 +66,6 @@ VoEAudioProcessing* apm = NULL;
 VoENetwork* netw = NULL;
 VoEFile* file = NULL;
 VoEVideoSync* vsync = NULL;
-VoEEncryption* encr = NULL;
 VoEHardware* hardware = NULL;
 VoEExternalMedia* xmedia = NULL;
 VoENetEqStats* neteqst = NULL;
@@ -147,7 +145,6 @@ int main(int argc, char** argv) {
   netw = VoENetwork::GetInterface(m_voe);
   file = VoEFile::GetInterface(m_voe);
   vsync = VoEVideoSync::GetInterface(m_voe);
-  encr = VoEEncryption::GetInterface(m_voe);
   hardware = VoEHardware::GetInterface(m_voe);
   xmedia = VoEExternalMedia::GetInterface(m_voe);
   neteqst = VoENetEqStats::GetInterface(m_voe);
@@ -219,9 +216,6 @@ int main(int argc, char** argv) {
 
   if (vsync)
     vsync->Release();
-
-  if (encr)
-    encr->Release();
 
   if (hardware)
     hardware->Release();

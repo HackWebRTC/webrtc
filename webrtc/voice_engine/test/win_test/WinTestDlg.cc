@@ -275,72 +275,6 @@ void MediaProcessImpl::Process(int channel,
 }
 
 // ----------------------------------------------------------------------------
-//    Encryptionen
-// ----------------------------------------------------------------------------
-
-class MyEncryption : public Encryption
-{
-public:
-    void encrypt(int channel_no, unsigned char * in_data, unsigned char * out_data, int bytes_in, int* bytes_out);
-    void decrypt(int channel_no, unsigned char * in_data, unsigned char * out_data, int bytes_in, int* bytes_out);
-    void encrypt_rtcp(int channel_no, unsigned char * in_data, unsigned char * out_data, int bytes_in, int* bytes_out);
-    void decrypt_rtcp(int channel_no, unsigned char * in_data, unsigned char * out_data, int bytes_in, int* bytes_out);
-};
-
-void MyEncryption::encrypt(int channel_no, unsigned char * in_data, unsigned char * out_data, int bytes_in, int* bytes_out)
-{
-    // --- Stereo emulation (sample based, 2 bytes per sample)
-
-    const int nBytesPayload = bytes_in-12;
-
-    // RTP header (first 12 bytes)
-    memcpy(out_data, in_data, 12);
-
-    // skip RTP header
-    short* ptrIn = (short*) &in_data[12];
-    short* ptrOut = (short*) &out_data[12];
-
-    // network byte order
-    for (int i = 0; i < nBytesPayload/2; i++)
-    {
-        // produce two output samples for each input sample
-        *ptrOut++ = *ptrIn; // left sample
-        *ptrOut++ = *ptrIn; // right sample
-        ptrIn++;
-    }
-
-    *bytes_out = 12 + 2*nBytesPayload;
-
-    /*
-    for(int i = 0; i < bytes_in; i++)
-        out_data[i] =~ in_data[i];
-    *bytes_out = bytes_in;
-    */
-}
-
-void MyEncryption::decrypt(int channel_no, unsigned char * in_data, unsigned char * out_data, int bytes_in, int* bytes_out)
-{
-    // Do nothing (<=> memcpy)
-    for(int i = 0; i < bytes_in; i++)
-        out_data[i] = in_data[i];
-    *bytes_out = bytes_in;
-}
-
-void MyEncryption::encrypt_rtcp(int channel_no, unsigned char * in_data, unsigned char * out_data, int bytes_in, int* bytes_out)
-{
-    for(int i = 0; i < bytes_in; i++)
-        out_data[i] =~ in_data[i];
-    *bytes_out = bytes_in;
-}
-
-void MyEncryption::decrypt_rtcp(int channel_no, unsigned char * in_data, unsigned char * out_data, int bytes_in, int* bytes_out)
-{
-    for(int i = 0; i < bytes_in; i++)
-        out_data[i] =~ in_data[i];
-    *bytes_out = bytes_in;
-}
-
-// ----------------------------------------------------------------------------
 //    TelephoneEventObserver
 // ----------------------------------------------------------------------------
 
@@ -1121,10 +1055,8 @@ CWinTestDlg::CWinTestDlg(CWnd* pParent /*=NULL*/)
     _veHardwarePtr(NULL),
     _veExternalMediaPtr(NULL),
     _veApmPtr(NULL),
-    _veEncryptionPtr(NULL),
     _veRtpRtcpPtr(NULL),
     _transportPtr(NULL),
-    _encryptionPtr(NULL),
     _externalMediaPtr(NULL),
     _externalTransport(false),
     _externalTransportBuild(false),
@@ -1172,7 +1104,6 @@ CWinTestDlg::CWinTestDlg(CWnd* pParent /*=NULL*/)
     {
         _veExternalMediaPtr = VoEExternalMedia::GetInterface(_vePtr);
         _veVolumeControlPtr = VoEVolumeControl::GetInterface(_vePtr);
-        _veEncryptionPtr = VoEEncryption::GetInterface(_vePtr);
         _veVideoSyncPtr = VoEVideoSync::GetInterface(_vePtr);
         _veNetworkPtr = VoENetwork::GetInterface(_vePtr);
         _veFilePtr = VoEFile::GetInterface(_vePtr);
@@ -1183,7 +1114,6 @@ CWinTestDlg::CWinTestDlg(CWnd* pParent /*=NULL*/)
         _veHardwarePtr = VoEHardware::GetInterface(_vePtr);
         _veRtpRtcpPtr = VoERTP_RTCP::GetInterface(_vePtr);
         _transportPtr = new MyTransport(_veNetworkPtr);
-        _encryptionPtr = new MyEncryption();
         _externalMediaPtr = new MediaProcessImpl();
         _connectionObserverPtr = new ConnectionObserver();
         _rxVadObserverPtr = new RxCallback();
@@ -1204,11 +1134,9 @@ CWinTestDlg::~CWinTestDlg()
     if (_connectionObserverPtr) delete _connectionObserverPtr;
     if (_externalMediaPtr) delete _externalMediaPtr;
     if (_transportPtr) delete _transportPtr;
-    if (_encryptionPtr) delete _encryptionPtr;
     if (_rxVadObserverPtr) delete _rxVadObserverPtr;
 
     if (_veExternalMediaPtr) _veExternalMediaPtr->Release();
-    if (_veEncryptionPtr) _veEncryptionPtr->Release();
     if (_veVideoSyncPtr) _veVideoSyncPtr->Release();
     if (_veVolumeControlPtr) _veVolumeControlPtr->Release();
 
@@ -2675,162 +2603,32 @@ void CWinTestDlg::OnBnClickedCheckMuteIn2()
 
 void CWinTestDlg::OnBnClickedCheckSrtpTx1()
 {
-    int ret(0);
-    int channel = GetDlgItemInt(IDC_EDIT_1);
-    CButton* button = (CButton*)GetDlgItem(IDC_CHECK_SRTP_TX_1);
-    int check = button->GetCheck();
-    const bool enable = (check == BST_CHECKED);
-    bool useForRTCP = false;
-    if (enable)
-    {
-        (_checkSrtpTx1++ %2 == 0) ? useForRTCP = false : useForRTCP = true;
-        // TODO(solenberg): Install SRTP encryption policy.
-        TEST(true, "Built-in SRTP support is deprecated. Enable it again by "
-            "setting an external encryption policy, i.e.:\n\r"
-            "_veEncryptionPtr->RegisterExternalEncryption(channel, myPolicy)");
-    }
-    else
-    {
-        // TODO(solenberg): Uninstall SRTP encryption policy, i.e.:
-        //   _veEncryptionPtr->DeRegisterExternalEncryption(channel);
-    }
-    if (ret == -1)
-    {
-        // restore inital state since API call failed
-        button->SetCheck((check == BST_CHECKED) ? BST_UNCHECKED : BST_CHECKED);
-    }
+    TEST(true, "Built-in SRTP support is deprecated.");
 }
 
 void CWinTestDlg::OnBnClickedCheckSrtpTx2()
 {
-    int ret(0);
-    int channel = GetDlgItemInt(IDC_EDIT_2);
-    CButton* button = (CButton*)GetDlgItem(IDC_CHECK_SRTP_TX_2);
-    int check = button->GetCheck();
-    const bool enable = (check == BST_CHECKED);
-    bool useForRTCP = false;
-    if (enable)
-    {
-        (_checkSrtpTx2++ %2 == 0) ? useForRTCP = false : useForRTCP = true;
-        // TODO(solenberg): Install SRTP encryption policy.
-        TEST(true, "Built-in SRTP support is deprecated. Enable it again by "
-            "setting an external encryption policy, i.e.:\n\r"
-            "_veEncryptionPtr->RegisterExternalEncryption(channel, myPolicy)");
-    }
-    else
-    {
-        // TODO(solenberg): Uninstall SRTP encryption policy, i.e.:
-        //   _veEncryptionPtr->DeRegisterExternalEncryption(channel);
-    }
-    if (ret == -1)
-    {
-        // restore inital state since API call failed
-        button->SetCheck((check == BST_CHECKED) ? BST_UNCHECKED : BST_CHECKED);
-    }
+    TEST(true, "Built-in SRTP support is deprecated.");
 }
 
 void CWinTestDlg::OnBnClickedCheckSrtpRx1()
 {
-    int ret(0);
-    int channel = GetDlgItemInt(IDC_EDIT_1);
-    CButton* button = (CButton*)GetDlgItem(IDC_CHECK_SRTP_RX_1);
-    int check = button->GetCheck();
-    const bool enable = (check == BST_CHECKED);
-    bool useForRTCP(false);
-    if (enable)
-    {
-        (_checkSrtpRx1++ %2 == 0) ? useForRTCP = false : useForRTCP = true;
-        // TODO(solenberg): Install SRTP encryption policy.
-        TEST(true, "Built-in SRTP support is deprecated. Enable it again by "
-            "setting an external encryption policy, i.e.:\n\r"
-            "_veEncryptionPtr->RegisterExternalEncryption(channel, myPolicy)");
-    }
-    else
-    {
-        // TODO(solenberg): Uninstall SRTP encryption policy, i.e.:
-        //   _veEncryptionPtr->DeRegisterExternalEncryption(channel);
-    }
-    if (ret == -1)
-    {
-        // restore inital state since API call failed
-        button->SetCheck((check == BST_CHECKED) ? BST_UNCHECKED : BST_CHECKED);
-    }
+    TEST(true, "Built-in SRTP support is deprecated.");
 }
 
 void CWinTestDlg::OnBnClickedCheckSrtpRx2()
 {
-    int ret(0);
-    int channel = GetDlgItemInt(IDC_EDIT_2);
-    CButton* button = (CButton*)GetDlgItem(IDC_CHECK_SRTP_RX_2);
-    int check = button->GetCheck();
-    const bool enable = (check == BST_CHECKED);
-    bool useForRTCP(false);
-    if (enable)
-    {
-        (_checkSrtpRx2++ %2 == 0) ? useForRTCP = false : useForRTCP = true;
-        // TODO(solenberg): Install SRTP encryption policy.
-        TEST(true, "Built-in SRTP support is deprecated. Enable it again by "
-            "setting an external encryption policy, i.e.:\n\r"
-            "_veEncryptionPtr->RegisterExternalEncryption(channel, myPolicy)");
-    }
-    else
-    {
-        // TODO(solenberg): Uninstall SRTP encryption policy, i.e.:
-        //   _veEncryptionPtr->DeRegisterExternalEncryption(channel);
-    }
-    if (ret == -1)
-    {
-        // restore inital state since API call failed
-        button->SetCheck((check == BST_CHECKED) ? BST_UNCHECKED : BST_CHECKED);
-    }
+    TEST(true, "Built-in SRTP support is deprecated.");
 }
 
 void CWinTestDlg::OnBnClickedCheckExtEncryption1()
 {
-    int ret(0);
-    int channel = GetDlgItemInt(IDC_EDIT_1);
-    CButton* button = (CButton*)GetDlgItem(IDC_CHECK_EXT_ENCRYPTION_1);
-    int check = button->GetCheck();
-    const bool enable = (check == BST_CHECKED);
-    if (enable)
-    {
-        TEST((ret = _veEncryptionPtr->RegisterExternalEncryption(channel, *_encryptionPtr)) == 0,
-            _T("RegisterExternalEncryption(channel=%d, encryption=0x%x)"), channel, _encryptionPtr);
-    }
-    else
-    {
-        TEST((ret = _veEncryptionPtr->DeRegisterExternalEncryption(channel)) == 0,
-            _T("DeRegisterExternalEncryption(channel=%d)"), channel);
-    }
-    if (ret == -1)
-    {
-        // restore inital state since API call failed
-        button->SetCheck((check == BST_CHECKED) ? BST_UNCHECKED : BST_CHECKED);
-    }
+    TEST(true, "External Encryption has been removed from the API!");
 }
 
 void CWinTestDlg::OnBnClickedCheckExtEncryption2()
 {
-    int ret(0);
-    int channel = GetDlgItemInt(IDC_EDIT_2);
-    CButton* button = (CButton*)GetDlgItem(IDC_CHECK_EXT_ENCRYPTION_2);
-    int check = button->GetCheck();
-    const bool enable = (check == BST_CHECKED);
-    if (enable)
-    {
-        TEST((ret = _veEncryptionPtr->RegisterExternalEncryption(channel, *_encryptionPtr)) == 0,
-            _T("RegisterExternalEncryption(channel=%d, encryption=0x%x)"), channel, _encryptionPtr);
-    }
-    else
-    {
-        TEST((ret = _veEncryptionPtr->DeRegisterExternalEncryption(channel)) == 0,
-            _T("DeRegisterExternalEncryption(channel=%d)"), channel);
-    }
-    if (ret == -1)
-    {
-        // restore inital state since API call failed
-        button->SetCheck((check == BST_CHECKED) ? BST_UNCHECKED : BST_CHECKED);
-    }
+    TEST(true, "External Encryption has been removed from the API!");
 }
 
 void CWinTestDlg::OnBnClickedButtonDtmf1()

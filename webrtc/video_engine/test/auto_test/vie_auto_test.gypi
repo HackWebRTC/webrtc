@@ -21,7 +21,6 @@
         '<(webrtc_root)/test/metrics.gyp:metrics',
         '<(webrtc_root)/test/test.gyp:channel_transport',
         '<(webrtc_root)/test/test.gyp:test_support',
-        '<(webrtc_root)/test/libtest/libtest.gyp:libtest',
         'video_engine_core',
         'libvietest',
       ],

@@ -19,22 +19,11 @@ namespace voetest {
 
 class VoETestManager;
 
-class VoEUnitTest : public Encryption {
+class VoEUnitTest {
  public:
   VoEUnitTest(VoETestManager& mgr);
   ~VoEUnitTest() {}
   int DoTest();
-
- protected:
-  // Encryption
-  void encrypt(int channel_no, unsigned char * in_data,
-               unsigned char * out_data, int bytes_in, int * bytes_out);
-  void decrypt(int channel_no, unsigned char * in_data,
-               unsigned char * out_data, int bytes_in, int * bytes_out);
-  void encrypt_rtcp(int channel_no, unsigned char * in_data,
-                    unsigned char * out_data, int bytes_in, int * bytes_out);
-  void decrypt_rtcp(int channel_no, unsigned char * in_data,
-                    unsigned char * out_data, int bytes_in, int * bytes_out);
 
  private:
   int MenuSelection();

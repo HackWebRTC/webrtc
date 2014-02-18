@@ -49,8 +49,6 @@ void SubAPIManager::DisplayStatus() const {
     TEST_LOG("  Codec\n");
   if (_dtmf)
     TEST_LOG("  Dtmf\n");
-  if (_encryption)
-    TEST_LOG("  Encryption\n");
   if (_externalMedia)
     TEST_LOG("  ExternalMedia\n");
   if (_file)
@@ -79,8 +77,6 @@ void SubAPIManager::DisplayStatus() const {
     TEST_LOG("  Codec\n");
   if (!_dtmf)
     TEST_LOG("  Dtmf\n");
-  if (!_encryption)
-    TEST_LOG("  Encryption\n");
   if (!_externalMedia)
     TEST_LOG("  ExternamMedia\n");
   if (!_file)
@@ -109,7 +105,6 @@ VoETestManager::VoETestManager()
       voe_call_report_(0),
       voe_codec_(0),
       voe_dtmf_(0),
-      voe_encrypt_(0),
       voe_xmedia_(0),
       voe_file_(0),
       voe_hardware_(0),
@@ -165,7 +160,6 @@ void VoETestManager::GetInterfaces() {
 #ifdef _TEST_VIDEO_SYNC_
     voe_vsync_ = VoEVideoSync::GetInterface(voice_engine_);
 #endif
-    voe_encrypt_ = VoEEncryption::GetInterface(voice_engine_);
     voe_hardware_ = VoEHardware::GetInterface(voice_engine_);
     // Set the audio layer to use in all tests
     if (voe_hardware_) {
@@ -231,10 +225,6 @@ int VoETestManager::ReleaseInterfaces() {
     voe_vsync_ = NULL;
   }
 #endif
-  if (voe_encrypt_) {
-    voe_encrypt_->Release();
-    voe_encrypt_ = NULL;
-  }
   if (voe_hardware_) {
     voe_hardware_->Release();
     voe_hardware_ = NULL;

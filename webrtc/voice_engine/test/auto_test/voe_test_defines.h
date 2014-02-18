@@ -30,7 +30,6 @@
 #define _TEST_NETWORK_
 #define _TEST_CALL_REPORT_
 #define _TEST_VIDEO_SYNC_
-#define _TEST_ENCRYPT_
 #define _TEST_NETEQ_STATS_
 #define _TEST_XMEDIA_
 
@@ -68,9 +67,6 @@
 #endif
 #ifndef WEBRTC_VOICE_ENGINE_VIDEO_SYNC_API
 #undef _TEST_VIDEO_SYNC_
-#endif
-#ifndef WEBRTC_VOICE_ENGINE_ENCRYPTION_API
-#undef _TEST_ENCRYPT_
 #endif
 #ifndef WEBRTC_VOICE_ENGINE_HARDWARE_API
 #undef _TEST_HARDWARE_

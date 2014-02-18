@@ -34,7 +34,6 @@ BeforeInitializationFixture::BeforeInitializationFixture() {
   voe_network_ = webrtc::VoENetwork::GetInterface(voice_engine_);
   voe_file_ = webrtc::VoEFile::GetInterface(voice_engine_);
   voe_vsync_ = webrtc::VoEVideoSync::GetInterface(voice_engine_);
-  voe_encrypt_ = webrtc::VoEEncryption::GetInterface(voice_engine_);
   voe_hardware_ = webrtc::VoEHardware::GetInterface(voice_engine_);
   voe_xmedia_ = webrtc::VoEExternalMedia::GetInterface(voice_engine_);
   voe_call_report_ = webrtc::VoECallReport::GetInterface(voice_engine_);
@@ -51,7 +50,6 @@ BeforeInitializationFixture::~BeforeInitializationFixture() {
   voe_network_->Release();
   voe_file_->Release();
   voe_vsync_->Release();
-  voe_encrypt_->Release();
   voe_hardware_->Release();
   voe_xmedia_->Release();
   voe_call_report_->Release();

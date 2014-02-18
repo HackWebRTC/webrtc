@@ -22,7 +22,6 @@
 #include "webrtc/voice_engine/include/voe_call_report.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
 #include "webrtc/voice_engine/include/voe_dtmf.h"
-#include "webrtc/voice_engine/include/voe_encryption.h"
 #include "webrtc/voice_engine/include/voe_errors.h"
 #include "webrtc/voice_engine/include/voe_external_media.h"
 #include "webrtc/voice_engine/include/voe_file.h"
@@ -67,7 +66,6 @@ class BeforeInitializationFixture : public testing::Test {
   webrtc::VoENetwork*         voe_network_;
   webrtc::VoEFile*            voe_file_;
   webrtc::VoEVideoSync*       voe_vsync_;
-  webrtc::VoEEncryption*      voe_encrypt_;
   webrtc::VoEHardware*        voe_hardware_;
   webrtc::VoEExternalMedia*   voe_xmedia_;
   webrtc::VoECallReport*      voe_call_report_;
