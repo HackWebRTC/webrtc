@@ -189,8 +189,8 @@ void Channel::CalcStatistics(WebRtcRTPHeader& rtpInfo, uint16_t payloadSize) {
       currentPayloadStr->lastPayloadLenByte = payloadSize;
       currentPayloadStr->lastTimestamp = rtpInfo.header.timestamp;
       currentPayloadStr->payloadType = rtpInfo.header.payloadType;
-      memset(currentPayloadStr->frameSizeStats, 0,
-             sizeof(ACMTestPayloadStats::frameSizeStats));
+      memset(currentPayloadStr->frameSizeStats, 0, MAX_NUM_FRAMESIZES *
+             sizeof(ACMTestFrameSizeStats));
     }
   } else {
     n = 0;
@@ -202,8 +202,8 @@ void Channel::CalcStatistics(WebRtcRTPHeader& rtpInfo, uint16_t payloadSize) {
     _payloadStats[n].lastPayloadLenByte = payloadSize;
     _payloadStats[n].lastTimestamp = rtpInfo.header.timestamp;
     _payloadStats[n].payloadType = rtpInfo.header.payloadType;
-    memset(_payloadStats[n].frameSizeStats, 0,
-           sizeof(ACMTestPayloadStats::frameSizeStats));
+    memset(_payloadStats[n].frameSizeStats, 0, MAX_NUM_FRAMESIZES *
+           sizeof(ACMTestFrameSizeStats));
   }
 }
 
