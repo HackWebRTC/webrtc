@@ -938,6 +938,23 @@ int ViERTP_RTCPImpl::GetRtpStatistics(const int video_channel,
   return 0;
 }
 
+int ViERTP_RTCPImpl::GetRtcpPacketTypeCounters(
+    int video_channel,
+    RtcpPacketTypeCounter* packets_sent,
+    RtcpPacketTypeCounter* packets_received) const {
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(shared_data_->instance_id(), video_channel),
+                 "%s: Channel %d doesn't exist", __FUNCTION__, video_channel);
+    shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
+    return -1;
+  }
+  vie_channel->GetRtcpPacketTypeCounters(packets_sent, packets_received);
+  return 0;
+}
+
 int ViERTP_RTCPImpl::GetBandwidthUsage(const int video_channel,
                                        unsigned int& total_bitrate_sent,
                                        unsigned int& video_bitrate_sent,

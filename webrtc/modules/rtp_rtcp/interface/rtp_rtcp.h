@@ -508,6 +508,13 @@ class RtpRtcp : public Module {
     virtual int32_t RemoveRTCPReportBlock(const uint32_t SSRC) = 0;
 
     /*
+    *   Get number of sent and received RTCP packet types.
+    */
+    virtual void GetRtcpPacketTypeCounters(
+        RtcpPacketTypeCounter* packets_sent,
+        RtcpPacketTypeCounter* packets_received) const = 0;
+
+    /*
     *   (APP) Application specific data
     *
     *   return -1 on failure else 0

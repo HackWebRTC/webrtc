@@ -99,6 +99,10 @@ class ViERTP_RTCPImpl
   virtual int GetRtpStatistics(const int video_channel,
                                StreamDataCounters& sent,
                                StreamDataCounters& received) const;
+  virtual int GetRtcpPacketTypeCounters(
+      int video_channel,
+      RtcpPacketTypeCounter* packets_sent,
+      RtcpPacketTypeCounter* packets_received) const;
   virtual int GetBandwidthUsage(const int video_channel,
                                 unsigned int& total_bitrate_sent,
                                 unsigned int& video_bitrate_sent,

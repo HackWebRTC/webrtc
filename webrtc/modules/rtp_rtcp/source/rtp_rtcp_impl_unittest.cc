@@ -80,10 +80,22 @@ class RtpRtcpModule {
 
     transport_.SimulateNetworkDelay(kOneWayNetworkDelayMs, clock);
   }
+
+  RtcpPacketTypeCounter packets_sent_;
+  RtcpPacketTypeCounter packets_received_;
   scoped_ptr<ReceiveStatistics> receive_statistics_;
   SendTransport transport_;
   RtcpRttStatsTestImpl rtt_stats_;
   scoped_ptr<ModuleRtpRtcpImpl> impl_;
+
+  RtcpPacketTypeCounter RtcpSent() {
+    impl_->GetRtcpPacketTypeCounters(&packets_sent_, &packets_received_);
+    return packets_sent_;
+  }
+  RtcpPacketTypeCounter RtcpReceived() {
+    impl_->GetRtcpPacketTypeCounters(&packets_sent_, &packets_received_);
+    return packets_received_;
+  }
 };
 }  // namespace
 
@@ -171,5 +183,36 @@ TEST_F(RtpRtcpImplTest, RttForReceiverOnly) {
   receiver_.impl_->Process();
   EXPECT_EQ(2 * kOneWayNetworkDelayMs, receiver_.rtt_stats_.LastProcessedRtt());
   EXPECT_EQ(2 * kOneWayNetworkDelayMs, receiver_.impl_->rtt_ms());
+}
+
+TEST_F(RtpRtcpImplTest, RtcpPacketTypeCounter_Nack) {
+  EXPECT_EQ(0U, sender_.RtcpReceived().nack_packets);
+  EXPECT_EQ(0U, receiver_.RtcpSent().nack_packets);
+  // Receive module sends a NACK.
+  const uint16_t kNackLength = 1;
+  uint16_t nack_list[kNackLength] = {123};
+  EXPECT_EQ(0, receiver_.impl_->SendNACK(nack_list, kNackLength));
+  EXPECT_EQ(1U, receiver_.RtcpSent().nack_packets);
+
+  // Send module receives the NACK.
+  EXPECT_EQ(1U, sender_.RtcpReceived().nack_packets);
+}
+
+TEST_F(RtpRtcpImplTest, RtcpPacketTypeCounter_FirAndPli) {
+  EXPECT_EQ(0U, sender_.RtcpReceived().fir_packets);
+  EXPECT_EQ(0U, receiver_.RtcpSent().fir_packets);
+  // Receive module sends a FIR.
+  EXPECT_EQ(0, receiver_.impl_->SendRTCP(kRtcpFir));
+  EXPECT_EQ(1U, receiver_.RtcpSent().fir_packets);
+  // Send module receives the FIR.
+  EXPECT_EQ(1U, sender_.RtcpReceived().fir_packets);
+
+  // Receive module sends a FIR and PLI.
+  EXPECT_EQ(0, receiver_.impl_->SendRTCP(kRtcpFir | kRtcpPli));
+  EXPECT_EQ(2U, receiver_.RtcpSent().fir_packets);
+  EXPECT_EQ(1U, receiver_.RtcpSent().pli_packets);
+  // Send module receives the FIR and PLI.
+  EXPECT_EQ(2U, sender_.RtcpReceived().fir_packets);
+  EXPECT_EQ(1U, sender_.RtcpReceived().pli_packets);
 }
 }  // namespace webrtc

@@ -192,6 +192,24 @@ class RtcpStatisticsCallback {
                                  uint32_t ssrc) = 0;
 };
 
+// Statistics for RTCP packet types.
+struct RtcpPacketTypeCounter {
+  RtcpPacketTypeCounter()
+    : nack_packets(0),
+      fir_packets(0),
+      pli_packets(0) {}
+
+  void Add(const RtcpPacketTypeCounter& other) {
+    nack_packets += other.nack_packets;
+    fir_packets += other.fir_packets;
+    pli_packets += other.pli_packets;
+  }
+
+  uint32_t nack_packets;
+  uint32_t fir_packets;
+  uint32_t pli_packets;
+};
+
 // Data usage statistics for a (rtp) stream
 struct StreamDataCounters {
   StreamDataCounters()

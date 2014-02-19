@@ -88,6 +88,8 @@ public:
     int32_t StatisticsReceived(
         std::vector<RTCPReportBlock>* receiveBlocks) const;
 
+    void GetPacketTypeCounter(RtcpPacketTypeCounter* packet_counter) const;
+
     // Returns true if we haven't received an RTCP RR for several RTCP
     // intervals, but only triggers true once.
     bool RtcpRrTimeout(int64_t rtcp_interval_ms);
@@ -266,6 +268,8 @@ protected:
   int64_t _lastIncreasedSequenceNumberMs;
 
   RtcpStatisticsCallback* stats_callback_;
+
+  RtcpPacketTypeCounter packet_type_counter_;
 };
 }  // namespace webrtc
 #endif // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_H_

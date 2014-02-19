@@ -983,6 +983,13 @@ int32_t ModuleRtpRtcpImpl::RemoveRTCPReportBlock(
   return rtcp_sender_.RemoveExternalReportBlock(ssrc);
 }
 
+void ModuleRtpRtcpImpl::GetRtcpPacketTypeCounters(
+    RtcpPacketTypeCounter* packets_sent,
+    RtcpPacketTypeCounter* packets_received) const {
+  rtcp_sender_.GetPacketTypeCounter(packets_sent);
+  rtcp_receiver_.GetPacketTypeCounter(packets_received);
+}
+
 // (REMB) Receiver Estimated Max Bitrate.
 bool ModuleRtpRtcpImpl::REMB() const {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "REMB()");

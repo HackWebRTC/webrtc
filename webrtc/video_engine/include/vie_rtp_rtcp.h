@@ -360,6 +360,14 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
   virtual int DeregisterReceiveChannelRtpStatisticsCallback(
       int video_channel, StreamDataCountersCallback* callback) = 0;
 
+
+  // Gets sent and received RTCP packet types.
+  // TODO(asapersson): Remove default implementation.
+  virtual int GetRtcpPacketTypeCounters(
+      int video_channel,
+      RtcpPacketTypeCounter* packets_sent,
+      RtcpPacketTypeCounter* packets_received) const { return -1; }
+
   // The function gets bandwidth usage statistics from the sent RTP streams in
   // bits/s.
   virtual int GetBandwidthUsage(const int video_channel,

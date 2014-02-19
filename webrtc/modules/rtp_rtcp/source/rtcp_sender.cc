@@ -156,10 +156,7 @@ RTCPSender::RTCPSender(const int32_t id,
 
     xrSendReceiverReferenceTimeEnabled_(false),
     _xrSendVoIPMetric(false),
-    _xrVoIPMetric(),
-    _nackCount(0),
-    _pliCount(0),
-    _fullIntraRequestCount(0)
+    _xrVoIPMetric()
 {
     memset(_CNAME, 0, sizeof(_CNAME));
     memset(_lastSendReport, 0, sizeof(_lastSendReport));
@@ -239,10 +236,7 @@ RTCPSender::Init()
     memset(_lastRTCPTime, 0, sizeof(_lastRTCPTime));
     last_xr_rr_.clear();
 
-    _nackCount = 0;
-    _pliCount = 0;
-    _fullIntraRequestCount = 0;
-
+    memset(&packet_type_counter_, 0, sizeof(packet_type_counter_));
     return 0;
 }
 
@@ -614,6 +608,12 @@ bool RTCPSender::SendTimeOfXrRrReport(uint32_t mid_ntp,
   }
   *time_ms = it->second;
   return true;
+}
+
+void RTCPSender::GetPacketTypeCounter(
+    RtcpPacketTypeCounter* packet_counter) const {
+  CriticalSectionScoped lock(_criticalSectionRTCPSender);
+  *packet_counter = packet_type_counter_;
 }
 
 int32_t RTCPSender::AddExternalReportBlock(
@@ -1919,8 +1919,9 @@ int RTCPSender::PrepareRTCP(const FeedbackState& feedback_state,
         return position;
       }
       TRACE_EVENT_INSTANT0("webrtc_rtp", "RTCPSender::PLI");
-      _pliCount++;
-      TRACE_COUNTER_ID1("webrtc_rtp", "RTCP_PLICount", _SSRC, _pliCount);
+      ++packet_type_counter_.pli_packets;
+      TRACE_COUNTER_ID1("webrtc_rtp", "RTCP_PLICount", _SSRC,
+                        packet_type_counter_.pli_packets);
   }
   if(rtcpPacketTypeFlags & kRtcpFir)
   {
@@ -1931,9 +1932,9 @@ int RTCPSender::PrepareRTCP(const FeedbackState& feedback_state,
         return position;
       }
       TRACE_EVENT_INSTANT0("webrtc_rtp", "RTCPSender::FIR");
-      _fullIntraRequestCount++;
+      ++packet_type_counter_.fir_packets;
       TRACE_COUNTER_ID1("webrtc_rtp", "RTCP_FIRCount", _SSRC,
-                        _fullIntraRequestCount);
+                        packet_type_counter_.fir_packets);
   }
   if(rtcpPacketTypeFlags & kRtcpSli)
   {
@@ -2016,8 +2017,9 @@ int RTCPSender::PrepareRTCP(const FeedbackState& feedback_state,
       }
       TRACE_EVENT_INSTANT1("webrtc_rtp", "RTCPSender::NACK",
                            "nacks", TRACE_STR_COPY(nackString.c_str()));
-      _nackCount++;
-      TRACE_COUNTER_ID1("webrtc_rtp", "RTCP_NACKCount", _SSRC, _nackCount);
+      ++packet_type_counter_.nack_packets;
+      TRACE_COUNTER_ID1("webrtc_rtp", "RTCP_NACKCount", _SSRC,
+                        packet_type_counter_.nack_packets);
   }
   if(rtcpPacketTypeFlags & kRtcpXrVoipMetric)
   {

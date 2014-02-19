@@ -197,9 +197,13 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   // Set received RTCP report block.
   virtual int32_t AddRTCPReportBlock(
-    const uint32_t ssrc, const RTCPReportBlock* receive_block) OVERRIDE;
+      const uint32_t ssrc, const RTCPReportBlock* receive_block) OVERRIDE;
 
   virtual int32_t RemoveRTCPReportBlock(const uint32_t ssrc) OVERRIDE;
+
+  virtual void GetRtcpPacketTypeCounters(
+      RtcpPacketTypeCounter* packets_sent,
+      RtcpPacketTypeCounter* packets_received) const OVERRIDE;
 
   // (REMB) Receiver Estimated Max Bitrate.
   virtual bool REMB() const OVERRIDE;

@@ -317,6 +317,12 @@ int32_t RTCPReceiver::StatisticsReceived(
   return 0;
 }
 
+void RTCPReceiver::GetPacketTypeCounter(
+    RtcpPacketTypeCounter* packet_counter) const {
+  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  *packet_counter = packet_type_counter_;
+}
+
 int32_t
 RTCPReceiver::IncomingRTCPPacket(RTCPPacketInformation& rtcpPacketInformation,
                                  RTCPUtility::RTCPParserV2* rtcpParser)
@@ -839,6 +845,10 @@ RTCPReceiver::HandleNACK(RTCPUtility::RTCPParserV2& rtcpParser,
         HandleNACKItem(rtcpPacket, rtcpPacketInformation);
         pktType = rtcpParser.Iterate();
     }
+
+    if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpNack) {
+      ++packet_type_counter_.nack_packets;
+    }
 }
 
 // no need for critsect we have _criticalSectionRTCPReceiver
@@ -1028,6 +1038,7 @@ void RTCPReceiver::HandlePLI(RTCPUtility::RTCPParserV2& rtcpParser,
   if (main_ssrc_ == rtcpPacket.PLI.MediaSSRC) {
     TRACE_EVENT_INSTANT0("webrtc_rtp", "PLI");
 
+    ++packet_type_counter_.pli_packets;
     // Received a signal that we need to send a new key frame.
     rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpPli;
   }
@@ -1270,6 +1281,9 @@ void RTCPReceiver::HandleFIRItem(RTCPReceiveInformation* receiveInfo,
   if (main_ssrc_ != rtcpPacket.FIRItem.SSRC) {
     return;
   }
+
+  ++packet_type_counter_.fir_packets;
+
   // rtcpPacket.FIR.MediaSSRC SHOULD be 0 but we ignore to check it
   // we don't know who this originate from
   if (receiveInfo) {
