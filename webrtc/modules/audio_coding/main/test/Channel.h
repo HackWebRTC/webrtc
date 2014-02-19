@@ -24,6 +24,7 @@ class CriticalSectionWrapper;
 #define MAX_NUM_PAYLOADS   50
 #define MAX_NUM_FRAMESIZES  6
 
+// TODO(turajs): Write constructor for this structure.
 struct ACMTestFrameSizeStats {
   uint16_t frameSizeSample;
   int16_t maxPayloadLen;
@@ -34,6 +35,7 @@ struct ACMTestFrameSizeStats {
   double usageLenSec;
 };
 
+// TODO(turajs): Write constructor for this structure.
 struct ACMTestPayloadStats {
   bool newPacket;
   int16_t payloadType;
