@@ -93,6 +93,23 @@ def _CheckApprovedFilesLintClean(input_api, output_api,
 
   return result
 
+def _CheckTalkOrWebrtcOnly(input_api, output_api):
+  base_folders = set(["webrtc", "talk"])
+  base_folders_in_cl = set()
+
+  for f in input_api.AffectedFiles():
+    full_path = f.LocalPath()
+    base_folders_in_cl.add(full_path[:full_path.find('/')])
+
+  results = []
+  if base_folders.issubset(base_folders_in_cl):
+    error_type = output_api.PresubmitError
+    results.append(error_type(
+        'It is not allowed to check in files to ' + ', '.join(base_folders) +
+        ' in the same cl',
+        []))
+  return results
+
 def _CommonChecks(input_api, output_api):
   """Checks common to both upload and commit."""
   # TODO(kjellander): Use presubmit_canned_checks.PanProjectChecks too.
@@ -133,6 +150,7 @@ def _CommonChecks(input_api, output_api):
   results.extend(_CheckApprovedFilesLintClean(input_api, output_api))
   results.extend(_CheckNoIOStreamInHeaders(input_api, output_api))
   results.extend(_CheckNoFRIEND_TEST(input_api, output_api))
+  results.extend(_CheckTalkOrWebrtcOnly(input_api, output_api))
   return results
 
 def CheckChangeOnUpload(input_api, output_api):
