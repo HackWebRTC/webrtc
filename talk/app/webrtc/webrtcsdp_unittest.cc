@@ -1783,6 +1783,18 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannels) {
   EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
 }
 
+// For crbug/344475.
+TEST_F(WebRtcSdpTest, DeserializeSdpWithCorruptedSctpDataChannels) {
+  std::string sdp_with_data = kSdpString;
+  sdp_with_data.append(kSdpSctpDataChannelString);
+  // Remove the "\n" at the end.
+  sdp_with_data = sdp_with_data.substr(0, sdp_with_data.size() - 1);
+  JsepSessionDescription jdesc_output(kDummyString);
+
+  EXPECT_FALSE(SdpDeserialize(sdp_with_data, &jdesc_output));
+  // No crash is a pass.
+}
+
 TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelAndNewPort) {
   AddSctpDataChannel();
   const uint16 kUnusualSctpPort = 9556;
