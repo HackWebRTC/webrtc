@@ -201,38 +201,6 @@ TEST_F(RtpRtcpTest, DisabledRtcpObserverDoesNotReceiveData) {
   EXPECT_EQ(0u, rtcp_app_handler.sub_type_);
 }
 
-TEST_F(RtpRtcpTest, InsertExtraRTPPacketDealsWithInvalidArguments) {
-  const char payload_data[8] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H' };
-
-  EXPECT_EQ(-1, voe_rtp_rtcp_->InsertExtraRTPPacket(
-      -1, 0, false, payload_data, 8)) <<
-          "Should reject: invalid channel.";
-  EXPECT_EQ(-1, voe_rtp_rtcp_->InsertExtraRTPPacket(
-      channel_, -1, false, payload_data, 8)) <<
-          "Should reject: invalid payload type.";
-  EXPECT_EQ(-1, voe_rtp_rtcp_->InsertExtraRTPPacket(
-      channel_, 128, false, payload_data, 8)) <<
-          "Should reject: invalid payload type.";
-  EXPECT_EQ(-1, voe_rtp_rtcp_->InsertExtraRTPPacket(
-        channel_, 99, false, NULL, 8)) <<
-            "Should reject: bad pointer.";
-  EXPECT_EQ(-1, voe_rtp_rtcp_->InsertExtraRTPPacket(
-        channel_, 99, false, payload_data, 1500 - 28 + 1)) <<
-            "Should reject: invalid size.";
-}
-
-TEST_F(RtpRtcpTest, DISABLED_CanTransmitExtraRtpPacketsWithoutError) {
-  const char payload_data[8] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H' };
-
-  for (int i = 0; i < 128; ++i) {
-    // Try both with and without the marker bit set
-    EXPECT_EQ(0, voe_rtp_rtcp_->InsertExtraRTPPacket(
-        channel_, i, false, payload_data, 8));
-    EXPECT_EQ(0, voe_rtp_rtcp_->InsertExtraRTPPacket(
-        channel_, i, true, payload_data, 8));
-  }
-}
-
 // TODO(xians, phoglund): Re-enable when issue 372 is resolved.
 TEST_F(RtpRtcpTest, DISABLED_CanCreateRtpDumpFilesWithoutError) {
   // Create two RTP dump files (3 seconds long). You can verify these after

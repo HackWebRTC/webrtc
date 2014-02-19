@@ -655,36 +655,6 @@ int VoERTP_RTCPImpl::RTPDumpIsActive(int channel, RTPDirections direction)
     return channelPtr->RTPDumpIsActive(direction);
 }
 
-int VoERTP_RTCPImpl::InsertExtraRTPPacket(int channel,
-                                          unsigned char payloadType,
-                                          bool markerBit,
-                                          const char* payloadData,
-                                          unsigned short payloadSize)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "InsertExtraRTPPacket(channel=%d, payloadType=%u,"
-                 " markerBit=%u, payloadSize=%u)",
-                 channel, payloadType, markerBit, payloadSize);
-
-    if (!_shared->statistics().Initialized())
-    {
-        _shared->SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-    voe::Channel* channelPtr = ch.channel();
-    if (channelPtr == NULL)
-    {
-        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-            "InsertExtraRTPPacket() failed to locate channel");
-        return -1;
-    }
-    return channelPtr->InsertExtraRTPPacket(payloadType,
-                                            markerBit,
-                                            payloadData,
-                                            payloadSize);
-}
-
 int VoERTP_RTCPImpl::GetLastRemoteTimeStamp(int channel,
                                             uint32_t* timestamp) {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),

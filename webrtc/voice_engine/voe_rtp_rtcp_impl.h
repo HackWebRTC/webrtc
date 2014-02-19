@@ -71,7 +71,7 @@ public:
                                                  bool& enabled,
                                                  unsigned char& ID);
 
-    // CSRC 
+    // CSRC
     virtual int GetRemoteCSRCs(int channel, unsigned int arrCSRC[15]);
 
     // Statistics
@@ -110,12 +110,6 @@ public:
     virtual int RTPDumpIsActive(int channel,
                                 RTPDirections direction = kRtpIncoming);
 
-    // Insert (and transmits) extra RTP packet into active RTP audio stream
-    virtual int InsertExtraRTPPacket(int channel,
-                                     unsigned char payloadType,
-                                     bool markerBit,
-                                     const char* payloadData,
-                                     unsigned short payloadSize);
     virtual int GetLastRemoteTimeStamp(int channel,
                                        uint32_t* lastRemoteTimeStamp);
 protected:

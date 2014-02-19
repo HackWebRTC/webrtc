@@ -279,9 +279,6 @@ public:
     int StartRTPDump(const char fileNameUTF8[1024], RTPDirections direction);
     int StopRTPDump(RTPDirections direction);
     bool RTPDumpIsActive(RTPDirections direction);
-    int InsertExtraRTPPacket(unsigned char payloadType, bool markerBit,
-                             const char* payloadData,
-                             unsigned short payloadSize);
     uint32_t LastRemoteTimeStamp() { return _lastRemoteTimeStamp; }
 
     // From AudioPacketizationCallback in the ACM
@@ -528,9 +525,6 @@ private:
     bool _playOutbandDtmfEvent;
     bool _playInbandDtmfEvent;
     // VoeRTP_RTCP
-    uint8_t _extraPayloadType;
-    bool _insertExtraRTPPacket;
-    bool _extraMarkerBit;
     uint32_t _lastLocalTimeStamp;
     uint32_t _lastRemoteTimeStamp;
     int8_t _lastPayloadType;

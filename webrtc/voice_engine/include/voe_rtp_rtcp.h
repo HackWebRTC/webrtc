@@ -18,7 +18,6 @@
 //  - Forward Error Correction (FEC).
 //  - Writing RTP and RTCP packets to binary files for off-line analysis of
 //    the call quality.
-//  - Inserting extra RTP packets into active audio stream.
 //
 // Usage example, omitting error checking:
 //
@@ -246,16 +245,15 @@ public:
     virtual int RTPDumpIsActive(
         int channel, RTPDirections direction = kRtpIncoming) = 0;
 
-    // Sends an extra RTP packet using an existing/active RTP session.
-    // It is possible to set the payload type, marker bit and payload
-    // of the extra RTP
-    virtual int InsertExtraRTPPacket(
-        int channel, unsigned char payloadType, bool markerBit,
-        const char* payloadData, unsigned short payloadSize) = 0;
-
     // Gets the timestamp of the last RTP packet received by |channel|.
     virtual int GetLastRemoteTimeStamp(int channel,
                                        uint32_t* lastRemoteTimeStamp) = 0;
+
+    // Don't use. To be removed.
+    virtual int InsertExtraRTPPacket(
+        int channel, unsigned char payloadType, bool markerBit,
+        const char* payloadData, unsigned short payloadSize) { return -1; };
+
 
 protected:
     VoERTP_RTCP() {}

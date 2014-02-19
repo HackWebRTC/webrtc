@@ -179,21 +179,6 @@ Channel::SendPacket(int channel, const void *data, int len)
         return -1;
     }
 
-    // Insert extra RTP packet using if user has called the InsertExtraRTPPacket
-    // API
-    if (_insertExtraRTPPacket)
-    {
-        uint8_t* rtpHdr = (uint8_t*)data;
-        uint8_t M_PT(0);
-        if (_extraMarkerBit)
-        {
-            M_PT = 0x80;            // set the M-bit
-        }
-        M_PT += _extraPayloadType;  // set the payload type
-        *(++rtpHdr) = M_PT;     // modify the M|PT-byte within the RTP header
-        _insertExtraRTPPacket = false;  // insert one packet only
-    }
-
     uint8_t* bufferToSendPtr = (uint8_t*)data;
     int32_t bufferLength = len;
 
@@ -922,9 +907,6 @@ Channel::Channel(int32_t channelId,
     _outputGain(1.0f),
     _playOutbandDtmfEvent(false),
     _playInbandDtmfEvent(false),
-    _extraPayloadType(0),
-    _insertExtraRTPPacket(false),
-    _extraMarkerBit(false),
     _lastLocalTimeStamp(0),
     _lastRemoteTimeStamp(0),
     _lastPayloadType(0),
@@ -4139,78 +4121,6 @@ Channel::RTPDumpIsActive(RTPDirections direction)
     RtpDump* rtpDumpPtr = (direction == kRtpIncoming) ?
         &_rtpDumpIn : &_rtpDumpOut;
     return rtpDumpPtr->IsActive();
-}
-
-int
-Channel::InsertExtraRTPPacket(unsigned char payloadType,
-                              bool markerBit,
-                              const char* payloadData,
-                              unsigned short payloadSize)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::InsertExtraRTPPacket()");
-    if (payloadType > 127)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_INVALID_PLTYPE, kTraceError,
-            "InsertExtraRTPPacket() invalid payload type");
-        return -1;
-    }
-    if (payloadData == NULL)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_INVALID_ARGUMENT, kTraceError,
-            "InsertExtraRTPPacket() invalid payload data");
-        return -1;
-    }
-    if (payloadSize > _rtpRtcpModule->MaxDataPayloadLength())
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_INVALID_ARGUMENT, kTraceError,
-            "InsertExtraRTPPacket() invalid payload size");
-        return -1;
-    }
-    if (!_sending)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_NOT_SENDING, kTraceError,
-            "InsertExtraRTPPacket() not sending");
-        return -1;
-    }
-
-    // Create extra RTP packet by calling RtpRtcp::SendOutgoingData().
-    // Transport::SendPacket() will be called by the module when the RTP packet
-    // is created.
-    // The call to SendOutgoingData() does *not* modify the timestamp and
-    // payloadtype to ensure that the RTP module generates a valid RTP packet
-    // (user might utilize a non-registered payload type).
-    // The marker bit and payload type will be replaced just before the actual
-    // transmission, i.e., the actual modification is done *after* the RTP
-    // module has delivered its RTP packet back to the VoE.
-    // We will use the stored values above when the packet is modified
-    // (see Channel::SendPacket()).
-
-    _extraPayloadType = payloadType;
-    _extraMarkerBit = markerBit;
-    _insertExtraRTPPacket = true;
-
-    if (_rtpRtcpModule->SendOutgoingData(kAudioFrameSpeech,
-                                        _lastPayloadType,
-                                        _lastLocalTimeStamp,
-                                        // Leaving the time when this frame was
-                                        // received from the capture device as
-                                        // undefined for voice for now.
-                                        -1,
-                                        (const uint8_t*) payloadData,
-                                        payloadSize) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_RTP_RTCP_MODULE_ERROR, kTraceError,
-            "InsertExtraRTPPacket() failed to send extra RTP packet");
-        return -1;
-    }
-
-    return 0;
 }
 
 uint32_t
