@@ -57,8 +57,7 @@ int PushSincResampler::Resample(const int16_t* source,
     resampler_->Resample(resampler_->ChunkSize(), float_buffer_.get());
 
   resampler_->Resample(destination_frames_, float_buffer_.get());
-  for (int i = 0; i < destination_frames_; ++i)
-    destination[i] = RoundToInt16(ClampInt16(float_buffer_[i]));
+  RoundToInt16(float_buffer_.get(), destination_frames_, destination);
   source_ptr_ = NULL;
   return destination_frames_;
 }

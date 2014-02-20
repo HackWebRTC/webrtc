@@ -27,11 +27,14 @@ TEST(AudioUtilTest, Clamp) {
 }
 
 TEST(AudioUtilTest, Round) {
-  EXPECT_EQ(0, RoundToInt16(0.f));
-  EXPECT_EQ(0, RoundToInt16(0.4f));
-  EXPECT_EQ(1, RoundToInt16(0.5f));
-  EXPECT_EQ(0, RoundToInt16(-0.4f));
-  EXPECT_EQ(-1, RoundToInt16(-0.5f));
+  const int kSize = 7;
+  const float kInput[kSize] = {
+      0.f, 0.4f, 0.5f, -0.4f, -0.5f, 32768.f, -32769.f};
+  const int16_t kReference[kSize] = {0, 0, 1, 0, -1, 32767, -32768};
+  int16_t output[kSize];
+  RoundToInt16(kInput, kSize, output);
+  for (int n = 0; n < kSize; ++n)
+    EXPECT_EQ(kReference[n], output[n]);
 }
 
 TEST(AudioUtilTest, InterleavingStereo) {
