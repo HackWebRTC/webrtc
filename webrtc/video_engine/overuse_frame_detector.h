@@ -24,15 +24,21 @@ class CriticalSectionWrapper;
 class VCMExpFilter;
 
 // Limits on standard deviation for under/overuse.
-#ifdef WEBRTC_LINUX
-const float kOveruseStdDevMs = 15.0f;
-const float kNormalUseStdDevMs = 7.0f;
+#ifdef WEBRTC_ANDROID
+const float kOveruseStdDevMs = 32.0f;
+const float kNormalUseStdDevMs = 27.0f;
+#elif WEBRTC_LINUX
+const float kOveruseStdDevMs = 20.0f;
+const float kNormalUseStdDevMs = 14.0f;
 #elif WEBRTC_MAC
-const float kOveruseStdDevMs = 24.0f;
+const float kOveruseStdDevMs = 27.0f;
+const float kNormalUseStdDevMs = 21.0f;
+#elif WEBRTC_WIN
+const float kOveruseStdDevMs = 20.0f;
 const float kNormalUseStdDevMs = 14.0f;
 #else
-const float kOveruseStdDevMs = 17.0f;
-const float kNormalUseStdDevMs = 10.0f;
+const float kOveruseStdDevMs = 30.0f;
+const float kNormalUseStdDevMs = 20.0f;
 #endif
 
 // TODO(pbos): Move this somewhere appropriate.
