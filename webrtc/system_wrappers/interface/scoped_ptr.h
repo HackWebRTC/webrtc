@@ -96,7 +96,7 @@
 #define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_SCOPED_PTR_H_
 
 // This is an implementation designed to match the anticipated future TR2
-// implementation of the scoped_ptr class and scoped_ptr_malloc (deprecated).
+// implementation of the scoped_ptr class.
 
 #include <assert.h>
 #include <stddef.h>
@@ -636,77 +636,6 @@ class scoped_array {
 
 template<class T> inline
 void swap(scoped_array<T>& a, scoped_array<T>& b) {
-  a.swap(b);
-}
-
-// DEPRECATED: Use scoped_ptr<C, webrtc::FreeDeleter> instead.
-// TODO(ajm): Remove scoped_ptr_malloc.
-//
-// scoped_ptr_malloc<> is similar to scoped_ptr<>, but it accepts a
-// second template argument, the function used to free the object.
-
-template<typename T, void (*FF)(void*) = free> class scoped_ptr_malloc {
- private:
-
-  T* ptr;
-
-  scoped_ptr_malloc(scoped_ptr_malloc const &);
-  scoped_ptr_malloc & operator=(scoped_ptr_malloc const &);
-
- public:
-
-  typedef T element_type;
-
-  explicit scoped_ptr_malloc(T* p = 0): ptr(p) {}
-
-  ~scoped_ptr_malloc() {
-    FF(static_cast<void*>(ptr));
-  }
-
-  void reset(T* p = 0) {
-    if (ptr != p) {
-      FF(static_cast<void*>(ptr));
-      ptr = p;
-    }
-  }
-
-  T& operator*() const {
-    assert(ptr != 0);
-    return *ptr;
-  }
-
-  T* operator->() const {
-    assert(ptr != 0);
-    return ptr;
-  }
-
-  T* get() const {
-    return ptr;
-  }
-
-  void swap(scoped_ptr_malloc & b) {
-    T* tmp = b.ptr;
-    b.ptr = ptr;
-    ptr = tmp;
-  }
-
-  T* release() {
-    T* tmp = ptr;
-    ptr = 0;
-    return tmp;
-  }
-
-  T** accept() {
-    if (ptr) {
-      FF(static_cast<void*>(ptr));
-      ptr = 0;
-    }
-    return &ptr;
-  }
-};
-
-template<typename T, void (*FF)(void*)> inline
-void swap(scoped_ptr_malloc<T,FF>& a, scoped_ptr_malloc<T,FF>& b) {
   a.swap(b);
 }
 
