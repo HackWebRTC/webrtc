@@ -216,7 +216,6 @@ int PacketBuffer::DiscardNextPacket() {
 }
 
 int PacketBuffer::DiscardOldPackets(uint32_t timestamp_limit) {
-  int discard_count = 0;
   while (!Empty() &&
       timestamp_limit != buffer_.front()->header.timestamp &&
       static_cast<uint32_t>(timestamp_limit
@@ -225,7 +224,6 @@ int PacketBuffer::DiscardOldPackets(uint32_t timestamp_limit) {
     if (DiscardNextPacket() != kOK) {
       assert(false);  // Must be ok by design.
     }
-    ++discard_count;
   }
   return 0;
 }
