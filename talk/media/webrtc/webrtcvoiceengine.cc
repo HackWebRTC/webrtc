@@ -1675,10 +1675,12 @@ class WebRtcVoiceMediaChannel::WebRtcVoiceChannelRenderer
 
   // Starts the rendering by setting a sink to the renderer to get data
   // callback.
+  // This method is called on the libjingle worker thread.
   // TODO(xians): Make sure Start() is called only once.
   void Start(AudioRenderer* renderer) {
+    talk_base::CritScope lock(&lock_);
     ASSERT(renderer != NULL);
-    if (renderer_) {
+    if (renderer_ != NULL) {
       ASSERT(renderer_ == renderer);
       return;
     }
@@ -1692,8 +1694,10 @@ class WebRtcVoiceMediaChannel::WebRtcVoiceChannelRenderer
 
   // Stops rendering by setting the sink of the renderer to NULL. No data
   // callback will be received after this method.
+  // This method is called on the libjingle worker thread.
   void Stop() {
-    if (!renderer_)
+    talk_base::CritScope lock(&lock_);
+    if (renderer_ == NULL)
       return;
 
     renderer_->RemoveChannel(channel_);
@@ -1702,13 +1706,29 @@ class WebRtcVoiceMediaChannel::WebRtcVoiceChannelRenderer
   }
 
   // AudioRenderer::Sink implementation.
+  // This method is called on the audio thread.
   virtual void OnData(const void* audio_data,
                       int bits_per_sample,
                       int sample_rate,
                       int number_of_channels,
                       int number_of_frames) OVERRIDE {
-    // TODO(xians): Make new interface in AudioTransport to pass the data to
-    // WebRtc VoE channel.
+#ifdef USE_WEBRTC_DEV_BRANCH
+    voe_audio_transport_->OnData(channel_,
+                                 audio_data,
+                                 bits_per_sample,
+                                 sample_rate,
+                                 number_of_channels,
+                                 number_of_frames);
+#endif
+  }
+
+  // Callback from the |renderer_| when it is going away. In case Start() has
+  // never been called, this callback won't be triggered.
+  virtual void OnClose() OVERRIDE {
+    talk_base::CritScope lock(&lock_);
+    // Set |renderer_| to NULL to make sure no more callback will get into
+    // the renderer.
+    renderer_ = NULL;
   }
 
   // Accessor to the VoE channel ID.
@@ -1722,6 +1742,9 @@ class WebRtcVoiceMediaChannel::WebRtcVoiceChannelRenderer
   // PeerConnection will make sure invalidating the pointer before the object
   // goes away.
   AudioRenderer* renderer_;
+
+  // Protects |renderer_| in Start(), Stop() and OnClose().
+  talk_base::CriticalSection lock_;
 };
 
 // WebRtcVoiceMediaChannel

@@ -58,7 +58,11 @@ void TrackHandler::OnChanged() {
 
 LocalAudioSinkAdapter::LocalAudioSinkAdapter() : sink_(NULL) {}
 
-LocalAudioSinkAdapter::~LocalAudioSinkAdapter() {}
+LocalAudioSinkAdapter::~LocalAudioSinkAdapter() {
+  talk_base::CritScope lock(&lock_);
+  if (sink_)
+    sink_->OnClose();
+}
 
 void LocalAudioSinkAdapter::OnData(const void* audio_data,
                                    int bits_per_sample,

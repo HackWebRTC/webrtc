@@ -522,6 +522,25 @@ TEST_F(SrtpFilterTest, TestSetParamsKeyTooShort) {
                                  kTestKey1, kTestKeyLen - 1));
 }
 
+#if defined(ENABLE_EXTERNAL_AUTH)
+TEST_F(SrtpFilterTest, TestGetSendAuthParams) {
+  EXPECT_TRUE(f1_.SetRtpParams(CS_AES_CM_128_HMAC_SHA1_32,
+                               kTestKey1, kTestKeyLen,
+                               CS_AES_CM_128_HMAC_SHA1_32,
+                               kTestKey2, kTestKeyLen));
+  EXPECT_TRUE(f1_.SetRtcpParams(CS_AES_CM_128_HMAC_SHA1_32,
+                                kTestKey1, kTestKeyLen,
+                                CS_AES_CM_128_HMAC_SHA1_32,
+                                kTestKey2, kTestKeyLen));
+  uint8* auth_key = NULL;
+  int auth_key_len = 0, auth_tag_len = 0;
+  EXPECT_TRUE(f1_.GetRtpAuthParams(&auth_key, &auth_key_len, &auth_tag_len));
+  EXPECT_TRUE(auth_key != NULL);
+  EXPECT_EQ(20, auth_key_len);
+  EXPECT_EQ(4, auth_tag_len);
+}
+#endif
+
 class SrtpSessionTest : public testing::Test {
  protected:
   virtual void SetUp() {
@@ -604,6 +623,15 @@ TEST_F(SrtpSessionTest, TestProtect_AES_CM_128_HMAC_SHA1_32) {
   TestProtectRtcp(CS_AES_CM_128_HMAC_SHA1_32);
   TestUnprotectRtp(CS_AES_CM_128_HMAC_SHA1_32);
   TestUnprotectRtcp(CS_AES_CM_128_HMAC_SHA1_32);
+}
+
+TEST_F(SrtpSessionTest, TestGetSendStreamPacketIndex) {
+  EXPECT_TRUE(s1_.SetSend(CS_AES_CM_128_HMAC_SHA1_32, kTestKey1, kTestKeyLen));
+  int64 index;
+  int out_len = 0;
+  EXPECT_TRUE(s1_.ProtectRtp(rtp_packet_, rtp_len_,
+                             sizeof(rtp_packet_), &out_len, &index));
+  EXPECT_EQ(1, index);
 }
 
 // Test that we fail to unprotect if someone tampers with the RTP/RTCP paylaods.

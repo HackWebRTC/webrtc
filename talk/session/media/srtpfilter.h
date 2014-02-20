@@ -122,11 +122,17 @@ class SrtpFilter {
   // Encrypts/signs an individual RTP/RTCP packet, in-place.
   // If an HMAC is used, this will increase the packet size.
   bool ProtectRtp(void* data, int in_len, int max_len, int* out_len);
+  // Overloaded version, outputs packet index.
+  bool ProtectRtp(void* data, int in_len, int max_len, int* out_len,
+                  int64* index);
   bool ProtectRtcp(void* data, int in_len, int max_len, int* out_len);
   // Decrypts/verifies an invidiual RTP/RTCP packet.
   // If an HMAC is used, this will decrease the packet size.
   bool UnprotectRtp(void* data, int in_len, int* out_len);
   bool UnprotectRtcp(void* data, int in_len, int* out_len);
+
+  // Returns rtp auth params from srtp context.
+  bool GetRtpAuthParams(uint8** key, int* key_len, int* tag_len);
 
   // Update the silent threshold (in ms) for signaling errors.
   void set_signal_silent_time(uint32 signal_silent_time_in_ms);
@@ -200,11 +206,17 @@ class SrtpSession {
   // Encrypts/signs an individual RTP/RTCP packet, in-place.
   // If an HMAC is used, this will increase the packet size.
   bool ProtectRtp(void* data, int in_len, int max_len, int* out_len);
+  // Overloaded version, outputs packet index.
+  bool ProtectRtp(void* data, int in_len, int max_len, int* out_len,
+                  int64* index);
   bool ProtectRtcp(void* data, int in_len, int max_len, int* out_len);
   // Decrypts/verifies an invidiual RTP/RTCP packet.
   // If an HMAC is used, this will decrease the packet size.
   bool UnprotectRtp(void* data, int in_len, int* out_len);
   bool UnprotectRtcp(void* data, int in_len, int* out_len);
+
+  // Helper method to get authentication params.
+  bool GetRtpAuthParams(uint8** key, int* key_len, int* tag_len);
 
   // Update the silent threshold (in ms) for signaling errors.
   void set_signal_silent_time(uint32 signal_silent_time_in_ms);
@@ -217,9 +229,13 @@ class SrtpSession {
 
  private:
   bool SetKey(int type, const std::string& cs, const uint8* key, int len);
+    // Returns send stream current packet index from srtp db.
+  bool GetSendStreamPacketIndex(void* data, int in_len, int64* index);
+
   static bool Init();
   void HandleEvent(const srtp_event_data_t* ev);
   static void HandleEventThunk(srtp_event_data_t* ev);
+
   static std::list<SrtpSession*>* sessions();
 
   srtp_t session_;

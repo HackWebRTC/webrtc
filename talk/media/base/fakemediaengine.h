@@ -316,17 +316,18 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
     return true;
   }
   virtual bool SetLocalRenderer(uint32 ssrc, AudioRenderer* renderer) {
-    std::map<uint32, AudioRenderer*>::iterator it = local_renderers_.find(ssrc);
+    std::map<uint32, VoiceChannelAudioSink*>::iterator it =
+        local_renderers_.find(ssrc);
     if (renderer) {
       if (it != local_renderers_.end()) {
-        ASSERT(it->second == renderer);
+        ASSERT(it->second->renderer() == renderer);
       } else {
-        local_renderers_.insert(std::make_pair(ssrc, renderer));
-        renderer->AddChannel(0);
+        local_renderers_.insert(std::make_pair(
+            ssrc, new VoiceChannelAudioSink(renderer)));
       }
     } else {
       if (it != local_renderers_.end()) {
-        it->second->RemoveChannel(0);
+        delete it->second;
         local_renderers_.erase(it);
       } else {
         return false;
@@ -419,6 +420,34 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
     double left, right;
   };
 
+  class VoiceChannelAudioSink : public AudioRenderer::Sink {
+   public:
+    explicit VoiceChannelAudioSink(AudioRenderer* renderer)
+        : renderer_(renderer) {
+      renderer_->AddChannel(0);
+      renderer_->SetSink(this);
+    }
+    virtual ~VoiceChannelAudioSink() {
+      if (renderer_) {
+        renderer_->RemoveChannel(0);
+        renderer_->SetSink(NULL);
+      }
+    }
+    virtual void OnData(const void* audio_data,
+                        int bits_per_sample,
+                        int sample_rate,
+                        int number_of_channels,
+                        int number_of_frames) OVERRIDE {}
+    virtual void OnClose() OVERRIDE {
+      renderer_ = NULL;
+    }
+    AudioRenderer* renderer() const { return renderer_; }
+
+   private:
+    AudioRenderer* renderer_;
+  };
+
+
   FakeVoiceEngine* engine_;
   std::vector<AudioCodec> recv_codecs_;
   std::vector<AudioCodec> send_codecs_;
@@ -430,7 +459,7 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
   bool ringback_tone_loop_;
   int time_since_last_typing_;
   AudioOptions options_;
-  std::map<uint32, AudioRenderer*> local_renderers_;
+  std::map<uint32, VoiceChannelAudioSink*> local_renderers_;
   std::map<uint32, AudioRenderer*> remote_renderers_;
 };
 
