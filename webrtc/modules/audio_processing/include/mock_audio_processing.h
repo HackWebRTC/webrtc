@@ -248,10 +248,6 @@ class MockAudioProcessing : public AudioProcessing {
   virtual MockVoiceDetection* voice_detection() const {
     return voice_detection_.get();
   };
-  MOCK_METHOD0(TimeUntilNextProcess,
-      int32_t());
-  MOCK_METHOD0(Process,
-      int32_t());
 
  private:
   scoped_ptr<MockEchoCancellation> echo_cancellation_;
