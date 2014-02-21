@@ -319,6 +319,11 @@ class BaseChannel
                                   ContentAction action,
                                   std::string* error_desc) = 0;
 
+  // Helper method to get RTP Absoulute SendTime extension header id if
+  // present in remote supported extensions list.
+  void MaybeCacheRtpAbsSendTimeHeaderExtension(
+    const std::vector<RtpHeaderExtension>& extensions);
+
   bool CheckSrtpConfig(const std::vector<CryptoParams>& cryptos,
                        bool* dtls,
                        std::string* error_desc);
@@ -380,6 +385,7 @@ class BaseChannel
   bool has_received_packet_;
   bool dtls_keyed_;
   bool secure_required_;
+  int rtp_abs_sendtime_extn_id_;
 };
 
 // VoiceChannel is a specialization that adds support for early media, DTMF,

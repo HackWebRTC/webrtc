@@ -118,6 +118,7 @@ const char STR_MUC_ROOM_FEATURE_HANGOUT[] = "muc_es";
 const char STR_MUC_ROOM_FEATURE_HANGOUT_LITE[] = "muc_lite";
 const char STR_MUC_ROOM_FEATURE_BROADCAST[] = "broadcast";
 const char STR_MUC_ROOM_FEATURE_MULTI_USER_VC[] = "muc_muvc";
+const char STR_MUC_ROOM_FEATURE_RECORDABLE[] = "recordable";
 const char STR_MUC_ROOM_OWNER_PROFILE_ID[] = "muc#roominfo_owner_profile_id";
 
 const char STR_ID_TYPE_CONVERSATION[] = "conversation";

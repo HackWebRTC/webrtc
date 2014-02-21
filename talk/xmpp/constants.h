@@ -111,6 +111,7 @@ extern const char STR_MUC_ROOM_FEATURE_HANGOUT[];
 extern const char STR_MUC_ROOM_FEATURE_HANGOUT_LITE[];
 extern const char STR_MUC_ROOM_FEATURE_BROADCAST[];
 extern const char STR_MUC_ROOM_FEATURE_MULTI_USER_VC[];
+extern const char STR_MUC_ROOM_FEATURE_RECORDABLE[];
 extern const char STR_MUC_ROOM_OWNER_PROFILE_ID[];
 
 extern const char STR_ID_TYPE_CONVERSATION[];

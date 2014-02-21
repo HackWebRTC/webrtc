@@ -152,10 +152,7 @@ static const char kRtpTimestampOffsetHeaderExtension[] =
     "urn:ietf:params:rtp-hdrext:toffset";
 static const int kRtpTimeOffsetExtensionId = 2;
 
-// Extension header for absolute send time, see url for details:
-// http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time
-static const char kRtpAbsoluteSendTimeHeaderExtension[] =
-    "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
+// Extension header ID for absolute send time. Url defined in constants.cc
 static const int kRtpAbsoluteSendTimeExtensionId = 3;
 // Default video dscp value.
 // See http://tools.ietf.org/html/rfc2474 for details

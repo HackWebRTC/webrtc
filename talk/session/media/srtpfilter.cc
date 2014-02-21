@@ -52,7 +52,7 @@ extern "C" srtp_stream_t srtp_get_stream(srtp_t srtp, uint32_t ssrc);
 #include "third_party/libsrtp/include/srtp_priv.h"
 #endif  // SRTP_RELATIVE_PATH
 #ifdef  ENABLE_EXTERNAL_AUTH
-#include "talk/session/media/external_hmac.h"
+#include "talk/session/media/externalhmac.h"
 #endif  // ENABLE_EXTERNAL_AUTH
 #ifdef _DEBUG
 extern "C" debug_module_t mod_srtp;

@@ -33,6 +33,7 @@
 #include "talk/base/common.h"
 #include "talk/base/dscp.h"
 #include "talk/base/logging.h"
+#include "talk/media/base/constants.h"
 #include "talk/media/base/rtputils.h"
 #include "talk/p2p/base/transportchannel.h"
 #include "talk/session/media/channelmanager.h"
@@ -186,7 +187,8 @@ BaseChannel::BaseChannel(talk_base::Thread* thread,
       remote_content_direction_(MD_INACTIVE),
       has_received_packet_(false),
       dtls_keyed_(false),
-      secure_required_(false) {
+      secure_required_(false),
+      rtp_abs_sendtime_extn_id_(-1) {
   ASSERT(worker_thread_ == talk_base::Thread::Current());
   LOG(LS_INFO) << "Created channel for " << content_name;
 }
@@ -462,14 +464,40 @@ bool BaseChannel::SendPacket(bool rtcp, talk_base::Buffer* packet,
     SignalSendPacketPreCrypto(packet->data(), packet->length(), rtcp);
   }
 
+  talk_base::PacketOptions options(dscp);
+  options.packet_time_params.rtp_sendtime_extension_id =
+      rtp_abs_sendtime_extn_id_;
   // Protect if needed.
   if (srtp_filter_.IsActive()) {
     bool res;
     char* data = packet->data();
     int len = static_cast<int>(packet->length());
     if (!rtcp) {
-      res = srtp_filter_.ProtectRtp(data, len,
-                                    static_cast<int>(packet->capacity()), &len);
+    // If ENABLE_EXTERNAL_AUTH flag is on then packet authentication is not done
+    // inside libsrtp for a RTP packet. A external HMAC module will be writing
+    // a fake HMAC value. This is ONLY done for a RTP packet.
+    // Socket layer will update rtp sendtime extension header if present in
+    // packet with current time before updating the HMAC.
+#if !defined(ENABLE_EXTERNAL_AUTH)
+      res = srtp_filter_.ProtectRtp(
+          data, len, static_cast<int>(packet->capacity()), &len);
+#else
+      res = srtp_filter_.ProtectRtp(
+          data, len, static_cast<int>(packet->capacity()), &len,
+          &options.packet_time_params.srtp_packet_index);
+      // If protection succeeds, let's get auth params from srtp.
+      if (res) {
+        uint8* auth_key = NULL;
+        int key_len;
+        res = srtp_filter_.GetRtpAuthParams(
+            &auth_key, &key_len, &options.packet_time_params.srtp_auth_tag_len);
+        if (res) {
+          options.packet_time_params.srtp_auth_key.resize(key_len);
+          options.packet_time_params.srtp_auth_key.assign(auth_key,
+                                                          auth_key + key_len);
+        }
+      }
+#endif
       if (!res) {
         int seq_num = -1;
         uint32 ssrc = 0;
@@ -511,7 +539,6 @@ bool BaseChannel::SendPacket(bool rtcp, talk_base::Buffer* packet,
   }
 
   // Bon voyage.
-  talk_base::PacketOptions options(dscp);
   int ret = channel->SendPacket(packet->data(), packet->length(), options,
       (secure() && secure_dtls()) ? PF_SRTP_BYPASS : 0);
   if (ret != static_cast<int>(packet->length())) {
@@ -1170,6 +1197,8 @@ bool BaseChannel::SetBaseRemoteContent_w(const MediaContentDescription* content,
            << MediaTypeToString(content->type()) << " content.";
       SafeSetError(desc.str(), error_desc);
       ret = false;
+    } else {
+      MaybeCacheRtpAbsSendTimeHeaderExtension(content->rtp_header_extensions());
     }
   }
 
@@ -1182,6 +1211,14 @@ bool BaseChannel::SetBaseRemoteContent_w(const MediaContentDescription* content,
   }
   set_remote_content_direction(content->direction());
   return ret;
+}
+
+void BaseChannel::MaybeCacheRtpAbsSendTimeHeaderExtension(
+    const std::vector<RtpHeaderExtension>& extensions) {
+  const RtpHeaderExtension* send_time_extension =
+      FindHeaderExtension(extensions, kRtpAbsoluteSendTimeHeaderExtension);
+  rtp_abs_sendtime_extn_id_ =
+      send_time_extension ? send_time_extension->id : -1;
 }
 
 void BaseChannel::OnMessage(talk_base::Message *pmsg) {

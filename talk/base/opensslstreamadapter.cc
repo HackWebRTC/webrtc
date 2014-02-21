@@ -53,6 +53,11 @@
 
 namespace talk_base {
 
+#if (OPENSSL_VERSION_NUMBER >= 0x10001000L)
+#define HAVE_DTLS_SRTP
+#endif
+
+#ifdef HAVE_DTLS_SRTP
 // SRTP cipher suite table
 struct SrtpCipherMapEntry {
   const char* external_name;
@@ -65,6 +70,7 @@ static SrtpCipherMapEntry SrtpCipherMap[] = {
   {"AES_CM_128_HMAC_SHA1_32", "SRTP_AES128_CM_SHA1_32"},
   {NULL, NULL}
 };
+#endif
 
 //////////////////////////////////////////////////////////////////////
 // StreamBIO
@@ -238,6 +244,7 @@ bool OpenSSLStreamAdapter::ExportKeyingMaterial(const std::string& label,
                                                 bool use_context,
                                                 uint8* result,
                                                 size_t result_len) {
+#ifdef HAVE_DTLS_SRTP
   int i;
 
   i = SSL_export_keying_material(ssl_, result, result_len,
@@ -249,10 +256,14 @@ bool OpenSSLStreamAdapter::ExportKeyingMaterial(const std::string& label,
     return false;
 
   return true;
+#else
+  return false;
+#endif
 }
 
 bool OpenSSLStreamAdapter::SetDtlsSrtpCiphers(
     const std::vector<std::string>& ciphers) {
+#ifdef HAVE_DTLS_SRTP
   std::string internal_ciphers;
 
   if (state_ != SSL_NONE)
@@ -283,9 +294,13 @@ bool OpenSSLStreamAdapter::SetDtlsSrtpCiphers(
 
   srtp_ciphers_ = internal_ciphers;
   return true;
+#else
+  return false;
+#endif
 }
 
 bool OpenSSLStreamAdapter::GetDtlsSrtpCipher(std::string* cipher) {
+#ifdef HAVE_DTLS_SRTP
   ASSERT(state_ == SSL_CONNECTED);
   if (state_ != SSL_CONNECTED)
     return false;
@@ -307,6 +322,9 @@ bool OpenSSLStreamAdapter::GetDtlsSrtpCipher(std::string* cipher) {
   ASSERT(false);  // This should never happen
 
   return false;
+#else
+  return false;
+#endif
 }
 
 int OpenSSLStreamAdapter::StartSSLWithServer(const char* server_name) {
@@ -737,12 +755,14 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
   SSL_CTX_set_verify_depth(ctx, 4);
   SSL_CTX_set_cipher_list(ctx, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
 
+#ifdef HAVE_DTLS_SRTP
   if (!srtp_ciphers_.empty()) {
     if (SSL_CTX_set_tlsext_use_srtp(ctx, srtp_ciphers_.c_str())) {
       SSL_CTX_free(ctx);
       return NULL;
     }
   }
+#endif
 
   return ctx;
 }
@@ -820,11 +840,19 @@ bool OpenSSLStreamAdapter::HaveDtls() {
 }
 
 bool OpenSSLStreamAdapter::HaveDtlsSrtp() {
+#ifdef HAVE_DTLS_SRTP
   return true;
+#else
+  return false;
+#endif
 }
 
 bool OpenSSLStreamAdapter::HaveExporter() {
+#ifdef HAVE_DTLS_SRTP
   return true;
+#else
+  return false;
+#endif
 }
 
 }  // namespace talk_base

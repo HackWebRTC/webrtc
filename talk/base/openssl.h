@@ -30,8 +30,8 @@
 
 #include <openssl/ssl.h>
 
-#if (OPENSSL_VERSION_NUMBER < 0x10001000L)
-#error OpenSSL is older than 1.0.1, which is the minimum supported version.
+#if (OPENSSL_VERSION_NUMBER < 0x10000000L)
+#error OpenSSL is older than 1.0.0, which is the minimum supported version.
 #endif
 
 #endif  // TALK_BASE_OPENSSL_H_

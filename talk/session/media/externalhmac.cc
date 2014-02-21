@@ -33,7 +33,7 @@
 #include "third_party/libsrtp/include/srtp.h"
 #endif  // SRTP_RELATIVE_PATH
 
-#include "talk/session/media/external_hmac.h"
+#include "talk/session/media/externalhmac.h"
 
 #include "talk/base/logging.h"
 

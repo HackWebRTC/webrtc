@@ -28,7 +28,6 @@
 
 #include "talk/base/common.h"  // For ASSERT
 #include "talk/base/criticalsection.h"
-#include "talk/base/logging.h"
 #include "talk/base/scoped_ptr.h"
 #include "talk/base/sigslot.h"
 #include "talk/media/base/videocommon.h"
@@ -64,11 +63,7 @@ class VideoAdapter {
   // the output frame.
   bool AdaptFrame(const VideoFrame* in_frame, VideoFrame** out_frame);
 
-  void set_scale_third(bool enable) {
-    LOG(LS_INFO) << "Video Adapter third scaling is now "
-                 << (enable ? "enabled" : "disabled");
-    scale_third_ = enable;
-  }
+  void set_scale_third(bool enable);
   bool scale_third() const { return scale_third_; }
 
  protected:
@@ -129,11 +124,7 @@ class CoordinatedVideoAdapter
   // Enable or disable smoothing when doing CPU adaptation. When smoothing is
   // enabled, system CPU load is tracked using an exponential weighted
   // average.
-  void set_cpu_smoothing(bool enable) {
-    LOG(LS_INFO) << "CPU smoothing is now "
-                 << (enable ? "enabled" : "disabled");
-    cpu_smoothing_ = enable;
-  }
+  void set_cpu_smoothing(bool enable);
   bool cpu_smoothing() const { return cpu_smoothing_; }
   // Enable or disable video adaptation due to the change of the GD
   void set_gd_adaptation(bool enable) { gd_adaptation_ = enable; }
@@ -151,47 +142,16 @@ class CoordinatedVideoAdapter
 
   // When the video is decreased, set the waiting time for CPU adaptation to
   // decrease video again.
-  void set_cpu_load_min_samples(int cpu_load_min_samples) {
-    if (cpu_load_min_samples_ != cpu_load_min_samples) {
-      LOG(LS_INFO) << "VAdapt Change Cpu Adapt Min Samples from: "
-                   << cpu_load_min_samples_ << " to "
-                   << cpu_load_min_samples;
-      cpu_load_min_samples_ = cpu_load_min_samples;
-    }
-  }
+  void set_cpu_load_min_samples(int cpu_load_min_samples);
   int cpu_load_min_samples() const { return cpu_load_min_samples_; }
   // CPU system load high threshold for reducing resolution.  e.g. 0.85f
-  void set_high_system_threshold(float high_system_threshold) {
-    ASSERT(high_system_threshold <= 1.0f);
-    ASSERT(high_system_threshold >= 0.0f);
-    if (high_system_threshold_ != high_system_threshold) {
-      LOG(LS_INFO) << "VAdapt Change High System Threshold from: "
-                   << high_system_threshold_ << " to " << high_system_threshold;
-      high_system_threshold_ = high_system_threshold;
-    }
-  }
+  void set_high_system_threshold(float high_system_threshold);
   float high_system_threshold() const { return high_system_threshold_; }
   // CPU system load low threshold for increasing resolution.  e.g. 0.70f
-  void set_low_system_threshold(float low_system_threshold) {
-    ASSERT(low_system_threshold <= 1.0f);
-    ASSERT(low_system_threshold >= 0.0f);
-    if (low_system_threshold_ != low_system_threshold) {
-      LOG(LS_INFO) << "VAdapt Change Low System Threshold from: "
-                   << low_system_threshold_ << " to " << low_system_threshold;
-      low_system_threshold_ = low_system_threshold;
-    }
-  }
+  void set_low_system_threshold(float low_system_threshold);
   float low_system_threshold() const { return low_system_threshold_; }
   // CPU process load threshold for reducing resolution.  e.g. 0.10f
-  void set_process_threshold(float process_threshold) {
-    ASSERT(process_threshold <= 1.0f);
-    ASSERT(process_threshold >= 0.0f);
-    if (process_threshold_ != process_threshold) {
-      LOG(LS_INFO) << "VAdapt Change High Process Threshold from: "
-                   << process_threshold_ << " to " << process_threshold;
-      process_threshold_ = process_threshold;
-    }
-  }
+  void set_process_threshold(float process_threshold);
   float process_threshold() const { return process_threshold_; }
 
   // Handle the format request from the server via Jingle update message.

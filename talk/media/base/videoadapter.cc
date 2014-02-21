@@ -211,6 +211,12 @@ void CoordinatedVideoAdapter::SetInputFormat(const VideoFormat& format) {
   }
 }
 
+void CoordinatedVideoAdapter::set_cpu_smoothing(bool enable) {
+  LOG(LS_INFO) << "CPU smoothing is now "
+               << (enable ? "enabled" : "disabled");
+  cpu_smoothing_ = enable;
+}
+
 void VideoAdapter::SetOutputFormat(const VideoFormat& format) {
   talk_base::CritScope cs(&critical_section_);
   int64 old_output_interval = output_format_.interval;
@@ -361,6 +367,12 @@ bool VideoAdapter::AdaptFrame(const VideoFrame* in_frame,
   return true;
 }
 
+void VideoAdapter::set_scale_third(bool enable) {
+  LOG(LS_INFO) << "Video Adapter third scaling is now "
+               << (enable ? "enabled" : "disabled");
+  scale_third_ = enable;
+}
+
 // Scale or Blacken the frame.  Returns true if successful.
 bool VideoAdapter::StretchToOutputFrame(const VideoFrame* in_frame) {
   int output_width = output_format_.width;
@@ -479,6 +491,48 @@ void CoordinatedVideoAdapter::OnOutputFormatRequest(const VideoFormat& format) {
                << " Pixels: " << view_desired_num_pixels_
                << " Changed: " << (changed ? "true" : "false")
                << " To: " << new_width << "x" << new_height;
+}
+
+void CoordinatedVideoAdapter::set_cpu_load_min_samples(
+    int cpu_load_min_samples) {
+  if (cpu_load_min_samples_ != cpu_load_min_samples) {
+    LOG(LS_INFO) << "VAdapt Change Cpu Adapt Min Samples from: "
+                 << cpu_load_min_samples_ << " to "
+                 << cpu_load_min_samples;
+    cpu_load_min_samples_ = cpu_load_min_samples;
+  }
+}
+
+void CoordinatedVideoAdapter::set_high_system_threshold(
+    float high_system_threshold) {
+  ASSERT(high_system_threshold <= 1.0f);
+  ASSERT(high_system_threshold >= 0.0f);
+  if (high_system_threshold_ != high_system_threshold) {
+    LOG(LS_INFO) << "VAdapt Change High System Threshold from: "
+                 << high_system_threshold_ << " to " << high_system_threshold;
+    high_system_threshold_ = high_system_threshold;
+  }
+}
+
+void CoordinatedVideoAdapter::set_low_system_threshold(
+    float low_system_threshold) {
+  ASSERT(low_system_threshold <= 1.0f);
+  ASSERT(low_system_threshold >= 0.0f);
+  if (low_system_threshold_ != low_system_threshold) {
+    LOG(LS_INFO) << "VAdapt Change Low System Threshold from: "
+                 << low_system_threshold_ << " to " << low_system_threshold;
+    low_system_threshold_ = low_system_threshold;
+  }
+}
+
+void CoordinatedVideoAdapter::set_process_threshold(float process_threshold) {
+  ASSERT(process_threshold <= 1.0f);
+  ASSERT(process_threshold >= 0.0f);
+  if (process_threshold_ != process_threshold) {
+    LOG(LS_INFO) << "VAdapt Change High Process Threshold from: "
+                 << process_threshold_ << " to " << process_threshold;
+    process_threshold_ = process_threshold;
+  }
 }
 
 // A Bandwidth GD request for new resolution
