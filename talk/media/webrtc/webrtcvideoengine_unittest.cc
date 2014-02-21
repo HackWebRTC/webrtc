@@ -1292,6 +1292,7 @@ TEST_F(WebRtcVideoEngineTestFake, MultipleSendStreamsWithOneCapturer) {
         cricket::StreamParams::CreateLegacy(kSsrcs2[i])));
     // Register the capturer to the ssrc.
     EXPECT_TRUE(channel_->SetCapturer(kSsrcs2[i], &capturer));
+    EXPECT_TRUE(channel_->SetSendStreamFormat(kSsrcs2[i], capture_format_vga));
   }
 
   const int channel0 = vie_.GetChannelFromLocalSsrc(kSsrcs2[0]);

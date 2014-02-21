@@ -56,6 +56,7 @@ class FakePeriodicVideoCapturer : public cricket::FakeVideoCapturer {
   virtual cricket::CaptureState Start(const cricket::VideoFormat& format) {
     cricket::CaptureState state = FakeVideoCapturer::Start(format);
     if (state != cricket::CS_FAILED) {
+      set_enable_video_adapter(false);  // Simplify testing.
       talk_base::Thread::Current()->Post(this, MSG_CREATEFRAME);
     }
     return state;

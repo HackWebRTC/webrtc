@@ -249,7 +249,11 @@ class WebRtcSessionCreateSDPObserverForTest
 
 class FakeAudioRenderer : public cricket::AudioRenderer {
  public:
-  FakeAudioRenderer() : channel_id_(-1) {}
+  FakeAudioRenderer() : channel_id_(-1), sink_(NULL) {}
+  virtual ~FakeAudioRenderer() {
+    if (sink_)
+      sink_->OnClose();
+  }
 
   virtual void AddChannel(int channel_id) OVERRIDE {
     ASSERT(channel_id_ == -1);
@@ -259,10 +263,15 @@ class FakeAudioRenderer : public cricket::AudioRenderer {
     ASSERT(channel_id == channel_id_);
     channel_id_ = -1;
   }
+  virtual void SetSink(Sink* sink) OVERRIDE {
+    sink_ = sink;
+  }
 
   int channel_id() const { return channel_id_; }
+  cricket::AudioRenderer::Sink* sink() const { return sink_; }
  private:
   int channel_id_;
+  cricket::AudioRenderer::Sink* sink_;
 };
 
 class WebRtcSessionTest : public testing::Test {
@@ -2187,13 +2196,39 @@ TEST_F(WebRtcSessionTest, SetAudioSend) {
   EXPECT_TRUE(channel->IsStreamMuted(send_ssrc));
   EXPECT_FALSE(channel->options().echo_cancellation.IsSet());
   EXPECT_EQ(0, renderer->channel_id());
+  EXPECT_TRUE(renderer->sink() != NULL);
 
+  // This will trigger SetSink(NULL) to the |renderer|.
   session_->SetAudioSend(send_ssrc, true, options, NULL);
   EXPECT_FALSE(channel->IsStreamMuted(send_ssrc));
   bool value;
   EXPECT_TRUE(channel->options().echo_cancellation.Get(&value));
   EXPECT_TRUE(value);
   EXPECT_EQ(-1, renderer->channel_id());
+  EXPECT_TRUE(renderer->sink() == NULL);
+}
+
+TEST_F(WebRtcSessionTest, AudioRendererForLocalStream) {
+  Init(NULL);
+  mediastream_signaling_.SendAudioVideoStream1();
+  CreateAndSetRemoteOfferAndLocalAnswer();
+  cricket::FakeVoiceMediaChannel* channel = media_engine_->GetVoiceChannel(0);
+  ASSERT_TRUE(channel != NULL);
+  ASSERT_EQ(1u, channel->send_streams().size());
+  uint32 send_ssrc  = channel->send_streams()[0].first_ssrc();
+
+  talk_base::scoped_ptr<FakeAudioRenderer> renderer(new FakeAudioRenderer());
+  cricket::AudioOptions options;
+  session_->SetAudioSend(send_ssrc, true, options, renderer.get());
+  EXPECT_TRUE(renderer->sink() != NULL);
+
+  // Delete the |renderer| and it will trigger OnClose() to the sink, and this
+  // will invalidate the |renderer_| pointer in the sink and prevent getting a
+  // SetSink(NULL) callback afterwards.
+  renderer.reset();
+
+  // This will trigger SetSink(NULL) if no OnClose() callback.
+  session_->SetAudioSend(send_ssrc, true, options, NULL);
 }
 
 TEST_F(WebRtcSessionTest, SetVideoPlayout) {

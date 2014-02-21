@@ -35,11 +35,16 @@ class AudioRenderer {
  public:
   class Sink {
    public:
+    // Callback to receive data from the AudioRenderer.
     virtual void OnData(const void* audio_data,
                         int bits_per_sample,
                         int sample_rate,
                         int number_of_channels,
                         int number_of_frames) = 0;
+
+    // Called when the AudioRenderer is going away.
+    virtual void OnClose() = 0;
+
    protected:
     virtual ~Sink() {}
   };
