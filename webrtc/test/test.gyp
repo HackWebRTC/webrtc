@@ -53,6 +53,17 @@
       ],
     },
     {
+      'target_name': 'rtcp_packet_parser',
+      'type': 'static_library',
+      'sources': [
+        'rtcp_packet_parser.cc',
+        'rtcp_packet_parser.h',
+      ],
+      'dependencies': [
+        '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
+      ],
+    },
+    {
       'target_name': 'test_support',
       'type': 'static_library',
       'dependencies': [

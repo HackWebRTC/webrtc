@@ -36,6 +36,8 @@
         'rtp_rtcp_config.h',
         'rtp_rtcp_impl.cc',
         'rtp_rtcp_impl.h',
+        'rtcp_packet.cc',
+        'rtcp_packet.h',
         'rtcp_receiver.cc',
         'rtcp_receiver.h',
         'rtcp_receiver_help.cc',

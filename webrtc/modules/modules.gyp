@@ -99,6 +99,7 @@
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             '<(webrtc_root)/test/test.gyp:test_support_main',
             '<(webrtc_root)/test/test.gyp:frame_generator',
+            '<(webrtc_root)/test/test.gyp:rtcp_packet_parser',
           ],
           'sources': [
             'audio_coding/main/acm2/acm_receiver_unittest.cc',
@@ -203,8 +204,9 @@
             'rtp_rtcp/source/producer_fec_unittest.cc',
             'rtp_rtcp/source/receive_statistics_unittest.cc',
             'rtp_rtcp/source/rtcp_format_remb_unittest.cc',
-            'rtp_rtcp/source/rtcp_sender_unittest.cc',
+            'rtp_rtcp/source/rtcp_packet_unittest.cc',
             'rtp_rtcp/source/rtcp_receiver_unittest.cc',
+            'rtp_rtcp/source/rtcp_sender_unittest.cc',
             'rtp_rtcp/source/rtp_fec_unittest.cc',
             'rtp_rtcp/source/rtp_format_vp8_unittest.cc',
             'rtp_rtcp/source/rtp_format_vp8_test_helper.cc',
