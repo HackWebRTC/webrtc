@@ -65,6 +65,9 @@ int WebRtcAec_CreateAec(AecCore** aec);
 int WebRtcAec_FreeAec(AecCore* aec);
 int WebRtcAec_InitAec(AecCore* aec, int sampFreq);
 void WebRtcAec_InitAec_SSE2(void);
+#if defined(MIPS_FPU_LE)
+void WebRtcAec_InitAec_mips(void);
+#endif
 
 void WebRtcAec_BufferFarendPartition(AecCore* aec, const float* farend);
 void WebRtcAec_ProcessFrame(AecCore* aec,

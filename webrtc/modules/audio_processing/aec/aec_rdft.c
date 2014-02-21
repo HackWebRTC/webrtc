@@ -116,7 +116,7 @@ static void bitrv2_32(int* ip, float* a) {
   }
 }
 
-static void bitrv2_128(float* a) {
+static void bitrv2_128_C(float* a) {
   /*
       Following things have been attempted but are no faster:
       (a) Storing the swap indexes in a LUT (index calculations are done
@@ -512,7 +512,7 @@ static void cftmdl_128_C(float* a) {
   }
 }
 
-static void cftfsub_128(float* a) {
+static void cftfsub_128_C(float* a) {
   int j, j1, j2, j3, l;
   float x0r, x0i, x1r, x1i, x2r, x2i, x3r, x3i;
 
@@ -542,7 +542,7 @@ static void cftfsub_128(float* a) {
   }
 }
 
-static void cftbsub_128(float* a) {
+static void cftbsub_128_C(float* a) {
   int j, j1, j2, j3, l;
   float x0r, x0i, x1r, x1i, x2r, x2i, x3r, x3i;
 
@@ -640,16 +640,25 @@ rft_sub_128_t cft1st_128;
 rft_sub_128_t cftmdl_128;
 rft_sub_128_t rftfsub_128;
 rft_sub_128_t rftbsub_128;
+rft_sub_128_t cftfsub_128;
+rft_sub_128_t cftbsub_128;
+rft_sub_128_t bitrv2_128;
 
 void aec_rdft_init(void) {
   cft1st_128 = cft1st_128_C;
   cftmdl_128 = cftmdl_128_C;
   rftfsub_128 = rftfsub_128_C;
   rftbsub_128 = rftbsub_128_C;
+  cftfsub_128 = cftfsub_128_C;
+  cftbsub_128 = cftbsub_128_C;
+  bitrv2_128 = bitrv2_128_C;
 #if defined(WEBRTC_ARCH_X86_FAMILY)
   if (WebRtc_GetCPUInfo(kSSE2)) {
     aec_rdft_init_sse2();
   }
+#endif
+#if defined(MIPS_FPU_LE)
+  aec_rdft_init_mips();
 #endif
   // init library constants.
   makewt_32();

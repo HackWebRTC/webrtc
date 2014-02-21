@@ -151,4 +151,11 @@ typedef void (*WebRtcAec_OverdriveAndSuppress_t)(AecCore* aec,
                                                  float efw[2][PART_LEN1]);
 extern WebRtcAec_OverdriveAndSuppress_t WebRtcAec_OverdriveAndSuppress;
 
+typedef void (*WebRtcAec_ComfortNoise_t)(AecCore* aec,
+                                         float efw[2][PART_LEN1],
+                                         complex_t* comfortNoiseHband,
+                                         const float* noisePow,
+                                         const float* lambda);
+extern WebRtcAec_ComfortNoise_t WebRtcAec_ComfortNoise;
+
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_CORE_INTERNAL_H_

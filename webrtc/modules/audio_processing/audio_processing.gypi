@@ -136,6 +136,14 @@
           'sources': [
             'aecm/aecm_core_mips.c',
           ],
+          'conditions': [
+            ['mips_fpu==1', {
+              'sources': [
+                'aec/aec_core_mips.c',
+                'aec/aec_rdft_mips.c',
+              ],
+            }],
+          ],
         }, {
           'sources': [
             'aecm/aecm_core_c.c',

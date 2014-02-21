@@ -47,11 +47,18 @@ extern rft_sub_128_t rftfsub_128;
 extern rft_sub_128_t rftbsub_128;
 extern rft_sub_128_t cft1st_128;
 extern rft_sub_128_t cftmdl_128;
+extern rft_sub_128_t cftfsub_128;
+extern rft_sub_128_t cftbsub_128;
+extern rft_sub_128_t bitrv2_128;
 
 // entry points
 void aec_rdft_init(void);
 void aec_rdft_init_sse2(void);
 void aec_rdft_forward_128(float* a);
 void aec_rdft_inverse_128(float* a);
+
+#if defined(MIPS_FPU_LE)
+void aec_rdft_init_mips(void);
+#endif
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_MAIN_SOURCE_AEC_RDFT_H_
