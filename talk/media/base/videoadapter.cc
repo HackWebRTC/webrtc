@@ -421,7 +421,7 @@ CoordinatedVideoAdapter::CoordinatedVideoAdapter()
       view_desired_interval_(0),
       encoder_desired_num_pixels_(INT_MAX),
       cpu_desired_num_pixels_(INT_MAX),
-      adapt_reason_(ADAPTREASON_NONE),
+      adapt_reason_(0),
       system_load_average_(kCpuLoadInitialAverage) {
 }
 
@@ -636,7 +636,7 @@ bool CoordinatedVideoAdapter::AdaptToMinimumFormat(int* new_width,
   }
   int old_num_pixels = GetOutputNumPixels();
   int min_num_pixels = INT_MAX;
-  adapt_reason_ = ADAPTREASON_NONE;
+  adapt_reason_ = 0;
 
   // Reduce resolution based on encoder bandwidth (GD).
   if (encoder_desired_num_pixels_ &&
@@ -677,7 +677,7 @@ bool CoordinatedVideoAdapter::AdaptToMinimumFormat(int* new_width,
         static_cast<int>(input.height * scale + .5f);
   }
   if (scale == 1.0f) {
-    adapt_reason_ = ADAPTREASON_NONE;
+    adapt_reason_ = 0;
   }
   *new_width = new_output.width = static_cast<int>(input.width * scale + .5f);
   *new_height = new_output.height = static_cast<int>(input.height * scale +

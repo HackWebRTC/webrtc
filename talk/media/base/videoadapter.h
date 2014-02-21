@@ -111,7 +111,6 @@ class CoordinatedVideoAdapter
  public:
   enum AdaptRequest { UPGRADE, KEEP, DOWNGRADE };
   enum AdaptReasonEnum {
-    ADAPTREASON_NONE = 0,
     ADAPTREASON_CPU = 1,
     ADAPTREASON_BANDWIDTH = 2,
     ADAPTREASON_VIEW = 4

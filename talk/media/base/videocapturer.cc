@@ -111,7 +111,6 @@ void VideoCapturer::Construct() {
   screencast_max_pixels_ = 0;
   muted_ = false;
   black_frame_count_down_ = kNumBlackFramesOnMute;
-  enable_video_adapter_ = true;
 }
 
 const std::vector<VideoFormat>* VideoCapturer::GetSupportedFormats() const {
@@ -478,9 +477,9 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
   }
 
   VideoFrame* adapted_frame = &i420_frame;
-  if (enable_video_adapter_ && !IsScreencast()) {
+  if (!SignalAdaptFrame.is_empty() && !IsScreencast()) {
     VideoFrame* out_frame = NULL;
-    video_adapter_.AdaptFrame(adapted_frame, &out_frame);
+    SignalAdaptFrame(this, adapted_frame, &out_frame);
     if (!out_frame) {
       return;  // VideoAdapter dropped the frame.
     }

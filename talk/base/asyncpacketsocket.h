@@ -49,6 +49,8 @@ struct PacketTimeUpdateParams {
   std::vector<char> srtp_auth_key;  // Authentication key.
   int srtp_auth_tag_len;            // Authentication tag length.
   int64 srtp_packet_index;          // Required for Rtp Packet authentication.
+  int payload_len;                  // Raw payload length, before any wrapping
+                                    // like TURN/GTURN.
 };
 
 // This structure holds meta information for the packet which is about to send

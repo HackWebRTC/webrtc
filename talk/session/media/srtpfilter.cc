@@ -44,16 +44,9 @@
 #ifdef HAVE_SRTP
 #ifdef SRTP_RELATIVE_PATH
 #include "srtp.h"  // NOLINT
-extern "C" srtp_stream_t srtp_get_stream(srtp_t srtp, uint32_t ssrc);
-#include "srtp_priv.h"  // NOLINT
 #else
 #include "third_party/libsrtp/include/srtp.h"
-extern "C" srtp_stream_t srtp_get_stream(srtp_t srtp, uint32_t ssrc);
-#include "third_party/libsrtp/include/srtp_priv.h"
 #endif  // SRTP_RELATIVE_PATH
-#ifdef  ENABLE_EXTERNAL_AUTH
-#include "talk/session/media/external_hmac.h"
-#endif  // ENABLE_EXTERNAL_AUTH
 #ifdef _DEBUG
 extern "C" debug_module_t mod_srtp;
 extern "C" debug_module_t mod_auth;
@@ -165,6 +158,7 @@ bool SrtpFilter::SetRtpParams(const std::string& send_cs,
   LOG(LS_INFO) << "SRTP activated with negotiated parameters:"
                << " send cipher_suite " << send_cs
                << " recv cipher_suite " << recv_cs;
+
   return true;
 }
 
@@ -214,16 +208,6 @@ bool SrtpFilter::ProtectRtp(void* p, int in_len, int max_len, int* out_len) {
   return send_session_->ProtectRtp(p, in_len, max_len, out_len);
 }
 
-bool SrtpFilter::ProtectRtp(void* p, int in_len, int max_len, int* out_len,
-                            int64* index) {
-  if (!IsActive()) {
-    LOG(LS_WARNING) << "Failed to ProtectRtp: SRTP not active";
-    return false;
-  }
-
-  return send_session_->ProtectRtp(p, in_len, max_len, out_len, index);
-}
-
 bool SrtpFilter::ProtectRtcp(void* p, int in_len, int max_len, int* out_len) {
   if (!IsActive()) {
     LOG(LS_WARNING) << "Failed to ProtectRtcp: SRTP not active";
@@ -254,15 +238,6 @@ bool SrtpFilter::UnprotectRtcp(void* p, int in_len, int* out_len) {
   } else {
     return recv_session_->UnprotectRtcp(p, in_len, out_len);
   }
-}
-
-bool SrtpFilter::GetRtpAuthParams(uint8** key, int* key_len, int* tag_len) {
-  if (!IsActive()) {
-    LOG(LS_WARNING) << "Failed to GetRtpAuthParams: SRTP not active";
-    return false;
-  }
-
-  return send_session_->GetRtpAuthParams(key, key_len, tag_len);
 }
 
 void SrtpFilter::set_signal_silent_time(uint32 signal_silent_time_in_ms) {
@@ -521,14 +496,6 @@ bool SrtpSession::ProtectRtp(void* p, int in_len, int max_len, int* out_len) {
   return true;
 }
 
-bool SrtpSession::ProtectRtp(void* p, int in_len, int max_len, int* out_len,
-                             int64* index) {
-  if (!ProtectRtp(p, in_len, max_len, out_len)) {
-    return false;
-  }
-  return (index) ? GetSendStreamPacketIndex(p, in_len, index) : true;
-}
-
 bool SrtpSession::ProtectRtcp(void* p, int in_len, int max_len, int* out_len) {
   if (!session_) {
     LOG(LS_WARNING) << "Failed to protect SRTCP packet: no SRTP Session";
@@ -587,42 +554,6 @@ bool SrtpSession::UnprotectRtcp(void* p, int in_len, int* out_len) {
   return true;
 }
 
-bool SrtpSession::GetRtpAuthParams(uint8** key, int* key_len,
-                                   int* tag_len) {
-#if defined(ENABLE_EXTERNAL_AUTH)
-  external_hmac_ctx_t* external_hmac = NULL;
-  // stream_template will be the reference context for other streams.
-  // Let's use it for getting the keys.
-  srtp_stream_ctx_t* srtp_context = session_->stream_template;
-  if (srtp_context && srtp_context->rtp_auth) {
-    external_hmac = reinterpret_cast<external_hmac_ctx_t*>(
-        srtp_context->rtp_auth->state);
-  }
-
-  if (!external_hmac) {
-    LOG(LS_ERROR) << "Failed to get auth keys from libsrtp!.";
-    return false;
-  }
-
-  *key = external_hmac->key;
-  *key_len = external_hmac->key_length;
-  *tag_len = rtp_auth_tag_len_;
-  return true;
-#else
-  return false;
-#endif
-}
-
-bool SrtpSession::GetSendStreamPacketIndex(void* p, int in_len, int64* index) {
-  srtp_hdr_t* hdr = reinterpret_cast<srtp_hdr_t*>(p);
-  srtp_stream_ctx_t* stream = srtp_get_stream(session_, hdr->ssrc);
-  if (stream == NULL)
-    return false;
-
-  *index = rdbx_get_packet_index(&stream->rtp_rdbx);
-  return true;
-}
-
 void SrtpSession::set_signal_silent_time(uint32 signal_silent_time_in_ms) {
   srtp_stat_->set_signal_silent_time(signal_silent_time_in_ms);
 }
@@ -665,13 +596,6 @@ bool SrtpSession::SetKey(int type, const std::string& cs,
   // TODO(astor) parse window size from WSH session-param
   policy.window_size = 1024;
   policy.allow_repeat_tx = 1;
-  // If external authentication option is enabled, supply custom auth module
-  // id EXTERNAL_HMAC_SHA1 in the policy structure.
-  // We want to set this option only for rtp packets.
-  // By default policy structure is initialized to HMAC_SHA1.
-#if defined(ENABLE_EXTERNAL_AUTH)
-  policy.rtp.auth_type = EXTERNAL_HMAC_SHA1;
-#endif
   policy.next = NULL;
 
   int err = srtp_create(&session_, &policy);
@@ -679,7 +603,6 @@ bool SrtpSession::SetKey(int type, const std::string& cs,
     LOG(LS_ERROR) << "Failed to create SRTP session, err=" << err;
     return false;
   }
-
 
   rtp_auth_tag_len_ = policy.rtp.auth_tag_len;
   rtcp_auth_tag_len_ = policy.rtcp.auth_tag_len;
@@ -700,13 +623,7 @@ bool SrtpSession::Init() {
       LOG(LS_ERROR) << "Failed to install SRTP event handler, err=" << err;
       return false;
     }
-#if defined(ENABLE_EXTERNAL_AUTH)
-    err = external_crypto_init();
-    if (err != err_status_ok) {
-      LOG(LS_ERROR) << "Failed to initialize fake auth, err=" << err;
-      return false;
-    }
-#endif
+
     inited_ = true;
   }
 
