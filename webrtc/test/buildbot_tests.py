@@ -114,6 +114,9 @@ def main():
 
   print 'Running WebRTC Buildbot tests: %s' % options.test
   for test in options.test:
+    if test == 'libjingle_peerconnection_java_unittest':
+      print 'Skipping disabled test: %s, see webrtc:2960' % test
+      continue
     cmd_line = test_dict[test]
     env = os.environ.copy()
     if test in _CUSTOM_ENV:
