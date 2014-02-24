@@ -13,13 +13,15 @@ function trace(text) {
   console.log((performance.now() / 1000).toFixed(3) + ": " + text);
 }
 function maybeFixConfiguration(pcConfig) {
+  if (pcConfig == null) {
+    return;
+  }
   for (var i = 0; i < pcConfig.iceServers.length; i++) {
     if (pcConfig.iceServers[i].hasOwnProperty('urls')){
       pcConfig.iceServers[i]['url'] = pcConfig.iceServers[i]['urls'];
       delete pcConfig.iceServers[i]['urls'];
     }
   }
-  return pcConfig;
 }
 
 if (navigator.mozGetUserMedia) {
@@ -33,7 +35,7 @@ if (navigator.mozGetUserMedia) {
   // The RTCPeerConnection object.
   var RTCPeerConnection = function(pcConfig, pcConstraints) {
     // .urls is not supported in FF yet.
-    pcConfig = maybeFixConfiguration(pcConfig);
+    maybeFixConfiguration(pcConfig);
     return new mozRTCPeerConnection(pcConfig, pcConstraints);
   }
 
@@ -165,7 +167,7 @@ if (navigator.mozGetUserMedia) {
   var RTCPeerConnection = function(pcConfig, pcConstraints) {
     // .urls is supported since Chrome M34.
     if (webrtcDetectedVersion < 34) {
-      pcConfig = maybeFixConfiguration(pcConfig);
+      maybeFixConfiguration(pcConfig);
     }
     return new webkitRTCPeerConnection(pcConfig, pcConstraints);
   }
