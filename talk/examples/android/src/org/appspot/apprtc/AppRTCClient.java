@@ -401,7 +401,7 @@ public class AppRTCClient {
           new LinkedList<PeerConnection.IceServer>();
       for (int i = 0; i < servers.length(); ++i) {
         JSONObject server = servers.getJSONObject(i);
-        String url = server.getString("url");
+        String url = server.getString("urls");
         String credential =
             server.has("credential") ? server.getString("credential") : "";
         ret.add(new PeerConnection.IceServer(url, "", credential));
