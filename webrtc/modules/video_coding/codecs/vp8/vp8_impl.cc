@@ -35,10 +35,6 @@ enum { kVp8ErrorPropagationTh = 30 };
 
 namespace webrtc {
 
-VP8Encoder* VP8Encoder::Create() {
-  return new VP8EncoderImpl();
-}
-
 VP8EncoderImpl::VP8EncoderImpl()
     : encoded_image_(),
       encoded_complete_callback_(NULL),
@@ -494,10 +490,6 @@ int VP8EncoderImpl::RegisterEncodeCompleteCallback(
     EncodedImageCallback* callback) {
   encoded_complete_callback_ = callback;
   return WEBRTC_VIDEO_CODEC_OK;
-}
-
-VP8Decoder* VP8Decoder::Create() {
-  return new VP8DecoderImpl();
 }
 
 VP8DecoderImpl::VP8DecoderImpl()
