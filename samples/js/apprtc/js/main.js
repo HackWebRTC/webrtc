@@ -71,13 +71,14 @@ function openChannel() {
 }
 
 function maybeRequestTurn() {
+  // Allow to skip turn by passing ts=false to apprtc.
   if (turnUrl == '') {
     turnDone = true;
     return;
   }
 
   for (var i = 0, len = pcConfig.iceServers.length; i < len; i++) {
-    if (pcConfig.iceServers[i].url.substr(0, 5) === 'turn:') {
+    if (pcConfig.iceServers[i].urls.substr(0, 5) === 'turn:') {
       turnDone = true;
       return;
     }
@@ -104,14 +105,12 @@ function onTurnResult() {
 
   if (xmlhttp.status === 200) {
     var turnServer = JSON.parse(xmlhttp.responseText);
-    for (i = 0; i < turnServer.uris.length; i++) {
-      // Create a turnUri using the polyfill (adapter.js).
-      var iceServer = createIceServer(turnServer.uris[i],
+    // Create turnUris using the polyfill (adapter.js).
+    var iceServers = createIceServers(turnServer.uris,
                                       turnServer.username,
                                       turnServer.password);
-      if (iceServer !== null) {
-        pcConfig.iceServers.push(iceServer);
-      }
+    if (iceServers !== null) {
+      pcConfig.iceServers = pcConfig.iceServers.concat(iceServers);
     }
   } else {
     messageError('No TURN server; unlikely that media will traverse networks.  '

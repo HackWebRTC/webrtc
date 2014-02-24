@@ -60,10 +60,10 @@ def make_pc_config(stun_server, turn_server, ts_pwd):
   servers = []
   if turn_server:
     turn_config = 'turn:{}'.format(turn_server)
-    servers.append({'url':turn_config, 'credential':ts_pwd})
+    servers.append({'urls':turn_config, 'credential':ts_pwd})
   if stun_server:
     stun_config = 'stun:{}'.format(stun_server)
-  servers.append({'url':stun_config})
+  servers.append({'urls':stun_config})
   return {'iceServers':servers}
 
 def create_channel(room, user, duration_minutes):
