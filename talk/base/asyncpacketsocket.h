@@ -28,7 +28,6 @@
 #ifndef TALK_BASE_ASYNCPACKETSOCKET_H_
 #define TALK_BASE_ASYNCPACKETSOCKET_H_
 
-#include "talk/base/buffer.h"
 #include "talk/base/dscp.h"
 #include "talk/base/sigslot.h"
 #include "talk/base/socket.h"
