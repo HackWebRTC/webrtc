@@ -1395,6 +1395,14 @@ void ViEChannel::GetRtcpPacketTypeCounters(
     packets_sent->Add(sent);
     packets_received->Add(received);
   }
+  for (std::list<RtpRtcp*>::const_iterator it = removed_rtp_rtcp_.begin();
+       it != removed_rtp_rtcp_.end(); ++it) {
+    RtcpPacketTypeCounter sent;
+    RtcpPacketTypeCounter received;
+    (*it)->GetRtcpPacketTypeCounters(&sent, &received);
+    packets_sent->Add(sent);
+    packets_received->Add(received);
+  }
 }
 
 void ViEChannel::GetBandwidthUsage(uint32_t* total_bitrate_sent,
