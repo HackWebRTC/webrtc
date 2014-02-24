@@ -715,6 +715,8 @@ int32_t AviRecorder::WriteEncodedAudioData(
     uint16_t millisecondsOfData,
     const TickTime* playoutTS)
 {
+    CriticalSectionScoped lock(_critSec);
+
     if (!IsRecording())
     {
         return -1;
