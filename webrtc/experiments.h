@@ -11,6 +11,8 @@
 #ifndef WEBRTC_EXPERIMENTS_H_
 #define WEBRTC_EXPERIMENTS_H_
 
+#include "webrtc/typedefs.h"
+
 namespace webrtc {
 struct PaddingStrategy {
   PaddingStrategy()
