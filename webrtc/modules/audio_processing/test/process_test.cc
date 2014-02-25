@@ -132,6 +132,7 @@ void usage() {
   printf("  --ns_prob_file FILE\n");
   printf("\n  -vad     Voice activity detection\n");
   printf("  --vad_out_file FILE\n");
+  printf("\n  -expns   Experimental Noise suppression\n");
   printf("\n Level metrics (enabled by default)\n");
   printf("  --no_level_metrics\n");
   printf("\n");
@@ -425,6 +426,9 @@ void void_main(int argc, char* argv[]) {
       i++;
       ASSERT_LT(i, argc) << "Specify filename after --vad_out_file";
       vad_out_filename = argv[i];
+
+    } else if (strcmp(argv[i], "-expns") == 0) {
+      ASSERT_EQ(apm->kNoError, apm->EnableExperimentalNs(true));
 
     } else if (strcmp(argv[i], "--noasm") == 0) {
       WebRtc_GetCPUInfo = WebRtc_GetCPUInfoNoASM;
@@ -722,6 +726,12 @@ void void_main(int argc, char* argv[]) {
                   apm->set_stream_delay_ms(delay_ms));
         apm->echo_cancellation()->set_stream_drift_samples(msg.drift());
 
+        if (msg.has_keypress()) {
+          apm->set_stream_key_pressed(msg.keypress());
+        } else {
+          apm->set_stream_key_pressed(true);
+        }
+
         int err = apm->ProcessStream(&near_frame);
         if (err == apm->kBadStreamParameterWarning) {
           printf("Bad parameter warning. %s\n", trace_stream.str().c_str());
@@ -929,6 +939,8 @@ void void_main(int argc, char* argv[]) {
         ASSERT_EQ(apm->kNoError,
                   apm->set_stream_delay_ms(delay_ms));
         apm->echo_cancellation()->set_stream_drift_samples(drift_samples);
+
+        apm->set_stream_key_pressed(true);
 
         int err = apm->ProcessStream(&near_frame);
         if (err == apm->kBadStreamParameterWarning) {
