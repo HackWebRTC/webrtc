@@ -169,7 +169,7 @@ void ScreenCapturerWin::Capture(const DesktopRegion& region) {
 
   const DesktopFrame* current_frame = queue_.current_frame();
   const DesktopFrame* last_frame = queue_.previous_frame();
-  if (last_frame) {
+  if (last_frame && last_frame->size().equals(current_frame->size())) {
     // Make sure the differencer is set up correctly for these previous and
     // current screens.
     if (!differ_.get() ||
@@ -188,7 +188,8 @@ void ScreenCapturerWin::Capture(const DesktopRegion& region) {
                              &region);
     helper_.InvalidateRegion(region);
   } else {
-    // No previous frame is available. Invalidate the whole screen.
+    // No previous frame is available, or the screen is resized. Invalidate the
+    // whole screen.
     helper_.InvalidateScreen(current_frame->size());
   }
 
