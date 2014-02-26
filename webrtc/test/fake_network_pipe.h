@@ -57,6 +57,9 @@ class FakeNetworkPipe {
   // Must not be called in parallel with SendPacket or Process.
   void SetReceiver(PacketReceiver* receiver);
 
+  // Sets a new configuration. This won't affect packets already in the pipe.
+  void SetConfig(const FakeNetworkPipe::Config& config);
+
   // Sends a new packet to the link.
   void SendPacket(const uint8_t* packet, size_t packet_length);
 

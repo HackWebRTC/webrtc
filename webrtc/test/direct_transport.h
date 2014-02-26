@@ -34,6 +34,8 @@ class DirectTransport : public newapi::Transport {
   explicit DirectTransport(const FakeNetworkPipe::Config& config);
   ~DirectTransport();
 
+  void SetConfig(const FakeNetworkPipe::Config& config);
+
   virtual void StopSending();
   virtual void SetReceiver(PacketReceiver* receiver);
 

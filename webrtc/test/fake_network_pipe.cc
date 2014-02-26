@@ -93,6 +93,11 @@ void FakeNetworkPipe::SetReceiver(PacketReceiver* receiver) {
   packet_receiver_ = receiver;
 }
 
+void FakeNetworkPipe::SetConfig(const FakeNetworkPipe::Config& config) {
+  CriticalSectionScoped crit(lock_.get());
+  config_ = config;  // Shallow copy of the struct.
+}
+
 void FakeNetworkPipe::SendPacket(const uint8_t* data, size_t data_length) {
   // A NULL packet_receiver_ means that this pipe will terminate the flow of
   // packets.
