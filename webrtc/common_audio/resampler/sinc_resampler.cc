@@ -223,20 +223,20 @@ void SincResampler::InitializeKernel() {
     for (int i = 0; i < kKernelSize; ++i) {
       const int idx = i + offset_idx * kKernelSize;
       const float pre_sinc = M_PI * (i - kKernelSize / 2 - subsample_offset);
-      kernel_pre_sinc_storage_.get()[idx] = pre_sinc;
+      kernel_pre_sinc_storage_[idx] = pre_sinc;
 
       // Compute Blackman window, matching the offset of the sinc().
       const float x = (i - subsample_offset) / kKernelSize;
       const float window = kA0 - kA1 * cos(2.0 * M_PI * x) + kA2
           * cos(4.0 * M_PI * x);
-      kernel_window_storage_.get()[idx] = window;
+      kernel_window_storage_[idx] = window;
 
       // Compute the sinc with offset, then window the sinc() function and store
       // at the correct offset.
       if (pre_sinc == 0) {
-        kernel_storage_.get()[idx] = sinc_scale_factor * window;
+        kernel_storage_[idx] = sinc_scale_factor * window;
       } else {
-        kernel_storage_.get()[idx] =
+        kernel_storage_[idx] =
             window * sin(sinc_scale_factor * pre_sinc) / pre_sinc;
       }
     }
@@ -257,13 +257,13 @@ void SincResampler::SetRatio(double io_sample_rate_ratio) {
   for (int offset_idx = 0; offset_idx <= kKernelOffsetCount; ++offset_idx) {
     for (int i = 0; i < kKernelSize; ++i) {
       const int idx = i + offset_idx * kKernelSize;
-      const float window = kernel_window_storage_.get()[idx];
-      const float pre_sinc = kernel_pre_sinc_storage_.get()[idx];
+      const float window = kernel_window_storage_[idx];
+      const float pre_sinc = kernel_pre_sinc_storage_[idx];
 
       if (pre_sinc == 0) {
-        kernel_storage_.get()[idx] = sinc_scale_factor * window;
+        kernel_storage_[idx] = sinc_scale_factor * window;
       } else {
-        kernel_storage_.get()[idx] =
+        kernel_storage_[idx] =
             window * sin(sinc_scale_factor * pre_sinc) / pre_sinc;
       }
     }

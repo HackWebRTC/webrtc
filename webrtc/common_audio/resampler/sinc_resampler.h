@@ -146,12 +146,12 @@ class SincResampler {
   // Contains kKernelOffsetCount kernels back-to-back, each of size kKernelSize.
   // The kernel offsets are sub-sample shifts of a windowed sinc shifted from
   // 0.0 to 1.0 sample.
-  scoped_ptr<float, AlignedFreeDeleter> kernel_storage_;
-  scoped_ptr<float, AlignedFreeDeleter> kernel_pre_sinc_storage_;
-  scoped_ptr<float, AlignedFreeDeleter> kernel_window_storage_;
+  scoped_ptr<float[], AlignedFreeDeleter> kernel_storage_;
+  scoped_ptr<float[], AlignedFreeDeleter> kernel_pre_sinc_storage_;
+  scoped_ptr<float[], AlignedFreeDeleter> kernel_window_storage_;
 
   // Data from the source is copied into this buffer for each processing pass.
-  scoped_ptr<float, AlignedFreeDeleter> input_buffer_;
+  scoped_ptr<float[], AlignedFreeDeleter> input_buffer_;
 
   // Stores the runtime selection of which Convolve function to use.
   // TODO(ajm): Move to using a global static which must only be initialized
