@@ -217,11 +217,11 @@ void WindowCapturerWin::Capture(const DesktopRegion& region) {
   // When composition is enabled the DC returned by GetWindowDC() doesn't always
   // have window frame rendered correctly. Windows renders it only once and then
   // caches the result between captures. We hack it around by calling
-  // PrintWindow() whenever window size changes - it somehow affects what we
-  // get from BitBlt() on the subsequent captures.
+  // PrintWindow() whenever window size changes, including the first time of
+  // capturing - it somehow affects what we get from BitBlt() on the subsequent
+  // captures.
 
-  if (!IsAeroEnabled() ||
-      (!previous_size_.is_empty() && !previous_size_.equals(frame->size()))) {
+  if (!IsAeroEnabled() || !previous_size_.equals(frame->size())) {
     result = PrintWindow(window_, mem_dc, 0);
   }
 
