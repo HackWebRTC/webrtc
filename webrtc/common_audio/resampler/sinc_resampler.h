@@ -20,13 +20,6 @@
 #include "webrtc/test/testsupport/gtest_prod_util.h"
 #include "webrtc/typedefs.h"
 
-#if (defined(WEBRTC_ARCH_X86_FAMILY) && !defined(WEBRTC_IOS) &&  \
-        !defined(__SSE__)) ||  \
-    (defined(WEBRTC_ARCH_ARM_V7) && !defined(WEBRTC_ARCH_ARM_NEON))
-// Convenience define.
-#define WEBRTC_RESAMPLER_CPU_DETECTION
-#endif
-
 namespace webrtc {
 
 // Callback class for providing more data into the resampler.  Expects |frames|
@@ -106,9 +99,8 @@ class SincResampler {
   void InitializeCPUSpecificFeatures();
 
   // Compute convolution of |k1| and |k2| over |input_ptr|, resultant sums are
-  // linearly interpolated using |kernel_interpolation_factor|.  On x86, the
-  // underlying implementation is chosen at run time based on SSE support.  On
-  // ARM, NEON support is chosen at compile time based on compilation flags.
+  // linearly interpolated using |kernel_interpolation_factor|.  On x86 and ARM
+  // the underlying implementation is chosen at run time.
   static float Convolve_C(const float* input_ptr, const float* k1,
                           const float* k2, double kernel_interpolation_factor);
 #if defined(WEBRTC_ARCH_X86_FAMILY)
@@ -157,7 +149,7 @@ class SincResampler {
   // TODO(ajm): Move to using a global static which must only be initialized
   // once by the user. We're not doing this initially, because we don't have
   // e.g. a LazyInstance helper in webrtc.
-#if defined(WEBRTC_RESAMPLER_CPU_DETECTION)
+#if defined(WEBRTC_CPU_DETECTION)
   typedef float (*ConvolveProc)(const float*, const float*, const float*,
                                 double);
   ConvolveProc convolve_proc_;

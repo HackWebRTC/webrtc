@@ -60,8 +60,9 @@
 #error Define either WEBRTC_ARCH_LITTLE_ENDIAN or WEBRTC_ARCH_BIG_ENDIAN
 #endif
 
-#if defined(__SSE2__) || defined(_MSC_VER)
-#define WEBRTC_USE_SSE2
+#if (defined(WEBRTC_ARCH_X86_FAMILY) && !defined(__SSE2__)) ||  \
+    (defined(WEBRTC_ARCH_ARM_V7) && !defined(WEBRTC_ARCH_ARM_NEON))
+#define WEBRTC_CPU_DETECTION
 #endif
 
 #if !defined(_MSC_VER)

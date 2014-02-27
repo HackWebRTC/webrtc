@@ -114,13 +114,12 @@ static double SincScaleFactor(double io_ratio) {
 }
 
 // If we know the minimum architecture at compile time, avoid CPU detection.
-// iOS lies about its architecture, so we also need to exclude it here.
-#if defined(WEBRTC_ARCH_X86_FAMILY) && !defined(WEBRTC_IOS)
-#if defined(__SSE__)
+#if defined(WEBRTC_ARCH_X86_FAMILY)
+#if defined(__SSE2__)
 #define CONVOLVE_FUNC Convolve_SSE
 void SincResampler::InitializeCPUSpecificFeatures() {}
 #else
-// X86 CPU detection required.  Function will be set by
+// x86 CPU detection required.  Function will be set by
 // InitializeCPUSpecificFeatures().
 // TODO(dalecurtis): Once Chrome moves to an SSE baseline this can be removed.
 #define CONVOLVE_FUNC convolve_proc_
@@ -134,7 +133,7 @@ void SincResampler::InitializeCPUSpecificFeatures() {
 #define CONVOLVE_FUNC Convolve_NEON
 void SincResampler::InitializeCPUSpecificFeatures() {}
 #else
-// NEON CPU detection required.  Function will be set by
+// ARM CPU detection required.  Function will be set by
 // InitializeCPUSpecificFeatures().
 #define CONVOLVE_FUNC convolve_proc_
 
@@ -165,12 +164,12 @@ SincResampler::SincResampler(double io_sample_rate_ratio,
           AlignedMalloc(sizeof(float) * kKernelStorageSize, 16))),
       input_buffer_(static_cast<float*>(
           AlignedMalloc(sizeof(float) * input_buffer_size_, 16))),
-#if defined(WEBRTC_RESAMPLER_CPU_DETECTION)
+#if defined(WEBRTC_CPU_DETECTION)
       convolve_proc_(NULL),
 #endif
       r1_(input_buffer_.get()),
       r2_(input_buffer_.get() + kKernelSize / 2) {
-#if defined(WEBRTC_RESAMPLER_CPU_DETECTION)
+#if defined(WEBRTC_CPU_DETECTION)
   InitializeCPUSpecificFeatures();
   assert(convolve_proc_);
 #endif
