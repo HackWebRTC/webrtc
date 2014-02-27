@@ -49,6 +49,7 @@ class PacedSender : public Module {
                                   bool retransmission) = 0;
     // Called when it's a good time to send a padding data.
     virtual int TimeToSendPadding(int bytes) = 0;
+
    protected:
     virtual ~Callback() {}
   };

@@ -109,6 +109,7 @@ class ViEEncoder
   int32_t SendCodecStatistics(uint32_t* num_key_frames,
                               uint32_t* num_delta_frames);
 
+  int PacerQueuingDelayMs() const;
   int32_t EstimatedSendBandwidth(
         uint32_t* available_bandwidth) const;
 

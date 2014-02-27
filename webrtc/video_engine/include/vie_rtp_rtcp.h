@@ -405,6 +405,13 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
       const int video_channel,
       ReceiveBandwidthEstimatorStats* output) const { return -1; }
 
+  // This function gets the PacedSender queuing delay for the last sent frame.
+  // TODO(jiayl): remove the default impl when libjingle is updated.
+  virtual int GetPacerQueuingDelayMs(
+      const int video_channel, int* delay_ms) const {
+    return -1;
+  }
+
   // This function enables capturing of RTP packets to a binary file on a
   // specific channel and for a given direction. The file can later be
   // replayed using e.g. RTP Tools rtpplay since the binary file format is

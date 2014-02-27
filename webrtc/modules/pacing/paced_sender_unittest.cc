@@ -421,7 +421,8 @@ TEST_F(PacedSenderTest, Pause) {
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
   EXPECT_EQ(0, send_bucket_->Process());
 
-  EXPECT_CALL(callback_, TimeToSendPacket(_, _, second_capture_time_ms, false))
+  EXPECT_CALL(
+      callback_, TimeToSendPacket(_, _, second_capture_time_ms, false))
       .Times(1)
       .WillRepeatedly(Return(true));
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());

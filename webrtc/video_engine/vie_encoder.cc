@@ -734,6 +734,10 @@ int32_t ViEEncoder::SendCodecStatistics(
   return 0;
 }
 
+int32_t ViEEncoder::PacerQueuingDelayMs() const {
+  return paced_sender_->QueueInMs();
+}
+
 int32_t ViEEncoder::EstimatedSendBandwidth(
     uint32_t* available_bandwidth) const {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",

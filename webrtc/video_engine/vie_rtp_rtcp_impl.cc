@@ -1040,6 +1040,25 @@ int ViERTP_RTCPImpl::GetReceiveBandwidthEstimatorStats(
   return 0;
 }
 
+int ViERTP_RTCPImpl::GetPacerQueuingDelayMs(
+    const int video_channel, int* delay_ms) const {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
+               ViEId(shared_data_->instance_id(), video_channel),
+               "%s(channel: %d)", __FUNCTION__, video_channel);
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
+  if (!vie_encoder) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(shared_data_->instance_id(), video_channel),
+                 "%s: Could not get encoder for channel %d", __FUNCTION__,
+                 video_channel);
+    shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
+    return -1;
+  }
+  *delay_ms = vie_encoder->PacerQueuingDelayMs();
+  return 0;
+}
+
 int ViERTP_RTCPImpl::StartRTPDump(const int video_channel,
                                   const char file_nameUTF8[1024],
                                   RTPDirections direction) {
