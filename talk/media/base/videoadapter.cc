@@ -30,6 +30,7 @@
 #include "talk/base/logging.h"
 #include "talk/base/timeutils.h"
 #include "talk/media/base/constants.h"
+#include "talk/media/base/videocommon.h"
 #include "talk/media/base/videoframe.h"
 
 namespace cricket {
@@ -235,6 +236,10 @@ const VideoFormat& VideoAdapter::input_format() {
   return input_format_;
 }
 
+bool VideoAdapter::drops_all_frames() const {
+  return output_num_pixels_ == 0;
+}
+
 const VideoFormat& VideoAdapter::output_format() {
   talk_base::CritScope cs(&critical_section_);
   return output_format_;
@@ -308,7 +313,7 @@ bool VideoAdapter::AdaptFrame(const VideoFrame* in_frame,
   }
 
   float scale = 1.f;
-  if (output_num_pixels_) {
+  if (output_num_pixels_ < input_format_.width * input_format_.height) {
     scale = VideoAdapter::FindClosestViewScale(
         static_cast<int>(in_frame->GetWidth()),
         static_cast<int>(in_frame->GetHeight()),
@@ -316,6 +321,9 @@ bool VideoAdapter::AdaptFrame(const VideoFrame* in_frame,
     output_format_.width = static_cast<int>(in_frame->GetWidth() * scale + .5f);
     output_format_.height = static_cast<int>(in_frame->GetHeight() * scale +
                                              .5f);
+  } else {
+    output_format_.width = static_cast<int>(in_frame->GetWidth());
+    output_format_.height = static_cast<int>(in_frame->GetHeight());
   }
 
   if (!StretchToOutputFrame(in_frame)) {

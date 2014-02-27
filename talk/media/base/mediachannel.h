@@ -289,6 +289,7 @@ struct VideoOptions {
     process_adaptation_threshhold.Set(kProcessCpuThreshold);
     system_low_adaptation_threshhold.Set(kLowSystemCpuThreshold);
     system_high_adaptation_threshhold.Set(kHighSystemCpuThreshold);
+    unsignalled_recv_stream_limit.Set(kNumDefaultUnsignalledVideoRecvStreams);
   }
 
   void SetAll(const VideoOptions& change) {
@@ -317,6 +318,7 @@ struct VideoOptions {
     lower_min_bitrate.SetFrom(change.lower_min_bitrate);
     dscp.SetFrom(change.dscp);
     suspend_below_min_bitrate.SetFrom(change.suspend_below_min_bitrate);
+    unsignalled_recv_stream_limit.SetFrom(change.unsignalled_recv_stream_limit);
   }
 
   bool operator==(const VideoOptions& o) const {
@@ -342,7 +344,8 @@ struct VideoOptions {
         buffered_mode_latency == o.buffered_mode_latency &&
         lower_min_bitrate == o.lower_min_bitrate &&
         dscp == o.dscp &&
-        suspend_below_min_bitrate == o.suspend_below_min_bitrate;
+        suspend_below_min_bitrate == o.suspend_below_min_bitrate &&
+        unsignalled_recv_stream_limit == o.unsignalled_recv_stream_limit;
   }
 
   std::string ToString() const {
@@ -372,6 +375,8 @@ struct VideoOptions {
     ost << ToStringIfSet("dscp", dscp);
     ost << ToStringIfSet("suspend below min bitrate",
                          suspend_below_min_bitrate);
+    ost << ToStringIfSet("num channels for early receive",
+                         unsignalled_recv_stream_limit);
     ost << "}";
     return ost.str();
   }
@@ -421,6 +426,8 @@ struct VideoOptions {
   // Enable WebRTC suspension of video. No video frames will be sent when the
   // bitrate is below the configured minimum bitrate.
   Settable<bool> suspend_below_min_bitrate;
+  // Limit on the number of early receive channels that can be created.
+  Settable<int> unsignalled_recv_stream_limit;
 };
 
 // A class for playing out soundclips.
@@ -677,6 +684,20 @@ struct MediaSenderInfo {
   std::vector<SsrcReceiverInfo> remote_stats;
 };
 
+template<class T>
+struct VariableInfo {
+  VariableInfo()
+      : min_val(),
+        mean(0.0),
+        max_val(),
+        variance(0.0) {
+  }
+  T min_val;
+  double mean;
+  T max_val;
+  double variance;
+};
+
 struct MediaReceiverInfo {
   MediaReceiverInfo()
       : bytes_rcvd(0),
@@ -782,6 +803,7 @@ struct VideoSenderInfo : public MediaSenderInfo {
   VideoSenderInfo()
       : packets_cached(0),
         firs_rcvd(0),
+        plis_rcvd(0),
         nacks_rcvd(0),
         input_frame_width(0),
         input_frame_height(0),
@@ -801,6 +823,7 @@ struct VideoSenderInfo : public MediaSenderInfo {
   std::vector<SsrcGroup> ssrc_groups;
   int packets_cached;
   int firs_rcvd;
+  int plis_rcvd;
   int nacks_rcvd;
   int input_frame_width;
   int input_frame_height;
@@ -815,12 +838,16 @@ struct VideoSenderInfo : public MediaSenderInfo {
   int avg_encode_ms;
   int encode_usage_percent;
   int capture_queue_delay_ms_per_s;
+  VariableInfo<int> adapt_frame_drops;
+  VariableInfo<int> effects_frame_drops;
+  VariableInfo<double> capturer_frame_time;
 };
 
 struct VideoReceiverInfo : public MediaReceiverInfo {
   VideoReceiverInfo()
       : packets_concealed(0),
         firs_sent(0),
+        plis_sent(0),
         nacks_sent(0),
         frame_width(0),
         frame_height(0),
@@ -841,6 +868,7 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
   std::vector<SsrcGroup> ssrc_groups;
   int packets_concealed;
   int firs_sent;
+  int plis_sent;
   int nacks_sent;
   int frame_width;
   int frame_height;

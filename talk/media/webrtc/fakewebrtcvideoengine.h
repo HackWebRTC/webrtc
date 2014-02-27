@@ -1044,6 +1044,10 @@ class FakeWebRtcVideoEngine
     channels_[channel]->transmission_smoothing_ = enable;
     return 0;
   }
+#ifdef USE_WEBRTC_DEV_BRANCH
+  WEBRTC_STUB_CONST(GetRtcpPacketTypeCounters, (int,
+      webrtc::RtcpPacketTypeCounter*, webrtc::RtcpPacketTypeCounter*));
+#endif
   WEBRTC_STUB_CONST(GetReceivedRTCPStatistics, (const int, unsigned short&,
       unsigned int&, unsigned int&, unsigned int&, int&));
   WEBRTC_STUB_CONST(GetSentRTCPStatistics, (const int, unsigned short&,

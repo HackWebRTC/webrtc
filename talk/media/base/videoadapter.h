@@ -51,6 +51,8 @@ class VideoAdapter {
   int GetOutputNumPixels() const;
 
   const VideoFormat& input_format();
+  // Returns true if the adapter is dropping frames in calls to AdaptFrame.
+  bool drops_all_frames() const;
   const VideoFormat& output_format();
   // If the parameter black is true, the adapted frames will be black.
   void SetBlackOutput(bool black);

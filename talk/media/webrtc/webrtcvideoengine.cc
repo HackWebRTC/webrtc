@@ -317,8 +317,7 @@ class WebRtcDecoderObserver : public webrtc::ViEDecoderObserver {
          target_delay_ms_(0),
          jitter_buffer_ms_(0),
          min_playout_delay_ms_(0),
-         render_delay_ms_(0),
-         firs_requested_(0) {
+         render_delay_ms_(0) {
   }
 
   // virtual functions from VieDecoderObserver.
@@ -350,16 +349,11 @@ class WebRtcDecoderObserver : public webrtc::ViEDecoderObserver {
     render_delay_ms_ = render_delay_ms;
   }
 
-  virtual void RequestNewKeyFrame(const int videoChannel) {
-    talk_base::CritScope cs(&crit_);
-    ASSERT(video_channel_ == videoChannel);
-    ++firs_requested_;
-  }
+  virtual void RequestNewKeyFrame(const int videoChannel) {}
 
   // Populate |rinfo| based on previously-set data in |*this|.
   void ExportTo(VideoReceiverInfo* rinfo) {
     talk_base::CritScope cs(&crit_);
-    rinfo->firs_sent = firs_requested_;
     rinfo->framerate_rcvd = framerate_;
     rinfo->decode_ms = decode_ms_;
     rinfo->max_decode_ms = max_decode_ms_;
@@ -382,7 +376,6 @@ class WebRtcDecoderObserver : public webrtc::ViEDecoderObserver {
   int jitter_buffer_ms_;
   int min_playout_delay_ms_;
   int render_delay_ms_;
-  int firs_requested_;
 };
 
 class WebRtcEncoderObserver : public webrtc::ViEEncoderObserver {
@@ -672,7 +665,6 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
     ASSERT(adapter && "Video adapter should not be null here.");
 
     UpdateAdapterCpuOptions();
-    adapter->OnOutputFormatRequest(video_format_);
 
     overuse_observer_.reset(new WebRtcOveruseObserver(adapter));
     // (Dis)connect the video adapter from the cpu monitor as appropriate.
@@ -1557,6 +1549,7 @@ WebRtcVideoMediaChannel::WebRtcVideoMediaChannel(
       remb_enabled_(false),
       render_started_(false),
       first_receive_ssrc_(0),
+      num_unsignalled_recv_channels_(0),
       send_rtx_type_(-1),
       send_red_type_(-1),
       send_fec_type_(-1),
@@ -1936,27 +1929,33 @@ bool WebRtcVideoMediaChannel::AddRecvStream(const StreamParams& sp) {
     return true;
   }
 
-  if (recv_channels_.find(sp.first_ssrc()) != recv_channels_.end() ||
-      first_receive_ssrc_ == sp.first_ssrc()) {
-    LOG(LS_ERROR) << "Stream already exists";
-    return false;
-  }
-
-  // TODO(perkj): Implement recv media from multiple media SSRCs per stream.
-  // NOTE: We have two SSRCs per stream when RTX is enabled.
-  if (!IsOneSsrcStream(sp)) {
-    LOG(LS_ERROR) << "WebRtcVideoMediaChannel supports one primary SSRC per"
-                  << " stream and one FID SSRC per primary SSRC.";
-    return false;
-  }
-
-  // Create a new channel for receiving video data.
-  // In order to get the bandwidth estimation work fine for
-  // receive only channels, we connect all receiving channels
-  // to our master send channel.
   int channel_id = -1;
-  if (!CreateChannel(sp.first_ssrc(), MD_RECV, &channel_id)) {
-    return false;
+  RecvChannelMap::iterator channel_iterator =
+      recv_channels_.find(sp.first_ssrc());
+  if (channel_iterator == recv_channels_.end() &&
+      first_receive_ssrc_ != sp.first_ssrc()) {
+    // TODO(perkj): Implement recv media from multiple media SSRCs per stream.
+    // NOTE: We have two SSRCs per stream when RTX is enabled.
+    if (!IsOneSsrcStream(sp)) {
+      LOG(LS_ERROR) << "WebRtcVideoMediaChannel supports one primary SSRC per"
+                    << " stream and one FID SSRC per primary SSRC.";
+      return false;
+    }
+
+    // Create a new channel for receiving video data.
+    // In order to get the bandwidth estimation work fine for
+    // receive only channels, we connect all receiving channels
+    // to our master send channel.
+    if (!CreateChannel(sp.first_ssrc(), MD_RECV, &channel_id)) {
+      return false;
+    }
+  } else {
+    // Already exists.
+    if (first_receive_ssrc_ == sp.first_ssrc()) {
+      return false;
+    }
+    // Early receive added channel.
+    channel_id = (*channel_iterator).second->channel_id();
   }
 
   // Set the corresponding RTX SSRC.
@@ -2327,12 +2326,18 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
       sinfo.packets_cached = -1;
       sinfo.packets_lost = -1;
       sinfo.fraction_lost = -1;
-      sinfo.firs_rcvd = -1;
-      sinfo.nacks_rcvd = -1;
       sinfo.rtt_ms = -1;
       sinfo.input_frame_width = static_cast<int>(channel_stream_info->width());
       sinfo.input_frame_height =
           static_cast<int>(channel_stream_info->height());
+
+      VideoCapturer* video_capturer = send_channel->video_capturer();
+      if (video_capturer) {
+        video_capturer->GetStats(&sinfo.adapt_frame_drops,
+                                 &sinfo.effects_frame_drops,
+                                 &sinfo.capturer_frame_time);
+      }
+
       webrtc::VideoCodec vie_codec;
       if (engine()->vie()->codec()->GetSendCodec(channel_id, vie_codec) == 0) {
         sinfo.send_frame_width = vie_codec.width;
@@ -2367,6 +2372,26 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
         sinfo.encode_usage_percent = encode_usage_percent;
         sinfo.capture_queue_delay_ms_per_s = capture_queue_delay_ms_per_s;
       }
+
+#ifdef USE_WEBRTC_DEV_BRANCH
+      webrtc::RtcpPacketTypeCounter rtcp_sent;
+      webrtc::RtcpPacketTypeCounter rtcp_received;
+      if (engine()->vie()->rtp()->GetRtcpPacketTypeCounters(
+          channel_id, &rtcp_sent, &rtcp_received) == 0) {
+        sinfo.firs_rcvd = rtcp_received.fir_packets;
+        sinfo.plis_rcvd = rtcp_received.pli_packets;
+        sinfo.nacks_rcvd = rtcp_received.nack_packets;
+      } else {
+        sinfo.firs_rcvd = -1;
+        sinfo.plis_rcvd = -1;
+        sinfo.nacks_rcvd = -1;
+        LOG_RTCERR1(GetRtcpPacketTypeCounters, channel_id);
+      }
+#else
+      sinfo.firs_rcvd = -1;
+      sinfo.plis_rcvd = -1;
+      sinfo.nacks_rcvd = -1;
+#endif
 
       // Get received RTCP statistics for the sender (reported by the remote
       // client in a RTCP packet), if available.
@@ -2425,10 +2450,6 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
   unsigned int estimated_recv_bandwidth = 0;
   for (RecvChannelMap::const_iterator it = recv_channels_.begin();
        it != recv_channels_.end(); ++it) {
-    // Don't report receive statistics from the default channel if we have
-    // specified receive channels.
-    if (it->first == 0 && recv_channels_.size() > 1)
-      continue;
     WebRtcVideoChannelRecvInfo* channel = it->second;
 
     unsigned int ssrc;
@@ -2453,13 +2474,32 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
     rinfo.packets_lost = -1;
     rinfo.packets_concealed = -1;
     rinfo.fraction_lost = -1;  // from SentRTCP
-    rinfo.nacks_sent = -1;
     rinfo.frame_width = channel->render_adapter()->width();
     rinfo.frame_height = channel->render_adapter()->height();
     int fps = channel->render_adapter()->framerate();
     rinfo.framerate_decoded = fps;
     rinfo.framerate_output = fps;
     channel->decoder_observer()->ExportTo(&rinfo);
+
+#ifdef USE_WEBRTC_DEV_BRANCH
+    webrtc::RtcpPacketTypeCounter rtcp_sent;
+    webrtc::RtcpPacketTypeCounter rtcp_received;
+    if (engine()->vie()->rtp()->GetRtcpPacketTypeCounters(
+        channel->channel_id(), &rtcp_sent, &rtcp_received) == 0) {
+      rinfo.firs_sent = rtcp_sent.fir_packets;
+      rinfo.plis_sent = rtcp_sent.pli_packets;
+      rinfo.nacks_sent = rtcp_sent.nack_packets;
+    } else {
+      rinfo.firs_sent = -1;
+      rinfo.plis_sent = -1;
+      rinfo.nacks_sent = -1;
+      LOG_RTCERR1(GetRtcpPacketTypeCounters, channel->channel_id());
+    }
+#else
+    rinfo.firs_sent = -1;
+    rinfo.plis_sent = -1;
+    rinfo.nacks_sent = -1;
+#endif
 
     // Get our locally created statistics of the received RTP stream.
     webrtc::RtcpStatistics incoming_stream_rtcp_stats;
@@ -2558,13 +2598,18 @@ void WebRtcVideoMediaChannel::OnPacketReceived(
   uint32 ssrc = 0;
   if (!GetRtpSsrc(packet->data(), packet->length(), &ssrc))
     return;
-  int which_channel = GetRecvChannelNum(ssrc);
-  if (which_channel == -1) {
-    which_channel = video_channel();
+  int processing_channel = GetRecvChannelNum(ssrc);
+  if (processing_channel == -1) {
+    // Allocate an unsignalled recv channel for processing in conference mode.
+    if (!InConferenceMode() ||
+        !CreateUnsignalledRecvChannel(ssrc, &processing_channel)) {
+      // If we cant find or allocate one, use the default.
+      processing_channel = video_channel();
+    }
   }
 
   engine()->vie()->network()->ReceivedRTPPacket(
-      which_channel,
+      processing_channel,
       packet->data(),
       static_cast<int>(packet->length()),
       webrtc::PacketTime(packet_time.timestamp, packet_time.not_before));
@@ -3098,6 +3143,22 @@ bool WebRtcVideoMediaChannel::CreateChannel(uint32 ssrc_key,
     return false;
   }
 
+  return true;
+}
+
+bool WebRtcVideoMediaChannel::CreateUnsignalledRecvChannel(
+    uint32 ssrc_key, int* out_channel_id) {
+  int unsignalled_recv_channel_limit =
+      options_.unsignalled_recv_stream_limit.GetWithDefaultIfUnset(
+          kNumDefaultUnsignalledVideoRecvStreams);
+  if (num_unsignalled_recv_channels_ >= unsignalled_recv_channel_limit) {
+    return false;
+  }
+  if (!CreateChannel(ssrc_key, MD_RECV, out_channel_id)) {
+    return false;
+  }
+  // TODO(tvsriram): Support dynamic sizing of unsignalled recv channels.
+  num_unsignalled_recv_channels_++;
   return true;
 }
 

@@ -63,6 +63,10 @@ static const int kYU12Penalty = 16;  // Needs to be higher than MJPG index.
 static const int kDefaultScreencastFps = 5;
 typedef talk_base::TypedMessageData<CaptureState> StateChangeParams;
 
+// Limit stats data collections to ~20 seconds of 30fps data before dropping
+// old data in case stats aren't reset for long periods of time.
+static const size_t kMaxAccumulatorSize = 600;
+
 }  // namespace
 
 /////////////////////////////////////////////////////////////////////
@@ -92,11 +96,19 @@ bool CapturedFrame::GetDataSize(uint32* size) const {
 /////////////////////////////////////////////////////////////////////
 // Implementation of class VideoCapturer
 /////////////////////////////////////////////////////////////////////
-VideoCapturer::VideoCapturer() : thread_(talk_base::Thread::Current()) {
+VideoCapturer::VideoCapturer()
+    : thread_(talk_base::Thread::Current()),
+      adapt_frame_drops_data_(kMaxAccumulatorSize),
+      effect_frame_drops_data_(kMaxAccumulatorSize),
+      frame_time_data_(kMaxAccumulatorSize) {
   Construct();
 }
 
-VideoCapturer::VideoCapturer(talk_base::Thread* thread) : thread_(thread) {
+VideoCapturer::VideoCapturer(talk_base::Thread* thread)
+    : thread_(thread),
+      adapt_frame_drops_data_(kMaxAccumulatorSize),
+      effect_frame_drops_data_(kMaxAccumulatorSize),
+      frame_time_data_(kMaxAccumulatorSize) {
   Construct();
 }
 
@@ -112,6 +124,9 @@ void VideoCapturer::Construct() {
   muted_ = false;
   black_frame_count_down_ = kNumBlackFramesOnMute;
   enable_video_adapter_ = true;
+  adapt_frame_drops_ = 0;
+  effect_frame_drops_ = 0;
+  previous_frame_time_ = 0.0;
 }
 
 const std::vector<VideoFormat>* VideoCapturer::GetSupportedFormats() const {
@@ -119,6 +134,7 @@ const std::vector<VideoFormat>* VideoCapturer::GetSupportedFormats() const {
 }
 
 bool VideoCapturer::StartCapturing(const VideoFormat& capture_format) {
+  previous_frame_time_ = frame_length_time_reporter_.TimerNow();
   CaptureState result = Start(capture_format);
   const bool success = (result == CS_RUNNING) || (result == CS_STARTING);
   if (!success) {
@@ -306,6 +322,19 @@ std::string VideoCapturer::ToString(const CapturedFrame* captured_frame) const {
   return ss.str();
 }
 
+void VideoCapturer::GetStats(VariableInfo<int>* adapt_drops_stats,
+                             VariableInfo<int>* effect_drops_stats,
+                             VariableInfo<double>* frame_time_stats) {
+  talk_base::CritScope cs(&frame_stats_crit_);
+  GetVariableSnapshot(adapt_frame_drops_data_, adapt_drops_stats);
+  GetVariableSnapshot(effect_frame_drops_data_, effect_drops_stats);
+  GetVariableSnapshot(frame_time_data_, frame_time_stats);
+
+  adapt_frame_drops_data_.Reset();
+  effect_frame_drops_data_.Reset();
+  frame_time_data_.Reset();
+}
+
 void VideoCapturer::OnFrameCaptured(VideoCapturer*,
                                     const CapturedFrame* captured_frame) {
   if (muted_) {
@@ -482,19 +511,36 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
     VideoFrame* out_frame = NULL;
     video_adapter_.AdaptFrame(adapted_frame, &out_frame);
     if (!out_frame) {
-      return;  // VideoAdapter dropped the frame.
+      // VideoAdapter dropped the frame.
+      ++adapt_frame_drops_;
+      return;
     }
     adapted_frame = out_frame;
   }
 
   if (!muted_ && !ApplyProcessors(adapted_frame)) {
     // Processor dropped the frame.
+    ++effect_frame_drops_;
     return;
   }
   if (muted_) {
     adapted_frame->SetToBlack();
   }
   SignalVideoFrame(this, adapted_frame);
+
+  double time_now = frame_length_time_reporter_.TimerNow();
+  if (previous_frame_time_ != 0.0) {
+    // Update stats protected from jmi data fetches.
+    talk_base::CritScope cs(&frame_stats_crit_);
+
+    adapt_frame_drops_data_.AddSample(adapt_frame_drops_);
+    effect_frame_drops_data_.AddSample(effect_frame_drops_);
+    frame_time_data_.AddSample(time_now - previous_frame_time_);
+  }
+  previous_frame_time_ = time_now;
+  effect_frame_drops_ = 0;
+  adapt_frame_drops_ = 0;
+
 #endif  // VIDEO_FRAME_NAME
 }
 
@@ -667,6 +713,16 @@ bool VideoCapturer::ShouldFilterFormat(const VideoFormat& format) const {
   }
   return format.width > max_format_->width ||
          format.height > max_format_->height;
+}
+
+template<class T>
+void VideoCapturer::GetVariableSnapshot(
+    const talk_base::RollingAccumulator<T>& data,
+    VariableInfo<T>* stats) {
+  stats->max_val = data.ComputeMax();
+  stats->mean = data.ComputeMean();
+  stats->min_val = data.ComputeMin();
+  stats->variance = data.ComputeVariance();
 }
 
 }  // namespace cricket

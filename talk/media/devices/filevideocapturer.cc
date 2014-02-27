@@ -209,8 +209,14 @@ bool FileVideoCapturer::Init(const Device& device) {
   std::vector<VideoFormat> supported;
   supported.push_back(format);
 
+  // TODO(thorcarpenter): Report the actual file video format as the supported
+  // format. Do not use kMinimumInterval as it conflicts with video adaptation.
   SetId(device.id);
   SetSupportedFormats(supported);
+
+  // TODO(wuwang): Design an E2E integration test for video adaptation,
+  // then remove the below call to disable the video adapter.
+  set_enable_video_adapter(false);
   return true;
 }
 

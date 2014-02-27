@@ -371,6 +371,13 @@ class FakeWebRtcVoiceEngine
   }
   WEBRTC_FUNC(SetSendCodec, (int channel, const webrtc::CodecInst& codec)) {
     WEBRTC_CHECK_CHANNEL(channel);
+    // To match the behavior of the real implementation.
+    if (_stricmp(codec.plname, "telephone-event") == 0 ||
+        _stricmp(codec.plname, "audio/telephone-event") == 0 ||
+        _stricmp(codec.plname, "CN") == 0 ||
+        _stricmp(codec.plname, "red") == 0 ) {
+      return -1;
+    }
     channels_[channel]->send_codec = codec;
     return 0;
   }

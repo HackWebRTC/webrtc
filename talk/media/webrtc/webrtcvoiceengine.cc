@@ -194,6 +194,18 @@ static bool IsCodecMultiRate(const webrtc::CodecInst& codec) {
   return false;
 }
 
+static bool IsTelephoneEventCodec(const std::string& name) {
+  return _stricmp(name.c_str(), "telephone-event") == 0;
+}
+
+static bool IsCNCodec(const std::string& name) {
+  return _stricmp(name.c_str(), "CN") == 0;
+}
+
+static bool IsRedCodec(const std::string& name) {
+  return _stricmp(name.c_str(), "red") == 0;
+}
+
 static bool FindCodec(const std::vector<AudioCodec>& codecs,
                       const AudioCodec& codec,
                       AudioCodec* found_codec) {
@@ -1966,10 +1978,11 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
 
   // Scan through the list to figure out the codec to use for sending, along
   // with the proper configuration for VAD and DTMF.
-  bool first = true;
+  bool found_send_codec = false;
   webrtc::CodecInst send_codec;
   memset(&send_codec, 0, sizeof(send_codec));
 
+  // Set send codec (the first non-telephone-event/CN codec)
   for (std::vector<AudioCodec>::const_iterator it = codecs.begin();
        it != codecs.end(); ++it) {
     // Ignore codecs we don't know about. The negotiation step should prevent
@@ -1977,6 +1990,11 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
     webrtc::CodecInst voe_codec;
     if (!engine()->FindWebRtcCodec(*it, &voe_codec)) {
       LOG(LS_WARNING) << "Unknown codec " << ToString(*it);
+      continue;
+    }
+
+    if (IsTelephoneEventCodec(it->name) || IsCNCodec(it->name)) {
+      // Skip telephone-event/CN codec, which will be handled later.
       continue;
     }
 
@@ -2015,21 +2033,73 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
       }
     }
 
+    // We'll use the first codec in the list to actually send audio data.
+    // Be sure to use the payload type requested by the remote side.
+    // "red", for FEC audio, is a special case where the actual codec to be
+    // used is specified in params.
+    if (IsRedCodec(it->name)) {
+      // Parse out the RED parameters. If we fail, just ignore RED;
+      // we don't support all possible params/usage scenarios.
+      if (!GetRedSendCodec(*it, codecs, &send_codec)) {
+        continue;
+      }
+
+      // Enable redundant encoding of the specified codec. Treat any
+      // failure as a fatal internal error.
+      LOG(LS_INFO) << "Enabling FEC";
+      if (engine()->voe()->rtp()->SetFECStatus(channel, true, it->id) == -1) {
+        LOG_RTCERR3(SetFECStatus, channel, true, it->id);
+        return false;
+      }
+    } else {
+      send_codec = voe_codec;
+      nack_enabled_ = IsNackEnabled(*it);
+      SetNack(channel, nack_enabled_);
+    }
+    found_send_codec = true;
+    break;
+  }
+
+  if (!found_send_codec) {
+    LOG(LS_WARNING) << "Received empty list of codecs.";
+    return false;
+  }
+
+  // Set the codec immediately, since SetVADStatus() depends on whether
+  // the current codec is mono or stereo.
+  if (!SetSendCodec(channel, send_codec))
+    return false;
+
+  // Always update the |send_codec_| to the currently set send codec.
+  send_codec_.reset(new webrtc::CodecInst(send_codec));
+
+  if (send_bw_setting_) {
+    SetSendBandwidthInternal(send_bw_bps_);
+  }
+
+  // Loop through the codecs list again to config the telephone-event/CN codec.
+  for (std::vector<AudioCodec>::const_iterator it = codecs.begin();
+       it != codecs.end(); ++it) {
+    // Ignore codecs we don't know about. The negotiation step should prevent
+    // this, but double-check to be sure.
+    webrtc::CodecInst voe_codec;
+    if (!engine()->FindWebRtcCodec(*it, &voe_codec)) {
+      LOG(LS_WARNING) << "Unknown codec " << ToString(*it);
+      continue;
+    }
+
     // Find the DTMF telephone event "codec" and tell VoiceEngine channels
     // about it.
-    if (_stricmp(it->name.c_str(), "telephone-event") == 0 ||
-        _stricmp(it->name.c_str(), "audio/telephone-event") == 0) {
+    if (IsTelephoneEventCodec(it->name)) {
       if (engine()->voe()->dtmf()->SetSendTelephoneEventPayloadType(
               channel, it->id) == -1) {
         LOG_RTCERR2(SetSendTelephoneEventPayloadType, channel, it->id);
         return false;
       }
-    }
-
-    // Turn voice activity detection/comfort noise on if supported.
-    // Set the wideband CN payload type appropriately.
-    // (narrowband always uses the static payload type 13).
-    if (_stricmp(it->name.c_str(), "CN") == 0) {
+    } else if (IsCNCodec(it->name)) {
+      // Turn voice activity detection/comfort noise on if supported.
+      // Set the wideband CN payload type appropriately.
+      // (narrowband always uses the static payload type 13).
       webrtc::PayloadFrequencies cn_freq;
       switch (it->clockrate) {
         case 8000:
@@ -2062,7 +2132,6 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
           // send the offer.
         }
       }
-
       // Only turn on VAD if we have a CN payload type that matches the
       // clockrate for the codec we are going to use.
       if (it->clockrate == send_codec.plfreq) {
@@ -2073,54 +2142,6 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
         }
       }
     }
-
-    // We'll use the first codec in the list to actually send audio data.
-    // Be sure to use the payload type requested by the remote side.
-    // "red", for FEC audio, is a special case where the actual codec to be
-    // used is specified in params.
-    if (first) {
-      if (_stricmp(it->name.c_str(), "red") == 0) {
-        // Parse out the RED parameters. If we fail, just ignore RED;
-        // we don't support all possible params/usage scenarios.
-        if (!GetRedSendCodec(*it, codecs, &send_codec)) {
-          continue;
-        }
-
-        // Enable redundant encoding of the specified codec. Treat any
-        // failure as a fatal internal error.
-        LOG(LS_INFO) << "Enabling FEC";
-        if (engine()->voe()->rtp()->SetFECStatus(channel, true, it->id) == -1) {
-          LOG_RTCERR3(SetFECStatus, channel, true, it->id);
-          return false;
-        }
-      } else {
-        send_codec = voe_codec;
-        nack_enabled_ = IsNackEnabled(*it);
-        SetNack(channel, nack_enabled_);
-      }
-      first = false;
-      // Set the codec immediately, since SetVADStatus() depends on whether
-      // the current codec is mono or stereo.
-      if (!SetSendCodec(channel, send_codec))
-        return false;
-    }
-  }
-
-  // If we're being asked to set an empty list of codecs, due to a buggy client,
-  // choose the most common format: PCMU
-  if (first) {
-    LOG(LS_WARNING) << "Received empty list of codecs; using PCMU/8000";
-    AudioCodec codec(0, "PCMU", 8000, 0, 1, 0);
-    engine()->FindWebRtcCodec(codec, &send_codec);
-    if (!SetSendCodec(channel, send_codec))
-      return false;
-  }
-
-  // Always update the |send_codec_| to the currently set send codec.
-  send_codec_.reset(new webrtc::CodecInst(send_codec));
-
-  if (send_bw_setting_) {
-    SetSendBandwidthInternal(send_bw_bps_);
   }
 
   return true;

@@ -163,6 +163,8 @@ static const RtpHeaderExtension kVideoRtpExtensionAnswer[] = {
   RtpHeaderExtension("urn:ietf:params:rtp-hdrext:toffset", 14),
 };
 
+static const uint32 kSimulcastParamsSsrc[] = {10, 11, 20, 21, 30, 31};
+static const uint32 kSimSsrc[] = {10, 20, 30};
 static const uint32 kFec1Ssrc[] = {10, 11};
 static const uint32 kFec2Ssrc[] = {20, 21};
 static const uint32 kFec3Ssrc[] = {30, 31};
@@ -192,6 +194,32 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
     tdf2_.set_identity(&id2_);
   }
 
+  // Create a video StreamParamsVec object with:
+  // - one video stream with 3 simulcast streams and FEC,
+  StreamParamsVec CreateComplexVideoStreamParamsVec() {
+    SsrcGroup sim_group("SIM", MAKE_VECTOR(kSimSsrc));
+    SsrcGroup fec_group1("FEC", MAKE_VECTOR(kFec1Ssrc));
+    SsrcGroup fec_group2("FEC", MAKE_VECTOR(kFec2Ssrc));
+    SsrcGroup fec_group3("FEC", MAKE_VECTOR(kFec3Ssrc));
+
+    std::vector<SsrcGroup> ssrc_groups;
+    ssrc_groups.push_back(sim_group);
+    ssrc_groups.push_back(fec_group1);
+    ssrc_groups.push_back(fec_group2);
+    ssrc_groups.push_back(fec_group3);
+
+    StreamParams simulcast_params;
+    simulcast_params.id = kVideoTrack1;
+    simulcast_params.ssrcs = MAKE_VECTOR(kSimulcastParamsSsrc);
+    simulcast_params.ssrc_groups = ssrc_groups;
+    simulcast_params.cname = "Video_SIM_FEC";
+    simulcast_params.sync_label = kMediaStream1;
+
+    StreamParamsVec video_streams;
+    video_streams.push_back(simulcast_params);
+
+    return video_streams;
+  }
 
   bool CompareCryptoParams(const CryptoParamsVec& c1,
                            const CryptoParamsVec& c2) {

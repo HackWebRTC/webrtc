@@ -34,9 +34,12 @@
 #include "talk/base/basictypes.h"
 #include "talk/base/criticalsection.h"
 #include "talk/base/messagehandler.h"
+#include "talk/base/rollingaccumulator.h"
 #include "talk/base/scoped_ptr.h"
 #include "talk/base/sigslot.h"
 #include "talk/base/thread.h"
+#include "talk/base/timing.h"
+#include "talk/media/base/mediachannel.h"
 #include "talk/media/base/videoadapter.h"
 #include "talk/media/base/videocommon.h"
 #include "talk/media/devices/devicemanager.h"
@@ -286,6 +289,13 @@ class VideoCapturer
     return &video_adapter_;
   }
 
+  // Gets statistics for tracked variables recorded since the last call to
+  // GetStats.  Note that calling GetStats resets any gathered data so it
+  // should be called only periodically to log statistics.
+  void GetStats(VariableInfo<int>* adapt_drop_stats,
+                VariableInfo<int>* effect_drop_stats,
+                VariableInfo<double>* frame_time_stats);
+
  protected:
   // Callback attached to SignalFrameCaptured where SignalVideoFrames is called.
   void OnFrameCaptured(VideoCapturer* video_capturer,
@@ -338,6 +348,13 @@ class VideoCapturer
   // Returns true if format doesn't fulfill all applied restrictions.
   bool ShouldFilterFormat(const VideoFormat& format) const;
 
+  // Helper function to save statistics on the current data from a
+  // RollingAccumulator into stats.
+  template<class T>
+  static void GetVariableSnapshot(
+      const talk_base::RollingAccumulator<T>& data,
+      VariableInfo<T>* stats);
+
   talk_base::Thread* thread_;
   std::string id_;
   CaptureState capture_state_;
@@ -358,6 +375,16 @@ class VideoCapturer
 
   bool enable_video_adapter_;
   CoordinatedVideoAdapter video_adapter_;
+
+  talk_base::Timing frame_length_time_reporter_;
+  talk_base::CriticalSection frame_stats_crit_;
+
+  int adapt_frame_drops_;
+  talk_base::RollingAccumulator<int> adapt_frame_drops_data_;
+  int effect_frame_drops_;
+  talk_base::RollingAccumulator<int> effect_frame_drops_data_;
+  double previous_frame_time_;
+  talk_base::RollingAccumulator<double> frame_time_data_;
 
   talk_base::CriticalSection crit_;
   VideoProcessors video_processors_;

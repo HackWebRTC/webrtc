@@ -323,6 +323,7 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   // returning false.
   bool CreateChannel(uint32 ssrc_key, MediaDirection direction,
                      int* channel_id);
+  bool CreateUnsignalledRecvChannel(uint32 ssrc_key, int* channel_id);
   bool ConfigureChannel(int channel_id, MediaDirection direction,
                         uint32 ssrc_key);
   bool ConfigureReceiving(int channel_id, uint32 remote_ssrc_key);
@@ -431,6 +432,7 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   bool render_started_;
   uint32 first_receive_ssrc_;
   std::vector<RtpHeaderExtension> receive_extensions_;
+  int num_unsignalled_recv_channels_;
 
   // Global send side state.
   SendChannelMap send_channels_;

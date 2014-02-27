@@ -122,6 +122,8 @@ const char StatsReport::kStatsValueNameLocalCertificateId[] =
     "googLocalCertificateId";
 const char StatsReport::kStatsValueNameNacksReceived[] = "googNacksReceived";
 const char StatsReport::kStatsValueNameNacksSent[] = "googNacksSent";
+const char StatsReport::kStatsValueNamePlisReceived[] = "googPlisReceived";
+const char StatsReport::kStatsValueNamePlisSent[] = "googPlisSent";
 const char StatsReport::kStatsValueNamePacketsReceived[] = "packetsReceived";
 const char StatsReport::kStatsValueNamePacketsSent[] = "packetsSent";
 const char StatsReport::kStatsValueNamePacketsLost[] = "packetsLost";
@@ -284,6 +286,8 @@ void ExtractStats(const cricket::VideoReceiverInfo& info, StatsReport* report) {
 
   report->AddValue(StatsReport::kStatsValueNameFirsSent,
                    info.firs_sent);
+  report->AddValue(StatsReport::kStatsValueNamePlisSent,
+                   info.plis_sent);
   report->AddValue(StatsReport::kStatsValueNameNacksSent,
                    info.nacks_sent);
   report->AddValue(StatsReport::kStatsValueNameFrameWidthReceived,
@@ -321,6 +325,8 @@ void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {
 
   report->AddValue(StatsReport::kStatsValueNameFirsReceived,
                    info.firs_rcvd);
+  report->AddValue(StatsReport::kStatsValueNamePlisReceived,
+                   info.plis_rcvd);
   report->AddValue(StatsReport::kStatsValueNameNacksReceived,
                    info.nacks_rcvd);
   report->AddValue(StatsReport::kStatsValueNameFrameWidthInput,

@@ -123,6 +123,7 @@
         'base/callback_unittest.cc',
         'base/cpumonitor_unittest.cc',
         'base/crc32_unittest.cc',
+        'base/criticalsection_unittest.cc',
         'base/event_unittest.cc',
         'base/filelock_unittest.cc',
         'base/fileutils_unittest.cc',

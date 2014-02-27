@@ -62,7 +62,7 @@ bool BandwidthSmoother::Sample(uint32 sample_time, int bandwidth) {
   }
 
   // Replace bandwidth with the mean of sampled bandwidths.
-  const int mean_bandwidth = accumulator_.ComputeMean();
+  const int mean_bandwidth = static_cast<int>(accumulator_.ComputeMean());
 
   if (mean_bandwidth < bandwidth_estimation_) {
     time_at_last_change_ = sample_time;

@@ -99,4 +99,8 @@ const char kComfortNoiseCodecName[] = "CN";
 const char kRtpAbsoluteSendTimeHeaderExtension[] =
     "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
 
+const int kNumDefaultUnsignalledVideoRecvStreams = 0;
+
+
 }  // namespace cricket
+

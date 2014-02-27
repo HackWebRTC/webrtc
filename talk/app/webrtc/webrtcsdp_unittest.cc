@@ -299,6 +299,19 @@ static const char kSdpSctpDataChannelWithCandidatesString[] =
     "a=mid:data_content_name\r\n"
     "a=sctpmap:5000 webrtc-datachannel 1024\r\n";
 
+    static const char kSdpConferenceString[] =
+    "v=0\r\n"
+    "o=- 18446744069414584320 18446462598732840960 IN IP4 127.0.0.1\r\n"
+    "s=-\r\n"
+    "t=0 0\r\n"
+    "a=msid-semantic: WMS\r\n"
+    "m=audio 1 RTP/SAVPF 111 103 104\r\n"
+    "c=IN IP4 0.0.0.0\r\n"
+    "a=x-google-flag:conference\r\n"
+    "m=video 1 RTP/SAVPF 120\r\n"
+    "c=IN IP4 0.0.0.0\r\n"
+    "a=x-google-flag:conference\r\n";
+
 
 // One candidate reference string as per W3c spec.
 // candidate:<blah> not a=candidate:<blah>CRLF
@@ -1474,6 +1487,21 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithExtmap) {
   EXPECT_EQ(sdp_with_extmap, message);
 }
 
+TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithBufferLatency) {
+  VideoContentDescription* vcd = static_cast<VideoContentDescription*>(
+      GetFirstVideoContent(&desc_)->description);
+  vcd->set_buffered_mode_latency(128);
+
+  ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(),
+                                jdesc_.session_id(),
+                                jdesc_.session_version()));
+  std::string message = webrtc::SdpSerialize(jdesc_);
+  std::string sdp_with_buffer_latency = kSdpFullString;
+  InjectAfter("a=rtpmap:120 VP8/90000\r\n",
+              "a=x-google-buffer-latency:128\r\n",
+              &sdp_with_buffer_latency);
+  EXPECT_EQ(sdp_with_buffer_latency, message);
+}
 
 TEST_F(WebRtcSdpTest, SerializeCandidates) {
   std::string message = webrtc::SdpSerializeCandidate(*jcandidate_);
@@ -1545,6 +1573,37 @@ TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithoutRtpmap) {
   ref_codecs.push_back(AudioCodec(18, "G729", 16000, 0, 1, 2));
   ref_codecs.push_back(AudioCodec(103, "ISAC", 16000, 32000, 1, 1));
   EXPECT_EQ(ref_codecs, audio->codecs());
+}
+
+TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithoutRtpmapButWithFmtp) {
+  static const char kSdpNoRtpmapString[] =
+      "v=0\r\n"
+      "o=- 11 22 IN IP4 127.0.0.1\r\n"
+      "s=-\r\n"
+      "t=0 0\r\n"
+      "m=audio 49232 RTP/AVP 18 103\r\n"
+      "a=fmtp:18 annexb=yes\r\n"
+      "a=rtpmap:103 ISAC/16000\r\n";
+
+  JsepSessionDescription jdesc(kDummyString);
+  EXPECT_TRUE(SdpDeserialize(kSdpNoRtpmapString, &jdesc));
+  cricket::AudioContentDescription* audio =
+    static_cast<AudioContentDescription*>(
+        jdesc.description()->GetContentDescriptionByName(cricket::CN_AUDIO));
+
+  cricket::AudioCodec g729 = audio->codecs()[0];
+  EXPECT_EQ("G729", g729.name);
+  EXPECT_EQ(8000, g729.clockrate);
+  EXPECT_EQ(18, g729.id);
+  cricket::CodecParameterMap::iterator found =
+      g729.params.find("annexb");
+  ASSERT_TRUE(found != g729.params.end());
+  EXPECT_EQ(found->second, "yes");
+
+  cricket::AudioCodec isac = audio->codecs()[1];
+  EXPECT_EQ("ISAC", isac.name);
+  EXPECT_EQ(103, isac.id);
+  EXPECT_EQ(16000, isac.clockrate);
 }
 
 // Ensure that we can deserialize SDP with a=fingerprint properly.
@@ -1654,6 +1713,23 @@ TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithUfragPwd) {
   EXPECT_TRUE(CompareSessionDescription(jdesc_, jdesc_with_ufrag_pwd));
 }
 
+TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithBufferLatency) {
+  JsepSessionDescription jdesc_with_buffer_latency(kDummyString);
+  std::string sdp_with_buffer_latency = kSdpFullString;
+  InjectAfter("a=rtpmap:120 VP8/90000\r\n",
+              "a=x-google-buffer-latency:128\r\n",
+              &sdp_with_buffer_latency);
+
+  EXPECT_TRUE(
+      SdpDeserialize(sdp_with_buffer_latency, &jdesc_with_buffer_latency));
+  VideoContentDescription* vcd = static_cast<VideoContentDescription*>(
+      GetFirstVideoContent(&desc_)->description);
+  vcd->set_buffered_mode_latency(128);
+  ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(),
+                                jdesc_.session_id(),
+                                jdesc_.session_version()));
+  EXPECT_TRUE(CompareSessionDescription(jdesc_, jdesc_with_buffer_latency));
+}
 
 TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithRecvOnlyContent) {
   EXPECT_TRUE(TestDeserializeDirection(cricket::MD_RECVONLY));
@@ -1902,6 +1978,24 @@ TEST_F(WebRtcSdpTest, DeserializeCandidateOldFormat) {
   ref_candidate.set_username("user_rtp");
   ref_candidate.set_password("password_rtp");
   EXPECT_TRUE(jcandidate.candidate().IsEquivalent(ref_candidate));
+}
+
+TEST_F(WebRtcSdpTest, DeserializeSdpWithConferenceFlag) {
+  JsepSessionDescription jdesc(kDummyString);
+
+  // Deserialize
+  EXPECT_TRUE(SdpDeserialize(kSdpConferenceString, &jdesc));
+
+  // Verify
+  cricket::AudioContentDescription* audio =
+    static_cast<AudioContentDescription*>(
+      jdesc.description()->GetContentDescriptionByName(cricket::CN_AUDIO));
+  EXPECT_TRUE(audio->conference_mode());
+
+  cricket::VideoContentDescription* video =
+    static_cast<VideoContentDescription*>(
+      jdesc.description()->GetContentDescriptionByName(cricket::CN_VIDEO));
+  EXPECT_TRUE(video->conference_mode());
 }
 
 TEST_F(WebRtcSdpTest, DeserializeBrokenSdp) {

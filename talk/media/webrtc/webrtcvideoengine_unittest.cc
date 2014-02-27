@@ -1292,7 +1292,6 @@ TEST_F(WebRtcVideoEngineTestFake, MultipleSendStreamsWithOneCapturer) {
         cricket::StreamParams::CreateLegacy(kSsrcs2[i])));
     // Register the capturer to the ssrc.
     EXPECT_TRUE(channel_->SetCapturer(kSsrcs2[i], &capturer));
-    EXPECT_TRUE(channel_->SetSendStreamFormat(kSsrcs2[i], capture_format_vga));
   }
 
   const int channel0 = vie_.GetChannelFromLocalSsrc(kSsrcs2[0]);
@@ -1937,10 +1936,6 @@ TEST_F(WebRtcVideoMediaChannelTest, SendVp8HdAndReceiveAdaptedVp8Vga) {
   EXPECT_TRUE(SetOneCodec(codec));
   codec.width /= 2;
   codec.height /= 2;
-  EXPECT_TRUE(channel_->SetSendStreamFormat(kSsrc, cricket::VideoFormat(
-      codec.width, codec.height,
-      cricket::VideoFormat::FpsToInterval(codec.framerate),
-      cricket::FOURCC_ANY)));
   EXPECT_TRUE(SetSend(true));
   EXPECT_TRUE(channel_->SetRender(true));
   EXPECT_EQ(0, renderer_.num_rendered_frames());
@@ -2098,4 +2093,27 @@ TEST_F(WebRtcVideoMediaChannelTest, TwoStreamsSendAndReceive) {
 TEST_F(WebRtcVideoMediaChannelTest, TwoStreamsReUseFirstStream) {
   Base::TwoStreamsReUseFirstStream(cricket::VideoCodec(100, "VP8", 640, 400, 30,
                                                        0));
+}
+
+TEST_F(WebRtcVideoMediaChannelTest, TwoStreamsSendAndUnsignalledRecv) {
+  Base::TwoStreamsSendAndUnsignalledRecv(cricket::VideoCodec(100, "VP8", 640,
+                                                             400, 30, 0));
+}
+
+TEST_F(WebRtcVideoMediaChannelTest, TwoStreamsSendAndFailUnsignalledRecv) {
+  Base::TwoStreamsSendAndFailUnsignalledRecv(
+      cricket::VideoCodec(100, "VP8", 640, 400, 30, 0));
+}
+
+TEST_F(WebRtcVideoMediaChannelTest,
+       TwoStreamsSendAndFailUnsignalledRecvInOneToOne) {
+  Base::TwoStreamsSendAndFailUnsignalledRecvInOneToOne(
+      cricket::VideoCodec(100, "VP8", 640, 400, 30, 0));
+}
+
+TEST_F(WebRtcVideoMediaChannelTest,
+       TwoStreamsAddAndRemoveUnsignalledRecv) {
+  Base::TwoStreamsAddAndRemoveUnsignalledRecv(cricket::VideoCodec(100, "VP8",
+                                                                  640, 400, 30,
+                                                                  0));
 }
