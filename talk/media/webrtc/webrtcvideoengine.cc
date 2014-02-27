@@ -3148,9 +3148,11 @@ bool WebRtcVideoMediaChannel::CreateChannel(uint32 ssrc_key,
 
 bool WebRtcVideoMediaChannel::CreateUnsignalledRecvChannel(
     uint32 ssrc_key, int* out_channel_id) {
-  int unsignalled_recv_channel_limit =
-      options_.unsignalled_recv_stream_limit.GetWithDefaultIfUnset(
-          kNumDefaultUnsignalledVideoRecvStreams);
+  int unsignalled_recv_channel_limit = 0;
+  // TODO(tvsriram): Enable this once we fix handling packets
+  // in default channel with unsignalled recv.
+  //    options_.unsignalled_recv_stream_limit.GetWithDefaultIfUnset(
+  //        kNumDefaultUnsignalledVideoRecvStreams);
   if (num_unsignalled_recv_channels_ >= unsignalled_recv_channel_limit) {
     return false;
   }
