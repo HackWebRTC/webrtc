@@ -15,13 +15,14 @@
 #include "webrtc/modules/audio_processing/processing_component.h"
 
 namespace webrtc {
-class AudioProcessingImpl;
+
 class AudioBuffer;
+class CriticalSectionWrapper;
 
 class VoiceDetectionImpl : public VoiceDetection,
                            public ProcessingComponent {
  public:
-  explicit VoiceDetectionImpl(const AudioProcessingImpl* apm);
+  VoiceDetectionImpl(const AudioProcessing* apm, CriticalSectionWrapper* crit);
   virtual ~VoiceDetectionImpl();
 
   int ProcessCaptureAudio(AudioBuffer* audio);
@@ -50,7 +51,8 @@ class VoiceDetectionImpl : public VoiceDetection,
   virtual int num_handles_required() const OVERRIDE;
   virtual int GetHandleError(void* handle) const OVERRIDE;
 
-  const AudioProcessingImpl* apm_;
+  const AudioProcessing* apm_;
+  CriticalSectionWrapper* crit_;
   bool stream_has_voice_;
   bool using_external_vad_;
   Likelihood likelihood_;

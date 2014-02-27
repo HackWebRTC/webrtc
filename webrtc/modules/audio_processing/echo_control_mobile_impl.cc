@@ -15,7 +15,6 @@
 
 #include "webrtc/modules/audio_processing/aecm/include/echo_control_mobile.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
-#include "webrtc/modules/audio_processing/audio_processing_impl.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 
@@ -63,9 +62,11 @@ size_t EchoControlMobile::echo_path_size_bytes() {
     return WebRtcAecm_echo_path_size_bytes();
 }
 
-EchoControlMobileImpl::EchoControlMobileImpl(const AudioProcessingImpl* apm)
-  : ProcessingComponent(apm),
+EchoControlMobileImpl::EchoControlMobileImpl(const AudioProcessing* apm,
+                                             CriticalSectionWrapper* crit)
+  : ProcessingComponent(),
     apm_(apm),
+    crit_(crit),
     routing_mode_(kSpeakerphone),
     comfort_noise_enabled_(true),
     external_echo_path_(NULL) {}
@@ -155,7 +156,7 @@ int EchoControlMobileImpl::ProcessCaptureAudio(AudioBuffer* audio) {
 }
 
 int EchoControlMobileImpl::Enable(bool enable) {
-  CriticalSectionScoped crit_scoped(apm_->crit());
+  CriticalSectionScoped crit_scoped(crit_);
   // Ensure AEC and AECM are not both enabled.
   if (enable && apm_->echo_cancellation()->is_enabled()) {
     return apm_->kBadParameterError;
@@ -169,7 +170,7 @@ bool EchoControlMobileImpl::is_enabled() const {
 }
 
 int EchoControlMobileImpl::set_routing_mode(RoutingMode mode) {
-  CriticalSectionScoped crit_scoped(apm_->crit());
+  CriticalSectionScoped crit_scoped(crit_);
   if (MapSetting(mode) == -1) {
     return apm_->kBadParameterError;
   }
@@ -184,7 +185,7 @@ EchoControlMobile::RoutingMode EchoControlMobileImpl::routing_mode()
 }
 
 int EchoControlMobileImpl::enable_comfort_noise(bool enable) {
-  CriticalSectionScoped crit_scoped(apm_->crit());
+  CriticalSectionScoped crit_scoped(crit_);
   comfort_noise_enabled_ = enable;
   return Configure();
 }
@@ -195,7 +196,7 @@ bool EchoControlMobileImpl::is_comfort_noise_enabled() const {
 
 int EchoControlMobileImpl::SetEchoPath(const void* echo_path,
                                        size_t size_bytes) {
-  CriticalSectionScoped crit_scoped(apm_->crit());
+  CriticalSectionScoped crit_scoped(crit_);
   if (echo_path == NULL) {
     return apm_->kNullPointerError;
   }
@@ -214,7 +215,7 @@ int EchoControlMobileImpl::SetEchoPath(const void* echo_path,
 
 int EchoControlMobileImpl::GetEchoPath(void* echo_path,
                                        size_t size_bytes) const {
-  CriticalSectionScoped crit_scoped(apm_->crit());
+  CriticalSectionScoped crit_scoped(crit_);
   if (echo_path == NULL) {
     return apm_->kNullPointerError;
   }

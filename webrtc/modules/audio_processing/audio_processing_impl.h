@@ -21,7 +21,7 @@
 namespace webrtc {
 class AudioBuffer;
 class CriticalSectionWrapper;
-class EchoCancellationImplWrapper;
+class EchoCancellationImpl;
 class EchoControlMobileImpl;
 class FileWrapper;
 class GainControlImpl;
@@ -41,19 +41,8 @@ class Event;
 
 class AudioProcessingImpl : public AudioProcessing {
  public:
-  enum {
-    kSampleRate8kHz = 8000,
-    kSampleRate16kHz = 16000,
-    kSampleRate32kHz = 32000
-  };
-
   explicit AudioProcessingImpl(const Config& config);
   virtual ~AudioProcessingImpl();
-
-  CriticalSectionWrapper* crit() const;
-
-  int split_sample_rate_hz() const;
-  bool was_stream_delay_set() const;
 
   // AudioProcessing methods.
   virtual int Initialize() OVERRIDE;
@@ -64,6 +53,7 @@ class AudioProcessingImpl : public AudioProcessing {
   }
   virtual int set_sample_rate_hz(int rate) OVERRIDE;
   virtual int sample_rate_hz() const OVERRIDE;
+  virtual int split_sample_rate_hz() const OVERRIDE;
   virtual int set_num_channels(int input_channels,
                                int output_channels) OVERRIDE;
   virtual int num_input_channels() const OVERRIDE;
@@ -76,6 +66,7 @@ class AudioProcessingImpl : public AudioProcessing {
   virtual int AnalyzeReverseStream(AudioFrame* frame) OVERRIDE;
   virtual int set_stream_delay_ms(int delay) OVERRIDE;
   virtual int stream_delay_ms() const OVERRIDE;
+  virtual bool was_stream_delay_set() const OVERRIDE;
   virtual void set_delay_offset_ms(int offset) OVERRIDE;
   virtual int delay_offset_ms() const OVERRIDE;
   virtual void set_stream_key_pressed(bool key_pressed) OVERRIDE;
@@ -103,7 +94,7 @@ class AudioProcessingImpl : public AudioProcessing {
   bool synthesis_needed(bool is_data_processed) const;
   bool analysis_needed(bool is_data_processed) const;
 
-  EchoCancellationImplWrapper* echo_cancellation_;
+  EchoCancellationImpl* echo_cancellation_;
   EchoControlMobileImpl* echo_control_mobile_;
   GainControlImpl* gain_control_;
   HighPassFilterImpl* high_pass_filter_;

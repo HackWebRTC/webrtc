@@ -14,7 +14,7 @@
 
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
-#include "webrtc/modules/audio_processing/echo_cancellation_impl_wrapper.h"
+#include "webrtc/modules/audio_processing/echo_cancellation_impl.h"
 #include "webrtc/modules/audio_processing/echo_control_mobile_impl.h"
 #include "webrtc/modules/audio_processing/gain_control_impl.h"
 #include "webrtc/modules/audio_processing/high_pass_filter_impl.h"
@@ -97,25 +97,25 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config)
       num_output_channels_(1),
       output_will_be_muted_(false),
       key_pressed_(false) {
-  echo_cancellation_ = EchoCancellationImplWrapper::Create(this);
+  echo_cancellation_ = new EchoCancellationImpl(this, crit_);
   component_list_.push_back(echo_cancellation_);
 
-  echo_control_mobile_ = new EchoControlMobileImpl(this);
+  echo_control_mobile_ = new EchoControlMobileImpl(this, crit_);
   component_list_.push_back(echo_control_mobile_);
 
-  gain_control_ = new GainControlImpl(this);
+  gain_control_ = new GainControlImpl(this, crit_);
   component_list_.push_back(gain_control_);
 
-  high_pass_filter_ = new HighPassFilterImpl(this);
+  high_pass_filter_ = new HighPassFilterImpl(this, crit_);
   component_list_.push_back(high_pass_filter_);
 
-  level_estimator_ = new LevelEstimatorImpl(this);
+  level_estimator_ = new LevelEstimatorImpl(this, crit_);
   component_list_.push_back(level_estimator_);
 
-  noise_suppression_ = new NoiseSuppressionImpl(this);
+  noise_suppression_ = new NoiseSuppressionImpl(this, crit_);
   component_list_.push_back(noise_suppression_);
 
-  voice_detection_ = new VoiceDetectionImpl(this);
+  voice_detection_ = new VoiceDetectionImpl(this, crit_);
   component_list_.push_back(voice_detection_);
 
   SetExtraOptions(config);
@@ -150,10 +150,6 @@ AudioProcessingImpl::~AudioProcessingImpl() {
 
   delete crit_;
   crit_ = NULL;
-}
-
-CriticalSectionWrapper* AudioProcessingImpl::crit() const {
-  return crit_;
 }
 
 int AudioProcessingImpl::split_sample_rate_hz() const {

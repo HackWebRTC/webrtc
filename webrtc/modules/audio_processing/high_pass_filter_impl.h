@@ -15,13 +15,14 @@
 #include "webrtc/modules/audio_processing/processing_component.h"
 
 namespace webrtc {
-class AudioProcessingImpl;
+
 class AudioBuffer;
+class CriticalSectionWrapper;
 
 class HighPassFilterImpl : public HighPassFilter,
                            public ProcessingComponent {
  public:
-  explicit HighPassFilterImpl(const AudioProcessingImpl* apm);
+  HighPassFilterImpl(const AudioProcessing* apm, CriticalSectionWrapper* crit);
   virtual ~HighPassFilterImpl();
 
   int ProcessCaptureAudio(AudioBuffer* audio);
@@ -41,7 +42,8 @@ class HighPassFilterImpl : public HighPassFilter,
   virtual int num_handles_required() const OVERRIDE;
   virtual int GetHandleError(void* handle) const OVERRIDE;
 
-  const AudioProcessingImpl* apm_;
+  const AudioProcessing* apm_;
+  CriticalSectionWrapper* crit_;
 };
 }  // namespace webrtc
 

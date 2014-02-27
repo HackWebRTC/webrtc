@@ -15,7 +15,6 @@
 #include <string.h>
 
 #include "webrtc/modules/audio_processing/audio_buffer.h"
-#include "webrtc/modules/audio_processing/audio_processing_impl.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 namespace webrtc {
@@ -84,9 +83,11 @@ class Level {
 };
 }  // namespace
 
-LevelEstimatorImpl::LevelEstimatorImpl(const AudioProcessingImpl* apm)
-  : ProcessingComponent(apm),
-    apm_(apm) {}
+LevelEstimatorImpl::LevelEstimatorImpl(const AudioProcessing* apm,
+                                       CriticalSectionWrapper* crit)
+    : ProcessingComponent(),
+      apm_(apm),
+      crit_(crit) {}
 
 LevelEstimatorImpl::~LevelEstimatorImpl() {}
 
@@ -113,7 +114,7 @@ int LevelEstimatorImpl::ProcessStream(AudioBuffer* audio) {
 }
 
 int LevelEstimatorImpl::Enable(bool enable) {
-  CriticalSectionScoped crit_scoped(apm_->crit());
+  CriticalSectionScoped crit_scoped(crit_);
   return EnableComponent(enable);
 }
 

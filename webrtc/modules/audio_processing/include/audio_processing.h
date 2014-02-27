@@ -168,6 +168,7 @@ class AudioProcessing {
   // streams. 8000, 16000 or 32000 Hz are permitted.
   virtual int set_sample_rate_hz(int rate) = 0;
   virtual int sample_rate_hz() const = 0;
+  virtual int split_sample_rate_hz() const = 0;
 
   // DEPRECATED: It is now possible to modify the number of channels directly in
   // a call to |ProcessStream|.
@@ -236,6 +237,7 @@ class AudioProcessing {
   //     ProcessStream().
   virtual int set_stream_delay_ms(int delay) = 0;
   virtual int stream_delay_ms() const = 0;
+  virtual bool was_stream_delay_set() const = 0;
 
   // Call to signal that a key press occurred (true) or did not occur (false)
   // with this chunk of audio.
@@ -303,6 +305,12 @@ class AudioProcessing {
     // This results when a set_stream_ parameter is out of range. Processing
     // will continue, but the parameter may have been truncated.
     kBadStreamParameterWarning = -13
+  };
+
+  enum {
+    kSampleRate8kHz = 8000,
+    kSampleRate16kHz = 16000,
+    kSampleRate32kHz = 32000
   };
 };
 

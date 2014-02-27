@@ -13,16 +13,13 @@
 
 #include <vector>
 
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/common.h"
 
 namespace webrtc {
-
-class AudioProcessingImpl;
 
 class ProcessingComponent {
  public:
   ProcessingComponent();
-  explicit ProcessingComponent(const AudioProcessingImpl* apm);
   virtual ~ProcessingComponent();
 
   virtual int Initialize();
@@ -45,7 +42,6 @@ class ProcessingComponent {
   virtual int num_handles_required() const = 0;
   virtual int GetHandleError(void* handle) const = 0;
 
-  const AudioProcessingImpl* apm_;
   std::vector<void*> handles_;
   bool initialized_;
   bool enabled_;

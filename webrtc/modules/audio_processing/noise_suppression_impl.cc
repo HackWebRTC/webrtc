@@ -12,15 +12,14 @@
 
 #include <assert.h>
 
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/modules/audio_processing/audio_buffer.h"
 #if defined(WEBRTC_NS_FLOAT)
 #include "webrtc/modules/audio_processing/ns/include/noise_suppression.h"
 #elif defined(WEBRTC_NS_FIXED)
 #include "webrtc/modules/audio_processing/ns/include/noise_suppression_x.h"
 #endif
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
-#include "webrtc/modules/audio_processing/audio_buffer.h"
-#include "webrtc/modules/audio_processing/audio_processing_impl.h"
 
 namespace webrtc {
 
@@ -47,9 +46,11 @@ int MapSetting(NoiseSuppression::Level level) {
 }
 }  // namespace
 
-NoiseSuppressionImpl::NoiseSuppressionImpl(const AudioProcessingImpl* apm)
-  : ProcessingComponent(apm),
+NoiseSuppressionImpl::NoiseSuppressionImpl(const AudioProcessing* apm,
+                                           CriticalSectionWrapper* crit)
+  : ProcessingComponent(),
     apm_(apm),
+    crit_(crit),
     level_(kModerate) {}
 
 NoiseSuppressionImpl::~NoiseSuppressionImpl() {}
@@ -88,7 +89,7 @@ int NoiseSuppressionImpl::ProcessCaptureAudio(AudioBuffer* audio) {
 }
 
 int NoiseSuppressionImpl::Enable(bool enable) {
-  CriticalSectionScoped crit_scoped(apm_->crit());
+  CriticalSectionScoped crit_scoped(crit_);
   return EnableComponent(enable);
 }
 
@@ -97,7 +98,7 @@ bool NoiseSuppressionImpl::is_enabled() const {
 }
 
 int NoiseSuppressionImpl::set_level(Level level) {
-  CriticalSectionScoped crit_scoped(apm_->crit());
+  CriticalSectionScoped crit_scoped(crit_);
   if (MapSetting(level) == -1) {
     return apm_->kBadParameterError;
   }

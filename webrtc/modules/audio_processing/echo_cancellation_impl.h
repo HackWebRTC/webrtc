@@ -11,21 +11,23 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_ECHO_CANCELLATION_IMPL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_ECHO_CANCELLATION_IMPL_H_
 
-#include "webrtc/modules/audio_processing/echo_cancellation_impl_wrapper.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/modules/audio_processing/processing_component.h"
 
 namespace webrtc {
 
-class AudioProcessingImpl;
 class AudioBuffer;
+class CriticalSectionWrapper;
 
-class EchoCancellationImpl : public EchoCancellationImplWrapper {
+class EchoCancellationImpl : public EchoCancellation,
+                             public ProcessingComponent {
  public:
-  explicit EchoCancellationImpl(const AudioProcessingImpl* apm);
+  EchoCancellationImpl(const AudioProcessing* apm,
+                       CriticalSectionWrapper* crit);
   virtual ~EchoCancellationImpl();
 
-  // EchoCancellationImplWrapper implementation.
-  virtual int ProcessRenderAudio(const AudioBuffer* audio) OVERRIDE;
-  virtual int ProcessCaptureAudio(AudioBuffer* audio) OVERRIDE;
+  int ProcessRenderAudio(const AudioBuffer* audio);
+  int ProcessCaptureAudio(AudioBuffer* audio);
 
   // EchoCancellation implementation.
   virtual bool is_enabled() const OVERRIDE;
@@ -62,7 +64,8 @@ class EchoCancellationImpl : public EchoCancellationImplWrapper {
   virtual int num_handles_required() const OVERRIDE;
   virtual int GetHandleError(void* handle) const OVERRIDE;
 
-  const AudioProcessingImpl* apm_;
+  const AudioProcessing* apm_;
+  CriticalSectionWrapper* crit_;
   bool drift_compensation_enabled_;
   bool metrics_enabled_;
   SuppressionLevel suppression_level_;

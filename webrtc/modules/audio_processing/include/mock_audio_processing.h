@@ -191,6 +191,8 @@ class MockAudioProcessing : public AudioProcessing {
       int(int rate));
   MOCK_CONST_METHOD0(sample_rate_hz,
       int());
+  MOCK_CONST_METHOD0(split_sample_rate_hz,
+      int());
   MOCK_METHOD2(set_num_channels,
       int(int input_channels, int output_channels));
   MOCK_CONST_METHOD0(num_input_channels,
@@ -213,6 +215,8 @@ class MockAudioProcessing : public AudioProcessing {
       int(int delay));
   MOCK_CONST_METHOD0(stream_delay_ms,
       int());
+  MOCK_CONST_METHOD0(was_stream_delay_set,
+      bool());
   MOCK_METHOD1(set_stream_key_pressed,
       void(bool key_pressed));
   MOCK_CONST_METHOD0(stream_key_pressed,

@@ -18,7 +18,6 @@ extern "C" {
 }
 #include "webrtc/modules/audio_processing/aec/include/echo_cancellation.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
-#include "webrtc/modules/audio_processing/audio_processing_impl.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 namespace webrtc {
@@ -56,14 +55,11 @@ AudioProcessing::Error MapError(int err) {
 }
 }  // namespace
 
-EchoCancellationImplWrapper* EchoCancellationImplWrapper::Create(
-    const AudioProcessingImpl* audioproc) {
-  return new EchoCancellationImpl(audioproc);
-}
-
-EchoCancellationImpl::EchoCancellationImpl(const AudioProcessingImpl* apm)
-  : ProcessingComponent(apm),
+EchoCancellationImpl::EchoCancellationImpl(const AudioProcessing* apm,
+                                           CriticalSectionWrapper* crit)
+  : ProcessingComponent(),
     apm_(apm),
+    crit_(crit),
     drift_compensation_enabled_(false),
     metrics_enabled_(false),
     suppression_level_(kModerateSuppression),
@@ -168,7 +164,7 @@ int EchoCancellationImpl::ProcessCaptureAudio(AudioBuffer* audio) {
 }
 
 int EchoCancellationImpl::Enable(bool enable) {
-  CriticalSectionScoped crit_scoped(apm_->crit());
+  CriticalSectionScoped crit_scoped(crit_);
   // Ensure AEC and AECM are not both enabled.
   if (enable && apm_->echo_control_mobile()->is_enabled()) {
     return apm_->kBadParameterError;
@@ -182,7 +178,7 @@ bool EchoCancellationImpl::is_enabled() const {
 }
 
 int EchoCancellationImpl::set_suppression_level(SuppressionLevel level) {
-  CriticalSectionScoped crit_scoped(apm_->crit());
+  CriticalSectionScoped crit_scoped(crit_);
   if (MapSetting(level) == -1) {
     return apm_->kBadParameterError;
   }
@@ -197,7 +193,7 @@ EchoCancellation::SuppressionLevel EchoCancellationImpl::suppression_level()
 }
 
 int EchoCancellationImpl::enable_drift_compensation(bool enable) {
-  CriticalSectionScoped crit_scoped(apm_->crit());
+  CriticalSectionScoped crit_scoped(crit_);
   drift_compensation_enabled_ = enable;
   return Configure();
 }
@@ -207,7 +203,7 @@ bool EchoCancellationImpl::is_drift_compensation_enabled() const {
 }
 
 int EchoCancellationImpl::set_device_sample_rate_hz(int rate) {
-  CriticalSectionScoped crit_scoped(apm_->crit());
+  CriticalSectionScoped crit_scoped(crit_);
   if (rate < 8000 || rate > 96000) {
     return apm_->kBadParameterError;
   }
@@ -230,7 +226,7 @@ int EchoCancellationImpl::stream_drift_samples() const {
 }
 
 int EchoCancellationImpl::enable_metrics(bool enable) {
-  CriticalSectionScoped crit_scoped(apm_->crit());
+  CriticalSectionScoped crit_scoped(crit_);
   metrics_enabled_ = enable;
   return Configure();
 }
@@ -242,7 +238,7 @@ bool EchoCancellationImpl::are_metrics_enabled() const {
 // TODO(ajm): we currently just use the metrics from the first AEC. Think more
 //            aboue the best way to extend this to multi-channel.
 int EchoCancellationImpl::GetMetrics(Metrics* metrics) {
-  CriticalSectionScoped crit_scoped(apm_->crit());
+  CriticalSectionScoped crit_scoped(crit_);
   if (metrics == NULL) {
     return apm_->kNullPointerError;
   }
@@ -289,7 +285,7 @@ bool EchoCancellationImpl::stream_has_echo() const {
 }
 
 int EchoCancellationImpl::enable_delay_logging(bool enable) {
-  CriticalSectionScoped crit_scoped(apm_->crit());
+  CriticalSectionScoped crit_scoped(crit_);
   delay_logging_enabled_ = enable;
   return Configure();
 }
@@ -300,7 +296,7 @@ bool EchoCancellationImpl::is_delay_logging_enabled() const {
 
 // TODO(bjornv): How should we handle the multi-channel case?
 int EchoCancellationImpl::GetDelayMetrics(int* median, int* std) {
-  CriticalSectionScoped crit_scoped(apm_->crit());
+  CriticalSectionScoped crit_scoped(crit_);
   if (median == NULL) {
     return apm_->kNullPointerError;
   }
@@ -322,7 +318,7 @@ int EchoCancellationImpl::GetDelayMetrics(int* median, int* std) {
 }
 
 struct AecCore* EchoCancellationImpl::aec_core() const {
-  CriticalSectionScoped crit_scoped(apm_->crit());
+  CriticalSectionScoped crit_scoped(crit_);
   if (!is_component_enabled()) {
     return NULL;
   }

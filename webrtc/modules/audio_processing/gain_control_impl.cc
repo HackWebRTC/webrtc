@@ -12,11 +12,9 @@
 
 #include <assert.h>
 
+#include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/agc/include/gain_control.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-
-#include "webrtc/modules/audio_processing/audio_buffer.h"
-#include "webrtc/modules/audio_processing/audio_processing_impl.h"
 
 namespace webrtc {
 
@@ -37,9 +35,11 @@ int16_t MapSetting(GainControl::Mode mode) {
 }
 }  // namespace
 
-GainControlImpl::GainControlImpl(const AudioProcessingImpl* apm)
-  : ProcessingComponent(apm),
+GainControlImpl::GainControlImpl(const AudioProcessing* apm,
+                                 CriticalSectionWrapper* crit)
+  : ProcessingComponent(),
     apm_(apm),
+    crit_(crit),
     mode_(kAdaptiveAnalog),
     minimum_capture_level_(0),
     maximum_capture_level_(255),
@@ -203,7 +203,7 @@ int GainControlImpl::stream_analog_level() {
 }
 
 int GainControlImpl::Enable(bool enable) {
-  CriticalSectionScoped crit_scoped(apm_->crit());
+  CriticalSectionScoped crit_scoped(crit_);
   return EnableComponent(enable);
 }
 
@@ -212,7 +212,7 @@ bool GainControlImpl::is_enabled() const {
 }
 
 int GainControlImpl::set_mode(Mode mode) {
-  CriticalSectionScoped crit_scoped(apm_->crit());
+  CriticalSectionScoped crit_scoped(crit_);
   if (MapSetting(mode) == -1) {
     return apm_->kBadParameterError;
   }
@@ -227,7 +227,7 @@ GainControl::Mode GainControlImpl::mode() const {
 
 int GainControlImpl::set_analog_level_limits(int minimum,
                                              int maximum) {
-  CriticalSectionScoped crit_scoped(apm_->crit());
+  CriticalSectionScoped crit_scoped(crit_);
   if (minimum < 0) {
     return apm_->kBadParameterError;
   }
@@ -259,7 +259,7 @@ bool GainControlImpl::stream_is_saturated() const {
 }
 
 int GainControlImpl::set_target_level_dbfs(int level) {
-  CriticalSectionScoped crit_scoped(apm_->crit());
+  CriticalSectionScoped crit_scoped(crit_);
   if (level > 31 || level < 0) {
     return apm_->kBadParameterError;
   }
@@ -273,7 +273,7 @@ int GainControlImpl::target_level_dbfs() const {
 }
 
 int GainControlImpl::set_compression_gain_db(int gain) {
-  CriticalSectionScoped crit_scoped(apm_->crit());
+  CriticalSectionScoped crit_scoped(crit_);
   if (gain < 0 || gain > 90) {
     return apm_->kBadParameterError;
   }
@@ -287,7 +287,7 @@ int GainControlImpl::compression_gain_db() const {
 }
 
 int GainControlImpl::enable_limiter(bool enable) {
-  CriticalSectionScoped crit_scoped(apm_->crit());
+  CriticalSectionScoped crit_scoped(crit_);
   limiter_enabled_ = enable;
   return Configure();
 }
