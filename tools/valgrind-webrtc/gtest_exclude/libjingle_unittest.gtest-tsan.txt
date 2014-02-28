@@ -1,6 +1,4 @@
 # Tests that are failing when run under TSan.
-AtomicOpsTest.Decrement
-AtomicOpsTest.Increment
 CpuMonitorTest.TestCpuMonitor
 PhysicalSocketTest.TestUdpReadyToSendIPv4
 ThreadTest.Release
