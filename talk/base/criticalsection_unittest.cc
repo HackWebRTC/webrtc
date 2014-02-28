@@ -40,7 +40,7 @@ namespace {
 
 const int kLongTime = 10000;  // 10 seconds
 const int kNumThreads = 16;
-const int kOperationsToRun = 10000;
+const int kOperationsToRun = 1000;
 
 template <class T>
 class AtomicOpRunner : public MessageHandler {

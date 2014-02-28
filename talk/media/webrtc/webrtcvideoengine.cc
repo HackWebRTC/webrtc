@@ -2544,6 +2544,9 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
           additional_stats.recent_arrival_time_ms);
     }
   }
+
+  engine_->vie()->rtp()->GetPacerQueuingDelayMs(
+      recv_channels_[0]->channel_id(), &bwe.bucket_delay);
 #endif
 
   // Calculations done above per send/receive stream.
