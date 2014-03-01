@@ -28,5 +28,3 @@ PeerConnectionInterfaceTest.DataChannelCloseWhenPeerConnectionClose
 PeerConnectionInterfaceTest.TestDataChannel
 PeerConnectionInterfaceTest.TestSendBinaryOnRtpDataChannel
 PeerConnectionInterfaceTest.TestSendOnlyDataChannel
-# Tracked in https://code.google.com/p/webrtc/issues/detail?id=2924.
-WebRtcSessionTest.TestIceStatesBundle

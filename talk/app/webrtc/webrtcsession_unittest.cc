@@ -856,6 +856,7 @@ class WebRtcSessionTest : public testing::Test {
     EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionChecking,
                    observer_.ice_connection_state_,
                    kIceCandidatesTimeout);
+
     // The ice connection state is "Connected" too briefly to catch in a test.
     EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
                    observer_.ice_connection_state_,
@@ -2649,10 +2650,11 @@ TEST_F(WebRtcSessionTest, TestIceStatesBasic) {
   TestLoopbackCall();
 }
 
-// Runs the loopback call test with BUNDLE, STUN, and TCP enabled.
+// Runs the loopback call test with BUNDLE and STUN enabled.
 TEST_F(WebRtcSessionTest, TestIceStatesBundle) {
   allocator_.set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                        cricket::PORTALLOCATOR_ENABLE_BUNDLE |
+                       cricket::PORTALLOCATOR_DISABLE_TCP |
                        cricket::PORTALLOCATOR_DISABLE_RELAY);
   TestLoopbackCall();
 }

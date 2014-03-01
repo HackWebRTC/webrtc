@@ -175,17 +175,7 @@ public class PeerConnectionTest extends TestCase {
     @Override
     public synchronized void onIceConnectionChange(
         IceConnectionState newState) {
-      // This is a bit crazy.  The offerer goes CHECKING->CONNECTED->COMPLETED
-      // mostly, but sometimes the middle CONNECTED is delivered as COMPLETED.
-      // Assuming a bug in underlying libjingle but compensating for it here to
-      // green the tree.
-      // TODO(fischman): either remove the craxy logic below when libjingle is
-      // fixed or rewrite the comment above if what libjingle is doing is
-      // actually legit.
-      assertTrue(
-          expectedIceConnectionChanges.remove(newState) ||
-          (newState == IceConnectionState.COMPLETED &&
-           expectedIceConnectionChanges.remove(IceConnectionState.CONNECTED)));
+      assertEquals(expectedIceConnectionChanges.removeFirst(), newState);
     }
 
     public synchronized void expectIceGatheringChange(
