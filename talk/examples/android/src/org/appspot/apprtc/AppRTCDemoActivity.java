@@ -438,16 +438,22 @@ public class AppRTCDemoActivity extends Activity
     @Override public void onCreateSuccess(final SessionDescription origSdp) {
       runOnUiThread(new Runnable() {
           public void run() {
-            logAndToast("Sending " + origSdp.type);
             SessionDescription sdp = new SessionDescription(
                 origSdp.type, preferISAC(origSdp.description));
-            JSONObject json = new JSONObject();
-            jsonPut(json, "type", sdp.type.canonicalForm());
-            jsonPut(json, "sdp", sdp.description);
-            sendMessage(json);
             pc.setLocalDescription(sdpObserver, sdp);
           }
         });
+    }
+
+    // Helper for sending local SDP (offer or answer, depending on role) to the
+    // other participant.
+    private void sendLocalDescription(PeerConnection pc) {
+      SessionDescription sdp = pc.getLocalDescription();
+      logAndToast("Sending " + sdp.type);
+      JSONObject json = new JSONObject();
+      jsonPut(json, "type", sdp.type.canonicalForm());
+      jsonPut(json, "sdp", sdp.description);
+      sendMessage(json);
     }
 
     @Override public void onSetSuccess() {
@@ -458,6 +464,9 @@ public class AppRTCDemoActivity extends Activity
                 // We've set our local offer and received & set the remote
                 // answer, so drain candidates.
                 drainRemoteCandidates();
+              } else {
+                // We've just set our local description so time to send it.
+                sendLocalDescription(pc);
               }
             } else {
               if (pc.getLocalDescription() == null) {
@@ -465,8 +474,9 @@ public class AppRTCDemoActivity extends Activity
                 logAndToast("Creating answer");
                 pc.createAnswer(SDPObserver.this, sdpMediaConstraints);
               } else {
-                // Sent our answer and set it as local description; drain
+                // Answer now set as local description; send it and drain
                 // candidates.
+                sendLocalDescription(pc);
                 drainRemoteCandidates();
               }
             }
