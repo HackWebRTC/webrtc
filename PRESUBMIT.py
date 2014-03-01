@@ -134,7 +134,7 @@ def _CommonChecks(input_api, output_api):
                   # TODO(phoglund): should arguably be checked.
                   r'^webrtc/build/.*\.py$',
                   r'^build/.*\.py$',
-                  r'^out/.*\.py$',),
+                  r'^out.*/.*\.py$',),
       disabled_warnings=['F0401',  # Failed to import x
                          'E0611',  # No package y in x
                          'W0232',  # Class has no __init__ method
