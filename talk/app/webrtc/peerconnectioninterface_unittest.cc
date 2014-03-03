@@ -410,7 +410,8 @@ class PeerConnectionInterfaceTest : public testing::Test {
   bool DoGetStats(MediaStreamTrackInterface* track) {
     talk_base::scoped_refptr<MockStatsObserver> observer(
         new talk_base::RefCountedObject<MockStatsObserver>());
-    if (!pc_->GetStats(observer, track))
+    if (!pc_->GetStats(
+        observer, track, PeerConnectionInterface::kStatsOutputLevelStandard))
       return false;
     EXPECT_TRUE_WAIT(observer->called(), kTimeout);
     return observer->called();

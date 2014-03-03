@@ -448,11 +448,6 @@ talk_base::scoped_refptr<DtmfSenderInterface> PeerConnection::CreateDtmfSender(
 }
 
 bool PeerConnection::GetStats(StatsObserver* observer,
-                              webrtc::MediaStreamTrackInterface* track) {
-  return GetStats(observer, track, kStatsOutputLevelStandard);
-}
-
-bool PeerConnection::GetStats(StatsObserver* observer,
                               MediaStreamTrackInterface* track,
                               StatsOutputLevel level) {
   if (!VERIFY(observer != NULL)) {

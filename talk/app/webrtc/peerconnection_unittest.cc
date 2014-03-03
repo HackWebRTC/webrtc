@@ -79,6 +79,7 @@ using webrtc::MockCreateSessionDescriptionObserver;
 using webrtc::MockDataChannelObserver;
 using webrtc::MockSetSessionDescriptionObserver;
 using webrtc::MockStatsObserver;
+using webrtc::PeerConnectionInterface;
 using webrtc::SessionDescriptionInterface;
 using webrtc::StreamCollectionInterface;
 
@@ -328,7 +329,8 @@ class PeerConnectionTestClientBase
   int GetAudioOutputLevelStats(webrtc::MediaStreamTrackInterface* track) {
     talk_base::scoped_refptr<MockStatsObserver>
         observer(new talk_base::RefCountedObject<MockStatsObserver>());
-    EXPECT_TRUE(peer_connection_->GetStats(observer, track));
+    EXPECT_TRUE(peer_connection_->GetStats(
+        observer, track, PeerConnectionInterface::kStatsOutputLevelStandard));
     EXPECT_TRUE_WAIT(observer->called(), kMaxWaitMs);
     return observer->AudioOutputLevel();
   }
@@ -336,7 +338,8 @@ class PeerConnectionTestClientBase
   int GetAudioInputLevelStats() {
     talk_base::scoped_refptr<MockStatsObserver>
         observer(new talk_base::RefCountedObject<MockStatsObserver>());
-    EXPECT_TRUE(peer_connection_->GetStats(observer, NULL));
+    EXPECT_TRUE(peer_connection_->GetStats(
+        observer, NULL, PeerConnectionInterface::kStatsOutputLevelStandard));
     EXPECT_TRUE_WAIT(observer->called(), kMaxWaitMs);
     return observer->AudioInputLevel();
   }
@@ -344,7 +347,8 @@ class PeerConnectionTestClientBase
   int GetBytesReceivedStats(webrtc::MediaStreamTrackInterface* track) {
     talk_base::scoped_refptr<MockStatsObserver>
     observer(new talk_base::RefCountedObject<MockStatsObserver>());
-    EXPECT_TRUE(peer_connection_->GetStats(observer, track));
+    EXPECT_TRUE(peer_connection_->GetStats(
+        observer, track, PeerConnectionInterface::kStatsOutputLevelStandard));
     EXPECT_TRUE_WAIT(observer->called(), kMaxWaitMs);
     return observer->BytesReceived();
   }
@@ -352,7 +356,8 @@ class PeerConnectionTestClientBase
   int GetBytesSentStats(webrtc::MediaStreamTrackInterface* track) {
     talk_base::scoped_refptr<MockStatsObserver>
     observer(new talk_base::RefCountedObject<MockStatsObserver>());
-    EXPECT_TRUE(peer_connection_->GetStats(observer, track));
+    EXPECT_TRUE(peer_connection_->GetStats(
+        observer, track, PeerConnectionInterface::kStatsOutputLevelStandard));
     EXPECT_TRUE_WAIT(observer->called(), kMaxWaitMs);
     return observer->BytesSent();
   }

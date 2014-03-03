@@ -2216,7 +2216,9 @@ JOW(bool, PeerConnection_nativeGetStats)(
   talk_base::scoped_refptr<StatsObserverWrapper> observer(
       new talk_base::RefCountedObject<StatsObserverWrapper>(jni, j_observer));
   return ExtractNativePC(jni, j_pc)->GetStats(
-      observer, reinterpret_cast<MediaStreamTrackInterface*>(native_track));
+      observer,
+      reinterpret_cast<MediaStreamTrackInterface*>(native_track),
+      PeerConnectionInterface::kStatsOutputLevelStandard);
 }
 
 JOW(jobject, PeerConnection_signalingState)(JNIEnv* jni, jobject j_pc) {

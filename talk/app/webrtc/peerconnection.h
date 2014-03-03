@@ -75,8 +75,6 @@ class PeerConnection : public PeerConnectionInterface,
       const std::string& label,
       const DataChannelInit* config);
   virtual bool GetStats(StatsObserver* observer,
-                        webrtc::MediaStreamTrackInterface* track);
-  virtual bool GetStats(StatsObserver* observer,
                         webrtc::MediaStreamTrackInterface* track,
                         StatsOutputLevel level);
 

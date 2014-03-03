@@ -199,10 +199,6 @@ class PeerConnectionInterface : public talk_base::RefCountInterface {
   virtual talk_base::scoped_refptr<DtmfSenderInterface> CreateDtmfSender(
       AudioTrackInterface* track) = 0;
 
-  // TODO(jiayl): remove the old API once all Chrome overrides are updated.
-  virtual bool GetStats(StatsObserver* observer,
-                        MediaStreamTrackInterface* track) = 0;
-
   virtual bool GetStats(StatsObserver* observer,
                         MediaStreamTrackInterface* track,
                         StatsOutputLevel level) = 0;
