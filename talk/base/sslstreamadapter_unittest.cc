@@ -768,7 +768,7 @@ TEST_F(SSLStreamAdapterTestDTLS,
 };
 
 // Test a handshake with small MTU
-TEST_F(SSLStreamAdapterTestDTLS, DISABLED_TestDTLSConnectWithSmallMtu) {
+TEST_F(SSLStreamAdapterTestDTLS, TestDTLSConnectWithSmallMtu) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetMtu(700);
   SetHandshakeWait(20000);
