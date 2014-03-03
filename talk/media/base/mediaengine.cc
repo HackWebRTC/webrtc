@@ -42,6 +42,13 @@ const int MediaEngineInterface::kDefaultAudioDelayOffset = 0;
 #if defined(HAVE_WEBRTC_VIDEO)
 #include "talk/media/webrtc/webrtcvideoengine.h"
 #endif  // HAVE_WEBRTC_VIDEO
+#if defined(HAVE_LMI)
+#include "talk/media/base/hybridvideoengine.h"
+#include "talk/media/lmi/lmimediaengine.h"
+#endif  // HAVE_LMI
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif  // HAVE_CONFIG
 
 namespace cricket {
 #if defined(HAVE_WEBRTC_VOICE)
@@ -51,22 +58,59 @@ namespace cricket {
 #endif
 
 #if defined(HAVE_WEBRTC_VIDEO)
+#if !defined(HAVE_LMI)
 template<>
 CompositeMediaEngine<WebRtcVoiceEngine, WebRtcVideoEngine>::
     CompositeMediaEngine() {
   video_.SetVoiceEngine(&voice_);
 }
 #define VIDEO_ENG_NAME WebRtcVideoEngine
+#else
+// If we have both WebRtcVideoEngine and LmiVideoEngine, enable dual-stack.
+// This small class here allows us to hook the WebRtcVideoChannel up to
+// the capturer owned by the LMI engine, without infecting the rest of the
+// HybridVideoEngine classes with this abstraction violation.
+class WebRtcLmiHybridVideoEngine
+    : public HybridVideoEngine<WebRtcVideoEngine, LmiVideoEngine> {
+ public:
+  void SetVoiceEngine(WebRtcVoiceEngine* engine) {
+    video1_.SetVoiceEngine(engine);
+  }
+};
+template<>
+CompositeMediaEngine<WebRtcVoiceEngine, WebRtcLmiHybridVideoEngine>::
+    CompositeMediaEngine() {
+  video_.SetVoiceEngine(&voice_);
+}
+#define VIDEO_ENG_NAME WebRtcLmiHybridVideoEngine
+#endif
+#elif defined(HAVE_LMI)
+#define VIDEO_ENG_NAME LmiVideoEngine
+#else
+#define VIDEO_ENG_NAME NullVideoEngine
 #endif
 
+MediaEngineFactory::MediaEngineCreateFunction
+    MediaEngineFactory::create_function_ = NULL;
+MediaEngineFactory::MediaEngineCreateFunction
+    MediaEngineFactory::SetCreateFunction(MediaEngineCreateFunction function) {
+  MediaEngineCreateFunction old_function = create_function_;
+  create_function_ = function;
+  return old_function;
+};
+
 MediaEngineInterface* MediaEngineFactory::Create() {
+  if (create_function_) {
+    return create_function_();
+  } else {
 #if defined(HAVE_LINPHONE)
-  return new LinphoneMediaEngine("", "");
+    return new LinphoneMediaEngine("", "");
 #elif defined(AUDIO_ENG_NAME) && defined(VIDEO_ENG_NAME)
-  return new CompositeMediaEngine<AUDIO_ENG_NAME, VIDEO_ENG_NAME>();
+    return new CompositeMediaEngine<AUDIO_ENG_NAME, VIDEO_ENG_NAME>();
 #else
-  return new NullMediaEngine();
+    return new NullMediaEngine();
 #endif
+  }
 }
 
 };  // namespace cricket

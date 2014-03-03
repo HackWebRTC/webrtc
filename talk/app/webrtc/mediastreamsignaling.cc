@@ -321,8 +321,29 @@ bool MediaStreamSignaling::AddLocalStream(MediaStreamInterface* local_stream) {
 
 void MediaStreamSignaling::RemoveLocalStream(
     MediaStreamInterface* local_stream) {
-  local_streams_->RemoveStream(local_stream);
+  AudioTrackVector audio_tracks = local_stream->GetAudioTracks();
+  for (AudioTrackVector::const_iterator it = audio_tracks.begin();
+       it != audio_tracks.end(); ++it) {
+    const TrackInfo* track_info = FindTrackInfo(local_audio_tracks_,
+                                                local_stream->label(),
+                                                (*it)->id());
+    if (track_info) {
+      stream_observer_->OnRemoveLocalAudioTrack(local_stream, *it,
+                                                track_info->ssrc);
+    }
+  }
+  VideoTrackVector video_tracks = local_stream->GetVideoTracks();
+  for (VideoTrackVector::const_iterator it = video_tracks.begin();
+       it != video_tracks.end(); ++it) {
+    const TrackInfo* track_info = FindTrackInfo(local_video_tracks_,
+                                                local_stream->label(),
+                                                (*it)->id());
+    if (track_info) {
+      stream_observer_->OnRemoveLocalVideoTrack(local_stream, *it);
+    }
+  }
 
+  local_streams_->RemoveStream(local_stream);
   stream_observer_->OnRemoveLocalStream(local_stream);
 }
 
@@ -725,7 +746,8 @@ void MediaStreamSignaling::UpdateLocalTracks(
     cricket::StreamParams params;
     if (!cricket::GetStreamBySsrc(streams, info.ssrc, &params) ||
         params.id != info.track_id || params.sync_label != info.stream_label) {
-      OnLocalTrackRemoved(info.stream_label, info.track_id, media_type);
+      OnLocalTrackRemoved(info.stream_label, info.track_id, info.ssrc,
+                          media_type);
       track_it = current_tracks->erase(track_it);
     } else {
       ++track_it;
@@ -787,6 +809,7 @@ void MediaStreamSignaling::OnLocalTrackSeen(
 void MediaStreamSignaling::OnLocalTrackRemoved(
     const std::string& stream_label,
     const std::string& track_id,
+    uint32 ssrc,
     cricket::MediaType media_type) {
   MediaStreamInterface* stream = local_streams_->find(stream_label);
   if (!stream) {
@@ -803,7 +826,7 @@ void MediaStreamSignaling::OnLocalTrackRemoved(
     if (!audio_track) {
       return;
     }
-    stream_observer_->OnRemoveLocalAudioTrack(stream, audio_track);
+    stream_observer_->OnRemoveLocalAudioTrack(stream, audio_track, ssrc);
   } else if (media_type == cricket::MEDIA_TYPE_VIDEO) {
     VideoTrackInterface* video_track = stream->FindVideoTrack(track_id);
     if (!video_track) {

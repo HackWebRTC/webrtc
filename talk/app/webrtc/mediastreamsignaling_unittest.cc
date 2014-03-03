@@ -298,7 +298,8 @@ class MockSignalingObserver : public webrtc::MediaStreamSignalingObserver {
   }
 
   virtual void OnRemoveLocalAudioTrack(MediaStreamInterface* stream,
-                                       AudioTrackInterface* audio_track) {
+                                       AudioTrackInterface* audio_track,
+                                       uint32 ssrc) {
     RemoveTrack(&local_audio_tracks_, stream, audio_track);
   }
 

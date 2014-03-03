@@ -201,6 +201,19 @@ void StatsReport::AddBoolean(const std::string& name, bool value) {
   AddValue(name, value ? "true" : "false");
 }
 
+void StatsReport::ReplaceValue(const std::string& name,
+                               const std::string& value) {
+  for (Values::iterator it = values.begin(); it != values.end(); ++it) {
+    if ((*it).name == name) {
+      it->value = value;
+      return;
+    }
+  }
+  // It is not reachable here, add an ASSERT to make sure the overwriting is
+  // always a success.
+  ASSERT(false);
+}
+
 namespace {
 typedef std::map<std::string, StatsReport> StatsMap;
 
@@ -456,6 +469,32 @@ void StatsCollector::AddStream(MediaStreamInterface* stream) {
                                        &reports_);
   CreateTrackReports<VideoTrackVector>(stream->GetVideoTracks(),
                                        &reports_);
+}
+
+void StatsCollector::AddLocalAudioTrack(AudioTrackInterface* audio_track,
+                                        uint32 ssrc) {
+  ASSERT(audio_track != NULL);
+#ifdef _DEBUG
+  for (LocalAudioTrackVector::iterator it = local_audio_tracks_.begin();
+       it != local_audio_tracks_.end(); ++it) {
+    ASSERT(it->first != audio_track || it->second != ssrc);
+  }
+#endif
+  local_audio_tracks_.push_back(std::make_pair(audio_track, ssrc));
+}
+
+void StatsCollector::RemoveLocalAudioTrack(AudioTrackInterface* audio_track,
+                                           uint32 ssrc) {
+  ASSERT(audio_track != NULL);
+  for (LocalAudioTrackVector::iterator it = local_audio_tracks_.begin();
+       it != local_audio_tracks_.end(); ++it) {
+    if (it->first == audio_track && it->second == ssrc) {
+      local_audio_tracks_.erase(it);
+      return;
+    }
+  }
+
+  ASSERT(false);
 }
 
 bool StatsCollector::GetStats(MediaStreamTrackInterface* track,
@@ -784,6 +823,8 @@ void StatsCollector::ExtractVoiceInfo() {
   }
   ExtractStatsFromList(voice_info.receivers, transport_id, this);
   ExtractStatsFromList(voice_info.senders, transport_id, this);
+
+  UpdateStatsFromExistingLocalAudioTracks();
 }
 
 void StatsCollector::ExtractVideoInfo(
@@ -840,19 +881,86 @@ bool StatsCollector::GetTransportIdFromProxy(const std::string& proxy,
   return true;
 }
 
-StatsReport* StatsCollector::GetOrCreateReport(const std::string& type,
-                                               const std::string& id) {
+StatsReport* StatsCollector::GetReport(const std::string& type,
+                                       const std::string& id) {
   std::string statsid = StatsId(type, id);
   StatsReport* report = NULL;
   std::map<std::string, StatsReport>::iterator it = reports_.find(statsid);
-  if (it == reports_.end()) {
+  if (it != reports_.end())
+    report = &(it->second);
+
+  return report;
+}
+
+StatsReport* StatsCollector::GetOrCreateReport(const std::string& type,
+                                               const std::string& id) {
+  StatsReport* report = GetReport(type, id);
+  if (report == NULL) {
+    std::string statsid = StatsId(type, id);
     report = &reports_[statsid];  // Create new element.
     report->id = statsid;
     report->type = type;
-  } else {
-    report = &(it->second);
   }
+
   return report;
+}
+
+void StatsCollector::UpdateStatsFromExistingLocalAudioTracks() {
+  // Loop through the existing local audio tracks.
+  for (LocalAudioTrackVector::const_iterator it = local_audio_tracks_.begin();
+       it != local_audio_tracks_.end(); ++it) {
+    AudioTrackInterface* track = it->first;
+    uint32 ssrc = it->second;
+    std::string ssrc_id = talk_base::ToString<uint32>(ssrc);
+    StatsReport* report = GetReport(StatsReport::kStatsReportTypeSsrc,
+                                    ssrc_id);
+    ASSERT(report != NULL);
+
+    // The same ssrc can be used by both local and remote audio tracks.
+    std::string track_id;
+    if (!ExtractValueFromReport(*report,
+                                StatsReport::kStatsValueNameTrackId,
+                                &track_id) ||
+        track_id != track->id()) {
+      continue;
+    }
+
+    UpdateReportFromAudioTrack(track, report);
+  }
+}
+
+void StatsCollector::UpdateReportFromAudioTrack(AudioTrackInterface* track,
+                                                StatsReport* report) {
+  ASSERT(track != NULL);
+  if (report == NULL)
+    return;
+
+  int signal_level = 0;
+  if (track->GetSignalLevel(&signal_level)) {
+    report->ReplaceValue(StatsReport::kStatsValueNameAudioInputLevel,
+                         talk_base::ToString<int>(signal_level));
+  }
+
+  talk_base::scoped_refptr<AudioProcessorInterface> audio_processor(
+      track->GetAudioProcessor());
+  if (audio_processor.get() == NULL)
+    return;
+
+  AudioProcessorInterface::AudioProcessorStats stats;
+  audio_processor->GetStats(&stats);
+  report->ReplaceValue(StatsReport::kStatsValueNameTypingNoiseState,
+                       stats.typing_noise_detected ? "true" : "false");
+  report->ReplaceValue(StatsReport::kStatsValueNameEchoReturnLoss,
+                       talk_base::ToString<int>(stats.echo_return_loss));
+  report->ReplaceValue(
+      StatsReport::kStatsValueNameEchoReturnLossEnhancement,
+      talk_base::ToString<int>(stats.echo_return_loss_enhancement));
+  report->ReplaceValue(StatsReport::kStatsValueNameEchoDelayMedian,
+                       talk_base::ToString<int>(stats.echo_delay_median_ms));
+  report->ReplaceValue(StatsReport::kStatsValueNameEchoCancellationQualityMin,
+                       talk_base::ToString<float>(stats.aec_quality_min));
+  report->ReplaceValue(StatsReport::kStatsValueNameEchoDelayStdDev,
+                       talk_base::ToString<int>(stats.echo_delay_std_ms));
 }
 
 }  // namespace webrtc

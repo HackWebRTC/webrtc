@@ -29,6 +29,8 @@
 #include "talk/app/webrtc/statscollector.h"
 
 #include "talk/app/webrtc/mediastream.h"
+#include "talk/app/webrtc/mediastreaminterface.h"
+#include "talk/app/webrtc/mediastreamtrack.h"
 #include "talk/app/webrtc/videotrack.h"
 #include "talk/base/base64.h"
 #include "talk/base/fakesslidentity.h"
@@ -47,6 +49,8 @@ using testing::Return;
 using testing::ReturnNull;
 using testing::SetArgPointee;
 using webrtc::PeerConnectionInterface;
+using webrtc::StatsReport;
+using webrtc::StatsReports;
 
 namespace cricket {
 
@@ -63,6 +67,7 @@ const char kNoReports[] = "NO REPORTS";
 
 // Constant names for track identification.
 const char kTrackId[] = "somename";
+const char kAudioTrackId[] = "audio_track_id";
 const uint32 kSsrcOfTrack = 1234;
 
 class MockWebRtcSession : public webrtc::WebRtcSession {
@@ -71,6 +76,7 @@ class MockWebRtcSession : public webrtc::WebRtcSession {
     : WebRtcSession(channel_manager, talk_base::Thread::Current(),
                     talk_base::Thread::Current(), NULL, NULL) {
   }
+  MOCK_METHOD0(voice_channel, cricket::VoiceChannel*());
   MOCK_METHOD0(video_channel, cricket::VideoChannel*());
   MOCK_METHOD2(GetTrackIdBySsrc, bool(uint32, std::string*));
   MOCK_METHOD1(GetStats, bool(cricket::SessionStats*));
@@ -86,10 +92,60 @@ class MockVideoMediaChannel : public cricket::FakeVideoMediaChannel {
   MOCK_METHOD2(GetStats, bool(const StatsOptions&, cricket::VideoMediaInfo*));
 };
 
-bool GetValue(const webrtc::StatsReport* report,
+class MockVoiceMediaChannel : public cricket::FakeVoiceMediaChannel {
+ public:
+  MockVoiceMediaChannel() : cricket::FakeVoiceMediaChannel(NULL) {
+  }
+  MOCK_METHOD1(GetStats, bool(cricket::VoiceMediaInfo*));
+};
+
+class FakeAudioProcessor : public webrtc::AudioProcessorInterface {
+ public:
+  FakeAudioProcessor() {}
+  ~FakeAudioProcessor() {}
+
+ private:
+  virtual void GetStats(
+      AudioProcessorInterface::AudioProcessorStats* stats) OVERRIDE {
+    stats->typing_noise_detected = true;
+    stats->echo_return_loss = 2;
+    stats->echo_return_loss_enhancement = 3;
+    stats->echo_delay_median_ms = 4;
+    stats->aec_quality_min = 5.1f;
+    stats->echo_delay_std_ms = 6;
+  }
+};
+
+class FakeLocalAudioTrack
+    : public webrtc::MediaStreamTrack<webrtc::AudioTrackInterface> {
+ public:
+  explicit FakeLocalAudioTrack(const std::string& id)
+      : webrtc::MediaStreamTrack<webrtc::AudioTrackInterface>(id),
+        processor_(new talk_base::RefCountedObject<FakeAudioProcessor>()) {}
+  std::string kind() const OVERRIDE {
+    return "audio";
+  }
+  virtual webrtc::AudioSourceInterface* GetSource() const OVERRIDE {
+    return NULL;
+  }
+  virtual void AddSink(webrtc::AudioTrackSinkInterface* sink) OVERRIDE {}
+  virtual void RemoveSink(webrtc::AudioTrackSinkInterface* sink) OVERRIDE {}
+  virtual bool GetSignalLevel(int* level) OVERRIDE {
+    *level = 1;
+    return true;
+  }
+  virtual webrtc::AudioProcessorInterface* GetAudioProcessor() OVERRIDE {
+    return processor_.get();
+  }
+
+ private:
+  talk_base::scoped_refptr<FakeAudioProcessor> processor_;
+};
+
+bool GetValue(const StatsReport* report,
               const std::string& name,
               std::string* value) {
-  webrtc::StatsReport::Values::const_iterator it = report->values.begin();
+  StatsReport::Values::const_iterator it = report->values.begin();
   for (; it != report->values.end(); ++it) {
     if (it->name == name) {
       *value = it->value;
@@ -100,7 +156,7 @@ bool GetValue(const webrtc::StatsReport* report,
 }
 
 std::string ExtractStatsValue(const std::string& type,
-                              const webrtc::StatsReports& reports,
+                              const StatsReports& reports,
                               const std::string name) {
   if (reports.empty()) {
     return kNoReports;
@@ -119,8 +175,8 @@ std::string ExtractStatsValue(const std::string& type,
 
 // Finds the |n|-th report of type |type| in |reports|.
 // |n| starts from 1 for finding the first report.
-const webrtc::StatsReport* FindNthReportByType(
-    const webrtc::StatsReports& reports, const std::string& type, int n) {
+const StatsReport* FindNthReportByType(
+    const StatsReports& reports, const std::string& type, int n) {
   for (size_t i = 0; i < reports.size(); ++i) {
     if (reports[i].type == type) {
       n--;
@@ -131,8 +187,8 @@ const webrtc::StatsReport* FindNthReportByType(
   return NULL;
 }
 
-const webrtc::StatsReport* FindReportById(const webrtc::StatsReports& reports,
-                                          const std::string& id) {
+const StatsReport* FindReportById(const StatsReports& reports,
+                                  const std::string& id) {
   for (size_t i = 0; i < reports.size(); ++i) {
     if (reports[i].id == id) {
       return &reports[i];
@@ -141,16 +197,16 @@ const webrtc::StatsReport* FindReportById(const webrtc::StatsReports& reports,
   return NULL;
 }
 
-std::string ExtractSsrcStatsValue(webrtc::StatsReports reports,
+std::string ExtractSsrcStatsValue(StatsReports reports,
                                   const std::string& name) {
   return ExtractStatsValue(
-      webrtc::StatsReport::kStatsReportTypeSsrc, reports, name);
+      StatsReport::kStatsReportTypeSsrc, reports, name);
 }
 
-std::string ExtractBweStatsValue(webrtc::StatsReports reports,
+std::string ExtractBweStatsValue(StatsReports reports,
                                   const std::string& name) {
   return ExtractStatsValue(
-      webrtc::StatsReport::kStatsReportTypeBwe, reports, name);
+      StatsReport::kStatsReportTypeBwe, reports, name);
 }
 
 std::string DerToPem(const std::string& der) {
@@ -167,18 +223,18 @@ std::vector<std::string> DersToPems(
   return pems;
 }
 
-void CheckCertChainReports(const webrtc::StatsReports& reports,
+void CheckCertChainReports(const StatsReports& reports,
                            const std::vector<std::string>& ders,
                            const std::string& start_id) {
   std::string certificate_id = start_id;
   size_t i = 0;
   while (true) {
-    const webrtc::StatsReport* report = FindReportById(reports, certificate_id);
+    const StatsReport* report = FindReportById(reports, certificate_id);
     ASSERT_TRUE(report != NULL);
 
     std::string der_base64;
     EXPECT_TRUE(GetValue(
-        report, webrtc::StatsReport::kStatsValueNameDer, &der_base64));
+        report, StatsReport::kStatsValueNameDer, &der_base64));
     std::string der = talk_base::Base64::Decode(der_base64,
                                                 talk_base::Base64::DO_STRICT);
     EXPECT_EQ(ders[i], der);
@@ -186,7 +242,7 @@ void CheckCertChainReports(const webrtc::StatsReports& reports,
     std::string fingerprint_algorithm;
     EXPECT_TRUE(GetValue(
         report,
-        webrtc::StatsReport::kStatsValueNameFingerprintAlgorithm,
+        StatsReport::kStatsValueNameFingerprintAlgorithm,
         &fingerprint_algorithm));
     // The digest algorithm for a FakeSSLCertificate is always SHA-1.
     std::string sha_1_str = talk_base::DIGEST_SHA_1;
@@ -195,15 +251,66 @@ void CheckCertChainReports(const webrtc::StatsReports& reports,
     std::string dummy_fingerprint;  // Value is not checked.
     EXPECT_TRUE(GetValue(
         report,
-        webrtc::StatsReport::kStatsValueNameFingerprint,
+        StatsReport::kStatsValueNameFingerprint,
         &dummy_fingerprint));
 
     ++i;
     if (!GetValue(
-        report, webrtc::StatsReport::kStatsValueNameIssuerId, &certificate_id))
+        report, StatsReport::kStatsValueNameIssuerId, &certificate_id))
       break;
   }
   EXPECT_EQ(ders.size(), i);
+}
+
+void VerifyVoiceSenderInfoReport(const StatsReport* report,
+                                 const cricket::VoiceSenderInfo& sinfo) {
+  std::string value_in_report;
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameCodecName, &value_in_report));
+  EXPECT_EQ(sinfo.codec_name, value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameBytesSent, &value_in_report));
+  EXPECT_EQ(talk_base::ToString<int64>(sinfo.bytes_sent), value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNamePacketsSent, &value_in_report));
+  EXPECT_EQ(talk_base::ToString<int>(sinfo.packets_sent), value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameRtt, &value_in_report));
+  EXPECT_EQ(talk_base::ToString<int>(sinfo.rtt_ms), value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameRtt, &value_in_report));
+  EXPECT_EQ(talk_base::ToString<int>(sinfo.rtt_ms), value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameJitterReceived, &value_in_report));
+  EXPECT_EQ(talk_base::ToString<int>(sinfo.jitter_ms), value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameEchoCancellationQualityMin,
+      &value_in_report));
+  EXPECT_EQ(talk_base::ToString<float>(sinfo.aec_quality_min), value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameEchoDelayMedian, &value_in_report));
+  EXPECT_EQ(talk_base::ToString<int>(sinfo.echo_delay_median_ms),
+            value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameEchoDelayStdDev, &value_in_report));
+  EXPECT_EQ(talk_base::ToString<int>(sinfo.echo_delay_std_ms),
+            value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameEchoReturnLoss, &value_in_report));
+  EXPECT_EQ(talk_base::ToString<int>(sinfo.echo_return_loss),
+            value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameEchoReturnLossEnhancement,
+      &value_in_report));
+  EXPECT_EQ(talk_base::ToString<int>(sinfo.echo_return_loss_enhancement),
+            value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameAudioInputLevel, &value_in_report));
+  EXPECT_EQ(talk_base::ToString<int>(sinfo.audio_level), value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameTypingNoiseState, &value_in_report));
+  std::string typing_detected = sinfo.typing_noise_detected ? "true" : "false";
+  EXPECT_EQ(typing_detected, value_in_report);
 }
 
 class StatsCollectorTest : public testing::Test {
@@ -245,12 +352,25 @@ class StatsCollectorTest : public testing::Test {
                             Return(true)));
   }
 
+  // Adds a local audio track with a given SSRC into the stats.
+  void AddLocalAudioTrackStats() {
+    if (stream_ == NULL)
+      stream_ = webrtc::MediaStream::Create("streamlabel");
+
+    audio_track_ =
+        new talk_base::RefCountedObject<FakeLocalAudioTrack>(kAudioTrackId);
+    stream_->AddTrack(audio_track_);
+    EXPECT_CALL(session_, GetTrackIdBySsrc(kSsrcOfTrack, _))
+        .WillRepeatedly(DoAll(SetArgPointee<1>(kAudioTrackId),
+                              Return(true)));
+  }
+
   void TestCertificateReports(const talk_base::FakeSSLCertificate& local_cert,
                               const std::vector<std::string>& local_ders,
                               const talk_base::FakeSSLCertificate& remote_cert,
                               const std::vector<std::string>& remote_ders) {
     webrtc::StatsCollector stats;  // Implementation under test.
-    webrtc::StatsReports reports;  // returned values.
+    StatsReports reports;  // returned values.
     stats.set_session(&session_);
 
     // Fake stats to process.
@@ -289,22 +409,22 @@ class StatsCollectorTest : public testing::Test {
     EXPECT_CALL(session_, GetStats(_))
       .WillOnce(DoAll(SetArgPointee<0>(session_stats),
                       Return(true)));
-    EXPECT_CALL(session_, video_channel())
-      .WillRepeatedly(ReturnNull());
+    EXPECT_CALL(session_, video_channel()).WillRepeatedly(ReturnNull());
+    EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
 
     stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
 
     stats.GetStats(NULL, &reports);
 
-    const webrtc::StatsReport* channel_report = FindNthReportByType(
-        reports, webrtc::StatsReport::kStatsReportTypeComponent, 1);
+    const StatsReport* channel_report = FindNthReportByType(
+        reports, StatsReport::kStatsReportTypeComponent, 1);
     EXPECT_TRUE(channel_report != NULL);
 
     // Check local certificate chain.
     std::string local_certificate_id = ExtractStatsValue(
-        webrtc::StatsReport::kStatsReportTypeComponent,
+        StatsReport::kStatsReportTypeComponent,
         reports,
-        webrtc::StatsReport::kStatsValueNameLocalCertificateId);
+        StatsReport::kStatsValueNameLocalCertificateId);
     if (local_ders.size() > 0) {
       EXPECT_NE(kNotFound, local_certificate_id);
       CheckCertChainReports(reports, local_ders, local_certificate_id);
@@ -314,9 +434,9 @@ class StatsCollectorTest : public testing::Test {
 
     // Check remote certificate chain.
     std::string remote_certificate_id = ExtractStatsValue(
-        webrtc::StatsReport::kStatsReportTypeComponent,
+        StatsReport::kStatsReportTypeComponent,
         reports,
-        webrtc::StatsReport::kStatsValueNameRemoteCertificateId);
+        StatsReport::kStatsValueNameRemoteCertificateId);
     if (remote_ders.size() > 0) {
       EXPECT_NE(kNotFound, remote_certificate_id);
       CheckCertChainReports(reports, remote_ders, remote_certificate_id);
@@ -331,6 +451,7 @@ class StatsCollectorTest : public testing::Test {
   cricket::SessionStats session_stats_;
   talk_base::scoped_refptr<webrtc::MediaStream> stream_;
   talk_base::scoped_refptr<webrtc::VideoTrack> track_;
+  talk_base::scoped_refptr<FakeLocalAudioTrack> audio_track_;
   std::string track_id_;
 };
 
@@ -340,7 +461,7 @@ TEST_F(StatsCollectorTest, BytesCounterHandles64Bits) {
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel;
   cricket::VideoChannel video_channel(talk_base::Thread::Current(),
       media_engine_, media_channel, &session_, "", false, NULL);
-  webrtc::StatsReports reports;  // returned values.
+  StatsReports reports;  // returned values.
   cricket::VideoSenderInfo video_sender_info;
   cricket::VideoMediaInfo stats_read;
   // The number of bytes must be larger than 0xFFFFFFFF for this test.
@@ -356,8 +477,8 @@ TEST_F(StatsCollectorTest, BytesCounterHandles64Bits) {
   video_sender_info.bytes_sent = kBytesSent;
   stats_read.senders.push_back(video_sender_info);
 
-  EXPECT_CALL(session_, video_channel())
-    .WillRepeatedly(Return(&video_channel));
+  EXPECT_CALL(session_, video_channel()).WillRepeatedly(Return(&video_channel));
+  EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
   EXPECT_CALL(*media_channel, GetStats(_, _))
     .WillOnce(DoAll(SetArgPointee<1>(stats_read),
                     Return(true)));
@@ -373,7 +494,7 @@ TEST_F(StatsCollectorTest, BandwidthEstimationInfoIsReported) {
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel;
   cricket::VideoChannel video_channel(talk_base::Thread::Current(),
       media_engine_, media_channel, &session_, "", false, NULL);
-  webrtc::StatsReports reports;  // returned values.
+  StatsReports reports;  // returned values.
   cricket::VideoSenderInfo video_sender_info;
   cricket::VideoMediaInfo stats_read;
   // Set up an SSRC just to test that we get both kinds of stats back: SSRC and
@@ -395,8 +516,8 @@ TEST_F(StatsCollectorTest, BandwidthEstimationInfoIsReported) {
   bwe.target_enc_bitrate = kTargetEncBitrate;
   stats_read.bw_estimations.push_back(bwe);
 
-  EXPECT_CALL(session_, video_channel())
-    .WillRepeatedly(Return(&video_channel));
+  EXPECT_CALL(session_, video_channel()).WillRepeatedly(Return(&video_channel));
+  EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
   EXPECT_CALL(*media_channel, GetStats(_, _))
     .WillOnce(DoAll(SetArgPointee<1>(stats_read),
                     Return(true)));
@@ -413,14 +534,14 @@ TEST_F(StatsCollectorTest, BandwidthEstimationInfoIsReported) {
 // exists in the returned stats.
 TEST_F(StatsCollectorTest, SessionObjectExists) {
   webrtc::StatsCollector stats;  // Implementation under test.
-  webrtc::StatsReports reports;  // returned values.
+  StatsReports reports;  // returned values.
   stats.set_session(&session_);
-  EXPECT_CALL(session_, video_channel())
-    .WillRepeatedly(ReturnNull());
+  EXPECT_CALL(session_, video_channel()).WillRepeatedly(ReturnNull());
+  EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
   stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.GetStats(NULL, &reports);
-  const webrtc::StatsReport* session_report = FindNthReportByType(
-      reports, webrtc::StatsReport::kStatsReportTypeSession, 1);
+  const StatsReport* session_report = FindNthReportByType(
+      reports, StatsReport::kStatsReportTypeSession, 1);
   EXPECT_FALSE(session_report == NULL);
 }
 
@@ -428,18 +549,18 @@ TEST_F(StatsCollectorTest, SessionObjectExists) {
 // in the returned stats.
 TEST_F(StatsCollectorTest, OnlyOneSessionObjectExists) {
   webrtc::StatsCollector stats;  // Implementation under test.
-  webrtc::StatsReports reports;  // returned values.
+  StatsReports reports;  // returned values.
   stats.set_session(&session_);
-  EXPECT_CALL(session_, video_channel())
-    .WillRepeatedly(ReturnNull());
+  EXPECT_CALL(session_, video_channel()).WillRepeatedly(ReturnNull());
+  EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
   stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.GetStats(NULL, &reports);
-  const webrtc::StatsReport* session_report = FindNthReportByType(
-      reports, webrtc::StatsReport::kStatsReportTypeSession, 1);
+  const StatsReport* session_report = FindNthReportByType(
+      reports, StatsReport::kStatsReportTypeSession, 1);
   EXPECT_FALSE(session_report == NULL);
   session_report = FindNthReportByType(
-      reports, webrtc::StatsReport::kStatsReportTypeSession, 2);
+      reports, StatsReport::kStatsReportTypeSession, 2);
   EXPECT_EQ(NULL, session_report);
 }
 
@@ -455,18 +576,18 @@ TEST_F(StatsCollectorTest, TrackObjectExistsWithoutUpdateStats) {
 
   stats.set_session(&session_);
 
-  webrtc::StatsReports reports;
+  StatsReports reports;
 
   // Verfies the existence of the track report.
   stats.GetStats(NULL, &reports);
   EXPECT_EQ((size_t)1, reports.size());
-  EXPECT_EQ(std::string(webrtc::StatsReport::kStatsReportTypeTrack),
+  EXPECT_EQ(std::string(StatsReport::kStatsReportTypeTrack),
             reports[0].type);
 
   std::string trackValue =
-      ExtractStatsValue(webrtc::StatsReport::kStatsReportTypeTrack,
+      ExtractStatsValue(StatsReport::kStatsReportTypeTrack,
                         reports,
-                        webrtc::StatsReport::kStatsValueNameTrackId);
+                        StatsReport::kStatsValueNameTrackId);
   EXPECT_EQ(kTrackId, trackValue);
 }
 
@@ -482,7 +603,7 @@ TEST_F(StatsCollectorTest, TrackAndSsrcObjectExistAfterUpdateSsrcStats) {
 
   stats.set_session(&session_);
 
-  webrtc::StatsReports reports;
+  StatsReports reports;
 
   // Constructs an ssrc stats update.
   cricket::VideoSenderInfo video_sender_info;
@@ -494,8 +615,8 @@ TEST_F(StatsCollectorTest, TrackAndSsrcObjectExistAfterUpdateSsrcStats) {
   video_sender_info.bytes_sent = kBytesSent;
   stats_read.senders.push_back(video_sender_info);
 
-  EXPECT_CALL(session_, video_channel())
-    .WillRepeatedly(Return(&video_channel));
+  EXPECT_CALL(session_, video_channel()).WillRepeatedly(Return(&video_channel));
+  EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
   EXPECT_CALL(*media_channel, GetStats(_, _))
     .WillOnce(DoAll(SetArgPointee<1>(stats_read),
                     Return(true)));
@@ -505,8 +626,8 @@ TEST_F(StatsCollectorTest, TrackAndSsrcObjectExistAfterUpdateSsrcStats) {
   // |reports| should contain at least one session report, one track report,
   // and one ssrc report.
   EXPECT_LE((size_t)3, reports.size());
-  const webrtc::StatsReport* track_report = FindNthReportByType(
-      reports, webrtc::StatsReport::kStatsReportTypeTrack, 1);
+  const StatsReport* track_report = FindNthReportByType(
+      reports, StatsReport::kStatsReportTypeTrack, 1);
   EXPECT_FALSE(track_report == NULL);
 
   stats.GetStats(track_, &reports);
@@ -514,15 +635,15 @@ TEST_F(StatsCollectorTest, TrackAndSsrcObjectExistAfterUpdateSsrcStats) {
   // and one ssrc report.
   EXPECT_LE((size_t)3, reports.size());
   track_report = FindNthReportByType(
-      reports, webrtc::StatsReport::kStatsReportTypeTrack, 1);
+      reports, StatsReport::kStatsReportTypeTrack, 1);
   EXPECT_FALSE(track_report == NULL);
 
   std::string ssrc_id = ExtractSsrcStatsValue(
-      reports, webrtc::StatsReport::kStatsValueNameSsrc);
+      reports, StatsReport::kStatsValueNameSsrc);
   EXPECT_EQ(talk_base::ToString<uint32>(kSsrcOfTrack), ssrc_id);
 
   std::string track_id = ExtractSsrcStatsValue(
-      reports, webrtc::StatsReport::kStatsValueNameTrackId);
+      reports, StatsReport::kStatsValueNameTrackId);
   EXPECT_EQ(kTrackId, track_id);
 }
 
@@ -540,7 +661,7 @@ TEST_F(StatsCollectorTest, TransportObjectLinkedFromSsrcObject) {
 
   stats.set_session(&session_);
 
-  webrtc::StatsReports reports;
+  StatsReports reports;
 
   // Constructs an ssrc stats update.
   cricket::VideoSenderInfo video_sender_info;
@@ -552,26 +673,26 @@ TEST_F(StatsCollectorTest, TransportObjectLinkedFromSsrcObject) {
   video_sender_info.bytes_sent = kBytesSent;
   stats_read.senders.push_back(video_sender_info);
 
-  EXPECT_CALL(session_, video_channel())
-    .WillRepeatedly(Return(&video_channel));
+  EXPECT_CALL(session_, video_channel()).WillRepeatedly(Return(&video_channel));
+  EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
   EXPECT_CALL(*media_channel, GetStats(_, _))
     .WillRepeatedly(DoAll(SetArgPointee<1>(stats_read),
                           Return(true)));
 
   InitSessionStats(kVcName);
   EXPECT_CALL(session_, GetStats(_))
-    .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
-                          Return(true)));
+      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
+                            Return(true)));
 
   stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.GetStats(NULL, &reports);
   std::string transport_id = ExtractStatsValue(
-      webrtc::StatsReport::kStatsReportTypeSsrc,
+      StatsReport::kStatsReportTypeSsrc,
       reports,
-      webrtc::StatsReport::kStatsValueNameTransportId);
+      StatsReport::kStatsValueNameTransportId);
   ASSERT_NE(kNotFound, transport_id);
-  const webrtc::StatsReport* transport_report = FindReportById(reports,
-                                                               transport_id);
+  const StatsReport* transport_report = FindReportById(reports,
+                                                       transport_id);
   ASSERT_FALSE(transport_report == NULL);
 }
 
@@ -589,14 +710,14 @@ TEST_F(StatsCollectorTest, RemoteSsrcInfoIsAbsent) {
 
   stats.set_session(&session_);
 
-  EXPECT_CALL(session_, video_channel())
-    .WillRepeatedly(ReturnNull());
+  EXPECT_CALL(session_, video_channel()).WillRepeatedly(ReturnNull());
+  EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
 
   stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
-  webrtc::StatsReports reports;
+  StatsReports reports;
   stats.GetStats(NULL, &reports);
-  const webrtc::StatsReport* remote_report = FindNthReportByType(reports,
-      webrtc::StatsReport::kStatsReportTypeRemoteSsrc, 1);
+  const StatsReport* remote_report = FindNthReportByType(reports,
+      StatsReport::kStatsReportTypeRemoteSsrc, 1);
   EXPECT_TRUE(remote_report == NULL);
 }
 
@@ -614,13 +735,13 @@ TEST_F(StatsCollectorTest, RemoteSsrcInfoIsPresent) {
 
   stats.set_session(&session_);
 
-  webrtc::StatsReports reports;
+  StatsReports reports;
 
   // Instruct the session to return stats containing the transport channel.
   InitSessionStats(kVcName);
   EXPECT_CALL(session_, GetStats(_))
-    .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
-                          Return(true)));
+      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
+                            Return(true)));
 
   // Constructs an ssrc stats update.
   cricket::VideoMediaInfo stats_read;
@@ -633,16 +754,16 @@ TEST_F(StatsCollectorTest, RemoteSsrcInfoIsPresent) {
   video_sender_info.remote_stats.push_back(remote_ssrc_stats);
   stats_read.senders.push_back(video_sender_info);
 
-  EXPECT_CALL(session_, video_channel())
-    .WillRepeatedly(Return(&video_channel));
+  EXPECT_CALL(session_, video_channel()).WillRepeatedly(Return(&video_channel));
+  EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
   EXPECT_CALL(*media_channel, GetStats(_, _))
     .WillRepeatedly(DoAll(SetArgPointee<1>(stats_read),
                           Return(true)));
 
   stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.GetStats(NULL, &reports);
-  const webrtc::StatsReport* remote_report = FindNthReportByType(reports,
-      webrtc::StatsReport::kStatsReportTypeRemoteSsrc, 1);
+  const StatsReport* remote_report = FindNthReportByType(reports,
+      StatsReport::kStatsReportTypeRemoteSsrc, 1);
   EXPECT_FALSE(remote_report == NULL);
   EXPECT_NE(0, remote_report->timestamp);
 }
@@ -689,7 +810,7 @@ TEST_F(StatsCollectorTest, ChainlessCertificateReportsCreated) {
 // transport is present.
 TEST_F(StatsCollectorTest, NoTransport) {
   webrtc::StatsCollector stats;  // Implementation under test.
-  webrtc::StatsReports reports;  // returned values.
+  StatsReports reports;  // returned values.
   stats.set_session(&session_);
 
   // Fake stats to process.
@@ -711,24 +832,24 @@ TEST_F(StatsCollectorTest, NoTransport) {
     .WillOnce(DoAll(SetArgPointee<0>(session_stats),
                     Return(true)));
 
-  EXPECT_CALL(session_, video_channel())
-    .WillRepeatedly(ReturnNull());
+  EXPECT_CALL(session_, video_channel()).WillRepeatedly(ReturnNull());
+  EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
 
   stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.GetStats(NULL, &reports);
 
   // Check that the local certificate is absent.
   std::string local_certificate_id = ExtractStatsValue(
-      webrtc::StatsReport::kStatsReportTypeComponent,
+      StatsReport::kStatsReportTypeComponent,
       reports,
-      webrtc::StatsReport::kStatsValueNameLocalCertificateId);
+      StatsReport::kStatsValueNameLocalCertificateId);
   ASSERT_EQ(kNotFound, local_certificate_id);
 
   // Check that the remote certificate is absent.
   std::string remote_certificate_id = ExtractStatsValue(
-      webrtc::StatsReport::kStatsReportTypeComponent,
+      StatsReport::kStatsReportTypeComponent,
       reports,
-      webrtc::StatsReport::kStatsValueNameRemoteCertificateId);
+      StatsReport::kStatsValueNameRemoteCertificateId);
   ASSERT_EQ(kNotFound, remote_certificate_id);
 }
 
@@ -736,7 +857,7 @@ TEST_F(StatsCollectorTest, NoTransport) {
 // does not have any certificates.
 TEST_F(StatsCollectorTest, NoCertificates) {
   webrtc::StatsCollector stats;  // Implementation under test.
-  webrtc::StatsReports reports;  // returned values.
+  StatsReports reports;  // returned values.
   stats.set_session(&session_);
 
   // Fake stats to process.
@@ -764,24 +885,24 @@ TEST_F(StatsCollectorTest, NoCertificates) {
   EXPECT_CALL(session_, GetStats(_))
     .WillOnce(DoAll(SetArgPointee<0>(session_stats),
                     Return(true)));
-  EXPECT_CALL(session_, video_channel())
-    .WillRepeatedly(ReturnNull());
+  EXPECT_CALL(session_, video_channel()).WillRepeatedly(ReturnNull());
+  EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
 
   stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.GetStats(NULL, &reports);
 
   // Check that the local certificate is absent.
   std::string local_certificate_id = ExtractStatsValue(
-      webrtc::StatsReport::kStatsReportTypeComponent,
+      StatsReport::kStatsReportTypeComponent,
       reports,
-      webrtc::StatsReport::kStatsValueNameLocalCertificateId);
+      StatsReport::kStatsValueNameLocalCertificateId);
   ASSERT_EQ(kNotFound, local_certificate_id);
 
   // Check that the remote certificate is absent.
   std::string remote_certificate_id = ExtractStatsValue(
-      webrtc::StatsReport::kStatsReportTypeComponent,
+      StatsReport::kStatsReportTypeComponent,
       reports,
-      webrtc::StatsReport::kStatsValueNameRemoteCertificateId);
+      StatsReport::kStatsValueNameRemoteCertificateId);
   ASSERT_EQ(kNotFound, remote_certificate_id);
 }
 
@@ -810,7 +931,7 @@ TEST_F(StatsCollectorTest, StatsOutputLevelVerbose) {
       media_engine_, media_channel, &session_, "", false, NULL);
   stats.set_session(&session_);
 
-  webrtc::StatsReports reports;  // returned values.
+  StatsReports reports;  // returned values.
   cricket::VideoMediaInfo stats_read;
   cricket::BandwidthEstimationInfo bwe;
   bwe.total_received_propagation_delta_ms = 10;
@@ -822,6 +943,7 @@ TEST_F(StatsCollectorTest, StatsOutputLevelVerbose) {
 
   EXPECT_CALL(session_, video_channel())
     .WillRepeatedly(Return(&video_channel));
+  EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
 
   StatsOptions options;
   options.include_received_propagation_stats = true;
@@ -842,6 +964,177 @@ TEST_F(StatsCollectorTest, StatsOutputLevelVerbose) {
   result = ExtractBweStatsValue(
       reports, "googReceivedPacketGroupArrivalTimeDebug");
   EXPECT_EQ("[1000, 2000]", result);
+}
+
+// This test verifies that a local stats object can get statistics via
+// AudioTrackInterface::GetStats() method.
+TEST_F(StatsCollectorTest, GetStatsFromLocalAudioTrack) {
+  webrtc::StatsCollector stats;  // Implementation under test.
+  MockVoiceMediaChannel* media_channel = new MockVoiceMediaChannel();
+  // The content_name known by the voice channel.
+  const std::string kVcName("vcname");
+  cricket::VoiceChannel voice_channel(talk_base::Thread::Current(),
+      media_engine_, media_channel, &session_, kVcName, false);
+  AddLocalAudioTrackStats();
+  stats.AddStream(stream_);
+  stats.AddLocalAudioTrack(audio_track_.get(), kSsrcOfTrack);
+
+  stats.set_session(&session_);
+
+  // Instruct the session to return stats containing the transport channel.
+  InitSessionStats(kVcName);
+  EXPECT_CALL(session_, GetStats(_))
+      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
+                            Return(true)));
+
+  cricket::VoiceSenderInfo voice_sender_info;
+  // Contents won't be modified by the AudioTrackInterface::GetStats().
+  voice_sender_info.add_ssrc(kSsrcOfTrack);
+  voice_sender_info.codec_name = "fake_codec";
+  voice_sender_info.bytes_sent = 100;
+  voice_sender_info.packets_sent = 101;
+  voice_sender_info.rtt_ms = 102;
+  voice_sender_info.fraction_lost = 103;
+  voice_sender_info.jitter_ms = 104;
+  voice_sender_info.packets_lost = 105;
+  voice_sender_info.ext_seqnum = 106;
+
+  // Contents will be modified by the AudioTrackInterface::GetStats().
+  voice_sender_info.audio_level = 107;
+  voice_sender_info.echo_return_loss = 108;;
+  voice_sender_info.echo_return_loss_enhancement = 109;
+  voice_sender_info.echo_delay_median_ms = 110;
+  voice_sender_info.echo_delay_std_ms = 111;
+  voice_sender_info.aec_quality_min = 112.0f;
+  voice_sender_info.typing_noise_detected = false;
+
+  // Constructs an ssrc stats update.
+  cricket::VoiceMediaInfo stats_read;
+  stats_read.senders.push_back(voice_sender_info);
+
+  EXPECT_CALL(session_, voice_channel()).WillRepeatedly(Return(&voice_channel));
+  EXPECT_CALL(session_, video_channel()).WillRepeatedly(ReturnNull());
+  EXPECT_CALL(*media_channel, GetStats(_))
+      .WillRepeatedly(DoAll(SetArgPointee<0>(stats_read),
+                            Return(true)));
+
+  StatsReports reports;  // returned values.
+  stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
+  stats.GetStats(NULL, &reports);
+
+  // Verfy the existence of the track report.
+  const StatsReport* report = FindNthReportByType(
+      reports, StatsReport::kStatsReportTypeSsrc, 1);
+  EXPECT_FALSE(report == NULL);
+  std::string track_id = ExtractSsrcStatsValue(
+      reports, StatsReport::kStatsValueNameTrackId);
+  EXPECT_EQ(kAudioTrackId, track_id);
+  std::string ssrc_id = ExtractSsrcStatsValue(
+      reports, StatsReport::kStatsValueNameSsrc);
+  EXPECT_EQ(talk_base::ToString<uint32>(kSsrcOfTrack), ssrc_id);
+
+  // Verifies the values in the track report.
+  audio_track_->GetSignalLevel(&voice_sender_info.audio_level);
+  webrtc::AudioProcessorInterface::AudioProcessorStats audio_processor_stats;
+  audio_track_->GetAudioProcessor()->GetStats(&audio_processor_stats);
+  voice_sender_info.typing_noise_detected =
+      audio_processor_stats.typing_noise_detected;
+  voice_sender_info.echo_return_loss = audio_processor_stats.echo_return_loss;
+  voice_sender_info.echo_return_loss_enhancement =
+      audio_processor_stats.echo_return_loss_enhancement;
+  voice_sender_info.echo_delay_median_ms =
+      audio_processor_stats.echo_delay_median_ms;
+  voice_sender_info.aec_quality_min = audio_processor_stats.aec_quality_min;
+  voice_sender_info.echo_delay_std_ms = audio_processor_stats.echo_delay_std_ms;
+  VerifyVoiceSenderInfoReport(report, voice_sender_info);
+
+  // Verify we get the same result by passing a track to GetStats().
+  StatsReports track_reports;  // returned values.
+  stats.GetStats(audio_track_.get(), &track_reports);
+  const StatsReport* track_report = FindNthReportByType(
+      track_reports, StatsReport::kStatsReportTypeSsrc, 1);
+  EXPECT_FALSE(track_report == NULL);
+  track_id = ExtractSsrcStatsValue(track_reports,
+                                   StatsReport::kStatsValueNameTrackId);
+  EXPECT_EQ(kAudioTrackId, track_id);
+  ssrc_id = ExtractSsrcStatsValue(track_reports,
+                                  StatsReport::kStatsValueNameSsrc);
+  EXPECT_EQ(talk_base::ToString<uint32>(kSsrcOfTrack), ssrc_id);
+  VerifyVoiceSenderInfoReport(track_report, voice_sender_info);
+}
+
+// This test verifies that a local stats object won't update its statistics
+// after a RemoveLocalAudioTrack() call.
+TEST_F(StatsCollectorTest, GetStatsAfterRemoveAudioStream) {
+  webrtc::StatsCollector stats;  // Implementation under test.
+  MockVoiceMediaChannel* media_channel = new MockVoiceMediaChannel();
+  // The content_name known by the voice channel.
+  const std::string kVcName("vcname");
+  cricket::VoiceChannel voice_channel(talk_base::Thread::Current(),
+      media_engine_, media_channel, &session_, kVcName, false);
+  AddLocalAudioTrackStats();
+  stats.AddStream(stream_);
+  stats.AddLocalAudioTrack(audio_track_.get(), kSsrcOfTrack);
+
+  stats.set_session(&session_);
+
+  // Instruct the session to return stats containing the transport channel.
+  InitSessionStats(kVcName);
+  EXPECT_CALL(session_, GetStats(_))
+      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
+                            Return(true)));
+
+  stats.RemoveLocalAudioTrack(audio_track_.get(), kSsrcOfTrack);
+  cricket::VoiceSenderInfo voice_sender_info;
+  // Contents won't be modified by the AudioTrackInterface::GetStats().
+  voice_sender_info.add_ssrc(kSsrcOfTrack);
+  voice_sender_info.codec_name = "fake_codec";
+  voice_sender_info.bytes_sent = 100;
+  voice_sender_info.packets_sent = 101;
+  voice_sender_info.rtt_ms = 102;
+  voice_sender_info.fraction_lost = 103;
+  voice_sender_info.jitter_ms = 104;
+  voice_sender_info.packets_lost = 105;
+  voice_sender_info.ext_seqnum = 106;
+
+  // Contents will be modified by the AudioTrackInterface::GetStats().
+  voice_sender_info.audio_level = 107;
+  voice_sender_info.echo_return_loss = 108;;
+  voice_sender_info.echo_return_loss_enhancement = 109;
+  voice_sender_info.echo_delay_median_ms = 110;
+  voice_sender_info.echo_delay_std_ms = 111;
+  voice_sender_info.aec_quality_min = 112;
+  voice_sender_info.typing_noise_detected = false;
+
+  // Constructs an ssrc stats update.
+  cricket::VoiceMediaInfo stats_read;
+  stats_read.senders.push_back(voice_sender_info);
+
+  EXPECT_CALL(session_, voice_channel()).WillRepeatedly(Return(&voice_channel));
+  EXPECT_CALL(session_, video_channel()).WillRepeatedly(ReturnNull());
+  EXPECT_CALL(*media_channel, GetStats(_))
+      .WillRepeatedly(DoAll(SetArgPointee<0>(stats_read),
+                            Return(true)));
+
+  StatsReports reports;  // returned values.
+  stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
+  stats.GetStats(NULL, &reports);
+
+  // The report will exist since we don't remove them in RemoveStream().
+  const StatsReport* report = FindNthReportByType(
+      reports, StatsReport::kStatsReportTypeSsrc, 1);
+  EXPECT_FALSE(report == NULL);
+  std::string track_id = ExtractSsrcStatsValue(
+      reports, StatsReport::kStatsValueNameTrackId);
+  EXPECT_EQ(kAudioTrackId, track_id);
+  std::string ssrc_id = ExtractSsrcStatsValue(
+      reports, StatsReport::kStatsValueNameSsrc);
+  EXPECT_EQ(talk_base::ToString<uint32>(kSsrcOfTrack), ssrc_id);
+
+  // Verifies the values in the track report, no value will be changed by the
+  // AudioTrackInterface::GetSignalValue() and
+  // AudioProcessorInterface::AudioProcessorStats::GetStats();
+  VerifyVoiceSenderInfoReport(report, voice_sender_info);
 }
 
 }  // namespace

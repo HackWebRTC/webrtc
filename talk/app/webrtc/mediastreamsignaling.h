@@ -92,7 +92,8 @@ class MediaStreamSignalingObserver {
 
   // Triggered when the local SessionDescription has removed an audio track.
   virtual void OnRemoveLocalAudioTrack(MediaStreamInterface* stream,
-                                       AudioTrackInterface* audio_track) = 0;
+                                       AudioTrackInterface* audio_track,
+                                       uint32 ssrc) = 0;
 
   // Triggered when the local SessionDescription has removed a video track.
   virtual void OnRemoveLocalVideoTrack(MediaStreamInterface* stream,
@@ -354,6 +355,7 @@ class MediaStreamSignaling {
   // MediaStreamTrack in a MediaStream in |local_streams_|.
   void OnLocalTrackRemoved(const std::string& stream_label,
                            const std::string& track_id,
+                           uint32 ssrc,
                            cricket::MediaType media_type);
 
   void UpdateLocalRtpDataChannels(const cricket::StreamParamsVec& streams);

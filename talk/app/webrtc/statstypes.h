@@ -57,6 +57,8 @@ class StatsReport {
   void AddValue(const std::string& name, const std::vector<T>& value);
   void AddBoolean(const std::string& name, bool value);
 
+  void ReplaceValue(const std::string& name, const std::string& value);
+
   double timestamp;  // Time since 1970-01-01T00:00:00Z in milliseconds.
   typedef std::vector<Value> Values;
   Values values;

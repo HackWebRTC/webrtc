@@ -706,6 +706,7 @@ void PeerConnection::OnAddLocalAudioTrack(MediaStreamInterface* stream,
                                           AudioTrackInterface* audio_track,
                                           uint32 ssrc) {
   stream_handler_container_->AddLocalAudioTrack(stream, audio_track, ssrc);
+  stats_.AddLocalAudioTrack(audio_track, ssrc);
 }
 void PeerConnection::OnAddLocalVideoTrack(MediaStreamInterface* stream,
                                           VideoTrackInterface* video_track,
@@ -714,8 +715,10 @@ void PeerConnection::OnAddLocalVideoTrack(MediaStreamInterface* stream,
 }
 
 void PeerConnection::OnRemoveLocalAudioTrack(MediaStreamInterface* stream,
-                                             AudioTrackInterface* audio_track) {
+                                             AudioTrackInterface* audio_track,
+                                             uint32 ssrc) {
   stream_handler_container_->RemoveLocalTrack(stream, audio_track);
+  stats_.RemoveLocalAudioTrack(audio_track, ssrc);
 }
 
 void PeerConnection::OnRemoveLocalVideoTrack(MediaStreamInterface* stream,

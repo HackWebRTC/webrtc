@@ -174,18 +174,55 @@ class AudioTrackSinkInterface {
   virtual ~AudioTrackSinkInterface() {}
 };
 
+// Interface of the audio processor used by the audio track to collect
+// statistics.
+class AudioProcessorInterface : public talk_base::RefCountInterface {
+ public:
+  struct AudioProcessorStats {
+    AudioProcessorStats() : typing_noise_detected(false),
+                            echo_return_loss(0),
+                            echo_return_loss_enhancement(0),
+                            echo_delay_median_ms(0),
+                            aec_quality_min(0.0),
+                            echo_delay_std_ms(0) {}
+    ~AudioProcessorStats() {}
+
+    bool typing_noise_detected;
+    int echo_return_loss;
+    int echo_return_loss_enhancement;
+    int echo_delay_median_ms;
+    float aec_quality_min;
+    int echo_delay_std_ms;
+  };
+
+  // Get audio processor statistics.
+  virtual void GetStats(AudioProcessorStats* stats) = 0;
+
+ protected:
+  virtual ~AudioProcessorInterface() {}
+};
+
 class AudioTrackInterface : public MediaStreamTrackInterface {
  public:
   // TODO(xians): Figure out if the following interface should be const or not.
   virtual AudioSourceInterface* GetSource() const =  0;
 
-  // Adds/Removes a sink that will receive the audio data from the track.
-  // TODO(xians): Make them pure virtual after Chrome implements these
-  // interfaces.
-  virtual void AddSink(AudioTrackSinkInterface* sink) {}
-  virtual void RemoveSink(AudioTrackSinkInterface* sink) {}
+  // Add/Remove a sink that will receive the audio data from the track.
+  virtual void AddSink(AudioTrackSinkInterface* sink) = 0;
+  virtual void RemoveSink(AudioTrackSinkInterface* sink) = 0;
 
-  // Gets a pointer to the audio renderer of this AudioTrack.
+  // Get the signal level from the audio track.
+  // Return true on success, otherwise false.
+  // TODO(xians): Change the interface to int GetSignalLevel() and pure virtual
+  // after Chrome has the correct implementation of the interface.
+  virtual bool GetSignalLevel(int* level) { return false; }
+
+  // Get the audio processor used by the audio track. Return NULL if the track
+  // does not have any processor.
+  // TODO(xians): Make the interface pure virtual.
+  virtual AudioProcessorInterface* GetAudioProcessor() { return NULL; }
+
+  // Get a pointer to the audio renderer of this AudioTrack.
   // The pointer is valid for the lifetime of this AudioTrack.
   // TODO(xians): Remove the following interface after Chrome switches to
   // AddSink() and RemoveSink() interfaces.

@@ -122,7 +122,8 @@ class FakeMediaStreamSignaling : public webrtc::MediaStreamSignaling,
 
   virtual void OnRemoveLocalAudioTrack(
       webrtc::MediaStreamInterface* stream,
-      webrtc::AudioTrackInterface* audio_track) {
+      webrtc::AudioTrackInterface* audio_track,
+      uint32 ssrc) {
   }
   virtual void OnRemoveLocalVideoTrack(
       webrtc::MediaStreamInterface* stream,

@@ -41,17 +41,21 @@ class AudioTrack : public MediaStreamTrack<AudioTrackInterface> {
   static talk_base::scoped_refptr<AudioTrack> Create(
       const std::string& id, AudioSourceInterface* source);
 
-  virtual AudioSourceInterface* GetSource() const {
+  // AudioTrackInterface implementation.
+  virtual AudioSourceInterface* GetSource() const OVERRIDE {
     return audio_source_.get();
   }
-
-  // This method is used for supporting multiple sources/sinks for AudioTracks.
-  virtual cricket::AudioRenderer* GetRenderer() {
+  // TODO(xians): Implement these methods.
+  virtual void AddSink(AudioTrackSinkInterface* sink) OVERRIDE {}
+  virtual void RemoveSink(AudioTrackSinkInterface* sink) OVERRIDE {}
+  virtual bool GetSignalLevel(int* level) OVERRIDE { return false; }
+  virtual AudioProcessorInterface* GetAudioProcessor() OVERRIDE { return NULL; }
+  virtual cricket::AudioRenderer* GetRenderer() OVERRIDE {
     return NULL;
   }
 
-  // Implement MediaStreamTrack
-  virtual std::string kind() const;
+  // MediaStreamTrack implementation.
+  virtual std::string kind() const OVERRIDE;
 
  protected:
   AudioTrack(const std::string& label, AudioSourceInterface* audio_source);
