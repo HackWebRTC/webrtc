@@ -288,12 +288,7 @@ int32_t WebRtcAgc_InitDigital(DigitalAgc_t *stt, int16_t agcMode)
 int32_t WebRtcAgc_AddFarendToDigital(DigitalAgc_t *stt, const int16_t *in_far,
                                      int16_t nrSamples)
 {
-    // Check for valid pointer
-    if (&stt->vadFarend == NULL)
-    {
-        return -1;
-    }
-
+    assert(stt != NULL);
     // VAD for far end
     WebRtcAgc_ProcessVad(&stt->vadFarend, in_far, nrSamples);
 
