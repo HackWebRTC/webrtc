@@ -45,9 +45,6 @@
 #include "talk/examples/call/console.h"
 #include "talk/examples/call/mediaenginefactory.h"
 #include "talk/p2p/base/constants.h"
-#ifdef ANDROID
-#include "talk/media/other/androidmediaengine.h"
-#endif
 #include "talk/session/media/mediasessionclient.h"
 #include "talk/session/media/srtpfilter.h"
 #include "talk/xmpp/xmppauth.h"
@@ -185,7 +182,7 @@ static const int DEFAULT_PORT = 5222;
 static std::vector<cricket::AudioCodec> codecs;
 static const cricket::AudioCodec ISAC(103, "ISAC", 40000, 16000, 1, 0);
 
-cricket::MediaEngine *AndroidMediaEngineFactory() {
+cricket::MediaEngineInterface *CreateAndroidMediaEngine() {
     cricket::FakeMediaEngine *engine = new cricket::FakeMediaEngine();
 
     codecs.push_back(ISAC);
@@ -438,7 +435,7 @@ int main(int argc, char **argv) {
   }
 
 #ifdef ANDROID
-  InitAndroidMediaEngineFactory(AndroidMediaEngineFactory);
+  MediaEngineFactory::SetCreateFunction(&CreateAndroidMediaEngine);
 #endif
 
 #if WIN32
