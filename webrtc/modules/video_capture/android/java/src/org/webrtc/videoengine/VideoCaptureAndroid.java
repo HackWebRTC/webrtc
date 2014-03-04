@@ -31,7 +31,9 @@ import android.view.SurfaceHolder.Callback;
 // the entry points to this class are all synchronized.  This shouldn't present
 // a performance bottleneck because only onPreviewFrame() is called more than
 // once (and is called serially on a single thread), so the lock should be
-// uncontended.
+// uncontended.  Note that each of these synchronized methods must check
+// |camera| for null to account for having possibly waited for stopCapture() to
+// complete.
 public class VideoCaptureAndroid implements PreviewCallback, Callback {
   private final static String TAG = "WEBRTC-JC";
 
@@ -149,7 +151,13 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
   private native void ProvideCameraFrame(
       byte[] data, int length, long captureObject);
 
-  public synchronized void onPreviewFrame(byte[] data, Camera camera) {
+  public synchronized void onPreviewFrame(byte[] data, Camera callbackCamera) {
+    if (camera == null) {
+      return;
+    }
+    if (camera != callbackCamera) {
+      throw new RuntimeException("Unexpected camera in callback!");
+    }
     ProvideCameraFrame(data, data.length, native_capturer);
     camera.addCallbackBuffer(data);
   }
@@ -184,10 +192,11 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
 
   public synchronized void surfaceCreated(SurfaceHolder holder) {
     Log.d(TAG, "VideoCaptureAndroid::surfaceCreated");
+    if (camera == null) {
+      return;
+    }
     try {
-      if (camera != null) {
-        camera.setPreviewDisplay(holder);
-      }
+      camera.setPreviewDisplay(holder);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -195,10 +204,11 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
 
   public synchronized void surfaceDestroyed(SurfaceHolder holder) {
     Log.d(TAG, "VideoCaptureAndroid::surfaceDestroyed");
+    if (camera == null) {
+      return;
+    }
     try {
-      if (camera != null) {
-        camera.setPreviewDisplay(null);
-      }
+      camera.setPreviewDisplay(null);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
