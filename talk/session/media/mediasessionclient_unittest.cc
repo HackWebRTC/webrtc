@@ -2751,11 +2751,11 @@ class MediaSessionClientTest : public sigslot::has_slots<> {
     ClearStanzas();
   }
 
-  void MakeSignalingSecure(cricket::SecureMediaPolicy secure) {
+  void MakeSignalingSecure(cricket::SecurePolicy secure) {
     client_->set_secure(secure);
   }
 
-  void ExpectCrypto(cricket::SecureMediaPolicy secure) {
+  void ExpectCrypto(cricket::SecurePolicy secure) {
     MakeSignalingSecure(secure);
     expect_incoming_crypto_ = true;
 #ifdef HAVE_SRTP

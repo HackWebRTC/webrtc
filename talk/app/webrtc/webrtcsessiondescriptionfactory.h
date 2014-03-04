@@ -112,8 +112,8 @@ class WebRtcSessionDescriptionFactory : public talk_base::MessageHandler,
       CreateSessionDescriptionObserver* observer,
       const MediaConstraintsInterface* constraints);
 
-  void SetSecure(cricket::SecureMediaPolicy secure_policy);
-  cricket::SecureMediaPolicy Secure() const;
+  void SetSdesPolicy(cricket::SecurePolicy secure_policy);
+  cricket::SecurePolicy SdesPolicy() const;
 
   sigslot::signal1<talk_base::SSLIdentity*> SignalIdentityReady;
 

@@ -1159,7 +1159,7 @@ bool BaseChannel::SetBaseLocalContent_w(const MediaContentDescription* content,
                                         ContentAction action,
                                         std::string* error_desc) {
   // Cache secure_required_ for belt and suspenders check on SendPacket
-  secure_required_ = content->crypto_required();
+  secure_required_ = content->crypto_required() != CT_NONE;
   bool ret = UpdateLocalStreams_w(content->streams(), action, error_desc);
   // Set local SRTP parameters (what we will encrypt with).
   ret &= SetSrtp_w(content->cryptos(), action, CS_LOCAL, error_desc);

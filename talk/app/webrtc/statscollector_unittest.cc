@@ -134,8 +134,9 @@ class FakeLocalAudioTrack
     *level = 1;
     return true;
   }
-  virtual webrtc::AudioProcessorInterface* GetAudioProcessor() OVERRIDE {
-    return processor_.get();
+  virtual talk_base::scoped_refptr<webrtc::AudioProcessorInterface>
+      GetAudioProcessor() OVERRIDE {
+    return processor_;
   }
 
  private:

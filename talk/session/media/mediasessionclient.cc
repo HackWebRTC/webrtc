@@ -339,8 +339,9 @@ bool ParseGingleEncryption(const buzz::XmlElement* desc,
        encryption != NULL;
        encryption = encryption->NextNamed(QN_ENCRYPTION)) {
     if (encryption->FirstNamed(usage) != NULL) {
-      media->set_crypto_required(
-          GetXmlAttr(encryption, QN_ENCRYPTION_REQUIRED, false));
+      if (GetXmlAttr(encryption, QN_ENCRYPTION_REQUIRED, false)) {
+        media->set_crypto_required(CT_SDES);
+      }
       for (const buzz::XmlElement* crypto = encryption->FirstNamed(QN_CRYPTO);
            crypto != NULL;
            crypto = crypto->NextNamed(QN_CRYPTO)) {
@@ -479,8 +480,9 @@ bool ParseJingleEncryption(const buzz::XmlElement* content_elem,
       return true;
   }
 
-  media->set_crypto_required(
-      GetXmlAttr(encryption, QN_ENCRYPTION_REQUIRED, false));
+  if (GetXmlAttr(encryption, QN_ENCRYPTION_REQUIRED, false)) {
+    media->set_crypto_required(CT_SDES);
+  }
 
   for (const buzz::XmlElement* crypto = encryption->FirstNamed(QN_CRYPTO);
        crypto != NULL;

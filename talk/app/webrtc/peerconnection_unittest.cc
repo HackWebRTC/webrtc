@@ -1095,32 +1095,6 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestDtlsRenegotiate) {
   receiving_client()->Negotiate();
 }
 
-// This test sets up a call between an endpoint configured to use either SDES or
-// DTLS (the offerer) and just SDES (the answerer). As a result, SDES is used
-// instead of DTLS.
-TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestOfferDtlsToSdes) {
-  MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
-  FakeConstraints setup_constraints;
-  setup_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
-                                 true);
-  ASSERT_TRUE(CreateTestClients(&setup_constraints, NULL));
-  LocalP2PTest();
-  VerifyRenderedSize(640, 480);
-}
-
-// This test sets up a call between an endpoint configured to use SDES
-// (the offerer) and either SDES or DTLS (the answerer). As a result, SDES is
-// used instead of DTLS.
-TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestOfferSdesToDtls) {
-  MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
-  FakeConstraints setup_constraints;
-  setup_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
-                                 true);
-  ASSERT_TRUE(CreateTestClients(NULL, &setup_constraints));
-  LocalP2PTest();
-  VerifyRenderedSize(640, 480);
-}
-
 // This test sets up a call between two endpoints that are configured to use
 // DTLS key agreement. The offerer don't support SDES. As a result, DTLS is
 // negotiated and used for transport.

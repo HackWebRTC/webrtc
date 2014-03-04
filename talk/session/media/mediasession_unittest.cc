@@ -41,12 +41,12 @@
 
 #ifdef HAVE_SRTP
 #define ASSERT_CRYPTO(cd, s, cs) \
-    ASSERT_FALSE(cd->crypto_required()); \
+    ASSERT_EQ(cricket::CT_NONE, cd->crypto_required()); \
     ASSERT_EQ(s, cd->cryptos().size()); \
     ASSERT_EQ(std::string(cs), cd->cryptos()[0].cipher_suite)
 #else
 #define ASSERT_CRYPTO(cd, s, cs) \
-  ASSERT_FALSE(cd->crypto_required()); \
+  ASSERT_EQ(cricket::CT_NONE, cd->crypto_required()); \
   ASSERT_EQ(0U, cd->cryptos().size());
 #endif
 

@@ -91,9 +91,9 @@ using webrtc::kCreateChannelFailed;
 using webrtc::kInvalidSdp;
 using webrtc::kMlineMismatch;
 using webrtc::kPushDownTDFailed;
-using webrtc::kSdpWithoutCrypto;
 using webrtc::kSdpWithoutIceUfragPwd;
-using webrtc::kSdpWithoutSdesAndDtlsDisabled;
+using webrtc::kSdpWithoutDtlsFingerprint;
+using webrtc::kSdpWithoutSdesCrypto;
 using webrtc::kSessionError;
 using webrtc::kSessionErrorDesc;
 
@@ -458,7 +458,7 @@ class WebRtcSessionTest : public testing::Test {
 
   // Set the internal fake description factories to do DTLS-SRTP.
   void SetFactoryDtlsSrtp() {
-    desc_factory_->set_secure(cricket::SEC_ENABLED);
+    desc_factory_->set_secure(cricket::SEC_DISABLED);
     std::string identity_name = "WebRTC" +
         talk_base::ToString(talk_base::CreateRandomId());
     identity_.reset(talk_base::SSLIdentity::Generate(identity_name));
@@ -484,8 +484,8 @@ class WebRtcSessionTest : public testing::Test {
         CreateRemoteOffer(options, cricket::SEC_DISABLED));
     ASSERT_TRUE(offer != NULL);
     VerifyNoCryptoParams(offer->description(), false);
-    SetRemoteDescriptionOfferExpectError(
-        "Called with a SDP without crypto enabled", offer);
+    SetRemoteDescriptionOfferExpectError(kSdpWithoutSdesCrypto,
+                                         offer);
     const webrtc::SessionDescriptionInterface* answer = CreateAnswer(NULL);
     // Answer should be NULL as no crypto params in offer.
     ASSERT_TRUE(answer == NULL);
@@ -645,6 +645,28 @@ class WebRtcSessionTest : public testing::Test {
     EXPECT_TRUE(*nocrypto_answer != NULL);
   }
 
+  void CreateDtlsOfferAndNonDtlsAnswer(SessionDescriptionInterface** offer,
+      SessionDescriptionInterface** nodtls_answer) {
+    cricket::MediaSessionOptions options;
+    options.has_video = true;
+    options.bundle_enabled = true;
+
+    talk_base::scoped_ptr<SessionDescriptionInterface> temp_offer(
+        CreateRemoteOffer(options, cricket::SEC_ENABLED));
+
+    *nodtls_answer =
+        CreateRemoteAnswer(temp_offer.get(), options, cricket::SEC_ENABLED);
+    EXPECT_TRUE(*nodtls_answer != NULL);
+    VerifyFingerprintStatus((*nodtls_answer)->description(), false);
+    VerifyCryptoParams((*nodtls_answer)->description());
+
+    SetFactoryDtlsSrtp();
+    *offer = CreateRemoteOffer(options, cricket::SEC_ENABLED);
+    ASSERT_TRUE(*offer != NULL);
+    VerifyFingerprintStatus((*offer)->description(), true);
+    VerifyCryptoParams((*offer)->description());
+  }
+
   JsepSessionDescription* CreateRemoteOfferWithVersion(
         cricket::MediaSessionOptions options,
         cricket::SecurePolicy secure_policy,
@@ -673,8 +695,9 @@ class WebRtcSessionTest : public testing::Test {
                                         kSessionVersion, NULL);
   }
   JsepSessionDescription* CreateRemoteOffer(
-      cricket::MediaSessionOptions options, cricket::SecurePolicy policy) {
-    return CreateRemoteOfferWithVersion(options, policy, kSessionVersion, NULL);
+      cricket::MediaSessionOptions options, cricket::SecurePolicy sdes_policy) {
+    return CreateRemoteOfferWithVersion(
+        options, sdes_policy, kSessionVersion, NULL);
   }
   JsepSessionDescription* CreateRemoteOffer(
       cricket::MediaSessionOptions options,
@@ -938,11 +961,11 @@ class WebRtcSessionTest : public testing::Test {
   void VerifyMultipleAsyncCreateDescription(
       bool success, CreateSessionDescriptionRequest::Type type) {
     InitWithDtls(!success);
-
+    SetFactoryDtlsSrtp();
     if (type == CreateSessionDescriptionRequest::kAnswer) {
       cricket::MediaSessionOptions options;
       scoped_ptr<JsepSessionDescription> offer(
-            CreateRemoteOffer(options, cricket::SEC_REQUIRED));
+            CreateRemoteOffer(options, cricket::SEC_DISABLED));
       ASSERT_TRUE(offer.get() != NULL);
       SetRemoteDescriptionWithoutError(offer.release());
     }
@@ -997,18 +1020,16 @@ class WebRtcSessionTest : public testing::Test {
   cricket::FakeVoiceMediaChannel* voice_channel_;
 };
 
-TEST_F(WebRtcSessionTest, TestInitialize) {
-  Init(NULL);
-}
-
 TEST_F(WebRtcSessionTest, TestInitializeWithDtls) {
   InitWithDtls();
+  // SDES is disabled when DTLS is on.
+  EXPECT_EQ(cricket::SEC_DISABLED, session_->SdesPolicy());
 }
 
-// Verifies that WebRtcSession uses SEC_REQUIRED by default.
-TEST_F(WebRtcSessionTest, TestDefaultSetSecurePolicy) {
+TEST_F(WebRtcSessionTest, TestInitializeWithoutDtls) {
   Init(NULL);
-  EXPECT_EQ(cricket::SEC_REQUIRED, session_->SecurePolicy());
+  // SDES is required if DTLS is off.
+  EXPECT_EQ(cricket::SEC_REQUIRED, session_->SdesPolicy());
 }
 
 TEST_F(WebRtcSessionTest, TestSessionCandidates) {
@@ -1063,7 +1084,7 @@ TEST_F(WebRtcSessionTest, SetSdpFailedOnInvalidSdp) {
 
 // Test creating offers and receive answers and make sure the
 // media engine creates the expected send and receive streams.
-TEST_F(WebRtcSessionTest, TestCreateOfferReceiveAnswer) {
+TEST_F(WebRtcSessionTest, TestCreateSdesOfferReceiveSdesAnswer) {
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream1();
   SessionDescriptionInterface* offer = CreateOffer(NULL);
@@ -1118,14 +1139,16 @@ TEST_F(WebRtcSessionTest, TestCreateOfferReceiveAnswer) {
 
 // Test receiving offers and creating answers and make sure the
 // media engine creates the expected send and receive streams.
-TEST_F(WebRtcSessionTest, TestReceiveOfferCreateAnswer) {
+TEST_F(WebRtcSessionTest, TestReceiveSdesOfferCreateSdesAnswer) {
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream2();
   SessionDescriptionInterface* offer = CreateOffer(NULL);
+  VerifyCryptoParams(offer->description());
   SetRemoteDescriptionWithoutError(offer);
 
   mediastream_signaling_.SendAudioVideoStream1();
   SessionDescriptionInterface* answer = CreateAnswer(NULL);
+  VerifyCryptoParams(answer->description());
   SetLocalDescriptionWithoutError(answer);
 
   const std::string session_id_orig = answer->session_id();
@@ -1186,9 +1209,39 @@ TEST_F(WebRtcSessionTest, SetLocalSdpFailedOnCreateChannel) {
   SetLocalDescriptionOfferExpectError(kCreateChannelFailed, offer);
 }
 
-// Test we will return fail when apply an offer that doesn't have
-// crypto enabled.
-TEST_F(WebRtcSessionTest, SetNonCryptoOffer) {
+//
+// Tests for creating/setting SDP under different SDES/DTLS polices:
+//
+// --DTLS off and SDES on
+// TestCreateSdesOfferReceiveSdesAnswer/TestReceiveSdesOfferCreateSdesAnswer:
+//     set local/remote offer/answer with crypto --> success
+// TestSetNonSdesOfferWhenSdesOn: set local/remote offer without crypto --->
+//     failure
+// TestSetLocalNonSdesAnswerWhenSdesOn: set local answer without crypto -->
+//     failure
+// TestSetRemoteNonSdesAnswerWhenSdesOn: set remote answer without crypto -->
+//     failure
+//
+// --DTLS on and SDES off
+// TestCreateDtlsOfferReceiveDtlsAnswer/TestReceiveDtlsOfferCreateDtlsAnswer:
+//     set local/remote offer/answer with DTLS fingerprint --> success
+// TestReceiveNonDtlsOfferWhenDtlsOn: set local/remote offer without DTLS
+//     fingerprint --> failure
+// TestSetLocalNonDtlsAnswerWhenDtlsOn: set local answer without fingerprint
+//     --> failure
+// TestSetRemoteNonDtlsAnswerWhenDtlsOn: set remote answer without fingerprint
+//     --> failure
+//
+// --Encryption disabled: DTLS off and SDES off
+// TestCreateOfferReceiveAnswerWithoutEncryption: set local offer and remote
+//     answer without SDES or DTLS --> success
+// TestCreateAnswerReceiveOfferWithoutEncryption: set remote offer and local
+//     answer without SDES or DTLS --> success
+//
+
+// Test that we return a failure when applying a remote/local offer that doesn't
+// have cryptos enabled when DTLS is off.
+TEST_F(WebRtcSessionTest, TestSetNonSdesOfferWhenSdesOn) {
   Init(NULL);
   cricket::MediaSessionOptions options;
   options.has_video = true;
@@ -1198,15 +1251,15 @@ TEST_F(WebRtcSessionTest, SetNonCryptoOffer) {
   VerifyNoCryptoParams(offer->description(), false);
   // SetRemoteDescription and SetLocalDescription will take the ownership of
   // the offer.
-  SetRemoteDescriptionOfferExpectError(kSdpWithoutCrypto, offer);
+  SetRemoteDescriptionOfferExpectError(kSdpWithoutSdesCrypto, offer);
   offer = CreateRemoteOffer(options, cricket::SEC_DISABLED);
   ASSERT_TRUE(offer != NULL);
-  SetLocalDescriptionOfferExpectError(kSdpWithoutCrypto, offer);
+  SetLocalDescriptionOfferExpectError(kSdpWithoutSdesCrypto, offer);
 }
 
-// Test we will return fail when apply an answer that doesn't have
-// crypto enabled.
-TEST_F(WebRtcSessionTest, SetLocalNonCryptoAnswer) {
+// Test that we return a failure when applying a local answer that doesn't have
+// cryptos enabled when DTLS is off.
+TEST_F(WebRtcSessionTest, TestSetLocalNonSdesAnswerWhenSdesOn) {
   Init(NULL);
   SessionDescriptionInterface* offer = NULL;
   SessionDescriptionInterface* answer = NULL;
@@ -1214,12 +1267,12 @@ TEST_F(WebRtcSessionTest, SetLocalNonCryptoAnswer) {
   // SetRemoteDescription and SetLocalDescription will take the ownership of
   // the offer.
   SetRemoteDescriptionWithoutError(offer);
-  SetLocalDescriptionAnswerExpectError(kSdpWithoutCrypto, answer);
+  SetLocalDescriptionAnswerExpectError(kSdpWithoutSdesCrypto, answer);
 }
 
-// Test we will return fail when apply an answer that doesn't have
-// crypto enabled.
-TEST_F(WebRtcSessionTest, SetRemoteNonCryptoAnswer) {
+// Test we will return fail when apply an remote answer that doesn't have
+// crypto enabled when DTLS is off.
+TEST_F(WebRtcSessionTest, TestSetRemoteNonSdesAnswerWhenSdesOn) {
   Init(NULL);
   SessionDescriptionInterface* offer = NULL;
   SessionDescriptionInterface* answer = NULL;
@@ -1227,32 +1280,23 @@ TEST_F(WebRtcSessionTest, SetRemoteNonCryptoAnswer) {
   // SetRemoteDescription and SetLocalDescription will take the ownership of
   // the offer.
   SetLocalDescriptionWithoutError(offer);
-  SetRemoteDescriptionAnswerExpectError(kSdpWithoutCrypto, answer);
+  SetRemoteDescriptionAnswerExpectError(kSdpWithoutSdesCrypto, answer);
 }
 
-// Test that we can create and set an offer with a DTLS fingerprint.
-TEST_F(WebRtcSessionTest, CreateSetDtlsOffer) {
+// Test that we accept an offer with a DTLS fingerprint when DTLS is on
+// and that we return an answer with a DTLS fingerprint.
+TEST_F(WebRtcSessionTest, TestReceiveDtlsOfferCreateDtlsAnswer) {
   MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
-  InitWithDtls();
   mediastream_signaling_.SendAudioVideoStream1();
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
-  ASSERT_TRUE(offer != NULL);
-  VerifyFingerprintStatus(offer->description(), true);
-  // SetLocalDescription will take the ownership of the offer.
-  SetLocalDescriptionWithoutError(offer);
-}
-
-// Test that we can process an offer with a DTLS fingerprint
-// and that we return an answer with a fingerprint.
-TEST_F(WebRtcSessionTest, ReceiveDtlsOfferCreateAnswer) {
-  MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
   InitWithDtls();
   SetFactoryDtlsSrtp();
   cricket::MediaSessionOptions options;
   options.has_video = true;
-  JsepSessionDescription* offer = CreateRemoteOffer(options);
+  JsepSessionDescription* offer =
+      CreateRemoteOffer(options, cricket::SEC_DISABLED);
   ASSERT_TRUE(offer != NULL);
   VerifyFingerprintStatus(offer->description(), true);
+  VerifyNoCryptoParams(offer->description(), true);
 
   // SetRemoteDescription will take the ownership of the offer.
   SetRemoteDescriptionWithoutError(offer);
@@ -1268,28 +1312,148 @@ TEST_F(WebRtcSessionTest, ReceiveDtlsOfferCreateAnswer) {
   SetLocalDescriptionWithoutError(answer);
 }
 
-// Test that even if we support DTLS, if the other side didn't offer a
-// fingerprint, we don't either.
-TEST_F(WebRtcSessionTest, ReceiveNoDtlsOfferCreateAnswer) {
+// Test that we set a local offer with a DTLS fingerprint when DTLS is on
+// and then we accept a remote answer with a DTLS fingerprint successfully.
+TEST_F(WebRtcSessionTest, TestCreateDtlsOfferReceiveDtlsAnswer) {
+  MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
+  mediastream_signaling_.SendAudioVideoStream1();
+  InitWithDtls();
+  SetFactoryDtlsSrtp();
+
+  // Verify that we get a crypto fingerprint in the answer.
+  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  ASSERT_TRUE(offer != NULL);
+  VerifyFingerprintStatus(offer->description(), true);
+  // Check that we don't have an a=crypto line in the offer.
+  VerifyNoCryptoParams(offer->description(), true);
+
+  // Now set the local description, which should work, even without a=crypto.
+  SetLocalDescriptionWithoutError(offer);
+
+  cricket::MediaSessionOptions options;
+  options.has_video = true;
+  JsepSessionDescription* answer =
+      CreateRemoteAnswer(offer, options, cricket::SEC_DISABLED);
+  ASSERT_TRUE(answer != NULL);
+  VerifyFingerprintStatus(answer->description(), true);
+  VerifyNoCryptoParams(answer->description(), true);
+
+  // SetRemoteDescription will take the ownership of the answer.
+  SetRemoteDescriptionWithoutError(answer);
+}
+
+// Test that if we support DTLS and the other side didn't offer a fingerprint,
+// we will fail to set the remote description.
+TEST_F(WebRtcSessionTest, TestReceiveNonDtlsOfferWhenDtlsOn) {
   MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
   InitWithDtls();
   cricket::MediaSessionOptions options;
   options.has_video = true;
+  options.bundle_enabled = true;
   JsepSessionDescription* offer = CreateRemoteOffer(
       options, cricket::SEC_REQUIRED);
   ASSERT_TRUE(offer != NULL);
   VerifyFingerprintStatus(offer->description(), false);
+  VerifyCryptoParams(offer->description());
 
-  // SetRemoteDescription will take the ownership of
-  // the offer.
+  // SetRemoteDescription will take the ownership of the offer.
+  SetRemoteDescriptionOfferExpectError(
+      kSdpWithoutDtlsFingerprint, offer);
+
+  offer = CreateRemoteOffer(options, cricket::SEC_REQUIRED);
+  // SetLocalDescription will take the ownership of the offer.
+  SetLocalDescriptionOfferExpectError(
+      kSdpWithoutDtlsFingerprint, offer);
+}
+
+// Test that we return a failure when applying a local answer that doesn't have
+// a DTLS fingerprint when DTLS is required.
+TEST_F(WebRtcSessionTest, TestSetLocalNonDtlsAnswerWhenDtlsOn) {
+  MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
+  InitWithDtls();
+  SessionDescriptionInterface* offer = NULL;
+  SessionDescriptionInterface* answer = NULL;
+  CreateDtlsOfferAndNonDtlsAnswer(&offer, &answer);
+
+  // SetRemoteDescription and SetLocalDescription will take the ownership of
+  // the offer and answer.
+  SetRemoteDescriptionWithoutError(offer);
+  SetLocalDescriptionAnswerExpectError(
+      kSdpWithoutDtlsFingerprint, answer);
+}
+
+// Test that we return a failure when applying a remote answer that doesn't have
+// a DTLS fingerprint when DTLS is required.
+TEST_F(WebRtcSessionTest, TestSetRemoteNonDtlsAnswerWhenDtlsOn) {
+  MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
+  InitWithDtls();
+  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  cricket::MediaSessionOptions options;
+  options.has_video = true;
+  JsepSessionDescription* answer =
+      CreateRemoteAnswer(offer, options, cricket::SEC_ENABLED);
+
+  // SetRemoteDescription and SetLocalDescription will take the ownership of
+  // the offer and answer.
+  SetLocalDescriptionWithoutError(offer);
+  SetRemoteDescriptionAnswerExpectError(
+      kSdpWithoutDtlsFingerprint, answer);
+}
+
+// Test that we create a local offer without SDES or DTLS and accept a remote
+// answer without SDES or DTLS when encryption is disabled.
+TEST_F(WebRtcSessionTest, TestCreateOfferReceiveAnswerWithoutEncryption) {
+  mediastream_signaling_.SendAudioVideoStream1();
+  options_.disable_encryption = true;
+  InitWithDtls();
+
+  // Verify that we get a crypto fingerprint in the answer.
+  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  ASSERT_TRUE(offer != NULL);
+  VerifyFingerprintStatus(offer->description(), false);
+  // Check that we don't have an a=crypto line in the offer.
+  VerifyNoCryptoParams(offer->description(), false);
+
+  // Now set the local description, which should work, even without a=crypto.
+  SetLocalDescriptionWithoutError(offer);
+
+  cricket::MediaSessionOptions options;
+  options.has_video = true;
+  JsepSessionDescription* answer =
+      CreateRemoteAnswer(offer, options, cricket::SEC_DISABLED);
+  ASSERT_TRUE(answer != NULL);
+  VerifyFingerprintStatus(answer->description(), false);
+  VerifyNoCryptoParams(answer->description(), false);
+
+  // SetRemoteDescription will take the ownership of the answer.
+  SetRemoteDescriptionWithoutError(answer);
+}
+
+// Test that we create a local answer without SDES or DTLS and accept a remote
+// offer without SDES or DTLS when encryption is disabled.
+TEST_F(WebRtcSessionTest, TestCreateAnswerReceiveOfferWithoutEncryption) {
+  options_.disable_encryption = true;
+  InitWithDtls();
+
+  cricket::MediaSessionOptions options;
+  options.has_video = true;
+  JsepSessionDescription* offer =
+      CreateRemoteOffer(options, cricket::SEC_DISABLED);
+  ASSERT_TRUE(offer != NULL);
+  VerifyFingerprintStatus(offer->description(), false);
+  VerifyNoCryptoParams(offer->description(), false);
+
+  // SetRemoteDescription will take the ownership of the offer.
   SetRemoteDescriptionWithoutError(offer);
 
-  // Verify that we don't get a crypto fingerprint in the answer.
+  // Verify that we get a crypto fingerprint in the answer.
   SessionDescriptionInterface* answer = CreateAnswer(NULL);
   ASSERT_TRUE(answer != NULL);
   VerifyFingerprintStatus(answer->description(), false);
+  // Check that we don't have an a=crypto line in the answer.
+  VerifyNoCryptoParams(answer->description(), false);
 
-  // Now set the local description.
+  // Now set the local description, which should work, even without a=crypto.
   SetLocalDescriptionWithoutError(answer);
 }
 
@@ -2700,7 +2864,7 @@ TEST_F(WebRtcSessionTest, TestRtpDataChannelConstraintTakesPrecedence) {
       webrtc::MediaConstraintsInterface::kEnableRtpDataChannels, true);
   options_.disable_sctp_data_channels = false;
 
-  InitWithDtls(false);
+  InitWithDtls();
 
   SetLocalDescriptionWithDataChannel();
   EXPECT_EQ(cricket::DCT_RTP, data_engine_->last_channel_type());
@@ -2709,7 +2873,7 @@ TEST_F(WebRtcSessionTest, TestRtpDataChannelConstraintTakesPrecedence) {
 TEST_F(WebRtcSessionTest, TestCreateOfferWithSctpEnabledWithoutStreams) {
   MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
 
-  InitWithDtls(false);
+  InitWithDtls();
 
   talk_base::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer(NULL));
   EXPECT_TRUE(offer->description()->GetContentByName("data") == NULL);
@@ -2719,13 +2883,13 @@ TEST_F(WebRtcSessionTest, TestCreateOfferWithSctpEnabledWithoutStreams) {
 TEST_F(WebRtcSessionTest, TestCreateAnswerWithSctpInOfferAndNoStreams) {
   MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
   SetFactoryDtlsSrtp();
-  InitWithDtls(false);
+  InitWithDtls();
 
   // Create remote offer with SCTP.
   cricket::MediaSessionOptions options;
   options.data_channel_type = cricket::DCT_SCTP;
   JsepSessionDescription* offer =
-      CreateRemoteOffer(options, cricket::SEC_ENABLED);
+      CreateRemoteOffer(options, cricket::SEC_DISABLED);
   SetRemoteDescriptionWithoutError(offer);
 
   // Verifies the answer contains SCTP.
@@ -2739,7 +2903,7 @@ TEST_F(WebRtcSessionTest, TestSctpDataChannelWithoutDtls) {
   constraints_.reset(new FakeConstraints());
   constraints_->AddOptional(
       webrtc::MediaConstraintsInterface::kEnableDtlsSrtp, false);
-  InitWithDtls(false);
+  InitWithDtls();
 
   SetLocalDescriptionWithDataChannel();
   EXPECT_EQ(cricket::DCT_NONE, data_engine_->last_channel_type());
@@ -2748,7 +2912,7 @@ TEST_F(WebRtcSessionTest, TestSctpDataChannelWithoutDtls) {
 TEST_F(WebRtcSessionTest, TestSctpDataChannelWithDtls) {
   MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
 
-  InitWithDtls(false);
+  InitWithDtls();
 
   SetLocalDescriptionWithDataChannel();
   EXPECT_EQ(cricket::DCT_SCTP, data_engine_->last_channel_type());
@@ -2757,7 +2921,7 @@ TEST_F(WebRtcSessionTest, TestSctpDataChannelWithDtls) {
 TEST_F(WebRtcSessionTest, TestDisableSctpDataChannels) {
   MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
   options_.disable_sctp_data_channels = true;
-  InitWithDtls(false);
+  InitWithDtls();
 
   SetLocalDescriptionWithDataChannel();
   EXPECT_EQ(cricket::DCT_NONE, data_engine_->last_channel_type());
@@ -2768,7 +2932,7 @@ TEST_F(WebRtcSessionTest, TestSctpDataChannelSendPortParsing) {
   const int new_send_port = 9998;
   const int new_recv_port = 7775;
 
-  InitWithDtls(false);
+  InitWithDtls();
   SetFactoryDtlsSrtp();
 
   // By default, don't actually add the codecs to desc_factory_; they don't
@@ -2821,34 +2985,41 @@ TEST_F(WebRtcSessionTest, TestSctpDataChannelSendPortParsing) {
 // identity generation is finished.
 TEST_F(WebRtcSessionTest, TestCreateOfferBeforeIdentityRequestReturnSuccess) {
   MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
-  InitWithDtls(false);
+  InitWithDtls();
 
   EXPECT_TRUE(session_->waiting_for_identity());
+  mediastream_signaling_.SendAudioVideoStream1();
   talk_base::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer(NULL));
   EXPECT_TRUE(offer != NULL);
+  VerifyNoCryptoParams(offer->description(), true);
+  VerifyFingerprintStatus(offer->description(), true);
 }
 
 // Verifies that CreateAnswer succeeds when CreateOffer is called before async
 // identity generation is finished.
 TEST_F(WebRtcSessionTest, TestCreateAnswerBeforeIdentityRequestReturnSuccess) {
   MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
-  InitWithDtls(false);
+  InitWithDtls();
+  SetFactoryDtlsSrtp();
 
   cricket::MediaSessionOptions options;
+  options.has_video = true;
   scoped_ptr<JsepSessionDescription> offer(
-        CreateRemoteOffer(options, cricket::SEC_REQUIRED));
+        CreateRemoteOffer(options, cricket::SEC_DISABLED));
   ASSERT_TRUE(offer.get() != NULL);
   SetRemoteDescriptionWithoutError(offer.release());
 
   talk_base::scoped_ptr<SessionDescriptionInterface> answer(CreateAnswer(NULL));
   EXPECT_TRUE(answer != NULL);
+  VerifyNoCryptoParams(answer->description(), true);
+  VerifyFingerprintStatus(answer->description(), true);
 }
 
 // Verifies that CreateOffer succeeds when CreateOffer is called after async
 // identity generation is finished.
 TEST_F(WebRtcSessionTest, TestCreateOfferAfterIdentityRequestReturnSuccess) {
   MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
-  InitWithDtls(false);
+  InitWithDtls();
 
   EXPECT_TRUE_WAIT(!session_->waiting_for_identity(), 1000);
   talk_base::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer(NULL));
@@ -2919,7 +3090,7 @@ TEST_F(WebRtcSessionTest, TestSetRemoteOfferFailIfDtlsDisabledAndNoCrypto) {
   audio->description.identity_fingerprint.reset(
       talk_base::SSLFingerprint::CreateFromRfc4572(
           talk_base::DIGEST_SHA_256, kFakeDtlsFingerprint));
-  SetRemoteDescriptionOfferExpectError(kSdpWithoutSdesAndDtlsDisabled,
+  SetRemoteDescriptionOfferExpectError(kSdpWithoutSdesCrypto,
                                        offer);
 }
 

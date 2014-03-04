@@ -63,7 +63,8 @@ extern const char kInvalidCandidates[];
 extern const char kInvalidSdp[];
 extern const char kMlineMismatch[];
 extern const char kPushDownTDFailed[];
-extern const char kSdpWithoutCrypto[];
+extern const char kSdpWithoutDtlsFingerprint[];
+extern const char kSdpWithoutSdesCrypto[];
 extern const char kSdpWithoutIceUfragPwd[];
 extern const char kSdpWithoutSdesAndDtlsDisabled[];
 extern const char kSessionError[];
@@ -128,8 +129,8 @@ class WebRtcSession : public cricket::BaseSession,
     return data_channel_.get();
   }
 
-  void SetSecurePolicy(cricket::SecureMediaPolicy secure_policy);
-  cricket::SecureMediaPolicy SecurePolicy() const;
+  void SetSdesPolicy(cricket::SecurePolicy secure_policy);
+  cricket::SecurePolicy SdesPolicy() const;
 
   // Get current ssl role from transport.
   bool GetSslRole(talk_base::SSLRole* role);

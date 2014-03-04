@@ -64,11 +64,12 @@ const char kMlineMismatch[] =
     "Offer and answer descriptions m-lines are not matching. Rejecting answer.";
 const char kPushDownTDFailed[] =
     "Failed to push down transport description:";
-const char kSdpWithoutCrypto[] = "Called with a SDP without crypto enabled.";
+const char kSdpWithoutDtlsFingerprint[] =
+    "Called with SDP without DTLS fingerprint.";
+const char kSdpWithoutSdesCrypto[] =
+    "Called with SDP without SDES crypto.";
 const char kSdpWithoutIceUfragPwd[] =
-    "Called with a SDP without ice-ufrag and ice-pwd.";
-const char kSdpWithoutSdesAndDtlsDisabled[] =
-    "Called with a SDP without SDES crypto and DTLS disabled locally.";
+    "Called with SDP without ice-ufrag and ice-pwd.";
 const char kSessionError[] = "Session error code: ";
 const char kSessionErrorDesc[] = "Session error description: ";
 
@@ -112,17 +113,18 @@ static bool VerifyCrypto(const SessionDescription* desc,
       *error = kInvalidSdp;
       return false;
     }
-    if (media->cryptos().empty()) {
+    if (dtls_enabled) {
       if (!tinfo->description.identity_fingerprint) {
-        // Crypto must be supplied.
-        LOG(LS_WARNING) << "Session description must have SDES or DTLS-SRTP.";
-        *error = kSdpWithoutCrypto;
+        LOG(LS_WARNING) <<
+            "Session description must have DTLS fingerprint if DTLS enabled.";
+        *error = kSdpWithoutDtlsFingerprint;
         return false;
       }
-      if (!dtls_enabled) {
+    } else {
+      if (media->cryptos().empty()) {
         LOG(LS_WARNING) <<
             "Session description must have SDES when DTLS disabled.";
-        *error = kSdpWithoutSdesAndDtlsDisabled;
+        *error = kSdpWithoutSdesCrypto;
         return false;
       }
     }
@@ -160,9 +162,8 @@ static bool VerifyIceUfragPwdPresent(const SessionDescription* desc) {
 // current security policy, to ensure a failure occurs if there is an error
 // in crypto negotiation.
 // Called when processing the local session description.
-static void UpdateSessionDescriptionSecurePolicy(
-    cricket::SecureMediaPolicy secure_policy,
-    SessionDescription* sdesc) {
+static void UpdateSessionDescriptionSecurePolicy(cricket::CryptoType type,
+                                                 SessionDescription* sdesc) {
   if (!sdesc) {
     return;
   }
@@ -175,7 +176,7 @@ static void UpdateSessionDescriptionSecurePolicy(
       MediaContentDescription* mdesc =
           static_cast<MediaContentDescription*> (iter->description);
       if (mdesc) {
-        mdesc->set_crypto_required(secure_policy == cricket::SEC_REQUIRED);
+        mdesc->set_crypto_required(type);
       }
     }
   }
@@ -465,14 +466,18 @@ bool WebRtcSession::Initialize(
   // can be null.
   bool value;
 
-  // Enable DTLS by default if |dtls_identity_service| is valid.
-  dtls_enabled_ = (dtls_identity_service != NULL);
-  // |constraints| can override the default |dtls_enabled_| value.
-  if (FindConstraint(
-        constraints,
-        MediaConstraintsInterface::kEnableDtlsSrtp,
-        &value, NULL)) {
-    dtls_enabled_ = value;
+  if (options.disable_encryption) {
+    dtls_enabled_ = false;
+  } else {
+    // Enable DTLS by default if |dtls_identity_service| is valid.
+    dtls_enabled_ = (dtls_identity_service != NULL);
+    // |constraints| can override the default |dtls_enabled_| value.
+    if (FindConstraint(
+          constraints,
+          MediaConstraintsInterface::kEnableDtlsSrtp,
+          &value, NULL)) {
+      dtls_enabled_ = value;
+    }
   }
 
   // Enable creation of RTP data channels if the kEnableRtpDataChannels is set.
@@ -526,7 +531,7 @@ bool WebRtcSession::Initialize(
       this, &WebRtcSession::OnIdentityReady);
 
   if (options.disable_encryption) {
-    webrtc_session_desc_factory_->SetSecure(cricket::SEC_DISABLED);
+    webrtc_session_desc_factory_->SetSdesPolicy(cricket::SEC_DISABLED);
   }
 
   return true;
@@ -554,13 +559,12 @@ bool WebRtcSession::StartCandidatesAllocation() {
   return true;
 }
 
-void WebRtcSession::SetSecurePolicy(
-    cricket::SecureMediaPolicy secure_policy) {
-  webrtc_session_desc_factory_->SetSecure(secure_policy);
+void WebRtcSession::SetSdesPolicy(cricket::SecurePolicy secure_policy) {
+  webrtc_session_desc_factory_->SetSdesPolicy(secure_policy);
 }
 
-cricket::SecureMediaPolicy WebRtcSession::SecurePolicy() const {
-  return webrtc_session_desc_factory_->Secure();
+cricket::SecurePolicy WebRtcSession::SdesPolicy() const {
+  return webrtc_session_desc_factory_->SdesPolicy();
 }
 
 bool WebRtcSession::GetSslRole(talk_base::SSLRole* role) {
@@ -609,10 +613,13 @@ bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,
     set_initiator(true);
   }
 
-  cricket::SecureMediaPolicy secure_policy =
-      webrtc_session_desc_factory_->Secure();
+  cricket::SecurePolicy sdes_policy =
+      webrtc_session_desc_factory_->SdesPolicy();
+  cricket::CryptoType crypto_required = dtls_enabled_ ?
+      cricket::CT_DTLS : (sdes_policy == cricket::SEC_REQUIRED ?
+          cricket::CT_SDES : cricket::CT_NONE);
   // Update the MediaContentDescription crypto settings as per the policy set.
-  UpdateSessionDescriptionSecurePolicy(secure_policy, desc->description());
+  UpdateSessionDescriptionSecurePolicy(crypto_required, desc->description());
 
   set_local_description(desc->description()->Copy());
   local_desc_.reset(desc_temp.release());
@@ -1512,7 +1519,8 @@ bool WebRtcSession::ValidateSessionDescription(
 
   // Verify crypto settings.
   std::string crypto_error;
-  if (webrtc_session_desc_factory_->Secure() == cricket::SEC_REQUIRED &&
+  if ((webrtc_session_desc_factory_->SdesPolicy() == cricket::SEC_REQUIRED ||
+       dtls_enabled_) &&
       !VerifyCrypto(sdesc->description(), dtls_enabled_, &crypto_error)) {
     return BadSdp(source, type, crypto_error, err_desc);
   }

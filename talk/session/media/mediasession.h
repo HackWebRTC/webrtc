@@ -54,9 +54,6 @@ typedef std::vector<DataCodec> DataCodecs;
 typedef std::vector<CryptoParams> CryptoParamsVec;
 typedef std::vector<RtpHeaderExtension> RtpHeaderExtensions;
 
-// TODO(juberti): Replace SecureMediaPolicy with SecurePolicy everywhere.
-typedef SecurePolicy SecureMediaPolicy;
-
 enum MediaType {
   MEDIA_TYPE_AUDIO,
   MEDIA_TYPE_VIDEO,
@@ -70,6 +67,12 @@ enum MediaContentDirection {
   MD_SENDONLY,
   MD_RECVONLY,
   MD_SENDRECV
+};
+
+enum CryptoType {
+  CT_NONE,
+  CT_SDES,
+  CT_DTLS
 };
 
 // RTC4585 RTP/AVPF
@@ -155,7 +158,7 @@ class MediaContentDescription : public ContentDescription {
   MediaContentDescription()
       : rtcp_mux_(false),
         bandwidth_(kAutoBandwidth),
-        crypto_required_(false),
+        crypto_required_(CT_NONE),
         rtp_header_extensions_set_(false),
         multistream_(false),
         conference_mode_(false),
@@ -190,9 +193,10 @@ class MediaContentDescription : public ContentDescription {
   void set_cryptos(const std::vector<CryptoParams>& cryptos) {
     cryptos_ = cryptos;
   }
-  bool crypto_required() const { return crypto_required_; }
-  void set_crypto_required(bool crypto) {
-    crypto_required_ = crypto;
+
+  CryptoType crypto_required() const { return crypto_required_; }
+  void set_crypto_required(CryptoType type) {
+    crypto_required_ = type;
   }
 
   const RtpHeaderExtensions& rtp_header_extensions() const {
@@ -279,7 +283,7 @@ class MediaContentDescription : public ContentDescription {
   int bandwidth_;
   std::string protocol_;
   std::vector<CryptoParams> cryptos_;
-  bool crypto_required_;
+  CryptoType crypto_required_;
   std::vector<RtpHeaderExtension> rtp_header_extensions_;
   bool rtp_header_extensions_set_;
   bool multistream_;

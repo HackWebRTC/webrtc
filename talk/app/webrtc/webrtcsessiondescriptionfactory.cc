@@ -127,8 +127,8 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
       identity_request_state_(IDENTITY_NOT_NEEDED) {
   transport_desc_factory_.set_protocol(cricket::ICEPROTO_HYBRID);
   session_desc_factory_.set_add_legacy_streams(false);
-  // By default SRTP-SDES is enabled in WebRtc.
-  SetSecure(cricket::SEC_REQUIRED);
+  // SRTP-SDES is disabled if DTLS is on.
+  SetSdesPolicy(dtls_enabled ? cricket::SEC_DISABLED : cricket::SEC_REQUIRED);
 
   if (!dtls_enabled) {
     return;
@@ -261,12 +261,12 @@ void WebRtcSessionDescriptionFactory::CreateAnswer(
   }
 }
 
-void WebRtcSessionDescriptionFactory::SetSecure(
-    cricket::SecureMediaPolicy secure_policy) {
+void WebRtcSessionDescriptionFactory::SetSdesPolicy(
+    cricket::SecurePolicy secure_policy) {
   session_desc_factory_.set_secure(secure_policy);
 }
 
-cricket::SecureMediaPolicy WebRtcSessionDescriptionFactory::Secure() const {
+cricket::SecurePolicy WebRtcSessionDescriptionFactory::SdesPolicy() const {
   return session_desc_factory_.secure();
 }
 
@@ -318,7 +318,8 @@ void WebRtcSessionDescriptionFactory::InternalCreateOffer(
   if (!offer->Initialize(desc, session_id_,
                          talk_base::ToString(session_version_++))) {
     delete offer;
-    PostCreateSessionDescriptionFailed(request.observer, "CreateOffer failed.");
+    PostCreateSessionDescriptionFailed(request.observer,
+                                       "Failed to initialize the offer.");
     return;
   }
   if (session_->local_description() &&
@@ -362,7 +363,7 @@ void WebRtcSessionDescriptionFactory::InternalCreateAnswer(
                           talk_base::ToString(session_version_++))) {
     delete answer;
     PostCreateSessionDescriptionFailed(request.observer,
-                                       "CreateAnswer failed.");
+                                       "Failed to initialize the answer.");
     return;
   }
   if (session_->local_description() &&
@@ -380,6 +381,7 @@ void WebRtcSessionDescriptionFactory::PostCreateSessionDescriptionFailed(
   CreateSessionDescriptionMsg* msg = new CreateSessionDescriptionMsg(observer);
   msg->error = error;
   signaling_thread_->Post(this, MSG_CREATE_SESSIONDESCRIPTION_FAILED, msg);
+  LOG(LS_ERROR) << "Create SDP failed: " << error;
 }
 
 void WebRtcSessionDescriptionFactory::PostCreateSessionDescriptionSucceeded(

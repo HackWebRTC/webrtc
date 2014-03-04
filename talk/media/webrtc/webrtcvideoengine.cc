@@ -704,8 +704,9 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
     // TODO(thorcarpenter): Have VideoAdapter be responsible for setting
     // all these video options.
     CoordinatedVideoAdapter* video_adapter = video_capturer_->video_adapter();
-    if (video_options_.adapt_input_to_cpu_usage.Get(&cpu_adapt)) {
-      video_adapter->set_cpu_adaptation(cpu_adapt);
+    if (video_options_.adapt_input_to_cpu_usage.Get(&cpu_adapt) ||
+        overuse_observer_enabled_) {
+      video_adapter->set_cpu_adaptation(cpu_adapt || overuse_observer_enabled_);
     }
     if (video_options_.adapt_cpu_with_smoothing.Get(&cpu_smoothing)) {
       video_adapter->set_cpu_smoothing(cpu_smoothing);
@@ -727,19 +728,18 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
   void SetCpuOveruseDetection(bool enable) {
     overuse_observer_enabled_ = enable;
 
-    if (!overuse_observer_) {
-      // Cannot actually use the overuse detector until it is initialized
-      // with a video adapter.
-      return;
+    if (overuse_observer_) {
+      overuse_observer_->Enable(enable);
     }
-    overuse_observer_->Enable(enable);
 
-    // If overuse detection is enabled, it will signal the video adapter
-    // instead of the cpu monitor. If disabled, connect the adapter to the
-    // cpu monitor.
+    // The video adapter is signaled by overuse detection if enabled; otherwise
+    // it will be signaled by cpu monitor.
     CoordinatedVideoAdapter* adapter = video_adapter();
     if (adapter) {
-      adapter->set_cpu_adaptation(enable);
+      bool cpu_adapt = false;
+      video_options_.adapt_input_to_cpu_usage.Get(&cpu_adapt);
+      adapter->set_cpu_adaptation(
+          adapter->cpu_adaptation() || cpu_adapt || enable);
       if (cpu_monitor_) {
         if (enable) {
           cpu_monitor_->SignalUpdate.disconnect(adapter);

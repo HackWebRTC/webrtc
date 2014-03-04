@@ -220,7 +220,8 @@ class AudioTrackInterface : public MediaStreamTrackInterface {
   // Get the audio processor used by the audio track. Return NULL if the track
   // does not have any processor.
   // TODO(xians): Make the interface pure virtual.
-  virtual AudioProcessorInterface* GetAudioProcessor() { return NULL; }
+  virtual talk_base::scoped_refptr<AudioProcessorInterface>
+      GetAudioProcessor() { return NULL; }
 
   // Get a pointer to the audio renderer of this AudioTrack.
   // The pointer is valid for the lifetime of this AudioTrack.

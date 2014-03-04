@@ -691,7 +691,7 @@ template <class C>
 static bool CreateMediaContentOffer(
     const MediaSessionOptions& options,
     const std::vector<C>& codecs,
-    const SecureMediaPolicy& secure_policy,
+    const SecurePolicy& secure_policy,
     const CryptoParamsVec* current_cryptos,
     const std::vector<std::string>& crypto_suites,
     const RtpHeaderExtensions& rtp_extensions,
@@ -701,7 +701,9 @@ static bool CreateMediaContentOffer(
   offer->AddCodecs(codecs);
   offer->SortCodecs();
 
-  offer->set_crypto_required(secure_policy == SEC_REQUIRED);
+  if (secure_policy == SEC_REQUIRED) {
+    offer->set_crypto_required(CT_SDES);
+  }
   offer->set_rtcp_mux(options.rtcp_mux_enabled);
   offer->set_multistream(options.is_muc);
   offer->set_rtp_header_extensions(rtp_extensions);
@@ -725,7 +727,7 @@ static bool CreateMediaContentOffer(
   }
 #endif
 
-  if (offer->crypto_required() && offer->cryptos().empty()) {
+  if (offer->crypto_required() == CT_SDES && offer->cryptos().empty()) {
     return false;
   }
   return true;
@@ -903,7 +905,7 @@ static bool CreateMediaContentAnswer(
     const MediaContentDescriptionImpl<C>* offer,
     const MediaSessionOptions& options,
     const std::vector<C>& local_codecs,
-    const SecureMediaPolicy& sdes_policy,
+    const SecurePolicy& sdes_policy,
     const CryptoParamsVec* current_cryptos,
     const RtpHeaderExtensions& local_rtp_extenstions,
     StreamParamsVec* current_streams,
@@ -934,7 +936,7 @@ static bool CreateMediaContentAnswer(
   }
 
   if (answer->cryptos().empty() &&
-      (offer->crypto_required() || sdes_policy == SEC_REQUIRED)) {
+      (offer->crypto_required() == CT_SDES || sdes_policy == SEC_REQUIRED)) {
     return false;
   }
 
