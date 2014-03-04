@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <string.h>  // memset
 
+#include <algorithm>
 #include <set>
 #include <sstream>
 #include <string>

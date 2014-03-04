@@ -10,6 +10,7 @@
 
 // Test to verify correct stereo and multi-channel operation.
 
+#include <algorithm>
 #include <string>
 #include <list>
 
