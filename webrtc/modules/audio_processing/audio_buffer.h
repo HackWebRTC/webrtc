@@ -46,17 +46,28 @@ class AudioBuffer {
 
   bool is_muted() const;
 
+  // Use for int16 interleaved data.
   void DeinterleaveFrom(AudioFrame* audioFrame);
   void InterleaveTo(AudioFrame* audioFrame) const;
   // If |data_changed| is false, only the non-audio data members will be copied
   // to |frame|.
   void InterleaveTo(AudioFrame* frame, bool data_changed) const;
+
+  // Use for float deinterleaved data.
+  void CopyFrom(const float* const* data, int samples_per_channel,
+                int num_channels);
+  void CopyTo(int samples_per_channel, int num_channels,
+              float* const* data) const;
+
   void Mix(int num_mixed_channels);
   void CopyAndMix(int num_mixed_channels);
   void CopyAndMixLowPass(int num_mixed_channels);
   void CopyLowPassToReference();
 
  private:
+  // Called from DeinterleaveFrom() and CopyFrom().
+  void InitForNewData(int num_channels);
+
   const int max_num_channels_;
   int num_channels_;
   int num_mixed_channels_;

@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 
+#include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 
 namespace webrtc {
@@ -79,11 +80,9 @@ AudioBuffer::AudioBuffer(int max_num_channels,
     mixed_channels_(NULL),
     mixed_low_pass_channels_(NULL),
     low_pass_reference_channels_(NULL) {
-  if (max_num_channels_ > 1) {
-    channels_.reset(new AudioChannel[max_num_channels_]);
-    mixed_channels_.reset(new AudioChannel[max_num_channels_]);
-    mixed_low_pass_channels_.reset(new AudioChannel[max_num_channels_]);
-  }
+  channels_.reset(new AudioChannel[max_num_channels_]);
+  mixed_channels_.reset(new AudioChannel[max_num_channels_]);
+  mixed_low_pass_channels_.reset(new AudioChannel[max_num_channels_]);
   low_pass_reference_channels_.reset(new AudioChannel[max_num_channels_]);
 
   if (samples_per_channel_ == kSamplesPer32kHzChannel) {
@@ -93,6 +92,17 @@ AudioBuffer::AudioBuffer(int max_num_channels,
 }
 
 AudioBuffer::~AudioBuffer() {}
+
+void AudioBuffer::InitForNewData(int num_channels) {
+  num_channels_ = num_channels;
+  data_ = NULL;
+  data_was_mixed_ = false;
+  num_mixed_channels_ = 0;
+  num_mixed_low_pass_channels_ = 0;
+  reference_copied_ = false;
+  activity_ = AudioFrame::kVadUnknown;
+  is_muted_ = false;
+}
 
 int16_t* AudioBuffer::data(int channel) const {
   assert(channel >= 0 && channel < num_channels_);
@@ -191,13 +201,8 @@ void AudioBuffer::DeinterleaveFrom(AudioFrame* frame) {
   assert(frame->num_channels_ <= max_num_channels_);
   assert(frame->samples_per_channel_ ==  samples_per_channel_);
 
-  num_channels_ = frame->num_channels_;
-  data_was_mixed_ = false;
-  num_mixed_channels_ = 0;
-  num_mixed_low_pass_channels_ = 0;
-  reference_copied_ = false;
+  InitForNewData(frame->num_channels_);
   activity_ = frame->vad_activity_;
-  is_muted_ = false;
   if (frame->energy_ == 0) {
     is_muted_ = true;
   }
@@ -249,6 +254,26 @@ void AudioBuffer::InterleaveTo(AudioFrame* frame, bool data_changed) const {
       interleaved[interleaved_idx] = deinterleaved[j];
       interleaved_idx += num_channels_;
     }
+  }
+}
+
+void AudioBuffer::CopyFrom(const float* const* data, int samples_per_channel,
+                           int num_channels) {
+  assert(num_channels <= max_num_channels_);
+  assert(samples_per_channel ==  samples_per_channel_);
+
+  InitForNewData(num_channels);
+  for (int i = 0; i < num_channels_; ++i) {
+    ScaleAndRoundToInt16(data[i], samples_per_channel, channels_[i].data);
+  }
+}
+
+void AudioBuffer::CopyTo(int samples_per_channel, int num_channels,
+                         float* const* data) const {
+  assert(num_channels == num_channels_);
+  assert(samples_per_channel == samples_per_channel_);
+  for (int i = 0; i < num_channels_; ++i) {
+    ScaleToFloat(channels_[i].data, samples_per_channel, data[i]);
   }
 }
 

@@ -68,7 +68,7 @@
 #if !defined(_MSC_VER)
 #include <stdint.h>
 #else
-// Define C99 equivalent types, since MSVC doesn't provide stdint.h.
+// Define C99 equivalent types, since pre-2010 MSVC doesn't provide stdint.h.
 typedef signed char         int8_t;
 typedef signed short        int16_t;
 typedef signed int          int32_t;

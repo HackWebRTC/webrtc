@@ -63,7 +63,16 @@ class AudioProcessingImpl : public AudioProcessing {
   virtual void set_output_will_be_muted(bool muted) OVERRIDE;
   virtual bool output_will_be_muted() const OVERRIDE;
   virtual int ProcessStream(AudioFrame* frame) OVERRIDE;
+  virtual int ProcessStream(float* const* data,
+                            int samples_per_channel,
+                            int sample_rate_hz,
+                            ChannelLayout input_layout,
+                            ChannelLayout output_layout) OVERRIDE;
   virtual int AnalyzeReverseStream(AudioFrame* frame) OVERRIDE;
+  virtual int AnalyzeReverseStream(const float* const* data,
+                                   int samples_per_channel,
+                                   int sample_rate_hz,
+                                   ChannelLayout layout) OVERRIDE;
   virtual int set_stream_delay_ms(int delay) OVERRIDE;
   virtual int stream_delay_ms() const OVERRIDE;
   virtual bool was_stream_delay_set() const OVERRIDE;
@@ -89,8 +98,11 @@ class AudioProcessingImpl : public AudioProcessing {
  private:
   int MaybeInitializeLocked(int sample_rate_hz, int num_input_channels,
                             int num_output_channels, int num_reverse_channels);
+  int ProcessStreamLocked();
+  int AnalyzeReverseStreamLocked();
+
   bool is_data_processed() const;
-  bool interleave_needed(bool is_data_processed) const;
+  bool output_copy_needed(bool is_data_processed) const;
   bool synthesis_needed(bool is_data_processed) const;
   bool analysis_needed(bool is_data_processed) const;
 

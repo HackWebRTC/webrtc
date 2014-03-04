@@ -135,6 +135,16 @@ struct ExperimentalAgc {
 //
 class AudioProcessing {
  public:
+  enum ChannelLayout {
+    kMono,
+    // Left, right.
+    kStereo,
+    // Mono, keyboard mic.
+    kMonoAndKeyboard,
+    // Left, right, keyboard mic.
+    kStereoAndKeyboard
+  };
+
   // Creates an APM instance. Use one instance for every primary audio stream
   // requiring processing. On the client-side, this would typically be one
   // instance for the near-end stream, and additional instances for each far-end
@@ -205,6 +215,17 @@ class AudioProcessing {
   // method, it will trigger an initialization.
   virtual int ProcessStream(AudioFrame* frame) = 0;
 
+  // Accepts deinterleaved float audio with the range [-1, 1]. Each element
+  // of |data| points to a channel buffer, arranged according to
+  // |input_layout|. At output, the channels will be arranged according to
+  // |output_layout|.
+  // TODO(ajm): Output layout conversion does not yet work.
+  virtual int ProcessStream(float* const* data,
+                            int samples_per_channel,
+                            int sample_rate_hz,
+                            ChannelLayout input_layout,
+                            ChannelLayout output_layout) = 0;
+
   // Analyzes a 10 ms |frame| of the reverse direction audio stream. The frame
   // will not be modified. On the client-side, this is the far-end (or to be
   // rendered) audio.
@@ -221,6 +242,13 @@ class AudioProcessing {
   //
   // TODO(ajm): add const to input; requires an implementation fix.
   virtual int AnalyzeReverseStream(AudioFrame* frame) = 0;
+
+  // Accepts deinterleaved float audio with the range [-1, 1]. Each element
+  // of |data| points to a channel buffer, arranged according to |layout|.
+  virtual int AnalyzeReverseStream(const float* const* data,
+                                   int samples_per_channel,
+                                   int sample_rate_hz,
+                                   ChannelLayout layout) = 0;
 
   // This must be called if and only if echo processing is enabled.
   //

@@ -209,8 +209,15 @@ class MockAudioProcessing : public AudioProcessing {
       bool());
   MOCK_METHOD1(ProcessStream,
       int(AudioFrame* frame));
+  MOCK_METHOD5(ProcessStream,
+      int(float* const* data, int frames, int sample_rate_hz,
+          ChannelLayout input_layout,
+          ChannelLayout output_layout));
   MOCK_METHOD1(AnalyzeReverseStream,
       int(AudioFrame* frame));
+  MOCK_METHOD4(AnalyzeReverseStream,
+      int(const float* const* data, int frames, int sample_rate_hz,
+          ChannelLayout input_layout));
   MOCK_METHOD1(set_stream_delay_ms,
       int(int delay));
   MOCK_CONST_METHOD0(stream_delay_ms,
@@ -242,16 +249,16 @@ class MockAudioProcessing : public AudioProcessing {
   }
   virtual MockHighPassFilter* high_pass_filter() const {
     return high_pass_filter_.get();
-  };
+  }
   virtual MockLevelEstimator* level_estimator() const {
     return level_estimator_.get();
-  };
+  }
   virtual MockNoiseSuppression* noise_suppression() const {
     return noise_suppression_.get();
-  };
+  }
   virtual MockVoiceDetection* voice_detection() const {
     return voice_detection_.get();
-  };
+  }
 
  private:
   scoped_ptr<MockEchoCancellation> echo_cancellation_;

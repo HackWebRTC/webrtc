@@ -16,25 +16,46 @@ namespace webrtc {
 
 void ExpectArraysEq(const int16_t* ref, const int16_t* test, int length) {
   for (int i = 0; i < length; ++i) {
-    EXPECT_EQ(test[i], ref[i]);
+    EXPECT_EQ(ref[i], test[i]);
   }
 }
 
-TEST(AudioUtilTest, Clamp) {
-  EXPECT_EQ(1000.f, ClampInt16(1000.f));
-  EXPECT_EQ(32767.f, ClampInt16(32767.5f));
-  EXPECT_EQ(-32768.f, ClampInt16(-32768.5f));
+void ExpectArraysEq(const float* ref, const float* test, int length) {
+  for (int i = 0; i < length; ++i) {
+    EXPECT_FLOAT_EQ(ref[i], test[i]);
+  }
 }
 
-TEST(AudioUtilTest, Round) {
+TEST(AudioUtilTest, RoundToInt16) {
   const int kSize = 7;
   const float kInput[kSize] = {
       0.f, 0.4f, 0.5f, -0.4f, -0.5f, 32768.f, -32769.f};
   const int16_t kReference[kSize] = {0, 0, 1, 0, -1, 32767, -32768};
   int16_t output[kSize];
   RoundToInt16(kInput, kSize, output);
-  for (int n = 0; n < kSize; ++n)
-    EXPECT_EQ(kReference[n], output[n]);
+  ExpectArraysEq(kReference, output, kSize);
+}
+
+TEST(AudioUtilTest, ScaleAndRoundToInt16) {
+  const int kSize = 9;
+  const float kInput[kSize] = {
+      0.f, 0.4f / 32767.f, 0.6f / 32767.f, -0.4f / 32768.f, -0.6f / 32768.f,
+      1.f, -1.f, 1.1f, -1.1f};
+  const int16_t kReference[kSize] = {
+    0, 0, 1, 0, -1, 32767, -32768, 32767, -32768};
+  int16_t output[kSize];
+  ScaleAndRoundToInt16(kInput, kSize, output);
+  ExpectArraysEq(kReference, output, kSize);
+}
+
+TEST(AudioUtilTest, ScaleToFloat) {
+  const int kSize = 7;
+  const int16_t kInput[kSize] = {0, 1, -1, 16384, -16384, 32767, -32768};
+  const float kReference[kSize] = {
+      0.f, 1.f / 32767.f, -1.f / 32768.f, 16384.f / 32767.f, -0.5f, 1.f, -1.f};
+  float output[kSize];
+  ScaleToFloat(kInput, kSize, output);
+  ExpectArraysEq(kReference, output, kSize);
 }
 
 TEST(AudioUtilTest, InterleavingStereo) {
@@ -47,12 +68,12 @@ TEST(AudioUtilTest, InterleavingStereo) {
   Deinterleave(kInterleaved, kSamplesPerChannel, kNumChannels, deinterleaved);
   const int16_t kRefLeft[] = {2, 4, 8, 16};
   const int16_t kRefRight[] = {3, 9, 27, 81};
-  ExpectArraysEq(left, kRefLeft, kSamplesPerChannel);
-  ExpectArraysEq(right, kRefRight, kSamplesPerChannel);
+  ExpectArraysEq(kRefLeft, left, kSamplesPerChannel);
+  ExpectArraysEq(kRefRight, right, kSamplesPerChannel);
 
   int16_t interleaved[kLength];
   Interleave(deinterleaved, kSamplesPerChannel, kNumChannels, interleaved);
-  ExpectArraysEq(interleaved, kInterleaved, kLength);
+  ExpectArraysEq(kInterleaved, interleaved, kLength);
 }
 
 TEST(AudioUtilTest, InterleavingMonoIsIdentical) {
@@ -62,11 +83,11 @@ TEST(AudioUtilTest, InterleavingMonoIsIdentical) {
   int16_t mono[kSamplesPerChannel];
   int16_t* deinterleaved[] = {mono};
   Deinterleave(kInterleaved, kSamplesPerChannel, kNumChannels, deinterleaved);
-  ExpectArraysEq(mono, kInterleaved, kSamplesPerChannel);
+  ExpectArraysEq(kInterleaved, mono, kSamplesPerChannel);
 
   int16_t interleaved[kSamplesPerChannel];
   Interleave(deinterleaved, kSamplesPerChannel, kNumChannels, interleaved);
-  ExpectArraysEq(interleaved, mono, kSamplesPerChannel);
+  ExpectArraysEq(mono, interleaved, kSamplesPerChannel);
 }
 
 }  // namespace webrtc
