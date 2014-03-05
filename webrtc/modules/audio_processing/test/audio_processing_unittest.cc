@@ -713,11 +713,11 @@ void ApmTest::StreamParametersTest(bool int_format) {
 }
 
 TEST_F(ApmTest, StreamParametersInt) {
-  StreamParametersTest(false);
+  StreamParametersTest(true);
 }
 
 TEST_F(ApmTest, StreamParametersFloat) {
-  StreamParametersTest(true);
+  StreamParametersTest(false);
 }
 
 TEST_F(ApmTest, DefaultDelayOffsetIsZero) {
@@ -777,11 +777,11 @@ void ApmTest::SampleRatesTest(bool int_format) {
 }
 
 TEST_F(ApmTest, SampleRatesInt) {
-  SampleRatesTest(false);
+  SampleRatesTest(true);
 }
 
 TEST_F(ApmTest, SampleRatesFloat) {
-  SampleRatesTest(true);
+  SampleRatesTest(false);
 }
 
 TEST_F(ApmTest, EchoCancellation) {
