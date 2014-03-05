@@ -160,7 +160,7 @@ bool VCMCodecDataBase::SetSendCodec(
   if (max_payload_size <= 0) {
     max_payload_size = kDefaultPayloadSize;
   }
-  if (number_of_cores <= 0 || number_of_cores > 32) {
+  if (number_of_cores <= 0) {
     return false;
   }
   if (send_codec->plType <= 0) {
