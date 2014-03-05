@@ -46,7 +46,8 @@
   },
   'target_defaults': {
     'include_dirs': [
-      '../..',
+      '<(libjingle_root)',
+      '<(DEPTH)',
       '../../third_party',
       '../../third_party/webrtc',
       '../../webrtc',
