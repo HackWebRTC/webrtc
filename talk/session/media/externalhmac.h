@@ -46,10 +46,11 @@
 // crypto_kernel_replace_auth_type function.
 #if defined(HAVE_SRTP) && defined(ENABLE_EXTERNAL_AUTH)
 
+#include "talk/base/basictypes.h"
 #ifdef SRTP_RELATIVE_PATH
-#include "crypto_types.h"  // NOLINT
+#include "auth.h"  // NOLINT
 #else
-#include "third_party/libsrtp/crypto/include/crypto_types.h"
+#include "third_party/libsrtp/crypto/include/auth.h"
 #endif  // SRTP_RELATIVE_PATH
 
 #define EXTERNAL_HMAC_SHA1 HMAC_SHA1 + 1
@@ -59,7 +60,7 @@
 // The pointer to the key  will be allocated in the external_hmac_init function.
 // This pointer is owned by srtp_t in a template context.
 typedef struct {
-  uint8_t key[HMAC_KEY_LENGTH];
+  uint8 key[HMAC_KEY_LENGTH];
   int key_length;
 } external_hmac_ctx_t;
 
