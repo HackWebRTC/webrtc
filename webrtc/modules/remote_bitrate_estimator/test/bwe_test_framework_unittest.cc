@@ -709,12 +709,12 @@ TEST_F(BweTestFramework_ChokeFilterTest, ShortTrace) {
   TestChoke(&filter, 100, 100, 6);
 }
 
-TEST_F(BweTestFramework_ChokeFilterTest, ShortTraceWrap) {
-  // According to the input file 10 packets should be transmitted within
-  // 140 milliseconds (at the wrapping point two packets are sent back to back).
+TEST_F(BweTestFramework_ChokeFilterTest, ShortTraceTwoWraps) {
+  // According to the input file 19 packets should be transmitted within
+  // 280 milliseconds (at the wrapping point two packets are sent back to back).
   TraceBasedDeliveryFilter filter(NULL);
   ASSERT_TRUE(filter.Init(test::ResourcePath("synthetic-trace", "rx")));
-  TestChoke(&filter, 140, 100, 10);
+  TestChoke(&filter, 280, 100, 19);
 }
 
 void TestVideoSender(VideoSender* sender, int64_t run_for_ms,

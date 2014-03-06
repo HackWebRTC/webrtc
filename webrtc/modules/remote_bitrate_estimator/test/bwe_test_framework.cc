@@ -335,6 +335,7 @@ void ChokeFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
 TraceBasedDeliveryFilter::TraceBasedDeliveryFilter(
     PacketProcessorListener* listener)
     : PacketProcessor(listener),
+      current_offset_us_(0),
       delivery_times_us_(),
       next_delivery_it_(),
       local_time_us_(-1),
@@ -345,6 +346,7 @@ TraceBasedDeliveryFilter::TraceBasedDeliveryFilter(
     PacketProcessorListener* listener,
     const std::string& name)
     : PacketProcessor(listener),
+      current_offset_us_(0),
       delivery_times_us_(),
       next_delivery_it_(),
       local_time_us_(-1),
@@ -409,8 +411,9 @@ void TraceBasedDeliveryFilter::ProceedToNextSlot() {
       // When the trace wraps we allow two packets to be sent back-to-back.
       for (TimeList::iterator it = delivery_times_us_.begin();
            it != delivery_times_us_.end(); ++it) {
-        *it += local_time_us_;
+        *it += local_time_us_ - current_offset_us_;
       }
+      current_offset_us_ += local_time_us_ - current_offset_us_;
       next_delivery_it_ = delivery_times_us_.begin();
     }
   }

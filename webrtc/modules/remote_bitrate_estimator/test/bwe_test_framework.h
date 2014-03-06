@@ -312,6 +312,7 @@ class TraceBasedDeliveryFilter : public PacketProcessor {
   void ProceedToNextSlot();
 
   typedef std::vector<int64_t> TimeList;
+  int64_t current_offset_us_;
   TimeList delivery_times_us_;
   TimeList::const_iterator next_delivery_it_;
   int64_t local_time_us_;
