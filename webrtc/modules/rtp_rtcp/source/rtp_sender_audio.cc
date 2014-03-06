@@ -17,7 +17,7 @@
 
 namespace webrtc {
 RTPSenderAudio::RTPSenderAudio(const int32_t id, Clock* clock,
-                               RTPSenderInterface* rtpSender) :
+                               RTPSender* rtpSender) :
     _id(id),
     _clock(clock),
     _rtpSender(rtpSender),
@@ -42,8 +42,6 @@ RTPSenderAudio::RTPSenderAudio(const int32_t id, Clock* clock,
     _cngSWBPayloadType(-1),
     _cngFBPayloadType(-1),
     _lastPayloadType(-1),
-    _includeAudioLevelIndication(false),    // @TODO - reset at Init()?
-    _audioLevelIndicationID(0),
     _audioLevel_dBov(0) {
 };
 
@@ -365,52 +363,12 @@ int32_t RTPSenderAudio::SendAudio(
   if (rtpHeaderLength <= 0) {
     return -1;
   }
+  if (maxPayloadLength < (rtpHeaderLength + payloadSize)) {
+    // Too large payload buffer.
+    return -1;
+  }
   {
     CriticalSectionScoped cs(_sendAudioCritsect);
-
-    // https://datatracker.ietf.org/doc/draft-lennox-avt-rtp-audio-level-exthdr/
-    if (_includeAudioLevelIndication) {
-      dataBuffer[0] |= 0x10; // set eXtension bit
-      /*
-        0                   1                   2                   3
-        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-        |      0xBE     |      0xDE     |            length=1           |
-        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-        |  ID   | len=0 |V|   level     |      0x00     |      0x00     |
-        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       */
-      // add our ID (0xBEDE)
-      ModuleRTPUtility::AssignUWord16ToBuffer(dataBuffer+rtpHeaderLength,
-                                              RTP_AUDIO_LEVEL_UNIQUE_ID);
-      rtpHeaderLength += 2;
-
-      // add the length (length=1) in number of word32
-      const uint8_t length = 1;
-      ModuleRTPUtility::AssignUWord16ToBuffer(dataBuffer+rtpHeaderLength,
-                                              length);
-      rtpHeaderLength += 2;
-
-      // add ID (defined by the user) and len(=0) byte
-      const uint8_t id = _audioLevelIndicationID;
-      const uint8_t len = 0;
-      dataBuffer[rtpHeaderLength++] = (id << 4) + len;
-
-      // add voice-activity flag (V) bit and the audio level (in dBov)
-      const uint8_t V = (frameType == kAudioFrameSpeech);
-      uint8_t level = _audioLevel_dBov;
-      dataBuffer[rtpHeaderLength++] = (V << 7) + level;
-
-      // add two bytes zero padding
-      ModuleRTPUtility::AssignUWord16ToBuffer(dataBuffer+rtpHeaderLength, 0);
-      rtpHeaderLength += 2;
-    }
-
-    if(maxPayloadLength < rtpHeaderLength + payloadSize ) {
-      // too large payload buffer
-      return -1;
-    }
-
     if (_REDPayloadType >= 0 &&  // Have we configured RED?
         fragmentation &&
         fragmentation->fragmentationVectorSize > 1 &&
@@ -474,6 +432,17 @@ int32_t RTPSenderAudio::SendAudio(
       }
     }
     _lastPayloadType = payloadType;
+
+    // Update audio level extension, if included.
+    {
+      uint16_t packetSize = payloadSize + rtpHeaderLength;
+      ModuleRTPUtility::RTPHeaderParser rtp_parser(dataBuffer, packetSize);
+      RTPHeader rtp_header;
+      rtp_parser.Parse(rtp_header);
+      _rtpSender->UpdateAudioLevel(dataBuffer, packetSize, rtp_header,
+                                   (frameType == kAudioFrameSpeech),
+                                   _audioLevel_dBov);
+    }
   }  // end critical section
   TRACE_EVENT_ASYNC_END2("webrtc", "Audio", captureTimeStamp,
                          "timestamp", _rtpSender->Timestamp(),
@@ -484,32 +453,6 @@ int32_t RTPSenderAudio::SendAudio(
                                    -1,
                                    kAllowRetransmission,
                                    PacedSender::kHighPriority);
-}
-
-int32_t
-RTPSenderAudio::SetAudioLevelIndicationStatus(const bool enable,
-                                              const uint8_t ID)
-{
-    if(enable && (ID < 1 || ID > 14))
-    {
-        return -1;
-    }
-    CriticalSectionScoped cs(_sendAudioCritsect);
-
-    _includeAudioLevelIndication = enable;
-    _audioLevelIndicationID = ID;
-
-    return 0;
-}
-
-int32_t
-RTPSenderAudio::AudioLevelIndicationStatus(bool& enable,
-                                           uint8_t& ID) const
-{
-    CriticalSectionScoped cs(_sendAudioCritsect);
-    enable = _includeAudioLevelIndication;
-    ID = _audioLevelIndicationID;
-    return 0;
 }
 
     // Audio level magnitude and voice activity flag are set for each RTP packet

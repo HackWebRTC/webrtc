@@ -1117,9 +1117,8 @@ uint16_t RTPSender::BuildRTPHeaderExtension(uint8_t* data_buffer) const {
             data_buffer + kHeaderLength + total_block_length);
         break;
       case kRtpExtensionAudioLevel:
-        // Because AudioLevel is handled specially by RTPSenderAudio, we pretend
-        // we don't have to care about it here, which is true until we wan't to
-        // use it together with any of the other extensions we support.
+        block_length = BuildAudioLevelExtension(
+            data_buffer + kHeaderLength + total_block_length);
         break;
       case kRtpExtensionAbsoluteSendTime:
         block_length = BuildAbsoluteSendTimeExtension(
@@ -1179,8 +1178,42 @@ uint8_t RTPSender::BuildTransmissionTimeOffsetExtension(
   return kTransmissionTimeOffsetLength;
 }
 
-uint8_t RTPSender::BuildAbsoluteSendTimeExtension(
-    uint8_t* data_buffer) const {
+uint8_t RTPSender::BuildAudioLevelExtension(uint8_t* data_buffer) const {
+  // An RTP Header Extension for Client-to-Mixer Audio Level Indication
+  //
+  // https://datatracker.ietf.org/doc/draft-lennox-avt-rtp-audio-level-exthdr/
+  //
+  // The form of the audio level extension block:
+  //
+  //    0                   1                   2                   3
+  //    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+  //    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  //    |  ID   | len=0 |V|   level     |      0x00     |      0x00     |
+  //    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  //
+  // Note that we always include 2 pad bytes, which will result in legal and
+  // correctly parsed RTP, but may be a bit wasteful if more short extensions
+  // are implemented. Right now the pad bytes would anyway be required at end
+  // of the extension block, so it makes no difference.
+
+  // Get id defined by user.
+  uint8_t id;
+  if (rtp_header_extension_map_.GetId(kRtpExtensionAudioLevel, &id) != 0) {
+    // Not registered.
+    return 0;
+  }
+  size_t pos = 0;
+  const uint8_t len = 0;
+  data_buffer[pos++] = (id << 4) + len;
+  data_buffer[pos++] = (1 << 7) + 0;     // Voice, 0 dBov.
+  data_buffer[pos++] = 0;                // Padding.
+  data_buffer[pos++] = 0;                // Padding.
+  // kAudioLevelLength is including pad bytes.
+  assert(pos == kAudioLevelLength);
+  return kAudioLevelLength;
+}
+
+uint8_t RTPSender::BuildAbsoluteSendTimeExtension(uint8_t* data_buffer) const {
   // Absolute send time in RTP streams.
   //
   // The absolute send time is signaled to the receiver in-band using the
@@ -1262,6 +1295,55 @@ bool RTPSender::UpdateTransmissionTimeOffset(
   // Update transmission offset field (converting to a 90 kHz timestamp).
   ModuleRTPUtility::AssignUWord24ToBuffer(rtp_packet + block_pos + 1,
                                           time_diff_ms * 90);  // RTP timestamp.
+  return true;
+}
+
+bool RTPSender::UpdateAudioLevel(uint8_t *rtp_packet,
+                                 const uint16_t rtp_packet_length,
+                                 const RTPHeader &rtp_header,
+                                 const bool is_voiced,
+                                 const uint8_t dBov) const {
+  CriticalSectionScoped cs(send_critsect_);
+
+  // Get length until start of header extension block.
+  int extension_block_pos =
+      rtp_header_extension_map_.GetLengthUntilBlockStartInBytes(
+          kRtpExtensionAudioLevel);
+  if (extension_block_pos < 0) {
+    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, id_,
+                 "Failed to update audio level, not registered.");
+    return false;
+  }
+  int block_pos = 12 + rtp_header.numCSRCs + extension_block_pos;
+  if (rtp_packet_length < block_pos + kAudioLevelLength ||
+      rtp_header.headerLength < block_pos + kAudioLevelLength) {
+    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, id_,
+                 "Failed to update audio level, invalid length.");
+    return false;
+  }
+  // Verify that header contains extension.
+  if (!((rtp_packet[12 + rtp_header.numCSRCs] == 0xBE) &&
+        (rtp_packet[12 + rtp_header.numCSRCs + 1] == 0xDE))) {
+    WEBRTC_TRACE(
+        kTraceStream, kTraceRtpRtcp, id_,
+        "Failed to update audio level, hdr extension not found.");
+    return false;
+  }
+  // Get id.
+  uint8_t id = 0;
+  if (rtp_header_extension_map_.GetId(kRtpExtensionAudioLevel, &id) != 0) {
+    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, id_,
+                 "Failed to update audio level, no id.");
+    return false;
+  }
+  // Verify first byte in block.
+  const uint8_t first_block_byte = (id << 4) + 0;
+  if (rtp_packet[block_pos] != first_block_byte) {
+    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, id_,
+                 "Failed to update audio level.");
+    return false;
+  }
+  rtp_packet[block_pos + 1] = (is_voiced ? 0x80 : 0x00) + (dBov & 0x7f);
   return true;
 }
 
@@ -1461,19 +1543,6 @@ int32_t RTPSender::SetAudioPacketSize(
     return -1;
   }
   return audio_->SetAudioPacketSize(packet_size_samples);
-}
-
-int32_t RTPSender::SetAudioLevelIndicationStatus(const bool enable,
-                                                 const uint8_t ID) {
-  if (!audio_configured_) {
-    return -1;
-  }
-  return audio_->SetAudioLevelIndicationStatus(enable, ID);
-}
-
-int32_t RTPSender::AudioLevelIndicationStatus(bool *enable,
-                                              uint8_t* id) const {
-  return audio_->AudioLevelIndicationStatus(*enable, *id);
 }
 
 int32_t RTPSender::SetAudioLevel(const uint8_t level_d_bov) {

@@ -63,13 +63,17 @@ public:
     virtual int GetRemoteSSRC(int channel, unsigned int& ssrc);
 
     // RTP Header Extension for Client-to-Mixer Audio Level Indication
-    virtual int SetRTPAudioLevelIndicationStatus(int channel,
-                                                 bool enable,
-                                                 unsigned char ID);
+    virtual int SetSendAudioLevelIndicationStatus(int channel,
+                                                  bool enable,
+                                                  unsigned char id);
 
-    virtual int GetRTPAudioLevelIndicationStatus(int channel,
-                                                 bool& enabled,
-                                                 unsigned char& ID);
+    // RTP Header Extension for Absolute Sender Time
+    virtual int SetSendAbsoluteSenderTimeStatus(int channel,
+                                                bool enable,
+                                                unsigned char id);
+    virtual int SetReceiveAbsoluteSenderTimeStatus(int channel,
+                                                   bool enable,
+                                                   unsigned char id);
 
     // CSRC
     virtual int GetRemoteCSRCs(int channel, unsigned int arrCSRC[15]);

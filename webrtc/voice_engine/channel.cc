@@ -3503,9 +3503,7 @@ Channel::GetRemoteCSRCs(unsigned int arrCSRC[15])
     return CSRCs;
 }
 
-int
-Channel::SetRTPAudioLevelIndicationStatus(bool enable, unsigned char ID)
-{
+int Channel::SetSendAudioLevelIndicationStatus(bool enable, unsigned char id) {
   if (rtp_audioproc_.get() == NULL) {
     rtp_audioproc_.reset(AudioProcessing::Create(VoEModuleId(_instanceId,
                                                              _channelId)));
@@ -3519,23 +3517,24 @@ Channel::SetRTPAudioLevelIndicationStatus(bool enable, unsigned char ID)
   }
 
   _includeAudioLevelIndication = enable;
-  if (enable) {
-    rtp_header_parser_->RegisterRtpHeaderExtension(kRtpExtensionAudioLevel,
-                                                   ID);
-  } else {
-    rtp_header_parser_->DeregisterRtpHeaderExtension(kRtpExtensionAudioLevel);
-  }
-  return _rtpRtcpModule->SetRTPAudioLevelIndicationStatus(enable, ID);
+
+  return SetSendRtpHeaderExtension(enable, kRtpExtensionAudioLevel, id);
 }
 
-int
-Channel::GetRTPAudioLevelIndicationStatus(bool& enabled, unsigned char& ID)
-{
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
-                 VoEId(_instanceId,_channelId),
-                 "GetRTPAudioLevelIndicationStatus() => enabled=%d, ID=%u",
-                 enabled, ID);
-    return _rtpRtcpModule->GetRTPAudioLevelIndicationStatus(enabled, ID);
+int Channel::SetSendAbsoluteSenderTimeStatus(bool enable, unsigned char id) {
+  return SetSendRtpHeaderExtension(enable, kRtpExtensionAbsoluteSendTime, id);
+}
+
+int Channel::SetReceiveAbsoluteSenderTimeStatus(bool enable, unsigned char id) {
+  rtp_header_parser_->DeregisterRtpHeaderExtension(
+      kRtpExtensionAbsoluteSendTime);
+  if (enable) {
+    if (!rtp_header_parser_->RegisterRtpHeaderExtension(
+        kRtpExtensionAbsoluteSendTime, id)) {
+      return -1;
+    }
+  }
+  return 0;
 }
 
 int
@@ -5059,5 +5058,14 @@ int Channel::SetRedPayloadType(int red_payload_type) {
   return 0;
 }
 
+int Channel::SetSendRtpHeaderExtension(bool enable, RTPExtensionType type,
+                                       unsigned char id) {
+  int error = 0;
+  _rtpRtcpModule->DeregisterSendRtpHeaderExtension(type);
+  if (enable) {
+    error = _rtpRtcpModule->RegisterSendRtpHeaderExtension(type, id);
+  }
+  return error;
+}
 }  // namespace voe
 }  // namespace webrtc

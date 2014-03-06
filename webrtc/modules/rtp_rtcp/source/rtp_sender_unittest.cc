@@ -160,11 +160,8 @@ TEST_F(RtpSenderTest, RegisterRtpAudioLevelHeaderExtension) {
   EXPECT_EQ(0, rtp_sender_->RtpHeaderExtensionTotalLength());
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
       kRtpExtensionAudioLevel, kAudioLevelExtensionId));
-  // Accounted size for audio level is zero because it is currently specially
-  // treated by RTPSenderAudio.
-  EXPECT_EQ(0, rtp_sender_->RtpHeaderExtensionTotalLength());
-  // EXPECT_EQ(kRtpOneByteHeaderLength + kAudioLevelLength,
-  //           rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(kRtpOneByteHeaderLength + kAudioLevelLength,
+            rtp_sender_->RtpHeaderExtensionTotalLength());
   EXPECT_EQ(0, rtp_sender_->DeregisterRtpHeaderExtension(
       kRtpExtensionAudioLevel));
   EXPECT_EQ(0, rtp_sender_->RtpHeaderExtensionTotalLength());
@@ -183,14 +180,16 @@ TEST_F(RtpSenderTest, RegisterRtpHeaderExtensions) {
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
       kRtpExtensionAudioLevel, kAudioLevelExtensionId));
   EXPECT_EQ(kRtpOneByteHeaderLength + kTransmissionTimeOffsetLength +
-      kAbsoluteSendTimeLength, rtp_sender_->RtpHeaderExtensionTotalLength());
-  EXPECT_EQ(0, rtp_sender_->DeregisterRtpHeaderExtension(
-      kRtpExtensionTransmissionTimeOffset));
-  EXPECT_EQ(kRtpOneByteHeaderLength + kAbsoluteSendTimeLength,
+      kAbsoluteSendTimeLength + kAudioLevelLength,
       rtp_sender_->RtpHeaderExtensionTotalLength());
   EXPECT_EQ(0, rtp_sender_->DeregisterRtpHeaderExtension(
+      kRtpExtensionTransmissionTimeOffset));
+  EXPECT_EQ(kRtpOneByteHeaderLength + kAbsoluteSendTimeLength +
+      kAudioLevelLength, rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(0, rtp_sender_->DeregisterRtpHeaderExtension(
       kRtpExtensionAbsoluteSendTime));
-  EXPECT_EQ(0, rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(kRtpOneByteHeaderLength + kAudioLevelLength,
+      rtp_sender_->RtpHeaderExtensionTotalLength());
   EXPECT_EQ(0, rtp_sender_->DeregisterRtpHeaderExtension(
       kRtpExtensionAudioLevel));
   EXPECT_EQ(0, rtp_sender_->RtpHeaderExtensionTotalLength());
@@ -202,23 +201,24 @@ TEST_F(RtpSenderTest, BuildRTPPacket) {
                                                kMarkerBit,
                                                kTimestamp,
                                                0);
-  EXPECT_EQ(12, length);
+  EXPECT_EQ(kRtpHeaderSize, length);
 
   // Verify
   webrtc::ModuleRTPUtility::RTPHeaderParser rtp_parser(packet_, length);
   webrtc::RTPHeader rtp_header;
 
-  RtpHeaderExtensionMap map;
-  map.Register(kRtpExtensionTransmissionTimeOffset,
-               kTransmissionTimeOffsetExtensionId);
-  const bool valid_rtp_header = rtp_parser.Parse(rtp_header, &map);
+  const bool valid_rtp_header = rtp_parser.Parse(rtp_header, NULL);
 
   ASSERT_TRUE(valid_rtp_header);
   ASSERT_FALSE(rtp_parser.RTCP());
   VerifyRTPHeaderCommon(rtp_header);
   EXPECT_EQ(length, rtp_header.headerLength);
+  EXPECT_FALSE(rtp_header.extension.hasTransmissionTimeOffset);
+  EXPECT_FALSE(rtp_header.extension.hasAbsoluteSendTime);
+  EXPECT_FALSE(rtp_header.extension.hasAudioLevel);
   EXPECT_EQ(0, rtp_header.extension.transmissionTimeOffset);
   EXPECT_EQ(0u, rtp_header.extension.absoluteSendTime);
+  EXPECT_EQ(0u, rtp_header.extension.audioLevel);
 }
 
 TEST_F(RtpSenderTest, BuildRTPPacketWithTransmissionOffsetExtension) {
@@ -231,7 +231,8 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithTransmissionOffsetExtension) {
                                                kMarkerBit,
                                                kTimestamp,
                                                0);
-  EXPECT_EQ(12 + rtp_sender_->RtpHeaderExtensionTotalLength(), length);
+  EXPECT_EQ(kRtpHeaderSize + rtp_sender_->RtpHeaderExtensionTotalLength(),
+      length);
 
   // Verify
   webrtc::ModuleRTPUtility::RTPHeaderParser rtp_parser(packet_, length);
@@ -246,6 +247,7 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithTransmissionOffsetExtension) {
   ASSERT_FALSE(rtp_parser.RTCP());
   VerifyRTPHeaderCommon(rtp_header);
   EXPECT_EQ(length, rtp_header.headerLength);
+  EXPECT_TRUE(rtp_header.extension.hasTransmissionTimeOffset);
   EXPECT_EQ(kTimeOffset, rtp_header.extension.transmissionTimeOffset);
 
   // Parse without map extension
@@ -255,6 +257,7 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithTransmissionOffsetExtension) {
   ASSERT_TRUE(valid_rtp_header2);
   VerifyRTPHeaderCommon(rtp_header2);
   EXPECT_EQ(length, rtp_header2.headerLength);
+  EXPECT_FALSE(rtp_header2.extension.hasTransmissionTimeOffset);
   EXPECT_EQ(0, rtp_header2.extension.transmissionTimeOffset);
 }
 
@@ -269,7 +272,8 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithNegativeTransmissionOffsetExtension) {
                                                kMarkerBit,
                                                kTimestamp,
                                                0);
-  EXPECT_EQ(12 + rtp_sender_->RtpHeaderExtensionTotalLength(), length);
+  EXPECT_EQ(kRtpHeaderSize + rtp_sender_->RtpHeaderExtensionTotalLength(),
+      length);
 
   // Verify
   webrtc::ModuleRTPUtility::RTPHeaderParser rtp_parser(packet_, length);
@@ -284,6 +288,7 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithNegativeTransmissionOffsetExtension) {
   ASSERT_FALSE(rtp_parser.RTCP());
   VerifyRTPHeaderCommon(rtp_header);
   EXPECT_EQ(length, rtp_header.headerLength);
+  EXPECT_TRUE(rtp_header.extension.hasTransmissionTimeOffset);
   EXPECT_EQ(kNegTimeOffset, rtp_header.extension.transmissionTimeOffset);
 }
 
@@ -297,7 +302,8 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithAbsoluteSendTimeExtension) {
                                                kMarkerBit,
                                                kTimestamp,
                                                0);
-  EXPECT_EQ(12 + rtp_sender_->RtpHeaderExtensionTotalLength(), length);
+  EXPECT_EQ(kRtpHeaderSize + rtp_sender_->RtpHeaderExtensionTotalLength(),
+      length);
 
   // Verify
   webrtc::ModuleRTPUtility::RTPHeaderParser rtp_parser(packet_, length);
@@ -311,6 +317,7 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithAbsoluteSendTimeExtension) {
   ASSERT_FALSE(rtp_parser.RTCP());
   VerifyRTPHeaderCommon(rtp_header);
   EXPECT_EQ(length, rtp_header.headerLength);
+  EXPECT_TRUE(rtp_header.extension.hasAbsoluteSendTime);
   EXPECT_EQ(kAbsoluteSendTime, rtp_header.extension.absoluteSendTime);
 
   // Parse without map extension
@@ -320,7 +327,52 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithAbsoluteSendTimeExtension) {
   ASSERT_TRUE(valid_rtp_header2);
   VerifyRTPHeaderCommon(rtp_header2);
   EXPECT_EQ(length, rtp_header2.headerLength);
+  EXPECT_FALSE(rtp_header2.extension.hasAbsoluteSendTime);
   EXPECT_EQ(0u, rtp_header2.extension.absoluteSendTime);
+}
+
+TEST_F(RtpSenderTest, BuildRTPPacketWithAudioLevelExtension) {
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+      kRtpExtensionAudioLevel, kAudioLevelExtensionId));
+
+  int32_t length = rtp_sender_->BuildRTPheader(packet_,
+                                               kPayload,
+                                               kMarkerBit,
+                                               kTimestamp,
+                                               0);
+  EXPECT_EQ(kRtpHeaderSize + rtp_sender_->RtpHeaderExtensionTotalLength(),
+      length);
+
+  // Verify
+  webrtc::ModuleRTPUtility::RTPHeaderParser rtp_parser(packet_, length);
+  webrtc::RTPHeader rtp_header;
+
+  // Updating audio level is done in RTPSenderAudio, so simulate it here.
+  rtp_parser.Parse(rtp_header);
+  rtp_sender_->UpdateAudioLevel(packet_, length, rtp_header, true, kAudioLevel);
+
+  RtpHeaderExtensionMap map;
+  map.Register(kRtpExtensionAudioLevel, kAudioLevelExtensionId);
+  const bool valid_rtp_header = rtp_parser.Parse(rtp_header, &map);
+
+  ASSERT_TRUE(valid_rtp_header);
+  ASSERT_FALSE(rtp_parser.RTCP());
+  VerifyRTPHeaderCommon(rtp_header);
+  EXPECT_EQ(length, rtp_header.headerLength);
+  EXPECT_TRUE(rtp_header.extension.hasAudioLevel);
+  // Expect kAudioLevel + 0x80 because we set "voiced" to true in the call to
+  // UpdateAudioLevel(), above.
+  EXPECT_EQ(kAudioLevel + 0x80u, rtp_header.extension.audioLevel);
+
+  // Parse without map extension
+  webrtc::RTPHeader rtp_header2;
+  const bool valid_rtp_header2 = rtp_parser.Parse(rtp_header2, NULL);
+
+  ASSERT_TRUE(valid_rtp_header2);
+  VerifyRTPHeaderCommon(rtp_header2);
+  EXPECT_EQ(length, rtp_header2.headerLength);
+  EXPECT_FALSE(rtp_header2.extension.hasAudioLevel);
+  EXPECT_EQ(0u, rtp_header2.extension.audioLevel);
 }
 
 TEST_F(RtpSenderTest, BuildRTPPacketWithHeaderExtensions) {
@@ -330,30 +382,42 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithHeaderExtensions) {
       kRtpExtensionTransmissionTimeOffset, kTransmissionTimeOffsetExtensionId));
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
       kRtpExtensionAbsoluteSendTime, kAbsoluteSendTimeExtensionId));
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+      kRtpExtensionAudioLevel, kAudioLevelExtensionId));
 
   int32_t length = rtp_sender_->BuildRTPheader(packet_,
                                                kPayload,
                                                kMarkerBit,
                                                kTimestamp,
                                                0);
-  EXPECT_EQ(12 + rtp_sender_->RtpHeaderExtensionTotalLength(), length);
+  EXPECT_EQ(kRtpHeaderSize + rtp_sender_->RtpHeaderExtensionTotalLength(),
+      length);
 
   // Verify
   webrtc::ModuleRTPUtility::RTPHeaderParser rtp_parser(packet_, length);
   webrtc::RTPHeader rtp_header;
 
+  // Updating audio level is done in RTPSenderAudio, so simulate it here.
+  rtp_parser.Parse(rtp_header);
+  rtp_sender_->UpdateAudioLevel(packet_, length, rtp_header, true, kAudioLevel);
+
   RtpHeaderExtensionMap map;
   map.Register(kRtpExtensionTransmissionTimeOffset,
                kTransmissionTimeOffsetExtensionId);
   map.Register(kRtpExtensionAbsoluteSendTime, kAbsoluteSendTimeExtensionId);
+  map.Register(kRtpExtensionAudioLevel, kAudioLevelExtensionId);
   const bool valid_rtp_header = rtp_parser.Parse(rtp_header, &map);
 
   ASSERT_TRUE(valid_rtp_header);
   ASSERT_FALSE(rtp_parser.RTCP());
   VerifyRTPHeaderCommon(rtp_header);
   EXPECT_EQ(length, rtp_header.headerLength);
+  EXPECT_TRUE(rtp_header.extension.hasTransmissionTimeOffset);
+  EXPECT_TRUE(rtp_header.extension.hasAbsoluteSendTime);
+  EXPECT_TRUE(rtp_header.extension.hasAudioLevel);
   EXPECT_EQ(kTimeOffset, rtp_header.extension.transmissionTimeOffset);
   EXPECT_EQ(kAbsoluteSendTime, rtp_header.extension.absoluteSendTime);
+  EXPECT_EQ(kAudioLevel + 0x80u, rtp_header.extension.audioLevel);
 
   // Parse without map extension
   webrtc::RTPHeader rtp_header2;
@@ -362,8 +426,12 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithHeaderExtensions) {
   ASSERT_TRUE(valid_rtp_header2);
   VerifyRTPHeaderCommon(rtp_header2);
   EXPECT_EQ(length, rtp_header2.headerLength);
+  EXPECT_FALSE(rtp_header2.extension.hasTransmissionTimeOffset);
+  EXPECT_FALSE(rtp_header2.extension.hasAbsoluteSendTime);
+  EXPECT_FALSE(rtp_header2.extension.hasAudioLevel);
   EXPECT_EQ(0, rtp_header2.extension.transmissionTimeOffset);
   EXPECT_EQ(0u, rtp_header2.extension.absoluteSendTime);
+  EXPECT_EQ(0u, rtp_header2.extension.audioLevel);
 }
 
 TEST_F(RtpSenderTest, TrafficSmoothingWithExtensions) {
@@ -493,7 +561,7 @@ TEST_F(RtpSenderTest, SendPadding) {
   uint16_t seq_num = kSeqNum;
   uint32_t timestamp = kTimestamp;
   rtp_sender_->SetStorePacketsStatus(true, 10);
-  int rtp_header_len = 12;
+  int32_t rtp_header_len = kRtpHeaderSize;
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
       kRtpExtensionTransmissionTimeOffset, kTransmissionTimeOffsetExtensionId));
   rtp_header_len += 4;  // 4 bytes extension.
@@ -613,7 +681,7 @@ TEST_F(RtpSenderTest, SendRedundantPayloads) {
 
   uint16_t seq_num = kSeqNum;
   rtp_sender_->SetStorePacketsStatus(true, 10);
-  int rtp_header_len = 12;
+  int32_t rtp_header_len = kRtpHeaderSize;
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
       kRtpExtensionAbsoluteSendTime, kAbsoluteSendTimeExtensionId));
   rtp_header_len += 4;  // 4 bytes extension.
@@ -939,48 +1007,6 @@ TEST_F(RtpSenderTest, StreamDataCountersCallbacks) {
   rtp_sender_->RegisterRtpStatisticsCallback(NULL);
 }
 
-TEST_F(RtpSenderAudioTest, BuildRTPPacketWithAudioLevelExtension) {
-  EXPECT_EQ(0, rtp_sender_->SetAudioLevelIndicationStatus(true,
-      kAudioLevelExtensionId));
-  EXPECT_EQ(0, rtp_sender_->SetAudioLevel(kAudioLevel));
-  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
-      kRtpExtensionAudioLevel, kAudioLevelExtensionId));
-
-  int32_t length = rtp_sender_->BuildRTPheader(packet_,
-                                               kAudioPayload,
-                                               kMarkerBit,
-                                               kTimestamp,
-                                               0);
-  EXPECT_EQ(12 + rtp_sender_->RtpHeaderExtensionTotalLength(), length);
-
-  // Currently, no space is added by for header extension by BuildRTPHeader().
-  EXPECT_EQ(0, rtp_sender_->RtpHeaderExtensionTotalLength());
-
-  // Verify
-  webrtc::ModuleRTPUtility::RTPHeaderParser rtp_parser(packet_, length);
-  webrtc::RTPHeader rtp_header;
-
-  RtpHeaderExtensionMap map;
-  map.Register(kRtpExtensionAudioLevel, kAudioLevelExtensionId);
-  const bool valid_rtp_header = rtp_parser.Parse(rtp_header, &map);
-
-  ASSERT_TRUE(valid_rtp_header);
-  ASSERT_FALSE(rtp_parser.RTCP());
-  VerifyRTPHeaderCommon(rtp_header);
-  EXPECT_EQ(length, rtp_header.headerLength);
-  // TODO(solenberg): Should verify that we got audio level in header extension.
-
-  // Parse without map extension
-  webrtc::RTPHeader rtp_header2;
-  const bool valid_rtp_header2 = rtp_parser.Parse(rtp_header2, NULL);
-
-  ASSERT_TRUE(valid_rtp_header2);
-  VerifyRTPHeaderCommon(rtp_header2);
-  EXPECT_EQ(length, rtp_header2.headerLength);
-  // TODO(solenberg): Should verify that we didn't get audio level.
-  EXPECT_EQ(0, rtp_sender_->SetAudioLevelIndicationStatus(false, 0));
-}
-
 TEST_F(RtpSenderAudioTest, SendAudio) {
   char payload_name[RTP_PAYLOAD_NAME_SIZE] = "PAYLOAD_NAME";
   const uint8_t payload_type = 127;
@@ -1007,8 +1033,6 @@ TEST_F(RtpSenderAudioTest, SendAudio) {
 }
 
 TEST_F(RtpSenderAudioTest, SendAudioWithAudioLevelExtension) {
-  EXPECT_EQ(0, rtp_sender_->SetAudioLevelIndicationStatus(true,
-      kAudioLevelExtensionId));
   EXPECT_EQ(0, rtp_sender_->SetAudioLevel(kAudioLevel));
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
       kRtpExtensionAudioLevel, kAudioLevelExtensionId));
@@ -1044,7 +1068,6 @@ TEST_F(RtpSenderAudioTest, SendAudioWithAudioLevelExtension) {
 
   EXPECT_EQ(0, memcmp(extension, payload_data - sizeof(extension),
                       sizeof(extension)));
-  EXPECT_EQ(0, rtp_sender_->SetAudioLevelIndicationStatus(false, 0));
 }
 
 }  // namespace webrtc

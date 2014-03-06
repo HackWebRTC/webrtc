@@ -398,6 +398,10 @@ bool RTPHeaderParser::Parse(RTPHeader& header,
   header.extension.hasAbsoluteSendTime = false;
   header.extension.absoluteSendTime = 0;
 
+  // May not be present in packet.
+  header.extension.hasAudioLevel = false;
+  header.extension.audioLevel = 0;
+
   if (X) {
     /* RTP header extension, RFC 3550.
      0                   1                   2                   3
@@ -496,7 +500,11 @@ void RTPHeaderParser::ParseOneByteExtensionHeader(
         break;
       }
       case kRtpExtensionAudioLevel: {
-        //   --- Only used for debugging ---
+        if (len != 0) {
+          WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
+                       "Incorrect audio level len: %d", len);
+          return;
+        }
         //  0                   1                   2                   3
         //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
         // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -509,6 +517,9 @@ void RTPHeaderParser::ParseOneByteExtensionHeader(
         // const uint8_t level = (*ptr & 0x7f);
         // DEBUG_PRINT("RTP_AUDIO_LEVEL_UNIQUE_ID: ID=%u, len=%u, V=%u,
         // level=%u", ID, len, V, level);
+
+        header.extension.audioLevel = *ptr++;
+        header.extension.hasAudioLevel = true;
         break;
       }
       case kRtpExtensionAbsoluteSendTime: {

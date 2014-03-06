@@ -671,25 +671,6 @@ class RtpRtcp : public Module {
          int8_t& payloadType) const = 0;
 
      /*
-     * Set status and ID for header-extension-for-audio-level-indication.
-     * See http://tools.ietf.org/html/rfc6464 for more details.
-     *
-     * return -1 on failure else 0
-     */
-     virtual int32_t SetRTPAudioLevelIndicationStatus(
-         const bool enable,
-         const uint8_t ID) = 0;
-
-     /*
-     * Get status and ID for header-extension-for-audio-level-indication.
-     *
-     * return -1 on failure else 0
-     */
-     virtual int32_t GetRTPAudioLevelIndicationStatus(
-         bool& enable,
-         uint8_t& ID) const = 0;
-
-     /*
      * Store the audio level in dBov for header-extension-for-audio-level-
      * indication.
      * This API shall be called before transmision of an RTP packet to ensure

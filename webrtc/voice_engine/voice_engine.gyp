@@ -184,6 +184,7 @@
             'test/auto_test/standard/neteq_test.cc',
             'test/auto_test/standard/network_test.cc',
             'test/auto_test/standard/rtp_rtcp_before_streaming_test.cc',
+            'test/auto_test/standard/rtp_rtcp_extensions.cc',
             'test/auto_test/standard/rtp_rtcp_test.cc',
             'test/auto_test/standard/voe_base_misc_test.cc',
             'test/auto_test/standard/video_sync_test.cc',

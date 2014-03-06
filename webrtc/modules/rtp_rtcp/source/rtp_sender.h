@@ -153,15 +153,19 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
 
   uint16_t BuildRTPHeaderExtension(uint8_t* data_buffer) const;
 
-  uint8_t BuildTransmissionTimeOffsetExtension(
-      uint8_t *data_buffer) const;
-  uint8_t BuildAbsoluteSendTimeExtension(
-      uint8_t* data_buffer) const;
+  uint8_t BuildTransmissionTimeOffsetExtension(uint8_t *data_buffer) const;
+  uint8_t BuildAudioLevelExtension(uint8_t* data_buffer) const;
+  uint8_t BuildAbsoluteSendTimeExtension(uint8_t* data_buffer) const;
 
   bool UpdateTransmissionTimeOffset(uint8_t *rtp_packet,
                                     const uint16_t rtp_packet_length,
                                     const RTPHeader &rtp_header,
                                     const int64_t time_diff_ms) const;
+  bool UpdateAudioLevel(uint8_t *rtp_packet,
+                        const uint16_t rtp_packet_length,
+                        const RTPHeader &rtp_header,
+                        const bool is_voiced,
+                        const uint8_t dBov) const;
   bool UpdateAbsoluteSendTime(uint8_t *rtp_packet,
                               const uint16_t rtp_packet_length,
                               const RTPHeader &rtp_header,
@@ -227,12 +231,6 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
   // Set audio packet size, used to determine when it's time to send a DTMF
   // packet in silence (CNG).
   int32_t SetAudioPacketSize(const uint16_t packet_size_samples);
-
-  // Set status and ID for header-extension-for-audio-level-indication.
-  int32_t SetAudioLevelIndicationStatus(const bool enable, const uint8_t ID);
-
-  // Get status and ID for header-extension-for-audio-level-indication.
-  int32_t AudioLevelIndicationStatus(bool *enable, uint8_t *id) const;
 
   // Store the audio level in d_bov for
   // header-extension-for-audio-level-indication.

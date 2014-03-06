@@ -253,8 +253,9 @@ public:
     int GetLocalSSRC(unsigned int& ssrc);
     int GetRemoteSSRC(unsigned int& ssrc);
     int GetRemoteCSRCs(unsigned int arrCSRC[15]);
-    int SetRTPAudioLevelIndicationStatus(bool enable, unsigned char ID);
-    int GetRTPAudioLevelIndicationStatus(bool& enable, unsigned char& ID);
+    int SetSendAudioLevelIndicationStatus(bool enable, unsigned char id);
+    int SetSendAbsoluteSenderTimeStatus(bool enable, unsigned char id);
+    int SetReceiveAbsoluteSenderTimeStatus(bool enable, unsigned char id);
     int SetRTCPStatus(bool enable);
     int GetRTCPStatus(bool& enabled);
     int SetRTCP_CNAME(const char cName[256]);
@@ -438,6 +439,8 @@ private:
     void RegisterReceiveCodecsToRTPModule();
 
     int SetRedPayloadType(int red_payload_type);
+    int SetSendRtpHeaderExtension(bool enable, RTPExtensionType type,
+                                  unsigned char id);
 
     CriticalSectionWrapper& _fileCritSect;
     CriticalSectionWrapper& _callbackCritSect;

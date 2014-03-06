@@ -1209,29 +1209,6 @@ int32_t ModuleRtpRtcpImpl::SetAudioPacketSize(
   return rtp_sender_.SetAudioPacketSize(packet_size_samples);
 }
 
-int32_t ModuleRtpRtcpImpl::SetRTPAudioLevelIndicationStatus(
-    const bool enable,
-    const uint8_t id) {
-
-  WEBRTC_TRACE(kTraceModuleCall,
-               kTraceRtpRtcp,
-               id_,
-               "SetRTPAudioLevelIndicationStatus(enable=%d, ID=%u)",
-               enable,
-               id);
-  return rtp_sender_.SetAudioLevelIndicationStatus(enable, id);
-}
-
-int32_t ModuleRtpRtcpImpl::GetRTPAudioLevelIndicationStatus(
-    bool& enable,
-    uint8_t& id) const {
-  WEBRTC_TRACE(kTraceModuleCall,
-               kTraceRtpRtcp,
-               id_,
-               "GetRTPAudioLevelIndicationStatus()");
-  return rtp_sender_.AudioLevelIndicationStatus(&enable, &id);
-}
-
 int32_t ModuleRtpRtcpImpl::SetAudioLevel(
     const uint8_t level_d_bov) {
   WEBRTC_TRACE(kTraceModuleCall,
