@@ -528,10 +528,16 @@ TEST_F(RampUpTest, UpDownUpOneStream) { RunRampUpDownUpTest(1, false); }
 
 // TODO(hlundin): Find out why these tests are failing on some bots and
 // re-enable.
-//TEST_F(RampUpTest, UpDownUpThreeStreams) { RunRampUpDownUpTest(3, false); }
-//
-//TEST_F(RampUpTest, UpDownUpOneStreamRtx) { RunRampUpDownUpTest(1, true); }
-//
-//TEST_F(RampUpTest, UpDownUpThreeStreamsRtx) { RunRampUpDownUpTest(3, true); }
+TEST_F(RampUpTest, DISABLED_UpDownUpThreeStreams) {
+  RunRampUpDownUpTest(3, false);
+}
+
+TEST_F(RampUpTest, DISABLED_UpDownUpOneStreamRtx) {
+  RunRampUpDownUpTest(1, true);
+}
+
+TEST_F(RampUpTest, DISABLED_UpDownUpThreeStreamsRtx) {
+  RunRampUpDownUpTest(3, true);
+}
 
 }  // namespace webrtc
