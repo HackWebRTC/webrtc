@@ -833,10 +833,10 @@ int NetEqImpl::GetAudioInternal(size_t max_length, int16_t* output,
     sync_buffer_->set_dtmf_index(sync_buffer_->Size());
   }
 
-  if ((last_mode_ != kModeExpand) && (last_mode_ != kModeRfc3389Cng)) {
-    // If last operation was neither expand, nor comfort noise, calculate the
-    // |playout_timestamp_| from the |sync_buffer_|. However, do not update the
-    // |playout_timestamp_| if it would be moved "backwards".
+  if (last_mode_ != kModeExpand) {
+    // If last operation was not expand, calculate the |playout_timestamp_| from
+    // the |sync_buffer_|. However, do not update the |playout_timestamp_| if it
+    // would be moved "backwards".
     uint32_t temp_timestamp = sync_buffer_->end_timestamp() -
         static_cast<uint32_t>(sync_buffer_->FutureLength());
     if (static_cast<int32_t>(temp_timestamp - playout_timestamp_) > 0) {

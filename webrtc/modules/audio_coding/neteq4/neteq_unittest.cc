@@ -788,15 +788,14 @@ void NetEqDecodingTest::LongCngWithClockDrift(double drift_factor) {
   EXPECT_GE(delay_after, delay_before - 20 * 16);
 }
 
-TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(LongCngWithClockNegativeDrift)) {
+TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(LongCngWithNegativeClockDrift)) {
   // Apply a clock drift of -25 ms / s (sender faster than receiver).
   const double kDriftFactor = 1000.0 / (1000.0 + 25.0);
   LongCngWithClockDrift(kDriftFactor);
 }
 
 // TODO(hlundin): Re-enable this test and fix the issues to make it pass.
-TEST_F(NetEqDecodingTest,
-       DISABLED_ON_ANDROID(DISABLED_LongCngWithClockPositiveDrift)) {
+TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(LongCngWithPositiveClockDrift)) {
   // Apply a clock drift of +25 ms / s (sender slower than receiver).
   const double kDriftFactor = 1000.0 / (1000.0 - 25.0);
   LongCngWithClockDrift(kDriftFactor);
