@@ -1083,12 +1083,38 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
 }
 
 TEST_F(VideoSendStreamTest, ProducesStats) {
-  static std::string kCName = "PjQatC14dGfbVwGPUOA9IH7RlsFDbWl4AhXEiDsBizo=";
+  static const std::string kCName =
+      "PjQatC14dGfbVwGPUOA9IH7RlsFDbWl4AhXEiDsBizo=";
+  static const uint32_t kTimeoutMs = 30 * 1000;
   class StatsObserver : public test::RtpRtcpObserver {
    public:
-    StatsObserver() : RtpRtcpObserver(30 * 1000), stream_(NULL) {}
+    StatsObserver()
+        : RtpRtcpObserver(kTimeoutMs),
+          stream_(NULL),
+          event_(EventWrapper::Create()) {}
 
     virtual Action OnSendRtcp(const uint8_t* packet, size_t length) OVERRIDE {
+      event_->Set();
+
+      return SEND_PACKET;
+    }
+
+    bool WaitForFilledStats() {
+      Clock* clock = Clock::GetRealTimeClock();
+      int64_t now = clock->TimeInMilliseconds();
+      int64_t stop_time = now + kTimeoutMs;
+      while (now < stop_time) {
+        int64_t time_left = stop_time - now;
+        if (time_left > 0 && event_->Wait(time_left) == kEventSignaled &&
+            CheckStats()) {
+          return true;
+        }
+        now = clock->TimeInMilliseconds();
+      }
+      return false;
+    }
+
+    bool CheckStats() {
       VideoSendStream::Stats stats = stream_->GetStats();
       // Check that all applicable data sources have been used.
       if (stats.input_frame_rate > 0 && stats.encode_frame_rate > 0 &&
@@ -1101,14 +1127,13 @@ TEST_F(VideoSendStreamTest, ProducesStats) {
                 config_.rtp.ssrcs.begin(), config_.rtp.ssrcs.end(), ssrc));
         // Check for data populated by various sources. RTCP excluded as this
         // data is received from remote side. Tested in call tests instead.
-        StreamStats& entry = stats.substreams[ssrc];
+        const StreamStats& entry = stats.substreams[ssrc];
         if (entry.key_frames > 0u && entry.bitrate_bps > 0 &&
             entry.rtp_stats.packets > 0u) {
-          observation_complete_->Set();
+          return true;
         }
       }
-
-      return SEND_PACKET;
+      return false;
     }
 
     void SetConfig(const VideoSendStream::Config& config) { config_ = config; }
@@ -1117,6 +1142,7 @@ TEST_F(VideoSendStreamTest, ProducesStats) {
 
     VideoSendStream* stream_;
     VideoSendStream::Config config_;
+    scoped_ptr<EventWrapper> event_;
   } observer;
 
   Call::Config call_config(observer.SendTransport());
@@ -1134,7 +1160,8 @@ TEST_F(VideoSendStreamTest, ProducesStats) {
   send_stream_->StartSending();
   frame_generator_capturer->Start();
 
-  EXPECT_EQ(kEventSignaled, observer.Wait());
+  EXPECT_TRUE(observer.WaitForFilledStats())
+      << "Timed out waiting for filled statistics.";
 
   observer.StopSending();
   frame_generator_capturer->Stop();
