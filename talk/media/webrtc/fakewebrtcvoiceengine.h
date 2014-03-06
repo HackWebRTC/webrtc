@@ -60,6 +60,15 @@ static const int kFakeDeviceId = 1;
 #endif
 
 
+// Verify the header extension ID, if enabled, is within the bounds specified in
+// [RFC5285]: 1-14 inclusive.
+#define WEBRTC_CHECK_HEADER_EXTENSION_ID(enable, id) \
+  do { \
+    if (enable && (id < 1 || id > 14)) { \
+      return -1; \
+    } \
+  } while (0);
+
 class FakeWebRtcVoiceEngine
     : public webrtc::VoEAudioProcessing,
       public webrtc::VoEBase, public webrtc::VoECodec, public webrtc::VoEDtmf,
@@ -98,7 +107,9 @@ class FakeWebRtcVoiceEngine
           fec_type(117),
           nack_max_packets(0),
           send_ssrc(0),
-          level_header_ext_(-1),
+          send_audio_level_ext_(-1),
+          send_absolute_sender_time_ext_(-1),
+          receive_absolute_sender_time_ext_(-1),
           using_experimental_acm(use_experimental_acm) {
       memset(&send_codec, 0, sizeof(send_codec));
       memset(&rx_agc_config, 0, sizeof(rx_agc_config));
@@ -123,7 +134,9 @@ class FakeWebRtcVoiceEngine
     int fec_type;
     int nack_max_packets;
     uint32 send_ssrc;
-    int level_header_ext_;
+    int send_audio_level_ext_;
+    int send_absolute_sender_time_ext_;
+    int receive_absolute_sender_time_ext_;
     DtmfInfo dtmf_info;
     std::vector<webrtc::CodecInst> recv_codecs;
     webrtc::CodecInst send_codec;
@@ -273,6 +286,15 @@ class FakeWebRtcVoiceEngine
     }
     channels_[++last_channel_] = ch;
     return last_channel_;
+  }
+  int GetSendAudioLevelId(int channel) {
+    return channels_[channel]->send_audio_level_ext_;
+  }
+  int GetSendAbsoluteSenderTimeId(int channel) {
+    return channels_[channel]->send_absolute_sender_time_ext_;
+  }
+  int GetReceiveAbsoluteSenderTimeId(int channel) {
+    return channels_[channel]->receive_absolute_sender_time_ext_;
   }
 
   WEBRTC_STUB(Release, ());
@@ -489,7 +511,6 @@ class FakeWebRtcVoiceEngine
   WEBRTC_STUB(SetDtmfPlayoutStatus, (int channel, bool enable));
   WEBRTC_STUB(GetDtmfPlayoutStatus, (int channel, bool& enabled));
 
-
   WEBRTC_FUNC(PlayDtmfTone,
       (int event_code, int length_ms = 200, int attenuation_db = 10)) {
     dtmf_info_.dtmf_event_code = event_code;
@@ -685,24 +706,41 @@ class FakeWebRtcVoiceEngine
     return 0;
   }
   WEBRTC_STUB(GetRemoteSSRC, (int channel, unsigned int& ssrc));
+#ifndef USE_WEBRTC_DEV_BRANCH
   WEBRTC_FUNC(SetRTPAudioLevelIndicationStatus, (int channel, bool enable,
       unsigned char id)) {
     WEBRTC_CHECK_CHANNEL(channel);
-    if (enable && (id < 1 || id > 14)) {
-      // [RFC5285] The 4-bit ID is the local identifier of this element in
-      // the range 1-14 inclusive.
-      return -1;
-    }
-    channels_[channel]->level_header_ext_ = (enable) ? id : -1;
+    WEBRTC_CHECK_HEADER_EXTENSION_ID(enable, id);
+    channels_[channel]->send_audio_level_ext_ = (enable) ? id : -1;
     return 0;
   }
-  WEBRTC_FUNC(GetRTPAudioLevelIndicationStatus, (int channel, bool& enabled,
-      unsigned char& id)) {
+  WEBRTC_STUB(GetRTPAudioLevelIndicationStatus, (int channel, bool& enable,
+      unsigned char& id));
+#endif
+#ifdef USE_WEBRTC_DEV_BRANCH
+  WEBRTC_FUNC(SetSendAudioLevelIndicationStatus, (int channel, bool enable,
+      unsigned char id)) {
     WEBRTC_CHECK_CHANNEL(channel);
-    enabled = (channels_[channel]->level_header_ext_ != -1);
-    id = channels_[channel]->level_header_ext_;
+    WEBRTC_CHECK_HEADER_EXTENSION_ID(enable, id);
+    channels_[channel]->send_audio_level_ext_ = (enable) ? id : -1;
     return 0;
   }
+  WEBRTC_FUNC(SetSendAbsoluteSenderTimeStatus, (int channel, bool enable,
+      unsigned char id)) {
+    WEBRTC_CHECK_CHANNEL(channel);
+    WEBRTC_CHECK_HEADER_EXTENSION_ID(enable, id);
+    channels_[channel]->send_absolute_sender_time_ext_ = (enable) ? id : -1;
+    return 0;
+  }
+  WEBRTC_FUNC(SetReceiveAbsoluteSenderTimeStatus, (int channel, bool enable,
+      unsigned char id)) {
+    WEBRTC_CHECK_CHANNEL(channel);
+    WEBRTC_CHECK_HEADER_EXTENSION_ID(enable, id);
+    channels_[channel]->receive_absolute_sender_time_ext_ = (enable) ? id : -1;
+    return 0;
+  }
+#endif
+
   WEBRTC_STUB(GetRemoteCSRCs, (int channel, unsigned int arrCSRC[15]));
   WEBRTC_STUB(SetRTCPStatus, (int channel, bool enable));
   WEBRTC_STUB(GetRTCPStatus, (int channel, bool& enabled));
@@ -1067,6 +1105,8 @@ class FakeWebRtcVoiceEngine
   DtmfInfo dtmf_info_;
   webrtc::VoEMediaProcess* media_processor_;
 };
+
+#undef WEBRTC_CHECK_HEADER_EXTENSION_ID
 
 }  // namespace cricket
 

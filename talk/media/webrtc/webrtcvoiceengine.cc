@@ -107,12 +107,6 @@ static const int kDefaultSoundclipDeviceId = -2;
 static const int kDefaultAudioDeviceId = 0;
 #endif
 
-// extension header for audio levels, as defined in
-// http://tools.ietf.org/html/draft-ietf-avtext-client-to-mixer-audio-level-03
-static const char kRtpAudioLevelHeaderExtension[] =
-    "urn:ietf:params:rtp-hdrext:ssrc-audio-level";
-static const int kRtpAudioLevelHeaderExtensionId = 1;
-
 static const char kIsacCodecName[] = "ISAC";
 static const char kL16CodecName[] = "L16";
 // Codec parameters for Opus.
@@ -391,7 +385,12 @@ void WebRtcVoiceEngine::Construct() {
   // Load our RTP Header extensions.
   rtp_header_extensions_.push_back(
       RtpHeaderExtension(kRtpAudioLevelHeaderExtension,
-                         kRtpAudioLevelHeaderExtensionId));
+                         kRtpAudioLevelHeaderExtensionDefaultId));
+#ifdef USE_WEBRTC_DEV_BRANCH
+  rtp_header_extensions_.push_back(
+      RtpHeaderExtension(kRtpAbsoluteSenderTimeHeaderExtension,
+                         kRtpAbsoluteSenderTimeHeaderExtensionDefaultId));
+#endif
   options_ = GetDefaultEngineOptions();
 
   // Initialize the VoE Configuration to the default ACM.
@@ -2218,43 +2217,74 @@ bool WebRtcVoiceMediaChannel::SetSendCodec(
 
 bool WebRtcVoiceMediaChannel::SetRecvRtpHeaderExtensions(
     const std::vector<RtpHeaderExtension>& extensions) {
-  // We don't support any incoming extensions headers right now.
+#ifdef USE_WEBRTC_DEV_BRANCH
+  const RtpHeaderExtension* send_time_extension =
+      FindHeaderExtension(extensions, kRtpAbsoluteSenderTimeHeaderExtension);
+
+  // Loop through all receive channels and enable/disable the extensions.
+  for (ChannelMap::const_iterator channel_it = receive_channels_.begin();
+       channel_it != receive_channels_.end(); ++channel_it) {
+    int channel_id = channel_it->second->channel();
+    if (!SetHeaderExtension(
+        &webrtc::VoERTP_RTCP::SetReceiveAbsoluteSenderTimeStatus, channel_id,
+        send_time_extension)) {
+      return false;
+    }
+  }
+#endif
   return true;
 }
 
 bool WebRtcVoiceMediaChannel::SetSendRtpHeaderExtensions(
     const std::vector<RtpHeaderExtension>& extensions) {
-  // Enable the audio level extension header if requested.
-  std::vector<RtpHeaderExtension>::const_iterator it;
-  for (it = extensions.begin(); it != extensions.end(); ++it) {
-    if (it->uri == kRtpAudioLevelHeaderExtension) {
-      break;
-    }
+  const RtpHeaderExtension* audio_level_extension =
+      FindHeaderExtension(extensions, kRtpAudioLevelHeaderExtension);
+#ifdef USE_WEBRTC_DEV_BRANCH
+  const RtpHeaderExtension* send_time_extension =
+      FindHeaderExtension(extensions, kRtpAbsoluteSenderTimeHeaderExtension);
+#endif
+
+#ifndef USE_WEBRTC_DEV_BRANCH
+  if (!SetHeaderExtension(
+      &webrtc::VoERTP_RTCP::SetRTPAudioLevelIndicationStatus, voe_channel(),
+      audio_level_extension)) {
+    return false;
   }
+#else
+  if (!SetHeaderExtension(
+      &webrtc::VoERTP_RTCP::SetSendAudioLevelIndicationStatus, voe_channel(),
+      audio_level_extension)) {
+    return false;
+  }
+  if (!SetHeaderExtension(
+      &webrtc::VoERTP_RTCP::SetSendAbsoluteSenderTimeStatus, voe_channel(),
+      send_time_extension)) {
+    return false;
+  }
+#endif
 
-  bool enable = (it != extensions.end());
-  int id = 0;
-
-  if (enable) {
-    id = it->id;
-    if (id < kMinRtpHeaderExtensionId ||
-        id > kMaxRtpHeaderExtensionId) {
-      LOG(LS_WARNING) << "Invalid RTP header extension id " << id;
+  for (ChannelMap::const_iterator channel_it = send_channels_.begin();
+       channel_it != send_channels_.end(); ++channel_it) {
+    int channel_id = channel_it->second->channel();
+#ifndef USE_WEBRTC_DEV_BRANCH
+    if (!SetHeaderExtension(
+        &webrtc::VoERTP_RTCP::SetRTPAudioLevelIndicationStatus, channel_id,
+        audio_level_extension)) {
       return false;
     }
-  }
-
-  LOG(LS_INFO) << "Enabling audio level header extension with ID " << id;
-  for (ChannelMap::const_iterator iter = send_channels_.begin();
-       iter != send_channels_.end(); ++iter) {
-    if (engine()->voe()->rtp()->SetRTPAudioLevelIndicationStatus(
-            iter->second->channel(), enable, id) == -1) {
-      LOG_RTCERR3(SetRTPAudioLevelIndicationStatus,
-                  iter->second->channel(), enable, id);
+#else
+    if (!SetHeaderExtension(
+        &webrtc::VoERTP_RTCP::SetSendAudioLevelIndicationStatus, channel_id,
+        audio_level_extension)) {
       return false;
     }
+    if (!SetHeaderExtension(
+        &webrtc::VoERTP_RTCP::SetSendAbsoluteSenderTimeStatus, channel_id,
+        send_time_extension)) {
+      return false;
+    }
+#endif
   }
-
   return true;
 }
 
@@ -3483,6 +3513,21 @@ VoiceMediaChannel::Error
     default:
       return VoiceMediaChannel::ERROR_OTHER;
   }
+}
+
+bool WebRtcVoiceMediaChannel::SetHeaderExtension(ExtensionSetterFunction setter,
+    int channel_id, const RtpHeaderExtension* extension) {
+  bool enable = false;
+  unsigned char id = 0;
+  if (extension) {
+    enable = true;
+    id = extension->id;
+  }
+  if ((engine()->voe()->rtp()->*setter)(channel_id, enable, id) != 0) {
+    LOG_RTCERR4(*setter, extension->uri, channel_id, enable, id);
+    return false;
+  }
+  return true;
 }
 
 int WebRtcSoundclipStream::Read(void *buf, int len) {

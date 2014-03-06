@@ -96,7 +96,16 @@ const char kGoogleSctpDataCodecName[] = "google-sctp-data";
 
 const char kComfortNoiseCodecName[] = "CN";
 
-const char kRtpAbsoluteSendTimeHeaderExtension[] =
+const int kRtpAudioLevelHeaderExtensionDefaultId = 1;
+const char kRtpAudioLevelHeaderExtension[] =
+    "urn:ietf:params:rtp-hdrext:ssrc-audio-level";
+
+const int kRtpTimestampOffsetHeaderExtensionDefaultId = 2;
+const char kRtpTimestampOffsetHeaderExtension[] =
+    "urn:ietf:params:rtp-hdrext:toffset";
+
+const int kRtpAbsoluteSenderTimeHeaderExtensionDefaultId = 3;
+const char kRtpAbsoluteSenderTimeHeaderExtension[] =
     "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
 
 const int kNumDefaultUnsignalledVideoRecvStreams = 0;

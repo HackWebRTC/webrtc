@@ -1,6 +1,29 @@
-// Copyright 2008 Google Inc.
-//
-// Author: Justin Uberti (juberti@google.com)
+/*
+ * libjingle
+ * Copyright 2008 Google Inc.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  1. Redistributions of source code must retain the above copyright notice,
+ *     this list of conditions and the following disclaimer.
+ *  2. Redistributions in binary form must reproduce the above copyright notice,
+ *     this list of conditions and the following disclaimer in the documentation
+ *     and/or other materials provided with the distribution.
+ *  3. The name of the author may not be used to endorse or promote products
+ *     derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+ * EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #ifdef WIN32
 #include "talk/base/win32.h"
@@ -226,43 +249,95 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
 
   void TestSetSendRtpHeaderExtensions(int channel_id) {
     std::vector<cricket::RtpHeaderExtension> extensions;
-    bool enable = false;
-    unsigned char id = 0;
 
-    // Ensure audio levels are off by default.
-    EXPECT_EQ(0, voe_.GetRTPAudioLevelIndicationStatus(
-        channel_id, enable, id));
-    EXPECT_FALSE(enable);
+    // Ensure extensions are off by default.
+    EXPECT_EQ(-1, voe_.GetSendAudioLevelId(channel_id));
+#ifdef USE_WEBRTC_DEV_BRANCH
+    EXPECT_EQ(-1, voe_.GetSendAbsoluteSenderTimeId(channel_id));
+#endif
 
     // Ensure unknown extensions won't cause an error.
     extensions.push_back(cricket::RtpHeaderExtension(
-        "urn:ietf:params:unknowextention", 1));
+        "urn:ietf:params:unknownextention", 1));
     EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
-    EXPECT_EQ(0, voe_.GetRTPAudioLevelIndicationStatus(
-        channel_id, enable, id));
-    EXPECT_FALSE(enable);
+    EXPECT_EQ(-1, voe_.GetSendAudioLevelId(channel_id));
+#ifdef USE_WEBRTC_DEV_BRANCH
+    EXPECT_EQ(-1, voe_.GetSendAbsoluteSenderTimeId(channel_id));
+#endif
 
-    // Ensure audio levels stay off with an empty list of headers.
+    // Ensure extensions stay off with an empty list of headers.
+    extensions.clear();
     EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
-    EXPECT_EQ(0, voe_.GetRTPAudioLevelIndicationStatus(
-        channel_id, enable, id));
-    EXPECT_FALSE(enable);
+    EXPECT_EQ(-1, voe_.GetSendAudioLevelId(channel_id));
+#ifdef USE_WEBRTC_DEV_BRANCH
+    EXPECT_EQ(-1, voe_.GetSendAbsoluteSenderTimeId(channel_id));
+#endif
 
-    // Ensure audio levels are enabled if the audio-level header is specified.
+    // Ensure audio levels are enabled if the audio-level header is specified
+    // (but AST is still off).
     extensions.push_back(cricket::RtpHeaderExtension(
         "urn:ietf:params:rtp-hdrext:ssrc-audio-level", 8));
     EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
-    EXPECT_EQ(0, voe_.GetRTPAudioLevelIndicationStatus(
-        channel_id, enable, id));
-    EXPECT_TRUE(enable);
-    EXPECT_EQ(8, id);
+    EXPECT_EQ(8, voe_.GetSendAudioLevelId(channel_id));
+#ifdef USE_WEBRTC_DEV_BRANCH
+    EXPECT_EQ(-1, voe_.GetSendAbsoluteSenderTimeId(channel_id));
+#endif
 
-    // Ensure audio levels go back off with an empty list.
+#ifdef USE_WEBRTC_DEV_BRANCH
+    // Ensure audio level and AST are enabled if the extensions are specified.
+    extensions.push_back(cricket::RtpHeaderExtension(
+        "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time", 12));
+    EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
+    EXPECT_EQ(8, voe_.GetSendAudioLevelId(channel_id));
+    EXPECT_EQ(12, voe_.GetSendAbsoluteSenderTimeId(channel_id));
+#endif
+
+    // Ensure all extensions go back off with an empty list.
     extensions.clear();
     EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
-    EXPECT_EQ(0, voe_.GetRTPAudioLevelIndicationStatus(
-        channel_id, enable, id));
-    EXPECT_FALSE(enable);
+    EXPECT_EQ(-1, voe_.GetSendAudioLevelId(channel_id));
+#ifdef USE_WEBRTC_DEV_BRANCH
+    EXPECT_EQ(-1, voe_.GetSendAbsoluteSenderTimeId(channel_id));
+#endif
+  }
+
+  void TestSetRecvRtpHeaderExtensions(int channel_id) {
+    std::vector<cricket::RtpHeaderExtension> extensions;
+
+#ifdef USE_WEBRTC_DEV_BRANCH
+    // Ensure extensions are off by default.
+    EXPECT_EQ(-1, voe_.GetReceiveAbsoluteSenderTimeId(channel_id));
+#endif
+
+    // Ensure unknown extensions won't cause an error.
+    extensions.push_back(cricket::RtpHeaderExtension(
+        "urn:ietf:params:unknownextention", 1));
+    EXPECT_TRUE(channel_->SetRecvRtpHeaderExtensions(extensions));
+#ifdef USE_WEBRTC_DEV_BRANCH
+    EXPECT_EQ(-1, voe_.GetReceiveAbsoluteSenderTimeId(channel_id));
+#endif
+
+    // An empty list shouldn't cause any headers to be enabled.
+    extensions.clear();
+    EXPECT_TRUE(channel_->SetRecvRtpHeaderExtensions(extensions));
+#ifdef USE_WEBRTC_DEV_BRANCH
+    EXPECT_EQ(-1, voe_.GetReceiveAbsoluteSenderTimeId(channel_id));
+#endif
+
+#ifdef USE_WEBRTC_DEV_BRANCH
+    // Nor should indicating we can receive the absolute sender time header.
+    extensions.push_back(cricket::RtpHeaderExtension(
+        "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time", 11));
+    EXPECT_TRUE(channel_->SetRecvRtpHeaderExtensions(extensions));
+    EXPECT_EQ(11, voe_.GetReceiveAbsoluteSenderTimeId(channel_id));
+#endif
+
+    // Resetting to an empty list shouldn't cause any headers to be enabled.
+    extensions.clear();
+    EXPECT_TRUE(channel_->SetRecvRtpHeaderExtensions(extensions));
+#ifdef USE_WEBRTC_DEV_BRANCH
+    EXPECT_EQ(-1, voe_.GetReceiveAbsoluteSenderTimeId(channel_id));
+#endif
   }
 
  protected:
@@ -1488,35 +1563,17 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsBadRED5) {
   EXPECT_FALSE(voe_.GetFEC(channel_num));
 }
 
-// Test that we support setting an empty list of recv header extensions.
-TEST_F(WebRtcVoiceEngineTestFake, SetRecvRtpHeaderExtensions) {
-  EXPECT_TRUE(SetupEngine());
-  std::vector<cricket::RtpHeaderExtension> extensions;
-  int channel_num = voe_.GetLastChannel();
-  bool enable = false;
-  unsigned char id = 0;
-
-  // An empty list shouldn't cause audio-level headers to be enabled.
-  EXPECT_TRUE(channel_->SetRecvRtpHeaderExtensions(extensions));
-  EXPECT_EQ(0, voe_.GetRTPAudioLevelIndicationStatus(
-      channel_num, enable, id));
-  EXPECT_FALSE(enable);
-
-  // Nor should indicating we can receive the audio-level header.
-  extensions.push_back(cricket::RtpHeaderExtension(
-      "urn:ietf:params:rtp-hdrext:ssrc-audio-level", 8));
-  EXPECT_TRUE(channel_->SetRecvRtpHeaderExtensions(extensions));
-  EXPECT_EQ(0, voe_.GetRTPAudioLevelIndicationStatus(
-      channel_num, enable, id));
-  EXPECT_FALSE(enable);
-}
-
 // Test that we support setting certain send header extensions.
 TEST_F(WebRtcVoiceEngineTestFake, SetSendRtpHeaderExtensions) {
   EXPECT_TRUE(SetupEngine());
-  std::vector<cricket::RtpHeaderExtension> extensions;
-  int channel_num = voe_.GetLastChannel();
-  TestSetSendRtpHeaderExtensions(channel_num);
+  TestSetSendRtpHeaderExtensions(voe_.GetLastChannel());
+}
+
+// Test that we support setting recv header extensions.
+TEST_F(WebRtcVoiceEngineTestFake, SetRecvRtpHeaderExtensions) {
+  EXPECT_TRUE(SetupEngine());
+  EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(2)));
+  TestSetRecvRtpHeaderExtensions(voe_.GetLastChannel());
 }
 
 // Test that we can create a channel and start sending/playing out on it.
@@ -1676,23 +1733,38 @@ TEST_F(WebRtcVoiceEngineTestFake, GetStatsWithMultipleSendStreams) {
   EXPECT_EQ(1u, info.receivers.size());
 }
 
-// Test that we support setting certain send header extensions on multiple
-// send streams.
+// Test that we support setting header extensions on multiple send streams.
 TEST_F(WebRtcVoiceEngineTestFake,
-       SetSendRtpHeaderExtensionsWithMultpleSendStreams) {
+       SetSendRtpHeaderExtensionsWithMultipleSendStreams) {
   SetupForMultiSendStream();
 
-  static const uint32 kSsrcs4[] = {1, 2, 3, 4};
-  // Create send streams.
-  for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs4); ++i) {
+  static const uint32 kSsrcs[] = {1, 2, 3, 4};
+  for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs); ++i) {
     EXPECT_TRUE(channel_->AddSendStream(
-        cricket::StreamParams::CreateLegacy(kSsrcs4[i])));
+        cricket::StreamParams::CreateLegacy(kSsrcs[i])));
   }
 
-  // Test SendRtpHeaderExtensions on each send channel.
-  for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs4); ++i) {
-    int channel_num = voe_.GetChannelFromLocalSsrc(kSsrcs4[i]);
+  for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs); ++i) {
+    int channel_num = voe_.GetChannelFromLocalSsrc(kSsrcs[i]);
     TestSetSendRtpHeaderExtensions(channel_num);
+  }
+}
+
+// Test that we support setting header extensions on multiple receive streams.
+TEST_F(WebRtcVoiceEngineTestFake,
+       SetRecvRtpHeaderExtensionsWithMultipleRecvStreams) {
+  EXPECT_TRUE(SetupEngine());
+
+  static const uint32 kSsrcs[] = {1, 2, 3, 4};
+  int channel_ids[ARRAY_SIZE(kSsrcs)] = {0};
+  for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs); ++i) {
+    EXPECT_TRUE(channel_->AddRecvStream(
+        cricket::StreamParams::CreateLegacy(kSsrcs[i])));
+    channel_ids[i] = voe_.GetLastChannel();
+  }
+
+  for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs); ++i) {
+    TestSetRecvRtpHeaderExtensions(channel_ids[i]);
   }
 }
 

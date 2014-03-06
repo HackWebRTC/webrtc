@@ -146,14 +146,6 @@ static const int kCpuMonitorPeriodMs = 2000;  // 2 seconds.
 
 static const bool kNotSending = false;
 
-// Extension header for RTP timestamp offset, see RFC 5450 for details:
-// http://tools.ietf.org/html/rfc5450
-static const char kRtpTimestampOffsetHeaderExtension[] =
-    "urn:ietf:params:rtp-hdrext:toffset";
-static const int kRtpTimeOffsetExtensionId = 2;
-
-// Extension header ID for absolute send time. Url defined in constants.cc
-static const int kRtpAbsoluteSendTimeExtensionId = 3;
 // Default video dscp value.
 // See http://tools.ietf.org/html/rfc2474 for details
 // See also http://tools.ietf.org/html/draft-jennings-rtcweb-qos-00
@@ -916,10 +908,10 @@ void WebRtcVideoEngine::Construct(ViEWrapper* vie_wrapper,
   // Load our RTP Header extensions.
   rtp_header_extensions_.push_back(
       RtpHeaderExtension(kRtpTimestampOffsetHeaderExtension,
-                         kRtpTimeOffsetExtensionId));
+                         kRtpTimestampOffsetHeaderExtensionDefaultId));
   rtp_header_extensions_.push_back(
-      RtpHeaderExtension(kRtpAbsoluteSendTimeHeaderExtension,
-                         kRtpAbsoluteSendTimeExtensionId));
+      RtpHeaderExtension(kRtpAbsoluteSenderTimeHeaderExtension,
+                         kRtpAbsoluteSenderTimeHeaderExtensionDefaultId));
 }
 
 WebRtcVideoEngine::~WebRtcVideoEngine() {
@@ -2684,7 +2676,7 @@ bool WebRtcVideoMediaChannel::SetRecvRtpHeaderExtensions(
   const RtpHeaderExtension* offset_extension =
       FindHeaderExtension(extensions, kRtpTimestampOffsetHeaderExtension);
   const RtpHeaderExtension* send_time_extension =
-      FindHeaderExtension(extensions, kRtpAbsoluteSendTimeHeaderExtension);
+      FindHeaderExtension(extensions, kRtpAbsoluteSenderTimeHeaderExtension);
 
   // Loop through all receive channels and enable/disable the extensions.
   for (RecvChannelMap::iterator channel_it = recv_channels_.begin();
@@ -2711,7 +2703,7 @@ bool WebRtcVideoMediaChannel::SetSendRtpHeaderExtensions(
   const RtpHeaderExtension* offset_extension =
       FindHeaderExtension(extensions, kRtpTimestampOffsetHeaderExtension);
   const RtpHeaderExtension* send_time_extension =
-      FindHeaderExtension(extensions, kRtpAbsoluteSendTimeHeaderExtension);
+      FindHeaderExtension(extensions, kRtpAbsoluteSenderTimeHeaderExtension);
 
   // Loop through all send channels and enable/disable the extensions.
   for (SendChannelMap::iterator channel_it = send_channels_.begin();
@@ -2742,7 +2734,7 @@ bool WebRtcVideoMediaChannel::SetSendRtpHeaderExtensions(
 
 int WebRtcVideoMediaChannel::GetRtpSendTimeExtnId() const {
   const RtpHeaderExtension* send_time_extension = FindHeaderExtension(
-      send_extensions_, kRtpAbsoluteSendTimeHeaderExtension);
+      send_extensions_, kRtpAbsoluteSenderTimeHeaderExtension);
   if (send_time_extension) {
     return send_time_extension->id;
   }
@@ -3271,10 +3263,9 @@ bool WebRtcVideoMediaChannel::ConfigureReceiving(int channel_id,
       channel_id, receive_extensions_, kRtpTimestampOffsetHeaderExtension)) {
     return false;
   }
-
   if (!SetHeaderExtension(
       &webrtc::ViERTP_RTCP::SetReceiveAbsoluteSendTimeStatus, channel_id,
-      receive_extensions_, kRtpAbsoluteSendTimeHeaderExtension)) {
+      receive_extensions_, kRtpAbsoluteSenderTimeHeaderExtension)) {
     return false;
   }
 
@@ -3389,7 +3380,7 @@ bool WebRtcVideoMediaChannel::ConfigureSending(int channel_id,
   }
 
   if (!SetHeaderExtension(&webrtc::ViERTP_RTCP::SetSendAbsoluteSendTimeStatus,
-      channel_id, send_extensions_, kRtpAbsoluteSendTimeHeaderExtension)) {
+      channel_id, send_extensions_, kRtpAbsoluteSenderTimeHeaderExtension)) {
     return false;
   }
 

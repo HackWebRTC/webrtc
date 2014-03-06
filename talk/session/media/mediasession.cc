@@ -398,9 +398,9 @@ class UsedRtpHeaderExtensionIds : public UsedIds<RtpHeaderExtension> {
   }
 
  private:
-  // Min and Max local identifier as specified by RFC5285.
+  // Min and Max local identifier for one-byte header extensions, per RFC5285.
   static const int kLocalIdMin = 1;
-  static const int kLocalIdMax = 255;
+  static const int kLocalIdMax = 14;
 };
 
 static bool IsSctp(const MediaContentDescription* desc) {
@@ -843,7 +843,7 @@ static bool FindByUri(const RtpHeaderExtensions& extensions,
     // We assume that all URIs are given in a canonical format.
     if (it->uri == ext_to_match.uri) {
       if (found_extension != NULL) {
-        *found_extension= *it;
+        *found_extension = *it;
       }
       return true;
     }
@@ -854,12 +854,16 @@ static bool FindByUri(const RtpHeaderExtensions& extensions,
 static void FindAndSetRtpHdrExtUsed(
   const RtpHeaderExtensions& reference_extensions,
   RtpHeaderExtensions* offered_extensions,
+  const RtpHeaderExtensions& other_extensions,
   UsedRtpHeaderExtensionIds* used_extensions) {
   for (RtpHeaderExtensions::const_iterator it = reference_extensions.begin();
       it != reference_extensions.end(); ++it) {
     if (!FindByUri(*offered_extensions, *it, NULL)) {
-      RtpHeaderExtension ext = *it;
-      used_extensions->FindAndSetIdUsed(&ext);
+      RtpHeaderExtension ext;
+      if (!FindByUri(other_extensions, *it, &ext)) {
+        ext = *it;
+        used_extensions->FindAndSetIdUsed(&ext);
+      }
       offered_extensions->push_back(ext);
     }
   }
@@ -1509,6 +1513,8 @@ void MediaSessionDescriptionFactory::GetRtpHdrExtsToOffer(
     const SessionDescription* current_description,
     RtpHeaderExtensions* audio_extensions,
     RtpHeaderExtensions* video_extensions) const {
+  // All header extensions allocated from the same range to avoid potential
+  // issues when using BUNDLE.
   UsedRtpHeaderExtensionIds used_ids;
   audio_extensions->clear();
   video_extensions->clear();
@@ -1535,9 +1541,9 @@ void MediaSessionDescriptionFactory::GetRtpHdrExtsToOffer(
   // Add our default RTP header extensions that are not in
   // |current_description|.
   FindAndSetRtpHdrExtUsed(audio_rtp_header_extensions(), audio_extensions,
-                          &used_ids);
+                          *video_extensions, &used_ids);
   FindAndSetRtpHdrExtUsed(video_rtp_header_extensions(), video_extensions,
-                          &used_ids);
+                          *audio_extensions, &used_ids);
 }
 
 bool MediaSessionDescriptionFactory::AddTransportOffer(

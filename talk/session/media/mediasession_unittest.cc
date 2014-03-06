@@ -143,6 +143,7 @@ static const RtpHeaderExtension kAudioRtpExtension1[] = {
 static const RtpHeaderExtension kAudioRtpExtension2[] = {
   RtpHeaderExtension("urn:ietf:params:rtp-hdrext:ssrc-audio-level", 2),
   RtpHeaderExtension("http://google.com/testing/audio_something_else", 8),
+  RtpHeaderExtension("http://google.com/testing/both_audio_and_video", 7),
 };
 
 static const RtpHeaderExtension kAudioRtpExtensionAnswer[] = {
@@ -151,12 +152,13 @@ static const RtpHeaderExtension kAudioRtpExtensionAnswer[] = {
 
 static const RtpHeaderExtension kVideoRtpExtension1[] = {
   RtpHeaderExtension("urn:ietf:params:rtp-hdrext:toffset", 14),
-  RtpHeaderExtension("http://google.com/testing/video_something", 15),
+  RtpHeaderExtension("http://google.com/testing/video_something", 13),
 };
 
 static const RtpHeaderExtension kVideoRtpExtension2[] = {
   RtpHeaderExtension("urn:ietf:params:rtp-hdrext:toffset", 2),
   RtpHeaderExtension("http://google.com/testing/video_something_else", 14),
+  RtpHeaderExtension("http://google.com/testing/both_audio_and_video", 7),
 };
 
 static const RtpHeaderExtension kVideoRtpExtensionAnswer[] = {
@@ -1616,17 +1618,19 @@ TEST_F(MediaSessionDescriptionFactoryTest,
   // extensions from the first offer/answer exchange plus the extensions only
   // |f2_| offer.
   // Since the default local extension id |f2_| uses has already been used by
-  // |f1_| for another extensions, it is changed to 255.
+  // |f1_| for another extensions, it is changed to 13.
   const RtpHeaderExtension kUpdatedAudioRtpExtensions[] = {
     kAudioRtpExtensionAnswer[0],
-    RtpHeaderExtension(kAudioRtpExtension2[1].uri, 255),
+    RtpHeaderExtension(kAudioRtpExtension2[1].uri, 13),
+    kAudioRtpExtension2[2],
   };
 
   // Since the default local extension id |f2_| uses has already been used by
-  // |f1_| for another extensions, is is changed to 254.
+  // |f1_| for another extensions, is is changed to 12.
   const RtpHeaderExtension kUpdatedVideoRtpExtensions[] = {
     kVideoRtpExtensionAnswer[0],
-    RtpHeaderExtension(kVideoRtpExtension2[1].uri, 254),
+    RtpHeaderExtension(kVideoRtpExtension2[1].uri, 12),
+    kVideoRtpExtension2[2],
   };
 
   const AudioContentDescription* updated_acd =

@@ -397,6 +397,8 @@ class WebRtcVoiceMediaChannel
   // WebRtcVoiceChannelRenderer will be created for every new stream and
   // will be destroyed when the stream goes away.
   typedef std::map<uint32, WebRtcVoiceChannelRenderer*> ChannelMap;
+  typedef int (webrtc::VoERTP_RTCP::* ExtensionSetterFunction)(int, bool,
+      unsigned char);
 
   void SetNack(int channel, bool nack_enabled);
   void SetNack(const ChannelMap& channels, bool nack_enabled);
@@ -416,6 +418,9 @@ class WebRtcVoiceMediaChannel
   }
   bool SetSendCodecs(int channel, const std::vector<AudioCodec>& codecs);
   bool SetSendBandwidthInternal(int bps);
+
+  bool SetHeaderExtension(ExtensionSetterFunction setter, int channel_id,
+                          const RtpHeaderExtension* extension);
 
   talk_base::scoped_ptr<WebRtcSoundclipStream> ringback_tone_;
   std::set<int> ringback_channels_;  // channels playing ringback

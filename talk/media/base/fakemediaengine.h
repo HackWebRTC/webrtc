@@ -737,6 +737,10 @@ class FakeBaseEngine {
   const std::vector<RtpHeaderExtension>& rtp_header_extensions() const {
     return rtp_header_extensions_;
   }
+  void set_rtp_header_extensions(
+      const std::vector<RtpHeaderExtension>& extensions) {
+    rtp_header_extensions_ = extensions;
+  }
 
  protected:
   int loglevel_;
@@ -959,18 +963,25 @@ class FakeMediaEngine :
   }
   virtual ~FakeMediaEngine() {}
 
-  virtual void SetAudioCodecs(const std::vector<AudioCodec> codecs) {
+  void SetAudioCodecs(const std::vector<AudioCodec>& codecs) {
     voice_.SetCodecs(codecs);
   }
-
-  virtual void SetVideoCodecs(const std::vector<VideoCodec> codecs) {
+  void SetVideoCodecs(const std::vector<VideoCodec>& codecs) {
     video_.SetCodecs(codecs);
+  }
+
+  void SetAudioRtpHeaderExtensions(
+      const std::vector<RtpHeaderExtension>& extensions) {
+    voice_.set_rtp_header_extensions(extensions);
+  }
+  void SetVideoRtpHeaderExtensions(
+      const std::vector<RtpHeaderExtension>& extensions) {
+    video_.set_rtp_header_extensions(extensions);
   }
 
   FakeVoiceMediaChannel* GetVoiceChannel(size_t index) {
     return voice_.GetChannel(index);
   }
-
   FakeVideoMediaChannel* GetVideoChannel(size_t index) {
     return video_.GetChannel(index);
   }

@@ -1216,7 +1216,7 @@ bool BaseChannel::SetBaseRemoteContent_w(const MediaContentDescription* content,
 void BaseChannel::MaybeCacheRtpAbsSendTimeHeaderExtension(
     const std::vector<RtpHeaderExtension>& extensions) {
   const RtpHeaderExtension* send_time_extension =
-      FindHeaderExtension(extensions, kRtpAbsoluteSendTimeHeaderExtension);
+      FindHeaderExtension(extensions, kRtpAbsoluteSenderTimeHeaderExtension);
   rtp_abs_sendtime_extn_id_ =
       send_time_extension ? send_time_extension->id : -1;
 }
