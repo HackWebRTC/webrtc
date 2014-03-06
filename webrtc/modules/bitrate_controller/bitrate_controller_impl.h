@@ -75,6 +75,8 @@ class BitrateControllerImpl : public BitrateController {
 
   virtual void EnforceMinBitrate(bool enforce_min_bitrate) OVERRIDE;
 
+  virtual void SetBweMinBitrate(uint32_t min_bitrate) OVERRIDE;
+
  private:
   // Called by BitrateObserver's direct from the RTCP module.
   void OnReceivedEstimatedBitrate(const uint32_t bitrate);

@@ -73,6 +73,10 @@ class BitrateController {
 
   // Changes the mode that was set in the constructor.
   virtual void EnforceMinBitrate(bool enforce_min_bitrate) = 0;
+
+  // Changes the minimum configured bitrate of the send-side bandwidth
+  // estimator.
+  virtual void SetBweMinBitrate(uint32_t min_bitrate) = 0;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_BITRATE_CONTROLLER_INCLUDE_BITRATE_CONTROLLER_H_

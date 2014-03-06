@@ -41,6 +41,7 @@ class SendSideBandwidthEstimation {
   bool AvailableBandwidth(uint32_t* bandwidth) const;
   void SetSendBitrate(const uint32_t bitrate);
   void SetMinMaxBitrate(const uint32_t min_bitrate, const uint32_t max_bitrate);
+  void SetMinBitrate(uint32_t min_bitrate);
 
  private:
   bool ShapeSimple(const uint8_t loss, const uint32_t rtt,

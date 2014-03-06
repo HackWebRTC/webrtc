@@ -131,7 +131,7 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
                                                     &encoded_frame_proxy_);
   }
 
-  if (config.suspend_below_min_bitrate) {
+  if (config_.suspend_below_min_bitrate) {
     codec_->SuspendBelowMinBitrate(channel_);
   }
 

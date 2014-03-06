@@ -51,6 +51,11 @@ void SendSideBandwidthEstimation::SetMinMaxBitrate(const uint32_t min_bitrate,
   }
 }
 
+void SendSideBandwidthEstimation::SetMinBitrate(uint32_t min_bitrate) {
+  CriticalSectionScoped cs(critsect_);
+  min_bitrate_configured_ = min_bitrate;
+}
+
 bool SendSideBandwidthEstimation::UpdateBandwidthEstimate(
     const uint32_t bandwidth,
     uint32_t* new_bitrate,

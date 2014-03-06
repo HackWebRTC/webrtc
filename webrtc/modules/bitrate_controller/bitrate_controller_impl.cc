@@ -249,6 +249,11 @@ void BitrateControllerImpl::EnforceMinBitrate(bool enforce_min_bitrate) {
   }
 }
 
+void BitrateControllerImpl::SetBweMinBitrate(uint32_t min_bitrate) {
+  CriticalSectionScoped cs(critsect_);
+  bandwidth_estimation_.SetMinBitrate(min_bitrate);
+}
+
 void BitrateControllerImpl::OnReceivedEstimatedBitrate(const uint32_t bitrate) {
   uint32_t new_bitrate = 0;
   uint8_t fraction_lost = 0;
