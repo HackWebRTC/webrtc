@@ -10,7 +10,8 @@
 
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_framework.h"
 
-#include <cstdio>
+#include <stdio.h>
+
 #include <sstream>
 
 namespace webrtc {
@@ -83,7 +84,7 @@ int Random::Gaussian(int mean, int standard_deviation) {
   a_ ^= b_;
   b_ += a_;
   return static_cast<int>(mean + standard_deviation *
-      std::sqrt(-2 * std::log(u1)) * std::cos(2 * kPi * u2));
+      sqrt(-2 * log(u1)) * cos(2 * kPi * u2));
 }
 
 Packet::Packet()

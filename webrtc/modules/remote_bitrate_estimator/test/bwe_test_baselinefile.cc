@@ -10,8 +10,9 @@
 
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_baselinefile.h"
 
+#include <stdio.h>
+
 #include <algorithm>
-#include <cstdio>
 #include <vector>
 
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_fileutils.h"

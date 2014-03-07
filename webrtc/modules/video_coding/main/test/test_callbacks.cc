@@ -406,7 +406,7 @@ RTPSendCompleteCallback::PacketLoss()
 bool
 RTPSendCompleteCallback::UnifomLoss(double lossPct)
 {
-    double randVal = (std::rand() + 1.0)/(RAND_MAX + 1.0);
+    double randVal = (rand() + 1.0) / (RAND_MAX + 1.0);
     return randVal < lossPct/100;
 }
 

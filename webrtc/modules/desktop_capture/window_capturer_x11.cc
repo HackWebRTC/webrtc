@@ -10,13 +10,14 @@
 
 #include "webrtc/modules/desktop_capture/window_capturer.h"
 
+#include <assert.h>
 #include <string.h>
 #include <X11/Xatom.h>
 #include <X11/extensions/Xcomposite.h>
 #include <X11/extensions/Xrender.h>
 #include <X11/Xutil.h>
+
 #include <algorithm>
-#include <cassert>
 
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"

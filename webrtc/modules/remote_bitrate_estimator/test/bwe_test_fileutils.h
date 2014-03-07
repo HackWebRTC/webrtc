@@ -11,7 +11,8 @@
 #ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_BWE_TEST_FILEUTILS_H_
 #define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_BWE_TEST_FILEUTILS_H_
 
-#include <cstdio>
+#include <stdio.h>
+
 #include <string>
 
 #include "webrtc/modules/interface/module_common_types.h"

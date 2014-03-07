@@ -11,9 +11,10 @@
 #ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_BWE_TEST_FRAMEWORK_H_
 #define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_BWE_TEST_FRAMEWORK_H_
 
+#include <assert.h>
+#include <math.h>
+
 #include <algorithm>
-#include <cassert>
-#include <cmath>
 #include <list>
 #include <numeric>
 #include <string>
@@ -71,7 +72,7 @@ template<typename T> class Stats {
     return variance_;
   }
   T GetStdDev() {
-    return std::sqrt(static_cast<double>(GetVariance()));
+    return sqrt(static_cast<double>(GetVariance()));
   }
   T GetMin() {
     RefreshMinMax();

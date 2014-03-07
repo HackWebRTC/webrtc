@@ -14,10 +14,10 @@
 
 #include "webrtc/modules/audio_coding/neteq4/interface/neteq.h"
 
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>  // memset
 
-#include <cmath>
 #include <set>
 #include <string>
 #include <vector>

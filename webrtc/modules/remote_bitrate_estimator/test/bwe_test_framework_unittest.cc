@@ -41,12 +41,12 @@ TEST(BweTestFramework_RandomTest, Gaussian) {
   }
 
   const double kPi = 3.14159265358979323846;
-  const double kScale = kN / (kStddev * std::sqrt(2.0 * kPi));
+  const double kScale = kN / (kStddev * sqrt(2.0 * kPi));
   const double kDiv = -2.0 * kStddev * kStddev;
   double self_corr = 0.0;
   double bucket_corr = 0.0;
   for (int n = 0; n < kBuckets; ++n) {
-    double normal_dist = kScale * std::exp((n - kMean) * (n - kMean) / kDiv);
+    double normal_dist = kScale * exp((n - kMean) * (n - kMean) / kDiv);
     self_corr += normal_dist * normal_dist;
     bucket_corr += normal_dist * buckets[n];
   }
