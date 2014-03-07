@@ -61,5 +61,9 @@
       'target_name': 'webrtc_perf_tests_apk',
       'type': 'none',
     },
+    {
+      'target_name': 'audio_codec_speed_tests_apk',
+      'type': 'none',
+    },
   ],
 }

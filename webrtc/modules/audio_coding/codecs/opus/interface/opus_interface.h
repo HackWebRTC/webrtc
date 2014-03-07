@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_INTERFACE_OPUS_INTERFACE_H_
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_INTERFACE_OPUS_INTERFACE_H_
 
-#include "typedefs.h"
+#include "webrtc/typedefs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,6 +58,21 @@ int16_t WebRtcOpus_Encode(OpusEncInst* inst, int16_t* audio_in, int16_t samples,
  *                             -1 - Error
  */
 int16_t WebRtcOpus_SetBitRate(OpusEncInst* inst, int32_t rate);
+
+/****************************************************************************
+ * WebRtcOpus_SetComplexity(...)
+ *
+ * This function adjusts the computational complexity. The effect is the same as
+ * calling the complexity setting of Opus as an Opus encoder related CTL.
+ *
+ * Input:
+ *      - inst               : Encoder context
+ *      - complexity         : New target complexity (0-10, inclusive)
+ *
+ * Return value              :  0 - Success
+ *                             -1 - Error
+ */
+int16_t WebRtcOpus_SetComplexity(OpusEncInst* inst, int32_t complexity);
 
 int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst, int channels);
 int16_t WebRtcOpus_DecoderFree(OpusDecInst* inst);

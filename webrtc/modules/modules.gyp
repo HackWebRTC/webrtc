@@ -43,6 +43,7 @@
       'includes': [
         'audio_coding/codecs/isac/isac_test.gypi',
         'audio_coding/codecs/isac/isacfix_test.gypi',
+        'audio_coding/codecs/tools/audio_codec_speed_tests.gypi',
         'audio_processing/audio_processing_tests.gypi',
         'rtp_rtcp/test/testFec/test_fec.gypi',
         'video_coding/main/source/video_coding_test.gypi',

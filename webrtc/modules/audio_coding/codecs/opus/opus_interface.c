@@ -103,7 +103,15 @@ int16_t WebRtcOpus_Encode(OpusEncInst* inst, int16_t* audio_in, int16_t samples,
 
 int16_t WebRtcOpus_SetBitRate(OpusEncInst* inst, int32_t rate) {
   if (inst) {
-  return opus_encoder_ctl(inst->encoder, OPUS_SET_BITRATE(rate));
+    return opus_encoder_ctl(inst->encoder, OPUS_SET_BITRATE(rate));
+  } else {
+    return -1;
+  }
+}
+
+int16_t WebRtcOpus_SetComplexity(OpusEncInst* inst, int32_t complexity) {
+  if (inst) {
+    return opus_encoder_ctl(inst->encoder, OPUS_SET_COMPLEXITY(complexity));
   } else {
     return -1;
   }
