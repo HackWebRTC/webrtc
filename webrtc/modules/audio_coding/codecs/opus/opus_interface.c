@@ -109,6 +109,31 @@ int16_t WebRtcOpus_SetBitRate(OpusEncInst* inst, int32_t rate) {
   }
 }
 
+int16_t WebRtcOpus_SetPacketLossRate(OpusEncInst* inst, int32_t loss_rate) {
+  if (inst) {
+    return opus_encoder_ctl(inst->encoder,
+                            OPUS_SET_PACKET_LOSS_PERC(loss_rate));
+  } else {
+    return -1;
+  }
+}
+
+int16_t WebRtcOpus_EnableFec(OpusEncInst* inst) {
+  if (inst) {
+    return opus_encoder_ctl(inst->encoder, OPUS_SET_INBAND_FEC(1));
+  } else {
+    return -1;
+  }
+}
+
+int16_t WebRtcOpus_DisableFec(OpusEncInst* inst) {
+  if (inst) {
+    return opus_encoder_ctl(inst->encoder, OPUS_SET_INBAND_FEC(0));
+  } else {
+    return -1;
+  }
+}
+
 int16_t WebRtcOpus_SetComplexity(OpusEncInst* inst, int32_t complexity) {
   if (inst) {
     return opus_encoder_ctl(inst->encoder, OPUS_SET_COMPLEXITY(complexity));
@@ -215,6 +240,23 @@ static int DecodeNative(OpusDecoder* inst, const int16_t* encoded,
   opus_int16* audio = (opus_int16*) decoded;
 
   int res = opus_decode(inst, coded, encoded_bytes, audio, frame_size, 0);
+
+  /* TODO(tlegrand): set to DTX for zero-length packets? */
+  *audio_type = 0;
+
+  if (res > 0) {
+    return res;
+  }
+  return -1;
+}
+
+static int DecodeFec(OpusDecoder* inst, const int16_t* encoded,
+                     int16_t encoded_bytes, int frame_size,
+                     int16_t* decoded, int16_t* audio_type) {
+  unsigned char* coded = (unsigned char*) encoded;
+  opus_int16* audio = (opus_int16*) decoded;
+
+  int res = opus_decode(inst, coded, encoded_bytes, audio, frame_size, 1);
 
   /* TODO(tlegrand): set to DTX for zero-length packets? */
   *audio_type = 0;
@@ -550,6 +592,52 @@ int16_t WebRtcOpus_DecodePlcSlave(OpusDecInst* inst, int16_t* decoded,
   return resampled_samples;
 }
 
+int16_t WebRtcOpus_DecodeFec(OpusDecInst* inst, const uint8_t* encoded,
+                             int16_t encoded_bytes, int16_t* decoded,
+                             int16_t* audio_type) {
+  /* |buffer| is big enough for 120 ms (the largest Opus packet size) of stereo
+   * audio at 48 kHz. */
+  int16_t buffer[kWebRtcOpusMaxFrameSize];
+  int16_t* coded = (int16_t*)encoded;
+  int decoded_samples;
+  int resampled_samples;
+  int fec_samples;
+
+  if (WebRtcOpus_PacketHasFec(encoded, encoded_bytes) != 1) {
+    return 0;
+  }
+
+  fec_samples = opus_packet_get_samples_per_frame(encoded, 48000);
+
+  /* Decode to a temporary buffer. */
+  decoded_samples = DecodeFec(inst->decoder_left, coded, encoded_bytes,
+                              fec_samples, buffer, audio_type);
+  if (decoded_samples < 0) {
+    return -1;
+  }
+
+  /* If mono case, just do a regular call to the decoder.
+   * If stereo, we need to de-interleave the stereo output into blocks with
+   * left and right channel. Each block is resampled to 32 kHz, and then
+   * interleaved again. */
+  if (inst->channels == 2) {
+    /* De-interleave and resample. */
+    resampled_samples = WebRtcOpus_DeInterleaveResample(inst,
+                                                        buffer,
+                                                        decoded_samples,
+                                                        decoded);
+  } else {
+    /* Resample from 48 kHz to 32 kHz. Filter state memory for left channel is
+     * used for mono signals. */
+    resampled_samples = WebRtcOpus_Resample48to32(buffer,
+                                                  decoded_samples,
+                                                  inst->state_48_32_left,
+                                                  decoded);
+  }
+
+  return resampled_samples;
+}
+
 int WebRtcOpus_DurationEst(OpusDecInst* inst,
                            const uint8_t* payload,
                            int payload_length_bytes) {
@@ -569,4 +657,80 @@ int WebRtcOpus_DurationEst(OpusDecInst* inst,
    * removed. */
   samples = samples * 2 / 3;
   return samples;
+}
+
+int WebRtcOpus_FecDurationEst(const uint8_t* payload,
+                              int payload_length_bytes) {
+  int samples;
+  if (WebRtcOpus_PacketHasFec(payload, payload_length_bytes) != 1) {
+    return 0;
+  }
+
+  samples = opus_packet_get_samples_per_frame(payload, 48000);
+  if (samples < 480 || samples > 5760) {
+    /* Invalid payload duration. */
+    return 0;
+  }
+  /* Compensate for the down-sampling from 48 kHz to 32 kHz.
+   * This should be removed when the resampling in WebRtcOpus_Decode is
+   * removed. */
+  samples = samples * 2 / 3;
+  return samples;
+}
+
+int WebRtcOpus_PacketHasFec(const uint8_t* payload,
+                            int payload_length_bytes) {
+  int frames, channels, payload_length_ms;
+  int n;
+  opus_int16 frame_sizes[48];
+  const unsigned char *frame_data[48];
+
+  if (payload == NULL || payload_length_bytes <= 0)
+    return 0;
+
+  /* In CELT_ONLY mode, packets should not have FEC. */
+  if (payload[0] & 0x80)
+    return 0;
+
+  payload_length_ms = opus_packet_get_samples_per_frame(payload, 48000) / 48;
+  if (10 > payload_length_ms)
+    payload_length_ms = 10;
+
+  channels = opus_packet_get_nb_channels(payload);
+
+  switch (payload_length_ms) {
+    case 10:
+    case 20: {
+      frames = 1;
+      break;
+    }
+    case 40: {
+      frames = 2;
+      break;
+    }
+    case 60: {
+      frames = 3;
+      break;
+    }
+    default: {
+      return 0; // It is actually even an invalid packet.
+    }
+  }
+
+  /* The following is to parse the LBRR flags. */
+  if (opus_packet_parse(payload, payload_length_bytes, NULL, frame_data,
+                        frame_sizes, NULL) < 0) {
+    return 0;
+  }
+
+  if (frame_sizes[0] <= 1) {
+    return 0;
+  }
+
+  for (n = 0; n < channels; n++) {
+    if (frame_data[0][0] & (0x80 >> ((n + 1) * (frames + 1) - 1)))
+      return 1;
+  }
+
+  return 0;
 }
