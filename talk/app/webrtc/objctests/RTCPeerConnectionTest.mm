@@ -97,28 +97,21 @@
 
 - (void)testCompleteSession {
   RTCPeerConnectionFactory *factory = [[RTCPeerConnectionFactory alloc] init];
-  NSString *stunURL = @"stun:stun.l.google.com:19302";
-  RTCICEServer *stunServer =
-      [[RTCICEServer alloc] initWithURI:[NSURL URLWithString:stunURL]
-                               username:@""
-                               password:@""];
-  NSArray *iceServers = @[stunServer];
-
   RTCMediaConstraints *constraints = [[RTCMediaConstraints alloc] init];
   RTCPeerConnectionSyncObserver *offeringExpectations =
       [[RTCPeerConnectionSyncObserver alloc] init];
-  RTCPeerConnection *pcOffer =
-      [factory peerConnectionWithICEServers:iceServers
+  RTCPeerConnection* pcOffer =
+      [factory peerConnectionWithICEServers:nil
                                 constraints:constraints
                                    delegate:offeringExpectations];
 
   RTCPeerConnectionSyncObserver *answeringExpectations =
       [[RTCPeerConnectionSyncObserver alloc] init];
-  RTCPeerConnection *pcAnswer =
-      [factory peerConnectionWithICEServers:iceServers
+
+  RTCPeerConnection* pcAnswer =
+      [factory peerConnectionWithICEServers:nil
                                 constraints:constraints
                                    delegate:answeringExpectations];
-
   // TODO(hughv): Create video capturer
   RTCVideoCapturer *capturer = nil;
   RTCVideoSource *videoSource =
@@ -188,6 +181,7 @@
 
   [offeringExpectations expectICEConnectionChange:RTCICEConnectionChecking];
   [offeringExpectations expectICEConnectionChange:RTCICEConnectionConnected];
+  [offeringExpectations expectICEConnectionChange:RTCICEConnectionCompleted];
   [answeringExpectations expectICEConnectionChange:RTCICEConnectionChecking];
   [answeringExpectations expectICEConnectionChange:RTCICEConnectionConnected];
 
@@ -219,11 +213,11 @@
   [offeringExpectations waitForAllExpectationsToBeSatisfied];
   [answeringExpectations waitForAllExpectationsToBeSatisfied];
 
-  // Let the audio feedback run for 10s to allow human testing and to ensure
+  // Let the audio feedback run for 2s to allow human testing and to ensure
   // things stabilize.  TODO(fischman): replace seconds with # of video frames,
   // when we have video flowing.
   [[NSRunLoop currentRunLoop]
-      runUntilDate:[NSDate dateWithTimeIntervalSinceNow:10]];
+      runUntilDate:[NSDate dateWithTimeIntervalSinceNow:2]];
 
   // TODO(hughv): Implement orderly shutdown.
 }
