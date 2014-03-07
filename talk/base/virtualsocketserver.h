@@ -28,7 +28,8 @@
 #ifndef TALK_BASE_VIRTUALSOCKETSERVER_H_
 #define TALK_BASE_VIRTUALSOCKETSERVER_H_
 
-#include <cassert>
+#include <assert.h>
+
 #include <deque>
 #include <map>
 

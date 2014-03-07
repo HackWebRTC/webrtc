@@ -32,7 +32,8 @@
 #include <CoreAudio/CoreAudio.h>
 #endif
 
-#include <climits>
+#include <limits.h>
+
 #include <string>
 #include <vector>
 

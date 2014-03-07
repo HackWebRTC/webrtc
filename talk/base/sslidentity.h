@@ -81,9 +81,10 @@ class SSLCertificate {
   virtual bool GetSignatureDigestAlgorithm(std::string* algorithm) const = 0;
 
   // Compute the digest of the certificate given algorithm
-  virtual bool ComputeDigest(const std::string &algorithm,
-                             unsigned char* digest, std::size_t size,
-                             std::size_t* length) const = 0;
+  virtual bool ComputeDigest(const std::string& algorithm,
+                             unsigned char* digest,
+                             size_t size,
+                             size_t* length) const = 0;
 };
 
 // SSLCertChain is a simple wrapper for a vector of SSLCertificates. It serves

@@ -103,8 +103,7 @@ class NSSStreamAdapter : public SSLStreamAdapterHelper {
   // Override SSLStreamAdapterHelper
   virtual int BeginSSL();
   virtual void Cleanup();
-  virtual bool GetDigestLength(const std::string &algorithm,
-                               std::size_t *length) {
+  virtual bool GetDigestLength(const std::string& algorithm, size_t* length) {
     return NSSCertificate::GetDigestLength(algorithm, length);
   }
 

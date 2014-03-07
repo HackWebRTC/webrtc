@@ -28,8 +28,9 @@
 #ifndef TALK_P2P_BASE_CANDIDATE_H_
 #define TALK_P2P_BASE_CANDIDATE_H_
 
-#include <climits>
-#include <cmath>
+#include <limits.h>
+#include <math.h>
+
 #include <string>
 #include <sstream>
 #include <iomanip>

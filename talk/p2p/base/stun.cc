@@ -27,7 +27,7 @@
 
 #include "talk/p2p/base/stun.h"
 
-#include <cstring>
+#include <string.h>
 
 #include "talk/base/byteorder.h"
 #include "talk/base/common.h"
@@ -217,8 +217,9 @@ bool StunMessage::ValidateMessageIntegrity(const char* data, size_t size,
     return false;
 
   // Comparing the calculated HMAC with the one present in the message.
-  return (std::memcmp(data + current_pos + kStunAttributeHeaderSize,
-                      hmac, sizeof(hmac)) == 0);
+  return memcmp(data + current_pos + kStunAttributeHeaderSize,
+                hmac,
+                sizeof(hmac)) == 0;
 }
 
 bool StunMessage::AddMessageIntegrity(const std::string& password) {
@@ -734,7 +735,7 @@ void StunByteStringAttribute::CopyBytes(const char* bytes) {
 
 void StunByteStringAttribute::CopyBytes(const void* bytes, size_t length) {
   char* new_bytes = new char[length];
-  std::memcpy(new_bytes, bytes, length);
+  memcpy(new_bytes, bytes, length);
   SetBytes(new_bytes, length);
 }
 

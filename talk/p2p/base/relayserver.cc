@@ -713,8 +713,7 @@ bool RelayServerBinding::HasMagicCookie(const char* bytes, size_t size) const {
   if (size < 24 + magic_cookie_.size()) {
     return false;
   } else {
-    return 0 == std::memcmp(
-        bytes + 24, magic_cookie_.c_str(), magic_cookie_.size());
+    return memcmp(bytes + 24, magic_cookie_.c_str(), magic_cookie_.size()) == 0;
   }
 }
 

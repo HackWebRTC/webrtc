@@ -87,8 +87,8 @@ class SSLStreamAdapterHelper : public SSLStreamAdapter {
   // Must be implemented by descendents
   virtual int BeginSSL() = 0;
   virtual void Cleanup() = 0;
-  virtual bool GetDigestLength(const std::string &algorithm,
-                               std::size_t *length) = 0;
+  virtual bool GetDigestLength(const std::string& algorithm,
+                               size_t* length) = 0;
 
   enum SSLState {
     // Before calling one of the StartSSL methods, data flows

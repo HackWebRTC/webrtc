@@ -27,7 +27,7 @@
 
 #include "talk/media/base/videoframe.h"
 
-#include <cstring>
+#include <string.h>
 
 #if !defined(DISABLE_YUV)
 #include "libyuv/compare.h"

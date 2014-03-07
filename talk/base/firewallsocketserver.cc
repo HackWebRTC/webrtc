@@ -27,7 +27,8 @@
 
 #include "talk/base/firewallsocketserver.h"
 
-#include <cassert>
+#include <assert.h>
+
 #include <algorithm>
 
 #include "talk/base/asyncsocket.h"

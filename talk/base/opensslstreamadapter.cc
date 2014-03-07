@@ -780,7 +780,7 @@ int OpenSSLStreamAdapter::SSLVerifyCallback(int ok, X509_STORE_CTX* store) {
   }
   X509* cert = X509_STORE_CTX_get_current_cert(store);
   unsigned char digest[EVP_MAX_MD_SIZE];
-  std::size_t digest_length;
+  size_t digest_length;
   if (!OpenSSLCertificate::ComputeDigest(
            cert,
            stream->peer_certificate_digest_algorithm_,

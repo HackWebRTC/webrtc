@@ -27,7 +27,7 @@
 
 #include "talk/base/transformadapter.h"
 
-#include <cstring>
+#include <string.h>
 
 #include "talk/base/common.h"
 

@@ -197,7 +197,7 @@ class RelayServerTest : public testing::Test {
 TEST_F(RelayServerTest, TestBadRequest) {
   talk_base::scoped_ptr<StunMessage> res;
 
-  SendRaw1(bad, static_cast<int>(std::strlen(bad)));
+  SendRaw1(bad, static_cast<int>(strlen(bad)));
   res.reset(Receive1());
 
   ASSERT_TRUE(!res);
@@ -340,7 +340,7 @@ TEST_F(RelayServerTest, TestRemoteBadRequest) {
   Allocate();
   Bind();
 
-  SendRaw1(bad, static_cast<int>(std::strlen(bad)));
+  SendRaw1(bad, static_cast<int>(strlen(bad)));
   EXPECT_TRUE(Receive1() == NULL);
   EXPECT_TRUE(Receive2() == NULL);
 }
@@ -486,7 +486,7 @@ TEST_F(RelayServerTest, TestSendRaw) {
 
     Send1(req.get());
     EXPECT_EQ(msg1, ReceiveRaw2());
-    SendRaw2(msg2, static_cast<int>(std::strlen(msg2)));
+    SendRaw2(msg2, static_cast<int>(strlen(msg2)));
     res.reset(Receive1());
 
     ASSERT_TRUE(res);
@@ -539,6 +539,6 @@ TEST_F(RelayServerTest, TestExpiration) {
   EXPECT_EQ("Operation Not Supported", err->reason());
 
   // Also verify that traffic from the external client is ignored.
-  SendRaw2(msg2, static_cast<int>(std::strlen(msg2)));
+  SendRaw2(msg2, static_cast<int>(strlen(msg2)));
   EXPECT_TRUE(ReceiveRaw1().empty());
 }

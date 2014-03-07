@@ -27,7 +27,7 @@
 
 #include "talk/p2p/base/asyncstuntcpsocket.h"
 
-#include <cstring>
+#include <string.h>
 
 #include "talk/base/common.h"
 #include "talk/base/logging.h"

@@ -27,8 +27,8 @@
 
 #include "talk/base/winping.h"
 
+#include <assert.h>
 #include <Iphlpapi.h>
-#include <cassert>
 
 #include "talk/base/byteorder.h"
 #include "talk/base/common.h"

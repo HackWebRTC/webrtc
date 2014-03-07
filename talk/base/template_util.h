@@ -5,7 +5,7 @@
 #ifndef TALK_BASE_TEMPLATE_UTIL_H_
 #define TALK_BASE_TEMPLATE_UTIL_H_
 
-#include <cstddef>  // For size_t.
+#include <stddef.h>  // For size_t.
 
 namespace talk_base {
 

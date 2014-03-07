@@ -27,7 +27,7 @@
 
 #include "talk/base/versionparsing.h"
 
-#include <cstdlib>
+#include <stdlib.h>
 
 namespace talk_base {
 

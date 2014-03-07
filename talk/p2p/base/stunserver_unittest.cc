@@ -119,7 +119,7 @@ TEST_F(StunServerTest, TestBad) {
   const char* bad = "this is a completely nonsensical message whose only "
                     "purpose is to make the parser go 'ack'.  it doesn't "
                     "look anything like a normal stun message";
-  Send(bad, static_cast<int>(std::strlen(bad)));
+  Send(bad, static_cast<int>(strlen(bad)));
 
   StunMessage* msg = Receive();
   ASSERT_TRUE(msg == NULL);

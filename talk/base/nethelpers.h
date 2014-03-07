@@ -30,7 +30,7 @@
 
 #ifdef POSIX
 #include <netdb.h>
-#include <cstddef>
+#include <stddef.h>
 #elif WIN32
 #include <winsock2.h>  // NOLINT
 #endif

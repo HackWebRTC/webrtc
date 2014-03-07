@@ -25,7 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <cstdio>
+#include <stdio.h>
+
 #include <iostream>
 
 #include "talk/base/thread.h"

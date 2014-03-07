@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <cassert>
+#include <assert.h>
 
 #ifdef WIN32
 // TODO(grunell): Remove io.h includes when Chromium has started

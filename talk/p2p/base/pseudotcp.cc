@@ -27,8 +27,9 @@
 
 #include "talk/p2p/base/pseudotcp.h"
 
-#include <cstdio>
-#include <cstdlib>
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <set>
 
 #include "talk/base/basictypes.h"

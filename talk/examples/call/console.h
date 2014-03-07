@@ -28,7 +28,7 @@
 #ifndef TALK_EXAMPLES_CALL_CONSOLE_H_
 #define TALK_EXAMPLES_CALL_CONSOLE_H_
 
-#include <cstdio>
+#include <stdio.h>
 
 #include "talk/base/thread.h"
 #include "talk/base/messagequeue.h"

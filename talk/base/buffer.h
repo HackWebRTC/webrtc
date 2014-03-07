@@ -28,7 +28,7 @@
 #ifndef TALK_BASE_BUFFER_H_
 #define TALK_BASE_BUFFER_H_
 
-#include <cstring>
+#include <string.h>
 
 #include "talk/base/scoped_ptr.h"
 

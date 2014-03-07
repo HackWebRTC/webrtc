@@ -94,16 +94,17 @@ class OpenSSLCertificate : public SSLCertificate {
   virtual void ToDER(Buffer* der_buffer) const;
 
   // Compute the digest of the certificate given algorithm
-  virtual bool ComputeDigest(const std::string &algorithm,
-                             unsigned char *digest, std::size_t size,
-                             std::size_t *length) const;
+  virtual bool ComputeDigest(const std::string& algorithm,
+                             unsigned char* digest,
+                             size_t size,
+                             size_t* length) const;
 
   // Compute the digest of a certificate as an X509 *
-  static bool ComputeDigest(const X509 *x509,
-                            const std::string &algorithm,
-                            unsigned char *digest,
-                            std::size_t size,
-                            std::size_t *length);
+  static bool ComputeDigest(const X509* x509,
+                            const std::string& algorithm,
+                            unsigned char* digest,
+                            size_t size,
+                            size_t* length);
 
   virtual bool GetSignatureDigestAlgorithm(std::string* algorithm) const;
 

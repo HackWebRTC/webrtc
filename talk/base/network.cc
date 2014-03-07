@@ -60,8 +60,9 @@
 #include <Iphlpapi.h>
 #endif
 
+#include <stdio.h>
+
 #include <algorithm>
-#include <cstdio>
 
 #include "talk/base/logging.h"
 #include "talk/base/scoped_ptr.h"

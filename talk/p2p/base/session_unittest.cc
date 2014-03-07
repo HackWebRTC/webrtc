@@ -25,7 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <cstring>
+#include <string.h>
+
 #include <sstream>
 #include <deque>
 #include <map>
@@ -823,7 +824,7 @@ struct ChannelHandler : sigslot::has_slots<> {
     EXPECT_LE(size, sizeof(last_data));
     data_count += 1;
     last_size = size;
-    std::memcpy(last_data, buf, size);
+    memcpy(last_data, buf, size);
   }
 
   void Send(const char* data, size_t size) {
@@ -1170,14 +1171,10 @@ class SessionTest : public testing::Test {
       EXPECT_EQ(strlen(dat1a), chan2a->last_size);
       EXPECT_EQ(strlen(dat1b), chan2b->last_size);
 
-      EXPECT_EQ(0, std::memcmp(chan1a->last_data, dat2a,
-                               strlen(dat2a)));
-      EXPECT_EQ(0, std::memcmp(chan1b->last_data, dat2b,
-                               strlen(dat2b)));
-      EXPECT_EQ(0, std::memcmp(chan2a->last_data, dat1a,
-                               strlen(dat1a)));
-      EXPECT_EQ(0, std::memcmp(chan2b->last_data, dat1b,
-                               strlen(dat1b)));
+      EXPECT_EQ(0, memcmp(chan1a->last_data, dat2a, strlen(dat2a)));
+      EXPECT_EQ(0, memcmp(chan1b->last_data, dat2b, strlen(dat2b)));
+      EXPECT_EQ(0, memcmp(chan2a->last_data, dat1a, strlen(dat1a)));
+      EXPECT_EQ(0, memcmp(chan2b->last_data, dat1b, strlen(dat1b)));
     }
   }
 

@@ -27,8 +27,9 @@
 
 #include "talk/app/webrtc/webrtcsession.h"
 
+#include <limits.h>
+
 #include <algorithm>
-#include <climits>
 #include <vector>
 
 #include "talk/app/webrtc/jsepicecandidate.h"

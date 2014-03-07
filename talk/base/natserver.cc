@@ -155,7 +155,7 @@ void NATServer::OnExternalPacket(
                                         remote_addr);
   // Copy the data part after the address.
   talk_base::PacketOptions options;
-  std::memcpy(real_buf.get() + addrlength, buf, size);
+  memcpy(real_buf.get() + addrlength, buf, size);
   server_socket_->SendTo(real_buf.get(), size + addrlength,
                          iter->second->route.source(), options);
 }

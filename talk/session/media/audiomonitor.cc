@@ -27,7 +27,7 @@
 
 #include "talk/session/media/audiomonitor.h"
 #include "talk/session/media/voicechannel.h"
-#include <cassert>
+#include <assert.h>
 
 namespace cricket {
 

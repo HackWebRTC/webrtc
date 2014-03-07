@@ -235,18 +235,18 @@ bool OpenSSLCertificate::GetSignatureDigestAlgorithm(
       EVP_get_digestbyobj(x509_->sig_alg->algorithm), algorithm);
 }
 
-bool OpenSSLCertificate::ComputeDigest(const std::string &algorithm,
-                                       unsigned char *digest,
-                                       std::size_t size,
-                                       std::size_t *length) const {
+bool OpenSSLCertificate::ComputeDigest(const std::string& algorithm,
+                                       unsigned char* digest,
+                                       size_t size,
+                                       size_t* length) const {
   return ComputeDigest(x509_, algorithm, digest, size, length);
 }
 
-bool OpenSSLCertificate::ComputeDigest(const X509 *x509,
-                                       const std::string &algorithm,
-                                       unsigned char *digest,
-                                       std::size_t size,
-                                       std::size_t *length) {
+bool OpenSSLCertificate::ComputeDigest(const X509* x509,
+                                       const std::string& algorithm,
+                                       unsigned char* digest,
+                                       size_t size,
+                                       size_t* length) {
   const EVP_MD *md;
   unsigned int n;
 

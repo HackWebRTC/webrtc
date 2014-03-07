@@ -29,7 +29,7 @@
 #pragma warning(disable:4786)
 #endif
 
-#include <cassert>
+#include <assert.h>
 
 #ifdef POSIX
 #include <string.h>

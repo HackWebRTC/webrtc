@@ -27,7 +27,7 @@
 
 #include "talk/base/asynctcpsocket.h"
 
-#include <cstring>
+#include <string.h>
 
 #include "talk/base/byteorder.h"
 #include "talk/base/common.h"

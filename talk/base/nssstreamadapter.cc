@@ -825,7 +825,7 @@ SECStatus NSSStreamAdapter::AuthCertificateHook(void *arg,
     LOG(LS_INFO) << "Checking against specified digest";
     // The peer certificate digest was specified
     unsigned char digest[64];  // Maximum size
-    std::size_t digest_length;
+    size_t digest_length;
 
     if (!peer_cert.ComputeDigest(
             stream->peer_certificate_digest_algorithm_,

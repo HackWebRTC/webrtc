@@ -27,12 +27,14 @@
 
 #define _CRT_SECURE_NO_DEPRECATE 1
 
+#include <assert.h>
+
 #ifdef POSIX
 #include <signal.h>
 #include <termios.h>
 #include <unistd.h>
 #endif  // POSIX
-#include <cassert>
+
 #include "talk/base/logging.h"
 #include "talk/base/messagequeue.h"
 #include "talk/base/stringutils.h"

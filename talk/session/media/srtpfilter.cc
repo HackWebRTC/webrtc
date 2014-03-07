@@ -29,8 +29,9 @@
 
 #include "talk/session/media/srtpfilter.h"
 
+#include <string.h>
+
 #include <algorithm>
-#include <cstring>
 
 #include "talk/base/base64.h"
 #include "talk/base/logging.h"

@@ -107,7 +107,7 @@ bool TestClient::CheckNextPacket(const char* buf, size_t size,
   bool res = false;
   Packet* packet = NextPacket();
   if (packet) {
-    res = (packet->size == size && std::memcmp(packet->buf, buf, size) == 0);
+    res = (packet->size == size && memcmp(packet->buf, buf, size) == 0);
     if (addr)
       *addr = packet->addr;
     delete packet;

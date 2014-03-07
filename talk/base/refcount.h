@@ -28,7 +28,7 @@
 #ifndef TALK_APP_BASE_REFCOUNT_H_
 #define TALK_APP_BASE_REFCOUNT_H_
 
-#include <cstring>
+#include <string.h>
 
 #include "talk/base/criticalsection.h"
 

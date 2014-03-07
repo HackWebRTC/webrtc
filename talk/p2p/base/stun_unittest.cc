@@ -50,8 +50,7 @@ class StunTest : public ::testing::Test {
     ASSERT_EQ(length, msg.transaction_id().size());
     ASSERT_EQ(length == kStunTransactionIdLength + 4, msg.IsLegacy());
     ASSERT_EQ(length == kStunTransactionIdLength, !msg.IsLegacy());
-    ASSERT_EQ(0, std::memcmp(msg.transaction_id().c_str(),
-                             expectedID, length));
+    ASSERT_EQ(0, memcmp(msg.transaction_id().c_str(), expectedID, length));
   }
 
   void CheckStunAddressAttribute(const StunAddressAttribute* addr,
@@ -64,13 +63,11 @@ class StunTest : public ::testing::Test {
     if (addr->family() == STUN_ADDRESS_IPV4) {
       in_addr v4_address = expected_address.ipv4_address();
       in_addr stun_address = addr->ipaddr().ipv4_address();
-      ASSERT_EQ(0, std::memcmp(&v4_address, &stun_address,
-                               sizeof(stun_address)));
+      ASSERT_EQ(0, memcmp(&v4_address, &stun_address, sizeof(stun_address)));
     } else if (addr->family() == STUN_ADDRESS_IPV6) {
       in6_addr v6_address = expected_address.ipv6_address();
       in6_addr stun_address = addr->ipaddr().ipv6_address();
-      ASSERT_EQ(0, std::memcmp(&v6_address, &stun_address,
-                               sizeof(stun_address)));
+      ASSERT_EQ(0, memcmp(&v6_address, &stun_address, sizeof(stun_address)));
     } else {
       ASSERT_TRUE(addr->family() == STUN_ADDRESS_IPV6 ||
                   addr->family() == STUN_ADDRESS_IPV4);
@@ -788,9 +785,8 @@ TEST_F(StunTest, SetIPv6XorAddressAttributeOwner) {
   EXPECT_TRUE(addr->Write(&correct_buf));
   EXPECT_TRUE(addr2.Write(&wrong_buf));
   // But when written out, the buffers should look different.
-  ASSERT_NE(0, std::memcmp(correct_buf.Data(),
-                           wrong_buf.Data(),
-                           wrong_buf.Length()));
+  ASSERT_NE(0,
+            memcmp(correct_buf.Data(), wrong_buf.Data(), wrong_buf.Length()));
   // And when reading a known good value, the address should be wrong.
   addr2.Read(&correct_buf);
   ASSERT_NE(addr->ipaddr(), addr2.ipaddr());
@@ -836,9 +832,8 @@ TEST_F(StunTest, SetIPv4XorAddressAttributeOwner) {
   EXPECT_TRUE(addr->Write(&correct_buf));
   EXPECT_TRUE(addr2.Write(&wrong_buf));
   // The same address data should be written.
-  ASSERT_EQ(0, std::memcmp(correct_buf.Data(),
-                           wrong_buf.Data(),
-                           wrong_buf.Length()));
+  ASSERT_EQ(0,
+            memcmp(correct_buf.Data(), wrong_buf.Data(), wrong_buf.Length()));
   // And an attribute should be able to un-XOR an address belonging to a message
   // with a different transaction ID.
   EXPECT_TRUE(addr2.Read(&correct_buf));
@@ -927,9 +922,7 @@ TEST_F(StunTest, WriteMessageWithIPv6AddressAttribute) {
   int len1 = static_cast<int>(out.Length());
   std::string bytes;
   out.ReadString(&bytes, len1);
-  ASSERT_EQ(0, std::memcmp(bytes.c_str(),
-                           kStunMessageWithIPv6MappedAddress,
-                           len1));
+  ASSERT_EQ(0, memcmp(bytes.c_str(), kStunMessageWithIPv6MappedAddress, len1));
 }
 
 TEST_F(StunTest, WriteMessageWithIPv4AddressAttribute) {
@@ -958,9 +951,7 @@ TEST_F(StunTest, WriteMessageWithIPv4AddressAttribute) {
   int len1 = static_cast<int>(out.Length());
   std::string bytes;
   out.ReadString(&bytes, len1);
-  ASSERT_EQ(0, std::memcmp(bytes.c_str(),
-                           kStunMessageWithIPv4MappedAddress,
-                           len1));
+  ASSERT_EQ(0, memcmp(bytes.c_str(), kStunMessageWithIPv4MappedAddress, len1));
 }
 
 TEST_F(StunTest, WriteMessageWithIPv6XorAddressAttribute) {
@@ -989,9 +980,8 @@ TEST_F(StunTest, WriteMessageWithIPv6XorAddressAttribute) {
   int len1 = static_cast<int>(out.Length());
   std::string bytes;
   out.ReadString(&bytes, len1);
-  ASSERT_EQ(0, std::memcmp(bytes.c_str(),
-                           kStunMessageWithIPv6XorMappedAddress,
-                           len1));
+  ASSERT_EQ(0,
+            memcmp(bytes.c_str(), kStunMessageWithIPv6XorMappedAddress, len1));
 }
 
 TEST_F(StunTest, WriteMessageWithIPv4XoreAddressAttribute) {
@@ -1020,9 +1010,8 @@ TEST_F(StunTest, WriteMessageWithIPv4XoreAddressAttribute) {
   int len1 = static_cast<int>(out.Length());
   std::string bytes;
   out.ReadString(&bytes, len1);
-  ASSERT_EQ(0, std::memcmp(bytes.c_str(),
-                           kStunMessageWithIPv4XorMappedAddress,
-                           len1));
+  ASSERT_EQ(0,
+            memcmp(bytes.c_str(), kStunMessageWithIPv4XorMappedAddress, len1));
 }
 
 TEST_F(StunTest, ReadByteStringAttribute) {
@@ -1107,7 +1096,7 @@ TEST_F(StunTest, WriteMessageWithAnErrorCodeAttribute) {
   EXPECT_TRUE(msg.Write(&out));
   ASSERT_EQ(size, out.Length());
   // No padding.
-  ASSERT_EQ(0, std::memcmp(out.Data(), kStunMessageWithErrorAttribute, size));
+  ASSERT_EQ(0, memcmp(out.Data(), kStunMessageWithErrorAttribute, size));
 }
 
 TEST_F(StunTest, WriteMessageWithAUInt16ListAttribute) {
@@ -1130,8 +1119,8 @@ TEST_F(StunTest, WriteMessageWithAUInt16ListAttribute) {
   EXPECT_TRUE(msg.Write(&out));
   ASSERT_EQ(size, out.Length());
   // Check everything up to the padding.
-  ASSERT_EQ(0, std::memcmp(out.Data(), kStunMessageWithUInt16ListAttribute,
-                           size - 2));
+  ASSERT_EQ(0,
+            memcmp(out.Data(), kStunMessageWithUInt16ListAttribute, size - 2));
 }
 
 // Test that we fail to read messages with invalid lengths.
@@ -1238,7 +1227,7 @@ TEST_F(StunTest, AddMessageIntegrity) {
   const StunByteStringAttribute* mi_attr =
       msg.GetByteString(STUN_ATTR_MESSAGE_INTEGRITY);
   EXPECT_EQ(20U, mi_attr->length());
-  EXPECT_EQ(0, std::memcmp(
+  EXPECT_EQ(0, memcmp(
       mi_attr->bytes(), kCalculatedHmac1, sizeof(kCalculatedHmac1)));
 
   talk_base::ByteBuffer buf1;
@@ -1256,8 +1245,8 @@ TEST_F(StunTest, AddMessageIntegrity) {
   const StunByteStringAttribute* mi_attr2 =
       msg2.GetByteString(STUN_ATTR_MESSAGE_INTEGRITY);
   EXPECT_EQ(20U, mi_attr2->length());
-  EXPECT_EQ(0, std::memcmp(
-      mi_attr2->bytes(), kCalculatedHmac2, sizeof(kCalculatedHmac2)));
+  EXPECT_EQ(
+      0, memcmp(mi_attr2->bytes(), kCalculatedHmac2, sizeof(kCalculatedHmac2)));
 
   talk_base::ByteBuffer buf3;
   EXPECT_TRUE(msg2.Write(&buf3));
@@ -1401,8 +1390,10 @@ TEST_F(StunTest, ReadRelayMessage) {
   bytes = msg.GetByteString(STUN_ATTR_MAGIC_COOKIE);
   ASSERT_TRUE(bytes != NULL);
   EXPECT_EQ(4U, bytes->length());
-  EXPECT_EQ(0, std::memcmp(bytes->bytes(), TURN_MAGIC_COOKIE_VALUE,
-                           sizeof(TURN_MAGIC_COOKIE_VALUE)));
+  EXPECT_EQ(0,
+            memcmp(bytes->bytes(),
+                   TURN_MAGIC_COOKIE_VALUE,
+                   sizeof(TURN_MAGIC_COOKIE_VALUE)));
 
   bytes2 = StunAttribute::CreateByteString(STUN_ATTR_MAGIC_COOKIE);
   bytes2->CopyBytes(reinterpret_cast<const char*>(TURN_MAGIC_COOKIE_VALUE),
@@ -1454,7 +1445,7 @@ TEST_F(StunTest, ReadRelayMessage) {
   size_t len1 = out.Length();
   std::string outstring;
   out.ReadString(&outstring, len1);
-  EXPECT_EQ(0, std::memcmp(outstring.c_str(), input, len1));
+  EXPECT_EQ(0, memcmp(outstring.c_str(), input, len1));
 
   talk_base::ByteBuffer out2;
   EXPECT_TRUE(msg2.Write(&out2));
@@ -1462,7 +1453,7 @@ TEST_F(StunTest, ReadRelayMessage) {
   size_t len2 = out2.Length();
   std::string outstring2;
   out2.ReadString(&outstring2, len2);
-  EXPECT_EQ(0, std::memcmp(outstring2.c_str(), input, len2));
+  EXPECT_EQ(0, memcmp(outstring2.c_str(), input, len2));
 }
 
 }  // namespace cricket

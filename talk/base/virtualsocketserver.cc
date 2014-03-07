@@ -28,9 +28,9 @@
 #include "talk/base/virtualsocketserver.h"
 
 #include <errno.h>
+#include <math.h>
 
 #include <algorithm>
-#include <cmath>
 #include <map>
 #include <vector>
 
@@ -80,7 +80,7 @@ class Packet : public MessageData {
         : size_(size), consumed_(0), from_(from) {
     ASSERT(NULL != data);
     data_ = new char[size_];
-    std::memcpy(data_, data, size_);
+    memcpy(data_, data, size_);
   }
 
   virtual ~Packet() {
@@ -283,7 +283,7 @@ class VirtualSocket : public AsyncSocket, public MessageHandler {
     // Return the packet at the front of the queue.
     Packet* packet = recv_buffer_.front();
     size_t data_read = _min(cb, packet->size());
-    std::memcpy(pv, packet->data(), data_read);
+    memcpy(pv, packet->data(), data_read);
     *paddr = packet->from();
 
     if (data_read < packet->size()) {
@@ -963,11 +963,11 @@ void VirtualSocketServer::UpdateDelayDistribution() {
   }
 }
 
-static double PI = 4 * std::atan(1.0);
+static double PI = 4 * atan(1.0);
 
 static double Normal(double x, double mean, double stddev) {
   double a = (x - mean) * (x - mean) / (2 * stddev * stddev);
-  return std::exp(-a) / (stddev * sqrt(2 * PI));
+  return exp(-a) / (stddev * sqrt(2 * PI));
 }
 
 #if 0  // static unused gives a warning

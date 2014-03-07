@@ -27,8 +27,8 @@
 
 #include "talk/base/stringencode.h"
 
-#include <cstdio>
-#include <cstdlib>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "talk/base/basictypes.h"
 #include "talk/base/common.h"

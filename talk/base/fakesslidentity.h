@@ -68,9 +68,10 @@ class FakeSSLCertificate : public talk_base::SSLCertificate {
     *algorithm = digest_algorithm_;
     return true;
   }
-  virtual bool ComputeDigest(const std::string &algorithm,
-                             unsigned char *digest, std::size_t size,
-                             std::size_t *length) const {
+  virtual bool ComputeDigest(const std::string& algorithm,
+                             unsigned char* digest,
+                             size_t size,
+                             size_t* length) const {
     *length = talk_base::ComputeDigest(algorithm, data_.c_str(), data_.size(),
                                        digest, size);
     return (*length != 0);

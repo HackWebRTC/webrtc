@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <cassert>
+#include <assert.h>
 
 #include "talk/base/nattypes.h"
 

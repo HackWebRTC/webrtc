@@ -84,8 +84,9 @@ class NSSCertificate : public SSLCertificate {
   virtual bool GetSignatureDigestAlgorithm(std::string* algorithm) const;
 
   virtual bool ComputeDigest(const std::string& algorithm,
-                             unsigned char* digest, std::size_t size,
-                             std::size_t* length) const;
+                             unsigned char* digest,
+                             size_t size,
+                             size_t* length) const;
 
   virtual bool GetChain(SSLCertChain** chain) const;
 
@@ -97,8 +98,7 @@ class NSSCertificate : public SSLCertificate {
   static bool IsValidChain(const CERTCertList* cert_list);
 
   // Helper function to get the length of a digest
-  static bool GetDigestLength(const std::string& algorithm,
-                              std::size_t* length);
+  static bool GetDigestLength(const std::string& algorithm, size_t* length);
 
   // Comparison.  Only the certificate itself is considered, not the chain.
   bool Equals(const NSSCertificate* tocompare) const;

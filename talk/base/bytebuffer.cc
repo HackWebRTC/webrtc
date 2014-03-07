@@ -27,9 +27,10 @@
 
 #include "talk/base/bytebuffer.h"
 
+#include <assert.h>
+#include <string.h>
+
 #include <algorithm>
-#include <cassert>
-#include <cstring>
 
 #include "talk/base/basictypes.h"
 #include "talk/base/byteorder.h"

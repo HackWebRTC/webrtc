@@ -25,11 +25,11 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <math.h>
 #include <time.h>
 #ifdef POSIX
 #include <netinet/in.h>
 #endif
-#include <cmath>
 
 #include "talk/base/logging.h"
 #include "talk/base/gunit.h"
@@ -686,7 +686,7 @@ class VirtualSocketServerTest : public testing::Test {
     double num =
         receiver.samples * receiver.sum_sq - receiver.sum * receiver.sum;
     double den = receiver.samples * (receiver.samples - 1);
-    const double sample_stddev = std::sqrt(num / den);
+    const double sample_stddev = sqrt(num / den);
     LOG(LS_VERBOSE) << "mean=" << sample_mean << " stddev=" << sample_stddev;
 
     EXPECT_LE(500u, receiver.samples);
@@ -1002,7 +1002,7 @@ TEST_F(VirtualSocketServerTest, CreatesStandardDistribution) {
           double dev = (*f)[i].second - mean;
           sum_sq_dev += dev * dev;
         }
-        const double stddev = std::sqrt(sum_sq_dev / f->size());
+        const double stddev = sqrt(sum_sq_dev / f->size());
         EXPECT_NEAR(kTestMean[midx], mean, 0.1 * kTestMean[midx])
           << "M=" << kTestMean[midx]
           << " SD=" << kStdDev

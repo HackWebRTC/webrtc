@@ -12,12 +12,11 @@
 #include <fcntl.h>
 #include <linux/types.h>
 #include <linux/videodev2.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-
-#include <cstring>
 
 #include "talk/base/logging.h"
 

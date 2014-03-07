@@ -28,9 +28,9 @@
 #include "talk/base/json.h"
 
 #include <errno.h>
+#include <limits.h>
+#include <stdlib.h>
 
-#include <climits>
-#include <cstdlib>
 #include <sstream>
 
 bool GetStringFromJson(const Json::Value& in, std::string* out) {

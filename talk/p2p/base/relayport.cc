@@ -258,8 +258,9 @@ bool RelayPort::HasMagicCookie(const char* data, size_t size) {
   if (size < 24 + sizeof(TURN_MAGIC_COOKIE_VALUE)) {
     return false;
   } else {
-    return 0 == std::memcmp(data + 24, TURN_MAGIC_COOKIE_VALUE,
-                            sizeof(TURN_MAGIC_COOKIE_VALUE));
+    return memcmp(data + 24,
+                  TURN_MAGIC_COOKIE_VALUE,
+                  sizeof(TURN_MAGIC_COOKIE_VALUE)) == 0;
   }
 }
 
@@ -430,7 +431,7 @@ void RelayConnection::OnSendPacket(const void* data, size_t size,
   int sent = socket_->SendTo(data, size, GetAddress(), options);
   if (sent <= 0) {
     LOG(LS_VERBOSE) << "OnSendPacket: failed sending to " << GetAddress() <<
-        std::strerror(socket_->GetError());
+        strerror(socket_->GetError());
     ASSERT(sent < 0);
   }
 }

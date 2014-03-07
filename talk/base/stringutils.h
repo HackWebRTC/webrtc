@@ -31,6 +31,7 @@
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 
 #ifdef WIN32
 #include <malloc.h>
@@ -46,7 +47,6 @@
 #endif  // !BSD
 #endif  // POSIX
 
-#include <cstring>
 #include <string>
 
 #include "talk/base/basictypes.h"

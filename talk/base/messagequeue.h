@@ -28,8 +28,9 @@
 #ifndef TALK_BASE_MESSAGEQUEUE_H_
 #define TALK_BASE_MESSAGEQUEUE_H_
 
+#include <string.h>
+
 #include <algorithm>
-#include <cstring>
 #include <list>
 #include <queue>
 #include <vector>

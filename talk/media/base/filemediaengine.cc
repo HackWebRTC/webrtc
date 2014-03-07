@@ -25,7 +25,7 @@
 
 #include "talk/media/base/filemediaengine.h"
 
-#include <climits>
+#include <limits.h>
 
 #include "talk/base/buffer.h"
 #include "talk/base/event.h"

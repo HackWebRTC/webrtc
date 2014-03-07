@@ -211,8 +211,8 @@ bool NSSCertificate::IsValidChain(const CERTCertList* cert_list) {
   return true;
 }
 
-bool NSSCertificate::GetDigestLength(const std::string &algorithm,
-                                     std::size_t *length) {
+bool NSSCertificate::GetDigestLength(const std::string& algorithm,
+                                     size_t* length) {
   const SECHashObject *ho;
 
   if (!GetDigestObject(algorithm, &ho))
@@ -271,9 +271,10 @@ bool NSSCertificate::GetSignatureDigestAlgorithm(std::string* algorithm) const {
   return true;
 }
 
-bool NSSCertificate::ComputeDigest(const std::string &algorithm,
-                                   unsigned char *digest, std::size_t size,
-                                   std::size_t *length) const {
+bool NSSCertificate::ComputeDigest(const std::string& algorithm,
+                                   unsigned char* digest,
+                                   size_t size,
+                                   size_t* length) const {
   const SECHashObject *ho;
 
   if (!GetDigestObject(algorithm, &ho))

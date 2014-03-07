@@ -28,7 +28,8 @@
 #ifndef TALK_MEDIA_BASE_RTPDUMP_H_
 #define TALK_MEDIA_BASE_RTPDUMP_H_
 
-#include <cstring>
+#include <string.h>
+
 #include <string>
 #include <vector>
 
