@@ -261,6 +261,13 @@
           }],
         ],
       }],
+      ['os_posix==1', {
+        # For access to standard POSIXish features, use WEBRTC_POSIX instead of
+        # a more specific macro.
+        'defines': [
+          'WEBRTC_POSIX',
+        ],
+      }],
       ['OS=="ios"', {
         'defines': [
           'WEBRTC_MAC',
