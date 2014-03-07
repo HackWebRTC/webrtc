@@ -127,6 +127,8 @@ const char StatsReport::kStatsValueNamePlisSent[] = "googPlisSent";
 const char StatsReport::kStatsValueNamePacketsReceived[] = "packetsReceived";
 const char StatsReport::kStatsValueNamePacketsSent[] = "packetsSent";
 const char StatsReport::kStatsValueNamePacketsLost[] = "packetsLost";
+const char StatsReport::kStatsValueNamePreferredJitterBufferMs[] =
+    "googPreferredJitterBufferMs";
 const char StatsReport::kStatsValueNameReadable[] = "googReadable";
 const char StatsReport::kStatsValueNameRecvPacketGroupArrivalTimeDebug[] =
     "googReceivedPacketGroupArrivalTimeDebug";
@@ -256,6 +258,12 @@ void ExtractStats(const cricket::VoiceReceiverInfo& info, StatsReport* report) {
                    info.bytes_rcvd);
   report->AddValue(StatsReport::kStatsValueNameJitterReceived,
                    info.jitter_ms);
+  report->AddValue(StatsReport::kStatsValueNameJitterBufferMs,
+                   info.jitter_buffer_ms);
+  report->AddValue(StatsReport::kStatsValueNamePreferredJitterBufferMs,
+                   info.jitter_buffer_preferred_ms);
+  report->AddValue(StatsReport::kStatsValueNameCurrentDelayMs,
+                   info.delay_estimate_ms);
   report->AddValue(StatsReport::kStatsValueNameExpandRate,
                    talk_base::ToString<float>(info.expand_rate));
   report->AddValue(StatsReport::kStatsValueNamePacketsReceived,

@@ -171,6 +171,7 @@ class StatsReport {
   static const char kStatsValueNameNacksSent[];
   static const char kStatsValueNamePlisReceived[];
   static const char kStatsValueNamePlisSent[];
+  static const char kStatsValueNamePreferredJitterBufferMs[];
   static const char kStatsValueNameRtt[];
   static const char kStatsValueNameAvailableSendBandwidth[];
   static const char kStatsValueNameAvailableReceiveBandwidth[];
