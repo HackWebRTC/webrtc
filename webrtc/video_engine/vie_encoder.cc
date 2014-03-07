@@ -385,6 +385,11 @@ int32_t ViEEncoder::DeRegisterExternalEncoder(uint8_t pl_type) {
       CriticalSectionScoped cs(data_cs_.get());
       send_padding_ = current_send_codec.numberOfSimulcastStreams > 1;
     }
+    // TODO(mflodman): Unfortunately the VideoCodec that VCM has cached a
+    // raw pointer to an |extra_options| that's long gone.  Clearing it here is
+    // a hack to prevent the following code from crashing.  This should be fixed
+    // for realz.  https://code.google.com/p/chromium/issues/detail?id=348222
+    current_send_codec.extra_options = NULL;
     if (vcm_.RegisterSendCodec(&current_send_codec, number_of_cores_,
                                max_data_payload_length) != VCM_OK) {
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
