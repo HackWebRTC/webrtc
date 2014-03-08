@@ -183,6 +183,9 @@
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
     iceConnectionChanged:(RTCICEConnectionState)newState {
+  // See TODO(fischman) in RTCPeerConnectionTest.mm about Completed.
+  if (newState == RTCICEConnectionCompleted)
+    return;
   int expectedState = [self popFirstElementAsInt:_expectedICEConnectionChanges];
   NSAssert(expectedState == (int)newState, @"Empty expectation array");
 }
