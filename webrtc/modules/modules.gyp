@@ -115,6 +115,7 @@
             'audio_coding/codecs/isac/fix/source/transform_unittest.cc',
             'audio_coding/codecs/isac/main/source/isac_unittest.cc',
             'audio_coding/codecs/opus/opus_unittest.cc',
+            'audio_coding/neteq4/audio_classifier_unittest.cc',
             'audio_coding/neteq4/audio_multi_vector_unittest.cc',
             'audio_coding/neteq4/audio_vector_unittest.cc',
             'audio_coding/neteq4/background_noise_unittest.cc',

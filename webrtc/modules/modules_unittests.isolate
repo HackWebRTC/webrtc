@@ -15,6 +15,12 @@
           '../../../data/',
           '../../../resources/',
         ],
+        'isolate_dependency_tracked': [
+          '../../../resources/short_mixed_mono_48.dat',
+          '../../../resources/short_mixed_mono_48.pcm',
+          '../../../resources/short_mixed_stereo_48.dat',
+          '../../../resources/short_mixed_stereo_48.pcm',
+        ],
       },
     }],
     ['OS=="linux" or OS=="mac" or OS=="win"', {
@@ -72,6 +78,10 @@
           '../../resources/remote_bitrate_estimator/VideoSendersTest_BweTest_SteadyLoss_0_TOF.bin',
           '../../resources/remote_bitrate_estimator/VideoSendersTest_BweTest_UnlimitedSpeed_0_AST.bin',
           '../../resources/remote_bitrate_estimator/VideoSendersTest_BweTest_UnlimitedSpeed_0_TOF.bin',
+          '../../resources/short_mixed_mono_48.dat',
+          '../../resources/short_mixed_mono_48.pcm',
+          '../../resources/short_mixed_stereo_48.dat',
+          '../../resources/short_mixed_stereo_48.pcm',
           '../../resources/sprint-downlink.rx',
           '../../resources/sprint-uplink.rx',
           '../../resources/synthetic-trace.rx',

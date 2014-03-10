@@ -141,6 +141,17 @@
     },
 
     {
+      'target_name': 'audio_classifier_test',
+      'type': 'executable',
+      'dependencies': [
+        'NetEq4',
+      ],
+      'sources': [
+        'test/audio_classifier_test.cc',
+      ],
+    },
+
+    {
       'target_name': 'neteq4_speed_test',
       'type': 'executable',
       'dependencies': [
