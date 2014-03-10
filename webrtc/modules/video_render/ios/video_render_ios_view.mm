@@ -135,12 +135,6 @@ using namespace webrtc;
                  __FUNCTION__,
                  __LINE__);
   }
-
-  // update UI stuff on the main thread
-  [self performSelectorOnMainThread:@selector(setNeedsDisplay)
-                         withObject:nil
-                      waitUntilDone:NO];
-
   return YES;
 }
 
