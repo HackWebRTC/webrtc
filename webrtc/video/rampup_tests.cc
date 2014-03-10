@@ -528,6 +528,7 @@ TEST_F(RampUpTest, UpDownUpOneStream) { RunRampUpDownUpTest(1, false); }
 
 // TODO(hlundin): Find out why these tests are failing on some bots and
 // re-enable.
+// See https://code.google.com/p/webrtc/issues/detail?id=3010.
 TEST_F(RampUpTest, DISABLED_UpDownUpThreeStreams) {
   RunRampUpDownUpTest(3, false);
 }
