@@ -35,6 +35,10 @@ class PushSincResampler : public SincResamplerCallback {
   // to |destination_frames|).
   int Resample(const int16_t* source, int source_frames,
                int16_t* destination, int destination_capacity);
+  int Resample(const float* source,
+               int source_frames,
+               float* destination,
+               int destination_capacity);
 
   // Implements SincResamplerCallback.
   virtual void Run(int frames, float* destination) OVERRIDE;
@@ -43,8 +47,9 @@ class PushSincResampler : public SincResamplerCallback {
 
  private:
   scoped_ptr<SincResampler> resampler_;
-  scoped_array<float> float_buffer_;
-  const int16_t* source_ptr_;
+  scoped_ptr<float[]> float_buffer_;
+  const float* source_ptr_;
+  const int16_t* source_ptr_int_;
   const int destination_frames_;
 
   // True on the first call to Resample(), to prime the SincResampler buffer.
