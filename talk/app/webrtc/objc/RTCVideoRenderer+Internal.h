@@ -35,6 +35,4 @@
 @property(nonatomic, assign, readonly)
     webrtc::VideoRendererInterface *videoRenderer;
 
-- (id)initWithVideoRenderer:(webrtc::VideoRendererInterface *)videoRenderer;
-
 @end

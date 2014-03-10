@@ -29,6 +29,7 @@
 
 @protocol RTCVideoRendererDelegate;
 struct CGRect;
+@class UIView;
 
 // Interface for rendering VideoFrames from a VideoTrack
 @interface RTCVideoRenderer : NSObject
@@ -38,10 +39,19 @@ struct CGRect;
 // A convenience method to create a renderer and window and render frames into
 // that window.
 + (RTCVideoRenderer *)videoRenderGUIWithFrame:(CGRect)frame;
++ (UIView*)newRenderViewWithFrame:(CGRect)frame;
+// The view to the following constructor
+// must be one of the views from newRenderViewWithFrame.
+- (id)initWithRenderView:(UIView*)renderView;
 
 // Initialize the renderer.  Requires a delegate which does the actual drawing
 // of frames.
 - (id)initWithDelegate:(id<RTCVideoRendererDelegate>)delegate;
+
+// Starts rendering.
+- (void)start;
+// Stops rendering. It can be restarted again using the 'start' method above.
+- (void)stop;
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 // Disallow init and don't add to documentation

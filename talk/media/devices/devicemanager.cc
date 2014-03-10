@@ -39,8 +39,6 @@
 #include "talk/media/devices/filevideocapturer.h"
 #include "talk/media/devices/yuvframescapturer.h"
 
-#if !defined(IOS)
-
 #if defined(HAVE_WEBRTC_VIDEO)
 #include "talk/media/webrtc/webrtcvideocapturer.h"
 #endif
@@ -50,8 +48,6 @@
 #define VIDEO_CAPTURER_NAME WebRtcVideoCapturer
 #endif
 
-
-#endif
 
 namespace {
 
@@ -216,10 +212,6 @@ void DeviceManager::ClearVideoCaptureDeviceMaxFormat(
 }
 
 VideoCapturer* DeviceManager::CreateVideoCapturer(const Device& device) const {
-#if defined(IOS)
-  LOG_F(LS_ERROR) << " should never be called!";
-  return NULL;
-#else
   VideoCapturer* capturer = ConstructFakeVideoCapturer(device);
   if (capturer) {
     return capturer;
@@ -237,7 +229,6 @@ VideoCapturer* DeviceManager::CreateVideoCapturer(const Device& device) const {
     capturer->ConstrainSupportedFormats(video_format);
   }
   return capturer;
-#endif
 }
 
 VideoCapturer* DeviceManager::ConstructFakeVideoCapturer(

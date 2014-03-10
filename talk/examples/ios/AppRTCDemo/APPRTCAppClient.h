@@ -36,6 +36,8 @@
 
 @end
 
+@class RTCMediaConstraints;
+
 // Negotiates signaling for chatting with apprtc.appspot.com "rooms".
 // Uses the client<->server specifics of the apprtc AppEngine webapp.
 //
@@ -48,6 +50,7 @@
 @property(nonatomic, assign) id<ICEServerDelegate> ICEServerDelegate;
 @property(nonatomic, assign) id<GAEMessageHandler> messageHandler;
 @property(nonatomic, assign) BOOL initiator;
+@property(nonatomic, strong) RTCMediaConstraints* videoConstraints;
 
 - (void)connectToRoom:(NSURL *)room;
 - (void)sendData:(NSData *)data;

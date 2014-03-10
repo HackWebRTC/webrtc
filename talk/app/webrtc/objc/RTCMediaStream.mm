@@ -126,14 +126,14 @@
           [[RTCAudioTrack alloc] initWithMediaTrack:track];
       [_audioTracks addObject:audioTrack];
     }
-      // TODO(hughv): Add video.
-//    for (size_t i = 0; i < video_tracks.size(); ++i) {
-//      talk_base::scoped_refptr<webrtc::VideoTrackInterface> track =
-//          video_tracks[i];
-//      RTCVideoTrack *videoTrack =
-//          [[RTCVideoTrack alloc] initWithMediaTrack:track];
-//      [_videoTracks addObject:videoTrack];
-//    }
+
+    for (size_t i = 0; i < video_tracks.size(); ++i) {
+      talk_base::scoped_refptr<webrtc::VideoTrackInterface> track =
+          video_tracks[i];
+      RTCVideoTrack* videoTrack =
+          [[RTCVideoTrack alloc] initWithMediaTrack:track];
+      [_videoTracks addObject:videoTrack];
+    }
   }
   return self;
 }

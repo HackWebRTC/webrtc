@@ -27,7 +27,11 @@
 
 #import "APPRTCViewController.h"
 
+#import "VideoView.h"
+
 @interface APPRTCViewController ()
+
+@property (nonatomic, assign) UIInterfaceOrientation statusBarOrientation;
 
 @end
 
@@ -36,11 +40,29 @@
 @synthesize textField = _textField;
 @synthesize textInstructions = _textInstructions;
 @synthesize textOutput = _textOutput;
+@synthesize blackView = _blackView;
+
+@synthesize remoteVideoView = _remoteVideoView;
+@synthesize localVideoView = _localVideoView;
+
+@synthesize statusBarOrientation = _statusBarOrientation;
 
 - (void)viewDidLoad {
   [super viewDidLoad];
+  self.statusBarOrientation =
+    [UIApplication sharedApplication].statusBarOrientation;
   self.textField.delegate = self;
   [self.textField becomeFirstResponder];
+}
+
+- (void)viewDidLayoutSubviews {
+    if (self.statusBarOrientation !=
+        [UIApplication sharedApplication].statusBarOrientation) {
+        self.statusBarOrientation =
+            [UIApplication sharedApplication].statusBarOrientation;
+        [[NSNotificationCenter defaultCenter]
+         postNotificationName:@"StatusBarOrientationDidChange" object:nil];
+    }
 }
 
 - (void)displayText:(NSString *)text {
@@ -52,11 +74,75 @@
 }
 
 - (void)resetUI {
+  [self.textField resignFirstResponder];
   self.textField.text = nil;
   self.textField.hidden = NO;
   self.textInstructions.hidden = NO;
   self.textOutput.hidden = YES;
   self.textOutput.text = nil;
+  self.blackView.hidden = YES;
+
+  [_remoteVideoView stop];
+  [_remoteVideoView removeFromSuperview];
+  self.remoteVideoView = nil;
+
+  [_localVideoView stop];
+  [_localVideoView removeFromSuperview];
+  self.localVideoView = nil;
+}
+
+// TODO(fischman): Use video dimensions from the incoming video stream
+// and resize the Video View accordingly w.r.t. aspect ratio.
+enum {
+    // Remote video view dimensions.
+    kRemoteVideoWidth = 640,
+    kRemoteVideoHeight = 480,
+    // Padding space for local video view with its parent.
+    kLocalViewPadding = 20
+};
+
+- (void)setupCaptureSession {
+    self.blackView.hidden = NO;
+
+    CGRect frame = CGRectMake((self.blackView.bounds.size.width
+                               -kRemoteVideoWidth)/2,
+                              (self.blackView.bounds.size.height
+                               -kRemoteVideoHeight)/2,
+                              kRemoteVideoWidth,
+                              kRemoteVideoHeight);
+    VideoView *videoView = [[VideoView alloc] initWithFrame:frame];
+    videoView.isRemote = TRUE;
+
+    [self.blackView addSubview:videoView];
+    videoView.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin |
+                                    UIViewAutoresizingFlexibleRightMargin |
+                                    UIViewAutoresizingFlexibleBottomMargin |
+                                    UIViewAutoresizingFlexibleTopMargin;
+    videoView.translatesAutoresizingMaskIntoConstraints = YES;
+    _remoteVideoView = videoView;
+
+    CGSize screenSize = [[UIScreen mainScreen] bounds].size;
+    CGFloat localVideoViewWidth =
+        UIInterfaceOrientationIsPortrait(self.statusBarOrientation) ?
+                        screenSize.width/4 : screenSize.height/4;
+    CGFloat localVideoViewHeight =
+        UIInterfaceOrientationIsPortrait(self.statusBarOrientation) ?
+                        screenSize.height/4 : screenSize.width/4;
+    frame = CGRectMake(self.blackView.bounds.size.width
+                       -localVideoViewWidth-kLocalViewPadding,
+                       kLocalViewPadding,
+                       localVideoViewWidth,
+                       localVideoViewHeight);
+    videoView = [[VideoView alloc] initWithFrame:frame];
+    videoView.isRemote = FALSE;
+
+    [self.blackView addSubview:videoView];
+    videoView.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin |
+                                    UIViewAutoresizingFlexibleBottomMargin |
+                                    UIViewAutoresizingFlexibleHeight |
+                                    UIViewAutoresizingFlexibleWidth;
+    videoView.translatesAutoresizingMaskIntoConstraints = YES;
+    _localVideoView = videoView;
 }
 
 #pragma mark - UITextFieldDelegate
@@ -76,6 +162,10 @@
   NSString *url =
       [NSString stringWithFormat:@"apprtc://apprtc.appspot.com/?r=%@", room];
   [[UIApplication sharedApplication] openURL:[NSURL URLWithString:url]];
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+      [self setupCaptureSession];
+  });
 }
 
 - (BOOL)textFieldShouldReturn:(UITextField *)textField {

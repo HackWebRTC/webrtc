@@ -120,7 +120,7 @@
     return nil;
   }
   talk_base::scoped_refptr<webrtc::VideoSourceInterface> source =
-      self.nativeFactory->CreateVideoSource(capturer.capturer.get(),
+      self.nativeFactory->CreateVideoSource([capturer release_native_capturer],
                                             constraints.constraints);
   return [[RTCVideoSource alloc] initWithMediaSource:source];
 }

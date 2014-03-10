@@ -922,7 +922,12 @@ void StatsCollector::UpdateStatsFromExistingLocalAudioTracks() {
     std::string ssrc_id = talk_base::ToString<uint32>(ssrc);
     StatsReport* report = GetReport(StatsReport::kStatsReportTypeSsrc,
                                     ssrc_id);
-    ASSERT(report != NULL);
+    if (report == NULL) {
+      // This can happen if a local audio track is added to a stream on the
+      // fly and the report has not been set up yet. Do nothing in this case.
+      LOG(LS_ERROR) << "Stats report does not exist for ssrc " << ssrc;
+      continue;
+    }
 
     // The same ssrc can be used by both local and remote audio tracks.
     std::string track_id;

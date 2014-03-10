@@ -25,6 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#import <AVFoundation/AVFoundation.h>
+
 #import "APPRTCAppDelegate.h"
 
 #import "APPRTCViewController.h"
@@ -37,16 +39,24 @@
 #import "RTCPeerConnectionDelegate.h"
 #import "RTCPeerConnectionFactory.h"
 #import "RTCSessionDescription.h"
+#import "RTCVideoRenderer.h"
+#import "RTCVideoCapturer.h"
+#import "RTCVideoTrack.h"
+#import "VideoView.h"
 
 @interface PCObserver : NSObject<RTCPeerConnectionDelegate>
 
 - (id)initWithDelegate:(id<APPRTCSendMessage>)delegate;
+
+@property(nonatomic, strong)  VideoView *videoView;
 
 @end
 
 @implementation PCObserver {
   id<APPRTCSendMessage> _delegate;
 }
+
+@synthesize videoView = _videoView;
 
 - (id)initWithDelegate:(id<APPRTCSendMessage>)delegate {
   if (self = [super init]) {
@@ -71,16 +81,18 @@
   dispatch_async(dispatch_get_main_queue(), ^(void) {
     NSAssert([stream.audioTracks count] >= 1,
              @"Expected at least 1 audio stream");
-    //NSAssert([stream.videoTracks count] >= 1,
-    //         @"Expected at least 1 video stream");
-    // TODO(hughv): Add video support
+    NSAssert([stream.videoTracks count] <= 1,
+             @"Expected at most 1 video stream");
+    if ([stream.videoTracks count] != 0) {
+        [[self videoView]
+         renderVideoTrackInterface:[stream.videoTracks objectAtIndex:0]];
+    }
   });
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
          removedStream:(RTCMediaStream *)stream {
   NSLog(@"PCO onRemoveStream.");
-  // TODO(hughv): Remove video track.
 }
 
 - (void)
@@ -166,8 +178,7 @@
 
 - (void)applicationWillResignActive:(UIApplication *)application {
   [self displayLogMessage:@"Application lost focus, connection broken."];
-  [self disconnect];
-  [self.viewController resetUI];
+  [self closeVideoUI];
 }
 
 - (void)applicationDidEnterBackground:(UIApplication *)application {
@@ -212,7 +223,21 @@
 - (void)onICEServers:(NSArray *)servers {
   self.queuedRemoteCandidates = [NSMutableArray array];
   self.peerConnectionFactory = [[RTCPeerConnectionFactory alloc] init];
-  RTCMediaConstraints *constraints = [[RTCMediaConstraints alloc] init];
+  RTCMediaConstraints *constraints = [[RTCMediaConstraints alloc]
+                                      initWithMandatoryConstraints:
+                                      @[[[RTCPair alloc]
+                                         initWithKey:@"OfferToReceiveAudio"
+                                                               value:@"true"],
+                                        [[RTCPair alloc]
+                                         initWithKey:@"OfferToReceiveVideo"
+                                                               value:@"true"]]
+                                      optionalConstraints:
+                                      @[[[RTCPair alloc]
+                                         initWithKey:@"internalSctpDataChannels"
+                                                               value:@"true"],
+                                        [[RTCPair alloc]
+                                         initWithKey:@"DtlsSrtpKeyAgreement"
+                                                               value:@"true"]]];
   self.pcObserver = [[PCObserver alloc] initWithDelegate:self];
   self.peerConnection =
       [self.peerConnectionFactory peerConnectionWithICEServers:servers
@@ -220,7 +245,34 @@
                                                       delegate:self.pcObserver];
   RTCMediaStream *lms =
       [self.peerConnectionFactory mediaStreamWithLabel:@"ARDAMS"];
-  // TODO(hughv): Add video.
+
+  NSString *cameraID = nil;
+  for (AVCaptureDevice *captureDevice in
+       [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo] ) {
+      if (captureDevice.position == AVCaptureDevicePositionFront) {
+          cameraID = [captureDevice localizedName];
+          break;
+      }
+  }
+  NSAssert(cameraID, @"Unable to get the front camera id");
+
+  RTCVideoCapturer *capturer =
+    [RTCVideoCapturer capturerWithDeviceName:cameraID];
+  RTCVideoSource *videoSource =
+    [self.peerConnectionFactory
+     videoSourceWithCapturer:capturer constraints:self.client.videoConstraints];
+  RTCVideoTrack *localVideoTrack =
+   [self.peerConnectionFactory
+    videoTrackWithID:@"ARDAMSv0" source:videoSource];
+  if (localVideoTrack) {
+      [lms addVideoTrack:localVideoTrack];
+  }
+
+  [self.viewController.localVideoView
+   renderVideoTrackInterface:localVideoTrack];
+
+  self.pcObserver.videoView = self.viewController.remoteVideoView;
+
   [lms addAudioTrack:[self.peerConnectionFactory audioTrackWithID:@"ARDAMSa0"]];
   [self.peerConnection addStream:lms constraints:constraints];
   [self displayLogMessage:@"onICEServers - add local stream."];
@@ -236,10 +288,9 @@
   [self displayLogMessage:@"GAE onOpen - create offer."];
   RTCPair *audio =
       [[RTCPair alloc] initWithKey:@"OfferToReceiveAudio" value:@"true"];
-  // TODO(hughv): Add video.
-  //  RTCPair *video = [[RTCPair alloc] initWithKey:@"OfferToReceiveVideo"
-  //                                          value:@"true"];
-  NSArray *mandatory = @[ audio /*, video*/ ];
+  RTCPair *video = [[RTCPair alloc] initWithKey:@"OfferToReceiveVideo"
+                                          value:@"true"];
+  NSArray *mandatory = @[ audio , video ];
   RTCMediaConstraints *constraints =
       [[RTCMediaConstraints alloc] initWithMandatoryConstraints:mandatory
                                             optionalConstraints:nil];
@@ -283,7 +334,14 @@
                                        sessionDescription:sdp];
     [self displayLogMessage:@"PC - setRemoteDescription."];
   } else if ([value compare:@"bye"] == NSOrderedSame) {
-    [self disconnect];
+    [self closeVideoUI];
+    UIAlertView *alertView =
+      [[UIAlertView alloc] initWithTitle:@"Remote end hung up"
+                                message:@"dropping PeerConnection"
+                                delegate:nil
+                                cancelButtonTitle:@"OK"
+                                otherButtonTitles:nil];
+    [alertView show];
   } else {
     NSAssert(NO, @"Invalid message: %@", data);
   }
@@ -291,13 +349,13 @@
 
 - (void)onClose {
   [self displayLogMessage:@"GAE onClose."];
-  [self disconnect];
+  [self closeVideoUI];
 }
 
 - (void)onError:(int)code withDescription:(NSString *)description {
   [self displayLogMessage:
           [NSString stringWithFormat:@"GAE onError:  %@", description]];
-  [self disconnect];
+  [self closeVideoUI];
 }
 
 #pragma mark - RTCSessionDescriptonDelegate methods
@@ -411,11 +469,10 @@
             RTCPair *audio =
                 [[RTCPair alloc]
                     initWithKey:@"OfferToReceiveAudio" value:@"true"];
-            // TODO(hughv): Add video.
-            // RTCPair *video =
-            //    [[RTCPair alloc]
-            //        initWithKey:@"OfferToReceiveVideo" value:@"true"];
-            NSArray *mandatory = @[ audio /*, video*/ ];
+            RTCPair *video =
+               [[RTCPair alloc]
+                   initWithKey:@"OfferToReceiveVideo" value:@"true"];
+            NSArray *mandatory = @[ audio , video ];
             RTCMediaConstraints *constraints =
                 [[RTCMediaConstraints alloc]
                     initWithMandatoryConstraints:mandatory
@@ -441,6 +498,7 @@
 - (void)disconnect {
   [self.client
       sendData:[@"{\"type\": \"bye\"}" dataUsingEncoding:NSUTF8StringEncoding]];
+  [self.peerConnection close];
   self.peerConnection = nil;
   self.peerConnectionFactory = nil;
   self.pcObserver = nil;
@@ -477,6 +535,13 @@
       [removeEscapedQuotes stringByReplacingOccurrencesOfString:@"\\\\"
                                                      withString:@"\\"];
   return removeBackslash;
+}
+
+#pragma mark - public methods
+
+- (void)closeVideoUI {
+    [self disconnect];
+    [self.viewController resetUI];
 }
 
 @end

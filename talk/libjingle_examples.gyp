@@ -251,12 +251,15 @@
             'examples/ios/AppRTCDemo/AppRTCDemo-Prefix.pch',
             'examples/ios/AppRTCDemo/GAEChannelClient.h',
             'examples/ios/AppRTCDemo/GAEChannelClient.m',
+            'examples/ios/AppRTCDemo/VideoView.h',
+            'examples/ios/AppRTCDemo/VideoView.m',
             'examples/ios/AppRTCDemo/main.m',
           ],
           'xcode_settings': {
             'CLANG_ENABLE_OBJC_ARC': 'YES',
             'INFOPLIST_FILE': 'examples/ios/AppRTCDemo/Info.plist',
             'OTHER_LDFLAGS': [
+	      '-framework CoreGraphics',
               '-framework Foundation',
               '-framework UIKit',
             ],

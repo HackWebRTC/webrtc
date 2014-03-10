@@ -27,33 +27,24 @@
 
 #import <UIKit/UIKit.h>
 
-#import "GAEChannelClient.h"
-#import "APPRTCAppClient.h"
-#import "RTCSessionDescriptonDelegate.h"
-
-// Used to send a message to an apprtc.appspot.com "room".
-@protocol APPRTCSendMessage<NSObject>
-
-- (void)sendData:(NSData *)data;
-// Logging helper.
-- (void)displayLogMessage:(NSString *)message;
-@end
-
-@class APPRTCViewController;
 @class RTCVideoTrack;
 
-// The main application class of the AppRTCDemo iOS app demonstrating
-// interoperability between the Objcective C implementation of PeerConnection
-// and the apprtc.appspot.com demo webapp.
-@interface APPRTCAppDelegate : UIResponder<ICEServerDelegate,
-                                           GAEMessageHandler,
-                                           APPRTCSendMessage,
-                                           RTCSessionDescriptonDelegate,
-                                           UIApplicationDelegate>
+// This class encapsulates VideoRenderIosView.
+@interface VideoView : UIView
 
-@property (strong, nonatomic) UIWindow *window;
-@property (strong, nonatomic) APPRTCViewController *viewController;
+// Property to get/set required video orientation.
+@property(nonatomic, assign) UIInterfaceOrientation videoOrientation;
+// Specifies whether the object represents a local or remote video stream.
+@property(nonatomic, assign) BOOL isRemote;
 
-- (void)closeVideoUI;
+// Sets up the underlying renderer and track objects.
+- (void)renderVideoTrackInterface:(RTCVideoTrack*)track;
+
+// Stops rendering.
+- (void)pause;
+// Starts rendering.
+- (void)resume;
+// Stops rendering and resets underlying renderer and track objects.
+- (void)stop;
 
 @end
