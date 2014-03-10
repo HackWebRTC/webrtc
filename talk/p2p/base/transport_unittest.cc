@@ -206,21 +206,18 @@ TEST_F(TransportTest, TestChannelCompletedAndFailed) {
   EXPECT_TRUE_WAIT(transport_->all_channels_writable(), 100);
   // ICE is not yet completed because there is still more than one connection.
   EXPECT_FALSE(completed_);
-  EXPECT_FALSE(transport_->completed());
   EXPECT_FALSE(failed_);
 
   // When the connection count drops to 1, SignalCompleted should be emitted,
   // and completed() should be true.
   channel_->SetConnectionCount(1);
   EXPECT_TRUE_WAIT(completed_, 100);
-  EXPECT_TRUE(transport_->completed());
   completed_ = false;
 
   // When the connection count drops to 0, SignalFailed should be emitted, and
   // completed() should be false.
   channel_->SetConnectionCount(0);
   EXPECT_TRUE_WAIT(failed_, 100);
-  EXPECT_FALSE(transport_->completed());
   EXPECT_FALSE(completed_);
 }
 

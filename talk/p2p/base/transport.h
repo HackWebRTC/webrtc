@@ -236,8 +236,6 @@ class Transport : public talk_base::MessageHandler,
   }
   sigslot::signal1<Transport*> SignalReadableState;
   sigslot::signal1<Transport*> SignalWritableState;
-
-  bool completed() const;
   sigslot::signal1<Transport*> SignalCompleted;
   sigslot::signal1<Transport*> SignalFailed;
 
@@ -488,6 +486,8 @@ class Transport : public talk_base::MessageHandler,
   bool GetStats_w(TransportStats* infos);
   bool GetRemoteCertificate_w(talk_base::SSLCertificate** cert);
 
+  // Sends SignalCompleted if we are now in that state.
+  void MaybeCompleted_w();
 
   talk_base::Thread* signaling_thread_;
   talk_base::Thread* worker_thread_;

@@ -497,6 +497,8 @@ void Transport::OnChannelReadableState_s() {
 void Transport::OnChannelWritableState(TransportChannel* channel) {
   ASSERT(worker_thread()->IsCurrent());
   signaling_thread()->Post(this, MSG_WRITESTATE, NULL);
+
+  MaybeCompleted_w();
 }
 
 void Transport::OnChannelWritableState_s() {
@@ -612,6 +614,8 @@ void Transport::OnChannelCandidatesAllocationDone(
       return;
   }
   signaling_thread_->Post(this, MSG_CANDIDATEALLOCATIONCOMPLETE);
+
+  MaybeCompleted_w();
 }
 
 void Transport::OnChannelCandidatesAllocationDone_s() {
@@ -626,15 +630,17 @@ void Transport::OnRoleConflict(TransportChannelImpl* channel) {
 
 void Transport::OnChannelConnectionRemoved(TransportChannelImpl* channel) {
   ASSERT(worker_thread()->IsCurrent());
-  // Determine if the Transport should move to Completed or Failed.  These
-  // states are only available in the Controlling ICE role.
+  MaybeCompleted_w();
+
+  // Check if the state is now Failed.
+  // Failed is only available in the Controlling ICE role.
   if (channel->GetIceRole() != ICEROLE_CONTROLLING) {
     return;
   }
 
   ChannelMap::iterator iter = channels_.find(channel->component());
   ASSERT(iter != channels_.end());
-  // Completed and Failed can only occur after candidate allocation has stopped.
+  // Failed can only occur after candidate allocation has stopped.
   if (!iter->second.candidates_allocated()) {
     return;
   }
@@ -644,28 +650,27 @@ void Transport::OnChannelConnectionRemoved(TransportChannelImpl* channel) {
     // A Transport has failed if any of its channels have no remaining
     // connections.
     signaling_thread_->Post(this, MSG_FAILED);
-  } else if (connections == 1 && completed()) {
-    signaling_thread_->Post(this, MSG_COMPLETED);
   }
 }
 
-bool Transport::completed() const {
+void Transport::MaybeCompleted_w() {
+  ASSERT(worker_thread()->IsCurrent());
+
   // A Transport's ICE process is completed if all of its channels are writable,
   // have finished allocating candidates, and have pruned all but one of their
   // connections.
-  if (!all_channels_writable())
-    return false;
-
   ChannelMap::const_iterator iter;
   for (iter = channels_.begin(); iter != channels_.end(); ++iter) {
     const TransportChannelImpl* channel = iter->second.get();
-    if (!(channel->GetConnectionCount() == 1 &&
+    if (!(channel->writable() &&
+          channel->GetConnectionCount() == 1 &&
           channel->GetIceRole() == ICEROLE_CONTROLLING &&
           iter->second.candidates_allocated())) {
-      return false;
+      return;
     }
   }
-  return true;
+
+  signaling_thread_->Post(this, MSG_COMPLETED);
 }
 
 void Transport::SetIceRole_w(IceRole role) {

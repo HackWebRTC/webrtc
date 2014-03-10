@@ -631,7 +631,9 @@ TEST_F(SrtpSessionTest, TestGetSendStreamPacketIndex) {
   int out_len = 0;
   EXPECT_TRUE(s1_.ProtectRtp(rtp_packet_, rtp_len_,
                              sizeof(rtp_packet_), &out_len, &index));
-  EXPECT_EQ(1, index);
+  // |index| will be shifted by 16.
+  int64 be64_index = be64_to_cpu(1 << 16);
+  EXPECT_EQ(be64_index, index);
 }
 
 // Test that we fail to unprotect if someone tampers with the RTP/RTCP paylaods.
