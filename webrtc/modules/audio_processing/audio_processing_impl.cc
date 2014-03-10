@@ -104,8 +104,11 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config)
       event_msg_(new audioproc::Event()),
 #endif
       sample_rate_hz_(kSampleRate16kHz),
+      reverse_sample_rate_hz_(kSampleRate16kHz),
       split_sample_rate_hz_(kSampleRate16kHz),
       samples_per_channel_(kChunkSizeMs * sample_rate_hz_ / 1000),
+      reverse_samples_per_channel_(
+          kChunkSizeMs * reverse_sample_rate_hz_ / 1000),
       stream_delay_ms_(0),
       delay_offset_ms_(0),
       was_stream_delay_set_(false),
@@ -178,6 +181,19 @@ int AudioProcessingImpl::Initialize() {
   return InitializeLocked();
 }
 
+int AudioProcessingImpl::Initialize(int sample_rate_hz,
+                                    int reverse_sample_rate_hz,
+                                    int num_input_channels,
+                                    int num_output_channels,
+                                    int num_reverse_channels) {
+  CriticalSectionScoped crit_scoped(crit_);
+  return InitializeLocked(sample_rate_hz,
+                          reverse_sample_rate_hz,
+                          num_input_channels,
+                          num_output_channels,
+                          num_reverse_channels);
+}
+
 int AudioProcessingImpl::InitializeLocked() {
   if (render_audio_ != NULL) {
     delete render_audio_;
@@ -190,7 +206,7 @@ int AudioProcessingImpl::InitializeLocked() {
   }
 
   render_audio_ = new AudioBuffer(num_reverse_channels_,
-                                  samples_per_channel_);
+                                  reverse_samples_per_channel_);
   capture_audio_ = new AudioBuffer(num_input_channels_,
                                    samples_per_channel_);
 
@@ -213,6 +229,79 @@ int AudioProcessingImpl::InitializeLocked() {
 #endif
 
   return kNoError;
+}
+
+int AudioProcessingImpl::InitializeLocked(int sample_rate_hz,
+                                          int reverse_sample_rate_hz,
+                                          int num_input_channels,
+                                          int num_output_channels,
+                                          int num_reverse_channels) {
+  if (sample_rate_hz != kSampleRate8kHz &&
+      sample_rate_hz != kSampleRate16kHz &&
+      sample_rate_hz != kSampleRate32kHz) {
+    return kBadSampleRateError;
+  }
+  if (reverse_sample_rate_hz != kSampleRate8kHz &&
+      reverse_sample_rate_hz != kSampleRate16kHz &&
+      reverse_sample_rate_hz != kSampleRate32kHz) {
+    return kBadSampleRateError;
+  }
+  // TODO(ajm): The reverse sample rate is constrained to be identical to the
+  // forward rate for now.
+  if (reverse_sample_rate_hz != sample_rate_hz) {
+    return kBadSampleRateError;
+  }
+  if (num_output_channels > num_input_channels) {
+    return kBadNumberChannelsError;
+  }
+  // Only mono and stereo supported currently.
+  if (num_input_channels > 2 || num_input_channels < 1 ||
+      num_output_channels > 2 || num_output_channels < 1 ||
+      num_reverse_channels > 2 || num_reverse_channels < 1) {
+    return kBadNumberChannelsError;
+  }
+  if (echo_control_mobile_->is_enabled() && sample_rate_hz > kSampleRate16kHz) {
+    LOG(LS_ERROR) << "AECM only supports 16 or 8 kHz sample rates";
+    return kUnsupportedComponentError;
+  }
+
+  sample_rate_hz_ = sample_rate_hz;
+  reverse_sample_rate_hz_ = reverse_sample_rate_hz;
+  reverse_samples_per_channel_ = kChunkSizeMs * reverse_sample_rate_hz / 1000;
+  samples_per_channel_ = kChunkSizeMs * sample_rate_hz / 1000;
+  num_input_channels_ = num_input_channels;
+  num_output_channels_ = num_output_channels;
+  num_reverse_channels_ = num_reverse_channels;
+
+  if (sample_rate_hz_ == kSampleRate32kHz) {
+    split_sample_rate_hz_ = kSampleRate16kHz;
+  } else {
+    split_sample_rate_hz_ = sample_rate_hz_;
+  }
+
+  return InitializeLocked();
+}
+
+// Calls InitializeLocked() if any of the audio parameters have changed from
+// their current values.
+int AudioProcessingImpl::MaybeInitializeLocked(int sample_rate_hz,
+                                               int reverse_sample_rate_hz,
+                                               int num_input_channels,
+                                               int num_output_channels,
+                                               int num_reverse_channels) {
+  if (sample_rate_hz == sample_rate_hz_ &&
+      reverse_sample_rate_hz == reverse_sample_rate_hz_ &&
+      num_input_channels == num_input_channels_ &&
+      num_output_channels == num_output_channels_ &&
+      num_reverse_channels == num_reverse_channels_) {
+    return kNoError;
+  }
+
+  return InitializeLocked(sample_rate_hz,
+                          reverse_sample_rate_hz,
+                          num_input_channels,
+                          num_output_channels,
+                          num_reverse_channels);
 }
 
 void AudioProcessingImpl::SetExtraOptions(const Config& config) {
@@ -316,51 +405,6 @@ bool AudioProcessingImpl::output_will_be_muted() const {
   return output_will_be_muted_;
 }
 
-// Calls InitializeLocked() if any of the audio parameters have changed from
-// their current values.
-int AudioProcessingImpl::MaybeInitializeLocked(int sample_rate_hz,
-    int num_input_channels, int num_output_channels, int num_reverse_channels) {
-  if (sample_rate_hz == sample_rate_hz_ &&
-      num_input_channels == num_input_channels_ &&
-      num_output_channels == num_output_channels_ &&
-      num_reverse_channels == num_reverse_channels_) {
-    return kNoError;
-  }
-
-  if (sample_rate_hz != kSampleRate8kHz &&
-      sample_rate_hz != kSampleRate16kHz &&
-      sample_rate_hz != kSampleRate32kHz) {
-    return kBadSampleRateError;
-  }
-  if (num_output_channels > num_input_channels) {
-    return kBadNumberChannelsError;
-  }
-  // Only mono and stereo supported currently.
-  if (num_input_channels > 2 || num_input_channels < 1 ||
-      num_output_channels > 2 || num_output_channels < 1 ||
-      num_reverse_channels > 2 || num_reverse_channels < 1) {
-    return kBadNumberChannelsError;
-  }
-  if (echo_control_mobile_->is_enabled() && sample_rate_hz > kSampleRate16kHz) {
-    LOG(LS_ERROR) << "AECM only supports 16 or 8 kHz sample rates";
-    return kUnsupportedComponentError;
-  }
-
-  sample_rate_hz_ = sample_rate_hz;
-  samples_per_channel_ = kChunkSizeMs * sample_rate_hz / 1000;
-  num_input_channels_ = num_input_channels;
-  num_output_channels_ = num_output_channels;
-  num_reverse_channels_ = num_reverse_channels;
-
-  if (sample_rate_hz_ == kSampleRate32kHz) {
-    split_sample_rate_hz_ = kSampleRate16kHz;
-  } else {
-    split_sample_rate_hz_ = sample_rate_hz_;
-  }
-
-  return InitializeLocked();
-}
-
 int AudioProcessingImpl::ProcessStream(float* const* data,
                                        int samples_per_channel,
                                        int sample_rate_hz,
@@ -374,7 +418,9 @@ int AudioProcessingImpl::ProcessStream(float* const* data,
   const int num_input_channels = ChannelsFromLayout(input_layout);
   // TODO(ajm): We now always set the output channels equal to the input
   // channels here. Restore the ability to downmix.
-  RETURN_ON_ERR(MaybeInitializeLocked(sample_rate_hz,
+  // TODO(ajm): The reverse sample rate is constrained to be identical to the
+  // forward rate for now.
+  RETURN_ON_ERR(MaybeInitializeLocked(sample_rate_hz, sample_rate_hz,
       num_input_channels, num_input_channels, num_reverse_channels_));
   if (samples_per_channel != samples_per_channel_) {
     return kBadDataLengthError;
@@ -386,7 +432,7 @@ int AudioProcessingImpl::ProcessStream(float* const* data,
     audioproc::Stream* msg = event_msg_->mutable_stream();
     const size_t channel_size = sizeof(float) * samples_per_channel;
     for (int i = 0; i < num_input_channels; ++i)
-      msg->set_input_channel(i, data[i], channel_size);
+      msg->add_input_channel(data[i], channel_size);
   }
 #endif
 
@@ -401,7 +447,7 @@ int AudioProcessingImpl::ProcessStream(float* const* data,
     audioproc::Stream* msg = event_msg_->mutable_stream();
     const size_t channel_size = sizeof(float) * samples_per_channel;
     for (int i = 0; i < num_output_channels_; ++i)
-      msg->set_output_channel(i, data[i], channel_size);
+      msg->add_output_channel(data[i], channel_size);
     RETURN_ON_ERR(WriteMessageToDebugFile());
   }
 #endif
@@ -417,8 +463,11 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
 
   // TODO(ajm): We now always set the output channels equal to the input
   // channels here. Restore the ability to downmix.
+  // TODO(ajm): The reverse sample rate is constrained to be identical to the
+  // forward rate for now.
   RETURN_ON_ERR(MaybeInitializeLocked(frame->sample_rate_hz_,
-      frame->num_channels_, frame->num_channels_, num_reverse_channels_));
+      frame->sample_rate_hz_, frame->num_channels_, frame->num_channels_,
+      num_reverse_channels_));
   if (frame->samples_per_channel_ != samples_per_channel_) {
     return kBadDataLengthError;
   }
@@ -526,9 +575,11 @@ int AudioProcessingImpl::AnalyzeReverseStream(const float* const* data,
   }
 
   const int num_channels = ChannelsFromLayout(layout);
-  RETURN_ON_ERR(MaybeInitializeLocked(sample_rate_hz_, num_input_channels_,
-      num_output_channels_, num_channels));
-  if (samples_per_channel != samples_per_channel_) {
+  // TODO(ajm): The reverse sample rate is constrained to be identical to the
+  // forward rate for now.
+  RETURN_ON_ERR(MaybeInitializeLocked(sample_rate_hz_, sample_rate_hz_,
+      num_input_channels_, num_output_channels_, num_channels));
+  if (samples_per_channel != reverse_samples_per_channel_) {
     return kBadDataLengthError;
   }
 
@@ -538,7 +589,7 @@ int AudioProcessingImpl::AnalyzeReverseStream(const float* const* data,
     audioproc::ReverseStream* msg = event_msg_->mutable_reverse_stream();
     const size_t channel_size = sizeof(float) * samples_per_channel;
     for (int i = 0; i < num_channels; ++i)
-      msg->set_channel(i, data[i], channel_size);
+      msg->add_channel(data[i], channel_size);
     RETURN_ON_ERR(WriteMessageToDebugFile());
   }
 #endif
@@ -555,9 +606,12 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
   if (frame->sample_rate_hz_ != sample_rate_hz_) {
     return kBadSampleRateError;
   }
-  RETURN_ON_ERR(MaybeInitializeLocked(sample_rate_hz_, num_input_channels_,
-      num_output_channels_, frame->num_channels_));
-  if (frame->samples_per_channel_ != samples_per_channel_) {
+
+  // TODO(ajm): The reverse sample rate is constrained to be identical to the
+  // forward rate for now.
+  RETURN_ON_ERR(MaybeInitializeLocked(sample_rate_hz_, sample_rate_hz_,
+      num_input_channels_, num_output_channels_, frame->num_channels_));
+  if (frame->samples_per_channel_ != reverse_samples_per_channel_) {
     return kBadDataLengthError;
   }
 
@@ -832,6 +886,7 @@ int AudioProcessingImpl::WriteInitMessage() {
   msg->set_num_input_channels(num_input_channels_);
   msg->set_num_output_channels(num_output_channels_);
   msg->set_num_reverse_channels(num_reverse_channels_);
+  msg->set_reverse_sample_rate(reverse_sample_rate_hz_);
 
   int err = WriteMessageToDebugFile();
   if (err != kNoError) {

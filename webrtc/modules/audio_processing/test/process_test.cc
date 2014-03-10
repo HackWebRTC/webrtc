@@ -19,6 +19,7 @@
 
 #include "webrtc/common.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/modules/audio_processing/test/test_utils.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
@@ -33,18 +34,7 @@
 #include "webrtc/audio_processing/debug.pb.h"
 #endif
 
-using webrtc::AudioFrame;
-using webrtc::AudioProcessing;
-using webrtc::Config;
-using webrtc::DelayCorrection;
-using webrtc::EchoCancellation;
-using webrtc::GainControl;
-using webrtc::NoiseSuppression;
-using webrtc::scoped_array;
-using webrtc::scoped_ptr;
-using webrtc::TickInterval;
-using webrtc::TickTime;
-using webrtc::VoiceDetection;
+namespace webrtc {
 
 using webrtc::audioproc::Event;
 using webrtc::audioproc::Init;
@@ -52,28 +42,6 @@ using webrtc::audioproc::ReverseStream;
 using webrtc::audioproc::Stream;
 
 namespace {
-// Returns true on success, false on error or end-of-file.
-bool ReadMessageFromFile(FILE* file,
-                        ::google::protobuf::MessageLite* msg) {
-  // The "wire format" for the size is little-endian.
-  // Assume process_test is running on a little-endian machine.
-  int32_t size = 0;
-  if (fread(&size, sizeof(int32_t), 1, file) != 1) {
-    return false;
-  }
-  if (size <= 0) {
-    return false;
-  }
-  const size_t usize = static_cast<size_t>(size);
-
-  scoped_array<char> array(new char[usize]);
-  if (fread(array.get(), sizeof(char), usize, file) != usize) {
-    return false;
-  }
-
-  msg->Clear();
-  return msg->ParseFromArray(array.get(), usize);
-}
 
 void PrintStat(const AudioProcessing::Statistic& stat) {
   printf("%d, %d, %d\n", stat.average,
@@ -87,11 +55,11 @@ void usage() {
   "  [-ir REVERSE_FILE] [-i PRIMARY_FILE] [-o OUT_FILE]\n");
   printf(
   "process_test is a test application for AudioProcessing.\n\n"
-  "When a protobuf debug file is available, specify it with -pb.\n"
-  "Alternately, when -ir or -i is used, the specified files will be\n"
-  "processed directly in a simulation mode. Otherwise the full set of\n"
-  "legacy test files is expected to be present in the working directory.\n");
-  printf("\n");
+  "When a protobuf debug file is available, specify it with -pb. Alternately,\n"
+  "when -ir or -i is used, the specified files will be processed directly in\n"
+  "a simulation mode. Otherwise the full set of legacy test files is expected\n"
+  "to be present in the working directory. OUT_FILE should be specified\n"
+  "without extension to support both int and float output.\n\n");
   printf("Options\n");
   printf("General configuration (only used for the simulation mode):\n");
   printf("  -fs SAMPLE_RATE_HZ\n");
@@ -174,13 +142,15 @@ void void_main(int argc, char* argv[]) {
     printf("Try `process_test --help' for more information.\n\n");
   }
 
-  scoped_ptr<AudioProcessing> apm(AudioProcessing::Create(0));
+  Config config;
+  config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
+  scoped_ptr<AudioProcessing> apm(AudioProcessing::Create(config));
   ASSERT_TRUE(apm.get() != NULL);
 
   const char* pb_filename = NULL;
   const char* far_filename = NULL;
   const char* near_filename = NULL;
-  const char* out_filename = NULL;
+  std::string out_filename;
   const char* vad_out_filename = NULL;
   const char* ns_prob_filename = NULL;
   const char* aecm_echo_path_in_filename = NULL;
@@ -201,7 +171,6 @@ void void_main(int argc, char* argv[]) {
   bool progress = true;
   int extra_delay_ms = 0;
   int override_delay_ms = 0;
-  //bool interleaved = true;
 
   ASSERT_EQ(apm->kNoError, apm->level_estimator()->Enable(true));
   for (int i = 1; i < argc; i++) {
@@ -224,7 +193,7 @@ void void_main(int argc, char* argv[]) {
 
     } else if (strcmp(argv[i], "-o") == 0) {
       i++;
-      ASSERT_LT(i, argc) << "Specify filename after -o";
+      ASSERT_LT(i, argc) << "Specify filename without extension after -o";
       out_filename = argv[i];
 
     } else if (strcmp(argv[i], "-fs") == 0) {
@@ -476,7 +445,6 @@ void void_main(int argc, char* argv[]) {
   const std::string out_path = webrtc::test::OutputPath();
   const char far_file_default[] = "apm_far.pcm";
   const char near_file_default[] = "apm_near.pcm";
-  const std::string out_file_default = out_path + "out.pcm";
   const char event_filename[] = "apm_event.dat";
   const char delay_filename[] = "apm_delay.dat";
   const char drift_filename[] = "apm_drift.dat";
@@ -488,9 +456,11 @@ void void_main(int argc, char* argv[]) {
     near_filename = near_file_default;
   }
 
-  if (!out_filename) {
-    out_filename = out_file_default.c_str();
+  if (out_filename.size() == 0) {
+    out_filename = out_path + "out";
   }
+  std::string out_float_filename = out_filename + ".float";
+  out_filename += ".pcm";
 
   if (!vad_out_filename) {
     vad_out_filename = vad_file_default.c_str();
@@ -503,7 +473,6 @@ void void_main(int argc, char* argv[]) {
   FILE* pb_file = NULL;
   FILE* far_file = NULL;
   FILE* near_file = NULL;
-  FILE* out_file = NULL;
   FILE* event_file = NULL;
   FILE* delay_file = NULL;
   FILE* drift_file = NULL;
@@ -513,37 +482,19 @@ void void_main(int argc, char* argv[]) {
   FILE* aecm_echo_path_out_file = NULL;
 
   if (pb_filename) {
-    pb_file = fopen(pb_filename, "rb");
-    ASSERT_TRUE(NULL != pb_file) << "Unable to open protobuf file "
-                                 << pb_filename;
+    pb_file = OpenFile(pb_filename, "rb");
   } else {
     if (far_filename) {
-      far_file = fopen(far_filename, "rb");
-      ASSERT_TRUE(NULL != far_file) << "Unable to open far-end audio file "
-                                    << far_filename;
+      far_file = OpenFile(far_filename, "rb");
     }
 
-    near_file = fopen(near_filename, "rb");
-    ASSERT_TRUE(NULL != near_file) << "Unable to open near-end audio file "
-                                   << near_filename;
+    near_file = OpenFile(near_filename, "rb");
     if (!simulating) {
-      event_file = fopen(event_filename, "rb");
-      ASSERT_TRUE(NULL != event_file) << "Unable to open event file "
-                                      << event_filename;
-
-      delay_file = fopen(delay_filename, "rb");
-      ASSERT_TRUE(NULL != delay_file) << "Unable to open buffer file "
-                                      << delay_filename;
-
-      drift_file = fopen(drift_filename, "rb");
-      ASSERT_TRUE(NULL != drift_file) << "Unable to open drift file "
-                                      << drift_filename;
+      event_file = OpenFile(event_filename, "rb");
+      delay_file = OpenFile(delay_filename, "rb");
+      drift_file = OpenFile(drift_filename, "rb");
     }
   }
-
-  out_file = fopen(out_filename, "wb");
-  ASSERT_TRUE(NULL != out_file) << "Unable to open output audio file "
-                                << out_filename;
 
   int near_size_bytes = 0;
   if (pb_file) {
@@ -558,21 +509,15 @@ void void_main(int argc, char* argv[]) {
   }
 
   if (apm->voice_detection()->is_enabled()) {
-    vad_out_file = fopen(vad_out_filename, "wb");
-    ASSERT_TRUE(NULL != vad_out_file) << "Unable to open VAD output file "
-                                      << vad_out_file;
+    vad_out_file = OpenFile(vad_out_filename, "wb");
   }
 
   if (apm->noise_suppression()->is_enabled()) {
-    ns_prob_file = fopen(ns_prob_filename, "wb");
-    ASSERT_TRUE(NULL != ns_prob_file) << "Unable to open NS output file "
-                                      << ns_prob_file;
+    ns_prob_file = OpenFile(ns_prob_filename, "wb");
   }
 
   if (aecm_echo_path_in_filename != NULL) {
-    aecm_echo_path_in_file = fopen(aecm_echo_path_in_filename, "rb");
-    ASSERT_TRUE(NULL != aecm_echo_path_in_file) << "Unable to open file "
-                                                << aecm_echo_path_in_filename;
+    aecm_echo_path_in_file = OpenFile(aecm_echo_path_in_filename, "rb");
 
     const size_t path_size =
         apm->echo_control_mobile()->echo_path_size_bytes();
@@ -589,9 +534,7 @@ void void_main(int argc, char* argv[]) {
   }
 
   if (aecm_echo_path_out_filename != NULL) {
-    aecm_echo_path_out_file = fopen(aecm_echo_path_out_filename, "wb");
-    ASSERT_TRUE(NULL != aecm_echo_path_out_file) << "Unable to open file "
-                                                 << aecm_echo_path_out_filename;
+    aecm_echo_path_out_file = OpenFile(aecm_echo_path_out_filename, "wb");
   }
 
   size_t read_count = 0;
@@ -620,6 +563,8 @@ void void_main(int argc, char* argv[]) {
   //            but for now we want to share the variables.
   if (pb_file) {
     Event event_msg;
+    scoped_ptr<ChannelBuffer<float> > reverse_cb;
+    scoped_ptr<ChannelBuffer<float> > primary_cb;
     while (ReadMessageFromFile(pb_file, &event_msg)) {
       std::ostringstream trace_stream;
       trace_stream << "Processed frames: " << reverse_count << " (reverse), "
@@ -631,17 +576,22 @@ void void_main(int argc, char* argv[]) {
         const Init msg = event_msg.init();
 
         ASSERT_TRUE(msg.has_sample_rate());
-        // TODO(bjornv): Replace set_sample_rate_hz() when we have a smarter
-        // AnalyzeReverseStream().
-        ASSERT_EQ(apm->kNoError, apm->set_sample_rate_hz(msg.sample_rate()));
+        ASSERT_TRUE(msg.has_num_input_channels());
+        ASSERT_TRUE(msg.has_num_output_channels());
+        ASSERT_TRUE(msg.has_num_reverse_channels());
+        int reverse_sample_rate = msg.sample_rate();
+        if (msg.has_reverse_sample_rate())
+          reverse_sample_rate = msg.reverse_sample_rate();
+        ASSERT_EQ(apm->kNoError, apm->Initialize(msg.sample_rate(),
+                                                 reverse_sample_rate,
+                                                 msg.num_input_channels(),
+                                                 msg.num_output_channels(),
+                                                 msg.num_reverse_channels()));
         ASSERT_TRUE(msg.has_device_sample_rate());
         ASSERT_EQ(apm->kNoError,
                   apm->echo_cancellation()->set_device_sample_rate_hz(
                       msg.device_sample_rate()));
 
-        ASSERT_TRUE(msg.has_num_input_channels());
-        ASSERT_TRUE(msg.has_num_output_channels());
-        ASSERT_TRUE(msg.has_num_reverse_channels());
 
         samples_per_channel = msg.sample_rate() / 100;
         far_frame.sample_rate_hz_ = msg.sample_rate();
@@ -650,6 +600,10 @@ void void_main(int argc, char* argv[]) {
         near_frame.sample_rate_hz_ = msg.sample_rate();
         near_frame.samples_per_channel_ = samples_per_channel;
         near_frame.num_channels_ = msg.num_input_channels();
+        reverse_cb.reset(new ChannelBuffer<float>(samples_per_channel,
+                                                  msg.num_reverse_channels()));
+        primary_cb.reset(new ChannelBuffer<float>(samples_per_channel,
+                                                  msg.num_input_channels()));
 
         if (verbose) {
           printf("Init at frame: %d (primary), %d (reverse)\n",
@@ -663,20 +617,35 @@ void void_main(int argc, char* argv[]) {
 
       } else if (event_msg.type() == Event::REVERSE_STREAM) {
         ASSERT_TRUE(event_msg.has_reverse_stream());
-        const ReverseStream msg = event_msg.reverse_stream();
+        ReverseStream msg = event_msg.reverse_stream();
         reverse_count++;
 
-        ASSERT_TRUE(msg.has_data());
-        ASSERT_EQ(sizeof(int16_t) * samples_per_channel *
-            far_frame.num_channels_, msg.data().size());
-        memcpy(far_frame.data_, msg.data().data(), msg.data().size());
+        ASSERT_TRUE(msg.has_data() ^ (msg.channel_size() > 0));
+        if (msg.has_data()) {
+          ASSERT_EQ(sizeof(int16_t) * samples_per_channel *
+              far_frame.num_channels_, msg.data().size());
+          memcpy(far_frame.data_, msg.data().data(), msg.data().size());
+        } else {
+          for (int i = 0; i < msg.channel_size(); ++i) {
+            reverse_cb->CopyFrom(msg.channel(i).data(), i);
+          }
+        }
 
         if (perf_testing) {
           t0 = TickTime::Now();
         }
 
-        ASSERT_EQ(apm->kNoError,
-                  apm->AnalyzeReverseStream(&far_frame));
+        if (msg.has_data()) {
+          ASSERT_EQ(apm->kNoError,
+                    apm->AnalyzeReverseStream(&far_frame));
+        } else {
+          ASSERT_EQ(apm->kNoError,
+                    apm->AnalyzeReverseStream(
+                        reverse_cb->channels(),
+                        far_frame.samples_per_channel_,
+                        far_frame.sample_rate_hz_,
+                        LayoutFromChannels(far_frame.num_channels_)));
+        }
 
         if (perf_testing) {
           t1 = TickTime::Now();
@@ -698,12 +667,18 @@ void void_main(int argc, char* argv[]) {
         // ProcessStream could have changed this for the output frame.
         near_frame.num_channels_ = apm->num_input_channels();
 
-        ASSERT_TRUE(msg.has_input_data());
-        ASSERT_EQ(sizeof(int16_t) * samples_per_channel *
-            near_frame.num_channels_, msg.input_data().size());
-        memcpy(near_frame.data_,
-               msg.input_data().data(),
-               msg.input_data().size());
+        ASSERT_TRUE(msg.has_input_data() ^ (msg.input_channel_size() > 0));
+        if (msg.has_input_data()) {
+          ASSERT_EQ(sizeof(int16_t) * samples_per_channel *
+              near_frame.num_channels_, msg.input_data().size());
+          memcpy(near_frame.data_,
+                 msg.input_data().data(),
+                 msg.input_data().size());
+        } else {
+          for (int i = 0; i < msg.input_channel_size(); ++i) {
+            primary_cb->CopyFrom(msg.input_channel(i).data(), i);
+          }
+        }
 
         near_read_bytes += msg.input_data().size();
         if (progress && primary_count % 100 == 0) {
@@ -732,13 +707,24 @@ void void_main(int argc, char* argv[]) {
           apm->set_stream_key_pressed(true);
         }
 
-        int err = apm->ProcessStream(&near_frame);
+        int err = apm->kNoError;
+        if (msg.has_input_data()) {
+          err = apm->ProcessStream(&near_frame);
+          ASSERT_TRUE(near_frame.num_channels_ == apm->num_output_channels());
+        } else {
+          err = apm->ProcessStream(
+              primary_cb->channels(),
+              near_frame.samples_per_channel_,
+              near_frame.sample_rate_hz_,
+              LayoutFromChannels(near_frame.num_channels_),
+              LayoutFromChannels(apm->num_output_channels()));
+        }
+
         if (err == apm->kBadStreamParameterWarning) {
           printf("Bad parameter warning. %s\n", trace_stream.str().c_str());
         }
         ASSERT_TRUE(err == apm->kNoError ||
                     err == apm->kBadStreamParameterWarning);
-        ASSERT_TRUE(near_frame.num_channels_ == apm->num_output_channels());
 
         stream_has_voice =
             static_cast<int8_t>(apm->voice_detection()->stream_has_voice());
@@ -769,11 +755,20 @@ void void_main(int argc, char* argv[]) {
           }
         }
 
-        size_t size = samples_per_channel * near_frame.num_channels_;
-        ASSERT_EQ(size, fwrite(near_frame.data_,
-                               sizeof(int16_t),
-                               size,
-                               out_file));
+        size_t num_samples = samples_per_channel * apm->num_output_channels();
+        if (msg.has_input_data()) {
+          static FILE* out_file = OpenFile(out_filename, "wb");
+          ASSERT_EQ(num_samples, fwrite(near_frame.data_,
+                                        sizeof(*near_frame.data_),
+                                        num_samples,
+                                        out_file));
+        } else {
+          static FILE* out_float_file = OpenFile(out_float_filename, "wb");
+          ASSERT_EQ(num_samples, fwrite(primary_cb->data(),
+                                        sizeof(*primary_cb->data()),
+                                        num_samples,
+                                        out_float_file));
+        }
       }
     }
 
@@ -986,6 +981,7 @@ void void_main(int argc, char* argv[]) {
         }
 
         size = samples_per_channel * near_frame.num_channels_;
+        static FILE* out_file = OpenFile(out_filename, "wb");
         ASSERT_EQ(size, fwrite(near_frame.data_,
                                sizeof(int16_t),
                                size,
@@ -1079,11 +1075,13 @@ void void_main(int argc, char* argv[]) {
     }
   }
 }
+
 }  // namespace
+}  // namespace webrtc
 
 int main(int argc, char* argv[])
 {
-  void_main(argc, argv);
+  webrtc::void_main(argc, argv);
 
   // Optional, but removes memory leak noise from Valgrind.
   google::protobuf::ShutdownProtobufLibrary();

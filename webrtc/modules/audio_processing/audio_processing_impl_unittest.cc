@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/audio_processing/audio_processing_impl.h"
 
+#include "webrtc/config.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
@@ -44,23 +45,23 @@ TEST(AudioProcessingImplTest, AudioParameterChangeTriggersInit) {
   SetFrameSampleRate(&frame, 16000);
   EXPECT_CALL(mock, InitializeLocked())
       .Times(0);
-  EXPECT_EQ(kNoErr, mock.ProcessStream(&frame));
-  EXPECT_EQ(kNoErr, mock.AnalyzeReverseStream(&frame));
+  EXPECT_NOERR(mock.ProcessStream(&frame));
+  EXPECT_NOERR(mock.AnalyzeReverseStream(&frame));
 
   // New sample rate. (Only impacts ProcessStream).
   SetFrameSampleRate(&frame, 32000);
   EXPECT_CALL(mock, InitializeLocked())
       .Times(1);
-  EXPECT_EQ(kNoErr, mock.ProcessStream(&frame));
+  EXPECT_NOERR(mock.ProcessStream(&frame));
 
   // New number of channels.
   frame.num_channels_ = 2;
   EXPECT_CALL(mock, InitializeLocked())
       .Times(2);
-  EXPECT_EQ(kNoErr, mock.ProcessStream(&frame));
+  EXPECT_NOERR(mock.ProcessStream(&frame));
   // ProcessStream sets num_channels_ == num_output_channels.
   frame.num_channels_ = 2;
-  EXPECT_EQ(kNoErr, mock.AnalyzeReverseStream(&frame));
+  EXPECT_NOERR(mock.AnalyzeReverseStream(&frame));
 
   // A new sample rate passed to AnalyzeReverseStream should be an error and
   // not cause an init.

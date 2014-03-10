@@ -164,6 +164,11 @@ class AudioProcessing {
   // rate and number of channels) have changed. Passing updated parameters
   // directly to |ProcessStream()| and |AnalyzeReverseStream()| is permissible.
   virtual int Initialize() = 0;
+  virtual int Initialize(int sample_rate_hz,
+                         int reverse_sample_rate_hz,
+                         int num_input_channels,
+                         int num_output_channels,
+                         int num_reverse_channels) = 0;
 
   // Pass down additional options which don't have explicit setters. This
   // ensures the options are applied immediately.

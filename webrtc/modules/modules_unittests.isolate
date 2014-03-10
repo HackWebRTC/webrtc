@@ -47,6 +47,7 @@
           '../../resources/near16_stereo.pcm',
           '../../resources/near32_stereo.pcm',
           '../../resources/near8_stereo.pcm',
+          '../../resources/ref03.aecdump',
           '../../resources/remote_bitrate_estimator/VideoSendersTest_BweTest_IncreasingChoke1_0_AST.bin',
           '../../resources/remote_bitrate_estimator/VideoSendersTest_BweTest_IncreasingChoke1_0_TOF.bin',
           '../../resources/remote_bitrate_estimator/VideoSendersTest_BweTest_IncreasingChoke1_1_AST.bin',

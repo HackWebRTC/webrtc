@@ -8,6 +8,7 @@ message Init {
   optional int32 num_input_channels = 3;
   optional int32 num_output_channels = 4;
   optional int32 num_reverse_channels = 5;
+  optional int32 reverse_sample_rate = 6;
 }
 
 // May contain interleaved or deinterleaved data, but don't store both formats.

@@ -46,6 +46,11 @@ class AudioProcessingImpl : public AudioProcessing {
 
   // AudioProcessing methods.
   virtual int Initialize() OVERRIDE;
+  virtual int Initialize(int sample_rate_hz,
+                         int reverse_sample_rate_hz,
+                         int num_input_channels,
+                         int num_output_channels,
+                         int num_reverse_channels) OVERRIDE;
   virtual void SetExtraOptions(const Config& config) OVERRIDE;
   virtual int EnableExperimentalNs(bool enable) OVERRIDE;
   virtual bool experimental_ns_enabled() const OVERRIDE {
@@ -93,11 +98,20 @@ class AudioProcessingImpl : public AudioProcessing {
   virtual VoiceDetection* voice_detection() const OVERRIDE;
 
  protected:
+  // Overridden in a mock.
   virtual int InitializeLocked();
 
  private:
-  int MaybeInitializeLocked(int sample_rate_hz, int num_input_channels,
-                            int num_output_channels, int num_reverse_channels);
+  int InitializeLocked(int sample_rate_hz,
+                       int reverse_sample_rate_hz,
+                       int num_input_channels,
+                       int num_output_channels,
+                       int num_reverse_channels);
+  int MaybeInitializeLocked(int sample_rate_hz,
+                            int reverse_sample_rate_hz,
+                            int num_input_channels,
+                            int num_output_channels,
+                            int num_reverse_channels);
   int ProcessStreamLocked();
   int AnalyzeReverseStreamLocked();
 
@@ -129,8 +143,10 @@ class AudioProcessingImpl : public AudioProcessing {
 #endif
 
   int sample_rate_hz_;
+  int reverse_sample_rate_hz_;
   int split_sample_rate_hz_;
   int samples_per_channel_;
+  int reverse_samples_per_channel_;
   int stream_delay_ms_;
   int delay_offset_ms_;
   bool was_stream_delay_set_;
