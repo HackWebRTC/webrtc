@@ -33,17 +33,17 @@ bool ParseArgsAndSetupEstimator(int argc,
                                 std::string* estimator_used) {
   *rtp_reader = webrtc::rtpplayer::CreateRtpFileReader(argv[3]);
   if (!*rtp_reader) {
-    printf("Cannot open input file %s\n", argv[3]);
+    fprintf(stderr, "Cannot open input file %s\n", argv[3]);
     return false;
   }
-  printf("Input file: %s\n\n", argv[3]);
+  fprintf(stderr, "Input file: %s\n\n", argv[3]);
   webrtc::RTPExtensionType extension = webrtc::kRtpExtensionAbsoluteSendTime;
 
   if (strncmp("tsoffset", argv[1], 8) == 0) {
     extension = webrtc::kRtpExtensionTransmissionTimeOffset;
-    printf("Extension: toffset\n");
+    fprintf(stderr, "Extension: toffset\n");
   } else {
-    printf("Extension: abs\n");
+    fprintf(stderr, "Extension: abs\n");
   }
   int id = atoi(argv[2]);
 
