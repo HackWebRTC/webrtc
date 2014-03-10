@@ -15,13 +15,18 @@
 
 #include "webrtc/modules/video_capture/ios/video_capture_ios.h"
 
-@interface VideoCaptureIosObjC
+// The following class listens to a notification with name:
+// 'StatusBarOrientationDidChange'.
+// This notification must be posted in order for the capturer to reflect the
+// orientation change in video w.r.t. the application orientation.
+@interface RTCVideoCaptureIosObjC
     : UIViewController<AVCaptureVideoDataOutputSampleBufferDelegate> {
  @private
   webrtc::videocapturemodule::VideoCaptureIos* _owner;
   webrtc::VideoCaptureCapability _capability;
   AVCaptureSession* _captureSession;
   int _captureId;
+  AVCaptureConnection* _connection;
 }
 
 @property webrtc::VideoCaptureRotation frameRotation;

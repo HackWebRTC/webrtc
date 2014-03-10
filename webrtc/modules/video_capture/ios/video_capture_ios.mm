@@ -9,7 +9,7 @@
  */
 
 #include "webrtc/modules/video_capture/ios/device_info_ios_objc.h"
-#include "webrtc/modules/video_capture/ios/video_capture_ios_objc.h"
+#include "webrtc/modules/video_capture/ios/rtc_video_capture_ios_objc.h"
 #include "webrtc/system_wrappers/interface/ref_count.h"
 #include "webrtc/system_wrappers/interface/scoped_refptr.h"
 #include "webrtc/system_wrappers/interface/trace.h"
@@ -53,8 +53,8 @@ VideoCaptureModule* VideoCaptureIos::Create(const int32_t capture_id,
   capture_module->_deviceUniqueId[name_length] = '\0';
 
   capture_module->capture_device_ =
-      [[VideoCaptureIosObjC alloc] initWithOwner:capture_module
-                                       captureId:capture_module->id_];
+      [[RTCVideoCaptureIosObjC alloc] initWithOwner:capture_module
+                                          captureId:capture_module->id_];
   if (!capture_module->capture_device_) {
     return NULL;
   }

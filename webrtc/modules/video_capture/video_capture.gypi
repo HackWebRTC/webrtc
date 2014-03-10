@@ -108,10 +108,10 @@
                 'ios/device_info_ios.mm',
                 'ios/device_info_ios_objc.h',
                 'ios/device_info_ios_objc.mm',
+                'ios/rtc_video_capture_ios_objc.h',
+                'ios/rtc_video_capture_ios_objc.mm',
                 'ios/video_capture_ios.h',
                 'ios/video_capture_ios.mm',
-                'ios/video_capture_ios_objc.h',
-                'ios/video_capture_ios_objc.mm',
               ],
               'all_dependent_settings': {
                 'xcode_settings': {

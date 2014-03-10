@@ -9,19 +9,19 @@
  */
 
 #import "webrtc/modules/video_capture/ios/device_info_ios_objc.h"
-#import "webrtc/modules/video_capture/ios/video_capture_ios_objc.h"
+#import "webrtc/modules/video_capture/ios/rtc_video_capture_ios_objc.h"
 
 #include "webrtc/system_wrappers/interface/trace.h"
 
 using namespace webrtc;
 using namespace webrtc::videocapturemodule;
 
-@interface VideoCaptureIosObjC (hidden)
+@interface RTCVideoCaptureIosObjC (hidden)
 - (int)changeCaptureInputWithName:(NSString*)captureDeviceName;
 
 @end
 
-@implementation VideoCaptureIosObjC
+@implementation RTCVideoCaptureIosObjC
 
 @synthesize frameRotation = _framRotation;
 
@@ -66,9 +66,22 @@ using namespace webrtc::videocapturemodule;
                selector:@selector(onVideoError:)
                    name:AVCaptureSessionRuntimeErrorNotification
                  object:_captureSession];
+    [notify addObserver:self
+               selector:@selector(statusBarOrientationDidChange:)
+                   name:@"StatusBarOrientationDidChange"
+                 object:nil];
   }
 
   return self;
+}
+
+- (void)statusBarOrientationDidChange:(NSNotification*)notification {
+  [self setRelativeVideoOrientation];
+}
+
+- (void)dealloc {
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
+  [super dealloc];
 }
 
 - (BOOL)setCaptureDeviceByUniqueId:(NSString*)uniqueId {
@@ -149,13 +162,12 @@ using namespace webrtc::videocapturemodule;
   [_captureSession setSessionPreset:captureQuality];
 
   // take care of capture framerate now
-  AVCaptureConnection* connection =
-      [currentOutput connectionWithMediaType:AVMediaTypeVideo];
-
+  _connection = [currentOutput connectionWithMediaType:AVMediaTypeVideo];
+  [self setRelativeVideoOrientation];
   CMTime cm_time = {1, _capability.maxFPS, kCMTimeFlags_Valid, 0};
 
-  [connection setVideoMinFrameDuration:cm_time];
-  [connection setVideoMaxFrameDuration:cm_time];
+  [_connection setVideoMinFrameDuration:cm_time];
+  [_connection setVideoMaxFrameDuration:cm_time];
 
   // finished configuring, commit settings to AVCaptureSession.
   [_captureSession commitConfiguration];
@@ -165,6 +177,26 @@ using namespace webrtc::videocapturemodule;
   [captureQuality release];
 
   return YES;
+}
+
+- (void)setRelativeVideoOrientation {
+  if (!_connection.supportsVideoOrientation)
+    return;
+  switch ([UIApplication sharedApplication].statusBarOrientation) {
+    case UIInterfaceOrientationPortrait:
+      _connection.videoOrientation = AVCaptureVideoOrientationPortrait;
+      break;
+    case UIInterfaceOrientationPortraitUpsideDown:
+      _connection.videoOrientation =
+          AVCaptureVideoOrientationPortraitUpsideDown;
+      break;
+    case UIInterfaceOrientationLandscapeLeft:
+      _connection.videoOrientation = AVCaptureVideoOrientationLandscapeLeft;
+      break;
+    case UIInterfaceOrientationLandscapeRight:
+      _connection.videoOrientation = AVCaptureVideoOrientationLandscapeRight;
+      break;
+  }
 }
 
 - (void)onVideoError {
