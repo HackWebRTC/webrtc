@@ -9,6 +9,7 @@
  */
 
 #include <stdio.h>
+#include <sstream>
 
 #include "webrtc/modules/remote_bitrate_estimator/tools/bwe_rtp.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
@@ -58,7 +59,9 @@ int main(int argc, char** argv) {
     if (header.extension.transmissionTimeOffset != 0)
       ++non_zero_ts_offsets;
     if (arrival_time_only) {
-      fprintf(stdout, "%ld\n", static_cast<int64_t>(time_ms) * 1000000);
+      std::stringstream ss;
+      ss << static_cast<int64_t>(time_ms) * 1000000;
+      fprintf(stdout, "%s\n", ss.str().c_str());
     } else {
       fprintf(stdout, "%u %u %d %u %u %d %u %u\n", header.sequenceNumber,
               header.timestamp, header.extension.transmissionTimeOffset,
