@@ -11,7 +11,7 @@ vars = {
   "googlecode_url": "http://%s.googlecode.com/svn",
   "sourceforge_url": "http://svn.code.sf.net/p/%(repo)s/code",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-  "chromium_revision": "249215",
+  "chromium_revision": "255773",
 
   # A small subset of WebKit is needed for the Android Python test framework.
   "webkit_trunk": "http://src.chromium.org/blink/trunk",
@@ -152,6 +152,9 @@ deps_os = {
     # SyzyASan to make it possible to run tests under ASan on Windows.
     "third_party/syzygy/binaries":
       From("chromium_deps", "src/third_party/syzygy/binaries"),
+
+    "tools/find_depot_tools":
+      File(Var("chromium_trunk") + "/src/tools/find_depot_tools.py@" + Var("chromium_revision")),
   },
 
   "mac": {
@@ -307,6 +310,7 @@ hooks = [
   },
   {
     # A change to a .gyp, .gypi, or to GYP itself should run the generator.
+    "name": "gyp",
     "pattern": ".",
     "action": ["python", Var("root_dir") + "/webrtc/build/gyp_webrtc",
                Var("extra_gyp_flag")],

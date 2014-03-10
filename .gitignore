@@ -85,6 +85,7 @@
 /tools/android
 /tools/android-dummy-test
 /tools/clang
+/tools/find_depot_tools
 /tools/gn
 /tools/grit
 /tools/gritsettings
