@@ -217,7 +217,9 @@ class LowRateStreamObserver : public test::DirectTransport,
         sent_bytes_(0),
         total_overuse_bytes_(0),
         number_of_streams_(number_of_streams),
-        rtx_used_(rtx_used) {
+        rtx_used_(rtx_used),
+        send_stream_(NULL),
+        suspended_in_stats_(true) {
     RtpRtcp::Configuration config;
     config.receive_statistics = receive_stats_.get();
     feedback_transport_.Enable();
@@ -236,6 +238,10 @@ class LowRateStreamObserver : public test::DirectTransport,
     forward_transport_config_.queue_length = 100;  // Something large.
     test::DirectTransport::SetConfig(forward_transport_config_);
     test::DirectTransport::SetReceiver(this);
+  }
+
+  virtual void SetSendStream(const VideoSendStream* send_stream) {
+    send_stream_ = send_stream;
   }
 
   virtual void OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
@@ -278,6 +284,7 @@ class LowRateStreamObserver : public test::DirectTransport,
     if (remote_bitrate_estimator_->TimeUntilNextProcess() <= 0) {
       remote_bitrate_estimator_->Process();
     }
+    suspended_in_stats_ = send_stream_->GetStats().suspended;
     return true;
   }
 
@@ -303,8 +310,11 @@ class LowRateStreamObserver : public test::DirectTransport,
   // This method defines the state machine for the ramp up-down-up test.
   void EvolveTestState(unsigned int bitrate_bps) {
     int64_t now = clock_->TimeInMilliseconds();
+    assert(send_stream_ != NULL);
+    CriticalSectionScoped lock(critical_section_.get());
     switch (test_state_) {
       case kFirstRampup: {
+        EXPECT_FALSE(suspended_in_stats_);
         if (bitrate_bps > kExpectedHighBitrateBps) {
           // The first ramp-up has reached the target bitrate. Change the
           // channel limit, and move to the next test state.
@@ -325,7 +335,7 @@ class LowRateStreamObserver : public test::DirectTransport,
         break;
       }
       case kLowRate: {
-        if (bitrate_bps < kExpectedLowBitrateBps) {
+        if (bitrate_bps < kExpectedLowBitrateBps && suspended_in_stats_) {
           // The ramp-down was successful. Change the channel limit back to a
           // high value, and move to the next test state.
           forward_transport_config_.link_capacity_kbps =
@@ -345,7 +355,7 @@ class LowRateStreamObserver : public test::DirectTransport,
         break;
       }
       case kSecondRampup: {
-        if (bitrate_bps > kExpectedHighBitrateBps) {
+        if (bitrate_bps > kExpectedHighBitrateBps && !suspended_in_stats_) {
           webrtc::test::PrintResult("ramp_up_down_up",
                                     GetModifierString(),
                                     "second_rampup",
@@ -391,6 +401,8 @@ class LowRateStreamObserver : public test::DirectTransport,
   size_t total_overuse_bytes_;
   const size_t number_of_streams_;
   const bool rtx_used_;
+  const VideoSendStream* send_stream_;
+  bool suspended_in_stats_ GUARDED_BY(critical_section_);
 };
 }
 
@@ -496,6 +508,7 @@ class RampUpTest : public ::testing::Test {
     send_config.suspend_below_min_bitrate = true;
 
     VideoSendStream* send_stream = call->CreateVideoSendStream(send_config);
+    stream_observer.SetSendStream(send_stream);
 
     scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer(
         test::FrameGeneratorCapturer::Create(send_stream->Input(),

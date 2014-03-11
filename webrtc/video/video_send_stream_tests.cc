@@ -876,7 +876,7 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
 
   class RembObserver : public test::RtpRtcpObserver, public I420FrameCallback {
    public:
-    RembObserver()
+    RembObserver(VideoSendStream** send_stream_ptr)
         : RtpRtcpObserver(30 * 1000),  // Timeout after 30 seconds.
           transport_adapter_(&transport_),
           clock_(Clock::GetRealTimeClock()),
@@ -886,7 +886,8 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
           suspended_frame_count_(0),
           low_remb_bps_(0),
           high_remb_bps_(0),
-          crit_sect_(CriticalSectionWrapper::CreateCriticalSection()) {
+          crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
+          send_stream_ptr_(send_stream_ptr) {
       transport_adapter_.Enable();
     }
 
@@ -914,6 +915,9 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
         SendRtcpFeedback(low_remb_bps_);
         test_state_ = kDuringSuspend;
       } else if (test_state_ == kDuringSuspend) {
+        assert(*send_stream_ptr_);
+        VideoSendStream::Stats stats = (*send_stream_ptr_)->GetStats();
+        EXPECT_TRUE(stats.suspended);
         if (header.paddingLength == 0) {
           // Received non-padding packet during suspension period. Reset the
           // counter.
@@ -926,6 +930,9 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
       } else if (test_state_ == kWaitingForPacket) {
         if (header.paddingLength == 0) {
           // Non-padding packet observed. Test is complete.
+          assert(*send_stream_ptr_);
+          VideoSendStream::Stats stats = (*send_stream_ptr_)->GetStats();
+          EXPECT_FALSE(stats.suspended);
           observation_complete_->Set();
         }
       }
@@ -983,7 +990,10 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
     int low_remb_bps_;
     int high_remb_bps_;
     scoped_ptr<CriticalSectionWrapper> crit_sect_;
-  } observer;
+    VideoSendStream** send_stream_ptr_;
+  } observer(&send_stream_);
+  // Note that |send_stream_| is created in RunSendTest(), called below. This
+  // is why a pointer to |send_stream_| must be provided here.
 
   Call::Config call_config(observer.SendTransport());
   scoped_ptr<Call> call(Call::Create(call_config));

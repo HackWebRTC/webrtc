@@ -54,6 +54,7 @@ class SendStatisticsProxyTest : public ::testing::Test,
     EXPECT_EQ(one.encode_frame_rate, other.encode_frame_rate);
     EXPECT_EQ(one.avg_delay_ms, other.avg_delay_ms);
     EXPECT_EQ(one.max_delay_ms, other.max_delay_ms);
+    EXPECT_EQ(one.suspended, other.suspended);
     EXPECT_EQ(one.c_name, other.c_name);
 
     EXPECT_EQ(one.substreams.size(), other.substreams.size());
@@ -129,6 +130,20 @@ TEST_F(SendStatisticsProxyTest, FrameRates) {
   VideoSendStream::Stats stats = statistics_proxy_->GetStats();
   EXPECT_EQ(capture_fps, stats.input_frame_rate);
   EXPECT_EQ(encode_fps, stats.encode_frame_rate);
+}
+
+TEST_F(SendStatisticsProxyTest, Suspended) {
+  // Verify that the value is false by default.
+  EXPECT_FALSE(statistics_proxy_->GetStats().suspended);
+
+  // Verify that we can set it to true.
+  ViEEncoderObserver* encoder_observer = statistics_proxy_.get();
+  encoder_observer->SuspendChange(0, true);
+  EXPECT_TRUE(statistics_proxy_->GetStats().suspended);
+
+  // Verify that we can set it back to false again.
+  encoder_observer->SuspendChange(0, false);
+  EXPECT_FALSE(statistics_proxy_->GetStats().suspended);
 }
 
 TEST_F(SendStatisticsProxyTest, FrameCounts) {
