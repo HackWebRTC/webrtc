@@ -2818,6 +2818,7 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
     conference_mode_turned_off = true;
   }
 
+
   // Save the options, to be interpreted where appropriate.
   // Use options_.SetAll() instead of assignment so that unset value in options
   // will not overwrite the previous option value.
@@ -2854,9 +2855,12 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
     expected_bitrate = kMaxVideoBitrate;
   }
 
-  if (send_codec_ &&
+  bool reset_send_codec_needed = send_codec_ &&
       (send_max_bitrate_ != expected_bitrate || denoiser_changed ||
-       adjusted_min_bitrate)) {
+       adjusted_min_bitrate);
+
+
+  if (reset_send_codec_needed) {
     // On success, SetSendCodec() will reset send_max_bitrate_ to
     // expected_bitrate.
     if (!SetSendCodec(*send_codec_,
@@ -2867,6 +2871,7 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
     }
     LogSendCodecChange("SetOptions()");
   }
+
   if (leaky_bucket_changed) {
     bool enable_leaky_bucket =
         options_.video_leaky_bucket.GetWithDefaultIfUnset(false);

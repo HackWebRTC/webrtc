@@ -319,6 +319,7 @@ struct VideoOptions {
     dscp.SetFrom(change.dscp);
     suspend_below_min_bitrate.SetFrom(change.suspend_below_min_bitrate);
     unsignalled_recv_stream_limit.SetFrom(change.unsignalled_recv_stream_limit);
+    use_simulcast_adapter.SetFrom(change.use_simulcast_adapter);
   }
 
   bool operator==(const VideoOptions& o) const {
@@ -345,7 +346,8 @@ struct VideoOptions {
         lower_min_bitrate == o.lower_min_bitrate &&
         dscp == o.dscp &&
         suspend_below_min_bitrate == o.suspend_below_min_bitrate &&
-        unsignalled_recv_stream_limit == o.unsignalled_recv_stream_limit;
+        unsignalled_recv_stream_limit == o.unsignalled_recv_stream_limit &&
+        use_simulcast_adapter == o.use_simulcast_adapter;
   }
 
   std::string ToString() const {
@@ -377,6 +379,7 @@ struct VideoOptions {
                          suspend_below_min_bitrate);
     ost << ToStringIfSet("num channels for early receive",
                          unsignalled_recv_stream_limit);
+    ost << ToStringIfSet("use simulcast adapter", use_simulcast_adapter);
     ost << "}";
     return ost.str();
   }
@@ -428,6 +431,8 @@ struct VideoOptions {
   Settable<bool> suspend_below_min_bitrate;
   // Limit on the number of early receive channels that can be created.
   Settable<int> unsignalled_recv_stream_limit;
+  // Enable use of simulcast adapter.
+  Settable<bool> use_simulcast_adapter;
 };
 
 // A class for playing out soundclips.

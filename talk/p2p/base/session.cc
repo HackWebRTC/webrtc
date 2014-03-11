@@ -548,6 +548,8 @@ TransportProxy* BaseSession::GetOrCreateTransportProxy(
                                   new TransportWrapper(transport));
   transproxy->SignalCandidatesReady.connect(
       this, &BaseSession::OnTransportProxyCandidatesReady);
+  if (identity_)
+    transproxy->SetIdentity(identity_);
   transports_[content_name] = transproxy;
 
   return transproxy;
