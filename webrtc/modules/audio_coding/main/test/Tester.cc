@@ -200,7 +200,7 @@ TEST(AudioCodingModuleTest, TestOpus) {
   Trace::ReturnTrace();
 }
 
-TEST(AudioCodingModuleTest, TestOpusNewACM) {
+TEST(AudioCodingModuleTest, DISABLED_ON_ANDROID(TestOpusNewACM)) {
   Trace::CreateTrace();
   Trace::SetTraceFile((webrtc::test::OutputPath() +
       "acm_opus_trace_new.txt").c_str());
