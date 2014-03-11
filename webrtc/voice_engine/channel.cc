@@ -3484,7 +3484,7 @@ Channel::GetRemoteCSRCs(unsigned int arrCSRC[15])
     }
     uint32_t arrOfCSRC[kRtpCsrcSize];
     int32_t CSRCs(0);
-    CSRCs = _rtpRtcpModule->CSRCs(arrOfCSRC);
+    CSRCs = rtp_receiver_->CSRCs(arrOfCSRC);
     if (CSRCs > 0)
     {
         memcpy(arrCSRC, arrOfCSRC, CSRCs * sizeof(uint32_t));
