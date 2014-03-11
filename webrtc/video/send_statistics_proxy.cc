@@ -32,11 +32,6 @@ void SendStatisticsProxy::OutgoingRate(const int video_channel,
   stats_.encode_frame_rate = framerate;
 }
 
-void SendStatisticsProxy::SuspendChange(int video_channel, bool is_suspended) {
-  CriticalSectionScoped cs(lock_.get());
-  stats_.suspended = is_suspended;
-}
-
 void SendStatisticsProxy::CapturedFrameRate(const int capture_id,
                                             const unsigned char frame_rate) {
   CriticalSectionScoped cs(lock_.get());

@@ -18,7 +18,6 @@
 #include "webrtc/video_engine/include/vie_capture.h"
 #include "webrtc/video_send_stream.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
-#include "webrtc/system_wrappers/interface/thread_annotations.h"
 
 namespace webrtc {
 
@@ -68,7 +67,7 @@ class SendStatisticsProxy : public RtcpStatisticsCallback,
                             const unsigned int framerate,
                             const unsigned int bitrate) OVERRIDE;
 
-  virtual void SuspendChange(int video_channel, bool is_suspended) OVERRIDE;
+  virtual void SuspendChange(int video_channel, bool is_suspended) OVERRIDE {}
 
   // From ViECaptureObserver.
   virtual void BrightnessAlarm(const int capture_id,
@@ -81,12 +80,12 @@ class SendStatisticsProxy : public RtcpStatisticsCallback,
                               const CaptureAlarm alarm) OVERRIDE {}
 
  private:
-  StreamStats* GetStatsEntry(uint32_t ssrc) EXCLUSIVE_LOCKS_REQUIRED(lock_);
+  StreamStats* GetStatsEntry(uint32_t ssrc);
 
   const VideoSendStream::Config config_;
   scoped_ptr<CriticalSectionWrapper> lock_;
-  VideoSendStream::Stats stats_ GUARDED_BY(lock_);
-  StatsProvider* const stats_provider_;
+  VideoSendStream::Stats stats_;
+  StatsProvider* stats_provider_;
 };
 
 }  // namespace webrtc
