@@ -612,9 +612,6 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
     }
     return video_adapter()->adapt_reason();
   }
-  webrtc::CpuOveruseObserver* overuse_observer() {
-    return overuse_observer_.get();
-  }
 
   StreamParams* stream_params() { return stream_params_.get(); }
   void set_stream_params(const StreamParams& sp) {
@@ -631,7 +628,8 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
   VideoCapturer* video_capturer() {
     return video_capturer_;
   }
-  void set_video_capturer(VideoCapturer* video_capturer) {
+  void set_video_capturer(VideoCapturer* video_capturer,
+                          ViEWrapper* vie_wrapper) {
     if (video_capturer == video_capturer_) {
       return;
     }
@@ -648,6 +646,7 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
     capturer_updated_ = true;
     video_capturer_ = video_capturer;
 
+    vie_wrapper->base()->RegisterCpuOveruseObserver(channel_id_, NULL);
     if (!video_capturer) {
       overuse_observer_.reset();
       return;
@@ -659,6 +658,8 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
     UpdateAdapterCpuOptions();
 
     overuse_observer_.reset(new WebRtcOveruseObserver(adapter));
+    vie_wrapper->base()->RegisterCpuOveruseObserver(channel_id_,
+                                                    overuse_observer_.get());
     // (Dis)connect the video adapter from the cpu monitor as appropriate.
     SetCpuOveruseDetection(overuse_observer_enabled_);
 
@@ -2204,7 +2205,7 @@ bool WebRtcVideoMediaChannel::DeleteSendChannel(uint32 ssrc_key) {
   }
   WebRtcVideoChannelSendInfo* send_channel = send_channels_[ssrc_key];
   MaybeDisconnectCapturer(send_channel->video_capturer());
-  send_channel->set_video_capturer(NULL);
+  send_channel->set_video_capturer(NULL, engine()->vie());
 
   int channel_id = send_channel->channel_id();
   int capture_id = send_channel->capture_id();
@@ -2244,7 +2245,7 @@ bool WebRtcVideoMediaChannel::RemoveCapturer(uint32 ssrc) {
     return false;
   }
   MaybeDisconnectCapturer(capturer);
-  send_channel->set_video_capturer(NULL);
+  send_channel->set_video_capturer(NULL, engine()->vie());
   const int64 timestamp = send_channel->local_stream_info()->time_stamp();
   if (send_codec_) {
     QueueBlackFrame(ssrc, timestamp, send_codec_->maxFramerate);
@@ -2567,7 +2568,7 @@ bool WebRtcVideoMediaChannel::SetCapturer(uint32 ssrc,
   VideoCapturer* old_capturer = send_channel->video_capturer();
   MaybeDisconnectCapturer(old_capturer);
 
-  send_channel->set_video_capturer(capturer);
+  send_channel->set_video_capturer(capturer, engine()->vie());
   MaybeConnectCapturer(capturer);
   if (!capturer->IsScreencast() && ratio_w_ != 0 && ratio_h_ != 0) {
     capturer->UpdateAspectRatio(ratio_w_, ratio_h_);
@@ -3359,11 +3360,6 @@ bool WebRtcVideoMediaChannel::ConfigureSending(int channel_id,
       new WebRtcVideoChannelSendInfo(channel_id, vie_capture,
                                      external_capture,
                                      engine()->cpu_monitor()));
-  if (engine()->vie()->base()->RegisterCpuOveruseObserver(
-      channel_id, send_channel->overuse_observer())) {
-    LOG_RTCERR1(RegisterCpuOveruseObserver, channel_id);
-    return false;
-  }
   send_channel->ApplyCpuOptions(options_);
   send_channel->SignalCpuAdaptationUnable.connect(this,
       &WebRtcVideoMediaChannel::OnCpuAdaptationUnable);
