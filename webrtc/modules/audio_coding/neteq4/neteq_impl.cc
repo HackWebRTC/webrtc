@@ -870,7 +870,7 @@ int NetEqImpl::GetDecision(Operations* operation,
   }
   const RTPHeader* header = packet_buffer_->NextRtpHeader();
 
-  if (decision_logic_->CngRfc3389On()) {
+  if (decision_logic_->CngRfc3389On() || last_mode_ == kModeRfc3389Cng) {
     // Because of timestamp peculiarities, we have to "manually" disallow using
     // a CNG packet with the same timestamp as the one that was last played.
     // This can happen when using redundancy and will cause the timing to shift.
@@ -878,7 +878,6 @@ int NetEqImpl::GetDecision(Operations* operation,
         decoder_database_->IsComfortNoise(header->payloadType) &&
         end_timestamp >= header->timestamp) {
       // Don't use this packet, discard it.
-      // TODO(hlundin): Write test for this case.
       if (packet_buffer_->DiscardNextPacket() != PacketBuffer::kOK) {
         assert(false);  // Must be ok by design.
       }
