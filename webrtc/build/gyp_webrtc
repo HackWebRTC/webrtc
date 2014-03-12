@@ -60,20 +60,7 @@ if __name__ == '__main__':
   if not os.environ.get('GYP_GENERATORS'):
     os.environ['GYP_GENERATORS'] = 'ninja'
 
-  # Set default Visual Studio version to 2010 until WebRTC fully supports 2013.
-  # TODO(kjellander): Remove this to enable 2013 as default when we're ready.
-  if (sys.platform in ('cygwin', 'win32') and
-      not os.environ.get('GYP_MSVS_VERSION')):
-    print 'Setting GYP_MSVS_VERSION to 2010 by default.'
-    os.environ['GYP_MSVS_VERSION'] = '2010'
-
-  vs2013_runtime_dll_dirs = None
-  if int(os.environ.get('GYP_MSVS_VERSION', '2010')) == 2013:
-    # Download Chromium's stripped down Visual Studio 2013 compile toolchain.
-    # TODO(kjellander): Make this look like gyp_chromium when 2013 works for us,
-    # this can currently only run for 2013 since GYP_MSVS_VERSION gets
-    # overwritten with 2013 in DownloadVsToolChain() right now.
-    vs2013_runtime_dll_dirs = gyp_chromium.DownloadVsToolChain()
+  vs2013_runtime_dll_dirs = gyp_chromium.DownloadVsToolChain()
 
   # Enforce gyp syntax checking. This adds about 20% execution time.
   args.append('--check')
