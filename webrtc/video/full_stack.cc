@@ -27,7 +27,6 @@
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/test/frame_generator_capturer.h"
 #include "webrtc/test/statistics.h"
-#include "webrtc/test/video_renderer.h"
 #include "webrtc/typedefs.h"
 
 DEFINE_int32(seconds, 10, "Seconds to run each clip.");
