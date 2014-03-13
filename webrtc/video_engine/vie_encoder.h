@@ -20,6 +20,7 @@
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/modules/video_processing/main/interface/video_processing.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/thread_annotations.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/frame_callback.h"
 #include "webrtc/video_engine/vie_defines.h"
@@ -154,6 +155,8 @@ class ViEEncoder
   // Sets SSRCs for all streams.
   bool SetSsrcs(const std::list<unsigned int>& ssrcs);
 
+  void SetMinTransmitBitrate(int min_transmit_bitrate_kbps);
+
   // Effect filter.
   int32_t RegisterEffectFilter(ViEEffectFilter* effect_filter);
 
@@ -207,6 +210,7 @@ class ViEEncoder
 
   int64_t time_of_last_incoming_frame_ms_;
   bool send_padding_;
+  int min_transmit_bitrate_kbps_ GUARDED_BY(data_cs_);
   int target_delay_ms_;
   bool network_is_transmitting_;
   bool encoder_paused_;
@@ -216,7 +220,7 @@ class ViEEncoder
   bool fec_enabled_;
   bool nack_enabled_;
 
-  ViEEncoderObserver* codec_observer_;
+  ViEEncoderObserver* codec_observer_ GUARDED_BY(callback_cs_);
   ViEEffectFilter* effect_filter_;
   ProcessThread& module_process_thread_;
 

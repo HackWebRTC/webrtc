@@ -266,6 +266,15 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
   virtual int SetTransmissionSmoothingStatus(int video_channel,
                                              bool enable) = 0;
 
+  // Sets a minimal bitrate which will be padded to when the encoder doesn't
+  // produce enough bitrate.
+  // TODO(pbos): Remove default implementation when libjingle's
+  // FakeWebRtcVideoEngine is updated.
+  virtual int SetMinTransmitBitrate(int video_channel,
+                                    int min_transmit_bitrate_kbps) {
+    return -1;
+  };
+
   // This function returns our locally created statistics of the received RTP
   // stream.
   virtual int GetReceiveChannelRtcpStatistics(const int video_channel,

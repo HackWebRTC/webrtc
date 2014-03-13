@@ -33,8 +33,8 @@ class RtpRtcpObserver {
     return &receive_transport_;
   }
 
-  void SetReceivers(PacketReceiver* send_transport_receiver,
-                    PacketReceiver* receive_transport_receiver) {
+  virtual void SetReceivers(PacketReceiver* send_transport_receiver,
+                            PacketReceiver* receive_transport_receiver) {
     send_transport_.SetReceiver(send_transport_receiver);
     receive_transport_.SetReceiver(receive_transport_receiver);
   }

@@ -1475,4 +1475,5 @@ TEST_F(CallTest, ReceiverReferenceTimeReportEnabled) {
 TEST_F(CallTest, ReceiverReferenceTimeReportDisabled) {
   TestXrReceiverReferenceTimeReport(false);
 }
+
 }  // namespace webrtc
