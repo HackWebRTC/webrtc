@@ -45,6 +45,7 @@
 #error "Bogus include."
 #endif
 
+
 namespace webrtc {
 class VideoCaptureModule;
 class VideoDecoder;

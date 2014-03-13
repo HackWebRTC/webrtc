@@ -285,6 +285,12 @@ struct AudioOptions {
 // We are moving all of the setting of options to structs like this,
 // but some things currently still use flags.
 struct VideoOptions {
+  enum HighestBitrate {
+    NORMAL,
+    HIGH,
+    VERY_HIGH
+  };
+
   VideoOptions() {
     process_adaptation_threshhold.Set(kProcessCpuThreshold);
     system_low_adaptation_threshhold.Set(kLowSystemCpuThreshold);
@@ -307,6 +313,7 @@ struct VideoOptions {
     video_temporal_layer_realtime.SetFrom(
         change.video_temporal_layer_realtime);
     video_leaky_bucket.SetFrom(change.video_leaky_bucket);
+    video_highest_bitrate.SetFrom(change.video_highest_bitrate);
     cpu_overuse_detection.SetFrom(change.cpu_overuse_detection);
     conference_mode.SetFrom(change.conference_mode);
     process_adaptation_threshhold.SetFrom(change.process_adaptation_threshhold);
@@ -335,6 +342,7 @@ struct VideoOptions {
         video_temporal_layer_screencast == o.video_temporal_layer_screencast &&
         video_temporal_layer_realtime == o.video_temporal_layer_realtime &&
         video_leaky_bucket == o.video_leaky_bucket &&
+        video_highest_bitrate == o.video_highest_bitrate &&
         cpu_overuse_detection == o.cpu_overuse_detection &&
         conference_mode == o.conference_mode &&
         process_adaptation_threshhold == o.process_adaptation_threshhold &&
@@ -367,6 +375,7 @@ struct VideoOptions {
     ost << ToStringIfSet("video temporal layer realtime",
                          video_temporal_layer_realtime);
     ost << ToStringIfSet("leaky bucket", video_leaky_bucket);
+    ost << ToStringIfSet("highest video bitrate", video_highest_bitrate);
     ost << ToStringIfSet("cpu overuse detection", cpu_overuse_detection);
     ost << ToStringIfSet("conference mode", conference_mode);
     ost << ToStringIfSet("process", process_adaptation_threshhold);
@@ -408,6 +417,8 @@ struct VideoOptions {
   Settable<bool> video_temporal_layer_realtime;
   // Enable WebRTC leaky bucket when sending media packets.
   Settable<bool> video_leaky_bucket;
+  // Set highest bitrate mode for video.
+  Settable<int> video_highest_bitrate;
   // Enable WebRTC Cpu Overuse Detection, which is a new version of the CPU
   // adaptation algorithm. So this option will override the
   // |adapt_input_to_cpu_usage|.
