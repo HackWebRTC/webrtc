@@ -112,7 +112,7 @@ external_hmac_alloc(auth_t** a, int key_len, int out_len) {
 err_status_t
 external_hmac_dealloc(auth_t* a) {
   // Zeroize entire state
-  memset((uint8_t *)a, sizeof(external_hmac_ctx_t) + sizeof(auth_t));
+  memset((uint8_t *)a, 0, sizeof(external_hmac_ctx_t) + sizeof(auth_t));
 
   // Free memory
   free(a);
