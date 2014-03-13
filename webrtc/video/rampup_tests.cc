@@ -219,7 +219,7 @@ class LowRateStreamObserver : public test::DirectTransport,
         number_of_streams_(number_of_streams),
         rtx_used_(rtx_used),
         send_stream_(NULL),
-        suspended_in_stats_(true) {
+        suspended_in_stats_(false) {
     RtpRtcp::Configuration config;
     config.receive_statistics = receive_stats_.get();
     feedback_transport_.Enable();
@@ -522,6 +522,8 @@ class RampUpTest : public ::testing::Test {
 
     EXPECT_EQ(kEventSignaled, stream_observer.Wait());
 
+    stream_observer.StopSending();
+    receiver_transport.StopSending();
     frame_generator_capturer->Stop();
     send_stream->StopSending();
 
