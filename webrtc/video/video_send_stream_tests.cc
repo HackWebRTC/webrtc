@@ -876,7 +876,7 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
 
   class RembObserver : public test::RtpRtcpObserver, public I420FrameCallback {
    public:
-    RembObserver()
+    RembObserver(VideoSendStream** send_stream_ptr)
         : RtpRtcpObserver(30 * 1000),  // Timeout after 30 seconds.
           transport_adapter_(&transport_),
           clock_(Clock::GetRealTimeClock()),
@@ -886,7 +886,8 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
           suspended_frame_count_(0),
           low_remb_bps_(0),
           high_remb_bps_(0),
-          crit_sect_(CriticalSectionWrapper::CreateCriticalSection()) {
+          crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
+          send_stream_ptr_(send_stream_ptr) {
       transport_adapter_.Enable();
     }
 
@@ -917,15 +918,14 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
         if (header.paddingLength == 0) {
           // Received non-padding packet during suspension period. Reset the
           // counter.
-          // TODO(hlundin): We should probably make this test more advanced in
-          // the future, so that it verifies that the bitrate can go below the
-          // min_bitrate. This requires that the fake encoder sees the
-          // min_bitrate, and never goes below it. See WebRTC Issue 2655.
           suspended_frame_count_ = 0;
         }
       } else if (test_state_ == kWaitingForPacket) {
         if (header.paddingLength == 0) {
           // Non-padding packet observed. Test is complete.
+          assert(*send_stream_ptr_);
+          VideoSendStream::Stats stats = (*send_stream_ptr_)->GetStats();
+          EXPECT_FALSE(stats.suspended);
           observation_complete_->Set();
         }
       }
@@ -938,6 +938,9 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
       CriticalSectionScoped lock(crit_sect_.get());
       if (test_state_ == kDuringSuspend &&
           ++suspended_frame_count_ > kSuspendTimeFrames) {
+        assert(*send_stream_ptr_);
+        VideoSendStream::Stats stats = (*send_stream_ptr_)->GetStats();
+        EXPECT_TRUE(stats.suspended);
         SendRtcpFeedback(high_remb_bps_);
         test_state_ = kWaitingForPacket;
       }
@@ -983,7 +986,10 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
     int low_remb_bps_;
     int high_remb_bps_;
     scoped_ptr<CriticalSectionWrapper> crit_sect_;
-  } observer;
+    VideoSendStream** send_stream_ptr_;
+  } observer(&send_stream_);
+  // Note that |send_stream_| is created in RunSendTest(), called below. This
+  // is why a pointer to |send_stream_| must be provided here.
 
   Call::Config call_config(observer.SendTransport());
   scoped_ptr<Call> call(Call::Create(call_config));
