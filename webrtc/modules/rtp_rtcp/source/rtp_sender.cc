@@ -157,10 +157,12 @@ uint32_t RTPSender::NackOverheadRate() const {
 
 bool RTPSender::GetSendSideDelay(int* avg_send_delay_ms,
                                  int* max_send_delay_ms) const {
+  if (!SendingMedia())
+    return false;
   CriticalSectionScoped cs(statistics_crit_.get());
   SendDelayMap::const_iterator it = send_delays_.upper_bound(
       clock_->TimeInMilliseconds() - kSendSideDelayWindowMs);
-  if (!sending_media_ || it == send_delays_.end())
+  if (it == send_delays_.end())
     return false;
   int num_delays = 0;
   for (; it != send_delays_.end(); ++it) {
@@ -528,7 +530,7 @@ int RTPSender::SendPadData(int payload_type, uint32_t timestamp,
                            StorageType store, bool force_full_size_packets,
                            bool only_pad_after_markerbit) {
   // Drop this packet if we're not sending media packets.
-  if (!sending_media_) {
+  if (!SendingMedia()) {
     return bytes;
   }
   int padding_bytes_in_packet = 0;
@@ -888,14 +890,14 @@ bool RTPSender::IsFecPacket(const uint8_t* buffer,
 }
 
 int RTPSender::TimeToSendPadding(int bytes) {
-  if (!sending_media_) {
-    return 0;
-  }
   int payload_type;
   int64_t capture_time_ms;
   uint32_t timestamp;
   {
     CriticalSectionScoped cs(send_critsect_);
+    if (!sending_media_) {
+      return 0;
+    }
     payload_type = ((rtx_ & kRtxRedundantPayloads) > 0) ? payload_type_rtx_ :
         payload_type_;
     timestamp = timestamp_;

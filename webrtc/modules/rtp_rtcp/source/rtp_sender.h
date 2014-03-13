@@ -25,6 +25,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "webrtc/modules/rtp_rtcp/source/ssrc_database.h"
 #include "webrtc/modules/rtp_rtcp/source/video_codec_information.h"
+#include "webrtc/system_wrappers/interface/thread_annotations.h"
 
 #define MAX_INIT_RTP_SEQ_NUMBER 32767  // 2^15 -1.
 
@@ -336,7 +337,7 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
   CriticalSectionWrapper *send_critsect_;
 
   Transport *transport_;
-  bool sending_media_;
+  bool sending_media_ GUARDED_BY(send_critsect_);
 
   uint16_t max_payload_length_;
   uint16_t target_send_bitrate_;
