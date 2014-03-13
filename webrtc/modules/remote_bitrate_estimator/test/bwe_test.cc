@@ -246,7 +246,9 @@ void BweTest::RunFor(int64_t time_ms) {
     for (vector<PacketProcessor*>::const_iterator it =
          processors_.begin(); it != processors_.end(); ++it) {
       (*it)->RunFor(simulation_interval_ms_, &packets);
-      (*it)->Plot((packets.back().send_time_us() + 500) / 1000);
+      if (!packets.empty()) {
+        (*it)->Plot((packets.back().send_time_us() + 500) / 1000);
+      }
     }
 
     // Verify packets are in order between batches.

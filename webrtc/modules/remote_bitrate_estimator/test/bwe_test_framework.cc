@@ -17,6 +17,33 @@
 namespace webrtc {
 namespace testing {
 namespace bwe {
+class DelayCapHelper {
+ public:
+  DelayCapHelper() : max_delay_us_(0), delay_stats_() {}
+
+  void SetMaxDelay(int max_delay_ms) {
+    BWE_TEST_LOGGING_ENABLE(false);
+    BWE_TEST_LOGGING_LOG1("Max Delay", "%d ms", static_cast<int>(max_delay_ms));
+    assert(max_delay_ms >= 0);
+    max_delay_us_ = max_delay_ms * 1000;
+  }
+
+  bool ShouldSendPacket(int64_t send_time_us, int64_t arrival_time_us) {
+    int64_t packet_delay_us = send_time_us - arrival_time_us;
+    delay_stats_.Push(std::min(packet_delay_us, max_delay_us_) / 1000);
+    return (max_delay_us_ == 0 || max_delay_us_ >= packet_delay_us);
+  }
+
+  const Stats<double>& delay_stats() const {
+    return delay_stats_;
+  }
+
+ private:
+  int64_t max_delay_us_;
+  Stats<double> delay_stats_;
+
+  DISALLOW_COPY_AND_ASSIGN(DelayCapHelper);
+};
 
 class RateCounter {
  public:
@@ -298,21 +325,16 @@ void ReorderFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
 ChokeFilter::ChokeFilter(PacketProcessorListener* listener)
     : PacketProcessor(listener),
       kbps_(1200),
-      max_delay_us_(0),
-      last_send_time_us_(0) {
+      last_send_time_us_(0),
+      delay_cap_helper_(new DelayCapHelper()) {
 }
+
+ChokeFilter::~ChokeFilter() {}
 
 void ChokeFilter::SetCapacity(uint32_t kbps) {
   BWE_TEST_LOGGING_ENABLE(false);
   BWE_TEST_LOGGING_LOG1("BitrateChoke", "%d kbps", kbps);
   kbps_ = kbps;
-}
-
-void ChokeFilter::SetMaxDelay(int64_t max_delay_ms) {
-  BWE_TEST_LOGGING_ENABLE(false);
-  BWE_TEST_LOGGING_LOG1("Max Delay", "%d ms", static_cast<int>(max_delay_ms));
-  assert(max_delay_ms >= 0);
-  max_delay_us_ = max_delay_ms * 1000;
 }
 
 void ChokeFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
@@ -322,8 +344,8 @@ void ChokeFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
         (it->payload_size() * 8 * 1000 + kbps_ / 2) / kbps_;
     int64_t new_send_time_us = std::max(it->send_time_us(),
                                         earliest_send_time_us);
-    if (max_delay_us_ == 0 ||
-        max_delay_us_ >= (new_send_time_us - it->send_time_us())) {
+    if (delay_cap_helper_->ShouldSendPacket(new_send_time_us,
+                                            it->send_time_us())) {
       it->set_send_time_us(new_send_time_us);
       last_send_time_us_ = new_send_time_us;
       ++it;
@@ -331,6 +353,14 @@ void ChokeFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
       it = in_out->erase(it);
     }
   }
+}
+
+void ChokeFilter::SetMaxDelay(int max_delay_ms) {
+  delay_cap_helper_->SetMaxDelay(max_delay_ms);
+}
+
+Stats<double> ChokeFilter::GetDelayStats() const {
+  return delay_cap_helper_->delay_stats();
 }
 
 TraceBasedDeliveryFilter::TraceBasedDeliveryFilter(
@@ -341,7 +371,8 @@ TraceBasedDeliveryFilter::TraceBasedDeliveryFilter(
       next_delivery_it_(),
       local_time_us_(-1),
       rate_counter_(new RateCounter),
-      name_("") {}
+      name_(""),
+      delay_cap_helper_(new DelayCapHelper()) {}
 
 TraceBasedDeliveryFilter::TraceBasedDeliveryFilter(
     PacketProcessorListener* listener,
@@ -352,7 +383,8 @@ TraceBasedDeliveryFilter::TraceBasedDeliveryFilter(
       next_delivery_it_(),
       local_time_us_(-1),
       rate_counter_(new RateCounter),
-      name_(name) {}
+      name_(name),
+      delay_cap_helper_(new DelayCapHelper()) {}
 
 TraceBasedDeliveryFilter::~TraceBasedDeliveryFilter() {
 }
@@ -395,14 +427,32 @@ void TraceBasedDeliveryFilter::Plot(int64_t timestamp_ms) {
 
 void TraceBasedDeliveryFilter::RunFor(int64_t time_ms, Packets* in_out) {
   assert(in_out);
-  for (PacketsIt it = in_out->begin(); it != in_out->end(); ++it) {
-    do {
+  for (PacketsIt it = in_out->begin(); it != in_out->end();) {
+    while (local_time_us_ < it->send_time_us()) {
       ProceedToNextSlot();
-      const int kPayloadSize = 1240;
-      rate_counter_->UpdateRates(local_time_us_, kPayloadSize);
-    } while (local_time_us_ < it->send_time_us());
-    it->set_send_time_us(local_time_us_);
+    }
+    // Drop any packets that have been queued for too long.
+    while (!delay_cap_helper_->ShouldSendPacket(local_time_us_,
+                                                it->send_time_us())) {
+      it = in_out->erase(it);
+      if (it == in_out->end()) {
+        return;
+      }
+    }
+    if (local_time_us_ >= it->send_time_us()) {
+      it->set_send_time_us(local_time_us_);
+      ProceedToNextSlot();
+    }
+    ++it;
   }
+}
+
+void TraceBasedDeliveryFilter::SetMaxDelay(int max_delay_ms) {
+  delay_cap_helper_->SetMaxDelay(max_delay_ms);
+}
+
+Stats<double> TraceBasedDeliveryFilter::GetDelayStats() const {
+  return delay_cap_helper_->delay_stats();
 }
 
 void TraceBasedDeliveryFilter::ProceedToNextSlot() {
@@ -419,6 +469,8 @@ void TraceBasedDeliveryFilter::ProceedToNextSlot() {
     }
   }
   local_time_us_ = *next_delivery_it_;
+  const int kPayloadSize = 1240;
+  rate_counter_->UpdateRates(local_time_us_, kPayloadSize);
 }
 
 PacketSender::PacketSender(PacketProcessorListener* listener)

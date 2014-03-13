@@ -717,6 +717,18 @@ TEST_F(BweTestFramework_ChokeFilterTest, ShortTraceTwoWraps) {
   TestChoke(&filter, 280, 100, 19);
 }
 
+TEST_F(BweTestFramework_ChokeFilterTest, ShortTraceMaxDelay) {
+  TraceBasedDeliveryFilter filter(NULL);
+  filter.SetMaxDelay(25);
+  ASSERT_TRUE(filter.Init(test::ResourcePath("synthetic-trace", "rx")));
+  // Uses all slots up to 110 ms. Several packets are being dropped.
+  TestChoke(&filter, 110, 20, 9);
+  CheckMaxDelay(25);
+  // Simulate enough time for the next slot (at 135 ms) to be used. This makes
+  // sure that a slot isn't missed between runs.
+  TestChoke(&filter, 25, 1, 1);
+}
+
 void TestVideoSender(VideoSender* sender, int64_t run_for_ms,
                      uint32_t expected_packets,
                      uint32_t expected_payload_size,
