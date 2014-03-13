@@ -7,24 +7,22 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
-  'targets': [
-    {
-      'target_name': 'audioproc_unittest_proto',
-      'type': 'static_library',
-      'sources': [ 'test/unittest.proto', ],
-      'variables': {
-        'proto_in_dir': 'test',
-        # Workaround to protect against gyp's pathname relativization when this
-        # file is included by modules.gyp.
-        'proto_out_protected': 'webrtc/audio_processing',
-        'proto_out_dir': '<(proto_out_protected)',
-      },
-      'includes': [ '../../build/protoc.gypi', ],
-    },
-  ],
   'conditions': [
     ['enable_protobuf==1', {
       'targets': [
+        {
+          'target_name': 'audioproc_unittest_proto',
+          'type': 'static_library',
+          'sources': [ 'test/unittest.proto', ],
+          'variables': {
+            'proto_in_dir': 'test',
+            # Workaround to protect against gyp's pathname relativization when
+            # this file is included by modules.gyp.
+            'proto_out_protected': 'webrtc/audio_processing',
+            'proto_out_dir': '<(proto_out_protected)',
+          },
+          'includes': [ '../../build/protoc.gypi', ],
+        },
         {
           'target_name': 'audioproc',
           'type': 'executable',
