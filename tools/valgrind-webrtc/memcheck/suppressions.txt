@@ -571,3 +571,20 @@
    fun:_ZN14DtlsTestClient12VerifyPacketEPKcmPj
    ...
 }
+{
+   bug_3063
+   Memcheck:Uninitialized
+   ...
+   fun:vfprintf
+   fun:__vsnprintf_chk
+   fun:_ZN6webrtc5Trace3AddENS_10TraceLevelENS_11TraceModuleEiPKcz
+   fun:_ZNK6webrtc12ViECodecImpl21GetCodecTargetBitrateEiPj
+   fun:_ZN7cricket23WebRtcVideoMediaChannel23MaybeChangeStartBitrateEiPN6webrtc10VideoCodecE
+   fun:_ZN7cricket23WebRtcVideoMediaChannel12SetSendCodecEPNS_26WebRtcVideoChannelSendInfoERKN6webrtc10VideoCodecEiii
+   fun:_ZN7cricket23WebRtcVideoMediaChannel12SetSendCodecERKN6webrtc10VideoCodecEiii
+   fun:_ZN7cricket23WebRtcVideoMediaChannel13SetSendCodecsERKSt6vectorINS_10VideoCodecESaIS2_EE
+   fun:_ZN21VideoMediaChannelTestIN7cricket17WebRtcVideoEngineENS0_23WebRtcVideoMediaChannelEE11SetOneCodecERKNS0_10VideoCodecE
+   fun:_ZN21VideoMediaChannelTestIN7cricket17WebRtcVideoEngineENS0_23WebRtcVideoMediaChannelEE4SendERKNS0_10VideoCodecE
+   fun:_ZN21VideoMediaChannelTestIN7cricket17WebRtcVideoEngineENS0_23WebRtcVideoMediaChannelEE36TwoStreamsSendAndFailUnsignalledRecvERKNS0_10VideoCodecE
+   fun:_ZN69WebRtcVideoMediaChannelTest_TwoStreamsSendAndFailUnsignalledRecv_Test8TestBodyEv
+}
