@@ -248,7 +248,7 @@ void Merge::Downsample(const int16_t* input, int input_length,
   int num_coefficients;
   int decimation_factor = fs_hz_ / 4000;
   static const int kCompensateDelay = 0;
-  int length_limit = fs_hz_ / 100;
+  int length_limit = fs_hz_ / 100;  // 10 ms in samples.
   if (fs_hz_ == 8000) {
     filter_coefficients = DspHelper::kDownsample8kHzTbl;
     num_coefficients = 3;
@@ -261,8 +261,6 @@ void Merge::Downsample(const int16_t* input, int input_length,
   } else {  // fs_hz_ == 48000
     filter_coefficients = DspHelper::kDownsample48kHzTbl;
     num_coefficients = 7;
-    // TODO(hlundin) Why is |length_limit| not 480 (legacy)?
-    length_limit = 320;
   }
   int signal_offset = num_coefficients - 1;
   WebRtcSpl_DownsampleFast(&expanded_signal[signal_offset],
