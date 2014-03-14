@@ -212,6 +212,9 @@ struct VideoFormat : VideoFormatPod {
   }
 
   static int IntervalToFps(int64 interval) {
+    if (!interval) {
+      return 0;
+    }
     return static_cast<int>(talk_base::kNumNanosecsPerSec / interval);
   }
 

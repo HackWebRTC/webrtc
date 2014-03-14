@@ -1713,7 +1713,7 @@ class VideoMediaChannelTest : public testing::Test,
     // instead of packets.
     EXPECT_EQ(0, renderer2_.num_rendered_frames());
     // Give a chance for the decoder to process before adding the receiver.
-    talk_base::Thread::Current()->ProcessMessages(10);
+    talk_base::Thread::Current()->ProcessMessages(100);
     // Test sending and receiving on second stream.
     EXPECT_TRUE(channel_->AddRecvStream(
         cricket::StreamParams::CreateLegacy(kSsrc + 2)));
@@ -1731,6 +1731,7 @@ class VideoMediaChannelTest : public testing::Test,
   // Tests that we cannot receive key frames with unsignalled recv disabled.
   void TwoStreamsSendAndFailUnsignalledRecv(const cricket::VideoCodec& codec) {
     cricket::VideoOptions vmo;
+    vmo.conference_mode.Set(true);
     vmo.unsignalled_recv_stream_limit.Set(0);
     EXPECT_TRUE(channel_->SetOptions(vmo));
     SetUpSecondStreamWithNoRecv();
@@ -1738,6 +1739,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(channel_->SetRender(true));
     Send(codec);
     EXPECT_EQ_WAIT(2, NumRtpPackets(), kTimeout);
+    talk_base::Thread::Current()->ProcessMessages(100);
     EXPECT_EQ_WAIT(1, renderer_.num_rendered_frames(), kTimeout);
     EXPECT_EQ_WAIT(0, renderer2_.num_rendered_frames(), kTimeout);
     // Give a chance for the decoder to process before adding the receiver.
@@ -1768,10 +1770,11 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(channel_->SetRender(true));
     Send(codec);
     EXPECT_EQ_WAIT(2, NumRtpPackets(), kTimeout);
-    EXPECT_EQ_WAIT(1, renderer_.num_rendered_frames(), kTimeout);
-    EXPECT_EQ_WAIT(0, renderer2_.num_rendered_frames(), kTimeout);
+    // In one-to-one mode, we deliver frames to the default channel if there
+    // is no registered recv channel for the ssrc.
+    EXPECT_TRUE_WAIT(renderer_.num_rendered_frames() >= 1, kTimeout);
     // Give a chance for the decoder to process before adding the receiver.
-    talk_base::Thread::Current()->ProcessMessages(10);
+    talk_base::Thread::Current()->ProcessMessages(100);
     // Test sending and receiving on second stream.
     EXPECT_TRUE(channel_->AddRecvStream(
         cricket::StreamParams::CreateLegacy(kSsrc + 2)));
@@ -1780,8 +1783,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE_WAIT(renderer_.num_rendered_frames() >= 1, kTimeout);
     EXPECT_EQ_WAIT(4, NumRtpPackets(), kTimeout);
     // We dont expect any frames here, because the key frame would have been
-    // lost in the earlier packet. This is the case we want to solve with early
-    // receive.
+    // delivered to default channel.
     EXPECT_EQ(0, renderer2_.num_rendered_frames());
   }
 
