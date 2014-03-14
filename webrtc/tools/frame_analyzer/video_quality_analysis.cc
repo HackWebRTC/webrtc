@@ -117,7 +117,7 @@ bool ExtractFrameFromYuvFile(const char* i420_file_name, int width, int height,
 bool ExtractFrameFromY4mFile(const char* y4m_file_name, int width, int height,
                              int frame_number, uint8* result_frame) {
   int frame_size = GetI420FrameSize(width, height);
-  int frame_offset = frame_number * frame_size
+  int frame_offset = frame_number * frame_size;
   bool errors = false;
 
   FILE* input_file = fopen(y4m_file_name, "rb");
