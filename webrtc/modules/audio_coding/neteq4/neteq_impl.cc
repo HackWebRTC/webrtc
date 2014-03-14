@@ -874,9 +874,10 @@ int NetEqImpl::GetDecision(Operations* operation,
     // Because of timestamp peculiarities, we have to "manually" disallow using
     // a CNG packet with the same timestamp as the one that was last played.
     // This can happen when using redundancy and will cause the timing to shift.
-    while (header &&
-        decoder_database_->IsComfortNoise(header->payloadType) &&
-        end_timestamp >= header->timestamp) {
+    while (header && decoder_database_->IsComfortNoise(header->payloadType) &&
+           (end_timestamp >= header->timestamp ||
+            end_timestamp + decision_logic_->generated_noise_samples() >
+                header->timestamp)) {
       // Don't use this packet, discard it.
       if (packet_buffer_->DiscardNextPacket() != PacketBuffer::kOK) {
         assert(false);  // Must be ok by design.
