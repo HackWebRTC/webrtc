@@ -14,9 +14,9 @@
 #if defined(__cplusplus)
 extern "C" {
 #endif
-#include "third_party/opus/src/celt/celt.h"
-#include "third_party/opus/src/src/analysis.h"
-#include "third_party/opus/src/src/opus_private.h"
+#include "celt.h"
+#include "analysis.h"
+#include "opus_private.h"
 #if defined(__cplusplus)
 }
 #endif

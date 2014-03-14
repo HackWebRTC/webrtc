@@ -41,11 +41,13 @@
       'include_dirs': [
         # Need Opus header files for the audio classifier.
         '<(DEPTH)/third_party/opus/src/celt',
+        '<(DEPTH)/third_party/opus/src/src',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
           # Need Opus header files for the audio classifier.
           '<(DEPTH)/third_party/opus/src/celt',
+          '<(DEPTH)/third_party/opus/src/src',
         ],
       },
       'export_dependent_settings': [
