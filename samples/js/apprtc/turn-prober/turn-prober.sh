@@ -10,7 +10,13 @@ export D=$(mktemp -d)
 CHROME_LOG_FILE="${D}/chrome_debug.log"
 touch $CHROME_LOG_FILE
 
-chrome \
+XVFB="xvfb-run -a -e $CHROME_LOG_FILE -s '-screen 0 1024x768x24'"
+if [ -n "$DISPLAY" ]; then
+  XVFB=""
+fi
+
+# "eval" below is required by $XVFB containing a quoted argument.
+eval $XVFB chrome \
   --enable-logging=stderr \
   --no-first-run \
   --disable-web-security \
@@ -34,9 +40,7 @@ exec 3>&-
 
 DONE=$(grep DONE $CHROME_LOG_FILE)
 EXIT_CODE=0
-if grep -q "DONE: PASS" $CHROME_LOG_FILE; then
-  echo "PASS"
-else
+if ! grep -q "DONE: PASS" $CHROME_LOG_FILE; then
   cat $CHROME_LOG_FILE
   EXIT_CODE=1
 fi
