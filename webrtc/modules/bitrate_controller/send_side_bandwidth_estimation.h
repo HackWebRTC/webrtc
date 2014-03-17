@@ -47,6 +47,8 @@ class SendSideBandwidthEstimation {
   bool ShapeSimple(const uint8_t loss, const uint32_t rtt,
                    const uint32_t now_ms, uint32_t* bitrate);
 
+  void CapBitrateToThresholds(uint32_t* bitrate);
+
   uint32_t CalcTFRCbps(uint16_t rtt, uint8_t loss);
 
   enum { kBWEIncreaseIntervalMs = 1000 };

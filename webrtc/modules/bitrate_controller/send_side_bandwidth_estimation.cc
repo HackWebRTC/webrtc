@@ -167,7 +167,6 @@ bool SendSideBandwidthEstimation::ShapeSimple(const uint8_t loss,
                                               const uint32_t now_ms,
                                               uint32_t* bitrate) {
   uint32_t new_bitrate = 0;
-  bool reducing = false;
 
   // Limit the rate increases to once a kBWEIncreaseIntervalMs.
   if (loss <= 5) {
@@ -193,7 +192,13 @@ bool SendSideBandwidthEstimation::ShapeSimple(const uint8_t loss,
     // packetLoss = 256*lossRate
     new_bitrate = static_cast<uint32_t>((bitrate_ *
         static_cast<double>(512 - loss)) / 512.0);
-    reducing = true;
+    // Calculate what rate TFRC would apply in this situation
+    // scale loss to Q0 (back to [0, 255])
+    uint32_t tfrc_bitrate = CalcTFRCbps(rtt, loss);
+    if (tfrc_bitrate > new_bitrate) {
+      // do not reduce further if rate is below TFRC rate
+      new_bitrate = tfrc_bitrate;
+    }
   } else {
     // increase rate by 8%
     new_bitrate = static_cast<uint32_t>(bitrate_ * 1.08 + 0.5);
@@ -202,29 +207,26 @@ bool SendSideBandwidthEstimation::ShapeSimple(const uint8_t loss,
     // (gives a little extra increase at low rates, negligible at higher rates)
     new_bitrate += 1000;
   }
-  if (reducing) {
-    // Calculate what rate TFRC would apply in this situation
-    // scale loss to Q0 (back to [0, 255])
-    uint32_t tfrc_bitrate = CalcTFRCbps(rtt, loss);
-    if (tfrc_bitrate > new_bitrate) {
-      // do not reduce further if rate is below TFRC rate
-      new_bitrate = tfrc_bitrate;
-    }
-  }
-  if (bwe_incoming_ > 0 && new_bitrate > bwe_incoming_) {
-    new_bitrate = bwe_incoming_;
-  }
-  if (new_bitrate > max_bitrate_configured_) {
-    new_bitrate = max_bitrate_configured_;
-  }
-  if (new_bitrate < min_bitrate_configured_) {
-    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
-                 "The configured min bitrate (%u kbps) is greater than the "
-                 "estimated available bandwidth (%u kbps).\n",
-                 min_bitrate_configured_ / 1000, new_bitrate / 1000);
-    new_bitrate = min_bitrate_configured_;
-  }
+  CapBitrateToThresholds(&new_bitrate);
   *bitrate = new_bitrate;
   return true;
 }
+
+void SendSideBandwidthEstimation::CapBitrateToThresholds(
+    uint32_t* new_bitrate) {
+  if (bwe_incoming_ > 0 && *new_bitrate > bwe_incoming_) {
+    *new_bitrate = bwe_incoming_;
+  }
+  if (*new_bitrate > max_bitrate_configured_) {
+    *new_bitrate = max_bitrate_configured_;
+  }
+  if (*new_bitrate < min_bitrate_configured_) {
+    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
+                 "The configured min bitrate (%u kbps) is greater than the "
+                 "estimated available bandwidth (%u kbps).\n",
+                 min_bitrate_configured_ / 1000, *new_bitrate / 1000);
+    *new_bitrate = min_bitrate_configured_;
+  }
+}
+
 }  // namespace webrtc
