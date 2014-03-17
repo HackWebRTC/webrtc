@@ -44,12 +44,11 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
  public:
   typedef std::map<uint32_t, int> BytesSentMap;
   typedef std::map<uint32_t, uint32_t> SsrcMap;
-  StreamObserver(int num_expected_ssrcs,
-                 const SsrcMap& rtx_media_ssrcs,
+  StreamObserver(const SsrcMap& rtx_media_ssrcs,
                  newapi::Transport* feedback_transport,
                  Clock* clock)
       : critical_section_(CriticalSectionWrapper::CreateCriticalSection()),
-        all_ssrcs_sent_(EventWrapper::Create()),
+        test_done_(EventWrapper::Create()),
         rtp_parser_(RtpHeaderParser::Create()),
         feedback_transport_(feedback_transport),
         receive_stats_(ReceiveStatistics::Create(clock)),
@@ -57,7 +56,6 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
             new RTPPayloadRegistry(-1,
                                    RTPPayloadStrategy::CreateStrategy(false))),
         clock_(clock),
-        num_expected_ssrcs_(num_expected_ssrcs),
         rtx_media_ssrcs_(rtx_media_ssrcs),
         total_sent_(0),
         padding_sent_(0),
@@ -87,43 +85,10 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
   virtual void OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
                                        unsigned int bitrate) {
     CriticalSectionScoped lock(critical_section_.get());
-    if (ssrcs.size() == num_expected_ssrcs_ && bitrate >= kExpectedBitrateBps) {
+    if (bitrate >= kExpectedBitrateBps) {
+      // Just trigger if there was any rtx padding packet.
       if (rtx_media_ssrcs_.empty() || rtx_media_sent_ > 0) {
-        const ::testing::TestInfo* const test_info =
-            ::testing::UnitTest::GetInstance()->current_test_info();
-        webrtc::test::PrintResult(
-            "total-sent", "", test_info->name(), total_sent_, "bytes", false);
-        webrtc::test::PrintResult("padding-sent",
-                                  "",
-                                  test_info->name(),
-                                  padding_sent_,
-                                  "bytes",
-                                  false);
-        webrtc::test::PrintResult("rtx-media-sent",
-                                  "",
-                                  test_info->name(),
-                                  rtx_media_sent_,
-                                  "bytes",
-                                  false);
-        webrtc::test::PrintResult("total-packets-sent",
-                                  "",
-                                  test_info->name(),
-                                  total_packets_sent_,
-                                  "packets",
-                                  false);
-        webrtc::test::PrintResult("padding-packets-sent",
-                                  "",
-                                  test_info->name(),
-                                  padding_packets_sent_,
-                                  "packets",
-                                  false);
-        webrtc::test::PrintResult("rtx-packets-sent",
-                                  "",
-                                  test_info->name(),
-                                  rtx_media_packets_sent_,
-                                  "packets",
-                                  false);
-        all_ssrcs_sent_->Set();
+        TriggerTestDone();
       }
     }
     rtp_rtcp_->SetREMBData(
@@ -172,13 +137,32 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
     return true;
   }
 
-  EventTypeWrapper Wait() { return all_ssrcs_sent_->Wait(120 * 1000); }
+  EventTypeWrapper Wait() { return test_done_->Wait(120 * 1000); }
 
  private:
   static const unsigned int kExpectedBitrateBps = 1200000;
 
+  void ReportResult(const std::string& measurement,
+                    size_t value,
+                    const std::string& units) {
+    webrtc::test::PrintResult(
+        measurement, "",
+        ::testing::UnitTest::GetInstance()->current_test_info()->name(),
+        value, units, false);
+  }
+
+  void TriggerTestDone() {
+    ReportResult("total-sent", total_sent_, "bytes");
+    ReportResult("padding-sent", padding_sent_, "bytes");
+    ReportResult("rtx-media-sent", rtx_media_sent_, "bytes");
+    ReportResult("total-packets-sent", total_packets_sent_, "packets");
+    ReportResult("padding-packets-sent", padding_packets_sent_, "packets");
+    ReportResult("rtx-packets-sent", rtx_media_packets_sent_, "packets");
+    test_done_->Set();
+  }
+
   scoped_ptr<CriticalSectionWrapper> critical_section_;
-  scoped_ptr<EventWrapper> all_ssrcs_sent_;
+  scoped_ptr<EventWrapper> test_done_;
   scoped_ptr<RtpHeaderParser> rtp_parser_;
   scoped_ptr<RtpRtcp> rtp_rtcp_;
   internal::TransportAdapter feedback_transport_;
@@ -186,7 +170,6 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
   scoped_ptr<RTPPayloadRegistry> payload_registry_;
   scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
   Clock* clock_;
-  const size_t num_expected_ssrcs_;
   SsrcMap rtx_media_ssrcs_;
   size_t total_sent_;
   size_t padding_sent_;
@@ -413,19 +396,15 @@ class RampUpTest : public ::testing::Test {
  protected:
   void RunRampUpTest(bool pacing, bool rtx) {
     const size_t kNumberOfStreams = 3;
-    std::vector<uint32_t> ssrcs;
-    for (size_t i = 0; i < kNumberOfStreams; ++i)
-      ssrcs.push_back(static_cast<uint32_t>(i + 1));
-    uint32_t kRtxSsrcs[kNumberOfStreams] = {111, 112, 113};
+    std::vector<uint32_t> ssrcs(GenerateSsrcs(kNumberOfStreams, 100));
+    std::vector<uint32_t> rtx_ssrcs(GenerateSsrcs(kNumberOfStreams, 200));
     StreamObserver::SsrcMap rtx_ssrc_map;
     if (rtx) {
       for (size_t i = 0; i < ssrcs.size(); ++i)
-        rtx_ssrc_map[kRtxSsrcs[i]] = ssrcs[i];
+        rtx_ssrc_map[rtx_ssrcs[i]] = ssrcs[i];
     }
     test::DirectTransport receiver_transport;
-    int num_expected_ssrcs = kNumberOfStreams + (rtx ? 1 : 0);
-    StreamObserver stream_observer(num_expected_ssrcs,
-                                   rtx_ssrc_map,
+    StreamObserver stream_observer(rtx_ssrc_map,
                                    &receiver_transport,
                                    Clock::GetRealTimeClock());
 
@@ -445,13 +424,10 @@ class RampUpTest : public ::testing::Test {
     send_config.codec.plType = 125;
     send_config.pacing = pacing;
     send_config.rtp.nack.rtp_history_ms = 1000;
-    send_config.rtp.ssrcs.insert(
-        send_config.rtp.ssrcs.begin(), ssrcs.begin(), ssrcs.end());
+    send_config.rtp.ssrcs = ssrcs;
     if (rtx) {
       send_config.rtp.rtx.payload_type = 96;
-      send_config.rtp.rtx.ssrcs.insert(send_config.rtp.rtx.ssrcs.begin(),
-                                       kRtxSsrcs,
-                                       kRtxSsrcs + kNumberOfStreams);
+      send_config.rtp.rtx.ssrcs = rtx_ssrcs;
     }
     send_config.rtp.extensions.push_back(
         RtpExtension(RtpExtension::kAbsSendTime, kAbsoluteSendTimeExtensionId));
@@ -528,6 +504,15 @@ class RampUpTest : public ::testing::Test {
     send_stream->StopSending();
 
     call->DestroyVideoSendStream(send_stream);
+  }
+
+ private:
+  std::vector<uint32_t> GenerateSsrcs(size_t num_streams,
+                                      uint32_t ssrc_offset) {
+    std::vector<uint32_t> ssrcs;
+    for (size_t i = 0; i != num_streams; ++i)
+      ssrcs.push_back(static_cast<uint32_t>(ssrc_offset + i));
+    return ssrcs;
   }
 
   std::map<uint32_t, bool> reserved_ssrcs_;
