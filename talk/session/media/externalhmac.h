@@ -64,29 +64,27 @@ typedef struct {
   int key_length;
 } external_hmac_ctx_t;
 
-err_status_t
-external_hmac_alloc(auth_t** a, int key_len, int out_len);
+err_status_t external_hmac_alloc(auth_t** a, int key_len, int out_len);
 
-err_status_t
-external_hmac_dealloc(auth_t* a);
+err_status_t external_hmac_dealloc(auth_t* a);
 
-err_status_t
-external_hmac_init(external_hmac_ctx_t* state,
-                   const uint8_t* key, int key_len);
+err_status_t external_hmac_init(external_hmac_ctx_t* state,
+                                const uint8_t* key,
+                                int key_len);
 
-err_status_t
-external_hmac_start(external_hmac_ctx_t* state);
+err_status_t external_hmac_start(external_hmac_ctx_t* state);
 
-err_status_t
-external_hmac_update(external_hmac_ctx_t* state, const uint8_t* message,
-                     int msg_octets);
+err_status_t external_hmac_update(external_hmac_ctx_t* state,
+                                  const uint8_t* message,
+                                  int msg_octets);
 
-err_status_t
-external_hmac_compute(external_hmac_ctx_t* state, const void* message,
-                      int msg_octets, int tag_len, uint8_t* result);
+err_status_t external_hmac_compute(external_hmac_ctx_t* state,
+                                   const void* message,
+                                   int msg_octets,
+                                   int tag_len,
+                                   uint8_t* result);
 
-err_status_t
-external_crypto_init();
+err_status_t external_crypto_init();
 
 #endif  // defined(HAVE_SRTP) && defined(ENABLE_EXTERNAL_AUTH)
 #endif  // TALK_SESSION_MEDIA_EXTERNAL_HMAC_H_
