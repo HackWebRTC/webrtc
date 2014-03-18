@@ -870,7 +870,8 @@ TEST_F(VideoSendStreamTest, CanChangeSendCodec) {
 // 3. Wait until |kSuspendTimeFrames| have been captured without seeing any RTP
 //    packets.
 // 4. Signal a high REMB and then wait for the RTP stream to start again.
-//    When the stream is detected again, the test ends.
+//    When the stream is detected again, and the stats show that the stream
+//    is no longer suspended, the test ends.
 TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
   static const int kSuspendTimeFrames = 60;  // Suspend for 2 seconds @ 30 fps.
 
@@ -922,10 +923,15 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
         }
       } else if (test_state_ == kWaitingForPacket) {
         if (header.paddingLength == 0) {
-          // Non-padding packet observed. Test is complete.
-          assert(*send_stream_ptr_);
-          VideoSendStream::Stats stats = (*send_stream_ptr_)->GetStats();
-          EXPECT_FALSE(stats.suspended);
+          // Non-padding packet observed. Test is almost complete. Will just
+          // have to wait for the stats to change.
+          test_state_ = kWaitingForStats;
+        }
+      } else if (test_state_ == kWaitingForStats) {
+        assert(*send_stream_ptr_);
+        VideoSendStream::Stats stats = (*send_stream_ptr_)->GetStats();
+        if (stats.suspended == false) {
+          // Stats flipped to false. Test is complete.
           observation_complete_->Set();
         }
       }
@@ -957,7 +963,7 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
       kBeforeSuspend,
       kDuringSuspend,
       kWaitingForPacket,
-      kAfterSuspend
+      kWaitingForStats
     };
 
     virtual void SendRtcpFeedback(int remb_value) {
