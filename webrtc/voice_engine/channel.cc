@@ -410,7 +410,7 @@ Channel::OnPacketTimeout(int32_t id)
     CriticalSectionScoped cs(_callbackCritSectPtr);
     if (_voiceEngineObserverPtr)
     {
-        if (_receiving || _externalTransport)
+        if (channel_state_.Get().receiving || _externalTransport)
         {
             int32_t channel = VoEChannelId(id);
             assert(channel == _channelId);
@@ -488,7 +488,7 @@ Channel::OnPeriodicDeadOrAlive(int32_t id,
     // It is possible that the connection is alive even if no RTP packet has
     // been received for a long time since the other side might use VAD/DTX
     // and a low SID-packet update rate.
-    if ((kRtpNoRtp == alive) && _playing)
+    if ((kRtpNoRtp == alive) && channel_state_.Get().playing)
     {
         // Detect Alive for all NetEQ states except for the case when we are
         // in PLC_CNG state.
@@ -527,7 +527,7 @@ Channel::OnReceivedPayloadData(const uint8_t* payloadData,
 
     _lastRemoteTimeStamp = rtpHeader->header.timestamp;
 
-    if (!_playing)
+    if (!channel_state_.Get().playing)
     {
         // Avoid inserting into NetEQ when we are not playing. Count the
         // packet as discarded.
@@ -612,7 +612,9 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame& audioFrame)
     // Store speech type for dead-or-alive detection
     _outputSpeechType = audioFrame.speech_type_;
 
-    if (_rxApmIsEnabled) {
+    ChannelState::State state = channel_state_.Get();
+
+    if (state.rx_apm_is_enabled) {
       int err = rx_audioproc_->ProcessStream(&audioFrame);
       if (err) {
         LOG(LS_ERROR) << "ProcessStream() error: " << err;
@@ -656,13 +658,13 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame& audioFrame)
     }
 
     // Mix decoded PCM output with file if file mixing is enabled
-    if (_outputFilePlaying)
+    if (state.output_file_playing)
     {
         MixAudioWithFile(audioFrame, audioFrame.sample_rate_hz_);
     }
 
     // Place channel in on-hold state (~muted) if on-hold is activated
-    if (_outputIsOnHold)
+    if (state.output_is_on_hold)
     {
         AudioFrameOperations::Mute(audioFrame);
     }
@@ -725,10 +727,10 @@ Channel::NeededFrequency(int32_t id)
     // we take that frequency into consideration as well
     // This is not needed on sending side, since the codec will
     // limit the spectrum anyway.
-    if (_outputFilePlaying)
+    if (channel_state_.Get().output_file_playing)
     {
         CriticalSectionScoped cs(&_fileCritSect);
-        if (_outputFilePlayerPtr && _outputFilePlaying)
+        if (_outputFilePlayerPtr)
         {
             if(_outputFilePlayerPtr->Frequency()>highestNeeded)
             {
@@ -790,9 +792,7 @@ Channel::PlayFileEnded(int32_t id)
 
     if (id == _inputFilePlayerId)
     {
-        CriticalSectionScoped cs(&_fileCritSect);
-
-        _inputFilePlaying = false;
+        channel_state_.SetInputFilePlaying(false);
         WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
                      VoEId(_instanceId,_channelId),
                      "Channel::PlayFileEnded() => input file player module is"
@@ -800,9 +800,7 @@ Channel::PlayFileEnded(int32_t id)
     }
     else if (id == _outputFilePlayerId)
     {
-        CriticalSectionScoped cs(&_fileCritSect);
-
-        _outputFilePlaying = false;
+        channel_state_.SetOutputFilePlaying(false);
         WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
                      VoEId(_instanceId,_channelId),
                      "Channel::PlayFileEnded() => output file player module is"
@@ -860,12 +858,9 @@ Channel::Channel(int32_t channelId,
     _inputFilePlayerId(VoEModuleId(instanceId, channelId) + 1024),
     _outputFilePlayerId(VoEModuleId(instanceId, channelId) + 1025),
     _outputFileRecorderId(VoEModuleId(instanceId, channelId) + 1026),
-    _inputFilePlaying(false),
-    _outputFilePlaying(false),
     _outputFileRecording(false),
     _inbandDtmfQueue(VoEModuleId(instanceId, channelId)),
     _inbandDtmfGenerator(VoEModuleId(instanceId, channelId)),
-    _inputExternalMedia(false),
     _outputExternalMedia(false),
     _inputExternalMediaCallbackPtr(NULL),
     _outputExternalMediaCallbackPtr(NULL),
@@ -891,13 +886,9 @@ Channel::Channel(int32_t channelId,
     _sendFrameType(0),
     _rtpObserverPtr(NULL),
     _rtcpObserverPtr(NULL),
-    _outputIsOnHold(false),
     _externalPlayout(false),
     _externalMixing(false),
     _inputIsOnHold(false),
-    _playing(false),
-    _sending(false),
-    _receiving(false),
     _mixFileWithMicrophone(false),
     _rtpObserver(false),
     _rtcpObserver(false),
@@ -924,7 +915,6 @@ Channel::Channel(int32_t channelId,
     _previousTimestamp(0),
     _recPacketDelayMs(20),
     _RxVadDetection(false),
-    _rxApmIsEnabled(false),
     _rxAgcIsEnabled(false),
     _rxNsIsEnabled(false),
     restored_packet_in_use_(false)
@@ -960,7 +950,7 @@ Channel::~Channel()
     {
         DeRegisterExternalMediaProcessing(kPlaybackPerChannel);
     }
-    if (_inputExternalMedia)
+    if (channel_state_.Get().input_external_media)
     {
         DeRegisterExternalMediaProcessing(kRecordingPerChannel);
     }
@@ -1032,6 +1022,8 @@ Channel::Init()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::Init()");
+
+    channel_state_.Reset();
 
     // --- Initial sanity
 
@@ -1231,7 +1223,7 @@ Channel::StartPlayout()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::StartPlayout()");
-    if (_playing)
+    if (channel_state_.Get().playing)
     {
         return 0;
     }
@@ -1247,8 +1239,7 @@ Channel::StartPlayout()
         }
     }
 
-    _playing = true;
-
+    channel_state_.SetPlaying(true);
     if (RegisterFilePlayingToMixer() != 0)
         return -1;
 
@@ -1260,7 +1251,7 @@ Channel::StopPlayout()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::StopPlayout()");
-    if (!_playing)
+    if (!channel_state_.Get().playing)
     {
         return 0;
     }
@@ -1276,7 +1267,7 @@ Channel::StopPlayout()
         }
     }
 
-    _playing = false;
+    channel_state_.SetPlaying(false);
     _outputAudioLevel.Clear();
 
     return 0;
@@ -1288,21 +1279,15 @@ Channel::StartSend()
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::StartSend()");
     // Resume the previous sequence number which was reset by StopSend().
-    // This needs to be done before |_sending| is set to true.
+    // This needs to be done before |sending| is set to true.
     if (send_sequence_number_)
       SetInitSequenceNumber(send_sequence_number_);
 
+    if (channel_state_.Get().sending)
     {
-        // A lock is needed because |_sending| can be accessed or modified by
-        // another thread at the same time.
-        CriticalSectionScoped cs(&_callbackCritSect);
-
-        if (_sending)
-        {
-            return 0;
-        }
-        _sending = true;
+      return 0;
     }
+    channel_state_.SetSending(true);
 
     if (_rtpRtcpModule->SetSendingStatus(true) != 0)
     {
@@ -1310,7 +1295,7 @@ Channel::StartSend()
             VE_RTP_RTCP_MODULE_ERROR, kTraceError,
             "StartSend() RTP/RTCP failed to start sending");
         CriticalSectionScoped cs(&_callbackCritSect);
-        _sending = false;
+        channel_state_.SetSending(false);
         return -1;
     }
 
@@ -1322,17 +1307,11 @@ Channel::StopSend()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::StopSend()");
+    if (!channel_state_.Get().sending)
     {
-        // A lock is needed because |_sending| can be accessed or modified by
-        // another thread at the same time.
-        CriticalSectionScoped cs(&_callbackCritSect);
-
-        if (!_sending)
-        {
-            return 0;
-        }
-        _sending = false;
+      return 0;
     }
+    channel_state_.SetSending(false);
 
     // Store the sequence number to be able to pick up the same sequence for
     // the next StartSend(). This is needed for restarting device, otherwise
@@ -1360,11 +1339,11 @@ Channel::StartReceiving()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::StartReceiving()");
-    if (_receiving)
+    if (channel_state_.Get().receiving)
     {
         return 0;
     }
-    _receiving = true;
+    channel_state_.SetReceiving(true);
     _numberOfDiscardedPackets = 0;
     return 0;
 }
@@ -1374,7 +1353,7 @@ Channel::StopReceiving()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::StopReceiving()");
-    if (!_receiving)
+    if (!channel_state_.Get().receiving)
     {
         return 0;
     }
@@ -1382,7 +1361,7 @@ Channel::StopReceiving()
     // Recover DTMF detection status.
     telephone_event_handler_->SetTelephoneEventForwardToDecoder(true);
     RegisterReceiveCodecsToRTPModule();
-    _receiving = false;
+    channel_state_.SetReceiving(false);
     return 0;
 }
 
@@ -1448,12 +1427,12 @@ Channel::SetOnHoldStatus(bool enable, OnHoldModes mode)
                  "Channel::SetOnHoldStatus()");
     if (mode == kHoldSendAndPlay)
     {
-        _outputIsOnHold = enable;
+        channel_state_.SetOutputIsOnHold(enable);
         _inputIsOnHold = enable;
     }
     else if (mode == kHoldPlayOnly)
     {
-        _outputIsOnHold = enable;
+        channel_state_.SetOutputIsOnHold(enable);
     }
     if (mode == kHoldSendOnly)
     {
@@ -1467,16 +1446,17 @@ Channel::GetOnHoldStatus(bool& enabled, OnHoldModes& mode)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::GetOnHoldStatus()");
-    enabled = (_outputIsOnHold || _inputIsOnHold);
-    if (_outputIsOnHold && _inputIsOnHold)
+    bool output_is_on_hold = channel_state_.Get().output_is_on_hold;
+    enabled = (output_is_on_hold || _inputIsOnHold);
+    if (output_is_on_hold && _inputIsOnHold)
     {
         mode = kHoldSendAndPlay;
     }
-    else if (_outputIsOnHold && !_inputIsOnHold)
+    else if (output_is_on_hold && !_inputIsOnHold)
     {
         mode = kHoldPlayOnly;
     }
-    else if (!_outputIsOnHold && _inputIsOnHold)
+    else if (!output_is_on_hold && _inputIsOnHold)
     {
         mode = kHoldSendOnly;
     }
@@ -1609,14 +1589,14 @@ Channel::SetRecPayloadType(const CodecInst& codec)
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SetRecPayloadType()");
 
-    if (_playing)
+    if (channel_state_.Get().playing)
     {
         _engineStatisticsPtr->SetLastError(
             VE_ALREADY_PLAYING, kTraceError,
             "SetRecPayloadType() unable to set PT while playing");
         return -1;
     }
-    if (_receiving)
+    if (channel_state_.Get().receiving)
     {
         _engineStatisticsPtr->SetLastError(
             VE_ALREADY_LISTENING, kTraceError,
@@ -1921,7 +1901,7 @@ Channel::SetISACMaxRate(int rateBps)
             return -1;
         }
     }
-    if (_sending)
+    if (channel_state_.Get().sending)
     {
         _engineStatisticsPtr->SetLastError(
             VE_SENDING, kTraceError,
@@ -1984,7 +1964,7 @@ Channel::SetISACMaxPayloadSize(int sizeBytes)
             return -1;
         }
     }
-    if (_sending)
+    if (channel_state_.Get().sending)
     {
         _engineStatisticsPtr->SetLastError(
             VE_SENDING, kTraceError,
@@ -2187,7 +2167,7 @@ int Channel::StartPlayingFileLocally(const char* fileName,
                  "stopPosition=%d)", fileName, loop, format, volumeScaling,
                  startPosition, stopPosition);
 
-    if (_outputFilePlaying)
+    if (channel_state_.Get().output_file_playing)
     {
         _engineStatisticsPtr->SetLastError(
             VE_ALREADY_PLAYING, kTraceError,
@@ -2236,7 +2216,7 @@ int Channel::StartPlayingFileLocally(const char* fileName,
             return -1;
         }
         _outputFilePlayerPtr->RegisterModuleFileCallback(this);
-        _outputFilePlaying = true;
+        channel_state_.SetOutputFilePlaying(true);
     }
 
     if (RegisterFilePlayingToMixer() != 0)
@@ -2266,7 +2246,7 @@ int Channel::StartPlayingFileLocally(InStream* stream,
     }
 
 
-    if (_outputFilePlaying)
+    if (channel_state_.Get().output_file_playing)
     {
         _engineStatisticsPtr->SetLastError(
             VE_ALREADY_PLAYING, kTraceError,
@@ -2314,7 +2294,7 @@ int Channel::StartPlayingFileLocally(InStream* stream,
           return -1;
       }
       _outputFilePlayerPtr->RegisterModuleFileCallback(this);
-      _outputFilePlaying = true;
+      channel_state_.SetOutputFilePlaying(true);
     }
 
     if (RegisterFilePlayingToMixer() != 0)
@@ -2328,7 +2308,7 @@ int Channel::StopPlayingFileLocally()
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::StopPlayingFileLocally()");
 
-    if (!_outputFilePlaying)
+    if (!channel_state_.Get().output_file_playing)
     {
         _engineStatisticsPtr->SetLastError(
             VE_INVALID_OPERATION, kTraceWarning,
@@ -2349,7 +2329,7 @@ int Channel::StopPlayingFileLocally()
         _outputFilePlayerPtr->RegisterModuleFileCallback(NULL);
         FilePlayer::DestroyFilePlayer(_outputFilePlayerPtr);
         _outputFilePlayerPtr = NULL;
-        _outputFilePlaying = false;
+        channel_state_.SetOutputFilePlaying(false);
     }
     // _fileCritSect cannot be taken while calling
     // SetAnonymousMixibilityStatus. Refer to comments in
@@ -2371,7 +2351,7 @@ int Channel::IsPlayingFileLocally() const
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::IsPlayingFileLocally()");
 
-    return (int32_t)_outputFilePlaying;
+    return channel_state_.Get().output_file_playing;
 }
 
 int Channel::RegisterFilePlayingToMixer()
@@ -2379,7 +2359,8 @@ int Channel::RegisterFilePlayingToMixer()
     // Return success for not registering for file playing to mixer if:
     // 1. playing file before playout is started on that channel.
     // 2. starting playout without file playing on that channel.
-    if (!_playing || !_outputFilePlaying)
+    if (!channel_state_.Get().playing ||
+        !channel_state_.Get().output_file_playing)
     {
         return 0;
     }
@@ -2390,8 +2371,8 @@ int Channel::RegisterFilePlayingToMixer()
     // the file, _fileCritSect will be taken. This would result in a deadlock.
     if (_outputMixerPtr->SetAnonymousMixabilityStatus(*this, true) != 0)
     {
+        channel_state_.SetOutputFilePlaying(false);
         CriticalSectionScoped cs(&_fileCritSect);
-        _outputFilePlaying = false;
         _engineStatisticsPtr->SetLastError(
             VE_AUDIO_CONF_MIX_MODULE_ERROR, kTraceError,
             "StartPlayingFile() failed to add participant as file to mixer");
@@ -2411,7 +2392,7 @@ int Channel::ScaleLocalFilePlayout(float scale)
 
     CriticalSectionScoped cs(&_fileCritSect);
 
-    if (!_outputFilePlaying)
+    if (!channel_state_.Get().output_file_playing)
     {
         _engineStatisticsPtr->SetLastError(
             VE_INVALID_OPERATION, kTraceError,
@@ -2473,15 +2454,15 @@ int Channel::StartPlayingFileAsMicrophone(const char* fileName,
                  "stopPosition=%d)", fileName, loop, format, volumeScaling,
                  startPosition, stopPosition);
 
-    if (_inputFilePlaying)
+    CriticalSectionScoped cs(&_fileCritSect);
+
+    if (channel_state_.Get().input_file_playing)
     {
         _engineStatisticsPtr->SetLastError(
             VE_ALREADY_PLAYING, kTraceWarning,
             "StartPlayingFileAsMicrophone() filePlayer is playing");
         return 0;
     }
-
-    CriticalSectionScoped cs(&_fileCritSect);
 
     // Destroy the old instance
     if (_inputFilePlayerPtr)
@@ -2523,7 +2504,7 @@ int Channel::StartPlayingFileAsMicrophone(const char* fileName,
         return -1;
     }
     _inputFilePlayerPtr->RegisterModuleFileCallback(this);
-    _inputFilePlaying = true;
+    channel_state_.SetInputFilePlaying(true);
 
     return 0;
 }
@@ -2548,15 +2529,15 @@ int Channel::StartPlayingFileAsMicrophone(InStream* stream,
         return -1;
     }
 
-    if (_inputFilePlaying)
+    CriticalSectionScoped cs(&_fileCritSect);
+
+    if (channel_state_.Get().input_file_playing)
     {
         _engineStatisticsPtr->SetLastError(
             VE_ALREADY_PLAYING, kTraceWarning,
             "StartPlayingFileAsMicrophone() is playing");
         return 0;
     }
-
-    CriticalSectionScoped cs(&_fileCritSect);
 
     // Destroy the old instance
     if (_inputFilePlayerPtr)
@@ -2594,7 +2575,7 @@ int Channel::StartPlayingFileAsMicrophone(InStream* stream,
     }
 
     _inputFilePlayerPtr->RegisterModuleFileCallback(this);
-    _inputFilePlaying = true;
+    channel_state_.SetInputFilePlaying(true);
 
     return 0;
 }
@@ -2604,7 +2585,9 @@ int Channel::StopPlayingFileAsMicrophone()
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::StopPlayingFileAsMicrophone()");
 
-    if (!_inputFilePlaying)
+    CriticalSectionScoped cs(&_fileCritSect);
+
+    if (!channel_state_.Get().input_file_playing)
     {
         _engineStatisticsPtr->SetLastError(
             VE_INVALID_OPERATION, kTraceWarning,
@@ -2612,7 +2595,6 @@ int Channel::StopPlayingFileAsMicrophone()
         return 0;
     }
 
-    CriticalSectionScoped cs(&_fileCritSect);
     if (_inputFilePlayerPtr->StopPlayingFile() != 0)
     {
         _engineStatisticsPtr->SetLastError(
@@ -2623,7 +2605,7 @@ int Channel::StopPlayingFileAsMicrophone()
     _inputFilePlayerPtr->RegisterModuleFileCallback(NULL);
     FilePlayer::DestroyFilePlayer(_inputFilePlayerPtr);
     _inputFilePlayerPtr = NULL;
-    _inputFilePlaying = false;
+    channel_state_.SetInputFilePlaying(false);
 
     return 0;
 }
@@ -2632,8 +2614,7 @@ int Channel::IsPlayingFileAsMicrophone() const
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::IsPlayingFileAsMicrophone()");
-
-    return _inputFilePlaying;
+    return channel_state_.Get().input_file_playing;
 }
 
 int Channel::ScaleFileAsMicrophonePlayout(float scale)
@@ -2643,7 +2624,7 @@ int Channel::ScaleFileAsMicrophonePlayout(float scale)
 
     CriticalSectionScoped cs(&_fileCritSect);
 
-    if (!_inputFilePlaying)
+    if (!channel_state_.Get().input_file_playing)
     {
         _engineStatisticsPtr->SetLastError(
             VE_INVALID_OPERATION, kTraceError,
@@ -2852,6 +2833,7 @@ int Channel::StopRecordingPlayout()
 void
 Channel::SetMixWithMicStatus(bool mix)
 {
+    CriticalSectionScoped cs(&_fileCritSect);
     _mixFileWithMicrophone=mix;
 }
 
@@ -3155,7 +3137,7 @@ Channel::SetRxAgcStatus(bool enable, AgcModes mode)
     }
 
     _rxAgcIsEnabled = enable;
-    _rxApmIsEnabled = ((_rxAgcIsEnabled == true) || (_rxNsIsEnabled == true));
+    channel_state_.SetRxApmIsEnabled(_rxAgcIsEnabled || _rxNsIsEnabled);
 
     return 0;
 }
@@ -3304,7 +3286,7 @@ Channel::SetRxNsStatus(bool enable, NsModes mode)
     }
 
     _rxNsIsEnabled = enable;
-    _rxApmIsEnabled = ((_rxAgcIsEnabled == true) || (_rxNsIsEnabled == true));
+    channel_state_.SetRxApmIsEnabled(_rxAgcIsEnabled || _rxNsIsEnabled);
 
     return 0;
 }
@@ -3435,7 +3417,7 @@ Channel::SetLocalSSRC(unsigned int ssrc)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                  "Channel::SetLocalSSRC()");
-    if (_sending)
+    if (channel_state_.Get().sending)
     {
         _engineStatisticsPtr->SetLastError(
             VE_ALREADY_SENDING, kTraceError,
@@ -3722,7 +3704,7 @@ Channel::SendApplicationDefinedRTCPPacket(unsigned char subType,
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                  "Channel::SendApplicationDefinedRTCPPacket()");
-    if (!_sending)
+    if (!channel_state_.Get().sending)
     {
         _engineStatisticsPtr->SetLastError(
             VE_NOT_SENDING, kTraceError,
@@ -4202,7 +4184,7 @@ Channel::PrepareEncodeAndSend(int mixingFrequency)
         return -1;
     }
 
-    if (_inputFilePlaying)
+    if (channel_state_.Get().input_file_playing)
     {
         MixOrReplaceAudioWithFile(mixingFrequency);
     }
@@ -4212,7 +4194,7 @@ Channel::PrepareEncodeAndSend(int mixingFrequency)
         AudioFrameOperations::Mute(_audioFrame);
     }
 
-    if (_inputExternalMedia)
+    if (channel_state_.Get().input_external_media)
     {
         CriticalSectionScoped cs(&_callbackCritSect);
         const bool isStereo = (_audioFrame.num_channels_ == 2);
@@ -4311,7 +4293,7 @@ int Channel::RegisterExternalMediaProcessing(
             return -1;
         }
         _inputExternalMediaCallbackPtr = &processObject;
-        _inputExternalMedia = true;
+        channel_state_.SetInputExternalMedia(true);
     }
     return 0;
 }
@@ -4346,7 +4328,7 @@ int Channel::DeRegisterExternalMediaProcessing(ProcessingTypes type)
                 "input external media already disabled");
             return 0;
         }
-        _inputExternalMedia = false;
+        channel_state_.SetInputExternalMedia(false);
         _inputExternalMediaCallbackPtr = NULL;
     }
 
@@ -4357,7 +4339,7 @@ int Channel::SetExternalMixing(bool enabled) {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SetExternalMixing(enabled=%d)", enabled);
 
-    if (_playing)
+    if (channel_state_.Get().playing)
     {
         _engineStatisticsPtr->SetLastError(
             VE_INVALID_OPERATION, kTraceError,
@@ -4583,7 +4565,7 @@ Channel::SetInitTimestamp(unsigned int timestamp)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                "Channel::SetInitTimestamp()");
-    if (_sending)
+    if (channel_state_.Get().sending)
     {
         _engineStatisticsPtr->SetLastError(
             VE_SENDING, kTraceError, "SetInitTimestamp() already sending");
@@ -4604,7 +4586,7 @@ Channel::SetInitSequenceNumber(short sequenceNumber)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SetInitSequenceNumber()");
-    if (_sending)
+    if (channel_state_.Get().sending)
     {
         _engineStatisticsPtr->SetLastError(
             VE_SENDING, kTraceError,

@@ -397,7 +397,12 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
     }
 
     // --- Record to file
-    if (_fileRecording)
+    bool file_recording = false;
+    {
+        CriticalSectionScoped cs(&_critSect);
+        file_recording =  _fileRecording;
+    }
+    if (file_recording)
     {
         RecordAudioToFile(_audioFrame.sample_rate_hz_);
     }
@@ -728,6 +733,8 @@ int TransmitMixer::StartRecordingMicrophone(const char* fileName,
                  "TransmitMixer::StartRecordingMicrophone(fileName=%s)",
                  fileName);
 
+    CriticalSectionScoped cs(&_critSect);
+
     if (_fileRecording)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
@@ -760,8 +767,6 @@ int TransmitMixer::StartRecordingMicrophone(const char* fileName,
     {
         format = kFileFormatCompressedFile;
     }
-
-    CriticalSectionScoped cs(&_critSect);
 
     // Destroy the old instance
     if (_fileRecorderPtr)
@@ -807,6 +812,8 @@ int TransmitMixer::StartRecordingMicrophone(OutStream* stream,
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
                "TransmitMixer::StartRecordingMicrophone()");
 
+    CriticalSectionScoped cs(&_critSect);
+
     if (_fileRecording)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
@@ -838,8 +845,6 @@ int TransmitMixer::StartRecordingMicrophone(OutStream* stream,
     {
         format = kFileFormatCompressedFile;
     }
-
-    CriticalSectionScoped cs(&_critSect);
 
     // Destroy the old instance
     if (_fileRecorderPtr)
@@ -884,14 +889,14 @@ int TransmitMixer::StopRecordingMicrophone()
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
                  "TransmitMixer::StopRecordingMicrophone()");
 
+    CriticalSectionScoped cs(&_critSect);
+
     if (!_fileRecording)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
                    "StopRecordingMicrophone() isnot recording");
         return 0;
     }
-
-    CriticalSectionScoped cs(&_critSect);
 
     if (_fileRecorderPtr->StopRecording() != 0)
     {
@@ -1170,7 +1175,7 @@ bool TransmitMixer::IsRecordingCall()
 
 bool TransmitMixer::IsRecordingMic()
 {
-
+    CriticalSectionScoped cs(&_critSect);
     return _fileRecording;
 }
 

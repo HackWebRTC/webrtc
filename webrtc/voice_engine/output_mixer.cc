@@ -569,20 +569,21 @@ OutputMixer::DoOperationsOnCombinedSignal()
     APMAnalyzeReverseStream();
 
     // --- External media processing
-
-    if (_externalMedia)
     {
         CriticalSectionScoped cs(&_callbackCritSect);
-        const bool isStereo = (_audioFrame.num_channels_ == 2);
-        if (_externalMediaCallbackPtr)
+        if (_externalMedia)
         {
-            _externalMediaCallbackPtr->Process(
-                -1,
-                kPlaybackAllChannelsMixed,
-                (int16_t*)_audioFrame.data_,
-                _audioFrame.samples_per_channel_,
-                _audioFrame.sample_rate_hz_,
-                isStereo);
+            const bool is_stereo = (_audioFrame.num_channels_ == 2);
+            if (_externalMediaCallbackPtr)
+            {
+                _externalMediaCallbackPtr->Process(
+                    -1,
+                    kPlaybackAllChannelsMixed,
+                    (int16_t*)_audioFrame.data_,
+                    _audioFrame.samples_per_channel_,
+                    _audioFrame.sample_rate_hz_,
+                    is_stereo);
+            }
         }
     }
 

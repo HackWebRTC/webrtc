@@ -70,6 +70,12 @@ int VoiceEngineImpl::Release() {
                  "VoiceEngineImpl self deleting (voiceEngine=0x%p)",
                  this);
 
+    // Clear any pointers before starting destruction. Otherwise worker-
+    // threads will still have pointers to a partially destructed object.
+    // Example: AudioDeviceBuffer::RequestPlayoutData() can access a
+    // partially deconstructed |_ptrCbAudioTransport| during destruction
+    // if we don't call Terminate here.
+    Terminate();
     delete this;
   }
 

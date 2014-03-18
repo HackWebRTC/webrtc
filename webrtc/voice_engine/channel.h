@@ -63,6 +63,91 @@ class StatisticsProxy;
 class TransmitMixer;
 class OutputMixer;
 
+// Helper class to simplify locking scheme for members that are accessed from
+// multiple threads.
+// Example: a member can be set on thread T1 and read by an internal audio
+// thread T2. Accessing the member via this class ensures that we are
+// safe and also avoid TSan v2 warnings.
+class ChannelState {
+ public:
+    struct State {
+        State() : rx_apm_is_enabled(false),
+                  input_external_media(false),
+                  output_is_on_hold(false),
+                  output_file_playing(false),
+                  input_file_playing(false),
+                  playing(false),
+                  sending(false),
+                  receiving(false) {}
+
+        bool rx_apm_is_enabled;
+        bool input_external_media;
+        bool output_is_on_hold;
+        bool output_file_playing;
+        bool input_file_playing;
+        bool playing;
+        bool sending;
+        bool receiving;
+    };
+
+    ChannelState() : lock_(CriticalSectionWrapper::CreateCriticalSection()) {
+    }
+    virtual ~ChannelState() {}
+
+    void Reset() {
+        CriticalSectionScoped lock(lock_.get());
+        state_ = State();
+    }
+
+    State Get() const {
+        CriticalSectionScoped lock(lock_.get());
+        return state_;
+    }
+
+    void SetRxApmIsEnabled(bool enable) {
+        CriticalSectionScoped lock(lock_.get());
+        state_.rx_apm_is_enabled = enable;
+    }
+
+    void SetInputExternalMedia(bool enable) {
+        CriticalSectionScoped lock(lock_.get());
+        state_.input_external_media = enable;
+    }
+
+    void SetOutputIsOnHold(bool enable) {
+        CriticalSectionScoped lock(lock_.get());
+        state_.output_is_on_hold = enable;
+    }
+
+    void SetOutputFilePlaying(bool enable) {
+        CriticalSectionScoped lock(lock_.get());
+        state_.output_file_playing = enable;
+    }
+
+    void SetInputFilePlaying(bool enable) {
+        CriticalSectionScoped lock(lock_.get());
+        state_.input_file_playing = enable;
+    }
+
+    void SetPlaying(bool enable) {
+        CriticalSectionScoped lock(lock_.get());
+        state_.playing = enable;
+    }
+
+    void SetSending(bool enable) {
+        CriticalSectionScoped lock(lock_.get());
+        state_.sending = enable;
+    }
+
+    void SetReceiving(bool enable) {
+        CriticalSectionScoped lock(lock_.get());
+        state_.receiving = enable;
+    }
+
+private:
+    scoped_ptr<CriticalSectionWrapper> lock_;
+    State state_;
+};
 
 class Channel:
     public RtpData,
@@ -371,31 +456,24 @@ public:
     }
     bool Playing() const
     {
-        return _playing;
+        return channel_state_.Get().playing;
     }
     bool Sending() const
     {
-        // A lock is needed because |_sending| is accessed by both
-        // TransmitMixer::PrepareDemux() and StartSend()/StopSend(), which
-        // are called by different threads.
-        CriticalSectionScoped cs(&_callbackCritSect);
-        return _sending;
+        return channel_state_.Get().sending;
     }
     bool Receiving() const
     {
-        return _receiving;
+        return channel_state_.Get().receiving;
     }
     bool ExternalTransport() const
     {
+        CriticalSectionScoped cs(&_callbackCritSect);
         return _externalTransport;
     }
     bool ExternalMixing() const
     {
         return _externalMixing;
-    }
-    bool OutputIsOnHold() const
-    {
-        return _outputIsOnHold;
     }
     bool InputIsOnHold() const
     {
@@ -448,6 +526,8 @@ private:
     uint32_t _instanceId;
     int32_t _channelId;
 
+    ChannelState channel_state_;
+
     scoped_ptr<RtpHeaderParser> rtp_header_parser_;
     scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
     scoped_ptr<ReceiveStatistics> rtp_receive_statistics_;
@@ -471,12 +551,9 @@ private:
     int _inputFilePlayerId;
     int _outputFilePlayerId;
     int _outputFileRecorderId;
-    bool _inputFilePlaying;
-    bool _outputFilePlaying;
     bool _outputFileRecording;
     DtmfInbandQueue _inbandDtmfQueue;
     DtmfInband _inbandDtmfGenerator;
-    bool _inputExternalMedia;
     bool _outputExternalMedia;
     VoEMediaProcess* _inputExternalMediaCallbackPtr;
     VoEMediaProcess* _outputExternalMediaCallbackPtr;
@@ -509,13 +586,9 @@ private:
     VoERTPObserver* _rtpObserverPtr;
     VoERTCPObserver* _rtcpObserverPtr;
     // VoEBase
-    bool _outputIsOnHold;
     bool _externalPlayout;
     bool _externalMixing;
     bool _inputIsOnHold;
-    bool _playing;
-    bool _sending;
-    bool _receiving;
     bool _mixFileWithMicrophone;
     bool _rtpObserver;
     bool _rtcpObserver;
@@ -548,7 +621,6 @@ private:
     uint16_t _recPacketDelayMs;
     // VoEAudioProcessing
     bool _RxVadDetection;
-    bool _rxApmIsEnabled;
     bool _rxAgcIsEnabled;
     bool _rxNsIsEnabled;
     bool restored_packet_in_use_;
