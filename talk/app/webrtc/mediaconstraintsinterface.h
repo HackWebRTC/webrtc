@@ -90,6 +90,8 @@ class MediaConstraintsInterface {
   // googTemporalLayeredScreencast
   static const char kTemporalLayeredScreencast[];
   static const char kCpuOveruseDetection[];
+  static const char kCpuUnderuseThreshold[];
+  static const char kCpuOveruseThreshold[];
 
   // Constraint keys for CreateOffer / CreateAnswer
   // Specified by the W3C PeerConnection spec

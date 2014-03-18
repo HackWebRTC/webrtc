@@ -173,15 +173,10 @@ struct FlushBlackFrameData : public talk_base::MessageData {
 class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
  public:
   explicit WebRtcRenderAdapter(VideoRenderer* renderer)
-      : renderer_(renderer), width_(0), height_(0), watermark_enabled_(false) {
+      : renderer_(renderer), width_(0), height_(0) {
   }
 
   virtual ~WebRtcRenderAdapter() {
-  }
-
-  void set_watermark_enabled(bool enable) {
-    talk_base::CritScope cs(&crit_);
-    watermark_enabled_ = enable;
   }
 
   void SetRenderer(VideoRenderer* renderer) {
@@ -250,7 +245,6 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
     video_frame.Alias(buffer, buffer_size, width_, height_,
                       1, 1, elapsed_time, time_stamp, 0);
 
-
     // Sanity check on decoded frame size.
     if (buffer_size != static_cast<int>(VideoFrame::SizeOf(width_, height_))) {
       LOG(LS_WARNING) << "WebRtcRenderAdapter received a strange frame size: "
@@ -294,7 +288,6 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
   unsigned int width_;
   unsigned int height_;
   talk_base::RateTracker frame_rate_tracker_;
-  bool watermark_enabled_;
 };
 
 class WebRtcDecoderObserver : public webrtc::ViEDecoderObserver {

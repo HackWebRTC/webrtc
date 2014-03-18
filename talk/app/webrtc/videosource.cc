@@ -183,7 +183,11 @@ bool NewFormatWithConstraints(
              constraint.key ==
                  MediaConstraintsInterface::kTemporalLayeredScreencast ||
              constraint.key ==
-                 MediaConstraintsInterface::kCpuOveruseDetection) {
+                 MediaConstraintsInterface::kCpuOveruseDetection ||
+             constraint.key ==
+                 MediaConstraintsInterface::kCpuUnderuseThreshold ||
+             constraint.key ==
+                 MediaConstraintsInterface::kCpuOveruseThreshold) {
     // These are actually options, not constraints, so they can be satisfied
     // regardless of the format.
     return true;
@@ -267,6 +271,22 @@ const cricket::VideoFormat& GetBestCaptureFormat(
   return *best_it;
 }
 
+// Set |option| to the highest-priority value of |key| in the optional
+// constraints if the key is found and has a valid value.
+void ExtractOptionalOption(const MediaConstraintsInterface* all_constraints,
+    const std::string& key, cricket::Settable<int>* option) {
+  if (!all_constraints) {
+    return;
+  }
+  std::string string_value;
+  int value;
+  if (all_constraints->GetOptional().FindFirst(key, &string_value)) {
+    if (talk_base::FromString(string_value, &value)) {
+      option->Set(value);
+    }
+  }
+}
+
 // Set |option| to the highest-priority value of |key| in the constraints.
 // Return false if the key is mandatory, and the value is invalid.
 bool ExtractOption(const MediaConstraintsInterface* all_constraints,
@@ -300,6 +320,12 @@ bool ExtractVideoOptions(const MediaConstraintsInterface* all_constraints,
   all_valid &= ExtractOption(all_constraints,
       MediaConstraintsInterface::kCpuOveruseDetection,
       &(options->cpu_overuse_detection));
+  ExtractOptionalOption(all_constraints,
+      MediaConstraintsInterface::kCpuUnderuseThreshold,
+      &(options->cpu_underuse_threshold));
+  ExtractOptionalOption(all_constraints,
+      MediaConstraintsInterface::kCpuOveruseThreshold,
+      &(options->cpu_overuse_threshold));
 
   return all_valid;
 }

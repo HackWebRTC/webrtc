@@ -36,12 +36,6 @@
 
 namespace cricket {
 
-static const int kWatermarkWidth = 8;
-static const int kWatermarkHeight = 8;
-static const int kWatermarkOffsetFromLeft = 8;
-static const int kWatermarkOffsetFromBottom = 8;
-static const unsigned char kWatermarkMaxYValue = 64;
-
 // Class that wraps ownerhip semantics of a buffer passed to it.
 // * Buffers passed using Attach() become owned by this FrameBuffer and will be
 //   destroyed on FrameBuffer destruction.
@@ -294,29 +288,6 @@ void WebRtcVideoFrame::Attach(
   elapsed_time_ = elapsed_time;
   time_stamp_ = time_stamp;
   rotation_ = rotation;
-}
-
-// Add a square watermark near the left-low corner. clamp Y.
-// Returns false on error.
-bool WebRtcVideoFrame::AddWatermark() {
-  size_t w = GetWidth();
-  size_t h = GetHeight();
-
-  if (w < kWatermarkWidth + kWatermarkOffsetFromLeft ||
-      h < kWatermarkHeight + kWatermarkOffsetFromBottom) {
-    return false;
-  }
-
-  uint8* buffer = GetYPlane();
-  for (size_t x = kWatermarkOffsetFromLeft;
-       x < kWatermarkOffsetFromLeft + kWatermarkWidth; ++x) {
-    for (size_t y = h - kWatermarkOffsetFromBottom - kWatermarkHeight;
-         y < h - kWatermarkOffsetFromBottom; ++y) {
-      buffer[y * w + x] =
-          talk_base::_min(buffer[y * w + x], kWatermarkMaxYValue);
-    }
-  }
-  return true;
 }
 
 webrtc::VideoFrame* WebRtcVideoFrame::frame() {

@@ -67,7 +67,6 @@ class WebRtcVideoFrame : public VideoFrame {
              size_t pixel_width, size_t pixel_height, int64 elapsed_time,
              int64 time_stamp, int rotation);
 
-  bool AddWatermark();
   webrtc::VideoFrame* frame();
   const webrtc::VideoFrame* frame() const;
 

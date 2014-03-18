@@ -72,6 +72,10 @@ const char MediaConstraintsInterface::kTemporalLayeredScreencast[] =
 // TODO(ronghuawu): Remove once cpu overuse detection is stable.
 const char MediaConstraintsInterface::kCpuOveruseDetection[] =
     "googCpuOveruseDetection";
+const char MediaConstraintsInterface::kCpuUnderuseThreshold[] =
+    "googCpuUnderuseThreshold";
+const char MediaConstraintsInterface::kCpuOveruseThreshold[] =
+    "googCpuOveruseThreshold";
 
 // Constraint keys for CreateOffer / CreateAnswer defined in W3C specification.
 const char MediaConstraintsInterface::kOfferToReceiveAudio[] =
