@@ -22,6 +22,7 @@
 #include "webrtc/modules/audio_coding/neteq4/statistics_calculator.h"
 #include "webrtc/system_wrappers/interface/constructor_magic.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/thread_annotations.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -212,8 +213,8 @@ class NetEqImpl : public webrtc::NetEq {
                            const uint8_t* payload,
                            int length_bytes,
                            uint32_t receive_timestamp,
-                           bool is_sync_packet);
-
+                           bool is_sync_packet)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Delivers 10 ms of audio data. The data is written to |output|, which can
   // hold (at least) |max_length| elements. The number of channels that were
@@ -221,9 +222,10 @@ class NetEqImpl : public webrtc::NetEq {
   // and each channel contains |samples_per_channel| elements. If more than one
   // channel is written, the samples are interleaved.
   // Returns 0 on success, otherwise an error code.
-  int GetAudioInternal(size_t max_length, int16_t* output,
-                       int* samples_per_channel, int* num_channels);
-
+  int GetAudioInternal(size_t max_length,
+                       int16_t* output,
+                       int* samples_per_channel,
+                       int* num_channels) EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Provides a decision to the GetAudioInternal method. The decision what to
   // do is written to |operation|. Packets to decode are written to
@@ -233,7 +235,7 @@ class NetEqImpl : public webrtc::NetEq {
   int GetDecision(Operations* operation,
                   PacketList* packet_list,
                   DtmfEvent* dtmf_event,
-                  bool* play_dtmf);
+                  bool* play_dtmf) EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Decodes the speech packets in |packet_list|, and writes the results to
   // |decoded_buffer|, which is allocated to hold |decoded_buffer_length|
@@ -241,116 +243,137 @@ class NetEqImpl : public webrtc::NetEq {
   // The speech type -- speech or (codec-internal) comfort noise -- is written
   // to |speech_type|. If |packet_list| contains any SID frames for RFC 3389
   // comfort noise, those are not decoded.
-  int Decode(PacketList* packet_list, Operations* operation,
-             int* decoded_length, AudioDecoder::SpeechType* speech_type);
+  int Decode(PacketList* packet_list,
+             Operations* operation,
+             int* decoded_length,
+             AudioDecoder::SpeechType* speech_type)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Sub-method to Decode(). Performs the actual decoding.
-  int DecodeLoop(PacketList* packet_list, Operations* operation,
-                 AudioDecoder* decoder, int* decoded_length,
-                 AudioDecoder::SpeechType* speech_type);
+  int DecodeLoop(PacketList* packet_list,
+                 Operations* operation,
+                 AudioDecoder* decoder,
+                 int* decoded_length,
+                 AudioDecoder::SpeechType* speech_type)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Sub-method which calls the Normal class to perform the normal operation.
-  void DoNormal(const int16_t* decoded_buffer, size_t decoded_length,
-                AudioDecoder::SpeechType speech_type, bool play_dtmf);
+  void DoNormal(const int16_t* decoded_buffer,
+                size_t decoded_length,
+                AudioDecoder::SpeechType speech_type,
+                bool play_dtmf) EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Sub-method which calls the Merge class to perform the merge operation.
-  void DoMerge(int16_t* decoded_buffer, size_t decoded_length,
-               AudioDecoder::SpeechType speech_type, bool play_dtmf);
+  void DoMerge(int16_t* decoded_buffer,
+               size_t decoded_length,
+               AudioDecoder::SpeechType speech_type,
+               bool play_dtmf) EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Sub-method which calls the Expand class to perform the expand operation.
-  int DoExpand(bool play_dtmf);
+  int DoExpand(bool play_dtmf) EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Sub-method which calls the Accelerate class to perform the accelerate
   // operation.
-  int DoAccelerate(int16_t* decoded_buffer, size_t decoded_length,
-                   AudioDecoder::SpeechType speech_type, bool play_dtmf);
+  int DoAccelerate(int16_t* decoded_buffer,
+                   size_t decoded_length,
+                   AudioDecoder::SpeechType speech_type,
+                   bool play_dtmf) EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Sub-method which calls the PreemptiveExpand class to perform the
   // preemtive expand operation.
-  int DoPreemptiveExpand(int16_t* decoded_buffer, size_t decoded_length,
-                         AudioDecoder::SpeechType speech_type, bool play_dtmf);
+  int DoPreemptiveExpand(int16_t* decoded_buffer,
+                         size_t decoded_length,
+                         AudioDecoder::SpeechType speech_type,
+                         bool play_dtmf) EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Sub-method which calls the ComfortNoise class to generate RFC 3389 comfort
   // noise. |packet_list| can either contain one SID frame to update the
   // noise parameters, or no payload at all, in which case the previously
   // received parameters are used.
-  int DoRfc3389Cng(PacketList* packet_list, bool play_dtmf);
+  int DoRfc3389Cng(PacketList* packet_list, bool play_dtmf)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Calls the audio decoder to generate codec-internal comfort noise when
   // no packet was received.
-  void DoCodecInternalCng();
+  void DoCodecInternalCng() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Calls the DtmfToneGenerator class to generate DTMF tones.
-  int DoDtmf(const DtmfEvent& dtmf_event, bool* play_dtmf);
+  int DoDtmf(const DtmfEvent& dtmf_event, bool* play_dtmf)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Produces packet-loss concealment using alternative methods. If the codec
   // has an internal PLC, it is called to generate samples. Otherwise, the
   // method performs zero-stuffing.
-  void DoAlternativePlc(bool increase_timestamp);
+  void DoAlternativePlc(bool increase_timestamp)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Overdub DTMF on top of |output|.
-  int DtmfOverdub(const DtmfEvent& dtmf_event, size_t num_channels,
-                  int16_t* output) const;
+  int DtmfOverdub(const DtmfEvent& dtmf_event,
+                  size_t num_channels,
+                  int16_t* output) const EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Extracts packets from |packet_buffer_| to produce at least
   // |required_samples| samples. The packets are inserted into |packet_list|.
   // Returns the number of samples that the packets in the list will produce, or
   // -1 in case of an error.
-  int ExtractPackets(int required_samples, PacketList* packet_list);
+  int ExtractPackets(int required_samples, PacketList* packet_list)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Resets various variables and objects to new values based on the sample rate
   // |fs_hz| and |channels| number audio channels.
-  void SetSampleRateAndChannels(int fs_hz, size_t channels);
+  void SetSampleRateAndChannels(int fs_hz, size_t channels)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Returns the output type for the audio produced by the latest call to
   // GetAudio().
-  NetEqOutputType LastOutputType();
+  NetEqOutputType LastOutputType() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
-  scoped_ptr<BackgroundNoise> background_noise_;
-  scoped_ptr<BufferLevelFilter> buffer_level_filter_;
-  scoped_ptr<DecoderDatabase> decoder_database_;
-  scoped_ptr<DelayManager> delay_manager_;
-  scoped_ptr<DelayPeakDetector> delay_peak_detector_;
-  scoped_ptr<DtmfBuffer> dtmf_buffer_;
-  scoped_ptr<DtmfToneGenerator> dtmf_tone_generator_;
-  scoped_ptr<PacketBuffer> packet_buffer_;
-  scoped_ptr<PayloadSplitter> payload_splitter_;
-  scoped_ptr<TimestampScaler> timestamp_scaler_;
-  scoped_ptr<DecisionLogic> decision_logic_;
-  scoped_ptr<PostDecodeVad> vad_;
-  scoped_ptr<AudioMultiVector> algorithm_buffer_;
-  scoped_ptr<SyncBuffer> sync_buffer_;
-  scoped_ptr<Expand> expand_;
-  scoped_ptr<ExpandFactory> expand_factory_;
-  scoped_ptr<Normal> normal_;
-  scoped_ptr<Merge> merge_;
-  scoped_ptr<Accelerate> accelerate_;
-  scoped_ptr<AccelerateFactory> accelerate_factory_;
-  scoped_ptr<PreemptiveExpand> preemptive_expand_;
-  scoped_ptr<PreemptiveExpandFactory> preemptive_expand_factory_;
-  RandomVector random_vector_;
-  scoped_ptr<ComfortNoise> comfort_noise_;
-  Rtcp rtcp_;
-  StatisticsCalculator stats_;
-  int fs_hz_;
-  int fs_mult_;
-  int output_size_samples_;
-  int decoder_frame_length_;
-  Modes last_mode_;
-  scoped_array<int16_t> mute_factor_array_;
-  size_t decoded_buffer_length_;
-  scoped_array<int16_t> decoded_buffer_;
-  uint32_t playout_timestamp_;
-  bool new_codec_;
-  uint32_t timestamp_;
-  bool reset_decoder_;
-  uint8_t current_rtp_payload_type_;
-  uint8_t current_cng_rtp_payload_type_;
-  uint32_t ssrc_;
-  bool first_packet_;
-  int error_code_;  // Store last error code.
-  int decoder_error_code_;
-  scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  const scoped_ptr<BufferLevelFilter> buffer_level_filter_;
+  const scoped_ptr<DecoderDatabase> decoder_database_;
+  const scoped_ptr<DelayManager> delay_manager_;
+  const scoped_ptr<DelayPeakDetector> delay_peak_detector_;
+  const scoped_ptr<DtmfBuffer> dtmf_buffer_;
+  const scoped_ptr<DtmfToneGenerator> dtmf_tone_generator_;
+  const scoped_ptr<PacketBuffer> packet_buffer_;
+  const scoped_ptr<PayloadSplitter> payload_splitter_;
+  const scoped_ptr<TimestampScaler> timestamp_scaler_;
+  const scoped_ptr<PostDecodeVad> vad_;
+  const scoped_ptr<ExpandFactory> expand_factory_;
+  const scoped_ptr<AccelerateFactory> accelerate_factory_;
+  const scoped_ptr<PreemptiveExpandFactory> preemptive_expand_factory_;
+
+  scoped_ptr<BackgroundNoise> background_noise_ GUARDED_BY(crit_sect_);
+  scoped_ptr<DecisionLogic> decision_logic_ GUARDED_BY(crit_sect_);
+  scoped_ptr<AudioMultiVector> algorithm_buffer_ GUARDED_BY(crit_sect_);
+  scoped_ptr<SyncBuffer> sync_buffer_ GUARDED_BY(crit_sect_);
+  scoped_ptr<Expand> expand_ GUARDED_BY(crit_sect_);
+  scoped_ptr<Normal> normal_ GUARDED_BY(crit_sect_);
+  scoped_ptr<Merge> merge_ GUARDED_BY(crit_sect_);
+  scoped_ptr<Accelerate> accelerate_ GUARDED_BY(crit_sect_);
+  scoped_ptr<PreemptiveExpand> preemptive_expand_ GUARDED_BY(crit_sect_);
+  RandomVector random_vector_ GUARDED_BY(crit_sect_);
+  scoped_ptr<ComfortNoise> comfort_noise_ GUARDED_BY(crit_sect_);
+  Rtcp rtcp_ GUARDED_BY(crit_sect_);
+  StatisticsCalculator stats_ GUARDED_BY(crit_sect_);
+  int fs_hz_ GUARDED_BY(crit_sect_);
+  int fs_mult_ GUARDED_BY(crit_sect_);
+  int output_size_samples_ GUARDED_BY(crit_sect_);
+  int decoder_frame_length_ GUARDED_BY(crit_sect_);
+  Modes last_mode_ GUARDED_BY(crit_sect_);
+  scoped_array<int16_t> mute_factor_array_ GUARDED_BY(crit_sect_);
+  size_t decoded_buffer_length_ GUARDED_BY(crit_sect_);
+  scoped_array<int16_t> decoded_buffer_ GUARDED_BY(crit_sect_);
+  uint32_t playout_timestamp_ GUARDED_BY(crit_sect_);
+  bool new_codec_ GUARDED_BY(crit_sect_);
+  uint32_t timestamp_ GUARDED_BY(crit_sect_);
+  bool reset_decoder_ GUARDED_BY(crit_sect_);
+  uint8_t current_rtp_payload_type_ GUARDED_BY(crit_sect_);
+  uint8_t current_cng_rtp_payload_type_ GUARDED_BY(crit_sect_);
+  uint32_t ssrc_ GUARDED_BY(crit_sect_);
+  bool first_packet_ GUARDED_BY(crit_sect_);
+  int error_code_ GUARDED_BY(crit_sect_);  // Store last error code.
+  int decoder_error_code_ GUARDED_BY(crit_sect_);
+  const scoped_ptr<CriticalSectionWrapper> crit_sect_;
 
   // These values are used by NACK module to estimate time-to-play of
   // a missing packet. Occasionally, NetEq might decide to decode more
@@ -359,8 +382,8 @@ class NetEqImpl : public webrtc::NetEq {
   // such cases, these values do not exactly represent the sequence number
   // or timestamp associated with a 10ms audio pulled from NetEq. NACK
   // module is designed to compensate for this.
-  int decoded_packet_sequence_number_;
-  uint32_t decoded_packet_timestamp_;
+  int decoded_packet_sequence_number_ GUARDED_BY(crit_sect_);
+  uint32_t decoded_packet_timestamp_ GUARDED_BY(crit_sect_);
 
   DISALLOW_COPY_AND_ASSIGN(NetEqImpl);
 };
