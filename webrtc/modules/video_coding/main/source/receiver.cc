@@ -12,6 +12,8 @@
 
 #include <assert.h>
 
+#include <cstdlib>
+
 #include "webrtc/modules/video_coding/main/source/encoded_frame.h"
 #include "webrtc/modules/video_coding/main/source/internal_defines.h"
 #include "webrtc/modules/video_coding/main/source/media_opt_util.h"
