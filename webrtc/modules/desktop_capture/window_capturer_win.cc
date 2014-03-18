@@ -89,6 +89,7 @@ class WindowCapturerWin : public WindowCapturer {
   // WindowCapturer interface.
   virtual bool GetWindowList(WindowList* windows) OVERRIDE;
   virtual bool SelectWindow(WindowId id) OVERRIDE;
+  virtual bool BringSelectedWindowToFront() OVERRIDE;
 
   // DesktopCapturer interface.
   virtual void Start(Callback* callback) OVERRIDE;
@@ -155,6 +156,16 @@ bool WindowCapturerWin::SelectWindow(WindowId id) {
   window_ = window;
   previous_size_.set(0, 0);
   return true;
+}
+
+bool WindowCapturerWin::BringSelectedWindowToFront() {
+  if (!window_)
+    return false;
+
+  if (!IsWindow(window_) || !IsWindowVisible(window_) || IsIconic(window_))
+    return false;
+
+  return SetForegroundWindow(window_) != 0;
 }
 
 void WindowCapturerWin::Start(Callback* callback) {

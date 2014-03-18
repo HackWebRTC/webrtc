@@ -71,7 +71,7 @@
         "win/scoped_thread_desktop.h",
         "window_capturer.cc",
         "window_capturer.h",
-        "window_capturer_mac.cc",
+        "window_capturer_mac.mm",
         "window_capturer_win.cc",
         "window_capturer_x11.cc",
         "x11/shared_x_display.h",

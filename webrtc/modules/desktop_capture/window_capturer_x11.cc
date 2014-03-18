@@ -94,6 +94,7 @@ class WindowCapturerLinux : public WindowCapturer,
   // WindowCapturer interface.
   virtual bool GetWindowList(WindowList* windows) OVERRIDE;
   virtual bool SelectWindow(WindowId id) OVERRIDE;
+  virtual bool BringSelectedWindowToFront() OVERRIDE;
 
   // DesktopCapturer interface.
   virtual void Start(Callback* callback) OVERRIDE;
@@ -217,6 +218,55 @@ bool WindowCapturerLinux::SelectWindow(WindowId id) {
   // remembers who has requested this and will turn it off for us when we exit.
   XCompositeRedirectWindow(display(), id, CompositeRedirectAutomatic);
 
+  return true;
+}
+
+bool WindowCapturerLinux::BringSelectedWindowToFront() {
+  if (!selected_window_)
+    return false;
+
+  unsigned int num_children;
+  ::Window* children;
+  ::Window parent;
+  ::Window root;
+  // Find the root window to pass event to.
+  int status = XQueryTree(
+      display(), selected_window_, &root, &parent, &children, &num_children);
+  if (status == 0) {
+    LOG(LS_ERROR) << "Failed to query for the root window.";
+    return false;
+  }
+
+  if (children)
+    XFree(children);
+
+  XRaiseWindow(display(), selected_window_);
+
+  // Some window managers (e.g., metacity in GNOME) consider it illegal to
+  // raise a window without also giving it input focus with
+  // _NET_ACTIVE_WINDOW, so XRaiseWindow() on its own isn't enough.
+  Atom atom = XInternAtom(display(), "_NET_ACTIVE_WINDOW", True);
+  if (atom != None) {
+    XEvent xev;
+    xev.xclient.type = ClientMessage;
+    xev.xclient.serial = 0;
+    xev.xclient.send_event = True;
+    xev.xclient.window = selected_window_;
+    xev.xclient.message_type = atom;
+
+    // The format member is set to 8, 16, or 32 and specifies whether the
+    // data should be viewed as a list of bytes, shorts, or longs.
+    xev.xclient.format = 32;
+
+    memset(xev.xclient.data.l, 0, sizeof(xev.xclient.data.l));
+
+    XSendEvent(display(),
+               root,
+               False,
+               SubstructureRedirectMask | SubstructureNotifyMask,
+               &xev);
+  }
+  XFlush(display());
   return true;
 }
 
