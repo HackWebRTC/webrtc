@@ -575,13 +575,13 @@ void ViEEncoder::DeliverFrame(int id,
                ViEId(engine_id_, channel_id_),
                "%s: %llu", __FUNCTION__,
                video_frame->timestamp());
+  if (default_rtp_rtcp_->SendingMedia() == false) {
+    // We've paused or we have no channels attached, don't encode.
+    return;
+  }
   {
     CriticalSectionScoped cs(data_cs_.get());
     time_of_last_incoming_frame_ms_ = TickTime::MillisecondTimestamp();
-    if (default_rtp_rtcp_->SendingMedia() == false) {
-      // We've paused or we have no channels attached, don't encode.
-      return;
-    }
     if (EncoderPaused()) {
       if (!encoder_paused_and_dropped_frame_) {
         TRACE_EVENT_ASYNC_BEGIN0("webrtc", "EncoderPaused", this);
