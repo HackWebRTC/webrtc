@@ -302,7 +302,8 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
   bool PrepareAndSendPacket(uint8_t* buffer,
                             uint16_t length,
                             int64_t capture_time_ms,
-                            bool send_over_rtx);
+                            bool send_over_rtx,
+                            bool is_retransmit);
 
   int SendRedundantPayloads(int payload_type, int bytes);
 

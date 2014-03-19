@@ -458,7 +458,7 @@ int RTPSender::SendRedundantPayloads(int payload_type, int bytes_to_send) {
                                               &capture_time_ms)) {
       break;
     }
-    if (!PrepareAndSendPacket(buffer, length, capture_time_ms, true))
+    if (!PrepareAndSendPacket(buffer, length, capture_time_ms, true, false))
       return -1;
     ModuleRTPUtility::RTPHeaderParser rtp_parser(buffer, length);
     RTPHeader rtp_header;
@@ -598,7 +598,6 @@ bool RTPSender::StorePackets() const {
 int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
   uint16_t length = IP_PACKET_SIZE;
   uint8_t data_buffer[IP_PACKET_SIZE];
-  uint8_t *buffer_to_send_ptr = data_buffer;
   int64_t capture_time_ms;
   if (!packet_history_.GetPacketAndSetSendTime(packet_id, min_resend_time, true,
                                                data_buffer, &length,
@@ -607,19 +606,15 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
     return 0;
   }
 
-  ModuleRTPUtility::RTPHeaderParser rtp_parser(data_buffer, length);
-  RTPHeader header;
-  if (!rtp_parser.Parse(header)) {
-    assert(false);
-    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, id_,
-                 "Failed to parse RTP header of packet to be retransmitted.");
-    return -1;
-  }
-  TRACE_EVENT_INSTANT2("webrtc_rtp", "RTPSender::ReSendPacket",
-                       "timestamp", header.timestamp,
-                       "seqnum", header.sequenceNumber);
-
   if (paced_sender_) {
+    ModuleRTPUtility::RTPHeaderParser rtp_parser(data_buffer, length);
+    RTPHeader header;
+    if (!rtp_parser.Parse(header)) {
+      assert(false);
+      WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, id_,
+                   "Failed to parse RTP header of packet to be retransmitted.");
+      return -1;
+    }
     if (!paced_sender_->SendPacket(PacedSender::kHighPriority,
                                    header.ssrc,
                                    header.sequenceNumber,
@@ -632,17 +627,8 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
     }
   }
 
-  uint8_t data_buffer_rtx[IP_PACKET_SIZE];
-  if ((rtx_ & kRtxRetransmitted) > 0) {
-    BuildRtxPacket(data_buffer, &length, data_buffer_rtx);
-    buffer_to_send_ptr = data_buffer_rtx;
-  }
-
-  if (SendPacketToNetwork(buffer_to_send_ptr, length)) {
-    UpdateRtpStats(buffer_to_send_ptr, length, header, rtx_ != kRtxOff, true);
-    return length;
-  }
-  return -1;
+  return PrepareAndSendPacket(data_buffer, length, capture_time_ms,
+                              (rtx_ & kRtxRetransmitted) > 0, true) ? 0 : -1;
 }
 
 bool RTPSender::SendPacketToNetwork(const uint8_t *packet, uint32_t size) {
@@ -798,19 +784,21 @@ bool RTPSender::TimeToSendPacket(uint16_t sequence_number,
     UpdateDelayStatistics(capture_time_ms, clock_->TimeInMilliseconds());
   }
   return PrepareAndSendPacket(data_buffer, length, capture_time_ms,
-                              retransmission && (rtx_ & kRtxRetransmitted) > 0);
+                              retransmission && (rtx_ & kRtxRetransmitted) > 0,
+                              retransmission);
 }
 
 bool RTPSender::PrepareAndSendPacket(uint8_t* buffer,
                                      uint16_t length,
                                      int64_t capture_time_ms,
-                                     bool send_over_rtx) {
+                                     bool send_over_rtx,
+                                     bool is_retransmit) {
   uint8_t *buffer_to_send_ptr = buffer;
 
   ModuleRTPUtility::RTPHeaderParser rtp_parser(buffer, length);
   RTPHeader rtp_header;
   rtp_parser.Parse(rtp_header);
-  TRACE_EVENT_INSTANT2("webrtc_rtp", "RTPSender::TimeToSendPacket",
+  TRACE_EVENT_INSTANT2("webrtc_rtp", "PrepareAndSendPacket",
                        "timestamp", rtp_header.timestamp,
                        "seqnum", rtp_header.sequenceNumber);
 
@@ -835,7 +823,8 @@ bool RTPSender::PrepareAndSendPacket(uint8_t* buffer,
   }
 
   bool ret = SendPacketToNetwork(buffer_to_send_ptr, length);
-  UpdateRtpStats(buffer_to_send_ptr, length, rtp_header, false, false);
+  UpdateRtpStats(buffer_to_send_ptr, length, rtp_header, send_over_rtx,
+                 is_retransmit);
   return ret;
 }
 

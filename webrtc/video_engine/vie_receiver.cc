@@ -258,6 +258,11 @@ bool ViEReceiver::ParseAndHandleEncapsulatingHeader(const uint8_t* packet,
     }
     return fec_receiver_->ProcessReceivedFec() == 0;
   } else if (rtp_payload_registry_->IsRtx(header)) {
+    if (header.headerLength + header.paddingLength == packet_length) {
+      // This is an empty packet and should be silently dropped before trying to
+      // parse the RTX header.
+      return true;
+    }
     // Remove the RTX header and parse the original RTP header.
     if (packet_length < header.headerLength)
       return false;
