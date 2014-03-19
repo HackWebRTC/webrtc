@@ -225,7 +225,7 @@ TEST_F(VideoSendStreamTest, CanStopStoppedStream) {
 
 TEST_F(VideoSendStreamTest, SendsSetSsrc) { SendsSetSsrcs(1, false); }
 
-TEST_F(VideoSendStreamTest, SendsSetSimulcastSsrcs) {
+TEST_F(VideoSendStreamTest, DISABLED_SendsSetSimulcastSsrcs) {
   SendsSetSsrcs(kNumSendSsrcs, false);
 }
 
