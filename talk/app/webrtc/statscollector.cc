@@ -279,6 +279,8 @@ void ExtractStats(const cricket::VoiceSenderInfo& info, StatsReport* report) {
                    info.bytes_sent);
   report->AddValue(StatsReport::kStatsValueNamePacketsSent,
                    info.packets_sent);
+  report->AddValue(StatsReport::kStatsValueNamePacketsLost,
+                   info.packets_lost);
   report->AddValue(StatsReport::kStatsValueNameJitterReceived,
                    info.jitter_ms);
   report->AddValue(StatsReport::kStatsValueNameRtt, info.rtt_ms);
@@ -343,6 +345,8 @@ void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {
                    info.bytes_sent);
   report->AddValue(StatsReport::kStatsValueNamePacketsSent,
                    info.packets_sent);
+  report->AddValue(StatsReport::kStatsValueNamePacketsLost,
+                   info.packets_lost);
 
   report->AddValue(StatsReport::kStatsValueNameFirsReceived,
                    info.firs_rcvd);

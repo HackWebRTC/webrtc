@@ -276,6 +276,9 @@ void VerifyVoiceSenderInfoReport(const StatsReport* report,
       report, StatsReport::kStatsValueNamePacketsSent, &value_in_report));
   EXPECT_EQ(talk_base::ToString<int>(sinfo.packets_sent), value_in_report);
   EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNamePacketsLost, &value_in_report));
+  EXPECT_EQ(talk_base::ToString<int>(sinfo.packets_lost), value_in_report);
+  EXPECT_TRUE(GetValue(
       report, StatsReport::kStatsValueNameRtt, &value_in_report));
   EXPECT_EQ(talk_base::ToString<int>(sinfo.rtt_ms), value_in_report);
   EXPECT_TRUE(GetValue(
