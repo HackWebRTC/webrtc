@@ -102,7 +102,7 @@ class NetEq {
     kSyncPacketNotAccepted
   };
 
-  static const int kMaxNumPacketsInBuffer = 240;  // TODO(hlundin): Remove.
+  static const int kMaxNumPacketsInBuffer = 50;  // TODO(hlundin): Remove.
   static const int kMaxBytesInBuffer = 113280;  // TODO(hlundin): Remove.
 
   // Creates a new NetEq object, starting at the sample rate |sample_rate_hz|.
