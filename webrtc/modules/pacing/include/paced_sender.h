@@ -56,8 +56,7 @@ class PacedSender : public Module {
 
   static const int kDefaultMaxQueueLengthMs = 2000;
 
-  PacedSender(Callback* callback, int target_bitrate_kbps,
-              float pace_multiplier);
+  PacedSender(Callback* callback, int max_bitrate_kbps, int min_bitrate_kbps);
 
   virtual ~PacedSender();
 
@@ -72,13 +71,9 @@ class PacedSender : public Module {
   // Resume sending packets.
   void Resume();
 
-  // Set the pacing target bitrate and the bitrate up to which we are allowed to
-  // pad. We will send padding packets to increase the total bitrate until we
-  // reach |pad_up_to_bitrate_kbps|. If the media bitrate is above
-  // |pad_up_to_bitrate_kbps| no padding will be sent.
-  void UpdateBitrate(int target_bitrate_kbps,
-                     int max_padding_bitrate_kbps,
-                     int pad_up_to_bitrate_kbps);
+  // Set target bitrates for the pacer. Padding packets will be utilized to
+  // reach |min_bitrate| unless enough media packets are available.
+  void UpdateBitrate(int max_bitrate_kbps, int min_bitrate_kbps);
 
   // Returns true if we send the packet now, else it will add the packet
   // information to the queue and call TimeToSendPacket when it's time to send.
@@ -120,7 +115,6 @@ class PacedSender : public Module {
   void UpdateMediaBytesSent(int num_bytes);
 
   Callback* callback_;
-  const float pace_multiplier_;
   bool enabled_;
   bool paused_;
   int max_queue_length_ms_;
@@ -129,12 +123,9 @@ class PacedSender : public Module {
   // we can pace out during the current interval.
   scoped_ptr<paced_sender::IntervalBudget> media_budget_;
   // This is the padding budget, keeping track of how many bits of padding we're
-  // allowed to send out during the current interval.
+  // allowed to send out during the current interval. This budget will be
+  // utilized when there's no media to send.
   scoped_ptr<paced_sender::IntervalBudget> padding_budget_;
-  // Media and padding share this budget, therefore no padding will be sent if
-  // media uses all of this budget. This is used to avoid padding above a given
-  // bitrate.
-  scoped_ptr<paced_sender::IntervalBudget> pad_up_to_bitrate_budget_;
 
   TickTime time_last_update_;
   TickTime time_last_send_;

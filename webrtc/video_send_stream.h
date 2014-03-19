@@ -86,7 +86,7 @@ class VideoSendStream {
     struct Rtp {
       Rtp()
           : max_packet_size(kDefaultMaxPacketSize),
-            min_transmit_bitrate_kbps(0) {}
+            min_transmit_bitrate_bps(0) {}
 
       std::vector<uint32_t> ssrcs;
 
@@ -96,7 +96,7 @@ class VideoSendStream {
       // Padding will be used up to this bitrate regardless of the bitrate
       // produced by the encoder. Padding above what's actually produced by the
       // encoder helps maintaining a higher bitrate estimate.
-      int min_transmit_bitrate_kbps;
+      int min_transmit_bitrate_bps;
 
       // RTP header extensions to use for this send stream.
       std::vector<RtpExtension> extensions;

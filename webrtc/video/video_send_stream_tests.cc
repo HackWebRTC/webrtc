@@ -15,6 +15,7 @@
 #include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/frame_callback.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -23,12 +24,13 @@
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/test/direct_transport.h"
+#include "webrtc/test/configurable_frame_size_encoder.h"
 #include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/fake_encoder.h"
-#include "webrtc/test/configurable_frame_size_encoder.h"
 #include "webrtc/test/frame_generator_capturer.h"
 #include "webrtc/test/null_transport.h"
 #include "webrtc/test/rtp_rtcp_observer.h"
+#include "webrtc/test/testsupport/perf_test.h"
 #include "webrtc/video/transport_adapter.h"
 #include "webrtc/video_send_stream.h"
 
@@ -1110,6 +1112,96 @@ TEST_F(VideoSendStreamTest, ProducesStats) {
 
   EXPECT_TRUE(observer.WaitForFilledStats())
       << "Timed out waiting for filled statistics.";
+
+  observer.StopSending();
+  frame_generator_capturer->Stop();
+  send_stream_->StopSending();
+  call->DestroyVideoSendStream(send_stream_);
+}
+
+// This test first observes "high" bitrate use at which point it sends a REMB to
+// indicate that it should be lowered significantly. The test then observes that
+// the bitrate observed is sinking well below the min-transmit-bitrate threshold
+// to verify that the min-transmit bitrate respects incoming REMB.
+TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
+  static const int kMinTransmitBitrateBps = 400000;
+  static const int kHighBitrateBps = 200000;
+  static const int kRembBitrateBps = 80000;
+  static const int kRembRespectedBitrateBps = 100000;
+  class BitrateObserver: public test::RtpRtcpObserver, public PacketReceiver {
+   public:
+    BitrateObserver()
+        : RtpRtcpObserver(30 * 1000),
+          feedback_transport_(ReceiveTransport()),
+          send_stream_(NULL),
+          bitrate_capped_(false) {
+      RtpRtcp::Configuration config;
+      feedback_transport_.Enable();
+      config.outgoing_transport = &feedback_transport_;
+      rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(config));
+      rtp_rtcp_->SetREMBStatus(true);
+      rtp_rtcp_->SetRTCPStatus(kRtcpNonCompound);
+    }
+
+    void SetSendStream(VideoSendStream* send_stream) {
+      send_stream_ = send_stream;
+    }
+
+   private:
+    virtual bool DeliverPacket(const uint8_t* packet, size_t length) {
+      if (RtpHeaderParser::IsRtcp(packet, static_cast<int>(length)))
+        return true;
+
+      RTPHeader header;
+      if (!parser_->Parse(packet, static_cast<int>(length), &header))
+        return true;
+      assert(send_stream_ != NULL);
+      VideoSendStream::Stats stats = send_stream_->GetStats();
+      if (!stats.substreams.empty()) {
+        EXPECT_EQ(1u, stats.substreams.size());
+        int bitrate_bps = stats.substreams.begin()->second.bitrate_bps;
+        test::PrintResult(
+            "bitrate_stats_",
+            "min_transmit_bitrate_low_remb",
+            "bitrate_bps",
+            static_cast<size_t>(bitrate_bps),
+            "bps",
+            false);
+        if (bitrate_bps > kHighBitrateBps) {
+          rtp_rtcp_->SetREMBData(kRembBitrateBps, 1, &header.ssrc);
+          rtp_rtcp_->Process();
+          bitrate_capped_ = true;
+        } else if (bitrate_capped_ &&
+                   bitrate_bps < kRembRespectedBitrateBps) {
+          observation_complete_->Set();
+        }
+      }
+      return true;
+    }
+
+    scoped_ptr<RtpRtcp> rtp_rtcp_;
+    internal::TransportAdapter feedback_transport_;
+    VideoSendStream* send_stream_;
+    bool bitrate_capped_;
+  } observer;
+
+  Call::Config call_config(observer.SendTransport());
+  scoped_ptr<Call> call(Call::Create(call_config));
+  observer.SetReceivers(&observer, call->Receiver());
+
+  VideoSendStream::Config send_config = GetSendTestConfig(call.get(), 1);
+  send_config.rtp.min_transmit_bitrate_bps = kMinTransmitBitrateBps;
+  send_stream_ = call->CreateVideoSendStream(send_config);
+  observer.SetSendStream(send_stream_);
+
+  scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer(
+      test::FrameGeneratorCapturer::Create(
+          send_stream_->Input(), 320, 240, 30, Clock::GetRealTimeClock()));
+  send_stream_->StartSending();
+  frame_generator_capturer->Start();
+
+  EXPECT_EQ(kEventSignaled, observer.Wait())
+      << "Timeout while waiting for low bitrate stats after REMB.";
 
   observer.StopSending();
   frame_generator_capturer->Stop();

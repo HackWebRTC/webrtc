@@ -50,9 +50,9 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
     config_.pacing = true;
   rtp_rtcp_->SetTransmissionSmoothingStatus(channel_, config_.pacing);
 
-  assert(config_.rtp.min_transmit_bitrate_kbps >= 0);
+  assert(config_.rtp.min_transmit_bitrate_bps >= 0);
   rtp_rtcp_->SetMinTransmitBitrate(channel_,
-                                   config_.rtp.min_transmit_bitrate_kbps);
+                                   config_.rtp.min_transmit_bitrate_bps / 1000);
 
   for (size_t i = 0; i < config_.rtp.extensions.size(); ++i) {
     const std::string& extension = config_.rtp.extensions[i].name;

@@ -120,19 +120,16 @@ class IntervalBudget {
 };
 }  // namespace paced_sender
 
-PacedSender::PacedSender(Callback* callback, int target_bitrate_kbps,
-                         float pace_multiplier)
+PacedSender::PacedSender(Callback* callback,
+                         int max_bitrate_kbps,
+                         int min_bitrate_kbps)
     : callback_(callback),
-      pace_multiplier_(pace_multiplier),
       enabled_(false),
       paused_(false),
       max_queue_length_ms_(kDefaultMaxQueueLengthMs),
       critsect_(CriticalSectionWrapper::CreateCriticalSection()),
-      media_budget_(new paced_sender::IntervalBudget(
-          pace_multiplier_ * target_bitrate_kbps)),
-      padding_budget_(new paced_sender::IntervalBudget(0)),
-      // No padding until UpdateBitrate is called.
-      pad_up_to_bitrate_budget_(new paced_sender::IntervalBudget(0)),
+      media_budget_(new paced_sender::IntervalBudget(max_bitrate_kbps)),
+      padding_budget_(new paced_sender::IntervalBudget(min_bitrate_kbps)),
       time_last_update_(TickTime::Now()),
       capture_time_ms_last_queued_(0),
       capture_time_ms_last_sent_(0),
@@ -165,13 +162,11 @@ bool PacedSender::Enabled() const {
   return enabled_;
 }
 
-void PacedSender::UpdateBitrate(int target_bitrate_kbps,
-                                int max_padding_bitrate_kbps,
-                                int pad_up_to_bitrate_kbps) {
+void PacedSender::UpdateBitrate(int max_bitrate_kbps,
+                                int min_bitrate_kbps) {
   CriticalSectionScoped cs(critsect_.get());
-  media_budget_->set_target_rate_kbps(pace_multiplier_ * target_bitrate_kbps);
-  padding_budget_->set_target_rate_kbps(max_padding_bitrate_kbps);
-  pad_up_to_bitrate_budget_->set_target_rate_kbps(pad_up_to_bitrate_kbps);
+  media_budget_->set_target_rate_kbps(max_bitrate_kbps);
+  padding_budget_->set_target_rate_kbps(min_bitrate_kbps);
 }
 
 bool PacedSender::SendPacket(Priority priority, uint32_t ssrc,
@@ -273,17 +268,13 @@ int32_t PacedSender::Process() {
     if (high_priority_packets_->empty() &&
         normal_priority_packets_->empty() &&
         low_priority_packets_->empty() &&
-        padding_budget_->bytes_remaining() > 0 &&
-        pad_up_to_bitrate_budget_->bytes_remaining() > 0) {
-      int padding_needed = std::min(
-          padding_budget_->bytes_remaining(),
-          pad_up_to_bitrate_budget_->bytes_remaining());
+        padding_budget_->bytes_remaining() > 0) {
+      int padding_needed = padding_budget_->bytes_remaining();
       critsect_->Leave();
       int bytes_sent = callback_->TimeToSendPadding(padding_needed);
       critsect_->Enter();
       media_budget_->UseBudget(bytes_sent);
       padding_budget_->UseBudget(bytes_sent);
-      pad_up_to_bitrate_budget_->UseBudget(bytes_sent);
     }
   }
   return 0;
@@ -324,7 +315,6 @@ bool PacedSender::SendPacketFromList(paced_sender::PacketList* packet_list)
 void PacedSender::UpdateBytesPerInterval(uint32_t delta_time_ms) {
   media_budget_->IncreaseBudget(delta_time_ms);
   padding_budget_->IncreaseBudget(delta_time_ms);
-  pad_up_to_bitrate_budget_->IncreaseBudget(delta_time_ms);
 }
 
 // MUST have critsect_ when calling.
@@ -388,7 +378,7 @@ paced_sender::Packet PacedSender::GetNextPacketFromList(
 void PacedSender::UpdateMediaBytesSent(int num_bytes) {
   time_last_send_ = TickTime::Now();
   media_budget_->UseBudget(num_bytes);
-  pad_up_to_bitrate_budget_->UseBudget(num_bytes);
+  padding_budget_->UseBudget(num_bytes);
 }
 
 }  // namespace webrtc

@@ -398,7 +398,7 @@ TEST_F(CallPerfTest, RegisterCpuOveruseObserver) {
 
 void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
   static const int kMaxEncodeBitrateKbps = 30;
-  static const int kMinTransmitBitrateKbps = 150;
+  static const int kMinTransmitBitrateBps = 150000;
   static const int kMinAcceptableTransmitBitrate = 130;
   static const int kMaxAcceptableTransmitBitrate = 170;
   static const int kNumBitrateObservationsInRange = 100;
@@ -475,9 +475,9 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
 
   send_config.pacing = true;
   if (pad_to_min_bitrate) {
-    send_config.rtp.min_transmit_bitrate_kbps = kMinTransmitBitrateKbps;
+    send_config.rtp.min_transmit_bitrate_bps = kMinTransmitBitrateBps;
   } else {
-    assert(send_config.rtp.min_transmit_bitrate_kbps == 0);
+    assert(send_config.rtp.min_transmit_bitrate_bps == 0);
   }
 
   VideoReceiveStream::Config receive_config =

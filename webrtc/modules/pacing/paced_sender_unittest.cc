@@ -59,8 +59,8 @@ class PacedSenderTest : public ::testing::Test {
     srand(0);
     TickTime::UseFakeClock(123456);
     // Need to initialize PacedSender after we initialize clock.
-    send_bucket_.reset(new PacedSender(&callback_, kTargetBitrate,
-                                       kPaceMultiplier));
+    send_bucket_.reset(
+        new PacedSender(&callback_, kPaceMultiplier * kTargetBitrate, 0));
     send_bucket_->SetStatus(true);
   }
 
@@ -209,7 +209,7 @@ TEST_F(PacedSenderTest, Padding) {
   uint32_t ssrc = 12345;
   uint16_t sequence_number = 1234;
 
-  send_bucket_->UpdateBitrate(kTargetBitrate, kTargetBitrate, kTargetBitrate);
+  send_bucket_->UpdateBitrate(kPaceMultiplier * kTargetBitrate, kTargetBitrate);
   // Due to the multiplicative factor we can send 3 packets not 2 packets.
   SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
                       TickTime::MillisecondTimestamp(), 250, false);
@@ -235,7 +235,7 @@ TEST_F(PacedSenderTest, Padding) {
 
 TEST_F(PacedSenderTest, NoPaddingWhenDisabled) {
   send_bucket_->SetStatus(false);
-  send_bucket_->UpdateBitrate(kTargetBitrate, kTargetBitrate, kTargetBitrate);
+  send_bucket_->UpdateBitrate(kPaceMultiplier * kTargetBitrate, kTargetBitrate);
   // No padding is expected since the pacer is disabled.
   EXPECT_CALL(callback_, TimeToSendPadding(_)).Times(0);
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
@@ -255,34 +255,13 @@ TEST_F(PacedSenderTest, VerifyPaddingUpToBitrate) {
   int64_t capture_time_ms = 56789;
   const int kTimeStep = 5;
   const int64_t kBitrateWindow = 100;
-  send_bucket_->UpdateBitrate(kTargetBitrate, kTargetBitrate, kTargetBitrate);
+  send_bucket_->UpdateBitrate(kPaceMultiplier * kTargetBitrate, kTargetBitrate);
   int64_t start_time = TickTime::MillisecondTimestamp();
   while (TickTime::MillisecondTimestamp() - start_time < kBitrateWindow) {
     SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
                         capture_time_ms, 250, false);
     TickTime::AdvanceFakeClock(kTimeStep);
     EXPECT_CALL(callback_, TimeToSendPadding(250)).Times(1).
-        WillOnce(Return(250));
-    send_bucket_->Process();
-  }
-}
-
-TEST_F(PacedSenderTest, VerifyMaxPaddingBitrate) {
-  uint32_t ssrc = 12345;
-  uint16_t sequence_number = 1234;
-  int64_t capture_time_ms = 56789;
-  const int kTimeStep = 5;
-  const int64_t kBitrateWindow = 100;
-  const int kTargetBitrate = 1500;
-  const int kMaxPaddingBitrate = 800;
-  send_bucket_->UpdateBitrate(kTargetBitrate, kMaxPaddingBitrate,
-                              kTargetBitrate);
-  int64_t start_time = TickTime::MillisecondTimestamp();
-  while (TickTime::MillisecondTimestamp() - start_time < kBitrateWindow) {
-    SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                        capture_time_ms, 250, false);
-    TickTime::AdvanceFakeClock(kTimeStep);
-    EXPECT_CALL(callback_, TimeToSendPadding(500)).Times(1).
         WillOnce(Return(250));
     send_bucket_->Process();
   }
@@ -295,10 +274,10 @@ TEST_F(PacedSenderTest, VerifyAverageBitrateVaryingMediaPayload) {
   const int kTimeStep = 5;
   const int64_t kBitrateWindow = 10000;
   PacedSenderPadding callback;
-  send_bucket_.reset(new PacedSender(&callback, kTargetBitrate,
-                                     kPaceMultiplier));
+  send_bucket_.reset(
+      new PacedSender(&callback, kPaceMultiplier * kTargetBitrate, 0));
   send_bucket_->SetStatus(true);
-  send_bucket_->UpdateBitrate(kTargetBitrate, kTargetBitrate, kTargetBitrate);
+  send_bucket_->UpdateBitrate(kPaceMultiplier * kTargetBitrate, kTargetBitrate);
   int64_t start_time = TickTime::MillisecondTimestamp();
   int media_bytes = 0;
   while (TickTime::MillisecondTimestamp() - start_time < kBitrateWindow) {
@@ -497,7 +476,7 @@ TEST_F(PacedSenderTest, MaxQueueLength) {
   uint16_t sequence_number = 1234;
   EXPECT_EQ(0, send_bucket_->QueueInMs());
 
-  send_bucket_->UpdateBitrate(30, 0, 0);
+  send_bucket_->UpdateBitrate(kPaceMultiplier * 30, 0);
   for (int i = 0; i < 30; ++i) {
     SendAndExpectPacket(PacedSender::kNormalPriority,
                         ssrc,
@@ -526,7 +505,7 @@ TEST_F(PacedSenderTest, QueueTimeGrowsOverTime) {
   uint16_t sequence_number = 1234;
   EXPECT_EQ(0, send_bucket_->QueueInMs());
 
-  send_bucket_->UpdateBitrate(30, 0, 0);
+  send_bucket_->UpdateBitrate(kPaceMultiplier * 30, 0);
   SendAndExpectPacket(PacedSender::kNormalPriority,
                       ssrc,
                       sequence_number,
