@@ -628,7 +628,8 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
   }
 
   return PrepareAndSendPacket(data_buffer, length, capture_time_ms,
-                              (rtx_ & kRtxRetransmitted) > 0, true) ? 0 : -1;
+                              (rtx_ & kRtxRetransmitted) > 0, true) ?
+      length : -1;
 }
 
 bool RTPSender::SendPacketToNetwork(const uint8_t *packet, uint32_t size) {
