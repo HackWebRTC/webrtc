@@ -229,7 +229,7 @@ TEST_F(VideoSendStreamTest, SendsSetSimulcastSsrcs) {
   SendsSetSsrcs(kNumSendSsrcs, false);
 }
 
-TEST_F(VideoSendStreamTest, CanSwitchToUseAllSsrcs) {
+TEST_F(VideoSendStreamTest, DISABLED_CanSwitchToUseAllSsrcs) {
   SendsSetSsrcs(kNumSendSsrcs, true);
 }
 
