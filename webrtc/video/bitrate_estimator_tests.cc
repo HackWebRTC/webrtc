@@ -18,6 +18,7 @@
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/direct_transport.h"
+#include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/fake_decoder.h"
 #include "webrtc/test/fake_encoder.h"
 #include "webrtc/test/frame_generator_capturer.h"
@@ -64,14 +65,15 @@ class BitrateEstimatorTest : public ::testing::Test {
 
     send_config_ = sender_call_->GetDefaultSendConfig();
     send_config_.rtp.ssrcs.push_back(kSendSsrc);
-    // send_config_.encoder will be set by every stream separately.
-    send_config_.internal_source = false;
-    test::FakeEncoder::SetCodecSettings(&send_config_.codec, 1);
-    send_config_.codec.plType = kSendPayloadType;
+    // Encoders will be set separately per stream.
+    send_config_.encoder_settings =
+        test::CreateEncoderSettings(NULL, "FAKE", kSendPayloadType, 1);
 
     receive_config_ = receiver_call_->GetDefaultReceiveConfig();
-    receive_config_.codecs.clear();
-    receive_config_.codecs.push_back(send_config_.codec);
+    assert(receive_config_.codecs.empty());
+    VideoCodec codec =
+        test::CreateDecoderVideoCodec(send_config_.encoder_settings);
+    receive_config_.codecs.push_back(codec);
     // receive_config_.external_decoders will be set by every stream separately.
     receive_config_.rtp.remote_ssrc = send_config_.rtp.ssrcs[0];
     receive_config_.rtp.local_ssrc = kReceiverLocalSsrc;
@@ -163,21 +165,22 @@ class BitrateEstimatorTest : public ::testing::Test {
           fake_encoder_(Clock::GetRealTimeClock()),
           fake_decoder_() {
       test_->send_config_.rtp.ssrcs[0]++;
-      test_->send_config_.encoder = &fake_encoder_;
+      test_->send_config_.encoder_settings.encoder = &fake_encoder_;
       send_stream_ =
           test_->sender_call_->CreateVideoSendStream(test_->send_config_);
-      frame_generator_capturer_.reset(
-          test::FrameGeneratorCapturer::Create(send_stream_->Input(),
-                                               test_->send_config_.codec.width,
-                                               test_->send_config_.codec.height,
-                                               30,
-                                               Clock::GetRealTimeClock()));
+      assert(test_->send_config_.encoder_settings.streams.size() == 1);
+      frame_generator_capturer_.reset(test::FrameGeneratorCapturer::Create(
+          send_stream_->Input(),
+          test_->send_config_.encoder_settings.streams[0].width,
+          test_->send_config_.encoder_settings.streams[0].height,
+          30,
+          Clock::GetRealTimeClock()));
       send_stream_->StartSending();
       frame_generator_capturer_->Start();
 
       ExternalVideoDecoder decoder;
       decoder.decoder = &fake_decoder_;
-      decoder.payload_type = test_->send_config_.codec.plType;
+      decoder.payload_type = test_->send_config_.encoder_settings.payload_type;
       test_->receive_config_.rtp.remote_ssrc = test_->send_config_.rtp.ssrcs[0];
       test_->receive_config_.rtp.local_ssrc++;
       test_->receive_config_.external_decoders.push_back(decoder);

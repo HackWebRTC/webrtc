@@ -99,6 +99,7 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
 
   codec_ = ViECodec::GetInterface(video_engine);
 
+  assert(!config_.codecs.empty());
   for (size_t i = 0; i < config_.codecs.size(); ++i) {
     if (codec_->SetReceiveCodec(channel_, config_.codecs[i]) != 0) {
       // TODO(pbos): Abort gracefully, this can be a runtime error.

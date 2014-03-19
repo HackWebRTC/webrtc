@@ -18,6 +18,8 @@
         'configurable_frame_size_encoder.h',
         'direct_transport.cc',
         'direct_transport.h',
+        'encoder_settings.cc',
+        'encoder_settings.h',
         'fake_audio_device.cc',
         'fake_audio_device.h',
         'fake_decoder.cc',

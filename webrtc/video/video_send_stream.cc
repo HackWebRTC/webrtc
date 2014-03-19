@@ -21,6 +21,7 @@
 #include "webrtc/video_engine/include/vie_image_process.h"
 #include "webrtc/video_engine/include/vie_network.h"
 #include "webrtc/video_engine/include/vie_rtp_rtcp.h"
+#include "webrtc/video_engine/vie_defines.h"
 #include "webrtc/video_send_stream.h"
 
 namespace webrtc {
@@ -108,24 +109,26 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
   network_->SetMTU(channel_,
                    static_cast<unsigned int>(config_.rtp.max_packet_size + 28));
 
-  if (config.encoder) {
-    external_codec_ = ViEExternalCodec::GetInterface(video_engine);
-    if (external_codec_->RegisterExternalSendCodec(channel_,
-                                                   config.codec.plType,
-                                                   config.encoder,
-                                                   config.internal_source) !=
-        0) {
-      abort();
-    }
+  assert(config.encoder_settings.encoder != NULL);
+  assert(config.encoder_settings.payload_type >= 0);
+  assert(config.encoder_settings.payload_type <= 127);
+  external_codec_ = ViEExternalCodec::GetInterface(video_engine);
+  if (external_codec_->RegisterExternalSendCodec(
+          channel_,
+          config.encoder_settings.payload_type,
+          config.encoder_settings.encoder,
+          false) != 0) {
+    abort();
   }
 
   codec_ = ViECodec::GetInterface(video_engine);
-  if (!SetCodec(config_.codec))
+  if (!ReconfigureVideoEncoder(config_.encoder_settings.streams,
+                               config_.encoder_settings.encoder_settings)) {
     abort();
-
-  if (overuse_observer) {
-    video_engine_base_->RegisterCpuOveruseObserver(channel_, overuse_observer);
   }
+
+  if (overuse_observer)
+    video_engine_base_->RegisterCpuOveruseObserver(channel_, overuse_observer);
 
   image_process_ = ViEImageProcess::GetInterface(video_engine);
   image_process_->RegisterPreEncodeCallback(channel_,
@@ -170,10 +173,8 @@ VideoSendStream::~VideoSendStream() {
   capture_->DisconnectCaptureDevice(channel_);
   capture_->ReleaseCaptureDevice(capture_id_);
 
-  if (external_codec_) {
-    external_codec_->DeRegisterExternalSendCodec(channel_,
-                                                 config_.codec.plType);
-  }
+  external_codec_->DeRegisterExternalSendCodec(
+      channel_, config_.encoder_settings.payload_type);
 
   video_engine_base_->DeleteChannel(channel_);
 
@@ -221,11 +222,91 @@ void VideoSendStream::StopSending() {
   transport_adapter_.Disable();
 }
 
-bool VideoSendStream::SetCodec(const VideoCodec& codec) {
-  assert(config_.rtp.ssrcs.size() >= codec.numberOfSimulcastStreams);
+bool VideoSendStream::ReconfigureVideoEncoder(
+    const std::vector<VideoStream>& streams,
+    void* encoder_settings) {
+  assert(!streams.empty());
+  assert(config_.rtp.ssrcs.size() >= streams.size());
+  // TODO(pbos): Wire encoder_settings.
+  assert(encoder_settings == NULL);
 
+  // VideoStreams in config_.encoder_settings need to be locked.
   CriticalSectionScoped crit(codec_lock_.get());
-  if (codec_->SetSendCodec(channel_, codec) != 0)
+
+  VideoCodec video_codec;
+  memset(&video_codec, 0, sizeof(video_codec));
+  video_codec.codecType =
+      (config_.encoder_settings.payload_name == "VP8" ? kVideoCodecVP8
+                                                      : kVideoCodecGeneric);
+
+  if (video_codec.codecType == kVideoCodecVP8) {
+    video_codec.codecSpecific.VP8.resilience = kResilientStream;
+    video_codec.codecSpecific.VP8.numberOfTemporalLayers = 1;
+    video_codec.codecSpecific.VP8.denoisingOn = true;
+    video_codec.codecSpecific.VP8.errorConcealmentOn = false;
+    video_codec.codecSpecific.VP8.automaticResizeOn = false;
+    video_codec.codecSpecific.VP8.frameDroppingOn = true;
+    video_codec.codecSpecific.VP8.keyFrameInterval = 3000;
+  }
+
+  strncpy(video_codec.plName,
+          config_.encoder_settings.payload_name.c_str(),
+          kPayloadNameSize - 1);
+  video_codec.plName[kPayloadNameSize - 1] = '\0';
+  video_codec.plType = config_.encoder_settings.payload_type;
+  video_codec.numberOfSimulcastStreams =
+      static_cast<unsigned char>(streams.size());
+  video_codec.minBitrate = streams[0].min_bitrate_bps / 1000;
+  assert(streams.size() <= kMaxSimulcastStreams);
+  for (size_t i = 0; i < streams.size(); ++i) {
+    SimulcastStream* sim_stream = &video_codec.simulcastStream[i];
+    assert(streams[i].width > 0);
+    assert(streams[i].height > 0);
+    assert(streams[i].max_framerate > 0);
+    // Different framerates not supported per stream at the moment.
+    assert(streams[i].max_framerate == streams[0].max_framerate);
+    assert(streams[i].min_bitrate_bps >= 0);
+    assert(streams[i].target_bitrate_bps >= streams[i].min_bitrate_bps);
+    assert(streams[i].max_bitrate_bps >= streams[i].target_bitrate_bps);
+    assert(streams[i].max_qp >= 0);
+
+    sim_stream->width = static_cast<unsigned short>(streams[i].width);
+    sim_stream->height = static_cast<unsigned short>(streams[i].height);
+    sim_stream->minBitrate = streams[i].min_bitrate_bps / 1000;
+    sim_stream->targetBitrate = streams[i].target_bitrate_bps / 1000;
+    sim_stream->maxBitrate = streams[i].max_bitrate_bps / 1000;
+    sim_stream->qpMax = streams[i].max_qp;
+    // TODO(pbos): Implement mapping for temporal layers.
+    assert(streams[i].temporal_layers.empty());
+
+    video_codec.width = std::max(video_codec.width,
+                                 static_cast<unsigned short>(streams[i].width));
+    video_codec.height = std::max(
+        video_codec.height, static_cast<unsigned short>(streams[i].height));
+    video_codec.minBitrate =
+        std::min(video_codec.minBitrate,
+                 static_cast<unsigned int>(streams[i].min_bitrate_bps / 1000));
+    video_codec.maxBitrate += streams[i].max_bitrate_bps / 1000;
+    video_codec.qpMax = std::max(video_codec.qpMax,
+                                 static_cast<unsigned int>(streams[i].max_qp));
+  }
+
+  if (video_codec.minBitrate < kViEMinCodecBitrate)
+    video_codec.minBitrate = kViEMinCodecBitrate;
+  if (video_codec.maxBitrate < kViEMinCodecBitrate)
+    video_codec.maxBitrate = kViEMinCodecBitrate;
+
+  video_codec.startBitrate = 300;
+
+  if (video_codec.startBitrate < video_codec.minBitrate)
+    video_codec.startBitrate = video_codec.minBitrate;
+  if (video_codec.startBitrate > video_codec.maxBitrate)
+    video_codec.startBitrate = video_codec.maxBitrate;
+
+  assert(config_.encoder_settings.streams[0].max_framerate > 0);
+  video_codec.maxFramerate = config_.encoder_settings.streams[0].max_framerate;
+
+  if (codec_->SetSendCodec(channel_, video_codec) != 0)
     return false;
 
   for (size_t i = 0; i < config_.rtp.ssrcs.size(); ++i) {
@@ -235,8 +316,8 @@ bool VideoSendStream::SetCodec(const VideoCodec& codec) {
                             static_cast<unsigned char>(i));
   }
 
-  if (&config_.codec != &codec)
-    config_.codec = codec;
+  config_.encoder_settings.streams = streams;
+  config_.encoder_settings.encoder_settings = encoder_settings;
 
   if (config_.rtp.rtx.ssrcs.empty())
     return true;
@@ -254,11 +335,6 @@ bool VideoSendStream::SetCodec(const VideoCodec& codec) {
     rtp_rtcp_->SetRtxSendPayloadType(channel_, config_.rtp.rtx.payload_type);
 
   return true;
-}
-
-VideoCodec VideoSendStream::GetCodec() {
-  CriticalSectionScoped crit(codec_lock_.get());
-  return config_.codec;
 }
 
 bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {

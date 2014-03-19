@@ -65,7 +65,6 @@ class Call : public webrtc::Call, public PacketReceiver {
   virtual ~Call();
 
   virtual PacketReceiver* Receiver() OVERRIDE;
-  virtual std::vector<VideoCodec> GetVideoCodecs() OVERRIDE;
 
   virtual VideoSendStream::Config GetDefaultSendConfig() OVERRIDE;
 
@@ -246,28 +245,14 @@ Call::~Call() {
 
 PacketReceiver* Call::Receiver() { return this; }
 
-std::vector<VideoCodec> Call::GetVideoCodecs() {
-  std::vector<VideoCodec> codecs;
-
-  VideoCodec codec;
-  for (size_t i = 0; i < static_cast<size_t>(codec_->NumberOfCodecs()); ++i) {
-    if (codec_->GetCodec(static_cast<unsigned char>(i), codec) == 0) {
-      codecs.push_back(codec);
-    }
-  }
-  return codecs;
-}
-
 VideoSendStream::Config Call::GetDefaultSendConfig() {
   VideoSendStream::Config config;
-  codec_->GetCodec(0, config.codec);
   return config;
 }
 
 VideoSendStream* Call::CreateVideoSendStream(
     const VideoSendStream::Config& config) {
   assert(config.rtp.ssrcs.size() > 0);
-  assert(config.rtp.ssrcs.size() >= config.codec.numberOfSimulcastStreams);
 
   VideoSendStream* send_stream = new VideoSendStream(
       config_.send_transport,

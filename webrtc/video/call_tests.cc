@@ -19,11 +19,13 @@
 #include "webrtc/call.h"
 #include "webrtc/frame_callback.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
+#include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/test/direct_transport.h"
+#include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/fake_audio_device.h"
 #include "webrtc/test/fake_decoder.h"
 #include "webrtc/test/fake_encoder.h"
@@ -69,16 +71,16 @@ class CallTest : public ::testing::Test {
     receive_config_ = receiver_call_->GetDefaultReceiveConfig();
 
     send_config_.rtp.ssrcs.push_back(kSendSsrc);
-    send_config_.encoder = &fake_encoder_;
-    send_config_.internal_source = false;
-    test::FakeEncoder::SetCodecSettings(&send_config_.codec, 1);
-    send_config_.codec.plType = kSendPayloadType;
+    send_config_.encoder_settings = test::CreateEncoderSettings(
+        &fake_encoder_, "FAKE", kSendPayloadType, 1);
 
-    receive_config_.codecs.clear();
-    receive_config_.codecs.push_back(send_config_.codec);
+    assert(receive_config_.codecs.empty());
+    VideoCodec codec =
+        test::CreateDecoderVideoCodec(send_config_.encoder_settings);
+    receive_config_.codecs.push_back(codec);
     ExternalVideoDecoder decoder;
     decoder.decoder = &fake_decoder_;
-    decoder.payload_type = send_config_.codec.plType;
+    decoder.payload_type = send_config_.encoder_settings.payload_type;
     receive_config_.external_decoders.push_back(decoder);
     receive_config_.rtp.remote_ssrc = send_config_.rtp.ssrcs[0];
     receive_config_.rtp.local_ssrc = kReceiverLocalSsrc;
@@ -93,12 +95,12 @@ class CallTest : public ::testing::Test {
   }
 
   void CreateFrameGenerator() {
-    frame_generator_capturer_.reset(
-        test::FrameGeneratorCapturer::Create(send_stream_->Input(),
-                                             send_config_.codec.width,
-                                             send_config_.codec.height,
-                                             30,
-                                             Clock::GetRealTimeClock()));
+    frame_generator_capturer_.reset(test::FrameGeneratorCapturer::Create(
+        send_stream_->Input(),
+        send_config_.encoder_settings.streams[0].width,
+        send_config_.encoder_settings.streams[0].height,
+        30,
+        Clock::GetRealTimeClock()));
   }
 
   void StartSending() {
@@ -401,7 +403,8 @@ TEST_F(CallTest, TransmitsFirstFrame) {
   StartSending();
 
   scoped_ptr<test::FrameGenerator> frame_generator(test::FrameGenerator::Create(
-      send_config_.codec.width, send_config_.codec.height));
+      send_config_.encoder_settings.streams[0].width,
+      send_config_.encoder_settings.streams[0].height));
   send_stream_->Input()->SwapFrame(frame_generator->NextFrame());
 
   EXPECT_EQ(kEventSignaled, renderer.Wait())
@@ -552,7 +555,7 @@ void CallTest::DecodesRetransmittedFrame(bool retransmit_over_rtx) {
   if (retransmit_over_rtx) {
     send_config_.rtp.rtx.ssrcs.push_back(kSendRtxSsrc);
     send_config_.rtp.rtx.payload_type = kSendRtxPayloadType;
-    int payload_type = send_config_.codec.plType;
+    int payload_type = send_config_.encoder_settings.payload_type;
     receive_config_.rtp.rtx[payload_type].ssrc = kSendRtxSsrc;
     receive_config_.rtp.rtx[payload_type].payload_type = kSendRtxPayloadType;
   }
@@ -643,11 +646,19 @@ TEST_F(CallTest, UsesFrameCallbacks) {
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
   CreateTestConfigs();
-  send_config_.encoder = NULL;
-  send_config_.codec = sender_call_->GetVideoCodecs()[0];
-  send_config_.codec.width = kWidth;
-  send_config_.codec.height = kHeight;
+  scoped_ptr<VP8Encoder> encoder(VP8Encoder::Create());
+  send_config_.encoder_settings.encoder = encoder.get();
+  send_config_.encoder_settings.payload_name = "VP8";
+  ASSERT_EQ(1u, send_config_.encoder_settings.streams.size())
+      << "Test setup error.";
+  send_config_.encoder_settings.streams[0].width = kWidth;
+  send_config_.encoder_settings.streams[0].height = kHeight;
   send_config_.pre_encode_callback = &pre_encode_callback;
+  receive_config_.codecs.clear();
+  VideoCodec codec =
+      test::CreateDecoderVideoCodec(send_config_.encoder_settings);
+  receive_config_.external_decoders.clear();
+  receive_config_.codecs.push_back(codec);
   receive_config_.pre_render_callback = &pre_render_callback;
   receive_config_.renderer = &renderer;
 
@@ -949,7 +960,7 @@ TEST_F(CallTest, SendsAndReceivesMultipleStreams) {
       done_->Set();
     }
 
-    void Wait() { done_->Wait(kDefaultTimeoutMs); }
+    EventTypeWrapper Wait() { return done_->Wait(kDefaultTimeoutMs); }
 
    private:
     test::FrameGeneratorCapturer** capturer_;
@@ -977,27 +988,40 @@ TEST_F(CallTest, SendsAndReceivesMultipleStreams) {
   VideoOutputObserver* observers[kNumStreams];
   test::FrameGeneratorCapturer* frame_generators[kNumStreams];
 
+  scoped_ptr<VP8Encoder> encoders[kNumStreams];
+  for (size_t i = 0; i < kNumStreams; ++i)
+    encoders[i].reset(VP8Encoder::Create());
+
   for (size_t i = 0; i < kNumStreams; ++i) {
     uint32_t ssrc = codec_settings[i].ssrc;
     int width = codec_settings[i].width;
     int height = codec_settings[i].height;
     observers[i] = new VideoOutputObserver(&frame_generators[i], width, height);
 
+    VideoSendStream::Config send_config = sender_call->GetDefaultSendConfig();
+    send_config.rtp.ssrcs.push_back(ssrc);
+    send_config.encoder_settings =
+        test::CreateEncoderSettings(encoders[i].get(), "VP8", 124, 1);
+    VideoStream* stream = &send_config.encoder_settings.streams[0];
+    stream->width = width;
+    stream->height = height;
+    stream->max_framerate = 5;
+    stream->min_bitrate_bps = stream->target_bitrate_bps =
+        stream->max_bitrate_bps = 100000;
+    send_streams[i] = sender_call->CreateVideoSendStream(send_config);
+    send_streams[i]->StartSending();
+
     VideoReceiveStream::Config receive_config =
         receiver_call->GetDefaultReceiveConfig();
     receive_config.renderer = observers[i];
     receive_config.rtp.remote_ssrc = ssrc;
     receive_config.rtp.local_ssrc = kReceiverLocalSsrc;
+    VideoCodec codec =
+        test::CreateDecoderVideoCodec(send_config.encoder_settings);
+    receive_config.codecs.push_back(codec);
     receive_streams[i] =
         receiver_call->CreateVideoReceiveStream(receive_config);
     receive_streams[i]->StartReceiving();
-
-    VideoSendStream::Config send_config = sender_call->GetDefaultSendConfig();
-    send_config.rtp.ssrcs.push_back(ssrc);
-    send_config.codec.width = width;
-    send_config.codec.height = height;
-    send_streams[i] = sender_call->CreateVideoSendStream(send_config);
-    send_streams[i]->StartSending();
 
     frame_generators[i] = test::FrameGeneratorCapturer::Create(
         send_streams[i]->Input(), width, height, 30, Clock::GetRealTimeClock());
@@ -1005,7 +1029,8 @@ TEST_F(CallTest, SendsAndReceivesMultipleStreams) {
   }
 
   for (size_t i = 0; i < kNumStreams; ++i) {
-    observers[i]->Wait();
+    EXPECT_EQ(kEventSignaled, observers[i]->Wait())
+        << "Timed out while waiting for observer " << i << " to render.";
   }
 
   for (size_t i = 0; i < kNumStreams; ++i) {
@@ -1074,7 +1099,8 @@ TEST_F(CallTest, ObserversEncodedFrames) {
   StartSending();
 
   scoped_ptr<test::FrameGenerator> frame_generator(test::FrameGenerator::Create(
-      send_config_.codec.width, send_config_.codec.height));
+      send_config_.encoder_settings.streams[0].width,
+      send_config_.encoder_settings.streams[0].height));
   send_stream_->Input()->SwapFrame(frame_generator->NextFrame());
 
   EXPECT_EQ(kEventSignaled, post_encode_observer.Wait())

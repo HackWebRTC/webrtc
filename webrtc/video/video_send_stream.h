@@ -50,8 +50,8 @@ class VideoSendStream : public webrtc::VideoSendStream,
 
   virtual void StopSending() OVERRIDE;
 
-  virtual bool SetCodec(const VideoCodec& codec) OVERRIDE;
-  virtual VideoCodec GetCodec() OVERRIDE;
+  virtual bool ReconfigureVideoEncoder(const std::vector<VideoStream>& streams,
+                                       void* encoder_settings) OVERRIDE;
 
   virtual Stats GetStats() const OVERRIDE;
 

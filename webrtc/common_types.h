@@ -11,6 +11,10 @@
 #ifndef WEBRTC_COMMON_TYPES_H_
 #define WEBRTC_COMMON_TYPES_H_
 
+#include <stddef.h>
+
+#include <vector>
+
 #include "webrtc/typedefs.h"
 
 #if defined(_MSC_VER)
@@ -657,7 +661,30 @@ struct PacketTime {
                         // If unknown, this value will be set to zero.
 };
 
+struct VideoStream {
+  VideoStream()
+      : width(0),
+        height(0),
+        max_framerate(-1),
+        min_bitrate_bps(-1),
+        target_bitrate_bps(-1),
+        max_bitrate_bps(-1),
+        max_qp(-1) {}
+
+  size_t width;
+  size_t height;
+  int max_framerate;
+
+  int min_bitrate_bps;
+  int target_bitrate_bps;
+  int max_bitrate_bps;
+
+  int max_qp;
+
+  // Bitrate thresholds for enabling additional temporal layers.
+  std::vector<int> temporal_layers;
+};
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_COMMON_TYPES_H_
-

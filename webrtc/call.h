@@ -78,8 +78,6 @@ class Call {
   static Call* Create(const Call::Config& config,
                       const webrtc::Config& webrtc_config);
 
-  virtual std::vector<VideoCodec> GetVideoCodecs() = 0;
-
   virtual VideoSendStream::Config GetDefaultSendConfig() = 0;
 
   virtual VideoSendStream* CreateVideoSendStream(

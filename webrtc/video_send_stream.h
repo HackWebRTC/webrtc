@@ -61,12 +61,26 @@ class VideoSendStream {
           post_encode_callback(NULL),
           local_renderer(NULL),
           render_delay_ms(0),
-          encoder(NULL),
-          internal_source(false),
           target_delay_ms(0),
           pacing(false),
           suspend_below_min_bitrate(false) {}
-    VideoCodec codec;
+    struct EncoderSettings {
+      EncoderSettings()
+          : payload_type(-1), encoder(NULL), encoder_settings(NULL) {}
+      std::string payload_name;
+      int payload_type;
+
+      // Uninitialized VideoEncoder instance to be used for encoding. Will be
+      // initialized from inside the VideoSendStream.
+      webrtc::VideoEncoder* encoder;
+      // TODO(pbos): Wire up encoder-specific settings.
+      // Encoder-specific settings, will be passed to the encoder during
+      // initialization.
+      void* encoder_settings;
+
+      // List of stream settings to encode (resolution, bitrates, framerate).
+      std::vector<VideoStream> streams;
+    } encoder_settings;
 
     static const size_t kDefaultMaxPacketSize = 1500 - 40;  // TCP over IPv4.
     struct Rtp {
@@ -125,13 +139,6 @@ class VideoSendStream {
     // Only valid if |renderer| is set.
     int render_delay_ms;
 
-    // TODO(mflodman) Move VideoEncoder to common_types.h and redefine.
-    // External encoding. 'encoder' is the external encoder instance and
-    // 'internal_source' is set to true if the encoder also captures the video
-    // frames.
-    VideoEncoder* encoder;
-    bool internal_source;
-
     // Target delay in milliseconds. A positive value indicates this stream is
     // used for streaming instead of a real-time call.
     int target_delay_ms;
@@ -155,8 +162,11 @@ class VideoSendStream {
   virtual void StartSending() = 0;
   virtual void StopSending() = 0;
 
-  virtual bool SetCodec(const VideoCodec& codec) = 0;
-  virtual VideoCodec GetCodec() = 0;
+  // Set which streams to send. Must have at least as many SSRCs as configured
+  // in the config. Encoder settings are passed on to the encoder instance along
+  // with the VideoStream settings.
+  virtual bool ReconfigureVideoEncoder(const std::vector<VideoStream>& streams,
+                                       void* encoder_settings) = 0;
 
   virtual Stats GetStats() const = 0;
 

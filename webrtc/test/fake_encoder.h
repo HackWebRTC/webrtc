@@ -24,7 +24,6 @@ class FakeEncoder : public VideoEncoder {
   explicit FakeEncoder(Clock* clock);
   virtual ~FakeEncoder();
 
-  static void SetCodecSettings(VideoCodec* codec, size_t num_streams);
   // Sets max bitrate. Not thread-safe, call before registering the encoder.
   void SetMaxBitrate(int max_kbps);
 

@@ -18,15 +18,18 @@
 #include "webrtc/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
+#include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
-#include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/direct_transport.h"
+#include "webrtc/test/encoder_settings.h"
+#include "webrtc/test/fake_encoder.h"
 #include "webrtc/test/frame_generator_capturer.h"
 #include "webrtc/test/statistics.h"
+#include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/typedefs.h"
 
 DEFINE_int32(seconds, 10, "Seconds to run each clip.");
@@ -398,13 +401,15 @@ TEST_P(FullStackTest, NoPacketLoss) {
   VideoSendStream::Config send_config = call->GetDefaultSendConfig();
   send_config.rtp.ssrcs.push_back(kSendSsrc);
 
-  // TODO(pbos): static_cast shouldn't be required after mflodman refactors the
-  //             VideoCodec struct.
-  send_config.codec.width = static_cast<uint16_t>(params.clip.width);
-  send_config.codec.height = static_cast<uint16_t>(params.clip.height);
-  send_config.codec.minBitrate = params.bitrate;
-  send_config.codec.startBitrate = params.bitrate;
-  send_config.codec.maxBitrate = params.bitrate;
+  scoped_ptr<VP8Encoder> encoder(VP8Encoder::Create());
+  send_config.encoder_settings =
+      test::CreateEncoderSettings(encoder.get(), "VP8", 124, 1);
+  VideoStream* stream = &send_config.encoder_settings.streams[0];
+  stream->width = params.clip.width;
+  stream->height = params.clip.height;
+  stream->min_bitrate_bps = stream->target_bitrate_bps =
+      stream->max_bitrate_bps = params.bitrate * 1000;
+  stream->max_framerate = params.clip.fps;
 
   VideoSendStream* send_stream = call->CreateVideoSendStream(send_config);
   analyzer.input_ = send_stream->Input();
@@ -422,6 +427,9 @@ TEST_P(FullStackTest, NoPacketLoss) {
       << ".yuv. Is this resource file present?";
 
   VideoReceiveStream::Config receive_config = call->GetDefaultReceiveConfig();
+  VideoCodec codec =
+      test::CreateDecoderVideoCodec(send_config.encoder_settings);
+  receive_config.codecs.push_back(codec);
   receive_config.rtp.remote_ssrc = send_config.rtp.ssrcs[0];
   receive_config.rtp.local_ssrc = kReceiverLocalSsrc;
   receive_config.renderer = &analyzer;
