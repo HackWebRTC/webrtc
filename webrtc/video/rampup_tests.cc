@@ -400,10 +400,9 @@ class RampUpTest : public ::testing::Test {
   virtual void SetUp() { reserved_ssrcs_.clear(); }
 
  protected:
-  void RunRampUpTest(bool pacing, bool rtx) {
-    const size_t kNumberOfStreams = 3;
-    std::vector<uint32_t> ssrcs(GenerateSsrcs(kNumberOfStreams, 100));
-    std::vector<uint32_t> rtx_ssrcs(GenerateSsrcs(kNumberOfStreams, 200));
+  void RunRampUpTest(bool pacing, bool rtx, size_t num_streams) {
+    std::vector<uint32_t> ssrcs(GenerateSsrcs(num_streams, 100));
+    std::vector<uint32_t> rtx_ssrcs(GenerateSsrcs(num_streams, 200));
     StreamObserver::SsrcMap rtx_ssrc_map;
     if (rtx) {
       for (size_t i = 0; i < ssrcs.size(); ++i)
@@ -425,7 +424,13 @@ class RampUpTest : public ::testing::Test {
 
     test::FakeEncoder encoder(Clock::GetRealTimeClock());
     send_config.encoder_settings =
-        test::CreateEncoderSettings(&encoder, "FAKE", 125, kNumberOfStreams);
+        test::CreateEncoderSettings(&encoder, "FAKE", 125, num_streams);
+
+    if (num_streams == 1) {
+      send_config.encoder_settings.streams[0].target_bitrate_bps = 2000000;
+      send_config.encoder_settings.streams[0].max_bitrate_bps = 2000000;
+    }
+
     send_config.pacing = pacing;
     send_config.rtp.nack.rtp_history_ms = 1000;
     send_config.rtp.ssrcs = ssrcs;
@@ -436,18 +441,22 @@ class RampUpTest : public ::testing::Test {
     send_config.rtp.extensions.push_back(
         RtpExtension(RtpExtension::kAbsSendTime, kAbsoluteSendTimeExtensionId));
 
-    // Use target bitrates for all streams except the last one and the min
-    // bitrate for the last one. This ensures that we reach enough bitrate to
-    // send all streams.
-    int expected_bitrate_bps =
-        send_config.encoder_settings.streams.back().min_bitrate_bps;
-    for (size_t i = 0; i < send_config.encoder_settings.streams.size() - 1;
-         ++i) {
-      expected_bitrate_bps +=
-          send_config.encoder_settings.streams[i].target_bitrate_bps;
+    if (num_streams == 1) {
+      // For single stream rampup until 1mbps
+      stream_observer.set_expected_bitrate_bps(1000000);
+    } else {
+      // For multi stream rampup until all streams are being sent. That means
+      // enough birate to sent all the target streams plus the min bitrate of
+      // the last one.
+      int expected_bitrate_bps =
+          send_config.encoder_settings.streams.back().min_bitrate_bps;
+      for (size_t i = 0; i < send_config.encoder_settings.streams.size() - 1;
+           ++i) {
+        expected_bitrate_bps +=
+            send_config.encoder_settings.streams[i].target_bitrate_bps;
+      }
+      stream_observer.set_expected_bitrate_bps(expected_bitrate_bps);
     }
-
-    stream_observer.set_expected_bitrate_bps(expected_bitrate_bps);
 
     VideoSendStream* send_stream = call->CreateVideoSendStream(send_config);
 
@@ -543,12 +552,26 @@ class RampUpTest : public ::testing::Test {
   std::map<uint32_t, bool> reserved_ssrcs_;
 };
 
-TEST_F(RampUpTest, WithoutPacing) { RunRampUpTest(false, false); }
+TEST_F(RampUpTest, SingleStreamWithoutPacing) {
+  RunRampUpTest(false, false, 1);
+}
 
-TEST_F(RampUpTest, WithPacing) { RunRampUpTest(true, false); }
+TEST_F(RampUpTest, SingleStreamWithPacing) {
+  RunRampUpTest(true, false, 1);
+}
+
+TEST_F(RampUpTest, SimulcastWithoutPacing) {
+  RunRampUpTest(false, false, 3);
+}
+
+TEST_F(RampUpTest, SimulcastWithPacing) {
+  RunRampUpTest(true, false, 3);
+}
 
 // TODO(pbos): Re-enable, webrtc:2992.
-TEST_F(RampUpTest, DISABLED_WithPacingAndRtx) { RunRampUpTest(true, true); }
+TEST_F(RampUpTest, DISABLED_SimulcastWithPacingAndRtx) {
+  RunRampUpTest(true, true, 3);
+}
 
 TEST_F(RampUpTest, UpDownUpOneStream) { RunRampUpDownUpTest(1, false); }
 
