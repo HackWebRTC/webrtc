@@ -60,6 +60,7 @@
       'target_name': 'libjingle_unittest_main',
       'type': 'static_library',
       'dependencies': [
+        '<(DEPTH)/webrtc/system_wrappers/source/system_wrappers.gyp:system_wrappers',
         '<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv',
         'gunit',
       ],
@@ -256,6 +257,7 @@
         'gunit',
         'libjingle.gyp:libjingle_media',
         'libjingle_unittest_main',
+        '<(DEPTH)/webrtc/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       # TODO(ronghuawu): Avoid the copies.
       # https://code.google.com/p/libjingle/issues/detail?id=398
@@ -330,6 +332,7 @@
         'libjingle.gyp:libjingle',
         'libjingle.gyp:libjingle_p2p',
         'libjingle_unittest_main',
+        '<(DEPTH)/webrtc/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'include_dirs': [
         '<(DEPTH)/third_party/libsrtp/srtp',
@@ -388,6 +391,7 @@
         'libjingle.gyp:libjingle_p2p',
         'libjingle.gyp:libjingle_peerconnection',
         'libjingle_unittest_main',
+        '<(DEPTH)/webrtc/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       # TODO(ronghuawu): Reenable below unit tests that require gmock.
       'sources': [
