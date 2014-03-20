@@ -13,6 +13,7 @@
 #include "webrtc/common.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_receiver.h"
@@ -4886,15 +4887,19 @@ void Channel::UpdatePacketDelay(uint32_t rtp_timestamp,
   // every incoming packet.
   uint32_t timestamp_diff_ms = (rtp_timestamp -
       jitter_buffer_playout_timestamp_) / (rtp_receive_frequency / 1000);
+  if (!IsNewerTimestamp(rtp_timestamp, jitter_buffer_playout_timestamp_) ||
+      timestamp_diff_ms > (2 * kVoiceEngineMaxMinPlayoutDelayMs)) {
+    // If |jitter_buffer_playout_timestamp_| is newer than the incoming RTP
+    // timestamp, the resulting difference is negative, but is set to zero.
+    // This can happen when a network glitch causes a packet to arrive late,
+    // and during long comfort noise periods with clock drift.
+    timestamp_diff_ms = 0;
+  }
 
   uint16_t packet_delay_ms = (rtp_timestamp - _previousTimestamp) /
       (rtp_receive_frequency / 1000);
 
   _previousTimestamp = rtp_timestamp;
-
-  if (timestamp_diff_ms > (2 * kVoiceEngineMaxMinPlayoutDelayMs)) {
-    timestamp_diff_ms = 0;
-  }
 
   if (timestamp_diff_ms == 0) return;
 
