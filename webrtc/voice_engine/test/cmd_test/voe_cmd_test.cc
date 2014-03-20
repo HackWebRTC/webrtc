@@ -270,6 +270,9 @@ void RunTest(std::string out_path) {
     fflush(NULL);
   }
 
+  scoped_ptr<VoiceChannelTransport> voice_channel_transport(
+      new VoiceChannelTransport(netw, chan));
+
   char ip[64];
   printf("1. 127.0.0.1 \n");
   printf("2. Specify IP \n");
@@ -289,9 +292,6 @@ void RunTest(std::string out_path) {
   if (1 == rPort)
     rPort = 1234;
   printf("Set Send port \n");
-
-  scoped_ptr<VoiceChannelTransport> voice_channel_transport(
-      new VoiceChannelTransport(netw, chan));
 
   printf("Set Send IP \n");
   res = voice_channel_transport->SetSendDestination(ip, rPort);
