@@ -22,7 +22,6 @@
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
-#include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/video_engine/include/vie_image_process.h"
 #include "webrtc/video_engine/overuse_frame_detector.h"
 #include "webrtc/video_engine/vie_defines.h"
@@ -59,9 +58,7 @@ ViECapturer::ViECapturer(int capture_id,
       denoising_enabled_(false),
       observer_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       observer_(NULL),
-      overuse_detector_(new OveruseFrameDetector(Clock::GetRealTimeClock(),
-                                                 kNormalUseStdDevMs,
-                                                 kOveruseStdDevMs)) {
+      overuse_detector_(new OveruseFrameDetector(Clock::GetRealTimeClock())) {
   WEBRTC_TRACE(kTraceMemory, kTraceVideo, ViEId(engine_id, capture_id),
                "ViECapturer::ViECapturer(capture_id: %d, engine_id: %d)",
                capture_id, engine_id);
@@ -267,11 +264,15 @@ void ViECapturer::RegisterCpuOveruseObserver(CpuOveruseObserver* observer) {
   overuse_detector_->SetObserver(observer);
 }
 
+void ViECapturer::SetCpuOveruseOptions(const CpuOveruseOptions& options) {
+  overuse_detector_->SetOptions(options);
+}
+
 void ViECapturer::CpuOveruseMeasures(int* capture_jitter_ms,
                                      int* avg_encode_time_ms,
                                      int* encode_usage_percent,
                                      int* capture_queue_delay_ms_per_s) const {
-  *capture_jitter_ms = overuse_detector_->last_capture_jitter_ms();
+  *capture_jitter_ms = overuse_detector_->CaptureJitterMs();
   *avg_encode_time_ms = overuse_detector_->AvgEncodeTimeMs();
   *encode_usage_percent = overuse_detector_->EncodeUsagePercent();
   *capture_queue_delay_ms_per_s =

@@ -118,6 +118,35 @@ int ViEBaseImpl::RegisterCpuOveruseObserver(int video_channel,
   return 0;
 }
 
+int ViEBaseImpl::SetCpuOveruseOptions(int video_channel,
+                                      const CpuOveruseOptions& options) {
+  ViEChannelManagerScoped cs(*(shared_data_.channel_manager()));
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError,
+                 kTraceVideo,
+                 ViEId(shared_data_.instance_id()),
+                 "%s: channel %d doesn't exist",
+                 __FUNCTION__,
+                 video_channel);
+    shared_data_.SetLastError(kViEBaseInvalidChannelId);
+    return -1;
+  }
+  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
+  assert(vie_encoder);
+
+  ViEInputManagerScoped is(*(shared_data_.input_manager()));
+  ViEFrameProviderBase* provider = is.FrameProvider(vie_encoder);
+  if (provider) {
+    ViECapturer* capturer = is.Capture(provider->Id());
+    if (capturer) {
+      capturer->SetCpuOveruseOptions(options);
+      return 0;
+    }
+  }
+  return -1;
+}
+
 int ViEBaseImpl::CpuOveruseMeasures(int video_channel,
                                     int* capture_jitter_ms,
                                     int* avg_encode_time_ms,

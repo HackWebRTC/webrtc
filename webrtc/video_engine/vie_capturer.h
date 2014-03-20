@@ -22,6 +22,7 @@
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/thread_annotations.h"
 #include "webrtc/typedefs.h"
+#include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/video_engine/include/vie_capture.h"
 #include "webrtc/video_engine/vie_defines.h"
 #include "webrtc/video_engine/vie_frame_provider_base.h"
@@ -106,6 +107,7 @@ class ViECapturer
   const char* CurrentDeviceName() const;
 
   void RegisterCpuOveruseObserver(CpuOveruseObserver* observer);
+  void SetCpuOveruseOptions(const CpuOveruseOptions& options);
 
   void CpuOveruseMeasures(int* capture_jitter_ms,
                           int* avg_encode_time_ms,

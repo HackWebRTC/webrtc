@@ -14,7 +14,7 @@
 #include "webrtc/modules/interface/module.h"
 #include "webrtc/system_wrappers/interface/constructor_magic.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
-#include "webrtc/test/testsupport/gtest_prod_util.h"
+#include "webrtc/video_engine/include/vie_base.h"
 
 namespace webrtc {
 
@@ -23,24 +23,6 @@ class CpuOveruseObserver;
 class CriticalSectionWrapper;
 class VCMExpFilter;
 
-// Limits on standard deviation for under/overuse.
-#ifdef WEBRTC_ANDROID
-const float kOveruseStdDevMs = 32.0f;
-const float kNormalUseStdDevMs = 27.0f;
-#elif WEBRTC_LINUX
-const float kOveruseStdDevMs = 20.0f;
-const float kNormalUseStdDevMs = 14.0f;
-#elif WEBRTC_MAC
-const float kOveruseStdDevMs = 27.0f;
-const float kNormalUseStdDevMs = 21.0f;
-#elif WEBRTC_WIN
-const float kOveruseStdDevMs = 20.0f;
-const float kNormalUseStdDevMs = 14.0f;
-#else
-const float kOveruseStdDevMs = 30.0f;
-const float kNormalUseStdDevMs = 20.0f;
-#endif
-
 // TODO(pbos): Move this somewhere appropriate.
 class Statistics {
  public:
@@ -48,6 +30,7 @@ class Statistics {
 
   void AddSample(float sample_ms);
   void Reset();
+  void SetOptions(const CpuOveruseOptions& options);
 
   float Mean() const;
   float StdDev() const;
@@ -59,6 +42,7 @@ class Statistics {
 
   float sum_;
   uint64_t count_;
+  CpuOveruseOptions options_;
   scoped_ptr<VCMExpFilter> filtered_samples_;
   scoped_ptr<VCMExpFilter> filtered_variance_;
 };
@@ -66,14 +50,15 @@ class Statistics {
 // Use to detect system overuse based on jitter in incoming frames.
 class OveruseFrameDetector : public Module {
  public:
-  explicit OveruseFrameDetector(Clock* clock,
-                                float normaluse_stddev_ms,
-                                float overuse_stddev_ms);
+  explicit OveruseFrameDetector(Clock* clock);
   ~OveruseFrameDetector();
 
   // Registers an observer receiving overuse and underuse callbacks. Set
   // 'observer' to NULL to disable callbacks.
   void SetObserver(CpuOveruseObserver* observer);
+
+  // Sets options for overuse detection.
+  void SetOptions(const CpuOveruseOptions& options);
 
   // Called for each captured frame.
   void FrameCaptured(int width, int height);
@@ -85,8 +70,8 @@ class OveruseFrameDetector : public Module {
   void FrameEncoded(int encode_time_ms);
 
   // Accessors.
-  // The last estimated jitter based on the incoming captured frames.
-  int last_capture_jitter_ms() const;
+  // The estimated jitter based on incoming captured frames.
+  int CaptureJitterMs() const;
 
   // Running average of reported encode time (FrameEncoded()).
   // Only used for stats.
@@ -111,19 +96,6 @@ class OveruseFrameDetector : public Module {
   virtual int32_t Process() OVERRIDE;
 
  private:
-  FRIEND_TEST_ALL_PREFIXES(OveruseFrameDetectorTest, TriggerOveruse);
-  FRIEND_TEST_ALL_PREFIXES(OveruseFrameDetectorTest, OveruseAndRecover);
-  FRIEND_TEST_ALL_PREFIXES(OveruseFrameDetectorTest, DoubleOveruseAndRecover);
-  FRIEND_TEST_ALL_PREFIXES(
-      OveruseFrameDetectorTest, TriggerNormalUsageWithMinProcessCount);
-  FRIEND_TEST_ALL_PREFIXES(
-      OveruseFrameDetectorTest, ConstantOveruseGivesNoNormalUsage);
-  FRIEND_TEST_ALL_PREFIXES(OveruseFrameDetectorTest, LastCaptureJitter);
-
-  void set_min_process_count_before_reporting(int64_t count) {
-    min_process_count_before_reporting_ = count;
-  }
-
   class EncodeTimeAvg;
   class EncodeUsage;
   class CaptureQueueDelay;
@@ -131,19 +103,18 @@ class OveruseFrameDetector : public Module {
   bool IsOverusing();
   bool IsUnderusing(int64_t time_now);
 
-  bool DetectFrameTimeout(int64_t now) const;
+  bool FrameTimeoutDetected(int64_t now) const;
+  bool FrameSizeChanged(int num_pixels) const;
+
+  void ResetAll(int num_pixels);
 
   // Protecting all members.
   scoped_ptr<CriticalSectionWrapper> crit_;
 
-  // Limits on standard deviation for under/overuse.
-  const float normaluse_stddev_ms_;
-  const float overuse_stddev_ms_;
-
-  int64_t min_process_count_before_reporting_;
-
   // Observer getting overuse reports.
   CpuOveruseObserver* observer_;
+
+  CpuOveruseOptions options_;
 
   Clock* clock_;
   int64_t next_process_time_;
@@ -161,8 +132,6 @@ class OveruseFrameDetector : public Module {
 
   // Number of pixels of last captured frame.
   int num_pixels_;
-
-  int last_capture_jitter_ms_;
 
   int64_t last_encode_sample_ms_;
   scoped_ptr<EncodeTimeAvg> encode_time_;
