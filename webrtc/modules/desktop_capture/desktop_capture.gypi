@@ -69,6 +69,8 @@
         "win/scoped_gdi_object.h",
         "win/scoped_thread_desktop.cc",
         "win/scoped_thread_desktop.h",
+        "win/window_capture_utils.cc",
+        "win/window_capture_utils.h",
         "window_capturer.cc",
         "window_capturer.h",
         "window_capturer_mac.mm",
