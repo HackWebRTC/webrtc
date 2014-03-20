@@ -1589,7 +1589,7 @@ bool PhysicalSocketServer::Wait(int cmsWait, bool process_io) {
     if (dw == WSA_WAIT_FAILED) {
       // Failed?
       // TODO: need a better strategy than this!
-      int error = WSAGetLastError();
+      WSAGetLastError();
       ASSERT(false);
       return false;
     } else if (dw == WSA_WAIT_TIMEOUT) {
