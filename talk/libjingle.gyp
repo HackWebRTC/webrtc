@@ -992,7 +992,6 @@
         '<(DEPTH)/third_party/libsrtp/libsrtp.gyp:libsrtp',
         'libjingle',
         'libjingle_media',
-        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'include_dirs': [
         '<(DEPTH)/testing/gtest/include',
@@ -1134,7 +1133,6 @@
         'libjingle',
         'libjingle_media',
         'libjingle_p2p',
-        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'sources': [
         'app/webrtc/audiotrack.cc',
