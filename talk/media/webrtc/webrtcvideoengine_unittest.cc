@@ -1585,6 +1585,7 @@ TEST_F(WebRtcVideoEngineTestFake, RegisterEncoderIfFactoryIsGiven) {
   EXPECT_TRUE(channel_->RemoveSendStream(kSsrc));
 }
 
+
 TEST_F(WebRtcVideoEngineTestFake, DontRegisterEncoderMultipleTimes) {
   encoder_factory_.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
   engine_.SetExternalEncoderFactory(&encoder_factory_);

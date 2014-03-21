@@ -1843,6 +1843,10 @@ bool WebRtcVideoMediaChannel::AddSendStream(const StreamParams& sp) {
 
   send_channel->set_stream_params(sp);
 
+  if (IsSimulcastStream(sp)) {
+    DisableAllExternalEncoders(send_channel, channel_id);
+  }
+
   // Reset send codec after stream parameters changed.
   if (send_codec_) {
     if (!SetSendCodec(send_channel, *send_codec_, send_min_bitrate_,
@@ -3906,6 +3910,24 @@ void WebRtcVideoMediaChannel::MaybeDisconnectCapturer(VideoCapturer* capturer) {
   if (capturer != NULL && GetSendChannelNum(capturer) == 1) {
     capturer->SignalVideoFrame.disconnect(this);
   }
+}
+
+void WebRtcVideoMediaChannel::DisableAllExternalEncoders(
+    WebRtcVideoChannelSendInfo* send_channel,
+    int channel_id) {
+  const WebRtcVideoChannelSendInfo::EncoderMap& encoder_map =
+      send_channel->registered_encoders();
+  for (WebRtcVideoChannelSendInfo::EncoderMap::const_iterator it =
+      encoder_map.begin(); it != encoder_map.end(); ++it) {
+    if (engine()->vie()->ext_codec()->DeRegisterExternalSendCodec(
+        channel_id, it->first) != 0) {
+      LOG_RTCERR1(DeregisterEncoderObserver, channel_id);
+    }
+    engine()->DestroyExternalEncoder(it->second);
+  }
+  send_channel->ClearRegisteredEncoders();
+
+  engine()->SetExternalEncoderFactory(NULL);
 }
 
 }  // namespace cricket

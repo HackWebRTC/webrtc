@@ -414,6 +414,11 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   // to one send channel, i.e. the last send channel.
   void MaybeDisconnectCapturer(VideoCapturer* capturer);
 
+  // Deregister and free all the external encoders previously register to
+  // |send_channel|. Also disable the external encoder factory.
+  void DisableAllExternalEncoders(WebRtcVideoChannelSendInfo* send_channel,
+                                  int channel_id);
+
   // Global state.
   WebRtcVideoEngine* engine_;
   VoiceMediaChannel* voice_channel_;
