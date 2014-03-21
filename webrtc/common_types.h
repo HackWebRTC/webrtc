@@ -12,7 +12,7 @@
 #define WEBRTC_COMMON_TYPES_H_
 
 #include <stddef.h>
-
+#include <string.h>
 #include <vector>
 
 #include "webrtc/typedefs.h"
@@ -37,7 +37,7 @@
 
 #define RTP_PAYLOAD_NAME_SIZE 32
 
-#if defined(WEBRTC_WIN)
+#if defined(WEBRTC_WIN) || defined(WIN32)
 // Compares two strings without regard to case.
 #define STR_CASE_CMP(s1, s2) ::_stricmp(s1, s2)
 // Compares characters of two strings without regard to case.
@@ -272,14 +272,26 @@ class FrameCountObserver {
 // ==================================================================
 
 // Each codec supported can be described by this structure.
-struct CodecInst
-{
-    int pltype;
-    char plname[RTP_PAYLOAD_NAME_SIZE];
-    int plfreq;
-    int pacsize;
-    int channels;
-    int rate;  // bits/sec unlike {start,min,max}Bitrate elsewhere in this file!
+struct CodecInst {
+  int pltype;
+  char plname[RTP_PAYLOAD_NAME_SIZE];
+  int plfreq;
+  int pacsize;
+  int channels;
+  int rate;  // bits/sec unlike {start,min,max}Bitrate elsewhere in this file!
+
+  bool operator==(const CodecInst& other) const {
+    return pltype == other.pltype &&
+           (STR_CASE_CMP(plname, other.plname) == 0) &&
+           plfreq == other.plfreq &&
+           pacsize == other.pacsize &&
+           channels == other.channels &&
+           rate == other.rate;
+  }
+
+  bool operator!=(const CodecInst& other) const {
+    return !(*this == other);
+  }
 };
 
 // RTP
@@ -541,18 +553,34 @@ enum VP8ResilienceMode {
 };
 
 // VP8 specific
-struct VideoCodecVP8
-{
-    bool                 pictureLossIndicationOn;
-    bool                 feedbackModeOn;
-    VideoCodecComplexity complexity;
-    VP8ResilienceMode    resilience;
-    unsigned char        numberOfTemporalLayers;
-    bool                 denoisingOn;
-    bool                 errorConcealmentOn;
-    bool                 automaticResizeOn;
-    bool                 frameDroppingOn;
-    int                  keyFrameInterval;
+struct VideoCodecVP8 {
+  bool                 pictureLossIndicationOn;
+  bool                 feedbackModeOn;
+  VideoCodecComplexity complexity;
+  VP8ResilienceMode    resilience;
+  unsigned char        numberOfTemporalLayers;
+  bool                 denoisingOn;
+  bool                 errorConcealmentOn;
+  bool                 automaticResizeOn;
+  bool                 frameDroppingOn;
+  int                  keyFrameInterval;
+
+  bool operator==(const VideoCodecVP8& other) const {
+    return pictureLossIndicationOn == other.pictureLossIndicationOn &&
+           feedbackModeOn == other.feedbackModeOn &&
+           complexity == other.complexity &&
+           resilience == other.resilience &&
+           numberOfTemporalLayers == other.numberOfTemporalLayers &&
+           denoisingOn == other.denoisingOn &&
+           errorConcealmentOn == other.errorConcealmentOn &&
+           automaticResizeOn == other.automaticResizeOn &&
+           frameDroppingOn == other.frameDroppingOn &&
+           keyFrameInterval == other.keyFrameInterval;
+  }
+
+  bool operator!=(const VideoCodecVP8& other) const {
+    return !(*this == other);
+  }
 };
 
 // Video codec types
@@ -574,15 +602,28 @@ union VideoCodecUnion
 
 // Simulcast is when the same stream is encoded multiple times with different
 // settings such as resolution.
-struct SimulcastStream
-{
-    unsigned short      width;
-    unsigned short      height;
-    unsigned char       numberOfTemporalLayers;
-    unsigned int        maxBitrate;  // kilobits/sec.
-    unsigned int        targetBitrate;  // kilobits/sec.
-    unsigned int        minBitrate;  // kilobits/sec.
-    unsigned int        qpMax; // minimum quality
+struct SimulcastStream {
+  unsigned short      width;
+  unsigned short      height;
+  unsigned char       numberOfTemporalLayers;
+  unsigned int        maxBitrate;  // kilobits/sec.
+  unsigned int        targetBitrate;  // kilobits/sec.
+  unsigned int        minBitrate;  // kilobits/sec.
+  unsigned int        qpMax; // minimum quality
+
+  bool operator==(const SimulcastStream& other) const {
+    return width == other.width &&
+           height == other.height &&
+           numberOfTemporalLayers == other.numberOfTemporalLayers &&
+           maxBitrate == other.maxBitrate &&
+           targetBitrate == other.targetBitrate &&
+           minBitrate == other.minBitrate &&
+           qpMax == other.qpMax;
+  }
+
+  bool operator!=(const SimulcastStream& other) const {
+    return !(*this == other);
+  }
 };
 
 enum VideoCodecMode {
@@ -591,31 +632,63 @@ enum VideoCodecMode {
 };
 
 // Common video codec properties
-struct VideoCodec
-{
-    VideoCodecType      codecType;
-    char                plName[kPayloadNameSize];
-    unsigned char       plType;
+struct VideoCodec {
+  VideoCodecType      codecType;
+  char                plName[kPayloadNameSize];
+  unsigned char       plType;
 
-    unsigned short      width;
-    unsigned short      height;
+  unsigned short      width;
+  unsigned short      height;
 
-    unsigned int        startBitrate;  // kilobits/sec.
-    unsigned int        maxBitrate;  // kilobits/sec.
-    unsigned int        minBitrate;  // kilobits/sec.
-    unsigned char       maxFramerate;
+  unsigned int        startBitrate;  // kilobits/sec.
+  unsigned int        maxBitrate;  // kilobits/sec.
+  unsigned int        minBitrate;  // kilobits/sec.
+  unsigned char       maxFramerate;
 
-    VideoCodecUnion     codecSpecific;
+  VideoCodecUnion     codecSpecific;
 
-    unsigned int        qpMax;
-    unsigned char       numberOfSimulcastStreams;
-    SimulcastStream     simulcastStream[kMaxSimulcastStreams];
+  unsigned int        qpMax;
+  unsigned char       numberOfSimulcastStreams;
+  SimulcastStream     simulcastStream[kMaxSimulcastStreams];
 
-    VideoCodecMode      mode;
+  VideoCodecMode      mode;
 
-    // When using an external encoder/decoder this allows to pass
-    // extra options without requiring webrtc to be aware of them.
-    Config*  extra_options;
+  // When using an external encoder/decoder this allows to pass
+  // extra options without requiring webrtc to be aware of them.
+  Config*  extra_options;
+};
+
+// TODO(mallinath) - Remove this and push these two methods inside VideoCodec.
+// This is done to handle operator== defined in fakewebrtcvideoengine.h
+// This modification allows us to commit this CL directly and not with libjingle
+// push.
+struct VideoCodecDerived : public VideoCodec {
+  bool operator==(const VideoCodec& other) const {
+    bool ret = codecType == other.codecType &&
+               (STR_CASE_CMP(plName, other.plName) == 0) &&
+               plType == other.plType &&
+               width == other.width &&
+               height == other.height &&
+               startBitrate == other.startBitrate &&
+               maxBitrate == other.maxBitrate &&
+               minBitrate == other.minBitrate &&
+               maxFramerate == other.maxFramerate &&
+               qpMax == other.qpMax &&
+               numberOfSimulcastStreams == other.numberOfSimulcastStreams &&
+               mode == other.mode;
+    if (ret && codecType == kVideoCodecVP8) {
+      ret &= (codecSpecific.VP8 == other.codecSpecific.VP8);
+    }
+
+    for (unsigned char i = 0; i < other.numberOfSimulcastStreams && ret; ++i) {
+      ret &= (simulcastStream[i] == other.simulcastStream[i]);
+    }
+    return ret;
+  }
+
+  bool operator!=(const VideoCodec& other) const {
+    return !(*this == other);
+  }
 };
 
 // Bandwidth over-use detector options.  These are used to drive

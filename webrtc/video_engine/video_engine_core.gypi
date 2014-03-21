@@ -131,6 +131,7 @@
             'encoder_state_feedback_unittest.cc',
             'overuse_frame_detector_unittest.cc',
             'stream_synchronization_unittest.cc',
+            'vie_codec_unittest.cc',
             'vie_remb_unittest.cc',
           ],
           'conditions': [
