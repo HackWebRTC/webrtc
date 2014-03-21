@@ -92,9 +92,9 @@ TEST_F(BitrateControllerTest, OneBitrateObserverOneRtcpObserver) {
   webrtc::ReportBlockList report_blocks;
   report_blocks.push_back(CreateReportBlock(1, 2, 0, 1));
   bandwidth_observer_->OnReceivedRtcpReceiverReport(report_blocks, 50, 1);
-  EXPECT_EQ(0u, bitrate_observer.last_bitrate_);
+  EXPECT_EQ(200000u, bitrate_observer.last_bitrate_);
   EXPECT_EQ(0, bitrate_observer.last_fraction_loss_);
-  EXPECT_EQ(0u, bitrate_observer.last_rtt_);
+  EXPECT_EQ(50u, bitrate_observer.last_rtt_);
 
   // Test bitrate increase 8% per second.
   report_blocks.clear();
@@ -161,9 +161,9 @@ TEST_F(BitrateControllerTest, OneBitrateObserverTwoRtcpObservers) {
   bandwidth_observer_->OnReceivedRtcpReceiverReport(report_blocks, 50, 1);
   second_bandwidth_observer->OnReceivedRtcpReceiverReport(
       report_blocks, 100, 1);
-  EXPECT_EQ(0u, bitrate_observer.last_bitrate_);
+  EXPECT_EQ(200000u, bitrate_observer.last_bitrate_);
   EXPECT_EQ(0, bitrate_observer.last_fraction_loss_);
-  EXPECT_EQ(0u, bitrate_observer.last_rtt_);
+  EXPECT_EQ(100u, bitrate_observer.last_rtt_);
 
   // Test bitrate increase 8% per second.
   report_blocks.clear();
@@ -323,11 +323,6 @@ TEST_F(BitrateControllerTest, TwoBitrateObserversOneRtcpObserver) {
   webrtc::ReportBlockList report_blocks;
   report_blocks.push_back(CreateReportBlock(1, 2, 0, 1));
   bandwidth_observer_->OnReceivedRtcpReceiverReport(report_blocks, 50, 1);
-
-  // Test bitrate increase 8% per second, distributed equally.
-  report_blocks.clear();
-  report_blocks.push_back(CreateReportBlock(1, 2, 0, 21));
-  bandwidth_observer_->OnReceivedRtcpReceiverReport(report_blocks, 50, 1001);
   EXPECT_EQ(100000u, bitrate_observer_1.last_bitrate_);
   EXPECT_EQ(0, bitrate_observer_1.last_fraction_loss_);
   EXPECT_EQ(50u, bitrate_observer_1.last_rtt_);
@@ -336,21 +331,22 @@ TEST_F(BitrateControllerTest, TwoBitrateObserversOneRtcpObserver) {
   EXPECT_EQ(0, bitrate_observer_2.last_fraction_loss_);
   EXPECT_EQ(50u, bitrate_observer_2.last_rtt_);
 
+  // Test bitrate increase 8% per second, distributed equally.
   report_blocks.clear();
-  report_blocks.push_back(CreateReportBlock(1, 2, 0, 41));
-  bandwidth_observer_->OnReceivedRtcpReceiverReport(report_blocks, 50, 2001);
+  report_blocks.push_back(CreateReportBlock(1, 2, 0, 21));
+  bandwidth_observer_->OnReceivedRtcpReceiverReport(report_blocks, 50, 1001);
   EXPECT_EQ(112500u, bitrate_observer_1.last_bitrate_);
   EXPECT_EQ(212500u, bitrate_observer_2.last_bitrate_);
 
   report_blocks.clear();
-  report_blocks.push_back(CreateReportBlock(1, 2, 0, 61));
-  bandwidth_observer_->OnReceivedRtcpReceiverReport(report_blocks, 50, 3001);
+  report_blocks.push_back(CreateReportBlock(1, 2, 0, 41));
+  bandwidth_observer_->OnReceivedRtcpReceiverReport(report_blocks, 50, 2001);
   EXPECT_EQ(126000u, bitrate_observer_1.last_bitrate_);
   EXPECT_EQ(226000u, bitrate_observer_2.last_bitrate_);
 
   report_blocks.clear();
-  report_blocks.push_back(CreateReportBlock(1, 2, 0, 81));
-  bandwidth_observer_->OnReceivedRtcpReceiverReport(report_blocks, 50, 4001);
+  report_blocks.push_back(CreateReportBlock(1, 2, 0, 61));
+  bandwidth_observer_->OnReceivedRtcpReceiverReport(report_blocks, 50, 3001);
   EXPECT_EQ(140580u, bitrate_observer_1.last_bitrate_);
   EXPECT_EQ(240580u, bitrate_observer_2.last_bitrate_);
 
@@ -434,8 +430,12 @@ TEST_F(BitrateControllerTestNoEnforceMin, OneBitrateObserver) {
   EXPECT_EQ(150000u, bitrate_observer_1.last_bitrate_);
 
   // Low REMB.
-  bandwidth_observer_->OnReceivedEstimatedBitrate(1000);
-  EXPECT_EQ(1000u, bitrate_observer_1.last_bitrate_);
+  bandwidth_observer_->OnReceivedEstimatedBitrate(10000);
+  EXPECT_EQ(10000u, bitrate_observer_1.last_bitrate_);
+
+  // Keeps at least 10 kbps.
+  bandwidth_observer_->OnReceivedEstimatedBitrate(9000);
+  EXPECT_EQ(10000u, bitrate_observer_1.last_bitrate_);
 
   controller_->RemoveBitrateObserver(&bitrate_observer_1);
 }
@@ -469,9 +469,15 @@ TEST_F(BitrateControllerTestNoEnforceMin, ThreeBitrateObservers) {
   EXPECT_EQ(200000u, bitrate_observer_3.last_bitrate_);  // Remainder.
 
   // Low REMB.
-  bandwidth_observer_->OnReceivedEstimatedBitrate(1000);
+  bandwidth_observer_->OnReceivedEstimatedBitrate(10000);
   // Verify that the first observer gets all the rate, and the rest get zero.
-  EXPECT_EQ(1000u, bitrate_observer_1.last_bitrate_);
+  EXPECT_EQ(10000u, bitrate_observer_1.last_bitrate_);
+  EXPECT_EQ(0u, bitrate_observer_2.last_bitrate_);
+  EXPECT_EQ(0u, bitrate_observer_3.last_bitrate_);
+
+  // Verify it keeps an estimate of at least 10kbps.
+  bandwidth_observer_->OnReceivedEstimatedBitrate(9000);
+  EXPECT_EQ(10000u, bitrate_observer_1.last_bitrate_);
   EXPECT_EQ(0u, bitrate_observer_2.last_bitrate_);
   EXPECT_EQ(0u, bitrate_observer_3.last_bitrate_);
 

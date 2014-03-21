@@ -132,22 +132,39 @@ void BitrateControllerImpl::SetBitrateObserver(
     // Add new settings.
     bitrate_observers_.push_back(BitrateObserverConfiguration(observer,
         new BitrateConfiguration(start_bitrate, min_bitrate, max_bitrate)));
+    bitrate_observers_modified_ = true;
+
+    // TODO(andresp): This is a ugly way to set start bitrate.
+    //
+    // Only change start bitrate if we have exactly one observer. By definition
+    // you can only have one start bitrate, once we have our first estimate we
+    // will adapt from there.
+    if (bitrate_observers_.size() == 1) {
+      bandwidth_estimation_.SetSendBitrate(start_bitrate);
+    }
   }
+
+  UpdateMinMaxBitrate();
+}
+
+void BitrateControllerImpl::UpdateMinMaxBitrate() {
   uint32_t sum_start_bitrate = 0;
   uint32_t sum_min_bitrate = 0;
   uint32_t sum_max_bitrate = 0;
-
-  // Summarize all configurations.
+  BitrateObserverConfList::iterator it;
   for (it = bitrate_observers_.begin(); it != bitrate_observers_.end(); ++it) {
     sum_start_bitrate += it->second->start_bitrate_;
     sum_min_bitrate += it->second->min_bitrate_;
     sum_max_bitrate += it->second->max_bitrate_;
   }
-  // Only change start bitrate if we have exactly one observer. By definition
-  // you can only have one start bitrate, once we have our first estimate we
-  // will adapt from there.
-  if (bitrate_observers_.size() == 1) {
-    bandwidth_estimation_.SetSendBitrate(sum_start_bitrate);
+  if (sum_max_bitrate == 0) {
+    // No max configured use 1Gbit/s.
+    sum_max_bitrate = 1000000000;
+  }
+  if (enforce_min_bitrate_ == false) {
+    // If not enforcing min bitrate, allow the bandwidth estimation to
+    // go as low as 10 kbps.
+    sum_min_bitrate = std::min(sum_min_bitrate, 10000u);
   }
   bandwidth_estimation_.SetMinMaxBitrate(sum_min_bitrate,
                                          sum_max_bitrate);
@@ -160,30 +177,20 @@ void BitrateControllerImpl::RemoveBitrateObserver(BitrateObserver* observer) {
   if (it != bitrate_observers_.end()) {
     delete it->second;
     bitrate_observers_.erase(it);
+    bitrate_observers_modified_ = true;
   }
 }
 
 void BitrateControllerImpl::EnforceMinBitrate(bool enforce_min_bitrate) {
   CriticalSectionScoped cs(critsect_);
   enforce_min_bitrate_ = enforce_min_bitrate;
-}
-
-void BitrateControllerImpl::SetBweMinBitrate(uint32_t min_bitrate) {
-  CriticalSectionScoped cs(critsect_);
-  bandwidth_estimation_.SetMinBitrate(min_bitrate);
+  UpdateMinMaxBitrate();
 }
 
 void BitrateControllerImpl::OnReceivedEstimatedBitrate(const uint32_t bitrate) {
-  uint32_t new_bitrate = 0;
-  uint8_t fraction_lost = 0;
-  uint16_t rtt = 0;
   CriticalSectionScoped cs(critsect_);
-  if (bandwidth_estimation_.UpdateBandwidthEstimate(bitrate,
-                                                    &new_bitrate,
-                                                    &fraction_lost,
-                                                    &rtt)) {
-    OnNetworkChanged(new_bitrate, fraction_lost, rtt);
-  }
+  bandwidth_estimation_.UpdateReceiverEstimate(bitrate);
+  MaybeTriggerOnNetworkChanged();
 }
 
 void BitrateControllerImpl::OnReceivedRtcpReceiverReport(
@@ -191,12 +198,27 @@ void BitrateControllerImpl::OnReceivedRtcpReceiverReport(
     const uint32_t rtt,
     const int number_of_packets,
     const uint32_t now_ms) {
-  uint32_t new_bitrate = 0;
-  uint8_t loss = fraction_loss;
   CriticalSectionScoped cs(critsect_);
-  if (bandwidth_estimation_.UpdatePacketLoss(number_of_packets, rtt, now_ms,
-                                             &loss, &new_bitrate)) {
-    OnNetworkChanged(new_bitrate, loss, rtt);
+  bandwidth_estimation_.UpdateReceiverBlock(
+      fraction_loss, rtt, number_of_packets, now_ms);
+  MaybeTriggerOnNetworkChanged();
+}
+
+void BitrateControllerImpl::MaybeTriggerOnNetworkChanged() {
+  uint32_t bitrate;
+  uint8_t fraction_loss;
+  uint32_t rtt;
+  bandwidth_estimation_.CurrentEstimate(&bitrate, &fraction_loss, &rtt);
+
+  if (bitrate_observers_modified_ || bitrate != last_bitrate_ ||
+      fraction_loss != last_fraction_loss_ || rtt != last_rtt_ ||
+      last_enforce_min_bitrate_ != enforce_min_bitrate_) {
+    last_bitrate_ = bitrate;
+    last_fraction_loss_ = fraction_loss;
+    last_rtt_ = rtt;
+    last_enforce_min_bitrate_ = enforce_min_bitrate_;
+    bitrate_observers_modified_ = false;
+    OnNetworkChanged(bitrate, fraction_loss, rtt);
   }
 }
 
@@ -289,7 +311,15 @@ void BitrateControllerImpl::LowRateAllocation(uint32_t bitrate,
 
 bool BitrateControllerImpl::AvailableBandwidth(uint32_t* bandwidth) const {
   CriticalSectionScoped cs(critsect_);
-  return bandwidth_estimation_.AvailableBandwidth(bandwidth);
+  uint32_t bitrate;
+  uint8_t fraction_loss;
+  uint32_t rtt;
+  bandwidth_estimation_.CurrentEstimate(&bitrate, &fraction_loss, &rtt);
+  if (bitrate) {
+    *bandwidth = bitrate;
+    return true;
+  }
+  return false;
 }
 
 }  // namespace webrtc

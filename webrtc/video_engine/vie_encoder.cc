@@ -1159,7 +1159,6 @@ int ViEEncoder::StopDebugRecording() {
 void ViEEncoder::SuspendBelowMinBitrate() {
   vcm_.SuspendBelowMinBitrate();
   bitrate_controller_->EnforceMinBitrate(false);
-  bitrate_controller_->SetBweMinBitrate(10000);
 }
 
 void ViEEncoder::RegisterPreEncodeCallback(

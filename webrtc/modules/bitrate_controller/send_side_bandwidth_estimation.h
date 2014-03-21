@@ -22,39 +22,24 @@ class SendSideBandwidthEstimation {
   SendSideBandwidthEstimation();
   virtual ~SendSideBandwidthEstimation();
 
-  // Call when we receive a RTCP message with TMMBR or REMB
-  // Return true if new_bitrate is valid.
-  bool UpdateBandwidthEstimate(const uint32_t bandwidth,
-                               uint32_t* new_bitrate,
-                               uint8_t* fraction_lost,
-                               uint16_t* rtt);
+  void CurrentEstimate(uint32_t* bitrate, uint8_t* loss, uint32_t* rtt) const;
 
-  // Call when we receive a RTCP message with a ReceiveBlock
-  // Return true if new_bitrate is valid.
-  bool UpdatePacketLoss(const int number_of_packets,
-                        const uint32_t rtt,
-                        const uint32_t now_ms,
-                        uint8_t* loss,
-                        uint32_t* new_bitrate);
+  // Call when we receive a RTCP message with TMMBR or REMB.
+  void UpdateReceiverEstimate(uint32_t bandwidth);
 
-  // Return false if no bandwidth estimate is available
-  bool AvailableBandwidth(uint32_t* bandwidth) const;
-  void SetSendBitrate(const uint32_t bitrate);
-  void SetMinMaxBitrate(const uint32_t min_bitrate, const uint32_t max_bitrate);
+  // Call when we receive a RTCP message with a ReceiveBlock.
+  void UpdateReceiverBlock(uint8_t fraction_loss,
+                           uint32_t rtt,
+                           int number_of_packets,
+                           uint32_t now_ms);
+
+  void SetSendBitrate(uint32_t bitrate);
+  void SetMinMaxBitrate(uint32_t min_bitrate, uint32_t max_bitrate);
   void SetMinBitrate(uint32_t min_bitrate);
 
  private:
-  bool ShapeSimple(const uint8_t loss, const uint32_t rtt,
-                   const uint32_t now_ms, uint32_t* bitrate);
-
-  void CapBitrateToThresholds(uint32_t* bitrate);
-
-  uint32_t CalcTFRCbps(uint16_t rtt, uint8_t loss);
-
-  enum { kBWEIncreaseIntervalMs = 1000 };
-  enum { kBWEDecreaseIntervalMs = 300 };
-  enum { kLimitNumPackets = 20 };
-  enum { kAvgPacketSizeBytes = 1000 };
+  void UpdateEstimate(uint32_t now_ms);
+  void CapBitrateToThresholds();
 
   // incoming filters
   int accumulate_lost_packets_Q8_;

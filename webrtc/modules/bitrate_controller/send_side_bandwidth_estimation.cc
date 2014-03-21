@@ -10,11 +10,41 @@
 
 #include "webrtc/modules/bitrate_controller/send_side_bandwidth_estimation.h"
 
-#include <math.h>  // sqrt()
+#include <cmath>
 
 #include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
+namespace {
+enum { kBweIncreaseIntervalMs = 1000 };
+enum { kBweDecreaseIntervalMs = 300 };
+enum { kLimitNumPackets = 20 };
+enum { kAvgPacketSizeBytes = 1000 };
+
+// Calculate the rate that TCP-Friendly Rate Control (TFRC) would apply.
+// The formula in RFC 3448, Section 3.1, is used.
+uint32_t CalcTfrcBps(uint16_t rtt, uint8_t loss) {
+  if (rtt == 0 || loss == 0) {
+    // Input variables out of range.
+    return 0;
+  }
+  double R = static_cast<double>(rtt) / 1000;  // RTT in seconds.
+  int b = 1;  // Number of packets acknowledged by a single TCP acknowledgement:
+              // recommended = 1.
+  double t_RTO = 4.0 * R;  // TCP retransmission timeout value in seconds
+                           // recommended = 4*R.
+  double p = static_cast<double>(loss) / 255;  // Packet loss rate in [0, 1).
+  double s = static_cast<double>(kAvgPacketSizeBytes);
+
+  // Calculate send rate in bytes/second.
+  double X =
+      s / (R * std::sqrt(2 * b * p / 3) +
+           (t_RTO * (3 * std::sqrt(3 * b * p / 8) * p * (1 + 32 * p * p))));
+
+  // Convert to bits/second.
+  return (static_cast<uint32_t>(X * 8));
+}
+}
 
 SendSideBandwidthEstimation::SendSideBandwidthEstimation()
     : accumulate_lost_packets_Q8_(0),
@@ -30,190 +60,121 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation()
 
 SendSideBandwidthEstimation::~SendSideBandwidthEstimation() {}
 
-void SendSideBandwidthEstimation::SetSendBitrate(const uint32_t bitrate) {
+void SendSideBandwidthEstimation::SetSendBitrate(uint32_t bitrate) {
   bitrate_ = bitrate;
 }
 
-void SendSideBandwidthEstimation::SetMinMaxBitrate(const uint32_t min_bitrate,
-                                                   const uint32_t max_bitrate) {
+void SendSideBandwidthEstimation::SetMinMaxBitrate(uint32_t min_bitrate,
+                                                   uint32_t max_bitrate) {
   min_bitrate_configured_ = min_bitrate;
-  if (max_bitrate == 0) {
-    // no max configured use 1Gbit/s
-    max_bitrate_configured_ = 1000000000;
-  } else {
-    max_bitrate_configured_ = max_bitrate;
-  }
+  max_bitrate_configured_ = max_bitrate;
 }
 
 void SendSideBandwidthEstimation::SetMinBitrate(uint32_t min_bitrate) {
   min_bitrate_configured_ = min_bitrate;
 }
 
-bool SendSideBandwidthEstimation::UpdateBandwidthEstimate(
-    const uint32_t bandwidth,
-    uint32_t* new_bitrate,
-    uint8_t* fraction_lost,
-    uint16_t* rtt) {
-  *new_bitrate = 0;
-  bwe_incoming_ = bandwidth;
-
-  if (bitrate_ == 0) {
-    // SendSideBandwidthEstimation off
-    return false;
-  }
-  if (bwe_incoming_ > 0 && bitrate_ > bwe_incoming_) {
-    bitrate_ = bwe_incoming_;
-    *new_bitrate = bitrate_;
-    *fraction_lost = last_fraction_loss_;
-    *rtt = last_round_trip_time_;
-    return true;
-  }
-  return false;
+void SendSideBandwidthEstimation::CurrentEstimate(uint32_t* bitrate,
+                                                  uint8_t* loss,
+                                                  uint32_t* rtt) const {
+  *bitrate = bitrate_;
+  *loss = last_fraction_loss_;
+  *rtt = last_round_trip_time_;
 }
 
-bool SendSideBandwidthEstimation::UpdatePacketLoss(
-    const int number_of_packets,
-    const uint32_t rtt,
-    const uint32_t now_ms,
-    uint8_t* loss,
-    uint32_t* new_bitrate) {
-  if (bitrate_ == 0) {
-    // SendSideBandwidthEstimation off
-    return false;
-  }
+void SendSideBandwidthEstimation::UpdateReceiverEstimate(uint32_t bandwidth) {
+  bwe_incoming_ = bandwidth;
+  CapBitrateToThresholds();
+}
+
+void SendSideBandwidthEstimation::UpdateReceiverBlock(uint8_t fraction_loss,
+                                                      uint32_t rtt,
+                                                      int number_of_packets,
+                                                      uint32_t now_ms) {
   // Update RTT.
   last_round_trip_time_ = rtt;
 
   // Check sequence number diff and weight loss report
   if (number_of_packets > 0) {
     // Calculate number of lost packets.
-    const int num_lost_packets_Q8 = *loss * number_of_packets;
+    const int num_lost_packets_Q8 = fraction_loss * number_of_packets;
     // Accumulate reports.
     accumulate_lost_packets_Q8_ += num_lost_packets_Q8;
     accumulate_expected_packets_ += number_of_packets;
 
     // Report loss if the total report is based on sufficiently many packets.
     if (accumulate_expected_packets_ >= kLimitNumPackets) {
-      *loss = accumulate_lost_packets_Q8_ / accumulate_expected_packets_;
+      last_fraction_loss_ =
+          accumulate_lost_packets_Q8_ / accumulate_expected_packets_;
 
-      // Reset accumulators
+      // Reset accumulators.
       accumulate_lost_packets_Q8_ = 0;
       accumulate_expected_packets_ = 0;
     } else {
-      // Report zero loss until we have enough data to estimate
-      // the loss rate.
-      return false;
+      // Early return without updating estimate.
+      return;
     }
   }
-  // Keep for next time.
-  last_fraction_loss_ = *loss;
-  uint32_t bitrate = 0;
-  if (!ShapeSimple(*loss, rtt, now_ms, &bitrate)) {
-    // No change.
-    return false;
-  }
-  bitrate_ = bitrate;
-  *new_bitrate = bitrate;
-  return true;
+  UpdateEstimate(now_ms);
 }
 
-bool SendSideBandwidthEstimation::AvailableBandwidth(
-    uint32_t* bandwidth) const {
-  if (bitrate_ == 0) {
-    return false;
-  }
-  *bandwidth = bitrate_;
-  return true;
-}
+void SendSideBandwidthEstimation::UpdateEstimate(uint32_t now_ms) {
+  if (last_fraction_loss_ <= 5) {
+    // Loss < 2%: Limit the rate increases to once a kBweIncreaseIntervalMs.
+    if ((now_ms - time_last_increase_) >= kBweIncreaseIntervalMs) {
+      time_last_increase_ = now_ms;
 
-/*
- * Calculate the rate that TCP-Friendly Rate Control (TFRC) would apply.
- * The formula in RFC 3448, Section 3.1, is used.
- */
-uint32_t SendSideBandwidthEstimation::CalcTFRCbps(uint16_t rtt, uint8_t loss) {
-  if (rtt == 0 || loss == 0) {
-    // input variables out of range
-    return 0;
-  }
-  double R = static_cast<double>(rtt) / 1000;  // RTT in seconds
-  int b = 1;  // number of packets acknowledged by a single TCP acknowledgement;
-              // recommended = 1
-  double t_RTO = 4.0 * R;  // TCP retransmission timeout value in seconds
-                           // recommended = 4*R
-  double p = static_cast<double>(loss) / 255;  // packet loss rate in [0, 1)
-  double s = static_cast<double>(kAvgPacketSizeBytes);
+      // Increase rate by 8%.
+      bitrate_ = static_cast<uint32_t>(bitrate_ * 1.08 + 0.5);
 
-  // calculate send rate in bytes/second
-  double X = s / (R * sqrt(2 * b * p / 3) +
-      (t_RTO * (3 * sqrt(3 * b * p / 8) * p * (1 + 32 * p * p))));
-
-  return (static_cast<uint32_t>(X * 8));  // bits/second
-}
-
-bool SendSideBandwidthEstimation::ShapeSimple(const uint8_t loss,
-                                              const uint32_t rtt,
-                                              const uint32_t now_ms,
-                                              uint32_t* bitrate) {
-  uint32_t new_bitrate = 0;
-
-  // Limit the rate increases to once a kBWEIncreaseIntervalMs.
-  if (loss <= 5) {
-    if ((now_ms - time_last_increase_) < kBWEIncreaseIntervalMs) {
-      return false;
+      // Add 1 kbps extra, just to make sure that we do not get stuck
+      // (gives a little extra increase at low rates, negligible at higher
+      // rates).
+      bitrate_ += 1000;
     }
-    time_last_increase_ = now_ms;
-  }
-  // Limit the rate decreases to once a kBWEDecreaseIntervalMs + rtt.
-  if (loss > 26) {
-    if ((now_ms - time_last_decrease_) < kBWEDecreaseIntervalMs + rtt) {
-      return false;
-    }
-    time_last_decrease_ = now_ms;
-  }
 
-  if (loss > 5 && loss <= 26) {
-    // 2% - 10%
-    new_bitrate = bitrate_;
-  } else if (loss > 26) {
-    // 26/256 ~= 10%
-    // reduce rate: newRate = rate * (1 - 0.5*lossRate)
-    // packetLoss = 256*lossRate
-    new_bitrate = static_cast<uint32_t>((bitrate_ *
-        static_cast<double>(512 - loss)) / 512.0);
-    // Calculate what rate TFRC would apply in this situation
-    // scale loss to Q0 (back to [0, 255])
-    uint32_t tfrc_bitrate = CalcTFRCbps(rtt, loss);
-    if (tfrc_bitrate > new_bitrate) {
-      // do not reduce further if rate is below TFRC rate
-      new_bitrate = tfrc_bitrate;
-    }
+  } else if (last_fraction_loss_ <= 26) {
+    // Loss between 2% - 10%: Do nothing.
+
   } else {
-    // increase rate by 8%
-    new_bitrate = static_cast<uint32_t>(bitrate_ * 1.08 + 0.5);
+    // Loss > 10%: Limit the rate decreases to once a kBweDecreaseIntervalMs +
+    // rtt.
+    if ((now_ms - time_last_decrease_) >=
+        static_cast<uint32_t>(kBweDecreaseIntervalMs + last_round_trip_time_)) {
+      time_last_decrease_ = now_ms;
 
-    // add 1 kbps extra, just to make sure that we do not get stuck
-    // (gives a little extra increase at low rates, negligible at higher rates)
-    new_bitrate += 1000;
+      // Reduce rate:
+      //   newRate = rate * (1 - 0.5*lossRate);
+      //   where packetLoss = 256*lossRate;
+      bitrate_ = static_cast<uint32_t>(
+          (bitrate_ * static_cast<double>(512 - last_fraction_loss_)) / 512.0);
+
+      // Calculate what rate TFRC would apply in this situation and to not
+      // reduce further than it.
+      bitrate_ = std::max(
+          bitrate_, CalcTfrcBps(last_round_trip_time_, last_fraction_loss_));
+    }
   }
-  CapBitrateToThresholds(&new_bitrate);
-  *bitrate = new_bitrate;
-  return true;
+
+  CapBitrateToThresholds();
 }
 
-void SendSideBandwidthEstimation::CapBitrateToThresholds(
-    uint32_t* new_bitrate) {
-  if (bwe_incoming_ > 0 && *new_bitrate > bwe_incoming_) {
-    *new_bitrate = bwe_incoming_;
+void SendSideBandwidthEstimation::CapBitrateToThresholds() {
+  if (bwe_incoming_ > 0 && bitrate_ > bwe_incoming_) {
+    bitrate_ = bwe_incoming_;
   }
-  if (*new_bitrate > max_bitrate_configured_) {
-    *new_bitrate = max_bitrate_configured_;
+  if (bitrate_ > max_bitrate_configured_) {
+    bitrate_ = max_bitrate_configured_;
   }
-  if (*new_bitrate < min_bitrate_configured_) {
-    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
+  if (bitrate_ < min_bitrate_configured_) {
+    WEBRTC_TRACE(kTraceWarning,
+                 kTraceRtpRtcp,
+                 -1,
                  "The configured min bitrate (%u kbps) is greater than the "
                  "estimated available bandwidth (%u kbps).\n",
-                 min_bitrate_configured_ / 1000, *new_bitrate / 1000);
-    *new_bitrate = min_bitrate_configured_;
+                 min_bitrate_configured_ / 1000,
+                 bitrate_ / 1000);
+    bitrate_ = min_bitrate_configured_;
   }
 }
 
