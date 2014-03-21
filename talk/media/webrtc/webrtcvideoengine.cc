@@ -2876,6 +2876,7 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
   if (leaky_bucket_changed) {
     bool enable_leaky_bucket =
         options_.video_leaky_bucket.GetWithDefaultIfUnset(false);
+    LOG(LS_INFO) << "Leaky bucket is enabled : " << enable_leaky_bucket;
     for (SendChannelMap::iterator it = send_channels_.begin();
         it != send_channels_.end(); ++it) {
       if (engine()->vie()->rtp()->SetTransmissionSmoothingStatus(
