@@ -627,13 +627,12 @@ int VoEHardwareImpl::ResetAudioDevice()
             "  Failed to reset sound device");
         return -1;
     }
+    return 0;
 #else
     _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
         "  no support for resetting sound device");
     return -1;
 #endif
-
-    return 0;
 }
 
 int VoEHardwareImpl::AudioDeviceControl(unsigned int par1, unsigned int par2,

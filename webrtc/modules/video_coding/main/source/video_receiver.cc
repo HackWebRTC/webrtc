@@ -782,14 +782,17 @@ int VideoReceiver::SetReceiverRobustnessMode(
       _keyRequestMode = kKeyOnError;  // TODO(hlundin): On long NACK list?
       break;
     case VideoCodingModule::kSoftNack:
+#if 1
       assert(false);  // TODO(hlundin): Not completed.
       return VCM_NOT_IMPLEMENTED;
+#else
       // Enable hybrid NACK/FEC. Always wait for retransmissions and don't add
       // extra delay when RTT is above kLowRttNackMs.
       _receiver.SetNackMode(kNack, media_optimization::kLowRttNackMs, -1);
       _dualReceiver.SetNackMode(kNoNack, -1, -1);
       _keyRequestMode = kKeyOnError;
       break;
+#endif
     case VideoCodingModule::kDualDecoder:
       if (decode_error_mode == kNoErrors) {
         return VCM_PARAMETER_ERROR;
@@ -802,14 +805,17 @@ int VideoReceiver::SetReceiverRobustnessMode(
       _keyRequestMode = kKeyOnError;
       break;
     case VideoCodingModule::kReferenceSelection:
+#if 1
       assert(false);  // TODO(hlundin): Not completed.
       return VCM_NOT_IMPLEMENTED;
+#else
       if (decode_error_mode == kNoErrors) {
         return VCM_PARAMETER_ERROR;
       }
       _receiver.SetNackMode(kNoNack, -1, -1);
       _dualReceiver.SetNackMode(kNoNack, -1, -1);
       break;
+#endif
   }
   _receiver.SetDecodeErrorMode(decode_error_mode);
   // The dual decoder should never decode with errors.

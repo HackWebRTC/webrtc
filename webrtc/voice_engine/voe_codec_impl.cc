@@ -488,7 +488,6 @@ int VoECodecImpl::SetISACMaxPayloadSize(int channel, int sizeBytes)
         "SetISACMaxPayloadSize() iSAC codec is not supported");
     return -1;
 #endif
-    return 0;
 }
 
 int VoECodecImpl::SetVADStatus(int channel, bool enable, VadModes mode,

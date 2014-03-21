@@ -294,20 +294,16 @@ int VoEVolumeControlImpl::SetInputMute(int channel, bool enable)
         // Mute before demultiplexing <=> affects all channels
         return _shared->transmit_mixer()->SetMute(enable);
     }
-    else
+    // Mute after demultiplexing <=> affects one channel only
+    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
+    voe::Channel* channelPtr = ch.channel();
+    if (channelPtr == NULL)
     {
-        // Mute after demultiplexing <=> affects one channel only
-        voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-        voe::Channel* channelPtr = ch.channel();
-        if (channelPtr == NULL)
-        {
-            _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                "SetInputMute() failed to locate channel");
-            return -1;
-        }
-        return channelPtr->SetMute(enable);
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+            "SetInputMute() failed to locate channel");
+        return -1;
     }
-    return 0;
+    return channelPtr->SetMute(enable);
 }
 
 int VoEVolumeControlImpl::GetInputMute(int channel, bool& enabled)
@@ -574,20 +570,16 @@ int VoEVolumeControlImpl::SetOutputVolumePan(int channel,
         // Master balance (affectes the signal after output mixing)
         return _shared->output_mixer()->SetOutputVolumePan(left, right);
     }
-    else
+    // Per-channel balance (affects the signal before output mixing)
+    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
+    voe::Channel* channelPtr = ch.channel();
+    if (channelPtr == NULL)
     {
-        // Per-channel balance (affects the signal before output mixing)
-        voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-        voe::Channel* channelPtr = ch.channel();
-        if (channelPtr == NULL)
-        {
-            _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                "SetOutputVolumePan() failed to locate channel");
-            return -1;
-        }
-        return channelPtr->SetOutputVolumePan(left, right);
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+            "SetOutputVolumePan() failed to locate channel");
+        return -1;
     }
-    return 0;
+    return channelPtr->SetOutputVolumePan(left, right);
 }
 
 int VoEVolumeControlImpl::GetOutputVolumePan(int channel,
@@ -618,19 +610,15 @@ int VoEVolumeControlImpl::GetOutputVolumePan(int channel,
     {
         return _shared->output_mixer()->GetOutputVolumePan(left, right);
     }
-    else
+    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
+    voe::Channel* channelPtr = ch.channel();
+    if (channelPtr == NULL)
     {
-        voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-        voe::Channel* channelPtr = ch.channel();
-        if (channelPtr == NULL)
-        {
-            _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                "GetOutputVolumePan() failed to locate channel");
-            return -1;
-        }
-        return channelPtr->GetOutputVolumePan(left, right);
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+            "GetOutputVolumePan() failed to locate channel");
+        return -1;
     }
-    return 0;
+    return channelPtr->GetOutputVolumePan(left, right);
 }
 
 #endif  // #ifdef WEBRTC_VOICE_ENGINE_VOLUME_CONTROL_API

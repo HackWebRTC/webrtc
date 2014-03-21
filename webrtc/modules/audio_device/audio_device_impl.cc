@@ -1750,8 +1750,6 @@ int32_t AudioDeviceModuleImpl::StopRawOutputFileRecording()
     CHECK_INITIALIZED();
 
     return (_audioDeviceBuffer.StopOutputFileRecording());
-
-    return 0;
 }
 
 // ----------------------------------------------------------------------------
