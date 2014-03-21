@@ -238,8 +238,15 @@ int PacketBuffer::NumSamplesInBuffer(DecoderDatabase* decoder_database,
     AudioDecoder* decoder =
         decoder_database->GetDecoder(packet->header.payloadType);
     if (decoder) {
-      int duration = packet->sync_packet ? last_duration :
-          decoder->PacketDuration(packet->payload, packet->payload_length);
+      int duration;
+      if (packet->sync_packet) {
+        duration = last_duration;
+      } else {
+        duration = packet->primary ?
+            decoder->PacketDuration(packet->payload, packet->payload_length) :
+            decoder->PacketDurationRedundant(packet->payload,
+                                             packet->payload_length);
+      }
       if (duration >= 0) {
         last_duration = duration;  // Save the most up-to-date (valid) duration.
       }

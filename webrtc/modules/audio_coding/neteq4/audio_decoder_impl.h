@@ -236,8 +236,13 @@ class AudioDecoderOpus : public AudioDecoder {
   virtual ~AudioDecoderOpus();
   virtual int Decode(const uint8_t* encoded, size_t encoded_len,
                      int16_t* decoded, SpeechType* speech_type);
+  virtual int DecodeRedundant(const uint8_t* encoded, size_t encoded_len,
+                              int16_t* decoded, SpeechType* speech_type);
   virtual int Init();
   virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len);
+  virtual int PacketDurationRedundant(const uint8_t* encoded,
+                                      size_t encoded_len) const;
+  virtual bool PacketHasFec(const uint8_t* encoded, size_t encoded_len) const;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderOpus);

@@ -41,6 +41,16 @@ int AudioDecoder::PacketDuration(const uint8_t* encoded, size_t encoded_len) {
   return kNotImplemented;
 }
 
+int AudioDecoder::PacketDurationRedundant(const uint8_t* encoded,
+                                          size_t encoded_len) const {
+  return kNotImplemented;
+}
+
+bool AudioDecoder::PacketHasFec(const uint8_t* encoded,
+                                size_t encoded_len) const {
+  return false;
+}
+
 NetEqDecoder AudioDecoder::codec_type() const { return codec_type_; }
 
 bool AudioDecoder::CodecSupported(NetEqDecoder codec_type) {

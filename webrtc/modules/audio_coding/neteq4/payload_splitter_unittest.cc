@@ -91,6 +91,34 @@ Packet* CreateRedPayload(int num_payloads,
   return packet;
 }
 
+
+// A possible Opus packet that contains FEC is the following.
+// The frame is 20 ms in duration.
+//
+// 0                   1                   2                   3
+// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+// |0|0|0|0|1|0|0|0|x|1|x|x|x|x|x|x|x|                             |
+// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                             |
+// |                    Compressed frame 1 (N-2 bytes)...          :
+// :                                                               |
+// |                                                               |
+// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+Packet* CreateOpusFecPacket(uint8_t payload_type, int payload_length,
+                            uint8_t payload_value) {
+  Packet* packet = new Packet;
+  packet->header.payloadType = payload_type;
+  packet->header.timestamp = kBaseTimestamp;
+  packet->header.sequenceNumber = kSequenceNumber;
+  packet->payload_length = payload_length;
+  uint8_t* payload = new uint8_t[packet->payload_length];
+  payload[0] = 0x08;
+  payload[1] = 0x40;
+  memset(&payload[2], payload_value, payload_length - 2);
+  packet->payload = payload;
+  return packet;
+}
+
 // Create a packet with all payload bytes set to |payload_value|.
 Packet* CreatePacket(uint8_t payload_type, int payload_length,
                      uint8_t payload_value) {
@@ -689,6 +717,61 @@ TEST(IlbcPayloadSplitter, UnevenPayload) {
 
   // The destructor is called when decoder_database goes out of scope.
   EXPECT_CALL(decoder_database, Die());
+}
+
+TEST(FecPayloadSplitter, MixedPayload) {
+  PacketList packet_list;
+  DecoderDatabase decoder_database;
+
+  decoder_database.RegisterPayload(0, kDecoderOpus);
+  decoder_database.RegisterPayload(1, kDecoderPCMu);
+
+  Packet* packet = CreateOpusFecPacket(0, 10, 0xFF);
+  packet_list.push_back(packet);
+
+  packet = CreatePacket(0, 10, 0); // Non-FEC Opus payload.
+  packet_list.push_back(packet);
+
+  packet = CreatePacket(1, 10, 0); // Non-Opus payload.
+  packet_list.push_back(packet);
+
+  PayloadSplitter splitter;
+  EXPECT_EQ(PayloadSplitter::kOK,
+            splitter.SplitFec(&packet_list, &decoder_database));
+  EXPECT_EQ(4u, packet_list.size());
+
+  // Check first packet.
+  packet = packet_list.front();
+  EXPECT_EQ(0, packet->header.payloadType);
+  EXPECT_EQ(kBaseTimestamp - 20 * 48, packet->header.timestamp);
+  EXPECT_EQ(10, packet->payload_length);
+  EXPECT_FALSE(packet->primary);
+  delete [] packet->payload;
+  delete packet;
+  packet_list.pop_front();
+
+  // Check second packet.
+  packet = packet_list.front();
+  EXPECT_EQ(0, packet->header.payloadType);
+  EXPECT_EQ(kBaseTimestamp, packet->header.timestamp);
+  EXPECT_EQ(10, packet->payload_length);
+  EXPECT_TRUE(packet->primary);
+  delete [] packet->payload;
+  delete packet;
+  packet_list.pop_front();
+
+  // Check third packet.
+  packet = packet_list.front();
+  VerifyPacket(packet, 10, 0, kSequenceNumber, kBaseTimestamp, 0, true);
+  delete [] packet->payload;
+  delete packet;
+  packet_list.pop_front();
+
+  // Check fourth packet.
+  packet = packet_list.front();
+  VerifyPacket(packet, 10, 1, kSequenceNumber, kBaseTimestamp, 0, true);
+  delete [] packet->payload;
+  delete packet;
 }
 
 }  // namespace webrtc

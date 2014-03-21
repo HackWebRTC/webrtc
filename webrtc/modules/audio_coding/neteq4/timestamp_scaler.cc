@@ -55,7 +55,8 @@ uint32_t TimestampScaler::ToInternal(uint32_t external_timestamp,
       // Use timestamp scaling with factor 2/3 (32 kHz sample rate, but RTP
       // timestamps run on 48 kHz).
       // TODO(tlegrand): Remove scaling for kDecoderCNGswb48kHz once ACM has
-      // full 48 kHz support.
+      // full 48 kHz support. Change also ought to be made in
+      // PayloadSplitter::SplitFec().
       numerator_ = 2;
       denominator_ = 3;
     }

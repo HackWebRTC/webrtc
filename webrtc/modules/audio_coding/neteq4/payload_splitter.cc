@@ -119,6 +119,62 @@ int PayloadSplitter::SplitRed(PacketList* packet_list) {
   return ret;
 }
 
+int PayloadSplitter::SplitFec(PacketList* packet_list,
+                              DecoderDatabase* decoder_database) {
+  PacketList::iterator it = packet_list->begin();
+  // Iterate through all packets in |packet_list|.
+  while (it != packet_list->end()) {
+    Packet* packet = (*it);  // Just to make the notation more intuitive.
+    // Get codec type for this payload.
+    uint8_t payload_type = packet->header.payloadType;
+    const DecoderDatabase::DecoderInfo* info =
+        decoder_database->GetDecoderInfo(payload_type);
+    if (!info) {
+      return kUnknownPayloadType;
+    }
+    // No splitting for a sync-packet.
+    if (packet->sync_packet) {
+      ++it;
+      continue;
+    }
+
+    // Not an FEC packet.
+    AudioDecoder* decoder = decoder_database->GetDecoder(payload_type);
+    if (!decoder->PacketHasFec(packet->payload, packet->payload_length)) {
+      ++it;
+      continue;
+    }
+
+    switch (info->codec_type) {
+      case kDecoderOpus:
+      case kDecoderOpus_2ch: {
+        Packet* new_packet = new Packet;
+
+        new_packet->header = packet->header;
+        int duration = decoder->
+            PacketDurationRedundant(packet->payload,
+                                    packet->payload_length) * 3 / 2;
+        new_packet->header.timestamp -= duration;
+        new_packet->payload = new uint8_t[packet->payload_length];
+        memcpy(new_packet->payload, packet->payload, packet->payload_length);
+        new_packet->payload_length = packet->payload_length;
+        new_packet->primary = false;
+        new_packet->waiting_time = packet->waiting_time;
+        new_packet->sync_packet = packet->sync_packet;
+
+        packet_list->insert(it, new_packet);
+        break;
+      }
+      default: {
+        return kFecSplitError;
+      }
+    }
+
+    ++it;
+  }
+  return kOK;
+}
+
 int PayloadSplitter::CheckRedPayloads(PacketList* packet_list,
                                       const DecoderDatabase& decoder_database) {
   PacketList::iterator it = packet_list->begin();
@@ -283,7 +339,7 @@ int PayloadSplitter::SplitAudio(PacketList* packet_list,
     // increment it manually.
     it = packet_list->erase(it);
   }
-  return 0;
+  return kOK;
 }
 
 void PayloadSplitter::SplitBySamples(const Packet* packet,

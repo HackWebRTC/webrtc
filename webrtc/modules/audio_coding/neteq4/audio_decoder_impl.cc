@@ -458,6 +458,19 @@ int AudioDecoderOpus::Decode(const uint8_t* encoded, size_t encoded_len,
   return ret;
 }
 
+int AudioDecoderOpus::DecodeRedundant(const uint8_t* encoded,
+                                      size_t encoded_len, int16_t* decoded,
+                                      SpeechType* speech_type) {
+  int16_t temp_type = 1;  // Default is speech.
+  int16_t ret = WebRtcOpus_DecodeFec(static_cast<OpusDecInst*>(state_), encoded,
+                                     static_cast<int16_t>(encoded_len), decoded,
+                                     &temp_type);
+  if (ret > 0)
+    ret *= static_cast<int16_t>(channels_);  // Return total number of samples.
+  *speech_type = ConvertSpeechType(temp_type);
+  return ret;
+}
+
 int AudioDecoderOpus::Init() {
   return WebRtcOpus_DecoderInitNew(static_cast<OpusDecInst*>(state_));
 }
@@ -466,6 +479,18 @@ int AudioDecoderOpus::PacketDuration(const uint8_t* encoded,
                                      size_t encoded_len) {
   return WebRtcOpus_DurationEst(static_cast<OpusDecInst*>(state_),
                                 encoded, static_cast<int>(encoded_len));
+}
+
+int AudioDecoderOpus::PacketDurationRedundant(const uint8_t* encoded,
+                                              size_t encoded_len) const {
+  return WebRtcOpus_FecDurationEst(encoded, static_cast<int>(encoded_len));
+}
+
+bool AudioDecoderOpus::PacketHasFec(const uint8_t* encoded,
+                                    size_t encoded_len) const {
+  int fec;
+  fec = WebRtcOpus_PacketHasFec(encoded, static_cast<int>(encoded_len));
+  return (fec == 1);
 }
 #endif
 

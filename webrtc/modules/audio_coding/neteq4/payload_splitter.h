@@ -32,7 +32,8 @@ class PayloadSplitter {
     kTooLargePayload = -1,
     kFrameSplitError = -2,
     kUnknownPayloadType = -3,
-    kRedLengthMismatch = -4
+    kRedLengthMismatch = -4,
+    kFecSplitError = -5,
   };
 
   PayloadSplitter() {}
@@ -46,6 +47,12 @@ class PayloadSplitter {
   // RED headers according to RFC 2198 at the very beginning of the payload.
   // Returns kOK or an error.
   virtual int SplitRed(PacketList* packet_list);
+
+  // Iterates through |packet_list| and, duplicate each audio payload that has
+  // FEC as new packet for redundant decoding. The decoder database is needed to
+  // get information about which payload type each packet contains.
+  virtual int SplitFec(PacketList* packet_list,
+                       DecoderDatabase* decoder_database);
 
   // Checks all packets in |packet_list|. Packets that are DTMF events or
   // comfort noise payloads are kept. Except that, only one single payload type

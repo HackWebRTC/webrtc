@@ -21,6 +21,8 @@ class MockPayloadSplitter : public PayloadSplitter {
  public:
   MOCK_METHOD1(SplitRed,
       int(PacketList* packet_list));
+  MOCK_METHOD2(SplitFec,
+      int(PacketList* packet_list, DecoderDatabase* decoder_database));
   MOCK_METHOD2(CheckRedPayloads,
       int(PacketList* packet_list, const DecoderDatabase& decoder_database));
   MOCK_METHOD2(SplitAudio,

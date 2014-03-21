@@ -167,6 +167,22 @@
     },
 
     {
+      'target_name': 'neteq4_opus_fec_quality_test',
+      'type': 'executable',
+      'dependencies': [
+        'NetEq4',
+        'neteq_unittest_tools',
+        'webrtc_opus',
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+        '<(webrtc_root)/test/test.gyp:test_support_main',
+      ],
+      'sources': [
+        'test/neteq_opus_fec_quality_test.cc',
+      ],
+    },
+
+    {
      'target_name': 'NetEq4TestTools',
       # Collection of useful functions used in other tests.
       'type': 'static_library',

@@ -108,6 +108,17 @@ class AudioDecoder {
   // is available, or -1 in case of an error.
   virtual int PacketDuration(const uint8_t* encoded, size_t encoded_len);
 
+  // Returns the duration in samples of the redandant payload in |encoded| which
+  // is |encoded_len| bytes long. Returns kNotImplemented if no duration
+  // estimate is available, or -1 in case of an error.
+  virtual int PacketDurationRedundant(const uint8_t* encoded,
+                                      size_t encoded_len) const;
+
+  // Detects whether a packet has forward error correction. The packet is
+  // comprised of the samples in |encoded| which is |encoded_len| bytes long.
+  // Returns true if the packet has FEC and false otherwise.
+  virtual bool PacketHasFec(const uint8_t* encoded, size_t encoded_len) const;
+
   virtual NetEqDecoder codec_type() const;
 
   // Returns the underlying decoder state.
