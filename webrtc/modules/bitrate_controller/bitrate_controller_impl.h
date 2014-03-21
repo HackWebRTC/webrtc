@@ -27,12 +27,28 @@
 
 namespace webrtc {
 
-class RtcpBandwidthObserverImpl;
-class LowRateStrategy;
-
 class BitrateControllerImpl : public BitrateController {
  public:
-  friend class RtcpBandwidthObserverImpl;
+  explicit BitrateControllerImpl(bool enforce_min_bitrate);
+  virtual ~BitrateControllerImpl();
+
+  virtual bool AvailableBandwidth(uint32_t* bandwidth) const OVERRIDE;
+
+  virtual RtcpBandwidthObserver* CreateRtcpBandwidthObserver() OVERRIDE;
+
+  virtual void SetBitrateObserver(BitrateObserver* observer,
+                                  const uint32_t start_bitrate,
+                                  const uint32_t min_bitrate,
+                                  const uint32_t max_bitrate) OVERRIDE;
+
+  virtual void RemoveBitrateObserver(BitrateObserver* observer) OVERRIDE;
+
+  virtual void EnforceMinBitrate(bool enforce_min_bitrate) OVERRIDE;
+
+  virtual void SetBweMinBitrate(uint32_t min_bitrate) OVERRIDE;
+
+ private:
+  class RtcpBandwidthObserverImpl;
 
   struct BitrateConfiguration {
     BitrateConfiguration(uint32_t start_bitrate,
@@ -59,25 +75,7 @@ class BitrateControllerImpl : public BitrateController {
       BitrateObserverConfiguration;
   typedef std::list<BitrateObserverConfiguration> BitrateObserverConfList;
 
-  explicit BitrateControllerImpl(bool enforce_min_bitrate);
-  virtual ~BitrateControllerImpl();
 
-  virtual bool AvailableBandwidth(uint32_t* bandwidth) const OVERRIDE;
-
-  virtual RtcpBandwidthObserver* CreateRtcpBandwidthObserver() OVERRIDE;
-
-  virtual void SetBitrateObserver(BitrateObserver* observer,
-                                  const uint32_t start_bitrate,
-                                  const uint32_t min_bitrate,
-                                  const uint32_t max_bitrate) OVERRIDE;
-
-  virtual void RemoveBitrateObserver(BitrateObserver* observer) OVERRIDE;
-
-  virtual void EnforceMinBitrate(bool enforce_min_bitrate) OVERRIDE;
-
-  virtual void SetBweMinBitrate(uint32_t min_bitrate) OVERRIDE;
-
- private:
   // Called by BitrateObserver's direct from the RTCP module.
   void OnReceivedEstimatedBitrate(const uint32_t bitrate);
 
@@ -86,18 +84,32 @@ class BitrateControllerImpl : public BitrateController {
                                     const int number_of_packets,
                                     const uint32_t now_ms);
 
-  typedef std::multimap<uint32_t, ObserverConfiguration*> ObserverSortingMap;
-
-  BitrateObserverConfList::iterator
-      FindObserverConfigurationPair(const BitrateObserver* observer);
   void OnNetworkChanged(const uint32_t bitrate,
                         const uint8_t fraction_loss,  // 0 - 255.
-                        const uint32_t rtt);
+                        const uint32_t rtt)
+      EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
+
+  void NormalRateAllocation(uint32_t bitrate,
+                            uint8_t fraction_loss,
+                            uint32_t rtt,
+                            uint32_t sum_min_bitrates)
+      EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
+
+  void LowRateAllocation(uint32_t bitrate,
+                         uint8_t fraction_loss,
+                         uint32_t rtt,
+                         uint32_t sum_min_bitrates)
+      EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
+
+  typedef std::multimap<uint32_t, ObserverConfiguration*> ObserverSortingMap;
+
+  BitrateObserverConfList::iterator FindObserverConfigurationPair(
+      const BitrateObserver* observer) EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
 
   CriticalSectionWrapper* critsect_;
-  SendSideBandwidthEstimation bandwidth_estimation_;
-  BitrateObserverConfList bitrate_observers_;
-  scoped_ptr<LowRateStrategy> low_rate_strategy_;
+  SendSideBandwidthEstimation bandwidth_estimation_ GUARDED_BY(*critsect_);
+  BitrateObserverConfList bitrate_observers_ GUARDED_BY(*critsect_);
+  bool enforce_min_bitrate_ GUARDED_BY(*critsect_);
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_BITRATE_CONTROLLER_BITRATE_CONTROLLER_IMPL_H_

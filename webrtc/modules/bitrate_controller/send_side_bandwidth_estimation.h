@@ -56,8 +56,6 @@ class SendSideBandwidthEstimation {
   enum { kLimitNumPackets = 20 };
   enum { kAvgPacketSizeBytes = 1000 };
 
-  CriticalSectionWrapper* critsect_;
-
   // incoming filters
   int accumulate_lost_packets_Q8_;
   int accumulate_expected_packets_;

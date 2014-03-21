@@ -17,8 +17,7 @@
 namespace webrtc {
 
 SendSideBandwidthEstimation::SendSideBandwidthEstimation()
-    : critsect_(CriticalSectionWrapper::CreateCriticalSection()),
-      accumulate_lost_packets_Q8_(0),
+    : accumulate_lost_packets_Q8_(0),
       accumulate_expected_packets_(0),
       bitrate_(0),
       min_bitrate_configured_(0),
@@ -27,21 +26,16 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation()
       last_round_trip_time_(0),
       bwe_incoming_(0),
       time_last_increase_(0),
-      time_last_decrease_(0) {
-}
+      time_last_decrease_(0) {}
 
-SendSideBandwidthEstimation::~SendSideBandwidthEstimation() {
-    delete critsect_;
-}
+SendSideBandwidthEstimation::~SendSideBandwidthEstimation() {}
 
 void SendSideBandwidthEstimation::SetSendBitrate(const uint32_t bitrate) {
-  CriticalSectionScoped cs(critsect_);
   bitrate_ = bitrate;
 }
 
 void SendSideBandwidthEstimation::SetMinMaxBitrate(const uint32_t min_bitrate,
                                                    const uint32_t max_bitrate) {
-  CriticalSectionScoped cs(critsect_);
   min_bitrate_configured_ = min_bitrate;
   if (max_bitrate == 0) {
     // no max configured use 1Gbit/s
@@ -52,7 +46,6 @@ void SendSideBandwidthEstimation::SetMinMaxBitrate(const uint32_t min_bitrate,
 }
 
 void SendSideBandwidthEstimation::SetMinBitrate(uint32_t min_bitrate) {
-  CriticalSectionScoped cs(critsect_);
   min_bitrate_configured_ = min_bitrate;
 }
 
@@ -62,8 +55,6 @@ bool SendSideBandwidthEstimation::UpdateBandwidthEstimate(
     uint8_t* fraction_lost,
     uint16_t* rtt) {
   *new_bitrate = 0;
-  CriticalSectionScoped cs(critsect_);
-
   bwe_incoming_ = bandwidth;
 
   if (bitrate_ == 0) {
@@ -86,8 +77,6 @@ bool SendSideBandwidthEstimation::UpdatePacketLoss(
     const uint32_t now_ms,
     uint8_t* loss,
     uint32_t* new_bitrate) {
-  CriticalSectionScoped cs(critsect_);
-
   if (bitrate_ == 0) {
     // SendSideBandwidthEstimation off
     return false;
@@ -130,7 +119,6 @@ bool SendSideBandwidthEstimation::UpdatePacketLoss(
 
 bool SendSideBandwidthEstimation::AvailableBandwidth(
     uint32_t* bandwidth) const {
-  CriticalSectionScoped cs(critsect_);
   if (bitrate_ == 0) {
     return false;
   }
