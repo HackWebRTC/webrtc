@@ -1145,12 +1145,11 @@ int NetEqImpl::Decode(PacketList* packet_list, Operations* operation,
           PacketBuffer::DeleteAllPackets(packet_list);
           return kDecoderNotFound;
         }
-        // We should have correct sampling rate and number of channels. They
-        // are set when packets are inserted.
+        // If sampling rate or number of channels has changed, we need to make
+        // a reset.
         if (decoder_info->fs_hz != fs_hz_ ||
             decoder->channels() != algorithm_buffer_->Channels()) {
-          LOG_F(LS_ERROR) << "Sampling rate or number of channels mismatch.";
-          assert(false);
+          // TODO(tlegrand): Add unittest to cover this event.
           SetSampleRateAndChannels(decoder_info->fs_hz, decoder->channels());
         }
         sync_buffer_->set_end_timestamp(timestamp_);

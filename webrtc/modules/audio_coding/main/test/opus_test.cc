@@ -333,6 +333,11 @@ void OpusTest::Run(TestPackStereo* channel, int channels, int bitrate,
 
     // Write stand-alone speech to file.
     out_file_standalone_.Write10MsData(out_audio, decoded_samples * channels);
+
+    // Number of channels should be the same for both stand-alone and
+    // ACM-decoding.
+    EXPECT_EQ(audio_frame.num_channels_, channels);
+
     decoded_samples = 0;
   }
 

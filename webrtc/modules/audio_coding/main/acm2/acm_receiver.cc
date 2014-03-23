@@ -473,19 +473,25 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
   assert(acm_codec_id >= 0 && acm_codec_id < ACMCodecDB::kMaxNumCodecs);
   NetEqDecoder neteq_decoder = ACMCodecDB::neteq_decoders_[acm_codec_id];
 
+  // Make sure the right decoder is registered for Opus.
+  if (neteq_decoder == kDecoderOpus && channels == 2) {
+    neteq_decoder = kDecoderOpus_2ch;
+  }
+
   CriticalSectionScoped lock(neteq_crit_sect_);
 
   // The corresponding NetEq decoder ID.
   // If this coder has been registered before.
   if (decoders_[acm_codec_id].registered) {
-    if (decoders_[acm_codec_id].payload_type == payload_type) {
+    if (decoders_[acm_codec_id].payload_type == payload_type &&
+        decoders_[acm_codec_id].channels == channels) {
       // Re-registering the same codec with the same payload-type. Do nothing
       // and return.
       return 0;
     }
 
-    // Changing the payload-type of this codec. First unregister. Then register
-    // with new payload-type.
+    // Changing the payload-type or number of channels for this codec.
+    // First unregister. Then register with new payload-type/channels.
     if (neteq_->RemovePayloadType(decoders_[acm_codec_id].payload_type) !=
         NetEq::kOK) {
       LOG_F(LS_ERROR) << "Cannot remover payload "
