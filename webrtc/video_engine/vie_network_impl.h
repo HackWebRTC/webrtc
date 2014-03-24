@@ -38,7 +38,8 @@ class ViENetworkImpl
                                  const void* data,
                                  const int length);
   virtual int SetMTU(int video_channel, unsigned int mtu);
-
+  virtual int ReceivedBWEPacket(const int video_channel,
+      int64_t arrival_time_ms, int payload_size, const RTPHeader& header);
  protected:
   explicit ViENetworkImpl(ViESharedData* shared_data);
   virtual ~ViENetworkImpl();

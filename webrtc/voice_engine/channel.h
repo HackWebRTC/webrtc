@@ -47,6 +47,7 @@ class RtpReceiver;
 class RTPReceiverAudio;
 class RtpRtcp;
 class TelephoneEventHandler;
+class ViENetwork;
 class VoEMediaProcess;
 class VoERTCPObserver;
 class VoERTPObserver;
@@ -222,7 +223,8 @@ public:
     // VoENetwork
     int32_t RegisterExternalTransport(Transport& transport);
     int32_t DeRegisterExternalTransport();
-    int32_t ReceivedRTPPacket(const int8_t* data, int32_t length);
+    int32_t ReceivedRTPPacket(const int8_t* data, int32_t length,
+                              const PacketTime& packet_time);
     int32_t ReceivedRTCPPacket(const int8_t* data, int32_t length);
 
     // VoEFile
@@ -366,6 +368,8 @@ public:
     int StopRTPDump(RTPDirections direction);
     bool RTPDumpIsActive(RTPDirections direction);
     uint32_t LastRemoteTimeStamp() { return _lastRemoteTimeStamp; }
+    // Takes ownership of the ViENetwork.
+    void SetVideoEngineBWETarget(ViENetwork* vie_network, int video_channel);
 
     // From AudioPacketizationCallback in the ACM
     int32_t SendData(FrameType frameType,
@@ -614,6 +618,8 @@ private:
     uint32_t _countAliveDetections;
     uint32_t _countDeadDetections;
     AudioFrame::SpeechType _outputSpeechType;
+    ViENetwork* vie_network_;
+    int video_channel_;
     // VoEVideoSync
     uint32_t _average_jitter_buffer_delay_us;
     int least_required_delay_ms_;

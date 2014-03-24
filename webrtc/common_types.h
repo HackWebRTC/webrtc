@@ -734,6 +734,54 @@ struct PacketTime {
                         // If unknown, this value will be set to zero.
 };
 
+struct RTPHeaderExtension {
+  RTPHeaderExtension()
+      : hasTransmissionTimeOffset(false),
+        transmissionTimeOffset(0),
+        hasAbsoluteSendTime(false),
+        absoluteSendTime(0),
+        hasAudioLevel(false),
+        audioLevel(0) {}
+
+  bool hasTransmissionTimeOffset;
+  int32_t transmissionTimeOffset;
+  bool hasAbsoluteSendTime;
+  uint32_t absoluteSendTime;
+
+  // Audio Level includes both level in dBov and voiced/unvoiced bit. See:
+  // https://datatracker.ietf.org/doc/draft-lennox-avt-rtp-audio-level-exthdr/
+  bool hasAudioLevel;
+  uint8_t audioLevel;
+};
+
+struct RTPHeader {
+  RTPHeader()
+      : markerBit(false),
+        payloadType(0),
+        sequenceNumber(0),
+        timestamp(0),
+        ssrc(0),
+        numCSRCs(0),
+        paddingLength(0),
+        headerLength(0),
+        payload_type_frequency(0),
+        extension() {
+    memset(&arrOfCSRCs, 0, sizeof(arrOfCSRCs));
+  }
+
+  bool markerBit;
+  uint8_t payloadType;
+  uint16_t sequenceNumber;
+  uint32_t timestamp;
+  uint32_t ssrc;
+  uint8_t numCSRCs;
+  uint32_t arrOfCSRCs[kRtpCsrcSize];
+  uint8_t paddingLength;
+  uint16_t headerLength;
+  int payload_type_frequency;
+  RTPHeaderExtension extension;
+};
+
 struct VideoStream {
   VideoStream()
       : width(0),

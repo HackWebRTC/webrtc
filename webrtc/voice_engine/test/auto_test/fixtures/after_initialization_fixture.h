@@ -95,7 +95,8 @@ class LoopBackTransport : public webrtc::Transport {
 
       switch (p.type) {
         case Packet::Rtp:
-          voe_network_->ReceivedRTPPacket(p.channel, p.data, p.len);
+          voe_network_->ReceivedRTPPacket(p.channel, p.data, p.len,
+                                          webrtc::PacketTime());
           break;
         case Packet::Rtcp:
           voe_network_->ReceivedRTCPPacket(p.channel, p.data, p.len);

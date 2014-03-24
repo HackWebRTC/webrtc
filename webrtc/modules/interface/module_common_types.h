@@ -27,32 +27,6 @@
 
 namespace webrtc {
 
-struct RTPHeaderExtension {
-  bool hasTransmissionTimeOffset;
-  int32_t transmissionTimeOffset;
-  bool hasAbsoluteSendTime;
-  uint32_t absoluteSendTime;
-
-  // Audio Level includes both level in dBov and voiced/unvoiced bit. See:
-  // https://datatracker.ietf.org/doc/draft-lennox-avt-rtp-audio-level-exthdr/
-  bool hasAudioLevel;
-  uint8_t audioLevel;
-};
-
-struct RTPHeader {
-  bool markerBit;
-  uint8_t payloadType;
-  uint16_t sequenceNumber;
-  uint32_t timestamp;
-  uint32_t ssrc;
-  uint8_t numCSRCs;
-  uint32_t arrOfCSRCs[kRtpCsrcSize];
-  uint8_t paddingLength;
-  uint16_t headerLength;
-  int payload_type_frequency;
-  RTPHeaderExtension extension;
-};
-
 struct RTPAudioHeader {
   uint8_t numEnergy;                  // number of valid entries in arrOfEnergy
   uint8_t arrOfEnergy[kRtpCsrcSize];  // one energy byte (0-9) per channel

@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
   int non_zero_abs_send_time = 0;
   int non_zero_ts_offsets = 0;
   while (rtp_reader->NextPacket(packet, &packet_length, &time_ms) == 0) {
-    webrtc::RTPHeader header = {};
+    webrtc::RTPHeader header;
     parser->Parse(packet, packet_length, &header);
     if (header.extension.absoluteSendTime != 0)
       ++non_zero_abs_send_time;

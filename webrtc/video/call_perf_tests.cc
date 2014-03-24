@@ -285,7 +285,7 @@ TEST_P(ParamCallPerfTest, PlaysOutAudioAndVideoInSync) {
             channel_, packet, static_cast<unsigned int>(length));
       } else {
         ret = voe_network_->ReceivedRTPPacket(
-            channel_, packet, static_cast<unsigned int>(length));
+            channel_, packet, static_cast<unsigned int>(length), PacketTime());
       }
       return ret == 0;
     }

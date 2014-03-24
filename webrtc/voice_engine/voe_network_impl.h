@@ -29,6 +29,10 @@ public:
     virtual int ReceivedRTPPacket(int channel,
                                   const void* data,
                                   unsigned int length);
+    virtual int ReceivedRTPPacket(int channel,
+                                  const void* data,
+                                  unsigned int length,
+                                  const PacketTime& packet_time);
 
     virtual int ReceivedRTCPPacket(int channel,
                                    const void* data,

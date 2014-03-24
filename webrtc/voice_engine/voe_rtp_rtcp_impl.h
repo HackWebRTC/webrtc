@@ -116,6 +116,8 @@ public:
 
     virtual int GetLastRemoteTimeStamp(int channel,
                                        uint32_t* lastRemoteTimeStamp);
+    virtual int SetVideoEngineBWETarget(int channel, ViENetwork* vie_network,
+                                        int video_channel);
 protected:
     VoERTP_RTCPImpl(voe::SharedData* shared);
     virtual ~VoERTP_RTCPImpl();

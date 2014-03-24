@@ -181,7 +181,7 @@ class BweTestFramework_RateCounterFilterTest : public ::testing::Test {
   void TestRateCounter(int64_t run_for_ms, uint32_t payload_bits,
                        uint32_t expected_pps, uint32_t expected_bps) {
     Packets packets;
-    RTPHeader header = {0};
+    RTPHeader header;
     // "Send" a packet every 10 ms.
     for (int64_t i = 0; i < run_for_ms; i += 10, now_ms_ += 10) {
       packets.push_back(Packet(now_ms_ * 1000, payload_bits / 8, header));
@@ -582,7 +582,7 @@ class BweTestFramework_ChokeFilterTest : public ::testing::Test {
                  uint32_t expected_kbit_transmitted) {
     // Generate a bunch of packets, apply choke, verify output is ordered.
     Packets packets;
-    RTPHeader header = {0};
+    RTPHeader header;
     for (uint32_t i = 0; i < packets_to_generate; ++i) {
       int64_t send_time_ms = now_ms_ + (i * run_for_ms) / packets_to_generate;
       header.sequenceNumber = sequence_number_++;

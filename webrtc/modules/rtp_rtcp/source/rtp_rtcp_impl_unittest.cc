@@ -123,7 +123,7 @@ class RtpRtcpImplTest : public ::testing::Test {
 };
 
 TEST_F(RtpRtcpImplTest, Rtt) {
-  RTPHeader header = {};
+  RTPHeader header;
   header.timestamp = 1;
   header.sequenceNumber = 123;
   header.ssrc = kSenderSsrc;
