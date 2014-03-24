@@ -140,6 +140,20 @@ int16_t ACMOpus::InternalInitEncoder(WebRtcACMCodecParams* codec_params) {
   // Store bitrate.
   bitrate_ = codec_params->codec_inst.rate;
 
+  // TODO(tlegrand): Remove this code when we have proper APIs to set the
+  // complexity at a higher level.
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS) || defined(WEBRTC_ARCH_ARM)
+  // If we are on Android, iOS and/or ARM, use a lower complexity setting as
+  // default, to save encoder complexity.
+  const int kOpusComplexity5 = 5;
+  WebRtcOpus_SetComplexity(encoder_inst_ptr_, kOpusComplexity5);
+  if (ret < 0) {
+     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
+                  "Setting complexity failed for Opus");
+     return ret;
+   }
+#endif
+
   return 0;
 }
 
