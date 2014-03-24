@@ -67,7 +67,7 @@ TEST_P(BweTest, UnlimitedSpeed) {
   RunFor(10 * 60 * 1000);
 }
 
-TEST_P(BweTest, SteadyLoss) {
+TEST_P(BweTest, DISABLED_SteadyLoss) {
   LossFilter loss(this);
   loss.SetLoss(20.0);
   RunFor(10 * 60 * 1000);
@@ -87,7 +87,7 @@ TEST_P(BweTest, SteadyDelay) {
   RunFor(10 * 60 * 1000);
 }
 
-TEST_P(BweTest, IncreasingDelay1) {
+TEST_P(BweTest, DISABLED_IncreasingDelay1) {
   DelayFilter delay(this);
   RunFor(10 * 60 * 1000);
   for (int i = 0; i < 30 * 2; ++i) {
@@ -163,13 +163,13 @@ TEST_P(BweTest, IncreasingReorder1) {
   }
 }
 
-TEST_P(BweTest, SteadyChoke) {
+TEST_P(BweTest, DISABLED_SteadyChoke) {
   ChokeFilter choke(this);
   choke.SetCapacity(140);
   RunFor(10 * 60 * 1000);
 }
 
-TEST_P(BweTest, IncreasingChoke1) {
+TEST_P(BweTest, DISABLED_IncreasingChoke1) {
   ChokeFilter choke(this);
   for (int i = 1200; i >= 100; i -= 100) {
     choke.SetCapacity(i);
@@ -177,7 +177,7 @@ TEST_P(BweTest, IncreasingChoke1) {
   }
 }
 
-TEST_P(BweTest, IncreasingChoke2) {
+TEST_P(BweTest, DISABLED_IncreasingChoke2) {
   ChokeFilter choke(this);
   RunFor(60 * 1000);
   for (int i = 1200; i >= 100; i -= 20) {
@@ -186,7 +186,7 @@ TEST_P(BweTest, IncreasingChoke2) {
   }
 }
 
-TEST_P(BweTest, Multi1) {
+TEST_P(BweTest, DISABLED_Multi1) {
   DelayFilter delay(this);
   ChokeFilter choke(this);
   RateCounterFilter counter(this);
