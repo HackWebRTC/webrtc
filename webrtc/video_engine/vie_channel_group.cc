@@ -41,6 +41,7 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
         engine_id_(engine_id),
         min_bitrate_bps_(config.Get<RemoteBitrateEstimatorMinRate>().min_rate),
         rbe_(RemoteBitrateEstimatorFactory().Create(observer_, clock_,
+                                                    kMimdControl,
                                                     min_bitrate_bps_)),
         using_absolute_send_time_(false),
         packets_since_absolute_send_time_(0) {
@@ -100,7 +101,7 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
         WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, ViEId(engine_id_),
             "WrappingBitrateEstimator: Switching to absolute send time RBE.");
         rbe_.reset(AbsoluteSendTimeRemoteBitrateEstimatorFactory().Create(
-            observer_, clock_, min_bitrate_bps_));
+            observer_, clock_, kMimdControl, min_bitrate_bps_));
         process_thread_->RegisterModule(rbe_.get());
         using_absolute_send_time_ = true;
       }
@@ -115,7 +116,7 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
               "WrappingBitrateEstimator: Switching to transmission time offset "
               "RBE.");
           rbe_.reset(RemoteBitrateEstimatorFactory().Create(observer_, clock_,
-              min_bitrate_bps_));
+              kMimdControl, min_bitrate_bps_));
           process_thread_->RegisterModule(rbe_.get());
           using_absolute_send_time_ = false;
         }

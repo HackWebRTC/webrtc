@@ -284,6 +284,7 @@ class RtcpSenderTest : public ::testing::Test {
             RemoteBitrateEstimatorFactory().Create(
                 &remote_bitrate_observer_,
                 &clock_,
+                kMimdControl,
                 kRemoteBitrateEstimatorMinBitrateBps)),
         receive_statistics_(ReceiveStatistics::Create(&clock_)) {
     test_transport_ = new TestTransport();

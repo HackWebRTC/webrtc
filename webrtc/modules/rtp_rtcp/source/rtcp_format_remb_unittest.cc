@@ -69,6 +69,7 @@ class RtcpFormatRembTest : public ::testing::Test {
             RemoteBitrateEstimatorFactory().Create(
                 &remote_bitrate_observer_,
                 system_clock_,
+                kMimdControl,
                 kRemoteBitrateEstimatorMinBitrateBps)) {}
   virtual void SetUp();
   virtual void TearDown();

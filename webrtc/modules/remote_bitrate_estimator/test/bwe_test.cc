@@ -46,7 +46,8 @@ class BweTest::TestedEstimator : public RemoteBitrateObserver {
         relative_estimator_stats_(),
         latest_estimate_bps_(-1),
         estimator_(config.estimator_factory->Create(
-            this, &clock_, kRemoteBitrateEstimatorMinBitrateBps)),
+            this, &clock_, config.control_type,
+            kRemoteBitrateEstimatorMinBitrateBps)),
         relative_estimator_(NULL),
         baseline_(BaseLineFileInterface::Create(test_name + "_" + debug_name_,
                                                 config.update_baseline)) {

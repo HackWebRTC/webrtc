@@ -81,7 +81,8 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
     AbsoluteSendTimeRemoteBitrateEstimatorFactory rbe_factory;
     const uint32_t kRemoteBitrateEstimatorMinBitrateBps = 30000;
     remote_bitrate_estimator_.reset(
-        rbe_factory.Create(this, clock, kRemoteBitrateEstimatorMinBitrateBps));
+        rbe_factory.Create(this, clock, kMimdControl,
+                           kRemoteBitrateEstimatorMinBitrateBps));
   }
 
   void set_expected_bitrate_bps(unsigned int expected_bitrate_bps) {
@@ -221,7 +222,8 @@ class LowRateStreamObserver : public test::DirectTransport,
     AbsoluteSendTimeRemoteBitrateEstimatorFactory rbe_factory;
     const uint32_t kRemoteBitrateEstimatorMinBitrateBps = 10000;
     remote_bitrate_estimator_.reset(
-        rbe_factory.Create(this, clock, kRemoteBitrateEstimatorMinBitrateBps));
+        rbe_factory.Create(this, clock, kMimdControl,
+                           kRemoteBitrateEstimatorMinBitrateBps));
     forward_transport_config_.link_capacity_kbps =
         kHighBandwidthLimitBps / 1000;
     forward_transport_config_.queue_length = 100;  // Something large.

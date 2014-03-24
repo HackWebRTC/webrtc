@@ -54,13 +54,15 @@ bool ParseArgsAndSetupEstimator(int argc,
     switch (extension) {
       case webrtc::kRtpExtensionAbsoluteSendTime: {
           webrtc::AbsoluteSendTimeRemoteBitrateEstimatorFactory factory;
-          *estimator = factory.Create(observer, clock, kMinBitrateBps);
+          *estimator = factory.Create(observer, clock, webrtc::kAimdControl,
+                                      kMinBitrateBps);
           *estimator_used = "AbsoluteSendTimeRemoteBitrateEstimator";
           break;
         }
       case webrtc::kRtpExtensionTransmissionTimeOffset: {
           webrtc::RemoteBitrateEstimatorFactory factory;
-          *estimator = factory.Create(observer, clock, kMinBitrateBps);
+          *estimator = factory.Create(observer, clock, webrtc::kAimdControl,
+                                      kMinBitrateBps);
           *estimator_used = "RemoteBitrateEstimator";
           break;
         }

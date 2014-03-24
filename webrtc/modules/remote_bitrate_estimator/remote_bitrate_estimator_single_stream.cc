@@ -234,6 +234,7 @@ void RemoteBitrateEstimatorSingleStream::GetSsrcs(
 RemoteBitrateEstimator* RemoteBitrateEstimatorFactory::Create(
     RemoteBitrateObserver* observer,
     Clock* clock,
+    RateControlType control_type,
     uint32_t min_bitrate_bps) const {
   WEBRTC_TRACE(kTraceStateInfo, kTraceRemoteBitrateEstimator, -1,
       "RemoteBitrateEstimatorFactory: Instantiating.");
@@ -244,6 +245,7 @@ RemoteBitrateEstimator* RemoteBitrateEstimatorFactory::Create(
 RemoteBitrateEstimator* AbsoluteSendTimeRemoteBitrateEstimatorFactory::Create(
     RemoteBitrateObserver* observer,
     Clock* clock,
+    RateControlType control_type,
     uint32_t min_bitrate_bps) const {
   WEBRTC_TRACE(kTraceStateInfo, kTraceRemoteBitrateEstimator, -1,
       "AbsoluteSendTimeRemoteBitrateEstimatorFactory: Instantiating.");

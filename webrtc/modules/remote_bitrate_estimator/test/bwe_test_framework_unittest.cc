@@ -766,7 +766,7 @@ void TestVideoSender(VideoSender* sender, int64_t run_for_ms,
   EXPECT_GE(1u, rtp_timestamp_wraps);
 }
 
-TEST(BweTestFramework_VideoSenderTest, Fps1Kpbs80_1s) {
+TEST(BweTestFramework_VideoSenderTest, Fps1Kbps80_1s) {
   // 1 fps, 80 kbps
   VideoSender sender(NULL, 1.0f, 80, 0x1234, 0);
   EXPECT_EQ(10000u, sender.bytes_per_second());

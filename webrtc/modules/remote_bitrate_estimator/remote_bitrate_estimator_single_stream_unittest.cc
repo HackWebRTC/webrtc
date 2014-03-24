@@ -24,6 +24,7 @@ class RemoteBitrateEstimatorSingleTest : public RemoteBitrateEstimatorTest {
     bitrate_estimator_.reset(RemoteBitrateEstimatorFactory().Create(
         bitrate_observer_.get(),
         &clock_,
+        kMimdControl,
         kRemoteBitrateEstimatorMinBitrateBps));
   }
  protected:
@@ -35,7 +36,7 @@ TEST_F(RemoteBitrateEstimatorSingleTest, InitialBehavior) {
 }
 
 TEST_F(RemoteBitrateEstimatorSingleTest, RateIncreaseReordering) {
-  RateIncreaseReorderingTestHelper();
+  RateIncreaseReorderingTestHelper(498136);
 }
 
 TEST_F(RemoteBitrateEstimatorSingleTest, RateIncreaseRtpTimestamps) {

@@ -17,11 +17,12 @@ namespace testing {
 namespace bwe {
 #if BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
 std::vector<BweTestConfig::EstimatorConfig> SingleEstimatorConfig() {
-  static const RemoteBitrateEstimatorFactory factory =
+  static const AbsoluteSendTimeRemoteBitrateEstimatorFactory factory =
       AbsoluteSendTimeRemoteBitrateEstimatorFactory();
 
   std::vector<BweTestConfig::EstimatorConfig> result;
-  result.push_back(BweTestConfig::EstimatorConfig("AST", &factory));
+  result.push_back(BweTestConfig::EstimatorConfig("AST", &factory, kAimdControl,
+                                                  false));
   return result;
 }
 

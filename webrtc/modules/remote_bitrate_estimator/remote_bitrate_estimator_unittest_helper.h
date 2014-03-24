@@ -190,7 +190,7 @@ class RemoteBitrateEstimatorTest : public ::testing::Test {
                               unsigned int target_bitrate);
 
   void InitialBehaviorTestHelper(unsigned int expected_converge_bitrate);
-  void RateIncreaseReorderingTestHelper();
+  void RateIncreaseReorderingTestHelper(unsigned int expected_bitrate);
   void RateIncreaseRtpTimestampsTestHelper();
   void CapacityDropTestHelper(int number_of_streams,
                               bool wrap_time_stamp,

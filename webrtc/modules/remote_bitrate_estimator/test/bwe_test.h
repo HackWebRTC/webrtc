@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include "gtest/gtest.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_framework.h"
 #include "webrtc/system_wrappers/interface/constructor_magic.h"
 
@@ -26,23 +27,28 @@ struct BweTestConfig {
     EstimatorConfig()
         : debug_name(),
           estimator_factory(NULL),
+          control_type(kMimdControl),
           update_baseline(false) {
     }
     EstimatorConfig(std::string debug_name,
                     const RemoteBitrateEstimatorFactory* estimator_factory)
         : debug_name(debug_name),
           estimator_factory(estimator_factory),
+          control_type(kMimdControl),
           update_baseline(false) {
     }
     EstimatorConfig(std::string debug_name,
                     const RemoteBitrateEstimatorFactory* estimator_factory,
+                    RateControlType control_type,
                     bool update_baseline)
         : debug_name(debug_name),
           estimator_factory(estimator_factory),
+          control_type(control_type),
           update_baseline(update_baseline) {
     }
     std::string debug_name;
     const RemoteBitrateEstimatorFactory* estimator_factory;
+    RateControlType control_type;
     bool update_baseline;
   };
 

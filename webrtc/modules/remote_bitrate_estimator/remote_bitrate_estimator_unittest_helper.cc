@@ -343,7 +343,8 @@ void RemoteBitrateEstimatorTest::InitialBehaviorTestHelper(
   EXPECT_EQ(bitrate_observer_->latest_bitrate(), bitrate_bps);
 }
 
-void RemoteBitrateEstimatorTest::RateIncreaseReorderingTestHelper() {
+void RemoteBitrateEstimatorTest::RateIncreaseReorderingTestHelper(
+    uint32_t expected_bitrate_bps) {
   const int kFramerate = 50;  // 50 fps to avoid rounding errors.
   const int kFrameIntervalMs = 1000 / kFramerate;
   const uint32_t kFrameIntervalAbsSendTime = AbsSendTime(1, kFramerate);
@@ -364,7 +365,7 @@ void RemoteBitrateEstimatorTest::RateIncreaseReorderingTestHelper() {
   }
   bitrate_estimator_->Process();
   EXPECT_TRUE(bitrate_observer_->updated());
-  EXPECT_EQ(498136u, bitrate_observer_->latest_bitrate());
+  EXPECT_EQ(expected_bitrate_bps, bitrate_observer_->latest_bitrate());
   for (int i = 0; i < 10; ++i) {
     clock_.AdvanceTimeMilliseconds(2 * kFrameIntervalMs);
     timestamp += 2 * 90 * kFrameIntervalMs;
@@ -379,7 +380,7 @@ void RemoteBitrateEstimatorTest::RateIncreaseReorderingTestHelper() {
   }
   bitrate_estimator_->Process();
   EXPECT_TRUE(bitrate_observer_->updated());
-  EXPECT_EQ(498136u, bitrate_observer_->latest_bitrate());
+  EXPECT_EQ(expected_bitrate_bps, bitrate_observer_->latest_bitrate());
 }
 
 // Make sure we initially increase the bitrate as expected.
