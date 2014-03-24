@@ -1843,10 +1843,6 @@ bool WebRtcVideoMediaChannel::AddSendStream(const StreamParams& sp) {
 
   send_channel->set_stream_params(sp);
 
-  if (IsSimulcastStream(sp)) {
-    DisableAllExternalEncoders(send_channel, channel_id);
-  }
-
   // Reset send codec after stream parameters changed.
   if (send_codec_) {
     if (!SetSendCodec(send_channel, *send_codec_, send_min_bitrate_,
@@ -2856,9 +2852,17 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
     expected_bitrate = kMaxVideoBitrate;
   }
 
+  int options_start_bitrate;
+  bool start_bitrate_changed = false;
+  if (options.video_start_bitrate.Get(&options_start_bitrate) &&
+      options_start_bitrate != send_start_bitrate_) {
+    send_start_bitrate_ = options_start_bitrate;
+    start_bitrate_changed = true;
+  }
+
   bool reset_send_codec_needed = send_codec_ &&
       (send_max_bitrate_ != expected_bitrate || denoiser_changed ||
-       adjusted_min_bitrate);
+       adjusted_min_bitrate || start_bitrate_changed);
 
 
   if (reset_send_codec_needed) {
@@ -3911,24 +3915,6 @@ void WebRtcVideoMediaChannel::MaybeDisconnectCapturer(VideoCapturer* capturer) {
   if (capturer != NULL && GetSendChannelNum(capturer) == 1) {
     capturer->SignalVideoFrame.disconnect(this);
   }
-}
-
-void WebRtcVideoMediaChannel::DisableAllExternalEncoders(
-    WebRtcVideoChannelSendInfo* send_channel,
-    int channel_id) {
-  const WebRtcVideoChannelSendInfo::EncoderMap& encoder_map =
-      send_channel->registered_encoders();
-  for (WebRtcVideoChannelSendInfo::EncoderMap::const_iterator it =
-      encoder_map.begin(); it != encoder_map.end(); ++it) {
-    if (engine()->vie()->ext_codec()->DeRegisterExternalSendCodec(
-        channel_id, it->first) != 0) {
-      LOG_RTCERR1(DeregisterEncoderObserver, channel_id);
-    }
-    engine()->DestroyExternalEncoder(it->second);
-  }
-  send_channel->ClearRegisteredEncoders();
-
-  engine()->SetExternalEncoderFactory(NULL);
 }
 
 }  // namespace cricket

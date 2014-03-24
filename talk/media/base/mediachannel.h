@@ -307,6 +307,7 @@ struct VideoOptions {
     video_noise_reduction.SetFrom(change.video_noise_reduction);
     video_one_layer_screencast.SetFrom(change.video_one_layer_screencast);
     video_high_bitrate.SetFrom(change.video_high_bitrate);
+    video_start_bitrate.SetFrom(change.video_start_bitrate);
     video_temporal_layer_screencast.SetFrom(
         change.video_temporal_layer_screencast);
     video_temporal_layer_realtime.SetFrom(
@@ -339,6 +340,7 @@ struct VideoOptions {
         video_noise_reduction == o.video_noise_reduction &&
         video_one_layer_screencast == o.video_one_layer_screencast &&
         video_high_bitrate == o.video_high_bitrate &&
+        video_start_bitrate == o.video_start_bitrate &&
         video_temporal_layer_screencast == o.video_temporal_layer_screencast &&
         video_temporal_layer_realtime == o.video_temporal_layer_realtime &&
         video_leaky_bucket == o.video_leaky_bucket &&
@@ -371,6 +373,7 @@ struct VideoOptions {
     ost << ToStringIfSet("noise reduction", video_noise_reduction);
     ost << ToStringIfSet("1 layer screencast", video_one_layer_screencast);
     ost << ToStringIfSet("high bitrate", video_high_bitrate);
+    ost << ToStringIfSet("start bitrate", video_start_bitrate);
     ost << ToStringIfSet("video temporal layer screencast",
                          video_temporal_layer_screencast);
     ost << ToStringIfSet("video temporal layer realtime",
@@ -412,6 +415,8 @@ struct VideoOptions {
   Settable<bool> video_one_layer_screencast;
   // Experimental: Enable WebRtc higher bitrate?
   Settable<bool> video_high_bitrate;
+  // Experimental: Enable WebRtc higher start bitrate?
+  Settable<int> video_start_bitrate;
   // Experimental: Enable WebRTC layered screencast.
   Settable<bool> video_temporal_layer_screencast;
   // Experimental: Enable WebRTC temporal layer strategy for realtime video.

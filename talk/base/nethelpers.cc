@@ -90,7 +90,7 @@ bool AsyncResolver::GetResolvedAddress(int family, SocketAddress* addr) const {
   *addr = addr_;
   for (size_t i = 0; i < addresses_.size(); ++i) {
     if (family == addresses_[i].family()) {
-      addr->SetIP(addresses_[i]);
+      addr->SetResolvedIP(addresses_[i]);
       return true;
     }
   }

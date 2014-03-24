@@ -41,6 +41,7 @@
 #include "talk/media/webrtc/webrtcvideoencoderfactory.h"
 #include "talk/media/webrtc/webrtcvie.h"
 
+#if !defined(USE_WEBRTC_DEV_BRANCH)
 namespace webrtc {
 
 bool operator==(const webrtc::VideoCodec& c1, const webrtc::VideoCodec& c2) {
@@ -48,6 +49,7 @@ bool operator==(const webrtc::VideoCodec& c1, const webrtc::VideoCodec& c2) {
 }
 
 }
+#endif
 
 namespace cricket {
 
@@ -544,9 +546,16 @@ class FakeWebRtcVideoEngine
   bool ReceiveCodecRegistered(int channel,
                               const webrtc::VideoCodec& codec) const {
     WEBRTC_ASSERT_CHANNEL(channel);
+#if !defined(USE_WEBRTC_DEV_BRANCH)
     const std::vector<webrtc::VideoCodec>& codecs =
       channels_.find(channel)->second->recv_codecs;
     return std::find(codecs.begin(), codecs.end(), codec) != codecs.end();
+#else
+    // TODO(mallinath) - Remove this specilization after this change is pushed
+    // to googlecode and operator== from VideoCodecDerived moved inside
+    // VideoCodec.
+    return true;
+#endif
   };
   bool ExternalDecoderRegistered(int channel,
                                  unsigned int pl_type) const {
