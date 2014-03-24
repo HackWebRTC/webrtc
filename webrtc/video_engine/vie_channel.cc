@@ -2067,4 +2067,8 @@ void ViEChannel::RegisterSendFrameCountObserver(
   }
 }
 
+void ViEChannel::ReceivedBWEPacket(int64_t arrival_time_ms,
+    int payload_size, const RTPHeader& header) {
+  vie_receiver_.ReceivedBWEPacket(arrival_time_ms, payload_size, header);
+}
 }  // namespace webrtc

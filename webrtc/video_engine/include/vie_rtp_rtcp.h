@@ -49,11 +49,6 @@ enum StreamType {
   kViEStreamTypeRtx = 1  // Retransmission media stream
 };
 
-enum BandwidthEstimationMode {
-  kViEMultiStreamEstimation,
-  kViESingleStreamEstimation
-};
-
 // This class declares an abstract interface for a user defined observer. It is
 // up to the VideoEngine user to implement a derived class which implements the
 // observer class. The observer is registered using RegisterRTPObserver() and

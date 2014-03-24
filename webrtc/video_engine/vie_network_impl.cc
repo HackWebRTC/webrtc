@@ -214,8 +214,7 @@ int ViENetworkImpl::ReceivedBWEPacket(const int video_channel,
     return -1;
   }
 
-  // TODO(solenberg): Implement!
-  // vie_channel->OnReceivedAudioPacket(arrival_time_ms, payload_size, header);
+  vie_channel->ReceivedBWEPacket(arrival_time_ms, payload_size, header);
   return 0;
 }
 }  // namespace webrtc

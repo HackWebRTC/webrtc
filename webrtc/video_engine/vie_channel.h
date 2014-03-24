@@ -351,6 +351,9 @@ class ViEChannel
 
   void RegisterSendFrameCountObserver(FrameCountObserver* observer);
 
+  void ReceivedBWEPacket(int64_t arrival_time_ms, int payload_size,
+                         const RTPHeader& header);
+
  protected:
   static bool ChannelDecodeThreadFunction(void* obj);
   bool ChannelDecodeProcess();

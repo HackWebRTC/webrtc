@@ -47,7 +47,8 @@ ViEReceiver::ViEReceiver(const int32_t channel_id,
       remote_bitrate_estimator_(remote_bitrate_estimator),
       rtp_dump_(NULL),
       receiving_(false),
-      restored_packet_in_use_(false) {
+      restored_packet_in_use_(false),
+      receiving_ast_enabled_(false) {
   assert(remote_bitrate_estimator);
 }
 
@@ -140,9 +141,15 @@ bool ViEReceiver::SetReceiveTimestampOffsetStatus(bool enable, int id) {
 
 bool ViEReceiver::SetReceiveAbsoluteSendTimeStatus(bool enable, int id) {
   if (enable) {
-    return rtp_header_parser_->RegisterRtpHeaderExtension(
-        kRtpExtensionAbsoluteSendTime, id);
+    if (rtp_header_parser_->RegisterRtpHeaderExtension(
+        kRtpExtensionAbsoluteSendTime, id)) {
+      receiving_ast_enabled_ = true;
+      return true;
+    } else {
+      return false;
+    }
   } else {
+    receiving_ast_enabled_ = false;
     return rtp_header_parser_->DeregisterRtpHeaderExtension(
         kRtpExtensionAbsoluteSendTime);
   }
@@ -181,6 +188,17 @@ bool ViEReceiver::OnRecoveredPacket(const uint8_t* rtp_packet,
   }
   header.payload_type_frequency = kVideoPayloadTypeFrequency;
   return ReceivePacket(rtp_packet, rtp_packet_length, header, false);
+}
+
+void ViEReceiver::ReceivedBWEPacket(
+    int64_t arrival_time_ms, int payload_size, const RTPHeader& header) {
+  // Only forward if the incoming packet *and* the channel are both configured
+  // to receive absolute sender time. RTP time stamps may have different rates
+  // for audio and video and shouldn't be mixed.
+  if (header.extension.hasAbsoluteSendTime && receiving_ast_enabled_) {
+    remote_bitrate_estimator_->IncomingPacket(arrival_time_ms, payload_size,
+                                              header);
+  }
 }
 
 int ViEReceiver::InsertRTPPacket(const uint8_t* rtp_packet,

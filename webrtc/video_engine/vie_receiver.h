@@ -87,6 +87,8 @@ class ViEReceiver : public RtpData {
 
   ReceiveStatistics* GetReceiveStatistics() const;
 
+  void ReceivedBWEPacket(int64_t arrival_time_ms, int payload_size,
+                         const RTPHeader& header);
  private:
   int InsertRTPPacket(const uint8_t* rtp_packet, int rtp_packet_length,
                       const PacketTime& packet_time);
@@ -119,6 +121,7 @@ class ViEReceiver : public RtpData {
   bool receiving_;
   uint8_t restored_packet_[kViEMaxMtu];
   bool restored_packet_in_use_;
+  bool receiving_ast_enabled_;
 };
 
 }  // namespace webrt
