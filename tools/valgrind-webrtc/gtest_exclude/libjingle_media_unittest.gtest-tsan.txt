@@ -1,4 +1,6 @@
-TODO(wu): issue 2380
-WebRtcVideoMediaChannelTest.TwoStreamsSendAndReceive
+TODO(wu): https://code.google.com/p/webrtc/issues/detail?id=2380
+WebRtcVideoMediaChannelTest.TwoStreamsAddAndRemoveUnsignalledRecv
 WebRtcVideoMediaChannelTest.TwoStreamsReUseFirstStream
+WebRtcVideoMediaChannelTest.TwoStreamsSendAndFailUnsignalledRecv
+WebRtcVideoMediaChannelTest.TwoStreamsSendAndReceive
 WebRtcVideoMediaChannelTest.TwoStreamsSendAndUnsignalledRecv
