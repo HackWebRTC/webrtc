@@ -304,6 +304,37 @@ void WebRtc_InitBinaryDelayEstimatorFarend(BinaryDelayEstimatorFarend* self) {
   memset(self->far_bit_counts, 0, sizeof(int) * self->history_size);
 }
 
+void WebRtc_SoftResetBinaryDelayEstimatorFarend(
+    BinaryDelayEstimatorFarend* self, int delay_shift) {
+  int abs_shift = abs(delay_shift);
+  int shift_size = 0;
+  assert(self != NULL);
+
+  shift_size = self->history_size - abs_shift;
+  if (delay_shift > 0) {
+    memmove(&self->binary_far_history[abs_shift],
+            self->binary_far_history,
+            sizeof(*self->binary_far_history) * shift_size);
+    memmove(&self->far_bit_counts[abs_shift],
+            self->far_bit_counts,
+            sizeof(*self->far_bit_counts) * shift_size);
+    memset(self->binary_far_history, 0,
+           sizeof(*self->binary_far_history) * abs_shift);
+    memset(self->far_bit_counts, 0, sizeof(*self->far_bit_counts) * abs_shift);
+  } else if (delay_shift < 0) {
+    memmove(self->binary_far_history,
+            &self->binary_far_history[abs_shift],
+            sizeof(*self->binary_far_history) * shift_size);
+    memmove(self->far_bit_counts,
+            &self->far_bit_counts[abs_shift],
+            sizeof(*self->far_bit_counts) * shift_size);
+    memset(&self->binary_far_history[shift_size], 0,
+           sizeof(*self->binary_far_history) * abs_shift);
+    memset(&self->far_bit_counts[shift_size], 0,
+           sizeof(*self->far_bit_counts) * abs_shift);
+  }
+}
+
 void WebRtc_AddBinaryFarSpectrum(BinaryDelayEstimatorFarend* handle,
                                  uint32_t binary_far_spectrum) {
   assert(handle != NULL);
@@ -345,10 +376,10 @@ void WebRtc_FreeBinaryDelayEstimator(BinaryDelayEstimator* self) {
 }
 
 BinaryDelayEstimator* WebRtc_CreateBinaryDelayEstimator(
-    BinaryDelayEstimatorFarend* farend, int lookahead) {
+    BinaryDelayEstimatorFarend* farend, int max_lookahead, int lookahead) {
   BinaryDelayEstimator* self = NULL;
 
-  if ((farend != NULL) && (lookahead >= 0)) {
+  if ((farend != NULL) && (lookahead >= 0) && (max_lookahead >= lookahead)) {
     // Sanity conditions fulfilled.
     self = malloc(sizeof(BinaryDelayEstimator));
   }
@@ -357,9 +388,11 @@ BinaryDelayEstimator* WebRtc_CreateBinaryDelayEstimator(
     int malloc_fail = 0;
 
     self->farend = farend;
-    self->near_history_size = lookahead + 1;
+    self->near_history_size = max_lookahead + 1;
     self->robust_validation_enabled = 0;  // Disabled by default.
     self->allowed_offset = 0;
+
+    self->lookahead = lookahead;
 
     // Allocate memory for spectrum buffers.  The extra array element in
     // |mean_bit_counts| and |histogram| is a dummy element only used while
@@ -398,8 +431,8 @@ void WebRtc_InitBinaryDelayEstimator(BinaryDelayEstimator* self) {
     self->mean_bit_counts[i] = (20 << 9);  // 20 in Q9.
     self->histogram[i] = 0.f;
   }
-  self->minimum_probability = (32 << 9);  // 32 in Q9.
-  self->last_delay_probability = (32 << 9);  // 32 in Q9.
+  self->minimum_probability = kMaxBitCountsQ9;  // 32 in Q9.
+  self->last_delay_probability = (int) kMaxBitCountsQ9;  // 32 in Q9.
 
   // Default return value if we're unable to estimate. -1 is used for errors.
   self->last_delay = -2;
@@ -410,13 +443,28 @@ void WebRtc_InitBinaryDelayEstimator(BinaryDelayEstimator* self) {
   self->last_delay_histogram = 0.f;
 }
 
+int WebRtc_SoftResetBinaryDelayEstimator(BinaryDelayEstimator* self,
+                                         int delay_shift) {
+  int lookahead = 0;
+  assert(self != NULL);
+  lookahead = self->lookahead;
+  self->lookahead -= delay_shift;
+  if (self->lookahead < 0) {
+    self->lookahead = 0;
+  }
+  if (self->lookahead > self->near_history_size - 1) {
+    self->lookahead = self->near_history_size - 1;
+  }
+  return lookahead - self->lookahead;
+}
+
 int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator* self,
                                  uint32_t binary_near_spectrum) {
   int i = 0;
   int candidate_delay = -1;
   int valid_candidate = 0;
 
-  int32_t value_best_candidate = 32 << 9;  // 32 in Q9, (max |mean_bit_counts|).
+  int32_t value_best_candidate = kMaxBitCountsQ9;
   int32_t value_worst_candidate = 0;
   int32_t valley_depth = 0;
 
@@ -427,8 +475,7 @@ int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator* self,
     memmove(&(self->binary_near_history[1]), &(self->binary_near_history[0]),
             (self->near_history_size - 1) * sizeof(uint32_t));
     self->binary_near_history[0] = binary_near_spectrum;
-    binary_near_spectrum =
-        self->binary_near_history[self->near_history_size - 1];
+    binary_near_spectrum = self->binary_near_history[self->lookahead];
   }
 
   // Compare with delayed spectra and store the |bit_counts| for each delay.
@@ -544,21 +591,23 @@ int WebRtc_binary_last_delay(BinaryDelayEstimator* self) {
   return self->last_delay;
 }
 
-int WebRtc_binary_last_delay_quality(BinaryDelayEstimator* self) {
-  int delay_quality = 0;
+float WebRtc_binary_last_delay_quality(BinaryDelayEstimator* self) {
+  float quality = 0;
   assert(self != NULL);
-  // |last_delay_probability| is the opposite of quality and states how deep the
-  // minimum of the cost function is. The value states how many non-matching
-  // bits we have between the binary spectra for the corresponding delay
-  // estimate. The range is thus from 0 to 32, since we use 32 bits in the
-  // binary spectra.
 
-  // Return the |delay_quality| = 1 - |last_delay_probability| / 32 (in Q14).
-  delay_quality = (32 << 9) - self->last_delay_probability;
-  if (delay_quality < 0) {
-    delay_quality = 0;
+  if (self->robust_validation_enabled) {
+    // Simply a linear function of the histogram height at delay estimate.
+    quality = self->histogram[self->compare_delay] / kHistogramMax;
+  } else {
+    // Note that |last_delay_probability| states how deep the minimum of the
+    // cost function is, so it is rather an error probability.
+    quality = (float) (kMaxBitCountsQ9 - self->last_delay_probability) /
+        kMaxBitCountsQ9;
+    if (quality < 0) {
+      quality = 0;
+    }
   }
-  return delay_quality;
+  return quality;
 }
 
 void WebRtc_MeanEstimatorFix(int32_t new_value,
