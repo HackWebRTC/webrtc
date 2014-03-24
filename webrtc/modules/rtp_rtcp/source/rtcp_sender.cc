@@ -348,6 +348,9 @@ RTCPSender::SetREMBData(const uint32_t bitrate,
         _rembSSRC[i] = SSRC[i];
     }
     _sendREMB = true;
+    // Send a REMB immediately if we have a new REMB. The frequency of REMBs is
+    // throttled by the caller.
+    _nextTimeToSendRTCP = _clock->TimeInMilliseconds();
     return 0;
 }
 
@@ -483,14 +486,15 @@ RTCPSender::TimeToSendRTCPReport(const bool sendKeyframeBeforeRTP) const
     For audio we use a fix 5 sec interval
 
     For video we use 1 sec interval fo a BW smaller than 360 kbit/s,
-        technicaly we break the max 5% RTCP BW for video below 10 kbit/s but that should be extreamly rare
+        technicaly we break the max 5% RTCP BW for video below 10 kbit/s but
+        that should be extremely rare
 
 
 From RFC 3550
 
     MAX RTCP BW is 5% if the session BW
         A send report is approximately 65 bytes inc CNAME
-        A report report is approximately 28 bytes
+        A receiver report is approximately 28 bytes
 
     The RECOMMENDED value for the reduced minimum in seconds is 360
       divided by the session bandwidth in kilobits/second.  This minimum
@@ -552,7 +556,7 @@ From RFC 3550
         now += RTCP_SEND_BEFORE_KEY_FRAME_MS;
     }
 
-    if(now > _nextTimeToSendRTCP)
+    if(now >= _nextTimeToSendRTCP)
     {
         return true;
 

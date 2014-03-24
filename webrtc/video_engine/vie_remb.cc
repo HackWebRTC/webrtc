@@ -22,8 +22,7 @@
 
 namespace webrtc {
 
-const int kRembSendIntervallMs = 1000;
-const unsigned int kRembMinimumBitrateKbps = 50;
+const int kRembSendIntervalMs = 200;
 
 // % threshold for if we should send a new REMB asap.
 const unsigned int kSendThresholdPercent = 97;
@@ -117,7 +116,7 @@ void VieRemb::OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
     if (new_remb_bitrate < kSendThresholdPercent * last_send_bitrate_ / 100) {
       // The new bitrate estimate is less than kSendThresholdPercent % of the
       // last report. Send a REMB asap.
-      last_remb_time_ = TickTime::MillisecondTimestamp() - kRembSendIntervallMs;
+      last_remb_time_ = TickTime::MillisecondTimestamp() - kRembSendIntervalMs;
     }
   }
   bitrate_ = bitrate;
@@ -125,7 +124,7 @@ void VieRemb::OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
   // Calculate total receive bitrate estimate.
   int64_t now = TickTime::MillisecondTimestamp();
 
-  if (now - last_remb_time_ < kRembSendIntervallMs) {
+  if (now - last_remb_time_ < kRembSendIntervalMs) {
     list_crit_->Leave();
     return;
   }
@@ -144,11 +143,6 @@ void VieRemb::OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
     sender = receive_modules_.front();
   }
   last_send_bitrate_ = bitrate_;
-
-  // Never send a REMB lower than last_send_bitrate_.
-  if (last_send_bitrate_ < kRembMinimumBitrateKbps) {
-    last_send_bitrate_ = kRembMinimumBitrateKbps;
-  }
 
   list_crit_->Leave();
 
