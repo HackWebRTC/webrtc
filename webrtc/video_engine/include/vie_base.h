@@ -66,6 +66,9 @@ struct CpuOveruseOptions {
     : enable_capture_jitter_method(true),
       low_capture_jitter_threshold_ms(kNormalUseStdDevMs),
       high_capture_jitter_threshold_ms(kOveruseStdDevMs),
+      enable_encode_usage_method(false),
+      low_encode_usage_threshold_percent(60),
+      high_encode_usage_threshold_percent(90),
       frame_timeout_interval_ms(1500),
       min_frame_samples(120),
       min_process_count(3),
@@ -75,6 +78,10 @@ struct CpuOveruseOptions {
   bool enable_capture_jitter_method;
   float low_capture_jitter_threshold_ms;  // Threshold for triggering underuse.
   float high_capture_jitter_threshold_ms; // Threshold for triggering overuse.
+  // Method based on encode time of frames.
+  bool enable_encode_usage_method;
+  int low_encode_usage_threshold_percent;  // Threshold for triggering underuse.
+  int high_encode_usage_threshold_percent; // Threshold for triggering overuse.
   // General settings.
   int frame_timeout_interval_ms;  // The maximum allowed interval between two
                                   // frames before resetting estimations.
@@ -90,6 +97,11 @@ struct CpuOveruseOptions {
         low_capture_jitter_threshold_ms == o.low_capture_jitter_threshold_ms &&
         high_capture_jitter_threshold_ms ==
         o.high_capture_jitter_threshold_ms &&
+        enable_encode_usage_method == o.enable_encode_usage_method &&
+        low_encode_usage_threshold_percent ==
+        o.low_encode_usage_threshold_percent &&
+        high_encode_usage_threshold_percent ==
+        o.high_encode_usage_threshold_percent &&
         frame_timeout_interval_ms == o.frame_timeout_interval_ms &&
         min_frame_samples == o.min_frame_samples &&
         min_process_count == o.min_process_count &&

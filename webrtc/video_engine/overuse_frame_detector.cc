@@ -140,12 +140,26 @@ class OveruseFrameDetector::EncodeUsage {
   EncodeUsage()
       : kWeightFactorFrameDiff(0.998f),
         kWeightFactorEncodeTime(0.995f),
+        kInitialSampleDiffMs(50.0f),
+        kMaxSampleDiffMs(66.0f),
+        count_(0),
         filtered_encode_time_ms_(new VCMExpFilter(kWeightFactorEncodeTime)),
         filtered_frame_diff_ms_(new VCMExpFilter(kWeightFactorFrameDiff)) {
-    filtered_encode_time_ms_->Apply(1.0f, kInitialAvgEncodeTimeMs);
-    filtered_frame_diff_ms_->Apply(1.0f, kSampleDiffMs);
+    Reset();
   }
   ~EncodeUsage() {}
+
+  void SetOptions(const CpuOveruseOptions& options) {
+    options_ = options;
+  }
+
+  void Reset() {
+    count_ = 0;
+    filtered_frame_diff_ms_->Reset(kWeightFactorFrameDiff);
+    filtered_frame_diff_ms_->Apply(1.0f, kInitialSampleDiffMs);
+    filtered_encode_time_ms_->Reset(kWeightFactorEncodeTime);
+    filtered_encode_time_ms_->Apply(1.0f, InitialEncodeTimeMs());
+  }
 
   void AddSample(float sample_ms) {
     float exp = sample_ms / kSampleDiffMs;
@@ -154,21 +168,40 @@ class OveruseFrameDetector::EncodeUsage {
   }
 
   void AddEncodeSample(float encode_time_ms, int64_t diff_last_sample_ms) {
+    ++count_;
     float exp = diff_last_sample_ms / kSampleDiffMs;
     exp = std::min(exp, kMaxExp);
     filtered_encode_time_ms_->Apply(exp, encode_time_ms);
   }
 
   int UsageInPercent() const {
+    if (count_ < static_cast<uint32_t>(options_.min_frame_samples)) {
+      return static_cast<int>(InitialUsageInPercent() + 0.5f);
+    }
     float frame_diff_ms = std::max(filtered_frame_diff_ms_->Value(), 1.0f);
+    frame_diff_ms = std::min(frame_diff_ms, kMaxSampleDiffMs);
     float encode_usage_percent =
         100.0f * filtered_encode_time_ms_->Value() / frame_diff_ms;
     return static_cast<int>(encode_usage_percent + 0.5);
   }
 
+  float InitialUsageInPercent() const {
+    // Start in between the underuse and overuse threshold.
+    return (options_.low_encode_usage_threshold_percent +
+            options_.high_encode_usage_threshold_percent) / 2.0f;
+  }
+
+  float InitialEncodeTimeMs() const {
+    return InitialUsageInPercent() * kInitialSampleDiffMs / 100;
+  }
+
  private:
   const float kWeightFactorFrameDiff;
   const float kWeightFactorEncodeTime;
+  const float kInitialSampleDiffMs;
+  const float kMaxSampleDiffMs;
+  uint64_t count_;
+  CpuOveruseOptions options_;
   scoped_ptr<VCMExpFilter> filtered_encode_time_ms_;
   scoped_ptr<VCMExpFilter> filtered_frame_diff_ms_;
 };
@@ -265,6 +298,7 @@ void OveruseFrameDetector::SetOptions(const CpuOveruseOptions& options) {
   }
   options_ = options;
   capture_deltas_.SetOptions(options);
+  encode_usage_->SetOptions(options);
   ResetAll(num_pixels_);
 }
 
@@ -315,6 +349,7 @@ bool OveruseFrameDetector::FrameTimeoutDetected(int64_t now) const {
 void OveruseFrameDetector::ResetAll(int num_pixels) {
   num_pixels_ = num_pixels;
   capture_deltas_.Reset();
+  encode_usage_->Reset();
   capture_queue_delay_->ClearFrames();
   last_capture_time_ = 0;
   num_process_times_ = 0;
@@ -420,8 +455,15 @@ int32_t OveruseFrameDetector::Process() {
 }
 
 bool OveruseFrameDetector::IsOverusing() {
-  bool overusing = options_.enable_capture_jitter_method &&
-      (capture_deltas_.StdDev() >= options_.high_capture_jitter_threshold_ms);
+  bool overusing = false;
+  if (options_.enable_capture_jitter_method) {
+    overusing = capture_deltas_.StdDev() >=
+        options_.high_capture_jitter_threshold_ms;
+  } else if (options_.enable_encode_usage_method) {
+    overusing = encode_usage_->UsageInPercent() >=
+        options_.high_encode_usage_threshold_percent;
+  }
+
   if (overusing) {
     ++checks_above_threshold_;
   } else {
@@ -435,8 +477,14 @@ bool OveruseFrameDetector::IsUnderusing(int64_t time_now) {
   if (time_now < last_rampup_time_ + delay)
     return false;
 
-  bool underusing = options_.enable_capture_jitter_method &&
-      (capture_deltas_.StdDev() < options_.low_capture_jitter_threshold_ms);
+  bool underusing = false;
+  if (options_.enable_capture_jitter_method) {
+    underusing = capture_deltas_.StdDev() <
+        options_.low_capture_jitter_threshold_ms;
+  } else if (options_.enable_encode_usage_method) {
+    underusing = encode_usage_->UsageInPercent() <
+        options_.low_encode_usage_threshold_percent;
+  }
   return underusing;
 }
 }  // namespace webrtc

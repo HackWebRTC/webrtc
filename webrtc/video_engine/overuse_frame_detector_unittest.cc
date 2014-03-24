@@ -66,11 +66,26 @@ class OveruseFrameDetectorTest : public ::testing::Test {
              options_.high_capture_jitter_threshold_ms) / 2.0f) + 0.5;
   }
 
+  int InitialEncodeUsage() {
+    return ((options_.low_encode_usage_threshold_percent +
+             options_.high_encode_usage_threshold_percent) / 2.0f) + 0.5;
+  }
+
   void InsertFramesWithInterval(
       size_t num_frames, int interval_ms, int width, int height) {
     while (num_frames-- > 0) {
       clock_->AdvanceTimeMilliseconds(interval_ms);
       overuse_detector_->FrameCaptured(width, height);
+    }
+  }
+
+  void InsertAndEncodeFramesWithInterval(
+      int num_frames, int interval_ms, int width, int height, int encode_ms) {
+    while (num_frames-- > 0) {
+      overuse_detector_->FrameCaptured(width, height);
+      clock_->AdvanceTimeMilliseconds(encode_ms);
+      overuse_detector_->FrameEncoded(encode_ms);
+      clock_->AdvanceTimeMilliseconds(interval_ms - encode_ms);
     }
   }
 
@@ -84,6 +99,22 @@ class OveruseFrameDetectorTest : public ::testing::Test {
 
   void TriggerNormalUsage() {
     InsertFramesWithInterval(900, kFrameInterval33ms, kWidth, kHeight);
+    overuse_detector_->Process();
+  }
+
+  void TriggerOveruseWithEncodeUsage(int num_times) {
+    const int kEncodeTimeMs = 32;
+    for (int i = 0; i < num_times; ++i) {
+      InsertAndEncodeFramesWithInterval(
+          1000, kFrameInterval33ms, kWidth, kHeight, kEncodeTimeMs);
+      overuse_detector_->Process();
+    }
+  }
+
+  void TriggerNormalUsageWithEncodeUsage() {
+    const int kEncodeTimeMs = 5;
+    InsertAndEncodeFramesWithInterval(
+        1000, kFrameInterval33ms, kWidth, kHeight, kEncodeTimeMs);
     overuse_detector_->Process();
   }
 
@@ -266,13 +297,42 @@ TEST_F(OveruseFrameDetectorTest, EncodedFrame) {
   EXPECT_EQ(2, overuse_detector_->AvgEncodeTimeMs());
 }
 
+TEST_F(OveruseFrameDetectorTest, InitialEncodeUsage) {
+  EXPECT_EQ(InitialEncodeUsage(), overuse_detector_->EncodeUsagePercent());
+}
+
 TEST_F(OveruseFrameDetectorTest, EncodedUsage) {
-  for (int i = 0; i < 30; i++) {
-    overuse_detector_->FrameCaptured(kWidth, kHeight);
-    clock_->AdvanceTimeMilliseconds(5);
-    overuse_detector_->FrameEncoded(5);
-    clock_->AdvanceTimeMilliseconds(33-5);
-  }
+  const int kEncodeTimeMs = 5;
+  InsertAndEncodeFramesWithInterval(
+      1000, kFrameInterval33ms, kWidth, kHeight, kEncodeTimeMs);
   EXPECT_EQ(15, overuse_detector_->EncodeUsagePercent());
+}
+
+TEST_F(OveruseFrameDetectorTest, EncodeUsageResetAfterChangingThreshold) {
+  EXPECT_EQ(InitialEncodeUsage(), overuse_detector_->EncodeUsagePercent());
+  options_.high_encode_usage_threshold_percent = 100;
+  overuse_detector_->SetOptions(options_);
+  EXPECT_EQ(InitialEncodeUsage(), overuse_detector_->EncodeUsagePercent());
+  options_.low_encode_usage_threshold_percent = 20;
+  overuse_detector_->SetOptions(options_);
+  EXPECT_EQ(InitialEncodeUsage(), overuse_detector_->EncodeUsagePercent());
+}
+
+TEST_F(OveruseFrameDetectorTest, TriggerOveruseWithEncodeUsage) {
+  options_.enable_capture_jitter_method = false;
+  options_.enable_encode_usage_method = true;
+  overuse_detector_->SetOptions(options_);
+  EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(1);
+  TriggerOveruseWithEncodeUsage(options_.high_threshold_consecutive_count);
+}
+
+TEST_F(OveruseFrameDetectorTest, OveruseAndRecoverWithEncodeUsage) {
+  options_.enable_capture_jitter_method = false;
+  options_.enable_encode_usage_method = true;
+  overuse_detector_->SetOptions(options_);
+  EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(1);
+  TriggerOveruseWithEncodeUsage(options_.high_threshold_consecutive_count);
+  EXPECT_CALL(*(observer_.get()), NormalUsage()).Times(testing::AtLeast(1));
+  TriggerNormalUsageWithEncodeUsage();
 }
 }  // namespace webrtc
