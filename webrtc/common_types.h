@@ -643,6 +643,8 @@ struct VideoCodec {
   unsigned int        startBitrate;  // kilobits/sec.
   unsigned int        maxBitrate;  // kilobits/sec.
   unsigned int        minBitrate;  // kilobits/sec.
+  unsigned int        targetBitrate;  // kilobits/sec.
+
   unsigned char       maxFramerate;
 
   VideoCodecUnion     codecSpecific;
@@ -672,6 +674,7 @@ struct VideoCodecDerived : public VideoCodec {
                startBitrate == other.startBitrate &&
                maxBitrate == other.maxBitrate &&
                minBitrate == other.minBitrate &&
+               targetBitrate == other.targetBitrate &&
                maxFramerate == other.maxFramerate &&
                qpMax == other.qpMax &&
                numberOfSimulcastStreams == other.numberOfSimulcastStreams &&
