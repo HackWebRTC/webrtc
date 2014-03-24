@@ -29,14 +29,14 @@
 #error "This file requires ARC support."
 #endif
 
-#import "RTCPeerConnection+internal.h"
+#import "RTCPeerConnection+Internal.h"
 
 #import "RTCEnumConverter.h"
-#import "RTCICECandidate+internal.h"
-#import "RTCICEServer+internal.h"
-#import "RTCMediaConstraints+internal.h"
-#import "RTCMediaStream+internal.h"
-#import "RTCSessionDescription+internal.h"
+#import "RTCICECandidate+Internal.h"
+#import "RTCICEServer+Internal.h"
+#import "RTCMediaConstraints+Internal.h"
+#import "RTCMediaStream+Internal.h"
+#import "RTCSessionDescription+Internal.h"
 #import "RTCSessionDescriptonDelegate.h"
 #import "RTCSessionDescription.h"
 

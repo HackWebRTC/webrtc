@@ -29,7 +29,7 @@
 #error "This file requires ARC support."
 #endif
 
-#import "RTCICECandidate+internal.h"
+#import "RTCICECandidate+Internal.h"
 
 @implementation RTCICECandidate
 

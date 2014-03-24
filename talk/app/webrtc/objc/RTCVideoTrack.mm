@@ -29,10 +29,10 @@
 #error "This file requires ARC support."
 #endif
 
-#import "RTCVideoTrack+internal.h"
+#import "RTCVideoTrack+Internal.h"
 
-#import "RTCMediaStreamTrack+internal.h"
-#import "RTCVideoRenderer+internal.h"
+#import "RTCMediaStreamTrack+Internal.h"
+#import "RTCVideoRenderer+Internal.h"
 
 @implementation RTCVideoTrack {
   NSMutableArray *_rendererArray;

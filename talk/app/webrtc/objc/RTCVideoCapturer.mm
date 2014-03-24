@@ -29,7 +29,7 @@
 #error "This file requires ARC support."
 #endif
 
-#import "RTCVideoCapturer+internal.h"
+#import "RTCVideoCapturer+Internal.h"
 
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/devices/devicemanager.h"

@@ -29,11 +29,11 @@
 #error "This file requires ARC support."
 #endif
 
-#import "RTCMediaStream+internal.h"
+#import "RTCMediaStream+Internal.h"
 
-#import "RTCAudioTrack+internal.h"
-#import "RTCMediaStreamTrack+internal.h"
-#import "RTCVideoTrack+internal.h"
+#import "RTCAudioTrack+Internal.h"
+#import "RTCMediaStreamTrack+Internal.h"
+#import "RTCVideoTrack+Internal.h"
 
 #include "talk/app/webrtc/mediastreaminterface.h"
 

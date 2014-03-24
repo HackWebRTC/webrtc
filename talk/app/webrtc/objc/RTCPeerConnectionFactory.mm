@@ -33,18 +33,18 @@
 
 #include <vector>
 
-#import "RTCAudioTrack+internal.h"
-#import "RTCICEServer+internal.h"
-#import "RTCMediaConstraints+internal.h"
-#import "RTCMediaSource+internal.h"
-#import "RTCMediaStream+internal.h"
-#import "RTCMediaStreamTrack+internal.h"
-#import "RTCPeerConnection+internal.h"
+#import "RTCAudioTrack+Internal.h"
+#import "RTCICEServer+Internal.h"
+#import "RTCMediaConstraints+Internal.h"
+#import "RTCMediaSource+Internal.h"
+#import "RTCMediaStream+Internal.h"
+#import "RTCMediaStreamTrack+Internal.h"
+#import "RTCPeerConnection+Internal.h"
 #import "RTCPeerConnectionDelegate.h"
 #import "RTCPeerConnectionObserver.h"
-#import "RTCVideoCapturer+internal.h"
-#import "RTCVideoSource+internal.h"
-#import "RTCVideoTrack+internal.h"
+#import "RTCVideoCapturer+Internal.h"
+#import "RTCVideoSource+Internal.h"
+#import "RTCVideoTrack+Internal.h"
 
 #include "talk/app/webrtc/audiotrack.h"
 #include "talk/app/webrtc/mediastreaminterface.h"

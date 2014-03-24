@@ -29,9 +29,9 @@
 #error "This file requires ARC support."
 #endif
 
-#import "RTCAudioTrack+internal.h"
+#import "RTCAudioTrack+Internal.h"
 
-#import "RTCMediaStreamTrack+internal.h"
+#import "RTCMediaStreamTrack+Internal.h"
 
 @implementation RTCAudioTrack
 @end

@@ -29,7 +29,7 @@
 #error "This file requires ARC support."
 #endif
 
-#import "RTCICEServer+internal.h"
+#import "RTCICEServer+Internal.h"
 
 @implementation RTCICEServer
 

@@ -29,7 +29,7 @@
 #error "This file requires ARC support."
 #endif
 
-#import "RTCMediaStreamTrack+internal.h"
+#import "RTCMediaStreamTrack+Internal.h"
 #import "RTCEnumConverter.h"
 
 @implementation RTCMediaStreamTrack {

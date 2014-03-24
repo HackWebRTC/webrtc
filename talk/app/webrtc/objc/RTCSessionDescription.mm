@@ -29,7 +29,7 @@
 #error "This file requires ARC support."
 #endif
 
-#import "RTCSessionDescription+internal.h"
+#import "RTCSessionDescription+Internal.h"
 
 @implementation RTCSessionDescription
 

@@ -29,7 +29,7 @@
 #error "This file requires ARC support."
 #endif
 
-#import "RTCVideoRenderer+internal.h"
+#import "RTCVideoRenderer+Internal.h"
 
 #if TARGET_OS_IPHONE
 #import <UIKit/UIKit.h>

@@ -29,8 +29,8 @@
 #error "This file requires ARC support."
 #endif
 
-#import "RTCVideoSource+internal.h"
-#import "RTCMediaSource+internal.h"
+#import "RTCVideoSource+Internal.h"
+#import "RTCMediaSource+Internal.h"
 
 @implementation RTCVideoSource
 @end

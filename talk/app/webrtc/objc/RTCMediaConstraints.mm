@@ -29,7 +29,7 @@
 #error "This file requires ARC support."
 #endif
 
-#import "RTCMediaConstraints+internal.h"
+#import "RTCMediaConstraints+Internal.h"
 
 #import "RTCPair.h"
 
