@@ -824,6 +824,28 @@ TEST_F(WebRtcVideoEngineTestFake, LeakyBucketTest) {
   EXPECT_TRUE(vie_.GetTransmissionSmoothingStatus(second_send_channel));
 }
 
+// Verify that SuspendBelowMinBitrate is enabled if it is set in the options.
+TEST_F(WebRtcVideoEngineTestFake, SuspendBelowMinBitrateTest) {
+  EXPECT_TRUE(SetupEngine());
+
+  // Verify this is off by default.
+  EXPECT_TRUE(channel_->AddSendStream(cricket::StreamParams::CreateLegacy(1)));
+  int first_send_channel = vie_.GetLastChannel();
+  EXPECT_FALSE(vie_.GetSuspendBelowMinBitrateStatus(first_send_channel));
+
+  // Enable the experiment and verify.
+  cricket::VideoOptions options;
+  options.suspend_below_min_bitrate.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  EXPECT_TRUE(vie_.GetSuspendBelowMinBitrateStatus(first_send_channel));
+
+  // Add a new send stream and verify suspend_below_min_bitrate is enabled.
+  EXPECT_TRUE(channel_->AddSendStream(cricket::StreamParams::CreateLegacy(2)));
+  int second_send_channel = vie_.GetLastChannel();
+  EXPECT_NE(first_send_channel, second_send_channel);
+  EXPECT_TRUE(vie_.GetSuspendBelowMinBitrateStatus(second_send_channel));
+}
+
 TEST_F(WebRtcVideoEngineTestFake, BufferedModeLatency) {
   EXPECT_TRUE(SetupEngine());
 
@@ -1055,6 +1077,24 @@ TEST_F(WebRtcVideoEngineTestFake, AddRemoveRecvStreamConference) {
   EXPECT_EQ(send_channel_num, vie_.GetOriginalChannelId(receive_channel_num));
   EXPECT_TRUE(channel_->RemoveRecvStream(1));
   EXPECT_FALSE(vie_.IsChannel(receive_channel_num));
+}
+
+// Test that adding/removing stream with 0 ssrc should fail (and not crash).
+// For crbug/351699 and 350988.
+TEST_F(WebRtcVideoEngineTestFake, AddRemoveRecvStreamWith0Ssrc) {
+  EXPECT_TRUE(SetupEngine());
+  EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(1)));
+  EXPECT_FALSE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(0)));
+  EXPECT_FALSE(channel_->RemoveRecvStream(0));
+  EXPECT_TRUE(channel_->RemoveRecvStream(1));
+}
+
+TEST_F(WebRtcVideoEngineTestFake, AddRemoveSendStreamWith0Ssrc) {
+  EXPECT_TRUE(SetupEngine());
+  EXPECT_TRUE(channel_->AddSendStream(cricket::StreamParams::CreateLegacy(1)));
+  EXPECT_FALSE(channel_->AddSendStream(cricket::StreamParams::CreateLegacy(0)));
+  EXPECT_FALSE(channel_->RemoveSendStream(0));
+  EXPECT_TRUE(channel_->RemoveSendStream(1));
 }
 
 // Test that we can create a channel and start/stop rendering out on it.

@@ -434,7 +434,6 @@ WebRtcSession::WebRtcSession(
       ice_connection_state_(PeerConnectionInterface::kIceConnectionNew),
       older_version_remote_peer_(false),
       dtls_enabled_(false),
-      dscp_enabled_(false),
       data_channel_type_(cricket::DCT_NONE),
       ice_restart_latch_(new IceRestartAnswerLatch) {
 }
@@ -505,7 +504,17 @@ bool WebRtcSession::Initialize(
         constraints,
         MediaConstraintsInterface::kEnableDscp,
         &value, NULL)) {
-    dscp_enabled_ = value;
+    audio_options_.dscp.Set(value);
+    video_options_.dscp.Set(value);
+  }
+
+  // Find Suspend Below Min Bitrate constraint.
+  if (FindConstraint(
+          constraints,
+          MediaConstraintsInterface::kEnableVideoSuspendBelowMinBitrate,
+          &value,
+          NULL)) {
+    video_options_.suspend_below_min_bitrate.Set(value);
   }
 
   const cricket::VideoCodec default_codec(
@@ -1386,11 +1395,7 @@ bool WebRtcSession::CreateVoiceChannel(const cricket::ContentInfo* content) {
   if (!voice_channel_.get())
     return false;
 
-  if (dscp_enabled_) {
-    cricket::AudioOptions options;
-    options.dscp.Set(true);
-    voice_channel_->SetChannelOptions(options);
-  }
+  voice_channel_->SetChannelOptions(audio_options_);
   return true;
 }
 
@@ -1400,11 +1405,7 @@ bool WebRtcSession::CreateVideoChannel(const cricket::ContentInfo* content) {
   if (!video_channel_.get())
     return false;
 
-  if (dscp_enabled_) {
-    cricket::VideoOptions options;
-    options.dscp.Set(true);
-    video_channel_->SetChannelOptions(options);
-  }
+  video_channel_->SetChannelOptions(video_options_);
   return true;
 }
 

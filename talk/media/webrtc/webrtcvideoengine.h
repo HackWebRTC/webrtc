@@ -246,6 +246,9 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   int video_channel() const { return vie_channel_; }
   bool sending() const { return sending_; }
 
+  // Public for testing purpose.
+  uint32 GetDefaultChannelSsrc();
+
   // VideoMediaChannel implementation
   virtual bool SetRecvCodecs(const std::vector<VideoCodec> &codecs);
   virtual bool SetSendCodecs(const std::vector<VideoCodec> &codecs);
@@ -378,7 +381,6 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   bool IsDefaultChannel(int channel_id) const {
     return channel_id == vie_channel_;
   }
-  uint32 GetDefaultChannelSsrc();
 
   bool DeleteSendChannel(uint32 ssrc_key);
 
@@ -413,6 +415,8 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   // Disconnect |capturer| from WebRtcVideoMediaChannel if it is only registered
   // to one send channel, i.e. the last send channel.
   void MaybeDisconnectCapturer(VideoCapturer* capturer);
+
+  bool RemoveRecvStreamInternal(uint32 ssrc);
 
   // Global state.
   WebRtcVideoEngine* engine_;

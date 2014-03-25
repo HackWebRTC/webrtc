@@ -97,6 +97,8 @@ const char MediaConstraintsInterface::kEnableRtpDataChannels[] =
     "RtpDataChannels";
 const char MediaConstraintsInterface::kEnableDscp[] = "googDscp";
 const char MediaConstraintsInterface::kEnableIPv6[] = "googIPv6";
+const char MediaConstraintsInterface::kEnableVideoSuspendBelowMinBitrate[] =
+    "googSuspendBelowMinBitrate";
 
 // Set |value| to the value associated with the first appearance of |key|, or
 // return false if |key| is not found.

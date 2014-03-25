@@ -1667,33 +1667,39 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_EQ(1, renderer2_.num_rendered_frames());
   }
 
-  // Disconnect the first stream and re-use it with another SSRC
+  // Set up 2 streams where the first stream uses the default channel.
+  // Then disconnect the first stream and verify default channel becomes
+  // available.
+  // Then add a new stream with |new_ssrc|. The new stream should re-use the
+  // default channel.
   void TwoStreamsReUseFirstStream(const cricket::VideoCodec& codec) {
     SetUpSecondStream();
+    // Default channel used by the first stream.
+    EXPECT_EQ(kSsrc, channel_->GetDefaultChannelSsrc());
     EXPECT_TRUE(channel_->RemoveRecvStream(kSsrc));
     EXPECT_FALSE(channel_->RemoveRecvStream(kSsrc));
-    // SSRC 0 should map to the "default" stream. I.e. the first added stream.
-    EXPECT_TRUE(channel_->RemoveSendStream(0));
-    // Make sure that the first added stream was indeed the "default" stream.
+    EXPECT_TRUE(channel_->RemoveSendStream(kSsrc));
     EXPECT_FALSE(channel_->RemoveSendStream(kSsrc));
-    // Make sure that the "default" stream is indeed removed and that removing
-    // the default stream has an effect.
-    EXPECT_FALSE(channel_->RemoveSendStream(0));
-
+    // Default channel is no longer used by a stream.
+    EXPECT_EQ(0u, channel_->GetDefaultChannelSsrc());
     SetRendererAsDefault();
+    uint32 new_ssrc = kSsrc + 100;
     EXPECT_TRUE(channel_->AddSendStream(
-        cricket::StreamParams::CreateLegacy(kSsrc)));
+        cricket::StreamParams::CreateLegacy(new_ssrc)));
+    // Re-use default channel.
+    EXPECT_EQ(new_ssrc, channel_->GetDefaultChannelSsrc());
     EXPECT_FALSE(channel_->AddSendStream(
-        cricket::StreamParams::CreateLegacy(kSsrc)));
+        cricket::StreamParams::CreateLegacy(new_ssrc)));
     EXPECT_TRUE(channel_->AddRecvStream(
-        cricket::StreamParams::CreateLegacy(kSsrc)));
+        cricket::StreamParams::CreateLegacy(new_ssrc)));
     EXPECT_FALSE(channel_->AddRecvStream(
-        cricket::StreamParams::CreateLegacy(kSsrc)));
+        cricket::StreamParams::CreateLegacy(new_ssrc)));
 
-    EXPECT_TRUE(channel_->SetCapturer(kSsrc, video_capturer_.get()));
+    EXPECT_TRUE(channel_->SetCapturer(new_ssrc, video_capturer_.get()));
 
     SendAndReceive(codec);
-    EXPECT_TRUE(channel_->RemoveSendStream(0));
+    EXPECT_TRUE(channel_->RemoveSendStream(new_ssrc));
+    EXPECT_EQ(0u, channel_->GetDefaultChannelSsrc());
   }
 
   // Tests that we can send and receive frames with early receive.

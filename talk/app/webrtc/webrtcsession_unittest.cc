@@ -3120,6 +3120,26 @@ TEST_F(WebRtcSessionTest, TestDscpConstraint) {
   EXPECT_TRUE(video_options.dscp.GetWithDefaultIfUnset(false));
 }
 
+TEST_F(WebRtcSessionTest, TestSuspendBelowMinBitrateConstraint) {
+  constraints_.reset(new FakeConstraints());
+  constraints_->AddOptional(
+      webrtc::MediaConstraintsInterface::kEnableVideoSuspendBelowMinBitrate,
+      true);
+  Init(NULL);
+  mediastream_signaling_.SendAudioVideoStream1();
+  SessionDescriptionInterface* offer = CreateOffer(NULL);
+
+  SetLocalDescriptionWithoutError(offer);
+
+  video_channel_ = media_engine_->GetVideoChannel(0);
+
+  ASSERT_TRUE(video_channel_ != NULL);
+  cricket::VideoOptions video_options;
+  EXPECT_TRUE(video_channel_->GetOptions(&video_options));
+  EXPECT_TRUE(
+      video_options.suspend_below_min_bitrate.GetWithDefaultIfUnset(false));
+}
+
 // TODO(bemasc): Add a TestIceStatesBundle with BUNDLE enabled.  That test
 // currently fails because upon disconnection and reconnection OnIceComplete is
 // called more than once without returning to IceGatheringGathering.

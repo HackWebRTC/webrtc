@@ -1570,7 +1570,7 @@ WebRtcVideoMediaChannel::~WebRtcVideoMediaChannel() {
 
   // Remove all receive streams and the default channel.
   while (!recv_channels_.empty()) {
-    RemoveRecvStream(recv_channels_.begin()->first);
+    RemoveRecvStreamInternal(recv_channels_.begin()->first);
   }
 
   // Unregister the channel from the engine.
@@ -1778,6 +1778,11 @@ bool WebRtcVideoMediaChannel::SetSend(bool send) {
 }
 
 bool WebRtcVideoMediaChannel::AddSendStream(const StreamParams& sp) {
+  if (sp.first_ssrc() == 0) {
+    LOG(LS_ERROR) << "AddSendStream with 0 ssrc is not supported.";
+    return false;
+  }
+
   LOG(LS_INFO) << "AddSendStream " << sp.ToString();
 
   if (!IsOneSsrcStream(sp) && !IsSimulcastStream(sp)) {
@@ -1859,6 +1864,11 @@ bool WebRtcVideoMediaChannel::AddSendStream(const StreamParams& sp) {
 }
 
 bool WebRtcVideoMediaChannel::RemoveSendStream(uint32 ssrc) {
+  if (ssrc == 0) {
+    LOG(LS_ERROR) << "RemoveSendStream with 0 ssrc is not supported.";
+    return false;
+  }
+
   uint32 ssrc_key;
   if (!GetSendChannelKey(ssrc, &ssrc_key)) {
     LOG(LS_WARNING) << "Try to remove stream with ssrc " << ssrc
@@ -1899,6 +1909,11 @@ bool WebRtcVideoMediaChannel::RemoveSendStream(uint32 ssrc) {
 }
 
 bool WebRtcVideoMediaChannel::AddRecvStream(const StreamParams& sp) {
+  if (sp.first_ssrc() == 0) {
+    LOG(LS_ERROR) << "AddRecvStream with 0 ssrc is not supported.";
+    return false;
+  }
+
   // TODO(zhurunz) Remove this once BWE works properly across different send
   // and receive channels.
   // Reuse default channel for recv stream in 1:1 call.
@@ -1981,8 +1996,15 @@ bool WebRtcVideoMediaChannel::AddRecvStream(const StreamParams& sp) {
 }
 
 bool WebRtcVideoMediaChannel::RemoveRecvStream(uint32 ssrc) {
-  RecvChannelMap::iterator it = recv_channels_.find(ssrc);
+  if (ssrc == 0) {
+    LOG(LS_ERROR) << "RemoveRecvStream with 0 ssrc is not supported.";
+    return false;
+  }
+  return RemoveRecvStreamInternal(ssrc);
+}
 
+bool WebRtcVideoMediaChannel::RemoveRecvStreamInternal(uint32 ssrc) {
+  RecvChannelMap::iterator it = recv_channels_.find(ssrc);
   if (it == recv_channels_.end()) {
     // TODO(perkj): Remove this once BWE works properly across different send
     // and receive channels.
@@ -3405,6 +3427,11 @@ bool WebRtcVideoMediaChannel::ConfigureSending(int channel_id,
       LOG_RTCERR2(SetSenderBufferingMode, channel_id, buffer_latency);
     }
   }
+
+  if (options_.suspend_below_min_bitrate.GetWithDefaultIfUnset(false)) {
+    engine()->vie()->codec()->SuspendBelowMinBitrate(channel_id);
+  }
+
   // The remb status direction correspond to the RTP stream (and not the RTCP
   // stream). I.e. if send remb is enabled it means it is receiving remote
   // rembs and should use them to estimate bandwidth. Receive remb mean that
@@ -3739,12 +3766,20 @@ bool WebRtcVideoMediaChannel::MaybeResetVieSendCodec(
     vie_codec.height = target_height;
     vie_codec.maxFramerate = target_codec.maxFramerate;
     vie_codec.startBitrate = target_codec.startBitrate;
+#ifdef USE_WEBRTC_DEV_BRANCH
+    vie_codec.targetBitrate = 0;
+#endif
     vie_codec.codecSpecific.VP8.automaticResizeOn = automatic_resize;
     vie_codec.codecSpecific.VP8.denoisingOn = denoising;
     vie_codec.codecSpecific.VP8.frameDroppingOn = vp8_frame_dropping;
-    // TODO(mflodman): Remove 'is_screencast' check when screen cast settings
-    // are treated correctly in WebRTC.
-    if (!is_screencast)
+    bool maybe_change_start_bitrate = !is_screencast;
+#ifdef USE_WEBRTC_DEV_BRANCH
+    // TODO(pbos): When USE_WEBRTC_DEV_BRANCH is removed, remove
+    // maybe_change_start_bitrate as well. MaybeChangeStartBitrate should be
+    // called for all content.
+    maybe_change_start_bitrate = true;
+#endif
+    if (maybe_change_start_bitrate)
       MaybeChangeStartBitrate(channel_id, &vie_codec);
 
     if (engine()->vie()->codec()->SetSendCodec(channel_id, vie_codec) != 0) {

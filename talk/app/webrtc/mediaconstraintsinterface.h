@@ -114,6 +114,8 @@ class MediaConstraintsInterface {
   static const char kEnableDscp[];
   // Constraint to enable IPv6 through JS.
   static const char kEnableIPv6[];
+  // Temporary constraint to enable suspend below min bitrate feature.
+  static const char kEnableVideoSuspendBelowMinBitrate[];
 
   // The prefix of internal-only constraints whose JS set values should be
   // stripped by Chrome before passed down to Libjingle.

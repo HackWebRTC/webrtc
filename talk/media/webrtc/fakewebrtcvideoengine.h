@@ -299,7 +299,9 @@ class FakeWebRtcVideoEngine
           send_fec_bitrate_(0),
           send_nack_bitrate_(0),
           send_bandwidth_(0),
-          receive_bandwidth_(0) {
+          receive_bandwidth_(0),
+          suspend_below_min_bitrate_(false),
+          overuse_observer_(NULL) {
       ssrcs_[0] = 0;  // default ssrc.
       memset(&send_codec, 0, sizeof(send_codec));
     }
@@ -338,6 +340,8 @@ class FakeWebRtcVideoEngine
     unsigned int send_nack_bitrate_;
     unsigned int send_bandwidth_;
     unsigned int receive_bandwidth_;
+    bool suspend_below_min_bitrate_;
+    webrtc::CpuOveruseObserver* overuse_observer_;
   };
   class Capturer : public webrtc::ViEExternalCapture {
    public:
@@ -535,6 +539,10 @@ class FakeWebRtcVideoEngine
     WEBRTC_ASSERT_CHANNEL(channel);
     return channels_.find(channel)->second->can_transmit_;
   }
+  webrtc::CpuOveruseObserver* GetCpuOveruseObserver(int channel) const {
+    WEBRTC_ASSERT_CHANNEL(channel);
+    return channels_.find(channel)->second->overuse_observer_;
+  }
   int GetRtxSsrc(int channel, int simulcast_idx) const {
     WEBRTC_ASSERT_CHANNEL(channel);
     if (channels_.find(channel)->second->rtx_ssrcs_.find(simulcast_idx) ==
@@ -611,6 +619,10 @@ class FakeWebRtcVideoEngine
     WEBRTC_CHECK_CHANNEL(channel);
     return channels_.find(channel)->second->remote_rtx_ssrc_;
   }
+  bool GetSuspendBelowMinBitrateStatus(int channel) {
+    WEBRTC_ASSERT_CHANNEL(channel);
+    return channels_.find(channel)->second->suspend_below_min_bitrate_;
+  }
 
   WEBRTC_STUB(Release, ());
 
@@ -651,8 +663,12 @@ class FakeWebRtcVideoEngine
     channels_.erase(channel);
     return 0;
   }
-  WEBRTC_STUB(RegisterCpuOveruseObserver,
-      (int channel, webrtc::CpuOveruseObserver* observer));
+  WEBRTC_FUNC(RegisterCpuOveruseObserver,
+      (int channel, webrtc::CpuOveruseObserver* observer)) {
+    WEBRTC_CHECK_CHANNEL(channel);
+    channels_[channel]->overuse_observer_ = observer;
+    return 0;
+  }
   WEBRTC_STUB(CpuOveruseMeasures, (int, int*, int*, int*, int*));
   WEBRTC_STUB(ConnectAudioChannel, (const int, const int));
   WEBRTC_STUB(DisconnectAudioChannel, (const int));
@@ -771,7 +787,10 @@ class FakeWebRtcVideoEngine
   WEBRTC_STUB(WaitForFirstKeyFrame, (const int, const bool));
   WEBRTC_STUB(StartDebugRecording, (int, const char*));
   WEBRTC_STUB(StopDebugRecording, (int));
-  WEBRTC_VOID_STUB(SuspendBelowMinBitrate, (int));
+  WEBRTC_VOID_FUNC(SuspendBelowMinBitrate, (int channel)) {
+    WEBRTC_ASSERT_CHANNEL(channel);
+    channels_[channel]->suspend_below_min_bitrate_ = true;
+  }
 
   // webrtc::ViECapture
   WEBRTC_STUB(NumberOfCaptureDevices, ());
