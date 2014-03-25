@@ -130,6 +130,9 @@
           ],
         }],
         ['OS=="ios"', {
+          'xcode_settings': {
+            'CLANG_ENABLE_OBJC_ARC': 'YES',
+          },
           'all_dependent_settings': {
             'xcode_settings': {
               'OTHER_LDFLAGS': [

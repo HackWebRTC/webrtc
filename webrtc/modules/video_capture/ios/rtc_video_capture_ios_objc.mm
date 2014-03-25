@@ -8,6 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#if !defined(__has_feature) || !__has_feature(objc_arc)
+#error "This file requires ARC support."
+#endif
+
+#import <UIKit/UIKit.h>
+
 #import "webrtc/modules/video_capture/ios/device_info_ios_objc.h"
 #import "webrtc/modules/video_capture/ios/rtc_video_capture_ios_objc.h"
 
@@ -81,7 +87,6 @@ using namespace webrtc::videocapturemodule;
 
 - (void)dealloc {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
-  [super dealloc];
 }
 
 - (BOOL)setCaptureDeviceByUniqueId:(NSString*)uniqueId {
@@ -174,8 +179,6 @@ using namespace webrtc::videocapturemodule;
 
   [_captureSession startRunning];
 
-  [captureQuality release];
-
   return YES;
 }
 
@@ -199,7 +202,8 @@ using namespace webrtc::videocapturemodule;
   }
 }
 
-- (void)onVideoError {
+- (void)onVideoError:(NSNotification*)notification {
+  NSLog(@"onVideoError: %@", notification);
   // TODO(sjlee): make the specific error handling with this notification.
   WEBRTC_TRACE(kTraceError,
                kTraceVideoCapture,

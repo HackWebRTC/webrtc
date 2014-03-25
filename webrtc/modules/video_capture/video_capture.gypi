@@ -113,6 +113,9 @@
                 'ios/video_capture_ios.h',
                 'ios/video_capture_ios.mm',
               ],
+              'xcode_settings': {
+                'CLANG_ENABLE_OBJC_ARC': 'YES',
+              },
               'all_dependent_settings': {
                 'xcode_settings': {
                   'OTHER_LDFLAGS': [
