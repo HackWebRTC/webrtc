@@ -28,6 +28,8 @@
   AVCaptureSession* _captureSession;
   int _captureId;
   AVCaptureConnection* _connection;
+  BOOL _captureStarting;  // Guarded by _captureStartingCondition.
+  NSCondition* _captureStartingCondition;
 }
 
 @property webrtc::VideoCaptureRotation frameRotation;
@@ -37,7 +39,7 @@
 // default init methods have been overridden to return nil.
 - (id)initWithOwner:(webrtc::videocapturemodule::VideoCaptureIos*)owner
           captureId:(int)captureId;
-- (BOOL)setCaptureDeviceByUniqueId:(NSString*)uniequeId;
+- (BOOL)setCaptureDeviceByUniqueId:(NSString*)uniqueId;
 - (BOOL)startCaptureWithCapability:
         (const webrtc::VideoCaptureCapability&)capability;
 - (BOOL)stopCapture;

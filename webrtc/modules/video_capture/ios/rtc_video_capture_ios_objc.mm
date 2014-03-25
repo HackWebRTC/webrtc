@@ -24,7 +24,6 @@ using namespace webrtc::videocapturemodule;
 
 @interface RTCVideoCaptureIosObjC (hidden)
 - (int)changeCaptureInputWithName:(NSString*)captureDeviceName;
-
 @end
 
 @implementation RTCVideoCaptureIosObjC
@@ -36,8 +35,10 @@ using namespace webrtc::videocapturemodule;
     _owner = owner;
     _captureId = captureId;
     _captureSession = [[AVCaptureSession alloc] init];
+    _captureStarting = NO;
+    _captureStartingCondition = [[NSCondition alloc] init];
 
-    if (!_captureSession) {
+    if (!_captureSession || !_captureStartingCondition) {
       return nil;
     }
 
@@ -144,6 +145,17 @@ using namespace webrtc::videocapturemodule;
     return NO;
   }
 
+  AVCaptureVideoDataOutput* currentOutput =
+      (AVCaptureVideoDataOutput*)[currentOutputs objectAtIndex:0];
+
+  dispatch_async(
+      dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
+      ^(void) { [self startCaptureInBackgroundWithOutput:currentOutput]; });
+  return YES;
+}
+
+- (void)startCaptureInBackgroundWithOutput:
+            (AVCaptureVideoDataOutput*)currentOutput {
   NSString* captureQuality =
       [NSString stringWithString:AVCaptureSessionPresetLow];
   if (_capability.width >= 1920 || _capability.height >= 1080) {
@@ -156,9 +168,6 @@ using namespace webrtc::videocapturemodule;
   } else if (_capability.width >= 352 || _capability.height >= 288) {
     captureQuality = [NSString stringWithString:AVCaptureSessionPreset352x288];
   }
-
-  AVCaptureVideoDataOutput* currentOutput =
-      (AVCaptureVideoDataOutput*)[currentOutputs objectAtIndex:0];
 
   // begin configuration for the AVCaptureSession
   [_captureSession beginConfiguration];
@@ -179,7 +188,10 @@ using namespace webrtc::videocapturemodule;
 
   [_captureSession startRunning];
 
-  return YES;
+  [_captureStartingCondition lock];
+  _captureStarting = NO;
+  [_captureStartingCondition signal];
+  [_captureStartingCondition unlock];
 }
 
 - (void)setRelativeVideoOrientation {
@@ -215,6 +227,7 @@ using namespace webrtc::videocapturemodule;
 }
 
 - (BOOL)stopCapture {
+  [self waitForCaptureStartToFinish];
   if (!_captureSession) {
     return NO;
   }
@@ -320,4 +333,11 @@ using namespace webrtc::videocapturemodule;
   CVPixelBufferUnlockBaseAddress(videoFrame, kFlags);
 }
 
+- (void)waitForCaptureStartToFinish {
+  [_captureStartingCondition lock];
+  while (_captureStarting) {
+    [_captureStartingCondition wait];
+  }
+  [_captureStartingCondition unlock];
+}
 @end
