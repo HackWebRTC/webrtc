@@ -27,8 +27,7 @@ class ExtensionVerifyTransport : public webrtc::Transport {
         ok_packets_(0),
         parser_(webrtc::RtpHeaderParser::Create()),
         audio_level_id_(-1),
-        absolute_sender_time_id_(-1) {
-  }
+        absolute_sender_time_id_(-1) {}
 
   virtual int SendPacket(int channel, const void* data, int len) {
     ++received_packets_;
@@ -128,7 +127,8 @@ TEST_F(SendRtpRtcpHeaderExtensionsTest, SentPacketsIncludeAllExtensions2) {
   EXPECT_EQ(0, voe_rtp_rtcp_->SetSendAudioLevelIndicationStatus(channel_, true,
                                                                 9));
   verifying_transport_.SetAbsoluteSenderTimeId(3);
-  verifying_transport_.SetAudioLevelId(9);
+  // Don't register audio level with header parser - unknown extensions should
+  // be ignored when parsing.
   ResumePlaying();
   EXPECT_TRUE(verifying_transport_.WaitForNPackets(10));
 }

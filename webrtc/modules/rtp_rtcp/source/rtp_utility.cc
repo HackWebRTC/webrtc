@@ -457,6 +457,8 @@ void RTPHeaderParser::ParseOneByteExtensionHeader(
     // |  ID   |  len  |
     // +-+-+-+-+-+-+-+-+
 
+    // Note that 'len' is the header extension element length, which is the
+    // number of bytes - 1.
     const uint8_t id = (*ptr & 0xf0) >> 4;
     const uint8_t len = (*ptr & 0x0f);
     ptr++;
@@ -469,84 +471,85 @@ void RTPHeaderParser::ParseOneByteExtensionHeader(
 
     RTPExtensionType type;
     if (ptrExtensionMap->GetType(id, &type) != 0) {
+      // If we encounter an unknown extension, just skip over it.
       WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1,
                    "Failed to find extension id: %d", id);
-      return;
+    } else {
+      switch (type) {
+        case kRtpExtensionTransmissionTimeOffset: {
+          if (len != 2) {
+            WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
+                         "Incorrect transmission time offset len: %d", len);
+            return;
+          }
+          //  0                   1                   2                   3
+          //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+          // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+          // |  ID   | len=2 |              transmission offset              |
+          // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+          int32_t transmissionTimeOffset = ptr[0] << 16;
+          transmissionTimeOffset += ptr[1] << 8;
+          transmissionTimeOffset += ptr[2];
+          header.extension.transmissionTimeOffset =
+              transmissionTimeOffset;
+          if (transmissionTimeOffset & 0x800000) {
+            // Negative offset, correct sign for Word24 to Word32.
+            header.extension.transmissionTimeOffset |= 0xFF000000;
+          }
+          header.extension.hasTransmissionTimeOffset = true;
+          break;
+        }
+        case kRtpExtensionAudioLevel: {
+          if (len != 0) {
+            WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
+                         "Incorrect audio level len: %d", len);
+            return;
+          }
+          //  0                   1                   2                   3
+          //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+          // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+          // |  ID   | len=0 |V|   level     |      0x00     |      0x00     |
+          // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+          //
+
+          // Parse out the fields but only use it for debugging for now.
+          // const uint8_t V = (*ptr & 0x80) >> 7;
+          // const uint8_t level = (*ptr & 0x7f);
+          // DEBUG_PRINT("RTP_AUDIO_LEVEL_UNIQUE_ID: ID=%u, len=%u, V=%u,
+          // level=%u", ID, len, V, level);
+
+          header.extension.audioLevel = ptr[0];
+          header.extension.hasAudioLevel = true;
+          break;
+        }
+        case kRtpExtensionAbsoluteSendTime: {
+          if (len != 2) {
+            WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
+                         "Incorrect absolute send time len: %d", len);
+            return;
+          }
+          //  0                   1                   2                   3
+          //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+          // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+          // |  ID   | len=2 |              absolute send time               |
+          // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+          uint32_t absoluteSendTime = ptr[0] << 16;
+          absoluteSendTime += ptr[1] << 8;
+          absoluteSendTime += ptr[2];
+          header.extension.absoluteSendTime = absoluteSendTime;
+          header.extension.hasAbsoluteSendTime = true;
+          break;
+        }
+        default: {
+          WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1,
+                       "Extension type not implemented.");
+          return;
+        }
+      }
     }
-
-    switch (type) {
-      case kRtpExtensionTransmissionTimeOffset: {
-        if (len != 2) {
-          WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
-                       "Incorrect transmission time offset len: %d", len);
-          return;
-        }
-        //  0                   1                   2                   3
-        //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-        // |  ID   | len=2 |              transmission offset              |
-        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-        int32_t transmissionTimeOffset = *ptr++ << 16;
-        transmissionTimeOffset += *ptr++ << 8;
-        transmissionTimeOffset += *ptr++;
-        header.extension.transmissionTimeOffset =
-            transmissionTimeOffset;
-        if (transmissionTimeOffset & 0x800000) {
-          // Negative offset, correct sign for Word24 to Word32.
-          header.extension.transmissionTimeOffset |= 0xFF000000;
-        }
-        header.extension.hasTransmissionTimeOffset = true;
-        break;
-      }
-      case kRtpExtensionAudioLevel: {
-        if (len != 0) {
-          WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
-                       "Incorrect audio level len: %d", len);
-          return;
-        }
-        //  0                   1                   2                   3
-        //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-        // |  ID   | len=0 |V|   level     |      0x00     |      0x00     |
-        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-        //
-
-        // Parse out the fields but only use it for debugging for now.
-        // const uint8_t V = (*ptr & 0x80) >> 7;
-        // const uint8_t level = (*ptr & 0x7f);
-        // DEBUG_PRINT("RTP_AUDIO_LEVEL_UNIQUE_ID: ID=%u, len=%u, V=%u,
-        // level=%u", ID, len, V, level);
-
-        header.extension.audioLevel = *ptr++;
-        header.extension.hasAudioLevel = true;
-        break;
-      }
-      case kRtpExtensionAbsoluteSendTime: {
-        if (len != 2) {
-          WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
-                       "Incorrect absolute send time len: %d", len);
-          return;
-        }
-        //  0                   1                   2                   3
-        //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-        // |  ID   | len=2 |              absolute send time               |
-        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-        uint32_t absoluteSendTime = *ptr++ << 16;
-        absoluteSendTime += *ptr++ << 8;
-        absoluteSendTime += *ptr++;
-        header.extension.absoluteSendTime = absoluteSendTime;
-        header.extension.hasAbsoluteSendTime = true;
-        break;
-      }
-      default: {
-        WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1,
-                     "Extension type not implemented.");
-        return;
-      }
-    }
+    ptr += (len + 1);
     uint8_t num_bytes = ParsePaddingBytes(ptrRTPDataExtensionEnd, ptr);
     ptr += num_bytes;
   }
