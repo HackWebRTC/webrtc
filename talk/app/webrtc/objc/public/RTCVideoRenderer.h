@@ -43,9 +43,6 @@ struct CGRect;
 // of frames.
 - (id)initWithDelegate:(id<RTCVideoRendererDelegate>)delegate;
 
-// Set an affine transform on relevant UIViews.
-- (void)setTransform:(CGAffineTransform)transform;
-
 // Starts rendering.
 - (void)start;
 // Stops rendering. It can be restarted again using the 'start' method above.

@@ -77,8 +77,8 @@
            addedStream:(RTCMediaStream*)stream {
   NSLog(@"PCO onAddStream.");
   dispatch_async(dispatch_get_main_queue(), ^(void) {
-      NSAssert([stream.audioTracks count] >= 1,
-               @"Expected at least 1 audio stream");
+      NSAssert([stream.audioTracks count] <= 1,
+               @"Expected at most 1 audio stream");
       NSAssert([stream.videoTracks count] <= 1,
                @"Expected at most 1 video stream");
       if ([stream.videoTracks count] != 0) {
