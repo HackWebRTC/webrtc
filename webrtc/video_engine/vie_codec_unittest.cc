@@ -60,7 +60,7 @@ void SetSimulcastSettings(webrtc::VideoCodec* video_codec) {
 // This test compares two VideoCodecInst objects except codec specific and
 // simulcast streams.
 TEST(ViECodecTest, TestCompareCodecs) {
-  VideoCodecDerived codec1, codec2;
+  VideoCodec codec1, codec2;
   memset(&codec1, 0, sizeof(VideoCodec));
   memset(&codec2, 0, sizeof(VideoCodec));
 
@@ -119,7 +119,7 @@ TEST(ViECodecTest, TestCompareCodecs) {
 
 // Test VP8 specific comparision.
 TEST(ViECodecTest, TestCompareVP8CodecSpecific) {
-  VideoCodecDerived codec1, codec2;
+  VideoCodec codec1, codec2;
   memset(&codec1, 0, sizeof(VideoCodec));
   memset(&codec2, 0, sizeof(VideoCodec));
 
@@ -179,7 +179,7 @@ TEST(ViECodecTest, TestCompareVP8CodecSpecific) {
 
 // This test compares simulcast stream information in VideoCodec.
 TEST(ViECodecTest, TestCompareSimulcastStreams) {
-  VideoCodecDerived codec1, codec2;
+  VideoCodec codec1, codec2;
   memset(&codec1, 0, sizeof(VideoCodec));
   memset(&codec2, 0, sizeof(VideoCodec));
 

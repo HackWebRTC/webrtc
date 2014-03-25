@@ -658,13 +658,7 @@ struct VideoCodec {
   // When using an external encoder/decoder this allows to pass
   // extra options without requiring webrtc to be aware of them.
   Config*  extra_options;
-};
 
-// TODO(mallinath) - Remove this and push these two methods inside VideoCodec.
-// This is done to handle operator== defined in fakewebrtcvideoengine.h
-// This modification allows us to commit this CL directly and not with libjingle
-// push.
-struct VideoCodecDerived : public VideoCodec {
   bool operator==(const VideoCodec& other) const {
     bool ret = codecType == other.codecType &&
                (STR_CASE_CMP(plName, other.plName) == 0) &&
