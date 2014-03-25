@@ -78,22 +78,13 @@ class BitrateControllerImpl::RtcpBandwidthObserverImpl
 };
 
 BitrateController* BitrateController::CreateBitrateController(
-    Clock* clock,
     bool enforce_min_bitrate) {
-  return new BitrateControllerImpl(clock, enforce_min_bitrate);
+  return new BitrateControllerImpl(enforce_min_bitrate);
 }
 
-BitrateControllerImpl::BitrateControllerImpl(Clock* clock,
-                                             bool enforce_min_bitrate)
-    : clock_(clock),
-      last_bitrate_update_ms_(clock_->TimeInMilliseconds()),
-      critsect_(CriticalSectionWrapper::CreateCriticalSection()),
-      enforce_min_bitrate_(enforce_min_bitrate),
-      last_bitrate_bps_(0),
-      last_fraction_loss_(0),
-      last_rtt_ms_(0),
-      last_enforce_min_bitrate_(enforce_min_bitrate_),
-      bitrate_observers_modified_(false) {}
+BitrateControllerImpl::BitrateControllerImpl(bool enforce_min_bitrate)
+    : critsect_(CriticalSectionWrapper::CreateCriticalSection()),
+      enforce_min_bitrate_(enforce_min_bitrate) {}
 
 BitrateControllerImpl::~BitrateControllerImpl() {
   BitrateObserverConfList::iterator it =
@@ -202,26 +193,6 @@ void BitrateControllerImpl::OnReceivedEstimatedBitrate(const uint32_t bitrate) {
   MaybeTriggerOnNetworkChanged();
 }
 
-int32_t BitrateControllerImpl::TimeUntilNextProcess() {
-  enum { kBitrateControllerUpdateIntervalMs = 25 };
-  CriticalSectionScoped cs(critsect_);
-  int time_since_update_ms =
-      clock_->TimeInMilliseconds() - last_bitrate_update_ms_;
-  return std::max(0, kBitrateControllerUpdateIntervalMs - time_since_update_ms);
-}
-
-int32_t BitrateControllerImpl::Process() {
-  if (TimeUntilNextProcess() > 0)
-    return 0;
-  {
-    CriticalSectionScoped cs(critsect_);
-    bandwidth_estimation_.UpdateEstimate(clock_->TimeInMilliseconds());
-    MaybeTriggerOnNetworkChanged();
-  }
-  last_bitrate_update_ms_ = clock_->TimeInMilliseconds();
-  return 0;
-}
-
 void BitrateControllerImpl::OnReceivedRtcpReceiverReport(
     const uint8_t fraction_loss,
     const uint32_t rtt,
@@ -239,12 +210,12 @@ void BitrateControllerImpl::MaybeTriggerOnNetworkChanged() {
   uint32_t rtt;
   bandwidth_estimation_.CurrentEstimate(&bitrate, &fraction_loss, &rtt);
 
-  if (bitrate_observers_modified_ || bitrate != last_bitrate_bps_ ||
-      fraction_loss != last_fraction_loss_ || rtt != last_rtt_ms_ ||
+  if (bitrate_observers_modified_ || bitrate != last_bitrate_ ||
+      fraction_loss != last_fraction_loss_ || rtt != last_rtt_ ||
       last_enforce_min_bitrate_ != enforce_min_bitrate_) {
-    last_bitrate_bps_ = bitrate;
+    last_bitrate_ = bitrate;
     last_fraction_loss_ = fraction_loss;
-    last_rtt_ms_ = rtt;
+    last_rtt_ = rtt;
     last_enforce_min_bitrate_ = enforce_min_bitrate_;
     bitrate_observers_modified_ = false;
     OnNetworkChanged(bitrate, fraction_loss, rtt);

@@ -29,7 +29,7 @@ namespace webrtc {
 
 class BitrateControllerImpl : public BitrateController {
  public:
-  BitrateControllerImpl(Clock* clock, bool enforce_min_bitrate);
+  explicit BitrateControllerImpl(bool enforce_min_bitrate);
   virtual ~BitrateControllerImpl();
 
   virtual bool AvailableBandwidth(uint32_t* bandwidth) const OVERRIDE;
@@ -44,9 +44,6 @@ class BitrateControllerImpl : public BitrateController {
   virtual void RemoveBitrateObserver(BitrateObserver* observer) OVERRIDE;
 
   virtual void EnforceMinBitrate(bool enforce_min_bitrate) OVERRIDE;
-
-  virtual int32_t TimeUntilNextProcess() OVERRIDE;
-  virtual int32_t Process() OVERRIDE;
 
  private:
   class RtcpBandwidthObserverImpl;
@@ -110,17 +107,13 @@ class BitrateControllerImpl : public BitrateController {
   BitrateObserverConfList::iterator FindObserverConfigurationPair(
       const BitrateObserver* observer) EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
 
-  // Used by process thread.
-  Clock* clock_;
-  uint32_t last_bitrate_update_ms_;
-
   CriticalSectionWrapper* critsect_;
   SendSideBandwidthEstimation bandwidth_estimation_ GUARDED_BY(*critsect_);
   BitrateObserverConfList bitrate_observers_ GUARDED_BY(*critsect_);
   bool enforce_min_bitrate_ GUARDED_BY(*critsect_);
-  uint32_t last_bitrate_bps_ GUARDED_BY(*critsect_);
+  uint32_t last_bitrate_ GUARDED_BY(*critsect_);
   uint8_t last_fraction_loss_ GUARDED_BY(*critsect_);
-  uint32_t last_rtt_ms_ GUARDED_BY(*critsect_);
+  uint32_t last_rtt_ GUARDED_BY(*critsect_);
   bool last_enforce_min_bitrate_ GUARDED_BY(*critsect_);
   bool bitrate_observers_modified_ GUARDED_BY(*critsect_);
 };

@@ -1123,12 +1123,9 @@ TEST_F(VideoSendStreamTest, ProducesStats) {
 // indicate that it should be lowered significantly. The test then observes that
 // the bitrate observed is sinking well below the min-transmit-bitrate threshold
 // to verify that the min-transmit bitrate respects incoming REMB.
-//
-// Note that the test starts at "high" bitrate and does not ramp up to "higher"
-// bitrate since no receiver block or remb is sent in the initial phase.
 TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
   static const int kMinTransmitBitrateBps = 400000;
-  static const int kHighBitrateBps = 150000;
+  static const int kHighBitrateBps = 200000;
   static const int kRembBitrateBps = 80000;
   static const int kRembRespectedBitrateBps = 100000;
   class BitrateObserver: public test::RtpRtcpObserver, public PacketReceiver {

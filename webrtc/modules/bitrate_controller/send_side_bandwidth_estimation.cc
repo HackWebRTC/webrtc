@@ -52,20 +52,16 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation()
       bitrate_(0),
       min_bitrate_configured_(0),
       max_bitrate_configured_(0),
-      time_last_receiver_block_ms_(0),
       last_fraction_loss_(0),
-      last_round_trip_time_ms_(0),
+      last_round_trip_time_(0),
       bwe_incoming_(0),
-      time_last_decrease_ms_(0) {}
+      time_last_increase_(0),
+      time_last_decrease_(0) {}
 
 SendSideBandwidthEstimation::~SendSideBandwidthEstimation() {}
 
 void SendSideBandwidthEstimation::SetSendBitrate(uint32_t bitrate) {
   bitrate_ = bitrate;
-
-  // Clear last sent bitrate history so the new value can be used directly
-  // and not capped.
-  min_bitrate_history_.clear();
 }
 
 void SendSideBandwidthEstimation::SetMinMaxBitrate(uint32_t min_bitrate,
@@ -83,7 +79,7 @@ void SendSideBandwidthEstimation::CurrentEstimate(uint32_t* bitrate,
                                                   uint32_t* rtt) const {
   *bitrate = bitrate_;
   *loss = last_fraction_loss_;
-  *rtt = last_round_trip_time_ms_;
+  *rtt = last_round_trip_time_;
 }
 
 void SendSideBandwidthEstimation::UpdateReceiverEstimate(uint32_t bandwidth) {
@@ -96,7 +92,7 @@ void SendSideBandwidthEstimation::UpdateReceiverBlock(uint8_t fraction_loss,
                                                       int number_of_packets,
                                                       uint32_t now_ms) {
   // Update RTT.
-  last_round_trip_time_ms_ = rtt;
+  last_round_trip_time_ = rtt;
 
   // Check sequence number diff and weight loss report
   if (number_of_packets > 0) {
@@ -119,80 +115,48 @@ void SendSideBandwidthEstimation::UpdateReceiverBlock(uint8_t fraction_loss,
       return;
     }
   }
-  time_last_receiver_block_ms_ = now_ms;
   UpdateEstimate(now_ms);
 }
 
 void SendSideBandwidthEstimation::UpdateEstimate(uint32_t now_ms) {
-  UpdateMinHistory(now_ms);
+  if (last_fraction_loss_ <= 5) {
+    // Loss < 2%: Limit the rate increases to once a kBweIncreaseIntervalMs.
+    if ((now_ms - time_last_increase_) >= kBweIncreaseIntervalMs) {
+      time_last_increase_ = now_ms;
 
-  // Only start updating bitrate when receiving receiver blocks.
-  if (time_last_receiver_block_ms_ != 0) {
-    if (last_fraction_loss_ <= 5) {
-      // Loss < 2%: Increase rate by 8% of the min bitrate in the last
-      // kBweIncreaseIntervalMs.
-      // Note that by remembering the bitrate over the last second one can
-      // rampup up one second faster than if only allowed to start ramping
-      // at 8% per second rate now. E.g.:
-      //   If sending a constant 100kbps it can rampup immediatly to 108kbps
-      //   whenever a receiver report is received with lower packet loss.
-      //   If instead one would do: bitrate_ *= 1.08^(delta time), it would
-      //   take over one second since the lower packet loss to achieve 108kbps.
-      bitrate_ = static_cast<uint32_t>(
-          min_bitrate_history_.front().second * 1.08 + 0.5);
+      // Increase rate by 8%.
+      bitrate_ = static_cast<uint32_t>(bitrate_ * 1.08 + 0.5);
 
       // Add 1 kbps extra, just to make sure that we do not get stuck
       // (gives a little extra increase at low rates, negligible at higher
       // rates).
       bitrate_ += 1000;
+    }
 
-    } else if (last_fraction_loss_ <= 26) {
-      // Loss between 2% - 10%: Do nothing.
+  } else if (last_fraction_loss_ <= 26) {
+    // Loss between 2% - 10%: Do nothing.
 
-    } else {
-      // Loss > 10%: Limit the rate decreases to once a kBweDecreaseIntervalMs +
-      // rtt.
-      if ((now_ms - time_last_decrease_ms_) >=
-          static_cast<uint32_t>(kBweDecreaseIntervalMs +
-                                last_round_trip_time_ms_)) {
-        time_last_decrease_ms_ = now_ms;
+  } else {
+    // Loss > 10%: Limit the rate decreases to once a kBweDecreaseIntervalMs +
+    // rtt.
+    if ((now_ms - time_last_decrease_) >=
+        static_cast<uint32_t>(kBweDecreaseIntervalMs + last_round_trip_time_)) {
+      time_last_decrease_ = now_ms;
 
-        // Reduce rate:
-        //   newRate = rate * (1 - 0.5*lossRate);
-        //   where packetLoss = 256*lossRate;
-        bitrate_ = static_cast<uint32_t>(
-            (bitrate_ * static_cast<double>(512 - last_fraction_loss_)) /
-            512.0);
+      // Reduce rate:
+      //   newRate = rate * (1 - 0.5*lossRate);
+      //   where packetLoss = 256*lossRate;
+      bitrate_ = static_cast<uint32_t>(
+          (bitrate_ * static_cast<double>(512 - last_fraction_loss_)) / 512.0);
 
-        // Calculate what rate TFRC would apply in this situation and to not
-        // reduce further than it.
-        bitrate_ = std::max(
-            bitrate_,
-            CalcTfrcBps(last_round_trip_time_ms_, last_fraction_loss_));
-      }
+      // Calculate what rate TFRC would apply in this situation and to not
+      // reduce further than it.
+      bitrate_ = std::max(
+          bitrate_, CalcTfrcBps(last_round_trip_time_, last_fraction_loss_));
     }
   }
+
   CapBitrateToThresholds();
-}
-
-void SendSideBandwidthEstimation::UpdateMinHistory(uint32_t now_ms) {
-  // Remove old data points from history.
-  // Since history precision is in ms, add one so it is able to increase
-  // bitrate if it is off by as little as 0.5ms.
-  while (!min_bitrate_history_.empty() &&
-         now_ms - min_bitrate_history_.front().first + 1 >
-             kBweIncreaseIntervalMs) {
-    min_bitrate_history_.pop_front();
-  }
-
-  // Typical minimum sliding-window algorithm: Pop values higher than current
-  // bitrate before pushing it.
-  while (!min_bitrate_history_.empty() &&
-         bitrate_ <= min_bitrate_history_.back().second) {
-    min_bitrate_history_.pop_back();
-  }
-
-  min_bitrate_history_.push_back(std::make_pair(now_ms, bitrate_));
 }
 
 void SendSideBandwidthEstimation::CapBitrateToThresholds() {
