@@ -275,7 +275,10 @@ int32_t RTPSender::DeRegisterSendPayload(
   return 0;
 }
 
-int8_t RTPSender::SendPayloadType() const { return payload_type_; }
+int8_t RTPSender::SendPayloadType() const {
+  CriticalSectionScoped cs(send_critsect_);
+  return payload_type_;
+}
 
 int RTPSender::SendPayloadFrequency() const {
   return audio_ != NULL ? audio_->AudioFrequency() : kVideoPayloadTypeFrequency;
