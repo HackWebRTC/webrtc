@@ -26,7 +26,15 @@ using namespace webrtc::videocapturemodule;
 - (int)changeCaptureInputWithName:(NSString*)captureDeviceName;
 @end
 
-@implementation RTCVideoCaptureIosObjC
+@implementation RTCVideoCaptureIosObjC {
+  webrtc::videocapturemodule::VideoCaptureIos* _owner;
+  webrtc::VideoCaptureCapability _capability;
+  AVCaptureSession* _captureSession;
+  int _captureId;
+  AVCaptureConnection* _connection;
+  BOOL _captureStarting;  // Guarded by _captureStartingCondition.
+  NSCondition* _captureStartingCondition;
+}
 
 @synthesize frameRotation = _framRotation;
 

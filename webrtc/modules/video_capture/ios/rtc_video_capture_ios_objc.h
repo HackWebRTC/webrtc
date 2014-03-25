@@ -21,16 +21,7 @@
 // This notification must be posted in order for the capturer to reflect the
 // orientation change in video w.r.t. the application orientation.
 @interface RTCVideoCaptureIosObjC
-    : NSObject<AVCaptureVideoDataOutputSampleBufferDelegate> {
- @private
-  webrtc::videocapturemodule::VideoCaptureIos* _owner;
-  webrtc::VideoCaptureCapability _capability;
-  AVCaptureSession* _captureSession;
-  int _captureId;
-  AVCaptureConnection* _connection;
-  BOOL _captureStarting;  // Guarded by _captureStartingCondition.
-  NSCondition* _captureStartingCondition;
-}
+    : NSObject<AVCaptureVideoDataOutputSampleBufferDelegate>
 
 @property webrtc::VideoCaptureRotation frameRotation;
 
