@@ -288,7 +288,7 @@ class LowRateStreamObserver : public test::DirectTransport,
   std::string GetModifierString() {
     std::string str("_");
     char temp_str[5];
-    sprintf(temp_str, "%zu", number_of_streams_);
+    sprintf(temp_str, "%i", static_cast<int>(number_of_streams_));
     str += std::string(temp_str);
     str += "stream";
     str += (number_of_streams_ > 1 ? "s" : "");
