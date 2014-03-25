@@ -33,8 +33,6 @@
 #include "talk/p2p/base/basicpacketsocketfactory.h"
 #include "talk/p2p/client/basicportallocator.h"
 
-static const char kUserAgent[] = "PeerConnection User Agent";
-
 namespace webrtc {
 
 using talk_base::scoped_ptr;

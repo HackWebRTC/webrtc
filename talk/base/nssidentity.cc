@@ -355,7 +355,7 @@ NSSIdentity* NSSIdentity::GenerateInternal(const SSLIdentityParams& params) {
   NSSIdentity *identity = NULL;
   CERTSubjectPublicKeyInfo *spki = NULL;
   CERTCertificateRequest *certreq = NULL;
-  CERTValidity *validity;
+  CERTValidity *validity = NULL;
   CERTCertificate *certificate = NULL;
   NSSKeyPair *keypair = NSSKeyPair::Generate();
   SECItem inner_der;

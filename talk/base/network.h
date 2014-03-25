@@ -254,10 +254,6 @@ class Network {
   std::vector<IPAddress> ips_;
   int scope_id_;
   bool ignored_;
-  double uniform_numerator_;
-  double uniform_denominator_;
-  double exponential_numerator_;
-  double exponential_denominator_;
   AdapterType type_;
   int preference_;
 

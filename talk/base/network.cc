@@ -612,16 +612,14 @@ Network::Network(const std::string& name, const std::string& desc,
                  const std::string& key)
     : name_(name), description_(desc), prefix_(prefix),
       prefix_length_(prefix_length), key_(key), scope_id_(0), ignored_(false),
-      uniform_numerator_(0), uniform_denominator_(0), exponential_numerator_(0),
-      exponential_denominator_(0), type_(ADAPTER_TYPE_UNKNOWN), preference_(0) {
+      type_(ADAPTER_TYPE_UNKNOWN), preference_(0) {
 }
 
 Network::Network(const std::string& name, const std::string& desc,
                  const IPAddress& prefix, int prefix_length)
     : name_(name), description_(desc), prefix_(prefix),
       prefix_length_(prefix_length), scope_id_(0), ignored_(false),
-      uniform_numerator_(0), uniform_denominator_(0), exponential_numerator_(0),
-      exponential_denominator_(0), type_(ADAPTER_TYPE_UNKNOWN), preference_(0) {
+      type_(ADAPTER_TYPE_UNKNOWN), preference_(0) {
 }
 
 std::string Network::ToString() const {

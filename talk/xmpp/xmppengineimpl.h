@@ -234,8 +234,6 @@ class XmppEngineImpl : public XmppEngine {
    private:
     XmppEngineImpl* engine_;
     State state_;
-    Error error_;
-
   };
 
   friend class StanzaParseHandler;

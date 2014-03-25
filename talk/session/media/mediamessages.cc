@@ -52,13 +52,6 @@ bool ParseSsrc(const std::string& string, uint32* ssrc) {
   return talk_base::FromString(string, ssrc);
 }
 
-bool ParseSsrc(const buzz::XmlElement* element, uint32* ssrc) {
-  if (element == NULL) {
-    return false;
-  }
-  return ParseSsrc(element->BodyText(), ssrc);
-}
-
 // Builds a <view> element according to the following spec:
 // goto/jinglemuc
 buzz::XmlElement* CreateViewElem(const std::string& name,

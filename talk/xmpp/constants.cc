@@ -216,7 +216,6 @@ const char NS_GOOGLE_AUTH_PROTOCOL[] =
     "http://www.google.com/talk/protocol/auth";
 const StaticQName QN_GOOGLE_AUTH_CLIENT_USES_FULL_BIND_RESULT =
     { NS_GOOGLE_AUTH_PROTOCOL, "client-uses-full-bind-result" };
-const char NS_GOOGLE_AUTH_OLD[] = "google:auth";
 const StaticQName QN_GOOGLE_ALLOW_NON_GOOGLE_ID_XMPP_LOGIN =
     { NS_GOOGLE_AUTH_PROTOCOL, "allow-non-google-login" };
 const StaticQName QN_GOOGLE_AUTH_SERVICE =
@@ -345,8 +344,6 @@ const StaticQName QN_NICK = { STR_EMPTY, "nick" };
 const StaticQName QN_SUBSCRIPTION = { STR_EMPTY, "subscription" };
 const StaticQName QN_TITLE1 = { STR_EMPTY, "title1" };
 const StaticQName QN_TITLE2 = { STR_EMPTY, "title2" };
-const StaticQName QN_SOURCE = { STR_EMPTY, "source" };
-const StaticQName QN_TIME = { STR_EMPTY, "time" };
 
 const StaticQName QN_XMLNS_CLIENT = { NS_XMLNS, STR_CLIENT };
 const StaticQName QN_XMLNS_SERVER = { NS_XMLNS, STR_SERVER };

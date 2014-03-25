@@ -87,7 +87,7 @@ private:
 
   class ParseContext : public XmlParseContext {
   public:
-    ParseContext(XmlParser * parser);
+    ParseContext();
     virtual ~ParseContext();
     virtual QName ResolveQName(const char * qname, bool isAttr);
     virtual void RaiseError(XML_Error err) { if (!raised_) raised_ = err; }
@@ -102,7 +102,6 @@ private:
     void SetPosition(int line, int column, long byte_index);
 
   private:
-    const XmlParser * parser_;
     XmlnsStack xmlnsstack_;
     XML_Error raised_;
     XML_Size line_number_;

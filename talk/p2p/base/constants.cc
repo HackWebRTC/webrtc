@@ -202,7 +202,6 @@ const buzz::StaticQName QN_ADDRESS = { cricket::NS_EMPTY, "address" };
 const buzz::StaticQName QN_USERNAME = { cricket::NS_EMPTY, "username" };
 const buzz::StaticQName QN_PASSWORD = { cricket::NS_EMPTY, "password" };
 const buzz::StaticQName QN_PREFERENCE = { cricket::NS_EMPTY, "preference" };
-const char GICE_CANDIDATE_TYPE_STUN[] = "stun";
 const char GICE_CHANNEL_NAME_RTP[] = "rtp";
 const char GICE_CHANNEL_NAME_RTCP[] = "rtcp";
 const char GICE_CHANNEL_NAME_VIDEO_RTP[] = "video_rtp";

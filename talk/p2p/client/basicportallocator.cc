@@ -56,7 +56,6 @@ const uint32 MSG_SEQUENCEOBJECTS_CREATED = 6;
 const uint32 MSG_CONFIG_STOP = 7;
 
 const uint32 ALLOCATE_DELAY = 250;
-const uint32 ALLOCATION_STEP_DELAY = 1 * 1000;
 
 const int PHASE_UDP = 0;
 const int PHASE_RELAY = 1;
@@ -238,7 +237,6 @@ BasicPortAllocatorSession::BasicPortAllocatorSession(
                            ice_ufrag, ice_pwd, allocator->flags()),
       allocator_(allocator), network_thread_(NULL),
       socket_factory_(allocator->socket_factory()),
-      configuration_done_(false),
       allocation_started_(false),
       network_manager_started_(false),
       running_(false),

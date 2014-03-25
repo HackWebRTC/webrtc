@@ -60,7 +60,7 @@ XmlDeclCallback(void * userData, const char * ver, const char * enc, int st) {
 }
 
 XmlParser::XmlParser(XmlParseHandler *pxph) :
-    context_(this), pxph_(pxph), sentError_(false) {
+    pxph_(pxph), sentError_(false) {
   expat_ = XML_ParserCreate(NULL);
   XML_SetUserData(expat_, this);
   XML_SetElementHandler(expat_, StartElementCallback, EndElementCallback);
@@ -196,8 +196,7 @@ XmlParser::ParseXml(XmlParseHandler *pxph, std::string text) {
   parser.Parse(text.c_str(), text.length(), true);
 }
 
-XmlParser::ParseContext::ParseContext(XmlParser *parser) :
-    parser_(parser),
+XmlParser::ParseContext::ParseContext() :
     xmlnsstack_(),
     raised_(XML_ERROR_NONE),
     line_number_(0),

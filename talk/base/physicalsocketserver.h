@@ -127,8 +127,6 @@ class PhysicalSocketServer : public SocketServer {
   Signaler* signal_wakeup_;
   CriticalSection crit_;
   bool fWait_;
-  uint32 last_tick_tracked_;
-  int last_tick_dispatch_count_;
 #ifdef WIN32
   WSAEVENT socket_ev_;
 #endif

@@ -25,6 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <stdint.h>
+
 #ifdef POSIX
 #include <sys/time.h>
 #if defined(OSX) || defined(IOS)
@@ -45,7 +47,6 @@
 
 namespace talk_base {
 
-const uint32 LAST = 0xFFFFFFFF;
 const uint32 HALF = 0x80000000;
 
 uint64 TimeNanos() {
@@ -190,13 +191,13 @@ int32 TimeDiff(uint32 later, uint32 earlier) {
     if (earlier <= later) {
       return static_cast<long>(later - earlier);
     } else {
-      return static_cast<long>(later + (LAST - earlier) + 1);
+      return static_cast<long>(later + (UINT32_MAX - earlier) + 1);
     }
   } else {
     if (later <= earlier) {
       return -static_cast<long>(earlier - later);
     } else {
-      return -static_cast<long>(earlier + (LAST - later) + 1);
+      return -static_cast<long>(earlier + (UINT32_MAX - later) + 1);
     }
   }
 #endif

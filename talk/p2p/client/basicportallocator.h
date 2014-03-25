@@ -204,7 +204,6 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   talk_base::Thread* network_thread_;
   talk_base::scoped_ptr<talk_base::PacketSocketFactory> owned_socket_factory_;
   talk_base::PacketSocketFactory* socket_factory_;
-  bool configuration_done_;
   bool allocation_started_;
   bool network_manager_started_;
   bool running_;  // set when StartGetAllPorts is called

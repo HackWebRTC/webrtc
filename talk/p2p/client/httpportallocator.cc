@@ -41,9 +41,6 @@
 
 namespace {
 
-const uint32 MSG_TIMEOUT = 100;  // must not conflict
-  // with BasicPortAllocator.cpp
-
 // Helper routine to remove whitespace from the ends of a string.
 void Trim(std::string& str) {
   size_t first = str.find_first_not_of(" \t\r\n");

@@ -79,6 +79,7 @@ typedef char* SockOptArg;
 
 namespace talk_base {
 
+#if defined(WIN32)
 // Standard MTUs, from RFC 1191
 const uint16 PACKET_MAXIMUMS[] = {
   65535,    // Theoretical maximum, Hyperchannel
@@ -106,6 +107,7 @@ static const int IP_HEADER_SIZE = 20u;
 static const int IPV6_HEADER_SIZE = 40u;
 static const int ICMP_HEADER_SIZE = 8u;
 static const int ICMP_PING_TIMEOUT_MILLIS = 10000u;
+#endif
 
 class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
  public:
@@ -1202,9 +1204,7 @@ class Signaler : public EventDispatcher {
 };
 
 PhysicalSocketServer::PhysicalSocketServer()
-    : fWait_(false),
-      last_tick_tracked_(0),
-      last_tick_dispatch_count_(0) {
+    : fWait_(false) {
   signal_wakeup_ = new Signaler(this, &fWait_);
 #ifdef WIN32
   socket_ev_ = WSACreateEvent();
@@ -1514,12 +1514,6 @@ bool PhysicalSocketServer::Wait(int cmsWait, bool process_io) {
   int cmsElapsed = 0;
   uint32 msStart = Time();
 
-#if LOGGING
-  if (last_tick_dispatch_count_ == 0) {
-    last_tick_tracked_ = msStart;
-  }
-#endif
-
   fWait_ = true;
   while (fWait_) {
     std::vector<WSAEVENT> events;
@@ -1568,23 +1562,6 @@ bool PhysicalSocketServer::Wait(int cmsWait, bool process_io) {
                                         false,
                                         cmsNext,
                                         false);
-
-#if 0  // LOGGING
-    // we track this information purely for logging purposes.
-    last_tick_dispatch_count_++;
-    if (last_tick_dispatch_count_ >= 1000) {
-      int32 elapsed = TimeSince(last_tick_tracked_);
-      LOG(INFO) << "PhysicalSocketServer took " << elapsed
-                << "ms for 1000 events";
-
-      // If we get more than 1000 events in a second, we are spinning badly
-      // (normally it should take about 8-20 seconds).
-      ASSERT(elapsed > 1000);
-
-      last_tick_tracked_ = Time();
-      last_tick_dispatch_count_ = 0;
-    }
-#endif
 
     if (dw == WSA_WAIT_FAILED) {
       // Failed?
