@@ -90,7 +90,7 @@ deps = {
     Var("chromium_trunk") + "/deps/third_party/opus@239448",
 
   "third_party/protobuf":
-    Var("chromium_trunk") + "/src/third_party/protobuf@" + Var("chromium_revision"),
+    Var("chromium_trunk") + "/src/third_party/protobuf@251211",
 
   "third_party/sqlite/":
     Var("chromium_trunk") + "/src/third_party/sqlite@" + Var("chromium_revision"),
