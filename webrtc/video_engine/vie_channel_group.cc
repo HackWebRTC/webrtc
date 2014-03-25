@@ -160,10 +160,13 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
 };
 }  // namespace
 
-ChannelGroup::ChannelGroup(int engine_id, ProcessThread* process_thread,
+ChannelGroup::ChannelGroup(int engine_id,
+                           ProcessThread* process_thread,
                            const Config* config)
     : remb_(new VieRemb()),
-      bitrate_controller_(BitrateController::CreateBitrateController(true)),
+      bitrate_controller_(
+          BitrateController::CreateBitrateController(Clock::GetRealTimeClock(),
+                                                     true)),
       call_stats_(new CallStats()),
       encoder_state_feedback_(new EncoderStateFeedback()),
       config_(config),
@@ -175,16 +178,21 @@ ChannelGroup::ChannelGroup(int engine_id, ProcessThread* process_thread,
   }
   assert(config_);  // Must have a valid config pointer here.
   remote_bitrate_estimator_.reset(
-      new WrappingBitrateEstimator(engine_id, remb_.get(),
-                                   Clock::GetRealTimeClock(), process_thread,
+      new WrappingBitrateEstimator(engine_id,
+                                   remb_.get(),
+                                   Clock::GetRealTimeClock(),
+                                   process_thread,
                                    *config_)),
-  call_stats_->RegisterStatsObserver(remote_bitrate_estimator_.get());
+      call_stats_->RegisterStatsObserver(remote_bitrate_estimator_.get());
+
   process_thread->RegisterModule(call_stats_.get());
+  process_thread->RegisterModule(bitrate_controller_.get());
 }
 
 ChannelGroup::~ChannelGroup() {
-  call_stats_->DeregisterStatsObserver(remote_bitrate_estimator_.get());
+  process_thread_->DeRegisterModule(bitrate_controller_.get());
   process_thread_->DeRegisterModule(call_stats_.get());
+  call_stats_->DeregisterStatsObserver(remote_bitrate_estimator_.get());
   assert(channels_.empty());
   assert(!remb_->InUse());
 }
