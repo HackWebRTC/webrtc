@@ -86,6 +86,13 @@ class WEBRTC_DLLEXPORT ViENetwork {
     return 0;
   }
 
+  // TODO(holmer): Remove the default implementation when this has been fixed
+  // in fakewebrtcvideoengine.cc.
+  virtual bool SetBandwidthEstimationConfig(int video_channel,
+                                            const webrtc::Config& config) {
+    return false;
+  }
+
  protected:
   ViENetwork() {}
   virtual ~ViENetwork() {}

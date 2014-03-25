@@ -39,5 +39,14 @@ struct SkipEncodingUnusedStreams {
 
   const bool enabled;
 };
+
+struct AimdRemoteRateControl {
+  AimdRemoteRateControl() : enabled(false) {}
+  explicit AimdRemoteRateControl(bool set_enabled)
+    : enabled(set_enabled) {}
+  virtual ~AimdRemoteRateControl() {}
+
+  const bool enabled;
+};
 }  // namespace webrtc
 #endif  // WEBRTC_EXPERIMENTS_H_

@@ -17,6 +17,7 @@
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/utility/interface/process_thread.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/thread_annotations.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/video_engine/call_stats.h"
 #include "webrtc/video_engine/encoder_state_feedback.h"
@@ -40,8 +41,10 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
         crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
         engine_id_(engine_id),
         min_bitrate_bps_(config.Get<RemoteBitrateEstimatorMinRate>().min_rate),
-        rbe_(RemoteBitrateEstimatorFactory().Create(observer_, clock_,
-                                                    kMimdControl,
+        rate_control_type_(kMimdControl),
+        rbe_(RemoteBitrateEstimatorFactory().Create(observer_,
+                                                    clock_,
+                                                    rate_control_type_,
                                                     min_bitrate_bps_)),
         using_absolute_send_time_(false),
         packets_since_absolute_send_time_(0) {
@@ -56,7 +59,7 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
                               int payload_size,
                               const RTPHeader& header) {
     CriticalSectionScoped cs(crit_sect_.get());
-    PickEstimator(header);
+    PickEstimatorFromHeader(header);
     rbe_->IncomingPacket(arrival_time_ms, payload_size, header);
   }
 
@@ -91,19 +94,27 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
     return rbe_->GetStats(output);
   }
 
+  void SetConfig(const webrtc::Config& config) {
+    CriticalSectionScoped cs(crit_sect_.get());
+    RateControlType new_control_type =
+        config.Get<AimdRemoteRateControl>().enabled ? kAimdControl :
+                                                      kMimdControl;
+    if (new_control_type != rate_control_type_) {
+      rate_control_type_ = new_control_type;
+      PickEstimator();
+    }
+  }
+
  private:
-  // Instantiate RBE for Time Offset or Absolute Send Time extensions.
-  void PickEstimator(const RTPHeader& header) {
+  void PickEstimatorFromHeader(const RTPHeader& header)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_.get()) {
     if (header.extension.hasAbsoluteSendTime) {
       // If we see AST in header, switch RBE strategy immediately.
       if (!using_absolute_send_time_) {
-        process_thread_->DeRegisterModule(rbe_.get());
         WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, ViEId(engine_id_),
             "WrappingBitrateEstimator: Switching to absolute send time RBE.");
-        rbe_.reset(AbsoluteSendTimeRemoteBitrateEstimatorFactory().Create(
-            observer_, clock_, kMimdControl, min_bitrate_bps_));
-        process_thread_->RegisterModule(rbe_.get());
         using_absolute_send_time_ = true;
+        PickEstimator();
       }
       packets_since_absolute_send_time_ = 0;
     } else {
@@ -111,17 +122,27 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
       if (using_absolute_send_time_) {
         ++packets_since_absolute_send_time_;
         if (packets_since_absolute_send_time_ >= kTimeOffsetSwitchThreshold) {
-          process_thread_->DeRegisterModule(rbe_.get());
           WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, ViEId(engine_id_),
               "WrappingBitrateEstimator: Switching to transmission time offset "
               "RBE.");
-          rbe_.reset(RemoteBitrateEstimatorFactory().Create(observer_, clock_,
-              kMimdControl, min_bitrate_bps_));
-          process_thread_->RegisterModule(rbe_.get());
           using_absolute_send_time_ = false;
+          PickEstimator();
         }
       }
     }
+  }
+
+  // Instantiate RBE for Time Offset or Absolute Send Time extensions.
+  void PickEstimator() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_.get()) {
+    process_thread_->DeRegisterModule(rbe_.get());
+    if (using_absolute_send_time_) {
+      rbe_.reset(AbsoluteSendTimeRemoteBitrateEstimatorFactory().Create(
+          observer_, clock_, rate_control_type_, min_bitrate_bps_));
+    } else {
+      rbe_.reset(RemoteBitrateEstimatorFactory().Create(
+          observer_, clock_, rate_control_type_, min_bitrate_bps_));
+    }
+    process_thread_->RegisterModule(rbe_.get());
   }
 
   RemoteBitrateObserver* observer_;
@@ -130,6 +151,7 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
   scoped_ptr<CriticalSectionWrapper> crit_sect_;
   const int engine_id_;
   const uint32_t min_bitrate_bps_;
+  RateControlType rate_control_type_;
   scoped_ptr<RemoteBitrateEstimator> rbe_;
   bool using_absolute_send_time_;
   uint32_t packets_since_absolute_send_time_;
@@ -223,5 +245,11 @@ bool ChannelGroup::SetChannelRembStatus(int channel_id, bool sender,
     remb_->RemoveReceiveChannel(rtp_module);
   }
   return true;
+}
+
+void ChannelGroup::SetBandwidthEstimationConfig(const webrtc::Config& config) {
+  WrappingBitrateEstimator* estimator =
+      static_cast<WrappingBitrateEstimator*>(remote_bitrate_estimator_.get());
+  estimator->SetConfig(config);
 }
 }  // namespace webrtc
