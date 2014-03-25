@@ -38,31 +38,31 @@
 #include "talk/app/webrtc/mediastreaminterface.h"
 
 @implementation RTCMediaStream {
-  NSMutableArray *_audioTracks;
-  NSMutableArray *_videoTracks;
+  NSMutableArray* _audioTracks;
+  NSMutableArray* _videoTracks;
   talk_base::scoped_refptr<webrtc::MediaStreamInterface> _mediaStream;
 }
 
-- (NSString *)description {
+- (NSString*)description {
   return [NSString stringWithFormat:@"[%@:A=%lu:V=%lu]",
-          [self label],
-          (unsigned long)[self.audioTracks count],
-          (unsigned long)[self.videoTracks count]];
+                                    [self label],
+                                    (unsigned long)[self.audioTracks count],
+                                    (unsigned long)[self.videoTracks count]];
 }
 
-- (NSArray *)audioTracks {
+- (NSArray*)audioTracks {
   return [_audioTracks copy];
 }
 
-- (NSArray *)videoTracks {
+- (NSArray*)videoTracks {
   return [_videoTracks copy];
 }
 
-- (NSString *)label {
+- (NSString*)label {
   return @(self.mediaStream->label().c_str());
 }
 
-- (BOOL)addAudioTrack:(RTCAudioTrack *)track {
+- (BOOL)addAudioTrack:(RTCAudioTrack*)track {
   if (self.mediaStream->AddTrack(track.audioTrack)) {
     [_audioTracks addObject:track];
     return YES;
@@ -70,7 +70,7 @@
   return NO;
 }
 
-- (BOOL)addVideoTrack:(RTCVideoTrack *)track {
+- (BOOL)addVideoTrack:(RTCVideoTrack*)track {
   if (self.mediaStream->AddTrack(track.videoTrack)) {
     [_videoTracks addObject:track];
     return YES;
@@ -78,7 +78,7 @@
   return NO;
 }
 
-- (BOOL)removeAudioTrack:(RTCAudioTrack *)track {
+- (BOOL)removeAudioTrack:(RTCAudioTrack*)track {
   NSUInteger index = [_audioTracks indexOfObjectIdenticalTo:track];
   NSAssert(index != NSNotFound,
            @"|removeAudioTrack| called on unexpected RTCAudioTrack");
@@ -89,7 +89,7 @@
   return NO;
 }
 
-- (BOOL)removeVideoTrack:(RTCVideoTrack *)track {
+- (BOOL)removeVideoTrack:(RTCVideoTrack*)track {
   NSUInteger index = [_videoTracks indexOfObjectIdenticalTo:track];
   NSAssert(index != NSNotFound,
            @"|removeAudioTrack| called on unexpected RTCVideoTrack");
@@ -105,7 +105,7 @@
 @implementation RTCMediaStream (Internal)
 
 - (id)initWithMediaStream:
-        (talk_base::scoped_refptr<webrtc::MediaStreamInterface>)mediaStream {
+          (talk_base::scoped_refptr<webrtc::MediaStreamInterface>)mediaStream {
   if (!mediaStream) {
     NSAssert(NO, @"nil arguments not allowed");
     self = nil;
@@ -122,7 +122,7 @@
     for (size_t i = 0; i < audio_tracks.size(); ++i) {
       talk_base::scoped_refptr<webrtc::AudioTrackInterface> track =
           audio_tracks[i];
-      RTCAudioTrack *audioTrack =
+      RTCAudioTrack* audioTrack =
           [[RTCAudioTrack alloc] initWithMediaTrack:track];
       [_audioTracks addObject:audioTrack];
     }

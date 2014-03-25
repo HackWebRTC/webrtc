@@ -36,7 +36,7 @@
 @synthesize description = _description;
 @synthesize type = _type;
 
-- (id)initWithType:(NSString *)type sdp:(NSString *)sdp {
+- (id)initWithType:(NSString*)type sdp:(NSString*)sdp {
   if (!type || !sdp) {
     NSAssert(NO, @"nil arguments not allowed");
     return nil;
@@ -53,14 +53,14 @@
 @implementation RTCSessionDescription (Internal)
 
 - (id)initWithSessionDescription:
-        (const webrtc::SessionDescriptionInterface *)sessionDescription {
+          (const webrtc::SessionDescriptionInterface*)sessionDescription {
   if (!sessionDescription) {
     NSAssert(NO, @"nil arguments not allowed");
     self = nil;
     return nil;
   }
   if ((self = [super init])) {
-    const std::string &type = sessionDescription->type();
+    const std::string& type = sessionDescription->type();
     std::string sdp;
     if (!sessionDescription->ToString(&sdp)) {
       NSAssert(NO, @"Invalid SessionDescriptionInterface.");
@@ -73,7 +73,7 @@
   return self;
 }
 
-- (webrtc::SessionDescriptionInterface *)sessionDescription {
+- (webrtc::SessionDescriptionInterface*)sessionDescription {
   return webrtc::CreateSessionDescription(
       [self.type UTF8String], [self.description UTF8String], NULL);
 }

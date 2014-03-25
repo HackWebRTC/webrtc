@@ -86,54 +86,55 @@
   return self;
 }
 
-- (RTCPeerConnection *)
-    peerConnectionWithICEServers:(NSArray *)servers
-                     constraints:(RTCMediaConstraints *)constraints
+- (RTCPeerConnection*)
+    peerConnectionWithICEServers:(NSArray*)servers
+                     constraints:(RTCMediaConstraints*)constraints
                         delegate:(id<RTCPeerConnectionDelegate>)delegate {
   webrtc::PeerConnectionInterface::IceServers iceServers;
-  for (RTCICEServer *server in servers) {
+  for (RTCICEServer* server in servers) {
     iceServers.push_back(server.iceServer);
   }
-  webrtc::RTCPeerConnectionObserver *observer =
+  webrtc::RTCPeerConnectionObserver* observer =
       new webrtc::RTCPeerConnectionObserver(delegate);
   webrtc::DTLSIdentityServiceInterface* dummy_dtls_identity_service = NULL;
   talk_base::scoped_refptr<webrtc::PeerConnectionInterface> peerConnection =
-      self.nativeFactory->CreatePeerConnection(
-          iceServers, constraints.constraints, dummy_dtls_identity_service,
-          observer);
-  RTCPeerConnection *pc =
+      self.nativeFactory->CreatePeerConnection(iceServers,
+                                               constraints.constraints,
+                                               dummy_dtls_identity_service,
+                                               observer);
+  RTCPeerConnection* pc =
       [[RTCPeerConnection alloc] initWithPeerConnection:peerConnection
                                                observer:observer];
   observer->SetPeerConnection(pc);
   return pc;
 }
 
-- (RTCMediaStream *)mediaStreamWithLabel:(NSString *)label {
+- (RTCMediaStream*)mediaStreamWithLabel:(NSString*)label {
   talk_base::scoped_refptr<webrtc::MediaStreamInterface> nativeMediaStream =
       self.nativeFactory->CreateLocalMediaStream([label UTF8String]);
   return [[RTCMediaStream alloc] initWithMediaStream:nativeMediaStream];
 }
 
-- (RTCVideoSource *)videoSourceWithCapturer:(RTCVideoCapturer *)capturer
-                                constraints:(RTCMediaConstraints *)constraints {
+- (RTCVideoSource*)videoSourceWithCapturer:(RTCVideoCapturer*)capturer
+                               constraints:(RTCMediaConstraints*)constraints {
   if (!capturer) {
     return nil;
   }
   talk_base::scoped_refptr<webrtc::VideoSourceInterface> source =
-      self.nativeFactory->CreateVideoSource([capturer release_native_capturer],
+      self.nativeFactory->CreateVideoSource([capturer takeNativeCapturer],
                                             constraints.constraints);
   return [[RTCVideoSource alloc] initWithMediaSource:source];
 }
 
-- (RTCVideoTrack *)videoTrackWithID:(NSString *)videoId
-                             source:(RTCVideoSource *)source {
+- (RTCVideoTrack*)videoTrackWithID:(NSString*)videoId
+                            source:(RTCVideoSource*)source {
   talk_base::scoped_refptr<webrtc::VideoTrackInterface> track =
       self.nativeFactory->CreateVideoTrack([videoId UTF8String],
                                            source.videoSource);
   return [[RTCVideoTrack alloc] initWithMediaTrack:track];
 }
 
-- (RTCAudioTrack *)audioTrackWithID:(NSString *)audioId {
+- (RTCAudioTrack*)audioTrackWithID:(NSString*)audioId {
   talk_base::scoped_refptr<webrtc::AudioTrackInterface> track =
       self.nativeFactory->CreateAudioTrack([audioId UTF8String], NULL);
   return [[RTCAudioTrack alloc] initWithMediaTrack:track];

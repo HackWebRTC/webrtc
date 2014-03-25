@@ -26,6 +26,7 @@
  */
 
 #import <Foundation/Foundation.h>
+#import <QuartzCore/QuartzCore.h>
 
 @protocol RTCVideoRendererDelegate;
 struct CGRect;
@@ -36,17 +37,14 @@ struct CGRect;
 
 @property(nonatomic, strong) id<RTCVideoRendererDelegate> delegate;
 
-// A convenience method to create a renderer and window and render frames into
-// that window.
-+ (RTCVideoRenderer *)videoRenderGUIWithFrame:(CGRect)frame;
-+ (UIView*)newRenderViewWithFrame:(CGRect)frame;
-// The view to the following constructor
-// must be one of the views from newRenderViewWithFrame.
-- (id)initWithRenderView:(UIView*)renderView;
+- (id)initWithView:(UIView*)view;
 
 // Initialize the renderer.  Requires a delegate which does the actual drawing
 // of frames.
 - (id)initWithDelegate:(id<RTCVideoRendererDelegate>)delegate;
+
+// Set an affine transform on relevant UIViews.
+- (void)setTransform:(CGAffineTransform)transform;
 
 // Starts rendering.
 - (void)start;
@@ -55,8 +53,8 @@ struct CGRect;
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 // Disallow init and don't add to documentation
-- (id)init __attribute__(
-    (unavailable("init is not a supported initializer for this class.")));
+- (id)init __attribute__((
+    unavailable("init is not a supported initializer for this class.")));
 #endif /* DOXYGEN_SHOULD_SKIP_THIS */
 
 @end

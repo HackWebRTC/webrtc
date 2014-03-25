@@ -39,7 +39,7 @@
 @implementation RTCAudioTrack (Internal)
 
 - (talk_base::scoped_refptr<webrtc::AudioTrackInterface>)audioTrack {
-  return static_cast<webrtc::AudioTrackInterface *>(self.mediaTrack.get());
+  return static_cast<webrtc::AudioTrackInterface*>(self.mediaTrack.get());
 }
 
 @end

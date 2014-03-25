@@ -44,8 +44,8 @@
   webrtc::MediaConstraintsInterface::Constraints _optional;
 }
 
-- (id)initWithMandatoryConstraints:(NSArray *)mandatory
-               optionalConstraints:(NSArray *)optional {
+- (id)initWithMandatoryConstraints:(NSArray*)mandatory
+               optionalConstraints:(NSArray*)optional {
   if ((self = [super init])) {
     _mandatory = [[self class] constraintsFromArray:mandatory];
     _optional = [[self class] constraintsFromArray:optional];
@@ -55,10 +55,10 @@
   return self;
 }
 
-+ (webrtc::MediaConstraintsInterface::Constraints)
-    constraintsFromArray:(NSArray *)array {
++ (webrtc::MediaConstraintsInterface::Constraints)constraintsFromArray:
+                                                      (NSArray*)array {
   webrtc::MediaConstraintsInterface::Constraints constraints;
-  for (RTCPair *pair in array) {
+  for (RTCPair* pair in array) {
     constraints.push_back(webrtc::MediaConstraintsInterface::Constraint(
         [pair.key UTF8String], [pair.value UTF8String]));
   }
@@ -69,7 +69,7 @@
 
 @implementation RTCMediaConstraints (internal)
 
-- (const webrtc::RTCMediaConstraintsNative *)constraints {
+- (const webrtc::RTCMediaConstraintsNative*)constraints {
   return _constraints.get();
 }
 

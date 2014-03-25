@@ -40,12 +40,13 @@
 
 - (BOOL)isEqual:(id)other {
   // Equality is purely based on the label just like the C++ implementation.
-  if (self == other) return YES;
+  if (self == other)
+    return YES;
   if (![other isKindOfClass:[self class]] ||
       ![self isKindOfClass:[other class]]) {
     return NO;
   }
-  RTCMediaStreamTrack *otherMediaStream = (RTCMediaStreamTrack *)other;
+  RTCMediaStreamTrack* otherMediaStream = (RTCMediaStreamTrack*)other;
   return [self.label isEqual:otherMediaStream.label];
 }
 
@@ -53,11 +54,11 @@
   return [self.label hash];
 }
 
-- (NSString *)kind {
+- (NSString*)kind {
   return @(self.mediaTrack->kind().c_str());
 }
 
-- (NSString *)label {
+- (NSString*)label {
   return @(self.mediaTrack->id().c_str());
 }
 
@@ -82,8 +83,9 @@
 
 @implementation RTCMediaStreamTrack (Internal)
 
-- (id)initWithMediaTrack:(
-    talk_base::scoped_refptr<webrtc::MediaStreamTrackInterface>)mediaTrack {
+- (id)initWithMediaTrack:
+          (talk_base::scoped_refptr<webrtc::MediaStreamTrackInterface>)
+      mediaTrack {
   if (!mediaTrack) {
     NSAssert(NO, @"nil arguments not allowed");
     self = nil;

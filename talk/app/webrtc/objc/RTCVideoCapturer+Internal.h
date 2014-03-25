@@ -31,7 +31,7 @@
 
 @interface RTCVideoCapturer (Internal)
 
-- (cricket::VideoCapturer*)release_native_capturer;
+- (cricket::VideoCapturer*)takeNativeCapturer;
 
 - (id)initWithCapturer:(cricket::VideoCapturer*)capturer;
 

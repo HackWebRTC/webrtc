@@ -35,13 +35,13 @@
 
 @implementation RTCPeerConnectionSyncObserver {
   int _expectedErrors;
-  NSMutableArray *_expectedSignalingChanges;
-  NSMutableArray *_expectedAddStreamLabels;
-  NSMutableArray *_expectedRemoveStreamLabels;
+  NSMutableArray* _expectedSignalingChanges;
+  NSMutableArray* _expectedAddStreamLabels;
+  NSMutableArray* _expectedRemoveStreamLabels;
   int _expectedICECandidates;
-  NSMutableArray *_receivedICECandidates;
-  NSMutableArray *_expectedICEConnectionChanges;
-  NSMutableArray *_expectedICEGatheringChanges;
+  NSMutableArray* _receivedICECandidates;
+  NSMutableArray* _expectedICEConnectionChanges;
+  NSMutableArray* _expectedICEGatheringChanges;
 }
 
 - (id)init {
@@ -58,24 +58,23 @@
   return self;
 }
 
-- (int)popFirstElementAsInt:(NSMutableArray *)array {
+- (int)popFirstElementAsInt:(NSMutableArray*)array {
   NSAssert([array count] > 0, @"Empty array");
-  NSNumber *boxedState = [array objectAtIndex:0];
+  NSNumber* boxedState = [array objectAtIndex:0];
   [array removeObjectAtIndex:0];
   return [boxedState intValue];
 }
 
-- (NSString *)popFirstElementAsNSString:(NSMutableArray *)array {
+- (NSString*)popFirstElementAsNSString:(NSMutableArray*)array {
   NSAssert([array count] > 0, @"Empty expectation array");
-  NSString *string = [array objectAtIndex:0];
+  NSString* string = [array objectAtIndex:0];
   [array removeObjectAtIndex:0];
   return string;
 }
 
 - (BOOL)areAllExpectationsSatisfied {
   return _expectedICECandidates <= 0 &&  // See comment in gotICECandidate.
-         _expectedErrors == 0 &&
-         [_expectedSignalingChanges count] == 0 &&
+         _expectedErrors == 0 && [_expectedSignalingChanges count] == 0 &&
          [_expectedICEConnectionChanges count] == 0 &&
          [_expectedICEGatheringChanges count] == 0 &&
          [_expectedAddStreamLabels count] == 0 &&
@@ -83,7 +82,7 @@
   // TODO(hughv): Test video state here too.
 }
 
-- (NSArray *)releaseReceivedICECandidates {
+- (NSArray*)releaseReceivedICECandidates {
   NSArray* ret = _receivedICECandidates;
   _receivedICECandidates = [NSMutableArray array];
   return ret;
@@ -97,11 +96,11 @@
   [_expectedSignalingChanges addObject:@((int)state)];
 }
 
-- (void)expectAddStream:(NSString *)label {
+- (void)expectAddStream:(NSString*)label {
   [_expectedAddStreamLabels addObject:label];
 }
 
-- (void)expectRemoveStream:(NSString *)label {
+- (void)expectRemoveStream:(NSString*)label {
   [_expectedRemoveStreamLabels addObject:label];
 }
 
@@ -129,39 +128,41 @@
 
 #pragma mark - RTCPeerConnectionDelegate methods
 
-- (void)peerConnectionOnError:(RTCPeerConnection *)peerConnection {
+- (void)peerConnectionOnError:(RTCPeerConnection*)peerConnection {
   NSLog(@"RTCPeerConnectionDelegate::onError");
   NSAssert(--_expectedErrors >= 0, @"Unexpected error");
 }
 
-- (void)peerConnection:(RTCPeerConnection *)peerConnection
+- (void)peerConnection:(RTCPeerConnection*)peerConnection
     signalingStateChanged:(RTCSignalingState)stateChanged {
   int expectedState = [self popFirstElementAsInt:_expectedSignalingChanges];
-  NSString *message = [NSString stringWithFormat: @"RTCPeerConnectionDelegate::"
-      @"onSignalingStateChange [%d] expected[%d]", stateChanged, expectedState];
-  NSAssert(expectedState == (int) stateChanged, message);
+  NSString* message =
+      [NSString stringWithFormat:@"RTCPeerConnectionDelegate::"
+                                 @"onSignalingStateChange [%d] expected[%d]",
+                                 stateChanged,
+                                 expectedState];
+  NSAssert(expectedState == (int)stateChanged, message);
 }
 
-- (void)peerConnection:(RTCPeerConnection *)peerConnection
-           addedStream:(RTCMediaStream *)stream {
-  NSString *expectedLabel =
+- (void)peerConnection:(RTCPeerConnection*)peerConnection
+           addedStream:(RTCMediaStream*)stream {
+  NSString* expectedLabel =
       [self popFirstElementAsNSString:_expectedAddStreamLabels];
   NSAssert([expectedLabel isEqual:stream.label], @"Stream not expected");
 }
 
-- (void)peerConnection:(RTCPeerConnection *)peerConnection
-        removedStream:(RTCMediaStream *)stream {
-  NSString *expectedLabel =
+- (void)peerConnection:(RTCPeerConnection*)peerConnection
+         removedStream:(RTCMediaStream*)stream {
+  NSString* expectedLabel =
       [self popFirstElementAsNSString:_expectedRemoveStreamLabels];
   NSAssert([expectedLabel isEqual:stream.label], @"Stream not expected");
 }
 
-- (void)peerConnectionOnRenegotiationNeeded:
-    (RTCPeerConnection *)peerConnection {
+- (void)peerConnectionOnRenegotiationNeeded:(RTCPeerConnection*)peerConnection {
 }
 
-- (void)peerConnection:(RTCPeerConnection *)peerConnection
-       gotICECandidate:(RTCICECandidate *)candidate {
+- (void)peerConnection:(RTCPeerConnection*)peerConnection
+       gotICECandidate:(RTCICECandidate*)candidate {
   --_expectedICECandidates;
   // We don't assert expectedICECandidates >= 0 because it's hard to know
   // how many to expect, in general.  We only use expectICECandidates to
@@ -169,7 +170,7 @@
   [_receivedICECandidates addObject:candidate];
 }
 
-- (void)peerConnection:(RTCPeerConnection *)peerConnection
+- (void)peerConnection:(RTCPeerConnection*)peerConnection
     iceGatheringChanged:(RTCICEGatheringState)newState {
   // It's fine to get a variable number of GATHERING messages before
   // COMPLETE fires (depending on how long the test runs) so we don't assert
@@ -181,7 +182,7 @@
   NSAssert(expectedState == (int)newState, @"Empty expectation array");
 }
 
-- (void)peerConnection:(RTCPeerConnection *)peerConnection
+- (void)peerConnection:(RTCPeerConnection*)peerConnection
     iceConnectionChanged:(RTCICEConnectionState)newState {
   // See TODO(fischman) in RTCPeerConnectionTest.mm about Completed.
   if (newState == RTCICEConnectionCompleted)

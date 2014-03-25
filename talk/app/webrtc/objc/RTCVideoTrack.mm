@@ -35,18 +35,19 @@
 #import "RTCVideoRenderer+Internal.h"
 
 @implementation RTCVideoTrack {
-  NSMutableArray *_rendererArray;
+  NSMutableArray* _rendererArray;
 }
 
-- (id)initWithMediaTrack:(
-    talk_base::scoped_refptr<webrtc::MediaStreamTrackInterface>)mediaTrack {
+- (id)initWithMediaTrack:
+          (talk_base::scoped_refptr<webrtc::MediaStreamTrackInterface>)
+      mediaTrack {
   if (self = [super initWithMediaTrack:mediaTrack]) {
     _rendererArray = [NSMutableArray array];
   }
   return self;
 }
 
-- (void)addRenderer:(RTCVideoRenderer *)renderer {
+- (void)addRenderer:(RTCVideoRenderer*)renderer {
   NSAssert1(![self.renderers containsObject:renderer],
             @"renderers already contains object [%@]",
             [renderer description]);
@@ -54,7 +55,7 @@
   self.videoTrack->AddRenderer(renderer.videoRenderer);
 }
 
-- (void)removeRenderer:(RTCVideoRenderer *)renderer {
+- (void)removeRenderer:(RTCVideoRenderer*)renderer {
   NSUInteger index = [self.renderers indexOfObjectIdenticalTo:renderer];
   if (index != NSNotFound) {
     [_rendererArray removeObjectAtIndex:index];
@@ -62,7 +63,7 @@
   }
 }
 
-- (NSArray *)renderers {
+- (NSArray*)renderers {
   return [_rendererArray copy];
 }
 
@@ -71,7 +72,7 @@
 @implementation RTCVideoTrack (Internal)
 
 - (talk_base::scoped_refptr<webrtc::VideoTrackInterface>)videoTrack {
-  return static_cast<webrtc::VideoTrackInterface *>(self.mediaTrack.get());
+  return static_cast<webrtc::VideoTrackInterface*>(self.mediaTrack.get());
 }
 
 @end

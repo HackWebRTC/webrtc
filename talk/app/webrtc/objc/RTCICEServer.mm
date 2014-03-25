@@ -37,9 +37,9 @@
 @synthesize username = _username;
 @synthesize password = _password;
 
-- (id)initWithURI:(NSURL *)URI
-         username:(NSString *)username
-         password:(NSString *)password {
+- (id)initWithURI:(NSURL*)URI
+         username:(NSString*)username
+         password:(NSString*)password {
   if (!URI || !username || !password) {
     NSAssert(NO, @"nil arguments not allowed");
     self = nil;
@@ -53,9 +53,11 @@
   return self;
 }
 
-- (NSString *)description {
+- (NSString*)description {
   return [NSString stringWithFormat:@"RTCICEServer: [%@:%@:%@]",
-                   [self.URI absoluteString], self.username, self.password];
+                                    [self.URI absoluteString],
+                                    self.username,
+                                    self.password];
 }
 
 @end

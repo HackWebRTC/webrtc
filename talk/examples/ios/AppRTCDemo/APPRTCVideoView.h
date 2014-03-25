@@ -30,7 +30,7 @@
 @class RTCVideoTrack;
 
 // This class encapsulates VideoRenderIosView.
-@interface VideoView : UIView
+@interface APPRTCVideoView : UIView
 
 // Property to get/set required video orientation.
 @property(nonatomic, assign) UIInterfaceOrientation videoOrientation;
@@ -39,12 +39,5 @@
 
 // Sets up the underlying renderer and track objects.
 - (void)renderVideoTrackInterface:(RTCVideoTrack*)track;
-
-// Stops rendering.
-- (void)pause;
-// Starts rendering.
-- (void)resume;
-// Stops rendering and resets underlying renderer and track objects.
-- (void)stop;
 
 @end

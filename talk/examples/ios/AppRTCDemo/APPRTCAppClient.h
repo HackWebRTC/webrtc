@@ -47,12 +47,20 @@
 // for the registered handler to be called with received messages.
 @interface APPRTCAppClient : NSObject<NSURLConnectionDataDelegate>
 
-@property(nonatomic, assign) id<ICEServerDelegate> ICEServerDelegate;
-@property(nonatomic, assign) id<GAEMessageHandler> messageHandler;
+@property(nonatomic, weak, readonly) id<ICEServerDelegate> ICEServerDelegate;
+@property(nonatomic, weak, readonly) id<GAEMessageHandler> messageHandler;
 @property(nonatomic, assign) BOOL initiator;
-@property(nonatomic, strong) RTCMediaConstraints* videoConstraints;
+@property(nonatomic, copy, readonly) RTCMediaConstraints* videoConstraints;
 
-- (void)connectToRoom:(NSURL *)room;
-- (void)sendData:(NSData *)data;
+- (id)initWithICEServerDelegate:(id<ICEServerDelegate>)delegate
+                 messageHandler:(id<GAEMessageHandler>)handler;
+- (void)connectToRoom:(NSURL*)room;
+- (void)sendData:(NSData*)data;
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+// Disallow init and don't add to documentation
+- (id)init __attribute__((
+    unavailable("init is not a supported initializer for this class.")));
+#endif /* DOXYGEN_SHOULD_SKIP_THIS */
 
 @end

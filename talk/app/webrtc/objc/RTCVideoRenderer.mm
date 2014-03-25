@@ -49,7 +49,6 @@
 // a VideoRenderCallback.  Suitable for feeding to
 // VideoTrackInterface::AddRenderer().
 class CallbackConverter : public webrtc::VideoRendererInterface {
-
  public:
   CallbackConverter(webrtc::VideoRenderCallback* callback,
                     const uint32_t streamId)
@@ -88,51 +87,57 @@ class CallbackConverter : public webrtc::VideoRendererInterface {
 };
 
 @implementation RTCVideoRenderer {
+  VideoRenderIosView* _renderView;
+  UIActivityIndicatorView* _activityIndicator;
   CallbackConverter* _converter;
   talk_base::scoped_ptr<webrtc::VideoRenderIosImpl> _iosRenderer;
 }
 
 @synthesize delegate = _delegate;
 
-+ (RTCVideoRenderer *)videoRenderGUIWithFrame:(CGRect)frame {
-  return [[RTCVideoRenderer alloc]
-      initWithRenderView:[RTCVideoRenderer newRenderViewWithFrame:frame]];
-}
-
 - (id)initWithDelegate:(id<RTCVideoRendererDelegate>)delegate {
-  if ((self = [super init])) {
-    _delegate = delegate;
-    // TODO (hughv): Create video renderer.
-  }
+  // TODO(hughv): Create video renderer.
+  [self doesNotRecognizeSelector:_cmd];
   return self;
 }
 
-+ (UIView*)newRenderViewWithFrame:(CGRect)frame {
-  VideoRenderIosView* newView =
-      [[VideoRenderIosView alloc] initWithFrame:frame];
-  return newView;
-}
-
-- (id)initWithRenderView:(UIView*)view {
-  NSAssert([view isKindOfClass:[VideoRenderIosView class]],
-           @"The view must be of kind 'VideoRenderIosView'");
+- (id)initWithView:(UIView*)view {
   if ((self = [super init])) {
-    VideoRenderIosView* renderView = (VideoRenderIosView*)view;
+    CGRect frame =
+        CGRectMake(0, 0, view.bounds.size.width, view.bounds.size.height);
+    _renderView = [[VideoRenderIosView alloc] initWithFrame:frame];
     _iosRenderer.reset(
-        new webrtc::VideoRenderIosImpl(0, (__bridge void*)renderView, NO));
-    if (_iosRenderer->Init() != -1) {
+        new webrtc::VideoRenderIosImpl(0, (__bridge void*)_renderView, NO));
+    if (_iosRenderer->Init() == -1) {
+      self = nil;
+    } else {
       webrtc::VideoRenderCallback* callback =
           _iosRenderer->AddIncomingRenderStream(0, 1, 0, 0, 1, 1);
       _converter = new CallbackConverter(callback, 0);
       _iosRenderer->StartRender();
-    } else {
-      self = nil;
+      [view addSubview:_renderView];
+      _renderView.autoresizingMask =
+          UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
+      _renderView.translatesAutoresizingMaskIntoConstraints = YES;
+
+      _activityIndicator = [[UIActivityIndicatorView alloc]
+          initWithActivityIndicatorStyle:
+              UIActivityIndicatorViewStyleWhiteLarge];
+      _activityIndicator.frame = view.bounds;
+      _activityIndicator.hidesWhenStopped = YES;
+      [view addSubview:_activityIndicator];
+      _activityIndicator.autoresizingMask =
+          UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+      _activityIndicator.translatesAutoresizingMaskIntoConstraints = YES;
+      [_activityIndicator startAnimating];
     }
   }
   return self;
 }
 
 - (void)start {
+  [_activityIndicator stopAnimating];
+  [_activityIndicator removeFromSuperview];
   _iosRenderer->StartRender();
 }
 
@@ -159,7 +164,7 @@ class CallbackConverter : public webrtc::VideoRendererInterface {
 #import "RTCVideoRendererDelegate.h"
 @implementation RTCVideoRenderer
 @synthesize delegate = _delegate;
-+ (RTCVideoRenderer*)videoRenderGUIWithFrame:(CGRect)frame {
++ (RTCVideoRenderer*)videoRendererWithFrame:(CGRect)frame {
   // TODO(hughv): Implement.
   return nil;
 }
@@ -170,12 +175,10 @@ class CallbackConverter : public webrtc::VideoRendererInterface {
   }
   return self;
 }
-
-+ (UIView*)newRenderViewWithFrame:(CGRect)frame {
+- (id)initWithView:(UIView*)view {
   return nil;
 }
-- (id)initWithRenderView:(UIView*)renderView {
-  return nil;
+- (void)setTransform:(CGAffineTransform)transform {
 }
 - (void)start {
 }
@@ -184,13 +187,13 @@ class CallbackConverter : public webrtc::VideoRendererInterface {
 
 @end
 @implementation RTCVideoRenderer (Internal)
-- (id)initWithVideoRenderer:(webrtc::VideoRendererInterface *)videoRenderer {
+- (id)initWithVideoRenderer:(webrtc::VideoRendererInterface*)videoRenderer {
   if ((self = [super init])) {
     // TODO(hughv): Implement.
   }
   return self;
 }
-- (webrtc::VideoRendererInterface *)videoRenderer {
+- (webrtc::VideoRendererInterface*)videoRenderer {
   // TODO(hughv): Implement.
   return NULL;
 }

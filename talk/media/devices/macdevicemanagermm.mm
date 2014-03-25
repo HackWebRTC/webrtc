@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2004--2010, Google Inc.
+ * Copyright 2010, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,7 +27,7 @@
 
 // support GCC compiler
 #ifndef __has_feature
-#  define __has_feature(x) 0
+#define __has_feature(x) 0
 #endif
 
 #include "talk/media/devices/devicemanager.h"
@@ -42,7 +42,7 @@
   cricket::DeviceManagerInterface* manager_;
 }
 - (id)init:(cricket::DeviceManagerInterface*)manager;
-- (void)onDevicesChanged:(NSNotification *)notification;
+- (void)onDevicesChanged:(NSNotification*)notification;
 @end
 
 @implementation DeviceWatcherImpl
@@ -50,14 +50,16 @@
   if ((self = [super init])) {
     assert(manager != NULL);
     manager_ = manager;
-    [[NSNotificationCenter defaultCenter] addObserver:self
-        selector:@selector(onDevicesChanged:)
-        name:QTCaptureDeviceWasConnectedNotification
-        object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self
-        selector:@selector(onDevicesChanged:)
-        name:QTCaptureDeviceWasDisconnectedNotification
-        object:nil];
+    [[NSNotificationCenter defaultCenter]
+        addObserver:self
+           selector:@selector(onDevicesChanged:)
+               name:QTCaptureDeviceWasConnectedNotification
+             object:nil];
+    [[NSNotificationCenter defaultCenter]
+        addObserver:self
+           selector:@selector(onDevicesChanged:)
+               name:QTCaptureDeviceWasDisconnectedNotification
+             object:nil];
   }
   return self;
 }
@@ -68,7 +70,7 @@
   [super dealloc];
 #endif
 }
-- (void)onDevicesChanged:(NSNotification *)notification {
+- (void)onDevicesChanged:(NSNotification*)notification {
   manager_->SignalDevicesChange();
 }
 @end
@@ -83,9 +85,7 @@ DeviceWatcherImpl* CreateDeviceWatcherCallback(
 #else
   @autoreleasepool
 #endif
-  {
-    impl = [[DeviceWatcherImpl alloc] init:manager];
-  }
+  { impl = [[DeviceWatcherImpl alloc] init:manager]; }
 #if !__has_feature(objc_arc)
   [pool drain];
 #endif
@@ -115,20 +115,19 @@ bool GetQTKitVideoDevices(std::vector<Device>* devices) {
       static NSString* const kFormat = @"localizedDisplayName: \"%@\", "
           @"modelUniqueID: \"%@\", uniqueID \"%@\", isConnected: %d, "
           @"isOpen: %d, isInUseByAnotherApplication: %d";
-      NSString* info = [NSString stringWithFormat:kFormat,
-          [qt_capture_device localizedDisplayName],
-          [qt_capture_device modelUniqueID],
-          [qt_capture_device uniqueID],
-          [qt_capture_device isConnected],
-          [qt_capture_device isOpen],
-          [qt_capture_device isInUseByAnotherApplication]];
+      NSString* info = [NSString
+          stringWithFormat:kFormat,
+                           [qt_capture_device localizedDisplayName],
+                           [qt_capture_device modelUniqueID],
+                           [qt_capture_device uniqueID],
+                           [qt_capture_device isConnected],
+                           [qt_capture_device isOpen],
+                           [qt_capture_device isInUseByAnotherApplication]];
       LOG(LS_INFO) << [info UTF8String];
 
-      std::string name([[qt_capture_device localizedDisplayName]
-                           UTF8String]);
-      devices->push_back(Device(name,
-         [[qt_capture_device uniqueID]
-             UTF8String]));
+      std::string name([[qt_capture_device localizedDisplayName] UTF8String]);
+      devices->push_back(
+          Device(name, [[qt_capture_device uniqueID] UTF8String]));
     }
   }
 #if !__has_feature(objc_arc)

@@ -34,9 +34,9 @@
 // Used to send a message to an apprtc.appspot.com "room".
 @protocol APPRTCSendMessage<NSObject>
 
-- (void)sendData:(NSData *)data;
+- (void)sendData:(NSData*)data;
 // Logging helper.
-- (void)displayLogMessage:(NSString *)message;
+- (void)displayLogMessage:(NSString*)message;
 @end
 
 @class APPRTCViewController;
@@ -51,8 +51,8 @@
                                            RTCSessionDescriptonDelegate,
                                            UIApplicationDelegate>
 
-@property (strong, nonatomic) UIWindow *window;
-@property (strong, nonatomic) APPRTCViewController *viewController;
+@property(strong, nonatomic) UIWindow* window;
+@property(strong, nonatomic) APPRTCViewController* viewController;
 
 - (void)closeVideoUI;
 

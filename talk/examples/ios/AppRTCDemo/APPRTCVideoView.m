@@ -25,19 +25,58 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "RTCPair.h"
+/*
+ * This APPRTCVideoView must be initialzed and added to a View to get
+ * either the local or remote video stream rendered.
+ * It is a view itself and it encapsulates
+ * an object of VideoRenderIosView and UIActivityIndicatorView.
+ * Both of the views will get resized as per the frame of their parent.
+ */
 
-@implementation RTCPair
+#import "APPRTCVideoView.h"
 
-@synthesize key = _key;
-@synthesize value = _value;
+#import "RTCVideoRenderer.h"
+#import "RTCVideoTrack.h"
 
-- (id)initWithKey:(NSString*)key value:(NSString*)value {
-  if ((self = [super init])) {
-    _key = [key copy];
-    _value = [value copy];
+@interface APPRTCVideoView () {
+  RTCVideoTrack* _track;
+  RTCVideoRenderer* _renderer;
+}
+
+@property(nonatomic, weak) UIView* renderView;
+@property(nonatomic, weak) UIActivityIndicatorView* activityView;
+
+@end
+
+@implementation APPRTCVideoView
+
+@synthesize videoOrientation = _videoOrientation;
+
+- (void)layoutSubviews {
+  [super layoutSubviews];
+  if (!_renderer) {
+    // Left-right (mirror) flip the remote view.
+    CGAffineTransform xform =
+        CGAffineTransformMakeScale(self.isRemote ? -1 : 1, 1);
+    // TODO(fischman): why is this rotate (vertical+horizontal flip) needed?!?
+    xform = CGAffineTransformRotate(xform, M_PI);
+    // TODO(fischman): ensure back-camera flip is correct in all orientations,
+    // when back-camera support is added.
+    [self setTransform:xform];
+    _renderer = [[RTCVideoRenderer alloc] initWithView:self];
   }
-  return self;
+}
+
+- (void)renderVideoTrackInterface:(RTCVideoTrack*)videoTrack {
+  [_track removeRenderer:_renderer];
+  [_renderer stop];
+
+  _track = videoTrack;
+
+  if (_track) {
+    [_track addRenderer:_renderer];
+    [_renderer start];
+  }
 }
 
 @end

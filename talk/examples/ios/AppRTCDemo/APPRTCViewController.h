@@ -27,20 +27,20 @@
 
 #import <UIKit/UIKit.h>
 
-@class VideoView;
+@class APPRTCVideoView;
 
 // The view controller that is displayed when AppRTCDemo is loaded.
 @interface APPRTCViewController : UIViewController<UITextFieldDelegate>
 
-@property (weak, nonatomic) IBOutlet UITextField *textField;
-@property (weak, nonatomic) IBOutlet UITextView *textInstructions;
-@property (weak, nonatomic) IBOutlet UITextView *textOutput;
+@property(weak, nonatomic) IBOutlet UITextField* textField;
+@property(weak, nonatomic) IBOutlet UITextView* textInstructions;
+@property(weak, nonatomic) IBOutlet UITextView* textOutput;
 @property(weak, nonatomic) IBOutlet UIView* blackView;
 
-@property(nonatomic, strong) VideoView* remoteVideoView;
-@property(nonatomic, strong) VideoView* localVideoView;
+@property(nonatomic, strong) APPRTCVideoView* remoteVideoView;
+@property(nonatomic, strong) APPRTCVideoView* localVideoView;
 
-- (void)displayText:(NSString *)text;
+- (void)displayText:(NSString*)text;
 - (void)resetUI;
 
 @end
