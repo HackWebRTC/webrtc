@@ -39,7 +39,9 @@ class RTCPeerConnectionObserver : public PeerConnectionObserver {
 
  public:
   explicit RTCPeerConnectionObserver(id<RTCPeerConnectionDelegate> delegate);
+  virtual ~RTCPeerConnectionObserver();
 
+  // |peerConnection| owns |this|, so outlives it.
   void SetPeerConnection(RTCPeerConnection *peerConnection);
 
   virtual void OnError() OVERRIDE;
@@ -73,7 +75,9 @@ class RTCPeerConnectionObserver : public PeerConnectionObserver {
 
  private:
   id<RTCPeerConnectionDelegate> _delegate;
-  RTCPeerConnection *_peerConnection;
+  // __unsafe_unretained is in fact safe because |_peerConnection| owns |this|;
+  // see comment on SetPeerConnection() above.
+  __unsafe_unretained RTCPeerConnection *_peerConnection;
 };
 
 } // namespace webrtc

@@ -246,12 +246,12 @@
 
   RTCVideoCapturer* capturer =
       [RTCVideoCapturer capturerWithDeviceName:cameraID];
-  RTCVideoSource* videoSource = [self.peerConnectionFactory
+  self.videoSource = [self.peerConnectionFactory
       videoSourceWithCapturer:capturer
                   constraints:self.client.videoConstraints];
   RTCVideoTrack* localVideoTrack =
       [self.peerConnectionFactory videoTrackWithID:@"ARDAMSv0"
-                                            source:videoSource];
+                                            source:self.videoSource];
   if (localVideoTrack) {
     [lms addVideoTrack:localVideoTrack];
   }
@@ -485,9 +485,10 @@
       sendData:[@"{\"type\": \"bye\"}" dataUsingEncoding:NSUTF8StringEncoding]];
   [self.peerConnection close];
   self.peerConnection = nil;
-  self.peerConnectionFactory = nil;
   self.pcObserver = nil;
   self.client = nil;
+  self.videoSource = nil;
+  self.peerConnectionFactory = nil;
   [RTCPeerConnectionFactory deinitializeSSL];
 }
 
@@ -523,8 +524,8 @@
 #pragma mark - public methods
 
 - (void)closeVideoUI {
-  [self disconnect];
   [self.viewController resetUI];
+  [self disconnect];
 }
 
 @end

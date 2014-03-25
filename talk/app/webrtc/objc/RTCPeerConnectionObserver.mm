@@ -42,6 +42,8 @@ RTCPeerConnectionObserver::RTCPeerConnectionObserver(
   _delegate = delegate;
 }
 
+RTCPeerConnectionObserver::~RTCPeerConnectionObserver() {}
+
 void RTCPeerConnectionObserver::SetPeerConnection(
     RTCPeerConnection* peerConnection) {
   _peerConnection = peerConnection;

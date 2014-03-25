@@ -183,7 +183,7 @@
 }
 
 - (void)peerConnection:(RTCPeerConnection*)peerConnection
-    iceConnectionChanged:(RTCICEConnectionState)newState {
+  iceConnectionChanged:(RTCICEConnectionState)newState {
   // See TODO(fischman) in RTCPeerConnectionTest.mm about Completed.
   if (newState == RTCICEConnectionCompleted)
     return;

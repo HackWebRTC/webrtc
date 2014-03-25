@@ -30,7 +30,7 @@
 #import "GAEChannelClient.h"
 #import "APPRTCAppClient.h"
 #import "RTCSessionDescriptonDelegate.h"
-
+#import "RTCVideoSource.h"
 // Used to send a message to an apprtc.appspot.com "room".
 @protocol APPRTCSendMessage<NSObject>
 
@@ -43,7 +43,7 @@
 @class RTCVideoTrack;
 
 // The main application class of the AppRTCDemo iOS app demonstrating
-// interoperability between the Objcective C implementation of PeerConnection
+// interoperability between the Objective C implementation of PeerConnection
 // and the apprtc.appspot.com demo webapp.
 @interface APPRTCAppDelegate : UIResponder<ICEServerDelegate,
                                            GAEMessageHandler,
@@ -53,6 +53,7 @@
 
 @property(strong, nonatomic) UIWindow* window;
 @property(strong, nonatomic) APPRTCViewController* viewController;
+@property (strong, nonatomic) RTCVideoSource* videoSource;
 
 - (void)closeVideoUI;
 

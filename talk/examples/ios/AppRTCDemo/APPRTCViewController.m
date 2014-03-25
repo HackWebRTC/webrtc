@@ -77,7 +77,7 @@
   [_remoteVideoView removeFromSuperview];
   self.remoteVideoView = nil;
 
-  [_remoteVideoView renderVideoTrackInterface:nil];
+  [_localVideoView renderVideoTrackInterface:nil];
   [_localVideoView removeFromSuperview];
   self.localVideoView = nil;
 }

@@ -59,7 +59,7 @@
                                 videoTrackID:(NSString*)videoTrackID
                                 audioTrackID:(NSString*)audioTrackID;
 
-- (void)testCompleteSession;
+- (void)testCompleteSessionWithFactory:(RTCPeerConnectionFactory*)factory;
 
 @end
 
@@ -93,8 +93,7 @@
   return localMediaStream;
 }
 
-- (void)testCompleteSession {
-  RTCPeerConnectionFactory* factory = [[RTCPeerConnectionFactory alloc] init];
+- (void)testCompleteSessionWithFactory:(RTCPeerConnectionFactory*)factory {
   RTCMediaConstraints* constraints = [[RTCMediaConstraints alloc] init];
   RTCPeerConnectionSyncObserver* offeringExpectations =
       [[RTCPeerConnectionSyncObserver alloc] init];
@@ -216,7 +215,24 @@
   [[NSRunLoop currentRunLoop]
       runUntilDate:[NSDate dateWithTimeIntervalSinceNow:2]];
 
-  // TODO(hughv): Implement orderly shutdown.
+  [offeringExpectations expectICEConnectionChange:RTCICEConnectionClosed];
+  [answeringExpectations expectICEConnectionChange:RTCICEConnectionClosed];
+  [offeringExpectations expectSignalingChange:RTCSignalingClosed];
+  [answeringExpectations expectSignalingChange:RTCSignalingClosed];
+
+  [pcOffer close];
+  [pcAnswer close];
+
+  [offeringExpectations waitForAllExpectationsToBeSatisfied];
+  [answeringExpectations waitForAllExpectationsToBeSatisfied];
+
+  capturer = nil;
+  videoSource = nil;
+  pcOffer = nil;
+  pcAnswer = nil;
+  // TODO(fischman): be stricter about shutdown checks; ensure thread
+  // counts return to where they were before the test kicked off, and
+  // that all objects have in fact shut down.
 }
 
 @end
@@ -225,8 +241,20 @@
 // RTCPeerConnectionTest and avoid the appearance of RTCPeerConnectionTest being
 // a TestBase since it's not.
 TEST(RTCPeerConnectionTest, SessionTest) {
-  talk_base::InitializeSSL();
-  RTCPeerConnectionTest* pcTest = [[RTCPeerConnectionTest alloc] init];
-  [pcTest testCompleteSession];
-  talk_base::CleanupSSL();
+  @autoreleasepool {
+    talk_base::InitializeSSL();
+    // Since |factory| will own the signaling & worker threads, it's important
+    // that it outlive the created PeerConnections since they self-delete on the
+    // signaling thread, and if |factory| is freed first then a last refcount on
+    // the factory will expire during this teardown, causing the signaling
+    // thread to try to Join() with itself.  This is a hack to ensure that the
+    // factory outlives RTCPeerConnection:dealloc.
+    // See https://code.google.com/p/webrtc/issues/detail?id=3100.
+    RTCPeerConnectionFactory* factory = [[RTCPeerConnectionFactory alloc] init];
+    @autoreleasepool {
+      RTCPeerConnectionTest* pcTest = [[RTCPeerConnectionTest alloc] init];
+      [pcTest testCompleteSessionWithFactory:factory];
+    }
+    talk_base::CleanupSSL();
+  }
 }
