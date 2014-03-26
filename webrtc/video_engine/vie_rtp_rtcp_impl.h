@@ -92,6 +92,8 @@ class ViERTP_RTCPImpl
   virtual int SetTransmissionSmoothingStatus(int video_channel, bool enable);
   virtual int SetMinTransmitBitrate(int video_channel,
                                     int min_transmit_bitrate_kbps);
+  virtual int SetReservedTransmitBitrate(
+      int video_channel, unsigned int reserved_transmit_bitrate_bps);
   virtual int GetReceiveChannelRtcpStatistics(const int video_channel,
                                               RtcpStatistics& basic_stats,
                                               int& rtt_ms) const;

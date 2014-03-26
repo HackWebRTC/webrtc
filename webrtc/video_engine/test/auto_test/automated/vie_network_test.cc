@@ -56,7 +56,7 @@ class RtcpCollectorTransport : public webrtc::Transport {
         it != packets_.end(); ++it) {
       if (it->remb_bitrate >= min_rate && it->remb_ssrc.end() !=
           std::find(it->remb_ssrc.begin(), it->remb_ssrc.end(), ssrc)) {
-          return true;
+        return true;
       }
     }
     return false;
@@ -210,5 +210,4 @@ TEST_F(ViENetworkTest, ReceiveBWEPacket_AST_DisabledReceive)  {
   ReceiveASTPacketsForBWE();
   EXPECT_FALSE(transport.FindREMBFor(kSsrc1, 0.0));
 }
-
 }  // namespace

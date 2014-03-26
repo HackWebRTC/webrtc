@@ -368,6 +368,19 @@ bool ViEChannelManager::SetRembStatus(int channel_id, bool sender,
   return group->SetChannelRembStatus(channel_id, sender, receiver, channel);
 }
 
+bool ViEChannelManager::SetReservedTransmitBitrate(
+    int channel_id, uint32_t reserved_transmit_bitrate_bps) {
+  CriticalSectionScoped cs(channel_id_critsect_);
+  ChannelGroup* group = FindGroup(channel_id);
+  if (!group) {
+    return false;
+  }
+
+  BitrateController* bitrate_controller = group->GetBitrateController();
+  bitrate_controller->SetReservedBitrate(reserved_transmit_bitrate_bps);
+  return true;
+}
+
 void ViEChannelManager::UpdateSsrcs(int channel_id,
                                     const std::list<unsigned int>& ssrcs) {
   CriticalSectionScoped cs(channel_id_critsect_);

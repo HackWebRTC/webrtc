@@ -84,11 +84,19 @@ BitrateController* BitrateController::CreateBitrateController(
 
 BitrateControllerImpl::BitrateControllerImpl(bool enforce_min_bitrate)
     : critsect_(CriticalSectionWrapper::CreateCriticalSection()),
-      enforce_min_bitrate_(enforce_min_bitrate) {}
+      bandwidth_estimation_(),
+      bitrate_observers_(),
+      enforce_min_bitrate_(enforce_min_bitrate),
+      last_bitrate_(0),
+      last_fraction_loss_(0),
+      last_rtt_(0),
+      last_enforce_min_bitrate_(!enforce_min_bitrate_),
+      bitrate_observers_modified_(false),
+      last_reserved_bitrate_bps_(0),
+      reserved_bitrate_bps_(0) {}
 
 BitrateControllerImpl::~BitrateControllerImpl() {
-  BitrateObserverConfList::iterator it =
-      bitrate_observers_.begin();
+  BitrateObserverConfList::iterator it = bitrate_observers_.begin();
   while (it != bitrate_observers_.end()) {
     delete it->second;
     bitrate_observers_.erase(it);
@@ -187,6 +195,12 @@ void BitrateControllerImpl::EnforceMinBitrate(bool enforce_min_bitrate) {
   UpdateMinMaxBitrate();
 }
 
+void BitrateControllerImpl::SetReservedBitrate(uint32_t reserved_bitrate_bps) {
+  CriticalSectionScoped cs(critsect_);
+  reserved_bitrate_bps_ = reserved_bitrate_bps;
+  MaybeTriggerOnNetworkChanged();
+}
+
 void BitrateControllerImpl::OnReceivedEstimatedBitrate(const uint32_t bitrate) {
   CriticalSectionScoped cs(critsect_);
   bandwidth_estimation_.UpdateReceiverEstimate(bitrate);
@@ -209,10 +223,12 @@ void BitrateControllerImpl::MaybeTriggerOnNetworkChanged() {
   uint8_t fraction_loss;
   uint32_t rtt;
   bandwidth_estimation_.CurrentEstimate(&bitrate, &fraction_loss, &rtt);
+  bitrate -= std::min(bitrate, reserved_bitrate_bps_);
 
   if (bitrate_observers_modified_ || bitrate != last_bitrate_ ||
       fraction_loss != last_fraction_loss_ || rtt != last_rtt_ ||
-      last_enforce_min_bitrate_ != enforce_min_bitrate_) {
+      last_enforce_min_bitrate_ != enforce_min_bitrate_ ||
+      last_reserved_bitrate_bps_ != reserved_bitrate_bps_) {
     last_bitrate_ = bitrate;
     last_fraction_loss_ = fraction_loss;
     last_rtt_ = rtt;
@@ -316,7 +332,7 @@ bool BitrateControllerImpl::AvailableBandwidth(uint32_t* bandwidth) const {
   uint32_t rtt;
   bandwidth_estimation_.CurrentEstimate(&bitrate, &fraction_loss, &rtt);
   if (bitrate) {
-    *bandwidth = bitrate;
+    *bandwidth = bitrate - std::min(bitrate, reserved_bitrate_bps_);
     return true;
   }
   return false;

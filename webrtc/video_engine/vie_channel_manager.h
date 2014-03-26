@@ -75,6 +75,9 @@ class ViEChannelManager: private ViEManagerBase {
   // Adds a channel to include when sending REMB.
   bool SetRembStatus(int channel_id, bool sender, bool receiver);
 
+  bool SetReservedTransmitBitrate(int channel_id,
+                                  uint32_t reserved_transmit_bitrate_bps);
+
   // Updates the SSRCs for a channel. If one of the SSRCs already is registered,
   // it will simply be ignored and no error is returned.
   void UpdateSsrcs(int channel_id, const std::list<unsigned int>& ssrcs);

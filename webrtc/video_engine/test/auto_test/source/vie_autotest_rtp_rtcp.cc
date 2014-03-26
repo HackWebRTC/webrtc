@@ -364,6 +364,33 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     EXPECT_GE(received.extended_max_sequence_number,
               sent.extended_max_sequence_number);
     EXPECT_EQ(0, ViE.base->StopSend(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.base->StopReceive(tbChannel.videoChannel));
+
+    //
+    // Test bandwidth statistics with reserved bitrate
+    //
+
+    myTransport.ClearStats();
+    network.packet_loss_rate = 0;
+    network.loss_model = kUniformLoss;
+    myTransport.SetNetworkParameters(network);
+
+    ViE.rtp_rtcp->SetReservedTransmitBitrate(tbChannel.videoChannel, 2000000);
+
+    EXPECT_EQ(0, ViE.base->StartReceive(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.base->StartSend(tbChannel.videoChannel));
+
+    AutoTestSleep(kAutoTestSleepTimeMs);
+
+    estimated_bandwidth = 0;
+    EXPECT_EQ(0, ViE.rtp_rtcp->GetEstimatedSendBandwidth(tbChannel.videoChannel,
+                                                         &estimated_bandwidth));
+    if (FLAGS_include_timing_dependent_tests) {
+      EXPECT_EQ(0u, estimated_bandwidth);
+    }
+
+    EXPECT_EQ(0, ViE.base->StopReceive(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.base->StopSend(tbChannel.videoChannel));
 
     //
     // Test bandwidth statistics with NACK and FEC separately
@@ -491,6 +518,7 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     // EXPECT_LT(inEndPos, outEndPos + 100);
 
     EXPECT_EQ(0, ViE.base->StopReceive(tbChannel.videoChannel));
+
 
     ViETest::Log("Testing Network Down...\n");
 

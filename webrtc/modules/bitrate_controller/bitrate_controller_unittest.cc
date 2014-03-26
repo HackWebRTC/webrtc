@@ -412,6 +412,61 @@ TEST_F(BitrateControllerTest, TwoBitrateObserversOneRtcpObserver) {
   controller_->RemoveBitrateObserver(&bitrate_observer_2);
 }
 
+TEST_F(BitrateControllerTest, SetReservedBitrate) {
+  TestBitrateObserver bitrate_observer;
+  controller_->SetBitrateObserver(&bitrate_observer, 200000, 100000, 300000);
+
+  // Receive successively lower REMBs, verify the reserved bitrate is deducted.
+
+  controller_->SetReservedBitrate(0);
+  bandwidth_observer_->OnReceivedEstimatedBitrate(400000);
+  EXPECT_EQ(200000u, bitrate_observer.last_bitrate_);
+  controller_->SetReservedBitrate(50000);
+  bandwidth_observer_->OnReceivedEstimatedBitrate(400000);
+  EXPECT_EQ(150000u, bitrate_observer.last_bitrate_);
+
+  controller_->SetReservedBitrate(0);
+  bandwidth_observer_->OnReceivedEstimatedBitrate(250000);
+  EXPECT_EQ(200000u, bitrate_observer.last_bitrate_);
+  controller_->SetReservedBitrate(50000);
+  bandwidth_observer_->OnReceivedEstimatedBitrate(250000);
+  EXPECT_EQ(150000u, bitrate_observer.last_bitrate_);
+
+  controller_->SetReservedBitrate(0);
+  bandwidth_observer_->OnReceivedEstimatedBitrate(200000);
+  EXPECT_EQ(200000u, bitrate_observer.last_bitrate_);
+  controller_->SetReservedBitrate(30000);
+  bandwidth_observer_->OnReceivedEstimatedBitrate(200000);
+  EXPECT_EQ(170000u, bitrate_observer.last_bitrate_);
+
+  controller_->SetReservedBitrate(0);
+  bandwidth_observer_->OnReceivedEstimatedBitrate(160000);
+  EXPECT_EQ(160000u, bitrate_observer.last_bitrate_);
+  controller_->SetReservedBitrate(30000);
+  bandwidth_observer_->OnReceivedEstimatedBitrate(160000);
+  EXPECT_EQ(130000u, bitrate_observer.last_bitrate_);
+
+  controller_->SetReservedBitrate(0);
+  bandwidth_observer_->OnReceivedEstimatedBitrate(120000);
+  EXPECT_EQ(120000u, bitrate_observer.last_bitrate_);
+  controller_->SetReservedBitrate(10000);
+  bandwidth_observer_->OnReceivedEstimatedBitrate(120000);
+  EXPECT_EQ(110000u, bitrate_observer.last_bitrate_);
+
+  controller_->SetReservedBitrate(0);
+  bandwidth_observer_->OnReceivedEstimatedBitrate(120000);
+  EXPECT_EQ(120000u, bitrate_observer.last_bitrate_);
+  controller_->SetReservedBitrate(50000);
+  bandwidth_observer_->OnReceivedEstimatedBitrate(120000);
+  EXPECT_EQ(100000u, bitrate_observer.last_bitrate_);
+
+  controller_->SetReservedBitrate(10000);
+  bandwidth_observer_->OnReceivedEstimatedBitrate(0);
+  EXPECT_EQ(100000u, bitrate_observer.last_bitrate_);
+
+  controller_->RemoveBitrateObserver(&bitrate_observer);
+}
+
 class BitrateControllerTestNoEnforceMin : public BitrateControllerTest {
  protected:
   BitrateControllerTestNoEnforceMin() : BitrateControllerTest() {
@@ -436,6 +491,26 @@ TEST_F(BitrateControllerTestNoEnforceMin, OneBitrateObserver) {
   // Keeps at least 10 kbps.
   bandwidth_observer_->OnReceivedEstimatedBitrate(9000);
   EXPECT_EQ(10000u, bitrate_observer_1.last_bitrate_);
+
+  controller_->RemoveBitrateObserver(&bitrate_observer_1);
+}
+
+TEST_F(BitrateControllerTestNoEnforceMin, SetReservedBitrate) {
+  TestBitrateObserver bitrate_observer_1;
+  controller_->SetBitrateObserver(&bitrate_observer_1, 200000, 100000, 400000);
+  controller_->SetReservedBitrate(10000);
+
+  // High REMB.
+  bandwidth_observer_->OnReceivedEstimatedBitrate(150000);
+  EXPECT_EQ(140000u, bitrate_observer_1.last_bitrate_);
+
+  // Low REMB.
+  bandwidth_observer_->OnReceivedEstimatedBitrate(15000);
+  EXPECT_EQ(5000u, bitrate_observer_1.last_bitrate_);
+
+  // Keeps at least 10 kbps.
+  bandwidth_observer_->OnReceivedEstimatedBitrate(9000);
+  EXPECT_EQ(0u, bitrate_observer_1.last_bitrate_);
 
   controller_->RemoveBitrateObserver(&bitrate_observer_1);
 }

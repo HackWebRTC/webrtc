@@ -270,6 +270,13 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
     return -1;
   };
 
+  // Set a constant amount to deduct from received bitrate estimates before
+  // using it to allocate capacity among outgoing video streams.
+  virtual int SetReservedTransmitBitrate(
+      int video_channel, unsigned int reserved_transmit_bitrate_bps) {
+    return 0;
+  }
+
   // This function returns our locally created statistics of the received RTP
   // stream.
   virtual int GetReceiveChannelRtcpStatistics(const int video_channel,
