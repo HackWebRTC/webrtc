@@ -359,6 +359,23 @@ static std::string MakeTdErrorString(const std::string& desc) {
   return MakeErrorString(kPushDownTDFailed, desc);
 }
 
+// Set |option| to the highest-priority value of |key| in the optional
+// constraints if the key is found and has a valid value.
+static void SetOptionFromOptionalConstraint(
+    const MediaConstraintsInterface* constraints,
+    const std::string& key, cricket::Settable<int>* option) {
+  if (!constraints) {
+    return;
+  }
+  std::string string_value;
+  int value;
+  if (constraints->GetOptional().FindFirst(key, &string_value)) {
+    if (talk_base::FromString(string_value, &value)) {
+      option->Set(value);
+    }
+  }
+}
+
 // Help class used to remember if a a remote peer has requested ice restart by
 // by sending a description with new ice ufrag and password.
 class IceRestartAnswerLatch {
@@ -525,15 +542,31 @@ bool WebRtcSession::Initialize(
     video_options_.skip_encoding_unused_streams.Set(value);
   }
 
-  std::string string_value;
-  if (constraints &&
-      constraints->GetOptional().FindFirst(
-        MediaConstraintsInterface::kScreencastMinBitrate,
-        &string_value)) {
-    int bitrate;
-    if (talk_base::FromString(string_value, &bitrate)) {
-      video_options_.screencast_min_bitrate.Set(bitrate);
-    }
+  SetOptionFromOptionalConstraint(constraints,
+      MediaConstraintsInterface::kScreencastMinBitrate,
+      &video_options_.screencast_min_bitrate);
+
+  // Find constraints for cpu overuse detection.
+  SetOptionFromOptionalConstraint(constraints,
+      MediaConstraintsInterface::kCpuUnderuseThreshold,
+      &video_options_.cpu_underuse_threshold);
+  SetOptionFromOptionalConstraint(constraints,
+      MediaConstraintsInterface::kCpuOveruseThreshold,
+      &video_options_.cpu_overuse_threshold);
+
+  if (FindConstraint(
+      constraints,
+      MediaConstraintsInterface::kCpuOveruseDetection,
+      &value,
+      NULL)) {
+    video_options_.cpu_overuse_detection.Set(value);
+  }
+  if (FindConstraint(
+      constraints,
+      MediaConstraintsInterface::kCpuOveruseEncodeUsage,
+      &value,
+      NULL)) {
+    video_options_.cpu_overuse_encode_usage.Set(value);
   }
 
   // Find improved wifi bwe constraint.

@@ -920,6 +920,120 @@ TEST_F(WebRtcVideoEngineTestFake, AdditiveVideoOptions) {
   EXPECT_TRUE(vie_.GetTransmissionSmoothingStatus(first_send_channel));
 }
 
+#ifdef USE_WEBRTC_DEV_BRANCH
+TEST_F(WebRtcVideoEngineTestFake, SetCpuOveruseOptionsWithCaptureJitterMethod) {
+  EXPECT_TRUE(SetupEngine());
+
+  // Verify this is off by default.
+  EXPECT_TRUE(channel_->AddSendStream(cricket::StreamParams::CreateLegacy(1)));
+  int first_send_channel = vie_.GetLastChannel();
+  webrtc::CpuOveruseOptions cpu_option =
+      vie_.GetCpuOveruseOptions(first_send_channel);
+  EXPECT_EQ(0, cpu_option.low_capture_jitter_threshold_ms);
+  EXPECT_EQ(0, cpu_option.high_capture_jitter_threshold_ms);
+  EXPECT_FALSE(cpu_option.enable_capture_jitter_method);
+  EXPECT_FALSE(cpu_option.enable_encode_usage_method);
+
+  // Set low and high threshold and verify that cpu options are set.
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  options.cpu_underuse_threshold.Set(10);
+  options.cpu_overuse_threshold.Set(20);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  cpu_option = vie_.GetCpuOveruseOptions(first_send_channel);
+  EXPECT_EQ(10, cpu_option.low_capture_jitter_threshold_ms);
+  EXPECT_EQ(20, cpu_option.high_capture_jitter_threshold_ms);
+  EXPECT_TRUE(cpu_option.enable_capture_jitter_method);
+  EXPECT_FALSE(cpu_option.enable_encode_usage_method);
+
+  // Add a receive channel and verify that cpu options are not set.
+  EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(2)));
+  int recv_channel_num = vie_.GetLastChannel();
+  EXPECT_NE(first_send_channel, recv_channel_num);
+  cpu_option = vie_.GetCpuOveruseOptions(recv_channel_num);
+  EXPECT_EQ(0, cpu_option.low_capture_jitter_threshold_ms);
+  EXPECT_EQ(0, cpu_option.high_capture_jitter_threshold_ms);
+  EXPECT_FALSE(cpu_option.enable_capture_jitter_method);
+  EXPECT_FALSE(cpu_option.enable_encode_usage_method);
+
+  // Add a new send stream and verify that cpu options are set from start.
+  EXPECT_TRUE(channel_->AddSendStream(cricket::StreamParams::CreateLegacy(3)));
+  int second_send_channel = vie_.GetLastChannel();
+  EXPECT_NE(first_send_channel, second_send_channel);
+  cpu_option = vie_.GetCpuOveruseOptions(second_send_channel);
+  EXPECT_EQ(10, cpu_option.low_capture_jitter_threshold_ms);
+  EXPECT_EQ(20, cpu_option.high_capture_jitter_threshold_ms);
+  EXPECT_TRUE(cpu_option.enable_capture_jitter_method);
+  EXPECT_FALSE(cpu_option.enable_encode_usage_method);
+}
+
+TEST_F(WebRtcVideoEngineTestFake, SetInvalidCpuOveruseThresholds) {
+  EXPECT_TRUE(SetupEngine());
+  EXPECT_TRUE(channel_->AddSendStream(cricket::StreamParams::CreateLegacy(1)));
+  int channel_num = vie_.GetLastChannel();
+
+  // Only low threshold set. Verify that cpu options are not set.
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  options.cpu_underuse_threshold.Set(10);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  webrtc::CpuOveruseOptions cpu_option = vie_.GetCpuOveruseOptions(channel_num);
+  EXPECT_EQ(0, cpu_option.low_capture_jitter_threshold_ms);
+  EXPECT_EQ(0, cpu_option.high_capture_jitter_threshold_ms);
+  EXPECT_FALSE(cpu_option.enable_capture_jitter_method);
+  EXPECT_FALSE(cpu_option.enable_encode_usage_method);
+
+  // Set high threshold to a negative value. Verify that options are not set.
+  options.cpu_overuse_threshold.Set(-1);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  cpu_option = vie_.GetCpuOveruseOptions(channel_num);
+  EXPECT_EQ(0, cpu_option.low_capture_jitter_threshold_ms);
+  EXPECT_EQ(0, cpu_option.high_capture_jitter_threshold_ms);
+  EXPECT_FALSE(cpu_option.enable_capture_jitter_method);
+  EXPECT_FALSE(cpu_option.enable_encode_usage_method);
+
+  // Low and high threshold valid. Verify that cpu options are set.
+  options.cpu_overuse_threshold.Set(20);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  cpu_option = vie_.GetCpuOveruseOptions(channel_num);
+  EXPECT_EQ(10, cpu_option.low_capture_jitter_threshold_ms);
+  EXPECT_EQ(20, cpu_option.high_capture_jitter_threshold_ms);
+  EXPECT_TRUE(cpu_option.enable_capture_jitter_method);
+  EXPECT_FALSE(cpu_option.enable_encode_usage_method);
+}
+
+TEST_F(WebRtcVideoEngineTestFake, SetCpuOveruseOptionsWithEncodeUsageMethod) {
+  EXPECT_TRUE(SetupEngine());
+  EXPECT_TRUE(channel_->AddSendStream(cricket::StreamParams::CreateLegacy(1)));
+  int first_send_channel = vie_.GetLastChannel();
+
+  // Set low and high threshold and enable encode usage method.
+  // Verify that cpu options are set.
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  options.cpu_underuse_threshold.Set(10);
+  options.cpu_overuse_threshold.Set(20);
+  options.cpu_overuse_encode_usage.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  webrtc::CpuOveruseOptions cpu_option =
+      vie_.GetCpuOveruseOptions(first_send_channel);
+  EXPECT_EQ(10, cpu_option.low_encode_usage_threshold_percent);
+  EXPECT_EQ(20, cpu_option.high_encode_usage_threshold_percent);
+  EXPECT_FALSE(cpu_option.enable_capture_jitter_method);
+  EXPECT_TRUE(cpu_option.enable_encode_usage_method);
+
+  // Add a new send stream and verify that cpu options are set from start.
+  EXPECT_TRUE(channel_->AddSendStream(cricket::StreamParams::CreateLegacy(3)));
+  int second_send_channel = vie_.GetLastChannel();
+  EXPECT_NE(first_send_channel, second_send_channel);
+  cpu_option = vie_.GetCpuOveruseOptions(second_send_channel);
+  EXPECT_EQ(10, cpu_option.low_encode_usage_threshold_percent);
+  EXPECT_EQ(20, cpu_option.high_encode_usage_threshold_percent);
+  EXPECT_FALSE(cpu_option.enable_capture_jitter_method);
+  EXPECT_TRUE(cpu_option.enable_encode_usage_method);
+}
+#endif
+
 // Test that AddRecvStream doesn't create new channel for 1:1 call.
 TEST_F(WebRtcVideoEngineTestFake, AddRecvStream1On1) {
   EXPECT_TRUE(SetupEngine());

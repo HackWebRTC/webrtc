@@ -267,7 +267,6 @@ TEST_F(Win32ToolhelpTest, TestCurrentNextCalled) {
 }
 
 TEST_F(Win32ToolhelpTest, TestCurrentProcess) {
-  int size = MAX_PATH;
   WCHAR buf[MAX_PATH];
   GetModuleFileName(NULL, buf, ARRAY_SIZE(buf));
   std::wstring name = ToUtf16(Pathname(ToUtf8(buf)).filename());

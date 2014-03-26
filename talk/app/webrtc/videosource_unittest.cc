@@ -370,12 +370,6 @@ TEST_F(VideoSourceTest, SetValidOptionValues) {
       MediaConstraintsInterface::kTemporalLayeredScreencast, "false");
   constraints.AddOptional(
       MediaConstraintsInterface::kLeakyBucket, "true");
-  constraints.AddOptional(
-      MediaConstraintsInterface::kCpuOveruseDetection, "true");
-  constraints.AddOptional(
-      MediaConstraintsInterface::kCpuUnderuseThreshold, 12);
-  constraints.AddOptional(
-      MediaConstraintsInterface::kCpuOveruseThreshold, 22);
 
   CreateVideoSource(&constraints);
 
@@ -387,12 +381,6 @@ TEST_F(VideoSourceTest, SetValidOptionValues) {
   EXPECT_FALSE(value);
   EXPECT_TRUE(source_->options()->video_leaky_bucket.Get(&value));
   EXPECT_TRUE(value);
-  EXPECT_TRUE(source_->options()->
-      cpu_overuse_detection.GetWithDefaultIfUnset(false));
-  EXPECT_EQ(12, source_->options()->
-      cpu_underuse_threshold.GetWithDefaultIfUnset(23));
-  EXPECT_EQ(22, source_->options()->
-      cpu_overuse_threshold.GetWithDefaultIfUnset(23));
 }
 
 TEST_F(VideoSourceTest, OptionNotSet) {
@@ -400,10 +388,6 @@ TEST_F(VideoSourceTest, OptionNotSet) {
   CreateVideoSource(&constraints);
   bool value;
   EXPECT_FALSE(source_->options()->video_noise_reduction.Get(&value));
-  EXPECT_FALSE(source_->options()->cpu_overuse_detection.Get(&value));
-  int int_value;
-  EXPECT_FALSE(source_->options()->cpu_underuse_threshold.Get(&int_value));
-  EXPECT_FALSE(source_->options()->cpu_overuse_threshold.Get(&int_value));
 }
 
 TEST_F(VideoSourceTest, MandatoryOptionOverridesOptional) {
@@ -456,10 +440,6 @@ TEST_F(VideoSourceTest, InvalidOptionValueOptional) {
       MediaConstraintsInterface::kNoiseReduction, "true");
   constraints.AddOptional(
       MediaConstraintsInterface::kLeakyBucket, "not boolean");
-  constraints.AddOptional(
-      MediaConstraintsInterface::kCpuUnderuseThreshold, "12");
-  constraints.AddOptional(
-      MediaConstraintsInterface::kCpuOveruseThreshold, "not int");
 
   CreateVideoSource(&constraints);
 
@@ -469,10 +449,6 @@ TEST_F(VideoSourceTest, InvalidOptionValueOptional) {
   EXPECT_TRUE(source_->options()->video_noise_reduction.Get(&value));
   EXPECT_TRUE(value);
   EXPECT_FALSE(source_->options()->video_leaky_bucket.Get(&value));
-  int int_value = 0;
-  EXPECT_TRUE(source_->options()->cpu_underuse_threshold.Get(&int_value));
-  EXPECT_EQ(12, int_value);
-  EXPECT_FALSE(source_->options()->cpu_overuse_threshold.Get(&int_value));
 }
 
 TEST_F(VideoSourceTest, InvalidOptionValueMandatory) {

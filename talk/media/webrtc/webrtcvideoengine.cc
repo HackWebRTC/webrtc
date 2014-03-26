@@ -842,6 +842,38 @@ static void UpdateVideoCodec(const cricket::VideoFormat& video_format,
       video_format.interval);
 }
 
+#ifdef USE_WEBRTC_DEV_BRANCH
+static bool GetCpuOveruseOptions(const VideoOptions& options,
+                                 webrtc::CpuOveruseOptions* overuse_options) {
+  int underuse_threshold = 0;
+  int overuse_threshold = 0;
+  if (!options.cpu_underuse_threshold.Get(&underuse_threshold) ||
+      !options.cpu_overuse_threshold.Get(&overuse_threshold)) {
+    return false;
+  }
+  if (underuse_threshold <= 0 || overuse_threshold <= 0) {
+    return false;
+  }
+  // Valid thresholds.
+  bool encode_usage =
+      options.cpu_overuse_encode_usage.GetWithDefaultIfUnset(false);
+  overuse_options->enable_capture_jitter_method = !encode_usage;
+  overuse_options->enable_encode_usage_method = encode_usage;
+  if (encode_usage) {
+    // Use method based on encode usage.
+    overuse_options->low_encode_usage_threshold_percent = underuse_threshold;
+    overuse_options->high_encode_usage_threshold_percent = overuse_threshold;
+  } else {
+    // Use default method based on capture jitter.
+    overuse_options->low_capture_jitter_threshold_ms =
+        static_cast<float>(underuse_threshold);
+    overuse_options->high_capture_jitter_threshold_ms =
+        static_cast<float>(overuse_threshold);
+  }
+  return true;
+}
+#endif
+
 WebRtcVideoEngine::WebRtcVideoEngine() {
   Construct(new ViEWrapper(), new ViETraceWrapper(), NULL,
       new talk_base::CpuMonitor(NULL));
@@ -2981,6 +3013,16 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
           it->second->channel_id(), config);
     }
   }
+  webrtc::CpuOveruseOptions overuse_options;
+  if (GetCpuOveruseOptions(options_, &overuse_options)) {
+    for (SendChannelMap::iterator it = send_channels_.begin();
+         it != send_channels_.end(); ++it) {
+      if (engine()->vie()->base()->SetCpuOveruseOptions(
+          it->second->channel_id(), overuse_options) != 0) {
+        LOG_RTCERR1(SetCpuOveruseOptions, it->second->channel_id());
+      }
+    }
+  }
 #endif
   return true;
 }
@@ -3413,6 +3455,16 @@ bool WebRtcVideoMediaChannel::ConfigureSending(int channel_id,
   if (options_.cpu_overuse_detection.GetWithDefaultIfUnset(false)) {
     send_channel->SetCpuOveruseDetection(true);
   }
+
+#ifdef USE_WEBRTC_DEV_BRANCH
+  webrtc::CpuOveruseOptions overuse_options;
+  if (GetCpuOveruseOptions(options_, &overuse_options)) {
+    if (engine()->vie()->base()->SetCpuOveruseOptions(channel_id,
+                                                      overuse_options) != 0) {
+      LOG_RTCERR1(SetCpuOveruseOptions, channel_id);
+    }
+  }
+#endif
 
   // Register encoder observer for outgoing framerate and bitrate.
   if (engine()->vie()->codec()->RegisterEncoderObserver(

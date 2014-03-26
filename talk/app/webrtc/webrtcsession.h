@@ -42,6 +42,7 @@
 #include "talk/session/media/mediasession.h"
 
 namespace cricket {
+
 class BaseChannel;
 class ChannelManager;
 class DataChannel;
@@ -50,6 +51,7 @@ class Transport;
 class VideoCapturer;
 class VideoChannel;
 class VoiceChannel;
+
 }  // namespace cricket
 
 namespace webrtc {
