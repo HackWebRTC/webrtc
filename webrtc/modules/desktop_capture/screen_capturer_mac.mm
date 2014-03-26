@@ -63,7 +63,8 @@ DesktopRect ScaleAndRoundCGRect(const CGRect& rect, float scale) {
     static_cast<int>(ceil((rect.origin.y + rect.size.height) * scale)));
 }
 
-// Copy pixels in the |rect| from |src_place| to |dest_plane|.
+// Copy pixels in the |rect| from |src_place| to |dest_plane|. |rect| should be
+// relative to the origin of |src_plane| and |dest_plane|.
 void CopyRect(const uint8_t* src_plane,
               int src_plane_stride,
               uint8_t* dest_plane,
@@ -87,6 +88,105 @@ void CopyRect(const uint8_t* src_plane,
   }
 }
 
+// Returns an array of CGWindowID for all the on-screen windows except
+// |window_to_exclude|, or NULL if the window is not found or it fails. The
+// caller should release the returned CFArrayRef.
+CFArrayRef CreateWindowListWithExclusion(CGWindowID window_to_exclude) {
+  if (!window_to_exclude)
+    return NULL;
+
+  CFArrayRef all_windows = CGWindowListCopyWindowInfo(
+      kCGWindowListOptionOnScreenOnly, kCGNullWindowID);
+  if (!all_windows)
+    return NULL;
+
+  CFMutableArrayRef returned_array = CFArrayCreateMutable(
+      NULL, CFArrayGetCount(all_windows), NULL);
+
+  bool found = false;
+  for (CFIndex i = 0; i < CFArrayGetCount(all_windows); ++i) {
+    CFDictionaryRef window = reinterpret_cast<CFDictionaryRef>(
+        CFArrayGetValueAtIndex(all_windows, i));
+
+    CFNumberRef id_ref = reinterpret_cast<CFNumberRef>(
+        CFDictionaryGetValue(window, kCGWindowNumber));
+
+    CGWindowID id;
+    CFNumberGetValue(id_ref, kCFNumberIntType, &id);
+    if (id == window_to_exclude) {
+      found = true;
+      continue;
+    }
+    CFArrayAppendValue(returned_array, reinterpret_cast<void *>(id));
+  }
+  CFRelease(all_windows);
+
+  if (!found) {
+    CFRelease(returned_array);
+    returned_array = NULL;
+  }
+  return returned_array;
+}
+
+// Returns the bounds of |window| in physical pixels, enlarged by a small amount
+// on four edges to take account of the border/shadow effects.
+DesktopRect GetExcludedWindowPixelBounds(CGWindowID window,
+                                         float dip_to_pixel_scale) {
+  // The amount of pixels to add to the actual window bounds to take into
+  // account of the border/shadow effects.
+  static const int kBorderEffectSize = 20;
+  CGRect rect;
+  CGWindowID ids[1];
+  ids[0] = window;
+
+  CFArrayRef window_id_array =
+      CFArrayCreate(NULL, reinterpret_cast<const void **>(&ids), 1, NULL);
+  CFArrayRef window_array =
+      CGWindowListCreateDescriptionFromArray(window_id_array);
+
+  if (CFArrayGetCount(window_array) > 0) {
+    CFDictionaryRef window = reinterpret_cast<CFDictionaryRef>(
+        CFArrayGetValueAtIndex(window_array, 0));
+    CFDictionaryRef bounds_ref = reinterpret_cast<CFDictionaryRef>(
+        CFDictionaryGetValue(window, kCGWindowBounds));
+    CGRectMakeWithDictionaryRepresentation(bounds_ref, &rect);
+  }
+
+  CFRelease(window_id_array);
+  CFRelease(window_array);
+
+  rect.origin.x -= kBorderEffectSize;
+  rect.origin.y -= kBorderEffectSize;
+  rect.size.width += kBorderEffectSize * 2;
+  rect.size.height += kBorderEffectSize * 2;
+  // |rect| is in DIP, so convert to physical pixels.
+  return ScaleAndRoundCGRect(rect, dip_to_pixel_scale);
+}
+
+// Create an image of the given region using the given |window_list|.
+// |pixel_bounds| should be in the primary display's coordinate in physical
+// pixels. The caller should release the returned CGImageRef and CFDataRef.
+CGImageRef CreateExcludedWindowRegionImage(const DesktopRect& pixel_bounds,
+                                           float dip_to_pixel_scale,
+                                           CFArrayRef window_list,
+                                           CFDataRef* data_ref) {
+  CGRect window_bounds;
+  // The origin is in DIP while the size is in physical pixels. That's what
+  // CGWindowListCreateImageFromArray expects.
+  window_bounds.origin.x = pixel_bounds.left() / dip_to_pixel_scale;
+  window_bounds.origin.y = pixel_bounds.top() / dip_to_pixel_scale;
+  window_bounds.size.width = pixel_bounds.width();
+  window_bounds.size.height = pixel_bounds.height();
+
+  CGImageRef excluded_image = CGWindowListCreateImageFromArray(
+      window_bounds, window_list, kCGWindowImageDefault);
+
+  CGDataProviderRef provider = CGImageGetDataProvider(excluded_image);
+  *data_ref = CGDataProviderCopyData(provider);
+  assert(*data_ref);
+  return excluded_image;
+}
+
 // A class to perform video frame capturing for mac.
 class ScreenCapturerMac : public ScreenCapturer {
  public:
@@ -99,6 +199,7 @@ class ScreenCapturerMac : public ScreenCapturer {
   // Overridden from ScreenCapturer:
   virtual void Start(Callback* callback) OVERRIDE;
   virtual void Capture(const DesktopRegion& region) OVERRIDE;
+  virtual void SetExcludedWindow(WindowId window) OVERRIDE;
   virtual void SetMouseShapeObserver(
       MouseShapeObserver* mouse_shape_observer) OVERRIDE;
   virtual bool GetScreenList(ScreenList* screens) OVERRIDE;
@@ -186,6 +287,8 @@ class ScreenCapturerMac : public ScreenCapturer {
   void* opengl_library_;
   CGLSetFullScreenFunc cgl_set_full_screen_;
 
+  CGWindowID excluded_window_;
+
   DISALLOW_COPY_AND_ASSIGN(ScreenCapturerMac);
 };
 
@@ -227,7 +330,8 @@ ScreenCapturerMac::ScreenCapturerMac(
       cg_display_bytes_per_row_(NULL),
       cg_display_bits_per_pixel_(NULL),
       opengl_library_(NULL),
-      cgl_set_full_screen_(NULL) {
+      cgl_set_full_screen_(NULL),
+      excluded_window_(0) {
 }
 
 ScreenCapturerMac::~ScreenCapturerMac() {
@@ -291,8 +395,7 @@ void ScreenCapturerMac::Start(Callback* callback) {
                               &power_assertion_id_user_);
 }
 
-void ScreenCapturerMac::Capture(
-    const DesktopRegion& region_to_capture) {
+void ScreenCapturerMac::Capture(const DesktopRegion& region_to_capture) {
   TickTime capture_start_time = TickTime::Now();
 
   queue_.MoveToNextFrame();
@@ -360,6 +463,10 @@ void ScreenCapturerMac::Capture(
   new_frame->set_capture_time_ms(
       (TickTime::Now() - capture_start_time).Milliseconds());
   callback_->OnCaptureCompleted(new_frame);
+}
+
+void ScreenCapturerMac::SetExcludedWindow(WindowId window) {
+  excluded_window_ = window;
 }
 
 void ScreenCapturerMac::SetMouseShapeObserver(
@@ -631,6 +738,9 @@ bool ScreenCapturerMac::CgBlitPostLion(const DesktopFrame& frame,
     displays_to_capture = desktop_config_.displays;
   }
 
+  // Create the window list once for all displays.
+  CFArrayRef window_list = CreateWindowListWithExclusion(excluded_window_);
+
   for (size_t i = 0; i < displays_to_capture.size(); ++i) {
     const MacDisplayConfiguration& display_config = displays_to_capture[i];
 
@@ -654,6 +764,26 @@ bool ScreenCapturerMac::CgBlitPostLion(const DesktopFrame& frame,
 
     // Translate the region to be copied into display-relative coordinates.
     copy_region.Translate(-display_bounds.left(), -display_bounds.top());
+
+    DesktopRect excluded_window_bounds;
+    CGImageRef excluded_image = NULL;
+    CFDataRef excluded_window_region_data = NULL;
+    if (excluded_window_ && window_list) {
+      // Get the region of the excluded window relative the primary display.
+      excluded_window_bounds = GetExcludedWindowPixelBounds(
+          excluded_window_, display_config.dip_to_pixel_scale);
+      excluded_window_bounds.IntersectWith(display_config.pixel_bounds);
+
+      // Create the image under the excluded window first, because it's faster
+      // than captuing the whole display.
+      if (!excluded_window_bounds.is_empty()) {
+        excluded_image = CreateExcludedWindowRegionImage(
+            excluded_window_bounds,
+            display_config.dip_to_pixel_scale,
+            window_list,
+            &excluded_window_region_data);
+      }
+    }
 
     // Create an image containing a snapshot of the display.
     CGImageRef image = CGDisplayCreateImage(display_config.id);
@@ -684,9 +814,36 @@ bool ScreenCapturerMac::CgBlitPostLion(const DesktopFrame& frame,
                i.rect());
     }
 
+    // Copy the region of the excluded window to the frame.
+    if (excluded_image) {
+      assert(excluded_window_region_data);
+      display_base_address = CFDataGetBytePtr(excluded_window_region_data);
+      src_bytes_per_row = CGImageGetBytesPerRow(excluded_image);
+
+      // Translate the bounds relative to the desktop, because |frame| data
+      // starts from the desktop top-left corner.
+      DesktopRect window_bounds_relative_to_desktop(excluded_window_bounds);
+      window_bounds_relative_to_desktop.Translate(
+          -screen_pixel_bounds_.left(), -screen_pixel_bounds_.top());
+      out_ptr = frame.data() +
+          (window_bounds_relative_to_desktop.left() * src_bytes_per_pixel) +
+          (window_bounds_relative_to_desktop.top() * frame.stride());
+
+      CopyRect(display_base_address,
+               src_bytes_per_row,
+               out_ptr,
+               frame.stride(),
+               src_bytes_per_pixel,
+               DesktopRect::MakeSize(excluded_window_bounds.size()));
+      CFRelease(excluded_window_region_data);
+      CFRelease(excluded_image);
+    }
+
     CFRelease(data);
     CFRelease(image);
   }
+  if (window_list)
+    CFRelease(window_list);
   return true;
 }
 
