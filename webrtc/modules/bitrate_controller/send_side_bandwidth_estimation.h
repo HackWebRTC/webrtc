@@ -13,6 +13,8 @@
 #ifndef WEBRTC_MODULES_BITRATE_CONTROLLER_SEND_SIDE_BANDWIDTH_ESTIMATION_H_
 #define WEBRTC_MODULES_BITRATE_CONTROLLER_SEND_SIDE_BANDWIDTH_ESTIMATION_H_
 
+#include <deque>
+
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
@@ -23,6 +25,9 @@ class SendSideBandwidthEstimation {
   virtual ~SendSideBandwidthEstimation();
 
   void CurrentEstimate(uint32_t* bitrate, uint8_t* loss, uint32_t* rtt) const;
+
+  // Call periodically to update estimate.
+  void UpdateEstimate(uint32_t now_ms);
 
   // Call when we receive a RTCP message with TMMBR or REMB.
   void UpdateReceiverEstimate(uint32_t bandwidth);
@@ -38,8 +43,14 @@ class SendSideBandwidthEstimation {
   void SetMinBitrate(uint32_t min_bitrate);
 
  private:
-  void UpdateEstimate(uint32_t now_ms);
   void CapBitrateToThresholds();
+
+  // Updates history of min bitrates.
+  // After this method returns min_bitrate_history_.front().second contains the
+  // min bitrate used during last kBweIncreaseIntervalMs.
+  void UpdateMinHistory(uint32_t now_ms);
+
+  std::deque<std::pair<uint32_t, uint32_t> > min_bitrate_history_;
 
   // incoming filters
   int accumulate_lost_packets_Q8_;
@@ -49,12 +60,12 @@ class SendSideBandwidthEstimation {
   uint32_t min_bitrate_configured_;
   uint32_t max_bitrate_configured_;
 
+  uint32_t time_last_receiver_block_ms_;
   uint8_t last_fraction_loss_;
-  uint16_t last_round_trip_time_;
+  uint16_t last_round_trip_time_ms_;
 
   uint32_t bwe_incoming_;
-  uint32_t time_last_increase_;
-  uint32_t time_last_decrease_;
+  uint32_t time_last_decrease_ms_;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_BITRATE_CONTROLLER_SEND_SIDE_BANDWIDTH_ESTIMATION_H_
