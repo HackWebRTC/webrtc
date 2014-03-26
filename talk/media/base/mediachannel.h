@@ -365,7 +365,7 @@ struct VideoOptions {
         unsignalled_recv_stream_limit == o.unsignalled_recv_stream_limit &&
         use_simulcast_adapter == o.use_simulcast_adapter &&
         skip_encoding_unused_streams == o.skip_encoding_unused_streams &&
-        screencast_min_bitrate == o.screencast_min_bitrate;
+        screencast_min_bitrate == o.screencast_min_bitrate &&
         use_improved_wifi_bandwidth_estimator ==
             o.use_improved_wifi_bandwidth_estimator;
   }
