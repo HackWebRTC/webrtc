@@ -77,6 +77,14 @@ const char MediaConstraintsInterface::kCpuUnderuseThreshold[] =
 const char MediaConstraintsInterface::kCpuOveruseThreshold[] =
     "googCpuOveruseThreshold";
 
+// Google-specific PeerConnection constraint keys.
+const char MediaConstraintsInterface::kImprovedWifiBwe[] =
+    "googImprovedWifiBwe";
+const char MediaConstraintsInterface::kScreencastMinBitrate[] =
+    "googScreencastMinBitrate";
+const char MediaConstraintsInterface::kSkipEncodingUnusedStreams[] =
+    "googSkipEncodingUnusedStreams";
+
 // Constraint keys for CreateOffer / CreateAnswer defined in W3C specification.
 const char MediaConstraintsInterface::kOfferToReceiveAudio[] =
     "OfferToReceiveAudio";

@@ -87,11 +87,18 @@ class MediaConstraintsInterface {
   // Google-specific constraint keys for a local video source
   static const char kNoiseReduction[];  // googNoiseReduction
   static const char kLeakyBucket[];  // googLeakyBucket
+
   // googTemporalLayeredScreencast
   static const char kTemporalLayeredScreencast[];
   static const char kCpuOveruseDetection[];
   static const char kCpuUnderuseThreshold[];
   static const char kCpuOveruseThreshold[];
+
+  // Google-specific PeerConnection constraint keys.
+  static const char kImprovedWifiBwe[];  // googImprovedWifiBwe
+  static const char kScreencastMinBitrate[];  // googScreencastMinBitrate
+  static const char kSkipEncodingUnusedStreams[];
+    // googSkipEncodingUnusedStreams
 
   // Constraint keys for CreateOffer / CreateAnswer
   // Specified by the W3C PeerConnection spec

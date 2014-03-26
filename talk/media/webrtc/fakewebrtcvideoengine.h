@@ -244,10 +244,6 @@ class FakeWebRtcVideoEncoderFactory : public WebRtcVideoEncoderFactory {
       (*it)->OnCodecsAvailable();
   }
 
-  int GetNumCreatedEncoders() {
-    return num_created_encoders_;
-  }
-
   const std::vector<FakeWebRtcVideoEncoder*>& encoders() {
     return encoders_;
   }

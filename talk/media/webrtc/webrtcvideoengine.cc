@@ -2837,6 +2837,13 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
     conference_mode_turned_off = true;
   }
 
+#ifdef USE_WEBRTC_DEV_BRANCH
+  bool improved_wifi_bwe_changed =
+      options.use_improved_wifi_bandwidth_estimator.IsSet() &&
+      options_.use_improved_wifi_bandwidth_estimator !=
+          options.use_improved_wifi_bandwidth_estimator;
+
+#endif
 
   // Save the options, to be interpreted where appropriate.
   // Use options_.SetAll() instead of assignment so that unset value in options
@@ -2961,6 +2968,19 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
       LOG(LS_WARNING) << "Cannot disable video suspension once it is enabled";
     }
   }
+#ifdef USE_WEBRTC_DEV_BRANCH
+  if (improved_wifi_bwe_changed) {
+    webrtc::Config config;
+    config.Set(new webrtc::AimdRemoteRateControl(
+        options_.use_improved_wifi_bandwidth_estimator
+          .GetWithDefaultIfUnset(false)));
+    for (SendChannelMap::iterator it = send_channels_.begin();
+            it != send_channels_.end(); ++it) {
+      engine()->vie()->network()->SetBandwidthEstimationConfig(
+          it->second->channel_id(), config);
+    }
+  }
+#endif
   return true;
 }
 
@@ -3753,6 +3773,11 @@ bool WebRtcVideoMediaChannel::MaybeResetVieSendCodec(
   // Disable denoising for screencasting.
   bool enable_denoising =
       options_.video_noise_reduction.GetWithDefaultIfUnset(false);
+#ifdef USE_WEBRTC_DEV_BRANCH
+  int screencast_min_bitrate =
+      options_.screencast_min_bitrate.GetWithDefaultIfUnset(0);
+  bool leaky_bucket = options_.video_leaky_bucket.GetWithDefaultIfUnset(false);
+#endif
   bool denoising = !is_screencast && enable_denoising;
   bool reset_send_codec =
       target_width != cur_width || target_height != cur_height ||
@@ -3786,6 +3811,24 @@ bool WebRtcVideoMediaChannel::MaybeResetVieSendCodec(
       LOG_RTCERR1(SetSendCodec, channel_id);
       return false;
     }
+
+#ifdef USE_WEBRTC_DEV_BRANCH
+    if (is_screencast) {
+      engine()->vie()->rtp()->SetMinTransmitBitrate(channel_id,
+                                                    screencast_min_bitrate);
+      // If screencast and min bitrate set, force enable pacer.
+      if (screencast_min_bitrate > 0) {
+        engine()->vie()->rtp()->SetTransmissionSmoothingStatus(channel_id,
+                                                               true);
+      }
+    } else {
+      // In case of switching from screencast to regular capture, set
+      // min bitrate padding and pacer back to defaults.
+      engine()->vie()->rtp()->SetMinTransmitBitrate(channel_id, 0);
+      engine()->vie()->rtp()->SetTransmissionSmoothingStatus(channel_id,
+                                                             leaky_bucket);
+    }
+#endif
     if (reset) {
       *reset = true;
     }

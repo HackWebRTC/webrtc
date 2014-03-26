@@ -517,6 +517,34 @@ bool WebRtcSession::Initialize(
     video_options_.suspend_below_min_bitrate.Set(value);
   }
 
+  if (FindConstraint(
+      constraints,
+      MediaConstraintsInterface::kSkipEncodingUnusedStreams,
+      &value,
+      NULL)) {
+    video_options_.skip_encoding_unused_streams.Set(value);
+  }
+
+  std::string string_value;
+  if (constraints &&
+      constraints->GetOptional().FindFirst(
+        MediaConstraintsInterface::kScreencastMinBitrate,
+        &string_value)) {
+    int bitrate;
+    if (talk_base::FromString(string_value, &bitrate)) {
+      video_options_.screencast_min_bitrate.Set(bitrate);
+    }
+  }
+
+  // Find improved wifi bwe constraint.
+  if (FindConstraint(
+        constraints,
+        MediaConstraintsInterface::kImprovedWifiBwe,
+        &value,
+        NULL)) {
+    video_options_.use_improved_wifi_bandwidth_estimator.Set(value);
+  }
+
   const cricket::VideoCodec default_codec(
       JsepSessionDescription::kDefaultVideoCodecId,
       JsepSessionDescription::kDefaultVideoCodecName,

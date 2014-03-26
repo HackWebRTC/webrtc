@@ -1662,11 +1662,9 @@ TEST_F(WebRtcVideoEngineTestFake, DontRegisterEncoderMultipleTimes) {
 
   EXPECT_TRUE(vie_.ExternalEncoderRegistered(channel_num, 100));
   EXPECT_EQ(1, vie_.GetNumExternalEncoderRegistered(channel_num));
-  EXPECT_EQ(1, encoder_factory_.GetNumCreatedEncoders());
 
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
   EXPECT_EQ(1, vie_.GetNumExternalEncoderRegistered(channel_num));
-  EXPECT_EQ(1, encoder_factory_.GetNumCreatedEncoders());
 
   // Remove stream previously added to free the external encoder instance.
   EXPECT_TRUE(channel_->RemoveSendStream(kSsrc));
@@ -1798,7 +1796,6 @@ TEST_F(WebRtcVideoEngineTestFake, UpdateEncoderCodecsAfterSetFactory) {
 
   EXPECT_TRUE(vie_.ExternalEncoderRegistered(channel_num, 100));
   EXPECT_EQ(1, vie_.GetNumExternalEncoderRegistered(channel_num));
-  EXPECT_EQ(1, encoder_factory_.GetNumCreatedEncoders());
 
   // Remove stream previously added to free the external encoder instance.
   EXPECT_TRUE(channel_->RemoveSendStream(kSsrc));
