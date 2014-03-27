@@ -100,7 +100,7 @@ void usage() {
   printf("  --ns_prob_file FILE\n");
   printf("\n  -vad     Voice activity detection\n");
   printf("  --vad_out_file FILE\n");
-  printf("\n  -expns   Experimental Noise suppression\n");
+  printf("\n  -expns   Experimental noise suppression\n");
   printf("\n Level metrics (enabled by default)\n");
   printf("  --no_level_metrics\n");
   printf("\n");
@@ -142,9 +142,7 @@ void void_main(int argc, char* argv[]) {
     printf("Try `process_test --help' for more information.\n\n");
   }
 
-  Config config;
-  config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
-  scoped_ptr<AudioProcessing> apm(AudioProcessing::Create(config));
+  scoped_ptr<AudioProcessing> apm(AudioProcessing::Create());
   ASSERT_TRUE(apm.get() != NULL);
 
   const char* pb_filename = NULL;
