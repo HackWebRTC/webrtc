@@ -124,8 +124,8 @@ function LoopbackTest(stream, callDurationMs, forceTurn, maxVideoBitrateKbps) {
       doneCallback();
     }
 
-    function fail() {
-      trace("Fail");
+    function fail(msg) {
+      trace("Fail: " + msg);
       doneCallback();
     }
   }
@@ -194,8 +194,9 @@ function LoopbackTest(stream, callDurationMs, forceTurn, maxVideoBitrateKbps) {
   function requestTurn(successCallback, failureCallback) {
     var currentDomain = document.domain;
     if (currentDomain.search('localhost') === -1 &&
-        currentDomain.search('apprtc') === -1) {
-      onerror("not authorized domain");
+        currentDomain.search('webrtc.googlecode.com') === -1) {
+      failureCallback("Domain not authorized for turn server: " +
+                      currentDomain);
       return;
     }
 
