@@ -57,7 +57,9 @@
 #include "talk/base/sharedexclusivelock.h"
 
 // Profiling could be switched via a build flag, but for now, it's always on.
+#ifndef ENABLE_PROFILING
 #define ENABLE_PROFILING
+#endif
 
 #ifdef ENABLE_PROFILING
 
