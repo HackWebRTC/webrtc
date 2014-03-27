@@ -36,7 +36,6 @@
 #include <set>
 
 #include "talk/base/basictypes.h"
-#include "talk/base/bind.h"
 #include "talk/base/buffer.h"
 #include "talk/base/byteorder.h"
 #include "talk/base/common.h"
@@ -2369,26 +2368,8 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
       sinfo.packets_lost = -1;
       sinfo.fraction_lost = -1;
       sinfo.rtt_ms = -1;
-      sinfo.input_frame_width = static_cast<int>(channel_stream_info->width());
-      sinfo.input_frame_height =
-          static_cast<int>(channel_stream_info->height());
-
-      VideoCapturer* video_capturer = send_channel->video_capturer();
-      if (video_capturer) {
-        video_capturer->GetStats(&sinfo.adapt_frame_drops,
-                                 &sinfo.effects_frame_drops,
-                                 &sinfo.capturer_frame_time);
-      }
-
-      webrtc::VideoCodec vie_codec;
-      if (engine()->vie()->codec()->GetSendCodec(channel_id, vie_codec) == 0) {
-        sinfo.send_frame_width = vie_codec.width;
-        sinfo.send_frame_height = vie_codec.height;
-      } else {
-        sinfo.send_frame_width = -1;
-        sinfo.send_frame_height = -1;
-        LOG_RTCERR1(GetSendCodec, channel_id);
-      }
+      sinfo.frame_width = static_cast<int>(channel_stream_info->width());
+      sinfo.frame_height = static_cast<int>(channel_stream_info->height());
       sinfo.framerate_input = channel_stream_info->framerate();
       sinfo.framerate_sent = send_channel->encoder_observer()->framerate();
       sinfo.nominal_bitrate = send_channel->encoder_observer()->bitrate();
@@ -3089,18 +3070,8 @@ bool WebRtcVideoMediaChannel::GetVideoAdapter(
   return true;
 }
 
-void WebRtcVideoMediaChannel::OnFrameFromCapturer(VideoCapturer* capturer,
-                                                  const VideoFrame* frame) {
-  // This method is called from the capturer thread while the rest of the
-  // WebRtcVideoMediaChannel is run on the worker thread.
-  engine_->worker_thread()->Invoke<void>(
-      Bind(&WebRtcVideoMediaChannel::SendFrame, this, capturer, frame));
-}
-
 void WebRtcVideoMediaChannel::SendFrame(VideoCapturer* capturer,
                                         const VideoFrame* frame) {
-  // TODO(ronghuawu): Reenable once webrtc 3125 is fixed.
-  // ASSERT(engine_->worker_thread() == talk_base::Thread::Current());
   // If the |capturer| is registered to any send channel, then send the frame
   // to those send channels.
   bool capturer_is_channel_owned = false;
@@ -4048,8 +4019,8 @@ bool WebRtcVideoMediaChannel::SetLocalRtxSsrc(int channel_id,
 
 void WebRtcVideoMediaChannel::MaybeConnectCapturer(VideoCapturer* capturer) {
   if (capturer != NULL && GetSendChannelNum(capturer) == 1) {
-    capturer->SignalVideoFrame.connect(
-        this, &WebRtcVideoMediaChannel::OnFrameFromCapturer);
+    capturer->SignalVideoFrame.connect(this,
+                                       &WebRtcVideoMediaChannel::SendFrame);
   }
 }
 

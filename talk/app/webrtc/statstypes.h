@@ -148,7 +148,6 @@ class StatsReport {
   static const char kStatsValueNameExpandRate[];
   static const char kStatsValueNameFirsReceived[];
   static const char kStatsValueNameFirsSent[];
-  static const char kStatsValueNameFrameHeightInput[];
   static const char kStatsValueNameFrameHeightReceived[];
   static const char kStatsValueNameFrameHeightSent[];
   static const char kStatsValueNameFrameRateReceived[];
@@ -163,7 +162,6 @@ class StatsReport {
   static const char kStatsValueNameRenderDelayMs[];
   static const char kStatsValueNameFrameRateInput[];
   static const char kStatsValueNameFrameRateSent[];
-  static const char kStatsValueNameFrameWidthInput[];
   static const char kStatsValueNameFrameWidthReceived[];
   static const char kStatsValueNameFrameWidthSent[];
   static const char kStatsValueNameJitterReceived[];

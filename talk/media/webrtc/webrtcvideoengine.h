@@ -292,7 +292,9 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   uint32 send_ssrc() const { return 0; }
   bool GetRenderer(uint32 ssrc, VideoRenderer** renderer);
   bool GetVideoAdapter(uint32 ssrc, CoordinatedVideoAdapter** video_adapter);
-  void OnFrameFromCapturer(VideoCapturer* capturer, const VideoFrame* frame);
+  void SendFrame(VideoCapturer* capturer, const VideoFrame* frame);
+  bool SendFrame(WebRtcVideoChannelSendInfo* channel_info,
+                 const VideoFrame* frame, bool is_screencast);
 
   // Thunk functions for use with HybridVideoEngine
   void OnLocalFrame(VideoCapturer* capturer, const VideoFrame* frame) {
@@ -414,9 +416,6 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   // to one send channel, i.e. the last send channel.
   void MaybeDisconnectCapturer(VideoCapturer* capturer);
 
-  void SendFrame(VideoCapturer* capturer, const VideoFrame* frame);
-  bool SendFrame(WebRtcVideoChannelSendInfo* channel_info,
-                 const VideoFrame* frame, bool is_screencast);
   bool RemoveRecvStreamInternal(uint32 ssrc);
 
   // Global state.
