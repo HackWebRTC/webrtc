@@ -36,6 +36,7 @@
 #include <set>
 
 #include "talk/base/basictypes.h"
+#include "talk/base/bind.h"
 #include "talk/base/buffer.h"
 #include "talk/base/byteorder.h"
 #include "talk/base/common.h"
@@ -3088,8 +3089,18 @@ bool WebRtcVideoMediaChannel::GetVideoAdapter(
   return true;
 }
 
+void WebRtcVideoMediaChannel::OnFrameFromCapturer(VideoCapturer* capturer,
+                                                  const VideoFrame* frame) {
+  // This method is called from the capturer thread while the rest of the
+  // WebRtcVideoMediaChannel is run on the worker thread.
+  engine_->worker_thread()->Invoke<void>(
+      Bind(&WebRtcVideoMediaChannel::SendFrame, this, capturer, frame));
+}
+
 void WebRtcVideoMediaChannel::SendFrame(VideoCapturer* capturer,
                                         const VideoFrame* frame) {
+  // TODO(ronghuawu): Reenable once webrtc 3125 is fixed.
+  // ASSERT(engine_->worker_thread() == talk_base::Thread::Current());
   // If the |capturer| is registered to any send channel, then send the frame
   // to those send channels.
   bool capturer_is_channel_owned = false;
@@ -4037,8 +4048,8 @@ bool WebRtcVideoMediaChannel::SetLocalRtxSsrc(int channel_id,
 
 void WebRtcVideoMediaChannel::MaybeConnectCapturer(VideoCapturer* capturer) {
   if (capturer != NULL && GetSendChannelNum(capturer) == 1) {
-    capturer->SignalVideoFrame.connect(this,
-                                       &WebRtcVideoMediaChannel::SendFrame);
+    capturer->SignalVideoFrame.connect(
+        this, &WebRtcVideoMediaChannel::OnFrameFromCapturer);
   }
 }
 

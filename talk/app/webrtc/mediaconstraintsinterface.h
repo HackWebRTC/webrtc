@@ -100,6 +100,9 @@ class MediaConstraintsInterface {
   static const char kCpuUnderuseThreshold[];
   static const char kCpuOveruseThreshold[];
   static const char kCpuOveruseEncodeUsage[];
+  static const char kHighStartBitrate[];  // googHighStartBitrate
+  static const char kHighBitrate[];  // googHighBitrate
+  static const char kVeryHighBitrate[];  // googVeryHighBitrate
 
   // Constraint keys for CreateOffer / CreateAnswer
   // Specified by the W3C PeerConnection spec

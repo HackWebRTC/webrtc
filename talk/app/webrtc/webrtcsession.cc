@@ -578,6 +578,30 @@ bool WebRtcSession::Initialize(
     video_options_.use_improved_wifi_bandwidth_estimator.Set(value);
   }
 
+  if (FindConstraint(
+        constraints,
+        MediaConstraintsInterface::kHighStartBitrate,
+        &value,
+        NULL)) {
+    video_options_.video_start_bitrate.Set(cricket::kHighStartBitrate);
+  }
+
+  if (FindConstraint(
+      constraints,
+      MediaConstraintsInterface::kVeryHighBitrate,
+      &value,
+      NULL)) {
+    video_options_.video_highest_bitrate.Set(
+        cricket::VideoOptions::VERY_HIGH);
+  } else if (FindConstraint(
+      constraints,
+      MediaConstraintsInterface::kHighBitrate,
+      &value,
+      NULL)) {
+    video_options_.video_highest_bitrate.Set(
+        cricket::VideoOptions::HIGH);
+  }
+
   const cricket::VideoCodec default_codec(
       JsepSessionDescription::kDefaultVideoCodecId,
       JsepSessionDescription::kDefaultVideoCodecName,

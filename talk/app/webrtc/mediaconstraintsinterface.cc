@@ -86,6 +86,12 @@ const char MediaConstraintsInterface::kCpuOveruseThreshold[] =
     "googCpuOveruseThreshold";
 const char MediaConstraintsInterface::kCpuOveruseEncodeUsage[] =
     "googCpuOveruseEncodeUsage";
+const char MediaConstraintsInterface::kHighStartBitrate[] =
+    "googHighStartBitrate";
+const char MediaConstraintsInterface::kHighBitrate[] =
+    "googHighBitrate";
+const char MediaConstraintsInterface::kVeryHighBitrate[] =
+    "googVeryHighBitrate";
 
 // Constraint keys for CreateOffer / CreateAnswer defined in W3C specification.
 const char MediaConstraintsInterface::kOfferToReceiveAudio[] =

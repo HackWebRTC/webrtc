@@ -128,7 +128,7 @@ class WebRtcVideoEngineTestFake : public testing::Test,
       return false;
     }
     cricket::FakeVideoCapturer capturer;
-    channel_->SendFrame(&capturer, &frame);
+    channel_->OnFrameFromCapturer(&capturer, &frame);
     return true;
   }
   bool SendI420ScreencastFrame(int width, int height) {
@@ -145,7 +145,7 @@ class WebRtcVideoEngineTestFake : public testing::Test,
     }
     cricket::FakeVideoCapturer capturer;
     capturer.SetScreencast(true);
-    channel_->SendFrame(&capturer, &frame);
+    channel_->OnFrameFromCapturer(&capturer, &frame);
     return true;
   }
   void VerifyCodecFeedbackParams(const cricket::VideoCodec& codec) {

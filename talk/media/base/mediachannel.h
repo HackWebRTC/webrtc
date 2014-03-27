@@ -62,6 +62,7 @@ class VideoRenderer;
 const int kMinRtpHeaderExtensionId = 1;
 const int kMaxRtpHeaderExtensionId = 255;
 const int kScreencastDefaultFps = 5;
+const int kHighStartBitrate = 1500;
 
 // Used in AudioOptions and VideoOptions to signify "unset" values.
 template <class T>
@@ -441,7 +442,7 @@ struct VideoOptions {
   // Enable WebRTC leaky bucket when sending media packets.
   Settable<bool> video_leaky_bucket;
   // Set highest bitrate mode for video.
-  Settable<int> video_highest_bitrate;
+  Settable<HighestBitrate> video_highest_bitrate;
   // Enable WebRTC Cpu Overuse Detection, which is a new version of the CPU
   // adaptation algorithm. So this option will override the
   // |adapt_input_to_cpu_usage|.
