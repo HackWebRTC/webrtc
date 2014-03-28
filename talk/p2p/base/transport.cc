@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2004--2005, Google Inc.
+ * Copyright 2004, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -405,6 +405,12 @@ bool Transport::VerifyCandidate(const Candidate& cand, std::string* error) {
 
   // Disallow all ports below 1024, except for 80 and 443 on public addresses.
   int port = cand.address().port();
+  if (port == 0) {
+    // Expected for active-only candidates per
+    // http://tools.ietf.org/html/rfc6544#section-4.5 so no error.
+    *error = "";
+    return false;
+  }
   if (port < 1024) {
     if ((port != 80) && (port != 443)) {
       *error = "candidate has port below 1024, but not 80 or 443";

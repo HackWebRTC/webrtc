@@ -1397,7 +1397,9 @@ bool WebRtcSession::UseCandidate(
     }
     // TODO(bemasc): If state is Completed, go back to Connected.
   } else {
-    LOG(LS_WARNING) << error;
+    if (!error.empty()) {
+      LOG(LS_WARNING) << error;
+    }
   }
   return true;
 }
