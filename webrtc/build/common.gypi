@@ -63,6 +63,9 @@
     # third party code will still have the reduced warning settings.
     'chromium_code': 1,
 
+    # Set to 1 to enable code coverage on Linux using the gcov library.
+    'coverage%': 0,
+
     # Remote bitrate estimator logging/plotting.
     'enable_bwe_test_logging%': 0,
 
@@ -260,6 +263,11 @@
             ],
           }],
         ],
+      }],
+      ['coverage==1 and OS=="linux"', {
+        'cflags': [ '-ftest-coverage',
+                    '-fprofile-arcs' ],
+        'link_settings': { 'libraries': [ '-lgcov' ] },
       }],
       ['os_posix==1', {
         # For access to standard POSIXish features, use WEBRTC_POSIX instead of
