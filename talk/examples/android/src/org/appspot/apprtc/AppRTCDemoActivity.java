@@ -179,7 +179,7 @@ public class AppRTCDemoActivity extends Activity
   private static void createDataChannelToRegressionTestBug2302(
       PeerConnection pc) {
     DataChannel dc = pc.createDataChannel("dcLabel", new DataChannel.Init());
-    abortUnless("dcLabel".equals(dc.label()), "WTF?");
+    abortUnless("dcLabel".equals(dc.label()), "Unexpected label corruption?");
     dc.close();
     dc.dispose();
   }
@@ -189,6 +189,8 @@ public class AppRTCDemoActivity extends Activity
     factory = new PeerConnectionFactory();
 
     MediaConstraints pcConstraints = appRtcClient.pcConstraints();
+    pcConstraints.mandatory.add(
+        new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
     pcConstraints.optional.add(
         new MediaConstraints.KeyValuePair("RtpDataChannels", "true"));
     pc = factory.createPeerConnection(iceServers, pcConstraints, pcObserver);
