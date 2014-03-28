@@ -2368,8 +2368,32 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
       sinfo.packets_lost = -1;
       sinfo.fraction_lost = -1;
       sinfo.rtt_ms = -1;
-      sinfo.frame_width = static_cast<int>(channel_stream_info->width());
-      sinfo.frame_height = static_cast<int>(channel_stream_info->height());
+      sinfo.input_frame_width = static_cast<int>(channel_stream_info->width());
+      sinfo.input_frame_height =
+          static_cast<int>(channel_stream_info->height());
+
+      VideoCapturer* video_capturer = send_channel->video_capturer();
+      if (video_capturer) {
+        video_capturer->GetStats(&sinfo.adapt_frame_drops,
+                                 &sinfo.effects_frame_drops,
+                                 &sinfo.capturer_frame_time);
+      }
+
+      webrtc::VideoCodec vie_codec;
+      // TODO(ronghuawu): Add unit tests to cover the new send stats:
+      // send_frame_width/height.
+      if (!video_capturer || video_capturer->IsMuted()) {
+        sinfo.send_frame_width = 0;
+        sinfo.send_frame_height = 0;
+      } else if (engine()->vie()->codec()->GetSendCodec(channel_id,
+                                                        vie_codec) == 0) {
+        sinfo.send_frame_width = vie_codec.width;
+        sinfo.send_frame_height = vie_codec.height;
+      } else {
+        sinfo.send_frame_width = -1;
+        sinfo.send_frame_height = -1;
+        LOG_RTCERR1(GetSendCodec, channel_id);
+      }
       sinfo.framerate_input = channel_stream_info->framerate();
       sinfo.framerate_sent = send_channel->encoder_observer()->framerate();
       sinfo.nominal_bitrate = send_channel->encoder_observer()->bitrate();

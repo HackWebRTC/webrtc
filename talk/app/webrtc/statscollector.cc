@@ -84,6 +84,8 @@ const char StatsReport::kStatsValueNameFingerprintAlgorithm[] =
     "googFingerprintAlgorithm";
 const char StatsReport::kStatsValueNameFirsReceived[] = "googFirsReceived";
 const char StatsReport::kStatsValueNameFirsSent[] = "googFirsSent";
+const char StatsReport::kStatsValueNameFrameHeightInput[] =
+    "googFrameHeightInput";
 const char StatsReport::kStatsValueNameFrameHeightReceived[] =
     "googFrameHeightReceived";
 const char StatsReport::kStatsValueNameFrameHeightSent[] =
@@ -105,6 +107,8 @@ const char StatsReport::kStatsValueNameRenderDelayMs[] = "googRenderDelayMs";
 
 const char StatsReport::kStatsValueNameFrameRateInput[] = "googFrameRateInput";
 const char StatsReport::kStatsValueNameFrameRateSent[] = "googFrameRateSent";
+const char StatsReport::kStatsValueNameFrameWidthInput[] =
+    "googFrameWidthInput";
 const char StatsReport::kStatsValueNameFrameWidthReceived[] =
     "googFrameWidthReceived";
 const char StatsReport::kStatsValueNameFrameWidthSent[] = "googFrameWidthSent";
@@ -350,10 +354,14 @@ void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {
                    info.plis_rcvd);
   report->AddValue(StatsReport::kStatsValueNameNacksReceived,
                    info.nacks_rcvd);
+  report->AddValue(StatsReport::kStatsValueNameFrameWidthInput,
+                   info.input_frame_width);
+  report->AddValue(StatsReport::kStatsValueNameFrameHeightInput,
+                   info.input_frame_height);
   report->AddValue(StatsReport::kStatsValueNameFrameWidthSent,
-                   info.frame_width);
+                   info.send_frame_width);
   report->AddValue(StatsReport::kStatsValueNameFrameHeightSent,
-                   info.frame_height);
+                   info.send_frame_height);
   report->AddValue(StatsReport::kStatsValueNameFrameRateInput,
                    info.framerate_input);
   report->AddValue(StatsReport::kStatsValueNameFrameRateSent,
