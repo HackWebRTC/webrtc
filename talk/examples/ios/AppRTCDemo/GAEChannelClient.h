@@ -33,7 +33,7 @@
 @protocol GAEMessageHandler<NSObject>
 
 - (void)onOpen;
-- (void)onMessage:(NSString *)data;
+- (void)onMessage:(NSDictionary*)data;
 - (void)onClose;
 - (void)onError:(int)code withDescription:(NSString *)description;
 

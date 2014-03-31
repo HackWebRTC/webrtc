@@ -6,10 +6,11 @@
   Helper HTML that redirects Google AppEngine's Channel API to Objective C.
   This is done by hosting this page in an iOS application.  The hosting
   class creates a UIWebView control and implements the UIWebViewDelegate
-  protocol.  Then when there is a channel message, it is encoded in an IFRAME.
-  That IFRAME is added to the DOM which triggers a navigation event
-  |shouldStartLoadWithRequest| in Objective C which can then be routed in the
-  application as desired.
+  protocol.  Then when there is a channel message it is queued in JS,
+  and an IFRAME is added to the DOM, triggering a navigation event
+  |shouldStartLoadWithRequest| in Objective C which can then fetch the
+  message using |popQueuedMessage|.  This queuing is necessary to avoid URL
+  length limits in UIWebView (which are undocumented).
   -->
   <body onbeforeunload="closeSocket()" onload="openSocket()">
     <script type="text/javascript">
@@ -38,6 +39,10 @@
 
       var channel = null;
       var socket = null;
+      // In-order queue of messages to be delivered to ObjectiveC.
+      // Each is a JSON.stringify()'d dictionary containing a 'type'
+      // field and optionally a 'payload'.
+      var messageQueue = [];
 
       function openSocket() {
         if (!QueryString.token || !QueryString.token.match(/^[A-z0-9_-]+$/)) {
@@ -52,17 +57,13 @@
             sendMessageToObjC("onopen");
           },
           'onmessage': function(msg) {
-            sendMessageToObjC("onmessage:" +
-                              encodeURIComponent(JSON.stringify(msg.data)));
+            sendMessageToObjC("onmessage", msg);
           },
           'onclose': function() {
             sendMessageToObjC("onclose");
           },
           'onerror': function(err) {
-            sendMessageToObjC("onerror:" +
-                              encodeURIComponent(JSON.stringify(err.code)) +
-                              ":message:" +
-                              encodeURIComponent(JSON.stringify(err.description)));
+            sendMessageToObjC("onerror", err);
           }
         });
       }
@@ -73,15 +74,20 @@
 
       // Add an IFRAME to the DOM to trigger a navigation event.  Then remove
       // it as it is no longer needed.  Only one event is generated.
-      function sendMessageToObjC(message) {
+      function sendMessageToObjC(type, payload) {
+        messageQueue.push(JSON.stringify({'type': type, 'payload': payload}));
         var iframe = document.createElement("IFRAME");
-        iframe.setAttribute("src", "js-frame:" + message);
+        iframe.setAttribute("src", "js-frame:");
         // For some reason we need to set a non-empty size for the iOS6
         // simulator...
         iframe.setAttribute("height", "1px");
         iframe.setAttribute("width", "1px");
         document.documentElement.appendChild(iframe);
         iframe.parentNode.removeChild(iframe);
+      }
+
+      function popQueuedMessage() {
+        return messageQueue.shift();
       }
     </script>
   </body>

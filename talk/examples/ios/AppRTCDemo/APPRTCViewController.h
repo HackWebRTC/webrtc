@@ -32,9 +32,9 @@
 // The view controller that is displayed when AppRTCDemo is loaded.
 @interface APPRTCViewController : UIViewController<UITextFieldDelegate>
 
-@property(weak, nonatomic) IBOutlet UITextField* textField;
-@property(weak, nonatomic) IBOutlet UITextView* textInstructions;
-@property(weak, nonatomic) IBOutlet UITextView* textOutput;
+@property(weak, nonatomic) IBOutlet UITextField* roomInput;
+@property(weak, nonatomic) IBOutlet UITextView* instructionsView;
+@property(weak, nonatomic) IBOutlet UITextView* logView;
 @property(weak, nonatomic) IBOutlet UIView* blackView;
 
 @property(nonatomic, strong) APPRTCVideoView* remoteVideoView;

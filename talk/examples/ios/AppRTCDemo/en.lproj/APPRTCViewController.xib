@@ -178,7 +178,7 @@
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBCocoaTouchOutletConnection" key="connection">
-						<string key="label">textField</string>
+						<string key="label">roomInput</string>
 						<reference key="source" ref="372490531"/>
 						<reference key="destination" ref="546385578"/>
 					</object>
@@ -186,7 +186,7 @@
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBCocoaTouchOutletConnection" key="connection">
-						<string key="label">textInstructions</string>
+						<string key="label">instructionsView</string>
 						<reference key="source" ref="372490531"/>
 						<reference key="destination" ref="176994284"/>
 					</object>
@@ -194,7 +194,7 @@
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBCocoaTouchOutletConnection" key="connection">
-						<string key="label">textOutput</string>
+						<string key="label">logView</string>
 						<reference key="source" ref="372490531"/>
 						<reference key="destination" ref="634862110"/>
 					</object>
@@ -660,25 +660,25 @@
 					<string key="superclassName">UIViewController</string>
 					<dictionary class="NSMutableDictionary" key="outlets">
 						<string key="blackView">UIView</string>
-						<string key="textField">UITextField</string>
-						<string key="textInstructions">UITextView</string>
-						<string key="textOutput">UITextView</string>
+						<string key="roomInput">UITextField</string>
+						<string key="instructionsView">UITextView</string>
+						<string key="logView">UITextView</string>
 					</dictionary>
 					<dictionary class="NSMutableDictionary" key="toOneOutletInfosByName">
 						<object class="IBToOneOutletInfo" key="blackView">
 							<string key="name">blackView</string>
 							<string key="candidateClassName">UIView</string>
 						</object>
-						<object class="IBToOneOutletInfo" key="textField">
-							<string key="name">textField</string>
+						<object class="IBToOneOutletInfo" key="roomInput">
+							<string key="name">roomInput</string>
 							<string key="candidateClassName">UITextField</string>
 						</object>
-						<object class="IBToOneOutletInfo" key="textInstructions">
-							<string key="name">textInstructions</string>
+						<object class="IBToOneOutletInfo" key="instructionsView">
+							<string key="name">instructionsView</string>
 							<string key="candidateClassName">UITextView</string>
 						</object>
-						<object class="IBToOneOutletInfo" key="textOutput">
-							<string key="name">textOutput</string>
+						<object class="IBToOneOutletInfo" key="logView">
+							<string key="name">logView</string>
 							<string key="candidateClassName">UITextView</string>
 						</object>
 					</dictionary>

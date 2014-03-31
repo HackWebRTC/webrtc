@@ -63,41 +63,54 @@
 
 #pragma mark - UIWebViewDelegate method
 
++ (NSDictionary*)jsonStringToDictionary:(NSString*)str {
+  NSData* data = [str dataUsingEncoding:NSUTF8StringEncoding];
+  NSError* error;
+  NSDictionary* dict =
+      [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
+  NSAssert(!error, @"Invalid JSON? %@", str);
+  return dict;
+}
+
 - (BOOL)webView:(UIWebView*)webView
     shouldStartLoadWithRequest:(NSURLRequest*)request
                 navigationType:(UIWebViewNavigationType)navigationType {
   NSString* scheme = [request.URL scheme];
-  if ([scheme compare:@"js-frame"] != NSOrderedSame) {
+  NSAssert(scheme, @"scheme is nil: %@", request);
+  if (![scheme isEqualToString:@"js-frame"]) {
     return YES;
   }
-  NSString* resourceSpecifier = [request.URL resourceSpecifier];
-  NSRange range = [resourceSpecifier rangeOfString:@":"];
-  NSString* method;
-  NSString* message;
-  if (range.length == 0 && range.location == NSNotFound) {
-    method = resourceSpecifier;
-  } else {
-    method = [resourceSpecifier substringToIndex:range.location];
-    message = [resourceSpecifier substringFromIndex:range.location + 1];
-  }
+
   dispatch_async(dispatch_get_main_queue(), ^(void) {
-      if ([method compare:@"onopen"] == NSOrderedSame) {
+      NSString* queuedMessage = [webView
+          stringByEvaluatingJavaScriptFromString:@"popQueuedMessage();"];
+      NSAssert([queuedMessage length], @"Empty queued message from JS");
+
+      NSDictionary* queuedMessageDict =
+          [GAEChannelClient jsonStringToDictionary:queuedMessage];
+      NSString* method = queuedMessageDict[@"type"];
+      NSAssert(method, @"Missing method: %@", queuedMessageDict);
+      NSDictionary* payload = queuedMessageDict[@"payload"];  // May be nil.
+
+      if ([method isEqualToString:@"onopen"]) {
         [self.delegate onOpen];
-      } else if ([method compare:@"onmessage"] == NSOrderedSame) {
-        [self.delegate onMessage:message];
-      } else if ([method compare:@"onclose"] == NSOrderedSame) {
+      } else if ([method isEqualToString:@"onmessage"]) {
+        NSDictionary* payloadData =
+            [GAEChannelClient jsonStringToDictionary:payload[@"data"]];
+        [self.delegate onMessage:payloadData];
+      } else if ([method isEqualToString:@"onclose"]) {
         [self.delegate onClose];
-      } else if ([method compare:@"onerror"] == NSOrderedSame) {
-        // TODO(hughv): Get error.
-        int code = -1;
-        NSString* description = message;
-        [self.delegate onError:code withDescription:description];
+      } else if ([method isEqualToString:@"onerror"]) {
+        NSNumber* codeNumber = payload[@"code"];
+        int code = [codeNumber intValue];
+        NSAssert([codeNumber isEqualToNumber:[NSNumber numberWithInt:code]],
+                 @"Unexpected non-integral code: %@", payload);
+        [self.delegate onError:code withDescription:payload[@"description"]];
       } else {
-        NSAssert(
-            NO, @"Invalid message sent from UIWebView: %@", resourceSpecifier);
+        NSAssert(NO, @"Invalid message sent from UIWebView: %@", queuedMessage);
       }
   });
-  return YES;
+  return NO;
 }
 
 @end
