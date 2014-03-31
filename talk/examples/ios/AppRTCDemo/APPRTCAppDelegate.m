@@ -247,6 +247,11 @@
   RTCMediaStream* lms =
       [self.peerConnectionFactory mediaStreamWithLabel:@"ARDAMS"];
 
+  // The iOS simulator doesn't provide any sort of camera capture
+  // support or emulation (http://goo.gl/rHAnC1) so don't bother
+  // trying to open a local stream.
+  RTCVideoTrack* localVideoTrack;
+#if !TARGET_IPHONE_SIMULATOR
   NSString* cameraID = nil;
   for (AVCaptureDevice* captureDevice in
        [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo]) {
@@ -262,12 +267,13 @@
   self.videoSource = [self.peerConnectionFactory
       videoSourceWithCapturer:capturer
                   constraints:self.client.videoConstraints];
-  RTCVideoTrack* localVideoTrack =
+  localVideoTrack =
       [self.peerConnectionFactory videoTrackWithID:@"ARDAMSv0"
                                             source:self.videoSource];
   if (localVideoTrack) {
     [lms addVideoTrack:localVideoTrack];
   }
+#endif
 
   [self.viewController.localVideoView
       renderVideoTrackInterface:localVideoTrack];
