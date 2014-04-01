@@ -78,6 +78,7 @@
 /third_party/opus
 /third_party/protobuf
 /third_party/sqlite
+/third_party/syzygy/binaries
 /third_party/usrsctp
 /third_party/valgrind
 /third_party/winsdk_samples/src
