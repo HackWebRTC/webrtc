@@ -218,23 +218,13 @@ int32_t AudioDeviceIPhone::MicrophoneIsAvailable(bool& available) {
     WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
                  "%s", __FUNCTION__);
 
+    // This function has never been implemented correctly (boo!) but
+    // the returned |available| value is ignored (yay?) so for now
+    // just hard-code the previous (more buggily-implemented behavior)
+    // until the entire MicrophoneIsAvailable interface is ripped out
+    // (since it's apparently useless).
+    // https://code.google.com/p/webrtc/issues/detail?id=3132
     available = false;
-
-    OSStatus result = -1;
-    UInt32 channel = 0;
-    UInt32 size = sizeof(channel);
-    result = AudioSessionGetProperty(kAudioSessionProperty_AudioInputAvailable,
-                                     &size, &channel);
-    if (channel != 0) {
-        // API is not supported on this platform, we return available = true
-        WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice,
-                     _id, "  API call not supported on this version");
-        available = true;
-        return 0;
-    }
-
-    available = (channel == 0) ? false : true;
-
     return 0;
 }
 
@@ -1716,7 +1706,10 @@ void AudioDeviceIPhone::UpdatePlayoutDelay() {
     if (_playoutDelayMeasurementCounter >= 100) {
         // Update HW and OS delay every second, unlikely to change
 
-        _playoutDelay = 0;
+        // Since this is eventually rounded to integral ms, add 0.5ms
+        // here to get round-to-nearest-int behavior instead of
+        // truncation.
+        float totalDelaySeconds = 0.0005;
 
         // HW output latency
         Float32 f32(0);
@@ -1727,7 +1720,8 @@ void AudioDeviceIPhone::UpdatePlayoutDelay() {
             WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
                          "error HW latency (result=%d)", result);
         }
-        _playoutDelay += static_cast<int>(f32 * 1000000);
+        assert(f32 >= 0);
+        totalDelaySeconds += f32;
 
         // HW buffer duration
         f32 = 0;
@@ -1737,7 +1731,8 @@ void AudioDeviceIPhone::UpdatePlayoutDelay() {
             WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
                          "error HW buffer duration (result=%d)", result);
         }
-        _playoutDelay += static_cast<int>(f32 * 1000000);
+        assert(f32 >= 0);
+        totalDelaySeconds += f32;
 
         // AU latency
         Float64 f64(0);
@@ -1748,10 +1743,11 @@ void AudioDeviceIPhone::UpdatePlayoutDelay() {
             WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
                          "error AU latency (result=%d)", result);
         }
-        _playoutDelay += static_cast<int>(f64 * 1000000);
+        assert(f64 >= 0);
+        totalDelaySeconds += f64;
 
         // To ms
-        _playoutDelay = (_playoutDelay - 500) / 1000;
+        _playoutDelay = static_cast<uint32_t>(totalDelaySeconds / 1000);
 
         // Reset counter
         _playoutDelayMeasurementCounter = 0;
@@ -1766,7 +1762,10 @@ void AudioDeviceIPhone::UpdateRecordingDelay() {
     if (_recordingDelayMeasurementCounter >= 100) {
         // Update HW and OS delay every second, unlikely to change
 
-        _recordingDelayHWAndOS = 0;
+        // Since this is eventually rounded to integral ms, add 0.5ms
+        // here to get round-to-nearest-int behavior instead of
+        // truncation.
+        float totalDelaySeconds = 0.0005;
 
         // HW input latency
         Float32 f32(0);
@@ -1777,7 +1776,8 @@ void AudioDeviceIPhone::UpdateRecordingDelay() {
             WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
                          "error HW latency (result=%d)", result);
         }
-        _recordingDelayHWAndOS += static_cast<int>(f32 * 1000000);
+        assert(f32 >= 0);
+        totalDelaySeconds += f32;
 
         // HW buffer duration
         f32 = 0;
@@ -1787,7 +1787,8 @@ void AudioDeviceIPhone::UpdateRecordingDelay() {
             WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
                          "error HW buffer duration (result=%d)", result);
         }
-        _recordingDelayHWAndOS += static_cast<int>(f32 * 1000000);
+        assert(f32 >= 0);
+        totalDelaySeconds += f32;
 
         // AU latency
         Float64 f64(0);
@@ -1799,10 +1800,12 @@ void AudioDeviceIPhone::UpdateRecordingDelay() {
             WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
                          "error AU latency (result=%d)", result);
         }
-        _recordingDelayHWAndOS += static_cast<int>(f64 * 1000000);
+        assert(f64 >= 0);
+        totalDelaySeconds += f64;
 
         // To ms
-        _recordingDelayHWAndOS = (_recordingDelayHWAndOS - 500) / 1000;
+        _recordingDelayHWAndOS =
+            static_cast<uint32_t>(totalDelaySeconds / 1000);
 
         // Reset counter
         _recordingDelayMeasurementCounter = 0;

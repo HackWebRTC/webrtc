@@ -341,8 +341,6 @@ void RunTest(std::string out_path) {
   // Call loop
   bool newcall = true;
   while (newcall) {
-
-#ifndef WEBRTC_ANDROID
     int rd(-1), pd(-1);
     res = hardware->GetNumOfRecordingDevices(rd);
     VALIDATE;
@@ -374,7 +372,6 @@ void RunTest(std::string out_path) {
     printf("Setting sound devices \n");
     res = hardware->SetRecordingDevice(rd);
     VALIDATE;
-#endif  // WEBRTC_ANDROID
 
     res = codec->SetVADStatus(0, enable_cng);
     VALIDATE;
@@ -415,7 +412,6 @@ void RunTest(std::string out_path) {
       VALIDATE;
     }
 
-#ifndef WEBRTC_ANDROID
     printf("Getting mic volume \n");
     unsigned int vol = 999;
     res = volume->GetMicVolume(vol);
@@ -423,7 +419,6 @@ void RunTest(std::string out_path) {
     if ((vol > 255) || (vol < 1)) {
       printf("\n****ERROR in GetMicVolume");
     }
-#endif
 
     int forever = 1;
     while (forever) {

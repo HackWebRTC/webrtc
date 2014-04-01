@@ -279,30 +279,6 @@ inline int VoEChannelId(int moduleId)
 // Default device for Linux and Android
 #define WEBRTC_VOICE_ENGINE_DEFAULT_DEVICE 0
 
-#ifdef ANDROID
-
-// ----------------------------------------------------------------------------
-//  Defines
-// ----------------------------------------------------------------------------
-
-  // Always excluded for Android builds
-  #undef WEBRTC_CODEC_ISAC
-  #undef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
-
-  #define ANDROID_NOT_SUPPORTED(stat) NOT_SUPPORTED(stat)
-
-#else // LINUX PC
-
-// ----------------------------------------------------------------------------
-//  Defines
-// ----------------------------------------------------------------------------
-
-  #define ANDROID_NOT_SUPPORTED(stat)
-
-#endif // ANDROID - LINUX PC
-
-#else
-#define ANDROID_NOT_SUPPORTED(stat)
 #endif  // #ifdef WEBRTC_LINUX
 
 // *** WEBRTC_MAC ***
@@ -359,35 +335,6 @@ inline int VoEChannelId(int moduleId)
 
 // Default device for Mac and iPhone
 #define WEBRTC_VOICE_ENGINE_DEFAULT_DEVICE 0
-
-// iPhone specific
-#if defined(WEBRTC_IOS)
-
-// ----------------------------------------------------------------------------
-//  Defines
-// ----------------------------------------------------------------------------
-
-  // Always excluded for iPhone builds
-  #undef WEBRTC_CODEC_ISAC
-  #undef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
-
-  #define IPHONE_NOT_SUPPORTED(stat) NOT_SUPPORTED(stat)
-
-#else // Non-iPhone
-
-// ----------------------------------------------------------------------------
-//  Enumerators
-// ----------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------
-//  Defines
-// ----------------------------------------------------------------------------
-
-  #define IPHONE_NOT_SUPPORTED(stat)
-#endif
-
-#else
-#define IPHONE_NOT_SUPPORTED(stat)
 #endif  // #ifdef WEBRTC_MAC
 
 #endif // WEBRTC_VOICE_ENGINE_VOICE_ENGINE_DEFINES_H

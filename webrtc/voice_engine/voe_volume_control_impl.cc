@@ -54,7 +54,6 @@ int VoEVolumeControlImpl::SetSpeakerVolume(unsigned int volume)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "SetSpeakerVolume(volume=%u)", volume);
-    IPHONE_NOT_SUPPORTED(_shared->statistics());
 
     if (!_shared->statistics().Initialized())
     {
@@ -96,7 +95,6 @@ int VoEVolumeControlImpl::GetSpeakerVolume(unsigned int& volume)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "GetSpeakerVolume()");
-    IPHONE_NOT_SUPPORTED(_shared->statistics());
 
     if (!_shared->statistics().Initialized())
     {
@@ -179,8 +177,6 @@ int VoEVolumeControlImpl::SetMicVolume(unsigned int volume)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "SetMicVolume(volume=%u)", volume);
-    ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED(_shared->statistics());
 
     if (!_shared->statistics().Initialized())
     {
@@ -238,8 +234,6 @@ int VoEVolumeControlImpl::GetMicVolume(unsigned int& volume)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "GetMicVolume()");
-    ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED(_shared->statistics());
 
     if (!_shared->statistics().Initialized())
     {
@@ -538,8 +532,6 @@ int VoEVolumeControlImpl::SetOutputVolumePan(int channel,
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "SetOutputVolumePan(channel=%d, left=%2.1f, right=%2.1f)",
                channel, left, right);
-    ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED(_shared->statistics());
 
     if (!_shared->statistics().Initialized())
     {
@@ -588,8 +580,6 @@ int VoEVolumeControlImpl::GetOutputVolumePan(int channel,
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "GetOutputVolumePan(channel=%d, left=?, right=?)", channel);
-    ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED(_shared->statistics());
 
     if (!_shared->statistics().Initialized())
     {

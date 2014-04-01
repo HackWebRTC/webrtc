@@ -56,8 +56,6 @@ int VoECallReportImpl::ResetCallReportStatistics(int channel)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "ResetCallReportStatistics(channel=%d)", channel);
-    ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED(_shared->statistics());
 
     if (!_shared->statistics().Initialized())
     {
@@ -114,8 +112,6 @@ int VoECallReportImpl::GetEchoMetricSummary(EchoStatistics& stats)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "GetEchoMetricSummary()");
-    ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED(_shared->statistics());
 
     if (!_shared->statistics().Initialized())
     {
@@ -215,8 +211,6 @@ int VoECallReportImpl::GetRoundTripTimeSummary(int channel, StatVal& delaysMs)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "GetRoundTripTimeSummary()");
-    ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED(_shared->statistics());
 
     if (!_shared->statistics().Initialized())
     {
@@ -241,8 +235,6 @@ int VoECallReportImpl::GetDeadOrAliveSummary(int channel,
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "GetDeadOrAliveSummary(channel=%d)", channel);
-    ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED(_shared->statistics());
 
     if (!_shared->statistics().Initialized())
     {
@@ -283,8 +275,6 @@ int VoECallReportImpl::WriteReportToFile(const char* fileNameUTF8)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "WriteReportToFile(fileNameUTF8=%s)", fileNameUTF8);
-    ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED(_shared->statistics());
 
     if (!_shared->statistics().Initialized())
     {
