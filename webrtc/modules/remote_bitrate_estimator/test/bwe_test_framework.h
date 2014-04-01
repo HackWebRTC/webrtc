@@ -205,6 +205,7 @@ class RateCounterFilter : public PacketProcessor {
   uint32_t bits_per_second() const;
 
   void LogStats();
+  Stats<double> GetBitrateStats() const;
   virtual void Plot(int64_t timestamp_ms);
   virtual void RunFor(int64_t time_ms, Packets* in_out);
 

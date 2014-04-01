@@ -203,6 +203,10 @@ void RateCounterFilter::LogStats() {
   kbps_stats_.Log("kbps");
 }
 
+Stats<double> RateCounterFilter::GetBitrateStats() const {
+  return kbps_stats_;
+}
+
 void RateCounterFilter::Plot(int64_t timestamp_ms) {
   BWE_TEST_LOGGING_CONTEXT(name_.c_str());
   BWE_TEST_LOGGING_PLOT("Throughput_#1", timestamp_ms,
@@ -469,7 +473,7 @@ void TraceBasedDeliveryFilter::ProceedToNextSlot() {
     }
   }
   local_time_us_ = *next_delivery_it_;
-  const int kPayloadSize = 1240;
+  const int kPayloadSize = 1200;
   rate_counter_->UpdateRates(local_time_us_, kPayloadSize);
 }
 
@@ -480,7 +484,7 @@ PacketSender::PacketSender(PacketProcessorListener* listener)
 VideoSender::VideoSender(PacketProcessorListener* listener, float fps,
                          uint32_t kbps, uint32_t ssrc, float first_frame_offset)
     : PacketSender(listener),
-      kMaxPayloadSizeBytes(1000),
+      kMaxPayloadSizeBytes(1200),
       kTimestampBase(0xff80ff00ul),
       frame_period_ms_(1000.0 / fps),
       bytes_per_second_((1000 * kbps) / 8),
