@@ -220,6 +220,22 @@ static bool IsNackEnabled(const AudioCodec& codec) {
                                               kParamValueEmpty));
 }
 
+// TODO(mallinath) - Remove this after trunk of webrtc is pushed to GTP.
+#if !defined(USE_WEBRTC_DEV_BRANCH)
+bool operator==(const webrtc::CodecInst& lhs, const webrtc::CodecInst& rhs) {
+  return lhs.pltype == rhs.pltype &&
+         (_stricmp(lhs.plname, rhs.plname) == 0) &&
+         lhs.plfreq == rhs.plfreq &&
+         lhs.pacsize == rhs.pacsize &&
+         lhs.channels == rhs.channels &&
+         lhs.rate == rhs.rate;
+}
+
+bool operator!=(const webrtc::CodecInst& lhs, const webrtc::CodecInst& rhs) {
+  return !(lhs == rhs);
+}
+#endif
+
 // Gets the default set of options applied to the engine. Historically, these
 // were supplied as a combination of flags from the channel manager (ec, agc,
 // ns, and highpass) and the rest hardcoded in InitInternal.
@@ -1981,6 +1997,8 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
   webrtc::CodecInst send_codec;
   memset(&send_codec, 0, sizeof(send_codec));
 
+  bool nack_enabled = nack_enabled_;
+
   // Set send codec (the first non-telephone-event/CN codec)
   for (std::vector<AudioCodec>::const_iterator it = codecs.begin();
        it != codecs.end(); ++it) {
@@ -2052,11 +2070,15 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
       }
     } else {
       send_codec = voe_codec;
-      nack_enabled_ = IsNackEnabled(*it);
-      SetNack(channel, nack_enabled_);
+      nack_enabled = IsNackEnabled(*it);
     }
     found_send_codec = true;
     break;
+  }
+
+  if (nack_enabled_ != nack_enabled) {
+    SetNack(channel, nack_enabled);
+    nack_enabled_ = nack_enabled;
   }
 
   if (!found_send_codec) {
@@ -2142,7 +2164,6 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
       }
     }
   }
-
   return true;
 }
 
@@ -2167,8 +2188,8 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
     }
   }
 
+  // Set nack status on receive channels and update |nack_enabled_|.
   SetNack(receive_channels_, nack_enabled_);
-
   return true;
 }
 
@@ -2207,6 +2228,13 @@ bool WebRtcVoiceMediaChannel::SetSendCodec(
     int channel, const webrtc::CodecInst& send_codec) {
   LOG(LS_INFO) << "Send channel " << channel <<  " selected voice codec "
                << ToString(send_codec) << ", bitrate=" << send_codec.rate;
+
+  webrtc::CodecInst current_codec;
+  if (engine()->voe()->codec()->GetSendCodec(channel, current_codec) == 0 &&
+      (send_codec == current_codec)) {
+    // Codec is already configured, we can return without setting it again.
+    return true;
+  }
 
   if (engine()->voe()->codec()->SetSendCodec(channel, send_codec) == -1) {
     LOG_RTCERR2(SetSendCodec, channel, ToString(send_codec));

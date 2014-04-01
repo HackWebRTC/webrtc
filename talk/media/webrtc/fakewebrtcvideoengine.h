@@ -433,7 +433,7 @@ class FakeWebRtcVideoEngine
   void set_fail_alloc_capturer(bool fail_alloc_capturer) {
     fail_alloc_capturer_ = fail_alloc_capturer;
   }
-  int num_set_send_codecs() const { return num_set_send_codecs_; }
+  int GetNumSetSendCodecs() const { return num_set_send_codecs_; }
 
   int GetCaptureId(int channel) const {
     WEBRTC_ASSERT_CHANNEL(channel);

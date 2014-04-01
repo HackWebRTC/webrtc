@@ -629,7 +629,7 @@ void P2PTransportChannel::OnCandidate(const Candidate& candidate) {
 // Creates connections from all of the ports that we care about to the given
 // remote candidate.  The return value is true if we created a connection from
 // the origin port.
-bool P2PTransportChannel::CreateConnections(const Candidate &remote_candidate,
+bool P2PTransportChannel::CreateConnections(const Candidate& remote_candidate,
                                             PortInterface* origin_port,
                                             bool readable) {
   ASSERT(worker_thread_ == talk_base::Thread::Current());
@@ -648,14 +648,25 @@ bool P2PTransportChannel::CreateConnections(const Candidate &remote_candidate,
     new_remote_candidate.set_password(remote_ice_pwd_);
   }
 
+  // If we've already seen the new remote candidate (in the current candidate
+  // generation), then we shouldn't try creating connections for it.
+  // We either already have a connection for it, or we previously created one
+  // and then later pruned it. If we don't return, the channel will again
+  // re-create any connections that were previously pruned, which will then
+  // immediately be re-pruned, churning the network for no purpose.
+  // This only applies to candidates received over signaling (i.e. origin_port
+  // is NULL).
+  if (!origin_port && IsDuplicateRemoteCandidate(new_remote_candidate)) {
+    // return true to indicate success, without creating any new connections.
+    return true;
+  }
+
   // Add a new connection for this candidate to every port that allows such a
   // connection (i.e., if they have compatible protocols) and that does not
   // already have a connection to an equivalent candidate.  We must be careful
   // to make sure that the origin port is included, even if it was pruned,
   // since that may be the only port that can create this connection.
-
   bool created = false;
-
   std::vector<PortInterface *>::reverse_iterator it;
   for (it = ports_.rbegin(); it != ports_.rend(); ++it) {
     if (CreateConnection(*it, new_remote_candidate, origin_port, readable)) {
@@ -690,7 +701,11 @@ bool P2PTransportChannel::CreateConnection(PortInterface* port,
     // It is not legal to try to change any of the parameters of an existing
     // connection; however, the other side can send a duplicate candidate.
     if (!remote_candidate.IsEquivalent(connection->remote_candidate())) {
-      LOG(INFO) << "Attempt to change a remote candidate";
+      LOG(INFO) << "Attempt to change a remote candidate."
+                << " Existing remote candidate: "
+                << connection->remote_candidate().ToString()
+                << "New remote candidate: "
+                << remote_candidate.ToString();
       return false;
     }
   } else {
@@ -740,6 +755,17 @@ uint32 P2PTransportChannel::GetRemoteCandidateGeneration(
   return remote_candidate_generation_;
 }
 
+// Check if remote candidate is already cached.
+bool P2PTransportChannel::IsDuplicateRemoteCandidate(
+    const Candidate& candidate) {
+  for (uint32 i = 0; i < remote_candidates_.size(); ++i) {
+    if (remote_candidates_[i].IsEquivalent(candidate)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // Maintain our remote candidate list, adding this new remote one.
 void P2PTransportChannel::RememberRemoteCandidate(
     const Candidate& remote_candidate, PortInterface* origin_port) {
@@ -757,12 +783,9 @@ void P2PTransportChannel::RememberRemoteCandidate(
   }
 
   // Make sure this candidate is not a duplicate.
-  for (uint32 i = 0; i < remote_candidates_.size(); ++i) {
-    if (remote_candidates_[i].IsEquivalent(remote_candidate)) {
-      LOG(INFO) << "Duplicate candidate: "
-                << remote_candidate.address().ToSensitiveString();
-      return;
-    }
+  if (IsDuplicateRemoteCandidate(remote_candidate)) {
+    LOG(INFO) << "Duplicate candidate: " << remote_candidate.ToString();
+    return;
   }
 
   // Try this candidate for all future ports.

@@ -164,6 +164,73 @@ static bool IsRembEnabled(const VideoCodec& codec) {
                                               kParamValueEmpty));
 }
 
+// TODO(mallinath) - Remove this after trunk of webrtc is pushed to GTP.
+#if !defined(USE_WEBRTC_DEV_BRANCH)
+bool operator==(const webrtc::VideoCodecVP8& lhs,
+                const webrtc::VideoCodecVP8& rhs) {
+  return lhs.pictureLossIndicationOn == rhs.pictureLossIndicationOn &&
+         lhs.feedbackModeOn == rhs.feedbackModeOn &&
+         lhs.complexity == rhs.complexity &&
+         lhs.resilience == rhs.resilience &&
+         lhs.numberOfTemporalLayers == rhs.numberOfTemporalLayers &&
+         lhs.denoisingOn == rhs.denoisingOn &&
+         lhs.errorConcealmentOn == rhs.errorConcealmentOn &&
+         lhs.automaticResizeOn == rhs.automaticResizeOn &&
+         lhs.frameDroppingOn == rhs.frameDroppingOn &&
+         lhs.keyFrameInterval == rhs.keyFrameInterval;
+}
+
+bool operator!=(const webrtc::VideoCodecVP8& lhs,
+                const webrtc::VideoCodecVP8& rhs) {
+  return !(lhs == rhs);
+}
+
+bool operator==(const webrtc::SimulcastStream& lhs,
+                const webrtc::SimulcastStream& rhs) {
+  return lhs.width == rhs.width &&
+         lhs.height == rhs.height &&
+         lhs.numberOfTemporalLayers == rhs.numberOfTemporalLayers &&
+         lhs.maxBitrate == rhs.maxBitrate &&
+         lhs.targetBitrate == rhs.targetBitrate &&
+         lhs.minBitrate == rhs.minBitrate &&
+         lhs.qpMax == rhs.qpMax;
+}
+
+bool operator!=(const webrtc::SimulcastStream& lhs,
+                const webrtc::SimulcastStream& rhs) {
+  return !(lhs == rhs);
+}
+
+bool operator==(const webrtc::VideoCodec& lhs,
+                const webrtc::VideoCodec& rhs) {
+  bool ret = lhs.codecType == rhs.codecType &&
+             (_stricmp(lhs.plName, rhs.plName) == 0) &&
+             lhs.plType == rhs.plType &&
+             lhs.width == rhs.width &&
+             lhs.height == rhs.height &&
+             lhs.startBitrate == rhs.startBitrate &&
+             lhs.maxBitrate == rhs.maxBitrate &&
+             lhs.minBitrate == rhs.minBitrate &&
+             lhs.maxFramerate == rhs.maxFramerate &&
+             lhs.qpMax == rhs.qpMax &&
+             lhs.numberOfSimulcastStreams == rhs.numberOfSimulcastStreams &&
+             lhs.mode == rhs.mode;
+  if (ret && lhs.codecType == webrtc::kVideoCodecVP8) {
+    ret &= (lhs.codecSpecific.VP8 == rhs.codecSpecific.VP8);
+  }
+
+  for (unsigned char i = 0; i < rhs.numberOfSimulcastStreams && ret; ++i) {
+    ret &= (lhs.simulcastStream[i] == rhs.simulcastStream[i]);
+  }
+  return ret;
+}
+
+bool operator!=(const webrtc::VideoCodec& lhs,
+                const webrtc::VideoCodec& rhs) {
+  return !(lhs == rhs);
+}
+#endif
+
 struct FlushBlackFrameData : public talk_base::MessageData {
   FlushBlackFrameData(uint32 s, int64 t) : ssrc(s), timestamp(t) {
   }
@@ -1647,6 +1714,8 @@ bool WebRtcVideoMediaChannel::SetSendCodecs(
     ConvertToCricketVideoCodec(*send_codec_, &current);
   }
   std::map<int, int> primary_rtx_pt_mapping;
+  bool nack_enabled = nack_enabled_;
+  bool remb_enabled = remb_enabled_;
   for (std::vector<VideoCodec>::const_iterator iter = codecs.begin();
       iter != codecs.end(); ++iter) {
     if (_stricmp(iter->name.c_str(), kRedPayloadName) == 0) {
@@ -1663,8 +1732,8 @@ bool WebRtcVideoMediaChannel::SetSendCodecs(
       webrtc::VideoCodec wcodec;
       if (engine()->ConvertFromCricketVideoCodec(checked_codec, &wcodec)) {
         if (send_codecs.empty()) {
-          nack_enabled_ = IsNackEnabled(checked_codec);
-          remb_enabled_ = IsRembEnabled(checked_codec);
+          nack_enabled = IsNackEnabled(checked_codec);
+          remb_enabled = IsRembEnabled(checked_codec);
         }
         send_codecs.push_back(wcodec);
       }
@@ -1680,35 +1749,43 @@ bool WebRtcVideoMediaChannel::SetSendCodecs(
   }
 
   // Recv protection.
-  for (RecvChannelMap::iterator it = recv_channels_.begin();
-      it != recv_channels_.end(); ++it) {
-    int channel_id = it->second->channel_id();
-    if (!SetNackFec(channel_id, send_red_type_, send_fec_type_,
-                    nack_enabled_)) {
-      return false;
+  // Do not update if the status is same as previously configured.
+  if (nack_enabled_ != nack_enabled) {
+    for (RecvChannelMap::iterator it = recv_channels_.begin();
+        it != recv_channels_.end(); ++it) {
+      int channel_id = it->second->channel_id();
+      if (!SetNackFec(channel_id, send_red_type_, send_fec_type_,
+                      nack_enabled)) {
+        return false;
+      }
+      if (engine_->vie()->rtp()->SetRembStatus(channel_id,
+                                               kNotSending,
+                                               remb_enabled_) != 0) {
+        LOG_RTCERR3(SetRembStatus, channel_id, kNotSending, remb_enabled_);
+        return false;
+      }
     }
-    if (engine_->vie()->rtp()->SetRembStatus(channel_id,
-                                             kNotSending,
-                                             remb_enabled_) != 0) {
-      LOG_RTCERR3(SetRembStatus, channel_id, kNotSending, remb_enabled_);
-      return false;
-    }
+    nack_enabled_ = nack_enabled;
   }
 
   // Send settings.
-  for (SendChannelMap::iterator iter = send_channels_.begin();
-       iter != send_channels_.end(); ++iter) {
-    int channel_id = iter->second->channel_id();
-    if (!SetNackFec(channel_id, send_red_type_, send_fec_type_,
-                    nack_enabled_)) {
-      return false;
+  // Do not update if the status is same as previously configured.
+  if (remb_enabled_ != remb_enabled) {
+    for (SendChannelMap::iterator iter = send_channels_.begin();
+         iter != send_channels_.end(); ++iter) {
+      int channel_id = iter->second->channel_id();
+      if (!SetNackFec(channel_id, send_red_type_, send_fec_type_,
+                      nack_enabled_)) {
+        return false;
+      }
+      if (engine_->vie()->rtp()->SetRembStatus(channel_id,
+                                               remb_enabled,
+                                               remb_enabled) != 0) {
+        LOG_RTCERR3(SetRembStatus, channel_id, remb_enabled, remb_enabled);
+        return false;
+      }
     }
-    if (engine_->vie()->rtp()->SetRembStatus(channel_id,
-                                             remb_enabled_,
-                                             remb_enabled_) != 0) {
-      LOG_RTCERR3(SetRembStatus, channel_id, remb_enabled_, remb_enabled_);
-      return false;
-    }
+    remb_enabled_ = remb_enabled;
   }
 
   // Select the first matched codec.
@@ -3646,6 +3723,15 @@ bool WebRtcVideoMediaChannel::SetSendCodec(
                  << "for ssrc: " << ssrc << ".";
   } else {
     MaybeChangeStartBitrate(channel_id, &target_codec);
+    webrtc::VideoCodec current_codec;
+    if (!engine()->vie()->codec()->GetSendCodec(channel_id, current_codec)) {
+      // Compare against existing configured send codec.
+      if (current_codec == target_codec) {
+        // Codec is already configured on channel. no need to apply.
+        return true;
+      }
+    }
+
     if (0 != engine()->vie()->codec()->SetSendCodec(channel_id, target_codec)) {
       LOG_RTCERR2(SetSendCodec, channel_id, target_codec.plName);
       return false;

@@ -189,6 +189,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   bool FindConnection(cricket::Connection* connection) const;
 
   uint32 GetRemoteCandidateGeneration(const Candidate& candidate);
+  bool IsDuplicateRemoteCandidate(const Candidate& candidate);
   void RememberRemoteCandidate(const Candidate& remote_candidate,
                                PortInterface* origin_port);
   bool IsPingable(Connection* conn);

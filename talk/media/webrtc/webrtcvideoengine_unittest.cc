@@ -313,7 +313,26 @@ TEST_F(WebRtcVideoEngineTestFake, SetSendCodecs) {
   VerifyVP8SendCodec(channel_num, kVP8Codec.width, kVP8Codec.height);
   EXPECT_TRUE(vie_.GetHybridNackFecStatus(channel_num));
   EXPECT_FALSE(vie_.GetNackStatus(channel_num));
+  EXPECT_EQ(1, vie_.GetNumSetSendCodecs());
   // TODO(juberti): Check RTCP, PLI, TMMBR.
+}
+
+// Test that ViE Channel doesn't call SetSendCodec again if same codec is tried
+// to apply.
+TEST_F(WebRtcVideoEngineTestFake, DontResetSetSendCodec) {
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = vie_.GetLastChannel();
+  std::vector<cricket::VideoCodec> codecs(engine_.codecs());
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  VerifyVP8SendCodec(channel_num, kVP8Codec.width, kVP8Codec.height);
+  EXPECT_TRUE(vie_.GetHybridNackFecStatus(channel_num));
+  EXPECT_FALSE(vie_.GetNackStatus(channel_num));
+  EXPECT_EQ(1, vie_.GetNumSetSendCodecs());
+  // Try setting same code again.
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  // Since it's exact same codec which is already set, media channel shouldn't
+  // send the codec to ViE.
+  EXPECT_EQ(1, vie_.GetNumSetSendCodecs());
 }
 
 TEST_F(WebRtcVideoEngineTestFake, SetSendCodecsWithMinMaxBitrate) {
@@ -1654,7 +1673,7 @@ TEST_F(WebRtcVideoEngineTestFake, ResetCodecOnScreencast) {
       cricket::StreamParams::CreateLegacy(123)));
   EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
   EXPECT_TRUE(channel_->SetSend(true));
-  EXPECT_EQ(1, vie_.num_set_send_codecs());
+  EXPECT_EQ(1, vie_.GetNumSetSendCodecs());
 
   webrtc::VideoCodec gcodec;
   memset(&gcodec, 0, sizeof(gcodec));
@@ -1665,7 +1684,7 @@ TEST_F(WebRtcVideoEngineTestFake, ResetCodecOnScreencast) {
   // Send a screencast frame with the same size.
   // Verify that denoising is turned off.
   SendI420ScreencastFrame(kVP8Codec.width, kVP8Codec.height);
-  EXPECT_EQ(2, vie_.num_set_send_codecs());
+  EXPECT_EQ(2, vie_.GetNumSetSendCodecs());
   EXPECT_EQ(0, vie_.GetSendCodec(channel_num, gcodec));
   EXPECT_FALSE(gcodec.codecSpecific.VP8.denoisingOn);
 }

@@ -743,6 +743,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecs) {
   codecs[0].id = 96;
   codecs[0].bitrate = 48000;
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_EQ(1, voe_.GetNumSetSendCodecs());
   webrtc::CodecInst gcodec;
   EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
   EXPECT_EQ(96, gcodec.pltype);
@@ -753,6 +754,24 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecs) {
   EXPECT_EQ(13, voe_.GetSendCNPayloadType(channel_num, false));
   EXPECT_EQ(105, voe_.GetSendCNPayloadType(channel_num, true));
   EXPECT_EQ(106, voe_.GetSendTelephoneEventPayloadType(channel_num));
+}
+
+// Test that VoE Channel doesn't call SetSendCodec again if same codec is tried
+// to apply.
+TEST_F(WebRtcVoiceEngineTestFake, DontResetSetSendCodec) {
+  EXPECT_TRUE(SetupEngine());
+  std::vector<cricket::AudioCodec> codecs;
+  codecs.push_back(kIsacCodec);
+  codecs.push_back(kPcmuCodec);
+  codecs.push_back(kRedCodec);
+  codecs[0].id = 96;
+  codecs[0].bitrate = 48000;
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_EQ(1, voe_.GetNumSetSendCodecs());
+  // Calling SetSendCodec again with same codec which is already set.
+  // In this case media channel shouldn't send codec to VoE.
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_EQ(1, voe_.GetNumSetSendCodecs());
 }
 
 // Test that if clockrate is not 48000 for opus, we fail.

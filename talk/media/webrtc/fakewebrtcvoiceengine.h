@@ -151,6 +151,7 @@ class FakeWebRtcVoiceEngine
         fail_create_channel_(false),
         codecs_(codecs),
         num_codecs_(num_codecs),
+        num_set_send_codecs_(0),
         ec_enabled_(false),
         ec_metrics_enabled_(false),
         cng_enabled_(false),
@@ -297,6 +298,8 @@ class FakeWebRtcVoiceEngine
     return channels_[channel]->receive_absolute_sender_time_ext_;
   }
 
+  int GetNumSetSendCodecs() const { return num_set_send_codecs_; }
+
   WEBRTC_STUB(Release, ());
 
   // webrtc::VoEBase
@@ -401,6 +404,7 @@ class FakeWebRtcVoiceEngine
       return -1;
     }
     channels_[channel]->send_codec = codec;
+    ++num_set_send_codecs_;
     return 0;
   }
   WEBRTC_FUNC(GetSendCodec, (int channel, webrtc::CodecInst& codec)) {
@@ -1082,6 +1086,7 @@ class FakeWebRtcVoiceEngine
   bool fail_create_channel_;
   const cricket::AudioCodec* const* codecs_;
   int num_codecs_;
+  int num_set_send_codecs_;  // how many times we call SetSendCodec().
   bool ec_enabled_;
   bool ec_metrics_enabled_;
   bool cng_enabled_;
