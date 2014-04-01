@@ -11,7 +11,7 @@ vars = {
   "googlecode_url": "http://%s.googlecode.com/svn",
   "sourceforge_url": "http://svn.code.sf.net/p/%(repo)s/code",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-  "chromium_revision": "255773",
+  "chromium_revision": "260462",
 
   # A small subset of WebKit is needed for the Android Python test framework.
   "webkit_trunk": "http://src.chromium.org/blink/trunk",
@@ -291,11 +291,10 @@ hooks = [
     ],
   },
   {
-    # Pull clang on mac. If nothing changed, or on non-mac platforms, this takes
-    # zero seconds to run. If something changed, it downloads a prebuilt clang.
+    # Pull clang if on Mac or clang is requested via GYP_DEFINES.
     "pattern": ".",
     "action": ["python", Var("root_dir") + "/tools/clang/scripts/update.py",
-               "--mac-only"],
+               "--if-needed"],
   },
   {
     # Download test resources, i.e. video and audio files from Google Storage.
