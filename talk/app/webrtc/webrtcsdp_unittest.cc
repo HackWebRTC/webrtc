@@ -401,14 +401,31 @@ static void Replace(const std::string& line,
                              newlines.c_str(), newlines.length(), message);
 }
 
-static void ReplaceAndTryToParse(const char* search, const char* replace) {
+// Expect fail to parase |bad_sdp| and expect |bad_part| be part of the error
+// message.
+static void ExpectParseFailure(const std::string& bad_sdp,
+                               const std::string& bad_part) {
   JsepSessionDescription desc(kDummyString);
-  std::string sdp = kSdpFullString;
-  Replace(search, replace, &sdp);
   SdpParseError error;
-  bool ret = webrtc::SdpDeserialize(sdp, &desc, &error);
+  bool ret = webrtc::SdpDeserialize(bad_sdp, &desc, &error);
   EXPECT_FALSE(ret);
-  EXPECT_NE(std::string::npos, error.line.find(replace));
+  EXPECT_NE(std::string::npos, error.line.find(bad_part.c_str()));
+}
+
+// Expect fail to parse kSdpFullString if replace |good_part| with |bad_part|.
+static void ExpectParseFailure(const char* good_part, const char* bad_part) {
+  std::string bad_sdp = kSdpFullString;
+  Replace(good_part, bad_part, &bad_sdp);
+  ExpectParseFailure(bad_sdp, bad_part);
+}
+
+// Expect fail to parse kSdpFullString if add |newlines| after |injectpoint|.
+static void ExpectParseFailureWithNewLines(const std::string& injectpoint,
+                                           const std::string& newlines,
+                                           const std::string& bad_part) {
+  std::string bad_sdp = kSdpFullString;
+  InjectAfter(injectpoint, newlines, &bad_sdp);
+  ExpectParseFailure(bad_sdp, bad_part);
 }
 
 static void ReplaceDirection(cricket::MediaContentDirection direction,
@@ -2017,28 +2034,67 @@ TEST_F(WebRtcSdpTest, DeserializeBrokenSdp) {
       "4A:AD:B9:B1:3F:82:18:3B:54:02:12:DF:3E:5D:49:6B";
 
   // Broken session description
-  ReplaceAndTryToParse("v=", kSdpDestroyer);
-  ReplaceAndTryToParse("o=", kSdpDestroyer);
-  ReplaceAndTryToParse("s=-", kSdpDestroyer);
+  ExpectParseFailure("v=", kSdpDestroyer);
+  ExpectParseFailure("o=", kSdpDestroyer);
+  ExpectParseFailure("s=-", kSdpDestroyer);
   // Broken time description
-  ReplaceAndTryToParse("t=", kSdpDestroyer);
+  ExpectParseFailure("t=", kSdpDestroyer);
 
   // Broken media description
-  ReplaceAndTryToParse("m=audio", "c=IN IP4 74.125.224.39");
-  ReplaceAndTryToParse("m=video", kSdpDestroyer);
+  ExpectParseFailure("m=audio", "c=IN IP4 74.125.224.39");
+  ExpectParseFailure("m=video", kSdpDestroyer);
 
   // Invalid lines
-  ReplaceAndTryToParse("a=candidate", kSdpInvalidLine1);
-  ReplaceAndTryToParse("a=candidate", kSdpInvalidLine2);
-  ReplaceAndTryToParse("a=candidate", kSdpInvalidLine3);
+  ExpectParseFailure("a=candidate", kSdpInvalidLine1);
+  ExpectParseFailure("a=candidate", kSdpInvalidLine2);
+  ExpectParseFailure("a=candidate", kSdpInvalidLine3);
 
   // Bogus fingerprint replacing a=sendrev. We selected this attribute
   // because it's orthogonal to what we are replacing and hence
   // safe.
-  ReplaceAndTryToParse("a=sendrecv", kSdpInvalidLine4);
-  ReplaceAndTryToParse("a=sendrecv", kSdpInvalidLine5);
-  ReplaceAndTryToParse("a=sendrecv", kSdpInvalidLine6);
-  ReplaceAndTryToParse("a=sendrecv", kSdpInvalidLine7);
+  ExpectParseFailure("a=sendrecv", kSdpInvalidLine4);
+  ExpectParseFailure("a=sendrecv", kSdpInvalidLine5);
+  ExpectParseFailure("a=sendrecv", kSdpInvalidLine6);
+  ExpectParseFailure("a=sendrecv", kSdpInvalidLine7);
+}
+
+TEST_F(WebRtcSdpTest, DeserializeSdpWithInvalidAttributeValue) {
+  // ssrc
+  ExpectParseFailure("a=ssrc:1", "a=ssrc:badvalue");
+  ExpectParseFailure("a=ssrc-group:FEC 5 6", "a=ssrc-group:FEC badvalue 6");
+  // crypto
+  ExpectParseFailure("a=crypto:1 ", "a=crypto:badvalue ");
+  // rtpmap
+  ExpectParseFailure("a=rtpmap:111 ", "a=rtpmap:badvalue ");
+  ExpectParseFailure("opus/48000/2", "opus/badvalue/2");
+  ExpectParseFailure("opus/48000/2", "opus/48000/badvalue");
+  // candidate
+  ExpectParseFailure("1 udp 2130706432", "badvalue udp 2130706432");
+  ExpectParseFailure("1 udp 2130706432", "1 udp badvalue");
+  ExpectParseFailure("192.168.1.5 1234", "192.168.1.5 badvalue");
+  ExpectParseFailure("rport 2346", "rport badvalue");
+  ExpectParseFailure("rport 2346 generation 2",
+                     "rport 2346 generation badvalue");
+  // m line
+  ExpectParseFailure("m=audio 2345 RTP/SAVPF 111 103 104",
+                     "m=audio 2345 RTP/SAVPF 111 badvalue 104");
+
+  // bandwidth
+  ExpectParseFailureWithNewLines("a=mid:video_content_name\r\n",
+                                 "b=AS:badvalue\r\n",
+                                 "b=AS:badvalue");
+  // rtcp-fb
+  ExpectParseFailureWithNewLines("a=mid:video_content_name\r\n",
+                                 "a=rtcp-fb:badvalue nack\r\n",
+                                 "a=rtcp-fb:badvalue nack");
+  // extmap
+  ExpectParseFailureWithNewLines("a=mid:video_content_name\r\n",
+                                 "a=extmap:badvalue http://example.com\r\n",
+                                 "a=extmap:badvalue http://example.com");
+  // x-google-buffer-latency
+  ExpectParseFailureWithNewLines("a=mid:video_content_name\r\n",
+                                 "a=x-google-buffer-latency:badvalue\r\n",
+                                 "a=x-google-buffer-latency:badvalue");
 }
 
 TEST_F(WebRtcSdpTest, DeserializeSdpWithReorderedPltypes) {
