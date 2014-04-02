@@ -81,14 +81,15 @@
     },
 
     {
-      'target_name': 'RTPanalyze',
+      'target_name': 'rtp_analyze',
       'type': 'executable',
       'dependencies': [
         'NetEq4TestTools',
         '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
       ],
       'sources': [
-        'test/RTPanalyze.cc',
+        'tools/rtp_analyze.cc',
       ],
     },
 
