@@ -641,27 +641,6 @@ bool AudioDeviceModuleImpl::Initialized() const
 }
 
 // ----------------------------------------------------------------------------
-//  SpeakerIsAvailable
-// ----------------------------------------------------------------------------
-
-int32_t AudioDeviceModuleImpl::SpeakerIsAvailable(bool* available)
-{
-    CHECK_INITIALIZED();
-
-    bool isAvailable(0);
-
-    if (_ptrAudioDevice->SpeakerIsAvailable(isAvailable) == -1)
-    {
-        return -1;
-    }
-
-    *available = isAvailable;
-
-    WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id, "output: available=%d", available);
-    return (0);
-}
-
-// ----------------------------------------------------------------------------
 //  InitSpeaker
 // ----------------------------------------------------------------------------
 
@@ -669,27 +648,6 @@ int32_t AudioDeviceModuleImpl::InitSpeaker()
 {
     CHECK_INITIALIZED();
     return (_ptrAudioDevice->InitSpeaker());
-}
-
-// ----------------------------------------------------------------------------
-//  MicrophoneIsAvailable
-// ----------------------------------------------------------------------------
-
-int32_t AudioDeviceModuleImpl::MicrophoneIsAvailable(bool* available)
-{
-    CHECK_INITIALIZED();
-
-    bool isAvailable(0);
-
-    if (_ptrAudioDevice->MicrophoneIsAvailable(isAvailable) == -1)
-    {
-        return -1;
-    }
-
-    *available = isAvailable;
-
-    WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id, "output: available=%d", *available);
-    return (0);
 }
 
 // ----------------------------------------------------------------------------

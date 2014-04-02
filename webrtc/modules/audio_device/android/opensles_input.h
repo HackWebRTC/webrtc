@@ -77,7 +77,6 @@ class OpenSlesInput {
   bool AGC() const { return agc_enabled_; }
 
   // Audio mixer initialization
-  int32_t MicrophoneIsAvailable(bool& available);  // NOLINT
   int32_t InitMicrophone();
   bool MicrophoneIsInitialized() const { return mic_initialized_; }
 

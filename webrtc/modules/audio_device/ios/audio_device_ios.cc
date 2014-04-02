@@ -175,15 +175,6 @@ bool AudioDeviceIPhone::Initialized() const {
     return (_initialized);
 }
 
-int32_t AudioDeviceIPhone::SpeakerIsAvailable(bool& available) {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
-
-    // speaker is always available in IOS
-    available = true;
-    return 0;
-}
-
 int32_t AudioDeviceIPhone::InitSpeaker() {
     WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
                  "%s", __FUNCTION__);
@@ -211,20 +202,6 @@ int32_t AudioDeviceIPhone::InitSpeaker() {
     // Do nothing
     _speakerIsInitialized = true;
 
-    return 0;
-}
-
-int32_t AudioDeviceIPhone::MicrophoneIsAvailable(bool& available) {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
-
-    // This function has never been implemented correctly (boo!) but
-    // the returned |available| value is ignored (yay?) so for now
-    // just hard-code the previous (more buggily-implemented behavior)
-    // until the entire MicrophoneIsAvailable interface is ripped out
-    // (since it's apparently useless).
-    // https://code.google.com/p/webrtc/issues/detail?id=3132
-    available = false;
     return 0;
 }
 

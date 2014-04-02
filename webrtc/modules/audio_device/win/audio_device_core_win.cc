@@ -751,25 +751,6 @@ bool AudioDeviceWindowsCore::Initialized() const
 }
 
 // ----------------------------------------------------------------------------
-//  SpeakerIsAvailable
-// ----------------------------------------------------------------------------
-
-int32_t AudioDeviceWindowsCore::SpeakerIsAvailable(bool& available)
-{
-
-    CriticalSectionScoped lock(&_critSect);
-
-    if (_ptrDeviceOut == NULL)
-    {
-        return -1;
-    }
-
-    available = true;
-
-    return 0;
-}
-
-// ----------------------------------------------------------------------------
 //  InitSpeaker
 // ----------------------------------------------------------------------------
 
@@ -847,25 +828,6 @@ int32_t AudioDeviceWindowsCore::InitSpeaker()
     SAFE_RELEASE(pManager);
 
     _speakerIsInitialized = true;
-
-    return 0;
-}
-
-// ----------------------------------------------------------------------------
-//  MicrophoneIsAvailable
-// ----------------------------------------------------------------------------
-
-int32_t AudioDeviceWindowsCore::MicrophoneIsAvailable(bool& available)
-{
-
-    CriticalSectionScoped lock(&_critSect);
-
-    if (_ptrDeviceIn == NULL)
-    {
-        return -1;
-    }
-
-    available = true;
 
     return 0;
 }

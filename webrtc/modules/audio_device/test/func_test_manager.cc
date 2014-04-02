@@ -1013,8 +1013,6 @@ int32_t FuncTestManager::TestDeviceSelection()
     {
         PRINT_STR(Stereo Playout, false);
     }
-    EXPECT_EQ(0, audioDevice->SpeakerIsAvailable(&available));
-    PRINT_STR(Speaker, available);
     EXPECT_EQ(0, audioDevice->SpeakerVolumeIsAvailable(&available));
     PRINT_STR(Speaker Volume, available);
     EXPECT_EQ(0, audioDevice->SpeakerMuteIsAvailable(&available));
@@ -1033,8 +1031,6 @@ int32_t FuncTestManager::TestDeviceSelection()
     {
         PRINT_STR(Stereo Playout, false);
     }
-    EXPECT_EQ(0, audioDevice->SpeakerIsAvailable(&available));
-    PRINT_STR(Speaker, available);
     EXPECT_EQ(0, audioDevice->SpeakerVolumeIsAvailable(&available));
     PRINT_STR(Speaker Volume, available);
     EXPECT_EQ(0, audioDevice->SpeakerMuteIsAvailable(&available));
@@ -1060,8 +1056,6 @@ int32_t FuncTestManager::TestDeviceSelection()
         {
             PRINT_STR(Stereo Playout, false);
         }
-        EXPECT_EQ(0, audioDevice->SpeakerIsAvailable(&available));
-        PRINT_STR(Speaker, available);
         EXPECT_EQ(0, audioDevice->SpeakerVolumeIsAvailable(&available));
         PRINT_STR(Speaker Volume, available);
         EXPECT_EQ(0, audioDevice->SpeakerMuteIsAvailable(&available));
@@ -1091,8 +1085,6 @@ int32_t FuncTestManager::TestDeviceSelection()
         // special fix to ensure that we don't log 'available' when recording is not OK
         PRINT_STR(Stereo Recording, false);
     }
-    EXPECT_EQ(0, audioDevice->MicrophoneIsAvailable(&available));
-    PRINT_STR(Microphone, available);
     EXPECT_EQ(0, audioDevice->MicrophoneVolumeIsAvailable(&available));
     PRINT_STR(Microphone Volume, available);
     EXPECT_EQ(0, audioDevice->MicrophoneMuteIsAvailable(&available));
@@ -1114,8 +1106,6 @@ int32_t FuncTestManager::TestDeviceSelection()
         // special fix to ensure that we don't log 'available' when recording is not OK
         PRINT_STR(Stereo Recording, false);
     }
-    EXPECT_EQ(0, audioDevice->MicrophoneIsAvailable(&available));
-    PRINT_STR(Microphone, available);
     EXPECT_EQ(0, audioDevice->MicrophoneVolumeIsAvailable(&available));
     PRINT_STR(Microphone Volume, available);
     EXPECT_EQ(0, audioDevice->MicrophoneMuteIsAvailable(&available));
@@ -1145,8 +1135,6 @@ int32_t FuncTestManager::TestDeviceSelection()
             // is not OK
             PRINT_STR(Stereo Recording, false);
         }
-        EXPECT_EQ(0, audioDevice->MicrophoneIsAvailable(&available));
-        PRINT_STR(Microphone, available);
         EXPECT_EQ(0, audioDevice->MicrophoneVolumeIsAvailable(&available));
         PRINT_STR(Microphone Volume, available);
         EXPECT_EQ(0, audioDevice->MicrophoneMuteIsAvailable(&available));

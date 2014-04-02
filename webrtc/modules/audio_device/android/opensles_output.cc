@@ -188,11 +188,6 @@ int32_t OpenSlesOutput::StopPlayout() {
   return 0;
 }
 
-int32_t OpenSlesOutput::SpeakerIsAvailable(bool& available) {  // NOLINT
-  available = true;
-  return 0;
-}
-
 int32_t OpenSlesOutput::InitSpeaker() {
   assert(!playing_);
   speaker_initialized_ = true;

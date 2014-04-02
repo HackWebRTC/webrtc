@@ -391,18 +391,6 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
         _shared->SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR, kTraceInfo,
             "Init() failed to set the default output device");
     }
-    if (_shared->audio_device()->SpeakerIsAvailable(&available) != 0)
-    {
-        _shared->SetLastError(VE_CANNOT_ACCESS_SPEAKER_VOL, kTraceInfo,
-            "Init() failed to check speaker availability, trying to "
-            "initialize speaker anyway");
-    }
-    else if (!available)
-    {
-        _shared->SetLastError(VE_CANNOT_ACCESS_SPEAKER_VOL, kTraceInfo,
-            "Init() speaker not available, trying to initialize speaker "
-            "anyway");
-    }
     if (_shared->audio_device()->InitSpeaker() != 0)
     {
         _shared->SetLastError(VE_CANNOT_ACCESS_SPEAKER_VOL, kTraceInfo,
@@ -415,18 +403,6 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
     {
         _shared->SetLastError(VE_SOUNDCARD_ERROR, kTraceInfo,
             "Init() failed to set the default input device");
-    }
-    if (_shared->audio_device()->MicrophoneIsAvailable(&available) != 0)
-    {
-        _shared->SetLastError(VE_CANNOT_ACCESS_MIC_VOL, kTraceInfo,
-            "Init() failed to check microphone availability, trying to "
-            "initialize microphone anyway");
-    }
-    else if (!available)
-    {
-        _shared->SetLastError(VE_CANNOT_ACCESS_MIC_VOL, kTraceInfo,
-            "Init() microphone not available, trying to initialize "
-            "microphone anyway");
     }
     if (_shared->audio_device()->InitMicrophone() != 0)
     {

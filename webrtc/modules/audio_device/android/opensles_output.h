@@ -74,7 +74,6 @@ class OpenSlesOutput : public PlayoutDelayProvider {
   bool Playing() const { return playing_; }
 
   // Audio mixer initialization
-  int32_t SpeakerIsAvailable(bool& available);  // NOLINT
   int32_t InitSpeaker();
   bool SpeakerIsInitialized() const { return speaker_initialized_; }
 

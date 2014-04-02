@@ -180,11 +180,6 @@ int32_t OpenSlesInput::SetAGC(bool enable) {
   return 0;
 }
 
-int32_t OpenSlesInput::MicrophoneIsAvailable(bool& available) {  // NOLINT
-  available = true;
-  return 0;
-}
-
 int32_t OpenSlesInput::InitMicrophone() {
   assert(initialized_);
   assert(!recording_);

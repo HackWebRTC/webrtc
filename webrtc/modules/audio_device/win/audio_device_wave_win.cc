@@ -490,33 +490,6 @@ bool AudioDeviceWindowsWave::Initialized() const
 }
 
 // ----------------------------------------------------------------------------
-//  SpeakerIsAvailable
-// ----------------------------------------------------------------------------
-
-int32_t AudioDeviceWindowsWave::SpeakerIsAvailable(bool& available)
-{
-
-    // Enumerate all avaliable speakers and make an attempt to open up the
-    // output mixer corresponding to the currently selected output device.
-    //
-    if (InitSpeaker() == -1)
-    {
-        available = false;
-        return 0;
-    }
-
-    // Given that InitSpeaker was successful, we know that a valid speaker exists
-    //
-    available = true;
-
-    // Close the initialized output mixer
-    //
-    _mixerManager.CloseSpeaker();
-
-    return 0;
-}
-
-// ----------------------------------------------------------------------------
 //  InitSpeaker
 // ----------------------------------------------------------------------------
 
@@ -550,33 +523,6 @@ int32_t AudioDeviceWindowsWave::InitSpeaker()
             return -1;
         }
     }
-
-    return 0;
-}
-
-// ----------------------------------------------------------------------------
-//  MicrophoneIsAvailable
-// ----------------------------------------------------------------------------
-
-int32_t AudioDeviceWindowsWave::MicrophoneIsAvailable(bool& available)
-{
-
-    // Enumerate all avaliable microphones and make an attempt to open up the
-    // input mixer corresponding to the currently selected output device.
-    //
-    if (InitMicrophone() == -1)
-    {
-        available = false;
-        return 0;
-    }
-
-    // Given that InitMicrophone was successful, we know that a valid microphone exists
-    //
-    available = true;
-
-    // Close the initialized input mixer
-    //
-    _mixerManager.CloseMicrophone();
 
     return 0;
 }

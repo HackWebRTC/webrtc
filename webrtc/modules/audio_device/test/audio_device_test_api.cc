@@ -787,33 +787,6 @@ TEST_F(AudioDeviceAPITest, SetAndGetWaveOutVolume) {
 }
 #endif  // defined(_WIN32) && !defined(WEBRTC_WINDOWS_CORE_AUDIO_BUILD)
 
-TEST_F(AudioDeviceAPITest, SpeakerIsAvailable) {
-  bool available;
-  CheckInitialPlayoutStates();
-
-#ifdef _WIN32
-  // check the kDefaultCommunicationDevice
-  EXPECT_TRUE(audio_device_->SetPlayoutDevice(
-          AudioDeviceModule::kDefaultCommunicationDevice) == 0);
-  EXPECT_EQ(0, audio_device_->SpeakerIsAvailable(&available));
-  // check for availability should not lead to initialization
-  EXPECT_FALSE(audio_device_->SpeakerIsInitialized());
-#endif
-
-  // check the kDefaultDevice
-  EXPECT_EQ(0, audio_device_->SetPlayoutDevice(MACRO_DEFAULT_DEVICE));
-  EXPECT_EQ(0, audio_device_->SpeakerIsAvailable(&available));
-  EXPECT_FALSE(audio_device_->SpeakerIsInitialized());
-
-  // check all availiable devices
-  int16_t no_devices = audio_device_->PlayoutDevices();
-  for (int i = 0; i < no_devices; i++) {
-    EXPECT_EQ(0, audio_device_->SetPlayoutDevice(i));
-    EXPECT_EQ(0, audio_device_->SpeakerIsAvailable(&available));
-    EXPECT_FALSE(audio_device_->SpeakerIsInitialized());
-  }
-}
-
 TEST_F(AudioDeviceAPITest, InitSpeaker) {
   // NOTE: By calling Terminate (in TearDown) followed by Init (in SetUp) we
   // ensure that any existing output mixer handle is set to NULL.
@@ -824,13 +797,10 @@ TEST_F(AudioDeviceAPITest, InitSpeaker) {
   // kDefaultCommunicationDevice
   EXPECT_EQ(0, audio_device_->SetPlayoutDevice(
       MACRO_DEFAULT_COMMUNICATION_DEVICE));
-  bool available;
-  EXPECT_EQ(0, audio_device_->SpeakerIsAvailable(&available));
-  if (available) {
-    EXPECT_EQ(0, audio_device_->InitSpeaker());
-  }
+  EXPECT_EQ(0, audio_device_->InitSpeaker());
 
   // fail tests
+  bool available;
   EXPECT_EQ(0, audio_device_->PlayoutIsAvailable(&available));
   if (available) {
     EXPECT_EQ(0, audio_device_->InitPlayout());
@@ -841,45 +811,13 @@ TEST_F(AudioDeviceAPITest, InitSpeaker) {
 
   // kDefaultDevice
   EXPECT_EQ(0, audio_device_->SetPlayoutDevice(MACRO_DEFAULT_DEVICE));
-  EXPECT_EQ(0, audio_device_->SpeakerIsAvailable(&available));
-  if (available) {
-    EXPECT_EQ(0, audio_device_->InitSpeaker());
-  }
+  EXPECT_EQ(0, audio_device_->InitSpeaker());
 
   // repeat test for all devices
   int16_t no_devices = audio_device_->PlayoutDevices();
   for (int i = 0; i < no_devices; i++) {
     EXPECT_EQ(0, audio_device_->SetPlayoutDevice(i));
-    EXPECT_EQ(0, audio_device_->SpeakerIsAvailable(&available));
-    if (available) {
-      EXPECT_EQ(0, audio_device_->InitSpeaker());
-    }
-  }
-}
-
-TEST_F(AudioDeviceAPITest, MicrophoneIsAvailable) {
-  CheckInitialRecordingStates();
-  bool available;
-#ifdef _WIN32
-  // check the kDefaultCommunicationDevice
-  EXPECT_TRUE(audio_device_->SetRecordingDevice(
-          AudioDeviceModule::kDefaultCommunicationDevice) == 0);
-  EXPECT_EQ(0, audio_device_->MicrophoneIsAvailable(&available));
-  // check for availability should not lead to initialization
-  EXPECT_FALSE(audio_device_->MicrophoneIsInitialized());
-#endif
-
-  // check the kDefaultDevice
-  EXPECT_EQ(0, audio_device_->SetRecordingDevice(MACRO_DEFAULT_DEVICE));
-  EXPECT_EQ(0, audio_device_->MicrophoneIsAvailable(&available));
-  EXPECT_FALSE(audio_device_->MicrophoneIsInitialized());
-
-  // check all availiable devices
-  int16_t no_devices = audio_device_->RecordingDevices();
-  for (int i = 0; i < no_devices; i++) {
-    EXPECT_EQ(0, audio_device_->SetRecordingDevice(i));
-    EXPECT_EQ(0, audio_device_->MicrophoneIsAvailable(&available));
-    EXPECT_FALSE(audio_device_->MicrophoneIsInitialized());
+    EXPECT_EQ(0, audio_device_->InitSpeaker());
   }
 }
 
@@ -893,13 +831,10 @@ TEST_F(AudioDeviceAPITest, InitMicrophone) {
   // kDefaultCommunicationDevice
   EXPECT_EQ(0,
       audio_device_->SetRecordingDevice(MACRO_DEFAULT_COMMUNICATION_DEVICE));
-  bool available;
-  EXPECT_EQ(0, audio_device_->MicrophoneIsAvailable(&available));
-  if (available) {
-    EXPECT_EQ(0, audio_device_->InitMicrophone());
-  }
+  EXPECT_EQ(0, audio_device_->InitMicrophone());
 
   // fail tests
+  bool available;
   EXPECT_EQ(0, audio_device_->RecordingIsAvailable(&available));
   if (available) {
     EXPECT_EQ(0, audio_device_->InitRecording());
@@ -910,19 +845,13 @@ TEST_F(AudioDeviceAPITest, InitMicrophone) {
 
   // kDefaultDevice
   EXPECT_EQ(0, audio_device_->SetRecordingDevice(MACRO_DEFAULT_DEVICE));
-  EXPECT_EQ(0, audio_device_->MicrophoneIsAvailable(&available));
-  if (available) {
-    EXPECT_EQ(0, audio_device_->InitMicrophone());
-  }
+  EXPECT_EQ(0, audio_device_->InitMicrophone());
 
   // repeat test for all devices
   int16_t no_devices = audio_device_->RecordingDevices();
   for (int i = 0; i < no_devices; i++) {
     EXPECT_EQ(0, audio_device_->SetRecordingDevice(i));
-    EXPECT_EQ(0, audio_device_->MicrophoneIsAvailable(&available));
-    if (available) {
-      EXPECT_EQ(0, audio_device_->InitMicrophone());
-    }
+    EXPECT_EQ(0, audio_device_->InitMicrophone());
   }
 }
 
