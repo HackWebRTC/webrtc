@@ -1509,8 +1509,19 @@ void ApmTest::ProcessDebugDump(const std::string& in_filename,
 
 void ApmTest::VerifyDebugDumpTest(Format format) {
   const std::string in_filename = test::ResourcePath("ref03", "aecdump");
-  const std::string ref_filename = test::OutputPath() + "ref.aecdump";
-  const std::string out_filename = test::OutputPath() + "out.aecdump";
+  std::string format_string;
+  switch (format) {
+    case kIntFormat:
+      format_string = "_int";
+      break;
+    case kFloatFormat:
+      format_string = "_float";
+      break;
+  }
+  const std::string ref_filename =
+      test::OutputPath() + "ref" + format_string + ".aecdump";
+  const std::string out_filename =
+      test::OutputPath() + "out" + format_string + ".aecdump";
   EnableAllComponents();
   ProcessDebugDump(in_filename, ref_filename, format);
   ProcessDebugDump(ref_filename, out_filename, format);
