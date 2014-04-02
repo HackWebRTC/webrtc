@@ -87,22 +87,8 @@ class MediaConstraintsInterface {
   // Google-specific constraint keys for a local video source
   static const char kNoiseReduction[];  // googNoiseReduction
   static const char kLeakyBucket[];  // googLeakyBucket
-
-  // googTemporalLayeredScreencast
   static const char kTemporalLayeredScreencast[];
-
-  // Google-specific PeerConnection constraint keys.
-  static const char kImprovedWifiBwe[];  // googImprovedWifiBwe
-  static const char kScreencastMinBitrate[];  // googScreencastMinBitrate
-  static const char kSkipEncodingUnusedStreams[];
-    // googSkipEncodingUnusedStreams
-  static const char kCpuOveruseDetection[];
-  static const char kCpuUnderuseThreshold[];
-  static const char kCpuOveruseThreshold[];
-  static const char kCpuOveruseEncodeUsage[];
-  static const char kHighStartBitrate[];  // googHighStartBitrate
-  static const char kHighBitrate[];  // googHighBitrate
-  static const char kVeryHighBitrate[];  // googVeryHighBitrate
+      // googTemporalLayeredScreencast
 
   // Constraint keys for CreateOffer / CreateAnswer
   // Specified by the W3C PeerConnection spec
@@ -117,16 +103,30 @@ class MediaConstraintsInterface {
   static const char kValueTrue[];  // true
   static const char kValueFalse[];  // false
 
+  // PeerConnection constraint keys.
   // Temporary pseudo-constraints used to enable DTLS-SRTP
   static const char kEnableDtlsSrtp[];  // Enable DTLS-SRTP
   // Temporary pseudo-constraints used to enable DataChannels
   static const char kEnableRtpDataChannels[];  // Enable RTP DataChannels
+  // Google-specific constraint keys.
   // Temporary pseudo-constraint for enabling DSCP through JS.
-  static const char kEnableDscp[];
+  static const char kEnableDscp[];  // googDscp
   // Constraint to enable IPv6 through JS.
-  static const char kEnableIPv6[];
+  static const char kEnableIPv6[];  // googIPv6
   // Temporary constraint to enable suspend below min bitrate feature.
   static const char kEnableVideoSuspendBelowMinBitrate[];
+      // googSuspendBelowMinBitrate
+  static const char kImprovedWifiBwe[];  // googImprovedWifiBwe
+  static const char kScreencastMinBitrate[];  // googScreencastMinBitrate
+  static const char kSkipEncodingUnusedStreams[];
+      // googSkipEncodingUnusedStreams
+  static const char kCpuOveruseDetection[];  // googCpuOveruseDetection
+  static const char kCpuUnderuseThreshold[];  // googCpuUnderuseThreshold
+  static const char kCpuOveruseThreshold[];  // googCpuOveruseThreshold
+  static const char kCpuOveruseEncodeUsage[];  // googCpuOveruseEncodeUsage
+  static const char kHighStartBitrate[];  // googHighStartBitrate
+  static const char kHighBitrate[];  // googHighBitrate
+  static const char kVeryHighBitrate[];  // googVeryHighBitrate
 
   // The prefix of internal-only constraints whose JS set values should be
   // stripped by Chrome before passed down to Libjingle.

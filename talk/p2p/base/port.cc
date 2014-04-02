@@ -1197,15 +1197,14 @@ std::string Connection::ToString() const {
      << ":" << local.type() << ":" << local.protocol()
      << ":" << local.address().ToSensitiveString()
      << "->" << remote.id() << ":" << remote.component()
-     << ":" << remote.generation()
+     << ":" << remote.preference()
      << ":" << remote.type() << ":"
-     << remote.protocol() << ":" << remote.address().ToSensitiveString()
-     << "|"
+     << remote.protocol() << ":" << remote.address().ToSensitiveString() << "|"
      << CONNECT_STATE_ABBREV[connected()]
      << READ_STATE_ABBREV[read_state()]
      << WRITE_STATE_ABBREV[write_state()]
-     << ICESTATE[state()]
-     << "|";
+     << ICESTATE[state()] << "|"
+     << priority() << "|";
   if (rtt_ < DEFAULT_RTT) {
     ss << rtt_ << "]";
   } else {

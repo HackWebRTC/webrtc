@@ -70,7 +70,29 @@ const char MediaConstraintsInterface::kLeakyBucket[] = "googLeakyBucket";
 const char MediaConstraintsInterface::kTemporalLayeredScreencast[] =
     "googTemporalLayeredScreencast";
 
-// Google-specific PeerConnection constraint keys.
+// Constraint keys for CreateOffer / CreateAnswer defined in W3C specification.
+const char MediaConstraintsInterface::kOfferToReceiveAudio[] =
+    "OfferToReceiveAudio";
+const char MediaConstraintsInterface::kOfferToReceiveVideo[] =
+    "OfferToReceiveVideo";
+const char MediaConstraintsInterface::kVoiceActivityDetection[] =
+    "VoiceActivityDetection";
+const char MediaConstraintsInterface::kIceRestart[] =
+    "IceRestart";
+// Google specific constraint for BUNDLE enable/disable.
+const char MediaConstraintsInterface::kUseRtpMux[] =
+    "googUseRtpMUX";
+
+// Below constraints should be used during PeerConnection construction.
+const char MediaConstraintsInterface::kEnableDtlsSrtp[] =
+    "DtlsSrtpKeyAgreement";
+const char MediaConstraintsInterface::kEnableRtpDataChannels[] =
+    "RtpDataChannels";
+// Google-specific constraint keys.
+const char MediaConstraintsInterface::kEnableDscp[] = "googDscp";
+const char MediaConstraintsInterface::kEnableIPv6[] = "googIPv6";
+const char MediaConstraintsInterface::kEnableVideoSuspendBelowMinBitrate[] =
+    "googSuspendBelowMinBitrate";
 const char MediaConstraintsInterface::kImprovedWifiBwe[] =
     "googImprovedWifiBwe";
 const char MediaConstraintsInterface::kScreencastMinBitrate[] =
@@ -92,29 +114,6 @@ const char MediaConstraintsInterface::kHighBitrate[] =
     "googHighBitrate";
 const char MediaConstraintsInterface::kVeryHighBitrate[] =
     "googVeryHighBitrate";
-
-// Constraint keys for CreateOffer / CreateAnswer defined in W3C specification.
-const char MediaConstraintsInterface::kOfferToReceiveAudio[] =
-    "OfferToReceiveAudio";
-const char MediaConstraintsInterface::kOfferToReceiveVideo[] =
-    "OfferToReceiveVideo";
-const char MediaConstraintsInterface::kVoiceActivityDetection[] =
-    "VoiceActivityDetection";
-const char MediaConstraintsInterface::kIceRestart[] =
-    "IceRestart";
-// Google specific constraint for BUNDLE enable/disable.
-const char MediaConstraintsInterface::kUseRtpMux[] =
-    "googUseRtpMUX";
-
-// Below constraints should be used during PeerConnection construction.
-const char MediaConstraintsInterface::kEnableDtlsSrtp[] =
-    "DtlsSrtpKeyAgreement";
-const char MediaConstraintsInterface::kEnableRtpDataChannels[] =
-    "RtpDataChannels";
-const char MediaConstraintsInterface::kEnableDscp[] = "googDscp";
-const char MediaConstraintsInterface::kEnableIPv6[] = "googIPv6";
-const char MediaConstraintsInterface::kEnableVideoSuspendBelowMinBitrate[] =
-    "googSuspendBelowMinBitrate";
 
 // Set |value| to the value associated with the first appearance of |key|, or
 // return false if |key| is not found.
