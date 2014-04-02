@@ -31,7 +31,7 @@ namespace voe {
 // Used for downmixing before resampling.
 // TODO(ajm): audio_device should advertise the maximum sample rate it can
 //            provide.
-static const int kMaxMonoDeviceDataSizeSamples = 960;  // 10 ms, 96 kHz, mono.
+static const int kMaxMonoDeviceDataSizeSamples = 1920;  // 10 ms, 192 kHz, mono.
 
 // TODO(ajm): The thread safety of this is dubious...
 void
