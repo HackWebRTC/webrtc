@@ -512,19 +512,6 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     memcpy(&main_header, &packet_list.front()->header, sizeof(main_header));
   }
 
-  // Check for FEC in packets, and separate payloads into several packets.
-  int ret = payload_splitter_->SplitFec(&packet_list, decoder_database_.get());
-  if (ret != PayloadSplitter::kOK) {
-    LOG_FERR1(LS_WARNING, SplitFec, packet_list.size());
-    PacketBuffer::DeleteAllPackets(&packet_list);
-    switch (ret) {
-      case PayloadSplitter::kUnknownPayloadType:
-        return kUnknownRtpPayloadType;
-      default:
-        return kOtherError;
-    }
-  }
-
   // Check payload types.
   if (decoder_database_->CheckPayloadTypes(packet_list) ==
       DecoderDatabase::kDecoderNotFound) {
@@ -568,6 +555,19 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
       it = packet_list.erase(it);
     } else {
       ++it;
+    }
+  }
+
+  // Check for FEC in packets, and separate payloads into several packets.
+  int ret = payload_splitter_->SplitFec(&packet_list, decoder_database_.get());
+  if (ret != PayloadSplitter::kOK) {
+    LOG_FERR1(LS_WARNING, SplitFec, packet_list.size());
+    PacketBuffer::DeleteAllPackets(&packet_list);
+    switch (ret) {
+      case PayloadSplitter::kUnknownPayloadType:
+        return kUnknownRtpPayloadType;
+      default:
+        return kOtherError;
     }
   }
 

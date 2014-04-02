@@ -140,7 +140,10 @@ int PayloadSplitter::SplitFec(PacketList* packet_list,
 
     // Not an FEC packet.
     AudioDecoder* decoder = decoder_database->GetDecoder(payload_type);
-    if (!decoder->PacketHasFec(packet->payload, packet->payload_length)) {
+    // decoder should not return NULL.
+    assert(decoder != NULL);
+    if (!decoder ||
+        !decoder->PacketHasFec(packet->payload, packet->payload_length)) {
       ++it;
       continue;
     }
@@ -152,8 +155,7 @@ int PayloadSplitter::SplitFec(PacketList* packet_list,
 
         new_packet->header = packet->header;
         int duration = decoder->
-            PacketDurationRedundant(packet->payload,
-                                    packet->payload_length) * 3 / 2;
+            PacketDurationRedundant(packet->payload, packet->payload_length);
         new_packet->header.timestamp -= duration;
         new_packet->payload = new uint8_t[packet->payload_length];
         memcpy(new_packet->payload, packet->payload, packet->payload_length);
