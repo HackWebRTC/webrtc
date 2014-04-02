@@ -437,6 +437,7 @@ CaptureSinkFilter::GetPin(IN int Index)
 
 STDMETHODIMP CaptureSinkFilter::Pause()
 {
+    LockReceive();
     LockFilter();
     if (m_State == State_Stopped)
     {
@@ -456,6 +457,7 @@ STDMETHODIMP CaptureSinkFilter::Pause()
         m_State = State_Paused;
     }
     UnlockFilter();
+    UnlockReceive();
     return S_OK;
 }
 
