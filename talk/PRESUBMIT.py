@@ -26,7 +26,6 @@
 # List of files that should not be committed to
 DO_NOT_SUBMIT_FILES = [
     "talk/app/webrtc/mediaconstraintsinterface.h",
-    "talk/app/webrtc/webrtcsdp_unittest.cc",
     "talk/base/linux.cc",
     "talk/base/linux.h",
     "talk/base/linux_unittest.cc",
