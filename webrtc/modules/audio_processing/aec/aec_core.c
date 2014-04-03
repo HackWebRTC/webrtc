@@ -231,7 +231,7 @@ int WebRtcAec_CreateAec(AecCore** aecInst) {
     return -1;
   }
   aec->delay_estimator = WebRtc_CreateDelayEstimator(
-      aec->delay_estimator_farend, kLookaheadBlocks, kLookaheadBlocks);
+      aec->delay_estimator_farend, kLookaheadBlocks);
   if (aec->delay_estimator == NULL) {
     WebRtcAec_FreeAec(aec);
     aec = NULL;

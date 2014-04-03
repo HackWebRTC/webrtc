@@ -267,8 +267,7 @@ void WebRtc_FreeDelayEstimator(void* handle) {
   free(self);
 }
 
-void* WebRtc_CreateDelayEstimator(void* farend_handle, int max_lookahead,
-                                  int lookahead) {
+void* WebRtc_CreateDelayEstimator(void* farend_handle, int max_lookahead) {
   DelayEstimator* self = NULL;
   DelayEstimatorFarend* farend = (DelayEstimatorFarend*) farend_handle;
 
@@ -281,8 +280,7 @@ void* WebRtc_CreateDelayEstimator(void* farend_handle, int max_lookahead,
 
     // Allocate memory for the farend spectrum handling.
     self->binary_handle =
-        WebRtc_CreateBinaryDelayEstimator(farend->binary_farend, max_lookahead,
-                                          lookahead);
+        WebRtc_CreateBinaryDelayEstimator(farend->binary_farend, max_lookahead);
     memory_fail |= (self->binary_handle == NULL);
 
     // Allocate memory for spectrum buffers.
@@ -326,9 +324,22 @@ int WebRtc_SoftResetDelayEstimator(void* handle, int delay_shift) {
   return WebRtc_SoftResetBinaryDelayEstimator(self->binary_handle, delay_shift);
 }
 
+int WebRtc_set_lookahead(void* handle, int lookahead) {
+  DelayEstimator* self = (DelayEstimator*) handle;
+  assert(self != NULL);
+  assert(self->binary_handle != NULL);
+  if ((lookahead > self->binary_handle->near_history_size - 1) ||
+      (lookahead < 0)) {
+    return -1;
+  }
+  self->binary_handle->lookahead = lookahead;
+  return self->binary_handle->lookahead;
+}
+
 int WebRtc_lookahead(void* handle) {
   DelayEstimator* self = (DelayEstimator*) handle;
   assert(self != NULL);
+  assert(self->binary_handle != NULL);
   return self->binary_handle->lookahead;
 }
 
@@ -360,6 +371,7 @@ int WebRtc_enable_robust_validation(void* handle, int enable) {
   if ((enable < 0) || (enable > 1)) {
     return -1;
   }
+  assert(self->binary_handle != NULL);
   self->binary_handle->robust_validation_enabled = enable;
   return 0;
 }

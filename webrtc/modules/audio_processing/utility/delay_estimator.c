@@ -308,31 +308,33 @@ void WebRtc_SoftResetBinaryDelayEstimatorFarend(
     BinaryDelayEstimatorFarend* self, int delay_shift) {
   int abs_shift = abs(delay_shift);
   int shift_size = 0;
-  assert(self != NULL);
+  int dest_index = 0;
+  int src_index = 0;
+  int padding_index = 0;
 
+  assert(self != NULL);
   shift_size = self->history_size - abs_shift;
-  if (delay_shift > 0) {
-    memmove(&self->binary_far_history[abs_shift],
-            self->binary_far_history,
-            sizeof(*self->binary_far_history) * shift_size);
-    memmove(&self->far_bit_counts[abs_shift],
-            self->far_bit_counts,
-            sizeof(*self->far_bit_counts) * shift_size);
-    memset(self->binary_far_history, 0,
-           sizeof(*self->binary_far_history) * abs_shift);
-    memset(self->far_bit_counts, 0, sizeof(*self->far_bit_counts) * abs_shift);
+  assert(shift_size > 0);
+  if (delay_shift == 0) {
+    return;
+  } else if (delay_shift > 0) {
+    dest_index = abs_shift;
   } else if (delay_shift < 0) {
-    memmove(self->binary_far_history,
-            &self->binary_far_history[abs_shift],
-            sizeof(*self->binary_far_history) * shift_size);
-    memmove(self->far_bit_counts,
-            &self->far_bit_counts[abs_shift],
-            sizeof(*self->far_bit_counts) * shift_size);
-    memset(&self->binary_far_history[shift_size], 0,
-           sizeof(*self->binary_far_history) * abs_shift);
-    memset(&self->far_bit_counts[shift_size], 0,
-           sizeof(*self->far_bit_counts) * abs_shift);
+    src_index = abs_shift;
+    padding_index = shift_size;
   }
+
+  // Shift and zero pad buffers.
+  memmove(&self->binary_far_history[dest_index],
+          &self->binary_far_history[src_index],
+          sizeof(*self->binary_far_history) * shift_size);
+  memset(&self->binary_far_history[padding_index], 0,
+         sizeof(*self->binary_far_history) * abs_shift);
+  memmove(&self->far_bit_counts[dest_index],
+          &self->far_bit_counts[src_index],
+          sizeof(*self->far_bit_counts) * shift_size);
+  memset(&self->far_bit_counts[padding_index], 0,
+         sizeof(*self->far_bit_counts) * abs_shift);
 }
 
 void WebRtc_AddBinaryFarSpectrum(BinaryDelayEstimatorFarend* handle,
@@ -376,10 +378,10 @@ void WebRtc_FreeBinaryDelayEstimator(BinaryDelayEstimator* self) {
 }
 
 BinaryDelayEstimator* WebRtc_CreateBinaryDelayEstimator(
-    BinaryDelayEstimatorFarend* farend, int max_lookahead, int lookahead) {
+    BinaryDelayEstimatorFarend* farend, int max_lookahead) {
   BinaryDelayEstimator* self = NULL;
 
-  if ((farend != NULL) && (lookahead >= 0) && (max_lookahead >= lookahead)) {
+  if ((farend != NULL) && (max_lookahead >= 0)) {
     // Sanity conditions fulfilled.
     self = malloc(sizeof(BinaryDelayEstimator));
   }
@@ -392,7 +394,7 @@ BinaryDelayEstimator* WebRtc_CreateBinaryDelayEstimator(
     self->robust_validation_enabled = 0;  // Disabled by default.
     self->allowed_offset = 0;
 
-    self->lookahead = lookahead;
+    self->lookahead = max_lookahead;
 
     // Allocate memory for spectrum buffers.  The extra array element in
     // |mean_bit_counts| and |histogram| is a dummy element only used while
@@ -405,7 +407,7 @@ BinaryDelayEstimator* WebRtc_CreateBinaryDelayEstimator(
     malloc_fail |= (self->bit_counts == NULL);
 
     // Allocate memory for history buffers.
-    self->binary_near_history = malloc((lookahead + 1) * sizeof(uint32_t));
+    self->binary_near_history = malloc((max_lookahead + 1) * sizeof(uint32_t));
     malloc_fail |= (self->binary_near_history == NULL);
 
     self->histogram = malloc((farend->history_size + 1) * sizeof(float));

@@ -86,14 +86,13 @@ void DelayEstimatorTest::SetUp() {
                                                      kMaxDelay + kLookahead);
   ASSERT_TRUE(farend_handle_ != NULL);
   farend_self_ = reinterpret_cast<DelayEstimatorFarend*>(farend_handle_);
-  handle_ = WebRtc_CreateDelayEstimator(farend_handle_, kLookahead, kLookahead);
+  handle_ = WebRtc_CreateDelayEstimator(farend_handle_, kLookahead);
   ASSERT_TRUE(handle_ != NULL);
   self_ = reinterpret_cast<DelayEstimator*>(handle_);
   binary_farend_ = WebRtc_CreateBinaryDelayEstimatorFarend(kMaxDelay +
                                                            kLookahead);
   ASSERT_TRUE(binary_farend_ != NULL);
-  binary_ = WebRtc_CreateBinaryDelayEstimator(binary_farend_, kLookahead,
-                                              kLookahead);
+  binary_ = WebRtc_CreateBinaryDelayEstimator(binary_farend_, kLookahead);
   ASSERT_TRUE(binary_ != NULL);
 }
 
@@ -202,7 +201,6 @@ void DelayEstimatorTest::RunBinarySpectraTest(int near_offset,
                                               int robust_validation) {
   BinaryDelayEstimator* binary2 =
       WebRtc_CreateBinaryDelayEstimator(binary_farend_,
-                                        kLookahead + lookahead_offset,
                                         kLookahead + lookahead_offset);
   // Verify the delay for both causal and non-causal systems. For causal systems
   // the delay is equivalent with a positive |offset| of the far-end sequence.
@@ -234,12 +232,9 @@ TEST_F(DelayEstimatorTest, CorrectErrorReturnsOfWrapper) {
   EXPECT_TRUE(handle == NULL);
 
   handle = handle_;
-  handle = WebRtc_CreateDelayEstimator(NULL, kLookahead, kLookahead);
+  handle = WebRtc_CreateDelayEstimator(NULL, kLookahead);
   EXPECT_TRUE(handle == NULL);
-  handle = WebRtc_CreateDelayEstimator(farend_handle_, kLookahead, -1);
-  EXPECT_TRUE(handle == NULL);
-  handle = WebRtc_CreateDelayEstimator(farend_handle_, kLookahead - 1,
-                                       kLookahead);
+  handle = WebRtc_CreateDelayEstimator(farend_handle_, -1);
   EXPECT_TRUE(handle == NULL);
 
   // WebRtc_InitDelayEstimatorFarend() and WebRtc_InitDelayEstimator() should
@@ -445,14 +440,9 @@ TEST_F(DelayEstimatorTest, CorrectErrorReturnsOfBinaryEstimator) {
   // |binary_handle| should be NULL.
   // Make sure we have a non-NULL value at start, so we can detect NULL after
   // create failure.
-  binary_handle = WebRtc_CreateBinaryDelayEstimator(NULL, kLookahead,
-                                                    kLookahead);
+  binary_handle = WebRtc_CreateBinaryDelayEstimator(NULL, kLookahead);
   EXPECT_TRUE(binary_handle == NULL);
-  binary_handle = WebRtc_CreateBinaryDelayEstimator(binary_farend_, kLookahead,
-                                                    -1);
-  EXPECT_TRUE(binary_handle == NULL);
-  binary_handle = WebRtc_CreateBinaryDelayEstimator(binary_farend_,
-                                                    kLookahead - 1, kLookahead);
+  binary_handle = WebRtc_CreateBinaryDelayEstimator(binary_farend_, -1);
   EXPECT_TRUE(binary_handle == NULL);
 }
 
@@ -539,8 +529,7 @@ TEST_F(DelayEstimatorTest, VerifyLookaheadAtCreate) {
   void* farend_handle = WebRtc_CreateDelayEstimatorFarend(kSpectrumSize,
                                                           kMaxDelay);
   ASSERT_TRUE(farend_handle != NULL);
-  void* handle = WebRtc_CreateDelayEstimator(farend_handle, kLookahead,
-                                             kLookahead);
+  void* handle = WebRtc_CreateDelayEstimator(farend_handle, kLookahead);
   ASSERT_TRUE(handle != NULL);
   EXPECT_EQ(kLookahead, WebRtc_lookahead(handle));
   WebRtc_FreeDelayEstimator(handle);

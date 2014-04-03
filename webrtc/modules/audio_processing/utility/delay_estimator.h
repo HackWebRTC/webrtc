@@ -136,42 +136,10 @@ void WebRtc_FreeBinaryDelayEstimator(BinaryDelayEstimator* self);
 // Allocates the memory needed by the binary delay estimation. The memory needs
 // to be initialized separately through WebRtc_InitBinaryDelayEstimator(...).
 //
-// Inputs:
-//      - farend        : Pointer to the far-end part of the Binary Delay
-//                        Estimator. This memory has to be created separately
-//                        prior to this call using
-//                        WebRtc_CreateBinaryDelayEstimatorFarend().
-//
-//                        Note that BinaryDelayEstimator does not take
-//                        ownership of |farend|.
-//
-//      - lookahead     : Amount of non-causal lookahead to use. This can
-//                        detect cases in which a near-end signal occurs before
-//                        the corresponding far-end signal. It will delay the
-//                        estimate for the current block by an equal amount,
-//                        and the returned values will be offset by it.
-//
-//                        A value of zero is the typical no-lookahead case.
-//                        This also represents the minimum delay which can be
-//                        estimated.
-//
-//                        Note that the effective range of delay estimates is
-//                        [-|lookahead|,... ,|history_size|-|lookahead|)
-//                        where |history_size| was set upon creating the far-end
-//                        history buffer size.
-//
-//      - max_lookahead : Maximum amount of non-causal lookahead allowed. This
-//                        is to allow for dynamically changing the lookahead on
-//                        the fly.
-//
-// Return value:
-//      - BinaryDelayEstimator*
-//                      : Created |handle|. If the memory can't be allocated
-//                        or if any of the input parameters are invalid NULL
-//                        is returned.
-//
+// See WebRtc_CreateDelayEstimator(..) in delay_estimator_wrapper.c for detailed
+// description.
 BinaryDelayEstimator* WebRtc_CreateBinaryDelayEstimator(
-    BinaryDelayEstimatorFarend* farend, int max_lookahead, int lookahead);
+    BinaryDelayEstimatorFarend* farend, int max_lookahead);
 
 // Initializes the delay estimation instance created with
 // WebRtc_CreateBinaryDelayEstimator(...).
@@ -230,7 +198,7 @@ int WebRtc_binary_last_delay(BinaryDelayEstimator* self);
 
 // Returns the estimation quality of the last calculated delay updated by the
 // function WebRtc_ProcessBinarySpectrum(...). The estimation quality is a value
-// in the interval [0, 1].  The higher the value, the better quality.
+// in the interval [0, 1].  The higher the value, the better the quality.
 //
 // Return value:
 //    - delay_quality         :  >= 0 - Estimation quality of last calculated

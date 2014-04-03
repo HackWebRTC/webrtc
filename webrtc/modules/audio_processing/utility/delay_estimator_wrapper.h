@@ -98,11 +98,18 @@ void WebRtc_FreeDelayEstimator(void* handle);
 //                        ownership of |farend_handle|, which has to be torn
 //                        down properly after this instance.
 //
-//      - lookahead     : Amount of non-causal lookahead to use. This can
-//                        detect cases in which a near-end signal occurs before
-//                        the corresponding far-end signal. It will delay the
-//                        estimate for the current block by an equal amount,
-//                        and the returned values will be offset by it.
+//      - max_lookahead : Maximum amount of non-causal lookahead allowed. The
+//                        actual amount of lookahead used can be controlled by
+//                        WebRtc_set_lookahead(...). The default |lookahead| is
+//                        set to |max_lookahead| at create time. Use
+//                        WebRtc_set_lookahead(...) before start if a different
+//                        value is desired.
+//
+//                        Using lookahead can detect cases in which a near-end
+//                        signal occurs before the corresponding far-end signal.
+//                        It will delay the estimate for the current block by an
+//                        equal amount, and the returned values will be offset
+//                        by it.
 //
 //                        A value of zero is the typical no-lookahead case.
 //                        This also represents the minimum delay which can be
@@ -113,17 +120,12 @@ void WebRtc_FreeDelayEstimator(void* handle);
 //                        where |history_size| was set upon creating the far-end
 //                        history buffer size.
 //
-//      - max_lookahead : Maximum amount of non-causal lookahead allowed. This
-//                        is to allow for dynamically changing the lookahead on
-//                        the fly.
-//
 // Return value:
 //      - void*         : Created |handle|. If the memory can't be allocated or
 //                        if any of the input parameters are invalid NULL is
 //                        returned.
 //
-void* WebRtc_CreateDelayEstimator(void* farend_handle, int max_lookahead,
-                                  int lookahead);
+void* WebRtc_CreateDelayEstimator(void* farend_handle, int max_lookahead);
 
 // Initializes the delay estimation instance returned by
 // WebRtc_CreateDelayEstimator(...)
@@ -144,6 +146,18 @@ int WebRtc_InitDelayEstimator(void* handle);
 //      - actual_shifts : The actual number of shifts performed.
 //
 int WebRtc_SoftResetDelayEstimator(void* handle, int delay_shift);
+
+// Sets the amount of |lookahead| to use. Valid values are [0, max_lookahead]
+// where |max_lookahead| was set at create time through
+// WebRtc_CreateDelayEstimator(...).
+//
+// Input:
+//      - lookahead     : The amount of blocks to shift history buffers.
+//
+// Return value:
+//      - new_lookahead : The actual number of shifts performed.
+//
+int WebRtc_set_lookahead(void* handle, int lookahead);
 
 // Returns the amount of lookahead we currently use.
 int WebRtc_lookahead(void* handle);
@@ -222,7 +236,7 @@ int WebRtc_last_delay(void* handle);
 // Returns the estimation quality/probability of the last calculated delay
 // updated by the function WebRtc_DelayEstimatorProcess(...). The estimation
 // quality is a value in the interval [0, 1]. The higher the value, the better
-// quality.
+// the quality.
 //
 // Return value:
 //      - delay_quality : >= 0  - Estimation quality of last calculated delay.
