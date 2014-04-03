@@ -27,6 +27,10 @@
 
 namespace webrtc {
 
+// Internal buffer size required for mono audio, based on the highest sample
+// rate voice engine supports (10 ms of audio at 192 kHz).
+static const int kMaxMonoDataSizeSamples = 1920;
+
 // VolumeControl
 enum { kMinVolumeLevel = 0 };
 enum { kMaxVolumeLevel = 255 };

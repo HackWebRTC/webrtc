@@ -1273,11 +1273,7 @@ int32_t AudioCodingModuleImpl::Add10MsData(
     return -1;
   }
 
-  // Allow for 8, 16, 32 and 48kHz input audio.
-  if ((audio_frame.sample_rate_hz_ != 8000)
-      && (audio_frame.sample_rate_hz_ != 16000)
-      && (audio_frame.sample_rate_hz_ != 32000)
-      && (audio_frame.sample_rate_hz_ != 48000)) {
+  if (audio_frame.sample_rate_hz_ > 48000) {
     assert(false);
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                  "Cannot Add 10 ms audio, input frequency not valid");
@@ -1444,7 +1440,7 @@ int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
 
     if (preprocess_frame_.samples_per_channel_ < 0) {
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
-                   "Cannot add 10 ms audio, resmapling failed");
+                   "Cannot add 10 ms audio, resampling failed");
       return -1;
     }
     preprocess_frame_.sample_rate_hz_ = send_codec_inst_.plfreq;

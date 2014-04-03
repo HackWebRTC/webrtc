@@ -57,8 +57,6 @@
         'monitor_module.h',
         'output_mixer.cc',
         'output_mixer.h',
-        'output_mixer_internal.cc',
-        'output_mixer_internal.h',
         'shared_data.cc',
         'shared_data.h',
         'statistics.cc',

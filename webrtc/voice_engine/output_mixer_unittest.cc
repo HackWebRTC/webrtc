@@ -11,12 +11,19 @@
 #include <math.h>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/voice_engine/output_mixer.h"
-#include "webrtc/voice_engine/output_mixer_internal.h"
+#include "webrtc/common_audio/resampler/include/push_resampler.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/voice_engine/utility.h"
+#include "webrtc/voice_engine/voice_engine_defines.h"
 
 namespace webrtc {
 namespace voe {
 namespace {
+
+enum FunctionToTest {
+  TestRemixAndResample,
+  TestDownConvertToCodecFormat
+};
 
 class OutputMixerTest : public ::testing::Test {
  protected:
@@ -29,7 +36,8 @@ class OutputMixerTest : public ::testing::Test {
   }
 
   void RunResampleTest(int src_channels, int src_sample_rate_hz,
-                       int dst_channels, int dst_sample_rate_hz);
+                       int dst_channels, int dst_sample_rate_hz,
+                       FunctionToTest function);
 
   PushResampler resampler_;
   AudioFrame src_frame_;
@@ -121,7 +129,8 @@ void VerifyFramesAreEqual(const AudioFrame& ref_frame,
 void OutputMixerTest::RunResampleTest(int src_channels,
                                       int src_sample_rate_hz,
                                       int dst_channels,
-                                      int dst_sample_rate_hz) {
+                                      int dst_sample_rate_hz,
+                                      FunctionToTest function) {
   PushResampler resampler;  // Create a new one with every test.
   const int16_t kSrcLeft = 30;  // Shouldn't overflow for any used sample rate.
   const int16_t kSrcRight = 15;
@@ -157,7 +166,21 @@ void OutputMixerTest::RunResampleTest(int src_channels,
       / src_sample_rate_hz * kInputKernelDelaySamples * dst_channels * 2;
   printf("(%d, %d Hz) -> (%d, %d Hz) ",  // SNR reported on the same line later.
       src_channels, src_sample_rate_hz, dst_channels, dst_sample_rate_hz);
-  EXPECT_EQ(0, RemixAndResample(src_frame_, &resampler, &dst_frame_));
+  if (function == TestRemixAndResample) {
+    RemixAndResample(src_frame_, &resampler, &dst_frame_);
+  } else {
+    int16_t mono_buffer[kMaxMonoDataSizeSamples];
+    DownConvertToCodecFormat(src_frame_.data_,
+                             src_frame_.samples_per_channel_,
+                             src_frame_.num_channels_,
+                             src_frame_.sample_rate_hz_,
+                             dst_frame_.num_channels_,
+                             dst_frame_.sample_rate_hz_,
+                             mono_buffer,
+                             &resampler,
+                             &dst_frame_);
+  }
+
   if (src_sample_rate_hz == 96000 && dst_sample_rate_hz == 8000) {
     // The sinc resampler gives poor SNR at this extreme conversion, but we
     // expect to see this rarely in practice.
@@ -171,13 +194,13 @@ TEST_F(OutputMixerTest, RemixAndResampleCopyFrameSucceeds) {
   // Stereo -> stereo.
   SetStereoFrame(&src_frame_, 10, 10);
   SetStereoFrame(&dst_frame_, 0, 0);
-  EXPECT_EQ(0, RemixAndResample(src_frame_, &resampler_, &dst_frame_));
+  RemixAndResample(src_frame_, &resampler_, &dst_frame_);
   VerifyFramesAreEqual(src_frame_, dst_frame_);
 
   // Mono -> mono.
   SetMonoFrame(&src_frame_, 20);
   SetMonoFrame(&dst_frame_, 0);
-  EXPECT_EQ(0, RemixAndResample(src_frame_, &resampler_, &dst_frame_));
+  RemixAndResample(src_frame_, &resampler_, &dst_frame_);
   VerifyFramesAreEqual(src_frame_, dst_frame_);
 }
 
@@ -186,20 +209,18 @@ TEST_F(OutputMixerTest, RemixAndResampleMixingOnlySucceeds) {
   SetStereoFrame(&dst_frame_, 0, 0);
   SetMonoFrame(&src_frame_, 10);
   SetStereoFrame(&golden_frame_, 10, 10);
-  EXPECT_EQ(0, RemixAndResample(src_frame_, &resampler_, &dst_frame_));
+  RemixAndResample(src_frame_, &resampler_, &dst_frame_);
   VerifyFramesAreEqual(dst_frame_, golden_frame_);
 
   // Mono -> stereo.
   SetMonoFrame(&dst_frame_, 0);
   SetStereoFrame(&src_frame_, 10, 20);
   SetMonoFrame(&golden_frame_, 15);
-  EXPECT_EQ(0, RemixAndResample(src_frame_, &resampler_, &dst_frame_));
+  RemixAndResample(src_frame_, &resampler_, &dst_frame_);
   VerifyFramesAreEqual(golden_frame_, dst_frame_);
 }
 
 TEST_F(OutputMixerTest, RemixAndResampleSucceeds) {
-  // TODO(ajm): convert this to the parameterized TEST_P style used in
-  // sinc_resampler_unittest.cc. We can then easily add tighter SNR thresholds.
   const int kSampleRates[] = {8000, 16000, 32000, 44100, 48000, 96000};
   const int kSampleRatesSize = sizeof(kSampleRates) / sizeof(*kSampleRates);
   const int kChannels[] = {1, 2};
@@ -209,7 +230,28 @@ TEST_F(OutputMixerTest, RemixAndResampleSucceeds) {
       for (int src_channel = 0; src_channel < kChannelsSize; src_channel++) {
         for (int dst_channel = 0; dst_channel < kChannelsSize; dst_channel++) {
           RunResampleTest(kChannels[src_channel], kSampleRates[src_rate],
-                          kChannels[dst_channel], kSampleRates[dst_rate]);
+                          kChannels[dst_channel], kSampleRates[dst_rate],
+                          TestRemixAndResample);
+        }
+      }
+    }
+  }
+}
+
+TEST_F(OutputMixerTest, ConvertToCodecFormatSucceeds) {
+  const int kSampleRates[] = {8000, 16000, 32000, 44100, 48000, 96000};
+  const int kSampleRatesSize = sizeof(kSampleRates) / sizeof(*kSampleRates);
+  const int kChannels[] = {1, 2};
+  const int kChannelsSize = sizeof(kChannels) / sizeof(*kChannels);
+  for (int src_rate = 0; src_rate < kSampleRatesSize; src_rate++) {
+    for (int dst_rate = 0; dst_rate < kSampleRatesSize; dst_rate++) {
+      for (int src_channel = 0; src_channel < kChannelsSize; src_channel++) {
+        for (int dst_channel = 0; dst_channel < kChannelsSize; dst_channel++) {
+          if (dst_rate <= src_rate && dst_channel <= src_channel) {
+            RunResampleTest(kChannels[src_channel], kSampleRates[src_rate],
+                            kChannels[src_channel], kSampleRates[dst_rate],
+                            TestDownConvertToCodecFormat);
+          }
         }
       }
     }

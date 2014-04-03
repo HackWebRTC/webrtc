@@ -25,13 +25,6 @@
 #include "webrtc/voice_engine/utility.h"
 #include "webrtc/voice_engine/voice_engine_impl.h"
 
-#if (defined(_WIN32) && defined(_DLL) && (_MSC_VER == 1400))
-// Fix for VS 2005 MD/MDd link problem
-#include <stdio.h>
-extern "C"
-    { FILE _iob[3] = {   __iob_func()[0], __iob_func()[1], __iob_func()[2]}; }
-#endif
-
 namespace webrtc
 {
 
@@ -223,6 +216,9 @@ int VoEBaseImpl::OnDataAvailable(const int voe_channels[],
   // No need to go through the APM, demultiplex the data to each VoE channel,
   // encode and send to the network.
   for (int i = 0; i < number_of_voe_channels; ++i) {
+    // TODO(ajm): In the case where multiple channels are using the same codec
+    // rate, this path needlessly does extra conversions. We should convert once
+    // and share between channels.
     OnData(voe_channels[i], audio_data, 16, sample_rate,
            number_of_channels, number_of_frames);
   }

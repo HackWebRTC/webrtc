@@ -11,13 +11,10 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_RESAMPLER_H_
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_RESAMPLER_H_
 
-#include "webrtc/common_audio/resampler/include/resampler.h"
+#include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-
-class CriticalSectionWrapper;
-
 namespace acm2 {
 
 class ACMResampler {
@@ -32,13 +29,10 @@ class ACMResampler {
                      int16_t* out_audio);
 
  private:
-  // Use the Resampler class.
-  Resampler resampler_;
-  CriticalSectionWrapper* resampler_crit_sect_;
+  PushResampler resampler_;
 };
 
 }  // namespace acm2
-
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_RESAMPLER_H_

@@ -61,6 +61,8 @@ struct ExperimentalAgc {
   bool enabled;
 };
 
+static const int kAudioProcMaxNativeSampleRateHz = 32000;
+
 // The Audio Processing Module (APM) provides a collection of voice processing
 // components designed for real-time communications software.
 //
