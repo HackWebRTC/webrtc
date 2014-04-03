@@ -121,6 +121,7 @@ def _CommonChecks(input_api, output_api):
                   r'^talk/site_scons/site_tools/talk_linux.py$',
                   r'^third_party/.*\.py$',
                   r'^testing/.*\.py$',
+                  r'^tools/clang/.*\.py$',
                   r'^tools/gyp/.*\.py$',
                   r'^tools/perf_expectations/.*\.py$',
                   r'^tools/protoc_wrapper/.*\.py$',
@@ -175,8 +176,16 @@ def CheckChangeOnCommit(input_api, output_api):
       json_url='http://webrtc-status.appspot.com/current?format=json'))
   return results
 
+def GetDefaultTryConfigs(bots=None):
+  """Returns a list of ('bot', set(['tests']), optionally filtered by [bots].
+
+  For WebRTC purposes, we always return an empty list of tests, since we want
+  to run all tests by default on all our trybots.
+  """
+  return { 'tryserver.webrtc': dict((bot, []) for bot in bots)}
+
 # pylint: disable=W0613
-def GetPreferredTrySlaves(project, change):
+def GetPreferredTryMasters(project, change):
   files = change.LocalPaths()
 
   android_bots = [
@@ -197,6 +206,7 @@ def GetPreferredTrySlaves(project, change):
       'linux_memcheck',
       'linux_rel',
       'linux_tsan',
+      'linux_tsan2',
   ]
   mac_bots = [
       'mac',
@@ -207,19 +217,22 @@ def GetPreferredTrySlaves(project, change):
   ]
   win_bots = [
       'win',
+      'win_asan',
       'win_baremetal',
       'win_rel',
       'win_x64_rel',
   ]
-
   if not files or all(re.search(r'[\\/]OWNERS$', f) for f in files):
-    return []
+    return {}
 
-  if all(re.search('[/_]ios[/_.]', f) for f in files):
-    return ios_bots
   if all(re.search('\.(m|mm)$|(^|[/_])mac[/_.]', f) for f in files):
-    return mac_bots
+    return GetDefaultTryConfigs(mac_bots)
   if all(re.search('(^|[/_])win[/_.]', f) for f in files):
-    return win_bots
+    return GetDefaultTryConfigs(win_bots)
+  if all(re.search('(^|[/_])android[/_.]', f) for f in files):
+    return GetDefaultTryConfigs(android_bots)
+  if all(re.search('[/_]ios[/_.]', f) for f in files):
+    return GetDefaultTryConfigs(ios_bots)
 
-  return android_bots + ios_bots + linux_bots + mac_bots + win_bots
+  return GetDefaultTryConfigs(android_bots + ios_bots + linux_bots + mac_bots +
+                              win_bots)
