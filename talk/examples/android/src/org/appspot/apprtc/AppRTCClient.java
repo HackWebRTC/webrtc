@@ -273,6 +273,7 @@ public class AppRTCClient {
 
       MediaConstraints pcConstraints = constraintsFromJSON(
           getVarValue(roomHtml, "pcConstraints", false));
+      addDTLSConstraintIfMissing(pcConstraints);
       Log.d(TAG, "pcConstraints: " + pcConstraints);
       MediaConstraints videoConstraints = constraintsFromJSON(
           getAVConstraints("video",
@@ -286,6 +287,26 @@ public class AppRTCClient {
       return new AppRTCSignalingParameters(
           iceServers, gaeBaseHref, token, postMessageUrl, initiator,
           pcConstraints, videoConstraints, audioConstraints);
+    }
+
+    // Mimic Chrome and set DtlsSrtpKeyAgreement to true if not set to false by
+    // the web-app.
+    private void addDTLSConstraintIfMissing(
+        MediaConstraints pcConstraints) {
+      for (MediaConstraints.KeyValuePair pair : pcConstraints.mandatory) {
+        if (pair.getKey().equals("DtlsSrtpKeyAgreement")) {
+          return;
+        }
+      }
+      for (MediaConstraints.KeyValuePair pair : pcConstraints.optional) {
+        if (pair.getKey().equals("DtlsSrtpKeyAgreement")) {
+          return;
+        }
+      }
+      // DTLS isn't being suppressed (e.g. for debug=loopback calls), so enable
+      // it by default.
+      pcConstraints.optional.add(
+          new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
     }
 
     // Return the constraints specified for |type| of "audio" or "video" in
