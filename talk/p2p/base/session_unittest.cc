@@ -77,19 +77,6 @@ static const int kNumPorts = 2;
 static const int kPort0 = 28653;
 static const int kPortStep = 5;
 
-static const std::string kNotifyNick1 = "derekcheng_google.com^59422C27";
-static const std::string kNotifyNick2 = "someoneelses_google.com^7abd6a7a20";
-static const uint32 kNotifyAudioSsrc1 = 2625839801U;
-static const uint32 kNotifyAudioSsrc2 = 2529430427U;
-static const uint32 kNotifyVideoSsrc1 = 3;
-static const uint32 kNotifyVideoSsrc2 = 2;
-
-static const std::string kViewRequestNick = "param_google.com^16A3CDBE";
-static const uint32 kViewRequestSsrc = 4;
-static const int kViewRequestWidth = 320;
-static const int kViewRequestHeight = 200;
-static const int kViewRequestFrameRate = 15;
-
 int GetPort(int port_index) {
   return kPort0 + (port_index * kPortStep);
 }

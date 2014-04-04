@@ -16,12 +16,6 @@ namespace {
     "Host: localhost\r\n"
     "\r\n";
 
-  const char* const kResponse =
-    "HTTP/1.1 200\r\n"
-    "Connection: Close\r\n"
-    "Content-Length: 0\r\n"
-    "\r\n";
-
   struct HttpServerMonitor : public sigslot::has_slots<> {
     HttpServerTransaction* transaction;
     bool server_closed, connection_closed;

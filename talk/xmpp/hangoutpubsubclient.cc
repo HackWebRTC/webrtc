@@ -42,7 +42,6 @@ namespace buzz {
 namespace {
 const char kPresenting[] = "s";
 const char kNotPresenting[] = "o";
-const char kEmpty[] = "";
 
 }  // namespace
 

@@ -108,8 +108,6 @@ static const char kFecPayloadName[] = "ulpfec";
 
 static const int kDefaultNumberOfTemporalLayers = 1;  // 1:1
 
-static const int kTimestampDeltaInSecondsForWarning = 2;
-
 static const int kMaxExternalVideoCodecs = 8;
 static const int kExternalVideoPayloadTypeBase = 120;
 
@@ -3252,6 +3250,8 @@ bool WebRtcVideoMediaChannel::SendFrame(
   // TODO(justinlin): Reenable after Windows issues with clock drift are fixed.
   // Currently reverted to old behavior of discarding capture timestamp.
 #if 0
+  static const int kTimestampDeltaInSecondsForWarning = 2;
+
   // If the frame timestamp is 0, we will use the deliver time.
   const int64 frame_timestamp = frame->GetTimeStamp();
   if (frame_timestamp != 0) {

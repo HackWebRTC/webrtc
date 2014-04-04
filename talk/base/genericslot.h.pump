@@ -1,0 +1,101 @@
+/*
+ * libjingle
+ * Copyright 2014 Google Inc.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  1. Redistributions of source code must retain the above copyright notice,
+ *     this list of conditions and the following disclaimer.
+ *  2. Redistributions in binary form must reproduce the above copyright notice,
+ *     this list of conditions and the following disclaimer in the documentation
+ *     and/or other materials provided with the distribution.
+ *  3. The name of the author may not be used to endorse or promote products
+ *     derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+ * EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#ifndef TALK_BASE_GENERICSLOT_H_
+#define TALK_BASE_GENERICSLOT_H_
+
+// To generate genericslot.h from genericslot.h.pump, execute:
+// /home/build/google3/third_party/gtest/scripts/pump.py genericslot.h.pump
+
+// Generic-slots are pure slots that can be hooked up to signals. They're
+// mainly intended to be used in tests where we want to check if a signal
+// was invoked and what arguments were passed. NOTE: They do not do any
+// lifetime management of the arguments received via callbacks.
+//
+// Example:
+//   /* Some signal */
+//   sigslot::signal1<int> foo;
+//
+//   /* We want to monitor foo in some test */
+//   talk_base::GenericSlot1<int> slot(&foo, 0);
+//   foo.emit(5);
+//   EXPECT_TRUE(slot.callback_received());
+//   EXPECT_EQ(5, *(slot.arg1()));
+//
+
+#include "talk/base/constructormagic.h"
+#include "talk/base/sigslot.h"
+
+namespace talk_base {
+
+$var n = 5
+$range i 1..n
+$for i [[
+$range j 1..i
+
+template <$for j , [[class A$j]]>
+class GenericSlot$i : public sigslot::has_slots<> {
+ public:
+  GenericSlot$i(sigslot::signal$i<$for j , [[A$j]]>* signal,
+                $for j , [[const A$j& arg$j[[]]_initial]])
+      : $for j , [[arg$j[[]]_initial_(arg$j[[]]_initial)]] {
+    Reset();
+    signal->connect(this, &GenericSlot$i::OnSignalCallback);
+  }
+
+  void Reset() {
+    callback_received_ = false;$for j [[
+
+    arg$j[[]]_ = arg$j[[]]_initial_; ]]
+
+  }
+
+  bool callback_received() const { return callback_received_; }$for j [[
+
+  const A$j& arg$j() const { return arg$j[[]]_; }]]
+
+
+ private:
+  void OnSignalCallback($for j , [[A$j arg$j]]) {
+    callback_received_ = true;$for j [[
+
+    arg$j[[]]_ = arg$j;]]
+
+  }
+
+  bool callback_received_;$for j [[
+
+  A$j arg$j[[]]_initial_, arg$j[[]]_;]]
+
+
+  DISALLOW_COPY_AND_ASSIGN(GenericSlot$i);
+};
+
+]]
+}  // namespace talk_base
+
+#endif  // TALK_BASE_GENERICSLOT_H_

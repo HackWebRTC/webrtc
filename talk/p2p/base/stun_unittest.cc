@@ -208,37 +208,6 @@ static const unsigned char kStunMessageWithErrorAttribute[] = {
   0x69, 0x7a, 0x65, 0x64
 };
 
-// Message with an address attribute with an unknown address family,
-// and a byte string attribute. Check that we quit reading after the
-// bogus address family and don't read the username attribute.
-static const unsigned char kStunMessageWithInvalidAddressFamily[] = {
-  0x01, 0x01, 0x00, 0x18,   // binding response, length 24
-  0x21, 0x12, 0xa4, 0x42,   // magic cookie
-  0x29, 0x1f, 0xcd, 0x7c,   // transaction ID
-  0xba, 0x58, 0xab, 0xd7,
-  0xf2, 0x41, 0x01, 0x00,
-  0x00, 0x01, 0x00, 0x08,  // Mapped address, 4 byte length
-  0x00, 0x09, 0xfe, 0xed,  // Bogus address family (port unimportant).
-  0xac, 0x17, 0x44, 0xe6,  // Should be skipped.
-  0x00, 0x06, 0x00, 0x08,  // Username attribute (length 8)
-  0x61, 0x62, 0x63, 0x64,  // abcdefgh
-  0x65, 0x66, 0x67, 0x68
-};
-
-// Message with an address attribute with an invalid address length.
-// Should fail to be read.
-static const unsigned char kStunMessageWithInvalidAddressLength[] = {
-  0x01, 0x01, 0x00, 0x18,   // binding response, length 24
-  0x21, 0x12, 0xa4, 0x42,   // magic cookie
-  0x29, 0x1f, 0xcd, 0x7c,   // transaction ID
-  0xba, 0x58, 0xab, 0xd7,
-  0xf2, 0x41, 0x01, 0x00,
-  0x00, 0x01, 0x00, 0x0c,  // Mapped address, 12 byte length
-  0x00, 0x01, 0xfe, 0xed,  // Claims to be AF_INET.
-  0xac, 0x17, 0x44, 0xe6,
-  0x00, 0x06, 0x00, 0x08
-};
-
 // Sample messages with an invalid length Field
 
 // The actual length in bytes of the invalid messages (including STUN header)
@@ -511,19 +480,10 @@ const in6_addr kIPv6TestAddress2 = { { { 0x24, 0x01, 0xfa, 0x00,
                                          0x06, 0x0c, 0xce, 0xff,
                                          0xfe, 0x1f, 0x61, 0xa4 } } };
 
-// This is kIPv6TestAddress1 xor-ed with kTestTransactionID2.
-const in6_addr kIPv6XoredTestAddress = { { { 0x05, 0x13, 0x5e, 0x42,
-                                             0xe3, 0xad, 0x56, 0xe1,
-                                             0xc2, 0x30, 0x99, 0x9d,
-                                             0xaa, 0xed, 0x01, 0xc3 } } };
-
 #ifdef POSIX
 const in_addr kIPv4TestAddress1 =  { 0xe64417ac };
-// This is kIPv4TestAddress xored with the STUN magic cookie.
-const in_addr kIPv4XoredTestAddress = { 0x8d05e0a4 };
 #elif defined WIN32
 // Windows in_addr has a union with a uchar[] array first.
-const in_addr kIPv4XoredTestAddress = { { 0x8d, 0x05, 0xe0, 0xa4 } };
 const in_addr kIPv4TestAddress1 =  { { 0x0ac, 0x017, 0x044, 0x0e6 } };
 #endif
 const char kTestUserName1[] = "abcdefgh";

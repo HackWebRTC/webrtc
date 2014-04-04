@@ -891,7 +891,6 @@ const std::string kJingleInitiateDynamicWithoutNames(
 const uint32 kAudioSsrc = 4294967295U;
 const uint32 kVideoSsrc = 87654321;
 const uint32 kDataSsrc = 1010101;
-const uint32 kDataSid = 0;
 // Note that this message does not specify a session ID. It must be populated
 // before use.
 const std::string kGingleAcceptWithSsrcs(
@@ -2514,6 +2513,7 @@ class MediaSessionClientTest : public sigslot::has_slots<> {
       CheckDataSsrcForIncomingAccept(call_->sessions()[0]);
     }
     // TODO(pthatcher): Check kDataSid if DCT_SCTP.
+    // const uint32 kDataSid = 0;
   }
 
   size_t ClearStanzas() {

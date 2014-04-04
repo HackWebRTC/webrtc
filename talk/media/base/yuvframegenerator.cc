@@ -19,7 +19,6 @@ const int kUnitBarSize = 2;
 const int kBarcodeNormalBarHeight = 80;
 const int kBarcodeGuardBarHeight = 96;
 const int kBarcodeMaxEncodableDigits = 7;
-const int kBarcodeMaxEncodableValue = 9999999;
 
 YuvFrameGenerator::YuvFrameGenerator(int width, int height,
                                      bool enable_barcode) {

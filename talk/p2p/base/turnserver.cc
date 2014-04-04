@@ -57,8 +57,6 @@ static const size_t kNonceSize = 40;
 static const size_t TURN_CHANNEL_HEADER_SIZE = 4U;
 
 // TODO(mallinath) - Move these to a common place.
-static const size_t kMaxPacketSize = 64 * 1024;
-
 inline bool IsTurnChannelData(uint16 msg_type) {
   // The first two bits of a channel data message are 0b01.
   return ((msg_type & 0xC000) == 0x4000);

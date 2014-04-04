@@ -51,7 +51,6 @@ static const std::string kFirefoxCorruptHeader =
   "iuahueqe32164";
 
 static const std::string kProxyAddress = "proxy.net.com";
-static const int kProxyPort = 9999;
 
 // Mocking out platform specific path to firefox prefs file.
 class FirefoxPrefsFileSystem : public FakeFileSystem {

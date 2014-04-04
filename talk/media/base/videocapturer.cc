@@ -59,7 +59,9 @@ enum {
 };
 
 static const int64 kMaxDistance = ~(static_cast<int64>(1) << 63);
+#ifdef LINUX
 static const int kYU12Penalty = 16;  // Needs to be higher than MJPG index.
+#endif
 static const int kDefaultScreencastFps = 5;
 typedef talk_base::TypedMessageData<CaptureState> StateChangeParams;
 

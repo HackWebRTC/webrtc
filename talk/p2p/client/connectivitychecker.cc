@@ -22,10 +22,6 @@
 
 namespace cricket {
 
-static const char kSessionTypeVideo[] =
-    "http://www.google.com/session/video";
-static const char kSessionNameRtp[] = "rtp";
-
 static const char kDefaultStunHostname[] = "stun.l.google.com";
 static const int kDefaultStunPort = 19302;
 

@@ -71,7 +71,6 @@ static const cricket::DataCodec kGoogleDataCodec(101, "google-data", 0);
 static const uint32 kSsrc1 = 0x1111;
 static const uint32 kSsrc2 = 0x2222;
 static const uint32 kSsrc3 = 0x3333;
-static const char kCName[] = "a@b.com";
 
 template<class ChannelT,
          class MediaChannelT,
