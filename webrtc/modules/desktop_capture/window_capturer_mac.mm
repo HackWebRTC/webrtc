@@ -185,7 +185,6 @@ void WindowCapturerMac::Capture(const DesktopRegion& region) {
       window_id_, kCGWindowImageBoundsIgnoreFraming);
 
   if (!window_image) {
-    CFRelease(window_image);
     callback_->OnCaptureCompleted(NULL);
     return;
   }
