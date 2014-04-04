@@ -984,21 +984,21 @@ std::wstring RegKey::GetParentKeyInfo(std::wstring* key_name) {
 uint32 RegKey::GetValueCount() {
   DWORD num_values = 0;
 
-  LONG res = ::RegQueryInfoKey(
-        h_key_,                  // key handle
-        NULL,                    // buffer for class name
-        NULL,                    // size of class string
-        NULL,                    // reserved
-        NULL,                    // number of subkeys
-        NULL,                    // longest subkey size
-        NULL,                    // longest class string
-        &num_values,             // number of values for this key
-        NULL,                    // longest value name
-        NULL,                    // longest value data
-        NULL,                    // security descriptor
-        NULL);                   // last write time
-
-  ASSERT(res == ERROR_SUCCESS);
+  if (ERROR_SUCCESS != ::RegQueryInfoKey(
+        h_key_,  // key handle
+        NULL,  // buffer for class name
+        NULL,  // size of class string
+        NULL,  // reserved
+        NULL,  // number of subkeys
+        NULL,  // longest subkey size
+        NULL,  // longest class string
+        &num_values,  // number of values for this key
+        NULL,  // longest value name
+        NULL,  // longest value data
+        NULL,  // security descriptor
+        NULL)) {  // last write time
+    ASSERT(false);
+  }
   return num_values;
 }
 
@@ -1028,21 +1028,21 @@ uint32 RegKey::GetSubkeyCount() {
   // number of values for key
   DWORD num_subkeys = 0;
 
-  LONG res = ::RegQueryInfoKey(
-    h_key_,                  // key handle
-    NULL,                    // buffer for class name
-    NULL,                    // size of class string
-    NULL,                    // reserved
-    &num_subkeys,            // number of subkeys
-    NULL,                    // longest subkey size
-    NULL,                    // longest class string
-    NULL,                    // number of values for this key
-    NULL,                    // longest value name
-    NULL,                    // longest value data
-    NULL,                    // security descriptor
-    NULL);                   // last write time
-
-  ASSERT(res == ERROR_SUCCESS);
+  if (ERROR_SUCCESS != ::RegQueryInfoKey(
+          h_key_,  // key handle
+          NULL,  // buffer for class name
+          NULL,  // size of class string
+          NULL,  // reserved
+          &num_subkeys,  // number of subkeys
+          NULL,  // longest subkey size
+          NULL,  // longest class string
+          NULL,  // number of values for this key
+          NULL,  // longest value name
+          NULL,  // longest value data
+          NULL,  // security descriptor
+          NULL)) { // last write time
+    ASSERT(false);
+  }
   return num_subkeys;
 }
 
