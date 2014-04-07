@@ -200,6 +200,9 @@ class NetEqImpl : public webrtc::NetEq {
   // Gets background noise mode.
   virtual NetEqBackgroundNoiseMode BackgroundNoiseMode() const;
 
+  // This accessor method is only intended for testing purposes.
+  virtual const SyncBuffer* sync_buffer_for_test() const;
+
  private:
   static const int kOutputSizeMs = 10;
   static const int kMaxFrameSize = 2880;  // 60 ms @ 48 kHz.

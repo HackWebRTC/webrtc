@@ -402,6 +402,11 @@ NetEqBackgroundNoiseMode NetEqImpl::BackgroundNoiseMode() const {
   return background_noise_->mode();
 }
 
+const SyncBuffer* NetEqImpl::sync_buffer_for_test() const {
+  CriticalSectionScoped lock(crit_sect_.get());
+  return sync_buffer_.get();
+}
+
 // Methods below this line are private.
 
 int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,

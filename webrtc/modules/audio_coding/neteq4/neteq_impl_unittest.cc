@@ -25,6 +25,7 @@
 #include "webrtc/modules/audio_coding/neteq4/mock/mock_packet_buffer.h"
 #include "webrtc/modules/audio_coding/neteq4/mock/mock_payload_splitter.h"
 #include "webrtc/modules/audio_coding/neteq4/preemptive_expand.h"
+#include "webrtc/modules/audio_coding/neteq4/sync_buffer.h"
 #include "webrtc/modules/audio_coding/neteq4/timestamp_scaler.h"
 
 using ::testing::Return;
@@ -394,6 +395,100 @@ TEST_F(NetEqImplTest, InsertPacketsUntilBufferIsFull) {
   const RTPHeader* test_header = packet_buffer_->NextRtpHeader();
   EXPECT_EQ(rtp_header.header.timestamp, test_header->timestamp);
   EXPECT_EQ(rtp_header.header.sequenceNumber, test_header->sequenceNumber);
+}
+
+// This test verifies that timestamps propagate from the incoming packets
+// through to the sync buffer and to the playout timestamp.
+TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
+  UseNoMocks();
+  CreateInstance();
+
+  const uint8_t kPayloadType = 17;   // Just an arbitrary number.
+  const uint32_t kReceiveTime = 17;  // Value doesn't matter for this test.
+  const int kSampleRateHz = 8000;
+  const int kPayloadLengthSamples = 10 * kSampleRateHz / 1000;  // 10 ms.
+  const size_t kPayloadLengthBytes = kPayloadLengthSamples;
+  uint8_t payload[kPayloadLengthBytes] = {0};
+  WebRtcRTPHeader rtp_header;
+  rtp_header.header.payloadType = kPayloadType;
+  rtp_header.header.sequenceNumber = 0x1234;
+  rtp_header.header.timestamp = 0x12345678;
+  rtp_header.header.ssrc = 0x87654321;
+
+  // This is a dummy decoder that produces as many output samples as the input
+  // has bytes. The output is an increasing series, starting at 1 for the first
+  // sample, and then increasing by 1 for each sample.
+  class CountingSamplesDecoder : public AudioDecoder {
+   public:
+    explicit CountingSamplesDecoder(enum NetEqDecoder type)
+        : AudioDecoder(type), next_value_(1) {}
+
+    // Produce as many samples as input bytes (|encoded_len|).
+    virtual int Decode(const uint8_t* encoded,
+                       size_t encoded_len,
+                       int16_t* decoded,
+                       SpeechType* speech_type) {
+      for (size_t i = 0; i < encoded_len; ++i) {
+        decoded[i] = next_value_++;
+      }
+      *speech_type = kSpeech;
+      return encoded_len;
+    }
+
+    virtual int Init() {
+      next_value_ = 1;
+      return 0;
+    }
+
+    uint16_t next_value() const { return next_value_; }
+
+   private:
+    int16_t next_value_;
+  } decoder_(kDecoderPCM16B);
+
+  EXPECT_EQ(NetEq::kOK,
+            neteq_->RegisterExternalDecoder(
+                &decoder_, kDecoderPCM16B, 8000, kPayloadType));
+
+  // Insert one packet.
+  EXPECT_EQ(NetEq::kOK,
+            neteq_->InsertPacket(
+                rtp_header, payload, kPayloadLengthBytes, kReceiveTime));
+
+  // Pull audio once.
+  const int kMaxOutputSize = 10 * kSampleRateHz / 1000;
+  int16_t output[kMaxOutputSize];
+  int samples_per_channel;
+  int num_channels;
+  NetEqOutputType type;
+  EXPECT_EQ(
+      NetEq::kOK,
+      neteq_->GetAudio(
+          kMaxOutputSize, output, &samples_per_channel, &num_channels, &type));
+  ASSERT_EQ(kMaxOutputSize, samples_per_channel);
+  EXPECT_EQ(1, num_channels);
+  EXPECT_EQ(kOutputNormal, type);
+
+  // Start with a simple check that the fake decoder is behaving as expected.
+  EXPECT_EQ(kPayloadLengthSamples, decoder_.next_value() - 1);
+
+  // The value of the last of the output samples is the same as the number of
+  // samples played from the decoded packet. Thus, this number + the RTP
+  // timestamp should match the playout timestamp.
+  EXPECT_EQ(rtp_header.header.timestamp + output[samples_per_channel - 1],
+            neteq_->PlayoutTimestamp());
+
+  // Check the timestamp for the last value in the sync buffer. This should
+  // be one full frame length ahead of the RTP timestamp.
+  const SyncBuffer* sync_buffer = neteq_->sync_buffer_for_test();
+  ASSERT_TRUE(sync_buffer != NULL);
+  EXPECT_EQ(rtp_header.header.timestamp + kPayloadLengthSamples,
+            sync_buffer->end_timestamp());
+
+  // Check that the number of samples still to play from the sync buffer add
+  // up with what was already played out.
+  EXPECT_EQ(kPayloadLengthSamples - output[samples_per_channel - 1],
+            static_cast<int>(sync_buffer->FutureLength()));
 }
 
 }  // namespace webrtc
