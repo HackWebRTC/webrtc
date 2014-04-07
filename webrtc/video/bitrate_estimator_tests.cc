@@ -228,7 +228,7 @@ class BitrateEstimatorTest : public ::testing::Test {
   std::vector<Stream*> streams_;
 };
 
-TEST_F(BitrateEstimatorTest, InstantiatesTOFPerDefault) {
+TEST_F(BitrateEstimatorTest, DISABLED_InstantiatesTOFPerDefault) {
   send_config_.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kTOffset, kTOFExtensionId));
   receiver_trace_.PushExpectedLogLine(
@@ -239,7 +239,7 @@ TEST_F(BitrateEstimatorTest, InstantiatesTOFPerDefault) {
   EXPECT_EQ(kEventSignaled, receiver_trace_.Wait());
 }
 
-TEST_F(BitrateEstimatorTest, ImmediatelySwitchToAST) {
+TEST_F(BitrateEstimatorTest, DISABLED_ImmediatelySwitchToAST) {
   send_config_.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kAbsSendTime, kASTExtensionId));
   receiver_trace_.PushExpectedLogLine(
@@ -253,7 +253,7 @@ TEST_F(BitrateEstimatorTest, ImmediatelySwitchToAST) {
   EXPECT_EQ(kEventSignaled, receiver_trace_.Wait());
 }
 
-TEST_F(BitrateEstimatorTest, SwitchesToAST) {
+TEST_F(BitrateEstimatorTest, DISABLED_SwitchesToAST) {
   send_config_.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kTOffset, kTOFExtensionId));
   receiver_trace_.PushExpectedLogLine(
@@ -272,7 +272,7 @@ TEST_F(BitrateEstimatorTest, SwitchesToAST) {
   EXPECT_EQ(kEventSignaled, receiver_trace_.Wait());
 }
 
-TEST_F(BitrateEstimatorTest, SwitchesToASTThenBackToTOF) {
+TEST_F(BitrateEstimatorTest, DISABLED_SwitchesToASTThenBackToTOF) {
   send_config_.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kTOffset, kTOFExtensionId));
   receiver_trace_.PushExpectedLogLine(

@@ -16,10 +16,6 @@
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "webrtc/typedefs.h"
 
-#ifdef WEBRTC_BWE_MATLAB
-#include "webrtc/modules/rtp_rtcp/test/BWEStandAlone/MatlabPlot.h"
-#endif
-
 namespace webrtc {
 enum RateControlRegion;
 
@@ -50,16 +46,6 @@ class OveruseDetector {
     int64_t complete_time_ms;
     int64_t timestamp;
     int64_t timestamp_ms;
-  };
-
-  struct DebugPlots {
-#ifdef WEBRTC_BWE_MATLAB
-    DebugPlots() : plot1(NULL), plot2(NULL), plot3(NULL), plot4(NULL) {}
-    MatlabPlot* plot1;
-    MatlabPlot* plot2;
-    MatlabPlot* plot3;
-    MatlabPlot* plot4;
-#endif
   };
 
   // Returns true if |timestamp| represent a time which is later than
@@ -104,9 +90,6 @@ class OveruseDetector {
   uint16_t over_use_counter_;
   BandwidthUsage hypothesis_;
   int64_t time_of_last_received_packet_;
-#ifdef WEBRTC_BWE_MATLAB
-  DebugPlots plots_;
-#endif
 };
 }  // namespace webrtc
 

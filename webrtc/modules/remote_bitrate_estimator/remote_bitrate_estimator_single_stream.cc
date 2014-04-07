@@ -16,8 +16,8 @@
 #include "webrtc/modules/remote_bitrate_estimator/remote_rate_control.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
-#include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -236,8 +236,7 @@ RemoteBitrateEstimator* RemoteBitrateEstimatorFactory::Create(
     Clock* clock,
     RateControlType control_type,
     uint32_t min_bitrate_bps) const {
-  WEBRTC_TRACE(kTraceStateInfo, kTraceRemoteBitrateEstimator, -1,
-      "RemoteBitrateEstimatorFactory: Instantiating.");
+  LOG(LS_INFO) << "RemoteBitrateEstimatorSingleStream: Instantiating.";
   return new RemoteBitrateEstimatorSingleStream(observer, clock,
                                                 min_bitrate_bps);
 }
@@ -247,8 +246,8 @@ RemoteBitrateEstimator* AbsoluteSendTimeRemoteBitrateEstimatorFactory::Create(
     Clock* clock,
     RateControlType control_type,
     uint32_t min_bitrate_bps) const {
-  WEBRTC_TRACE(kTraceStateInfo, kTraceRemoteBitrateEstimator, -1,
-      "AbsoluteSendTimeRemoteBitrateEstimatorFactory: Instantiating.");
+  LOG(LS_INFO) << "AbsoluteSendTimeRemoteBitrateEstimatorFactory: "
+      "Instantiating.";
   return new RemoteBitrateEstimatorSingleStream(observer, clock,
                                                 min_bitrate_bps);
 }
