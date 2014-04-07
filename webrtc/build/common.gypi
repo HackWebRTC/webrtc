@@ -136,7 +136,6 @@
       ['OS=="ios"', {
         'build_libjpeg%': 0,
         'enable_protobuf%': 0,
-        'include_tests%': 0,
       }],
       ['target_arch=="arm" or target_arch=="armv7"', {
         'prefer_fixed_point%': 1,
