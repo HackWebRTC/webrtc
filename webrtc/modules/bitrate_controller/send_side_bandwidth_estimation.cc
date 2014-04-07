@@ -12,7 +12,7 @@
 
 #include <cmath>
 
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 
 namespace webrtc {
 namespace {
@@ -203,13 +203,9 @@ void SendSideBandwidthEstimation::CapBitrateToThresholds() {
     bitrate_ = max_bitrate_configured_;
   }
   if (bitrate_ < min_bitrate_configured_) {
-    WEBRTC_TRACE(kTraceWarning,
-                 kTraceRtpRtcp,
-                 -1,
-                 "The configured min bitrate (%u kbps) is greater than the "
-                 "estimated available bandwidth (%u kbps).\n",
-                 min_bitrate_configured_ / 1000,
-                 bitrate_ / 1000);
+    LOG(LS_WARNING) << "Estimated available bandwidth " << bitrate_ / 1000
+                    << " kbps is below configured min bitrate "
+                    << min_bitrate_configured_ / 1000 << " kbps.";
     bitrate_ = min_bitrate_configured_;
   }
 }
