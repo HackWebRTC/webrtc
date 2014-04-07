@@ -99,7 +99,7 @@ class SocketClient : public TestGenerator, public sigslot::has_slots<> {
 class MessageClient : public MessageHandler, public TestGenerator {
  public:
   MessageClient(Thread* pth, Socket* socket)
-      : thread_(pth), socket_(socket) {
+      : socket_(socket) {
   }
 
   virtual ~MessageClient() {
@@ -114,7 +114,6 @@ class MessageClient : public MessageHandler, public TestGenerator {
   }
 
  private:
-  Thread* thread_;
   Socket* socket_;
 };
 
