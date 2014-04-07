@@ -1,0 +1,3 @@
+# Flakily fails on Dr Memory Light/Full.
+# https://code.google.com/p/webrtc/issues/detail?id=3158
+JsepPeerConnectionP2PTestClient.LocalP2PTest16To9

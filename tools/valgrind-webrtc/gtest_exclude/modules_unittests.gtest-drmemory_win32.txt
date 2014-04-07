@@ -1,4 +1,5 @@
 # Too slow to run with Dr Memory on Windows.
+ApmTest.EchoCancellationReportsCorrectDelays
 VideoProcessingModuleTest.Denoising
 
 
