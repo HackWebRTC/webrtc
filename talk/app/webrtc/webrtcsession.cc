@@ -86,6 +86,15 @@ static bool VerifyMediaDescriptions(
     if ((offer->contents()[i].name) != answer->contents()[i].name) {
       return false;
     }
+    const MediaContentDescription* offer_mdesc =
+        static_cast<const MediaContentDescription*>(
+            offer->contents()[i].description);
+    const MediaContentDescription* answer_mdesc =
+        static_cast<const MediaContentDescription*>(
+            answer->contents()[i].description);
+    if (offer_mdesc->type() != answer_mdesc->type()) {
+      return false;
+    }
   }
   return true;
 }

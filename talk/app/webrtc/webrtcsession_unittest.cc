@@ -2611,21 +2611,30 @@ TEST_F(WebRtcSessionTest, TestIncorrectMLinesInRemoteAnswer) {
                                           answer->session_version()));
   SetRemoteDescriptionAnswerExpectError(kMlineMismatch, modified_answer);
 
-  // Modifying content names.
+  // Different content names.
   std::string sdp;
   EXPECT_TRUE(answer->ToString(&sdp));
   const std::string kAudioMid = "a=mid:audio";
   const std::string kAudioMidReplaceStr = "a=mid:audio_content_name";
-
-  // Replacing |audio| with |audio_content_name|.
   talk_base::replace_substrs(kAudioMid.c_str(), kAudioMid.length(),
                              kAudioMidReplaceStr.c_str(),
                              kAudioMidReplaceStr.length(),
                              &sdp);
-
   SessionDescriptionInterface* modified_answer1 =
       CreateSessionDescription(JsepSessionDescription::kAnswer, sdp, NULL);
   SetRemoteDescriptionAnswerExpectError(kMlineMismatch, modified_answer1);
+
+  // Different media types.
+  EXPECT_TRUE(answer->ToString(&sdp));
+  const std::string kAudioMline = "m=audio";
+  const std::string kAudioMlineReplaceStr = "m=video";
+  talk_base::replace_substrs(kAudioMline.c_str(), kAudioMline.length(),
+                             kAudioMlineReplaceStr.c_str(),
+                             kAudioMlineReplaceStr.length(),
+                             &sdp);
+  SessionDescriptionInterface* modified_answer2 =
+      CreateSessionDescription(JsepSessionDescription::kAnswer, sdp, NULL);
+  SetRemoteDescriptionAnswerExpectError(kMlineMismatch, modified_answer2);
 
   SetRemoteDescriptionWithoutError(answer.release());
 }
