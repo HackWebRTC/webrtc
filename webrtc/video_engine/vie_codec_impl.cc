@@ -15,7 +15,6 @@
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/system_wrappers/interface/logging.h"
-#include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/video_engine/include/vie_errors.h"
 #include "webrtc/video_engine/vie_capturer.h"
 #include "webrtc/video_engine/vie_channel.h"
@@ -27,6 +26,51 @@
 #include "webrtc/video_engine/vie_shared_data.h"
 
 namespace webrtc {
+
+static void LogCodec(const VideoCodec& codec) {
+  LOG(LS_INFO) << "CodecType " << codec.codecType
+               << ", pl_type " << codec.plType
+               << ", resolution " << codec.width
+               << " x " << codec.height
+               << ", start br " << codec.startBitrate
+               << ", min br " << codec.minBitrate
+               << ", max br " << codec.maxBitrate
+               << ", max fpr " << codec.maxFramerate
+               << ", max qp " << codec.qpMax
+               << ", number of streams "
+               << codec.numberOfSimulcastStreams;
+  if (codec.codecType == kVideoCodecVP8) {
+    LOG(LS_INFO) << "VP8 specific settings";
+    LOG(LS_INFO) << "pivtureLossIndicationOn "
+                 << codec.codecSpecific.VP8.pictureLossIndicationOn
+                 << ", feedbackModeOn "
+                 << codec.codecSpecific.VP8.feedbackModeOn
+                 << ", complexity "
+                 << codec.codecSpecific.VP8.complexity
+                 << ", resilience "
+                 << codec.codecSpecific.VP8.resilience
+                 << ", numberOfTeporalLayers "
+                 << codec.codecSpecific.VP8.numberOfTemporalLayers
+                 << ", keyFrameinterval "
+                 << codec.codecSpecific.VP8.keyFrameInterval;
+    for (int idx = 0; idx < codec.numberOfSimulcastStreams; ++idx) {
+      LOG(LS_INFO) << "Stream " << codec.simulcastStream[idx].width
+                   << " x " << codec.simulcastStream[idx].height;
+      LOG(LS_INFO) << "Temporal layers "
+                   << codec.simulcastStream[idx].numberOfTemporalLayers
+                   << ", min br "
+                   << codec.simulcastStream[idx].minBitrate
+                   << ", target br "
+                   << codec.simulcastStream[idx].targetBitrate
+                   << ", max br "
+                   << codec.simulcastStream[idx].maxBitrate
+                   << ", qp max "
+                   << codec.simulcastStream[idx].qpMax;
+
+    }
+  }
+}
+
 
 ViECodec* ViECodec::GetInterface(VideoEngine* video_engine) {
 #ifdef WEBRTC_VIDEO_ENGINE_CODEC_API
@@ -44,45 +88,33 @@ ViECodec* ViECodec::GetInterface(VideoEngine* video_engine) {
 }
 
 int ViECodecImpl::Release() {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, shared_data_->instance_id(),
-               "ViECodecImpl::Release()");
+  LOG(LS_INFO) << "ViECodec::Release.";
   // Decrease ref count.
   (*this)--;
 
   int32_t ref_count = GetCount();
   if (ref_count < 0) {
-    WEBRTC_TRACE(kTraceWarning, kTraceVideo, shared_data_->instance_id(),
-                 "ViECodec released too many times");
+    LOG(LS_WARNING) << "ViECodec released too many times.";
     shared_data_->SetLastError(kViEAPIDoesNotExist);
     return -1;
   }
-  WEBRTC_TRACE(kTraceInfo, kTraceVideo, shared_data_->instance_id(),
-               "ViECodec reference count: %d", ref_count);
   return ref_count;
 }
 
 ViECodecImpl::ViECodecImpl(ViESharedData* shared_data)
     : shared_data_(shared_data) {
-  WEBRTC_TRACE(kTraceMemory, kTraceVideo, shared_data_->instance_id(),
-               "ViECodecImpl::ViECodecImpl() Ctor");
 }
 
 ViECodecImpl::~ViECodecImpl() {
-  WEBRTC_TRACE(kTraceMemory, kTraceVideo, shared_data_->instance_id(),
-               "ViECodecImpl::~ViECodecImpl() Dtor");
 }
 
 int ViECodecImpl::NumberOfCodecs() const {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(shared_data_->instance_id()),
-               "%s", __FUNCTION__);
   // +2 because of FEC(RED and ULPFEC)
   return static_cast<int>((VideoCodingModule::NumberOfCodecs() + 2));
 }
 
 int ViECodecImpl::GetCodec(const unsigned char list_number,
                            VideoCodec& video_codec) const {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(shared_data_->instance_id()),
-               "%s(list_number: %d)", __FUNCTION__, list_number);
   if (list_number == VideoCodingModule::NumberOfCodecs()) {
     memset(&video_codec, 0, sizeof(VideoCodec));
     strcpy(video_codec.plName, "red");
@@ -94,9 +126,6 @@ int ViECodecImpl::GetCodec(const unsigned char list_number,
     video_codec.codecType = kVideoCodecULPFEC;
     video_codec.plType = VCM_ULPFEC_PAYLOAD_TYPE;
   } else if (VideoCodingModule::Codec(list_number, &video_codec) != VCM_OK) {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(shared_data_->instance_id()),
-                 "%s: Could not get codec for list_number: %u", __FUNCTION__,
-                 list_number);
     shared_data_->SetLastError(kViECodecInvalidArgument);
     return -1;
   }
@@ -105,33 +134,8 @@ int ViECodecImpl::GetCodec(const unsigned char list_number,
 
 int ViECodecImpl::SetSendCodec(const int video_channel,
                                const VideoCodec& video_codec) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
-               ViEId(shared_data_->instance_id(), video_channel),
-               "%s(video_channel: %d, codec_type: %d)", __FUNCTION__,
-               video_channel, video_codec.codecType);
-  WEBRTC_TRACE(kTraceInfo, kTraceVideo,
-               ViEId(shared_data_->instance_id(), video_channel),
-               "%s: codec: %d, pl_type: %d, width: %d, height: %d, bitrate: %d"
-               "maxBr: %d, min_br: %d, frame_rate: %d, qpMax: %u,"
-               "numberOfSimulcastStreams: %u )", __FUNCTION__,
-               video_codec.codecType, video_codec.plType, video_codec.width,
-               video_codec.height, video_codec.startBitrate,
-               video_codec.maxBitrate, video_codec.minBitrate,
-               video_codec.maxFramerate, video_codec.qpMax,
-               video_codec.numberOfSimulcastStreams);
-  if (video_codec.codecType == kVideoCodecVP8) {
-    WEBRTC_TRACE(kTraceInfo, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "pictureLossIndicationOn: %d, feedbackModeOn: %d, "
-                 "complexity: %d, resilience: %d, numberOfTemporalLayers: %u"
-                 "keyFrameInterval %d",
-                 video_codec.codecSpecific.VP8.pictureLossIndicationOn,
-                 video_codec.codecSpecific.VP8.feedbackModeOn,
-                 video_codec.codecSpecific.VP8.complexity,
-                 video_codec.codecSpecific.VP8.resilience,
-                 video_codec.codecSpecific.VP8.numberOfTemporalLayers,
-                 video_codec.codecSpecific.VP8.keyFrameInterval);
-  }
+  LOG(LS_INFO) << "SetSendCodec for channel " << video_channel;
+  LogCodec(video_codec);
   if (!CodecValid(video_codec)) {
     // Error logged.
     shared_data_->SetLastError(kViECodecInvalidCodec);
@@ -141,9 +145,6 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: No channel %d", __FUNCTION__, video_channel);
     shared_data_->SetLastError(kViECodecInvalidChannelId);
     return -1;
   }
@@ -151,9 +152,7 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
   ViEEncoder* vie_encoder = cs.Encoder(video_channel);
   assert(vie_encoder);
   if (vie_encoder->Owner() != video_channel) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: Receive only channel %d", __FUNCTION__, video_channel);
+    LOG_F(LS_ERROR) << "Receive only channel.";
     shared_data_->SetLastError(kViECodecReceiveOnlyChannel);
     return -1;
   }
@@ -166,10 +165,7 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
                                        video_codec_internal.height *
                                        video_codec_internal.maxFramerate)
                                        / 1000;
-    WEBRTC_TRACE(kTraceInfo, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: New max bitrate set to %d kbps", __FUNCTION__,
-                 video_codec_internal.maxBitrate);
+    LOG(LS_INFO) << "New max bitrate set " << video_codec_internal.maxBitrate;
   }
 
   if (video_codec_internal.startBitrate > video_codec_internal.maxBitrate) {
@@ -192,10 +188,6 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
   vie_encoder->Pause();
 
   if (vie_encoder->SetEncoder(video_codec_internal) != 0) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: Could not change encoder for channel %d", __FUNCTION__,
-                 video_channel);
     shared_data_->SetLastError(kViECodecUnknownError);
     return -1;
   }
@@ -207,10 +199,6 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
        ++it) {
     bool ret = true;
     if ((*it)->SetSendCodec(video_codec_internal, new_rtp_stream) != 0) {
-      WEBRTC_TRACE(kTraceError, kTraceVideo,
-                   ViEId(shared_data_->instance_id(), video_channel),
-                   "%s: Could not set send codec for channel %d", __FUNCTION__,
-                   video_channel);
       ret = false;
     }
     if (!ret) {
@@ -225,9 +213,7 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
   if (video_codec_internal.numberOfSimulcastStreams == 0) {
     unsigned int ssrc = 0;
     if (vie_channel->GetLocalSSRC(0, &ssrc) != 0) {
-      WEBRTC_TRACE(kTraceError, kTraceVideo,
-                   ViEId(shared_data_->instance_id(), video_channel),
-                   "%s: Could not get ssrc", __FUNCTION__);
+      LOG_F(LS_ERROR) << "Could not get ssrc.";
     }
     ssrcs.push_back(ssrc);
   } else {
@@ -235,9 +221,7 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
          ++idx) {
       unsigned int ssrc = 0;
       if (vie_channel->GetLocalSSRC(idx, &ssrc) != 0) {
-        WEBRTC_TRACE(kTraceError, kTraceVideo,
-                     ViEId(shared_data_->instance_id(), video_channel),
-                     "%s: Could not get ssrc for idx %d", __FUNCTION__, idx);
+        LOG_F(LS_ERROR) << "Could not get ssrc for stream " << idx;
       }
       ssrcs.push_back(ssrc);
     }
@@ -264,16 +248,9 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
 
 int ViECodecImpl::GetSendCodec(const int video_channel,
                                VideoCodec& video_codec) const {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
-               ViEId(shared_data_->instance_id(), video_channel),
-               "%s(video_channel: %d)", __FUNCTION__, video_channel);
-
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEEncoder* vie_encoder = cs.Encoder(video_channel);
   if (!vie_encoder) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: No encoder for channel %d", __FUNCTION__, video_channel);
     shared_data_->SetLastError(kViECodecInvalidChannelId);
     return -1;
   }
@@ -282,21 +259,11 @@ int ViECodecImpl::GetSendCodec(const int video_channel,
 
 int ViECodecImpl::SetReceiveCodec(const int video_channel,
                                   const VideoCodec& video_codec) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
-               ViEId(shared_data_->instance_id(), video_channel),
-               "%s(video_channel: %d, codec_type: %d)", __FUNCTION__,
-               video_channel, video_codec.codecType);
-  WEBRTC_TRACE(kTraceInfo, kTraceVideo,
-               ViEId(shared_data_->instance_id(), video_channel),
-               "%s: codec: %d, pl_type: %d, width: %d, height: %d, bitrate: %d,"
-               "maxBr: %d, min_br: %d, frame_rate: %d", __FUNCTION__,
-               video_codec.codecType, video_codec.plType, video_codec.width,
-               video_codec.height, video_codec.startBitrate,
-               video_codec.maxBitrate, video_codec.minBitrate,
-               video_codec.maxFramerate);
+  LOG(LS_INFO) << "SetReceiveCodec for channel " << video_channel;
+  LOG(LS_INFO) << "Codec type " << video_codec.codecType
+               << ", payload type " << video_codec.plType;
 
   if (CodecValid(video_codec) == false) {
-    // Error logged.
     shared_data_->SetLastError(kViECodecInvalidCodec);
     return -1;
   }
@@ -304,18 +271,11 @@ int ViECodecImpl::SetReceiveCodec(const int video_channel,
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: No channel %d", __FUNCTION__, video_channel);
     shared_data_->SetLastError(kViECodecInvalidChannelId);
     return -1;
   }
 
   if (vie_channel->SetReceiveCodec(video_codec) != 0) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: Could not set receive codec for channel %d",
-                 __FUNCTION__, video_channel);
     shared_data_->SetLastError(kViECodecUnknownError);
     return -1;
   }
@@ -324,17 +284,9 @@ int ViECodecImpl::SetReceiveCodec(const int video_channel,
 
 int ViECodecImpl::GetReceiveCodec(const int video_channel,
                                   VideoCodec& video_codec) const {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
-               ViEId(shared_data_->instance_id(), video_channel),
-               "%s(video_channel: %d, codec_type: %d)", __FUNCTION__,
-               video_channel, video_codec.codecType);
-
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: No channel %d", __FUNCTION__, video_channel);
     shared_data_->SetLastError(kViECodecInvalidChannelId);
     return -1;
   }
@@ -350,16 +302,11 @@ int ViECodecImpl::GetCodecConfigParameters(
   const int video_channel,
   unsigned char config_parameters[kConfigParameterSize],
   unsigned char& config_parameters_size) const {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
-               ViEId(shared_data_->instance_id(), video_channel),
-               "%s(video_channel: %d)", __FUNCTION__, video_channel);
+  LOG(LS_INFO) << "GetCodecConfigParameters " << video_channel;
 
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEEncoder* vie_encoder = cs.Encoder(video_channel);
   if (!vie_encoder) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: No encoder for channel %d", __FUNCTION__, video_channel);
     shared_data_->SetLastError(kViECodecInvalidChannelId);
     return -1;
   }
@@ -374,17 +321,12 @@ int ViECodecImpl::GetCodecConfigParameters(
 
 int ViECodecImpl::SetImageScaleStatus(const int video_channel,
                                       const bool enable) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
-               ViEId(shared_data_->instance_id(), video_channel),
-               "%s(video_channel: %d, enable: %d)", __FUNCTION__, video_channel,
-               enable);
+  LOG(LS_INFO) << "SetImageScaleStates for channel " << video_channel
+               << ", enable: " << enable;
 
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEEncoder* vie_encoder = cs.Encoder(video_channel);
   if (!vie_encoder) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: No channel %d", __FUNCTION__, video_channel);
     shared_data_->SetLastError(kViECodecInvalidChannelId);
     return -1;
   }
@@ -399,17 +341,9 @@ int ViECodecImpl::SetImageScaleStatus(const int video_channel,
 int ViECodecImpl::GetSendCodecStastistics(const int video_channel,
                                           unsigned int& key_frames,
                                           unsigned int& delta_frames) const {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
-               ViEId(shared_data_->instance_id(), video_channel),
-               "%s(video_channel %d)", __FUNCTION__, video_channel);
-
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEEncoder* vie_encoder = cs.Encoder(video_channel);
   if (!vie_encoder) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: No send codec for channel %d", __FUNCTION__,
-                 video_channel);
     shared_data_->SetLastError(kViECodecInvalidChannelId);
     return -1;
   }
@@ -424,17 +358,9 @@ int ViECodecImpl::GetSendCodecStastistics(const int video_channel,
 int ViECodecImpl::GetReceiveCodecStastistics(const int video_channel,
                                              unsigned int& key_frames,
                                              unsigned int& delta_frames) const {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
-               ViEId(shared_data_->instance_id(), video_channel),
-               "%s(video_channel: %d)", __FUNCTION__,
-               video_channel);
-
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: No channel %d", __FUNCTION__, video_channel);
     shared_data_->SetLastError(kViECodecInvalidChannelId);
     return -1;
   }
@@ -447,20 +373,11 @@ int ViECodecImpl::GetReceiveCodecStastistics(const int video_channel,
 
 int ViECodecImpl::GetReceiveSideDelay(const int video_channel,
                                       int* delay_ms) const {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
-               ViEId(shared_data_->instance_id(), video_channel),
-               "%s(video_channel: %d)", __FUNCTION__, video_channel);
-  if (delay_ms == NULL) {
-    LOG_F(LS_ERROR) << "NULL pointer argument.";
-    return -1;
-  }
+  assert(delay_ms != NULL);
 
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: No channel %d", __FUNCTION__, video_channel);
     shared_data_->SetLastError(kViECodecInvalidChannelId);
     return -1;
   }
@@ -474,18 +391,9 @@ int ViECodecImpl::GetReceiveSideDelay(const int video_channel,
 
 int ViECodecImpl::GetCodecTargetBitrate(const int video_channel,
                                         unsigned int* bitrate) const {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
-               ViEId(shared_data_->instance_id(), video_channel),
-               "%s(video_channel: %d, codec_type: %d)", __FUNCTION__,
-               video_channel);
-
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEEncoder* vie_encoder = cs.Encoder(video_channel);
   if (!vie_encoder) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: No send codec for channel %d", __FUNCTION__,
-                 video_channel);
     shared_data_->SetLastError(kViECodecInvalidChannelId);
     return -1;
   }
@@ -493,17 +401,9 @@ int ViECodecImpl::GetCodecTargetBitrate(const int video_channel,
 }
 
 unsigned int ViECodecImpl::GetDiscardedPackets(const int video_channel) const {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
-               ViEId(shared_data_->instance_id(), video_channel),
-               "%s(video_channel: %d, codec_type: %d)", __FUNCTION__,
-               video_channel);
-
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: No channel %d", __FUNCTION__, video_channel);
     shared_data_->SetLastError(kViECodecInvalidChannelId);
     return -1;
   }
@@ -512,16 +412,12 @@ unsigned int ViECodecImpl::GetDiscardedPackets(const int video_channel) const {
 
 int ViECodecImpl::SetKeyFrameRequestCallbackStatus(const int video_channel,
                                                    const bool enable) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
-               ViEId(shared_data_->instance_id(), video_channel),
-               "%s(video_channel: %d)", __FUNCTION__, video_channel);
+  LOG(LS_INFO) << "SetKeyFrameRequestCallbackStatus for " << video_channel
+               << ", enacle " << enable;
 
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: No channel %d", __FUNCTION__, video_channel);
     shared_data_->SetLastError(kViECodecInvalidChannelId);
     return -1;
   }
@@ -535,17 +431,13 @@ int ViECodecImpl::SetKeyFrameRequestCallbackStatus(const int video_channel,
 int ViECodecImpl::SetSignalKeyPacketLossStatus(const int video_channel,
                                                const bool enable,
                                                const bool only_key_frames) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
-               ViEId(shared_data_->instance_id(), video_channel),
-               "%s(video_channel: %d, enable: %d, only_key_frames: %d)",
-               __FUNCTION__, video_channel, enable);
+  LOG(LS_INFO) << "SetSignalKeyPacketLossStatus for " << video_channel
+               << "enable, " << enable
+               << ", only key frames " << only_key_frames;
 
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: No channel %d", __FUNCTION__, video_channel);
     shared_data_->SetLastError(kViECodecInvalidChannelId);
     return -1;
   }
@@ -558,23 +450,15 @@ int ViECodecImpl::SetSignalKeyPacketLossStatus(const int video_channel,
 
 int ViECodecImpl::RegisterEncoderObserver(const int video_channel,
                                           ViEEncoderObserver& observer) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(shared_data_->instance_id()),
-               "%s", __FUNCTION__);
+  LOG(LS_INFO) << "RegisterEncoderObserver for channel " << video_channel;
 
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEEncoder* vie_encoder = cs.Encoder(video_channel);
   if (!vie_encoder) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: No encoder for channel %d", __FUNCTION__, video_channel);
     shared_data_->SetLastError(kViECodecInvalidChannelId);
     return -1;
   }
   if (vie_encoder->RegisterCodecObserver(&observer) != 0) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: Could not register codec observer at channel",
-                 __FUNCTION__);
     shared_data_->SetLastError(kViECodecObserverAlreadyRegistered);
     return -1;
   }
@@ -582,15 +466,11 @@ int ViECodecImpl::RegisterEncoderObserver(const int video_channel,
 }
 
 int ViECodecImpl::DeregisterEncoderObserver(const int video_channel) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(shared_data_->instance_id()),
-               "%s", __FUNCTION__);
+  LOG(LS_INFO) << "DeregisterEncoderObserver for channel " << video_channel;
 
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEEncoder* vie_encoder = cs.Encoder(video_channel);
   if (!vie_encoder) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: No encoder for channel %d", __FUNCTION__, video_channel);
     shared_data_->SetLastError(kViECodecInvalidChannelId);
     return -1;
   }
@@ -603,23 +483,15 @@ int ViECodecImpl::DeregisterEncoderObserver(const int video_channel) {
 
 int ViECodecImpl::RegisterDecoderObserver(const int video_channel,
                                           ViEDecoderObserver& observer) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(shared_data_->instance_id()),
-               "%s", __FUNCTION__);
+  LOG(LS_INFO) << "RegisterDecoderObserver for channel " << video_channel;
 
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: No channel %d", __FUNCTION__, video_channel);
     shared_data_->SetLastError(kViECodecInvalidChannelId);
     return -1;
   }
   if (vie_channel->RegisterCodecObserver(&observer) != 0) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: Could not register codec observer at channel",
-                 __FUNCTION__);
     shared_data_->SetLastError(kViECodecObserverAlreadyRegistered);
     return -1;
   }
@@ -627,16 +499,11 @@ int ViECodecImpl::RegisterDecoderObserver(const int video_channel,
 }
 
 int ViECodecImpl::DeregisterDecoderObserver(const int video_channel) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
-               ViEId(shared_data_->instance_id()), "%s",
-               __FUNCTION__);
+  LOG(LS_INFO) << "DeregisterDecodeObserver for channel " << video_channel;
 
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: No channel %d", __FUNCTION__, video_channel);
     shared_data_->SetLastError(kViECodecInvalidChannelId);
     return -1;
   }
@@ -648,15 +515,11 @@ int ViECodecImpl::DeregisterDecoderObserver(const int video_channel) {
 }
 
 int ViECodecImpl::SendKeyFrame(const int video_channel) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(shared_data_->instance_id()),
-               "%s(video_channel: %d)", __FUNCTION__, video_channel);
+  LOG(LS_INFO) << "SendKeyFrame on channel " << video_channel;
 
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEEncoder* vie_encoder = cs.Encoder(video_channel);
   if (!vie_encoder) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: No channel %d", __FUNCTION__, video_channel);
     shared_data_->SetLastError(kViECodecInvalidChannelId);
     return -1;
   }
@@ -669,17 +532,12 @@ int ViECodecImpl::SendKeyFrame(const int video_channel) {
 
 int ViECodecImpl::WaitForFirstKeyFrame(const int video_channel,
                                        const bool wait) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
-               ViEId(shared_data_->instance_id()),
-               "%s(video_channel: %d, wait: %d)", __FUNCTION__, video_channel,
-               wait);
+  LOG(LS_INFO) << "WaitForFirstKeyFrame for channel " << video_channel
+               << ", wait " << wait;
 
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: No channel %d", __FUNCTION__, video_channel);
     shared_data_->SetLastError(kViECodecInvalidChannelId);
     return -1;
   }
@@ -692,44 +550,35 @@ int ViECodecImpl::WaitForFirstKeyFrame(const int video_channel,
 
 int ViECodecImpl::StartDebugRecording(int video_channel,
                                       const char* file_name_utf8) {
+  LOG(LS_INFO) << "StartDebugRecording for channel " << video_channel;
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEEncoder* vie_encoder = cs.Encoder(video_channel);
   if (!vie_encoder) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: No encoder %d", __FUNCTION__, video_channel);
     return -1;
   }
   return vie_encoder->StartDebugRecording(file_name_utf8);
 }
 
 int ViECodecImpl::StopDebugRecording(int video_channel) {
+  LOG(LS_INFO) << "StopDebugRecording for channel " << video_channel;
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEEncoder* vie_encoder = cs.Encoder(video_channel);
   if (!vie_encoder) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: No encoder %d", __FUNCTION__, video_channel);
     return -1;
   }
   return vie_encoder->StopDebugRecording();
 }
 
 void ViECodecImpl::SuspendBelowMinBitrate(int video_channel) {
+  LOG(LS_INFO) << "SuspendBelowMinBitrate for channel " << video_channel;
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEEncoder* vie_encoder = cs.Encoder(video_channel);
   if (!vie_encoder) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: No encoder %d", __FUNCTION__, video_channel);
     return;
   }
   vie_encoder->SuspendBelowMinBitrate();
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: No channel %d", __FUNCTION__, video_channel);
     return;
   }
   // Must enable pacing when enabling SuspendBelowMinBitrate. Otherwise, no
@@ -743,9 +592,6 @@ bool ViECodecImpl::GetSendSideDelay(int video_channel, int* avg_delay_ms,
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: No channel %d", __FUNCTION__, video_channel);
     shared_data_->SetLastError(kViECodecInvalidChannelId);
     return false;
   }
@@ -763,8 +609,7 @@ bool ViECodecImpl::CodecValid(const VideoCodec& video_codec) {
       // We only care about the type and name for red.
       return true;
     }
-    WEBRTC_TRACE(kTraceError, kTraceVideo, -1,
-                 "Codec type doesn't match pl_name", video_codec.plType);
+    LOG_F(LS_ERROR) << "Invalid RED configuration.";
     return false;
   } else if (video_codec.codecType == kVideoCodecULPFEC) {
 #if defined(WIN32)
@@ -775,8 +620,7 @@ bool ViECodecImpl::CodecValid(const VideoCodec& video_codec) {
       // We only care about the type and name for ULPFEC.
       return true;
     }
-    WEBRTC_TRACE(kTraceError, kTraceVideo, -1,
-                 "Codec type doesn't match pl_name", video_codec.plType);
+    LOG_F(LS_ERROR) << "Invalid ULPFEC configuration.";
     return false;
   } else if ((video_codec.codecType == kVideoCodecVP8 &&
               strncmp(video_codec.plName, "VP8", 4) == 0) ||
@@ -784,32 +628,28 @@ bool ViECodecImpl::CodecValid(const VideoCodec& video_codec) {
               strncmp(video_codec.plName, "I420", 4) == 0)) {
     // OK.
   } else if (video_codec.codecType != kVideoCodecGeneric) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo, -1,
-                 "Codec type doesn't match pl_name", video_codec.plType);
+    LOG(LS_ERROR) << "Codec type and name mismatch.";
     return false;
   }
 
   if (video_codec.plType == 0 || video_codec.plType > 127) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo, -1,
-                 "Invalid codec payload type: %d", video_codec.plType);
+    LOG(LS_ERROR) << "Invalif payload type: " << video_codec.plType;
     return false;
   }
 
   if (video_codec.width > kViEMaxCodecWidth ||
       video_codec.height > kViEMaxCodecHeight) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Invalid codec size: %u x %u",
-                 video_codec.width, video_codec.height);
+    LOG(LS_ERROR) << "Invalid codec resolution " << video_codec.width
+                  << " x " << video_codec.height;
     return false;
   }
 
   if (video_codec.startBitrate < kViEMinCodecBitrate) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Invalid start_bitrate: %u",
-                 video_codec.startBitrate);
+    LOG(LS_ERROR) << "Invalid start bitrate.";
     return false;
   }
   if (video_codec.minBitrate < kViEMinCodecBitrate) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Invalid min_bitrate: %u",
-                 video_codec.minBitrate);
+    LOG(LS_ERROR) << "Invalid min bitrate.";
     return false;
   }
   return true;

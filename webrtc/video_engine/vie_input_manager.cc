@@ -17,6 +17,7 @@
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/video_engine/include/vie_errors.h"
@@ -420,8 +421,10 @@ ViEFrameProviderBase* ViEInputManager::ViEFrameProvider(int provider_id) const {
 
 ViECapturer* ViEInputManager::ViECapturePtr(int capture_id) const {
   if (!(capture_id >= kViECaptureIdBase &&
-        capture_id <= kViECaptureIdBase + kViEMaxCaptureDevices))
+        capture_id <= kViECaptureIdBase + kViEMaxCaptureDevices)) {
+    LOG(LS_ERROR) << "Capture device doesn't exist " << capture_id << ".";
     return NULL;
+  }
 
   return static_cast<ViECapturer*>(ViEFrameProvider(capture_id));
 }

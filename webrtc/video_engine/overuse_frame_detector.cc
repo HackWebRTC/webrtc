@@ -19,7 +19,7 @@
 #include "webrtc/modules/video_coding/utility/include/exp_filter.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 
 namespace webrtc {
 
@@ -438,19 +438,13 @@ int32_t OveruseFrameDetector::Process() {
       observer_->NormalUsage();
   }
 
-  WEBRTC_TRACE(
-      webrtc::kTraceInfo,
-      webrtc::kTraceVideo,
-      -1,
-      "Capture input stats: avg: %.2fms, std_dev: %.2fms (rampup delay: "
-      "%dms, overuse: >=%.2fms, "
-      "underuse: <%.2fms)",
-      capture_deltas_.Mean(),
-      capture_deltas_.StdDev(),
-      in_quick_rampup_ ? kQuickRampUpDelayMs : current_rampup_delay_ms_,
-      options_.high_capture_jitter_threshold_ms,
-      options_.low_capture_jitter_threshold_ms);
-
+  int rampup_delay =
+      in_quick_rampup_ ? kQuickRampUpDelayMs : current_rampup_delay_ms_;
+  LOG(LS_VERBOSE) << "Capture input stats: avg: " << capture_deltas_.Mean()
+                  << " std_dev " << capture_deltas_.StdDev()
+                  << " rampup delay " << rampup_delay
+                  << " overuse >= " << options_.high_capture_jitter_threshold_ms
+                  << " underuse < " << options_.low_capture_jitter_threshold_ms;
   return 0;
 }
 

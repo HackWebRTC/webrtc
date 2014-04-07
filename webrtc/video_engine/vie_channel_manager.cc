@@ -15,7 +15,7 @@
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/utility/interface/process_thread.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/video_engine/call_stats.h"
 #include "webrtc/video_engine/encoder_state_feedback.h"
 #include "webrtc/video_engine/vie_channel.h"
@@ -39,18 +39,12 @@ ViEChannelManager::ViEChannelManager(
       voice_engine_(NULL),
       module_process_thread_(NULL),
       engine_config_(config) {
-  WEBRTC_TRACE(kTraceMemory, kTraceVideo, ViEId(engine_id),
-               "ViEChannelManager::ViEChannelManager(engine_id: %d)",
-               engine_id);
   for (int idx = 0; idx < free_channel_ids_size_; idx++) {
     free_channel_ids_[idx] = true;
   }
 }
 
 ViEChannelManager::~ViEChannelManager() {
-  WEBRTC_TRACE(kTraceMemory, kTraceVideo, ViEId(engine_id_),
-               "ViEChannelManager Destructor, engine_id: %d", engine_id_);
-
   while (channel_map_.size() > 0) {
     ChannelMap::iterator it = channel_map_.begin();
     // DeleteChannel will erase this channel from the map and invalidate |it|.
@@ -225,8 +219,6 @@ int ViEChannelManager::DeleteChannel(int channel_id) {
     ChannelMap::iterator c_it = channel_map_.find(channel_id);
     if (c_it == channel_map_.end()) {
       // No such channel.
-      WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_),
-                   "%s Channel doesn't exist: %d", __FUNCTION__, channel_id);
       return -1;
     }
     vie_channel = c_it->second;
@@ -276,22 +268,17 @@ int ViEChannelManager::DeleteChannel(int channel_id) {
   // deleted, which might take time.
   // If statment just to show that this object is not always deleted.
   if (vie_encoder) {
-    WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_),
-                 "%s ViEEncoder deleted for channel %d", __FUNCTION__,
-                 channel_id);
+    LOG(LS_VERBOSE) << "ViEEncoder deleted for channel " << channel_id;
     delete vie_encoder;
   }
   // If statment just to show that this object is not always deleted.
   if (group) {
     // Delete the group if empty last since the encoder holds a pointer to the
     // BitrateController object that the group owns.
-    WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_),
-                 "%s ChannelGroup deleted for channel %d", __FUNCTION__,
-                 channel_id);
+    LOG(LS_VERBOSE) << "Channel group deleted for channel " << channel_id;
     delete group;
   }
-  WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_),
-               "%s Channel %d deleted", __FUNCTION__, channel_id);
+  LOG(LS_VERBOSE) << "Channel deleted " << channel_id;
   return 0;
 }
 
@@ -306,9 +293,6 @@ int ViEChannelManager::SetVoiceEngine(VoiceEngine* voice_engine) {
     // Get new sync interface.
     sync_interface = VoEVideoSync::GetInterface(voice_engine);
     if (!sync_interface) {
-      WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_),
-                   "%s Can't get audio sync interface from VoiceEngine.",
-                   __FUNCTION__);
       return -1;
     }
   }
@@ -329,8 +313,7 @@ int ViEChannelManager::ConnectVoiceChannel(int channel_id,
                                            int audio_channel_id) {
   CriticalSectionScoped cs(channel_id_critsect_);
   if (!voice_sync_interface_) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id),
-                 "No VoE set");
+    LOG_F(LS_ERROR) << "No VoE set.";
     return -1;
   }
   ViEChannel* channel = ViEChannelPtr(channel_id);
@@ -438,21 +421,15 @@ bool ViEChannelManager::CreateChannelObject(
                                            send_rtp_rtcp_module,
                                            sender);
   if (vie_channel->Init() != 0) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_),
-                 "%s could not init channel", __FUNCTION__, channel_id);
     delete vie_channel;
     return false;
   }
   VideoCodec encoder;
   if (vie_encoder->GetEncoder(&encoder) != 0) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id),
-                 "%s: Could not GetEncoder.", __FUNCTION__);
     delete vie_channel;
     return false;
   }
   if (sender && vie_channel->SetSendCodec(encoder) != 0) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id),
-                 "%s: Could not SetSendCodec.", __FUNCTION__);
     delete vie_channel;
     return false;
   }
@@ -466,8 +443,7 @@ ViEChannel* ViEChannelManager::ViEChannelPtr(int channel_id) const {
   CriticalSectionScoped cs(channel_id_critsect_);
   ChannelMap::const_iterator it = channel_map_.find(channel_id);
   if (it == channel_map_.end()) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_),
-                 "%s Channel doesn't exist: %d", __FUNCTION__, channel_id);
+    LOG(LS_ERROR) << "Channel doesn't exist " << channel_id;
     return NULL;
   }
   return it->second;
@@ -492,8 +468,7 @@ int ViEChannelManager::FreeChannelId() {
     }
     idx++;
   }
-  WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_),
-               "Max number of channels reached: %d", channel_map_.size());
+  LOG(LS_ERROR) << "Max number of channels reached.";
   return -1;
 }
 

@@ -157,10 +157,9 @@ void ViEAutoTest::ViEImageProcessAPITest()
         tbCapture.captureId, effectFilter));
     EXPECT_EQ(0, ViE.image_process->DeregisterCaptureEffectFilter(
         tbCapture.captureId));
-
-    // Double deregister
-    EXPECT_NE(0, ViE.image_process->DeregisterCaptureEffectFilter(
+    EXPECT_EQ(0, ViE.image_process->DeregisterCaptureEffectFilter(
         tbCapture.captureId));
+
     // Non-existing capture device
     EXPECT_NE(0, ViE.image_process->RegisterCaptureEffectFilter(
         tbChannel.videoChannel, effectFilter));
@@ -174,7 +173,7 @@ void ViEAutoTest::ViEImageProcessAPITest()
         tbChannel.videoChannel, effectFilter));
     EXPECT_EQ(0, ViE.image_process->DeregisterRenderEffectFilter(
         tbChannel.videoChannel));
-    EXPECT_NE(0, ViE.image_process->DeregisterRenderEffectFilter(
+    EXPECT_EQ(0, ViE.image_process->DeregisterRenderEffectFilter(
         tbChannel.videoChannel));
 
     // Non-existing channel id
@@ -190,7 +189,7 @@ void ViEAutoTest::ViEImageProcessAPITest()
         tbChannel.videoChannel, effectFilter));
     EXPECT_EQ(0, ViE.image_process->DeregisterSendEffectFilter(
         tbChannel.videoChannel));
-    EXPECT_NE(0, ViE.image_process->DeregisterSendEffectFilter(
+    EXPECT_EQ(0, ViE.image_process->DeregisterSendEffectFilter(
         tbChannel.videoChannel));
     EXPECT_NE(0, ViE.image_process->RegisterSendEffectFilter(
         tbCapture.captureId, effectFilter));

@@ -26,7 +26,6 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
-#include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 #include "webrtc/video_engine/include/vie_codec.h"
 #include "webrtc/video_engine/include/vie_image_process.h"
@@ -166,11 +165,6 @@ ViEEncoder::ViEEncoder(int32_t engine_id,
     qm_callback_(NULL),
     video_suspended_(false),
     pre_encode_callback_(NULL) {
-  WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo,
-               ViEId(engine_id, channel_id),
-               "%s(engine_id: %d) 0x%p - Constructor", __FUNCTION__, engine_id,
-               this);
-
   RtpRtcp::Configuration configuration;
   configuration.id = ViEModuleId(engine_id_, channel_id_);
   configuration.audio = false;  // Video.
@@ -184,9 +178,6 @@ ViEEncoder::ViEEncoder(int32_t engine_id,
 
 bool ViEEncoder::Init() {
   if (vcm_.InitializeSender() != 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_),
-                 "%s InitializeSender failure", __FUNCTION__);
     return false;
   }
   vpm_.EnableTemporalDecimation(true);
@@ -197,9 +188,6 @@ bool ViEEncoder::Init() {
   if (module_process_thread_.RegisterModule(&vcm_) != 0 ||
       module_process_thread_.RegisterModule(default_rtp_rtcp_.get()) != 0 ||
       module_process_thread_.RegisterModule(paced_sender_.get()) != 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_),
-                 "%s RegisterModule failure", __FUNCTION__);
     return false;
   }
   if (qm_callback_) {
@@ -210,9 +198,6 @@ bool ViEEncoder::Init() {
 #ifdef VIDEOCODEC_VP8
   VideoCodec video_codec;
   if (vcm_.Codec(webrtc::kVideoCodecVP8, &video_codec) != VCM_OK) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_),
-                 "%s Codec failure", __FUNCTION__);
     return false;
   }
   {
@@ -221,15 +206,9 @@ bool ViEEncoder::Init() {
   }
   if (vcm_.RegisterSendCodec(&video_codec, number_of_cores_,
                              default_rtp_rtcp_->MaxDataPayloadLength()) != 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_),
-                 "%s RegisterSendCodec failure", __FUNCTION__);
     return false;
   }
   if (default_rtp_rtcp_->RegisterSendPayload(video_codec) != 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_),
-                 "%s RegisterSendPayload failure", __FUNCTION__);
     return false;
   }
 #else
@@ -248,30 +227,18 @@ bool ViEEncoder::Init() {
 #endif
 
   if (vcm_.RegisterTransportCallback(this) != 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_),
-                 "ViEEncoder: VCM::RegisterTransportCallback failure");
     return false;
   }
   if (vcm_.RegisterSendStatisticsCallback(this) != 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_),
-                 "ViEEncoder: VCM::RegisterSendStatisticsCallback failure");
     return false;
   }
   if (vcm_.RegisterVideoQMCallback(qm_callback_) != 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_),
-                 "VCM::RegisterQMCallback failure");
     return false;
   }
   return true;
 }
 
 ViEEncoder::~ViEEncoder() {
-  WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo,
-               ViEId(engine_id_, channel_id_),
-               "ViEEncoder Destructor 0x%p, engine_id: %d", this, engine_id_);
   if (bitrate_controller_) {
     bitrate_controller_->RemoveBitrateObserver(bitrate_observer_.get());
   }
@@ -289,10 +256,6 @@ int ViEEncoder::Owner() const {
 }
 
 void ViEEncoder::SetNetworkTransmissionState(bool is_transmitting) {
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
-               ViEId(engine_id_, channel_id_),
-               "%s(%s)", __FUNCTION__,
-               is_transmitting ? "transmitting" : "not transmitting");
   {
     CriticalSectionScoped cs(data_cs_.get());
     network_is_transmitting_ = is_transmitting;
@@ -305,17 +268,11 @@ void ViEEncoder::SetNetworkTransmissionState(bool is_transmitting) {
 }
 
 void ViEEncoder::Pause() {
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
-               ViEId(engine_id_, channel_id_),
-               "%s", __FUNCTION__);
   CriticalSectionScoped cs(data_cs_.get());
   encoder_paused_ = true;
 }
 
 void ViEEncoder::Restart() {
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
-               ViEId(engine_id_, channel_id_),
-               "%s", __FUNCTION__);
   CriticalSectionScoped cs(data_cs_.get());
   encoder_paused_ = false;
 }
@@ -326,9 +283,6 @@ uint8_t ViEEncoder::NumberOfCodecs() {
 
 int32_t ViEEncoder::GetCodec(uint8_t list_index, VideoCodec* video_codec) {
   if (vcm_.Codec(list_index, video_codec) != 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_), "%s: Could not get codec",
-                 __FUNCTION__);
     return -1;
   }
   return 0;
@@ -337,43 +291,27 @@ int32_t ViEEncoder::GetCodec(uint8_t list_index, VideoCodec* video_codec) {
 int32_t ViEEncoder::RegisterExternalEncoder(webrtc::VideoEncoder* encoder,
                                             uint8_t pl_type,
                                             bool internal_source) {
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
-               ViEId(engine_id_, channel_id_), "%s: pltype %u", __FUNCTION__,
-               pl_type);
-
   if (encoder == NULL)
     return -1;
 
   if (vcm_.RegisterExternalEncoder(encoder, pl_type, internal_source) !=
-          VCM_OK) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_),
-                 "Could not register external encoder");
+      VCM_OK) {
     return -1;
   }
   return 0;
 }
 
 int32_t ViEEncoder::DeRegisterExternalEncoder(uint8_t pl_type) {
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
-               ViEId(engine_id_, channel_id_),
-               "%s: pltype %u", __FUNCTION__, pl_type);
-
   webrtc::VideoCodec current_send_codec;
   if (vcm_.SendCodec(&current_send_codec) == VCM_OK) {
     uint32_t current_bitrate_bps = 0;
     if (vcm_.Bitrate(&current_bitrate_bps) != 0) {
-      WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo,
-                   ViEId(engine_id_, channel_id_),
-                   "Failed to get the current encoder target bitrate.");
+      LOG(LS_WARNING) << "Failed to get the current encoder target bitrate.";
     }
     current_send_codec.startBitrate = (current_bitrate_bps + 500) / 1000;
   }
 
   if (vcm_.RegisterExternalEncoder(NULL, pl_type) != VCM_OK) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_),
-                 "Could not deregister external encoder");
     return -1;
   }
 
@@ -393,9 +331,6 @@ int32_t ViEEncoder::DeRegisterExternalEncoder(uint8_t pl_type) {
     current_send_codec.extra_options = NULL;
     if (vcm_.RegisterSendCodec(&current_send_codec, number_of_cores_,
                                max_data_payload_length) != VCM_OK) {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(engine_id_, channel_id_),
-                   "Could not use internal encoder");
       return -1;
     }
   }
@@ -403,23 +338,13 @@ int32_t ViEEncoder::DeRegisterExternalEncoder(uint8_t pl_type) {
 }
 
 int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
-               ViEId(engine_id_, channel_id_),
-               "%s: CodecType: %d, width: %u, height: %u", __FUNCTION__,
-               video_codec.codecType, video_codec.width, video_codec.height);
   // Setting target width and height for VPM.
   if (vpm_.SetTargetResolution(video_codec.width, video_codec.height,
                                video_codec.maxFramerate) != VPM_OK) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_),
-                 "Could not set VPM target dimensions");
     return -1;
   }
 
   if (default_rtp_rtcp_->RegisterSendPayload(video_codec) != 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_),
-                 "Could register RTP module video payload");
     return -1;
   }
   // Convert from kbps to bps.
@@ -438,9 +363,6 @@ int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
   }
   if (vcm_.RegisterSendCodec(&video_codec, number_of_cores_,
                              max_data_payload_length) != VCM_OK) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_),
-                 "Could not register send codec");
     return -1;
   }
 
@@ -448,9 +370,6 @@ int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
   // start and stop sending.
   if (default_rtp_rtcp_->Sending() == false) {
     if (default_rtp_rtcp_->SetSendingStatus(true) != 0) {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(engine_id_, channel_id_),
-                   "Could start RTP module sending");
       return -1;
     }
   }
@@ -472,13 +391,7 @@ int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
 }
 
 int32_t ViEEncoder::GetEncoder(VideoCodec* video_codec) {
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
-               ViEId(engine_id_, channel_id_), "%s", __FUNCTION__);
-
   if (vcm_.SendCodec(video_codec) != 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_),
-                 "Could not get VCM send codec");
     return -1;
   }
   return 0;
@@ -487,16 +400,10 @@ int32_t ViEEncoder::GetEncoder(VideoCodec* video_codec) {
 int32_t ViEEncoder::GetCodecConfigParameters(
     unsigned char config_parameters[kConfigParameterSize],
     unsigned char& config_parameters_size) {
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
-               ViEId(engine_id_, channel_id_), "%s", __FUNCTION__);
-
   int32_t num_parameters =
       vcm_.CodecConfigParameters(config_parameters, kConfigParameterSize);
   if (num_parameters <= 0) {
     config_parameters_size = 0;
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_),
-                 "Could not get config parameters");
     return -1;
   }
   config_parameters_size = static_cast<unsigned char>(num_parameters);
@@ -504,16 +411,11 @@ int32_t ViEEncoder::GetCodecConfigParameters(
 }
 
 int32_t ViEEncoder::ScaleInputImage(bool enable) {
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
-               ViEId(engine_id_, channel_id_), "%s(enable %d)", __FUNCTION__,
-               enable);
-
   VideoFrameResampling resampling_mode = kFastRescaling;
-  if (enable == true) {
+  // TODO(mflodman) What?
+  if (enable) {
     // kInterpolation is currently not supported.
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_), "%s not supported",
-                 __FUNCTION__, enable);
+    LOG_F(LS_ERROR) << "Not supported.";
     return -1;
   }
   vpm_.SetInputFrameResampleMode(resampling_mode);
@@ -560,9 +462,6 @@ bool ViEEncoder::EncoderPaused() const {
 }
 
 RtpRtcp* ViEEncoder::SendRtpRtcpModule() {
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
-               ViEId(engine_id_, channel_id_), "%s", __FUNCTION__);
-
   return default_rtp_rtcp_.get();
 }
 
@@ -570,11 +469,6 @@ void ViEEncoder::DeliverFrame(int id,
                               I420VideoFrame* video_frame,
                               int num_csrcs,
                               const uint32_t CSRC[kRtpCsrcSize]) {
-  WEBRTC_TRACE(webrtc::kTraceStream,
-               webrtc::kTraceVideo,
-               ViEId(engine_id_, channel_id_),
-               "%s: %llu", __FUNCTION__,
-               video_frame->timestamp());
   if (default_rtp_rtcp_->SendingMedia() == false) {
     // We've paused or we have no channels attached, don't encode.
     return;
@@ -640,11 +534,6 @@ void ViEEncoder::DeliverFrame(int id,
     return;
   }
   if (ret != VPM_OK) {
-    WEBRTC_TRACE(webrtc::kTraceError,
-                 webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_),
-                 "%s: Error preprocessing frame %u", __FUNCTION__,
-                 video_frame->timestamp());
     return;
   }
   // Frame was not sampled => use original.
@@ -673,47 +562,24 @@ void ViEEncoder::DeliverFrame(int id,
     has_received_sli_ = false;
     has_received_rpsi_ = false;
 
-    if (vcm_.AddVideoFrame(*decimated_frame,
-                           vpm_.ContentMetrics(),
-                           &codec_specific_info) != VCM_OK) {
-      WEBRTC_TRACE(webrtc::kTraceError,
-                   webrtc::kTraceVideo,
-                   ViEId(engine_id_, channel_id_),
-                   "%s: Error encoding frame %u", __FUNCTION__,
-                   video_frame->timestamp());
-    }
+    vcm_.AddVideoFrame(*decimated_frame, vpm_.ContentMetrics(),
+                       &codec_specific_info);
     return;
   }
 #endif
-  if (vcm_.AddVideoFrame(*decimated_frame) != VCM_OK) {
-    WEBRTC_TRACE(webrtc::kTraceError,
-                 webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_),
-                 "%s: Error encoding frame %u", __FUNCTION__,
-                 video_frame->timestamp());
-  }
+  vcm_.AddVideoFrame(*decimated_frame);
 }
 
 void ViEEncoder::DelayChanged(int id, int frame_delay) {
-  WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceVideo,
-               ViEId(engine_id_, channel_id_), "%s: %u", __FUNCTION__,
-               frame_delay);
-
   default_rtp_rtcp_->SetCameraDelay(frame_delay);
 }
 
 int ViEEncoder::GetPreferedFrameSettings(int* width,
                                          int* height,
                                          int* frame_rate) {
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
-               ViEId(engine_id_, channel_id_), "%s", __FUNCTION__);
-
   webrtc::VideoCodec video_codec;
   memset(&video_codec, 0, sizeof(video_codec));
   if (vcm_.SendCodec(&video_codec) != VCM_OK) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_),
-                 "Could not get VCM send codec");
     return -1;
   }
 
@@ -724,21 +590,13 @@ int ViEEncoder::GetPreferedFrameSettings(int* width,
 }
 
 int ViEEncoder::SendKeyFrame() {
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
-               ViEId(engine_id_, channel_id_), "%s", __FUNCTION__);
   return vcm_.IntraFrameRequest(0);
 }
 
 int32_t ViEEncoder::SendCodecStatistics(
     uint32_t* num_key_frames, uint32_t* num_delta_frames) {
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
-               ViEId(engine_id_, channel_id_), "%s", __FUNCTION__);
-
   webrtc::VCMFrameCount sent_frames;
   if (vcm_.SentFrameCount(sent_frames) != VCM_OK) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_),
-                 "%s: Could not get sent frame information", __FUNCTION__);
     return -1;
   }
   *num_key_frames = sent_frames.numKeyFrames;
@@ -752,9 +610,6 @@ int32_t ViEEncoder::PacerQueuingDelayMs() const {
 
 int32_t ViEEncoder::EstimatedSendBandwidth(
     uint32_t* available_bandwidth) const {
-  WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
-               __FUNCTION__);
-
   if (!bitrate_controller_->AvailableBandwidth(available_bandwidth)) {
     return -1;
   }
@@ -762,8 +617,6 @@ int32_t ViEEncoder::EstimatedSendBandwidth(
 }
 
 int ViEEncoder::CodecTargetBitrate(uint32_t* bitrate) const {
-  WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
-               __FUNCTION__);
   if (vcm_.Bitrate(bitrate) != 0)
     return -1;
   return 0;
@@ -799,9 +652,6 @@ int32_t ViEEncoder::UpdateProtectionMethod(bool enable_nack) {
   }
 
   if (fec_enabled_ || nack_enabled_) {
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_), "%s: FEC status ",
-                 __FUNCTION__, fec_enabled);
     vcm_.RegisterProtectionCallback(this);
     // The send codec must be registered to set correct MTU.
     webrtc::VideoCodec codec;
@@ -809,17 +659,12 @@ int32_t ViEEncoder::UpdateProtectionMethod(bool enable_nack) {
       uint16_t max_pay_load = default_rtp_rtcp_->MaxDataPayloadLength();
       uint32_t current_bitrate_bps = 0;
       if (vcm_.Bitrate(&current_bitrate_bps) != 0) {
-        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo,
-                     ViEId(engine_id_, channel_id_),
-                     "Failed to get the current encoder target bitrate.");
+        LOG_F(LS_WARNING) <<
+            "Failed to get the current encoder target bitrate.";
       }
       // Convert to start bitrate in kbps.
       codec.startBitrate = (current_bitrate_bps + 500) / 1000;
       if (vcm_.RegisterSendCodec(&codec, number_of_cores_, max_pay_load) != 0) {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(engine_id_, channel_id_),
-                     "%s: Failed to update Sendcodec when enabling FEC",
-                     __FUNCTION__, fec_enabled);
         return -1;
       }
     }
@@ -878,30 +723,8 @@ int32_t ViEEncoder::ProtectionRequest(
     uint32_t* sent_video_rate_bps,
     uint32_t* sent_nack_rate_bps,
     uint32_t* sent_fec_rate_bps) {
-  WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceVideo,
-               ViEId(engine_id_, channel_id_),
-               "%s, deltaFECRate: %u, key_fecrate: %u, "
-               "delta_use_uep_protection: %d, key_use_uep_protection: %d, "
-               "delta_max_fec_frames: %d, key_max_fec_frames: %d, "
-               "delta_mask_type: %d, key_mask_type: %d, ",
-               __FUNCTION__,
-               delta_fec_params->fec_rate,
-               key_fec_params->fec_rate,
-               delta_fec_params->use_uep_protection,
-               key_fec_params->use_uep_protection,
-               delta_fec_params->max_fec_frames,
-               key_fec_params->max_fec_frames,
-               delta_fec_params->fec_mask_type,
-               key_fec_params->fec_mask_type);
-  if (default_rtp_rtcp_->SetFecParameters(delta_fec_params,
-                                         key_fec_params) != 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_),
-                 "%s: Could not update FEC parameters", __FUNCTION__);
-  }
-  default_rtp_rtcp_->BitrateSent(NULL,
-                                sent_video_rate_bps,
-                                sent_fec_rate_bps,
+  default_rtp_rtcp_->SetFecParameters(delta_fec_params, key_fec_params);
+  default_rtp_rtcp_->BitrateSent(NULL, sent_video_rate_bps, sent_fec_rate_bps,
                                 sent_nack_rate_bps);
   return 0;
 }
@@ -910,9 +733,6 @@ int32_t ViEEncoder::SendStatistics(const uint32_t bit_rate,
                                    const uint32_t frame_rate) {
   CriticalSectionScoped cs(callback_cs_.get());
   if (codec_observer_) {
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_), "%s: bitrate %u, framerate %u",
-                 __FUNCTION__, bit_rate, frame_rate);
     codec_observer_->OutgoingRate(channel_id_, frame_rate, bit_rate);
   }
   return 0;
@@ -920,29 +740,11 @@ int32_t ViEEncoder::SendStatistics(const uint32_t bit_rate,
 
 int32_t ViEEncoder::RegisterCodecObserver(ViEEncoderObserver* observer) {
   CriticalSectionScoped cs(callback_cs_.get());
-  if (observer) {
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_), "%s: observer added",
-                 __FUNCTION__);
-    if (codec_observer_) {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(engine_id_, channel_id_), "%s: observer already set.",
-                   __FUNCTION__);
-      return -1;
-    }
-    codec_observer_ = observer;
-  } else {
-    if (codec_observer_ == NULL) {
-      WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
-                   ViEId(engine_id_, channel_id_),
-                   "%s: observer does not exist.", __FUNCTION__);
-      return -1;
-    }
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_), "%s: observer removed",
-                 __FUNCTION__);
-    codec_observer_ = NULL;
+  if (observer && codec_observer_) {
+    LOG_F(LS_ERROR) << "Observer already set.";
+    return -1;
   }
+  codec_observer_ = observer;
   return 0;
 }
 
@@ -960,8 +762,6 @@ void ViEEncoder::OnReceivedRPSI(uint32_t /*ssrc*/,
 
 void ViEEncoder::OnReceivedIntraFrameRequest(uint32_t ssrc) {
   // Key frame request from remote side, signal to VCM.
-  WEBRTC_TRACE(webrtc::kTraceStateInfo, webrtc::kTraceVideo,
-               ViEId(engine_id_, channel_id_), "%s", __FUNCTION__);
   TRACE_EVENT0("webrtc", "OnKeyFrameRequest");
 
   int idx = 0;
@@ -981,9 +781,6 @@ void ViEEncoder::OnReceivedIntraFrameRequest(uint32_t ssrc) {
 
     int64_t now = TickTime::MillisecondTimestamp();
     if (time_last_intra_request_ms_[ssrc] + kViEMinKeyRequestIntervalMs > now) {
-      WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceVideo,
-                   ViEId(engine_id_, channel_id_),
-                   "%s: Not encoding new intra due to timing", __FUNCTION__);
       return;
     }
     time_last_intra_request_ms_[ssrc] = now;
@@ -1045,11 +842,9 @@ void ViEEncoder::SetMinTransmitBitrate(int min_transmit_bitrate_kbps) {
 void ViEEncoder::OnNetworkChanged(const uint32_t bitrate_bps,
                                   const uint8_t fraction_lost,
                                   const uint32_t round_trip_time_ms) {
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
-               ViEId(engine_id_, channel_id_),
-               "%s(bitrate_bps: %u, fraction_lost: %u, rtt_ms: %u",
-               __FUNCTION__, bitrate_bps, fraction_lost, round_trip_time_ms);
-
+  LOG(LS_VERBOSE) << "OnNetworkChanged, bitrate" << bitrate_bps
+                  << " packet loss " << fraction_lost
+                  << " rtt " << round_trip_time_ms;
   vcm_.SetChannelParameters(bitrate_bps, fraction_lost, round_trip_time_ms);
   bool video_is_suspended = vcm_.VideoSuspended();
   int bitrate_kbps = bitrate_bps / 1000;
@@ -1109,10 +904,8 @@ void ViEEncoder::OnNetworkChanged(const uint32_t bitrate_bps,
   // Video suspend-state changed, inform codec observer.
   CriticalSectionScoped crit(callback_cs_.get());
   if (codec_observer_) {
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_),
-                 "%s: video_suspended_ changed to %i",
-                 __FUNCTION__, video_is_suspended);
+    LOG(LS_INFO) << "Video suspended " << video_is_suspended
+                 << " for channel " << channel_id_;
     codec_observer_->SuspendChange(channel_id_, video_is_suspended);
   }
 }
@@ -1123,26 +916,9 @@ PacedSender* ViEEncoder::GetPacedSender() {
 
 int32_t ViEEncoder::RegisterEffectFilter(ViEEffectFilter* effect_filter) {
   CriticalSectionScoped cs(callback_cs_.get());
-  if (effect_filter == NULL) {
-    if (effect_filter_ == NULL) {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(engine_id_, channel_id_), "%s: no effect filter added",
-                   __FUNCTION__);
-      return -1;
-    }
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_), "%s: deregister effect filter",
-                 __FUNCTION__);
-  } else {
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_), "%s: register effect",
-                 __FUNCTION__);
-    if (effect_filter_) {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(engine_id_, channel_id_),
-                   "%s: effect filter already added ", __FUNCTION__);
-      return -1;
-    }
+  if (effect_filter != NULL && effect_filter_ != NULL) {
+    LOG_F(LS_ERROR) << "Filter already set.";
+    return -1;
   }
   effect_filter_ = effect_filter;
   return 0;

@@ -17,8 +17,8 @@
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/utility/interface/process_thread.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/thread_annotations.h"
-#include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/video_engine/call_stats.h"
 #include "webrtc/video_engine/encoder_state_feedback.h"
 #include "webrtc/video_engine/vie_channel.h"
@@ -111,8 +111,8 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
     if (header.extension.hasAbsoluteSendTime) {
       // If we see AST in header, switch RBE strategy immediately.
       if (!using_absolute_send_time_) {
-        WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, ViEId(engine_id_),
-            "WrappingBitrateEstimator: Switching to absolute send time RBE.");
+        LOG(LS_INFO) <<
+            "WrappingBitrateEstimator: Switching to absolute send time RBE.";
         using_absolute_send_time_ = true;
         PickEstimator();
       }
@@ -122,9 +122,8 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
       if (using_absolute_send_time_) {
         ++packets_since_absolute_send_time_;
         if (packets_since_absolute_send_time_ >= kTimeOffsetSwitchThreshold) {
-          WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, ViEId(engine_id_),
-              "WrappingBitrateEstimator: Switching to transmission time offset "
-              "RBE.");
+          LOG(LS_INFO) << "WrappingBitrateEstimator: Switching to transmission "
+                       << "time offset RBE.";
           using_absolute_send_time_ = false;
           PickEstimator();
         }

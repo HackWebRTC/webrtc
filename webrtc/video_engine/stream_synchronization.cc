@@ -16,7 +16,7 @@
 
 #include <algorithm>
 
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 
 namespace webrtc {
 
@@ -96,18 +96,12 @@ bool StreamSynchronization::ComputeDelays(int relative_delay_ms,
   assert(total_audio_delay_target_ms && total_video_delay_target_ms);
 
   int current_video_delay_ms = *total_video_delay_target_ms;
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, video_channel_id_,
-               "Audio delay is: %d for voice channel: %d",
-               current_audio_delay_ms, audio_channel_id_);
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, video_channel_id_,
-               "Network delay diff is: %d for voice channel: %d",
-               channel_delay_->network_delay, audio_channel_id_);
+  LOG(LS_VERBOSE) << "Audio delay: " << current_audio_delay_ms
+                  << ", network delay diff: " << channel_delay_->network_delay
+                  << " current diff: " << relative_delay_ms
+                  << " for channel " << audio_channel_id_;
   // Calculate the difference between the lowest possible video delay and
   // the current audio delay.
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, video_channel_id_,
-               "Current diff is: %d for audio channel: %d",
-               relative_delay_ms, audio_channel_id_);
-
   int current_diff_ms = current_video_delay_ms - current_audio_delay_ms +
       relative_delay_ms;
 
@@ -198,11 +192,10 @@ bool StreamSynchronization::ComputeDelays(int relative_delay_ms,
   channel_delay_->last_video_delay_ms = new_video_delay_ms;
   channel_delay_->last_audio_delay_ms = new_audio_delay_ms;
 
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, video_channel_id_,
-      "Sync video delay %d ms for video channel and audio delay %d for audio "
-      "channel %d",
-      new_video_delay_ms, channel_delay_->extra_audio_delay_ms,
-      audio_channel_id_);
+  LOG(LS_VERBOSE) << "Sync video delay " << new_video_delay_ms
+                  << " and audio delay " << channel_delay_->extra_audio_delay_ms
+                  << " for video channel " << video_channel_id_
+                  << " for audio channel " << audio_channel_id_;
 
   // Return values.
   *total_video_delay_target_ms = new_video_delay_ms;

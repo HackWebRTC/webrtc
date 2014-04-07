@@ -14,8 +14,8 @@
 
 #include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
-#include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/video_engine/vie_defines.h"
 
 namespace webrtc {
@@ -29,9 +29,8 @@ ViEFrameProviderBase::ViEFrameProviderBase(int Id, int engine_id)
 
 ViEFrameProviderBase::~ViEFrameProviderBase() {
   if (frame_callbacks_.size() > 0) {
-    WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, id_),
-                 "FrameCallbacks still exist when Provider deleted %d",
-                 frame_callbacks_.size());
+    LOG_F(LS_WARNING) << "FrameCallbacks still exist when Provider deleted: "
+                      << frame_callbacks_.size();
   }
 
   for (FrameCallbacks::iterator it = frame_callbacks_.begin();
@@ -76,8 +75,7 @@ void ViEFrameProviderBase::DeliverFrame(
       static_cast<int>((TickTime::Now() - start_process_time).Milliseconds());
   if (process_time > 25) {
     // Warn if the delivery time is too long.
-    WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, id_),
-                 "%s Too long time: %ums", __FUNCTION__, process_time);
+    LOG(LS_WARNING) << "Too long time delivering frame " << process_time;
   }
 #endif
 }
@@ -131,16 +129,10 @@ int ViEFrameProviderBase::GetBestFormat(int* best_width,
 int ViEFrameProviderBase::RegisterFrameCallback(
     int observer_id, ViEFrameCallback* callback_object) {
   assert(callback_object);
-  WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, id_), "%s(0x%p)",
-               __FUNCTION__, callback_object);
   {
     CriticalSectionScoped cs(provider_cs_.get());
     if (std::find(frame_callbacks_.begin(), frame_callbacks_.end(),
                   callback_object) != frame_callbacks_.end()) {
-      // This object is already registered.
-      WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, id_),
-                   "%s 0x%p already registered", __FUNCTION__,
-                   callback_object);
       assert(false && "frameObserver already registered");
       return -1;
     }
@@ -157,21 +149,15 @@ int ViEFrameProviderBase::RegisterFrameCallback(
 int ViEFrameProviderBase::DeregisterFrameCallback(
     const ViEFrameCallback* callback_object) {
   assert(callback_object);
-  WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, id_), "%s(0x%p)",
-               __FUNCTION__, callback_object);
   CriticalSectionScoped cs(provider_cs_.get());
 
   FrameCallbacks::iterator it = std::find(frame_callbacks_.begin(),
                                           frame_callbacks_.end(),
                                           callback_object);
   if (it == frame_callbacks_.end()) {
-    WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, id_),
-                 "%s 0x%p not found", __FUNCTION__, callback_object);
     return -1;
   }
   frame_callbacks_.erase(it);
-  WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, id_),
-               "%s 0x%p deregistered", __FUNCTION__, callback_object);
 
   // Notify implementer of this class that the callback list have changed.
   FrameCallbackChanged();
@@ -181,8 +167,6 @@ int ViEFrameProviderBase::DeregisterFrameCallback(
 bool ViEFrameProviderBase::IsFrameCallbackRegistered(
     const ViEFrameCallback* callback_object) {
   assert(callback_object);
-  WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, id_),
-               "%s(0x%p)", __FUNCTION__, callback_object);
 
   CriticalSectionScoped cs(provider_cs_.get());
   return std::find(frame_callbacks_.begin(), frame_callbacks_.end(),
