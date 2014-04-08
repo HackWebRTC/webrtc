@@ -46,6 +46,8 @@ static const uint32_t kSendRtxSsrc = 0x424242;
 static const uint32_t kReceiverLocalSsrc = 0x123456;
 static const uint8_t kSendPayloadType = 125;
 static const uint8_t kSendRtxPayloadType = 126;
+static const int kRedPayloadType = 118;
+static const int kUlpfecPayloadType = 119;
 
 class CallTest : public ::testing::Test {
  public:
@@ -472,6 +474,109 @@ TEST_F(CallTest, ReceivesAndRetransmitsNack) {
   int rtp_history_ms = 1000;
   send_config_.rtp.nack.rtp_history_ms = rtp_history_ms;
   receive_config_.rtp.nack.rtp_history_ms = rtp_history_ms;
+
+  CreateStreams();
+  CreateFrameGenerator();
+  StartSending();
+
+  // Wait() waits for an event triggered when NACKs have been received, NACKed
+  // packets retransmitted and frames rendered again.
+  EXPECT_EQ(kEventSignaled, observer.Wait());
+
+  StopSending();
+
+  observer.StopSending();
+
+  DestroyStreams();
+}
+
+TEST_F(CallTest, CanReceiveFec) {
+  class FecRenderObserver : public test::RtpRtcpObserver, public VideoRenderer {
+   public:
+    FecRenderObserver()
+        : RtpRtcpObserver(kDefaultTimeoutMs),
+          state_(kFirstPacket),
+          protected_sequence_number_(0),
+          protected_frame_timestamp_(0) {}
+
+   private:
+    virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
+      RTPHeader header;
+      EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
+
+      EXPECT_EQ(kRedPayloadType, header.payloadType);
+      int encapsulated_payload_type =
+          static_cast<int>(packet[header.headerLength]);
+      if (encapsulated_payload_type != kSendPayloadType)
+        EXPECT_EQ(kUlpfecPayloadType, encapsulated_payload_type);
+
+      switch(state_) {
+        case kFirstPacket:
+          state_ = kDropEveryOtherPacketUntilFec;
+          break;
+        case kDropEveryOtherPacketUntilFec:
+          if (encapsulated_payload_type == kUlpfecPayloadType) {
+            state_ = kDropNextMediaPacket;
+            return SEND_PACKET;
+          }
+          if (header.sequenceNumber % 2 == 0)
+            return DROP_PACKET;
+          break;
+        case kDropNextMediaPacket:
+          if (encapsulated_payload_type == kSendPayloadType) {
+            protected_sequence_number_ = header.sequenceNumber;
+            protected_frame_timestamp_ = header.timestamp;
+            state_ = kProtectedPacketDropped;
+            return DROP_PACKET;
+          }
+          break;
+        case kProtectedPacketDropped:
+          EXPECT_NE(header.sequenceNumber, protected_sequence_number_)
+              << "Protected packet retransmitted. Should not happen with FEC.";
+          break;
+      }
+
+      return SEND_PACKET;
+    }
+
+    virtual void RenderFrame(const I420VideoFrame& video_frame,
+                             int time_to_render_ms) OVERRIDE {
+      CriticalSectionScoped crit_(lock_.get());
+      // Rendering frame with timestamp associated with dropped packet -> FEC
+      // protection worked.
+      if (state_ == kProtectedPacketDropped &&
+          video_frame.timestamp() == protected_frame_timestamp_) {
+        observation_complete_->Set();
+      }
+    }
+
+    enum {
+      kFirstPacket,
+      kDropEveryOtherPacketUntilFec,
+      kDropNextMediaPacket,
+      kProtectedPacketDropped,
+    } state_;
+
+    uint32_t protected_sequence_number_;
+    uint32_t protected_frame_timestamp_;
+  } observer;
+
+  CreateCalls(Call::Config(observer.SendTransport()),
+              Call::Config(observer.ReceiveTransport()));
+
+  observer.SetReceivers(receiver_call_->Receiver(), sender_call_->Receiver());
+
+  CreateTestConfigs();
+  // TODO(pbos): Run this test with combined NACK/FEC enabled as well.
+  // int rtp_history_ms = 1000;
+  // receive_config_.rtp.nack.rtp_history_ms = rtp_history_ms;
+  // send_config_.rtp.nack.rtp_history_ms = rtp_history_ms;
+  send_config_.rtp.fec.red_payload_type = kRedPayloadType;
+  send_config_.rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+
+  receive_config_.rtp.fec.red_payload_type = kRedPayloadType;
+  receive_config_.rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+  receive_config_.renderer = &observer;
 
   CreateStreams();
   CreateFrameGenerator();

@@ -17,6 +17,7 @@
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/video/receive_statistics_proxy.h"
 #include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/video_engine/include/vie_capture.h"
@@ -98,6 +99,31 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
   network_->RegisterSendTransport(channel_, transport_adapter_);
 
   codec_ = ViECodec::GetInterface(video_engine);
+
+  if (config_.rtp.fec.ulpfec_payload_type != -1) {
+    // ULPFEC without RED doesn't make sense.
+    assert(config_.rtp.fec.red_payload_type != -1);
+    VideoCodec codec;
+    memset(&codec, 0, sizeof(codec));
+    codec.codecType = kVideoCodecULPFEC;
+    strcpy(codec.plName, "ulpfec");
+    codec.plType = config_.rtp.fec.ulpfec_payload_type;
+    if (codec_->SetReceiveCodec(channel_, codec) != 0) {
+      LOG(LS_ERROR) << "Could not set ULPFEC codec. This shouldn't happen.";
+      abort();
+    }
+  }
+  if (config_.rtp.fec.red_payload_type != -1) {
+    VideoCodec codec;
+    memset(&codec, 0, sizeof(codec));
+    codec.codecType = kVideoCodecRED;
+    strcpy(codec.plName, "red");
+    codec.plType = config_.rtp.fec.red_payload_type;
+    if (codec_->SetReceiveCodec(channel_, codec) != 0) {
+      LOG(LS_ERROR) << "Could not set RED codec. This shouldn't happen.";
+      abort();
+    }
+  }
 
   assert(!config_.codecs.empty());
   for (size_t i = 0; i < config_.codecs.size(); ++i) {
