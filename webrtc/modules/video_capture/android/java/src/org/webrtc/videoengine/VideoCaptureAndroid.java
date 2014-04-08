@@ -37,16 +37,24 @@ import android.view.SurfaceHolder.Callback;
 public class VideoCaptureAndroid implements PreviewCallback, Callback {
   private final static String TAG = "WEBRTC-JC";
 
+  private static SurfaceHolder localPreview;
   private Camera camera;  // Only non-null while capturing.
   private final int id;
   private final Camera.CameraInfo info;
   private final long native_capturer;  // |VideoCaptureAndroid*| in C++.
-  private SurfaceHolder localPreview;
   private SurfaceTexture dummySurfaceTexture;
   // Arbitrary queue depth.  Higher number means more memory allocated & held,
   // lower number means more sensitivity to processing time in the client (and
   // potentially stalling the capturer if it runs out of buffers to write to).
   private final int numCaptureBuffers = 3;
+
+  // Requests future capturers to send their frames to |localPreview| directly.
+  public static void setLocalPreview(SurfaceHolder localPreview) {
+    // It is a gross hack that this is a class-static.  Doing it right would
+    // mean plumbing this through the C++ API and using it from
+    // webrtc/examples/android/media_demo's MediaEngine class.
+    VideoCaptureAndroid.localPreview = localPreview;
+  }
 
   public VideoCaptureAndroid(int id, long native_capturer) {
     this.id = id;
@@ -68,7 +76,6 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
     try {
       camera = Camera.open(id);
 
-      localPreview = ViERenderer.GetLocalRenderer();
       if (localPreview != null) {
         localPreview.addCallback(this);
         if (localPreview.getSurface() != null &&

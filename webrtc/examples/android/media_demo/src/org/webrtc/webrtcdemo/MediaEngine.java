@@ -11,6 +11,7 @@
 package org.webrtc.webrtcdemo;
 
 import org.webrtc.videoengine.ViERenderer;
+import org.webrtc.videoengine.VideoCaptureAndroid;
 
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
@@ -18,8 +19,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
+import android.hardware.Camera;
 import android.hardware.SensorManager;
 import android.os.Environment;
 import android.util.Log;
@@ -589,9 +590,9 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
     cameraInfo.dispose();
     check(vie.connectCaptureDevice(currentCameraHandle, videoChannel) == 0,
         "Failed to connect capture device");
-    // Camera and preview surface. Note, renderer must be created before
-    // calling StartCapture or |svLocal| won't be able to render.
-    svLocal = ViERenderer.CreateLocalRenderer(context);
+    // Camera and preview surface.
+    svLocal = new SurfaceView(context);
+    VideoCaptureAndroid.setLocalPreview(svLocal.getHolder());
     check(vie.startCapture(currentCameraHandle) == 0, "Failed StartCapture");
     compensateRotation();
   }
