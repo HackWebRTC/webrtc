@@ -34,7 +34,7 @@ VideoCaptureIos::VideoCaptureIos(const int32_t capture_id)
 }
 
 VideoCaptureIos::~VideoCaptureIos() {
-  if (capture_device_) {
+  if (is_capturing_) {
     [capture_device_ stopCapture];
   }
 }

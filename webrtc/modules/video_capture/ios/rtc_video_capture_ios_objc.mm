@@ -32,8 +32,8 @@ using namespace webrtc::videocapturemodule;
   AVCaptureSession* _captureSession;
   int _captureId;
   AVCaptureConnection* _connection;
-  BOOL _captureStarting;  // Guarded by _captureStartingCondition.
-  NSCondition* _captureStartingCondition;
+  BOOL _captureChanging;  // Guarded by _captureChangingCondition.
+  NSCondition* _captureChangingCondition;
 }
 
 @synthesize frameRotation = _framRotation;
@@ -43,18 +43,16 @@ using namespace webrtc::videocapturemodule;
     _owner = owner;
     _captureId = captureId;
     _captureSession = [[AVCaptureSession alloc] init];
-    _captureStarting = NO;
-    _captureStartingCondition = [[NSCondition alloc] init];
+    _captureChanging = NO;
+    _captureChangingCondition = [[NSCondition alloc] init];
 
-    if (!_captureSession || !_captureStartingCondition) {
+    if (!_captureSession || !_captureChangingCondition) {
       return nil;
     }
 
     // create and configure a new output (using callbacks)
     AVCaptureVideoDataOutput* captureOutput =
         [[AVCaptureVideoDataOutput alloc] init];
-    [captureOutput setSampleBufferDelegate:self
-        queue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)];
     NSString* key = (NSString*)kCVPixelBufferPixelFormatTypeKey;
 
     NSNumber* val = [NSNumber
@@ -90,6 +88,17 @@ using namespace webrtc::videocapturemodule;
   return self;
 }
 
+- (void)directOutputToSelf {
+  [[self currentOutput]
+      setSampleBufferDelegate:self
+                        queue:dispatch_get_global_queue(
+                                  DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)];
+}
+
+- (void)directOutputToNil {
+  [[self currentOutput] setSampleBufferDelegate:nil queue:NULL];
+}
+
 - (void)statusBarOrientationDidChange:(NSNotification*)notification {
   [self setRelativeVideoOrientation];
 }
@@ -99,6 +108,7 @@ using namespace webrtc::videocapturemodule;
 }
 
 - (BOOL)setCaptureDeviceByUniqueId:(NSString*)uniqueId {
+  [self waitForCaptureChangeToFinish];
   // check to see if the camera is already set
   if (_captureSession) {
     NSArray* currentInputs = [NSArray arrayWithArray:[_captureSession inputs]];
@@ -114,6 +124,7 @@ using namespace webrtc::videocapturemodule;
 }
 
 - (BOOL)startCaptureWithCapability:(const VideoCaptureCapability&)capability {
+  [self waitForCaptureChangeToFinish];
   if (!_captureSession) {
     return NO;
   }
@@ -148,18 +159,21 @@ using namespace webrtc::videocapturemodule;
 
   _capability = capability;
 
-  NSArray* currentOutputs = [_captureSession outputs];
-  if ([currentOutputs count] == 0) {
+  AVCaptureVideoDataOutput* currentOutput = [self currentOutput];
+  if (!currentOutput)
     return NO;
-  }
 
-  AVCaptureVideoDataOutput* currentOutput =
-      (AVCaptureVideoDataOutput*)[currentOutputs objectAtIndex:0];
+  [self directOutputToSelf];
 
+  _captureChanging = YES;
   dispatch_async(
       dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
       ^(void) { [self startCaptureInBackgroundWithOutput:currentOutput]; });
   return YES;
+}
+
+- (AVCaptureVideoDataOutput*)currentOutput {
+  return [[_captureSession outputs] firstObject];
 }
 
 - (void)startCaptureInBackgroundWithOutput:
@@ -195,11 +209,7 @@ using namespace webrtc::videocapturemodule;
   [_captureSession commitConfiguration];
 
   [_captureSession startRunning];
-
-  [_captureStartingCondition lock];
-  _captureStarting = NO;
-  [_captureStartingCondition signal];
-  [_captureStartingCondition unlock];
+  [self signalCaptureChangeEnd];
 }
 
 - (void)setRelativeVideoOrientation {
@@ -235,17 +245,26 @@ using namespace webrtc::videocapturemodule;
 }
 
 - (BOOL)stopCapture {
-  [self waitForCaptureStartToFinish];
+  [self waitForCaptureChangeToFinish];
+  [self directOutputToNil];
+
   if (!_captureSession) {
     return NO;
   }
 
-  [_captureSession stopRunning];
-
+  _captureChanging = YES;
+  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
+                 ^(void) { [self stopCaptureInBackground]; });
   return YES;
 }
 
+- (void)stopCaptureInBackground {
+  [_captureSession stopRunning];
+  [self signalCaptureChangeEnd];
+}
+
 - (BOOL)changeCaptureInputByUniqueId:(NSString*)uniqueId {
+  [self waitForCaptureChangeToFinish];
   NSArray* currentInputs = [_captureSession inputs];
   // remove current input
   if ([currentInputs count] > 0) {
@@ -341,11 +360,18 @@ using namespace webrtc::videocapturemodule;
   CVPixelBufferUnlockBaseAddress(videoFrame, kFlags);
 }
 
-- (void)waitForCaptureStartToFinish {
-  [_captureStartingCondition lock];
-  while (_captureStarting) {
-    [_captureStartingCondition wait];
+- (void)signalCaptureChangeEnd {
+  [_captureChangingCondition lock];
+  _captureChanging = NO;
+  [_captureChangingCondition signal];
+  [_captureChangingCondition unlock];
+}
+
+- (void)waitForCaptureChangeToFinish {
+  [_captureChangingCondition lock];
+  while (_captureChanging) {
+    [_captureChangingCondition wait];
   }
-  [_captureStartingCondition unlock];
+  [_captureChangingCondition unlock];
 }
 @end
