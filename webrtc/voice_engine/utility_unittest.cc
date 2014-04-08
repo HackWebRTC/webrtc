@@ -25,9 +25,9 @@ enum FunctionToTest {
   TestDownConvertToCodecFormat
 };
 
-class OutputMixerTest : public ::testing::Test {
+class UtilityTest : public ::testing::Test {
  protected:
-  OutputMixerTest() {
+  UtilityTest() {
     src_frame_.sample_rate_hz_ = 16000;
     src_frame_.samples_per_channel_ = src_frame_.sample_rate_hz_ / 100;
     src_frame_.num_channels_ = 1;
@@ -126,7 +126,7 @@ void VerifyFramesAreEqual(const AudioFrame& ref_frame,
   }
 }
 
-void OutputMixerTest::RunResampleTest(int src_channels,
+void UtilityTest::RunResampleTest(int src_channels,
                                       int src_sample_rate_hz,
                                       int dst_channels,
                                       int dst_sample_rate_hz,
@@ -190,7 +190,7 @@ void OutputMixerTest::RunResampleTest(int src_channels,
   }
 }
 
-TEST_F(OutputMixerTest, RemixAndResampleCopyFrameSucceeds) {
+TEST_F(UtilityTest, RemixAndResampleCopyFrameSucceeds) {
   // Stereo -> stereo.
   SetStereoFrame(&src_frame_, 10, 10);
   SetStereoFrame(&dst_frame_, 0, 0);
@@ -204,7 +204,7 @@ TEST_F(OutputMixerTest, RemixAndResampleCopyFrameSucceeds) {
   VerifyFramesAreEqual(src_frame_, dst_frame_);
 }
 
-TEST_F(OutputMixerTest, RemixAndResampleMixingOnlySucceeds) {
+TEST_F(UtilityTest, RemixAndResampleMixingOnlySucceeds) {
   // Stereo -> mono.
   SetStereoFrame(&dst_frame_, 0, 0);
   SetMonoFrame(&src_frame_, 10);
@@ -220,7 +220,7 @@ TEST_F(OutputMixerTest, RemixAndResampleMixingOnlySucceeds) {
   VerifyFramesAreEqual(golden_frame_, dst_frame_);
 }
 
-TEST_F(OutputMixerTest, RemixAndResampleSucceeds) {
+TEST_F(UtilityTest, RemixAndResampleSucceeds) {
   const int kSampleRates[] = {8000, 16000, 32000, 44100, 48000, 96000};
   const int kSampleRatesSize = sizeof(kSampleRates) / sizeof(*kSampleRates);
   const int kChannels[] = {1, 2};
@@ -238,7 +238,7 @@ TEST_F(OutputMixerTest, RemixAndResampleSucceeds) {
   }
 }
 
-TEST_F(OutputMixerTest, ConvertToCodecFormatSucceeds) {
+TEST_F(UtilityTest, ConvertToCodecFormatSucceeds) {
   const int kSampleRates[] = {8000, 16000, 32000, 44100, 48000, 96000};
   const int kSampleRatesSize = sizeof(kSampleRates) / sizeof(*kSampleRates);
   const int kChannels[] = {1, 2};

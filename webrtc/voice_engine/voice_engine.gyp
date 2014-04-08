@@ -124,8 +124,8 @@
           ],
           'sources': [
             'channel_unittest.cc',
-            'output_mixer_unittest.cc',
             'transmit_mixer_unittest.cc',
+            'utility_unittest.cc',
             'voe_audio_processing_unittest.cc',
             'voe_base_unittest.cc',
             'voe_codec_unittest.cc',
