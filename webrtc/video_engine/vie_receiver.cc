@@ -35,13 +35,13 @@ ViEReceiver::ViEReceiver(const int32_t channel_id,
       channel_id_(channel_id),
       rtp_header_parser_(RtpHeaderParser::Create()),
       rtp_payload_registry_(new RTPPayloadRegistry(
-          channel_id, RTPPayloadStrategy::CreateStrategy(false))),
+          RTPPayloadStrategy::CreateStrategy(false))),
       rtp_receiver_(RtpReceiver::CreateVideoReceiver(
           channel_id, Clock::GetRealTimeClock(), this, rtp_feedback,
           rtp_payload_registry_.get())),
       rtp_receive_statistics_(ReceiveStatistics::Create(
           Clock::GetRealTimeClock())),
-      fec_receiver_(FecReceiver::Create(channel_id, this)),
+      fec_receiver_(FecReceiver::Create(this)),
       rtp_rtcp_(NULL),
       vcm_(module_vcm),
       remote_bitrate_estimator_(remote_bitrate_estimator),

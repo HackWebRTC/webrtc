@@ -157,7 +157,7 @@ int MTRxTxTest(CmdArgs& args)
     configuration.outgoing_transport = outgoingTransport;
     RtpRtcp* rtp = RtpRtcp::CreateRtpRtcp(configuration);
     scoped_ptr<RTPPayloadRegistry> registry(new RTPPayloadRegistry(
-        -1, RTPPayloadStrategy::CreateStrategy(false)));
+        RTPPayloadStrategy::CreateStrategy(false)));
     scoped_ptr<RtpReceiver> rtp_receiver(
         RtpReceiver::CreateVideoReceiver(-1, Clock::GetRealTimeClock(),
                                          &dataCallback, NULL, registry.get()));

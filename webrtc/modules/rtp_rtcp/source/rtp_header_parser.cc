@@ -13,7 +13,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
-#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 
@@ -60,8 +59,6 @@ bool RtpHeaderParserImpl::Parse(const uint8_t* packet, int length,
 
   const bool valid_rtpheader = rtp_parser.Parse(*header, &map);
   if (!valid_rtpheader) {
-    WEBRTC_TRACE(kTraceDebug, kTraceRtpRtcp, -1,
-                 "IncomingPacket invalid RTP header");
     return false;
   }
   return true;

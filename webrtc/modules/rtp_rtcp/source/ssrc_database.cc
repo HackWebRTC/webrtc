@@ -14,7 +14,6 @@
 #include <stdlib.h>
 
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/trace.h"
 
 #ifdef _WIN32
     #include <windows.h>
@@ -185,8 +184,6 @@ SSRCDatabase::SSRCDatabase()
     _ssrcVector = new uint32_t[10];
 #endif
     _critSect = CriticalSectionWrapper::CreateCriticalSection();
-
-    WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, -1, "%s created", __FUNCTION__);
 }
 
 SSRCDatabase::~SSRCDatabase()
@@ -197,8 +194,6 @@ SSRCDatabase::~SSRCDatabase()
     _ssrcMap.clear();
 #endif
     delete _critSect;
-
-    WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, -1, "%s deleted", __FUNCTION__);
 }
 
 uint32_t SSRCDatabase::GenerateRandom()

@@ -39,8 +39,8 @@ class MockRtpData : public RtpData {
 class ReceiverFecTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
-    fec_ = new ForwardErrorCorrection(0);
-    receiver_fec_ = FecReceiver::Create(0, &rtp_data_callback_);
+    fec_ = new ForwardErrorCorrection();
+    receiver_fec_ = FecReceiver::Create(&rtp_data_callback_);
     generator_ = new FrameGenerator();
   }
 

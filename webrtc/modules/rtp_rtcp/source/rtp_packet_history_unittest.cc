@@ -103,19 +103,6 @@ TEST_F(RtpPacketHistoryTest, PutRtpPacket_TooLargePacketLength) {
                                     kAllowRetransmission));
 }
 
-TEST_F(RtpPacketHistoryTest, GetRtpPacket_TooSmallBuffer) {
-  hist_->SetStorePacketsStatus(true, 10);
-  uint16_t len = 0;
-  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
-  CreateRtpPacket(kSeqNum, kSsrc, kPayload, kTimestamp, packet_, &len);
-  EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, kMaxPacketLength,
-                                   capture_time_ms, kAllowRetransmission));
-  uint16_t len_out = len - 1;
-  int64_t time;
-  EXPECT_FALSE(hist_->GetPacketAndSetSendTime(kSeqNum, 0, false, packet_,
-                                              &len_out, &time));
-}
-
 TEST_F(RtpPacketHistoryTest, GetRtpPacket_NotStored) {
   hist_->SetStorePacketsStatus(true, 10);
   uint16_t len = kMaxPacketLength;
@@ -161,8 +148,8 @@ TEST_F(RtpPacketHistoryTest, ReplaceRtpHeader) {
   uint16_t len = 0;
   int64_t capture_time_ms = 1;
   CreateRtpPacket(kSeqNum, kSsrc, kPayload, kTimestamp, packet_, &len);
+
   // Replace should fail, packet is not stored.
-  EXPECT_EQ(-1, hist_->ReplaceRTPHeader(packet_, kSeqNum, len));
   EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, kMaxPacketLength,
                                    capture_time_ms, kAllowRetransmission));
 
@@ -180,10 +167,6 @@ TEST_F(RtpPacketHistoryTest, ReplaceRtpHeader) {
   for (int i = 0; i < len; i++)  {
     EXPECT_EQ(packet_[i], packet_out_[i]);
   }
-
-  // Replace should fail, too large length.
-  EXPECT_EQ(-1, hist_->ReplaceRTPHeader(packet_, kSeqNum,
-      kMaxPacketLength + 1));
 
   // Replace should fail, packet is not stored.
   len = 0;
@@ -236,10 +219,10 @@ TEST_F(RtpPacketHistoryTest, MinResendTime) {
                                    capture_time_ms, kAllowRetransmission));
 
   int64_t time;
+  len = kMaxPacketLength;
   EXPECT_TRUE(hist_->GetPacketAndSetSendTime(kSeqNum, 100, false, packet_, &len,
                                              &time));
   fake_clock_.AdvanceTimeMilliseconds(100);
-
   // Time has elapsed.
   len = kMaxPacketLength;
   EXPECT_TRUE(hist_->GetPacketAndSetSendTime(kSeqNum, 100, false, packet_, &len,

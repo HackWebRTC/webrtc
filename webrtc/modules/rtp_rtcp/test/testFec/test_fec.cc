@@ -105,9 +105,7 @@ TEST(FecTest, FecTest) {
   ASSERT_EQ(12, kMaxMediaPackets[1]) << "Max media packets for bursty mode not "
                                      << "equal to 12.";
 
-  uint32_t id = 0;
-  ForwardErrorCorrection fec(id);
-
+  ForwardErrorCorrection fec;
   ForwardErrorCorrection::PacketList mediaPacketList;
   ForwardErrorCorrection::PacketList fecPacketList;
   ForwardErrorCorrection::ReceivedPacketList toDecodeList;

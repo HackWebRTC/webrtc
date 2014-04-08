@@ -11,7 +11,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 
 namespace webrtc {
 namespace rtcp {
@@ -233,8 +233,7 @@ void SenderReport::Create(uint8_t* packet,
                           uint16_t* len,
                           uint16_t max_len) const {
   if (*len + Length() > max_len) {
-    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
-                 "Max packet size reached, skipped SR.");
+    LOG(LS_WARNING) << "Max packet size reached.";
     return;
   }
   CreateSenderReport(sr_, packet, len);
@@ -244,8 +243,7 @@ void SenderReport::Create(uint8_t* packet,
 void SenderReport::WithReportBlock(ReportBlock* block) {
   assert(block);
   if (report_blocks_.size() >= kMaxNumberOfReportBlocks) {
-    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
-                 "Max report block size reached.");
+    LOG(LS_WARNING) << "Max report blocks reached.";
     return;
   }
   report_blocks_.push_back(block);
@@ -256,8 +254,7 @@ void ReceiverReport::Create(uint8_t* packet,
                             uint16_t* len,
                             uint16_t max_len) const {
   if (*len + Length() > max_len) {
-    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
-                 "Max packet size reached, skipped RR.");
+    LOG(LS_WARNING) << "Max packet size reached.";
     return;
   }
   CreateReceiverReport(rr_, packet, len);
@@ -267,8 +264,7 @@ void ReceiverReport::Create(uint8_t* packet,
 void ReceiverReport::WithReportBlock(ReportBlock* block) {
   assert(block);
   if (report_blocks_.size() >= kMaxNumberOfReportBlocks) {
-    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
-                 "Max report block size reached.");
+    LOG(LS_WARNING) << "Max report blocks reached.";
     return;
   }
   report_blocks_.push_back(block);
@@ -277,8 +273,7 @@ void ReceiverReport::WithReportBlock(ReportBlock* block) {
 
 void Bye::Create(uint8_t* packet, uint16_t* len, uint16_t max_len) const {
   if (*len + Length() > max_len) {
-    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
-                 "Max packet size reached, skipped BYE.");
+    LOG(LS_WARNING) << "Max packet size reached.";
     return;
   }
   CreateBye(bye_, csrcs_, packet, len);
@@ -286,8 +281,7 @@ void Bye::Create(uint8_t* packet, uint16_t* len, uint16_t max_len) const {
 
 void Bye::WithCsrc(uint32_t csrc) {
   if (csrcs_.size() >= kMaxNumberOfCsrcs) {
-    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
-                 "Max CSRC size reached.");
+    LOG(LS_WARNING) << "Max CSRC size reached.";
     return;
   }
   csrcs_.push_back(csrc);
@@ -295,8 +289,7 @@ void Bye::WithCsrc(uint32_t csrc) {
 
 void Fir::Create(uint8_t* packet, uint16_t* len, uint16_t max_len) const {
   if (*len + Length() > max_len) {
-    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
-                 "Max packet size reached, skipped FIR.");
+    LOG(LS_WARNING) << "Max packet size reached.";
     return;
   }
   CreateFirRequest(fir_, fir_item_, packet, len);

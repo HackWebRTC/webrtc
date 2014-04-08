@@ -20,7 +20,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_vp8.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc {
@@ -31,11 +31,9 @@ struct RtpPacket {
   ForwardErrorCorrection::Packet* pkt;
 };
 
-RTPSenderVideo::RTPSenderVideo(const int32_t id,
-                               Clock* clock,
+RTPSenderVideo::RTPSenderVideo(Clock* clock,
                                RTPSenderInterface* rtpSender)
-    : _id(id),
-      _rtpSender(*rtpSender),
+    : _rtpSender(*rtpSender),
       _sendVideoCritsect(CriticalSectionWrapper::CreateCriticalSection()),
       _videoType(kRtpVideoGeneric),
       _videoCodecInformation(NULL),
@@ -43,7 +41,7 @@ RTPSenderVideo::RTPSenderVideo(const int32_t id,
       _retransmissionSettings(kRetransmitBaseLayer),
 
       // Generic FEC
-      _fec(id),
+      _fec(),
       _fecEnabled(false),
       _payloadTypeRED(-1),
       _payloadTypeFEC(-1),
@@ -329,8 +327,6 @@ RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
     {
         return retVal;
     }
-    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, _id, "%s(timestamp:%u)",
-                 __FUNCTION__, captureTimeStamp);
     return 0;
 }
 
@@ -476,9 +472,9 @@ RTPSenderVideo::SendVP8(const FrameType frameType,
                                   rtpHeaderLength, captureTimeStamp,
                                   capture_time_ms, storage, protect))
         {
-          WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
-                       "RTPSenderVideo::SendVP8 failed to send packet number"
-                       " %d", _rtpSender.SequenceNumber());
+          LOG(LS_WARNING)
+              << "RTPSenderVideo::SendVP8 failed to send packet number "
+              << _rtpSender.SequenceNumber();
         }
     }
     TRACE_EVENT_ASYNC_END1("webrtc", "Video", capture_time_ms,

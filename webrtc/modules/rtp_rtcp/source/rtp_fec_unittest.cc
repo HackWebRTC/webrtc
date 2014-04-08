@@ -41,7 +41,7 @@ template <typename T> void ClearList(std::list<T*>* my_list) {
 class RtpFecTest : public ::testing::Test {
  protected:
   RtpFecTest()
-      : fec_(new ForwardErrorCorrection(0)), ssrc_(rand()), fec_seq_num_(0) {}
+      : fec_(new ForwardErrorCorrection()), ssrc_(rand()), fec_seq_num_(0) {}
 
   ForwardErrorCorrection* fec_;
   int ssrc_;
@@ -85,43 +85,6 @@ class RtpFecTest : public ::testing::Test {
   // Delete the media and FEC packets.
   void TearDown();
 };
-
-// TODO(marpan): Consider adding table for input/output to simplify tests.
-
-TEST_F(RtpFecTest, HandleIncorrectInputs) {
-  int kNumImportantPackets = 0;
-  bool kUseUnequalProtection = false;
-  uint8_t kProtectionFactor = 60;
-
-  // Media packet list is empty.
-  EXPECT_EQ(-1, fec_->GenerateFEC(media_packet_list_, kProtectionFactor,
-                                  kNumImportantPackets, kUseUnequalProtection,
-                                  webrtc::kFecMaskBursty, &fec_packet_list_));
-
-  int num_media_packets = 10;
-  ConstructMediaPackets(num_media_packets);
-
-  kNumImportantPackets = -1;
-  // Number of important packets below 0.
-  EXPECT_EQ(-1, fec_->GenerateFEC(media_packet_list_, kProtectionFactor,
-                                  kNumImportantPackets, kUseUnequalProtection,
-                                  webrtc::kFecMaskBursty, &fec_packet_list_));
-
-  kNumImportantPackets = 12;
-  // Number of important packets greater than number of media packets.
-  EXPECT_EQ(-1, fec_->GenerateFEC(media_packet_list_, kProtectionFactor,
-                                  kNumImportantPackets, kUseUnequalProtection,
-                                  webrtc::kFecMaskBursty, &fec_packet_list_));
-
-  num_media_packets = kMaxNumberMediaPackets + 1;
-  ConstructMediaPackets(num_media_packets);
-
-  kNumImportantPackets = 0;
-  // Number of media packet is above maximum allowed (kMaxNumberMediaPackets).
-  EXPECT_EQ(-1, fec_->GenerateFEC(media_packet_list_, kProtectionFactor,
-                                  kNumImportantPackets, kUseUnequalProtection,
-                                  webrtc::kFecMaskBursty, &fec_packet_list_));
-}
 
 TEST_F(RtpFecTest, FecRecoveryNoLoss) {
   const int kNumImportantPackets = 0;

@@ -54,8 +54,7 @@ class RTPPayloadStrategy {
 class RTPPayloadRegistry {
  public:
   // The registry takes ownership of the strategy.
-  RTPPayloadRegistry(const int32_t id,
-                     RTPPayloadStrategy* rtp_payload_strategy);
+  RTPPayloadRegistry(RTPPayloadStrategy* rtp_payload_strategy);
   ~RTPPayloadRegistry();
 
   int32_t RegisterReceivePayload(
@@ -153,7 +152,6 @@ class RTPPayloadRegistry {
 
   scoped_ptr<CriticalSectionWrapper> crit_sect_;
   ModuleRTPUtility::PayloadTypeMap payload_type_map_;
-  int32_t id_;
   scoped_ptr<RTPPayloadStrategy> rtp_payload_strategy_;
   int8_t  red_payload_type_;
   int8_t ulpfec_payload_type_;

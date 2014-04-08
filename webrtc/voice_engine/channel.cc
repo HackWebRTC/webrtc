@@ -837,8 +837,7 @@ Channel::Channel(int32_t channelId,
     _channelId(channelId),
     rtp_header_parser_(RtpHeaderParser::Create()),
     rtp_payload_registry_(
-        new RTPPayloadRegistry(channelId,
-                               RTPPayloadStrategy::CreateStrategy(true))),
+        new RTPPayloadRegistry(RTPPayloadStrategy::CreateStrategy(true))),
     rtp_receive_statistics_(ReceiveStatistics::Create(
         Clock::GetRealTimeClock())),
     rtp_receiver_(RtpReceiver::CreateAudioReceiver(

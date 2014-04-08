@@ -164,7 +164,7 @@ class RtxLoopBackTransport : public webrtc::Transport {
 class RtpRtcpRtxNackTest : public ::testing::Test {
  protected:
   RtpRtcpRtxNackTest()
-      : rtp_payload_registry_(0, RTPPayloadStrategy::CreateStrategy(false)),
+      : rtp_payload_registry_(RTPPayloadStrategy::CreateStrategy(false)),
         rtp_rtcp_module_(NULL),
         transport_(kTestSsrc + 1),
         receiver_(),

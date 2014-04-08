@@ -76,7 +76,7 @@ TEST(ParseVP8Test, BasicHeader) {
   payload[0] = 0x14;  // Binary 0001 0100; S = 1, PartID = 4.
   payload[1] = 0x01;  // P frame.
 
-  RTPPayloadParser rtpPayloadParser(kRtpVideoVp8, payload, 4, 0);
+  RTPPayloadParser rtpPayloadParser(kRtpVideoVp8, payload, 4);
 
   RTPPayload parsedPacket;
   ASSERT_TRUE(rtpPayloadParser.Parse(parsedPacket));
@@ -97,7 +97,7 @@ TEST(ParseVP8Test, PictureID) {
   payload[1] = 0x80;
   payload[2] = 17;
 
-  RTPPayloadParser rtpPayloadParser(kRtpVideoVp8, payload, 10, 0);
+  RTPPayloadParser rtpPayloadParser(kRtpVideoVp8, payload, 10);
 
   RTPPayload parsedPacket;
   ASSERT_TRUE(rtpPayloadParser.Parse(parsedPacket));
@@ -117,7 +117,7 @@ TEST(ParseVP8Test, PictureID) {
   // Re-use payload, but change to long PictureID.
   payload[2] = 0x80 | 17;
   payload[3] = 17;
-  RTPPayloadParser rtpPayloadParser2(kRtpVideoVp8, payload, 10, 0);
+  RTPPayloadParser rtpPayloadParser2(kRtpVideoVp8, payload, 10);
 
   ASSERT_TRUE(rtpPayloadParser2.Parse(parsedPacket));
 
@@ -136,7 +136,7 @@ TEST(ParseVP8Test, Tl0PicIdx) {
   payload[1] = 0x40;
   payload[2] = 17;
 
-  RTPPayloadParser rtpPayloadParser(kRtpVideoVp8, payload, 13, 0);
+  RTPPayloadParser rtpPayloadParser(kRtpVideoVp8, payload, 13);
 
   RTPPayload parsedPacket;
   ASSERT_TRUE(rtpPayloadParser.Parse(parsedPacket));
@@ -159,7 +159,7 @@ TEST(ParseVP8Test, TIDAndLayerSync) {
   payload[1] = 0x20;
   payload[2] = 0x80;  // TID(2) + LayerSync(false)
 
-  RTPPayloadParser rtpPayloadParser(kRtpVideoVp8, payload, 10, 0);
+  RTPPayloadParser rtpPayloadParser(kRtpVideoVp8, payload, 10);
 
   RTPPayload parsedPacket;
   ASSERT_TRUE(rtpPayloadParser.Parse(parsedPacket));
@@ -183,7 +183,7 @@ TEST(ParseVP8Test, KeyIdx) {
   payload[1] = 0x10;  // K = 1.
   payload[2] = 0x11;  // KEYIDX = 17 decimal.
 
-  RTPPayloadParser rtpPayloadParser(kRtpVideoVp8, payload, 10, 0);
+  RTPPayloadParser rtpPayloadParser(kRtpVideoVp8, payload, 10);
 
   RTPPayload parsedPacket;
   ASSERT_TRUE(rtpPayloadParser.Parse(parsedPacket));
@@ -209,7 +209,7 @@ TEST(ParseVP8Test, MultipleExtensions) {
   payload[4] = 42;           // Tl0PicIdx.
   payload[5] = 0x40 | 0x20 | 0x11;  // TID(1) + LayerSync(true) + KEYIDX(17).
 
-  RTPPayloadParser rtpPayloadParser(kRtpVideoVp8, payload, 10, 0);
+  RTPPayloadParser rtpPayloadParser(kRtpVideoVp8, payload, 10);
 
   RTPPayload parsedPacket;
   ASSERT_TRUE(rtpPayloadParser.Parse(parsedPacket));
@@ -236,7 +236,7 @@ TEST(ParseVP8Test, TooShortHeader) {
   payload[2] = 0x80 | 17;  // ... but only 2 bytes PictureID is provided.
   payload[3] = 17;  // PictureID, low 8 bits.
 
-  RTPPayloadParser rtpPayloadParser(kRtpVideoVp8, payload, 4, 0);
+  RTPPayloadParser rtpPayloadParser(kRtpVideoVp8, payload, 4);
 
   RTPPayload parsedPacket;
   EXPECT_FALSE(rtpPayloadParser.Parse(parsedPacket));
@@ -258,7 +258,7 @@ TEST(ParseVP8Test, TestWithPacketizer) {
   ASSERT_EQ(0, packetizer.NextPacket(packet, &send_bytes, &last));
   ASSERT_TRUE(last);
 
-  RTPPayloadParser rtpPayloadParser(kRtpVideoVp8, packet, send_bytes, 0);
+  RTPPayloadParser rtpPayloadParser(kRtpVideoVp8, packet, send_bytes);
 
   RTPPayload parsedPacket;
   ASSERT_TRUE(rtpPayloadParser.Parse(parsedPacket));

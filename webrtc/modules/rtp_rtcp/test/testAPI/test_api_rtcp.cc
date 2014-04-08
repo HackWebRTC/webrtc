@@ -116,9 +116,9 @@ class RtpRtcpRtcpTest : public ::testing::Test {
     configuration.intra_frame_callback = myRTCPFeedback1;
 
     rtp_payload_registry1_.reset(new RTPPayloadRegistry(
-            test_id, RTPPayloadStrategy::CreateStrategy(true)));
+            RTPPayloadStrategy::CreateStrategy(true)));
     rtp_payload_registry2_.reset(new RTPPayloadRegistry(
-            test_id, RTPPayloadStrategy::CreateStrategy(true)));
+            RTPPayloadStrategy::CreateStrategy(true)));
 
     module1 = RtpRtcp::CreateRtpRtcp(configuration);
 
@@ -280,7 +280,6 @@ TEST_F(RtpRtcpRtcpTest, RTCP) {
   reportBlock.lastSR = 6;
 
   // Set report blocks.
-  EXPECT_EQ(-1, module1->AddRTCPReportBlock(test_CSRC[0], NULL));
   EXPECT_EQ(0, module1->AddRTCPReportBlock(test_CSRC[0], &reportBlock));
 
   reportBlock.lastSR= 7;
@@ -319,7 +318,6 @@ TEST_F(RtpRtcpRtcpTest, RTCP) {
 
   // get all report blocks
   std::vector<RTCPReportBlock> report_blocks;
-  EXPECT_EQ(-1, module1->RemoteRTCPStat(NULL));
   EXPECT_EQ(0, module1->RemoteRTCPStat(&report_blocks));
   ASSERT_EQ(1u, report_blocks.size());
   const RTCPReportBlock& reportBlockReceived = report_blocks[0];

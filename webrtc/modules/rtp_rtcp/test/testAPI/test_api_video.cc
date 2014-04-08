@@ -28,7 +28,7 @@ class RtpRtcpVideoTest : public ::testing::Test {
  protected:
   RtpRtcpVideoTest()
       : test_id_(123),
-        rtp_payload_registry_(0, RTPPayloadStrategy::CreateStrategy(false)),
+        rtp_payload_registry_(RTPPayloadStrategy::CreateStrategy(false)),
         test_ssrc_(3456),
         test_timestamp_(4567),
         test_sequence_number_(2345),

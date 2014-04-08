@@ -122,9 +122,9 @@ class RtpRtcpAudioTest : public ::testing::Test {
     receive_statistics2_.reset(ReceiveStatistics::Create(&fake_clock));
 
     rtp_payload_registry1_.reset(new RTPPayloadRegistry(
-        test_id, RTPPayloadStrategy::CreateStrategy(true)));
+        RTPPayloadStrategy::CreateStrategy(true)));
     rtp_payload_registry2_.reset(new RTPPayloadRegistry(
-        test_id, RTPPayloadStrategy::CreateStrategy(true)));
+        RTPPayloadStrategy::CreateStrategy(true)));
 
     RtpRtcp::Configuration configuration;
     configuration.id = test_id;

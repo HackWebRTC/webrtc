@@ -15,7 +15,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_audio.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_video.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc {
@@ -105,9 +105,8 @@ RTPSender::RTPSender(const int32_t id,
     audio_ = new RTPSenderAudio(id, clock_, this);
     audio_->RegisterAudioCallback(audio_feedback);
   } else {
-    video_ = new RTPSenderVideo(id, clock_, this);
+    video_ = new RTPSenderVideo(clock_, this);
   }
-  WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, id, "%s created", __FUNCTION__);
 }
 
 RTPSender::~RTPSender() {
@@ -126,8 +125,6 @@ RTPSender::~RTPSender() {
   }
   delete audio_;
   delete video_;
-
-  WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, id_, "%s deleted", __FUNCTION__);
 }
 
 void RTPSender::SetTargetSendBitrate(const uint32_t bits) {
@@ -290,16 +287,12 @@ int32_t RTPSender::SetMaxPayloadLength(
     const uint16_t packet_over_head) {
   // Sanity check.
   if (max_payload_length < 100 || max_payload_length > IP_PACKET_SIZE) {
-    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, id_, "%s invalid argument",
-                 __FUNCTION__);
+    LOG(LS_ERROR) << "Invalid max payload length: " << max_payload_length;
     return -1;
   }
   CriticalSectionScoped cs(send_critsect_);
   max_payload_length_ = max_payload_length;
   packet_over_head_ = packet_over_head;
-
-  WEBRTC_TRACE(kTraceInfo, kTraceRtpRtcp, id_, "SetMaxPayloadLength to %d.",
-               max_payload_length);
   return 0;
 }
 
@@ -350,8 +343,7 @@ int32_t RTPSender::CheckPayloadType(const int8_t payload_type,
   CriticalSectionScoped cs(send_critsect_);
 
   if (payload_type < 0) {
-    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, id_, "\tinvalid payload_type (%d)",
-                 payload_type);
+    LOG(LS_ERROR) << "Invalid payload_type " << payload_type;
     return -1;
   }
   if (audio_configured_) {
@@ -373,8 +365,7 @@ int32_t RTPSender::CheckPayloadType(const int8_t payload_type,
   std::map<int8_t, ModuleRTPUtility::Payload *>::iterator it =
       payload_type_map_.find(payload_type);
   if (it == payload_type_map_.end()) {
-    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, id_,
-                 "\tpayloadType:%d not registered", payload_type);
+    LOG(LS_WARNING) << "Payload type " << payload_type << " not registered.";
     return -1;
   }
   payload_type_ = payload_type;
@@ -403,9 +394,7 @@ int32_t RTPSender::SendOutgoingData(
   }
   RtpVideoCodecTypes video_type = kRtpVideoGeneric;
   if (CheckPayloadType(payload_type, &video_type) != 0) {
-    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, id_,
-                 "%s invalid argument failed to find payload_type:%d",
-                 __FUNCTION__, payload_type);
+    LOG(LS_ERROR) << "Don't send data with unknown payload type.";
     return -1;
   }
 
@@ -616,8 +605,6 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
     RTPHeader header;
     if (!rtp_parser.Parse(header)) {
       assert(false);
-      WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, id_,
-                   "Failed to parse RTP header of packet to be retransmitted.");
       return -1;
     }
     if (!paced_sender_->SendPacket(PacedSender::kHighPriority,
@@ -644,10 +631,9 @@ bool RTPSender::SendPacketToNetwork(const uint8_t *packet, uint32_t size) {
   }
   TRACE_EVENT_INSTANT2("webrtc_rtp", "RTPSender::SendPacketToNetwork",
                        "size", size, "sent", bytes_sent);
-  // TODO(pwesin): Add a separate bitrate for sent bitrate after pacer.
+  // TODO(pwestin): Add a separate bitrate for sent bitrate after pacer.
   if (bytes_sent <= 0) {
-    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, id_,
-                 "Transport failed to send packet");
+    LOG(LS_WARNING) << "Transport failed to send packet";
     return false;
   }
   return true;
@@ -676,11 +662,8 @@ void RTPSender::OnReceivedNACK(
 
   // Enough bandwidth to send NACK?
   if (!ProcessNACKBitRate(now)) {
-    WEBRTC_TRACE(kTraceStream,
-                 kTraceRtpRtcp,
-                 id_,
-                 "NACK bitrate reached. Skip sending NACK response. Target %d",
-                 target_bitrate_kbps);
+    LOG(LS_INFO) << "NACK bitrate reached. Skip sending NACK response. Target "
+                 << target_bitrate_kbps;
     return;
   }
 
@@ -695,9 +678,8 @@ void RTPSender::OnReceivedNACK(
       continue;
     } else if (bytes_sent < 0) {
       // Failed to send one Sequence number. Give up the rest in this nack.
-      WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, id_,
-                   "Failed resending RTP packet %d, Discard rest of packets",
-                   *it);
+      LOG(LS_WARNING) << "Failed resending RTP packet " << *it
+                      << ", Discard rest of packets";
       break;
     }
     // Delay bandwidth estimate (RTT * BW).
@@ -1258,39 +1240,36 @@ bool RTPSender::UpdateTransmissionTimeOffset(
       rtp_header_extension_map_.GetLengthUntilBlockStartInBytes(
           kRtpExtensionTransmissionTimeOffset);
   if (extension_block_pos < 0) {
-    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, id_,
-                 "Failed to update transmission time offset, not registered.");
+    LOG(LS_WARNING)
+        << "Failed to update transmission time offset, not registered.";
     return false;
   }
   int block_pos = 12 + rtp_header.numCSRCs + extension_block_pos;
   if (rtp_packet_length < block_pos + kTransmissionTimeOffsetLength ||
       rtp_header.headerLength <
           block_pos + kTransmissionTimeOffsetLength) {
-    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, id_,
-                 "Failed to update transmission time offset, invalid length.");
+    LOG(LS_WARNING)
+        << "Failed to update transmission time offset, invalid length.";
     return false;
   }
   // Verify that header contains extension.
   if (!((rtp_packet[12 + rtp_header.numCSRCs] == 0xBE) &&
         (rtp_packet[12 + rtp_header.numCSRCs + 1] == 0xDE))) {
-    WEBRTC_TRACE(
-        kTraceStream, kTraceRtpRtcp, id_,
-        "Failed to update transmission time offset, hdr extension not found.");
+    LOG(LS_WARNING) << "Failed to update transmission time offset, hdr "
+                       "extension not found.";
     return false;
   }
   // Get id.
   uint8_t id = 0;
   if (rtp_header_extension_map_.GetId(kRtpExtensionTransmissionTimeOffset,
                                       &id) != 0) {
-    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, id_,
-                 "Failed to update transmission time offset, no id.");
+    LOG(LS_WARNING) << "Failed to update transmission time offset, no id.";
     return false;
   }
   // Verify first byte in block.
   const uint8_t first_block_byte = (id << 4) + 2;
   if (rtp_packet[block_pos] != first_block_byte) {
-    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, id_,
-                 "Failed to update transmission time offset.");
+    LOG(LS_WARNING) << "Failed to update transmission time offset.";
     return false;
   }
   // Update transmission offset field (converting to a 90 kHz timestamp).
@@ -1311,37 +1290,31 @@ bool RTPSender::UpdateAudioLevel(uint8_t *rtp_packet,
       rtp_header_extension_map_.GetLengthUntilBlockStartInBytes(
           kRtpExtensionAudioLevel);
   if (extension_block_pos < 0) {
-    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, id_,
-                 "Failed to update audio level, not registered.");
+    LOG(LS_WARNING) << "Failed to update audio level, not registered.";
     return false;
   }
   int block_pos = 12 + rtp_header.numCSRCs + extension_block_pos;
   if (rtp_packet_length < block_pos + kAudioLevelLength ||
       rtp_header.headerLength < block_pos + kAudioLevelLength) {
-    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, id_,
-                 "Failed to update audio level, invalid length.");
+    LOG(LS_WARNING) << "Failed to update audio level, invalid length.";
     return false;
   }
   // Verify that header contains extension.
   if (!((rtp_packet[12 + rtp_header.numCSRCs] == 0xBE) &&
         (rtp_packet[12 + rtp_header.numCSRCs + 1] == 0xDE))) {
-    WEBRTC_TRACE(
-        kTraceStream, kTraceRtpRtcp, id_,
-        "Failed to update audio level, hdr extension not found.");
+    LOG(LS_WARNING) << "Failed to update audio level, hdr extension not found.";
     return false;
   }
   // Get id.
   uint8_t id = 0;
   if (rtp_header_extension_map_.GetId(kRtpExtensionAudioLevel, &id) != 0) {
-    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, id_,
-                 "Failed to update audio level, no id.");
+    LOG(LS_WARNING) << "Failed to update audio level, no id.";
     return false;
   }
   // Verify first byte in block.
   const uint8_t first_block_byte = (id << 4) + 0;
   if (rtp_packet[block_pos] != first_block_byte) {
-    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, id_,
-                 "Failed to update audio level.");
+    LOG(LS_WARNING) << "Failed to update audio level.";
     return false;
   }
   rtp_packet[block_pos + 1] = (is_voiced ? 0x80 : 0x00) + (dBov & 0x7f);
@@ -1358,38 +1331,33 @@ bool RTPSender::UpdateAbsoluteSendTime(
       rtp_header_extension_map_.GetLengthUntilBlockStartInBytes(
           kRtpExtensionAbsoluteSendTime);
   if (extension_block_pos < 0) {
-    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, id_,
-                 "Failed to update absolute send time, not registered.");
+    LOG(LS_WARNING) << "Failed to update absolute send time, not registered.";
     return false;
   }
   int block_pos = 12 + rtp_header.numCSRCs + extension_block_pos;
   if (rtp_packet_length < block_pos + kAbsoluteSendTimeLength ||
       rtp_header.headerLength < block_pos + kAbsoluteSendTimeLength) {
-    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, id_,
-                 "Failed to update absolute send time, invalid length.");
+    LOG(LS_WARNING) << "Failed to update absolute send time, invalid length.";
     return false;
   }
   // Verify that header contains extension.
   if (!((rtp_packet[12 + rtp_header.numCSRCs] == 0xBE) &&
         (rtp_packet[12 + rtp_header.numCSRCs + 1] == 0xDE))) {
-    WEBRTC_TRACE(
-        kTraceStream, kTraceRtpRtcp, id_,
-        "Failed to update absolute send time, hdr extension not found.");
+    LOG(LS_WARNING)
+        << "Failed to update absolute send time, hdr extension not found.";
     return false;
   }
   // Get id.
   uint8_t id = 0;
   if (rtp_header_extension_map_.GetId(kRtpExtensionAbsoluteSendTime,
                                       &id) != 0) {
-    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, id_,
-                 "Failed to update absolute send time, no id.");
+    LOG(LS_WARNING) << "Failed to update absolute send time, no id.";
     return false;
   }
   // Verify first byte in block.
   const uint8_t first_block_byte = (id << 4) + 2;
   if (rtp_packet[block_pos] != first_block_byte) {
-    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, id_,
-                 "Failed to update absolute send time.");
+    LOG(LS_WARNING) << "Failed to update absolute send time.";
     return false;
   }
   // Update absolute send time field (convert ms to 24-bit unsigned with 18 bit

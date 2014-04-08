@@ -18,6 +18,7 @@
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/typedefs.h"
+#include "webrtc/system_wrappers/interface/thread_annotations.h"
 
 namespace webrtc {
 
@@ -74,8 +75,8 @@ class RTPPacketHistory {
  private:
   void GetPacket(int index, uint8_t* packet, uint16_t* packet_length,
                  int64_t* stored_time_ms) const;
-  void Allocate(uint16_t number_to_store);
-  void Free();
+  void Allocate(uint16_t number_to_store) EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
+  void Free() EXCLUSIVE_LOCKS_REQUIRED(*critsect_);
   void VerifyAndAllocatePacketLength(uint16_t packet_length);
   bool FindSeqNum(uint16_t sequence_number, int32_t* index) const;
   int FindBestFittingPacket(uint16_t size) const;

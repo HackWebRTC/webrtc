@@ -30,7 +30,7 @@
 #endif
 
 #include "webrtc/system_wrappers/interface/tick_util.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 
 #if (defined(_DEBUG) && defined(_WIN32) && (_MSC_VER >= 1400))
 #define DEBUG_PRINT(...)           \
@@ -464,22 +464,21 @@ void RTPHeaderParser::ParseOneByteExtensionHeader(
     ptr++;
 
     if (id == 15) {
-      WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
-                   "Ext id: 15 encountered, parsing terminated.");
+      LOG(LS_WARNING)
+          << "RTP extension header 15 encountered. Terminate parsing.";
       return;
     }
 
     RTPExtensionType type;
     if (ptrExtensionMap->GetType(id, &type) != 0) {
       // If we encounter an unknown extension, just skip over it.
-      WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1,
-                   "Failed to find extension id: %d", id);
+      LOG(LS_WARNING) << "Failed to find extension id: " << id;
     } else {
       switch (type) {
         case kRtpExtensionTransmissionTimeOffset: {
           if (len != 2) {
-            WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
-                         "Incorrect transmission time offset len: %d", len);
+            LOG(LS_WARNING) << "Incorrect transmission time offset len: "
+                            << len;
             return;
           }
           //  0                   1                   2                   3
@@ -502,8 +501,7 @@ void RTPHeaderParser::ParseOneByteExtensionHeader(
         }
         case kRtpExtensionAudioLevel: {
           if (len != 0) {
-            WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
-                         "Incorrect audio level len: %d", len);
+            LOG(LS_WARNING) << "Incorrect audio level len: " << len;
             return;
           }
           //  0                   1                   2                   3
@@ -525,8 +523,7 @@ void RTPHeaderParser::ParseOneByteExtensionHeader(
         }
         case kRtpExtensionAbsoluteSendTime: {
           if (len != 2) {
-            WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
-                         "Incorrect absolute send time len: %d", len);
+            LOG(LS_WARNING) << "Incorrect absolute send time len: " << len;
             return;
           }
           //  0                   1                   2                   3
@@ -543,8 +540,7 @@ void RTPHeaderParser::ParseOneByteExtensionHeader(
           break;
         }
         default: {
-          WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1,
-                       "Extension type not implemented.");
+          LOG(LS_WARNING) << "Extension type not implemented: " << type;
           return;
         }
       }
@@ -570,17 +566,12 @@ uint8_t RTPHeaderParser::ParsePaddingBytes(
   return num_zero_bytes;
 }
 
-// RTP payload parser
 RTPPayloadParser::RTPPayloadParser(const RtpVideoCodecTypes videoType,
                                    const uint8_t* payloadData,
-                                   uint16_t payloadDataLength,
-                                   int32_t id)
-  :
-  _id(id),
-  _dataPtr(payloadData),
-  _dataLength(payloadDataLength),
-  _videoType(videoType) {
-}
+                                   uint16_t payloadDataLength)
+    : _dataPtr(payloadData),
+      _dataLength(payloadDataLength),
+      _videoType(videoType) {}
 
 RTPPayloadParser::~RTPPayloadParser() {
 }
@@ -655,8 +646,7 @@ bool RTPPayloadParser::ParseVP8(RTPPayload& parsedPacket) const {
   }
 
   if (dataLength <= 0) {
-    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
-                 "Error parsing VP8 payload descriptor; payload too short");
+    LOG(LS_ERROR) << "Error parsing VP8 payload descriptor!";
     return false;
   }
 

@@ -643,11 +643,6 @@ int ViEChannel::SetSenderBufferingMode(int target_delay_ms) {
       nack_history_size_sender_ = kSendSidePacketHistorySize;
     }
   }
-  // Setting nack_history_size_.
-  // First disabling (forcing free) and then resetting to desired value.
-  if (rtp_rtcp_->SetStorePacketsStatus(false, 0) != 0) {
-    return -1;
-  }
   if (rtp_rtcp_->SetStorePacketsStatus(true, nack_history_size_sender_) != 0) {
     return -1;
   }

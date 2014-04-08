@@ -273,7 +273,7 @@ class SsrcHandlers {
             LostPackets* lost_packets)
         : rtp_header_parser_(RtpHeaderParser::Create()),
           rtp_payload_registry_(new RTPPayloadRegistry(
-              0, RTPPayloadStrategy::CreateStrategy(false))),
+              RTPPayloadStrategy::CreateStrategy(false))),
           rtp_module_(),
           payload_sink_(),
           ssrc_(ssrc),

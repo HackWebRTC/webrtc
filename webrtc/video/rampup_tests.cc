@@ -54,8 +54,7 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
         feedback_transport_(feedback_transport),
         receive_stats_(ReceiveStatistics::Create(clock)),
         payload_registry_(
-            new RTPPayloadRegistry(-1,
-                                   RTPPayloadStrategy::CreateStrategy(false))),
+            new RTPPayloadRegistry(RTPPayloadStrategy::CreateStrategy(false))),
         clock_(clock),
         expected_bitrate_bps_(0),
         rtx_media_ssrcs_(rtx_media_ssrcs),

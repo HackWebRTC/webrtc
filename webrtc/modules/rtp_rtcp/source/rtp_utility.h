@@ -166,8 +166,8 @@ namespace ModuleRTPUtility
     public:
         RTPPayloadParser(const RtpVideoCodecTypes payloadType,
                          const uint8_t* payloadData,
-                         const uint16_t payloadDataLength, // Length w/o padding.
-                         const int32_t id);
+                         // Length w/o padding.
+                         const uint16_t payloadDataLength);
 
         ~RTPPayloadParser();
 
@@ -202,7 +202,6 @@ namespace ModuleRTPUtility
                               int dataLength) const;
 
     private:
-        int32_t               _id;
         const uint8_t*        _dataPtr;
         const uint16_t        _dataLength;
         const RtpVideoCodecTypes    _videoType;

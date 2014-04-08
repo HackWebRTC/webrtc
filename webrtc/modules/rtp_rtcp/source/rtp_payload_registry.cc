@@ -10,15 +10,13 @@
 
 #include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
 
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 
 namespace webrtc {
 
 RTPPayloadRegistry::RTPPayloadRegistry(
-    const int32_t id,
     RTPPayloadStrategy* rtp_payload_strategy)
     : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
-      id_(id),
       rtp_payload_strategy_(rtp_payload_strategy),
       red_payload_type_(-1),
       ulpfec_payload_type_(-1),
@@ -60,9 +58,8 @@ int32_t RTPPayloadRegistry::RegisterReceivePayload(
     case 77:        //  205 Transport layer FB message.
     case 78:        //  206 Payload-specific FB message.
     case 79:        //  207 Extended report.
-      WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, id_,
-                   "%s invalid payloadtype:%d",
-                   __FUNCTION__, payload_type);
+      LOG(LS_ERROR) << "Can't register invalid receiver payload type: "
+                    << payload_type;
       return -1;
     default:
       break;
@@ -94,9 +91,7 @@ int32_t RTPPayloadRegistry::RegisterReceivePayload(
         return 0;
       }
     }
-    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, id_,
-                 "%s invalid argument payload_type:%d already registered",
-                 __FUNCTION__, payload_type);
+    LOG(LS_ERROR) << "Payload type already registered: " << payload_type;
     return -1;
   }
 
@@ -138,14 +133,8 @@ int32_t RTPPayloadRegistry::DeRegisterReceivePayload(
     const int8_t payload_type) {
   CriticalSectionScoped cs(crit_sect_.get());
   ModuleRTPUtility::PayloadTypeMap::iterator it =
-    payload_type_map_.find(payload_type);
-
-  if (it == payload_type_map_.end()) {
-    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, id_,
-                 "%s failed to find payload_type:%d",
-                 __FUNCTION__, payload_type);
-    return -1;
-  }
+      payload_type_map_.find(payload_type);
+  assert(it != payload_type_map_.end());
   delete it->second;
   payload_type_map_.erase(it);
   return 0;
@@ -194,11 +183,7 @@ int32_t RTPPayloadRegistry::ReceivePayloadType(
     const uint8_t channels,
     const uint32_t rate,
     int8_t* payload_type) const {
-  if (payload_type == NULL) {
-    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, id_,
-                 "%s invalid argument", __FUNCTION__);
-    return -1;
-  }
+  assert(payload_type);
   size_t payload_name_length = strlen(payload_name);
 
   CriticalSectionScoped cs(crit_sect_.get());
@@ -296,8 +281,7 @@ bool RTPPayloadRegistry::RestoreOriginalPacket(uint8_t** restored_packet,
         (*restored_packet)[1] |= kRtpMarkerBitMask;  // Marker bit is set.
       }
     } else {
-      WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, id_,
-                   "Incorrect RTX configuration, dropping packet.");
+      LOG(LS_WARNING) << "Incorrect RTX configuration, dropping packet.";
       return false;
     }
   }

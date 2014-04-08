@@ -17,19 +17,18 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_video_generic.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc {
 
 RTPReceiverStrategy* RTPReceiverStrategy::CreateVideoStrategy(
-    int32_t id, RtpData* data_callback) {
-  return new RTPReceiverVideo(id, data_callback);
+    RtpData* data_callback) {
+  return new RTPReceiverVideo(data_callback);
 }
 
-RTPReceiverVideo::RTPReceiverVideo(int32_t id, RtpData* data_callback)
-    : RTPReceiverStrategy(data_callback),
-      id_(id) {}
+RTPReceiverVideo::RTPReceiverVideo(RtpData* data_callback)
+    : RTPReceiverStrategy(data_callback) {}
 
 RTPReceiverVideo::~RTPReceiverVideo() {
 }
@@ -93,11 +92,8 @@ int32_t RTPReceiverVideo::InvokeOnInitializeDecoder(
   // For video we just go with default values.
   if (-1 == callback->OnInitializeDecoder(
       id, payload_type, payload_name, kVideoPayloadTypeFrequency, 1, 0)) {
-    WEBRTC_TRACE(kTraceError,
-                 kTraceRtpRtcp,
-                 id,
-                 "Failed to create video decoder for payload type:%d",
-                 payload_type);
+    LOG(LS_ERROR) << "Failed to created decoder for payload type: "
+                  << payload_type;
     return -1;
   }
   return 0;
@@ -111,13 +107,6 @@ int32_t RTPReceiverVideo::ParseVideoCodecSpecific(
     RtpVideoCodecTypes video_type,
     int64_t now_ms,
     bool is_first_packet) {
-  WEBRTC_TRACE(kTraceStream,
-               kTraceRtpRtcp,
-               id_,
-               "%s(timestamp:%u)",
-               __FUNCTION__,
-               rtp_header->header.timestamp);
-
   switch (rtp_header->type.Video.codec) {
     case kRtpVideoGeneric:
       rtp_header->type.Video.isFirstPacket = is_first_packet;
@@ -170,13 +159,8 @@ int32_t RTPReceiverVideo::ReceiveVp8Codec(WebRtcRTPHeader* rtp_header,
                                           const uint8_t* payload_data,
                                           uint16_t payload_data_length) {
   ModuleRTPUtility::RTPPayload parsed_packet;
-  uint32_t id;
-  {
-    CriticalSectionScoped cs(crit_sect_.get());
-    id = id_;
-  }
   ModuleRTPUtility::RTPPayloadParser rtp_payload_parser(
-      kRtpVideoVp8, payload_data, payload_data_length, id);
+      kRtpVideoVp8, payload_data, payload_data_length);
 
   if (!rtp_payload_parser.Parse(parsed_packet))
     return -1;

@@ -22,7 +22,7 @@ namespace webrtc {
 
 class RTPReceiverVideo : public RTPReceiverStrategy {
  public:
-  RTPReceiverVideo(const int32_t id, RtpData* data_callback);
+  RTPReceiverVideo(RtpData* data_callback);
 
   virtual ~RTPReceiverVideo();
 
@@ -80,8 +80,6 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
       RtpVideoCodecTypes video_type,
       int64_t now_ms,
       bool is_first_packet);
-
-  int32_t id_;
 };
 }  // namespace webrtc
 

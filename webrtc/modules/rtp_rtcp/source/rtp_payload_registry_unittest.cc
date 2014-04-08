@@ -32,8 +32,7 @@ class RtpPayloadRegistryTest : public ::testing::Test {
   void SetUp() {
     // Note: the payload registry takes ownership of the strategy.
     mock_payload_strategy_ = new testing::NiceMock<MockRTPPayloadStrategy>();
-    rtp_payload_registry_.reset(
-        new RTPPayloadRegistry(123, mock_payload_strategy_));
+    rtp_payload_registry_.reset(new RTPPayloadRegistry(mock_payload_strategy_));
   }
 
  protected:

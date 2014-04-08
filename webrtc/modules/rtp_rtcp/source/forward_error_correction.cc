@@ -20,7 +20,7 @@
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction_internal.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 
 namespace webrtc {
 
@@ -82,9 +82,8 @@ ForwardErrorCorrection::ReceivedPacket::~ReceivedPacket() {}
 ForwardErrorCorrection::RecoveredPacket::RecoveredPacket() {}
 ForwardErrorCorrection::RecoveredPacket::~RecoveredPacket() {}
 
-ForwardErrorCorrection::ForwardErrorCorrection(int32_t id)
-    : id_(id),
-      generated_fec_packets_(kMaxMediaPackets),
+ForwardErrorCorrection::ForwardErrorCorrection()
+    : generated_fec_packets_(kMaxMediaPackets),
       fec_packet_received_(false) {}
 
 ForwardErrorCorrection::~ForwardErrorCorrection() {}
@@ -112,43 +111,23 @@ int32_t ForwardErrorCorrection::GenerateFEC(const PacketList& media_packet_list,
                                             bool use_unequal_protection,
                                             FecMaskType fec_mask_type,
                                             PacketList* fec_packet_list) {
-  if (media_packet_list.empty()) {
-    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, id_,
-                 "%s media packet list is empty", __FUNCTION__);
-    return -1;
-  }
-  if (!fec_packet_list->empty()) {
-    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, id_,
-                 "%s FEC packet list is not empty", __FUNCTION__);
-    return -1;
-  }
   const uint16_t num_media_packets = media_packet_list.size();
+
+  // Sanity check arguments.
+  assert(num_media_packets > 0);
+  assert(num_important_packets >= 0 &&
+         num_important_packets <= num_media_packets);
+  assert(fec_packet_list->empty());
+
+  if (num_media_packets > kMaxMediaPackets) {
+    LOG(LS_WARNING) << "Can't protect " << num_media_packets
+                    << " media packets per frame. Max is " << kMaxMediaPackets;
+    return -1;
+  }
+
   bool l_bit = (num_media_packets > 8 * kMaskSizeLBitClear);
   int num_maskBytes = l_bit ? kMaskSizeLBitSet : kMaskSizeLBitClear;
 
-  if (num_media_packets > kMaxMediaPackets) {
-    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, id_,
-                 "%s can only protect %d media packets per frame; %d requested",
-                 __FUNCTION__, kMaxMediaPackets, num_media_packets);
-    return -1;
-  }
-
-  // Error checking on the number of important packets.
-  // Can't have more important packets than media packets.
-  if (num_important_packets > num_media_packets) {
-    WEBRTC_TRACE(
-        kTraceError, kTraceRtpRtcp, id_,
-        "Number of important packets (%d) greater than number of media "
-        "packets (%d)",
-        num_important_packets, num_media_packets);
-    return -1;
-  }
-  if (num_important_packets < 0) {
-    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, id_,
-                 "Number of important packets (%d) less than zero",
-                 num_important_packets);
-    return -1;
-  }
   // Do some error checking on the media packets.
   PacketList::const_iterator media_list_it = media_packet_list.begin();
   while (media_list_it != media_packet_list.end()) {
@@ -156,20 +135,16 @@ int32_t ForwardErrorCorrection::GenerateFEC(const PacketList& media_packet_list,
     assert(media_packet);
 
     if (media_packet->length < kRtpHeaderSize) {
-      WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, id_,
-                   "%s media packet (%d bytes) is smaller than RTP header",
-                   __FUNCTION__, media_packet->length);
+      LOG(LS_WARNING) << "Media packet " << media_packet->length << " bytes "
+                      << "is smaller than RTP header.";
       return -1;
     }
 
     // Ensure our FEC packets will fit in a typical MTU.
     if (media_packet->length + PacketOverhead() + kTransportOverhead >
         IP_PACKET_SIZE) {
-      WEBRTC_TRACE(
-          kTraceError, kTraceRtpRtcp, id_,
-          "%s media packet (%d bytes) with overhead is larger than MTU(%d)",
-          __FUNCTION__, media_packet->length, IP_PACKET_SIZE);
-      return -1;
+      LOG(LS_WARNING) << "Media packet " << media_packet->length << " bytes "
+                      << "with overhead is larger than " << IP_PACKET_SIZE;
     }
     media_list_it++;
   }
@@ -582,9 +557,7 @@ void ForwardErrorCorrection::InsertFECPacket(
   }
   if (fec_packet->protected_pkt_list.empty()) {
     // All-zero packet mask; we can discard this FEC packet.
-    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, id_,
-                 "FEC packet %u has an all-zero packet mask.",
-                 fec_packet->seq_num, __FUNCTION__);
+    LOG(LS_WARNING) << "FEC packet has an all-zero packet mask.";
     delete fec_packet;
   } else {
     AssignRecoveredPackets(fec_packet, recovered_packet_list);

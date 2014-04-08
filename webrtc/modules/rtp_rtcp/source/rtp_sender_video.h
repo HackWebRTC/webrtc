@@ -31,7 +31,7 @@ struct RtpPacket;
 class RTPSenderVideo
 {
 public:
-    RTPSenderVideo(const int32_t id, Clock* clock,
+    RTPSenderVideo(Clock* clock,
                    RTPSenderInterface* rtpSender);
     virtual ~RTPSenderVideo();
 
@@ -112,7 +112,6 @@ private:
                     const RTPVideoTypeHeader* rtpTypeHdr);
 
 private:
-    int32_t             _id;
     RTPSenderInterface&        _rtpSender;
 
     CriticalSectionWrapper*   _sendVideoCritsect;

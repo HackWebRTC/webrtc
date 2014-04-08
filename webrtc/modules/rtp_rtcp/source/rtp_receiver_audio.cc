@@ -15,7 +15,7 @@
 #include <string.h>  // memcpy()
 
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc {
@@ -277,11 +277,8 @@ int32_t RTPReceiverAudio::InvokeOnInitializeDecoder(
                                           specific_payload.Audio.frequency,
                                           specific_payload.Audio.channels,
                                           specific_payload.Audio.rate)) {
-    WEBRTC_TRACE(kTraceError,
-                 kTraceRtpRtcp,
-                 id,
-                 "Failed to create video decoder for payload type:%d",
-                 payload_type);
+    LOG(LS_ERROR) << "Failed to create decoder for payload type: "
+                  << payload_name << "/" << payload_type;
     return -1;
   }
   return 0;

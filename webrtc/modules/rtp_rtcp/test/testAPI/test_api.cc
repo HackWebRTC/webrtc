@@ -34,7 +34,7 @@ class RtpRtcpAPITest : public ::testing::Test {
     configuration.clock = &fake_clock;
     module = RtpRtcp::CreateRtpRtcp(configuration);
     rtp_payload_registry_.reset(new RTPPayloadRegistry(
-            test_id, RTPPayloadStrategy::CreateStrategy(true)));
+            RTPPayloadStrategy::CreateStrategy(true)));
     rtp_receiver_.reset(RtpReceiver::CreateAudioReceiver(
         test_id, &fake_clock, NULL, NULL, NULL, rtp_payload_registry_.get()));
   }
