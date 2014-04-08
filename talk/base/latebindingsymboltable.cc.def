@@ -63,16 +63,17 @@
 #error You must define LATE_BINDING_SYMBOL_TABLE_DLL_NAME
 #endif
 
+#define X(sym) #sym,
+const char* const LATE_BINDING_SYMBOL_TABLE_CLASS_NAME::kSymbolNames[] = {
+  LATE_BINDING_SYMBOL_TABLE_SYMBOLS_LIST
+};
+#undef X
+
 const ::talk_base::LateBindingSymbolTable::TableInfo
     LATE_BINDING_SYMBOL_TABLE_CLASS_NAME::kTableInfo = {
   LATE_BINDING_SYMBOL_TABLE_DLL_NAME,
   SYMBOL_TABLE_SIZE,
-  (const char *const []){
-#define X(sym) \
-    #sym,
-LATE_BINDING_SYMBOL_TABLE_SYMBOLS_LIST
-#undef X
-  },
+  LATE_BINDING_SYMBOL_TABLE_CLASS_NAME::kSymbolNames
 };
 
 LATE_BINDING_SYMBOL_TABLE_CLASS_NAME::LATE_BINDING_SYMBOL_TABLE_CLASS_NAME()

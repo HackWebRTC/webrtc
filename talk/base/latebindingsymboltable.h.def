@@ -89,6 +89,7 @@ LATE_BINDING_SYMBOL_TABLE_SYMBOLS_LIST
   };
 
   static const ::talk_base::LateBindingSymbolTable::TableInfo kTableInfo;
+  static const char *const kSymbolNames[];
 
   void *table_[SYMBOL_TABLE_SIZE];
 
