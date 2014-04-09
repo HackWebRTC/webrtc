@@ -217,17 +217,19 @@
     {
       'target_name': 'video_capture_tests_apk',
       'type': 'none',
-      'variables': {
-        'test_suite_name': 'video_capture_tests',
-        'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)video_capture_tests<(SHARED_LIB_SUFFIX)',
-      },
-      'dependencies': [
-        '<(webrtc_root)/modules/modules.gyp:video_capture_tests',
-        'video_capture_java',
-      ],
-      'includes': [
-        '../../../build/apk_test.gypi',
-      ],
+      # TODO(kjellander): uncomment the following after adding
+      # include_internal_video_capture=1 to the APK buildbot's $GYP_DEFINES.
+      # 'variables': {
+      #   'test_suite_name': 'video_capture_tests',
+      #   'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)video_capture_tests<(SHARED_LIB_SUFFIX)',
+      # },
+      # 'dependencies': [
+      #   '<(webrtc_root)/modules/modules.gyp:video_capture_tests',
+      #   'video_capture_java',
+      # ],
+      # 'includes': [
+      #   '../../../build/apk_test.gypi',
+      # ],
     },
     {
       # Used only by video_capture_tests_apk above, and impossible to use in the
