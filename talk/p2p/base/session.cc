@@ -284,9 +284,12 @@ bool TransportProxy::SetLocalTransportDescription(
   if (action == CA_ANSWER) {
     CompleteNegotiation();
   }
-  return transport_->get()->SetLocalTransportDescription(description,
-                                                         action,
-                                                         error_desc);
+  bool result = transport_->get()->SetLocalTransportDescription(description,
+                                                                action,
+                                                                error_desc);
+  if (result)
+    local_description_set_ = true;
+  return result;
 }
 
 bool TransportProxy::SetRemoteTransportDescription(
@@ -297,9 +300,12 @@ bool TransportProxy::SetRemoteTransportDescription(
   if (action == CA_ANSWER) {
     CompleteNegotiation();
   }
-  return transport_->get()->SetRemoteTransportDescription(description,
-                                                          action,
-                                                          error_desc);
+  bool result = transport_->get()->SetRemoteTransportDescription(description,
+                                                                 action,
+                                                                 error_desc);
+  if (result)
+    remote_description_set_ = true;
+  return result;
 }
 
 void TransportProxy::OnSignalingReady() {

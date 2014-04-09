@@ -882,9 +882,32 @@ bool WebRtcSession::ProcessIceMessage(const IceCandidateInterface* candidate) {
     return false;
   }
 
-  if (!local_description() || !remote_description()) {
-    LOG(LS_INFO) << "ProcessIceMessage: Remote description not set, "
-                 << "save the candidate for later use.";
+  cricket::TransportProxy* transport_proxy = NULL;
+  if (remote_description()) {
+    size_t mediacontent_index =
+        static_cast<size_t>(candidate->sdp_mline_index());
+    size_t remote_content_size =
+        BaseSession::remote_description()->contents().size();
+    if (mediacontent_index >= remote_content_size) {
+      LOG(LS_ERROR)
+          << "ProcessIceMessage: Invalid candidate media index.";
+      return false;
+    }
+
+    cricket::ContentInfo content =
+        BaseSession::remote_description()->contents()[mediacontent_index];
+    transport_proxy = GetTransportProxy(content.name);
+  }
+
+  // We need to check the local/remote description for the Transport instead of
+  // the session, because a new Transport added during renegotiation may have
+  // them unset while the session has them set from the previou negotiation. Not
+  // doing so may trigger the auto generation of transport description and mess
+  // up DTLS identity information, ICE credential, etc.
+  if (!transport_proxy || !(transport_proxy->local_description_set() &&
+                            transport_proxy->remote_description_set())) {
+    LOG(LS_INFO) << "ProcessIceMessage: Local/Remote description not set "
+                 << "on the Transport, save the candidate for later use.";
     saved_candidates_.push_back(
         new JsepIceCandidate(candidate->sdp_mid(), candidate->sdp_mline_index(),
                              candidate->candidate()));

@@ -102,7 +102,9 @@ class TransportProxy : public sigslot::has_slots<>,
         connecting_(false),
         negotiated_(false),
         sent_candidates_(false),
-        candidates_allocated_(false) {
+        candidates_allocated_(false),
+        local_description_set_(false),
+        remote_description_set_(false) {
     transport_->get()->SignalCandidatesReady.connect(
         this, &TransportProxy::OnTransportCandidatesReady);
   }
@@ -165,6 +167,13 @@ class TransportProxy : public sigslot::has_slots<>,
     SignalCandidatesReady(this, candidates);
   }
 
+  bool local_description_set() const {
+    return local_description_set_;
+  }
+  bool remote_description_set() const {
+    return remote_description_set_;
+  }
+
   // Handles sending of ready candidates and receiving of remote candidates.
   sigslot::signal2<TransportProxy*,
                          const std::vector<Candidate>&> SignalCandidatesReady;
@@ -196,6 +205,8 @@ class TransportProxy : public sigslot::has_slots<>,
   Candidates sent_candidates_;
   Candidates unsent_candidates_;
   bool candidates_allocated_;
+  bool local_description_set_;
+  bool remote_description_set_;
 };
 
 typedef std::map<std::string, TransportProxy*> TransportMap;

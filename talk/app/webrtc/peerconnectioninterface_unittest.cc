@@ -259,8 +259,9 @@ class PeerConnectionInterfaceTest : public testing::Test {
 
     port_allocator_factory_ = FakePortAllocatorFactory::Create();
 
-    // TODO(jiayl): we should always pass a FakeIdentityService so that DTLS
-    // is enabled by default like in Chrome (issue 2838).
+    // DTLS does not work in a loopback call, so is disabled for most of the
+    // tests in this file. We only create a FakeIdentityService if the test
+    // explicitly sets the constraint.
     FakeIdentityService* dtls_service = NULL;
     bool dtls;
     if (FindConstraint(constraints,

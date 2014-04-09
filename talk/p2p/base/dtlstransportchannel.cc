@@ -156,14 +156,15 @@ void DtlsTransportChannelWrapper::Reset() {
 
 bool DtlsTransportChannelWrapper::SetLocalIdentity(
     talk_base::SSLIdentity* identity) {
-  if (dtls_state_ == STATE_OPEN && identity == local_identity_) {
-    return true;
-  }
-
-  // TODO(ekr@rtfm.com): Forbid this if Connect() has been called.
   if (dtls_state_ != STATE_NONE) {
-    LOG_J(LS_ERROR, this) << "Can't set DTLS local identity in this state";
-    return false;
+    if (identity == local_identity_) {
+      // This may happen during renegotiation.
+      LOG_J(LS_INFO, this) << "Ignoring identical DTLS identity";
+      return true;
+    } else {
+      LOG_J(LS_ERROR, this) << "Can't change DTLS local identity in this state";
+      return false;
+    }
   }
 
   if (identity) {
