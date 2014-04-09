@@ -1,8 +1,0 @@
-Change 64504440 updated.
-Starting METADATA Presubmit checks ...
-Spawned CheckCopyright (//depot/METADATA)
-Success: CheckCopyright (5.25 us)
-Presubmit checks finished with:
-	0 errors; 0 warnings; 0 notices.
-Change 64504440 updated.
-Reverting any unchanged files.
