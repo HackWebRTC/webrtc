@@ -58,7 +58,7 @@ class DesktopSize {
   int32_t width() const { return width_; }
   int32_t height() const { return height_; }
 
-  bool is_empty() const { return width_ <= 0 && height_ <= 0; }
+  bool is_empty() const { return width_ <= 0 || height_ <= 0; }
 
   bool equals(const DesktopSize& other) const {
     return width_ == other.width_ && height_ == other.height_;
