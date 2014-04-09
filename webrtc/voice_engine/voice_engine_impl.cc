@@ -12,8 +12,10 @@
 #include "webrtc/modules/audio_device/android/audio_device_template.h"
 #include "webrtc/modules/audio_device/android/audio_record_jni.h"
 #include "webrtc/modules/audio_device/android/audio_track_jni.h"
+#if !defined(WEBRTC_CHROMIUM_BUILD)
 #include "webrtc/modules/audio_device/android/opensles_input.h"
 #include "webrtc/modules/audio_device/android/opensles_output.h"
+#endif
 #endif
 
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
@@ -151,6 +153,7 @@ bool VoiceEngine::Delete(VoiceEngine*& voiceEngine)
     return true;
 }
 
+#if !defined(WEBRTC_CHROMIUM_BUILD)
 int VoiceEngine::SetAndroidObjects(void* javaVM, void* env, void* context)
 {
 #ifdef WEBRTC_ANDROID
@@ -171,5 +174,6 @@ int VoiceEngine::SetAndroidObjects(void* javaVM, void* env, void* context)
   return -1;
 #endif
 }
+#endif
 
 }  // namespace webrtc
