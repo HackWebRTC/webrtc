@@ -39,6 +39,7 @@ void JNICALL ProvideCameraFrame(
 }
 
 int32_t SetCaptureAndroidVM(JavaVM* javaVM) {
+  assert(!g_jvm);
   g_jvm = javaVM;
   AttachThreadScoped ats(g_jvm);
 
@@ -143,7 +144,8 @@ int32_t VideoCaptureAndroid::StartCapture(
   assert(j_start);
   int min_mfps = 0;
   int max_mfps = 0;
-  _deviceInfo.GetFpsRange(_deviceUniqueId, &min_mfps, &max_mfps);
+  _deviceInfo.GetMFpsRange(_deviceUniqueId, _captureCapability.maxFPS,
+                           &min_mfps, &max_mfps);
   bool started = env->CallBooleanMethod(_jCapturer, j_start,
                                         _captureCapability.width,
                                         _captureCapability.height,

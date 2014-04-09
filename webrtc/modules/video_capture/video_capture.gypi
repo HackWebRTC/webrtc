@@ -19,6 +19,8 @@
       'sources': [
         'device_info_impl.cc',
         'device_info_impl.h',
+        'ensure_initialized.cc',
+        'ensure_initialized.h',
         'include/video_capture.h',
         'include/video_capture_defines.h',
         'include/video_capture_factory.h',
@@ -137,7 +139,7 @@
       'targets': [
         {
           'target_name': 'video_capture_tests',
-          'type': 'executable',
+          'type': '<(gtest_target_type)',
           'dependencies': [
             'video_capture_module',
             'webrtc_utility',
@@ -162,6 +164,13 @@
                 '-lrt',
                 '-lXext',
                 '-lX11',
+              ],
+            }],
+            # TODO(henrike): remove build_with_chromium==1 when the bots are
+            # using Chromium's buildbots.
+            ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+              'dependencies': [
+                '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
               ],
             }],
             ['OS=="mac"', {
