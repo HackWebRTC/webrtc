@@ -41,11 +41,13 @@ void EnsureInitializedOnce() {
   assert(status == 0);
   status = webrtc::SetCaptureAndroidVM(jvm) == 0;
   assert(status);
+  status = status;
 }
 
 void EnsureInitialized() {
   int ret = pthread_once(&g_initialize_once, &EnsureInitializedOnce);
   assert(ret == 0);
+  ret = ret;
 }
 
 }  // namespace videocapturemodule
