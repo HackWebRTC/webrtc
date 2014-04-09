@@ -97,7 +97,7 @@ NetEqImpl::NetEqImpl(int fs,
         "Changing to 8000 Hz.";
     fs = 8000;
   }
-  LOG(LS_INFO) << "Create NetEqImpl object with fs = " << fs << ".";
+  LOG(LS_VERBOSE) << "Create NetEqImpl object with fs = " << fs << ".";
   fs_hz_ = fs;
   fs_mult_ = fs / 8000;
   output_size_samples_ = kOutputSizeMs * 8 * fs_mult_;
