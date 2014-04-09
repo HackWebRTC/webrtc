@@ -25,6 +25,14 @@ void EnsureInitialized() {}
 
 #include "base/android/jni_android.h"
 
+// Handy alternative to assert() which suppresses unused-variable warnings when
+// assert() is a no-op (i.e. in Release builds).
+#ifdef NDEBUG
+#define ASSERT(x) if (false && (x)); else
+#else
+#define ASSERT(x) assert(x)
+#endif
+
 namespace webrtc {
 
 // Declared in webrtc/modules/video_capture/include/video_capture.h.
@@ -38,16 +46,14 @@ void EnsureInitializedOnce() {
   JNIEnv* jni = ::base::android::AttachCurrentThread();
   JavaVM* jvm = NULL;
   int status = jni->GetJavaVM(&jvm);
-  assert(status == 0);
+  ASSERT(status == 0);
   status = webrtc::SetCaptureAndroidVM(jvm) == 0;
-  assert(status);
-  status = status;
+  ASSERT(status);
 }
 
 void EnsureInitialized() {
   int ret = pthread_once(&g_initialize_once, &EnsureInitializedOnce);
-  assert(ret == 0);
-  ret = ret;
+  ASSERT(ret == 0);
 }
 
 }  // namespace videocapturemodule
