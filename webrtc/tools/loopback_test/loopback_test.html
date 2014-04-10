@@ -88,7 +88,8 @@ function start() {
   var maxVideoBitrateKbps = parseInt(maxVideoBitrateInput.value);
   var forceTurn = forceTurnInput.checked;
   var autoClose = autoModeInput.checked;
-  var pcConstraints = JSON.parse(pcConstraintsInput.value);
+  var pcConstraints = pcConstraintsInput.value == "" ?
+                      null : JSON.parse(pcConstraintsInput.value);
 
   var updateStatusInterval;
   var testFinished = false;
