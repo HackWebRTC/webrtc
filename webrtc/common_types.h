@@ -93,7 +93,6 @@ enum TraceModule
     kTraceAudioDevice            = 0x0012,
     kTraceVideoRenderer          = 0x0014,
     kTraceVideoCapture           = 0x0015,
-    kTraceVideoPreocessing       = 0x0016,
     kTraceRemoteBitrateEstimator = 0x0017,
 };
 

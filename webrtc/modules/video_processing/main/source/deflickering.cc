@@ -14,8 +14,8 @@
 #include <stdlib.h>
 
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/sort.h"
-#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 
@@ -102,21 +102,16 @@ int32_t VPMDeflickering::ProcessFrame(I420VideoFrame* frame,
   int height = frame->height();
 
   if (frame->IsZeroSize()) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, id_,
-                 "Null frame pointer");
     return VPM_GENERAL_ERROR;
   }
 
   // Stricter height check due to subsampling size calculation below.
   if (height < 2) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, id_,
-                 "Invalid frame size");
+    LOG(LS_ERROR) << "Invalid frame size.";
     return VPM_GENERAL_ERROR;
   }
 
   if (!VideoProcessingModule::ValidFrameStats(*stats)) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, id_,
-                 "Invalid frame stats");
     return VPM_GENERAL_ERROR;
   }
 
@@ -152,8 +147,7 @@ int32_t VPMDeflickering::ProcessFrame(I420VideoFrame* frame,
   // Ensure we won't get an overflow below.
   // In practice, the number of subsampled pixels will not become this large.
   if (y_sub_size > (1 << 21) - 1) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, id_,
-        "Subsampled number of pixels too large");
+    LOG(LS_ERROR) << "Subsampled number of pixels too large.";
     return -1;
   }
 

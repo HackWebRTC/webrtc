@@ -9,7 +9,6 @@
  */
 
 #include "webrtc/modules/video_processing/main/source/denoising.h"
-#include "webrtc/system_wrappers/interface/trace.h"
 
 #include <string.h>
 
@@ -78,8 +77,6 @@ int32_t VPMDenoising::ProcessFrame(I420VideoFrame* frame) {
   int32_t  num_pixels_changed = 0;
 
   if (frame->IsZeroSize()) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, id_,
-                 "zero size frame");
     return VPM_GENERAL_ERROR;
   }
 

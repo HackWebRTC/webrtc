@@ -11,7 +11,7 @@
 
 #include "webrtc/modules/video_processing/main/source/video_processing_impl.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 
 #include <assert.h>
 
@@ -68,13 +68,9 @@ VideoProcessingModuleImpl::VideoProcessingModuleImpl(const int32_t id)
   deflickering_.ChangeUniqueId(id);
   denoising_.ChangeUniqueId(id);
   frame_pre_processor_.ChangeUniqueId(id);
-  WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideoPreocessing, id_,
-               "Created");
 }
 
 VideoProcessingModuleImpl::~VideoProcessingModuleImpl() {
-  WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideoPreocessing, id_,
-               "Destroyed");
   delete &mutex_;
 }
 
@@ -89,8 +85,7 @@ void VideoProcessingModuleImpl::Reset() {
 int32_t VideoProcessingModule::GetFrameStats(FrameStats* stats,
                                              const I420VideoFrame& frame) {
   if (frame.IsZeroSize()) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, -1,
-                 "zero size frame");
+    LOG(LS_ERROR) << "Zero size frame.";
     return VPM_PARAMETER_ERROR;
   }
 
@@ -121,7 +116,10 @@ int32_t VideoProcessingModule::GetFrameStats(FrameStats* stats,
 }
 
 bool VideoProcessingModule::ValidFrameStats(const FrameStats& stats) {
-  if (stats.num_pixels == 0) return false;
+  if (stats.num_pixels == 0) {
+    LOG(LS_WARNING) << "Invalid frame stats.";
+    return false;
+  }
   return true;
 }
 

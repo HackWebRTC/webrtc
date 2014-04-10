@@ -9,7 +9,6 @@
  */
 
 #include "webrtc/modules/video_processing/main/source/frame_preprocessor.h"
-#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 
@@ -112,8 +111,6 @@ int32_t VPMFramePreprocessor::PreprocessFrame(const I420VideoFrame& frame,
   vd_->UpdateIncomingframe_rate();
 
   if (vd_->DropFrame()) {
-    WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceVideo, id_,
-                 "Drop frame due to frame rate");
     return 1;  // drop 1 frame
   }
 
