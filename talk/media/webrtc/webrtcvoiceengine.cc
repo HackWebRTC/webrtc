@@ -409,9 +409,9 @@ void WebRtcVoiceEngine::Construct() {
 #endif
   options_ = GetDefaultEngineOptions();
 
-  // Initialize the VoE Configuration to the default ACM.
+  // Initialize the VoE Configuration to the new ACM.
   voe_config_.Set<webrtc::AudioCodingModuleFactory>(
-      new webrtc::AudioCodingModuleFactory);
+      new webrtc::NewAudioCodingModuleFactory);
 }
 
 static bool IsOpus(const AudioCodec& codec) {

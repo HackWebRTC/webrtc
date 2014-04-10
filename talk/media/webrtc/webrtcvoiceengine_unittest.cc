@@ -3089,14 +3089,14 @@ TEST(WebRtcVoiceEngineTest, CoInitialize) {
 TEST_F(WebRtcVoiceEngineTestFake, SetExperimentalAcm) {
   EXPECT_TRUE(SetupEngine());
 
-  // By default experimental ACM should not be used.
+  // By default the new ACM should be used.
   int media_channel = engine_.CreateMediaVoiceChannel();
   ASSERT_GE(media_channel, 0);
-  EXPECT_FALSE(voe_.IsUsingExperimentalAcm(media_channel));
+  EXPECT_TRUE(voe_.IsUsingExperimentalAcm(media_channel));
 
   int soundclip_channel = engine_.CreateSoundclipVoiceChannel();
   ASSERT_GE(soundclip_channel, 0);
-  EXPECT_FALSE(voe_sc_.IsUsingExperimentalAcm(soundclip_channel));
+  EXPECT_TRUE(voe_sc_.IsUsingExperimentalAcm(soundclip_channel));
 
   // Set options to use experimental ACM.
   cricket::AudioOptions options;
