@@ -40,6 +40,7 @@
 <div id="test-launcher">
   <p>Duration (s): <input id="duration" type="text"></p>
   <p>Max video bitrate (kbps): <input id="max-video-bitrate" type="text"></p>
+  <p>Peer connection constraints: <input id="pc-constraints" type="text"></p>
   <p>Force TURN: <input id="force-turn" type="checkbox" checked></p>
   <p><input id="launcher-button" type="button" value="Run test">
   <div id="test-status" style="display:none"></div>
@@ -58,6 +59,7 @@ var forceTurnInput = document.getElementById('force-turn');
 var launcherButton = document.getElementById('launcher-button');
 var autoModeInput = document.createElement('input');
 var testStatus = document.getElementById('test-status');
+var pcConstraintsInput = document.getElementById('pc-constraints');
 
 launcherButton.onclick = start;
 
@@ -77,6 +79,7 @@ durationInput.value = getURLParameter('duration', 10);
 maxVideoBitrateInput.value = getURLParameter('max-video-bitrate', 2000);
 forceTurnInput.checked = (getURLParameter('force-turn', 'true') === 'true');
 autoModeInput.checked = (getURLParameter('auto-mode', 'false') === 'true');
+pcConstraintsInput.value = getURLParameter('pc-constraints', '');
 
 if (autoModeInput.checked) start();
 
@@ -85,6 +88,7 @@ function start() {
   var maxVideoBitrateKbps = parseInt(maxVideoBitrateInput.value);
   var forceTurn = forceTurnInput.checked;
   var autoClose = autoModeInput.checked;
+  var pcConstraints = JSON.parse(pcConstraintsInput.value);
 
   var updateStatusInterval;
   var testFinished = false;
@@ -126,7 +130,9 @@ function start() {
 
   function gotStream(stream) {
     updateStatus();
-    var test = new LoopbackTest(stream, durationMs, forceTurn,
+    var test = new LoopbackTest(stream, durationMs,
+                                forceTurn,
+                                pcConstraints,
                                 maxVideoBitrateKbps);
     test.run(onTestFinished.bind(test));
   }

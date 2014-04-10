@@ -15,13 +15,20 @@
 //
 // Usage:
 //  var test = new LoopbackTest(stream, callDurationMs,
-//                              forceTurn, maxVideoBitrateKbps);
+//                              forceTurn, pcConstraints,
+//                              maxVideoBitrateKbps);
 //  test.run(onDone);
 //  function onDone() {
 //    test.getResults(); // return stats recorded during the loopback test.
 //  }
 //
-function LoopbackTest(stream, callDurationMs, forceTurn, maxVideoBitrateKbps) {
+function LoopbackTest(
+    stream,
+    callDurationMs,
+    forceTurn,
+    pcConstraints,
+    maxVideoBitrateKbps) {
+
   var pc1StatTracker;
   var pc2StatTracker;
 
@@ -87,7 +94,7 @@ function LoopbackTest(stream, callDurationMs, forceTurn, maxVideoBitrateKbps) {
     function start(turnServer) {
       var pcConfig = forceTurn ? { iceServers: [turnServer] } : null;
       console.log(pcConfig);
-      var pc1 = new RTCPeerConnection(pcConfig);
+      var pc1 = new RTCPeerConnection(pcConfig, pcConstraints);
       constrainTurnCandidates(pc1);
       constrainOfferToRemoveFec(pc1);
       pc1StatTracker = new StatTracker(pc1, 50);
@@ -100,7 +107,7 @@ function LoopbackTest(stream, callDurationMs, forceTurn, maxVideoBitrateKbps) {
       pc1StatTracker.recordStat("ActualEncodedBitrate",
                                 "bweforvideo", "googActualEncBitrate");
 
-      var pc2 = new RTCPeerConnection(pcConfig);
+      var pc2 = new RTCPeerConnection(pcConfig, pcConstraints);
       constrainTurnCandidates(pc2);
       constrainBitrateAnswer(pc2);
       pc2StatTracker = new StatTracker(pc2, 50);
