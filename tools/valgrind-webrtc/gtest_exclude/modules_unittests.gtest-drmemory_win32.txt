@@ -4,9 +4,14 @@ ApmTest.FloatAndIntInterfacesGiveIdenticalResults
 ApmTest.IdenticalInputChannelsResultInIdenticalOutputChannels
 ApmTest.VerifyDebugDumpFloat
 ApmTest.VerifyDebugDumpInt
+TestScaler.PointScaleTest
+TestScaler.BiLinearScaleTest
+TestScaler.BoxScaleTest
 TestVideoSenderWithVp8.*
-VideoSendersTest.*
+TestVp8Impl.BaseUnitTest
 VideoProcessingModuleTest.Denoising
+VideoProcessorIntegrationTest.ProcessNoLossChangeBitRate
+VideoSendersTest.*
 
 # https://code.google.com/p/webrtc/issues/detail?id=2323
 MouseCursorShapeTest.MatchCursors

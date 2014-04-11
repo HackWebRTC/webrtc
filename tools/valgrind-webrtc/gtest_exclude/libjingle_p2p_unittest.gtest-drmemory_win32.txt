@@ -1,3 +1,4 @@
 # Fails on Dr Memory Full.
 # https://code.google.com/p/webrtc/issues/detail?id=3158
-P2PTransportChannelTest.TestOPENToOPENAsGiceNoneSharedUfrag
+P2PTransportChannel*.*
+PseudoTcpTest.TestSendBothUseLargeWindowScale
