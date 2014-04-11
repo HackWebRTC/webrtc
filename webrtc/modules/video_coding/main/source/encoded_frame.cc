@@ -149,17 +149,12 @@ const RTPFragmentationHeader* VCMEncodedFrame::FragmentationHeader() const {
   return &_fragmentation;
 }
 
-int32_t
-VCMEncodedFrame::VerifyAndAllocate(const uint32_t minimumSize)
+void VCMEncodedFrame::VerifyAndAllocate(const uint32_t minimumSize)
 {
     if(minimumSize > _size)
     {
         // create buffer of sufficient size
         uint8_t* newBuffer = new uint8_t[minimumSize];
-        if (newBuffer == NULL)
-        {
-            return -1;
-        }
         if(_buffer)
         {
             // copy old data
@@ -169,7 +164,6 @@ VCMEncodedFrame::VerifyAndAllocate(const uint32_t minimumSize)
         _buffer = newBuffer;
         _size = minimumSize;
     }
-    return 0;
 }
 
 webrtc::FrameType VCMEncodedFrame::ConvertFrameType(VideoFrameType frameType)

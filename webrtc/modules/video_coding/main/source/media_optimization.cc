@@ -14,6 +14,7 @@
 #include "webrtc/modules/video_coding/main/source/qm_select.h"
 #include "webrtc/modules/video_coding/utility/include/frame_dropper.h"
 #include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 
 namespace webrtc {
 namespace media_optimization {
@@ -73,9 +74,8 @@ struct MediaOptimization::EncodedFrameSample {
   int64_t time_complete_ms;
 };
 
-MediaOptimization::MediaOptimization(int32_t id, Clock* clock)
-    : id_(id),
-      clock_(clock),
+MediaOptimization::MediaOptimization(Clock* clock)
+    : clock_(clock),
       max_bit_rate_(0),
       send_codec_type_(kVideoCodecUnknown),
       codec_width_(0),
@@ -537,13 +537,9 @@ bool MediaOptimization::QMUpdate(
     codec_height_ = qm->codec_height;
   }
 
-  WEBRTC_TRACE(webrtc::kTraceDebug,
-               webrtc::kTraceVideoCoding,
-               id_,
-               "Resolution change from QM select: W = %d, H = %d, FR = %f",
-               qm->codec_width,
-               qm->codec_height,
-               qm->frame_rate);
+  LOG(LS_INFO) << "Media optimizer requests the video resolution to be changed "
+                  "to " << qm->codec_width << "x" << qm->codec_height << "@"
+               << qm->frame_rate;
 
   // Update VPM with new target frame rate and frame size.
   // Note: use |qm->frame_rate| instead of |_incoming_frame_rate| for updating

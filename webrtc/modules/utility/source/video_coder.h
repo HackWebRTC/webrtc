@@ -20,7 +20,7 @@ namespace webrtc {
 class VideoCoder : public VCMPacketizationCallback, public VCMReceiveCallback
 {
 public:
-    VideoCoder(uint32_t instanceID);
+    VideoCoder();
     ~VideoCoder();
 
     int32_t SetEncodeCodec(VideoCodec& videoCodecInst,

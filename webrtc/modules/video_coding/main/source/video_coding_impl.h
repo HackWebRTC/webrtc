@@ -54,9 +54,7 @@ class VideoSender {
  public:
   typedef VideoCodingModule::SenderNackMode SenderNackMode;
 
-  VideoSender(const int32_t id,
-              Clock* clock,
-              EncodedImageCallback* post_encode_callback);
+  VideoSender(Clock* clock, EncodedImageCallback* post_encode_callback);
 
   ~VideoSender();
 
@@ -110,7 +108,6 @@ class VideoSender {
   int32_t Process();
 
  private:
-  int32_t _id;
   Clock* clock_;
 
   scoped_ptr<DebugRecorder> recorder_;
@@ -134,7 +131,7 @@ class VideoReceiver {
  public:
   typedef VideoCodingModule::ReceiverRobustness ReceiverRobustness;
 
-  VideoReceiver(const int32_t id, Clock* clock, EventFactory* event_factory);
+  VideoReceiver(Clock* clock, EventFactory* event_factory);
   ~VideoReceiver();
 
   int32_t InitializeReceiver();
@@ -202,7 +199,6 @@ class VideoReceiver {
                     // in any frame
   };
 
-  int32_t _id;
   Clock* clock_;
   scoped_ptr<CriticalSectionWrapper> process_crit_sect_;
   CriticalSectionWrapper* _receiveCritSect;

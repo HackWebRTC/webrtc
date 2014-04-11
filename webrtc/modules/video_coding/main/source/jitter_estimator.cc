@@ -11,7 +11,6 @@
 #include "webrtc/modules/video_coding/main/source/internal_defines.h"
 #include "webrtc/modules/video_coding/main/source/jitter_estimator.h"
 #include "webrtc/modules/video_coding/main/source/rtt_filter.h"
-#include "webrtc/system_wrappers/interface/trace.h"
 
 #include <assert.h>
 #include <math.h>
@@ -20,20 +19,20 @@
 
 namespace webrtc {
 
-VCMJitterEstimator::VCMJitterEstimator(int32_t vcmId, int32_t receiverId) :
-_vcmId(vcmId),
-_receiverId(receiverId),
-_phi(0.97),
-_psi(0.9999),
-_alphaCountMax(400),
-_thetaLow(0.000001),
-_nackLimit(3),
-_numStdDevDelayOutlier(15),
-_numStdDevFrameSizeOutlier(3),
-_noiseStdDevs(2.33), // ~Less than 1% chance
-                     // (look up in normal distribution table)...
-_noiseStdDevOffset(30.0), // ...of getting 30 ms freezes
-_rttFilter(vcmId, receiverId) {
+VCMJitterEstimator::VCMJitterEstimator(int32_t vcmId, int32_t receiverId)
+    : _vcmId(vcmId),
+      _receiverId(receiverId),
+      _phi(0.97),
+      _psi(0.9999),
+      _alphaCountMax(400),
+      _thetaLow(0.000001),
+      _nackLimit(3),
+      _numStdDevDelayOutlier(15),
+      _numStdDevFrameSizeOutlier(3),
+      _noiseStdDevs(2.33),       // ~Less than 1% chance
+                                 // (look up in normal distribution table)...
+      _noiseStdDevOffset(30.0),  // ...of getting 30 ms freezes
+      _rttFilter() {
     Reset();
 }
 
@@ -108,10 +107,6 @@ void
 VCMJitterEstimator::UpdateEstimate(int64_t frameDelayMS, uint32_t frameSizeBytes,
                                             bool incompleteFrame /* = false */)
 {
-    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding,
-               VCMId(_vcmId, _receiverId),
-               "Jitter estimate updated with: frameSize=%d frameDelayMS=%d",
-               frameSizeBytes, frameDelayMS);
     if (frameSizeBytes == 0)
     {
         return;
@@ -195,16 +190,6 @@ VCMJitterEstimator::UpdateEstimate(int64_t frameDelayMS, uint32_t frameSizeBytes
     {
         _startupCount++;
     }
-    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _receiverId),
-               "Framesize statistics: max=%f average=%f", _maxFrameSize, _avgFrameSize);
-    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _receiverId),
-               "The estimated slope is: theta=(%f, %f)", _theta[0], _theta[1]);
-    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _receiverId),
-               "Random jitter: mean=%f variance=%f", _avgNoise, _varNoise);
-    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _receiverId),
-               "Current jitter estimate: %f", _filterJitterEstimate);
-    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _receiverId),
-               "Current max RTT: %u", _rttFilter.RttMs());
 }
 
 // Updates the nack/packet ratio

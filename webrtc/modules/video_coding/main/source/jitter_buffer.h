@@ -77,10 +77,7 @@ class FrameList
 class VCMJitterBuffer {
  public:
   VCMJitterBuffer(Clock* clock,
-                  EventFactory* event_factory,
-                  int vcm_id,
-                  int receiver_id,
-                  bool master);
+                  EventFactory* event_factory);
   virtual ~VCMJitterBuffer();
 
   // Makes |this| a deep copy of |rhs|.
@@ -274,13 +271,10 @@ class VCMJitterBuffer {
 
   uint16_t EstimatedLowSequenceNumber(const VCMFrameBuffer& frame) const;
 
-  int vcm_id_;
-  int receiver_id_;
   Clock* clock_;
   // If we are running (have started) or not.
   bool running_;
   CriticalSectionWrapper* crit_sect_;
-  bool master_;
   // Event to signal when we have a frame ready for decoder.
   scoped_ptr<EventWrapper> frame_event_;
   // Event to signal when we have received a packet.

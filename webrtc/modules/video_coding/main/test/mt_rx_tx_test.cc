@@ -145,7 +145,7 @@ int MTRxTxTest(CmdArgs& args)
         printf("Cannot read file %s.\n", outname.c_str());
         return -1;
     }
-    VideoCodingModule* vcm = VideoCodingModule::Create(1);
+    VideoCodingModule* vcm = VideoCodingModule::Create();
     RtpDataCallback dataCallback(vcm);
 
     RTPSendCompleteCallback* outgoingTransport =

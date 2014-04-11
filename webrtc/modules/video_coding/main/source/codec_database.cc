@@ -20,7 +20,7 @@
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #endif
 #include "webrtc/modules/video_coding/main/source/internal_defines.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 
 namespace webrtc {
 
@@ -42,9 +42,8 @@ VCMExtDecoderMapItem::VCMExtDecoderMapItem(
       internal_render_timing(internal_render_timing) {
 }
 
-VCMCodecDataBase::VCMCodecDataBase(int id)
-    : id_(id),
-      number_of_cores_(0),
+VCMCodecDataBase::VCMCodecDataBase()
+    : number_of_cores_(0),
       max_payload_size_(kDefaultPayloadSize),
       periodic_key_frames_(false),
       pending_encoder_reset_(true),
@@ -58,8 +57,7 @@ VCMCodecDataBase::VCMCodecDataBase(int id)
       ptr_decoder_(NULL),
       current_dec_is_external_(false),
       dec_map_(),
-      dec_external_map_() {
-}
+      dec_external_map_() {}
 
 VCMCodecDataBase::~VCMCodecDataBase() {
   ResetSender();
@@ -221,24 +219,14 @@ bool VCMCodecDataBase::SetSendCodec(
   } else {
     ptr_encoder_ = CreateEncoder(send_codec->codecType);
     current_enc_is_external_ = false;
+    if (!ptr_encoder_) {
+      return false;
+    }
   }
   encoded_frame_callback->SetPayloadType(send_codec->plType);
-  if (!ptr_encoder_) {
-    WEBRTC_TRACE(webrtc::kTraceError,
-                 webrtc::kTraceVideoCoding,
-                 VCMId(id_),
-                 "Failed to create encoder: %s.",
-                 send_codec->plName);
-    return false;
-  }
   if (ptr_encoder_->InitEncode(send_codec,
                                number_of_cores_,
                                max_payload_size_) < 0) {
-    WEBRTC_TRACE(webrtc::kTraceError,
-                 webrtc::kTraceVideoCoding,
-                 VCMId(id_),
-                 "Failed to initialize encoder: %s.",
-                 send_codec->plName);
     DeleteEncoder();
     return false;
   } else if (ptr_encoder_->RegisterEncodeCallback(encoded_frame_callback) < 0) {
@@ -257,8 +245,6 @@ bool VCMCodecDataBase::SetSendCodec(
 }
 
 bool VCMCodecDataBase::SendCodec(VideoCodec* current_send_codec) const {
-  WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideoCoding, VCMId(id_),
-               "SendCodec");
   if (!ptr_encoder_) {
     return false;
   }
@@ -267,8 +253,6 @@ bool VCMCodecDataBase::SendCodec(VideoCodec* current_send_codec) const {
 }
 
 VideoCodecType VCMCodecDataBase::SendCodec() const {
-  WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideoCoding, VCMId(id_),
-               "SendCodec type");
   if (!ptr_encoder_) {
     return kVideoCodecUnknown;
   }
@@ -437,12 +421,6 @@ bool VCMCodecDataBase::RegisterReceiveCodec(
   if (number_of_cores < 0) {
     return false;
   }
-  WEBRTC_TRACE(webrtc::kTraceStateInfo, webrtc::kTraceVideoCoding, VCMId(id_),
-               "Codec: %s, Payload type %d, Height %d, Width %d, Bitrate %d,"
-               "Framerate %d.",
-               receive_codec->plName, receive_codec->plType,
-               receive_codec->height, receive_codec->width,
-               receive_codec->startBitrate, receive_codec->maxFramerate);
   // Check if payload value already exists, if so  - erase old and insert new.
   DeregisterReceiveCodec(receive_codec->plType);
   if (receive_codec->codecType == kVideoCodecUnknown) {
@@ -524,7 +502,7 @@ VCMGenericDecoder* VCMCodecDataBase::CreateDecoderCopy() const {
   if (!decoder_copy) {
     return NULL;
   }
-  return new VCMGenericDecoder(*decoder_copy, id_, ptr_decoder_->External());
+  return new VCMGenericDecoder(*decoder_copy, ptr_decoder_->External());
 }
 
 void VCMCodecDataBase::ReleaseDecoder(VCMGenericDecoder* decoder) const {
@@ -543,8 +521,7 @@ void VCMCodecDataBase::CopyDecoder(const VCMGenericDecoder& decoder) {
   if (decoder_copy) {
     VCMDecodedFrameCallback* cb = ptr_decoder_->_callback;
     ReleaseDecoder(ptr_decoder_);
-    ptr_decoder_ = new VCMGenericDecoder(*decoder_copy, id_,
-                                         decoder.External());
+    ptr_decoder_ = new VCMGenericDecoder(*decoder_copy, decoder.External());
     if (cb && ptr_decoder_->RegisterDecodeCompleteCallback(cb)) {
       assert(false);
     }
@@ -569,8 +546,8 @@ VCMGenericDecoder* VCMCodecDataBase::CreateAndInitDecoder(
   assert(new_codec);
   const VCMDecoderMapItem* decoder_item = FindDecoderItem(payload_type);
   if (!decoder_item) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCoding, VCMId(id_),
-                 "Unknown payload type: %u", payload_type);
+    LOG(LS_ERROR) << "Can't find a decoder associated with payload type: "
+                  << payload_type;
     return NULL;
   }
   VCMGenericDecoder* ptr_decoder = NULL;
@@ -579,7 +556,7 @@ VCMGenericDecoder* VCMCodecDataBase::CreateAndInitDecoder(
   if (external_dec_item) {
     // External codec.
     ptr_decoder = new VCMGenericDecoder(
-        *external_dec_item->external_decoder_instance, id_, true);
+        *external_dec_item->external_decoder_instance, true);
     *external = true;
   } else {
     // Create decoder.
@@ -611,6 +588,7 @@ VCMGenericEncoder* VCMCodecDataBase::CreateEncoder(
       return new VCMGenericEncoder(*(new I420Encoder));
 #endif
     default:
+      LOG(LS_WARNING) << "No internal encoder of this type exists.";
       return NULL;
   }
 }
@@ -630,11 +608,11 @@ VCMGenericDecoder* VCMCodecDataBase::CreateDecoder(VideoCodecType type) const {
   switch (type) {
 #ifdef VIDEOCODEC_VP8
     case kVideoCodecVP8:
-      return new VCMGenericDecoder(*(VP8Decoder::Create()), id_);
+      return new VCMGenericDecoder(*(VP8Decoder::Create()));
 #endif
 #ifdef VIDEOCODEC_I420
     case kVideoCodecI420:
-      return new VCMGenericDecoder(*(new I420Decoder), id_);
+      return new VCMGenericDecoder(*(new I420Decoder));
 #endif
     default:
       return NULL;

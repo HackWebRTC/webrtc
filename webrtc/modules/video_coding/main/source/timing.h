@@ -25,8 +25,6 @@ class VCMTiming {
   // The primary timing component should be passed
   // if this is the dual timing component.
   VCMTiming(Clock* clock,
-            int32_t vcm_id = 0,
-            int32_t timing_id = 0,
             VCMTiming* master_timing = NULL);
   ~VCMTiming();
 
@@ -101,9 +99,7 @@ class VCMTiming {
 
  private:
   CriticalSectionWrapper* crit_sect_;
-  int32_t vcm_id_;
   Clock* clock_;
-  int32_t timing_id_;
   bool master_;
   VCMTimestampExtrapolator* ts_extrapolator_;
   VCMCodecTimer codec_timer_;

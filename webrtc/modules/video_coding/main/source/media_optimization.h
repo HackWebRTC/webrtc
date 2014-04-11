@@ -18,7 +18,6 @@
 #include "webrtc/modules/video_coding/main/source/media_opt_util.h"
 #include "webrtc/modules/video_coding/main/source/qm_select.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
-#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 
@@ -32,7 +31,7 @@ namespace media_optimization {
 // TODO(andresp): Make thread safe.
 class MediaOptimization {
  public:
-  MediaOptimization(int32_t id, Clock* clock);
+  explicit MediaOptimization(Clock* clock);
   ~MediaOptimization();
 
   // TODO(andresp): Can Reset and SetEncodingData be done at construction time
@@ -124,7 +123,6 @@ class MediaOptimization {
   // the state of |video_suspended_| accordingly.
   void CheckSuspendConditions();
 
-  int32_t id_;
   Clock* clock_;
   int32_t max_bit_rate_;
   VideoCodecType send_codec_type_;

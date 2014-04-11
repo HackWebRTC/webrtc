@@ -12,8 +12,7 @@
 #include "webrtc/modules/video_coding/main/source/generic_decoder.h"
 #include "webrtc/modules/video_coding/main/source/internal_defines.h"
 #include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/system_wrappers/interface/trace.h"
-#include "webrtc/system_wrappers/interface/trace_event.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 
 namespace webrtc {
 
@@ -59,11 +58,7 @@ int32_t VCMDecodedFrameCallback::Decoded(I420VideoFrame& decodedImage)
             _timestampMap.Pop(decodedImage.timestamp()));
         callback = _receiveCallback;
     }
-    if (frameInfo == NULL)
-    {
-        // The map should never be empty or full if this callback is called.
-        return WEBRTC_VIDEO_CODEC_ERROR;
-    }
+    assert(frameInfo != NULL);
 
     _timing.StopDecodeTimer(
         decodedImage.timestamp(),
@@ -73,14 +68,7 @@ int32_t VCMDecodedFrameCallback::Decoded(I420VideoFrame& decodedImage)
     if (callback != NULL)
     {
         decodedImage.set_render_time_ms(frameInfo->renderTimeMs);
-        int32_t callbackReturn = callback->FrameToRender(decodedImage);
-        if (callbackReturn < 0)
-        {
-            WEBRTC_TRACE(webrtc::kTraceDebug,
-                         webrtc::kTraceVideoCoding,
-                         -1,
-                         "Render callback returned error: %d", callbackReturn);
-        }
+        callback->FrameToRender(decodedImage);
     }
     return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -125,15 +113,15 @@ int32_t VCMDecodedFrameCallback::Pop(uint32_t timestamp)
     return VCM_OK;
 }
 
-VCMGenericDecoder::VCMGenericDecoder(VideoDecoder& decoder, int32_t id, bool isExternal)
+VCMGenericDecoder::VCMGenericDecoder(VideoDecoder& decoder, bool isExternal)
 :
-_id(id),
 _callback(NULL),
 _frameInfos(),
 _nextFrameInfoIdx(0),
 _decoder(decoder),
 _codecType(kVideoCodecUnknown),
-_isExternal(isExternal)
+_isExternal(isExternal),
+_keyFrameDecoded(false)
 {
 }
 
@@ -156,11 +144,6 @@ int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame,
     _frameInfos[_nextFrameInfoIdx].renderTimeMs = frame.RenderTimeMs();
     _callback->Map(frame.TimeStamp(), &_frameInfos[_nextFrameInfoIdx]);
 
-    WEBRTC_TRACE(webrtc::kTraceDebug,
-                 webrtc::kTraceVideoCoding,
-                 VCMId(_id),
-                 "Decoding timestamp %u", frame.TimeStamp());
-
     _nextFrameInfoIdx = (_nextFrameInfoIdx + 1) % kDecoderFrameMemoryLength;
     int32_t ret = _decoder.Decode(frame.EncodedImage(),
                                         frame.MissingFrame(),
@@ -170,7 +153,8 @@ int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame,
 
     if (ret < WEBRTC_VIDEO_CODEC_OK)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCoding, VCMId(_id), "Decoder error: %d\n", ret);
+        LOG(LS_WARNING) << "Failed to decode frame with timestamp "
+                        << frame.TimeStamp() << ", error code: " << ret;
         _callback->Pop(frame.TimeStamp());
         return ret;
     }

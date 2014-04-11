@@ -28,8 +28,7 @@ int GenericCodecTest::RunTest(CmdArgs& args)
 {
     SimulatedClock clock(0);
     NullEventFactory event_factory;
-    VideoCodingModule* vcm = VideoCodingModule::Create(1, &clock,
-                                                       &event_factory);
+    VideoCodingModule* vcm = VideoCodingModule::Create(&clock, &event_factory);
     GenericCodecTest* get = new GenericCodecTest(vcm, &clock);
     Trace::CreateTrace();
     Trace::SetTraceFile(

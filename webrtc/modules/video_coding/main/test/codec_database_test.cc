@@ -29,7 +29,7 @@ using namespace webrtc;
 
 int CodecDataBaseTest::RunTest(CmdArgs& args)
 {
-    VideoCodingModule* vcm = VideoCodingModule::Create(1);
+    VideoCodingModule* vcm = VideoCodingModule::Create();
     CodecDataBaseTest* cdbt = new CodecDataBaseTest(vcm);
     cdbt->Perform(args);
     VideoCodingModule::Destroy(vcm);

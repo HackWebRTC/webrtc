@@ -328,7 +328,7 @@ AviRecorder::AviRecorder(uint32_t instanceID, FileFormats fileFormat)
       _writtenAudioMS(0),
       _writtenVideoMS(0)
 {
-    _videoEncoder = new VideoCoder(instanceID);
+    _videoEncoder = new VideoCoder();
     _frameScaler = new FrameScaler();
     _videoFramesQueue = new VideoFramesQueue();
     _thread = ThreadWrapper::CreateThread(Run, this, kNormalPriority,

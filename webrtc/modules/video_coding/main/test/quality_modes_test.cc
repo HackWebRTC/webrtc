@@ -32,7 +32,7 @@ int qualityModeTest(const CmdArgs& args)
 {
   SimulatedClock clock(0);
   NullEventFactory event_factory;
-  VideoCodingModule* vcm = VideoCodingModule::Create(1, &clock, &event_factory);
+  VideoCodingModule* vcm = VideoCodingModule::Create(&clock, &event_factory);
   QualityModesTest QMTest(vcm, &clock);
   QMTest.Perform(args);
   VideoCodingModule::Destroy(vcm);

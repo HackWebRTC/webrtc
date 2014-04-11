@@ -11,34 +11,27 @@
 #include "webrtc/modules/video_coding/main/source/internal_defines.h"
 #include "webrtc/modules/video_coding/main/source/timestamp_extrapolator.h"
 #include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 
-VCMTimestampExtrapolator::VCMTimestampExtrapolator(Clock* clock,
-                                                   int32_t vcmId,
-                                                   int32_t id)
-:
-_rwLock(RWLockWrapper::CreateRWLock()),
-_vcmId(vcmId),
-_id(id),
-_clock(clock),
-_startMs(0),
-_firstTimestamp(0),
-_wrapArounds(0),
-_prevUnwrappedTimestamp(-1),
-_prevWrapTimestamp(-1),
-_lambda(1),
-_firstAfterReset(true),
-_packetCount(0),
-_startUpFilterDelayInPackets(2),
-_detectorAccumulatorPos(0),
-_detectorAccumulatorNeg(0),
-_alarmThreshold(60e3),
-_accDrift(6600), // in timestamp ticks, i.e. 15 ms
-_accMaxError(7000),
-_P11(1e10)
-{
+VCMTimestampExtrapolator::VCMTimestampExtrapolator(Clock* clock)
+    : _rwLock(RWLockWrapper::CreateRWLock()),
+      _clock(clock),
+      _startMs(0),
+      _firstTimestamp(0),
+      _wrapArounds(0),
+      _prevUnwrappedTimestamp(-1),
+      _prevWrapTimestamp(-1),
+      _lambda(1),
+      _firstAfterReset(true),
+      _packetCount(0),
+      _startUpFilterDelayInPackets(2),
+      _detectorAccumulatorPos(0),
+      _detectorAccumulatorNeg(0),
+      _alarmThreshold(60e3),
+      _accDrift(6600),  // in timestamp ticks, i.e. 15 ms
+      _accMaxError(7000),
+      _P11(1e10) {
     Reset();
 }
 
@@ -69,7 +62,7 @@ VCMTimestampExtrapolator::Reset()
 }
 
 void
-VCMTimestampExtrapolator::Update(int64_t tMs, uint32_t ts90khz, bool trace)
+VCMTimestampExtrapolator::Update(int64_t tMs, uint32_t ts90khz)
 {
 
     _rwLock->AcquireLockExclusive();
@@ -115,7 +108,7 @@ VCMTimestampExtrapolator::Update(int64_t tMs, uint32_t ts90khz, bool trace)
     double residual =
         (static_cast<double>(unwrapped_ts90khz) - _firstTimestamp) -
         static_cast<double>(tMs) * _w[0] - _w[1];
-    if (DelayChangeDetection(residual, trace) &&
+    if (DelayChangeDetection(residual) &&
         _packetCount >= _startUpFilterDelayInPackets)
     {
         // A sudden change of average network delay has been detected.
@@ -146,10 +139,6 @@ VCMTimestampExtrapolator::Update(int64_t tMs, uint32_t ts90khz, bool trace)
     if (_packetCount < _startUpFilterDelayInPackets)
     {
         _packetCount++;
-    }
-    if (trace)
-    {
-        WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _id),  "w[0]=%f w[1]=%f ts=%u tMs=%u", _w[0], _w[1], ts90khz, tMs);
     }
     _rwLock->ReleaseLockExclusive();
 }
@@ -222,7 +211,7 @@ VCMTimestampExtrapolator::CheckForWrapArounds(uint32_t ts90khz)
 }
 
 bool
-VCMTimestampExtrapolator::DelayChangeDetection(double error, bool trace)
+VCMTimestampExtrapolator::DelayChangeDetection(double error)
 {
     // CUSUM detection of sudden delay changes
     error = (error > 0) ? VCM_MIN(error, _accMaxError) : VCM_MAX(error, -_accMaxError);
@@ -231,16 +220,8 @@ VCMTimestampExtrapolator::DelayChangeDetection(double error, bool trace)
     if (_detectorAccumulatorPos > _alarmThreshold || _detectorAccumulatorNeg < -_alarmThreshold)
     {
         // Alarm
-        if (trace)
-        {
-            WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _id),  "g1=%f g2=%f alarm=1", _detectorAccumulatorPos, _detectorAccumulatorNeg);
-        }
         _detectorAccumulatorPos = _detectorAccumulatorNeg = 0;
         return true;
-    }
-    if (trace)
-    {
-        WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _id),  "g1=%f g2=%f alarm=0", _detectorAccumulatorPos, _detectorAccumulatorNeg);
     }
     return false;
 }

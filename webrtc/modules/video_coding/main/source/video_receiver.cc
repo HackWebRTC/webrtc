@@ -16,7 +16,7 @@
 #include "webrtc/modules/video_coding/main/source/packet.h"
 #include "webrtc/modules/video_coding/main/source/video_coding_impl.h"
 #include "webrtc/system_wrappers/interface/clock.h"
-#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 
 // #define DEBUG_DECODER_BIT_STREAM
@@ -24,18 +24,15 @@
 namespace webrtc {
 namespace vcm {
 
-VideoReceiver::VideoReceiver(const int32_t id,
-                             Clock* clock,
-                             EventFactory* event_factory)
-    : _id(id),
-      clock_(clock),
+VideoReceiver::VideoReceiver(Clock* clock, EventFactory* event_factory)
+    : clock_(clock),
       process_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       _receiveCritSect(CriticalSectionWrapper::CreateCriticalSection()),
       _receiverInited(false),
-      _timing(clock_, id, 1),
-      _dualTiming(clock_, id, 2, &_timing),
-      _receiver(&_timing, clock_, event_factory, id, 1, true),
-      _dualReceiver(&_dualTiming, clock_, event_factory, id, 2, false),
+      _timing(clock_),
+      _dualTiming(clock_, &_timing),
+      _receiver(&_timing, clock_, event_factory, true),
+      _dualReceiver(&_dualTiming, clock_, event_factory, false),
       _decodedFrameCallback(_timing, clock_),
       _dualDecodedFrameCallback(_dualTiming, clock_),
       _frameTypeCallback(NULL),
@@ -53,7 +50,7 @@ VideoReceiver::VideoReceiver(const int32_t id,
       _scheduleKeyRequest(false),
       max_nack_list_size_(0),
       pre_decode_image_callback_(NULL),
-      _codecDataBase(id),
+      _codecDataBase(),
       _receiveStatsTimer(1000, clock_),
       _retransmissionTimer(10, clock_),
       _keyRequestTimer(500, clock_) {
@@ -446,17 +443,9 @@ int32_t VideoReceiver::RequestSliceLossIndication(
     const int32_t ret =
         _frameTypeCallback->SliceLossIndicationRequest(pictureID);
     if (ret < 0) {
-      WEBRTC_TRACE(webrtc::kTraceError,
-                   webrtc::kTraceVideoCoding,
-                   VCMId(_id),
-                   "Failed to request key frame");
       return ret;
     }
   } else {
-    WEBRTC_TRACE(webrtc::kTraceWarning,
-                 webrtc::kTraceVideoCoding,
-                 VCMId(_id),
-                 "No frame type request callback registered");
     return VCM_MISSING_CALLBACK;
   }
   return VCM_OK;
@@ -468,18 +457,10 @@ int32_t VideoReceiver::RequestKeyFrame() {
   if (_frameTypeCallback != NULL) {
     const int32_t ret = _frameTypeCallback->RequestKeyFrame();
     if (ret < 0) {
-      WEBRTC_TRACE(webrtc::kTraceError,
-                   webrtc::kTraceVideoCoding,
-                   VCMId(_id),
-                   "Failed to request key frame");
       return ret;
     }
     _scheduleKeyRequest = false;
   } else {
-    WEBRTC_TRACE(webrtc::kTraceWarning,
-                 webrtc::kTraceVideoCoding,
-                 VCMId(_id),
-                 "No frame type request callback registered");
     return VCM_MISSING_CALLBACK;
   }
   return VCM_OK;
@@ -502,29 +483,18 @@ int32_t VideoReceiver::DecodeDualFrame(uint16_t maxWaitTimeMs) {
   VCMEncodedFrame* dualFrame =
       _dualReceiver.FrameForDecoding(maxWaitTimeMs, dummyRenderTime);
   if (dualFrame != NULL && _dualDecoder != NULL) {
-    WEBRTC_TRACE(webrtc::kTraceStream,
-                 webrtc::kTraceVideoCoding,
-                 VCMId(_id),
-                 "Decoding frame %u with dual decoder",
-                 dualFrame->TimeStamp());
     // Decode dualFrame and try to catch up
     int32_t ret =
         _dualDecoder->Decode(*dualFrame, clock_->TimeInMilliseconds());
     if (ret != WEBRTC_VIDEO_CODEC_OK) {
-      WEBRTC_TRACE(webrtc::kTraceWarning,
-                   webrtc::kTraceVideoCoding,
-                   VCMId(_id),
-                   "Failed to decode frame with dual decoder");
+      LOG(LS_ERROR) << "Failed to decode frame with dual decoder. Error code: "
+                    << ret;
       _dualReceiver.ReleaseFrame(dualFrame);
       return VCM_CODEC_ERROR;
     }
     if (_receiver.DualDecoderCaughtUp(dualFrame, _dualReceiver)) {
       // Copy the complete decoder state of the dual decoder
       // to the primary decoder.
-      WEBRTC_TRACE(webrtc::kTraceStream,
-                   webrtc::kTraceVideoCoding,
-                   VCMId(_id),
-                   "Dual decoder caught up");
       _codecDataBase.CopyDecoder(*_dualDecoder);
       _codecDataBase.ReleaseDecoder(_dualDecoder);
       _dualDecoder = NULL;
@@ -565,11 +535,6 @@ int32_t VideoReceiver::Decode(const VCMEncodedFrame& frame) {
       return RequestSliceLossIndication(
           _decodedFrameCallback.LastReceivedPictureID() + 1);
     } else {
-      WEBRTC_TRACE(webrtc::kTraceError,
-                   webrtc::kTraceVideoCoding,
-                   VCMId(_id),
-                   "Failed to decode frame %u, requesting key frame",
-                   frame.TimeStamp());
       request_key_frame = true;
     }
   } else if (ret == VCM_REQUEST_SLI) {
@@ -730,24 +695,8 @@ int32_t VideoReceiver::NackList(uint16_t* nackList, uint16_t* size) {
     nackStatus = _dualReceiver.NackList(nackList, *size, &nack_list_length);
   }
   *size = nack_list_length;
-
-  switch (nackStatus) {
-    case kNackNeedMoreMemory: {
-      WEBRTC_TRACE(webrtc::kTraceError,
-                   webrtc::kTraceVideoCoding,
-                   VCMId(_id),
-                   "Out of memory");
-      return VCM_MEMORY;
-    }
-    case kNackKeyFrameRequest: {
-      WEBRTC_TRACE(webrtc::kTraceWarning,
-                   webrtc::kTraceVideoCoding,
-                   VCMId(_id),
-                   "Failed to get NACK list, requesting key frame");
+  if (nackStatus == kNackKeyFrameRequest) {
       return RequestKeyFrame();
-    }
-    default:
-      break;
   }
   return VCM_OK;
 }

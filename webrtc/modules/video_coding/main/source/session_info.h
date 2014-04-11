@@ -147,7 +147,6 @@ class VCMSessionInfo {
   bool complete_;
   bool decodable_;
   webrtc::FrameType frame_type_;
-  bool previous_frame_loss_;
   // Packets in this frame.
   PacketList packets_;
   int empty_seq_num_low_;

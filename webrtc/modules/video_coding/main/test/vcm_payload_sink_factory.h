@@ -56,7 +56,6 @@ class VcmPayloadSinkFactory : public PayloadSinkFactoryInterface {
   scoped_ptr<NullEventFactory> null_event_factory_;
   scoped_ptr<CriticalSectionWrapper> crit_sect_;
   Sinks sinks_;
-  int next_id_;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(VcmPayloadSinkFactory);
 };

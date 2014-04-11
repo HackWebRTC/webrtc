@@ -72,11 +72,9 @@ public:
         kReferenceSelection
     };
 
-    static VideoCodingModule* Create(const int32_t id);
+    static VideoCodingModule* Create();
 
-    static VideoCodingModule* Create(const int32_t id,
-                                     Clock* clock,
-                                     EventFactory* event_factory);
+    static VideoCodingModule* Create(Clock* clock, EventFactory* event_factory);
 
     static void Destroy(VideoCodingModule* module);
 

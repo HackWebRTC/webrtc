@@ -417,7 +417,7 @@ int32_t FilePlayerImpl::SetUpAudioDecoder()
 VideoFilePlayerImpl::VideoFilePlayerImpl(uint32_t instanceID,
                                          FileFormats fileFormat)
     : FilePlayerImpl(instanceID, fileFormat),
-      video_decoder_(new VideoCoder(instanceID)),
+      video_decoder_(new VideoCoder()),
       video_codec_info_(),
       _decodedVideoFrames(0),
       _encodedData(*new EncodedVideoData()),
@@ -481,7 +481,7 @@ int32_t VideoFilePlayerImpl::StopPlayingFile()
     CriticalSectionScoped lock( _critSec);
 
     _decodedVideoFrames = 0;
-    video_decoder_.reset(new VideoCoder(_instanceID));
+    video_decoder_.reset(new VideoCoder());
 
     return FilePlayerImpl::StopPlayingFile();
 }

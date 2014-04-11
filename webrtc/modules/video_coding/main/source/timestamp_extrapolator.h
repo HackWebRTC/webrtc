@@ -22,20 +22,16 @@ class Clock;
 class VCMTimestampExtrapolator
 {
 public:
-    VCMTimestampExtrapolator(Clock* clock,
-                             int32_t vcmId = 0,
-                             int32_t receiverId = 0);
+    explicit VCMTimestampExtrapolator(Clock* clock);
     ~VCMTimestampExtrapolator();
-    void Update(int64_t tMs, uint32_t ts90khz, bool trace = true);
+    void Update(int64_t tMs, uint32_t ts90khz);
     int64_t ExtrapolateLocalTime(uint32_t timestamp90khz);
     void Reset();
 
 private:
     void CheckForWrapArounds(uint32_t ts90khz);
-    bool DelayChangeDetection(double error, bool trace = true);
+    bool DelayChangeDetection(double error);
     RWLockWrapper*        _rwLock;
-    int32_t         _vcmId;
-    int32_t         _id;
     Clock*                _clock;
     double                _w[2];
     double                _P[2][2];
