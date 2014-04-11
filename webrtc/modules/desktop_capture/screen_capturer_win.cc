@@ -67,8 +67,9 @@ class ScreenCapturerWin : public ScreenCapturer {
   // Capture the current cursor shape.
   void CaptureCursor();
 
-  // Get the rect of the currently selected screen. If the screen is disabled
-  // or disconnected, or any error happens, an empty rect is returned.
+  // Get the rect of the currently selected screen, relative to the primary
+  // display's top-left. If the screen is disabled or disconnected, or any error
+  // happens, an empty rect is returned.
   DesktopRect GetScreenRect();
 
   Callback* callback_;
@@ -94,7 +95,8 @@ class ScreenCapturerWin : public ScreenCapturer {
   // Queue of the frames buffers.
   ScreenCaptureFrameQueue queue_;
 
-  // Rectangle describing the bounds of the desktop device context.
+  // Rectangle describing the bounds of the desktop device context, relative to
+  // the primary display's top-left.
   DesktopRect desktop_dc_rect_;
 
   // Class to calculate the difference between two screen bitmaps.
@@ -442,11 +444,10 @@ DesktopRect ScreenCapturerWin::GetScreenRect() {
   if (!result)
     return DesktopRect();
 
-  rect = DesktopRect::MakeXYWH(
-      rect.left() + device_mode.dmPosition.x,
-      rect.top() + device_mode.dmPosition.y,
-      device_mode.dmPelsWidth,
-      device_mode.dmPelsHeight);
+  rect = DesktopRect::MakeXYWH(device_mode.dmPosition.x,
+                               device_mode.dmPosition.y,
+                               device_mode.dmPelsWidth,
+                               device_mode.dmPelsHeight);
   return rect;
 }
 }  // namespace
