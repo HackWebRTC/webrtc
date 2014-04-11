@@ -16,8 +16,8 @@
 
 #include "webrtc/common_video/interface/texture_video_frame.h"
 #include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
-#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 VideoFramesQueue::VideoFramesQueue()
@@ -56,16 +56,9 @@ int32_t VideoFramesQueue::AddFrame(const I420VideoFrame& newFrame) {
   if (!ptrFrameToAdd) {
     if (_emptyFrames.size() + _incomingFrames.size() >
         KMaxNumberOfFrames) {
-      WEBRTC_TRACE(kTraceWarning, kTraceVideoRenderer, -1,
-                   "%s: too many frames, limit: %d", __FUNCTION__,
-                   KMaxNumberOfFrames);
+      LOG(LS_WARNING) << "Too many frames, limit: " << KMaxNumberOfFrames;
       return -1;
     }
-
-    WEBRTC_TRACE(kTraceMemory, kTraceVideoRenderer, -1,
-                 "%s: allocating buffer %d", __FUNCTION__,
-                 _emptyFrames.size() + _incomingFrames.size());
-
     ptrFrameToAdd = new I420VideoFrame();
   }
   ptrFrameToAdd->CopyFrame(newFrame);
