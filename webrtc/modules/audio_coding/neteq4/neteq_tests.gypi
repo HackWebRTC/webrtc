@@ -49,6 +49,7 @@
         'CODEC_PCM16B_WB',
         'CODEC_ISAC_SWB',
         'CODEC_PCM16B_32KHZ',
+        'CODEC_PCM16B_48KHZ',
         'CODEC_CNGCODEC8',
         'CODEC_CNGCODEC16',
         'CODEC_CNGCODEC32',

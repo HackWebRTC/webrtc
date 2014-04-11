@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>  // memset
 
+#include <algorithm>
 #include <set>
 #include <string>
 #include <vector>
@@ -232,6 +233,7 @@ class NetEqDecodingTest : public ::testing::Test {
   unsigned int sim_clock_;
   int16_t out_data_[kMaxBlockSize];
   int output_sample_rate_;
+  int algorithmic_delay_ms_;
 };
 
 // Allocating the static const so that it can be passed by reference.
@@ -246,12 +248,16 @@ NetEqDecodingTest::NetEqDecodingTest()
     : neteq_(NULL),
       rtp_fp_(NULL),
       sim_clock_(0),
-      output_sample_rate_(kInitSampleRateHz) {
+      output_sample_rate_(kInitSampleRateHz),
+      algorithmic_delay_ms_(0) {
   memset(out_data_, 0, sizeof(out_data_));
 }
 
 void NetEqDecodingTest::SetUp() {
   neteq_ = NetEq::Create(kInitSampleRateHz);
+  NetEqNetworkStatistics stat;
+  ASSERT_EQ(0, neteq_->NetworkStatistics(&stat));
+  algorithmic_delay_ms_ = stat.current_buffer_size_ms;
   ASSERT_TRUE(neteq_);
   LoadDecoders();
 }
@@ -483,8 +489,8 @@ void NetEqDecodingTest::CheckBgnOff(int sampling_rate_hz,
   ASSERT_EQ(expected_samples_per_channel, samples_per_channel);
 
   // To be able to test the fading of background noise we need at lease to pull
-  // 610 frames.
-  const int kFadingThreshold = 610;
+  // 611 frames.
+  const int kFadingThreshold = 611;
 
   // Test several CNG-to-PLC packet for the expected behavior. The number 20 is
   // arbitrary, but sufficiently large to test enough number of frames.
@@ -1110,12 +1116,16 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(SyncPacketInsert)) {
 // First insert several noise like packets, then sync-packets. Decoding all
 // packets should not produce error, statistics should not show any packet loss
 // and sync-packets should decode to zero.
+// TODO(turajs) we will have a better test if we have a referece NetEq, and
+// when Sync packets are inserted in "test" NetEq we insert all-zero payload
+// in reference NetEq and compare the output of those two.
 TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(SyncPacketDecode)) {
   WebRtcRTPHeader rtp_info;
   PopulateRtpInfo(0, 0, &rtp_info);
   const int kPayloadBytes = kBlockSize16kHz * sizeof(int16_t);
   uint8_t payload[kPayloadBytes];
   int16_t decoded[kBlockSize16kHz];
+  int algorithmic_frame_delay = algorithmic_delay_ms_ / 10 + 1;
   for (int n = 0; n < kPayloadBytes; ++n) {
     payload[n] = (rand() & 0xF0) + 1;  // Non-zero random sequence.
   }
@@ -1125,7 +1135,6 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(SyncPacketDecode)) {
   int num_channels;
   int samples_per_channel;
   uint32_t receive_timestamp = 0;
-  int delay_samples = 0;
   for (int n = 0; n < 100; ++n) {
     ASSERT_EQ(0, neteq_->InsertPacket(rtp_info, payload, kPayloadBytes,
                                       receive_timestamp));
@@ -1135,16 +1144,15 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(SyncPacketDecode)) {
     ASSERT_EQ(kBlockSize16kHz, samples_per_channel);
     ASSERT_EQ(1, num_channels);
 
-    // Even if there is RTP packet in NetEq's buffer, the first frame pulled
-    // from NetEq starts with few zero samples. Here we measure this delay.
-    if (n == 0) {
-      while (decoded[delay_samples] == 0) delay_samples++;
-    }
     rtp_info.header.sequenceNumber++;
     rtp_info.header.timestamp += kBlockSize16kHz;
     receive_timestamp += kBlockSize16kHz;
   }
   const int kNumSyncPackets = 10;
+
+  // Make sure sufficient number of sync packets are inserted that we can
+  // conduct a test.
+  ASSERT_GT(kNumSyncPackets, algorithmic_frame_delay);
   // Insert sync-packets, the decoded sequence should be all-zero.
   for (int n = 0; n < kNumSyncPackets; ++n) {
     ASSERT_EQ(0, neteq_->InsertSyncPacket(rtp_info, receive_timestamp));
@@ -1153,30 +1161,37 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(SyncPacketDecode)) {
                                   &output_type));
     ASSERT_EQ(kBlockSize16kHz, samples_per_channel);
     ASSERT_EQ(1, num_channels);
-    EXPECT_TRUE(IsAllZero(&decoded[delay_samples],
-                          samples_per_channel * num_channels - delay_samples));
-    delay_samples = 0;  // Delay only matters in the first frame.
+    if (n > algorithmic_frame_delay) {
+      EXPECT_TRUE(IsAllZero(decoded, samples_per_channel * num_channels));
+    }
     rtp_info.header.sequenceNumber++;
     rtp_info.header.timestamp += kBlockSize16kHz;
     receive_timestamp += kBlockSize16kHz;
   }
-  // We insert a regular packet, if sync packet are not correctly buffered then
+
+  // We insert regular packets, if sync packet are not correctly buffered then
   // network statistics would show some packet loss.
-  ASSERT_EQ(0, neteq_->InsertPacket(rtp_info, payload, kPayloadBytes,
-                                    receive_timestamp));
-  ASSERT_EQ(0, neteq_->GetAudio(kBlockSize16kHz, decoded,
-                                &samples_per_channel, &num_channels,
-                                &output_type));
-  // Make sure the last inserted packet is decoded and there are non-zero
-  // samples.
-  EXPECT_FALSE(IsAllZero(decoded, samples_per_channel * num_channels));
+  for (int n = 0; n <= algorithmic_frame_delay + 10; ++n) {
+    ASSERT_EQ(0, neteq_->InsertPacket(rtp_info, payload, kPayloadBytes,
+                                      receive_timestamp));
+    ASSERT_EQ(0, neteq_->GetAudio(kBlockSize16kHz, decoded,
+                                  &samples_per_channel, &num_channels,
+                                  &output_type));
+    if (n >= algorithmic_frame_delay + 1) {
+      // Expect that this frame contain samples from regular RTP.
+      EXPECT_TRUE(IsAllNonZero(decoded, samples_per_channel * num_channels));
+    }
+    rtp_info.header.sequenceNumber++;
+    rtp_info.header.timestamp += kBlockSize16kHz;
+    receive_timestamp += kBlockSize16kHz;
+  }
   NetEqNetworkStatistics network_stats;
   ASSERT_EQ(0, neteq_->NetworkStatistics(&network_stats));
   // Expecting a "clean" network.
   EXPECT_EQ(0, network_stats.packet_loss_rate);
   EXPECT_EQ(0, network_stats.expand_rate);
   EXPECT_EQ(0, network_stats.accelerate_rate);
-  EXPECT_EQ(0, network_stats.preemptive_rate);
+  EXPECT_LE(network_stats.preemptive_rate, 150);
 }
 
 // Test if the size of the packet buffer reported correctly when containing
@@ -1199,7 +1214,8 @@ TEST_F(NetEqDecodingTest,
   int num_channels;
   int samples_per_channel;
   uint32_t receive_timestamp = 0;
-  for (int n = 0; n < 1; ++n) {
+  int algorithmic_frame_delay = algorithmic_delay_ms_ / 10 + 1;
+  for (int n = 0; n < algorithmic_frame_delay; ++n) {
     ASSERT_EQ(0, neteq_->InsertPacket(rtp_info, payload, kPayloadBytes,
                                       receive_timestamp));
     ASSERT_EQ(0, neteq_->GetAudio(kBlockSize16kHz, decoded,
@@ -1225,7 +1241,8 @@ TEST_F(NetEqDecodingTest,
   }
   NetEqNetworkStatistics network_stats;
   ASSERT_EQ(0, neteq_->NetworkStatistics(&network_stats));
-  EXPECT_EQ(kNumSyncPackets * 10, network_stats.current_buffer_size_ms);
+  EXPECT_EQ(kNumSyncPackets * 10 + algorithmic_delay_ms_,
+            network_stats.current_buffer_size_ms);
 
   // Rewind |rtp_info| to that of the first sync packet.
   memcpy(&rtp_info, &first_sync_packet_rtp_info, sizeof(rtp_info));
@@ -1298,7 +1315,8 @@ void NetEqDecodingTest::WrapTest(uint16_t start_seq_no,
       if (packets_inserted > 4) {
         // Expect preferred and actual buffer size to be no more than 2 frames.
         EXPECT_LE(network_stats.preferred_buffer_size_ms, kFrameSizeMs * 2);
-        EXPECT_LE(network_stats.current_buffer_size_ms, kFrameSizeMs * 2);
+        EXPECT_LE(network_stats.current_buffer_size_ms, kFrameSizeMs * 2 +
+                  algorithmic_delay_ms_);
       }
       last_seq_no = seq_no;
       last_timestamp = timestamp;
@@ -1362,6 +1380,8 @@ void NetEqDecodingTest::DuplicateCng() {
   const int kSamples = kFrameSizeMs * kSampleRateKhz;
   const int kPayloadBytes = kSamples * 2;
 
+  const int algorithmic_delay_samples = std::max(
+      algorithmic_delay_ms_ * kSampleRateKhz, 5 * kSampleRateKhz / 8);
   // Insert three speech packet. Three are needed to get the frame length
   // correct.
   int out_len;
@@ -1398,7 +1418,7 @@ void NetEqDecodingTest::DuplicateCng() {
                 kMaxBlockSize, out_data_, &out_len, &num_channels, &type));
   ASSERT_EQ(kBlockSize16kHz, out_len);
   EXPECT_EQ(kOutputCNG, type);
-  EXPECT_EQ(timestamp - 10, neteq_->PlayoutTimestamp());
+  EXPECT_EQ(timestamp - algorithmic_delay_samples, neteq_->PlayoutTimestamp());
 
   // Insert the same CNG packet again. Note that at this point it is old, since
   // we have already decoded the first copy of it.
@@ -1412,7 +1432,8 @@ void NetEqDecodingTest::DuplicateCng() {
                   kMaxBlockSize, out_data_, &out_len, &num_channels, &type));
     ASSERT_EQ(kBlockSize16kHz, out_len);
     EXPECT_EQ(kOutputCNG, type);
-    EXPECT_EQ(timestamp - 10, neteq_->PlayoutTimestamp());
+    EXPECT_EQ(timestamp - algorithmic_delay_samples,
+              neteq_->PlayoutTimestamp());
   }
 
   // Insert speech again.
@@ -1427,7 +1448,8 @@ void NetEqDecodingTest::DuplicateCng() {
                 kMaxBlockSize, out_data_, &out_len, &num_channels, &type));
   ASSERT_EQ(kBlockSize16kHz, out_len);
   EXPECT_EQ(kOutputNormal, type);
-  EXPECT_EQ(timestamp + kSamples - 10, neteq_->PlayoutTimestamp());
+  EXPECT_EQ(timestamp + kSamples - algorithmic_delay_samples,
+            neteq_->PlayoutTimestamp());
 }
 
 TEST_F(NetEqDecodingTest, DiscardDuplicateCng) { DuplicateCng(); }

@@ -29,11 +29,13 @@ class BackgroundNoise;
 // PreemptiveExpand are implemented.
 class PreemptiveExpand : public TimeStretch {
  public:
-  PreemptiveExpand(int sample_rate_hz, size_t num_channels,
-                   const BackgroundNoise& background_noise)
+  PreemptiveExpand(int sample_rate_hz,
+                   size_t num_channels,
+                   const BackgroundNoise& background_noise,
+                   int overlap_samples)
       : TimeStretch(sample_rate_hz, num_channels, background_noise),
         old_data_length_per_channel_(-1),
-        overlap_samples_(5 * sample_rate_hz / 8000) {
+        overlap_samples_(overlap_samples) {
   }
 
   virtual ~PreemptiveExpand() {}
@@ -77,7 +79,8 @@ struct PreemptiveExpandFactory {
   virtual PreemptiveExpand* Create(
       int sample_rate_hz,
       size_t num_channels,
-      const BackgroundNoise& background_noise) const;
+      const BackgroundNoise& background_noise,
+      int overlap_samples) const;
 };
 
 }  // namespace webrtc

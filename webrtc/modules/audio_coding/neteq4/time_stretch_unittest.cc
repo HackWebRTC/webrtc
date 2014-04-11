@@ -21,14 +21,17 @@ namespace webrtc {
 TEST(TimeStretch, CreateAndDestroy) {
   const int kSampleRate = 8000;
   const size_t kNumChannels = 1;
+  const int kOverlapSamples = 5 * kSampleRate / 8000;
   BackgroundNoise bgn(kNumChannels);
   Accelerate accelerate(kSampleRate, kNumChannels, bgn);
-  PreemptiveExpand preemptive_expand(kSampleRate, kNumChannels, bgn);
+  PreemptiveExpand preemptive_expand(
+      kSampleRate, kNumChannels, bgn, kOverlapSamples);
 }
 
 TEST(TimeStretch, CreateUsingFactory) {
   const int kSampleRate = 8000;
   const size_t kNumChannels = 1;
+  const int kOverlapSamples = 5 * kSampleRate / 8000;
   BackgroundNoise bgn(kNumChannels);
 
   AccelerateFactory accelerate_factory;
@@ -38,8 +41,8 @@ TEST(TimeStretch, CreateUsingFactory) {
   delete accelerate;
 
   PreemptiveExpandFactory preemptive_expand_factory;
-  PreemptiveExpand* preemptive_expand =
-      preemptive_expand_factory.Create(kSampleRate, kNumChannels, bgn);
+  PreemptiveExpand* preemptive_expand = preemptive_expand_factory.Create(
+      kSampleRate, kNumChannels, bgn, kOverlapSamples);
   EXPECT_TRUE(preemptive_expand != NULL);
   delete preemptive_expand;
 }

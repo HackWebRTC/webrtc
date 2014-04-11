@@ -302,55 +302,6 @@ TEST_F(AcmReceiverTest, DISABLED_ON_ANDROID(PostdecodingVad)) {
   EXPECT_EQ(AudioFrame::kVadUnknown, frame.vad_activity_);
 }
 
-TEST_F(AcmReceiverTest, DISABLED_ON_ANDROID(FlushBuffer)) {
-  const int id = ACMCodecDB::kISAC;
-  EXPECT_EQ(0, receiver_->AddCodec(id, codecs_[id].pltype, codecs_[id].channels,
-                                   NULL));
-  const int kNumPackets = 5;
-  const int num_10ms_frames = codecs_[id].pacsize / (codecs_[id].plfreq / 100);
-  for (int n = 0; n < kNumPackets; ++n)
-     InsertOnePacketOfSilence(id);
-  ACMNetworkStatistics statistics;
-  receiver_->NetworkStatistics(&statistics);
-  ASSERT_EQ(num_10ms_frames * kNumPackets * 10, statistics.currentBufferSize);
-
-  receiver_->FlushBuffers();
-  receiver_->NetworkStatistics(&statistics);
-  ASSERT_EQ(0, statistics.currentBufferSize);
-}
-
-TEST_F(AcmReceiverTest, DISABLED_ON_ANDROID(PlayoutTimestamp)) {
-  const int id = ACMCodecDB::kPCM16Bwb;
-  EXPECT_EQ(0, receiver_->AddCodec(id, codecs_[id].pltype, codecs_[id].channels,
-                                   NULL));
-  receiver_->SetPlayoutMode(fax);
-  const int kNumPackets = 5;
-  const int num_10ms_frames = codecs_[id].pacsize / (codecs_[id].plfreq / 100);
-  uint32_t expected_timestamp;
-  AudioFrame frame;
-  int ts_offset = 0;
-  bool first_audio_frame = true;
-  for (int n = 0; n < kNumPackets; ++n) {
-    packet_sent_ = false;
-    InsertOnePacketOfSilence(id);
-    ASSERT_TRUE(packet_sent_);
-    expected_timestamp = last_packet_send_timestamp_;
-    for (int k = 0; k < num_10ms_frames; ++k) {
-      ASSERT_EQ(0, receiver_->GetAudio(codecs_[id].plfreq, &frame));
-      if (first_audio_frame) {
-        // There is an offset in playout timestamps. Perhaps, it is related to
-        // initial delay that NetEq applies
-        ts_offset =  receiver_->PlayoutTimestamp() - expected_timestamp;
-        first_audio_frame = false;
-      } else {
-        EXPECT_EQ(expected_timestamp + ts_offset,
-                  receiver_->PlayoutTimestamp());
-      }
-      expected_timestamp += codecs_[id].plfreq / 100;  // Increment by 10 ms.
-    }
-  }
-}
-
 TEST_F(AcmReceiverTest, DISABLED_ON_ANDROID(LastAudioCodec)) {
   const int kCodecId[] = {
       ACMCodecDB::kISAC, ACMCodecDB::kPCMA, ACMCodecDB::kISACSWB,

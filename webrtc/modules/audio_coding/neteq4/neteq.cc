@@ -28,7 +28,7 @@ namespace webrtc {
 
 // Creates all classes needed and inject them into a new NetEqImpl object.
 // Return the new object.
-NetEq* NetEq::Create(int sample_rate_hz) {
+NetEq* NetEq::Create(int sample_rate_hz, bool enable_audio_classifier) {
   BufferLevelFilter* buffer_level_filter = new BufferLevelFilter;
   DecoderDatabase* decoder_database = new DecoderDatabase;
   DelayPeakDetector* delay_peak_detector = new DelayPeakDetector;

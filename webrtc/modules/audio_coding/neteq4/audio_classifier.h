@@ -41,7 +41,7 @@ class AudioClassifier {
   bool Analysis(const int16_t* input, int input_length, int channels);
 
   // Gets the current classification : true = music, false = speech.
-  bool is_music() const { return is_music_; }
+  virtual bool is_music() const { return is_music_; }
 
   // Gets the current music probability.
   float music_probability() const { return music_probability_; }

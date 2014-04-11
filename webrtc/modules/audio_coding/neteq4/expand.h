@@ -36,12 +36,13 @@ class Expand {
          RandomVector* random_vector,
          int fs,
          size_t num_channels)
-      : background_noise_(background_noise),
+      : random_vector_(random_vector),
         sync_buffer_(sync_buffer),
-        random_vector_(random_vector),
         first_expand_(true),
         fs_hz_(fs),
         num_channels_(num_channels),
+        consecutive_expands_(0),
+        background_noise_(background_noise),
         overlap_length_(5 * fs / 8000),
         lag_index_direction_(0),
         current_lag_index_(0),
@@ -57,19 +58,19 @@ class Expand {
   virtual ~Expand() {}
 
   // Resets the object.
-  void Reset();
+  virtual void Reset();
 
   // The main method to produce concealment data. The data is appended to the
   // end of |output|.
-  int Process(AudioMultiVector* output);
+  virtual int Process(AudioMultiVector* output);
 
   // Prepare the object to do extra expansion during normal operation following
   // a period of expands.
-  void SetParametersForNormalAfterExpand();
+  virtual void SetParametersForNormalAfterExpand();
 
   // Prepare the object to do extra expansion during merge operation following
   // a period of expands.
-  void SetParametersForMergeAfterExpand();
+  virtual void SetParametersForMergeAfterExpand();
 
   // Sets the mute factor for |channel| to |value|.
   void SetMuteFactor(int16_t value, size_t channel) {
@@ -84,8 +85,37 @@ class Expand {
   }
 
   // Accessors and mutators.
-  size_t overlap_length() const { return overlap_length_; }
+  virtual size_t overlap_length() const { return overlap_length_; }
   int16_t max_lag() const { return max_lag_; }
+
+ protected:
+  static const int kMaxConsecutiveExpands = 200;
+  void GenerateRandomVector(int seed_increment,
+                            size_t length,
+                            int16_t* random_vector);
+
+  void GenerateBackgroundNoise(int16_t* random_vector,
+                               size_t channel,
+                               int16_t mute_slope,
+                               bool too_many_expands,
+                               size_t num_noise_samples,
+                               int16_t* buffer);
+
+  // Initializes member variables at the beginning of an expand period.
+  void InitializeForAnExpandPeriod();
+
+  bool TooManyExpands();
+
+  // Analyzes the signal history in |sync_buffer_|, and set up all parameters
+  // necessary to produce concealment data.
+  void AnalyzeSignal(int16_t* random_vector);
+
+  RandomVector* random_vector_;
+  SyncBuffer* sync_buffer_;
+  bool first_expand_;
+  const int fs_hz_;
+  const size_t num_channels_;
+  int consecutive_expands_;
 
  private:
   static const int kUnvoicedLpcOrder = 6;
@@ -94,7 +124,6 @@ class Expand {
   static const int kLpcAnalysisLength = 160;
   static const int kMaxSampleRate = 48000;
   static const int kNumLags = 3;
-  static const int kMaxConsecutiveExpands = 200;
 
   struct ChannelParameters {
     // Constructor.
@@ -122,10 +151,6 @@ class Expand {
     int16_t mute_slope; /* Q20 */
   };
 
-  // Analyze the signal history in |sync_buffer_|, and set up all parameters
-  // necessary to produce concealment data.
-  void AnalyzeSignal(int16_t* random_vector);
-
   // Calculate the auto-correlation of |input|, with length |input_length|
   // samples. The correlation is calculated from a downsampled version of
   // |input|, and is written to |output|. The scale factor is written to
@@ -136,13 +161,7 @@ class Expand {
   void UpdateLagIndex();
 
   BackgroundNoise* background_noise_;
-  SyncBuffer* sync_buffer_;
-  RandomVector* random_vector_;
-  bool first_expand_;
-  const int fs_hz_;
-  const size_t num_channels_;
   const size_t overlap_length_;
-  int consecutive_expands_;
   int16_t max_lag_;
   size_t expand_lags_[kNumLags];
   int lag_index_direction_;

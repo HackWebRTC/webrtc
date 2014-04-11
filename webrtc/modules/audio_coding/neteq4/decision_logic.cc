@@ -145,8 +145,8 @@ Operations DecisionLogic::GetDecision(const SyncBuffer& sync_buffer,
                                 reset_decoder);
 }
 
-void DecisionLogic::ExpandDecision(bool is_expand_decision) {
-  if (is_expand_decision) {
+void DecisionLogic::ExpandDecision(Operations operation) {
+  if (operation == kExpand) {
     num_consecutive_expands_++;
   } else {
     num_consecutive_expands_ = 0;

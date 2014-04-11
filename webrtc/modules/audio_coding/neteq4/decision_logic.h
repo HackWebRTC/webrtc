@@ -92,7 +92,7 @@ class DecisionLogic {
   // not. Note that this is necessary, since an expand decision can be changed
   // to kNormal in NetEqImpl::GetDecision if there is still enough data in the
   // sync buffer.
-  void ExpandDecision(bool is_expand_decision);
+  virtual void ExpandDecision(Operations operation);
 
   // Adds |value| to |sample_memory_|.
   void AddSampleMemory(int32_t value) {

@@ -108,7 +108,8 @@ class NetEq {
   // Creates a new NetEq object, starting at the sample rate |sample_rate_hz|.
   // (Note that it will still change the sample rate depending on what payloads
   // are being inserted; |sample_rate_hz| is just for startup configuration.)
-  static NetEq* Create(int sample_rate_hz);
+  static NetEq* Create(int sample_rate_hz,
+                       bool enable_audio_classifier = false);
 
   virtual ~NetEq() {}
 

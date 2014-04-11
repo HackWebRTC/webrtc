@@ -61,7 +61,8 @@ NetEqImpl::NetEqImpl(int fs,
                      TimestampScaler* timestamp_scaler,
                      AccelerateFactory* accelerate_factory,
                      ExpandFactory* expand_factory,
-                     PreemptiveExpandFactory* preemptive_expand_factory)
+                     PreemptiveExpandFactory* preemptive_expand_factory,
+                     bool create_components)
     : buffer_level_filter_(buffer_level_filter),
       decoder_database_(decoder_database),
       delay_manager_(delay_manager),
@@ -103,13 +104,9 @@ NetEqImpl::NetEqImpl(int fs,
   output_size_samples_ = kOutputSizeMs * 8 * fs_mult_;
   decoder_frame_length_ = 3 * output_size_samples_;
   WebRtcSpl_Init();
-  decision_logic_.reset(DecisionLogic::Create(fs_hz_, output_size_samples_,
-                                              kPlayoutOn,
-                                              decoder_database_.get(),
-                                              *packet_buffer_.get(),
-                                              delay_manager_.get(),
-                                              buffer_level_filter_.get()));
-  SetSampleRateAndChannels(fs, 1);  // Default is 1 channel.
+  if (create_components) {
+    SetSampleRateAndChannels(fs, 1);  // Default is 1 channel.
+  }
 }
 
 NetEqImpl::~NetEqImpl() {
@@ -284,12 +281,7 @@ void NetEqImpl::SetPlayoutMode(NetEqPlayoutMode mode) {
   CriticalSectionScoped lock(crit_sect_.get());
   if (!decision_logic_.get() || mode != decision_logic_->playout_mode()) {
     // The reset() method calls delete for the old object.
-    decision_logic_.reset(DecisionLogic::Create(fs_hz_, output_size_samples_,
-                                                mode,
-                                                decoder_database_.get(),
-                                                *packet_buffer_.get(),
-                                                delay_manager_.get(),
-                                                buffer_level_filter_.get()));
+    CreateDecisionLogic(mode);
   }
 }
 
@@ -948,7 +940,7 @@ int NetEqImpl::GetDecision(Operations* operation,
     return 0;
   }
 
-  decision_logic_->ExpandDecision(*operation == kExpand);
+  decision_logic_->ExpandDecision(*operation);
 
   // Check conditions for reset.
   if (new_codec_ || *operation == kUndefined) {
@@ -1065,6 +1057,11 @@ int NetEqImpl::GetDecision(Operations* operation,
         required_samples = 2 * output_size_samples_;
       }
       // Move on with the preemptive expand decision.
+      break;
+    }
+    case kMerge: {
+      required_samples =
+          std::max(merge_->RequiredFutureSamples(), required_samples);
       break;
     }
     default: {
@@ -1834,6 +1831,14 @@ int NetEqImpl::ExtractPackets(int required_samples, PacketList* packet_list) {
   return extracted_samples;
 }
 
+void NetEqImpl::UpdatePlcComponents(int fs_hz, size_t channels) {
+  // Delete objects and create new ones.
+  expand_.reset(expand_factory_->Create(background_noise_.get(),
+                                        sync_buffer_.get(), &random_vector_,
+                                        fs_hz, channels));
+  merge_.reset(new Merge(fs_hz, channels, expand_.get(), sync_buffer_.get()));
+}
+
 void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
   LOG_API2(fs_hz, channels);
   // TODO(hlundin): Change to an enumerator and skip assert.
@@ -1881,21 +1886,20 @@ void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
   // Reset random vector.
   random_vector_.Reset();
 
-  // Delete Expand object and create a new one.
-  expand_.reset(expand_factory_->Create(background_noise_.get(),
-                                        sync_buffer_.get(), &random_vector_,
-                                        fs_hz, channels));
+  UpdatePlcComponents(fs_hz, channels);
+
   // Move index so that we create a small set of future samples (all 0).
   sync_buffer_->set_next_index(sync_buffer_->next_index() -
-                               expand_->overlap_length());
+      expand_->overlap_length());
 
   normal_.reset(new Normal(fs_hz, decoder_database_.get(), *background_noise_,
                            expand_.get()));
-  merge_.reset(new Merge(fs_hz, channels, expand_.get(), sync_buffer_.get()));
   accelerate_.reset(
       accelerate_factory_->Create(fs_hz, channels, *background_noise_));
-  preemptive_expand_.reset(
-      preemptive_expand_factory_->Create(fs_hz, channels, *background_noise_));
+  preemptive_expand_.reset(preemptive_expand_factory_->Create(
+      fs_hz, channels,
+      *background_noise_,
+      static_cast<int>(expand_->overlap_length())));
 
   // Delete ComfortNoise object and create a new one.
   comfort_noise_.reset(new ComfortNoise(fs_hz, decoder_database_.get(),
@@ -1908,8 +1912,11 @@ void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
     decoded_buffer_.reset(new int16_t[decoded_buffer_length_]);
   }
 
-  // Communicate new sample rate and output size to DecisionLogic object.
-  assert(decision_logic_.get());
+  // Create DecisionLogic if it is not created yet, then communicate new sample
+  // rate and output size to DecisionLogic object.
+  if (!decision_logic_.get()) {
+    CreateDecisionLogic(kPlayoutOn);
+  }
   decision_logic_->SetSampleRate(fs_hz_, output_size_samples_);
 }
 
@@ -1930,4 +1937,12 @@ NetEqOutputType NetEqImpl::LastOutputType() {
   }
 }
 
+void NetEqImpl::CreateDecisionLogic(NetEqPlayoutMode mode) {
+  decision_logic_.reset(DecisionLogic::Create(fs_hz_, output_size_samples_,
+                                              mode,
+                                              decoder_database_.get(),
+                                              *packet_buffer_.get(),
+                                              delay_manager_.get(),
+                                              buffer_level_filter_.get()));
+}
 }  // namespace webrtc

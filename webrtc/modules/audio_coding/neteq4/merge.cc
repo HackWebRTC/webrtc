@@ -20,6 +20,7 @@
 #include "webrtc/modules/audio_coding/neteq4/dsp_helper.h"
 #include "webrtc/modules/audio_coding/neteq4/expand.h"
 #include "webrtc/modules/audio_coding/neteq4/sync_buffer.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -307,9 +308,11 @@ int16_t Merge::CorrelateAndPeakSearch(int16_t expanded_max, int16_t input_max,
                              stop_position_downsamp, correlation_shift, 1);
 
   // Normalize correlation to 14 bits and copy to a 16-bit array.
-  static const int kPadLength = 4;
-  int16_t correlation16[kPadLength + kMaxCorrelationLength + kPadLength] = {0};
-  int16_t* correlation_ptr = &correlation16[kPadLength];
+  const int pad_length = static_cast<int>(expand_->overlap_length() - 1);
+  const int correlation_buffer_size = 2 * pad_length + kMaxCorrelationLength;
+  scoped_ptr<int16_t[]> correlation16(new int16_t[correlation_buffer_size]);
+  memset(correlation16.get(), 0, correlation_buffer_size * sizeof(int16_t));
+  int16_t* correlation_ptr = &correlation16[pad_length];
   int32_t max_correlation = WebRtcSpl_MaxAbsValueW32(correlation,
                                                      stop_position_downsamp);
   int16_t norm_shift = std::max(0, 17 - WebRtcSpl_NormW32(max_correlation));
@@ -332,7 +335,7 @@ int16_t Merge::CorrelateAndPeakSearch(int16_t expanded_max, int16_t input_max,
   // start index |start_index_downsamp| and the effective array length.
   int modified_stop_pos =
       std::min(stop_position_downsamp,
-               kMaxCorrelationLength + kPadLength - start_index_downsamp);
+               kMaxCorrelationLength + pad_length - start_index_downsamp);
   int best_correlation_index;
   int16_t best_correlation;
   static const int kNumCorrelationCandidates = 1;
@@ -354,5 +357,10 @@ int16_t Merge::CorrelateAndPeakSearch(int16_t expanded_max, int16_t input_max,
   }
   return best_correlation_index;
 }
+
+int Merge::RequiredFutureSamples() {
+  return static_cast<int>(fs_hz_ / 100 * num_channels_);  // 10 ms.
+}
+
 
 }  // namespace webrtc

@@ -38,6 +38,10 @@ class DecisionLogicNormal : public DecisionLogic {
   virtual ~DecisionLogicNormal() {}
 
  protected:
+  static const int kAllowMergeWithoutExpandMs = 20;  // 20 ms.
+  static const int kReinitAfterExpands = 100;
+  static const int kMaxWaitForPacket = 10;
+
   // Returns the operation that should be done next. |sync_buffer| and |expand|
   // are provided for reference. |decoder_frame_length| is the number of samples
   // obtained from the last decoded frame. If there is a packet available, the
@@ -54,31 +58,28 @@ class DecisionLogicNormal : public DecisionLogic {
                                             Modes prev_mode, bool play_dtmf,
                                             bool* reset_decoder);
 
- private:
-  static const int kAllowMergeWithoutExpandMs = 20;  // 20 ms.
-  static const int kReinitAfterExpands = 100;
-  static const int kMaxWaitForPacket = 10;
+  // Returns the operation to do given that the expected packet is not
+  // available, but a packet further into the future is at hand.
+  virtual Operations FuturePacketAvailable(
+      const SyncBuffer& sync_buffer,
+      const Expand& expand,
+      int decoder_frame_length, Modes prev_mode,
+      uint32_t target_timestamp,
+      uint32_t available_timestamp,
+      bool play_dtmf);
 
+  // Returns the operation to do given that the expected packet is available.
+  virtual Operations ExpectedPacketAvailable(Modes prev_mode, bool play_dtmf);
+
+  // Returns the operation given that no packets are available (except maybe
+  // a DTMF event, flagged by setting |play_dtmf| true).
+  virtual Operations NoPacket(bool play_dtmf);
+
+ private:
   // Returns the operation given that the next available packet is a comfort
   // noise payload (RFC 3389 only, not codec-internal).
   Operations CngOperation(Modes prev_mode, uint32_t target_timestamp,
                           uint32_t available_timestamp);
-
-  // Returns the operation given that no packets are available (except maybe
-  // a DTMF event, flagged by setting |play_dtmf| true).
-  Operations NoPacket(bool play_dtmf);
-
-  // Returns the operation to do given that the expected packet is available.
-  Operations ExpectedPacketAvailable(Modes prev_mode, bool play_dtmf);
-
-  // Returns the operation to do given that the expected packet is not
-  // available, but a packet further into the future is at hand.
-  Operations FuturePacketAvailable(const SyncBuffer& sync_buffer,
-                                   const Expand& expand,
-                                   int decoder_frame_length, Modes prev_mode,
-                                   uint32_t target_timestamp,
-                                   uint32_t available_timestamp,
-                                   bool play_dtmf);
 
   // Checks if enough time has elapsed since the last successful timescale
   // operation was done (i.e., accelerate or preemptive expand).

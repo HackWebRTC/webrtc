@@ -56,20 +56,9 @@ int Expand::Process(AudioMultiVector* output) {
     // This is not the first expansion, parameters are already estimated.
     // Extract a noise segment.
     int16_t rand_length = max_lag_;
-    // TODO(hlundin): This if-statement should not be needed. Should be just
-    // as good to generate all of the vector in one call in either case.
-    if (rand_length <= RandomVector::kRandomTableSize) {
-      random_vector_->IncreaseSeedIncrement(2);
-      random_vector_->Generate(rand_length, random_vector);
-    } else {
-      // This only applies to SWB where length could be larger than 256.
-      assert(rand_length <= kMaxSampleRate / 8000 * 120 + 30);
-      random_vector_->IncreaseSeedIncrement(2);
-      random_vector_->Generate(RandomVector::kRandomTableSize, random_vector);
-      random_vector_->IncreaseSeedIncrement(2);
-      random_vector_->Generate(rand_length - RandomVector::kRandomTableSize,
-                               &random_vector[RandomVector::kRandomTableSize]);
-    }
+    // This only applies to SWB where length could be larger than 256.
+    assert(rand_length <= kMaxSampleRate / 8000 * 120 + 30);
+    GenerateRandomVector(2, rand_length, random_vector);
   }
 
 
@@ -262,82 +251,12 @@ int Expand::Process(AudioMultiVector* output) {
     }
 
     // Background noise part.
-    // TODO(hlundin): Move to separate method? In BackgroundNoise class?
-    if (background_noise_->initialized()) {
-      // Use background noise parameters.
-      memcpy(noise_vector - kNoiseLpcOrder,
-             background_noise_->FilterState(channel_ix),
-             sizeof(int16_t) * kNoiseLpcOrder);
-
-      if (background_noise_->ScaleShift(channel_ix) > 1) {
-        add_constant = 1 << (background_noise_->ScaleShift(channel_ix) - 1);
-      } else {
-        add_constant = 0;
-      }
-
-      // Scale random vector to correct energy level.
-      WebRtcSpl_AffineTransformVector(
-          scaled_random_vector, random_vector,
-          background_noise_->Scale(channel_ix), add_constant,
-          background_noise_->ScaleShift(channel_ix),
-          static_cast<int>(current_lag));
-
-      WebRtcSpl_FilterARFastQ12(scaled_random_vector, noise_vector,
-                                background_noise_->Filter(channel_ix),
-                                kNoiseLpcOrder + 1,
-                                static_cast<int>(current_lag));
-
-      background_noise_->SetFilterState(
-          channel_ix,
-          &(noise_vector[current_lag - kNoiseLpcOrder]),
-          kNoiseLpcOrder);
-
-      // Unmute the background noise.
-      int16_t bgn_mute_factor = background_noise_->MuteFactor(channel_ix);
-      NetEqBackgroundNoiseMode bgn_mode = background_noise_->mode();
-      if (bgn_mode == kBgnFade &&
-          consecutive_expands_ >= kMaxConsecutiveExpands &&
-          bgn_mute_factor > 0) {
-        // Fade BGN to zero.
-        // Calculate muting slope, approximately -2^18 / fs_hz.
-        int16_t mute_slope;
-        if (fs_hz_ == 8000) {
-          mute_slope = -32;
-        } else if (fs_hz_ == 16000) {
-          mute_slope = -16;
-        } else if (fs_hz_ == 32000) {
-          mute_slope = -8;
-        } else {
-          mute_slope = -5;
-        }
-        // Use UnmuteSignal function with negative slope.
-        // |bgn_mute_factor| is in Q14. |mute_slope| is in Q20.
-        DspHelper::UnmuteSignal(noise_vector, current_lag, &bgn_mute_factor,
-                                mute_slope, noise_vector);
-      } else if (bgn_mute_factor < 16384) {
-        // If mode is kBgnOff, or if kBgnFade has started fading,
-        // Use regular |mute_slope|.
-        if (!stop_muting_ && bgn_mode != kBgnOff &&
-            !(bgn_mode == kBgnFade &&
-                consecutive_expands_ >= kMaxConsecutiveExpands)) {
-          DspHelper::UnmuteSignal(noise_vector, static_cast<int>(current_lag),
-                                  &bgn_mute_factor, parameters.mute_slope,
-                                  noise_vector);
-        } else {
-          // kBgnOn and stop muting, or
-          // kBgnOff (mute factor is always 0), or
-          // kBgnFade has reached 0.
-          WebRtcSpl_AffineTransformVector(noise_vector, noise_vector,
-                                          bgn_mute_factor, 8192, 14,
-                                          static_cast<int>(current_lag));
-        }
-      }
-      // Update mute_factor in BackgroundNoise class.
-      background_noise_->SetMuteFactor(channel_ix, bgn_mute_factor);
-    } else {
-      // BGN parameters have not been initialized; use zero noise.
-      memset(noise_vector, 0, sizeof(int16_t) * current_lag);
-    }
+    GenerateBackgroundNoise(random_vector,
+                            channel_ix,
+                            channel_parameters_[channel_ix].mute_slope,
+                            TooManyExpands(),
+                            current_lag,
+                            unvoiced_array_memory);
 
     // Add background noise to the combined voiced-unvoiced signal.
     for (size_t i = 0; i < current_lag; i++) {
@@ -353,11 +272,8 @@ int Expand::Process(AudioMultiVector* output) {
   }
 
   // Increase call number and cap it.
-  ++consecutive_expands_;
-  if (consecutive_expands_ > kMaxConsecutiveExpands) {
-    consecutive_expands_ = kMaxConsecutiveExpands;
-  }
-
+  consecutive_expands_ = consecutive_expands_ >= kMaxConsecutiveExpands ?
+      kMaxConsecutiveExpands : consecutive_expands_ + 1;
   return 0;
 }
 
@@ -371,6 +287,24 @@ void Expand::SetParametersForMergeAfterExpand() {
   current_lag_index_ = -1; /* out of the 3 possible ones */
   lag_index_direction_ = 1; /* make sure we get the "optimal" lag */
   stop_muting_ = true;
+}
+
+void Expand::InitializeForAnExpandPeriod() {
+  lag_index_direction_ = 1;
+  current_lag_index_ = -1;
+  stop_muting_ = false;
+  random_vector_->set_seed_increment(1);
+  consecutive_expands_ = 0;
+  for (size_t ix = 0; ix < num_channels_; ++ix) {
+    channel_parameters_[ix].current_voice_mix_factor = 16384;  // 1.0 in Q14.
+    channel_parameters_[ix].mute_factor = 16384;  // 1.0 in Q14.
+    // Start with 0 gain for background noise.
+    background_noise_->SetMuteFactor(ix, 0);
+  }
+}
+
+bool Expand::TooManyExpands() {
+  return consecutive_expands_ >= kMaxConsecutiveExpands;
 }
 
 void Expand::AnalyzeSignal(int16_t* random_vector) {
@@ -400,18 +334,8 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
   const int16_t* audio_history =
       &(*sync_buffer_)[0][sync_buffer_->Size() - signal_length];
 
-  // Initialize some member variables.
-  lag_index_direction_ = 1;
-  current_lag_index_ = -1;
-  stop_muting_ = false;
-  random_vector_->set_seed_increment(1);
-  consecutive_expands_ = 0;
-  for (size_t ix = 0; ix < num_channels_; ++ix) {
-    channel_parameters_[ix].current_voice_mix_factor = 16384;  // 1.0 in Q14.
-    channel_parameters_[ix].mute_factor = 16384;  // 1.0 in Q14.
-    // Start with 0 gain for background noise.
-    background_noise_->SetMuteFactor(ix, 0);
-  }
+  // Initialize.
+  InitializeForAnExpandPeriod();
 
   // Calculate correlation in downsampled domain (4 kHz sample rate).
   int16_t correlation_scale;
@@ -873,5 +797,108 @@ Expand* ExpandFactory::Create(BackgroundNoise* background_noise,
                     num_channels);
 }
 
+// TODO(turajs): This can be moved to BackgroundNoise class.
+void Expand::GenerateBackgroundNoise(int16_t* random_vector,
+                                     size_t channel,
+                                     int16_t mute_slope,
+                                     bool too_many_expands,
+                                     size_t num_noise_samples,
+                                     int16_t* buffer) {
+  static const int kNoiseLpcOrder = BackgroundNoise::kMaxLpcOrder;
+  int16_t scaled_random_vector[kMaxSampleRate / 8000 * 125];
+  assert(kMaxSampleRate / 8000 * 125 >= (int)num_noise_samples);
+  int16_t* noise_samples = &buffer[kNoiseLpcOrder];
+  if (background_noise_->initialized()) {
+    // Use background noise parameters.
+    memcpy(noise_samples - kNoiseLpcOrder,
+           background_noise_->FilterState(channel),
+           sizeof(int16_t) * kNoiseLpcOrder);
+
+    int dc_offset = 0;
+    if (background_noise_->ScaleShift(channel) > 1) {
+      dc_offset = 1 << (background_noise_->ScaleShift(channel) - 1);
+    }
+
+    // Scale random vector to correct energy level.
+    WebRtcSpl_AffineTransformVector(
+        scaled_random_vector, random_vector,
+        background_noise_->Scale(channel), dc_offset,
+        background_noise_->ScaleShift(channel),
+        static_cast<int>(num_noise_samples));
+
+    WebRtcSpl_FilterARFastQ12(scaled_random_vector, noise_samples,
+                              background_noise_->Filter(channel),
+                              kNoiseLpcOrder + 1,
+                              static_cast<int>(num_noise_samples));
+
+    background_noise_->SetFilterState(
+        channel,
+        &(noise_samples[num_noise_samples - kNoiseLpcOrder]),
+        kNoiseLpcOrder);
+
+    // Unmute the background noise.
+    int16_t bgn_mute_factor = background_noise_->MuteFactor(channel);
+    NetEqBackgroundNoiseMode bgn_mode = background_noise_->mode();
+    if (bgn_mode == kBgnFade && too_many_expands && bgn_mute_factor > 0) {
+      // Fade BGN to zero.
+      // Calculate muting slope, approximately -2^18 / fs_hz.
+      int16_t mute_slope;
+      if (fs_hz_ == 8000) {
+        mute_slope = -32;
+      } else if (fs_hz_ == 16000) {
+        mute_slope = -16;
+      } else if (fs_hz_ == 32000) {
+        mute_slope = -8;
+      } else {
+        mute_slope = -5;
+      }
+      // Use UnmuteSignal function with negative slope.
+      // |bgn_mute_factor| is in Q14. |mute_slope| is in Q20.
+      DspHelper::UnmuteSignal(noise_samples,
+                              num_noise_samples,
+                              &bgn_mute_factor,
+                              mute_slope,
+                              noise_samples);
+    } else if (bgn_mute_factor < 16384) {
+      // If mode is kBgnOff, or if kBgnFade has started fading,
+      // Use regular |mute_slope|.
+      if (!stop_muting_ && bgn_mode != kBgnOff &&
+          !(bgn_mode == kBgnFade && too_many_expands)) {
+        DspHelper::UnmuteSignal(noise_samples,
+                                static_cast<int>(num_noise_samples),
+                                &bgn_mute_factor,
+                                mute_slope,
+                                noise_samples);
+      } else {
+        // kBgnOn and stop muting, or
+        // kBgnOff (mute factor is always 0), or
+        // kBgnFade has reached 0.
+        WebRtcSpl_AffineTransformVector(noise_samples, noise_samples,
+                                        bgn_mute_factor, 8192, 14,
+                                        static_cast<int>(num_noise_samples));
+      }
+    }
+    // Update mute_factor in BackgroundNoise class.
+    background_noise_->SetMuteFactor(channel, bgn_mute_factor);
+  } else {
+    // BGN parameters have not been initialized; use zero noise.
+    memset(noise_samples, 0, sizeof(int16_t) * num_noise_samples);
+  }
+}
+
+void Expand::GenerateRandomVector(int seed_increment,
+                                  size_t length,
+                                  int16_t* random_vector) {
+  // TODO(turajs): According to hlundin The loop should not be needed. Should be
+  // just as good to generate all of the vector in one call.
+  size_t samples_generated = 0;
+  const size_t kMaxRandSamples = RandomVector::kRandomTableSize;
+  while(samples_generated < length) {
+    size_t rand_length = std::min(length - samples_generated, kMaxRandSamples);
+    random_vector_->IncreaseSeedIncrement(seed_increment);
+    random_vector_->Generate(rand_length, &random_vector[samples_generated]);
+    samples_generated += rand_length;
+  }
+}
 
 }  // namespace webrtc

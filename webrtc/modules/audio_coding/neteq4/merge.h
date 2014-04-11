@@ -35,14 +35,16 @@ class Merge {
  public:
   Merge(int fs_hz, size_t num_channels, Expand* expand, SyncBuffer* sync_buffer)
       : fs_hz_(fs_hz),
-        fs_mult_(fs_hz_ / 8000),
         num_channels_(num_channels),
+        fs_mult_(fs_hz_ / 8000),
         timestamps_per_call_(fs_hz_ / 100),
         expand_(expand),
         sync_buffer_(sync_buffer),
         expanded_(num_channels_) {
     assert(num_channels_ > 0);
   }
+
+  virtual ~Merge() {}
 
   // The main method to produce the audio data. The decoded data is supplied in
   // |input|, having |input_length| samples in total for all channels
@@ -51,9 +53,15 @@ class Merge {
   // de-interleaving |input|. The values in |external_mute_factor_array| (Q14)
   // will be used to scale the audio, and is updated in the process. The array
   // must have |num_channels_| elements.
-  int Process(int16_t* input, size_t input_length,
-              int16_t* external_mute_factor_array,
-              AudioMultiVector* output);
+  virtual int Process(int16_t* input, size_t input_length,
+                      int16_t* external_mute_factor_array,
+                      AudioMultiVector* output);
+
+  virtual int RequiredFutureSamples();
+
+ protected:
+  const int fs_hz_;
+  const size_t num_channels_;
 
  private:
   static const int kMaxSampleRate = 48000;
@@ -87,9 +95,7 @@ class Merge {
                                  int start_position, int input_length,
                                  int expand_period) const;
 
-  const int fs_hz_;
   const int fs_mult_;  // fs_hz_ / 8000.
-  const size_t num_channels_;
   const int timestamps_per_call_;
   Expand* expand_;
   SyncBuffer* sync_buffer_;
