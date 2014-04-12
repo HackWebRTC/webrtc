@@ -1,4 +1,5 @@
 # Fails on Dr Memory Full.
 # https://code.google.com/p/webrtc/issues/detail?id=3158
 P2PTransportChannel*.*
+PortTest.*
 PseudoTcpTest.TestSendBothUseLargeWindowScale
