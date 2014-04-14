@@ -962,7 +962,6 @@
         }],
         ['OS=="ios"', {
           'sources': [
-            'media/devices/iosdeviceinfo.cc',
             'media/devices/mobiledevicemanager.cc',
           ],
           'include_dirs': [
