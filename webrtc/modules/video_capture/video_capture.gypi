@@ -19,8 +19,6 @@
       'sources': [
         'device_info_impl.cc',
         'device_info_impl.h',
-        'ensure_initialized.cc',
-        'ensure_initialized.h',
         'include/video_capture.h',
         'include/video_capture_defines.h',
         'include/video_capture_factory.h',
@@ -147,6 +145,8 @@
             '<(DEPTH)/testing/gtest.gyp:gtest',
           ],
           'sources': [
+            'ensure_initialized.cc',
+            'ensure_initialized.h',
             'test/video_capture_unittest.cc',
             'test/video_capture_main_mac.mm',
           ],
