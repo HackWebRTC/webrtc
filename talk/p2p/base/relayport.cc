@@ -240,8 +240,11 @@ void RelayPort::SetReady() {
     for (iter = external_addr_.begin();
          iter != external_addr_.end(); ++iter) {
       std::string proto_name = ProtoToString(iter->proto);
-      AddAddress(iter->address, iter->address, proto_name,
-                 RELAY_PORT_TYPE, ICE_TYPE_PREFERENCE_RELAY, false);
+      // In case of Gturn, related address is set to null socket address.
+      // This is due to as mapped address stun attribute is used for allocated
+      // address.
+      AddAddress(iter->address, iter->address, talk_base::SocketAddress(),
+                 proto_name, RELAY_PORT_TYPE, ICE_TYPE_PREFERENCE_RELAY, false);
     }
     ready_ = true;
     SignalPortComplete(this);
@@ -548,10 +551,6 @@ void RelayEntry::OnConnect(const talk_base::SocketAddress& mapped_addr,
             << " @ " << mapped_addr.ToSensitiveString();
   connected_ = true;
 
-  // In case of Gturn related address is set to null socket address.
-  // This is due to mapped address stun attribute is used for allocated
-  // address.
-  port_->set_related_address(talk_base::SocketAddress());
   port_->AddExternalAddress(ProtocolAddress(mapped_addr, proto));
   port_->SetReady();
 }

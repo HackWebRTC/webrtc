@@ -157,7 +157,13 @@ class TurnPortTest : public testing::Test,
                        const talk_base::PacketTime& packet_time) {
     udp_packets_.push_back(talk_base::Buffer(data, size));
   }
-
+  void OnSocketReadPacket(talk_base::AsyncPacketSocket* socket,
+                          const char* data, size_t size,
+                          const talk_base::SocketAddress& remote_addr,
+                          const talk_base::PacketTime& packet_time) {
+    turn_port_->HandleIncomingPacket(socket, data, size, remote_addr,
+                                     packet_time);
+  }
   talk_base::AsyncSocket* CreateServerSocket(const SocketAddress addr) {
     talk_base::AsyncSocket* socket = ss_->CreateAsyncSocket(SOCK_STREAM);
     EXPECT_GE(socket->Bind(addr), 0);
@@ -185,6 +191,31 @@ class TurnPortTest : public testing::Test,
     // This TURN port will be the controlling.
     turn_port_->SetIceProtocolType(cricket::ICEPROTO_RFC5245);
     turn_port_->SetIceRole(cricket::ICEROLE_CONTROLLING);
+    ConnectSignals();
+  }
+
+  void CreateSharedTurnPort(const std::string& username,
+                            const std::string& password,
+                            const cricket::ProtocolAddress& server_address) {
+    socket_.reset(socket_factory_.CreateUdpSocket(
+        talk_base::SocketAddress(kLocalAddr1.ipaddr(), 0), 0, 0));
+    ASSERT_TRUE(socket_ != NULL);
+    socket_->SignalReadPacket.connect(this, &TurnPortTest::OnSocketReadPacket);
+
+    cricket::RelayCredentials credentials(username, password);
+    turn_port_.reset(cricket::TurnPort::Create(
+        main_, &socket_factory_, &network_, socket_.get(), kIceUfrag1, kIcePwd1,
+        server_address, credentials));
+    // Set ICE protocol type to ICEPROTO_RFC5245, as port by default will be
+    // in Hybrid mode. Protocol type is necessary to send correct type STUN ping
+    // messages.
+    // This TURN port will be the controlling.
+    turn_port_->SetIceProtocolType(cricket::ICEPROTO_RFC5245);
+    turn_port_->SetIceRole(cricket::ICEROLE_CONTROLLING);
+    ConnectSignals();
+  }
+
+  void ConnectSignals() {
     turn_port_->SignalPortComplete.connect(this,
         &TurnPortTest::OnTurnPortComplete);
     turn_port_->SignalPortError.connect(this,
@@ -294,6 +325,7 @@ class TurnPortTest : public testing::Test,
   talk_base::SocketServerScope ss_scope_;
   talk_base::Network network_;
   talk_base::BasicPacketSocketFactory socket_factory_;
+  talk_base::scoped_ptr<talk_base::AsyncPacketSocket> socket_;
   cricket::TestTurnServer turn_server_;
   talk_base::scoped_ptr<TurnPort> turn_port_;
   talk_base::scoped_ptr<UDPPort> udp_port_;
@@ -346,6 +378,12 @@ TEST_F(TurnPortTest, TestTurnAllocateBadPassword) {
 // outside. It should now work as well.
 TEST_F(TurnPortTest, TestTurnConnection) {
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
+  TestTurnConnection();
+}
+
+// Similar to above, except that this test will use the shared socket.
+TEST_F(TurnPortTest, TestTurnConnectionUsingSharedSocket) {
+  CreateSharedTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
   TestTurnConnection();
 }
 

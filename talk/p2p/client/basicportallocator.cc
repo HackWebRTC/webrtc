@@ -148,6 +148,9 @@ class AllocationSequence : public talk_base::MessageHandler,
                     const talk_base::PacketTime& packet_time);
 
   void OnPortDestroyed(PortInterface* port);
+  void OnResolvedTurnServerAddress(
+    TurnPort* port, const talk_base::SocketAddress& server_address,
+    const talk_base::SocketAddress& resolved_server_address);
 
   BasicPortAllocatorSession* session_;
   talk_base::Network* network_;
@@ -157,8 +160,10 @@ class AllocationSequence : public talk_base::MessageHandler,
   uint32 flags_;
   ProtocolList protocols_;
   talk_base::scoped_ptr<talk_base::AsyncPacketSocket> udp_socket_;
-  // Keeping a list of all UDP based ports.
-  std::deque<Port*> ports;
+  // There will be only one udp port per AllocationSequence.
+  Port* udp_port_;
+  // Keeping a map for turn ports keyed with server addresses.
+  std::map<talk_base::SocketAddress, Port*> turn_ports_;
   int phase_;
 };
 
@@ -693,6 +698,7 @@ AllocationSequence::AllocationSequence(BasicPortAllocatorSession* session,
       state_(kInit),
       flags_(flags),
       udp_socket_(),
+      udp_port_(NULL),
       phase_(0) {
 }
 
@@ -855,7 +861,6 @@ void AllocationSequence::CreateUDPPorts() {
   }
 
   if (port) {
-    ports.push_back(port);
     // If shared socket is enabled, STUN candidate will be allocated by the
     // UDPPort.
     if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET) &&
@@ -866,7 +871,13 @@ void AllocationSequence::CreateUDPPorts() {
             << "AllocationSequence: No STUN server configured, skipping.";
         return;
       }
-      port->set_server_addr(config_->stun_address);
+      udp_port_ = port;
+      // If there is a TURN UDP server available, then we will use TURN port
+      // to get stun address, otherwise by UDP port.
+      // Shared socket mode is not used in GTURN mode.
+      if (config_ && !config_->SupportsProtocol(RELAY_TURN, PROTO_UDP)) {
+        port->set_server_addr(config_->stun_address);
+      }
     }
 
     session_->AddAllocatedPort(port, this, true);
@@ -992,15 +1003,40 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
   PortList::const_iterator relay_port;
   for (relay_port = config.ports.begin();
        relay_port != config.ports.end(); ++relay_port) {
-    TurnPort* port = TurnPort::Create(session_->network_thread(),
-                                      session_->socket_factory(),
-                                      network_, ip_,
-                                      session_->allocator()->min_port(),
-                                      session_->allocator()->max_port(),
-                                      session_->username(),
-                                      session_->password(),
-                                      *relay_port, config.credentials);
+    TurnPort* port = NULL;
+    if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET)) {
+      port = TurnPort::Create(session_->network_thread(),
+                              session_->socket_factory(),
+                              network_, udp_socket_.get(),
+                              session_->username(), session_->password(),
+                              *relay_port, config.credentials);
+    } else {
+      port = TurnPort::Create(session_->network_thread(),
+                              session_->socket_factory(),
+                              network_, ip_,
+                              session_->allocator()->min_port(),
+                              session_->allocator()->max_port(),
+                              session_->username(),
+                              session_->password(),
+                              *relay_port, config.credentials);
+    }
+
     if (port) {
+      // If we are using shared socket for TURN and udp ports, we need to
+      // find a way to demux the packets to the correct port when received.
+      // Mapping against server_address is one way of doing this. When packet
+      // is received the remote_address will be checked against the map.
+      // If server address is not resolved, a signal will be sent from the port
+      // after the address is resolved. The map entry will updated with the
+      // resolved address when the signal is received from the port.
+      if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET)) {
+        // If server address is not resolved then listen for signal from port.
+        if ((*relay_port).address.IsUnresolved()) {
+          port->SignalResolvedServerAddress.connect(
+              this, &AllocationSequence::OnResolvedTurnServerAddress);
+        }
+        turn_ports_[(*relay_port).address] = port;
+      }
       session_->AddAllocatedPort(port, this, true);
     }
   }
@@ -1011,22 +1047,46 @@ void AllocationSequence::OnReadPacket(
     const talk_base::SocketAddress& remote_addr,
     const talk_base::PacketTime& packet_time) {
   ASSERT(socket == udp_socket_.get());
-  for (std::deque<Port*>::iterator iter = ports.begin();
-       iter != ports.end(); ++iter) {
-    // We have only one port in the queue.
-    // TODO(mallinath) - Add shared socket support to Relay and Turn ports.
-    if ((*iter)->HandleIncomingPacket(
-        socket, data, size, remote_addr, packet_time)) {
-      break;
+  // If the packet is received from one of the TURN server in the config, then
+  // pass down the packet to that port, otherwise it will be handed down to
+  // the local udp port.
+  Port* port = NULL;
+  std::map<talk_base::SocketAddress, Port*>::iterator iter =
+      turn_ports_.find(remote_addr);
+  if (iter != turn_ports_.end()) {
+    port = iter->second;
+  } else if (udp_port_) {
+    port = udp_port_;
+  }
+  ASSERT(port != NULL);
+  port->HandleIncomingPacket(socket, data, size, remote_addr, packet_time);
+}
+
+void AllocationSequence::OnPortDestroyed(PortInterface* port) {
+  if (udp_port_ == port) {
+    udp_port_ = NULL;
+  } else {
+    std::map<talk_base::SocketAddress, Port*>::iterator iter;
+    for (iter = turn_ports_.begin(); iter != turn_ports_.end(); ++iter) {
+      if (iter->second == port) {
+        turn_ports_.erase(iter);
+        break;
+      }
     }
   }
 }
 
-void AllocationSequence::OnPortDestroyed(PortInterface* port) {
-  std::deque<Port*>::iterator iter =
-      std::find(ports.begin(), ports.end(), port);
-  ASSERT(iter != ports.end());
-  ports.erase(iter);
+void AllocationSequence::OnResolvedTurnServerAddress(
+    TurnPort* port, const talk_base::SocketAddress& server_address,
+    const talk_base::SocketAddress& resolved_server_address) {
+  std::map<talk_base::SocketAddress, Port*>::iterator iter;
+  iter = turn_ports_.find(server_address);
+
+  ASSERT(iter != turn_ports_.end());
+  ASSERT(iter->second != port);
+  // Remove old entry and then insert using the resolved address as key.
+  turn_ports_.erase(iter);
+  turn_ports_[resolved_server_address] = port;
 }
 
 // PortConfiguration
@@ -1044,12 +1104,22 @@ void PortConfiguration::AddRelay(const RelayServerConfig& config) {
 }
 
 bool PortConfiguration::SupportsProtocol(
-    const RelayServerConfig& relay, ProtocolType type) {
+    const RelayServerConfig& relay, ProtocolType type) const {
   PortList::const_iterator relay_port;
   for (relay_port = relay.ports.begin();
         relay_port != relay.ports.end();
         ++relay_port) {
     if (relay_port->proto == type)
+      return true;
+  }
+  return false;
+}
+
+bool PortConfiguration::SupportsProtocol(const RelayType turn_type,
+                                         ProtocolType type) const {
+  for (size_t i = 0; i < relays.size(); ++i) {
+    if (relays[i].type == turn_type &&
+        SupportsProtocol(relays[i], type))
       return true;
   }
   return false;

@@ -232,8 +232,9 @@ struct PortConfiguration : public talk_base::MessageData {
   void AddRelay(const RelayServerConfig& config);
 
   // Determines whether the given relay server supports the given protocol.
-  static bool SupportsProtocol(const RelayServerConfig& relay,
-                               ProtocolType type);
+  bool SupportsProtocol(const RelayServerConfig& relay,
+                        ProtocolType type) const;
+  bool SupportsProtocol(const RelayType turn_type, ProtocolType type) const;
 };
 
 }  // namespace cricket

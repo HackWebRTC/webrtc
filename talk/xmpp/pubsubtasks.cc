@@ -173,9 +173,16 @@ void PubSubRequestTask::HandleResult(const XmlElement* stanza) {
   SignalResult(this, items);
 }
 
+int PubSubReceiveTask::ProcessStart() {
+  if (SignalUpdate.is_empty()) {
+    return STATE_DONE;
+  }
+  return ReceiveTask::ProcessStart();
+}
+
 bool PubSubReceiveTask::WantsStanza(const XmlElement* stanza) {
   return MatchStanzaFrom(stanza, pubsubjid_) &&
-      IsPubSubEventItemsElem(stanza, node_);
+      IsPubSubEventItemsElem(stanza, node_) && !SignalUpdate.is_empty();
 }
 
 void PubSubReceiveTask::ReceiveStanza(const XmlElement* stanza) {

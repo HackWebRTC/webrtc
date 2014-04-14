@@ -351,10 +351,6 @@ XmppPresenceImpl::set_raw_xml(const XmlElement * xml) {
       xml->Name() != QN_PRESENCE)
     return XMPP_RETURN_BADARGUMENT;
 
-  const std::string& type = xml->Attr(QN_TYPE);
-  if (type != STR_EMPTY && type != "unavailable")
-    return XMPP_RETURN_BADARGUMENT;
-
   raw_xml_.reset(new XmlElement(*xml));
   return XMPP_RETURN_OK;
 }

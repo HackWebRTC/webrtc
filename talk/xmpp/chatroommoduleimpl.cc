@@ -320,17 +320,13 @@ XmppChatroomModuleImpl::RequestExitChatroom() {
   if (!engine())
     return XMPP_RETURN_BADSTATE;
 
-  // currently, can't leave a room unless you've entered
-  // no way to cancel a pending enter call - is that bad?
-  if (chatroom_state_ != XMPP_CHATROOM_STATE_IN_ROOM)
-    return XMPP_RETURN_BADSTATE; // $TODO - this isn't a bad state, it's a bad call,  diff error code?
-
   // exiting a chatroom is a presence request to the server
   XmlElement element(QN_PRESENCE);
   element.AddAttr(QN_TO, member_jid().Str());
   element.AddAttr(QN_TYPE, "unavailable");
   XmppReturnStatus status = engine()->SendStanza(&element);
-  if (status == XMPP_RETURN_OK) {
+  if (status == XMPP_RETURN_OK &&
+      chatroom_state_ == XMPP_CHATROOM_STATE_IN_ROOM) {
     return ClientChangeMyPresence(XMPP_CHATROOM_STATE_REQUESTED_EXIT);
   }
   return status;
@@ -513,6 +509,7 @@ XmppChatroomModuleImpl::ServerChangedOtherPresence(const XmlElement&
       FireMemberChanged(member);
     }
     else if (presence->available() == XMPP_PRESENCE_UNAVAILABLE) {
+      member->SetPresence(presence.get());
       chatroom_jid_members_.erase(pos);
       chatroom_jid_members_version_++;
       FireMemberExited(member);

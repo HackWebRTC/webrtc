@@ -755,6 +755,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   if (options.experimental_acm.Get(&enable_acm2)) {
     EnableExperimentalAcm(enable_acm2);
   }
+  LOG(LS_INFO) << "ACM2 enabled? " << enable_acm2;
 
   webrtc::VoEAudioProcessing* voep = voe_wrapper_->processing();
 
@@ -854,6 +855,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
 
   bool highpass_filter;
   if (options.highpass_filter.Get(&highpass_filter)) {
+    LOG(LS_INFO) << "High pass filter enabled? " << highpass_filter;
     if (voep->EnableHighPassFilter(highpass_filter) == -1) {
       LOG_RTCERR1(SetHighpassFilterStatus, highpass_filter);
       return false;
@@ -862,6 +864,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
 
   bool stereo_swapping;
   if (options.stereo_swapping.Get(&stereo_swapping)) {
+    LOG(LS_INFO) << "Stereo swapping enabled? " << stereo_swapping;
     voep->EnableStereoChannelSwapping(stereo_swapping);
     if (voep->IsStereoChannelSwappingEnabled() != stereo_swapping) {
       LOG_RTCERR1(EnableStereoChannelSwapping, stereo_swapping);
@@ -871,6 +874,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
 
   bool typing_detection;
   if (options.typing_detection.Get(&typing_detection)) {
+    LOG(LS_INFO) << "Typing detection is enabled? " << typing_detection;
     if (voep->SetTypingDetectionStatus(typing_detection) == -1) {
       // In case of error, log the info and continue
       LOG_RTCERR1(SetTypingDetectionStatus, typing_detection);
@@ -879,6 +883,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
 
   int adjust_agc_delta;
   if (options.adjust_agc_delta.Get(&adjust_agc_delta)) {
+    LOG(LS_INFO) << "Adjust agc delta is " << adjust_agc_delta;
     if (!AdjustAgcLevel(adjust_agc_delta)) {
       return false;
     }
@@ -886,6 +891,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
 
   bool aec_dump;
   if (options.aec_dump.Get(&aec_dump)) {
+    LOG(LS_INFO) << "Aec dump is enabled? " << aec_dump;
     if (aec_dump)
       StartAecDump(kAecDumpByAudioOptionFilename);
     else
@@ -894,6 +900,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
 
   bool experimental_aec;
   if (options.experimental_aec.Get(&experimental_aec)) {
+    LOG(LS_INFO) << "Experimental aec is " << experimental_aec;
     webrtc::AudioProcessing* audioproc =
         voe_wrapper_->base()->audio_processing();
     // We check audioproc for the benefit of tests, since FakeWebRtcVoiceEngine
@@ -908,6 +915,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
 
   uint32 recording_sample_rate;
   if (options.recording_sample_rate.Get(&recording_sample_rate)) {
+    LOG(LS_INFO) << "Recording sample rate is " << recording_sample_rate;
     if (voe_wrapper_->hw()->SetRecordingSampleRate(recording_sample_rate)) {
       LOG_RTCERR1(SetRecordingSampleRate, recording_sample_rate);
     }
@@ -915,6 +923,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
 
   uint32 playout_sample_rate;
   if (options.playout_sample_rate.Get(&playout_sample_rate)) {
+    LOG(LS_INFO) << "Playout sample rate is " << playout_sample_rate;
     if (voe_wrapper_->hw()->SetPlayoutSampleRate(playout_sample_rate)) {
       LOG_RTCERR1(SetPlayoutSampleRate, playout_sample_rate);
     }

@@ -44,7 +44,9 @@
 #if !defined(USE_WEBRTC_DEV_BRANCH)
 namespace webrtc {
 
-bool operator==(const webrtc::VideoCodec& c1, const webrtc::VideoCodec& c2) {
+// This function is 'inline' to avoid link errors.
+inline bool operator==(const webrtc::VideoCodec& c1,
+                       const webrtc::VideoCodec& c2) {
   return memcmp(&c1, &c2, sizeof(c1)) == 0;
 }
 
@@ -300,6 +302,7 @@ class FakeWebRtcVideoEngine
           send_nack_bitrate_(0),
           send_bandwidth_(0),
           receive_bandwidth_(0),
+          reserved_transmit_bitrate_bps_(0),
           suspend_below_min_bitrate_(false),
           overuse_observer_(NULL) {
       ssrcs_[0] = 0;  // default ssrc.
@@ -343,6 +346,7 @@ class FakeWebRtcVideoEngine
     unsigned int send_nack_bitrate_;
     unsigned int send_bandwidth_;
     unsigned int receive_bandwidth_;
+    unsigned int reserved_transmit_bitrate_bps_;
     bool suspend_below_min_bitrate_;
     webrtc::CpuOveruseObserver* overuse_observer_;
 #ifdef USE_WEBRTC_DEV_BRANCH
@@ -635,6 +639,10 @@ class FakeWebRtcVideoEngine
     WEBRTC_ASSERT_CHANNEL(channel);
     return channels_.find(channel)->second->suspend_below_min_bitrate_;
   }
+  unsigned int GetReservedTransmitBitrate(int channel) {
+    WEBRTC_ASSERT_CHANNEL(channel);
+    return channels_.find(channel)->second->reserved_transmit_bitrate_bps_;
+  }
 
   WEBRTC_STUB(Release, ());
 
@@ -883,6 +891,10 @@ class FakeWebRtcVideoEngine
   // Not using WEBRTC_STUB due to bool return value
   virtual bool IsIPv6Enabled(int channel) { return true; }
   WEBRTC_STUB(SetMTU, (int, unsigned int));
+#ifdef USE_WEBRTC_DEV_BRANCH
+  WEBRTC_STUB(ReceivedBWEPacket, (const int, int64_t, int,
+      const webrtc::RTPHeader&));
+#endif
 
   // webrtc::ViERender
   WEBRTC_STUB(RegisterVideoRenderModule, (webrtc::VideoRender&));
@@ -1092,6 +1104,15 @@ class FakeWebRtcVideoEngine
     channels_[channel]->transmission_smoothing_ = enable;
     return 0;
   }
+#ifdef USE_WEBRTC_DEV_BRANCH
+  WEBRTC_FUNC(SetReservedTransmitBitrate, (int channel,
+      unsigned int reserved_transmit_bitrate_bps)) {
+    WEBRTC_CHECK_CHANNEL(channel);
+    channels_[channel]->reserved_transmit_bitrate_bps_ =
+        reserved_transmit_bitrate_bps;
+    return 0;
+  }
+#endif
 #ifdef USE_WEBRTC_DEV_BRANCH
   WEBRTC_STUB_CONST(GetRtcpPacketTypeCounters, (int,
       webrtc::RtcpPacketTypeCounter*, webrtc::RtcpPacketTypeCounter*));

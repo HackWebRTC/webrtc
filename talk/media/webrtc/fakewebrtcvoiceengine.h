@@ -43,6 +43,10 @@
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/common.h"
 
+namespace webrtc {
+class ViENetwork;
+}
+
 namespace cricket {
 
 // Function returning stats will return these values
@@ -106,6 +110,8 @@ class FakeWebRtcVoiceEngine
           dtmf_type(106),
           fec_type(117),
           nack_max_packets(0),
+          vie_network(NULL),
+          video_channel(-1),
           send_ssrc(0),
           send_audio_level_ext_(-1),
           send_absolute_sender_time_ext_(-1),
@@ -133,6 +139,8 @@ class FakeWebRtcVoiceEngine
     int dtmf_type;
     int fec_type;
     int nack_max_packets;
+    webrtc::ViENetwork* vie_network;
+    int video_channel;
     uint32 send_ssrc;
     int send_audio_level_ext_;
     int send_absolute_sender_time_ext_;
@@ -140,6 +148,7 @@ class FakeWebRtcVoiceEngine
     DtmfInfo dtmf_info;
     std::vector<webrtc::CodecInst> recv_codecs;
     webrtc::CodecInst send_codec;
+    webrtc::PacketTime last_rtp_packet_time;
     std::list<std::string> packets;
     bool using_experimental_acm;
   };
@@ -217,6 +226,18 @@ class FakeWebRtcVoiceEngine
   }
   int GetNACKMaxPackets(int channel) {
     return channels_[channel]->nack_max_packets;
+  }
+  webrtc::ViENetwork* GetViENetwork(int channel) {
+    WEBRTC_ASSERT_CHANNEL(channel);
+    return channels_[channel]->vie_network;
+  }
+  int GetVideoChannel(int channel) {
+    WEBRTC_ASSERT_CHANNEL(channel);
+    return channels_[channel]->video_channel;
+  }
+  const webrtc::PacketTime& GetLastRtpPacketTime(int channel) {
+    WEBRTC_ASSERT_CHANNEL(channel);
+    return channels_[channel]->last_rtp_packet_time;
   }
   bool IsUsingExperimentalAcm(int channel) {
     WEBRTC_ASSERT_CHANNEL(channel);
@@ -689,6 +710,19 @@ class FakeWebRtcVoiceEngine
         std::string(static_cast<const char*>(data), length));
     return 0;
   }
+#ifdef USE_WEBRTC_DEV_BRANCH
+  WEBRTC_FUNC(ReceivedRTPPacket, (int channel, const void* data,
+                                  unsigned int length,
+                                  const webrtc::PacketTime& packet_time)) {
+    WEBRTC_CHECK_CHANNEL(channel);
+    if (ReceivedRTPPacket(channel, data, length) == -1) {
+      return -1;
+    }
+    channels_[channel]->last_rtp_packet_time = packet_time;
+    return 0;
+  }
+#endif
+
   WEBRTC_STUB(ReceivedRTCPPacket, (int channel, const void* data,
                                    unsigned int length));
 
@@ -824,6 +858,16 @@ class FakeWebRtcVoiceEngine
                                      unsigned short payloadSize));
   WEBRTC_STUB(GetLastRemoteTimeStamp, (int channel,
                                        uint32_t* lastRemoteTimeStamp));
+#ifdef USE_WEBRTC_DEV_BRANCH
+  WEBRTC_FUNC(SetVideoEngineBWETarget, (int channel,
+                                        webrtc::ViENetwork* vie_network,
+                                        int video_channel)) {
+    WEBRTC_CHECK_CHANNEL(channel);
+    channels_[channel]->vie_network = vie_network;
+    channels_[channel]->video_channel = video_channel;
+    return 0;
+  }
+#endif
 
   // webrtc::VoEVideoSync
   WEBRTC_STUB(GetPlayoutBufferSize, (int& bufferMs));

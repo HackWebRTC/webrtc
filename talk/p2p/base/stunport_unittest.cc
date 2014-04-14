@@ -43,6 +43,8 @@ static const SocketAddress kBadAddr("0.0.0.1", 5000);
 static const SocketAddress kStunHostnameAddr("localhost", 5000);
 static const SocketAddress kBadHostnameAddr("not-a-real-hostname", 5000);
 static const int kTimeoutMs = 10000;
+// stun prio = 100 << 24 | 30 (IPV4) << 8 | 256 - 0
+static const uint32 kStunCandidatePriority = 1677729535;
 
 // Tests connecting a StunPort to a fake STUN server (cricket::StunServer)
 // TODO: Use a VirtualSocketServer here. We have to use a
@@ -178,6 +180,7 @@ TEST_F(StunPortTest, TestPrepareAddressHostname) {
   EXPECT_TRUE_WAIT(done(), kTimeoutMs);
   ASSERT_EQ(1U, port()->Candidates().size());
   EXPECT_TRUE(kLocalAddr.EqualIPs(port()->Candidates()[0].address()));
+  EXPECT_EQ(kStunCandidatePriority, port()->Candidates()[0].priority());
 }
 
 // Test that we handle hostname lookup failures properly.

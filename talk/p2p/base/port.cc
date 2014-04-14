@@ -248,6 +248,7 @@ Connection* Port::GetConnection(const talk_base::SocketAddress& remote_addr) {
 
 void Port::AddAddress(const talk_base::SocketAddress& address,
                       const talk_base::SocketAddress& base_address,
+                      const talk_base::SocketAddress& related_address,
                       const std::string& protocol,
                       const std::string& type,
                       uint32 type_preference,
@@ -263,7 +264,7 @@ void Port::AddAddress(const talk_base::SocketAddress& address,
   c.set_password(password_);
   c.set_network_name(network_->name());
   c.set_generation(generation_);
-  c.set_related_address(related_address_);
+  c.set_related_address(related_address);
   c.set_foundation(ComputeFoundation(type, protocol, base_address));
   candidates_.push_back(c);
   SignalCandidateReady(this, c);

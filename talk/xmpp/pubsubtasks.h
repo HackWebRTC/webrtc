@@ -71,6 +71,7 @@ class PubSubReceiveTask : public ReceiveTask {
         node_(node) {
   }
 
+  virtual int ProcessStart();
   sigslot::signal2<PubSubReceiveTask*,
                    const std::vector<PubSubItem>&> SignalUpdate;
 

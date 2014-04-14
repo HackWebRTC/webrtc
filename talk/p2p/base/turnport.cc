@@ -50,6 +50,7 @@ static const int TURN_CHANNEL_NUMBER_START = 0x4000;
 static const int TURN_PERMISSION_TIMEOUT = 5 * 60 * 1000;  // 5 minutes
 
 static const size_t TURN_CHANNEL_HEADER_SIZE = 4U;
+static const size_t MAX_CANDIDATES_PER_TURNPORT = 2;  // A STUN + TURN
 
 inline bool IsTurnChannelData(uint16 msg_type) {
   return ((msg_type & 0xC000) == 0x4000);  // MSB are 0b01
@@ -171,6 +172,27 @@ class TurnEntry : public sigslot::has_slots<> {
 TurnPort::TurnPort(talk_base::Thread* thread,
                    talk_base::PacketSocketFactory* factory,
                    talk_base::Network* network,
+                   talk_base::AsyncPacketSocket* socket,
+                   const std::string& username,
+                   const std::string& password,
+                   const ProtocolAddress& server_address,
+                   const RelayCredentials& credentials)
+    : Port(thread, factory, network, socket->GetLocalAddress().ipaddr(),
+           username, password),
+      server_address_(server_address),
+      credentials_(credentials),
+      socket_(socket),
+      resolver_(NULL),
+      error_(0),
+      request_manager_(thread),
+      next_channel_number_(TURN_CHANNEL_NUMBER_START),
+      connected_(false) {
+  request_manager_.SignalSendPacket.connect(this, &TurnPort::OnSendStunPacket);
+}
+
+TurnPort::TurnPort(talk_base::Thread* thread,
+                   talk_base::PacketSocketFactory* factory,
+                   talk_base::Network* network,
                    const talk_base::IPAddress& ip,
                    int min_port, int max_port,
                    const std::string& username,
@@ -181,6 +203,7 @@ TurnPort::TurnPort(talk_base::Thread* thread,
            username, password),
       server_address_(server_address),
       credentials_(credentials),
+      socket_(NULL),
       resolver_(NULL),
       error_(0),
       request_manager_(thread),
@@ -196,6 +219,9 @@ TurnPort::~TurnPort() {
   }
   if (resolver_) {
     resolver_->Destroy(false);
+  }
+  if (!SharedSocket()) {
+    delete socket_;
   }
 }
 
@@ -227,19 +253,18 @@ void TurnPort::PrepareAddress() {
     LOG_J(LS_INFO, this) << "Trying to connect to TURN server via "
                          << ProtoToString(server_address_.proto) << " @ "
                          << server_address_.address.ToSensitiveString();
-    if (server_address_.proto == PROTO_UDP) {
-      socket_.reset(socket_factory()->CreateUdpSocket(
-          talk_base::SocketAddress(ip(), 0), min_port(), max_port()));
+    if (server_address_.proto == PROTO_UDP && !SharedSocket()) {
+      socket_ = socket_factory()->CreateUdpSocket(
+          talk_base::SocketAddress(ip(), 0), min_port(), max_port());
     } else if (server_address_.proto == PROTO_TCP) {
       int opts = talk_base::PacketSocketFactory::OPT_STUN;
       // If secure bit is enabled in server address, use TLS over TCP.
       if (server_address_.secure) {
         opts |= talk_base::PacketSocketFactory::OPT_TLS;
       }
-
-      socket_.reset(socket_factory()->CreateClientTcpSocket(
+      socket_ = socket_factory()->CreateClientTcpSocket(
           talk_base::SocketAddress(ip(), 0), server_address_.address,
-          proxy(), user_agent(), opts));
+          proxy(), user_agent(), opts);
     }
 
     if (!socket_) {
@@ -253,7 +278,11 @@ void TurnPort::PrepareAddress() {
       socket_->SetOption(iter->first, iter->second);
     }
 
-    socket_->SignalReadPacket.connect(this, &TurnPort::OnReadPacket);
+    if (!SharedSocket()) {
+      // If socket is shared, AllocationSequence will receive the packet.
+      socket_->SignalReadPacket.connect(this, &TurnPort::OnReadPacket);
+    }
+
     socket_->SignalReadyToSend.connect(this, &TurnPort::OnReadyToSend);
 
     if (server_address_.proto == PROTO_TCP) {
@@ -294,12 +323,18 @@ Connection* TurnPort::CreateConnection(const Candidate& address,
   // Create an entry, if needed, so we can get our permissions set up correctly.
   CreateEntry(address.address());
 
-  // TODO(juberti): The '0' index will need to change if we start gathering STUN
-  // candidates on this port.
-  ProxyConnection* conn = new ProxyConnection(this, 0, address);
-  conn->SignalDestroyed.connect(this, &TurnPort::OnConnectionDestroyed);
-  AddConnection(conn);
-  return conn;
+  // A TURN port will have two candiates, STUN and TURN. STUN may not
+  // present in all cases. If present stun candidate will be added first
+  // and TURN candidate later.
+  for (size_t index = 0; index < Candidates().size(); ++index) {
+    if (Candidates()[index].type() == RELAY_PORT_TYPE) {
+      ProxyConnection* conn = new ProxyConnection(this, index, address);
+      conn->SignalDestroyed.connect(this, &TurnPort::OnConnectionDestroyed);
+      AddConnection(conn);
+      return conn;
+    }
+  }
+  return NULL;
 }
 
 int TurnPort::SetOption(talk_base::Socket::Option opt, int value) {
@@ -360,7 +395,7 @@ void TurnPort::OnReadPacket(
     talk_base::AsyncPacketSocket* socket, const char* data, size_t size,
     const talk_base::SocketAddress& remote_addr,
     const talk_base::PacketTime& packet_time) {
-  ASSERT(socket == socket_.get());
+  ASSERT(socket == socket_);
   ASSERT(remote_addr == server_address_.address);
 
   // The message must be at least the size of a channel header.
@@ -415,6 +450,8 @@ void TurnPort::OnResolveResult(talk_base::AsyncResolverInterface* resolver) {
     return;
   }
 
+  SignalResolvedServerAddress(this, server_address_.address,
+                              resolver_->address());
   PrepareAddress();
 }
 
@@ -428,15 +465,25 @@ void TurnPort::OnSendStunPacket(const void* data, size_t size,
 }
 
 void TurnPort::OnStunAddress(const talk_base::SocketAddress& address) {
-  // For relay, mapped address is rel-addr.
-  set_related_address(address);
+  if (server_address_.proto == PROTO_UDP  &&
+      address != socket_->GetLocalAddress()) {
+    AddAddress(address,
+               socket_->GetLocalAddress(),
+               socket_->GetLocalAddress(),
+               UDP_PROTOCOL_NAME,
+               STUN_PORT_TYPE,
+               ICE_TYPE_PREFERENCE_SRFLX,
+               false);
+  }
 }
 
-void TurnPort::OnAllocateSuccess(const talk_base::SocketAddress& address) {
+void TurnPort::OnAllocateSuccess(const talk_base::SocketAddress& address,
+                                 const talk_base::SocketAddress& stun_address) {
   connected_ = true;
   AddAddress(address,
              socket_->GetLocalAddress(),
-             "udp",
+             stun_address,
+             UDP_PROTOCOL_NAME,
              RELAY_PORT_TYPE,
              GetRelayPreference(server_address_.proto, server_address_.secure),
              true);
@@ -684,7 +731,7 @@ void TurnAllocateRequest::OnResponse(StunMessage* response) {
     return;
   }
 
-  // TODO(mallinath) - Use mapped address for STUN candidate.
+  // Using XOR-Mapped-Address for stun.
   port_->OnStunAddress(mapped_attr->GetAddress());
 
   const StunAddressAttribute* relayed_attr =
@@ -703,7 +750,8 @@ void TurnAllocateRequest::OnResponse(StunMessage* response) {
     return;
   }
   // Notify the port the allocate succeeded, and schedule a refresh request.
-  port_->OnAllocateSuccess(relayed_attr->GetAddress());
+  port_->OnAllocateSuccess(relayed_attr->GetAddress(),
+                           mapped_attr->GetAddress());
   port_->ScheduleRefresh(lifetime_attr->value());
 }
 

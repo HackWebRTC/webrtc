@@ -73,7 +73,7 @@ class FakeStunPort : public StunPort {
 
   // Just set external address and signal that we are done.
   virtual void PrepareAddress() {
-    AddAddress(kExternalAddr, kExternalAddr, "udp",
+    AddAddress(kExternalAddr, kExternalAddr, talk_base::SocketAddress(), "udp",
                STUN_PORT_TYPE, ICE_TYPE_PREFERENCE_SRFLX, true);
     SignalPortComplete(this);
   }

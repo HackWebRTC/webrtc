@@ -184,12 +184,6 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingIceServers) {
   webrtc::PortAllocatorFactoryInterface::StunConfiguration stun1(
       "stun.l.google.com", 19302);
   stun_configs.push_back(stun1);
-  webrtc::PortAllocatorFactoryInterface::StunConfiguration stun2(
-        "test.com", 1234);
-  stun_configs.push_back(stun2);
-  webrtc::PortAllocatorFactoryInterface::StunConfiguration stun3(
-        "hello.com", kDefaultStunPort);
-  stun_configs.push_back(stun3);
   VerifyStunConfigurations(stun_configs);
   TurnConfigurations turn_configs;
   webrtc::PortAllocatorFactoryInterface::TurnConfiguration turn1(
@@ -242,11 +236,6 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingTurnUrlWithTransportParam) {
       "hello.com", kDefaultStunPort, "test", kTurnPassword, "tcp", false);
   turn_configs.push_back(turn);
   VerifyTurnConfigurations(turn_configs);
-  StunConfigurations stun_configs;
-  webrtc::PortAllocatorFactoryInterface::StunConfiguration stun(
-        "hello.com", kDefaultStunPort);
-  stun_configs.push_back(stun);
-  VerifyStunConfigurations(stun_configs);
 }
 
 TEST_F(PeerConnectionFactoryTest, CreatePCUsingSecureTurnUrl) {
@@ -317,9 +306,8 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingIPLiteralAddress) {
   webrtc::PortAllocatorFactoryInterface::StunConfiguration stun4(
       "2401:fa00:4::", 3478);
   stun_configs.push_back(stun4);  // Default port
-  // Turn Address has the same host information as |stun3|.
-  stun_configs.push_back(stun3);
   VerifyStunConfigurations(stun_configs);
+
   TurnConfigurations turn_configs;
   webrtc::PortAllocatorFactoryInterface::TurnConfiguration turn1(
       "2401:fa00:4::", 1234, "test", kTurnPassword, "udp", false);

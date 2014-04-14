@@ -172,13 +172,6 @@ class Port : public PortInterface, public talk_base::MessageHandler,
     send_retransmit_count_attribute_ = enable;
   }
 
-  const talk_base::SocketAddress& related_address() const {
-    return related_address_;
-  }
-  void set_related_address(const talk_base::SocketAddress& address) {
-    related_address_ = address;
-  }
-
   // Identifies the generation that this port was created in.
   uint32 generation() { return generation_; }
   void set_generation(uint32 generation) { generation_ = generation; }
@@ -315,6 +308,7 @@ class Port : public PortInterface, public talk_base::MessageHandler,
   // Fills in the local address of the port.
   void AddAddress(const talk_base::SocketAddress& address,
                   const talk_base::SocketAddress& base_address,
+                  const talk_base::SocketAddress& related_address,
                   const std::string& protocol, const std::string& type,
                   uint32 type_preference, bool final);
 
@@ -365,7 +359,6 @@ class Port : public PortInterface, public talk_base::MessageHandler,
   std::string content_name_;
   int component_;
   uint32 generation_;
-  talk_base::SocketAddress related_address_;
   // In order to establish a connection to this Port (so that real data can be
   // sent through), the other side must send us a STUN binding request that is
   // authenticated with this username_fragment and password.

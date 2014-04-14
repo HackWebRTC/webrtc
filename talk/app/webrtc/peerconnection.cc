@@ -266,13 +266,6 @@ bool ParseIceServers(const PeerConnectionInterface::IceServers& configuration,
                                                  server.password,
                                                  turn_transport_type,
                                                  secure));
-        // STUN functionality is part of TURN.
-        // Note: If there is only TURNS is supplied as part of configuration,
-        // we will have problem in fetching server reflexive candidate, as
-        // currently we don't have support of TCP/TLS in stunport.cc.
-        // In that case we should fetch server reflexive addess from
-        // TURN allocate response.
-        stun_config->push_back(StunConfiguration(address, port));
         break;
       }
       case INVALID:

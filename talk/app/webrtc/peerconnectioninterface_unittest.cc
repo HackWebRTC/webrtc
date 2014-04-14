@@ -301,7 +301,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
     EXPECT_EQ(0u, port_allocator_factory_->turn_configs().size());
 
     CreatePeerConnection(kTurnIceServerUri, kTurnPassword, NULL);
-    EXPECT_EQ(1u, port_allocator_factory_->stun_configs().size());
+    EXPECT_EQ(0u, port_allocator_factory_->stun_configs().size());
     EXPECT_EQ(1u, port_allocator_factory_->turn_configs().size());
     EXPECT_EQ(kTurnUsername,
               port_allocator_factory_->turn_configs()[0].username);
@@ -309,8 +309,6 @@ class PeerConnectionInterfaceTest : public testing::Test {
               port_allocator_factory_->turn_configs()[0].password);
     EXPECT_EQ(kTurnHostname,
               port_allocator_factory_->turn_configs()[0].server.hostname());
-    EXPECT_EQ(kTurnHostname,
-              port_allocator_factory_->stun_configs()[0].server.hostname());
   }
 
   void ReleasePeerConnection() {

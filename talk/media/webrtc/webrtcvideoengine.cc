@@ -238,8 +238,8 @@ struct FlushBlackFrameData : public talk_base::MessageData {
 
 class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
  public:
-  explicit WebRtcRenderAdapter(VideoRenderer* renderer)
-      : renderer_(renderer), width_(0), height_(0) {
+  WebRtcRenderAdapter(VideoRenderer* renderer, int channel_id)
+      : renderer_(renderer), channel_id_(channel_id), width_(0), height_(0) {
   }
 
   virtual ~WebRtcRenderAdapter() {
@@ -256,7 +256,8 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
     if (width_ > 0 && height_ > 0 && renderer_ != NULL) {
       if (!renderer_->SetSize(width_, height_, 0)) {
         LOG(LS_ERROR)
-            << "WebRtcRenderAdapter SetRenderer failed to SetSize to: "
+            << "WebRtcRenderAdapter (channel " << channel_id_
+            << ") SetRenderer failed to SetSize to: "
             << width_ << "x" << height_;
       }
     }
@@ -268,10 +269,12 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
     talk_base::CritScope cs(&crit_);
     width_ = width;
     height_ = height;
-    LOG(LS_INFO) << "WebRtcRenderAdapter frame size changed to: "
+    LOG(LS_INFO) << "WebRtcRenderAdapter (channel " << channel_id_
+                 << ") frame size changed to: "
                  << width << "x" << height;
     if (renderer_ == NULL) {
-      LOG(LS_VERBOSE) << "WebRtcRenderAdapter the renderer has not been set. "
+      LOG(LS_VERBOSE) << "WebRtcRenderAdapter (channel " << channel_id_
+                      << ") the renderer has not been set. "
                       << "SetSize will be called later in SetRenderer.";
       return 0;
     }
@@ -313,7 +316,8 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
 
     // Sanity check on decoded frame size.
     if (buffer_size != static_cast<int>(VideoFrame::SizeOf(width_, height_))) {
-      LOG(LS_WARNING) << "WebRtcRenderAdapter received a strange frame size: "
+      LOG(LS_WARNING) << "WebRtcRenderAdapter (channel " << channel_id_
+                      << ") received a strange frame size: "
                       << buffer_size;
     }
 
@@ -351,6 +355,7 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
  private:
   talk_base::CriticalSection crit_;
   VideoRenderer* renderer_;
+  int channel_id_;
   unsigned int width_;
   unsigned int height_;
   talk_base::RateTracker frame_rate_tracker_;
@@ -539,7 +544,7 @@ class WebRtcVideoChannelRecvInfo  {
   typedef std::map<int, webrtc::VideoDecoder*> DecoderMap;  // key: payload type
   explicit WebRtcVideoChannelRecvInfo(int channel_id)
       : channel_id_(channel_id),
-        render_adapter_(NULL),
+        render_adapter_(NULL, channel_id),
         decoder_observer_(channel_id) {
   }
   int channel_id() { return channel_id_; }
@@ -3008,6 +3013,8 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
        adjusted_min_bitrate || start_bitrate_changed);
 
 
+  LOG(LS_INFO) << "Reset send codec needed is enabled? "
+               << reset_send_codec_needed;
   if (reset_send_codec_needed) {
     // On success, SetSendCodec() will reset send_max_bitrate_ to
     // expected_bitrate.
@@ -3023,7 +3030,7 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
   if (leaky_bucket_changed) {
     bool enable_leaky_bucket =
         options_.video_leaky_bucket.GetWithDefaultIfUnset(false);
-    LOG(LS_INFO) << "Leaky bucket is enabled : " << enable_leaky_bucket;
+    LOG(LS_INFO) << "Leaky bucket is enabled? " << enable_leaky_bucket;
     for (SendChannelMap::iterator it = send_channels_.begin();
         it != send_channels_.end(); ++it) {
       if (engine()->vie()->rtp()->SetTransmissionSmoothingStatus(
@@ -3037,6 +3044,7 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
     int buffer_latency =
         options_.buffered_mode_latency.GetWithDefaultIfUnset(
             cricket::kBufferedModeDisabled);
+    LOG(LS_INFO) << "Buffer latency is " << buffer_latency;
     for (SendChannelMap::iterator it = send_channels_.begin();
         it != send_channels_.end(); ++it) {
       if (engine()->vie()->rtp()->SetSenderBufferingMode(
@@ -3057,6 +3065,8 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
   if (cpu_overuse_detection_changed) {
     bool cpu_overuse_detection =
         options_.cpu_overuse_detection.GetWithDefaultIfUnset(false);
+    LOG(LS_INFO) << "CPU overuse detection is enabled? "
+                 << cpu_overuse_detection;
     for (SendChannelMap::iterator iter = send_channels_.begin();
          iter != send_channels_.end(); ++iter) {
       WebRtcVideoChannelSendInfo* send_channel = iter->second;
@@ -3067,12 +3077,14 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
     talk_base::DiffServCodePoint dscp = talk_base::DSCP_DEFAULT;
     if (options_.dscp.GetWithDefaultIfUnset(false))
       dscp = kVideoDscpValue;
+    LOG(LS_INFO) << "DSCP is " << dscp;
     if (MediaChannel::SetDscp(dscp) != 0) {
       LOG(LS_WARNING) << "Failed to set DSCP settings for video channel";
     }
   }
   if (suspend_below_min_bitrate_changed) {
     if (options_.suspend_below_min_bitrate.GetWithDefaultIfUnset(false)) {
+      LOG(LS_INFO) << "Suspend below min bitrate enabled.";
       for (SendChannelMap::iterator it = send_channels_.begin();
            it != send_channels_.end(); ++it) {
         engine()->vie()->codec()->SuspendBelowMinBitrate(
@@ -3084,6 +3096,7 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
   }
 #ifdef USE_WEBRTC_DEV_BRANCH
   if (improved_wifi_bwe_changed) {
+    LOG(LS_INFO) << "Improved WIFI BWE called.";
     webrtc::Config config;
     config.Set(new webrtc::AimdRemoteRateControl(
         options_.use_improved_wifi_bandwidth_estimator
