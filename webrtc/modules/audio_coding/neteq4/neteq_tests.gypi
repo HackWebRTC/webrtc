@@ -85,7 +85,7 @@
       'target_name': 'rtp_analyze',
       'type': 'executable',
       'dependencies': [
-        'NetEq4TestTools',
+        'neteq_unittest_tools',
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
       ],

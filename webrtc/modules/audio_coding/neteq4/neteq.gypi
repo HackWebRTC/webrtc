@@ -171,6 +171,7 @@
             '<(DEPTH)/testing/gmock.gyp:gmock',
             '<(DEPTH)/testing/gtest.gyp:gtest',
             'PCM16B',  # Needed by neteq_performance_test.
+            'rtp_rtcp',
           ],
           'direct_dependent_settings': {
             'include_dirs': [
@@ -187,6 +188,11 @@
             'tools/input_audio_file.h',
             'tools/neteq_performance_test.cc',
             'tools/neteq_performance_test.h',
+            'tools/packet.cc',
+            'tools/packet.h',
+            'tools/packet_source.h',
+            'tools/rtp_file_source.cc',
+            'tools/rtp_file_source.h',
             'tools/rtp_generator.cc',
             'tools/rtp_generator.h',
             'tools/neteq_quality_test.cc',

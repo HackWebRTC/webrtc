@@ -13,8 +13,9 @@
 #include <vector>
 
 #include "google/gflags.h"
-#include "webrtc/modules/audio_coding/neteq4/test/NETEQTEST_DummyRTPpacket.h"
-#include "webrtc/modules/audio_coding/neteq4/test/NETEQTEST_RTPpacket.h"
+#include "webrtc/modules/audio_coding/neteq4/tools/packet.h"
+#include "webrtc/modules/audio_coding/neteq4/tools/rtp_file_source.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 // Flag validator.
 static bool ValidatePayloadType(const char* flagname, int32_t value) {
@@ -23,11 +24,20 @@ static bool ValidatePayloadType(const char* flagname, int32_t value) {
   printf("Invalid value for --%s: %d\n", flagname, static_cast<int>(value));
   return false;
 }
+static bool ValidateExtensionId(const char* flagname, int32_t value) {
+  if (value > 0 && value <= 255)  // Value is ok.
+    return true;
+  printf("Invalid value for --%s: %d\n", flagname, static_cast<int>(value));
+  return false;
+}
 
 // Define command line flags.
 DEFINE_int32(red, 117, "RTP payload type for RED");
-static const bool pcmu_dummy =
+static const bool red_dummy =
     google::RegisterFlagValidator(&FLAGS_red, &ValidatePayloadType);
+DEFINE_int32(audio_level, 1, "Extension ID for audio level (RFC 6464)");
+static const bool audio_level_dummy =
+    google::RegisterFlagValidator(&FLAGS_audio_level, &ValidateExtensionId);
 
 int main(int argc, char* argv[]) {
   std::string program_name = argv[0];
@@ -55,6 +65,16 @@ int main(int argc, char* argv[]) {
     return -1;
   }
   printf("Input file: %s\n", argv[1]);
+  webrtc::scoped_ptr<webrtc::test::RtpFileSource> file_source(
+      webrtc::test::RtpFileSource::Create(argv[1]));
+  assert(file_source.get());
+  // Set RTP extension ID.
+  bool print_audio_level = false;
+  if (!google::GetCommandLineFlagInfoOrDie("audio_level").is_default) {
+    print_audio_level = true;
+    file_source->RegisterRtpHeaderExtension(webrtc::kRtpExtensionAudioLevel,
+                                            FLAGS_audio_level);
+  }
 
   FILE* out_file;
   if (argc == 3) {
@@ -69,37 +89,54 @@ int main(int argc, char* argv[]) {
   }
 
   // Print file header.
-  fprintf(out_file, "SeqNo  TimeStamp   SendTime  Size    PT  M       SSRC\n");
+  fprintf(out_file, "SeqNo  TimeStamp   SendTime  Size    PT  M       SSRC");
+  if (print_audio_level) {
+    fprintf(out_file, " AuLvl (V)");
+  }
+  fprintf(out_file, "\n");
 
-  // Read file header.
-  NETEQTEST_RTPpacket::skipFileHeader(in_file);
-  NETEQTEST_RTPpacket packet;
-
-  while (packet.readFromFile(in_file) >= 0) {
+  webrtc::scoped_ptr<webrtc::test::Packet> packet;
+  while (!file_source->EndOfFile()) {
+    packet.reset(file_source->NextPacket());
+    if (!packet.get()) {
+      // This is probably an RTCP packet. Move on to the next one.
+      continue;
+    }
+    assert(packet.get());
     // Write packet data to file.
     fprintf(out_file,
-            "%5u %10u %10u %5i %5i %2i %#08X\n",
-            packet.sequenceNumber(),
-            packet.timeStamp(),
-            packet.time(),
-            packet.dataLen(),
-            packet.payloadType(),
-            packet.markerBit(),
-            packet.SSRC());
-    if (packet.payloadType() == FLAGS_red) {
-      webrtc::WebRtcRTPHeader red_header;
-      int len;
-      int red_index = 0;
-      while ((len = packet.extractRED(red_index++, red_header)) >= 0) {
+            "%5u %10u %10u %5i %5i %2i %#08X",
+            packet->header().sequenceNumber,
+            packet->header().timestamp,
+            static_cast<unsigned int>(packet->time_ms()),
+            static_cast<int>(packet->packet_length_bytes()),
+            packet->header().payloadType,
+            packet->header().markerBit,
+            packet->header().ssrc);
+    if (print_audio_level && packet->header().extension.hasAudioLevel) {
+      // |audioLevel| consists of one bit for "V" and then 7 bits level.
+      fprintf(out_file,
+              " %5u (%1i)",
+              packet->header().extension.audioLevel & 0x7F,
+              (packet->header().extension.audioLevel & 0x80) == 0 ? 0 : 1);
+    }
+    fprintf(out_file, "\n");
+
+    if (packet->header().payloadType == FLAGS_red) {
+      std::list<webrtc::RTPHeader*> red_headers;
+      packet->ExtractRedHeaders(&red_headers);
+      while (!red_headers.empty()) {
+        webrtc::RTPHeader* red = red_headers.front();
+        assert(red);
         fprintf(out_file,
-                "* %5u %10u %10u %5i %5i\n",
-                red_header.header.sequenceNumber,
-                red_header.header.timestamp,
-                packet.time(),
-                len,
-                red_header.header.payloadType);
+                "* %5u %10u %10u %5i\n",
+                red->sequenceNumber,
+                red->timestamp,
+                static_cast<unsigned int>(packet->time_ms()),
+                red->payloadType);
+        red_headers.pop_front();
+        delete red;
       }
-      assert(red_index > 1);  // We must get at least one payload.
     }
   }
 
