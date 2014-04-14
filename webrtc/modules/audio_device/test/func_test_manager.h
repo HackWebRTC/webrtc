@@ -131,10 +131,14 @@ public:
                                 bool key_pressed,
                                 bool need_audio_processing);
 
-    virtual void OnData(int voe_channel, const void* audio_data,
-                        int bits_per_sample, int sample_rate,
-                        int number_of_channels,
-                        int number_of_frames);
+    virtual void PushCaptureData(int voe_channel, const void* audio_data,
+                                 int bits_per_sample, int sample_rate,
+                                 int number_of_channels,
+                                 int number_of_frames);
+
+    virtual void PullRenderData(int bits_per_sample, int sample_rate,
+                                int number_of_channels, int number_of_frames,
+                                void* audio_data);
 
     AudioTransportImpl(AudioDeviceModule* audioDevice);
     ~AudioTransportImpl();

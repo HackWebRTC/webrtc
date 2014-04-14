@@ -60,7 +60,7 @@ public:
 
     int32_t MixActiveChannels();
 
-    int32_t DoOperationsOnCombinedSignal();
+    int32_t DoOperationsOnCombinedSignal(bool feed_data_to_apm);
 
     int32_t SetMixabilityStatus(MixerParticipant& participant,
                                 bool mixable);

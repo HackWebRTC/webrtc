@@ -106,6 +106,14 @@ public:
                         int bits_per_sample, int sample_rate,
                         int number_of_channels, int number_of_frames);
 
+    virtual void PushCaptureData(int voe_channel, const void* audio_data,
+                                 int bits_per_sample, int sample_rate,
+                                 int number_of_channels, int number_of_frames);
+
+    virtual void PullRenderData(int bits_per_sample, int sample_rate,
+                                int number_of_channels, int number_of_frames,
+                                void* audio_data);
+
     // AudioDeviceObserver
     virtual void OnErrorIsReported(ErrorCode error);
     virtual void OnWarningIsReported(WarningCode warning);
@@ -137,6 +145,10 @@ private:
                                    int32_t clock_drift,
                                    uint32_t volume,
                                    bool key_pressed);
+
+    void GetPlayoutData(int sample_rate, int number_of_channels,
+                        int number_of_frames, bool feed_data_to_apm,
+                        void* audio_data);
 
     int32_t AddBuildInfo(char* str) const;
     int32_t AddVoEVersion(char* str) const;

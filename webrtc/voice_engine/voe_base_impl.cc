@@ -150,39 +150,18 @@ int32_t VoEBaseImpl::NeedMorePlayData(
         void* audioSamples,
         uint32_t& nSamplesOut)
 {
-    WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "VoEBaseImpl::NeedMorePlayData(nSamples=%u, "
-                     "nBytesPerSample=%d, nChannels=%d, samplesPerSec=%u)",
-                 nSamples, nBytesPerSample, nChannels, samplesPerSec);
+  WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_shared->instance_id(), -1),
+               "VoEBaseImpl::NeedMorePlayData(nSamples=%u, "
+               "nBytesPerSample=%d, nChannels=%d, samplesPerSec=%u)",
+               nSamples, nBytesPerSample, nChannels, samplesPerSec);
 
-    assert(_shared->output_mixer() != NULL);
+  GetPlayoutData(static_cast<int>(samplesPerSec),
+                 static_cast<int>(nChannels),
+                 static_cast<int>(nSamples), true, audioSamples);
 
-    // TODO(andrew): if the device is running in mono, we should tell the mixer
-    // here so that it will only request mono from AudioCodingModule.
-    // Perform mixing of all active participants (channel-based mixing)
-    _shared->output_mixer()->MixActiveChannels();
+  nSamplesOut = _audioFrame.samples_per_channel_;
 
-    // Additional operations on the combined signal
-    _shared->output_mixer()->DoOperationsOnCombinedSignal();
-
-    // Retrieve the final output mix (resampled to match the ADM)
-    _shared->output_mixer()->GetMixedAudio(samplesPerSec, nChannels,
-        &_audioFrame);
-
-    assert(static_cast<int>(nSamples) == _audioFrame.samples_per_channel_);
-    assert(samplesPerSec ==
-        static_cast<uint32_t>(_audioFrame.sample_rate_hz_));
-
-    // Deliver audio (PCM) samples to the ADM
-    memcpy(
-           (int16_t*) audioSamples,
-           (const int16_t*) _audioFrame.data_,
-           sizeof(int16_t) * (_audioFrame.samples_per_channel_
-                   * _audioFrame.num_channels_));
-
-    nSamplesOut = _audioFrame.samples_per_channel_;
-
-    return 0;
+  return 0;
 }
 
 int VoEBaseImpl::OnDataAvailable(const int voe_channels[],
@@ -219,8 +198,8 @@ int VoEBaseImpl::OnDataAvailable(const int voe_channels[],
     // TODO(ajm): In the case where multiple channels are using the same codec
     // rate, this path needlessly does extra conversions. We should convert once
     // and share between channels.
-    OnData(voe_channels[i], audio_data, 16, sample_rate,
-           number_of_channels, number_of_frames);
+    PushCaptureData(voe_channels[i], audio_data, 16, sample_rate,
+                    number_of_channels, number_of_frames);
   }
 
   // Return 0 to indicate no need to change the volume.
@@ -231,6 +210,14 @@ void VoEBaseImpl::OnData(int voe_channel, const void* audio_data,
                          int bits_per_sample, int sample_rate,
                          int number_of_channels,
                          int number_of_frames) {
+  PushCaptureData(voe_channel, audio_data, bits_per_sample, sample_rate,
+                  number_of_channels, number_of_frames);
+}
+
+void VoEBaseImpl::PushCaptureData(int voe_channel, const void* audio_data,
+                                  int bits_per_sample, int sample_rate,
+                                  int number_of_channels,
+                                  int number_of_frames) {
   voe::ChannelOwner ch = _shared->channel_manager().GetChannel(voe_channel);
   voe::Channel* channel_ptr = ch.channel();
   if (!channel_ptr)
@@ -244,6 +231,16 @@ void VoEBaseImpl::OnData(int voe_channel, const void* audio_data,
     channel_ptr->PrepareEncodeAndSend(sample_rate);
     channel_ptr->EncodeAndSend();
   }
+}
+
+void VoEBaseImpl::PullRenderData(int bits_per_sample, int sample_rate,
+                                 int number_of_channels, int number_of_frames,
+                                 void* audio_data) {
+  assert(bits_per_sample == 16);
+  assert(number_of_frames == static_cast<int>(sample_rate / 100));
+
+  GetPlayoutData(sample_rate, number_of_channels, number_of_frames, false,
+                 audio_data);
 }
 
 int VoEBaseImpl::RegisterVoiceEngineObserver(VoiceEngineObserver& observer)
@@ -1186,6 +1183,31 @@ int VoEBaseImpl::ProcessRecordedDataWithAPM(
 
   // Return 0 to indicate no change on the volume.
   return 0;
+}
+
+void VoEBaseImpl::GetPlayoutData(int sample_rate, int number_of_channels,
+                                 int number_of_frames, bool feed_data_to_apm,
+                                 void* audio_data) {
+  assert(_shared->output_mixer() != NULL);
+
+  // TODO(andrew): if the device is running in mono, we should tell the mixer
+  // here so that it will only request mono from AudioCodingModule.
+  // Perform mixing of all active participants (channel-based mixing)
+  _shared->output_mixer()->MixActiveChannels();
+
+  // Additional operations on the combined signal
+  _shared->output_mixer()->DoOperationsOnCombinedSignal(feed_data_to_apm);
+
+  // Retrieve the final output mix (resampled to match the ADM)
+  _shared->output_mixer()->GetMixedAudio(sample_rate, number_of_channels,
+                                         &_audioFrame);
+
+  assert(number_of_frames == _audioFrame.samples_per_channel_);
+  assert(sample_rate == _audioFrame.sample_rate_hz_);
+
+  // Deliver audio (PCM) samples to the ADM
+  memcpy(audio_data, _audioFrame.data_,
+         sizeof(int16_t) * number_of_frames * number_of_channels);
 }
 
 }  // namespace webrtc
