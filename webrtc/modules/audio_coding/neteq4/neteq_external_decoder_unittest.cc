@@ -45,13 +45,15 @@ class NetEqExternalDecoderTest : public ::testing::Test {
         frame_size_ms_(10),
         frame_size_samples_(frame_size_ms_ * samples_per_ms_),
         output_size_samples_(frame_size_ms_ * samples_per_ms_),
-        neteq_external_(NetEq::Create(sample_rate_hz_)),
-        neteq_(NetEq::Create(sample_rate_hz_)),
         external_decoder_(new MockExternalPcm16B(kDecoderPCM16Bswb32kHz)),
         rtp_generator_(samples_per_ms_),
         payload_size_bytes_(0),
         last_send_time_(0),
         last_arrival_time_(0) {
+    NetEq::Config config;
+    config.sample_rate_hz = sample_rate_hz_;
+    neteq_external_ = NetEq::Create(config);
+    neteq_ = NetEq::Create(config);
     input_ = new int16_t[frame_size_samples_];
     encoded_ = new uint8_t[2 * frame_size_samples_];
   }

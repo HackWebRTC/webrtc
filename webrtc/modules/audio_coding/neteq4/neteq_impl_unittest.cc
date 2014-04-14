@@ -48,9 +48,9 @@ int DeletePacketsAndReturnOk(PacketList* packet_list) {
 
 class NetEqImplTest : public ::testing::Test {
  protected:
-  static const int kInitSampleRateHz = 8000;
   NetEqImplTest()
       : neteq_(NULL),
+        config_(),
         mock_buffer_level_filter_(NULL),
         buffer_level_filter_(NULL),
         use_mock_buffer_level_filter_(true),
@@ -75,7 +75,9 @@ class NetEqImplTest : public ::testing::Test {
         mock_payload_splitter_(NULL),
         payload_splitter_(NULL),
         use_mock_payload_splitter_(true),
-        timestamp_scaler_(NULL) {}
+        timestamp_scaler_(NULL) {
+    config_.sample_rate_hz = 8000;
+  }
 
   void CreateInstance() {
     if (use_mock_buffer_level_filter_) {
@@ -109,10 +111,10 @@ class NetEqImplTest : public ::testing::Test {
           new DelayManager(NetEq::kMaxNumPacketsInBuffer, delay_peak_detector_);
     }
     if (use_mock_dtmf_buffer_) {
-      mock_dtmf_buffer_ = new MockDtmfBuffer(kInitSampleRateHz);
+      mock_dtmf_buffer_ = new MockDtmfBuffer(config_.sample_rate_hz);
       dtmf_buffer_ = mock_dtmf_buffer_;
     } else {
-      dtmf_buffer_ = new DtmfBuffer(kInitSampleRateHz);
+      dtmf_buffer_ = new DtmfBuffer(config_.sample_rate_hz);
     }
     if (use_mock_dtmf_tone_generator_) {
       mock_dtmf_tone_generator_ = new MockDtmfToneGenerator;
@@ -140,7 +142,7 @@ class NetEqImplTest : public ::testing::Test {
     PreemptiveExpandFactory* preemptive_expand_factory =
         new PreemptiveExpandFactory;
 
-    neteq_ = new NetEqImpl(kInitSampleRateHz,
+    neteq_ = new NetEqImpl(config_.sample_rate_hz,
                            buffer_level_filter_,
                            decoder_database_,
                            delay_manager_,
@@ -194,6 +196,7 @@ class NetEqImplTest : public ::testing::Test {
   }
 
   NetEqImpl* neteq_;
+  NetEq::Config config_;
   MockBufferLevelFilter* mock_buffer_level_filter_;
   BufferLevelFilter* buffer_level_filter_;
   bool use_mock_buffer_level_filter_;
@@ -225,7 +228,8 @@ class NetEqImplTest : public ::testing::Test {
 // This tests the interface class NetEq.
 // TODO(hlundin): Move to separate file?
 TEST(NetEq, CreateAndDestroy) {
-  NetEq* neteq = NetEq::Create(8000);
+  NetEq::Config config;
+  NetEq* neteq = NetEq::Create(config);
   delete neteq;
 }
 

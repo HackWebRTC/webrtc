@@ -42,8 +42,10 @@ NetEqQualityTest::NetEqQualityTest(int block_duration_ms,
       in_file_(new InputAudioFile(in_filename_)),
       out_file_(NULL),
       rtp_generator_(new RtpGenerator(in_sampling_khz_, 0, 0,
-                                      decodable_time_ms_)),
-      neteq_(NetEq::Create(out_sampling_khz_ * 1000)) {
+                                      decodable_time_ms_)) {
+  NetEq::Config config;
+  config.sample_rate_hz = out_sampling_khz_ * 1000;
+  neteq_.reset(NetEq::Create(config));
   max_payload_bytes_ = in_size_samples_ * channels_ * sizeof(int16_t);
   in_data_.reset(new int16_t[in_size_samples_ * channels_]);
   payload_.reset(new uint8_t[max_payload_bytes_]);

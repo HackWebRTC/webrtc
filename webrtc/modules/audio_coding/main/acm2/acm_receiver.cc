@@ -35,7 +35,6 @@ namespace acm2 {
 
 namespace {
 
-const int kNeteqInitSampleRateHz = 16000;
 const int kNackThresholdPackets = 2;
 
 // |vad_activity_| field of |audio_frame| is set to |previous_audio_activity_|
@@ -119,13 +118,14 @@ bool IsCng(int codec_id) {
 
 AcmReceiver::AcmReceiver()
     : id_(0),
-      neteq_(NetEq::Create(kNeteqInitSampleRateHz)),
+      neteq_config_(),
+      neteq_(NetEq::Create(neteq_config_)),
       last_audio_decoder_(-1),  // Invalid value.
       decode_lock_(RWLockWrapper::CreateRWLock()),
       neteq_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       vad_enabled_(true),
       previous_audio_activity_(AudioFrame::kVadPassive),
-      current_sample_rate_hz_(kNeteqInitSampleRateHz),
+      current_sample_rate_hz_(neteq_config_.sample_rate_hz),
       nack_(),
       nack_enabled_(false),
       av_sync_(false),
@@ -774,7 +774,7 @@ bool AcmReceiver::GetSilence(int desired_sample_rate_hz, AudioFrame* frame) {
     current_sample_rate_hz_ = ACMCodecDB::database_[last_audio_decoder_].plfreq;
     frame->num_channels_ = decoders_[last_audio_decoder_].channels;
   } else {
-    current_sample_rate_hz_ = kNeteqInitSampleRateHz;
+    current_sample_rate_hz_ = neteq_config_.sample_rate_hz;
     frame->num_channels_ = 1;
   }
 

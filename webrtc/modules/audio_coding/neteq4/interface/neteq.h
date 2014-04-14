@@ -67,6 +67,15 @@ enum NetEqBackgroundNoiseMode {
 // This is the interface class for NetEq.
 class NetEq {
  public:
+  struct Config {
+    Config()
+        : sample_rate_hz(16000),
+          enable_audio_classifier(false) {}
+
+    int sample_rate_hz;  // Initial vale. Will change with input data.
+    bool enable_audio_classifier;
+  };
+
   enum ReturnCodes {
     kOK = 0,
     kFail = -1,
@@ -105,11 +114,10 @@ class NetEq {
   static const int kMaxNumPacketsInBuffer = 50;  // TODO(hlundin): Remove.
   static const int kMaxBytesInBuffer = 113280;  // TODO(hlundin): Remove.
 
-  // Creates a new NetEq object, starting at the sample rate |sample_rate_hz|.
-  // (Note that it will still change the sample rate depending on what payloads
-  // are being inserted; |sample_rate_hz| is just for startup configuration.)
-  static NetEq* Create(int sample_rate_hz,
-                       bool enable_audio_classifier = false);
+  // Creates a new NetEq object, with parameters set in |config|. The |config|
+  // object will only have to be valid for the duration of the call to this
+  // method.
+  static NetEq* Create(const NetEq::Config& config);
 
   virtual ~NetEq() {}
 

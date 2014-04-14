@@ -340,6 +340,7 @@ class AcmReceiver {
   void InsertStreamOfSyncPackets(InitialDelayManager::SyncStream* sync_stream);
 
   int id_;
+  NetEq::Config neteq_config_;
   NetEq* neteq_;
   Decoder decoders_[ACMCodecDB::kMaxNumCodecs];
   int last_audio_decoder_;

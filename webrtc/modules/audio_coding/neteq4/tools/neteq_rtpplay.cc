@@ -176,7 +176,9 @@ int main(int argc, char* argv[]) {
 
   // Initialize NetEq instance.
   int sample_rate_hz = 16000;
-  NetEq* neteq = NetEq::Create(sample_rate_hz);
+  NetEq::Config config;
+  config.sample_rate_hz = sample_rate_hz;
+  NetEq* neteq = NetEq::Create(config);
   RegisterPayloadTypes(neteq);
 
   // Read first packet.

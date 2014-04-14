@@ -28,13 +28,13 @@ namespace webrtc {
 
 // Creates all classes needed and inject them into a new NetEqImpl object.
 // Return the new object.
-NetEq* NetEq::Create(int sample_rate_hz, bool enable_audio_classifier) {
+NetEq* NetEq::Create(const NetEq::Config& config) {
   BufferLevelFilter* buffer_level_filter = new BufferLevelFilter;
   DecoderDatabase* decoder_database = new DecoderDatabase;
   DelayPeakDetector* delay_peak_detector = new DelayPeakDetector;
   DelayManager* delay_manager = new DelayManager(kMaxNumPacketsInBuffer,
                                                  delay_peak_detector);
-  DtmfBuffer* dtmf_buffer = new DtmfBuffer(sample_rate_hz);
+  DtmfBuffer* dtmf_buffer = new DtmfBuffer(config.sample_rate_hz);
   DtmfToneGenerator* dtmf_tone_generator = new DtmfToneGenerator;
   PacketBuffer* packet_buffer = new PacketBuffer(kMaxNumPacketsInBuffer,
                                                  kMaxBytesInBuffer);
@@ -44,7 +44,7 @@ NetEq* NetEq::Create(int sample_rate_hz, bool enable_audio_classifier) {
   ExpandFactory* expand_factory = new ExpandFactory;
   PreemptiveExpandFactory* preemptive_expand_factory =
       new PreemptiveExpandFactory;
-  return new NetEqImpl(sample_rate_hz,
+  return new NetEqImpl(config.sample_rate_hz,
                        buffer_level_filter,
                        decoder_database,
                        delay_manager,

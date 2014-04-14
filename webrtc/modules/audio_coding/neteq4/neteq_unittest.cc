@@ -254,7 +254,9 @@ NetEqDecodingTest::NetEqDecodingTest()
 }
 
 void NetEqDecodingTest::SetUp() {
-  neteq_ = NetEq::Create(kInitSampleRateHz);
+  NetEq::Config config;
+  config.sample_rate_hz = kInitSampleRateHz;
+  neteq_ = NetEq::Create(config);
   NetEqNetworkStatistics stat;
   ASSERT_EQ(0, neteq_->NetworkStatistics(&stat));
   algorithmic_delay_ms_ = stat.current_buffer_size_ms;

@@ -36,7 +36,9 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
   const int kPayloadType = 95;
 
   // Initialize NetEq instance.
-  NetEq* neteq = NetEq::Create(kSampRateHz);
+  NetEq::Config config;
+  config.sample_rate_hz = kSampRateHz;
+  NetEq* neteq = NetEq::Create(config);
   // Register decoder in |neteq|.
   if (neteq->RegisterPayloadType(kDecoderType, kPayloadType) != 0)
     return -1;
