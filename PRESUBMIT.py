@@ -219,6 +219,7 @@ def GetPreferredTryMasters(project, change):
       'win',
       'win_asan',
       'win_baremetal',
+      'win_drmemory_light',
       'win_rel',
       'win_x64_rel',
   ]
