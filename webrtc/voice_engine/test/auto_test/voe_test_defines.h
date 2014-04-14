@@ -28,7 +28,6 @@
 #define _TEST_AUDIO_PROCESSING_
 #define _TEST_FILE_
 #define _TEST_NETWORK_
-#define _TEST_CALL_REPORT_
 #define _TEST_VIDEO_SYNC_
 #define _TEST_NETEQ_STATS_
 #define _TEST_XMEDIA_
@@ -76,9 +75,6 @@
 #endif
 #ifndef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
 #undef _TEST_NETEQ_STATS_
-#endif
-#ifndef WEBRTC_VOICE_ENGINE_CALL_REPORT_API
-#undef _TEST_CALL_REPORT_
 #endif
 
 // Some parts can cause problems while running Insure

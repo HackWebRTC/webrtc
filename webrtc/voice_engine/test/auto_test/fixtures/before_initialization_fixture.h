@@ -19,7 +19,6 @@
 #include "webrtc/test/testsupport/gtest_disable.h"
 #include "webrtc/voice_engine/include/voe_audio_processing.h"
 #include "webrtc/voice_engine/include/voe_base.h"
-#include "webrtc/voice_engine/include/voe_call_report.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
 #include "webrtc/voice_engine/include/voe_dtmf.h"
 #include "webrtc/voice_engine/include/voe_errors.h"
@@ -68,7 +67,6 @@ class BeforeInitializationFixture : public testing::Test {
   webrtc::VoEVideoSync*       voe_vsync_;
   webrtc::VoEHardware*        voe_hardware_;
   webrtc::VoEExternalMedia*   voe_xmedia_;
-  webrtc::VoECallReport*      voe_call_report_;
   webrtc::VoENetEqStats*      voe_neteq_stats_;
   webrtc::Config              config_;
 };

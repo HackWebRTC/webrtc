@@ -281,12 +281,6 @@ public:
     int SetChannelOutputVolumeScaling(float scaling);
     int GetChannelOutputVolumeScaling(float& scaling) const;
 
-    // VoECallReport
-    void ResetDeadOrAliveCounters();
-    int ResetRTCPStatistics();
-    int GetRoundTripTimeSummary(StatVal& delaysMs) const;
-    int GetDeadOrAliveCounters(int& countDead, int& countAlive) const;
-
     // VoENetEqStats
     int GetNetworkStatistics(NetworkStatistics& stats);
     void GetDecodingCallStatistics(AudioDecodingCallStats* stats) const;
@@ -514,7 +508,6 @@ private:
     int InsertInbandDtmfTone();
     int32_t MixOrReplaceAudioWithFile(int mixingFrequency);
     int32_t MixAudioWithFile(AudioFrame& audioFrame, int mixingFrequency);
-    void UpdateDeadOrAliveCounters(bool alive);
     int32_t SendPacketRaw(const void *data, int len, bool RTCP);
     void UpdatePacketDelay(uint32_t timestamp,
                            uint16_t sequenceNumber);
@@ -615,8 +608,6 @@ private:
     uint32_t _rtpTimeOutSeconds;
     bool _connectionObserver;
     VoEConnectionObserver* _connectionObserverPtr;
-    uint32_t _countAliveDetections;
-    uint32_t _countDeadDetections;
     AudioFrame::SpeechType _outputSpeechType;
     ViENetwork* vie_network_;
     int video_channel_;

@@ -18,9 +18,6 @@
 #ifdef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
 #include "webrtc/voice_engine/voe_audio_processing_impl.h"
 #endif
-#ifdef WEBRTC_VOICE_ENGINE_CALL_REPORT_API
-#include "webrtc/voice_engine/voe_call_report_impl.h"
-#endif
 #ifdef WEBRTC_VOICE_ENGINE_CODEC_API
 #include "webrtc/voice_engine/voe_codec_impl.h"
 #endif
@@ -58,9 +55,6 @@ class VoiceEngineImpl : public voe::SharedData,  // Must be the first base class
 #ifdef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
                         public VoEAudioProcessingImpl,
 #endif
-#ifdef WEBRTC_VOICE_ENGINE_CALL_REPORT_API
-                        public VoECallReportImpl,
-#endif
 #ifdef WEBRTC_VOICE_ENGINE_CODEC_API
                         public VoECodecImpl,
 #endif
@@ -96,9 +90,6 @@ public:
         SharedData(*config),
 #ifdef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
         VoEAudioProcessingImpl(this),
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_CALL_REPORT_API
-        VoECallReportImpl(this),
 #endif
 #ifdef WEBRTC_VOICE_ENGINE_CODEC_API
         VoECodecImpl(this),

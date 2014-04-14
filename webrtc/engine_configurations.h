@@ -84,10 +84,6 @@
 #define WEBRTC_VOICE_ENGINE_VIDEO_SYNC_API
 #define WEBRTC_VOICE_ENGINE_VOLUME_CONTROL_API
 
-#ifndef WEBRTC_CHROMIUM_BUILD
-#define WEBRTC_VOICE_ENGINE_CALL_REPORT_API
-#endif
-
 // ============================================================================
 //                                 VideoEngine
 // ============================================================================

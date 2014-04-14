@@ -502,8 +502,6 @@ Channel::OnPeriodicDeadOrAlive(int32_t id,
         isAlive = (_outputSpeechType != AudioFrame::kPLCCNG);
     }
 
-    UpdateDeadOrAliveCounters(isAlive);
-
     // Send callback to the registered observer
     if (_connectionObserver)
     {
@@ -908,8 +906,6 @@ Channel::Channel(int32_t channelId,
     _rtpTimeOutSeconds(0),
     _connectionObserver(false),
     _connectionObserverPtr(NULL),
-    _countAliveDetections(0),
-    _countDeadDetections(0),
     _outputSpeechType(AudioFrame::kNormalSpeech),
     vie_network_(NULL),
     video_channel_(-1),
@@ -4354,68 +4350,6 @@ int Channel::SetExternalMixing(bool enabled) {
 }
 
 int
-Channel::ResetRTCPStatistics()
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::ResetRTCPStatistics()");
-    uint32_t remoteSSRC(0);
-    remoteSSRC = rtp_receiver_->SSRC();
-    return _rtpRtcpModule->ResetRTT(remoteSSRC);
-}
-
-int
-Channel::GetRoundTripTimeSummary(StatVal& delaysMs) const
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::GetRoundTripTimeSummary()");
-    // Override default module outputs for the case when RTCP is disabled.
-    // This is done to ensure that we are backward compatible with the
-    // VoiceEngine where we did not use RTP/RTCP module.
-    if (!_rtpRtcpModule->RTCP())
-    {
-        delaysMs.min = -1;
-        delaysMs.max = -1;
-        delaysMs.average = -1;
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,_channelId),
-                     "Channel::GetRoundTripTimeSummary() RTCP is disabled =>"
-                     " valid RTT measurements cannot be retrieved");
-        return 0;
-    }
-
-    uint32_t remoteSSRC;
-    uint16_t RTT;
-    uint16_t avgRTT;
-    uint16_t maxRTT;
-    uint16_t minRTT;
-    // The remote SSRC will be zero if no RTP packet has been received.
-    remoteSSRC = rtp_receiver_->SSRC();
-    if (remoteSSRC == 0)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,_channelId),
-                     "Channel::GetRoundTripTimeSummary() unable to measure RTT"
-                     " since no RTP packet has been received yet");
-    }
-
-    // Retrieve RTT statistics from the RTP/RTCP module for the specified
-    // channel and SSRC. The SSRC is required to parse out the correct source
-    // in conference scenarios.
-    if (_rtpRtcpModule->RTT(remoteSSRC, &RTT, &avgRTT, &minRTT,&maxRTT) != 0)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,_channelId),
-                     "GetRoundTripTimeSummary unable to retrieve RTT values"
-                     " from the RTCP layer");
-        delaysMs.min = -1; delaysMs.max = -1; delaysMs.average = -1;
-    }
-    else
-    {
-        delaysMs.min = minRTT;
-        delaysMs.max = maxRTT;
-        delaysMs.average = avgRTT;
-    }
-    return 0;
-}
-
-int
 Channel::GetNetworkStatistics(NetworkStatistics& stats)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
@@ -4807,28 +4741,6 @@ Channel::InsertInbandDtmfTone()
         // Add 10ms to "delay-since-last-tone" counter
         _inbandDtmfGenerator.UpdateDelaySinceLastTone();
     }
-    return 0;
-}
-
-void
-Channel::ResetDeadOrAliveCounters()
-{
-    _countDeadDetections = 0;
-    _countAliveDetections = 0;
-}
-
-void
-Channel::UpdateDeadOrAliveCounters(bool alive)
-{
-    if (alive)
-        _countAliveDetections++;
-    else
-        _countDeadDetections++;
-}
-
-int
-Channel::GetDeadOrAliveCounters(int& countDead, int& countAlive) const
-{
     return 0;
 }
 

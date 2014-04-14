@@ -25,9 +25,6 @@
 #include "webrtc/voice_engine/test/auto_test/resource_manager.h"
 #include "webrtc/voice_engine/test/auto_test/voe_test_common.h"
 #include "webrtc/voice_engine/test/auto_test/voe_test_interface.h"
-#ifdef WEBRTC_VOICE_ENGINE_CALL_REPORT_API
-#include "webrtc/voice_engine/include/voe_call_report.h"
-#endif
 #ifdef WEBRTC_VOICE_ENGINE_CODEC_API
 #include "webrtc/voice_engine/include/voe_codec.h"
 #endif
@@ -65,7 +62,6 @@ class SubAPIManager {
  public:
   SubAPIManager()
     : _base(true),
-      _callReport(false),
       _codec(false),
       _dtmf(false),
       _externalMedia(false),
@@ -77,9 +73,6 @@ class SubAPIManager {
       _videoSync(false),
       _volumeControl(false),
       _apm(false) {
-#ifdef WEBRTC_VOICE_ENGINE_CALL_REPORT_API
-      _callReport = true;
-#endif
 #ifdef WEBRTC_VOICE_ENGINE_CODEC_API
       _codec = true;
 #endif
@@ -116,7 +109,7 @@ class SubAPIManager {
   void DisplayStatus() const;
 
  private:
-  bool _base, _callReport, _codec, _dtmf;
+  bool _base, _codec, _dtmf;
   bool _externalMedia, _file, _hardware;
   bool _netEqStats, _network, _rtp_rtcp, _videoSync, _volumeControl, _apm;
 };
@@ -182,10 +175,6 @@ class VoETestManager {
     return voe_xmedia_;
   }
 
-  VoECallReport* CallReportPtr() const {
-    return voe_call_report_;
-  }
-
 #ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
   VoENetEqStats* NetEqStatsPtr() const {
     return voe_neteq_stats_;
@@ -197,7 +186,6 @@ class VoETestManager {
 
   VoiceEngine*           voice_engine_;
   VoEBase*               voe_base_;
-  VoECallReport*         voe_call_report_;
   VoECodec*              voe_codec_;
   VoEDtmf*               voe_dtmf_;
   VoEExternalMedia*      voe_xmedia_;

@@ -42,8 +42,6 @@ void SubAPIManager::DisplayStatus() const {
   TEST_LOG("Supported sub APIs:\n\n");
   if (_base)
     TEST_LOG("  Base\n");
-  if (_callReport)
-    TEST_LOG("  CallReport\n");
   if (_codec)
     TEST_LOG("  Codec\n");
   if (_dtmf)
@@ -70,8 +68,6 @@ void SubAPIManager::DisplayStatus() const {
   TEST_LOG("Excluded sub APIs:\n\n");
   if (!_base)
     TEST_LOG("  Base\n");
-  if (!_callReport)
-    TEST_LOG("  CallReport\n");
   if (!_codec)
     TEST_LOG("  Codec\n");
   if (!_dtmf)
@@ -101,7 +97,6 @@ VoETestManager::VoETestManager()
     : initialized_(false),
       voice_engine_(NULL),
       voe_base_(0),
-      voe_call_report_(0),
       voe_codec_(0),
       voe_dtmf_(0),
       voe_xmedia_(0),
@@ -174,9 +169,6 @@ void VoETestManager::GetInterfaces() {
 #ifdef _TEST_XMEDIA_
     voe_xmedia_ = VoEExternalMedia::GetInterface(voice_engine_);
 #endif
-#ifdef _TEST_CALL_REPORT_
-    voe_call_report_ = VoECallReport::GetInterface(voice_engine_);
-#endif
 #ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
     voe_neteq_stats_ = VoENetEqStats::GetInterface(voice_engine_);
 #endif
@@ -232,12 +224,6 @@ int VoETestManager::ReleaseInterfaces() {
   if (voe_xmedia_) {
     voe_xmedia_->Release();
     voe_xmedia_ = NULL;
-  }
-#endif
-#ifdef _TEST_CALL_REPORT_
-  if (voe_call_report_) {
-    voe_call_report_->Release();
-    voe_call_report_ = NULL;
   }
 #endif
 #ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
