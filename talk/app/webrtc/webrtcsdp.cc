@@ -2115,6 +2115,12 @@ bool ParseMediaDescription(const std::string& message,
     // <fmt>
     std::vector<int> codec_preference;
     for (size_t j = 3 ; j < fields.size(); ++j) {
+      // TODO(wu): Remove when below bug is fixed.
+      // https://bugzilla.mozilla.org/show_bug.cgi?id=996329
+      if (fields[j] == "" && j == fields.size() - 1) {
+        continue;
+      }
+
       int pl = 0;
       if (!GetValueFromString(line, fields[j], &pl, error)) {
         return false;
