@@ -19,6 +19,7 @@ VCMPacket::VCMPacket()
   :
     payloadType(0),
     timestamp(0),
+    ntp_time_ms_(0),
     seqNum(0),
     dataPtr(NULL),
     sizeBytes(0),
@@ -38,6 +39,7 @@ VCMPacket::VCMPacket(const uint8_t* ptr,
                      const WebRtcRTPHeader& rtpHeader) :
     payloadType(rtpHeader.header.payloadType),
     timestamp(rtpHeader.header.timestamp),
+    ntp_time_ms_(rtpHeader.ntp_time_ms),
     seqNum(rtpHeader.header.sequenceNumber),
     dataPtr(ptr),
     sizeBytes(size),
@@ -58,6 +60,7 @@ VCMPacket::VCMPacket(const uint8_t* ptr,
 VCMPacket::VCMPacket(const uint8_t* ptr, uint32_t size, uint16_t seq, uint32_t ts, bool mBit) :
     payloadType(0),
     timestamp(ts),
+    ntp_time_ms_(0),
     seqNum(seq),
     dataPtr(ptr),
     sizeBytes(size),
@@ -76,6 +79,7 @@ VCMPacket::VCMPacket(const uint8_t* ptr, uint32_t size, uint16_t seq, uint32_t t
 void VCMPacket::Reset() {
   payloadType = 0;
   timestamp = 0;
+  ntp_time_ms_ = 0;
   seqNum = 0;
   dataPtr = NULL;
   sizeBytes = 0;

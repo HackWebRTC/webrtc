@@ -46,6 +46,7 @@ public:
         : _encodedWidth(0),
           _encodedHeight(0),
           _timeStamp(0),
+          ntp_time_ms_(0),
           capture_time_ms_(0),
           _frameType(kDeltaFrame),
           _buffer(buffer),
@@ -56,6 +57,8 @@ public:
     uint32_t                    _encodedWidth;
     uint32_t                    _encodedHeight;
     uint32_t                    _timeStamp;
+    // NTP time of the capture time in local timebase in milliseconds.
+    int64_t ntp_time_ms_;
     int64_t                      capture_time_ms_;
     VideoFrameType              _frameType;
     uint8_t*                    _buffer;

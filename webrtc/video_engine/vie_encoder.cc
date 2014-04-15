@@ -507,6 +507,7 @@ void ViEEncoder::DeliverFrame(int id,
       ExtractBuffer(*video_frame, length, video_buffer.get());
       effect_filter_->Transform(length,
                                 video_buffer.get(),
+                                video_frame->ntp_time_ms(),
                                 video_frame->timestamp(),
                                 video_frame->width(),
                                 video_frame->height());

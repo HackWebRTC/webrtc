@@ -49,10 +49,12 @@ TEST(TestI420VideoFrame, WidthHeightValues) {
   EXPECT_EQ(valid_value, frame.height());
   EXPECT_EQ(invalid_value, frame.set_height(0));
   EXPECT_EQ(valid_value, frame.height());
-  frame.set_timestamp(100u);
-  EXPECT_EQ(100u, frame.timestamp());
-  frame.set_render_time_ms(100);
-  EXPECT_EQ(100, frame.render_time_ms());
+  frame.set_timestamp(123u);
+  EXPECT_EQ(123u, frame.timestamp());
+  frame.set_ntp_time_ms(456);
+  EXPECT_EQ(456, frame.ntp_time_ms());
+  frame.set_render_time_ms(789);
+  EXPECT_EQ(789, frame.render_time_ms());
 }
 
 TEST(TestI420VideoFrame, SizeAllocation) {
@@ -82,7 +84,8 @@ TEST(TestI420VideoFrame, ResetSize) {
 TEST(TestI420VideoFrame, CopyFrame) {
   I420VideoFrame frame1, frame2;
   uint32_t timestamp = 1;
-  int64_t render_time_ms = 1;
+  int64_t ntp_time_ms = 2;
+  int64_t render_time_ms = 3;
   int stride_y = 15;
   int stride_u = 10;
   int stride_v = 10;
@@ -92,6 +95,7 @@ TEST(TestI420VideoFrame, CopyFrame) {
   EXPECT_EQ(0, frame1.CreateEmptyFrame(width, height,
                                        stride_y, stride_u, stride_v));
   frame1.set_timestamp(timestamp);
+  frame1.set_ntp_time_ms(ntp_time_ms);
   frame1.set_render_time_ms(render_time_ms);
   const int kSizeY = 225;
   const int kSizeU = 80;
@@ -151,7 +155,8 @@ TEST(TestI420VideoFrame, CopyBuffer) {
 TEST(TestI420VideoFrame, FrameSwap) {
   I420VideoFrame frame1, frame2;
   uint32_t timestamp1 = 1;
-  int64_t render_time_ms1 = 1;
+  int64_t ntp_time_ms1 = 2;
+  int64_t render_time_ms1 = 3;
   int stride_y1 = 15;
   int stride_u1 = 10;
   int stride_v1 = 10;
@@ -160,8 +165,9 @@ TEST(TestI420VideoFrame, FrameSwap) {
   const int kSizeY1 = 225;
   const int kSizeU1 = 80;
   const int kSizeV1 = 80;
-  uint32_t timestamp2 = 2;
-  int64_t render_time_ms2 = 4;
+  uint32_t timestamp2 = 4;
+  int64_t ntp_time_ms2 = 5;
+  int64_t render_time_ms2 = 6;
   int stride_y2 = 30;
   int stride_u2 = 20;
   int stride_v2 = 20;
@@ -174,6 +180,7 @@ TEST(TestI420VideoFrame, FrameSwap) {
   EXPECT_EQ(0, frame1.CreateEmptyFrame(width1, height1,
                                        stride_y1, stride_u1, stride_v1));
   frame1.set_timestamp(timestamp1);
+  frame1.set_ntp_time_ms(ntp_time_ms1);
   frame1.set_render_time_ms(render_time_ms1);
   // Set memory for frame1.
   uint8_t buffer_y1[kSizeY1];
@@ -190,6 +197,7 @@ TEST(TestI420VideoFrame, FrameSwap) {
   EXPECT_EQ(0, frame2.CreateEmptyFrame(width2, height2,
                                        stride_y2, stride_u2, stride_v2));
   frame2.set_timestamp(timestamp2);
+  frame1.set_ntp_time_ms(ntp_time_ms2);
   frame2.set_render_time_ms(render_time_ms2);
   // Set memory for frame2.
   uint8_t buffer_y2[kSizeY2];
@@ -245,6 +253,7 @@ bool EqualFramesExceptSize(const I420VideoFrame& frame1,
   ret |= (frame1.stride(kUPlane) == frame2.stride(kUPlane));
   ret |= (frame1.stride(kVPlane) == frame2.stride(kVPlane));
   ret |= (frame1.timestamp() == frame2.timestamp());
+  ret |= (frame1.ntp_time_ms() == frame2.ntp_time_ms());
   ret |= (frame1.render_time_ms() == frame2.render_time_ms());
   if (!ret)
     return false;

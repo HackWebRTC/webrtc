@@ -1403,8 +1403,11 @@ int32_t ViEChannel::FrameToRender(
                                            video_frame.height());
       scoped_array<uint8_t> video_buffer(new uint8_t[length]);
       ExtractBuffer(video_frame, length, video_buffer.get());
-      effect_filter_->Transform(length, video_buffer.get(),
-                                video_frame.timestamp(), video_frame.width(),
+      effect_filter_->Transform(length,
+                                video_buffer.get(),
+                                video_frame.ntp_time_ms(),
+                                video_frame.timestamp(),
+                                video_frame.width(),
                                 video_frame.height());
     }
     if (color_enhancement_) {

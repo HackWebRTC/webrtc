@@ -22,6 +22,8 @@ namespace webrtc {
 enum { kMaxWaitEncTimeMs = 100 };
 enum { kMaxWaitDecTimeMs = 25 };
 
+static const uint32_t kTestTimestamp = 123;
+static const int64_t kTestNtpTimeMs = 456;
 
 // TODO(mikhal): Replace these with mocks.
 class Vp8UnitTestEncodeCompleteCallback : public webrtc::EncodedImageCallback {
@@ -128,6 +130,7 @@ class TestVp8Impl : public ::testing::Test {
 
     input_frame_.CreateEmptyFrame(codec_inst_.width, codec_inst_.height,
                                   stride_y, stride_uv, stride_uv);
+    input_frame_.set_timestamp(kTestTimestamp);
     // Using ConvertToI420 to add stride to the image.
     EXPECT_EQ(0, ConvertToI420(kI420, source_buffer_.get(), 0, 0,
                                codec_inst_.width, codec_inst_.height,
@@ -235,10 +238,13 @@ TEST_F(TestVp8Impl, DISABLED_ON_ANDROID(AlignedStrideEncodeDecode)) {
   VideoFrameToEncodedImage(encoded_video_frame_, encodedImage);
   // First frame should be a key frame.
   encodedImage._frameType = kKeyFrame;
+  encodedImage.ntp_time_ms_ = kTestNtpTimeMs;
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Decode(encodedImage, false, NULL));
   EXPECT_GT(WaitForDecodedFrame(), 0);
   // Compute PSNR on all planes (faster than SSIM).
   EXPECT_GT(I420PSNR(&input_frame_, &decoded_video_frame_), 36);
+  EXPECT_EQ(kTestTimestamp, decoded_video_frame_.timestamp());
+  EXPECT_EQ(kTestNtpTimeMs, decoded_video_frame_.ntp_time_ms());
 }
 
 TEST_F(TestVp8Impl, DISABLED_ON_ANDROID(DecodeWithACompleteKeyFrame)) {

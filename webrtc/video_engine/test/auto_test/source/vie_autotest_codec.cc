@@ -124,7 +124,8 @@ class RenderFilter : public webrtc::ViEEffectFilter {
   }
   virtual int Transform(int size,
                         unsigned char* frame_buffer,
-                        unsigned int time_stamp90KHz,
+                        int64_t ntp_time_ms,
+                        unsigned int timestamp,
                         unsigned int width,
                         unsigned int height)  {
     num_frames_++;

@@ -96,6 +96,8 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet,
         // First packet (empty and/or media) inserted into this frame.
         // store some info and set some initial values.
         _timeStamp = packet.timestamp;
+        // We only take the ntp timestamp of the first packet of a frame.
+        ntp_time_ms_ = packet.ntp_time_ms_;
         _codec = packet.codec;
         if (packet.frameType != kFrameEmpty) {
             // first media packet

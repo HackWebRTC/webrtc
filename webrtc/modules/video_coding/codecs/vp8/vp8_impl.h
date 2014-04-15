@@ -214,7 +214,9 @@ class VP8DecoderImpl : public VP8Decoder {
   int DecodePartitions(const EncodedImage& input_image,
                        const RTPFragmentationHeader* fragmentation);
 
-  int ReturnFrame(const vpx_image_t* img, uint32_t timeStamp);
+  int ReturnFrame(const vpx_image_t* img,
+                  uint32_t timeStamp,
+                  int64_t ntp_time_ms);
 
   I420VideoFrame decoded_image_;
   DecodedImageCallback* decode_complete_callback_;

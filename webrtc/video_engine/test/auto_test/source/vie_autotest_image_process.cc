@@ -28,12 +28,15 @@ public:
 
     ~MyEffectFilter() {}
 
-    virtual int Transform(int size, unsigned char* frameBuffer,
-                          unsigned int timeStamp90KHz, unsigned int width,
+    virtual int Transform(int size,
+                          unsigned char* frame_buffer,
+                          int64_t ntp_time_ms,
+                          unsigned int timestamp,
+                          unsigned int width,
                           unsigned int height)
     {
         // Black and white
-        memset(frameBuffer + (2 * size) / 3, 0x7f, size / 3);
+        memset(frame_buffer + (2 * size) / 3, 0x7f, size / 3);
         return 0;
     }
 };

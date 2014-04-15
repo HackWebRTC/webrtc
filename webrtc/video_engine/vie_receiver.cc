@@ -171,6 +171,7 @@ int ViEReceiver::ReceivedRTCPPacket(const void* rtcp_packet,
 int32_t ViEReceiver::OnReceivedPayloadData(
     const uint8_t* payload_data, const uint16_t payload_size,
     const WebRtcRTPHeader* rtp_header) {
+  // TODO(wu): Calculate ntp_time_ms
   if (vcm_->IncomingPacket(payload_data, payload_size, *rtp_header) != 0) {
     // Check this...
     return -1;
