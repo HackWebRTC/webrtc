@@ -2688,7 +2688,7 @@ int32_t FuncTestManager::TestAdvancedMBAPI()
         " from the loudspeaker.\n\
 > Press any key to stop...\n \n");
     PAUSE(DEFAULT_PAUSE_TIME);
-    EXPECT_EQ(0, audioDevice->GetLoudspeakerStatus(loudspeakerOn));
+    EXPECT_EQ(0, audioDevice->GetLoudspeakerStatus(&loudspeakerOn));
     EXPECT_TRUE(loudspeakerOn);
 
     TEST_LOG("Set to not use speaker\n");
@@ -2697,7 +2697,7 @@ int32_t FuncTestManager::TestAdvancedMBAPI()
         " from the loudspeaker.\n\
 > Press any key to stop...\n \n");
     PAUSE(DEFAULT_PAUSE_TIME);
-    EXPECT_EQ(0, audioDevice->GetLoudspeakerStatus(loudspeakerOn));
+    EXPECT_EQ(0, audioDevice->GetLoudspeakerStatus(&loudspeakerOn));
     EXPECT_FALSE(loudspeakerOn);
 #endif
 

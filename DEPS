@@ -161,6 +161,12 @@ deps_os = {
     # NSS, for SSLClientSocketNSS.
     "third_party/nss":
       From("chromium_deps", "src/third_party/nss"),
+
+    # TODO(kjellander): remove once bug 2152 is fixed.
+    # This needs to specify the path directly (instead of using the
+    # chromium_deps version) because chromium_deps only defines this for ios.
+    "testing/iossim/third_party/class-dump":
+      Var("chromium_trunk") + "/deps/third_party/class-dump@199203",
   },
 
   "ios": {

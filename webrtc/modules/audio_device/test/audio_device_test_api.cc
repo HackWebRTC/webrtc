@@ -1792,19 +1792,19 @@ TEST_F(AudioDeviceAPITest, SetPlayoutSpeaker) {
 #if defined(WEBRTC_IOS)
   // Not playing or recording, should just return a success
   EXPECT_EQ(0, audio_device_->SetLoudspeakerStatus(true));
-  EXPECT_EQ(0, audio_device_->GetLoudspeakerStatus(loudspeakerOn));
+  EXPECT_EQ(0, audio_device_->GetLoudspeakerStatus(&loudspeakerOn));
   EXPECT_TRUE(loudspeakerOn);
   EXPECT_EQ(0, audio_device_->SetLoudspeakerStatus(false));
-  EXPECT_EQ(0, audio_device_->GetLoudspeakerStatus(loudspeakerOn));
+  EXPECT_EQ(0, audio_device_->GetLoudspeakerStatus(&loudspeakerOn));
   EXPECT_FALSE(loudspeakerOn);
 
   EXPECT_EQ(0, audio_device_->InitPlayout());
   EXPECT_EQ(0, audio_device_->StartPlayout());
   EXPECT_EQ(0, audio_device_->SetLoudspeakerStatus(true));
-  EXPECT_EQ(0, audio_device_->GetLoudspeakerStatus(loudspeakerOn));
+  EXPECT_EQ(0, audio_device_->GetLoudspeakerStatus(&loudspeakerOn));
   EXPECT_TRUE(loudspeakerOn);
   EXPECT_EQ(0, audio_device_->SetLoudspeakerStatus(false));
-  EXPECT_EQ(0, audio_device_->GetLoudspeakerStatus(loudspeakerOn));
+  EXPECT_EQ(0, audio_device_->GetLoudspeakerStatus(&loudspeakerOn));
   EXPECT_FALSE(loudspeakerOn);
 
 #else

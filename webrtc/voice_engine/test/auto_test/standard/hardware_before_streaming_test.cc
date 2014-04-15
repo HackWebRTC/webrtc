@@ -14,10 +14,6 @@
 
 using namespace webrtc;
 
-static const char* kNoDevicesErrorMessage =
-    "Either you have no recording / playout device "
-    "on your system, or the method failed.";
-
 class HardwareBeforeStreamingTest : public AfterInitializationFixture {
 };
 
@@ -50,6 +46,10 @@ TEST_F(HardwareBeforeStreamingTest, ResetsAudioDeviceOnIphone) {
 
 // Tests that only apply to desktop:
 #if !defined(WEBRTC_IOS) & !defined(WEBRTC_ANDROID)
+
+static const char* kNoDevicesErrorMessage =
+    "Either you have no recording / playout device "
+    "on your system, or the method failed.";
 
 TEST_F(HardwareBeforeStreamingTest, GetPlayoutDeviceStatusReturnsTrue) {
   bool play_available = false;
