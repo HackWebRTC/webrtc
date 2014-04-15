@@ -1295,7 +1295,7 @@ bool RTPSender::UpdateAudioLevel(uint8_t *rtp_packet,
       rtp_header_extension_map_.GetLengthUntilBlockStartInBytes(
           kRtpExtensionAudioLevel);
   if (extension_block_pos < 0) {
-    LOG(LS_WARNING) << "Failed to update audio level, not registered.";
+    // The feature is not enabled.
     return false;
   }
   int block_pos = 12 + rtp_header.numCSRCs + extension_block_pos;
@@ -1337,7 +1337,7 @@ bool RTPSender::UpdateAbsoluteSendTime(
       rtp_header_extension_map_.GetLengthUntilBlockStartInBytes(
           kRtpExtensionAbsoluteSendTime);
   if (extension_block_pos < 0) {
-    LOG(LS_WARNING) << "Failed to update absolute send time, not registered.";
+    // The feature is not enabled.
     return false;
   }
   int block_pos = 12 + rtp_header.numCSRCs + extension_block_pos;
