@@ -62,6 +62,8 @@ class RtpHeaderExtensionMap {
 
   int32_t Deregister(const RTPExtensionType type);
 
+  bool IsRegistered(RTPExtensionType type) const;
+
   int32_t GetType(const uint8_t id, RTPExtensionType* type) const;
 
   int32_t GetId(const RTPExtensionType type, uint8_t* id) const;

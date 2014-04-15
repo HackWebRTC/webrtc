@@ -1234,7 +1234,13 @@ bool RTPSender::UpdateTransmissionTimeOffset(
     uint8_t *rtp_packet, const uint16_t rtp_packet_length,
     const RTPHeader &rtp_header, const int64_t time_diff_ms) const {
   CriticalSectionScoped cs(send_critsect_);
-
+  // Get id.
+  uint8_t id = 0;
+  if (rtp_header_extension_map_.GetId(kRtpExtensionTransmissionTimeOffset,
+                                      &id) != 0) {
+    // Not registered.
+    return false;
+  }
   // Get length until start of header extension block.
   int extension_block_pos =
       rtp_header_extension_map_.GetLengthUntilBlockStartInBytes(
@@ -1259,13 +1265,6 @@ bool RTPSender::UpdateTransmissionTimeOffset(
                        "extension not found.";
     return false;
   }
-  // Get id.
-  uint8_t id = 0;
-  if (rtp_header_extension_map_.GetId(kRtpExtensionTransmissionTimeOffset,
-                                      &id) != 0) {
-    LOG(LS_WARNING) << "Failed to update transmission time offset, no id.";
-    return false;
-  }
   // Verify first byte in block.
   const uint8_t first_block_byte = (id << 4) + 2;
   if (rtp_packet[block_pos] != first_block_byte) {
@@ -1285,6 +1284,12 @@ bool RTPSender::UpdateAudioLevel(uint8_t *rtp_packet,
                                  const uint8_t dBov) const {
   CriticalSectionScoped cs(send_critsect_);
 
+  // Get id.
+  uint8_t id = 0;
+  if (rtp_header_extension_map_.GetId(kRtpExtensionAudioLevel, &id) != 0) {
+    // Not registered.
+    return false;
+  }
   // Get length until start of header extension block.
   int extension_block_pos =
       rtp_header_extension_map_.GetLengthUntilBlockStartInBytes(
@@ -1305,12 +1310,6 @@ bool RTPSender::UpdateAudioLevel(uint8_t *rtp_packet,
     LOG(LS_WARNING) << "Failed to update audio level, hdr extension not found.";
     return false;
   }
-  // Get id.
-  uint8_t id = 0;
-  if (rtp_header_extension_map_.GetId(kRtpExtensionAudioLevel, &id) != 0) {
-    LOG(LS_WARNING) << "Failed to update audio level, no id.";
-    return false;
-  }
   // Verify first byte in block.
   const uint8_t first_block_byte = (id << 4) + 0;
   if (rtp_packet[block_pos] != first_block_byte) {
@@ -1326,6 +1325,13 @@ bool RTPSender::UpdateAbsoluteSendTime(
     const RTPHeader &rtp_header, const int64_t now_ms) const {
   CriticalSectionScoped cs(send_critsect_);
 
+  // Get id.
+  uint8_t id = 0;
+  if (rtp_header_extension_map_.GetId(kRtpExtensionAbsoluteSendTime,
+                                      &id) != 0) {
+    // Not registered.
+    return false;
+  }
   // Get length until start of header extension block.
   int extension_block_pos =
       rtp_header_extension_map_.GetLengthUntilBlockStartInBytes(
@@ -1345,13 +1351,6 @@ bool RTPSender::UpdateAbsoluteSendTime(
         (rtp_packet[12 + rtp_header.numCSRCs + 1] == 0xDE))) {
     LOG(LS_WARNING)
         << "Failed to update absolute send time, hdr extension not found.";
-    return false;
-  }
-  // Get id.
-  uint8_t id = 0;
-  if (rtp_header_extension_map_.GetId(kRtpExtensionAbsoluteSendTime,
-                                      &id) != 0) {
-    LOG(LS_WARNING) << "Failed to update absolute send time, no id.";
     return false;
   }
   // Verify first byte in block.
