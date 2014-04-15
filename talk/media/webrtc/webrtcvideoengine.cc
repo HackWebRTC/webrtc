@@ -281,8 +281,13 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
     return renderer_->SetSize(width_, height_, 0) ? 0 : -1;
   }
 
-  virtual int DeliverFrame(unsigned char* buffer, int buffer_size,
-                           uint32_t time_stamp, int64_t render_time,
+  virtual int DeliverFrame(unsigned char* buffer,
+                           int buffer_size,
+                           uint32_t time_stamp,
+#ifdef USE_WEBRTC_DEV_BRANCH
+                           int64_t ntp_time_ms,
+#endif
+                           int64_t render_time,
                            void* handle) {
     talk_base::CritScope cs(&crit_);
     frame_rate_tracker_.Update(1);
