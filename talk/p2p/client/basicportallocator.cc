@@ -863,20 +863,19 @@ void AllocationSequence::CreateUDPPorts() {
   if (port) {
     // If shared socket is enabled, STUN candidate will be allocated by the
     // UDPPort.
-    if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET) &&
-        !IsFlagSet(PORTALLOCATOR_DISABLE_STUN)) {
-      ASSERT(config_ && !config_->stun_address.IsNil());
-      if (!(config_ && !config_->stun_address.IsNil())) {
-        LOG(LS_WARNING)
-            << "AllocationSequence: No STUN server configured, skipping.";
-        return;
-      }
+    if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET)) {
       udp_port_ = port;
-      // If there is a TURN UDP server available, then we will use TURN port
-      // to get stun address, otherwise by UDP port.
-      // Shared socket mode is not used in GTURN mode.
-      if (config_ && !config_->SupportsProtocol(RELAY_TURN, PROTO_UDP)) {
-        port->set_server_addr(config_->stun_address);
+
+      // If STUN is not disabled, setting stun server address to port.
+      if (!IsFlagSet(PORTALLOCATOR_DISABLE_STUN)) {
+        // If there is a TURN UDP server available, then we will use TURN port
+        // to get stun address, otherwise by UDP port.
+        // Shared socket mode is not used in GTURN mode.
+        if (config_ &&
+            !config_->SupportsProtocol(RELAY_TURN, PROTO_UDP) &&
+            !config_->stun_address.IsNil()) {
+          port->set_server_addr(config_->stun_address);
+        }
       }
     }
 
@@ -1059,7 +1058,9 @@ void AllocationSequence::OnReadPacket(
     port = udp_port_;
   }
   ASSERT(port != NULL);
-  port->HandleIncomingPacket(socket, data, size, remote_addr, packet_time);
+  if (port) {
+    port->HandleIncomingPacket(socket, data, size, remote_addr, packet_time);
+  }
 }
 
 void AllocationSequence::OnPortDestroyed(PortInterface* port) {

@@ -1509,6 +1509,43 @@ TEST_F(P2PTransportChannelTest, TestIPv6Connections) {
   DestroyChannels();
 }
 
+// Simple test without any stun or turn server addresses. Making sure ports
+// can receive and send data.
+TEST_F(P2PTransportChannelTest, TestSharedSocketModeWithStunTurnAddress) {
+  AddAddress(0, kPublicAddrs[0]);
+  AddAddress(1, kPublicAddrs[1]);
+
+  const talk_base::SocketAddress null_addr;
+  GetEndpoint(0)->allocator_.reset(new cricket::BasicPortAllocator(
+        &(GetEndpoint(0)->network_manager_), null_addr, null_addr,
+        null_addr, null_addr));
+  GetEndpoint(1)->allocator_.reset(new cricket::BasicPortAllocator(
+        &(GetEndpoint(1)->network_manager_), null_addr, null_addr,
+        null_addr, null_addr));
+
+  SetAllocatorFlags(0, cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
+                       cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG);
+  SetAllocatorFlags(1, cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
+                       cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG);
+
+  SetAllocationStepDelay(0, kMinimumStepDelay);
+  SetAllocationStepDelay(1, kMinimumStepDelay);
+
+  CreateChannels(1);
+
+  EXPECT_TRUE_WAIT(ep1_ch1()->readable() &&
+                   ep1_ch1()->writable() &&
+                   ep2_ch1()->readable() &&
+                   ep2_ch1()->writable(),
+                   1000);
+
+  EXPECT_TRUE(ep1_ch1()->best_connection() &&
+              ep2_ch1()->best_connection());
+
+  TestSendRecv(1);
+  DestroyChannels();
+}
+
 // Test what happens when we have 2 users behind the same NAT. This can lead
 // to interesting behavior because the STUN server will only give out the
 // address of the outermost NAT.
