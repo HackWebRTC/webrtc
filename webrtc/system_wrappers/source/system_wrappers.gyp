@@ -52,6 +52,7 @@
         '../interface/tick_util.h',
         '../interface/trace.h',
         '../interface/trace_event.h',
+        '../interface/utf_util_win.h',
         'aligned_malloc.cc',
         'atomic32_mac.cc',
         'atomic32_posix.cc',

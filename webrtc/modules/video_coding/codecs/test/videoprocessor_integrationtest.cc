@@ -156,7 +156,10 @@ class VideoProcessorIntegrationTest: public testing::Test {
     // Setup the TestConfig struct for processing of a clip in CIF resolution.
     config_.input_filename =
         webrtc::test::ResourcePath("foreman_cif", "yuv");
-    config_.output_filename = tmpnam(NULL);
+
+    // Generate an output filename in a safe way.
+    config_.output_filename = webrtc::test::TempFilename(
+        webrtc::test::OutputPath(), "videoprocessor_integrationtest");
     config_.frame_length_in_bytes = CalcBufferSize(kI420,
                                                    kCIFWidth, kCIFHeight);
     config_.verbose = false;

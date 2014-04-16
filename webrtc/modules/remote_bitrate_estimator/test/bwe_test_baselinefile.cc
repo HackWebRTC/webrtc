@@ -118,7 +118,7 @@ class BaseLineFileUpdate : public BaseLineFileInterface {
   virtual bool VerifyOrWrite() {
     if (!verifier_->VerifyOrWrite()) {
       std::string dir_path = webrtc::test::OutputPath() + kResourceSubDir;
-      if (!webrtc::test::CreateDirectory(dir_path)) {
+      if (!webrtc::test::CreateDir(dir_path)) {
         printf("WARNING: Cannot create output dir: %s\n", dir_path.c_str());
         return false;
       }

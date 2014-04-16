@@ -46,7 +46,7 @@ class FileUtilsTest : public testing::Test {
     original_working_dir_ = webrtc::test::WorkingDir();
     std::string resources_path = original_working_dir_ + kPathDelimiter +
         kResourcesDir + kPathDelimiter;
-    webrtc::test::CreateDirectory(resources_path);
+    webrtc::test::CreateDir(resources_path);
 
     files_.push_back(resources_path + kTestName + "." + kExtension);
     files_.push_back(resources_path + kTestName + "_32." + kExtension);
@@ -117,12 +117,19 @@ TEST_F(FileUtilsTest, DISABLED_ON_ANDROID(OutputPathFromRootWorkingDir)) {
   ASSERT_EQ("./", webrtc::test::OutputPath());
 }
 
+TEST_F(FileUtilsTest, DISABLED_ON_ANDROID(TempFilename)) {
+  std::string temp_filename = webrtc::test::TempFilename(
+      webrtc::test::OutputPath(), "TempFilenameTest");
+  ASSERT_TRUE(webrtc::test::FileExists(temp_filename));
+  remove(temp_filename.c_str());
+}
+
 // Only tests that the code executes
-TEST_F(FileUtilsTest, CreateDirectory) {
+TEST_F(FileUtilsTest, CreateDir) {
   std::string directory = "fileutils-unittest-empty-dir";
   // Make sure it's removed if a previous test has failed:
   remove(directory.c_str());
-  ASSERT_TRUE(webrtc::test::CreateDirectory(directory));
+  ASSERT_TRUE(webrtc::test::CreateDir(directory));
   remove(directory.c_str());
 }
 
