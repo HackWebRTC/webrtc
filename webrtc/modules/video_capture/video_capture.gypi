@@ -133,6 +133,15 @@
     },
   ],
   'conditions': [
+    ['include_tests==1 and build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+      # Use WebRTC capture code for Android APK tests that are built from a
+      # Chromium checkout. Normally when built as a part of Chromium the
+      # Chromium video capture code is used. This overrides the default in
+      # webrtc/build/common.gypi.
+      'variables': {
+        'include_internal_video_capture': 1,
+      },
+    }],
     ['include_tests==1', {
       'targets': [
         {
