@@ -206,14 +206,7 @@ public:
     int32_t GetVADStatus(bool& enabledVAD, ACMVADMode& mode, bool& disabledDTX);
     int32_t SetRecPayloadType(const CodecInst& codec);
     int32_t GetRecPayloadType(CodecInst& codec);
-    int32_t SetAMREncFormat(AmrMode mode);
-    int32_t SetAMRDecFormat(AmrMode mode);
-    int32_t SetAMRWbEncFormat(AmrMode mode);
-    int32_t SetAMRWbDecFormat(AmrMode mode);
     int32_t SetSendCNPayloadType(int type, PayloadFrequencies frequency);
-    int32_t SetISACInitTargetRate(int rateBps, bool useFixedFrameSize);
-    int32_t SetISACMaxRate(int rateBps);
-    int32_t SetISACMaxPayloadSize(int sizeBytes);
 
     // VoE dual-streaming.
     int SetSecondarySendCodec(const CodecInst& codec, int red_payload_type);

@@ -84,22 +84,6 @@ public:
     // Gets the currently received |codec| for a specific |channel|.
     virtual int GetRecCodec(int channel, CodecInst& codec) = 0;
 
-    // Sets the initial values of target rate and frame size for iSAC
-    // for a specified |channel|. This API is only valid if iSAC is setup
-    // to run in channel-adaptive mode
-    virtual int SetISACInitTargetRate(int channel, int rateBps,
-                                      bool useFixedFrameSize = false) = 0;
-
-    // Sets the maximum allowed iSAC rate which the codec may not exceed
-    // for a single packet for the specified |channel|. The maximum rate is
-    // defined as payload size per frame size in bits per second.
-    virtual int SetISACMaxRate(int channel, int rateBps) = 0;
-
-    // Sets the maximum allowed iSAC payload size for a specified |channel|.
-    // The maximum value is set independently of the frame size, i.e.
-    // 30 ms and 60 ms packets have the same limit.
-    virtual int SetISACMaxPayloadSize(int channel, int sizeBytes) = 0;
-
     // Sets the dynamic payload type number for a particular |codec| or
     // disables (ignores) a codec for receiving. For instance, when receiving
     // an invite from a SIP-based client, this function can be used to change
@@ -130,17 +114,15 @@ public:
     virtual int GetVADStatus(int channel, bool& enabled, VadModes& mode,
                              bool& disabledDTX) = 0;
 
-    // Not supported
-    virtual int SetAMREncFormat(int channel, AmrMode mode) = 0;
-
-    // Not supported
-    virtual int SetAMRDecFormat(int channel, AmrMode mode) = 0;
-
-    // Not supported
-    virtual int SetAMRWbEncFormat(int channel, AmrMode mode) = 0;
-
-    // Not supported
-    virtual int SetAMRWbDecFormat(int channel, AmrMode mode) = 0;
+    // Don't use. To be removed.
+    virtual int SetAMREncFormat(int channel, AmrMode mode) { return -1; }
+    virtual int SetAMRDecFormat(int channel, AmrMode mode) { return -1; }
+    virtual int SetAMRWbEncFormat(int channel, AmrMode mode) { return -1; }
+    virtual int SetAMRWbDecFormat(int channel, AmrMode mode) { return -1; }
+    virtual int SetISACInitTargetRate(int channel, int rateBps,
+            bool useFixedFrameSize = false) { return -1; }
+    virtual int SetISACMaxRate(int channel, int rateBps) { return -1; }
+    virtual int SetISACMaxPayloadSize(int channel, int sizeBytes) { return -1; }
 
 protected:
     VoECodec() {}
