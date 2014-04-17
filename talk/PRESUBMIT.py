@@ -25,15 +25,7 @@
 
 # List of files that should not be committed to
 DO_NOT_SUBMIT_FILES = [
-    "talk/app/webrtc/mediaconstraintsinterface.h",
-    "talk/base/linux.cc",
-    "talk/base/linux.h",
-    "talk/base/linux_unittest.cc",
-    "talk/main.scons",
-    "talk/media/base/hybridvideoengine.cc",
-    "talk/media/base/mediaengine.cc",
     "talk/media/base/mutedvideocapturer.cc",
-    "talk/media/base/streamparams.h",
     "talk/media/base/videocapturer.cc",
     "talk/media/base/videocapturer.h",
     "talk/media/base/videocapturer_unittest.cc",
@@ -49,9 +41,7 @@ DO_NOT_SUBMIT_FILES = [
     "talk/media/webrtc/webrtcvoiceengine.cc",
     "talk/media/webrtc/webrtcvoiceengine.h",
     "talk/media/webrtc/webrtcvoiceengine_unittest.cc",
-    "talk/p2p/base/session.cc",
-    "talk/session/media/channel.cc",
-    "talk/session/media/mediasession_unittest.cc"]
+    "talk/session/media/channel.cc"]
 
 def _LicenseHeader(input_api):
   """Returns the license header regexp."""
