@@ -340,24 +340,3 @@ TEST_F(PeerConnectionFactoryTest, LocalRendering) {
   EXPECT_TRUE(capturer->CaptureFrame());
   EXPECT_EQ(2, local_renderer.num_rendered_frames());
 }
-
-// Test that no deadlock or ASSERT triggers on releasing the last
-// reference to a PeerConnectionFactory (regression test for
-// https://code.google.com/p/webrtc/issues/detail?id=3100).
-TEST(PeerConnectionFactory2Test, ThreadTeardown) {
-  talk_base::scoped_refptr<PeerConnectionFactoryInterface> factory(
-      webrtc::CreatePeerConnectionFactory());
-  NullPeerConnectionObserver observer;
-  talk_base::scoped_refptr<PeerConnectionInterface> pc(
-      factory->CreatePeerConnection(
-          webrtc::PeerConnectionInterface::IceServers(),
-          NULL,
-          NULL,
-          &observer));
-  factory = NULL;
-  // Now |pc| holds the last ref to the factory (and thus its
-  // threads).  If the next line, which causes |pc| to be freed,
-  // doesn't ASSERT (in Debug) or deadlock (in Release) then the test
-  // is successful.
-  pc = NULL;
-}
