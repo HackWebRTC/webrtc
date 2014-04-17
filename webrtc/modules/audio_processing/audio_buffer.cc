@@ -25,12 +25,9 @@ enum {
 void StereoToMono(const int16_t* left, const int16_t* right,
                   int16_t* out, int samples_per_channel) {
   assert(left != NULL && right != NULL && out != NULL);
-  for (int i = 0; i < samples_per_channel; i++) {
-    int32_t data32 = (static_cast<int32_t>(left[i]) +
-                      static_cast<int32_t>(right[i])) >> 1;
-
-    out[i] = WebRtcSpl_SatW32ToW16(data32);
-  }
+  for (int i = 0; i < samples_per_channel; i++)
+    out[i] = (static_cast<int32_t>(left[i]) +
+              static_cast<int32_t>(right[i])) >> 1;
 }
 }  // namespace
 
