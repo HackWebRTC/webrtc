@@ -183,12 +183,33 @@ PeerConnectionFactory::PeerConnectionFactory(
   // ASSERT(default_adm != NULL);
 }
 
+// Deletes |thread| if it is not the current thread, else causes it to
+// exit and delete itself after completing the currently processing
+// message.
+//
+// NOTE: this is required because:
+// 1) PeerConnection holds a ref on PeerConnectionFactory; and
+// 2) PeerConnectionFactory may own the signaling & worker threads; and
+// 3) PeerConnection is always destroyed on the signaling thread.
+// As a result, if the last ref on PeerConnectionFactory is held by
+// PeerConnection, a naive "delete signaling_thread_;" in
+// ~PeerConnectionFactory() would result in deadlock.  See
+// https://code.google.com/p/webrtc/issues/detail?id=3100 for history.
+static void DeleteOrRelease(talk_base::Thread* thread) {
+  if (thread->IsCurrent()) {
+    thread->Release();  // Causes thread to delete itself after Quit().
+    thread->Quit();
+  } else {
+    delete thread;  // Calls thread->Stop() implicitly.
+  }
+}
+
 PeerConnectionFactory::~PeerConnectionFactory() {
   signaling_thread_->Clear(this);
   signaling_thread_->Send(this, MSG_TERMINATE_FACTORY);
   if (owns_ptrs_) {
-    delete signaling_thread_;
-    delete worker_thread_;
+    DeleteOrRelease(signaling_thread_);
+    DeleteOrRelease(worker_thread_);
   }
 }
 
