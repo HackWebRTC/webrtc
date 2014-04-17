@@ -201,7 +201,6 @@ int NetEqImpl::RegisterPayloadType(enum NetEqDecoder codec,
 
 int NetEqImpl::RegisterExternalDecoder(AudioDecoder* decoder,
                                        enum NetEqDecoder codec,
-                                       int sample_rate_hz,
                                        uint8_t rtp_payload_type) {
   CriticalSectionScoped lock(crit_sect_.get());
   LOG_API2(static_cast<int>(rtp_payload_type), codec);
@@ -210,6 +209,7 @@ int NetEqImpl::RegisterExternalDecoder(AudioDecoder* decoder,
     assert(false);
     return kFail;
   }
+  const int sample_rate_hz = AudioDecoder::CodecSampleRateHz(codec);
   int ret = decoder_database_->InsertExternal(rtp_payload_type, codec,
                                               sample_rate_hz, decoder);
   if (ret != DecoderDatabase::kOK) {

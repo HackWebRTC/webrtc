@@ -115,11 +115,10 @@ class NetEqImpl : public webrtc::NetEq {
 
   // Provides an externally created decoder object |decoder| to insert in the
   // decoder database. The decoder implements a decoder of type |codec| and
-  // associates it with |rtp_payload_type|. The decoder operates at the
-  // frequency |sample_rate_hz|. Returns kOK on success, kFail on failure.
+  // associates it with |rtp_payload_type|. Returns kOK on success, kFail on
+  // failure.
   virtual int RegisterExternalDecoder(AudioDecoder* decoder,
                                       enum NetEqDecoder codec,
-                                      int sample_rate_hz,
                                       uint8_t rtp_payload_type);
 
   // Removes |rtp_payload_type| from the codec database. Returns 0 on success,

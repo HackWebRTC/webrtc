@@ -80,7 +80,6 @@ class NetEqExternalDecoderTest : public ::testing::Test {
     ASSERT_EQ(NetEq::kOK,
               neteq_external_->RegisterExternalDecoder(external_decoder_,
                                                        decoder,
-                                                       sample_rate_hz_,
                                                        kPayloadType));
     ASSERT_EQ(NetEq::kOK,
               neteq_->RegisterPayloadType(decoder, kPayloadType));

@@ -452,7 +452,7 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
 
   EXPECT_EQ(NetEq::kOK,
             neteq_->RegisterExternalDecoder(
-                &decoder_, kDecoderPCM16B, 8000, kPayloadType));
+                &decoder_, kDecoderPCM16B, kPayloadType));
 
   // Insert one packet.
   EXPECT_EQ(NetEq::kOK,

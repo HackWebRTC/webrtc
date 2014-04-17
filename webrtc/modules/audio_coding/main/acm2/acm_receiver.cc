@@ -505,8 +505,7 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
     ret_val = neteq_->RegisterPayloadType(neteq_decoder, payload_type);
   } else {
     ret_val = neteq_->RegisterExternalDecoder(
-        audio_decoder, neteq_decoder,
-        ACMCodecDB::database_[acm_codec_id].plfreq, payload_type);
+        audio_decoder, neteq_decoder, payload_type);
   }
   if (ret_val != NetEq::kOK) {
     LOG_FERR3(LS_ERROR, "AcmReceiver::AddCodec", acm_codec_id, payload_type,
