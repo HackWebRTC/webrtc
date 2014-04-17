@@ -382,7 +382,11 @@ bool VCMCodecDataBase::DeregisterExternalDecoder(uint8_t payload_type) {
     // Not found
     return false;
   }
-  if (receive_codec_.plType == payload_type) {
+  // We can't use payload_type to check if the decoder is currently in use,
+  // because payload type may be out of date (e.g. before we decode the first
+  // frame after RegisterReceiveCodec)
+  if (ptr_decoder_ != NULL &&
+      &ptr_decoder_->_decoder == (*it).second->external_decoder_instance) {
     // Release it if it was registered and in use.
     ReleaseDecoder(ptr_decoder_);
     ptr_decoder_ = NULL;
