@@ -421,10 +421,7 @@ TransmitMixer::DemuxAndMix()
          it.Increment())
     {
         Channel* channelPtr = it.GetChannel();
-        if (channelPtr->InputIsOnHold())
-        {
-            channelPtr->UpdateLocalTimeStamp();
-        } else if (channelPtr->Sending())
+        if (channelPtr->Sending())
         {
             // Demultiplex makes a copy of its input.
             channelPtr->Demultiplex(_audioFrame);
@@ -440,9 +437,7 @@ void TransmitMixer::DemuxAndMix(const int voe_channels[],
     voe::ChannelOwner ch = _channelManagerPtr->GetChannel(voe_channels[i]);
     voe::Channel* channel_ptr = ch.channel();
     if (channel_ptr) {
-      if (channel_ptr->InputIsOnHold()) {
-        channel_ptr->UpdateLocalTimeStamp();
-      } else if (channel_ptr->Sending()) {
+      if (channel_ptr->Sending()) {
         // Demultiplex makes a copy of its input.
         channel_ptr->Demultiplex(_audioFrame);
         channel_ptr->PrepareEncodeAndSend(_audioFrame.sample_rate_hz_);
@@ -461,7 +456,7 @@ TransmitMixer::EncodeAndSend()
          it.Increment())
     {
         Channel* channelPtr = it.GetChannel();
-        if (channelPtr->Sending() && !channelPtr->InputIsOnHold())
+        if (channelPtr->Sending())
         {
             channelPtr->EncodeAndSend();
         }
@@ -474,7 +469,7 @@ void TransmitMixer::EncodeAndSend(const int voe_channels[],
   for (int i = 0; i < number_of_voe_channels; ++i) {
     voe::ChannelOwner ch = _channelManagerPtr->GetChannel(voe_channels[i]);
     voe::Channel* channel_ptr = ch.channel();
-    if (channel_ptr && channel_ptr->Sending() && !channel_ptr->InputIsOnHold())
+    if (channel_ptr && channel_ptr->Sending())
       channel_ptr->EncodeAndSend();
   }
 }

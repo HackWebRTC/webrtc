@@ -55,16 +55,6 @@ public:
 
     virtual int StopSend(int channel);
 
-    virtual int SetNetEQPlayoutMode(int channel, NetEqModes mode);
-
-    virtual int GetNetEQPlayoutMode(int channel, NetEqModes& mode);
-
-    virtual int SetOnHoldStatus(int channel,
-                                bool enable,
-                                OnHoldModes mode = kHoldSendAndPlay);
-
-    virtual int GetOnHoldStatus(int channel, bool& enabled, OnHoldModes& mode);
-
     virtual int GetVersion(char version[1024]);
 
     virtual int LastError();

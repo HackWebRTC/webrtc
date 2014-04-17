@@ -663,12 +663,6 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame& audioFrame)
         MixAudioWithFile(audioFrame, audioFrame.sample_rate_hz_);
     }
 
-    // Place channel in on-hold state (~muted) if on-hold is activated
-    if (state.output_is_on_hold)
-    {
-        AudioFrameOperations::Mute(audioFrame);
-    }
-
     // External media
     if (_outputExternalMedia)
     {
@@ -886,7 +880,6 @@ Channel::Channel(int32_t channelId,
     _rtcpObserverPtr(NULL),
     _externalPlayout(false),
     _externalMixing(false),
-    _inputIsOnHold(false),
     _mixFileWithMicrophone(false),
     _rtpObserver(false),
     _rtcpObserver(false),
@@ -1420,52 +1413,6 @@ Channel::GetNetEQPlayoutMode(NetEqModes& mode)
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
                  VoEId(_instanceId,_channelId),
                  "Channel::GetNetEQPlayoutMode() => mode=%u", mode);
-    return 0;
-}
-
-int32_t
-Channel::SetOnHoldStatus(bool enable, OnHoldModes mode)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::SetOnHoldStatus()");
-    if (mode == kHoldSendAndPlay)
-    {
-        channel_state_.SetOutputIsOnHold(enable);
-        _inputIsOnHold = enable;
-    }
-    else if (mode == kHoldPlayOnly)
-    {
-        channel_state_.SetOutputIsOnHold(enable);
-    }
-    if (mode == kHoldSendOnly)
-    {
-        _inputIsOnHold = enable;
-    }
-    return 0;
-}
-
-int32_t
-Channel::GetOnHoldStatus(bool& enabled, OnHoldModes& mode)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::GetOnHoldStatus()");
-    bool output_is_on_hold = channel_state_.Get().output_is_on_hold;
-    enabled = (output_is_on_hold || _inputIsOnHold);
-    if (output_is_on_hold && _inputIsOnHold)
-    {
-        mode = kHoldSendAndPlay;
-    }
-    else if (output_is_on_hold && !_inputIsOnHold)
-    {
-        mode = kHoldPlayOnly;
-    }
-    else if (!output_is_on_hold && _inputIsOnHold)
-    {
-        mode = kHoldSendOnly;
-    }
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::GetOnHoldStatus() => enabled=%d, mode=%d",
-                 enabled, mode);
     return 0;
 }
 

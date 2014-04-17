@@ -466,6 +466,7 @@ enum AudioLayers
     kAudioLinuxPulse = 4
 };
 
+// TODO(henrika): to be removed.
 enum NetEqModes             // NetEQ playout configurations
 {
     // Optimized trade-off between low delay and jitter robustness for two-way
@@ -482,6 +483,7 @@ enum NetEqModes             // NetEQ playout configurations
     kNetEqOff = 3,
 };
 
+// TODO(henrika): to be removed.
 enum OnHoldModes            // On Hold direction
 {
     kHoldSendAndPlay = 0,    // Put both sending and playing in on-hold state.
@@ -489,6 +491,7 @@ enum OnHoldModes            // On Hold direction
     kHoldPlayOnly            // Put only playing in on-hold state.
 };
 
+// TODO(henrika): to be removed.
 enum AmrMode
 {
     kRfc3267BwEfficient = 0,

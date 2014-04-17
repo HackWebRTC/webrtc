@@ -242,7 +242,6 @@ void RunTest(std::string out_path) {
   bool enable_rx_ns = false;
   bool typing_detection = false;
   bool muted = false;
-  bool on_hold = false;
   bool opus_stereo = false;
   bool experimental_ns_enabled = false;
 
@@ -632,19 +631,6 @@ void RunTest(std::string out_path) {
           printf("\n Microphone is now on mute! \n");
         else
           printf("\n Microphone is no longer on mute! \n");
-      } else if (option_selection == option_index++) {
-        // Toggle the call on hold
-        OnHoldModes mode;
-        res = base1->GetOnHoldStatus(chan, on_hold, mode);
-        VALIDATE;
-        on_hold = !on_hold;
-        mode = kHoldSendAndPlay;
-        res = base1->SetOnHoldStatus(chan, on_hold, mode);
-        VALIDATE;
-        if (on_hold)
-          printf("\n Call now on hold! \n");
-        else
-          printf("\n Call now not on hold! \n");
       } else if (option_selection == option_index++) {
         // Get the last error code and print to screen
         int err_code = 0;

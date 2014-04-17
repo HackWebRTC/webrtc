@@ -223,9 +223,7 @@ void VoEBaseImpl::PushCaptureData(int voe_channel, const void* audio_data,
   if (!channel_ptr)
     return;
 
-  if (channel_ptr->InputIsOnHold()) {
-    channel_ptr->UpdateLocalTimeStamp();
-  } else if (channel_ptr->Sending()) {
+  if (channel_ptr->Sending()) {
     channel_ptr->Demultiplex(static_cast<const int16_t*>(audio_data),
                              sample_rate, number_of_frames, number_of_channels);
     channel_ptr->PrepareEncodeAndSend(sample_rate);
@@ -869,88 +867,6 @@ int VoEBaseImpl::LastError()
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "LastError()");
     return (_shared->statistics().LastError());
-}
-
-
-int VoEBaseImpl::SetNetEQPlayoutMode(int channel, NetEqModes mode)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "SetNetEQPlayoutMode(channel=%i, mode=%i)", channel, mode);
-    if (!_shared->statistics().Initialized())
-    {
-        _shared->SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-    voe::Channel* channelPtr = ch.channel();
-    if (channelPtr == NULL)
-    {
-        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-            "SetNetEQPlayoutMode() failed to locate channel");
-        return -1;
-    }
-    return channelPtr->SetNetEQPlayoutMode(mode);
-}
-
-int VoEBaseImpl::GetNetEQPlayoutMode(int channel, NetEqModes& mode)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "GetNetEQPlayoutMode(channel=%i, mode=?)", channel);
-    if (!_shared->statistics().Initialized())
-    {
-        _shared->SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-    voe::Channel* channelPtr = ch.channel();
-    if (channelPtr == NULL)
-    {
-        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-            "GetNetEQPlayoutMode() failed to locate channel");
-        return -1;
-    }
-    return channelPtr->GetNetEQPlayoutMode(mode);
-}
-
-int VoEBaseImpl::SetOnHoldStatus(int channel, bool enable, OnHoldModes mode)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "SetOnHoldStatus(channel=%d, enable=%d, mode=%d)", channel,
-                 enable, mode);
-    if (!_shared->statistics().Initialized())
-    {
-        _shared->SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-    voe::Channel* channelPtr = ch.channel();
-    if (channelPtr == NULL)
-    {
-        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-            "SetOnHoldStatus() failed to locate channel");
-        return -1;
-    }
-    return channelPtr->SetOnHoldStatus(enable, mode);
-}
-
-int VoEBaseImpl::GetOnHoldStatus(int channel, bool& enabled, OnHoldModes& mode)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "GetOnHoldStatus(channel=%d, enabled=?, mode=?)", channel);
-    if (!_shared->statistics().Initialized())
-    {
-        _shared->SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-    voe::Channel* channelPtr = ch.channel();
-    if (channelPtr == NULL)
-    {
-        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-            "GetOnHoldStatus() failed to locate channel");
-        return -1;
-    }
-    return channelPtr->GetOnHoldStatus(enabled, mode);
 }
 
 int32_t VoEBaseImpl::StartPlayout()

@@ -74,7 +74,6 @@ class ChannelState {
     struct State {
         State() : rx_apm_is_enabled(false),
                   input_external_media(false),
-                  output_is_on_hold(false),
                   output_file_playing(false),
                   input_file_playing(false),
                   playing(false),
@@ -83,7 +82,6 @@ class ChannelState {
 
         bool rx_apm_is_enabled;
         bool input_external_media;
-        bool output_is_on_hold;
         bool output_file_playing;
         bool input_file_playing;
         bool playing;
@@ -113,11 +111,6 @@ class ChannelState {
     void SetInputExternalMedia(bool enable) {
         CriticalSectionScoped lock(lock_.get());
         state_.input_external_media = enable;
-    }
-
-    void SetOutputIsOnHold(bool enable) {
-        CriticalSectionScoped lock(lock_.get());
-        state_.output_is_on_hold = enable;
     }
 
     void SetOutputFilePlaying(bool enable) {
@@ -193,8 +186,6 @@ public:
 
     int32_t SetNetEQPlayoutMode(NetEqModes mode);
     int32_t GetNetEQPlayoutMode(NetEqModes& mode);
-    int32_t SetOnHoldStatus(bool enable, OnHoldModes mode);
-    int32_t GetOnHoldStatus(bool& enabled, OnHoldModes& mode);
     int32_t RegisterVoiceEngineObserver(VoiceEngineObserver& observer);
     int32_t DeRegisterVoiceEngineObserver();
 
@@ -466,10 +457,6 @@ public:
     {
         return _externalMixing;
     }
-    bool InputIsOnHold() const
-    {
-        return _inputIsOnHold;
-    }
     RtpRtcp* RtpRtcpModulePtr() const
     {
         return _rtpRtcpModule.get();
@@ -578,7 +565,6 @@ private:
     // VoEBase
     bool _externalPlayout;
     bool _externalMixing;
-    bool _inputIsOnHold;
     bool _mixFileWithMicrophone;
     bool _rtpObserver;
     bool _rtcpObserver;
