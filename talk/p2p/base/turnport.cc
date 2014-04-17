@@ -50,7 +50,6 @@ static const int TURN_CHANNEL_NUMBER_START = 0x4000;
 static const int TURN_PERMISSION_TIMEOUT = 5 * 60 * 1000;  // 5 minutes
 
 static const size_t TURN_CHANNEL_HEADER_SIZE = 4U;
-static const size_t MAX_CANDIDATES_PER_TURNPORT = 2;  // A STUN + TURN
 
 inline bool IsTurnChannelData(uint16 msg_type) {
   return ((msg_type & 0xC000) == 0x4000);  // MSB are 0b01
