@@ -1003,12 +1003,28 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
   for (relay_port = config.ports.begin();
        relay_port != config.ports.end(); ++relay_port) {
     TurnPort* port = NULL;
-    if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET)) {
+    // Shared socket mode must be enabled only for UDP based ports. Hence
+    // don't pass shared socket for ports which will create TCP sockets.
+    if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET) &&
+        relay_port->proto == PROTO_UDP) {
       port = TurnPort::Create(session_->network_thread(),
                               session_->socket_factory(),
                               network_, udp_socket_.get(),
                               session_->username(), session_->password(),
                               *relay_port, config.credentials);
+      // If we are using shared socket for TURN and udp ports, we need to
+      // find a way to demux the packets to the correct port when received.
+      // Mapping against server_address is one way of doing this. When packet
+      // is received the remote_address will be checked against the map.
+      // If server address is not resolved, a signal will be sent from the port
+      // after the address is resolved. The map entry will updated with the
+      // resolved address when the signal is received from the port.
+      if ((*relay_port).address.IsUnresolved()) {
+        // If server address is not resolved then listen for signal from port.
+        port->SignalResolvedServerAddress.connect(
+            this, &AllocationSequence::OnResolvedTurnServerAddress);
+      }
+      turn_ports_[(*relay_port).address] = port;
     } else {
       port = TurnPort::Create(session_->network_thread(),
                               session_->socket_factory(),
@@ -1019,25 +1035,8 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
                               session_->password(),
                               *relay_port, config.credentials);
     }
-
-    if (port) {
-      // If we are using shared socket for TURN and udp ports, we need to
-      // find a way to demux the packets to the correct port when received.
-      // Mapping against server_address is one way of doing this. When packet
-      // is received the remote_address will be checked against the map.
-      // If server address is not resolved, a signal will be sent from the port
-      // after the address is resolved. The map entry will updated with the
-      // resolved address when the signal is received from the port.
-      if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET)) {
-        // If server address is not resolved then listen for signal from port.
-        if ((*relay_port).address.IsUnresolved()) {
-          port->SignalResolvedServerAddress.connect(
-              this, &AllocationSequence::OnResolvedTurnServerAddress);
-        }
-        turn_ports_[(*relay_port).address] = port;
-      }
-      session_->AddAllocatedPort(port, this, true);
-    }
+    ASSERT(port != NULL);
+    session_->AddAllocatedPort(port, this, true);
   }
 }
 

@@ -257,6 +257,7 @@ void TurnPort::PrepareAddress() {
       socket_ = socket_factory()->CreateUdpSocket(
           talk_base::SocketAddress(ip(), 0), min_port(), max_port());
     } else if (server_address_.proto == PROTO_TCP) {
+      ASSERT(!SharedSocket());
       int opts = talk_base::PacketSocketFactory::OPT_STUN;
       // If secure bit is enabled in server address, use TLS over TCP.
       if (server_address_.secure) {

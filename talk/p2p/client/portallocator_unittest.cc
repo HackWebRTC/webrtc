@@ -65,7 +65,8 @@ static const SocketAddress kRelayTcpExtAddr("99.99.99.3", 5003);
 static const SocketAddress kRelaySslTcpIntAddr("99.99.99.2", 5004);
 static const SocketAddress kRelaySslTcpExtAddr("99.99.99.3", 5005);
 static const SocketAddress kTurnUdpIntAddr("99.99.99.4", 3478);
-static const SocketAddress kTurnUdpExtAddr("99.99.99.5", 0);
+static const SocketAddress kTurnTcpIntAddr("99.99.99.5", 3478);
+static const SocketAddress kTurnUdpExtAddr("99.99.99.6", 0);
 
 // Minimum and maximum port for port range tests.
 static const int kMinPort = 10000;
@@ -701,6 +702,43 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithNat) {
   EXPECT_EQ(3U, candidates_.size());
 }
 
+// Test TURN port in shared socket mode with UDP and TCP TURN server adderesses.
+TEST_F(PortAllocatorTest, TestSharedSocketWithoutNatUsingTurn) {
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, cricket::PROTO_TCP);
+  AddInterface(kClientAddr);
+  allocator_.reset(new cricket::BasicPortAllocator(&network_manager_));
+  cricket::RelayServerConfig relay_server(cricket::RELAY_TURN);
+  cricket::RelayCredentials credentials(kTurnUsername, kTurnPassword);
+  relay_server.credentials = credentials;
+  relay_server.ports.push_back(cricket::ProtocolAddress(
+      kTurnUdpIntAddr, cricket::PROTO_UDP, false));
+  relay_server.ports.push_back(cricket::ProtocolAddress(
+      kTurnTcpIntAddr, cricket::PROTO_TCP, false));
+  allocator_->AddRelay(relay_server);
+
+  allocator_->set_step_delay(cricket::kMinimumStepDelay);
+  allocator_->set_flags(allocator().flags() |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
+                        cricket::PORTALLOCATOR_DISABLE_TCP);
+
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+
+  ASSERT_EQ_WAIT(3U, candidates_.size(), kDefaultAllocationTimeout);
+  ASSERT_EQ(3U, ports_.size());
+  EXPECT_PRED5(CheckCandidate, candidates_[0],
+      cricket::ICE_CANDIDATE_COMPONENT_RTP, "local", "udp", kClientAddr);
+  EXPECT_PRED5(CheckCandidate, candidates_[1],
+      cricket::ICE_CANDIDATE_COMPONENT_RTP, "relay", "udp",
+      talk_base::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
+  EXPECT_PRED5(CheckCandidate, candidates_[2],
+      cricket::ICE_CANDIDATE_COMPONENT_RTP, "relay", "udp",
+      talk_base::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
+  EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
+  EXPECT_EQ(3U, candidates_.size());
+}
+
 // Test that when PORTALLOCATOR_ENABLE_SHARED_SOCKET is enabled only one port
 // is allocated for udp/stun/turn. In this test we should expect all local,
 // stun and turn candidates.
@@ -722,8 +760,10 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithNatUsingTurn) {
                         cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
                         cricket::PORTALLOCATOR_DISABLE_TCP);
+
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
+
   ASSERT_EQ_WAIT(3U, candidates_.size(), kDefaultAllocationTimeout);
   ASSERT_EQ(2U, ports_.size());
   EXPECT_PRED5(CheckCandidate, candidates_[0],

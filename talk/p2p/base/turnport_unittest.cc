@@ -197,6 +197,8 @@ class TurnPortTest : public testing::Test,
   void CreateSharedTurnPort(const std::string& username,
                             const std::string& password,
                             const cricket::ProtocolAddress& server_address) {
+    ASSERT(server_address.proto == cricket::PROTO_UDP);
+
     socket_.reset(socket_factory_.CreateUdpSocket(
         talk_base::SocketAddress(kLocalAddr1.ipaddr(), 0), 0, 0));
     ASSERT_TRUE(socket_ != NULL);
