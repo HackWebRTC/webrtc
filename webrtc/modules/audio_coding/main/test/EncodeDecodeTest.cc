@@ -19,7 +19,6 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/common_types.h"
-#include "webrtc/common.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_common_defs.h"
 #include "webrtc/modules/audio_coding/main/test/utility.h"
@@ -242,16 +241,14 @@ void Receiver::Run() {
   }
 }
 
-EncodeDecodeTest::EncodeDecodeTest(const Config& config)
-    : config_(config) {
+EncodeDecodeTest::EncodeDecodeTest() {
   _testMode = 2;
   Trace::CreateTrace();
   Trace::SetTraceFile(
       (webrtc::test::OutputPath() + "acm_encdec_trace.txt").c_str());
 }
 
-EncodeDecodeTest::EncodeDecodeTest(int testMode, const Config& config)
-    : config_(config) {
+EncodeDecodeTest::EncodeDecodeTest(int testMode) {
   //testMode == 0 for autotest
   //testMode == 1 for testing all codecs/parameters
   //testMode > 1 for specific user-input test (as it was used before)
@@ -273,8 +270,7 @@ void EncodeDecodeTest::Perform() {
   codePars[1] = 0;
   codePars[2] = 0;
 
-  scoped_ptr<AudioCodingModule> acm(
-      config_.Get<AudioCodingModuleFactory>().Create(0));
+  scoped_ptr<AudioCodingModule> acm(AudioCodingModule::Create(0));
   struct CodecInst sendCodecTmp;
   numCodecs = acm->NumberOfCodecs();
 
@@ -329,8 +325,7 @@ void EncodeDecodeTest::Perform() {
 
 void EncodeDecodeTest::EncodeToFile(int fileType, int codeId, int* codePars,
                                     int testMode) {
-  scoped_ptr<AudioCodingModule> acm(
-      config_.Get<AudioCodingModuleFactory>().Create(1));
+  scoped_ptr<AudioCodingModule> acm(AudioCodingModule::Create(1));
   RTPFile rtpFile;
   std::string fileName = webrtc::test::OutputPath() + "outFile.rtp";
   rtpFile.Open(fileName.c_str(), "wb+");

@@ -23,8 +23,6 @@ namespace webrtc {
 
 #define MAX_INCOMING_PAYLOAD 8096
 
-class Config;
-
 // TestPacketization callback which writes the encoded payloads to file
 class TestPacketization : public AudioPacketizationCallback {
  public:
@@ -92,8 +90,8 @@ class Receiver {
 
 class EncodeDecodeTest : public ACMTest {
  public:
-  explicit EncodeDecodeTest(const Config& config);
-  EncodeDecodeTest(int testMode, const Config& config);
+  EncodeDecodeTest();
+  explicit EncodeDecodeTest(int testMode);
   virtual void Perform();
 
   uint16_t _playoutFreq;
@@ -101,8 +99,6 @@ class EncodeDecodeTest : public ACMTest {
 
  private:
   void EncodeToFile(int fileType, int codeId, int* codePars, int testMode);
-
-  const Config& config_;
 
  protected:
   Sender _sender;

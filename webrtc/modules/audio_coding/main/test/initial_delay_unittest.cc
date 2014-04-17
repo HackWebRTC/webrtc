@@ -16,7 +16,6 @@
 #include <iostream>
 
 #include "gtest/gtest.h"
-#include "webrtc/common.h"
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
@@ -44,11 +43,11 @@ double FrameRms(AudioFrame& frame) {
 
 }
 
-class InitialPlayoutDelayTest {
- public:
-  explicit InitialPlayoutDelayTest(const Config& config)
-      : acm_a_(config.Get<AudioCodingModuleFactory>().Create(0)),
-        acm_b_(config.Get<AudioCodingModuleFactory>().Create(1)),
+class InitialPlayoutDelayTest : public ::testing::Test {
+ protected:
+  InitialPlayoutDelayTest()
+      : acm_a_(AudioCodingModule::Create(0)),
+        acm_b_(AudioCodingModule::Create(1)),
         channel_a2b_(NULL) {}
 
   ~InitialPlayoutDelayTest() {
@@ -162,72 +161,16 @@ class InitialPlayoutDelayTest {
   Channel* channel_a2b_;
 };
 
-namespace {
+TEST_F(InitialPlayoutDelayTest, NbMono) { NbMono(); }
 
-InitialPlayoutDelayTest* CreateLegacy() {
-  Config config;
-  UseLegacyAcm(&config);
-  InitialPlayoutDelayTest* test = new InitialPlayoutDelayTest(config);
-  test->SetUp();
-  return test;
-}
+TEST_F(InitialPlayoutDelayTest, WbMono) { WbMono(); }
 
-InitialPlayoutDelayTest* CreateNew() {
-  Config config;
-  UseNewAcm(&config);
-  InitialPlayoutDelayTest* test = new InitialPlayoutDelayTest(config);
-  test->SetUp();
-  return test;
-}
+TEST_F(InitialPlayoutDelayTest, SwbMono) { SwbMono(); }
 
-}  // namespace
+TEST_F(InitialPlayoutDelayTest, NbStereo) { NbStereo(); }
 
-TEST(InitialPlayoutDelayTest, NbMono) {
-  scoped_ptr<InitialPlayoutDelayTest> test(CreateLegacy());
-  test->NbMono();
+TEST_F(InitialPlayoutDelayTest, WbStereo) { WbStereo(); }
 
-  test.reset(CreateNew());
-  test->NbMono();
-}
-
-TEST(InitialPlayoutDelayTest, WbMono) {
-  scoped_ptr<InitialPlayoutDelayTest> test(CreateLegacy());
-  test->WbMono();
-
-  test.reset(CreateNew());
-  test->WbMono();
-}
-
-TEST(InitialPlayoutDelayTest, SwbMono) {
-  scoped_ptr<InitialPlayoutDelayTest> test(CreateLegacy());
-  test->SwbMono();
-
-  test.reset(CreateNew());
-  test->SwbMono();
-}
-
-TEST(InitialPlayoutDelayTest, NbStereo) {
-  scoped_ptr<InitialPlayoutDelayTest> test(CreateLegacy());
-  test->NbStereo();
-
-  test.reset(CreateNew());
-  test->NbStereo();
-}
-
-TEST(InitialPlayoutDelayTest, WbStereo) {
-  scoped_ptr<InitialPlayoutDelayTest> test(CreateLegacy());
-  test->WbStereo();
-
-  test.reset(CreateNew());
-  test->WbStereo();
-}
-
-TEST(InitialPlayoutDelayTest, SwbStereo) {
-  scoped_ptr<InitialPlayoutDelayTest> test(CreateLegacy());
-  test->SwbStereo();
-
-  test.reset(CreateNew());
-  test->SwbStereo();
-}
+TEST_F(InitialPlayoutDelayTest, SwbStereo) { SwbStereo(); }
 
 }  // namespace webrtc

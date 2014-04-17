@@ -13,7 +13,6 @@
 #include <assert.h>
 #include <iostream>
 
-#include "webrtc/common.h"
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
@@ -23,12 +22,11 @@
 
 namespace webrtc {
 
-TestFEC::TestFEC(const Config& config)
-    : _acmA(config.Get<AudioCodingModuleFactory>().Create(0)),
-      _acmB(config.Get<AudioCodingModuleFactory>().Create(1)),
+TestFEC::TestFEC()
+    : _acmA(AudioCodingModule::Create(0)),
+      _acmB(AudioCodingModule::Create(1)),
       _channelA2B(NULL),
-      _testCntr(0) {
-}
+      _testCntr(0) {}
 
 TestFEC::~TestFEC() {
   if (_channelA2B != NULL) {

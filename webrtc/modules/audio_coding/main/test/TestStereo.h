@@ -20,8 +20,6 @@
 
 namespace webrtc {
 
-class Config;
-
 enum StereoMonoMode {
   kNotSet,
   kMono,
@@ -62,7 +60,7 @@ class TestPackStereo : public AudioPacketizationCallback {
 
 class TestStereo : public ACMTest {
  public:
-  TestStereo(int test_mode, const Config& config);
+  explicit TestStereo(int test_mode);
   ~TestStereo();
 
   void Perform();

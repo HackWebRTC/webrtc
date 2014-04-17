@@ -56,8 +56,8 @@ void APITest::Wait(uint32_t waitLengthMs) {
 }
 
 APITest::APITest(const Config& config)
-    : _acmA(config.Get<AudioCodingModuleFactory>().Create(1)),
-      _acmB(config.Get<AudioCodingModuleFactory>().Create(2)),
+    : _acmA(AudioCodingModule::Create(1)),
+      _acmB(AudioCodingModule::Create(2)),
       _channel_A2B(NULL),
       _channel_B2A(NULL),
       _writeToFile(true),

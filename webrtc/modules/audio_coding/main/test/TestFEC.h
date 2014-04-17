@@ -18,11 +18,9 @@
 
 namespace webrtc {
 
-class Config;
-
 class TestFEC : public ACMTest {
  public:
-  explicit TestFEC(const Config& config);
+  TestFEC();
   ~TestFEC();
 
   void Perform();

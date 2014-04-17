@@ -11,7 +11,6 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_TEST_TESTALLCODECS_H_
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_TEST_TESTALLCODECS_H_
 
-#include "webrtc/common.h"
 #include "webrtc/modules/audio_coding/main/test/ACMTest.h"
 #include "webrtc/modules/audio_coding/main/test/Channel.h"
 #include "webrtc/modules/audio_coding/main/test/PCMFile.h"
@@ -50,7 +49,7 @@ class TestPack : public AudioPacketizationCallback {
 
 class TestAllCodecs : public ACMTest {
  public:
-  TestAllCodecs(int test_mode, const Config& config);
+  explicit TestAllCodecs(int test_mode);
   ~TestAllCodecs();
 
   void Perform();
