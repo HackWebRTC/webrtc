@@ -2287,7 +2287,7 @@ TEST_F(WebRtcVideoMediaChannelTest, TwoStreamsReUseFirstStream) {
                                                        0));
 }
 
-TEST_F(WebRtcVideoMediaChannelTest, TwoStreamsSendAndUnsignalledRecv) {
+TEST_F(WebRtcVideoMediaChannelTest, DISABLED_TwoStreamsSendAndUnsignalledRecv) {
   Base::TwoStreamsSendAndUnsignalledRecv(cricket::VideoCodec(100, "VP8", 640,
                                                              400, 30, 0));
 }
