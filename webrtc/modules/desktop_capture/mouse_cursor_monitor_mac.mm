@@ -200,7 +200,7 @@ void MouseCursorMonitorMac::Capture() {
         position.set(-1, -1);
       }
     } else {
-      position.subtract(configuration.primary_bounds.top_left());
+      position.subtract(configuration.bounds.top_left());
     }
   }
   if (state == INSIDE) {
