@@ -681,8 +681,8 @@ void ScreenCapturerMac::CgBlitPreLion(const DesktopFrame& frame,
 
     // Determine the display's position relative to the desktop, in pixels.
     DesktopRect display_bounds = display_config.pixel_bounds;
-    display_bounds.Translate(-desktop_config_.pixel_bounds.left(),
-                             -desktop_config_.pixel_bounds.top());
+    display_bounds.Translate(-desktop_config_.primary_pixel_bounds.left(),
+                             -desktop_config_.primary_pixel_bounds.top());
 
     // Determine which parts of the blit region, if any, lay within the monitor.
     DesktopRegion copy_region = region;
@@ -854,7 +854,7 @@ void ScreenCapturerMac::ScreenConfigurationChanged() {
     screen_pixel_bounds_ = config ? config->pixel_bounds : DesktopRect();
     dip_to_pixel_scale_ = config ? config->dip_to_pixel_scale : 1.0f;
   } else {
-    screen_pixel_bounds_ = desktop_config_.pixel_bounds;
+    screen_pixel_bounds_ = desktop_config_.primary_pixel_bounds;
     dip_to_pixel_scale_ = desktop_config_.dip_to_pixel_scale;
   }
 

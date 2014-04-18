@@ -134,11 +134,15 @@ MacDesktopConfiguration MacDesktopConfiguration::GetCurrent(Origin origin) {
     // Add the display to the configuration.
     desktop_config.displays.push_back(display_config);
 
-    // Update the desktop bounds to account for this display.
-    desktop_config.bounds =
-        JoinRects(desktop_config.bounds, display_config.bounds);
-    desktop_config.pixel_bounds =
-        JoinRects(desktop_config.pixel_bounds, display_config.pixel_bounds);
+    // Update the desktop bounds to account for this display, unless the current
+    // display uses different DPI settings.
+    if (display_config.dip_to_pixel_scale ==
+        desktop_config.dip_to_pixel_scale) {
+      desktop_config.primary_bounds =
+          JoinRects(desktop_config.primary_bounds, display_config.bounds);
+      desktop_config.primary_pixel_bounds = JoinRects(
+          desktop_config.primary_pixel_bounds, display_config.pixel_bounds);
+    }
   }
 
   return desktop_config;
@@ -155,8 +159,8 @@ bool operator==(const MacDisplayConfiguration& left,
 }
 
 bool MacDesktopConfiguration::Equals(const MacDesktopConfiguration& other) {
-  return bounds.equals(other.bounds) &&
-      pixel_bounds.equals(other.pixel_bounds) &&
+  return primary_bounds.equals(other.primary_bounds) &&
+      primary_pixel_bounds.equals(other.primary_pixel_bounds) &&
       dip_to_pixel_scale == other.dip_to_pixel_scale &&
       displays == other.displays;
 }

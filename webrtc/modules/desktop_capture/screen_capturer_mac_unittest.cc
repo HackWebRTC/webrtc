@@ -55,7 +55,7 @@ void ScreenCapturerMacTest::CaptureDoneCallback1(
 
   // Verify that the region contains full frame.
   DesktopRegion::Iterator it(frame->updated_region());
-  EXPECT_TRUE(!it.IsAtEnd() && it.rect().equals(config.pixel_bounds));
+  EXPECT_TRUE(!it.IsAtEnd() && it.rect().equals(config.primary_pixel_bounds));
 }
 
 void ScreenCapturerMacTest::CaptureDoneCallback2(
@@ -64,8 +64,8 @@ void ScreenCapturerMacTest::CaptureDoneCallback2(
 
   MacDesktopConfiguration config = MacDesktopConfiguration::GetCurrent(
       MacDesktopConfiguration::BottomLeftOrigin);
-  int width = config.pixel_bounds.width();
-  int height = config.pixel_bounds.height();
+  int width = config.primary_pixel_bounds.width();
+  int height = config.primary_pixel_bounds.height();
 
   EXPECT_EQ(width, frame->size().width());
   EXPECT_EQ(height, frame->size().height());
