@@ -58,7 +58,6 @@ void TransportChannelProxy::SetImplementation(TransportChannelImpl* impl) {
   ASSERT(talk_base::Thread::Current() == worker_thread_);
 
   if (impl == impl_) {
-    ASSERT(false);
     // Ignore if the |impl| has already been set.
     LOG(LS_WARNING) << "Ignored TransportChannelProxy::SetImplementation call "
                     << "with a same impl as the existing one.";
