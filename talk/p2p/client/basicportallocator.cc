@@ -1083,7 +1083,7 @@ void AllocationSequence::OnResolvedTurnServerAddress(
   iter = turn_ports_.find(server_address);
 
   ASSERT(iter != turn_ports_.end());
-  ASSERT(iter->second != port);
+  ASSERT(iter->second == port);
   // Remove old entry and then insert using the resolved address as key.
   turn_ports_.erase(iter);
   turn_ports_[resolved_server_address] = port;

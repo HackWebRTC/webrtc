@@ -442,16 +442,19 @@ void TurnPort::ResolveTurnAddress(const talk_base::SocketAddress& address) {
 
 void TurnPort::OnResolveResult(talk_base::AsyncResolverInterface* resolver) {
   ASSERT(resolver == resolver_);
+  talk_base::SocketAddress resolved_address;
   if (resolver_->GetError() != 0 ||
-      !resolver_->GetResolvedAddress(ip().family(), &server_address_.address)) {
+      !resolver_->GetResolvedAddress(ip().family(), &resolved_address)) {
     LOG_J(LS_WARNING, this) << "TURN host lookup received error "
                             << resolver_->GetError();
     OnAllocateError();
     return;
   }
-
+  // Signal needs both resolved and unresolved address. After signal is sent
+  // we can copy resolved address back into |server_address_|.
   SignalResolvedServerAddress(this, server_address_.address,
-                              resolver_->address());
+                              resolved_address);
+  server_address_.address = resolved_address;
   PrepareAddress();
 }
 

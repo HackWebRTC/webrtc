@@ -739,6 +739,33 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithoutNatUsingTurn) {
   EXPECT_EQ(3U, candidates_.size());
 }
 
+// Testing DNS resolve for the TURN server, this will test AllocationSequence
+// handling the unresolved address signal from TurnPort.
+TEST_F(PortAllocatorTest, TestSharedSocketWithServerAddressResolve) {
+  turn_server_.AddInternalSocket(talk_base::SocketAddress("127.0.0.1", 3478),
+                                 cricket::PROTO_UDP);
+  AddInterface(kClientAddr);
+  allocator_.reset(new cricket::BasicPortAllocator(&network_manager_));
+  cricket::RelayServerConfig relay_server(cricket::RELAY_TURN);
+  cricket::RelayCredentials credentials(kTurnUsername, kTurnPassword);
+  relay_server.credentials = credentials;
+  relay_server.ports.push_back(cricket::ProtocolAddress(
+      talk_base::SocketAddress("localhost", 3478),
+      cricket::PROTO_UDP, false));
+  allocator_->AddRelay(relay_server);
+
+  allocator_->set_step_delay(cricket::kMinimumStepDelay);
+  allocator_->set_flags(allocator().flags() |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
+                        cricket::PORTALLOCATOR_DISABLE_TCP);
+
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+
+  EXPECT_EQ_WAIT(2U, ports_.size(), kDefaultAllocationTimeout);
+}
+
 // Test that when PORTALLOCATOR_ENABLE_SHARED_SOCKET is enabled only one port
 // is allocated for udp/stun/turn. In this test we should expect all local,
 // stun and turn candidates.
