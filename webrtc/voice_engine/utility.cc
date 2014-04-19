@@ -25,7 +25,7 @@ namespace voe {
 // ConvertToCodecFormat, but if we're to consolidate we should probably make a
 // real converter class.
 void RemixAndResample(const AudioFrame& src_frame,
-                      PushResampler* resampler,
+                      PushResampler<int16_t>* resampler,
                       AudioFrame* dst_frame) {
   const int16_t* audio_ptr = src_frame.data_;
   int audio_ptr_num_channels = src_frame.num_channels_;
@@ -76,7 +76,7 @@ void DownConvertToCodecFormat(const int16_t* src_data,
                               int codec_num_channels,
                               int codec_rate_hz,
                               int16_t* mono_buffer,
-                              PushResampler* resampler,
+                              PushResampler<int16_t>* resampler,
                               AudioFrame* dst_af) {
   assert(samples_per_channel <= kMaxMonoDataSizeSamples);
   assert(num_channels == 1 || num_channels == 2);

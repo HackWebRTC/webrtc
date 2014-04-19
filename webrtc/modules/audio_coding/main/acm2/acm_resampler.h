@@ -29,7 +29,7 @@ class ACMResampler {
                      int16_t* out_audio);
 
  private:
-  PushResampler resampler_;
+  PushResampler<int16_t> resampler_;
 };
 
 }  // namespace acm2

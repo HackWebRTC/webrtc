@@ -44,6 +44,9 @@ class PushSincResampler : public SincResamplerCallback {
   virtual void Run(int frames, float* destination) OVERRIDE;
 
   SincResampler* get_resampler_for_testing() { return resampler_.get(); }
+  static float AlgorithmicDelaySeconds(int source_rate_hz) {
+    return 1.f / source_rate_hz * SincResampler::kKernelSize / 2;
+  }
 
  private:
   scoped_ptr<SincResampler> resampler_;

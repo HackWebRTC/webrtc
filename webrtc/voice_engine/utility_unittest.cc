@@ -39,7 +39,7 @@ class UtilityTest : public ::testing::Test {
                        int dst_channels, int dst_sample_rate_hz,
                        FunctionToTest function);
 
-  PushResampler resampler_;
+  PushResampler<int16_t> resampler_;
   AudioFrame src_frame_;
   AudioFrame dst_frame_;
   AudioFrame golden_frame_;
@@ -127,11 +127,11 @@ void VerifyFramesAreEqual(const AudioFrame& ref_frame,
 }
 
 void UtilityTest::RunResampleTest(int src_channels,
-                                      int src_sample_rate_hz,
-                                      int dst_channels,
-                                      int dst_sample_rate_hz,
-                                      FunctionToTest function) {
-  PushResampler resampler;  // Create a new one with every test.
+                                  int src_sample_rate_hz,
+                                  int dst_channels,
+                                  int dst_sample_rate_hz,
+                                  FunctionToTest function) {
+  PushResampler<int16_t> resampler;  // Create a new one with every test.
   const int16_t kSrcLeft = 30;  // Shouldn't overflow for any used sample rate.
   const int16_t kSrcRight = 15;
   const float resampling_factor = (1.0 * src_sample_rate_hz) /

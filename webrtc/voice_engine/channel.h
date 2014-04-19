@@ -519,8 +519,8 @@ private:
     bool _externalTransport;
     AudioFrame _audioFrame;
     scoped_ptr<int16_t[]> mono_recording_audio_;
-    // Resampler is used when input data is stereo while codec is mono.
-    PushResampler input_resampler_;
+    // Downsamples to the codec rate if necessary.
+    PushResampler<int16_t> input_resampler_;
     uint8_t _audioLevel_dBov;
     FilePlayer* _inputFilePlayerPtr;
     FilePlayer* _outputFilePlayerPtr;

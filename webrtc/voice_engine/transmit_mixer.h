@@ -200,7 +200,7 @@ private:
     // owns
     MonitorModule _monitorModule;
     AudioFrame _audioFrame;
-    PushResampler resampler_;  // ADM sample rate -> mixing rate
+    PushResampler<int16_t> resampler_;  // ADM sample rate -> mixing rate
     FilePlayer* _filePlayerPtr;
     FileRecorder* _fileRecorderPtr;
     FileRecorder* _fileCallRecorderPtr;

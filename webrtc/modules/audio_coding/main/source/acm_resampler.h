@@ -15,7 +15,6 @@
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-
 namespace acm1 {
 
 class ACMResampler {
@@ -30,11 +29,10 @@ class ACMResampler {
                          uint8_t num_audio_channels);
 
  private:
-  PushResampler resampler_;
+  PushResampler<int16_t> resampler_;
 };
 
 }  // namespace acm1
-
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_RESAMPLER_H_

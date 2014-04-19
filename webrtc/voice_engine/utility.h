@@ -15,12 +15,12 @@
 #ifndef WEBRTC_VOICE_ENGINE_UTILITY_H_
 #define WEBRTC_VOICE_ENGINE_UTILITY_H_
 
+#include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 
 class AudioFrame;
-class PushResampler;
 
 namespace voe {
 
@@ -30,7 +30,7 @@ namespace voe {
 //
 // On failure, returns -1 and copies |src_frame| to |dst_frame|.
 void RemixAndResample(const AudioFrame& src_frame,
-                      PushResampler* resampler,
+                      PushResampler<int16_t>* resampler,
                       AudioFrame* dst_frame);
 
 // Downmix and downsample the audio in |src_data| to |dst_af| as necessary,
@@ -44,7 +44,7 @@ void DownConvertToCodecFormat(const int16_t* src_data,
                               int codec_num_channels,
                               int codec_rate_hz,
                               int16_t* mono_buffer,
-                              PushResampler* resampler,
+                              PushResampler<int16_t>* resampler,
                               AudioFrame* dst_af);
 
 void MixWithSat(int16_t target[],
