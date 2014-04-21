@@ -71,7 +71,7 @@
   [self.condition unlock];
 }
 
-#pragma mark - RTCSessionDescriptonDelegate methods
+#pragma mark - RTCSessionDescriptionDelegate methods
 - (void)peerConnection:(RTCPeerConnection*)peerConnection
     didCreateSessionDescription:(RTCSessionDescription*)sdp
                           error:(NSError*)error {

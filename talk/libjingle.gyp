@@ -215,7 +215,7 @@
             'app/webrtc/objc/public/RTCPeerConnectionDelegate.h',
             'app/webrtc/objc/public/RTCPeerConnectionFactory.h',
             'app/webrtc/objc/public/RTCSessionDescription.h',
-            'app/webrtc/objc/public/RTCSessionDescriptonDelegate.h',
+            'app/webrtc/objc/public/RTCSessionDescriptionDelegate.h',
             'app/webrtc/objc/public/RTCTypes.h',
             'app/webrtc/objc/public/RTCVideoCapturer.h',
             'app/webrtc/objc/public/RTCVideoRenderer.h',

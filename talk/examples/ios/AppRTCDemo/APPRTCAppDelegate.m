@@ -357,7 +357,7 @@
   [self closeVideoUI];
 }
 
-#pragma mark - RTCSessionDescriptonDelegate methods
+#pragma mark - RTCSessionDescriptionDelegate methods
 
 // Match |pattern| to |string| and return the first group of the first
 // match, or nil if no match was found.

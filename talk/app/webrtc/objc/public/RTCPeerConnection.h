@@ -32,7 +32,7 @@
 @class RTCMediaConstraints;
 @class RTCMediaStream;
 @class RTCSessionDescription;
-@protocol RTCSessionDescriptonDelegate;
+@protocol RTCSessionDescriptionDelegate;
 
 // RTCPeerConnection is an ObjectiveC friendly wrapper around a PeerConnection
 // object.  See the documentation in talk/app/webrtc/peerconnectioninterface.h.
@@ -67,25 +67,25 @@
 - (void)removeStream:(RTCMediaStream *)stream;
 
 // Create a new offer.
-// Success or failure will be reported via RTCSessionDescriptonDelegate.
-- (void)createOfferWithDelegate:(id<RTCSessionDescriptonDelegate>)delegate
+// Success or failure will be reported via RTCSessionDescriptionDelegate.
+- (void)createOfferWithDelegate:(id<RTCSessionDescriptionDelegate>)delegate
                     constraints:(RTCMediaConstraints *)constraints;
 
 // Create an answer to an offer.
-// Success or failure will be reported via RTCSessionDescriptonDelegate.
-- (void)createAnswerWithDelegate:(id<RTCSessionDescriptonDelegate>)delegate
+// Success or failure will be reported via RTCSessionDescriptionDelegate.
+- (void)createAnswerWithDelegate:(id<RTCSessionDescriptionDelegate>)delegate
                      constraints:(RTCMediaConstraints *)constraints;
 
 // Sets the local session description.
-// Success or failure will be reported via RTCSessionDescriptonDelegate.
+// Success or failure will be reported via RTCSessionDescriptionDelegate.
 - (void)
-    setLocalDescriptionWithDelegate:(id<RTCSessionDescriptonDelegate>)delegate
+    setLocalDescriptionWithDelegate:(id<RTCSessionDescriptionDelegate>)delegate
                  sessionDescription:(RTCSessionDescription *)sdp;
 
 // Sets the remote session description.
-// Success or failure will be reported via RTCSessionDescriptonDelegate.
+// Success or failure will be reported via RTCSessionDescriptionDelegate.
 - (void)
-    setRemoteDescriptionWithDelegate:(id<RTCSessionDescriptonDelegate>)delegate
+    setRemoteDescriptionWithDelegate:(id<RTCSessionDescriptionDelegate>)delegate
                   sessionDescription:(RTCSessionDescription *)sdp;
 
 // Restarts or updates the ICE Agent process of gathering local candidates

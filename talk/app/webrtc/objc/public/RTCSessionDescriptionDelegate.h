@@ -33,9 +33,9 @@
 extern NSString* const kRTCSessionDescriptionDelegateErrorDomain;
 extern int const kRTCSessionDescriptionDelegateErrorCode;
 
-// RTCSessionDescriptonDelegate is a protocol for listening to callback messages
-// when RTCSessionDescriptions are created or set.
-@protocol RTCSessionDescriptonDelegate<NSObject>
+// RTCSessionDescriptionDelegate is a protocol for listening to callback
+// messages when RTCSessionDescriptions are created or set.
+@protocol RTCSessionDescriptionDelegate<NSObject>
 
 // Called when creating a session.
 - (void)peerConnection:(RTCPeerConnection *)peerConnection

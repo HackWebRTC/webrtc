@@ -29,7 +29,7 @@
 
 #import "GAEChannelClient.h"
 #import "APPRTCAppClient.h"
-#import "RTCSessionDescriptonDelegate.h"
+#import "RTCSessionDescriptionDelegate.h"
 #import "RTCVideoSource.h"
 // Used to send a message to an apprtc.appspot.com "room".
 @protocol APPRTCSendMessage<NSObject>
@@ -48,7 +48,7 @@
 @interface APPRTCAppDelegate : UIResponder<ICEServerDelegate,
                                            GAEMessageHandler,
                                            APPRTCSendMessage,
-                                           RTCSessionDescriptonDelegate,
+                                           RTCSessionDescriptionDelegate,
                                            UIApplicationDelegate>
 
 @property(strong, nonatomic) UIWindow* window;

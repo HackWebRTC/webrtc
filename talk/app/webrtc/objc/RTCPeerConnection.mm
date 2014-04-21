@@ -37,7 +37,7 @@
 #import "RTCMediaConstraints+Internal.h"
 #import "RTCMediaStream+Internal.h"
 #import "RTCSessionDescription+Internal.h"
-#import "RTCSessionDescriptonDelegate.h"
+#import "RTCSessionDescriptionDelegate.h"
 #import "RTCSessionDescription.h"
 
 #include "talk/app/webrtc/jsep.h"
@@ -50,8 +50,9 @@ namespace webrtc {
 class RTCCreateSessionDescriptionObserver
     : public CreateSessionDescriptionObserver {
  public:
-  RTCCreateSessionDescriptionObserver(id<RTCSessionDescriptonDelegate> delegate,
-                                      RTCPeerConnection* peerConnection) {
+  RTCCreateSessionDescriptionObserver(
+      id<RTCSessionDescriptionDelegate> delegate,
+      RTCPeerConnection* peerConnection) {
     _delegate = delegate;
     _peerConnection = peerConnection;
   }
@@ -76,13 +77,13 @@ class RTCCreateSessionDescriptionObserver
   }
 
  private:
-  id<RTCSessionDescriptonDelegate> _delegate;
+  id<RTCSessionDescriptionDelegate> _delegate;
   RTCPeerConnection* _peerConnection;
 };
 
 class RTCSetSessionDescriptionObserver : public SetSessionDescriptionObserver {
  public:
-  RTCSetSessionDescriptionObserver(id<RTCSessionDescriptonDelegate> delegate,
+  RTCSetSessionDescriptionObserver(id<RTCSessionDescriptionDelegate> delegate,
                                    RTCPeerConnection* peerConnection) {
     _delegate = delegate;
     _peerConnection = peerConnection;
@@ -104,7 +105,7 @@ class RTCSetSessionDescriptionObserver : public SetSessionDescriptionObserver {
   }
 
  private:
-  id<RTCSessionDescriptonDelegate> _delegate;
+  id<RTCSessionDescriptionDelegate> _delegate;
   RTCPeerConnection* _peerConnection;
 };
 }
@@ -132,7 +133,7 @@ class RTCSetSessionDescriptionObserver : public SetSessionDescriptionObserver {
   return YES;
 }
 
-- (void)createAnswerWithDelegate:(id<RTCSessionDescriptonDelegate>)delegate
+- (void)createAnswerWithDelegate:(id<RTCSessionDescriptionDelegate>)delegate
                      constraints:(RTCMediaConstraints*)constraints {
   talk_base::scoped_refptr<webrtc::RTCCreateSessionDescriptionObserver>
       observer(new talk_base::RefCountedObject<
@@ -140,7 +141,7 @@ class RTCSetSessionDescriptionObserver : public SetSessionDescriptionObserver {
   self.peerConnection->CreateAnswer(observer, constraints.constraints);
 }
 
-- (void)createOfferWithDelegate:(id<RTCSessionDescriptonDelegate>)delegate
+- (void)createOfferWithDelegate:(id<RTCSessionDescriptionDelegate>)delegate
                     constraints:(RTCMediaConstraints*)constraints {
   talk_base::scoped_refptr<webrtc::RTCCreateSessionDescriptionObserver>
       observer(new talk_base::RefCountedObject<
@@ -154,7 +155,7 @@ class RTCSetSessionDescriptionObserver : public SetSessionDescriptionObserver {
 }
 
 - (void)setLocalDescriptionWithDelegate:
-            (id<RTCSessionDescriptonDelegate>)delegate
+            (id<RTCSessionDescriptionDelegate>)delegate
                      sessionDescription:(RTCSessionDescription*)sdp {
   talk_base::scoped_refptr<webrtc::RTCSetSessionDescriptionObserver> observer(
       new talk_base::RefCountedObject<webrtc::RTCSetSessionDescriptionObserver>(
@@ -163,7 +164,7 @@ class RTCSetSessionDescriptionObserver : public SetSessionDescriptionObserver {
 }
 
 - (void)setRemoteDescriptionWithDelegate:
-            (id<RTCSessionDescriptonDelegate>)delegate
+            (id<RTCSessionDescriptionDelegate>)delegate
                       sessionDescription:(RTCSessionDescription*)sdp {
   talk_base::scoped_refptr<webrtc::RTCSetSessionDescriptionObserver> observer(
       new talk_base::RefCountedObject<webrtc::RTCSetSessionDescriptionObserver>(

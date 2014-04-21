@@ -27,14 +27,14 @@
 
 #import <Foundation/Foundation.h>
 
-#import "RTCSessionDescriptonDelegate.h"
+#import "RTCSessionDescriptionDelegate.h"
 
 @class RTCSessionDescription;
 
 // Observer of SDP-related events, used by RTCPeerConnectionTest to check
 // expectations.
 @interface RTCSessionDescriptionSyncObserver : NSObject<
-    RTCSessionDescriptonDelegate>
+    RTCSessionDescriptionDelegate>
 
 // Error string.  May be nil.
 @property(atomic, copy) NSString *error;
