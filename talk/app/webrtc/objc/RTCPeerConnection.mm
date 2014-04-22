@@ -36,9 +36,12 @@
 #import "RTCICEServer+Internal.h"
 #import "RTCMediaConstraints+Internal.h"
 #import "RTCMediaStream+Internal.h"
+#import "RTCMediaStreamTrack+Internal.h"
 #import "RTCSessionDescription+Internal.h"
 #import "RTCSessionDescriptionDelegate.h"
 #import "RTCSessionDescription.h"
+#import "RTCStatsDelegate.h"
+#import "RTCStatsReport+Internal.h"
 
 #include "talk/app/webrtc/jsep.h"
 
@@ -106,6 +109,30 @@ class RTCSetSessionDescriptionObserver : public SetSessionDescriptionObserver {
 
  private:
   id<RTCSessionDescriptionDelegate> _delegate;
+  RTCPeerConnection* _peerConnection;
+};
+
+class RTCStatsObserver : public StatsObserver {
+ public:
+  RTCStatsObserver(id<RTCStatsDelegate> delegate,
+                   RTCPeerConnection* peerConnection) {
+    _delegate = delegate;
+    _peerConnection = peerConnection;
+  }
+
+  virtual void OnComplete(const std::vector<StatsReport>& reports) OVERRIDE {
+    NSMutableArray* stats = [NSMutableArray arrayWithCapacity:reports.size()];
+    std::vector<StatsReport>::const_iterator it = reports.begin();
+    for (; it != reports.end(); ++it) {
+      RTCStatsReport* statsReport =
+          [[RTCStatsReport alloc] initWithStatsReport:*it];
+      [stats addObject:statsReport];
+    }
+    [_delegate peerConnection:_peerConnection didGetStats:stats];
+  }
+
+ private:
+  id<RTCStatsDelegate> _delegate;
   RTCPeerConnection* _peerConnection;
 };
 }
@@ -218,6 +245,18 @@ class RTCSetSessionDescriptionObserver : public SetSessionDescriptionObserver {
 
 - (void)close {
   self.peerConnection->Close();
+}
+
+- (BOOL)getStatsWithDelegate:(id<RTCStatsDelegate>)delegate
+            mediaStreamTrack:(RTCMediaStreamTrack*)mediaStreamTrack
+            statsOutputLevel:(RTCStatsOutputLevel)statsOutputLevel {
+  talk_base::scoped_refptr<webrtc::RTCStatsObserver> observer(
+      new talk_base::RefCountedObject<webrtc::RTCStatsObserver>(delegate,
+                                                                self));
+  webrtc::PeerConnectionInterface::StatsOutputLevel nativeOutputLevel =
+      [RTCEnumConverter convertStatsOutputLevelToNative:statsOutputLevel];
+  return self.peerConnection->GetStats(
+      observer, mediaStreamTrack.mediaTrack, nativeOutputLevel);
 }
 
 @end

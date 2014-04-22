@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2013, Google Inc.
+ * Copyright 2014, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,23 +25,12 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "RTCPair.h"
+#import "RTCStatsReport.h"
 
-@implementation RTCPair
+#include "talk/app/webrtc/statstypes.h"
 
-@synthesize key = _key;
-@synthesize value = _value;
+@interface RTCStatsReport (Internal)
 
-- (id)initWithKey:(NSString*)key value:(NSString*)value {
-  if ((self = [super init])) {
-    _key = [key copy];
-    _value = [value copy];
-  }
-  return self;
-}
-
-- (NSString*)description {
-  return [NSString stringWithFormat:@"%@: %@", _key, _value];
-}
+- (instancetype)initWithStatsReport:(const webrtc::StatsReport&)statsReport;
 
 @end

@@ -31,8 +31,10 @@
 @class RTCICEServers;
 @class RTCMediaConstraints;
 @class RTCMediaStream;
+@class RTCMediaStreamTrack;
 @class RTCSessionDescription;
 @protocol RTCSessionDescriptionDelegate;
+@protocol RTCStatsDelegate;
 
 // RTCPeerConnection is an ObjectiveC friendly wrapper around a PeerConnection
 // object.  See the documentation in talk/app/webrtc/peerconnectioninterface.h.
@@ -99,7 +101,12 @@
 // Terminates all media and closes the transport.
 - (void)close;
 
-// TODO(hughv): Implement GetStats.
+// Gets statistics for the media track. If |mediaStreamTrack| is nil statistics
+// are gathered for all tracks.
+// Statistics information will be reported via RTCStatsDelegate.
+- (BOOL)getStatsWithDelegate:(id<RTCStatsDelegate>)delegate
+            mediaStreamTrack:(RTCMediaStreamTrack*)mediaStreamTrack
+            statsOutputLevel:(RTCStatsOutputLevel)statsOutputLevel;
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 // Disallow init and don't add to documentation

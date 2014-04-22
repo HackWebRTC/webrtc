@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2013, Google Inc.
+ * Copyright 2014, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,23 +25,21 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "RTCPair.h"
+#import <Foundation/Foundation.h>
 
-@implementation RTCPair
+// ObjectiveC friendly wrapper around a StatsReport object.
+// See talk/app/webrtc/statsypes.h
+@interface RTCStatsReport : NSObject
 
-@synthesize key = _key;
-@synthesize value = _value;
+@property(nonatomic, readonly) NSString* reportId;
+@property(nonatomic, readonly) NSString* type;
+@property(nonatomic, readonly) CFTimeInterval timestamp;
+@property(nonatomic, readonly) NSArray* values;  // NSArray of RTCPair*.
 
-- (id)initWithKey:(NSString*)key value:(NSString*)value {
-  if ((self = [super init])) {
-    _key = [key copy];
-    _value = [value copy];
-  }
-  return self;
-}
-
-- (NSString*)description {
-  return [NSString stringWithFormat:@"%@: %@", _key, _value];
-}
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+// Disallow init and don't add to documentation
+- (id)init __attribute__((
+    unavailable("init is not a supported initializer for this class.")));
+#endif /* DOXYGEN_SHOULD_SKIP_THIS */
 
 @end

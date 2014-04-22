@@ -193,6 +193,8 @@
             'app/webrtc/objc/RTCPeerConnectionObserver.mm',
             'app/webrtc/objc/RTCSessionDescription+Internal.h',
             'app/webrtc/objc/RTCSessionDescription.mm',
+            'app/webrtc/objc/RTCStatsReport+Internal.h',
+            'app/webrtc/objc/RTCStatsReport.mm',
             'app/webrtc/objc/RTCVideoCapturer+Internal.h',
             'app/webrtc/objc/RTCVideoCapturer.mm',
             'app/webrtc/objc/RTCVideoRenderer+Internal.h',
@@ -216,6 +218,8 @@
             'app/webrtc/objc/public/RTCPeerConnectionFactory.h',
             'app/webrtc/objc/public/RTCSessionDescription.h',
             'app/webrtc/objc/public/RTCSessionDescriptionDelegate.h',
+            'app/webrtc/objc/public/RTCStatsDelegate.h',
+            'app/webrtc/objc/public/RTCStatsReport.h',
             'app/webrtc/objc/public/RTCTypes.h',
             'app/webrtc/objc/public/RTCVideoCapturer.h',
             'app/webrtc/objc/public/RTCVideoRenderer.h',
@@ -241,6 +245,9 @@
           },
           'xcode_settings': {
             'CLANG_ENABLE_OBJC_ARC': 'YES',
+            # common.gypi enables this for mac but we want this to be disabled
+            # like it is for ios.
+            'CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS': 'NO',
           },
         },  # target libjingle_peerconnection_objc
       ],

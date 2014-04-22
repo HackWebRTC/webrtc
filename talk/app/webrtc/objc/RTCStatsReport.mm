@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2013, Google Inc.
+ * Copyright 2014, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,23 +25,45 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if !defined(__has_feature) || !__has_feature(objc_arc)
+#error "This file requires ARC support."
+#endif
+
+#import "RTCStatsReport+Internal.h"
+
 #import "RTCPair.h"
 
-@implementation RTCPair
-
-@synthesize key = _key;
-@synthesize value = _value;
-
-- (id)initWithKey:(NSString*)key value:(NSString*)value {
-  if ((self = [super init])) {
-    _key = [key copy];
-    _value = [value copy];
-  }
-  return self;
-}
+@implementation RTCStatsReport
 
 - (NSString*)description {
-  return [NSString stringWithFormat:@"%@: %@", _key, _value];
+  NSString* format = @"id: %@, type: %@, timestamp: %f, values: %@";
+  return [NSString stringWithFormat:format,
+                                    self.reportId,
+                                    self.type,
+                                    self.timestamp,
+                                    self.values];
+}
+
+@end
+
+@implementation RTCStatsReport (Internal)
+
+- (instancetype)initWithStatsReport:(const webrtc::StatsReport&)statsReport {
+  if (self = [super init]) {
+    _reportId = @(statsReport.id.c_str());
+    _type = @(statsReport.type.c_str());
+    _timestamp = statsReport.timestamp;
+    NSMutableArray* values =
+        [NSMutableArray arrayWithCapacity:statsReport.values.size()];
+    webrtc::StatsReport::Values::const_iterator it = statsReport.values.begin();
+    for (; it != statsReport.values.end(); ++it) {
+      RTCPair* pair = [[RTCPair alloc] initWithKey:@(it->name.c_str())
+                                             value:@(it->value.c_str())];
+      [values addObject:pair];
+    }
+    _values = values;
+  }
+  return self;
 }
 
 @end

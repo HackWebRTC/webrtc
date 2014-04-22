@@ -81,6 +81,16 @@
   }
 }
 
++ (webrtc::PeerConnectionInterface::StatsOutputLevel)
+    convertStatsOutputLevelToNative:(RTCStatsOutputLevel)statsOutputLevel {
+  switch (statsOutputLevel) {
+    case RTCStatsOutputLevelStandard:
+      return webrtc::PeerConnectionInterface::kStatsOutputLevelStandard;
+    case RTCStatsOutputLevelDebug:
+      return webrtc::PeerConnectionInterface::kStatsOutputLevelDebug;
+  }
+}
+
 + (RTCSourceState)convertSourceStateToObjC:
     (webrtc::MediaSourceInterface::SourceState)nativeState {
   switch (nativeState) {

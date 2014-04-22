@@ -42,6 +42,9 @@
 + (RTCSignalingState)convertSignalingStateToObjC:
         (webrtc::PeerConnectionInterface::SignalingState)nativeState;
 
++ (webrtc::PeerConnectionInterface::StatsOutputLevel)
+    convertStatsOutputLevelToNative:(RTCStatsOutputLevel)statsOutputLevel;
+
 + (RTCSourceState)convertSourceStateToObjC:
         (webrtc::MediaSourceInterface::SourceState)nativeState;
 

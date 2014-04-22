@@ -39,6 +39,7 @@
 #import "RTCPeerConnectionDelegate.h"
 #import "RTCPeerConnectionFactory.h"
 #import "RTCSessionDescription.h"
+#import "RTCStatsDelegate.h"
 #import "RTCVideoRenderer.h"
 #import "RTCVideoCapturer.h"
 #import "RTCVideoTrack.h"
@@ -62,6 +63,8 @@
   }
   return self;
 }
+
+#pragma mark - RTCPeerConnectionDelegate
 
 - (void)peerConnectionOnError:(RTCPeerConnection*)peerConnection {
   dispatch_async(dispatch_get_main_queue(), ^(void) {
@@ -147,13 +150,15 @@
   });
 }
 
+#pragma mark - Private
+
 - (void)displayLogMessage:(NSString*)message {
   [_delegate displayLogMessage:message];
 }
 
 @end
 
-@interface APPRTCAppDelegate ()
+@interface APPRTCAppDelegate () <RTCStatsDelegate>
 
 @property(nonatomic, strong) APPRTCAppClient* client;
 @property(nonatomic, strong) PCObserver* pcObserver;
@@ -163,7 +168,9 @@
 
 @end
 
-@implementation APPRTCAppDelegate
+@implementation APPRTCAppDelegate {
+  NSTimer* _statsTimer;
+}
 
 #pragma mark - UIApplicationDelegate methods
 
@@ -175,6 +182,12 @@
       [[APPRTCViewController alloc] initWithNibName:@"APPRTCViewController"
                                              bundle:nil];
   self.window.rootViewController = self.viewController;
+  _statsTimer =
+      [NSTimer scheduledTimerWithTimeInterval:10
+                                       target:self
+                                     selector:@selector(didFireStatsTimer:)
+                                     userInfo:nil
+                                      repeats:YES];
   [self.window makeKeyAndVisible];
   return YES;
 }
@@ -488,6 +501,16 @@
   });
 }
 
+#pragma mark - RTCStatsDelegate methods
+
+- (void)peerConnection:(RTCPeerConnection*)peerConnection
+           didGetStats:(NSArray*)stats {
+  dispatch_async(dispatch_get_main_queue(), ^{
+      NSString* message = [NSString stringWithFormat:@"Stats:\n %@", stats];
+      [self displayLogMessage:message];
+  });
+}
+
 #pragma mark - internal methods
 
 - (void)disconnect {
@@ -529,6 +552,14 @@
       [removeEscapedQuotes stringByReplacingOccurrencesOfString:@"\\\\"
                                                      withString:@"\\"];
   return removeBackslash;
+}
+
+- (void)didFireStatsTimer:(NSTimer *)timer {
+  if (self.peerConnection) {
+    [self.peerConnection getStatsWithDelegate:self
+                             mediaStreamTrack:nil
+                             statsOutputLevel:RTCStatsOutputLevelDebug];
+  }
 }
 
 #pragma mark - public methods
