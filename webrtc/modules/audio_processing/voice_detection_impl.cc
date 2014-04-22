@@ -70,7 +70,7 @@ int VoiceDetectionImpl::ProcessCaptureAudio(AudioBuffer* audio) {
   // TODO(ajm): concatenate data in frame buffer here.
 
   int vad_ret = WebRtcVad_Process(static_cast<Handle*>(handle(0)),
-                                  apm_->split_sample_rate_hz(),
+                                  apm_->proc_split_sample_rate_hz(),
                                   mixed_data,
                                   frame_size_samples_);
   if (vad_ret == 0) {
@@ -146,7 +146,8 @@ int VoiceDetectionImpl::Initialize() {
   }
 
   using_external_vad_ = false;
-  frame_size_samples_ = frame_size_ms_ * (apm_->split_sample_rate_hz() / 1000);
+  frame_size_samples_ = frame_size_ms_ *
+      apm_->proc_split_sample_rate_hz() / 1000;
   // TODO(ajm): intialize frame buffer here.
 
   return apm_->kNoError;

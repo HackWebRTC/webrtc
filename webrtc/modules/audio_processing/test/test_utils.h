@@ -9,6 +9,7 @@
  */
 
 #include "webrtc/audio_processing/debug.pb.h"
+#include "webrtc/modules/audio_processing/common.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
@@ -17,37 +18,6 @@ namespace webrtc {
 
 static const AudioProcessing::Error kNoErr = AudioProcessing::kNoError;
 #define EXPECT_NOERR(expr) EXPECT_EQ(kNoErr, (expr))
-
-static const int kChunkSizeMs = 10;
-
-// Helper to encapsulate a contiguous data buffer with access to a pointer
-// array of the deinterleaved channels.
-template <typename T>
-class ChannelBuffer {
- public:
-  ChannelBuffer(int samples_per_channel, int num_channels)
-      : data_(new T[samples_per_channel * num_channels]),
-        channels_(new T*[num_channels]),
-        samples_per_channel_(samples_per_channel) {
-    memset(data_.get(), 0, sizeof(T) * samples_per_channel * num_channels);
-    for (int i = 0; i < num_channels; ++i)
-      channels_[i] = &data_[i * samples_per_channel];
-  }
-  ~ChannelBuffer() {}
-
-  void CopyFrom(const void* channel_ptr, int index) {
-    memcpy(channels_[index], channel_ptr, samples_per_channel_ * sizeof(T));
-  }
-
-  T* data() { return data_.get(); }
-  T* channel(int index) { return channels_[index]; }
-  T** channels() { return channels_.get(); }
-
- private:
-  scoped_ptr<T[]> data_;
-  scoped_ptr<T*[]> channels_;
-  int samples_per_channel_;
-};
 
 // Exits on failure; do not use in unit tests.
 static inline FILE* OpenFile(const std::string& filename, const char* mode) {
@@ -59,10 +29,15 @@ static inline FILE* OpenFile(const std::string& filename, const char* mode) {
   return file;
 }
 
+static inline int SamplesFromRate(int rate) {
+  return AudioProcessing::kChunkSizeMs * rate / 1000;
+}
+
 static inline void SetFrameSampleRate(AudioFrame* frame,
                                       int sample_rate_hz) {
   frame->sample_rate_hz_ = sample_rate_hz;
-  frame->samples_per_channel_ = kChunkSizeMs * sample_rate_hz / 1000;
+  frame->samples_per_channel_ = AudioProcessing::kChunkSizeMs *
+      sample_rate_hz / 1000;
 }
 
 template <typename T>

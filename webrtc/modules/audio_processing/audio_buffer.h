@@ -8,21 +8,46 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_MAIN_SOURCE_AUDIO_BUFFER_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_MAIN_SOURCE_AUDIO_BUFFER_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AUDIO_BUFFER_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_AUDIO_BUFFER_H_
 
+#include <vector>
+
+#include "webrtc/modules/audio_processing/common.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/scoped_vector.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 
-struct AudioChannel;
-struct SplitAudioChannel;
+class PushSincResampler;
+class SplitChannelBuffer;
+
+struct SplitFilterStates {
+  SplitFilterStates() {
+    memset(analysis_filter_state1, 0, sizeof(analysis_filter_state1));
+    memset(analysis_filter_state2, 0, sizeof(analysis_filter_state2));
+    memset(synthesis_filter_state1, 0, sizeof(synthesis_filter_state1));
+    memset(synthesis_filter_state2, 0, sizeof(synthesis_filter_state2));
+  }
+
+  static const int kStateSize = 6;
+  int analysis_filter_state1[kStateSize];
+  int analysis_filter_state2[kStateSize];
+  int synthesis_filter_state1[kStateSize];
+  int synthesis_filter_state2[kStateSize];
+};
 
 class AudioBuffer {
  public:
-  AudioBuffer(int max_num_channels, int samples_per_channel);
+  // TODO(ajm): Switch to take ChannelLayouts.
+  AudioBuffer(int input_samples_per_channel,
+              int num_input_channels,
+              int process_samples_per_channel,
+              int num_process_channels,
+              int output_samples_per_channel);
   virtual ~AudioBuffer();
 
   int num_channels() const;
@@ -36,10 +61,7 @@ class AudioBuffer {
   int16_t* mixed_low_pass_data(int channel) const;
   int16_t* low_pass_reference(int channel) const;
 
-  int32_t* analysis_filter_state1(int channel) const;
-  int32_t* analysis_filter_state2(int channel) const;
-  int32_t* synthesis_filter_state1(int channel) const;
-  int32_t* synthesis_filter_state2(int channel) const;
+  SplitFilterStates* filter_states(int channel) const;
 
   void set_activity(AudioFrame::VADActivity activity);
   AudioFrame::VADActivity activity() const;
@@ -54,40 +76,48 @@ class AudioBuffer {
   void InterleaveTo(AudioFrame* frame, bool data_changed) const;
 
   // Use for float deinterleaved data.
-  void CopyFrom(const float* const* data, int samples_per_channel,
-                int num_channels);
-  void CopyTo(int samples_per_channel, int num_channels,
-              float* const* data) const;
+  void CopyFrom(const float* const* data,
+                int samples_per_channel,
+                AudioProcessing::ChannelLayout layout);
+  void CopyTo(int samples_per_channel,
+              AudioProcessing::ChannelLayout layout,
+              float* const* data);
 
-  void Mix(int num_mixed_channels);
   void CopyAndMix(int num_mixed_channels);
   void CopyAndMixLowPass(int num_mixed_channels);
   void CopyLowPassToReference();
 
  private:
   // Called from DeinterleaveFrom() and CopyFrom().
-  void InitForNewData(int num_channels);
+  void InitForNewData();
 
-  const int max_num_channels_;
-  int num_channels_;
+  const int input_samples_per_channel_;
+  const int num_input_channels_;
+  const int proc_samples_per_channel_;
+  const int num_proc_channels_;
+  const int output_samples_per_channel_;
+  int samples_per_split_channel_;
   int num_mixed_channels_;
   int num_mixed_low_pass_channels_;
   // Whether the original data was replaced with mixed data.
   bool data_was_mixed_;
-  const int samples_per_channel_;
-  int samples_per_split_channel_;
   bool reference_copied_;
   AudioFrame::VADActivity activity_;
   bool is_muted_;
 
   int16_t* data_;
-  scoped_array<AudioChannel> channels_;
-  scoped_array<SplitAudioChannel> split_channels_;
-  scoped_array<AudioChannel> mixed_channels_;
-  // TODO(andrew): improve this, we don't need the full 32 kHz space here.
-  scoped_array<AudioChannel> mixed_low_pass_channels_;
-  scoped_array<AudioChannel> low_pass_reference_channels_;
+  scoped_ptr<ChannelBuffer<int16_t> > channels_;
+  scoped_ptr<SplitChannelBuffer> split_channels_;
+  scoped_ptr<SplitFilterStates[]> filter_states_;
+  scoped_ptr<ChannelBuffer<int16_t> > mixed_channels_;
+  scoped_ptr<ChannelBuffer<int16_t> > mixed_low_pass_channels_;
+  scoped_ptr<ChannelBuffer<int16_t> > low_pass_reference_channels_;
+  scoped_ptr<ChannelBuffer<float> > input_buffer_;
+  scoped_ptr<ChannelBuffer<float> > process_buffer_;
+  ScopedVector<PushSincResampler> input_resamplers_;
+  ScopedVector<PushSincResampler> output_resamplers_;
 };
+
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_MAIN_SOURCE_AUDIO_BUFFER_H_
+#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AUDIO_BUFFER_H_

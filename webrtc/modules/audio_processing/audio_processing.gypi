@@ -54,6 +54,7 @@
         'audio_buffer.h',
         'audio_processing_impl.cc',
         'audio_processing_impl.h',
+        'common.h',
         'echo_cancellation_impl.cc',
         'echo_cancellation_impl.h',
         'echo_control_mobile_impl.cc',

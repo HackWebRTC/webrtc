@@ -154,7 +154,7 @@ void HighPassFilterImpl::DestroyHandle(void* handle) const {
 
 int HighPassFilterImpl::InitializeHandle(void* handle) const {
   return InitializeFilter(static_cast<Handle*>(handle),
-                          apm_->sample_rate_hz());
+                          apm_->proc_sample_rate_hz());
 }
 
 int HighPassFilterImpl::ConfigureHandle(void* /*handle*/) const {

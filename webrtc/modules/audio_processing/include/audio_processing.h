@@ -92,8 +92,9 @@ static const int kAudioProcMaxNativeSampleRateHz = 32000;
 //   2. Parameter getters are never called concurrently with the corresponding
 //      setter.
 //
-// APM accepts only 16-bit linear PCM audio data in frames of 10 ms. Multiple
-// channels should be interleaved.
+// APM accepts only linear PCM audio data in chunks of 10 ms. The int16
+// interfaces use interleaved data, while the float interfaces use deinterleaved
+// data.
 //
 // Usage example, omitting error checking:
 // AudioProcessing* apm = AudioProcessing::Create(0);
@@ -162,15 +163,27 @@ class AudioProcessing {
   // Initializes internal states, while retaining all user settings. This
   // should be called before beginning to process a new audio stream. However,
   // it is not necessary to call before processing the first stream after
-  // creation. It is also not necessary to call if the audio parameters (sample
+  // creation.
+  //
+  // It is also not necessary to call if the audio parameters (sample
   // rate and number of channels) have changed. Passing updated parameters
   // directly to |ProcessStream()| and |AnalyzeReverseStream()| is permissible.
+  // If the parameters are known at init-time though, they may be provided.
   virtual int Initialize() = 0;
-  virtual int Initialize(int sample_rate_hz,
+
+  // The int16 interfaces require:
+  //   - only |NativeRate|s be used
+  //   - that the input, output and reverse rates must match
+  //   - that |output_layout| matches |input_layout|
+  //
+  // The float interfaces accept arbitrary rates and support differing input
+  // and output layouts, but the output may only remove channels, not add.
+  virtual int Initialize(int input_sample_rate_hz,
+                         int output_sample_rate_hz,
                          int reverse_sample_rate_hz,
-                         int num_input_channels,
-                         int num_output_channels,
-                         int num_reverse_channels) = 0;
+                         ChannelLayout input_layout,
+                         ChannelLayout output_layout,
+                         ChannelLayout reverse_layout) = 0;
 
   // Pass down additional options which don't have explicit setters. This
   // ensures the options are applied immediately.
@@ -179,28 +192,20 @@ class AudioProcessing {
   virtual int EnableExperimentalNs(bool enable) = 0;
   virtual bool experimental_ns_enabled() const = 0;
 
-  // DEPRECATED: It is now possible to modify the sample rate directly in a call
-  // to |ProcessStream|.
-  // Sets the sample |rate| in Hz for both the primary and reverse audio
-  // streams. 8000, 16000 or 32000 Hz are permitted.
+  // DEPRECATED.
+  // TODO(ajm): Remove after Chromium has upgraded to using Initialize().
   virtual int set_sample_rate_hz(int rate) = 0;
-  virtual int sample_rate_hz() const = 0;
-  virtual int split_sample_rate_hz() const = 0;
+  // DEPRECATED.
+  // TODO(ajm): Remove after voice engine no longer requires it to resample
+  // the reverse stream to the forward rate.
+  virtual int input_sample_rate_hz() const = 0;
 
-  // DEPRECATED: It is now possible to modify the number of channels directly in
-  // a call to |ProcessStream|.
-  // Sets the number of channels for the primary audio stream. Input frames must
-  // contain a number of channels given by |input_channels|, while output frames
-  // will be returned with number of channels given by |output_channels|.
-  virtual int set_num_channels(int input_channels, int output_channels) = 0;
+  // TODO(ajm): Only intended for internal use. Make private and friend the
+  // necessary classes?
+  virtual int proc_sample_rate_hz() const = 0;
+  virtual int proc_split_sample_rate_hz() const = 0;
   virtual int num_input_channels() const = 0;
   virtual int num_output_channels() const = 0;
-
-  // DEPRECATED: It is now possible to modify the number of channels directly in
-  // a call to |AnalyzeReverseStream|.
-  // Sets the number of channels for the reverse audio stream. Input frames must
-  // contain a number of channels given by |channels|.
-  virtual int set_num_reverse_channels(int channels) = 0;
   virtual int num_reverse_channels() const = 0;
 
   // Set to true when the output of AudioProcessing will be muted or in some
@@ -223,15 +228,19 @@ class AudioProcessing {
   virtual int ProcessStream(AudioFrame* frame) = 0;
 
   // Accepts deinterleaved float audio with the range [-1, 1]. Each element
-  // of |data| points to a channel buffer, arranged according to
+  // of |src| points to a channel buffer, arranged according to
   // |input_layout|. At output, the channels will be arranged according to
-  // |output_layout|.
-  // TODO(ajm): Output layout conversion does not yet work.
-  virtual int ProcessStream(float* const* data,
+  // |output_layout| at |output_sample_rate_hz| in |dest|.
+  //
+  // The output layout may only remove channels, not add. |src| and |dest|
+  // may use the same memory, if desired.
+  virtual int ProcessStream(const float* const* src,
                             int samples_per_channel,
-                            int sample_rate_hz,
+                            int input_sample_rate_hz,
                             ChannelLayout input_layout,
-                            ChannelLayout output_layout) = 0;
+                            int output_sample_rate_hz,
+                            ChannelLayout output_layout,
+                            float* const* dest) = 0;
 
   // Analyzes a 10 ms |frame| of the reverse direction audio stream. The frame
   // will not be modified. On the client-side, this is the far-end (or to be
@@ -245,7 +254,7 @@ class AudioProcessing {
   //
   // The |sample_rate_hz_|, |num_channels_|, and |samples_per_channel_|
   // members of |frame| must be valid. |sample_rate_hz_| must correspond to
-  // |sample_rate_hz()|
+  // |input_sample_rate_hz()|
   //
   // TODO(ajm): add const to input; requires an implementation fix.
   virtual int AnalyzeReverseStream(AudioFrame* frame) = 0;
@@ -342,11 +351,13 @@ class AudioProcessing {
     kBadStreamParameterWarning = -13
   };
 
-  enum {
+  enum NativeRate {
     kSampleRate8kHz = 8000,
     kSampleRate16kHz = 16000,
     kSampleRate32kHz = 32000
   };
+
+  static const int kChunkSizeMs = 10;
 };
 
 // The acoustic echo cancellation (AEC) component provides better performance
@@ -367,15 +378,9 @@ class EchoCancellation {
   // render and capture devices are used, particularly with webcams.
   //
   // This enables a compensation mechanism, and requires that
-  // |set_device_sample_rate_hz()| and |set_stream_drift_samples()| be called.
+  // set_stream_drift_samples() be called.
   virtual int enable_drift_compensation(bool enable) = 0;
   virtual bool is_drift_compensation_enabled() const = 0;
-
-  // Provides the sampling rate of the audio devices. It is assumed the render
-  // and capture devices use the same nominal sample rate. Required if and only
-  // if drift compensation is enabled.
-  virtual int set_device_sample_rate_hz(int rate) = 0;
-  virtual int device_sample_rate_hz() const = 0;
 
   // Sets the difference between the number of samples rendered and captured by
   // the audio devices since the last call to |ProcessStream()|. Must be called

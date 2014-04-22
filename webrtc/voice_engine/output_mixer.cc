@@ -602,7 +602,7 @@ void OutputMixer::APMAnalyzeReverseStream() {
   // side. Downmix to mono.
   AudioFrame frame;
   frame.num_channels_ = 1;
-  frame.sample_rate_hz_ = _audioProcessingModulePtr->sample_rate_hz();
+  frame.sample_rate_hz_ = _audioProcessingModulePtr->input_sample_rate_hz();
   RemixAndResample(_audioFrame, &audioproc_resampler_, &frame);
 
   if (_audioProcessingModulePtr->AnalyzeReverseStream(&frame) == -1) {

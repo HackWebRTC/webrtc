@@ -31,7 +31,6 @@ class EchoCancellationImpl : public EchoCancellation,
 
   // EchoCancellation implementation.
   virtual bool is_enabled() const OVERRIDE;
-  virtual int device_sample_rate_hz() const OVERRIDE;
   virtual int stream_drift_samples() const OVERRIDE;
 
   // ProcessingComponent implementation.
@@ -43,7 +42,6 @@ class EchoCancellationImpl : public EchoCancellation,
   virtual int Enable(bool enable) OVERRIDE;
   virtual int enable_drift_compensation(bool enable) OVERRIDE;
   virtual bool is_drift_compensation_enabled() const OVERRIDE;
-  virtual int set_device_sample_rate_hz(int rate) OVERRIDE;
   virtual void set_stream_drift_samples(int drift) OVERRIDE;
   virtual int set_suppression_level(SuppressionLevel level) OVERRIDE;
   virtual SuppressionLevel suppression_level() const OVERRIDE;
@@ -69,7 +67,6 @@ class EchoCancellationImpl : public EchoCancellation,
   bool drift_compensation_enabled_;
   bool metrics_enabled_;
   SuppressionLevel suppression_level_;
-  int device_sample_rate_hz_;
   int stream_drift_samples_;
   bool was_stream_drift_set_;
   bool stream_has_echo_;

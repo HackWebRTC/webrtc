@@ -438,11 +438,6 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
 
     // Set the error state for any failures in this block.
     _shared->SetLastError(VE_APM_ERROR);
-    if (audioproc->echo_cancellation()->set_device_sample_rate_hz(48000)) {
-      LOG_FERR1(LS_ERROR, set_device_sample_rate_hz, 48000);
-      return -1;
-    }
-
     // Configure AudioProcessing components.
     if (audioproc->high_pass_filter()->Enable(true) != 0) {
       LOG_FERR1(LS_ERROR, high_pass_filter()->Enable, true);

@@ -63,7 +63,6 @@ EchoCancellationImpl::EchoCancellationImpl(const AudioProcessing* apm,
     drift_compensation_enabled_(false),
     metrics_enabled_(false),
     suppression_level_(kModerateSuppression),
-    device_sample_rate_hz_(48000),
     stream_drift_samples_(0),
     was_stream_drift_set_(false),
     stream_has_echo_(false),
@@ -200,20 +199,6 @@ int EchoCancellationImpl::enable_drift_compensation(bool enable) {
 
 bool EchoCancellationImpl::is_drift_compensation_enabled() const {
   return drift_compensation_enabled_;
-}
-
-int EchoCancellationImpl::set_device_sample_rate_hz(int rate) {
-  CriticalSectionScoped crit_scoped(crit_);
-  if (rate < 8000 || rate > 96000) {
-    return apm_->kBadParameterError;
-  }
-
-  device_sample_rate_hz_ = rate;
-  return Initialize();
-}
-
-int EchoCancellationImpl::device_sample_rate_hz() const {
-  return device_sample_rate_hz_;
 }
 
 void EchoCancellationImpl::set_stream_drift_samples(int drift) {
@@ -358,9 +343,12 @@ void EchoCancellationImpl::DestroyHandle(void* handle) const {
 
 int EchoCancellationImpl::InitializeHandle(void* handle) const {
   assert(handle != NULL);
+  // TODO(ajm): Drift compensation is disabled in practice. If restored, it
+  // should be managed internally and not depend on the hardware sample rate.
+  // For now, just hardcode a 48 kHz value.
   return WebRtcAec_Init(static_cast<Handle*>(handle),
-                       apm_->sample_rate_hz(),
-                       device_sample_rate_hz_);
+                       apm_->proc_sample_rate_hz(),
+                       48000);
 }
 
 int EchoCancellationImpl::ConfigureHandle(void* handle) const {

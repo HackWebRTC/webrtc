@@ -19,6 +19,7 @@
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
+
 class AudioBuffer;
 class CriticalSectionWrapper;
 class EchoCancellationImpl;
@@ -39,6 +40,44 @@ class Event;
 }  // namespace audioproc
 #endif
 
+class AudioRate {
+ public:
+  explicit AudioRate(int sample_rate_hz)
+      : rate_(sample_rate_hz),
+        samples_per_channel_(AudioProcessing::kChunkSizeMs * rate_ / 1000) {}
+  virtual ~AudioRate() {}
+
+  void set(int rate) {
+    rate_ = rate;
+    samples_per_channel_ = AudioProcessing::kChunkSizeMs * rate_ / 1000;
+  }
+
+  int rate() const { return rate_; }
+  int samples_per_channel() const { return samples_per_channel_; }
+
+ private:
+  int rate_;
+  int samples_per_channel_;
+};
+
+class AudioFormat : public AudioRate {
+ public:
+  AudioFormat(int sample_rate_hz, int num_channels)
+      : AudioRate(sample_rate_hz),
+        num_channels_(num_channels) {}
+  virtual ~AudioFormat() {}
+
+  void set(int rate, int num_channels) {
+    AudioRate::set(rate);
+    num_channels_ = num_channels;
+  }
+
+  int num_channels() const { return num_channels_; }
+
+ private:
+  int num_channels_;
+};
+
 class AudioProcessingImpl : public AudioProcessing {
  public:
   explicit AudioProcessingImpl(const Config& config);
@@ -46,33 +85,34 @@ class AudioProcessingImpl : public AudioProcessing {
 
   // AudioProcessing methods.
   virtual int Initialize() OVERRIDE;
-  virtual int Initialize(int sample_rate_hz,
+  virtual int Initialize(int input_sample_rate_hz,
+                         int output_sample_rate_hz,
                          int reverse_sample_rate_hz,
-                         int num_input_channels,
-                         int num_output_channels,
-                         int num_reverse_channels) OVERRIDE;
+                         ChannelLayout input_layout,
+                         ChannelLayout output_layout,
+                         ChannelLayout reverse_layout) OVERRIDE;
   virtual void SetExtraOptions(const Config& config) OVERRIDE;
   virtual int EnableExperimentalNs(bool enable) OVERRIDE;
   virtual bool experimental_ns_enabled() const OVERRIDE {
     return false;
   }
   virtual int set_sample_rate_hz(int rate) OVERRIDE;
-  virtual int sample_rate_hz() const OVERRIDE;
-  virtual int split_sample_rate_hz() const OVERRIDE;
-  virtual int set_num_channels(int input_channels,
-                               int output_channels) OVERRIDE;
+  virtual int input_sample_rate_hz() const OVERRIDE;
+  virtual int proc_sample_rate_hz() const OVERRIDE;
+  virtual int proc_split_sample_rate_hz() const OVERRIDE;
   virtual int num_input_channels() const OVERRIDE;
   virtual int num_output_channels() const OVERRIDE;
-  virtual int set_num_reverse_channels(int channels) OVERRIDE;
   virtual int num_reverse_channels() const OVERRIDE;
   virtual void set_output_will_be_muted(bool muted) OVERRIDE;
   virtual bool output_will_be_muted() const OVERRIDE;
   virtual int ProcessStream(AudioFrame* frame) OVERRIDE;
-  virtual int ProcessStream(float* const* data,
+  virtual int ProcessStream(const float* const* src,
                             int samples_per_channel,
-                            int sample_rate_hz,
+                            int input_sample_rate_hz,
                             ChannelLayout input_layout,
-                            ChannelLayout output_layout) OVERRIDE;
+                            int output_sample_rate_hz,
+                            ChannelLayout output_layout,
+                            float* const* dest) OVERRIDE;
   virtual int AnalyzeReverseStream(AudioFrame* frame) OVERRIDE;
   virtual int AnalyzeReverseStream(const float* const* data,
                                    int samples_per_channel,
@@ -102,12 +142,14 @@ class AudioProcessingImpl : public AudioProcessing {
   virtual int InitializeLocked();
 
  private:
-  int InitializeLocked(int sample_rate_hz,
+  int InitializeLocked(int input_sample_rate_hz,
+                       int output_sample_rate_hz,
                        int reverse_sample_rate_hz,
                        int num_input_channels,
                        int num_output_channels,
                        int num_reverse_channels);
-  int MaybeInitializeLocked(int sample_rate_hz,
+  int MaybeInitializeLocked(int input_sample_rate_hz,
+                            int output_sample_rate_hz,
                             int reverse_sample_rate_hz,
                             int num_input_channels,
                             int num_output_channels,
@@ -130,8 +172,8 @@ class AudioProcessingImpl : public AudioProcessing {
 
   std::list<ProcessingComponent*> component_list_;
   CriticalSectionWrapper* crit_;
-  AudioBuffer* render_audio_;
-  AudioBuffer* capture_audio_;
+  scoped_ptr<AudioBuffer> render_audio_;
+  scoped_ptr<AudioBuffer> capture_audio_;
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   // TODO(andrew): make this more graceful. Ideally we would split this stuff
   // out into a separate class with an "enabled" and "disabled" implementation.
@@ -142,22 +184,22 @@ class AudioProcessingImpl : public AudioProcessing {
   std::string event_str_;  // Memory for protobuf serialization.
 #endif
 
-  int sample_rate_hz_;
-  int reverse_sample_rate_hz_;
-  int split_sample_rate_hz_;
-  int samples_per_channel_;
-  int reverse_samples_per_channel_;
+  AudioFormat fwd_in_format_;
+  AudioFormat fwd_proc_format_;
+  AudioRate fwd_out_format_;
+  AudioFormat rev_in_format_;
+  AudioFormat rev_proc_format_;
+  int split_rate_;
+
   int stream_delay_ms_;
   int delay_offset_ms_;
   bool was_stream_delay_set_;
 
-  int num_reverse_channels_;
-  int num_input_channels_;
-  int num_output_channels_;
   bool output_will_be_muted_;
 
   bool key_pressed_;
 };
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_MAIN_SOURCE_AUDIO_PROCESSING_IMPL_H_

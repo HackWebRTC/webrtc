@@ -26,10 +26,6 @@ class MockEchoCancellation : public EchoCancellation {
       int(bool enable));
   MOCK_CONST_METHOD0(is_drift_compensation_enabled,
       bool());
-  MOCK_METHOD1(set_device_sample_rate_hz,
-      int(int rate));
-  MOCK_CONST_METHOD0(device_sample_rate_hz,
-      int());
   MOCK_METHOD1(set_stream_drift_samples,
       void(int drift));
   MOCK_CONST_METHOD0(stream_drift_samples,
@@ -181,12 +177,13 @@ class MockAudioProcessing : public AudioProcessing {
 
   MOCK_METHOD0(Initialize,
       int());
-  MOCK_METHOD5(Initialize,
+  MOCK_METHOD6(Initialize,
       int(int sample_rate_hz,
+          int output_sample_rate_hz,
           int reverse_sample_rate_hz,
-          int num_input_channels,
-          int num_output_channels,
-          int num_reverse_channels));
+          ChannelLayout input_layout,
+          ChannelLayout output_layout,
+          ChannelLayout reverse_layout));
   MOCK_METHOD1(SetExtraOptions,
       void(const Config& config));
   MOCK_METHOD1(EnableExperimentalNs,
@@ -195,18 +192,16 @@ class MockAudioProcessing : public AudioProcessing {
       bool());
   MOCK_METHOD1(set_sample_rate_hz,
       int(int rate));
-  MOCK_CONST_METHOD0(sample_rate_hz,
+  MOCK_CONST_METHOD0(input_sample_rate_hz,
       int());
-  MOCK_CONST_METHOD0(split_sample_rate_hz,
+  MOCK_CONST_METHOD0(proc_sample_rate_hz,
       int());
-  MOCK_METHOD2(set_num_channels,
-      int(int input_channels, int output_channels));
+  MOCK_CONST_METHOD0(proc_split_sample_rate_hz,
+      int());
   MOCK_CONST_METHOD0(num_input_channels,
       int());
   MOCK_CONST_METHOD0(num_output_channels,
       int());
-  MOCK_METHOD1(set_num_reverse_channels,
-      int(int channels));
   MOCK_CONST_METHOD0(num_reverse_channels,
       int());
   MOCK_METHOD1(set_output_will_be_muted,
@@ -215,10 +210,14 @@ class MockAudioProcessing : public AudioProcessing {
       bool());
   MOCK_METHOD1(ProcessStream,
       int(AudioFrame* frame));
-  MOCK_METHOD5(ProcessStream,
-      int(float* const* data, int frames, int sample_rate_hz,
+  MOCK_METHOD7(ProcessStream,
+      int(const float* const* src,
+          int samples_per_channel,
+          int input_sample_rate_hz,
           ChannelLayout input_layout,
-          ChannelLayout output_layout));
+          int output_sample_rate_hz,
+          ChannelLayout output_layout,
+          float* const* dest));
   MOCK_METHOD1(AnalyzeReverseStream,
       int(AudioFrame* frame));
   MOCK_METHOD4(AnalyzeReverseStream,

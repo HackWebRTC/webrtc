@@ -155,7 +155,6 @@ void void_main(int argc, char* argv[]) {
   const char* aecm_echo_path_out_filename = NULL;
 
   int32_t sample_rate_hz = 16000;
-  int32_t device_sample_rate_hz = 16000;
 
   int num_capture_input_channels = 1;
   int num_capture_output_channels = 1;
@@ -563,6 +562,8 @@ void void_main(int argc, char* argv[]) {
     Event event_msg;
     scoped_ptr<ChannelBuffer<float> > reverse_cb;
     scoped_ptr<ChannelBuffer<float> > primary_cb;
+    int output_sample_rate = 32000;
+    AudioProcessing::ChannelLayout output_layout = AudioProcessing::kMono;
     while (ReadMessageFromFile(pb_file, &event_msg)) {
       std::ostringstream trace_stream;
       trace_stream << "Processed frames: " << reverse_count << " (reverse), "
@@ -578,18 +579,21 @@ void void_main(int argc, char* argv[]) {
         ASSERT_TRUE(msg.has_num_output_channels());
         ASSERT_TRUE(msg.has_num_reverse_channels());
         int reverse_sample_rate = msg.sample_rate();
-        if (msg.has_reverse_sample_rate())
+        if (msg.has_reverse_sample_rate()) {
           reverse_sample_rate = msg.reverse_sample_rate();
-        ASSERT_EQ(apm->kNoError, apm->Initialize(msg.sample_rate(),
-                                                 reverse_sample_rate,
-                                                 msg.num_input_channels(),
-                                                 msg.num_output_channels(),
-                                                 msg.num_reverse_channels()));
-        ASSERT_TRUE(msg.has_device_sample_rate());
-        ASSERT_EQ(apm->kNoError,
-                  apm->echo_cancellation()->set_device_sample_rate_hz(
-                      msg.device_sample_rate()));
-
+        }
+        output_sample_rate = msg.sample_rate();
+        if (msg.has_output_sample_rate()) {
+          output_sample_rate = msg.output_sample_rate();
+        }
+        output_layout = LayoutFromChannels(msg.num_output_channels());
+        ASSERT_EQ(kNoErr, apm->Initialize(
+                              msg.sample_rate(),
+                              output_sample_rate,
+                              reverse_sample_rate,
+                              LayoutFromChannels(msg.num_input_channels()),
+                              output_layout,
+                              LayoutFromChannels(msg.num_reverse_channels())));
 
         samples_per_channel = msg.sample_rate() / 100;
         far_frame.sample_rate_hz_ = msg.sample_rate();
@@ -606,11 +610,13 @@ void void_main(int argc, char* argv[]) {
         if (verbose) {
           printf("Init at frame: %d (primary), %d (reverse)\n",
               primary_count, reverse_count);
-          printf("  Sample rate: %d Hz\n", msg.sample_rate());
+          printf("  Primary rates: %d Hz (in), %d Hz (out)\n",
+                 msg.sample_rate(), output_sample_rate);
           printf("  Primary channels: %d (in), %d (out)\n",
                  msg.num_input_channels(),
                  msg.num_output_channels());
-          printf("  Reverse channels: %d \n", msg.num_reverse_channels());
+          printf("  Reverse rate: %d\n", reverse_sample_rate);
+          printf("  Reverse channels: %d\n", msg.num_reverse_channels());
         }
 
       } else if (event_msg.type() == Event::REVERSE_STREAM) {
@@ -715,7 +721,9 @@ void void_main(int argc, char* argv[]) {
               near_frame.samples_per_channel_,
               near_frame.sample_rate_hz_,
               LayoutFromChannels(near_frame.num_channels_),
-              LayoutFromChannels(apm->num_output_channels()));
+              output_sample_rate,
+              output_layout,
+              primary_cb->channels());
         }
 
         if (err == apm->kBadStreamParameterWarning) {
@@ -814,19 +822,20 @@ void void_main(int argc, char* argv[]) {
             fread(&sample_rate_hz, sizeof(sample_rate_hz), 1, event_file));
         samples_per_channel = sample_rate_hz / 100;
 
+        int32_t unused_device_sample_rate_hz;
         ASSERT_EQ(1u,
-            fread(&device_sample_rate_hz,
-                  sizeof(device_sample_rate_hz),
+            fread(&unused_device_sample_rate_hz,
+                  sizeof(unused_device_sample_rate_hz),
                   1,
                   event_file));
 
-        // TODO(bjornv): Replace set_sample_rate_hz() when we have a smarter
-        // AnalyzeReverseStream().
-        ASSERT_EQ(apm->kNoError, apm->set_sample_rate_hz(sample_rate_hz));
-
-        ASSERT_EQ(apm->kNoError,
-                  apm->echo_cancellation()->set_device_sample_rate_hz(
-                      device_sample_rate_hz));
+        ASSERT_EQ(kNoErr, apm->Initialize(
+                              sample_rate_hz,
+                              sample_rate_hz,
+                              sample_rate_hz,
+                              LayoutFromChannels(num_capture_input_channels),
+                              LayoutFromChannels(num_capture_output_channels),
+                              LayoutFromChannels(num_render_channels)));
 
         far_frame.sample_rate_hz_ = sample_rate_hz;
         far_frame.samples_per_channel_ = samples_per_channel;

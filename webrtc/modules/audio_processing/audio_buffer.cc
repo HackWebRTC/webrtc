@@ -11,6 +11,7 @@
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 
 #include "webrtc/common_audio/include/audio_util.h"
+#include "webrtc/common_audio/resampler/push_sinc_resampler.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 
 namespace webrtc {
@@ -22,76 +23,166 @@ enum {
   kSamplesPer32kHzChannel = 320
 };
 
-void StereoToMono(const int16_t* left, const int16_t* right,
-                  int16_t* out, int samples_per_channel) {
-  assert(left != NULL && right != NULL && out != NULL);
-  for (int i = 0; i < samples_per_channel; i++)
-    out[i] = (static_cast<int32_t>(left[i]) +
-              static_cast<int32_t>(right[i])) >> 1;
+void StereoToMono(const float* left, const float* right, float* out,
+                  int samples_per_channel) {
+  for (int i = 0; i < samples_per_channel; ++i) {
+    out[i] = (left[i] + right[i]) / 2;
+  }
 }
+
+void StereoToMono(const int16_t* left, const int16_t* right, int16_t* out,
+                  int samples_per_channel) {
+  for (int i = 0; i < samples_per_channel; i++)
+    out[i] = (left[i] + right[i]) >> 1;
+}
+
 }  // namespace
 
-struct AudioChannel {
-  AudioChannel() {
-    memset(data, 0, sizeof(data));
+class SplitChannelBuffer {
+ public:
+  SplitChannelBuffer(int samples_per_split_channel, int num_channels)
+      : low_(samples_per_split_channel, num_channels),
+        high_(samples_per_split_channel, num_channels) {
   }
+  ~SplitChannelBuffer() {}
 
-  int16_t data[kSamplesPer32kHzChannel];
+  int16_t* low_channel(int i) { return low_.channel(i); }
+  int16_t* high_channel(int i) { return high_.channel(i); }
+
+ private:
+  ChannelBuffer<int16_t> low_;
+  ChannelBuffer<int16_t> high_;
 };
 
-struct SplitAudioChannel {
-  SplitAudioChannel() {
-    memset(low_pass_data, 0, sizeof(low_pass_data));
-    memset(high_pass_data, 0, sizeof(high_pass_data));
-    memset(analysis_filter_state1, 0, sizeof(analysis_filter_state1));
-    memset(analysis_filter_state2, 0, sizeof(analysis_filter_state2));
-    memset(synthesis_filter_state1, 0, sizeof(synthesis_filter_state1));
-    memset(synthesis_filter_state2, 0, sizeof(synthesis_filter_state2));
-  }
-
-  int16_t low_pass_data[kSamplesPer16kHzChannel];
-  int16_t high_pass_data[kSamplesPer16kHzChannel];
-
-  int32_t analysis_filter_state1[6];
-  int32_t analysis_filter_state2[6];
-  int32_t synthesis_filter_state1[6];
-  int32_t synthesis_filter_state2[6];
-};
-
-// TODO(andrew): check range of input parameters?
-AudioBuffer::AudioBuffer(int max_num_channels,
-                         int samples_per_channel)
-  : max_num_channels_(max_num_channels),
-    num_channels_(0),
+AudioBuffer::AudioBuffer(int input_samples_per_channel,
+                         int num_input_channels,
+                         int process_samples_per_channel,
+                         int num_process_channels,
+                         int output_samples_per_channel)
+  : input_samples_per_channel_(input_samples_per_channel),
+    num_input_channels_(num_input_channels),
+    proc_samples_per_channel_(process_samples_per_channel),
+    num_proc_channels_(num_process_channels),
+    output_samples_per_channel_(output_samples_per_channel),
+    samples_per_split_channel_(proc_samples_per_channel_),
     num_mixed_channels_(0),
     num_mixed_low_pass_channels_(0),
     data_was_mixed_(false),
-    samples_per_channel_(samples_per_channel),
-    samples_per_split_channel_(samples_per_channel),
     reference_copied_(false),
     activity_(AudioFrame::kVadUnknown),
     is_muted_(false),
     data_(NULL),
-    channels_(NULL),
-    split_channels_(NULL),
-    mixed_channels_(NULL),
-    mixed_low_pass_channels_(NULL),
-    low_pass_reference_channels_(NULL) {
-  channels_.reset(new AudioChannel[max_num_channels_]);
-  mixed_channels_.reset(new AudioChannel[max_num_channels_]);
-  mixed_low_pass_channels_.reset(new AudioChannel[max_num_channels_]);
-  low_pass_reference_channels_.reset(new AudioChannel[max_num_channels_]);
+    channels_(new ChannelBuffer<int16_t>(proc_samples_per_channel_,
+                                         num_proc_channels_)) {
+  assert(input_samples_per_channel_ > 0);
+  assert(proc_samples_per_channel_ > 0);
+  assert(output_samples_per_channel_ > 0);
+  assert(num_input_channels_ > 0 && num_input_channels_ <= 2);
+  assert(num_proc_channels_ <= num_input_channels);
 
-  if (samples_per_channel_ == kSamplesPer32kHzChannel) {
-    split_channels_.reset(new SplitAudioChannel[max_num_channels_]);
+  if (num_input_channels_ == 2 && num_proc_channels_ == 1) {
+    input_buffer_.reset(new ChannelBuffer<float>(input_samples_per_channel_,
+                                                 num_proc_channels_));
+  }
+
+  if (input_samples_per_channel_ != proc_samples_per_channel_ ||
+      output_samples_per_channel_ != proc_samples_per_channel_) {
+    // Create an intermediate buffer for resampling.
+    process_buffer_.reset(new ChannelBuffer<float>(proc_samples_per_channel_,
+                                                   num_proc_channels_));
+  }
+
+  if (input_samples_per_channel_ != proc_samples_per_channel_) {
+    input_resamplers_.reserve(num_proc_channels_);
+    for (int i = 0; i < num_proc_channels_; ++i) {
+      input_resamplers_.push_back(
+          new PushSincResampler(input_samples_per_channel_,
+                                proc_samples_per_channel_));
+    }
+  }
+
+  if (output_samples_per_channel_ != proc_samples_per_channel_) {
+    output_resamplers_.reserve(num_proc_channels_);
+    for (int i = 0; i < num_proc_channels_; ++i) {
+      output_resamplers_.push_back(
+          new PushSincResampler(proc_samples_per_channel_,
+                                output_samples_per_channel_));
+    }
+  }
+
+  if (proc_samples_per_channel_ == kSamplesPer32kHzChannel) {
     samples_per_split_channel_ = kSamplesPer16kHzChannel;
+    split_channels_.reset(new SplitChannelBuffer(samples_per_split_channel_,
+                                                 num_proc_channels_));
+    filter_states_.reset(new SplitFilterStates[num_proc_channels_]);
+  }
+}
+
+void AudioBuffer::CopyFrom(const float* const* data,
+                           int samples_per_channel,
+                           AudioProcessing::ChannelLayout layout) {
+  assert(samples_per_channel == input_samples_per_channel_);
+  assert(ChannelsFromLayout(layout) == num_input_channels_);
+  InitForNewData();
+
+  // Downmix.
+  const float* const* data_ptr = data;
+  if (num_input_channels_ == 2 && num_proc_channels_ == 1) {
+    StereoToMono(data[0],
+                 data[1],
+                 input_buffer_->channel(0),
+                 input_samples_per_channel_);
+    data_ptr = input_buffer_->channels();
+  }
+
+  // Resample.
+  if (input_samples_per_channel_ != proc_samples_per_channel_) {
+    for (int i = 0; i < num_proc_channels_; ++i) {
+      input_resamplers_[i]->Resample(data_ptr[i],
+                                     input_samples_per_channel_,
+                                     process_buffer_->channel(i),
+                                     proc_samples_per_channel_);
+    }
+    data_ptr = process_buffer_->channels();
+  }
+
+  // Convert to int16.
+  for (int i = 0; i < num_proc_channels_; ++i) {
+    ScaleAndRoundToInt16(data_ptr[i], proc_samples_per_channel_,
+                         channels_->channel(i));
+  }
+}
+
+void AudioBuffer::CopyTo(int samples_per_channel,
+                         AudioProcessing::ChannelLayout layout,
+                         float* const* data) {
+  assert(samples_per_channel == output_samples_per_channel_);
+  assert(ChannelsFromLayout(layout) == num_proc_channels_);
+
+  // Convert to float.
+  float* const* data_ptr = data;
+  if (output_samples_per_channel_ != proc_samples_per_channel_) {
+    // Convert to an intermediate buffer for subsequent resampling.
+    data_ptr = process_buffer_->channels();
+  }
+  for (int i = 0; i < num_proc_channels_; ++i) {
+    ScaleToFloat(channels_->channel(i), proc_samples_per_channel_, data_ptr[i]);
+  }
+
+  // Resample.
+  if (output_samples_per_channel_ != proc_samples_per_channel_) {
+    for (int i = 0; i < num_proc_channels_; ++i) {
+      output_resamplers_[i]->Resample(data_ptr[i],
+                                      proc_samples_per_channel_,
+                                      data[i],
+                                      output_samples_per_channel_);
+    }
   }
 }
 
 AudioBuffer::~AudioBuffer() {}
 
-void AudioBuffer::InitForNewData(int num_channels) {
-  num_channels_ = num_channels;
+void AudioBuffer::InitForNewData() {
   data_ = NULL;
   data_was_mixed_ = false;
   num_mixed_channels_ = 0;
@@ -102,71 +193,56 @@ void AudioBuffer::InitForNewData(int num_channels) {
 }
 
 int16_t* AudioBuffer::data(int channel) const {
-  assert(channel >= 0 && channel < num_channels_);
+  assert(channel >= 0 && channel < num_proc_channels_);
   if (data_ != NULL) {
     return data_;
   }
 
-  return channels_[channel].data;
+  return channels_->channel(channel);
 }
 
 int16_t* AudioBuffer::low_pass_split_data(int channel) const {
-  assert(channel >= 0 && channel < num_channels_);
+  assert(channel >= 0 && channel < num_proc_channels_);
   if (split_channels_.get() == NULL) {
     return data(channel);
   }
 
-  return split_channels_[channel].low_pass_data;
+  return split_channels_->low_channel(channel);
 }
 
 int16_t* AudioBuffer::high_pass_split_data(int channel) const {
-  assert(channel >= 0 && channel < num_channels_);
+  assert(channel >= 0 && channel < num_proc_channels_);
   if (split_channels_.get() == NULL) {
     return NULL;
   }
 
-  return split_channels_[channel].high_pass_data;
+  return split_channels_->high_channel(channel);
 }
 
 int16_t* AudioBuffer::mixed_data(int channel) const {
   assert(channel >= 0 && channel < num_mixed_channels_);
 
-  return mixed_channels_[channel].data;
+  return mixed_channels_->channel(channel);
 }
 
 int16_t* AudioBuffer::mixed_low_pass_data(int channel) const {
   assert(channel >= 0 && channel < num_mixed_low_pass_channels_);
 
-  return mixed_low_pass_channels_[channel].data;
+  return mixed_low_pass_channels_->channel(channel);
 }
 
 int16_t* AudioBuffer::low_pass_reference(int channel) const {
-  assert(channel >= 0 && channel < num_channels_);
+  assert(channel >= 0 && channel < num_proc_channels_);
   if (!reference_copied_) {
     return NULL;
   }
 
-  return low_pass_reference_channels_[channel].data;
+  return low_pass_reference_channels_->channel(channel);
 }
 
-int32_t* AudioBuffer::analysis_filter_state1(int channel) const {
-  assert(channel >= 0 && channel < num_channels_);
-  return split_channels_[channel].analysis_filter_state1;
-}
-
-int32_t* AudioBuffer::analysis_filter_state2(int channel) const {
-  assert(channel >= 0 && channel < num_channels_);
-  return split_channels_[channel].analysis_filter_state2;
-}
-
-int32_t* AudioBuffer::synthesis_filter_state1(int channel) const {
-  assert(channel >= 0 && channel < num_channels_);
-  return split_channels_[channel].synthesis_filter_state1;
-}
-
-int32_t* AudioBuffer::synthesis_filter_state2(int channel) const {
-  assert(channel >= 0 && channel < num_channels_);
-  return split_channels_[channel].synthesis_filter_state2;
+SplitFilterStates* AudioBuffer::filter_states(int channel) const {
+  assert(channel >= 0 && channel < num_proc_channels_);
+  return &filter_states_[channel];
 }
 
 void AudioBuffer::set_activity(AudioFrame::VADActivity activity) {
@@ -182,11 +258,11 @@ bool AudioBuffer::is_muted() const {
 }
 
 int AudioBuffer::num_channels() const {
-  return num_channels_;
+  return num_proc_channels_;
 }
 
 int AudioBuffer::samples_per_channel() const {
-  return samples_per_channel_;
+  return proc_samples_per_channel_;
 }
 
 int AudioBuffer::samples_per_split_channel() const {
@@ -195,46 +271,49 @@ int AudioBuffer::samples_per_split_channel() const {
 
 // TODO(andrew): Do deinterleaving and mixing in one step?
 void AudioBuffer::DeinterleaveFrom(AudioFrame* frame) {
-  assert(frame->num_channels_ <= max_num_channels_);
-  assert(frame->samples_per_channel_ ==  samples_per_channel_);
-
-  InitForNewData(frame->num_channels_);
+  assert(proc_samples_per_channel_ == input_samples_per_channel_);
+  assert(num_proc_channels_ == num_input_channels_);
+  assert(frame->num_channels_ == num_proc_channels_);
+  assert(frame->samples_per_channel_ ==  proc_samples_per_channel_);
+  InitForNewData();
   activity_ = frame->vad_activity_;
   if (frame->energy_ == 0) {
     is_muted_ = true;
   }
 
-  if (num_channels_ == 1) {
+  if (num_proc_channels_ == 1) {
     // We can get away with a pointer assignment in this case.
     data_ = frame->data_;
     return;
   }
 
   int16_t* interleaved = frame->data_;
-  for (int i = 0; i < num_channels_; i++) {
-    int16_t* deinterleaved = channels_[i].data;
+  for (int i = 0; i < num_proc_channels_; i++) {
+    int16_t* deinterleaved = channels_->channel(i);
     int interleaved_idx = i;
-    for (int j = 0; j < samples_per_channel_; j++) {
+    for (int j = 0; j < proc_samples_per_channel_; j++) {
       deinterleaved[j] = interleaved[interleaved_idx];
-      interleaved_idx += num_channels_;
+      interleaved_idx += num_proc_channels_;
     }
   }
 }
 
 void AudioBuffer::InterleaveTo(AudioFrame* frame, bool data_changed) const {
-  assert(frame->num_channels_ == num_channels_);
-  assert(frame->samples_per_channel_ == samples_per_channel_);
+  assert(proc_samples_per_channel_ == output_samples_per_channel_);
+  assert(num_proc_channels_ == num_input_channels_);
+  assert(frame->num_channels_ == num_proc_channels_);
+  assert(frame->samples_per_channel_ == proc_samples_per_channel_);
   frame->vad_activity_ = activity_;
 
   if (!data_changed) {
     return;
   }
 
-  if (num_channels_ == 1) {
+  if (num_proc_channels_ == 1) {
     if (data_was_mixed_) {
       memcpy(frame->data_,
-             channels_[0].data,
-             sizeof(int16_t) * samples_per_channel_);
+             channels_->channel(0),
+             sizeof(int16_t) * proc_samples_per_channel_);
     } else {
       // These should point to the same buffer in this case.
       assert(data_ == frame->data_);
@@ -244,74 +323,47 @@ void AudioBuffer::InterleaveTo(AudioFrame* frame, bool data_changed) const {
   }
 
   int16_t* interleaved = frame->data_;
-  for (int i = 0; i < num_channels_; i++) {
-    int16_t* deinterleaved = channels_[i].data;
+  for (int i = 0; i < num_proc_channels_; i++) {
+    int16_t* deinterleaved = channels_->channel(i);
     int interleaved_idx = i;
-    for (int j = 0; j < samples_per_channel_; j++) {
+    for (int j = 0; j < proc_samples_per_channel_; j++) {
       interleaved[interleaved_idx] = deinterleaved[j];
-      interleaved_idx += num_channels_;
+      interleaved_idx += num_proc_channels_;
     }
   }
 }
 
-void AudioBuffer::CopyFrom(const float* const* data, int samples_per_channel,
-                           int num_channels) {
-  assert(num_channels <= max_num_channels_);
-  assert(samples_per_channel ==  samples_per_channel_);
-
-  InitForNewData(num_channels);
-  for (int i = 0; i < num_channels_; ++i) {
-    ScaleAndRoundToInt16(data[i], samples_per_channel, channels_[i].data);
-  }
-}
-
-void AudioBuffer::CopyTo(int samples_per_channel, int num_channels,
-                         float* const* data) const {
-  assert(num_channels == num_channels_);
-  assert(samples_per_channel == samples_per_channel_);
-  for (int i = 0; i < num_channels_; ++i) {
-    ScaleToFloat(channels_[i].data, samples_per_channel, data[i]);
-  }
-}
-
-// TODO(andrew): would be good to support the no-mix case with pointer
-// assignment.
-// TODO(andrew): handle mixing to multiple channels?
-void AudioBuffer::Mix(int num_mixed_channels) {
-  // We currently only support the stereo to mono case.
-  assert(num_channels_ == 2);
-  assert(num_mixed_channels == 1);
-
-  StereoToMono(channels_[0].data,
-               channels_[1].data,
-               channels_[0].data,
-               samples_per_channel_);
-
-  num_channels_ = num_mixed_channels;
-  data_was_mixed_ = true;
-}
-
 void AudioBuffer::CopyAndMix(int num_mixed_channels) {
   // We currently only support the stereo to mono case.
-  assert(num_channels_ == 2);
+  assert(num_proc_channels_ == 2);
   assert(num_mixed_channels == 1);
+  if (!mixed_channels_.get()) {
+    mixed_channels_.reset(
+        new ChannelBuffer<int16_t>(proc_samples_per_channel_,
+                                   num_mixed_channels));
+  }
 
-  StereoToMono(channels_[0].data,
-               channels_[1].data,
-               mixed_channels_[0].data,
-               samples_per_channel_);
+  StereoToMono(channels_->channel(0),
+               channels_->channel(1),
+               mixed_channels_->channel(0),
+               proc_samples_per_channel_);
 
   num_mixed_channels_ = num_mixed_channels;
 }
 
 void AudioBuffer::CopyAndMixLowPass(int num_mixed_channels) {
   // We currently only support the stereo to mono case.
-  assert(num_channels_ == 2);
+  assert(num_proc_channels_ == 2);
   assert(num_mixed_channels == 1);
+  if (!mixed_low_pass_channels_.get()) {
+    mixed_low_pass_channels_.reset(
+        new ChannelBuffer<int16_t>(samples_per_split_channel_,
+                                   num_mixed_channels));
+  }
 
   StereoToMono(low_pass_split_data(0),
                low_pass_split_data(1),
-               mixed_low_pass_channels_[0].data,
+               mixed_low_pass_channels_->channel(0),
                samples_per_split_channel_);
 
   num_mixed_low_pass_channels_ = num_mixed_channels;
@@ -319,10 +371,14 @@ void AudioBuffer::CopyAndMixLowPass(int num_mixed_channels) {
 
 void AudioBuffer::CopyLowPassToReference() {
   reference_copied_ = true;
-  for (int i = 0; i < num_channels_; i++) {
-    memcpy(low_pass_reference_channels_[i].data,
-           low_pass_split_data(i),
-           sizeof(int16_t) * samples_per_split_channel_);
+  if (!low_pass_reference_channels_.get()) {
+    low_pass_reference_channels_.reset(
+        new ChannelBuffer<int16_t>(samples_per_split_channel_,
+                                   num_proc_channels_));
+  }
+  for (int i = 0; i < num_proc_channels_; i++) {
+    low_pass_reference_channels_->CopyFrom(low_pass_split_data(i), i);
   }
 }
+
 }  // namespace webrtc

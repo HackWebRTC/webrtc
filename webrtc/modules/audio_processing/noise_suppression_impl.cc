@@ -151,9 +151,11 @@ void NoiseSuppressionImpl::DestroyHandle(void* handle) const {
 
 int NoiseSuppressionImpl::InitializeHandle(void* handle) const {
 #if defined(WEBRTC_NS_FLOAT)
-  return WebRtcNs_Init(static_cast<Handle*>(handle), apm_->sample_rate_hz());
+  return WebRtcNs_Init(static_cast<Handle*>(handle),
+                       apm_->proc_sample_rate_hz());
 #elif defined(WEBRTC_NS_FIXED)
-  return WebRtcNsx_Init(static_cast<Handle*>(handle), apm_->sample_rate_hz());
+  return WebRtcNsx_Init(static_cast<Handle*>(handle),
+                        apm_->proc_sample_rate_hz());
 #endif
 }
 

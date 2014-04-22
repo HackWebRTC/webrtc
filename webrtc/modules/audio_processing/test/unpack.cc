@@ -165,8 +165,6 @@ while (ReadMessageFromFile(debug_file, &event_msg)) {
       // These should print out zeros if they're missing.
       fprintf(settings_file, "Init at frame: %d\n", frame_count);
       fprintf(settings_file, "  Sample rate: %d\n", msg.sample_rate());
-      fprintf(settings_file, "  Device sample rate: %d\n",
-              msg.device_sample_rate());
       fprintf(settings_file, "  Input channels: %d\n",
               msg.num_input_channels());
       fprintf(settings_file, "  Output channels: %d\n",
