@@ -44,14 +44,8 @@ int WebRtcVad_Create(VadInst** handle) {
   return 0;
 }
 
-int WebRtcVad_Free(VadInst* handle) {
-  if (handle == NULL) {
-    return -1;
-  }
-
+void WebRtcVad_Free(VadInst* handle) {
   free(handle);
-
-  return 0;
 }
 
 // TODO(bjornv): Move WebRtcVad_InitCore() code here.

@@ -34,9 +34,7 @@ int WebRtcVad_Create(VadInst** handle);
 // Frees the dynamic memory of a specified VAD instance.
 //
 // - handle [i] : Pointer to VAD instance that should be freed.
-//
-// returns      : 0 - (OK), -1 - (NULL pointer in)
-int WebRtcVad_Free(VadInst* handle);
+void WebRtcVad_Free(VadInst* handle);
 
 // Initializes a VAD instance.
 //
