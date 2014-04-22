@@ -114,7 +114,7 @@ static int TimestampLessThan(uint32_t t1, uint32_t t2) {
 
 }  // namespace
 
-AudioCodingModuleImpl::AudioCodingModuleImpl(int id)
+AudioCodingModuleImpl::AudioCodingModuleImpl(int id, Clock* clock)
     : packetization_callback_(NULL),
       id_(id),
       expected_codec_ts_(0xD87F3F9F),
@@ -131,6 +131,7 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(int id)
       stereo_send_(false),
       current_send_codec_idx_(-1),
       send_codec_registered_(false),
+      receiver_(clock),
       acm_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       vad_callback_(NULL),
       is_first_red_(true),

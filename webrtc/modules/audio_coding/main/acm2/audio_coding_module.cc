@@ -24,11 +24,11 @@ const char kExperimentalAcmVersion[] = "acm2";
 
 // Create module
 AudioCodingModule* AudioCodingModule::Create(int id) {
-  return new acm1::AudioCodingModuleImpl(id, Clock::GetRealTimeClock());
+  return new acm2::AudioCodingModuleImpl(id, Clock::GetRealTimeClock());
 }
 
 AudioCodingModule* AudioCodingModule::Create(int id, Clock* clock) {
-  return new acm1::AudioCodingModuleImpl(id, clock);
+  return new acm2::AudioCodingModuleImpl(id, clock);
 }
 
 // Get number of supported codecs
@@ -101,7 +101,7 @@ AudioCodingModule* AudioCodingModuleFactory::Create(int id) const {
 }
 
 AudioCodingModule* NewAudioCodingModuleFactory::Create(int id) const {
-  return new acm2::AudioCodingModuleImpl(id);
+  return new acm2::AudioCodingModuleImpl(id, Clock::GetRealTimeClock());
 }
 
 }  // namespace webrtc

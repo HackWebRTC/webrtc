@@ -27,6 +27,7 @@
 
 namespace webrtc {
 
+class Clock;
 struct CodecInst;
 class CriticalSectionWrapper;
 class RWLockWrapper;
@@ -47,9 +48,7 @@ class AcmReceiver {
   };
 
   // Constructor of the class
-  AcmReceiver();
-
-  explicit AcmReceiver(NetEq* neteq);
+  explicit AcmReceiver(Clock* clock);
 
   // Destructor of the class.
   ~AcmReceiver();
@@ -354,6 +353,7 @@ class AcmReceiver {
   int16_t audio_buffer_[AudioFrame::kMaxDataSizeSamples];
   scoped_ptr<Nack> nack_;
   bool nack_enabled_;
+  Clock* clock_;
 
   // Indicates if a non-zero initial delay is set, and the receiver is in
   // AV-sync mode.

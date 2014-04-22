@@ -23,6 +23,7 @@
 #include "webrtc/modules/audio_coding/main/acm2/nack.h"
 #include "webrtc/modules/audio_coding/neteq4/interface/audio_decoder.h"
 #include "webrtc/modules/audio_coding/neteq4/interface/neteq.h"
+#include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
@@ -116,7 +117,7 @@ bool IsCng(int codec_id) {
 
 }  // namespace
 
-AcmReceiver::AcmReceiver()
+AcmReceiver::AcmReceiver(Clock* clock)
     : id_(0),
       neteq_config_(),
       neteq_(NetEq::Create(neteq_config_)),
@@ -128,6 +129,7 @@ AcmReceiver::AcmReceiver()
       current_sample_rate_hz_(neteq_config_.sample_rate_hz),
       nack_(),
       nack_enabled_(false),
+      clock_(clock),
       av_sync_(false),
       initial_delay_manager_(),
       missing_packets_sync_stream_(),
@@ -817,7 +819,7 @@ uint32_t AcmReceiver::NowInTimestamp(int decoder_sampling_rate) const {
   // We masked 6 most significant bits of 32-bit so there is no overflow in
   // the conversion from milliseconds to timestamp.
   const uint32_t now_in_ms = static_cast<uint32_t>(
-      TickTime::MillisecondTimestamp() & 0x03ffffff);
+      clock_->TimeInMilliseconds() & 0x03ffffff);
   return static_cast<uint32_t>(
       (decoder_sampling_rate / 1000) * now_in_ms);
 }
