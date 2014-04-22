@@ -836,7 +836,7 @@ Channel::Channel(int32_t channelId,
         VoEModuleId(instanceId, channelId), Clock::GetRealTimeClock(), this,
         this, this, rtp_payload_registry_.get())),
     telephone_event_handler_(rtp_receiver_->GetTelephoneEventHandler()),
-    audio_coding_(config.Get<AudioCodingModuleFactory>().Create(
+    audio_coding_(AudioCodingModule::Create(
         VoEModuleId(instanceId, channelId))),
     _rtpDumpIn(*RtpDump::CreateRtpDump()),
     _rtpDumpOut(*RtpDump::CreateRtpDump()),
