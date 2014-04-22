@@ -16,7 +16,6 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/call.h"
-#include "webrtc/common.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/rtp_to_ntp.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
@@ -156,16 +155,14 @@ class VideoRtcpAndSyncObserver : public SyncRtcpObserver, public VideoRenderer {
   VideoRtcpAndSyncObserver(Clock* clock,
                            int voe_channel,
                            VoEVideoSync* voe_sync,
-                           SyncRtcpObserver* audio_observer,
-                           bool using_new_acm)
+                           SyncRtcpObserver* audio_observer)
       : SyncRtcpObserver(FakeNetworkPipe::Config()),
         clock_(clock),
         voe_channel_(voe_channel),
         voe_sync_(voe_sync),
         audio_observer_(audio_observer),
         creation_time_ms_(clock_->TimeInMilliseconds()),
-        first_time_in_sync_(-1),
-        using_new_acm_(using_new_acm) {}
+        first_time_in_sync_(-1) {}
 
   virtual void RenderFrame(const I420VideoFrame& video_frame,
                            int time_to_render_ms) OVERRIDE {
@@ -184,12 +181,8 @@ class VideoRtcpAndSyncObserver : public SyncRtcpObserver, public VideoRenderer {
     int64_t stream_offset = latest_audio_ntp - latest_video_ntp;
     std::stringstream ss;
     ss << stream_offset;
-    std::stringstream acm_type;
-    if (using_new_acm_) {
-      acm_type << "_acm2";
-    }
     webrtc::test::PrintResult("stream_offset",
-                              acm_type.str(),
+                              "",
                               "synchronization",
                               ss.str(),
                               "ms",
@@ -203,7 +196,7 @@ class VideoRtcpAndSyncObserver : public SyncRtcpObserver, public VideoRenderer {
       if (first_time_in_sync_ == -1) {
         first_time_in_sync_ = now_ms;
         webrtc::test::PrintResult("sync_convergence_time",
-                                  acm_type.str(),
+                                  "",
                                   "synchronization",
                                   time_since_creation,
                                   "ms",
@@ -221,19 +214,9 @@ class VideoRtcpAndSyncObserver : public SyncRtcpObserver, public VideoRenderer {
   SyncRtcpObserver* audio_observer_;
   int64_t creation_time_ms_;
   int64_t first_time_in_sync_;
-  bool using_new_acm_;
 };
 
-class ParamCallPerfTest : public CallPerfTest,
-                          public ::testing::WithParamInterface<bool> {
- public:
-  ParamCallPerfTest() : CallPerfTest(), use_new_acm_(GetParam()) {}
-
- protected:
-  bool use_new_acm_;
-};
-
-TEST_P(ParamCallPerfTest, PlaysOutAudioAndVideoInSync) {
+TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSync) {
   VoiceEngine* voice_engine = VoiceEngine::Create();
   VoEBase* voe_base = VoEBase::GetInterface(voice_engine);
   VoECodec* voe_codec = VoECodec::GetInterface(voice_engine);
@@ -245,15 +228,7 @@ TEST_P(ParamCallPerfTest, PlaysOutAudioAndVideoInSync) {
   test::FakeAudioDevice fake_audio_device(Clock::GetRealTimeClock(),
                                           audio_filename);
   EXPECT_EQ(0, voe_base->Init(&fake_audio_device, NULL));
-  Config config;
-  if (use_new_acm_) {
-    config.Set<webrtc::AudioCodingModuleFactory>(
-        new webrtc::NewAudioCodingModuleFactory());
-  } else {
-    config.Set<webrtc::AudioCodingModuleFactory>(
-        new webrtc::AudioCodingModuleFactory());
-  }
-  int channel = voe_base->CreateChannel(config);
+  int channel = voe_base->CreateChannel();
 
   FakeNetworkPipe::Config net_config;
   net_config.queue_delay_ms = 500;
@@ -261,8 +236,7 @@ TEST_P(ParamCallPerfTest, PlaysOutAudioAndVideoInSync) {
   VideoRtcpAndSyncObserver observer(Clock::GetRealTimeClock(),
                                     channel,
                                     voe_sync,
-                                    &audio_observer,
-                                    use_new_acm_);
+                                    &audio_observer);
 
   Call::Config receiver_config(observer.ReceiveTransport());
   receiver_config.voice_engine = voice_engine;
@@ -368,9 +342,6 @@ TEST_P(ParamCallPerfTest, PlaysOutAudioAndVideoInSync) {
   receiver_call->DestroyVideoReceiveStream(receive_stream);
   VoiceEngine::Delete(voice_engine);
 }
-
-// Test with both ACM1 and ACM2.
-INSTANTIATE_TEST_CASE_P(SwitchAcm, ParamCallPerfTest, ::testing::Bool());
 
 TEST_F(CallPerfTest, RegisterCpuOveruseObserver) {
   // Verifies that either a normal or overuse callback is triggered.
