@@ -351,9 +351,9 @@ void* EchoCancellationImpl::CreateHandle() const {
   return handle;
 }
 
-int EchoCancellationImpl::DestroyHandle(void* handle) const {
+void EchoCancellationImpl::DestroyHandle(void* handle) const {
   assert(handle != NULL);
-  return WebRtcAec_Free(static_cast<Handle*>(handle));
+  WebRtcAec_Free(static_cast<Handle*>(handle));
 }
 
 int EchoCancellationImpl::InitializeHandle(void* handle) const {

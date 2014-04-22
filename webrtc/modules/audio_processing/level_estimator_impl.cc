@@ -135,11 +135,10 @@ void* LevelEstimatorImpl::CreateHandle() const {
   return new Level;
 }
 
-int LevelEstimatorImpl::DestroyHandle(void* handle) const {
+void LevelEstimatorImpl::DestroyHandle(void* handle) const {
   assert(handle != NULL);
   Level* level = static_cast<Level*>(handle);
   delete level;
-  return apm_->kNoError;
 }
 
 int LevelEstimatorImpl::InitializeHandle(void* handle) const {

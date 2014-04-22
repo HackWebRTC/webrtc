@@ -38,7 +38,7 @@ class ProcessingComponent {
   virtual void* CreateHandle() const = 0;
   virtual int InitializeHandle(void* handle) const = 0;
   virtual int ConfigureHandle(void* handle) const = 0;
-  virtual int DestroyHandle(void* handle) const = 0;
+  virtual void DestroyHandle(void* handle) const = 0;
   virtual int num_handles_required() const = 0;
   virtual int GetHandleError(void* handle) const = 0;
 

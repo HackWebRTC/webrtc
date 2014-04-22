@@ -163,9 +163,8 @@ void* VoiceDetectionImpl::CreateHandle() const {
   return handle;
 }
 
-int VoiceDetectionImpl::DestroyHandle(void* handle) const {
+void VoiceDetectionImpl::DestroyHandle(void* handle) const {
   WebRtcVad_Free(static_cast<Handle*>(handle));
-  return apm_->kNoError;
 }
 
 int VoiceDetectionImpl::InitializeHandle(void* handle) const {

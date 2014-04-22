@@ -317,8 +317,8 @@ void* GainControlImpl::CreateHandle() const {
   return handle;
 }
 
-int GainControlImpl::DestroyHandle(void* handle) const {
-  return WebRtcAgc_Free(static_cast<Handle*>(handle));
+void GainControlImpl::DestroyHandle(void* handle) const {
+  WebRtcAgc_Free(static_cast<Handle*>(handle));
 }
 
 int GainControlImpl::InitializeHandle(void* handle) const {

@@ -260,8 +260,8 @@ void* EchoControlMobileImpl::CreateHandle() const {
   return handle;
 }
 
-int EchoControlMobileImpl::DestroyHandle(void* handle) const {
-  return WebRtcAecm_Free(static_cast<Handle*>(handle));
+void EchoControlMobileImpl::DestroyHandle(void* handle) const {
+  WebRtcAecm_Free(static_cast<Handle*>(handle));
 }
 
 int EchoControlMobileImpl::InitializeHandle(void* handle) const {

@@ -141,11 +141,11 @@ void* NoiseSuppressionImpl::CreateHandle() const {
   return handle;
 }
 
-int NoiseSuppressionImpl::DestroyHandle(void* handle) const {
+void NoiseSuppressionImpl::DestroyHandle(void* handle) const {
 #if defined(WEBRTC_NS_FLOAT)
-  return WebRtcNs_Free(static_cast<Handle*>(handle));
+  WebRtcNs_Free(static_cast<Handle*>(handle));
 #elif defined(WEBRTC_NS_FIXED)
-  return WebRtcNsx_Free(static_cast<Handle*>(handle));
+  WebRtcNsx_Free(static_cast<Handle*>(handle));
 #endif
 }
 

@@ -42,7 +42,7 @@ class NoiseSuppressionImpl : public NoiseSuppression,
   virtual void* CreateHandle() const OVERRIDE;
   virtual int InitializeHandle(void* handle) const OVERRIDE;
   virtual int ConfigureHandle(void* handle) const OVERRIDE;
-  virtual int DestroyHandle(void* handle) const OVERRIDE;
+  virtual void DestroyHandle(void* handle) const OVERRIDE;
   virtual int num_handles_required() const OVERRIDE;
   virtual int GetHandleError(void* handle) const OVERRIDE;
 
