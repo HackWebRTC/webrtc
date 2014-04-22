@@ -640,6 +640,7 @@ void AcmReceiver::NetworkStatistics(ACMNetworkStatistics* acm_stat) {
   acm_stat->currentPreemptiveRate = neteq_stat.preemptive_rate;
   acm_stat->currentAccelerateRate = neteq_stat.accelerate_rate;
   acm_stat->clockDriftPPM = neteq_stat.clockdrift_ppm;
+  acm_stat->addedSamples = neteq_stat.added_zero_samples;
 
   std::vector<int> waiting_times;
   neteq_->WaitingTimes(&waiting_times);
