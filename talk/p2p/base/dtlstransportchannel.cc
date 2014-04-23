@@ -364,7 +364,7 @@ int DtlsTransportChannelWrapper::SendPacket(
       if (flags & PF_SRTP_BYPASS) {
         ASSERT(!srtp_ciphers_.empty());
         if (!IsRtpPacket(data, size)) {
-          result = false;
+          result = -1;
           break;
         }
 

@@ -254,6 +254,17 @@ class DtlsTestClient : public sigslot::has_slots<> {
     } while (sent < count);
   }
 
+  int SendInvalidSrtpPacket(size_t channel, size_t size) {
+    ASSERT(channel < channels_.size());
+    talk_base::scoped_ptr<char[]> packet(new char[size]);
+    // Fill the packet with 0 to form an invalid SRTP packet.
+    memset(packet.get(), 0, size);
+
+    talk_base::PacketOptions packet_options;
+    return channels_[channel]->SendPacket(
+        packet.get(), size, packet_options, cricket::PF_SRTP_BYPASS);
+  }
+
   void ExpectPackets(size_t channel, size_t size) {
     packet_size_ = size;
     received_.clear();
@@ -624,6 +635,16 @@ TEST_F(DtlsTransportChannelTest, TestTransferDtlsSrtp) {
   TestTransfer(0, 1000, 100, true);
 }
 
+// Connect with DTLS-SRTP, transfer an invalid SRTP packet, and expects -1
+// returned.
+TEST_F(DtlsTransportChannelTest, TestTransferDtlsInvalidSrtpPacket) {
+  MAYBE_SKIP_TEST(HaveDtls);
+  PrepareDtls(true, true);
+  PrepareDtlsSrtp(true, true);
+  ASSERT_TRUE(Connect());
+  int result = client1_.SendInvalidSrtpPacket(0, 100);
+  ASSERT_EQ(-1, result);
+}
 
 // Connect with DTLS. A does DTLS-SRTP but B does not.
 TEST_F(DtlsTransportChannelTest, TestTransferDtlsSrtpRejected) {
