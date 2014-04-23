@@ -473,6 +473,7 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   aec->delay_logging_enabled = 0;
   memset(aec->delay_histogram, 0, sizeof(aec->delay_histogram));
 
+  aec->reported_delay_enabled = 1;
   aec->extended_filter_enabled = 0;
   aec->num_partitions = kNormalNumPartitions;
 
@@ -783,6 +784,14 @@ void WebRtcAec_SetConfigCore(AecCore* self,
   if (self->delay_logging_enabled) {
     memset(self->delay_histogram, 0, sizeof(self->delay_histogram));
   }
+}
+
+void WebRtcAec_enable_reported_delay(AecCore* self, int enable) {
+  self->reported_delay_enabled = enable;
+}
+
+int WebRtcAec_reported_delay_enabled(AecCore* self) {
+  return self->reported_delay_enabled;
 }
 
 void WebRtcAec_enable_delay_correction(AecCore* self, int enable) {

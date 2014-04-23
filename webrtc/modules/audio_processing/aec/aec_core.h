@@ -104,6 +104,12 @@ void WebRtcAec_SetConfigCore(AecCore* self,
                              int metrics_mode,
                              int delay_logging);
 
+// Non-zero enables, zero disables.
+void WebRtcAec_enable_reported_delay(AecCore* self, int enable);
+
+// Returns non-zero if reported delay is enabled and zero if disabled.
+int WebRtcAec_reported_delay_enabled(AecCore* self);
+
 // We now interpret delay correction to mean an extended filter length feature.
 // We reuse the delay correction infrastructure to avoid changes through to
 // libjingle. See details along with |DelayCorrection| in

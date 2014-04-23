@@ -67,7 +67,8 @@ EchoCancellationImpl::EchoCancellationImpl(const AudioProcessing* apm,
     was_stream_drift_set_(false),
     stream_has_echo_(false),
     delay_logging_enabled_(false),
-    delay_correction_enabled_(false) {}
+    delay_correction_enabled_(false),
+    reported_delay_enabled_(true) {}
 
 EchoCancellationImpl::~EchoCancellationImpl() {}
 
@@ -361,6 +362,8 @@ int EchoCancellationImpl::ConfigureHandle(void* handle) const {
 
   WebRtcAec_enable_delay_correction(WebRtcAec_aec_core(
       static_cast<Handle*>(handle)), delay_correction_enabled_ ? 1 : 0);
+  WebRtcAec_enable_reported_delay(WebRtcAec_aec_core(
+      static_cast<Handle*>(handle)), reported_delay_enabled_ ? 1 : 0);
   return WebRtcAec_set_config(static_cast<Handle*>(handle), config);
 }
 

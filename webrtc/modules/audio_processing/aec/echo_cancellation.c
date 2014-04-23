@@ -766,7 +766,9 @@ static int ProcessNormal(aecpc_t* aecpc,
     }
   } else {
     // AEC is enabled.
-    EstBufDelayNormal(aecpc);
+    if (WebRtcAec_reported_delay_enabled(aecpc->aec)) {
+      EstBufDelayNormal(aecpc);
+    }
 
     // Note that 1 frame is supported for NB and 2 frames for WB.
     for (i = 0; i < nFrames; i++) {
@@ -842,7 +844,9 @@ static void ProcessExtended(aecpc_t* self,
     self->startup_phase = 0;
   }
 
-  EstBufDelayExtended(self);
+  if (WebRtcAec_reported_delay_enabled(self->aec)) {
+    EstBufDelayExtended(self);
+  }
 
   {
     // |delay_diff_offset| gives us the option to manually rewind the delay on

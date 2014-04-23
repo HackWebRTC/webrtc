@@ -122,6 +122,7 @@ struct AecCore {
   void* delay_estimator_farend;
   void* delay_estimator;
 
+  int reported_delay_enabled;  // 0 = disabled, otherwise enabled.
   // 1 = extended filter mode enabled, 0 = disabled.
   int extended_filter_enabled;
   // Runtime selection of number of filter partitions.
