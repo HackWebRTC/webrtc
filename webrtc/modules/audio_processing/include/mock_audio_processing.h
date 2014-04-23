@@ -194,6 +194,8 @@ class MockAudioProcessing : public AudioProcessing {
       int(int rate));
   MOCK_CONST_METHOD0(input_sample_rate_hz,
       int());
+  MOCK_CONST_METHOD0(sample_rate_hz,
+      int());
   MOCK_CONST_METHOD0(proc_sample_rate_hz,
       int());
   MOCK_CONST_METHOD0(proc_split_sample_rate_hz,

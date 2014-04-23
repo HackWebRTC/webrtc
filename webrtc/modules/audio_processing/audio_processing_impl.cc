@@ -312,6 +312,11 @@ int AudioProcessingImpl::input_sample_rate_hz() const {
   return fwd_in_format_.rate();
 }
 
+int AudioProcessingImpl::sample_rate_hz() const {
+  CriticalSectionScoped crit_scoped(crit_);
+  return fwd_in_format_.rate();
+}
+
 int AudioProcessingImpl::proc_sample_rate_hz() const {
   return fwd_proc_format_.rate();
 }

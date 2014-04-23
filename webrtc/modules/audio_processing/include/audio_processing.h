@@ -195,10 +195,11 @@ class AudioProcessing {
   // DEPRECATED.
   // TODO(ajm): Remove after Chromium has upgraded to using Initialize().
   virtual int set_sample_rate_hz(int rate) = 0;
-  // DEPRECATED.
   // TODO(ajm): Remove after voice engine no longer requires it to resample
   // the reverse stream to the forward rate.
   virtual int input_sample_rate_hz() const = 0;
+  // TODO(ajm): Remove after Chromium no longer depends on it.
+  virtual int sample_rate_hz() const = 0;
 
   // TODO(ajm): Only intended for internal use. Make private and friend the
   // necessary classes?

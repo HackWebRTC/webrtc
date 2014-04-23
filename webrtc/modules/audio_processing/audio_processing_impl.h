@@ -98,6 +98,7 @@ class AudioProcessingImpl : public AudioProcessing {
   }
   virtual int set_sample_rate_hz(int rate) OVERRIDE;
   virtual int input_sample_rate_hz() const OVERRIDE;
+  virtual int sample_rate_hz() const OVERRIDE;
   virtual int proc_sample_rate_hz() const OVERRIDE;
   virtual int proc_split_sample_rate_hz() const OVERRIDE;
   virtual int num_input_channels() const OVERRIDE;
