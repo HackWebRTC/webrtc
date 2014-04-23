@@ -4,6 +4,7 @@ ApmTest.FloatAndIntInterfacesGiveIdenticalResults
 ApmTest.IdenticalInputChannelsResultInIdenticalOutputChannels
 ApmTest.VerifyDebugDumpFloat
 ApmTest.VerifyDebugDumpInt
+CommonFormats/AudioProcessingTest*
 TestScaler.PointScaleTest
 TestScaler.BiLinearScaleTest
 TestScaler.BoxScaleTest

@@ -1,6 +1,7 @@
 # Too slow to run with TSan on Windows.
 ApmTest.EchoCancellationReportsCorrectDelays
 ApmTest.IdenticalInputChannelsResultInIdenticalOutputChannels
+CommonFormats/AudioProcessingTest*
 RingBufferTest.RandomStressTest
 RingBufferTest.RandomStressTestWithNullPtr
 VideoProcessingModuleTest.ContentAnalysis
