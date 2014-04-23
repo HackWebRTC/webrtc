@@ -370,9 +370,9 @@ bool UnixFilesystem::GetAppPathname(Pathname* path) {
 #elif defined(__native_client__)
   return false;
 #else  // OSX
-  char buffer[NAME_MAX+1];
-  size_t len = readlink("/proc/self/exe", buffer, ARRAY_SIZE(buffer) - 1);
-  if (len <= 0)
+  char buffer[PATH_MAX + 2];
+  ssize_t len = readlink("/proc/self/exe", buffer, ARRAY_SIZE(buffer) - 1);
+  if ((len <= 0) || (len == PATH_MAX + 1))
     return false;
   buffer[len] = '\0';
   path->SetPathname(buffer);
