@@ -19,10 +19,7 @@
 
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/common.h"
-#include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
-#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/channel_transport/include/channel_transport.h"
@@ -42,8 +39,6 @@
 #include "webrtc/voice_engine/include/voe_video_sync.h"
 #include "webrtc/voice_engine/include/voe_volume_control.h"
 
-DEFINE_bool(use_acm_version_1, false,
-            "If true, we'll run the tests with Audio Coding Module version 2.");
 DEFINE_bool(use_log_file, false,
     "Output logs to a file; by default they will be printed to stderr.");
 
@@ -129,13 +124,7 @@ int main(int argc, char** argv) {
 
   printf("Test started \n");
 
-  // TODO(minyue): Remove when the old ACM is removed.
-  Config config;
-  config.Set<AudioCodingModuleFactory>(FLAGS_use_acm_version_1 ?
-      new AudioCodingModuleFactory() :
-      new NewAudioCodingModuleFactory());
-  m_voe = VoiceEngine::Create(config);
-
+  m_voe = VoiceEngine::Create();
   base1 = VoEBase::GetInterface(m_voe);
   codec = VoECodec::GetInterface(m_voe);
   apm = VoEAudioProcessing::GetInterface(m_voe);

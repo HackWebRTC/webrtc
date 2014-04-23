@@ -15,7 +15,6 @@
 #include <string>
 
 #include "gflags/gflags.h"
-#include "webrtc/common.h"
 #include "webrtc/voice_engine/include/voe_audio_processing.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_dtmf.h"
@@ -201,8 +200,6 @@ class VoETestManager {
   VoEAudioProcessing*    voe_apm_;
 
   ResourceManager        resource_manager_;
-
-  Config                 config_;
 };
 
 }  // namespace voetest

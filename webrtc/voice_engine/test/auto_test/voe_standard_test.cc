@@ -10,11 +10,11 @@
 
 #include "webrtc/voice_engine/test/auto_test/voe_standard_test.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "webrtc/engine_configurations.h"
-#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/voice_engine/include/voe_neteq_stats.h"
 #include "webrtc/voice_engine/test/auto_test/automated_mode.h"
@@ -29,8 +29,6 @@ DEFINE_bool(include_timing_dependent_tests, true,
 DEFINE_bool(automated, false,
             "If true, we'll run the automated tests we have in noninteractive "
             "mode.");
-DEFINE_bool(use_acm_version_2, false,
-            "If true, we'll run the tests with Audio Coding Module version 2.");
 
 using namespace webrtc;
 
@@ -127,12 +125,7 @@ bool VoETestManager::Init() {
     return false;
   }
 
-  // TODO(minyue): Remove when the old ACM is removed (latest 2014-04-01).
-  config_.Set<AudioCodingModuleFactory>(FLAGS_use_acm_version_2 ?
-      new NewAudioCodingModuleFactory() :
-      new AudioCodingModuleFactory());
-  voice_engine_ = VoiceEngine::Create(config_);
-
+  voice_engine_ = VoiceEngine::Create();
   if (!voice_engine_) {
     TEST_LOG("Failed to create VoiceEngine\n");
     return false;
