@@ -211,8 +211,9 @@ void OpusTest::Run(TestPackStereo* channel, int channels, int bitrate,
                    int frame_length, int percent_loss) {
   AudioFrame audio_frame;
   int32_t out_freq_hz_b = out_file_.SamplingFrequency();
-  int16_t audio[480 * 12 * 2];  // Can hold 120 ms stereo audio.
-  int16_t out_audio[480 * 12 * 2];  // Can hold 120 ms stereo audio.
+  const int kBufferSizeSamples = 480 * 12 * 2;  // Can hold 120 ms stereo audio.
+  int16_t audio[kBufferSizeSamples];
+  int16_t out_audio[kBufferSizeSamples];
   int16_t audio_type;
   int written_samples = 0;
   int read_samples = 0;
@@ -257,6 +258,7 @@ void OpusTest::Run(TestPackStereo* channel, int channels, int bitrate,
                                         audio_frame.sample_rate_hz_,
                                         48000,
                                         channels,
+                                        kBufferSizeSamples - written_samples,
                                         &audio[written_samples]));
     written_samples += 480 * channels;
 

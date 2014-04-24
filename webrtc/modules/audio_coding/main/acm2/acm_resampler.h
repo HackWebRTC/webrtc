@@ -26,6 +26,7 @@ class ACMResampler {
                      int in_freq_hz,
                      int out_freq_hz,
                      int num_audio_channels,
+                     int out_capacity_samples,
                      int16_t* out_audio);
 
  private:

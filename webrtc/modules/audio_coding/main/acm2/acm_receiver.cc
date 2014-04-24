@@ -428,9 +428,13 @@ int AcmReceiver::GetAudio(int desired_freq_hz, AudioFrame* audio_frame) {
   if (ptr_audio_buffer == audio_buffer_) {
     // Data is written to local buffer.
     if (need_resampling) {
-      samples_per_channel = resampler_.Resample10Msec(
-          audio_buffer_, current_sample_rate_hz_, desired_freq_hz,
-          num_channels, audio_frame->data_);
+      samples_per_channel =
+          resampler_.Resample10Msec(audio_buffer_,
+                                    current_sample_rate_hz_,
+                                    desired_freq_hz,
+                                    num_channels,
+                                    AudioFrame::kMaxDataSizeSamples,
+                                    audio_frame->data_);
       if (samples_per_channel < 0) {
         LOG_FERR0(LS_ERROR, "AcmReceiver::GetAudio") << "Resampler Failed.";
         return -1;
@@ -444,9 +448,13 @@ int AcmReceiver::GetAudio(int desired_freq_hz, AudioFrame* audio_frame) {
     // Data is written into |audio_frame|.
     if (need_resampling) {
       // We might end up here ONLY if codec is changed.
-      samples_per_channel = resampler_.Resample10Msec(
-          audio_frame->data_, current_sample_rate_hz_, desired_freq_hz,
-          num_channels, audio_buffer_);
+      samples_per_channel =
+          resampler_.Resample10Msec(audio_frame->data_,
+                                    current_sample_rate_hz_,
+                                    desired_freq_hz,
+                                    num_channels,
+                                    AudioFrame::kMaxDataSizeSamples,
+                                    audio_buffer_);
       if (samples_per_channel < 0) {
         LOG_FERR0(LS_ERROR, "AcmReceiver::GetAudio") << "Resampler Failed.";
         return -1;

@@ -1362,9 +1362,13 @@ int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
     // The result of the resampler is written to output frame.
     dest_ptr_audio = preprocess_frame_.data_;
 
-    preprocess_frame_.samples_per_channel_ = resampler_.Resample10Msec(
-        src_ptr_audio, in_frame.sample_rate_hz_, send_codec_inst_.plfreq,
-        preprocess_frame_.num_channels_, dest_ptr_audio);
+    preprocess_frame_.samples_per_channel_ =
+        resampler_.Resample10Msec(src_ptr_audio,
+                                  in_frame.sample_rate_hz_,
+                                  send_codec_inst_.plfreq,
+                                  preprocess_frame_.num_channels_,
+                                  AudioFrame::kMaxDataSizeSamples,
+                                  dest_ptr_audio);
 
     if (preprocess_frame_.samples_per_channel_ < 0) {
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
