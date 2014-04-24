@@ -3237,6 +3237,17 @@ int Channel::SetSendAudioLevelIndicationStatus(bool enable, unsigned char id) {
   return SetSendRtpHeaderExtension(enable, kRtpExtensionAudioLevel, id);
 }
 
+int Channel::SetReceiveAudioLevelIndicationStatus(bool enable,
+                                                  unsigned char id) {
+  rtp_header_parser_->DeregisterRtpHeaderExtension(
+      kRtpExtensionAudioLevel);
+  if (enable && !rtp_header_parser_->RegisterRtpHeaderExtension(
+          kRtpExtensionAudioLevel, id)) {
+    return -1;
+  }
+  return 0;
+}
+
 int Channel::SetSendAbsoluteSenderTimeStatus(bool enable, unsigned char id) {
   return SetSendRtpHeaderExtension(enable, kRtpExtensionAbsoluteSendTime, id);
 }

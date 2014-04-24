@@ -472,7 +472,8 @@ void RTPHeaderParser::ParseOneByteExtensionHeader(
     RTPExtensionType type;
     if (ptrExtensionMap->GetType(id, &type) != 0) {
       // If we encounter an unknown extension, just skip over it.
-      LOG(LS_WARNING) << "Failed to find extension id: " << id;
+      LOG(LS_WARNING) << "Failed to find extension id: "
+                      << static_cast<int>(id);
     } else {
       switch (type) {
         case kRtpExtensionTransmissionTimeOffset: {

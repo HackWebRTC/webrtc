@@ -246,6 +246,36 @@ int VoERTP_RTCPImpl::SetSendAudioLevelIndicationStatus(int channel,
     return channelPtr->SetSendAudioLevelIndicationStatus(enable, id);
 }
 
+int VoERTP_RTCPImpl::SetReceiveAudioLevelIndicationStatus(int channel,
+                                                          bool enable,
+                                                          unsigned char id) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+      "SetReceiveAudioLevelIndicationStatus(channel=%d, enable=%d, id=%u)",
+      channel, enable, id);
+  if (!_shared->statistics().Initialized()) {
+    _shared->SetLastError(VE_NOT_INITED, kTraceError);
+    return -1;
+  }
+  if (enable &&
+      (id < kVoiceEngineMinRtpExtensionId ||
+       id > kVoiceEngineMaxRtpExtensionId)) {
+    // [RFC5285] The 4-bit id is the local identifier of this element in
+    // the range 1-14 inclusive.
+    _shared->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
+        "SetReceiveAbsoluteSenderTimeStatus() invalid id parameter");
+    return -1;
+  }
+  // Set state and id for the specified channel.
+  voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
+  voe::Channel* channel_ptr = ch.channel();
+  if (channel_ptr == NULL) {
+    _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+        "SetReceiveAudioLevelIndicationStatus() failed to locate channel");
+    return -1;
+  }
+  return channel_ptr->SetReceiveAudioLevelIndicationStatus(enable, id);
+}
+
 int VoERTP_RTCPImpl::SetSendAbsoluteSenderTimeStatus(int channel,
                                                      bool enable,
                                                      unsigned char id) {

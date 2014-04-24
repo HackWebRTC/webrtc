@@ -319,6 +319,7 @@ public:
     int GetRemoteSSRC(unsigned int& ssrc);
     int GetRemoteCSRCs(unsigned int arrCSRC[15]);
     int SetSendAudioLevelIndicationStatus(bool enable, unsigned char id);
+    int SetReceiveAudioLevelIndicationStatus(bool enable, unsigned char id);
     int SetSendAbsoluteSenderTimeStatus(bool enable, unsigned char id);
     int SetReceiveAbsoluteSenderTimeStatus(bool enable, unsigned char id);
     int SetRTCPStatus(bool enable);

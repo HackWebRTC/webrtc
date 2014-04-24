@@ -66,6 +66,9 @@ public:
     virtual int SetSendAudioLevelIndicationStatus(int channel,
                                                   bool enable,
                                                   unsigned char id);
+    virtual int SetReceiveAudioLevelIndicationStatus(int channel,
+                                                     bool enable,
+                                                     unsigned char id);
 
     // RTP Header Extension for Absolute Sender Time
     virtual int SetSendAbsoluteSenderTimeStatus(int channel,

@@ -157,6 +157,15 @@ public:
                                                   bool enable,
                                                   unsigned char id = 1) = 0;
 
+    // Sets the status of receiving rtp-audio-level-indication on a specific
+    // |channel|.
+    virtual int SetReceiveAudioLevelIndicationStatus(int channel,
+                                                     bool enable,
+                                                     unsigned char id = 1) {
+      // TODO(wu): Remove default implementation once talk is updated.
+      return 0;
+    }
+
     // Sets the status of sending absolute sender time on a specific |channel|.
     virtual int SetSendAbsoluteSenderTimeStatus(int channel,
                                                 bool enable,
