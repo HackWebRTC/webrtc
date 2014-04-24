@@ -229,13 +229,15 @@ std::string ResourceFilePath(std::string name, int sample_rate_hz) {
 }
 
 std::string OutputFilePath(std::string name,
-                           int sample_rate_hz,
+                           int input_rate,
+                           int output_rate,
+                           int reverse_rate,
                            int num_input_channels,
                            int num_output_channels,
                            int num_reverse_channels) {
   std::ostringstream ss;
-  ss << name << sample_rate_hz / 1000 << "_" << num_reverse_channels << "r" <<
-      num_input_channels << "i" << "_";
+  ss << name << "_i" << num_input_channels << "_" << input_rate / 1000
+     << "_r" << num_reverse_channels << "_" << reverse_rate  / 1000 << "_";
   if (num_output_channels == 1) {
     ss << "mono";
   } else if (num_output_channels == 2) {
@@ -243,7 +245,7 @@ std::string OutputFilePath(std::string name,
   } else {
     assert(false);
   }
-  ss << ".pcm";
+  ss << output_rate / 1000 << ".pcm";
 
   return test::OutputPath() + ss.str();
 }
@@ -427,8 +429,13 @@ void ApmTest::Init(int sample_rate_hz,
     if (out_file_) {
       ASSERT_EQ(0, fclose(out_file_));
     }
-    filename = OutputFilePath("out", sample_rate_hz, num_input_channels,
-                              num_output_channels, num_reverse_channels);
+    filename = OutputFilePath("out",
+                              sample_rate_hz,
+                              output_sample_rate_hz,
+                              reverse_sample_rate_hz,
+                              num_input_channels,
+                              num_output_channels,
+                              num_reverse_channels);
     out_file_ = fopen(filename.c_str(), "wb");
     ASSERT_TRUE(out_file_ != NULL) << "Could not open file " <<
           filename << "\n";
@@ -2046,7 +2053,9 @@ class AudioProcessingTest
     FILE* far_file = fopen(ResourceFilePath("far", reverse_rate).c_str(), "rb");
     FILE* near_file = fopen(ResourceFilePath("near", input_rate).c_str(), "rb");
     FILE* out_file = fopen(OutputFilePath(output_file_prefix,
+                                          input_rate,
                                           output_rate,
+                                          reverse_rate,
                                           num_input_channels,
                                           num_output_channels,
                                           num_reverse_channels).c_str(), "wb");
@@ -2152,12 +2161,16 @@ TEST_P(AudioProcessingTest, Formats) {
 #endif
 
     FILE* out_file = fopen(OutputFilePath("out",
+                                          input_rate_,
                                           output_rate_,
+                                          reverse_rate_,
                                           cf[i].num_input,
                                           cf[i].num_output,
                                           cf[i].num_reverse).c_str(), "rb");
     // The reference files always have matching input and output channels.
     FILE* ref_file = fopen(OutputFilePath("ref",
+                                          ref_rate,
+                                          ref_rate,
                                           ref_rate,
                                           cf[i].num_output,
                                           cf[i].num_output,
