@@ -237,7 +237,7 @@ TCPConnection::TCPConnection(TCPPort* port, const Candidate& candidate,
     int opts = (candidate.protocol() == SSLTCP_PROTOCOL_NAME) ?
         talk_base::PacketSocketFactory::OPT_SSLTCP : 0;
     socket_ = port->socket_factory()->CreateClientTcpSocket(
-        talk_base::SocketAddress(port_->Network()->ip(), 0),
+        talk_base::SocketAddress(port->ip(), 0),
         candidate.address(), port->proxy(), port->user_agent(), opts);
     if (socket_) {
       LOG_J(LS_VERBOSE, this) << "Connecting from "
@@ -293,9 +293,19 @@ int TCPConnection::GetError() {
 
 void TCPConnection::OnConnect(talk_base::AsyncPacketSocket* socket) {
   ASSERT(socket == socket_);
-  LOG_J(LS_VERBOSE, this) << "Connection established to "
-                          << socket->GetRemoteAddress().ToSensitiveString();
-  set_connected(true);
+  // Do not use this connection if the socket bound to a different address than
+  // the one we asked for. This is seen in Chrome, where TCP sockets cannot be
+  // given a binding address, and the platform is expected to pick the
+  // correct local address.
+  if (socket->GetLocalAddress().ipaddr() == port()->ip()) {
+    LOG_J(LS_VERBOSE, this) << "Connection established to "
+                            << socket->GetRemoteAddress().ToSensitiveString();
+    set_connected(true);
+  } else {
+    LOG_J(LS_WARNING, this) << "Dropping connection as TCP socket bound to a "
+                            << "different address from the local candidate.";
+    socket_->Close();
+  }
 }
 
 void TCPConnection::OnClose(talk_base::AsyncPacketSocket* socket, int error) {

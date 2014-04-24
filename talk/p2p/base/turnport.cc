@@ -297,6 +297,18 @@ void TurnPort::PrepareAddress() {
 }
 
 void TurnPort::OnSocketConnect(talk_base::AsyncPacketSocket* socket) {
+  ASSERT(server_address_.proto == PROTO_TCP);
+  // Do not use this port if the socket bound to a different address than
+  // the one we asked for. This is seen in Chrome, where TCP sockets cannot be
+  // given a binding address, and the platform is expected to pick the
+  // correct local address.
+  if (socket->GetLocalAddress().ipaddr() != ip()) {
+    LOG(LS_WARNING) << "Socket is bound to a different address then the "
+                    << "local port. Discarding TURN port.";
+    OnAllocateError();
+    return;
+  }
+
   LOG(LS_INFO) << "TurnPort connected to " << socket->GetRemoteAddress()
                << " using tcp.";
   SendRequest(new TurnAllocateRequest(this), 0);
