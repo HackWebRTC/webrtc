@@ -53,6 +53,7 @@ class AudioBuffer {
   int num_channels() const;
   int samples_per_channel() const;
   int samples_per_split_channel() const;
+  int samples_per_keyboard_channel() const;
 
   int16_t* data(int channel) const;
   int16_t* low_pass_split_data(int channel) const;
@@ -60,6 +61,7 @@ class AudioBuffer {
   int16_t* mixed_data(int channel) const;
   int16_t* mixed_low_pass_data(int channel) const;
   int16_t* low_pass_reference(int channel) const;
+  const float* keyboard_data() const;
 
   SplitFilterStates* filter_states(int channel) const;
 
@@ -106,6 +108,7 @@ class AudioBuffer {
   bool is_muted_;
 
   int16_t* data_;
+  const float* keyboard_data_;
   scoped_ptr<ChannelBuffer<int16_t> > channels_;
   scoped_ptr<SplitChannelBuffer> split_channels_;
   scoped_ptr<SplitFilterStates[]> filter_states_;

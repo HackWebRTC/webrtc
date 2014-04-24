@@ -23,6 +23,35 @@ enum {
   kSamplesPer32kHzChannel = 320
 };
 
+bool HasKeyboardChannel(AudioProcessing::ChannelLayout layout) {
+  switch (layout) {
+    case AudioProcessing::kMono:
+    case AudioProcessing::kStereo:
+      return false;
+    case AudioProcessing::kMonoAndKeyboard:
+    case AudioProcessing::kStereoAndKeyboard:
+      return true;
+  }
+  assert(false);
+  return false;
+}
+
+int KeyboardChannelIndex(AudioProcessing::ChannelLayout layout) {
+  switch (layout) {
+    case AudioProcessing::kMono:
+    case AudioProcessing::kStereo:
+      assert(false);
+      return -1;
+    case AudioProcessing::kMonoAndKeyboard:
+      return 1;
+    case AudioProcessing::kStereoAndKeyboard:
+      return 2;
+  }
+  assert(false);
+  return -1;
+}
+
+
 void StereoToMono(const float* left, const float* right, float* out,
                   int samples_per_channel) {
   for (int i = 0; i < samples_per_channel; ++i) {
@@ -32,8 +61,9 @@ void StereoToMono(const float* left, const float* right, float* out,
 
 void StereoToMono(const int16_t* left, const int16_t* right, int16_t* out,
                   int samples_per_channel) {
-  for (int i = 0; i < samples_per_channel; i++)
+  for (int i = 0; i < samples_per_channel; ++i) {
     out[i] = (left[i] + right[i]) >> 1;
+  }
 }
 
 }  // namespace
@@ -72,6 +102,7 @@ AudioBuffer::AudioBuffer(int input_samples_per_channel,
     activity_(AudioFrame::kVadUnknown),
     is_muted_(false),
     data_(NULL),
+    keyboard_data_(NULL),
     channels_(new ChannelBuffer<int16_t>(proc_samples_per_channel_,
                                          num_proc_channels_)) {
   assert(input_samples_per_channel_ > 0);
@@ -118,12 +149,18 @@ AudioBuffer::AudioBuffer(int input_samples_per_channel,
   }
 }
 
+AudioBuffer::~AudioBuffer() {}
+
 void AudioBuffer::CopyFrom(const float* const* data,
                            int samples_per_channel,
                            AudioProcessing::ChannelLayout layout) {
   assert(samples_per_channel == input_samples_per_channel_);
   assert(ChannelsFromLayout(layout) == num_input_channels_);
   InitForNewData();
+
+  if (HasKeyboardChannel(layout)) {
+    keyboard_data_ = data[KeyboardChannelIndex(layout)];
+  }
 
   // Downmix.
   const float* const* data_ptr = data;
@@ -180,10 +217,9 @@ void AudioBuffer::CopyTo(int samples_per_channel,
   }
 }
 
-AudioBuffer::~AudioBuffer() {}
-
 void AudioBuffer::InitForNewData() {
   data_ = NULL;
+  keyboard_data_ = NULL;
   data_was_mixed_ = false;
   num_mixed_channels_ = 0;
   num_mixed_low_pass_channels_ = 0;
@@ -240,6 +276,10 @@ int16_t* AudioBuffer::low_pass_reference(int channel) const {
   return low_pass_reference_channels_->channel(channel);
 }
 
+const float* AudioBuffer::keyboard_data() const {
+  return keyboard_data_;
+}
+
 SplitFilterStates* AudioBuffer::filter_states(int channel) const {
   assert(channel >= 0 && channel < num_proc_channels_);
   return &filter_states_[channel];
@@ -267,6 +307,11 @@ int AudioBuffer::samples_per_channel() const {
 
 int AudioBuffer::samples_per_split_channel() const {
   return samples_per_split_channel_;
+}
+
+int AudioBuffer::samples_per_keyboard_channel() const {
+  // We don't resample the keyboard channel.
+  return input_samples_per_channel_;
 }
 
 // TODO(andrew): Do deinterleaving and mixing in one step?

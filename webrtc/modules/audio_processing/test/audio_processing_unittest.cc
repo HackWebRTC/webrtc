@@ -81,6 +81,21 @@ void ConvertToFloat(const AudioFrame& frame, ChannelBuffer<float>* cb) {
   ConvertToFloat(frame.data_, cb);
 }
 
+// Number of channels including the keyboard channel.
+int TotalChannelsFromLayout(AudioProcessing::ChannelLayout layout) {
+  switch (layout) {
+    case AudioProcessing::kMono:
+      return 1;
+    case AudioProcessing::kMonoAndKeyboard:
+    case AudioProcessing::kStereo:
+      return 2;
+    case AudioProcessing::kStereoAndKeyboard:
+      return 3;
+  }
+  assert(false);
+  return -1;
+}
+
 int TruncateToMultipleOf10(int value) {
   return (value / 10) * 10;
 }
@@ -1915,6 +1930,43 @@ TEST_F(ApmTest, DISABLED_ON_ANDROID(Process)) {
 }
 
 #endif  // WEBRTC_AUDIOPROC_BIT_EXACT
+
+TEST_F(ApmTest, NoErrorsWithKeyboardChannel) {
+  struct ChannelFormat {
+    AudioProcessing::ChannelLayout in_layout;
+    AudioProcessing::ChannelLayout out_layout;
+  };
+  ChannelFormat cf[] = {
+    {AudioProcessing::kMonoAndKeyboard, AudioProcessing::kMono},
+    {AudioProcessing::kStereoAndKeyboard, AudioProcessing::kMono},
+    {AudioProcessing::kStereoAndKeyboard, AudioProcessing::kStereo},
+  };
+  size_t channel_format_size = sizeof(cf) / sizeof(*cf);
+
+  scoped_ptr<AudioProcessing> ap(AudioProcessing::Create());
+  // Enable one component just to ensure some processing takes place.
+  ap->noise_suppression()->Enable(true);
+  for (size_t i = 0; i < channel_format_size; ++i) {
+    const int in_rate = 44100;
+    const int out_rate = 48000;
+    ChannelBuffer<float> in_cb(SamplesFromRate(in_rate),
+                               TotalChannelsFromLayout(cf[i].in_layout));
+    ChannelBuffer<float> out_cb(SamplesFromRate(out_rate),
+                                ChannelsFromLayout(cf[i].out_layout));
+
+    // Run over a few chunks.
+    for (int j = 0; j < 10; ++j) {
+      EXPECT_NOERR(ap->ProcessStream(
+          in_cb.channels(),
+          in_cb.samples_per_channel(),
+          in_rate,
+          cf[i].in_layout,
+          out_rate,
+          cf[i].out_layout,
+          out_cb.channels()));
+    }
+  }
+}
 
 // Reads a 10 ms chunk of int16 interleaved audio from the given (assumed
 // stereo) file, converts to deinterleaved float (optionally downmixing) and

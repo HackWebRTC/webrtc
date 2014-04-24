@@ -468,48 +468,46 @@ int AudioProcessingImpl::ProcessStreamLocked() {
   }
 #endif
 
+  AudioBuffer* ca = capture_audio_.get();  // For brevity.
   bool data_processed = is_data_processed();
   if (analysis_needed(data_processed)) {
     for (int i = 0; i < fwd_proc_format_.num_channels(); i++) {
-      SplitFilterStates* filter_states = capture_audio_->filter_states(i);
       // Split into a low and high band.
-      WebRtcSpl_AnalysisQMF(capture_audio_->data(i),
-                            capture_audio_->samples_per_channel(),
-                            capture_audio_->low_pass_split_data(i),
-                            capture_audio_->high_pass_split_data(i),
-                            filter_states->analysis_filter_state1,
-                            filter_states->analysis_filter_state2);
+      WebRtcSpl_AnalysisQMF(ca->data(i),
+                            ca->samples_per_channel(),
+                            ca->low_pass_split_data(i),
+                            ca->high_pass_split_data(i),
+                            ca->filter_states(i)->analysis_filter_state1,
+                            ca->filter_states(i)->analysis_filter_state2);
     }
   }
 
-  RETURN_ON_ERR(high_pass_filter_->ProcessCaptureAudio(capture_audio_.get()));
-  RETURN_ON_ERR(gain_control_->AnalyzeCaptureAudio(capture_audio_.get()));
-  RETURN_ON_ERR(echo_cancellation_->ProcessCaptureAudio(capture_audio_.get()));
+  RETURN_ON_ERR(high_pass_filter_->ProcessCaptureAudio(ca));
+  RETURN_ON_ERR(gain_control_->AnalyzeCaptureAudio(ca));
+  RETURN_ON_ERR(echo_cancellation_->ProcessCaptureAudio(ca));
 
   if (echo_control_mobile_->is_enabled() && noise_suppression_->is_enabled()) {
-    capture_audio_->CopyLowPassToReference();
+    ca->CopyLowPassToReference();
   }
-  RETURN_ON_ERR(noise_suppression_->ProcessCaptureAudio(capture_audio_.get()));
-  RETURN_ON_ERR(
-      echo_control_mobile_->ProcessCaptureAudio(capture_audio_.get()));
-  RETURN_ON_ERR(voice_detection_->ProcessCaptureAudio(capture_audio_.get()));
-  RETURN_ON_ERR(gain_control_->ProcessCaptureAudio(capture_audio_.get()));
+  RETURN_ON_ERR(noise_suppression_->ProcessCaptureAudio(ca));
+  RETURN_ON_ERR(echo_control_mobile_->ProcessCaptureAudio(ca));
+  RETURN_ON_ERR(voice_detection_->ProcessCaptureAudio(ca));
+  RETURN_ON_ERR(gain_control_->ProcessCaptureAudio(ca));
 
   if (synthesis_needed(data_processed)) {
     for (int i = 0; i < fwd_proc_format_.num_channels(); i++) {
       // Recombine low and high bands.
-      SplitFilterStates* filter_states = capture_audio_->filter_states(i);
-      WebRtcSpl_SynthesisQMF(capture_audio_->low_pass_split_data(i),
-                             capture_audio_->high_pass_split_data(i),
-                             capture_audio_->samples_per_split_channel(),
-                             capture_audio_->data(i),
-                             filter_states->synthesis_filter_state1,
-                             filter_states->synthesis_filter_state2);
+      WebRtcSpl_SynthesisQMF(ca->low_pass_split_data(i),
+                             ca->high_pass_split_data(i),
+                             ca->samples_per_split_channel(),
+                             ca->data(i),
+                             ca->filter_states(i)->synthesis_filter_state1,
+                             ca->filter_states(i)->synthesis_filter_state2);
     }
   }
 
   // The level estimator operates on the recombined data.
-  RETURN_ON_ERR(level_estimator_->ProcessStream(capture_audio_.get()));
+  RETURN_ON_ERR(level_estimator_->ProcessStream(ca));
 
   was_stream_delay_set_ = false;
   return kNoError;
@@ -592,27 +590,23 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
   return AnalyzeReverseStreamLocked();
 }
 
-// TODO(ajm): Have AnalyzeReverseStream accept sample rates not matching the
-// primary stream and convert ourselves rather than having the user manage it.
-// We can be smarter and use the splitting filter when appropriate. Similarly,
-// perform downmixing here.
 int AudioProcessingImpl::AnalyzeReverseStreamLocked() {
+  AudioBuffer* ra = render_audio_.get();  // For brevity.
   if (rev_proc_format_.rate() == kSampleRate32kHz) {
     for (int i = 0; i < rev_proc_format_.num_channels(); i++) {
       // Split into low and high band.
-      SplitFilterStates* filter_states = render_audio_->filter_states(i);
-      WebRtcSpl_AnalysisQMF(render_audio_->data(i),
-                            render_audio_->samples_per_channel(),
-                            render_audio_->low_pass_split_data(i),
-                            render_audio_->high_pass_split_data(i),
-                            filter_states->analysis_filter_state1,
-                            filter_states->analysis_filter_state2);
+      WebRtcSpl_AnalysisQMF(ra->data(i),
+                            ra->samples_per_channel(),
+                            ra->low_pass_split_data(i),
+                            ra->high_pass_split_data(i),
+                            ra->filter_states(i)->analysis_filter_state1,
+                            ra->filter_states(i)->analysis_filter_state2);
     }
   }
 
-  RETURN_ON_ERR(echo_cancellation_->ProcessRenderAudio(render_audio_.get()));
-  RETURN_ON_ERR(echo_control_mobile_->ProcessRenderAudio(render_audio_.get()));
-  RETURN_ON_ERR(gain_control_->ProcessRenderAudio(render_audio_.get()));
+  RETURN_ON_ERR(echo_cancellation_->ProcessRenderAudio(ra));
+  RETURN_ON_ERR(echo_control_mobile_->ProcessRenderAudio(ra));
+  RETURN_ON_ERR(gain_control_->ProcessRenderAudio(ra));
 
   return kNoError;
 }
