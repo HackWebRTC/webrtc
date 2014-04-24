@@ -182,8 +182,8 @@ void WindowCapturerWin::Capture(const DesktopRegion& region) {
     return;
   }
 
-  // Stop capturing if the window has been minimized or hidden.
-  if (IsIconic(window_) || !IsWindowVisible(window_)) {
+  // Stop capturing if the window has been closed or hidden.
+  if (!IsWindow(window_) || !IsWindowVisible(window_)) {
     callback_->OnCaptureCompleted(NULL);
     return;
   }

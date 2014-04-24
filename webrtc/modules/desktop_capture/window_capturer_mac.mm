@@ -42,6 +42,18 @@ bool CFStringRefToUtf8(const CFStringRef string, std::string* str_utf8) {
   return true;
 }
 
+bool IsWindowValid(CGWindowID id) {
+  CFArrayRef window_id_array =
+      CFArrayCreate(NULL, reinterpret_cast<const void **>(&id), 1, NULL);
+  CFArrayRef window_array =
+      CGWindowListCreateDescriptionFromArray(window_id_array);
+  bool valid = window_array && CFArrayGetCount(window_array);
+  CFRelease(window_id_array);
+  CFRelease(window_array);
+
+  return valid;
+}
+
 class WindowCapturerMac : public WindowCapturer {
  public:
   WindowCapturerMac();
@@ -115,22 +127,8 @@ bool WindowCapturerMac::GetWindowList(WindowList* windows) {
 }
 
 bool WindowCapturerMac::SelectWindow(WindowId id) {
-  // Request description for the specified window to make sure |id| is valid.
-  CGWindowID ids[1];
-  ids[0] = id;
-  CFArrayRef window_id_array =
-      CFArrayCreate(NULL, reinterpret_cast<const void **>(&ids), 1, NULL);
-  CFArrayRef window_array =
-      CGWindowListCreateDescriptionFromArray(window_id_array);
-  int results_count = window_array ? CFArrayGetCount(window_array) : 0;
-  CFRelease(window_id_array);
-  CFRelease(window_array);
-
-  if (results_count == 0) {
-    // Could not find the window. It might have been closed.
+  if (!IsWindowValid(id))
     return false;
-  }
-
   window_id_ = id;
   return true;
 }
@@ -180,6 +178,11 @@ void WindowCapturerMac::Start(Callback* callback) {
 }
 
 void WindowCapturerMac::Capture(const DesktopRegion& region) {
+  if (!IsWindowValid(window_id_)) {
+    callback_->OnCaptureCompleted(NULL);
+    return;
+  }
+
   CGImageRef window_image = CGWindowListCreateImage(
       CGRectNull, kCGWindowListOptionIncludingWindow,
       window_id_, kCGWindowImageBoundsIgnoreFraming);
