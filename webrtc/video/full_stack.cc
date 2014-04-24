@@ -437,16 +437,15 @@ TEST_P(FullStackTest, NoPacketLoss) {
   VideoReceiveStream* receive_stream =
       call->CreateVideoReceiveStream(receive_config);
 
-  receive_stream->StartReceiving();
-  send_stream->StartSending();
-
+  receive_stream->Start();
+  send_stream->Start();
   file_capturer->Start();
 
   analyzer.Wait();
 
   file_capturer->Stop();
-  send_stream->StopSending();
-  receive_stream->StopReceiving();
+  send_stream->Stop();
+  receive_stream->Stop();
 
   call->DestroyVideoReceiveStream(receive_stream);
   call->DestroyVideoSendStream(send_stream);

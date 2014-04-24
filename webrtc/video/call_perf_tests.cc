@@ -67,14 +67,14 @@ class CallPerfTest : public ::testing::Test {
     scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer(
         test::FrameGeneratorCapturer::Create(
             send_stream_->Input(), 320, 240, 30, Clock::GetRealTimeClock()));
-    send_stream_->StartSending();
+    send_stream_->Start();
     frame_generator_capturer->Start();
 
     EXPECT_EQ(kEventSignaled, observer->Wait());
 
     observer->StopSending();
     frame_generator_capturer->Stop();
-    send_stream_->StopSending();
+    send_stream_->Stop();
     call->DestroyVideoSendStream(send_stream_);
   }
 
@@ -310,8 +310,8 @@ TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSync) {
           send_config.encoder_settings.streams[0].height,
           30,
           Clock::GetRealTimeClock()));
-  receive_stream->StartReceiving();
-  send_stream->StartSending();
+  receive_stream->Start();
+  send_stream->Start();
   capturer->Start();
 
   fake_audio_device.Start();
@@ -328,8 +328,8 @@ TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSync) {
   fake_audio_device.Stop();
 
   capturer->Stop();
-  send_stream->StopSending();
-  receive_stream->StopReceiving();
+  send_stream->Stop();
+  receive_stream->Stop();
   observer.StopSending();
   audio_observer.StopSending();
 
@@ -477,15 +477,15 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
           30,
           Clock::GetRealTimeClock()));
   observer.SetSendStream(send_stream);
-  receive_stream->StartReceiving();
-  send_stream->StartSending();
+  receive_stream->Start();
+  send_stream->Start();
   capturer->Start();
 
   EXPECT_EQ(kEventSignaled, observer.Wait())
       << "Timeout while waiting for send-bitrate stats.";
 
-  send_stream->StopSending();
-  receive_stream->StopReceiving();
+  send_stream->Stop();
+  receive_stream->Stop();
   observer.StopSending();
   capturer->Stop();
   sender_call->DestroyVideoSendStream(send_stream);

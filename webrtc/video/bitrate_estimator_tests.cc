@@ -175,7 +175,7 @@ class BitrateEstimatorTest : public ::testing::Test {
           test_->send_config_.encoder_settings.streams[0].height,
           30,
           Clock::GetRealTimeClock()));
-      send_stream_->StartSending();
+      send_stream_->Start();
       frame_generator_capturer_->Start();
 
       ExternalVideoDecoder decoder;
@@ -186,7 +186,7 @@ class BitrateEstimatorTest : public ::testing::Test {
       test_->receive_config_.external_decoders.push_back(decoder);
       receive_stream_ = test_->receiver_call_->CreateVideoReceiveStream(
           test_->receive_config_);
-      receive_stream_->StartReceiving();
+      receive_stream_->Start();
 
       is_sending_receiving_ = true;
     }
@@ -202,8 +202,8 @@ class BitrateEstimatorTest : public ::testing::Test {
     void StopSending() {
       if (is_sending_receiving_) {
         frame_generator_capturer_->Stop();
-        send_stream_->StopSending();
-        receive_stream_->StopReceiving();
+        send_stream_->Stop();
+        receive_stream_->Stop();
         is_sending_receiving_ = false;
       }
     }

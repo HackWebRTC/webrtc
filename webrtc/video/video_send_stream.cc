@@ -210,13 +210,13 @@ void VideoSendStream::SwapFrame(I420VideoFrame* frame) {
 
 VideoSendStreamInput* VideoSendStream::Input() { return this; }
 
-void VideoSendStream::StartSending() {
+void VideoSendStream::Start() {
   transport_adapter_.Enable();
   video_engine_base_->StartSend(channel_);
   video_engine_base_->StartReceive(channel_);
 }
 
-void VideoSendStream::StopSending() {
+void VideoSendStream::Stop() {
   video_engine_base_->StopSend(channel_);
   video_engine_base_->StopReceive(channel_);
   transport_adapter_.Disable();

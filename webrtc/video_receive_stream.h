@@ -171,8 +171,8 @@ class VideoReceiveStream {
     int target_delay_ms;
   };
 
-  virtual void StartReceiving() = 0;
-  virtual void StopReceiving() = 0;
+  virtual void Start() = 0;
+  virtual void Stop() = 0;
   virtual Stats GetStats() const = 0;
 
   // TODO(mflodman) Replace this with callback.

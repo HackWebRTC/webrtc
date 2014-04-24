@@ -159,8 +159,8 @@ class VideoSendStream {
   // VideoSendStream is valid.
   virtual VideoSendStreamInput* Input() = 0;
 
-  virtual void StartSending() = 0;
-  virtual void StopSending() = 0;
+  virtual void Start() = 0;
+  virtual void Stop() = 0;
 
   // Set which streams to send. Must have at least as many SSRCs as configured
   // in the config. Encoder settings are passed on to the encoder instance along

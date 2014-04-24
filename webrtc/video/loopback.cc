@@ -91,15 +91,15 @@ TEST_F(LoopbackTest, Test) {
   VideoReceiveStream* receive_stream =
       call->CreateVideoReceiveStream(receive_config);
 
-  receive_stream->StartReceiving();
-  send_stream->StartSending();
+  receive_stream->Start();
+  send_stream->Start();
   camera->Start();
 
   test::PressEnterToContinue();
 
   camera->Stop();
-  send_stream->StopSending();
-  receive_stream->StopReceiving();
+  send_stream->Stop();
+  receive_stream->Stop();
 
   call->DestroyVideoReceiveStream(receive_stream);
   call->DestroyVideoSendStream(send_stream);

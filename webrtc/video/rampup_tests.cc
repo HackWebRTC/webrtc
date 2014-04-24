@@ -469,13 +469,13 @@ class RampUpTest : public ::testing::Test {
             send_config.encoder_settings.streams.back().max_framerate,
             Clock::GetRealTimeClock()));
 
-    send_stream->StartSending();
+    send_stream->Start();
     frame_generator_capturer->Start();
 
     EXPECT_EQ(kEventSignaled, stream_observer.Wait());
 
     frame_generator_capturer->Stop();
-    send_stream->StopSending();
+    send_stream->Stop();
 
     call->DestroyVideoSendStream(send_stream);
   }
@@ -528,7 +528,7 @@ class RampUpTest : public ::testing::Test {
                                              30,
                                              Clock::GetRealTimeClock()));
 
-    send_stream->StartSending();
+    send_stream->Start();
     frame_generator_capturer->Start();
 
     EXPECT_EQ(kEventSignaled, stream_observer.Wait());
@@ -536,7 +536,7 @@ class RampUpTest : public ::testing::Test {
     stream_observer.StopSending();
     receiver_transport.StopSending();
     frame_generator_capturer->Stop();
-    send_stream->StopSending();
+    send_stream->Stop();
 
     call->DestroyVideoSendStream(send_stream);
   }

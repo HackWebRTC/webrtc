@@ -106,8 +106,8 @@ class CallTest : public ::testing::Test {
   }
 
   void StartSending() {
-    receive_stream_->StartReceiving();
-    send_stream_->StartSending();
+    receive_stream_->Start();
+    send_stream_->Start();
     if (frame_generator_capturer_.get() != NULL)
       frame_generator_capturer_->Start();
   }
@@ -116,9 +116,9 @@ class CallTest : public ::testing::Test {
     if (frame_generator_capturer_.get() != NULL)
       frame_generator_capturer_->Stop();
     if (send_stream_ != NULL)
-      send_stream_->StopSending();
+      send_stream_->Stop();
     if (receive_stream_ != NULL)
-      receive_stream_->StopReceiving();
+      receive_stream_->Stop();
   }
 
   void DestroyStreams() {
@@ -286,8 +286,8 @@ TEST_F(CallTest, ReceiverCanBeStartedTwice) {
   CreateTestConfigs();
   CreateStreams();
 
-  receive_stream_->StartReceiving();
-  receive_stream_->StartReceiving();
+  receive_stream_->Start();
+  receive_stream_->Start();
 
   DestroyStreams();
 }
@@ -299,8 +299,8 @@ TEST_F(CallTest, ReceiverCanBeStoppedTwice) {
   CreateTestConfigs();
   CreateStreams();
 
-  receive_stream_->StopReceiving();
-  receive_stream_->StopReceiving();
+  receive_stream_->Stop();
+  receive_stream_->Stop();
 
   DestroyStreams();
 }
@@ -1116,7 +1116,7 @@ TEST_F(CallTest, SendsAndReceivesMultipleStreams) {
     stream->min_bitrate_bps = stream->target_bitrate_bps =
         stream->max_bitrate_bps = 100000;
     send_streams[i] = sender_call->CreateVideoSendStream(send_config);
-    send_streams[i]->StartSending();
+    send_streams[i]->Start();
 
     VideoReceiveStream::Config receive_config =
         receiver_call->GetDefaultReceiveConfig();
@@ -1128,7 +1128,7 @@ TEST_F(CallTest, SendsAndReceivesMultipleStreams) {
     receive_config.codecs.push_back(codec);
     receive_streams[i] =
         receiver_call->CreateVideoReceiveStream(receive_config);
-    receive_streams[i]->StartReceiving();
+    receive_streams[i]->Start();
 
     frame_generators[i] = test::FrameGeneratorCapturer::Create(
         send_streams[i]->Input(), width, height, 30, Clock::GetRealTimeClock());

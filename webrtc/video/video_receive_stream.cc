@@ -212,7 +212,7 @@ VideoReceiveStream::~VideoReceiveStream() {
   rtp_rtcp_->Release();
 }
 
-void VideoReceiveStream::StartReceiving() {
+void VideoReceiveStream::Start() {
   transport_adapter_.Enable();
   if (render_->StartRender(channel_) != 0)
     abort();
@@ -220,7 +220,7 @@ void VideoReceiveStream::StartReceiving() {
     abort();
 }
 
-void VideoReceiveStream::StopReceiving() {
+void VideoReceiveStream::Stop() {
   if (render_->StopRender(channel_) != 0)
     abort();
   if (video_engine_base_->StopReceive(channel_) != 0)

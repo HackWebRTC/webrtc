@@ -51,14 +51,14 @@ class VideoSendStreamTest : public ::testing::Test {
     scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer(
         test::FrameGeneratorCapturer::Create(
             send_stream_->Input(), 320, 240, 30, Clock::GetRealTimeClock()));
-    send_stream_->StartSending();
+    send_stream_->Start();
     frame_generator_capturer->Start();
 
     EXPECT_EQ(kEventSignaled, observer->Wait());
 
     observer->StopSending();
     frame_generator_capturer->Stop();
-    send_stream_->StopSending();
+    send_stream_->Stop();
     call->DestroyVideoSendStream(send_stream_);
   }
 
@@ -179,7 +179,7 @@ void VideoSendStreamTest::SendsSetSsrcs(size_t num_ssrcs,
   scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer(
       test::FrameGeneratorCapturer::Create(
           send_stream_->Input(), 320, 240, 30, Clock::GetRealTimeClock()));
-  send_stream_->StartSending();
+  send_stream_->Start();
   frame_generator_capturer->Start();
 
   EXPECT_EQ(kEventSignaled, observer.Wait())
@@ -195,7 +195,7 @@ void VideoSendStreamTest::SendsSetSsrcs(size_t num_ssrcs,
 
   observer.StopSending();
   frame_generator_capturer->Stop();
-  send_stream_->StopSending();
+  send_stream_->Stop();
   call->DestroyVideoSendStream(send_stream_);
 }
 
@@ -206,8 +206,8 @@ TEST_F(VideoSendStreamTest, CanStartStartedStream) {
 
   VideoSendStream::Config config = GetSendTestConfig(call.get(), 1);
   VideoSendStream* stream = call->CreateVideoSendStream(config);
-  stream->StartSending();
-  stream->StartSending();
+  stream->Start();
+  stream->Start();
   call->DestroyVideoSendStream(stream);
 }
 
@@ -218,8 +218,8 @@ TEST_F(VideoSendStreamTest, CanStopStoppedStream) {
 
   VideoSendStream::Config config = GetSendTestConfig(call.get(), 1);
   VideoSendStream* stream = call->CreateVideoSendStream(config);
-  stream->StopSending();
-  stream->StopSending();
+  stream->Stop();
+  stream->Stop();
   call->DestroyVideoSendStream(stream);
 }
 
@@ -415,7 +415,7 @@ TEST_F(VideoSendStreamTest, SwapsI420VideoFrames) {
 
   VideoSendStream::Config send_config = GetSendTestConfig(call.get(), 1);
   VideoSendStream* video_send_stream = call->CreateVideoSendStream(send_config);
-  video_send_stream->StartSending();
+  video_send_stream->Start();
 
   I420VideoFrame frame;
   frame.CreateEmptyFrame(
@@ -1020,7 +1020,7 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
       test::FrameGeneratorCapturer::Create(
           send_stream_->Input(), 320, 240, 30, Clock::GetRealTimeClock()));
   observer.SetCapturer(frame_generator_capturer.get());
-  send_stream_->StartSending();
+  send_stream_->Start();
   frame_generator_capturer->Start();
 
   EXPECT_EQ(kEventSignaled, observer.Wait())
@@ -1028,7 +1028,7 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
 
   observer.StopSending();
   frame_generator_capturer->Stop();
-  send_stream_->StopSending();
+  send_stream_->Stop();
   call->DestroyVideoSendStream(send_stream_);
 }
 
@@ -1107,7 +1107,7 @@ TEST_F(VideoSendStreamTest, ProducesStats) {
   scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer(
       test::FrameGeneratorCapturer::Create(
           send_stream_->Input(), 320, 240, 30, Clock::GetRealTimeClock()));
-  send_stream_->StartSending();
+  send_stream_->Start();
   frame_generator_capturer->Start();
 
   EXPECT_TRUE(observer.WaitForFilledStats())
@@ -1115,7 +1115,7 @@ TEST_F(VideoSendStreamTest, ProducesStats) {
 
   observer.StopSending();
   frame_generator_capturer->Stop();
-  send_stream_->StopSending();
+  send_stream_->Stop();
   call->DestroyVideoSendStream(send_stream_);
 }
 
@@ -1200,7 +1200,7 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
   scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer(
       test::FrameGeneratorCapturer::Create(
           send_stream_->Input(), 320, 240, 30, Clock::GetRealTimeClock()));
-  send_stream_->StartSending();
+  send_stream_->Start();
   frame_generator_capturer->Start();
 
   EXPECT_EQ(kEventSignaled, observer.Wait())
@@ -1208,7 +1208,7 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
 
   observer.StopSending();
   frame_generator_capturer->Stop();
-  send_stream_->StopSending();
+  send_stream_->Stop();
   call->DestroyVideoSendStream(send_stream_);
 }
 
