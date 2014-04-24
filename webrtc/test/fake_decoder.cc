@@ -36,6 +36,7 @@ int32_t FakeDecoder::Decode(const EncodedImage& input,
                             const CodecSpecificInfo* codec_specific_info,
                             int64_t render_time_ms) {
   frame_.set_timestamp(input._timeStamp);
+  frame_.set_ntp_time_ms(input.ntp_time_ms_);
   frame_.set_render_time_ms(render_time_ms);
 
   callback_->Decoded(frame_);

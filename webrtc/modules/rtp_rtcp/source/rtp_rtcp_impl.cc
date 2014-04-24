@@ -733,7 +733,12 @@ int32_t ModuleRtpRtcpImpl::RTT(const uint32_t remote_ssrc,
                                uint16_t* avg_rtt,
                                uint16_t* min_rtt,
                                uint16_t* max_rtt) const {
-  return rtcp_receiver_.RTT(remote_ssrc, rtt, avg_rtt, min_rtt, max_rtt);
+  int32_t ret = rtcp_receiver_.RTT(remote_ssrc, rtt, avg_rtt, min_rtt, max_rtt);
+  if (rtt && *rtt == 0) {
+    // Try to get RTT from RtcpRttStats class.
+    *rtt = static_cast<uint16_t>(rtt_ms());
+  }
+  return ret;
 }
 
 // Reset RoundTripTime statistics.

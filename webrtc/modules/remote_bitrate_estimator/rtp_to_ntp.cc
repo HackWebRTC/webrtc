@@ -57,6 +57,40 @@ bool CompensateForWrapAround(uint32_t new_timestamp,
   return true;
 }
 
+bool UpdateRtcpList(uint32_t ntp_secs,
+                    uint32_t ntp_frac,
+                    uint32_t rtp_timestamp,
+                    RtcpList* rtcp_list,
+                    bool* new_rtcp_sr) {
+  *new_rtcp_sr = false;
+  if (ntp_secs == 0 && ntp_frac == 0) {
+    return false;
+  }
+
+  RtcpMeasurement measurement;
+  measurement.ntp_secs = ntp_secs;
+  measurement.ntp_frac = ntp_frac;
+  measurement.rtp_timestamp = rtp_timestamp;
+
+  for (RtcpList::iterator it = rtcp_list->begin();
+       it != rtcp_list->end(); ++it) {
+    if (measurement.ntp_secs == (*it).ntp_secs &&
+        measurement.ntp_frac == (*it).ntp_frac) {
+      // This RTCP has already been added to the list.
+      return true;
+    }
+  }
+
+  // We need two RTCP SR reports to map between RTP and NTP. More than two will
+  // not improve the mapping.
+  if (rtcp_list->size() == 2) {
+    rtcp_list->pop_back();
+  }
+  rtcp_list->push_front(measurement);
+  *new_rtcp_sr = true;
+  return true;
+}
+
 // Converts |rtp_timestamp| to the NTP time base using the NTP and RTP timestamp
 // pairs in |rtcp|. The converted timestamp is returned in
 // |rtp_timestamp_in_ms|. This function compensates for wrap arounds in RTP

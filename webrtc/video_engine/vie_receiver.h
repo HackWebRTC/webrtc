@@ -14,12 +14,16 @@
 #include <list>
 
 #include "webrtc/engine_configurations.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/rtp_to_ntp.h"
 #include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_engine/include/vie_network.h"
 #include "webrtc/video_engine/vie_defines.h"
+
+// TODO(wu): Move rtp_to_ntp.h and timestamp_extrapolator.h to somewhere that
+// can be shared between audio and video.
 
 namespace webrtc {
 
@@ -32,6 +36,7 @@ class RtpHeaderParser;
 class RTPPayloadRegistry;
 class RtpReceiver;
 class RtpRtcp;
+class VCMTimestampExtrapolator;
 class VideoCodingModule;
 struct ReceiveBandwidthEstimatorStats;
 
@@ -105,6 +110,9 @@ class ViEReceiver : public RtpData {
   bool IsPacketInOrder(const RTPHeader& header) const;
   bool IsPacketRetransmitted(const RTPHeader& header, bool in_order) const;
 
+  bool GetRtcpTimestamp();
+  void CalculateCaptureNtpTime(WebRtcRTPHeader* rtp_header);
+
   scoped_ptr<CriticalSectionWrapper> receive_cs_;
   const int32_t channel_id_;
   scoped_ptr<RtpHeaderParser> rtp_header_parser_;
@@ -116,6 +124,10 @@ class ViEReceiver : public RtpData {
   std::list<RtpRtcp*> rtp_rtcp_simulcast_;
   VideoCodingModule* vcm_;
   RemoteBitrateEstimator* remote_bitrate_estimator_;
+
+  Clock* clock_;
+  scoped_ptr<VCMTimestampExtrapolator> ts_extrapolator_;
+  synchronization::RtcpList rtcp_list_;
 
   RtpDump* rtp_dump_;
   bool receiving_;

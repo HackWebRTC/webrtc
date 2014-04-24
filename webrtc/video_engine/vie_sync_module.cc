@@ -30,31 +30,24 @@ int UpdateMeasurements(StreamSynchronization::Measurements* stream,
     return -1;
   if (!receiver.LastReceivedTimeMs(&stream->latest_receive_time_ms))
     return -1;
-  synchronization::RtcpMeasurement measurement;
-  if (0 != rtp_rtcp.RemoteNTP(&measurement.ntp_secs,
-                              &measurement.ntp_frac,
+
+  uint32_t ntp_secs = 0;
+  uint32_t ntp_frac = 0;
+  uint32_t rtp_timestamp = 0;
+  if (0 != rtp_rtcp.RemoteNTP(&ntp_secs,
+                              &ntp_frac,
                               NULL,
                               NULL,
-                              &measurement.rtp_timestamp)) {
+                              &rtp_timestamp)) {
     return -1;
   }
-  if (measurement.ntp_secs == 0 && measurement.ntp_frac == 0) {
+
+  bool new_rtcp_sr = false;
+  if (!synchronization::UpdateRtcpList(
+      ntp_secs, ntp_frac, rtp_timestamp, &stream->rtcp, &new_rtcp_sr)) {
     return -1;
   }
-  for (synchronization::RtcpList::iterator it = stream->rtcp.begin();
-       it != stream->rtcp.end(); ++it) {
-    if (measurement.ntp_secs == (*it).ntp_secs &&
-        measurement.ntp_frac == (*it).ntp_frac) {
-      // This RTCP has already been added to the list.
-      return 0;
-    }
-  }
-  // We need two RTCP SR reports to map between RTP and NTP. More than two will
-  // not improve the mapping.
-  if (stream->rtcp.size() == 2) {
-    stream->rtcp.pop_back();
-  }
-  stream->rtcp.push_front(measurement);
+
   return 0;
 }
 

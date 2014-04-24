@@ -29,6 +29,15 @@ struct RtcpMeasurement {
 
 typedef std::list<RtcpMeasurement> RtcpList;
 
+// Updates |rtcp_list| with timestamps from the latest RTCP SR.
+// |new_rtcp_sr| will be set to true if these are the timestamps which have
+// never be added to |rtcp_list|.
+bool UpdateRtcpList(uint32_t ntp_secs,
+                    uint32_t ntp_frac,
+                    uint32_t rtp_timestamp,
+                    RtcpList* rtcp_list,
+                    bool* new_rtcp_sr);
+
 // Converts an RTP timestamp to the NTP domain in milliseconds using two
 // (RTP timestamp, NTP timestamp) pairs.
 bool RtpToNtpMs(int64_t rtp_timestamp, const RtcpList& rtcp,
