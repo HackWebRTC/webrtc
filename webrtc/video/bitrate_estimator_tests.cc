@@ -54,7 +54,6 @@ class BitrateEstimatorTest : public ::testing::Test {
     // Create receiver call first so that we are guaranteed to have a trace
     // callback when sender call is created.
     Call::Config receiver_call_config(&receive_transport_);
-    receiver_call_config.trace_callback = &receiver_trace_;
     receiver_call_.reset(Call::Create(receiver_call_config));
 
     Call::Config sender_call_config(&send_transport_);

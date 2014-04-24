@@ -54,8 +54,6 @@ class Call {
         : webrtc_config(NULL),
           send_transport(send_transport),
           voice_engine(NULL),
-          trace_callback(NULL),
-          trace_filter(kTraceDefault),
           overuse_callback(NULL) {}
 
     webrtc::Config* webrtc_config;
@@ -64,9 +62,6 @@ class Call {
 
     // VoiceEngine used for audio/video synchronization for this Call.
     VoiceEngine* voice_engine;
-
-    TraceCallback* trace_callback;
-    uint32_t trace_filter;
 
     // Callback for overuse and normal usage based on the jitter of incoming
     // captured frames. 'NULL' disables the callback.

@@ -222,63 +222,6 @@ class NackObserver : public test::RtpRtcpObserver {
   int nacks_left_;
 };
 
-// Test disabled, ongoing work disabled traces causing UsesTraceCallback to
-// fail. Tracked by webrtc:3157.
-TEST_F(CallTest, DISABLED_UsesTraceCallback) {
-  const unsigned int kSenderTraceFilter = kTraceDebug;
-  const unsigned int kReceiverTraceFilter = kTraceDefault & (~kTraceDebug);
-  class TraceObserver : public TraceCallback {
-   public:
-    explicit TraceObserver(unsigned int filter)
-        : filter_(filter), messages_left_(50), done_(EventWrapper::Create()) {}
-
-    virtual void Print(TraceLevel level,
-                       const char* message,
-                       int length) OVERRIDE {
-      EXPECT_EQ(0u, level & (~filter_));
-      if (--messages_left_ == 0)
-        done_->Set();
-    }
-
-    EventTypeWrapper Wait() { return done_->Wait(kDefaultTimeoutMs); }
-
-   private:
-    unsigned int filter_;
-    unsigned int messages_left_;
-    scoped_ptr<EventWrapper> done_;
-  } sender_trace(kSenderTraceFilter), receiver_trace(kReceiverTraceFilter);
-
-  test::DirectTransport send_transport, receive_transport;
-  Call::Config sender_call_config(&send_transport);
-  sender_call_config.trace_callback = &sender_trace;
-  sender_call_config.trace_filter = kSenderTraceFilter;
-  Call::Config receiver_call_config(&receive_transport);
-  receiver_call_config.trace_callback = &receiver_trace;
-  receiver_call_config.trace_filter = kReceiverTraceFilter;
-  CreateCalls(sender_call_config, receiver_call_config);
-  send_transport.SetReceiver(receiver_call_->Receiver());
-  receive_transport.SetReceiver(sender_call_->Receiver());
-
-  CreateTestConfigs();
-
-  CreateStreams();
-  CreateFrameGenerator();
-  StartSending();
-
-  // Wait() waits for a couple of trace callbacks to occur.
-  EXPECT_EQ(kEventSignaled, sender_trace.Wait());
-  EXPECT_EQ(kEventSignaled, receiver_trace.Wait());
-
-  StopSending();
-  send_transport.StopSending();
-  receive_transport.StopSending();
-  DestroyStreams();
-
-  // The TraceCallback instance MUST outlive Calls, destroy Calls explicitly.
-  sender_call_.reset();
-  receiver_call_.reset();
-}
-
 TEST_F(CallTest, ReceiverCanBeStartedTwice) {
   test::NullTransport transport;
   CreateCalls(Call::Config(&transport), Call::Config(&transport));
