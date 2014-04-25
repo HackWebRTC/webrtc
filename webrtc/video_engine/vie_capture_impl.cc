@@ -213,7 +213,7 @@ int ViECaptureImpl::DisconnectCaptureDevice(const int video_channel) {
 
 int ViECaptureImpl::StartCapture(const int capture_id,
                                  const CaptureCapability& capture_capability) {
-  LOG(LS_ERROR) << "StartCapture " << capture_id;
+  LOG(LS_INFO) << "StartCapture " << capture_id;
 
   ViEInputManagerScoped is(*(shared_data_->input_manager()));
   ViECapturer* vie_capture = is.Capture(capture_id);

@@ -29,19 +29,19 @@ namespace webrtc {
 
 static void LogCodec(const VideoCodec& codec) {
   LOG(LS_INFO) << "CodecType " << codec.codecType
-               << ", pl_type " << codec.plType
+               << ", pl_type " << static_cast<int>(codec.plType)
                << ", resolution " << codec.width
                << " x " << codec.height
                << ", start br " << codec.startBitrate
                << ", min br " << codec.minBitrate
                << ", max br " << codec.maxBitrate
-               << ", max fpr " << codec.maxFramerate
+               << ", max fps " << static_cast<int>(codec.maxFramerate)
                << ", max qp " << codec.qpMax
                << ", number of streams "
-               << codec.numberOfSimulcastStreams;
+               << static_cast<int>(codec.numberOfSimulcastStreams);
   if (codec.codecType == kVideoCodecVP8) {
     LOG(LS_INFO) << "VP8 specific settings";
-    LOG(LS_INFO) << "pivtureLossIndicationOn "
+    LOG(LS_INFO) << "pictureLossIndicationOn "
                  << codec.codecSpecific.VP8.pictureLossIndicationOn
                  << ", feedbackModeOn "
                  << codec.codecSpecific.VP8.feedbackModeOn
@@ -49,15 +49,17 @@ static void LogCodec(const VideoCodec& codec) {
                  << codec.codecSpecific.VP8.complexity
                  << ", resilience "
                  << codec.codecSpecific.VP8.resilience
-                 << ", numberOfTeporalLayers "
-                 << codec.codecSpecific.VP8.numberOfTemporalLayers
+                 << ", numberOfTemporalLayers "
+                 << static_cast<int>(
+                     codec.codecSpecific.VP8.numberOfTemporalLayers)
                  << ", keyFrameinterval "
                  << codec.codecSpecific.VP8.keyFrameInterval;
     for (int idx = 0; idx < codec.numberOfSimulcastStreams; ++idx) {
       LOG(LS_INFO) << "Stream " << codec.simulcastStream[idx].width
                    << " x " << codec.simulcastStream[idx].height;
       LOG(LS_INFO) << "Temporal layers "
-                   << codec.simulcastStream[idx].numberOfTemporalLayers
+                   << static_cast<int>(
+                       codec.simulcastStream[idx].numberOfTemporalLayers)
                    << ", min br "
                    << codec.simulcastStream[idx].minBitrate
                    << ", target br "
@@ -66,7 +68,6 @@ static void LogCodec(const VideoCodec& codec) {
                    << codec.simulcastStream[idx].maxBitrate
                    << ", qp max "
                    << codec.simulcastStream[idx].qpMax;
-
     }
   }
 }
