@@ -294,8 +294,12 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
     if (renderer_ == NULL) {
       return 0;
     }
+#ifdef USE_WEBRTC_DEV_BRANCH
+    int64 capture_time_ns = ntp_time_ms *
+#else
     // Convert 90K rtp timestamp to ns timestamp.
-    int64 rtp_time_stamp_in_ns = (time_stamp / 90) *
+    int64 capture_time_ns = (time_stamp / 90) *
+#endif
         talk_base::kNumNanosecsPerMillisec;
     // Convert milisecond render time to ns timestamp.
     int64 render_time_stamp_in_ns = render_time *
@@ -304,10 +308,10 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
     // and the render timestamp as the VideoFrame elapsed_time.
     if (handle == NULL) {
       return DeliverBufferFrame(buffer, buffer_size, render_time_stamp_in_ns,
-                                rtp_time_stamp_in_ns);
+                                capture_time_ns);
     } else {
       return DeliverTextureFrame(handle, render_time_stamp_in_ns,
-                                 rtp_time_stamp_in_ns);
+                                 capture_time_ns);
     }
   }
 
