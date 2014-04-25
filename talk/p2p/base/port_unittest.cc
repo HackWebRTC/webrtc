@@ -470,10 +470,17 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
   TurnPort* CreateTurnPort(const SocketAddress& addr,
                            PacketSocketFactory* socket_factory,
                            ProtocolType int_proto, ProtocolType ext_proto) {
+    return CreateTurnPort(addr, socket_factory,
+                          int_proto, ext_proto, kTurnUdpIntAddr);
+  }
+  TurnPort* CreateTurnPort(const SocketAddress& addr,
+                           PacketSocketFactory* socket_factory,
+                           ProtocolType int_proto, ProtocolType ext_proto,
+                           const talk_base::SocketAddress& server_addr) {
     TurnPort* port = TurnPort::Create(main_, socket_factory, &network_,
                                       addr.ipaddr(), 0, 0,
                                       username_, password_, ProtocolAddress(
-                                          kTurnUdpIntAddr, PROTO_UDP),
+                                          server_addr, PROTO_UDP),
                                       kRelayCredentials);
     port->SetIceProtocolType(ice_protocol_);
     return port;
@@ -2168,20 +2175,39 @@ TEST_F(PortTest, TestCandidateFoundation) {
   EXPECT_NE(udpport2->Candidates()[0].foundation(),
             relayport->Candidates()[0].foundation());
   // Verifying TURN candidate foundation.
-  talk_base::scoped_ptr<Port> turnport(CreateTurnPort(
+  talk_base::scoped_ptr<Port> turnport1(CreateTurnPort(
       kLocalAddr1, nat_socket_factory1(), PROTO_UDP, PROTO_UDP));
-  turnport->PrepareAddress();
-  ASSERT_EQ_WAIT(2U, turnport->Candidates().size(), kTimeout);
-  EXPECT_NE(turnport->Candidates()[0].foundation(),
-            turnport->Candidates()[1].foundation());
+  turnport1->PrepareAddress();
+  ASSERT_EQ_WAIT(2U, turnport1->Candidates().size(), kTimeout);
+  EXPECT_NE(turnport1->Candidates()[0].foundation(),
+            turnport1->Candidates()[1].foundation());
   EXPECT_NE(udpport1->Candidates()[0].foundation(),
-            turnport->Candidates()[1].foundation());
+            turnport1->Candidates()[1].foundation());
   EXPECT_NE(udpport2->Candidates()[0].foundation(),
-            turnport->Candidates()[1].foundation());
+            turnport1->Candidates()[1].foundation());
   EXPECT_NE(stunport->Candidates()[0].foundation(),
-            turnport->Candidates()[1].foundation());
+            turnport1->Candidates()[1].foundation());
   EXPECT_EQ(stunport->Candidates()[0].foundation(),
-            turnport->Candidates()[0].foundation());
+            turnport1->Candidates()[0].foundation());
+  talk_base::scoped_ptr<Port> turnport2(CreateTurnPort(
+      kLocalAddr1, nat_socket_factory1(), PROTO_UDP, PROTO_UDP));
+  turnport2->PrepareAddress();
+  ASSERT_EQ_WAIT(2U, turnport2->Candidates().size(), kTimeout);
+  EXPECT_EQ(turnport1->Candidates()[1].foundation(),
+            turnport2->Candidates()[1].foundation());
+
+  // Running a second turn server, to get different base IP address.
+  SocketAddress kTurnUdpIntAddr2("99.99.98.4", STUN_SERVER_PORT);
+  SocketAddress kTurnUdpExtAddr2("99.99.98.5", 0);
+  TestTurnServer turn_server2(
+      talk_base::Thread::Current(), kTurnUdpIntAddr2, kTurnUdpExtAddr2);
+  talk_base::scoped_ptr<Port> turnport3(CreateTurnPort(
+      kLocalAddr1, nat_socket_factory1(), PROTO_UDP, PROTO_UDP,
+      kTurnUdpIntAddr2));
+  turnport3->PrepareAddress();
+  ASSERT_EQ_WAIT(2U, turnport3->Candidates().size(), kTimeout);
+  EXPECT_NE(turnport3->Candidates()[1].foundation(),
+            turnport2->Candidates()[1].foundation());
 }
 
 // This test verifies the related addresses of different types of

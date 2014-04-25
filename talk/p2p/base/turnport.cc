@@ -482,9 +482,9 @@ void TurnPort::OnSendStunPacket(const void* data, size_t size,
 void TurnPort::OnStunAddress(const talk_base::SocketAddress& address) {
   if (server_address_.proto == PROTO_UDP  &&
       address != socket_->GetLocalAddress()) {
-    AddAddress(address,
-               socket_->GetLocalAddress(),
-               socket_->GetLocalAddress(),
+    AddAddress(address,  // Candidate address.
+               socket_->GetLocalAddress(),  // Base address.
+               socket_->GetLocalAddress(),  // Related address.
                UDP_PROTOCOL_NAME,
                STUN_PORT_TYPE,
                ICE_TYPE_PREFERENCE_SRFLX,
@@ -494,10 +494,11 @@ void TurnPort::OnStunAddress(const talk_base::SocketAddress& address) {
 
 void TurnPort::OnAllocateSuccess(const talk_base::SocketAddress& address,
                                  const talk_base::SocketAddress& stun_address) {
+  // For relayed candidate, Base is the candidate itself.
   connected_ = true;
-  AddAddress(address,
-             socket_->GetLocalAddress(),
-             stun_address,
+  AddAddress(address,  // Candidate Address
+             address,  // Base Address
+             stun_address,  // Related address.
              UDP_PROTOCOL_NAME,
              RELAY_PORT_TYPE,
              GetRelayPreference(server_address_.proto, server_address_.secure),
