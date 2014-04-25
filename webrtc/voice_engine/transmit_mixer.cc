@@ -1217,7 +1217,7 @@ int32_t TransmitMixer::RecordAudioToFile(
 int32_t TransmitMixer::MixOrReplaceAudioWithFile(
     int mixingFrequency)
 {
-    scoped_array<int16_t> fileBuffer(new int16_t[640]);
+    scoped_ptr<int16_t[]> fileBuffer(new int16_t[640]);
 
     int fileSamples(0);
     {

@@ -49,7 +49,7 @@ TEST_F(VideoProcessingModuleTest, DISABLED_ON_ANDROID(Denoising))
         int32_t modifiedPixels = 0;
 
         frameNum = 0;
-        scoped_array<uint8_t> video_buffer(new uint8_t[frame_length_]);
+        scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
         while (fread(video_buffer.get(), 1, frame_length_, source_file_) ==
             frame_length_)
         {

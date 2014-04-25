@@ -30,7 +30,7 @@ struct Frame {
     memcpy(this->buffer.get(), buffer, buffer_size);
   }
 
-  webrtc::scoped_array<unsigned char> buffer;
+  webrtc::scoped_ptr<unsigned char[]> buffer;
   int buffer_size;
   uint32_t timestamp;
   int64_t render_time;

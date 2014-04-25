@@ -473,7 +473,7 @@ TEST_F(VideoCaptureExternalTest, TestExternalCapture) {
   unsigned int length = webrtc::CalcBufferSize(webrtc::kI420,
                                                test_frame_.width(),
                                                test_frame_.height());
-  webrtc::scoped_array<uint8_t> test_buffer(new uint8_t[length]);
+  webrtc::scoped_ptr<uint8_t[]> test_buffer(new uint8_t[length]);
   webrtc::ExtractBuffer(test_frame_, length, test_buffer.get());
   EXPECT_EQ(0, capture_input_interface_->IncomingFrame(test_buffer.get(),
       length, capture_callback_.capability(), 0));
@@ -558,7 +558,7 @@ TEST_F(VideoCaptureExternalTest , FrameRate) {
      unsigned int length = webrtc::CalcBufferSize(webrtc::kI420,
                                                  test_frame_.width(),
                                                  test_frame_.height());
-     webrtc::scoped_array<uint8_t> test_buffer(new uint8_t[length]);
+     webrtc::scoped_ptr<uint8_t[]> test_buffer(new uint8_t[length]);
      webrtc::ExtractBuffer(test_frame_, length, test_buffer.get());
      EXPECT_EQ(0, capture_input_interface_->IncomingFrame(test_buffer.get(),
        length, capture_callback_.capability(), 0));
@@ -574,7 +574,7 @@ TEST_F(VideoCaptureExternalTest , FrameRate) {
     unsigned int length = webrtc::CalcBufferSize(webrtc::kI420,
                                                  test_frame_.width(),
                                                  test_frame_.height());
-    webrtc::scoped_array<uint8_t> test_buffer(new uint8_t[length]);
+    webrtc::scoped_ptr<uint8_t[]> test_buffer(new uint8_t[length]);
     webrtc::ExtractBuffer(test_frame_, length, test_buffer.get());
     EXPECT_EQ(0, capture_input_interface_->IncomingFrame(test_buffer.get(),
       length, capture_callback_.capability(), 0));
@@ -592,7 +592,7 @@ TEST_F(VideoCaptureExternalTest, Rotation) {
   unsigned int length = webrtc::CalcBufferSize(webrtc::kI420,
                                                test_frame_.width(),
                                                test_frame_.height());
-  webrtc::scoped_array<uint8_t> test_buffer(new uint8_t[length]);
+  webrtc::scoped_ptr<uint8_t[]> test_buffer(new uint8_t[length]);
   webrtc::ExtractBuffer(test_frame_, length, test_buffer.get());
   EXPECT_EQ(0, capture_input_interface_->IncomingFrame(test_buffer.get(),
     length, capture_callback_.capability(), 0));

@@ -503,7 +503,7 @@ void ViEEncoder::DeliverFrame(int id,
       unsigned int length = CalcBufferSize(kI420,
                                            video_frame->width(),
                                            video_frame->height());
-      scoped_array<uint8_t> video_buffer(new uint8_t[length]);
+      scoped_ptr<uint8_t[]> video_buffer(new uint8_t[length]);
       ExtractBuffer(*video_frame, length, video_buffer.get());
       effect_filter_->Transform(length,
                                 video_buffer.get(),

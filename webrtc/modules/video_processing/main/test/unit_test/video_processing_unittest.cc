@@ -89,7 +89,7 @@ TEST_F(VideoProcessingModuleTest, HandleNullBuffer) {
 
 TEST_F(VideoProcessingModuleTest, HandleBadStats) {
   VideoProcessingModule::FrameStats stats;
-  scoped_array<uint8_t> video_buffer(new uint8_t[frame_length_]);
+  scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
   ASSERT_EQ(frame_length_, fread(video_buffer.get(), 1, frame_length_,
                                  source_file_));
   EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0,
@@ -129,7 +129,7 @@ TEST_F(VideoProcessingModuleTest, IdenticalResultsAfterReset) {
   I420VideoFrame video_frame2;
   VideoProcessingModule::FrameStats stats;
   // Only testing non-static functions here.
-  scoped_array<uint8_t> video_buffer(new uint8_t[frame_length_]);
+  scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
   ASSERT_EQ(frame_length_, fread(video_buffer.get(), 1, frame_length_,
                                 source_file_));
   EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0,
@@ -172,7 +172,7 @@ TEST_F(VideoProcessingModuleTest, IdenticalResultsAfterReset) {
 
 TEST_F(VideoProcessingModuleTest, FrameStats) {
   VideoProcessingModule::FrameStats stats;
-  scoped_array<uint8_t> video_buffer(new uint8_t[frame_length_]);
+  scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
   ASSERT_EQ(frame_length_, fread(video_buffer.get(), 1, frame_length_,
                                  source_file_));
   EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0,
@@ -242,7 +242,7 @@ TEST_F(VideoProcessingModuleTest, Resampler) {
   vpm_->EnableTemporalDecimation(false);
 
   // Reading test frame
-  scoped_array<uint8_t> video_buffer(new uint8_t[frame_length_]);
+  scoped_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
   ASSERT_EQ(frame_length_, fread(video_buffer.get(), 1, frame_length_,
                                  source_file_));
   // Using ConvertToI420 to add stride to the image.

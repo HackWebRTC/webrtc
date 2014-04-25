@@ -55,7 +55,7 @@ class FakeAudioDeviceBuffer : public AudioDeviceBuffer {
   AudioManagerJni audio_manager_;
 
   SingleRwFifo fifo_;
-  scoped_array<scoped_array<int8_t> > buf_;
+  scoped_ptr<scoped_ptr<int8_t[]>[]> buf_;
   int next_available_buffer_;
 
   uint8_t record_channels_;

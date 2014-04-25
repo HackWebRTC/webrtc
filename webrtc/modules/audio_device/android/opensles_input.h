@@ -205,7 +205,7 @@ class OpenSlesInput {
   // Audio buffers
   AudioDeviceBuffer* audio_buffer_;
   // Holds all allocated memory such that it is deallocated properly.
-  scoped_array<scoped_array<int8_t> > rec_buf_;
+  scoped_ptr<scoped_ptr<int8_t[]>[]> rec_buf_;
   // Index in |rec_buf_| pointing to the audio buffer that will be ready the
   // next time RecorderSimpleBufferQueueCallbackHandler is invoked.
   // Ready means buffer contains audio data from the device.

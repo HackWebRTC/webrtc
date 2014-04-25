@@ -27,8 +27,7 @@ class AudioLoop {
   AudioLoop()
       : next_index_(0),
         loop_length_samples_(0),
-        block_length_samples_(0),
-        audio_array_(NULL) {
+        block_length_samples_(0) {
   }
 
   virtual ~AudioLoop() {}
@@ -50,7 +49,7 @@ class AudioLoop {
   size_t next_index_;
   size_t loop_length_samples_;
   size_t block_length_samples_;
-  scoped_array<int16_t> audio_array_;
+  scoped_ptr<int16_t[]> audio_array_;
 
   DISALLOW_COPY_AND_ASSIGN(AudioLoop);
 };

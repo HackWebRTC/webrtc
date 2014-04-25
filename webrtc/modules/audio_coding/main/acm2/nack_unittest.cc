@@ -398,7 +398,7 @@ TEST(NackTest, ChangeOfListSizeAppliedAndOldElementsRemoved) {
     // Packet lost more than NACK-list size limit.
     uint16_t num_lost_packets = kNackThreshold + kNackListSize + 5;
 
-    scoped_array<uint16_t> seq_num_lost(new uint16_t[num_lost_packets]);
+    scoped_ptr<uint16_t[]> seq_num_lost(new uint16_t[num_lost_packets]);
     for (int n = 0; n < num_lost_packets; ++n) {
       seq_num_lost[n] = ++seq_num;
     }

@@ -340,7 +340,7 @@ void OpenSlesOutput::AllocateBuffers() {
   fifo_.reset(new SingleRwFifo(num_fifo_buffers_needed_));
 
   // Allocate the memory area to be used.
-  play_buf_.reset(new scoped_array<int8_t>[TotalBuffersUsed()]);
+  play_buf_.reset(new scoped_ptr<int8_t[]>[TotalBuffersUsed()]);
   int required_buffer_size = fine_buffer_->RequiredBufferSizeBytes();
   for (int i = 0; i < TotalBuffersUsed(); ++i) {
     play_buf_[i].reset(new int8_t[required_buffer_size]);

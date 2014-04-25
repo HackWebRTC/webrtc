@@ -61,7 +61,7 @@ class RawRtpPacket {
   uint16_t seq_num() const { return seq_num_; }
 
  private:
-  scoped_array<uint8_t> data_;
+  scoped_ptr<uint8_t[]> data_;
   uint32_t length_;
   int64_t resend_time_ms_;
   uint32_t ssrc_;

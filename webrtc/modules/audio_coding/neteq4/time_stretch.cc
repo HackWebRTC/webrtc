@@ -29,7 +29,7 @@ TimeStretch::ReturnCodes TimeStretch::Process(
   int fs_mult_120 = fs_mult_ * 120;  // Corresponds to 15 ms.
 
   const int16_t* signal;
-  scoped_array<int16_t> signal_array;
+  scoped_ptr<int16_t[]> signal_array;
   size_t signal_len;
   if (num_channels_ == 1) {
     signal = input;

@@ -223,7 +223,7 @@ class OpenSlesOutput : public PlayoutDelayProvider {
   // Audio buffers
   AudioDeviceBuffer* audio_buffer_;
   scoped_ptr<FineAudioBuffer> fine_buffer_;
-  scoped_array<scoped_array<int8_t> > play_buf_;
+  scoped_ptr<scoped_ptr<int8_t[]>[]> play_buf_;
   // Index in |rec_buf_| pointing to the audio buffer that will be ready the
   // next time PlayerSimpleBufferQueueCallbackHandler is invoked.
   // Ready means buffer is ready to be played out to device.

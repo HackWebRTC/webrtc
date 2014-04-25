@@ -167,7 +167,7 @@ class Expand {
   int lag_index_direction_;
   int current_lag_index_;
   bool stop_muting_;
-  scoped_array<ChannelParameters> channel_parameters_;
+  scoped_ptr<ChannelParameters[]> channel_parameters_;
 
   DISALLOW_COPY_AND_ASSIGN(Expand);
 };

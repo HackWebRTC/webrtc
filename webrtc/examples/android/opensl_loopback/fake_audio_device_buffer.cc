@@ -22,7 +22,7 @@ FakeAudioDeviceBuffer::FakeAudioDeviceBuffer()
       next_available_buffer_(0),
       record_channels_(0),
       play_channels_(0) {
-  buf_.reset(new scoped_array<int8_t>[kNumBuffers]);
+  buf_.reset(new scoped_ptr<int8_t[]>[kNumBuffers]);
   for (int i = 0; i < kNumBuffers; ++i) {
     buf_[i].reset(new int8_t[buffer_size_bytes()]);
   }

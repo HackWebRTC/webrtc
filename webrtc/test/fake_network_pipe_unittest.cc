@@ -47,7 +47,7 @@ class FakeNetworkPipeTest : public ::testing::Test {
   }
 
   void SendPackets(FakeNetworkPipe* pipe, int number_packets, int kPacketSize) {
-    scoped_array<uint8_t> packet(new uint8_t[kPacketSize]);
+    scoped_ptr<uint8_t[]> packet(new uint8_t[kPacketSize]);
     for (int i = 0; i < number_packets; ++i) {
       pipe->SendPacket(packet.get(), kPacketSize);
     }

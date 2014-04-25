@@ -181,7 +181,7 @@ class TestVp8Impl : public ::testing::Test {
 
   scoped_ptr<Vp8UnitTestEncodeCompleteCallback> encode_complete_callback_;
   scoped_ptr<Vp8UnitTestDecodeCompleteCallback> decode_complete_callback_;
-  scoped_array<uint8_t> source_buffer_;
+  scoped_ptr<uint8_t[]> source_buffer_;
   FILE* source_file_;
   I420VideoFrame input_frame_;
   scoped_ptr<VideoEncoder> encoder_;

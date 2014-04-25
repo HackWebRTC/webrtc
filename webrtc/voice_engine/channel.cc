@@ -4279,7 +4279,7 @@ Channel::GetRtpRtcp(RtpRtcp** rtpRtcpModule, RtpReceiver** rtp_receiver) const
 int32_t
 Channel::MixOrReplaceAudioWithFile(int mixingFrequency)
 {
-    scoped_array<int16_t> fileBuffer(new int16_t[640]);
+    scoped_ptr<int16_t[]> fileBuffer(new int16_t[640]);
     int fileSamples(0);
 
     {
@@ -4349,7 +4349,7 @@ Channel::MixAudioWithFile(AudioFrame& audioFrame,
 {
     assert(mixingFrequency <= 32000);
 
-    scoped_array<int16_t> fileBuffer(new int16_t[640]);
+    scoped_ptr<int16_t[]> fileBuffer(new int16_t[640]);
     int fileSamples(0);
 
     {

@@ -518,7 +518,7 @@ void void_main(int argc, char* argv[]) {
 
     const size_t path_size =
         apm->echo_control_mobile()->echo_path_size_bytes();
-    scoped_array<char> echo_path(new char[path_size]);
+    scoped_ptr<char[]> echo_path(new char[path_size]);
     ASSERT_EQ(path_size, fread(echo_path.get(),
                                sizeof(char),
                                path_size,
@@ -1004,7 +1004,7 @@ void void_main(int argc, char* argv[]) {
   if (aecm_echo_path_out_file != NULL) {
     const size_t path_size =
         apm->echo_control_mobile()->echo_path_size_bytes();
-    scoped_array<char> echo_path(new char[path_size]);
+    scoped_ptr<char[]> echo_path(new char[path_size]);
     apm->echo_control_mobile()->GetEchoPath(echo_path.get(), path_size);
     ASSERT_EQ(path_size, fwrite(echo_path.get(),
                                 sizeof(char),

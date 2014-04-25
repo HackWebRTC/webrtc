@@ -126,7 +126,7 @@ class BackgroundNoise {
                       int32_t residual_energy);
 
   size_t num_channels_;
-  scoped_array<ChannelParameters> channel_parameters_;
+  scoped_ptr<ChannelParameters[]> channel_parameters_;
   bool initialized_;
   NetEqBackgroundNoiseMode mode_;
 

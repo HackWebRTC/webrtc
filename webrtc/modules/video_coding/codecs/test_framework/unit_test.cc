@@ -565,7 +565,7 @@ UnitTest::Perform()
         frameLength = WaitForDecodedFrame();
     }
     unsigned int length = CalcBufferSize(kI420, width, height);
-    scoped_array<uint8_t> decoded_buffer(new uint8_t[length]);
+    scoped_ptr<uint8_t[]> decoded_buffer(new uint8_t[length]);
     ExtractBuffer(_decodedVideoBuffer, _lengthSourceFrame,
                   decoded_buffer.get());
     EXPECT_TRUE(CheckIfBitExact(decoded_buffer.get(), frameLength, _refDecFrame,
@@ -645,7 +645,7 @@ UnitTest::Perform()
 
         // check that decoded frame matches with reference
         unsigned int length = CalcBufferSize(kI420, width, height);
-        scoped_array<uint8_t> decoded_buffer(new uint8_t[length]);
+        scoped_ptr<uint8_t[]> decoded_buffer(new uint8_t[length]);
         ExtractBuffer(_decodedVideoBuffer, length, decoded_buffer.get());
         EXPECT_TRUE(CheckIfBitExact(decoded_buffer.get(), length,
                                     _refDecFrame, _lengthSourceFrame) == true);
