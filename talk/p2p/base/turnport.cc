@@ -496,8 +496,8 @@ void TurnPort::OnAllocateSuccess(const talk_base::SocketAddress& address,
                                  const talk_base::SocketAddress& stun_address) {
   // For relayed candidate, Base is the candidate itself.
   connected_ = true;
-  AddAddress(address,  // Candidate Address
-             address,  // Base Address
+  AddAddress(address,  // Candidate address.
+             address,  // Base address.
              stun_address,  // Related address.
              UDP_PROTOCOL_NAME,
              RELAY_PORT_TYPE,
