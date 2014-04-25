@@ -68,7 +68,7 @@ class DefaultBweTest : public BweTest,
   }
 
   virtual void TearDown() {
-    while (packet_senders_.empty()) {
+    while (!packet_senders_.empty()) {
       delete packet_senders_.front();
       packet_senders_.pop_front();
     }
