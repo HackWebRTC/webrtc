@@ -184,7 +184,7 @@ class BweTestFramework_RateCounterFilterTest : public ::testing::Test {
     RTPHeader header;
     // "Send" a packet every 10 ms.
     for (int64_t i = 0; i < run_for_ms; i += 10, now_ms_ += 10) {
-      packets.push_back(Packet(now_ms_ * 1000, payload_bits / 8, header));
+      packets.push_back(Packet(0, now_ms_ * 1000, payload_bits / 8, header));
     }
     filter_.RunFor(run_for_ms, &packets);
     ASSERT_TRUE(IsTimeSorted(packets));
@@ -587,7 +587,7 @@ class BweTestFramework_ChokeFilterTest : public ::testing::Test {
       int64_t send_time_ms = now_ms_ + (i * run_for_ms) / packets_to_generate;
       header.sequenceNumber = sequence_number_++;
       // Payload is 1000 bits.
-      packets.push_back(Packet(send_time_ms * 1000, 125, header));
+      packets.push_back(Packet(0, send_time_ms * 1000, 125, header));
       send_times_us_.push_back(send_time_ms * 1000);
     }
     ASSERT_TRUE(IsTimeSorted(packets));
@@ -768,7 +768,7 @@ void TestVideoSender(VideoSender* sender, int64_t run_for_ms,
 
 TEST(BweTestFramework_VideoSenderTest, Fps1Kbps80_1s) {
   // 1 fps, 80 kbps
-  VideoSender sender(NULL, 1.0f, 80, 0x1234, 0);
+  VideoSender sender(0, NULL, 1.0f, 80, 0x1234, 0);
   EXPECT_EQ(10000u, sender.bytes_per_second());
   // We're at 1 fps, so all packets should be generated on first call, giving 10
   // packets of each 1000 bytes, total 10000 bytes.
@@ -785,7 +785,7 @@ TEST(BweTestFramework_VideoSenderTest, Fps1Kbps80_1s) {
 
 TEST(BweTestFramework_VideoSenderTest, Fps1Kbps80_1s_Offset) {
   // 1 fps, 80 kbps, offset 0.5 of a frame period, ==0.5s in this case.
-  VideoSender sender(NULL, 1.0f, 80, 0x1234, 0.5f);
+  VideoSender sender(0, NULL, 1.0f, 80, 0x1234, 0.5f);
   EXPECT_EQ(10000u, sender.bytes_per_second());
   // 499ms, no output.
   TestVideoSender(&sender, 499, 0, 0, 0);
@@ -805,7 +805,7 @@ TEST(BweTestFramework_VideoSenderTest, Fps1Kbps80_1s_Offset) {
 
 TEST(BweTestFramework_VideoSenderTest, Fps50Kpbs80_11s) {
   // 50 fps, 80 kbps.
-  VideoSender sender(NULL, 50.0f, 80, 0x1234, 0);
+  VideoSender sender(0, NULL, 50.0f, 80, 0x1234, 0);
   EXPECT_EQ(10000u, sender.bytes_per_second());
   // 9998ms, should see 500 frames, 200 byte payloads, total 100000 bytes.
   TestVideoSender(&sender, 9998, 500, 200, 100000);
@@ -821,7 +821,7 @@ TEST(BweTestFramework_VideoSenderTest, Fps50Kpbs80_11s) {
 
 TEST(BweTestFramework_VideoSenderTest, Fps10Kpbs120_1s) {
   // 20 fps, 120 kbps.
-  VideoSender sender(NULL, 20.0f, 120, 0x1234, 0);
+  VideoSender sender(0, NULL, 20.0f, 120, 0x1234, 0);
   EXPECT_EQ(15000u, sender.bytes_per_second());
   // 498ms, 10 frames with 750 byte payloads, total 7500 bytes.
   TestVideoSender(&sender, 498, 10, 750, 7500);
@@ -837,7 +837,7 @@ TEST(BweTestFramework_VideoSenderTest, Fps10Kpbs120_1s) {
 
 TEST(BweTestFramework_VideoSenderTest, Fps30Kbps800_20s) {
   // 20 fps, 820 kbps.
-  VideoSender sender(NULL, 25.0f, 820, 0x1234, 0);
+  VideoSender sender(0, NULL, 25.0f, 820, 0x1234, 0);
   EXPECT_EQ(102500u, sender.bytes_per_second());
   // 9998ms, 250 frames. 820 kbps = 102500 bytes/s, so total should be 1025000.
   // Each frame is 102500/25=4100 bytes, or 5 packets (4 @1000 bytes, 1 @100),
@@ -858,7 +858,7 @@ TEST(BweTestFramework_VideoSenderTest, Fps30Kbps800_20s) {
 
 TEST(BweTestFramework_VideoSenderTest, TestAppendInOrder) {
   // 1 fps, 80 kbps, 250ms offset.
-  VideoSender sender1(NULL, 1.0f, 80, 0x1234, 0.25f);
+  VideoSender sender1(0, NULL, 1.0f, 80, 0x1234, 0.25f);
   EXPECT_EQ(10000u, sender1.bytes_per_second());
   Packets packets;
   // Generate some packets, verify they are sorted.
@@ -873,7 +873,7 @@ TEST(BweTestFramework_VideoSenderTest, TestAppendInOrder) {
   EXPECT_EQ(18u, packets.size());
 
   // Another sender, 2 fps, 160 kpbs, 150ms offset
-  VideoSender sender2(NULL, 2.0f, 160, 0x2234, 0.30f);
+  VideoSender sender2(0, NULL, 2.0f, 160, 0x2234, 0.30f);
   EXPECT_EQ(20000u, sender2.bytes_per_second());
   // Generate some packets, verify that they are merged with the packets already
   // on the list.
@@ -887,7 +887,7 @@ TEST(BweTestFramework_VideoSenderTest, TestAppendInOrder) {
 }
 
 TEST(BweTestFramework_VideoSenderTest, FeedbackIneffective) {
-  VideoSender sender(NULL, 25.0f, 820, 0x1234, 0);
+  VideoSender sender(0, NULL, 25.0f, 820, 0x1234, 0);
   EXPECT_EQ(102500u, sender.bytes_per_second());
   TestVideoSender(&sender, 9998, 1000, 500, 1025000);
 
@@ -899,7 +899,7 @@ TEST(BweTestFramework_VideoSenderTest, FeedbackIneffective) {
 }
 
 TEST(BweTestFramework_AdaptiveVideoSenderTest, FeedbackChangesBitrate) {
-  AdaptiveVideoSender sender(NULL, 25.0f, 820, 0x1234, 0);
+  AdaptiveVideoSender sender(0, NULL, 25.0f, 820, 0x1234, 0);
   EXPECT_EQ(102500u, sender.bytes_per_second());
   TestVideoSender(&sender, 9998, 1000, 500, 1025000);
 

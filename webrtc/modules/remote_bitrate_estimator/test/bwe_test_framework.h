@@ -31,6 +31,10 @@ namespace bwe {
 class DelayCapHelper;
 class RateCounter;
 
+
+typedef std::vector<int> FlowIds;
+const FlowIds CreateFlowIds(const int *flow_ids_array, size_t num_flow_ids);
+
 template<typename T> class Stats {
  public:
   Stats()
@@ -139,12 +143,13 @@ class Random {
 class Packet {
  public:
   Packet();
-  Packet(int64_t send_time_us, uint32_t payload_size,
+  Packet(int flow_id, int64_t send_time_us, uint32_t payload_size,
          const RTPHeader& header);
   Packet(int64_t send_time_us, uint32_t sequence_number);
 
   bool operator<(const Packet& rhs) const;
 
+  int flow_id() const { return flow_id_; }
   int64_t creation_time_us() const { return creation_time_us_; }
   void set_send_time_us(int64_t send_time_us);
   int64_t send_time_us() const { return send_time_us_; }
@@ -152,6 +157,7 @@ class Packet {
   const RTPHeader& header() const { return header_; }
 
  private:
+  int flow_id_;
   int64_t creation_time_us_;  // Time when the packet was created.
   int64_t send_time_us_;   // Time the packet left last processor touching it.
   uint32_t payload_size_;  // Size of the (non-existent, simulated) payload.
@@ -170,13 +176,16 @@ class PacketProcessorListener {
  public:
   virtual ~PacketProcessorListener() {}
 
-  virtual void AddPacketProcessor(PacketProcessor* processor) = 0;
+  virtual void AddPacketProcessor(PacketProcessor* processor,
+                                  bool is_sender) = 0;
   virtual void RemovePacketProcessor(PacketProcessor* processor) = 0;
 };
 
 class PacketProcessor {
  public:
-  explicit PacketProcessor(PacketProcessorListener* listener);
+  PacketProcessor(PacketProcessorListener* listener, bool is_sender);
+  PacketProcessor(PacketProcessorListener* listener, const FlowIds& flow_ids,
+                  bool is_sender);
   virtual ~PacketProcessor();
 
   // Called after each simulation batch to allow the processor to plot any
@@ -188,8 +197,11 @@ class PacketProcessor {
   // |send_time_us_|. The simulation time |time_ms| is optional to use.
   virtual void RunFor(int64_t time_ms, Packets* in_out) = 0;
 
+  const FlowIds& flow_ids() const { return flow_ids_; }
+
  private:
   PacketProcessorListener* listener_;
+  FlowIds flow_ids_;
 
   DISALLOW_COPY_AND_ASSIGN(PacketProcessor);
 };
@@ -198,6 +210,9 @@ class RateCounterFilter : public PacketProcessor {
  public:
   explicit RateCounterFilter(PacketProcessorListener* listener);
   RateCounterFilter(PacketProcessorListener* listener,
+                    const std::string& name);
+  RateCounterFilter(PacketProcessorListener* listener,
+                    const FlowIds& flow_ids,
                     const std::string& name);
   virtual ~RateCounterFilter();
 
@@ -283,6 +298,7 @@ class ReorderFilter : public PacketProcessor {
 class ChokeFilter : public PacketProcessor {
  public:
   explicit ChokeFilter(PacketProcessorListener* listener);
+  ChokeFilter(PacketProcessorListener* listener, const FlowIds& flow_ids);
   virtual ~ChokeFilter();
 
   void SetCapacity(uint32_t kbps);
@@ -338,6 +354,7 @@ class PacketSender : public PacketProcessor {
   };
 
   explicit PacketSender(PacketProcessorListener* listener);
+  PacketSender(PacketProcessorListener* listener, const FlowIds& flow_ids);
   virtual ~PacketSender() {}
 
   virtual uint32_t GetCapacityKbps() const { return 0; }
@@ -347,23 +364,17 @@ class PacketSender : public PacketProcessor {
   // Note that changing the feedback interval affects the timing of when the
   // output of the estimators is sampled and therefore the baseline files may
   // have to be regenerated.
-  virtual int64_t GetFeedbackIntervalMs() const { return 1000; }
+  virtual int GetFeedbackIntervalMs() const { return 1000; }
   virtual void GiveFeedback(const Feedback& feedback) {}
 
  private:
   DISALLOW_COPY_AND_ASSIGN(PacketSender);
 };
 
-struct PacketSenderFactory {
-  PacketSenderFactory() {}
-  virtual ~PacketSenderFactory() {}
-  virtual PacketSender* Create() const = 0;
-};
-
 class VideoSender : public PacketSender {
  public:
-  VideoSender(PacketProcessorListener* listener, float fps, uint32_t kbps,
-              uint32_t ssrc, float first_frame_offset);
+  VideoSender(int flow_id, PacketProcessorListener* listener, float fps,
+              uint32_t kbps, uint32_t ssrc, float first_frame_offset);
   virtual ~VideoSender() {}
 
   uint32_t max_payload_size_bytes() const { return kMaxPayloadSizeBytes; }
@@ -390,48 +401,17 @@ class VideoSender : public PacketSender {
 
 class AdaptiveVideoSender : public VideoSender {
  public:
-  AdaptiveVideoSender(PacketProcessorListener* listener, float fps,
-                      uint32_t kbps, uint32_t ssrc, float first_frame_offset);
+  AdaptiveVideoSender(int flow_id, PacketProcessorListener* listener,
+                      float fps, uint32_t kbps, uint32_t ssrc,
+                      float first_frame_offset);
   virtual ~AdaptiveVideoSender() {}
 
-  virtual int64_t GetFeedbackIntervalMs() const { return 100; }
+  virtual int GetFeedbackIntervalMs() const { return 100; }
   virtual void GiveFeedback(const Feedback& feedback);
 
 private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(AdaptiveVideoSender);
 };
-
-class VideoPacketSenderFactory : public PacketSenderFactory {
- public:
-  VideoPacketSenderFactory(float fps, uint32_t kbps, uint32_t ssrc,
-                           float frame_offset)
-      : fps_(fps),
-        kbps_(kbps),
-        ssrc_(ssrc),
-        frame_offset_(frame_offset) {
-  }
-  virtual ~VideoPacketSenderFactory() {}
-  virtual PacketSender* Create() const {
-    return new VideoSender(NULL, fps_, kbps_, ssrc_, frame_offset_);
-  }
- protected:
-  float fps_;
-  uint32_t kbps_;
-  uint32_t ssrc_;
-  float frame_offset_;
-};
-
-class AdaptiveVideoPacketSenderFactory : public VideoPacketSenderFactory {
- public:
-  AdaptiveVideoPacketSenderFactory(float fps, uint32_t kbps, uint32_t ssrc,
-                                   float frame_offset)
-      : VideoPacketSenderFactory(fps, kbps, ssrc, frame_offset) {}
-  virtual ~AdaptiveVideoPacketSenderFactory() {}
-  virtual PacketSender* Create() const {
-    return new AdaptiveVideoSender(NULL, fps_, kbps_, ssrc_, frame_offset_);
-  }
-};
-
 }  // namespace bwe
 }  // namespace testing
 }  // namespace webrtc
