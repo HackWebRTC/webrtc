@@ -2065,7 +2065,7 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(
   PCOJava* observer = reinterpret_cast<PCOJava*>(observer_p);
   observer->SetConstraints(new ConstraintsWrapper(jni, j_constraints));
   talk_base::scoped_refptr<PeerConnectionInterface> pc(f->CreatePeerConnection(
-      servers, observer->constraints(), NULL, observer));
+      servers, observer->constraints(), NULL, NULL, observer));
   return (jlong)pc.release();
 }
 

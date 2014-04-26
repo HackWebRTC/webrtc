@@ -105,6 +105,7 @@ bool Conductor::InitializePeerConnection() {
   peer_connection_ = peer_connection_factory_->CreatePeerConnection(servers,
                                                                     NULL,
                                                                     NULL,
+                                                                    NULL,
                                                                     this);
   if (!peer_connection_.get()) {
     main_wnd_->MessageBox("Error",

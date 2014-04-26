@@ -100,6 +100,7 @@
   talk_base::scoped_refptr<webrtc::PeerConnectionInterface> peerConnection =
       self.nativeFactory->CreatePeerConnection(iceServers,
                                                constraints.constraints,
+                                               NULL,
                                                dummy_dtls_identity_service,
                                                observer);
   RTCPeerConnection* pc =
