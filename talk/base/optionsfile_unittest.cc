@@ -25,12 +25,18 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/base/fileutils.h"
 #include "talk/base/gunit.h"
 #include "talk/base/optionsfile.h"
-#include "talk/base/pathutils.h"
 
 namespace talk_base {
+
+#ifdef ANDROID
+static const char *kTestFile = "/sdcard/.testfile";
+#elif CHROMEOS
+static const char *kTestFile = "/tmp/.testfile";
+#else
+static const char *kTestFile = ".testfile";
+#endif
 
 static const std::string kTestOptionA = "test-option-a";
 static const std::string kTestOptionB = "test-option-b";
@@ -50,135 +56,122 @@ static int kTestInt2 = 67890;
 static int kNegInt = -634;
 static int kZero = 0;
 
-class OptionsFileTest : public testing::Test {
- public:
-  OptionsFileTest() {
-    Pathname dir;
-    ASSERT(Filesystem::GetTemporaryFolder(dir, true, NULL));
-    test_file_ = Filesystem::TempFilename(dir, ".testfile");
-    OpenStore();
-  }
-
- protected:
-  void OpenStore() {
-    store_.reset(new OptionsFile(test_file_));
-  }
-
-  talk_base::scoped_ptr<OptionsFile> store_;
-
- private:
-  std::string test_file_;
-};
-
-TEST_F(OptionsFileTest, GetSetString) {
+TEST(OptionsFile, GetSetString) {
+  OptionsFile store(kTestFile);
   // Clear contents of the file on disk.
-  EXPECT_TRUE(store_->Save());
+  EXPECT_TRUE(store.Save());
   std::string out1, out2;
-  EXPECT_FALSE(store_->GetStringValue(kTestOptionA, &out1));
-  EXPECT_FALSE(store_->GetStringValue(kTestOptionB, &out2));
-  EXPECT_TRUE(store_->SetStringValue(kTestOptionA, kTestString1));
-  EXPECT_TRUE(store_->Save());
-  EXPECT_TRUE(store_->Load());
-  EXPECT_TRUE(store_->SetStringValue(kTestOptionB, kTestString2));
-  EXPECT_TRUE(store_->Save());
-  EXPECT_TRUE(store_->Load());
-  EXPECT_TRUE(store_->GetStringValue(kTestOptionA, &out1));
-  EXPECT_TRUE(store_->GetStringValue(kTestOptionB, &out2));
+  EXPECT_FALSE(store.GetStringValue(kTestOptionA, &out1));
+  EXPECT_FALSE(store.GetStringValue(kTestOptionB, &out2));
+  EXPECT_TRUE(store.SetStringValue(kTestOptionA, kTestString1));
+  EXPECT_TRUE(store.Save());
+  EXPECT_TRUE(store.Load());
+  EXPECT_TRUE(store.SetStringValue(kTestOptionB, kTestString2));
+  EXPECT_TRUE(store.Save());
+  EXPECT_TRUE(store.Load());
+  EXPECT_TRUE(store.GetStringValue(kTestOptionA, &out1));
+  EXPECT_TRUE(store.GetStringValue(kTestOptionB, &out2));
   EXPECT_EQ(kTestString1, out1);
   EXPECT_EQ(kTestString2, out2);
-  EXPECT_TRUE(store_->RemoveValue(kTestOptionA));
-  EXPECT_TRUE(store_->Save());
-  EXPECT_TRUE(store_->Load());
-  EXPECT_TRUE(store_->RemoveValue(kTestOptionB));
-  EXPECT_TRUE(store_->Save());
-  EXPECT_TRUE(store_->Load());
-  EXPECT_FALSE(store_->GetStringValue(kTestOptionA, &out1));
-  EXPECT_FALSE(store_->GetStringValue(kTestOptionB, &out2));
+  EXPECT_TRUE(store.RemoveValue(kTestOptionA));
+  EXPECT_TRUE(store.Save());
+  EXPECT_TRUE(store.Load());
+  EXPECT_TRUE(store.RemoveValue(kTestOptionB));
+  EXPECT_TRUE(store.Save());
+  EXPECT_TRUE(store.Load());
+  EXPECT_FALSE(store.GetStringValue(kTestOptionA, &out1));
+  EXPECT_FALSE(store.GetStringValue(kTestOptionB, &out2));
 }
 
-TEST_F(OptionsFileTest, GetSetInt) {
+TEST(OptionsFile, GetSetInt) {
+  OptionsFile store(kTestFile);
   // Clear contents of the file on disk.
-  EXPECT_TRUE(store_->Save());
+  EXPECT_TRUE(store.Save());
   int out1, out2;
-  EXPECT_FALSE(store_->GetIntValue(kTestOptionA, &out1));
-  EXPECT_FALSE(store_->GetIntValue(kTestOptionB, &out2));
-  EXPECT_TRUE(store_->SetIntValue(kTestOptionA, kTestInt1));
-  EXPECT_TRUE(store_->Save());
-  EXPECT_TRUE(store_->Load());
-  EXPECT_TRUE(store_->SetIntValue(kTestOptionB, kTestInt2));
-  EXPECT_TRUE(store_->Save());
-  EXPECT_TRUE(store_->Load());
-  EXPECT_TRUE(store_->GetIntValue(kTestOptionA, &out1));
-  EXPECT_TRUE(store_->GetIntValue(kTestOptionB, &out2));
+  EXPECT_FALSE(store.GetIntValue(kTestOptionA, &out1));
+  EXPECT_FALSE(store.GetIntValue(kTestOptionB, &out2));
+  EXPECT_TRUE(store.SetIntValue(kTestOptionA, kTestInt1));
+  EXPECT_TRUE(store.Save());
+  EXPECT_TRUE(store.Load());
+  EXPECT_TRUE(store.SetIntValue(kTestOptionB, kTestInt2));
+  EXPECT_TRUE(store.Save());
+  EXPECT_TRUE(store.Load());
+  EXPECT_TRUE(store.GetIntValue(kTestOptionA, &out1));
+  EXPECT_TRUE(store.GetIntValue(kTestOptionB, &out2));
   EXPECT_EQ(kTestInt1, out1);
   EXPECT_EQ(kTestInt2, out2);
-  EXPECT_TRUE(store_->RemoveValue(kTestOptionA));
-  EXPECT_TRUE(store_->Save());
-  EXPECT_TRUE(store_->Load());
-  EXPECT_TRUE(store_->RemoveValue(kTestOptionB));
-  EXPECT_TRUE(store_->Save());
-  EXPECT_TRUE(store_->Load());
-  EXPECT_FALSE(store_->GetIntValue(kTestOptionA, &out1));
-  EXPECT_FALSE(store_->GetIntValue(kTestOptionB, &out2));
-  EXPECT_TRUE(store_->SetIntValue(kTestOptionA, kNegInt));
-  EXPECT_TRUE(store_->GetIntValue(kTestOptionA, &out1));
+  EXPECT_TRUE(store.RemoveValue(kTestOptionA));
+  EXPECT_TRUE(store.Save());
+  EXPECT_TRUE(store.Load());
+  EXPECT_TRUE(store.RemoveValue(kTestOptionB));
+  EXPECT_TRUE(store.Save());
+  EXPECT_TRUE(store.Load());
+  EXPECT_FALSE(store.GetIntValue(kTestOptionA, &out1));
+  EXPECT_FALSE(store.GetIntValue(kTestOptionB, &out2));
+  EXPECT_TRUE(store.SetIntValue(kTestOptionA, kNegInt));
+  EXPECT_TRUE(store.GetIntValue(kTestOptionA, &out1));
   EXPECT_EQ(kNegInt, out1);
-  EXPECT_TRUE(store_->SetIntValue(kTestOptionA, kZero));
-  EXPECT_TRUE(store_->GetIntValue(kTestOptionA, &out1));
+  EXPECT_TRUE(store.SetIntValue(kTestOptionA, kZero));
+  EXPECT_TRUE(store.GetIntValue(kTestOptionA, &out1));
   EXPECT_EQ(kZero, out1);
 }
 
-TEST_F(OptionsFileTest, Persist) {
-  // Clear contents of the file on disk.
-  EXPECT_TRUE(store_->Save());
-  EXPECT_TRUE(store_->SetStringValue(kTestOptionA, kTestString1));
-  EXPECT_TRUE(store_->SetIntValue(kTestOptionB, kNegInt));
-  EXPECT_TRUE(store_->Save());
-
-  // Load the saved contents from above.
-  OpenStore();
-  EXPECT_TRUE(store_->Load());
-  std::string out1;
-  int out2;
-  EXPECT_TRUE(store_->GetStringValue(kTestOptionA, &out1));
-  EXPECT_TRUE(store_->GetIntValue(kTestOptionB, &out2));
-  EXPECT_EQ(kTestString1, out1);
-  EXPECT_EQ(kNegInt, out2);
+TEST(OptionsFile, Persist) {
+  {
+    OptionsFile store(kTestFile);
+    // Clear contents of the file on disk.
+    EXPECT_TRUE(store.Save());
+    EXPECT_TRUE(store.SetStringValue(kTestOptionA, kTestString1));
+    EXPECT_TRUE(store.SetIntValue(kTestOptionB, kNegInt));
+    EXPECT_TRUE(store.Save());
+  }
+  {
+    OptionsFile store(kTestFile);
+    // Load the saved contents from above.
+    EXPECT_TRUE(store.Load());
+    std::string out1;
+    int out2;
+    EXPECT_TRUE(store.GetStringValue(kTestOptionA, &out1));
+    EXPECT_TRUE(store.GetIntValue(kTestOptionB, &out2));
+    EXPECT_EQ(kTestString1, out1);
+    EXPECT_EQ(kNegInt, out2);
+  }
 }
 
-TEST_F(OptionsFileTest, SpecialCharacters) {
+TEST(OptionsFile, SpecialCharacters) {
+  OptionsFile store(kTestFile);
   // Clear contents of the file on disk.
-  EXPECT_TRUE(store_->Save());
+  EXPECT_TRUE(store.Save());
   std::string out;
-  EXPECT_FALSE(store_->SetStringValue(kOptionWithEquals, kTestString1));
-  EXPECT_FALSE(store_->GetStringValue(kOptionWithEquals, &out));
-  EXPECT_FALSE(store_->SetStringValue(kOptionWithNewline, kTestString1));
-  EXPECT_FALSE(store_->GetStringValue(kOptionWithNewline, &out));
-  EXPECT_TRUE(store_->SetStringValue(kOptionWithUtf8, kValueWithUtf8));
-  EXPECT_TRUE(store_->SetStringValue(kTestOptionA, kTestString1));
-  EXPECT_TRUE(store_->Save());
-  EXPECT_TRUE(store_->Load());
-  EXPECT_TRUE(store_->GetStringValue(kTestOptionA, &out));
+  EXPECT_FALSE(store.SetStringValue(kOptionWithEquals, kTestString1));
+  EXPECT_FALSE(store.GetStringValue(kOptionWithEquals, &out));
+  EXPECT_FALSE(store.SetStringValue(kOptionWithNewline, kTestString1));
+  EXPECT_FALSE(store.GetStringValue(kOptionWithNewline, &out));
+  EXPECT_TRUE(store.SetStringValue(kOptionWithUtf8, kValueWithUtf8));
+  EXPECT_TRUE(store.SetStringValue(kTestOptionA, kTestString1));
+  EXPECT_TRUE(store.Save());
+  EXPECT_TRUE(store.Load());
+  EXPECT_TRUE(store.GetStringValue(kTestOptionA, &out));
   EXPECT_EQ(kTestString1, out);
-  EXPECT_TRUE(store_->GetStringValue(kOptionWithUtf8, &out));
+  EXPECT_TRUE(store.GetStringValue(kOptionWithUtf8, &out));
   EXPECT_EQ(kValueWithUtf8, out);
-  EXPECT_FALSE(store_->SetStringValue(kTestOptionA, kValueWithNewline));
-  EXPECT_TRUE(store_->GetStringValue(kTestOptionA, &out));
+  EXPECT_FALSE(store.SetStringValue(kTestOptionA, kValueWithNewline));
+  EXPECT_TRUE(store.GetStringValue(kTestOptionA, &out));
   EXPECT_EQ(kTestString1, out);
-  EXPECT_TRUE(store_->SetStringValue(kTestOptionA, kValueWithEquals));
-  EXPECT_TRUE(store_->Save());
-  EXPECT_TRUE(store_->Load());
-  EXPECT_TRUE(store_->GetStringValue(kTestOptionA, &out));
+  EXPECT_TRUE(store.SetStringValue(kTestOptionA, kValueWithEquals));
+  EXPECT_TRUE(store.Save());
+  EXPECT_TRUE(store.Load());
+  EXPECT_TRUE(store.GetStringValue(kTestOptionA, &out));
   EXPECT_EQ(kValueWithEquals, out);
-  EXPECT_TRUE(store_->SetStringValue(kEmptyString, kTestString2));
-  EXPECT_TRUE(store_->Save());
-  EXPECT_TRUE(store_->Load());
-  EXPECT_TRUE(store_->GetStringValue(kEmptyString, &out));
+  EXPECT_TRUE(store.SetStringValue(kEmptyString, kTestString2));
+  EXPECT_TRUE(store.Save());
+  EXPECT_TRUE(store.Load());
+  EXPECT_TRUE(store.GetStringValue(kEmptyString, &out));
   EXPECT_EQ(kTestString2, out);
-  EXPECT_TRUE(store_->SetStringValue(kTestOptionB, kEmptyString));
-  EXPECT_TRUE(store_->Save());
-  EXPECT_TRUE(store_->Load());
-  EXPECT_TRUE(store_->GetStringValue(kTestOptionB, &out));
+  EXPECT_TRUE(store.SetStringValue(kTestOptionB, kEmptyString));
+  EXPECT_TRUE(store.Save());
+  EXPECT_TRUE(store.Load());
+  EXPECT_TRUE(store.GetStringValue(kTestOptionB, &out));
   EXPECT_EQ(kEmptyString, out);
 }
 

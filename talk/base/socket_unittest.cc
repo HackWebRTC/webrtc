@@ -172,8 +172,8 @@ void SocketTest::TestUdpIPv6() {
 }
 
 void SocketTest::TestUdpReadyToSendIPv4() {
-#if !defined(OSX) && !defined(IOS)
-  // TODO(ronghuawu): Enable this test on mac/ios.
+#if !defined(OSX)
+  // TODO(ronghuawu): Enable this test (currently failed on build bots) on mac.
   UdpReadyToSend(kIPv4Loopback);
 #endif
 }

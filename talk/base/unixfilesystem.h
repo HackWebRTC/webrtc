@@ -36,17 +36,13 @@ namespace talk_base {
 
 class UnixFilesystem : public FilesystemInterface {
  public:
-  UnixFilesystem();
-  virtual ~UnixFilesystem();
 
 #if defined(ANDROID) || defined(IOS)
-  // Android does not have a native code API to fetch the app data or temp
-  // folders. That needs to be passed into this class from Java. Similarly, iOS
-  // only supports an Objective-C API for fetching the folder locations, so that
-  // needs to be passed in here from Objective-C.  Or at least that used to be
-  // the case; now the ctor will do the work if necessary and possible.
-  // TODO(fischman): add an Android version that uses JNI and drop the
-  // SetApp*Folder() APIs once external users stop using them.
+// Android does not have a native code API to fetch the app data or temp
+// folders. That needs to be passed into this class from Java. Similarly, iOS
+// only supports an Objective-C API for fetching the folder locations, so that
+// needs to be passed in here from Objective-C.
+
   static void SetAppDataFolder(const std::string& folder);
   static void SetAppTempFolder(const std::string& folder);
 #endif

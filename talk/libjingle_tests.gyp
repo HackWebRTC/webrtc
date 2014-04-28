@@ -104,7 +104,6 @@
     {
       'target_name': 'libjingle_unittest',
       'type': 'executable',
-      'includes': [ 'build/ios_tests.gypi', ],
       'dependencies': [
         'gunit',
         'libjingle.gyp:libjingle',
@@ -493,12 +492,35 @@
       # does just fine on 10.6 too).
       'targets': [
         {
-          'target_name': 'libjingle_peerconnection_objc_test',
+        'target_name': 'libjingle_peerconnection_objc_test',
+          'variables': {
+            'infoplist_file': './app/webrtc/objctests/Info.plist',
+          },
           'type': 'executable',
-          'includes': [ 'build/ios_tests.gypi', ],
+          'mac_bundle': 1,
+          'mac_bundle_resources': [
+            '<(infoplist_file)',
+          ],
+          # The plist is listed above so that it appears in XCode's file list,
+          # but we don't actually want to bundle it.
+          'mac_bundle_resources!': [
+            '<(infoplist_file)',
+          ],
+          'xcode_settings': {
+            'CLANG_ENABLE_OBJC_ARC': 'YES',
+            # common.gypi enables this for mac but we want this to be disabled
+            # like it is for ios.
+            'CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS': 'NO',
+            'INFOPLIST_FILE': '<(infoplist_file)',
+          },
           'dependencies': [
             'gunit',
             'libjingle.gyp:libjingle_peerconnection_objc',
+          ],
+          'FRAMEWORK_SEARCH_PATHS': [
+            '$(inherited)',
+            '$(SDKROOT)/Developer/Library/Frameworks',
+            '$(DEVELOPER_LIBRARY_DIR)/Frameworks',
           ],
           'sources': [
             'app/webrtc/objctests/RTCPeerConnectionSyncObserver.h',
@@ -506,14 +528,15 @@
             'app/webrtc/objctests/RTCPeerConnectionTest.mm',
             'app/webrtc/objctests/RTCSessionDescriptionSyncObserver.h',
             'app/webrtc/objctests/RTCSessionDescriptionSyncObserver.m',
-            # TODO(fischman): figure out if this works for ios or if it
-            # needs a GUI driver.
-            'app/webrtc/objctests/mac/main.mm',
           ],
-          'FRAMEWORK_SEARCH_PATHS': [
-            '$(inherited)',
-            '$(SDKROOT)/Developer/Library/Frameworks',
-            '$(DEVELOPER_LIBRARY_DIR)/Frameworks',
+          'conditions': [
+            ['OS=="mac" or OS=="ios"', {
+              'sources': [
+                # TODO(fischman): figure out if this works for ios or if it
+                # needs a GUI driver.
+                'app/webrtc/objctests/mac/main.mm',
+              ],
+            }],
           ],
         },  # target libjingle_peerconnection_objc_test
       ],

@@ -66,15 +66,6 @@
 #include "talk/base/stream.h"
 #include "talk/base/stringutils.h"
 
-#if defined(IOS)
-// Defined in iosfilesystem.mm.  No header file to discourage use
-// elsewhere; other places should use GetApp{Data,Temp}Folder() in
-// this file.  Don't copy/paste.  I mean it.
-char* IOSDataDirectory();
-char* IOSTempDirectory();
-void IOSAppName(talk_base::Pathname* path);
-#endif
-
 namespace talk_base {
 
 #if !defined(ANDROID) && !defined(IOS)
@@ -93,17 +84,6 @@ void UnixFilesystem::SetAppTempFolder(const std::string& folder) {
   provided_app_temp_folder_ = CopyString(folder);
 }
 #endif
-
-UnixFilesystem::UnixFilesystem() {
-#if defined(IOS)
-  if (!provided_app_data_folder_)
-    provided_app_data_folder_ = IOSDataDirectory();
-  if (!provided_app_temp_folder_)
-    provided_app_temp_folder_ = IOSTempDirectory();
-#endif
-}
-
-UnixFilesystem::~UnixFilesystem() {}
 
 bool UnixFilesystem::CreateFolder(const Pathname &path, mode_t mode) {
   std::string pathname(path.pathname());
@@ -389,9 +369,6 @@ bool UnixFilesystem::GetAppPathname(Pathname* path) {
   return success;
 #elif defined(__native_client__)
   return false;
-#elif IOS
-  IOSAppName(path);
-  return true;
 #else  // OSX
   char buffer[PATH_MAX + 2];
   ssize_t len = readlink("/proc/self/exe", buffer, ARRAY_SIZE(buffer) - 1);
@@ -544,7 +521,7 @@ bool UnixFilesystem::GetDiskFreeSpace(const Pathname& path, int64 *freebytes) {
 #endif  // ANDROID
 #if defined(LINUX) || defined(ANDROID)
   *freebytes = static_cast<int64>(vfs.f_bsize) * vfs.f_bavail;
-#elif defined(OSX) || defined(IOS)
+#elif defined(OSX)
   *freebytes = static_cast<int64>(vfs.f_frsize) * vfs.f_bavail;
 #endif
 
