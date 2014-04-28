@@ -435,7 +435,8 @@ TEST_F(CallTest, ReceivesAndRetransmitsNack) {
   DestroyStreams();
 }
 
-TEST_F(CallTest, CanReceiveFec) {
+// TODO(pbos): Flaky, webrtc:3269
+TEST_F(CallTest, DISABLED_CanReceiveFec) {
   class FecRenderObserver : public test::RtpRtcpObserver, public VideoRenderer {
    public:
     FecRenderObserver()
