@@ -525,7 +525,8 @@ TEST_F(CallPerfTest, CaptureNtpTimeWithNetworkDelay) {
   TestCaptureNtpTime(net_config, kThresholdMs, kStartTimeMs, kRunTimeMs);
 }
 
-TEST_F(CallPerfTest, CaptureNtpTimeWithNetworkJitter) {
+// Flaky, webrtc:3271.
+TEST_F(CallPerfTest, DISABLED_CaptureNtpTimeWithNetworkJitter) {
   FakeNetworkPipe::Config net_config;
   net_config.delay_standard_deviation_ms = 10;
   // TODO(wu): lower the threshold as the calculation/estimatation becomes more
