@@ -171,7 +171,6 @@ struct AudioOptions {
     experimental_aec.SetFrom(change.experimental_aec);
     experimental_ns.SetFrom(change.experimental_ns);
     aec_dump.SetFrom(change.aec_dump);
-    experimental_acm.SetFrom(change.experimental_acm);
     tx_agc_target_dbov.SetFrom(change.tx_agc_target_dbov);
     tx_agc_digital_compression_gain.SetFrom(
         change.tx_agc_digital_compression_gain);
@@ -200,7 +199,6 @@ struct AudioOptions {
         experimental_ns == o.experimental_ns &&
         adjust_agc_delta == o.adjust_agc_delta &&
         aec_dump == o.aec_dump &&
-        experimental_acm == o.experimental_acm &&
         tx_agc_target_dbov == o.tx_agc_target_dbov &&
         tx_agc_digital_compression_gain == o.tx_agc_digital_compression_gain &&
         tx_agc_limiter == o.tx_agc_limiter &&
@@ -229,7 +227,6 @@ struct AudioOptions {
     ost << ToStringIfSet("experimental_aec", experimental_aec);
     ost << ToStringIfSet("experimental_ns", experimental_ns);
     ost << ToStringIfSet("aec_dump", aec_dump);
-    ost << ToStringIfSet("experimental_acm", experimental_acm);
     ost << ToStringIfSet("tx_agc_target_dbov", tx_agc_target_dbov);
     ost << ToStringIfSet("tx_agc_digital_compression_gain",
         tx_agc_digital_compression_gain);
@@ -267,7 +264,6 @@ struct AudioOptions {
   Settable<bool> experimental_aec;
   Settable<bool> experimental_ns;
   Settable<bool> aec_dump;
-  Settable<bool> experimental_acm;
   // Note that tx_agc_* only applies to non-experimental AGC.
   Settable<uint16> tx_agc_target_dbov;
   Settable<uint16> tx_agc_digital_compression_gain;

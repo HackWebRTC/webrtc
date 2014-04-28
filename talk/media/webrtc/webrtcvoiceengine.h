@@ -44,7 +44,6 @@
 #include "talk/media/webrtc/webrtcvoe.h"
 #include "talk/session/media/channel.h"
 #include "webrtc/common.h"
-#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 
 #if !defined(LIBPEERCONNECTION_LIB) && \
     !defined(LIBPEERCONNECTION_IMPLEMENTATION)
@@ -201,9 +200,6 @@ class WebRtcVoiceEngine
   // allows us to selectively turn on and off different options easily
   // at any time.
   bool ApplyOptions(const AudioOptions& options);
-  // Configure for using ACM2, if |enable| is true, otherwise configure for
-  // ACM1.
-  void EnableExperimentalAcm(bool enable);
   virtual void Print(webrtc::TraceLevel level, const char* trace, int length);
   virtual void CallbackOnError(int channel, int errCode);
   // Given the device type, name, and id, find device id. Return true and
@@ -261,7 +257,6 @@ class WebRtcVoiceEngine
   webrtc::AgcConfig default_agc_config_;
 
   webrtc::Config voe_config_;
-  bool use_experimental_acm_;
 
   bool initialized_;
   // See SetOptions and SetOptionOverrides for a description of the

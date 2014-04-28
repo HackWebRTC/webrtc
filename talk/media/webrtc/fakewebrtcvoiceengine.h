@@ -40,8 +40,6 @@
 #include "talk/media/base/voiceprocessor.h"
 #include "talk/media/webrtc/fakewebrtccommon.h"
 #include "talk/media/webrtc/webrtcvoe.h"
-#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
-#include "webrtc/common.h"
 
 namespace webrtc {
 class ViENetwork;
@@ -91,7 +89,7 @@ class FakeWebRtcVoiceEngine
     int dtmf_length_ms;
   };
   struct Channel {
-    explicit Channel(bool use_experimental_acm)
+    explicit Channel()
         : external_transport(false),
           send(false),
           playout(false),
@@ -115,8 +113,7 @@ class FakeWebRtcVoiceEngine
           send_ssrc(0),
           send_audio_level_ext_(-1),
           send_absolute_sender_time_ext_(-1),
-          receive_absolute_sender_time_ext_(-1),
-          using_experimental_acm(use_experimental_acm) {
+          receive_absolute_sender_time_ext_(-1) {
       memset(&send_codec, 0, sizeof(send_codec));
       memset(&rx_agc_config, 0, sizeof(rx_agc_config));
     }
@@ -150,7 +147,6 @@ class FakeWebRtcVoiceEngine
     webrtc::CodecInst send_codec;
     webrtc::PacketTime last_rtp_packet_time;
     std::list<std::string> packets;
-    bool using_experimental_acm;
   };
 
   FakeWebRtcVoiceEngine(const cricket::AudioCodec* const* codecs,
@@ -239,10 +235,6 @@ class FakeWebRtcVoiceEngine
     WEBRTC_ASSERT_CHANNEL(channel);
     return channels_[channel]->last_rtp_packet_time;
   }
-  bool IsUsingExperimentalAcm(int channel) {
-    WEBRTC_ASSERT_CHANNEL(channel);
-    return channels_[channel]->using_experimental_acm;
-  }
   int GetSendCNPayloadType(int channel, bool wideband) {
     return (wideband) ?
         channels_[channel]->cn16_type :
@@ -296,11 +288,11 @@ class FakeWebRtcVoiceEngine
                                 true);
     }
   }
-  int AddChannel(bool use_experimental_acm) {
+  int AddChannel() {
     if (fail_create_channel_) {
       return -1;
     }
-    Channel* ch = new Channel(use_experimental_acm);
+    Channel* ch = new Channel();
     for (int i = 0; i < NumOfCodecs(); ++i) {
       webrtc::CodecInst codec;
       GetCodec(i, codec);
@@ -343,13 +335,10 @@ class FakeWebRtcVoiceEngine
     return NULL;
   }
   WEBRTC_FUNC(CreateChannel, ()) {
-    return AddChannel(false);
+    return AddChannel();
   }
-  WEBRTC_FUNC(CreateChannel, (const webrtc::Config& config)) {
-    talk_base::scoped_ptr<webrtc::AudioCodingModule> acm(
-        config.Get<webrtc::AudioCodingModuleFactory>().Create(0));
-    return AddChannel(strcmp(acm->Version(), webrtc::kExperimentalAcmVersion)
-                      == 0);
+  WEBRTC_FUNC(CreateChannel, (const webrtc::Config& /*config*/)) {
+    return AddChannel();
   }
   WEBRTC_FUNC(DeleteChannel, (int channel)) {
     WEBRTC_CHECK_CHANNEL(channel);

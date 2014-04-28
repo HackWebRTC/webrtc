@@ -253,7 +253,6 @@ static AudioOptions GetDefaultEngineOptions() {
   options.experimental_aec.Set(false);
   options.experimental_ns.Set(false);
   options.aec_dump.Set(false);
-  options.experimental_acm.Set(false);
   return options;
 }
 
@@ -357,7 +356,6 @@ WebRtcVoiceEngine::WebRtcVoiceEngine()
       log_filter_(SeverityToFilter(kDefaultLogSeverity)),
       is_dumping_aec_(false),
       desired_local_monitor_enable_(false),
-      use_experimental_acm_(false),
       tx_processor_ssrc_(0),
       rx_processor_ssrc_(0) {
   Construct();
@@ -375,7 +373,6 @@ WebRtcVoiceEngine::WebRtcVoiceEngine(VoEWrapper* voe_wrapper,
       log_filter_(SeverityToFilter(kDefaultLogSeverity)),
       is_dumping_aec_(false),
       desired_local_monitor_enable_(false),
-      use_experimental_acm_(false),
       tx_processor_ssrc_(0),
       rx_processor_ssrc_(0) {
   Construct();
@@ -408,10 +405,6 @@ void WebRtcVoiceEngine::Construct() {
                          kRtpAbsoluteSenderTimeHeaderExtensionDefaultId));
 #endif
   options_ = GetDefaultEngineOptions();
-
-  // Initialize the VoE Configuration to the new ACM.
-  voe_config_.Set<webrtc::AudioCodingModuleFactory>(
-      new webrtc::NewAudioCodingModuleFactory);
 }
 
 static bool IsOpus(const AudioCodec& codec) {
@@ -749,13 +742,6 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
 #endif
 
   LOG(LS_INFO) << "Applying audio options: " << options.ToString();
-
-  // Configure whether ACM1 or ACM2 is used.
-  bool enable_acm2 = false;
-  if (options.experimental_acm.Get(&enable_acm2)) {
-    EnableExperimentalAcm(enable_acm2);
-  }
-  LOG(LS_INFO) << "ACM2 enabled? " << enable_acm2;
 
   webrtc::VoEAudioProcessing* voep = voe_wrapper_->processing();
 
@@ -1316,21 +1302,6 @@ bool WebRtcVoiceEngine::ShouldIgnoreTrace(const std::string& trace) {
     }
   }
   return false;
-}
-
-void WebRtcVoiceEngine::EnableExperimentalAcm(bool enable) {
-  if (enable == use_experimental_acm_)
-    return;
-  if (enable) {
-    LOG(LS_INFO) << "VoiceEngine is set to use new ACM (ACM2 + NetEq4).";
-    voe_config_.Set<webrtc::AudioCodingModuleFactory>(
-        new webrtc::NewAudioCodingModuleFactory());
-  } else {
-    LOG(LS_INFO) << "VoiceEngine is set to use legacy ACM (ACM1 + Neteq3).";
-    voe_config_.Set<webrtc::AudioCodingModuleFactory>(
-        new webrtc::AudioCodingModuleFactory());
-  }
-  use_experimental_acm_ = enable;
 }
 
 void WebRtcVoiceEngine::Print(webrtc::TraceLevel level, const char* trace,

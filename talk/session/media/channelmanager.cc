@@ -939,14 +939,6 @@ VideoFormat ChannelManager::GetStartCaptureFormat() {
       Bind(&MediaEngineInterface::GetStartCaptureFormat, media_engine_.get()));
 }
 
-bool ChannelManager::SetAudioOptions(const AudioOptions& options) {
-  if (!media_engine_->SetAudioOptions(options)) {
-    return false;
-  }
-  audio_options_ = options;
-  return true;
-}
-
 bool ChannelManager::StartAecDump(talk_base::PlatformFile file) {
   return worker_thread_->Invoke<bool>(
       Bind(&MediaEngineInterface::StartAecDump, media_engine_.get(), file));
