@@ -184,9 +184,9 @@ int PacketBuffer::DiscardNextPacket() {
   if (Empty()) {
     return kBufferEmpty;
   }
-  Packet* temp_packet = buffer_.front();
   // Assert that the packet sanity checks in InsertPacket method works.
-  assert(temp_packet && temp_packet->payload);
+  assert(buffer_.front());
+  assert(buffer_.front()->payload);
   DeleteFirstPacket(&buffer_);
   return kOK;
 }
