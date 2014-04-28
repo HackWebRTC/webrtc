@@ -73,6 +73,7 @@ import java.util.regex.Pattern;
 public class AppRTCDemoActivity extends Activity
     implements AppRTCClient.IceServersObserver {
   private static final String TAG = "AppRTCDemoActivity";
+  private static boolean factoryStaticInitialized;
   private PeerConnectionFactory factory;
   private VideoSource videoSource;
   private boolean videoSourceStopped;
@@ -104,8 +105,11 @@ public class AppRTCDemoActivity extends Activity
     vsv = new VideoStreamsView(this, displaySize);
     setContentView(vsv);
 
-    abortUnless(PeerConnectionFactory.initializeAndroidGlobals(this),
+    if (!factoryStaticInitialized) {
+      abortUnless(PeerConnectionFactory.initializeAndroidGlobals(this),
         "Failed to initializeAndroidGlobals");
+      factoryStaticInitialized = true;
+    }
 
     AudioManager audioManager =
         ((AudioManager) getSystemService(AUDIO_SERVICE));
