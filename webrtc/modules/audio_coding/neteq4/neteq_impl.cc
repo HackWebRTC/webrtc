@@ -364,12 +364,9 @@ void NetEqImpl::FlushBuffers() {
 }
 
 void NetEqImpl::PacketBufferStatistics(int* current_num_packets,
-                                       int* max_num_packets,
-                                       int* current_memory_size_bytes,
-                                       int* max_memory_size_bytes) const {
+                                       int* max_num_packets) const {
   CriticalSectionScoped lock(crit_sect_.get());
-  packet_buffer_->BufferStat(current_num_packets, max_num_packets,
-                             current_memory_size_bytes, max_memory_size_bytes);
+  packet_buffer_->BufferStat(current_num_packets, max_num_packets);
 }
 
 int NetEqImpl::DecodedRtpInfo(int* sequence_number, uint32_t* timestamp) const {
@@ -610,9 +607,6 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     new_codec_ = true;
     update_sample_rate_and_channels = true;
     LOG_F(LS_WARNING) << "Packet buffer flushed";
-  } else if (ret == PacketBuffer::kOversizePacket) {
-    LOG_F(LS_WARNING) << "Packet larger than packet buffer";
-    return kOversizePacket;
   } else if (ret != PacketBuffer::kOK) {
     LOG_FERR1(LS_WARNING, InsertPacketList, packet_list.size());
     PacketBuffer::DeleteAllPackets(&packet_list);

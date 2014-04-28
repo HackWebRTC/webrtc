@@ -29,14 +29,12 @@ class PacketBuffer {
     kNotFound,
     kBufferEmpty,
     kInvalidPacket,
-    kInvalidPointer,
-    kOversizePacket
+    kInvalidPointer
   };
 
   // Constructor creates a buffer which can hold a maximum of
-  // |max_number_of_packets| packets and |max_payload_memory| bytes of payload,
-  // excluding RTP headers.
-  PacketBuffer(size_t max_number_of_packets, size_t max_payload_memory);
+  // |max_number_of_packets| packets.
+  PacketBuffer(size_t max_number_of_packets);
 
   // Deletes all packets in the buffer before destroying the buffer.
   virtual ~PacketBuffer();
@@ -116,12 +114,7 @@ class PacketBuffer {
   // The default value for |inc| is 1.
   virtual void IncrementWaitingTimes(int inc = 1);
 
-  virtual void BufferStat(int* num_packets,
-                          int* max_num_packets,
-                          int* current_memory_bytes,
-                          int* max_memory_bytes) const;
-
-  virtual int current_memory_bytes() const { return current_memory_bytes_; }
+  virtual void BufferStat(int* num_packets, int* max_num_packets) const;
 
   // Static method that properly deletes the first packet, and its payload
   // array, in |packet_list|. Returns false if |packet_list| already was empty,
@@ -134,8 +127,6 @@ class PacketBuffer {
 
  private:
   size_t max_number_of_packets_;
-  size_t max_memory_bytes_;
-  int current_memory_bytes_;
   PacketList buffer_;
   DISALLOW_COPY_AND_ASSIGN(PacketBuffer);
 };

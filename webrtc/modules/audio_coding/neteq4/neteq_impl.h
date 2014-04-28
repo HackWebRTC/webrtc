@@ -186,9 +186,7 @@ class NetEqImpl : public webrtc::NetEq {
   virtual void FlushBuffers();
 
   virtual void PacketBufferStatistics(int* current_num_packets,
-                                      int* max_num_packets,
-                                      int* current_memory_size_bytes,
-                                      int* max_memory_size_bytes) const;
+                                      int* max_num_packets) const;
 
   // Get sequence number and timestamp of the latest RTP.
   // This method is to facilitate NACK.

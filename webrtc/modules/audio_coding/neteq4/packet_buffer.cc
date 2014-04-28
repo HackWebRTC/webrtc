@@ -36,14 +36,8 @@ class NewTimestampIsLarger {
   const Packet* new_packet_;
 };
 
-// Constructor. The arguments define the maximum number of slots and maximum
-// payload memory (excluding RTP headers) that the buffer will accept.
-PacketBuffer::PacketBuffer(size_t max_number_of_packets,
-                           size_t max_memory_bytes)
-    : max_number_of_packets_(max_number_of_packets),
-      max_memory_bytes_(max_memory_bytes),
-      current_memory_bytes_(0) {
-}
+PacketBuffer::PacketBuffer(size_t max_number_of_packets)
+    : max_number_of_packets_(max_number_of_packets) {}
 
 // Destructor. All packets in the buffer will be destroyed.
 PacketBuffer::~PacketBuffer() {
@@ -53,7 +47,6 @@ PacketBuffer::~PacketBuffer() {
 // Flush the buffer. All packets in the buffer will be destroyed.
 void PacketBuffer::Flush() {
   DeleteAllPackets(&buffer_);
-  current_memory_bytes_ = 0;
 }
 
 int PacketBuffer::InsertPacket(Packet* packet) {
@@ -66,22 +59,10 @@ int PacketBuffer::InsertPacket(Packet* packet) {
 
   int return_val = kOK;
 
-  if ((buffer_.size() >= max_number_of_packets_) ||
-      (current_memory_bytes_ + packet->payload_length
-          > static_cast<int>(max_memory_bytes_))) {
+  if (buffer_.size() >= max_number_of_packets_) {
     // Buffer is full. Flush it.
     Flush();
     return_val = kFlushed;
-    if ((buffer_.size() >= max_number_of_packets_) ||
-        (current_memory_bytes_ + packet->payload_length
-            > static_cast<int>(max_memory_bytes_))) {
-      // Buffer is still too small for the packet. Either the buffer limits are
-      // really small, or the packet is really large. Delete the packet and
-      // return an error.
-      delete [] packet->payload;
-      delete packet;
-      return kOversizePacket;
-    }
   }
 
   // Get an iterator pointing to the place in the buffer where the new packet
@@ -91,7 +72,6 @@ int PacketBuffer::InsertPacket(Packet* packet) {
       buffer_.rbegin(), buffer_.rend(),
       NewTimestampIsLarger(packet));
   buffer_.insert(rit.base(), packet);  // Insert the packet at that position.
-  current_memory_bytes_ += packet->payload_length;
 
   return return_val;
 }
@@ -183,8 +163,6 @@ Packet* PacketBuffer::GetNextPacket(int* discard_count) {
   // Assert that the packet sanity checks in InsertPacket method works.
   assert(packet && packet->payload);
   buffer_.pop_front();
-  current_memory_bytes_ -= packet->payload_length;
-  assert(current_memory_bytes_ >= 0);  // Assert bookkeeping is correct.
   // Discard other packets with the same timestamp. These are duplicates or
   // redundant payloads that should not be used.
   if (discard_count) {
@@ -209,8 +187,6 @@ int PacketBuffer::DiscardNextPacket() {
   Packet* temp_packet = buffer_.front();
   // Assert that the packet sanity checks in InsertPacket method works.
   assert(temp_packet && temp_packet->payload);
-  current_memory_bytes_ -= temp_packet->payload_length;
-  assert(current_memory_bytes_ >= 0);  // Assert bookkeeping is correct.
   DeleteFirstPacket(&buffer_);
   return kOK;
 }
@@ -280,14 +256,9 @@ void PacketBuffer::DeleteAllPackets(PacketList* packet_list) {
   }
 }
 
-void PacketBuffer::BufferStat(int* num_packets,
-                              int* max_num_packets,
-                              int* current_memory_bytes,
-                              int* max_memory_bytes) const {
+void PacketBuffer::BufferStat(int* num_packets, int* max_num_packets) const {
   *num_packets = static_cast<int>(buffer_.size());
   *max_num_packets = static_cast<int>(max_number_of_packets_);
-  *current_memory_bytes = current_memory_bytes_;
-  *max_memory_bytes = static_cast<int>(max_memory_bytes_);
 }
 
 }  // namespace webrtc

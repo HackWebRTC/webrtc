@@ -24,7 +24,7 @@ TEST(DecisionLogic, CreateAndDestroy) {
   int fs_hz = 8000;
   int output_size_samples = fs_hz / 100;  // Samples per 10 ms.
   DecoderDatabase decoder_database;
-  PacketBuffer packet_buffer(10, 1000);
+  PacketBuffer packet_buffer(10);
   DelayPeakDetector delay_peak_detector;
   DelayManager delay_manager(240, &delay_peak_detector);
   BufferLevelFilter buffer_level_filter;

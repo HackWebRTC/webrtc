@@ -19,8 +19,8 @@ namespace webrtc {
 
 class MockPacketBuffer : public PacketBuffer {
  public:
-  MockPacketBuffer(size_t max_number_of_packets, size_t max_payload_memory)
-      : PacketBuffer(max_number_of_packets, max_payload_memory) {}
+  MockPacketBuffer(size_t max_number_of_packets)
+      : PacketBuffer(max_number_of_packets) {}
   virtual ~MockPacketBuffer() { Die(); }
   MOCK_METHOD0(Die, void());
   MOCK_METHOD0(Flush,

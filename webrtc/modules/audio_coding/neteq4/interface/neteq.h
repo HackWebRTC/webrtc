@@ -70,10 +70,15 @@ class NetEq {
   struct Config {
     Config()
         : sample_rate_hz(16000),
-          enable_audio_classifier(false) {}
+          enable_audio_classifier(false),
+          max_packets_in_buffer(50),
+          // |max_delay_ms| has the same effect as calling SetMaximumDelay().
+          max_delay_ms(2000) {}
 
     int sample_rate_hz;  // Initial vale. Will change with input data.
     bool enable_audio_classifier;
+    int max_packets_in_buffer;
+    int max_delay_ms;
   };
 
   enum ReturnCodes {
@@ -107,12 +112,8 @@ class NetEq {
     kFrameSplitError,
     kRedundancySplitError,
     kPacketBufferCorruption,
-    kOversizePacket,
     kSyncPacketNotAccepted
   };
-
-  static const int kMaxNumPacketsInBuffer = 50;  // TODO(hlundin): Remove.
-  static const int kMaxBytesInBuffer = 113280;  // TODO(hlundin): Remove.
 
   // Creates a new NetEq object, with parameters set in |config|. The |config|
   // object will only have to be valid for the duration of the call to this
@@ -179,7 +180,8 @@ class NetEq {
 
   // Sets a maximum delay in milliseconds for packet buffer. The latency will
   // not exceed the given value, even required delay (given the channel
-  // conditions) is higher.
+  // conditions) is higher. Calling this method has the same effect as setting
+  // the |max_delay_ms| value in the NetEq::Config struct.
   virtual bool SetMaximumDelay(int delay_ms) = 0;
 
   // The smallest latency required. This is computed bases on inter-arrival
@@ -249,9 +251,7 @@ class NetEq {
 
   // Current usage of packet-buffer and it's limits.
   virtual void PacketBufferStatistics(int* current_num_packets,
-                                      int* max_num_packets,
-                                      int* current_memory_size_bytes,
-                                      int* max_memory_size_bytes) const = 0;
+                                      int* max_num_packets) const = 0;
 
   // Get sequence number and timestamp of the latest RTP.
   // This method is to facilitate NACK.

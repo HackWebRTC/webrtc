@@ -70,13 +70,13 @@ void PacketGenerator::SkipPacket() {
 // Start of test definitions.
 
 TEST(PacketBuffer, CreateAndDestroy) {
-  PacketBuffer* buffer = new PacketBuffer(10, 1000);  // 10 packets, 1000 bytes.
+  PacketBuffer* buffer = new PacketBuffer(10);  // 10 packets.
   EXPECT_TRUE(buffer->Empty());
   delete buffer;
 }
 
 TEST(PacketBuffer, InsertPacket) {
-  PacketBuffer buffer(10, 1000);  // 10 packets, 1000 bytes.
+  PacketBuffer buffer(10);  // 10 packets.
   PacketGenerator gen(17u, 4711u, 0, 10);
 
   const int payload_len = 100;
@@ -88,7 +88,6 @@ TEST(PacketBuffer, InsertPacket) {
   EXPECT_EQ(4711u, next_ts);
   EXPECT_FALSE(buffer.Empty());
   EXPECT_EQ(1, buffer.NumPacketsInBuffer());
-  EXPECT_EQ(payload_len, buffer.current_memory_bytes());
   const RTPHeader* hdr = buffer.NextRtpHeader();
   EXPECT_EQ(&(packet->header), hdr);  // Compare pointer addresses.
 
@@ -98,7 +97,7 @@ TEST(PacketBuffer, InsertPacket) {
 
 // Test to flush buffer.
 TEST(PacketBuffer, FlushBuffer) {
-  PacketBuffer buffer(10, 1000);  // 10 packets, 1000 bytes.
+  PacketBuffer buffer(10);  // 10 packets.
   PacketGenerator gen(0, 0, 0, 10);
   const int payload_len = 10;
 
@@ -109,18 +108,16 @@ TEST(PacketBuffer, FlushBuffer) {
   }
   EXPECT_EQ(10, buffer.NumPacketsInBuffer());
   EXPECT_FALSE(buffer.Empty());
-  EXPECT_EQ(10 * payload_len, buffer.current_memory_bytes());
 
   buffer.Flush();
   // Buffer should delete the payloads itself.
   EXPECT_EQ(0, buffer.NumPacketsInBuffer());
   EXPECT_TRUE(buffer.Empty());
-  EXPECT_EQ(0, buffer.current_memory_bytes());
 }
 
 // Test to fill the buffer over the limits, and verify that it flushes.
 TEST(PacketBuffer, OverfillBuffer) {
-  PacketBuffer buffer(10, 1000);  // 10 packets, 1000 bytes.
+  PacketBuffer buffer(10);  // 10 packets.
   PacketGenerator gen(0, 0, 0, 10);
 
   // Insert 10 small packets; should be ok.
@@ -131,7 +128,6 @@ TEST(PacketBuffer, OverfillBuffer) {
     EXPECT_EQ(PacketBuffer::kOK, buffer.InsertPacket(packet));
   }
   EXPECT_EQ(10, buffer.NumPacketsInBuffer());
-  EXPECT_EQ(10 * payload_len, buffer.current_memory_bytes());
   uint32_t next_ts;
   EXPECT_EQ(PacketBuffer::kOK, buffer.NextTimestamp(&next_ts));
   EXPECT_EQ(0u, next_ts);  // Expect first inserted packet to be first in line.
@@ -140,30 +136,17 @@ TEST(PacketBuffer, OverfillBuffer) {
   Packet* packet = gen.NextPacket(payload_len);
   EXPECT_EQ(PacketBuffer::kFlushed, buffer.InsertPacket(packet));
   EXPECT_EQ(1, buffer.NumPacketsInBuffer());
-  EXPECT_EQ(payload_len, buffer.current_memory_bytes());
   EXPECT_EQ(PacketBuffer::kOK, buffer.NextTimestamp(&next_ts));
   // Expect last inserted packet to be first in line.
   EXPECT_EQ(packet->header.timestamp, next_ts);
 
-  // Insert 2 large packets; expect to flush when inserting the second one.
-  const int large_payload_len = 500;
-  packet = gen.NextPacket(large_payload_len);
-  EXPECT_EQ(PacketBuffer::kOK, buffer.InsertPacket(packet));
-  EXPECT_EQ(2, buffer.NumPacketsInBuffer());
-  EXPECT_EQ(payload_len + large_payload_len, buffer.current_memory_bytes());
-
-  packet = gen.NextPacket(large_payload_len);
-  EXPECT_EQ(PacketBuffer::kFlushed, buffer.InsertPacket(packet));
-  EXPECT_EQ(1, buffer.NumPacketsInBuffer());
-  EXPECT_EQ(large_payload_len, buffer.current_memory_bytes());
-
-  // Flush buffer to delete remaining packets.
+  // Flush buffer to delete all packets.
   buffer.Flush();
 }
 
 // Test inserting a list of packets.
 TEST(PacketBuffer, InsertPacketList) {
-  PacketBuffer buffer(10, 1000);  // 10 packets, 1000 bytes.
+  PacketBuffer buffer(10);  // 10 packets.
   PacketGenerator gen(0, 0, 0, 10);
   PacketList list;
   const int payload_len = 10;
@@ -187,7 +170,6 @@ TEST(PacketBuffer, InsertPacketList) {
                                                        &current_cng_pt));
   EXPECT_TRUE(list.empty());  // The PacketBuffer should have depleted the list.
   EXPECT_EQ(10, buffer.NumPacketsInBuffer());
-  EXPECT_EQ(10 * payload_len, buffer.current_memory_bytes());
   EXPECT_EQ(0, current_pt);  // Current payload type changed to 0.
   EXPECT_EQ(0xFF, current_cng_pt);  // CNG payload type not changed.
 
@@ -200,7 +182,7 @@ TEST(PacketBuffer, InsertPacketList) {
 // Expecting the buffer to flush.
 // TODO(hlundin): Remove this test when legacy operation is no longer needed.
 TEST(PacketBuffer, InsertPacketListChangePayloadType) {
-  PacketBuffer buffer(10, 1000);  // 10 packets, 1000 bytes.
+  PacketBuffer buffer(10);  // 10 packets.
   PacketGenerator gen(0, 0, 0, 10);
   PacketList list;
   const int payload_len = 10;
@@ -229,7 +211,6 @@ TEST(PacketBuffer, InsertPacketListChangePayloadType) {
                                                             &current_cng_pt));
   EXPECT_TRUE(list.empty());  // The PacketBuffer should have depleted the list.
   EXPECT_EQ(1, buffer.NumPacketsInBuffer());  // Only the last packet.
-  EXPECT_EQ(1 * payload_len, buffer.current_memory_bytes());
   EXPECT_EQ(1, current_pt);  // Current payload type changed to 0.
   EXPECT_EQ(0xFF, current_cng_pt);  // CNG payload type not changed.
 
@@ -252,7 +233,7 @@ TEST(PacketBuffer, InsertPacketListChangePayloadType) {
 // 8           0x0005      0x00000028    0x0000001E
 // 9           0x0006      0x00000032    0x00000028
 TEST(PacketBuffer, ExtractOrderRedundancy) {
-  PacketBuffer buffer(100, 1000);  // 100 packets, 1000 bytes.
+  PacketBuffer buffer(100);  // 100 packets.
   const uint32_t ts_increment = 10;  // Samples per packet.
   const uint16_t start_seq_no = 0xFFFF - 2;  // Wraps after 3 packets.
   const uint32_t start_ts = 0xFFFFFFFF -
@@ -321,7 +302,7 @@ TEST(PacketBuffer, ExtractOrderRedundancy) {
 }
 
 TEST(PacketBuffer, DiscardPackets) {
-  PacketBuffer buffer(100, 1000);  // 100 packets, 1000 bytes.
+  PacketBuffer buffer(100);  // 100 packets.
   const uint16_t start_seq_no = 17;
   const uint32_t start_ts = 4711;
   const uint32_t ts_increment = 10;
@@ -335,7 +316,6 @@ TEST(PacketBuffer, DiscardPackets) {
     buffer.InsertPacket(packet);
   }
   EXPECT_EQ(10, buffer.NumPacketsInBuffer());
-  EXPECT_EQ(10 * payload_len, buffer.current_memory_bytes());
 
   // Discard them one by one and make sure that the right packets are at the
   // front of the buffer.
@@ -351,7 +331,7 @@ TEST(PacketBuffer, DiscardPackets) {
 }
 
 TEST(PacketBuffer, Reordering) {
-  PacketBuffer buffer(100, 1000);  // 100 packets, 1000 bytes.
+  PacketBuffer buffer(100);  // 100 packets.
   const uint16_t start_seq_no = 17;
   const uint32_t start_ts = 4711;
   const uint32_t ts_increment = 10;
@@ -384,7 +364,6 @@ TEST(PacketBuffer, Reordering) {
                                                        &current_pt,
                                                        &current_cng_pt));
   EXPECT_EQ(10, buffer.NumPacketsInBuffer());
-  EXPECT_EQ(10 * payload_len, buffer.current_memory_bytes());
 
   // Extract them and make sure that come out in the right order.
   uint32_t current_ts = start_ts;
@@ -408,18 +387,8 @@ TEST(PacketBuffer, Failures) {
   int payload_len = 100;
   PacketGenerator gen(start_seq_no, start_ts, 0, ts_increment);
 
-  PacketBuffer* buffer = new PacketBuffer(0, 1000);  // 0 packets, 1000 bytes.
-  Packet* packet = gen.NextPacket(payload_len);
-  EXPECT_EQ(PacketBuffer::kOversizePacket, buffer->InsertPacket(packet));
-  delete buffer;
-
-  buffer = new PacketBuffer(100, 10);  // 100 packets, 10 bytes.
-  packet = gen.NextPacket(payload_len);
-  EXPECT_EQ(PacketBuffer::kOversizePacket, buffer->InsertPacket(packet));
-  delete buffer;
-
-  buffer = new PacketBuffer(100, 10000);  // 100 packets, 10000 bytes.
-  packet = NULL;
+  PacketBuffer* buffer = new PacketBuffer(100);  // 100 packets.
+  Packet* packet = NULL;
   EXPECT_EQ(PacketBuffer::kInvalidPacket, buffer->InsertPacket(packet));
   packet = gen.NextPacket(payload_len);
   delete [] packet->payload;
@@ -448,7 +417,7 @@ TEST(PacketBuffer, Failures) {
   // Insert packet list of three packets, where the second packet has an invalid
   // payload.  Expect first packet to be inserted, and the remaining two to be
   // discarded.
-  buffer = new PacketBuffer(100, 1000);  // 100 packets, 1000 bytes.
+  buffer = new PacketBuffer(100);  // 100 packets.
   PacketList list;
   list.push_back(gen.NextPacket(payload_len));  // Valid packet.
   packet = gen.NextPacket(payload_len);

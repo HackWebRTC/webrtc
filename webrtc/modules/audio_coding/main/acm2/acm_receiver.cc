@@ -765,13 +765,9 @@ bool AcmReceiver::GetSilence(int desired_sample_rate_hz, AudioFrame* frame) {
   // exceeds a threshold.
   int num_packets;
   int max_num_packets;
-  int buffer_size_byte;
-  int max_buffer_size_byte;
   const float kBufferingThresholdScale = 0.9f;
-  neteq_->PacketBufferStatistics(&num_packets, &max_num_packets,
-                                 &buffer_size_byte, &max_buffer_size_byte);
-  if (num_packets > max_num_packets * kBufferingThresholdScale ||
-      buffer_size_byte > max_buffer_size_byte * kBufferingThresholdScale) {
+  neteq_->PacketBufferStatistics(&num_packets, &max_num_packets);
+  if (num_packets > max_num_packets * kBufferingThresholdScale) {
     initial_delay_manager_->DisableBuffering();
     return false;
   }

@@ -32,12 +32,12 @@ NetEq* NetEq::Create(const NetEq::Config& config) {
   BufferLevelFilter* buffer_level_filter = new BufferLevelFilter;
   DecoderDatabase* decoder_database = new DecoderDatabase;
   DelayPeakDetector* delay_peak_detector = new DelayPeakDetector;
-  DelayManager* delay_manager = new DelayManager(kMaxNumPacketsInBuffer,
-                                                 delay_peak_detector);
+  DelayManager* delay_manager =
+      new DelayManager(config.max_packets_in_buffer, delay_peak_detector);
+  delay_manager->SetMaximumDelay(config.max_delay_ms);
   DtmfBuffer* dtmf_buffer = new DtmfBuffer(config.sample_rate_hz);
   DtmfToneGenerator* dtmf_tone_generator = new DtmfToneGenerator;
-  PacketBuffer* packet_buffer = new PacketBuffer(kMaxNumPacketsInBuffer,
-                                                 kMaxBytesInBuffer);
+  PacketBuffer* packet_buffer = new PacketBuffer(config.max_packets_in_buffer);
   PayloadSplitter* payload_splitter = new PayloadSplitter;
   TimestampScaler* timestamp_scaler = new TimestampScaler(*decoder_database);
   AccelerateFactory* accelerate_factory = new AccelerateFactory;
