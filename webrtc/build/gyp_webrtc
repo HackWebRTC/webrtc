@@ -61,7 +61,9 @@ if __name__ == '__main__':
   if not os.environ.get('GYP_GENERATORS'):
     os.environ['GYP_GENERATORS'] = 'ninja'
 
-  vs2013_runtime_dll_dirs = vs_toolchain.DownloadVsToolchain()
+  vs2013_runtime_dll_dirs = None
+  if int(os.environ.get('DEPOT_TOOLS_WIN_TOOLCHAIN', '1')):
+    vs2013_runtime_dll_dirs = vs_toolchain.DownloadVsToolchain()
 
   # Enforce gyp syntax checking. This adds about 20% execution time.
   args.append('--check')
