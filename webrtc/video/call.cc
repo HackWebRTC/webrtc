@@ -21,6 +21,7 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/thread_annotations.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/video/video_receive_stream.h"
 #include "webrtc/video/video_send_stream.h"
@@ -45,18 +46,18 @@ class CpuOveruseObserverProxy : public webrtc::CpuOveruseObserver {
   virtual ~CpuOveruseObserverProxy() {}
 
   virtual void OveruseDetected() OVERRIDE {
-    CriticalSectionScoped cs(crit_.get());
+    CriticalSectionScoped lock(crit_.get());
     overuse_callback_->OnOveruse();
   }
 
   virtual void NormalUsage() OVERRIDE {
-    CriticalSectionScoped cs(crit_.get());
+    CriticalSectionScoped lock(crit_.get());
     overuse_callback_->OnNormalUse();
   }
 
  private:
-  scoped_ptr<CriticalSectionWrapper> crit_;
-  OveruseCallback* overuse_callback_;
+  const scoped_ptr<CriticalSectionWrapper> crit_;
+  OveruseCallback* overuse_callback_ GUARDED_BY(crit_);
 };
 
 class Call : public webrtc::Call, public PacketReceiver {
@@ -95,10 +96,11 @@ class Call : public webrtc::Call, public PacketReceiver {
 
   Call::Config config_;
 
-  std::map<uint32_t, VideoReceiveStream*> receive_ssrcs_;
+  std::map<uint32_t, VideoReceiveStream*> receive_ssrcs_
+      GUARDED_BY(receive_lock_);
   scoped_ptr<RWLockWrapper> receive_lock_;
 
-  std::map<uint32_t, VideoSendStream*> send_ssrcs_;
+  std::map<uint32_t, VideoSendStream*> send_ssrcs_ GUARDED_BY(send_lock_);
   scoped_ptr<RWLockWrapper> send_lock_;
 
   scoped_ptr<RtpHeaderParser> rtp_header_parser_;

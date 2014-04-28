@@ -17,6 +17,7 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/thread_annotations.h"
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/fake_decoder.h"
@@ -111,14 +112,14 @@ class BitrateEstimatorTest : public ::testing::Test {
     }
 
     void PushExpectedLogLine(const std::string& expected_log_line) {
-      CriticalSectionScoped cs(crit_sect_.get());
+      CriticalSectionScoped lock(crit_sect_.get());
       expected_log_lines_.push_back(expected_log_line);
     }
 
     virtual void Print(TraceLevel level,
                        const char* message,
                        int length) OVERRIDE {
-      CriticalSectionScoped cs(crit_sect_.get());
+      CriticalSectionScoped lock(crit_sect_.get());
       if (!(level & kTraceStateInfo)) {
         return;
       }
@@ -147,9 +148,9 @@ class BitrateEstimatorTest : public ::testing::Test {
 
    private:
     typedef std::list<std::string> Strings;
-    scoped_ptr<CriticalSectionWrapper> crit_sect_;
-    Strings received_log_lines_;
-    Strings expected_log_lines_;
+    const scoped_ptr<CriticalSectionWrapper> crit_sect_;
+    Strings received_log_lines_ GUARDED_BY(crit_sect_);
+    Strings expected_log_lines_ GUARDED_BY(crit_sect_);
     scoped_ptr<EventWrapper> done_;
   };
 

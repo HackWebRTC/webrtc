@@ -54,7 +54,7 @@ class FrameGeneratorCapturer : public VideoCapturer {
   void InsertFrame();
   static bool Run(void* obj);
 
-  Clock* clock_;
+  Clock* const clock_;
   bool sending_;
 
   scoped_ptr<EventWrapper> tick_;

@@ -87,7 +87,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
   int channel_;
   int capture_id_;
 
-  scoped_ptr<SendStatisticsProxy> stats_proxy_;
+  const scoped_ptr<SendStatisticsProxy> stats_proxy_;
 };
 }  // namespace internal
 }  // namespace webrtc

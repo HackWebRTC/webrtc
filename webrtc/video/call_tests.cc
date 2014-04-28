@@ -446,7 +446,8 @@ TEST_F(CallTest, DISABLED_CanReceiveFec) {
           protected_frame_timestamp_(0) {}
 
    private:
-    virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
+    virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE
+        EXCLUSIVE_LOCKS_REQUIRED(crit_) {
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
 
@@ -487,7 +488,7 @@ TEST_F(CallTest, DISABLED_CanReceiveFec) {
 
     virtual void RenderFrame(const I420VideoFrame& video_frame,
                              int time_to_render_ms) OVERRIDE {
-      CriticalSectionScoped crit_(lock_.get());
+      CriticalSectionScoped lock(crit_.get());
       // Rendering frame with timestamp associated with dropped packet -> FEC
       // protection worked.
       if (state_ == kProtectedPacketDropped &&
@@ -503,8 +504,8 @@ TEST_F(CallTest, DISABLED_CanReceiveFec) {
       kProtectedPacketDropped,
     } state_;
 
-    uint32_t protected_sequence_number_;
-    uint32_t protected_frame_timestamp_;
+    uint32_t protected_sequence_number_ GUARDED_BY(crit_);
+    uint32_t protected_frame_timestamp_ GUARDED_BY(crit_);
   } observer;
 
   CreateCalls(Call::Config(observer.SendTransport()),
@@ -581,7 +582,7 @@ void CallTest::DecodesRetransmittedFrame(bool retransmit_over_rtx) {
     }
 
     virtual void FrameCallback(I420VideoFrame* frame) OVERRIDE {
-      CriticalSectionScoped crit_(lock_.get());
+      CriticalSectionScoped lock(crit_.get());
       if (frame->timestamp() == retransmitted_timestamp_) {
         EXPECT_TRUE(frame_retransmitted_);
         observation_complete_->Set();
@@ -785,7 +786,7 @@ class PliObserver : public test::RtpRtcpObserver, public VideoRenderer {
 
   virtual void RenderFrame(const I420VideoFrame& video_frame,
                            int time_to_render_ms) OVERRIDE {
-    CriticalSectionScoped crit_(lock_.get());
+    CriticalSectionScoped lock(crit_.get());
     if (received_pli_ && video_frame.timestamp() > highest_dropped_timestamp_) {
       observation_complete_->Set();
     }

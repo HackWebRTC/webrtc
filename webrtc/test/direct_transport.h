@@ -49,7 +49,7 @@ class DirectTransport : public newapi::Transport {
   scoped_ptr<CriticalSectionWrapper> lock_;
   scoped_ptr<EventWrapper> packet_event_;
   scoped_ptr<ThreadWrapper> thread_;
-  Clock* clock_;
+  Clock* const clock_;
 
   bool shutting_down_;
 

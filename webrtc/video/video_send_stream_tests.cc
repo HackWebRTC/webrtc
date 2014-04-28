@@ -820,14 +820,14 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
         : RtpRtcpObserver(30 * 1000),  // Timeout after 30 seconds.
           transport_adapter_(&transport_),
           clock_(Clock::GetRealTimeClock()),
+          send_stream_ptr_(send_stream_ptr),
+          crit_(CriticalSectionWrapper::CreateCriticalSection()),
           test_state_(kBeforeSuspend),
           rtp_count_(0),
           last_sequence_number_(0),
           suspended_frame_count_(0),
           low_remb_bps_(0),
-          high_remb_bps_(0),
-          crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
-          send_stream_ptr_(send_stream_ptr) {
+          high_remb_bps_(0) {
       transport_adapter_.Enable();
     }
 
@@ -838,13 +838,13 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
     virtual Action OnSendRtcp(const uint8_t* packet, size_t length) OVERRIDE {
       // Receive statistics reporting having lost 0% of the packets.
       // This is needed for the send-side bitrate controller to work properly.
-      CriticalSectionScoped lock(crit_sect_.get());
+      CriticalSectionScoped lock(crit_.get());
       SendRtcpFeedback(0);  // REMB is only sent if value is > 0.
       return SEND_PACKET;
     }
 
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
-      CriticalSectionScoped lock(crit_sect_.get());
+      CriticalSectionScoped lock(crit_.get());
       ++rtp_count_;
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
@@ -880,7 +880,7 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
 
     // This method implements the I420FrameCallback.
     void FrameCallback(I420VideoFrame* video_frame) OVERRIDE {
-      CriticalSectionScoped lock(crit_sect_.get());
+      CriticalSectionScoped lock(crit_.get());
       if (test_state_ == kDuringSuspend &&
           ++suspended_frame_count_ > kSuspendTimeFrames) {
         assert(*send_stream_ptr_);
@@ -891,9 +891,15 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
       }
     }
 
-    void set_low_remb_bps(int value) { low_remb_bps_ = value; }
+    void set_low_remb_bps(int value) {
+      CriticalSectionScoped lock(crit_.get());
+      low_remb_bps_ = value;
+    }
 
-    void set_high_remb_bps(int value) { high_remb_bps_ = value; }
+    void set_high_remb_bps(int value) {
+      CriticalSectionScoped lock(crit_.get());
+      high_remb_bps_ = value;
+    }
 
     void Stop() { transport_.StopSending(); }
 
@@ -905,7 +911,8 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
       kWaitingForStats
     };
 
-    virtual void SendRtcpFeedback(int remb_value) {
+    virtual void SendRtcpFeedback(int remb_value)
+        EXCLUSIVE_LOCKS_REQUIRED(crit_) {
       FakeReceiveStatistics receive_stats(
           kSendSsrc, last_sequence_number_, rtp_count_, 0);
       RTCPSender rtcp_sender(0, false, clock_, &receive_stats);
@@ -923,15 +930,16 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
 
     internal::TransportAdapter transport_adapter_;
     test::DirectTransport transport_;
-    Clock* clock_;
-    TestState test_state_;
-    int rtp_count_;
-    int last_sequence_number_;
-    int suspended_frame_count_;
-    int low_remb_bps_;
-    int high_remb_bps_;
-    scoped_ptr<CriticalSectionWrapper> crit_sect_;
-    VideoSendStream** send_stream_ptr_;
+    Clock* const clock_;
+    VideoSendStream** const send_stream_ptr_;
+
+    const scoped_ptr<CriticalSectionWrapper> crit_;
+    TestState test_state_ GUARDED_BY(crit_);
+    int rtp_count_ GUARDED_BY(crit_);
+    int last_sequence_number_ GUARDED_BY(crit_);
+    int suspended_frame_count_ GUARDED_BY(crit_);
+    int low_remb_bps_ GUARDED_BY(crit_);
+    int high_remb_bps_ GUARDED_BY(crit_);
   } observer(&send_stream_);
   // Note that |send_stream_| is created in RunSendTest(), called below. This
   // is why a pointer to |send_stream_| must be provided here.
@@ -961,26 +969,27 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
     PacketObserver()
         : RtpRtcpObserver(30 * 1000),  // Timeout after 30 seconds.
           clock_(Clock::GetRealTimeClock()),
-          last_packet_time_ms_(-1),
           transport_adapter_(ReceiveTransport()),
-          capturer_(NULL),
-          crit_sect_(CriticalSectionWrapper::CreateCriticalSection()) {
+          crit_(CriticalSectionWrapper::CreateCriticalSection()),
+          last_packet_time_ms_(-1),
+          capturer_(NULL) {
       transport_adapter_.Enable();
     }
 
     void SetCapturer(test::FrameGeneratorCapturer* capturer) {
+      CriticalSectionScoped lock(crit_.get());
       capturer_ = capturer;
     }
 
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
-      CriticalSectionScoped lock(crit_sect_.get());
+      CriticalSectionScoped lock(crit_.get());
       last_packet_time_ms_ = clock_->TimeInMilliseconds();
       capturer_->Stop();
       return SEND_PACKET;
     }
 
     virtual Action OnSendRtcp(const uint8_t* packet, size_t length) OVERRIDE {
-      CriticalSectionScoped lock(crit_sect_.get());
+      CriticalSectionScoped lock(crit_.get());
       const int kVideoMutedThresholdMs = 10000;
       if (last_packet_time_ms_ > 0 &&
           clock_->TimeInMilliseconds() - last_packet_time_ms_ >
@@ -1002,11 +1011,11 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
     }
 
    private:
-    Clock* clock_;
-    int64_t last_packet_time_ms_;
+    Clock* const clock_;
     internal::TransportAdapter transport_adapter_;
-    test::FrameGeneratorCapturer* capturer_;
-    scoped_ptr<CriticalSectionWrapper> crit_sect_;
+    const scoped_ptr<CriticalSectionWrapper> crit_;
+    int64_t last_packet_time_ms_ GUARDED_BY(crit_);
+    test::FrameGeneratorCapturer* capturer_ GUARDED_BY(crit_);
   } observer;
 
   Call::Config call_config(observer.SendTransport());

@@ -42,7 +42,7 @@ class FakeEncoder : public VideoEncoder {
                            uint32_t framerate) OVERRIDE;
 
  private:
-  Clock* clock_;
+  Clock* const clock_;
   VideoCodec config_;
   EncodedImageCallback* callback_;
   int target_bitrate_kbps_;

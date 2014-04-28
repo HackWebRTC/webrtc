@@ -37,7 +37,8 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
       codec_lock_(CriticalSectionWrapper::CreateCriticalSection()),
       config_(config),
       external_codec_(NULL),
-      channel_(-1) {
+      channel_(-1),
+      stats_proxy_(new SendStatisticsProxy(config, this)) {
   video_engine_base_ = ViEBase::GetInterface(video_engine);
   video_engine_base_->CreateChannel(channel_, base_channel);
   assert(channel_ != -1);
@@ -141,8 +142,6 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
   if (config_.suspend_below_min_bitrate) {
     codec_->SuspendBelowMinBitrate(channel_);
   }
-
-  stats_proxy_.reset(new SendStatisticsProxy(config, this));
 
   rtp_rtcp_->RegisterSendChannelRtcpStatisticsCallback(channel_,
                                                        stats_proxy_.get());

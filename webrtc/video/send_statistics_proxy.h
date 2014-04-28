@@ -81,12 +81,12 @@ class SendStatisticsProxy : public RtcpStatisticsCallback,
                               const CaptureAlarm alarm) OVERRIDE {}
 
  private:
-  StreamStats* GetStatsEntry(uint32_t ssrc) EXCLUSIVE_LOCKS_REQUIRED(lock_);
+  StreamStats* GetStatsEntry(uint32_t ssrc) EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   const VideoSendStream::Config config_;
-  scoped_ptr<CriticalSectionWrapper> lock_;
-  VideoSendStream::Stats stats_ GUARDED_BY(lock_);
   StatsProvider* const stats_provider_;
+  scoped_ptr<CriticalSectionWrapper> crit_;
+  VideoSendStream::Stats stats_ GUARDED_BY(crit_);
 };
 
 }  // namespace webrtc

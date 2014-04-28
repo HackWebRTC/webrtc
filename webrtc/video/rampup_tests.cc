@@ -48,14 +48,14 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
   StreamObserver(const SsrcMap& rtx_media_ssrcs,
                  newapi::Transport* feedback_transport,
                  Clock* clock)
-      : critical_section_(CriticalSectionWrapper::CreateCriticalSection()),
+      : clock_(clock),
         test_done_(EventWrapper::Create()),
         rtp_parser_(RtpHeaderParser::Create()),
         feedback_transport_(feedback_transport),
         receive_stats_(ReceiveStatistics::Create(clock)),
         payload_registry_(
             new RTPPayloadRegistry(RTPPayloadStrategy::CreateStrategy(false))),
-        clock_(clock),
+        crit_(CriticalSectionWrapper::CreateCriticalSection()),
         expected_bitrate_bps_(0),
         rtx_media_ssrcs_(rtx_media_ssrcs),
         total_sent_(0),
@@ -85,12 +85,13 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
   }
 
   void set_expected_bitrate_bps(unsigned int expected_bitrate_bps) {
+    CriticalSectionScoped lock(crit_.get());
     expected_bitrate_bps_ = expected_bitrate_bps;
   }
 
   virtual void OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
                                        unsigned int bitrate) OVERRIDE {
-    CriticalSectionScoped lock(critical_section_.get());
+    CriticalSectionScoped lock(crit_.get());
     assert(expected_bitrate_bps_ > 0);
     if (bitrate >= expected_bitrate_bps_) {
       // Just trigger if there was any rtx padding packet.
@@ -104,7 +105,7 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
   }
 
   virtual bool SendRtp(const uint8_t* packet, size_t length) OVERRIDE {
-    CriticalSectionScoped lock(critical_section_.get());
+    CriticalSectionScoped lock(crit_.get());
     RTPHeader header;
     EXPECT_TRUE(rtp_parser_->Parse(packet, static_cast<int>(length), &header));
     receive_stats_->IncomingPacket(header, length, false);
@@ -156,7 +157,7 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
         value, units, false);
   }
 
-  void TriggerTestDone() {
+  void TriggerTestDone() EXCLUSIVE_LOCKS_REQUIRED(crit_) {
     ReportResult("total-sent", total_sent_, "bytes");
     ReportResult("padding-sent", padding_sent_, "bytes");
     ReportResult("rtx-media-sent", rtx_media_sent_, "bytes");
@@ -166,23 +167,24 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
     test_done_->Set();
   }
 
-  scoped_ptr<CriticalSectionWrapper> critical_section_;
-  scoped_ptr<EventWrapper> test_done_;
-  scoped_ptr<RtpHeaderParser> rtp_parser_;
+  Clock* const clock_;
+  const scoped_ptr<EventWrapper> test_done_;
+  const scoped_ptr<RtpHeaderParser> rtp_parser_;
   scoped_ptr<RtpRtcp> rtp_rtcp_;
   internal::TransportAdapter feedback_transport_;
-  scoped_ptr<ReceiveStatistics> receive_stats_;
-  scoped_ptr<RTPPayloadRegistry> payload_registry_;
+  const scoped_ptr<ReceiveStatistics> receive_stats_;
+  const scoped_ptr<RTPPayloadRegistry> payload_registry_;
   scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
-  Clock* clock_;
-  unsigned int expected_bitrate_bps_;
-  SsrcMap rtx_media_ssrcs_;
-  size_t total_sent_;
-  size_t padding_sent_;
-  size_t rtx_media_sent_;
-  int total_packets_sent_;
-  int padding_packets_sent_;
-  int rtx_media_packets_sent_;
+
+  const scoped_ptr<CriticalSectionWrapper> crit_;
+  unsigned int expected_bitrate_bps_ GUARDED_BY(crit_);
+  SsrcMap rtx_media_ssrcs_ GUARDED_BY(crit_);
+  size_t total_sent_ GUARDED_BY(crit_);
+  size_t padding_sent_ GUARDED_BY(crit_);
+  size_t rtx_media_sent_ GUARDED_BY(crit_);
+  int total_packets_sent_ GUARDED_BY(crit_);
+  int padding_packets_sent_ GUARDED_BY(crit_);
+  int rtx_media_packets_sent_ GUARDED_BY(crit_);
 };
 
 class LowRateStreamObserver : public test::DirectTransport,
@@ -193,21 +195,21 @@ class LowRateStreamObserver : public test::DirectTransport,
                         Clock* clock,
                         size_t number_of_streams,
                         bool rtx_used)
-      : critical_section_(CriticalSectionWrapper::CreateCriticalSection()),
+      : clock_(clock),
+        number_of_streams_(number_of_streams),
+        rtx_used_(rtx_used),
         test_done_(EventWrapper::Create()),
         rtp_parser_(RtpHeaderParser::Create()),
         feedback_transport_(feedback_transport),
         receive_stats_(ReceiveStatistics::Create(clock)),
-        clock_(clock),
+        crit_(CriticalSectionWrapper::CreateCriticalSection()),
+        send_stream_(NULL),
         test_state_(kFirstRampup),
         state_start_ms_(clock_->TimeInMilliseconds()),
         interval_start_ms_(state_start_ms_),
         last_remb_bps_(0),
         sent_bytes_(0),
         total_overuse_bytes_(0),
-        number_of_streams_(number_of_streams),
-        rtx_used_(rtx_used),
-        send_stream_(NULL),
         suspended_in_stats_(false) {
     RtpRtcp::Configuration config;
     config.receive_statistics = receive_stats_.get();
@@ -231,12 +233,13 @@ class LowRateStreamObserver : public test::DirectTransport,
   }
 
   virtual void SetSendStream(const VideoSendStream* send_stream) {
+    CriticalSectionScoped lock(crit_.get());
     send_stream_ = send_stream;
   }
 
   virtual void OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
                                        unsigned int bitrate) {
-    CriticalSectionScoped lock(critical_section_.get());
+    CriticalSectionScoped lock(crit_.get());
     rtp_rtcp_->SetREMBData(
         bitrate, static_cast<uint8_t>(ssrcs.size()), &ssrcs[0]);
     rtp_rtcp_->Process();
@@ -244,6 +247,7 @@ class LowRateStreamObserver : public test::DirectTransport,
   }
 
   virtual bool SendRtp(const uint8_t* data, size_t length) OVERRIDE {
+    CriticalSectionScoped lock(crit_.get());
     sent_bytes_ += length;
     int64_t now_ms = clock_->TimeInMilliseconds();
     if (now_ms > interval_start_ms_ + 1000) {  // Let at least 1 second pass.
@@ -265,7 +269,7 @@ class LowRateStreamObserver : public test::DirectTransport,
   }
 
   virtual bool DeliverPacket(const uint8_t* packet, size_t length) OVERRIDE {
-    CriticalSectionScoped lock(critical_section_.get());
+    CriticalSectionScoped lock(crit_.get());
     RTPHeader header;
     EXPECT_TRUE(rtp_parser_->Parse(packet, static_cast<int>(length), &header));
     receive_stats_->IncomingPacket(header, length, false);
@@ -300,8 +304,8 @@ class LowRateStreamObserver : public test::DirectTransport,
   // This method defines the state machine for the ramp up-down-up test.
   void EvolveTestState(unsigned int bitrate_bps) {
     int64_t now = clock_->TimeInMilliseconds();
+    CriticalSectionScoped lock(crit_.get());
     assert(send_stream_ != NULL);
-    CriticalSectionScoped lock(critical_section_.get());
     switch (test_state_) {
       case kFirstRampup: {
         EXPECT_FALSE(suspended_in_stats_);
@@ -374,25 +378,26 @@ class LowRateStreamObserver : public test::DirectTransport,
   static const unsigned int kExpectedLowBitrateBps = 20000;
   enum TestStates { kFirstRampup, kLowRate, kSecondRampup };
 
-  scoped_ptr<CriticalSectionWrapper> critical_section_;
-  scoped_ptr<EventWrapper> test_done_;
-  scoped_ptr<RtpHeaderParser> rtp_parser_;
-  scoped_ptr<RtpRtcp> rtp_rtcp_;
-  internal::TransportAdapter feedback_transport_;
-  scoped_ptr<ReceiveStatistics> receive_stats_;
-  scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
-  Clock* clock_;
-  FakeNetworkPipe::Config forward_transport_config_;
-  TestStates test_state_;
-  int64_t state_start_ms_;
-  int64_t interval_start_ms_;
-  unsigned int last_remb_bps_;
-  size_t sent_bytes_;
-  size_t total_overuse_bytes_;
+  Clock* const clock_;
   const size_t number_of_streams_;
   const bool rtx_used_;
-  const VideoSendStream* send_stream_;
-  bool suspended_in_stats_ GUARDED_BY(critical_section_);
+  const scoped_ptr<EventWrapper> test_done_;
+  const scoped_ptr<RtpHeaderParser> rtp_parser_;
+  scoped_ptr<RtpRtcp> rtp_rtcp_;
+  internal::TransportAdapter feedback_transport_;
+  const scoped_ptr<ReceiveStatistics> receive_stats_;
+  scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
+
+  scoped_ptr<CriticalSectionWrapper> crit_;
+  const VideoSendStream* send_stream_ GUARDED_BY(crit_);
+  FakeNetworkPipe::Config forward_transport_config_ GUARDED_BY(crit_);
+  TestStates test_state_ GUARDED_BY(crit_);
+  int64_t state_start_ms_ GUARDED_BY(crit_);
+  int64_t interval_start_ms_ GUARDED_BY(crit_);
+  unsigned int last_remb_bps_ GUARDED_BY(crit_);
+  size_t sent_bytes_ GUARDED_BY(crit_);
+  size_t total_overuse_bytes_ GUARDED_BY(crit_);
+  bool suspended_in_stats_ GUARDED_BY(crit_);
 };
 }
 

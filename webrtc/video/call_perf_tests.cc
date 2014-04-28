@@ -22,6 +22,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/thread_annotations.h"
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/fake_audio_device.h"
@@ -93,7 +94,7 @@ class SyncRtcpObserver : public test::RtpRtcpObserver {
  public:
   explicit SyncRtcpObserver(const FakeNetworkPipe::Config& config)
       : test::RtpRtcpObserver(kLongTimeoutMs, config),
-        critical_section_(CriticalSectionWrapper::CreateCriticalSection()) {}
+        crit_(CriticalSectionWrapper::CreateCriticalSection()) {}
 
   virtual Action OnSendRtcp(const uint8_t* packet, size_t length) OVERRIDE {
     RTCPUtility::RTCPParserV2 parser(packet, length, true);
@@ -115,7 +116,7 @@ class SyncRtcpObserver : public test::RtpRtcpObserver {
   }
 
   int64_t RtpTimestampToNtp(uint32_t timestamp) const {
-    CriticalSectionScoped cs(critical_section_.get());
+    CriticalSectionScoped lock(crit_.get());
     int64_t timestamp_in_ms = -1;
     if (ntp_rtp_pairs_.size() == 2) {
       // TODO(stefan): We can't EXPECT_TRUE on this call due to a bug in the
@@ -129,7 +130,7 @@ class SyncRtcpObserver : public test::RtpRtcpObserver {
 
  private:
   void StoreNtpRtpPair(synchronization::RtcpMeasurement ntp_rtp_pair) {
-    CriticalSectionScoped cs(critical_section_.get());
+    CriticalSectionScoped lock(crit_.get());
     for (synchronization::RtcpList::iterator it = ntp_rtp_pairs_.begin();
          it != ntp_rtp_pairs_.end();
          ++it) {
@@ -147,8 +148,8 @@ class SyncRtcpObserver : public test::RtpRtcpObserver {
     ntp_rtp_pairs_.push_front(ntp_rtp_pair);
   }
 
-  scoped_ptr<CriticalSectionWrapper> critical_section_;
-  synchronization::RtcpList ntp_rtp_pairs_;
+  const scoped_ptr<CriticalSectionWrapper> crit_;
+  synchronization::RtcpList ntp_rtp_pairs_ GUARDED_BY(crit_);
 };
 
 class VideoRtcpAndSyncObserver : public SyncRtcpObserver, public VideoRenderer {
@@ -213,7 +214,7 @@ class VideoRtcpAndSyncObserver : public SyncRtcpObserver, public VideoRenderer {
   }
 
  private:
-  Clock* clock_;
+  Clock* const clock_;
   int voe_channel_;
   VoEVideoSync* voe_sync_;
   SyncRtcpObserver* audio_observer_;
