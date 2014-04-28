@@ -15,6 +15,7 @@
 
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
+#include "webrtc/modules/audio_coding/neteq4/interface/neteq.h"
 #include "webrtc/modules/interface/module.h"
 #include "webrtc/typedefs.h"
 
@@ -82,6 +83,15 @@ class AudioCodingModule: public Module {
   AudioCodingModule() {}
 
  public:
+  struct Config {
+    Config()
+        : id(0),
+          neteq_config() {}
+
+    int id;
+    NetEq::Config neteq_config;
+  };
+
   ///////////////////////////////////////////////////////////////////////////
   // Creation and destruction of a ACM.
   //

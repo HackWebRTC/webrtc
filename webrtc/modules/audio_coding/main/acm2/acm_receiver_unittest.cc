@@ -43,12 +43,14 @@ class AcmReceiverTest : public AudioPacketizationCallback,
                         public ::testing::Test {
  protected:
   AcmReceiverTest()
-      : receiver_(new AcmReceiver(Clock::GetRealTimeClock())),
-        acm_(new AudioCodingModuleImpl(0, Clock::GetRealTimeClock())),
-        timestamp_(0),
+      : timestamp_(0),
         packet_sent_(false),
         last_packet_send_timestamp_(timestamp_),
-        last_frame_type_(kFrameEmpty) {}
+        last_frame_type_(kFrameEmpty) {
+    AudioCodingModule::Config config;
+    acm_.reset(new AudioCodingModuleImpl(config, Clock::GetRealTimeClock()));
+    receiver_.reset(new AcmReceiver(config, Clock::GetRealTimeClock()));
+  }
 
   ~AcmReceiverTest() {}
 

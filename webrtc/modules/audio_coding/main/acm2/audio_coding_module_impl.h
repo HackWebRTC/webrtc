@@ -33,7 +33,7 @@ class ACMGenericCodec;
 
 class AudioCodingModuleImpl : public AudioCodingModule {
  public:
-  AudioCodingModuleImpl(int id, Clock* clock);
+  AudioCodingModuleImpl(const AudioCodingModule::Config& config, Clock* clock);
   ~AudioCodingModuleImpl();
 
   virtual const char* Version() const;
