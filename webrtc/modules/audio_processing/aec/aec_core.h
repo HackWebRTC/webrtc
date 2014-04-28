@@ -22,17 +22,6 @@
 #define PART_LEN1 (PART_LEN + 1)  // Unique fft coefficients
 #define PART_LEN2 (PART_LEN * 2)  // Length of partition * 2
 
-// Delay estimator constants, used for logging.
-enum {
-  kMaxDelayBlocks = 60
-};
-enum {
-  kLookaheadBlocks = 15
-};
-enum {
-  kHistorySizeBlocks = kMaxDelayBlocks + kLookaheadBlocks
-};
-
 typedef float complex_t[2];
 // For performance reasons, some arrays of complex numbers are replaced by twice
 // as long arrays of float, all the real parts followed by all the imaginary
