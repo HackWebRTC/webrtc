@@ -44,8 +44,6 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   AudioCodingModuleImpl(const int32_t id, Clock* clock);
   ~AudioCodingModuleImpl();
 
-  virtual const char* Version() const;
-
   // Change the unique identifier of this object.
   virtual int32_t ChangeUniqueId(const int32_t id);
 

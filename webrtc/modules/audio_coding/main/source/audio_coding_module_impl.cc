@@ -3029,10 +3029,6 @@ void AudioCodingModuleImpl::DisableNack() {
   nack_enabled_ = false;
 }
 
-const char* AudioCodingModuleImpl::Version() const {
-  return kLegacyAcmVersion;
-}
-
 void AudioCodingModuleImpl::GetDecodingCallStatistics(
       AudioDecodingCallStats* call_stats) const {
   CriticalSectionScoped lock(acm_crit_sect_);
