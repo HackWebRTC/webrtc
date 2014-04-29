@@ -80,6 +80,8 @@
 #ifndef TALK_BASE_SCOPED_REF_PTR_H_
 #define TALK_BASE_SCOPED_REF_PTR_H_
 
+#include <stddef.h>
+
 namespace talk_base {
 
 template <class T>
