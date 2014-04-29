@@ -169,6 +169,9 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
     LOG(LS_INFO) << "New max bitrate set " << video_codec_internal.maxBitrate;
   }
 
+  if (video_codec_internal.startBitrate < video_codec_internal.minBitrate) {
+    video_codec_internal.startBitrate = video_codec_internal.minBitrate;
+  }
   if (video_codec_internal.startBitrate > video_codec_internal.maxBitrate) {
     video_codec_internal.startBitrate = video_codec_internal.maxBitrate;
   }

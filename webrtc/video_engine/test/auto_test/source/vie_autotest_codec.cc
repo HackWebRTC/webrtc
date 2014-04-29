@@ -510,6 +510,13 @@ void ViEAutoTest::ViECodecAPITest() {
       break;
     }
   }
+  const unsigned int kMinBitrate = 123;
+  video_codec.minBitrate = kMinBitrate;
+  video_codec.startBitrate = 50;
+  EXPECT_EQ(0, codec->SetSendCodec(video_channel, video_codec));
+  EXPECT_EQ(0, codec->GetSendCodec(video_channel, video_codec));
+  EXPECT_EQ(kMinBitrate, video_codec.startBitrate);
+
   memset(&video_codec, 0, sizeof(video_codec));
   EXPECT_EQ(0, codec->GetSendCodec(video_channel, video_codec));
   EXPECT_EQ(webrtc::kVideoCodecVP8, video_codec.codecType);
