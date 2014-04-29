@@ -110,8 +110,7 @@ TEST_P(BweSimulation, Choke200kbps30kbps200kbps) {
   RunFor(60 * 1000);
 }
 
-// webrtc:3277
-TEST_P(BweSimulation, DISABLED_GoogleWifiTrace3Mbps) {
+TEST_P(BweSimulation, GoogleWifiTrace3Mbps) {
   VerboseLogging(true);
   AdaptiveVideoSender sender(0, this, 30, 300, 0, 0);
   RateCounterFilter counter1(this, "sender_output");

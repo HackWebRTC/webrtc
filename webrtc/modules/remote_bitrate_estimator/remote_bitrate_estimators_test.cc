@@ -322,7 +322,8 @@ TEST_F(BweFeedbackTest, Verizon4gDownlinkTest) {
                filter.GetDelayStats());
 }
 
-TEST_F(BweFeedbackTest, GoogleWifiTrace3Mbps) {
+// webrtc:3277
+TEST_F(BweFeedbackTest, DISABLED_GoogleWifiTrace3Mbps) {
   AdaptiveVideoSender sender(0, this, 30, 300, 0, 0);
   RateCounterFilter counter1(this, "sender_output");
   TraceBasedDeliveryFilter filter(this, "link_capacity");
