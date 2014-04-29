@@ -13,14 +13,10 @@
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_codec_database.h"
 #include "webrtc/modules/audio_coding/main/acm2/audio_coding_module_impl.h"
-#include "webrtc/modules/audio_coding/main/source/audio_coding_module_impl.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
-
-const char kLegacyAcmVersion[] = "acm1";
-const char kExperimentalAcmVersion[] = "acm2";
 
 // Create module
 AudioCodingModule* AudioCodingModule::Create(int id) {

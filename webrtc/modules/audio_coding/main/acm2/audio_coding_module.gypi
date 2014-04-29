@@ -7,9 +7,29 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
+  'variables': {
+    'audio_coding_dependencies': [
+      'CNG',
+      'G711',
+      'G722',
+      'iLBC',
+      'iSAC',
+      'iSACFix',
+      'PCM16B',
+      '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
+      '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+    ],
+    'audio_coding_defines': [],
+    'conditions': [
+      ['include_opus==1', {
+        'audio_coding_dependencies': ['webrtc_opus',],
+        'audio_coding_defines': ['WEBRTC_CODEC_OPUS',],
+      }],
+    ],
+  },
   'targets': [
     {
-      'target_name': 'acm2',
+      'target_name': 'audio_coding_module',
       'type': 'static_library',
       'defines': [
         '<@(audio_coding_defines)',
@@ -92,5 +112,44 @@
         'nack.h',
       ],
     },
+  ],
+  'conditions': [
+    ['include_tests==1', {
+      'targets': [
+        {
+          'target_name': 'delay_test',
+          'type': 'executable',
+          'dependencies': [
+            'audio_coding_module',
+            '<(DEPTH)/testing/gtest.gyp:gtest',
+            '<(webrtc_root)/test/test.gyp:test_support',
+            '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+          ],
+          'sources': [
+             '../test/delay_test.cc',
+             '../test/Channel.cc',
+             '../test/PCMFile.cc',
+             '../test/utility.cc',
+           ],
+        }, # delay_test
+        {
+          'target_name': 'insert_packet_with_timing',
+          'type': 'executable',
+          'dependencies': [
+            'audio_coding_module',
+            '<(DEPTH)/testing/gtest.gyp:gtest',
+            '<(webrtc_root)/test/test.gyp:test_support',
+            '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+          ],
+          'sources': [
+             '../test/insert_packet_with_timing.cc',
+             '../test/Channel.cc',
+             '../test/PCMFile.cc',
+           ],
+        }, # delay_test
+      ],
+    }],
   ],
 }

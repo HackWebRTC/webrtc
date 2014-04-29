@@ -1978,10 +1978,6 @@ int AudioCodingModuleImpl::LeastRequiredDelayMs() const {
   return receiver_.LeastRequiredDelayMs();
 }
 
-const char* AudioCodingModuleImpl::Version() const {
-  return kExperimentalAcmVersion;
-}
-
 void AudioCodingModuleImpl::GetDecodingCallStatistics(
       AudioDecodingCallStats* call_stats) const {
   receiver_.GetDecodingCallStatistics(call_stats);
