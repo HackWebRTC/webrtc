@@ -87,6 +87,12 @@
             'android/video_render_android_surface_view.cc',
             'android/video_render_opengles20.cc',
           ],
+        }, {
+          'all_dependent_settings': {
+            'libraries': [
+              '-lGLESv2',
+            ],
+          },
         }],
         ['OS!="ios" or include_internal_video_render==0', {
           'sources!': [

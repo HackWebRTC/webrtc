@@ -11,7 +11,7 @@ vars = {
   "googlecode_url": "http://%s.googlecode.com/svn",
   "sourceforge_url": "http://svn.code.sf.net/p/%(repo)s/code",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-  "chromium_revision": "260462",
+  "chromium_revision": "266514",
 
   # A small subset of WebKit is needed for the Android Python test framework.
   "webkit_trunk": "http://src.chromium.org/blink/trunk",
@@ -42,6 +42,9 @@ deps = {
   "testing/gtest":
     From("chromium_deps", "src/testing/gtest"),
 
+  "third_party/binutils":
+    Var("chromium_trunk") + "/src/third_party/binutils@" + Var("chromium_revision"),
+
   "third_party/clang_format":
     Var("chromium_trunk") + "/src/third_party/clang_format@" + Var("chromium_revision"),
 
@@ -67,6 +70,18 @@ deps = {
 
   "third_party/junit/":
     (Var("googlecode_url") % "webrtc") + "/deps/third_party/junit@3367",
+
+  "third_party/libc++":
+    Var("chromium_trunk") + "/src/third_party/libc++@" + Var("chromium_revision"),
+
+  "third_party/libc++/trunk":
+    From("chromium_deps", "src/third_party/libc++/trunk"),
+
+  "third_party/libc++abi":
+    Var("chromium_trunk") + "/src/third_party/libc++abi@" + Var("chromium_revision"),
+
+  "third_party/libc++abi/trunk":
+    From("chromium_deps", "src/third_party/libc++abi/trunk"),
 
   "third_party/libjpeg":
     Var("chromium_trunk") + "/src/third_party/libjpeg@" + Var("chromium_revision"),
@@ -183,11 +198,6 @@ deps_os = {
       Var("chromium_trunk") + "/src/testing/iossim@" + Var("chromium_revision"),
   },
 
-  "unix": {
-    "third_party/gold":
-      From("chromium_deps", "src/third_party/gold"),
-  },
-
   "android": {
     # Precompiled tools needed for Android test execution. Needed since we can't
     # compile them from source in WebRTC since they depend on Chromium's base.
@@ -301,6 +311,20 @@ hooks = [
     "pattern": ".",
     "action": ["python", Var("root_dir") + "/tools/clang/scripts/update.py",
                "--if-needed"],
+  },
+  {
+    # Update the Windows toolchain if necessary.
+    "name": "win_toolchain",
+    "pattern": ".",
+    "action": ["python",
+               Var("root_dir") + "/webrtc/build/download_vs_toolchain.py",
+               "update"],
+  },
+  {
+    # Pull binutils for gold.
+    "name": "binutils",
+    "pattern": ".",
+    "action": ["python", Var("root_dir") + "/third_party/binutils/download.py"],
   },
   {
     # Download test resources, i.e. video and audio files from Google Storage.
