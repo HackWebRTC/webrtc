@@ -22,7 +22,6 @@
 
 namespace webrtc {
 
-class Clock;
 class CriticalSectionWrapper;
 class RWLockWrapper;
 
@@ -33,7 +32,7 @@ class ACMGenericCodec;
 
 class AudioCodingModuleImpl : public AudioCodingModule {
  public:
-  AudioCodingModuleImpl(const AudioCodingModule::Config& config, Clock* clock);
+  explicit AudioCodingModuleImpl(const AudioCodingModule::Config& config);
   ~AudioCodingModuleImpl();
 
   virtual const char* Version() const;

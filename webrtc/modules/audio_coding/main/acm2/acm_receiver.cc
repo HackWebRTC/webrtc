@@ -117,7 +117,7 @@ bool IsCng(int codec_id) {
 
 }  // namespace
 
-AcmReceiver::AcmReceiver(const AudioCodingModule::Config& config, Clock* clock)
+AcmReceiver::AcmReceiver(const AudioCodingModule::Config& config)
     : id_(config.id),
       neteq_(NetEq::Create(config.neteq_config)),
       last_audio_decoder_(-1),  // Invalid value.
@@ -128,11 +128,12 @@ AcmReceiver::AcmReceiver(const AudioCodingModule::Config& config, Clock* clock)
       current_sample_rate_hz_(config.neteq_config.sample_rate_hz),
       nack_(),
       nack_enabled_(false),
-      clock_(clock),
+      clock_(config.clock),
       av_sync_(false),
       initial_delay_manager_(),
       missing_packets_sync_stream_(),
       late_packets_sync_stream_() {
+  assert(clock_);
   for (int n = 0; n < ACMCodecDB::kMaxNumCodecs; ++n) {
     decoders_[n].registered = false;
   }

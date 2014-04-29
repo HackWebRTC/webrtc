@@ -48,8 +48,8 @@ class AcmReceiverTest : public AudioPacketizationCallback,
         last_packet_send_timestamp_(timestamp_),
         last_frame_type_(kFrameEmpty) {
     AudioCodingModule::Config config;
-    acm_.reset(new AudioCodingModuleImpl(config, Clock::GetRealTimeClock()));
-    receiver_.reset(new AcmReceiver(config, Clock::GetRealTimeClock()));
+    acm_.reset(new AudioCodingModuleImpl(config));
+    receiver_.reset(new AcmReceiver(config));
   }
 
   ~AcmReceiverTest() {}

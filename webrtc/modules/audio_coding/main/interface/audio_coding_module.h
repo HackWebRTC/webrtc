@@ -17,6 +17,7 @@
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
 #include "webrtc/modules/audio_coding/neteq4/interface/neteq.h"
 #include "webrtc/modules/interface/module.h"
+#include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -26,7 +27,6 @@ struct CodecInst;
 struct WebRtcRTPHeader;
 class AudioFrame;
 class RTPFragmentationHeader;
-class Clock;
 
 #define WEBRTC_10MS_PCM_AUDIO 960  // 16 bits super wideband 48 kHz
 
@@ -86,10 +86,12 @@ class AudioCodingModule: public Module {
   struct Config {
     Config()
         : id(0),
-          neteq_config() {}
+          neteq_config(),
+          clock(Clock::GetRealTimeClock()) {}
 
     int id;
     NetEq::Config neteq_config;
+    Clock* clock;
   };
 
   ///////////////////////////////////////////////////////////////////////////

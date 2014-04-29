@@ -30,7 +30,8 @@ AudioCodingModule* AudioCodingModule::Create(int id) {
 AudioCodingModule* AudioCodingModule::Create(int id, Clock* clock) {
   AudioCodingModule::Config config;
   config.id = id;
-  return new acm2::AudioCodingModuleImpl(config, clock);
+  config.clock = clock;
+  return new acm2::AudioCodingModuleImpl(config);
 }
 
 // Get number of supported codecs
@@ -105,7 +106,7 @@ AudioCodingModule* AudioCodingModuleFactory::Create(int id) const {
 AudioCodingModule* NewAudioCodingModuleFactory::Create(int id) const {
   AudioCodingModule::Config config;
   config.id = id;
-  return new acm2::AudioCodingModuleImpl(config, Clock::GetRealTimeClock());
+  return new acm2::AudioCodingModuleImpl(config);
 }
 
 }  // namespace webrtc

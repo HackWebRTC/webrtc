@@ -27,7 +27,6 @@
 
 namespace webrtc {
 
-class Clock;
 struct CodecInst;
 class CriticalSectionWrapper;
 class RWLockWrapper;
@@ -48,7 +47,7 @@ class AcmReceiver {
   };
 
   // Constructor of the class
-  explicit AcmReceiver(const AudioCodingModule::Config& config, Clock* clock);
+  explicit AcmReceiver(const AudioCodingModule::Config& config);
 
   // Destructor of the class.
   ~AcmReceiver();
