@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <list>
 #include <numeric>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -86,6 +87,13 @@ template<typename T> class Stats {
   T GetMax() {
     RefreshMinMax();
     return max_;
+  }
+
+  std::string AsString() {
+    std::stringstream ss;
+    ss << (GetMean() >= 0 ? GetMean() : -1) << ", " <<
+        (GetStdDev() >= 0 ? GetStdDev() : -1);
+    return ss.str();
   }
 
   void Log(const std::string& units) {
@@ -226,7 +234,7 @@ class RateCounterFilter : public PacketProcessor {
 
  private:
   scoped_ptr<RateCounter> rate_counter_;
-  Stats<double> pps_stats_;
+  Stats<double> packets_per_second_stats_;
   Stats<double> kbps_stats_;
   std::string name_;
 
@@ -331,6 +339,7 @@ class TraceBasedDeliveryFilter : public PacketProcessor {
 
   void SetMaxDelay(int max_delay_ms);
   Stats<double> GetDelayStats() const;
+  Stats<double> GetBitrateStats() const;
 
  private:
   void ProceedToNextSlot();
@@ -343,6 +352,8 @@ class TraceBasedDeliveryFilter : public PacketProcessor {
   scoped_ptr<RateCounter> rate_counter_;
   std::string name_;
   scoped_ptr<DelayCapHelper> delay_cap_helper_;
+  Stats<double> packets_per_second_stats_;
+  Stats<double> kbps_stats_;
 
   DISALLOW_COPY_AND_ASSIGN(TraceBasedDeliveryFilter);
 };

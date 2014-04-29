@@ -101,6 +101,7 @@ class BweTest : public PacketProcessorListener {
   void SetupTestFromConfig(const BweTestConfig& config);
   void VerboseLogging(bool enable);
   void RunFor(int64_t time_ms);
+  std::string GetTestName() const;
 
  private:
   typedef std::map<int, TestedEstimator*> EstimatorMap;

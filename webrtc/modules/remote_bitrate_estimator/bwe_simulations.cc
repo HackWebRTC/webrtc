@@ -28,7 +28,7 @@ BweTestConfig::EstimatorConfig CreateEstimatorConfig(
                                         plot_delay, plot_estimate);
 }
 
-BweTestConfig MakeAdaptiveBweTestConfig(uint32_t sender_count) {
+BweTestConfig MakeAdaptiveBweTestConfig() {
   BweTestConfig result;
   result.estimator_configs.push_back(CreateEstimatorConfig(0, true, true));
   return result;
@@ -60,8 +60,7 @@ class BweSimulation : public BweTest,
 };
 
 INSTANTIATE_TEST_CASE_P(VideoSendersTest, BweSimulation,
-    ::testing::Values(MakeAdaptiveBweTestConfig(1),
-                      MakeAdaptiveBweTestConfig(3)));
+    ::testing::Values(MakeAdaptiveBweTestConfig()));
 
 TEST_P(BweSimulation, SprintUplinkTest) {
   VerboseLogging(true);

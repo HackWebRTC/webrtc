@@ -342,6 +342,12 @@ void BweTest::RunFor(int64_t time_ms) {
     }
   }
 }
+
+string BweTest::GetTestName() const {
+  const ::testing::TestInfo* const test_info =
+      ::testing::UnitTest::GetInstance()->current_test_info();
+  return string(test_info->name());
+}
 }  // namespace bwe
 }  // namespace testing
 }  // namespace webrtc

@@ -8,9 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <sstream>
+
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test.h"
 #include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/test/testsupport/perf_test.h"
 
 using std::string;
 
@@ -27,16 +30,14 @@ BweTestConfig::EstimatorConfig EstimatorConfigs(Estimator estimator,
   };
   switch (estimator) {
     case kTransmissionOffset:
-      return BweTestConfig::EstimatorConfig("TOF", flow_id, &factories[0], true,
-                                            true);
+      return BweTestConfig::EstimatorConfig("TOF", flow_id, &factories[0],
+                                            kMimdControl, false, false);
     case kAbsSendTime:
-      return BweTestConfig::EstimatorConfig("AST", flow_id, &factories[1], true,
-                                            true);
-    default:
-      assert(false);
-      return BweTestConfig::EstimatorConfig("AST", flow_id, &factories[1], true,
-                                            true);
+      return BweTestConfig::EstimatorConfig("AST", flow_id, &factories[1],
+                                            kMimdControl, false, false);
   }
+  assert(false);
+  return BweTestConfig::EstimatorConfig();
 }
 
 struct DefaultBweTestConfig {
@@ -230,6 +231,107 @@ TEST_P(DefaultBweTest, Multi2) {
   choke.SetCapacity(2000);
   jitter.SetJitter(120);
   RunFor(5 * 60 * 1000);
+}
+
+// This test fixture is used to instantiate tests running with adaptive video
+// senders.
+class BweFeedbackTest : public BweTest,
+                        public ::testing::TestWithParam<BweTestConfig> {
+ public:
+  BweFeedbackTest() : BweTest() {}
+  virtual ~BweFeedbackTest() {}
+
+  virtual void SetUp() {
+    BweTestConfig config;
+    config.estimator_configs.push_back(EstimatorConfigs(kAbsSendTime, 0));
+    SetupTestFromConfig(config);
+  }
+
+  void PrintResults(double max_throughput_kbps, Stats<double> throughput_kbps,
+                    Stats<double> delay_ms) {
+    double utilization = throughput_kbps.GetMean() / max_throughput_kbps;
+    webrtc::test::PrintResult("BwePerformance",
+                              GetTestName(),
+                              "Utilization",
+                              utilization * 100.0,
+                              "%",
+                              false);
+    std::stringstream ss;
+    ss << throughput_kbps.GetStdDev() / throughput_kbps.GetMean();
+    webrtc::test::PrintResult("BwePerformance",
+                              GetTestName(),
+                              "Utilization var coeff",
+                              ss.str(),
+                              "",
+                              false);
+    webrtc::test::PrintResult("BwePerformance",
+                              GetTestName(),
+                              "Average delay",
+                              delay_ms.AsString(),
+                              "ms",
+                              false);
+  }
+
+ private:
+  DISALLOW_COPY_AND_ASSIGN(BweFeedbackTest);
+};
+
+TEST_F(BweFeedbackTest, Choke1000kbps500kbps1000kbps) {
+  AdaptiveVideoSender sender(0, this, 30, 300, 0, 0);
+  ChokeFilter filter(this);
+  RateCounterFilter counter(this, "receiver_input");
+  const int kHighCapacityKbps = 1000;
+  const int kLowCapacityKbps = 500;
+  filter.SetCapacity(kHighCapacityKbps);
+  filter.SetMaxDelay(500);
+  RunFor(60 * 1000);
+  filter.SetCapacity(kLowCapacityKbps);
+  RunFor(60 * 1000);
+  filter.SetCapacity(kHighCapacityKbps);
+  RunFor(60 * 1000);
+  PrintResults((2 * kHighCapacityKbps + kLowCapacityKbps) / 3.0,
+               counter.GetBitrateStats(), filter.GetDelayStats());
+}
+
+TEST_F(BweFeedbackTest, Choke200kbps30kbps200kbps) {
+  AdaptiveVideoSender sender(0, this, 30, 300, 0, 0);
+  ChokeFilter filter(this);
+  RateCounterFilter counter(this, "receiver_input");
+  const int kHighCapacityKbps = 200;
+  const int kLowCapacityKbps = 30;
+  filter.SetCapacity(kHighCapacityKbps);
+  filter.SetMaxDelay(500);
+  RunFor(60 * 1000);
+  filter.SetCapacity(kLowCapacityKbps);
+  RunFor(60 * 1000);
+  filter.SetCapacity(kHighCapacityKbps);
+  RunFor(60 * 1000);
+
+  PrintResults((2 * kHighCapacityKbps + kLowCapacityKbps) / 3.0,
+               counter.GetBitrateStats(), filter.GetDelayStats());
+}
+
+TEST_F(BweFeedbackTest, Verizon4gDownlinkTest) {
+  AdaptiveVideoSender sender(0, this, 30, 300, 0, 0);
+  RateCounterFilter counter1(this, "sender_output");
+  TraceBasedDeliveryFilter filter(this, "link_capacity");
+  RateCounterFilter counter2(this, "receiver_input");
+  ASSERT_TRUE(filter.Init(test::ResourcePath("verizon4g-downlink", "rx")));
+  RunFor(22 * 60 * 1000);
+  PrintResults(filter.GetBitrateStats().GetMean(), counter2.GetBitrateStats(),
+               filter.GetDelayStats());
+}
+
+TEST_F(BweFeedbackTest, GoogleWifiTrace3Mbps) {
+  AdaptiveVideoSender sender(0, this, 30, 300, 0, 0);
+  RateCounterFilter counter1(this, "sender_output");
+  TraceBasedDeliveryFilter filter(this, "link_capacity");
+  filter.SetMaxDelay(500);
+  RateCounterFilter counter2(this, "receiver_input");
+  ASSERT_TRUE(filter.Init(test::ResourcePath("google-wifi-3mbps", "rx")));
+  RunFor(300 * 1000);
+  PrintResults(filter.GetBitrateStats().GetMean(), counter2.GetBitrateStats(),
+               filter.GetDelayStats());
 }
 }  // namespace bwe
 }  // namespace testing

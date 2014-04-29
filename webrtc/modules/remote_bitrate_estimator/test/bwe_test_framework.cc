@@ -191,7 +191,7 @@ PacketProcessor::~PacketProcessor() {
 RateCounterFilter::RateCounterFilter(PacketProcessorListener* listener)
     : PacketProcessor(listener, false),
       rate_counter_(new RateCounter()),
-      pps_stats_(),
+      packets_per_second_stats_(),
       kbps_stats_(),
       name_("") {}
 
@@ -199,7 +199,7 @@ RateCounterFilter::RateCounterFilter(PacketProcessorListener* listener,
                                      const std::string& name)
     : PacketProcessor(listener, false),
       rate_counter_(new RateCounter()),
-      pps_stats_(),
+      packets_per_second_stats_(),
       kbps_stats_(),
       name_(name) {}
 
@@ -208,7 +208,7 @@ RateCounterFilter::RateCounterFilter(PacketProcessorListener* listener,
                                      const std::string& name)
     : PacketProcessor(listener, flow_ids, false),
       rate_counter_(new RateCounter()),
-      pps_stats_(),
+      packets_per_second_stats_(),
       kbps_stats_(),
       name_(name) {
   std::stringstream ss;
@@ -233,7 +233,7 @@ uint32_t RateCounterFilter::bits_per_second() const {
 
 void RateCounterFilter::LogStats() {
   BWE_TEST_LOGGING_CONTEXT("RateCounterFilter");
-  pps_stats_.Log("pps");
+  packets_per_second_stats_.Log("pps");
   kbps_stats_.Log("kbps");
 }
 
@@ -252,7 +252,7 @@ void RateCounterFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
   for (PacketsConstIt it = in_out->begin(); it != in_out->end(); ++it) {
     rate_counter_->UpdateRates(it->send_time_us(), it->payload_size());
   }
-  pps_stats_.Push(rate_counter_->packets_per_second());
+  packets_per_second_stats_.Push(rate_counter_->packets_per_second());
   kbps_stats_.Push(rate_counter_->bits_per_second() / 1000.0);
 }
 
@@ -418,7 +418,9 @@ TraceBasedDeliveryFilter::TraceBasedDeliveryFilter(
       local_time_us_(-1),
       rate_counter_(new RateCounter),
       name_(""),
-      delay_cap_helper_(new DelayCapHelper()) {}
+      delay_cap_helper_(new DelayCapHelper()),
+      packets_per_second_stats_(),
+      kbps_stats_() {}
 
 TraceBasedDeliveryFilter::TraceBasedDeliveryFilter(
     PacketProcessorListener* listener,
@@ -430,7 +432,9 @@ TraceBasedDeliveryFilter::TraceBasedDeliveryFilter(
       local_time_us_(-1),
       rate_counter_(new RateCounter),
       name_(name),
-      delay_cap_helper_(new DelayCapHelper()) {}
+      delay_cap_helper_(new DelayCapHelper()),
+      packets_per_second_stats_(),
+      kbps_stats_() {}
 
 TraceBasedDeliveryFilter::~TraceBasedDeliveryFilter() {
 }
@@ -491,6 +495,8 @@ void TraceBasedDeliveryFilter::RunFor(int64_t time_ms, Packets* in_out) {
     }
     ++it;
   }
+  packets_per_second_stats_.Push(rate_counter_->packets_per_second());
+  kbps_stats_.Push(rate_counter_->bits_per_second() / 1000.0);
 }
 
 void TraceBasedDeliveryFilter::SetMaxDelay(int max_delay_ms) {
@@ -499,6 +505,10 @@ void TraceBasedDeliveryFilter::SetMaxDelay(int max_delay_ms) {
 
 Stats<double> TraceBasedDeliveryFilter::GetDelayStats() const {
   return delay_cap_helper_->delay_stats();
+}
+
+Stats<double> TraceBasedDeliveryFilter::GetBitrateStats() const {
+  return kbps_stats_;
 }
 
 void TraceBasedDeliveryFilter::ProceedToNextSlot() {
