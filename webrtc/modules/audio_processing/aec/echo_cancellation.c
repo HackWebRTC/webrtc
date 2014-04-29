@@ -254,7 +254,7 @@ int32_t WebRtcAec_Init(void* aecInst, int32_t sampFreq, int32_t scSampFreq) {
   aecpc->checkBuffSize = 1;
   aecpc->firstVal = 0;
 
-  aecpc->startup_phase = 1;
+  aecpc->startup_phase = WebRtcAec_reported_delay_enabled(aecpc->aec);
   aecpc->bufSizeStart = 0;
   aecpc->checkBufSizeCtr = 0;
   aecpc->msInSndCardBuf = 0;
