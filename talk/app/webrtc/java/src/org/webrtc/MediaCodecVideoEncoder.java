@@ -98,7 +98,9 @@ class MediaCodecVideoEncoder {
     // webrtc "kilo" means 1000, not 1024.  Apparently.
     // (and the price for overshooting is frame-dropping as webrtc enforces its
     // bandwidth estimation, which is unpleasant).
-    return kbps * 1000;
+    // Since the HW encoder in the N5 overshoots, we clamp to a bit less than
+    // the requested rate.  Sad but true.  Bug 3194.
+    return kbps * 950;
   }
 
   private void checkOnMediaCodecThread() {
