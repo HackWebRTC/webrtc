@@ -80,8 +80,10 @@ I420VideoFrame* VideoFramesQueue::FrameToRecord() {
       // List is traversed beginning to end. If ptrRenderFrame is not
       // NULL it must be the first, and thus oldest, VideoFrame in the
       // queue. It can be recycled.
-      ReturnFrame(ptrRenderFrame);
-      iter = _incomingFrames.erase(iter);
+      if (ptrRenderFrame) {
+        ReturnFrame(ptrRenderFrame);
+       _incomingFrames.pop_front();
+      }
       ptrRenderFrame = ptrOldestFrameInList;
     } else {
       // All VideoFrames following this one will be even newer. No match
