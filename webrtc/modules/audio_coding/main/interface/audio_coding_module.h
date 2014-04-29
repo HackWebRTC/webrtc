@@ -948,20 +948,6 @@ class AudioCodingModule: public Module {
       AudioDecodingCallStats* call_stats) const = 0;
 };
 
-struct AudioCodingModuleFactory {
-  AudioCodingModuleFactory() {}
-  virtual ~AudioCodingModuleFactory() {}
-
-  virtual AudioCodingModule* Create(int id) const;
-};
-
-struct NewAudioCodingModuleFactory : AudioCodingModuleFactory {
-  NewAudioCodingModuleFactory() {}
-  virtual ~NewAudioCodingModuleFactory() {}
-
-  virtual AudioCodingModule* Create(int id) const;
-};
-
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_INTERFACE_AUDIO_CODING_MODULE_H_
