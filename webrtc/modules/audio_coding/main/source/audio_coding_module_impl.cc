@@ -2250,18 +2250,10 @@ int32_t AudioCodingModuleImpl::PlayoutData10Ms(
   int decoded_seq_num;
   uint32_t decoded_timestamp;
   bool update_nack =
-      neteq_.DecodedRtpInfo(&decoded_seq_num, &decoded_timestamp) &&
-      nack_enabled_;  // Update NACK only if it is enabled.
-  audio_frame->num_channels_ = audio_frame_.num_channels_;
-  audio_frame->vad_activity_ = audio_frame_.vad_activity_;
-  audio_frame->speech_type_ = audio_frame_.speech_type_;
+      neteq_.DecodedRtpInfo(&decoded_seq_num, &decoded_timestamp);
 
-  stereo_mode = (audio_frame_.num_channels_ > 1);
-
-  // For stereo playout:
   // Master and Slave samples are interleaved starting with Master.
-  const uint16_t receive_freq =
-      static_cast<uint16_t>(audio_frame_.sample_rate_hz_);
+  uint16_t receive_freq;
   bool tone_detected = false;
   int16_t last_detected_tone;
   int16_t tone;
@@ -2270,10 +2262,17 @@ int32_t AudioCodingModuleImpl::PlayoutData10Ms(
   {
     CriticalSectionScoped lock(acm_crit_sect_);
 
+    audio_frame->num_channels_ = audio_frame_.num_channels_;
+    audio_frame->vad_activity_ = audio_frame_.vad_activity_;
+    audio_frame->speech_type_ = audio_frame_.speech_type_;
+
+    stereo_mode = (audio_frame_.num_channels_ > 1);
+
+    receive_freq = static_cast<uint16_t>(audio_frame_.sample_rate_hz_);
     // Update call statistics.
     call_stats_.DecodedByNetEq(audio_frame->speech_type_);
 
-    if (update_nack) {
+    if (nack_enabled_ && update_nack) {
       assert(nack_.get());
       nack_->UpdateLastDecodedPacket(decoded_seq_num, decoded_timestamp);
     }
