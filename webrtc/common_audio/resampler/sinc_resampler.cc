@@ -90,6 +90,7 @@
 #include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
 #include "webrtc/typedefs.h"
 
+#include <assert.h>
 #include <math.h>
 #include <string.h>
 

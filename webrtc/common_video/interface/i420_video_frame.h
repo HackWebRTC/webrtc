@@ -15,6 +15,8 @@
 //
 // Storing and handling of YUV (I420) video frames.
 
+#include <assert.h>
+
 #include "webrtc/common_video/plane.h"
 #include "webrtc/system_wrappers/interface/scoped_refptr.h"
 #include "webrtc/typedefs.h"

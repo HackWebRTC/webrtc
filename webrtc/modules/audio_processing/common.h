@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_COMMON_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_COMMON_H_
 
+#include <assert.h>
 #include <string.h>
 
 #include "webrtc/modules/audio_processing/include/audio_processing.h"

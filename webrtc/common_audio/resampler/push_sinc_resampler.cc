@@ -10,6 +10,7 @@
 
 #include "webrtc/common_audio/include/audio_util.h"
 
+#include <assert.h>
 #include <string.h>
 
 #include "webrtc/common_audio/resampler/push_sinc_resampler.h"

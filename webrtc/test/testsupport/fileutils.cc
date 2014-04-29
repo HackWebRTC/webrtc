@@ -10,8 +10,9 @@
 
 #include "webrtc/test/testsupport/fileutils.h"
 
-#ifdef WIN32
 #include <assert.h>
+
+#ifdef WIN32
 #include <direct.h>
 #include <tchar.h>
 #include <windows.h>

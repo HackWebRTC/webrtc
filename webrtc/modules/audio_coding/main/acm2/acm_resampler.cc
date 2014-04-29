@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/audio_coding/main/acm2/acm_resampler.h"
 
+#include <assert.h>
 #include <string.h>
 
 #include "webrtc/common_audio/resampler/include/resampler.h"
