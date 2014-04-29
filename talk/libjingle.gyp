@@ -657,6 +657,7 @@
         }],
         ['OS=="ios"', {
           'sources': [
+            'base/iosfilesystem.mm',
             'base/scoped_autorelease_pool.mm',
           ],
           'dependencies': [

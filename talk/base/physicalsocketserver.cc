@@ -501,7 +501,7 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
   }
 
   void MaybeRemapSendError() {
-#if defined(OSX)
+#if defined(OSX) || defined(IOS)
     // https://developer.apple.com/library/mac/documentation/Darwin/
     // Reference/ManPages/man2/sendto.2.html
     // ENOBUFS - The output queue for a network interface is full.
