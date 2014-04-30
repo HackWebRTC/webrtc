@@ -56,7 +56,8 @@
   if (self = [super init]) {
     _ICEServerDelegate = delegate;
     _messageHandler = handler;
-    _backgroundQueue = dispatch_queue_create("RTCBackgroundQueue", NULL);
+    _backgroundQueue = dispatch_queue_create("RTCBackgroundQueue",
+                                             DISPATCH_QUEUE_SERIAL);
     _sendQueue = [NSMutableArray array];
     // Uncomment to see Request/Response logging.
     // _verboseLogging = YES;
@@ -72,11 +73,22 @@
 }
 
 - (void)sendData:(NSData*)data {
-  @synchronized(self) {
-    [self maybeLogMessage:@"Send message"];
+  [self maybeLogMessage:@"Send message"];
+
+  dispatch_async(self.backgroundQueue, ^{
     [self.sendQueue addObject:[data copy]];
-  }
-  [self requestQueueDrainInBackground];
+
+    if ([self.postMessageUrl length] < 1) {
+      return;
+    }
+    for (NSData* data in self.sendQueue) {
+      NSString* url =
+          [NSString stringWithFormat:@"%@/%@",
+                    self.baseURL, self.postMessageUrl];
+      [self sendData:data withUrl:url];
+    }
+    [self.sendQueue removeAllObjects];
+  });
 }
 
 #pragma mark - Internal methods
@@ -131,24 +143,6 @@
   if (self.verboseLogging) {
     NSLog(@"%@", message);
   }
-}
-
-- (void)requestQueueDrainInBackground {
-  dispatch_async(self.backgroundQueue, ^(void) {
-      // TODO(hughv): This can block the UI thread.  Fix.
-      @synchronized(self) {
-        if ([self.postMessageUrl length] < 1) {
-          return;
-        }
-        for (NSData* data in self.sendQueue) {
-          NSString* url =
-            [NSString stringWithFormat:@"%@/%@",
-                      self.baseURL, self.postMessageUrl];
-          [self sendData:data withUrl:url];
-        }
-        [self.sendQueue removeAllObjects];
-      }
-    });
 }
 
 - (void)sendData:(NSData*)data withUrl:(NSString*)url {
