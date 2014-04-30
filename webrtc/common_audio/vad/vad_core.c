@@ -603,7 +603,7 @@ int WebRtcVad_set_mode_core(VadInstT* self, int mode) {
 // Calculate VAD decision by first extracting feature values and then calculate
 // probability for both speech and background noise.
 
-int WebRtcVad_CalcVad48khz(VadInstT* inst, int16_t* speech_frame,
+int WebRtcVad_CalcVad48khz(VadInstT* inst, const int16_t* speech_frame,
                            int frame_length) {
   int vad;
   int i;
@@ -628,7 +628,7 @@ int WebRtcVad_CalcVad48khz(VadInstT* inst, int16_t* speech_frame,
   return vad;
 }
 
-int WebRtcVad_CalcVad32khz(VadInstT* inst, int16_t* speech_frame,
+int WebRtcVad_CalcVad32khz(VadInstT* inst, const int16_t* speech_frame,
                            int frame_length)
 {
     int len, vad;
@@ -650,7 +650,7 @@ int WebRtcVad_CalcVad32khz(VadInstT* inst, int16_t* speech_frame,
     return vad;
 }
 
-int WebRtcVad_CalcVad16khz(VadInstT* inst, int16_t* speech_frame,
+int WebRtcVad_CalcVad16khz(VadInstT* inst, const int16_t* speech_frame,
                            int frame_length)
 {
     int len, vad;
@@ -666,7 +666,7 @@ int WebRtcVad_CalcVad16khz(VadInstT* inst, int16_t* speech_frame,
     return vad;
 }
 
-int WebRtcVad_CalcVad8khz(VadInstT* inst, int16_t* speech_frame,
+int WebRtcVad_CalcVad8khz(VadInstT* inst, const int16_t* speech_frame,
                           int frame_length)
 {
     int16_t feature_vector[kNumChannels], total_power;

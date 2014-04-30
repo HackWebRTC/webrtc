@@ -20,7 +20,15 @@
 namespace webrtc {
 namespace {
 
-const double kMaxSquaredLevel = 32768.0 * 32768.0;
+const float kMaxSquaredLevel = 32768.0 * 32768.0;
+
+float SumSquare(const int16_t* data, int length) {
+  float sum_square = 0.f;
+  for (int i = 0; i < length; ++i) {
+    sum_square += data[i] * data[i];
+  }
+  return sum_square;
+}
 
 class Level {
  public:
@@ -36,7 +44,7 @@ class Level {
     sample_count_ = 0;
   }
 
-  void Process(int16_t* data, int length) {
+  void Process(const int16_t* data, int length) {
     assert(data != NULL);
     assert(length > 0);
     sum_square_ += SumSquare(data, length);
@@ -55,7 +63,7 @@ class Level {
     }
 
     // Normalize by the max level.
-    double rms = sum_square_ / (sample_count_ * kMaxSquaredLevel);
+    float rms = sum_square_ / (sample_count_ * kMaxSquaredLevel);
     // 20log_10(x^0.5) = 10log_10(x)
     rms = 10 * log10(rms);
     if (rms > 0)
@@ -69,18 +77,10 @@ class Level {
   }
 
  private:
-  static double SumSquare(int16_t* data, int length) {
-    double sum_square = 0.0;
-    for (int i = 0; i < length; ++i) {
-      double data_d = static_cast<double>(data[i]);
-      sum_square += data_d * data_d;
-    }
-    return sum_square;
-  }
-
-  double sum_square_;
+  float sum_square_;
   int sample_count_;
 };
+
 }  // namespace
 
 LevelEstimatorImpl::LevelEstimatorImpl(const AudioProcessing* apm,
@@ -102,7 +102,7 @@ int LevelEstimatorImpl::ProcessStream(AudioBuffer* audio) {
     return apm_->kNoError;
   }
 
-  int16_t* mixed_data = audio->data(0);
+  const int16_t* mixed_data = audio->data(0);
   if (audio->num_channels() > 1) {
     audio->CopyAndMix(1);
     mixed_data = audio->mixed_data(0);

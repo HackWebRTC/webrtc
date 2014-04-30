@@ -228,7 +228,7 @@ void AudioBuffer::InitForNewData() {
   is_muted_ = false;
 }
 
-int16_t* AudioBuffer::data(int channel) const {
+const int16_t* AudioBuffer::data(int channel) const {
   assert(channel >= 0 && channel < num_proc_channels_);
   if (data_ != NULL) {
     return data_;
@@ -237,7 +237,12 @@ int16_t* AudioBuffer::data(int channel) const {
   return channels_->channel(channel);
 }
 
-int16_t* AudioBuffer::low_pass_split_data(int channel) const {
+int16_t* AudioBuffer::data(int channel) {
+  const AudioBuffer* t = this;
+  return const_cast<int16_t*>(t->data(channel));
+}
+
+const int16_t* AudioBuffer::low_pass_split_data(int channel) const {
   assert(channel >= 0 && channel < num_proc_channels_);
   if (split_channels_.get() == NULL) {
     return data(channel);
@@ -246,7 +251,12 @@ int16_t* AudioBuffer::low_pass_split_data(int channel) const {
   return split_channels_->low_channel(channel);
 }
 
-int16_t* AudioBuffer::high_pass_split_data(int channel) const {
+int16_t* AudioBuffer::low_pass_split_data(int channel) {
+  const AudioBuffer* t = this;
+  return const_cast<int16_t*>(t->low_pass_split_data(channel));
+}
+
+const int16_t* AudioBuffer::high_pass_split_data(int channel) const {
   assert(channel >= 0 && channel < num_proc_channels_);
   if (split_channels_.get() == NULL) {
     return NULL;
@@ -255,19 +265,24 @@ int16_t* AudioBuffer::high_pass_split_data(int channel) const {
   return split_channels_->high_channel(channel);
 }
 
-int16_t* AudioBuffer::mixed_data(int channel) const {
+int16_t* AudioBuffer::high_pass_split_data(int channel) {
+  const AudioBuffer* t = this;
+  return const_cast<int16_t*>(t->high_pass_split_data(channel));
+}
+
+const int16_t* AudioBuffer::mixed_data(int channel) const {
   assert(channel >= 0 && channel < num_mixed_channels_);
 
   return mixed_channels_->channel(channel);
 }
 
-int16_t* AudioBuffer::mixed_low_pass_data(int channel) const {
+const int16_t* AudioBuffer::mixed_low_pass_data(int channel) const {
   assert(channel >= 0 && channel < num_mixed_low_pass_channels_);
 
   return mixed_low_pass_channels_->channel(channel);
 }
 
-int16_t* AudioBuffer::low_pass_reference(int channel) const {
+const int16_t* AudioBuffer::low_pass_reference(int channel) const {
   assert(channel >= 0 && channel < num_proc_channels_);
   if (!reference_copied_) {
     return NULL;
@@ -280,7 +295,7 @@ const float* AudioBuffer::keyboard_data() const {
   return keyboard_data_;
 }
 
-SplitFilterStates* AudioBuffer::filter_states(int channel) const {
+SplitFilterStates* AudioBuffer::filter_states(int channel) {
   assert(channel >= 0 && channel < num_proc_channels_);
   return &filter_states_[channel];
 }

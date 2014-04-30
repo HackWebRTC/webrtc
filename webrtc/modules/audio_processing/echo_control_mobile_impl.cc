@@ -128,7 +128,7 @@ int EchoControlMobileImpl::ProcessCaptureAudio(AudioBuffer* audio) {
   for (int i = 0; i < audio->num_channels(); i++) {
     // TODO(ajm): improve how this works, possibly inside AECM.
     //            This is kind of hacked up.
-    int16_t* noisy = audio->low_pass_reference(i);
+    const int16_t* noisy = audio->low_pass_reference(i);
     int16_t* clean = audio->low_pass_split_data(i);
     if (noisy == NULL) {
       noisy = clean;

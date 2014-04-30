@@ -69,7 +69,7 @@ int WebRtcVad_set_mode(VadInst* handle, int mode);
 // returns              : 1 - (Active Voice),
 //                        0 - (Non-active Voice),
 //                       -1 - (Error)
-int WebRtcVad_Process(VadInst* handle, int fs, int16_t* audio_frame,
+int WebRtcVad_Process(VadInst* handle, int fs, const int16_t* audio_frame,
                       int frame_length);
 
 // Checks for valid combinations of |rate| and |frame_length|. We support 10,
