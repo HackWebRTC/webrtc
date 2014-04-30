@@ -27,6 +27,8 @@
 
 #import "RTCPeerConnectionDelegate.h"
 
+@class RTCDataChannel;
+@class RTCDataChannelInit;
 @class RTCICECandidate;
 @class RTCICEServers;
 @class RTCMediaConstraints;
@@ -67,6 +69,10 @@
 // Note that a SessionDescription negotiation is need before the
 // remote peer is notified.
 - (void)removeStream:(RTCMediaStream *)stream;
+
+// Create a data channel.
+- (RTCDataChannel*)createDataChannelWithLabel:(NSString*)label
+                                       config:(RTCDataChannelInit*)config;
 
 // Create a new offer.
 // Success or failure will be reported via RTCSessionDescriptionDelegate.

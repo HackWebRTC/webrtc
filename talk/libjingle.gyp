@@ -157,7 +157,8 @@
         },
       ],
     }],
-    ['OS=="ios" or (OS=="mac" and target_arch!="ia32")', {
+    ['OS=="ios" or (OS=="mac" and target_arch!="ia32" and mac_sdk>="10.7")', {
+      # The >= 10.7 above is required for ARC.
       'targets': [
         {
           'target_name': 'libjingle_peerconnection_objc',
@@ -168,6 +169,8 @@
           'sources': [
             'app/webrtc/objc/RTCAudioTrack+Internal.h',
             'app/webrtc/objc/RTCAudioTrack.mm',
+            'app/webrtc/objc/RTCDataChannel+Internal.h',
+            'app/webrtc/objc/RTCDataChannel.mm',
             'app/webrtc/objc/RTCEnumConverter.h',
             'app/webrtc/objc/RTCEnumConverter.mm',
             'app/webrtc/objc/RTCI420Frame.mm',
@@ -205,6 +208,7 @@
             'app/webrtc/objc/RTCVideoTrack.mm',
             'app/webrtc/objc/public/RTCAudioSource.h',
             'app/webrtc/objc/public/RTCAudioTrack.h',
+            'app/webrtc/objc/public/RTCDataChannel.h',
             'app/webrtc/objc/public/RTCI420Frame.h',
             'app/webrtc/objc/public/RTCICECandidate.h',
             'app/webrtc/objc/public/RTCICEServer.h',
@@ -249,6 +253,15 @@
             # like it is for ios.
             'CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS': 'NO',
           },
+          'conditions': [
+            ['OS=="mac"', {
+              'xcode_settings': {
+                # Need to build against 10.7 framework for full ARC support
+                # on OSX.
+                'MACOSX_DEPLOYMENT_TARGET' : '10.7',
+              },
+            }],
+          ],
         },  # target libjingle_peerconnection_objc
       ],
     }],

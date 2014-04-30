@@ -150,6 +150,11 @@
   });
 }
 
+- (void)peerConnection:(RTCPeerConnection*)peerConnection
+    didOpenDataChannel:(RTCDataChannel*)dataChannel {
+  NSAssert(NO, @"AppRTC doesn't use DataChannels");
+}
+
 #pragma mark - Private
 
 - (void)displayLogMessage:(NSString*)message {

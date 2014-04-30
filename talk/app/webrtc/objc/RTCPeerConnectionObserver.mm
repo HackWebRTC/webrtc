@@ -31,6 +31,7 @@
 
 #import "RTCPeerConnectionObserver.h"
 
+#import "RTCDataChannel+Internal.h"
 #import "RTCICECandidate+Internal.h"
 #import "RTCMediaStream+Internal.h"
 #import "RTCEnumConverter.h"
@@ -74,7 +75,9 @@ void RTCPeerConnectionObserver::OnRemoveStream(MediaStreamInterface* stream) {
 
 void RTCPeerConnectionObserver::OnDataChannel(
     DataChannelInterface* data_channel) {
-  // TODO(hughv): Implement for future version.
+  RTCDataChannel* dataChannel =
+      [[RTCDataChannel alloc] initWithDataChannel:data_channel];
+  [_delegate peerConnection:_peerConnection didOpenDataChannel:dataChannel];
 }
 
 void RTCPeerConnectionObserver::OnRenegotiationNeeded() {

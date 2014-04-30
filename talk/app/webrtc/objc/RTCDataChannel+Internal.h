@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2013, Google Inc.
+ * Copyright 2014, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,35 +25,31 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import <Foundation/Foundation.h>
-
 #import "RTCDataChannel.h"
-#import "RTCPeerConnectionDelegate.h"
 
-// Observer of PeerConnection events, used by RTCPeerConnectionTest to check
-// expectations.
-@interface RTCPeerConnectionSyncObserver
-    : NSObject<RTCPeerConnectionDelegate, RTCDataChannelDelegate>
-@property(nonatomic) RTCDataChannel* dataChannel;
-// TODO(hughv): Add support for RTCVideoRendererDelegate when Video is enabled.
+#include "talk/app/webrtc/datachannelinterface.h"
+#include "talk/base/scoped_ref_ptr.h"
 
-// Transfer received ICE candidates to the caller.
-- (NSArray*)releaseReceivedICECandidates;
+@interface RTCDataBuffer (Internal)
 
-// Register expectations for events that this observer should see before it can
-// be considered satisfied (see below).
-- (void)expectError;
-- (void)expectSignalingChange:(RTCSignalingState)state;
-- (void)expectAddStream:(NSString *)label;
-- (void)expectRemoveStream:(NSString *)label;
-- (void)expectICECandidates:(int)count;
-- (void)expectICEConnectionChange:(RTCICEConnectionState)state;
-- (void)expectICEGatheringChange:(RTCICEGatheringState)state;
-- (void)expectDataChannel:(NSString*)label;
-- (void)expectStateChange:(RTCDataChannelState)state;
-- (void)expectMessage:(NSData*)message isBinary:(BOOL)isBinary;
+@property(nonatomic, readonly) const webrtc::DataBuffer* dataBuffer;
 
-// Wait until all registered expectations above have been observed.
-- (void)waitForAllExpectationsToBeSatisfied;
+- (instancetype)initWithDataBuffer:(const webrtc::DataBuffer&)buffer;
+
+@end
+
+@interface RTCDataChannelInit (Internal)
+
+@property(nonatomic, readonly) const webrtc::DataChannelInit* dataChannelInit;
+
+@end
+
+@interface RTCDataChannel (Internal)
+
+@property(nonatomic, readonly)
+    talk_base::scoped_refptr<webrtc::DataChannelInterface> dataChannel;
+
+- (instancetype)initWithDataChannel:
+        (talk_base::scoped_refptr<webrtc::DataChannelInterface>)dataChannel;
 
 @end

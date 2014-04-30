@@ -42,6 +42,9 @@
   NSMutableArray* _receivedICECandidates;
   NSMutableArray* _expectedICEConnectionChanges;
   NSMutableArray* _expectedICEGatheringChanges;
+  NSMutableArray* _expectedDataChannels;
+  NSMutableArray* _expectedStateChanges;
+  NSMutableArray* _expectedMessages;
 }
 
 - (id)init {
@@ -54,6 +57,9 @@
     _receivedICECandidates = [NSMutableArray array];
     _expectedICEConnectionChanges = [NSMutableArray array];
     _expectedICEGatheringChanges = [NSMutableArray array];
+    _expectedDataChannels = [NSMutableArray array];
+    _expectedMessages = [NSMutableArray array];
+    _expectedStateChanges = [NSMutableArray array];
   }
   return self;
 }
@@ -78,7 +84,10 @@
          [_expectedICEConnectionChanges count] == 0 &&
          [_expectedICEGatheringChanges count] == 0 &&
          [_expectedAddStreamLabels count] == 0 &&
-         [_expectedRemoveStreamLabels count] == 0;
+         [_expectedRemoveStreamLabels count] == 0 &&
+         [_expectedDataChannels count] == 0 &&
+         [_expectedStateChanges count] == 0 &&
+         [_expectedMessages count] == 0;
   // TODO(hughv): Test video state here too.
 }
 
@@ -114,6 +123,20 @@
 
 - (void)expectICEGatheringChange:(RTCICEGatheringState)state {
   [_expectedICEGatheringChanges addObject:@((int)state)];
+}
+
+- (void)expectDataChannel:(NSString*)label {
+  [_expectedDataChannels addObject:label];
+}
+
+- (void)expectStateChange:(RTCDataChannelState)state {
+  [_expectedStateChanges addObject:@(state)];
+}
+
+- (void)expectMessage:(NSData*)message isBinary:(BOOL)isBinary {
+  RTCDataBuffer* buffer = [[RTCDataBuffer alloc] initWithData:message
+                                                     isBinary:isBinary];
+  [_expectedMessages addObject:buffer];
 }
 
 - (void)waitForAllExpectationsToBeSatisfied {
@@ -189,6 +212,39 @@
     return;
   int expectedState = [self popFirstElementAsInt:_expectedICEConnectionChanges];
   NSAssert(expectedState == (int)newState, @"Empty expectation array");
+}
+
+- (void)peerConnection:(RTCPeerConnection*)peerConnection
+    didOpenDataChannel:(RTCDataChannel*)dataChannel {
+  NSString* expectedLabel =
+      [self popFirstElementAsNSString:_expectedDataChannels];
+  NSAssert([expectedLabel isEqual:dataChannel.label],
+           @"Data channel not expected");
+  self.dataChannel = dataChannel;
+  dataChannel.delegate = self;
+  NSAssert(kRTCDataChannelStateConnecting == dataChannel.state,
+           @"Unexpected state");
+}
+
+#pragma mark - RTCDataChannelDelegate
+
+- (void)channelDidChangeState:(RTCDataChannel*)channel {
+  NSAssert([_expectedStateChanges count] > 0,
+           @"Unexpected state change");
+  int expectedState = [self popFirstElementAsInt:_expectedStateChanges];
+  NSAssert(expectedState == channel.state, @"Channel state should match");
+}
+
+- (void)channel:(RTCDataChannel*)channel
+    didReceiveMessageWithBuffer:(RTCDataBuffer*)buffer {
+  NSAssert([_expectedMessages count] > 0,
+           @"Unexpected message received");
+  RTCDataBuffer* expectedBuffer = [_expectedMessages objectAtIndex:0];
+  NSAssert(expectedBuffer.isBinary == buffer.isBinary,
+           @"Buffer isBinary should match");
+  NSAssert([expectedBuffer.data isEqual:buffer.data],
+           @"Buffer data should match");
+  [_expectedMessages removeObjectAtIndex:0];
 }
 
 @end

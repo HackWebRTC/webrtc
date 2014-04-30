@@ -97,7 +97,9 @@ class DataChannelObserver {
 
 class DataChannelInterface : public talk_base::RefCountInterface {
  public:
-  enum DataState {  // Keep in sync with DataChannel.java:State.
+  // Keep in sync with DataChannel.java:State and
+  // RTCDataChannel.h:RTCDataChannelState.
+  enum DataState {
     kConnecting,
     kOpen,  // The DataChannel is ready to send data.
     kClosing,

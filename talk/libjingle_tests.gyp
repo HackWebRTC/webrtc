@@ -535,8 +535,20 @@
           ],
           'xcode_settings': {
             'CLANG_ENABLE_OBJC_ARC': 'YES',
+            # common.gypi enables this for mac but we want this to be disabled
+            # like it is for ios.
+            'CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS': 'NO',
             'INFOPLIST_FILE': '<(infoplist_file)',
           },
+          'conditions': [
+            ['OS=="mac"', {
+              'xcode_settings': {
+                # Need to build against 10.7 framework for full ARC support
+                # on OSX.
+                'MACOSX_DEPLOYMENT_TARGET' : '10.7',
+              },
+            }],
+          ],
         },  # target libjingle_peerconnection_objc_test
       ],
     }],

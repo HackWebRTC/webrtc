@@ -31,6 +31,7 @@
 
 #import "RTCPeerConnection+Internal.h"
 
+#import "RTCDataChannel+Internal.h"
 #import "RTCEnumConverter.h"
 #import "RTCICECandidate+Internal.h"
 #import "RTCICEServer+Internal.h"
@@ -158,6 +159,15 @@ class RTCStatsObserver : public StatsObserver {
   }
   [_localStreams addObject:stream];
   return YES;
+}
+
+- (RTCDataChannel*)createDataChannelWithLabel:(NSString*)label
+                                       config:(RTCDataChannelInit*)config {
+  std::string labelString([label UTF8String]);
+  talk_base::scoped_refptr<webrtc::DataChannelInterface> dataChannel =
+      self.peerConnection->CreateDataChannel(labelString,
+                                             config.dataChannelInit);
+  return [[RTCDataChannel alloc] initWithDataChannel:dataChannel];
 }
 
 - (void)createAnswerWithDelegate:(id<RTCSessionDescriptionDelegate>)delegate

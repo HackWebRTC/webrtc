@@ -30,6 +30,7 @@
 #import "RTCICEServer.h"
 #import "RTCMediaConstraints.h"
 #import "RTCMediaStream.h"
+#import "RTCPair.h"
 #import "RTCPeerConnection.h"
 #import "RTCPeerConnectionFactory.h"
 #import "RTCPeerConnectionSyncObserver.h"
@@ -94,12 +95,20 @@
 }
 
 - (void)testCompleteSessionWithFactory:(RTCPeerConnectionFactory*)factory {
+  NSArray* mandatory = @[
+    [[RTCPair alloc] initWithKey:@"DtlsSrtpKeyAgreement" value:@"true"],
+    [[RTCPair alloc] initWithKey:@"internalSctpDataChannels" value:@"true"],
+  ];
   RTCMediaConstraints* constraints = [[RTCMediaConstraints alloc] init];
+  RTCMediaConstraints* pcConstraints =
+      [[RTCMediaConstraints alloc] initWithMandatoryConstraints:mandatory
+                                            optionalConstraints:nil];
+
   RTCPeerConnectionSyncObserver* offeringExpectations =
       [[RTCPeerConnectionSyncObserver alloc] init];
   RTCPeerConnection* pcOffer =
       [factory peerConnectionWithICEServers:nil
-                                constraints:constraints
+                                constraints:pcConstraints
                                    delegate:offeringExpectations];
 
   RTCPeerConnectionSyncObserver* answeringExpectations =
@@ -107,7 +116,7 @@
 
   RTCPeerConnection* pcAnswer =
       [factory peerConnectionWithICEServers:nil
-                                constraints:constraints
+                                constraints:pcConstraints
                                    delegate:answeringExpectations];
   // TODO(hughv): Create video capturer
   RTCVideoCapturer* capturer = nil;
@@ -123,6 +132,14 @@
                                                    streamLabel:@"oLMS"
                                                   videoTrackID:@"oLMSv0"
                                                   audioTrackID:@"oLMSa0"];
+
+  RTCDataChannel* offerDC =
+      [pcOffer createDataChannelWithLabel:@"offerDC"
+                                   config:[[RTCDataChannelInit alloc] init]];
+  EXPECT_TRUE([offerDC.label isEqual:@"offerDC"]);
+  offerDC.delegate = offeringExpectations;
+  offeringExpectations.dataChannel = offerDC;
+
   RTCSessionDescriptionSyncObserver* sdpObserver =
       [[RTCSessionDescriptionSyncObserver alloc] init];
   [pcOffer createOfferWithDelegate:sdpObserver constraints:constraints];
@@ -181,6 +198,10 @@
   [answeringExpectations expectICEConnectionChange:RTCICEConnectionChecking];
   [answeringExpectations expectICEConnectionChange:RTCICEConnectionConnected];
 
+  [offeringExpectations expectStateChange:kRTCDataChannelStateOpen];
+  [answeringExpectations expectDataChannel:@"offerDC"];
+  [answeringExpectations expectStateChange:kRTCDataChannelStateOpen];
+
   [offeringExpectations expectICEGatheringChange:RTCICEGatheringComplete];
   [answeringExpectations expectICEGatheringChange:RTCICEGatheringComplete];
 
@@ -208,6 +229,42 @@
 
   [offeringExpectations waitForAllExpectationsToBeSatisfied];
   [answeringExpectations waitForAllExpectationsToBeSatisfied];
+
+  EXPECT_EQ(pcOffer.signalingState, RTCSignalingStable);
+  EXPECT_EQ(pcAnswer.signalingState, RTCSignalingStable);
+
+  // Test send and receive UTF-8 text
+  NSString* text = @"你好";
+  NSData* textData = [text dataUsingEncoding:NSUTF8StringEncoding];
+  RTCDataBuffer* buffer =
+      [[RTCDataBuffer alloc] initWithData:textData isBinary:NO];
+  [answeringExpectations expectMessage:[textData copy] isBinary:NO];
+  EXPECT_TRUE([offeringExpectations.dataChannel sendData:buffer]);
+  [answeringExpectations waitForAllExpectationsToBeSatisfied];
+
+  // Test send and receive binary data
+  const size_t byteLength = 5;
+  char bytes[byteLength] = {1, 2, 3, 4, 5};
+  NSData* byteData = [NSData dataWithBytes:bytes length:byteLength];
+  buffer = [[RTCDataBuffer alloc] initWithData:byteData isBinary:YES];
+  [answeringExpectations expectMessage:[byteData copy] isBinary:YES];
+  EXPECT_TRUE([offeringExpectations.dataChannel sendData:buffer]);
+  [answeringExpectations waitForAllExpectationsToBeSatisfied];
+
+  [offeringExpectations expectStateChange:kRTCDataChannelStateClosing];
+  [answeringExpectations expectStateChange:kRTCDataChannelStateClosing];
+  [offeringExpectations expectStateChange:kRTCDataChannelStateClosed];
+  [answeringExpectations expectStateChange:kRTCDataChannelStateClosed];
+
+  [answeringExpectations.dataChannel close];
+  [offeringExpectations.dataChannel close];
+
+  [offeringExpectations waitForAllExpectationsToBeSatisfied];
+  [answeringExpectations waitForAllExpectationsToBeSatisfied];
+  // Don't need to listen to further state changes.
+  // TODO(tkchin): figure out why Closed->Closing without this.
+  offeringExpectations.dataChannel.delegate = nil;
+  answeringExpectations.dataChannel.delegate = nil;
 
   // Let the audio feedback run for 2s to allow human testing and to ensure
   // things stabilize.  TODO(fischman): replace seconds with # of video frames,
