@@ -1173,7 +1173,12 @@ void TransmitMixer::GenerateAudioFrame(const int16_t* audio,
   // See: https://code.google.com/p/webrtc/issues/detail?id=3146
   // When 48 kHz is supported natively by AudioProcessing, this will have
   // to be changed to handle 44.1 kHz.
-  codec_rate = std::min(codec_rate, kAudioProcMaxNativeSampleRateHz);
+  int max_sample_rate_hz = kAudioProcMaxNativeSampleRateHz;
+  if (audioproc_->echo_control_mobile()->is_enabled()) {
+    // AECM only supports 8 and 16 kHz.
+    max_sample_rate_hz = 16000;
+  }
+  codec_rate = std::min(codec_rate, max_sample_rate_hz);
   stereo_codec_ = num_codec_channels == 2;
 
   if (!mono_buffer_.get()) {

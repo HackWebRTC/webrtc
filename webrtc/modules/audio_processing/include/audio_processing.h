@@ -61,12 +61,7 @@ struct ExperimentalAgc {
   bool enabled;
 };
 
-#if defined(ANDROID) || defined(IOS)
-// AECM only supports 8kHz & 16kHz.
-static const int kAudioProcMaxNativeSampleRateHz = 16000;
-#else
 static const int kAudioProcMaxNativeSampleRateHz = 32000;
-#endif
 
 // The Audio Processing Module (APM) provides a collection of voice processing
 // components designed for real-time communications software.
