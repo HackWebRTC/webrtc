@@ -83,6 +83,9 @@ deps = {
   "third_party/libc++abi/trunk":
     From("chromium_deps", "src/third_party/libc++abi/trunk"),
 
+  "third_party/openmax_dl/":
+    (Var("googlecode_url") % "webrtc") + "/deps/third_party/openmax@6027",
+
   "third_party/libjpeg":
     Var("chromium_trunk") + "/src/third_party/libjpeg@" + Var("chromium_revision"),
 
