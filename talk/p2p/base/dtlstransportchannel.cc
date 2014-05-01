@@ -211,8 +211,11 @@ bool DtlsTransportChannelWrapper::SetRemoteFingerprint(
 
   talk_base::Buffer remote_fingerprint_value(digest, digest_len);
 
-  if ((dtls_state_ == STATE_OPEN) &&
-      (remote_fingerprint_value_ == remote_fingerprint_value)) {
+  if (dtls_state_ != STATE_NONE &&
+      remote_fingerprint_value_ == remote_fingerprint_value &&
+      !digest_alg.empty()) {
+    // This may happen during renegotiation.
+    LOG_J(LS_INFO, this) << "Ignoring identical remote DTLS fingerprint";
     return true;
   }
 

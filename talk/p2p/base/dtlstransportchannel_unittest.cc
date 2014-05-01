@@ -776,6 +776,25 @@ TEST_F(DtlsTransportChannelTest, TestDtlsReOfferWithDifferentSetupAttr) {
   TestTransfer(1, 1000, 100, true);
 }
 
+// Test that re-negotiation can be started before the clients become connected
+// in the first negotiation.
+TEST_F(DtlsTransportChannelTest, TestRenegotiateBeforeConnect) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
+  SetChannelCount(2);
+  PrepareDtls(true, true);
+  PrepareDtlsSrtp(true, true);
+  Negotiate();
+
+  Renegotiate(&client1_, cricket::CONNECTIONROLE_ACTPASS,
+              cricket::CONNECTIONROLE_ACTIVE, NF_REOFFER);
+  bool rv = client1_.Connect(&client2_);
+  EXPECT_TRUE(rv);
+  EXPECT_TRUE_WAIT(client1_.writable() && client2_.writable(), 10000);
+
+  TestTransfer(0, 1000, 100, true);
+  TestTransfer(1, 1000, 100, true);
+}
+
 // Test Certificates state after negotiation but before connection.
 TEST_F(DtlsTransportChannelTest, TestCertificatesBeforeConnect) {
   MAYBE_SKIP_TEST(HaveDtls);
