@@ -40,6 +40,43 @@ class CodecTest : public testing::Test {
   CodecTest() {}
 };
 
+TEST_F(CodecTest, TestCodecOperators) {
+  Codec c0(96, "D", 1000, 0);
+  c0.SetParam("a", 1);
+
+  Codec c1 = c0;
+  EXPECT_TRUE(c1 == c0);
+
+  int param_value0;
+  int param_value1;
+  EXPECT_TRUE(c0.GetParam("a", &param_value0));
+  EXPECT_TRUE(c1.GetParam("a", &param_value1));
+  EXPECT_EQ(param_value0, param_value1);
+
+  c1.id = 86;
+  EXPECT_TRUE(c0 != c1);
+
+  c1 = c0;
+  c1.name = "x";
+  EXPECT_TRUE(c0 != c1);
+
+  c1 = c0;
+  c1.clockrate = 2000;
+  EXPECT_TRUE(c0 != c1);
+
+  c1 = c0;
+  c1.preference = 1;
+  EXPECT_TRUE(c0 != c1);
+
+  c1 = c0;
+  c1.SetParam("a", 2);
+  EXPECT_TRUE(c0 != c1);
+
+  Codec c5;
+  Codec c6(0, "", 0, 0);
+  EXPECT_TRUE(c5 == c6);
+}
+
 TEST_F(CodecTest, TestAudioCodecOperators) {
   AudioCodec c0(96, "A", 44100, 20000, 2, 3);
   AudioCodec c1(95, "A", 44100, 20000, 2, 3);
@@ -236,23 +273,6 @@ TEST_F(CodecTest, TestDataCodecMatches) {
   EXPECT_TRUE(c1.Matches(DataCodec(97, "d", 0)));
   EXPECT_FALSE(c1.Matches(DataCodec(96, "", 0)));
   EXPECT_FALSE(c1.Matches(DataCodec(95, "D", 0)));
-}
-
-TEST_F(CodecTest, TestDataCodecOperators) {
-  DataCodec c0(96, "D", 3);
-  DataCodec c1(95, "D", 3);
-  DataCodec c2(96, "x", 3);
-  DataCodec c3(96, "D", 1);
-  EXPECT_TRUE(c0 != c1);
-  EXPECT_TRUE(c0 != c2);
-  EXPECT_TRUE(c0 != c3);
-
-  DataCodec c4;
-  DataCodec c5(0, "", 0);
-  DataCodec c6 = c0;
-  EXPECT_TRUE(c5 == c4);
-  EXPECT_TRUE(c6 != c4);
-  EXPECT_TRUE(c6 == c0);
 }
 
 TEST_F(CodecTest, TestSetParamAndGetParam) {

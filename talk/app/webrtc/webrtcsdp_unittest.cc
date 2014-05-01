@@ -299,7 +299,7 @@ static const char kSdpSctpDataChannelWithCandidatesString[] =
     "a=mid:data_content_name\r\n"
     "a=sctpmap:5000 webrtc-datachannel 1024\r\n";
 
-    static const char kSdpConferenceString[] =
+static const char kSdpConferenceString[] =
     "v=0\r\n"
     "o=- 18446744069414584320 18446462598732840960 IN IP4 127.0.0.1\r\n"
     "s=-\r\n"
@@ -1466,6 +1466,37 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithSctpDataChannel) {
   EXPECT_EQ(message, expected_sdp);
 }
 
+TEST_F(WebRtcSdpTest, SerializeWithSctpDataChannelAndNewPort) {
+  AddSctpDataChannel();
+  JsepSessionDescription jsep_desc(kDummyString);
+
+  ASSERT_TRUE(jsep_desc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
+  DataContentDescription* dcdesc = static_cast<DataContentDescription*>(
+      jsep_desc.description()->GetContentDescriptionByName(kDataContentName));
+
+  const int kNewPort = 1234;
+  cricket::DataCodec codec(
+        cricket::kGoogleSctpDataCodecId, cricket::kGoogleSctpDataCodecName, 0);
+  codec.SetParam(cricket::kCodecParamPort, kNewPort);
+  dcdesc->AddOrReplaceCodec(codec);
+
+  std::string message = webrtc::SdpSerialize(jsep_desc);
+
+  std::string expected_sdp = kSdpString;
+  expected_sdp.append(kSdpSctpDataChannelString);
+
+  char default_portstr[16];
+  char new_portstr[16];
+  talk_base::sprintfn(default_portstr, sizeof(default_portstr), "%d",
+                      kDefaultSctpPort);
+  talk_base::sprintfn(new_portstr, sizeof(new_portstr), "%d", kNewPort);
+  talk_base::replace_substrs(default_portstr, strlen(default_portstr),
+                             new_portstr, strlen(new_portstr),
+                             &expected_sdp);
+
+  EXPECT_EQ(expected_sdp, message);
+}
+
 TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithDataChannelAndBandwidth) {
   AddRtpDataChannel();
   data_desc_->set_bandwidth(100*1000);
@@ -1898,6 +1929,7 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelAndNewPort) {
   talk_base::sprintfn(unusual_portstr, sizeof(unusual_portstr), "%d",
                       kUnusualSctpPort);
 
+  // First setup the expected JsepSessionDescription.
   JsepSessionDescription jdesc(kDummyString);
   // take our pre-built session description and change the SCTP port.
   cricket::SessionDescription* mutant = desc_.Copy();
@@ -1907,11 +1939,13 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelAndNewPort) {
   EXPECT_EQ(codecs.size(), 1UL);
   EXPECT_EQ(codecs[0].id, cricket::kGoogleSctpDataCodecId);
   codecs[0].SetParam(cricket::kCodecParamPort, kUnusualSctpPort);
+  dcdesc->set_codecs(codecs);
 
   // note: mutant's owned by jdesc now.
   ASSERT_TRUE(jdesc.Initialize(mutant, kSessionId, kSessionVersion));
   mutant = NULL;
 
+  // Then get the deserialized JsepSessionDescription.
   std::string sdp_with_data = kSdpString;
   sdp_with_data.append(kSdpSctpDataChannelString);
   talk_base::replace_substrs(default_portstr, strlen(default_portstr),

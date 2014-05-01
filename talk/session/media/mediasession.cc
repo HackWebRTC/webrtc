@@ -308,6 +308,20 @@ static void GetCurrentStreamParams(const SessionDescription* sdesc,
   }
 }
 
+// Filters the data codecs for the data channel type.
+void FilterDataCodecs(std::vector<DataCodec>* codecs, bool sctp) {
+  // Filter RTP codec for SCTP and vice versa.
+  int codec_id = sctp ? kGoogleRtpDataCodecId : kGoogleSctpDataCodecId;
+  for (std::vector<DataCodec>::iterator iter = codecs->begin();
+       iter != codecs->end();) {
+    if (iter->id == codec_id) {
+      iter = codecs->erase(iter);
+    } else {
+      ++iter;
+    }
+  }
+}
+
 template <typename IdStruct>
 class UsedIds {
  public:
@@ -1204,6 +1218,8 @@ SessionDescription* MediaSessionDescriptionFactory::CreateOffer(
     scoped_ptr<DataContentDescription> data(new DataContentDescription());
     bool is_sctp = (options.data_channel_type == DCT_SCTP);
 
+    FilterDataCodecs(&data_codecs, is_sctp);
+
     cricket::SecurePolicy sdes_policy =
         IsDtlsActive(CN_DATA, current_description) ?
             cricket::SEC_DISABLED : secure();
@@ -1397,6 +1413,10 @@ SessionDescription* MediaSessionDescriptionFactory::CreateAnswer(
     if (!data_transport) {
       return NULL;
     }
+    bool is_sctp = (options.data_channel_type == DCT_SCTP);
+    std::vector<DataCodec> data_codecs(data_codecs_);
+    FilterDataCodecs(&data_codecs, is_sctp);
+
     scoped_ptr<DataContentDescription> data_answer(
         new DataContentDescription());
     // Do not require or create SDES cryptos if DTLS is used.

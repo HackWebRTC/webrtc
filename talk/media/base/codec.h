@@ -120,6 +120,8 @@ struct Codec {
     name = c.name;
     clockrate = c.clockrate;
     preference = c.preference;
+    params = c.params;
+    feedback_params = c.feedback_params;
     return *this;
   }
 
@@ -127,7 +129,9 @@ struct Codec {
     return this->id == c.id &&  // id is reserved in objective-c
         name == c.name &&
         clockrate == c.clockrate &&
-        preference == c.preference;
+        preference == c.preference &&
+        params == c.params &&
+        feedback_params == c.feedback_params;
   }
 
   bool operator!=(const Codec& c) const {

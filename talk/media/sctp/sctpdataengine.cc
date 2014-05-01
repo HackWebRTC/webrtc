@@ -105,12 +105,6 @@ namespace cricket {
 typedef talk_base::ScopedMessageData<SctpInboundPacket> InboundPacketMessage;
 typedef talk_base::ScopedMessageData<talk_base::Buffer> OutboundPacketMessage;
 
-// This is the SCTP port to use. It is passed along the wire and the listener
-// and connector must be using the same port. It is not related to the ports at
-// the IP level. (Corresponds to: sockaddr_conn.sconn_port in usrsctp.h)
-//
-// TODO(ldixon): Allow port to be set from higher level code.
-static const int kSctpDefaultPort = 5001;
 // TODO(ldixon): Find where this is defined, and also check is Sctp really
 // respects this.
 static const size_t kSctpMtu = 1280;
@@ -277,10 +271,9 @@ SctpDataEngine::SctpDataEngine() {
   }
   usrsctp_engines_count++;
 
-  // We don't put in a codec because we don't want one offered when we
-  // use the hybrid data engine.
-  // codecs_.push_back(cricket::DataCodec( kGoogleSctpDataCodecId,
-  // kGoogleSctpDataCodecName, 0));
+  cricket::DataCodec codec(kGoogleSctpDataCodecId, kGoogleSctpDataCodecName, 0);
+  codec.SetParam(kCodecParamPort, kSctpDefaultPort);
+  codecs_.push_back(codec);
 }
 
 SctpDataEngine::~SctpDataEngine() {
@@ -308,8 +301,8 @@ DataMediaChannel* SctpDataEngine::CreateChannel(
 
 SctpDataMediaChannel::SctpDataMediaChannel(talk_base::Thread* thread)
     : worker_thread_(thread),
-      local_port_(-1),
-      remote_port_(-1),
+      local_port_(kSctpDefaultPort),
+      remote_port_(kSctpDefaultPort),
       sock_(NULL),
       sending_(false),
       receiving_(false),
@@ -423,12 +416,6 @@ void SctpDataMediaChannel::CloseSctpSocket() {
 
 bool SctpDataMediaChannel::Connect() {
   LOG(LS_VERBOSE) << debug_name_ << "->Connect().";
-  if (remote_port_ < 0) {
-    remote_port_ = kSctpDefaultPort;
-  }
-  if (local_port_ < 0) {
-    local_port_ = kSctpDefaultPort;
-  }
 
   // If we already have a socket connection, just return.
   if (sock_) {

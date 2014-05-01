@@ -58,6 +58,12 @@ namespace cricket {
 // tell SCTP we're going to use.
 const uint32 kMaxSctpSid = 1023;
 
+// This is the default SCTP port to use. It is passed along the wire and the
+// connectee and connector must be using the same port. It is not related to the
+// ports at the IP level. (Corresponds to: sockaddr_conn.sconn_port in
+// usrsctp.h)
+const int kSctpDefaultPort = 5000;
+
 // A DataEngine that interacts with usrsctp.
 //
 // From channel calls, data flows like this:

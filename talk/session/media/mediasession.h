@@ -318,6 +318,16 @@ class MediaContentDescriptionImpl : public MediaContentDescription {
   void AddCodec(const C& codec) {
     codecs_.push_back(codec);
   }
+  void AddOrReplaceCodec(const C& codec) {
+    for (typename std::vector<C>::iterator iter = codecs_.begin();
+         iter != codecs_.end(); ++iter) {
+      if (iter->id == codec.id) {
+        *iter = codec;
+        return;
+      }
+    }
+    AddCodec(codec);
+  }
   void AddCodecs(const std::vector<C>& codecs) {
     typename std::vector<C>::const_iterator codec;
     for (codec = codecs.begin(); codec != codecs.end(); ++codec) {

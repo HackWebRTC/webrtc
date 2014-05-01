@@ -1345,6 +1345,20 @@ TEST_F(JsepPeerConnectionP2PTestClient, AddDataChannelAfterRenegotiation) {
                    kMaxWaitMs);
 }
 
+// This test sets up a Jsep call with SCTP DataChannel and verifies the
+// negotiation is completed without error.
+#ifdef HAVE_SCTP
+TEST_F(JsepPeerConnectionP2PTestClient, CreateOfferWithSctpDataChannel) {
+  MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
+  FakeConstraints constraints;
+  constraints.SetMandatory(
+      MediaConstraintsInterface::kEnableDtlsSrtp, true);
+  ASSERT_TRUE(CreateTestClients(&constraints, &constraints));
+  initializing_client()->CreateDataChannel();
+  initializing_client()->Negotiate(false, false);
+}
+#endif
+
 // This test sets up a call between two parties with audio, and video.
 // During the call, the initializing side restart ice and the test verifies that
 // new ice candidates are generated and audio and video still can flow.
@@ -1406,6 +1420,4 @@ TEST_F(JsepPeerConnectionP2PTestClient,
   EnableVideoDecoderFactory();
   LocalP2PTest();
 }
-
 #endif // if !defined(THREAD_SANITIZER)
-
