@@ -315,7 +315,7 @@ public class AppRTCDemoActivity extends Activity
   }
 
   // Mangle SDP to prefer ISAC/16000 over any other audio codec.
-  private String preferISAC(String sdpDescription) {
+  private static String preferISAC(String sdpDescription) {
     String[] lines = sdpDescription.split("\r\n");
     int mLineIndex = -1;
     String isac16kRtpMap = null;
@@ -439,24 +439,30 @@ public class AppRTCDemoActivity extends Activity
   // Implementation detail: handle offer creation/signaling and answer setting,
   // as well as adding remote ICE candidates once the answer SDP is set.
   private class SDPObserver implements SdpObserver {
+    private SessionDescription localSdp;
+
     @Override public void onCreateSuccess(final SessionDescription origSdp) {
+      abortUnless(localSdp == null, "multiple SDP create?!?");
+      final SessionDescription sdp = new SessionDescription(
+          origSdp.type, preferISAC(origSdp.description));
+      localSdp = sdp;
       runOnUiThread(new Runnable() {
           public void run() {
-            SessionDescription sdp = new SessionDescription(
-                origSdp.type, preferISAC(origSdp.description));
             pc.setLocalDescription(sdpObserver, sdp);
           }
         });
     }
 
     // Helper for sending local SDP (offer or answer, depending on role) to the
-    // other participant.
-    private void sendLocalDescription(PeerConnection pc) {
-      SessionDescription sdp = pc.getLocalDescription();
-      logAndToast("Sending " + sdp.type);
+    // other participant.  Note that it is important to send the output of
+    // create{Offer,Answer} and not merely the current value of
+    // getLocalDescription() because the latter may include ICE candidates that
+    // we might want to filter elsewhere.
+    private void sendLocalDescription() {
+      logAndToast("Sending " + localSdp.type);
       JSONObject json = new JSONObject();
-      jsonPut(json, "type", sdp.type.canonicalForm());
-      jsonPut(json, "sdp", sdp.description);
+      jsonPut(json, "type", localSdp.type.canonicalForm());
+      jsonPut(json, "sdp", localSdp.description);
       sendMessage(json);
     }
 
@@ -470,7 +476,7 @@ public class AppRTCDemoActivity extends Activity
                 drainRemoteCandidates();
               } else {
                 // We've just set our local description so time to send it.
-                sendLocalDescription(pc);
+                sendLocalDescription();
               }
             } else {
               if (pc.getLocalDescription() == null) {
@@ -480,7 +486,7 @@ public class AppRTCDemoActivity extends Activity
               } else {
                 // Answer now set as local description; send it and drain
                 // candidates.
-                sendLocalDescription(pc);
+                sendLocalDescription();
                 drainRemoteCandidates();
               }
             }
