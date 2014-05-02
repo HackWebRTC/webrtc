@@ -357,6 +357,627 @@ WebRtcVoiceEngine::WebRtcVoiceEngine(VoEWrapper* voe_wrapper,
       log_filter_(SeverityToFilter(kDefaultLogSeverity)),
       is_dumping_aec_(false),
       desired_local_monitor_enable_(false),
+      tx_processor_ssrc_(0),
+      rx_processor_ssrc_(0) {
+  Construct();
+}
+
+void WebRtcVoiceEngine::Construct() {
+  SetTraceFilter(log_filter_);
+  initialized_ = false;
+  LOG(LS_VERBOSE) << "WebRtcVoiceEngine::WebRtcVoiceEngine";
+  SetTraceOptions("");
+  if (tracing_->SetTraceCallback(this) == -1) {
+    LOG_RTCERR0(SetTraceCallback);
+  }
+  if (voe_wrapper_->base()->RegisterVoiceEngineObserver(*this) == -1) {
+    LOG_RTCERR0(RegisterVoiceEngineObserver);
+  }
+  // Clear the default agc state.
+  memset(&default_agc_config_, 0, sizeof(default_agc_config_));
+
+  // Load our audio codec list.
+  ConstructCodecs();
+
+  // Load our RTP Header extensions.
+  rtp_header_extensions_.push_back(
+      RtpHeaderExtension(kRtpAudioLevelHeaderExtension,
+                         kRtpAudioLevelHeaderExtensionDefaultId));
+  rtp_header_extensions_.push_back(
+      RtpHeaderExtension(kRtpAbsoluteSenderTimeHeaderExtension,
+                         kRtpAbsoluteSenderTimeHeaderExtensionDefaultId));
+  options_ = GetDefaultEngineOptions();
+}
+
+static bool IsOpus(const AudioCodec& codec) {
+  return (_stricmp(codec.name.c_str(), kOpusCodecName) == 0);
+}
+
+static bool IsIsac(const AudioCodec& codec) {
+  return (_stricmp(codec.name.c_str(), kIsacCodecName) == 0);
+}
+
+// True if params["stereo"] == "1"
+static bool IsOpusStereoEnabled(const AudioCodec& codec) {
+  CodecParameterMap::const_iterator param =
+      codec.params.find(kCodecParamStereo);
+  if (param == codec.params.end()) {
+    return false;
+  }
+  return param->second == kParamValueTrue;
+}
+
+static bool IsValidOpusBitrate(int bitrate) {
+  return (bitrate >= kOpusMinBitrate && bitrate <= kOpusMaxBitrate);
+}
+
+// Returns 0 if params[kCodecParamMaxAverageBitrate] is not defined or invalid.
+// Returns the value of params[kCodecParamMaxAverageBitrate] otherwise.
+static int GetOpusBitrateFromParams(const AudioCodec& codec) {
+  int bitrate = 0;
+  if (!codec.GetParam(kCodecParamMaxAverageBitrate, &bitrate)) {
+    return 0;
+  }
+  if (!IsValidOpusBitrate(bitrate)) {
+    LOG(LS_WARNING) << "Codec parameter \"maxaveragebitrate\" has an "
+                    << "invalid value: " << bitrate;
+    return 0;
+  }
+  return bitrate;
+}
+
+void WebRtcVoiceEngine::ConstructCodecs() {
+  LOG(LS_INFO) << "WebRtc VoiceEngine codecs:";
+  int ncodecs = voe_wrapper_->codec()->NumOfCodecs();
+  for (int i = 0; i < ncodecs; ++i) {
+    webrtc::CodecInst voe_codec;
+    if (voe_wrapper_->codec()->GetCodec(i, voe_codec) != -1) {
+      // Skip uncompressed formats.
+      if (_stricmp(voe_codec.plname, kL16CodecName) == 0) {
+        continue;
+      }
+
+      const CodecPref* pref = NULL;
+      for (size_t j = 0; j < ARRAY_SIZE(kCodecPrefs); ++j) {
+        if (_stricmp(kCodecPrefs[j].name, voe_codec.plname) == 0 &&
+            kCodecPrefs[j].clockrate == voe_codec.plfreq &&
+            kCodecPrefs[j].channels == voe_codec.channels) {
+          pref = &kCodecPrefs[j];
+          break;
+        }
+      }
+
+      if (pref) {
+        // Use the payload type that we've configured in our pref table;
+        // use the offset in our pref table to determine the sort order.
+        AudioCodec codec(pref->payload_type, voe_codec.plname, voe_codec.plfreq,
+                         voe_codec.rate, voe_codec.channels,
+                         ARRAY_SIZE(kCodecPrefs) - (pref - kCodecPrefs));
+        LOG(LS_INFO) << ToString(codec);
+        if (IsIsac(codec)) {
+          // Indicate auto-bandwidth in signaling.
+          codec.bitrate = 0;
+        }
+        if (IsOpus(codec)) {
+          // Only add fmtp parameters that differ from the spec.
+          if (kPreferredMinPTime != kOpusDefaultMinPTime) {
+            codec.params[kCodecParamMinPTime] =
+                talk_base::ToString(kPreferredMinPTime);
+          }
+          if (kPreferredMaxPTime != kOpusDefaultMaxPTime) {
+            codec.params[kCodecParamMaxPTime] =
+                talk_base::ToString(kPreferredMaxPTime);
+          }
+          // TODO(hellner): Add ptime, sprop-stereo, stereo and useinbandfec
+          // when they can be set to values other than the default.
+        }
+        codecs_.push_back(codec);
+      } else {
+        LOG(LS_WARNING) << "Unexpected codec: " << ToString(voe_codec);
+      }
+    }
+  }
+  // Make sure they are in local preference order.
+  std::sort(codecs_.begin(), codecs_.end(), &AudioCodec::Preferable);
+}
+
+WebRtcVoiceEngine::~WebRtcVoiceEngine() {
+  LOG(LS_VERBOSE) << "WebRtcVoiceEngine::~WebRtcVoiceEngine";
+  if (voe_wrapper_->base()->DeRegisterVoiceEngineObserver() == -1) {
+    LOG_RTCERR0(DeRegisterVoiceEngineObserver);
+  }
+  if (adm_) {
+    voe_wrapper_.reset();
+    adm_->Release();
+    adm_ = NULL;
+  }
+  if (adm_sc_) {
+    voe_wrapper_sc_.reset();
+    adm_sc_->Release();
+    adm_sc_ = NULL;
+  }
+
+  // Test to see if the media processor was deregistered properly
+  ASSERT(SignalRxMediaFrame.is_empty());
+  ASSERT(SignalTxMediaFrame.is_empty());
+
+  tracing_->SetTraceCallback(NULL);
+}
+
+bool WebRtcVoiceEngine::Init(talk_base::Thread* worker_thread) {
+  LOG(LS_INFO) << "WebRtcVoiceEngine::Init";
+  bool res = InitInternal();
+  if (res) {
+    LOG(LS_INFO) << "WebRtcVoiceEngine::Init Done!";
+  } else {
+    LOG(LS_ERROR) << "WebRtcVoiceEngine::Init failed";
+    Terminate();
+  }
+  return res;
+}
+
+bool WebRtcVoiceEngine::InitInternal() {
+  // Temporarily turn logging level up for the Init call
+  int old_filter = log_filter_;
+  int extended_filter = log_filter_ | SeverityToFilter(talk_base::LS_INFO);
+  SetTraceFilter(extended_filter);
+  SetTraceOptions("");
+
+  // Init WebRtc VoiceEngine.
+  if (voe_wrapper_->base()->Init(adm_) == -1) {
+    LOG_RTCERR0_EX(Init, voe_wrapper_->error());
+    SetTraceFilter(old_filter);
+    return false;
+  }
+
+  SetTraceFilter(old_filter);
+  SetTraceOptions(log_options_);
+
+  // Log the VoiceEngine version info
+  char buffer[1024] = "";
+  voe_wrapper_->base()->GetVersion(buffer);
+  LOG(LS_INFO) << "WebRtc VoiceEngine Version:";
+  LogMultiline(talk_base::LS_INFO, buffer);
+
+  // Save the default AGC configuration settings. This must happen before
+  // calling SetOptions or the default will be overwritten.
+  if (voe_wrapper_->processing()->GetAgcConfig(default_agc_config_) == -1) {
+    LOG_RTCERR0(GetAgcConfig);
+    return false;
+  }
+
+  // Set defaults for options, so that ApplyOptions applies them explicitly
+  // when we clear option (channel) overrides. External clients can still
+  // modify the defaults via SetOptions (on the media engine).
+  if (!SetOptions(GetDefaultEngineOptions())) {
+    return false;
+  }
+
+  // Print our codec list again for the call diagnostic log
+  LOG(LS_INFO) << "WebRtc VoiceEngine codecs:";
+  for (std::vector<AudioCodec>::const_iterator it = codecs_.begin();
+      it != codecs_.end(); ++it) {
+    LOG(LS_INFO) << ToString(*it);
+  }
+
+  // Disable the DTMF playout when a tone is sent.
+  // PlayDtmfTone will be used if local playout is needed.
+  if (voe_wrapper_->dtmf()->SetDtmfFeedbackStatus(false) == -1) {
+    LOG_RTCERR1(SetDtmfFeedbackStatus, false);
+  }
+
+  initialized_ = true;
+  return true;
+}
+
+bool WebRtcVoiceEngine::EnsureSoundclipEngineInit() {
+  if (voe_wrapper_sc_initialized_) {
+    return true;
+  }
+  // Note that, if initialization fails, voe_wrapper_sc_initialized_ will still
+  // be false, so subsequent calls to EnsureSoundclipEngineInit will
+  // probably just fail again. That's acceptable behavior.
+#if defined(LINUX) && !defined(HAVE_LIBPULSE)
+  voe_wrapper_sc_->hw()->SetAudioDeviceLayer(webrtc::kAudioLinuxAlsa);
+#endif
+
+  // Initialize the VoiceEngine instance that we'll use to play out sound clips.
+  if (voe_wrapper_sc_->base()->Init(adm_sc_) == -1) {
+    LOG_RTCERR0_EX(Init, voe_wrapper_sc_->error());
+    return false;
+  }
+
+  // On Windows, tell it to use the default sound (not communication) devices.
+  // First check whether there is a valid sound device for playback.
+  // TODO(juberti): Clean this up when we support setting the soundclip device.
+#ifdef WIN32
+  // The SetPlayoutDevice may not be implemented in the case of external ADM.
+  // TODO(ronghuawu): We should only check the adm_sc_ here, but current
+  // PeerConnection interface never set the adm_sc_, so need to check both
+  // in order to determine if the external adm is used.
+  if (!adm_ && !adm_sc_) {
+    int num_of_devices = 0;
+    if (voe_wrapper_sc_->hw()->GetNumOfPlayoutDevices(num_of_devices) != -1 &&
+        num_of_devices > 0) {
+      if (voe_wrapper_sc_->hw()->SetPlayoutDevice(kDefaultSoundclipDeviceId)
+          == -1) {
+        LOG_RTCERR1_EX(SetPlayoutDevice, kDefaultSoundclipDeviceId,
+                       voe_wrapper_sc_->error());
+        return false;
+      }
+    } else {
+      LOG(LS_WARNING) << "No valid sound playout device found.";
+    }
+  }
+#endif
+  voe_wrapper_sc_initialized_ = true;
+  LOG(LS_INFO) << "Initialized WebRtc soundclip engine.";
+  return true;
+}
+
+void WebRtcVoiceEngine::Terminate() {
+  LOG(LS_INFO) << "WebRtcVoiceEngine::Terminate";
+  initialized_ = false;
+
+  StopAecDump();
+
+  if (voe_wrapper_sc_) {
+    voe_wrapper_sc_initialized_ = false;
+    voe_wrapper_sc_->base()->Terminate();
+  }
+  voe_wrapper_->base()->Terminate();
+  desired_local_monitor_enable_ = false;
+}
+
+int WebRtcVoiceEngine::GetCapabilities() {
+  return AUDIO_SEND | AUDIO_RECV;
+}
+
+VoiceMediaChannel *WebRtcVoiceEngine::CreateChannel() {
+  WebRtcVoiceMediaChannel* ch = new WebRtcVoiceMediaChannel(this);
+  if (!ch->valid()) {
+    delete ch;
+    ch = NULL;
+  }
+  return ch;
+}
+
+SoundclipMedia *WebRtcVoiceEngine::CreateSoundclip() {
+  if (!EnsureSoundclipEngineInit()) {
+    LOG(LS_ERROR) << "Unable to create soundclip: soundclip engine failed to "
+                  << "initialize.";
+    return NULL;
+  }
+  WebRtcSoundclipMedia *soundclip = new WebRtcSoundclipMedia(this);
+  if (!soundclip->Init() || !soundclip->Enable()) {
+    delete soundclip;
+    return NULL;
+  }
+  return soundclip;
+}
+
+bool WebRtcVoiceEngine::SetOptions(const AudioOptions& options) {
+  if (!ApplyOptions(options)) {
+    return false;
+  }
+  options_ = options;
+  return true;
+}
+
+bool WebRtcVoiceEngine::SetOptionOverrides(const AudioOptions& overrides) {
+  LOG(LS_INFO) << "Setting option overrides: " << overrides.ToString();
+  if (!ApplyOptions(overrides)) {
+    return false;
+  }
+  option_overrides_ = overrides;
+  return true;
+}
+
+bool WebRtcVoiceEngine::ClearOptionOverrides() {
+  LOG(LS_INFO) << "Clearing option overrides.";
+  AudioOptions options = options_;
+  // Only call ApplyOptions if |options_overrides_| contains overrided options.
+  // ApplyOptions affects NS, AGC other options that is shared between
+  // all WebRtcVoiceEngineChannels.
+  if (option_overrides_ == AudioOptions()) {
+    return true;
+  }
+
+  if (!ApplyOptions(options)) {
+    return false;
+  }
+  option_overrides_ = AudioOptions();
+  return true;
+}
+
+// AudioOptions defaults are set in InitInternal (for options with corresponding
+// MediaEngineInterface flags) and in SetOptions(int) for flagless options.
+bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
+  AudioOptions options = options_in;  // The options are modified below.
+  // kEcConference is AEC with high suppression.
+  webrtc::EcModes ec_mode = webrtc::kEcConference;
+  webrtc::AecmModes aecm_mode = webrtc::kAecmSpeakerphone;
+  webrtc::AgcModes agc_mode = webrtc::kAgcAdaptiveAnalog;
+  webrtc::NsModes ns_mode = webrtc::kNsHighSuppression;
+  bool aecm_comfort_noise = false;
+  if (options.aecm_generate_comfort_noise.Get(&aecm_comfort_noise)) {
+    LOG(LS_VERBOSE) << "Comfort noise explicitly set to "
+                    << aecm_comfort_noise << " (default is false).";
+  }
+
+#if defined(IOS)
+  // On iOS, VPIO provides built-in EC and AGC.
+  options.echo_cancellation.Set(false);
+  options.auto_gain_control.Set(false);
+#elif defined(ANDROID)
+  ec_mode = webrtc::kEcAecm;
+#endif
+
+#if defined(IOS) || defined(ANDROID)
+  // Set the AGC mode for iOS as well despite disabling it above, to avoid
+  // unsupported configuration errors from webrtc.
+  agc_mode = webrtc::kAgcFixedDigital;
+  options.typing_detection.Set(false);
+  options.experimental_agc.Set(false);
+  options.experimental_aec.Set(false);
+  options.experimental_ns.Set(false);
+#endif
+
+  LOG(LS_INFO) << "Applying audio options: " << options.ToString();
+
+  webrtc::VoEAudioProcessing* voep = voe_wrapper_->processing();
+
+  bool echo_cancellation;
+  if (options.echo_cancellation.Get(&echo_cancellation)) {
+    if (voep->SetEcStatus(echo_cancellation, ec_mode) == -1) {
+      LOG_RTCERR2(SetEcStatus, echo_cancellation, ec_mode);
+      return false;
+    } else {
+      LOG(LS_VERBOSE) << "Echo control set to " << echo_cancellation
+                      << " with mode " << ec_mode;
+    }
+#if !defined(ANDROID)
+    // TODO(ajm): Remove the error return on Android from webrtc.
+    if (voep->SetEcMetricsStatus(echo_cancellation) == -1) {
+      LOG_RTCERR1(SetEcMetricsStatus, echo_cancellation);
+      return false;
+    }
+#endif
+    if (ec_mode == webrtc::kEcAecm) {
+      if (voep->SetAecmMode(aecm_mode, aecm_comfort_noise) != 0) {
+        LOG_RTCERR2(SetAecmMode, aecm_mode, aecm_comfort_noise);
+        return false;
+      }
+    }
+  }
+
+  bool auto_gain_control;
+  if (options.auto_gain_control.Get(&auto_gain_control)) {
+    if (voep->SetAgcStatus(auto_gain_control, agc_mode) == -1) {
+      LOG_RTCERR2(SetAgcStatus, auto_gain_control, agc_mode);
+      return false;
+    } else {
+      LOG(LS_VERBOSE) << "Auto gain set to " << auto_gain_control
+                      << " with mode " << agc_mode;
+    }
+  }
+
+  if (options.tx_agc_target_dbov.IsSet() ||
+      options.tx_agc_digital_compression_gain.IsSet() ||
+      options.tx_agc_limiter.IsSet()) {
+    // Override default_agc_config_. Generally, an unset option means "leave
+    // the VoE bits alone" in this function, so we want whatever is set to be
+    // stored as the new "default". If we didn't, then setting e.g.
+    // tx_agc_target_dbov would reset digital compression gain and limiter
+    // settings.
+    // Also, if we don't update default_agc_config_, then adjust_agc_delta
+    // would be an offset from the original values, and not whatever was set
+    // explicitly.
+    default_agc_config_.targetLeveldBOv =
+        options.tx_agc_target_dbov.GetWithDefaultIfUnset(
+            default_agc_config_.targetLeveldBOv);
+    default_agc_config_.digitalCompressionGaindB =
+        options.tx_agc_digital_compression_gain.GetWithDefaultIfUnset(
+            default_agc_config_.digitalCompressionGaindB);
+    default_agc_config_.limiterEnable =
+        options.tx_agc_limiter.GetWithDefaultIfUnset(
+            default_agc_config_.limiterEnable);
+    if (voe_wrapper_->processing()->SetAgcConfig(default_agc_config_) == -1) {
+      LOG_RTCERR3(SetAgcConfig,
+                  default_agc_config_.targetLeveldBOv,
+                  default_agc_config_.digitalCompressionGaindB,
+                  default_agc_config_.limiterEnable);
+      return false;
+    }
+  }
+
+  bool noise_suppression;
+  if (options.noise_suppression.Get(&noise_suppression)) {
+    if (voep->SetNsStatus(noise_suppression, ns_mode) == -1) {
+      LOG_RTCERR2(SetNsStatus, noise_suppression, ns_mode);
+      return false;
+    } else {
+      LOG(LS_VERBOSE) << "Noise suppression set to " << noise_suppression
+                      << " with mode " << ns_mode;
+    }
+  }
+
+  bool experimental_ns;
+  if (options.experimental_ns.Get(&experimental_ns)) {
+    webrtc::AudioProcessing* audioproc =
+        voe_wrapper_->base()->audio_processing();
+    // We check audioproc for the benefit of tests, since FakeWebRtcVoiceEngine
+    // returns NULL on audio_processing().
+    if (audioproc) {
+      if (audioproc->EnableExperimentalNs(experimental_ns) == -1) {
+        LOG_RTCERR1(EnableExperimentalNs, experimental_ns);
+        return false;
+      }
+    } else {
+      LOG(LS_VERBOSE) << "Experimental noise suppression set to "
+                      << experimental_ns;
+    }
+  }
+
+  bool highpass_filter;
+  if (options.highpass_filter.Get(&highpass_filter)) {
+    LOG(LS_INFO) << "High pass filter enabled? " << highpass_filter;
+    if (voep->EnableHighPassFilter(highpass_filter) == -1) {
+      LOG_RTCERR1(SetHighpassFilterStatus, highpass_filter);
+      return false;
+    }
+  }
+
+  bool stereo_swapping;
+  if (options.stereo_swapping.Get(&stereo_swapping)) {
+    LOG(LS_INFO) << "Stereo swapping enabled? " << stereo_swapping;
+    voep->EnableStereoChannelSwapping(stereo_swapping);
+    if (voep->IsStereoChannelSwappingEnabled() != stereo_swapping) {
+      LOG_RTCERR1(EnableStereoChannelSwapping, stereo_swapping);
+      return false;
+    }
+  }
+
+  bool typing_detection;
+  if (options.typing_detection.Get(&typing_detection)) {
+    LOG(LS_INFO) << "Typing detection is enabled? " << typing_detection;
+    if (voep->SetTypingDetectionStatus(typing_detection) == -1) {
+      // In case of error, log the info and continue
+      LOG_RTCERR1(SetTypingDetectionStatus, typing_detection);
+    }
+  }
+
+  int adjust_agc_delta;
+  if (options.adjust_agc_delta.Get(&adjust_agc_delta)) {
+    LOG(LS_INFO) << "Adjust agc delta is " << adjust_agc_delta;
+    if (!AdjustAgcLevel(adjust_agc_delta)) {
+      return false;
+    }
+  }
+
+  bool aec_dump;
+  if (options.aec_dump.Get(&aec_dump)) {
+    LOG(LS_INFO) << "Aec dump is enabled? " << aec_dump;
+    if (aec_dump)
+      StartAecDump(kAecDumpByAudioOptionFilename);
+    else
+      StopAecDump();
+  }
+
+  bool experimental_aec;
+  if (options.experimental_aec.Get(&experimental_aec)) {
+    LOG(LS_INFO) << "Experimental aec is " << experimental_aec;
+    webrtc::AudioProcessing* audioproc =
+        voe_wrapper_->base()->audio_processing();
+    // We check audioproc for the benefit of tests, since FakeWebRtcVoiceEngine
+    // returns NULL on audio_processing().
+    if (audioproc) {
+      webrtc::Config config;
+      config.Set<webrtc::DelayCorrection>(
+          new webrtc::DelayCorrection(experimental_aec));
+      audioproc->SetExtraOptions(config);
+    }
+  }
+
+  uint32 recording_sample_rate;
+  if (options.recording_sample_rate.Get(&recording_sample_rate)) {
+    LOG(LS_INFO) << "Recording sample rate is " << recording_sample_rate;
+    if (voe_wrapper_->hw()->SetRecordingSampleRate(recording_sample_rate)) {
+      LOG_RTCERR1(SetRecordingSampleRate, recording_sample_rate);
+    }
+  }
+
+  uint32 playout_sample_rate;
+  if (options.playout_sample_rate.Get(&playout_sample_rate)) {
+    LOG(LS_INFO) << "Playout sample rate is " << playout_sample_rate;
+    if (voe_wrapper_->hw()->SetPlayoutSampleRate(playout_sample_rate)) {
+      LOG_RTCERR1(SetPlayoutSampleRate, playout_sample_rate);
+    }
+  }
+
+  return true;
+}
+
+bool WebRtcVoiceEngine::SetDelayOffset(int offset) {
+  voe_wrapper_->processing()->SetDelayOffsetMs(offset);
+  if (voe_wrapper_->processing()->DelayOffsetMs() != offset) {
+    LOG_RTCERR1(SetDelayOffsetMs, offset);
+    return false;
+  }
+
+  return true;
+}
+
+struct ResumeEntry {
+  ResumeEntry(WebRtcVoiceMediaChannel *c, bool p, SendFlags s)
+      : channel(c),
+        playout(p),
+        send(s) {
+  }
+
+  WebRtcVoiceMediaChannel *channel;
+  bool playout;
+  SendFlags send;
+};
+
+// TODO(juberti): Refactor this so that the core logic can be used to set the
+// soundclip device. At that time, reinstate the soundclip pause/resume code.
+bool WebRtcVoiceEngine::SetDevices(const Device* in_device,
+                                   const Device* out_device) {
+#if !defined(IOS)
+  int in_id = in_device ? talk_base::FromString<int>(in_device->id) :
+      kDefaultAudioDeviceId;
+  int out_id = out_device ? talk_base::FromString<int>(out_device->id) :
+      kDefaultAudioDeviceId;
+  // The device manager uses -1 as the default device, which was the case for
+  // VoE 3.5. VoE 4.0, however, uses 0 as the default in Linux and Mac.
+#ifndef WIN32
+  if (-1 == in_id) {
+    in_id = kDefaultAudioDeviceId;
+  }
+  if (-1 == out_id) {
+    out_id = kDefaultAudioDeviceId;
+  }
+#endif
+
+  std::string in_name = (in_id != kDefaultAudioDeviceId) ?
+      in_device->name : "Default device";
+  std::string out_name = (out_id != kDefaultAudioDeviceId) ?
+      out_device->name : "Default device";
+  LOG(LS_INFO) << "Setting microphone to (id=" << in_id << ", name=" << in_name
+            << ") and speaker to (id=" << out_id << ", name=" << out_name
+            << ")";
+
+  // If we're running the local monitor, we need to stop it first.
+  bool ret = true;
+  if (!PauseLocalMonitor()) {
+    LOG(LS_WARNING) << "Failed to pause local monitor";
+    ret = false;
+  }
+
+  // Must also pause all audio playback and capture.
+  for (ChannelList::const_iterator i = channels_.begin();
+       i != channels_.end(); ++i) {
+    WebRtcVoiceMediaChannel *channel = *i;
+    if (!channel->PausePlayout()) {
+      LOG(LS_WARNING) << "Failed to pause playout";
+      ret = false;
+    }
+    if (!channel->PauseSend()) {
+      LOG(LS_WARNING) << "Failed to pause send";
+      ret = false;
+    }
+  }
+
+  // Find the recording device id in VoiceEngine and set recording device.
+  if (!FindWebRtcAudioDeviceId(true, in_name, in_id, &in_id)) {
+    ret = false;
+  }
+  if (ret) {
+    if (voe_wrapper_->hw()->SetRecordingDevice(in_id) == -1) {
+      LOG_RTCERR2(SetRecordingDevice, in_name, in_id);
+      ret = false;
+    }
   }
 
   // Find the playout device id in VoiceEngine and set playout device.
