@@ -554,6 +554,24 @@ TEST_F(NetworkTest, TestNetworkListSorting) {
   EXPECT_TRUE(net1->preference() < net2->preference());
 }
 
+TEST_F(NetworkTest, TestNetworkAdapterTypes) {
+  Network wifi("wlan0", "Wireless Adapter", IPAddress(0x12345600U), 24,
+               ADAPTER_TYPE_WIFI);
+  EXPECT_EQ(ADAPTER_TYPE_WIFI, wifi.type());
+  Network ethernet("eth0", "Ethernet", IPAddress(0x12345600U), 24,
+                   ADAPTER_TYPE_ETHERNET);
+  EXPECT_EQ(ADAPTER_TYPE_ETHERNET, ethernet.type());
+  Network cellular("test_cell", "Cellular Adapter", IPAddress(0x12345600U), 24,
+                   ADAPTER_TYPE_CELLULAR);
+  EXPECT_EQ(ADAPTER_TYPE_CELLULAR, cellular.type());
+  Network vpn("bridge_test", "VPN Adapter", IPAddress(0x12345600U), 24,
+              ADAPTER_TYPE_VPN);
+  EXPECT_EQ(ADAPTER_TYPE_VPN, vpn.type());
+  Network unknown("test", "Test Adapter", IPAddress(0x12345600U), 24,
+                  ADAPTER_TYPE_UNKNOWN);
+  EXPECT_EQ(ADAPTER_TYPE_UNKNOWN, unknown.type());
+}
+
 #if defined(POSIX)
 // Verify that we correctly handle interfaces with no address.
 TEST_F(NetworkTest, TestConvertIfAddrsNoAddress) {

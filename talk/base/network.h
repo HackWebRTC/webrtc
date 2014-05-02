@@ -182,14 +182,11 @@ class BasicNetworkManager : public NetworkManagerBase,
 // Represents a Unix-type network interface, with a name and single address.
 class Network {
  public:
-  Network() : prefix_(INADDR_ANY), scope_id_(0),
-              type_(ADAPTER_TYPE_UNKNOWN) {}
-  Network(const std::string& name, const std::string& description,
-          const IPAddress& prefix, int prefix_length,
-          const std::string& key);
-
   Network(const std::string& name, const std::string& description,
           const IPAddress& prefix, int prefix_length);
+
+  Network(const std::string& name, const std::string& description,
+          const IPAddress& prefix, int prefix_length, AdapterType type);
 
   // Returns the name of the interface this network is associated wtih.
   const std::string& name() const { return name_; }
