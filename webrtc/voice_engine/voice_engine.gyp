@@ -173,7 +173,6 @@
             'test/auto_test/standard/hardware_test.cc',
             'test/auto_test/standard/mixing_test.cc',
             'test/auto_test/standard/neteq_stats_test.cc',
-            'test/auto_test/standard/network_test.cc',
             'test/auto_test/standard/rtp_rtcp_before_streaming_test.cc',
             'test/auto_test/standard/rtp_rtcp_extensions.cc',
             'test/auto_test/standard/rtp_rtcp_test.cc',
