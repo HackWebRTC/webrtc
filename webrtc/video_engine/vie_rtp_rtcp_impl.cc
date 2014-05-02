@@ -1008,18 +1008,11 @@ int ViERTP_RTCPImpl::GetEstimatedSendBandwidth(
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
                ViEId(shared_data_->instance_id(), video_channel),
                "%s(channel: %d)", __FUNCTION__, video_channel);
-  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
-  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
-  if (!vie_encoder) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: Could not get encoder for channel %d", __FUNCTION__,
-                 video_channel);
-    shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
+  if (!shared_data_->channel_manager()->GetEstimatedSendBandwidth(
+      video_channel, estimated_bandwidth)) {
     return -1;
   }
-  return vie_encoder->EstimatedSendBandwidth(
-      static_cast<uint32_t*>(estimated_bandwidth));
+  return 0;
 }
 
 int ViERTP_RTCPImpl::GetEstimatedReceiveBandwidth(
@@ -1028,18 +1021,10 @@ int ViERTP_RTCPImpl::GetEstimatedReceiveBandwidth(
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
                ViEId(shared_data_->instance_id(), video_channel),
                "%s(channel: %d)", __FUNCTION__, video_channel);
-  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
-  ViEChannel* vie_channel = cs.Channel(video_channel);
-  if (!vie_channel) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: Could not get channel %d", __FUNCTION__,
-                 video_channel);
-    shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
+  if (!shared_data_->channel_manager()->GetEstimatedReceiveBandwidth(
+      video_channel, estimated_bandwidth)) {
     return -1;
   }
-  vie_channel->GetEstimatedReceiveBandwidth(
-      static_cast<uint32_t*>(estimated_bandwidth));
   return 0;
 }
 

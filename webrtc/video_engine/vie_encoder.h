@@ -111,8 +111,6 @@ class ViEEncoder
                               uint32_t* num_delta_frames);
 
   int PacerQueuingDelayMs() const;
-  int32_t EstimatedSendBandwidth(
-        uint32_t* available_bandwidth) const;
 
   int CodecTargetBitrate(uint32_t* bitrate) const;
   // Loss protection.

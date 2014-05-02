@@ -112,10 +112,6 @@ class ViENetworkTest : public testing::Test {
   }
 
   virtual void TearDown() {
-    unsigned int bandwidth = 0;
-    EXPECT_EQ(0, vie_.rtp_rtcp->GetEstimatedReceiveBandwidth(channel_,
-                                                             &bandwidth));
-    EXPECT_EQ(bandwidth, 0u);
     EXPECT_EQ(0, vie_.network->DeregisterSendTransport(channel_));
   }
 
@@ -156,6 +152,9 @@ TEST_F(ViENetworkTest, ReceiveBWEPacket_NoExtension)  {
     webrtc::SleepMs(kIntervalMs);
   }
   EXPECT_FALSE(transport.FindREMBFor(kSsrc1, 0.0));
+  unsigned int bandwidth = 0;
+  EXPECT_EQ(-1, vie_.rtp_rtcp->GetEstimatedReceiveBandwidth(channel_,
+                                                            &bandwidth));
 }
 
 TEST_F(ViENetworkTest, ReceiveBWEPacket_TOF)  {
@@ -173,6 +172,9 @@ TEST_F(ViENetworkTest, ReceiveBWEPacket_TOF)  {
     webrtc::SleepMs(kIntervalMs);
   }
   EXPECT_FALSE(transport.FindREMBFor(kSsrc1, 0.0));
+  unsigned int bandwidth = 0;
+  EXPECT_EQ(-1, vie_.rtp_rtcp->GetEstimatedReceiveBandwidth(channel_,
+                                                            &bandwidth));
 }
 
 TEST_F(ViENetworkTest, ReceiveBWEPacket_AST)  {
@@ -180,6 +182,10 @@ TEST_F(ViENetworkTest, ReceiveBWEPacket_AST)  {
                                                                1));
   ReceiveASTPacketsForBWE();
   EXPECT_TRUE(transport.FindREMBFor(kSsrc1, 100000.0));
+  unsigned int bandwidth = 0;
+  EXPECT_EQ(0, vie_.rtp_rtcp->GetEstimatedReceiveBandwidth(channel_,
+                                                           &bandwidth));
+  EXPECT_GT(bandwidth, 0u);
 }
 
 TEST_F(ViENetworkTest, ReceiveBWEPacket_ASTx2)  {
@@ -202,6 +208,10 @@ TEST_F(ViENetworkTest, ReceiveBWEPacket_ASTx2)  {
   }
   EXPECT_TRUE(transport.FindREMBFor(kSsrc1, 200000.0));
   EXPECT_TRUE(transport.FindREMBFor(kSsrc2, 200000.0));
+  unsigned int bandwidth = 0;
+  EXPECT_EQ(0, vie_.rtp_rtcp->GetEstimatedReceiveBandwidth(channel_,
+                                                           &bandwidth));
+  EXPECT_GT(bandwidth, 0u);
 }
 
 TEST_F(ViENetworkTest, ReceiveBWEPacket_AST_DisabledReceive)  {
@@ -209,5 +219,8 @@ TEST_F(ViENetworkTest, ReceiveBWEPacket_AST_DisabledReceive)  {
                                                                1));
   ReceiveASTPacketsForBWE();
   EXPECT_FALSE(transport.FindREMBFor(kSsrc1, 0.0));
+  unsigned int bandwidth = 0;
+  EXPECT_EQ(-1, vie_.rtp_rtcp->GetEstimatedReceiveBandwidth(channel_,
+                                                            &bandwidth));
 }
 }  // namespace

@@ -86,6 +86,11 @@ class ViEChannelManager: private ViEManagerBase {
   bool SetBandwidthEstimationConfig(int channel_id,
                                     const webrtc::Config& config);
 
+  bool GetEstimatedSendBandwidth(int channel_id,
+                                 uint32_t* estimated_bandwidth) const;
+  bool GetEstimatedReceiveBandwidth(int channel_id,
+                                    uint32_t* estimated_bandwidth) const;
+
  private:
   // Creates a channel object connected to |vie_encoder|. Assumed to be called
   // protected.
@@ -112,7 +117,7 @@ class ViEChannelManager: private ViEManagerBase {
   void ReturnChannelId(int channel_id);
 
   // Returns the iterator to the ChannelGroup containing |channel_id|.
-  ChannelGroup* FindGroup(int channel_id);
+  ChannelGroup* FindGroup(int channel_id) const;
 
   // Returns true if at least one other channels uses the same ViEEncoder as
   // channel_id.

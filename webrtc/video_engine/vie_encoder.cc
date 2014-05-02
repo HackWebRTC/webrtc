@@ -608,14 +608,6 @@ int32_t ViEEncoder::PacerQueuingDelayMs() const {
   return paced_sender_->QueueInMs();
 }
 
-int32_t ViEEncoder::EstimatedSendBandwidth(
-    uint32_t* available_bandwidth) const {
-  if (!bitrate_controller_->AvailableBandwidth(available_bandwidth)) {
-    return -1;
-  }
-  return 0;
-}
-
 int ViEEncoder::CodecTargetBitrate(uint32_t* bitrate) const {
   if (vcm_.Bitrate(bitrate) != 0)
     return -1;

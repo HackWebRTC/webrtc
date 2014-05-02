@@ -210,7 +210,6 @@ class ViEChannel
                          uint32_t* fec_bitrate_sent,
                          uint32_t* nackBitrateSent) const;
   bool GetSendSideDelay(int* avg_send_delay, int* max_send_delay) const;
-  void GetEstimatedReceiveBandwidth(uint32_t* estimated_bandwidth) const;
   void GetReceiveBandwidthEstimatorStats(
       ReceiveBandwidthEstimatorStats* output) const;
 

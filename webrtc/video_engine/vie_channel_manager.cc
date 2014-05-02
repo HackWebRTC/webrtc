@@ -396,6 +396,35 @@ bool ViEChannelManager::SetBandwidthEstimationConfig(
   return true;
 }
 
+bool ViEChannelManager::GetEstimatedSendBandwidth(
+    int channel_id, uint32_t* estimated_bandwidth) const {
+  CriticalSectionScoped cs(channel_id_critsect_);
+  ChannelGroup* group = FindGroup(channel_id);
+  if (!group) {
+    return false;
+  }
+  group->GetBitrateController()->AvailableBandwidth(estimated_bandwidth);
+  return true;
+}
+
+bool ViEChannelManager::GetEstimatedReceiveBandwidth(
+    int channel_id, uint32_t* estimated_bandwidth) const {
+  CriticalSectionScoped cs(channel_id_critsect_);
+  ChannelGroup* group = FindGroup(channel_id);
+  if (!group) {
+    return false;
+  }
+  std::vector<unsigned int> ssrcs;
+  if (!group->GetRemoteBitrateEstimator()->LatestEstimate(
+      &ssrcs, estimated_bandwidth)) {
+    return false;
+  }
+  if (ssrcs.empty()) {
+    *estimated_bandwidth = 0;
+  }
+  return true;
+}
+
 bool ViEChannelManager::CreateChannelObject(
     int channel_id,
     ViEEncoder* vie_encoder,
@@ -479,8 +508,8 @@ void ViEChannelManager::ReturnChannelId(int channel_id) {
   free_channel_ids_[channel_id - kViEChannelIdBase] = true;
 }
 
-ChannelGroup* ViEChannelManager::FindGroup(int channel_id) {
-  for (ChannelGroups::iterator it = channel_groups_.begin();
+ChannelGroup* ViEChannelManager::FindGroup(int channel_id) const {
+  for (ChannelGroups::const_iterator it = channel_groups_.begin();
        it != channel_groups_.end(); ++it) {
     if ((*it)->HasChannel(channel_id)) {
       return *it;
