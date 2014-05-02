@@ -1075,8 +1075,17 @@ int32_t ViEChannel::GetRtpStatistics(uint32_t* bytes_sent,
     uint32_t packets_sent_temp = 0;
     RtpRtcp* rtp_rtcp = *it;
     rtp_rtcp->DataCountersRTP(&bytes_sent_temp, &packets_sent_temp);
-    bytes_sent += bytes_sent_temp;
-    packets_sent += packets_sent_temp;
+    *bytes_sent += bytes_sent_temp;
+    *packets_sent += packets_sent_temp;
+  }
+  for (std::list<RtpRtcp*>::const_iterator it = removed_rtp_rtcp_.begin();
+       it != removed_rtp_rtcp_.end(); ++it) {
+    uint32_t bytes_sent_temp = 0;
+    uint32_t packets_sent_temp = 0;
+    RtpRtcp* rtp_rtcp = *it;
+    rtp_rtcp->DataCountersRTP(&bytes_sent_temp, &packets_sent_temp);
+    *bytes_sent += bytes_sent_temp;
+    *packets_sent += packets_sent_temp;
   }
   return 0;
 }
