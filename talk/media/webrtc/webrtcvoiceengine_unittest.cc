@@ -246,32 +246,25 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_EQ(expected_bitrate, temp_codec.rate);
   }
 
-
   void TestSetSendRtpHeaderExtensions(int channel_id) {
     std::vector<cricket::RtpHeaderExtension> extensions;
 
     // Ensure extensions are off by default.
     EXPECT_EQ(-1, voe_.GetSendAudioLevelId(channel_id));
-#ifdef USE_WEBRTC_DEV_BRANCH
     EXPECT_EQ(-1, voe_.GetSendAbsoluteSenderTimeId(channel_id));
-#endif
 
     // Ensure unknown extensions won't cause an error.
     extensions.push_back(cricket::RtpHeaderExtension(
         "urn:ietf:params:unknownextention", 1));
     EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
     EXPECT_EQ(-1, voe_.GetSendAudioLevelId(channel_id));
-#ifdef USE_WEBRTC_DEV_BRANCH
     EXPECT_EQ(-1, voe_.GetSendAbsoluteSenderTimeId(channel_id));
-#endif
 
     // Ensure extensions stay off with an empty list of headers.
     extensions.clear();
     EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
     EXPECT_EQ(-1, voe_.GetSendAudioLevelId(channel_id));
-#ifdef USE_WEBRTC_DEV_BRANCH
     EXPECT_EQ(-1, voe_.GetSendAbsoluteSenderTimeId(channel_id));
-#endif
 
     // Ensure audio levels are enabled if the audio-level header is specified
     // (but AST is still off).
@@ -279,65 +272,49 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
         "urn:ietf:params:rtp-hdrext:ssrc-audio-level", 8));
     EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
     EXPECT_EQ(8, voe_.GetSendAudioLevelId(channel_id));
-#ifdef USE_WEBRTC_DEV_BRANCH
     EXPECT_EQ(-1, voe_.GetSendAbsoluteSenderTimeId(channel_id));
-#endif
 
-#ifdef USE_WEBRTC_DEV_BRANCH
     // Ensure audio level and AST are enabled if the extensions are specified.
     extensions.push_back(cricket::RtpHeaderExtension(
         "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time", 12));
     EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
     EXPECT_EQ(8, voe_.GetSendAudioLevelId(channel_id));
     EXPECT_EQ(12, voe_.GetSendAbsoluteSenderTimeId(channel_id));
-#endif
 
     // Ensure all extensions go back off with an empty list.
     extensions.clear();
     EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
     EXPECT_EQ(-1, voe_.GetSendAudioLevelId(channel_id));
-#ifdef USE_WEBRTC_DEV_BRANCH
     EXPECT_EQ(-1, voe_.GetSendAbsoluteSenderTimeId(channel_id));
-#endif
   }
 
   void TestSetRecvRtpHeaderExtensions(int channel_id) {
     std::vector<cricket::RtpHeaderExtension> extensions;
 
-#ifdef USE_WEBRTC_DEV_BRANCH
     // Ensure extensions are off by default.
     EXPECT_EQ(-1, voe_.GetReceiveAbsoluteSenderTimeId(channel_id));
-#endif
 
     // Ensure unknown extensions won't cause an error.
     extensions.push_back(cricket::RtpHeaderExtension(
         "urn:ietf:params:unknownextention", 1));
     EXPECT_TRUE(channel_->SetRecvRtpHeaderExtensions(extensions));
-#ifdef USE_WEBRTC_DEV_BRANCH
     EXPECT_EQ(-1, voe_.GetReceiveAbsoluteSenderTimeId(channel_id));
-#endif
 
     // An empty list shouldn't cause any headers to be enabled.
     extensions.clear();
     EXPECT_TRUE(channel_->SetRecvRtpHeaderExtensions(extensions));
-#ifdef USE_WEBRTC_DEV_BRANCH
     EXPECT_EQ(-1, voe_.GetReceiveAbsoluteSenderTimeId(channel_id));
-#endif
 
-#ifdef USE_WEBRTC_DEV_BRANCH
     // Nor should indicating we can receive the absolute sender time header.
     extensions.push_back(cricket::RtpHeaderExtension(
         "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time", 11));
     EXPECT_TRUE(channel_->SetRecvRtpHeaderExtensions(extensions));
     EXPECT_EQ(11, voe_.GetReceiveAbsoluteSenderTimeId(channel_id));
-#endif
 
     // Resetting to an empty list shouldn't cause any headers to be enabled.
     extensions.clear();
     EXPECT_TRUE(channel_->SetRecvRtpHeaderExtensions(extensions));
-#ifdef USE_WEBRTC_DEV_BRANCH
     EXPECT_EQ(-1, voe_.GetReceiveAbsoluteSenderTimeId(channel_id));
-#endif
   }
 
  protected:
@@ -2686,7 +2663,6 @@ TEST_F(WebRtcVoiceEngineTestFake, InitDoesNotOverwriteDefaultAgcConfig) {
   EXPECT_EQ(set_config.limiterEnable, config.limiterEnable);
 }
 
-
 TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
   EXPECT_TRUE(SetupEngine());
   talk_base::scoped_ptr<cricket::VoiceMediaChannel> channel1(
@@ -2885,7 +2861,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOutputScaling) {
   EXPECT_DOUBLE_EQ(2, left);
   EXPECT_DOUBLE_EQ(1, right);
 }
-
 
 // Tests for the actual WebRtc VoE library.
 

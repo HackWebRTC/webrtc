@@ -50,7 +50,6 @@
 #error "Bogus include."
 #endif
 
-
 namespace cricket {
 
 // WebRtcSoundclipStream is an adapter object that allows a memory stream to be

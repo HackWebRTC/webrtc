@@ -939,7 +939,6 @@ TEST_F(WebRtcVideoEngineTestFake, AdditiveVideoOptions) {
   EXPECT_TRUE(vie_.GetTransmissionSmoothingStatus(first_send_channel));
 }
 
-#ifdef USE_WEBRTC_DEV_BRANCH
 TEST_F(WebRtcVideoEngineTestFake, SetCpuOveruseOptionsWithCaptureJitterMethod) {
   EXPECT_TRUE(SetupEngine());
 
@@ -1051,7 +1050,6 @@ TEST_F(WebRtcVideoEngineTestFake, SetCpuOveruseOptionsWithEncodeUsageMethod) {
   EXPECT_FALSE(cpu_option.enable_capture_jitter_method);
   EXPECT_TRUE(cpu_option.enable_encode_usage_method);
 }
-#endif
 
 // Test that AddRecvStream doesn't create new channel for 1:1 call.
 TEST_F(WebRtcVideoEngineTestFake, AddRecvStream1On1) {

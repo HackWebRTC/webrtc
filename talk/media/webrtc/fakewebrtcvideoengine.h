@@ -41,18 +41,6 @@
 #include "talk/media/webrtc/webrtcvideoencoderfactory.h"
 #include "talk/media/webrtc/webrtcvie.h"
 
-#if !defined(USE_WEBRTC_DEV_BRANCH)
-namespace webrtc {
-
-// This function is 'inline' to avoid link errors.
-inline bool operator==(const webrtc::VideoCodec& c1,
-                       const webrtc::VideoCodec& c2) {
-  return memcmp(&c1, &c2, sizeof(c1)) == 0;
-}
-
-}
-#endif
-
 namespace cricket {
 
 #define WEBRTC_CHECK_CAPTURER(capturer) \
@@ -307,9 +295,7 @@ class FakeWebRtcVideoEngine
           overuse_observer_(NULL) {
       ssrcs_[0] = 0;  // default ssrc.
       memset(&send_codec, 0, sizeof(send_codec));
-#ifdef USE_WEBRTC_DEV_BRANCH
       memset(&overuse_options_, 0, sizeof(overuse_options_));
-#endif
     }
     int capture_id_;
     int original_channel_id_;
@@ -349,9 +335,7 @@ class FakeWebRtcVideoEngine
     unsigned int reserved_transmit_bitrate_bps_;
     bool suspend_below_min_bitrate_;
     webrtc::CpuOveruseObserver* overuse_observer_;
-#ifdef USE_WEBRTC_DEV_BRANCH
     webrtc::CpuOveruseOptions overuse_options_;
-#endif
   };
   class Capturer : public webrtc::ViEExternalCapture {
    public:
@@ -553,12 +537,10 @@ class FakeWebRtcVideoEngine
     WEBRTC_ASSERT_CHANNEL(channel);
     return channels_.find(channel)->second->overuse_observer_;
   }
-#ifdef USE_WEBRTC_DEV_BRANCH
   webrtc::CpuOveruseOptions GetCpuOveruseOptions(int channel) const {
     WEBRTC_ASSERT_CHANNEL(channel);
     return channels_.find(channel)->second->overuse_options_;
   }
-#endif
   int GetRtxSsrc(int channel, int simulcast_idx) const {
     WEBRTC_ASSERT_CHANNEL(channel);
     if (channels_.find(channel)->second->rtx_ssrcs_.find(simulcast_idx) ==
@@ -570,16 +552,7 @@ class FakeWebRtcVideoEngine
   bool ReceiveCodecRegistered(int channel,
                               const webrtc::VideoCodec& codec) const {
     WEBRTC_ASSERT_CHANNEL(channel);
-#if !defined(USE_WEBRTC_DEV_BRANCH)
-    const std::vector<webrtc::VideoCodec>& codecs =
-      channels_.find(channel)->second->recv_codecs;
-    return std::find(codecs.begin(), codecs.end(), codec) != codecs.end();
-#else
-    // TODO(mallinath) - Remove this specilization after this change is pushed
-    // to googlecode and operator== from VideoCodecDerived moved inside
-    // VideoCodec.
     return true;
-#endif
   };
   bool ExternalDecoderRegistered(int channel,
                                  unsigned int pl_type) const {
@@ -690,14 +663,12 @@ class FakeWebRtcVideoEngine
     return 0;
   }
   WEBRTC_STUB(CpuOveruseMeasures, (int, int*, int*, int*, int*));
-#ifdef USE_WEBRTC_DEV_BRANCH
   WEBRTC_FUNC(SetCpuOveruseOptions,
       (int channel, const webrtc::CpuOveruseOptions& options)) {
     WEBRTC_CHECK_CHANNEL(channel);
     channels_[channel]->overuse_options_ = options;
     return 0;
   }
-#endif
   WEBRTC_STUB(ConnectAudioChannel, (const int, const int));
   WEBRTC_STUB(DisconnectAudioChannel, (const int));
   WEBRTC_FUNC(StartSend, (const int channel)) {
@@ -891,10 +862,8 @@ class FakeWebRtcVideoEngine
   // Not using WEBRTC_STUB due to bool return value
   virtual bool IsIPv6Enabled(int channel) { return true; }
   WEBRTC_STUB(SetMTU, (int, unsigned int));
-#ifdef USE_WEBRTC_DEV_BRANCH
   WEBRTC_STUB(ReceivedBWEPacket, (const int, int64_t, int,
       const webrtc::RTPHeader&));
-#endif
 
   // webrtc::ViERender
   WEBRTC_STUB(RegisterVideoRenderModule, (webrtc::VideoRender&));
@@ -1104,19 +1073,15 @@ class FakeWebRtcVideoEngine
     channels_[channel]->transmission_smoothing_ = enable;
     return 0;
   }
-#ifdef USE_WEBRTC_DEV_BRANCH
-  WEBRTC_FUNC(SetReservedTransmitBitrate, (int channel,
+  WEBRTC_FUNC(SetReservedTransmitBitrate, (int channel, 
       unsigned int reserved_transmit_bitrate_bps)) {
     WEBRTC_CHECK_CHANNEL(channel);
     channels_[channel]->reserved_transmit_bitrate_bps_ =
         reserved_transmit_bitrate_bps;
     return 0;
   }
-#endif
-#ifdef USE_WEBRTC_DEV_BRANCH
   WEBRTC_STUB_CONST(GetRtcpPacketTypeCounters, (int,
       webrtc::RtcpPacketTypeCounter*, webrtc::RtcpPacketTypeCounter*));
-#endif
   WEBRTC_STUB_CONST(GetReceivedRTCPStatistics, (const int, unsigned short&,
       unsigned int&, unsigned int&, unsigned int&, int&));
   WEBRTC_STUB_CONST(GetSentRTCPStatistics, (const int, unsigned short&,

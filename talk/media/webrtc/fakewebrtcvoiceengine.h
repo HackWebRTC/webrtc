@@ -32,7 +32,6 @@
 #include <map>
 #include <vector>
 
-
 #include "talk/base/basictypes.h"
 #include "talk/base/gunit.h"
 #include "talk/base/stringutils.h"
@@ -60,7 +59,6 @@ static const int kFakeDeviceId = 0;
 #else
 static const int kFakeDeviceId = 1;
 #endif
-
 
 // Verify the header extension ID, if enabled, is within the bounds specified in
 // [RFC5285]: 1-14 inclusive.
@@ -699,7 +697,6 @@ class FakeWebRtcVoiceEngine
         std::string(static_cast<const char*>(data), length));
     return 0;
   }
-#ifdef USE_WEBRTC_DEV_BRANCH
   WEBRTC_FUNC(ReceivedRTPPacket, (int channel, const void* data,
                                   unsigned int length,
                                   const webrtc::PacketTime& packet_time)) {
@@ -710,7 +707,6 @@ class FakeWebRtcVoiceEngine
     channels_[channel]->last_rtp_packet_time = packet_time;
     return 0;
   }
-#endif
 
   WEBRTC_STUB(ReceivedRTCPPacket, (int channel, const void* data,
                                    unsigned int length));
@@ -733,18 +729,6 @@ class FakeWebRtcVoiceEngine
     return 0;
   }
   WEBRTC_STUB(GetRemoteSSRC, (int channel, unsigned int& ssrc));
-#ifndef USE_WEBRTC_DEV_BRANCH
-  WEBRTC_FUNC(SetRTPAudioLevelIndicationStatus, (int channel, bool enable,
-      unsigned char id)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    WEBRTC_CHECK_HEADER_EXTENSION_ID(enable, id);
-    channels_[channel]->send_audio_level_ext_ = (enable) ? id : -1;
-    return 0;
-  }
-  WEBRTC_STUB(GetRTPAudioLevelIndicationStatus, (int channel, bool& enable,
-      unsigned char& id));
-#endif
-#ifdef USE_WEBRTC_DEV_BRANCH
   WEBRTC_FUNC(SetSendAudioLevelIndicationStatus, (int channel, bool enable,
       unsigned char id)) {
     WEBRTC_CHECK_CHANNEL(channel);
@@ -766,7 +750,6 @@ class FakeWebRtcVoiceEngine
     channels_[channel]->receive_absolute_sender_time_ext_ = (enable) ? id : -1;
     return 0;
   }
-#endif
 
   WEBRTC_STUB(GetRemoteCSRCs, (int channel, unsigned int arrCSRC[15]));
   WEBRTC_STUB(SetRTCPStatus, (int channel, bool enable));
@@ -847,7 +830,6 @@ class FakeWebRtcVoiceEngine
                                      unsigned short payloadSize));
   WEBRTC_STUB(GetLastRemoteTimeStamp, (int channel,
                                        uint32_t* lastRemoteTimeStamp));
-#ifdef USE_WEBRTC_DEV_BRANCH
   WEBRTC_FUNC(SetVideoEngineBWETarget, (int channel,
                                         webrtc::ViENetwork* vie_network,
                                         int video_channel)) {
@@ -856,7 +838,6 @@ class FakeWebRtcVoiceEngine
     channels_[channel]->video_channel = video_channel;
     return 0;
   }
-#endif
 
   // webrtc::VoEVideoSync
   WEBRTC_STUB(GetPlayoutBufferSize, (int& bufferMs));
