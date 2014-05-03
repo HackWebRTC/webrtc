@@ -60,7 +60,6 @@ class MediaConstraintsInterface {
   virtual const Constraints& GetMandatory() const = 0;
   virtual const Constraints& GetOptional() const = 0;
 
-
   // Constraint keys used by a local video source.
   // Specified by draft-alvestrand-constraints-resolution-00b
   static const char kMinAspectRatio[];  // minAspectRatio

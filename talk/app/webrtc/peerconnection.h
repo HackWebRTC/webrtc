@@ -57,11 +57,12 @@ class PeerConnection : public PeerConnectionInterface,
  public:
   explicit PeerConnection(PeerConnectionFactory* factory);
 
-  bool Initialize(const PeerConnectionInterface::IceServers& configuration,
-                  const MediaConstraintsInterface* constraints,
-                  PortAllocatorFactoryInterface* allocator_factory,
-                  DTLSIdentityServiceInterface* dtls_identity_service,
-                  PeerConnectionObserver* observer);
+  bool Initialize(
+      const PeerConnectionInterface::RTCConfiguration& configuration,
+      const MediaConstraintsInterface* constraints,
+      PortAllocatorFactoryInterface* allocator_factory,
+      DTLSIdentityServiceInterface* dtls_identity_service,
+      PeerConnectionObserver* observer);
   virtual talk_base::scoped_refptr<StreamCollectionInterface> local_streams();
   virtual talk_base::scoped_refptr<StreamCollectionInterface> remote_streams();
   virtual bool AddStream(MediaStreamInterface* local_stream,
@@ -97,8 +98,11 @@ class PeerConnection : public PeerConnectionInterface,
                                    SessionDescriptionInterface* desc);
   virtual void SetRemoteDescription(SetSessionDescriptionObserver* observer,
                                     SessionDescriptionInterface* desc);
+  // TODO(mallinath) : Deprecated version, remove after all clients are updated.
   virtual bool UpdateIce(const IceServers& configuration,
                          const MediaConstraintsInterface* constraints);
+  virtual bool UpdateIce(
+      const PeerConnectionInterface::RTCConfiguration& config);
   virtual bool AddIceCandidate(const IceCandidateInterface* candidate);
 
   virtual void Close();
@@ -152,7 +156,8 @@ class PeerConnection : public PeerConnectionInterface,
                             cricket::BaseSession::State state);
   void ChangeSignalingState(SignalingState signaling_state);
 
-  bool DoInitialize(const StunConfigurations& stun_config,
+  bool DoInitialize(IceTransportsType type,
+                    const StunConfigurations& stun_config,
                     const TurnConfigurations& turn_config,
                     const MediaConstraintsInterface* constraints,
                     PortAllocatorFactoryInterface* allocator_factory,

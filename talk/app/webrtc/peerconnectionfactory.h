@@ -46,18 +46,12 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface,
 
   virtual talk_base::scoped_refptr<PeerConnectionInterface>
       CreatePeerConnection(
-          const PeerConnectionInterface::IceServers& configuration,
-          const MediaConstraintsInterface* constraints,
-          DTLSIdentityServiceInterface* dtls_identity_service,
-          PeerConnectionObserver* observer);
-
-  virtual talk_base::scoped_refptr<PeerConnectionInterface>
-      CreatePeerConnection(
-          const PeerConnectionInterface::IceServers& configuration,
+          const PeerConnectionInterface::RTCConfiguration& configuration,
           const MediaConstraintsInterface* constraints,
           PortAllocatorFactoryInterface* allocator_factory,
           DTLSIdentityServiceInterface* dtls_identity_service,
           PeerConnectionObserver* observer);
+
   bool Initialize();
 
   virtual talk_base::scoped_refptr<MediaStreamInterface>
@@ -103,12 +97,14 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface,
   talk_base::scoped_refptr<VideoSourceInterface> CreateVideoSource_s(
       cricket::VideoCapturer* capturer,
       const MediaConstraintsInterface* constraints);
+
   talk_base::scoped_refptr<PeerConnectionInterface> CreatePeerConnection_s(
-      const PeerConnectionInterface::IceServers& configuration,
+      const PeerConnectionInterface::RTCConfiguration& configuration,
       const MediaConstraintsInterface* constraints,
       PortAllocatorFactoryInterface* allocator_factory,
       DTLSIdentityServiceInterface* dtls_identity_service,
       PeerConnectionObserver* observer);
+
   bool StartAecDump_s(talk_base::PlatformFile file);
 
   // Implements talk_base::MessageHandler.

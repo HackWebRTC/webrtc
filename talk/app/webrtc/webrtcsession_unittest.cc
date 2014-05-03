@@ -53,6 +53,7 @@
 #include "talk/media/devices/fakedevicemanager.h"
 #include "talk/p2p/base/stunserver.h"
 #include "talk/p2p/base/teststunserver.h"
+#include "talk/p2p/base/testturnserver.h"
 #include "talk/p2p/client/basicportallocator.h"
 #include "talk/session/media/channelmanager.h"
 #include "talk/session/media/mediasession.h"
@@ -72,6 +73,7 @@ using cricket::NS_JINGLE_ICE_UDP;
 using cricket::TransportInfo;
 using talk_base::SocketAddress;
 using talk_base::scoped_ptr;
+using talk_base::Thread;
 using webrtc::CreateSessionDescription;
 using webrtc::CreateSessionDescriptionObserver;
 using webrtc::CreateSessionDescriptionRequest;
@@ -101,6 +103,10 @@ static const int kClientAddrPort = 0;
 static const char kClientAddrHost1[] = "11.11.11.11";
 static const char kClientAddrHost2[] = "22.22.22.22";
 static const char kStunAddrHost[] = "99.99.99.1";
+static const SocketAddress kTurnUdpIntAddr("99.99.99.4", 3478);
+static const SocketAddress kTurnUdpExtAddr("99.99.99.6", 0);
+static const char kTurnUsername[] = "test";
+static const char kTurnPassword[] = "test";
 
 static const char kSessionVersion[] = "1";
 
@@ -294,16 +300,20 @@ class WebRtcSessionTest : public testing::Test {
       ss_scope_(fss_.get()),
       stun_socket_addr_(talk_base::SocketAddress(kStunAddrHost,
                                                  cricket::STUN_SERVER_PORT)),
-      stun_server_(talk_base::Thread::Current(), stun_socket_addr_),
-      allocator_(&network_manager_, stun_socket_addr_,
-                 SocketAddress(), SocketAddress(), SocketAddress()),
-      mediastream_signaling_(channel_manager_.get()) {
+      stun_server_(Thread::Current(), stun_socket_addr_),
+      turn_server_(Thread::Current(), kTurnUdpIntAddr, kTurnUdpExtAddr),
+      allocator_(new cricket::BasicPortAllocator(
+          &network_manager_, stun_socket_addr_,
+          SocketAddress(), SocketAddress(), SocketAddress())),
+      mediastream_signaling_(channel_manager_.get()),
+      ice_type_(PeerConnectionInterface::kAll) {
     tdesc_factory_->set_protocol(cricket::ICEPROTO_HYBRID);
-    allocator_.set_flags(cricket::PORTALLOCATOR_DISABLE_TCP |
+    allocator_->set_flags(cricket::PORTALLOCATOR_DISABLE_TCP |
                          cricket::PORTALLOCATOR_DISABLE_RELAY |
                          cricket::PORTALLOCATOR_ENABLE_BUNDLE);
     EXPECT_TRUE(channel_manager_->Init());
     desc_factory_->set_add_legacy_streams(false);
+    allocator_->set_step_delay(cricket::kMinimumStepDelay);
   }
 
   static void SetUpTestCase() {
@@ -318,11 +328,15 @@ class WebRtcSessionTest : public testing::Test {
     network_manager_.AddInterface(addr);
   }
 
+  void SetIceTransportType(PeerConnectionInterface::IceTransportsType type) {
+    ice_type_ = type;
+  }
+
   void Init(DTLSIdentityServiceInterface* identity_service) {
     ASSERT_TRUE(session_.get() == NULL);
     session_.reset(new WebRtcSessionForTest(
         channel_manager_.get(), talk_base::Thread::Current(),
-        talk_base::Thread::Current(), &allocator_,
+        talk_base::Thread::Current(), allocator_.get(),
         &observer_,
         &mediastream_signaling_));
 
@@ -332,7 +346,7 @@ class WebRtcSessionTest : public testing::Test {
         observer_.ice_gathering_state_);
 
     EXPECT_TRUE(session_->Initialize(options_, constraints_.get(),
-                                     identity_service));
+                                     identity_service, ice_type_));
   }
 
   void InitWithDtmfCodec() {
@@ -1009,8 +1023,9 @@ class WebRtcSessionTest : public testing::Test {
   talk_base::SocketServerScope ss_scope_;
   talk_base::SocketAddress stun_socket_addr_;
   cricket::TestStunServer stun_server_;
+  cricket::TestTurnServer turn_server_;
   talk_base::FakeNetworkManager network_manager_;
-  cricket::BasicPortAllocator allocator_;
+  talk_base::scoped_ptr<cricket::BasicPortAllocator> allocator_;
   PeerConnectionFactoryInterface::Options options_;
   talk_base::scoped_ptr<FakeConstraints> constraints_;
   FakeMediaStreamSignaling mediastream_signaling_;
@@ -1018,6 +1033,7 @@ class WebRtcSessionTest : public testing::Test {
   MockIceObserver observer_;
   cricket::FakeVideoMediaChannel* video_channel_;
   cricket::FakeVoiceMediaChannel* voice_channel_;
+  PeerConnectionInterface::IceTransportsType ice_type_;
 };
 
 TEST_F(WebRtcSessionTest, TestInitializeWithDtls) {
@@ -2237,8 +2253,8 @@ TEST_F(WebRtcSessionTest, VerifyBundleFlagInPA) {
   // local description is removed by the application, BUNDLE flag should be
   // disabled in PortAllocator. By default BUNDLE is enabled in the WebRtc.
   Init(NULL);
-  EXPECT_TRUE((cricket::PORTALLOCATOR_ENABLE_BUNDLE & allocator_.flags()) ==
-      cricket::PORTALLOCATOR_ENABLE_BUNDLE);
+  EXPECT_TRUE((cricket::PORTALLOCATOR_ENABLE_BUNDLE &
+      allocator_->flags()) == cricket::PORTALLOCATOR_ENABLE_BUNDLE);
   talk_base::scoped_ptr<SessionDescriptionInterface> offer(
       CreateOffer(NULL));
   cricket::SessionDescription* offer_copy =
@@ -2249,14 +2265,14 @@ TEST_F(WebRtcSessionTest, VerifyBundleFlagInPA) {
   modified_offer->Initialize(offer_copy, "1", "1");
 
   SetLocalDescriptionWithoutError(modified_offer);
-  EXPECT_FALSE(allocator_.flags() & cricket::PORTALLOCATOR_ENABLE_BUNDLE);
+  EXPECT_FALSE(allocator_->flags() & cricket::PORTALLOCATOR_ENABLE_BUNDLE);
 }
 
 TEST_F(WebRtcSessionTest, TestDisabledBundleInAnswer) {
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream1();
-  EXPECT_TRUE((cricket::PORTALLOCATOR_ENABLE_BUNDLE & allocator_.flags()) ==
-      cricket::PORTALLOCATOR_ENABLE_BUNDLE);
+  EXPECT_TRUE((cricket::PORTALLOCATOR_ENABLE_BUNDLE &
+      allocator_->flags()) == cricket::PORTALLOCATOR_ENABLE_BUNDLE);
   FakeConstraints constraints;
   constraints.SetMandatoryUseRtpMux(true);
   SessionDescriptionInterface* offer = CreateOffer(&constraints);
@@ -2270,8 +2286,8 @@ TEST_F(WebRtcSessionTest, TestDisabledBundleInAnswer) {
       new JsepSessionDescription(JsepSessionDescription::kAnswer);
   modified_answer->Initialize(answer_copy, "1", "1");
   SetRemoteDescriptionWithoutError(modified_answer);
-  EXPECT_TRUE((cricket::PORTALLOCATOR_ENABLE_BUNDLE & allocator_.flags()) ==
-      cricket::PORTALLOCATOR_ENABLE_BUNDLE);
+  EXPECT_TRUE((cricket::PORTALLOCATOR_ENABLE_BUNDLE &
+      allocator_->flags()) == cricket::PORTALLOCATOR_ENABLE_BUNDLE);
 
   video_channel_ = media_engine_->GetVideoChannel(0);
   voice_channel_ = media_engine_->GetVoiceChannel(0);
@@ -2293,8 +2309,8 @@ TEST_F(WebRtcSessionTest, TestDisabledBundleInAnswer) {
 TEST_F(WebRtcSessionTest, TestDisabledRtcpMuxWithBundleEnabled) {
   WebRtcSessionTest::Init(NULL);
   mediastream_signaling_.SendAudioVideoStream1();
-  EXPECT_TRUE((cricket::PORTALLOCATOR_ENABLE_BUNDLE & allocator_.flags()) ==
-      cricket::PORTALLOCATOR_ENABLE_BUNDLE);
+  EXPECT_TRUE((cricket::PORTALLOCATOR_ENABLE_BUNDLE &
+      allocator_->flags()) == cricket::PORTALLOCATOR_ENABLE_BUNDLE);
   FakeConstraints constraints;
   constraints.SetMandatoryUseRtpMux(true);
   SessionDescriptionInterface* offer = CreateOffer(&constraints);
@@ -2816,7 +2832,7 @@ TEST_F(WebRtcSessionTest, TestSessionContentError) {
 // Runs the loopback call test with BUNDLE and STUN disabled.
 TEST_F(WebRtcSessionTest, TestIceStatesBasic) {
   // Lets try with only UDP ports.
-  allocator_.set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
+  allocator_->set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                        cricket::PORTALLOCATOR_DISABLE_TCP |
                        cricket::PORTALLOCATOR_DISABLE_STUN |
                        cricket::PORTALLOCATOR_DISABLE_RELAY);
@@ -2825,7 +2841,7 @@ TEST_F(WebRtcSessionTest, TestIceStatesBasic) {
 
 // Runs the loopback call test with BUNDLE and STUN enabled.
 TEST_F(WebRtcSessionTest, TestIceStatesBundle) {
-  allocator_.set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
+  allocator_->set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                        cricket::PORTALLOCATOR_ENABLE_BUNDLE |
                        cricket::PORTALLOCATOR_DISABLE_TCP |
                        cricket::PORTALLOCATOR_DISABLE_RELAY);

@@ -166,6 +166,21 @@ class PeerConnectionInterface : public talk_base::RefCountInterface {
   };
   typedef std::vector<IceServer> IceServers;
 
+  enum IceTransportsType {
+    kNone,
+    kRelay,
+    kNoHost,
+    kAll
+  };
+
+  struct RTCConfiguration {
+    IceTransportsType type;
+    IceServers servers;
+
+    RTCConfiguration() : type(kAll) {}
+    explicit RTCConfiguration(IceTransportsType type) : type(type) {}
+  };
+
   // Used by GetStats to decide which stats to include in the stats reports.
   // |kStatsOutputLevelStandard| includes the standard stats for Javascript API;
   // |kStatsOutputLevelDebug| includes both the standard stats and additional
@@ -412,19 +427,34 @@ class PeerConnectionFactoryInterface : public talk_base::RefCountInterface {
   };
 
   virtual void SetOptions(const Options& options) = 0;
+
   virtual talk_base::scoped_refptr<PeerConnectionInterface>
-     CreatePeerConnection(
-         const PeerConnectionInterface::IceServers& configuration,
-         const MediaConstraintsInterface* constraints,
-         DTLSIdentityServiceInterface* dtls_identity_service,
-         PeerConnectionObserver* observer) = 0;
-  virtual talk_base::scoped_refptr<PeerConnectionInterface>
+      CreatePeerConnection(
+          const PeerConnectionInterface::RTCConfiguration& configuration,
+          const MediaConstraintsInterface* constraints,
+          PortAllocatorFactoryInterface* allocator_factory,
+          DTLSIdentityServiceInterface* dtls_identity_service,
+          PeerConnectionObserver* observer) = 0;
+
+  // TODO(mallinath) : Remove below versions after clients are updated
+  // to above method.
+  // In latest W3C WebRTC draft, PC constructor will take RTCConfiguration,
+  // and not IceServers. RTCConfiguration is made up of ice servers and
+  // ice transport type.
+  // http://dev.w3.org/2011/webrtc/editor/webrtc.html
+  inline talk_base::scoped_refptr<PeerConnectionInterface>
       CreatePeerConnection(
           const PeerConnectionInterface::IceServers& configuration,
           const MediaConstraintsInterface* constraints,
           PortAllocatorFactoryInterface* allocator_factory,
           DTLSIdentityServiceInterface* dtls_identity_service,
-          PeerConnectionObserver* observer) = 0;
+          PeerConnectionObserver* observer) {
+      PeerConnectionInterface::RTCConfiguration rtc_config;
+      rtc_config.servers = configuration;
+      return CreatePeerConnection(rtc_config, constraints, allocator_factory,
+                                  dtls_identity_service, observer);
+  }
+
   virtual talk_base::scoped_refptr<MediaStreamInterface>
       CreateLocalMediaStream(const std::string& label) = 0;
 

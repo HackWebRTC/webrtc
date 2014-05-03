@@ -51,7 +51,7 @@ typedef talk_base::TypedMessageData<bool> InitMessageData;
 
 struct CreatePeerConnectionParams : public talk_base::MessageData {
   CreatePeerConnectionParams(
-      const webrtc::PeerConnectionInterface::IceServers& configuration,
+      const webrtc::PeerConnectionInterface::RTCConfiguration& configuration,
       const webrtc::MediaConstraintsInterface* constraints,
       webrtc::PortAllocatorFactoryInterface* allocator_factory,
       webrtc::DTLSIdentityServiceInterface* dtls_identity_service,
@@ -63,25 +63,10 @@ struct CreatePeerConnectionParams : public talk_base::MessageData {
         observer(observer) {
   }
   scoped_refptr<webrtc::PeerConnectionInterface> peerconnection;
-  const webrtc::PeerConnectionInterface::IceServers& configuration;
+  const webrtc::PeerConnectionInterface::RTCConfiguration& configuration;
   const webrtc::MediaConstraintsInterface* constraints;
   scoped_refptr<webrtc::PortAllocatorFactoryInterface> allocator_factory;
   webrtc::DTLSIdentityServiceInterface* dtls_identity_service;
-  webrtc::PeerConnectionObserver* observer;
-};
-
-struct CreatePeerConnectionParamsDeprecated : public talk_base::MessageData {
-  CreatePeerConnectionParamsDeprecated(
-      const std::string& configuration,
-      webrtc::PortAllocatorFactoryInterface* allocator_factory,
-        webrtc::PeerConnectionObserver* observer)
-      : configuration(configuration),
-        allocator_factory(allocator_factory),
-        observer(observer) {
-  }
-  scoped_refptr<webrtc::PeerConnectionInterface> peerconnection;
-  const std::string& configuration;
-  scoped_refptr<webrtc::PortAllocatorFactoryInterface> allocator_factory;
   webrtc::PeerConnectionObserver* observer;
 };
 
@@ -295,7 +280,7 @@ bool PeerConnectionFactory::StartAecDump_s(talk_base::PlatformFile file) {
 
 scoped_refptr<PeerConnectionInterface>
 PeerConnectionFactory::CreatePeerConnection(
-    const PeerConnectionInterface::IceServers& configuration,
+    const PeerConnectionInterface::RTCConfiguration& configuration,
     const MediaConstraintsInterface* constraints,
     PortAllocatorFactoryInterface* allocator_factory,
     DTLSIdentityServiceInterface* dtls_identity_service,
@@ -303,23 +288,14 @@ PeerConnectionFactory::CreatePeerConnection(
   CreatePeerConnectionParams params(configuration, constraints,
                                     allocator_factory, dtls_identity_service,
                                     observer);
-  signaling_thread_->Send(this, MSG_CREATE_PEERCONNECTION, &params);
+  signaling_thread_->Send(
+      this, MSG_CREATE_PEERCONNECTION, &params);
   return params.peerconnection;
-}
-
-scoped_refptr<PeerConnectionInterface>
-PeerConnectionFactory::CreatePeerConnection(
-    const PeerConnectionInterface::IceServers& configuration,
-    const MediaConstraintsInterface* constraints,
-    DTLSIdentityServiceInterface* dtls_identity_service,
-    PeerConnectionObserver* observer) {
-  return CreatePeerConnection(
-      configuration, constraints, NULL, dtls_identity_service, observer);
 }
 
 talk_base::scoped_refptr<PeerConnectionInterface>
 PeerConnectionFactory::CreatePeerConnection_s(
-    const PeerConnectionInterface::IceServers& configuration,
+    const PeerConnectionInterface::RTCConfiguration& configuration,
     const MediaConstraintsInterface* constraints,
     PortAllocatorFactoryInterface* allocator_factory,
     DTLSIdentityServiceInterface* dtls_identity_service,

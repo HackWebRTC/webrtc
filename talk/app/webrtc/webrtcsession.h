@@ -55,7 +55,9 @@ class VoiceChannel;
 }  // namespace cricket
 
 namespace webrtc {
+
 class IceRestartAnswerLatch;
+class JsepIceCandidate;
 class MediaStreamSignaling;
 class WebRtcSessionDescriptionFactory;
 
@@ -112,7 +114,8 @@ class WebRtcSession : public cricket::BaseSession,
 
   bool Initialize(const PeerConnectionFactoryInterface::Options& options,
                   const MediaConstraintsInterface* constraints,
-                  DTLSIdentityServiceInterface* dtls_identity_service);
+                  DTLSIdentityServiceInterface* dtls_identity_service,
+                  PeerConnectionInterface::IceTransportsType ice_transport);
   // Deletes the voice, video and data channel and changes the session state
   // to STATE_RECEIVEDTERMINATE.
   void Terminate();
@@ -152,6 +155,9 @@ class WebRtcSession : public cricket::BaseSession,
   bool SetRemoteDescription(SessionDescriptionInterface* desc,
                             std::string* err_desc);
   bool ProcessIceMessage(const IceCandidateInterface* ice_candidate);
+
+  bool UpdateIce(PeerConnectionInterface::IceTransportsType type);
+
   const SessionDescriptionInterface* local_description() const {
     return local_desc_.get();
   }

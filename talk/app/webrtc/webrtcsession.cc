@@ -41,6 +41,7 @@
 #include "talk/base/helpers.h"
 #include "talk/base/logging.h"
 #include "talk/base/stringencode.h"
+#include "talk/base/stringutils.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/session/media/channel.h"
@@ -485,8 +486,9 @@ WebRtcSession::~WebRtcSession() {
 
 bool WebRtcSession::Initialize(
     const PeerConnectionFactoryInterface::Options& options,
-    const MediaConstraintsInterface* constraints,
-    DTLSIdentityServiceInterface* dtls_identity_service) {
+    const MediaConstraintsInterface*  constraints,
+    DTLSIdentityServiceInterface* dtls_identity_service,
+    PeerConnectionInterface::IceTransportsType ice_transport) {
   // TODO(perkj): Take |constraints| into consideration. Return false if not all
   // mandatory constraints can be fulfilled. Note that |constraints|
   // can be null.
@@ -921,6 +923,10 @@ bool WebRtcSession::ProcessIceMessage(const IceCandidateInterface* candidate) {
   }
 
   return UseCandidate(candidate);
+}
+
+bool WebRtcSession::UpdateIce(PeerConnectionInterface::IceTransportsType type) {
+  return false;
 }
 
 bool WebRtcSession::GetTrackIdBySsrc(uint32 ssrc, std::string* id) {
