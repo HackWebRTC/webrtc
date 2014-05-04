@@ -96,6 +96,17 @@ typedef unsigned __int64    uint64_t;
 #define OVERRIDE
 #endif
 
+// Annotate a variable indicating it's ok if the variable is not used.
+// (Typically used to silence a compiler warning when the assignment
+// is important for some other reason.)
+// Use like:
+//   int x ALLOW_UNUSED = ...;
+#if defined(__GNUC__)
+#define ALLOW_UNUSED __attribute__((unused))
+#else
+#define ALLOW_UNUSED
+#endif
+
 // Annotate a function indicating the caller must examine the return value.
 // Use like:
 //   int foo() WARN_UNUSED_RESULT;
