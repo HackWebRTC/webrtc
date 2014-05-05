@@ -10,107 +10,35 @@
 
 #include "webrtc/modules/audio_processing/level_estimator_impl.h"
 
-#include <assert.h>
-#include <math.h>
-#include <string.h>
-
 #include "webrtc/modules/audio_processing/audio_buffer.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 namespace webrtc {
-namespace {
-
-const float kMaxSquaredLevel = 32768.0 * 32768.0;
-
-float SumSquare(const int16_t* data, int length) {
-  float sum_square = 0.f;
-  for (int i = 0; i < length; ++i) {
-    sum_square += data[i] * data[i];
-  }
-  return sum_square;
-}
-
-class Level {
- public:
-  static const int kMinLevel = 127;
-
-  Level()
-    : sum_square_(0.0),
-      sample_count_(0) {}
-  ~Level() {}
-
-  void Init() {
-    sum_square_ = 0.0;
-    sample_count_ = 0;
-  }
-
-  void Process(const int16_t* data, int length) {
-    assert(data != NULL);
-    assert(length > 0);
-    sum_square_ += SumSquare(data, length);
-    sample_count_ += length;
-  }
-
-  void ProcessMuted(int length) {
-    assert(length > 0);
-    sample_count_ += length;
-  }
-
-  int RMS() {
-    if (sample_count_ == 0 || sum_square_ == 0.0) {
-      Init();
-      return kMinLevel;
-    }
-
-    // Normalize by the max level.
-    float rms = sum_square_ / (sample_count_ * kMaxSquaredLevel);
-    // 20log_10(x^0.5) = 10log_10(x)
-    rms = 10 * log10(rms);
-    if (rms > 0)
-      rms = 0;
-    else if (rms < -kMinLevel)
-      rms = -kMinLevel;
-
-    rms = -rms;
-    Init();
-    return static_cast<int>(rms + 0.5);
-  }
-
- private:
-  float sum_square_;
-  int sample_count_;
-};
-
-}  // namespace
 
 LevelEstimatorImpl::LevelEstimatorImpl(const AudioProcessing* apm,
                                        CriticalSectionWrapper* crit)
     : ProcessingComponent(),
-      apm_(apm),
       crit_(crit) {}
 
 LevelEstimatorImpl::~LevelEstimatorImpl() {}
 
 int LevelEstimatorImpl::ProcessStream(AudioBuffer* audio) {
   if (!is_component_enabled()) {
-    return apm_->kNoError;
+    return AudioProcessing::kNoError;
   }
 
-  Level* level = static_cast<Level*>(handle(0));
+  RMSLevel* rms_level = static_cast<RMSLevel*>(handle(0));
   if (audio->is_muted()) {
-    level->ProcessMuted(audio->samples_per_channel());
-    return apm_->kNoError;
+    rms_level->ProcessMuted(audio->samples_per_channel() *
+                            audio->num_channels());
+  } else {
+    for (int i = 0; i < audio->num_channels(); ++i) {
+      rms_level->Process(audio->data(i), audio->samples_per_channel());
+    }
   }
 
-  const int16_t* mixed_data = audio->data(0);
-  if (audio->num_channels() > 1) {
-    audio->CopyAndMix(1);
-    mixed_data = audio->mixed_data(0);
-  }
-
-  level->Process(mixed_data, audio->samples_per_channel());
-
-  return apm_->kNoError;
+  return AudioProcessing::kNoError;
 }
 
 int LevelEstimatorImpl::Enable(bool enable) {
@@ -124,42 +52,38 @@ bool LevelEstimatorImpl::is_enabled() const {
 
 int LevelEstimatorImpl::RMS() {
   if (!is_component_enabled()) {
-    return apm_->kNotEnabledError;
+    return AudioProcessing::kNotEnabledError;
   }
 
-  Level* level = static_cast<Level*>(handle(0));
-  return level->RMS();
+  RMSLevel* rms_level = static_cast<RMSLevel*>(handle(0));
+  return rms_level->RMS();
 }
 
+// The ProcessingComponent implementation is pretty weird in this class since
+// we have only a single instance of the trivial underlying component.
 void* LevelEstimatorImpl::CreateHandle() const {
-  return new Level;
+  return new RMSLevel;
 }
 
 void LevelEstimatorImpl::DestroyHandle(void* handle) const {
-  assert(handle != NULL);
-  Level* level = static_cast<Level*>(handle);
-  delete level;
+  delete static_cast<RMSLevel*>(handle);
 }
 
 int LevelEstimatorImpl::InitializeHandle(void* handle) const {
-  assert(handle != NULL);
-  Level* level = static_cast<Level*>(handle);
-  level->Init();
-
-  return apm_->kNoError;
+  static_cast<RMSLevel*>(handle)->Reset();
+  return AudioProcessing::kNoError;
 }
 
 int LevelEstimatorImpl::ConfigureHandle(void* /*handle*/) const {
-  return apm_->kNoError;
+  return AudioProcessing::kNoError;
 }
 
 int LevelEstimatorImpl::num_handles_required() const {
   return 1;
 }
 
-int LevelEstimatorImpl::GetHandleError(void* handle) const {
-  // The component has no detailed errors.
-  assert(handle != NULL);
-  return apm_->kUnspecifiedError;
+int LevelEstimatorImpl::GetHandleError(void* /*handle*/) const {
+  return AudioProcessing::kUnspecifiedError;
 }
+
 }  // namespace webrtc

@@ -622,8 +622,7 @@ class LevelEstimator {
   // frames since the last call to RMS(). The returned value is positive but
   // should be interpreted as negative. It is constrained to [0, 127].
   //
-  // The computation follows:
-  // http://tools.ietf.org/html/draft-ietf-avtext-client-to-mixer-audio-level-05
+  // The computation follows: https://tools.ietf.org/html/rfc6465
   // with the intent that it can provide the RTP audio level indication.
   //
   // Frames passed to ProcessStream() with an |_energy| of zero are considered

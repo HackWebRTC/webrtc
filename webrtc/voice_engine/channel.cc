@@ -106,7 +106,7 @@ Channel::SendData(FrameType frameType,
         // Store current audio level in the RTP/RTCP module.
         // The level will be used in combination with voice-activity state
         // (frameType) to add an RTP header extension
-        _rtpRtcpModule->SetAudioLevel(rtp_audioproc_->level_estimator()->RMS());
+        _rtpRtcpModule->SetAudioLevel(rms_level_.RMS());
     }
 
     // Push data from ACM to RTP/RTCP-module to deliver audio frame for
@@ -3220,20 +3220,7 @@ Channel::GetRemoteCSRCs(unsigned int arrCSRC[15])
 }
 
 int Channel::SetSendAudioLevelIndicationStatus(bool enable, unsigned char id) {
-  if (rtp_audioproc_.get() == NULL) {
-    rtp_audioproc_.reset(AudioProcessing::Create(VoEModuleId(_instanceId,
-                                                             _channelId)));
-  }
-
-  if (rtp_audioproc_->level_estimator()->Enable(enable) !=
-      AudioProcessing::kNoError) {
-    _engineStatisticsPtr->SetLastError(VE_APM_ERROR, kTraceError,
-        "Failed to enable AudioProcessing::level_estimator()");
-    return -1;
-  }
-
   _includeAudioLevelIndication = enable;
-
   return SetSendRtpHeaderExtension(enable, kRtpExtensionAudioLevel, id);
 }
 
@@ -3936,12 +3923,8 @@ Channel::PrepareEncodeAndSend(int mixingFrequency)
     InsertInbandDtmfTone();
 
     if (_includeAudioLevelIndication) {
-      // Performs level analysis only; does not affect the signal.
-      int err = rtp_audioproc_->ProcessStream(&_audioFrame);
-      if (err) {
-        LOG(LS_ERROR) << "ProcessStream() error: " << err;
-        assert(false);
-      }
+      int length = _audioFrame.samples_per_channel_ * _audioFrame.num_channels_;
+      rms_level_.Process(_audioFrame.data_, length);
     }
 
     return 0;

@@ -8,13 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_CHANNEL_H
-#define WEBRTC_VOICE_ENGINE_CHANNEL_H
+#ifndef WEBRTC_VOICE_ENGINE_CHANNEL_H_
+#define WEBRTC_VOICE_ENGINE_CHANNEL_H_
 
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/modules/audio_conference_mixer/interface/audio_conference_mixer_defines.h"
+#include "webrtc/modules/audio_processing/rms_level.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/utility/interface/file_player.h"
@@ -556,7 +557,7 @@ private:
     VoiceEngineObserver* _voiceEngineObserverPtr; // owned by base
     CriticalSectionWrapper* _callbackCritSectPtr; // owned by base
     Transport* _transportPtr; // WebRtc socket or external transport
-    scoped_ptr<AudioProcessing> rtp_audioproc_;
+    RMSLevel rms_level_;
     scoped_ptr<AudioProcessing> rx_audioproc_; // far end AudioProcessing
     VoERxVadCallback* _rxVadObserverPtr;
     int32_t _oldVadDecision;
@@ -606,4 +607,4 @@ private:
 }  // namespace voe
 }  // namespace webrtc
 
-#endif  // WEBRTC_VOICE_ENGINE_CHANNEL_H
+#endif  // WEBRTC_VOICE_ENGINE_CHANNEL_H_

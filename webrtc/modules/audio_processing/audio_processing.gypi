@@ -70,6 +70,8 @@
         'noise_suppression_impl.h',
         'processing_component.cc',
         'processing_component.h',
+        'rms_level.cc',
+        'rms_level.h',
         'typing_detection.cc',
         'typing_detection.h',
         'utility/delay_estimator.c',
