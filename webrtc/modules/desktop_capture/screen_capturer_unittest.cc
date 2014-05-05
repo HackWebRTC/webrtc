@@ -106,7 +106,7 @@ TEST_F(ScreenCapturerTest, Capture) {
   delete frame;
 }
 
-#if defined(OS_WIN)
+#if defined(WEBRTC_WIN)
 
 TEST_F(ScreenCapturerTest, UseSharedBuffers) {
   DesktopFrame* frame = NULL;
@@ -129,6 +129,20 @@ TEST_F(ScreenCapturerTest, UseSharedBuffers) {
   delete frame;
 }
 
-#endif  // defined(OS_WIN)
+TEST_F(ScreenCapturerTest, UseMagnifier) {
+  DesktopCaptureOptions options(DesktopCaptureOptions::CreateDefault());
+  options.set_allow_use_magnification_api(true);
+  capturer_.reset(ScreenCapturer::Create(options));
+
+  DesktopFrame* frame = NULL;
+  EXPECT_CALL(callback_, OnCaptureCompleted(_)).WillOnce(SaveArg<0>(&frame));
+
+  capturer_->Start(&callback_);
+  capturer_->Capture(DesktopRegion());
+  ASSERT_TRUE(frame);
+  delete frame;
+}
+
+#endif  // defined(WEBRTC_WIN)
 
 }  // namespace webrtc
