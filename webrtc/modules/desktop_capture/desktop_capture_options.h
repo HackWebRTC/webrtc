@@ -66,15 +66,6 @@ class DesktopCaptureOptions {
     disable_effects_ = disable_effects;
   }
 
-#if defined(WEBRTC_WIN)
-  bool allow_use_magnification_api() const {
-    return allow_use_magnification_api_;
-  }
-  void set_allow_use_magnification_api(bool allow) {
-    allow_use_magnification_api_ = allow;
-  }
-#endif
-
  private:
 #if defined(USE_X11)
   scoped_refptr<SharedXDisplay> x_display_;
@@ -82,10 +73,6 @@ class DesktopCaptureOptions {
 
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
   scoped_refptr<DesktopConfigurationMonitor> configuration_monitor_;
-#endif
-
-#if defined(WEBRTC_WIN)
-  bool allow_use_magnification_api_;
 #endif
   bool use_update_notifications_;
   bool disable_effects_;

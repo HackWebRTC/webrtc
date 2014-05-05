@@ -19,10 +19,6 @@ DesktopCaptureOptions::DesktopCaptureOptions()
   // XDamage is often broken, so don't use it by default.
   use_update_notifications_ = false;
 #endif
-
-#if defined(WEBRTC_WIN)
-  allow_use_magnification_api_ = false;
-#endif
 }
 
 DesktopCaptureOptions::~DesktopCaptureOptions() {}
