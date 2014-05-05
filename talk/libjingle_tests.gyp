@@ -357,6 +357,7 @@
         'p2p/client/connectivitychecker_unittest.cc',
         'p2p/client/fakeportallocator.h',
         'p2p/client/portallocator_unittest.cc',
+        'session/media/bundlefilter_unittest.cc',
         'session/media/channel_unittest.cc',
         'session/media/channelmanager_unittest.cc',
         'session/media/currentspeakermonitor_unittest.cc',
@@ -366,7 +367,6 @@
         'session/media/mediasessionclient_unittest.cc',
         'session/media/rtcpmuxfilter_unittest.cc',
         'session/media/srtpfilter_unittest.cc',
-        'session/media/ssrcmuxfilter_unittest.cc',
       ],
       'conditions': [
         ['OS=="win"', {

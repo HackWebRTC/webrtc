@@ -38,7 +38,6 @@
 #include "talk/p2p/base/transportchannel.h"
 #include "talk/session/media/channelmanager.h"
 #include "talk/session/media/mediamessages.h"
-#include "talk/session/media/rtcpmuxfilter.h"
 #include "talk/session/media/typingmonitor.h"
 
 
@@ -559,15 +558,9 @@ bool BaseChannel::WantsPacket(bool rtcp, talk_base::Buffer* packet) {
                   << packet->length();
     return false;
   }
-  // If this channel is suppose to handle RTP data, that is determined by
-  // checking against ssrc filter. This is necessary to do it here to avoid
-  // double decryption.
-  if (ssrc_filter_.IsActive() &&
-      !ssrc_filter_.DemuxPacket(packet->data(), packet->length(), rtcp)) {
-    return false;
-  }
 
-  return true;
+  // Bundle filter handles both rtp and rtcp packets.
+  return bundle_filter_.DemuxPacket(packet->data(), packet->length(), rtcp);
 }
 
 void BaseChannel::HandlePacket(bool rtcp, talk_base::Buffer* packet,
@@ -996,12 +989,12 @@ bool BaseChannel::AddRecvStream_w(const StreamParams& sp) {
   if (!media_channel()->AddRecvStream(sp))
     return false;
 
-  return ssrc_filter_.AddStream(sp);
+  return bundle_filter_.AddStream(sp);
 }
 
 bool BaseChannel::RemoveRecvStream_w(uint32 ssrc) {
   ASSERT(worker_thread() == talk_base::Thread::Current());
-  ssrc_filter_.RemoveStream(ssrc);
+  bundle_filter_.RemoveStream(ssrc);
   return media_channel()->RemoveRecvStream(ssrc);
 }
 
@@ -1479,6 +1472,10 @@ bool VoiceChannel::SetLocalContent_w(const MediaContentDescription* content,
 
   // If everything worked, see if we can start receiving.
   if (ret) {
+    std::vector<AudioCodec>::const_iterator it = audio->codecs().begin();
+    for (; it != audio->codecs().end(); ++it) {
+      bundle_filter()->AddPayloadType(it->id);
+    }
     ChangeState();
   } else {
     LOG(LS_WARNING) << "Failed to set local voice description";
@@ -1844,6 +1841,10 @@ bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
 
   // If everything worked, see if we can start receiving.
   if (ret) {
+    std::vector<VideoCodec>::const_iterator it = video->codecs().begin();
+    for (; it != video->codecs().end(); ++it) {
+      bundle_filter()->AddPayloadType(it->id);
+    }
     ChangeState();
   } else {
     LOG(LS_WARNING) << "Failed to set local video description";
@@ -2249,7 +2250,6 @@ bool DataChannel::SetLocalContent_w(const MediaContentDescription* content,
     }
   } else {
     ret = SetBaseLocalContent_w(content, action, error_desc);
-
     if (action != CA_UPDATE || data->has_codecs()) {
       if (!media_channel()->SetRecvCodecs(data->codecs())) {
         SafeSetError("Failed to set data receive codecs.", error_desc);
@@ -2260,6 +2260,10 @@ bool DataChannel::SetLocalContent_w(const MediaContentDescription* content,
 
   // If everything worked, see if we can start receiving.
   if (ret) {
+    std::vector<DataCodec>::const_iterator it = data->codecs().begin();
+    for (; it != data->codecs().end(); ++it) {
+      bundle_filter()->AddPayloadType(it->id);
+    }
     ChangeState();
   } else {
     LOG(LS_WARNING) << "Failed to set local data description";

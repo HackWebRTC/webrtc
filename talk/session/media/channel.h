@@ -44,11 +44,11 @@
 #include "talk/p2p/base/session.h"
 #include "talk/p2p/client/socketmonitor.h"
 #include "talk/session/media/audiomonitor.h"
+#include "talk/session/media/bundlefilter.h"
 #include "talk/session/media/mediamonitor.h"
 #include "talk/session/media/mediasession.h"
 #include "talk/session/media/rtcpmuxfilter.h"
 #include "talk/session/media/srtpfilter.h"
-#include "talk/session/media/ssrcmuxfilter.h"
 
 namespace cricket {
 
@@ -213,7 +213,7 @@ class BaseChannel
     }
   }
 
-  SsrcMuxFilter* ssrc_filter() { return &ssrc_filter_; }
+  BundleFilter* bundle_filter() { return &bundle_filter_; }
 
   const std::vector<StreamParams>& local_streams() const {
     return local_streams_;
@@ -372,7 +372,7 @@ class BaseChannel
   TransportChannel* rtcp_transport_channel_;
   SrtpFilter srtp_filter_;
   RtcpMuxFilter rtcp_mux_filter_;
-  SsrcMuxFilter ssrc_filter_;
+  BundleFilter bundle_filter_;
   talk_base::scoped_ptr<SocketMonitor> socket_monitor_;
   bool enabled_;
   bool writable_;

@@ -25,9 +25,10 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_SESSION_MEDIA_SSRCMUXFILTER_H_
-#define TALK_SESSION_MEDIA_SSRCMUXFILTER_H_
+#ifndef TALK_SESSION_MEDIA_BUNDLEFILTER_H_
+#define TALK_SESSION_MEDIA_BUNDLEFILTER_H_
 
+#include <set>
 #include <vector>
 
 #include "talk/base/basictypes.h"
@@ -35,33 +36,45 @@
 
 namespace cricket {
 
-// This class maintains list of recv SSRC's destined for cricket::BaseChannel.
 // In case of single RTP session and single transport channel, all session
 // ( or media) channels share a common transport channel. Hence they all get
 // SignalReadPacket when packet received on transport channel. This requires
 // cricket::BaseChannel to know all the valid sources, else media channel
 // will decode invalid packets.
-class SsrcMuxFilter {
+//
+// This class determines whether a packet is destined for cricket::BaseChannel.
+// For rtp packets, this is decided based on the payload type. For rtcp packets,
+// this is decided based on the sender ssrc values.
+class BundleFilter {
  public:
-  SsrcMuxFilter();
-  ~SsrcMuxFilter();
+  BundleFilter();
+  ~BundleFilter();
 
-  // Whether the rtp mux is active for a sdp session.
-  // Returns true if the filter contains a stream.
-  bool IsActive() const;
   // Determines packet belongs to valid cricket::BaseChannel.
   bool DemuxPacket(const char* data, size_t len, bool rtcp);
+
+  // Adds the supported payload type.
+  void AddPayloadType(int payload_type);
+
   // Adding a valid source to the filter.
   bool AddStream(const StreamParams& stream);
+
   // Removes source from the filter.
   bool RemoveStream(uint32 ssrc);
-  // Utility method added for unitest.
+
+  // Utility methods added for unitest.
+  // True if |streams_| is not empty.
+  bool HasStreams() const;
   bool FindStream(uint32 ssrc) const;
+  bool FindPayloadType(int pl_type) const;
+  void ClearAllPayloadTypes();
+
 
  private:
+  std::set<int> payload_types_;
   std::vector<StreamParams> streams_;
 };
 
 }  // namespace cricket
 
-#endif  // TALK_SESSION_MEDIA_SSRCMUXFILTER_H_
+#endif  // TALK_SESSION_MEDIA_BUNDLEFILTER_H_

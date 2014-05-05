@@ -25,34 +25,34 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #include "talk/base/gunit.h"
-#include "talk/session/media/ssrcmuxfilter.h"
+#include "talk/session/media/bundlefilter.h"
+
+using cricket::StreamParams;
 
 static const int kSsrc1 = 0x1111;
 static const int kSsrc2 = 0x2222;
 static const int kSsrc3 = 0x3333;
+static const int kPayloadType1 = 0x11;
+static const int kPayloadType2 = 0x22;
+static const int kPayloadType3 = 0x33;
 
-using cricket::StreamParams;
-
-// SSRC = 0x1111
-static const unsigned char kRtpPacketSsrc1[] = {
-    0x80, 0x80, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x11, 0x11,
+// SSRC = 0x1111, Payload type = 0x11
+static const unsigned char kRtpPacketPt1Ssrc1[] = {
+    0x80, kPayloadType1, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x11,
+    0x11,
 };
 
-// SSRC = 0x2222
-static const unsigned char kRtpPacketSsrc2[] = {
-    0x80, 0x80, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x22, 0x22,
+// SSRC = 0x2222, Payload type = 0x22
+static const unsigned char kRtpPacketPt2Ssrc2[] = {
+    0x80, 0x80 + kPayloadType2, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x22, 0x22,
 };
 
-// SSRC = 0
-static const unsigned char kRtpPacketInvalidSsrc[] = {
-    0x80, 0x80, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-};
-
-// invalid size
-static const unsigned char kRtpPacketTooSmall[] = {
-    0x80, 0x80, 0x00, 0x00,
+// SSRC = 0x2222, Payload type = 0x33
+static const unsigned char kRtpPacketPt3Ssrc2[] = {
+    0x80, kPayloadType3, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x22,
+    0x22,
 };
 
 // PT = 200 = SR, len = 28, SSRC of sender = 0x0001
@@ -105,80 +105,92 @@ static const unsigned char kRtcpPacketNonCompoundRtcpPliFeedback[] = {
     0x81, 0xCE, 0x00, 0x0C, 0x00, 0x00, 0x11, 0x11, 0x00, 0x00, 0x11, 0x11,
 };
 
-TEST(SsrcMuxFilterTest, AddRemoveStreamTest) {
-  cricket::SsrcMuxFilter ssrc_filter;
-  EXPECT_FALSE(ssrc_filter.IsActive());
-  EXPECT_TRUE(ssrc_filter.AddStream(StreamParams::CreateLegacy(kSsrc1)));
+TEST(BundleFilterTest, AddRemoveStreamTest) {
+  cricket::BundleFilter bundle_filter;
+  EXPECT_FALSE(bundle_filter.HasStreams());
+  EXPECT_TRUE(bundle_filter.AddStream(StreamParams::CreateLegacy(kSsrc1)));
   StreamParams stream2;
   stream2.ssrcs.push_back(kSsrc2);
   stream2.ssrcs.push_back(kSsrc3);
-  EXPECT_TRUE(ssrc_filter.AddStream(stream2));
+  EXPECT_TRUE(bundle_filter.AddStream(stream2));
 
-  EXPECT_TRUE(ssrc_filter.IsActive());
-  EXPECT_TRUE(ssrc_filter.FindStream(kSsrc1));
-  EXPECT_TRUE(ssrc_filter.FindStream(kSsrc2));
-  EXPECT_TRUE(ssrc_filter.FindStream(kSsrc3));
-  EXPECT_TRUE(ssrc_filter.RemoveStream(kSsrc1));
-  EXPECT_FALSE(ssrc_filter.FindStream(kSsrc1));
-  EXPECT_TRUE(ssrc_filter.RemoveStream(kSsrc3));
-  EXPECT_FALSE(ssrc_filter.RemoveStream(kSsrc2));  // Already removed.
-  EXPECT_FALSE(ssrc_filter.IsActive());
+  EXPECT_TRUE(bundle_filter.HasStreams());
+  EXPECT_TRUE(bundle_filter.FindStream(kSsrc1));
+  EXPECT_TRUE(bundle_filter.FindStream(kSsrc2));
+  EXPECT_TRUE(bundle_filter.FindStream(kSsrc3));
+  EXPECT_TRUE(bundle_filter.RemoveStream(kSsrc1));
+  EXPECT_FALSE(bundle_filter.FindStream(kSsrc1));
+  EXPECT_TRUE(bundle_filter.RemoveStream(kSsrc3));
+  EXPECT_FALSE(bundle_filter.RemoveStream(kSsrc2));  // Already removed.
+  EXPECT_FALSE(bundle_filter.HasStreams());
 }
 
-TEST(SsrcMuxFilterTest, RtpPacketTest) {
-  cricket::SsrcMuxFilter ssrc_filter;
-  EXPECT_TRUE(ssrc_filter.AddStream(StreamParams::CreateLegacy(kSsrc1)));
-  EXPECT_TRUE(ssrc_filter.DemuxPacket(
-      reinterpret_cast<const char*>(kRtpPacketSsrc1),
-      sizeof(kRtpPacketSsrc1), false));
-  EXPECT_TRUE(ssrc_filter.AddStream(StreamParams::CreateLegacy(kSsrc2)));
-  EXPECT_TRUE(ssrc_filter.DemuxPacket(
-      reinterpret_cast<const char*>(kRtpPacketSsrc2),
-      sizeof(kRtpPacketSsrc2), false));
-  EXPECT_TRUE(ssrc_filter.RemoveStream(kSsrc2));
-  EXPECT_FALSE(ssrc_filter.DemuxPacket(
-      reinterpret_cast<const char*>(kRtpPacketSsrc2),
-      sizeof(kRtpPacketSsrc2), false));
-  EXPECT_FALSE(ssrc_filter.DemuxPacket(
-      reinterpret_cast<const char*>(kRtpPacketInvalidSsrc),
-      sizeof(kRtpPacketInvalidSsrc), false));
-  EXPECT_FALSE(ssrc_filter.DemuxPacket(
-      reinterpret_cast<const char*>(kRtpPacketTooSmall),
-      sizeof(kRtpPacketTooSmall), false));
+TEST(BundleFilterTest, RtpPacketTest) {
+  cricket::BundleFilter bundle_filter;
+  bundle_filter.AddPayloadType(kPayloadType1);
+  EXPECT_TRUE(bundle_filter.DemuxPacket(
+      reinterpret_cast<const char*>(kRtpPacketPt1Ssrc1),
+      sizeof(kRtpPacketPt1Ssrc1), false));
+  bundle_filter.AddPayloadType(kPayloadType2);
+  EXPECT_TRUE(bundle_filter.DemuxPacket(
+      reinterpret_cast<const char*>(kRtpPacketPt2Ssrc2),
+      sizeof(kRtpPacketPt2Ssrc2), false));
+
+  // Payload type 0x33 is not added.
+  EXPECT_FALSE(bundle_filter.DemuxPacket(
+      reinterpret_cast<const char*>(kRtpPacketPt3Ssrc2),
+      sizeof(kRtpPacketPt3Ssrc2), false));
+  // Size is too small.
+  EXPECT_FALSE(bundle_filter.DemuxPacket(
+      reinterpret_cast<const char*>(kRtpPacketPt1Ssrc1), 11, false));
+
+  bundle_filter.ClearAllPayloadTypes();
+  EXPECT_FALSE(bundle_filter.DemuxPacket(
+      reinterpret_cast<const char*>(kRtpPacketPt1Ssrc1),
+      sizeof(kRtpPacketPt1Ssrc1), false));
+  EXPECT_FALSE(bundle_filter.DemuxPacket(
+      reinterpret_cast<const char*>(kRtpPacketPt2Ssrc2),
+      sizeof(kRtpPacketPt2Ssrc2), false));
 }
 
-TEST(SsrcMuxFilterTest, RtcpPacketTest) {
-  cricket::SsrcMuxFilter ssrc_filter;
-  EXPECT_TRUE(ssrc_filter.AddStream(StreamParams::CreateLegacy(kSsrc1)));
-  EXPECT_TRUE(ssrc_filter.DemuxPacket(
+TEST(BundleFilterTest, RtcpPacketTest) {
+  cricket::BundleFilter bundle_filter;
+  EXPECT_TRUE(bundle_filter.AddStream(StreamParams::CreateLegacy(kSsrc1)));
+  EXPECT_TRUE(bundle_filter.DemuxPacket(
       reinterpret_cast<const char*>(kRtcpPacketCompoundSrSdesSsrc1),
       sizeof(kRtcpPacketCompoundSrSdesSsrc1), true));
-  EXPECT_TRUE(ssrc_filter.AddStream(StreamParams::CreateLegacy(kSsrc2)));
-  EXPECT_TRUE(ssrc_filter.DemuxPacket(
+  EXPECT_TRUE(bundle_filter.AddStream(StreamParams::CreateLegacy(kSsrc2)));
+  EXPECT_TRUE(bundle_filter.DemuxPacket(
       reinterpret_cast<const char*>(kRtcpPacketSrSsrc2),
       sizeof(kRtcpPacketSrSsrc2), true));
-  EXPECT_TRUE(ssrc_filter.DemuxPacket(
+  EXPECT_TRUE(bundle_filter.DemuxPacket(
       reinterpret_cast<const char*>(kRtcpPacketSdesSsrc2),
       sizeof(kRtcpPacketSdesSsrc2), true));
-  EXPECT_TRUE(ssrc_filter.RemoveStream(kSsrc2));
+  EXPECT_TRUE(bundle_filter.RemoveStream(kSsrc2));
   // RTCP Packets other than SR and RR are demuxed regardless of SSRC.
-  EXPECT_TRUE(ssrc_filter.DemuxPacket(
+  EXPECT_TRUE(bundle_filter.DemuxPacket(
       reinterpret_cast<const char*>(kRtcpPacketSdesSsrc2),
       sizeof(kRtcpPacketSdesSsrc2), true));
   // RTCP Packets with 'special' SSRC 0x01 are demuxed also
-  EXPECT_TRUE(ssrc_filter.DemuxPacket(
+  EXPECT_TRUE(bundle_filter.DemuxPacket(
       reinterpret_cast<const char*>(kRtcpPacketSrSsrc01),
       sizeof(kRtcpPacketSrSsrc01), true));
-  EXPECT_FALSE(ssrc_filter.DemuxPacket(
+  EXPECT_FALSE(bundle_filter.DemuxPacket(
       reinterpret_cast<const char*>(kRtcpPacketSrSsrc2),
       sizeof(kRtcpPacketSrSsrc2), true));
-  EXPECT_FALSE(ssrc_filter.DemuxPacket(
+  EXPECT_FALSE(bundle_filter.DemuxPacket(
       reinterpret_cast<const char*>(kRtcpPacketFixedHeaderOnly),
       sizeof(kRtcpPacketFixedHeaderOnly), true));
-  EXPECT_FALSE(ssrc_filter.DemuxPacket(
+  EXPECT_FALSE(bundle_filter.DemuxPacket(
       reinterpret_cast<const char*>(kRtcpPacketTooSmall),
       sizeof(kRtcpPacketTooSmall), true));
-  EXPECT_TRUE(ssrc_filter.DemuxPacket(
+  EXPECT_TRUE(bundle_filter.DemuxPacket(
       reinterpret_cast<const char*>(kRtcpPacketNonCompoundRtcpPliFeedback),
       sizeof(kRtcpPacketNonCompoundRtcpPliFeedback), true));
+  // If the streams_ is empty, rtcp packet passes through
+  EXPECT_TRUE(bundle_filter.RemoveStream(kSsrc1));
+  EXPECT_FALSE(bundle_filter.HasStreams());
+  EXPECT_TRUE(bundle_filter.DemuxPacket(
+      reinterpret_cast<const char*>(kRtcpPacketSrSsrc2),
+      sizeof(kRtcpPacketSrSsrc2), true));
 }
