@@ -41,7 +41,7 @@ struct CompileAssert {
 };
 
 #define COMPILE_ASSERT(expr, msg) \
-  typedef CompileAssert<(bool(expr))> msg[bool(expr) ? 1 : -1] ALLOW_UNUSED
+  typedef CompileAssert<(bool(expr))> msg[bool(expr) ? 1 : -1]
 
 #endif  //  __cplusplus >= 201103L
 #endif  //  !defined(COMPILE_ASSERT)
