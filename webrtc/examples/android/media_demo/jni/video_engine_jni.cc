@@ -631,7 +631,8 @@ JOWW(jint, VideoEngine_setTraceFile)(JNIEnv* jni, jobject, jstring j_filename,
   return webrtc::VideoEngine::SetTraceFile(filename.c_str(), file_counter);
 }
 
-JOWW(jint, VideoEngine_setTraceFilter)(JNIEnv* jni, jobject, jint filter) {
+JOWW(jint, VideoEngine_nativeSetTraceFilter)(JNIEnv* jni, jobject,
+                                             jint filter) {
   return webrtc::VideoEngine::SetTraceFilter(filter);
 }
 

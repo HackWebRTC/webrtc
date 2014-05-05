@@ -29,7 +29,7 @@ public class VideoEngine {
     TRACE_DEBUG(0x0800),
     TRACE_INFO(0x1000),
     TRACE_TERSE_INFO(0x2000),
-    TRACE_ALL(0xfff);
+    TRACE_ALL(0xffff);
 
     public final int level;
     TraceLevel(int level) {
@@ -103,9 +103,9 @@ public class VideoEngine {
   public native int setTraceFile(String fileName,
       boolean fileCounter);
   public int setTraceFilter(TraceLevel filter) {
-    return filter.level;
+    return nativeSetTraceFilter(filter.level);
   }
-  private native int setTraceFilter(int filter);
+  private native int nativeSetTraceFilter(int filter);
   public int startRtpDump(int channel, String file,
       RtpDirections direction) {
     return startRtpDump(channel, file, direction.ordinal());
