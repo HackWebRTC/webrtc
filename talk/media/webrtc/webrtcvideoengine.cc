@@ -2728,7 +2728,6 @@ bool WebRtcVideoMediaChannel::SetRecvRtpHeaderExtensions(
   if (receive_extensions_ == extensions) {
     return true;
   }
-  receive_extensions_ = extensions;
 
   const RtpHeaderExtension* offset_extension =
       FindHeaderExtension(extensions, kRtpTimestampOffsetHeaderExtension);
@@ -2750,12 +2749,16 @@ bool WebRtcVideoMediaChannel::SetRecvRtpHeaderExtensions(
       return false;
     }
   }
+
+  receive_extensions_ = extensions;
   return true;
 }
 
 bool WebRtcVideoMediaChannel::SetSendRtpHeaderExtensions(
     const std::vector<RtpHeaderExtension>& extensions) {
-  send_extensions_ = extensions;
+  if (send_extensions_ == extensions) {
+    return true;
+  }
 
   const RtpHeaderExtension* offset_extension =
       FindHeaderExtension(extensions, kRtpTimestampOffsetHeaderExtension);
@@ -2786,6 +2789,8 @@ bool WebRtcVideoMediaChannel::SetSendRtpHeaderExtensions(
                             talk_base::Socket::OPT_RTP_SENDTIME_EXTN_ID,
                             send_time_extension->id);
   }
+
+  send_extensions_ = extensions;
   return true;
 }
 

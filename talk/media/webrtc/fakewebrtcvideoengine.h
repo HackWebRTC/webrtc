@@ -276,10 +276,10 @@ class FakeWebRtcVideoEngine
           tmmbr_(false),
           remb_contribute_(false),
           remb_bw_partition_(false),
-          rtp_offset_send_id_(0),
-          rtp_offset_receive_id_(0),
-          rtp_absolute_send_time_send_id_(0),
-          rtp_absolute_send_time_receive_id_(0),
+          rtp_offset_send_id_(-1),
+          rtp_offset_receive_id_(-1),
+          rtp_absolute_send_time_send_id_(-1),
+          rtp_absolute_send_time_receive_id_(-1),
           sender_target_delay_(0),
           receiver_target_delay_(0),
           transmission_smoothing_(false),
@@ -483,21 +483,24 @@ class FakeWebRtcVideoEngine
     WEBRTC_ASSERT_CHANNEL(channel);
     return channels_.find(channel)->second->remb_contribute_;
   }
-  int GetSendRtpTimestampOffsetExtensionId(int channel) {
+  int GetSendRtpExtensionId(int channel, const std::string& extension) {
     WEBRTC_ASSERT_CHANNEL(channel);
-    return channels_.find(channel)->second->rtp_offset_send_id_;
+    if (extension == kRtpTimestampOffsetHeaderExtension) {
+      return channels_.find(channel)->second->rtp_offset_send_id_;
+    } else if (extension == kRtpAbsoluteSenderTimeHeaderExtension) {
+      return channels_.find(channel)->second->rtp_absolute_send_time_send_id_;
+    }
+    return -1;
   }
-  int GetReceiveRtpTimestampOffsetExtensionId(int channel) {
+  int GetReceiveRtpExtensionId(int channel, const std::string& extension) {
     WEBRTC_ASSERT_CHANNEL(channel);
-    return channels_.find(channel)->second->rtp_offset_receive_id_;
-  }
-  int GetSendAbsoluteSendTimeExtensionId(int channel) {
-    WEBRTC_ASSERT_CHANNEL(channel);
-    return channels_.find(channel)->second->rtp_absolute_send_time_send_id_;
-  }
-  int GetReceiveAbsoluteSendTimeExtensionId(int channel) {
-    WEBRTC_ASSERT_CHANNEL(channel);
-    return channels_.find(channel)->second->rtp_absolute_send_time_receive_id_;
+    if (extension == kRtpTimestampOffsetHeaderExtension) {
+      return channels_.find(channel)->second->rtp_offset_receive_id_;
+    } else if (extension == kRtpAbsoluteSenderTimeHeaderExtension) {
+      return
+          channels_.find(channel)->second->rtp_absolute_send_time_receive_id_;
+    }
+    return -1;
   }
   bool GetTransmissionSmoothingStatus(int channel) {
     WEBRTC_ASSERT_CHANNEL(channel);
@@ -1046,25 +1049,25 @@ class FakeWebRtcVideoEngine
   WEBRTC_FUNC(SetSendTimestampOffsetStatus, (int channel, bool enable,
       int id)) {
     WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->rtp_offset_send_id_ = (enable) ? id : 0;
+    channels_[channel]->rtp_offset_send_id_ = (enable) ? id : -1;
     return 0;
   }
   WEBRTC_FUNC(SetReceiveTimestampOffsetStatus, (int channel, bool enable,
       int id)) {
     WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->rtp_offset_receive_id_ = (enable) ? id : 0;
+    channels_[channel]->rtp_offset_receive_id_ = (enable) ? id : -1;
     return 0;
   }
   WEBRTC_FUNC(SetSendAbsoluteSendTimeStatus, (int channel, bool enable,
       int id)) {
     WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->rtp_absolute_send_time_send_id_ = (enable) ? id : 0;
+    channels_[channel]->rtp_absolute_send_time_send_id_ = (enable) ? id : -1;
     return 0;
   }
   WEBRTC_FUNC(SetReceiveAbsoluteSendTimeStatus, (int channel, bool enable,
       int id)) {
     WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->rtp_absolute_send_time_receive_id_ = (enable) ? id : 0;
+    channels_[channel]->rtp_absolute_send_time_receive_id_ = (enable) ? id : -1;
     return 0;
   }
   WEBRTC_STUB(SetRtcpXrRrtrStatus, (int, bool));

@@ -416,6 +416,13 @@ class WebRtcVoiceMediaChannel
   bool SetHeaderExtension(ExtensionSetterFunction setter, int channel_id,
                           const RtpHeaderExtension* extension);
 
+  bool SetChannelRecvRtpHeaderExtensions(
+    int channel_id,
+    const std::vector<RtpHeaderExtension>& extensions);
+  bool SetChannelSendRtpHeaderExtensions(
+    int channel_id,
+    const std::vector<RtpHeaderExtension>& extensions);
+
   talk_base::scoped_ptr<WebRtcSoundclipStream> ringback_tone_;
   std::set<int> ringback_channels_;  // channels playing ringback
   std::vector<AudioCodec> recv_codecs_;
@@ -436,6 +443,7 @@ class WebRtcVoiceMediaChannel
   // When the default channel (voe_channel) is used for sending, it is
   // contained in send_channels_, otherwise not.
   ChannelMap send_channels_;
+  std::vector<RtpHeaderExtension> send_extensions_;
   uint32 default_receive_ssrc_;
   // Note the default channel (voe_channel()) can reside in both
   // receive_channels_ and send_channels_ in non-conference mode and in that
@@ -445,6 +453,7 @@ class WebRtcVoiceMediaChannel
   // the WebRtc thread must be synchronized with edits on the worker thread.
   // Reads on the worker thread are ok.
   //
+  std::vector<RtpHeaderExtension> receive_extensions_;
   // Do not lock this on the VoE media processor thread; potential for deadlock
   // exists.
   mutable talk_base::CriticalSection receive_channels_cs_;

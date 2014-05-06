@@ -110,6 +110,7 @@ class FakeWebRtcVoiceEngine
           video_channel(-1),
           send_ssrc(0),
           send_audio_level_ext_(-1),
+          receive_audio_level_ext_(-1),
           send_absolute_sender_time_ext_(-1),
           receive_absolute_sender_time_ext_(-1) {
       memset(&send_codec, 0, sizeof(send_codec));
@@ -138,6 +139,7 @@ class FakeWebRtcVoiceEngine
     int video_channel;
     uint32 send_ssrc;
     int send_audio_level_ext_;
+    int receive_audio_level_ext_;
     int send_absolute_sender_time_ext_;
     int receive_absolute_sender_time_ext_;
     DtmfInfo dtmf_info;
@@ -299,14 +301,23 @@ class FakeWebRtcVoiceEngine
     channels_[++last_channel_] = ch;
     return last_channel_;
   }
-  int GetSendAudioLevelId(int channel) {
-    return channels_[channel]->send_audio_level_ext_;
+  int GetSendRtpExtensionId(int channel, const std::string& extension) {
+    WEBRTC_ASSERT_CHANNEL(channel);
+    if (extension == kRtpAudioLevelHeaderExtension) {
+      return channels_[channel]->send_audio_level_ext_;
+    } else if (extension == kRtpAbsoluteSenderTimeHeaderExtension) {
+      return channels_[channel]->send_absolute_sender_time_ext_;
+    }
+    return -1;
   }
-  int GetSendAbsoluteSenderTimeId(int channel) {
-    return channels_[channel]->send_absolute_sender_time_ext_;
-  }
-  int GetReceiveAbsoluteSenderTimeId(int channel) {
-    return channels_[channel]->receive_absolute_sender_time_ext_;
+  int GetReceiveRtpExtensionId(int channel, const std::string& extension) {
+    WEBRTC_ASSERT_CHANNEL(channel);
+    if (extension == kRtpAudioLevelHeaderExtension) {
+      return channels_[channel]->receive_audio_level_ext_;
+    } else if (extension == kRtpAbsoluteSenderTimeHeaderExtension) {
+      return channels_[channel]->receive_absolute_sender_time_ext_;
+    }
+    return -1;
   }
 
   int GetNumSetSendCodecs() const { return num_set_send_codecs_; }
@@ -736,6 +747,15 @@ class FakeWebRtcVoiceEngine
     channels_[channel]->send_audio_level_ext_ = (enable) ? id : -1;
     return 0;
   }
+#ifdef USE_WEBRTC_DEV_BRANCH
+  WEBRTC_FUNC(SetReceiveAudioLevelIndicationStatus, (int channel, bool enable,
+      unsigned char id)) {
+    WEBRTC_CHECK_CHANNEL(channel);
+    WEBRTC_CHECK_HEADER_EXTENSION_ID(enable, id);
+    channels_[channel]->receive_audio_level_ext_ = (enable) ? id : -1;
+   return 0;
+  }
+#endif  // USE_WEBRTC_DEV_BRANCH
   WEBRTC_FUNC(SetSendAbsoluteSenderTimeStatus, (int channel, bool enable,
       unsigned char id)) {
     WEBRTC_CHECK_CHANNEL(channel);
