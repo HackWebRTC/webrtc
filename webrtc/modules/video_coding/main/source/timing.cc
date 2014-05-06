@@ -35,7 +35,8 @@ VCMTiming::VCMTiming(Clock* clock,
       prev_frame_timestamp_(0) {
   if (master_timing == NULL) {
     master_ = true;
-    ts_extrapolator_ = new VCMTimestampExtrapolator(clock_);
+    ts_extrapolator_ =
+        new VCMTimestampExtrapolator(clock_->TimeInMilliseconds());
   } else {
     ts_extrapolator_ = master_timing->ts_extrapolator_;
   }
@@ -50,7 +51,7 @@ VCMTiming::~VCMTiming() {
 
 void VCMTiming::Reset() {
   CriticalSectionScoped cs(crit_sect_);
-  ts_extrapolator_->Reset();
+  ts_extrapolator_->Reset(clock_->TimeInMilliseconds());
   codec_timer_.Reset();
   render_delay_ms_ = kDefaultRenderDelayMs;
   min_playout_delay_ms_ = 0;

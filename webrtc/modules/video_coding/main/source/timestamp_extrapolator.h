@@ -17,22 +17,19 @@
 namespace webrtc
 {
 
-class Clock;
-
 class VCMTimestampExtrapolator
 {
 public:
-    explicit VCMTimestampExtrapolator(Clock* clock);
+    explicit VCMTimestampExtrapolator(int64_t start_ms);
     ~VCMTimestampExtrapolator();
     void Update(int64_t tMs, uint32_t ts90khz);
     int64_t ExtrapolateLocalTime(uint32_t timestamp90khz);
-    void Reset();
+    void Reset(int64_t start_ms);
 
 private:
     void CheckForWrapArounds(uint32_t ts90khz);
     bool DelayChangeDetection(double error);
     RWLockWrapper*        _rwLock;
-    Clock*                _clock;
     double                _w[2];
     double                _P[2][2];
     int64_t         _startMs;
