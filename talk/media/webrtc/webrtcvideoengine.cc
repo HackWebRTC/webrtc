@@ -2381,20 +2381,22 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
       sinfo.packets_lost = -1;
       sinfo.fraction_lost = -1;
       sinfo.rtt_ms = -1;
-      sinfo.input_frame_width = static_cast<int>(channel_stream_info->width());
-      sinfo.input_frame_height =
-          static_cast<int>(channel_stream_info->height());
 
       VideoCapturer* video_capturer = send_channel->video_capturer();
       if (video_capturer) {
+        VideoFormat last_captured_frame_format;
         video_capturer->GetStats(&sinfo.adapt_frame_drops,
                                  &sinfo.effects_frame_drops,
-                                 &sinfo.capturer_frame_time);
+                                 &sinfo.capturer_frame_time,
+                                 &last_captured_frame_format);
+        sinfo.input_frame_width = last_captured_frame_format.width;
+        sinfo.input_frame_height = last_captured_frame_format.height;
+      } else {
+        sinfo.input_frame_width = 0;
+        sinfo.input_frame_height = 0;
       }
 
       webrtc::VideoCodec vie_codec;
-      // TODO(ronghuawu): Add unit tests to cover the new send stats:
-      // send_frame_width/height.
       if (!video_capturer || video_capturer->IsMuted()) {
         sinfo.send_frame_width = 0;
         sinfo.send_frame_height = 0;

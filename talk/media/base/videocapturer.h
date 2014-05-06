@@ -294,7 +294,8 @@ class VideoCapturer
   // should be called only periodically to log statistics.
   void GetStats(VariableInfo<int>* adapt_drop_stats,
                 VariableInfo<int>* effect_drop_stats,
-                VariableInfo<double>* frame_time_stats);
+                VariableInfo<double>* frame_time_stats,
+                VideoFormat* last_captured_frame_format);
 
  protected:
   // Callback attached to SignalFrameCaptured where SignalVideoFrames is called.
@@ -348,6 +349,8 @@ class VideoCapturer
   // Returns true if format doesn't fulfill all applied restrictions.
   bool ShouldFilterFormat(const VideoFormat& format) const;
 
+  void UpdateStats(const CapturedFrame* captured_frame);
+
   // Helper function to save statistics on the current data from a
   // RollingAccumulator into stats.
   template<class T>
@@ -385,6 +388,8 @@ class VideoCapturer
   talk_base::RollingAccumulator<int> effect_frame_drops_data_;
   double previous_frame_time_;
   talk_base::RollingAccumulator<double> frame_time_data_;
+  // The captured frame format before potential adapation.
+  VideoFormat last_captured_frame_format_;
 
   talk_base::CriticalSection crit_;
   VideoProcessors video_processors_;

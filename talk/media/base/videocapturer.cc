@@ -326,11 +326,13 @@ std::string VideoCapturer::ToString(const CapturedFrame* captured_frame) const {
 
 void VideoCapturer::GetStats(VariableInfo<int>* adapt_drops_stats,
                              VariableInfo<int>* effect_drops_stats,
-                             VariableInfo<double>* frame_time_stats) {
+                             VariableInfo<double>* frame_time_stats,
+                             VideoFormat* last_captured_frame_format) {
   talk_base::CritScope cs(&frame_stats_crit_);
   GetVariableSnapshot(adapt_frame_drops_data_, adapt_drops_stats);
   GetVariableSnapshot(effect_frame_drops_data_, effect_drops_stats);
   GetVariableSnapshot(frame_time_data_, frame_time_stats);
+  *last_captured_frame_format = last_captured_frame_format_;
 
   adapt_frame_drops_data_.Reset();
   effect_frame_drops_data_.Reset();
@@ -530,18 +532,7 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
   }
   SignalVideoFrame(this, adapted_frame);
 
-  double time_now = frame_length_time_reporter_.TimerNow();
-  if (previous_frame_time_ != 0.0) {
-    // Update stats protected from jmi data fetches.
-    talk_base::CritScope cs(&frame_stats_crit_);
-
-    adapt_frame_drops_data_.AddSample(adapt_frame_drops_);
-    effect_frame_drops_data_.AddSample(effect_frame_drops_);
-    frame_time_data_.AddSample(time_now - previous_frame_time_);
-  }
-  previous_frame_time_ = time_now;
-  effect_frame_drops_ = 0;
-  adapt_frame_drops_ = 0;
+  UpdateStats(captured_frame);
 
 #endif  // VIDEO_FRAME_NAME
 }
@@ -715,6 +706,27 @@ bool VideoCapturer::ShouldFilterFormat(const VideoFormat& format) const {
   }
   return format.width > max_format_->width ||
          format.height > max_format_->height;
+}
+
+void VideoCapturer::UpdateStats(const CapturedFrame* captured_frame) {
+  // Update stats protected from fetches from different thread.
+  talk_base::CritScope cs(&frame_stats_crit_);
+
+  last_captured_frame_format_.width = captured_frame->width;
+  last_captured_frame_format_.height = captured_frame->height;
+  // TODO(ronghuawu): Useful to report interval as well?
+  last_captured_frame_format_.interval = 0;
+  last_captured_frame_format_.fourcc = captured_frame->fourcc;
+
+  double time_now = frame_length_time_reporter_.TimerNow();
+  if (previous_frame_time_ != 0.0) {
+    adapt_frame_drops_data_.AddSample(adapt_frame_drops_);
+    effect_frame_drops_data_.AddSample(effect_frame_drops_);
+    frame_time_data_.AddSample(time_now - previous_frame_time_);
+  }
+  previous_frame_time_ = time_now;
+  effect_frame_drops_ = 0;
+  adapt_frame_drops_ = 0;
 }
 
 template<class T>
