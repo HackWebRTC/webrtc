@@ -39,6 +39,8 @@
 #include "talk/media/devices/filevideocapturer.h"
 #include "talk/media/devices/yuvframescapturer.h"
 
+#if !defined(IOS)
+
 #if defined(HAVE_WEBRTC_VIDEO)
 #include "talk/media/webrtc/webrtcvideocapturer.h"
 #endif
@@ -48,6 +50,8 @@
 #define VIDEO_CAPTURER_NAME WebRtcVideoCapturer
 #endif
 
+
+#endif
 
 namespace {
 
@@ -97,7 +101,7 @@ DeviceManager::~DeviceManager() {
 
 bool DeviceManager::Init() {
   if (!initialized()) {
-    if (!watcher()->Start()) {
+    if (watcher() && !watcher()->Start()) {
       return false;
     }
     set_initialized(true);
@@ -107,7 +111,9 @@ bool DeviceManager::Init() {
 
 void DeviceManager::Terminate() {
   if (initialized()) {
-    watcher()->Stop();
+    if (watcher()) {
+      watcher()->Stop();
+    }
     set_initialized(false);
   }
 }
