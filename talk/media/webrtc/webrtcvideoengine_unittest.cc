@@ -1529,26 +1529,28 @@ TEST_F(WebRtcVideoEngineTestFake, MultipleSendStreamsWithOneCapturer) {
 }
 
 
-// Disabled since its flaky: b/11288120
-TEST_F(WebRtcVideoEngineTestFake, DISABLED_SendReceiveBitratesStats) {
+TEST_F(WebRtcVideoEngineTestFake, SendReceiveBitratesStats) {
   EXPECT_TRUE(SetupEngine());
   cricket::VideoOptions options;
   options.conference_mode.Set(true);
   EXPECT_TRUE(channel_->SetOptions(options));
   EXPECT_TRUE(channel_->AddSendStream(
       cricket::StreamParams::CreateLegacy(1)));
-  int send_channel = vie_.GetLastChannel();
+  int first_send_channel = vie_.GetLastChannel();
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::StreamParams::CreateLegacy(2)));
+  int second_send_channel = vie_.GetLastChannel();
   cricket::VideoCodec codec(kVP8Codec720p);
   std::vector<cricket::VideoCodec> codec_list;
   codec_list.push_back(codec);
   EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
 
   EXPECT_TRUE(channel_->AddRecvStream(
-      cricket::StreamParams::CreateLegacy(2)));
-  int first_receive_channel = vie_.GetLastChannel();
-  EXPECT_NE(send_channel, first_receive_channel);
-  EXPECT_TRUE(channel_->AddRecvStream(
       cricket::StreamParams::CreateLegacy(3)));
+  int first_receive_channel = vie_.GetLastChannel();
+  EXPECT_NE(first_send_channel, first_receive_channel);
+  EXPECT_TRUE(channel_->AddRecvStream(
+      cricket::StreamParams::CreateLegacy(4)));
   int second_receive_channel = vie_.GetLastChannel();
   EXPECT_NE(first_receive_channel, second_receive_channel);
 
@@ -1563,21 +1565,20 @@ TEST_F(WebRtcVideoEngineTestFake, DISABLED_SendReceiveBitratesStats) {
   ASSERT_EQ(0, info.bw_estimations[0].target_enc_bitrate);
 
   // Start sending and receiving on one of the channels and verify bitrates.
-  EXPECT_EQ(0, vie_.StartSend(send_channel));
+  EXPECT_EQ(0, vie_.StartSend(first_send_channel));
   int send_video_bitrate = 800;
   int send_fec_bitrate = 100;
   int send_nack_bitrate = 20;
   int send_total_bitrate = send_video_bitrate + send_fec_bitrate +
       send_nack_bitrate;
-  int send_bandwidth = 950;
-  vie_.SetSendBitrates(send_channel, send_video_bitrate, send_fec_bitrate,
+  int send_bandwidth = 1900;
+  vie_.SetSendBitrates(first_send_channel, send_video_bitrate, send_fec_bitrate,
                        send_nack_bitrate);
-  vie_.SetSendBandwidthEstimate(send_channel, send_bandwidth);
+  vie_.SetSendBandwidthEstimate(first_send_channel, send_bandwidth);
 
   EXPECT_EQ(0, vie_.StartReceive(first_receive_channel));
-  int first_channel_receive_bandwidth = 600;
-  vie_.SetReceiveBandwidthEstimate(first_receive_channel,
-                                   first_channel_receive_bandwidth);
+  int receive_bandwidth = 600;
+  vie_.SetReceiveBandwidthEstimate(first_receive_channel, receive_bandwidth);
 
   info.Clear();
   EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
@@ -1586,26 +1587,26 @@ TEST_F(WebRtcVideoEngineTestFake, DISABLED_SendReceiveBitratesStats) {
   ASSERT_EQ(send_total_bitrate, info.bw_estimations[0].transmit_bitrate);
   ASSERT_EQ(send_nack_bitrate, info.bw_estimations[0].retransmit_bitrate);
   ASSERT_EQ(send_bandwidth, info.bw_estimations[0].available_send_bandwidth);
-  ASSERT_EQ(first_channel_receive_bandwidth,
-            info.bw_estimations[0].available_recv_bandwidth);
+  ASSERT_EQ(receive_bandwidth, info.bw_estimations[0].available_recv_bandwidth);
   ASSERT_EQ(send_video_bitrate, info.bw_estimations[0].target_enc_bitrate);
 
   // Start receiving on the second channel and verify received rate.
+  EXPECT_EQ(0, vie_.StartSend(second_send_channel));
+  vie_.SetSendBitrates(second_send_channel,
+                       send_video_bitrate,
+                       send_fec_bitrate,
+                       send_nack_bitrate);
   EXPECT_EQ(0, vie_.StartReceive(second_receive_channel));
-  int second_channel_receive_bandwidth = 100;
-  vie_.SetReceiveBandwidthEstimate(second_receive_channel,
-                                   second_channel_receive_bandwidth);
 
   info.Clear();
   EXPECT_TRUE(channel_->GetStats(cricket::StatsOptions(), &info));
   ASSERT_EQ(1U, info.bw_estimations.size());
-  ASSERT_EQ(send_video_bitrate, info.bw_estimations[0].actual_enc_bitrate);
-  ASSERT_EQ(send_total_bitrate, info.bw_estimations[0].transmit_bitrate);
-  ASSERT_EQ(send_nack_bitrate, info.bw_estimations[0].retransmit_bitrate);
+  ASSERT_EQ(2 * send_video_bitrate, info.bw_estimations[0].actual_enc_bitrate);
+  ASSERT_EQ(2 * send_total_bitrate, info.bw_estimations[0].transmit_bitrate);
+  ASSERT_EQ(2 * send_nack_bitrate, info.bw_estimations[0].retransmit_bitrate);
   ASSERT_EQ(send_bandwidth, info.bw_estimations[0].available_send_bandwidth);
-  ASSERT_EQ(first_channel_receive_bandwidth + second_channel_receive_bandwidth,
-            info.bw_estimations[0].available_recv_bandwidth);
-  ASSERT_EQ(send_video_bitrate, info.bw_estimations[0].target_enc_bitrate);
+  ASSERT_EQ(receive_bandwidth, info.bw_estimations[0].available_recv_bandwidth);
+  ASSERT_EQ(2 * send_video_bitrate, info.bw_estimations[0].target_enc_bitrate);
 }
 
 TEST_F(WebRtcVideoEngineTestFake, TestSetAdaptInputToCpuUsage) {

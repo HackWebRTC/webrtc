@@ -596,12 +596,13 @@ class FakeWebRtcVideoEngine
   }
   void SetSendBandwidthEstimate(int channel, unsigned int send_bandwidth) {
     WEBRTC_ASSERT_CHANNEL(channel);
-    channels_[channel]->send_bandwidth_ = send_bandwidth;
+    channels_[GetOriginalChannelId(channel)]->send_bandwidth_ = send_bandwidth;
   }
   void SetReceiveBandwidthEstimate(int channel,
                                    unsigned int receive_bandwidth) {
     WEBRTC_ASSERT_CHANNEL(channel);
-    channels_[channel]->receive_bandwidth_ = receive_bandwidth;
+    channels_[GetOriginalChannelId(channel)]->receive_bandwidth_ =
+        receive_bandwidth;
   };
   int GetRtxSendPayloadType(int channel) {
     WEBRTC_CHECK_CHANNEL(channel);
@@ -636,7 +637,11 @@ class FakeWebRtcVideoEngine
       return -1;
     }
     Channel* ch = new Channel();
-    channels_[++last_channel_] = ch;
+    ++last_channel_;
+    // The original channel of the first channel in a group refers to itself
+    // for code simplicity.
+    ch->original_channel_id_ = last_channel_;
+    channels_[last_channel_] = ch;
     channel = last_channel_;
     return 0;
   };
@@ -1121,6 +1126,7 @@ class FakeWebRtcVideoEngine
     std::map<int, Channel*>::const_iterator it = channels_.find(channel);
     // Assume the current video, fec and nack bitrate sums up to our estimate.
     if (it->second->send) {
+      it = channels_.find(GetOriginalChannelId(channel));
       *send_bandwidth_estimate = it->second->send_bandwidth_;
     } else {
       *send_bandwidth_estimate = 0;
@@ -1132,7 +1138,7 @@ class FakeWebRtcVideoEngine
     WEBRTC_CHECK_CHANNEL(channel);
     std::map<int, Channel*>::const_iterator it = channels_.find(channel);
     if (it->second->receive_) {
-    // For simplicity, assume all channels receive half of max send rate.
+      it = channels_.find(GetOriginalChannelId(channel));
       *receive_bandwidth_estimate = it->second->receive_bandwidth_;
     } else {
       *receive_bandwidth_estimate = 0;

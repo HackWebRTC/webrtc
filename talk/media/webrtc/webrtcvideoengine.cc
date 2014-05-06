@@ -2483,13 +2483,6 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
         LOG_RTCERR1(GetBandwidthUsage, channel_id);
       }
 
-      unsigned int estimated_stream_send_bandwidth = 0;
-      if (engine_->vie()->rtp()->GetEstimatedSendBandwidth(
-          channel_id, &estimated_stream_send_bandwidth) == 0) {
-        estimated_send_bandwidth += estimated_stream_send_bandwidth;
-      } else {
-        LOG_RTCERR1(GetEstimatedSendBandwidth, channel_id);
-      }
       unsigned int target_enc_stream_bitrate = 0;
       if (engine_->vie()->codec()->GetCodecTargetBitrate(
           channel_id, &target_enc_stream_bitrate) == 0) {
@@ -2498,12 +2491,22 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
         LOG_RTCERR1(GetCodecTargetBitrate, channel_id);
       }
     }
+    if (!send_channels_.empty()) {
+      // GetEstimatedSendBandwidth returns the estimated bandwidth for all video
+      // engine channels in a channel group. Any valid channel id will do as it
+      // is only used to access the right group of channels.
+      const int channel_id = send_channels_.begin()->second->channel_id();
+      // Get the send bandwidth available for this MediaChannel.
+      if (engine_->vie()->rtp()->GetEstimatedSendBandwidth(
+          channel_id, &estimated_send_bandwidth) != 0) {
+        LOG_RTCERR1(GetEstimatedSendBandwidth, channel_id);
+      }
+    }
   } else {
     LOG(LS_WARNING) << "GetStats: sender information not ready.";
   }
 
   // Get the SSRC and stats for each receiver, based on our own calculations.
-  unsigned int estimated_recv_bandwidth = 0;
   for (RecvChannelMap::const_iterator it = recv_channels_.begin();
        it != recv_channels_.end(); ++it) {
     WebRtcVideoChannelRecvInfo* channel = it->second;
@@ -2564,15 +2567,20 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
           incoming_stream_rtcp_stats.fraction_lost) / (1 << 8);
     }
     info->receivers.push_back(rinfo);
-
-    unsigned int estimated_recv_stream_bandwidth = 0;
+  }
+  unsigned int estimated_recv_bandwidth = 0;
+  if (!recv_channels_.empty()) {
+    // GetEstimatedReceiveBandwidth returns the estimated bandwidth for all
+    // video engine channels in a channel group. Any valid channel id will do as
+    // it is only used to access the right group of channels.
+    const int channel_id = recv_channels_.begin()->second->channel_id();
+    // Gets the estimated receive bandwidth for the MediaChannel.
     if (engine_->vie()->rtp()->GetEstimatedReceiveBandwidth(
-        channel->channel_id(), &estimated_recv_stream_bandwidth) == 0) {
-      estimated_recv_bandwidth += estimated_recv_stream_bandwidth;
-    } else {
-      LOG_RTCERR1(GetEstimatedReceiveBandwidth, channel->channel_id());
+        channel_id, &estimated_recv_bandwidth) != 0) {
+      LOG_RTCERR1(GetEstimatedReceiveBandwidth, channel_id);
     }
   }
+
   // Build BandwidthEstimationInfo.
   // TODO(zhurunz): Add real unittest for this.
   BandwidthEstimationInfo bwe;
