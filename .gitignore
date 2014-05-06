@@ -76,6 +76,7 @@
 /third_party/llvm-build
 /third_party/nss
 /third_party/oauth2
+/third_party/openmax_dl
 /third_party/openssl
 /third_party/opus
 /third_party/protobuf
