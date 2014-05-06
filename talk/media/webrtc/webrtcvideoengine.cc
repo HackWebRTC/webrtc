@@ -81,6 +81,8 @@ void DestroyWebRtcMediaEngine(cricket::MediaEngineInterface* media_engine) {
 }
 #endif
 
+static const int kVideoCodecClockratekHz = cricket::kVideoCodecClockrate / 1000;
+
 
 namespace cricket {
 
@@ -169,7 +171,13 @@ struct FlushBlackFrameData : public talk_base::MessageData {
 class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
  public:
   WebRtcRenderAdapter(VideoRenderer* renderer, int channel_id)
-      : renderer_(renderer), channel_id_(channel_id), width_(0), height_(0) {
+      : renderer_(renderer),
+        channel_id_(channel_id),
+        width_(0),
+        height_(0),
+        first_frame_arrived_(false),
+        capture_start_rtp_time_stamp_(0),
+        capture_start_ntp_time_ms_(0) {
   }
 
   virtual ~WebRtcRenderAdapter() {
@@ -213,19 +221,31 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
 
   virtual int DeliverFrame(unsigned char* buffer,
                            int buffer_size,
-                           uint32_t time_stamp,
+                           uint32_t rtp_time_stamp,
 #ifdef USE_WEBRTC_DEV_BRANCH
                            int64_t ntp_time_ms,
 #endif
                            int64_t render_time,
                            void* handle) {
     talk_base::CritScope cs(&crit_);
+    if (!first_frame_arrived_) {
+      first_frame_arrived_ = true;
+      capture_start_rtp_time_stamp_ = rtp_time_stamp;
+    }
+#ifdef USE_WEBRTC_DEV_BRANCH
+    if (ntp_time_ms > 0) {
+      uint32 elapsed_time_ms =
+          (rtp_time_stamp - capture_start_rtp_time_stamp_) /
+          kVideoCodecClockratekHz;
+      capture_start_ntp_time_ms_ = ntp_time_ms - elapsed_time_ms;
+    }
+#endif
     frame_rate_tracker_.Update(1);
     if (renderer_ == NULL) {
       return 0;
     }
     // Convert 90K rtp timestamp to ns timestamp.
-    int64 rtp_time_stamp_in_ns = (time_stamp / 90) *
+    int64 rtp_time_stamp_in_ns = (rtp_time_stamp / kVideoCodecClockratekHz) *
         talk_base::kNumNanosecsPerMillisec;
     // Convert milisecond render time to ns timestamp.
     int64 render_time_stamp_in_ns = render_time *
@@ -244,10 +264,10 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
   virtual bool IsTextureSupported() { return true; }
 
   int DeliverBufferFrame(unsigned char* buffer, int buffer_size,
-                         int64 elapsed_time, int64 time_stamp) {
+                         int64 elapsed_time, int64 rtp_time_stamp_in_ns) {
     WebRtcVideoFrame video_frame;
     video_frame.Alias(buffer, buffer_size, width_, height_,
-                      1, 1, elapsed_time, time_stamp, 0);
+                      1, 1, elapsed_time, rtp_time_stamp_in_ns, 0);
 
     // Sanity check on decoded frame size.
     if (buffer_size != static_cast<int>(VideoFrame::SizeOf(width_, height_))) {
@@ -260,10 +280,12 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
     return ret;
   }
 
-  int DeliverTextureFrame(void* handle, int64 elapsed_time, int64 time_stamp) {
+  int DeliverTextureFrame(void* handle,
+                          int64 elapsed_time,
+                          int64 rtp_time_stamp_in_ns) {
     WebRtcTextureVideoFrame video_frame(
         static_cast<webrtc::NativeHandle*>(handle), width_, height_,
-        elapsed_time, time_stamp);
+        elapsed_time, rtp_time_stamp_in_ns);
     return renderer_->RenderFrame(&video_frame);
   }
 
@@ -287,6 +309,11 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
     return renderer_;
   }
 
+  int64 capture_start_ntp_time_ms() {
+    talk_base::CritScope cs(&crit_);
+    return capture_start_ntp_time_ms_;
+  }
+
  private:
   talk_base::CriticalSection crit_;
   VideoRenderer* renderer_;
@@ -294,6 +321,9 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
   unsigned int width_;
   unsigned int height_;
   talk_base::RateTracker frame_rate_tracker_;
+  bool first_frame_arrived_;
+  uint32 capture_start_rtp_time_stamp_;
+  int64 capture_start_ntp_time_ms_;
 };
 
 class WebRtcDecoderObserver : public webrtc::ViEDecoderObserver {
@@ -2538,6 +2568,8 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
     int fps = channel->render_adapter()->framerate();
     rinfo.framerate_decoded = fps;
     rinfo.framerate_output = fps;
+    rinfo.capture_start_ntp_time_ms =
+        channel->render_adapter()->capture_start_ntp_time_ms();
     channel->decoder_observer()->ExportTo(&rinfo);
 
     webrtc::RtcpPacketTypeCounter rtcp_sent;

@@ -161,6 +161,7 @@ class StatsReport {
   static const char kStatsValueNameJitterBufferMs[];
   static const char kStatsValueNameMinPlayoutDelayMs[];
   static const char kStatsValueNameRenderDelayMs[];
+  static const char kStatsValueNameCaptureStartNtpTimeMs[];
   static const char kStatsValueNameFrameRateInput[];
   static const char kStatsValueNameFrameRateSent[];
   static const char kStatsValueNameFrameWidthInput[];

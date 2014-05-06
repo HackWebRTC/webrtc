@@ -105,6 +105,9 @@ const char StatsReport::kStatsValueNameMinPlayoutDelayMs[] =
     "googMinPlayoutDelayMs";
 const char StatsReport::kStatsValueNameRenderDelayMs[] = "googRenderDelayMs";
 
+const char StatsReport::kStatsValueNameCaptureStartNtpTimeMs[] =
+    "googCaptureStartNtpTimeMs";
+
 const char StatsReport::kStatsValueNameFrameRateInput[] = "googFrameRateInput";
 const char StatsReport::kStatsValueNameFrameRateSent[] = "googFrameRateSent";
 const char StatsReport::kStatsValueNameFrameWidthInput[] =
@@ -338,6 +341,9 @@ void ExtractStats(const cricket::VideoReceiverInfo& info, StatsReport* report) {
                    info.min_playout_delay_ms);
   report->AddValue(StatsReport::kStatsValueNameRenderDelayMs,
                    info.render_delay_ms);
+
+  report->AddValue(StatsReport::kStatsValueNameCaptureStartNtpTimeMs,
+                   info.capture_start_ntp_time_ms);
 }
 
 void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {

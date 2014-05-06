@@ -911,7 +911,8 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
         min_playout_delay_ms(0),
         render_delay_ms(0),
         target_delay_ms(0),
-        current_delay_ms(0) {
+        current_delay_ms(0),
+        capture_start_ntp_time_ms(0) {
   }
 
   std::vector<SsrcGroup> ssrc_groups;
@@ -948,6 +949,9 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
   int target_delay_ms;
   // Current overall delay, possibly ramping towards target_delay_ms.
   int current_delay_ms;
+
+  // Estimated capture start time in NTP time in ms.
+  int64 capture_start_ntp_time_ms;
 };
 
 struct DataSenderInfo : public MediaSenderInfo {
