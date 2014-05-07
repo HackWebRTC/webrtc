@@ -88,7 +88,7 @@
             'android/video_render_opengles20.cc',
           ],
         }, {
-          'all_dependent_settings': {
+          'link_settings': {
             'libraries': [
               '-lGLESv2',
             ],
@@ -118,6 +118,12 @@
             'linux/video_x11_channel.cc',
             'linux/video_x11_render.cc',
           ],
+        }, {
+          'link_settings': {
+            'libraries': [
+              '-lXext',
+            ],
+          },
         }],
         ['OS!="mac" or include_internal_video_render==0', {
           'sources!': [
@@ -214,11 +220,11 @@
               ],
             }],
             ['OS=="linux"', {
-              'libraries': [
-                '-lrt',
-                '-lXext',
-                '-lX11',
-              ],
+              'link_settings': {
+                'libraries': [
+                  '-lX11',
+                ],
+              },
             }],
             ['OS=="mac"', {
               'xcode_settings': {
