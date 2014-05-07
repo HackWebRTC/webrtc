@@ -201,6 +201,7 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   void SetTraceFilter(int filter);
   void SetTraceOptions(const std::string& options);
   bool InitVideoEngine();
+  bool VerifyApt(const VideoCodec& in, int expected_apt) const;
 
   // webrtc::TraceCallback implementation.
   virtual void Print(webrtc::TraceLevel level, const char* trace, int length);
@@ -313,6 +314,7 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
  private:
   typedef std::map<uint32, WebRtcVideoChannelRecvInfo*> RecvChannelMap;
   typedef std::map<uint32, WebRtcVideoChannelSendInfo*> SendChannelMap;
+  typedef std::map<uint32, uint32> SsrcMap;
   typedef int (webrtc::ViERTP_RTCP::* ExtensionSetterFunction)(int, bool, int);
 
   enum MediaDirection { MD_RECV, MD_SEND, MD_SENDRECV };
@@ -433,7 +435,16 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   // work properly), resides in both recv_channels_ and send_channels_ with the
   // ssrc key 0.
   RecvChannelMap recv_channels_;  // Contains all receive channels.
+  // A map from the SSRCs on which RTX packets are received to the media SSRCs
+  // the RTX packets are associated with. RTX packets will be delivered to the
+  // streams matching the primary SSRC.
+  SsrcMap rtx_to_primary_ssrc_;
   std::vector<webrtc::VideoCodec> receive_codecs_;
+  // A map from codec payload types to their associated payload types, if any.
+  // TODO(holmer): This is a temporary solution until webrtc::VideoCodec has
+  // an associated payload type member, when it does we can rely on
+  // receive_codecs_.
+  std::map<int, int> associated_payload_types_;
   bool render_started_;
   uint32 first_receive_ssrc_;
   std::vector<RtpHeaderExtension> receive_extensions_;

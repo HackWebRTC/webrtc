@@ -1299,6 +1299,15 @@ bool WebRtcVideoEngine::ConvertFromCricketVideoCodec(
     }
   }
 
+  // Is this an RTX codec? Handled separately here since webrtc doesn't handle
+  // them as webrtc::VideoCodec internally.
+  if (!found && _stricmp(in_codec.name.c_str(), kRtxCodecName) == 0) {
+    talk_base::strcpyn(out_codec->plName, sizeof(out_codec->plName),
+                       in_codec.name.c_str(), in_codec.name.length());
+    out_codec->plType = in_codec.id;
+    found = true;
+  }
+
   if (!found) {
     LOG(LS_ERROR) << "invalid codec type";
     return false;
@@ -1651,12 +1660,17 @@ WebRtcVideoMediaChannel::~WebRtcVideoMediaChannel() {
 bool WebRtcVideoMediaChannel::SetRecvCodecs(
     const std::vector<VideoCodec>& codecs) {
   receive_codecs_.clear();
+  associated_payload_types_.clear();
   for (std::vector<VideoCodec>::const_iterator iter = codecs.begin();
       iter != codecs.end(); ++iter) {
     if (engine()->FindCodec(*iter)) {
       webrtc::VideoCodec wcodec;
       if (engine()->ConvertFromCricketVideoCodec(*iter, &wcodec)) {
         receive_codecs_.push_back(wcodec);
+        int apt;
+        if (iter->GetParam(cricket::kCodecParamAssociatedPayloadType, &apt)) {
+          associated_payload_types_[wcodec.plType] = apt;
+        }
       }
     } else {
       LOG(LS_INFO) << "Unknown codec " << iter->name;
@@ -2036,15 +2050,21 @@ bool WebRtcVideoMediaChannel::AddRecvStream(const StreamParams& sp) {
     // Early receive added channel.
     channel_id = (*channel_iterator).second->channel_id();
   }
+  channel_iterator = recv_channels_.find(sp.first_ssrc());
 
   // Set the corresponding RTX SSRC.
   uint32 rtx_ssrc;
   bool has_rtx = sp.GetFidSsrc(sp.first_ssrc(), &rtx_ssrc);
-  if (has_rtx && engine()->vie()->rtp()->SetRemoteSSRCType(
-      channel_id, webrtc::kViEStreamTypeRtx, rtx_ssrc) != 0) {
-    LOG_RTCERR3(SetRemoteSSRCType, channel_id, webrtc::kViEStreamTypeRtx,
-                rtx_ssrc);
-    return false;
+  if (has_rtx) {
+    LOG(LS_INFO) << "Setting rtx ssrc " << rtx_ssrc << " for stream "
+                 << sp.first_ssrc();
+    if (engine()->vie()->rtp()->SetRemoteSSRCType(
+        channel_id, webrtc::kViEStreamTypeRtx, rtx_ssrc) != 0) {
+      LOG_RTCERR3(SetRemoteSSRCType, channel_id, webrtc::kViEStreamTypeRtx,
+                  rtx_ssrc);
+      return false;
+    }
+    rtx_to_primary_ssrc_[rtx_ssrc] = sp.first_ssrc();
   }
 
   // Get the default renderer.
@@ -2102,6 +2122,17 @@ bool WebRtcVideoMediaChannel::RemoveRecvStreamInternal(uint32 ssrc) {
     return false;
   }
   WebRtcVideoChannelRecvInfo* info = it->second;
+
+  // Remove any RTX SSRC mappings to this stream.
+  SsrcMap::iterator rtx_it = rtx_to_primary_ssrc_.begin();
+  while (rtx_it != rtx_to_primary_ssrc_.end()) {
+    if (rtx_it->second == ssrc) {
+      rtx_to_primary_ssrc_.erase(rtx_it++);
+    } else {
+      ++rtx_it;
+    }
+  }
+
   int channel_id = info->channel_id();
   if (engine()->vie()->render()->RemoveRenderer(channel_id) != 0) {
     LOG_RTCERR1(RemoveRenderer, channel_id);
@@ -2695,10 +2726,10 @@ void WebRtcVideoMediaChannel::OnPacketReceived(
   if (processing_channel == -1) {
     // Allocate an unsignalled recv channel for processing in conference mode.
     if (!InConferenceMode()) {
-      // If we cant find or allocate one, use the default.
+      // If we can't find or allocate one, use the default.
       processing_channel = video_channel();
     } else if (!CreateUnsignalledRecvChannel(ssrc, &processing_channel)) {
-      // If we cant create an unsignalled recv channel, drop the packet in
+      // If we can't create an unsignalled recv channel, drop the packet in
       // conference mode.
       return;
     }
@@ -3806,12 +3837,45 @@ bool WebRtcVideoMediaChannel::SetReceiveCodecs(
   int red_type = -1;
   int fec_type = -1;
   int channel_id = info->channel_id();
+  // Build a map from payload types to video codecs so that we easily can find
+  // out if associated payload types are referring to valid codecs.
+  std::map<int, webrtc::VideoCodec*> pt_to_codec;
+  for (std::vector<webrtc::VideoCodec>::iterator it = receive_codecs_.begin();
+       it != receive_codecs_.end(); ++it) {
+    pt_to_codec[it->plType] = &(*it);
+  }
   for (std::vector<webrtc::VideoCodec>::iterator it = receive_codecs_.begin();
        it != receive_codecs_.end(); ++it) {
     if (it->codecType == webrtc::kVideoCodecRED) {
       red_type = it->plType;
     } else if (it->codecType == webrtc::kVideoCodecULPFEC) {
       fec_type = it->plType;
+    }
+    // If this is an RTX codec we have to verify that it is associated with
+    // a valid video codec which we have RTX support for.
+    if (_stricmp(it->plName, kRtxCodecName) == 0) {
+      std::map<int, int>::iterator apt_it = associated_payload_types_.find(
+          it->plType);
+      bool valid_apt = false;
+      if (apt_it != associated_payload_types_.end()) {
+        std::map<int, webrtc::VideoCodec*>::iterator codec_it =
+            pt_to_codec.find(apt_it->second);
+        // We currently only support RTX associated with VP8 due to limitations
+        // in webrtc where only one RTX payload type can be registered.
+        valid_apt = codec_it != pt_to_codec.end() &&
+            _stricmp(codec_it->second->plName, kVp8PayloadName) == 0;
+      }
+      if (!valid_apt) {
+        LOG(LS_ERROR) << "The RTX codec isn't associated with a known and "
+                         "supported payload type";
+        return false;
+      }
+      if (engine()->vie()->rtp()->SetRtxReceivePayloadType(
+          channel_id, it->plType) != 0) {
+        LOG_RTCERR2(SetRtxReceivePayloadType, channel_id, it->plType);
+        return false;
+      }
+      continue;
     }
     if (engine()->vie()->codec()->SetReceiveCodec(channel_id, *it) != 0) {
       LOG_RTCERR2(SetReceiveCodec, channel_id, it->plName);
@@ -3840,8 +3904,20 @@ int WebRtcVideoMediaChannel::GetRecvChannelNum(uint32 ssrc) {
   if (ssrc == first_receive_ssrc_) {
     return vie_channel_;
   }
+  int recv_channel = -1;
   RecvChannelMap::iterator it = recv_channels_.find(ssrc);
-  return (it != recv_channels_.end()) ? it->second->channel_id() : -1;
+  if (it == recv_channels_.end()) {
+    // Check if we have an RTX stream registered on this SSRC.
+    SsrcMap::iterator rtx_it = rtx_to_primary_ssrc_.find(ssrc);
+    if (rtx_it != rtx_to_primary_ssrc_.end()) {
+      it = recv_channels_.find(rtx_it->second);
+      assert(it != recv_channels_.end());
+      recv_channel = it->second->channel_id();
+    }
+  } else {
+    recv_channel = it->second->channel_id();
+  }
+  return recv_channel;
 }
 
 // If the new frame size is different from the send codec size we set on vie,

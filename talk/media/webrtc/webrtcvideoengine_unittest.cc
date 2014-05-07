@@ -719,6 +719,76 @@ TEST_F(WebRtcVideoEngineTestFake, SetRecvCodecs) {
   EXPECT_TRUE(vie_.ReceiveCodecRegistered(channel_num, wcodec));
 }
 
+// Test that we set our inbound RTX codecs properly.
+TEST_F(WebRtcVideoEngineTestFake, SetRecvCodecsWithRtx) {
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = vie_.GetLastChannel();
+
+  std::vector<cricket::VideoCodec> codecs;
+  cricket::VideoCodec rtx_codec(96, "rtx", 0, 0, 0, 0);
+  codecs.push_back(rtx_codec);
+  // Should fail since there's no associated payload type set.
+  EXPECT_FALSE(channel_->SetRecvCodecs(codecs));
+
+  codecs[0].SetParam("apt", 97);
+  // Should still fail since the we don't support RTX on this APT.
+  EXPECT_FALSE(channel_->SetRecvCodecs(codecs));
+
+  codecs[0].SetParam("apt", kVP8Codec.id);
+  // Should still fail since the associated payload type is unknown.
+  EXPECT_FALSE(channel_->SetRecvCodecs(codecs));
+
+  codecs.push_back(kVP8Codec);
+  EXPECT_TRUE(channel_->SetRecvCodecs(codecs));
+
+  webrtc::VideoCodec wcodec;
+  // Should not have been registered as a WebRTC codec.
+  EXPECT_TRUE(engine_.ConvertFromCricketVideoCodec(rtx_codec, &wcodec));
+  EXPECT_STREQ("rtx", wcodec.plName);
+  EXPECT_FALSE(vie_.ReceiveCodecRegistered(channel_num, wcodec));
+
+  // The RTX payload type should have been set.
+  EXPECT_EQ(rtx_codec.id, vie_.GetRtxRecvPayloadType(channel_num));
+}
+
+// Test that RTX packets are routed to the correct video channel.
+TEST_F(WebRtcVideoEngineTestFake, TestReceiveRtx) {
+  EXPECT_TRUE(SetupEngine());
+
+  // Setup three channels with associated RTX streams.
+  int channel_num[ARRAY_SIZE(kSsrcs3)];
+  for (size_t i = 0; i < ARRAY_SIZE(kSsrcs3); ++i) {
+    cricket::StreamParams params =
+      cricket::StreamParams::CreateLegacy(kSsrcs3[i]);
+    params.AddFidSsrc(kSsrcs3[i], kRtxSsrcs3[i]);
+    EXPECT_TRUE(channel_->AddRecvStream(params));
+    channel_num[i] = vie_.GetLastChannel();
+  }
+
+  // Register codecs.
+  std::vector<cricket::VideoCodec> codec_list;
+  codec_list.push_back(kVP8Codec720p);
+  cricket::VideoCodec rtx_codec(96, "rtx", 0, 0, 0, 0);
+  rtx_codec.SetParam("apt", kVP8Codec.id);
+  codec_list.push_back(rtx_codec);
+  EXPECT_TRUE(channel_->SetRecvCodecs(codec_list));
+
+  // Construct a fake RTX packet and verify that it is passed to the
+  // right WebRTC channel.
+  const size_t kDataLength = 12;
+  uint8_t data[kDataLength];
+  memset(data, 0, sizeof(data));
+  data[0] = 0x80;
+  data[1] = rtx_codec.id;
+  talk_base::SetBE32(&data[8], kRtxSsrcs3[1]);
+  talk_base::Buffer packet(data, kDataLength);
+  talk_base::PacketTime packet_time;
+  channel_->OnPacketReceived(&packet, packet_time);
+  EXPECT_NE(rtx_codec.id, vie_.GetLastRecvdPayloadType(channel_num[0]));
+  EXPECT_EQ(rtx_codec.id, vie_.GetLastRecvdPayloadType(channel_num[1]));
+  EXPECT_NE(rtx_codec.id, vie_.GetLastRecvdPayloadType(channel_num[2]));
+}
+
 // Test that channel connects and disconnects external capturer correctly.
 TEST_F(WebRtcVideoEngineTestFake, HasExternalCapturer) {
   EXPECT_TRUE(SetupEngine());
@@ -2053,6 +2123,7 @@ TEST_F(WebRtcVideoEngineTest, FindCodec) {
   EXPECT_TRUE(engine_.FindCodec(fec));
 
   cricket::VideoCodec rtx(96, "rtx", 0, 0, 30, 0);
+  rtx.SetParam("apt", kVP8Codec.id);
   EXPECT_TRUE(engine_.FindCodec(rtx));
 }
 
