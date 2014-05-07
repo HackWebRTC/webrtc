@@ -8,15 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/remote_bitrate_estimator/include/rtp_to_ntp.h"
+#include "webrtc/system_wrappers/interface/rtp_to_ntp.h"
 
 #include "webrtc/system_wrappers/interface/clock.h"
 
 #include <assert.h>
 
 namespace webrtc {
-
-namespace synchronization {
 
 RtcpMeasurement::RtcpMeasurement()
     : ntp_secs(0), ntp_frac(0), rtp_timestamp(0) {}
@@ -47,8 +45,7 @@ bool CompensateForWrapAround(uint32_t new_timestamp,
                              uint32_t old_timestamp,
                              int64_t* compensated_timestamp) {
   assert(compensated_timestamp);
-  int64_t wraps = synchronization::CheckForWrapArounds(new_timestamp,
-                                                       old_timestamp);
+  int64_t wraps = CheckForWrapArounds(new_timestamp, old_timestamp);
   if (wraps < 0) {
     // Reordering, don't use this packet.
     return false;
@@ -96,7 +93,7 @@ bool UpdateRtcpList(uint32_t ntp_secs,
 // |rtp_timestamp_in_ms|. This function compensates for wrap arounds in RTP
 // timestamps and returns false if it can't do the conversion due to reordering.
 bool RtpToNtpMs(int64_t rtp_timestamp,
-                const synchronization::RtcpList& rtcp,
+                const RtcpList& rtcp,
                 int64_t* rtp_timestamp_in_ms) {
   assert(rtcp.size() == 2);
   int64_t rtcp_ntp_ms_new = Clock::NtpToMs(rtcp.front().ntp_secs,
@@ -149,5 +146,5 @@ int CheckForWrapArounds(uint32_t new_timestamp, uint32_t old_timestamp) {
   }
   return 0;
 }
-}  // namespace synchronization
+
 }  // namespace webrtc

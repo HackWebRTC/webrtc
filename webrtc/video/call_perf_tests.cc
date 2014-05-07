@@ -17,10 +17,10 @@
 
 #include "webrtc/call.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
-#include "webrtc/modules/remote_bitrate_estimator/include/rtp_to_ntp.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/rtp_to_ntp.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/thread_annotations.h"
 #include "webrtc/test/direct_transport.h"
@@ -105,7 +105,7 @@ class SyncRtcpObserver : public test::RtpRtcpObserver {
          packet_type = parser.Iterate()) {
       if (packet_type == RTCPUtility::kRtcpSrCode) {
         const RTCPUtility::RTCPPacket& packet = parser.Packet();
-        synchronization::RtcpMeasurement ntp_rtp_pair(
+        RtcpMeasurement ntp_rtp_pair(
             packet.SR.NTPMostSignificant,
             packet.SR.NTPLeastSignificant,
             packet.SR.RTPTimestamp);
@@ -122,16 +122,16 @@ class SyncRtcpObserver : public test::RtpRtcpObserver {
       // TODO(stefan): We can't EXPECT_TRUE on this call due to a bug in the
       // RTCP sender where it sends RTCP SR before any RTP packets, which leads
       // to a bogus NTP/RTP mapping.
-      synchronization::RtpToNtpMs(timestamp, ntp_rtp_pairs_, &timestamp_in_ms);
+      RtpToNtpMs(timestamp, ntp_rtp_pairs_, &timestamp_in_ms);
       return timestamp_in_ms;
     }
     return -1;
   }
 
  private:
-  void StoreNtpRtpPair(synchronization::RtcpMeasurement ntp_rtp_pair) {
+  void StoreNtpRtpPair(RtcpMeasurement ntp_rtp_pair) {
     CriticalSectionScoped lock(crit_.get());
-    for (synchronization::RtcpList::iterator it = ntp_rtp_pairs_.begin();
+    for (RtcpList::iterator it = ntp_rtp_pairs_.begin();
          it != ntp_rtp_pairs_.end();
          ++it) {
       if (ntp_rtp_pair.ntp_secs == it->ntp_secs &&
@@ -149,7 +149,7 @@ class SyncRtcpObserver : public test::RtpRtcpObserver {
   }
 
   const scoped_ptr<CriticalSectionWrapper> crit_;
-  synchronization::RtcpList ntp_rtp_pairs_ GUARDED_BY(crit_);
+  RtcpList ntp_rtp_pairs_ GUARDED_BY(crit_);
 };
 
 class VideoRtcpAndSyncObserver : public SyncRtcpObserver, public VideoRenderer {

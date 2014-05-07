@@ -29,6 +29,7 @@
         'data_log_helpers_unittest.cc',
         'data_log_c_helpers_unittest.c',
         'data_log_c_helpers_unittest.h',
+        'rtp_to_ntp_unittest.cc',
         'scoped_vector_unittest.cc',
         'stringize_macros_unittest.cc',
         'stl_util_unittest.cc',

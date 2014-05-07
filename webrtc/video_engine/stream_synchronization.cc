@@ -64,15 +64,15 @@ bool StreamSynchronization::ComputeRelativeDelay(
     return false;
   }
   int64_t audio_last_capture_time_ms;
-  if (!synchronization::RtpToNtpMs(audio_measurement.latest_timestamp,
-                                   audio_measurement.rtcp,
-                                   &audio_last_capture_time_ms)) {
+  if (!RtpToNtpMs(audio_measurement.latest_timestamp,
+                  audio_measurement.rtcp,
+                  &audio_last_capture_time_ms)) {
     return false;
   }
   int64_t video_last_capture_time_ms;
-  if (!synchronization::RtpToNtpMs(video_measurement.latest_timestamp,
-                                   video_measurement.rtcp,
-                                   &video_last_capture_time_ms)) {
+  if (!RtpToNtpMs(video_measurement.latest_timestamp,
+                  video_measurement.rtcp,
+                  &video_last_capture_time_ms)) {
     return false;
   }
   if (video_last_capture_time_ms < 0) {

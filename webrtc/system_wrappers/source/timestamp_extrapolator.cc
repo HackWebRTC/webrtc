@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/main/source/timestamp_extrapolator.h"
+#include "webrtc/system_wrappers/interface/timestamp_extrapolator.h"
 
 #include <algorithm>
 
 namespace webrtc {
 
-VCMTimestampExtrapolator::VCMTimestampExtrapolator(int64_t start_ms)
+TimestampExtrapolator::TimestampExtrapolator(int64_t start_ms)
     : _rwLock(RWLockWrapper::CreateRWLock()),
       _startMs(0),
       _firstTimestamp(0),
@@ -34,13 +34,12 @@ VCMTimestampExtrapolator::VCMTimestampExtrapolator(int64_t start_ms)
     Reset(start_ms);
 }
 
-VCMTimestampExtrapolator::~VCMTimestampExtrapolator()
+TimestampExtrapolator::~TimestampExtrapolator()
 {
     delete _rwLock;
 }
 
-void
-VCMTimestampExtrapolator::Reset(int64_t start_ms)
+void TimestampExtrapolator::Reset(int64_t start_ms)
 {
     WriteLockScoped wl(*_rwLock);
     _startMs = start_ms;
@@ -61,7 +60,7 @@ VCMTimestampExtrapolator::Reset(int64_t start_ms)
 }
 
 void
-VCMTimestampExtrapolator::Update(int64_t tMs, uint32_t ts90khz)
+TimestampExtrapolator::Update(int64_t tMs, uint32_t ts90khz)
 {
 
     _rwLock->AcquireLockExclusive();
@@ -143,7 +142,7 @@ VCMTimestampExtrapolator::Update(int64_t tMs, uint32_t ts90khz)
 }
 
 int64_t
-VCMTimestampExtrapolator::ExtrapolateLocalTime(uint32_t timestamp90khz)
+TimestampExtrapolator::ExtrapolateLocalTime(uint32_t timestamp90khz)
 {
     ReadLockScoped rl(*_rwLock);
     int64_t localTimeMs = 0;
@@ -181,7 +180,7 @@ VCMTimestampExtrapolator::ExtrapolateLocalTime(uint32_t timestamp90khz)
 // Investigates if the timestamp clock has overflowed since the last timestamp and
 // keeps track of the number of wrap arounds since reset.
 void
-VCMTimestampExtrapolator::CheckForWrapArounds(uint32_t ts90khz)
+TimestampExtrapolator::CheckForWrapArounds(uint32_t ts90khz)
 {
     if (_prevWrapTimestamp == -1)
     {
@@ -210,7 +209,7 @@ VCMTimestampExtrapolator::CheckForWrapArounds(uint32_t ts90khz)
 }
 
 bool
-VCMTimestampExtrapolator::DelayChangeDetection(double error)
+TimestampExtrapolator::DelayChangeDetection(double error)
 {
     // CUSUM detection of sudden delay changes
     error = (error > 0) ? std::min(error, _accMaxError) :

@@ -35,11 +35,13 @@ LOCAL_SRC_FILES := \
     condition_variable_posix.cc \
     critical_section_posix.cc \
     event_posix.cc \
+    rtp_to_ntp.cc \
     sleep.cc \
     thread_posix.cc \
     tick_util.cc \
+    timestamp_extrapolator.cc \
     trace_posix.cc \
-    rw_lock_posix.cc 
+    rw_lock_posix.cc
 
 LOCAL_CFLAGS := \
     $(MY_WEBRTC_COMMON_DEFS)

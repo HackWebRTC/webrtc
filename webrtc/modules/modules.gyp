@@ -180,7 +180,6 @@
             'remote_bitrate_estimator/remote_bitrate_estimator_unittest_helper.cc',
             'remote_bitrate_estimator/remote_bitrate_estimator_unittest_helper.h',
             'remote_bitrate_estimator/remote_bitrate_estimators_test.cc',
-            'remote_bitrate_estimator/rtp_to_ntp_unittest.cc',
             'remote_bitrate_estimator/test/bwe_test_baselinefile.cc',
             'remote_bitrate_estimator/test/bwe_test_baselinefile.h',
             'remote_bitrate_estimator/test/bwe_test_fileutils.cc',

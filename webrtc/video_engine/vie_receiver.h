@@ -14,16 +14,13 @@
 #include <list>
 
 #include "webrtc/engine_configurations.h"
-#include "webrtc/modules/remote_bitrate_estimator/include/rtp_to_ntp.h"
 #include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/system_wrappers/interface/rtp_to_ntp.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_engine/include/vie_network.h"
 #include "webrtc/video_engine/vie_defines.h"
-
-// TODO(wu): Move rtp_to_ntp.h and timestamp_extrapolator.h to somewhere that
-// can be shared between audio and video.
 
 namespace webrtc {
 
@@ -36,7 +33,7 @@ class RtpHeaderParser;
 class RTPPayloadRegistry;
 class RtpReceiver;
 class RtpRtcp;
-class VCMTimestampExtrapolator;
+class TimestampExtrapolator;
 class VideoCodingModule;
 struct ReceiveBandwidthEstimatorStats;
 
@@ -124,8 +121,8 @@ class ViEReceiver : public RtpData {
   RemoteBitrateEstimator* remote_bitrate_estimator_;
 
   Clock* clock_;
-  scoped_ptr<VCMTimestampExtrapolator> ts_extrapolator_;
-  synchronization::RtcpList rtcp_list_;
+  scoped_ptr<TimestampExtrapolator> ts_extrapolator_;
+  RtcpList rtcp_list_;
 
   RtpDump* rtp_dump_;
   bool receiving_;

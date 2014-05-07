@@ -43,7 +43,7 @@ int UpdateMeasurements(StreamSynchronization::Measurements* stream,
   }
 
   bool new_rtcp_sr = false;
-  if (!synchronization::UpdateRtcpList(
+  if (!UpdateRtcpList(
       ntp_secs, ntp_frac, rtp_timestamp, &stream->rtcp, &new_rtcp_sr)) {
     return -1;
   }

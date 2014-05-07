@@ -18,7 +18,7 @@
 namespace webrtc {
 
 class Clock;
-class VCMTimestampExtrapolator;
+class TimestampExtrapolator;
 
 class VCMTiming {
  public:
@@ -101,7 +101,7 @@ class VCMTiming {
   CriticalSectionWrapper* crit_sect_;
   Clock* clock_;
   bool master_;
-  VCMTimestampExtrapolator* ts_extrapolator_;
+  TimestampExtrapolator* ts_extrapolator_;
   VCMCodecTimer codec_timer_;
   uint32_t render_delay_ms_;
   uint32_t min_playout_delay_ms_;
