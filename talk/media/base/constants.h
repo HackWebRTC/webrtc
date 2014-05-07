@@ -99,6 +99,7 @@ extern const char kRtcpFbCcmParamFir[];
 // Google specific parameters
 extern const char kCodecParamMaxBitrate[];
 extern const char kCodecParamMinBitrate[];
+extern const char kCodecParamStartBitrate[];
 extern const char kCodecParamMaxQuantization[];
 extern const char kCodecParamPort[];
 

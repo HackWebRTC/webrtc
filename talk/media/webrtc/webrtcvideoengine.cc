@@ -1265,6 +1265,7 @@ static void ConvertToCricketVideoCodec(
   out_codec->framerate = in_codec.maxFramerate;
   out_codec->SetParam(kCodecParamMinBitrate, in_codec.minBitrate);
   out_codec->SetParam(kCodecParamMaxBitrate, in_codec.maxBitrate);
+  out_codec->SetParam(kCodecParamStartBitrate, in_codec.startBitrate);
   if (in_codec.qpMax) {
     out_codec->SetParam(kCodecParamMaxQuantization, in_codec.qpMax);
   }
@@ -1322,6 +1323,7 @@ bool WebRtcVideoEngine::ConvertFromCricketVideoCodec(
 
   in_codec.GetParam(kCodecParamMinBitrate, &min_bitrate);
   in_codec.GetParam(kCodecParamMaxBitrate, &max_bitrate);
+  in_codec.GetParam(kCodecParamStartBitrate, &start_bitrate);
 
   if (max_bitrate < min_bitrate) {
     return false;
