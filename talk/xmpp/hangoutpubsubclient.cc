@@ -277,6 +277,7 @@ void HangoutPubSubClient::OnAudioMuteStateChange(
   bool is_muted = change.new_state;
   bool remote_action = (!change.publisher_nick.empty() &&
                         (change.publisher_nick != change.published_nick));
+
   if (remote_action) {
     const std::string& mutee_nick = change.published_nick;
     const std::string& muter_nick = change.publisher_nick;
@@ -287,9 +288,8 @@ void HangoutPubSubClient::OnAudioMuteStateChange(
     }
     bool should_mute_locally = (mutee_nick == nick_);
     SignalRemoteMute(mutee_nick, muter_nick, should_mute_locally);
-  } else {
-    SignalAudioMuteStateChange(change.published_nick, was_muted, is_muted);
   }
+  SignalAudioMuteStateChange(change.published_nick, was_muted, is_muted);
 }
 
 const std::string GetAudioMuteNickFromItem(const XmlElement* item) {

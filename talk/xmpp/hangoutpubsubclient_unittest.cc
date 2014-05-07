@@ -449,11 +449,14 @@ TEST_F(HangoutPubSubClientTest, TestRequest) {
       "  </event>"
       "</message>";
 
+  listener->last_is_audio_muted = false;
   xmpp_client->HandleStanza(
       buzz::XmlElement::ForStr(incoming_remote_mute_message));
   EXPECT_EQ("mutee", listener->last_mutee_nick);
   EXPECT_EQ("muter", listener->last_muter_nick);
   EXPECT_FALSE(listener->last_should_mute);
+  EXPECT_EQ("mutee", listener->last_audio_muted_nick);
+  EXPECT_TRUE(listener->last_is_audio_muted);
 
   std::string incoming_remote_mute_me_message =
       "<message xmlns='jabber:client' from='room@domain.com'>"
@@ -466,11 +469,14 @@ TEST_F(HangoutPubSubClientTest, TestRequest) {
       "  </event>"
       "</message>";
 
+  listener->last_is_audio_muted = false;
   xmpp_client->HandleStanza(
       buzz::XmlElement::ForStr(incoming_remote_mute_me_message));
   EXPECT_EQ("me", listener->last_mutee_nick);
   EXPECT_EQ("muter", listener->last_muter_nick);
   EXPECT_TRUE(listener->last_should_mute);
+  EXPECT_EQ("me", listener->last_audio_muted_nick);
+  EXPECT_TRUE(listener->last_is_audio_muted);
 
   std::string incoming_media_block_message =
       "<message xmlns='jabber:client' from='room@domain.com'>"

@@ -121,6 +121,7 @@ const char STR_MUC_ROOM_FEATURE_MULTI_USER_VC[] = "muc_muvc";
 const char STR_MUC_ROOM_FEATURE_RECORDABLE[] = "recordable";
 const char STR_MUC_ROOM_FEATURE_CUSTOM_RECORDING[] = "custom_recording";
 const char STR_MUC_ROOM_OWNER_PROFILE_ID[] = "muc#roominfo_owner_profile_id";
+const char STR_MUC_ROOM_FEATURE_ABUSE_RECORDABLE[] = "abuse_recordable";
 
 const char STR_ID_TYPE_CONVERSATION[] = "conversation";
 const char NS_GOOGLE_MUC_HANGOUT[] = "google:muc#hangout";

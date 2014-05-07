@@ -114,6 +114,7 @@ extern const char STR_MUC_ROOM_FEATURE_MULTI_USER_VC[];
 extern const char STR_MUC_ROOM_FEATURE_RECORDABLE[];
 extern const char STR_MUC_ROOM_FEATURE_CUSTOM_RECORDING[];
 extern const char STR_MUC_ROOM_OWNER_PROFILE_ID[];
+extern const char STR_MUC_ROOM_FEATURE_ABUSE_RECORDABLE[];
 
 extern const char STR_ID_TYPE_CONVERSATION[];
 extern const char NS_GOOGLE_MUC_HANGOUT[];
