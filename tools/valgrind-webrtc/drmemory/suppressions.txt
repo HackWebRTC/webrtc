@@ -753,3 +753,9 @@ name=https://code.google.com/p/webrtc/issues/detail?id=3275 (allocated with oper
 drmemorylib.dll!replace_free
 ...
 *!*
+
+UNINITIALIZED READ
+name=b/11288120
+*!cricket::WebRtcVideoMediaChannel::GetStats
+*!WebRtcVideoEngineTestFake_SendReceiveBitratesStats_Test::TestBody
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
