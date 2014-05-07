@@ -81,8 +81,6 @@ void DestroyWebRtcMediaEngine(cricket::MediaEngineInterface* media_engine) {
 }
 #endif
 
-static const int kVideoCodecClockratekHz = cricket::kVideoCodecClockrate / 1000;
-
 
 namespace cricket {
 
@@ -232,6 +230,9 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
       first_frame_arrived_ = true;
       capture_start_rtp_time_stamp_ = rtp_time_stamp;
     }
+
+    const int kVideoCodecClockratekHz = cricket::kVideoCodecClockrate / 1000;
+
 #ifdef USE_WEBRTC_DEV_BRANCH
     if (ntp_time_ms > 0) {
       uint32 elapsed_time_ms =
