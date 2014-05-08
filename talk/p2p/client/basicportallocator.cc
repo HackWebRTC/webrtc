@@ -1081,8 +1081,11 @@ void AllocationSequence::OnResolvedTurnServerAddress(
     const talk_base::SocketAddress& resolved_server_address) {
   std::map<talk_base::SocketAddress, Port*>::iterator iter;
   iter = turn_ports_.find(server_address);
+  if (iter == turn_ports_.end()) {
+    LOG(LS_INFO) << "TurnPort entry is not found in the map.";
+    return;
+  }
 
-  ASSERT(iter != turn_ports_.end());
   ASSERT(iter->second == port);
   // Remove old entry and then insert using the resolved address as key.
   turn_ports_.erase(iter);
