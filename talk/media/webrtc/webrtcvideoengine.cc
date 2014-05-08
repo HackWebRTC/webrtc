@@ -107,11 +107,11 @@ static const int kDefaultNumberOfTemporalLayers = 1;  // 1:1
 static const int kMaxExternalVideoCodecs = 8;
 static const int kExternalVideoPayloadTypeBase = 120;
 
-bool BitrateIsSet(int value) {
+static bool BitrateIsSet(int value) {
   return value > kAutoBandwidth;
 }
 
-int GetBitrate(int value, int deflt) {
+static int GetBitrate(int value, int deflt) {
   return BitrateIsSet(value) ? value : deflt;
 }
 
