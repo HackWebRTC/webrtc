@@ -587,6 +587,9 @@ bool WebRtcSession::Initialize(
         &value,
         NULL)) {
     video_options_.use_improved_wifi_bandwidth_estimator.Set(value);
+  } else {
+    // Enable by default if the constraint is not set.
+    video_options_.use_improved_wifi_bandwidth_estimator.Set(true);
   }
 
   if (FindConstraint(
