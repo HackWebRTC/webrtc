@@ -386,6 +386,26 @@ TEST_F(SctpDataMediaChannelTest, SendData) {
                   << "recv1.last_data=" << receiver1()->last_data();
 }
 
+// Sends a lot of large messages at once and verifies SDR_BLOCK is returned.
+TEST_F(SctpDataMediaChannelTest, SendDataBlocked) {
+  SetupConnectedChannels();
+
+  cricket::SendDataResult result;
+  cricket::SendDataParams params;
+  params.ssrc = 1;
+
+  std::vector<char> buffer(1024 * 64, 0);
+
+  for (size_t i = 0; i < 100; ++i) {
+    channel1()->SendData(
+        params, talk_base::Buffer(buffer.data(), buffer.size()), &result);
+    if (result == cricket::SDR_BLOCK)
+      break;
+  }
+
+  EXPECT_EQ(cricket::SDR_BLOCK, result);
+}
+
 TEST_F(SctpDataMediaChannelTest, ClosesRemoteStream) {
   SetupConnectedChannels();
   SignalChannelClosedObserver chan_1_sig_receiver, chan_2_sig_receiver;

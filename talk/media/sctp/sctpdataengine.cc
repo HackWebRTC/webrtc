@@ -552,7 +552,7 @@ bool SctpDataMediaChannel::SendData(
                            talk_base::checked_cast<socklen_t>(sizeof(spa)),
                            SCTP_SENDV_SPA, 0);
   if (send_res < 0) {
-    if (errno == EWOULDBLOCK) {
+    if (errno == SCTP_EWOULDBLOCK) {
       *result = SDR_BLOCK;
       LOG(LS_INFO) << debug_name_ << "->SendData(...): EWOULDBLOCK returned";
     } else {
