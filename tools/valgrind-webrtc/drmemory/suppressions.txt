@@ -748,12 +748,6 @@ name=name=https://code.google.com/p/webrtc/issues/detail?id=3183 (3)
 *!RtpRtcpRtxNackTest_RtxNack_Test::TestBody
 *!testing::internal::HandleSehExceptionsInMethodIfSupported<>
 
-INVALID HEAP ARGUMENT
-name=https://code.google.com/p/webrtc/issues/detail?id=3275 (allocated with operator new, freed with free)
-drmemorylib.dll!replace_free
-...
-*!*
-
 UNINITIALIZED READ
 name=b/11288120
 *!cricket::WebRtcVideoMediaChannel::GetStats
