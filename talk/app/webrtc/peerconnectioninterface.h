@@ -76,6 +76,7 @@
 #include "talk/app/webrtc/jsep.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/statstypes.h"
+#include "talk/app/webrtc/umametrics.h"
 #include "talk/base/fileutils.h"
 #include "talk/base/socketaddress.h"
 
@@ -116,6 +117,15 @@ class StatsObserver : public talk_base::RefCountInterface {
 
  protected:
   virtual ~StatsObserver() {}
+};
+
+class UMAObserver : public talk_base::RefCountInterface {
+ public:
+  virtual void IncrementCounter(UMAMetricsCounter type) = 0;
+  virtual void AddHistogramSample(UMAMetricsName type, int value) = 0;
+
+ protected:
+  virtual ~UMAObserver() {}
 };
 
 class PeerConnectionInterface : public talk_base::RefCountInterface {
@@ -254,6 +264,8 @@ class PeerConnectionInterface : public talk_base::RefCountInterface {
   // TODO(ronghuawu): Consider to change this so that the AddIceCandidate will
   // take the ownership of the |candidate|.
   virtual bool AddIceCandidate(const IceCandidateInterface* candidate) = 0;
+
+  virtual void RegisterUMAObserver(UMAObserver* observer) = 0;
 
   // Returns the current SignalingState.
   virtual SignalingState signaling_state() = 0;

@@ -105,6 +105,8 @@ class PeerConnection : public PeerConnectionInterface,
       const PeerConnectionInterface::RTCConfiguration& config);
   virtual bool AddIceCandidate(const IceCandidateInterface* candidate);
 
+  virtual void RegisterUMAObserver(UMAObserver* observer);
+
   virtual void Close();
 
  protected:
@@ -183,6 +185,7 @@ class PeerConnection : public PeerConnectionInterface,
   // will refer to the same reference count.
   talk_base::scoped_refptr<PeerConnectionFactory> factory_;
   PeerConnectionObserver* observer_;
+  UMAObserver* uma_observer_;
   SignalingState signaling_state_;
   // TODO(bemasc): Remove ice_state_.
   IceState ice_state_;

@@ -301,6 +301,7 @@ namespace webrtc {
 PeerConnection::PeerConnection(PeerConnectionFactory* factory)
     : factory_(factory),
       observer_(NULL),
+      uma_observer_(NULL),
       signaling_state_(kStable),
       ice_state_(kIceNew),
       ice_connection_state_(kIceConnectionNew),
@@ -356,6 +357,12 @@ bool PeerConnection::DoInitialize(
         MediaConstraintsInterface::kEnableIPv6,
         &value, NULL) && value) {
     portallocator_flags |= cricket::PORTALLOCATOR_ENABLE_IPV6;
+  }
+
+  if (value && uma_observer_) {
+    uma_observer_->IncrementCounter(kPeerConnection_IPv6);
+  } else if (!value && uma_observer_) {
+    uma_observer_->IncrementCounter(kPeerConnection_IPv4);
   }
 
   port_allocator_->set_flags(portallocator_flags);
@@ -617,6 +624,10 @@ bool PeerConnection::UpdateIce(const RTCConfiguration& config) {
 bool PeerConnection::AddIceCandidate(
     const IceCandidateInterface* ice_candidate) {
   return session_->ProcessIceMessage(ice_candidate);
+}
+
+void PeerConnection::RegisterUMAObserver(UMAObserver* observer) {
+  uma_observer_ = observer;
 }
 
 const SessionDescriptionInterface* PeerConnection::local_description() const {
