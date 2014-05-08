@@ -558,7 +558,7 @@ TEST_F(WebRtcVideoEngineTestFake, MaxBitrateResetWithConferenceMode) {
   EXPECT_TRUE(channel_->SetOptions(options));
   VerifyVP8SendCodec(
       channel_num, kVP8Codec.width, kVP8Codec.height, 0,
-      kMaxBandwidthKbps, 10, 20);
+      kMaxBandwidthKbps, 10, kStartBandwidthKbps);
 }
 
 // Verify the current send bitrate is used as start bitrate when reconfiguring
@@ -1458,7 +1458,7 @@ TEST_F(WebRtcVideoEngineTestFake, SetStartBandwidthOption) {
       kMaxBandwidthKbps, kMinBandwidthKbps, start_bandwidth_kbps);
 }
 
-// Test that SetMaxSendBandwidth is ignored in conference mode.
+// Test that SetMaxSendBandwidth works as expected in conference mode.
 TEST_F(WebRtcVideoEngineTestFake, SetBandwidthInConference) {
   EXPECT_TRUE(SetupEngine());
   int channel_num = vie_.GetLastChannel();
@@ -1471,16 +1471,11 @@ TEST_F(WebRtcVideoEngineTestFake, SetBandwidthInConference) {
   // Set send bandwidth.
   EXPECT_TRUE(channel_->SetMaxSendBandwidth(768000));
 
-  // Verify bitrate not changed.
-  webrtc::VideoCodec gcodec;
-  EXPECT_EQ(0, vie_.GetSendCodec(channel_num, gcodec));
-  EXPECT_EQ(kMinBandwidthKbps, gcodec.minBitrate);
-  EXPECT_EQ(kStartBandwidthKbps, gcodec.startBitrate);
-  EXPECT_EQ(kMaxBandwidthKbps, gcodec.maxBitrate);
-  EXPECT_NE(768U, gcodec.minBitrate);
-  EXPECT_NE(768U, gcodec.startBitrate);
-  EXPECT_NE(768U, gcodec.maxBitrate);
+  // Verify that the max bitrate has changed.
+  VerifyVP8SendCodec(channel_num, kVP8Codec.width, kVP8Codec.height, 0,
+                     768, kMinBandwidthKbps, kStartBandwidthKbps);
 }
+
 
 // Test that sending screencast frames doesn't change bitrate.
 TEST_F(WebRtcVideoEngineTestFake, SetBandwidthScreencast) {

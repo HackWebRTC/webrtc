@@ -90,7 +90,6 @@ static const int kDefaultLogSeverity = talk_base::LS_WARNING;
 static const int kMinVideoBitrate = 50;
 static const int kStartVideoBitrate = 300;
 static const int kMaxVideoBitrate = 2000;
-static const int kDefaultConferenceModeMaxVideoBitrate = 500;
 
 // Controlled by exp, try a super low minimum bitrate for poor connections.
 static const int kLowerMinBitrate = 30;
@@ -107,6 +106,14 @@ static const int kDefaultNumberOfTemporalLayers = 1;  // 1:1
 
 static const int kMaxExternalVideoCodecs = 8;
 static const int kExternalVideoPayloadTypeBase = 120;
+
+bool BitrateIsSet(int value) {
+  return value > kAutoBandwidth;
+}
+
+int GetBitrate(int value, int deflt) {
+  return BitrateIsSet(value) ? value : deflt;
+}
 
 // Static allocation of payload type values for external video codec.
 static int GetExternalVideoPayloadType(int index) {
@@ -1264,9 +1271,15 @@ static void ConvertToCricketVideoCodec(
   out_codec->width = in_codec.width;
   out_codec->height = in_codec.height;
   out_codec->framerate = in_codec.maxFramerate;
-  out_codec->SetParam(kCodecParamMinBitrate, in_codec.minBitrate);
-  out_codec->SetParam(kCodecParamMaxBitrate, in_codec.maxBitrate);
-  out_codec->SetParam(kCodecParamStartBitrate, in_codec.startBitrate);
+  if (BitrateIsSet(in_codec.minBitrate)) {
+    out_codec->SetParam(kCodecParamMinBitrate, in_codec.minBitrate);
+  }
+  if (BitrateIsSet(in_codec.maxBitrate)) {
+    out_codec->SetParam(kCodecParamMaxBitrate, in_codec.maxBitrate);
+  }
+  if (BitrateIsSet(in_codec.startBitrate)) {
+    out_codec->SetParam(kCodecParamStartBitrate, in_codec.startBitrate);
+  }
   if (in_codec.qpMax) {
     out_codec->SetParam(kCodecParamMaxQuantization, in_codec.qpMax);
   }
@@ -1327,19 +1340,14 @@ bool WebRtcVideoEngine::ConvertFromCricketVideoCodec(
     out_codec->maxFramerate = in_codec.framerate;
 
   // Convert bitrate parameters.
-  int max_bitrate = kMaxVideoBitrate;
-  int min_bitrate = kMinVideoBitrate;
-  int start_bitrate = kStartVideoBitrate;
+  int max_bitrate = -1;
+  int min_bitrate = -1;
+  int start_bitrate = -1;
 
   in_codec.GetParam(kCodecParamMinBitrate, &min_bitrate);
   in_codec.GetParam(kCodecParamMaxBitrate, &max_bitrate);
   in_codec.GetParam(kCodecParamStartBitrate, &start_bitrate);
 
-  if (max_bitrate < min_bitrate) {
-    return false;
-  }
-  start_bitrate = talk_base::_max(start_bitrate, min_bitrate);
-  start_bitrate = talk_base::_min(start_bitrate, max_bitrate);
 
   out_codec->minBitrate = min_bitrate;
   out_codec->startBitrate = start_bitrate;
@@ -1617,9 +1625,6 @@ WebRtcVideoMediaChannel::WebRtcVideoMediaChannel(
       send_rtx_type_(-1),
       send_red_type_(-1),
       send_fec_type_(-1),
-      send_min_bitrate_(kMinVideoBitrate),
-      send_start_bitrate_(kStartVideoBitrate),
-      send_max_bitrate_(kMaxVideoBitrate),
       sending_(false),
       ratio_w_(0),
       ratio_h_(0) {
@@ -1782,8 +1787,19 @@ bool WebRtcVideoMediaChannel::SetSendCodecs(
     send_rtx_type_ = rtx_it->second;
   }
 
-  if (!SetSendCodec(
-          codec, codec.minBitrate, codec.startBitrate, codec.maxBitrate)) {
+  if (BitrateIsSet(codec.minBitrate) && BitrateIsSet(codec.maxBitrate) &&
+      codec.minBitrate > codec.maxBitrate) {
+    // TODO(pthatcher): This behavior contradicts other behavior in
+    // this file which will cause min > max to push the min down to
+    // the max.  There are unit tests for both behaviors.  We should
+    // pick one and do that.
+    LOG(LS_INFO) << "Rejecting codec with min bitrate ("
+                 << codec.minBitrate << ") larger than max ("
+                 << codec.maxBitrate << "). ";
+    return false;
+  }
+
+  if (!SetSendCodec(codec)) {
     return false;
   }
 
@@ -1943,8 +1959,7 @@ bool WebRtcVideoMediaChannel::AddSendStream(const StreamParams& sp) {
 
   // Reset send codec after stream parameters changed.
   if (send_codec_) {
-    if (!SetSendCodec(send_channel, *send_codec_, send_min_bitrate_,
-                      send_start_bitrate_, send_max_bitrate_)) {
+    if (!SetSendCodec(send_channel, *send_codec_)) {
       return false;
     }
     LogSendCodecChange("SetSendStreamFormat()");
@@ -2476,7 +2491,10 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
       sinfo.framerate_input = channel_stream_info->framerate();
       sinfo.framerate_sent = send_channel->encoder_observer()->framerate();
       sinfo.nominal_bitrate = send_channel->encoder_observer()->bitrate();
-      sinfo.preferred_bitrate = send_max_bitrate_;
+      if (send_codec_) {
+        sinfo.preferred_bitrate = GetBitrate(
+            send_codec_->maxBitrate, kMaxVideoBitrate);
+      }
       sinfo.adapt_reason = send_channel->CurrentAdaptReason();
       sinfo.capture_jitter_ms = -1;
       sinfo.avg_encode_ms = -1;
@@ -2888,34 +2906,29 @@ bool WebRtcVideoMediaChannel::SetStartSendBandwidth(int bps) {
   }
 
   // On success, SetSendCodec() will reset |send_start_bitrate_| to |bps/1000|,
-  // by calling MaybeChangeStartBitrate.  That method will also clamp the
+  // by calling MaybeChangeBitrates.  That method will also clamp the
   // start bitrate between min and max, consistent with the override behavior
   // in SetMaxSendBandwidth.
-  return SetSendCodec(*send_codec_,
-      send_min_bitrate_, bps / 1000, send_max_bitrate_);
+  webrtc::VideoCodec new_codec = *send_codec_;
+  if (BitrateIsSet(bps)) {
+    new_codec.startBitrate = bps / 1000;
+  }
+  return SetSendCodec(new_codec);
 }
 
 bool WebRtcVideoMediaChannel::SetMaxSendBandwidth(int bps) {
   LOG(LS_INFO) << "WebRtcVideoMediaChannel::SetMaxSendBandwidth";
-
-  if (InConferenceMode()) {
-    LOG(LS_INFO) << "Conference mode ignores SetMaxSendBandwidth";
-    return true;
-  }
 
   if (!send_codec_) {
     LOG(LS_INFO) << "The send codec has not been set up yet";
     return true;
   }
 
-  // Use the default value or the bps for the max
-  int max_bitrate = (bps <= 0) ? send_max_bitrate_ : (bps / 1000);
-
-  // Reduce the current minimum and start bitrates if necessary.
-  int min_bitrate = talk_base::_min(send_min_bitrate_, max_bitrate);
-  int start_bitrate = talk_base::_min(send_start_bitrate_, max_bitrate);
-
-  if (!SetSendCodec(*send_codec_, min_bitrate, start_bitrate, max_bitrate)) {
+  webrtc::VideoCodec new_codec = *send_codec_;
+  if (BitrateIsSet(bps)) {
+    new_codec.maxBitrate = bps / 1000;
+  }
+  if (!SetSendCodec(new_codec)) {
     return false;
   }
   LogSendCodecChange("SetMaxSendBandwidth()");
@@ -2974,55 +2987,41 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
     send_channel->ApplyCpuOptions(options_);
   }
 
-  // Adjust send codec bitrate if needed.
-  int conf_max_bitrate = kDefaultConferenceModeMaxVideoBitrate;
+  if (send_codec_) {
+    bool reset_send_codec_needed = denoiser_changed;
+    webrtc::VideoCodec new_codec = *send_codec_;
 
-  // Save altered min_bitrate level and apply if necessary.
-  bool adjusted_min_bitrate = false;
-  if (options.lower_min_bitrate.IsSet()) {
-    bool lower;
-    options.lower_min_bitrate.Get(&lower);
-
-    int new_send_min_bitrate = lower ? kLowerMinBitrate : kMinVideoBitrate;
-    adjusted_min_bitrate = (new_send_min_bitrate != send_min_bitrate_);
-    send_min_bitrate_ = new_send_min_bitrate;
-  }
-
-  int expected_bitrate = send_max_bitrate_;
-  if (InConferenceMode()) {
-    expected_bitrate = conf_max_bitrate;
-  } else if (conference_mode_turned_off) {
-    // This is a special case for turning conference mode off.
-    // Max bitrate should go back to the default maximum value instead
-    // of the current maximum.
-    expected_bitrate = kMaxVideoBitrate;
-  }
-
-  int options_start_bitrate;
-  bool start_bitrate_changed = false;
-  if (options.video_start_bitrate.Get(&options_start_bitrate) &&
-      options_start_bitrate != send_start_bitrate_) {
-    send_start_bitrate_ = options_start_bitrate;
-    start_bitrate_changed = true;
-  }
-
-  bool reset_send_codec_needed = send_codec_ &&
-      (send_max_bitrate_ != expected_bitrate || denoiser_changed ||
-       adjusted_min_bitrate || start_bitrate_changed);
-
-
-  LOG(LS_INFO) << "Reset send codec needed is enabled? "
-               << reset_send_codec_needed;
-  if (reset_send_codec_needed) {
-    // On success, SetSendCodec() will reset send_max_bitrate_ to
-    // expected_bitrate.
-    if (!SetSendCodec(*send_codec_,
-                      send_min_bitrate_,
-                      send_start_bitrate_,
-                      expected_bitrate)) {
-      return false;
+    // TODO(pthatcher): Remove this.  We don't need 4 ways to set bitrates.
+    bool lower_min_bitrate;
+    if (options.lower_min_bitrate.Get(&lower_min_bitrate)) {
+      new_codec.minBitrate = kLowerMinBitrate;
+      reset_send_codec_needed = true;
     }
-    LogSendCodecChange("SetOptions()");
+
+    if (conference_mode_turned_off) {
+      // This is a special case for turning conference mode off.
+      // Max bitrate should go back to the default maximum value instead
+      // of the current maximum.
+      new_codec.maxBitrate = kAutoBandwidth;
+      reset_send_codec_needed = true;
+    }
+
+    // TODO(pthatcher): Remove this.  We don't need 4 ways to set bitrates.
+    int new_start_bitrate;
+    if (options.video_start_bitrate.Get(&new_start_bitrate)) {
+      new_codec.startBitrate = new_start_bitrate;
+      reset_send_codec_needed = true;
+    }
+
+
+    LOG(LS_INFO) << "Reset send codec needed is enabled? "
+                 << reset_send_codec_needed;
+    if (reset_send_codec_needed) {
+      if (!SetSendCodec(new_codec)) {
+        return false;
+      }
+      LogSendCodecChange("SetOptions()");
+    }
   }
 
   if (leaky_bucket_changed) {
@@ -3643,32 +3642,24 @@ bool WebRtcVideoMediaChannel::SetNackFec(int channel_id,
   return true;
 }
 
-bool WebRtcVideoMediaChannel::SetSendCodec(const webrtc::VideoCodec& codec,
-                                           int min_bitrate,
-                                           int start_bitrate,
-                                           int max_bitrate) {
+bool WebRtcVideoMediaChannel::SetSendCodec(const webrtc::VideoCodec& codec) {
   bool ret_val = true;
   for (SendChannelMap::iterator iter = send_channels_.begin();
        iter != send_channels_.end(); ++iter) {
     WebRtcVideoChannelSendInfo* send_channel = iter->second;
-    ret_val = SetSendCodec(send_channel, codec, min_bitrate, start_bitrate,
-                           max_bitrate) && ret_val;
+    ret_val = SetSendCodec(send_channel, codec) && ret_val;
   }
   if (ret_val) {
     // All SetSendCodec calls were successful. Update the global state
     // accordingly.
     send_codec_.reset(new webrtc::VideoCodec(codec));
-    send_min_bitrate_ = min_bitrate;
-    send_start_bitrate_ = start_bitrate;
-    send_max_bitrate_ = max_bitrate;
   } else {
     // At least one SetSendCodec call failed, rollback.
     for (SendChannelMap::iterator iter = send_channels_.begin();
          iter != send_channels_.end(); ++iter) {
       WebRtcVideoChannelSendInfo* send_channel = iter->second;
       if (send_codec_) {
-        SetSendCodec(send_channel, *send_codec_.get(), send_min_bitrate_,
-                     send_start_bitrate_, send_max_bitrate_);
+        SetSendCodec(send_channel, *send_codec_);
       }
     }
   }
@@ -3677,19 +3668,14 @@ bool WebRtcVideoMediaChannel::SetSendCodec(const webrtc::VideoCodec& codec,
 
 bool WebRtcVideoMediaChannel::SetSendCodec(
     WebRtcVideoChannelSendInfo* send_channel,
-    const webrtc::VideoCodec& codec,
-    int min_bitrate,
-    int start_bitrate,
-    int max_bitrate) {
+    const webrtc::VideoCodec& codec) {
   if (!send_channel) {
     return false;
   }
+
   const int channel_id = send_channel->channel_id();
   // Make a copy of the codec
   webrtc::VideoCodec target_codec = codec;
-  target_codec.startBitrate = start_bitrate;
-  target_codec.minBitrate = min_bitrate;
-  target_codec.maxBitrate = max_bitrate;
 
   // Set the default number of temporal layers for VP8.
   if (webrtc::kVideoCodecVP8 == codec.codecType) {
@@ -3729,7 +3715,7 @@ bool WebRtcVideoMediaChannel::SetSendCodec(
     LOG(LS_INFO) << "0x0 resolution selected. Captured frames will be dropped "
                  << "for ssrc: " << ssrc << ".";
   } else {
-    MaybeChangeStartBitrate(channel_id, &target_codec);
+    MaybeChangeBitrates(channel_id, &target_codec);
     webrtc::VideoCodec current_codec;
     if (!engine()->vie()->codec()->GetSendCodec(channel_id, current_codec)) {
       // Compare against existing configured send codec.
@@ -3925,6 +3911,8 @@ int WebRtcVideoMediaChannel::GetRecvChannelNum(uint32 ssrc) {
 // we need to reset the send codec on vie.
 // The new send codec size should not exceed send_codec_ which is controlled
 // only by the 'jec' logic.
+// TODO(pthatcher): Get rid of this function, so we only ever set up
+// codecs in a single place.
 bool WebRtcVideoMediaChannel::MaybeResetVieSendCodec(
     WebRtcVideoChannelSendInfo* send_channel,
     int new_width,
@@ -3936,7 +3924,7 @@ bool WebRtcVideoMediaChannel::MaybeResetVieSendCodec(
   }
   ASSERT(send_codec_.get() != NULL);
 
-  webrtc::VideoCodec target_codec = *send_codec_.get();
+  webrtc::VideoCodec target_codec = *send_codec_;
   const VideoFormat& video_format = send_channel->video_format();
   UpdateVideoCodec(video_format, &target_codec);
 
@@ -3986,11 +3974,13 @@ bool WebRtcVideoMediaChannel::MaybeResetVieSendCodec(
     vie_codec.height = target_height;
     vie_codec.maxFramerate = target_codec.maxFramerate;
     vie_codec.startBitrate = target_codec.startBitrate;
+    vie_codec.minBitrate = target_codec.minBitrate;
+    vie_codec.maxBitrate = target_codec.maxBitrate;
     vie_codec.targetBitrate = 0;
     vie_codec.codecSpecific.VP8.automaticResizeOn = automatic_resize;
     vie_codec.codecSpecific.VP8.denoisingOn = denoising;
     vie_codec.codecSpecific.VP8.frameDroppingOn = vp8_frame_dropping;
-    MaybeChangeStartBitrate(channel_id, &vie_codec);
+    MaybeChangeBitrates(channel_id, &vie_codec);
 
     if (engine()->vie()->codec()->SetSendCodec(channel_id, vie_codec) != 0) {
       LOG_RTCERR1(SetSendCodec, channel_id);
@@ -4021,12 +4011,28 @@ bool WebRtcVideoMediaChannel::MaybeResetVieSendCodec(
   return true;
 }
 
-void WebRtcVideoMediaChannel::MaybeChangeStartBitrate(
-  int channel_id, webrtc::VideoCodec* video_codec) {
-  if (video_codec->startBitrate < video_codec->minBitrate) {
-    video_codec->startBitrate = video_codec->minBitrate;
-  } else if (video_codec->startBitrate > video_codec->maxBitrate) {
-    video_codec->startBitrate = video_codec->maxBitrate;
+void WebRtcVideoMediaChannel::MaybeChangeBitrates(
+  int channel_id, webrtc::VideoCodec* codec) {
+  codec->minBitrate = GetBitrate(codec->minBitrate, kMinVideoBitrate);
+  codec->startBitrate = GetBitrate(codec->startBitrate, kStartVideoBitrate);
+  codec->maxBitrate = GetBitrate(codec->maxBitrate, kMaxVideoBitrate);
+
+  if (codec->minBitrate > codec->maxBitrate) {
+    LOG(LS_INFO) << "Decreasing codec min bitrate to the max ("
+                 << codec->maxBitrate << ") because the min ("
+                 << codec->minBitrate << ") exceeds the max.";
+    codec->minBitrate = codec->maxBitrate;
+  }
+  if (codec->startBitrate < codec->minBitrate) {
+    LOG(LS_INFO) << "Increasing codec start bitrate to the min ("
+                 << codec->minBitrate << ") because the start ("
+                 << codec->startBitrate << ") is less than the min.";
+    codec->startBitrate = codec->minBitrate;
+  } else if (codec->startBitrate > codec->maxBitrate) {
+    LOG(LS_INFO) << "Decreasing codec start bitrate to the max ("
+                 << codec->maxBitrate << ") because the start ("
+                 << codec->startBitrate << ") exceeds the max.";
+    codec->startBitrate = codec->maxBitrate;
   }
 
   // Use a previous target bitrate, if there is one.
@@ -4035,11 +4041,11 @@ void WebRtcVideoMediaChannel::MaybeChangeStartBitrate(
       channel_id, &current_target_bitrate) == 0) {
     // Convert to kbps.
     current_target_bitrate /= 1000;
-    if (current_target_bitrate > video_codec->maxBitrate) {
-      current_target_bitrate = video_codec->maxBitrate;
+    if (current_target_bitrate > codec->maxBitrate) {
+      current_target_bitrate = codec->maxBitrate;
     }
-    if (current_target_bitrate > video_codec->startBitrate) {
-      video_codec->startBitrate = current_target_bitrate;
+    if (current_target_bitrate > codec->startBitrate) {
+      codec->startBitrate = current_target_bitrate;
     }
   }
 }

@@ -336,11 +336,9 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   bool ConfigureSending(int channel_id, uint32 local_ssrc_key);
   bool SetNackFec(int channel_id, int red_payload_type, int fec_payload_type,
                   bool nack_enabled);
-  bool SetSendCodec(const webrtc::VideoCodec& codec, int min_bitrate,
-                    int start_bitrate, int max_bitrate);
+  bool SetSendCodec(const webrtc::VideoCodec& codec);
   bool SetSendCodec(WebRtcVideoChannelSendInfo* send_channel,
-                    const webrtc::VideoCodec& codec, int min_bitrate,
-                    int start_bitrate, int max_bitrate);
+                    const webrtc::VideoCodec& codec);
   void LogSendCodecChange(const std::string& reason);
   // Prepares the channel with channel id |info->channel_id()| to receive all
   // codecs in |receive_codecs_| and start receive packets.
@@ -353,9 +351,9 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   bool MaybeResetVieSendCodec(WebRtcVideoChannelSendInfo* send_channel,
                               int new_width, int new_height, bool is_screencast,
                               bool* reset);
-  // Checks the current bitrate estimate and modifies the start bitrate
-  // accordingly.
-  void MaybeChangeStartBitrate(int channel_id, webrtc::VideoCodec* video_codec);
+  // Checks the current bitrate estimate and modifies the bitrates
+  // accordingly, including converting kAutoBandwidth to the correct defaults.
+  void MaybeChangeBitrates(int channel_id, webrtc::VideoCodec* video_codec);
   // Helper function for starting the sending of media on all channels or
   // |channel_id|. Note that these two function do not change |sending_|.
   bool StartSend();
@@ -456,9 +454,6 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   int send_rtx_type_;
   int send_red_type_;
   int send_fec_type_;
-  int send_min_bitrate_;
-  int send_start_bitrate_;
-  int send_max_bitrate_;
   bool sending_;
   std::vector<RtpHeaderExtension> send_extensions_;
 
