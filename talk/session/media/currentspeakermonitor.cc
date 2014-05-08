@@ -39,9 +39,10 @@ const int kMaxAudioLevel = 9;
 const int kDefaultMinTimeBetweenSwitches = 1000;
 }
 
-CurrentSpeakerMonitor::CurrentSpeakerMonitor(Call* call, BaseSession* session)
+CurrentSpeakerMonitor::CurrentSpeakerMonitor(
+    AudioSourceContext* audio_source_context, BaseSession* session)
     : started_(false),
-      call_(call),
+      audio_source_context_(audio_source_context),
       session_(session),
       current_speaker_ssrc_(0),
       earliest_permitted_switch_time_(0),
@@ -54,9 +55,9 @@ CurrentSpeakerMonitor::~CurrentSpeakerMonitor() {
 
 void CurrentSpeakerMonitor::Start() {
   if (!started_) {
-    call_->SignalAudioMonitor.connect(
+    audio_source_context_->SignalAudioMonitor.connect(
         this, &CurrentSpeakerMonitor::OnAudioMonitor);
-    call_->SignalMediaStreamsUpdate.connect(
+    audio_source_context_->SignalMediaStreamsUpdate.connect(
         this, &CurrentSpeakerMonitor::OnMediaStreamsUpdate);
 
     started_ = true;
@@ -65,8 +66,8 @@ void CurrentSpeakerMonitor::Start() {
 
 void CurrentSpeakerMonitor::Stop() {
   if (started_) {
-    call_->SignalAudioMonitor.disconnect(this);
-    call_->SignalMediaStreamsUpdate.disconnect(this);
+    audio_source_context_->SignalAudioMonitor.disconnect(this);
+    audio_source_context_->SignalMediaStreamsUpdate.disconnect(this);
 
     started_ = false;
     ssrc_to_speaking_state_map_.clear();
@@ -80,7 +81,8 @@ void CurrentSpeakerMonitor::set_min_time_between_switches(
   min_time_between_switches_ = min_time_between_switches;
 }
 
-void CurrentSpeakerMonitor::OnAudioMonitor(Call* call, const AudioInfo& info) {
+void CurrentSpeakerMonitor::OnAudioMonitor(
+    AudioSourceContext* audio_source_context, const AudioInfo& info) {
   std::map<uint32, int> active_ssrc_to_level_map;
   cricket::AudioInfo::StreamList::const_iterator stream_list_it;
   for (stream_list_it = info.active_streams.begin();
@@ -187,11 +189,10 @@ void CurrentSpeakerMonitor::OnAudioMonitor(Call* call, const AudioInfo& info) {
   }
 }
 
-void CurrentSpeakerMonitor::OnMediaStreamsUpdate(Call* call,
-                                                 Session* session,
-                                                 const MediaStreams& added,
-                                                 const MediaStreams& removed) {
-  if (call == call_ && session == session_) {
+void CurrentSpeakerMonitor::OnMediaStreamsUpdate(
+    AudioSourceContext* audio_source_context, Session* session,
+    const MediaStreams& added, const MediaStreams& removed) {
+  if (audio_source_context == audio_source_context_ && session == session_) {
     // Update the speaking state map based on added and removed streams.
     for (std::vector<cricket::StreamParams>::const_iterator
            it = removed.video().begin(); it != removed.video().end(); ++it) {

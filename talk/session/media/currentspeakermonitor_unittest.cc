@@ -47,7 +47,7 @@ class MockCall : public Call {
   MockCall() : Call(NULL) {}
 
   void EmitAudioMonitor(const AudioInfo& info) {
-    SignalAudioMonitor(this, info);
+    GetAudioSourceProxy()->SignalAudioMonitor(GetAudioSourceProxy(), info);
   }
 };
 
@@ -56,7 +56,7 @@ class CurrentSpeakerMonitorTest : public testing::Test,
  public:
   CurrentSpeakerMonitorTest() {
     call_ = new MockCall();
-    monitor_ = new CurrentSpeakerMonitor(call_, NULL);
+    monitor_ = new CurrentSpeakerMonitor(call_->GetAudioSourceProxy(), NULL);
     // Shrink the minimum time betweeen switches to 10 ms so we don't have to
     // slow down our tests.
     monitor_->set_min_time_between_switches(kMinTimeBetweenSwitches);

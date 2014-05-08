@@ -44,11 +44,27 @@ class Session;
 struct AudioInfo;
 struct MediaStreams;
 
-// Note that the call's audio monitor must be started before this is started.
+class AudioSourceContext {
+ public:
+  sigslot::signal2<AudioSourceContext*, const cricket::AudioInfo&>
+      SignalAudioMonitor;
+  sigslot::signal4<AudioSourceContext*, cricket::Session*,
+      const cricket::MediaStreams&, const cricket::MediaStreams&>
+          SignalMediaStreamsUpdate;
+};
+
+// CurrentSpeakerMonitor can be used to monitor the audio-levels from
+// many audio-sources and report on changes in the loudest audio-source.
+// Its a generic type and relies on an AudioSourceContext which is aware of
+// the audio-sources. AudioSourceContext needs to provide two signals namely
+// SignalAudioInfoMonitor - provides audio info of the all current speakers.
+// SignalMediaSourcesUpdated - provides updates when a speaker leaves or joins.
+// Note that the AudioSourceContext's audio monitor must be started
+// before this is started.
 // It's recommended that the audio monitor be started with a 100 ms period.
 class CurrentSpeakerMonitor : public sigslot::has_slots<> {
  public:
-  CurrentSpeakerMonitor(Call* call, BaseSession* session);
+  CurrentSpeakerMonitor(AudioSourceContext* call, BaseSession* session);
   ~CurrentSpeakerMonitor();
 
   BaseSession* session() const { return session_; }
@@ -67,8 +83,8 @@ class CurrentSpeakerMonitor : public sigslot::has_slots<> {
   sigslot::signal2<CurrentSpeakerMonitor*, uint32> SignalUpdate;
 
  private:
-  void OnAudioMonitor(Call* call, const AudioInfo& info);
-  void OnMediaStreamsUpdate(Call* call,
+  void OnAudioMonitor(AudioSourceContext* call, const AudioInfo& info);
+  void OnMediaStreamsUpdate(AudioSourceContext* call,
                             Session* session,
                             const MediaStreams& added,
                             const MediaStreams& removed);
@@ -85,7 +101,7 @@ class CurrentSpeakerMonitor : public sigslot::has_slots<> {
   };
 
   bool started_;
-  Call* call_;
+  AudioSourceContext* audio_source_context_;
   BaseSession* session_;
   std::map<uint32, SpeakingState> ssrc_to_speaking_state_map_;
   uint32 current_speaker_ssrc_;

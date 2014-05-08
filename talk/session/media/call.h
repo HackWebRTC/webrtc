@@ -48,6 +48,7 @@
 
 namespace cricket {
 
+struct AudioInfo;
 class MediaSessionClient;
 class BaseChannel;
 class VoiceChannel;
@@ -56,6 +57,26 @@ class DataChannel;
 
 // Can't typedef this easily since it's forward declared as struct elsewhere.
 struct CallOptions : public MediaSessionOptions {
+};
+
+// CurrentSpeakerMonitor used to have a dependency on Call. To remove this
+// dependency, we create AudioSourceContext. CurrentSpeakerMonitor depends on
+// AudioSourceContext.
+// AudioSourceProxy acts as a proxy so that when SignalAudioMonitor
+// in Call is triggered, SignalAudioMonitor in AudioSourceContext is triggered.
+// Likewise, when OnMediaStreamsUpdate in Call is triggered,
+// OnMediaStreamsUpdate in AudioSourceContext is triggered.
+class AudioSourceProxy: public AudioSourceContext, public sigslot::has_slots<> {
+ public:
+  explicit AudioSourceProxy(Call* call);
+
+ private:
+  void OnAudioMonitor(Call* call, const AudioInfo& info);
+  void OnMediaStreamsUpdate(Call* call, cricket::Session*,
+      const cricket::MediaStreams&, const cricket::MediaStreams&);
+
+  AudioSourceContext* audio_source_context_;
+  Call* call_;
 };
 
 class Call : public talk_base::MessageHandler, public sigslot::has_slots<> {
@@ -167,6 +188,8 @@ class Call : public talk_base::MessageHandler, public sigslot::has_slots<> {
                    const ReceiveDataParams&,
                    const talk_base::Buffer&> SignalDataReceived;
 
+  AudioSourceProxy* GetAudioSourceProxy();
+
  private:
   void OnMessage(talk_base::Message* message);
   void OnSessionState(BaseSession* base_session, BaseSession::State state);
@@ -275,6 +298,8 @@ class Call : public talk_base::MessageHandler, public sigslot::has_slots<> {
   bool playing_dtmf_;
 
   VoiceMediaInfo last_voice_media_info_;
+
+  talk_base::scoped_ptr<AudioSourceProxy> audio_source_proxy_;
 
   friend class MediaSessionClient;
 };
