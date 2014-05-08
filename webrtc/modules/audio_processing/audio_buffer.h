@@ -104,13 +104,15 @@ class AudioBuffer {
   int samples_per_split_channel_;
   int num_mixed_channels_;
   int num_mixed_low_pass_channels_;
-  // Whether the original data was replaced with mixed data.
-  bool data_was_mixed_;
   bool reference_copied_;
   AudioFrame::VADActivity activity_;
   bool is_muted_;
 
+  // If non-null, use this instead of channels_->channel(0). This is an
+  // optimization for the case num_proc_channels_ == 1 that allows us to point
+  // to the data instead of copying it.
   int16_t* data_;
+
   const float* keyboard_data_;
   scoped_ptr<ChannelBuffer<int16_t> > channels_;
   scoped_ptr<SplitChannelBuffer> split_channels_;

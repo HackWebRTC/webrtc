@@ -97,7 +97,6 @@ AudioBuffer::AudioBuffer(int input_samples_per_channel,
     samples_per_split_channel_(proc_samples_per_channel_),
     num_mixed_channels_(0),
     num_mixed_low_pass_channels_(0),
-    data_was_mixed_(false),
     reference_copied_(false),
     activity_(AudioFrame::kVadUnknown),
     is_muted_(false),
@@ -220,7 +219,6 @@ void AudioBuffer::CopyTo(int samples_per_channel,
 void AudioBuffer::InitForNewData() {
   data_ = NULL;
   keyboard_data_ = NULL;
-  data_was_mixed_ = false;
   num_mixed_channels_ = 0;
   num_mixed_low_pass_channels_ = 0;
   reference_copied_ = false;
@@ -231,6 +229,7 @@ void AudioBuffer::InitForNewData() {
 const int16_t* AudioBuffer::data(int channel) const {
   assert(channel >= 0 && channel < num_proc_channels_);
   if (data_ != NULL) {
+    assert(channel == 0 && num_proc_channels_ == 1);
     return data_;
   }
 
@@ -370,15 +369,7 @@ void AudioBuffer::InterleaveTo(AudioFrame* frame, bool data_changed) const {
   }
 
   if (num_proc_channels_ == 1) {
-    if (data_was_mixed_) {
-      memcpy(frame->data_,
-             channels_->channel(0),
-             sizeof(int16_t) * proc_samples_per_channel_);
-    } else {
-      // These should point to the same buffer in this case.
-      assert(data_ == frame->data_);
-    }
-
+    assert(data_ == frame->data_);
     return;
   }
 
