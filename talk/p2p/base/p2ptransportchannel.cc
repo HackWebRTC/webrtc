@@ -470,10 +470,22 @@ void P2PTransportChannel::OnUnknownAddress(
     }
   } else {
     // Create a new candidate with this address.
-
+    uint32 priority = 0;
     std::string type;
     if (port->IceProtocol() == ICEPROTO_RFC5245) {
       type = PRFLX_PORT_TYPE;
+      // RFC 5245 - The priority of the candidate is set to the PRIORITY
+      // attribute from the request.
+      const StunUInt32Attribute* priority_attr =
+          stun_msg->GetUInt32(STUN_ATTR_PRIORITY);
+      if (!priority_attr) {
+        LOG(LS_WARNING) << "P2PTransportChannel::OnUnknownAddress - "
+                        << "No STUN_ATTR_PRIORITY found in the "
+                        << "STUN request message";
+        ASSERT(false);
+        return;
+      }
+      priority = priority_attr->value();
     } else {
       // G-ICE doesn't support prflx candidate.
       // We set candidate type to STUN_PORT_TYPE if the binding request comes
@@ -493,6 +505,7 @@ void P2PTransportChannel::OnUnknownAddress(
         port->Network()->name(), 0U,
         talk_base::ToString<uint32>(talk_base::ComputeCrc32(id)));
     new_remote_candidate.set_priority(
+        (port->IceProtocol() == ICEPROTO_RFC5245) ? priority :
         new_remote_candidate.GetPriority(ICE_TYPE_PREFERENCE_SRFLX,
                                          port->Network()->preference()));
   }

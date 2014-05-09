@@ -161,7 +161,7 @@ class AllocationSequence : public talk_base::MessageHandler,
   ProtocolList protocols_;
   talk_base::scoped_ptr<talk_base::AsyncPacketSocket> udp_socket_;
   // There will be only one udp port per AllocationSequence.
-  Port* udp_port_;
+  UDPPort* udp_port_;
   // Keeping a map for turn ports keyed with server addresses.
   std::map<talk_base::SocketAddress, Port*> turn_ports_;
   int phase_;
@@ -206,13 +206,15 @@ BasicPortAllocator::BasicPortAllocator(
       stun_address_(stun_address) {
 
   RelayServerConfig config(RELAY_GTURN);
-  if (!relay_address_udp.IsAny())
+  if (!relay_address_udp.IsAny() && !relay_address_udp.IsNil())
     config.ports.push_back(ProtocolAddress(relay_address_udp, PROTO_UDP));
-  if (!relay_address_tcp.IsAny())
+  if (!relay_address_tcp.IsAny() && !relay_address_tcp.IsNil())
     config.ports.push_back(ProtocolAddress(relay_address_tcp, PROTO_TCP));
-  if (!relay_address_ssl.IsAny())
+  if (!relay_address_ssl.IsAny() && !relay_address_ssl.IsNil())
     config.ports.push_back(ProtocolAddress(relay_address_ssl, PROTO_SSLTCP));
-  AddRelay(config);
+
+  if (!config.ports.empty())
+    AddRelay(config);
 
   Construct();
 }
@@ -868,13 +870,18 @@ void AllocationSequence::CreateUDPPorts() {
 
       // If STUN is not disabled, setting stun server address to port.
       if (!IsFlagSet(PORTALLOCATOR_DISABLE_STUN)) {
-        // If there is a TURN UDP server available, then we will use TURN port
-        // to get stun address, otherwise by UDP port.
-        // Shared socket mode is not used in GTURN mode.
-        if (config_ &&
-            !config_->SupportsProtocol(RELAY_TURN, PROTO_UDP) &&
-            !config_->stun_address.IsNil()) {
+        // If config has stun_address, use it to get server reflexive candidate
+        // otherwise use first TURN server which supports UDP.
+        if (config_ && !config_->stun_address.IsNil()) {
+          LOG(LS_INFO) << "AllocationSequence: UDPPort will be handling the "
+                       <<  "STUN candidate generation.";
           port->set_server_addr(config_->stun_address);
+        } else if (config_ &&
+                   config_->SupportsProtocol(RELAY_TURN, PROTO_UDP)) {
+          port->set_server_addr(config_->GetFirstRelayServerAddress(
+              RELAY_TURN, PROTO_UDP));
+          LOG(LS_INFO) << "AllocationSequence: TURN Server address will be "
+                       << " used for generating STUN candidate.";
         }
       }
     }
@@ -911,8 +918,6 @@ void AllocationSequence::CreateStunPorts() {
   }
 
   if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET)) {
-    LOG(LS_INFO) << "AllocationSequence: "
-                 << "UDPPort will be handling the STUN candidate generation.";
     return;
   }
 
@@ -1118,7 +1123,7 @@ bool PortConfiguration::SupportsProtocol(
   return false;
 }
 
-bool PortConfiguration::SupportsProtocol(const RelayType turn_type,
+bool PortConfiguration::SupportsProtocol(RelayType turn_type,
                                          ProtocolType type) const {
   for (size_t i = 0; i < relays.size(); ++i) {
     if (relays[i].type == turn_type &&
@@ -1126,6 +1131,16 @@ bool PortConfiguration::SupportsProtocol(const RelayType turn_type,
       return true;
   }
   return false;
+}
+
+talk_base::SocketAddress PortConfiguration::GetFirstRelayServerAddress(
+    RelayType turn_type, ProtocolType type) const {
+  for (size_t i = 0; i < relays.size(); ++i) {
+    if (relays[i].type == turn_type && SupportsProtocol(relays[i], type)) {
+      return relays[i].ports.front().address;
+    }
+  }
+  return talk_base::SocketAddress();
 }
 
 }  // namespace cricket
