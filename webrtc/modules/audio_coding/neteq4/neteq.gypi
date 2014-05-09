@@ -8,7 +8,7 @@
 
 {
   'variables': {
-    'neteq_dependencies': [
+    'codecs': [
       'G711',
       'G722',
       'PCM16B',
@@ -16,16 +16,19 @@
       'iSAC',
       'iSACFix',
       'CNG',
-      '<(DEPTH)/third_party/opus/opus.gyp:opus',
-      '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
-      '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
     ],
     'neteq_defines': [],
     'conditions': [
       ['include_opus==1', {
-        'neteq_dependencies': ['webrtc_opus',],
+        'codecs': ['webrtc_opus',],
         'neteq_defines': ['WEBRTC_CODEC_OPUS',],
       }],
+    ],
+    'neteq_dependencies': [
+      '<@(codecs)',
+      '<(DEPTH)/third_party/opus/opus.gyp:opus',
+      '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
+      '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
     ],
   },
   'targets': [
@@ -132,7 +135,7 @@
           'target_name': 'audio_decoder_unittests',
           'type': '<(gtest_target_type)',
           'dependencies': [
-            '<@(neteq_dependencies)',
+            '<@(codecs)',
             '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
             '<(webrtc_root)/test/test.gyp:test_support_main',
