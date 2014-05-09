@@ -142,6 +142,7 @@ class UDPPort : public Port {
 
   void SendStunBindingRequest();
 
+
  private:
   // DNS resolution of the STUN server.
   void ResolveStunAddress();

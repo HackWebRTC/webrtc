@@ -192,7 +192,7 @@ void UDPPort::MaybePrepareStunCandidate() {
   if (!server_addr_.IsNil()) {
     SendStunBindingRequest();
   } else {
-    // Port is done allocating candidates.
+    // Processing host candidate address.
     SetResult(true);
   }
 }
