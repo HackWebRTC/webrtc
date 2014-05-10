@@ -334,7 +334,7 @@ class NetEqImpl : public webrtc::NetEq {
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Creates DecisionLogic object for the given mode.
-  void CreateDecisionLogic(NetEqPlayoutMode mode)
+  virtual void CreateDecisionLogic(NetEqPlayoutMode mode)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   const scoped_ptr<BufferLevelFilter> buffer_level_filter_;
