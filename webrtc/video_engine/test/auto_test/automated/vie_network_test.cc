@@ -153,8 +153,8 @@ TEST_F(ViENetworkTest, ReceiveBWEPacket_NoExtension)  {
   }
   EXPECT_FALSE(transport.FindREMBFor(kSsrc1, 0.0));
   unsigned int bandwidth = 0;
-  EXPECT_EQ(-1, vie_.rtp_rtcp->GetEstimatedReceiveBandwidth(channel_,
-                                                            &bandwidth));
+  EXPECT_EQ(0, vie_.rtp_rtcp->GetEstimatedReceiveBandwidth(channel_,
+                                                           &bandwidth));
 }
 
 TEST_F(ViENetworkTest, ReceiveBWEPacket_TOF)  {
@@ -173,8 +173,8 @@ TEST_F(ViENetworkTest, ReceiveBWEPacket_TOF)  {
   }
   EXPECT_FALSE(transport.FindREMBFor(kSsrc1, 0.0));
   unsigned int bandwidth = 0;
-  EXPECT_EQ(-1, vie_.rtp_rtcp->GetEstimatedReceiveBandwidth(channel_,
-                                                            &bandwidth));
+  EXPECT_EQ(0, vie_.rtp_rtcp->GetEstimatedReceiveBandwidth(channel_,
+                                                           &bandwidth));
 }
 
 TEST_F(ViENetworkTest, ReceiveBWEPacket_AST)  {
@@ -220,7 +220,7 @@ TEST_F(ViENetworkTest, ReceiveBWEPacket_AST_DisabledReceive)  {
   ReceiveASTPacketsForBWE();
   EXPECT_FALSE(transport.FindREMBFor(kSsrc1, 0.0));
   unsigned int bandwidth = 0;
-  EXPECT_EQ(-1, vie_.rtp_rtcp->GetEstimatedReceiveBandwidth(channel_,
-                                                            &bandwidth));
+  EXPECT_EQ(0, vie_.rtp_rtcp->GetEstimatedReceiveBandwidth(channel_,
+                                                           &bandwidth));
 }
 }  // namespace
