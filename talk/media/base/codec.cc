@@ -198,8 +198,8 @@ bool VideoCodec::ValidateCodecFormat() const {
     LOG(LS_ERROR) << "Codec with invalid dimensions: " << ToString();
     return false;
   }
-  int min_bitrate;
-  int max_bitrate;
+  int min_bitrate = -1;
+  int max_bitrate = -1;
   if (GetParam(kCodecParamMinBitrate, &min_bitrate) &&
       GetParam(kCodecParamMaxBitrate, &max_bitrate)) {
     if (max_bitrate < min_bitrate) {
