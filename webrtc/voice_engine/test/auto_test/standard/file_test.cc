@@ -45,15 +45,11 @@ TEST_F(FileTest, ManualRecordToFileForThreeSecondsAndPlayback) {
   EXPECT_EQ(0, voe_file_->StartPlayingFileLocally(
       channel_, recording_filename.c_str()));
 
-  // Play the file to the user and ensure the is-playing-locally
-  // and scaling methods also work. The clip is 3 seconds long.
+  // Play the file to the user and ensure the is-playing-locally.
+  // The clip is 3 seconds long.
   Sleep(250);
   EXPECT_EQ(1, voe_file_->IsPlayingFileLocally(channel_));
   Sleep(1500);
-  TEST_LOG("Decreasing level by 50%%.\n");
-  EXPECT_EQ(0, voe_file_->ScaleLocalFilePlayout(channel_, 0.5f));
-  Sleep(1500);
-  EXPECT_EQ(0, voe_file_->IsPlayingFileLocally(channel_));
 }
 
 TEST_F(FileTest, ManualRecordPlayoutToWavFileForThreeSecondsAndPlayback) {
@@ -79,11 +75,4 @@ TEST_F(FileTest, ManualRecordPlayoutToWavFileForThreeSecondsAndPlayback) {
   Sleep(2000);
   // We should still be playing since we're looping.
   EXPECT_EQ(1, voe_file_->IsPlayingFileAsMicrophone(channel_));
-
-  // Try scaling as well.
-  TEST_LOG("Decreasing level by 50%%.\n");
-  EXPECT_EQ(0, voe_file_->ScaleFileAsMicrophonePlayout(channel_, 0.5f));
-  Sleep(1000);
-
-  EXPECT_EQ(0, voe_file_->StopPlayingFileAsMicrophone(channel_));
 }

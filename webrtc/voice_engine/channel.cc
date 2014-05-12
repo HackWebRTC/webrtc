@@ -2087,61 +2087,6 @@ int Channel::RegisterFilePlayingToMixer()
     return 0;
 }
 
-int Channel::ScaleLocalFilePlayout(float scale)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::ScaleLocalFilePlayout(scale=%5.3f)", scale);
-
-    CriticalSectionScoped cs(&_fileCritSect);
-
-    if (!channel_state_.Get().output_file_playing)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_INVALID_OPERATION, kTraceError,
-            "ScaleLocalFilePlayout() isnot playing");
-        return -1;
-    }
-    if ((_outputFilePlayerPtr == NULL) ||
-        (_outputFilePlayerPtr->SetAudioScaling(scale) != 0))
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_BAD_ARGUMENT, kTraceError,
-            "SetAudioScaling() failed to scale the playout");
-        return -1;
-    }
-
-    return 0;
-}
-
-int Channel::GetLocalPlayoutPosition(int& positionMs)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::GetLocalPlayoutPosition(position=?)");
-
-    uint32_t position;
-
-    CriticalSectionScoped cs(&_fileCritSect);
-
-    if (_outputFilePlayerPtr == NULL)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_INVALID_OPERATION, kTraceError,
-            "GetLocalPlayoutPosition() filePlayer instance doesnot exist");
-        return -1;
-    }
-
-    if (_outputFilePlayerPtr->GetPlayoutPosition(position) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_BAD_FILE, kTraceError,
-            "GetLocalPlayoutPosition() failed");
-        return -1;
-    }
-    positionMs = position;
-
-    return 0;
-}
-
 int Channel::StartPlayingFileAsMicrophone(const char* fileName,
                                           bool loop,
                                           FileFormats format,
@@ -2317,33 +2262,6 @@ int Channel::IsPlayingFileAsMicrophone() const
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::IsPlayingFileAsMicrophone()");
     return channel_state_.Get().input_file_playing;
-}
-
-int Channel::ScaleFileAsMicrophonePlayout(float scale)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::ScaleFileAsMicrophonePlayout(scale=%5.3f)", scale);
-
-    CriticalSectionScoped cs(&_fileCritSect);
-
-    if (!channel_state_.Get().input_file_playing)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_INVALID_OPERATION, kTraceError,
-            "ScaleFileAsMicrophonePlayout() isnot playing");
-        return -1;
-    }
-
-    if ((_inputFilePlayerPtr == NULL) ||
-        (_inputFilePlayerPtr->SetAudioScaling(scale) != 0))
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_BAD_ARGUMENT, kTraceError,
-            "SetAudioScaling() failed to scale playout");
-        return -1;
-    }
-
-    return 0;
 }
 
 int Channel::StartRecordingPlayout(const char* fileName,

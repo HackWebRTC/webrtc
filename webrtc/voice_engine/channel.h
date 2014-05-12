@@ -227,8 +227,6 @@ public:
     int StopPlayingFileLocally();
     int IsPlayingFileLocally() const;
     int RegisterFilePlayingToMixer();
-    int ScaleLocalFilePlayout(float scale);
-    int GetLocalPlayoutPosition(int& positionMs);
     int StartPlayingFileAsMicrophone(const char* fileName, bool loop,
                                      FileFormats format,
                                      int startPosition,
@@ -243,7 +241,6 @@ public:
                                      const CodecInst* codecInst);
     int StopPlayingFileAsMicrophone();
     int IsPlayingFileAsMicrophone() const;
-    int ScaleFileAsMicrophonePlayout(float scale);
     int StartRecordingPlayout(const char* fileName, const CodecInst* codecInst);
     int StartRecordingPlayout(OutStream* stream, const CodecInst* codecInst);
     int StopRecordingPlayout();

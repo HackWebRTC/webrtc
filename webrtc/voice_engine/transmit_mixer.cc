@@ -681,34 +681,6 @@ int TransmitMixer::IsPlayingFileAsMicrophone() const
     return _filePlaying;
 }
 
-int TransmitMixer::ScaleFileAsMicrophonePlayout(float scale)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
-                 "TransmitMixer::ScaleFileAsMicrophonePlayout(scale=%5.3f)",
-                 scale);
-
-    CriticalSectionScoped cs(&_critSect);
-
-    if (!_filePlaying)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_INVALID_OPERATION, kTraceError,
-            "ScaleFileAsMicrophonePlayout() isnot playing file");
-        return -1;
-    }
-
-    if ((_filePlayerPtr == NULL) ||
-        (_filePlayerPtr->SetAudioScaling(scale) != 0))
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_BAD_ARGUMENT, kTraceError,
-            "SetAudioScaling() failed to scale playout");
-        return -1;
-    }
-
-    return 0;
-}
-
 int TransmitMixer::StartRecordingMicrophone(const char* fileName,
                                             const CodecInst* codecInst)
 {
