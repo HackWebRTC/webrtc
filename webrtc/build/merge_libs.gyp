@@ -10,6 +10,7 @@
   'includes': ['common.gypi',],
   'variables': {
     'merge_libs_dependencies': [
+      '../base/base_tests.gyp:webrtc_base_tests_utils',
       '../webrtc.gyp:webrtc',
     ],
   },

@@ -185,6 +185,174 @@ name=https://code.google.com/p/webrtc/issues/detail?id=3158 (4)
 *!_towlower_l
 *!towlower
 *!tolowercase
+*!rtc::IsDefaultBrowserFirefox
+*!rtc::GetProxySettingsForUrl
+*!rtc::AutoDetectProxy::GetProxyForUrl
+*!rtc::AutoDetectProxy::DoWork
+*!rtc::SignalThread::Run
+*!rtc::SignalThread::Worker::Run
+*!rtc::Thread::PreRun
+KERNEL32.dll!BaseThreadInitThunk
+
+UNADDRESSABLE ACCESS
+name=https://code.google.com/p/webrtc/issues/detail?id=3158 (12)
+ntdll.dll!RtlIntegerToUnicodeString
+ntdll.dll!RtlIntegerToUnicodeString
+libjingle_peerconnection_unittes!rtc::CriticalSection::Enter
+libjingle_peerconnection_unittes!rtc::CritScope::CritScope
+libjingle_peerconnection_unittes!rtc::LogMessage::~LogMessage
+libjingle_peerconnection_unittes!cricket::WebRtcVideoEngine::Print
+libjingle_peerconnection_unittes!webrtc::TraceImpl::WriteToFile
+libjingle_peerconnection_unittes!webrtc::TraceImpl::Process
+libjingle_peerconnection_unittes!webrtc::TraceImpl::Run
+libjingle_peerconnection_unittes!webrtc::ThreadWindows::Run
+libjingle_peerconnection_unittes!webrtc::ThreadWindows::StartThread
+libjingle_peerconnection_unittes!_callthreadstartex
+libjingle_peerconnection_unittes!_threadstartex
+KERNEL32.dll!BaseThreadInitThunk
+
+UNADDRESSABLE ACCESS
+name=https://code.google.com/p/webrtc/issues/detail?id=3158 (14)
+libjingle_peerconnection_unittes!std::list<>::begin
+libjingle_peerconnection_unittes!rtc::LogMessage::~LogMessage
+libjingle_peerconnection_unittes!cricket::WebRtcVideoEngine::Construct
+libjingle_peerconnection_unittes!cricket::WebRtcVideoEngine::WebRtcVideoEngine
+libjingle_peerconnection_unittes!cricket::CompositeMediaEngine<>::CompositeMediaEngine<>
+libjingle_peerconnection_unittes!cricket::WebRtcMediaEngine::WebRtcMediaEngine
+libjingle_peerconnection_unittes!webrtc::PeerConnectionFactory::Initialize_s
+libjingle_peerconnection_unittes!webrtc::PeerConnectionFactory::OnMessage
+libjingle_peerconnection_unittes!rtc::Thread::Send
+libjingle_peerconnection_unittes!webrtc::PeerConnectionFactory::Initialize
+libjingle_peerconnection_unittes!webrtc::CreatePeerConnectionFactory
+libjingle_peerconnection_unittes!PeerConnectionInterfaceTest::SetUp
+libjingle_peerconnection_unittes!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+UNADDRESSABLE ACCESS
+name=https://code.google.com/p/webrtc/issues/detail?id=3158 (15)
+ntdll.dll!RtlIntegerToUnicodeString
+ntdll.dll!RtlIntegerToUnicodeString
+libjingle_peerconnection_unittes!rtc::CriticalSection::Enter
+libjingle_peerconnection_unittes!rtc::CritScope::CritScope
+libjingle_peerconnection_unittes!rtc::LogMessage::~LogMessage
+libjingle_peerconnection_unittes!TestInvalidParameterHandler
+libjingle_peerconnection_unittes!_invalid_parameter
+...
+libjingle_peerconnection_unittes!cricket::WebRtcVideoEngine::Construct
+libjingle_peerconnection_unittes!cricket::WebRtcVideoEngine::WebRtcVideoEngine
+libjingle_peerconnection_unittes!cricket::CompositeMediaEngine<>::CompositeMediaEngine<>
+libjingle_peerconnection_unittes!cricket::WebRtcMediaEngine::WebRtcMediaEngine
+libjingle_peerconnection_unittes!webrtc::PeerConnectionFactory::Initialize_s
+libjingle_peerconnection_unittes!webrtc::PeerConnectionFactory::OnMessage
+libjingle_peerconnection_unittes!rtc::Thread::Send
+libjingle_peerconnection_unittes!webrtc::PeerConnectionFactory::Initialize
+libjingle_peerconnection_unittes!webrtc::CreatePeerConnectionFactory
+libjingle_peerconnection_unittes!PeerConnectionInterfaceTest::SetUp
+libjingle_peerconnection_unittes!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+UNADDRESSABLE ACCESS
+name=https://code.google.com/p/webrtc/issues/detail?id=3158 (16)
+ntdll.dll!RtlIntegerToUnicodeString
+ntdll.dll!RtlIntegerToUnicodeString
+libjingle_peerconnection_unittes!rtc::CriticalSection::Enter
+libjingle_peerconnection_unittes!rtc::CritScope::CritScope
+libjingle_peerconnection_unittes!rtc::LogMessage::~LogMessage
+libjingle_peerconnection_unittes!cricket::WebRtcVoiceEngine::ConstructCodecs
+libjingle_peerconnection_unittes!cricket::WebRtcVoiceEngine::Construct
+libjingle_peerconnection_unittes!cricket::WebRtcVoiceEngine::WebRtcVoiceEngine
+libjingle_peerconnection_unittes!cricket::CompositeMediaEngine<>::CompositeMediaEngine<>
+libjingle_peerconnection_unittes!cricket::WebRtcMediaEngine::WebRtcMediaEngine
+libjingle_peerconnection_unittes!webrtc::PeerConnectionFactory::Initialize_s
+libjingle_peerconnection_unittes!webrtc::PeerConnectionFactory::OnMessage
+libjingle_peerconnection_unittes!rtc::Thread::Send
+libjingle_peerconnection_unittes!webrtc::PeerConnectionFactory::Initialize
+libjingle_peerconnection_unittes!webrtc::CreatePeerConnectionFactory
+libjingle_peerconnection_unittes!PeerConnectionInterfaceTest::SetUp
+libjingle_peerconnection_unittes!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+UNADDRESSABLE ACCESS
+name=https://code.google.com/p/webrtc/issues/detail?id=3158 (32)
+ntdll.dll!RtlIntegerToUnicodeString
+ntdll.dll!RtlIntegerToUnicodeString
+libjingle_peerconnection_unittes!rtc::CriticalSection::Enter
+libjingle_peerconnection_unittes!rtc::CritScope::CritScope
+...
+libjingle_peerconnection_unittes!testing::internal::CountIf<>
+libjingle_peerconnection_unittes!testing::TestResult::HasFatalFailure
+libjingle_peerconnection_unittes!testing::Test::HasFatalFailure
+libjingle_peerconnection_unittes!testing::Test::Run
+
+UNADDRESSABLE ACCESS
+name=https://code.google.com/p/webrtc/issues/detail?id=3158 (34)
+ntdll.dll!RtlIntegerToUnicodeString
+ntdll.dll!RtlIntegerToUnicodeString
+libjingle_peerconnection_unittes!rtc::CriticalSection::Enter
+libjingle_peerconnection_unittes!rtc::CritScope::CritScope
+...
+libjingle_peerconnection_unittes!TestPureCallHandler
+libjingle_peerconnection_unittes!_purecall
+libjingle_peerconnection_unittes!testing::internal::DefaultGlobalTestPartResultReporter::ReportTestPartResult
+libjingle_peerconnection_unittes!testing::internal::DefaultPerThreadTestPartResultReporter::ReportTestPartResult
+libjingle_peerconnection_unittes!testing::UnitTest::AddTestPartResult
+libjingle_peerconnection_unittes!testing::internal::ReportFailureInUnknownLocation
+libjingle_peerconnection_unittes!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+HANDLE LEAK
+name=https://code.google.com/p/webrtc/issues/detail?id=3158 (35)
+system call NtCreateEvent
+KERNELBASE.dll!CreateEventExW
+KERNELBASE.dll!CreateEventW
+libjingle_peerconnection_unittes!webrtc::EventWindows::EventWindows
+libjingle_peerconnection_unittes!webrtc::EventWrapper::Create
+libjingle_peerconnection_unittes!webrtc::ProcessThreadImpl::ProcessThreadImpl
+libjingle_peerconnection_unittes!webrtc::ProcessThread::CreateProcessThread
+libjingle_peerconnection_unittes!webrtc::voe::SharedData::SharedData
+libjingle_peerconnection_unittes!webrtc::VoiceEngineImpl::VoiceEngineImpl
+libjingle_peerconnection_unittes!webrtc::GetVoiceEngine
+libjingle_peerconnection_unittes!webrtc::VoiceEngine::Create
+libjingle_peerconnection_unittes!cricket::VoEWrapper::VoEWrapper
+libjingle_peerconnection_unittes!cricket::WebRtcVoiceEngine::WebRtcVoiceEngine
+libjingle_peerconnection_unittes!cricket::CompositeMediaEngine<>::CompositeMediaEngine<>
+libjingle_peerconnection_unittes!cricket::WebRtcMediaEngine::WebRtcMediaEngine
+libjingle_peerconnection_unittes!webrtc::PeerConnectionFactory::Initialize_s
+libjingle_peerconnection_unittes!webrtc::PeerConnectionFactory::OnMessage
+libjingle_peerconnection_unittes!rtc::Thread::Send
+libjingle_peerconnection_unittes!webrtc::PeerConnectionFactory::Initialize
+libjingle_peerconnection_unittes!webrtc::CreatePeerConnectionFactory
+libjingle_peerconnection_unittes!PeerConnectionInterfaceTest::SetUp
+libjingle_peerconnection_unittes!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+UNINITIALIZED READ
+name=https://code.google.com/p/webrtc/issues/detail?id=3158 (36)
+libjingle_peerconnection_unittes!webrtc::WebRtcSessionDescriptionFactory::InternalCreateAnswer
+libjingle_peerconnection_unittes!webrtc::WebRtcSessionDescriptionFactory::CreateAnswer
+libjingle_peerconnection_unittes!webrtc::WebRtcSession::CreateAnswer
+libjingle_peerconnection_unittes!webrtc::PeerConnection::CreateAnswer
+libjingle_peerconnection_unittes!webrtc::ReturnType<>::Invoke<>
+libjingle_peerconnection_unittes!webrtc::MethodCall2<>::OnMessage
+libjingle_peerconnection_unittes!rtc::Thread::Send
+libjingle_peerconnection_unittes!webrtc::MethodCall2<>::Marshal
+libjingle_peerconnection_unittes!webrtc::PeerConnectionProxy::CreateAnswer
+libjingle_peerconnection_unittes!PeerConnectionInterfaceTest::DoCreateOfferAnswer
+libjingle_peerconnection_unittes!PeerConnectionInterfaceTest::DoCreateAnswer
+libjingle_peerconnection_unittes!PeerConnectionInterfaceTest::CreateAnswerAsLocalDescription
+libjingle_peerconnection_unittes!PeerConnectionInterfaceTest_ReceiveOfferCreatePrAnswerAndAnswer_Test::TestBody
+libjingle_peerconnection_unittes!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+UNADDRESSABLE ACCESS
+name=https://code.google.com/p/webrtc/issues/detail?id=3158 (37)
+ntdll.dll!RtlIntegerToUnicodeString
+ntdll.dll!RtlIntegerToUnicodeString
+libjingle_peerconnection_unittes!rtc::CriticalSection::Enter
+libjingle_peerconnection_unittes!rtc::CritScope::CritScope
+libjingle_peerconnection_unittes!rtc::LogMessage::GetLogToStream
+libjingle_peerconnection_unittes!rtc::LogMessage::ConfigureLogging
+libjingle_peerconnection_unittes!main
+
+UNINITIALIZED READ
+name=https://code.google.com/p/webrtc/issues/detail?id=3158 (4)
+*!_towlower_l
+*!towlower
+*!tolowercase
 *!talk_base::IsDefaultBrowserFirefox
 *!talk_base::GetProxySettingsForUrl
 *!talk_base::AutoDetectProxy::GetProxyForUrl
