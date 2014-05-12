@@ -5,3 +5,8 @@ WebRtcVideoMediaChannelTest.TwoStreamsSendAndFailUnsignalledRecv
 WebRtcVideoMediaChannelTest.TwoStreamsSendAndFailUnsignalledRecvInOneToOne
 WebRtcVideoMediaChannelTest.TwoStreamsSendAndReceive
 WebRtcVideoMediaChannelTest.TwoStreamsSendAndUnsignalledRecv
+
+TODO(pbos): This suppression is overly broad, but offline talks with kjellander@
+indicate that we can move over to tsanv2 and deprecate tsanv1, which will remove
+the need for tsanv1 suppressions.
+WebRtcVideoChannel2BaseTest.*
