@@ -622,6 +622,14 @@ bool PeerConnection::AddIceCandidate(
 
 void PeerConnection::RegisterUMAObserver(UMAObserver* observer) {
   uma_observer_ = observer;
+  // Send information about IPv4/IPv6 status.
+  if (uma_observer_ && port_allocator_) {
+    if (port_allocator_->flags() & cricket::PORTALLOCATOR_ENABLE_IPV6) {
+      uma_observer_->IncrementCounter(kPeerConnection_IPv4);
+    } else {
+      uma_observer_->IncrementCounter(kPeerConnection_IPv6);
+    }
+  }
 }
 
 const SessionDescriptionInterface* PeerConnection::local_description() const {
