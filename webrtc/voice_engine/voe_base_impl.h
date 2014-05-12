@@ -149,9 +149,6 @@ private:
 #ifdef WEBRTC_EXTERNAL_TRANSPORT
     int32_t AddExternalTransportBuild(char* str) const;
 #endif
-#ifdef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
-    int32_t AddExternalRecAndPlayoutBuild(char* str) const;
-#endif
     VoiceEngineObserver* _voiceEngineObserverPtr;
     CriticalSectionWrapper& _callbackCritSect;
 
