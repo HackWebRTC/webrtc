@@ -1,3 +1,5 @@
 # Fails on Dr Memory Full.
+# https://code.google.com/p/webrtc/issues/detail?id=3336
+WebRtcVideoChannel2BaseTest.SetSend
 # https://code.google.com/p/webrtc/issues/detail?id=3158
 WebRtcVideoMediaChannelTest.SendVp8HdAndReceiveAdaptedVp8Vga
