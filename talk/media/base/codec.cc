@@ -31,7 +31,6 @@
 #include <sstream>
 
 #include "talk/base/common.h"
-#include "talk/base/logging.h"
 #include "talk/base/stringencode.h"
 #include "talk/base/stringutils.h"
 
@@ -159,55 +158,6 @@ std::string VideoCodec::ToString() const {
   os << "VideoCodec[" << id << ":" << name << ":" << width << ":" << height
      << ":" << framerate << ":" << preference << "]";
   return os.str();
-}
-
-VideoCodec VideoCodec::CreateRtxCodec(int rtx_payload_type,
-                                      int associated_payload_type) {
-  VideoCodec rtx_codec(rtx_payload_type, kRtxCodecName, 0, 0, 0, 0);
-  rtx_codec.SetParam(kCodecParamAssociatedPayloadType, associated_payload_type);
-  return rtx_codec;
-}
-
-VideoCodec::CodecType VideoCodec::GetCodecType() const {
-  const char* payload_name = name.c_str();
-  if (_stricmp(payload_name, kRedCodecName) == 0) {
-    return CODEC_RED;
-  }
-  if (_stricmp(payload_name, kUlpfecCodecName) == 0) {
-    return CODEC_ULPFEC;
-  }
-  if (_stricmp(payload_name, kRtxCodecName) == 0) {
-    return CODEC_RTX;
-  }
-
-  return CODEC_VIDEO;
-}
-
-bool VideoCodec::ValidateCodecFormat() const {
-  if (id < 0 || id > 127) {
-    LOG(LS_ERROR) << "Codec with invalid payload type: " << ToString();
-    return false;
-  }
-  if (GetCodecType() != CODEC_VIDEO) {
-    return true;
-  }
-
-  // Video validation from here on.
-
-  if (width <= 0 || height <= 0) {
-    LOG(LS_ERROR) << "Codec with invalid dimensions: " << ToString();
-    return false;
-  }
-  int min_bitrate;
-  int max_bitrate;
-  if (GetParam(kCodecParamMinBitrate, &min_bitrate) &&
-      GetParam(kCodecParamMaxBitrate, &max_bitrate)) {
-    if (max_bitrate < min_bitrate) {
-      LOG(LS_ERROR) << "Codec with max < min bitrate: " << ToString();
-      return false;
-    }
-  }
-  return true;
 }
 
 std::string DataCodec::ToString() const {

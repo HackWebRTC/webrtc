@@ -34,9 +34,6 @@ using cricket::DataCodec;
 using cricket::FeedbackParam;
 using cricket::VideoCodec;
 using cricket::VideoEncoderConfig;
-using cricket::kCodecParamAssociatedPayloadType;
-using cricket::kCodecParamMaxBitrate;
-using cricket::kCodecParamMinBitrate;
 
 class CodecTest : public testing::Test {
  public:
@@ -314,82 +311,4 @@ TEST_F(CodecTest, TestIntersectFeedbackParams) {
   EXPECT_TRUE(c1.HasFeedbackParam(a1));
   EXPECT_FALSE(c1.HasFeedbackParam(b2));
   EXPECT_FALSE(c1.HasFeedbackParam(c3));
-}
-
-TEST_F(CodecTest, TestGetCodecType) {
-  // Codec type comparison should be case insenstive on names.
-  const VideoCodec codec(96, "V", 320, 200, 30, 3);
-  const VideoCodec rtx_codec(96, "rTx", 320, 200, 30, 3);
-  const VideoCodec ulpfec_codec(96, "ulpFeC", 320, 200, 30, 3);
-  const VideoCodec red_codec(96, "ReD", 320, 200, 30, 3);
-  EXPECT_EQ(VideoCodec::CODEC_VIDEO, codec.GetCodecType());
-  EXPECT_EQ(VideoCodec::CODEC_RTX, rtx_codec.GetCodecType());
-  EXPECT_EQ(VideoCodec::CODEC_ULPFEC, ulpfec_codec.GetCodecType());
-  EXPECT_EQ(VideoCodec::CODEC_RED, red_codec.GetCodecType());
-}
-
-TEST_F(CodecTest, TestCreateRtxCodec) {
-  VideoCodec rtx_codec = VideoCodec::CreateRtxCodec(96, 120);
-  EXPECT_EQ(96, rtx_codec.id);
-  EXPECT_EQ(VideoCodec::CODEC_RTX, rtx_codec.GetCodecType());
-  int associated_payload_type;
-  ASSERT_TRUE(rtx_codec.GetParam(kCodecParamAssociatedPayloadType,
-                                 &associated_payload_type));
-  EXPECT_EQ(120, associated_payload_type);
-}
-
-TEST_F(CodecTest, TestValidateCodecFormat) {
-  const VideoCodec codec(96, "V", 320, 200, 30, 3);
-  ASSERT_TRUE(codec.ValidateCodecFormat());
-
-  // Accept 0-127 as payload types.
-  VideoCodec low_payload_type = codec;
-  low_payload_type.id = 0;
-  VideoCodec high_payload_type = codec;
-  high_payload_type.id = 127;
-  ASSERT_TRUE(low_payload_type.ValidateCodecFormat());
-  EXPECT_TRUE(high_payload_type.ValidateCodecFormat());
-
-  // Reject negative payloads.
-  VideoCodec negative_payload_type = codec;
-  negative_payload_type.id = -1;
-  EXPECT_FALSE(negative_payload_type.ValidateCodecFormat());
-
-  // Reject too-high payloads.
-  VideoCodec too_high_payload_type = codec;
-  too_high_payload_type.id = 128;
-  EXPECT_FALSE(too_high_payload_type.ValidateCodecFormat());
-
-  // Reject zero-width codecs.
-  VideoCodec zero_width = codec;
-  zero_width.width = 0;
-  EXPECT_FALSE(zero_width.ValidateCodecFormat());
-
-  // Reject zero-height codecs.
-  VideoCodec zero_height = codec;
-  zero_height.height = 0;
-  EXPECT_FALSE(zero_height.ValidateCodecFormat());
-
-  // Accept non-video codecs with zero dimensions.
-  VideoCodec zero_width_rtx_codec = VideoCodec::CreateRtxCodec(96, 120);
-  zero_width_rtx_codec.width = 0;
-  EXPECT_TRUE(zero_width_rtx_codec.ValidateCodecFormat());
-
-  // Reject codecs with min bitrate > max bitrate.
-  VideoCodec incorrect_bitrates = codec;
-  incorrect_bitrates.params[kCodecParamMinBitrate] = "100";
-  incorrect_bitrates.params[kCodecParamMaxBitrate] = "80";
-  EXPECT_FALSE(incorrect_bitrates.ValidateCodecFormat());
-
-  // Accept min bitrate == max bitrate.
-  VideoCodec equal_bitrates = codec;
-  equal_bitrates.params[kCodecParamMinBitrate] = "100";
-  equal_bitrates.params[kCodecParamMaxBitrate] = "100";
-  EXPECT_TRUE(equal_bitrates.ValidateCodecFormat());
-
-  // Accept min bitrate < max bitrate.
-  VideoCodec different_bitrates = codec;
-  different_bitrates.params[kCodecParamMinBitrate] = "99";
-  different_bitrates.params[kCodecParamMaxBitrate] = "100";
-  EXPECT_TRUE(different_bitrates.ValidateCodecFormat());
 }

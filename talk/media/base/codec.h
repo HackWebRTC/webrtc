@@ -246,22 +246,6 @@ struct VideoCodec : public Codec {
   bool operator!=(const VideoCodec& c) const {
     return !(*this == c);
   }
-
-  static VideoCodec CreateRtxCodec(int rtx_payload_type,
-                                   int associated_payload_type);
-
-  enum CodecType {
-    CODEC_VIDEO,
-    CODEC_RED,
-    CODEC_ULPFEC,
-    CODEC_RTX,
-  };
-
-  CodecType GetCodecType() const;
-  // Validates a VideoCodec's payload type, dimensions and bitrates etc. If they
-  // don't make sense (such as max < min bitrate), and error is logged and
-  // ValidateCodecFormat returns false.
-  bool ValidateCodecFormat() const;
 };
 
 struct DataCodec : public Codec {
