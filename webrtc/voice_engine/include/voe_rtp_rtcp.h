@@ -125,24 +125,6 @@ public:
     // deleted.
     virtual int Release() = 0;
 
-    // Registers an instance of a VoERTPObserver derived class for a specified
-    // |channel|. It will allow the user to observe callbacks related to the
-    // RTP protocol such as changes in the incoming SSRC.
-    virtual int RegisterRTPObserver(int channel, VoERTPObserver& observer) = 0;
-
-    // Deregisters an instance of a VoERTPObserver derived class for a
-    // specified |channel|.
-    virtual int DeRegisterRTPObserver(int channel) = 0;
-
-    // Registers an instance of a VoERTCPObserver derived class for a specified
-    // |channel|.
-    virtual int RegisterRTCPObserver(
-        int channel, VoERTCPObserver& observer) = 0;
-
-    // Deregisters an instance of a VoERTCPObserver derived class for a
-    // specified |channel|.
-    virtual int DeRegisterRTCPObserver(int channel) = 0;
-
     // Sets the local RTP synchronization source identifier (SSRC) explicitly.
     virtual int SetLocalSSRC(int channel, unsigned int ssrc) = 0;
 
@@ -176,9 +158,6 @@ public:
                                                    bool enable,
                                                    unsigned char id) = 0;
 
-    // Gets the CSRCs of the incoming RTP packets.
-    virtual int GetRemoteCSRCs(int channel, unsigned int arrCSRC[15]) = 0;
-
     // Sets the RTCP status on a specific |channel|.
     virtual int SetRTCPStatus(int channel, bool enable) = 0;
 
@@ -211,22 +190,12 @@ public:
     // Gets RTCP statistics for a specific |channel|.
     virtual int GetRTCPStatistics(int channel, CallStatistics& stats) = 0;
 
-    // Gets the sender info part of the last received RTCP Sender Report (SR)
-    // on a specified |channel|.
-    virtual int GetRemoteRTCPSenderInfo(
-        int channel, SenderInfo* sender_info) = 0;
-
     // Gets the report block parts of the last received RTCP Sender Report (SR),
     // or RTCP Receiver Report (RR) on a specified |channel|. Each vector
     // element also contains the SSRC of the sender in addition to a report
     // block.
     virtual int GetRemoteRTCPReportBlocks(
         int channel, std::vector<ReportBlock>* receive_blocks) = 0;
-
-    // Sends an RTCP APP packet on a specific |channel|.
-    virtual int SendApplicationDefinedRTCPPacket(
-        int channel, unsigned char subType, unsigned int name,
-        const char* data, unsigned short dataLengthInBytes) = 0;
 
     // Sets the Forward Error Correction (FEC) status on a specific |channel|.
     virtual int SetFECStatus(
@@ -262,15 +231,6 @@ public:
     virtual int RTPDumpIsActive(
         int channel, RTPDirections direction = kRtpIncoming) = 0;
 
-    // Gets the timestamp of the last RTP packet received by |channel|.
-    virtual int GetLastRemoteTimeStamp(int channel,
-                                       uint32_t* lastRemoteTimeStamp) = 0;
-
-    // Don't use. To be removed.
-    virtual int InsertExtraRTPPacket(
-        int channel, unsigned char payloadType, bool markerBit,
-        const char* payloadData, unsigned short payloadSize) { return -1; };
-
     // Sets video engine channel to receive incoming audio packets for
     // aggregated bandwidth estimation. Takes ownership of the ViENetwork
     // interface.
@@ -278,6 +238,26 @@ public:
                                         int video_channel) {
       return 0;
     }
+
+    // Will be removed. Don't use.
+    virtual int RegisterRTPObserver(int channel,
+            VoERTPObserver& observer) { return -1; };
+    virtual int DeRegisterRTPObserver(int channel) { return -1; };
+    virtual int RegisterRTCPObserver(
+            int channel, VoERTCPObserver& observer) { return -1; };
+    virtual int DeRegisterRTCPObserver(int channel) { return -1; };
+    virtual int GetRemoteCSRCs(int channel,
+            unsigned int arrCSRC[15]) { return -1; };
+    virtual int InsertExtraRTPPacket(
+            int channel, unsigned char payloadType, bool markerBit,
+            const char* payloadData, unsigned short payloadSize) { return -1; };
+    virtual int GetRemoteRTCPSenderInfo(
+            int channel, SenderInfo* sender_info) { return -1; };
+    virtual int SendApplicationDefinedRTCPPacket(
+            int channel, unsigned char subType, unsigned int name,
+            const char* data, unsigned short dataLengthInBytes) { return -1; };
+    virtual int GetLastRemoteTimeStamp(int channel,
+            uint32_t* lastRemoteTimeStamp) { return -1; };
 
 protected:
     VoERTP_RTCP() {}

@@ -311,14 +311,11 @@ public:
 #endif
 
     // VoERTP_RTCP
-    int RegisterRTPObserver(VoERTPObserver& observer);
-    int DeRegisterRTPObserver();
     int RegisterRTCPObserver(VoERTCPObserver& observer);
     int DeRegisterRTCPObserver();
     int SetLocalSSRC(unsigned int ssrc);
     int GetLocalSSRC(unsigned int& ssrc);
     int GetRemoteSSRC(unsigned int& ssrc);
-    int GetRemoteCSRCs(unsigned int arrCSRC[15]);
     int SetSendAudioLevelIndicationStatus(bool enable, unsigned char id);
     int SetReceiveAudioLevelIndicationStatus(bool enable, unsigned char id);
     int SetSendAbsoluteSenderTimeStatus(bool enable, unsigned char id);
@@ -338,7 +335,6 @@ public:
     int GetRTPStatistics(unsigned int& averageJitterMs,
                          unsigned int& maxJitterMs,
                          unsigned int& discardedPackets);
-    int GetRemoteRTCPSenderInfo(SenderInfo* sender_info);
     int GetRemoteRTCPReportBlocks(std::vector<ReportBlock>* report_blocks);
     int GetRTPStatistics(CallStatistics& stats);
     int SetFECStatus(bool enable, int redPayloadtype);
@@ -347,7 +343,6 @@ public:
     int StartRTPDump(const char fileNameUTF8[1024], RTPDirections direction);
     int StopRTPDump(RTPDirections direction);
     bool RTPDumpIsActive(RTPDirections direction);
-    uint32_t LastRemoteTimeStamp() { return _lastRemoteTimeStamp; }
     // Takes ownership of the ViENetwork.
     void SetVideoEngineBWETarget(ViENetwork* vie_network, int video_channel);
 
@@ -562,13 +557,11 @@ private:
     VoERxVadCallback* _rxVadObserverPtr;
     int32_t _oldVadDecision;
     int32_t _sendFrameType; // Send data is voice, 1-voice, 0-otherwise
-    VoERTPObserver* _rtpObserverPtr;
     VoERTCPObserver* _rtcpObserverPtr;
     // VoEBase
     bool _externalPlayout;
     bool _externalMixing;
     bool _mixFileWithMicrophone;
-    bool _rtpObserver;
     bool _rtcpObserver;
     // VoEVolumeControl
     bool _mute;
@@ -580,7 +573,6 @@ private:
     bool _playInbandDtmfEvent;
     // VoeRTP_RTCP
     uint32_t _lastLocalTimeStamp;
-    uint32_t _lastRemoteTimeStamp;
     int8_t _lastPayloadType;
     bool _includeAudioLevelIndication;
     // VoENetwork

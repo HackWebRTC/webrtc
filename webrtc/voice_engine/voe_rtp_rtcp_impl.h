@@ -20,15 +20,6 @@ namespace webrtc {
 class VoERTP_RTCPImpl : public VoERTP_RTCP
 {
 public:
-    // Registration of observers for RTP and RTCP callbacks
-    virtual int RegisterRTPObserver(int channel, VoERTPObserver& observer);
-
-    virtual int DeRegisterRTPObserver(int channel);
-
-    virtual int RegisterRTCPObserver(int channel, VoERTCPObserver& observer);
-
-    virtual int DeRegisterRTCPObserver(int channel);
-
     // RTCP
     virtual int SetRTCPStatus(int channel, bool enable);
 
@@ -47,13 +38,6 @@ public:
                                   unsigned int& playoutTimestamp,
                                   unsigned int* jitter = NULL,
                                   unsigned short* fractionLost = NULL);
-
-    virtual int SendApplicationDefinedRTCPPacket(
-        int channel,
-        unsigned char subType,
-        unsigned int name,
-        const char* data,
-        unsigned short dataLengthInBytes);
 
     // SSRC
     virtual int SetLocalSSRC(int channel, unsigned int ssrc);
@@ -78,9 +62,6 @@ public:
                                                    bool enable,
                                                    unsigned char id);
 
-    // CSRC
-    virtual int GetRemoteCSRCs(int channel, unsigned int arrCSRC[15]);
-
     // Statistics
     virtual int GetRTPStatistics(int channel,
                                  unsigned int& averageJitterMs,
@@ -88,8 +69,6 @@ public:
                                  unsigned int& discardedPackets);
 
     virtual int GetRTCPStatistics(int channel, CallStatistics& stats);
-
-    virtual int GetRemoteRTCPSenderInfo(int channel, SenderInfo* sender_info);
 
     virtual int GetRemoteRTCPReportBlocks(
         int channel, std::vector<ReportBlock>* report_blocks);
@@ -117,8 +96,6 @@ public:
     virtual int RTPDumpIsActive(int channel,
                                 RTPDirections direction = kRtpIncoming);
 
-    virtual int GetLastRemoteTimeStamp(int channel,
-                                       uint32_t* lastRemoteTimeStamp);
     virtual int SetVideoEngineBWETarget(int channel, ViENetwork* vie_network,
                                         int video_channel);
 protected:

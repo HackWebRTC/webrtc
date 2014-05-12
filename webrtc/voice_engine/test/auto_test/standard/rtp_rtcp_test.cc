@@ -153,54 +153,6 @@ TEST_F(RtpRtcpTest, DISABLED_ON_LINUX(SSRCPropagatesCorrectly)) {
   EXPECT_EQ(local_ssrc, ssrc);
 }
 
-TEST_F(RtpRtcpTest, RtcpApplicationDefinedPacketsCanBeSentAndReceived) {
-  RtcpAppHandler rtcp_app_handler;
-  EXPECT_EQ(0, voe_rtp_rtcp_->RegisterRTCPObserver(
-      channel_, rtcp_app_handler));
-
-  // Send data aligned to 32 bytes.
-  const char* data = "application-dependent data------";
-  unsigned short data_length = strlen(data);
-  unsigned int data_name = 0x41424344;  // 'ABCD' in ascii
-  unsigned char data_subtype = 1;
-
-  EXPECT_EQ(0, voe_rtp_rtcp_->SendApplicationDefinedRTCPPacket(
-      channel_, data_subtype, data_name, data, data_length));
-
-  // Ensure the RTP-RTCP process gets scheduled.
-  Sleep(1000);
-
-  // Ensure we received the data in the callback.
-  ASSERT_EQ(data_length, rtcp_app_handler.length_in_bytes_);
-  EXPECT_EQ(0, memcmp(data, rtcp_app_handler.data_, data_length));
-  EXPECT_EQ(data_name, rtcp_app_handler.name_);
-  EXPECT_EQ(data_subtype, rtcp_app_handler.sub_type_);
-
-  EXPECT_EQ(0, voe_rtp_rtcp_->DeRegisterRTCPObserver(channel_));
-}
-
-TEST_F(RtpRtcpTest, DisabledRtcpObserverDoesNotReceiveData) {
-  RtcpAppHandler rtcp_app_handler;
-  EXPECT_EQ(0, voe_rtp_rtcp_->RegisterRTCPObserver(
-      channel_, rtcp_app_handler));
-
-  // Put observer in a known state before de-registering.
-  rtcp_app_handler.Reset();
-
-  EXPECT_EQ(0, voe_rtp_rtcp_->DeRegisterRTCPObserver(channel_));
-
-  const char* data = "whatever";
-  EXPECT_EQ(0, voe_rtp_rtcp_->SendApplicationDefinedRTCPPacket(
-      channel_, 1, 0x41424344, data, strlen(data)));
-
-  // Ensure the RTP-RTCP process gets scheduled.
-  Sleep(1000);
-
-  // Ensure we received no data.
-  EXPECT_EQ(0u, rtcp_app_handler.name_);
-  EXPECT_EQ(0u, rtcp_app_handler.sub_type_);
-}
-
 // TODO(xians, phoglund): Re-enable when issue 372 is resolved.
 TEST_F(RtpRtcpTest, DISABLED_CanCreateRtpDumpFilesWithoutError) {
   // Create two RTP dump files (3 seconds long). You can verify these after
@@ -220,27 +172,3 @@ TEST_F(RtpRtcpTest, DISABLED_CanCreateRtpDumpFilesWithoutError) {
   EXPECT_EQ(0, voe_rtp_rtcp_->StopRTPDump(channel_, webrtc::kRtpOutgoing));
 }
 
-TEST_F(RtpRtcpTest, ObserverGetsNotifiedOnSsrcChange) {
-  TestRtpObserver rtcp_observer;
-  EXPECT_EQ(0, voe_rtp_rtcp_->RegisterRTPObserver(
-      channel_, rtcp_observer));
-
-  unsigned int new_ssrc = 7777;
-  EXPECT_EQ(0, voe_base_->StopSend(channel_));
-  rtcp_observer.SetIncomingSsrc(new_ssrc);
-  EXPECT_EQ(0, voe_rtp_rtcp_->SetLocalSSRC(channel_, new_ssrc));
-  EXPECT_EQ(0, voe_base_->StartSend(channel_));
-
-  rtcp_observer.WaitForChangedSsrc();
-
-  // Now try another SSRC.
-  unsigned int newer_ssrc = 1717;
-  EXPECT_EQ(0, voe_base_->StopSend(channel_));
-  rtcp_observer.SetIncomingSsrc(newer_ssrc);
-  EXPECT_EQ(0, voe_rtp_rtcp_->SetLocalSSRC(channel_, newer_ssrc));
-  EXPECT_EQ(0, voe_base_->StartSend(channel_));
-
-  rtcp_observer.WaitForChangedSsrc();
-
-  EXPECT_EQ(0, voe_rtp_rtcp_->DeRegisterRTPObserver(channel_));
-}
