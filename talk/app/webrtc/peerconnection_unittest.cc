@@ -85,7 +85,7 @@ using webrtc::StreamCollectionInterface;
 
 static const int kMaxWaitMs = 2000;
 static const int kMaxWaitForStatsMs = 3000;
-static const int kMaxWaitForFramesMs = 5000;
+static const int kMaxWaitForFramesMs = 10000;
 static const int kEndAudioFrameCount = 3;
 static const int kEndVideoFrameCount = 3;
 

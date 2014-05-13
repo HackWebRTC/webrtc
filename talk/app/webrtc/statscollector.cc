@@ -63,6 +63,18 @@ const char StatsReport::kStatsValueNameComponent[] = "googComponent";
 const char StatsReport::kStatsValueNameContentName[] = "googContentName";
 const char StatsReport::kStatsValueNameCpuLimitedResolution[] =
     "googCpuLimitedResolution";
+const char StatsReport::kStatsValueNameDecodingCTSG[] =
+    "googDecodingCTSG";
+const char StatsReport::kStatsValueNameDecodingCTN[] =
+    "googDecodingCTN";
+const char StatsReport::kStatsValueNameDecodingNormal[] =
+    "googDecodingNormal";
+const char StatsReport::kStatsValueNameDecodingPLC[] =
+    "googDecodingPLC";
+const char StatsReport::kStatsValueNameDecodingCNG[] =
+    "googDecodingCNG";
+const char StatsReport::kStatsValueNameDecodingPLCCNG[] =
+    "googDecodingPLCCNG";
 const char StatsReport::kStatsValueNameDer[] = "googDerBase64";
 // Echo metrics from the audio processing module.
 const char StatsReport::kStatsValueNameEchoCancellationQualityMin[] =
@@ -273,6 +285,18 @@ void ExtractStats(const cricket::VoiceReceiverInfo& info, StatsReport* report) {
                    info.packets_rcvd);
   report->AddValue(StatsReport::kStatsValueNamePacketsLost,
                    info.packets_lost);
+  report->AddValue(StatsReport::kStatsValueNameDecodingCTSG,
+                   info.decoding_calls_to_silence_generator);
+  report->AddValue(StatsReport::kStatsValueNameDecodingCTN,
+                   info.decoding_calls_to_neteq);
+  report->AddValue(StatsReport::kStatsValueNameDecodingNormal,
+                   info.decoding_normal);
+  report->AddValue(StatsReport::kStatsValueNameDecodingPLC,
+                   info.decoding_plc);
+  report->AddValue(StatsReport::kStatsValueNameDecodingCNG,
+                   info.decoding_cng);
+  report->AddValue(StatsReport::kStatsValueNameDecodingPLCCNG,
+                   info.decoding_plc_cng);
 }
 
 void ExtractStats(const cricket::VoiceSenderInfo& info, StatsReport* report) {

@@ -263,6 +263,58 @@ void CheckCertChainReports(const StatsReports& reports,
   EXPECT_EQ(ders.size(), i);
 }
 
+void VerifyVoiceReceiverInfoReport(const StatsReport* report,
+                                   const cricket::VoiceReceiverInfo& sinfo) {
+  std::string value_in_report;
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameAudioOutputLevel, &value_in_report));
+  EXPECT_EQ(talk_base::ToString<int>(sinfo.audio_level), value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameBytesReceived, &value_in_report));
+  EXPECT_EQ(talk_base::ToString<int>(sinfo.bytes_rcvd), value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameJitterReceived, &value_in_report));
+  EXPECT_EQ(talk_base::ToString<int>(sinfo.jitter_ms), value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameJitterBufferMs, &value_in_report));
+  EXPECT_EQ(talk_base::ToString<int>(sinfo.jitter_buffer_ms), value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNamePreferredJitterBufferMs,
+      &value_in_report));
+  EXPECT_EQ(talk_base::ToString<int>(sinfo.jitter_buffer_preferred_ms),
+      value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameCurrentDelayMs, &value_in_report));
+  EXPECT_EQ(talk_base::ToString<int>(sinfo.delay_estimate_ms), value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameExpandRate, &value_in_report));
+  EXPECT_EQ(talk_base::ToString<float>(sinfo.expand_rate), value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNamePacketsReceived, &value_in_report));
+  EXPECT_EQ(talk_base::ToString<int>(sinfo.packets_rcvd), value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameDecodingCTSG, &value_in_report));
+  EXPECT_EQ(talk_base::ToString<int>(sinfo.decoding_calls_to_silence_generator),
+      value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameDecodingCTN, &value_in_report));
+  EXPECT_EQ(talk_base::ToString<int>(sinfo.decoding_calls_to_neteq),
+      value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameDecodingNormal, &value_in_report));
+  EXPECT_EQ(talk_base::ToString<int>(sinfo.decoding_normal), value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameDecodingPLC, &value_in_report));
+  EXPECT_EQ(talk_base::ToString<int>(sinfo.decoding_plc), value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameDecodingCNG, &value_in_report));
+  EXPECT_EQ(talk_base::ToString<int>(sinfo.decoding_cng), value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameDecodingPLCCNG, &value_in_report));
+  EXPECT_EQ(talk_base::ToString<int>(sinfo.decoding_plc_cng), value_in_report);
+}
+
+
 void VerifyVoiceSenderInfoReport(const StatsReport* report,
                                  const cricket::VoiceSenderInfo& sinfo) {
   std::string value_in_report;
@@ -1066,6 +1118,66 @@ TEST_F(StatsCollectorTest, GetStatsFromLocalAudioTrack) {
   EXPECT_EQ(talk_base::ToString<uint32>(kSsrcOfTrack), ssrc_id);
   VerifyVoiceSenderInfoReport(track_report, voice_sender_info);
 }
+
+
+// This test verifies that audio receive streams populate stats reports
+// correctly.
+TEST_F(StatsCollectorTest, GetStatsFromRemoteStream) {
+  webrtc::StatsCollector stats;  // Implementation under test.
+  MockVoiceMediaChannel* media_channel = new MockVoiceMediaChannel();
+  // The content_name known by the voice channel.
+  const std::string kVcName("vcname");
+  cricket::VoiceChannel voice_channel(talk_base::Thread::Current(),
+      media_engine_, media_channel, &session_, kVcName, false);
+  stream_ = webrtc::MediaStream::Create("remoteStreamLabel");
+  stats.AddStream(stream_);
+
+  stats.set_session(&session_);
+
+  // Instruct the session to return stats containing the transport channel.
+  InitSessionStats(kVcName);
+  EXPECT_CALL(session_, GetStats(_))
+      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
+                            Return(true)));
+
+  cricket::VoiceReceiverInfo voice_receiver_info;
+  voice_receiver_info.add_ssrc(kSsrcOfTrack);
+  voice_receiver_info.bytes_rcvd = 100;
+  voice_receiver_info.packets_rcvd = 101;
+  voice_receiver_info.packets_lost = 102;
+  voice_receiver_info.fraction_lost = 103;
+  voice_receiver_info.packets_lost = 104;
+  voice_receiver_info.ext_seqnum = 105;
+  voice_receiver_info.jitter_ms = 106;
+  voice_receiver_info.jitter_buffer_ms = 107;
+  voice_receiver_info.jitter_buffer_preferred_ms = 108;
+  voice_receiver_info.delay_estimate_ms = 109;
+  voice_receiver_info.audio_level = 110;
+  voice_receiver_info.expand_rate = 111;
+
+  // Constructs an ssrc stats update.
+  cricket::VoiceMediaInfo stats_read;
+  stats_read.receivers.push_back(voice_receiver_info);
+
+  EXPECT_CALL(session_, voice_channel()).WillRepeatedly(Return(&voice_channel));
+  EXPECT_CALL(session_, video_channel()).WillRepeatedly(ReturnNull());
+  EXPECT_CALL(*media_channel, GetStats(_))
+      .WillRepeatedly(DoAll(SetArgPointee<0>(stats_read),
+                            Return(true)));
+  EXPECT_CALL(session_, GetTrackIdBySsrc(kSsrcOfTrack, _))
+      .WillRepeatedly(Return(true));
+
+  StatsReports reports;  // returned values.
+  stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
+  stats.GetStats(NULL, &reports);
+
+  // Verify the remote report.
+  const StatsReport* report = FindNthReportByType(
+        reports, StatsReport::kStatsReportTypeSsrc, 1);
+  EXPECT_FALSE(report == NULL);
+  VerifyVoiceReceiverInfoReport(report, voice_receiver_info);
+}
+
 
 // This test verifies that a local stats object won't update its statistics
 // after a RemoveLocalAudioTrack() call.

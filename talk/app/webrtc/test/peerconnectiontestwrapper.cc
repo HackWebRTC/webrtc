@@ -36,7 +36,7 @@
 static const char kStreamLabelBase[] = "stream_label";
 static const char kVideoTrackLabelBase[] = "video_track";
 static const char kAudioTrackLabelBase[] = "audio_track";
-static const int kMaxWait = 5000;
+static const int kMaxWait = 10000;
 static const int kTestAudioFrameCount = 3;
 static const int kTestVideoFrameCount = 3;
 
