@@ -140,8 +140,8 @@ class OveruseFrameDetector::EncodeUsage {
   EncodeUsage()
       : kWeightFactorFrameDiff(0.998f),
         kWeightFactorEncodeTime(0.995f),
-        kInitialSampleDiffMs(50.0f),
-        kMaxSampleDiffMs(66.0f),
+        kInitialSampleDiffMs(40.0f),
+        kMaxSampleDiffMs(45.0f),
         count_(0),
         filtered_encode_time_ms_(new VCMExpFilter(kWeightFactorEncodeTime)),
         filtered_frame_diff_ms_(new VCMExpFilter(kWeightFactorFrameDiff)) {
