@@ -40,6 +40,8 @@ const float kLowSystemCpuThreshold = 0.65f;
 const float kProcessCpuThreshold = 0.10f;
 
 const char kRtxCodecName[] = "rtx";
+const char kRedCodecName[] = "red";
+const char kUlpfecCodecName[] = "ulpfec";
 
 // RTP payload type is in the 0-127 range. Use 128 to indicate "all" payload
 // types.
