@@ -89,9 +89,6 @@
     'build_libyuv%': 1,
     'build_libvpx%': 1,
 
-    # Disable by default
-    'have_dbus_glib%': 0,
-
     # Enable to use the Mozilla internal settings.
     'build_with_mozilla%': 0,
 
@@ -147,6 +144,9 @@
   },
   'target_defaults': {
     'include_dirs': [
+      # Allow includes to be prefixed with webrtc/ in case it is not an
+      # immediate subdirectory of <(DEPTH).
+      '../..',
       # To include the top-level directory when building in Chrome, so we can
       # use full paths (e.g. headers inside testing/ or third_party/).
       '<(DEPTH)',
@@ -161,14 +161,6 @@
           'WEBRTC_MOZILLA_BUILD',
          ],
       }],
-      ['have_dbus_glib==1', {
-        'defines': [
-          'HAVE_DBUS_GLIB',
-         ],
-         'cflags': [
-           '<!@(pkg-config --cflags dbus-glib-1)',
-         ],
-      }],
       ['enable_video==1', {
         'defines': ['WEBRTC_MODULE_UTILITY_VIDEO',],
       }],
@@ -176,15 +168,6 @@
         'defines': [
           # Changes settings for Chromium build.
           'WEBRTC_CHROMIUM_BUILD',
-          'LOGGING_INSIDE_WEBRTC',
-        ],
-        'include_dirs': [
-          # overrides must be included first as that is the mechanism for
-          # selecting the override headers in Chromium.
-          '../overrides',
-          # Allow includes to be prefixed with webrtc/ in case it is not an
-          # immediate subdirectory of <(DEPTH).
-          '../..',
         ],
       }, {
         'conditions': [
@@ -347,6 +330,9 @@
       }],
     ], # conditions
     'direct_dependent_settings': {
+      'include_dirs': [
+        '../..',
+      ],
       'conditions': [
         ['build_with_mozilla==1', {
           'defines': [
@@ -358,16 +344,6 @@
           'defines': [
             # Changes settings for Chromium build.
             'WEBRTC_CHROMIUM_BUILD',
-          ],
-          'include_dirs': [
-            # overrides must be included first as that is the mechanism for
-            # selecting the override headers in Chromium.
-            '../overrides',
-            '../..',
-          ],
-        }, {
-          'include_dirs': [
-            '../..',
           ],
         }],
         ['OS=="mac"', {
@@ -403,13 +379,6 @@
                ],
              }]
            ],
-        }],
-        ['os_posix==1', {
-          # For access to standard POSIXish features, use WEBRTC_POSIX instead
-          # of a more specific macro.
-          'defines': [
-            'WEBRTC_POSIX',
-          ],
         }],
       ],
     },
