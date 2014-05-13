@@ -95,10 +95,12 @@ TEST_F(VolumeTest, ManualSetVolumeWorks) {
   Sleep(1000);
 }
 
-TEST_F(VolumeTest, DISABLED_ON_LINUX(DefaultMicrophoneVolumeIsAtMost255)) {
+TEST_F(VolumeTest, DefaultMicrophoneVolumeIsAtMost255) {
   unsigned int volume = 1000;
-  EXPECT_EQ(0, voe_volume_control_->GetMicVolume(volume));
-  EXPECT_LE(volume, 255u);
+  if (voe_volume_control_->GetMicVolume(volume) == 0)
+    EXPECT_LE(volume, 255u);
+  else
+    EXPECT_EQ(1000u, volume);
 }
 
 TEST_F(VolumeTest, DISABLED_ON_LINUX(
