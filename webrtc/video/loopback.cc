@@ -12,6 +12,7 @@
 
 #include <map>
 
+#include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/call.h"
@@ -21,7 +22,6 @@
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/fake_encoder.h"
-#include "webrtc/test/flags.h"
 #include "webrtc/test/run_loop.h"
 #include "webrtc/test/run_tests.h"
 #include "webrtc/test/video_capturer.h"
@@ -29,20 +29,35 @@
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
+namespace flags {
 
-class LoopbackTest : public ::testing::Test {
- protected:
-  std::map<uint32_t, bool> reserved_ssrcs_;
-};
+DEFINE_int32(width, 640, "Video width.");
+size_t Width() { return static_cast<size_t>(FLAGS_width); }
+
+DEFINE_int32(height, 480, "Video height.");
+size_t Height() { return static_cast<size_t>(FLAGS_height); }
+
+DEFINE_int32(fps, 30, "Frames per second.");
+int Fps() { return static_cast<int>(FLAGS_fps); }
+
+DEFINE_int32(min_bitrate, 50, "Minimum video bitrate.");
+size_t MinBitrate() { return static_cast<size_t>(FLAGS_min_bitrate); }
+
+DEFINE_int32(start_bitrate, 300, "Video starting bitrate.");
+size_t StartBitrate() { return static_cast<size_t>(FLAGS_start_bitrate); }
+
+DEFINE_int32(max_bitrate, 800, "Maximum video bitrate.");
+size_t MaxBitrate() { return static_cast<size_t>(FLAGS_max_bitrate); }
+}  // namespace flags
 
 static const uint32_t kSendSsrc = 0x654321;
 static const uint32_t kReceiverLocalSsrc = 0x123456;
 
-TEST_F(LoopbackTest, Test) {
+void Loopback() {
   scoped_ptr<test::VideoRenderer> local_preview(test::VideoRenderer::Create(
-      "Local Preview", test::flags::Width(), test::flags::Height()));
+      "Local Preview", flags::Width(), flags::Height()));
   scoped_ptr<test::VideoRenderer> loopback_video(test::VideoRenderer::Create(
-      "Loopback Video", test::flags::Width(), test::flags::Height()));
+      "Loopback Video", flags::Width(), flags::Height()));
 
   test::DirectTransport transport;
   Call::Config call_config(&transport);
@@ -60,12 +75,12 @@ TEST_F(LoopbackTest, Test) {
   send_config.encoder_settings =
       test::CreateEncoderSettings(encoder.get(), "VP8", 124, 1);
   VideoStream* stream = &send_config.encoder_settings.streams[0];
-  stream->width = test::flags::Width();
-  stream->height = test::flags::Height();
-  stream->min_bitrate_bps = static_cast<int>(test::flags::MinBitrate()) * 1000;
+  stream->width = flags::Width();
+  stream->height = flags::Height();
+  stream->min_bitrate_bps = static_cast<int>(flags::MinBitrate()) * 1000;
   stream->target_bitrate_bps =
-      static_cast<int>(test::flags::MaxBitrate()) * 1000;
-  stream->max_bitrate_bps = static_cast<int>(test::flags::MaxBitrate()) * 1000;
+      static_cast<int>(flags::MaxBitrate()) * 1000;
+  stream->max_bitrate_bps = static_cast<int>(flags::MaxBitrate()) * 1000;
   stream->max_framerate = 30;
   stream->max_qp = 56;
 
@@ -75,9 +90,9 @@ TEST_F(LoopbackTest, Test) {
 
   scoped_ptr<test::VideoCapturer> camera(
       test::VideoCapturer::Create(send_stream->Input(),
-                                  test::flags::Width(),
-                                  test::flags::Height(),
-                                  test::flags::Fps(),
+                                  flags::Width(),
+                                  flags::Height(),
+                                  flags::Fps(),
                                   test_clock));
 
   VideoReceiveStream::Config receive_config = call->GetDefaultReceiveConfig();
@@ -107,3 +122,11 @@ TEST_F(LoopbackTest, Test) {
   transport.StopSending();
 }
 }  // namespace webrtc
+
+int main(int argc, char* argv[]) {
+  ::testing::InitGoogleTest(&argc, argv);
+  google::ParseCommandLineFlags(&argc, &argv, true);
+
+  webrtc::Loopback();
+  return 0;
+}

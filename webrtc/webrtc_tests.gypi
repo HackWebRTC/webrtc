@@ -21,10 +21,10 @@
       'type': 'executable',
       'sources': [
         'video/loopback.cc',
-        'test/test_main.cc',
       ],
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
         'test/webrtc_test_common.gyp:webrtc_test_common',
         'webrtc',
       ],
@@ -43,7 +43,6 @@
       ],
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
-        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
         'modules/modules.gyp:rtp_rtcp',
         'test/metrics.gyp:metrics',
         'test/webrtc_test_common.gyp:webrtc_test_common',
@@ -62,7 +61,6 @@
       ],
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
-        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
         'modules/modules.gyp:neteq_test_support',  # Needed by neteq_performance_unittest.
         'modules/modules.gyp:rtp_rtcp',
         'test/webrtc_test_common.gyp:webrtc_test_common',

@@ -28,8 +28,6 @@
         'fake_encoder.h',
         'fake_network_pipe.cc',
         'fake_network_pipe.h',
-        'flags.cc',
-        'flags.h',
         'frame_generator_capturer.cc',
         'frame_generator_capturer.h',
         'mock_transport.h',
@@ -84,7 +82,6 @@
       },
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
-        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
         '<(webrtc_root)/modules/modules.gyp:video_capture_module',
         '<(webrtc_root)/modules/modules.gyp:media_file',
         '<(webrtc_root)/test/test.gyp:frame_generator',
