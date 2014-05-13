@@ -209,7 +209,8 @@ TEST_F(PeerConnectionEndToEndTest, Call) {
   WaitForCallEstablished();
 }
 
-TEST_F(PeerConnectionEndToEndTest, CallWithLegacySdp) {
+// Disabled per b/14899892
+TEST_F(PeerConnectionEndToEndTest, DISABLED_CallWithLegacySdp) {
   FakeConstraints pc_constraints;
   pc_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
                               false);
