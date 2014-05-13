@@ -10,6 +10,473 @@
 
 # 1. webrtc stuff
 {
+  bug_1205_33
+  ThreadSanitizer:Race
+  fun:webrtc::PeerConnectionProxy::~PeerConnectionProxy
+  fun:rtc::RefCountedObject::~RefCountedObject
+  fun:rtc::RefCountedObject::~RefCountedObject
+  fun:rtc::RefCountedObject::Release
+  fun:rtc::scoped_refptr::~scoped_refptr
+  ...
+}
+{
+  bug_1205_34
+  ThreadSanitizer:Race
+  fun:rtc::AtomicOps::Increment
+  fun:rtc::RefCountedObject::AddRef
+  fun:rtc::scoped_refptr::scoped_refptr
+  fun:webrtc::PeerConnectionFactory::CreatePeerConnection
+  fun:webrtc::PeerConnectionFactory::CreatePeerConnection
+  ...
+}
+{
+  bug_1205_35
+  ThreadSanitizer:Race
+  fun:rtc::scoped_refptr::scoped_refptr
+  fun:webrtc::PeerConnectionFactory::CreatePeerConnection
+  fun:webrtc::PeerConnectionFactory::CreatePeerConnection
+  ...
+}
+{
+  bug_1205_36
+  ThreadSanitizer:Race
+  fun:rtc::MessageHandler::~MessageHandler
+  fun:FakeAudioCaptureModule::~FakeAudioCaptureModule
+  ...
+}
+{
+  bug_1205_39
+  ThreadSanitizer:Race
+  fun:rtc::Thread::Send
+  fun:FakeAudioCaptureModule::UpdateProcessing
+  fun:FakeAudioCaptureModule::StopRecording
+  fun:webrtc::VoEBaseImpl::StopSend
+  fun:webrtc::VoEBaseImpl::DeleteChannel
+  fun:cricket::WebRtcVoiceMediaChannel::~WebRtcVoiceMediaChannel
+  ...
+}
+{
+  bug_1205_41
+  ThreadSanitizer:Race
+  fun:rtc::Thread::Send
+  fun:FakeAudioCaptureModule::~FakeAudioCaptureModule
+  ...
+}
+{
+  bug_2078_2
+  ThreadSanitizer:Race
+  ...
+  fun:rtc::MemoryStreamBase::Read
+  ...
+  fun:cricket::RtpDumpReader::ReadPacket
+  ...
+}
+{
+  bug_2078_3
+  ThreadSanitizer:Race
+  fun:cricket::RtpSenderReceiver::OnMessage
+  fun:rtc::MessageQueue::Dispatch
+  fun:rtc::Thread::ProcessMessages
+  fun:rtc::Thread::Run
+  fun:rtc::Thread::PreRun
+}
+{
+  bug_2078_4
+  ThreadSanitizer:Race
+  fun:cricket::FileNetworkInterface::SendPacket
+  fun:cricket::RtpSenderReceiver::SendRtpPacket
+  fun:cricket::RtpSenderReceiver::OnMessage
+  fun:rtc::MessageQueue::Dispatch
+  fun:rtc::Thread::ProcessMessages
+  fun:rtc::Thread::Run
+  fun:rtc::Thread::PreRun
+}
+{
+  bug_2078_7
+  ThreadSanitizer:Race
+  fun:rtc::MemoryStreamBase::~MemoryStreamBase
+  fun:rtc::MemoryStream::~MemoryStream
+  ...
+}
+{
+  bug_2078_8
+  ThreadSanitizer:Race
+  fun:rtc::MemoryStreamBase::SetPosition
+  fun:rtc::StreamInterface::Rewind
+  fun:cricket::RtpTestUtility::VerifyTestPacketsFromStream
+  ...
+}
+{
+  bug_2078_13
+  ThreadSanitizer:Race
+  fun:std::_Vector_base::~_Vector_base
+  fun:std::vector::~vector
+  fun:cricket::RtpDumpPacket::~RtpDumpPacket
+  fun:cricket::RtpSenderReceiver::~RtpSenderReceiver
+  fun:cricket::RtpSenderReceiver::~RtpSenderReceiver
+  fun:rtc::scoped_ptr::~scoped_ptr
+  ...
+}
+{
+  bug_2078_14
+  ThreadSanitizer:Race
+  fun:cricket::RtpDumpReader::~RtpDumpReader
+  fun:cricket::RtpDumpLoopReader::~RtpDumpLoopReader
+  fun:cricket::RtpDumpLoopReader::~RtpDumpLoopReader
+  fun:rtc::scoped_ptr::~scoped_ptr
+  fun:cricket::RtpSenderReceiver::~RtpSenderReceiver
+  fun:cricket::RtpSenderReceiver::~RtpSenderReceiver
+  fun:rtc::scoped_ptr::~scoped_ptr
+  ...
+}
+{
+  bug_2078_15
+  ThreadSanitizer:Race
+  fun:rtc::FileStream::Close
+  fun:rtc::FileStream::~FileStream
+  fun:rtc::FileStream::~FileStream
+  fun:rtc::scoped_ptr::~scoped_ptr
+  fun:cricket::RtpSenderReceiver::~RtpSenderReceiver
+  fun:cricket::RtpSenderReceiver::~RtpSenderReceiver
+  fun:rtc::scoped_ptr::~scoped_ptr
+  ...
+}
+{
+  bug_2078_16
+  ThreadSanitizer:Race
+  fun:rtc::StreamInterface::~StreamInterface
+  fun:rtc::FileStream::~FileStream
+  fun:rtc::FileStream::~FileStream
+  fun:rtc::scoped_ptr::~scoped_ptr
+  fun:cricket::RtpSenderReceiver::~RtpSenderReceiver
+  fun:cricket::RtpSenderReceiver::~RtpSenderReceiver
+  fun:rtc::scoped_ptr::~scoped_ptr
+  ...
+}
+{
+  bug_2078_18
+  ThreadSanitizer:Race
+  fun:rtc::MemoryStream::~MemoryStream
+  ...
+}
+{
+  bug_2078_22
+  ThreadSanitizer:Race
+  fun:rtc::MessageQueue::Quit
+  fun:rtc::Thread::Stop
+  ...
+}
+{
+  bug_2078_23
+  ThreadSanitizer:Race
+  fun:::FileVideoCapturerTest::VideoCapturerListener::OnFrameCaptured
+  fun:sigslot::_connection2::emit
+  ...
+  fun:cricket::FileVideoCapturer::ReadFrame
+  fun:cricket::FileVideoCapturer::FileReadThread::OnMessage
+  fun:rtc::MessageQueue::Dispatch
+  fun:rtc::Thread::ProcessMessages
+  fun:rtc::Thread::Run
+  fun:cricket::FileVideoCapturer::FileReadThread::Run
+  fun:rtc::Thread::PreRun
+}
+{
+  bug_2078_24
+  ThreadSanitizer:Race
+  fun:rtc::MemoryStreamBase::SetPosition
+  fun:rtc::StreamInterface::Rewind
+  ...
+}
+{
+  bug_2078_25
+  ThreadSanitizer:Race
+  fun:cricket::FileNetworkInterface::SendPacket
+  fun:cricket::MediaChannel::DoSendPacket
+  fun:cricket::MediaChannel::SendPacket
+  fun:cricket::RtpSenderReceiver::SendRtpPacket
+  fun:cricket::RtpSenderReceiver::OnMessage
+  fun:rtc::MessageQueue::Dispatch
+  fun:rtc::Thread::ProcessMessages
+  fun:rtc::Thread::Run
+  fun:rtc::Thread::PreRun
+}
+{
+  bug_2079_1
+  ThreadSanitizer:Race
+  fun:rtc::VirtualSocketServer::AddPacketToNetwork
+  fun:rtc::VirtualSocketServer::SendUdp
+  fun:rtc::VirtualSocket::SendUdp
+  fun:rtc::VirtualSocket::SendTo
+  fun:rtc::AsyncUDPSocket::SendTo
+  fun:cricket::StunServer::SendResponse
+  fun:cricket::StunServer::OnBindingRequest
+  fun:cricket::StunServer::OnPacket
+  fun:sigslot::_connection4::emit
+  ...
+}
+{
+  bug_2079_5
+  ThreadSanitizer:Race
+  fun:rtc::Thread::Send
+  fun:cricket::Transport::SetRole
+  fun:cricket::BaseSession::GetOrCreateTransportProxy
+  fun:cricket::BaseSession::CreateChannel
+  fun:cricket::FakeSession::CreateChannel
+  fun:cricket::VoiceChannel::Init
+  fun:cricket::ChannelManager::CreateVoiceChannel_w
+  ...
+}
+{
+  bug_2079_6
+  ThreadSanitizer:Race
+  fun:rtc::Thread::ReceiveSends
+  fun:rtc::Thread::Send
+  fun:rtc::Thread::Invoke
+  ...
+}
+{
+  bug_2079_8
+  ThreadSanitizer:Race
+  fun:rtc::Thread::Invoke
+  fun:cricket::ChannelManager::SetCaptureDevice
+  ...
+}
+{
+  bug_2079_9
+  ThreadSanitizer:Race
+  fun:rtc::Thread::Send
+  fun:cricket::Transport::SetIceRole
+  fun:cricket::BaseSession::GetOrCreateTransportProxy
+  fun:cricket::BaseSession::CreateChannel
+  fun:cricket::FakeSession::CreateChannel
+  fun:cricket::VoiceChannel::Init
+  fun:cricket::ChannelManager::CreateVoiceChannel_w
+  ...
+}
+{
+  bug_2080_1
+  ThreadSanitizer:Race
+  fun:rtc::MessageQueue::Quit
+  fun:rtc::SignalThread::Destroy
+  ...
+}
+{
+  bug_2080_2
+  ThreadSanitizer:Race
+  fun:rtc::MessageQueue::Quit
+  fun:rtc::AsyncHttpRequest::OnComplete
+  fun:sigslot::_connection2::emit
+  ...
+}
+{
+  bug_2080_3
+  ThreadSanitizer:Race
+  fun:rtc::LogMessage::UpdateMinLogSeverity
+  fun:rtc::LogMessage::AddLogToStream
+  ...
+}
+{
+  bug_2080_8
+  ThreadSanitizer:Race
+  ...
+  fun:rtc::AsyncUDPSocket::OnReadEvent
+  fun:sigslot::_connection1::emit
+  ...
+}
+{
+  bug_2080_9
+  ThreadSanitizer:Race
+  ...
+  fun:rtc::AsyncUDPSocket::OnWriteEvent
+  fun:sigslot::_connection1::emit
+  ...
+}
+{
+  bug_2080_14
+  ThreadSanitizer:Race
+  fun:rtc::IPAddress::IPAddress
+  fun:rtc::SocketAddress::ToSockAddrStorage
+  fun:rtc::PhysicalSocket::SendTo
+  fun:rtc::AsyncUDPSocket::SendTo
+  fun:rtc::NATServer::OnExternalPacket
+  ...
+}
+{
+  bug_2080_16
+  ThreadSanitizer:Race
+  ...
+  fun:rtc::IPAddress::operator<
+  ...
+}
+{
+  bug_2080_18
+  ThreadSanitizer:Race
+  fun:rtc::SocketAddress::port
+  ...
+}
+{
+  bug_2080_19
+  ThreadSanitizer:Race
+  fun:std::vector::_M_insert_aux
+  fun:std::vector::push_back
+  fun:rtc::TestClient::OnPacket
+  ...
+}
+{
+  bug_2080_20
+  ThreadSanitizer:Race
+  fun:rtc::VirtualSocketServer::AddPacketToNetwork
+  fun:rtc::VirtualSocketServer::SendUdp
+  fun:rtc::VirtualSocket::SendUdp
+  fun:rtc::VirtualSocket::SendTo
+  fun:rtc::AsyncUDPSocket::SendTo
+  fun:rtc::TestClient::SendTo
+  ...
+}
+{
+  bug_2080_21
+  ThreadSanitizer:Race
+  fun:rtc::SharedExclusiveTask::waiting_time_in_ms
+  ...
+}
+{
+  bug_2080_22
+  ThreadSanitizer:Race
+  fun:rtc::SharedExclusiveTask::~SharedExclusiveTask
+  fun:rtc::ReadTask::~ReadTask
+  ...
+}
+{
+  bug_2080_24
+  ThreadSanitizer:Race
+  ...
+  fun:OwnerThread::Run
+  fun:rtc::Thread::PreRun
+}
+{
+  bug_2080_25
+  ThreadSanitizer:Race
+  fun:sigslot::has_slots::~has_slots
+  fun:OwnerThread::~OwnerThread
+  fun:OwnerThread::~OwnerThread
+  fun:rtc::scoped_ptr::~scoped_ptr
+  ...
+}
+{
+  bug_2080_27
+  ThreadSanitizer:Race
+  ...
+  fun:std::_Rb_tree::clear
+  fun:std::_Rb_tree::_M_erase_aux
+  fun:std::_Rb_tree::erase
+  fun:std::set::erase
+  fun:sigslot::has_slots::disconnect_all
+  fun:sigslot::has_slots::~has_slots
+  fun:OwnerThread::~OwnerThread
+  fun:OwnerThread::~OwnerThread
+  fun:rtc::scoped_ptr::~scoped_ptr
+  ...
+}
+{
+  bug_2080_29
+  ThreadSanitizer:Race
+  fun:rtc::Thread::Release
+  fun:ThreadTest_Release_Test::TestBody
+  ...
+}
+{
+  bug_2080_30
+  ThreadSanitizer:Race
+  fun:rtc::Thread::Invoke
+  fun:MessageQueueTest::IsLocked
+  fun:DeletedLockChecker::~DeletedLockChecker
+  ...
+}
+{
+  bug_2080_31
+  ThreadSanitizer:Race
+  fun:rtc::MessageHandler::~MessageHandler
+  fun:rtc::Thread::FunctorMessageHandler::~FunctorMessageHandler
+  ...
+}
+{
+  bug_2080_32
+  ThreadSanitizer:Race
+  fun:rtc::ReadTask::OnMessage
+  fun:rtc::MessageQueue::Dispatch
+  ...
+}
+{
+  bug_2080_33
+  ThreadSanitizer:Race
+  fun:rtc::SharedExclusiveLockTest_TestSharedShared_Test::TestBody
+  fun:testing::internal::HandleSehExceptionsInMethodIfSupported
+}
+{
+  bug_2080_34
+  ThreadSanitizer:Race
+  fun:rtc::WriteTask::OnMessage
+  fun:rtc::MessageQueue::Dispatch
+  fun:rtc::Thread::ProcessMessages
+  fun:rtc::Thread::Run
+  fun:rtc::Thread::PreRun
+}
+{
+  bug_2080_35
+  ThreadSanitizer:UnlockNonLocked
+  fun:pthread_mutex_unlock
+  fun:rtc::CriticalSection::Leave
+  fun:rtc::CritScope::~CritScope
+  ...
+  fun:rtc::AsyncFunctorMessageHandler::OnMessage
+  fun:rtc::MessageQueue::Dispatch
+  fun:rtc::Thread::ProcessMessages
+  fun:rtc::Thread::Run
+  fun:rtc::Thread::PreRun
+}
+{
+  bug_2080_36
+  ThreadSanitizer:Race
+  ...
+  fun:rtc::FunctorMessageHandler::OnMessage
+  fun:rtc::MessageQueue::Dispatch
+  fun:rtc::Thread::ProcessMessages
+  fun:rtc::Thread::Run
+  fun:rtc::Thread::PreRun
+}
+{
+  bug_2931_1
+  ThreadSanitizer:Race
+  ...
+  fun:rtc::FireAndForgetAsyncClosure::Execute
+  fun:rtc::AsyncInvoker::OnMessage
+  fun:rtc::MessageQueue::Dispatch
+  fun:rtc::Thread::ProcessMessages
+  fun:rtc::Thread::Run
+  fun:rtc::Thread::PreRun
+}
+{
+  bug_2931_2
+  ThreadSanitizer:Race
+  ...
+  fun:rtc::Callback0::HelperImpl::~HelperImpl
+  fun:rtc::RefCountedObject::~RefCountedObject
+  fun:rtc::RefCountedObject::~RefCountedObject
+  fun:rtc::RefCountedObject::Release
+  fun:rtc::scoped_refptr::~scoped_refptr
+  fun:rtc::Callback0::~Callback0
+  fun:rtc::FireAndForgetAsyncClosure::~FireAndForgetAsyncClosure
+  fun:rtc::RefCountedObject::~RefCountedObject
+  fun:rtc::RefCountedObject::~RefCountedObject
+  fun:rtc::RefCountedObject::Release
+  fun:rtc::scoped_refptr::~scoped_refptr
+  fun:rtc::AsyncInvoker::OnMessage
+  fun:rtc::MessageQueue::Dispatch
+  fun:rtc::Thread::ProcessMessages
+  fun:AsyncInvokeTest_WithCallback_Test::TestBody
+  ...
+}
+{
   bug_300
   ThreadSanitizer:Race
   fun:webrtc::TraceImpl::SetTraceCallbackImpl

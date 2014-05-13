@@ -16,6 +16,9 @@
         'spreadsortlib',
         '../interface',
       ],
+      'dependencies': [
+        '../../base/base.gyp:webrtc_base',
+      ],
       'direct_dependent_settings': {
         'include_dirs': [
           '../interface',
