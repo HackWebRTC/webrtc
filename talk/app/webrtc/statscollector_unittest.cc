@@ -271,7 +271,7 @@ void VerifyVoiceReceiverInfoReport(const StatsReport* report,
   EXPECT_EQ(talk_base::ToString<int>(sinfo.audio_level), value_in_report);
   EXPECT_TRUE(GetValue(
       report, StatsReport::kStatsValueNameBytesReceived, &value_in_report));
-  EXPECT_EQ(talk_base::ToString<int>(sinfo.bytes_rcvd), value_in_report);
+  EXPECT_EQ(talk_base::ToString<int64>(sinfo.bytes_rcvd), value_in_report);
   EXPECT_TRUE(GetValue(
       report, StatsReport::kStatsValueNameJitterReceived, &value_in_report));
   EXPECT_EQ(talk_base::ToString<int>(sinfo.jitter_ms), value_in_report);
