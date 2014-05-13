@@ -470,7 +470,6 @@ void P2PTransportChannel::OnUnknownAddress(
     }
   } else {
     // Create a new candidate with this address.
-
     std::string type;
     if (port->IceProtocol() == ICEPROTO_RFC5245) {
       type = PRFLX_PORT_TYPE;

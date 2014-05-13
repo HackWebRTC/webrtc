@@ -480,22 +480,19 @@ void TurnPort::OnSendStunPacket(const void* data, size_t size,
 }
 
 void TurnPort::OnStunAddress(const talk_base::SocketAddress& address) {
-  if (server_address_.proto == PROTO_UDP  &&
-      address != socket_->GetLocalAddress()) {
-    AddAddress(address,  // Candidate address.
-               socket_->GetLocalAddress(),  // Base address.
-               socket_->GetLocalAddress(),  // Related address.
-               UDP_PROTOCOL_NAME,
-               STUN_PORT_TYPE,
-               ICE_TYPE_PREFERENCE_SRFLX,
-               false);
-  }
+  // STUN Port will discover STUN candidate, as it's supplied with first TURN
+  // server address.
+  // Why not using this address? - P2PTransportChannel will start creating
+  // connections after first candidate, which means it could start creating the
+  // connections before TURN candidate added. For that to handle, we need to
+  // supply STUN candidate from this port to UDPPort, and TurnPort should have
+  // handle to UDPPort to pass back the address.
 }
 
 void TurnPort::OnAllocateSuccess(const talk_base::SocketAddress& address,
                                  const talk_base::SocketAddress& stun_address) {
-  // For relayed candidate, Base is the candidate itself.
   connected_ = true;
+  // For relayed candidate, Base is the candidate itself.
   AddAddress(address,  // Candidate address.
              address,  // Base address.
              stun_address,  // Related address.
@@ -746,7 +743,6 @@ void TurnAllocateRequest::OnResponse(StunMessage* response) {
                              << "attribute in allocate success response";
     return;
   }
-
   // Using XOR-Mapped-Address for stun.
   port_->OnStunAddress(mapped_attr->GetAddress());
 

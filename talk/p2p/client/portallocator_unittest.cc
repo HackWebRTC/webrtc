@@ -804,9 +804,8 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithNatUsingTurn) {
   EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
   EXPECT_EQ(3U, candidates_.size());
   // Local port will be created first and then TURN port.
-  // Checking TURN port has two candidates, STUN + TURN.
-  EXPECT_EQ(1U, ports_[0]->Candidates().size());
-  EXPECT_EQ(2U, ports_[1]->Candidates().size());
+  EXPECT_EQ(2U, ports_[0]->Candidates().size());
+  EXPECT_EQ(1U, ports_[1]->Candidates().size());
 }
 
 // This test verifies when PORTALLOCATOR_ENABLE_SHARED_SOCKET flag is enabled
