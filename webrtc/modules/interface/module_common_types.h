@@ -691,6 +691,10 @@ class AudioFrame {
   int num_channels_;
   SpeechType speech_type_;
   VADActivity vad_activity_;
+  // Note that there is no guarantee that |energy_| is correct. Any user of this
+  // member must verify that the value is correct.
+  // TODO(henrike) Remove |energy_|.
+  // See https://code.google.com/p/webrtc/issues/detail?id=3315.
   uint32_t energy_;
   bool interleaved_;
 
