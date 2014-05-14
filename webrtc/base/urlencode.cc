@@ -36,8 +36,8 @@ static int HexPairValue(const char * code) {
   }
 }
 
-int InternalUrlDecode(const char *source, char *dest,
-                      bool encode_space_as_plus) {
+static int InternalUrlDecode(const char *source, char *dest,
+                             bool encode_space_as_plus) {
   char * start = dest;
 
   while (*source) {
@@ -74,20 +74,22 @@ int InternalUrlDecode(const char *source, char *dest,
   return static_cast<int>(dest - start);
 }
 
+static bool IsValidUrlChar(char ch, bool unsafe_only) {
+  if (unsafe_only) {
+    return !(ch <= ' ' || strchr("\\\"^&`<>[]{}", ch));
+  } else {
+    return isalnum(ch) || strchr("-_.!~*'()", ch);
+  }
+}
+
+namespace rtc {
+
 int UrlDecode(const char *source, char *dest) {
   return InternalUrlDecode(source, dest, true);
 }
 
 int UrlDecodeWithoutEncodingSpaceAsPlus(const char *source, char *dest) {
   return InternalUrlDecode(source, dest, false);
-}
-
-bool IsValidUrlChar(char ch, bool unsafe_only) {
-  if (unsafe_only) {
-    return !(ch <= ' ' || strchr("\\\"^&`<>[]{}", ch));
-  } else {
-    return isalnum(ch) || strchr("-_.!~*'()", ch);
-  }
 }
 
 int InternalUrlEncode(const char *source, char *dest, unsigned int max,
@@ -177,3 +179,5 @@ std::string
 UrlEncodeStringForOnlyUnsafeChars(const std::string & decoded) {
   return InternalUrlEncodeString(decoded, false, true);
 }
+
+}  // namespace rtc

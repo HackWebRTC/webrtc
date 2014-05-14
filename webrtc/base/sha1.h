@@ -5,12 +5,14 @@
  *
 */
 
-// Ported to C++, Google style and uses basictypes.h
+// Ported to C++, Google style, under namespace rtc and uses basictypes.h
 
 #ifndef WEBRTC_BASE_SHA1_H_
 #define WEBRTC_BASE_SHA1_H_
 
 #include "webrtc/base/basictypes.h"
+
+namespace rtc {
 
 struct SHA1_CTX {
   uint32 state[5];
@@ -26,3 +28,5 @@ void SHA1Update(SHA1_CTX* context, const uint8* data, size_t len);
 void SHA1Final(SHA1_CTX* context, uint8 digest[SHA1_DIGEST_SIZE]);
 
 #endif  // WEBRTC_BASE_SHA1_H_
+
+}  // namespace rtc

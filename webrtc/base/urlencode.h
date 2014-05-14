@@ -13,6 +13,8 @@
 
 #include <string>
 
+namespace rtc {
+
 // Decode all encoded characters. Also decode + as space.
 int UrlDecode(const char *source, char *dest);
 
@@ -41,3 +43,4 @@ std::string UrlEncodeStringForOnlyUnsafeChars(const std::string & decoded);
 
 #endif
 
+}  // namespace rtc

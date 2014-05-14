@@ -13,6 +13,8 @@
 #include "webrtc/base/thread.h"
 #include "webrtc/base/urlencode.h"
 
+using rtc::UrlEncode;
+
 TEST(Urlencode, SourceTooLong) {
   char source[] = "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
       "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^";
@@ -61,21 +63,21 @@ TEST(Urlencode, Encoding1) {
 TEST(Urlencode, Encoding2) {
   char source[] = "A^ ";
   char dest[8];
-  ASSERT_EQ(7, UrlEncodeWithoutEncodingSpaceAsPlus(source, dest,
-                                                   ARRAY_SIZE(dest)));
+  ASSERT_EQ(7, rtc::UrlEncodeWithoutEncodingSpaceAsPlus(source, dest,
+                                                        ARRAY_SIZE(dest)));
   ASSERT_STREQ("A%5E%20", dest);
 }
 
 TEST(Urldecode, Decoding1) {
   char source[] = "A%5E+";
   char dest[8];
-  ASSERT_EQ(3, UrlDecode(source, dest));
+  ASSERT_EQ(3, rtc::UrlDecode(source, dest));
   ASSERT_STREQ("A^ ", dest);
 }
 
 TEST(Urldecode, Decoding2) {
   char source[] = "A%5E+";
   char dest[8];
-  ASSERT_EQ(3, UrlDecodeWithoutEncodingSpaceAsPlus(source, dest));
+  ASSERT_EQ(3, rtc::UrlDecodeWithoutEncodingSpaceAsPlus(source, dest));
   ASSERT_STREQ("A^+", dest);
 }

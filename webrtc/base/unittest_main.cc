@@ -77,9 +77,9 @@ rtc::Pathname GetTalkDirectory() {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
-  FlagList::SetFlagsFromCommandLine(&argc, argv, false);
+  rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, false);
   if (FLAG_help) {
-    FlagList::Print(NULL, false);
+    rtc::FlagList::Print(NULL, false);
     return 0;
   }
 

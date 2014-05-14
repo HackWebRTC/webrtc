@@ -8,6 +8,7 @@
 /* subject:/C=SE/O=AddTrust AB/OU=AddTrust External TTP Network/CN=AddTrust External CA Root */
 /* issuer :/C=SE/O=AddTrust AB/OU=AddTrust External TTP Network/CN=AddTrust External CA Root */
 
+namespace rtc {
 
 const unsigned char AddTrust_External_Root_certificate[1082]={
 0x30,0x82,0x04,0x36,0x30,0x82,0x03,0x1E,0xA0,0x03,0x02,0x01,0x02,0x02,0x01,0x01,
@@ -4928,3 +4929,4 @@ const size_t kSSLCertCertificateSizeList[] = {
   1076,
 };
 
+}  // namspace rtc

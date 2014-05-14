@@ -84,9 +84,9 @@ static BIO_METHOD methods_socket = {
   NULL,
 };
 
-BIO_METHOD* BIO_s_socket2() { return(&methods_socket); }
+static BIO_METHOD* BIO_s_socket2() { return(&methods_socket); }
 
-BIO* BIO_new_socket(rtc::AsyncSocket* socket) {
+static BIO* BIO_new_socket(rtc::AsyncSocket* socket) {
   BIO* ret = BIO_new(BIO_s_socket2());
   if (ret == NULL) {
           return NULL;

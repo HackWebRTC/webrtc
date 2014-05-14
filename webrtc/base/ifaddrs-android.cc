@@ -23,14 +23,18 @@
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 
+namespace {
+
 struct netlinkrequest {
   nlmsghdr header;
   ifaddrmsg msg;
 };
 
-namespace {
 const int kMaxReadSize = 4096;
-};
+
+}  // namespace
+
+namespace rtc {
 
 int set_ifname(struct ifaddrs* ifaddr, int interface) {
   char buf[IFNAMSIZ] = {0};
@@ -215,3 +219,5 @@ void freeifaddrs(struct ifaddrs* addrs) {
   }
 }
 #endif  // defined(WEBRTC_ANDROID)
+
+}  // namespace rtc

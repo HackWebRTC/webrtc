@@ -15,6 +15,8 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 
+namespace rtc {
+
 void Fatal(const char* file, int line, const char* format, ...) {
   char msg[256];
 
@@ -28,3 +30,5 @@ void Fatal(const char* file, int line, const char* format, ...) {
                 << "\n#\n";
   abort();
 }
+
+}  // namespace rtc

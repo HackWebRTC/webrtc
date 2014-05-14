@@ -13,6 +13,8 @@
 
 #include <stdio.h>
 #include <sys/socket.h>
+
+
 // Implementation of getifaddrs for Android.
 // Fills out a list of ifaddr structs (see below) which contain information
 // about every network interface available on the host.
@@ -27,7 +29,11 @@ struct ifaddrs {
   // We don't need them (yet?).
 };
 
+namespace rtc {
+
 int getifaddrs(struct ifaddrs** result);
 void freeifaddrs(struct ifaddrs* addrs);
+
+}  // namespace rtc
 
 #endif  // WEBRTC_BASE_IFADDRS_ANDROID_H_

@@ -25,6 +25,8 @@
 
 #include "webrtc/base/byteorder.h"  // for ARCH_CPU_LITTLE_ENDIAN.
 
+namespace rtc {
+
 #ifdef ARCH_CPU_LITTLE_ENDIAN
 #define ByteReverse(buf, len)  // Nothing.
 #else  // ARCH_CPU_BIG_ENDIAN
@@ -216,3 +218,5 @@ void MD5Transform(uint32 buf[4], const uint32 in[16]) {
   buf[2] += c;
   buf[3] += d;
 }
+
+}  // namespace rtc

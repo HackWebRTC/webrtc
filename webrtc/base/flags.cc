@@ -20,7 +20,7 @@
 
 #include "webrtc/base/flags.h"
 
-
+namespace rtc {
 // -----------------------------------------------------------------------------
 // Implementation of Flag
 
@@ -296,3 +296,4 @@ WindowsCommandLineArguments::~WindowsCommandLineArguments() {
 }
 #endif  // WEBRTC_WIN 
 
+}  // namespace rtc

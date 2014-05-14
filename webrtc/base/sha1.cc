@@ -102,6 +102,8 @@
 #include <stdio.h>
 #include <string.h>
 
+namespace rtc {
+
 void SHA1Transform(uint32 state[5], const uint8 buffer[64]);
 
 #define rol(value, bits) (((value) << (bits)) | ((value) >> (32 - (bits))))
@@ -280,3 +282,5 @@ void SHA1Final(SHA1_CTX* context, uint8 digest[SHA1_DIGEST_SIZE]) {
   SHA1Transform(context->state, context->buffer);
 #endif
 }
+
+}  // namespace rtc

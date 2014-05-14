@@ -16,12 +16,15 @@
 
 #include <string.h>
 
+namespace rtc {
+
 // Prints an error message to stderr and aborts execution.
 void Fatal(const char* file, int line, const char* format, ...);
 
+}  // namespace rtc
 
 // The UNREACHABLE macro is very useful during development.
 #define UNREACHABLE()                                   \
-  Fatal(__FILE__, __LINE__, "unreachable code")
+  rtc::Fatal(__FILE__, __LINE__, "unreachable code")
 
 #endif  // WEBRTC_BASE_CHECKS_H_

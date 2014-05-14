@@ -28,6 +28,8 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 
+namespace rtc {
+
 // Internal use only.
 union FlagValue {
   // Note: Because in C++ non-bool values are silently converted into
@@ -155,9 +157,9 @@ class Flag {
   /* define and initialize the flag */                    \
   c_type FLAG_##name = (default);                         \
   /* register the flag */                                 \
-  static Flag Flag_##name(__FILE__, #name, (comment),   \
-                          Flag::type, &FLAG_##name,       \
-                          FlagValue::New_##type(default))
+  static rtc::Flag Flag_##name(__FILE__, #name, (comment),      \
+                               rtc::Flag::type, &FLAG_##name,   \
+                               rtc::FlagValue::New_##type(default))
 
 
 // Internal use only.
@@ -263,5 +265,6 @@ class WindowsCommandLineArguments {
 };
 #endif  // WEBRTC_WIN 
 
+}  // namespace rtc
 
 #endif  // SHARED_COMMANDLINEFLAGS_FLAGS_H__
