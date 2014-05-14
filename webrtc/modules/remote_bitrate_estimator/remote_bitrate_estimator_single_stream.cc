@@ -236,7 +236,7 @@ RemoteBitrateEstimator* RemoteBitrateEstimatorFactory::Create(
     Clock* clock,
     RateControlType control_type,
     uint32_t min_bitrate_bps) const {
-  LOG(LS_INFO) << "RemoteBitrateEstimatorSingleStream: Instantiating.";
+  LOG(LS_INFO) << "RemoteBitrateEstimatorFactory: Instantiating.";
   return new RemoteBitrateEstimatorSingleStream(observer, clock,
                                                 min_bitrate_bps);
 }
