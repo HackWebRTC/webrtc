@@ -188,58 +188,6 @@ TEST_F(VolumeTest, DISABLED_ON_LINUX(ManualInputMutingMutesMicrophone)) {
   Sleep(2000);
 }
 
-TEST_F(VolumeTest, DISABLED_ON_LINUX(SystemInputMutingIsNotEnabledByDefault)) {
-  bool is_muted = true;
-  EXPECT_EQ(0, voe_volume_control_->GetSystemInputMute(is_muted));
-  EXPECT_FALSE(is_muted);
-}
-
-TEST_F(VolumeTest, DISABLED_ON_LINUX(ManualSystemInputMutingMutesMicrophone)) {
-  SwitchToManualMicrophone();
-
-  // Enable system input muting.
-  EXPECT_EQ(0, voe_volume_control_->SetSystemInputMute(true));
-  bool is_muted = false;
-  EXPECT_EQ(0, voe_volume_control_->GetSystemInputMute(is_muted));
-  EXPECT_TRUE(is_muted);
-
-  TEST_LOG("Muted: talk into microphone and verify you can't hear yourself.\n");
-  Sleep(2000);
-
-  // Test that we can disable system input muting.
-  EXPECT_EQ(0, voe_volume_control_->SetSystemInputMute(false));
-  EXPECT_EQ(0, voe_volume_control_->GetSystemInputMute(is_muted));
-  EXPECT_FALSE(is_muted);
-
-  TEST_LOG("Unmuted: talk into microphone and verify you can hear yourself.\n");
-  Sleep(2000);
-}
-
-TEST_F(VolumeTest, DISABLED_ON_LINUX(SystemOutputMutingIsNotEnabledByDefault)) {
-  bool is_muted = true;
-  EXPECT_EQ(0, voe_volume_control_->GetSystemOutputMute(is_muted));
-  EXPECT_FALSE(is_muted);
-}
-
-TEST_F(VolumeTest, ManualSystemOutputMutingMutesOutput) {
-  // Enable muting.
-  EXPECT_EQ(0, voe_volume_control_->SetSystemOutputMute(true));
-  bool is_muted = false;
-  EXPECT_EQ(0, voe_volume_control_->GetSystemOutputMute(is_muted));
-  EXPECT_TRUE(is_muted);
-
-  TEST_LOG("Muted: you should hear no audio.\n");
-  Sleep(2000);
-
-  // Test that we can disable muting.
-  EXPECT_EQ(0, voe_volume_control_->SetSystemOutputMute(false));
-  EXPECT_EQ(0, voe_volume_control_->GetSystemOutputMute(is_muted));
-  EXPECT_FALSE(is_muted);
-
-  TEST_LOG("Unmuted: you should hear audio.\n");
-  Sleep(2000);
-}
-
 TEST_F(VolumeTest, ManualTestInputAndOutputLevels) {
   SwitchToManualMicrophone();
 

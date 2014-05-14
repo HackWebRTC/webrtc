@@ -129,50 +129,6 @@ int VoEVolumeControlImpl::GetSpeakerVolume(unsigned int& volume)
     return 0;
 }
 
-int VoEVolumeControlImpl::SetSystemOutputMute(bool enable)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetSystemOutputMute(enabled=%d)", enable);
-
-    if (!_shared->statistics().Initialized())
-    {
-        _shared->SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-
-    if (_shared->audio_device()->SetSpeakerMute(enable) != 0)
-    {
-        _shared->SetLastError(VE_GET_MIC_VOL_ERROR, kTraceError,
-            "SpeakerMute() unable to Set speaker mute");
-        return -1;
-    }
-
-    return 0;
-}
-
-int VoEVolumeControlImpl::GetSystemOutputMute(bool& enabled)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetSystemOutputMute(enabled=?)");
-
-    if (!_shared->statistics().Initialized())
-    {
-        _shared->SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-
-    if (_shared->audio_device()->SpeakerMute(&enabled) != 0)
-    {
-        _shared->SetLastError(VE_GET_MIC_VOL_ERROR, kTraceError,
-            "SpeakerMute() unable to get speaker mute state");
-        return -1;
-    }
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
-        VoEId(_shared->instance_id(), -1),
-        "GetSystemOutputMute() => %d", enabled);
-    return 0;
-}
-
 int VoEVolumeControlImpl::SetMicVolume(unsigned int volume)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
@@ -332,50 +288,6 @@ int VoEVolumeControlImpl::GetInputMute(int channel, bool& enabled)
     return 0;
 }
 
-int VoEVolumeControlImpl::SetSystemInputMute(bool enable)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "SetSystemInputMute(enabled=%d)", enable);
-
-    if (!_shared->statistics().Initialized())
-    {
-            _shared->SetLastError(VE_NOT_INITED, kTraceError);
-            return -1;
-    }
-
-    if (_shared->audio_device()->SetMicrophoneMute(enable) != 0)
-    {
-        _shared->SetLastError(VE_GET_MIC_VOL_ERROR, kTraceError,
-            "MicrophoneMute() unable to set microphone mute state");
-        return -1;
-    }
-
-    return 0;
-}
-
-int VoEVolumeControlImpl::GetSystemInputMute(bool& enabled)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "GetSystemInputMute(enabled=?)");
-
-    if (!_shared->statistics().Initialized())
-    {
-        _shared->SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-
-    if (_shared->audio_device()->MicrophoneMute(&enabled) != 0)
-    {
-        _shared->SetLastError(VE_GET_MIC_VOL_ERROR, kTraceError,
-            "MicrophoneMute() unable to get microphone mute state");
-        return -1;
-    }
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
-        VoEId(_shared->instance_id(), -1),
-        "GetSystemInputMute() => %d", enabled);
-	return 0;
-}
-
 int VoEVolumeControlImpl::GetSpeechInputLevel(unsigned int& level)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
@@ -399,7 +311,7 @@ int VoEVolumeControlImpl::GetSpeechOutputLevel(int channel,
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "GetSpeechOutputLevel(channel=%d, level=?)", channel);
-	
+
     if (!_shared->statistics().Initialized())
     {
         _shared->SetLastError(VE_NOT_INITED, kTraceError);
