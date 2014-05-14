@@ -17,9 +17,9 @@
 #include "webrtc/modules/video_capture/video_capture_config.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/ref_count.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
-#include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc
@@ -260,10 +260,6 @@ int32_t VideoCaptureImpl::IncomingFrame(
     const VideoCaptureCapability& frameInfo,
     int64_t captureTime/*=0*/)
 {
-    WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceVideoCapture, _id,
-               "IncomingFrame width %d, height %d", (int) frameInfo.width,
-               (int) frameInfo.height);
-
     CriticalSectionScoped cs(&_callBackCs);
 
     const int32_t width = frameInfo.width;
@@ -281,8 +277,7 @@ int32_t VideoCaptureImpl::IncomingFrame(
             CalcBufferSize(commonVideoType, width,
                            abs(height)) != videoFrameLength)
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
-                         "Wrong incoming frame length.");
+            LOG(LS_ERROR) << "Wrong incoming frame length.";
             return -1;
         }
 
@@ -306,8 +301,8 @@ int32_t VideoCaptureImpl::IncomingFrame(
                                                  stride_uv, stride_uv);
         if (ret < 0)
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
-                       "Failed to allocate I420 frame.");
+            LOG(LS_ERROR) << "Failed to create empty frame, this should only "
+                             "happen due to bad parameters.";
             return -1;
         }
         const int conversionResult = ConvertToI420(commonVideoType,
@@ -319,9 +314,8 @@ int32_t VideoCaptureImpl::IncomingFrame(
                                                    &_captureFrame);
         if (conversionResult < 0)
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
-                       "Failed to convert capture frame from type %d to I420",
-                       frameInfo.rawType);
+          LOG(LS_ERROR) << "Failed to convert capture frame from type "
+                        << frameInfo.rawType << "to I420.";
             return -1;
         }
         DeliverCapturedFrame(_captureFrame, captureTime);
