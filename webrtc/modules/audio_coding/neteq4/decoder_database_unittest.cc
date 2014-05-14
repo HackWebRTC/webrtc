@@ -68,11 +68,11 @@ TEST(DecoderDatabase, GetRtpPayloadType) {
             db.GetRtpPayloadType(kDecoderISAC));  // iSAC is not registered.
 }
 
-TEST(DecoderDatabase, DISABLED_ON_ANDROID(GetDecoder)) {
+TEST(DecoderDatabase, GetDecoder) {
   DecoderDatabase db;
   const uint8_t kPayloadType = 0;
   EXPECT_EQ(DecoderDatabase::kOK,
-            db.RegisterPayload(kPayloadType, kDecoderILBC));
+            db.RegisterPayload(kPayloadType, kDecoderPCM16B));
   AudioDecoder* dec = db.GetDecoder(kPayloadType);
   ASSERT_TRUE(dec != NULL);
 }
