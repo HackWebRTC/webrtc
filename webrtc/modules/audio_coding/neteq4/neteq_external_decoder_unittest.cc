@@ -203,7 +203,7 @@ class NetEqExternalDecoderTest : public ::testing::Test {
   scoped_ptr<test::InputAudioFile> input_file_;
 };
 
-TEST_F(NetEqExternalDecoderTest, DISABLED_ON_ANDROID(RunTest)) {
+TEST_F(NetEqExternalDecoderTest, RunTest) {
   RunTest(100);  // Run 100 laps @ 10 ms each in the test loop.
 }
 
