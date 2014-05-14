@@ -116,7 +116,7 @@ extern int webrtc_aec_instance_count;
 // "Private" function prototypes.
 static void ProcessBlock(AecCore* aec);
 
-static void NonLinearProcessing(AecCore* aec, float* output, float* outputH);
+static void NonLinearProcessing(AecCore* aec, short* output, short* outputH);
 
 static void GetHighbandGain(const float* lambda, float* nlpGainHband);
 
@@ -160,28 +160,28 @@ int WebRtcAec_CreateAec(AecCore** aecInst) {
     return -1;
   }
 
-  aec->nearFrBuf = WebRtc_CreateBuffer(FRAME_LEN + PART_LEN, sizeof(float));
+  aec->nearFrBuf = WebRtc_CreateBuffer(FRAME_LEN + PART_LEN, sizeof(int16_t));
   if (!aec->nearFrBuf) {
     WebRtcAec_FreeAec(aec);
     aec = NULL;
     return -1;
   }
 
-  aec->outFrBuf = WebRtc_CreateBuffer(FRAME_LEN + PART_LEN, sizeof(float));
+  aec->outFrBuf = WebRtc_CreateBuffer(FRAME_LEN + PART_LEN, sizeof(int16_t));
   if (!aec->outFrBuf) {
     WebRtcAec_FreeAec(aec);
     aec = NULL;
     return -1;
   }
 
-  aec->nearFrBufH = WebRtc_CreateBuffer(FRAME_LEN + PART_LEN, sizeof(float));
+  aec->nearFrBufH = WebRtc_CreateBuffer(FRAME_LEN + PART_LEN, sizeof(int16_t));
   if (!aec->nearFrBufH) {
     WebRtcAec_FreeAec(aec);
     aec = NULL;
     return -1;
   }
 
-  aec->outFrBufH = WebRtc_CreateBuffer(FRAME_LEN + PART_LEN, sizeof(float));
+  aec->outFrBufH = WebRtc_CreateBuffer(FRAME_LEN + PART_LEN, sizeof(int16_t));
   if (!aec->outFrBufH) {
     WebRtcAec_FreeAec(aec);
     aec = NULL;
@@ -617,11 +617,11 @@ int WebRtcAec_MoveFarReadPtr(AecCore* aec, int elements) {
 }
 
 void WebRtcAec_ProcessFrame(AecCore* aec,
-                            const float* nearend,
-                            const float* nearendH,
+                            const short* nearend,
+                            const short* nearendH,
                             int knownDelay,
-                            float* out,
-                            float* outH) {
+                            int16_t* out,
+                            int16_t* outH) {
   int out_elements = 0;
 
   // For each frame the process is as follows:
@@ -814,7 +814,7 @@ void WebRtcAec_SetSystemDelay(AecCore* self, int delay) {
 
 static void ProcessBlock(AecCore* aec) {
   int i;
-  float y[PART_LEN], e[PART_LEN];
+  float d[PART_LEN], y[PART_LEN], e[PART_LEN], dH[PART_LEN];
   float scale;
 
   float fft[PART_LEN2];
@@ -833,22 +833,30 @@ static void ProcessBlock(AecCore* aec) {
   const float ramp = 1.0002f;
   const float gInitNoise[2] = {0.999f, 0.001f};
 
-  float nearend[PART_LEN];
-  float* nearend_ptr = NULL;
-  float output[PART_LEN];
-  float outputH[PART_LEN];
+  int16_t nearend[PART_LEN];
+  int16_t* nearend_ptr = NULL;
+  int16_t output[PART_LEN];
+  int16_t outputH[PART_LEN];
 
   float* xf_ptr = NULL;
 
-  // Concatenate old and new nearend blocks.
+  memset(dH, 0, sizeof(dH));
   if (aec->sampFreq == 32000) {
+    // Get the upper band first so we can reuse |nearend|.
     WebRtc_ReadBuffer(aec->nearFrBufH, (void**)&nearend_ptr, nearend, PART_LEN);
-    memcpy(aec->dBufH + PART_LEN, nearend_ptr, sizeof(nearend));
+    for (i = 0; i < PART_LEN; i++) {
+      dH[i] = (float)(nearend_ptr[i]);
+    }
+    memcpy(aec->dBufH + PART_LEN, dH, sizeof(float) * PART_LEN);
   }
   WebRtc_ReadBuffer(aec->nearFrBuf, (void**)&nearend_ptr, nearend, PART_LEN);
-  memcpy(aec->dBuf + PART_LEN, nearend_ptr, sizeof(nearend));
 
   // ---------- Ooura fft ----------
+  // Concatenate old and new nearend blocks.
+  for (i = 0; i < PART_LEN; i++) {
+    d[i] = (float)(nearend_ptr[i]);
+  }
+  memcpy(aec->dBuf + PART_LEN, d, sizeof(float) * PART_LEN);
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP
   {
@@ -960,7 +968,7 @@ static void ProcessBlock(AecCore* aec) {
   }
 
   for (i = 0; i < PART_LEN; i++) {
-    e[i] = nearend_ptr[i] - y[i];
+    e[i] = d[i] - y[i];
   }
 
   // Error fft
@@ -1019,7 +1027,7 @@ static void ProcessBlock(AecCore* aec) {
 #endif
 }
 
-static void NonLinearProcessing(AecCore* aec, float* output, float* outputH) {
+static void NonLinearProcessing(AecCore* aec, short* output, short* outputH) {
   float efw[2][PART_LEN1], dfw[2][PART_LEN1], xfw[2][PART_LEN1];
   complex_t comfortNoiseHband[PART_LEN1];
   float fft[PART_LEN2];
@@ -1313,10 +1321,13 @@ static void NonLinearProcessing(AecCore* aec, float* output, float* outputH) {
     fft[i] *= scale;  // fft scaling
     fft[i] = fft[i] * sqrtHanning[i] + aec->outBuf[i];
 
+    // Saturation protection
+    output[i] = (short)WEBRTC_SPL_SAT(
+        WEBRTC_SPL_WORD16_MAX, fft[i], WEBRTC_SPL_WORD16_MIN);
+
     fft[PART_LEN + i] *= scale;  // fft scaling
     aec->outBuf[i] = fft[PART_LEN + i] * sqrtHanning[PART_LEN - i];
   }
-  memcpy(output, fft, sizeof(*output) * PART_LEN);
 
   // For H band
   if (aec->sampFreq == 32000) {
@@ -1340,8 +1351,8 @@ static void NonLinearProcessing(AecCore* aec, float* output, float* outputH) {
 
     // compute gain factor
     for (i = 0; i < PART_LEN; i++) {
-      dtmp = aec->dBufH[i];
-      dtmp = dtmp * nlpGainHband;  // for variable gain
+      dtmp = (float)aec->dBufH[i];
+      dtmp = (float)dtmp * nlpGainHband;  // for variable gain
 
       // add some comfort noise where Hband is attenuated
       if (flagHbandCn == 1) {
@@ -1349,7 +1360,9 @@ static void NonLinearProcessing(AecCore* aec, float* output, float* outputH) {
         dtmp += cnScaleHband * fft[i];
       }
 
-      outputH[i] = dtmp;
+      // Saturation protection
+      outputH[i] = (short)WEBRTC_SPL_SAT(
+          WEBRTC_SPL_WORD16_MAX, dtmp, WEBRTC_SPL_WORD16_MIN);
     }
   }
 

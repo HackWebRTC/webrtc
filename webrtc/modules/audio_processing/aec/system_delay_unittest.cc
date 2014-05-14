@@ -46,18 +46,16 @@ class SystemDelayTest : public ::testing::Test {
   aecpc_t* self_;
   int samples_per_frame_;
   // Dummy input/output speech data.
-  static const int kSamplesPerChunk = 160;
-  int16_t far_[kSamplesPerChunk];
-  float near_[kSamplesPerChunk];
-  float out_[kSamplesPerChunk];
+  int16_t far_[160];
+  int16_t near_[160];
+  int16_t out_[160];
 };
 
 SystemDelayTest::SystemDelayTest()
     : handle_(NULL), self_(NULL), samples_per_frame_(0) {
   // Dummy input data are set with more or less arbitrary non-zero values.
   memset(far_, 1, sizeof(far_));
-  for (int i = 0; i < kSamplesPerChunk; i++)
-    near_[i] = 514.0;
+  memset(near_, 2, sizeof(near_));
   memset(out_, 0, sizeof(out_));
 }
 

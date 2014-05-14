@@ -133,9 +133,9 @@ int32_t WebRtcAec_BufferFarend(void* aecInst,
  * Inputs                       Description
  * -------------------------------------------------------------------
  * void*         aecInst        Pointer to the AEC instance
- * float*        nearend        In buffer containing one frame of
+ * int16_t*      nearend        In buffer containing one frame of
  *                              nearend+echo signal for L band
- * float*        nearendH       In buffer containing one frame of
+ * int16_t*      nearendH       In buffer containing one frame of
  *                              nearend+echo signal for H band
  * int16_t       nrOfSamples    Number of samples in nearend buffer
  * int16_t       msInSndCardBuf Delay estimate for sound card and
@@ -146,18 +146,18 @@ int32_t WebRtcAec_BufferFarend(void* aecInst,
  *
  * Outputs                      Description
  * -------------------------------------------------------------------
- * float*        out            Out buffer, one frame of processed nearend
+ * int16_t*      out            Out buffer, one frame of processed nearend
  *                              for L band
- * float*        outH           Out buffer, one frame of processed nearend
+ * int16_t*      outH           Out buffer, one frame of processed nearend
  *                              for H band
  * int32_t       return         0: OK
  *                             -1: error
  */
 int32_t WebRtcAec_Process(void* aecInst,
-                          const float* nearend,
-                          const float* nearendH,
-                          float* out,
-                          float* outH,
+                          const int16_t* nearend,
+                          const int16_t* nearendH,
+                          int16_t* out,
+                          int16_t* outH,
                           int16_t nrOfSamples,
                           int16_t msInSndCardBuf,
                           int32_t skew);

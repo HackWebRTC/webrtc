@@ -104,18 +104,18 @@ int webrtc_aec_instance_count = 0;
 static void EstBufDelayNormal(aecpc_t* aecInst);
 static void EstBufDelayExtended(aecpc_t* aecInst);
 static int ProcessNormal(aecpc_t* self,
-                         const float* near,
-                         const float* near_high,
-                         float* out,
-                         float* out_high,
+                         const int16_t* near,
+                         const int16_t* near_high,
+                         int16_t* out,
+                         int16_t* out_high,
                          int16_t num_samples,
                          int16_t reported_delay_ms,
                          int32_t skew);
 static void ProcessExtended(aecpc_t* self,
-                            const float* near,
-                            const float* near_high,
-                            float* out,
-                            float* out_high,
+                            const int16_t* near,
+                            const int16_t* near_high,
+                            int16_t* out,
+                            int16_t* out_high,
                             int16_t num_samples,
                             int16_t reported_delay_ms,
                             int32_t skew);
@@ -372,10 +372,10 @@ int32_t WebRtcAec_BufferFarend(void* aecInst,
 }
 
 int32_t WebRtcAec_Process(void* aecInst,
-                          const float* nearend,
-                          const float* nearendH,
-                          float* out,
-                          float* outH,
+                          const int16_t* nearend,
+                          const int16_t* nearendH,
+                          int16_t* out,
+                          int16_t* outH,
                           int16_t nrOfSamples,
                           int16_t msInSndCardBuf,
                           int32_t skew) {
@@ -632,10 +632,10 @@ AecCore* WebRtcAec_aec_core(void* handle) {
 }
 
 static int ProcessNormal(aecpc_t* aecpc,
-                         const float* nearend,
-                         const float* nearendH,
-                         float* out,
-                         float* outH,
+                         const int16_t* nearend,
+                         const int16_t* nearendH,
+                         int16_t* out,
+                         int16_t* outH,
                          int16_t nrOfSamples,
                          int16_t msInSndCardBuf,
                          int32_t skew) {
@@ -689,10 +689,10 @@ static int ProcessNormal(aecpc_t* aecpc,
   if (aecpc->startup_phase) {
     // Only needed if they don't already point to the same place.
     if (nearend != out) {
-      memcpy(out, nearend, sizeof(*out) * nrOfSamples);
+      memcpy(out, nearend, sizeof(short) * nrOfSamples);
     }
     if (nearendH != outH) {
-      memcpy(outH, nearendH, sizeof(*outH) * nrOfSamples);
+      memcpy(outH, nearendH, sizeof(short) * nrOfSamples);
     }
 
     // The AEC is in the start up mode
@@ -789,10 +789,10 @@ static int ProcessNormal(aecpc_t* aecpc,
 }
 
 static void ProcessExtended(aecpc_t* self,
-                            const float* near,
-                            const float* near_high,
-                            float* out,
-                            float* out_high,
+                            const int16_t* near,
+                            const int16_t* near_high,
+                            int16_t* out,
+                            int16_t* out_high,
                             int16_t num_samples,
                             int16_t reported_delay_ms,
                             int32_t skew) {
@@ -823,10 +823,10 @@ static void ProcessExtended(aecpc_t* self,
   if (!self->farend_started) {
     // Only needed if they don't already point to the same place.
     if (near != out) {
-      memcpy(out, near, sizeof(*out) * num_samples);
+      memcpy(out, near, sizeof(short) * num_samples);
     }
     if (near_high != out_high) {
-      memcpy(out_high, near_high, sizeof(*out_high) * num_samples);
+      memcpy(out_high, near_high, sizeof(short) * num_samples);
     }
     return;
   }
