@@ -1928,6 +1928,12 @@ class OwnedFactoryAndThreads {
 
 JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnectionFactory)(
     JNIEnv* jni, jclass) {
+  // talk/ assumes pretty widely that the current Thread is ThreadManager'd, but
+  // ThreadManager only WrapCurrentThread()s the thread where it is first
+  // created.  Since the semantics around when auto-wrapping happens in
+  // talk/base/ are convoluted, we simply wrap here to avoid having to think
+  // about ramifications of auto-wrapping there.
+  talk_base::ThreadManager::Instance()->WrapCurrentThread();
   webrtc::Trace::CreateTrace();
   Thread* worker_thread = new Thread();
   worker_thread->SetName("worker_thread", NULL);
