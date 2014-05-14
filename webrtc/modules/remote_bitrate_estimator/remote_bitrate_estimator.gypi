@@ -45,6 +45,7 @@
       ],
       'dependencies': [
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:field_trial_default',
         'bwe_tools_util',
         'rtp_rtcp',
       ],
@@ -67,6 +68,7 @@
       ],
       'dependencies': [
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:field_trial_default',
         'bwe_tools_util',
         'rtp_rtcp',
       ],

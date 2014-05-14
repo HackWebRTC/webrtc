@@ -91,6 +91,7 @@
       'type': 'executable',
       'dependencies': [
         '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:field_trial_default',
       ],
       'sources': [
         'force_mic_volume_max/force_mic_volume_max.cc',
@@ -106,6 +107,7 @@
           'dependencies': [
             '<(webrtc_root)/test/test.gyp:channel_transport',
             '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
+            '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:field_trial_default',
             '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
           ],

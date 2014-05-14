@@ -64,6 +64,17 @@
       ],
     },
     {
+      'target_name': 'test_main',
+      'type': 'static_library',
+      'sources': [
+        'test_main.cc',
+      ],
+      'dependencies': [
+	'<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:field_trial_default',
+      ],
+    },
+    {
       'target_name': 'test_support',
       'type': 'static_library',
       'dependencies': [
@@ -118,6 +129,7 @@
       'type': 'static_library',
       'dependencies': [
         'test_support',
+	'<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:field_trial_default',
       ],
       'sources': [
         'run_all_unittests.cc',

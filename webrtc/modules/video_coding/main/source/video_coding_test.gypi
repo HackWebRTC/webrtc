@@ -20,6 +20,7 @@
          '<(webrtc_root)/test/test.gyp:test_support',
          '<(webrtc_root)/test/metrics.gyp:metrics',
          '<(webrtc_root)/common_video/common_video.gyp:common_video',
+         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:field_trial_default',
       ],
       'sources': [
         # headers

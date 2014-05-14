@@ -88,6 +88,7 @@
         'neteq_unittest_tools',
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:field_trial_default',
       ],
       'sources': [
         'tools/rtp_analyze.cc',
