@@ -222,7 +222,7 @@ class BaseChannel
     return remote_streams_;
   }
 
-  // Used for latency measurements.
+  // Used for measuring the latency of the first media packet.
   sigslot::signal1<BaseChannel*> SignalFirstPacketReceived;
 
   // Used to alert UI when the muted status changes, perhaps autonomously.
