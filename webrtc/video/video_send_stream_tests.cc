@@ -1160,13 +1160,14 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
     }
 
    private:
-    virtual bool DeliverPacket(const uint8_t* packet, size_t length) {
+    virtual DeliveryStatus DeliverPacket(const uint8_t* packet,
+                                         size_t length) OVERRIDE {
       if (RtpHeaderParser::IsRtcp(packet, static_cast<int>(length)))
-        return true;
+        return DELIVERY_OK;
 
       RTPHeader header;
       if (!parser_->Parse(packet, static_cast<int>(length), &header))
-        return true;
+        return DELIVERY_PACKET_ERROR;
       assert(send_stream_ != NULL);
       VideoSendStream::Stats stats = send_stream_->GetStats();
       if (!stats.substreams.empty()) {
@@ -1188,7 +1189,7 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
           observation_complete_->Set();
         }
       }
-      return true;
+      return DELIVERY_OK;
     }
 
     scoped_ptr<RtpRtcp> rtp_rtcp_;

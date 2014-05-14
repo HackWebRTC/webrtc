@@ -268,7 +268,8 @@ class LowRateStreamObserver : public test::DirectTransport,
     return test::DirectTransport::SendRtp(data, length);
   }
 
-  virtual bool DeliverPacket(const uint8_t* packet, size_t length) OVERRIDE {
+  virtual DeliveryStatus DeliverPacket(const uint8_t* packet,
+                                       size_t length) OVERRIDE {
     CriticalSectionScoped lock(crit_.get());
     RTPHeader header;
     EXPECT_TRUE(rtp_parser_->Parse(packet, static_cast<int>(length), &header));
@@ -279,7 +280,7 @@ class LowRateStreamObserver : public test::DirectTransport,
       remote_bitrate_estimator_->Process();
     }
     suspended_in_stats_ = send_stream_->GetStats().suspended;
-    return true;
+    return DELIVERY_OK;
   }
 
   virtual bool SendRtcp(const uint8_t* packet, size_t length) OVERRIDE {

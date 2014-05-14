@@ -258,7 +258,8 @@ TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSync) {
         : channel_(channel),
           voe_network_(voe_network),
           parser_(RtpHeaderParser::Create()) {}
-    virtual bool DeliverPacket(const uint8_t* packet, size_t length) {
+    virtual DeliveryStatus DeliverPacket(const uint8_t* packet,
+                                         size_t length) OVERRIDE {
       int ret;
       if (parser_->IsRtcp(packet, static_cast<int>(length))) {
         ret = voe_network_->ReceivedRTCPPacket(
@@ -267,7 +268,7 @@ TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSync) {
         ret = voe_network_->ReceivedRTPPacket(
             channel_, packet, static_cast<unsigned int>(length), PacketTime());
       }
-      return ret == 0;
+      return ret == 0 ? DELIVERY_OK : DELIVERY_PACKET_ERROR;
     }
 
    private:
@@ -589,7 +590,8 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
     }
 
    private:
-    virtual bool DeliverPacket(const uint8_t* packet, size_t length) OVERRIDE {
+    virtual DeliveryStatus DeliverPacket(const uint8_t* packet,
+                                         size_t length) OVERRIDE {
       VideoSendStream::Stats stats = send_stream_->GetStats();
       if (stats.substreams.size() > 0) {
         assert(stats.substreams.size() == 1);

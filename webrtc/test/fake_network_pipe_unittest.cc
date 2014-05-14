@@ -33,7 +33,7 @@ class MockReceiver : public PacketReceiver {
     delete [] data;
   }
 
-  MOCK_METHOD2(DeliverPacket, bool(const uint8_t*, size_t));
+  MOCK_METHOD2(DeliverPacket, DeliveryStatus(const uint8_t*, size_t));
 };
 
 class FakeNetworkPipeTest : public ::testing::Test {

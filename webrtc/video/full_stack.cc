@@ -111,7 +111,8 @@ class VideoAnalyzer : public PacketReceiver,
 
   virtual void SetReceiver(PacketReceiver* receiver) { receiver_ = receiver; }
 
-  virtual bool DeliverPacket(const uint8_t* packet, size_t length) OVERRIDE {
+  virtual DeliveryStatus DeliverPacket(const uint8_t* packet,
+                                       size_t length) OVERRIDE {
     scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
     RTPHeader header;
     parser->Parse(packet, static_cast<int>(length), &header);

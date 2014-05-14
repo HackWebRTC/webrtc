@@ -840,7 +840,7 @@ TEST_F(CallTest, DISABLED_ReceivesPliAndRecoversWithoutNack) {
   ReceivesPliAndRecovers(0);
 }
 
-TEST_F(CallTest, SurvivesIncomingRtpPacketsToDestroyedReceiveStream) {
+TEST_F(CallTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
   class PacketInputObserver : public PacketReceiver {
    public:
     explicit PacketInputObserver(PacketReceiver* receiver)
@@ -851,13 +851,16 @@ TEST_F(CallTest, SurvivesIncomingRtpPacketsToDestroyedReceiveStream) {
     }
 
    private:
-    virtual bool DeliverPacket(const uint8_t* packet, size_t length) {
+    virtual DeliveryStatus DeliverPacket(const uint8_t* packet,
+                                         size_t length) OVERRIDE {
       if (RtpHeaderParser::IsRtcp(packet, static_cast<int>(length))) {
         return receiver_->DeliverPacket(packet, length);
       } else {
-        EXPECT_FALSE(receiver_->DeliverPacket(packet, length));
+        DeliveryStatus delivery_status =
+            receiver_->DeliverPacket(packet, length);
+        EXPECT_EQ(DELIVERY_UNKNOWN_SSRC, delivery_status);
         delivered_packet_->Set();
-        return false;
+        return delivery_status;
       }
     }
 

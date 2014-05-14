@@ -25,7 +25,14 @@ const char* Version();
 
 class PacketReceiver {
  public:
-  virtual bool DeliverPacket(const uint8_t* packet, size_t length) = 0;
+  enum DeliveryStatus {
+    DELIVERY_OK,
+    DELIVERY_UNKNOWN_SSRC,
+    DELIVERY_PACKET_ERROR,
+  };
+
+  virtual DeliveryStatus DeliverPacket(const uint8_t* packet,
+                                       size_t length) = 0;
 
  protected:
   virtual ~PacketReceiver() {}
