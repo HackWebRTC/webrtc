@@ -8,6 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_RMS_LEVEL_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_RMS_LEVEL_H_
+
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -49,3 +52,6 @@ class RMSLevel {
 };
 
 }  // namespace webrtc
+
+#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_RMS_LEVEL_H_
+

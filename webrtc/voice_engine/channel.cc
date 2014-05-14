@@ -3689,9 +3689,9 @@ Channel::PrepareEncodeAndSend(int mixingFrequency)
         MixOrReplaceAudioWithFile(mixingFrequency);
     }
 
-    if (Mute())
-    {
-        AudioFrameOperations::Mute(_audioFrame);
+    bool is_muted = Mute();  // Cache locally as Mute() takes a lock.
+    if (is_muted) {
+      AudioFrameOperations::Mute(_audioFrame);
     }
 
     if (channel_state_.Get().input_external_media)
@@ -3714,7 +3714,11 @@ Channel::PrepareEncodeAndSend(int mixingFrequency)
 
     if (_includeAudioLevelIndication) {
       int length = _audioFrame.samples_per_channel_ * _audioFrame.num_channels_;
-      rms_level_.Process(_audioFrame.data_, length);
+      if (is_muted) {
+        rms_level_.ProcessMuted(length);
+      } else {
+        rms_level_.Process(_audioFrame.data_, length);
+      }
     }
 
     return 0;

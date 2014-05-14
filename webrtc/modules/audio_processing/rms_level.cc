@@ -15,16 +15,16 @@
 
 namespace webrtc {
 
-static const float kMaxSquaredLevel = 32768.0 * 32768.0;
+static const float kMaxSquaredLevel = 32768 * 32768;
 
 RMSLevel::RMSLevel()
-    : sum_square_(0.0),
+    : sum_square_(0),
       sample_count_(0) {}
 
 RMSLevel::~RMSLevel() {}
 
 void RMSLevel::Reset() {
-  sum_square_ = 0.0;
+  sum_square_ = 0;
   sample_count_ = 0;
 }
 
@@ -40,7 +40,7 @@ void RMSLevel::ProcessMuted(int length) {
 }
 
 int RMSLevel::RMS() {
-  if (sample_count_ == 0 || sum_square_ == 0.0) {
+  if (sample_count_ == 0 || sum_square_ == 0) {
     Reset();
     return kMinLevel;
   }

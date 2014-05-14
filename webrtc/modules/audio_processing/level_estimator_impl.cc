@@ -12,6 +12,7 @@
 
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/modules/audio_processing/rms_level.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 namespace webrtc {
@@ -29,13 +30,8 @@ int LevelEstimatorImpl::ProcessStream(AudioBuffer* audio) {
   }
 
   RMSLevel* rms_level = static_cast<RMSLevel*>(handle(0));
-  if (audio->is_muted()) {
-    rms_level->ProcessMuted(audio->samples_per_channel() *
-                            audio->num_channels());
-  } else {
-    for (int i = 0; i < audio->num_channels(); ++i) {
-      rms_level->Process(audio->data(i), audio->samples_per_channel());
-    }
+  for (int i = 0; i < audio->num_channels(); ++i) {
+    rms_level->Process(audio->data(i), audio->samples_per_channel());
   }
 
   return AudioProcessing::kNoError;

@@ -71,8 +71,6 @@ class AudioBuffer {
   void set_activity(AudioFrame::VADActivity activity);
   AudioFrame::VADActivity activity() const;
 
-  bool is_muted() const;
-
   // Use for int16 interleaved data.
   void DeinterleaveFrom(AudioFrame* audioFrame);
   void InterleaveTo(AudioFrame* audioFrame) const;
@@ -106,7 +104,6 @@ class AudioBuffer {
   int num_mixed_low_pass_channels_;
   bool reference_copied_;
   AudioFrame::VADActivity activity_;
-  bool is_muted_;
 
   // If non-null, use this instead of channels_->channel(0). This is an
   // optimization for the case num_proc_channels_ == 1 that allows us to point

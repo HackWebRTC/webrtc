@@ -99,7 +99,6 @@ AudioBuffer::AudioBuffer(int input_samples_per_channel,
     num_mixed_low_pass_channels_(0),
     reference_copied_(false),
     activity_(AudioFrame::kVadUnknown),
-    is_muted_(false),
     data_(NULL),
     keyboard_data_(NULL),
     channels_(new ChannelBuffer<int16_t>(proc_samples_per_channel_,
@@ -223,7 +222,6 @@ void AudioBuffer::InitForNewData() {
   num_mixed_low_pass_channels_ = 0;
   reference_copied_ = false;
   activity_ = AudioFrame::kVadUnknown;
-  is_muted_ = false;
 }
 
 const int16_t* AudioBuffer::data(int channel) const {
@@ -307,10 +305,6 @@ AudioFrame::VADActivity AudioBuffer::activity() const {
   return activity_;
 }
 
-bool AudioBuffer::is_muted() const {
-  return is_muted_;
-}
-
 int AudioBuffer::num_channels() const {
   return num_proc_channels_;
 }
@@ -336,9 +330,6 @@ void AudioBuffer::DeinterleaveFrom(AudioFrame* frame) {
   assert(frame->samples_per_channel_ ==  proc_samples_per_channel_);
   InitForNewData();
   activity_ = frame->vad_activity_;
-  if (frame->energy_ == 0) {
-    is_muted_ = true;
-  }
 
   if (num_proc_channels_ == 1) {
     // We can get away with a pointer assignment in this case.
