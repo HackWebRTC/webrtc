@@ -1180,16 +1180,21 @@ bool WebRtcVideoChannel2::RequestIntraFrame() {
 void WebRtcVideoChannel2::OnPacketReceived(
     talk_base::Buffer* packet,
     const talk_base::PacketTime& packet_time) {
-  if (call_->Receiver()->DeliverPacket(
-          reinterpret_cast<const uint8_t*>(packet->data()), packet->length())) {
-    return;
+  const webrtc::PacketReceiver::DeliveryStatus delivery_result =
+      call_->Receiver()->DeliverPacket(
+          reinterpret_cast<const uint8_t*>(packet->data()), packet->length());
+  switch (delivery_result) {
+    case webrtc::PacketReceiver::DELIVERY_OK:
+      return;
+    case webrtc::PacketReceiver::DELIVERY_PACKET_ERROR:
+      return;
+    case webrtc::PacketReceiver::DELIVERY_UNKNOWN_SSRC:
+      break;
   }
-  // Packet ignored most likely because there's no receiver for it, try to
-  // create one unless it already exists.
 
   uint32 ssrc = 0;
   if (default_recv_ssrc_ != 0) {  // Already one default stream.
-    LOG(LS_WARNING) << "Default receive stream already set.";
+    LOG(LS_WARNING) << "Unknown SSRC, but default receive stream already set.";
     return;
   }
 
