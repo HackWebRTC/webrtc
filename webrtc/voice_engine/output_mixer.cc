@@ -236,29 +236,6 @@ int OutputMixer::PlayDtmfTone(uint8_t eventCode, int lengthMs,
     return 0;
 }
 
-int OutputMixer::StartPlayingDtmfTone(uint8_t eventCode,
-                                      int attenuationDb)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
-                 "OutputMixer::StartPlayingDtmfTone()");
-    if (_dtmfGenerator.StartTone(eventCode, attenuationDb) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_STILL_PLAYING_PREV_DTMF,
-            kTraceError,
-            "OutputMixer::StartPlayingDtmfTone())");
-        return -1;
-    }
-    return 0;
-}
-
-int OutputMixer::StopPlayingDtmfTone()
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
-                 "OutputMixer::StopPlayingDtmfTone()");
-    return (_dtmfGenerator.StopTone());
-}
-
 int32_t
 OutputMixer::SetMixabilityStatus(MixerParticipant& participant,
                                  bool mixable)

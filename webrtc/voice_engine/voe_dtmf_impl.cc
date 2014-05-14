@@ -227,50 +227,6 @@ int VoEDtmfImpl::PlayDtmfTone(int eventCode,
                                                attenuationDb);
 }
 
-int VoEDtmfImpl::StartPlayingDtmfTone(int eventCode,
-                                      int attenuationDb)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "StartPlayingDtmfTone(eventCode=%d, attenuationDb=%d)",
-                 eventCode, attenuationDb);
-
-    if (!_shared->statistics().Initialized())
-    {
-        _shared->SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-    if (!_shared->audio_device()->Playing())
-    {
-        _shared->SetLastError(VE_NOT_PLAYING, kTraceError,
-            "StartPlayingDtmfTone() no channel is playing out");
-        return -1;
-    }
-    if ((eventCode < kMinDtmfEventCode) ||
-        (eventCode > kMaxDtmfEventCode) ||
-        (attenuationDb < kMinTelephoneEventAttenuation) ||
-        (attenuationDb > kMaxTelephoneEventAttenuation))
-    {
-        _shared->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
-            "StartPlayingDtmfTone() invalid tone parameter(s)");
-        return -1;
-    }
-    return _shared->output_mixer()->StartPlayingDtmfTone(eventCode,
-                                                       attenuationDb);
-}
-
-int VoEDtmfImpl::StopPlayingDtmfTone()
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "StopPlayingDtmfTone()");
-
-    if (!_shared->statistics().Initialized())
-    {
-        _shared->SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-    return _shared->output_mixer()->StopPlayingDtmfTone();
-}
-
 int VoEDtmfImpl::SetDtmfFeedbackStatus(bool enable, bool directFeedback)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),

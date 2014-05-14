@@ -54,10 +54,6 @@ public:
     // VoEDtmf
     int PlayDtmfTone(uint8_t eventCode, int lengthMs, int attenuationDb);
 
-    int StartPlayingDtmfTone(uint8_t eventCode, int attenuationDb);
-
-    int StopPlayingDtmfTone();
-
     int32_t MixActiveChannels();
 
     int32_t DoOperationsOnCombinedSignal(bool feed_data_to_apm);
