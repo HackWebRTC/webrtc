@@ -47,26 +47,28 @@ int TestCrtReportHandler(int report_type, char* msg, int* retval) {
 }
 #endif  // WIN32
 
-talk_base::Pathname GetTalkDirectory() {
-  // Locate talk directory.
+// Look in parent dir for parallel directory.
+talk_base::Pathname GetSiblingDirectory(
+    const std::string& parallel_dir) {
   talk_base::Pathname path = talk_base::Filesystem::GetCurrentDirectory();
-  std::string talk_folder_name("talk");
-  talk_folder_name += path.folder_delimiter();
-  while (path.folder_name() != talk_folder_name && !path.empty()) {
+  while (!path.empty()) {
+    talk_base::Pathname potential_parallel_dir = path;
+    potential_parallel_dir.AppendFolder(parallel_dir);
+    if (talk_base::Filesystem::IsFolder(potential_parallel_dir)) {
+      return potential_parallel_dir;
+    }
+
     path.SetFolder(path.parent_folder());
   }
-
-  // If not running inside "talk" folder, then assume running in its parent
-  // folder.
-  if (path.empty()) {
-    path = talk_base::Filesystem::GetCurrentDirectory();
-    path.AppendFolder("talk");
-    // Make sure the folder exist.
-    if (!talk_base::Filesystem::IsFolder(path)) {
-      path.clear();
-    }
-  }
   return path;
+}
+
+talk_base::Pathname GetGoogle3Directory() {
+  return GetSiblingDirectory("google3");
+}
+
+talk_base::Pathname GetTalkDirectory() {
+  return GetSiblingDirectory("talk");
 }
 
 int main(int argc, char** argv) {

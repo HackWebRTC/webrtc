@@ -107,6 +107,7 @@ class Pathname;
     } \
   } while (0);
 
+talk_base::Pathname GetGoogle3Directory();
 talk_base::Pathname GetTalkDirectory();
 
 #endif  // TALK_BASE_GUNIT_H_
