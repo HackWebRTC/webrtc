@@ -1131,7 +1131,9 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestAnswerNone) {
 // runs for a while (10 frames), the caller sends an update offer with video
 // being rejected. Once the re-negotiation is done, the video flow should stop
 // and the audio flow should continue.
-TEST_F(JsepPeerConnectionP2PTestClient, UpdateOfferWithRejectedContent) {
+// Disabled due to b/14955157.
+TEST_F(JsepPeerConnectionP2PTestClient,
+       DISABLED_UpdateOfferWithRejectedContent) {
   ASSERT_TRUE(CreateTestClients());
   LocalP2PTest();
   TestUpdateOfferWithRejectedContent();
@@ -1139,7 +1141,8 @@ TEST_F(JsepPeerConnectionP2PTestClient, UpdateOfferWithRejectedContent) {
 
 // This test sets up a Jsep call between two parties. The MSID is removed from
 // the SDP strings from the caller.
-TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestWithoutMsid) {
+// Disabled due to b/14955157.
+TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTestWithoutMsid) {
   ASSERT_TRUE(CreateTestClients());
   receiving_client()->RemoveMsidFromReceivedSdp(true);
   // TODO(perkj): Currently there is a bug that cause audio to stop playing if
