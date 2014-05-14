@@ -35,6 +35,7 @@
 #include "talk/base/pathutils.h"
 #include "talk/base/stream.h"
 #include "talk/base/stringutils.h"
+#include "talk/base/testutils.h"
 #include "talk/media/base/rtpdump.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videoframe.h"
@@ -254,7 +255,7 @@ void VideoCapturerListener::OnFrameCaptured(VideoCapturer* capturer,
 // Returns the absolute path to a file in the testdata/ directory.
 std::string GetTestFilePath(const std::string& filename) {
   // Locate test data directory.
-  talk_base::Pathname path = GetTalkDirectory();
+  talk_base::Pathname path = testing::GetTalkDirectory();
   EXPECT_FALSE(path.empty());  // must be run from inside "talk"
   path.AppendFolder("media");
   path.AppendFolder("testdata");

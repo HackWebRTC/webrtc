@@ -12,7 +12,6 @@
 #include "talk/base/fileutils.h"
 #include "talk/base/gunit.h"
 #include "talk/base/logging.h"
-#include "talk/base/pathutils.h"
 
 DEFINE_bool(help, false, "prints this message");
 DEFINE_string(log, "", "logging options to use");
@@ -46,30 +45,6 @@ int TestCrtReportHandler(int report_type, char* msg, int* retval) {
   }
 }
 #endif  // WIN32
-
-// Look in parent dir for parallel directory.
-talk_base::Pathname GetSiblingDirectory(
-    const std::string& parallel_dir) {
-  talk_base::Pathname path = talk_base::Filesystem::GetCurrentDirectory();
-  while (!path.empty()) {
-    talk_base::Pathname potential_parallel_dir = path;
-    potential_parallel_dir.AppendFolder(parallel_dir);
-    if (talk_base::Filesystem::IsFolder(potential_parallel_dir)) {
-      return potential_parallel_dir;
-    }
-
-    path.SetFolder(path.parent_folder());
-  }
-  return path;
-}
-
-talk_base::Pathname GetGoogle3Directory() {
-  return GetSiblingDirectory("google3");
-}
-
-talk_base::Pathname GetTalkDirectory() {
-  return GetSiblingDirectory("talk");
-}
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);

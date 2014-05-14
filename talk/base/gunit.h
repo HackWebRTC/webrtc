@@ -36,11 +36,6 @@
 #include "testing/base/public/gunit.h"
 #endif
 
-// forward declarations
-namespace talk_base {
-class Pathname;
-}
-
 // Wait until "ex" is true, or "timeout" expires.
 #define WAIT(ex, timeout) \
   for (uint32 start = talk_base::Time(); \
@@ -106,8 +101,5 @@ class Pathname;
       EXPECT_TRUE(ex); \
     } \
   } while (0);
-
-talk_base::Pathname GetGoogle3Directory();
-talk_base::Pathname GetTalkDirectory();
 
 #endif  // TALK_BASE_GUNIT_H_

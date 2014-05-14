@@ -45,6 +45,7 @@
 #include "talk/base/common.h"
 #include "talk/base/gunit.h"
 #include "talk/base/nethelpers.h"
+#include "talk/base/pathutils.h"
 #include "talk/base/stream.h"
 #include "talk/base/stringencode.h"
 #include "talk/base/stringutils.h"
@@ -449,6 +450,30 @@ inline bool ReadFile(const char* filename, std::string* contents) {
   bool success = (0 != feof(fp));
   fclose(fp);
   return success;
+}
+
+// Look in parent dir for parallel directory.
+inline talk_base::Pathname GetSiblingDirectory(
+    const std::string& parallel_dir) {
+  talk_base::Pathname path = talk_base::Filesystem::GetCurrentDirectory();
+  while (!path.empty()) {
+    talk_base::Pathname potential_parallel_dir = path;
+    potential_parallel_dir.AppendFolder(parallel_dir);
+    if (talk_base::Filesystem::IsFolder(potential_parallel_dir)) {
+      return potential_parallel_dir;
+    }
+
+    path.SetFolder(path.parent_folder());
+  }
+  return path;
+}
+
+inline talk_base::Pathname GetGoogle3Directory() {
+  return GetSiblingDirectory("google3");
+}
+
+inline talk_base::Pathname GetTalkDirectory() {
+  return GetSiblingDirectory("talk");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
