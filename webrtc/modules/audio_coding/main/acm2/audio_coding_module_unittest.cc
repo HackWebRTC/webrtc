@@ -173,9 +173,6 @@ TEST_F(AudioCodingModuleTest, VerifyOutputFrame) {
   AudioFrame audio_frame;
   const int kSampleRateHz = 32000;
   EXPECT_EQ(0, acm_->PlayoutData10Ms(kSampleRateHz, &audio_frame));
-  // The energy must be -1 in order to have the energy calculated later on in
-  // the AudioConferenceMixer module.
-  EXPECT_EQ(static_cast<uint32_t>(-1), audio_frame.energy_);
   EXPECT_EQ(id_, audio_frame.id_);
   EXPECT_EQ(0u, audio_frame.timestamp_);
   EXPECT_GT(audio_frame.num_channels_, 0);
