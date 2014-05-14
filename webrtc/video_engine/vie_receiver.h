@@ -16,7 +16,6 @@
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
-#include "webrtc/system_wrappers/interface/rtp_to_ntp.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_engine/include/vie_network.h"
@@ -26,6 +25,7 @@ namespace webrtc {
 
 class CriticalSectionWrapper;
 class FecReceiver;
+class RemoteNtpTimeEstimator;
 class ReceiveStatistics;
 class RemoteBitrateEstimator;
 class RtpDump;
@@ -33,7 +33,6 @@ class RtpHeaderParser;
 class RTPPayloadRegistry;
 class RtpReceiver;
 class RtpRtcp;
-class TimestampExtrapolator;
 class VideoCodingModule;
 struct ReceiveBandwidthEstimatorStats;
 
@@ -105,9 +104,6 @@ class ViEReceiver : public RtpData {
   bool IsPacketInOrder(const RTPHeader& header) const;
   bool IsPacketRetransmitted(const RTPHeader& header, bool in_order) const;
 
-  bool GetRtcpTimestamp();
-  void CalculateCaptureNtpTime(WebRtcRTPHeader* rtp_header);
-
   scoped_ptr<CriticalSectionWrapper> receive_cs_;
   scoped_ptr<RtpHeaderParser> rtp_header_parser_;
   scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
@@ -119,9 +115,7 @@ class ViEReceiver : public RtpData {
   VideoCodingModule* vcm_;
   RemoteBitrateEstimator* remote_bitrate_estimator_;
 
-  Clock* clock_;
-  scoped_ptr<TimestampExtrapolator> ts_extrapolator_;
-  RtcpList rtcp_list_;
+  scoped_ptr<RemoteNtpTimeEstimator> ntp_estimator_;
 
   RtpDump* rtp_dump_;
   bool receiving_;

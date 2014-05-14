@@ -20,6 +20,7 @@
         # Common
         '../interface/fec_receiver.h',
         '../interface/receive_statistics.h',
+        '../interface/remote_ntp_time_estimator.h',
         '../interface/rtp_header_parser.h',
         '../interface/rtp_payload_registry.h',
         '../interface/rtp_receiver.h',
@@ -32,6 +33,7 @@
         'fec_receiver_impl.h',
         'receive_statistics_impl.cc',
         'receive_statistics_impl.h',
+        'remote_ntp_time_estimator.cc',
         'rtp_header_parser.cc',
         'rtp_rtcp_config.h',
         'rtp_rtcp_impl.cc',

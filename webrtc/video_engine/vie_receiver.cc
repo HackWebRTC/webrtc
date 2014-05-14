@@ -15,6 +15,7 @@
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/interface/fec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
+#include "webrtc/modules/rtp_rtcp/interface/remote_ntp_time_estimator.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_receiver.h"
@@ -25,6 +26,7 @@
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/timestamp_extrapolator.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 
@@ -45,9 +47,7 @@ ViEReceiver::ViEReceiver(const int32_t channel_id,
       rtp_rtcp_(NULL),
       vcm_(module_vcm),
       remote_bitrate_estimator_(remote_bitrate_estimator),
-      clock_(Clock::GetRealTimeClock()),
-      ts_extrapolator_(
-          new TimestampExtrapolator(clock_->TimeInMilliseconds())),
+      ntp_estimator_(new RemoteNtpTimeEstimator(Clock::GetRealTimeClock())),
       rtp_dump_(NULL),
       receiving_(false),
       restored_packet_in_use_(false),
@@ -175,7 +175,8 @@ int32_t ViEReceiver::OnReceivedPayloadData(
     const uint8_t* payload_data, const uint16_t payload_size,
     const WebRtcRTPHeader* rtp_header) {
   WebRtcRTPHeader rtp_header_with_ntp = *rtp_header;
-  CalculateCaptureNtpTime(&rtp_header_with_ntp);
+  rtp_header_with_ntp.ntp_time_ms =
+      ntp_estimator_->Estimate(rtp_header->header.timestamp);
   if (vcm_->IncomingPacket(payload_data,
                            payload_size,
                            rtp_header_with_ntp) != 0) {
@@ -183,26 +184,6 @@ int32_t ViEReceiver::OnReceivedPayloadData(
     return -1;
   }
   return 0;
-}
-
-void ViEReceiver::CalculateCaptureNtpTime(WebRtcRTPHeader* rtp_header) {
-  if (rtcp_list_.size() < 2) {
-    // We need two RTCP SR reports to calculate NTP.
-    return;
-  }
-
-  int64_t sender_capture_ntp_ms = 0;
-  if (!RtpToNtpMs(rtp_header->header.timestamp,
-                  rtcp_list_,
-                  &sender_capture_ntp_ms)) {
-    return;
-  }
-  uint32_t timestamp = sender_capture_ntp_ms * 90;
-  int64_t receiver_capture_ms =
-      ts_extrapolator_->ExtrapolateLocalTime(timestamp);
-  int64_t ntp_offset =
-      clock_->CurrentNtpInMilliseconds() - clock_->TimeInMilliseconds();
-  rtp_header->ntp_time_ms = receiver_capture_ms + ntp_offset;
 }
 
 bool ViEReceiver::OnRecoveredPacket(const uint8_t* rtp_packet,
@@ -352,54 +333,11 @@ int ViEReceiver::InsertRTCPPacket(const uint8_t* rtcp_packet,
     return ret;
   }
 
-  if (!GetRtcpTimestamp()) {
+  if (!ntp_estimator_->UpdateRtcpTimestamp(rtp_receiver_->SSRC(), rtp_rtcp_)) {
     LOG(LS_WARNING) << "Failed to retrieve timestamp information from RTCP SR.";
   }
 
   return 0;
-}
-
-bool ViEReceiver::GetRtcpTimestamp() {
-  uint16_t rtt = 0;
-  rtp_rtcp_->RTT(rtp_receiver_->SSRC(), &rtt, NULL, NULL, NULL);
-  if (rtt == 0) {
-    // Waiting for valid rtt.
-    return true;
-  }
-
-  // Update RTCP list
-  uint32_t ntp_secs = 0;
-  uint32_t ntp_frac = 0;
-  uint32_t rtp_timestamp = 0;
-  if (0 != rtp_rtcp_->RemoteNTP(&ntp_secs,
-                                &ntp_frac,
-                                NULL,
-                                NULL,
-                                &rtp_timestamp)) {
-    return false;
-  }
-
-  bool new_rtcp_sr = false;
-  if (!UpdateRtcpList(ntp_secs,
-                      ntp_frac,
-                      rtp_timestamp,
-                      &rtcp_list_,
-                      &new_rtcp_sr)) {
-    return false;
-  }
-
-  if (!new_rtcp_sr) {
-    // No new RTCP SR since last time this function was called.
-    return true;
-  }
-
-  // Update extrapolator with the new arrival time.
-  // The extrapolator assumes the TimeInMilliseconds time.
-  int64_t receiver_arrival_time = clock_->TimeInMilliseconds();
-  int64_t sender_send_time_ms = Clock::NtpToMs(ntp_secs, ntp_frac);
-  int64_t sender_arrival_time_90k = (sender_send_time_ms + rtt / 2) * 90;
-  ts_extrapolator_->Update(receiver_arrival_time, sender_arrival_time_90k);
-  return true;
 }
 
 void ViEReceiver::StartReceive() {
