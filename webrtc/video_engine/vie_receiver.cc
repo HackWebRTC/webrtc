@@ -333,9 +333,7 @@ int ViEReceiver::InsertRTCPPacket(const uint8_t* rtcp_packet,
     return ret;
   }
 
-  if (!ntp_estimator_->UpdateRtcpTimestamp(rtp_receiver_->SSRC(), rtp_rtcp_)) {
-    LOG(LS_WARNING) << "Failed to retrieve timestamp information from RTCP SR.";
-  }
+  ntp_estimator_->UpdateRtcpTimestamp(rtp_receiver_->SSRC(), rtp_rtcp_);
 
   return 0;
 }
