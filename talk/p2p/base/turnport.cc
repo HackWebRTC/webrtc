@@ -454,7 +454,9 @@ void TurnPort::ResolveTurnAddress(const talk_base::SocketAddress& address) {
 
 void TurnPort::OnResolveResult(talk_base::AsyncResolverInterface* resolver) {
   ASSERT(resolver == resolver_);
-  talk_base::SocketAddress resolved_address;
+  // Copy the original server address in |resolved_address|. For TLS based
+  // sockets we need hostname along with resolved address.
+  talk_base::SocketAddress resolved_address = server_address_.address;
   if (resolver_->GetError() != 0 ||
       !resolver_->GetResolvedAddress(ip().family(), &resolved_address)) {
     LOG_J(LS_WARNING, this) << "TURN host lookup received error "
