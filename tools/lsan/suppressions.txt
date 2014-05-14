@@ -8,6 +8,26 @@
 # Leak reported in libstdc++
 leak:std::string::_Rep::_S_create
 
+# False positives in libfontconfig. http://crbug.com/39050
+leak:libfontconfig
+
+# Leaks in Nvidia's libGL.
+leak:libGL.so
+
+# XRandR has several one time leaks.
+leak:libxrandr
+
+# The NSS suppressions above will not fire when the fast stack unwinder is used,
+# because it can't unwind through NSS libraries. Apply blanket suppressions for
+# now.
+leak:libnssutil3
+leak:libnspr4
+leak:libnss3
+leak:libplds4
+leak:libnssckbi
+
+# xrandr leak. http://crbug.com/119677
+leak:XRRFindDisplay
 
 #### Actual bugs in WebRTC code ####
 
