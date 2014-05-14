@@ -302,3 +302,16 @@ TEST_F(SctpDataChannelTest, OpenAckRoleInitialization) {
   webrtc::InternalDataChannelInit init2(base);
   EXPECT_EQ(webrtc::InternalDataChannelInit::kNone, init2.open_handshake_role);
 }
+
+// Tests that message is dropped if the channel is not open.
+TEST_F(SctpDataChannelTest, ReceivedDataDroppedIfNotOpen) {
+  AddObserver();
+  EXPECT_CALL(*(observer_.get()), OnMessage(testing::_)).Times(0);
+
+  webrtc_data_channel_->SetSctpSid(1);
+
+  cricket::ReceiveDataParams params;
+  params.ssrc = 1;
+  webrtc::DataBuffer buffer("abcd");
+  webrtc_data_channel_->OnDataReceived(NULL, params, buffer.data);
+}

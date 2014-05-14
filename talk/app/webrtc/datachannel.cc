@@ -284,6 +284,10 @@ void DataChannel::OnDataEngineClose() {
 void DataChannel::OnDataReceived(cricket::DataChannel* channel,
                                  const cricket::ReceiveDataParams& params,
                                  const talk_base::Buffer& payload) {
+  if (state_ != kOpen) {
+    return;
+  }
+
   uint32 expected_ssrc =
       (data_channel_type_ == cricket::DCT_RTP) ? receive_ssrc_ : config_.id;
   if (params.ssrc != expected_ssrc) {
