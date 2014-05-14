@@ -43,6 +43,9 @@ int ViEAutoTestMain::RunTests(int argc, char** argv) {
   webrtc::test::SetExecutablePath(argv[0]);
   // Initialize the testing framework.
   testing::InitGoogleTest(&argc, argv);
+  // AllowCommandLineParsing allows us to ignore flags passed on to us by
+  // Chromium build bots without having to explicitly disable them.
+  google::AllowCommandLineReparsing();
   // Parse remaining flags:
   google::ParseCommandLineFlags(&argc, &argv, true);
 
