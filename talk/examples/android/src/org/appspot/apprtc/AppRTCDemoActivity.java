@@ -125,7 +125,8 @@ public class AppRTCDemoActivity extends Activity
     addContentView(hudView, hudLayout);
 
     if (!factoryStaticInitialized) {
-      abortUnless(PeerConnectionFactory.initializeAndroidGlobals(this),
+      abortUnless(PeerConnectionFactory.initializeAndroidGlobals(
+          this, true, true),
         "Failed to initializeAndroidGlobals");
       factoryStaticInitialized = true;
     }

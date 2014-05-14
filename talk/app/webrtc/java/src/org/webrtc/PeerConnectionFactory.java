@@ -43,7 +43,11 @@ public class PeerConnectionFactory {
 
   // |context| is an android.content.Context object, but we keep it untyped here
   // to allow building on non-Android platforms.
-  public static native boolean initializeAndroidGlobals(Object context);
+  // Callers may specify either |initializeAudio| or |initializeVideo| as false
+  // to skip initializing the respective engine (and avoid the need for the
+  // respective permissions).
+  public static native boolean initializeAndroidGlobals(
+      Object context, boolean initializeAudio, boolean initializeVideo);
 
   public PeerConnectionFactory() {
     nativeFactory = nativeCreatePeerConnectionFactory();

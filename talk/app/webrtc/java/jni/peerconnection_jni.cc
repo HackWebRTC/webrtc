@@ -1892,11 +1892,14 @@ JOW(jlong, PeerConnectionFactory_nativeCreateObserver)(
 
 #ifdef ANDROID
 JOW(jboolean, PeerConnectionFactory_initializeAndroidGlobals)(
-    JNIEnv* jni, jclass, jobject context) {
+    JNIEnv* jni, jclass, jobject context,
+    jboolean initialize_audio, jboolean initialize_video) {
   CHECK(g_jvm, "JNI_OnLoad failed to run?");
   bool failure = false;
-  failure |= webrtc::VideoEngine::SetAndroidObjects(g_jvm);
-  failure |= webrtc::VoiceEngine::SetAndroidObjects(g_jvm, jni, context);
+  if (initialize_video)
+    failure |= webrtc::VideoEngine::SetAndroidObjects(g_jvm);
+  if (initialize_audio)
+    failure |= webrtc::VoiceEngine::SetAndroidObjects(g_jvm, jni, context);
   return !failure;
 }
 #endif  // ANDROID
