@@ -809,6 +809,7 @@
         '<(webrtc_root)/webrtc.gyp:webrtc',
         '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:field_trial_default',
         'libjingle',
         'libjingle_sound',
       ],
