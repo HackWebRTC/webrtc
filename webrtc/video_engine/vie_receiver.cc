@@ -25,7 +25,6 @@
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/timestamp_extrapolator.h"
-#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 
@@ -34,7 +33,6 @@ ViEReceiver::ViEReceiver(const int32_t channel_id,
                          RemoteBitrateEstimator* remote_bitrate_estimator,
                          RtpFeedback* rtp_feedback)
     : receive_cs_(CriticalSectionWrapper::CreateCriticalSection()),
-      channel_id_(channel_id),
       rtp_header_parser_(RtpHeaderParser::Create()),
       rtp_payload_registry_(new RTPPayloadRegistry(
           RTPPayloadStrategy::CreateStrategy(false))),
@@ -211,8 +209,6 @@ bool ViEReceiver::OnRecoveredPacket(const uint8_t* rtp_packet,
                                     int rtp_packet_length) {
   RTPHeader header;
   if (!rtp_header_parser_->Parse(rtp_packet, rtp_packet_length, &header)) {
-    WEBRTC_TRACE(kTraceDebug, webrtc::kTraceVideo, channel_id_,
-                 "IncomingPacket invalid RTP header");
     return false;
   }
   header.payload_type_frequency = kVideoPayloadTypeFrequency;
@@ -247,8 +243,6 @@ int ViEReceiver::InsertRTPPacket(const uint8_t* rtp_packet,
   RTPHeader header;
   if (!rtp_header_parser_->Parse(rtp_packet, rtp_packet_length,
                                  &header)) {
-    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideo, channel_id_,
-                 "Incoming packet: Invalid RTP header");
     return -1;
   }
   int payload_length = rtp_packet_length - header.headerLength;
@@ -299,8 +293,6 @@ bool ViEReceiver::ParseAndHandleEncapsulatingHeader(const uint8_t* packet,
       rtp_receive_statistics_->FecPacketReceived(header.ssrc);
     if (fec_receiver_->AddReceivedRedPacket(
             header, packet, packet_length, ulpfec_pt) != 0) {
-      WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideo, channel_id_,
-                   "Incoming RED packet error");
       return false;
     }
     return fec_receiver_->ProcessReceivedFec() == 0;
@@ -317,16 +309,14 @@ bool ViEReceiver::ParseAndHandleEncapsulatingHeader(const uint8_t* packet,
       return false;
     CriticalSectionScoped cs(receive_cs_.get());
     if (restored_packet_in_use_) {
-      WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideo, channel_id_,
-                   "Multiple RTX headers detected, dropping packet");
+      LOG(LS_WARNING) << "Multiple RTX headers detected, dropping packet.";
       return false;
     }
     uint8_t* restored_packet_ptr = restored_packet_;
     if (!rtp_payload_registry_->RestoreOriginalPacket(
         &restored_packet_ptr, packet, &packet_length, rtp_receiver_->SSRC(),
         header)) {
-      WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideo, channel_id_,
-                   "Incoming RTX packet: invalid RTP header");
+      LOG(LS_WARNING) << "Incoming RTX packet: Invalid RTP header";
       return false;
     }
     restored_packet_in_use_ = true;
@@ -430,16 +420,12 @@ int ViEReceiver::StartRTPDump(const char file_nameUTF8[1024]) {
   } else {
     rtp_dump_ = RtpDump::CreateRtpDump();
     if (rtp_dump_ == NULL) {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, channel_id_,
-                   "StartRTPDump: Failed to create RTP dump");
       return -1;
     }
   }
   if (rtp_dump_->Start(file_nameUTF8) != 0) {
     RtpDump::DestroyRtpDump(rtp_dump_);
     rtp_dump_ = NULL;
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, channel_id_,
-                 "StartRTPDump: Failed to start RTP dump");
     return -1;
   }
   return 0;
@@ -450,15 +436,10 @@ int ViEReceiver::StopRTPDump() {
   if (rtp_dump_) {
     if (rtp_dump_->IsActive()) {
       rtp_dump_->Stop();
-    } else {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, channel_id_,
-                   "StopRTPDump: Dump not active");
     }
     RtpDump::DestroyRtpDump(rtp_dump_);
     rtp_dump_ = NULL;
   } else {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, channel_id_,
-                 "StopRTPDump: RTP dump not started");
     return -1;
   }
   return 0;

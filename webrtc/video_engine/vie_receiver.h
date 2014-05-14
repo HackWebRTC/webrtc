@@ -109,7 +109,6 @@ class ViEReceiver : public RtpData {
   void CalculateCaptureNtpTime(WebRtcRTPHeader* rtp_header);
 
   scoped_ptr<CriticalSectionWrapper> receive_cs_;
-  const int32_t channel_id_;
   scoped_ptr<RtpHeaderParser> rtp_header_parser_;
   scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
   scoped_ptr<RtpReceiver> rtp_receiver_;

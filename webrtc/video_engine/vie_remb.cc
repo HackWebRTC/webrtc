@@ -37,15 +37,12 @@ VieRemb::~VieRemb() {}
 
 void VieRemb::AddReceiveChannel(RtpRtcp* rtp_rtcp) {
   assert(rtp_rtcp);
-  WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, -1,
-               "VieRemb::AddReceiveChannel(%p)", rtp_rtcp);
 
   CriticalSectionScoped cs(list_crit_.get());
   if (std::find(receive_modules_.begin(), receive_modules_.end(), rtp_rtcp) !=
       receive_modules_.end())
     return;
 
-  WEBRTC_TRACE(kTraceInfo, kTraceVideo, -1, "AddRembChannel");
   // The module probably doesn't have a remote SSRC yet, so don't add it to the
   // map.
   receive_modules_.push_back(rtp_rtcp);
@@ -53,8 +50,6 @@ void VieRemb::AddReceiveChannel(RtpRtcp* rtp_rtcp) {
 
 void VieRemb::RemoveReceiveChannel(RtpRtcp* rtp_rtcp) {
   assert(rtp_rtcp);
-  WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, -1,
-               "VieRemb::RemoveReceiveChannel(%p)", rtp_rtcp);
 
   CriticalSectionScoped cs(list_crit_.get());
   for (RtpModules::iterator it = receive_modules_.begin();
@@ -68,8 +63,6 @@ void VieRemb::RemoveReceiveChannel(RtpRtcp* rtp_rtcp) {
 
 void VieRemb::AddRembSender(RtpRtcp* rtp_rtcp) {
   assert(rtp_rtcp);
-  WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, -1,
-               "VieRemb::AddRembSender(%p)", rtp_rtcp);
 
   CriticalSectionScoped cs(list_crit_.get());
 
@@ -82,8 +75,6 @@ void VieRemb::AddRembSender(RtpRtcp* rtp_rtcp) {
 
 void VieRemb::RemoveRembSender(RtpRtcp* rtp_rtcp) {
   assert(rtp_rtcp);
-  WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, -1,
-               "VieRemb::RemoveRembSender(%p)", rtp_rtcp);
 
   CriticalSectionScoped cs(list_crit_.get());
   for (RtpModules::iterator it = rtcp_sender_.begin();
@@ -105,8 +96,6 @@ bool VieRemb::InUse() const {
 
 void VieRemb::OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
                                       unsigned int bitrate) {
-  WEBRTC_TRACE(kTraceStream, kTraceVideo, -1,
-               "VieRemb::UpdateBitrateEstimate(bitrate: %u)", bitrate);
   list_crit_->Enter();
   // If we already have an estimate, check if the new total estimate is below
   // kSendThresholdPercent of the previous estimate.
