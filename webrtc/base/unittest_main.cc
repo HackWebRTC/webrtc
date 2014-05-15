@@ -18,7 +18,6 @@
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/pathutils.h"
 
 DEFINE_bool(help, false, "prints this message");
 DEFINE_string(log, "", "logging options to use");
@@ -52,28 +51,6 @@ int TestCrtReportHandler(int report_type, char* msg, int* retval) {
   }
 }
 #endif  // WEBRTC_WIN 
-
-rtc::Pathname GetTalkDirectory() {
-  // Locate talk directory.
-  rtc::Pathname path = rtc::Filesystem::GetCurrentDirectory();
-  std::string talk_folder_name("talk");
-  talk_folder_name += path.folder_delimiter();
-  while (path.folder_name() != talk_folder_name && !path.empty()) {
-    path.SetFolder(path.parent_folder());
-  }
-
-  // If not running inside "talk" folder, then assume running in its parent
-  // folder.
-  if (path.empty()) {
-    path = rtc::Filesystem::GetCurrentDirectory();
-    path.AppendFolder("talk");
-    // Make sure the folder exist.
-    if (!rtc::Filesystem::IsFolder(path)) {
-      path.clear();
-    }
-  }
-  return path;
-}
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);

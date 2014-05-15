@@ -28,6 +28,7 @@
 #include "webrtc/base/common.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/nethelpers.h"
+#include "webrtc/base/pathutils.h"
 #include "webrtc/base/stream.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
@@ -432,6 +433,30 @@ inline bool ReadFile(const char* filename, std::string* contents) {
   bool success = (0 != feof(fp));
   fclose(fp);
   return success;
+}
+
+// Look in parent dir for parallel directory.
+inline rtc::Pathname GetSiblingDirectory(
+    const std::string& parallel_dir) {
+  rtc::Pathname path = rtc::Filesystem::GetCurrentDirectory();
+  while (!path.empty()) {
+    rtc::Pathname potential_parallel_dir = path;
+    potential_parallel_dir.AppendFolder(parallel_dir);
+    if (rtc::Filesystem::IsFolder(potential_parallel_dir)) {
+      return potential_parallel_dir;
+    }
+
+    path.SetFolder(path.parent_folder());
+  }
+  return path;
+}
+
+inline rtc::Pathname GetGoogle3Directory() {
+  return GetSiblingDirectory("google3");
+}
+
+inline rtc::Pathname GetTalkDirectory() {
+  return GetSiblingDirectory("talk");
 }
 
 ///////////////////////////////////////////////////////////////////////////////

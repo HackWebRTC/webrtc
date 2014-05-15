@@ -19,11 +19,6 @@
 #include "testing/base/public/gunit.h"
 #endif
 
-// forward declarations
-namespace rtc {
-class Pathname;
-}
-
 // Wait until "ex" is true, or "timeout" expires.
 #define WAIT(ex, timeout) \
   for (uint32 start = rtc::Time(); \
@@ -89,7 +84,5 @@ class Pathname;
       EXPECT_TRUE(ex); \
     } \
   } while (0);
-
-rtc::Pathname GetTalkDirectory();
 
 #endif  // WEBRTC_BASE_GUNIT_H_
