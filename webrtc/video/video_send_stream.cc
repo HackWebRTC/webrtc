@@ -27,7 +27,7 @@
 
 namespace webrtc {
 std::string
-VideoSendStream::VideoSendStream::Config::EncoderSettings::ToString() const {
+VideoSendStream::Config::EncoderSettings::ToString() const {
   std::stringstream ss;
   ss << "{payload_name: " << payload_name;
   ss << ", payload_type: " << payload_type;
@@ -48,7 +48,7 @@ VideoSendStream::VideoSendStream::Config::EncoderSettings::ToString() const {
   return ss.str();
 }
 
-std::string VideoSendStream::VideoSendStream::Config::Rtp::Rtx::ToString()
+std::string VideoSendStream::Config::Rtp::Rtx::ToString()
     const {
   std::stringstream ss;
   ss << "{ssrcs: {";
@@ -64,7 +64,7 @@ std::string VideoSendStream::VideoSendStream::Config::Rtp::Rtx::ToString()
   return ss.str();
 }
 
-std::string VideoSendStream::VideoSendStream::Config::Rtp::ToString() const {
+std::string VideoSendStream::Config::Rtp::ToString() const {
   std::stringstream ss;
   ss << "{ssrcs: {";
   for (size_t i = 0; i < ssrcs.size(); ++i) {
@@ -98,7 +98,7 @@ std::string VideoSendStream::VideoSendStream::Config::Rtp::ToString() const {
   return ss.str();
 }
 
-std::string VideoSendStream::VideoSendStream::Config::ToString() const {
+std::string VideoSendStream::Config::ToString() const {
   std::stringstream ss;
   ss << "{encoder_settings: " << encoder_settings.ToString();
   ss << ", rtp: " << rtp.ToString();
@@ -118,8 +118,8 @@ std::string VideoSendStream::VideoSendStream::Config::ToString() const {
   ss << '}';
   return ss.str();
 }
-namespace internal {
 
+namespace internal {
 VideoSendStream::VideoSendStream(newapi::Transport* transport,
                                  CpuOveruseObserver* overuse_observer,
                                  webrtc::VideoEngine* video_engine,
