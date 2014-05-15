@@ -288,8 +288,9 @@ void InitDiagnosticLoggingDelegateFunction(
   // Ensure that this function is always called from the same thread.
   base::subtle::NoBarrier_CompareAndSwap(&g_init_logging_delegate_thread_id, 0,
       static_cast<base::subtle::Atomic32>(base::PlatformThread::CurrentId()));
-  DCHECK_EQ(g_init_logging_delegate_thread_id,
-            base::PlatformThread::CurrentId());
+  DCHECK_EQ(
+      g_init_logging_delegate_thread_id,
+      static_cast<base::subtle::Atomic32>(base::PlatformThread::CurrentId()));
 #endif
   CHECK(delegate);
   // This function may be called with the same argument several times if the
