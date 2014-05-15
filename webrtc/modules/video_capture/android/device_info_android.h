@@ -24,6 +24,7 @@ namespace videocapturemodule
 class DeviceInfoAndroid : public DeviceInfoImpl {
  public:
   static void Initialize(JNIEnv* env);
+  static void DeInitialize();
 
   DeviceInfoAndroid(int32_t id);
   virtual ~DeviceInfoAndroid();

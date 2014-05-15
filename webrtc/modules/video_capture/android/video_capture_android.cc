@@ -39,25 +39,37 @@ void JNICALL ProvideCameraFrame(
 }
 
 int32_t SetCaptureAndroidVM(JavaVM* javaVM) {
-  assert(!g_jvm);
-  g_jvm = javaVM;
-  AttachThreadScoped ats(g_jvm);
+  if (javaVM) {
+    assert(!g_jvm);
+    g_jvm = javaVM;
+    AttachThreadScoped ats(g_jvm);
 
-  videocapturemodule::DeviceInfoAndroid::Initialize(ats.env());
+    videocapturemodule::DeviceInfoAndroid::Initialize(ats.env());
 
-  jclass j_capture_class =
-      ats.env()->FindClass("org/webrtc/videoengine/VideoCaptureAndroid");
-  assert(j_capture_class);
-  g_java_capturer_class =
-      reinterpret_cast<jclass>(ats.env()->NewGlobalRef(j_capture_class));
-  assert(g_java_capturer_class);
+    jclass j_capture_class =
+        ats.env()->FindClass("org/webrtc/videoengine/VideoCaptureAndroid");
+    assert(j_capture_class);
+    g_java_capturer_class =
+        reinterpret_cast<jclass>(ats.env()->NewGlobalRef(j_capture_class));
+    assert(g_java_capturer_class);
 
-  JNINativeMethod native_method = {
-    "ProvideCameraFrame", "([BIJ)V",
-    reinterpret_cast<void*>(&ProvideCameraFrame)
-  };
-  if (ats.env()->RegisterNatives(g_java_capturer_class, &native_method, 1) != 0)
-    assert(false);
+    JNINativeMethod native_method = {
+      "ProvideCameraFrame", "([BIJ)V",
+      reinterpret_cast<void*>(&ProvideCameraFrame)
+    };
+    if (ats.env()->RegisterNatives(g_java_capturer_class,
+                                   &native_method, 1) != 0)
+      assert(false);
+  } else {
+    if (g_jvm) {
+      AttachThreadScoped ats(g_jvm);
+      ats.env()->UnregisterNatives(g_java_capturer_class);
+      ats.env()->DeleteGlobalRef(g_java_capturer_class);
+      g_java_capturer_class = NULL;
+      videocapturemodule::DeviceInfoAndroid::DeInitialize();
+      g_jvm = NULL;
+    }
+  }
 
   return 0;
 }

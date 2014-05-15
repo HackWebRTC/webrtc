@@ -142,6 +142,13 @@ void DeviceInfoAndroid::Initialize(JNIEnv* jni) {
   }
 }
 
+void DeviceInfoAndroid::DeInitialize() {
+  if (g_camera_info) {
+    delete g_camera_info;
+    g_camera_info = NULL;
+  }
+}
+
 VideoCaptureModule::DeviceInfo* VideoCaptureImpl::CreateDeviceInfo(
     const int32_t id) {
   return new videocapturemodule::DeviceInfoAndroid(id);

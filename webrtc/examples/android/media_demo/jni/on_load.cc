@@ -47,6 +47,8 @@ JOWW(void, NativeWebRtcContextRegistry_register)(
 JOWW(void, NativeWebRtcContextRegistry_unRegister)(
     JNIEnv* jni,
     jclass) {
+  CHECK(webrtc::VideoEngine::SetAndroidObjects(NULL) == 0,
+        "Failed to unregister android objects from video engine");
   CHECK(webrtc::VoiceEngine::SetAndroidObjects(NULL, NULL, NULL) == 0,
         "Failed to unregister android objects from voice engine");
   webrtc_examples::ClearVieDeviceObjects();
