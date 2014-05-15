@@ -141,7 +141,7 @@ void RefFiles::ReadFromFileAndCompare(
     NetEqNetworkStatistics ref_stats;
     ASSERT_EQ(1u, fread(&ref_stats, stat_size, 1, input_fp_));
     // Compare
-    EXPECT_EQ(0, memcmp(&stats, &ref_stats, stat_size));
+    ASSERT_EQ(0, memcmp(&stats, &ref_stats, stat_size));
   }
 }
 
@@ -174,11 +174,11 @@ void RefFiles::ReadFromFileAndCompare(
     ASSERT_EQ(1u, fread(&(ref_stats.jitter), sizeof(ref_stats.jitter), 1,
                         input_fp_));
     // Compare
-    EXPECT_EQ(ref_stats.fraction_lost, stats.fraction_lost);
-    EXPECT_EQ(ref_stats.cumulative_lost, stats.cumulative_lost);
-    EXPECT_EQ(ref_stats.extended_max_sequence_number,
+    ASSERT_EQ(ref_stats.fraction_lost, stats.fraction_lost);
+    ASSERT_EQ(ref_stats.cumulative_lost, stats.cumulative_lost);
+    ASSERT_EQ(ref_stats.extended_max_sequence_number,
               stats.extended_max_sequence_number);
-    EXPECT_EQ(ref_stats.jitter, stats.jitter);
+    ASSERT_EQ(ref_stats.jitter, stats.jitter);
   }
 }
 
@@ -381,19 +381,20 @@ void NetEqDecodingTest::DecodeAndCheckStats(const std::string &rtp_file,
   ASSERT_GT(rtp.readFromFile(rtp_fp_), 0);
   while (rtp.dataLen() >= 0) {
     int out_len;
-    Process(&rtp, &out_len);
+    ASSERT_NO_FATAL_FAILURE(Process(&rtp, &out_len));
 
     // Query the network statistics API once per second
     if (sim_clock_ % 1000 == 0) {
       // Process NetworkStatistics.
       NetEqNetworkStatistics network_stats;
       ASSERT_EQ(0, neteq_->NetworkStatistics(&network_stats));
-      network_stat_files.ProcessReference(network_stats);
+      ASSERT_NO_FATAL_FAILURE(
+          network_stat_files.ProcessReference(network_stats));
 
       // Process RTCPstat.
       RtcpStatistics rtcp_stats;
       neteq_->GetRtcpStatistics(&rtcp_stats);
-      rtcp_stat_files.ProcessReference(rtcp_stats);
+      ASSERT_NO_FATAL_FAILURE(rtcp_stat_files.ProcessReference(rtcp_stats));
     }
   }
 }
@@ -573,7 +574,7 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(TestNetworkStatistics)) {
 }
 
 // TODO(hlundin): Re-enable test once the statistics interface is up and again.
-TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(TestFrameWaitingTimeStatistics)) {
+TEST_F(NetEqDecodingTest, TestFrameWaitingTimeStatistics) {
   // Use fax mode to avoid time-scaling. This is to simplify the testing of
   // packet waiting times in the packet buffer.
   neteq_->SetPlayoutMode(kPlayoutFax);
@@ -647,8 +648,7 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(TestFrameWaitingTimeStatistics)) {
   EXPECT_EQ(100u, waiting_times.size());
 }
 
-TEST_F(NetEqDecodingTest,
-       DISABLED_ON_ANDROID(TestAverageInterArrivalTimeNegative)) {
+TEST_F(NetEqDecodingTest, TestAverageInterArrivalTimeNegative) {
   const int kNumFrames = 3000;  // Needed for convergence.
   int frame_index = 0;
   const int kSamples = 10 * 16;
@@ -679,8 +679,7 @@ TEST_F(NetEqDecodingTest,
   EXPECT_EQ(-103196, network_stats.clockdrift_ppm);
 }
 
-TEST_F(NetEqDecodingTest,
-       DISABLED_ON_ANDROID(TestAverageInterArrivalTimePositive)) {
+TEST_F(NetEqDecodingTest, TestAverageInterArrivalTimePositive) {
   const int kNumFrames = 5000;  // Needed for convergence.
   int frame_index = 0;
   const int kSamples = 10 * 16;
@@ -847,7 +846,7 @@ void NetEqDecodingTest::LongCngWithClockDrift(double drift_factor,
   EXPECT_GE(delay_after, delay_before - delay_tolerance_ms * 16);
 }
 
-TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(LongCngWithNegativeClockDrift)) {
+TEST_F(NetEqDecodingTest, LongCngWithNegativeClockDrift) {
   // Apply a clock drift of -25 ms / s (sender faster than receiver).
   const double kDriftFactor = 1000.0 / (1000.0 + 25.0);
   const double kNetworkFreezeTimeMs = 0.0;
@@ -861,7 +860,7 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(LongCngWithNegativeClockDrift)) {
                         kMaxTimeToSpeechMs);
 }
 
-TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(LongCngWithPositiveClockDrift)) {
+TEST_F(NetEqDecodingTest, LongCngWithPositiveClockDrift) {
   // Apply a clock drift of +25 ms / s (sender slower than receiver).
   const double kDriftFactor = 1000.0 / (1000.0 - 25.0);
   const double kNetworkFreezeTimeMs = 0.0;
@@ -875,8 +874,7 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(LongCngWithPositiveClockDrift)) {
                         kMaxTimeToSpeechMs);
 }
 
-TEST_F(NetEqDecodingTest,
-       DISABLED_ON_ANDROID(LongCngWithNegativeClockDriftNetworkFreeze)) {
+TEST_F(NetEqDecodingTest, LongCngWithNegativeClockDriftNetworkFreeze) {
   // Apply a clock drift of -25 ms / s (sender faster than receiver).
   const double kDriftFactor = 1000.0 / (1000.0 + 25.0);
   const double kNetworkFreezeTimeMs = 5000.0;
@@ -890,8 +888,7 @@ TEST_F(NetEqDecodingTest,
                         kMaxTimeToSpeechMs);
 }
 
-TEST_F(NetEqDecodingTest,
-       DISABLED_ON_ANDROID(LongCngWithPositiveClockDriftNetworkFreeze)) {
+TEST_F(NetEqDecodingTest, LongCngWithPositiveClockDriftNetworkFreeze) {
   // Apply a clock drift of +25 ms / s (sender slower than receiver).
   const double kDriftFactor = 1000.0 / (1000.0 - 25.0);
   const double kNetworkFreezeTimeMs = 5000.0;
@@ -905,9 +902,7 @@ TEST_F(NetEqDecodingTest,
                         kMaxTimeToSpeechMs);
 }
 
-TEST_F(
-    NetEqDecodingTest,
-    DISABLED_ON_ANDROID(LongCngWithPositiveClockDriftNetworkFreezeExtraPull)) {
+TEST_F(NetEqDecodingTest, LongCngWithPositiveClockDriftNetworkFreezeExtraPull) {
   // Apply a clock drift of +25 ms / s (sender slower than receiver).
   const double kDriftFactor = 1000.0 / (1000.0 - 25.0);
   const double kNetworkFreezeTimeMs = 5000.0;
@@ -921,7 +916,7 @@ TEST_F(
                         kMaxTimeToSpeechMs);
 }
 
-TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(LongCngWithoutClockDrift)) {
+TEST_F(NetEqDecodingTest, LongCngWithoutClockDrift) {
   const double kDriftFactor = 1.0;  // No drift.
   const double kNetworkFreezeTimeMs = 0.0;
   const bool kGetAudioDuringFreezeRecovery = false;
@@ -934,7 +929,7 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(LongCngWithoutClockDrift)) {
                         kMaxTimeToSpeechMs);
 }
 
-TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(UnknownPayloadType)) {
+TEST_F(NetEqDecodingTest, UnknownPayloadType) {
   const int kPayloadBytes = 100;
   uint8_t payload[kPayloadBytes] = {0};
   WebRtcRTPHeader rtp_info;
@@ -984,7 +979,7 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(DecoderError)) {
   }
 }
 
-TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(GetAudioBeforeInsertPacket)) {
+TEST_F(NetEqDecodingTest, GetAudioBeforeInsertPacket) {
   NetEqOutputType type;
   // Set all of |out_data_| to 1, and verify that it was set to 0 by the call
   // to GetAudio.
@@ -1007,7 +1002,7 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(GetAudioBeforeInsertPacket)) {
   }
 }
 
-TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(BackgroundNoise)) {
+TEST_F(NetEqDecodingTest, BackgroundNoise) {
   neteq_->SetBackgroundNoiseMode(kBgnOn);
   CheckBgnOff(8000, kBgnOn);
   CheckBgnOff(16000, kBgnOn);
@@ -1027,7 +1022,7 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(BackgroundNoise)) {
   EXPECT_EQ(kBgnFade, neteq_->BackgroundNoiseMode());
 }
 
-TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(SyncPacketInsert)) {
+TEST_F(NetEqDecodingTest, SyncPacketInsert) {
   WebRtcRTPHeader rtp_info;
   uint32_t receive_timestamp = 0;
   // For the readability use the following payloads instead of the defaults of
@@ -1109,7 +1104,7 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(SyncPacketInsert)) {
 // TODO(turajs) we will have a better test if we have a referece NetEq, and
 // when Sync packets are inserted in "test" NetEq we insert all-zero payload
 // in reference NetEq and compare the output of those two.
-TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(SyncPacketDecode)) {
+TEST_F(NetEqDecodingTest, SyncPacketDecode) {
   WebRtcRTPHeader rtp_info;
   PopulateRtpInfo(0, 0, &rtp_info);
   const int kPayloadBytes = kBlockSize16kHz * sizeof(int16_t);
@@ -1188,8 +1183,7 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(SyncPacketDecode)) {
 // sync packets. Also, test if network packets override sync packets. That is to
 // prefer decoding a network packet to a sync packet, if both have same sequence
 // number and timestamp.
-TEST_F(NetEqDecodingTest,
-       DISABLED_ON_ANDROID(SyncPacketBufferSizeAndOverridenByNetworkPackets)) {
+TEST_F(NetEqDecodingTest, SyncPacketBufferSizeAndOverridenByNetworkPackets) {
   WebRtcRTPHeader rtp_info;
   PopulateRtpInfo(0, 0, &rtp_info);
   const int kPayloadBytes = kBlockSize16kHz * sizeof(int16_t);
