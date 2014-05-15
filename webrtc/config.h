@@ -57,6 +57,7 @@ struct NackConfig {
 // payload types to '-1' to disable.
 struct FecConfig {
   FecConfig() : ulpfec_payload_type(-1), red_payload_type(-1) {}
+  std::string ToString() const;
   // Payload type used for ULPFEC packets.
   int ulpfec_payload_type;
 
@@ -66,13 +67,40 @@ struct FecConfig {
 
 // RTP header extension to use for the video stream, see RFC 5285.
 struct RtpExtension {
+  RtpExtension(const char* name, int id) : name(name), id(id) {}
+  std::string ToString() const;
+  // TODO(mflodman) Add API to query supported extensions.
   static const char* kTOffset;
   static const char* kAbsSendTime;
-  RtpExtension(const char* name, int id) : name(name), id(id) {}
-  // TODO(mflodman) Add API to query supported extensions.
   std::string name;
   int id;
 };
+
+struct VideoStream {
+  VideoStream()
+      : width(0),
+        height(0),
+        max_framerate(-1),
+        min_bitrate_bps(-1),
+        target_bitrate_bps(-1),
+        max_bitrate_bps(-1),
+        max_qp(-1) {}
+  std::string ToString() const;
+
+  size_t width;
+  size_t height;
+  int max_framerate;
+
+  int min_bitrate_bps;
+  int target_bitrate_bps;
+  int max_bitrate_bps;
+
+  int max_qp;
+
+  // Bitrate thresholds for enabling additional temporal layers.
+  std::vector<int> temporal_layers;
+};
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_CONFIG_H_

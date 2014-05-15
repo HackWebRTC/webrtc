@@ -20,6 +20,7 @@
   'variables': {
     'webrtc_all_dependencies': [
       'base/base.gyp:*',
+      'common.gyp:*',
       'common_audio/common_audio.gyp:*',
       'common_video/common_video.gyp:*',
       'modules/modules.gyp:*',
@@ -75,6 +76,7 @@
         '<@(webrtc_video_sources)',
       ],
       'dependencies': [
+        'common.gyp:*',
         '<@(webrtc_video_dependencies)',
       ],
     },

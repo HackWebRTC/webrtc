@@ -13,6 +13,8 @@
 
 #include <stddef.h>
 #include <string.h>
+
+#include <string>
 #include <vector>
 
 #include "webrtc/typedefs.h"
@@ -779,30 +781,6 @@ struct RTPHeader {
   uint16_t headerLength;
   int payload_type_frequency;
   RTPHeaderExtension extension;
-};
-
-struct VideoStream {
-  VideoStream()
-      : width(0),
-        height(0),
-        max_framerate(-1),
-        min_bitrate_bps(-1),
-        target_bitrate_bps(-1),
-        max_bitrate_bps(-1),
-        max_qp(-1) {}
-
-  size_t width;
-  size_t height;
-  int max_framerate;
-
-  int min_bitrate_bps;
-  int target_bitrate_bps;
-  int max_bitrate_bps;
-
-  int max_qp;
-
-  // Bitrate thresholds for enabling additional temporal layers.
-  std::vector<int> temporal_layers;
 };
 
 }  // namespace webrtc
