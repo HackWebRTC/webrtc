@@ -181,8 +181,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
         media_info_callbacks2_(),
         mute_callback_recved_(false),
         mute_callback_value_(false),
-        first_packet_received_on_channel1_(0),
-        first_packet_received_on_channel2_(0),
         ssrc_(0),
         error_(T::MediaChannel::ERROR_NONE) {
   }
@@ -236,10 +234,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
         this, &ChannelTest<T>::OnMediaChannelError);
     channel1_->SignalAutoMuted.connect(
         this, &ChannelTest<T>::OnMediaMuted);
-    channel1_->SignalFirstPacketReceived.connect(
-        this, &ChannelTest<T>::OnFirstPacketReceived);
-    channel2_->SignalFirstPacketReceived.connect(
-        this, &ChannelTest<T>::OnFirstPacketReceived);
     if ((flags1 & DTLS) && (flags2 & DTLS)) {
       flags1 = (flags1 & ~SECURE);
       flags2 = (flags2 & ~SECURE);
@@ -291,10 +285,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
         this, &ChannelTest<T>::OnMediaMonitor);
     channel2_->SignalMediaError.connect(
         this, &ChannelTest<T>::OnMediaChannelError);
-    channel1_->SignalFirstPacketReceived.connect(
-        this, &ChannelTest<T>::OnFirstPacketReceived);
-    channel2_->SignalFirstPacketReceived.connect(
-        this, &ChannelTest<T>::OnFirstPacketReceived);
     CreateContent(flags, kPcmuCodec, kH264Codec,
                   &local_media_content1_);
     CreateContent(flags, kPcmuCodec, kH264Codec,
@@ -581,14 +571,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
                            typename T::MediaChannel::Error error) {
     ssrc_ = ssrc;
     error_ = error;
-  }
-
-  void OnFirstPacketReceived(cricket::BaseChannel* channel) {
-    if (channel == channel1_.get()) {
-      first_packet_received_on_channel1_++;
-    } else if (channel == channel2_.get()) {
-      first_packet_received_on_channel2_++;
-    }
   }
 
   void OnMediaMuted(cricket::BaseChannel* channel, bool muted) {
@@ -1362,38 +1344,26 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
   // Test that we properly send RTP without SRTP from a thread.
   void SendRtpToRtpOnThread() {
-    bool sent_rtp1, sent_rtp2;
-    CreateChannels(0, 0);
+    bool sent_rtp1, sent_rtp2, sent_rtcp1, sent_rtcp2;
+    CreateChannels(RTCP, RTCP);
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
     CallOnThread(&ChannelTest<T>::SendRtp1, &sent_rtp1);
     CallOnThread(&ChannelTest<T>::SendRtp2, &sent_rtp2);
+    CallOnThread(&ChannelTest<T>::SendRtcp1, &sent_rtcp1);
+    CallOnThread(&ChannelTest<T>::SendRtcp2, &sent_rtcp2);
     EXPECT_TRUE_WAIT(CheckRtp1(), 1000);
     EXPECT_TRUE_WAIT(CheckRtp2(), 1000);
     EXPECT_TRUE_WAIT(sent_rtp1, 1000);
     EXPECT_TRUE_WAIT(sent_rtp2, 1000);
     EXPECT_TRUE(CheckNoRtp1());
     EXPECT_TRUE(CheckNoRtp2());
-    EXPECT_EQ(1, first_packet_received_on_channel1_);
-    EXPECT_EQ(1, first_packet_received_on_channel2_);
-  }
-
-  // Test that we properly send RTCP without SRTP from a thread.
-  void SendRtcpToRtcpOnThread() {
-    bool sent_rtcp1, sent_rtcp2;
-    CreateChannels(RTCP, RTCP);
-    EXPECT_TRUE(SendInitiate());
-    EXPECT_TRUE(SendAccept());
-    CallOnThread(&ChannelTest<T>::SendRtcp1, &sent_rtcp1);
-    CallOnThread(&ChannelTest<T>::SendRtcp2, &sent_rtcp2);
     EXPECT_TRUE_WAIT(CheckRtcp1(), 1000);
     EXPECT_TRUE_WAIT(CheckRtcp2(), 1000);
     EXPECT_TRUE_WAIT(sent_rtcp1, 1000);
     EXPECT_TRUE_WAIT(sent_rtcp2, 1000);
     EXPECT_TRUE(CheckNoRtcp1());
     EXPECT_TRUE(CheckNoRtcp2());
-    EXPECT_EQ(0, first_packet_received_on_channel1_);
-    EXPECT_EQ(0, first_packet_received_on_channel2_);
   }
 
   // Test that we properly send SRTP with RTCP from a thread.
@@ -1899,10 +1869,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   int media_info_callbacks2_;
   bool mute_callback_recved_;
   bool mute_callback_value_;
-  // They are implemented as counters to make sure that
-  // SignalFirstPacketReceived is only fired at most once on each channel.
-  int first_packet_received_on_channel1_;
-  int first_packet_received_on_channel2_;
 
   uint32 ssrc_;
   typename T::MediaChannel::Error error_;
@@ -2200,10 +2166,6 @@ TEST_F(VoiceChannelTest, SendEarlyMediaUsingRtcpMuxSrtp) {
 
 TEST_F(VoiceChannelTest, SendRtpToRtpOnThread) {
   Base::SendRtpToRtpOnThread();
-}
-
-TEST_F(VoiceChannelTest, SendRtcpToRtcpOnThread) {
-  Base::SendRtcpToRtcpOnThread();
 }
 
 TEST_F(VoiceChannelTest, SendSrtpToSrtpOnThread) {
@@ -2625,10 +2587,6 @@ TEST_F(VideoChannelTest, SendRtpToRtpOnThread) {
   Base::SendRtpToRtpOnThread();
 }
 
-TEST_F(VideoChannelTest, SendRtcpToRtcpOnThread) {
-  Base::SendRtcpToRtcpOnThread();
-}
-
 TEST_F(VideoChannelTest, SendSrtpToSrtpOnThread) {
   Base::SendSrtpToSrtpOnThread();
 }
@@ -2938,10 +2896,6 @@ TEST_F(DataChannelTest, SendSrtcpMux) {
 
 TEST_F(DataChannelTest, SendRtpToRtpOnThread) {
   Base::SendRtpToRtpOnThread();
-}
-
-TEST_F(DataChannelTest, SendRtcpToRtcpOnThread) {
-  Base::SendRtcpToRtcpOnThread();
 }
 
 TEST_F(DataChannelTest, SendSrtpToSrtpOnThread) {

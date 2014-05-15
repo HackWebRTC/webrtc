@@ -569,7 +569,7 @@ void BaseChannel::HandlePacket(bool rtcp, talk_base::Buffer* packet,
     return;
   }
 
-  if (!has_received_packet_ && !rtcp) {
+  if (!has_received_packet_) {
     has_received_packet_ = true;
     signaling_thread()->Post(this, MSG_FIRSTPACKETRECEIVED);
   }
