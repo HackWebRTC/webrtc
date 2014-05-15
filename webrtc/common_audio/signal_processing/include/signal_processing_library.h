@@ -83,11 +83,6 @@
 #define WEBRTC_SPL_MUL_32_32_RSFT32(a32a, a32b, b32) \
     ((int32_t)(WEBRTC_SPL_MUL_16_32_RSFT16(a32a, b32) \
     + (WEBRTC_SPL_MUL_16_32_RSFT16(a32b, b32) >> 16)))
-#define WEBRTC_SPL_MUL_32_32_RSFT32BI(a32, b32) \
-    ((int32_t)(WEBRTC_SPL_MUL_16_32_RSFT16(( \
-    (int16_t)(a32 >> 16)), b32) + \
-    (WEBRTC_SPL_MUL_16_32_RSFT16(( \
-    (int16_t)((a32 & 0x0000FFFF) >> 1)), b32) >> 15)))
 #endif
 #endif
 
@@ -122,8 +117,6 @@
 #define WEBRTC_SPL_ADD_SAT_W16(a, b)    WebRtcSpl_AddSatW16(a, b)
 #define WEBRTC_SPL_SUB_SAT_W16(a, b)    WebRtcSpl_SubSatW16(a, b)
 
-// We cannot do casting here due to signed/unsigned problem
-#define WEBRTC_SPL_IS_NEG(a)            ((a) & 0x80000000)
 // Shifting with negative numbers allowed
 // Positive means left shift
 #define WEBRTC_SPL_SHIFT_W16(x, c) \
