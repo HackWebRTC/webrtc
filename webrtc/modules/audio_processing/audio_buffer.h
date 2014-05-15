@@ -24,6 +24,7 @@ namespace webrtc {
 
 class PushSincResampler;
 class SplitChannelBuffer;
+class IFChannelBuffer;
 
 struct SplitFilterStates {
   SplitFilterStates() {
@@ -64,6 +65,13 @@ class AudioBuffer {
   const int16_t* mixed_data(int channel) const;
   const int16_t* mixed_low_pass_data(int channel) const;
   const int16_t* low_pass_reference(int channel) const;
+
+  // Float versions of the accessors, with automatic conversion back and forth
+  // as necessary. The range of the numbers are the same as for int16_t.
+  float* data_f(int channel);
+  float* low_pass_split_data_f(int channel);
+  float* high_pass_split_data_f(int channel);
+
   const float* keyboard_data() const;
 
   SplitFilterStates* filter_states(int channel);
@@ -111,7 +119,7 @@ class AudioBuffer {
   int16_t* data_;
 
   const float* keyboard_data_;
-  scoped_ptr<ChannelBuffer<int16_t> > channels_;
+  scoped_ptr<IFChannelBuffer> channels_;
   scoped_ptr<SplitChannelBuffer> split_channels_;
   scoped_ptr<SplitFilterStates[]> filter_states_;
   scoped_ptr<ChannelBuffer<int16_t> > mixed_channels_;

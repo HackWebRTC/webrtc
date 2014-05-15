@@ -60,11 +60,11 @@ void WebRtcAec_InitAec_mips(void);
 
 void WebRtcAec_BufferFarendPartition(AecCore* aec, const float* farend);
 void WebRtcAec_ProcessFrame(AecCore* aec,
-                            const short* nearend,
-                            const short* nearendH,
+                            const float* nearend,
+                            const float* nearendH,
                             int knownDelay,
-                            int16_t* out,
-                            int16_t* outH);
+                            float* out,
+                            float* outH);
 
 // A helper function to call WebRtc_MoveReadPtr() for all far-end buffers.
 // Returns the number of elements moved, and adjusts |system_delay| by the
