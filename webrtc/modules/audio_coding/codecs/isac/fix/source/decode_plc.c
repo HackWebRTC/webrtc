@@ -326,7 +326,7 @@ int16_t WebRtcIsacfix_DecodePlcImpl(int16_t *signal_out16,
         for( k = 0; k < lag0; k++ )
         {
           corr = WEBRTC_SPL_ADD_SAT_W32( corr, WEBRTC_SPL_ABS_W32(
-              WEBRTC_SPL_SUB_SAT_W16(
+              WebRtcSpl_SubSatW16(
                   (ISACdec_obj->plcstr_obj).lastPitchLP[k],
                   (ISACdec_obj->plcstr_obj).prevPitchInvIn[
                       FRAMESAMPLES_HALF - 2*lag0 - 10 + i + k ] ) ) );

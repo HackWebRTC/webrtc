@@ -78,7 +78,6 @@ TEST_F(SplTest, MacroTest) {
 
     EXPECT_EQ(16386, WEBRTC_SPL_SUB_SAT_W32(a, b));
     EXPECT_EQ(16380, WEBRTC_SPL_ADD_SAT_W16(a, b));
-    EXPECT_EQ(16386, WEBRTC_SPL_SUB_SAT_W16(a, b));
 
     // Shifting with negative numbers allowed
     int shift_amount = 1;  // Workaround compiler warning using variable here.
