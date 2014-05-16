@@ -14,7 +14,7 @@
       'lib_intermediate_name': '',
       'conditions' : [
         ['android_webview_build==1', {
-          'lib_intermediate_name' : '$(realpath $(call intermediates-dir-for, STATIC_LIBRARIES, lib_core_neon_offsets,,, $(GYP_VAR_PREFIX)))/lib_core_neon_offsets.a',
+          'lib_intermediate_name' : '$(abspath $(call intermediates-dir-for,STATIC_LIBRARIES,lib_core_neon_offsets,,,$(gyp_var_prefix)))/lib_core_neon_offsets.a',
         }],
       ],
     },
