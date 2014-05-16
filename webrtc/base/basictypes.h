@@ -125,26 +125,6 @@ namespace rtc {
     ((t) - 1)) & ~((t) - 1))))
 #define IS_ALIGNED(p, a) (!((uintptr_t)(p) & ((a) - 1)))
 
-// Note: UNUSED is also defined in common.h
-#ifndef UNUSED
-#define UNUSED(x) Unused(static_cast<const void*>(&x))
-#define UNUSED2(x, y) Unused(static_cast<const void*>(&x)); \
-    Unused(static_cast<const void*>(&y))
-#define UNUSED3(x, y, z) Unused(static_cast<const void*>(&x)); \
-    Unused(static_cast<const void*>(&y)); \
-    Unused(static_cast<const void*>(&z))
-#define UNUSED4(x, y, z, a) Unused(static_cast<const void*>(&x)); \
-    Unused(static_cast<const void*>(&y)); \
-    Unused(static_cast<const void*>(&z)); \
-    Unused(static_cast<const void*>(&a))
-#define UNUSED5(x, y, z, a, b) Unused(static_cast<const void*>(&x)); \
-    Unused(static_cast<const void*>(&y)); \
-    Unused(static_cast<const void*>(&z)); \
-    Unused(static_cast<const void*>(&a)); \
-    Unused(static_cast<const void*>(&b))
-inline void Unused(const void*) {}
-#endif  // UNUSED
-
 // Use these to declare and define a static local variable (static T;) so that
 // it is leaked so that its destructors are not called at exit.
 #define LIBJINGLE_DEFINE_STATIC_LOCAL(type, name, arguments) \

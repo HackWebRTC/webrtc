@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/audio_device/android/single_rw_fifo.h"
 
+#include <assert.h>
+
 static int UpdatePos(int pos, int capacity) {
   return (pos + 1) % capacity;
 }

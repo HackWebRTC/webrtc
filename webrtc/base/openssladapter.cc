@@ -144,8 +144,8 @@ static int socket_puts(BIO* b, const char* str) {
 }
 
 static long socket_ctrl(BIO* b, int cmd, long num, void* ptr) {
-  UNUSED(num);
-  UNUSED(ptr);
+  RTC_UNUSED(num);
+  RTC_UNUSED(ptr);
 
   switch (cmd) {
   case BIO_CTRL_RESET:

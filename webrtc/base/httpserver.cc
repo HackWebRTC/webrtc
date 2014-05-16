@@ -222,7 +222,7 @@ HttpServer::Connection::onHttpComplete(HttpMode mode, HttpError err) {
 
 void
 HttpServer::Connection::onHttpClosed(HttpError err) {
-  UNUSED(err);
+  RTC_UNUSED(err);
   server_->Remove(connection_id_);
 }
 
