@@ -489,7 +489,7 @@ TEST_F(SplTest, RandTest) {
     int16_t b16[kVectorSize];
     uint32_t bSeed = 100000;
 
-    EXPECT_EQ(464449057u, WebRtcSpl_IncreaseSeed(&bSeed));
+    EXPECT_EQ(7086, WebRtcSpl_RandU(&bSeed));
     EXPECT_EQ(31565, WebRtcSpl_RandU(&bSeed));
     EXPECT_EQ(-9786, WebRtcSpl_RandN(&bSeed));
     EXPECT_EQ(kVectorSize, WebRtcSpl_RandUArray(b16, kVectorSize, &bSeed));

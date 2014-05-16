@@ -27,7 +27,6 @@
 #define WEBRTC_SPL_WORD32_MAX       (int32_t)0x7fffffff
 #define WEBRTC_SPL_WORD32_MIN       (int32_t)0x80000000
 #define WEBRTC_SPL_MAX_LPC_ORDER    14
-#define WEBRTC_SPL_MAX_SEED_USED    0x80000000L
 #define WEBRTC_SPL_MIN(A, B)        (A < B ? A : B)  // Get min value
 #define WEBRTC_SPL_MAX(A, B)        (A > B ? A : B)  // Get max value
 // TODO(kma/bjorn): For the next two macros, investigate how to correct the code
@@ -665,7 +664,6 @@ void WebRtcSpl_SqrtOfOneMinusXSquared(int16_t* in_vector,
 
 // Randomization functions. Implementations collected in
 // randomization_functions.c and descriptions at bottom of this file.
-uint32_t WebRtcSpl_IncreaseSeed(uint32_t* seed);
 int16_t WebRtcSpl_RandU(uint32_t* seed);
 int16_t WebRtcSpl_RandN(uint32_t* seed);
 int16_t WebRtcSpl_RandUArray(int16_t* vector,
