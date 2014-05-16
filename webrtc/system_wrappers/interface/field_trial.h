@@ -53,7 +53,6 @@
 //     needs to push a config with start_active:true or run a local finch
 //     server.
 //
-// TODO(andresp): support --force_fieldtirals from webrtc tests.
 // TODO(andresp): find out how to get bots to run tests with trials enabled.
 
 namespace webrtc {

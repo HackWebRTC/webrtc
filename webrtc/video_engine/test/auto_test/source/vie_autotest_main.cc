@@ -13,6 +13,7 @@
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/test/field_trial.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/video_engine/test/auto_test/interface/vie_autotest.h"
 #include "webrtc/video_engine/test/auto_test/interface/vie_autotest_window_manager_interface.h"
@@ -20,6 +21,10 @@
 
 DEFINE_bool(automated, false, "Run Video engine tests in noninteractive mode.");
 DEFINE_bool(auto_custom_call, false, "Run custom call directly.");
+DEFINE_string(force_fieldtrials, "",
+    "Field trials control experimental feature code which can be forced. "
+    "E.g. running with --force_fieldtrials=WebRTC-FooFeature/Enable/"
+    " will assign the group Enable to field trial WebRTC-FooFeature.");
 
 static const std::string kStandardTest = "ViEStandardIntegrationTest";
 static const std::string kExtendedTest = "ViEExtendedIntegrationTest";
@@ -48,6 +53,8 @@ int ViEAutoTestMain::RunTests(int argc, char** argv) {
   google::AllowCommandLineReparsing();
   // Parse remaining flags:
   google::ParseCommandLineFlags(&argc, &argv, true);
+  // Initialize field trial
+  webrtc::test::InitFieldTrialsFromString(FLAGS_force_fieldtrials);
 
   int result;
   if (FLAGS_automated) {
