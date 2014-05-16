@@ -1206,9 +1206,11 @@ void WebRtcVideoChannel2::OnPacketReceived(
   sp.ssrcs.push_back(ssrc);
   AddRecvStream(sp);
 
-  if (!call_->Receiver()->DeliverPacket(
-          reinterpret_cast<const uint8_t*>(packet->data()), packet->length())) {
-    LOG(LS_WARNING) << "Failed to deliver RTP packet.";
+  if (call_->Receiver()->DeliverPacket(
+          reinterpret_cast<const uint8_t*>(packet->data()), packet->length()) !=
+      webrtc::PacketReceiver::DELIVERY_OK) {
+    LOG(LS_WARNING) << "Failed to deliver RTP packet after creating default "
+                       "receiver.";
     return;
   }
 }
@@ -1216,8 +1218,9 @@ void WebRtcVideoChannel2::OnPacketReceived(
 void WebRtcVideoChannel2::OnRtcpReceived(
     talk_base::Buffer* packet,
     const talk_base::PacketTime& packet_time) {
-  if (!call_->Receiver()->DeliverPacket(
-          reinterpret_cast<const uint8_t*>(packet->data()), packet->length())) {
+  if (call_->Receiver()->DeliverPacket(
+          reinterpret_cast<const uint8_t*>(packet->data()), packet->length()) !=
+      webrtc::PacketReceiver::DELIVERY_OK) {
     LOG(LS_WARNING) << "Failed to deliver RTCP packet.";
   }
 }
