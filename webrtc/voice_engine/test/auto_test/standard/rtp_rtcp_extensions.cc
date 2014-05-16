@@ -13,7 +13,7 @@
 #include "webrtc/system_wrappers/interface/atomic32.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/video_engine/include/vie_network.h"
-#include "webrtc/voice_engine/test/auto_test/fixtures/after_streaming_fixture.h"
+#include "webrtc/voice_engine/test/auto_test/fixtures/before_streaming_fixture.h"
 
 using ::testing::_;
 using ::testing::AtLeast;
@@ -23,14 +23,13 @@ using ::testing::Field;
 class ExtensionVerifyTransport : public webrtc::Transport {
  public:
   ExtensionVerifyTransport()
-      : received_packets_(0),
-        ok_packets_(0),
-        parser_(webrtc::RtpHeaderParser::Create()),
+      : parser_(webrtc::RtpHeaderParser::Create()),
+        received_packets_(0),
+        bad_packets_(0),
         audio_level_id_(-1),
         absolute_sender_time_id_(-1) {}
 
   virtual int SendPacket(int channel, const void* data, int len) {
-    ++received_packets_;
     webrtc::RTPHeader header;
     if (parser_->Parse(static_cast<const uint8_t*>(data), len, &header)) {
       bool ok = true;
@@ -42,10 +41,14 @@ class ExtensionVerifyTransport : public webrtc::Transport {
           !header.extension.hasAbsoluteSendTime) {
         ok = false;
       }
-      if (ok) {
-        ++ok_packets_;
+      if (!ok) {
+        // bad_packets_ count packets we expected to have an extension but
+        // didn't have one.
+        ++bad_packets_;
       }
     }
+    // received_packets_ count all packets we receive.
+    ++received_packets_;
     return len;
   }
 
@@ -64,25 +67,31 @@ class ExtensionVerifyTransport : public webrtc::Transport {
                                         id);
   }
 
-  bool WaitForNPackets(int count) {
-    while (received_packets_.Value() < count) {
-      webrtc::SleepMs(10);
+  bool Wait() {
+    // Wait until we've received to specified number of packets.
+    while (received_packets_.Value() < kPacketsExpected) {
+      webrtc::SleepMs(kSleepIntervalMs);
     }
-    return (ok_packets_.Value() == count);
+    // Check whether any where 'bad' (didn't contain an extension when they
+    // where supposed to).
+    return bad_packets_.Value() == 0;
   }
 
  private:
-  webrtc::Atomic32 received_packets_;
-  webrtc::Atomic32 ok_packets_;
+  enum {
+    kPacketsExpected = 10,
+    kSleepIntervalMs = 10
+  };
   webrtc::scoped_ptr<webrtc::RtpHeaderParser> parser_;
+  webrtc::Atomic32 received_packets_;
+  webrtc::Atomic32 bad_packets_;
   int audio_level_id_;
   int absolute_sender_time_id_;
 };
 
-class SendRtpRtcpHeaderExtensionsTest : public AfterStreamingFixture {
+class SendRtpRtcpHeaderExtensionsTest : public BeforeStreamingFixture {
  protected:
   virtual void SetUp() {
-    PausePlaying();
     EXPECT_EQ(0, voe_network_->DeRegisterExternalTransport(channel_));
     EXPECT_EQ(0, voe_network_->RegisterExternalTransport(channel_,
                                                          verifying_transport_));
@@ -94,12 +103,25 @@ class SendRtpRtcpHeaderExtensionsTest : public AfterStreamingFixture {
   ExtensionVerifyTransport verifying_transport_;
 };
 
+TEST_F(SendRtpRtcpHeaderExtensionsTest, SentPacketsIncludeNoAudioLevel) {
+  verifying_transport_.SetAudioLevelId(0);
+  ResumePlaying();
+  EXPECT_FALSE(verifying_transport_.Wait());
+}
+
 TEST_F(SendRtpRtcpHeaderExtensionsTest, SentPacketsIncludeAudioLevel) {
   EXPECT_EQ(0, voe_rtp_rtcp_->SetSendAudioLevelIndicationStatus(channel_, true,
                                                                 9));
   verifying_transport_.SetAudioLevelId(9);
   ResumePlaying();
-  EXPECT_TRUE(verifying_transport_.WaitForNPackets(10));
+  EXPECT_TRUE(verifying_transport_.Wait());
+}
+
+TEST_F(SendRtpRtcpHeaderExtensionsTest, SentPacketsIncludeNoAbsoluteSenderTime)
+{
+  verifying_transport_.SetAbsoluteSenderTimeId(0);
+  ResumePlaying();
+  EXPECT_FALSE(verifying_transport_.Wait());
 }
 
 TEST_F(SendRtpRtcpHeaderExtensionsTest, SentPacketsIncludeAbsoluteSenderTime) {
@@ -107,7 +129,7 @@ TEST_F(SendRtpRtcpHeaderExtensionsTest, SentPacketsIncludeAbsoluteSenderTime) {
                                                               11));
   verifying_transport_.SetAbsoluteSenderTimeId(11);
   ResumePlaying();
-  EXPECT_TRUE(verifying_transport_.WaitForNPackets(10));
+  EXPECT_TRUE(verifying_transport_.Wait());
 }
 
 TEST_F(SendRtpRtcpHeaderExtensionsTest, SentPacketsIncludeAllExtensions1) {
@@ -118,7 +140,7 @@ TEST_F(SendRtpRtcpHeaderExtensionsTest, SentPacketsIncludeAllExtensions1) {
   verifying_transport_.SetAudioLevelId(9);
   verifying_transport_.SetAbsoluteSenderTimeId(11);
   ResumePlaying();
-  EXPECT_TRUE(verifying_transport_.WaitForNPackets(10));
+  EXPECT_TRUE(verifying_transport_.Wait());
 }
 
 TEST_F(SendRtpRtcpHeaderExtensionsTest, SentPacketsIncludeAllExtensions2) {
@@ -130,7 +152,7 @@ TEST_F(SendRtpRtcpHeaderExtensionsTest, SentPacketsIncludeAllExtensions2) {
   // Don't register audio level with header parser - unknown extensions should
   // be ignored when parsing.
   ResumePlaying();
-  EXPECT_TRUE(verifying_transport_.WaitForNPackets(10));
+  EXPECT_TRUE(verifying_transport_.Wait());
 }
 
 class MockViENetwork : public webrtc::ViENetwork {
@@ -150,10 +172,9 @@ class MockViENetwork : public webrtc::ViENetwork {
                                       const webrtc::RTPHeader&));
 };
 
-class ReceiveRtpRtcpHeaderExtensionsTest : public AfterStreamingFixture {
+class ReceiveRtpRtcpHeaderExtensionsTest : public BeforeStreamingFixture {
  protected:
   virtual void SetUp() {
-    PausePlaying();
     EXPECT_EQ(0,
         voe_rtp_rtcp_->SetSendAbsoluteSenderTimeStatus(channel_, true, 11));
     EXPECT_EQ(0,

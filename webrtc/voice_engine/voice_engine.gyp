@@ -162,6 +162,8 @@
             'test/auto_test/fixtures/after_streaming_fixture.h',
             'test/auto_test/fixtures/before_initialization_fixture.cc',
             'test/auto_test/fixtures/before_initialization_fixture.h',
+            'test/auto_test/fixtures/before_streaming_fixture.cc',
+            'test/auto_test/fixtures/before_streaming_fixture.h',
             'test/auto_test/standard/audio_processing_test.cc',
             'test/auto_test/standard/codec_before_streaming_test.cc',
             'test/auto_test/standard/codec_test.cc',
