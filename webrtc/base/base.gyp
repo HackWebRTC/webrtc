@@ -524,7 +524,6 @@
             'xcode_settings': {
               'OTHER_LDFLAGS': [
                 '-framework Foundation',
-                '-framework IOKit',
                 '-framework Security',
                 '-framework SystemConfiguration',
                 '-framework UIKit',
