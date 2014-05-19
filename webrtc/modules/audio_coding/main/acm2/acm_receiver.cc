@@ -473,6 +473,12 @@ int AcmReceiver::GetAudio(int desired_freq_hz, AudioFrame* audio_frame) {
   SetAudioFrameActivityAndType(vad_enabled_, type, audio_frame);
   previous_audio_activity_ = audio_frame->vad_activity_;
   call_stats_.DecodedByNetEq(audio_frame->speech_type_);
+
+  // Computes the RTP timestamp of the first sample in |audio_frame| from
+  // |PlayoutTimestamp|, which is the timestamp of the last sample of
+  // |audio_frame|.
+  audio_frame->timestamp_ =
+      PlayoutTimestamp() - audio_frame->samples_per_channel_;
   return 0;
 }
 

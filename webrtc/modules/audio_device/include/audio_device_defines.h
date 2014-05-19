@@ -63,14 +63,16 @@ public:
                                             const int32_t clockDrift,
                                             const uint32_t currentMicLevel,
                                             const bool keyPressed,
-                                            uint32_t& newMicLevel) = 0;   
+                                            uint32_t& newMicLevel) = 0;
 
     virtual int32_t NeedMorePlayData(const uint32_t nSamples,
                                      const uint8_t nBytesPerSample,
                                      const uint8_t nChannels,
                                      const uint32_t samplesPerSec,
                                      void* audioSamples,
-                                     uint32_t& nSamplesOut) = 0;
+                                     uint32_t& nSamplesOut,
+                                     uint32_t* rtp_timestamp,
+                                     int64_t* ntp_time_ms) = 0;
 
     // Method to pass captured data directly and unmixed to network channels.
     // |channel_ids| contains a list of VoE channels which are the
@@ -125,7 +127,9 @@ public:
     // channel.
     virtual void PullRenderData(int bits_per_sample, int sample_rate,
                                 int number_of_channels, int number_of_frames,
-                                void* audio_data) {}
+                                void* audio_data,
+                                uint32_t* rtp_timestamp,
+                                int64_t* ntp_time_ms) {}
 
 protected:
     virtual ~AudioTransport() {}

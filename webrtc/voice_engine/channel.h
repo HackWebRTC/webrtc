@@ -540,6 +540,15 @@ private:
     uint16_t send_sequence_number_;
     uint8_t restored_packet_[kVoiceEngineMaxIpPacketSizeBytes];
 
+    scoped_ptr<CriticalSectionWrapper> ts_stats_lock_;
+
+    bool first_frame_arrived_;
+    // The rtp timestamp of the first played out audio frame.
+    uint32_t capture_start_rtp_time_stamp_;
+    // The capture ntp time (in local timebase) of the first played out audio
+    // frame.
+    int64_t capture_start_ntp_time_ms_;
+
     // uses
     Statistics* _engineStatisticsPtr;
     OutputMixer* _outputMixerPtr;

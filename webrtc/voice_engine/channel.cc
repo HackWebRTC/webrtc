@@ -664,6 +664,25 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame& audioFrame)
     // Measure audio level (0-9)
     _outputAudioLevel.ComputeLevel(audioFrame);
 
+    // TODO(wu): Calculate capture NTP time based on RTP timestamp and RTCP SR.
+    audioFrame.ntp_time_ms_ = 0;
+
+    if (!first_frame_arrived_) {
+      first_frame_arrived_ = true;
+      capture_start_rtp_time_stamp_ = audioFrame.timestamp_;
+    } else {
+      // |ntp_time_ms_| won't be valid until at least 2 RTCP SRs are received.
+      if (audioFrame.ntp_time_ms_ > 0) {
+        // Compute |capture_start_ntp_time_ms_| so that
+        // |capture_start_ntp_time_ms_| + |elapsed_time_ms| == |ntp_time_ms_|
+        CriticalSectionScoped lock(ts_stats_lock_.get());
+        uint32_t elapsed_time_ms =
+            (audioFrame.timestamp_ - capture_start_rtp_time_stamp_) /
+            (audioFrame.sample_rate_hz_ * 1000);
+        capture_start_ntp_time_ms_ = audioFrame.ntp_time_ms_ - elapsed_time_ms;
+      }
+    }
+
     return 0;
 }
 
@@ -836,6 +855,10 @@ Channel::Channel(int32_t channelId,
     playout_delay_ms_(0),
     _numberOfDiscardedPackets(0),
     send_sequence_number_(0),
+    ts_stats_lock_(CriticalSectionWrapper::CreateCriticalSection()),
+    first_frame_arrived_(false),
+    capture_start_rtp_time_stamp_(0),
+    capture_start_ntp_time_ms_(-1),
     _engineStatisticsPtr(NULL),
     _outputMixerPtr(NULL),
     _transmitMixerPtr(NULL),
@@ -3371,7 +3394,7 @@ int Channel::GetRemoteRTCPReportBlocks(
 int
 Channel::GetRTPStatistics(CallStatistics& stats)
 {
-    // --- Part one of the final structure (four values)
+    // --- RtcpStatistics
 
     // The jitter statistics is updated for each received RTP packet and is
     // based on received packets.
@@ -3398,7 +3421,7 @@ Channel::GetRTPStatistics(CallStatistics& stats)
                  stats.fractionLost, stats.cumulativeLost, stats.extendedMax,
                  stats.jitterSamples);
 
-    // --- Part two of the final structure (one value)
+    // --- RTT
 
     uint16_t RTT(0);
     RTCPMethod method = _rtpRtcpModule->RTCP();
@@ -3441,7 +3464,7 @@ Channel::GetRTPStatistics(CallStatistics& stats)
                  VoEId(_instanceId, _channelId),
                  "GetRTPStatistics() => rttMs=%d", stats.rttMs);
 
-    // --- Part three of the final structure (four values)
+    // --- Data counters
 
     uint32_t bytesSent(0);
     uint32_t packetsSent(0);
@@ -3473,6 +3496,11 @@ Channel::GetRTPStatistics(CallStatistics& stats)
                  stats.bytesSent, stats.packetsSent, stats.bytesReceived,
                  stats.packetsReceived);
 
+    // --- Timestamps
+    {
+      CriticalSectionScoped lock(ts_stats_lock_.get());
+      stats.capture_start_ntp_time_ms_ = capture_start_ntp_time_ms_;
+    }
     return 0;
 }
 

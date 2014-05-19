@@ -86,6 +86,9 @@ struct CallStatistics
     int packetsSent;
     int bytesReceived;
     int packetsReceived;
+    // The capture ntp time (in local timebase) of the first played out audio
+    // frame.
+    int64_t capture_start_ntp_time_ms_;
 };
 
 // See section 6.4.1 in http://www.ietf.org/rfc/rfc3550.txt for details.

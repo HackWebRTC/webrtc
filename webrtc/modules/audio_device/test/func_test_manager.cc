@@ -292,7 +292,9 @@ int32_t AudioTransportImpl::NeedMorePlayData(
     const uint8_t nChannels,
     const uint32_t samplesPerSec,
     void* audioSamples,
-    uint32_t& nSamplesOut)
+    uint32_t& nSamplesOut,
+    uint32_t* rtp_timestamp,
+    int64_t* ntp_time_ms)
 {
     if (_fullDuplex)
     {
@@ -551,7 +553,9 @@ void AudioTransportImpl::PushCaptureData(int voe_channel,
 void AudioTransportImpl::PullRenderData(int bits_per_sample, int sample_rate,
                                         int number_of_channels,
                                         int number_of_frames,
-                                        void* audio_data) {}
+                                        void* audio_data,
+                                        uint32_t* rtp_timestamp,
+                                        int64_t* ntp_time_ms) {}
 
 FuncTestManager::FuncTestManager() :
     _processThread(NULL),

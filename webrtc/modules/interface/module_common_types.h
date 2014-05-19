@@ -684,7 +684,10 @@ class AudioFrame {
   AudioFrame& operator-=(const AudioFrame& rhs);
 
   int id_;
+  // RTP timestamp of the first sample in the AudioFrame.
   uint32_t timestamp_;
+  // NTP time of the estimated capture time in local timebase in milliseconds.
+  int64_t ntp_time_ms_;
   int16_t data_[kMaxDataSizeSamples];
   int samples_per_channel_;
   int sample_rate_hz_;
@@ -705,6 +708,7 @@ class AudioFrame {
 inline AudioFrame::AudioFrame()
     : id_(-1),
       timestamp_(0),
+      ntp_time_ms_(0),
       data_(),
       samples_per_channel_(0),
       sample_rate_hz_(0),

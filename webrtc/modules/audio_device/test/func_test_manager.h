@@ -118,7 +118,9 @@ public:
                                      const uint8_t nChannels,
                                      const uint32_t samplesPerSec,
                                      void* audioSamples,
-                                     uint32_t& nSamplesOut);
+                                     uint32_t& nSamplesOut,
+                                     uint32_t* rtp_timestamp,
+                                     int64_t* ntp_time_ms);
 
     virtual int OnDataAvailable(const int voe_channels[],
                                 int number_of_voe_channels,
@@ -138,7 +140,9 @@ public:
 
     virtual void PullRenderData(int bits_per_sample, int sample_rate,
                                 int number_of_channels, int number_of_frames,
-                                void* audio_data);
+                                void* audio_data,
+                                uint32_t* rtp_timestamp,
+                                int64_t* ntp_time_ms);
 
     AudioTransportImpl(AudioDeviceModule* audioDevice);
     ~AudioTransportImpl();
