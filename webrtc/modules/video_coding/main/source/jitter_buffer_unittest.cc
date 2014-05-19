@@ -2033,4 +2033,31 @@ TEST_F(TestJitterBufferNack, NormalOperationWrap2) {
   EXPECT_EQ(65535, list[0]);
 }
 
+TEST_F(TestJitterBufferNack, ResetByFutureKeyFrameDoesntError) {
+  stream_generator_->Init(0, 0, clock_->TimeInMilliseconds());
+  InsertFrame(kVideoFrameKey);
+  EXPECT_TRUE(DecodeCompleteFrame());
+  uint16_t nack_list_size = 0;
+  bool extended = false;
+  jitter_buffer_->GetNackList(&nack_list_size, &extended);
+  EXPECT_EQ(0, nack_list_size);
+
+  // Far-into-the-future video frame, could be caused by resetting the encoder
+  // or otherwise restarting. This should not fail when error when the packet is
+  // a keyframe, even if all of the nack list needs to be flushed.
+  stream_generator_->Init(10000, 0, clock_->TimeInMilliseconds());
+  clock_->AdvanceTimeMilliseconds(kDefaultFramePeriodMs);
+  InsertFrame(kVideoFrameKey);
+  EXPECT_TRUE(DecodeCompleteFrame());
+  jitter_buffer_->GetNackList(&nack_list_size, &extended);
+  EXPECT_EQ(0, nack_list_size);
+
+  // Stream should be decodable from this point.
+  clock_->AdvanceTimeMilliseconds(kDefaultFramePeriodMs);
+  InsertFrame(kVideoFrameDelta);
+  EXPECT_TRUE(DecodeCompleteFrame());
+  jitter_buffer_->GetNackList(&nack_list_size, &extended);
+  EXPECT_EQ(0, nack_list_size);
+}
+
 }  // namespace webrtc

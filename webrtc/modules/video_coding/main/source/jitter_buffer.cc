@@ -682,7 +682,8 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
       if (IsPacketRetransmitted(packet)) {
         frame->IncrementNackCount();
       }
-      if (!UpdateNackList(packet.seqNum)) {
+      if (!UpdateNackList(packet.seqNum) &&
+          packet.frameType != kVideoFrameKey) {
         buffer_return = kFlushIndicator;
       }
       latest_received_sequence_number_ = LatestSequenceNumber(
