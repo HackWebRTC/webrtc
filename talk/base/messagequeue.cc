@@ -126,7 +126,7 @@ void MessageQueueManager::ClearInternal(MessageHandler *handler) {
 // MessageQueue
 
 MessageQueue::MessageQueue(SocketServer* ss)
-    : ss_(ss), fStop_(false), fPeekKeep_(false), active_(false),
+    : ss_(ss), fStop_(false), fPeekKeep_(false),
       dmsgq_next_num_(0) {
   if (!ss_) {
     // Currently, MessageQueue holds a socket server, and is the base class for
@@ -138,6 +138,7 @@ MessageQueue::MessageQueue(SocketServer* ss)
     ss_ = default_ss_.get();
   }
   ss_->SetMessageQueue(this);
+  MessageQueueManager::Add(this);
 }
 
 MessageQueue::~MessageQueue() {
@@ -145,10 +146,8 @@ MessageQueue::~MessageQueue() {
   // that it always gets called when the queue
   // is going away.
   SignalQueueDestroyed();
-  if (active_) {
-    MessageQueueManager::Remove(this);
-    Clear(NULL);
-  }
+  MessageQueueManager::Remove(this);
+  Clear(NULL);
   if (ss_) {
     ss_->SetMessageQueue(NULL);
   }
@@ -296,7 +295,6 @@ void MessageQueue::Post(MessageHandler *phandler, uint32 id,
   // Signal for the multiplexer to return
 
   CritScope cs(&crit_);
-  EnsureActive();
   Message msg;
   msg.phandler = phandler;
   msg.message_id = id;
@@ -318,7 +316,6 @@ void MessageQueue::DoDelayPost(int cmsDelay, uint32 tstamp,
   // Signal for the multiplexer to return.
 
   CritScope cs(&crit_);
-  EnsureActive();
   Message msg;
   msg.phandler = phandler;
   msg.message_id = id;
@@ -399,14 +396,6 @@ void MessageQueue::Clear(MessageHandler *phandler, uint32 id,
 
 void MessageQueue::Dispatch(Message *pmsg) {
   pmsg->phandler->OnMessage(pmsg);
-}
-
-void MessageQueue::EnsureActive() {
-  ASSERT(crit_.CurrentThreadIsOwner());
-  if (!active_) {
-    active_ = true;
-    MessageQueueManager::Add(this);
-  }
 }
 
 }  // namespace talk_base

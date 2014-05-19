@@ -75,7 +75,7 @@ class MessageQueueManager {
   void ClearInternal(MessageHandler *handler);
 
   static MessageQueueManager* instance_;
-  // This list contains 'active' MessageQueues.
+  // This list contains all live MessageQueues.
   std::vector<MessageQueue *> message_queues_;
   CriticalSection crit_;
 };
@@ -247,7 +247,6 @@ class MessageQueue {
     void reheap() { make_heap(c.begin(), c.end(), comp); }
   };
 
-  void EnsureActive();
   void DoDelayPost(int cmsDelay, uint32 tstamp, MessageHandler *phandler,
                    uint32 id, MessageData* pdata);
 
@@ -258,9 +257,6 @@ class MessageQueue {
   bool fStop_;
   bool fPeekKeep_;
   Message msgPeek_;
-  // A message queue is active if it has ever had a message posted to it.
-  // This also corresponds to being in MessageQueueManager's global list.
-  bool active_;
   MessageList msgq_;
   PriorityQueue dmsgq_;
   uint32 dmsgq_next_num_;
