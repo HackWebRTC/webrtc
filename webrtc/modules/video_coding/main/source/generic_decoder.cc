@@ -58,7 +58,12 @@ int32_t VCMDecodedFrameCallback::Decoded(I420VideoFrame& decodedImage)
             _timestampMap.Pop(decodedImage.timestamp()));
         callback = _receiveCallback;
     }
-    assert(frameInfo != NULL);
+
+    if (frameInfo == NULL) {
+      LOG(LS_WARNING) << "Too many frames backed up in the decoder, dropping "
+                         "this one.";
+      return WEBRTC_VIDEO_CODEC_OK;
+    }
 
     _timing.StopDecodeTimer(
         decodedImage.timestamp(),
