@@ -31,8 +31,6 @@
 
 @interface RTCVideoRenderer (Internal)
 
-// TODO(hughv): Use smart pointer.
-@property(nonatomic, assign, readonly)
-    webrtc::VideoRendererInterface *videoRenderer;
+@property(nonatomic, readonly) webrtc::VideoRendererInterface* videoRenderer;
 
 @end

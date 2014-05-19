@@ -27,12 +27,11 @@
 
 #import "APPRTCViewController.h"
 
-#import "APPRTCVideoView.h"
+#import <AVFoundation/AVFoundation.h>
+#import "RTCEAGLVideoView.h"
 
 @interface APPRTCViewController ()
-
 @property(nonatomic, assign) UIInterfaceOrientation statusBarOrientation;
-
 @end
 
 @implementation APPRTCViewController
@@ -75,12 +74,10 @@
   self.logView.text = nil;
   self.blackView.hidden = YES;
 
-  [_remoteVideoView renderVideoTrackInterface:nil];
-  [_remoteVideoView removeFromSuperview];
+  [self.remoteVideoView removeFromSuperview];
   self.remoteVideoView = nil;
 
-  [_localVideoView renderVideoTrackInterface:nil];
-  [_localVideoView removeFromSuperview];
+  [self.localVideoView removeFromSuperview];
   self.localVideoView = nil;
 }
 
@@ -97,46 +94,29 @@ enum {
 - (void)setupCaptureSession {
   self.blackView.hidden = NO;
 
-  CGRect frame =
-      CGRectMake((self.blackView.bounds.size.width - kRemoteVideoWidth) / 2,
-                 (self.blackView.bounds.size.height - kRemoteVideoHeight) / 2,
-                 kRemoteVideoWidth,
-                 kRemoteVideoHeight);
-  APPRTCVideoView* videoView = [[APPRTCVideoView alloc] initWithFrame:frame];
-  videoView.isRemote = TRUE;
+  CGSize videoSize =
+        CGSizeMake(kRemoteVideoWidth, kRemoteVideoHeight);
+  CGRect remoteVideoFrame =
+      AVMakeRectWithAspectRatioInsideRect(videoSize,
+                                          self.blackView.bounds);
+  CGRect localVideoFrame = remoteVideoFrame;
+  // TODO(tkchin): use video dimensions from incoming video stream
+  // and handle rotation.
+  localVideoFrame.size.width = remoteVideoFrame.size.height / 4;
+  localVideoFrame.size.height = remoteVideoFrame.size.width / 4;
+  localVideoFrame.origin.x = CGRectGetMaxX(remoteVideoFrame)
+      - localVideoFrame.size.width - kLocalViewPadding;
+  localVideoFrame.origin.y = CGRectGetMaxY(remoteVideoFrame)
+      - localVideoFrame.size.height - kLocalViewPadding;
 
-  [self.blackView addSubview:videoView];
-  videoView.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin |
-                               UIViewAutoresizingFlexibleRightMargin |
-                               UIViewAutoresizingFlexibleBottomMargin |
-                               UIViewAutoresizingFlexibleTopMargin;
-  videoView.translatesAutoresizingMaskIntoConstraints = YES;
-  _remoteVideoView = videoView;
+  self.remoteVideoView =
+      [[RTCEAGLVideoView alloc] initWithFrame:remoteVideoFrame];
+  [self.blackView addSubview:self.remoteVideoView];
+  self.remoteVideoView.transform = CGAffineTransformMakeScale(-1, 1);
 
-  CGSize screenSize = [[UIScreen mainScreen] bounds].size;
-  CGFloat localVideoViewWidth =
-      UIInterfaceOrientationIsPortrait(self.statusBarOrientation)
-          ? screenSize.width / 4
-          : screenSize.height / 4;
-  CGFloat localVideoViewHeight =
-      UIInterfaceOrientationIsPortrait(self.statusBarOrientation)
-          ? screenSize.height / 4
-          : screenSize.width / 4;
-  frame = CGRectMake(self.blackView.bounds.size.width - localVideoViewWidth -
-                         kLocalViewPadding,
-                     kLocalViewPadding,
-                     localVideoViewWidth,
-                     localVideoViewHeight);
-  videoView = [[APPRTCVideoView alloc] initWithFrame:frame];
-  videoView.isRemote = FALSE;
-
-  [self.blackView addSubview:videoView];
-  videoView.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin |
-                               UIViewAutoresizingFlexibleBottomMargin |
-                               UIViewAutoresizingFlexibleHeight |
-                               UIViewAutoresizingFlexibleWidth;
-  videoView.translatesAutoresizingMaskIntoConstraints = YES;
-  _localVideoView = videoView;
+  self.localVideoView =
+      [[RTCEAGLVideoView alloc] initWithFrame:localVideoFrame];
+  [self.blackView addSubview:self.localVideoView];
 }
 
 #pragma mark - UITextFieldDelegate

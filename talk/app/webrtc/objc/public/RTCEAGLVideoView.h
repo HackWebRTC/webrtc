@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2013, Google Inc.
+ * Copyright 2014, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,22 +25,15 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
-@class RTCEAGLVideoView;
+#import "RTCVideoRenderer.h"
 
-// The view controller that is displayed when AppRTCDemo is loaded.
-@interface APPRTCViewController : UIViewController<UITextFieldDelegate>
+@class RTCVideoTrack;
+// RTCEAGLVideoView renders |videoTrack| onto itself using OpenGLES.
+@interface RTCEAGLVideoView : UIView
 
-@property(weak, nonatomic) IBOutlet UITextField* roomInput;
-@property(weak, nonatomic) IBOutlet UITextView* instructionsView;
-@property(weak, nonatomic) IBOutlet UITextView* logView;
-@property(weak, nonatomic) IBOutlet UIView* blackView;
-
-@property(nonatomic, strong) RTCEAGLVideoView* localVideoView;
-@property(nonatomic, strong) RTCEAGLVideoView* remoteVideoView;
-
-- (void)displayText:(NSString*)text;
-- (void)resetUI;
+@property(nonatomic, strong) RTCVideoTrack* videoTrack;
 
 @end

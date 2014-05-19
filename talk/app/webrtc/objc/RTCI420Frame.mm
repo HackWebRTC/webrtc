@@ -27,8 +27,68 @@
 
 #import "RTCI420Frame.h"
 
-@implementation RTCI420Frame
+#include "talk/base/scoped_ptr.h"
+#include "talk/media/base/videoframe.h"
 
-// TODO(hughv): Should this just be a cricket::VideoFrame wrapper object?
+@implementation RTCI420Frame {
+  talk_base::scoped_ptr<cricket::VideoFrame> _videoFrame;
+}
+
+- (NSUInteger)width {
+  return _videoFrame->GetWidth();
+}
+
+- (NSUInteger)height {
+  return _videoFrame->GetHeight();
+}
+
+- (NSUInteger)chromaWidth {
+  return _videoFrame->GetChromaWidth();
+}
+
+- (NSUInteger)chromaHeight {
+  return _videoFrame->GetChromaHeight();
+}
+
+- (NSUInteger)chromaSize {
+  return _videoFrame->GetChromaSize();
+}
+
+- (const uint8_t*)yPlane {
+  return _videoFrame->GetYPlane();
+}
+
+- (const uint8_t*)uPlane {
+  return _videoFrame->GetUPlane();
+}
+
+- (const uint8_t*)vPlane {
+  return _videoFrame->GetVPlane();
+}
+
+- (NSInteger)yPitch {
+  return _videoFrame->GetYPitch();
+}
+
+- (NSInteger)uPitch {
+  return _videoFrame->GetUPitch();
+}
+
+- (NSInteger)vPitch {
+  return _videoFrame->GetVPitch();
+}
+
+@end
+
+@implementation RTCI420Frame (Internal)
+
+- (instancetype)initWithVideoFrame:(cricket::VideoFrame*)videoFrame {
+  if (self = [super init]) {
+    // Keep a shallow copy of the video frame. The underlying frame buffer is
+    // not copied.
+    _videoFrame.reset(videoFrame->Copy());
+  }
+  return self;
+}
 
 @end

@@ -173,6 +173,7 @@
             'app/webrtc/objc/RTCDataChannel.mm',
             'app/webrtc/objc/RTCEnumConverter.h',
             'app/webrtc/objc/RTCEnumConverter.mm',
+            'app/webrtc/objc/RTCI420Frame+Internal.h',
             'app/webrtc/objc/RTCI420Frame.mm',
             'app/webrtc/objc/RTCICECandidate+Internal.h',
             'app/webrtc/objc/RTCICECandidate.mm',
@@ -227,7 +228,6 @@
             'app/webrtc/objc/public/RTCTypes.h',
             'app/webrtc/objc/public/RTCVideoCapturer.h',
             'app/webrtc/objc/public/RTCVideoRenderer.h',
-            'app/webrtc/objc/public/RTCVideoRendererDelegate.h',
             'app/webrtc/objc/public/RTCVideoSource.h',
             'app/webrtc/objc/public/RTCVideoTrack.h',
           ],
@@ -243,7 +243,6 @@
           ],
           'link_settings': {
             'libraries': [
-              '$(SDKROOT)/System/Library/Frameworks/Foundation.framework',
               '-lstdc++',
             ],
           },
@@ -254,6 +253,23 @@
             'CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS': 'NO',
           },
           'conditions': [
+            ['OS=="ios"', {
+              'sources': [
+                'app/webrtc/objc/RTCEAGLVideoRenderer.mm',
+                'app/webrtc/objc/RTCEAGLVideoView+Internal.h',
+                'app/webrtc/objc/RTCEAGLVideoView.m',
+                'app/webrtc/objc/public/RTCEAGLVideoRenderer.h',
+                'app/webrtc/objc/public/RTCEAGLVideoView.h',
+              ],
+              'link_settings': {
+                'xcode_settings': {
+                  'OTHER_LDFLAGS': [
+                    '-framework CoreGraphics',
+                    '-framework GLKit',
+                  ],
+                },
+              },
+            }],
             ['OS=="mac"', {
               'xcode_settings': {
                 # Need to build against 10.7 framework for full ARC support
@@ -680,7 +696,6 @@
             'xcode_settings': {
               'OTHER_LDFLAGS': [
                 '-framework Foundation',
-                '-framework IOKit',
                 '-framework Security',
                 '-framework SystemConfiguration',
                 '-framework UIKit',

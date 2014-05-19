@@ -32,8 +32,24 @@
 #import "RTCMediaStreamTrack+Internal.h"
 #import "RTCEnumConverter.h"
 
+namespace webrtc {
+
+class RTCMediaStreamTrackObserver : public ObserverInterface {
+ public:
+  RTCMediaStreamTrackObserver(RTCMediaStreamTrack* track) { _track = track; }
+
+  virtual void OnChanged() OVERRIDE {
+    [_track.delegate mediaStreamTrackDidChange:_track];
+  }
+
+ private:
+  __weak RTCMediaStreamTrack* _track;
+};
+}
+
 @implementation RTCMediaStreamTrack {
   talk_base::scoped_refptr<webrtc::MediaStreamTrackInterface> _mediaTrack;
+  talk_base::scoped_ptr<webrtc::RTCMediaStreamTrackObserver> _observer;
 }
 
 @synthesize label;
@@ -91,11 +107,17 @@
     self = nil;
     return nil;
   }
-  if ((self = [super init])) {
+  if (self = [super init]) {
     _mediaTrack = mediaTrack;
     label = @(mediaTrack->id().c_str());
+    _observer.reset(new webrtc::RTCMediaStreamTrackObserver(self));
+    _mediaTrack->RegisterObserver(_observer.get());
   }
   return self;
+}
+
+- (void)dealloc {
+  _mediaTrack->UnregisterObserver(_observer.get());
 }
 
 - (talk_base::scoped_refptr<webrtc::MediaStreamTrackInterface>)mediaTrack {

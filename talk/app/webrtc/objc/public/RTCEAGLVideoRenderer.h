@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2013, Google Inc.
+ * Copyright 2014, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,34 +26,40 @@
  */
 
 #import <Foundation/Foundation.h>
+#import <GLKit/GLKit.h>
 
-#import "RTCTypes.h"
+@class RTCI420Frame;
 
-@class RTCMediaStreamTrack;
-@protocol RTCMediaStreamTrackDelegate<NSObject>
+// RTCEAGLVideoRenderer issues appropriate EAGL commands to draw a frame to the
+// currently bound framebuffer. OpenGL framebuffer creation and management
+// should be handled elsewhere using the same context used to initialize this
+// class.
+@interface RTCEAGLVideoRenderer : NSObject
 
-- (void)mediaStreamTrackDidChange:(RTCMediaStreamTrack*)mediaStreamTrack;
+// The last successfully drawn frame. Used to avoid drawing frames unnecessarily
+// hence saving battery life by reducing load.
+@property(nonatomic, readonly) RTCI420Frame* lastDrawnFrame;
 
-@end
+- (instancetype)initWithContext:(EAGLContext*)context;
 
-// RTCMediaStreamTrack implements the interface common to RTCAudioTrack and
-// RTCVideoTrack.  Do not create an instance of this class, rather create one
-// of the derived classes.
-@interface RTCMediaStreamTrack : NSObject
+// Draws |frame| onto the currently bound OpenGL framebuffer. |setupGL| must be
+// called before this function will succeed.
+- (BOOL)drawFrame:(RTCI420Frame*)frame;
 
-@property(nonatomic, readonly) NSString* kind;
-@property(nonatomic, readonly) NSString* label;
-@property(nonatomic, weak) id<RTCMediaStreamTrackDelegate> delegate;
+// The following methods are used to manage OpenGL resources. On iOS
+// applications should release resources when placed in background for use in
+// the foreground application. In fact, attempting to call OpenGLES commands
+// while in background will result in application termination.
 
-- (BOOL)isEnabled;
-- (BOOL)setEnabled:(BOOL)enabled;
-- (RTCTrackState)state;
-- (BOOL)setState:(RTCTrackState)state;
+// Sets up the OpenGL state needed for rendering.
+- (void)setupGL;
+// Tears down the OpenGL state created by |setupGL|.
+- (void)teardownGL;
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 // Disallow init and don't add to documentation
-- (id)init __attribute__(
-    (unavailable("init is not a supported initializer for this class.")));
+- (id)init __attribute__((
+    unavailable("init is not a supported initializer for this class.")));
 #endif /* DOXYGEN_SHOULD_SKIP_THIS */
 
 @end

@@ -30,6 +30,7 @@
 #import "APPRTCAppDelegate.h"
 
 #import "APPRTCViewController.h"
+#import "RTCEAGLVideoView.h"
 #import "RTCICECandidate.h"
 #import "RTCICEServer.h"
 #import "RTCMediaConstraints.h"
@@ -43,13 +44,12 @@
 #import "RTCVideoRenderer.h"
 #import "RTCVideoCapturer.h"
 #import "RTCVideoTrack.h"
-#import "APPRTCVideoView.h"
 
 @interface PCObserver : NSObject<RTCPeerConnectionDelegate>
 
 - (id)initWithDelegate:(id<APPRTCSendMessage>)delegate;
 
-@property(nonatomic, strong) APPRTCVideoView* videoView;
+@property(nonatomic, strong) RTCEAGLVideoView* videoView;
 
 @end
 
@@ -89,8 +89,7 @@
       NSAssert([stream.videoTracks count] <= 1,
                @"Expected at most 1 video stream");
       if ([stream.videoTracks count] != 0) {
-        [self.videoView
-            renderVideoTrackInterface:[stream.videoTracks objectAtIndex:0]];
+        self.videoView.videoTrack = stream.videoTracks[0];
       }
   });
 }
@@ -291,13 +290,12 @@
   if (localVideoTrack) {
     [lms addVideoTrack:localVideoTrack];
   }
+  self.viewController.localVideoView.videoTrack = localVideoTrack;
+#else
+  self.viewController.localVideoView.hidden = YES;
 #endif
 
-  [self.viewController.localVideoView
-      renderVideoTrackInterface:localVideoTrack];
-
   self.pcObserver.videoView = self.viewController.remoteVideoView;
-
   [lms addAudioTrack:[self.peerConnectionFactory audioTrackWithID:@"ARDAMSa0"]];
   [self.peerConnection addStream:lms constraints:constraints];
   [self displayLogMessage:@"onICEServers - added local stream."];

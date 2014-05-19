@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2013, Google Inc.
+ * Copyright 2014, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,19 +25,12 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import <UIKit/UIKit.h>
+#import <Foundation/Foundation.h>
 
-@class RTCVideoTrack;
+#import "RTCEAGLVideoView.h"
+#import "RTCVideoRenderer.h"
 
-// This class encapsulates VideoRenderIosView.
-@interface APPRTCVideoView : UIView
-
-// Property to get/set required video orientation.
-@property(nonatomic, assign) UIInterfaceOrientation videoOrientation;
-// Specifies whether the object represents a local or remote video stream.
-@property(nonatomic, assign) BOOL isRemote;
-
-// Sets up the underlying renderer and track objects.
-- (void)renderVideoTrackInterface:(RTCVideoTrack*)track;
-
+// TODO(tkchin): Move declaration to implementation file. Exposed here in order
+// to support deprecated methods in RTCVideoRenderer.
+@interface RTCEAGLVideoView (Internal) <RTCVideoRendererDelegate>
 @end

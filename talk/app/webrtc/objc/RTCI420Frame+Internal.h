@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2013, Google Inc.
+ * Copyright 2014, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,20 +25,12 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import <Foundation/Foundation.h>
+#import "RTCI420Frame.h"
 
-@class RTCI420Frame;
-@class RTCVideoRenderer;
+#include "talk/media/base/videoframe.h"
 
-// RTCVideoRendererDelegate is a protocol for an object that must be
-// implemented to get messages when rendering.
-@protocol RTCVideoRendererDelegate<NSObject>
+@interface RTCI420Frame (Internal)
 
-// The size of the frame.
-- (void)videoRenderer:(RTCVideoRenderer *)videoRenderer setSize:(CGSize)size;
-
-// The frame to be displayed.
-- (void)videoRenderer:(RTCVideoRenderer *)videoRenderer
-          renderFrame:(RTCI420Frame *)frame;
+- (instancetype)initWithVideoFrame:(const cricket::VideoFrame*)videoFrame;
 
 @end
