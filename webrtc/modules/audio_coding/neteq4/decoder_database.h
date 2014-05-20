@@ -13,10 +13,10 @@
 
 #include <map>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/common_types.h"  // NULL
 #include "webrtc/modules/audio_coding/neteq4/interface/audio_decoder.h"
 #include "webrtc/modules/audio_coding/neteq4/packet.h"
-#include "webrtc/system_wrappers/interface/constructor_magic.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

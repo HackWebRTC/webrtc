@@ -13,9 +13,9 @@
 
 #include <string.h>  // size_t
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/neteq4/audio_multi_vector.h"
 #include "webrtc/modules/audio_coding/neteq4/interface/neteq.h"
-#include "webrtc/system_wrappers/interface/constructor_magic.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 

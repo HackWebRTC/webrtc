@@ -11,8 +11,8 @@
 #ifndef WEBRTC_VIDEO_ENGINE_OVERUSE_FRAME_DETECTOR_H_
 #define WEBRTC_VIDEO_ENGINE_OVERUSE_FRAME_DETECTOR_H_
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/interface/module.h"
-#include "webrtc/system_wrappers/interface/constructor_magic.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/video_engine/include/vie_base.h"
 

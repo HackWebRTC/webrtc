@@ -32,7 +32,7 @@
 #include <stddef.h>  // for NULL
 #include <string.h>
 
-#include "webrtc/system_wrappers/interface/constructor_magic.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 // This file provides macros for creating "symbol table" classes to simplify the

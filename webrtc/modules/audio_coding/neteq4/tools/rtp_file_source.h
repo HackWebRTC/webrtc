@@ -14,10 +14,10 @@
 #include <stdio.h>
 #include <string>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/neteq4/tools/packet_source.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
-#include "webrtc/system_wrappers/interface/constructor_magic.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
