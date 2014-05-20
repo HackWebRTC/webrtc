@@ -516,7 +516,9 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
   receiver_call->DestroyVideoReceiveStream(receive_stream);
 }
 
-TEST_F(CallPerfTest, CaptureNtpTimeWithNetworkDelay) {
+// Disabled due to being flaky, see issue 3374:
+// https://code.google.com/p/webrtc/issues/detail?id=3374
+TEST_F(CallPerfTest, DISABLED_CaptureNtpTimeWithNetworkDelay) {
   FakeNetworkPipe::Config net_config;
   net_config.queue_delay_ms = 100;
   // TODO(wu): lower the threshold as the calculation/estimatation becomes more
