@@ -10,6 +10,7 @@
 
 #include "webrtc/common_audio/signal_processing/include/real_fft.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 #include "webrtc/typedefs.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
@@ -48,7 +49,7 @@ TEST_F(RealFFTTest, CreateFailsOnBadInput) {
   EXPECT_TRUE(fft == NULL);
 }
 
-TEST_F(RealFFTTest, RealAndComplexMatch) {
+TEST_F(RealFFTTest, DISABLED_ON_ANDROID(RealAndComplexMatch)) {
   int i = 0;
   int j = 0;
   int16_t real_fft_time[kTimeDataLength] = {0};
