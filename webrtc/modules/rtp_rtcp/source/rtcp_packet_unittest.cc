@@ -18,11 +18,13 @@
 using webrtc::rtcp::Bye;
 using webrtc::rtcp::Empty;
 using webrtc::rtcp::Fir;
-using webrtc::rtcp::SenderReport;
+using webrtc::rtcp::Nack;
 using webrtc::rtcp::RawPacket;
 using webrtc::rtcp::ReceiverReport;
 using webrtc::rtcp::ReportBlock;
+using webrtc::rtcp::Rpsi;
 using webrtc::test::RtcpPacketParser;
+using webrtc::rtcp::SenderReport;
 
 namespace webrtc {
 
@@ -150,6 +152,121 @@ TEST(RtcpPacketTest, SrWithTwoReportBlocks) {
   EXPECT_EQ(2, parser.report_block()->num_packets());
   EXPECT_EQ(1, parser.report_blocks_per_ssrc(kRemoteSsrc));
   EXPECT_EQ(1, parser.report_blocks_per_ssrc(kRemoteSsrc + 1));
+}
+
+TEST(RtcpPacketTest, Nack) {
+  Nack nack;
+  const uint16_t kList[] = {0, 1, 3, 8, 16};
+  const uint16_t kListLength = sizeof(kList) / sizeof(kList[0]);
+  nack.From(kSenderSsrc);
+  nack.To(kRemoteSsrc);
+  nack.WithList(kList, kListLength);
+  RawPacket packet = nack.Build();
+  RtcpPacketParser parser;
+  parser.Parse(packet.buffer(), packet.buffer_length());
+  EXPECT_EQ(1, parser.nack()->num_packets());
+  EXPECT_EQ(kSenderSsrc, parser.nack()->Ssrc());
+  EXPECT_EQ(kRemoteSsrc, parser.nack()->MediaSsrc());
+  EXPECT_EQ(1, parser.nack_item()->num_packets());
+  std::vector<uint16_t> seqs = parser.nack_item()->last_nack_list();
+  EXPECT_EQ(kListLength, seqs.size());
+  for (size_t i = 0; i < kListLength; ++i) {
+    EXPECT_EQ(kList[i], seqs[i]);
+  }
+}
+
+TEST(RtcpPacketTest, NackWithWrap) {
+  Nack nack;
+  const uint16_t kList[] = {65500, 65516, 65534, 65535, 0, 1, 3, 20, 100};
+  const uint16_t kListLength = sizeof(kList) / sizeof(kList[0]);
+  nack.From(kSenderSsrc);
+  nack.To(kRemoteSsrc);
+  nack.WithList(kList, kListLength);
+  RawPacket packet = nack.Build();
+  RtcpPacketParser parser;
+  parser.Parse(packet.buffer(), packet.buffer_length());
+  EXPECT_EQ(1, parser.nack()->num_packets());
+  EXPECT_EQ(kSenderSsrc, parser.nack()->Ssrc());
+  EXPECT_EQ(kRemoteSsrc, parser.nack()->MediaSsrc());
+  EXPECT_EQ(4, parser.nack_item()->num_packets());
+  std::vector<uint16_t> seqs = parser.nack_item()->last_nack_list();
+  EXPECT_EQ(kListLength, seqs.size());
+  for (size_t i = 0; i < kListLength; ++i) {
+    EXPECT_EQ(kList[i], seqs[i]);
+  }
+}
+
+TEST(RtcpPacketTest, Rpsi) {
+  Rpsi rpsi;
+  // 1000001 (7 bits = 1 byte in native string).
+  const uint64_t kPictureId = 0x41;
+  const uint16_t kNumberOfValidBytes = 1;
+  rpsi.WithPayloadType(100);
+  rpsi.WithPictureId(kPictureId);
+
+  RawPacket packet = rpsi.Build();
+  RtcpPacketParser parser;
+  parser.Parse(packet.buffer(), packet.buffer_length());
+  EXPECT_EQ(100, parser.rpsi()->PayloadType());
+  EXPECT_EQ(kNumberOfValidBytes * 8, parser.rpsi()->NumberOfValidBits());
+  EXPECT_EQ(kPictureId, parser.rpsi()->PictureId());
+}
+
+TEST(RtcpPacketTest, RpsiWithTwoByteNativeString) {
+  Rpsi rpsi;
+  // |1 0000001 (7 bits = 1 byte in native string).
+  const uint64_t kPictureId = 0x81;
+  const uint16_t kNumberOfValidBytes = 2;
+  rpsi.WithPictureId(kPictureId);
+
+  RawPacket packet = rpsi.Build();
+  RtcpPacketParser parser;
+  parser.Parse(packet.buffer(), packet.buffer_length());
+  EXPECT_EQ(kNumberOfValidBytes * 8, parser.rpsi()->NumberOfValidBits());
+  EXPECT_EQ(kPictureId, parser.rpsi()->PictureId());
+}
+
+TEST(RtcpPacketTest, RpsiWithThreeByteNativeString) {
+  Rpsi rpsi;
+  // 10000|00 100000|0 1000000 (7 bits = 1 byte in native string).
+  const uint64_t kPictureId = 0x102040;
+  const uint16_t kNumberOfValidBytes = 3;
+  rpsi.WithPictureId(kPictureId);
+
+  RawPacket packet = rpsi.Build();
+  RtcpPacketParser parser;
+  parser.Parse(packet.buffer(), packet.buffer_length());
+  EXPECT_EQ(kNumberOfValidBytes * 8, parser.rpsi()->NumberOfValidBits());
+  EXPECT_EQ(kPictureId, parser.rpsi()->PictureId());
+}
+
+TEST(RtcpPacketTest, RpsiWithFourByteNativeString) {
+  Rpsi rpsi;
+  // 1000|001 00001|01 100001|1 1000010 (7 bits = 1 byte in native string).
+  const uint64_t kPictureId = 0x84161C2;
+  const uint16_t kNumberOfValidBytes = 4;
+  rpsi.WithPictureId(kPictureId);
+
+  RawPacket packet = rpsi.Build();
+  RtcpPacketParser parser;
+  parser.Parse(packet.buffer(), packet.buffer_length());
+  EXPECT_EQ(kNumberOfValidBytes * 8, parser.rpsi()->NumberOfValidBits());
+  EXPECT_EQ(kPictureId, parser.rpsi()->PictureId());
+}
+
+TEST(RtcpPacketTest, RpsiWithMaxPictureId) {
+  Rpsi rpsi;
+  // 1 1111111| 1111111 1|111111 11|11111 111|1111 1111|111 11111|
+  // 11 111111|1 1111111 (7 bits = 1 byte in native string).
+  const uint64_t kPictureId = 0xffffffffffffffff;
+  const uint16_t kNumberOfValidBytes = 10;
+  rpsi.WithPictureId(kPictureId);
+
+  RawPacket packet = rpsi.Build();
+  RtcpPacketParser parser;
+  parser.Parse(packet.buffer(), packet.buffer_length());
+  EXPECT_EQ(kNumberOfValidBytes * 8, parser.rpsi()->NumberOfValidBits());
+  EXPECT_EQ(kPictureId, parser.rpsi()->PictureId());
 }
 
 TEST(RtcpPacketTest, Fir) {

@@ -23,167 +23,192 @@ namespace test {
 
 class RtcpPacketParser;
 
-class SenderReport {
+class PacketType {
  public:
-  SenderReport() : num_packets_(0) {}
-  ~SenderReport() {}
+  virtual ~PacketType() {}
 
-  int num_packets() { return num_packets_; }
-  uint32_t Ssrc() { return sr_.SenderSSRC; }
-  uint32_t NtpSec() { return sr_.NTPMostSignificant; }
-  uint32_t NtpFrac() { return sr_.NTPLeastSignificant; }
-  uint32_t RtpTimestamp() { return sr_.RTPTimestamp; }
-  uint32_t PacketCount() { return sr_.SenderPacketCount; }
-  uint32_t OctetCount() { return sr_.SenderOctetCount; }
+  int num_packets() const { return num_packets_; }
+
+ protected:
+  PacketType() : num_packets_(0) {}
+
+  int num_packets_;
+};
+
+class SenderReport : public PacketType {
+ public:
+  SenderReport() {}
+  virtual ~SenderReport() {}
+
+  uint32_t Ssrc() const { return sr_.SenderSSRC; }
+  uint32_t NtpSec() const { return sr_.NTPMostSignificant; }
+  uint32_t NtpFrac() const { return sr_.NTPLeastSignificant; }
+  uint32_t RtpTimestamp() const { return sr_.RTPTimestamp; }
+  uint32_t PacketCount() const { return sr_.SenderPacketCount; }
+  uint32_t OctetCount() const { return sr_.SenderOctetCount; }
 
  private:
   friend class RtcpPacketParser;
+
   void Set(const RTCPUtility::RTCPPacketSR& sr) {
     sr_ = sr;
     ++num_packets_;
   }
 
-  int num_packets_;
   RTCPUtility::RTCPPacketSR sr_;
 };
 
-class ReceiverReport {
+class ReceiverReport : public PacketType {
  public:
-  ReceiverReport() : num_packets_(0) {}
-  ~ReceiverReport() {}
+  ReceiverReport() {}
+  virtual ~ReceiverReport() {}
 
-  int num_packets() { return num_packets_; }
-  uint32_t Ssrc() { return rr_.SenderSSRC; }
+  uint32_t Ssrc() const { return rr_.SenderSSRC; }
 
  private:
   friend class RtcpPacketParser;
+
   void Set(const RTCPUtility::RTCPPacketRR& rr) {
     rr_ = rr;
     ++num_packets_;
   }
 
-  int num_packets_;
   RTCPUtility::RTCPPacketRR rr_;
 };
 
-class ReportBlock {
+class ReportBlock : public PacketType {
  public:
-  ReportBlock() : num_packets_(0) {}
-  ~ReportBlock() {}
+  ReportBlock() {}
+  virtual ~ReportBlock() {}
 
-  int num_packets() { return num_packets_; }
-  uint32_t Ssrc() { return rb_.SSRC; }
-  uint8_t FractionLost() { return rb_.FractionLost; }
-  uint32_t CumPacketLost() { return rb_.CumulativeNumOfPacketsLost; }
-  uint32_t ExtHighestSeqNum() { return rb_.ExtendedHighestSequenceNumber; }
-  uint32_t Jitter() { return rb_.Jitter; }
-  uint32_t LastSr() { return rb_.LastSR; }
-  uint32_t DelayLastSr() { return rb_.DelayLastSR; }
+  uint32_t Ssrc() const { return rb_.SSRC; }
+  uint8_t FractionLost() const { return rb_.FractionLost; }
+  uint32_t CumPacketLost() const { return rb_.CumulativeNumOfPacketsLost; }
+  uint32_t ExtHighestSeqNum() const { return rb_.ExtendedHighestSequenceNumber;}
+  uint32_t Jitter() const { return rb_.Jitter; }
+  uint32_t LastSr() const { return rb_.LastSR; }
+  uint32_t DelayLastSr()const  { return rb_.DelayLastSR; }
 
  private:
   friend class RtcpPacketParser;
+
   void Set(const RTCPUtility::RTCPPacketReportBlockItem& rb) {
     rb_ = rb;
     ++num_packets_;
   }
 
-  int num_packets_;
   RTCPUtility::RTCPPacketReportBlockItem rb_;
 };
 
-class Bye {
+class Bye : public PacketType {
  public:
-  Bye() : num_packets_(0) {}
-  ~Bye() {}
+  Bye() {}
+  virtual ~Bye() {}
 
-  int num_packets() { return num_packets_; }
-  uint32_t Ssrc() { return bye_.SenderSSRC; }
+  uint32_t Ssrc() const { return bye_.SenderSSRC; }
 
  private:
   friend class RtcpPacketParser;
+
   void Set(const RTCPUtility::RTCPPacketBYE& bye) {
     bye_ = bye;
     ++num_packets_;
   }
 
-  int num_packets_;
   RTCPUtility::RTCPPacketBYE bye_;
 };
 
-class Fir {
+class Rpsi : public PacketType {
  public:
-  Fir() : num_packets_(0) {}
-  ~Fir() {}
+  Rpsi() {}
+  virtual ~Rpsi() {}
 
-  int num_packets() { return num_packets_; }
-  uint32_t Ssrc() { return fir_.SenderSSRC; }
+  uint32_t Ssrc() const { return rpsi_.SenderSSRC; }
+  uint32_t MediaSsrc() const { return rpsi_.MediaSSRC; }
+  uint8_t PayloadType() const { return rpsi_.PayloadType; }
+  uint16_t NumberOfValidBits() const { return rpsi_.NumberOfValidBits; }
+  uint64_t PictureId() const;
 
  private:
   friend class RtcpPacketParser;
+
+  void Set(const RTCPUtility::RTCPPacketPSFBRPSI& rpsi) {
+    rpsi_ = rpsi;
+    ++num_packets_;
+  }
+
+  RTCPUtility::RTCPPacketPSFBRPSI rpsi_;
+};
+
+class Fir : public PacketType {
+ public:
+  Fir() {}
+  virtual ~Fir() {}
+
+  uint32_t Ssrc() const { return fir_.SenderSSRC; }
+
+ private:
+  friend class RtcpPacketParser;
+
   void Set(const RTCPUtility::RTCPPacketPSFBFIR& fir) {
     fir_ = fir;
     ++num_packets_;
   }
 
-  int num_packets_;
   RTCPUtility::RTCPPacketPSFBFIR fir_;
 };
 
-class FirItem {
+class FirItem : public PacketType {
  public:
-  FirItem() : num_packets_(0) {}
-  ~FirItem() {}
+  FirItem() {}
+  virtual ~FirItem() {}
 
-  int num_packets() { return num_packets_; }
-  uint32_t Ssrc() { return fir_item_.SSRC; }
-  uint8_t SeqNum() { return fir_item_.CommandSequenceNumber; }
+  uint32_t Ssrc() const { return fir_item_.SSRC; }
+  uint8_t SeqNum() const { return fir_item_.CommandSequenceNumber; }
 
  private:
   friend class RtcpPacketParser;
+
   void Set(const RTCPUtility::RTCPPacketPSFBFIRItem& fir_item) {
     fir_item_ = fir_item;
     ++num_packets_;
   }
 
-  int num_packets_;
   RTCPUtility::RTCPPacketPSFBFIRItem fir_item_;
 };
 
-class Nack {
+class Nack : public PacketType {
  public:
-  Nack() : num_packets_(0) {}
-  ~Nack() {}
+  Nack() {}
+  virtual ~Nack() {}
 
-  int num_packets() { return num_packets_; }
-  uint32_t Ssrc() { return nack_.SenderSSRC; }
-  uint32_t MediaSsrc() { return nack_.MediaSSRC; }
+  uint32_t Ssrc() const { return nack_.SenderSSRC; }
+  uint32_t MediaSsrc() const { return nack_.MediaSSRC; }
 
  private:
   friend class RtcpPacketParser;
+
   void Set(const RTCPUtility::RTCPPacketRTPFBNACK& nack) {
     nack_ = nack;
     ++num_packets_;
   }
 
-  int num_packets_;
   RTCPUtility::RTCPPacketRTPFBNACK nack_;
 };
 
-class NackItem {
+class NackItem : public PacketType {
  public:
-  NackItem() : num_packets_(0) {}
-  ~NackItem() {}
+  NackItem() {}
+  virtual ~NackItem() {}
 
-  int num_packets() { return num_packets_; }
-  std::vector<uint16_t> last_nack_list() {
-    assert(num_packets_ > 0);
+  std::vector<uint16_t> last_nack_list() const {
     return last_nack_list_;
   }
 
  private:
   friend class RtcpPacketParser;
+
   void Set(const RTCPUtility::RTCPPacketRTPFBNACKItem& nack_item) {
-    last_nack_list_.clear();
     last_nack_list_.push_back(nack_item.PacketID);
     for (int i = 0; i < 16; ++i) {
       if (nack_item.BitMask & (1 << i)) {
@@ -192,11 +217,10 @@ class NackItem {
     }
     ++num_packets_;
   }
+  void Clear() { last_nack_list_.clear(); }
 
-  int num_packets_;
   std::vector<uint16_t> last_nack_list_;
 };
-
 
 class RtcpPacketParser {
  public:
@@ -209,6 +233,7 @@ class RtcpPacketParser {
   ReceiverReport* receiver_report() { return &receiver_report_; }
   ReportBlock* report_block() { return &report_block_; }
   Bye* bye() { return &bye_; }
+  Rpsi* rpsi() { return &rpsi_; }
   Fir* fir() { return &fir_; }
   FirItem* fir_item() { return &fir_item_; }
   Nack* nack() { return &nack_; }
@@ -223,6 +248,7 @@ class RtcpPacketParser {
   ReceiverReport receiver_report_;
   ReportBlock report_block_;
   Bye bye_;
+  Rpsi rpsi_;
   Fir fir_;
   FirItem fir_item_;
   Nack nack_;

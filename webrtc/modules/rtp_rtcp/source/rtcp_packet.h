@@ -244,7 +244,7 @@ class ReportBlock {
     report_block_.DelayLastSR = delay_last_sr;
   }
 
-  void Create(uint8_t* array, uint16_t* cur_pos) const;
+  void Create(uint8_t* packet, uint16_t* len) const;
 
  private:
   RTCPUtility::RTCPPacketReportBlockItem report_block_;
@@ -285,7 +285,7 @@ class Bye : public RtcpPacket {
 
  private:
   uint16_t Length() const {
-    const uint16_t kByeBlockLen = 8 + 4*csrcs_.size();
+    const uint16_t kByeBlockLen = 8 + 4 * csrcs_.size();
     return kByeBlockLen;
   }
 
@@ -309,6 +309,98 @@ class Bye : public RtcpPacket {
 //   :            Feedback Control Information (FCI)                 :
 //   :
 
+// Generic NACK (RFC 4585).
+//
+// FCI:
+//    0                   1                   2                   3
+//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |            PID                |             BLP               |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+class Nack : public RtcpPacket {
+ public:
+  Nack()
+    : RtcpPacket() {
+    memset(&nack_, 0, sizeof(nack_));
+  }
+
+  virtual ~Nack() {}
+
+  void From(uint32_t ssrc) {
+    nack_.SenderSSRC = ssrc;
+  }
+  void To(uint32_t ssrc) {
+    nack_.MediaSSRC = ssrc;
+  }
+  void WithList(const uint16_t* nack_list, int length);
+
+ protected:
+  virtual void Create(uint8_t* packet, uint16_t* len, uint16_t max_len) const
+      OVERRIDE;
+
+ private:
+  uint16_t Length() const {
+    const uint16_t kNackBlockLen = 4 * (3 + nack_fields_.size());
+    return kNackBlockLen;
+  }
+
+  RTCPUtility::RTCPPacketRTPFBNACK nack_;
+  std::vector<RTCPUtility::RTCPPacketRTPFBNACKItem> nack_fields_;
+
+  DISALLOW_COPY_AND_ASSIGN(Nack);
+};
+
+// Reference picture selection indication (RPSI) (RFC 4585).
+//
+// FCI:
+//
+//    0                   1                   2                   3
+//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |      PB       |0| Payload Type|    Native RPSI bit string     |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |   defined per codec          ...                | Padding (0) |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+class Rpsi : public RtcpPacket {
+ public:
+  Rpsi()
+    : RtcpPacket(),
+      padding_bytes_(0) {
+    memset(&rpsi_, 0, sizeof(rpsi_));
+  }
+
+  virtual ~Rpsi() {}
+
+  void From(uint32_t ssrc) {
+    rpsi_.SenderSSRC = ssrc;
+  }
+  void To(uint32_t ssrc) {
+    rpsi_.MediaSSRC = ssrc;
+  }
+  void WithPayloadType(uint8_t payload) {
+    assert(payload <= 0x7f);
+    rpsi_.PayloadType = payload;
+  }
+  void WithPictureId(uint64_t picture_id);
+
+ protected:
+  virtual void Create(uint8_t* packet, uint16_t* len, uint16_t max_len) const
+      OVERRIDE;
+
+ private:
+  uint16_t Length() const {
+    const uint16_t kRpsiBlockLen =
+        12 + 2 + (rpsi_.NumberOfValidBits / 8) + padding_bytes_;
+    return kRpsiBlockLen;
+  }
+
+  uint8_t padding_bytes_;
+  RTCPUtility::RTCPPacketPSFBRPSI rpsi_;
+
+  DISALLOW_COPY_AND_ASSIGN(Rpsi);
+};
 
 // Full intra request (FIR) (RFC 5104).
 //
