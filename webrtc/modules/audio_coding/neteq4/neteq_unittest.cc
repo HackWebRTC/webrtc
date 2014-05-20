@@ -524,25 +524,14 @@ void NetEqDecodingTest::CheckBgnOff(int sampling_rate_hz,
   EXPECT_TRUE(plc_to_cng);  // Just to be sure that PLC-to-CNG has occurred.
 }
 
-#if defined(_WIN32) && defined(WEBRTC_ARCH_64_BITS)
-// Disabled for Windows 64-bit until webrtc:1458 is fixed.
-#define MAYBE_TestBitExactness DISABLED_TestBitExactness
-#else
-#define MAYBE_TestBitExactness TestBitExactness
-#endif
-
-TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(MAYBE_TestBitExactness)) {
+TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(TestBitExactness)) {
   const std::string input_rtp_file = webrtc::test::ProjectRootPath() +
       "resources/audio_coding/neteq_universal_new.rtp";
-#if defined(_MSC_VER) && (_MSC_VER >= 1700)
-  // For Visual Studio 2012 and later, we will have to use the generic reference
-  // file, rather than the windows-specific one.
-  const std::string input_ref_file = webrtc::test::ProjectRootPath() +
-      "resources/audio_coding/neteq4_universal_ref.pcm";
-#else
+  // Note that neteq4_universal_ref.pcm and neteq4_universal_ref_win_32.pcm
+  // are identical. The latter could have been removed, but if clients still
+  // have a copy of the file, the test will fail.
   const std::string input_ref_file =
       webrtc::test::ResourcePath("audio_coding/neteq4_universal_ref", "pcm");
-#endif
 
   if (FLAGS_gen_ref) {
     DecodeAndCompare(input_rtp_file, "");
