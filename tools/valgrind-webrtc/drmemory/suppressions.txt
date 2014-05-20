@@ -915,9 +915,3 @@ name=name=https://code.google.com/p/webrtc/issues/detail?id=3183 (3)
 *!RtpRtcpRtxNackTest::RunRtxTest
 *!RtpRtcpRtxNackTest_RtxNack_Test::TestBody
 *!testing::internal::HandleSehExceptionsInMethodIfSupported<>
-
-UNINITIALIZED READ
-name=b/11288120
-*!cricket::WebRtcVideoMediaChannel::GetStats
-*!WebRtcVideoEngineTestFake_SendReceiveBitratesStats_Test::TestBody
-*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
