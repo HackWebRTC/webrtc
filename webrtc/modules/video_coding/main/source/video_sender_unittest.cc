@@ -345,6 +345,8 @@ class TestVideoSenderWithVp8 : public TestVideoSender {
   void InsertFrames(float framerate, float seconds) {
     for (int i = 0; i < seconds * framerate; ++i) {
       clock_.AdvanceTimeMilliseconds(1000.0f / framerate);
+      EXPECT_CALL(post_encode_callback_, Encoded(_, NULL, NULL))
+          .WillOnce(Return(0));
       AddFrame();
 
       // SetChannelParameters needs to be called frequently to propagate
