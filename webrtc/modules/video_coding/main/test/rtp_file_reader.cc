@@ -103,11 +103,10 @@ class RtpFileReaderImpl : public RtpPacketSourceInterface {
   }
 
   virtual int NextPacket(uint8_t* rtp_data, uint32_t* length,
-                         uint32_t* time_ms, uint32_t* original_length) {
+                         uint32_t* time_ms) {
     assert(rtp_data);
     assert(length);
     assert(time_ms);
-    assert(original_length);
 
     uint16_t len;
     uint16_t plen;
@@ -127,7 +126,6 @@ class RtpFileReaderImpl : public RtpPacketSourceInterface {
 
     *length = len;
     *time_ms = offset;
-    *original_length = plen;
     return kResultSuccess;
   }
 
