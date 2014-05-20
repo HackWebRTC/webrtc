@@ -53,9 +53,10 @@ class RtpPacketSourceInterface {
   // Read next RTP packet into buffer pointed to by rtp_data. On call, 'length'
   // field must be filled in with the size of the buffer. The actual size of
   // the packet is available in 'length' upon returning. Time in milliseconds
-  // from start of stream is returned in 'time_ms'.
+  // from start of stream is returned in 'time_ms'.  The original full length
+  // of the packet is returned in 'original_length'.
   virtual int NextPacket(uint8_t* rtp_data, uint32_t* length,
-                         uint32_t* time_ms) = 0;
+                         uint32_t* time_ms, uint32_t* original_length) = 0;
 };
 
 // Implemented by RtpPlayer and given to client as a means to retrieve
