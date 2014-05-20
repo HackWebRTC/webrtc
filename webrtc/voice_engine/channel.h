@@ -42,6 +42,7 @@ class CriticalSectionWrapper;
 class FileWrapper;
 class ProcessThread;
 class ReceiveStatistics;
+class RemoteNtpTimeEstimator;
 class RtpDump;
 class RTPPayloadRegistry;
 class RtpReceiver;
@@ -530,6 +531,8 @@ private:
     VoEMediaProcess* _outputExternalMediaCallbackPtr;
     uint32_t _timeStamp;
     uint8_t _sendTelephoneEventPayloadType;
+
+    scoped_ptr<RemoteNtpTimeEstimator> ntp_estimator_;
 
     // Timestamp of the audio pulled from NetEq.
     uint32_t jitter_buffer_playout_timestamp_;
