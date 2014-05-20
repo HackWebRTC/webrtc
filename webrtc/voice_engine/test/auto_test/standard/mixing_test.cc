@@ -87,6 +87,9 @@ class MixingTest : public AfterInitializationFixture {
     EXPECT_EQ(0, voe_file_->StartRecordingPlayout(-1 /* record meeting */,
         output_filename_.c_str()));
     SleepMs(kTestDurationMs);
+    while (GetFileDurationMs(output_filename_.c_str()) < kTestDurationMs) {
+      SleepMs(200);
+    }
     EXPECT_EQ(0, voe_file_->StopRecordingPlayout(-1));
 
     StopLocalStreams(local_streams);
@@ -126,7 +129,7 @@ class MixingTest : public AfterInitializationFixture {
     // Ensure we've at least recorded half as much file as the duration of the
     // test. We have to use a relaxed tolerance here due to filesystem flakiness
     // on the bots.
-    ASSERT_GE((samples_read * 1000.0) / kSampleRateHz, 0.5 * kTestDurationMs);
+    ASSERT_GE((samples_read * 1000.0) / kSampleRateHz, kTestDurationMs);
     // Ensure we read the entire file.
     ASSERT_NE(0, feof(output_file));
     ASSERT_EQ(0, fclose(output_file));
@@ -197,6 +200,17 @@ class MixingTest : public AfterInitializationFixture {
       EXPECT_EQ(0, voe_network_->DeRegisterExternalTransport(streams[i]));
       EXPECT_EQ(0, voe_base_->DeleteChannel(streams[i]));
     }
+  }
+
+  int GetFileDurationMs(const char* file_name) {
+    FILE* fid = fopen(file_name, "rb");
+    EXPECT_FALSE(fid == NULL);
+    fseek(fid, 0, SEEK_END);
+    int size = ftell(fid);
+    EXPECT_NE(-1, size);
+    fclose(fid);
+    // Divided by 2 due to 2 bytes/sample.
+    return size * 1000 / kSampleRateHz / 2;
   }
 
   std::string input_filename_;
