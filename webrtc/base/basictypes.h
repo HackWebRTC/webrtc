@@ -123,7 +123,7 @@ namespace rtc {
 #define ALIGNP(p, t) \
     (reinterpret_cast<uint8*>(((reinterpret_cast<uintptr_t>(p) + \
     ((t) - 1)) & ~((t) - 1))))
-#define IS_ALIGNED(p, a) (!((uintptr_t)(p) & ((a) - 1)))
+#define RTC_IS_ALIGNED(p, a) (!((uintptr_t)(p) & ((a) - 1)))
 
 // Use these to declare and define a static local variable (static T;) so that
 // it is leaked so that its destructors are not called at exit.
