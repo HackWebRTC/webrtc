@@ -15,7 +15,7 @@
 
 #include <string>
 
-#include "webrtc/base/constructormagic.h"
+#include "webrtc/system_wrappers/interface/constructor_magic.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

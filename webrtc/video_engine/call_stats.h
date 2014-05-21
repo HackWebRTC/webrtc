@@ -13,8 +13,8 @@
 
 #include <list>
 
-#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/interface/module.h"
+#include "webrtc/system_wrappers/interface/constructor_magic.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {

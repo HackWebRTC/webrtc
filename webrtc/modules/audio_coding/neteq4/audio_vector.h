@@ -13,7 +13,7 @@
 
 #include <string.h>  // Access to size_t.
 
-#include "webrtc/base/constructormagic.h"
+#include "webrtc/system_wrappers/interface/constructor_magic.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 

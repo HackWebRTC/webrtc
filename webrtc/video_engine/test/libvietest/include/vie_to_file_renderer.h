@@ -17,7 +17,7 @@
 #include <list>
 #include <string>
 
-#include "webrtc/base/constructormagic.h"
+#include "webrtc/system_wrappers/interface/constructor_magic.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/video_engine/include/vie_render.h"
 

@@ -18,8 +18,8 @@
 // selection is made in the gypi file instead of in engine_configurations.h.
 #include "webrtc/engine_configurations.h"
 #endif
-#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/neteq4/interface/audio_decoder.h"
+#include "webrtc/system_wrappers/interface/constructor_magic.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

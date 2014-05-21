@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ4_TOOLS_PACKET_SOURCE_H_
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ4_TOOLS_PACKET_SOURCE_H_
 
-#include "webrtc/base/constructormagic.h"
+#include "webrtc/system_wrappers/interface/constructor_magic.h"
 
 namespace webrtc {
 namespace test {
