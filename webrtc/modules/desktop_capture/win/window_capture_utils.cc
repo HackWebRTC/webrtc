@@ -21,6 +21,7 @@ GetCroppedWindowRect(HWND window,
     return false;
   }
   WINDOWPLACEMENT window_placement;
+  window_placement.length = sizeof(window_placement);
   if (!GetWindowPlacement(window, &window_placement)) {
     return false;
   }
