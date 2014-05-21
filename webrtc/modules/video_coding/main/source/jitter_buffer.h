@@ -16,6 +16,7 @@
 #include <set>
 #include <vector>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
@@ -23,7 +24,6 @@
 #include "webrtc/modules/video_coding/main/source/inter_frame_delay.h"
 #include "webrtc/modules/video_coding/main/source/jitter_buffer_common.h"
 #include "webrtc/modules/video_coding/main/source/jitter_estimator.h"
-#include "webrtc/system_wrappers/interface/constructor_magic.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/typedefs.h"
 

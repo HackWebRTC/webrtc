@@ -11,9 +11,9 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/modules/video_coding/main/test/rtp_player.h"
-#include "webrtc/system_wrappers/interface/constructor_magic.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 class NullEventFactory;

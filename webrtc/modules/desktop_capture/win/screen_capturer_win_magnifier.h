@@ -11,16 +11,16 @@
 #ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURER_WIN_MAGNIFIER_H_
 #define WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURER_WIN_MAGNIFIER_H_
 
+#include <windows.h>
 #include <magnification.h>
 #include <wincodec.h>
-#include <windows.h>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/desktop_capture/screen_capture_frame_queue.h"
-#include "webrtc/modules/desktop_capture/screen_capturer_helper.h"
 #include "webrtc/modules/desktop_capture/screen_capturer.h"
+#include "webrtc/modules/desktop_capture/screen_capturer_helper.h"
 #include "webrtc/modules/desktop_capture/win/scoped_thread_desktop.h"
 #include "webrtc/system_wrappers/interface/atomic32.h"
-#include "webrtc/system_wrappers/interface/constructor_magic.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {

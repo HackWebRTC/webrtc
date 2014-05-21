@@ -13,8 +13,8 @@
 
 #include <string.h>  // Access to size_t.
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/neteq4/audio_multi_vector.h"
-#include "webrtc/system_wrappers/interface/constructor_magic.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

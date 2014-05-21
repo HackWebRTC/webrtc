@@ -13,6 +13,7 @@
 
 #include <vector>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/neteq4/audio_multi_vector.h"
 #include "webrtc/modules/audio_coding/neteq4/defines.h"
 #include "webrtc/modules/audio_coding/neteq4/interface/neteq.h"
@@ -20,7 +21,6 @@
 #include "webrtc/modules/audio_coding/neteq4/random_vector.h"
 #include "webrtc/modules/audio_coding/neteq4/rtcp.h"
 #include "webrtc/modules/audio_coding/neteq4/statistics_calculator.h"
-#include "webrtc/system_wrappers/interface/constructor_magic.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/thread_annotations.h"
 #include "webrtc/typedefs.h"

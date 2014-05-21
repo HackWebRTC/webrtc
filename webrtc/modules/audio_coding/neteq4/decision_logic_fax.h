@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ4_DECISION_LOGIC_FAX_H_
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ4_DECISION_LOGIC_FAX_H_
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/neteq4/decision_logic.h"
-#include "webrtc/system_wrappers/interface/constructor_magic.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
