@@ -2215,7 +2215,7 @@ TEST_F(WebRtcVideoMediaChannelTest, SendManyResizeOnce) {
   SendManyResizeOnce();
 }
 
-TEST_F(WebRtcVideoMediaChannelTest, DISABLED_SendVp8HdAndReceiveAdaptedVp8Vga) {
+TEST_F(WebRtcVideoMediaChannelTest, SendVp8HdAndReceiveAdaptedVp8Vga) {
   EXPECT_TRUE(channel_->SetCapturer(kSsrc, NULL));
   channel_->UpdateAspectRatio(1280, 720);
   video_capturer_.reset(new cricket::FakeVideoCapturer);
