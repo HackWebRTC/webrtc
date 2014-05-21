@@ -102,6 +102,7 @@ class AllocationSequence : public talk_base::MessageHandler,
                      uint32 flags);
   ~AllocationSequence();
   bool Init();
+  void Clear();
 
   State state() const { return state_; }
 
@@ -257,6 +258,12 @@ BasicPortAllocatorSession::~BasicPortAllocatorSession() {
   allocator_->network_manager()->StopUpdating();
   if (network_thread_ != NULL)
     network_thread_->Clear(this);
+
+  for (uint32 i = 0; i < sequences_.size(); ++i) {
+    // AllocationSequence should clear it's map entry for turn ports before
+    // ports are destroyed.
+    sequences_[i]->Clear();
+  }
 
   std::vector<PortData>::iterator it;
   for (it = ports_.begin(); it != ports_.end(); it++)
@@ -727,6 +734,11 @@ bool AllocationSequence::Init() {
   return true;
 }
 
+void AllocationSequence::Clear() {
+  udp_port_ = NULL;
+  turn_ports_.clear();
+}
+
 AllocationSequence::~AllocationSequence() {
   session_->network_thread()->Clear(this);
 }
@@ -1030,6 +1042,9 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
             this, &AllocationSequence::OnResolvedTurnServerAddress);
       }
       turn_ports_[(*relay_port).address] = port;
+      // Listen to the port destroyed signal, to allow AllocationSequence to
+      // remove entrt from it's map.
+      port->SignalDestroyed.connect(this, &AllocationSequence::OnPortDestroyed);
     } else {
       port = TurnPort::Create(session_->network_thread(),
                               session_->socket_factory(),
