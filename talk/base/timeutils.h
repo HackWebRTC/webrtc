@@ -97,6 +97,17 @@ inline int64 UnixTimestampNanosecsToNtpMillisecs(int64 unix_ts_ns) {
   return unix_ts_ns / kNumNanosecsPerMillisec + kJan1970AsNtpMillisecs;
 }
 
+class TimestampWrapAroundHandler {
+ public:
+  TimestampWrapAroundHandler();
+
+  int64 Unwrap(uint32 ts);
+
+ private:
+  uint32 last_ts_;
+  int64 num_wrap_;
+};
+
 }  // namespace talk_base
 
 #endif  // TALK_BASE_TIMEUTILS_H_

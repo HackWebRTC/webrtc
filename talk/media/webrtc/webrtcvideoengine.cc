@@ -180,8 +180,7 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
         channel_id_(channel_id),
         width_(0),
         height_(0),
-        first_frame_arrived_(false),
-        capture_start_rtp_time_stamp_(0),
+        capture_start_rtp_time_stamp_(-1),
         capture_start_ntp_time_ms_(0) {
   }
 
@@ -233,8 +232,7 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
                            int64_t render_time,
                            void* handle) {
     talk_base::CritScope cs(&crit_);
-    if (!first_frame_arrived_) {
-      first_frame_arrived_ = true;
+    if (capture_start_rtp_time_stamp_ < 0) {
       capture_start_rtp_time_stamp_ = rtp_time_stamp;
     }
 
@@ -242,9 +240,9 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
 
 #ifdef USE_WEBRTC_DEV_BRANCH
     if (ntp_time_ms > 0) {
-      uint32 elapsed_time_ms =
-          (rtp_time_stamp - capture_start_rtp_time_stamp_) /
-          kVideoCodecClockratekHz;
+      int64 elapsed_time_ms =
+          (rtp_ts_wraparound_handler_.Unwrap(rtp_time_stamp) -
+           capture_start_rtp_time_stamp_) / kVideoCodecClockratekHz;
       capture_start_ntp_time_ms_ = ntp_time_ms - elapsed_time_ms;
     }
 #endif
@@ -329,8 +327,8 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
   unsigned int width_;
   unsigned int height_;
   talk_base::RateTracker frame_rate_tracker_;
-  bool first_frame_arrived_;
-  uint32 capture_start_rtp_time_stamp_;
+  talk_base::TimestampWrapAroundHandler rtp_ts_wraparound_handler_;
+  int64 capture_start_rtp_time_stamp_;
   int64 capture_start_ntp_time_ms_;
 };
 

@@ -160,4 +160,27 @@ TEST(TimeTest, DISABLED_CurrentTmTime) {
   EXPECT_TRUE(0 <= microseconds && microseconds < 1000000);
 }
 
+class TimestampWrapAroundHandlerTest : public testing::Test {
+ public:
+  TimestampWrapAroundHandlerTest() {}
+
+ protected:
+  TimestampWrapAroundHandler wraparound_handler_;
+};
+
+TEST_F(TimestampWrapAroundHandlerTest, Unwrap) {
+  uint32 ts = 0xfffffff2;
+  int64 unwrapped_ts = ts;
+  EXPECT_EQ(ts, wraparound_handler_.Unwrap(ts));
+  ts = 2;
+  unwrapped_ts += 0x10;
+  EXPECT_EQ(unwrapped_ts, wraparound_handler_.Unwrap(ts));
+  ts = 0xfffffff2;
+  unwrapped_ts += 0xfffffff0;
+  EXPECT_EQ(unwrapped_ts, wraparound_handler_.Unwrap(ts));
+  ts = 0;
+  unwrapped_ts += 0xe;
+  EXPECT_EQ(unwrapped_ts, wraparound_handler_.Unwrap(ts));
+}
+
 }  // namespace talk_base

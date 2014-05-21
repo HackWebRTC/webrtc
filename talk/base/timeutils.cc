@@ -203,4 +203,18 @@ int32 TimeDiff(uint32 later, uint32 earlier) {
 #endif
 }
 
+TimestampWrapAroundHandler::TimestampWrapAroundHandler()
+    : last_ts_(0), num_wrap_(0) {}
+
+int64 TimestampWrapAroundHandler::Unwrap(uint32 ts) {
+  if (ts < last_ts_) {
+    if (last_ts_ > 0xf0000000 && ts < 0x0fffffff) {
+      ++num_wrap_;
+    }
+  }
+  last_ts_ = ts;
+  int64_t unwrapped_ts = ts + (num_wrap_ << 32);
+  return unwrapped_ts;
+}
+
 } // namespace talk_base
