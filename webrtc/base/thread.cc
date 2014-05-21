@@ -140,8 +140,7 @@ Thread::Thread(SocketServer* ss)
 
 Thread::~Thread() {
   Stop();
-  if (active_)
-    Clear(NULL);
+  Clear(NULL);
 }
 
 bool Thread::SleepMs(int milliseconds) {
@@ -386,7 +385,6 @@ void Thread::Send(MessageHandler *phandler, uint32 id, MessageData *pdata) {
   bool ready = false;
   {
     CritScope cs(&crit_);
-    EnsureActive();
     _SendMessage smsg;
     smsg.thread = current_thread;
     smsg.msg = msg;
