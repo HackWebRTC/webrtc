@@ -48,7 +48,9 @@ class AudioSourceContext {
  public:
   sigslot::signal2<AudioSourceContext*, const cricket::AudioInfo&>
       SignalAudioMonitor;
-  sigslot::signal4<AudioSourceContext*, cricket::Session*,
+  sigslot::signal2<AudioSourceContext*, cricket::BaseSession*>
+      SignalMediaStreamsReset;
+  sigslot::signal4<AudioSourceContext*, cricket::BaseSession*,
       const cricket::MediaStreams&, const cricket::MediaStreams&>
           SignalMediaStreamsUpdate;
 };
@@ -85,9 +87,11 @@ class CurrentSpeakerMonitor : public sigslot::has_slots<> {
  private:
   void OnAudioMonitor(AudioSourceContext* call, const AudioInfo& info);
   void OnMediaStreamsUpdate(AudioSourceContext* call,
-                            Session* session,
+                            BaseSession* session,
                             const MediaStreams& added,
                             const MediaStreams& removed);
+  void OnMediaStreamsReset(AudioSourceContext* audio_source_context,
+                           BaseSession* session);
 
   // These are states that a participant will pass through so that we gradually
   // recognize that they have started and stopped speaking.  This avoids
