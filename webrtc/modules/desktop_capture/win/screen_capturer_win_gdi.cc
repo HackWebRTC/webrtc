@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/desktop_capture/win/screen_capturer_win_gdi.h"
 
+#include <assert.h>
+
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_frame_win.h"

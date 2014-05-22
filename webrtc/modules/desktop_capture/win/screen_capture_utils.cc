@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/desktop_capture/win/screen_capture_utils.h"
 
+#include <assert.h>
 #include <windows.h>
 
 namespace webrtc {
