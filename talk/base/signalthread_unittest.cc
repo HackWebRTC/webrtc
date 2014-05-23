@@ -50,19 +50,19 @@ class SignalThreadTest : public testing::Test, public sigslot::has_slots<> {
       ASSERT_TRUE(harness_ != NULL);
       ++harness_->thread_started_;
       EXPECT_EQ(harness_->main_thread_, Thread::Current());
-      EXPECT_FALSE(worker()->started());  // not started yet
+      EXPECT_FALSE(worker()->RunningForTest());  // not started yet
     }
 
     virtual void OnWorkStop() {
       ++harness_->thread_stopped_;
       EXPECT_EQ(harness_->main_thread_, Thread::Current());
-      EXPECT_TRUE(worker()->started());  // not stopped yet
+      EXPECT_TRUE(worker()->RunningForTest());  // not stopped yet
     }
 
     virtual void OnWorkDone() {
       ++harness_->thread_done_;
       EXPECT_EQ(harness_->main_thread_, Thread::Current());
-      EXPECT_TRUE(worker()->started());  // not stopped yet
+      EXPECT_TRUE(worker()->RunningForTest());  // not stopped yet
     }
 
     virtual void DoWork() {

@@ -261,30 +261,12 @@ TEST(ThreadTest, Wrap) {
   current_thread->UnwrapCurrent();
   CustomThread* cthread = new CustomThread();
   EXPECT_TRUE(cthread->WrapCurrent());
-  EXPECT_TRUE(cthread->started());
+  EXPECT_TRUE(cthread->RunningForTest());
   EXPECT_FALSE(cthread->IsOwned());
   cthread->UnwrapCurrent();
-  EXPECT_FALSE(cthread->started());
+  EXPECT_FALSE(cthread->RunningForTest());
   delete cthread;
   current_thread->WrapCurrent();
-}
-
-// Test that calling Release on a thread causes it to self-destruct when
-// it's finished running
-TEST(ThreadTest, Release) {
-  scoped_ptr<Event> event(new Event(true, false));
-  // Ensure the event is initialized.
-  event->Reset();
-
-  Thread* thread = new SignalWhenDestroyedThread(event.get());
-  thread->Start();
-  thread->Release();
-
-  // The event should get signaled when the thread completes, which should
-  // be nearly instantaneous, since it doesn't do anything.  For safety,
-  // give it 3 seconds in case the machine is under load.
-  bool signaled = event->Wait(3000);
-  EXPECT_TRUE(signaled);
 }
 
 TEST(ThreadTest, Invoke) {

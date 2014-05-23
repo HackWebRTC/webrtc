@@ -217,7 +217,11 @@ bool ChannelManager::Init() {
   }
 
   ASSERT(worker_thread_ != NULL);
-  if (worker_thread_ && worker_thread_->started()) {
+  ASSERT(worker_thread_->RunningForChannelManager());
+  // TODO(fischman): remove the if below (and
+  // Thread::RunningForChannelManager()) once the ASSERT above has stuck for a
+  // month (2014/06/22).
+  if (worker_thread_ && worker_thread_->RunningForChannelManager()) {
     if (media_engine_->Init(worker_thread_)) {
       initialized_ = true;
 
