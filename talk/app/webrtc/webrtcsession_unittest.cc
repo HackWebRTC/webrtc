@@ -124,6 +124,12 @@ static const char kFakeDtlsFingerprint[] =
     "BB:CD:72:F7:2F:D0:BA:43:F3:68:B1:0C:23:72:B6:4A:"
     "0F:DE:34:06:BC:E0:FE:01:BC:73:C8:6D:F4:65:D5:24";
 
+static const char kTooLongIceUfragPwd[] =
+    "IceUfragIceUfragIceUfragIceUfragIceUfragIceUfragIceUfragIceUfragIceUfrag"
+    "IceUfragIceUfragIceUfragIceUfragIceUfragIceUfragIceUfragIceUfragIceUfrag"
+    "IceUfragIceUfragIceUfragIceUfragIceUfragIceUfragIceUfragIceUfragIceUfrag"
+    "IceUfragIceUfragIceUfragIceUfragIceUfragIceUfragIceUfragIceUfragIceUfrag";
+
 // Add some extra |newlines| to the |message| after |line|.
 static void InjectAfter(const std::string& line,
                         const std::string& newlines,
@@ -568,6 +574,35 @@ class WebRtcSessionTest : public testing::Test {
                                  sdp);
       talk_base::replace_substrs(pwd_line.c_str(), pwd_line.length(),
                                  "", 0,
+                                 sdp);
+    }
+  }
+
+  void ModifyIceUfragPwdLines(const SessionDescriptionInterface* current_desc,
+                              const std::string& modified_ice_ufrag,
+                              const std::string& modified_ice_pwd,
+                              std::string* sdp) {
+    const cricket::SessionDescription* desc = current_desc->description();
+    EXPECT_TRUE(current_desc->ToString(sdp));
+
+    const cricket::ContentInfos& contents = desc->contents();
+    cricket::ContentInfos::const_iterator it = contents.begin();
+    // Replace ufrag and pwd lines with |modified_ice_ufrag| and
+    // |modified_ice_pwd| strings.
+    for (; it != contents.end(); ++it) {
+      const cricket::TransportDescription* transport_desc =
+          desc->GetTransportDescriptionByName(it->name);
+      std::string ufrag_line = "a=ice-ufrag:" + transport_desc->ice_ufrag
+          + "\r\n";
+      std::string pwd_line = "a=ice-pwd:" + transport_desc->ice_pwd
+          + "\r\n";
+      std::string mod_ufrag = "a=ice-ufrag:" + modified_ice_ufrag + "\r\n";
+      std::string mod_pwd = "a=ice-pwd:" + modified_ice_pwd + "\r\n";
+      talk_base::replace_substrs(ufrag_line.c_str(), ufrag_line.length(),
+                                 mod_ufrag.c_str(), mod_ufrag.length(),
+                                 sdp);
+      talk_base::replace_substrs(pwd_line.c_str(), pwd_line.length(),
+                                 mod_pwd.c_str(), mod_pwd.length(),
                                  sdp);
     }
   }
@@ -2246,6 +2281,54 @@ TEST_F(WebRtcSessionTest, TestSetRemoteDescriptionWithoutIce) {
   SessionDescriptionInterface* modified_offer =
     CreateSessionDescription(JsepSessionDescription::kOffer, sdp, NULL);
   SetRemoteDescriptionOfferExpectError(kSdpWithoutIceUfragPwd, modified_offer);
+}
+
+// This test verifies that setLocalDescription fails if local offer has
+// too short ice ufrag and pwd strings.
+TEST_F(WebRtcSessionTest, TestSetLocalDescriptionInvalidIceCredentials) {
+  Init(NULL);
+  tdesc_factory_->set_protocol(cricket::ICEPROTO_RFC5245);
+  mediastream_signaling_.SendAudioVideoStream1();
+  talk_base::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer(NULL));
+  std::string sdp;
+  // Modifying ice ufrag and pwd in local offer with strings smaller than the
+  // recommended values of 4 and 22 bytes respectively.
+  ModifyIceUfragPwdLines(offer.get(), "ice", "icepwd", &sdp);
+  SessionDescriptionInterface* modified_offer =
+      CreateSessionDescription(JsepSessionDescription::kOffer, sdp, NULL);
+  std::string error;
+  EXPECT_FALSE(session_->SetLocalDescription(modified_offer, &error));
+
+  // Test with string greater than 256.
+  sdp.clear();
+  ModifyIceUfragPwdLines(offer.get(), kTooLongIceUfragPwd, kTooLongIceUfragPwd,
+                         &sdp);
+  modified_offer = CreateSessionDescription(JsepSessionDescription::kOffer, sdp,
+                                            NULL);
+  EXPECT_FALSE(session_->SetLocalDescription(modified_offer, &error));
+}
+
+// This test verifies that setRemoteDescription fails if remote offer has
+// too short ice ufrag and pwd strings.
+TEST_F(WebRtcSessionTest, TestSetRemoteDescriptionInvalidIceCredentials) {
+  Init(NULL);
+  tdesc_factory_->set_protocol(cricket::ICEPROTO_RFC5245);
+  talk_base::scoped_ptr<SessionDescriptionInterface> offer(CreateRemoteOffer());
+  std::string sdp;
+  // Modifying ice ufrag and pwd in remote offer with strings smaller than the
+  // recommended values of 4 and 22 bytes respectively.
+  ModifyIceUfragPwdLines(offer.get(), "ice", "icepwd", &sdp);
+  SessionDescriptionInterface* modified_offer =
+     CreateSessionDescription(JsepSessionDescription::kOffer, sdp, NULL);
+  std::string error;
+  EXPECT_FALSE(session_->SetRemoteDescription(modified_offer, &error));
+
+  sdp.clear();
+  ModifyIceUfragPwdLines(offer.get(), kTooLongIceUfragPwd, kTooLongIceUfragPwd,
+                         &sdp);
+  modified_offer = CreateSessionDescription(JsepSessionDescription::kOffer, sdp,
+                                            NULL);
+  EXPECT_FALSE(session_->SetRemoteDescription(modified_offer, &error));
 }
 
 TEST_F(WebRtcSessionTest, VerifyBundleFlagInPA) {

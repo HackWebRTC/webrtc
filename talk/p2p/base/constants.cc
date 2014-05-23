@@ -176,6 +176,10 @@ const int ICE_UFRAG_LENGTH = 16;
 // Minimum password length of 22 characters as per RFC5245. We chose 24 because
 // some internal systems expect password to be multiple of 4.
 const int ICE_PWD_LENGTH = 24;
+const size_t ICE_UFRAG_MIN_LENGTH = 4;
+const size_t ICE_PWD_MIN_LENGTH = 22;
+const size_t ICE_UFRAG_MAX_LENGTH = 255;
+const size_t ICE_PWD_MAX_LENGTH = 256;
 // TODO: This is media-specific, so might belong
 // somewhere like media/base/constants.h
 const int ICE_CANDIDATE_COMPONENT_RTP = 1;

@@ -94,6 +94,22 @@ static std::string IceProtoToString(TransportProtocol proto) {
   return proto_str;
 }
 
+static bool VerifyIceParams(const TransportDescription& desc) {
+  // For legacy protocols.
+  if (desc.ice_ufrag.empty() && desc.ice_pwd.empty())
+    return true;
+
+  if (desc.ice_ufrag.length() < ICE_UFRAG_MIN_LENGTH ||
+      desc.ice_ufrag.length() > ICE_UFRAG_MAX_LENGTH) {
+    return false;
+  }
+  if (desc.ice_pwd.length() < ICE_PWD_MIN_LENGTH ||
+      desc.ice_pwd.length() > ICE_PWD_MAX_LENGTH) {
+    return false;
+  }
+  return true;
+}
+
 bool BadTransportDescription(const std::string& desc, std::string* err_desc) {
   if (err_desc) {
     *err_desc = desc;
@@ -704,8 +720,13 @@ bool Transport::SetLocalTransportDescription_w(
     std::string* error_desc) {
   bool ret = true;
   talk_base::CritScope cs(&crit_);
-  local_description_.reset(new TransportDescription(desc));
 
+  if (!VerifyIceParams(desc)) {
+    return BadTransportDescription("Invalid ice-ufrag or ice-pwd length",
+                                   error_desc);
+  }
+
+  local_description_.reset(new TransportDescription(desc));
   for (ChannelMap::iterator iter = channels_.begin();
        iter != channels_.end(); ++iter) {
     ret &= ApplyLocalTransportDescription_w(iter->second.get(), error_desc);
@@ -726,8 +747,13 @@ bool Transport::SetRemoteTransportDescription_w(
     std::string* error_desc) {
   bool ret = true;
   talk_base::CritScope cs(&crit_);
-  remote_description_.reset(new TransportDescription(desc));
 
+  if (!VerifyIceParams(desc)) {
+    return BadTransportDescription("Invalid ice-ufrag or ice-pwd length",
+                                   error_desc);
+  }
+
+  remote_description_.reset(new TransportDescription(desc));
   for (ChannelMap::iterator iter = channels_.begin();
        iter != channels_.end(); ++iter) {
     ret &= ApplyRemoteTransportDescription_w(iter->second.get(), error_desc);
