@@ -1249,3 +1249,21 @@
   fun:AsyncInvokeTest_WithCallback_Test::TestBody
   ...
 }
+{
+  bug_3372_1
+  ThreadSanitizer:Race
+  fun:talk_base::LogMessage::Loggable
+  fun:cricket::WebRtcVideoEngine::Print
+  fun:webrtc::TraceImpl::WriteToFile
+  fun:webrtc::TraceImpl::Process
+  fun:webrtc::TraceImpl::Run
+  fun:webrtc::ThreadPosix::Run
+  fun:StartThread
+}
+{
+  bug_3372_2
+  ThreadSanitizer:Race
+  fun:std::string::find
+  fun:WebRtcVideoEngineTest_WebRtcShouldNotLog_Test::TestBody
+  fun:testing::internal::HandleSehExceptionsInMethodIfSupported
+}
