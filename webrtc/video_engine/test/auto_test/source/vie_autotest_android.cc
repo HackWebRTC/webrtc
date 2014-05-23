@@ -66,9 +66,11 @@ int ViEAutoTestAndroid::RunAutotest(int testSelection, int subTestSelection,
           vieAutoTest.ViEImageProcessStandardTest();
           break;
 
+#if 0  // vie_autotest_network.cc isn't actually pulled into the build at all!
         case 7: // network
           vieAutoTest.ViENetworkStandardTest();
           break;
+#endif
 
         case 8: // Render
           vieAutoTest.ViERenderStandardTest();
@@ -101,9 +103,11 @@ int ViEAutoTestAndroid::RunAutotest(int testSelection, int subTestSelection,
           vieAutoTest.ViEImageProcessAPITest();
           break;
 
+#if 0  // vie_autotest_network.cc isn't actually pulled into the build at all!
         case 7: // network
           vieAutoTest.ViENetworkAPITest();
           break;
+#endif
 
         case 8: // Render
           vieAutoTest.ViERenderAPITest();
