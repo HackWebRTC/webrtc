@@ -280,12 +280,24 @@ VideoSendStream::~VideoSendStream() {
   rtp_rtcp_->Release();
 }
 
+void VideoSendStream::PutFrame(const I420VideoFrame& frame) {
+  input_frame_.CopyFrame(frame);
+  SwapFrame(&input_frame_);
+}
+
 void VideoSendStream::SwapFrame(I420VideoFrame* frame) {
+  // TODO(pbos): Warn if frame is "too far" into the future, or too old. This
+  //             would help detect if frame's being used without NTP.
+  //             TO REVIEWER: Is there any good check for this? Should it be
+  //             skipped?
+  if (frame != &input_frame_)
+    input_frame_.SwapFrame(frame);
+
   // TODO(pbos): Local rendering should not be done on the capture thread.
   if (config_.local_renderer != NULL)
-    config_.local_renderer->RenderFrame(*frame, 0);
+    config_.local_renderer->RenderFrame(input_frame_, 0);
 
-  external_capture_->SwapFrame(frame);
+  external_capture_->SwapFrame(&input_frame_);
 }
 
 VideoSendStreamInput* VideoSendStream::Input() { return this; }

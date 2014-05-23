@@ -125,6 +125,10 @@ class VideoAnalyzer : public PacketReceiver,
     return receiver_->DeliverPacket(packet, length);
   }
 
+  virtual void PutFrame(const I420VideoFrame& video_frame) OVERRIDE {
+    ADD_FAILURE() << "PutFrame() should not have been called in this test.";
+  }
+
   virtual void SwapFrame(I420VideoFrame* video_frame) OVERRIDE {
     I420VideoFrame* copy = NULL;
     {
