@@ -1,5 +1,8 @@
-# Fails on Dr Memory Full.
-# https://code.google.com/p/webrtc/issues/detail?id=3336
-WebRtcVideoChannel2BaseTest.*
+# Times out before finishing on DrMemory Full
+# https://code.google.com/p/webrtc/issues/detail?id=3375
+WebRtcVideoChannel2BaseTest.SimulateConference
+WebRtcVideoChannel2BaseTest.TwoStreamsSendAndReceive
+WebRtcVideoChannel2BaseTest.TwoStreamsReUseFirstStream
+
 # https://code.google.com/p/webrtc/issues/detail?id=3158
 WebRtcVideoMediaChannelTest.SendVp8HdAndReceiveAdaptedVp8Vga

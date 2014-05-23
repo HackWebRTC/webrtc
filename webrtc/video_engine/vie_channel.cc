@@ -76,10 +76,10 @@ ViEChannel::ViEChannel(int32_t channel_id,
       callback_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       rtp_rtcp_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       default_rtp_rtcp_(default_rtp_rtcp),
-      vcm_(*VideoCodingModule::Create()),
-      vie_receiver_(channel_id, &vcm_, remote_bitrate_estimator, this),
+      vcm_(VideoCodingModule::Create()),
+      vie_receiver_(channel_id, vcm_, remote_bitrate_estimator, this),
       vie_sender_(channel_id),
-      vie_sync_(&vcm_, this),
+      vie_sync_(vcm_, this),
       stats_observer_(new ChannelStatsObserver(this)),
       module_process_thread_(module_process_thread),
       codec_observer_(NULL),
@@ -119,7 +119,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
 
   rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(configuration));
   vie_receiver_.SetRtpRtcpModule(rtp_rtcp_.get());
-  vcm_.SetNackSettings(kMaxNackListSize, max_nack_reordering_threshold_, 0);
+  vcm_->SetNackSettings(kMaxNackListSize, max_nack_reordering_threshold_, 0);
 }
 
 int32_t ViEChannel::Init() {
@@ -139,32 +139,32 @@ int32_t ViEChannel::Init() {
   if (paced_sender_) {
     rtp_rtcp_->SetStorePacketsStatus(true, nack_history_size_sender_);
   }
-  if (vcm_.InitializeReceiver() != 0) {
+  if (vcm_->InitializeReceiver() != 0) {
     return -1;
   }
-  if (vcm_.SetVideoProtection(kProtectionKeyOnLoss, true)) {
+  if (vcm_->SetVideoProtection(kProtectionKeyOnLoss, true)) {
     return -1;
   }
-  if (vcm_.RegisterReceiveCallback(this) != 0) {
+  if (vcm_->RegisterReceiveCallback(this) != 0) {
     return -1;
   }
-  vcm_.RegisterFrameTypeCallback(this);
-  vcm_.RegisterReceiveStatisticsCallback(this);
-  vcm_.RegisterDecoderTimingCallback(this);
-  vcm_.SetRenderDelay(kViEDefaultRenderDelayMs);
-  if (module_process_thread_.RegisterModule(&vcm_) != 0) {
+  vcm_->RegisterFrameTypeCallback(this);
+  vcm_->RegisterReceiveStatisticsCallback(this);
+  vcm_->RegisterDecoderTimingCallback(this);
+  vcm_->SetRenderDelay(kViEDefaultRenderDelayMs);
+  if (module_process_thread_.RegisterModule(vcm_) != 0) {
     return -1;
   }
 #ifdef VIDEOCODEC_VP8
   VideoCodec video_codec;
-  if (vcm_.Codec(kVideoCodecVP8, &video_codec) == VCM_OK) {
+  if (vcm_->Codec(kVideoCodecVP8, &video_codec) == VCM_OK) {
     rtp_rtcp_->RegisterSendPayload(video_codec);
     // TODO(holmer): Can we call SetReceiveCodec() here instead?
     if (!vie_receiver_.RegisterPayload(video_codec)) {
       return -1;
     }
-    vcm_.RegisterReceiveCodec(&video_codec, number_of_cores_);
-    vcm_.RegisterSendCodec(&video_codec, number_of_cores_,
+    vcm_->RegisterReceiveCodec(&video_codec, number_of_cores_);
+    vcm_->RegisterSendCodec(&video_codec, number_of_cores_,
                            rtp_rtcp_->MaxDataPayloadLength());
   } else {
     assert(false);
@@ -178,7 +178,7 @@ ViEChannel::~ViEChannel() {
   // Make sure we don't get more callbacks from the RTP module.
   module_process_thread_.DeRegisterModule(vie_receiver_.GetReceiveStatistics());
   module_process_thread_.DeRegisterModule(rtp_rtcp_.get());
-  module_process_thread_.DeRegisterModule(&vcm_);
+  module_process_thread_.DeRegisterModule(vcm_);
   module_process_thread_.DeRegisterModule(&vie_sync_);
   while (simulcast_rtp_rtcp_.size() > 0) {
     std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
@@ -196,7 +196,7 @@ ViEChannel::~ViEChannel() {
     StopDecodeThread();
   }
   // Release modules.
-  VideoCodingModule::Destroy(&vcm_);
+  VideoCodingModule::Destroy(vcm_);
 }
 
 int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
@@ -408,7 +408,7 @@ int32_t ViEChannel::SetReceiveCodec(const VideoCodec& video_codec) {
   if (video_codec.codecType != kVideoCodecRED &&
       video_codec.codecType != kVideoCodecULPFEC) {
     // Register codec type with VCM, but do not register RED or ULPFEC.
-    if (vcm_.RegisterReceiveCodec(&video_codec, number_of_cores_,
+    if (vcm_->RegisterReceiveCodec(&video_codec, number_of_cores_,
                                   wait_for_key_frame_) != VCM_OK) {
       return -1;
     }
@@ -417,7 +417,7 @@ int32_t ViEChannel::SetReceiveCodec(const VideoCodec& video_codec) {
 }
 
 int32_t ViEChannel::GetReceiveCodec(VideoCodec* video_codec) {
-  if (vcm_.ReceiveCodec(video_codec) != 0) {
+  if (vcm_->ReceiveCodec(video_codec) != 0) {
     return -1;
   }
   return 0;
@@ -442,24 +442,24 @@ int32_t ViEChannel::RegisterExternalDecoder(const uint8_t pl_type,
                                             bool buffered_rendering,
                                             int32_t render_delay) {
   int32_t result;
-  result = vcm_.RegisterExternalDecoder(decoder, pl_type, buffered_rendering);
+  result = vcm_->RegisterExternalDecoder(decoder, pl_type, buffered_rendering);
   if (result != VCM_OK) {
     return result;
   }
-  return vcm_.SetRenderDelay(render_delay);
+  return vcm_->SetRenderDelay(render_delay);
 }
 
 int32_t ViEChannel::DeRegisterExternalDecoder(const uint8_t pl_type) {
   VideoCodec current_receive_codec;
   int32_t result = 0;
-  result = vcm_.ReceiveCodec(&current_receive_codec);
-  if (vcm_.RegisterExternalDecoder(NULL, pl_type, false) != VCM_OK) {
+  result = vcm_->ReceiveCodec(&current_receive_codec);
+  if (vcm_->RegisterExternalDecoder(NULL, pl_type, false) != VCM_OK) {
     return -1;
   }
 
   if (result == 0 && current_receive_codec.plType == pl_type) {
-    result = vcm_.RegisterReceiveCodec(&current_receive_codec, number_of_cores_,
-                                       wait_for_key_frame_);
+    result = vcm_->RegisterReceiveCodec(
+        &current_receive_codec, number_of_cores_, wait_for_key_frame_);
   }
   return result;
 }
@@ -467,7 +467,7 @@ int32_t ViEChannel::DeRegisterExternalDecoder(const uint8_t pl_type) {
 int32_t ViEChannel::ReceiveCodecStatistics(uint32_t* num_key_frames,
                                            uint32_t* num_delta_frames) {
   VCMFrameCount received_frames;
-  if (vcm_.ReceivedFrameCount(received_frames) != VCM_OK) {
+  if (vcm_->ReceivedFrameCount(received_frames) != VCM_OK) {
     return -1;
   }
   *num_key_frames = received_frames.numKeyFrames;
@@ -476,11 +476,11 @@ int32_t ViEChannel::ReceiveCodecStatistics(uint32_t* num_key_frames,
 }
 
 uint32_t ViEChannel::DiscardedPackets() const {
-  return vcm_.DiscardedPackets();
+  return vcm_->DiscardedPackets();
 }
 
 int ViEChannel::ReceiveDelay() const {
-  return vcm_.Delay();
+  return vcm_->Delay();
 }
 
 int32_t ViEChannel::WaitForKeyFrame(bool wait) {
@@ -492,19 +492,19 @@ int32_t ViEChannel::SetSignalPacketLossStatus(bool enable,
                                               bool only_key_frames) {
   if (enable) {
     if (only_key_frames) {
-      vcm_.SetVideoProtection(kProtectionKeyOnLoss, false);
-      if (vcm_.SetVideoProtection(kProtectionKeyOnKeyLoss, true) != VCM_OK) {
+      vcm_->SetVideoProtection(kProtectionKeyOnLoss, false);
+      if (vcm_->SetVideoProtection(kProtectionKeyOnKeyLoss, true) != VCM_OK) {
         return -1;
       }
     } else {
-      vcm_.SetVideoProtection(kProtectionKeyOnKeyLoss, false);
-      if (vcm_.SetVideoProtection(kProtectionKeyOnLoss, true) != VCM_OK) {
+      vcm_->SetVideoProtection(kProtectionKeyOnKeyLoss, false);
+      if (vcm_->SetVideoProtection(kProtectionKeyOnLoss, true) != VCM_OK) {
         return -1;
       }
     }
   } else {
-    vcm_.SetVideoProtection(kProtectionKeyOnLoss, false);
-    vcm_.SetVideoProtection(kProtectionKeyOnKeyLoss, false);
+    vcm_->SetVideoProtection(kProtectionKeyOnLoss, false);
+    vcm_->SetVideoProtection(kProtectionKeyOnKeyLoss, false);
   }
   return 0;
 }
@@ -527,7 +527,7 @@ int32_t ViEChannel::GetRTCPMode(RTCPMethod* rtcp_mode) {
 
 int32_t ViEChannel::SetNACKStatus(const bool enable) {
   // Update the decoding VCM.
-  if (vcm_.SetVideoProtection(kProtectionNack, enable) != VCM_OK) {
+  if (vcm_->SetVideoProtection(kProtectionNack, enable) != VCM_OK) {
     return -1;
   }
   if (enable) {
@@ -535,7 +535,7 @@ int32_t ViEChannel::SetNACKStatus(const bool enable) {
     SetFECStatus(false, 0, 0);
   }
   // Update the decoding VCM.
-  if (vcm_.SetVideoProtection(kProtectionNack, enable) != VCM_OK) {
+  if (vcm_->SetVideoProtection(kProtectionNack, enable) != VCM_OK) {
     return -1;
   }
   return ProcessNACKRequest(enable);
@@ -549,7 +549,7 @@ int32_t ViEChannel::ProcessNACKRequest(const bool enable) {
     }
     vie_receiver_.SetNackStatus(true, max_nack_reordering_threshold_);
     rtp_rtcp_->SetStorePacketsStatus(true, nack_history_size_sender_);
-    vcm_.RegisterPacketRequestCallback(this);
+    vcm_->RegisterPacketRequestCallback(this);
 
     CriticalSectionScoped cs(rtp_rtcp_cs_.get());
 
@@ -560,7 +560,7 @@ int32_t ViEChannel::ProcessNACKRequest(const bool enable) {
       rtp_rtcp->SetStorePacketsStatus(true, nack_history_size_sender_);
     }
     // Don't introduce errors when NACK is enabled.
-    vcm_.SetDecodeErrorMode(kNoErrors);
+    vcm_->SetDecodeErrorMode(kNoErrors);
   } else {
     CriticalSectionScoped cs(rtp_rtcp_cs_.get());
     for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
@@ -571,14 +571,14 @@ int32_t ViEChannel::ProcessNACKRequest(const bool enable) {
         rtp_rtcp->SetStorePacketsStatus(false, 0);
       }
     }
-    vcm_.RegisterPacketRequestCallback(NULL);
+    vcm_->RegisterPacketRequestCallback(NULL);
     if (paced_sender_ == NULL) {
       rtp_rtcp_->SetStorePacketsStatus(false, 0);
     }
     vie_receiver_.SetNackStatus(false, max_nack_reordering_threshold_);
     // When NACK is off, allow decoding with errors. Otherwise, the video
     // will freeze, and will only recover with a complete key frame.
-    vcm_.SetDecodeErrorMode(kWithErrors);
+    vcm_->SetDecodeErrorMode(kWithErrors);
   }
   return 0;
 }
@@ -616,7 +616,7 @@ int32_t ViEChannel::SetHybridNACKFECStatus(
     const bool enable,
     const unsigned char payload_typeRED,
     const unsigned char payload_typeFEC) {
-  if (vcm_.SetVideoProtection(kProtectionNackFEC, enable) != VCM_OK) {
+  if (vcm_->SetVideoProtection(kProtectionNackFEC, enable) != VCM_OK) {
     return -1;
   }
 
@@ -668,9 +668,9 @@ int ViEChannel::SetReceiverBufferingMode(int target_delay_ms) {
     max_incomplete_time_ms = static_cast<int>(kMaxIncompleteTimeMultiplier *
         target_delay_ms + 0.5f);
   }
-  vcm_.SetNackSettings(max_nack_list_size, max_nack_reordering_threshold_,
+  vcm_->SetNackSettings(max_nack_list_size, max_nack_reordering_threshold_,
                        max_incomplete_time_ms);
-  vcm_.SetMinReceiverDelay(target_delay_ms);
+  vcm_->SetMinReceiverDelay(target_delay_ms);
   if (vie_sync_.SetTargetBufferingDelay(target_delay_ms) < 0)
     return -1;
   return 0;
@@ -1288,7 +1288,7 @@ int32_t ViEChannel::StartReceive() {
 int32_t ViEChannel::StopReceive() {
   vie_receiver_.StopReceive();
   StopDecodeThread();
-  vcm_.ResetDecoder();
+  vcm_->ResetDecoder();
   return 0;
 }
 
@@ -1492,12 +1492,12 @@ bool ViEChannel::ChannelDecodeThreadFunction(void* obj) {
 }
 
 bool ViEChannel::ChannelDecodeProcess() {
-  vcm_.Decode(kMaxDecodeWaitTimeMs);
+  vcm_->Decode(kMaxDecodeWaitTimeMs);
   return true;
 }
 
 void ViEChannel::OnRttUpdate(uint32_t rtt) {
-  vcm_.SetReceiveChannelParameters(rtt);
+  vcm_->SetReceiveChannelParameters(rtt);
 }
 
 int32_t ViEChannel::StartDecodeThread() {
@@ -1574,8 +1574,7 @@ void ViEChannel::RegisterPreRenderCallback(
 
 void ViEChannel::RegisterPreDecodeImageCallback(
     EncodedImageCallback* pre_decode_callback) {
-  CriticalSectionScoped cs(callback_cs_.get());
-  vcm_.RegisterPreDecodeImageCallback(pre_decode_callback);
+  vcm_->RegisterPreDecodeImageCallback(pre_decode_callback);
 }
 
 void ViEChannel::OnApplicationDataReceived(const int32_t id,
@@ -1605,7 +1604,7 @@ int32_t ViEChannel::OnInitializeDecoder(
     const uint32_t rate) {
   LOG(LS_INFO) << "OnInitializeDecoder " << payload_type << " "
                << payload_name;
-  vcm_.ResetDecoder();
+  vcm_->ResetDecoder();
 
   CriticalSectionScoped cs(callback_cs_.get());
   decoder_reset_ = true;
