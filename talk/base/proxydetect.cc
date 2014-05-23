@@ -638,27 +638,27 @@ bool IsDefaultBrowserFirefox() {
   if (ERROR_SUCCESS != result)
     return false;
 
-  wchar_t* value = NULL;
   DWORD size, type;
+  bool success = false;
   result = RegQueryValueEx(key, L"", 0, &type, NULL, &size);
-  if (REG_SZ != type) {
-    result = ERROR_ACCESS_DENIED;  // Any error is fine
-  } else if (ERROR_SUCCESS == result) {
-    value = new wchar_t[size+1];
+  if (result == ERROR_SUCCESS && type == REG_SZ) {
+    wchar_t* value = new wchar_t[size+1];
     BYTE* buffer = reinterpret_cast<BYTE*>(value);
     result = RegQueryValueEx(key, L"", 0, &type, buffer, &size);
-  }
-  RegCloseKey(key);
-
-  bool success = false;
-  if (ERROR_SUCCESS == result) {
-    value[size] = L'\0';
-    for (size_t i = 0; i < size; ++i) {
-      value[i] = tolowercase(value[i]);
+    if (result == ERROR_SUCCESS) {
+      // Size returned by RegQueryValueEx is in bytes, convert to number of
+      // wchar_t's.
+      size /= sizeof(value[0]);
+      value[size] = L'\0';
+      for (size_t i = 0; i < size; ++i) {
+        value[i] = tolowercase(value[i]);
+      }
+      success = (NULL != strstr(value, L"firefox.exe"));
     }
-    success = (NULL != strstr(value, L"firefox.exe"));
+    delete[] value;
   }
-  delete [] value;
+
+  RegCloseKey(key);
   return success;
 }
 
