@@ -33,6 +33,7 @@ typedef struct Bitstreamstruct_dec {
   int16_t   full;             /* 0 - first byte in memory filled, second empty*/
   /* 1 - both bytes are empty (we just filled the previous memory */
 
+  int stream_size;  /* The size of stream. */
 } Bitstr_dec;
 
 /* Bitstream struct for encoder */

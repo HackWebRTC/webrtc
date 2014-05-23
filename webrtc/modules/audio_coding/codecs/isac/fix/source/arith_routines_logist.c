@@ -248,7 +248,7 @@ int16_t WebRtcIsacfix_DecLogisticMulti2(int16_t *dataQ7,
   int16_t     envCount;
   uint16_t    tmpARSpecQ8 = 0;
   int             k, i;
-
+  int offset = 0;
 
   /* point to beginning of stream buffer */
   streamPtr = streamData->stream + streamData->stream_index;
@@ -377,14 +377,27 @@ int16_t WebRtcIsacfix_DecLogisticMulti2(int16_t *dataQ7,
        * W_upper < 2^24 */
       while ( !(W_upper & 0xFF000000) )
       {
-        /* read next byte from stream */
-        if (streamData->full == 0) {
-          streamVal = WEBRTC_SPL_LSHIFT_W32(streamVal, 8) | (*streamPtr++ & 0x00FF);
-          streamData->full = 1;
+        if (streamPtr < streamData->stream + streamData->stream_size) {
+          /* read next byte from stream */
+          if (streamData->full == 0) {
+            streamVal = WEBRTC_SPL_LSHIFT_W32(streamVal, 8) | (*streamPtr++ & 0x00FF);
+            streamData->full = 1;
+          } else {
+            streamVal = WEBRTC_SPL_LSHIFT_W32(streamVal, 8) |
+                WEBRTC_SPL_RSHIFT_U16(*streamPtr, 8);
+            streamData->full = 0;
+          }
         } else {
-          streamVal = WEBRTC_SPL_LSHIFT_W32(streamVal, 8) |
-              WEBRTC_SPL_RSHIFT_U16(*streamPtr, 8);
-          streamData->full = 0;
+          /* Intending to read outside the stream. This can happen for the last
+           * two or three bytes. It is how the algorithm is implemented. Do
+           * not read from the bit stream and insert zeros instead. */
+          streamVal = WEBRTC_SPL_LSHIFT_W32(streamVal, 8);
+          if (streamData->full == 0) {
+            offset++;  // We would have incremented the pointer in this case.
+            streamData->full = 1;
+          } else {
+            streamData->full = 0;
+          }
         }
         W_upper = WEBRTC_SPL_LSHIFT_W32(W_upper, 8);
       }
@@ -392,7 +405,7 @@ int16_t WebRtcIsacfix_DecLogisticMulti2(int16_t *dataQ7,
     envCount++;
   }
 
-  streamData->stream_index = streamPtr - streamData->stream;
+  streamData->stream_index = streamPtr + offset - streamData->stream;
   streamData->W_upper = W_upper;
   streamData->streamval = streamVal;
 

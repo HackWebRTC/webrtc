@@ -791,6 +791,7 @@ int16_t WebRtcIsacfix_Decode(ISACFIX_MainStruct *ISAC_main_inst,
   }
 
   (ISAC_inst->ISACdec_obj.bitstr_obj).stream = (uint16_t *)encoded;
+  ISAC_inst->ISACdec_obj.bitstr_obj.stream_size = (len + 1) >> 1;
 
   /* convert bitstream from int16_t to bytes */
 #ifndef WEBRTC_ARCH_BIG_ENDIAN
