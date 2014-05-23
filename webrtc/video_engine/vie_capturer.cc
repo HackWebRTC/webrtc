@@ -337,6 +337,9 @@ int ViECapturer::IncomingFrameI420(const ViEVideoFrameI420& video_frame,
 void ViECapturer::SwapFrame(I420VideoFrame* frame) {
   external_capture_module_->IncomingI420VideoFrame(frame,
                                                    frame->render_time_ms());
+  frame->set_timestamp(0);
+  frame->set_ntp_time_ms(0);
+  frame->set_render_time_ms(0);
 }
 
 void ViECapturer::OnIncomingCapturedFrame(const int32_t capture_id,
