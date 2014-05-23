@@ -57,7 +57,6 @@ class VideoSendStream : public webrtc::VideoSendStream,
   bool DeliverRtcp(const uint8_t* packet, size_t length);
 
   // From VideoSendStreamInput.
-  virtual void PutFrame(const I420VideoFrame& frame) OVERRIDE;
   virtual void SwapFrame(I420VideoFrame* frame) OVERRIDE;
 
   // From webrtc::VideoSendStream.
@@ -69,7 +68,6 @@ class VideoSendStream : public webrtc::VideoSendStream,
   virtual std::string GetCName() OVERRIDE;
 
  private:
-  I420VideoFrame input_frame_;
   TransportAdapter transport_adapter_;
   EncodedFrameCallbackAdapter encoded_frame_proxy_;
   scoped_ptr<CriticalSectionWrapper> codec_lock_;
