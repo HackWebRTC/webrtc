@@ -167,5 +167,3 @@ void Console::OnMessage(talk_base::Message *msg) {
       break;
   }
 }
-
-}
