@@ -49,6 +49,7 @@ def _LicenseHeader(input_api):
   current_year = int(input_api.time.strftime('%Y'))
   allowed_years = (str(s) for s in reversed(xrange(2004, current_year + 1)))
   years_re = '(' + '|'.join(allowed_years) + ')'
+  years_re = '%s(--%s)?' % (years_re, years_re)
   license_header = (
       r'.*? libjingle\n'
       r'.*? Copyright %(year)s,? Google Inc\.\n'
