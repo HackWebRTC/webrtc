@@ -122,7 +122,9 @@ TEST_F(ChannelManagerTest, StartupShutdownOnThread) {
 }
 
 // Test that we fail to startup if we're given an unstarted thread.
-TEST_F(ChannelManagerTest, StartupShutdownOnUnstartedThread) {
+// TODO(fischman): delete once Thread::RunningForChannelManager() is gone
+// (webrtc:3388).
+TEST_F(ChannelManagerTest, DISABLED_StartupShutdownOnUnstartedThread) {
   EXPECT_TRUE(cm_->set_worker_thread(&worker_));
   EXPECT_FALSE(cm_->Init());
   EXPECT_FALSE(cm_->initialized());
