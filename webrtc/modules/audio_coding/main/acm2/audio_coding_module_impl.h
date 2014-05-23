@@ -92,14 +92,27 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   int Add10MsData(const AudioFrame& audio_frame);
 
   /////////////////////////////////////////
-  // (FEC) Forward Error Correction
+  // (RED) Redundant Coding
   //
 
-  // Configure FEC status i.e on/off.
-  int SetFECStatus(bool enable_fec);
+  // Configure RED status i.e. on/off.
+  int SetREDStatus(bool enable_red);
+
+  // Get RED status.
+  bool REDStatus() const;
+
+  /////////////////////////////////////////
+  // (FEC) Forward Error Correction (codec internal)
+  //
+
+  // Configure FEC status i.e. on/off.
+  int SetCodecFEC(bool enabled_codec_fec);
 
   // Get FEC status.
-  bool FECStatus() const;
+  bool CodecFEC() const;
+
+  // Set target packet loss rate
+  int SetPacketLossRate(int loss_rate);
 
   /////////////////////////////////////////
   //   (VAD) Voice Activity Detection
@@ -313,21 +326,24 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   CriticalSectionWrapper* acm_crit_sect_;
   ACMVADCallback* vad_callback_;
 
-  // RED/FEC.
+  // RED.
   bool is_first_red_;
-  bool fec_enabled_;
+  bool red_enabled_;
 
   // TODO(turajs): |red_buffer_| is allocated in constructor, why having them
   // as pointers and not an array. If concerned about the memory, then make a
   // set-up function to allocate them only when they are going to be used, i.e.
-  // FEC or Dual-streaming is enabled.
+  // RED or Dual-streaming is enabled.
   uint8_t* red_buffer_;
 
   // TODO(turajs): we actually don't need |fragmentation_| as a member variable.
   // It is sufficient to keep the length & payload type of previous payload in
   // member variables.
   RTPFragmentationHeader fragmentation_;
-  uint32_t last_fec_timestamp_;
+  uint32_t last_red_timestamp_;
+
+  // Codec internal FEC
+  bool codec_fec_enabled_;
 
   // This is to keep track of CN instances where we can send DTMFs.
   uint8_t previous_pltype_;

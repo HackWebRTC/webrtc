@@ -18,8 +18,9 @@
 #include "webrtc/modules/audio_coding/main/test/EncodeDecodeTest.h"
 #include "webrtc/modules/audio_coding/main/test/iSACTest.h"
 #include "webrtc/modules/audio_coding/main/test/opus_test.h"
+#include "webrtc/modules/audio_coding/main/test/PacketLossTest.h"
 #include "webrtc/modules/audio_coding/main/test/TestAllCodecs.h"
-#include "webrtc/modules/audio_coding/main/test/TestFEC.h"
+#include "webrtc/modules/audio_coding/main/test/TestRedFec.h"
 #include "webrtc/modules/audio_coding/main/test/TestStereo.h"
 #include "webrtc/modules/audio_coding/main/test/TestVADDTX.h"
 #include "webrtc/modules/audio_coding/main/test/TwoWayCommunication.h"
@@ -49,11 +50,11 @@ TEST(AudioCodingModuleTest, DISABLED_ON_ANDROID(TestEncodeDecode)) {
   Trace::ReturnTrace();
 }
 
-TEST(AudioCodingModuleTest, DISABLED_ON_ANDROID(TestFEC)) {
+TEST(AudioCodingModuleTest, DISABLED_ON_ANDROID(TestRedFec)) {
   Trace::CreateTrace();
   Trace::SetTraceFile((webrtc::test::OutputPath() +
       "acm_fec_trace.txt").c_str());
-  webrtc::TestFEC().Perform();
+  webrtc::TestRedFec().Perform();
   Trace::ReturnTrace();
 }
 
@@ -94,6 +95,38 @@ TEST(AudioCodingModuleTest, TestOpus) {
   Trace::SetTraceFile((webrtc::test::OutputPath() +
       "acm_opus_trace.txt").c_str());
   webrtc::OpusTest().Perform();
+  Trace::ReturnTrace();
+}
+
+TEST(AudioCodingModuleTest, TestPacketLoss) {
+  Trace::CreateTrace();
+  Trace::SetTraceFile((webrtc::test::OutputPath() +
+      "acm_packetloss_trace.txt").c_str());
+  webrtc::PacketLossTest(1, 10, 10, 1).Perform();
+  Trace::ReturnTrace();
+}
+
+TEST(AudioCodingModuleTest, TestPacketLossBurst) {
+  Trace::CreateTrace();
+  Trace::SetTraceFile((webrtc::test::OutputPath() +
+      "acm_packetloss_burst_trace.txt").c_str());
+  webrtc::PacketLossTest(1, 10, 10, 2).Perform();
+  Trace::ReturnTrace();
+}
+
+TEST(AudioCodingModuleTest, TestPacketLossStereo) {
+  Trace::CreateTrace();
+  Trace::SetTraceFile((webrtc::test::OutputPath() +
+      "acm_packetloss_trace.txt").c_str());
+  webrtc::PacketLossTest(2, 10, 10, 1).Perform();
+  Trace::ReturnTrace();
+}
+
+TEST(AudioCodingModuleTest, TestPacketLossStereoBurst) {
+  Trace::CreateTrace();
+  Trace::SetTraceFile((webrtc::test::OutputPath() +
+      "acm_packetloss_burst_trace.txt").c_str());
+  webrtc::PacketLossTest(2, 10, 10, 2).Perform();
   Trace::ReturnTrace();
 }
 

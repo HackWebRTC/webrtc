@@ -373,12 +373,12 @@ class AudioCodingModule: public Module {
   virtual int32_t Add10MsData(const AudioFrame& audio_frame) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
-  // (FEC) Forward Error Correction
+  // (RED) Redundant Coding
   //
 
   ///////////////////////////////////////////////////////////////////////////
-  // int32_t SetFECStatus(const bool enable)
-  // configure FEC status i.e. on/off.
+  // int32_t SetREDStatus()
+  // configure RED status i.e. on/off.
   //
   // RFC 2198 describes a solution which has a single payload type which
   // signifies a packet with redundancy. That packet then becomes a container,
@@ -388,27 +388,69 @@ class AudioCodingModule: public Module {
   // since each encapsulated payload must be preceded by a header indicating
   // the type of data enclosed.
   //
-  // This means that FEC is actually a RED scheme.
-  //
   // Input:
-  //   -enable_fec         : if true FEC is enabled, otherwise FEC is
+  //   -enable_red         : if true RED is enabled, otherwise RED is
   //                         disabled.
   //
   // Return value:
-  //   -1 if failed to set FEC status,
+  //   -1 if failed to set RED status,
   //    0 if succeeded.
   //
-  virtual int32_t SetFECStatus(const bool enable_fec) = 0;
+  virtual int32_t SetREDStatus(bool enable_red) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
-  // bool FECStatus()
-  // Get FEC status
+  // bool REDStatus()
+  // Get RED status
   //
-  // Return value
+  // Return value:
+  //   true if RED is enabled,
+  //   false if RED is disabled.
+  //
+  virtual bool REDStatus() const = 0;
+
+  ///////////////////////////////////////////////////////////////////////////
+  // (FEC) Forward Error Correction (codec internal)
+  //
+
+  ///////////////////////////////////////////////////////////////////////////
+  // int32_t SetCodecFEC()
+  // Configures codec internal FEC status i.e. on/off. No effects on codecs that
+  // do not provide internal FEC.
+  //
+  // Input:
+  //   -enable_fec         : if true FEC will be enabled otherwise the FEC is
+  //                         disabled.
+  //
+  // Return value:
+  //   -1 if failed, or the codec does not support FEC
+  //    0 if succeeded.
+  //
+  virtual int SetCodecFEC(bool enable_codec_fec) = 0;
+
+  ///////////////////////////////////////////////////////////////////////////
+  // bool CodecFEC()
+  // Gets status of codec internal FEC.
+  //
+  // Return value:
   //   true if FEC is enabled,
   //   false if FEC is disabled.
   //
-  virtual bool FECStatus() const = 0;
+  virtual bool CodecFEC() const = 0;
+
+  ///////////////////////////////////////////////////////////////////////////
+  // int SetPacketLossRate()
+  // Sets expected packet loss rate for encoding. Some encoders provide packet
+  // loss gnostic encoding to make stream less sensitive to packet losses,
+  // through e.g., FEC. No effects on codecs that do not provide such encoding.
+  //
+  // Input:
+  //   -packet_loss_rate   : expected packet loss rate (0 -- 100 inclusive).
+  //
+  // Return value
+  //   -1 if failed to set packet loss rate,
+  //   0 if succeeded.
+  //
+  virtual int SetPacketLossRate(int packet_loss_rate) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   //   (VAD) Voice Activity Detection

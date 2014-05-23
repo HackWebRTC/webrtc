@@ -560,6 +560,46 @@ class ACMGenericCodec {
   //
   virtual AudioDecoder* Decoder(int /* codec_id */) { return NULL; }
 
+  ///////////////////////////////////////////////////////////////////////////
+  // bool HasInternalFEC()
+  // Used to check if the codec has internal FEC.
+  //
+  // Return value:
+  //   true if the codec has an internal FEC, e.g. Opus.
+  //   false otherwise.
+  //
+  bool HasInternalFEC() const { return has_internal_fec_; }
+
+  ///////////////////////////////////////////////////////////////////////////
+  // int SetFEC();
+  // Sets the codec internal FEC. No effects on codecs that do not provide
+  // internal FEC.
+  //
+  // Input:
+  //   -enable_fec         : if true FEC will be enabled otherwise the FEC is
+  //                         disabled.
+  //
+  // Return value:
+  //   -1 if failed, or the codec does not support FEC
+  //    0 if succeeded.
+  //
+  virtual int SetFEC(bool /* enable_fec */) { return -1; }
+
+  ///////////////////////////////////////////////////////////////////////////
+  // int SetPacketLossRate()
+  // Sets expected packet loss rate for encoding. Some encoders provide packet
+  // loss gnostic encoding to make stream less sensitive to packet losses,
+  // through e.g., FEC. No effects on codecs that do not provide such encoding.
+  //
+  // Input:
+  //   -loss_rate          : expected packet loss rate (0 -- 100 inclusive).
+  //
+  // Return value:
+  //   -1 if failed, or codec does not support packet loss gnostic encoding,
+  //    0 if succeeded.
+  //
+  virtual int SetPacketLossRate(int /* loss_rate */) { return -1; }
+
  protected:
   ///////////////////////////////////////////////////////////////////////////
   // All the functions with FunctionNameSafe(...) contain the actual
@@ -898,6 +938,9 @@ class ACMGenericCodec {
   uint8_t num_lpc_params_;
   bool sent_cn_previous_;
   int16_t prev_frame_cng_;
+
+  // FEC.
+  bool has_internal_fec_;
 
   WebRtcACMCodecParams encoder_params_;
 

@@ -32,6 +32,10 @@ class ACMOpus : public ACMGenericCodec {
 
   int16_t InternalInitEncoder(WebRtcACMCodecParams *codec_params);
 
+  virtual int SetFEC(bool enable_fec) OVERRIDE;
+
+  virtual int SetPacketLossRate(int loss_rate) OVERRIDE;
+
  protected:
   void DestructEncoderSafe();
 
@@ -45,6 +49,9 @@ class ACMOpus : public ACMGenericCodec {
   uint16_t sample_freq_;
   uint16_t bitrate_;
   int channels_;
+
+  bool fec_enabled_;
+  int packet_loss_rate_;
 };
 
 }  // namespace acm2

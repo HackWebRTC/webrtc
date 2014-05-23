@@ -161,8 +161,8 @@ class DelayTest {
   void ConfigAcm(const AcmSettings& config) {
     ASSERT_EQ(0, acm_a_->SetVAD(config.dtx, config.dtx, VADAggr)) <<
         "Failed to set VAD.\n";
-    ASSERT_EQ(0, acm_a_->SetFECStatus(config.fec)) <<
-        "Failed to set FEC.\n";
+    ASSERT_EQ(0, acm_a_->SetREDStatus(config.fec)) <<
+        "Failed to set RED.\n";
   }
 
   void ConfigChannel(bool packet_loss) {

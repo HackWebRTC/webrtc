@@ -59,6 +59,7 @@ ACMGenericCodec::ACMGenericCodec()
       num_lpc_params_(kNewCNGNumPLCParams),
       sent_cn_previous_(false),
       prev_frame_cng_(0),
+      has_internal_fec_(false),
       neteq_decode_lock_(NULL),
       codec_wrapper_lock_(*RWLockWrapper::CreateRWLock()),
       last_timestamp_(0xD87F3F9F),

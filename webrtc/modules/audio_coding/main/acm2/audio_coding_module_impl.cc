@@ -39,11 +39,11 @@ enum {
   kMaxPacketSize = 2560
 };
 
-// Maximum number of payloads that can be packed in one RED payload. For
-// regular FEC, we only pack two payloads. In case of dual-streaming, in worst
-// case we might pack 3 payloads in one RED payload.
+// Maximum number of payloads that can be packed in one RED packet. For
+// regular RED, we only pack two payloads. In case of dual-streaming, in worst
+// case we might pack 3 payloads in one RED packet.
 enum {
-  kNumFecFragmentationVectors = 2,
+  kNumRedFragmentationVectors = 2,
   kMaxNumFragmentationVectors = 3
 };
 
@@ -136,8 +136,9 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
       acm_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       vad_callback_(NULL),
       is_first_red_(true),
-      fec_enabled_(false),
-      last_fec_timestamp_(0),
+      red_enabled_(false),
+      last_red_timestamp_(0),
+      codec_fec_enabled_(false),
       previous_pltype_(255),
       aux_rtp_header_(NULL),
       receiver_initialized_(false),
@@ -349,7 +350,7 @@ int AudioCodingModuleImpl::ProcessDualStream() {
       int16_t len_bytes = MAX_PAYLOAD_SIZE_BYTE;
       WebRtcACMEncodingType encoding_type;
       if (secondary_encoder_->Encode(red_buffer_, &len_bytes,
-                                     &last_fec_timestamp_,
+                                     &last_red_timestamp_,
                                      &encoding_type) < 0) {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                      "ProcessDual(): Encoding of secondary encoder Failed");
@@ -372,7 +373,7 @@ int AudioCodingModuleImpl::ProcessDualStream() {
       index_primary = secondary_ready_to_encode ?
           TimestampLessThan(primary_timestamp, secondary_timestamp) : 0;
       index_primary += has_previous_payload ?
-          TimestampLessThan(primary_timestamp, last_fec_timestamp_) : 0;
+          TimestampLessThan(primary_timestamp, last_red_timestamp_) : 0;
     }
 
     if (secondary_ready_to_encode) {
@@ -384,7 +385,7 @@ int AudioCodingModuleImpl::ProcessDualStream() {
 
     if (has_previous_payload) {
       index_previous_secondary = primary_ready_to_encode ?
-          (1 - TimestampLessThan(primary_timestamp, last_fec_timestamp_)) : 0;
+          (1 - TimestampLessThan(primary_timestamp, last_red_timestamp_)) : 0;
       // If secondary is ready it always have a timestamp larger than previous
       // secondary. So the index is either 0 or 1.
       index_previous_secondary += secondary_ready_to_encode ? 1 : 0;
@@ -405,7 +406,7 @@ int AudioCodingModuleImpl::ProcessDualStream() {
     } else if (index_secondary == 0) {
       current_timestamp = secondary_timestamp;
     } else {
-      current_timestamp = last_fec_timestamp_;
+      current_timestamp = last_red_timestamp_;
     }
 
     fragmentation_.fragmentationVectorSize = 0;
@@ -420,7 +421,7 @@ int AudioCodingModuleImpl::ProcessDualStream() {
       fragmentation_.fragmentationPlType[index_previous_secondary] =
           secondary_send_codec_inst_.pltype;
       fragmentation_.fragmentationTimeDiff[index_previous_secondary] =
-          static_cast<uint16_t>(current_timestamp - last_fec_timestamp_);
+          static_cast<uint16_t>(current_timestamp - last_red_timestamp_);
       fragmentation_.fragmentationVectorSize++;
     }
 
@@ -462,7 +463,7 @@ int AudioCodingModuleImpl::ProcessDualStream() {
   {
     CriticalSectionScoped lock(callback_crit_sect_);
     if (packetization_callback_ != NULL) {
-      // Callback with payload data, including redundant data (FEC/RED).
+      // Callback with payload data, including redundant data (RED).
       if (packetization_callback_->SendData(kAudioFrameSpeech,
                                             my_red_payload_type,
                                             current_timestamp, stream,
@@ -495,7 +496,7 @@ int AudioCodingModuleImpl::ProcessSingleStream() {
   FrameType frame_type = kAudioFrameSpeech;
   uint8_t current_payload_type = 0;
   bool has_data_to_send = false;
-  bool fec_active = false;
+  bool red_active = false;
   RTPFragmentationHeader my_fragmentation;
 
   // Keep the scope of the ACM critical section limited.
@@ -562,15 +563,15 @@ int AudioCodingModuleImpl::ProcessSingleStream() {
       // Redundancy encode is done here. The two bitstreams packetized into
       // one RTP packet and the fragmentation points are set.
       // Only apply RED on speech data.
-      if ((fec_enabled_) &&
+      if ((red_enabled_) &&
           ((encoding_type == kActiveNormalEncoded) ||
               (encoding_type == kPassiveNormalEncoded))) {
-        // FEC is enabled within this scope.
+        // RED is enabled within this scope.
         //
         // Note that, a special solution exists for iSAC since it is the only
         // codec for which GetRedPayload has a non-empty implementation.
         //
-        // Summary of the FEC scheme below (use iSAC as example):
+        // Summary of the RED scheme below (use iSAC as example):
         //
         //  1st (is_first_red_ is true) encoded iSAC frame (primary #1) =>
         //      - call GetRedPayload() and store redundancy for packet #1 in
@@ -581,7 +582,7 @@ int AudioCodingModuleImpl::ProcessSingleStream() {
         //      - store primary #2 in 1st fragment of RED buffer and send the
         //        combined packet
         //      - the transmitted packet contains primary #2 (new) and
-        //        reduncancy for packet #1 (old)
+        //        redundancy for packet #1 (old)
         //      - call GetRed_Payload() and store redundancy for packet #2 in
         //        second fragment of RED buffer
         //
@@ -604,19 +605,19 @@ int AudioCodingModuleImpl::ProcessSingleStream() {
         //
         //  Hence, even if every second packet is dropped, perfect
         //  reconstruction is possible.
-        fec_active = true;
+        red_active = true;
 
         has_data_to_send = false;
         // Skip the following part for the first packet in a RED session.
         if (!is_first_red_) {
-          // Rearrange stream such that FEC packets are included.
+          // Rearrange stream such that RED packets are included.
           // Replace stream now that we have stored current stream.
           memcpy(stream + fragmentation_.fragmentationOffset[1], red_buffer_,
                  fragmentation_.fragmentationLength[1]);
           // Update the fragmentation time difference vector, in number of
           // timestamps.
           uint16_t time_since_last = static_cast<uint16_t>(
-              rtp_timestamp - last_fec_timestamp_);
+              rtp_timestamp - last_red_timestamp_);
 
           // Update fragmentation vectors.
           fragmentation_.fragmentationPlType[1] =
@@ -630,7 +631,7 @@ int AudioCodingModuleImpl::ProcessSingleStream() {
 
         // Insert new packet payload type.
         fragmentation_.fragmentationPlType[0] = current_payload_type;
-        last_fec_timestamp_ = rtp_timestamp;
+        last_red_timestamp_ = rtp_timestamp;
 
         // Can be modified by the GetRedPayload() call if iSAC is utilized.
         red_length_bytes = length_bytes;
@@ -650,7 +651,7 @@ int AudioCodingModuleImpl::ProcessSingleStream() {
         if (codecs_[current_send_codec_idx_]->GetRedPayload(
             red_buffer_, &red_length_bytes) == -1) {
           // The codec was not iSAC => use current encoder output as redundant
-          // data instead (trivial FEC scheme).
+          // data instead (trivial RED scheme).
           memcpy(red_buffer_, stream, red_length_bytes);
         }
 
@@ -658,7 +659,7 @@ int AudioCodingModuleImpl::ProcessSingleStream() {
         // Update payload type with RED payload type.
         current_payload_type = red_pltype_;
         // We have packed 2 payloads.
-        fragmentation_.fragmentationVectorSize = kNumFecFragmentationVectors;
+        fragmentation_.fragmentationVectorSize = kNumRedFragmentationVectors;
 
         // Copy to local variable, as it will be used outside ACM lock.
         my_fragmentation.CopyFrom(fragmentation_);
@@ -672,8 +673,8 @@ int AudioCodingModuleImpl::ProcessSingleStream() {
     CriticalSectionScoped lock(callback_crit_sect_);
 
     if (packetization_callback_ != NULL) {
-      if (fec_active) {
-        // Callback with payload data, including redundant data (FEC/RED).
+      if (red_active) {
+        // Callback with payload data, including redundant data (RED).
         packetization_callback_->SendData(frame_type, current_payload_type,
                                           rtp_timestamp, stream, length_bytes,
                                           &my_fragmentation);
@@ -713,14 +714,14 @@ int AudioCodingModuleImpl::InitializeSender() {
     }
   }
 
-  // Initialize FEC/RED.
+  // Initialize RED.
   is_first_red_ = true;
-  if (fec_enabled_ || secondary_encoder_.get() != NULL) {
+  if (red_enabled_ || secondary_encoder_.get() != NULL) {
     if (red_buffer_ != NULL) {
       memset(red_buffer_, 0, MAX_PAYLOAD_SIZE_BYTE);
     }
-    if (fec_enabled_) {
-      ResetFragmentation(kNumFecFragmentationVectors);
+    if (red_enabled_) {
+      ResetFragmentation(kNumRedFragmentationVectors);
     } else {
       ResetFragmentation(0);
     }
@@ -1031,10 +1032,20 @@ int AudioCodingModuleImpl::RegisterSendCodec(const CodecInst& send_codec) {
 
     // Everything is fine so we can replace the previous codec with this one.
     if (send_codec_registered_) {
-      // If we change codec we start fresh with FEC.
+      // If we change codec we start fresh with RED.
       // This is not strictly required by the standard.
       is_first_red_ = true;
       codec_ptr->SetVAD(&dtx_enabled_, &vad_enabled_, &vad_mode_);
+
+      if (!codec_ptr->HasInternalFEC()) {
+        codec_fec_enabled_ = false;
+      } else {
+        if (codec_ptr->SetFEC(codec_fec_enabled_) < 0) {
+          WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
+                       "Cannot set codec FEC");
+          return -1;
+        }
+      }
     }
 
     current_send_codec_idx_ = codec_id;
@@ -1120,8 +1131,18 @@ int AudioCodingModuleImpl::RegisterSendCodec(const CodecInst& send_codec) {
       }
       send_codec_inst_.rate = send_codec.rate;
     }
-    previous_pltype_ = send_codec_inst_.pltype;
 
+    if (!codecs_[codec_id]->HasInternalFEC()) {
+      codec_fec_enabled_ = false;
+    } else {
+      if (codecs_[codec_id]->SetFEC(codec_fec_enabled_) < 0) {
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
+                     "Cannot set codec FEC");
+        return -1;
+      }
+    }
+
+    previous_pltype_ = send_codec_inst_.pltype;
     return 0;
   }
 }
@@ -1384,39 +1405,84 @@ int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
 }
 
 /////////////////////////////////////////
-//   (FEC) Forward Error Correction
+//   (RED) Redundant Coding
 //
 
-bool AudioCodingModuleImpl::FECStatus() const {
+bool AudioCodingModuleImpl::REDStatus() const {
   CriticalSectionScoped lock(acm_crit_sect_);
-  return fec_enabled_;
+
+  return red_enabled_;
 }
 
-// Configure FEC status i.e on/off.
-int AudioCodingModuleImpl::SetFECStatus(
+// Configure RED status i.e on/off.
+int AudioCodingModuleImpl::SetREDStatus(
 #ifdef WEBRTC_CODEC_RED
-    bool enable_fec) {
+    bool enable_red) {
   CriticalSectionScoped lock(acm_crit_sect_);
 
-  if (fec_enabled_ != enable_fec) {
+  if (enable_red == true && codec_fec_enabled_ == true) {
+    WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceAudioCoding, id_,
+                 "Codec internal FEC and RED cannot be co-enabled.");
+    return -1;
+  }
+
+  if (red_enabled_ != enable_red) {
     // Reset the RED buffer.
     memset(red_buffer_, 0, MAX_PAYLOAD_SIZE_BYTE);
 
     // Reset fragmentation buffers.
-    ResetFragmentation(kNumFecFragmentationVectors);
-    // Set fec_enabled_.
-    fec_enabled_ = enable_fec;
+    ResetFragmentation(kNumRedFragmentationVectors);
+    // Set red_enabled_.
+    red_enabled_ = enable_red;
   }
-  is_first_red_ = true;  // Make sure we restart FEC.
+  is_first_red_ = true;  // Make sure we restart RED.
   return 0;
 #else
-    bool /* enable_fec */) {
-  fec_enabled_ = false;
+    bool /* enable_red */) {
+  red_enabled_ = false;
   WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceAudioCoding, id_,
-               "  WEBRTC_CODEC_RED is undefined => fec_enabled_ = %d",
-               fec_enabled_);
+               "  WEBRTC_CODEC_RED is undefined => red_enabled_ = %d",
+               red_enabled_);
   return -1;
 #endif
+}
+
+/////////////////////////////////////////
+//   (FEC) Forward Error Correction (codec internal)
+//
+
+bool AudioCodingModuleImpl::CodecFEC() const {
+  return codec_fec_enabled_;
+}
+
+int AudioCodingModuleImpl::SetCodecFEC(bool enable_codec_fec) {
+  CriticalSectionScoped lock(acm_crit_sect_);
+
+  if (enable_codec_fec == true && red_enabled_ == true) {
+    WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceAudioCoding, id_,
+                 "Codec internal FEC and RED cannot be co-enabled.");
+    return -1;
+  }
+
+  // Set codec FEC.
+  if (HaveValidEncoder("SetCodecFEC") &&
+      codecs_[current_send_codec_idx_]->SetFEC(enable_codec_fec) < 0) {
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
+                   "Set codec internal FEC failed.");
+    return -1;
+  }
+  codec_fec_enabled_ = enable_codec_fec;
+  return 0;
+}
+
+int AudioCodingModuleImpl::SetPacketLossRate(int loss_rate) {
+  if (HaveValidEncoder("SetPacketLossRate") &&
+      codecs_[current_send_codec_idx_]->SetPacketLossRate(loss_rate) < 0) {
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
+                   "Set packet loss rate failed.");
+    return -1;
+  }
+  return 0;
 }
 
 /////////////////////////////////////////

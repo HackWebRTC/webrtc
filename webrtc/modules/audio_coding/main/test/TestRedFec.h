@@ -8,9 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_TESTFEC_H_
-#define WEBRTC_MODULES_AUDIO_CODING_MAIN_TESTFEC_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_TESTREDFEC_H_
+#define WEBRTC_MODULES_AUDIO_CODING_MAIN_TESTREDFEC_H_
 
+#include <string>
 #include "webrtc/modules/audio_coding/main/test/ACMTest.h"
 #include "webrtc/modules/audio_coding/main/test/Channel.h"
 #include "webrtc/modules/audio_coding/main/test/PCMFile.h"
@@ -18,10 +19,12 @@
 
 namespace webrtc {
 
-class TestFEC : public ACMTest {
+class Config;
+
+class TestRedFec : public ACMTest {
  public:
-  TestFEC();
-  ~TestFEC();
+  explicit TestRedFec();
+  ~TestRedFec();
 
   void Perform();
  private:
@@ -45,4 +48,4 @@ class TestFEC : public ACMTest {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_TESTFEC_H_
+#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_TESTREDFEC_H_

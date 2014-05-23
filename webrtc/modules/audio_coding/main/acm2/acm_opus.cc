@@ -75,6 +75,8 @@ ACMOpus::ACMOpus(int16_t codec_id)
   // Opus has internal DTX, but we dont use it for now.
   has_internal_dtx_ = false;
 
+  has_internal_fec_ = true;
+
   if (codec_id_ != ACMCodecDB::kOpus) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
                  "Wrong codec id for Opus.");
@@ -195,6 +197,31 @@ int16_t ACMOpus::SetBitRateSafe(const int32_t rate) {
     return 0;
   }
 
+  return -1;
+}
+
+int ACMOpus::SetFEC(bool enable_fec) {
+  // Ask the encoder to enable FEC.
+  if (enable_fec) {
+    if (WebRtcOpus_EnableFec(encoder_inst_ptr_) == 0) {
+      fec_enabled_ = true;
+      return 0;
+    }
+  } else {
+    if (WebRtcOpus_DisableFec(encoder_inst_ptr_) == 0) {
+      fec_enabled_ = false;
+      return 0;
+    }
+  }
+  return -1;
+}
+
+int ACMOpus::SetPacketLossRate(int loss_rate) {
+  // Ask the encoder to change the target packet loss rate.
+  if (WebRtcOpus_SetPacketLossRate(encoder_inst_ptr_, loss_rate) == 0) {
+    packet_loss_rate_ = loss_rate;
+    return 0;
+  }
   return -1;
 }
 

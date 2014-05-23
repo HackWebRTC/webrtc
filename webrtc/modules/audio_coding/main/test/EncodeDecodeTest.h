@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_TEST_ENCODEDECODETEST_H_
 
 #include <stdio.h>
+#include <string.h>
 
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/main/test/ACMTest.h"
@@ -44,7 +45,8 @@ class TestPacketization : public AudioPacketizationCallback {
 class Sender {
  public:
   Sender();
-  void Setup(AudioCodingModule *acm, RTPStream *rtpStream);
+  void Setup(AudioCodingModule *acm, RTPStream *rtpStream,
+             std::string in_file_name, int sample_rate, int channels);
   void Teardown();
   void Run();
   bool Add10MsData();
@@ -53,8 +55,10 @@ class Sender {
   uint8_t testMode;
   uint8_t codeId;
 
- private:
+ protected:
   AudioCodingModule* _acm;
+
+ private:
   PCMFile _pcmFile;
   AudioFrame _audioFrame;
   TestPacketization* _packetization;
@@ -63,10 +67,12 @@ class Sender {
 class Receiver {
  public:
   Receiver();
-  void Setup(AudioCodingModule *acm, RTPStream *rtpStream);
+  virtual ~Receiver() {};
+  void Setup(AudioCodingModule *acm, RTPStream *rtpStream,
+             std::string out_file_name, int channels);
   void Teardown();
   void Run();
-  bool IncomingPacket();
+  virtual bool IncomingPacket();
   bool PlayoutData();
 
   //for auto_test and logging
@@ -74,17 +80,19 @@ class Receiver {
   uint8_t testMode;
 
  private:
-  AudioCodingModule* _acm;
-  RTPStream* _rtpStream;
   PCMFile _pcmFile;
   int16_t* _playoutBuffer;
   uint16_t _playoutLengthSmpls;
-  uint8_t _incomingPayload[MAX_INCOMING_PAYLOAD];
-  uint16_t _payloadSizeBytes;
-  uint16_t _realPayloadSizeBytes;
   int32_t _frequency;
   bool _firstTime;
+
+ protected:
+  AudioCodingModule* _acm;
+  uint8_t _incomingPayload[MAX_INCOMING_PAYLOAD];
+  RTPStream* _rtpStream;
   WebRtcRTPHeader _rtpInfo;
+  uint16_t _realPayloadSizeBytes;
+  uint16_t _payloadSizeBytes;
   uint32_t _nextTime;
 };
 
