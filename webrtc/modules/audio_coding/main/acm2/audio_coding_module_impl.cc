@@ -1835,6 +1835,7 @@ int AudioCodingModuleImpl::IncomingPayload(const uint8_t* incoming_payload,
     aux_rtp_header_->type.Audio.channel = 1;
   }
 
+  aux_rtp_header_->header.timestamp = timestamp;
   IncomingPacket(incoming_payload, payload_length, *aux_rtp_header_);
   // Get ready for the next payload.
   aux_rtp_header_->header.sequenceNumber++;
