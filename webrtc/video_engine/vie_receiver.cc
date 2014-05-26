@@ -238,12 +238,16 @@ int ViEReceiver::InsertRTPPacket(const uint8_t* rtp_packet,
   header.payload_type_frequency = kVideoPayloadTypeFrequency;
 
   bool in_order = IsPacketInOrder(header);
-  rtp_receive_statistics_->IncomingPacket(
-      header, rtp_packet_length, IsPacketRetransmitted(header, in_order));
   rtp_payload_registry_->SetIncomingPayloadType(header);
-  return ReceivePacket(rtp_packet, rtp_packet_length, header, in_order)
+  int ret = ReceivePacket(rtp_packet, rtp_packet_length, header, in_order)
       ? 0
       : -1;
+  // Update receive statistics after ReceivePacket.
+  // Receive statistics will be reset if the payload type changes (make sure
+  // that the first packet is included in the stats).
+  rtp_receive_statistics_->IncomingPacket(
+      header, rtp_packet_length, IsPacketRetransmitted(header, in_order));
+  return ret;
 }
 
 bool ViEReceiver::ReceivePacket(const uint8_t* packet,

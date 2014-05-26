@@ -1557,4 +1557,52 @@ TEST_F(CallTest, ReceiverReferenceTimeReportDisabled) {
   TestXrReceiverReferenceTimeReport(false);
 }
 
+TEST_F(CallTest, TestReceivedRtpPacketStats) {
+  static const size_t kNumRtpPacketsToSend = 5;
+  class ReceivedRtpStatsObserver : public test::RtpRtcpObserver {
+   public:
+    ReceivedRtpStatsObserver()
+        : test::RtpRtcpObserver(kDefaultTimeoutMs),
+          receive_stream_(NULL),
+          sent_rtp_(0) {}
+
+    void SetReceiveStream(VideoReceiveStream* stream) {
+      receive_stream_ = stream;
+    }
+
+   private:
+    virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
+      if (sent_rtp_ >= kNumRtpPacketsToSend) {
+        VideoReceiveStream::Stats stats = receive_stream_->GetStats();
+        if (kNumRtpPacketsToSend == stats.rtp_stats.packets) {
+          observation_complete_->Set();
+        }
+        return DROP_PACKET;
+      }
+      ++sent_rtp_;
+      return SEND_PACKET;
+    }
+
+    VideoReceiveStream* receive_stream_;
+    uint32_t sent_rtp_;
+  } observer;
+
+  CreateCalls(Call::Config(observer.SendTransport()),
+              Call::Config(observer.ReceiveTransport()));
+  observer.SetReceivers(receiver_call_->Receiver(), sender_call_->Receiver());
+
+  CreateTestConfigs();
+  CreateStreams();
+  observer.SetReceiveStream(receive_stream_);
+  CreateFrameGenerator();
+  StartSending();
+
+  EXPECT_EQ(kEventSignaled, observer.Wait())
+      << "Timed out while verifying number of received RTP packets.";
+
+  StopSending();
+  observer.StopSending();
+  DestroyStreams();
+}
+
 }  // namespace webrtc
