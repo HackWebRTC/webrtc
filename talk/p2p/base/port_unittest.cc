@@ -895,7 +895,8 @@ TEST_F(PortTest, TestLocalToSymNat) {
   TestLocalToStun(NAT_SYMMETRIC);
 }
 
-TEST_F(PortTest, TestLocalToTurn) {
+// Flaky: https://code.google.com/p/webrtc/issues/detail?id=3316.
+TEST_F(PortTest, DISABLED_TestLocalToTurn) {
   TestLocalToRelay(RELAY_TURN, PROTO_UDP);
 }
 

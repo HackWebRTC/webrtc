@@ -148,7 +148,8 @@ class SharedExclusiveLockTest
   int value_;
 };
 
-TEST_F(SharedExclusiveLockTest, TestSharedShared) {
+// Flaky: https://code.google.com/p/webrtc/issues/detail?id=3318
+TEST_F(SharedExclusiveLockTest, DISABLED_TestSharedShared) {
   int value0, value1;
   bool done0, done1;
   ReadTask reader0(shared_exclusive_lock_.get(), &value_, &done0);

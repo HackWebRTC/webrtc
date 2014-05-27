@@ -1530,7 +1530,8 @@ TEST_F(P2PTransportChannelTest, TestDefaultDscpValue) {
 }
 
 // Verify IPv6 connection is preferred over IPv4.
-TEST_F(P2PTransportChannelTest, TestIPv6Connections) {
+// Flaky: https://code.google.com/p/webrtc/issues/detail?id=3317
+TEST_F(P2PTransportChannelTest, DISABLED_TestIPv6Connections) {
   AddAddress(0, kIPv6PublicAddrs[0]);
   AddAddress(0, kPublicAddrs[0]);
   AddAddress(1, kIPv6PublicAddrs[1]);
