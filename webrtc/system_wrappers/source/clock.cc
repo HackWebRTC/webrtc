@@ -20,6 +20,7 @@
 #include <time.h>
 #endif
 
+#include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 
 namespace webrtc {
@@ -143,20 +144,27 @@ Clock* Clock::GetRealTimeClock() {
 }
 
 SimulatedClock::SimulatedClock(int64_t initial_time_us)
-    : time_us_(initial_time_us) {}
+    : time_us_(initial_time_us), lock_(RWLockWrapper::CreateRWLock()) {
+}
+
+SimulatedClock::~SimulatedClock() {
+}
 
 int64_t SimulatedClock::TimeInMilliseconds() {
+  ReadLockScoped synchronize(*lock_);
   return (time_us_ + 500) / 1000;
 }
 
 int64_t SimulatedClock::TimeInMicroseconds() {
+  ReadLockScoped synchronize(*lock_);
   return time_us_;
 }
 
 void SimulatedClock::CurrentNtp(uint32_t& seconds, uint32_t& fractions) {
-  seconds = (TimeInMilliseconds() / 1000) + kNtpJan1970;
-  fractions = (uint32_t)((TimeInMilliseconds() % 1000) *
-      kMagicNtpFractionalUnit / 1000);
+  int64_t now_ms = TimeInMilliseconds();
+  seconds = (now_ms / 1000) + kNtpJan1970;
+  fractions =
+      static_cast<uint32_t>((now_ms % 1000) * kMagicNtpFractionalUnit / 1000);
 }
 
 int64_t SimulatedClock::CurrentNtpInMilliseconds() {
@@ -168,6 +176,7 @@ void SimulatedClock::AdvanceTimeMilliseconds(int64_t milliseconds) {
 }
 
 void SimulatedClock::AdvanceTimeMicroseconds(int64_t microseconds) {
+  WriteLockScoped synchronize(*lock_);
   time_us_ += microseconds;
 }
 

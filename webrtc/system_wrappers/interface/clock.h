@@ -11,9 +11,13 @@
 #ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_CLOCK_H_
 #define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_CLOCK_H_
 
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/thread_annotations.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
+
+class RWLockWrapper;
 
 // January 1970, in NTP seconds.
 const uint32_t kNtpJan1970 = 2208988800UL;
@@ -51,7 +55,7 @@ class SimulatedClock : public Clock {
  public:
   explicit SimulatedClock(int64_t initial_time_us);
 
-  virtual ~SimulatedClock() {}
+  virtual ~SimulatedClock();
 
   // Return a timestamp in milliseconds relative to some arbitrary source; the
   // source is fixed for this clock.
@@ -73,7 +77,8 @@ class SimulatedClock : public Clock {
   void AdvanceTimeMicroseconds(int64_t microseconds);
 
  private:
-  int64_t time_us_;
+  int64_t time_us_ GUARDED_BY(lock_);
+  scoped_ptr<RWLockWrapper> lock_;
 };
 
 };  // namespace webrtc
