@@ -17,17 +17,26 @@
 
 #include "webrtc/common.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
-#include "webrtc/modules/utility/interface/mock/mock_process_thread.h"
+#include "webrtc/modules/utility/interface/process_thread.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/video_engine/vie_encoder.h"
 
-using ::testing::NiceMock;
-
 namespace webrtc {
+
+// TODO(mflodman) Create a common mock in module utility.
+class TestProcessThread : public ProcessThread {
+ public:
+  TestProcessThread() {}
+  ~TestProcessThread() {}
+  virtual int32_t Start() { return 0; }
+  virtual int32_t Stop() { return 0; }
+  virtual int32_t RegisterModule(Module* module) { return 0; }
+  virtual int32_t DeRegisterModule(const Module* module) { return 0; }
+};
 
 class MockVieEncoder : public ViEEncoder {
  public:
-  explicit MockVieEncoder(ProcessThread* process_thread)
+  explicit MockVieEncoder(TestProcessThread* process_thread)
       : ViEEncoder(1, 1, 1, config_, *process_thread, NULL) {}
   ~MockVieEncoder() {}
 
@@ -46,10 +55,10 @@ class MockVieEncoder : public ViEEncoder {
 class VieKeyRequestTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
-    process_thread_.reset(new NiceMock<MockProcessThread>);
+    process_thread_.reset(new TestProcessThread());
     encoder_state_feedback_.reset(new EncoderStateFeedback());
   }
-  scoped_ptr<MockProcessThread> process_thread_;
+  scoped_ptr<TestProcessThread> process_thread_;
   scoped_ptr<EncoderStateFeedback> encoder_state_feedback_;
 };
 

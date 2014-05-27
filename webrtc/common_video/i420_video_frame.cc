@@ -10,8 +10,6 @@
 
 #include "webrtc/common_video/interface/i420_video_frame.h"
 
-#include <string.h>
-
 #include <algorithm>  // swap
 
 namespace webrtc {
@@ -78,15 +76,6 @@ int I420VideoFrame::CopyFrame(const I420VideoFrame& videoFrame) {
   ntp_time_ms_ = videoFrame.ntp_time_ms_;
   render_time_ms_ = videoFrame.render_time_ms_;
   return 0;
-}
-
-I420VideoFrame* I420VideoFrame::CloneFrame() const {
-  scoped_ptr<I420VideoFrame> new_frame(new I420VideoFrame());
-  if (new_frame->CopyFrame(*this) == -1) {
-    // CopyFrame failed.
-    return NULL;
-  }
-  return new_frame.release();
 }
 
 void I420VideoFrame::SwapFrame(I420VideoFrame* videoFrame) {

@@ -10,7 +10,6 @@
 
 #include "webrtc/video_engine/vie_capturer.h"
 
-#include "webrtc/common_video/interface/texture_video_frame.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/utility/interface/process_thread.h"
@@ -347,16 +346,11 @@ void ViECapturer::OnIncomingCapturedFrame(const int32_t capture_id,
   TRACE_EVENT_ASYNC_BEGIN1("webrtc", "Video", video_frame.render_time_ms(),
                            "render_time", video_frame.render_time_ms());
 
-  if (video_frame.native_handle() != NULL) {
-    captured_frame_.reset(video_frame.CloneFrame());
-  } else {
-    if (captured_frame_ == NULL || captured_frame_->native_handle() != NULL)
-      captured_frame_.reset(new I420VideoFrame());
-    captured_frame_->SwapFrame(&video_frame);
-  }
+  captured_frame_.SwapFrame(&video_frame);
   capture_event_.Set();
-  overuse_detector_->FrameCaptured(captured_frame_->width(),
-                                   captured_frame_->height());
+  overuse_detector_->FrameCaptured(captured_frame_.width(),
+                                   captured_frame_.height());
+  return;
 }
 
 void ViECapturer::OnCaptureDelayChanged(const int32_t id,
@@ -479,9 +473,7 @@ bool ViECapturer::ViECaptureProcess() {
     deliver_cs_->Enter();
     if (SwapCapturedAndDeliverFrameIfAvailable()) {
       encode_start_time = Clock::GetRealTimeClock()->TimeInMilliseconds();
-      DeliverI420Frame(deliver_frame_.get());
-      if (deliver_frame_->native_handle() != NULL)
-        deliver_frame_.reset();  // Release the texture so it can be reused.
+      DeliverI420Frame(&deliver_frame_);
     }
     deliver_cs_->Leave();
     if (current_brightness_level_ != reported_brightness_level_) {
@@ -502,11 +494,6 @@ bool ViECapturer::ViECaptureProcess() {
 }
 
 void ViECapturer::DeliverI420Frame(I420VideoFrame* video_frame) {
-  if (video_frame->native_handle() != NULL) {
-    ViEFrameProviderBase::DeliverFrame(video_frame);
-    return;
-  }
-
   // Apply image enhancement and effect filter.
   if (deflicker_frame_stats_) {
     if (image_proc_module_->GetFrameStats(deflicker_frame_stats_,
@@ -621,21 +608,11 @@ void ViECapturer::OnNoPictureAlarm(const int32_t id,
 
 bool ViECapturer::SwapCapturedAndDeliverFrameIfAvailable() {
   CriticalSectionScoped cs(capture_cs_.get());
-  if (captured_frame_ == NULL)
+  if (captured_frame_.IsZeroSize())
     return false;
 
-  if (captured_frame_->native_handle() != NULL) {
-    deliver_frame_.reset(captured_frame_.release());
-    return true;
-  }
-
-  if (captured_frame_->IsZeroSize())
-    return false;
-
-  if (deliver_frame_ == NULL)
-    deliver_frame_.reset(new I420VideoFrame());
-  deliver_frame_->SwapFrame(captured_frame_.get());
-  captured_frame_->ResetSize();
+  deliver_frame_.SwapFrame(&captured_frame_);
+  captured_frame_.ResetSize();
   return true;
 }
 

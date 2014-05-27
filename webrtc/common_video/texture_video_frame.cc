@@ -57,11 +57,6 @@ int TextureVideoFrame::CopyFrame(const I420VideoFrame& videoFrame) {
   return -1;
 }
 
-I420VideoFrame* TextureVideoFrame::CloneFrame() const {
-  return new TextureVideoFrame(
-      handle_, width(), height(), timestamp(), render_time_ms());
-}
-
 void TextureVideoFrame::SwapFrame(I420VideoFrame* videoFrame) {
   assert(false);  // Should not be called.
 }

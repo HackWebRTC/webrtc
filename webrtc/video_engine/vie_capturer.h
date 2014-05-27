@@ -169,8 +169,8 @@ class ViECapturer
   EventWrapper& capture_event_;
   EventWrapper& deliver_event_;
 
-  scoped_ptr<I420VideoFrame> captured_frame_;
-  scoped_ptr<I420VideoFrame> deliver_frame_;
+  I420VideoFrame captured_frame_;
+  I420VideoFrame deliver_frame_;
 
   // Image processing.
   ViEEffectFilter* effect_filter_;
