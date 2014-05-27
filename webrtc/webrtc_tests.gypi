@@ -49,6 +49,15 @@
         'test/test.gyp:test_main',
         'webrtc',
       ],
+      'conditions': [
+        # TODO(henrike): remove build_with_chromium==1 when the bots are
+        # using Chromium's buildbots.
+        ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+          'dependencies': [
+            '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
+          ],
+        }],
+      ],
     },
     {
       'target_name': 'webrtc_perf_tests',
