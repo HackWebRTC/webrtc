@@ -140,10 +140,35 @@ int ViEBaseImpl::CpuOveruseMeasures(int video_channel,
   if (provider) {
     ViECapturer* capturer = is.Capture(provider->Id());
     if (capturer) {
-      capturer->CpuOveruseMeasures(capture_jitter_ms,
-                                   avg_encode_time_ms,
-                                   encode_usage_percent,
-                                   capture_queue_delay_ms_per_s);
+      CpuOveruseMetrics metrics;
+      capturer->GetCpuOveruseMetrics(&metrics);
+      *capture_jitter_ms = metrics.capture_jitter_ms;
+      *avg_encode_time_ms = metrics.avg_encode_time_ms;
+      *encode_usage_percent = metrics.encode_usage_percent;
+      *capture_queue_delay_ms_per_s = metrics.capture_queue_delay_ms_per_s;
+      return 0;
+    }
+  }
+  return -1;
+}
+
+int ViEBaseImpl::GetCpuOveruseMetrics(int video_channel,
+                                      CpuOveruseMetrics* metrics) {
+  ViEChannelManagerScoped cs(*(shared_data_.channel_manager()));
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    shared_data_.SetLastError(kViEBaseInvalidChannelId);
+    return -1;
+  }
+  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
+  assert(vie_encoder);
+
+  ViEInputManagerScoped is(*(shared_data_.input_manager()));
+  ViEFrameProviderBase* provider = is.FrameProvider(vie_encoder);
+  if (provider) {
+    ViECapturer* capturer = is.Capture(provider->Id());
+    if (capturer) {
+      capturer->GetCpuOveruseMetrics(metrics);
       return 0;
     }
   }

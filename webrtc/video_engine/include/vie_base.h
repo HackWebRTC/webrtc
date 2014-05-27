@@ -109,6 +109,24 @@ struct CpuOveruseOptions {
   }
 };
 
+struct CpuOveruseMetrics {
+  CpuOveruseMetrics()
+    : capture_jitter_ms(-1),
+      avg_encode_time_ms(-1),
+      encode_usage_percent(-1),
+      capture_queue_delay_ms_per_s(-1) {}
+
+  int capture_jitter_ms;  // The current estimated jitter in ms based on
+                          // incoming captured frames.
+  int avg_encode_time_ms;   // The average encode time in ms.
+  int encode_usage_percent; // The average encode time divided by the average
+                            // time difference between incoming captured frames.
+  int capture_queue_delay_ms_per_s;  // The current time delay between an
+                                     // incoming captured frame until the frame
+                                     // is being processed. The delay is
+                                     // expressed in ms delay per second.
+};
+
 class WEBRTC_DLLEXPORT VideoEngine {
  public:
   // Creates a VideoEngine object, which can then be used to acquire sub‐APIs.
@@ -193,16 +211,12 @@ class WEBRTC_DLLEXPORT ViEBase {
   }
 
   // Gets cpu overuse measures.
-  // capture_jitter_ms: The current estimated jitter in ms based on incoming
-  //                    captured frames.
-  // avg_encode_time_ms: The average encode time in ms.
-  // encode_usage_percent: The average encode time divided by the average time
-  //                       difference between incoming captured frames.
-  // capture_queue_delay_ms_per_s: The current time delay between an incoming
-  //                               captured frame until the frame is being
-  //                               processed. The delay is expressed in ms
-  //                               delay per second.
   // TODO(asapersson): Remove default implementation.
+  virtual int GetCpuOveruseMetrics(int channel,
+                                   CpuOveruseMetrics* metrics) {
+    return -1;
+  }
+  // TODO(asapersson): Remove this function when libjingle has been updated.
   virtual int CpuOveruseMeasures(int channel,
                                  int* capture_jitter_ms,
                                  int* avg_encode_time_ms,

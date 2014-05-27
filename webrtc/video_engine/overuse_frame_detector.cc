@@ -302,29 +302,19 @@ void OveruseFrameDetector::SetOptions(const CpuOveruseOptions& options) {
   ResetAll(num_pixels_);
 }
 
-int OveruseFrameDetector::CaptureJitterMs() const {
-  CriticalSectionScoped cs(crit_.get());
-  return static_cast<int>(capture_deltas_.StdDev() + 0.5);
-}
-
-int OveruseFrameDetector::AvgEncodeTimeMs() const {
-  CriticalSectionScoped cs(crit_.get());
-  return encode_time_->filtered_encode_time_ms();
-}
-
-int OveruseFrameDetector::EncodeUsagePercent() const {
-  CriticalSectionScoped cs(crit_.get());
-  return encode_usage_->UsageInPercent();
-}
-
-int OveruseFrameDetector::AvgCaptureQueueDelayMsPerS() const {
-  CriticalSectionScoped cs(crit_.get());
-  return capture_queue_delay_->filtered_delay_ms_per_s();
-}
-
 int OveruseFrameDetector::CaptureQueueDelayMsPerS() const {
   CriticalSectionScoped cs(crit_.get());
   return capture_queue_delay_->delay_ms();
+}
+
+void OveruseFrameDetector::GetCpuOveruseMetrics(
+    CpuOveruseMetrics* metrics) const {
+  CriticalSectionScoped cs(crit_.get());
+  metrics->capture_jitter_ms = static_cast<int>(capture_deltas_.StdDev() + 0.5);
+  metrics->avg_encode_time_ms = encode_time_->filtered_encode_time_ms();
+  metrics->encode_usage_percent = encode_usage_->UsageInPercent();
+  metrics->capture_queue_delay_ms_per_s =
+      capture_queue_delay_->filtered_delay_ms_per_s();
 }
 
 int32_t OveruseFrameDetector::TimeUntilNextProcess() {

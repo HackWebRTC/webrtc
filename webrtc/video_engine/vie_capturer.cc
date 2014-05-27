@@ -249,15 +249,8 @@ void ViECapturer::SetCpuOveruseOptions(const CpuOveruseOptions& options) {
   overuse_detector_->SetOptions(options);
 }
 
-void ViECapturer::CpuOveruseMeasures(int* capture_jitter_ms,
-                                     int* avg_encode_time_ms,
-                                     int* encode_usage_percent,
-                                     int* capture_queue_delay_ms_per_s) const {
-  *capture_jitter_ms = overuse_detector_->CaptureJitterMs();
-  *avg_encode_time_ms = overuse_detector_->AvgEncodeTimeMs();
-  *encode_usage_percent = overuse_detector_->EncodeUsagePercent();
-  *capture_queue_delay_ms_per_s =
-      overuse_detector_->AvgCaptureQueueDelayMsPerS();
+void ViECapturer::GetCpuOveruseMetrics(CpuOveruseMetrics* metrics) const {
+  overuse_detector_->GetCpuOveruseMetrics(metrics);
 }
 
 int32_t ViECapturer::SetCaptureDelay(int32_t delay_ms) {

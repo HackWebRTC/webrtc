@@ -70,25 +70,23 @@ class OveruseFrameDetector : public Module {
   void FrameEncoded(int encode_time_ms);
 
   // Accessors.
-  // The estimated jitter based on incoming captured frames.
-  int CaptureJitterMs() const;
 
-  // Running average of reported encode time (FrameEncoded()).
-  // Only used for stats.
-  int AvgEncodeTimeMs() const;
+  // Returns CpuOveruseMetrics where
+  // capture_jitter_ms: The estimated jitter based on incoming captured frames.
+  // avg_encode_time_ms: Running average of reported encode time
+  //                     (FrameEncoded()). Only used for stats.
+  // encode_usage_percent: The average encode time divided by the average time
+  //                       difference between incoming captured frames.
+  // capture_queue_delay_ms_per_s: The current time delay between an incoming
+  //                               captured frame (FrameCaptured()) until the
+  //                               frame is being processed
+  //                               (FrameProcessingStarted()). (Note: if a new
+  //                               frame is received before an old frame has
+  //                               been processed, the old frame is skipped).
+  //                               The delay is expressed in ms delay per sec.
+  //                               Only used for stats.
+  void GetCpuOveruseMetrics(CpuOveruseMetrics* metrics) const;
 
-  // The average encode time divided by the average time difference between
-  // incoming captured frames.
-  // This variable is currently only used for statistics.
-  int EncodeUsagePercent() const;
-
-  // The current time delay between an incoming captured frame (FrameCaptured())
-  // until the frame is being processed (FrameProcessingStarted()).
-  // (Note: if a new frame is received before an old frame has been processed,
-  // the old frame is skipped).
-  // The delay is returned as the delay in ms per second.
-  // This variable is currently only used for statistics.
-  int AvgCaptureQueueDelayMsPerS() const;
   int CaptureQueueDelayMsPerS() const;
 
   // Implements Module.

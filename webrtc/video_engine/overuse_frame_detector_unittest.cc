@@ -118,6 +118,24 @@ class OveruseFrameDetectorTest : public ::testing::Test {
     overuse_detector_->Process();
   }
 
+  int CaptureJitterMs() {
+    CpuOveruseMetrics metrics;
+    overuse_detector_->GetCpuOveruseMetrics(&metrics);
+    return metrics.capture_jitter_ms;
+  }
+
+  int AvgEncodeTimeMs() {
+    CpuOveruseMetrics metrics;
+    overuse_detector_->GetCpuOveruseMetrics(&metrics);
+    return metrics.avg_encode_time_ms;
+  }
+
+  int EncodeUsagePercent() {
+    CpuOveruseMetrics metrics;
+    overuse_detector_->GetCpuOveruseMetrics(&metrics);
+    return metrics.encode_usage_percent;
+  }
+
   CpuOveruseOptions options_;
   scoped_ptr<SimulatedClock> clock_;
   scoped_ptr<MockCpuOveruseObserver> observer_;
@@ -196,49 +214,58 @@ TEST_F(OveruseFrameDetectorTest, IncorrectConsecutiveCountTriggersNoOveruse) {
   TriggerOveruse(1);
 }
 
+TEST_F(OveruseFrameDetectorTest, GetCpuOveruseMetrics) {
+  CpuOveruseMetrics metrics;
+  overuse_detector_->GetCpuOveruseMetrics(&metrics);
+  EXPECT_GT(metrics.capture_jitter_ms, 0);
+  EXPECT_GT(metrics.avg_encode_time_ms, 0);
+  EXPECT_GT(metrics.encode_usage_percent, 0);
+  EXPECT_GE(metrics.capture_queue_delay_ms_per_s, 0);
+}
+
 TEST_F(OveruseFrameDetectorTest, CaptureJitter) {
-  EXPECT_EQ(InitialJitter(), overuse_detector_->CaptureJitterMs());
+  EXPECT_EQ(InitialJitter(), CaptureJitterMs());
   InsertFramesWithInterval(1000, kFrameInterval33ms, kWidth, kHeight);
-  EXPECT_NE(InitialJitter(), overuse_detector_->CaptureJitterMs());
+  EXPECT_NE(InitialJitter(), CaptureJitterMs());
 }
 
 TEST_F(OveruseFrameDetectorTest, CaptureJitterResetAfterResolutionChange) {
-  EXPECT_EQ(InitialJitter(), overuse_detector_->CaptureJitterMs());
+  EXPECT_EQ(InitialJitter(), CaptureJitterMs());
   InsertFramesWithInterval(1000, kFrameInterval33ms, kWidth, kHeight);
-  EXPECT_NE(InitialJitter(), overuse_detector_->CaptureJitterMs());
+  EXPECT_NE(InitialJitter(), CaptureJitterMs());
   // Verify reset.
   InsertFramesWithInterval(1, kFrameInterval33ms, kWidth, kHeight + 1);
-  EXPECT_EQ(InitialJitter(), overuse_detector_->CaptureJitterMs());
+  EXPECT_EQ(InitialJitter(), CaptureJitterMs());
 }
 
 TEST_F(OveruseFrameDetectorTest, CaptureJitterResetAfterFrameTimeout) {
-  EXPECT_EQ(InitialJitter(), overuse_detector_->CaptureJitterMs());
+  EXPECT_EQ(InitialJitter(), CaptureJitterMs());
   InsertFramesWithInterval(1000, kFrameInterval33ms, kWidth, kHeight);
-  EXPECT_NE(InitialJitter(), overuse_detector_->CaptureJitterMs());
+  EXPECT_NE(InitialJitter(), CaptureJitterMs());
   InsertFramesWithInterval(
       1, options_.frame_timeout_interval_ms, kWidth, kHeight);
-  EXPECT_NE(InitialJitter(), overuse_detector_->CaptureJitterMs());
+  EXPECT_NE(InitialJitter(), CaptureJitterMs());
   // Verify reset.
   InsertFramesWithInterval(
       1, options_.frame_timeout_interval_ms + 1, kWidth, kHeight);
-  EXPECT_EQ(InitialJitter(), overuse_detector_->CaptureJitterMs());
+  EXPECT_EQ(InitialJitter(), CaptureJitterMs());
 }
 
 TEST_F(OveruseFrameDetectorTest, CaptureJitterResetAfterChangingThreshold) {
-  EXPECT_EQ(InitialJitter(), overuse_detector_->CaptureJitterMs());
+  EXPECT_EQ(InitialJitter(), CaptureJitterMs());
   options_.high_capture_jitter_threshold_ms = 90.0f;
   overuse_detector_->SetOptions(options_);
-  EXPECT_EQ(InitialJitter(), overuse_detector_->CaptureJitterMs());
+  EXPECT_EQ(InitialJitter(), CaptureJitterMs());
   options_.low_capture_jitter_threshold_ms = 30.0f;
   overuse_detector_->SetOptions(options_);
-  EXPECT_EQ(InitialJitter(), overuse_detector_->CaptureJitterMs());
+  EXPECT_EQ(InitialJitter(), CaptureJitterMs());
 }
 
 TEST_F(OveruseFrameDetectorTest, MinFrameSamplesBeforeUpdatingCaptureJitter) {
   options_.min_frame_samples = 40;
   overuse_detector_->SetOptions(options_);
   InsertFramesWithInterval(40, kFrameInterval33ms, kWidth, kHeight);
-  EXPECT_EQ(InitialJitter(), overuse_detector_->CaptureJitterMs());
+  EXPECT_EQ(InitialJitter(), CaptureJitterMs());
 }
 
 TEST_F(OveruseFrameDetectorTest, NoCaptureQueueDelay) {
@@ -289,33 +316,33 @@ TEST_F(OveruseFrameDetectorTest, CaptureQueueDelayNoMatchingCapturedFrame) {
 
 TEST_F(OveruseFrameDetectorTest, EncodedFrame) {
   const int kInitialAvgEncodeTimeInMs = 5;
-  EXPECT_EQ(kInitialAvgEncodeTimeInMs, overuse_detector_->AvgEncodeTimeMs());
+  EXPECT_EQ(kInitialAvgEncodeTimeInMs, AvgEncodeTimeMs());
   for (int i = 0; i < 30; i++) {
     clock_->AdvanceTimeMilliseconds(33);
     overuse_detector_->FrameEncoded(2);
   }
-  EXPECT_EQ(2, overuse_detector_->AvgEncodeTimeMs());
+  EXPECT_EQ(2, AvgEncodeTimeMs());
 }
 
 TEST_F(OveruseFrameDetectorTest, InitialEncodeUsage) {
-  EXPECT_EQ(InitialEncodeUsage(), overuse_detector_->EncodeUsagePercent());
+  EXPECT_EQ(InitialEncodeUsage(), EncodeUsagePercent());
 }
 
 TEST_F(OveruseFrameDetectorTest, EncodedUsage) {
   const int kEncodeTimeMs = 5;
   InsertAndEncodeFramesWithInterval(
       1000, kFrameInterval33ms, kWidth, kHeight, kEncodeTimeMs);
-  EXPECT_EQ(15, overuse_detector_->EncodeUsagePercent());
+  EXPECT_EQ(15, EncodeUsagePercent());
 }
 
 TEST_F(OveruseFrameDetectorTest, EncodeUsageResetAfterChangingThreshold) {
-  EXPECT_EQ(InitialEncodeUsage(), overuse_detector_->EncodeUsagePercent());
+  EXPECT_EQ(InitialEncodeUsage(), EncodeUsagePercent());
   options_.high_encode_usage_threshold_percent = 100;
   overuse_detector_->SetOptions(options_);
-  EXPECT_EQ(InitialEncodeUsage(), overuse_detector_->EncodeUsagePercent());
+  EXPECT_EQ(InitialEncodeUsage(), EncodeUsagePercent());
   options_.low_encode_usage_threshold_percent = 20;
   overuse_detector_->SetOptions(options_);
-  EXPECT_EQ(InitialEncodeUsage(), overuse_detector_->EncodeUsagePercent());
+  EXPECT_EQ(InitialEncodeUsage(), EncodeUsagePercent());
 }
 
 TEST_F(OveruseFrameDetectorTest, TriggerOveruseWithEncodeUsage) {
