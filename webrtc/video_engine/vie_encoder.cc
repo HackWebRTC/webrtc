@@ -487,6 +487,10 @@ void ViEEncoder::DeliverFrame(int id,
     }
     encoder_paused_and_dropped_frame_ = false;
   }
+  if (video_frame->native_handle() != NULL) {
+    // TODO(wuchengli): add texture support. http://crbug.com/362437
+    return;
+  }
 
   // Convert render time, in ms, to RTP timestamp.
   const int kMsToRtpTimestamp = 90;
