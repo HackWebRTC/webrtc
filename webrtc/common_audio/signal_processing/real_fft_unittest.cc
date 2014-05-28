@@ -49,7 +49,7 @@ TEST_F(RealFFTTest, CreateFailsOnBadInput) {
   EXPECT_TRUE(fft == NULL);
 }
 
-TEST_F(RealFFTTest, DISABLED_ON_ANDROID(RealAndComplexMatch)) {
+TEST_F(RealFFTTest, RealAndComplexMatch) {
   int i = 0;
   int j = 0;
   int16_t real_fft_time[kTimeDataLength] = {0};
