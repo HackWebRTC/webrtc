@@ -50,7 +50,10 @@ class MouseCursorMonitorTest : public testing::Test,
 // tests. Figure out how to do that without breaking other tests in
 // modules_unittests and enable these tests on Mac.
 // https://code.google.com/p/webrtc/issues/detail?id=2532
-#if !defined(WEBRTC_MAC)
+//
+// Disabled on Windows due to flake, see:
+// https://code.google.com/p/webrtc/issues/detail?id=3408
+#if !defined(WEBRTC_MAC) && !defined(WEBRTC_WIN)
 #define MAYBE(x) x
 #else
 #define MAYBE(x) DISABLED_##x
