@@ -1315,8 +1315,11 @@ static void NonLinearProcessing(AecCore* aec, float* output, float* outputH) {
 
     fft[PART_LEN + i] *= scale;  // fft scaling
     aec->outBuf[i] = fft[PART_LEN + i] * sqrtHanning[PART_LEN - i];
+
+    // Saturate output to keep it in the allowed range.
+    output[i] = WEBRTC_SPL_SAT(
+        WEBRTC_SPL_WORD16_MAX, fft[i], WEBRTC_SPL_WORD16_MIN);
   }
-  memcpy(output, fft, sizeof(*output) * PART_LEN);
 
   // For H band
   if (aec->sampFreq == 32000) {
@@ -1349,7 +1352,9 @@ static void NonLinearProcessing(AecCore* aec, float* output, float* outputH) {
         dtmp += cnScaleHband * fft[i];
       }
 
-      outputH[i] = dtmp;
+      // Saturate output to keep it in the allowed range.
+      outputH[i] = WEBRTC_SPL_SAT(
+          WEBRTC_SPL_WORD16_MAX, dtmp, WEBRTC_SPL_WORD16_MIN);
     }
   }
 
