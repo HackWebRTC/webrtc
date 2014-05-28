@@ -217,11 +217,11 @@ int PacketBuffer::NumSamplesInBuffer(DecoderDatabase* decoder_database,
       int duration;
       if (packet->sync_packet) {
         duration = last_duration;
+      } else if (packet->primary) {
+        duration =
+            decoder->PacketDuration(packet->payload, packet->payload_length);
       } else {
-        duration = packet->primary ?
-            decoder->PacketDuration(packet->payload, packet->payload_length) :
-            decoder->PacketDurationRedundant(packet->payload,
-                                             packet->payload_length);
+        continue;
       }
       if (duration >= 0) {
         last_duration = duration;  // Save the most up-to-date (valid) duration.
