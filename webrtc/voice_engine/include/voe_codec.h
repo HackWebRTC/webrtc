@@ -102,6 +102,18 @@ public:
     virtual int SetSendCNPayloadType(
         int channel, int type, PayloadFrequencies frequency = kFreq16000Hz) = 0;
 
+    // Sets the codec internal FEC (forward error correction) status for a
+    // specified |channel|. Returns 0 if success, and -1 if failed.
+    // TODO(minyue): Make SetFECStatus() pure virtual when fakewebrtcvoiceengine
+    // in talk is ready.
+    virtual int SetFECStatus(int channel, bool enable) { return -1; }
+
+    // Gets the codec internal FEC status for a specified |channel|. Returns 0
+    // with the status stored in |enabled| if success, and -1 if encountered
+    // error.
+    // TODO(minyue): Make GetFECStatus() pure virtual when fakewebrtcvoiceengine
+    // in talk is ready.
+    virtual int GetFECStatus(int channel, bool& enabled) { return -1; }
 
     // Sets the VAD/DTX (silence suppression) status and |mode| for a
     // specified |channel|. Disabling VAD (through |enable|) will also disable

@@ -89,6 +89,24 @@ class StatisticsProxy : public RtcpStatisticsCallback {
   ChannelStatistics stats_;
 };
 
+class VoEBitrateObserver : public BitrateObserver {
+ public:
+  explicit VoEBitrateObserver(Channel* owner)
+      : owner_(owner) {}
+  virtual ~VoEBitrateObserver() {}
+
+  // Implements BitrateObserver.
+  virtual void OnNetworkChanged(const uint32_t bitrate_bps,
+                                const uint8_t fraction_lost,
+                                const uint32_t rtt) OVERRIDE {
+    // |fraction_lost| has a scale of 0 - 255.
+    owner_->OnNetworkChanged(bitrate_bps, fraction_lost, rtt);
+  }
+
+ private:
+  Channel* owner_;
+};
+
 int32_t
 Channel::SendData(FrameType frameType,
                   uint8_t   payloadType,
@@ -900,7 +918,13 @@ Channel::Channel(int32_t channelId,
     _RxVadDetection(false),
     _rxAgcIsEnabled(false),
     _rxNsIsEnabled(false),
-    restored_packet_in_use_(false)
+    restored_packet_in_use_(false),
+    bitrate_controller_(
+        BitrateController::CreateBitrateController(Clock::GetRealTimeClock(),
+                                                   true)),
+    rtcp_bandwidth_observer_(
+        bitrate_controller_->CreateRtcpBandwidthObserver()),
+    send_bitrate_observer_(new VoEBitrateObserver(this))
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::Channel() - ctor");
@@ -915,6 +939,7 @@ Channel::Channel(int32_t channelId,
     configuration.rtcp_feedback = this;
     configuration.audio_messages = this;
     configuration.receive_statistics = rtp_receive_statistics_.get();
+    configuration.bandwidth_callback = rtcp_bandwidth_observer_.get();
 
     _rtpRtcpModule.reset(RtpRtcp::CreateRtpRtcp(configuration));
 
@@ -1489,7 +1514,25 @@ Channel::SetSendCodec(const CodecInst& codec)
         return -1;
     }
 
+    bitrate_controller_->SetBitrateObserver(send_bitrate_observer_.get(),
+                                            codec.rate, 0, 0);
+
     return 0;
+}
+
+void
+Channel::OnNetworkChanged(const uint32_t bitrate_bps,
+                          const uint8_t fraction_lost,  // 0 - 255.
+                          const uint32_t rtt) {
+  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
+      "Channel::OnNetworkChanged(bitrate_bps=%d, fration_lost=%d, rtt=%d)",
+      bitrate_bps, fraction_lost, rtt);
+  // Normalizes rate to 0 - 100.
+  if (audio_coding_->SetPacketLossRate(100 * fraction_lost / 255) != 0) {
+    _engineStatisticsPtr->SetLastError(VE_AUDIO_CODING_MODULE_ERROR,
+        kTraceError, "OnNetworkChanged() failed to set packet loss rate");
+    assert(false);  // This should not happen.
+  }
 }
 
 int32_t
@@ -3508,15 +3551,15 @@ Channel::GetRTPStatistics(CallStatistics& stats)
     return 0;
 }
 
-int Channel::SetFECStatus(bool enable, int redPayloadtype) {
+int Channel::SetREDStatus(bool enable, int redPayloadtype) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::SetFECStatus()");
+               "Channel::SetREDStatus()");
 
   if (enable) {
     if (redPayloadtype < 0 || redPayloadtype > 127) {
       _engineStatisticsPtr->SetLastError(
           VE_PLTYPE_ERROR, kTraceError,
-          "SetFECStatus() invalid RED payload type");
+          "SetREDStatus() invalid RED payload type");
       return -1;
     }
 
@@ -3538,7 +3581,7 @@ int Channel::SetFECStatus(bool enable, int redPayloadtype) {
 }
 
 int
-Channel::GetFECStatus(bool& enabled, int& redPayloadtype)
+Channel::GetREDStatus(bool& enabled, int& redPayloadtype)
 {
     enabled = audio_coding_->REDStatus();
     if (enabled)
@@ -3548,20 +3591,41 @@ Channel::GetFECStatus(bool& enabled, int& redPayloadtype)
         {
             _engineStatisticsPtr->SetLastError(
                 VE_RTP_RTCP_MODULE_ERROR, kTraceError,
-                "GetFECStatus() failed to retrieve RED PT from RTP/RTCP "
+                "GetREDStatus() failed to retrieve RED PT from RTP/RTCP "
                 "module");
             return -1;
         }
         WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
                    VoEId(_instanceId, _channelId),
-                   "GetFECStatus() => enabled=%d, redPayloadtype=%d",
+                   "GetREDStatus() => enabled=%d, redPayloadtype=%d",
                    enabled, redPayloadtype);
         return 0;
     }
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
                  VoEId(_instanceId, _channelId),
-                 "GetFECStatus() => enabled=%d", enabled);
+                 "GetREDStatus() => enabled=%d", enabled);
     return 0;
+}
+
+int Channel::SetCodecFECStatus(bool enable) {
+  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
+               "Channel::SetCodecFECStatus()");
+
+  if (audio_coding_->SetCodecFEC(enable) != 0) {
+    _engineStatisticsPtr->SetLastError(
+        VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
+        "SetCodecFECStatus() failed to set FEC state");
+    return -1;
+  }
+  return 0;
+}
+
+bool Channel::GetCodecFECStatus() {
+  bool enabled = audio_coding_->CodecFEC();
+  WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
+               VoEId(_instanceId, _channelId),
+               "GetCodecFECStatus() => enabled=%d", enabled);
+  return enabled;
 }
 
 void Channel::SetNACKStatus(bool enable, int maxNumberOfPackets) {
@@ -4501,5 +4565,6 @@ int Channel::SetSendRtpHeaderExtension(bool enable, RTPExtensionType type,
   }
   return error;
 }
+
 }  // namespace voe
 }  // namespace webrtc

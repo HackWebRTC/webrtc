@@ -15,7 +15,7 @@
 //  - Transmission of RTCP sender reports.
 //  - Obtaining RTCP data from incoming RTCP sender reports.
 //  - RTP and RTCP statistics (jitter, packet loss, RTT etc.).
-//  - Forward Error Correction (FEC).
+//  - Redundant Coding (RED)
 //  - Writing RTP and RTCP packets to binary files for off-line analysis of
 //    the call quality.
 //
@@ -200,13 +200,33 @@ public:
     virtual int GetRemoteRTCPReportBlocks(
         int channel, std::vector<ReportBlock>* receive_blocks) = 0;
 
+    // Sets the Redundant Coding (RED) status on a specific |channel|.
+    // TODO(minyue): Make SetREDStatus() pure virtual when fakewebrtcvoiceengine
+    // in talk is ready.
+    virtual int SetREDStatus(
+        int channel, bool enable, int redPayloadtype = -1) { return -1; }
+
+    // Gets the RED status on a specific |channel|.
+    // TODO(minyue): Make GetREDStatus() pure virtual when fakewebrtcvoiceengine
+    // in talk is ready.
+    virtual int GetREDStatus(
+        int channel, bool& enabled, int& redPayloadtype) { return -1; }
+
     // Sets the Forward Error Correction (FEC) status on a specific |channel|.
+    // TODO(minyue): Remove SetFECStatus() when SetFECStatus() is replaced by
+    // SetREDStatus() in fakewebrtcvoiceengine.
     virtual int SetFECStatus(
-        int channel, bool enable, int redPayloadtype = -1) = 0;
+        int channel, bool enable, int redPayloadtype = -1) {
+      return SetREDStatus(channel, enable, redPayloadtype);
+    };
 
     // Gets the FEC status on a specific |channel|.
+    // TODO(minyue): Remove GetFECStatus() when GetFECStatus() is replaced by
+    // GetREDStatus() in fakewebrtcvoiceengine.
     virtual int GetFECStatus(
-        int channel, bool& enabled, int& redPayloadtype) = 0;
+        int channel, bool& enabled, int& redPayloadtype) {
+      return SetREDStatus(channel, enabled, redPayloadtype);
+    }
 
     // This function enables Negative Acknowledgment (NACK) using RTCP,
     // implemented based on RFC 4585. NACK retransmits RTP packets if lost on

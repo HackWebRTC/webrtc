@@ -16,6 +16,7 @@
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/modules/audio_conference_mixer/interface/audio_conference_mixer_defines.h"
 #include "webrtc/modules/audio_processing/rms_level.h"
+#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/utility/interface/file_player.h"
@@ -335,8 +336,10 @@ public:
                          unsigned int& discardedPackets);
     int GetRemoteRTCPReportBlocks(std::vector<ReportBlock>* report_blocks);
     int GetRTPStatistics(CallStatistics& stats);
-    int SetFECStatus(bool enable, int redPayloadtype);
-    int GetFECStatus(bool& enabled, int& redPayloadtype);
+    int SetREDStatus(bool enable, int redPayloadtype);
+    int GetREDStatus(bool& enabled, int& redPayloadtype);
+    int SetCodecFECStatus(bool enable);
+    bool GetCodecFECStatus();
     void SetNACKStatus(bool enable, int maxNumberOfPackets);
     int StartRTPDump(const char fileNameUTF8[1024], RTPDirections direction);
     int StopRTPDump(RTPDirections direction);
@@ -471,6 +474,11 @@ public:
     uint32_t PrepareEncodeAndSend(int mixingFrequency);
     uint32_t EncodeAndSend();
 
+    // From BitrateObserver (called by the RTP/RTCP module).
+    void OnNetworkChanged(const uint32_t bitrate_bps,
+                          const uint8_t fraction_lost,  // 0 - 255.
+                          const uint32_t rtt);
+
 private:
     bool ReceivePacket(const uint8_t* packet, int packet_length,
                        const RTPHeader& header, bool in_order);
@@ -603,6 +611,10 @@ private:
     bool _rxAgcIsEnabled;
     bool _rxNsIsEnabled;
     bool restored_packet_in_use_;
+    // RtcpBandwidthObserver
+    scoped_ptr<BitrateController> bitrate_controller_;
+    scoped_ptr<RtcpBandwidthObserver> rtcp_bandwidth_observer_;
+    scoped_ptr<BitrateObserver> send_bitrate_observer_;
 };
 
 }  // namespace voe

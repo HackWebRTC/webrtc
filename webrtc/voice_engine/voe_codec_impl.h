@@ -40,6 +40,10 @@ public:
 
     virtual int GetRecPayloadType(int channel, CodecInst& codec);
 
+    virtual int SetFECStatus(int channel, bool enable);
+
+    virtual int GetFECStatus(int channel, bool& enabled);
+
     virtual int SetVADStatus(int channel,
                              bool enable,
                              VadModes mode = kVadConventional,

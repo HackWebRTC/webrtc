@@ -295,6 +295,41 @@ int VoECodecImpl::SetSendCNPayloadType(int channel, int type,
     return channelPtr->SetSendCNPayloadType(type, frequency);
 }
 
+int VoECodecImpl::SetFECStatus(int channel, bool enable) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+               "SetCodecFECStatus(channel=%d, enable=%d)", channel, enable);
+  if (!_shared->statistics().Initialized()) {
+    _shared->SetLastError(VE_NOT_INITED, kTraceError);
+    return -1;
+  }
+  voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
+  voe::Channel* channelPtr = ch.channel();
+  if (channelPtr == NULL) {
+    _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+                          "SetCodecFECStatus() failed to locate channel");
+    return -1;
+  }
+  return channelPtr->SetCodecFECStatus(enable);
+}
+
+int VoECodecImpl::GetFECStatus(int channel, bool& enabled) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+               "GetCodecFECStatus(channel=%d)", channel);
+  if (!_shared->statistics().Initialized()) {
+    _shared->SetLastError(VE_NOT_INITED, kTraceError);
+    return -1;
+  }
+  voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
+  voe::Channel* channelPtr = ch.channel();
+  if (channelPtr == NULL) {
+    _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+                          "GetFECStatus() failed to locate channel");
+    return -1;
+  }
+  enabled = channelPtr->GetCodecFECStatus();
+  return 0;
+}
+
 int VoECodecImpl::SetVADStatus(int channel, bool enable, VadModes mode,
                                bool disableDTX)
 {

@@ -427,10 +427,10 @@ int VoERTP_RTCPImpl::GetRemoteRTCPReportBlocks(
   return channel_ptr->GetRemoteRTCPReportBlocks(report_blocks);
 }
 
-int VoERTP_RTCPImpl::SetFECStatus(int channel, bool enable, int redPayloadtype)
+int VoERTP_RTCPImpl::SetREDStatus(int channel, bool enable, int redPayloadtype)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "SetFECStatus(channel=%d, enable=%d, redPayloadtype=%d)",
+                 "SetREDStatus(channel=%d, enable=%d, redPayloadtype=%d)",
                  channel, enable, redPayloadtype);
 #ifdef WEBRTC_CODEC_RED
     if (!_shared->statistics().Initialized())
@@ -443,23 +443,23 @@ int VoERTP_RTCPImpl::SetFECStatus(int channel, bool enable, int redPayloadtype)
     if (channelPtr == NULL)
     {
         _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-            "SetFECStatus() failed to locate channel");
+            "SetREDStatus() failed to locate channel");
         return -1;
     }
-    return channelPtr->SetFECStatus(enable, redPayloadtype);
+    return channelPtr->SetREDStatus(enable, redPayloadtype);
 #else
     _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-        "SetFECStatus() RED is not supported");
+        "SetREDStatus() RED is not supported");
     return -1;
 #endif
 }
 
-int VoERTP_RTCPImpl::GetFECStatus(int channel,
+int VoERTP_RTCPImpl::GetREDStatus(int channel,
                                   bool& enabled,
                                   int& redPayloadtype)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "GetFECStatus(channel=%d, enabled=?, redPayloadtype=?)",
+                 "GetREDStatus(channel=%d, enabled=?, redPayloadtype=?)",
                  channel);
 #ifdef WEBRTC_CODEC_RED
     if (!_shared->statistics().Initialized())
@@ -472,17 +472,16 @@ int VoERTP_RTCPImpl::GetFECStatus(int channel,
     if (channelPtr == NULL)
     {
         _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-            "GetFECStatus() failed to locate channel");
+            "GetREDStatus() failed to locate channel");
         return -1;
     }
-    return channelPtr->GetFECStatus(enabled, redPayloadtype);
+    return channelPtr->GetREDStatus(enabled, redPayloadtype);
 #else
     _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-        "GetFECStatus() RED is not supported");
+        "GetREDStatus() RED is not supported");
     return -1;
 #endif
 }
-
 
 int VoERTP_RTCPImpl::SetNACKStatus(int channel,
                                    bool enable,

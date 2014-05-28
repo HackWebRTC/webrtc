@@ -73,12 +73,12 @@ public:
     virtual int GetRemoteRTCPReportBlocks(
         int channel, std::vector<ReportBlock>* report_blocks);
 
-    // FEC
-    virtual int SetFECStatus(int channel,
+    // RED
+    virtual int SetREDStatus(int channel,
                              bool enable,
                              int redPayloadtype = -1);
 
-    virtual int GetFECStatus(int channel, bool& enabled, int& redPayloadtype);
+    virtual int GetREDStatus(int channel, bool& enabled, int& redPayloadtype);
 
     //NACK
     virtual int SetNACKStatus(int channel,

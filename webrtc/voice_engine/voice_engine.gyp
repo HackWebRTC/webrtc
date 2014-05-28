@@ -20,6 +20,7 @@
         '<(webrtc_root)/modules/modules.gyp:audio_conference_mixer',
         '<(webrtc_root)/modules/modules.gyp:audio_device',
         '<(webrtc_root)/modules/modules.gyp:audio_processing',
+        '<(webrtc_root)/modules/modules.gyp:bitrate_controller',
         '<(webrtc_root)/modules/modules.gyp:media_file',
         '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
         '<(webrtc_root)/modules/modules.gyp:webrtc_utility',

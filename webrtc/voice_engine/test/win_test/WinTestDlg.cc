@@ -1238,7 +1238,7 @@ BEGIN_MESSAGE_MAP(CWinTestDlg, CDialog)
     ON_BN_CLICKED(IDC_CHECK_NS_1, &CWinTestDlg::OnBnClickedCheckNs1)
     ON_BN_CLICKED(IDC_CHECK_REC_CALL, &CWinTestDlg::OnBnClickedCheckRecCall)
     ON_BN_CLICKED(IDC_CHECK_TYPING_DETECTION, &CWinTestDlg::OnBnClickedCheckTypingDetection)
-    ON_BN_CLICKED(IDC_CHECK_FEC, &CWinTestDlg::OnBnClickedCheckFEC)
+    ON_BN_CLICKED(IDC_CHECK_RED, &CWinTestDlg::OnBnClickedCheckRED)
     ON_BN_CLICKED(IDC_BUTTON_CLEAR_ERROR_CALLBACK, &CWinTestDlg::OnBnClickedButtonClearErrorCallback)
 END_MESSAGE_MAP()
 
@@ -1440,7 +1440,7 @@ BOOL CWinTestDlg::OnInitDialog()
     GetDlgItem(IDC_CHECK_RXVAD)->EnableWindow(FALSE);
     GetDlgItem(IDC_CHECK_AGC_1)->EnableWindow(FALSE);
     GetDlgItem(IDC_CHECK_NS_1)->EnableWindow(FALSE);
-    GetDlgItem(IDC_CHECK_FEC)->EnableWindow(FALSE);
+    GetDlgItem(IDC_CHECK_RED)->EnableWindow(FALSE);
 
     CComboBox* comboIP(NULL);
     comboIP = (CComboBox*)GetDlgItem(IDC_COMBO_IP_1);
@@ -1709,7 +1709,7 @@ void CWinTestDlg::OnBnClickedButtonCreate1()
         GetDlgItem(IDC_CHECK_RXVAD)->EnableWindow(TRUE);
         GetDlgItem(IDC_CHECK_AGC_1)->EnableWindow(TRUE);
         GetDlgItem(IDC_CHECK_NS_1)->EnableWindow(TRUE);
-        GetDlgItem(IDC_CHECK_FEC)->EnableWindow(TRUE);
+        GetDlgItem(IDC_CHECK_RED)->EnableWindow(TRUE);
 
         // Always set send codec to default codec <=> index 0.
         CodecInst codec;
@@ -1799,7 +1799,7 @@ void CWinTestDlg::OnBnClickedButtonDelete1()
         GetDlgItem(IDC_CHECK_AGC_1)->EnableWindow(FALSE);
         GetDlgItem(IDC_CHECK_NS_1)->EnableWindow(FALSE);
         GetDlgItem(IDC_CHECK_RXVAD)->EnableWindow(FALSE);
-        GetDlgItem(IDC_CHECK_FEC)->EnableWindow(FALSE);
+        GetDlgItem(IDC_CHECK_RED)->EnableWindow(FALSE);
         SetDlgItemText(IDC_EDIT_RXVAD, _T(""));
         GetDlgItem(IDC_EDIT_RXVAD)->EnableWindow(FALSE);
         CButton* button = (CButton*)GetDlgItem(IDC_CHECK_EXT_TRANS_1);
@@ -1834,7 +1834,7 @@ void CWinTestDlg::OnBnClickedButtonDelete1()
         button->SetCheck(BST_UNCHECKED);
         button = (CButton*)GetDlgItem(IDC_CHECK_RXVAD);
         button->SetCheck(BST_UNCHECKED);
-        button = (CButton*)GetDlgItem(IDC_CHECK_FEC);
+        button = (CButton*)GetDlgItem(IDC_CHECK_RED);
         button->SetCheck(BST_UNCHECKED);
     }
 }
@@ -3250,13 +3250,14 @@ void CWinTestDlg::OnBnClickedCheckTypingDetection()
     TEST(_veApmPtr->SetTypingDetectionStatus(enable) == 0, _T("SetTypingDetectionStatus(enable=%d)"), enable);
 }
 
-void CWinTestDlg::OnBnClickedCheckFEC()
+void CWinTestDlg::OnBnClickedCheckRED()
 {
-    CButton* button = (CButton*)GetDlgItem(IDC_CHECK_FEC);
+    CButton* button = (CButton*)GetDlgItem(IDC_CHECK_RED);
     int channel = GetDlgItemInt(IDC_EDIT_1);
     int check = button->GetCheck();
     const bool enable = (check == BST_CHECKED);
-    TEST(_veRtpRtcpPtr->SetFECStatus(channel, enable) == 0, _T("SetFECStatus(enable=%d)"), enable);
+    TEST(_veRtpRtcpPtr->SetREDStatus(channel, enable) == 0,
+         _T("SetREDStatus(enable=%d)"), enable);
 }
 
 // ----------------------------------------------------------------------------

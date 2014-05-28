@@ -268,7 +268,7 @@ public:
     afx_msg void OnBnClickedCheckNs1();
     afx_msg void OnBnClickedCheckRecCall();
     afx_msg void OnBnClickedCheckTypingDetection();
-    afx_msg void OnBnClickedCheckFEC();
+    afx_msg void OnBnClickedCheckRED();
     afx_msg void OnBnClickedButtonClearErrorCallback();
     afx_msg void OnBnClickedCheckBwe1();
 };
