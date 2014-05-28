@@ -63,7 +63,7 @@
       'target_name': 'webrtc_perf_tests',
       'type': '<(gtest_target_type)',
       'sources': [
-        'modules/audio_coding/neteq/test/neteq_performance_unittest.cc',
+        'modules/audio_coding/neteq4/test/neteq_performance_unittest.cc',
         'video/call_perf_tests.cc',
         'video/full_stack.cc',
         'video/rampup_tests.cc',

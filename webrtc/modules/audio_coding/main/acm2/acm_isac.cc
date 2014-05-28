@@ -14,7 +14,7 @@
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_codec_database.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_common_defs.h"
-#include "webrtc/modules/audio_coding/neteq/interface/audio_decoder.h"
+#include "webrtc/modules/audio_coding/neteq4/interface/audio_decoder.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 #ifdef WEBRTC_CODEC_ISAC
