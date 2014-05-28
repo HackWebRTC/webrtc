@@ -36,7 +36,7 @@
       ],
       'dependencies': [
         '<@(audio_coding_dependencies)',
-        'NetEq4',
+        'neteq',
       ],
       'include_dirs': [
         '../interface',
