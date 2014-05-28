@@ -19,8 +19,8 @@
 
 namespace webrtc {
 
-bool EqualFrames(const I420VideoFrame& videoFrame1,
-                 const I420VideoFrame& videoFrame2);
+bool EqualFrames(const I420VideoFrame& frame1,
+                 const I420VideoFrame& frame2);
 bool EqualFramesExceptSize(const I420VideoFrame& frame1,
                            const I420VideoFrame& frame2);
 int ExpectedSize(int plane_stride, int image_height, PlaneType type);
@@ -120,6 +120,29 @@ TEST(TestI420VideoFrame, CopyFrame) {
   // Frame of larger dimensions - update allocated sizes.
   EXPECT_EQ(0, frame2.CopyFrame(frame1));
   EXPECT_TRUE(EqualFrames(frame1, frame2));
+}
+
+TEST(TestI420VideoFrame, CloneFrame) {
+  I420VideoFrame frame1;
+  scoped_ptr<I420VideoFrame> frame2;
+  const int kSizeY = 225;
+  const int kSizeU = 80;
+  const int kSizeV = 80;
+  uint8_t buffer_y[kSizeY];
+  uint8_t buffer_u[kSizeU];
+  uint8_t buffer_v[kSizeV];
+  memset(buffer_y, 16, kSizeY);
+  memset(buffer_u, 8, kSizeU);
+  memset(buffer_v, 4, kSizeV);
+  frame1.CreateFrame(
+      kSizeY, buffer_y, kSizeU, buffer_u, kSizeV, buffer_v, 20, 20, 20, 10, 10);
+  frame1.set_timestamp(1);
+  frame1.set_ntp_time_ms(2);
+  frame1.set_render_time_ms(3);
+
+  frame2.reset(frame1.CloneFrame());
+  EXPECT_TRUE(frame2.get() != NULL);
+  EXPECT_TRUE(EqualFrames(frame1, *frame2));
 }
 
 TEST(TestI420VideoFrame, CopyBuffer) {
@@ -234,29 +257,24 @@ TEST(TestI420VideoFrame, RefCountedInstantiation) {
 
 bool EqualFrames(const I420VideoFrame& frame1,
                  const I420VideoFrame& frame2) {
-  if (!EqualFramesExceptSize(frame1, frame2))
-    return false;
-  // Compare allocated memory size.
-  bool ret = true;
-  ret |= (frame1.allocated_size(kYPlane) == frame2.allocated_size(kYPlane));
-  ret |= (frame1.allocated_size(kUPlane) == frame2.allocated_size(kUPlane));
-  ret |= (frame1.allocated_size(kVPlane) == frame2.allocated_size(kVPlane));
-  return ret;
+  return (EqualFramesExceptSize(frame1, frame2) &&
+          (frame1.allocated_size(kYPlane) == frame2.allocated_size(kYPlane)) &&
+          (frame1.allocated_size(kUPlane) == frame2.allocated_size(kUPlane)) &&
+          (frame1.allocated_size(kVPlane) == frame2.allocated_size(kVPlane)));
 }
 
 bool EqualFramesExceptSize(const I420VideoFrame& frame1,
                            const I420VideoFrame& frame2) {
-  bool ret = true;
-  ret |= (frame1.width() == frame2.width());
-  ret |= (frame1.height() == frame2.height());
-  ret |= (frame1.stride(kYPlane) == frame2.stride(kYPlane));
-  ret |= (frame1.stride(kUPlane) == frame2.stride(kUPlane));
-  ret |= (frame1.stride(kVPlane) == frame2.stride(kVPlane));
-  ret |= (frame1.timestamp() == frame2.timestamp());
-  ret |= (frame1.ntp_time_ms() == frame2.ntp_time_ms());
-  ret |= (frame1.render_time_ms() == frame2.render_time_ms());
-  if (!ret)
+  if ((frame1.width() != frame2.width()) ||
+      (frame1.height() != frame2.height()) ||
+      (frame1.stride(kYPlane) != frame2.stride(kYPlane)) ||
+      (frame1.stride(kUPlane) != frame2.stride(kUPlane)) ||
+      (frame1.stride(kVPlane) != frame2.stride(kVPlane)) ||
+      (frame1.timestamp() != frame2.timestamp()) ||
+      (frame1.ntp_time_ms() != frame2.ntp_time_ms()) ||
+      (frame1.render_time_ms() != frame2.render_time_ms())) {
     return false;
+  }
   // Memory should be the equal for the minimum of the two sizes.
   int size_y = std::min(frame1.allocated_size(kYPlane),
                         frame2.allocated_size(kYPlane));
@@ -264,13 +282,9 @@ bool EqualFramesExceptSize(const I420VideoFrame& frame1,
                         frame2.allocated_size(kUPlane));
   int size_v = std::min(frame1.allocated_size(kVPlane),
                         frame2.allocated_size(kVPlane));
-  int ret_val = 0;
-  ret_val += memcmp(frame1.buffer(kYPlane), frame2.buffer(kYPlane), size_y);
-  ret_val += memcmp(frame1.buffer(kUPlane), frame2.buffer(kUPlane), size_u);
-  ret_val += memcmp(frame1.buffer(kVPlane), frame2.buffer(kVPlane), size_v);
-  if (ret_val == 0)
-    return true;
-  return false;
+  return (memcmp(frame1.buffer(kYPlane), frame2.buffer(kYPlane), size_y) == 0 &&
+          memcmp(frame1.buffer(kUPlane), frame2.buffer(kUPlane), size_u) == 0 &&
+          memcmp(frame1.buffer(kVPlane), frame2.buffer(kVPlane), size_v) == 0);
 }
 
 int ExpectedSize(int plane_stride, int image_height, PlaneType type) {

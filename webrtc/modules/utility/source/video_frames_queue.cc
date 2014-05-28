@@ -38,12 +38,7 @@ VideoFramesQueue::~VideoFramesQueue() {
 
 int32_t VideoFramesQueue::AddFrame(const I420VideoFrame& newFrame) {
   if (newFrame.native_handle() != NULL) {
-    _incomingFrames.push_back(new TextureVideoFrame(
-        static_cast<NativeHandle*>(newFrame.native_handle()),
-        newFrame.width(),
-        newFrame.height(),
-        newFrame.timestamp(),
-        newFrame.render_time_ms()));
+    _incomingFrames.push_back(newFrame.CloneFrame());
     return 0;
   }
 
