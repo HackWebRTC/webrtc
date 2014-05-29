@@ -80,6 +80,8 @@ extern const char kMediaProtocolAvpf[];
 // RFC5124 RTP/SAVPF
 extern const char kMediaProtocolSavpf[];
 
+extern const char kMediaProtocolDtlsSavpf[];
+
 extern const char kMediaProtocolRtpPrefix[];
 
 extern const char kMediaProtocolSctp[];

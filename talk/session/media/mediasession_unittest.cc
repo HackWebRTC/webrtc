@@ -1788,6 +1788,64 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCryptoWithAnswerBundle) {
   TestCryptoWithBundle(false);
 }
 
+// Verifies that creating answer fails if the offer has UDP/TLS/RTP/SAVPF but
+// DTLS is not enabled locally.
+TEST_F(MediaSessionDescriptionFactoryTest,
+       TestOfferDtlsSavpfWithoutDtlsFailed) {
+  f1_.set_secure(SEC_ENABLED);
+  f2_.set_secure(SEC_ENABLED);
+  tdf1_.set_secure(SEC_DISABLED);
+  tdf2_.set_secure(SEC_DISABLED);
+
+  talk_base::scoped_ptr<SessionDescription> offer(
+      f1_.CreateOffer(MediaSessionOptions(), NULL));
+  ASSERT_TRUE(offer.get() != NULL);
+  ContentInfo* offer_content = offer->GetContentByName("audio");
+  ASSERT_TRUE(offer_content != NULL);
+  AudioContentDescription* offer_audio_desc =
+      static_cast<AudioContentDescription*>(offer_content->description);
+  offer_audio_desc->set_protocol(cricket::kMediaProtocolDtlsSavpf);
+
+  talk_base::scoped_ptr<SessionDescription> answer(
+      f2_.CreateAnswer(offer.get(), MediaSessionOptions(), NULL));
+  ASSERT_TRUE(answer != NULL);
+  ContentInfo* answer_content = answer->GetContentByName("audio");
+  ASSERT_TRUE(answer_content != NULL);
+
+  ASSERT_TRUE(answer_content->rejected);
+}
+
+// Offers UDP/TLS/RTP/SAVPF and verifies the answer can be created and contains
+// UDP/TLS/RTP/SAVPF.
+TEST_F(MediaSessionDescriptionFactoryTest, TestOfferDtlsSavpfCreateAnswer) {
+  f1_.set_secure(SEC_ENABLED);
+  f2_.set_secure(SEC_ENABLED);
+  tdf1_.set_secure(SEC_ENABLED);
+  tdf2_.set_secure(SEC_ENABLED);
+
+  talk_base::scoped_ptr<SessionDescription> offer(
+      f1_.CreateOffer(MediaSessionOptions(), NULL));
+  ASSERT_TRUE(offer.get() != NULL);
+  ContentInfo* offer_content = offer->GetContentByName("audio");
+  ASSERT_TRUE(offer_content != NULL);
+  AudioContentDescription* offer_audio_desc =
+      static_cast<AudioContentDescription*>(offer_content->description);
+  offer_audio_desc->set_protocol(cricket::kMediaProtocolDtlsSavpf);
+
+  talk_base::scoped_ptr<SessionDescription> answer(
+      f2_.CreateAnswer(offer.get(), MediaSessionOptions(), NULL));
+  ASSERT_TRUE(answer != NULL);
+
+  const ContentInfo* answer_content = answer->GetContentByName("audio");
+  ASSERT_TRUE(answer_content != NULL);
+  ASSERT_FALSE(answer_content->rejected);
+
+  const AudioContentDescription* answer_audio_desc =
+      static_cast<const AudioContentDescription*>(answer_content->description);
+  EXPECT_EQ(std::string(cricket::kMediaProtocolDtlsSavpf),
+                        answer_audio_desc->protocol());
+}
+
 // Test that we include both SDES and DTLS in the offer, but only include SDES
 // in the answer if DTLS isn't negotiated.
 TEST_F(MediaSessionDescriptionFactoryTest, TestCryptoDtls) {
