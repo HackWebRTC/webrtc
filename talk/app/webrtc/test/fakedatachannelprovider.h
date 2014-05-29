@@ -32,7 +32,8 @@ class FakeDataChannelProvider : public webrtc::DataChannelProviderInterface {
   FakeDataChannelProvider()
       : send_blocked_(false),
         transport_available_(false),
-        ready_to_send_(false) {}
+        ready_to_send_(false),
+        transport_error_(false) {}
   virtual ~FakeDataChannelProvider() {}
 
   virtual bool SendData(const cricket::SendDataParams& params,
@@ -43,6 +44,12 @@ class FakeDataChannelProvider : public webrtc::DataChannelProviderInterface {
       *result = cricket::SDR_BLOCK;
       return false;
     }
+
+    if (transport_error_) {
+      *result = cricket::SDR_ERROR;
+      return false;
+    }
+
     last_send_data_params_ = params;
     return true;
   }
@@ -115,6 +122,10 @@ class FakeDataChannelProvider : public webrtc::DataChannelProviderInterface {
     }
   }
 
+  void set_transport_error() {
+    transport_error_ = true;
+  }
+
   cricket::SendDataParams last_send_data_params() const {
     return last_send_data_params_;
   }
@@ -136,6 +147,7 @@ class FakeDataChannelProvider : public webrtc::DataChannelProviderInterface {
   bool send_blocked_;
   bool transport_available_;
   bool ready_to_send_;
+  bool transport_error_;
   std::set<webrtc::DataChannel*> connected_channels_;
   std::set<uint32> send_ssrcs_;
   std::set<uint32> recv_ssrcs_;

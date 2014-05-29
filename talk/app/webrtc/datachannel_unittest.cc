@@ -29,14 +29,24 @@
 #include "talk/app/webrtc/sctputils.h"
 #include "talk/app/webrtc/test/fakedatachannelprovider.h"
 #include "talk/base/gunit.h"
-#include "testing/base/public/gmock.h"
 
 using webrtc::DataChannel;
 
 class FakeDataChannelObserver : public webrtc::DataChannelObserver {
  public:
-  MOCK_METHOD0(OnStateChange, void());
-  MOCK_METHOD1(OnMessage, void(const webrtc::DataBuffer& buffer));
+  FakeDataChannelObserver() : messages_received_(0) {}
+
+  void OnStateChange() {}
+  void OnMessage(const webrtc::DataBuffer& buffer) {
+    ++messages_received_;
+  }
+
+  size_t messages_received() const {
+    return messages_received_;
+  }
+
+ private:
+  size_t messages_received_;
 };
 
 class SctpDataChannelTest : public testing::Test {
@@ -233,12 +243,13 @@ TEST_F(SctpDataChannelTest, ReceiveDataWithInvalidSsrc) {
   SetChannelReady();
 
   AddObserver();
-  EXPECT_CALL(*(observer_.get()), OnMessage(testing::_)).Times(0);
 
   cricket::ReceiveDataParams params;
   params.ssrc = 0;
   webrtc::DataBuffer buffer("abcd");
   webrtc_data_channel_->OnDataReceived(NULL, params, buffer.data);
+
+  EXPECT_EQ(0U, observer_->messages_received());
 }
 
 // Tests that the incoming messages with right ssrcs are acceted.
@@ -247,13 +258,13 @@ TEST_F(SctpDataChannelTest, ReceiveDataWithValidSsrc) {
   SetChannelReady();
 
   AddObserver();
-  EXPECT_CALL(*(observer_.get()), OnMessage(testing::_)).Times(1);
 
   cricket::ReceiveDataParams params;
   params.ssrc = 1;
   webrtc::DataBuffer buffer("abcd");
 
   webrtc_data_channel_->OnDataReceived(NULL, params, buffer.data);
+  EXPECT_EQ(1U, observer_->messages_received());
 }
 
 // Tests that no CONTROL message is sent if the datachannel is negotiated and
@@ -301,4 +312,30 @@ TEST_F(SctpDataChannelTest, OpenAckRoleInitialization) {
   base.negotiated = true;
   webrtc::InternalDataChannelInit init2(base);
   EXPECT_EQ(webrtc::InternalDataChannelInit::kNone, init2.open_handshake_role);
+}
+
+// Tests that the DataChannel is closed if the sending buffer is full.
+TEST_F(SctpDataChannelTest, ClosedWhenSendBufferFull) {
+  SetChannelReady();
+  webrtc::DataBuffer buffer("abcd");
+  provider_.set_send_blocked(true);
+
+  for (size_t i = 0; i < 101; ++i) {
+    EXPECT_TRUE(webrtc_data_channel_->Send(buffer));
+  }
+
+  EXPECT_EQ(webrtc::DataChannelInterface::kClosed,
+            webrtc_data_channel_->state());
+}
+
+// Tests that the DataChannel is closed on transport errors.
+TEST_F(SctpDataChannelTest, ClosedOnTransportError) {
+  SetChannelReady();
+  webrtc::DataBuffer buffer("abcd");
+  provider_.set_transport_error();
+
+  EXPECT_TRUE(webrtc_data_channel_->Send(buffer));
+
+  EXPECT_EQ(webrtc::DataChannelInterface::kClosed,
+            webrtc_data_channel_->state());
 }
