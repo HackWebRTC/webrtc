@@ -482,6 +482,8 @@ talk_base::scoped_refptr<DataChannelInterface>
 PeerConnection::CreateDataChannel(
     const std::string& label,
     const DataChannelInit* config) {
+  bool first_datachannel = !mediastream_signaling_->HasDataChannels();
+
   talk_base::scoped_ptr<InternalDataChannelInit> internal_config;
   if (config) {
     internal_config.reset(new InternalDataChannelInit(*config));
@@ -491,7 +493,11 @@ PeerConnection::CreateDataChannel(
   if (!channel.get())
     return NULL;
 
-  observer_->OnRenegotiationNeeded();
+  // Trigger the onRenegotiationNeeded event for every new RTP DataChannel, or
+  // the first SCTP DataChannel.
+  if (session_->data_channel_type() == cricket::DCT_RTP || first_datachannel) {
+    observer_->OnRenegotiationNeeded();
+  }
 
   return DataChannelProxy::Create(signaling_thread(), channel.get());
 }

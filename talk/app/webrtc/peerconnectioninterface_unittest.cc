@@ -946,23 +946,28 @@ TEST_F(PeerConnectionInterfaceTest, CreateSctpDataChannel) {
       pc_->CreateDataChannel("1", &config);
   EXPECT_TRUE(channel != NULL);
   EXPECT_TRUE(channel->reliable());
+  EXPECT_TRUE(observer_.renegotiation_needed_);
+  observer_.renegotiation_needed_ = false;
 
   config.ordered = false;
   channel = pc_->CreateDataChannel("2", &config);
   EXPECT_TRUE(channel != NULL);
   EXPECT_TRUE(channel->reliable());
+  EXPECT_FALSE(observer_.renegotiation_needed_);
 
   config.ordered = true;
   config.maxRetransmits = 0;
   channel = pc_->CreateDataChannel("3", &config);
   EXPECT_TRUE(channel != NULL);
   EXPECT_FALSE(channel->reliable());
+  EXPECT_FALSE(observer_.renegotiation_needed_);
 
   config.maxRetransmits = -1;
   config.maxRetransmitTime = 0;
   channel = pc_->CreateDataChannel("4", &config);
   EXPECT_TRUE(channel != NULL);
   EXPECT_FALSE(channel->reliable());
+  EXPECT_FALSE(observer_.renegotiation_needed_);
 }
 
 // This tests that no data channel is returned if both maxRetransmits and
@@ -1010,6 +1015,23 @@ TEST_F(PeerConnectionInterfaceTest,
   config.id = cricket::kMaxSctpSid + 1;
   channel = pc_->CreateDataChannel("x", &config);
   EXPECT_TRUE(channel == NULL);
+}
+
+// This test verifies that OnRenegotiationNeeded is fired for every new RTP
+// DataChannel.
+TEST_F(PeerConnectionInterfaceTest, RenegotiationNeededForNewRtpDataChannel) {
+  FakeConstraints constraints;
+  constraints.SetAllowRtpDataChannels();
+  CreatePeerConnection(&constraints);
+
+  scoped_refptr<DataChannelInterface> dc1  =
+      pc_->CreateDataChannel("test1", NULL);
+  EXPECT_TRUE(observer_.renegotiation_needed_);
+  observer_.renegotiation_needed_ = false;
+
+  scoped_refptr<DataChannelInterface> dc2  =
+      pc_->CreateDataChannel("test2", NULL);
+  EXPECT_TRUE(observer_.renegotiation_needed_);
 }
 
 // This test that a data channel closes when a PeerConnection is deleted/closed.
