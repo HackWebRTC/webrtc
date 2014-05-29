@@ -167,24 +167,24 @@ class SignalChannelClosedObserver : public sigslot::has_slots<> {
  public:
   SignalChannelClosedObserver() {}
   void BindSelf(cricket::SctpDataMediaChannel* channel) {
-    channel->SignalStreamClosed.connect(
+    channel->SignalStreamClosedRemotely.connect(
         this, &SignalChannelClosedObserver::OnStreamClosed);
   }
-  void OnStreamClosed(int stream) {
+  void OnStreamClosed(uint32 stream) {
     streams_.push_back(stream);
   }
 
-  int StreamCloseCount(int stream) {
+  int StreamCloseCount(uint32 stream) {
     return std::count(streams_.begin(), streams_.end(), stream);
   }
 
-  bool WasStreamClosed(int stream) {
+  bool WasStreamClosed(uint32 stream) {
     return std::find(streams_.begin(), streams_.end(), stream)
         != streams_.end();
   }
 
  private:
-  std::vector<int> streams_;
+  std::vector<uint32> streams_;
 };
 
 class SignalChannelClosedReopener : public sigslot::has_slots<> {

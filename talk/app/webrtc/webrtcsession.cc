@@ -1548,6 +1548,9 @@ bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content) {
     mediastream_signaling_->OnDataTransportCreatedForSctp();
     data_channel_->SignalDataReceived.connect(
         this, &WebRtcSession::OnDataChannelMessageReceived);
+    data_channel_->SignalStreamClosedRemotely.connect(
+        mediastream_signaling_,
+        &MediaStreamSignaling::OnRemoteSctpDataChannelClosed);
   }
   return true;
 }

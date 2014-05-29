@@ -198,14 +198,8 @@ void MediaStreamSignaling::TearDown() {
 bool MediaStreamSignaling::IsSctpSidAvailable(int sid) const {
   if (sid < 0 || sid > static_cast<int>(cricket::kMaxSctpSid))
     return false;
-  for (SctpDataChannels::const_iterator iter = sctp_data_channels_.begin();
-       iter != sctp_data_channels_.end();
-       ++iter) {
-    if ((*iter)->id() == sid) {
-      return false;
-    }
-  }
-  return true;
+
+  return FindDataChannelBySid(sid) < 0;
 }
 
 // Gets the first unused odd/even id based on the DTLS role. If |role| is
@@ -953,6 +947,17 @@ void MediaStreamSignaling::OnDtlsRoleReadyForSctp(talk_base::SSLRole role) {
   }
 }
 
+
+void MediaStreamSignaling::OnRemoteSctpDataChannelClosed(uint32 sid) {
+  int index = FindDataChannelBySid(sid);
+  if (index < 0) {
+    LOG(LS_WARNING) << "Unexpected sid " << sid
+                    << " of the remotely closed DataChannel.";
+    return;
+  }
+  sctp_data_channels_[index]->Close();
+}
+
 const MediaStreamSignaling::TrackInfo*
 MediaStreamSignaling::FindTrackInfo(
     const MediaStreamSignaling::TrackInfos& infos,
@@ -965,6 +970,15 @@ MediaStreamSignaling::FindTrackInfo(
       return &*it;
   }
   return NULL;
+}
+
+int MediaStreamSignaling::FindDataChannelBySid(int sid) const {
+  for (size_t i = 0; i < sctp_data_channels_.size(); ++i) {
+    if (sctp_data_channels_[i]->id() == sid) {
+      return static_cast<int>(i);
+    }
+  }
+  return -1;
 }
 
 }  // namespace webrtc

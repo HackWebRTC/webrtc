@@ -54,6 +54,7 @@ enum {
   MSG_READYTOSENDDATA,
   MSG_DATARECEIVED,
   MSG_FIRSTPACKETRECEIVED,
+  MSG_STREAMCLOSEDREMOTELY,
 };
 
 // Value specified in RFC 5764.
@@ -2148,6 +2149,8 @@ bool DataChannel::Init() {
       this, &DataChannel::OnDataChannelError);
   media_channel()->SignalReadyToSend.connect(
       this, &DataChannel::OnDataChannelReadyToSend);
+  media_channel()->SignalStreamClosedRemotely.connect(
+      this, &DataChannel::OnStreamClosedRemotely);
   srtp_filter()->SignalSrtpError.connect(
       this, &DataChannel::OnSrtpError);
   return true;
@@ -2387,6 +2390,13 @@ void DataChannel::OnMessage(talk_base::Message *pmsg) {
       delete data;
       break;
     }
+    case MSG_STREAMCLOSEDREMOTELY: {
+      talk_base::TypedMessageData<uint32>* data =
+          static_cast<talk_base::TypedMessageData<uint32>*>(pmsg->pdata);
+      SignalStreamClosedRemotely(data->data());
+      delete data;
+      break;
+    }
     default:
       BaseChannel::OnMessage(pmsg);
       break;
@@ -2471,6 +2481,12 @@ void DataChannel::GetSrtpCiphers(std::vector<std::string>* ciphers) const {
 
 bool DataChannel::ShouldSetupDtlsSrtp() const {
   return (data_channel_type_ == DCT_RTP);
+}
+
+void DataChannel::OnStreamClosedRemotely(uint32 sid) {
+  talk_base::TypedMessageData<uint32>* message =
+      new talk_base::TypedMessageData<uint32>(sid);
+  signaling_thread()->Post(this, MSG_STREAMCLOSEDREMOTELY, message);
 }
 
 }  // namespace cricket

@@ -1277,6 +1277,8 @@ class DataMediaChannel : public MediaChannel {
   // Signal when the media channel is ready to send the stream. Arguments are:
   //     writable(bool)
   sigslot::signal1<bool> SignalReadyToSend;
+  // Signal for notifying that the remote side has closed the DataChannel.
+  sigslot::signal1<uint32> SignalStreamClosedRemotely;
 };
 
 }  // namespace cricket

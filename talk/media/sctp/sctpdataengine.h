@@ -190,9 +190,6 @@ class SctpDataMediaChannel : public DataMediaChannel,
   }
   const std::string& debug_name() const { return debug_name_; }
 
-  // Called with the SSID of a remote stream that's been closed.
-  sigslot::signal1<int> SignalStreamClosed;
-
  private:
   sockaddr_conn GetSctpSockAddr(int port);
 

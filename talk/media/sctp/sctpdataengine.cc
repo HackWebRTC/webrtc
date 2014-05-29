@@ -818,7 +818,7 @@ void SctpDataMediaChannel::OnStreamResetEvent(
         LOG(LS_VERBOSE) << "SCTP_STREAM_RESET_EVENT(" << debug_name_
                         << "): closing sid " << stream_id;
         open_streams_.erase(it);
-        SignalStreamClosed(stream_id);
+        SignalStreamClosedRemotely(stream_id);
 
       } else if ((it = queued_reset_streams_.find(stream_id))
                  != queued_reset_streams_.end()) {
