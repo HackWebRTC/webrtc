@@ -236,14 +236,6 @@ class VideoProcessingModule : public Module {
                                       uint32_t frame_rate) = 0;
 
   /**
-  Set max frame rate
-  \param[in] max_frame_rate: maximum frame rate (limited to native frame rate)
-
-  \return VPM_OK on success, a negative value on error (see error codes)
-  */
-  virtual int32_t SetMaxFramerate(uint32_t max_frame_rate) = 0;
-
-  /**
   Get decimated(target) frame rate
   */
   virtual uint32_t Decimatedframe_rate() = 0;

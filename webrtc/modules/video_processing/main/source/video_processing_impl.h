@@ -51,9 +51,6 @@ class VideoProcessingModuleImpl : public VideoProcessingModule {
   // Enable content analysis
   virtual void EnableContentAnalysis(bool enable);
 
-  // Set max frame rate
-  virtual int32_t SetMaxFramerate(uint32_t max_frame_rate);
-
   // Set Target Resolution: frame rate and dimension
   virtual int32_t SetTargetResolution(uint32_t width,
                                       uint32_t height,

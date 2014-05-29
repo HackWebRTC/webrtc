@@ -171,11 +171,6 @@ void VideoProcessingModuleImpl::SetInputFrameResampleMode(VideoFrameResampling
   frame_pre_processor_.SetInputFrameResampleMode(resampling_mode);
 }
 
-int32_t VideoProcessingModuleImpl::SetMaxFramerate(uint32_t max_frame_rate) {
-  CriticalSectionScoped cs(&mutex_);
-  return frame_pre_processor_.SetMaxFramerate(max_frame_rate);
-}
-
 int32_t VideoProcessingModuleImpl::SetTargetResolution(uint32_t width,
                                                        uint32_t height,
                                                        uint32_t frame_rate) {
