@@ -109,7 +109,7 @@ public class AppRTCDemoActivity extends Activity
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
     Point displaySize = new Point();
-    getWindowManager().getDefaultDisplay().getSize(displaySize);
+    getWindowManager().getDefaultDisplay().getRealSize(displaySize);
     vsv = new VideoStreamsView(this, displaySize);
     vsv.setOnClickListener(new View.OnClickListener() {
         @Override public void onClick(View v) {
@@ -117,11 +117,14 @@ public class AppRTCDemoActivity extends Activity
         }
       });
     setContentView(vsv);
+    logAndToast("Tap the screen to toggle stats visibility");
+
     hudView = new TextView(this);
     hudView.setTextColor(Color.BLACK);
     hudView.setBackgroundColor(Color.WHITE);
     hudView.setAlpha(0.4f);
     hudView.setTextSize(TypedValue.COMPLEX_UNIT_PT, 5);
+    hudView.setVisibility(View.INVISIBLE);
     addContentView(hudView, hudLayout);
 
     if (!factoryStaticInitialized) {
@@ -189,9 +192,6 @@ public class AppRTCDemoActivity extends Activity
 
   // Update the heads-up display with information from |reports|.
   private void updateHUD(StatsReport[] reports) {
-    if (hudView.getText().length() == 0) {
-      logAndToast("Tap the screen to toggle stats visibility");
-    }
     StringBuilder builder = new StringBuilder();
     for (StatsReport report : reports) {
       if (!report.id.equals("bweforvideo")) {
@@ -264,6 +264,10 @@ public class AppRTCDemoActivity extends Activity
                 return;
               }
               final Runnable runnableThis = this;
+              if (hudView.getVisibility() == View.INVISIBLE) {
+                vsv.postDelayed(runnableThis, 1000);
+                return;
+              }
               boolean success = finalPC.getStats(new StatsObserver() {
                   public void onComplete(final StatsReport[] reports) {
                     runOnUiThread(new Runnable() {

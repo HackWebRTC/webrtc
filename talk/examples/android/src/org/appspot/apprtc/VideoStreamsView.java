@@ -40,6 +40,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.EnumMap;
+import java.util.EnumSet;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -64,6 +65,8 @@ public class VideoStreamsView
   private Point screenDimensions;
   // [0] are local Y,U,V, [1] are remote Y,U,V.
   private int[][] yuvTextures = { { -1, -1, -1}, {-1, -1, -1 }};
+  private EnumSet<Endpoint> seenFrameInDirection =
+      EnumSet.noneOf(Endpoint.class);
   private int posLocation = -1;
   private long lastFPSLogTime = System.nanoTime();
   private long numFramesSinceLastLog = 0;
@@ -115,10 +118,12 @@ public class VideoStreamsView
       remoteFrame = framesToRender.remove(Endpoint.REMOTE);
     }
     if (localFrame != null) {
+      seenFrameInDirection.add(Endpoint.LOCAL);
       texImage2D(localFrame, yuvTextures[0]);
       framePool.returnFrame(localFrame);
     }
     if (remoteFrame != null) {
+      seenFrameInDirection.add(Endpoint.REMOTE);
       texImage2D(remoteFrame, yuvTextures[1]);
       framePool.returnFrame(remoteFrame);
     }
@@ -167,8 +172,12 @@ public class VideoStreamsView
   @Override
   public void onDrawFrame(GL10 unused) {
     GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-    drawRectangle(yuvTextures[1], remoteVertices);
-    drawRectangle(yuvTextures[0], localVertices);
+    if (seenFrameInDirection.contains(Endpoint.REMOTE)) {
+      drawRectangle(yuvTextures[1], remoteVertices);
+    }
+    if (seenFrameInDirection.contains(Endpoint.LOCAL)) {
+      drawRectangle(yuvTextures[0], localVertices);
+    }
     ++numFramesSinceLastLog;
     long now = System.nanoTime();
     if (lastFPSLogTime == -1 || now - lastFPSLogTime > 1e9) {
@@ -208,6 +217,13 @@ public class VideoStreamsView
 
     GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     checkNoGLES2Error();
+  }
+
+  @Override
+  protected void onAttachedToWindow() {
+    super.onAttachedToWindow();
+    setSystemUiVisibility(SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+        SYSTEM_UI_FLAG_FULLSCREEN | SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
   }
 
   // Wrap a float[] in a direct FloatBuffer using native byte order.
