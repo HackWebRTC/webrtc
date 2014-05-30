@@ -25,10 +25,9 @@ class AudioFrame;
 namespace voe {
 
 // Upmix or downmix and resample the audio in |src_frame| to |dst_frame|.
-// Expects |dst_frame| to have its |num_channels_| and |sample_rate_hz_| set to
-// the desired values. Updates |samples_per_channel_| accordingly.
-//
-// On failure, returns -1 and copies |src_frame| to |dst_frame|.
+// Expects |dst_frame| to have its sample rate and channels members set to the
+// desired values. Updates the samples per channel member accordingly. No other
+// members will be changed.
 void RemixAndResample(const AudioFrame& src_frame,
                       PushResampler<int16_t>* resampler,
                       AudioFrame* dst_frame);
@@ -37,6 +36,11 @@ void RemixAndResample(const AudioFrame& src_frame,
 // specified by |codec_num_channels| and |codec_rate_hz|. |mono_buffer| is
 // temporary space and must be of sufficient size to hold the downmixed source
 // audio (recommend using a size of kMaxMonoDataSizeSamples).
+//
+// |dst_af| will have its data and format members (sample rate, channels and
+// samples per channel) set appropriately. No other members will be changed.
+// TODO(ajm): For now, this still calls Reset() on |dst_af|. Remove this, as
+// it shouldn't be needed.
 void DownConvertToCodecFormat(const int16_t* src_data,
                               int samples_per_channel,
                               int num_channels,

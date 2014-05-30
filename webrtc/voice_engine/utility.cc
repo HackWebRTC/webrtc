@@ -43,7 +43,6 @@ void RemixAndResample(const AudioFrame& src_frame,
   if (resampler->InitializeIfNeeded(src_frame.sample_rate_hz_,
                                     dst_frame->sample_rate_hz_,
                                     audio_ptr_num_channels) == -1) {
-    dst_frame->CopyFrom(src_frame);
     LOG_FERR3(LS_ERROR, InitializeIfNeeded, src_frame.sample_rate_hz_,
               dst_frame->sample_rate_hz_, audio_ptr_num_channels);
     assert(false);
@@ -54,7 +53,6 @@ void RemixAndResample(const AudioFrame& src_frame,
   int out_length = resampler->Resample(audio_ptr, src_length, dst_frame->data_,
                                        AudioFrame::kMaxDataSizeSamples);
   if (out_length == -1) {
-    dst_frame->CopyFrom(src_frame);
     LOG_FERR3(LS_ERROR, Resample, audio_ptr, src_length, dst_frame->data_);
     assert(false);
   }
@@ -81,6 +79,7 @@ void DownConvertToCodecFormat(const int16_t* src_data,
   assert(samples_per_channel <= kMaxMonoDataSizeSamples);
   assert(num_channels == 1 || num_channels == 2);
   assert(codec_num_channels == 1 || codec_num_channels == 2);
+  dst_af->Reset();
 
   // Never upsample the capture signal here. This should be done at the
   // end of the send chain.
@@ -116,9 +115,6 @@ void DownConvertToCodecFormat(const int16_t* src_data,
   dst_af->samples_per_channel_ = out_length / num_channels;
   dst_af->sample_rate_hz_ = destination_rate;
   dst_af->num_channels_ = num_channels;
-  dst_af->timestamp_ = -1;
-  dst_af->speech_type_ = AudioFrame::kNormalSpeech;
-  dst_af->vad_activity_ = AudioFrame::kVadUnknown;
 }
 
 void MixWithSat(int16_t target[],
