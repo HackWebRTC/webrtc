@@ -223,7 +223,12 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
   private native void ProvideCameraFrame(
       byte[] data, int length, long captureObject);
 
-  public synchronized void onPreviewFrame(byte[] data, Camera callbackCamera) {
+  // Called on cameraThread so must not "synchronized".
+  @Override
+  public void onPreviewFrame(byte[] data, Camera callbackCamera) {
+    if (Thread.currentThread() != cameraThread) {
+      throw new RuntimeException("Camera callback not on camera thread?!?");
+    }
     if (camera == null) {
       return;
     }
@@ -270,12 +275,14 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
     exchange(result, null);
   }
 
+  @Override
   public synchronized void surfaceChanged(
       SurfaceHolder holder, int format, int width, int height) {
     Log.d(TAG, "VideoCaptureAndroid::surfaceChanged ignored: " +
         format + ": " + width + "x" + height);
   }
 
+  @Override
   public synchronized void surfaceCreated(final SurfaceHolder holder) {
     Log.d(TAG, "VideoCaptureAndroid::surfaceCreated");
     if (camera == null || cameraThreadHandler == null) {
@@ -293,6 +300,7 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
     }
   }
 
+  @Override
   public synchronized void surfaceDestroyed(SurfaceHolder holder) {
     Log.d(TAG, "VideoCaptureAndroid::surfaceDestroyed");
     if (camera == null || cameraThreadHandler == null) {
