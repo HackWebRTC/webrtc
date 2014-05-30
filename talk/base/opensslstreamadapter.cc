@@ -779,6 +779,18 @@ int OpenSSLStreamAdapter::SSLVerifyCallback(int ok, X509_STORE_CTX* store) {
     return 0;
   }
   X509* cert = X509_STORE_CTX_get_current_cert(store);
+  int depth = X509_STORE_CTX_get_error_depth(ctx);
+
+  // For now We ignore the parent certificates and verify the leaf against
+  // the digest.
+  //
+  // TODO(jiayl): Verify the chain is a proper chain and report the chain to
+  // |stream->peer_certificate_|, like what NSS does.
+  if (depth > 0) {
+    LOG(LS_INFO) << "Ignored chained certificate at depth " << depth;
+    return 1;
+  }
+
   unsigned char digest[EVP_MAX_MD_SIZE];
   size_t digest_length;
   if (!OpenSSLCertificate::ComputeDigest(
@@ -789,6 +801,7 @@ int OpenSSLStreamAdapter::SSLVerifyCallback(int ok, X509_STORE_CTX* store) {
     LOG(LS_WARNING) << "Failed to compute peer cert digest.";
     return 0;
   }
+
   Buffer computed_digest(digest, digest_length);
   if (computed_digest != stream->peer_certificate_digest_value_) {
     LOG(LS_WARNING) << "Rejected peer certificate due to mismatched digest.";
@@ -798,6 +811,7 @@ int OpenSSLStreamAdapter::SSLVerifyCallback(int ok, X509_STORE_CTX* store) {
   // value in checking the validity of a self-signed cert issued by untrusted
   // sources.
   LOG(LS_INFO) << "Accepted peer certificate.";
+
   // Record the peer's certificate.
   stream->peer_certificate_.reset(new OpenSSLCertificate(cert));
   return 1;
