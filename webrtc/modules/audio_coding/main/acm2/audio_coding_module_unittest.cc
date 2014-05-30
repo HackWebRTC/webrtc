@@ -364,7 +364,7 @@ class AudioCodingModuleMtTest : public AudioCodingModuleTest {
   SimulatedClock* fake_clock_;
 };
 
-TEST_F(AudioCodingModuleMtTest, DoTest) {
+TEST_F(AudioCodingModuleMtTest, DISABLED_DoTest) {
   EXPECT_EQ(kEventSignaled, RunTest());
 }
 
