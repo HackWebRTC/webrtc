@@ -370,6 +370,9 @@ void DataChannel::OnChannelReady(bool writable) {
 }
 
 void DataChannel::DoClose() {
+  if (state_ == kClosed)
+    return;
+
   receive_ssrc_set_ = false;
   send_ssrc_set_ = false;
   SetState(kClosing);
@@ -412,6 +415,9 @@ void DataChannel::UpdateState() {
 }
 
 void DataChannel::SetState(DataState state) {
+  if (state_ == state)
+    return;
+
   state_ = state;
   if (observer_) {
     observer_->OnStateChange();

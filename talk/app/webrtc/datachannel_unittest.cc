@@ -34,9 +34,13 @@ using webrtc::DataChannel;
 
 class FakeDataChannelObserver : public webrtc::DataChannelObserver {
  public:
-  FakeDataChannelObserver() : messages_received_(0) {}
+  FakeDataChannelObserver()
+      : messages_received_(0), on_state_change_count_(0) {}
 
-  void OnStateChange() {}
+  void OnStateChange() {
+    ++on_state_change_count_;
+  }
+
   void OnMessage(const webrtc::DataBuffer& buffer) {
     ++messages_received_;
   }
@@ -45,8 +49,17 @@ class FakeDataChannelObserver : public webrtc::DataChannelObserver {
     return messages_received_;
   }
 
+  void ResetOnStateChangeCount() {
+    on_state_change_count_ = 0;
+  }
+
+  size_t on_state_change_count() const {
+    return on_state_change_count_;
+  }
+
  private:
   size_t messages_received_;
+  size_t on_state_change_count_;
 };
 
 class SctpDataChannelTest : public testing::Test {
@@ -339,3 +352,27 @@ TEST_F(SctpDataChannelTest, ClosedOnTransportError) {
   EXPECT_EQ(webrtc::DataChannelInterface::kClosed,
             webrtc_data_channel_->state());
 }
+
+// Tests that a already closed DataChannel does not fire onStateChange again.
+TEST_F(SctpDataChannelTest, ClosedDataChannelDoesNotFireOnStateChange) {
+  AddObserver();
+  webrtc_data_channel_->Close();
+  // OnStateChange called for kClosing and kClosed.
+  EXPECT_EQ(2U, observer_->on_state_change_count());
+
+  observer_->ResetOnStateChangeCount();
+  webrtc_data_channel_->RemotePeerRequestClose();
+  EXPECT_EQ(0U, observer_->on_state_change_count());
+}
+
+// Tests that RemotePeerRequestClose closes the local DataChannel.
+TEST_F(SctpDataChannelTest, RemotePeerRequestClose) {
+  AddObserver();
+  webrtc_data_channel_->RemotePeerRequestClose();
+
+  // OnStateChange called for kClosing and kClosed.
+  EXPECT_EQ(2U, observer_->on_state_change_count());
+  EXPECT_EQ(webrtc::DataChannelInterface::kClosed,
+            webrtc_data_channel_->state());
+}
+
