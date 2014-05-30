@@ -542,6 +542,13 @@
   fun:webrtc::VideoEngine::SetTraceFilter
   ...
 }
+{
+  Benign TRACE_EVENT race (webrtc:3409)
+  ThreadSanitizer:Race
+  fun:webrtc::RTCPReceiver::HandleSenderReceiverReport
+  fun:webrtc::RTCPReceiver::IncomingRTCPPacket
+  ...
+}
 
 #-----------------------------------------------------------------------
 # 2. libjingle stuff (talk folder)
