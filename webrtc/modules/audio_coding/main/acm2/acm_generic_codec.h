@@ -595,10 +595,10 @@ class ACMGenericCodec {
   //   -loss_rate          : expected packet loss rate (0 -- 100 inclusive).
   //
   // Return value:
-  //   -1 if failed, or codec does not support packet loss gnostic encoding,
-  //    0 if succeeded.
+  //   -1 if failed,
+  //    0 if succeeded or packet loss rate is ignored.
   //
-  virtual int SetPacketLossRate(int /* loss_rate */) { return -1; }
+  virtual int SetPacketLossRate(int /* loss_rate */) { return 0; }
 
  protected:
   ///////////////////////////////////////////////////////////////////////////
