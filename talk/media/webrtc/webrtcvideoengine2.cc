@@ -1011,6 +1011,7 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp) {
     config.rtp.rtx[0].ssrc = rtx_ssrc;
   }
 
+  config.rtp.nack.rtp_history_ms = kNackHistoryMs;
   config.rtp.remb = true;
   // TODO(pbos): This protection is against setting the same local ssrc as
   // remote which is not permitted by the lower-level API. RTCP requires a

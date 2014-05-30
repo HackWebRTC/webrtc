@@ -687,9 +687,23 @@ TEST_F(WebRtcVideoChannel2Test, DISABLED_RembOnOff) {
   FAIL() << "Not implemented.";  // TODO(pbos): Implement.
 }
 
-TEST_F(WebRtcVideoChannel2Test, DISABLED_NackEnabled) {
-  // Verify NACK on both sender and receiver.
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
+TEST_F(WebRtcVideoChannel2Test, NackIsEnabled) {
+  EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
+  EXPECT_TRUE(channel_->SetSend(true));
+
+  // Send side.
+  FakeVideoSendStream* send_stream =
+      AddSendStream(cricket::StreamParams::CreateLegacy(1));
+  EXPECT_GT(send_stream->GetConfig().rtp.nack.rtp_history_ms, 0);
+
+  // Receiver side.
+  FakeVideoReceiveStream* recv_stream =
+      AddRecvStream(cricket::StreamParams::CreateLegacy(1));
+  EXPECT_GT(recv_stream->GetConfig().rtp.nack.rtp_history_ms, 0);
+
+  // Nack history size should match between sender and receiver.
+  EXPECT_EQ(send_stream->GetConfig().rtp.nack.rtp_history_ms,
+            recv_stream->GetConfig().rtp.nack.rtp_history_ms);
 }
 
 TEST_F(WebRtcVideoChannel2Test, DISABLED_VideoProtectionInterop) {
