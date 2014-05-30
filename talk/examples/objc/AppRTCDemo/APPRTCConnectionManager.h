@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2013, Google Inc.
+ * Copyright 2014, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,19 +25,42 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "RTCPeerConnection.h"
+#import <Foundation/Foundation.h>
 
-#import "RTCPeerConnectionDelegate.h"
+// Used to log messages to destination like UI.
+@protocol APPRTCLogger<NSObject>
+- (void)logMessage:(NSString*)message;
+@end
 
-#include "talk/app/webrtc/peerconnectioninterface.h"
+@class RTCVideoTrack;
+@class APPRTCConnectionManager;
 
-@interface RTCPeerConnection (Internal)
+// Used to provide AppRTC connection information.
+@protocol APPRTCConnectionManagerDelegate<NSObject>
 
-@property(nonatomic, assign, readonly)
-    talk_base::scoped_refptr<webrtc::PeerConnectionInterface> peerConnection;
+- (void)connectionManager:(APPRTCConnectionManager*)manager
+    didReceiveLocalVideoTrack:(RTCVideoTrack*)localVideoTrack;
 
-- (instancetype)initWithFactory:(webrtc::PeerConnectionFactoryInterface*)factory
-     iceServers:(const webrtc::PeerConnectionInterface::IceServers&)iceServers
-    constraints:(const webrtc::MediaConstraintsInterface*)constraints;
+- (void)connectionManager:(APPRTCConnectionManager*)manager
+    didReceiveRemoteVideoTrack:(RTCVideoTrack*)remoteVideoTrack;
+
+- (void)connectionManagerDidReceiveHangup:(APPRTCConnectionManager*)manager;
+
+- (void)connectionManager:(APPRTCConnectionManager*)manager
+      didErrorWithMessage:(NSString*)errorMessage;
+
+@end
+
+// Abstracts the network connection aspect of AppRTC. The delegate will receive
+// information about connection status as changes occur.
+@interface APPRTCConnectionManager : NSObject
+
+@property(nonatomic, weak) id<APPRTCConnectionManagerDelegate> delegate;
+@property(nonatomic, weak) id<APPRTCLogger> logger;
+
+- (instancetype)initWithDelegate:(id<APPRTCConnectionManagerDelegate>)delegate
+                          logger:(id<APPRTCLogger>)logger;
+- (BOOL)connectToRoomWithURL:(NSURL*)url;
+- (void)disconnect;
 
 @end

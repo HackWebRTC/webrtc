@@ -25,19 +25,44 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "RTCPeerConnection.h"
+#import <Foundation/Foundation.h>
 
-#import "RTCPeerConnectionDelegate.h"
+#import "GAEChannelClient.h"
 
-#include "talk/app/webrtc/peerconnectioninterface.h"
+@class APPRTCAppClient;
+@protocol APPRTCAppClientDelegate
 
-@interface RTCPeerConnection (Internal)
+- (void)appClient:(APPRTCAppClient*)appClient
+    didErrorWithMessage:(NSString*)message;
+- (void)appClient:(APPRTCAppClient*)appClient
+    didReceiveICEServers:(NSArray*)servers;
 
-@property(nonatomic, assign, readonly)
-    talk_base::scoped_refptr<webrtc::PeerConnectionInterface> peerConnection;
+@end
 
-- (instancetype)initWithFactory:(webrtc::PeerConnectionFactoryInterface*)factory
-     iceServers:(const webrtc::PeerConnectionInterface::IceServers&)iceServers
-    constraints:(const webrtc::MediaConstraintsInterface*)constraints;
+@class RTCMediaConstraints;
+
+// Negotiates signaling for chatting with apprtc.appspot.com "rooms".
+// Uses the client<->server specifics of the apprtc AppEngine webapp.
+//
+// To use: create an instance of this object (registering a message handler) and
+// call connectToRoom().  apprtc.appspot.com will signal that is successful via
+// onOpen through the browser channel.  Then you should call sendData() and wait
+// for the registered handler to be called with received messages.
+@interface APPRTCAppClient : NSObject<NSURLConnectionDataDelegate>
+
+@property(nonatomic) BOOL initiator;
+@property(nonatomic, copy, readonly) RTCMediaConstraints* videoConstraints;
+@property(nonatomic, weak) id<APPRTCAppClientDelegate> delegate;
+
+- (id)initWithDelegate:(id<APPRTCAppClientDelegate>)delegate
+        messageHandler:(id<GAEMessageHandler>)handler;
+- (void)connectToRoom:(NSURL*)room;
+- (void)sendData:(NSData*)data;
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+// Disallow init and don't add to documentation
+- (id)init __attribute__((
+    unavailable("init is not a supported initializer for this class.")));
+#endif /* DOXYGEN_SHOULD_SKIP_THIS */
 
 @end

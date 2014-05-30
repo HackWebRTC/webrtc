@@ -25,36 +25,41 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import <UIKit/UIKit.h>
+#import "APPRTCAppDelegate.h"
 
-#import "GAEChannelClient.h"
-#import "APPRTCAppClient.h"
-#import "RTCSessionDescriptionDelegate.h"
-#import "RTCVideoSource.h"
-// Used to send a message to an apprtc.appspot.com "room".
-@protocol APPRTCSendMessage<NSObject>
+#import "APPRTCViewController.h"
+#import "RTCPeerConnectionFactory.h"
 
-- (void)sendData:(NSData*)data;
-// Logging helper.
-- (void)displayLogMessage:(NSString*)message;
-@end
+@implementation APPRTCAppDelegate {
+  UIWindow* _window;
+}
 
-@class APPRTCViewController;
-@class RTCVideoTrack;
+#pragma mark - UIApplicationDelegate methods
 
-// The main application class of the AppRTCDemo iOS app demonstrating
-// interoperability between the Objective C implementation of PeerConnection
-// and the apprtc.appspot.com demo webapp.
-@interface APPRTCAppDelegate : UIResponder<ICEServerDelegate,
-                                           GAEMessageHandler,
-                                           APPRTCSendMessage,
-                                           RTCSessionDescriptionDelegate,
-                                           UIApplicationDelegate>
+- (BOOL)application:(UIApplication*)application
+    didFinishLaunchingWithOptions:(NSDictionary*)launchOptions {
+  [RTCPeerConnectionFactory initializeSSL];
+  _window =  [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+  APPRTCViewController* viewController =
+      [[APPRTCViewController alloc] initWithNibName:@"APPRTCViewController"
+                                             bundle:nil];
+  _window.rootViewController = viewController;
+  [_window makeKeyAndVisible];
+  return YES;
+}
 
-@property(strong, nonatomic) UIWindow* window;
-@property(strong, nonatomic) APPRTCViewController* viewController;
-@property (strong, nonatomic) RTCVideoSource* videoSource;
+- (void)applicationWillResignActive:(UIApplication*)application {
+  [[self appRTCViewController] applicationWillResignActive:application];
+}
 
-- (void)closeVideoUI;
+- (void)applicationWillTerminate:(UIApplication*)application {
+  [RTCPeerConnectionFactory deinitializeSSL];
+}
+
+#pragma mark - Private
+
+- (APPRTCViewController*)appRTCViewController {
+  return (APPRTCViewController*)_window.rootViewController;
+}
 
 @end

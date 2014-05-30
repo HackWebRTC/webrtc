@@ -32,20 +32,21 @@
 #import "RTCEAGLVideoView+Internal.h"
 
 #import <GLKit/GLKit.h>
-#import <QuartzCore/QuartzCore.h>
 
-#import "RTCEAGLVideoRenderer.h"
+#import "RTCOpenGLVideoRenderer.h"
 #import "RTCVideoRenderer.h"
 #import "RTCVideoTrack.h"
 
 @interface RTCEAGLVideoView () <GLKViewDelegate>
+// |i420Frame| is set when we receive a frame from a worker thread and is read
+// from the display link callback so atomicity is required.
 @property(atomic, strong) RTCI420Frame* i420Frame;
 @end
 
 @implementation RTCEAGLVideoView {
   CADisplayLink* _displayLink;
   GLKView* _glkView;
-  RTCEAGLVideoRenderer* _glRenderer;
+  RTCOpenGLVideoRenderer* _glRenderer;
   RTCVideoRenderer* _videoRenderer;
 }
 
@@ -53,7 +54,7 @@
   if (self = [super initWithFrame:frame]) {
     EAGLContext* glContext =
         [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
-    _glRenderer = [[RTCEAGLVideoRenderer alloc] initWithContext:glContext];
+    _glRenderer = [[RTCOpenGLVideoRenderer alloc] initWithContext:glContext];
 
     // GLKView manages a framebuffer for us.
     _glkView = [[GLKView alloc] initWithFrame:CGRectZero
@@ -175,7 +176,9 @@
 // provide. This occurs on non-main thread.
 - (void)renderer:(RTCVideoRenderer*)renderer
       didSetSize:(CGSize)size {
-  // Size is checked in renderer as frames arrive, no need to do anything here.
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [self.delegate videoView:self didChangeVideoSize:size];
+  });
 }
 
 - (void)renderer:(RTCVideoRenderer*)renderer

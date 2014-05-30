@@ -38,6 +38,7 @@
 #import "RTCMediaConstraints+Internal.h"
 #import "RTCMediaStream+Internal.h"
 #import "RTCMediaStreamTrack+Internal.h"
+#import "RTCPeerConnectionObserver.h"
 #import "RTCSessionDescription+Internal.h"
 #import "RTCSessionDescriptionDelegate.h"
 #import "RTCSessionDescription.h"
@@ -273,19 +274,15 @@ class RTCStatsObserver : public StatsObserver {
 
 @implementation RTCPeerConnection (Internal)
 
-- (id)initWithPeerConnection:
-          (talk_base::scoped_refptr<webrtc::PeerConnectionInterface>)
-      peerConnection
-                    observer:(webrtc::RTCPeerConnectionObserver*)observer {
-  if (!peerConnection || !observer) {
-    NSAssert(NO, @"nil arguments not allowed");
-    self = nil;
-    return nil;
-  }
-  if ((self = [super init])) {
-    _peerConnection = peerConnection;
+- (instancetype)initWithFactory:(webrtc::PeerConnectionFactoryInterface*)factory
+     iceServers:(const webrtc::PeerConnectionInterface::IceServers&)iceServers
+    constraints:(const webrtc::MediaConstraintsInterface*)constraints {
+  NSParameterAssert(factory != NULL);
+  if (self = [super init]) {
+    _observer.reset(new webrtc::RTCPeerConnectionObserver(self));
+    _peerConnection = factory->CreatePeerConnection(
+        iceServers, constraints, NULL, NULL, _observer.get());
     _localStreams = [[NSMutableArray alloc] init];
-    _observer.reset(observer);
   }
   return self;
 }

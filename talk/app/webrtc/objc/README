@@ -45,6 +45,10 @@ Example of building & using the unittest & app:
       ninja -C out_mac/Debug libjingle_peerconnection_objc_test && \
       ./out_mac/Debug/libjingle_peerconnection_objc_test.app/Contents/MacOS/libjingle_peerconnection_objc_test
 
+- To build & launch the sample app on OSX:
+  wrmac && gclient runhooks && ninja -C out_mac/Debug AppRTCDemo && \
+      ./out_mac/Debug/AppRTCDemo.app/Contents/MacOS/AppRTCDemo
+
 - To build & launch the sample app on the iOS simulator:
   wrsim && gclient runhooks && ninja -C out_sim/Debug iossim AppRTCDemo && \
       ./out_sim/Debug/iossim out_sim/Debug/AppRTCDemo.app
@@ -66,14 +70,11 @@ Example of building & using the unittest & app:
       the Info.plist file to ensure that the Bundle Identifier matches
       your phone provisioning profile, or use a development wildcard
       provisioning profile.)
+- Alternately, use ios-deploy:
+  ios-deploy -d -b out_ios/Debug-iphoneos/AppRTCDemo.app
 
 - Once installed:
   - Tap AppRTCDemo on the iOS device's home screen (might have to scroll to find it).
   - In desktop chrome, navigate to http://apprtc.appspot.com and note
     the r=<NNN> room number in the resulting URL; enter that number
     into the text field on the phone.
-  - Alternatively, background the app and launch Safari.  In Safari,
-    open the url apprtc://apprtc.appspot.com/?r=<NNN> where <NNN> is
-    the room name.  Other options are to put the link in an email/chat
-    and send it to yourself.  Clicking on it will launch AppRTCDemo
-    and navigate to the room.

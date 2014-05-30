@@ -45,6 +45,8 @@
 // http://www.w3.org/TR/mediacapture-streams/
 @interface RTCPeerConnection : NSObject
 
+@property(nonatomic, weak) id<RTCPeerConnectionDelegate> delegate;
+
 // Accessor methods to active local streams.
 @property(nonatomic, strong, readonly) NSArray *localStreams;
 

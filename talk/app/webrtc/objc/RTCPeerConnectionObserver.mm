@@ -39,70 +39,74 @@
 namespace webrtc {
 
 RTCPeerConnectionObserver::RTCPeerConnectionObserver(
-    id<RTCPeerConnectionDelegate> delegate) {
-  _delegate = delegate;
-}
-
-RTCPeerConnectionObserver::~RTCPeerConnectionObserver() {}
-
-void RTCPeerConnectionObserver::SetPeerConnection(
     RTCPeerConnection* peerConnection) {
   _peerConnection = peerConnection;
 }
 
+RTCPeerConnectionObserver::~RTCPeerConnectionObserver() {
+}
+
 void RTCPeerConnectionObserver::OnError() {
-  [_delegate peerConnectionOnError:_peerConnection];
+  [_peerConnection.delegate peerConnectionOnError:_peerConnection];
 }
 
 void RTCPeerConnectionObserver::OnSignalingChange(
     PeerConnectionInterface::SignalingState new_state) {
-  [_delegate peerConnection:_peerConnection
-      signalingStateChanged:[RTCEnumConverter
-                                convertSignalingStateToObjC:new_state]];
+  RTCSignalingState state =
+      [RTCEnumConverter convertSignalingStateToObjC:new_state];
+  [_peerConnection.delegate peerConnection:_peerConnection
+                     signalingStateChanged:state];
 }
 
 void RTCPeerConnectionObserver::OnAddStream(MediaStreamInterface* stream) {
   RTCMediaStream* mediaStream =
       [[RTCMediaStream alloc] initWithMediaStream:stream];
-  [_delegate peerConnection:_peerConnection addedStream:mediaStream];
+  [_peerConnection.delegate peerConnection:_peerConnection
+                               addedStream:mediaStream];
 }
 
 void RTCPeerConnectionObserver::OnRemoveStream(MediaStreamInterface* stream) {
   RTCMediaStream* mediaStream =
       [[RTCMediaStream alloc] initWithMediaStream:stream];
-  [_delegate peerConnection:_peerConnection removedStream:mediaStream];
+  [_peerConnection.delegate peerConnection:_peerConnection
+                             removedStream:mediaStream];
 }
 
 void RTCPeerConnectionObserver::OnDataChannel(
     DataChannelInterface* data_channel) {
   RTCDataChannel* dataChannel =
       [[RTCDataChannel alloc] initWithDataChannel:data_channel];
-  [_delegate peerConnection:_peerConnection didOpenDataChannel:dataChannel];
+  [_peerConnection.delegate peerConnection:_peerConnection
+                        didOpenDataChannel:dataChannel];
 }
 
 void RTCPeerConnectionObserver::OnRenegotiationNeeded() {
-  [_delegate peerConnectionOnRenegotiationNeeded:_peerConnection];
+  id<RTCPeerConnectionDelegate> delegate = _peerConnection.delegate;
+  [delegate peerConnectionOnRenegotiationNeeded:_peerConnection];
 }
 
 void RTCPeerConnectionObserver::OnIceConnectionChange(
     PeerConnectionInterface::IceConnectionState new_state) {
-  [_delegate peerConnection:_peerConnection
-       iceConnectionChanged:[RTCEnumConverter
-                                convertIceConnectionStateToObjC:new_state]];
+  RTCICEConnectionState state =
+      [RTCEnumConverter convertIceConnectionStateToObjC:new_state];
+  [_peerConnection.delegate peerConnection:_peerConnection
+                      iceConnectionChanged:state];
 }
 
 void RTCPeerConnectionObserver::OnIceGatheringChange(
     PeerConnectionInterface::IceGatheringState new_state) {
-  [_delegate peerConnection:_peerConnection
-        iceGatheringChanged:[RTCEnumConverter
-                                convertIceGatheringStateToObjC:new_state]];
+  RTCICEGatheringState state =
+      [RTCEnumConverter convertIceGatheringStateToObjC:new_state];
+  [_peerConnection.delegate peerConnection:_peerConnection
+                       iceGatheringChanged:state];
 }
 
 void RTCPeerConnectionObserver::OnIceCandidate(
     const IceCandidateInterface* candidate) {
   RTCICECandidate* iceCandidate =
       [[RTCICECandidate alloc] initWithCandidate:candidate];
-  [_delegate peerConnection:_peerConnection gotICECandidate:iceCandidate];
+  [_peerConnection.delegate peerConnection:_peerConnection
+                           gotICECandidate:iceCandidate];
 }
 
 }  // namespace webrtc

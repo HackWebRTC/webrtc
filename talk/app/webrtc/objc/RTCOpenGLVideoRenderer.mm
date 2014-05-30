@@ -29,50 +29,72 @@
 #error "This file requires ARC support."
 #endif
 
-#import "RTCEAGLVideoRenderer.h"
+#import "RTCOpenGLVideoRenderer.h"
 
+#if TARGET_OS_IPHONE
 #import <OpenGLES/ES2/gl.h>
+#else
+#import <OpenGL/gl3.h>
+#endif
+
 #import "RTCI420Frame.h"
 
 // TODO(tkchin): check and log openGL errors. Methods here return BOOLs in
 // anticipation of that happening in the future.
 
-// Convenience macro for writing shader code that converts a code snippet into
-// a C string during the C preprocessor step.
-#define RTC_STRINGIZE(...) #__VA_ARGS__
+#if TARGET_OS_IPHONE
+#define RTC_PIXEL_FORMAT GL_LUMINANCE
+#define SHADER_VERSION
+#define VERTEX_SHADER_IN "attribute"
+#define VERTEX_SHADER_OUT "varying"
+#define FRAGMENT_SHADER_IN "varying"
+#define FRAGMENT_SHADER_OUT
+#define FRAGMENT_SHADER_COLOR "gl_FragColor"
+#define FRAGMENT_SHADER_TEXTURE "texture2D"
+#else
+#define RTC_PIXEL_FORMAT GL_RED
+#define SHADER_VERSION "#version 150\n"
+#define VERTEX_SHADER_IN "in"
+#define VERTEX_SHADER_OUT "out"
+#define FRAGMENT_SHADER_IN "in"
+#define FRAGMENT_SHADER_OUT "out vec4 fragColor;\n"
+#define FRAGMENT_SHADER_COLOR "fragColor"
+#define FRAGMENT_SHADER_TEXTURE "texture"
+#endif
 
 // Vertex shader doesn't do anything except pass coordinates through.
-static const char kVertexShaderSource[] = RTC_STRINGIZE(
-  attribute vec2 position;
-  attribute vec2 texcoord;
-  varying vec2 v_texcoord;
-  void main() {
-    gl_Position = vec4(position.x, position.y, 0.0, 1.0);
-    v_texcoord = texcoord;
-  }
-);
+static const char kVertexShaderSource[] =
+  SHADER_VERSION
+  VERTEX_SHADER_IN " vec2 position;\n"
+  VERTEX_SHADER_IN " vec2 texcoord;\n"
+  VERTEX_SHADER_OUT " vec2 v_texcoord;\n"
+  "void main() {\n"
+  "    gl_Position = vec4(position.x, position.y, 0.0, 1.0);\n"
+  "    v_texcoord = texcoord;\n"
+  "}\n";
 
 // Fragment shader converts YUV values from input textures into a final RGB
 // pixel. The conversion formula is from http://www.fourcc.org/fccyvrgb.php.
-static const char kFragmentShaderSource[] = RTC_STRINGIZE(
-  precision highp float;
-  varying vec2 v_texcoord;
-  uniform lowp sampler2D s_textureY;
-  uniform lowp sampler2D s_textureU;
-  uniform lowp sampler2D s_textureV;
-  void main() {
-    float y, u, v, r, g, b;
-    y = texture2D(s_textureY, v_texcoord).r;
-    u = texture2D(s_textureU, v_texcoord).r;
-    v = texture2D(s_textureV, v_texcoord).r;
-    u = u - 0.5;
-    v = v - 0.5;
-    r = y + 1.403 * v;
-    g = y - 0.344 * u - 0.714 * v;
-    b = y + 1.770 * u;
-    gl_FragColor = vec4(r, g, b, 1.0);
-  }
-);
+static const char kFragmentShaderSource[] =
+  SHADER_VERSION
+  "precision highp float;"
+  FRAGMENT_SHADER_IN " vec2 v_texcoord;\n"
+  "uniform lowp sampler2D s_textureY;\n"
+  "uniform lowp sampler2D s_textureU;\n"
+  "uniform lowp sampler2D s_textureV;\n"
+  FRAGMENT_SHADER_OUT
+  "void main() {\n"
+  "    float y, u, v, r, g, b;\n"
+  "    y = " FRAGMENT_SHADER_TEXTURE "(s_textureY, v_texcoord).r;\n"
+  "    u = " FRAGMENT_SHADER_TEXTURE "(s_textureU, v_texcoord).r;\n"
+  "    v = " FRAGMENT_SHADER_TEXTURE "(s_textureV, v_texcoord).r;\n"
+  "    u = u - 0.5;\n"
+  "    v = v - 0.5;\n"
+  "    r = y + 1.403 * v;\n"
+  "    g = y - 0.344 * u - 0.714 * v;\n"
+  "    b = y + 1.770 * u;\n"
+  "    " FRAGMENT_SHADER_COLOR " = vec4(r, g, b, 1.0);\n"
+  "  }\n";
 
 // Compiles a shader of the given |type| with GLSL source |source| and returns
 // the shader handle or 0 on error.
@@ -122,11 +144,11 @@ GLuint CreateProgram(GLuint vertexShader, GLuint fragmentShader) {
 // here because the incoming frame has origin in upper left hand corner but
 // OpenGL expects origin in bottom left corner.
 const GLfloat gVertices[] = {
-    // X, Y, U, V.
-    -1, -1, 0, 1,  // Bottom left.
-    1,  -1, 1, 1,  // Bottom right.
-    1,  1,  1, 0,  // Top right.
-    -1, 1,  0, 0,  // Top left.
+  // X, Y, U, V.
+  -1, -1, 0, 1,  // Bottom left.
+   1, -1, 1, 1,  // Bottom right.
+   1,  1, 1, 0,  // Top right.
+  -1,  1, 0, 0,  // Top left.
 };
 
 // |kNumTextures| must not exceed 8, which is the limit in OpenGLES2. Two sets
@@ -136,13 +158,20 @@ const GLfloat gVertices[] = {
 static const GLsizei kNumTextureSets = 2;
 static const GLsizei kNumTextures = 3 * kNumTextureSets;
 
-@implementation RTCEAGLVideoRenderer {
+@implementation RTCOpenGLVideoRenderer {
+#if TARGET_OS_IPHONE
   EAGLContext* _context;
+#else
+  NSOpenGLContext* _context;
+#endif
   BOOL _isInitialized;
   NSUInteger _currentTextureSet;
   // Handles for OpenGL constructs.
   GLuint _textures[kNumTextures];
   GLuint _program;
+#if !TARGET_OS_IPHONE
+  GLuint _vertexArray;
+#endif
   GLuint _vertexBuffer;
   GLint _position;
   GLint _texcoord;
@@ -156,7 +185,11 @@ static const GLsizei kNumTextures = 3 * kNumTextureSets;
   glDisable(GL_DITHER);
 }
 
+#if TARGET_OS_IPHONE
 - (instancetype)initWithContext:(EAGLContext*)context {
+#else
+- (instancetype)initWithContext:(NSOpenGLContext*)context {
+#endif
   NSAssert(context != nil, @"context cannot be nil");
   if (self = [super init]) {
     _context = context;
@@ -177,8 +210,14 @@ static const GLsizei kNumTextures = 3 * kNumTextureSets;
     return NO;
   }
   glClear(GL_COLOR_BUFFER_BIT);
+#if !TARGET_OS_IPHONE
+  glBindVertexArray(_vertexArray);
+#endif
   glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
   glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+#if !TARGET_OS_IPHONE
+  [_context flushBuffer];
+#endif
   _lastDrawnFrame = frame;
   return YES;
 }
@@ -213,23 +252,34 @@ static const GLsizei kNumTextures = 3 * kNumTextureSets;
   glDeleteTextures(kNumTextures, _textures);
   glDeleteBuffers(1, &_vertexBuffer);
   _vertexBuffer = 0;
+#if !TARGET_OS_IPHONE
+  glDeleteVertexArrays(1, &_vertexArray);
+#endif
   _isInitialized = NO;
 }
 
 #pragma mark - Private
 
 - (void)ensureGLContext {
+  NSAssert(_context, @"context shouldn't be nil");
+#if TARGET_OS_IPHONE
   if ([EAGLContext currentContext] != _context) {
-    NSAssert(_context, @"context shouldn't be nil");
     [EAGLContext setCurrentContext:_context];
   }
+#else
+  if ([NSOpenGLContext currentContext] != _context) {
+    [_context makeCurrentContext];
+  }
+#endif
 }
 
 - (BOOL)setupProgram {
   NSAssert(!_program, @"program already set up");
   GLuint vertexShader = CreateShader(GL_VERTEX_SHADER, kVertexShaderSource);
+  NSAssert(vertexShader, @"failed to create vertex shader");
   GLuint fragmentShader =
       CreateShader(GL_FRAGMENT_SHADER, kFragmentShaderSource);
+  NSAssert(fragmentShader, @"failed to create fragment shader");
   _program = CreateProgram(vertexShader, fragmentShader);
   // Shaders are created only to generate program.
   if (vertexShader) {
@@ -282,33 +332,31 @@ static const GLsizei kNumTextures = 3 * kNumTextureSets;
     glActiveTexture(GL_TEXTURE0 + i * 3);
     glTexImage2D(GL_TEXTURE_2D,
                  0,
-                 GL_LUMINANCE,
+                 RTC_PIXEL_FORMAT,
                  lumaWidth,
                  lumaHeight,
                  0,
-                 GL_LUMINANCE,
+                 RTC_PIXEL_FORMAT,
                  GL_UNSIGNED_BYTE,
                  0);
-
     glActiveTexture(GL_TEXTURE0 + i * 3 + 1);
     glTexImage2D(GL_TEXTURE_2D,
                  0,
-                 GL_LUMINANCE,
+                 RTC_PIXEL_FORMAT,
                  chromaWidth,
                  chromaHeight,
                  0,
-                 GL_LUMINANCE,
+                 RTC_PIXEL_FORMAT,
                  GL_UNSIGNED_BYTE,
                  0);
-
     glActiveTexture(GL_TEXTURE0 + i * 3 + 2);
     glTexImage2D(GL_TEXTURE_2D,
                  0,
-                 GL_LUMINANCE,
+                 RTC_PIXEL_FORMAT,
                  chromaWidth,
                  chromaHeight,
                  0,
-                 GL_LUMINANCE,
+                 RTC_PIXEL_FORMAT,
                  GL_UNSIGNED_BYTE,
                  0);
   }
@@ -328,11 +376,11 @@ static const GLsizei kNumTextures = 3 * kNumTextureSets;
   glUniform1i(_ySampler, textureOffset);
   glTexImage2D(GL_TEXTURE_2D,
                0,
-               GL_LUMINANCE,
+               RTC_PIXEL_FORMAT,
                frame.width,
                frame.height,
                0,
-               GL_LUMINANCE,
+               RTC_PIXEL_FORMAT,
                GL_UNSIGNED_BYTE,
                frame.yPlane);
 
@@ -340,11 +388,11 @@ static const GLsizei kNumTextures = 3 * kNumTextureSets;
   glUniform1i(_uSampler, textureOffset + 1);
   glTexImage2D(GL_TEXTURE_2D,
                0,
-               GL_LUMINANCE,
+               RTC_PIXEL_FORMAT,
                frame.chromaWidth,
                frame.chromaHeight,
                0,
-               GL_LUMINANCE,
+               RTC_PIXEL_FORMAT,
                GL_UNSIGNED_BYTE,
                frame.uPlane);
 
@@ -352,11 +400,11 @@ static const GLsizei kNumTextures = 3 * kNumTextureSets;
   glUniform1i(_vSampler, textureOffset + 2);
   glTexImage2D(GL_TEXTURE_2D,
                0,
-               GL_LUMINANCE,
+               RTC_PIXEL_FORMAT,
                frame.chromaWidth,
                frame.chromaHeight,
                0,
-               GL_LUMINANCE,
+               RTC_PIXEL_FORMAT,
                GL_UNSIGNED_BYTE,
                frame.vPlane);
 
@@ -365,9 +413,21 @@ static const GLsizei kNumTextures = 3 * kNumTextureSets;
 }
 
 - (BOOL)setupVertices {
+#if !TARGET_OS_IPHONE
+  NSAssert(!_vertexArray, @"vertex array already set up");
+  glGenVertexArrays(1, &_vertexArray);
+  if (!_vertexArray) {
+    return NO;
+  }
+  glBindVertexArray(_vertexArray);
+#endif
   NSAssert(!_vertexBuffer, @"vertex buffer already set up");
   glGenBuffers(1, &_vertexBuffer);
   if (!_vertexBuffer) {
+#if !TARGET_OS_IPHONE
+    glDeleteVertexArrays(1, &_vertexArray);
+    _vertexArray = 0;
+#endif
     return NO;
   }
   glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);

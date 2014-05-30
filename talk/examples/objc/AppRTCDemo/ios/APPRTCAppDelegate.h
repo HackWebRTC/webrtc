@@ -27,20 +27,8 @@
 
 #import <UIKit/UIKit.h>
 
-@class RTCEAGLVideoView;
-
-// The view controller that is displayed when AppRTCDemo is loaded.
-@interface APPRTCViewController : UIViewController<UITextFieldDelegate>
-
-@property(weak, nonatomic) IBOutlet UITextField* roomInput;
-@property(weak, nonatomic) IBOutlet UITextView* instructionsView;
-@property(weak, nonatomic) IBOutlet UITextView* logView;
-@property(weak, nonatomic) IBOutlet UIView* blackView;
-
-@property(nonatomic, strong) RTCEAGLVideoView* localVideoView;
-@property(nonatomic, strong) RTCEAGLVideoView* remoteVideoView;
-
-- (void)displayText:(NSString*)text;
-- (void)resetUI;
-
+// The main application class of the AppRTCDemo iOS app demonstrating
+// interoperability between the Objective C implementation of PeerConnection
+// and the apprtc.appspot.com demo webapp.
+@interface APPRTCAppDelegate : NSObject<UIApplicationDelegate>
 @end

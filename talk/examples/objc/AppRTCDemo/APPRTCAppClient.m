@@ -25,18 +25,22 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if !defined(__has_feature) || !__has_feature(objc_arc)
+#error "This file requires ARC support."
+#endif
+
 #import "APPRTCAppClient.h"
 
 #import <dispatch/dispatch.h>
 
 #import "GAEChannelClient.h"
 #import "RTCICEServer.h"
-#import "APPRTCAppDelegate.h"
 #import "RTCMediaConstraints.h"
+#import "RTCPair.h"
 
 @interface APPRTCAppClient ()
 
-@property(nonatomic, strong) dispatch_queue_t backgroundQueue;
+@property(nonatomic, weak, readonly) id<GAEMessageHandler> messageHandler;
 @property(nonatomic, copy) NSString* baseURL;
 @property(nonatomic, strong) GAEChannelClient* gaeChannel;
 @property(nonatomic, copy) NSString* postMessageUrl;
@@ -49,12 +53,14 @@
 
 @end
 
-@implementation APPRTCAppClient
+@implementation APPRTCAppClient {
+  dispatch_queue_t _backgroundQueue;
+}
 
-- (id)initWithICEServerDelegate:(id<ICEServerDelegate>)delegate
-                 messageHandler:(id<GAEMessageHandler>)handler {
+- (id)initWithDelegate:(id<APPRTCAppClientDelegate>)delegate
+        messageHandler:(id<GAEMessageHandler>)handler {
   if (self = [super init]) {
-    _ICEServerDelegate = delegate;
+    _delegate = delegate;
     _messageHandler = handler;
     _backgroundQueue = dispatch_queue_create("RTCBackgroundQueue",
                                              DISPATCH_QUEUE_SERIAL);
@@ -68,14 +74,15 @@
 #pragma mark - Public methods
 
 - (void)connectToRoom:(NSURL*)url {
-  NSURLRequest* request = [self getRequestFromUrl:url];
+  self.roomHtml = [NSMutableString stringWithCapacity:20000];
+  NSURLRequest* request = [NSURLRequest requestWithURL:url];
   [NSURLConnection connectionWithRequest:request delegate:self];
 }
 
 - (void)sendData:(NSData*)data {
   [self maybeLogMessage:@"Send message"];
 
-  dispatch_async(self.backgroundQueue, ^{
+  dispatch_async(_backgroundQueue, ^{
     [self.sendQueue addObject:[data copy]];
 
     if ([self.postMessageUrl length] < 1) {
@@ -109,10 +116,10 @@
   NSArray* matches =
       [regexp matchesInString:self.roomHtml options:0 range:fullRange];
   if ([matches count] != 1) {
-    [self showMessage:[NSString stringWithFormat:@"%d matches for %@ in %@",
-                                                 [matches count],
-                                                 name,
-                                                 self.roomHtml]];
+    NSString* format = @"%lu matches for %@ in %@";
+    NSString* message = [NSString stringWithFormat:format,
+        (unsigned long)[matches count], name, self.roomHtml];
+    [self.delegate appClient:self didErrorWithMessage:message];
     return nil;
   }
   NSRange matchRange = [matches[0] rangeAtIndex:1];
@@ -128,15 +135,6 @@
     value = [value substringWithRange:NSMakeRange(1, [value length] - 2)];
   }
   return value;
-}
-
-- (NSURLRequest*)getRequestFromUrl:(NSURL*)url {
-  self.roomHtml = [NSMutableString stringWithCapacity:20000];
-  NSString* path =
-      [NSString stringWithFormat:@"https:%@", [url resourceSpecifier]];
-  NSURLRequest* request =
-      [NSURLRequest requestWithURL:[NSURL URLWithString:path]];
-  return request;
 }
 
 - (void)maybeLogMessage:(NSString*)message {
@@ -164,23 +162,13 @@
            [NSString stringWithUTF8String:[responseData bytes]]);
 }
 
-- (void)showMessage:(NSString*)message {
-  NSLog(@"%@", message);
-  UIAlertView* alertView = [[UIAlertView alloc] initWithTitle:@"Unable to join"
-                                                      message:message
-                                                     delegate:nil
-                                            cancelButtonTitle:@"OK"
-                                            otherButtonTitles:nil];
-  [alertView show];
-}
-
 - (void)updateICEServers:(NSMutableArray*)ICEServers
           withTurnServer:(NSString*)turnServerUrl {
   if ([turnServerUrl length] < 1) {
-    [self.ICEServerDelegate onICEServers:ICEServers];
+    [self.delegate appClient:self didReceiveICEServers:ICEServers];
     return;
   }
-  dispatch_async(self.backgroundQueue, ^(void) {
+  dispatch_async(_backgroundQueue, ^(void) {
       NSMutableURLRequest* request = [NSMutableURLRequest
           requestWithURL:[NSURL URLWithString:turnServerUrl]];
       [request addValue:@"Mozilla/5.0" forHTTPHeaderField:@"user-agent"];
@@ -214,7 +202,7 @@
       }
 
       dispatch_async(dispatch_get_main_queue(), ^(void) {
-          [self.ICEServerDelegate onICEServers:ICEServers];
+          [self.delegate appClient:self didReceiveICEServers:ICEServers];
       });
   });
 }
@@ -223,8 +211,10 @@
 
 - (void)connection:(NSURLConnection*)connection didReceiveData:(NSData*)data {
   NSString* roomHtml = [NSString stringWithUTF8String:[data bytes]];
-  [self maybeLogMessage:[NSString stringWithFormat:@"Received %d chars",
-                                                   [roomHtml length]]];
+  NSString* message =
+      [NSString stringWithFormat:@"Received %lu chars",
+                                  (unsigned long)[roomHtml length]];
+  [self maybeLogMessage:message];
   [self.roomHtml appendString:roomHtml];
 }
 
@@ -243,8 +233,10 @@
 }
 
 - (void)connectionDidFinishLoading:(NSURLConnection*)connection {
-  [self maybeLogMessage:[NSString stringWithFormat:@"finished loading %d chars",
-                                                   [self.roomHtml length]]];
+  NSString* message =
+      [NSString stringWithFormat:@"finished loading %lu chars",
+                                  (unsigned long)[self.roomHtml length]];
+  [self maybeLogMessage:message];
   NSRegularExpression* fullRegex =
       [NSRegularExpression regularExpressionWithPattern:@"room is full"
                                                 options:0
@@ -253,10 +245,8 @@
           numberOfMatchesInString:self.roomHtml
                           options:0
                             range:NSMakeRange(0, [self.roomHtml length])]) {
-    [self showMessage:@"Room full"];
-    APPRTCAppDelegate* ad =
-        (APPRTCAppDelegate*)[[UIApplication sharedApplication] delegate];
-    [ad closeVideoUI];
+    NSString* message = @"Room full, dropping peerconnection.";
+    [self.delegate appClient:self didErrorWithMessage:message];
     return;
   }
 
@@ -331,7 +321,22 @@
     json =
         [NSJSONSerialization JSONObjectWithData:mcData options:0 error:&error];
     NSAssert(!error, @"Unable to parse.  %@", error.localizedDescription);
-    if ([[json objectForKey:@"video"] boolValue]) {
+    id video = json[@"video"];
+    if ([video isKindOfClass:[NSDictionary class]]) {
+      NSDictionary* mandatory = video[@"mandatory"];
+      NSMutableArray* mandatoryContraints =
+          [NSMutableArray arrayWithCapacity:[mandatory count]];
+      [mandatory enumerateKeysAndObjectsUsingBlock:^(
+          id key, id obj, BOOL* stop) {
+        [mandatoryContraints addObject:[[RTCPair alloc] initWithKey:key
+                                                              value:obj]];
+      }];
+      // TODO(tkchin): figure out json formats for optional constraints.
+      _videoConstraints =
+          [[RTCMediaConstraints alloc]
+              initWithMandatoryConstraints:mandatoryContraints
+                       optionalConstraints:nil];
+    } else if ([video isKindOfClass:[NSNumber class]] && [video boolValue]) {
       _videoConstraints = [[RTCMediaConstraints alloc] init];
     }
   }

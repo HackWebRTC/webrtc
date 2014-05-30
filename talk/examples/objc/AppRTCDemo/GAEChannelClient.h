@@ -27,40 +27,23 @@
 
 #import <Foundation/Foundation.h>
 
-#import "GAEChannelClient.h"
+// These methods will be called by the AppEngine chanel.  The documentation
+// for these methods is found here.  (Yes, it is a JS API.)
+// https://developers.google.com/appengine/docs/java/channel/javascript
+@protocol GAEMessageHandler<NSObject>
 
-// Called when there are RTCICEServers.
-@protocol ICEServerDelegate<NSObject>
-
-- (void)onICEServers:(NSArray*)servers;
+- (void)onOpen;
+- (void)onMessage:(NSDictionary*)data;
+- (void)onClose;
+- (void)onError:(int)code withDescription:(NSString*)description;
 
 @end
 
-@class RTCMediaConstraints;
+// Initialize with a token for an AppRTC data channel.  This will load
+// ios_channel.html and use the token to establish a data channel between the
+// application and AppEngine.
+@interface GAEChannelClient : NSObject
 
-// Negotiates signaling for chatting with apprtc.appspot.com "rooms".
-// Uses the client<->server specifics of the apprtc AppEngine webapp.
-//
-// To use: create an instance of this object (registering a message handler) and
-// call connectToRoom().  apprtc.appspot.com will signal that is successful via
-// onOpen through the browser channel.  Then you should call sendData() and wait
-// for the registered handler to be called with received messages.
-@interface APPRTCAppClient : NSObject<NSURLConnectionDataDelegate>
-
-@property(nonatomic, weak, readonly) id<ICEServerDelegate> ICEServerDelegate;
-@property(nonatomic, weak, readonly) id<GAEMessageHandler> messageHandler;
-@property(nonatomic, assign) BOOL initiator;
-@property(nonatomic, copy, readonly) RTCMediaConstraints* videoConstraints;
-
-- (id)initWithICEServerDelegate:(id<ICEServerDelegate>)delegate
-                 messageHandler:(id<GAEMessageHandler>)handler;
-- (void)connectToRoom:(NSURL*)room;
-- (void)sendData:(NSData*)data;
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-// Disallow init and don't add to documentation
-- (id)init __attribute__((
-    unavailable("init is not a supported initializer for this class.")));
-#endif /* DOXYGEN_SHOULD_SKIP_THIS */
+- (id)initWithToken:(NSString*)token delegate:(id<GAEMessageHandler>)delegate;
 
 @end

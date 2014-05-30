@@ -52,7 +52,7 @@
 						<bool key="IBUIClipsSubviews">YES</bool>
 						<bool key="IBUIUserInteractionEnabled">NO</bool>
 						<string key="targetRuntimeIdentifier">IBCocoaTouchFramework</string>
-						<string key="IBUIText">Use Safari and open a URL with a scheme of apprtc to load the test app and connect.  i.e.  apprtc://apprtc.appspot.com/?r=12345678  Or just enter the room below to connect to apprtc.</string>
+						<string key="IBUIText">Enter the room below to connect to apprtc.</string>
 						<object class="IBUITextInputTraits" key="IBUITextInputTraits">
 							<int key="IBUIAutocapitalizationType">2</int>
 							<string key="targetRuntimeIdentifier">IBCocoaTouchFramework</string>

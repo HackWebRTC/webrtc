@@ -41,7 +41,6 @@
 #import "RTCMediaStreamTrack+Internal.h"
 #import "RTCPeerConnection+Internal.h"
 #import "RTCPeerConnectionDelegate.h"
-#import "RTCPeerConnectionObserver.h"
 #import "RTCVideoCapturer+Internal.h"
 #import "RTCVideoSource+Internal.h"
 #import "RTCVideoTrack+Internal.h"
@@ -94,19 +93,11 @@
   for (RTCICEServer* server in servers) {
     iceServers.push_back(server.iceServer);
   }
-  webrtc::RTCPeerConnectionObserver* observer =
-      new webrtc::RTCPeerConnectionObserver(delegate);
-  webrtc::DTLSIdentityServiceInterface* dummy_dtls_identity_service = NULL;
-  talk_base::scoped_refptr<webrtc::PeerConnectionInterface> peerConnection =
-      self.nativeFactory->CreatePeerConnection(iceServers,
-                                               constraints.constraints,
-                                               NULL,
-                                               dummy_dtls_identity_service,
-                                               observer);
   RTCPeerConnection* pc =
-      [[RTCPeerConnection alloc] initWithPeerConnection:peerConnection
-                                               observer:observer];
-  observer->SetPeerConnection(pc);
+      [[RTCPeerConnection alloc] initWithFactory:self.nativeFactory.get()
+                                      iceServers:iceServers
+                                     constraints:constraints.constraints];
+  pc.delegate = delegate;
   return pc;
 }
 

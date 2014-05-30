@@ -30,10 +30,18 @@
 
 #import "RTCVideoRenderer.h"
 
+@class RTCEAGLVideoView;
+@protocol RTCEAGLVideoViewDelegate
+
+- (void)videoView:(RTCEAGLVideoView*)videoView didChangeVideoSize:(CGSize)size;
+
+@end
+
 @class RTCVideoTrack;
 // RTCEAGLVideoView renders |videoTrack| onto itself using OpenGLES.
 @interface RTCEAGLVideoView : UIView
 
 @property(nonatomic, strong) RTCVideoTrack* videoTrack;
+@property(nonatomic, weak) id<RTCEAGLVideoViewDelegate> delegate;
 
 @end

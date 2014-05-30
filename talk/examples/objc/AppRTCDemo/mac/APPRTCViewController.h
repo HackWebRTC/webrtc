@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2013, Google Inc.
+ * Copyright 2014, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,25 +25,10 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import <UIKit/UIKit.h>
+#import <Cocoa/Cocoa.h>
 
-// These methods will be called by the AppEngine chanel.  The documentation
-// for these methods is found here.  (Yes, it is a JS API.)
-// https://developers.google.com/appengine/docs/java/channel/javascript
-@protocol GAEMessageHandler<NSObject>
+@interface APPRTCViewController : NSViewController
 
-- (void)onOpen;
-- (void)onMessage:(NSDictionary*)data;
-- (void)onClose;
-- (void)onError:(int)code withDescription:(NSString *)description;
-
-@end
-
-// Initialize with a token for an AppRTC data channel.  This will load
-// ios_channel.html and use the token to establish a data channel between the
-// application and AppEngine.
-@interface GAEChannelClient : NSObject<UIWebViewDelegate>
-
-- (id)initWithToken:(NSString *)token delegate:(id<GAEMessageHandler>)delegate;
+- (void)windowWillClose:(NSNotification*)notification;
 
 @end

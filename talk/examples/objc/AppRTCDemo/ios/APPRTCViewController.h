@@ -25,19 +25,16 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "RTCPeerConnection.h"
+#import <UIKit/UIKit.h>
 
-#import "RTCPeerConnectionDelegate.h"
+// The view controller that is displayed when AppRTCDemo is loaded.
+@interface APPRTCViewController : UIViewController<UITextFieldDelegate>
 
-#include "talk/app/webrtc/peerconnectioninterface.h"
+@property(weak, nonatomic) IBOutlet UITextField* roomInput;
+@property(weak, nonatomic) IBOutlet UITextView* instructionsView;
+@property(weak, nonatomic) IBOutlet UITextView* logView;
+@property(weak, nonatomic) IBOutlet UIView* blackView;
 
-@interface RTCPeerConnection (Internal)
-
-@property(nonatomic, assign, readonly)
-    talk_base::scoped_refptr<webrtc::PeerConnectionInterface> peerConnection;
-
-- (instancetype)initWithFactory:(webrtc::PeerConnectionFactoryInterface*)factory
-     iceServers:(const webrtc::PeerConnectionInterface::IceServers&)iceServers
-    constraints:(const webrtc::MediaConstraintsInterface*)constraints;
+- (void)applicationWillResignActive:(UIApplication*)application;
 
 @end

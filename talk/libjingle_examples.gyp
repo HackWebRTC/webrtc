@@ -218,7 +218,7 @@
       ], # targets
     }],  # OS=="linux" or OS=="win"
 
-    ['OS=="ios"', {
+    ['OS=="ios" or (OS=="mac" and mac_sdk>="10.8")', {
       'targets': [
         {
           'target_name': 'AppRTCDemo',
@@ -226,40 +226,71 @@
           'product_name': 'AppRTCDemo',
           'mac_bundle': 1,
           'mac_bundle_resources': [
-            'examples/ios/AppRTCDemo/ResourceRules.plist',
-            'examples/ios/AppRTCDemo/en.lproj/APPRTCViewController.xib',
-            'examples/ios/AppRTCDemo/ios_channel.html',
-            'examples/ios/Icon.png',
+            'examples/objc/AppRTCDemo/channel.html',
           ],
           'dependencies': [
             'libjingle.gyp:libjingle_peerconnection_objc',
           ],
           'conditions': [
+            ['OS=="ios"', {
+              'mac_bundle_resources': [
+                'examples/objc/AppRTCDemo/ios/ResourceRules.plist',
+                'examples/objc/AppRTCDemo/ios/en.lproj/APPRTCViewController.xib',
+                'examples/objc/Icon.png',
+              ],
+              'sources': [
+                'examples/objc/AppRTCDemo/ios/APPRTCAppDelegate.h',
+                'examples/objc/AppRTCDemo/ios/APPRTCAppDelegate.m',
+                'examples/objc/AppRTCDemo/ios/APPRTCViewController.h',
+                'examples/objc/AppRTCDemo/ios/APPRTCViewController.m',
+                'examples/objc/AppRTCDemo/ios/AppRTCDemo-Prefix.pch',
+                'examples/objc/AppRTCDemo/ios/main.m',
+              ],
+              'xcode_settings': {
+                'INFOPLIST_FILE': 'examples/objc/AppRTCDemo/ios/Info.plist',
+              },
+            }],
+            ['OS=="mac"', {
+              'sources': [
+                'examples/objc/AppRTCDemo/mac/APPRTCAppDelegate.h',
+                'examples/objc/AppRTCDemo/mac/APPRTCAppDelegate.m',
+                'examples/objc/AppRTCDemo/mac/APPRTCViewController.h',
+                'examples/objc/AppRTCDemo/mac/APPRTCViewController.m',
+                'examples/objc/AppRTCDemo/mac/main.m',
+              ],
+              'xcode_settings': {
+                'CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS': 'NO',
+                'INFOPLIST_FILE': 'examples/objc/AppRTCDemo/mac/Info.plist',
+                'MACOSX_DEPLOYMENT_TARGET' : '10.8',
+                'OTHER_LDFLAGS': [
+                  '-framework AVFoundation',
+                  '-framework WebKit',
+                ],
+              },
+            }],
             ['target_arch=="ia32"', {
               'dependencies' : [
                 '<(DEPTH)/testing/iossim/iossim.gyp:iossim#host',
               ],
             }],
           ],
+          'include_dirs': [
+            'examples/objc/APPRTCDemo',
+          ],
           'sources': [
-            'examples/ios/AppRTCDemo/APPRTCAppClient.h',
-            'examples/ios/AppRTCDemo/APPRTCAppClient.m',
-            'examples/ios/AppRTCDemo/APPRTCAppDelegate.h',
-            'examples/ios/AppRTCDemo/APPRTCAppDelegate.m',
-            'examples/ios/AppRTCDemo/APPRTCViewController.h',
-            'examples/ios/AppRTCDemo/APPRTCViewController.m',
-            'examples/ios/AppRTCDemo/AppRTCDemo-Prefix.pch',
-            'examples/ios/AppRTCDemo/GAEChannelClient.h',
-            'examples/ios/AppRTCDemo/GAEChannelClient.m',
-            'examples/ios/AppRTCDemo/main.m',
+            'examples/objc/AppRTCDemo/APPRTCAppClient.h',
+            'examples/objc/AppRTCDemo/APPRTCAppClient.m',
+            'examples/objc/AppRTCDemo/APPRTCConnectionManager.h',
+            'examples/objc/AppRTCDemo/APPRTCConnectionManager.m',
+            'examples/objc/AppRTCDemo/GAEChannelClient.h',
+            'examples/objc/AppRTCDemo/GAEChannelClient.m',
           ],
           'xcode_settings': {
             'CLANG_ENABLE_OBJC_ARC': 'YES',
-            'INFOPLIST_FILE': 'examples/ios/AppRTCDemo/Info.plist',
           },
         },  # target AppRTCDemo
       ],  # targets
-    }],  # OS=="ios"
+    }],  # OS=="ios" or (OS=="mac" and mac_sdk>="10.8")
 
     ['OS=="android"', {
       'targets': [

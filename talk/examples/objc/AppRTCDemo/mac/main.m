@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2013, Google Inc.
+ * Copyright 2014, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,19 +25,15 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "RTCPeerConnection.h"
+#import <Cocoa/Cocoa.h>
 
-#import "RTCPeerConnectionDelegate.h"
+#import "APPRTCAppDelegate.h"
 
-#include "talk/app/webrtc/peerconnectioninterface.h"
-
-@interface RTCPeerConnection (Internal)
-
-@property(nonatomic, assign, readonly)
-    talk_base::scoped_refptr<webrtc::PeerConnectionInterface> peerConnection;
-
-- (instancetype)initWithFactory:(webrtc::PeerConnectionFactoryInterface*)factory
-     iceServers:(const webrtc::PeerConnectionInterface::IceServers&)iceServers
-    constraints:(const webrtc::MediaConstraintsInterface*)constraints;
-
-@end
+int main(int argc, char* argv[]) {
+  @autoreleasepool {
+    [NSApplication sharedApplication];
+    APPRTCAppDelegate* delegate = [[APPRTCAppDelegate alloc] init];
+    [NSApp setDelegate:delegate];
+    [NSApp run];
+  }
+}
