@@ -12,7 +12,13 @@
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
 #include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/interface/compile_assert.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/thread_annotations.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
@@ -55,49 +61,102 @@ class RtpUtility {
   uint8_t payload_type_;
 };
 
+class PacketizationCallbackStub : public AudioPacketizationCallback {
+ public:
+  PacketizationCallbackStub()
+      : num_calls_(0),
+        crit_sect_(CriticalSectionWrapper::CreateCriticalSection()) {}
+
+  virtual int32_t SendData(
+      FrameType frame_type,
+      uint8_t payload_type,
+      uint32_t timestamp,
+      const uint8_t* payload_data,
+      uint16_t payload_len_bytes,
+      const RTPFragmentationHeader* fragmentation) OVERRIDE {
+    CriticalSectionScoped lock(crit_sect_.get());
+    ++num_calls_;
+    return 0;
+  }
+
+  int num_calls() const {
+    CriticalSectionScoped lock(crit_sect_.get());
+    return num_calls_;
+  }
+
+ private:
+  int num_calls_ GUARDED_BY(crit_sect_);
+  const scoped_ptr<CriticalSectionWrapper> crit_sect_;
+};
+
 class AudioCodingModuleTest : public ::testing::Test {
  protected:
   AudioCodingModuleTest()
       : id_(1),
         rtp_utility_(new RtpUtility(kFrameSizeSamples, kPayloadType)),
-        acm_(AudioCodingModule::Create(id_)) {}
+        clock_(Clock::GetRealTimeClock()) {}
 
   ~AudioCodingModuleTest() {}
 
   void TearDown() {}
 
   void SetUp() {
-    CodecInst codec;
-    AudioCodingModule::Codec("L16", &codec, kSampleRateHz, 1);
-    codec.pltype = kPayloadType;
+    acm_.reset(AudioCodingModule::Create(id_, clock_));
 
-    // Register L16 codec in ACMs.
-    ASSERT_EQ(0, acm_->RegisterReceiveCodec(codec));
+    AudioCodingModule::Codec("L16", &codec_, kSampleRateHz, 1);
+    codec_.pltype = kPayloadType;
+
+    // Register L16 codec in ACM.
+    ASSERT_EQ(0, acm_->RegisterReceiveCodec(codec_));
+    ASSERT_EQ(0, acm_->RegisterSendCodec(codec_));
 
     rtp_utility_->Populate(&rtp_header_);
+
+    input_frame_.sample_rate_hz_ = kSampleRateHz;
+    input_frame_.samples_per_channel_ = kSampleRateHz * 10 / 1000;  // 10 ms.
+    COMPILE_ASSERT(kSampleRateHz * 10 / 1000 <= AudioFrame::kMaxDataSizeSamples,
+                   audio_frame_too_small);
+    memset(input_frame_.data_,
+           0,
+           input_frame_.samples_per_channel_ * sizeof(input_frame_.data_[0]));
+
+    ASSERT_EQ(0, acm_->RegisterTransportCallback(&packet_cb_));
   }
 
   void InsertPacketAndPullAudio() {
-    AudioFrame audio_frame;
-    const uint8_t kPayload[kPayloadSizeBytes] = {0};
+    InsertPacket();
+    PullAudio();
+  }
 
+  void InsertPacket() {
+    const uint8_t kPayload[kPayloadSizeBytes] = {0};
     ASSERT_EQ(0,
               acm_->IncomingPacket(kPayload, kPayloadSizeBytes, rtp_header_));
-
-    ASSERT_EQ(0, acm_->PlayoutData10Ms(-1, &audio_frame));
     rtp_utility_->Forward(&rtp_header_);
   }
 
-  void JustPullAudio() {
+  void PullAudio() {
     AudioFrame audio_frame;
     ASSERT_EQ(0, acm_->PlayoutData10Ms(-1, &audio_frame));
+  }
+
+  void InsertAudio() { ASSERT_EQ(0, acm_->Add10MsData(input_frame_)); }
+
+  void Encode() {
+    int32_t encoded_bytes = acm_->Process();
+    // Expect to get one packet with two bytes per sample, or no packet at all,
+    // depending on how many 10 ms blocks go into |codec_.pacsize|.
+    EXPECT_TRUE(encoded_bytes == 2 * codec_.pacsize || encoded_bytes == 0);
   }
 
   const int id_;
   scoped_ptr<RtpUtility> rtp_utility_;
   scoped_ptr<AudioCodingModule> acm_;
-
+  PacketizationCallbackStub packet_cb_;
   WebRtcRTPHeader rtp_header_;
+  AudioFrame input_frame_;
+  CodecInst codec_;
+  Clock* clock_;
 };
 
 // Check if the statistics are initialized correctly. Before any call to ACM
@@ -158,7 +217,7 @@ TEST_F(AudioCodingModuleTest, DISABLED_ON_ANDROID(NetEqCalls)) {
 
   // Simulate packet-loss. NetEq first performs PLC then PLC fades to CNG.
   for (int n = 0; n < kNumPlc + kNumPlcCng; ++n) {
-    JustPullAudio();
+    PullAudio();
   }
   acm_->GetDecodingCallStatistics(&stats);
   EXPECT_EQ(kNumNormalCalls + kNumPlc + kNumPlcCng, stats.calls_to_neteq);
@@ -183,6 +242,130 @@ TEST_F(AudioCodingModuleTest, VerifyOutputFrame) {
 TEST_F(AudioCodingModuleTest, FailOnZeroDesiredFrequency) {
   AudioFrame audio_frame;
   EXPECT_EQ(-1, acm_->PlayoutData10Ms(0, &audio_frame));
+}
+
+class AudioCodingModuleMtTest : public AudioCodingModuleTest {
+ protected:
+  static const int kNumPackets = 10000;
+  static const int kNumPullCalls = 10000;
+
+  AudioCodingModuleMtTest()
+      : AudioCodingModuleTest(),
+        send_thread_(ThreadWrapper::CreateThread(CbSendThread,
+                                                 this,
+                                                 kRealtimePriority,
+                                                 "send")),
+        insert_packet_thread_(ThreadWrapper::CreateThread(CbInsertPacketThread,
+                                                          this,
+                                                          kRealtimePriority,
+                                                          "insert_packet")),
+        pull_audio_thread_(ThreadWrapper::CreateThread(CbPullAudioThread,
+                                                       this,
+                                                       kRealtimePriority,
+                                                       "pull_audio")),
+        test_complete_(EventWrapper::Create()),
+        send_count_(0),
+        insert_packet_count_(0),
+        pull_audio_count_(0),
+        crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
+        next_insert_packet_time_ms_(0),
+        fake_clock_(new SimulatedClock(0)) {
+    clock_ = fake_clock_;
+  }
+
+  ~AudioCodingModuleMtTest() {}
+
+  void SetUp() {
+    AudioCodingModuleTest::SetUp();
+    unsigned int thread_id = 0;
+    ASSERT_TRUE(send_thread_->Start(thread_id));
+    ASSERT_TRUE(insert_packet_thread_->Start(thread_id));
+    ASSERT_TRUE(pull_audio_thread_->Start(thread_id));
+  }
+
+  void TearDown() {
+    AudioCodingModuleTest::TearDown();
+    pull_audio_thread_->Stop();
+    send_thread_->Stop();
+    insert_packet_thread_->Stop();
+  }
+
+  EventTypeWrapper RunTest() { return test_complete_->Wait(60000); }
+
+ private:
+  static bool CbSendThread(void* context) {
+    return reinterpret_cast<AudioCodingModuleMtTest*>(context)->CbSendImpl();
+  }
+
+  // The send thread doesn't have to care about the current simulated time,
+  // since only the AcmReceiver is using the clock.
+  bool CbSendImpl() {
+    ++send_count_;
+    InsertAudio();
+    Encode();
+    if (packet_cb_.num_calls() > kNumPackets) {
+      CriticalSectionScoped lock(crit_sect_.get());
+      if (pull_audio_count_ > kNumPullCalls) {
+        // Both conditions for completion are met. End the test.
+        test_complete_->Set();
+      }
+    }
+    return true;
+  }
+
+  static bool CbInsertPacketThread(void* context) {
+    return reinterpret_cast<AudioCodingModuleMtTest*>(context)
+        ->CbInsertPacketImpl();
+  }
+
+  bool CbInsertPacketImpl() {
+    {
+      CriticalSectionScoped lock(crit_sect_.get());
+      if (clock_->TimeInMilliseconds() < next_insert_packet_time_ms_) {
+        return true;
+      }
+      next_insert_packet_time_ms_ += 10;
+    }
+    // Now we're not holding the crit sect when calling ACM.
+    ++insert_packet_count_;
+    InsertPacket();
+    return true;
+  }
+
+  static bool CbPullAudioThread(void* context) {
+    return reinterpret_cast<AudioCodingModuleMtTest*>(context)
+        ->CbPullAudioImpl();
+  }
+
+  bool CbPullAudioImpl() {
+    {
+      CriticalSectionScoped lock(crit_sect_.get());
+      // Don't let the insert thread fall behind.
+      if (next_insert_packet_time_ms_ < clock_->TimeInMilliseconds()) {
+        return true;
+      }
+      ++pull_audio_count_;
+    }
+    // Now we're not holding the crit sect when calling ACM.
+    PullAudio();
+    fake_clock_->AdvanceTimeMilliseconds(10);
+    return true;
+  }
+
+  scoped_ptr<ThreadWrapper> send_thread_;
+  scoped_ptr<ThreadWrapper> insert_packet_thread_;
+  scoped_ptr<ThreadWrapper> pull_audio_thread_;
+  const scoped_ptr<EventWrapper> test_complete_;
+  int send_count_;
+  int insert_packet_count_;
+  int pull_audio_count_ GUARDED_BY(crit_sect_);
+  const scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  int64_t next_insert_packet_time_ms_ GUARDED_BY(crit_sect_);
+  SimulatedClock* fake_clock_;
+};
+
+TEST_F(AudioCodingModuleMtTest, DoTest) {
+  EXPECT_EQ(kEventSignaled, RunTest());
 }
 
 }  // namespace webrtc
