@@ -779,7 +779,7 @@ int OpenSSLStreamAdapter::SSLVerifyCallback(int ok, X509_STORE_CTX* store) {
     return 0;
   }
   X509* cert = X509_STORE_CTX_get_current_cert(store);
-  int depth = X509_STORE_CTX_get_error_depth(ctx);
+  int depth = X509_STORE_CTX_get_error_depth(store);
 
   // For now We ignore the parent certificates and verify the leaf against
   // the digest.
