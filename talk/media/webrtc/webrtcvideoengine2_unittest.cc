@@ -650,8 +650,14 @@ TEST_F(WebRtcVideoChannel2Test, DISABLED_RecvStreamWithRtxOnMultiplePayloads) {
   FAIL() << "Not implemented.";
 }
 
-TEST_F(WebRtcVideoChannel2Test, DISABLED_RecvStreamNoRtx) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
+TEST_F(WebRtcVideoChannel2Test, RecvStreamWithoutRtx) {
+  EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
+  EXPECT_TRUE(channel_->SetSend(true));
+
+  FakeVideoReceiveStream* recv_stream =
+      AddRecvStream(cricket::StreamParams::CreateLegacy(1));
+  EXPECT_TRUE(recv_stream->GetConfig().rtp.rtx.empty())
+      << "RTX SSRCs for receive stream without RTX configured.";
 }
 
 TEST_F(WebRtcVideoChannel2Test, DISABLED_RtpTimestampOffsetHeaderExtensions) {
