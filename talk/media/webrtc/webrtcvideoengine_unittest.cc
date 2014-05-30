@@ -71,8 +71,6 @@ static const unsigned int kStartBandwidthKbps = 300;
 static const unsigned int kMinBandwidthKbps = 50;
 static const unsigned int kMaxBandwidthKbps = 2000;
 
-static const unsigned int kNumberOfTemporalLayers = 1;
-
 static const uint32 kSsrcs1[] = {1};
 static const uint32 kSsrcs2[] = {1, 2};
 static const uint32 kSsrcs3[] = {1, 2, 3};
