@@ -1205,6 +1205,7 @@ void WebRtcVideoChannel2::OnPacketReceived(
 
   StreamParams sp;
   sp.ssrcs.push_back(ssrc);
+  LOG(LS_INFO) << "Creating default receive stream for SSRC=" << ssrc << ".";
   AddRecvStream(sp);
 
   if (call_->Receiver()->DeliverPacket(
