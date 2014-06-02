@@ -19,11 +19,11 @@
 #include "webrtc/modules/audio_coding/main/acm2/acm_receiver.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_resampler.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/thread_annotations.h"
 
 namespace webrtc {
 
 class CriticalSectionWrapper;
-class RWLockWrapper;
 
 namespace acm2 {
 
@@ -246,13 +246,14 @@ class AudioCodingModuleImpl : public AudioCodingModule {
 
   ACMGenericCodec* CreateCodec(const CodecInst& codec);
 
-  int InitializeReceiverSafe();
+  int InitializeReceiverSafe() EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
 
   bool HaveValidEncoder(const char* caller_name) const;
 
   // Set VAD/DTX status. This function does not acquire a lock, and it is
   // created to be called only from inside a critical section.
-  int SetVADSafe(bool enable_dtx, bool enable_vad, ACMVADMode mode);
+  int SetVADSafe(bool enable_dtx, bool enable_vad, ACMVADMode mode)
+      EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
 
   // Process buffered audio when dual-streaming is not enabled (When RED is
   // enabled still this function is used.)
@@ -274,18 +275,22 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   //   -1: if encountering an error.
   //    0: otherwise.
   int PreprocessToAddData(const AudioFrame& in_frame,
-                          const AudioFrame** ptr_out);
+                          const AudioFrame** ptr_out)
+      EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
 
   // Change required states after starting to receive the codec corresponding
   // to |index|.
   int UpdateUponReceivingCodec(int index);
 
-  int EncodeFragmentation(int fragmentation_index, int payload_type,
+  int EncodeFragmentation(int fragmentation_index,
+                          int payload_type,
                           uint32_t current_timestamp,
                           ACMGenericCodec* encoder,
-                          uint8_t* stream);
+                          uint8_t* stream)
+      EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
 
-  void ResetFragmentation(int vector_size);
+  void ResetFragmentation(int vector_size)
+      EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
 
   // Get a pointer to AudioDecoder of the given codec. For some codecs, e.g.
   // iSAC, encoding and decoding have to be performed on a shared
@@ -300,53 +305,50 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   int GetAudioDecoder(const CodecInst& codec, int codec_id,
                       int mirror_id, AudioDecoder** decoder);
 
-  AudioPacketizationCallback* packetization_callback_;
+  CriticalSectionWrapper* acm_crit_sect_;
+  int id_;  // TODO(henrik.lundin) Make const.
+  uint32_t expected_codec_ts_ GUARDED_BY(acm_crit_sect_);
+  uint32_t expected_in_ts_ GUARDED_BY(acm_crit_sect_);
+  CodecInst send_codec_inst_ GUARDED_BY(acm_crit_sect_);
 
-  int id_;
-  uint32_t expected_codec_ts_;
-  uint32_t expected_in_ts_;
-  CodecInst send_codec_inst_;
+  uint8_t cng_nb_pltype_ GUARDED_BY(acm_crit_sect_);
+  uint8_t cng_wb_pltype_ GUARDED_BY(acm_crit_sect_);
+  uint8_t cng_swb_pltype_ GUARDED_BY(acm_crit_sect_);
+  uint8_t cng_fb_pltype_ GUARDED_BY(acm_crit_sect_);
 
-  uint8_t cng_nb_pltype_;
-  uint8_t cng_wb_pltype_;
-  uint8_t cng_swb_pltype_;
-  uint8_t cng_fb_pltype_;
-
-  uint8_t red_pltype_;
-  bool vad_enabled_;
-  bool dtx_enabled_;
-  ACMVADMode vad_mode_;
+  uint8_t red_pltype_ GUARDED_BY(acm_crit_sect_);
+  bool vad_enabled_ GUARDED_BY(acm_crit_sect_);
+  bool dtx_enabled_ GUARDED_BY(acm_crit_sect_);
+  ACMVADMode vad_mode_ GUARDED_BY(acm_crit_sect_);
   ACMGenericCodec* codecs_[ACMCodecDB::kMaxNumCodecs];
   int mirror_codec_idx_[ACMCodecDB::kMaxNumCodecs];
-  bool stereo_send_;
+  bool stereo_send_ GUARDED_BY(acm_crit_sect_);
   int current_send_codec_idx_;
   bool send_codec_registered_;
-  ACMResampler resampler_;
+  ACMResampler resampler_ GUARDED_BY(acm_crit_sect_);
   AcmReceiver receiver_;
-  CriticalSectionWrapper* acm_crit_sect_;
-  ACMVADCallback* vad_callback_;
 
   // RED.
-  bool is_first_red_;
-  bool red_enabled_;
+  bool is_first_red_ GUARDED_BY(acm_crit_sect_);
+  bool red_enabled_ GUARDED_BY(acm_crit_sect_);
 
   // TODO(turajs): |red_buffer_| is allocated in constructor, why having them
   // as pointers and not an array. If concerned about the memory, then make a
   // set-up function to allocate them only when they are going to be used, i.e.
   // RED or Dual-streaming is enabled.
-  uint8_t* red_buffer_;
+  uint8_t* red_buffer_ GUARDED_BY(acm_crit_sect_);
 
   // TODO(turajs): we actually don't need |fragmentation_| as a member variable.
   // It is sufficient to keep the length & payload type of previous payload in
   // member variables.
-  RTPFragmentationHeader fragmentation_;
-  uint32_t last_red_timestamp_;
+  RTPFragmentationHeader fragmentation_ GUARDED_BY(acm_crit_sect_);
+  uint32_t last_red_timestamp_ GUARDED_BY(acm_crit_sect_);
 
   // Codec internal FEC
   bool codec_fec_enabled_;
 
   // This is to keep track of CN instances where we can send DTMFs.
-  uint8_t previous_pltype_;
+  uint8_t previous_pltype_ GUARDED_BY(acm_crit_sect_);
 
   // Used when payloads are pushed into ACM without any RTP info
   // One example is when pre-encoded bit-stream is pushed from
@@ -356,15 +358,18 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   // be used in other methods, locks need to be taken.
   WebRtcRTPHeader* aux_rtp_header_;
 
-  bool receiver_initialized_;
+  bool receiver_initialized_ GUARDED_BY(acm_crit_sect_);
+
+  AudioFrame preprocess_frame_ GUARDED_BY(acm_crit_sect_);
+  CodecInst secondary_send_codec_inst_ GUARDED_BY(acm_crit_sect_);
+  scoped_ptr<ACMGenericCodec> secondary_encoder_ GUARDED_BY(acm_crit_sect_);
+  uint32_t codec_timestamp_ GUARDED_BY(acm_crit_sect_);
+  bool first_10ms_data_ GUARDED_BY(acm_crit_sect_);
 
   CriticalSectionWrapper* callback_crit_sect_;
-
-  AudioFrame preprocess_frame_;
-  CodecInst secondary_send_codec_inst_;
-  scoped_ptr<ACMGenericCodec> secondary_encoder_;
-  uint32_t codec_timestamp_;
-  bool first_10ms_data_;
+  AudioPacketizationCallback* packetization_callback_
+      GUARDED_BY(callback_crit_sect_);
+  ACMVADCallback* vad_callback_ GUARDED_BY(callback_crit_sect_);
 };
 
 }  // namespace acm2
