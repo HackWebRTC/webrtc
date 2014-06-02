@@ -46,8 +46,6 @@ const int MAX_LIFETIME = 15 * 60 * 1000;
 // The number of bytes in each of the usernames we use.
 const uint32 USERNAME_LENGTH = 16;
 
-static const uint32 kMessageAcceptConnection = 1;
-
 // Calls SendTo on the given socket and logs any bad results.
 void Send(talk_base::AsyncPacketSocket* socket, const char* bytes, size_t size,
           const talk_base::SocketAddress& addr) {
@@ -548,7 +546,10 @@ void RelayServer::RemoveBinding(RelayServerBinding* binding) {
 }
 
 void RelayServer::OnMessage(talk_base::Message *pmsg) {
+#if ENABLE_DEBUG
+  static const uint32 kMessageAcceptConnection = 1;
   ASSERT(pmsg->message_id == kMessageAcceptConnection);
+#endif
   talk_base::MessageData* data = pmsg->pdata;
   talk_base::AsyncSocket* socket =
       static_cast <talk_base::TypedMessageData<talk_base::AsyncSocket*>*>

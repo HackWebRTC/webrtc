@@ -62,6 +62,7 @@
 #include "talk/media/webrtc/webrtcvoiceengine.h"
 #include "webrtc/experiments.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "webrtc/system_wrappers/interface/field_trial.h"
 
 #if !defined(LIBPEERCONNECTION_LIB)
 #include "talk/media/webrtc/webrtcmediaengine.h"
@@ -71,13 +72,30 @@ cricket::MediaEngineInterface* CreateWebRtcMediaEngine(
     webrtc::AudioDeviceModule* adm, webrtc::AudioDeviceModule* adm_sc,
     cricket::WebRtcVideoEncoderFactory* encoder_factory,
     cricket::WebRtcVideoDecoderFactory* decoder_factory) {
-  return new cricket::WebRtcMediaEngine(adm, adm_sc, encoder_factory,
-                                        decoder_factory);
+#ifdef WEBRTC_CHROMIUM_BUILD
+  if (webrtc::field_trial::FindFullName("WebRTC-NewVideoAPI") == "Enabled") {
+    return new cricket::WebRtcMediaEngine2(
+        adm, adm_sc, encoder_factory, decoder_factory);
+  } else {
+#endif
+    return new cricket::WebRtcMediaEngine(
+        adm, adm_sc, encoder_factory, decoder_factory);
+#ifdef WEBRTC_CHROMIUM_BUILD
+  }
+#endif
 }
 
 WRME_EXPORT
 void DestroyWebRtcMediaEngine(cricket::MediaEngineInterface* media_engine) {
-  delete static_cast<cricket::WebRtcMediaEngine*>(media_engine);
+#ifdef WEBRTC_CHROMIUM_BUILD
+  if (webrtc::field_trial::FindFullName("WebRTC-NewVideoAPI") == "Enabled") {
+    delete static_cast<cricket::WebRtcMediaEngine2*>(media_engine);
+  } else {
+#endif
+    delete static_cast<cricket::WebRtcMediaEngine*>(media_engine);
+#ifdef WEBRTC_CHROMIUM_BUILD
+  }
+#endif
 }
 #endif
 
@@ -104,7 +122,6 @@ static const char kFecPayloadName[] = "ulpfec";
 
 static const int kDefaultNumberOfTemporalLayers = 1;  // 1:1
 
-static const int kMaxExternalVideoCodecs = 8;
 static const int kExternalVideoPayloadTypeBase = 120;
 
 static bool BitrateIsSet(int value) {
@@ -117,7 +134,10 @@ static int GetBitrate(int value, int deflt) {
 
 // Static allocation of payload type values for external video codec.
 static int GetExternalVideoPayloadType(int index) {
+#if ENABLE_DEBUG
+  static const int kMaxExternalVideoCodecs = 8;
   ASSERT(index >= 0 && index < kMaxExternalVideoCodecs);
+#endif
   return kExternalVideoPayloadTypeBase + index;
 }
 
