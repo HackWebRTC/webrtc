@@ -105,8 +105,6 @@ static const char kClientAddrHost2[] = "22.22.22.22";
 static const char kStunAddrHost[] = "99.99.99.1";
 static const SocketAddress kTurnUdpIntAddr("99.99.99.4", 3478);
 static const SocketAddress kTurnUdpExtAddr("99.99.99.6", 0);
-static const char kTurnUsername[] = "test";
-static const char kTurnPassword[] = "test";
 
 static const char kSessionVersion[] = "1";
 

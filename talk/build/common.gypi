@@ -86,6 +86,9 @@
         'conditions': [
           ['clang==1', {
             'cflags': [
+              '-Wall',
+              '-Wextra',
+              '-Wunused-variable',
               # TODO(ronghuawu): Fix the warning caused by
               # LateBindingSymbolTable::TableInfo from
               # latebindingsymboltable.cc.def and remove below flag.
