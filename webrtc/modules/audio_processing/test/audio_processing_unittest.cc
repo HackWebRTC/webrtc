@@ -2166,7 +2166,7 @@ class AudioProcessingTest
   double expected_snr_;
 };
 
-TEST_P(AudioProcessingTest, DISABLED_ON_ANDROID(Formats)) {
+TEST_P(AudioProcessingTest, Formats) {
   struct ChannelFormat {
     int num_input;
     int num_output;
