@@ -16,17 +16,13 @@
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
-using ::std::string;
-using ::std::tr1::tuple;
-using ::testing::TestWithParam;
-
 namespace webrtc {
 
 // Define coding parameter as
 // <channels, bit_rate, file_name, extension, if_save_output>.
-typedef tuple<int, int, string, string, bool> coding_param;
+typedef std::tr1::tuple<int, int, std::string, std::string, bool> coding_param;
 
-class AudioCodecSpeedTest : public TestWithParam<coding_param> {
+class AudioCodecSpeedTest : public testing::TestWithParam<coding_param> {
  protected:
   AudioCodecSpeedTest(int block_duration_ms,
                       int input_sampling_khz,
@@ -83,7 +79,7 @@ class AudioCodecSpeedTest : public TestWithParam<coding_param> {
   // Bit rate is in bit-per-second.
   int bit_rate_;
 
-  string in_filename_;
+  std::string in_filename_;
 
   // Determines whether to save the output to file.
   bool save_out_data_;

@@ -117,8 +117,8 @@ void AudioCodecSpeedTest::EncodeDecode(size_t audio_duration_sec) {
   }
 
   printf("Encoding: %.2f%% real time,\nDecoding: %.2f%% real time.\n",
-         encoding_time_ms_ / audio_duration_sec / 10.0,
-         decoding_time_ms_ / audio_duration_sec / 10.0);
+         (encoding_time_ms_ / audio_duration_sec) / 10.0,
+         (decoding_time_ms_ / audio_duration_sec) / 10.0);
 }
 
 }  // namespace webrtc
