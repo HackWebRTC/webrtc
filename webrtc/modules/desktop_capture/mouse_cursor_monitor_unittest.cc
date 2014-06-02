@@ -17,6 +17,7 @@
 #include "webrtc/modules/desktop_capture/window_capturer.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 
@@ -59,7 +60,9 @@ class MouseCursorMonitorTest : public testing::Test,
 #define MAYBE(x) DISABLED_##x
 #endif
 
-TEST_F(MouseCursorMonitorTest, MAYBE(FromScreen)) {
+// Disabled due to flake, see:
+// https://code.google.com/p/webrtc/issues/detail?id=3245
+TEST_F(MouseCursorMonitorTest, MAYBE(DISABLED_ON_LINUX(FromScreen))) {
   scoped_ptr<MouseCursorMonitor> capturer(MouseCursorMonitor::CreateForScreen(
       DesktopCaptureOptions::CreateDefault(), webrtc::kFullDesktopScreenId));
   assert(capturer.get());
