@@ -301,11 +301,8 @@ float* AudioBuffer::data_f(int channel) {
 
 const int16_t* AudioBuffer::low_pass_split_data(int channel) const {
   assert(channel >= 0 && channel < num_proc_channels_);
-  if (split_channels_.get() == NULL) {
-    return data(channel);
-  }
-
-  return split_channels_->low_channel(channel);
+  return split_channels_.get() ? split_channels_->low_channel(channel)
+                               : data(channel);
 }
 
 int16_t* AudioBuffer::low_pass_split_data(int channel) {
@@ -321,11 +318,7 @@ float* AudioBuffer::low_pass_split_data_f(int channel) {
 
 const int16_t* AudioBuffer::high_pass_split_data(int channel) const {
   assert(channel >= 0 && channel < num_proc_channels_);
-  if (split_channels_.get() == NULL) {
-    return NULL;
-  }
-
-  return split_channels_->high_channel(channel);
+  return split_channels_.get() ? split_channels_->high_channel(channel) : NULL;
 }
 
 int16_t* AudioBuffer::high_pass_split_data(int channel) {
