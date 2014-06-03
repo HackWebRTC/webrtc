@@ -84,7 +84,13 @@ using webrtc::SessionDescriptionInterface;
 using webrtc::StreamCollectionInterface;
 
 static const int kMaxWaitMs = 2000;
+// Disable for TSan v2, see
+// https://code.google.com/p/webrtc/issues/detail?id=1205 for details.
+// This declaration is also #ifdef'd as it causes uninitialized-variable
+// warnings.
+#if !defined(THREAD_SANITIZER)
 static const int kMaxWaitForStatsMs = 3000;
+#endif
 static const int kMaxWaitForFramesMs = 10000;
 static const int kEndAudioFrameCount = 3;
 static const int kEndVideoFrameCount = 3;
