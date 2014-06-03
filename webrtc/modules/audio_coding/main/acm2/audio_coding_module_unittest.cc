@@ -113,7 +113,6 @@ class AudioCodingModuleTest : public ::testing::Test {
     rtp_utility_->Populate(&rtp_header_);
 
     input_frame_.sample_rate_hz_ = kSampleRateHz;
-    input_frame_.num_channels_ = 1;
     input_frame_.samples_per_channel_ = kSampleRateHz * 10 / 1000;  // 10 ms.
     COMPILE_ASSERT(kSampleRateHz * 10 / 1000 <= AudioFrame::kMaxDataSizeSamples,
                    audio_frame_too_small);
@@ -247,8 +246,8 @@ TEST_F(AudioCodingModuleTest, FailOnZeroDesiredFrequency) {
 
 class AudioCodingModuleMtTest : public AudioCodingModuleTest {
  protected:
-  static const int kNumPackets = 5000;
-  static const int kNumPullCalls = 5000;
+  static const int kNumPackets = 10000;
+  static const int kNumPullCalls = 10000;
 
   AudioCodingModuleMtTest()
       : AudioCodingModuleTest(),
@@ -291,7 +290,7 @@ class AudioCodingModuleMtTest : public AudioCodingModuleTest {
     insert_packet_thread_->Stop();
   }
 
-  EventTypeWrapper RunTest() { return test_complete_->Wait(120000); }
+  EventTypeWrapper RunTest() { return test_complete_->Wait(60000); }
 
  private:
   static bool CbSendThread(void* context) {
@@ -301,10 +300,6 @@ class AudioCodingModuleMtTest : public AudioCodingModuleTest {
   // The send thread doesn't have to care about the current simulated time,
   // since only the AcmReceiver is using the clock.
   bool CbSendImpl() {
-    if (HasFatalFailure()) {
-      // End the test early if a fatal failure (ASSERT_*) has occurred.
-      test_complete_->Set();
-    }
     ++send_count_;
     InsertAudio();
     Encode();
@@ -369,7 +364,7 @@ class AudioCodingModuleMtTest : public AudioCodingModuleTest {
   SimulatedClock* fake_clock_;
 };
 
-TEST_F(AudioCodingModuleMtTest, DoTest) {
+TEST_F(AudioCodingModuleMtTest, DISABLED_DoTest) {
   EXPECT_EQ(kEventSignaled, RunTest());
 }
 
