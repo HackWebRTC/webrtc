@@ -905,6 +905,7 @@
         'media/sctp/sctpdataengine.h',
         'media/webrtc/webrtccommon.h',
         'media/webrtc/webrtcexport.h',
+        'media/webrtc/webrtcmediaengine.cc',
         'media/webrtc/webrtcmediaengine.h',
         'media/webrtc/webrtcpassthroughrender.cc',
         'media/webrtc/webrtcpassthroughrender.h',
