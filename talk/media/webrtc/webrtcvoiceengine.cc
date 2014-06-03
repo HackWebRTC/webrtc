@@ -3267,6 +3267,9 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
       rinfo.fraction_lost = static_cast<float>(cs.fractionLost) / (1 << 8);
       rinfo.packets_lost = cs.cumulativeLost;
       rinfo.ext_seqnum = cs.extendedMax;
+#ifdef USE_WEBRTC_DEV_BRANCH
+      rinfo.capture_start_ntp_time_ms = cs.capture_start_ntp_time_ms_;
+#endif
       // Convert samples to milliseconds.
       if (codec.plfreq / 1000 > 0) {
         rinfo.jitter_ms = cs.jitterSamples / (codec.plfreq / 1000);

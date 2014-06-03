@@ -62,7 +62,9 @@
 #include "talk/media/webrtc/webrtcvoiceengine.h"
 #include "webrtc/experiments.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#ifdef WEBRTC_CHROMIUM_BUILD
 #include "webrtc/system_wrappers/interface/field_trial.h"
+#endif
 
 #if !defined(LIBPEERCONNECTION_LIB)
 #include "talk/media/webrtc/webrtcmediaengine.h"
@@ -2514,6 +2516,15 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
             send_codec_->maxBitrate, kMaxVideoBitrate);
       }
       sinfo.adapt_reason = send_channel->CurrentAdaptReason();
+
+#ifdef USE_WEBRTC_DEV_BRANCH
+      webrtc::CpuOveruseMetrics metrics;
+      engine()->vie()->base()->GetCpuOveruseMetrics(channel_id, &metrics);
+      sinfo.capture_jitter_ms = metrics.capture_jitter_ms;
+      sinfo.avg_encode_ms = metrics.avg_encode_time_ms;
+      sinfo.encode_usage_percent = metrics.encode_usage_percent;
+      sinfo.capture_queue_delay_ms_per_s = metrics.capture_queue_delay_ms_per_s;
+#else
       sinfo.capture_jitter_ms = -1;
       sinfo.avg_encode_ms = -1;
       sinfo.encode_usage_percent = -1;
@@ -2534,6 +2545,7 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
         sinfo.encode_usage_percent = encode_usage_percent;
         sinfo.capture_queue_delay_ms_per_s = capture_queue_delay_ms_per_s;
       }
+#endif
 
       webrtc::RtcpPacketTypeCounter rtcp_sent;
       webrtc::RtcpPacketTypeCounter rtcp_received;

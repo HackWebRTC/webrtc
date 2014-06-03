@@ -297,6 +297,8 @@ void ExtractStats(const cricket::VoiceReceiverInfo& info, StatsReport* report) {
                    info.decoding_cng);
   report->AddValue(StatsReport::kStatsValueNameDecodingPLCCNG,
                    info.decoding_plc_cng);
+  report->AddValue(StatsReport::kStatsValueNameCaptureStartNtpTimeMs,
+                   info.capture_start_ntp_time_ms);
 }
 
 void ExtractStats(const cricket::VoiceSenderInfo& info, StatsReport* report) {

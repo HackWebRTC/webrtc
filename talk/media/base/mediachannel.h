@@ -829,7 +829,8 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
         decoding_normal(0),
         decoding_plc(0),
         decoding_cng(0),
-        decoding_plc_cng(0) {
+        decoding_plc_cng(0),
+        capture_start_ntp_time_ms(-1) {
   }
 
   int ext_seqnum;
@@ -846,6 +847,8 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
   int decoding_plc;
   int decoding_cng;
   int decoding_plc_cng;
+  // Estimated capture start time in NTP time in ms.
+  int64 capture_start_ntp_time_ms;
 };
 
 struct VideoSenderInfo : public MediaSenderInfo {
@@ -912,7 +915,7 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
         render_delay_ms(0),
         target_delay_ms(0),
         current_delay_ms(0),
-        capture_start_ntp_time_ms(0) {
+        capture_start_ntp_time_ms(-1) {
   }
 
   std::vector<SsrcGroup> ssrc_groups;
