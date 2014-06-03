@@ -563,8 +563,7 @@ void SetRateControlMetrics(RateControlMetrics* rc_metrics,
 // Run with no packet loss and fixed bitrate. Quality should be very high.
 // One key frame (first frame only) in sequence. Setting |key_frame_interval|
 // to -1 below means no periodic key frames in test.
-TEST_F(VideoProcessorIntegrationTest,
-       DISABLED_ON_ANDROID(ProcessZeroPacketLoss)) {
+TEST_F(VideoProcessorIntegrationTest, ProcessZeroPacketLoss) {
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
   SetRateProfilePars(&rate_profile, 0, 500, 30, 0);
@@ -575,7 +574,7 @@ TEST_F(VideoProcessorIntegrationTest,
   SetCodecParameters(&process_settings, 0.0f, -1, 1, false, true, true, false);
   // Metrics for expected quality.
   QualityMetrics quality_metrics;
-  SetQualityMetrics(&quality_metrics, 36.95, 33.0, 0.90, 0.90);
+  SetQualityMetrics(&quality_metrics, 34.95, 33.0, 0.90, 0.89);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[1];
   SetRateControlMetrics(rc_metrics, 0, 0, 40, 20, 10, 15, 0);
@@ -587,8 +586,7 @@ TEST_F(VideoProcessorIntegrationTest,
 
 // Run with 5% packet loss and fixed bitrate. Quality should be a bit lower.
 // One key frame (first frame only) in sequence.
-TEST_F(VideoProcessorIntegrationTest,
-       DISABLED_ON_ANDROID(Process5PercentPacketLoss)) {
+TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLoss) {
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
   SetRateProfilePars(&rate_profile, 0, 500, 30, 0);
@@ -611,8 +609,7 @@ TEST_F(VideoProcessorIntegrationTest,
 
 // Run with 10% packet loss and fixed bitrate. Quality should be even lower.
 // One key frame (first frame only) in sequence.
-TEST_F(VideoProcessorIntegrationTest,
-       DISABLED_ON_ANDROID(Process10PercentPacketLoss)) {
+TEST_F(VideoProcessorIntegrationTest, Process10PercentPacketLoss) {
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
   SetRateProfilePars(&rate_profile, 0, 500, 30, 0);
@@ -632,6 +629,15 @@ TEST_F(VideoProcessorIntegrationTest,
                          process_settings,
                          rc_metrics);
 }
+
+// The tests below are currently disabled for Android. For ARM, the encoder
+// uses |cpu_speed| = 12, as opposed to default |cpu_speed| <= 6 for x86,
+// which leads to significantly different quality. The quality and rate control
+// settings in the tests below are defined for encoder speed setting
+// |cpu_speed| <= ~6. A number of settings would need to be significantly
+// modified for the |cpu_speed| = 12 case. For now, keep the tests below
+// disabled on Android. Some quality parameter in the above test has been
+// adjusted to also pass for |cpu_speed| <= 12.
 
 // Run with no packet loss, with varying bitrate (3 rate updates):
 // low to high to medium. Check that quality and encoder response to the new
