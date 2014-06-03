@@ -175,6 +175,9 @@ class WebRtcMediaEngine : public cricket::MediaEngineInterface {
 #else
 
 #include "talk/media/webrtc/webrtcvideoengine.h"
+#ifdef WEBRTC_CHROMIUM_BUILD
+#include "talk/media/webrtc/webrtcvideoengine2.h"
+#endif
 #include "talk/media/webrtc/webrtcvoiceengine.h"
 
 namespace cricket {
@@ -194,6 +197,23 @@ class WebRtcMediaEngine : public WebRtcCompositeMediaEngine {
     video_.SetExternalDecoderFactory(decoder_factory);
   }
 };
+
+#ifdef WEBRTC_CHROMIUM_BUILD
+typedef CompositeMediaEngine<WebRtcVoiceEngine, WebRtcVideoEngine2>
+        WebRtcCompositeMediaEngine2;
+
+class WebRtcMediaEngine2 : public WebRtcCompositeMediaEngine2 {
+ public:
+  WebRtcMediaEngine2(webrtc::AudioDeviceModule* adm,
+                     webrtc::AudioDeviceModule* adm_sc,
+                     WebRtcVideoEncoderFactory* encoder_factory,
+                     WebRtcVideoDecoderFactory* decoder_factory) {
+    voice_.SetAudioDeviceModule(adm, adm_sc);
+    video_.SetVoiceEngine(&voice_);
+    video_.EnableTimedRender();
+  }
+};
+#endif
 
 }  // namespace cricket
 
