@@ -113,11 +113,6 @@ class AudioBuffer {
   bool reference_copied_;
   AudioFrame::VADActivity activity_;
 
-  // If non-null, use this instead of channels_->channel(0). This is an
-  // optimization for the case num_proc_channels_ == 1 that allows us to point
-  // to the data instead of copying it.
-  int16_t* data_;
-
   const float* keyboard_data_;
   scoped_ptr<IFChannelBuffer> channels_;
   scoped_ptr<SplitChannelBuffer> split_channels_;

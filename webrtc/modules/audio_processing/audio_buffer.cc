@@ -159,7 +159,6 @@ AudioBuffer::AudioBuffer(int input_samples_per_channel,
     num_mixed_low_pass_channels_(0),
     reference_copied_(false),
     activity_(AudioFrame::kVadUnknown),
-    data_(NULL),
     keyboard_data_(NULL),
     channels_(new IFChannelBuffer(proc_samples_per_channel_,
                                   num_proc_channels_)) {
@@ -278,7 +277,6 @@ void AudioBuffer::CopyTo(int samples_per_channel,
 }
 
 void AudioBuffer::InitForNewData() {
-  data_ = NULL;
   keyboard_data_ = NULL;
   num_mixed_channels_ = 0;
   num_mixed_low_pass_channels_ = 0;
@@ -288,11 +286,6 @@ void AudioBuffer::InitForNewData() {
 
 const int16_t* AudioBuffer::data(int channel) const {
   assert(channel >= 0 && channel < num_proc_channels_);
-  if (data_ != NULL) {
-    assert(channel == 0 && num_proc_channels_ == 1);
-    return data_;
-  }
-
   return channels_->ibuf()->channel(channel);
 }
 
@@ -303,14 +296,6 @@ int16_t* AudioBuffer::data(int channel) {
 
 float* AudioBuffer::data_f(int channel) {
   assert(channel >= 0 && channel < num_proc_channels_);
-  if (data_ != NULL) {
-    // Need to make a copy of the data instead of just pointing to it, since
-    // we're about to convert it to float.
-    assert(channel == 0 && num_proc_channels_ == 1);
-    memcpy(channels_->ibuf()->channel(0), data_,
-           sizeof(*data_) * proc_samples_per_channel_);
-    data_ = NULL;
-  }
   return channels_->fbuf()->channel(channel);
 }
 
@@ -418,12 +403,6 @@ void AudioBuffer::DeinterleaveFrom(AudioFrame* frame) {
   InitForNewData();
   activity_ = frame->vad_activity_;
 
-  if (num_proc_channels_ == 1) {
-    // We can get away with a pointer assignment in this case.
-    data_ = frame->data_;
-    return;
-  }
-
   int16_t* interleaved = frame->data_;
   for (int i = 0; i < num_proc_channels_; i++) {
     int16_t* deinterleaved = channels_->ibuf()->channel(i);
@@ -443,12 +422,6 @@ void AudioBuffer::InterleaveTo(AudioFrame* frame, bool data_changed) const {
   frame->vad_activity_ = activity_;
 
   if (!data_changed) {
-    return;
-  }
-
-  if (data_) {
-    assert(num_proc_channels_ == 1);
-    assert(data_ == frame->data_);
     return;
   }
 
