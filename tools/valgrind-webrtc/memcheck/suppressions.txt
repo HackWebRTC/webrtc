@@ -10,6 +10,20 @@
 
 # 1. webrtc stuff
 {
+   bug_3446
+   Memcheck:Uninitialized
+   fun:vp8cx_pick_filter_level_fast
+   fun:vp8_loopfilter_frame
+   fun:encode_frame_to_data_rate
+   fun:vp8_get_compressed_data
+   fun:vp8e_encode
+   fun:vpx_codec_encode
+   ...
+   fun:_ZN6webrtc4test18VideoProcessorImpl12ProcessFrameEi
+   fun:_ZN6webrtc29VideoProcessorIntegrationTest22ProcessFramesAndVerifyENS_14QualityMetricsENS_11RateProfileENS_15CodecConfigParsEPNS_18RateControlMetricsE
+   fun:_ZN6webrtc70VideoProcessorIntegrationTest_ProcessNoLossSpatialResizeFrameDrop_Test8TestBodyEv
+}
+{
    bug_1976_1
    Memcheck:Unaddressable
    fun:pthread_mutex_unlock
