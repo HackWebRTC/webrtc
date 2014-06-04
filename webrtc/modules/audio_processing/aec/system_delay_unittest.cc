@@ -361,7 +361,7 @@ TEST_F(SystemDelayTest, DISABLED_ON_ANDROID(CorrectDelayDuringDrift)) {
   }
 }
 
-TEST_F(SystemDelayTest, ShouldRecoverAfterGlitch) {
+TEST_F(SystemDelayTest, DISABLED_ON_ANDROID(ShouldRecoverAfterGlitch)) {
   // This glitch test should verify that the system delay recovers if there is
   // a glitch in data. The data glitch is constructed as 200 ms of buffering
   // after which the stable procedure continues. The glitch is never reported by
