@@ -28,7 +28,7 @@
     'conditions': [
       # TODO(henrike): remove build_with_chromium==1 when the bots are
       # using Chromium's buildbots.
-      ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+      ['build_with_chromium==1 and OS=="android"', {
         'dependencies': [
           '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
         ],
@@ -38,7 +38,7 @@
   'conditions': [
     # TODO(henrike): remove build_with_chromium==1 when the bots are using
     # Chromium's buildbots.
-    ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+    ['build_with_chromium==1 and OS=="android"', {
       'targets': [
         {
           'target_name': 'audio_codec_speed_tests_apk_target',

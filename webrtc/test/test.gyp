@@ -117,7 +117,7 @@
       'conditions': [
         # TODO(henrike): remove build_with_chromium==1 when the bots are using
         # Chromium's buildbots.
-        ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+        ['build_with_chromium==1 and OS=="android"', {
           'dependencies': [
             '<(DEPTH)/base/base.gyp:base',
           ],
@@ -193,7 +193,7 @@
       'conditions': [
         # TODO(henrike): remove build_with_chromium==1 when the bots are
         # using Chromium's buildbots.
-        ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+        ['build_with_chromium==1 and OS=="android"', {
           'dependencies': [
             '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
           ],
@@ -228,7 +228,7 @@
     }],
     # TODO(henrike): remove build_with_chromium==1 when the bots are using
     # Chromium's buildbots.
-    ['include_tests==1 and build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+    ['include_tests==1 and build_with_chromium==1 and OS=="android"', {
       'targets': [
         {
           'target_name': 'test_support_unittests_apk_target',
