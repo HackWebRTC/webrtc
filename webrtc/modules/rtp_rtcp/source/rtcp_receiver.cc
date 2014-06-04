@@ -1391,7 +1391,7 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
   }
   if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpNack) {
     if (rtcpPacketInformation.nackSequenceNumbers.size() > 0) {
-      LOG(LS_INFO) << "Incoming NACK length: "
+      LOG(LS_VERBOSE) << "Incoming NACK length: "
                    << rtcpPacketInformation.nackSequenceNumbers.size();
       _rtpRtcp.OnReceivedNACK(rtcpPacketInformation.nackSequenceNumbers);
     }
@@ -1407,10 +1407,10 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
       if ((rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpPli) ||
           (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpFir)) {
         if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpPli) {
-          LOG(LS_INFO) << "Incoming PLI from SSRC "
+          LOG(LS_VERBOSE) << "Incoming PLI from SSRC "
                        << rtcpPacketInformation.remoteSSRC;
         } else {
-          LOG(LS_INFO) << "Incoming FIR from SSRC "
+          LOG(LS_VERBOSE) << "Incoming FIR from SSRC "
                        << rtcpPacketInformation.remoteSSRC;
         }
         _cbRtcpIntraFrameObserver->OnReceivedIntraFrameRequest(local_ssrc);
@@ -1426,7 +1426,7 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
     }
     if (_cbRtcpBandwidthObserver) {
       if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpRemb) {
-        LOG(LS_INFO) << "Incoming REMB: "
+        LOG(LS_VERBOSE) << "Incoming REMB: "
                      << rtcpPacketInformation.receiverEstimatedMaxBitrate;
         _cbRtcpBandwidthObserver->OnReceivedEstimatedBitrate(
             rtcpPacketInformation.receiverEstimatedMaxBitrate);
