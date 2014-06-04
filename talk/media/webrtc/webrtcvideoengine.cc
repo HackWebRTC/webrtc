@@ -69,6 +69,10 @@
 #if !defined(LIBPEERCONNECTION_LIB)
 #include "talk/media/webrtc/webrtcmediaengine.h"
 
+#ifdef _MSC_VER
+#define strtok_r strtok_s
+#endif  // _MSC_VER
+
 WRME_EXPORT
 cricket::MediaEngineInterface* CreateWebRtcMediaEngine(
     webrtc::AudioDeviceModule* adm, webrtc::AudioDeviceModule* adm_sc,
@@ -145,8 +149,9 @@ static int GetExternalVideoPayloadType(int index) {
 
 static void LogMultiline(talk_base::LoggingSeverity sev, char* text) {
   const char* delim = "\r\n";
-  // TODO(fbarchard): Fix strtok lint warning.
-  for (char* tok = strtok(text, delim); tok; tok = strtok(NULL, delim)) {
+  char* strtok_save;
+  for (char* tok = strtok_r(text, delim, &strtok_save);
+       tok; tok = strtok_r(NULL, delim, &strtok_save)) {
     LOG_V(sev) << tok;
   }
 }
