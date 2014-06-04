@@ -9,12 +9,12 @@
  */
 
 #include "testing/gtest/include/gtest/gtest.h"
-
 extern "C" {
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
 }
 #include "webrtc/modules/audio_processing/aec/echo_cancellation_internal.h"
 #include "webrtc/modules/audio_processing/aec/include/echo_cancellation.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 #include "webrtc/typedefs.h"
 
 namespace {
@@ -248,7 +248,8 @@ TEST_F(SystemDelayTest, CorrectDelayAfterUnstableStartup) {
   }
 }
 
-TEST_F(SystemDelayTest, CorrectDelayAfterStableBufferBuildUp) {
+TEST_F(SystemDelayTest,
+       DISABLED_ON_ANDROID(CorrectDelayAfterStableBufferBuildUp)) {
   // In this test we start by establishing the device buffer size during stable
   // conditions, but with an empty internal far-end buffer. Once that is done we
   // verify that the system delay is increased correctly until we have reach an
@@ -329,7 +330,7 @@ TEST_F(SystemDelayTest, CorrectDelayWhenBufferUnderrun) {
   }
 }
 
-TEST_F(SystemDelayTest, CorrectDelayDuringDrift) {
+TEST_F(SystemDelayTest, DISABLED_ON_ANDROID(CorrectDelayDuringDrift)) {
   // This drift test should verify that the system delay is never exceeding the
   // device buffer. The drift is simulated by decreasing the reported device
   // buffer size by 1 ms every 100 ms. If the device buffer size goes below 30

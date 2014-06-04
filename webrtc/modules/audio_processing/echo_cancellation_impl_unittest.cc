@@ -14,10 +14,11 @@ extern "C" {
 }
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 
-TEST(EchoCancellationInternalTest, DelayCorrection) {
+TEST(EchoCancellationInternalTest, DISABLED_ON_ANDROID(DelayCorrection)) {
   scoped_ptr<AudioProcessing> ap(AudioProcessing::Create(0));
   EXPECT_TRUE(ap->echo_cancellation()->aec_core() == NULL);
 

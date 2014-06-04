@@ -827,7 +827,7 @@ TEST_F(ApmTest, EchoCancellation) {
   EXPECT_FALSE(apm_->echo_cancellation()->aec_core() != NULL);
 }
 
-TEST_F(ApmTest, EchoCancellationReportsCorrectDelays) {
+TEST_F(ApmTest, DISABLED_ON_ANDROID(EchoCancellationReportsCorrectDelays)) {
   // Enable AEC only.
   EXPECT_EQ(apm_->kNoError,
             apm_->echo_cancellation()->enable_drift_compensation(false));
@@ -1369,7 +1369,7 @@ TEST_F(ApmTest, IdenticalInputChannelsResultInIdenticalOutputChannels) {
   }
 }
 
-TEST_F(ApmTest, SplittingFilter) {
+TEST_F(ApmTest, DISABLED_ON_ANDROID(SplittingFilter)) {
   // Verify the filter is not active through undistorted audio when:
   // 1. No components are enabled...
   SetFrameTo(frame_, 1000);
