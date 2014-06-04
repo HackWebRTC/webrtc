@@ -61,9 +61,13 @@ class VideoAdapter {
   // true and set the output frame to NULL if the input frame is dropped. Return
   // true and set the out frame to output_frame_ if the input frame is adapted
   // successfully. Return false otherwise.
-  // output_frame_ is owned by the VideoAdapter that has the best knowledge on
-  // the output frame.
-  bool AdaptFrame(const VideoFrame* in_frame, VideoFrame** out_frame);
+  // Note that, if no adaptation is required, |out_frame| will refer directly
+  // in_frame. If a copy is always required, the caller must do an explicit
+  // copy.
+  // If a copy has taken place, |output_frame_| is owned by the VideoAdapter
+  // and will remain usable until the adapter is destroyed or AdaptFrame is
+  // called again.
+  bool AdaptFrame(VideoFrame* in_frame, VideoFrame** out_frame);
 
   void set_scale_third(bool enable);
   bool scale_third() const { return scale_third_; }

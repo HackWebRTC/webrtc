@@ -261,7 +261,7 @@ int VideoAdapter::GetOutputNumPixels() const {
 
 // TODO(fbarchard): Add AdaptFrameRate function that only drops frames but
 // not resolution.
-bool VideoAdapter::AdaptFrame(const VideoFrame* in_frame,
+bool VideoAdapter::AdaptFrame(VideoFrame* in_frame,
                               VideoFrame** out_frame) {
   talk_base::CritScope cs(&critical_section_);
   if (!in_frame || !out_frame) {
@@ -326,12 +326,19 @@ bool VideoAdapter::AdaptFrame(const VideoFrame* in_frame,
     output_format_.height = static_cast<int>(in_frame->GetHeight());
   }
 
-  if (!StretchToOutputFrame(in_frame)) {
-    LOG(LS_VERBOSE) << "VAdapt Stretch Failed.";
-    return false;
-  }
+  if (!black_output_ &&
+      in_frame->GetWidth() == static_cast<size_t>(output_format_.width) &&
+      in_frame->GetHeight() == static_cast<size_t>(output_format_.height)) {
+    // The dimensions are correct and we aren't muting, so use the input frame.
+    *out_frame = in_frame;
+  } else {
+    if (!StretchToOutputFrame(in_frame)) {
+      LOG(LS_VERBOSE) << "VAdapt Stretch Failed.";
+      return false;
+    }
 
-  *out_frame = output_frame_.get();
+    *out_frame = output_frame_.get();
+  }
 
   ++frames_out_;
   if (in_frame->GetWidth() != (*out_frame)->GetWidth() ||
