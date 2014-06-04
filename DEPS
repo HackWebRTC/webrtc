@@ -108,7 +108,7 @@ deps = {
     Var("chromium_trunk") + "/deps/third_party/opus@256783",
 
   "third_party/protobuf":
-    Var("chromium_trunk") + "/src/third_party/protobuf@251211",
+    Var("chromium_trunk") + "/src/third_party/protobuf@" + Var("chromium_revision"),
 
   "third_party/sqlite/":
     Var("chromium_trunk") + "/src/third_party/sqlite@" + Var("chromium_revision"),
@@ -205,7 +205,7 @@ deps_os = {
     # Precompiled tools needed for Android test execution. Needed since we can't
     # compile them from source in WebRTC since they depend on Chromium's base.
     "tools/android":
-      (Var("googlecode_url") % "webrtc") + "/deps/tools/android@4258",
+      (Var("googlecode_url") % "webrtc") + "/deps/tools/android@6306",
 
     "third_party/android_tools":
       From("chromium_deps", "src/third_party/android_tools"),

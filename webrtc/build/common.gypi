@@ -189,13 +189,23 @@
       }, {
         'conditions': [
           ['os_posix==1', {
-            'cflags': [
-              '-Wextra',
-              # We need to repeat some flags from Chromium's common.gypi here
-              # that get overridden by -Wextra.
-              '-Wno-unused-parameter',
-              '-Wno-missing-field-initializers',
-              '-Wno-strict-overflow',
+            'conditions': [
+              # -Wextra is currently disabled in Chromium's common.gypi. Enable
+              # for targets that can handle it. For Android/arm64 right now
+              # there will be an 'enumeral and non-enumeral type in conditional
+              # expression' warning in android_tools/ndk_experimental's version
+              # of stlport.
+              # See: https://code.google.com/p/chromium/issues/detail?id=379699
+              ['target_arch!="arm64" or OS!="android"', {
+                'cflags': [
+                  '-Wextra',
+                  # We need to repeat some flags from Chromium's common.gypi
+                  # here that get overridden by -Wextra.
+                  '-Wno-unused-parameter',
+                  '-Wno-missing-field-initializers',
+                  '-Wno-strict-overflow',
+                ],
+              }],
             ],
             'cflags_cc': [
               '-Wnon-virtual-dtor',
