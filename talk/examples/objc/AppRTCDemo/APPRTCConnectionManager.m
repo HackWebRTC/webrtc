@@ -101,6 +101,7 @@
   [self.peerConnection close];
   self.peerConnection = nil;
   self.client = nil;
+  self.videoSource = nil;
   self.queuedRemoteCandidates = nil;
 }
 

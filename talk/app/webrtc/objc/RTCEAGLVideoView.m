@@ -37,14 +37,72 @@
 #import "RTCVideoRenderer.h"
 #import "RTCVideoTrack.h"
 
+// RTCDisplayLinkTimer wraps a CADisplayLink and is set to fire every two screen
+// refreshes, which should be 30fps. We wrap the display link in order to avoid
+// a retain cycle since CADisplayLink takes a strong reference onto its target.
+// The timer is paused by default.
+@interface RTCDisplayLinkTimer : NSObject
+
+@property(nonatomic) BOOL isPaused;
+
+- (instancetype)initWithTimerHandler:(void (^)(void))timerHandler;
+- (void)invalidate;
+
+@end
+
+@implementation RTCDisplayLinkTimer {
+  CADisplayLink* _displayLink;
+  void (^_timerHandler)(void);
+}
+
+- (instancetype)initWithTimerHandler:(void (^)(void))timerHandler {
+  NSParameterAssert(timerHandler);
+  if (self = [super init]) {
+    _timerHandler = timerHandler;
+    _displayLink =
+        [CADisplayLink displayLinkWithTarget:self
+                                    selector:@selector(displayLinkDidFire:)];
+    _displayLink.paused = YES;
+    // Set to half of screen refresh, which should be 30fps.
+    [_displayLink setFrameInterval:2];
+    [_displayLink addToRunLoop:[NSRunLoop currentRunLoop]
+                       forMode:NSRunLoopCommonModes];
+  }
+  return self;
+}
+
+- (void)dealloc {
+  [self invalidate];
+}
+
+- (BOOL)isPaused {
+  return _displayLink.paused;
+}
+
+- (void)setIsPaused:(BOOL)isPaused {
+  _displayLink.paused = isPaused;
+}
+
+- (void)invalidate {
+  [_displayLink invalidate];
+}
+
+- (void)displayLinkDidFire:(CADisplayLink*)displayLink {
+  _timerHandler();
+}
+
+@end
+
 @interface RTCEAGLVideoView () <GLKViewDelegate>
 // |i420Frame| is set when we receive a frame from a worker thread and is read
 // from the display link callback so atomicity is required.
 @property(atomic, strong) RTCI420Frame* i420Frame;
+@property(nonatomic, readonly) GLKView* glkView;
+@property(nonatomic, readonly) RTCOpenGLVideoRenderer* glRenderer;
 @end
 
 @implementation RTCEAGLVideoView {
-  CADisplayLink* _displayLink;
+  RTCDisplayLinkTimer* _timer;
   GLKView* _glkView;
   RTCOpenGLVideoRenderer* _glRenderer;
   RTCVideoRenderer* _videoRenderer;
@@ -79,14 +137,21 @@
                            selector:@selector(didBecomeActive)
                                name:UIApplicationDidBecomeActiveNotification
                              object:nil];
-    _displayLink =
-        [CADisplayLink displayLinkWithTarget:self
-                                    selector:@selector(displayLinkDidFire:)];
-    _displayLink.paused = YES;
-    // Set to half of screen refresh, which should be 30fps.
-    [_displayLink setFrameInterval:2];
-    [_displayLink addToRunLoop:[NSRunLoop currentRunLoop]
-                       forMode:NSRunLoopCommonModes];
+
+    // Frames are received on a separate thread, so we poll for current frame
+    // using a refresh rate proportional to screen refresh frequency. This
+    // occurs on the main thread.
+    __weak RTCEAGLVideoView* weakSelf = self;
+    _timer = [[RTCDisplayLinkTimer alloc] initWithTimerHandler:^{
+      RTCEAGLVideoView* strongSelf = weakSelf;
+      // Don't render if frame hasn't changed.
+      if (strongSelf.glRenderer.lastDrawnFrame == strongSelf.i420Frame) {
+        return;
+      }
+      // This tells the GLKView that it's dirty, which will then call the
+      // GLKViewDelegate method implemented below.
+      [strongSelf.glkView setNeedsDisplay];
+    }];
     _videoRenderer = [[RTCVideoRenderer alloc] initWithDelegate:self];
     [self setupGL];
   }
@@ -100,6 +165,7 @@
   if (appState == UIApplicationStateActive) {
     [self teardownGL];
   }
+  [_timer invalidate];
 }
 
 - (void)setVideoTrack:(RTCVideoTrack*)videoTrack {
@@ -134,26 +200,13 @@
 
 #pragma mark - Private
 
-// Frames are received on a separate thread, so we poll for current frame
-// using a refresh rate proportional to screen refresh frequency. This occurs
-// on main thread.
-- (void)displayLinkDidFire:(CADisplayLink*)displayLink {
-  // Don't render if frame hasn't changed.
-  if (_glRenderer.lastDrawnFrame == self.i420Frame) {
-    return;
-  }
-  // This tells the GLKView that it's dirty, which will then call the the
-  // GLKViewDelegate method implemented above.
-  [_glkView setNeedsDisplay];
-}
-
 - (void)setupGL {
   [_glRenderer setupGL];
-  _displayLink.paused = NO;
+  _timer.isPaused = NO;
 }
 
 - (void)teardownGL {
-  _displayLink.paused = YES;
+  _timer.isPaused = YES;
   [_glkView deleteDrawable];
   [_glRenderer teardownGL];
 }
@@ -176,8 +229,10 @@
 // provide. This occurs on non-main thread.
 - (void)renderer:(RTCVideoRenderer*)renderer
       didSetSize:(CGSize)size {
+  __weak RTCEAGLVideoView* weakSelf = self;
   dispatch_async(dispatch_get_main_queue(), ^{
-    [self.delegate videoView:self didChangeVideoSize:size];
+    RTCEAGLVideoView* strongSelf = weakSelf;
+    [strongSelf.delegate videoView:strongSelf didChangeVideoSize:size];
   });
 }
 
