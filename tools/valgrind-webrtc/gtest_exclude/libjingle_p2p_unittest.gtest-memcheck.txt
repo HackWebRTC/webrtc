@@ -3,4 +3,5 @@ P2PTransportChannelTest.*
 P2PTransportChannelSameNatTest.TestConesBehindSameCone
 PortTest.TestSendStunMessageAsIce
 PseudoTcpTest.TestSendBothUseLargeWindowScale
-
+# Issue 3447
+P2PTransportChannelMultihomedTest.TestFailover
