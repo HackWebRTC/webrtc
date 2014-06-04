@@ -2521,6 +2521,7 @@ int32_t ModuleFileUtility::FileDurationMs(const char* fileName,
                 break;
             }
 #endif
+            break;
         }
         case kFileFormatPreencodedFile:
         {
