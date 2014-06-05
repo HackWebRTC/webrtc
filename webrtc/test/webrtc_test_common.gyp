@@ -31,12 +31,9 @@
         'frame_generator_capturer.cc',
         'frame_generator_capturer.h',
         'mock_transport.h',
-        'null_platform_renderer.cc',
         'null_transport.cc',
         'null_transport.h',
         'rtp_rtcp_observer.h',
-        'run_tests.cc',
-        'run_tests.h',
         'run_loop.cc',
         'run_loop.h',
         'statistics.cc',
@@ -45,12 +42,71 @@
         'vcm_capturer.h',
         'video_capturer.cc',
         'video_capturer.h',
+        'win/run_loop_win.cc',
+      ],
+      'conditions': [
+        ['OS=="win"', {
+          'sources!': [
+            'run_loop.cc',
+          ],
+        }],
+      ],
+      'dependencies': [
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+        '<(webrtc_root)/modules/modules.gyp:video_capture_module',
+        '<(webrtc_root)/modules/modules.gyp:media_file',
+        '<(webrtc_root)/test/test.gyp:frame_generator',
+        '<(webrtc_root)/test/test.gyp:test_support',
+      ],
+    },
+    {
+      'target_name': 'webrtc_test_renderer',
+      'type': 'static_library',
+      'sources': [
+        'gl/gl_renderer.cc',
+        'gl/gl_renderer.h',
+        'linux/glx_renderer.cc',
+        'linux/glx_renderer.h',
+        'linux/video_renderer_linux.cc',
+        'mac/video_renderer_mac.h',
+        'mac/video_renderer_mac.mm',
+        'null_platform_renderer.cc',
         'video_renderer.cc',
         'video_renderer.h',
+        'win/d3d_renderer.cc',
+        'win/d3d_renderer.h',
       ],
-      # TODO(pbos): As far as I can tell these are dependencies from
-      # video_render and they should really not be here. This target provides
-      # no platform-specific rendering.
+      'conditions': [
+        ['OS=="linux"', {
+          'sources!': [
+            'null_platform_renderer.cc',
+          ],
+        }],
+        ['OS=="mac"', {
+          'sources!': [
+            'null_platform_renderer.cc',
+          ],
+        }],
+        ['OS!="linux" and OS!="mac"', {
+          'sources!' : [
+            'gl/gl_renderer.cc',
+            'gl/gl_renderer.h',
+          ],
+        }],
+        ['OS=="win"', {
+          'sources!': [
+            'null_platform_renderer.cc',
+          ],
+        }],
+      ],
+      'dependencies': [
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(webrtc_root)/modules/modules.gyp:video_capture_module',
+        '<(webrtc_root)/modules/modules.gyp:media_file',
+        '<(webrtc_root)/test/test.gyp:frame_generator',
+        '<(webrtc_root)/test/test.gyp:test_support',
+      ],
       'direct_dependent_settings': {
         'conditions': [
           ['OS=="linux"', {
@@ -68,25 +124,47 @@
           ['OS=="mac"', {
             'xcode_settings' : {
               'OTHER_LDFLAGS' : [
-                '-framework Foundation',
-                '-framework AppKit',
                 '-framework Cocoa',
                 '-framework OpenGL',
                 '-framework CoreVideo',
-                '-framework CoreAudio',
-                '-framework AudioToolbox',
               ],
             },
           }],
         ],
       },
-      'dependencies': [
-        '<(DEPTH)/testing/gtest.gyp:gtest',
-        '<(webrtc_root)/modules/modules.gyp:video_capture_module',
-        '<(webrtc_root)/modules/modules.gyp:media_file',
-        '<(webrtc_root)/test/test.gyp:frame_generator',
-        '<(webrtc_root)/test/test.gyp:test_support',
-      ],
+    },
+    {
+      # This target is only needed since the video render module builds platform
+      # specific code and depends on these libraries. This target should be
+      # removed as soon as the new video API doesn't depend on the module.
+      # TODO(mflodman) Remove this target as described above.
+      'target_name': 'webrtc_test_video_render_dependencies',
+      'type': 'static_library',
+      'direct_dependent_settings': {
+        'conditions': [
+          ['OS=="linux"', {
+            'libraries': [
+              '-lXext',
+              '-lX11',
+              '-lGL',
+            ],
+          }],
+          ['OS=="android"', {
+            'libraries' : [
+              '-lGLESv2', '-llog',
+            ],
+          }],
+          ['OS=="mac"', {
+            'xcode_settings' : {
+              'OTHER_LDFLAGS' : [
+                '-framework Cocoa',
+                '-framework OpenGL',
+                '-framework CoreVideo',
+              ],
+            },
+          }],
+        ],
+      },
     },
   ],
   'conditions': [

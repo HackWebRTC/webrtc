@@ -10,15 +10,20 @@
 
 #import <Cocoa/Cocoa.h>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/run_test.h"
 
+// Converting a C++ function pointer to an Objective-C block.
+typedef void(^TestBlock)();
+TestBlock functionToBlock(void(*function)()) {
+  return [^(void) { function(); } copy];
+}
+
+// Class calling the test function on the platform specific thread.
 @interface TestRunner : NSObject {
   BOOL running_;
-  int testResult_;
 }
-- (void)runAllTests:(NSObject *)ignored;
+- (void)runAllTests:(TestBlock)ignored;
 - (BOOL)running;
-- (int)result;
 @end
 
 @implementation TestRunner
@@ -30,9 +35,9 @@
   return self;
 }
 
-- (void)runAllTests:(NSObject *)ignored {
+- (void)runAllTests:(TestBlock)testBlock {
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-  testResult_  = RUN_ALL_TESTS();
+  testBlock();
   running_ = NO;
   [pool release];
 }
@@ -40,33 +45,30 @@
 - (BOOL)running {
   return running_;
 }
-
-- (int)result {
-  return testResult_;
-}
 @end
 
 namespace webrtc {
 namespace test {
 
-int RunAllTests() {
+void RunTest(void(*test)()) {
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   [NSApplication sharedApplication];
 
+  // Convert the function pointer to an Objective-C block and call on a
+  // separate thread, to avoid blocking the main thread.
   TestRunner *testRunner = [[TestRunner alloc] init];
+  TestBlock testBlock = functionToBlock(test);
   [NSThread detachNewThreadSelector:@selector(runAllTests:)
                            toTarget:testRunner
-                         withObject:nil];
+                         withObject:testBlock];
 
   NSRunLoop *runLoop = [NSRunLoop currentRunLoop];
   while ([testRunner running] &&
          [runLoop runMode:NSDefaultRunLoopMode
                beforeDate:[NSDate distantFuture]]);
 
-  int result = [testRunner result];
   [testRunner release];
   [pool release];
-  return result;
 }
 
 }  // namespace test

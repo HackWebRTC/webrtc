@@ -20,12 +20,23 @@
       'target_name': 'video_loopback',
       'type': 'executable',
       'sources': [
+        'test/mac/run_test.mm',
+        'test/run_test.cc',
+        'test/run_test.h',
         'video/loopback.cc',
+      ],
+      'conditions': [
+        ['OS=="mac"', {
+          'sources!': [
+            'test/run_test.cc',
+          ],
+        }],
       ],
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
         'test/webrtc_test_common.gyp:webrtc_test_common',
+        'test/webrtc_test_common.gyp:webrtc_test_renderer',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:field_trial_default',
         'webrtc',
       ],
@@ -47,6 +58,7 @@
         'test/metrics.gyp:metrics',
         'test/webrtc_test_common.gyp:webrtc_test_common',
         'test/test.gyp:test_main',
+        'test/webrtc_test_common.gyp:webrtc_test_video_render_dependencies',
         'webrtc',
       ],
       'conditions': [
@@ -74,6 +86,7 @@
         'modules/modules.gyp:rtp_rtcp',
         'test/webrtc_test_common.gyp:webrtc_test_common',
         'test/test.gyp:test_main',
+        'test/webrtc_test_common.gyp:webrtc_test_video_render_dependencies',
         'webrtc',
       ],
       'conditions': [

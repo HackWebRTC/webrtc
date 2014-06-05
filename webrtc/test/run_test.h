@@ -7,14 +7,16 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "testing/gtest/include/gtest/gtest.h"
+#ifndef WEBRTC_TEST_RUN_TEST_H
+#define WEBRTC_TEST_RUN_TEST_H
 
 namespace webrtc {
 namespace test {
 
-int RunAllTests() {
-  return RUN_ALL_TESTS();
-}
+// Running a test function on a separate thread, if required by the OS.
+void RunTest(void(*test)());
 
 }  // namespace test
 }  // namespace webrtc
+
+#endif  // WEBRTC_TEST_RUN_TEST_H

@@ -23,7 +23,7 @@
 #include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/fake_encoder.h"
 #include "webrtc/test/run_loop.h"
-#include "webrtc/test/run_tests.h"
+#include "webrtc/test/run_test.h"
 #include "webrtc/test/video_capturer.h"
 #include "webrtc/test/video_renderer.h"
 #include "webrtc/typedefs.h"
@@ -127,6 +127,6 @@ int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
   google::ParseCommandLineFlags(&argc, &argv, true);
 
-  webrtc::Loopback();
+  webrtc::test::RunTest(webrtc::Loopback);
   return 0;
 }

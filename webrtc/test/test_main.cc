@@ -11,7 +11,6 @@
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/test/field_trial.h"
-#include "webrtc/test/run_tests.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 DEFINE_string(force_fieldtrials, "",
@@ -29,5 +28,5 @@ int main(int argc, char* argv[]) {
 
   webrtc::test::SetExecutablePath(argv[0]);
   webrtc::test::InitFieldTrialsFromString(FLAGS_force_fieldtrials);
-  return webrtc::test::RunAllTests();
+  return RUN_ALL_TESTS();
 }
