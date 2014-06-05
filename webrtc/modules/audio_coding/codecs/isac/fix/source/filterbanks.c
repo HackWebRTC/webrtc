@@ -102,8 +102,8 @@ void WebRtcIsacfix_HighpassFilterFixDec32(int16_t *io,
 
 #ifdef WEBRTC_ARCH_ARM_V7
     {
-      int tmp_coeff0 = 0;
-      int tmp_coeff1 = 0;
+      register int tmp_coeff0;
+      register int tmp_coeff1;
       __asm __volatile(
         "ldr %[tmp_coeff0], [%[coeff]]\n\t"
         "ldr %[tmp_coeff1], [%[coeff], #4]\n\t"
@@ -113,12 +113,12 @@ void WebRtcIsacfix_HighpassFilterFixDec32(int16_t *io,
         "ldr %[tmp_coeff1], [%[coeff], #12]\n\t"
         "smmulr %[a1], %[tmp_coeff0], %[state0]\n\t"
         "smmulr %[b1], %[tmp_coeff1], %[state1]\n\t"
-        :[a2]"+r"(a2),
-         [b2]"+r"(b2),
-         [a1]"+r"(a1),
-         [b1]"+r"(b1),
-         [tmp_coeff0]"+r"(tmp_coeff0),
-         [tmp_coeff1]"+r"(tmp_coeff1)
+        :[a2]"=&r"(a2),
+         [b2]"=&r"(b2),
+         [a1]"=&r"(a1),
+         [b1]"=r"(b1),
+         [tmp_coeff0]"=&r"(tmp_coeff0),
+         [tmp_coeff1]"=&r"(tmp_coeff1)
         :[coeff]"r"(coefficient),
          [state0]"r"(state0),
          [state1]"r"(state1)

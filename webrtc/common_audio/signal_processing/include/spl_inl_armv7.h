@@ -41,7 +41,7 @@ static __inline int32_t WEBRTC_SPL_MUL_32_32_RSFT32(int16_t a,
   __asm __volatile (
     "pkhbt %[tmp], %[b], %[a], lsl #16\n\t"
     "smmulr %[tmp], %[tmp], %[c]\n\t"
-    :[tmp]"+r"(tmp)
+    :[tmp]"+&r"(tmp)
     :[a]"r"(a),
      [b]"r"(b),
      [c]"r"(c)
