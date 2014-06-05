@@ -834,13 +834,15 @@ void WebRtcIsacfix_GetLpcCoef(int16_t *inLoQ0,
 
     /* bandwidth expansion */
     for (n = 1; n <= ORDERLO; n++) {
-      a_LOQ11[n] = (int16_t) WEBRTC_SPL_MUL_16_16_RSFT_WITH_FIXROUND(kPolyVecLo[n-1], a_LOQ11[n]);
+      a_LOQ11[n] = (int16_t) ((WEBRTC_SPL_MUL_16_16(
+          kPolyVecLo[n-1], a_LOQ11[n]) + ((int32_t) (1 << 14))) >> 15);
     }
 
 
     polyHI[0] = a_HIQ12[0];
     for (n = 1; n <= ORDERHI; n++) {
-      a_HIQ12[n] = (int16_t) WEBRTC_SPL_MUL_16_16_RSFT_WITH_FIXROUND(kPolyVecHi[n-1], a_HIQ12[n]);
+      a_HIQ12[n] = (int16_t) ((WEBRTC_SPL_MUL_16_16(
+          kPolyVecHi[n-1], a_HIQ12[n]) + ((int32_t) (1 << 14))) >> 15);
       polyHI[n] = a_HIQ12[n];
     }
 

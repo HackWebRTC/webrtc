@@ -99,8 +99,6 @@
 #define WEBRTC_SPL_MUL_16_16_RSFT_WITH_ROUND(a, b, c) \
     ((WEBRTC_SPL_MUL_16_16(a, b) + ((int32_t) \
                                   (((int32_t)1) << ((c) - 1)))) >> (c))
-#define WEBRTC_SPL_MUL_16_16_RSFT_WITH_FIXROUND(a, b) \
-    ((WEBRTC_SPL_MUL_16_16(a, b) + ((int32_t) (1 << 14))) >> 15)
 
 // C + the 32 most significant bits of A * B
 #define WEBRTC_SPL_SCALEDIFF32(A, B, C) \
