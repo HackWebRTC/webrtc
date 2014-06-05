@@ -192,6 +192,9 @@ static std::vector<VideoCodec> DefaultVideoCodecs() {
   return codecs;
 }
 
+WebRtcVideoEncoderFactory2::~WebRtcVideoEncoderFactory2() {
+}
+
 class DefaultVideoEncoderFactory : public WebRtcVideoEncoderFactory2 {
  public:
   virtual bool CreateEncoderSettings(
@@ -239,7 +242,7 @@ class DefaultVideoEncoderFactory : public WebRtcVideoEncoderFactory2 {
   virtual bool SupportsCodec(const VideoCodec& codec) OVERRIDE {
     return _stricmp(codec.name.c_str(), kVp8PayloadName) == 0;
   }
-} default_encoder_factory;
+};
 
 WebRtcVideoEngine2::WebRtcVideoEngine2() {
   // Construct without a factory or voice engine.
@@ -265,6 +268,7 @@ void WebRtcVideoEngine2::Construct(WebRtcVideoChannelFactory* channel_factory,
 
   video_codecs_ = DefaultVideoCodecs();
   default_codec_format_ = VideoFormat(kDefaultVideoFormat);
+  default_video_encoder_factory_.reset(new DefaultVideoEncoderFactory());
 }
 
 WebRtcVideoEngine2::~WebRtcVideoEngine2() {
@@ -328,7 +332,7 @@ WebRtcVideoChannel2* WebRtcVideoEngine2::CreateChannel(
       channel_factory_ != NULL
           ? channel_factory_->Create(this, voice_channel)
           : new WebRtcVideoChannel2(
-                this, voice_channel, GetDefaultVideoEncoderFactory());
+                this, voice_channel, GetVideoEncoderFactory());
   if (!channel->Init()) {
     delete channel;
     return NULL;
@@ -463,9 +467,8 @@ bool WebRtcVideoEngine2::ShouldIgnoreTrace(const std::string& trace) {
   return false;
 }
 
-WebRtcVideoEncoderFactory2* WebRtcVideoEngine2::GetDefaultVideoEncoderFactory()
-    const {
-  return &default_encoder_factory;
+WebRtcVideoEncoderFactory2* WebRtcVideoEngine2::GetVideoEncoderFactory() const {
+  return default_video_encoder_factory_.get();
 }
 
 // Thin map between cricket::VideoFrame and an existing webrtc::I420VideoFrame

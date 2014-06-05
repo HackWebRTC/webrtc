@@ -243,9 +243,7 @@ class FakeWebRtcVideoChannel2 : public WebRtcVideoChannel2 {
   FakeWebRtcVideoChannel2(FakeCall* call,
                           WebRtcVideoEngine2* engine,
                           VoiceMediaChannel* voice_channel)
-      : WebRtcVideoChannel2(call,
-                            engine,
-                            engine->GetDefaultVideoEncoderFactory()),
+      : WebRtcVideoChannel2(call, engine, engine->GetVideoEncoderFactory()),
         fake_call_(call),
         voice_channel_(voice_channel) {}
 

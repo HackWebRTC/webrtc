@@ -82,6 +82,7 @@ class WebRtcVideoChannel2;
 
 class WebRtcVideoEncoderFactory2 {
  public:
+  virtual ~WebRtcVideoEncoderFactory2();
   virtual bool CreateEncoderSettings(
       webrtc::VideoSendStream::Config::EncoderSettings* encoder_settings,
       const VideoOptions& options,
@@ -139,7 +140,7 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
 
   talk_base::CpuMonitor* cpu_monitor() { return cpu_monitor_.get(); }
 
-  virtual WebRtcVideoEncoderFactory2* GetDefaultVideoEncoderFactory() const;
+  virtual WebRtcVideoEncoderFactory2* GetVideoEncoderFactory() const;
 
  private:
   void Construct(WebRtcVideoChannelFactory* channel_factory,
@@ -162,6 +163,8 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
 
   talk_base::scoped_ptr<talk_base::CpuMonitor> cpu_monitor_;
   WebRtcVideoChannelFactory* channel_factory_;
+  talk_base::scoped_ptr<WebRtcVideoEncoderFactory2>
+      default_video_encoder_factory_;
 };
 
 // Adapter between webrtc::VideoRenderer and cricket::VideoRenderer.
