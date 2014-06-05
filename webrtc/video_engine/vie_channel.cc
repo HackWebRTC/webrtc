@@ -792,14 +792,13 @@ int32_t ViEChannel::EnableKeyFrameRequestCallback(const bool enable) {
 int32_t ViEChannel::SetSSRC(const uint32_t SSRC,
                             const StreamType usage,
                             const uint8_t simulcast_idx) {
-  int rtx_settings = kRtxRetransmitted;
-  if (config_.Get<PaddingStrategy>().redundant_payloads)
-    rtx_settings |= kRtxRedundantPayloads;
   if (simulcast_idx == 0) {
     if (usage == kViEStreamTypeRtx) {
-      return rtp_rtcp_->SetRTXSendStatus(rtx_settings, true, SSRC);
+      rtp_rtcp_->SetRtxSsrc(SSRC);
+    } else {
+      rtp_rtcp_->SetSSRC(SSRC);
     }
-    return rtp_rtcp_->SetSSRC(SSRC);
+    return 0;
   }
   CriticalSectionScoped cs(rtp_rtcp_cs_.get());
   if (simulcast_idx > simulcast_rtp_rtcp_.size()) {
@@ -813,14 +812,16 @@ int32_t ViEChannel::SetSSRC(const uint32_t SSRC,
   }
   RtpRtcp* rtp_rtcp_module = *it;
   if (usage == kViEStreamTypeRtx) {
-    return rtp_rtcp_module->SetRTXSendStatus(rtx_settings, true, SSRC);
+    rtp_rtcp_module->SetRtxSsrc(SSRC);
+  } else {
+    rtp_rtcp_module->SetSSRC(SSRC);
   }
-  return rtp_rtcp_module->SetSSRC(SSRC);
+  return 0;
 }
 
 int32_t ViEChannel::SetRemoteSSRCType(const StreamType usage,
                                       const uint32_t SSRC) {
-  vie_receiver_.SetRtxStatus(true, SSRC);
+  vie_receiver_.SetRtxSsrc(SSRC);
   return 0;
 }
 
@@ -860,14 +861,16 @@ int32_t ViEChannel::GetRemoteCSRC(uint32_t CSRCs[kRtpCsrcSize]) {
 }
 
 int ViEChannel::SetRtxSendPayloadType(int payload_type) {
-  if (rtp_rtcp_->Sending()) {
-    return -1;
-  }
+  int rtx_settings = kRtxRetransmitted;
+  if (config_.Get<PaddingStrategy>().redundant_payloads)
+    rtx_settings |= kRtxRedundantPayloads;
   rtp_rtcp_->SetRtxSendPayloadType(payload_type);
+  rtp_rtcp_->SetRTXSendStatus(rtx_settings);
   CriticalSectionScoped cs(rtp_rtcp_cs_.get());
   for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
        it != simulcast_rtp_rtcp_.end(); it++) {
     (*it)->SetRtxSendPayloadType(payload_type);
+    (*it)->SetRTXSendStatus(rtx_settings);
   }
   return 0;
 }

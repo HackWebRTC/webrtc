@@ -152,8 +152,8 @@ class RtpRtcpRtcpTest : public ::testing::Test {
     EXPECT_EQ(0, module1->SetRTCPStatus(kRtcpCompound));
     EXPECT_EQ(0, module2->SetRTCPStatus(kRtcpCompound));
 
-    EXPECT_EQ(0, module2->SetSSRC(test_ssrc + 1));
-    EXPECT_EQ(0, module1->SetSSRC(test_ssrc));
+    module2->SetSSRC(test_ssrc + 1);
+    module1->SetSSRC(test_ssrc);
     EXPECT_EQ(0, module1->SetSequenceNumber(test_sequence_number));
     EXPECT_EQ(0, module1->SetStartTimestamp(test_timestamp));
     EXPECT_EQ(0, module1->SetCSRCs(test_CSRC, 2));

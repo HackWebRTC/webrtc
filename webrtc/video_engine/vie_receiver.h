@@ -47,8 +47,8 @@ class ViEReceiver : public RtpData {
   bool RegisterPayload(const VideoCodec& video_codec);
 
   void SetNackStatus(bool enable, int max_nack_reordering_threshold);
-  void SetRtxStatus(bool enable, uint32_t ssrc);
-  void SetRtxPayloadType(uint32_t payload_type);
+  void SetRtxPayloadType(int payload_type);
+  void SetRtxSsrc(uint32_t ssrc);
 
   uint32_t GetRemoteSsrc() const;
   int GetCsrcs(uint32_t* csrcs) const;

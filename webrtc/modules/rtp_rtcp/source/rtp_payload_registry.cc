@@ -228,12 +228,6 @@ int32_t RTPPayloadRegistry::ReceivePayloadType(
   return -1;
 }
 
-void RTPPayloadRegistry::SetRtxStatus(bool enable, uint32_t ssrc) {
-  CriticalSectionScoped cs(crit_sect_.get());
-  rtx_ = enable;
-  ssrc_rtx_ = ssrc;
-}
-
 bool RTPPayloadRegistry::RtxEnabled() const {
   CriticalSectionScoped cs(crit_sect_.get());
   return rtx_;
@@ -288,9 +282,17 @@ bool RTPPayloadRegistry::RestoreOriginalPacket(uint8_t** restored_packet,
   return true;
 }
 
+void RTPPayloadRegistry::SetRtxSsrc(uint32_t ssrc) {
+  CriticalSectionScoped cs(crit_sect_.get());
+  ssrc_rtx_ = ssrc;
+  rtx_ = true;
+}
+
 void RTPPayloadRegistry::SetRtxPayloadType(int payload_type) {
   CriticalSectionScoped cs(crit_sect_.get());
+  assert(payload_type >= 0);
   payload_type_rtx_ = payload_type;
+  rtx_ = true;
 }
 
 bool RTPPayloadRegistry::IsRed(const RTPHeader& header) const {

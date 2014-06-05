@@ -188,7 +188,7 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
         kTestId, &fake_clock, &receiver_, rtp_feedback_.get(),
         &rtp_payload_registry_));
 
-    EXPECT_EQ(0, rtp_rtcp_module_->SetSSRC(kTestSsrc));
+    rtp_rtcp_module_->SetSSRC(kTestSsrc);
     EXPECT_EQ(0, rtp_rtcp_module_->SetRTCPStatus(kRtcpCompound));
     rtp_receiver_->SetNACKStatus(kNackRtcp);
     EXPECT_EQ(0, rtp_rtcp_module_->SetStorePacketsStatus(true, 600));
@@ -253,9 +253,9 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
   }
 
   void RunRtxTest(RtxMode rtx_method, int loss) {
-    rtp_payload_registry_.SetRtxStatus(true, kTestSsrc + 1);
-    EXPECT_EQ(0, rtp_rtcp_module_->SetRTXSendStatus(rtx_method, true,
-        kTestSsrc + 1));
+    rtp_payload_registry_.SetRtxSsrc(kTestSsrc + 1);
+    rtp_rtcp_module_->SetRTXSendStatus(rtx_method);
+    rtp_rtcp_module_->SetRtxSsrc(kTestSsrc + 1);
     transport_.DropEveryNthPacket(loss);
     uint32_t timestamp = 3000;
     uint16_t nack_list[kVideoNackListSize];

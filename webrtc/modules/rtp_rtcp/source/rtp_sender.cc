@@ -312,16 +312,14 @@ uint16_t RTPSender::MaxPayloadLength() const {
 
 uint16_t RTPSender::PacketOverHead() const { return packet_over_head_; }
 
-void RTPSender::SetRTXStatus(int mode, bool set_ssrc, uint32_t ssrc) {
+void RTPSender::SetRTXStatus(int mode) {
   CriticalSectionScoped cs(send_critsect_);
   rtx_ = mode;
-  if (rtx_ != kRtxOff) {
-    if (set_ssrc) {
-      ssrc_rtx_ = ssrc;
-    } else {
-      ssrc_rtx_ = ssrc_db_.CreateSSRC();  // Can't be 0.
-    }
-  }
+}
+
+void RTPSender::SetRtxSsrc(uint32_t ssrc) {
+  CriticalSectionScoped cs(send_critsect_);
+  ssrc_rtx_ = ssrc;
 }
 
 void RTPSender::RTXStatus(int* mode, uint32_t* ssrc,

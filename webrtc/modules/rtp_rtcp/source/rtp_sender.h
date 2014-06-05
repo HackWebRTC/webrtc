@@ -184,9 +184,11 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
   bool ProcessNACKBitRate(const uint32_t now);
 
   // RTX.
-  void SetRTXStatus(int mode, bool set_ssrc, uint32_t ssrc);
+  void SetRTXStatus(int mode);
 
   void RTXStatus(int* mode, uint32_t* ssrc, int* payload_type) const;
+
+  void SetRtxSsrc(uint32_t ssrc);
 
   void SetRtxPayloadType(int payloadType);
 

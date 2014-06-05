@@ -687,8 +687,8 @@ TEST_F(RtpSenderTest, SendRedundantPayloads) {
   rtp_header_len += 4;  // 4 bytes extension.
   rtp_header_len += 4;  // 4 extra bytes common to all extension headers.
 
-  rtp_sender_->SetRTXStatus(kRtxRetransmitted | kRtxRedundantPayloads, true,
-                            1234);
+  rtp_sender_->SetRTXStatus(kRtxRetransmitted | kRtxRedundantPayloads);
+  rtp_sender_->SetRtxSsrc(1234);
 
   // Create and set up parser.
   scoped_ptr<webrtc::RtpHeaderParser> rtp_parser(

@@ -3072,13 +3072,7 @@ Channel::SetLocalSSRC(unsigned int ssrc)
             "SetLocalSSRC() already sending");
         return -1;
     }
-    if (_rtpRtcpModule->SetSSRC(ssrc) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_RTP_RTCP_MODULE_ERROR, kTraceError,
-            "SetLocalSSRC() failed to set SSRC");
-        return -1;
-    }
+    _rtpRtcpModule->SetSSRC(ssrc);
     return 0;
 }
 

@@ -411,8 +411,8 @@ bool VideoSendStream::ReconfigureVideoEncoder(
                             static_cast<unsigned char>(i));
   }
 
-  if (config_.rtp.rtx.payload_type != 0)
-    rtp_rtcp_->SetRtxSendPayloadType(channel_, config_.rtp.rtx.payload_type);
+  assert(config_.rtp.rtx.payload_type >= 0);
+  rtp_rtcp_->SetRtxSendPayloadType(channel_, config_.rtp.rtx.payload_type);
 
   return true;
 }

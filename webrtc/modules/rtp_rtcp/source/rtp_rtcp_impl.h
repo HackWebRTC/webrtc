@@ -80,7 +80,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   virtual uint32_t SSRC() const OVERRIDE;
 
   // Configure SSRC, default is a random number.
-  virtual int32_t SetSSRC(const uint32_t ssrc) OVERRIDE;
+  virtual void SetSSRC(const uint32_t ssrc) OVERRIDE;
 
   virtual int32_t CSRCs(uint32_t arr_of_csrc[kRtpCsrcSize]) const OVERRIDE;
 
@@ -95,13 +95,12 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   virtual uint32_t ByteCountSent() const;
 
-  virtual int32_t SetRTXSendStatus(const int mode,
-                                   const bool set_ssrc,
-                                   const uint32_t ssrc) OVERRIDE;
+  virtual void SetRTXSendStatus(const int mode) OVERRIDE;
 
-  virtual int32_t RTXSendStatus(int* mode, uint32_t* ssrc,
-                                int* payloadType) const OVERRIDE;
+  virtual void RTXSendStatus(int* mode, uint32_t* ssrc,
+                             int* payloadType) const OVERRIDE;
 
+  virtual void SetRtxSsrc(uint32_t ssrc) OVERRIDE;
 
   virtual void SetRtxSendPayloadType(int payload_type) OVERRIDE;
 

@@ -96,12 +96,12 @@ void ViEReceiver::SetNackStatus(bool enable,
   rtp_receiver_->SetNACKStatus(enable ? kNackRtcp : kNackOff);
 }
 
-void ViEReceiver::SetRtxStatus(bool enable, uint32_t ssrc) {
-  rtp_payload_registry_->SetRtxStatus(enable, ssrc);
+void ViEReceiver::SetRtxPayloadType(int payload_type) {
+  rtp_payload_registry_->SetRtxPayloadType(payload_type);
 }
 
-void ViEReceiver::SetRtxPayloadType(uint32_t payload_type) {
-  rtp_payload_registry_->SetRtxPayloadType(payload_type);
+void ViEReceiver::SetRtxSsrc(uint32_t ssrc) {
+  rtp_payload_registry_->SetRtxSsrc(ssrc);
 }
 
 uint32_t ViEReceiver::GetRemoteSsrc() const {

@@ -107,11 +107,11 @@ class RtpRtcpImplTest : public ::testing::Test {
         receiver_(&clock_) {
     // Send module.
     EXPECT_EQ(0, sender_.impl_->SetSendingStatus(true));
-    EXPECT_EQ(0, sender_.impl_->SetSSRC(kSenderSsrc));
+    sender_.impl_->SetSSRC(kSenderSsrc);
     sender_.impl_->SetRemoteSSRC(kReceiverSsrc);
     // Receive module.
     EXPECT_EQ(0, receiver_.impl_->SetSendingStatus(false));
-    EXPECT_EQ(0, receiver_.impl_->SetSSRC(kReceiverSsrc));
+    receiver_.impl_->SetSSRC(kReceiverSsrc);
     receiver_.impl_->SetRemoteSSRC(kSenderSsrc);
     // Transport settings.
     sender_.transport_.SetRtpRtcpModule(receiver_.impl_.get());

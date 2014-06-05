@@ -213,7 +213,7 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual int32_t SetSSRC(const uint32_t ssrc) = 0;
+    virtual void SetSSRC(const uint32_t ssrc) = 0;
 
     /*
     *   Get CSRC
@@ -249,10 +249,14 @@ class RtpRtcp : public Module {
     virtual int32_t SetCSRCStatus(const bool include) = 0;
 
     /*
-    * Turn on/off sending RTX (RFC 4588) on a specific SSRC.
+    * Turn on/off sending RTX (RFC 4588). The modes can be set as a combination
+    * of values of the enumerator RtxMode.
     */
-    virtual int32_t SetRTXSendStatus(int modes, bool set_ssrc,
-                                     uint32_t ssrc) = 0;
+    virtual void SetRTXSendStatus(int modes) = 0;
+
+    // Sets the SSRC to use when sending RTX packets. This doesn't enable RTX,
+    // only the SSRC is set.
+    virtual void SetRtxSsrc(uint32_t ssrc) = 0;
 
     // Sets the payload type to use when sending RTX packets. Note that this
     // doesn't enable RTX, only the payload type is set.
@@ -261,8 +265,8 @@ class RtpRtcp : public Module {
     /*
     * Get status of sending RTX (RFC 4588) on a specific SSRC.
     */
-    virtual int32_t RTXSendStatus(int* modes, uint32_t* ssrc,
-                                  int* payloadType) const = 0;
+    virtual void RTXSendStatus(int* modes, uint32_t* ssrc,
+                               int* payloadType) const = 0;
 
     /*
     *   sends kRtcpByeCode when going from true to false

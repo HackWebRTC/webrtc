@@ -114,7 +114,7 @@ class VideoSendStream {
       // Settings for RTP retransmission payload format, see RFC 4588 for
       // details.
       struct Rtx {
-        Rtx() : payload_type(0) {}
+        Rtx() : payload_type(-1) {}
         std::string ToString() const;
         // SSRCs to use for the RTX streams.
         std::vector<uint32_t> ssrcs;

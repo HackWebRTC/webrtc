@@ -248,16 +248,17 @@ int32_t ModuleRtpRtcpImpl::Process() {
   return 0;
 }
 
-int32_t ModuleRtpRtcpImpl::SetRTXSendStatus(int mode, bool set_ssrc,
-                                            uint32_t ssrc) {
-  rtp_sender_.SetRTXStatus(mode, set_ssrc, ssrc);
-  return 0;
+void ModuleRtpRtcpImpl::SetRTXSendStatus(int mode) {
+  rtp_sender_.SetRTXStatus(mode);
 }
 
-int32_t ModuleRtpRtcpImpl::RTXSendStatus(int* mode, uint32_t* ssrc,
+void ModuleRtpRtcpImpl::RTXSendStatus(int* mode, uint32_t* ssrc,
                                          int* payload_type) const {
   rtp_sender_.RTXStatus(mode, ssrc, payload_type);
-  return 0;
+}
+
+void ModuleRtpRtcpImpl::SetRtxSsrc(uint32_t ssrc) {
+  rtp_sender_.SetRtxSsrc(ssrc);
 }
 
 void ModuleRtpRtcpImpl::SetRtxSendPayloadType(int payload_type) {
@@ -347,12 +348,10 @@ uint32_t ModuleRtpRtcpImpl::SSRC() const {
 }
 
 // Configure SSRC, default is a random number.
-int32_t ModuleRtpRtcpImpl::SetSSRC(const uint32_t ssrc) {
+void ModuleRtpRtcpImpl::SetSSRC(const uint32_t ssrc) {
   rtp_sender_.SetSSRC(ssrc);
   rtcp_sender_.SetSSRC(ssrc);
   SetRtcpReceiverSsrcs(ssrc);
-
-  return 0;  // TODO(pwestin): change to void.
 }
 
 int32_t ModuleRtpRtcpImpl::SetCSRCStatus(const bool include) {
