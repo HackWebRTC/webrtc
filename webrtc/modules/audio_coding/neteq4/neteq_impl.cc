@@ -63,7 +63,8 @@ NetEqImpl::NetEqImpl(int fs,
                      ExpandFactory* expand_factory,
                      PreemptiveExpandFactory* preemptive_expand_factory,
                      bool create_components)
-    : buffer_level_filter_(buffer_level_filter),
+    : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
+      buffer_level_filter_(buffer_level_filter),
       decoder_database_(decoder_database),
       delay_manager_(delay_manager),
       delay_peak_detector_(delay_peak_detector),
@@ -89,7 +90,6 @@ NetEqImpl::NetEqImpl(int fs,
       first_packet_(true),
       error_code_(0),
       decoder_error_code_(0),
-      crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       decoded_packet_sequence_number_(-1),
       decoded_packet_timestamp_(0) {
   if (fs != 8000 && fs != 16000 && fs != 32000 && fs != 48000) {

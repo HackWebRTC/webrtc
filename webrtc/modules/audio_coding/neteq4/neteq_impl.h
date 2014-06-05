@@ -337,19 +337,25 @@ class NetEqImpl : public webrtc::NetEq {
   virtual void CreateDecisionLogic(NetEqPlayoutMode mode)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
-  const scoped_ptr<BufferLevelFilter> buffer_level_filter_;
-  const scoped_ptr<DecoderDatabase> decoder_database_;
-  const scoped_ptr<DelayManager> delay_manager_;
-  const scoped_ptr<DelayPeakDetector> delay_peak_detector_;
-  const scoped_ptr<DtmfBuffer> dtmf_buffer_;
-  const scoped_ptr<DtmfToneGenerator> dtmf_tone_generator_;
-  const scoped_ptr<PacketBuffer> packet_buffer_;
-  const scoped_ptr<PayloadSplitter> payload_splitter_;
-  const scoped_ptr<TimestampScaler> timestamp_scaler_;
-  const scoped_ptr<PostDecodeVad> vad_;
-  const scoped_ptr<ExpandFactory> expand_factory_;
-  const scoped_ptr<AccelerateFactory> accelerate_factory_;
-  const scoped_ptr<PreemptiveExpandFactory> preemptive_expand_factory_;
+  const scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  const scoped_ptr<BufferLevelFilter> buffer_level_filter_
+      GUARDED_BY(crit_sect_);
+  const scoped_ptr<DecoderDatabase> decoder_database_ GUARDED_BY(crit_sect_);
+  const scoped_ptr<DelayManager> delay_manager_ GUARDED_BY(crit_sect_);
+  const scoped_ptr<DelayPeakDetector> delay_peak_detector_
+      GUARDED_BY(crit_sect_);
+  const scoped_ptr<DtmfBuffer> dtmf_buffer_ GUARDED_BY(crit_sect_);
+  const scoped_ptr<DtmfToneGenerator> dtmf_tone_generator_
+      GUARDED_BY(crit_sect_);
+  const scoped_ptr<PacketBuffer> packet_buffer_ GUARDED_BY(crit_sect_);
+  const scoped_ptr<PayloadSplitter> payload_splitter_ GUARDED_BY(crit_sect_);
+  const scoped_ptr<TimestampScaler> timestamp_scaler_ GUARDED_BY(crit_sect_);
+  const scoped_ptr<PostDecodeVad> vad_ GUARDED_BY(crit_sect_);
+  const scoped_ptr<ExpandFactory> expand_factory_ GUARDED_BY(crit_sect_);
+  const scoped_ptr<AccelerateFactory> accelerate_factory_
+      GUARDED_BY(crit_sect_);
+  const scoped_ptr<PreemptiveExpandFactory> preemptive_expand_factory_
+      GUARDED_BY(crit_sect_);
 
   scoped_ptr<BackgroundNoise> background_noise_ GUARDED_BY(crit_sect_);
   scoped_ptr<DecisionLogic> decision_logic_ GUARDED_BY(crit_sect_);
@@ -382,7 +388,6 @@ class NetEqImpl : public webrtc::NetEq {
   bool first_packet_ GUARDED_BY(crit_sect_);
   int error_code_ GUARDED_BY(crit_sect_);  // Store last error code.
   int decoder_error_code_ GUARDED_BY(crit_sect_);
-  const scoped_ptr<CriticalSectionWrapper> crit_sect_;
 
   // These values are used by NACK module to estimate time-to-play of
   // a missing packet. Occasionally, NetEq might decide to decode more
