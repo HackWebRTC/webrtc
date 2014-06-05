@@ -807,6 +807,8 @@ void TestStereo::Run(TestPackStereo* channel, int in_channels, int out_channels,
   uint32_t time_stamp_diff;
   channel->reset_payload_size();
   int error_count = 0;
+  int variable_bytes = 0;
+  int variable_packets = 0;
 
   while (1) {
     // Simulate packet loss by setting |packet_loss_| to "true" in
@@ -838,11 +840,16 @@ void TestStereo::Run(TestPackStereo* channel, int in_channels, int out_channels,
     // Run sender side of ACM
     EXPECT_GT(acm_a_->Process(), -1);
 
-    // Verify that the received packet size matches the settings
+    // Verify that the received packet size matches the settings.
     rec_size = channel->payload_size();
     if ((0 < rec_size) & (rec_size < 65535)) {
-      // Opus is variable rate, skip this test.
-      if (strcmp(send_codec_name_, "opus")) {
+      if (strcmp(send_codec_name_, "opus") == 0) {
+        // Opus is a variable rate codec, hence calculate the average packet
+        // size, and later make sure the average is in the right range.
+        variable_bytes += rec_size;
+        variable_packets++;
+      } else {
+        // For fixed rate codecs, check that packet size is correct.
         if ((rec_size != pack_size_bytes_ * out_channels)
             && (pack_size_bytes_ < 65535)) {
           error_count++;
@@ -865,6 +872,13 @@ void TestStereo::Run(TestPackStereo* channel, int in_channels, int out_channels,
   }
 
   EXPECT_EQ(0, error_count);
+
+  // Check that packet size is in the right range for variable rate codecs,
+  // such as Opus.
+  if (variable_packets > 0) {
+    variable_bytes /= variable_packets;
+    EXPECT_NEAR(variable_bytes, pack_size_bytes_, 3);
+  }
 
   if (in_file_mono_->EndOfFile()) {
     in_file_mono_->Rewind();
