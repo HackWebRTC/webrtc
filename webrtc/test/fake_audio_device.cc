@@ -121,8 +121,8 @@ void FakeAudioDevice::CaptureAudio() {
         samples_needed = std::min(kFrequencyHz / time_since_last_playout_ms,
                                   kBufferSizeBytes / 2);
       uint32_t samples_out = 0;
-      uint32_t rtp_timestamp = 0;
-      int64_t ntp_time_ms = 0;
+      int64_t elapsed_time_ms = -1;
+      int64_t ntp_time_ms = -1;
       EXPECT_EQ(0,
                 audio_callback_->NeedMorePlayData(samples_needed,
                                                   2,
@@ -130,7 +130,7 @@ void FakeAudioDevice::CaptureAudio() {
                                                   kFrequencyHz,
                                                   playout_buffer_,
                                                   samples_out,
-                                                  &rtp_timestamp,
+                                                  &elapsed_time_ms,
                                                   &ntp_time_ms));
     }
   }

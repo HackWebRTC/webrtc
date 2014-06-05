@@ -166,8 +166,7 @@ class NetEqImpl : public webrtc::NetEq {
   // Disables post-decode VAD.
   virtual void DisableVad();
 
-  // Returns the RTP timestamp for the last sample delivered by GetAudio().
-  virtual uint32_t PlayoutTimestamp();
+  virtual bool GetPlayoutTimestamp(uint32_t* timestamp);
 
   virtual int SetTargetNumberOfChannels() { return kNotImplemented; }
 

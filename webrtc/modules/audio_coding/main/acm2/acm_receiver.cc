@@ -475,10 +475,17 @@ int AcmReceiver::GetAudio(int desired_freq_hz, AudioFrame* audio_frame) {
   call_stats_.DecodedByNetEq(audio_frame->speech_type_);
 
   // Computes the RTP timestamp of the first sample in |audio_frame| from
-  // |PlayoutTimestamp|, which is the timestamp of the last sample of
+  // |GetPlayoutTimestamp|, which is the timestamp of the last sample of
   // |audio_frame|.
-  audio_frame->timestamp_ =
-      PlayoutTimestamp() - audio_frame->samples_per_channel_;
+  uint32_t playout_timestamp = 0;
+  if (GetPlayoutTimestamp(&playout_timestamp)) {
+    audio_frame->timestamp_ =
+        playout_timestamp - audio_frame->samples_per_channel_;
+  } else {
+    // Remain 0 until we have a valid |playout_timestamp|.
+    audio_frame->timestamp_ = 0;
+  }
+
   return 0;
 }
 
@@ -596,13 +603,14 @@ void AcmReceiver::set_id(int id) {
   id_ = id;
 }
 
-uint32_t AcmReceiver::PlayoutTimestamp() {
+bool AcmReceiver::GetPlayoutTimestamp(uint32_t* timestamp) {
   if (av_sync_) {
     assert(initial_delay_manager_.get());
-    if (initial_delay_manager_->buffering())
-      return initial_delay_manager_->playout_timestamp();
+    if (initial_delay_manager_->buffering()) {
+      return initial_delay_manager_->GetPlayoutTimestamp(timestamp);
+    }
   }
-  return neteq_->PlayoutTimestamp();
+  return neteq_->GetPlayoutTimestamp(timestamp);
 }
 
 int AcmReceiver::last_audio_codec_id() const {

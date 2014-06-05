@@ -149,7 +149,7 @@ int32_t VoEBaseImpl::NeedMorePlayData(
         uint32_t samplesPerSec,
         void* audioSamples,
         uint32_t& nSamplesOut,
-        uint32_t* rtp_timestamp,
+        int64_t* elapsed_time_ms,
         int64_t* ntp_time_ms)
 {
   WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_shared->instance_id(), -1),
@@ -160,7 +160,7 @@ int32_t VoEBaseImpl::NeedMorePlayData(
   GetPlayoutData(static_cast<int>(samplesPerSec),
                  static_cast<int>(nChannels),
                  static_cast<int>(nSamples), true, audioSamples,
-                 rtp_timestamp, ntp_time_ms);
+                 elapsed_time_ms, ntp_time_ms);
 
   nSamplesOut = _audioFrame.samples_per_channel_;
 
@@ -237,13 +237,13 @@ void VoEBaseImpl::PushCaptureData(int voe_channel, const void* audio_data,
 void VoEBaseImpl::PullRenderData(int bits_per_sample, int sample_rate,
                                  int number_of_channels, int number_of_frames,
                                  void* audio_data,
-                                 uint32_t* rtp_timestamp,
+                                 int64_t* elapsed_time_ms,
                                  int64_t* ntp_time_ms) {
   assert(bits_per_sample == 16);
   assert(number_of_frames == static_cast<int>(sample_rate / 100));
 
   GetPlayoutData(sample_rate, number_of_channels, number_of_frames, false,
-                 audio_data, rtp_timestamp, ntp_time_ms);
+                 audio_data, elapsed_time_ms, ntp_time_ms);
 }
 
 int VoEBaseImpl::RegisterVoiceEngineObserver(VoiceEngineObserver& observer)
@@ -1087,7 +1087,7 @@ int VoEBaseImpl::ProcessRecordedDataWithAPM(
 void VoEBaseImpl::GetPlayoutData(int sample_rate, int number_of_channels,
                                  int number_of_frames, bool feed_data_to_apm,
                                  void* audio_data,
-                                 uint32_t* rtp_timestamp,
+                                 int64_t* elapsed_time_ms,
                                  int64_t* ntp_time_ms) {
   assert(_shared->output_mixer() != NULL);
 
@@ -1110,7 +1110,7 @@ void VoEBaseImpl::GetPlayoutData(int sample_rate, int number_of_channels,
   memcpy(audio_data, _audioFrame.data_,
          sizeof(int16_t) * number_of_frames * number_of_channels);
 
-  *rtp_timestamp = _audioFrame.timestamp_;
+  *elapsed_time_ms = _audioFrame.elapsed_time_ms_;
   *ntp_time_ms = _audioFrame.ntp_time_ms_;
 }
 

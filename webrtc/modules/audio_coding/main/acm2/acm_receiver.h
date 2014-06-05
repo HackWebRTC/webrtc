@@ -242,9 +242,10 @@ class AcmReceiver {
   void set_id(int id);  // TODO(turajs): can be inline.
 
   //
-  // Returns the RTP timestamp of the last sample delivered by GetAudio().
+  // Gets the RTP timestamp of the last sample delivered by GetAudio().
+  // Returns true if the RTP timestamp is valid, otherwise false.
   //
-  uint32_t PlayoutTimestamp();
+  bool GetPlayoutTimestamp(uint32_t* timestamp);
 
   //
   // Return the index of the codec associated with the last non-CNG/non-DTMF

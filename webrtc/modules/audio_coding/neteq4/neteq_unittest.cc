@@ -228,6 +228,8 @@ class NetEqDecodingTest : public ::testing::Test {
 
   void DuplicateCng();
 
+  uint32_t PlayoutTimestamp();
+
   NetEq* neteq_;
   FILE* rtp_fp_;
   unsigned int sim_clock_;
@@ -736,7 +738,7 @@ void NetEqDecodingTest::LongCngWithClockDrift(double drift_factor,
   }
 
   EXPECT_EQ(kOutputNormal, type);
-  int32_t delay_before = timestamp - neteq_->PlayoutTimestamp();
+  int32_t delay_before = timestamp - PlayoutTimestamp();
 
   // Insert CNG for 1 minute (= 60000 ms).
   const int kCngPeriodMs = 100;
@@ -829,7 +831,7 @@ void NetEqDecodingTest::LongCngWithClockDrift(double drift_factor,
   // Check that the speech starts again within reasonable time.
   double time_until_speech_returns_ms = t_ms - speech_restart_time_ms;
   EXPECT_LT(time_until_speech_returns_ms, max_time_to_speech_ms);
-  int32_t delay_after = timestamp - neteq_->PlayoutTimestamp();
+  int32_t delay_after = timestamp - PlayoutTimestamp();
   // Compare delay before and after, and make sure it differs less than 20 ms.
   EXPECT_LE(delay_after, delay_before + delay_tolerance_ms * 16);
   EXPECT_GE(delay_after, delay_before - delay_tolerance_ms * 16);
@@ -1310,7 +1312,7 @@ void NetEqDecodingTest::WrapTest(uint16_t start_seq_no,
     ASSERT_EQ(1, num_channels);
 
     // Expect delay (in samples) to be less than 2 packets.
-    EXPECT_LE(timestamp - neteq_->PlayoutTimestamp(),
+    EXPECT_LE(timestamp - PlayoutTimestamp(),
               static_cast<uint32_t>(kSamples * 2));
   }
   // Make sure we have actually tested wrap-around.
@@ -1391,7 +1393,7 @@ void NetEqDecodingTest::DuplicateCng() {
                 kMaxBlockSize, out_data_, &out_len, &num_channels, &type));
   ASSERT_EQ(kBlockSize16kHz, out_len);
   EXPECT_EQ(kOutputCNG, type);
-  EXPECT_EQ(timestamp - algorithmic_delay_samples, neteq_->PlayoutTimestamp());
+  EXPECT_EQ(timestamp - algorithmic_delay_samples, PlayoutTimestamp());
 
   // Insert the same CNG packet again. Note that at this point it is old, since
   // we have already decoded the first copy of it.
@@ -1406,7 +1408,7 @@ void NetEqDecodingTest::DuplicateCng() {
     ASSERT_EQ(kBlockSize16kHz, out_len);
     EXPECT_EQ(kOutputCNG, type);
     EXPECT_EQ(timestamp - algorithmic_delay_samples,
-              neteq_->PlayoutTimestamp());
+              PlayoutTimestamp());
   }
 
   // Insert speech again.
@@ -1422,7 +1424,13 @@ void NetEqDecodingTest::DuplicateCng() {
   ASSERT_EQ(kBlockSize16kHz, out_len);
   EXPECT_EQ(kOutputNormal, type);
   EXPECT_EQ(timestamp + kSamples - algorithmic_delay_samples,
-            neteq_->PlayoutTimestamp());
+            PlayoutTimestamp());
+}
+
+uint32_t NetEqDecodingTest::PlayoutTimestamp() {
+  uint32_t playout_timestamp = 0;
+  EXPECT_TRUE(neteq_->GetPlayoutTimestamp(&playout_timestamp));
+  return playout_timestamp;
 }
 
 TEST_F(NetEqDecodingTest, DiscardDuplicateCng) { DuplicateCng(); }

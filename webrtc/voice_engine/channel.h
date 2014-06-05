@@ -35,6 +35,11 @@
 #include "webrtc/voice_engine/include/voe_dtmf.h"
 #endif
 
+namespace rtc {
+
+class TimestampWrapAroundHandler;
+}
+
 namespace webrtc {
 
 class AudioDeviceModule;
@@ -500,6 +505,8 @@ private:
     int SetSendRtpHeaderExtension(bool enable, RTPExtensionType type,
                                   unsigned char id);
 
+    int32_t GetPlayoutFrequency();
+
     CriticalSectionWrapper& _fileCritSect;
     CriticalSectionWrapper& _callbackCritSect;
     CriticalSectionWrapper& volume_settings_critsect_;
@@ -553,9 +560,9 @@ private:
 
     scoped_ptr<CriticalSectionWrapper> ts_stats_lock_;
 
-    bool first_frame_arrived_;
+    scoped_ptr<rtc::TimestampWrapAroundHandler> rtp_ts_wraparound_handler_;
     // The rtp timestamp of the first played out audio frame.
-    uint32_t capture_start_rtp_time_stamp_;
+    int64_t capture_start_rtp_time_stamp_;
     // The capture ntp time (in local timebase) of the first played out audio
     // frame.
     int64_t capture_start_ntp_time_ms_;

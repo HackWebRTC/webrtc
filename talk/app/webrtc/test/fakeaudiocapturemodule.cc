@@ -729,12 +729,12 @@ void FakeAudioCaptureModule::ReceiveFrameP() {
     ResetRecBuffer();
     uint32_t nSamplesOut = 0;
 #ifdef USE_WEBRTC_DEV_BRANCH
-    uint32_t rtp_timestamp = 0;
+    int64_t elapsed_time_ms = 0;
     int64_t ntp_time_ms = 0;
     if (audio_callback_->NeedMorePlayData(kNumberSamples, kNumberBytesPerSample,
                                          kNumberOfChannels, kSamplesPerSecond,
                                          rec_buffer_, nSamplesOut,
-                                         &rtp_timestamp, &ntp_time_ms) != 0) {
+                                         &elapsed_time_ms, &ntp_time_ms) != 0) {
       ASSERT(false);
     }
 #else

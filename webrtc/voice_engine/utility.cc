@@ -65,6 +65,10 @@ void RemixAndResample(const AudioFrame& src_frame,
     dst_frame->num_channels_ = 1;
     AudioFrameOperations::MonoToStereo(dst_frame);
   }
+
+  dst_frame->timestamp_ = src_frame.timestamp_;
+  dst_frame->elapsed_time_ms_ = src_frame.elapsed_time_ms_;
+  dst_frame->ntp_time_ms_ = src_frame.ntp_time_ms_;
 }
 
 void DownConvertToCodecFormat(const int16_t* src_data,

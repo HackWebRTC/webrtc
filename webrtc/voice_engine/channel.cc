@@ -10,6 +10,7 @@
 
 #include "webrtc/voice_engine/channel.h"
 
+#include "webrtc/base/timeutils.h"
 #include "webrtc/common.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
@@ -683,21 +684,30 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame& audioFrame)
     // Measure audio level (0-9)
     _outputAudioLevel.ComputeLevel(audioFrame);
 
-    audioFrame.ntp_time_ms_ = ntp_estimator_->Estimate(audioFrame.timestamp_);
-
-    if (!first_frame_arrived_) {
-      first_frame_arrived_ = true;
+    if (capture_start_rtp_time_stamp_ < 0 && audioFrame.timestamp_ != 0) {
+      // The first frame with a valid rtp timestamp.
       capture_start_rtp_time_stamp_ = audioFrame.timestamp_;
-    } else {
+    }
+
+    if (capture_start_rtp_time_stamp_ >= 0) {
+      // audioFrame.timestamp_ should be valid from now on.
+
+      // Compute elapsed time.
+      int64_t unwrap_timestamp =
+          rtp_ts_wraparound_handler_->Unwrap(audioFrame.timestamp_);
+      audioFrame.elapsed_time_ms_ =
+          (unwrap_timestamp - capture_start_rtp_time_stamp_) /
+          (GetPlayoutFrequency() / 1000);
+
+      // Compute ntp time.
+      audioFrame.ntp_time_ms_ = ntp_estimator_->Estimate(audioFrame.timestamp_);
       // |ntp_time_ms_| won't be valid until at least 2 RTCP SRs are received.
       if (audioFrame.ntp_time_ms_ > 0) {
         // Compute |capture_start_ntp_time_ms_| so that
-        // |capture_start_ntp_time_ms_| + |elapsed_time_ms| == |ntp_time_ms_|
+        // |capture_start_ntp_time_ms_| + |elapsed_time_ms_| == |ntp_time_ms_|
         CriticalSectionScoped lock(ts_stats_lock_.get());
-        uint32_t elapsed_time_ms =
-            (audioFrame.timestamp_ - capture_start_rtp_time_stamp_) /
-            (audioFrame.sample_rate_hz_ * 1000);
-        capture_start_ntp_time_ms_ = audioFrame.ntp_time_ms_ - elapsed_time_ms;
+        capture_start_ntp_time_ms_ =
+            audioFrame.ntp_time_ms_ - audioFrame.elapsed_time_ms_;
       }
     }
 
@@ -875,8 +885,8 @@ Channel::Channel(int32_t channelId,
     _numberOfDiscardedPackets(0),
     send_sequence_number_(0),
     ts_stats_lock_(CriticalSectionWrapper::CreateCriticalSection()),
-    first_frame_arrived_(false),
-    capture_start_rtp_time_stamp_(0),
+    rtp_ts_wraparound_handler_(new rtc::TimestampWrapAroundHandler()),
+    capture_start_rtp_time_stamp_(-1),
     capture_start_ntp_time_ms_(-1),
     _engineStatisticsPtr(NULL),
     _outputMixerPtr(NULL),
@@ -4045,20 +4055,10 @@ void Channel::UpdatePlayoutTimestamp(bool rtcp) {
     return;
   }
 
-  int32_t playout_frequency = audio_coding_->PlayoutFrequency();
-  CodecInst current_recive_codec;
-  if (audio_coding_->ReceiveCodec(&current_recive_codec) == 0) {
-    if (STR_CASE_CMP("G722", current_recive_codec.plname) == 0) {
-      playout_frequency = 8000;
-    } else if (STR_CASE_CMP("opus", current_recive_codec.plname) == 0) {
-      playout_frequency = 48000;
-    }
-  }
-
   jitter_buffer_playout_timestamp_ = playout_timestamp;
 
   // Remove the playout delay.
-  playout_timestamp -= (delay_ms * (playout_frequency / 1000));
+  playout_timestamp -= (delay_ms * (GetPlayoutFrequency() / 1000));
 
   WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                "Channel::UpdatePlayoutTimestamp() => playoutTimestamp = %lu",
@@ -4364,29 +4364,10 @@ void Channel::UpdatePacketDelay(uint32_t rtp_timestamp,
                rtp_timestamp, sequence_number);
 
   // Get frequency of last received payload
-  int rtp_receive_frequency = audio_coding_->ReceiveFrequency();
-
-  CodecInst current_receive_codec;
-  if (audio_coding_->ReceiveCodec(&current_receive_codec) != 0) {
-    return;
-  }
+  int rtp_receive_frequency = GetPlayoutFrequency();
 
   // Update the least required delay.
   least_required_delay_ms_ = audio_coding_->LeastRequiredDelayMs();
-
-  if (STR_CASE_CMP("G722", current_receive_codec.plname) == 0) {
-    // Even though the actual sampling rate for G.722 audio is
-    // 16,000 Hz, the RTP clock rate for the G722 payload format is
-    // 8,000 Hz because that value was erroneously assigned in
-    // RFC 1890 and must remain unchanged for backward compatibility.
-    rtp_receive_frequency = 8000;
-  } else if (STR_CASE_CMP("opus", current_receive_codec.plname) == 0) {
-    // We are resampling Opus internally to 32,000 Hz until all our
-    // DSP routines can operate at 48,000 Hz, but the RTP clock
-    // rate for the Opus payload format is standardized to 48,000 Hz,
-    // because that is the maximum supported decoding sampling rate.
-    rtp_receive_frequency = 48000;
-  }
 
   // |jitter_buffer_playout_timestamp_| updated in UpdatePlayoutTimestamp for
   // every incoming packet.
@@ -4558,6 +4539,27 @@ int Channel::SetSendRtpHeaderExtension(bool enable, RTPExtensionType type,
     error = _rtpRtcpModule->RegisterSendRtpHeaderExtension(type, id);
   }
   return error;
+}
+
+int32_t Channel::GetPlayoutFrequency() {
+  int32_t playout_frequency = audio_coding_->PlayoutFrequency();
+  CodecInst current_recive_codec;
+  if (audio_coding_->ReceiveCodec(&current_recive_codec) == 0) {
+    if (STR_CASE_CMP("G722", current_recive_codec.plname) == 0) {
+      // Even though the actual sampling rate for G.722 audio is
+      // 16,000 Hz, the RTP clock rate for the G722 payload format is
+      // 8,000 Hz because that value was erroneously assigned in
+      // RFC 1890 and must remain unchanged for backward compatibility.
+      playout_frequency = 8000;
+    } else if (STR_CASE_CMP("opus", current_recive_codec.plname) == 0) {
+      // We are resampling Opus internally to 32,000 Hz until all our
+      // DSP routines can operate at 48,000 Hz, but the RTP clock
+      // rate for the Opus payload format is standardized to 48,000 Hz,
+      // because that is the maximum supported decoding sampling rate.
+      playout_frequency = 48000;
+    }
+  }
+  return playout_frequency;
 }
 
 }  // namespace voe

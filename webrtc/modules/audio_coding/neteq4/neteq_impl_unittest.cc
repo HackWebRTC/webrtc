@@ -477,8 +477,10 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
   // The value of the last of the output samples is the same as the number of
   // samples played from the decoded packet. Thus, this number + the RTP
   // timestamp should match the playout timestamp.
+  uint32_t timestamp = 0;
+  EXPECT_TRUE(neteq_->GetPlayoutTimestamp(&timestamp));
   EXPECT_EQ(rtp_header.header.timestamp + output[samples_per_channel - 1],
-            neteq_->PlayoutTimestamp());
+            timestamp);
 
   // Check the timestamp for the last value in the sync buffer. This should
   // be one full frame length ahead of the RTP timestamp.

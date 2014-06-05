@@ -651,6 +651,11 @@ void AudioConferenceMixerImpl::UpdateToMix(
             _audioFramePool->PushMemory(audioFrame);
             continue;
         }
+        if (_participantList.size() != 1) {
+          // TODO(wu): Issue 3390, add support for multiple participants case.
+          audioFrame->ntp_time_ms_ = -1;
+        }
+
         // TODO(henrike): this assert triggers in some test cases where SRTP is
         // used which prevents NetEQ from making a VAD. Temporarily disable this
         // assert until the problem is fixed on a higher level.
@@ -948,6 +953,16 @@ int32_t AudioConferenceMixerImpl::MixFromList(
         SetParticipantStatistics(&_scratchMixedParticipants[position],
                                  *audioFrame);
         return 0;
+    }
+
+    if (audioFrameList->size() == 1) {
+      mixedAudio.timestamp_ = audioFrameList->front()->timestamp_;
+      mixedAudio.elapsed_time_ms_ = audioFrameList->front()->elapsed_time_ms_;
+    } else {
+      // TODO(wu): Issue 3390.
+      // Audio frame timestamp is only supported in one channel case.
+      mixedAudio.timestamp_ = 0;
+      mixedAudio.elapsed_time_ms_ = -1;
     }
 
     for (AudioFrameList::const_iterator iter = audioFrameList->begin();

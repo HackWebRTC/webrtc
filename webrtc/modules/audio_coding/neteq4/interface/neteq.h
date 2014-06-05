@@ -228,8 +228,9 @@ class NetEq {
   // Disables post-decode VAD.
   virtual void DisableVad() = 0;
 
-  // Returns the RTP timestamp for the last sample delivered by GetAudio().
-  virtual uint32_t PlayoutTimestamp() = 0;
+  // Gets the RTP timestamp for the last sample delivered by GetAudio().
+  // Returns true if the RTP timestamp is valid, otherwise false.
+  virtual bool GetPlayoutTimestamp(uint32_t* timestamp) = 0;
 
   // Not implemented.
   virtual int SetTargetNumberOfChannels() = 0;

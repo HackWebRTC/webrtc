@@ -1776,7 +1776,6 @@ int AudioCodingModuleImpl::PlayoutData10Ms(int desired_freq_hz,
   }
 
   audio_frame->id_ = id_;
-  audio_frame->timestamp_ = 0;
   return 0;
 }
 
@@ -1917,8 +1916,7 @@ int AudioCodingModuleImpl::ConfigISACBandwidthEstimator(
 }
 
 int AudioCodingModuleImpl::PlayoutTimestamp(uint32_t* timestamp) {
-  *timestamp = receiver_.PlayoutTimestamp();
-  return 0;
+  return receiver_.GetPlayoutTimestamp(timestamp) ? 0 : -1;
 }
 
 bool AudioCodingModuleImpl::HaveValidEncoder(const char* caller_name) const {
