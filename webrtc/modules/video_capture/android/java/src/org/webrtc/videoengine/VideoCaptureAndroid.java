@@ -15,6 +15,7 @@ import java.util.Locale;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.locks.ReentrantLock;
 
+import android.content.Context;
 import android.graphics.ImageFormat;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
@@ -25,6 +26,7 @@ import android.hardware.Camera;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.OrientationEventListener;
 import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceHolder;
 
@@ -46,6 +48,7 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
   private Handler cameraThreadHandler;
   private final int id;
   private final Camera.CameraInfo info;
+  private final OrientationEventListener orientationListener;
   private final long native_capturer;  // |VideoCaptureAndroid*| in C++.
   private SurfaceTexture dummySurfaceTexture;
   // Arbitrary queue depth.  Higher number means more memory allocated & held,
@@ -66,7 +69,29 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
     this.native_capturer = native_capturer;
     this.info = new Camera.CameraInfo();
     Camera.getCameraInfo(id, info);
+
+    // Must be the last thing in the ctor since we pass a reference to |this|!
+    final VideoCaptureAndroid self = this;
+    orientationListener = new OrientationEventListener(GetContext()) {
+        @Override public void onOrientationChanged(int degrees) {
+          if (degrees == OrientationEventListener.ORIENTATION_UNKNOWN) {
+            return;
+          }
+          if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+            degrees = (info.orientation - degrees + 360) % 360;
+          } else {  // back-facing
+            degrees = (info.orientation + degrees) % 360;
+          }
+          self.OnOrientationChanged(self.native_capturer, degrees);
+        }
+      };
+    // Don't add any code here; see the comment above |self| above!
   }
+
+  // Return the global application context.
+  private static native Context GetContext();
+  // Request frame rotation post-capture.
+  private native void OnOrientationChanged(long captureObject, int degrees);
 
   private class CameraThread extends Thread {
     private Exchanger<Handler> handlerExchanger;
@@ -96,6 +121,7 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
     cameraThread = new CameraThread(handlerExchanger);
     cameraThread.start();
     cameraThreadHandler = exchange(handlerExchanger, null);
+    orientationListener.enable();
 
     final Exchanger<Boolean> result = new Exchanger<Boolean>();
     cameraThreadHandler.post(new Runnable() {
@@ -186,6 +212,7 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
     }
     cameraThreadHandler = null;
     cameraThread = null;
+    orientationListener.disable();
     return status;
   }
 

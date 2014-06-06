@@ -21,7 +21,7 @@
 namespace webrtc {
 
 #if defined(ANDROID)
-int32_t SetCaptureAndroidVM(JavaVM* javaVM);
+int32_t SetCaptureAndroidVM(JavaVM* javaVM, jobject context);
 #endif
 
 class VideoCaptureModule: public RefCountedModule {

@@ -140,10 +140,10 @@ int VideoEngine::SetTraceCallback(TraceCallback* callback) {
 }
 
 #if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
-int VideoEngine::SetAndroidObjects(JavaVM* javaVM) {
+int VideoEngine::SetAndroidObjects(JavaVM* javaVM, jobject context) {
   LOG_F(LS_INFO);
 
-  if (SetCaptureAndroidVM(javaVM) != 0) {
+  if (SetCaptureAndroidVM(javaVM, context) != 0) {
     LOG(LS_ERROR) << "Could not set capture Android VM";
     return -1;
   }

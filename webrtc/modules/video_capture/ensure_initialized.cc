@@ -36,7 +36,7 @@ void EnsureInitialized() {}
 namespace webrtc {
 
 // Declared in webrtc/modules/video_capture/include/video_capture.h.
-int32_t SetCaptureAndroidVM(JavaVM* javaVM);
+int32_t SetCaptureAndroidVM(JavaVM* javaVM, jobject g_context);
 
 namespace videocapturemodule {
 
@@ -44,10 +44,11 @@ static pthread_once_t g_initialize_once = PTHREAD_ONCE_INIT;
 
 void EnsureInitializedOnce() {
   JNIEnv* jni = ::base::android::AttachCurrentThread();
+  jobject context = ::base::android::GetApplicationContext();
   JavaVM* jvm = NULL;
   int status = jni->GetJavaVM(&jvm);
   ASSERT(status == 0);
-  status = webrtc::SetCaptureAndroidVM(jvm) == 0;
+  status = webrtc::SetCaptureAndroidVM(jvm, context) == 0;
   ASSERT(status);
 }
 

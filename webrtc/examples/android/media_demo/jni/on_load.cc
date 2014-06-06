@@ -38,7 +38,7 @@ JOWW(void, NativeWebRtcContextRegistry_register)(
     jobject context) {
   webrtc_examples::SetVoeDeviceObjects(g_vm);
   webrtc_examples::SetVieDeviceObjects(g_vm);
-  CHECK(webrtc::VideoEngine::SetAndroidObjects(g_vm) == 0,
+  CHECK(webrtc::VideoEngine::SetAndroidObjects(g_vm, context) == 0,
         "Failed to register android objects to video engine");
   CHECK(webrtc::VoiceEngine::SetAndroidObjects(g_vm, jni, context) == 0,
         "Failed to register android objects to voice engine");
@@ -47,7 +47,7 @@ JOWW(void, NativeWebRtcContextRegistry_register)(
 JOWW(void, NativeWebRtcContextRegistry_unRegister)(
     JNIEnv* jni,
     jclass) {
-  CHECK(webrtc::VideoEngine::SetAndroidObjects(NULL) == 0,
+  CHECK(webrtc::VideoEngine::SetAndroidObjects(NULL, NULL) == 0,
         "Failed to unregister android objects from video engine");
   CHECK(webrtc::VoiceEngine::SetAndroidObjects(NULL, NULL, NULL) == 0,
         "Failed to unregister android objects from voice engine");

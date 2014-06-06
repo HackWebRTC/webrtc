@@ -31,6 +31,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.media.AudioManager;
@@ -226,6 +227,13 @@ public class AppRTCDemoActivity extends Activity
     }
   }
 
+  @Override
+  public void onConfigurationChanged (Configuration newConfig) {
+    Point displaySize = new Point();
+    getWindowManager().getDefaultDisplay().getSize(displaySize);
+    vsv.updateDisplaySize(displaySize);
+    super.onConfigurationChanged(newConfig);
+  }
 
   // Just for fun (and to regression-test bug 2302) make sure that DataChannels
   // can be created, queried, and disposed.

@@ -1897,7 +1897,7 @@ JOW(jboolean, PeerConnectionFactory_initializeAndroidGlobals)(
   CHECK(g_jvm, "JNI_OnLoad failed to run?");
   bool failure = false;
   if (initialize_video)
-    failure |= webrtc::VideoEngine::SetAndroidObjects(g_jvm);
+    failure |= webrtc::VideoEngine::SetAndroidObjects(g_jvm, context);
   if (initialize_audio)
     failure |= webrtc::VoiceEngine::SetAndroidObjects(g_jvm, jni, context);
   return !failure;

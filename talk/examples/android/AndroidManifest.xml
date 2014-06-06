@@ -21,7 +21,8 @@
                android:allowBackup="false">
     <activity android:name="AppRTCDemoActivity"
               android:label="@string/app_name"
-              android:screenOrientation="landscape"
+              android:screenOrientation="fullUser"
+              android:configChanges="orientation|screenSize"
               android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />

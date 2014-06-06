@@ -84,11 +84,15 @@ public class VideoStreamsView
     setRenderMode(RENDERMODE_WHEN_DIRTY);
   }
 
+  public void updateDisplaySize(Point screenDimensions) {
+    this.screenDimensions = screenDimensions;
+  }
+
   /** Queue |frame| to be uploaded. */
   public void queueFrame(final Endpoint stream, I420Frame frame) {
     // Paying for the copy of the YUV data here allows CSC and painting time
     // to get spent on the render thread instead of the UI thread.
-    abortUnless(framePool.validateDimensions(frame), "Frame too large!");
+    abortUnless(FramePool.validateDimensions(frame), "Frame too large!");
     final I420Frame frameCopy = framePool.takeFrame(frame).copyFrom(frame);
     boolean needToScheduleRender;
     synchronized (framesToRender) {

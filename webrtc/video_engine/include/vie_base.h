@@ -150,7 +150,7 @@ class WEBRTC_DLLEXPORT VideoEngine {
 
 #if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
   // Android specific.
-  static int SetAndroidObjects(JavaVM* java_vm);
+  static int SetAndroidObjects(JavaVM* java_vm, jobject context);
 #endif
 
  protected:
