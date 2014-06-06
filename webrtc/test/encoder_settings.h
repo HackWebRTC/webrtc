@@ -14,14 +14,10 @@
 
 namespace webrtc {
 namespace test {
-VideoSendStream::Config::EncoderSettings CreateEncoderSettings(
-    VideoEncoder* encoder,
-    const char* payload_name,
-    int payload_type,
-    size_t num_streams);
+std::vector<VideoStream> CreateVideoStreams(size_t num_streams);
 
 VideoCodec CreateDecoderVideoCodec(
-    const VideoSendStream::Config::EncoderSettings& settings);
+    const VideoSendStream::Config::EncoderSettings& encoder_settings);
 }  // namespace test
 }  // namespace webrtc
 

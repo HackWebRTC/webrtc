@@ -52,12 +52,12 @@ static const uint32 kRtxSsrcs1[] = {4};
 namespace cricket {
 class FakeVideoSendStream : public webrtc::VideoSendStream {
  public:
-  explicit FakeVideoSendStream(const webrtc::VideoSendStream::Config& config)
-      : sending_(false) {
-    config_ = config;
-  }
+  FakeVideoSendStream(const webrtc::VideoSendStream::Config& config,
+                      const std::vector<webrtc::VideoStream>& video_streams)
+      : sending_(false), config_(config), video_streams_(video_streams) {}
 
   webrtc::VideoSendStream::Config GetConfig() { return config_; }
+  std::vector<webrtc::VideoStream> GetVideoStreams() { return video_streams_; }
 
   bool IsSending() { return sending_; }
 
@@ -68,9 +68,8 @@ class FakeVideoSendStream : public webrtc::VideoSendStream {
 
   virtual bool ReconfigureVideoEncoder(
       const std::vector<webrtc::VideoStream>& streams,
-      void* encoder_specific) OVERRIDE {
-    // TODO(pbos): Store encoder_specific ptr?
-    config_.encoder_settings.streams = streams;
+      const void* encoder_specific) OVERRIDE {
+    video_streams_ = streams;
     return true;
   }
 
@@ -85,6 +84,7 @@ class FakeVideoSendStream : public webrtc::VideoSendStream {
 
   bool sending_;
   webrtc::VideoSendStream::Config config_;
+  std::vector<webrtc::VideoStream> video_streams_;
 };
 
 class FakeVideoReceiveStream : public webrtc::VideoReceiveStream {
@@ -178,8 +178,11 @@ class FakeCall : public webrtc::Call {
   }
 
   virtual webrtc::VideoSendStream* CreateVideoSendStream(
-      const webrtc::VideoSendStream::Config& config) OVERRIDE {
-    FakeVideoSendStream* fake_stream = new FakeVideoSendStream(config);
+      const webrtc::VideoSendStream::Config& config,
+      const std::vector<webrtc::VideoStream>& video_streams,
+      const void* encoder_settings) OVERRIDE {
+    FakeVideoSendStream* fake_stream =
+        new FakeVideoSendStream(config, video_streams);
     video_send_streams_.push_back(fake_stream);
     return fake_stream;
   }
@@ -515,13 +518,10 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
 
     FakeVideoSendStream* stream = AddSendStream();
 
-    webrtc::VideoSendStream::Config::EncoderSettings encoder_settings =
-        stream->GetConfig().encoder_settings;
-    ASSERT_EQ(1u, encoder_settings.streams.size());
-    EXPECT_EQ(atoi(min_bitrate),
-              encoder_settings.streams.back().min_bitrate_bps / 1000);
-    EXPECT_EQ(atoi(max_bitrate),
-              encoder_settings.streams.back().max_bitrate_bps / 1000);
+    std::vector<webrtc::VideoStream> video_streams = stream->GetVideoStreams();
+    ASSERT_EQ(1u, video_streams.size());
+    EXPECT_EQ(atoi(min_bitrate), video_streams.back().min_bitrate_bps / 1000);
+    EXPECT_EQ(atoi(max_bitrate), video_streams.back().max_bitrate_bps / 1000);
 
     VideoCodec codec;
     EXPECT_TRUE(channel_->GetSendCodec(&codec));
@@ -556,15 +556,14 @@ TEST_F(WebRtcVideoChannel2Test, DISABLED_StartSendBitrate) {
   const unsigned int kVideoTargetSendBitrateKbps = 300;
   const unsigned int kVideoMaxSendBitrateKbps = 2000;
   FakeVideoSendStream* stream = AddSendStream();
-  webrtc::VideoSendStream::Config::EncoderSettings encoder_settings =
-      stream->GetConfig().encoder_settings;
-  ASSERT_EQ(1u, encoder_settings.streams.size());
+  std::vector<webrtc::VideoStream> video_streams = stream->GetVideoStreams();
+  ASSERT_EQ(1u, video_streams.size());
   EXPECT_EQ(kVideoMinSendBitrateKbps,
-            encoder_settings.streams.back().min_bitrate_bps / 1000);
+            video_streams.back().min_bitrate_bps / 1000);
   EXPECT_EQ(kVideoTargetSendBitrateKbps,
-            encoder_settings.streams.back().target_bitrate_bps / 1000);
+            video_streams.back().target_bitrate_bps / 1000);
   EXPECT_EQ(kVideoMaxSendBitrateKbps,
-            encoder_settings.streams.back().max_bitrate_bps / 1000);
+            video_streams.back().max_bitrate_bps / 1000);
 #if 0
   // TODO(pbos): un-#if
   VerifyVP8SendCodec(send_channel, kVP8Codec.width, kVP8Codec.height, 0,
@@ -925,9 +924,8 @@ TEST_F(WebRtcVideoChannel2Test, SetSendCodecsWithMaxQuantization) {
   codecs.push_back(kVp8Codec);
   codecs[0].params[kCodecParamMaxQuantization] = kMaxQuantization;
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
-  EXPECT_EQ(
-      static_cast<unsigned int>(atoi(kMaxQuantization)),
-      AddSendStream()->GetConfig().encoder_settings.streams.back().max_qp);
+  EXPECT_EQ(static_cast<unsigned int>(atoi(kMaxQuantization)),
+            AddSendStream()->GetVideoStreams().back().max_qp);
 
   VideoCodec codec;
   EXPECT_TRUE(channel_->GetSendCodec(&codec));

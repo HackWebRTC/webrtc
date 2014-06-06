@@ -66,8 +66,7 @@ class VideoSendStream {
     std::string ToString() const;
 
     struct EncoderSettings {
-      EncoderSettings()
-          : payload_type(-1), encoder(NULL), encoder_settings(NULL) {}
+      EncoderSettings() : payload_type(-1), encoder(NULL) {}
       std::string ToString() const;
 
       std::string payload_name;
@@ -76,13 +75,6 @@ class VideoSendStream {
       // Uninitialized VideoEncoder instance to be used for encoding. Will be
       // initialized from inside the VideoSendStream.
       webrtc::VideoEncoder* encoder;
-      // TODO(pbos): Wire up encoder-specific settings.
-      // Encoder-specific settings, will be passed to the encoder during
-      // initialization.
-      void* encoder_settings;
-
-      // List of stream settings to encode (resolution, bitrates, framerate).
-      std::vector<VideoStream> streams;
     } encoder_settings;
 
     static const size_t kDefaultMaxPacketSize = 1500 - 40;  // TCP over IPv4.
@@ -155,8 +147,7 @@ class VideoSendStream {
     // True if the stream should be suspended when the available bitrate fall
     // below the minimum configured bitrate. If this variable is false, the
     // stream may send at a rate higher than the estimated available bitrate.
-    // Enabling suspend_below_min_bitrate will also enable pacing and padding,
-    // otherwise, the video will be unable to recover from suspension.
+    // |suspend_below_min_bitrate| requires |pacing| to be enabled as well.
     bool suspend_below_min_bitrate;
   };
 
@@ -171,7 +162,7 @@ class VideoSendStream {
   // in the config. Encoder settings are passed on to the encoder instance along
   // with the VideoStream settings.
   virtual bool ReconfigureVideoEncoder(const std::vector<VideoStream>& streams,
-                                       void* encoder_settings) = 0;
+                                       const void* encoder_settings) = 0;
 
   virtual Stats GetStats() const = 0;
 

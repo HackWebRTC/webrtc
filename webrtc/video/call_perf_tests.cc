@@ -53,18 +53,19 @@ class CallPerfTest : public ::testing::Test {
       : send_stream_(NULL), fake_encoder_(Clock::GetRealTimeClock()) {}
 
  protected:
-  VideoSendStream::Config GetSendTestConfig(Call* call) {
-    VideoSendStream::Config config = call->GetDefaultSendConfig();
-    config.rtp.ssrcs.push_back(kSendSsrc);
-    config.encoder_settings = test::CreateEncoderSettings(
-        &fake_encoder_, "FAKE", kSendPayloadType, 1);
-    return config;
+  void CreateTestConfig(Call* call) {
+    send_config_ = call->GetDefaultSendConfig();
+    send_config_.rtp.ssrcs.push_back(kSendSsrc);
+    send_config_.encoder_settings.encoder = &fake_encoder_;
+    send_config_.encoder_settings.payload_type = kSendPayloadType;
+    send_config_.encoder_settings.payload_name = "FAKE";
+    video_streams_ = test::CreateVideoStreams(1);
   }
 
   void RunVideoSendTest(Call* call,
                         const VideoSendStream::Config& config,
                         test::RtpRtcpObserver* observer) {
-    send_stream_ = call->CreateVideoSendStream(config);
+    send_stream_ = call->CreateVideoSendStream(config, video_streams_, NULL);
     scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer(
         test::FrameGeneratorCapturer::Create(
             send_stream_->Input(), 320, 240, 30, Clock::GetRealTimeClock()));
@@ -86,6 +87,8 @@ class CallPerfTest : public ::testing::Test {
                           int start_time_ms,
                           int run_time_ms);
 
+  VideoSendStream::Config send_config_;
+  std::vector<VideoStream> video_streams_;
   VideoSendStream* send_stream_;
   test::FakeEncoder fake_encoder_;
 };
@@ -288,35 +291,34 @@ TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSync) {
 
   test::FakeDecoder fake_decoder;
 
-  VideoSendStream::Config send_config = GetSendTestConfig(sender_call.get());
+  CreateTestConfig(sender_call.get());
 
   VideoReceiveStream::Config receive_config =
       receiver_call->GetDefaultReceiveConfig();
   assert(receive_config.codecs.empty());
   VideoCodec codec =
-      test::CreateDecoderVideoCodec(send_config.encoder_settings);
+      test::CreateDecoderVideoCodec(send_config_.encoder_settings);
   receive_config.codecs.push_back(codec);
   assert(receive_config.external_decoders.empty());
   ExternalVideoDecoder decoder;
   decoder.decoder = &fake_decoder;
-  decoder.payload_type = send_config.encoder_settings.payload_type;
+  decoder.payload_type = send_config_.encoder_settings.payload_type;
   receive_config.external_decoders.push_back(decoder);
-  receive_config.rtp.remote_ssrc = send_config.rtp.ssrcs[0];
+  receive_config.rtp.remote_ssrc = send_config_.rtp.ssrcs[0];
   receive_config.rtp.local_ssrc = kReceiverLocalSsrc;
   receive_config.renderer = &observer;
   receive_config.audio_channel_id = channel;
 
   VideoSendStream* send_stream =
-      sender_call->CreateVideoSendStream(send_config);
+      sender_call->CreateVideoSendStream(send_config_, video_streams_, NULL);
   VideoReceiveStream* receive_stream =
       receiver_call->CreateVideoReceiveStream(receive_config);
   scoped_ptr<test::FrameGeneratorCapturer> capturer(
-      test::FrameGeneratorCapturer::Create(
-          send_stream->Input(),
-          send_config.encoder_settings.streams[0].width,
-          send_config.encoder_settings.streams[0].height,
-          30,
-          Clock::GetRealTimeClock()));
+      test::FrameGeneratorCapturer::Create(send_stream->Input(),
+                                           video_streams_[0].width,
+                                           video_streams_[0].height,
+                                           30,
+                                           Clock::GetRealTimeClock()));
   receive_stream->Start();
   send_stream->Start();
   capturer->Start();
@@ -465,16 +467,15 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
   observer.SetReceivers(receiver_call->Receiver(), sender_call->Receiver());
 
   // Configure send stream.
-  VideoSendStream::Config send_config = GetSendTestConfig(sender_call.get());
+  CreateTestConfig(sender_call.get());
   VideoSendStream* send_stream =
-      sender_call->CreateVideoSendStream(send_config);
+      sender_call->CreateVideoSendStream(send_config_, video_streams_, NULL);
   scoped_ptr<test::FrameGeneratorCapturer> capturer(
-      test::FrameGeneratorCapturer::Create(
-          send_stream->Input(),
-          send_config.encoder_settings.streams[0].width,
-          send_config.encoder_settings.streams[0].height,
-          30,
-          Clock::GetRealTimeClock()));
+      test::FrameGeneratorCapturer::Create(send_stream->Input(),
+                                           video_streams_[0].width,
+                                           video_streams_[0].height,
+                                           30,
+                                           Clock::GetRealTimeClock()));
   observer.SetCapturer(capturer.get());
 
   // Configure receive stream.
@@ -482,15 +483,15 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
       receiver_call->GetDefaultReceiveConfig();
   assert(receive_config.codecs.empty());
   VideoCodec codec =
-      test::CreateDecoderVideoCodec(send_config.encoder_settings);
+      test::CreateDecoderVideoCodec(send_config_.encoder_settings);
   receive_config.codecs.push_back(codec);
   assert(receive_config.external_decoders.empty());
   ExternalVideoDecoder decoder;
   test::FakeDecoder fake_decoder;
   decoder.decoder = &fake_decoder;
-  decoder.payload_type = send_config.encoder_settings.payload_type;
+  decoder.payload_type = send_config_.encoder_settings.payload_type;
   receive_config.external_decoders.push_back(decoder);
-  receive_config.rtp.remote_ssrc = send_config.rtp.ssrcs[0];
+  receive_config.rtp.remote_ssrc = send_config_.rtp.ssrcs[0];
   receive_config.rtp.local_ssrc = kReceiverLocalSsrc;
   receive_config.renderer = &observer;
   // Enable the receiver side rtt calculation.
@@ -559,8 +560,8 @@ TEST_F(CallPerfTest, RegisterCpuOveruseObserver) {
   call_config.overuse_callback = &observer;
   scoped_ptr<Call> call(Call::Create(call_config));
 
-  VideoSendStream::Config send_config = GetSendTestConfig(call.get());
-  RunVideoSendTest(call.get(), send_config, &observer);
+  CreateTestConfig(call.get());
+  RunVideoSendTest(call.get(), send_config_, &observer);
 }
 
 void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
@@ -636,43 +637,42 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
   scoped_ptr<Call> receiver_call(
       Call::Create(Call::Config(observer.ReceiveTransport())));
 
-  VideoSendStream::Config send_config = GetSendTestConfig(sender_call.get());
+  CreateTestConfig(sender_call.get());
   fake_encoder_.SetMaxBitrate(kMaxEncodeBitrateKbps);
 
   observer.SetReceivers(receiver_call->Receiver(), sender_call->Receiver());
 
-  send_config.pacing = true;
+  send_config_.pacing = true;
   if (pad_to_min_bitrate) {
-    send_config.rtp.min_transmit_bitrate_bps = kMinTransmitBitrateBps;
+    send_config_.rtp.min_transmit_bitrate_bps = kMinTransmitBitrateBps;
   } else {
-    assert(send_config.rtp.min_transmit_bitrate_bps == 0);
+    assert(send_config_.rtp.min_transmit_bitrate_bps == 0);
   }
 
   VideoReceiveStream::Config receive_config =
       receiver_call->GetDefaultReceiveConfig();
   receive_config.codecs.clear();
   VideoCodec codec =
-      test::CreateDecoderVideoCodec(send_config.encoder_settings);
+      test::CreateDecoderVideoCodec(send_config_.encoder_settings);
   receive_config.codecs.push_back(codec);
   test::FakeDecoder fake_decoder;
   ExternalVideoDecoder decoder;
   decoder.decoder = &fake_decoder;
-  decoder.payload_type = send_config.encoder_settings.payload_type;
+  decoder.payload_type = send_config_.encoder_settings.payload_type;
   receive_config.external_decoders.push_back(decoder);
-  receive_config.rtp.remote_ssrc = send_config.rtp.ssrcs[0];
+  receive_config.rtp.remote_ssrc = send_config_.rtp.ssrcs[0];
   receive_config.rtp.local_ssrc = kReceiverLocalSsrc;
 
   VideoSendStream* send_stream =
-      sender_call->CreateVideoSendStream(send_config);
+      sender_call->CreateVideoSendStream(send_config_, video_streams_, NULL);
   VideoReceiveStream* receive_stream =
       receiver_call->CreateVideoReceiveStream(receive_config);
   scoped_ptr<test::FrameGeneratorCapturer> capturer(
-      test::FrameGeneratorCapturer::Create(
-          send_stream->Input(),
-          send_config.encoder_settings.streams[0].width,
-          send_config.encoder_settings.streams[0].height,
-          30,
-          Clock::GetRealTimeClock()));
+      test::FrameGeneratorCapturer::Create(send_stream->Input(),
+                                           video_streams_[0].width,
+                                           video_streams_[0].height,
+                                           30,
+                                           Clock::GetRealTimeClock()));
   observer.SetSendStream(send_stream);
   receive_stream->Start();
   send_stream->Start();

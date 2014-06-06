@@ -150,13 +150,13 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
 
   external_codec_ = ViEExternalCodec::GetInterface(video_engine);
   for (size_t i = 0; i < config_.external_decoders.size(); ++i) {
-    ExternalVideoDecoder* decoder = &config_.external_decoders[i];
+    const ExternalVideoDecoder& decoder = config_.external_decoders[i];
     if (external_codec_->RegisterExternalReceiveCodec(
             channel_,
-            decoder->payload_type,
-            decoder->decoder,
-            decoder->renderer,
-            decoder->expected_delay_ms) != 0) {
+            decoder.payload_type,
+            decoder.decoder,
+            decoder.renderer,
+            decoder.expected_delay_ms) != 0) {
       // TODO(pbos): Abort gracefully? Can this be a runtime error?
       abort();
     }

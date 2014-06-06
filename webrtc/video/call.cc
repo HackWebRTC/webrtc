@@ -70,7 +70,9 @@ class Call : public webrtc::Call, public PacketReceiver {
   virtual VideoSendStream::Config GetDefaultSendConfig() OVERRIDE;
 
   virtual VideoSendStream* CreateVideoSendStream(
-      const VideoSendStream::Config& config) OVERRIDE;
+      const VideoSendStream::Config& config,
+      const std::vector<VideoStream>& video_streams,
+      const void* encoder_settings) OVERRIDE;
 
   virtual void DestroyVideoSendStream(webrtc::VideoSendStream* send_stream)
       OVERRIDE;
@@ -175,15 +177,19 @@ VideoSendStream::Config Call::GetDefaultSendConfig() {
 }
 
 VideoSendStream* Call::CreateVideoSendStream(
-    const VideoSendStream::Config& config) {
+    const VideoSendStream::Config& config,
+    const std::vector<VideoStream>& video_streams,
+    const void* encoder_settings) {
   assert(config.rtp.ssrcs.size() > 0);
 
-  VideoSendStream* send_stream = new VideoSendStream(
-      config_.send_transport,
-      overuse_observer_proxy_.get(),
-      video_engine_,
-      config,
-      base_channel_id_);
+  VideoSendStream* send_stream =
+      new VideoSendStream(config_.send_transport,
+                          overuse_observer_proxy_.get(),
+                          video_engine_,
+                          config,
+                          video_streams,
+                          encoder_settings,
+                          base_channel_id_);
 
   WriteLockScoped write_lock(*send_lock_);
   for (size_t i = 0; i < config.rtp.ssrcs.size(); ++i) {

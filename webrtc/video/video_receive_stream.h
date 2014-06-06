@@ -69,7 +69,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
  private:
   TransportAdapter transport_adapter_;
   EncodedFrameCallbackAdapter encoded_frame_proxy_;
-  VideoReceiveStream::Config config_;
+  const VideoReceiveStream::Config config_;
   Clock* const clock_;
 
   ViEBase* video_engine_base_;

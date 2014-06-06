@@ -42,6 +42,8 @@ class VideoSendStream : public webrtc::VideoSendStream,
                   CpuOveruseObserver* overuse_observer,
                   webrtc::VideoEngine* video_engine,
                   const VideoSendStream::Config& config,
+                  const std::vector<VideoStream> video_streams,
+                  const void* encoder_settings,
                   int base_channel);
 
   virtual ~VideoSendStream();
@@ -50,7 +52,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
   virtual void Stop() OVERRIDE;
 
   virtual bool ReconfigureVideoEncoder(const std::vector<VideoStream>& streams,
-                                       void* encoder_settings) OVERRIDE;
+                                       const void* encoder_settings) OVERRIDE;
 
   virtual Stats GetStats() const OVERRIDE;
 
@@ -70,8 +72,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
  private:
   TransportAdapter transport_adapter_;
   EncodedFrameCallbackAdapter encoded_frame_proxy_;
-  scoped_ptr<CriticalSectionWrapper> codec_lock_;
-  VideoSendStream::Config config_;
+  const VideoSendStream::Config config_;
 
   ViEBase* video_engine_base_;
   ViECapture* capture_;

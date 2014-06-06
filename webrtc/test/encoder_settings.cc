@@ -16,18 +16,14 @@
 
 namespace webrtc {
 namespace test {
-VideoSendStream::Config::EncoderSettings CreateEncoderSettings(
-    VideoEncoder* encoder,
-    const char* payload_name,
-    int payload_type,
-    size_t num_streams) {
+std::vector<VideoStream> CreateVideoStreams(size_t num_streams) {
   assert(num_streams > 0);
 
   // Add more streams to the settings above with reasonable values if required.
   static const size_t kNumSettings = 3;
   assert(num_streams <= kNumSettings);
 
-  VideoStream stream_settings[kNumSettings];
+  std::vector<VideoStream> stream_settings(kNumSettings);
 
   stream_settings[0].width = 320;
   stream_settings[0].height = 180;
@@ -52,28 +48,20 @@ VideoSendStream::Config::EncoderSettings CreateEncoderSettings(
   stream_settings[2].target_bitrate_bps = stream_settings[2].max_bitrate_bps =
       1500000;
   stream_settings[2].max_qp = 56;
-
-  VideoSendStream::Config::EncoderSettings settings;
-
-  for (size_t i = 0; i < num_streams; ++i)
-    settings.streams.push_back(stream_settings[i]);
-
-  settings.encoder = encoder;
-  settings.payload_name = payload_name;
-  settings.payload_type = payload_type;
-  return settings;
+  stream_settings.resize(num_streams);
+  return stream_settings;
 }
 
 VideoCodec CreateDecoderVideoCodec(
-    const VideoSendStream::Config::EncoderSettings& settings) {
-  assert(settings.streams.size() > 0);
+    const VideoSendStream::Config::EncoderSettings& encoder_settings) {
   VideoCodec codec;
   memset(&codec, 0, sizeof(codec));
 
-  codec.plType = settings.payload_type;
-  strcpy(codec.plName, settings.payload_name.c_str());
+  codec.plType = encoder_settings.payload_type;
+  strcpy(codec.plName, encoder_settings.payload_name.c_str());
   codec.codecType =
-      (settings.payload_name == "VP8" ? kVideoCodecVP8 : kVideoCodecGeneric);
+      (encoder_settings.payload_name == "VP8" ? kVideoCodecVP8
+                                              : kVideoCodecGeneric);
 
   if (codec.codecType == kVideoCodecVP8) {
     codec.codecSpecific.VP8.resilience = kResilientStream;
@@ -85,33 +73,9 @@ VideoCodec CreateDecoderVideoCodec(
     codec.codecSpecific.VP8.keyFrameInterval = 3000;
   }
 
-  codec.minBitrate = settings.streams[0].min_bitrate_bps / 1000;
-  for (size_t i = 0; i < settings.streams.size(); ++i) {
-    const VideoStream& stream = settings.streams[i];
-    if (stream.width > codec.width)
-      codec.width = static_cast<unsigned short>(stream.width);
-    if (stream.height > codec.height)
-      codec.height = static_cast<unsigned short>(stream.height);
-    if (static_cast<unsigned int>(stream.min_bitrate_bps / 1000) <
-        codec.minBitrate)
-      codec.minBitrate =
-          static_cast<unsigned int>(stream.min_bitrate_bps / 1000);
-    codec.maxBitrate += stream.max_bitrate_bps / 1000;
-    if (static_cast<unsigned int>(stream.max_qp) > codec.qpMax)
-      codec.qpMax = static_cast<unsigned int>(stream.max_qp);
-  }
-
-  if (codec.minBitrate < kViEMinCodecBitrate)
-    codec.minBitrate = kViEMinCodecBitrate;
-  if (codec.maxBitrate < kViEMinCodecBitrate)
-    codec.maxBitrate = kViEMinCodecBitrate;
-
-  codec.startBitrate = 300;
-
-  if (codec.startBitrate < codec.minBitrate)
-    codec.startBitrate = codec.minBitrate;
-  if (codec.startBitrate > codec.maxBitrate)
-    codec.startBitrate = codec.maxBitrate;
+  codec.width = 320;
+  codec.height = 180;
+  codec.startBitrate = codec.minBitrate = codec.maxBitrate = 300;
 
   return codec;
 }

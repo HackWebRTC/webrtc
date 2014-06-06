@@ -430,12 +430,15 @@ class RampUpTest : public ::testing::Test {
     receiver_transport.SetReceiver(call->Receiver());
 
     test::FakeEncoder encoder(Clock::GetRealTimeClock());
-    send_config.encoder_settings =
-        test::CreateEncoderSettings(&encoder, "FAKE", 125, num_streams);
+    send_config.encoder_settings.encoder = &encoder;
+    send_config.encoder_settings.payload_type = 125;
+    send_config.encoder_settings.payload_name = "FAKE";
+    std::vector<VideoStream> video_streams =
+        test::CreateVideoStreams(num_streams);
 
     if (num_streams == 1) {
-      send_config.encoder_settings.streams[0].target_bitrate_bps = 2000000;
-      send_config.encoder_settings.streams[0].max_bitrate_bps = 2000000;
+      video_streams[0].target_bitrate_bps = 2000000;
+      video_streams[0].max_bitrate_bps = 2000000;
     }
 
     send_config.pacing = pacing;
@@ -455,25 +458,22 @@ class RampUpTest : public ::testing::Test {
       // For multi stream rampup until all streams are being sent. That means
       // enough birate to sent all the target streams plus the min bitrate of
       // the last one.
-      int expected_bitrate_bps =
-          send_config.encoder_settings.streams.back().min_bitrate_bps;
-      for (size_t i = 0; i < send_config.encoder_settings.streams.size() - 1;
-           ++i) {
-        expected_bitrate_bps +=
-            send_config.encoder_settings.streams[i].target_bitrate_bps;
+      int expected_bitrate_bps = video_streams.back().min_bitrate_bps;
+      for (size_t i = 0; i < video_streams.size() - 1; ++i) {
+        expected_bitrate_bps += video_streams[i].target_bitrate_bps;
       }
       stream_observer.set_expected_bitrate_bps(expected_bitrate_bps);
     }
 
-    VideoSendStream* send_stream = call->CreateVideoSendStream(send_config);
+    VideoSendStream* send_stream =
+        call->CreateVideoSendStream(send_config, video_streams, NULL);
 
     scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer(
-        test::FrameGeneratorCapturer::Create(
-            send_stream->Input(),
-            send_config.encoder_settings.streams.back().width,
-            send_config.encoder_settings.streams.back().height,
-            send_config.encoder_settings.streams.back().max_framerate,
-            Clock::GetRealTimeClock()));
+        test::FrameGeneratorCapturer::Create(send_stream->Input(),
+                                             video_streams.back().width,
+                                             video_streams.back().height,
+                                             video_streams.back().max_framerate,
+                                             Clock::GetRealTimeClock()));
 
     send_stream->Start();
     frame_generator_capturer->Start();
@@ -504,23 +504,29 @@ class RampUpTest : public ::testing::Test {
     receiver_transport.SetReceiver(call->Receiver());
 
     test::FakeEncoder encoder(Clock::GetRealTimeClock());
-    send_config.encoder_settings =
-        test::CreateEncoderSettings(&encoder, "FAKE", 125, number_of_streams);
+    send_config.encoder_settings.encoder = &encoder;
+    send_config.encoder_settings.payload_type = 125;
+    send_config.encoder_settings.payload_name = "FAKE";
+    std::vector<VideoStream> video_streams =
+        test::CreateVideoStreams(number_of_streams);
+
     send_config.rtp.nack.rtp_history_ms = 1000;
     send_config.rtp.ssrcs.insert(
         send_config.rtp.ssrcs.begin(), ssrcs.begin(), ssrcs.end());
     send_config.rtp.extensions.push_back(
         RtpExtension(RtpExtension::kAbsSendTime, kAbsoluteSendTimeExtensionId));
     send_config.suspend_below_min_bitrate = true;
+    send_config.pacing = true;
 
-    VideoSendStream* send_stream = call->CreateVideoSendStream(send_config);
+    VideoSendStream* send_stream =
+        call->CreateVideoSendStream(send_config, video_streams, NULL);
     stream_observer.SetSendStream(send_stream);
 
     size_t width = 0;
     size_t height = 0;
-    for (size_t i = 0; i < send_config.encoder_settings.streams.size(); ++i) {
-      size_t stream_width = send_config.encoder_settings.streams[i].width;
-      size_t stream_height = send_config.encoder_settings.streams[i].height;
+    for (size_t i = 0; i < video_streams.size(); ++i) {
+      size_t stream_width = video_streams[i].width;
+      size_t stream_height = video_streams[i].height;
       if (stream_width > width)
         width = stream_width;
       if (stream_height > height)

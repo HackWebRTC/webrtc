@@ -70,8 +70,10 @@ class BitrateEstimatorTest : public ::testing::Test {
     send_config_ = sender_call_->GetDefaultSendConfig();
     send_config_.rtp.ssrcs.push_back(kSendSsrc);
     // Encoders will be set separately per stream.
-    send_config_.encoder_settings =
-        test::CreateEncoderSettings(NULL, "FAKE", kSendPayloadType, 1);
+    send_config_.encoder_settings.encoder = NULL;
+    send_config_.encoder_settings.payload_name = "FAKE";
+    send_config_.encoder_settings.payload_type = kSendPayloadType;
+    video_streams_ = test::CreateVideoStreams(1);
 
     receive_config_ = receiver_call_->GetDefaultReceiveConfig();
     assert(receive_config_.codecs.empty());
@@ -169,15 +171,15 @@ class BitrateEstimatorTest : public ::testing::Test {
           fake_decoder_() {
       test_->send_config_.rtp.ssrcs[0]++;
       test_->send_config_.encoder_settings.encoder = &fake_encoder_;
-      send_stream_ =
-          test_->sender_call_->CreateVideoSendStream(test_->send_config_);
-      assert(test_->send_config_.encoder_settings.streams.size() == 1);
-      frame_generator_capturer_.reset(test::FrameGeneratorCapturer::Create(
-          send_stream_->Input(),
-          test_->send_config_.encoder_settings.streams[0].width,
-          test_->send_config_.encoder_settings.streams[0].height,
-          30,
-          Clock::GetRealTimeClock()));
+      send_stream_ = test_->sender_call_->CreateVideoSendStream(
+          test_->send_config_, test_->video_streams_, NULL);
+      assert(test_->video_streams_.size() == 1);
+      frame_generator_capturer_.reset(
+          test::FrameGeneratorCapturer::Create(send_stream_->Input(),
+                                               test_->video_streams_[0].width,
+                                               test_->video_streams_[0].height,
+                                               30,
+                                               Clock::GetRealTimeClock()));
       send_stream_->Start();
       frame_generator_capturer_->Start();
 
@@ -227,6 +229,7 @@ class BitrateEstimatorTest : public ::testing::Test {
   scoped_ptr<Call> sender_call_;
   scoped_ptr<Call> receiver_call_;
   VideoSendStream::Config send_config_;
+  std::vector<VideoStream> video_streams_;
   VideoReceiveStream::Config receive_config_;
   std::vector<Stream*> streams_;
 };

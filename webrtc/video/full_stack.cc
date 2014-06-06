@@ -398,16 +398,19 @@ TEST_P(FullStackTest, NoPacketLoss) {
   send_config.rtp.ssrcs.push_back(kSendSsrc);
 
   scoped_ptr<VP8Encoder> encoder(VP8Encoder::Create());
-  send_config.encoder_settings =
-      test::CreateEncoderSettings(encoder.get(), "VP8", 124, 1);
-  VideoStream* stream = &send_config.encoder_settings.streams[0];
+  send_config.encoder_settings.encoder = encoder.get();
+  send_config.encoder_settings.payload_name = "VP8";
+  send_config.encoder_settings.payload_type = 124;
+  std::vector<VideoStream> video_streams = test::CreateVideoStreams(1);
+  VideoStream* stream = &video_streams[0];
   stream->width = params.clip.width;
   stream->height = params.clip.height;
   stream->min_bitrate_bps = stream->target_bitrate_bps =
       stream->max_bitrate_bps = params.bitrate * 1000;
   stream->max_framerate = params.clip.fps;
 
-  VideoSendStream* send_stream = call->CreateVideoSendStream(send_config);
+  VideoSendStream* send_stream =
+      call->CreateVideoSendStream(send_config, video_streams, NULL);
   analyzer.input_ = send_stream->Input();
 
   scoped_ptr<test::FrameGeneratorCapturer> file_capturer(
