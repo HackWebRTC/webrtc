@@ -44,6 +44,9 @@
 // application and AppEngine.
 @interface GAEChannelClient : NSObject
 
-- (id)initWithToken:(NSString*)token delegate:(id<GAEMessageHandler>)delegate;
+@property(nonatomic, weak) id<GAEMessageHandler> delegate;
+
+- (instancetype)initWithToken:(NSString*)token
+                     delegate:(id<GAEMessageHandler>)delegate;
 
 @end

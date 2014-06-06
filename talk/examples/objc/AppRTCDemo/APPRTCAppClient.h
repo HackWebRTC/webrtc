@@ -48,20 +48,20 @@
 // call connectToRoom().  apprtc.appspot.com will signal that is successful via
 // onOpen through the browser channel.  Then you should call sendData() and wait
 // for the registered handler to be called with received messages.
-@interface APPRTCAppClient : NSObject<NSURLConnectionDataDelegate>
+@interface APPRTCAppClient : NSObject
 
 @property(nonatomic) BOOL initiator;
 @property(nonatomic, copy, readonly) RTCMediaConstraints* videoConstraints;
 @property(nonatomic, weak) id<APPRTCAppClientDelegate> delegate;
 
-- (id)initWithDelegate:(id<APPRTCAppClientDelegate>)delegate
-        messageHandler:(id<GAEMessageHandler>)handler;
+- (instancetype)initWithDelegate:(id<APPRTCAppClientDelegate>)delegate
+                  messageHandler:(id<GAEMessageHandler>)handler;
 - (void)connectToRoom:(NSURL*)room;
 - (void)sendData:(NSData*)data;
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 // Disallow init and don't add to documentation
-- (id)init __attribute__((
+- (instancetype)init __attribute__((
     unavailable("init is not a supported initializer for this class.")));
 #endif /* DOXYGEN_SHOULD_SKIP_THIS */
 

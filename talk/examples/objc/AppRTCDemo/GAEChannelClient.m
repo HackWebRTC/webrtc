@@ -47,13 +47,14 @@
 
 #endif
 
-@property(nonatomic, assign) id<GAEMessageHandler> delegate;
-
 @end
 
 @implementation GAEChannelClient
 
-- (id)initWithToken:(NSString*)token delegate:(id<GAEMessageHandler>)delegate {
+- (instancetype)initWithToken:(NSString*)token
+                     delegate:(id<GAEMessageHandler>)delegate {
+  NSParameterAssert([token length] > 0);
+  NSParameterAssert(delegate);
   self = [super init];
   if (self) {
 #if TARGET_OS_IPHONE
@@ -69,7 +70,6 @@
     NSURL* htmlUrl = [NSURL fileURLWithPath:htmlPath];
     NSString* path = [NSString
         stringWithFormat:@"%@?token=%@", [htmlUrl absoluteString], token];
-
 #if TARGET_OS_IPHONE
     [_webView
 #else
