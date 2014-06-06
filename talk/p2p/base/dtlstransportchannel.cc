@@ -34,7 +34,6 @@
 #include "talk/base/stream.h"
 #include "talk/base/sslstreamadapter.h"
 #include "talk/base/thread.h"
-#include "talk/media/base/rtputils.h"
 #include "talk/p2p/base/common.h"
 
 namespace cricket {
@@ -42,10 +41,15 @@ namespace cricket {
 // We don't pull the RTP constants from rtputils.h, to avoid a layer violation.
 static const size_t kDtlsRecordHeaderLen = 13;
 static const size_t kMaxDtlsPacketLen = 2048;
+static const size_t kMinRtpPacketLen = 12;
 
 static bool IsDtlsPacket(const char* data, size_t len) {
   const uint8* u = reinterpret_cast<const uint8*>(data);
   return (len >= kDtlsRecordHeaderLen && (u[0] > 19 && u[0] < 64));
+}
+static bool IsRtpPacket(const char* data, size_t len) {
+  const uint8* u = reinterpret_cast<const uint8*>(data);
+  return (len >= kMinRtpPacketLen && (u[0] & 0xC0) == 0x80);
 }
 
 talk_base::StreamResult StreamInterfaceChannel::Read(void* buffer,
