@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/video_capture/android/video_capture_android.h"
 
+#include "webrtc/base/common.h"
 #include "webrtc/modules/utility/interface/helpers_android.h"
 #include "webrtc/modules/video_capture/android/device_info_android.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -61,6 +62,7 @@ void JNICALL OnOrientationChanged(
       kCameraRotate0;  // Impossible.
   int32_t status =
       captureModule->VideoCaptureImpl::SetCaptureRotation(rotation);
+  RTC_UNUSED(status);
   assert(status == 0);
 }
 
