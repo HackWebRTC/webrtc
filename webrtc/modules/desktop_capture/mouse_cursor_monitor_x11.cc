@@ -17,6 +17,7 @@
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/mouse_cursor.h"
+#include "webrtc/modules/desktop_capture/x11/x_error_trap.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
@@ -145,10 +146,12 @@ void MouseCursorMonitorX11::Capture() {
     Window root_window;
     Window child_window;
     unsigned int mask;
+
+    XErrorTrap error_trap(display());
     Bool result = XQueryPointer(display(), window_, &root_window, &child_window,
                                 &root_x, &root_y, &win_x, &win_y, &mask);
     CursorState state;
-    if (!result) {
+    if (!result || error_trap.GetLastErrorAndDisable() != 0) {
       state = OUTSIDE;
     } else {
       // In screen mode (window_ == root_window) the mouse is always inside.
