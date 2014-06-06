@@ -50,7 +50,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.DataChannel;
 import org.webrtc.IceCandidate;
-import org.webrtc.Logging;
 import org.webrtc.MediaConstraints;
 import org.webrtc.MediaStream;
 import org.webrtc.PeerConnection;
@@ -61,11 +60,10 @@ import org.webrtc.StatsObserver;
 import org.webrtc.StatsReport;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoRenderer;
-import org.webrtc.VideoRenderer.I420Frame;
+import org.webrtc.VideoRendererGui;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
 
-import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -88,7 +86,9 @@ public class AppRTCDemoActivity extends Activity
   private final SDPObserver sdpObserver = new SDPObserver();
   private final GAEChannelClient.MessageHandler gaeHandler = new GAEHandler();
   private AppRTCClient appRtcClient = new AppRTCClient(this, gaeHandler, this);
-  private VideoStreamsView vsv;
+  private AppRTCGLView vsv;
+  private VideoRenderer.Callbacks localRender;
+  private VideoRenderer.Callbacks remoteRender;
   private Toast logToast;
   private final LayoutParams hudLayout =
       new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
@@ -111,7 +111,12 @@ public class AppRTCDemoActivity extends Activity
 
     Point displaySize = new Point();
     getWindowManager().getDefaultDisplay().getRealSize(displaySize);
-    vsv = new VideoStreamsView(this, displaySize);
+
+    vsv = new AppRTCGLView(this, displaySize);
+    VideoRendererGui.setView(vsv);
+    remoteRender = VideoRendererGui.create(0, 0, 100, 100);
+    localRender = VideoRendererGui.create(70, 5, 25, 25);
+
     vsv.setOnClickListener(new View.OnClickListener() {
         @Override public void onClick(View v) {
           toggleHUD();
@@ -307,8 +312,7 @@ public class AppRTCDemoActivity extends Activity
             capturer, appRtcClient.videoConstraints());
         VideoTrack videoTrack =
             factory.createVideoTrack("ARDAMSv0", videoSource);
-        videoTrack.addRenderer(new VideoRenderer(new VideoCallbacks(
-            vsv, VideoStreamsView.Endpoint.LOCAL)));
+        videoTrack.addRenderer(new VideoRenderer(localRender));
         lMS.addTrack(videoTrack);
       }
       if (appRtcClient.audioConstraints() != null) {
@@ -471,8 +475,8 @@ public class AppRTCDemoActivity extends Activity
                 stream.videoTracks.size() <= 1,
                 "Weird-looking stream: " + stream);
             if (stream.videoTracks.size() == 1) {
-              stream.videoTracks.get(0).addRenderer(new VideoRenderer(
-                  new VideoCallbacks(vsv, VideoStreamsView.Endpoint.REMOTE)));
+              stream.videoTracks.get(0).addRenderer(
+                  new VideoRenderer(remoteRender));
             }
           }
         });
@@ -662,30 +666,4 @@ public class AppRTCDemoActivity extends Activity
     }
   }
 
-  // Implementation detail: bridge the VideoRenderer.Callbacks interface to the
-  // VideoStreamsView implementation.
-  private class VideoCallbacks implements VideoRenderer.Callbacks {
-    private final VideoStreamsView view;
-    private final VideoStreamsView.Endpoint stream;
-
-    public VideoCallbacks(
-        VideoStreamsView view, VideoStreamsView.Endpoint stream) {
-      this.view = view;
-      this.stream = stream;
-    }
-
-    @Override
-    public void setSize(final int width, final int height) {
-      view.queueEvent(new Runnable() {
-          public void run() {
-            view.setSize(stream, width, height);
-          }
-        });
-    }
-
-    @Override
-    public void renderFrame(I420Frame frame) {
-      view.queueFrame(stream, frame);
-    }
-  }
 }

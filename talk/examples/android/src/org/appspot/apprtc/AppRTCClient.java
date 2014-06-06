@@ -45,8 +45,6 @@ import java.net.URLConnection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Negotiates signaling for chatting with apprtc.appspot.com "rooms".
