@@ -260,7 +260,8 @@ int32_t VideoCaptureImpl::IncomingFrame(
     const VideoCaptureCapability& frameInfo,
     int64_t captureTime/*=0*/)
 {
-    CriticalSectionScoped cs(&_callBackCs);
+    CriticalSectionScoped cs(&_apiCs);
+    CriticalSectionScoped cs2(&_callBackCs);
 
     const int32_t width = frameInfo.width;
     const int32_t height = frameInfo.height;
@@ -332,7 +333,8 @@ int32_t VideoCaptureImpl::IncomingFrame(
 int32_t VideoCaptureImpl::IncomingI420VideoFrame(I420VideoFrame* video_frame,
                                                  int64_t captureTime) {
 
-  CriticalSectionScoped cs(&_callBackCs);
+  CriticalSectionScoped cs(&_apiCs);
+  CriticalSectionScoped cs2(&_callBackCs);
   DeliverCapturedFrame(*video_frame, captureTime);
 
   return 0;
