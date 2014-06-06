@@ -260,11 +260,11 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
 
     const int kVideoCodecClockratekHz = cricket::kVideoCodecClockrate / 1000;
 
+    int64 elapsed_time_ms =
+        (rtp_ts_wraparound_handler_.Unwrap(rtp_time_stamp) -
+         capture_start_rtp_time_stamp_) / kVideoCodecClockratekHz;
 #ifdef USE_WEBRTC_DEV_BRANCH
     if (ntp_time_ms > 0) {
-      int64 elapsed_time_ms =
-          (rtp_ts_wraparound_handler_.Unwrap(rtp_time_stamp) -
-           capture_start_rtp_time_stamp_) / kVideoCodecClockratekHz;
       capture_start_ntp_time_ms_ = ntp_time_ms - elapsed_time_ms;
     }
 #endif
@@ -272,30 +272,31 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
     if (renderer_ == NULL) {
       return 0;
     }
-    // Convert 90K rtp timestamp to ns timestamp.
-    int64 rtp_time_stamp_in_ns = (rtp_time_stamp / kVideoCodecClockratekHz) *
-        talk_base::kNumNanosecsPerMillisec;
+    // Convert elapsed_time_ms to ns timestamp.
+    int64 elapsed_time_ns =
+        elapsed_time_ms * talk_base::kNumNanosecsPerMillisec;
     // Convert milisecond render time to ns timestamp.
-    int64 render_time_stamp_in_ns = render_time *
+    int64 render_time_ns = render_time *
         talk_base::kNumNanosecsPerMillisec;
-    // Send the rtp timestamp to renderer as the VideoFrame timestamp.
-    // and the render timestamp as the VideoFrame elapsed_time.
+    // Note that here we send the |elapsed_time_ns| to renderer as the
+    // cricket::VideoFrame's elapsed_time_ and the |render_time_ns| as the
+    // cricket::VideoFrame's time_stamp_.
     if (handle == NULL) {
-      return DeliverBufferFrame(buffer, buffer_size, render_time_stamp_in_ns,
-                                rtp_time_stamp_in_ns);
+      return DeliverBufferFrame(buffer, buffer_size, render_time_ns,
+                                elapsed_time_ns);
     } else {
-      return DeliverTextureFrame(handle, render_time_stamp_in_ns,
-                                 rtp_time_stamp_in_ns);
+      return DeliverTextureFrame(handle, render_time_ns,
+                                 elapsed_time_ns);
     }
   }
 
   virtual bool IsTextureSupported() { return true; }
 
   int DeliverBufferFrame(unsigned char* buffer, int buffer_size,
-                         int64 elapsed_time, int64 rtp_time_stamp_in_ns) {
+                         int64 time_stamp, int64 elapsed_time) {
     WebRtcVideoFrame video_frame;
     video_frame.Alias(buffer, buffer_size, width_, height_,
-                      1, 1, elapsed_time, rtp_time_stamp_in_ns, 0);
+                      1, 1, elapsed_time, time_stamp, 0);
 
     // Sanity check on decoded frame size.
     if (buffer_size != static_cast<int>(VideoFrame::SizeOf(width_, height_))) {
@@ -308,12 +309,10 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
     return ret;
   }
 
-  int DeliverTextureFrame(void* handle,
-                          int64 elapsed_time,
-                          int64 rtp_time_stamp_in_ns) {
+  int DeliverTextureFrame(void* handle, int64 time_stamp, int64 elapsed_time) {
     WebRtcTextureVideoFrame video_frame(
         static_cast<webrtc::NativeHandle*>(handle), width_, height_,
-        elapsed_time, rtp_time_stamp_in_ns);
+        elapsed_time, time_stamp);
     return renderer_->RenderFrame(&video_frame);
   }
 
