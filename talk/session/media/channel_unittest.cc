@@ -1767,9 +1767,18 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     // So we need to pass in pl_type so that the packet can pass through
     // the bundle filter before it can be processed by the srtp filter.
     // The packet is not a valid srtp packet because it is too short.
-    unsigned const char kBadPacket[] = {
-      0x84, pl_type, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01
-    };
+    unsigned const char kBadPacket[] = {0x84,
+                                        static_cast<unsigned char>(pl_type),
+                                        0x00,
+                                        0x01,
+                                        0x00,
+                                        0x00,
+                                        0x00,
+                                        0x00,
+                                        0x00,
+                                        0x00,
+                                        0x00,
+                                        0x01};
     CreateChannels(RTCP | SECURE, RTCP | SECURE);
     EXPECT_FALSE(channel1_->secure());
     EXPECT_FALSE(channel2_->secure());
