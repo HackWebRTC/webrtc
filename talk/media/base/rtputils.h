@@ -74,6 +74,7 @@ bool SetRtpSsrc(void* data, size_t len, uint32 value);
 // Assumes version 2, no padding, no extensions, no csrcs.
 bool SetRtpHeader(void* data, size_t len, const RtpHeader& header);
 
+bool IsRtpPacket(const void* data, size_t len);
 }  // namespace cricket
 
 #endif  // TALK_MEDIA_BASE_RTPUTILS_H_
