@@ -219,6 +219,7 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
   private void stopCaptureOnCameraThread(
       Exchanger<Boolean> result) {
     Log.d(TAG, "stopCapture");
+    Looper.myLooper().quit();
     if (camera == null) {
       throw new RuntimeException("Camera is already stopped!");
     }
@@ -242,7 +243,6 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
       error = e;
     }
     Log.e(TAG, "Failed to stop camera", error);
-    Looper.myLooper().quit();
     exchange(result, false);
     return;
   }
