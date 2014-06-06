@@ -2050,6 +2050,9 @@ bool WebRtcVideoMediaChannel::AddRecvStream(const StreamParams& sp) {
                  << " reuse default channel #"
                  << vie_channel_;
     first_receive_ssrc_ = sp.first_ssrc();
+    if (!MaybeSetRtxSsrc(sp, vie_channel_)) {
+      return false;
+    }
     if (render_started_) {
       if (engine()->vie()->render()->StartRender(vie_channel_) !=0) {
         LOG_RTCERR1(StartRender, vie_channel_);
@@ -2088,19 +2091,8 @@ bool WebRtcVideoMediaChannel::AddRecvStream(const StreamParams& sp) {
   }
   channel_iterator = recv_channels_.find(sp.first_ssrc());
 
-  // Set the corresponding RTX SSRC.
-  uint32 rtx_ssrc;
-  bool has_rtx = sp.GetFidSsrc(sp.first_ssrc(), &rtx_ssrc);
-  if (has_rtx) {
-    LOG(LS_INFO) << "Setting rtx ssrc " << rtx_ssrc << " for stream "
-                 << sp.first_ssrc();
-    if (engine()->vie()->rtp()->SetRemoteSSRCType(
-        channel_id, webrtc::kViEStreamTypeRtx, rtx_ssrc) != 0) {
-      LOG_RTCERR3(SetRemoteSSRCType, channel_id, webrtc::kViEStreamTypeRtx,
-                  rtx_ssrc);
-      return false;
-    }
-    rtx_to_primary_ssrc_[rtx_ssrc] = sp.first_ssrc();
+  if (!MaybeSetRtxSsrc(sp, channel_id)) {
+    return false;
   }
 
   // Get the default renderer.
@@ -2126,6 +2118,24 @@ bool WebRtcVideoMediaChannel::AddRecvStream(const StreamParams& sp) {
                << " registered to VideoEngine channel #"
                << channel_id << " and connected to channel #" << vie_channel_;
 
+  return true;
+}
+
+bool WebRtcVideoMediaChannel::MaybeSetRtxSsrc(const StreamParams& sp,
+                                              int channel_id) {
+  uint32 rtx_ssrc;
+  bool has_rtx = sp.GetFidSsrc(sp.first_ssrc(), &rtx_ssrc);
+  if (has_rtx) {
+    LOG(LS_INFO) << "Setting rtx ssrc " << rtx_ssrc << " for stream "
+                 << sp.first_ssrc();
+    if (engine()->vie()->rtp()->SetRemoteSSRCType(
+        channel_id, webrtc::kViEStreamTypeRtx, rtx_ssrc) != 0) {
+      LOG_RTCERR3(SetRemoteSSRCType, channel_id, webrtc::kViEStreamTypeRtx,
+                  rtx_ssrc);
+      return false;
+    }
+    rtx_to_primary_ssrc_[rtx_ssrc] = sp.first_ssrc();
+  }
   return true;
 }
 
@@ -3974,9 +3984,13 @@ int WebRtcVideoMediaChannel::GetRecvChannelNum(uint32 ssrc) {
     // Check if we have an RTX stream registered on this SSRC.
     SsrcMap::iterator rtx_it = rtx_to_primary_ssrc_.find(ssrc);
     if (rtx_it != rtx_to_primary_ssrc_.end()) {
-      it = recv_channels_.find(rtx_it->second);
-      assert(it != recv_channels_.end());
-      recv_channel = it->second->channel_id();
+      if (rtx_it->second == first_receive_ssrc_) {
+        recv_channel = vie_channel_;
+      } else {
+        it = recv_channels_.find(rtx_it->second);
+        assert(it != recv_channels_.end());
+        recv_channel = it->second->channel_id();
+      }
     }
   } else {
     recv_channel = it->second->channel_id();

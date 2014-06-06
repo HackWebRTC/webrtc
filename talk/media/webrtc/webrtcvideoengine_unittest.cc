@@ -74,7 +74,7 @@ static const unsigned int kMaxBandwidthKbps = 2000;
 static const uint32 kSsrcs1[] = {1};
 static const uint32 kSsrcs2[] = {1, 2};
 static const uint32 kSsrcs3[] = {1, 2, 3};
-static const uint32 kRtxSsrc1[] = {4};
+static const uint32 kRtxSsrcs1[] = {4};
 static const uint32 kRtxSsrcs3[] = {4, 5, 6};
 
 
@@ -750,8 +750,44 @@ TEST_F(WebRtcVideoEngineTestFake, SetRecvCodecsWithRtx) {
   EXPECT_EQ(rtx_codec.id, vie_.GetRtxRecvPayloadType(channel_num));
 }
 
+// Test that RTX packets are routed to the default video channel if
+// there's only one recv stream.
+TEST_F(WebRtcVideoEngineTestFake, TestReceiveRtxOneStream) {
+  EXPECT_TRUE(SetupEngine());
+
+  // Setup one channel with an associated RTX stream.
+  cricket::StreamParams params =
+    cricket::StreamParams::CreateLegacy(kSsrcs1[0]);
+  params.AddFidSsrc(kSsrcs1[0], kRtxSsrcs1[0]);
+  EXPECT_TRUE(channel_->AddRecvStream(params));
+  int channel_num = vie_.GetLastChannel();
+  EXPECT_EQ(static_cast<int>(kRtxSsrcs1[0]),
+            vie_.GetRemoteRtxSsrc(channel_num));
+
+  // Register codecs.
+  std::vector<cricket::VideoCodec> codec_list;
+  codec_list.push_back(kVP8Codec720p);
+  cricket::VideoCodec rtx_codec(96, "rtx", 0, 0, 0, 0);
+  rtx_codec.SetParam("apt", kVP8Codec.id);
+  codec_list.push_back(rtx_codec);
+  EXPECT_TRUE(channel_->SetRecvCodecs(codec_list));
+
+  // Construct a fake RTX packet and verify that it is passed to the
+  // right WebRTC channel.
+  const size_t kDataLength = 12;
+  uint8_t data[kDataLength];
+  memset(data, 0, sizeof(data));
+  data[0] = 0x80;
+  data[1] = rtx_codec.id;
+  talk_base::SetBE32(&data[8], kRtxSsrcs1[0]);
+  talk_base::Buffer packet(data, kDataLength);
+  talk_base::PacketTime packet_time;
+  channel_->OnPacketReceived(&packet, packet_time);
+  EXPECT_EQ(rtx_codec.id, vie_.GetLastRecvdPayloadType(channel_num));
+}
+
 // Test that RTX packets are routed to the correct video channel.
-TEST_F(WebRtcVideoEngineTestFake, TestReceiveRtx) {
+TEST_F(WebRtcVideoEngineTestFake, TestReceiveRtxThreeStreams) {
   EXPECT_TRUE(SetupEngine());
 
   // Setup three channels with associated RTX streams.
@@ -881,7 +917,7 @@ TEST_F(WebRtcVideoEngineTestFake, RecvStreamWithRtx) {
   EXPECT_TRUE(channel_->AddRecvStream(
       cricket::CreateSimWithRtxStreamParams("cname",
                                             MAKE_VECTOR(kSsrcs1),
-                                            MAKE_VECTOR(kRtxSsrc1))));
+                                            MAKE_VECTOR(kRtxSsrcs1))));
   int new_channel_num = vie_.GetLastChannel();
   EXPECT_NE(default_channel, new_channel_num);
   EXPECT_EQ(4, vie_.GetRemoteRtxSsrc(new_channel_num));
