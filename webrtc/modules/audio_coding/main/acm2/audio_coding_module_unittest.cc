@@ -17,6 +17,7 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/thread_annotations.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
@@ -113,6 +114,7 @@ class AudioCodingModuleTest : public ::testing::Test {
     rtp_utility_->Populate(&rtp_header_);
 
     input_frame_.sample_rate_hz_ = kSampleRateHz;
+    input_frame_.num_channels_ = 1;
     input_frame_.samples_per_channel_ = kSampleRateHz * 10 / 1000;  // 10 ms.
     COMPILE_ASSERT(kSampleRateHz * 10 / 1000 <= AudioFrame::kMaxDataSizeSamples,
                    audio_frame_too_small);
@@ -246,8 +248,8 @@ TEST_F(AudioCodingModuleTest, FailOnZeroDesiredFrequency) {
 
 class AudioCodingModuleMtTest : public AudioCodingModuleTest {
  protected:
-  static const int kNumPackets = 10000;
-  static const int kNumPullCalls = 10000;
+  static const int kNumPackets = 500;
+  static const int kNumPullCalls = 500;
 
   AudioCodingModuleMtTest()
       : AudioCodingModuleTest(),
@@ -270,10 +272,8 @@ class AudioCodingModuleMtTest : public AudioCodingModuleTest {
         crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
         next_insert_packet_time_ms_(0),
         fake_clock_(new SimulatedClock(0)) {
-    clock_ = fake_clock_;
+    clock_ = fake_clock_.get();
   }
-
-  ~AudioCodingModuleMtTest() {}
 
   void SetUp() {
     AudioCodingModuleTest::SetUp();
@@ -290,7 +290,9 @@ class AudioCodingModuleMtTest : public AudioCodingModuleTest {
     insert_packet_thread_->Stop();
   }
 
-  EventTypeWrapper RunTest() { return test_complete_->Wait(60000); }
+  EventTypeWrapper RunTest() {
+    return test_complete_->Wait(10 * 60 * 1000);  // 10 minutes' timeout.
+  }
 
  private:
   static bool CbSendThread(void* context) {
@@ -300,6 +302,11 @@ class AudioCodingModuleMtTest : public AudioCodingModuleTest {
   // The send thread doesn't have to care about the current simulated time,
   // since only the AcmReceiver is using the clock.
   bool CbSendImpl() {
+    SleepMs(1);
+    if (HasFatalFailure()) {
+      // End the test early if a fatal failure (ASSERT_*) has occurred.
+      test_complete_->Set();
+    }
     ++send_count_;
     InsertAudio();
     Encode();
@@ -319,6 +326,7 @@ class AudioCodingModuleMtTest : public AudioCodingModuleTest {
   }
 
   bool CbInsertPacketImpl() {
+    SleepMs(1);
     {
       CriticalSectionScoped lock(crit_sect_.get());
       if (clock_->TimeInMilliseconds() < next_insert_packet_time_ms_) {
@@ -338,6 +346,7 @@ class AudioCodingModuleMtTest : public AudioCodingModuleTest {
   }
 
   bool CbPullAudioImpl() {
+    SleepMs(1);
     {
       CriticalSectionScoped lock(crit_sect_.get());
       // Don't let the insert thread fall behind.
@@ -361,10 +370,10 @@ class AudioCodingModuleMtTest : public AudioCodingModuleTest {
   int pull_audio_count_ GUARDED_BY(crit_sect_);
   const scoped_ptr<CriticalSectionWrapper> crit_sect_;
   int64_t next_insert_packet_time_ms_ GUARDED_BY(crit_sect_);
-  SimulatedClock* fake_clock_;
+  scoped_ptr<SimulatedClock> fake_clock_;
 };
 
-TEST_F(AudioCodingModuleMtTest, DISABLED_DoTest) {
+TEST_F(AudioCodingModuleMtTest, DoTest) {
   EXPECT_EQ(kEventSignaled, RunTest());
 }
 
