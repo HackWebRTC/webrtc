@@ -172,6 +172,7 @@ def GetPreferredTryMasters(project, change):
 
   android_bots = [
       'android',
+      'android_arm64',
       'android_apk',
       'android_apk_rel',
       'android_rel',
@@ -187,7 +188,6 @@ def GetPreferredTryMasters(project, change):
       'linux_baremetal',
       'linux_memcheck',
       'linux_rel',
-      'linux_tsan',
       'linux_tsan2',
   ]
   mac_bots = [
