@@ -20,7 +20,6 @@
     ['OS=="linux" or OS=="mac" or OS=="win"', {
       'variables': {
         'command': [
-          '../testing/test_env.py',
           '<(PRODUCT_DIR)/webrtc_perf_tests<(EXECUTABLE_SUFFIX)',
         ],
         'isolate_dependency_tracked': [
@@ -28,7 +27,6 @@
           '../resources/foreman_cif.yuv',
           '../resources/paris_qcif.yuv',
           '../resources/voice_engine/audio_long16.pcm',
-          '../testing/test_env.py',
           '<(PRODUCT_DIR)/webrtc_perf_tests<(EXECUTABLE_SUFFIX)',
         ],
         'isolate_dependency_untracked': [

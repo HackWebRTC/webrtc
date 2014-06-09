@@ -702,7 +702,7 @@
             'base/scoped_autorelease_pool.mm',
           ],
           'dependencies': [
-            '../net/third_party/nss/ssl.gyp:libssl',
+            '<(DEPTH)/net/third_party/nss/ssl.gyp:libssl',
           ],
           'all_dependent_settings': {
             'xcode_settings': {

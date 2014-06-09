@@ -29,12 +29,10 @@
     ['OS=="linux" or OS=="mac" or OS=="win"', {
       'variables': {
         'command': [
-          '../testing/test_env.py',
           '<(PRODUCT_DIR)/libjingle_media_unittest<(EXECUTABLE_SUFFIX)',
         ],
         'isolate_dependency_tracked': [
           'media/testdata/captured-320x240-2s-48.frames',
-          '../testing/test_env.py',
           '<(PRODUCT_DIR)/libjingle_media_unittest<(EXECUTABLE_SUFFIX)',
         ],
         'isolate_dependency_untracked': [
