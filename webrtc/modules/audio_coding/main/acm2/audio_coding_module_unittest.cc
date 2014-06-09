@@ -8,9 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string.h>
+#include <vector>
+
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
+#include "webrtc/modules/audio_coding/neteq/tools/audio_loop.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/compile_assert.h"
@@ -20,6 +24,7 @@
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/thread_annotations.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
@@ -77,6 +82,7 @@ class PacketizationCallbackStub : public AudioPacketizationCallback {
       const RTPFragmentationHeader* fragmentation) OVERRIDE {
     CriticalSectionScoped lock(crit_sect_.get());
     ++num_calls_;
+    last_payload_vec_.assign(payload_data, payload_data + payload_len_bytes);
     return 0;
   }
 
@@ -85,8 +91,19 @@ class PacketizationCallbackStub : public AudioPacketizationCallback {
     return num_calls_;
   }
 
+  int last_payload_len_bytes() const {
+    CriticalSectionScoped lock(crit_sect_.get());
+    return last_payload_vec_.size();
+  }
+
+  void SwapBuffers(std::vector<uint8_t>* payload) {
+    CriticalSectionScoped lock(crit_sect_.get());
+    last_payload_vec_.swap(*payload);
+  }
+
  private:
   int num_calls_ GUARDED_BY(crit_sect_);
+  std::vector<uint8_t> last_payload_vec_ GUARDED_BY(crit_sect_);
   const scoped_ptr<CriticalSectionWrapper> crit_sect_;
 };
 
@@ -104,12 +121,7 @@ class AudioCodingModuleTest : public ::testing::Test {
   void SetUp() {
     acm_.reset(AudioCodingModule::Create(id_, clock_));
 
-    AudioCodingModule::Codec("L16", &codec_, kSampleRateHz, 1);
-    codec_.pltype = kPayloadType;
-
-    // Register L16 codec in ACM.
-    ASSERT_EQ(0, acm_->RegisterReceiveCodec(codec_));
-    ASSERT_EQ(0, acm_->RegisterSendCodec(codec_));
+    RegisterCodec();
 
     rtp_utility_->Populate(&rtp_header_);
 
@@ -125,26 +137,38 @@ class AudioCodingModuleTest : public ::testing::Test {
     ASSERT_EQ(0, acm_->RegisterTransportCallback(&packet_cb_));
   }
 
-  void InsertPacketAndPullAudio() {
+  virtual void RegisterCodec() {
+    AudioCodingModule::Codec("L16", &codec_, kSampleRateHz, 1);
+    codec_.pltype = kPayloadType;
+
+    // Register L16 codec in ACM.
+    ASSERT_EQ(0, acm_->RegisterReceiveCodec(codec_));
+    ASSERT_EQ(0, acm_->RegisterSendCodec(codec_));
+  }
+
+  virtual void InsertPacketAndPullAudio() {
     InsertPacket();
     PullAudio();
   }
 
-  void InsertPacket() {
+  virtual void InsertPacket() {
     const uint8_t kPayload[kPayloadSizeBytes] = {0};
     ASSERT_EQ(0,
               acm_->IncomingPacket(kPayload, kPayloadSizeBytes, rtp_header_));
     rtp_utility_->Forward(&rtp_header_);
   }
 
-  void PullAudio() {
+  virtual void PullAudio() {
     AudioFrame audio_frame;
     ASSERT_EQ(0, acm_->PlayoutData10Ms(-1, &audio_frame));
   }
 
-  void InsertAudio() { ASSERT_EQ(0, acm_->Add10MsData(input_frame_)); }
+  virtual void InsertAudio() {
+    ASSERT_EQ(0, acm_->Add10MsData(input_frame_));
+    input_frame_.timestamp_ += kNumSamples10ms;
+  }
 
-  void Encode() {
+  virtual void Encode() {
     int32_t encoded_bytes = acm_->Process();
     // Expect to get one packet with two bytes per sample, or no packet at all,
     // depending on how many 10 ms blocks go into |codec_.pacsize|.
@@ -246,6 +270,8 @@ TEST_F(AudioCodingModuleTest, FailOnZeroDesiredFrequency) {
   EXPECT_EQ(-1, acm_->PlayoutData10Ms(0, &audio_frame));
 }
 
+// A multi-threaded test for ACM. This base class is using the PCM16b 16 kHz
+// codec, while the derive class AcmIsacMtTest is using iSAC.
 class AudioCodingModuleMtTest : public AudioCodingModuleTest {
  protected:
   static const int kNumPackets = 500;
@@ -277,6 +303,10 @@ class AudioCodingModuleMtTest : public AudioCodingModuleTest {
 
   void SetUp() {
     AudioCodingModuleTest::SetUp();
+    StartThreads();
+  }
+
+  void StartThreads() {
     unsigned int thread_id = 0;
     ASSERT_TRUE(send_thread_->Start(thread_id));
     ASSERT_TRUE(insert_packet_thread_->Start(thread_id));
@@ -294,7 +324,17 @@ class AudioCodingModuleMtTest : public AudioCodingModuleTest {
     return test_complete_->Wait(10 * 60 * 1000);  // 10 minutes' timeout.
   }
 
- private:
+  virtual bool TestDone() {
+    if (packet_cb_.num_calls() > kNumPackets) {
+      CriticalSectionScoped lock(crit_sect_.get());
+      if (pull_audio_count_ > kNumPullCalls) {
+        // Both conditions for completion are met. End the test.
+        return true;
+      }
+    }
+    return false;
+  }
+
   static bool CbSendThread(void* context) {
     return reinterpret_cast<AudioCodingModuleMtTest*>(context)->CbSendImpl();
   }
@@ -310,12 +350,8 @@ class AudioCodingModuleMtTest : public AudioCodingModuleTest {
     ++send_count_;
     InsertAudio();
     Encode();
-    if (packet_cb_.num_calls() > kNumPackets) {
-      CriticalSectionScoped lock(crit_sect_.get());
-      if (pull_audio_count_ > kNumPullCalls) {
-        // Both conditions for completion are met. End the test.
-        test_complete_->Set();
-      }
+    if (TestDone()) {
+      test_complete_->Set();
     }
     return true;
   }
@@ -374,6 +410,104 @@ class AudioCodingModuleMtTest : public AudioCodingModuleTest {
 };
 
 TEST_F(AudioCodingModuleMtTest, DoTest) {
+  EXPECT_EQ(kEventSignaled, RunTest());
+}
+
+// This is a multi-threaded ACM test using iSAC. The test encodes audio
+// from a PCM file. The most recent encoded frame is used as input to the
+// receiving part. Depending on timing, it may happen that the same RTP packet
+// is inserted into the receiver multiple times, but this is a valid use-case,
+// and simplifies the test code a lot.
+class AcmIsacMtTest : public AudioCodingModuleMtTest {
+ protected:
+  static const int kNumPackets = 500;
+  static const int kNumPullCalls = 500;
+
+  AcmIsacMtTest()
+      : AudioCodingModuleMtTest(),
+        last_packet_number_(0) {}
+
+  ~AcmIsacMtTest() {}
+
+  void SetUp() {
+    AudioCodingModuleTest::SetUp();
+
+    // Set up input audio source to read from specified file, loop after 5
+    // seconds, and deliver blocks of 10 ms.
+    const std::string input_file_name =
+        webrtc::test::ResourcePath("audio_coding/speech_mono_16kHz", "pcm");
+    audio_loop_.Init(input_file_name, 5 * kSampleRateHz, kNumSamples10ms);
+
+    // Generate one packet to have something to insert.
+    int loop_counter = 0;
+    while (packet_cb_.last_payload_len_bytes() == 0) {
+      InsertAudio();
+      Encode();
+      ASSERT_LT(loop_counter++, 10);
+    }
+    // Set |last_packet_number_| to one less that |num_calls| so that the packet
+    // will be fetched in the next InsertPacket() call.
+    last_packet_number_ = packet_cb_.num_calls() - 1;
+
+    StartThreads();
+  }
+
+  virtual void RegisterCodec() {
+    COMPILE_ASSERT(kSampleRateHz == 16000, test_designed_for_isac_16khz);
+    AudioCodingModule::Codec("ISAC", &codec_, kSampleRateHz, 1);
+    codec_.pltype = kPayloadType;
+
+    // Register iSAC codec in ACM, effectively unregistering the PCM16B codec
+    // registered in AudioCodingModuleTest::SetUp();
+    ASSERT_EQ(0, acm_->RegisterReceiveCodec(codec_));
+    ASSERT_EQ(0, acm_->RegisterSendCodec(codec_));
+  }
+
+  void InsertPacket() {
+    int num_calls = packet_cb_.num_calls();  // Store locally for thread safety.
+    if (num_calls > last_packet_number_) {
+      // Get the new payload out from the callback handler.
+      // Note that since we swap buffers here instead of directly inserting
+      // a pointer to the data in |packet_cb_|, we avoid locking the callback
+      // for the duration of the IncomingPacket() call.
+      packet_cb_.SwapBuffers(&last_payload_vec_);
+      ASSERT_GT(last_payload_vec_.size(), 0u);
+      rtp_utility_->Forward(&rtp_header_);
+      last_packet_number_ = num_calls;
+    }
+    ASSERT_GT(last_payload_vec_.size(), 0u);
+    ASSERT_EQ(
+        0,
+        acm_->IncomingPacket(
+            &last_payload_vec_[0], last_payload_vec_.size(), rtp_header_));
+  }
+
+  void InsertAudio() {
+    memcpy(input_frame_.data_, audio_loop_.GetNextBlock(), kNumSamples10ms);
+    AudioCodingModuleTest::InsertAudio();
+  }
+
+  void Encode() { ASSERT_GE(acm_->Process(), 0); }
+
+  // This method is the same as AudioCodingModuleMtTest::TestDone(), but here
+  // it is using the constants defined in this class (i.e., shorter test run).
+  virtual bool TestDone() {
+    if (packet_cb_.num_calls() > kNumPackets) {
+      CriticalSectionScoped lock(crit_sect_.get());
+      if (pull_audio_count_ > kNumPullCalls) {
+        // Both conditions for completion are met. End the test.
+        return true;
+      }
+    }
+    return false;
+  }
+
+  int last_packet_number_;
+  std::vector<uint8_t> last_payload_vec_;
+  test::AudioLoop audio_loop_;
+};
+
+TEST_F(AcmIsacMtTest, DoTest) {
   EXPECT_EQ(kEventSignaled, RunTest());
 }
 
