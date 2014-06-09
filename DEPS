@@ -156,6 +156,9 @@ deps = {
 
 deps_os = {
   "win": {
+    "third_party/drmemory":
+      Var("chromium_trunk") + "/src/third_party/drmemory@275048",
+
     "third_party/winsdk_samples/src":
       (Var("googlecode_url") % "webrtc") + "/deps/third_party/winsdk_samples_v71@3145",
 
@@ -328,6 +331,17 @@ hooks = [
     "name": "binutils",
     "pattern": ".",
     "action": ["python", Var("root_dir") + "/third_party/binutils/download.py"],
+  },
+  {
+    "name": "drmemory",
+    "pattern": ".",
+    "action": [ "download_from_google_storage",
+                "--no_resume",
+                "--platform=win32",
+                "--no_auth",
+                "--bucket", "chromium-drmemory",
+                "-s", Var("root_dir") + "/third_party/drmemory/drmemory-windows-sfx.exe.sha1",
+    ],
   },
   {
     # Download test resources, i.e. video and audio files from Google Storage.
