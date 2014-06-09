@@ -129,18 +129,19 @@ void get_time(WindowsHelpTimer* help_timer, FILETIME& current_time) {
 class RealTimeClock : public Clock {
   // Return a timestamp in milliseconds relative to some arbitrary source; the
   // source is fixed for this clock.
-  virtual int64_t TimeInMilliseconds() OVERRIDE {
+  virtual int64_t TimeInMilliseconds() const OVERRIDE {
     return TickTime::MillisecondTimestamp();
   }
 
   // Return a timestamp in microseconds relative to some arbitrary source; the
   // source is fixed for this clock.
-  virtual int64_t TimeInMicroseconds() OVERRIDE {
+  virtual int64_t TimeInMicroseconds() const OVERRIDE {
     return TickTime::MicrosecondTimestamp();
   }
 
   // Retrieve an NTP absolute timestamp in seconds and fractions of a second.
-  virtual void CurrentNtp(uint32_t& seconds, uint32_t& fractions) OVERRIDE {
+  virtual void CurrentNtp(uint32_t& seconds,
+                          uint32_t& fractions) const OVERRIDE {
     timeval tv = CurrentTimeVal();
     double microseconds_in_seconds;
     Adjust(tv, &seconds, &microseconds_in_seconds);
@@ -149,7 +150,7 @@ class RealTimeClock : public Clock {
   }
 
   // Retrieve an NTP absolute timestamp in milliseconds.
-  virtual int64_t CurrentNtpInMilliseconds() OVERRIDE {
+  virtual int64_t CurrentNtpInMilliseconds() const OVERRIDE {
     timeval tv = CurrentTimeVal();
     uint32_t seconds;
     double microseconds_in_seconds;
@@ -270,24 +271,24 @@ SimulatedClock::SimulatedClock(int64_t initial_time_us)
 SimulatedClock::~SimulatedClock() {
 }
 
-int64_t SimulatedClock::TimeInMilliseconds() {
+int64_t SimulatedClock::TimeInMilliseconds() const {
   ReadLockScoped synchronize(*lock_);
   return (time_us_ + 500) / 1000;
 }
 
-int64_t SimulatedClock::TimeInMicroseconds() {
+int64_t SimulatedClock::TimeInMicroseconds() const {
   ReadLockScoped synchronize(*lock_);
   return time_us_;
 }
 
-void SimulatedClock::CurrentNtp(uint32_t& seconds, uint32_t& fractions) {
+void SimulatedClock::CurrentNtp(uint32_t& seconds, uint32_t& fractions) const {
   int64_t now_ms = TimeInMilliseconds();
   seconds = (now_ms / 1000) + kNtpJan1970;
   fractions =
       static_cast<uint32_t>((now_ms % 1000) * kMagicNtpFractionalUnit / 1000);
 }
 
-int64_t SimulatedClock::CurrentNtpInMilliseconds() {
+int64_t SimulatedClock::CurrentNtpInMilliseconds() const {
   return TimeInMilliseconds() + 1000 * static_cast<int64_t>(kNtpJan1970);
 }
 
