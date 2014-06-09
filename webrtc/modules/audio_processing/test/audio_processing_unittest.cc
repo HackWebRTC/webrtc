@@ -1369,7 +1369,7 @@ TEST_F(ApmTest, IdenticalInputChannelsResultInIdenticalOutputChannels) {
   }
 }
 
-TEST_F(ApmTest, DISABLED_ON_ANDROID(SplittingFilter)) {
+TEST_F(ApmTest, SplittingFilter) {
   // Verify the filter is not active through undistorted audio when:
   // 1. No components are enabled...
   SetFrameTo(frame_, 1000);
@@ -1417,6 +1417,11 @@ TEST_F(ApmTest, DISABLED_ON_ANDROID(SplittingFilter)) {
   // TODO(andrew): This test, and the one below, rely rather tenuously on the
   // behavior of the AEC. Think of something more robust.
   EXPECT_EQ(apm_->kNoError, apm_->echo_cancellation()->Enable(true));
+  // Make sure we have extended filter enabled. This makes sure nothing is
+  // touched until we have a farend frame.
+  Config config;
+  config.Set<DelayCorrection>(new DelayCorrection(true));
+  apm_->SetExtraOptions(config);
   SetFrameTo(frame_, 1000);
   frame_copy.CopyFrom(*frame_);
   EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(0));
