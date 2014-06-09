@@ -15,7 +15,7 @@ function failedCallback(test) {
   });
 }
 function invokeGetUserMedia(test, okCallback) {
-  getUserMedia({ video: true, audio: true }, okCallback,
+  navigator.getUserMedia({ video: true, audio: true }, okCallback,
       failedCallback(test));
 }
 
@@ -105,7 +105,7 @@ mediaStreamTest.step(function() {
     // TODO(kjellander): verify number of tracks.
     mediaStreamTest.done();
   });
-  invokeGetUserMedia(mediaStreamTest, okCallback);;
+  invokeGetUserMedia(mediaStreamTest, okCallback);
 });
 
 // 4.3 MediaStreamTrack.
@@ -158,14 +158,12 @@ function verifyTrack(type, track) {
   }, '[MediaStreamTrack (' + type + ')] onunmute EventHandler');
 
   test(function () {
-    // Missing in Chrome.
     assert_own_property(track, '_readonly');
     assert_readonly(track, '_readonly');
     assert_true(typeof track._readonly === 'boolean');
   }, '[MediaStreamTrack (' + type + ')] _readonly attribute');
 
   test(function () {
-    // Missing in Chrome.
     assert_own_property(track, 'remote');
     assert_readonly(track, 'remote');
     assert_true(typeof track.remote === 'boolean');
@@ -179,7 +177,6 @@ function verifyTrack(type, track) {
   }, '[MediaStreamTrack (' + type + ')] readyState attribute');
 
   test(function () {
-    // Missing in Chrome.
     assert_own_property(track, 'onstarted');
     assert_true(track.onstarted === null);
   }, '[MediaStreamTrack (' + type + ')] onstarted EventHandler');
@@ -190,53 +187,41 @@ function verifyTrack(type, track) {
   }, '[MediaStreamTrack (' + type + ')] onended EventHandler');
 
   test(function () {
-    // Missing in Chrome.
-    assert_inherits(track, 'getSourceInfos');
-    assert_true(typeof track.getSourceInfos === 'function');
-  }, '[MediaStreamTrack (' + type + ')]: getSourceInfos function');
-
-  test(function () {
-    // Missing in Chrome.
-    assert_inherits(track, 'constraints');
-    assert_true(typeof track.constraints === 'function');
-  }, '[MediaStreamTrack (' + type + ')]: constraints function');
-
-  test(function () {
-    // Missing in Chrome.
-    assert_inherits(track, 'states');
-    assert_true(typeof track.states === 'function');
-  }, '[MediaStreamTrack (' + type + ')]: states function');
-
-  test(function () {
-    // Missing in Chrome.
-    assert_inherits(track, 'capabilities');
+    assert_inherits(track, 'getNativeSettings');
     assert_true(typeof track.capabilities === 'function');
-  }, '[MediaStreamTrack (' + type + ')]: capabilities function');
+  }, '[MediaStreamTrack (' + type + ')]: getNativeSettings function');
 
   test(function () {
-    // Missing in Chrome.
-    assert_inherits(track, 'applyConstraints');
-    assert_true(typeof track.applyConstraints === 'function');
-  }, '[MediaStreamTrack (' + type + ')]: applyConstraints function');
-
-  test(function () {
-    // Missing in Chrome.
-    assert_own_property(track, 'onoverconstrained');
-    assert_true(track.onoverconstrained === null);
-  }, '[MediaStreamTrack (' + type + ')] onoverconstrained EventHandler');
-
-  test(function () {
-    // Missing in Chrome.
     assert_inherits(track, 'clone');
     assert_true(typeof track.clone === 'function');
   }, '[MediaStreamTrack (' + type + ')] clone function');
 
   test(function () {
-    // Missing in Chrome.
     assert_inherits(track, 'stop');
     assert_true(typeof track.stop === 'function');
   }, '[MediaStreamTrack (' + type + ')] stop function');
+
+  test(function () {
+    assert_inherits(track, 'getCapabilities');
+    assert_true(typeof track.capabilities === 'function');
+  }, '[MediaStreamTrack (' + type + ')]: getCapabilities function');
+
+  test(function () {
+    assert_inherits(track, 'getConstraints');
+    assert_true(typeof track.constraints === 'function');
+  }, '[MediaStreamTrack (' + type + ')]: getConstraints function');
+
+  test(function () {
+    assert_inherits(track, 'getSettings');
+    assert_true(typeof track.constraints === 'function');
+  }, '[MediaStreamTrack (' + type + ')]: getSettings function');
+
+  test(function () {
+    assert_inherits(track, 'applyConstraints');
+    assert_true(typeof track.applyConstraints === 'function');
+  }, '[MediaStreamTrack (' + type + ')]: applyConstraints function');
 };
+
 mediaStreamTrackTest.step(function() {
   var okCallback = mediaStreamTrackTest.step_func(function (stream) {
     verifyTrack('audio', stream.getAudioTracks()[0]);
@@ -250,11 +235,11 @@ mediaStreamTrackTest.step(function() {
   var okCallback = mediaStreamTrackTest.step_func(function (stream) {
     // Verify event handlers are working.
     var track = stream.getVideoTracks()[0];
-    track.onended = onendedCallback
+    track.onended = onEndedCallback
     track.stop();
     mediaStreamTrackTest.done();
   });
-  var onendedCallback = mediaStreamTrackTest.step_func(function () {
+  var onEndedCallback = mediaStreamTrackTest.step_func(function () {
     assert_true(track.ended);
     mediaStreamTrackTest.done();
   });
@@ -296,7 +281,7 @@ avTracksTest.step(function() {
 var createObjectURLTest = async_test('8.1 URL createObjectURL method');
 createObjectURLTest.step(function() {
   var okCallback = createObjectURLTest.step_func(function (stream) {
-    var url = webkitURL.createObjectURL(stream);
+    var url = URL.createObjectURL(stream);
     assert_true(typeof url === 'string');
     createObjectURLTest.done();
   });
@@ -363,8 +348,7 @@ function verifyVideoTagWithStream(videoTag) {
 mediaElementsTest.step(function() {
   var okCallback = mediaElementsTest.step_func(function (stream) {
     var videoTag = document.getElementById('local-view');
-    // Call the polyfill wrapper to attach the media stream to this element.
-    attachMediaStream(videoTag, stream);
+    videoTag.srcObject = stream;
     verifyVideoTagWithStream(videoTag);
     mediaElementsTest.done();
   });
@@ -381,17 +365,12 @@ getUserMediaTest.step(function() {
     getUserMediaTest.done();
   });
 
-  // boolean parameters, without failure callback:
-  getUserMedia({ video: true, audio: true }, okCallback);
-  getUserMedia({ video: true, audio: false }, okCallback);
-  getUserMedia({ video: false, audio: true }, okCallback);
-
-  // boolean parameters, with failure callback:
-  getUserMedia({ video: true, audio: true }, okCallback,
+  // All three arguments are mandatory, so pass all of them.
+  navigator.getUserMedia({ video: true, audio: true }, okCallback,
       failedCallback(getUserMediaTest));
-  getUserMedia({ video: true, audio: false }, okCallback,
+  navigator.getUserMedia({ video: true, audio: false }, okCallback,
       failedCallback(getUserMediaTest));
-  getUserMedia({ video: false, audio: true }, okCallback,
+  navigator.getUserMedia({ video: false, audio: true }, okCallback,
       failedCallback(getUserMediaTest));
 });
 
@@ -413,7 +392,8 @@ constraintsTest.step(function() {
   constraints.video.mandatory.minHeight = 480;
   constraints.video.mandatory.minFrameRate = 15;
 
-  getUserMedia(constraints, okCallback, failedCallback(constraintsTest));
+  navigator.getUserMedia(constraints, okCallback,
+                         failedCallback(constraintsTest));
 });
 
 // 11.3 NavigatorUserMediaSuccessCallback.
@@ -427,25 +407,3 @@ successCallbackTest.step(function() {
   invokeGetUserMedia(successCallbackTest, okCallback);
 });
 
-// 11.4 NavigatorUserMediaError and NavigatorUserMediaErrorCallback.
-var errorCallbackTest = async_test('11.4 NavigatorUserMediaError and ' +
-                                   'NavigatorUserMediaErrorCallback');
-errorCallbackTest.step(function() {
-  var okCallback = errorCallbackTest.step_func(function (stream) {
-    assert_unreached('Should not get a success callback');
-  });
-  var errorCallback = errorCallbackTest.step_func(function (error) {
-    assert_own_property(error, 'name');
-    assert_readonly(error.name);
-    assert_true(typeof error.name === 'string');
-    assert_equals(error.name, 'ConstraintNotSatisfiedError', 'error.name');
-    errorCallbackTest.done();
-  });
-  // Setting both audio and video to false triggers an error callback.
-  // TODO(kjellander): Figure out if there's a way in the spec to trigger an
-  // error callback.
-
-  // TODO(kjellander): Investigate why the error callback is not called when
-  // false/false is provided in Chrome.
-  getUserMedia({ video: false, audio: false }, okCallback, errorCallback);
-});
