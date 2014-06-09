@@ -18,7 +18,7 @@ extern "C" {
 
 namespace webrtc {
 
-TEST(EchoCancellationInternalTest, DISABLED_ON_ANDROID(DelayCorrection)) {
+TEST(EchoCancellationInternalTest, DelayCorrection) {
   scoped_ptr<AudioProcessing> ap(AudioProcessing::Create(0));
   EXPECT_TRUE(ap->echo_cancellation()->aec_core() == NULL);
 
