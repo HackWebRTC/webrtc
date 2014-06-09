@@ -1153,6 +1153,15 @@ class WebRtcSdpTest : public testing::Test {
        << "a=maxptime:" << params.max_ptime << "\r\n";
     sdp += os.str();
 
+    os.clear();
+    os.str("");
+    // Pl type 100 preferred.
+    os << "m=video 1 RTP/SAVPF 99 95\r\n"
+       << "a=rtpmap:99 VP8/90000\r\n"
+       << "a=rtpmap:95 RTX/90000\r\n"
+       << "a=fmtp:95 apt=99;rtx-time=1000\r\n";
+    sdp += os.str();
+
     // Deserialize
     SdpParseError error;
     EXPECT_TRUE(webrtc::SdpDeserialize(sdp, jdesc_output, &error));
@@ -1183,6 +1192,19 @@ class WebRtcSdpTest : public testing::Test {
         }
       }
     }
+
+    const ContentInfo* vc = GetFirstVideoContent(jdesc_output->description());
+    ASSERT_TRUE(vc != NULL);
+    const VideoContentDescription* vcd =
+        static_cast<const VideoContentDescription*>(vc->description);
+    ASSERT_FALSE(vcd->codecs().empty());
+    cricket::VideoCodec vp8 = vcd->codecs()[0];
+    EXPECT_EQ("VP8", vp8.name);
+    EXPECT_EQ(99, vp8.id);
+    cricket::VideoCodec rtx = vcd->codecs()[1];
+    EXPECT_EQ("RTX", rtx.name);
+    EXPECT_EQ(95, rtx.id);
+    VerifyCodecParameter(rtx.params, "apt", vp8.id);
   }
 
   void TestDeserializeRtcpFb(JsepSessionDescription* jdesc_output,

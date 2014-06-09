@@ -247,6 +247,7 @@ bool PeerConnectionFactory::Initialize_s() {
 
   channel_manager_.reset(new cricket::ChannelManager(
       webrtc_media_engine, device_manager, worker_thread_));
+  channel_manager_->SetVideoRtxEnabled(true);
   if (!channel_manager_->Init()) {
     return false;
   }
