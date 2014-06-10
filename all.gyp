@@ -8,7 +8,7 @@
 
 {
   'variables': {
-    'talk_root%': '<(DEPTH)/talk',
+    'libjingle_root%': '<(DEPTH)',
   },
   'targets': [
     {
@@ -17,9 +17,9 @@
       'dependencies': [
         'third_party/openmax_dl/dl/dl.gyp:*',
         'webrtc/webrtc.gyp:*',
-        '<(talk_root)/libjingle.gyp:*',
-        '<(talk_root)/libjingle_examples.gyp:*',
-        '<(talk_root)/libjingle_tests.gyp:*',
+        '<(libjingle_root)/talk/libjingle.gyp:*',
+        '<(libjingle_root)/talk/libjingle_examples.gyp:*',
+        '<(libjingle_root)/talk/libjingle_tests.gyp:*',
       ],
       'conditions': [
         ['OS=="android"', {
