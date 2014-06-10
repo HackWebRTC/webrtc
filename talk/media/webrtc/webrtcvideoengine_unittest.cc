@@ -2323,13 +2323,19 @@ TEST_F(WebRtcVideoMediaChannelTest, DISABLED_SendVp8HdAndReceiveAdaptedVp8Vga) {
   EXPECT_FRAME_WAIT(1, codec.width, codec.height, kTimeout);
 }
 
-// TODO(juberti): Fix this test to tolerate missing stats.
+#ifdef USE_WEBRTC_DEV_BRANCH
+TEST_F(WebRtcVideoMediaChannelTest, GetStats) {
+#else
 TEST_F(WebRtcVideoMediaChannelTest, DISABLED_GetStats) {
+#endif
   Base::GetStats();
 }
 
-// TODO(juberti): Fix this test to tolerate missing stats.
+#ifdef USE_WEBRTC_DEV_BRANCH
+TEST_F(WebRtcVideoMediaChannelTest, GetStatsMultipleRecvStreams) {
+#else
 TEST_F(WebRtcVideoMediaChannelTest, DISABLED_GetStatsMultipleRecvStreams) {
+#endif
   Base::GetStatsMultipleRecvStreams();
 }
 
