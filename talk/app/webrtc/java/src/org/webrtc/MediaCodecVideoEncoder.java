@@ -32,6 +32,7 @@ import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
 import android.media.MediaFormat;
+import android.media.MediaCodecInfo.CodecCapabilities;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -51,28 +52,49 @@ class MediaCodecVideoEncoder {
   private static final String TAG = "MediaCodecVideoEncoder";
 
   private static final int DEQUEUE_TIMEOUT = 0;  // Non-blocking, no wait.
+  private Thread mediaCodecThread;
   private MediaCodec mediaCodec;
   private ByteBuffer[] outputBuffers;
   private static final String VP8_MIME_TYPE = "video/x-vnd.on2.vp8";
-  private Thread mediaCodecThread;
+  // List of supported HW VP8 codecs.
+  private static final String[] supportedHwCodecPrefixes =
+    {"OMX.qcom.", "OMX.Nvidia." };
+  // Bitrate mode
+  private static final int VIDEO_ControlRateConstant = 2;
+  // NV12 color format supported by QCOM codec, but not declared in MediaCodec -
+  // see /hardware/qcom/media/mm-core/inc/OMX_QCOMExtns.h
+  private static final int
+    COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m = 0x7FA30C04;
+  // Allowable color formats supported by codec - in order of preference.
+  private static final int[] supportedColorList = {
+    CodecCapabilities.COLOR_FormatYUV420Planar,
+    CodecCapabilities.COLOR_FormatYUV420SemiPlanar,
+    CodecCapabilities.COLOR_QCOM_FormatYUV420SemiPlanar,
+    COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m
+  };
+  private int colorFormat;
 
   private MediaCodecVideoEncoder() {}
 
-  private static boolean isPlatformSupported() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT)
-      return false; // MediaCodec.setParameters is missing.
-
-    if (!Build.MODEL.equals("Nexus 5")) {
-      // TODO(fischman): Currently the N5 is the only >=KK device containing a
-      // HW VP8 encoder, so don't bother with any others.  When this list grows,
-      // update the KEY_COLOR_FORMAT logic below.
-      return false;
+  // Helper struct for findVp8HwEncoder() below.
+  private static class EncoderProperties {
+    EncoderProperties(String codecName, int colorFormat) {
+      this.codecName = codecName;
+      this.colorFormat = colorFormat;
     }
+    public final String codecName; // OpenMax component name for VP8 codec.
+    public final int colorFormat;  // Color format supported by codec.
+  }
+
+  private static EncoderProperties findVp8HwEncoder() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT)
+      return null; // MediaCodec.setParameters is missing.
 
     for (int i = 0; i < MediaCodecList.getCodecCount(); ++i) {
       MediaCodecInfo info = MediaCodecList.getCodecInfoAt(i);
-      if (!info.isEncoder())
+      if (!info.isEncoder()) {
         continue;
+      }
       String name = null;
       for (String mimeType : info.getSupportedTypes()) {
         if (mimeType.equals(VP8_MIME_TYPE)) {
@@ -80,18 +102,39 @@ class MediaCodecVideoEncoder {
           break;
         }
       }
-      if (name == null)
+      if (name == null) {
         continue;  // No VP8 support in this codec; try the next one.
-      if (name.startsWith("OMX.google.") || name.startsWith("OMX.SEC.")) {
-        // SW encoder is highest priority VP8 codec; unlikely we can get HW.
-        // "OMX.google." is known-software, while "OMX.SEC." is sometimes SW &
-        // sometimes HW, although not VP8 HW in any known device, so treat as SW
-        // here (b/9735008 #20).
-        return false;
       }
-      return true;  // Yay, passed the gauntlet of pre-requisites!
+      Log.d(TAG, "Found candidate encoder " + name);
+      CodecCapabilities capabilities =
+          info.getCapabilitiesForType(VP8_MIME_TYPE);
+      for (int colorFormat : capabilities.colorFormats) {
+        Log.d(TAG, "   Color: 0x" + Integer.toHexString(colorFormat));
+      }
+
+      // Check if this is supported HW encoder
+      for (String hwCodecPrefix : supportedHwCodecPrefixes) {
+        if (!name.startsWith(hwCodecPrefix)) {
+          continue;
+        }
+        // Check if codec supports either yuv420 or nv12
+        for (int supportedColorFormat : supportedColorList) {
+          for (int codecColorFormat : capabilities.colorFormats) {
+            if (codecColorFormat == supportedColorFormat) {
+              // Found supported HW VP8 encoder
+              Log.d(TAG, "Found target encoder " + name +
+                  ". Color: 0x" + Integer.toHexString(codecColorFormat));
+              return new EncoderProperties(name, codecColorFormat);
+            }
+          }
+        }
+      }
     }
-    return false;  // No VP8 encoder.
+    return null;  // No HW VP8 encoder.
+  }
+
+  private static boolean isPlatformSupported() {
+    return findVp8HwEncoder() != null;
   }
 
   private static int bitRate(int kbps) {
@@ -113,32 +156,39 @@ class MediaCodecVideoEncoder {
 
   // Return the array of input buffers, or null on failure.
   private ByteBuffer[] initEncode(int width, int height, int kbps) {
+    Log.d(TAG, "initEncode: " + width + " x " + height +
+        ". @ " + kbps + " kbps. Color: 0x" + Integer.toHexString(colorFormat));
     if (mediaCodecThread != null) {
       throw new RuntimeException("Forgot to release()?");
+    }
+    EncoderProperties properties = findVp8HwEncoder();
+    if (properties == null) {
+      throw new RuntimeException("Can not find HW VP8 encoder");
     }
     mediaCodecThread = Thread.currentThread();
     try {
       MediaFormat format =
           MediaFormat.createVideoFormat(VP8_MIME_TYPE, width, height);
       format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate(kbps));
-      // Arbitrary choices.
+      format.setInteger("bitrate-mode", VIDEO_ControlRateConstant);
+      format.setInteger(MediaFormat.KEY_COLOR_FORMAT, properties.colorFormat);
+      // Default WebRTC settings
       format.setInteger(MediaFormat.KEY_FRAME_RATE, 30);
-      format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 450);
-      // TODO(fischman): when there is more than just the N5 with a VP8 HW
-      // encoder, negotiate input colorformats with the codec.  For now
-      // hard-code qcom's supported value.  See isPlatformSupported above.
-      format.setInteger(
-          MediaFormat.KEY_COLOR_FORMAT,
-          MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar);
-      mediaCodec = MediaCodec.createEncoderByType(VP8_MIME_TYPE);
+      format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 100);
+      Log.d(TAG, "  Format: " + format);
+      mediaCodec = MediaCodec.createByCodecName(properties.codecName);
       if (mediaCodec == null) {
         return null;
       }
       mediaCodec.configure(
           format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
       mediaCodec.start();
+      colorFormat = properties.colorFormat;
       outputBuffers = mediaCodec.getOutputBuffers();
-      return mediaCodec.getInputBuffers();
+      ByteBuffer[] inputBuffers = mediaCodec.getInputBuffers();
+      Log.d(TAG, "Input buffers: " + inputBuffers.length +
+          ". Output buffers: " + outputBuffers.length);
+      return inputBuffers;
     } catch (IllegalStateException e) {
       Log.e(TAG, "initEncode failed", e);
       return null;
@@ -155,6 +205,7 @@ class MediaCodecVideoEncoder {
         // indicate this in queueInputBuffer() below and guarantee _this_ frame
         // be encoded as a key frame, but sadly that flag is ignored.  Instead,
         // we request a key frame "soon".
+        Log.d(TAG, "Sync frame request");
         Bundle b = new Bundle();
         b.putInt(MediaCodec.PARAMETER_KEY_REQUEST_SYNC_FRAME, 0);
         mediaCodec.setParameters(b);
@@ -170,6 +221,7 @@ class MediaCodecVideoEncoder {
   }
 
   private void release() {
+    Log.d(TAG, "release");
     checkOnMediaCodecThread();
     try {
       mediaCodec.stop();
@@ -182,13 +234,14 @@ class MediaCodecVideoEncoder {
   }
 
   private boolean setRates(int kbps, int frameRateIgnored) {
+    // frameRate argument is ignored - HW encoder is supposed to use
+    // video frame timestamps for bit allocation.
     checkOnMediaCodecThread();
+    Log.v(TAG, "setRates: " + kbps + " kbps");
     try {
       Bundle params = new Bundle();
       params.putInt(MediaCodec.PARAMETER_KEY_VIDEO_BITRATE, bitRate(kbps));
       mediaCodec.setParameters(params);
-      // Sure would be nice to honor the frameRate argument to this function,
-      // but MediaCodec doesn't expose that particular knob.  b/12977358
       return true;
     } catch (IllegalStateException e) {
       Log.e(TAG, "setRates failed", e);
