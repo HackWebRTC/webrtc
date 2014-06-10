@@ -63,16 +63,18 @@ const float kNormalUseStdDevMs = 20.0f;
 
 struct CpuOveruseOptions {
   CpuOveruseOptions()
-    : enable_capture_jitter_method(true),
-      low_capture_jitter_threshold_ms(kNormalUseStdDevMs),
-      high_capture_jitter_threshold_ms(kOveruseStdDevMs),
-      enable_encode_usage_method(false),
-      low_encode_usage_threshold_percent(60),
-      high_encode_usage_threshold_percent(90),
-      frame_timeout_interval_ms(1500),
-      min_frame_samples(120),
-      min_process_count(3),
-      high_threshold_consecutive_count(2) {}
+      : enable_capture_jitter_method(true),
+        low_capture_jitter_threshold_ms(kNormalUseStdDevMs),
+        high_capture_jitter_threshold_ms(kOveruseStdDevMs),
+        enable_encode_usage_method(false),
+        low_encode_usage_threshold_percent(60),
+        high_encode_usage_threshold_percent(90),
+        low_encode_time_rsd_threshold(0),
+        high_encode_time_rsd_threshold(0),
+        frame_timeout_interval_ms(1500),
+        min_frame_samples(120),
+        min_process_count(3),
+        high_threshold_consecutive_count(2) {}
 
   // Method based on inter-arrival jitter of captured frames.
   bool enable_capture_jitter_method;
@@ -82,6 +84,8 @@ struct CpuOveruseOptions {
   bool enable_encode_usage_method;
   int low_encode_usage_threshold_percent;  // Threshold for triggering underuse.
   int high_encode_usage_threshold_percent; // Threshold for triggering overuse.
+  int low_encode_time_rsd_threshold;   // Threshold for triggering underuse.
+  int high_encode_time_rsd_threshold;  // Threshold for triggering overuse.
   // General settings.
   int frame_timeout_interval_ms;  // The maximum allowed interval between two
                                   // frames before resetting estimations.
@@ -102,6 +106,8 @@ struct CpuOveruseOptions {
         o.low_encode_usage_threshold_percent &&
         high_encode_usage_threshold_percent ==
         o.high_encode_usage_threshold_percent &&
+        low_encode_time_rsd_threshold == o.low_encode_time_rsd_threshold &&
+        high_encode_time_rsd_threshold == o.high_encode_time_rsd_threshold &&
         frame_timeout_interval_ms == o.frame_timeout_interval_ms &&
         min_frame_samples == o.min_frame_samples &&
         min_process_count == o.min_process_count &&
@@ -111,16 +117,18 @@ struct CpuOveruseOptions {
 
 struct CpuOveruseMetrics {
   CpuOveruseMetrics()
-    : capture_jitter_ms(-1),
-      avg_encode_time_ms(-1),
-      encode_usage_percent(-1),
-      capture_queue_delay_ms_per_s(-1) {}
+      : capture_jitter_ms(-1),
+        avg_encode_time_ms(-1),
+        encode_usage_percent(-1),
+        encode_rsd(-1),
+        capture_queue_delay_ms_per_s(-1) {}
 
   int capture_jitter_ms;  // The current estimated jitter in ms based on
                           // incoming captured frames.
   int avg_encode_time_ms;   // The average encode time in ms.
   int encode_usage_percent; // The average encode time divided by the average
                             // time difference between incoming captured frames.
+  int encode_rsd;           // The relative std dev of encode time of frames.
   int capture_queue_delay_ms_per_s;  // The current time delay between an
                                      // incoming captured frame until the frame
                                      // is being processed. The delay is
