@@ -167,10 +167,10 @@ int WebRtcNs_set_policy_core(NSinst_t* inst, int mode);
 
 
 int WebRtcNs_ProcessCore(NSinst_t* inst,
-                         short* inFrameLow,
-                         short* inFrameHigh,
-                         short* outFrameLow,
-                         short* outFrameHigh);
+                         float* inFrameLow,
+                         float* inFrameHigh,
+                         float* outFrameLow,
+                         float* outFrameHigh);
 
 
 #ifdef __cplusplus

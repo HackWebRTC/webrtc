@@ -99,10 +99,10 @@ int WebRtcNs_set_policy(NsHandle* NS_inst, int mode);
  *                        -1 - Error
  */
 int WebRtcNs_Process(NsHandle* NS_inst,
-                     short* spframe,
-                     short* spframe_H,
-                     short* outframe,
-                     short* outframe_H);
+                     float* spframe,
+                     float* spframe_H,
+                     float* outframe,
+                     float* outframe_H);
 
 /* Returns the internally used prior speech probability of the current frame.
  * There is a frequency bin based one as well, with which this should not be

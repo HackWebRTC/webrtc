@@ -715,10 +715,10 @@ void WebRtcNs_SpeechNoiseProb(NSinst_t* inst, float* probSpeechFinal, float* snr
 }
 
 int WebRtcNs_ProcessCore(NSinst_t* inst,
-                         short* speechFrame,
-                         short* speechFrameHB,
-                         short* outFrame,
-                         short* outFrameHB) {
+                         float* speechFrame,
+                         float* speechFrameHB,
+                         float* outFrame,
+                         float* outFrameHB) {
   // main routine for noise reduction
 
   int     flagHB = 0;
@@ -731,8 +731,8 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
   float   snrPrior, currentEstimateStsa;
   float   tmpFloat1, tmpFloat2, tmpFloat3, probSpeech, probNonSpeech;
   float   gammaNoiseTmp, gammaNoiseOld;
-  float   noiseUpdateTmp, fTmp, dTmp;
-  float   fin[BLOCKL_MAX], fout[BLOCKL_MAX];
+  float   noiseUpdateTmp, fTmp;
+  float   fout[BLOCKL_MAX];
   float   winData[ANAL_BLOCKL_MAX];
   float   magn[HALF_ANAL_BLOCKL], noise[HALF_ANAL_BLOCKL];
   float   theFilter[HALF_ANAL_BLOCKL], theFilterTmp[HALF_ANAL_BLOCKL];
@@ -775,26 +775,17 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
   updateParsFlag = inst->modelUpdatePars[0];
   //
 
-  //for LB do all processing
-  // convert to float
-  for (i = 0; i < inst->blockLen10ms; i++) {
-    fin[i] = (float)speechFrame[i];
-  }
   // update analysis buffer for L band
   memcpy(inst->dataBuf, inst->dataBuf + inst->blockLen10ms,
          sizeof(float) * (inst->anaLen - inst->blockLen10ms));
-  memcpy(inst->dataBuf + inst->anaLen - inst->blockLen10ms, fin,
+  memcpy(inst->dataBuf + inst->anaLen - inst->blockLen10ms, speechFrame,
          sizeof(float) * inst->blockLen10ms);
 
   if (flagHB == 1) {
-    // convert to float
-    for (i = 0; i < inst->blockLen10ms; i++) {
-      fin[i] = (float)speechFrameHB[i];
-    }
     // update analysis buffer for H band
     memcpy(inst->dataBufHB, inst->dataBufHB + inst->blockLen10ms,
            sizeof(float) * (inst->anaLen - inst->blockLen10ms));
-    memcpy(inst->dataBufHB + inst->anaLen - inst->blockLen10ms, fin,
+    memcpy(inst->dataBufHB + inst->anaLen - inst->blockLen10ms, speechFrameHB,
            sizeof(float) * inst->blockLen10ms);
   }
 
@@ -833,30 +824,16 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
           inst->outBuf[i] = fout[i + inst->blockLen10ms];
         }
       }
-      // convert to short
-      for (i = 0; i < inst->blockLen10ms; i++) {
-        dTmp = fout[i];
-        if (dTmp < WEBRTC_SPL_WORD16_MIN) {
-          dTmp = WEBRTC_SPL_WORD16_MIN;
-        } else if (dTmp > WEBRTC_SPL_WORD16_MAX) {
-          dTmp = WEBRTC_SPL_WORD16_MAX;
-        }
-        outFrame[i] = (short)dTmp;
-      }
+      for (i = 0; i < inst->blockLen10ms; ++i)
+        outFrame[i] = WEBRTC_SPL_SAT(
+            WEBRTC_SPL_WORD16_MAX, fout[i], WEBRTC_SPL_WORD16_MIN);
 
       // for time-domain gain of HB
-      if (flagHB == 1) {
-        for (i = 0; i < inst->blockLen10ms; i++) {
-          dTmp = inst->dataBufHB[i];
-          if (dTmp < WEBRTC_SPL_WORD16_MIN) {
-            dTmp = WEBRTC_SPL_WORD16_MIN;
-          } else if (dTmp > WEBRTC_SPL_WORD16_MAX) {
-            dTmp = WEBRTC_SPL_WORD16_MAX;
-          }
-          outFrameHB[i] = (short)dTmp;
-        }
-      }  // end of H band gain computation
-      //
+      if (flagHB == 1)
+        for (i = 0; i < inst->blockLen10ms; ++i)
+          outFrameHB[i] = WEBRTC_SPL_SAT(
+              WEBRTC_SPL_WORD16_MAX, inst->dataBufHB[i], WEBRTC_SPL_WORD16_MIN);
+
       return 0;
     }
 
@@ -1239,16 +1216,9 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
     inst->outLen -= inst->blockLen10ms;
   }
 
-  // convert to short
-  for (i = 0; i < inst->blockLen10ms; i++) {
-    dTmp = fout[i];
-    if (dTmp < WEBRTC_SPL_WORD16_MIN) {
-      dTmp = WEBRTC_SPL_WORD16_MIN;
-    } else if (dTmp > WEBRTC_SPL_WORD16_MAX) {
-      dTmp = WEBRTC_SPL_WORD16_MAX;
-    }
-    outFrame[i] = (short)dTmp;
-  }
+  for (i = 0; i < inst->blockLen10ms; ++i)
+    outFrame[i] = WEBRTC_SPL_SAT(
+        WEBRTC_SPL_WORD16_MAX, fout[i], WEBRTC_SPL_WORD16_MIN);
 
   // for time-domain gain of HB
   if (flagHB == 1) {
@@ -1289,13 +1259,9 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
     }
     //apply gain
     for (i = 0; i < inst->blockLen10ms; i++) {
-      dTmp = gainTimeDomainHB * inst->dataBufHB[i];
-      if (dTmp < WEBRTC_SPL_WORD16_MIN) {
-        dTmp = WEBRTC_SPL_WORD16_MIN;
-      } else if (dTmp > WEBRTC_SPL_WORD16_MAX) {
-        dTmp = WEBRTC_SPL_WORD16_MAX;
-      }
-      outFrameHB[i] = (short)dTmp;
+      float o = gainTimeDomainHB * inst->dataBufHB[i];
+      outFrameHB[i] = WEBRTC_SPL_SAT(
+          WEBRTC_SPL_WORD16_MAX, o, WEBRTC_SPL_WORD16_MIN);
     }
   }  // end of H band gain computation
   //

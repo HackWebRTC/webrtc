@@ -68,10 +68,10 @@ int NoiseSuppressionImpl::ProcessCaptureAudio(AudioBuffer* audio) {
     Handle* my_handle = static_cast<Handle*>(handle(i));
 #if defined(WEBRTC_NS_FLOAT)
     err = WebRtcNs_Process(static_cast<Handle*>(handle(i)),
-                           audio->low_pass_split_data(i),
-                           audio->high_pass_split_data(i),
-                           audio->low_pass_split_data(i),
-                           audio->high_pass_split_data(i));
+                           audio->low_pass_split_data_f(i),
+                           audio->high_pass_split_data_f(i),
+                           audio->low_pass_split_data_f(i),
+                           audio->high_pass_split_data_f(i));
 #elif defined(WEBRTC_NS_FIXED)
     err = WebRtcNsx_Process(static_cast<Handle*>(handle(i)),
                             audio->low_pass_split_data(i),
