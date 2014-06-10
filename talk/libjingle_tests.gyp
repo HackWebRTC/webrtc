@@ -301,6 +301,7 @@
         # 'media/devices/devicemanager_unittest.cc',
         'media/webrtc/webrtcvideoengine_unittest.cc',
         'media/webrtc/webrtcvideoengine2_unittest.cc',
+        'media/webrtc/webrtcvideoengine2_unittest.h',
         'media/webrtc/webrtcvoiceengine_unittest.cc',
       ],
       'conditions': [

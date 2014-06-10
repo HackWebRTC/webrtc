@@ -26,13 +26,14 @@
  */
 
 #include <map>
+#include <vector>
 
 #include "talk/base/gunit.h"
 #include "talk/media/base/testutils.h"
 #include "talk/media/base/videoengine_unittest.h"
 #include "talk/media/webrtc/webrtcvideoengine2.h"
+#include "talk/media/webrtc/webrtcvideoengine2_unittest.h"
 #include "talk/media/webrtc/webrtcvideochannelfactory.h"
-#include "webrtc/call.h"
 
 namespace {
 static const cricket::VideoCodec kVp8Codec720p(100, "VP8", 1280, 720, 30, 0);
@@ -50,234 +51,228 @@ static const uint32 kRtxSsrcs1[] = {4};
 }  // namespace
 
 namespace cricket {
-class FakeVideoSendStream : public webrtc::VideoSendStream {
- public:
-  FakeVideoSendStream(const webrtc::VideoSendStream::Config& config,
-                      const std::vector<webrtc::VideoStream>& video_streams)
-      : sending_(false), config_(config), video_streams_(video_streams) {}
+FakeVideoSendStream::FakeVideoSendStream(
+    const webrtc::VideoSendStream::Config& config,
+    const std::vector<webrtc::VideoStream>& video_streams)
+    : sending_(false), config_(config), video_streams_(video_streams) {
+}
 
-  webrtc::VideoSendStream::Config GetConfig() { return config_; }
-  std::vector<webrtc::VideoStream> GetVideoStreams() { return video_streams_; }
+webrtc::VideoSendStream::Config FakeVideoSendStream::GetConfig() {
+  return config_;
+}
 
-  bool IsSending() { return sending_; }
+std::vector<webrtc::VideoStream> FakeVideoSendStream::GetVideoStreams() {
+  return video_streams_;
+}
 
- private:
-  virtual webrtc::VideoSendStream::Stats GetStats() const OVERRIDE {
-    return webrtc::VideoSendStream::Stats();
-  }
+bool FakeVideoSendStream::IsSending() {
+  return sending_;
+}
 
-  virtual bool ReconfigureVideoEncoder(
-      const std::vector<webrtc::VideoStream>& streams,
-      const void* encoder_specific) OVERRIDE {
-    video_streams_ = streams;
-    return true;
-  }
+webrtc::VideoSendStream::Stats FakeVideoSendStream::GetStats() const {
+  return webrtc::VideoSendStream::Stats();
+}
 
-  virtual webrtc::VideoSendStreamInput* Input() OVERRIDE {
-    // TODO(pbos): Fix.
-    return NULL;
-  }
+bool FakeVideoSendStream::ReconfigureVideoEncoder(
+    const std::vector<webrtc::VideoStream>& streams,
+    const void* encoder_specific) {
+  video_streams_ = streams;
+  return true;
+}
 
-  virtual void Start() OVERRIDE { sending_ = true; }
+webrtc::VideoSendStreamInput* FakeVideoSendStream::Input() {
+  // TODO(pbos): Fix.
+  return NULL;
+}
 
-  virtual void Stop() OVERRIDE { sending_ = false; }
+void FakeVideoSendStream::Start() {
+  sending_ = true;
+}
 
-  bool sending_;
-  webrtc::VideoSendStream::Config config_;
-  std::vector<webrtc::VideoStream> video_streams_;
-};
+void FakeVideoSendStream::Stop() {
+  sending_ = false;
+}
 
-class FakeVideoReceiveStream : public webrtc::VideoReceiveStream {
- public:
-  explicit FakeVideoReceiveStream(
-      const webrtc::VideoReceiveStream::Config& config)
-      : config_(config), receiving_(false) {}
+FakeVideoReceiveStream::FakeVideoReceiveStream(
+    const webrtc::VideoReceiveStream::Config& config)
+    : config_(config), receiving_(false) {
+}
 
-  webrtc::VideoReceiveStream::Config GetConfig() { return config_; }
+webrtc::VideoReceiveStream::Config FakeVideoReceiveStream::GetConfig() {
+  return config_;
+}
 
- private:
-  virtual webrtc::VideoReceiveStream::Stats GetStats() const OVERRIDE {
-    return webrtc::VideoReceiveStream::Stats();
-  }
+webrtc::VideoReceiveStream::Stats FakeVideoReceiveStream::GetStats() const {
+  return webrtc::VideoReceiveStream::Stats();
+}
 
-  virtual void Start() OVERRIDE { receiving_ = true; }
-  virtual void Stop() OVERRIDE { receiving_ = false; }
-  virtual void GetCurrentReceiveCodec(webrtc::VideoCodec* codec) OVERRIDE {}
+void FakeVideoReceiveStream::Start() {
+  receiving_ = true;
+}
+void FakeVideoReceiveStream::Stop() {
+  receiving_ = false;
+}
+void FakeVideoReceiveStream::GetCurrentReceiveCodec(webrtc::VideoCodec* codec) {
+}
 
-  webrtc::VideoReceiveStream::Config config_;
-  bool receiving_;
-};
+FakeCall::FakeCall() { SetVideoCodecs(GetDefaultVideoCodecs()); }
 
-class FakeCall : public webrtc::Call {
- public:
-  FakeCall() { SetVideoCodecs(GetDefaultVideoCodecs()); }
+FakeCall::~FakeCall() {
+  EXPECT_EQ(0u, video_send_streams_.size());
+  EXPECT_EQ(0u, video_receive_streams_.size());
+}
 
-  ~FakeCall() {
-    EXPECT_EQ(0u, video_send_streams_.size());
-    EXPECT_EQ(0u, video_receive_streams_.size());
-  }
+void FakeCall::SetVideoCodecs(const std::vector<webrtc::VideoCodec> codecs) {
+  codecs_ = codecs;
+}
 
-  void SetVideoCodecs(const std::vector<webrtc::VideoCodec> codecs) {
-    codecs_ = codecs;
-  }
+std::vector<FakeVideoSendStream*> FakeCall::GetVideoSendStreams() {
+  return video_send_streams_;
+}
 
-  std::vector<FakeVideoSendStream*> GetVideoSendStreams() {
-    return video_send_streams_;
-  }
+std::vector<FakeVideoReceiveStream*> FakeCall::GetVideoReceiveStreams() {
+  return video_receive_streams_;
+}
 
-  std::vector<FakeVideoReceiveStream*> GetVideoReceiveStreams() {
-    return video_receive_streams_;
-  }
+webrtc::VideoCodec FakeCall::GetEmptyVideoCodec() {
+  webrtc::VideoCodec codec;
+  codec.minBitrate = 300;
+  codec.startBitrate = 800;
+  codec.maxBitrate = 1500;
+  codec.maxFramerate = 10;
+  codec.width = 640;
+  codec.height = 480;
+  codec.qpMax = 56;
 
-  webrtc::VideoCodec GetEmptyVideoCodec() {
-    webrtc::VideoCodec codec;
-    codec.minBitrate = 300;
-    codec.startBitrate = 800;
-    codec.maxBitrate = 1500;
-    codec.maxFramerate = 10;
-    codec.width = 640;
-    codec.height = 480;
-    codec.qpMax = 56;
+  return codec;
+}
 
-    return codec;
-  }
+webrtc::VideoCodec FakeCall::GetVideoCodecVp8() {
+  webrtc::VideoCodec vp8_codec = GetEmptyVideoCodec();
+  vp8_codec.codecType = webrtc::kVideoCodecVP8;
+  strcpy(vp8_codec.plName, kVp8Codec.name.c_str());
+  vp8_codec.plType = kVp8Codec.id;
 
-  webrtc::VideoCodec GetVideoCodecVp8() {
-    webrtc::VideoCodec vp8_codec = GetEmptyVideoCodec();
-    vp8_codec.codecType = webrtc::kVideoCodecVP8;
-    strcpy(vp8_codec.plName, kVp8Codec.name.c_str());
-    vp8_codec.plType = kVp8Codec.id;
+  return vp8_codec;
+}
 
-    return vp8_codec;
-  }
+webrtc::VideoCodec FakeCall::GetVideoCodecVp9() {
+  webrtc::VideoCodec vp9_codec = GetEmptyVideoCodec();
+  // TODO(pbos): Add a correct codecType when webrtc has one.
+  vp9_codec.codecType = webrtc::kVideoCodecVP8;
+  strcpy(vp9_codec.plName, kVp9Codec.name.c_str());
+  vp9_codec.plType = kVp9Codec.id;
 
-  webrtc::VideoCodec GetVideoCodecVp9() {
-    webrtc::VideoCodec vp9_codec = GetEmptyVideoCodec();
-    // TODO(pbos): Add a correct codecType when webrtc has one.
-    vp9_codec.codecType = webrtc::kVideoCodecVP8;
-    strcpy(vp9_codec.plName, kVp9Codec.name.c_str());
-    vp9_codec.plType = kVp9Codec.id;
+  return vp9_codec;
+}
 
-    return vp9_codec;
-  }
+std::vector<webrtc::VideoCodec> FakeCall::GetDefaultVideoCodecs() {
+  std::vector<webrtc::VideoCodec> codecs;
+  codecs.push_back(GetVideoCodecVp8());
+  //    codecs.push_back(GetVideoCodecVp9());
 
-  std::vector<webrtc::VideoCodec> GetDefaultVideoCodecs() {
-    std::vector<webrtc::VideoCodec> codecs;
-    codecs.push_back(GetVideoCodecVp8());
-    //    codecs.push_back(GetVideoCodecVp9());
+  return codecs;
+}
 
-    return codecs;
-  }
+webrtc::VideoSendStream::Config FakeCall::GetDefaultSendConfig() {
+  webrtc::VideoSendStream::Config config;
+  // TODO(pbos): Encoder settings.
+  //    config.codec = GetVideoCodecVp8();
+  return config;
+}
 
- private:
-  virtual webrtc::VideoSendStream::Config GetDefaultSendConfig() OVERRIDE {
-    webrtc::VideoSendStream::Config config;
-    // TODO(pbos): Encoder settings.
-    //    config.codec = GetVideoCodecVp8();
-    return config;
-  }
+webrtc::VideoSendStream* FakeCall::CreateVideoSendStream(
+    const webrtc::VideoSendStream::Config& config,
+    const std::vector<webrtc::VideoStream>& video_streams,
+    const void* encoder_settings) {
+  FakeVideoSendStream* fake_stream =
+      new FakeVideoSendStream(config, video_streams);
+  video_send_streams_.push_back(fake_stream);
+  return fake_stream;
+}
 
-  virtual webrtc::VideoSendStream* CreateVideoSendStream(
-      const webrtc::VideoSendStream::Config& config,
-      const std::vector<webrtc::VideoStream>& video_streams,
-      const void* encoder_settings) OVERRIDE {
-    FakeVideoSendStream* fake_stream =
-        new FakeVideoSendStream(config, video_streams);
-    video_send_streams_.push_back(fake_stream);
-    return fake_stream;
-  }
-
-  virtual void DestroyVideoSendStream(webrtc::VideoSendStream* send_stream)
-      OVERRIDE {
-    FakeVideoSendStream* fake_stream =
-        static_cast<FakeVideoSendStream*>(send_stream);
-    for (size_t i = 0; i < video_send_streams_.size(); ++i) {
-      if (video_send_streams_[i] == fake_stream) {
-        delete video_send_streams_[i];
-        video_send_streams_.erase(video_send_streams_.begin() + i);
-        return;
-      }
+void FakeCall::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
+  FakeVideoSendStream* fake_stream =
+      static_cast<FakeVideoSendStream*>(send_stream);
+  for (size_t i = 0; i < video_send_streams_.size(); ++i) {
+    if (video_send_streams_[i] == fake_stream) {
+      delete video_send_streams_[i];
+      video_send_streams_.erase(video_send_streams_.begin() + i);
+      return;
     }
-    ADD_FAILURE() << "DestroyVideoSendStream called with unknown paramter.";
   }
+  ADD_FAILURE() << "DestroyVideoSendStream called with unknown paramter.";
+}
 
-  virtual webrtc::VideoReceiveStream::Config GetDefaultReceiveConfig()
-      OVERRIDE {
-    return webrtc::VideoReceiveStream::Config();
-  }
+webrtc::VideoReceiveStream::Config FakeCall::GetDefaultReceiveConfig() {
+  return webrtc::VideoReceiveStream::Config();
+}
 
-  virtual webrtc::VideoReceiveStream* CreateVideoReceiveStream(
-      const webrtc::VideoReceiveStream::Config& config) OVERRIDE {
-    video_receive_streams_.push_back(new FakeVideoReceiveStream(config));
-    return video_receive_streams_[video_receive_streams_.size() - 1];
-  }
+webrtc::VideoReceiveStream* FakeCall::CreateVideoReceiveStream(
+    const webrtc::VideoReceiveStream::Config& config) {
+  video_receive_streams_.push_back(new FakeVideoReceiveStream(config));
+  return video_receive_streams_[video_receive_streams_.size() - 1];
+}
 
-  virtual void DestroyVideoReceiveStream(
-      webrtc::VideoReceiveStream* receive_stream) OVERRIDE {
-    FakeVideoReceiveStream* fake_stream =
-        static_cast<FakeVideoReceiveStream*>(receive_stream);
-    for (size_t i = 0; i < video_receive_streams_.size(); ++i) {
-      if (video_receive_streams_[i] == fake_stream) {
-        delete video_receive_streams_[i];
-        video_receive_streams_.erase(video_receive_streams_.begin() + i);
-        return;
-      }
+void FakeCall::DestroyVideoReceiveStream(
+    webrtc::VideoReceiveStream* receive_stream) {
+  FakeVideoReceiveStream* fake_stream =
+      static_cast<FakeVideoReceiveStream*>(receive_stream);
+  for (size_t i = 0; i < video_receive_streams_.size(); ++i) {
+    if (video_receive_streams_[i] == fake_stream) {
+      delete video_receive_streams_[i];
+      video_receive_streams_.erase(video_receive_streams_.begin() + i);
+      return;
     }
-    ADD_FAILURE() << "DestroyVideoReceiveStream called with unknown paramter.";
   }
+  ADD_FAILURE() << "DestroyVideoReceiveStream called with unknown paramter.";
+}
 
-  virtual webrtc::PacketReceiver* Receiver() OVERRIDE {
-    // TODO(pbos): Fix this.
-    return NULL;
-  }
+webrtc::PacketReceiver* FakeCall::Receiver() {
+  // TODO(pbos): Fix this.
+  return NULL;
+}
 
-  virtual uint32_t SendBitrateEstimate() OVERRIDE { return 0; }
+uint32_t FakeCall::SendBitrateEstimate() {
+  return 0;
+}
 
-  virtual uint32_t ReceiveBitrateEstimate() OVERRIDE { return 0; }
+uint32_t FakeCall::ReceiveBitrateEstimate() {
+  return 0;
+}
 
- private:
-  std::vector<webrtc::VideoCodec> codecs_;
-  std::vector<FakeVideoSendStream*> video_send_streams_;
-  std::vector<FakeVideoReceiveStream*> video_receive_streams_;
-};
+FakeWebRtcVideoChannel2::FakeWebRtcVideoChannel2(
+    FakeCall* call,
+    WebRtcVideoEngine2* engine,
+    VoiceMediaChannel* voice_channel)
+    : WebRtcVideoChannel2(call, engine, engine->GetVideoEncoderFactory()),
+      fake_call_(call),
+      voice_channel_(voice_channel) {
+}
 
-class FakeWebRtcVideoChannel2 : public WebRtcVideoChannel2 {
- public:
-  FakeWebRtcVideoChannel2(FakeCall* call,
-                          WebRtcVideoEngine2* engine,
-                          VoiceMediaChannel* voice_channel)
-      : WebRtcVideoChannel2(call, engine, engine->GetVideoEncoderFactory()),
-        fake_call_(call),
-        voice_channel_(voice_channel) {}
+FakeWebRtcVideoChannel2::~FakeWebRtcVideoChannel2() {
+}
 
-  virtual ~FakeWebRtcVideoChannel2() {}
+VoiceMediaChannel* FakeWebRtcVideoChannel2::GetVoiceChannel() {
+  return voice_channel_;
+}
+FakeCall* FakeWebRtcVideoChannel2::GetFakeCall() {
+  return fake_call_;
+}
 
-  VoiceMediaChannel* GetVoiceChannel() { return voice_channel_; }
-  FakeCall* GetFakeCall() { return fake_call_; }
+FakeWebRtcVideoChannel2* FakeWebRtcVideoMediaChannelFactory::GetFakeChannel(
+    VideoMediaChannel* channel) {
+  return channel_map_[channel];
+}
 
- private:
-  FakeCall* fake_call_;
-  VoiceMediaChannel* voice_channel_;
-};
-
-class FakeWebRtcVideoMediaChannelFactory : public WebRtcVideoChannelFactory {
- public:
-  FakeWebRtcVideoChannel2* GetFakeChannel(VideoMediaChannel* channel) {
-    return channel_map_[channel];
-  }
-
- private:
-  virtual WebRtcVideoChannel2* Create(WebRtcVideoEngine2* engine,
-                                      VoiceMediaChannel* voice_channel)
-      OVERRIDE {
-    FakeWebRtcVideoChannel2* channel =
-        new FakeWebRtcVideoChannel2(new FakeCall(), engine, voice_channel);
-    channel_map_[channel] = channel;
-    return channel;
-  }
-
-  std::map<VideoMediaChannel*, FakeWebRtcVideoChannel2*> channel_map_;
-};
+WebRtcVideoChannel2* FakeWebRtcVideoMediaChannelFactory::Create(
+    WebRtcVideoEngine2* engine,
+    VoiceMediaChannel* voice_channel) {
+  FakeWebRtcVideoChannel2* channel =
+      new FakeWebRtcVideoChannel2(new FakeCall(), engine, voice_channel);
+  channel_map_[channel] = channel;
+  return channel;
+}
 
 class WebRtcVideoEngine2Test : public testing::Test {
  public:
