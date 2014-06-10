@@ -4,7 +4,6 @@ mflodman@webrtc.org
 niklas.enbom@webrtc.org
 tina.legrand@webrtc.org
 tommi@webrtc.org
-per-file *.isolate=kjellander@webrtc.org
 per-file .gitignore=*
 per-file AUTHORS=*
 per-file DEPS=*
