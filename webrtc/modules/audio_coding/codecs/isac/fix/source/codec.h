@@ -179,6 +179,21 @@ void WebRtcIsacfix_FilterMaLoopNeon(int16_t input0,
                                     int32_t* ptr2);
 #endif
 
+#if defined(MIPS32_LE)
+int WebRtcIsacfix_AutocorrMIPS(int32_t* __restrict r,
+                               const int16_t* __restrict x,
+                               int16_t N,
+                               int16_t order,
+                               int16_t* __restrict scale);
+
+void WebRtcIsacfix_FilterMaLoopMIPS(int16_t input0,
+                                    int16_t input1,
+                                    int32_t input2,
+                                    int32_t* ptr0,
+                                    int32_t* ptr1,
+                                    int32_t* ptr2);
+#endif
+
 /* Function pointers associated with the above functions. */
 
 typedef int (*AutocorrFix)(int32_t* __restrict r,

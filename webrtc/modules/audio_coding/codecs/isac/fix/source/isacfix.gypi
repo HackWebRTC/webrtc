@@ -85,6 +85,30 @@
             'pitch_filter_c.c',
           ],
         }],
+        ['target_arch=="mipsel"', {
+          'sources': [
+            'filters_mips.c',
+            'lattice_mips.c',
+          ],
+          'sources!': [
+            'lattice_c.c',
+          ],
+          'conditions': [
+            ['mips_dsp_rev>0', {
+              'sources': [
+                'filterbanks_mips.c',
+              ],
+            }],
+            ['mips_dsp_rev>1', {
+              'sources': [
+                'pitch_filter_mips.c',
+              ],
+              'sources!': [
+                'pitch_filter_c.c',
+              ],
+            }],
+          ],
+        }],
       ],
     },
   ],

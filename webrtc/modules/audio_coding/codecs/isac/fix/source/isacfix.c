@@ -179,7 +179,7 @@ int16_t WebRtcIsacfix_FreeInternal(ISACFIX_MainStruct *ISAC_main_inst)
 }
 
 /****************************************************************************
- * WebRtcAecm_InitNeon(...)
+ * WebRtcIsacfix_InitNeon(...)
  *
  * This function initializes function pointers for ARM Neon platform.
  */
@@ -196,6 +196,23 @@ static void WebRtcIsacfix_InitNeon(void) {
       WebRtcIsacfix_AllpassFilter2FixDec16Neon;
   WebRtcIsacfix_MatrixProduct1 = WebRtcIsacfix_MatrixProduct1Neon;
   WebRtcIsacfix_MatrixProduct2 = WebRtcIsacfix_MatrixProduct2Neon;
+}
+#endif
+
+/****************************************************************************
+ * WebRtcIsacfix_InitMIPS(...)
+ *
+ * This function initializes function pointers for MIPS platform.
+ */
+
+#if defined(MIPS32_LE)
+static void WebRtcIsacfix_InitMIPS(void) {
+  WebRtcIsacfix_AutocorrFix = WebRtcIsacfix_AutocorrMIPS;
+  WebRtcIsacfix_FilterMaLoopFix = WebRtcIsacfix_FilterMaLoopMIPS;
+#if defined(MIPS_DSP_R1_LE)
+  WebRtcIsacfix_AllpassFilter2FixDec16 =
+      WebRtcIsacfix_AllpassFilter2FixDec16MIPS;
+#endif
 }
 #endif
 
@@ -294,6 +311,10 @@ int16_t WebRtcIsacfix_EncoderInit(ISACFIX_MainStruct *ISAC_main_inst,
   }
 #elif defined(WEBRTC_ARCH_ARM_NEON)
   WebRtcIsacfix_InitNeon();
+#endif
+
+#if defined(MIPS32_LE)
+  WebRtcIsacfix_InitMIPS();
 #endif
 
   return statusInit;

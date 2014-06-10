@@ -58,6 +58,17 @@ void WebRtcIsacfix_AllpassFilter2FixDec16Neon(
    int32_t *filter_state_ch2);
 #endif
 
+#if defined(MIPS_DSP_R1_LE)
+void WebRtcIsacfix_AllpassFilter2FixDec16MIPS(
+   int16_t *data_ch1,
+   int16_t *data_ch2,
+   const int16_t *factor_ch1,
+   const int16_t *factor_ch2,
+   const int length,
+   int32_t *filter_state_ch1,
+   int32_t *filter_state_ch2);
+#endif
+
 #if defined(__cplusplus) || defined(c_plusplus)
 }
 #endif
