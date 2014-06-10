@@ -52,6 +52,10 @@ class PeerConnectionTestWrapper
 
   bool CreatePc(const webrtc::MediaConstraintsInterface* constraints);
 
+  talk_base::scoped_refptr<webrtc::DataChannelInterface> CreateDataChannel(
+      const std::string& label,
+      const webrtc::DataChannelInit& init);
+
   // Implements PeerConnectionObserver.
   virtual void OnError() {}
   virtual void OnSignalingChange(
@@ -60,7 +64,7 @@ class PeerConnectionTestWrapper
       webrtc::PeerConnectionObserver::StateType state_changed) {}
   virtual void OnAddStream(webrtc::MediaStreamInterface* stream);
   virtual void OnRemoveStream(webrtc::MediaStreamInterface* stream) {}
-  virtual void OnDataChannel(webrtc::DataChannelInterface* data_channel) {}
+  virtual void OnDataChannel(webrtc::DataChannelInterface* data_channel);
   virtual void OnRenegotiationNeeded() {}
   virtual void OnIceConnectionChange(
       webrtc::PeerConnectionInterface::IceConnectionState new_state) {}
@@ -94,6 +98,7 @@ class PeerConnectionTestWrapper
                    const std::string&> SignalOnIceCandidateReady;
   sigslot::signal1<std::string*> SignalOnSdpCreated;
   sigslot::signal1<const std::string&> SignalOnSdpReady;
+  sigslot::signal1<webrtc::DataChannelInterface*> SignalOnDataChannel;
 
  private:
   void SetLocalDescription(const std::string& type, const std::string& sdp);

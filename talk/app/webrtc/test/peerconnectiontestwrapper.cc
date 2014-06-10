@@ -103,6 +103,13 @@ bool PeerConnectionTestWrapper::CreatePc(
   return peer_connection_.get() != NULL;
 }
 
+talk_base::scoped_refptr<webrtc::DataChannelInterface>
+PeerConnectionTestWrapper::CreateDataChannel(
+    const std::string& label,
+    const webrtc::DataChannelInit& init) {
+  return peer_connection_->CreateDataChannel(label, &init);
+}
+
 void PeerConnectionTestWrapper::OnAddStream(MediaStreamInterface* stream) {
   LOG(LS_INFO) << "PeerConnectionTestWrapper " << name_
                << ": OnAddStream";
@@ -120,6 +127,11 @@ void PeerConnectionTestWrapper::OnIceCandidate(
   SignalOnIceCandidateCreated(&sdp);
   SignalOnIceCandidateReady(candidate->sdp_mid(), candidate->sdp_mline_index(),
                             sdp);
+}
+
+void PeerConnectionTestWrapper::OnDataChannel(
+    webrtc::DataChannelInterface* data_channel) {
+  SignalOnDataChannel(data_channel);
 }
 
 void PeerConnectionTestWrapper::OnSuccess(SessionDescriptionInterface* desc) {
