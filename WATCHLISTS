@@ -34,7 +34,8 @@
       'filepath': '\.java$|\.xml$',
     },
     'video_engine': {
-      'filepath': 'webrtc/video_engine/.*',
+      'filepath': 'webrtc/video_engine/.*|'\
+                  'webrtc/video/.*',
     },
     'voice_engine': {
       'filepath': 'webrtc/voice_engine/.*',
@@ -77,6 +78,9 @@
     },
     'remote_bitrate_estimator': {
       'filepath': 'webrtc/modules/remote_bitrate_estimator/.*'
+    },
+    'pacing': {
+      'filepath': 'webrtc/modules/pacing/.*'
     },
     'rtp_rtcp': {
       'filepath': 'webrtc/modules/rtp_rtcp/.*'
@@ -121,11 +125,16 @@
     'video_codecs': ['henrik.lundin@webrtc.org',
                      'pwestin@webrtc.org'],
     'video_coding': ['stefan@webrtc.org',
-                     'mikhal@webrtc.org'],
+                     'mikhal@webrtc.org',
+                     'mflodman@webrtc.org'],
     'video_processing': ['mikhal@webrtc.org',
                          'stefan@webrtc.org'],
-    'bitrate_controller': ['stefan@webrtc.org'],
-    'remote_bitrate_estimator': ['stefan@webrtc.org'],
+    'bitrate_controller': ['stefan@webrtc.org',
+                           'mflodman@webrtc.org'],
+    'remote_bitrate_estimator': ['stefan@webrtc.org',
+                                 'mflodman@webrtc.org'],
+    'pacing': ['stefan@webrtc.org',
+               'mflodman@webrtc.org'],
     'rtp_rtcp': ['mflodman@webrtc.org',
                  'pwestin@webrtc.org',
                  'stefan@webrtc.org'],
