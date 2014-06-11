@@ -45,14 +45,8 @@
     #include "audio_device_utility_mac.h"
     #include "audio_device_mac.h"
 #endif
-
-#if defined(WEBRTC_DUMMY_FILE_DEVICES)
-#include "webrtc/modules/audio_device/dummy/file_audio_device_factory.h"
-#endif
-
 #include "webrtc/modules/audio_device/dummy/audio_device_dummy.h"
 #include "webrtc/modules/audio_device/dummy/audio_device_utility_dummy.h"
-#include "webrtc/modules/audio_device/dummy/file_audio_device.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
@@ -205,14 +199,6 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
     ptrAudioDevice = new AudioDeviceDummy(Id());
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "Dummy Audio APIs will be utilized");
 
-    if (ptrAudioDevice != NULL)
-    {
-        ptrAudioDeviceUtility = new AudioDeviceUtilityDummy(Id());
-    }
-#elif defined(WEBRTC_DUMMY_FILE_DEVICES)
-    ptrAudioDevice = FileAudioDeviceFactory::CreateFileAudioDevice(Id());
-    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                 "Will use file-playing dummy device.");
     if (ptrAudioDevice != NULL)
     {
         ptrAudioDeviceUtility = new AudioDeviceUtilityDummy(Id());
