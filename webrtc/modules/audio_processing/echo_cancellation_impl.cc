@@ -323,6 +323,7 @@ int EchoCancellationImpl::Initialize() {
 
 void EchoCancellationImpl::SetExtraOptions(const Config& config) {
   delay_correction_enabled_ = config.Get<DelayCorrection>().enabled;
+  reported_delay_enabled_ = config.Get<ReportedDelay>().enabled;
   Configure();
 }
 

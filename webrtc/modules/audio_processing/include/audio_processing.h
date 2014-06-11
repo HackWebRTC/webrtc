@@ -53,6 +53,18 @@ struct DelayCorrection {
   bool enabled;
 };
 
+// Use to disable the reported system delays. By disabling the reported system
+// delays the echo cancellation algorithm assumes the process and reverse
+// streams to be aligned. This configuration only applies to EchoCancellation
+// and not EchoControlMobile and is set with AudioProcessing::SetExtraOptions().
+// Note that by disabling reported system delays the EchoCancellation may
+// regress in performance.
+struct ReportedDelay {
+  ReportedDelay() : enabled(true) {}
+  explicit ReportedDelay(bool enabled) : enabled(enabled) {}
+  bool enabled;
+};
+
 // Must be provided through AudioProcessing::Create(Confg&). It will have no
 // impact if used with AudioProcessing::SetExtraOptions().
 struct ExperimentalAgc {
