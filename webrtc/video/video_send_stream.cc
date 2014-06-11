@@ -381,8 +381,10 @@ bool VideoSendStream::ReconfigureVideoEncoder(
                             static_cast<unsigned char>(i));
   }
 
-  if (config_.rtp.rtx.ssrcs.empty())
+  if (config_.rtp.rtx.ssrcs.empty()) {
+    assert(!config_.rtp.rtx.pad_with_redundant_payloads);
     return true;
+  }
 
   // Set up RTX.
   assert(config_.rtp.rtx.ssrcs.size() == config_.rtp.ssrcs.size());
@@ -391,6 +393,10 @@ bool VideoSendStream::ReconfigureVideoEncoder(
                             config_.rtp.rtx.ssrcs[i],
                             kViEStreamTypeRtx,
                             static_cast<unsigned char>(i));
+  }
+
+  if (config_.rtp.rtx.pad_with_redundant_payloads) {
+    rtp_rtcp_->SetPadWithRedundantPayloads(channel_, true);
   }
 
   assert(config_.rtp.rtx.payload_type >= 0);

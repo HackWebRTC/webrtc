@@ -89,6 +89,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
       intra_frame_observer_(intra_frame_observer),
       rtt_stats_(rtt_stats),
       paced_sender_(paced_sender),
+      pad_with_redundant_payloads_(false),
       bandwidth_observer_(bandwidth_observer),
       send_timestamp_extension_id_(kInvalidRtpExtensionId),
       absolute_send_time_extension_id_(kInvalidRtpExtensionId),
@@ -102,8 +103,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
       sender_(sender),
       nack_history_size_sender_(kSendSidePacketHistorySize),
       max_nack_reordering_threshold_(kMaxPacketAgeToNack),
-      pre_render_callback_(NULL),
-      config_(config) {
+      pre_render_callback_(NULL) {
   RtpRtcp::Configuration configuration;
   configuration.id = ViEModuleId(engine_id, channel_id);
   configuration.audio = false;
@@ -860,19 +860,46 @@ int32_t ViEChannel::GetRemoteCSRC(uint32_t CSRCs[kRtpCsrcSize]) {
   return 0;
 }
 
+void ViEChannel::SetPadWithRedundantPayloads(bool enable) {
+  {
+    CriticalSectionScoped cs(callback_cs_.get());
+    pad_with_redundant_payloads_ = enable;
+  }
+  int mode;
+  uint32_t ssrc;
+  int payload_type;
+  rtp_rtcp_->RTXSendStatus(&mode, &ssrc, &payload_type);
+  if (mode != kRtxOff) {
+    // Since RTX was already enabled we have to reset it with payload-based
+    // padding on.
+    SetRtxSendStatus(true);
+  }
+}
+
 int ViEChannel::SetRtxSendPayloadType(int payload_type) {
-  int rtx_settings = kRtxRetransmitted;
-  if (config_.Get<PaddingStrategy>().redundant_payloads)
-    rtx_settings |= kRtxRedundantPayloads;
   rtp_rtcp_->SetRtxSendPayloadType(payload_type);
+  for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
+       it != simulcast_rtp_rtcp_.end(); it++) {
+    (*it)->SetRtxSendPayloadType(payload_type);
+  }
+  SetRtxSendStatus(true);
+  return 0;
+}
+
+void ViEChannel::SetRtxSendStatus(bool enable) {
+  int rtx_settings = kRtxOff;
+  if (enable) {
+    CriticalSectionScoped cs(callback_cs_.get());
+    rtx_settings = kRtxRetransmitted;
+    if (pad_with_redundant_payloads_)
+      rtx_settings |= kRtxRedundantPayloads;
+  }
   rtp_rtcp_->SetRTXSendStatus(rtx_settings);
   CriticalSectionScoped cs(rtp_rtcp_cs_.get());
   for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
        it != simulcast_rtp_rtcp_.end(); it++) {
-    (*it)->SetRtxSendPayloadType(payload_type);
     (*it)->SetRTXSendStatus(rtx_settings);
   }
-  return 0;
 }
 
 void ViEChannel::SetRtxReceivePayloadType(int payload_type) {

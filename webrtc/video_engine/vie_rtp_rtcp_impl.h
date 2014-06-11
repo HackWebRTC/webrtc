@@ -41,6 +41,7 @@ class ViERTP_RTCPImpl
                              unsigned int CSRCs[kRtpCsrcSize]) const;
   virtual int SetRtxSendPayloadType(const int video_channel,
                                     const uint8_t payload_type);
+  virtual int SetPadWithRedundantPayloads(int video_channel, bool enable);
   virtual int SetRtxReceivePayloadType(const int video_channel,
                                        const uint8_t payload_type);
   virtual int SetStartSequenceNumber(const int video_channel,

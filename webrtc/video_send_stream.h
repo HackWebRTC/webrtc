@@ -106,13 +106,17 @@ class VideoSendStream {
       // Settings for RTP retransmission payload format, see RFC 4588 for
       // details.
       struct Rtx {
-        Rtx() : payload_type(-1) {}
+        Rtx() : payload_type(-1), pad_with_redundant_payloads(false) {}
         std::string ToString() const;
         // SSRCs to use for the RTX streams.
         std::vector<uint32_t> ssrcs;
 
         // Payload type to use for the RTX stream.
         int payload_type;
+        // Use redundant payloads to pad the bitrate. Instead of padding with
+        // randomized packets, we will preemptively retransmit media packets on
+        // the RTX stream.
+        bool pad_with_redundant_payloads;
       } rtx;
 
       // RTCP CNAME, see RFC 3550.

@@ -38,7 +38,7 @@
 namespace webrtc {
 
 namespace {
-static const int kAbsoluteSendTimeExtensionId = 7;
+static const int kTransmissionTimeOffsetExtensionId = 6;
 static const int kMaxPacketSize = 1500;
 
 class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
@@ -75,8 +75,8 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
     rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(config));
     rtp_rtcp_->SetREMBStatus(true);
     rtp_rtcp_->SetRTCPStatus(kRtcpNonCompound);
-    rtp_parser_->RegisterRtpHeaderExtension(kRtpExtensionAbsoluteSendTime,
-                                            kAbsoluteSendTimeExtensionId);
+    rtp_parser_->RegisterRtpHeaderExtension(kRtpExtensionTransmissionTimeOffset,
+                                            kTransmissionTimeOffsetExtensionId);
     AbsoluteSendTimeRemoteBitrateEstimatorFactory rbe_factory;
     const uint32_t kRemoteBitrateEstimatorMinBitrateBps = 30000;
     remote_bitrate_estimator_.reset(
@@ -218,8 +218,8 @@ class LowRateStreamObserver : public test::DirectTransport,
     rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(config));
     rtp_rtcp_->SetREMBStatus(true);
     rtp_rtcp_->SetRTCPStatus(kRtcpNonCompound);
-    rtp_parser_->RegisterRtpHeaderExtension(kRtpExtensionAbsoluteSendTime,
-                                            kAbsoluteSendTimeExtensionId);
+    rtp_parser_->RegisterRtpHeaderExtension(kRtpExtensionTransmissionTimeOffset,
+                                            kTransmissionTimeOffsetExtensionId);
     AbsoluteSendTimeRemoteBitrateEstimatorFactory rbe_factory;
     const uint32_t kRemoteBitrateEstimatorMinBitrateBps = 10000;
     remote_bitrate_estimator_.reset(
@@ -421,9 +421,6 @@ class RampUpTest : public ::testing::Test {
                                    Clock::GetRealTimeClock());
 
     Call::Config call_config(&stream_observer);
-    webrtc::Config webrtc_config;
-    call_config.webrtc_config = &webrtc_config;
-    webrtc_config.Set<PaddingStrategy>(new PaddingStrategy(rtx));
     scoped_ptr<Call> call(Call::Create(call_config));
     VideoSendStream::Config send_config = call->GetDefaultSendConfig();
 
@@ -447,9 +444,11 @@ class RampUpTest : public ::testing::Test {
     if (rtx) {
       send_config.rtp.rtx.payload_type = 96;
       send_config.rtp.rtx.ssrcs = rtx_ssrcs;
+      send_config.rtp.rtx.pad_with_redundant_payloads = true;
     }
     send_config.rtp.extensions.push_back(
-        RtpExtension(RtpExtension::kAbsSendTime, kAbsoluteSendTimeExtensionId));
+        RtpExtension(RtpExtension::kTOffset,
+                     kTransmissionTimeOffsetExtensionId));
 
     if (num_streams == 1) {
       // For single stream rampup until 1mbps
@@ -514,7 +513,8 @@ class RampUpTest : public ::testing::Test {
     send_config.rtp.ssrcs.insert(
         send_config.rtp.ssrcs.begin(), ssrcs.begin(), ssrcs.end());
     send_config.rtp.extensions.push_back(
-        RtpExtension(RtpExtension::kAbsSendTime, kAbsoluteSendTimeExtensionId));
+        RtpExtension(RtpExtension::kTOffset,
+                     kTransmissionTimeOffsetExtensionId));
     send_config.suspend_below_min_bitrate = true;
     send_config.pacing = true;
 
@@ -581,8 +581,7 @@ TEST_F(RampUpTest, SimulcastWithPacing) {
   RunRampUpTest(true, false, 3);
 }
 
-// TODO(pbos): Re-enable, webrtc:2992.
-TEST_F(RampUpTest, DISABLED_SimulcastWithPacingAndRtx) {
+TEST_F(RampUpTest, SimulcastWithPacingAndRtx) {
   RunRampUpTest(true, true, 3);
 }
 

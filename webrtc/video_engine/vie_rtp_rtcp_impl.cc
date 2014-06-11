@@ -207,6 +207,21 @@ int ViERTP_RTCPImpl::SetRtxSendPayloadType(const int video_channel,
   return 0;
 }
 
+int ViERTP_RTCPImpl::SetPadWithRedundantPayloads(int video_channel,
+                                                 bool enable) {
+  LOG_F(LS_INFO) << "channel: " << video_channel
+                 << " pad with redundant payloads: " << (enable ? "enable" :
+                 "disable");
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
+    return -1;
+  }
+  vie_channel->SetPadWithRedundantPayloads(enable);
+  return 0;
+}
+
 int ViERTP_RTCPImpl::SetRtxReceivePayloadType(const int video_channel,
                                               const uint8_t payload_type) {
   LOG_F(LS_INFO) << "channel: " << video_channel

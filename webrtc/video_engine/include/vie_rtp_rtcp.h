@@ -134,6 +134,15 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
   virtual int SetRtxSendPayloadType(const int video_channel,
                                     const uint8_t payload_type) = 0;
 
+  // This enables sending redundant payloads when padding up the bitrate instead
+  // of sending dummy padding packets. This feature is off by default and will
+  // only have an effect if RTX is also enabled.
+  // TODO(holmer): Remove default implementation once this has been implemented
+  // in libjingle.
+  virtual int SetPadWithRedundantPayloads(int video_channel, bool enable) {
+    return 0;
+  }
+
   virtual int SetRtxReceivePayloadType(const int video_channel,
                                        const uint8_t payload_type) = 0;
 

@@ -145,6 +145,8 @@ class ViEChannel
   int32_t GetRemoteCSRC(uint32_t CSRCs[kRtpCsrcSize]);
 
   int SetRtxSendPayloadType(int payload_type);
+  // Only has an effect once RTX is enabled.
+  void SetPadWithRedundantPayloads(bool enable);
   void SetRtxReceivePayloadType(int payload_type);
 
   // Sets the starting sequence number, must be called before StartSend.
@@ -370,6 +372,7 @@ class ViEChannel
                             const unsigned char payload_typeFEC);
   // Compute NACK list parameters for the buffering mode.
   int GetRequiredNackListSize(int target_delay_ms);
+  void SetRtxSendStatus(bool enable);
 
   int32_t channel_id_;
   int32_t engine_id_;
@@ -403,6 +406,7 @@ class ViEChannel
   RtcpIntraFrameObserver* intra_frame_observer_;
   RtcpRttStats* rtt_stats_;
   PacedSender* paced_sender_;
+  bool pad_with_redundant_payloads_;
 
   scoped_ptr<RtcpBandwidthObserver> bandwidth_observer_;
   int send_timestamp_extension_id_;
@@ -426,7 +430,6 @@ class ViEChannel
   int nack_history_size_sender_;
   int max_nack_reordering_threshold_;
   I420FrameCallback* pre_render_callback_;
-  const Config& config_;
 };
 
 }  // namespace webrtc
