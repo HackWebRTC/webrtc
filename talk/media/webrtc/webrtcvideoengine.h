@@ -336,11 +336,6 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   bool ConfigureSending(int channel_id, uint32 local_ssrc_key);
   bool SetNackFec(int channel_id, int red_payload_type, int fec_payload_type,
                   bool nack_enabled);
-  bool SetHybridNackFecStatus(int channel_id, bool enabled,
-                              int red_payload_type, int fec_payload_type);
-  bool SetFecStatus(int channel_id, bool enabled,
-                    int red_payload_type, int fec_payload_type);
-  bool SetNackStatus(int channel_id, bool enabled);
   bool SetSendCodec(const webrtc::VideoCodec& codec);
   bool SetSendCodec(WebRtcVideoChannelSendInfo* send_channel,
                     const webrtc::VideoCodec& codec);

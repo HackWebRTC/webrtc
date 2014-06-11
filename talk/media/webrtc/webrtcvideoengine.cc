@@ -3622,71 +3622,24 @@ bool WebRtcVideoMediaChannel::SetNackFec(int channel_id,
                                          int red_payload_type,
                                          int fec_payload_type,
                                          bool nack_enabled) {
-  bool fec_enabled = (red_payload_type != -1 && fec_payload_type != -1 &&
+  bool enable = (red_payload_type != -1 && fec_payload_type != -1 &&
       !InConferenceMode());
-  bool hybrid_enabled = (fec_enabled && nack_enabled);
-
-  if (!SetHybridNackFecStatus(channel_id, hybrid_enabled,
-                              red_payload_type, fec_payload_type)) {
-    return false;
+  if (enable) {
+    if (engine_->vie()->rtp()->SetHybridNACKFECStatus(
+        channel_id, nack_enabled, red_payload_type, fec_payload_type) != 0) {
+      LOG_RTCERR4(SetHybridNACKFECStatus,
+                  channel_id, nack_enabled, red_payload_type, fec_payload_type);
+      return false;
+    }
+    LOG(LS_INFO) << "Hybrid NACK/FEC enabled for channel " << channel_id;
+  } else {
+    if (engine_->vie()->rtp()->SetNACKStatus(channel_id, nack_enabled) != 0) {
+      LOG_RTCERR1(SetNACKStatus, channel_id);
+      return false;
+    }
+    std::string enabled = nack_enabled ? "enabled" : "disabled";
+    LOG(LS_INFO) << "NACK " << enabled << " for channel " << channel_id;
   }
-  if (hybrid_enabled) {
-    return true;
-  }
-
-  if (!SetFecStatus(channel_id, fec_enabled,
-                    red_payload_type, fec_payload_type)) {
-    return false;
-  }
-  if (fec_enabled) {
-    return true;
-  }
-
-  if (!SetNackStatus(channel_id, nack_enabled)) {
-    return false;
-  }
-
-  return true;
-}
-
-bool WebRtcVideoMediaChannel::SetHybridNackFecStatus(int channel_id,
-                                                     bool enabled,
-                                                     int red_payload_type,
-                                                     int fec_payload_type) {
-  if (engine_->vie()->rtp()->SetHybridNACKFECStatus(
-      channel_id, enabled, red_payload_type, fec_payload_type) != 0) {
-    LOG_RTCERR4(SetHybridNACKFECStatus, channel_id, enabled,
-                red_payload_type, fec_payload_type);
-    return false;
-  }
-  std::string enabled_str = enabled ? "enabled" : "disabled";
-  LOG(LS_INFO) << "Hybrid NACK/FEC " << enabled_str
-               << " for channel " << channel_id;
-  return true;
-}
-
-bool WebRtcVideoMediaChannel::SetFecStatus(int channel_id,
-                                           bool enabled,
-                                           int red_payload_type,
-                                           int fec_payload_type) {
-  if (engine_->vie()->rtp()->SetFECStatus(
-      channel_id, enabled, red_payload_type, fec_payload_type) != 0) {
-    LOG_RTCERR4(SetFECStatus, channel_id, enabled,
-                red_payload_type, fec_payload_type);
-    return false;
-  }
-  std::string enabled_str = enabled ? "enabled" : "disabled";
-  LOG(LS_INFO) << "FEC " << enabled_str << " for channel " << channel_id;
-  return true;
-}
-
-bool WebRtcVideoMediaChannel::SetNackStatus(int channel_id, bool enabled) {
-  if (engine_->vie()->rtp()->SetNACKStatus(channel_id, enabled) != 0) {
-    LOG_RTCERR2(SetNACKStatus, channel_id, enabled);
-    return false;
-  }
-  std::string enabled_str = enabled ? "enabled" : "disabled";
-  LOG(LS_INFO) << "NACK " << enabled_str << " for channel " << channel_id;
   return true;
 }
 

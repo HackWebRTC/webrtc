@@ -285,7 +285,6 @@ class FakeWebRtcVideoEngine
           receiver_target_delay_(0),
           transmission_smoothing_(false),
           nack_(false),
-          fec_(false),
           hybrid_nack_fec_(false),
           send_video_bitrate_(0),
           send_fec_bitrate_(0),
@@ -326,7 +325,6 @@ class FakeWebRtcVideoEngine
     int receiver_target_delay_;
     bool transmission_smoothing_;
     bool nack_;
-    bool fec_;
     bool hybrid_nack_fec_;
     std::vector<webrtc::VideoCodec> recv_codecs;
     std::set<unsigned int> ext_decoder_pl_types_;
@@ -519,10 +517,6 @@ class FakeWebRtcVideoEngine
   int GetReceiverTargetDelay(int channel) {
     WEBRTC_ASSERT_CHANNEL(channel);
     return channels_.find(channel)->second->receiver_target_delay_;
-  }
-  bool GetFecStatus(int channel) const {
-    WEBRTC_ASSERT_CHANNEL(channel);
-    return channels_.find(channel)->second->fec_;
   }
   bool GetNackStatus(int channel) const {
     WEBRTC_ASSERT_CHANNEL(channel);
@@ -1043,28 +1037,16 @@ class FakeWebRtcVideoEngine
     channels_[channel]->hybrid_nack_fec_ = false;
     return 0;
   }
-  WEBRTC_FUNC(SetFECStatus, (const int channel, const bool enable,
-      const unsigned char red_type, const unsigned char fec_type)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    if (enable && (red_type == fec_type ||
-        red_type == channels_[channel]->send_codec.plType ||
-        fec_type == channels_[channel]->send_codec.plType)) {
-      return -1;
-    }
-    channels_[channel]->fec_ = enable;
-    channels_[channel]->nack_ = false;
-    channels_[channel]->hybrid_nack_fec_ = false;
-    return 0;
-  }
+  WEBRTC_STUB(SetFECStatus, (const int, const bool, const unsigned char,
+      const unsigned char));
   WEBRTC_FUNC(SetHybridNACKFECStatus, (const int channel, const bool enable,
       const unsigned char red_type, const unsigned char fec_type)) {
     WEBRTC_CHECK_CHANNEL(channel);
-    if (enable && (red_type == fec_type ||
+    if (red_type == fec_type ||
         red_type == channels_[channel]->send_codec.plType ||
-        fec_type == channels_[channel]->send_codec.plType)) {
+        fec_type == channels_[channel]->send_codec.plType) {
       return -1;
     }
-    channels_[channel]->fec_ = false;
     channels_[channel]->nack_ = false;
     channels_[channel]->hybrid_nack_fec_ = enable;
     return 0;
@@ -1129,7 +1111,7 @@ class FakeWebRtcVideoEngine
     channels_[channel]->transmission_smoothing_ = enable;
     return 0;
   }
-  WEBRTC_FUNC(SetReservedTransmitBitrate, (int channel,
+  WEBRTC_FUNC(SetReservedTransmitBitrate, (int channel, 
       unsigned int reserved_transmit_bitrate_bps)) {
     WEBRTC_CHECK_CHANNEL(channel);
     channels_[channel]->reserved_transmit_bitrate_bps_ =
