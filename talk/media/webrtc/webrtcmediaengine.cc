@@ -25,5 +25,28 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// TODO(pbos): Move CreateWebRtcMediaEngine here as soon as
-//             libjingle/libjingle.gyp in Chromium builds this file.
+#include "talk/media/webrtc/webrtcmediaengine.h"
+#include "webrtc/system_wrappers/interface/field_trial.h"
+
+WRME_EXPORT
+cricket::MediaEngineInterface* CreateWebRtcMediaEngine(
+    webrtc::AudioDeviceModule* adm,
+    webrtc::AudioDeviceModule* adm_sc,
+    cricket::WebRtcVideoEncoderFactory* encoder_factory,
+    cricket::WebRtcVideoDecoderFactory* decoder_factory) {
+  if (webrtc::field_trial::FindFullName("WebRTC-NewVideoAPI") == "Enabled") {
+    return new cricket::WebRtcMediaEngine2(
+        adm, adm_sc, encoder_factory, decoder_factory);
+  }
+  return new cricket::WebRtcMediaEngine(
+      adm, adm_sc, encoder_factory, decoder_factory);
+}
+
+WRME_EXPORT
+void DestroyWebRtcMediaEngine(cricket::MediaEngineInterface* media_engine) {
+  if (webrtc::field_trial::FindFullName("WebRTC-NewVideoAPI") == "Enabled") {
+    delete static_cast<cricket::WebRtcMediaEngine2*>(media_engine);
+  } else {
+    delete static_cast<cricket::WebRtcMediaEngine*>(media_engine);
+  }
+}
