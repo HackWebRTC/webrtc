@@ -123,7 +123,6 @@
 #define WEBRTC_SPL_RSHIFT_W32(x, c)     ((x) >> (c))
 #define WEBRTC_SPL_LSHIFT_W32(x, c)     ((x) << (c))
 
-#define WEBRTC_SPL_RSHIFT_U16(x, c)     ((uint16_t)(x) >> (c))
 #define WEBRTC_SPL_LSHIFT_U16(x, c)     ((uint16_t)(x) << (c))
 #define WEBRTC_SPL_RSHIFT_U32(x, c)     ((uint32_t)(x) >> (c))
 #define WEBRTC_SPL_LSHIFT_U32(x, c)     ((uint32_t)(x) << (c))

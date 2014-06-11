@@ -118,7 +118,7 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t *gainTable, // Q16
     limiterLvlX = analogTarget - limiterOffset;
     limiterIdx = 2
             + WebRtcSpl_DivW32W16ResW16(WEBRTC_SPL_LSHIFT_W32((int32_t)limiterLvlX, 13),
-                                        WEBRTC_SPL_RSHIFT_U16(kLog10_2, 1));
+                                        (kLog10_2 / 2));
     tmp16no1 = WebRtcSpl_DivW32W16ResW16(limiterOffset + (kCompRatio >> 1), kCompRatio);
     limiterLvl = targetLevelDbfs + tmp16no1;
 

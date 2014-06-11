@@ -1409,7 +1409,7 @@ void WebRtcNsx_DataAnalysis(NsxInst_t* inst, short* speechFrame, uint16_t* magnU
     // Shift the largest value of sum_log_i and tmp32no3 before multiplication
     tmp_u16 = WEBRTC_SPL_LSHIFT_U16((uint16_t)sum_log_i, 1); // Q6
     if ((uint32_t)sum_log_i > tmpU32no1) {
-      tmp_u16 = WEBRTC_SPL_RSHIFT_U16(tmp_u16, zeros);
+      tmp_u16 >>= zeros;
     } else {
       tmpU32no1 = WEBRTC_SPL_RSHIFT_U32(tmpU32no1, zeros);
     }
@@ -2071,8 +2071,8 @@ int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* speechFrame, short* speechFram
       tmpU16no1 += nonSpeechProbFinal[i]; // Q8
       tmpU32no1 += (uint32_t)(inst->noiseSupFilter[i]); // Q14
     }
-    avgProbSpeechHB = (int16_t)(4096
-        - WEBRTC_SPL_RSHIFT_U16(tmpU16no1, inst->stages - 7)); // Q12
+    assert(inst->stages >= 7);
+    avgProbSpeechHB = (4096 - (tmpU16no1 >> (inst->stages - 7)));  // Q12
     avgFilterGainHB = (int16_t)WEBRTC_SPL_RSHIFT_U32(
         tmpU32no1, inst->stages - 3); // Q14
 

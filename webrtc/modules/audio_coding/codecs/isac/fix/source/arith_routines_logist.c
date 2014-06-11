@@ -383,7 +383,7 @@ int16_t WebRtcIsacfix_DecLogisticMulti2(int16_t *dataQ7,
             streamData->full = 1;
           } else {
             streamVal = WEBRTC_SPL_LSHIFT_W32(streamVal, 8) |
-                WEBRTC_SPL_RSHIFT_U16(*streamPtr, 8);
+                ((*streamPtr) >> 8);
             streamData->full = 0;
           }
         } else {
