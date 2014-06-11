@@ -20,7 +20,7 @@
         '.',
         '../interface',
         'include',
-        'dummy', # dummy audio device
+        'dummy',  # Contains dummy audio device implementations.
       ],
       'direct_dependent_settings': {
         'include_dirs': [
@@ -45,6 +45,8 @@
         'dummy/audio_device_dummy.h',
         'dummy/audio_device_utility_dummy.cc',
         'dummy/audio_device_utility_dummy.h',
+        'dummy/file_audio_device.cc',
+        'dummy/file_audio_device.h',
       ],
       'conditions': [
         ['OS=="linux"', {
@@ -75,6 +77,13 @@
         ['include_internal_audio_device==0', {
           'defines': [
             'WEBRTC_DUMMY_AUDIO_BUILD',
+          ],
+        }],
+        ['build_with_chromium==0', {
+          'sources': [
+            # Don't link these into Chrome since they contain static data.
+            'dummy/file_audio_device_factory.cc',
+            'dummy/file_audio_device_factory.h',
           ],
         }],
         ['include_internal_audio_device==1', {
