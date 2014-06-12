@@ -18,7 +18,7 @@
       ],
       'sources': ['<(shared_generated_dir)/nsx_core_neon_offsets.o',],
       'variables' : {
-        'object_file_to_extract':'nsx_core_neon_offsets.o',
+        'unpack_lib_name':'nsx_core_neon_offsets.o',
       },
       'includes': [
         '../../../third_party/libvpx/unpack_lib_posix.gypi',
@@ -33,7 +33,7 @@
         '<(DEPTH)/third_party/libvpx/libvpx.gyp:libvpx_obj_int_extract#host',
       ],
       'variables': {
-        'object_file_to_extract':'aecm_core_neon_offsets.o',
+        'unpack_lib_name':'aecm_core_neon_offsets.o',
       },
       'sources': ['<(shared_generated_dir)/aecm_core_neon_offsets.o',],
       'includes': [
