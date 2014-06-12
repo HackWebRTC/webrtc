@@ -1009,6 +1009,16 @@ class P2PTestConductor : public testing::Test {
                      kMaxWaitForFramesMs);
   }
 
+  void SendRtpData(webrtc::DataChannelInterface* dc, const std::string& data) {
+    // Messages may get lost on the unreliable DataChannel, so we send multiple
+    // times to avoid test flakiness.
+    static const size_t kSendAttempts = 5;
+
+    for (size_t i = 0; i < kSendAttempts; ++i) {
+      dc->Send(DataBuffer(data));
+    }
+  }
+
   SignalingClass* initializing_client() { return initiating_client_.get(); }
   SignalingClass* receiving_client() { return receiving_client_.get(); }
 
@@ -1251,12 +1261,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, GetBytesSentStats) {
 }
 
 // This test sets up a call between two parties with audio, video and data.
-// TODO(jiayl): fix the flakiness on Windows and reenable. Issue 2891.
-#if defined(WIN32)
-TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTestDataChannel) {
-#else
 TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestDataChannel) {
-#endif
   FakeConstraints setup_constraints;
   setup_constraints.SetAllowRtpDataChannels();
   ASSERT_TRUE(CreateTestClients(&setup_constraints, &setup_constraints));
@@ -1270,10 +1275,12 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestDataChannel) {
                    kMaxWaitMs);
 
   std::string data = "hello world";
-  initializing_client()->data_channel()->Send(DataBuffer(data));
+
+  SendRtpData(initializing_client()->data_channel(), data);
   EXPECT_EQ_WAIT(data, receiving_client()->data_observer()->last_message(),
                  kMaxWaitMs);
-  receiving_client()->data_channel()->Send(DataBuffer(data));
+
+  SendRtpData(receiving_client()->data_channel(), data);
   EXPECT_EQ_WAIT(data, initializing_client()->data_observer()->last_message(),
                  kMaxWaitMs);
 
@@ -1307,8 +1314,10 @@ TEST_F(JsepPeerConnectionP2PTestClient, RegisterDataChannelObserver) {
 
   // Unregister the existing observer.
   receiving_client()->data_channel()->UnregisterObserver();
+
   std::string data = "hello world";
-  initializing_client()->data_channel()->Send(DataBuffer(data));
+  SendRtpData(initializing_client()->data_channel(), data);
+
   // Wait a while to allow the sent data to arrive before an observer is
   // registered..
   talk_base::Thread::Current()->ProcessMessages(100);
