@@ -69,8 +69,8 @@ struct CpuOveruseOptions {
         enable_encode_usage_method(false),
         low_encode_usage_threshold_percent(60),
         high_encode_usage_threshold_percent(90),
-        low_encode_time_rsd_threshold(0),
-        high_encode_time_rsd_threshold(0),
+        low_encode_time_rsd_threshold(-1),
+        high_encode_time_rsd_threshold(-1),
         frame_timeout_interval_ms(1500),
         min_frame_samples(120),
         min_process_count(3),
@@ -84,8 +84,12 @@ struct CpuOveruseOptions {
   bool enable_encode_usage_method;
   int low_encode_usage_threshold_percent;  // Threshold for triggering underuse.
   int high_encode_usage_threshold_percent; // Threshold for triggering overuse.
-  int low_encode_time_rsd_threshold;   // Threshold for triggering underuse.
-  int high_encode_time_rsd_threshold;  // Threshold for triggering overuse.
+  int low_encode_time_rsd_threshold;   // Additional threshold for triggering
+                                       // underuse (used in addition to
+                                       // threshold above if configured).
+  int high_encode_time_rsd_threshold;  // Additional threshold for triggering
+                                       // overuse (used in addition to
+                                       // threshold above if configured).
   // General settings.
   int frame_timeout_interval_ms;  // The maximum allowed interval between two
                                   // frames before resetting estimations.

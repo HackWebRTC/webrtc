@@ -38,7 +38,7 @@ const float kWeightFactorMean = 0.98f;
 const int kQuickRampUpDelayMs = 10 * 1000;
 // Delay between rampup attempts. Initially uses standard, scales up to max.
 const int kStandardRampUpDelayMs = 30 * 1000;
-const int kMaxRampUpDelayMs = 120 * 1000;
+const int kMaxRampUpDelayMs = 240 * 1000;
 // Expontential back-off factor, to prevent annoying up-down behaviour.
 const double kRampUpBackoffFactor = 2.0;
 
@@ -126,7 +126,7 @@ class OveruseFrameDetector::EncodeTimeAvg {
     filtered_encode_time_ms_->Apply(exp, encode_time_ms);
   }
 
-  int filtered_encode_time_ms() const {
+  int Value() const {
     return static_cast<int>(filtered_encode_time_ms_->Value() + 0.5);
   }
 
@@ -175,7 +175,7 @@ class OveruseFrameDetector::EncodeUsage {
     filtered_encode_time_ms_->Apply(exp, encode_time_ms);
   }
 
-  int UsageInPercent() const {
+  int Value() const {
     if (count_ < static_cast<uint32_t>(options_.min_frame_samples)) {
       return static_cast<int>(InitialUsageInPercent() + 0.5f);
     }
@@ -186,6 +186,7 @@ class OveruseFrameDetector::EncodeUsage {
     return static_cast<int>(encode_usage_percent + 0.5);
   }
 
+ private:
   float InitialUsageInPercent() const {
     // Start in between the underuse and overuse threshold.
     return (options_.low_encode_usage_threshold_percent +
@@ -196,7 +197,6 @@ class OveruseFrameDetector::EncodeUsage {
     return InitialUsageInPercent() * kInitialSampleDiffMs / 100;
   }
 
- private:
   const float kWeightFactorFrameDiff;
   const float kWeightFactorEncodeTime;
   const float kInitialSampleDiffMs;
@@ -295,13 +295,13 @@ class OveruseFrameDetector::EncodeTimeRsd {
     return static_cast<int>(filtered_rsd_->Value() + 0.5);
   }
 
+ private:
   float InitialValue() const {
     // Start in between the underuse and overuse threshold.
-    return (options_.low_encode_time_rsd_threshold +
-            options_.high_encode_time_rsd_threshold) / 2.0f;
+    return std::max(((options_.low_encode_time_rsd_threshold +
+                      options_.high_encode_time_rsd_threshold) / 2.0f), 0.0f);
   }
 
- private:
   const float kWeightFactor;
   uint32_t count_;  // Number of encode samples since last reset.
   CpuOveruseOptions options_;
@@ -358,7 +358,7 @@ class OveruseFrameDetector::CaptureQueueDelay {
     return delay_ms_;
   }
 
-  int filtered_delay_ms_per_s() const {
+  int Value() const {
     return static_cast<int>(filtered_delay_ms_per_s_->Value() + 0.5);
   }
 
@@ -419,11 +419,10 @@ void OveruseFrameDetector::GetCpuOveruseMetrics(
     CpuOveruseMetrics* metrics) const {
   CriticalSectionScoped cs(crit_.get());
   metrics->capture_jitter_ms = static_cast<int>(capture_deltas_.StdDev() + 0.5);
-  metrics->avg_encode_time_ms = encode_time_->filtered_encode_time_ms();
+  metrics->avg_encode_time_ms = encode_time_->Value();
   metrics->encode_rsd = encode_rsd_->Value();
-  metrics->encode_usage_percent = encode_usage_->UsageInPercent();
-  metrics->capture_queue_delay_ms_per_s =
-      capture_queue_delay_->filtered_delay_ms_per_s();
+  metrics->encode_usage_percent = encode_usage_->Value();
+  metrics->capture_queue_delay_ms_per_s = capture_queue_delay_->Value();
 }
 
 int32_t OveruseFrameDetector::TimeUntilNextProcess() {
@@ -544,7 +543,7 @@ int32_t OveruseFrameDetector::Process() {
       in_quick_rampup_ ? kQuickRampUpDelayMs : current_rampup_delay_ms_;
   LOG(LS_INFO) << " Frame stats: capture avg: " << capture_deltas_.Mean()
                << " capture stddev " << capture_deltas_.StdDev()
-               << " encode usage " << encode_usage_->UsageInPercent()
+               << " encode usage " << encode_usage_->Value()
                << " encode rsd " << encode_rsd_->Value()
                << " rampup delay " << rampup_delay;
   return 0;
@@ -556,8 +555,14 @@ bool OveruseFrameDetector::IsOverusing() {
     overusing = capture_deltas_.StdDev() >=
         options_.high_capture_jitter_threshold_ms;
   } else if (options_.enable_encode_usage_method) {
-    overusing = encode_usage_->UsageInPercent() >=
-        options_.high_encode_usage_threshold_percent;
+    bool encode_usage_overuse =
+        encode_usage_->Value() >= options_.high_encode_usage_threshold_percent;
+    bool encode_rsd_overuse = false;
+    if (options_.high_encode_time_rsd_threshold > 0) {
+      encode_rsd_overuse =
+          (encode_rsd_->Value() >= options_.high_encode_time_rsd_threshold);
+    }
+    overusing = encode_usage_overuse || encode_rsd_overuse;
   }
 
   if (overusing) {
@@ -578,8 +583,14 @@ bool OveruseFrameDetector::IsUnderusing(int64_t time_now) {
     underusing = capture_deltas_.StdDev() <
         options_.low_capture_jitter_threshold_ms;
   } else if (options_.enable_encode_usage_method) {
-    underusing = encode_usage_->UsageInPercent() <
-        options_.low_encode_usage_threshold_percent;
+    bool encode_usage_underuse =
+        encode_usage_->Value() < options_.low_encode_usage_threshold_percent;
+    bool encode_rsd_underuse = true;
+    if (options_.low_encode_time_rsd_threshold > 0) {
+      encode_rsd_underuse =
+          (encode_rsd_->Value() < options_.low_encode_time_rsd_threshold);
+    }
+    underusing = encode_usage_underuse && encode_rsd_underuse;
   }
   return underusing;
 }
