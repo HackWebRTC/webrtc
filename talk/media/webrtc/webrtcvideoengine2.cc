@@ -195,50 +195,47 @@ static std::vector<VideoCodec> DefaultVideoCodecs() {
 WebRtcVideoEncoderFactory2::~WebRtcVideoEncoderFactory2() {
 }
 
-class DefaultVideoEncoderFactory : public WebRtcVideoEncoderFactory2 {
- public:
-  virtual std::vector<webrtc::VideoStream> CreateVideoStreams(
-      const VideoCodec& codec,
-      const VideoOptions& options,
-      size_t num_streams) OVERRIDE {
-    assert(SupportsCodec(codec));
-    if (num_streams != 1) {
-      LOG(LS_ERROR) << "Unsupported number of streams: " << num_streams;
-      return std::vector<webrtc::VideoStream>();
-    }
-
-    webrtc::VideoStream stream;
-    stream.width = codec.width;
-    stream.height = codec.height;
-    stream.max_framerate =
-        codec.framerate != 0 ? codec.framerate : kDefaultFramerate;
-
-    int min_bitrate = kMinVideoBitrate;
-    codec.GetParam(kCodecParamMinBitrate, &min_bitrate);
-    int max_bitrate = kMaxVideoBitrate;
-    codec.GetParam(kCodecParamMaxBitrate, &max_bitrate);
-    stream.min_bitrate_bps = min_bitrate * 1000;
-    stream.target_bitrate_bps = stream.max_bitrate_bps = max_bitrate * 1000;
-
-    int max_qp = 56;
-    codec.GetParam(kCodecParamMaxQuantization, &max_qp);
-    stream.max_qp = max_qp;
-    std::vector<webrtc::VideoStream> streams;
-    streams.push_back(stream);
-    return streams;
+std::vector<webrtc::VideoStream> WebRtcVideoEncoderFactory2::CreateVideoStreams(
+    const VideoCodec& codec,
+    const VideoOptions& options,
+    size_t num_streams) {
+  assert(SupportsCodec(codec));
+  if (num_streams != 1) {
+    LOG(LS_ERROR) << "Unsupported number of streams: " << num_streams;
+    return std::vector<webrtc::VideoStream>();
   }
 
-  virtual webrtc::VideoEncoder* CreateVideoEncoder(
-      const VideoCodec& codec,
-      const VideoOptions& options) OVERRIDE {
-    assert(SupportsCodec(codec));
-    return webrtc::VP8Encoder::Create();
-  }
+  webrtc::VideoStream stream;
+  stream.width = codec.width;
+  stream.height = codec.height;
+  stream.max_framerate =
+      codec.framerate != 0 ? codec.framerate : kDefaultFramerate;
 
-  virtual bool SupportsCodec(const VideoCodec& codec) OVERRIDE {
-    return _stricmp(codec.name.c_str(), kVp8PayloadName) == 0;
-  }
-};
+  int min_bitrate = kMinVideoBitrate;
+  codec.GetParam(kCodecParamMinBitrate, &min_bitrate);
+  int max_bitrate = kMaxVideoBitrate;
+  codec.GetParam(kCodecParamMaxBitrate, &max_bitrate);
+  stream.min_bitrate_bps = min_bitrate * 1000;
+  stream.target_bitrate_bps = stream.max_bitrate_bps = max_bitrate * 1000;
+
+  int max_qp = 56;
+  codec.GetParam(kCodecParamMaxQuantization, &max_qp);
+  stream.max_qp = max_qp;
+  std::vector<webrtc::VideoStream> streams;
+  streams.push_back(stream);
+  return streams;
+}
+
+webrtc::VideoEncoder* WebRtcVideoEncoderFactory2::CreateVideoEncoder(
+    const VideoCodec& codec,
+    const VideoOptions& options) {
+  assert(SupportsCodec(codec));
+  return webrtc::VP8Encoder::Create();
+}
+
+bool WebRtcVideoEncoderFactory2::SupportsCodec(const VideoCodec& codec) {
+  return _stricmp(codec.name.c_str(), kVp8PayloadName) == 0;
+}
 
 WebRtcVideoEngine2::WebRtcVideoEngine2() {
   // Construct without a factory or voice engine.
@@ -264,7 +261,6 @@ void WebRtcVideoEngine2::Construct(WebRtcVideoChannelFactory* channel_factory,
 
   video_codecs_ = DefaultVideoCodecs();
   default_codec_format_ = VideoFormat(kDefaultVideoFormat);
-  default_video_encoder_factory_.reset(new DefaultVideoEncoderFactory());
 }
 
 WebRtcVideoEngine2::~WebRtcVideoEngine2() {
@@ -463,8 +459,8 @@ bool WebRtcVideoEngine2::ShouldIgnoreTrace(const std::string& trace) {
   return false;
 }
 
-WebRtcVideoEncoderFactory2* WebRtcVideoEngine2::GetVideoEncoderFactory() const {
-  return default_video_encoder_factory_.get();
+WebRtcVideoEncoderFactory2* WebRtcVideoEngine2::GetVideoEncoderFactory() {
+  return &default_video_encoder_factory_;
 }
 
 // Thin map between VideoFrame and an existing webrtc::I420VideoFrame

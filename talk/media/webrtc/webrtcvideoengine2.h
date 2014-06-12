@@ -86,13 +86,13 @@ class WebRtcVideoEncoderFactory2 {
   virtual std::vector<webrtc::VideoStream> CreateVideoStreams(
       const VideoCodec& codec,
       const VideoOptions& options,
-      size_t num_streams) = 0;
+      size_t num_streams);
 
   virtual webrtc::VideoEncoder* CreateVideoEncoder(
       const VideoCodec& codec,
-      const VideoOptions& options) = 0;
+      const VideoOptions& options);
 
-  virtual bool SupportsCodec(const cricket::VideoCodec& codec) = 0;
+  virtual bool SupportsCodec(const cricket::VideoCodec& codec);
 };
 
 // WebRtcVideoEngine2 is used for the new native WebRTC Video API (webrtc:1667).
@@ -144,7 +144,7 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
 
   talk_base::CpuMonitor* cpu_monitor() { return cpu_monitor_.get(); }
 
-  virtual WebRtcVideoEncoderFactory2* GetVideoEncoderFactory() const;
+  virtual WebRtcVideoEncoderFactory2* GetVideoEncoderFactory();
 
  private:
   void Construct(WebRtcVideoChannelFactory* channel_factory,
@@ -167,8 +167,7 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
 
   talk_base::scoped_ptr<talk_base::CpuMonitor> cpu_monitor_;
   WebRtcVideoChannelFactory* channel_factory_;
-  talk_base::scoped_ptr<WebRtcVideoEncoderFactory2>
-      default_video_encoder_factory_;
+  WebRtcVideoEncoderFactory2 default_video_encoder_factory_;
 };
 
 // Adapter between webrtc::VideoRenderer and cricket::VideoRenderer.
