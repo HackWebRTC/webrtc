@@ -3027,10 +3027,13 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
 
   if (leaky_bucket_changed) {
     bool enable_leaky_bucket =
-        options_.video_leaky_bucket.GetWithDefaultIfUnset(false);
+        options_.video_leaky_bucket.GetWithDefaultIfUnset(true);
     LOG(LS_INFO) << "Leaky bucket is enabled? " << enable_leaky_bucket;
     for (SendChannelMap::iterator it = send_channels_.begin();
         it != send_channels_.end(); ++it) {
+      // TODO(holmer): This API will be removed as we move to the new
+      // webrtc::Call API. We should clean up this experiment when that is
+      // happening.
       if (engine()->vie()->rtp()->SetTransmissionSmoothingStatus(
           it->second->channel_id(), enable_leaky_bucket) != 0) {
         LOG_RTCERR2(SetTransmissionSmoothingStatus, it->second->channel_id(),
@@ -3573,7 +3576,7 @@ bool WebRtcVideoMediaChannel::ConfigureSending(int channel_id,
     return false;
   }
 
-  if (options_.video_leaky_bucket.GetWithDefaultIfUnset(false)) {
+  if (options_.video_leaky_bucket.GetWithDefaultIfUnset(true)) {
     if (engine()->vie()->rtp()->SetTransmissionSmoothingStatus(channel_id,
                                                                true) != 0) {
       LOG_RTCERR2(SetTransmissionSmoothingStatus, channel_id, true);
@@ -3965,7 +3968,7 @@ bool WebRtcVideoMediaChannel::MaybeResetVieSendCodec(
       options_.video_noise_reduction.GetWithDefaultIfUnset(false);
   int screencast_min_bitrate =
       options_.screencast_min_bitrate.GetWithDefaultIfUnset(0);
-  bool leaky_bucket = options_.video_leaky_bucket.GetWithDefaultIfUnset(false);
+  bool leaky_bucket = options_.video_leaky_bucket.GetWithDefaultIfUnset(true);
   bool denoising = !is_screencast && enable_denoising;
   bool reset_send_codec =
       target_width != cur_width || target_height != cur_height ||

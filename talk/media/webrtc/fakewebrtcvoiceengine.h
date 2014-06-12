@@ -96,7 +96,8 @@ class FakeWebRtcVoiceEngine
           volume_pan_right(1.0),
           file(false),
           vad(false),
-          fec(false),
+          codec_fec(false),
+          red(false),
           nack(false),
           media_processor_registered(false),
           rx_agc_enabled(false),
@@ -104,7 +105,7 @@ class FakeWebRtcVoiceEngine
           cn8_type(13),
           cn16_type(105),
           dtmf_type(106),
-          fec_type(117),
+          red_type(117),
           nack_max_packets(0),
           vie_network(NULL),
           video_channel(-1),
@@ -124,7 +125,8 @@ class FakeWebRtcVoiceEngine
     float volume_pan_right;
     bool file;
     bool vad;
-    bool fec;
+    bool codec_fec;
+    bool red;
     bool nack;
     bool media_processor_registered;
     bool rx_agc_enabled;
@@ -133,7 +135,7 @@ class FakeWebRtcVoiceEngine
     int cn8_type;
     int cn16_type;
     int dtmf_type;
-    int fec_type;
+    int red_type;
     int nack_max_packets;
     webrtc::ViENetwork* vie_network;
     int video_channel;
@@ -214,8 +216,11 @@ class FakeWebRtcVoiceEngine
   bool GetVAD(int channel) {
     return channels_[channel]->vad;
   }
-  bool GetFEC(int channel) {
-    return channels_[channel]->fec;
+  bool GetRED(int channel) {
+    return channels_[channel]->red;
+  }
+  bool GetCodecFEC(int channel) {
+    return channels_[channel]->codec_fec;
   }
   bool GetNACK(int channel) {
     return channels_[channel]->nack;
@@ -243,8 +248,8 @@ class FakeWebRtcVoiceEngine
   int GetSendTelephoneEventPayloadType(int channel) {
     return channels_[channel]->dtmf_type;
   }
-  int GetSendFECPayloadType(int channel) {
-    return channels_[channel]->fec_type;
+  int GetSendREDPayloadType(int channel) {
+    return channels_[channel]->red_type;
   }
   bool CheckPacket(int channel, const void* data, size_t len) {
     bool result = !CheckNoPacket(channel);
@@ -511,6 +516,16 @@ class FakeWebRtcVoiceEngine
   }
   WEBRTC_STUB(GetVADStatus, (int channel, bool& enabled,
                              webrtc::VadModes& mode, bool& disabledDTX));
+  WEBRTC_FUNC(SetFECStatus, (int channel, bool enable)) {
+    WEBRTC_CHECK_CHANNEL(channel);
+    channels_[channel]->codec_fec = enable;
+    return 0;
+  }
+  WEBRTC_FUNC(GetFECStatus, (int channel, bool& enable)) {
+    WEBRTC_CHECK_CHANNEL(channel);
+    enable = channels_[channel]->codec_fec;
+    return 0;
+  }
 
   // webrtc::VoEDtmf
   WEBRTC_FUNC(SendTelephoneEvent, (int channel, int event_code,
@@ -823,16 +838,24 @@ class FakeWebRtcVoiceEngine
     stats.packetsReceived = kIntStatValue;
     return 0;
   }
+#ifdef USE_WEBRTC_DEV_BRANCH
+  WEBRTC_FUNC(SetREDStatus, (int channel, bool enable, int redPayloadtype)) {
+#else
   WEBRTC_FUNC(SetFECStatus, (int channel, bool enable, int redPayloadtype)) {
+#endif  // USE_WEBRTC_DEV_BRANCH
     WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->fec = enable;
-    channels_[channel]->fec_type = redPayloadtype;
+    channels_[channel]->red = enable;
+    channels_[channel]->red_type = redPayloadtype;
     return 0;
   }
+#ifdef USE_WEBRTC_DEV_BRANCH
+  WEBRTC_FUNC(GetREDStatus, (int channel, bool& enable, int& redPayloadtype)) {
+#else
   WEBRTC_FUNC(GetFECStatus, (int channel, bool& enable, int& redPayloadtype)) {
+#endif  // USE_WEBRTC_DEV_BRANCH
     WEBRTC_CHECK_CHANNEL(channel);
-    enable = channels_[channel]->fec;
-    redPayloadtype = channels_[channel]->fec_type;
+    enable = channels_[channel]->red;
+    redPayloadtype = channels_[channel]->red_type;
     return 0;
   }
   WEBRTC_FUNC(SetNACKStatus, (int channel, bool enable, int maxNoPackets)) {
