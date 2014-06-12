@@ -642,7 +642,6 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
 
   observer.SetReceivers(receiver_call->Receiver(), sender_call->Receiver());
 
-  send_config_.pacing = true;
   if (pad_to_min_bitrate) {
     send_config_.rtp.min_transmit_bitrate_bps = kMinTransmitBitrateBps;
   } else {

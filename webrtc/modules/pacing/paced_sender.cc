@@ -124,7 +124,7 @@ PacedSender::PacedSender(Callback* callback,
                          int max_bitrate_kbps,
                          int min_bitrate_kbps)
     : callback_(callback),
-      enabled_(false),
+      enabled_(true),
       paused_(false),
       max_queue_length_ms_(kDefaultMaxQueueLengthMs),
       critsect_(CriticalSectionWrapper::CreateCriticalSection()),

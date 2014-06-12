@@ -61,7 +61,6 @@ class VideoSendStream {
           local_renderer(NULL),
           render_delay_ms(0),
           target_delay_ms(0),
-          pacing(false),
           suspend_below_min_bitrate(false) {}
     std::string ToString() const;
 
@@ -144,14 +143,9 @@ class VideoSendStream {
     // used for streaming instead of a real-time call.
     int target_delay_ms;
 
-    // True if network a send-side packet buffer should be used to pace out
-    // packets onto the network.
-    bool pacing;
-
     // True if the stream should be suspended when the available bitrate fall
     // below the minimum configured bitrate. If this variable is false, the
     // stream may send at a rate higher than the estimated available bitrate.
-    // |suspend_below_min_bitrate| requires |pacing| to be enabled as well.
     bool suspend_below_min_bitrate;
   };
 

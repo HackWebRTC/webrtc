@@ -75,8 +75,7 @@ class VideoSendStreamTest : public ::testing::Test {
   }
 
   void TestNackRetransmission(uint32_t retransmit_ssrc,
-                              uint8_t retransmit_payload_type,
-                              bool enable_pacing);
+                              uint8_t retransmit_payload_type);
 
   void TestPacketFragmentationSize(VideoFormat format, bool with_fec);
 
@@ -504,8 +503,7 @@ TEST_F(VideoSendStreamTest, SupportsFec) {
 
 void VideoSendStreamTest::TestNackRetransmission(
     uint32_t retransmit_ssrc,
-    uint8_t retransmit_payload_type,
-    bool enable_pacing) {
+    uint8_t retransmit_payload_type) {
   class NackObserver : public test::RtpRtcpObserver {
    public:
     explicit NackObserver(uint32_t retransmit_ssrc,
@@ -574,7 +572,6 @@ void VideoSendStreamTest::TestNackRetransmission(
   CreateTestConfig(call.get(), 1);
   send_config_.rtp.nack.rtp_history_ms = 1000;
   send_config_.rtp.rtx.payload_type = retransmit_payload_type;
-  send_config_.pacing = enable_pacing;
   if (retransmit_ssrc != kSendSsrc)
     send_config_.rtp.rtx.ssrcs.push_back(retransmit_ssrc);
 
@@ -583,17 +580,12 @@ void VideoSendStreamTest::TestNackRetransmission(
 
 TEST_F(VideoSendStreamTest, RetransmitsNack) {
   // Normal NACKs should use the send SSRC.
-  TestNackRetransmission(kSendSsrc, kFakeSendPayloadType, false);
+  TestNackRetransmission(kSendSsrc, kFakeSendPayloadType);
 }
 
 TEST_F(VideoSendStreamTest, RetransmitsNackOverRtx) {
   // NACKs over RTX should use a separate SSRC.
-  TestNackRetransmission(kSendRtxSsrc, kSendRtxPayloadType, false);
-}
-
-TEST_F(VideoSendStreamTest, RetransmitsNackOverRtxWithPacing) {
-  // NACKs over RTX should use a separate SSRC.
-  TestNackRetransmission(kSendRtxSsrc, kSendRtxPayloadType, true);
+  TestNackRetransmission(kSendRtxSsrc, kSendRtxPayloadType);
 }
 
 void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
@@ -774,7 +766,6 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
   if (format == kVP8)
     send_config_.encoder_settings.payload_name = "VP8";
 
-  send_config_.pacing = false;
   send_config_.encoder_settings.encoder = &encoder;
   send_config_.rtp.max_packet_size = kMaxPacketSize;
   send_config_.post_encode_callback = &observer;
@@ -955,7 +946,6 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
   send_config_.rtp.nack.rtp_history_ms = 1000;
   send_config_.pre_encode_callback = &observer;
   send_config_.suspend_below_min_bitrate = true;
-  send_config_.pacing = true;
   int min_bitrate_bps = video_streams_[0].min_bitrate_bps;
   observer.set_low_remb_bps(min_bitrate_bps - 10000);
   int threshold_window = std::max(min_bitrate_bps / 10, 10000);
@@ -1114,7 +1104,6 @@ TEST_F(VideoSendStreamTest, ProducesStats) {
 
   CreateTestConfig(call.get(), 1);
   send_config_.rtp.c_name = kCName;
-  send_config_.pacing = true;
   observer.SetConfig(send_config_);
 
   send_stream_ =

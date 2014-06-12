@@ -61,7 +61,6 @@ class PacedSenderTest : public ::testing::Test {
     // Need to initialize PacedSender after we initialize clock.
     send_bucket_.reset(
         new PacedSender(&callback_, kPaceMultiplier * kTargetBitrate, 0));
-    send_bucket_->SetStatus(true);
   }
 
   void SendAndExpectPacket(PacedSender::Priority priority,
@@ -276,7 +275,6 @@ TEST_F(PacedSenderTest, VerifyAverageBitrateVaryingMediaPayload) {
   PacedSenderPadding callback;
   send_bucket_.reset(
       new PacedSender(&callback, kPaceMultiplier * kTargetBitrate, 0));
-  send_bucket_->SetStatus(true);
   send_bucket_->UpdateBitrate(kPaceMultiplier * kTargetBitrate, kTargetBitrate);
   int64_t start_time = TickTime::MillisecondTimestamp();
   int media_bytes = 0;

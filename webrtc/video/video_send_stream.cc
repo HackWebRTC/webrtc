@@ -101,8 +101,6 @@ std::string VideoSendStream::Config::ToString() const {
   }
   if (target_delay_ms > 0)
     ss << ", target_delay_ms: " << target_delay_ms;
-  if (pacing)
-    ss << ", pacing: on";
   if (suspend_below_min_bitrate)
     ss << ", suspend_below_min_bitrate: on";
   ss << '}';
@@ -131,9 +129,6 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
   assert(rtp_rtcp_ != NULL);
 
   assert(config_.rtp.ssrcs.size() > 0);
-  if (config_.suspend_below_min_bitrate)
-    assert(config_.pacing);
-  rtp_rtcp_->SetTransmissionSmoothingStatus(channel_, config_.pacing);
 
   assert(config_.rtp.min_transmit_bitrate_bps >= 0);
   rtp_rtcp_->SetMinTransmitBitrate(channel_,

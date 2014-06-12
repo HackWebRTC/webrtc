@@ -407,7 +407,7 @@ class RampUpTest : public ::testing::Test {
   virtual void SetUp() { reserved_ssrcs_.clear(); }
 
  protected:
-  void RunRampUpTest(bool pacing, bool rtx, size_t num_streams) {
+  void RunRampUpTest(bool rtx, size_t num_streams) {
     std::vector<uint32_t> ssrcs(GenerateSsrcs(num_streams, 100));
     std::vector<uint32_t> rtx_ssrcs(GenerateSsrcs(num_streams, 200));
     StreamObserver::SsrcMap rtx_ssrc_map;
@@ -438,7 +438,6 @@ class RampUpTest : public ::testing::Test {
       video_streams[0].max_bitrate_bps = 2000000;
     }
 
-    send_config.pacing = pacing;
     send_config.rtp.nack.rtp_history_ms = 1000;
     send_config.rtp.ssrcs = ssrcs;
     if (rtx) {
@@ -516,7 +515,6 @@ class RampUpTest : public ::testing::Test {
         RtpExtension(RtpExtension::kTOffset,
                      kTransmissionTimeOffsetExtensionId));
     send_config.suspend_below_min_bitrate = true;
-    send_config.pacing = true;
 
     VideoSendStream* send_stream =
         call->CreateVideoSendStream(send_config, video_streams, NULL);
@@ -565,24 +563,16 @@ class RampUpTest : public ::testing::Test {
   std::map<uint32_t, bool> reserved_ssrcs_;
 };
 
-TEST_F(RampUpTest, SingleStreamWithoutPacing) {
-  RunRampUpTest(false, false, 1);
+TEST_F(RampUpTest, SingleStream) {
+  RunRampUpTest(false, 1);
 }
 
-TEST_F(RampUpTest, SingleStreamWithPacing) {
-  RunRampUpTest(true, false, 1);
+TEST_F(RampUpTest, Simulcast) {
+  RunRampUpTest(false, 3);
 }
 
-TEST_F(RampUpTest, SimulcastWithoutPacing) {
-  RunRampUpTest(false, false, 3);
-}
-
-TEST_F(RampUpTest, SimulcastWithPacing) {
-  RunRampUpTest(true, false, 3);
-}
-
-TEST_F(RampUpTest, SimulcastWithPacingAndRtx) {
-  RunRampUpTest(true, true, 3);
+TEST_F(RampUpTest, SimulcastWithRtx) {
+  RunRampUpTest(true, 3);
 }
 
 TEST_F(RampUpTest, UpDownUpOneStream) { RunRampUpDownUpTest(1, false); }

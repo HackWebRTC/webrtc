@@ -179,8 +179,6 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     myTransport.ClearStats();
 
     EXPECT_EQ(0, ViE.rtp_rtcp->SetNACKStatus(tbChannel.videoChannel, true));
-    EXPECT_EQ(0, ViE.rtp_rtcp->SetTransmissionSmoothingStatus(
-        tbChannel.videoChannel, true));
     EXPECT_EQ(0, ViE.base->StartReceive(tbChannel.videoChannel));
     EXPECT_EQ(0, ViE.base->StartSend(tbChannel.videoChannel));
 
@@ -220,6 +218,7 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     myTransport.ClearStats();
 
     const uint8_t kRtxPayloadType = 96;
+    // Temporarily disable pacing.
     EXPECT_EQ(0, ViE.rtp_rtcp->SetTransmissionSmoothingStatus(
         tbChannel.videoChannel, false));
     EXPECT_EQ(0, ViE.rtp_rtcp->SetNACKStatus(tbChannel.videoChannel, true));
@@ -523,6 +522,7 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     ViETest::Log("Testing Network Down...\n");
 
     EXPECT_EQ(0, ViE.rtp_rtcp->SetNACKStatus(tbChannel.videoChannel, true));
+    // Reenable pacing.
     EXPECT_EQ(0, ViE.rtp_rtcp->SetTransmissionSmoothingStatus(
         tbChannel.videoChannel, true));
 
