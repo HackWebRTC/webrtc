@@ -90,7 +90,7 @@ class MockSetSessionDescriptionObserver
 class MockDataChannelObserver : public webrtc::DataChannelObserver {
  public:
   explicit MockDataChannelObserver(webrtc::DataChannelInterface* channel)
-     : channel_(channel) {
+     : channel_(channel), received_message_count_(0) {
     channel_->RegisterObserver(this);
     state_ = channel_->state();
   }
@@ -101,15 +101,18 @@ class MockDataChannelObserver : public webrtc::DataChannelObserver {
   virtual void OnStateChange() { state_ = channel_->state(); }
   virtual void OnMessage(const DataBuffer& buffer) {
     last_message_.assign(buffer.data.data(), buffer.data.length());
+    ++received_message_count_;
   }
 
   bool IsOpen() const { return state_ == DataChannelInterface::kOpen; }
   const std::string& last_message() const { return last_message_; }
+  size_t received_message_count() const { return received_message_count_; }
 
  private:
   talk_base::scoped_refptr<webrtc::DataChannelInterface> channel_;
   DataChannelInterface::DataState state_;
   std::string last_message_;
+  size_t received_message_count_;
 };
 
 class MockStatsObserver : public webrtc::StatsObserver {

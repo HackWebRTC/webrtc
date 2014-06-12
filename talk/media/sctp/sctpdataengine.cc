@@ -781,7 +781,6 @@ void SctpDataMediaChannel::OnStreamResetEvent(
                   << ListStreams(open_streams_) << "], Q'd: ["
                   << ListStreams(queued_reset_streams_) << "], Sent: ["
                   << ListStreams(sent_reset_streams_) << "]";
-  bool local_stream_reset_acknowledged = false;
 
   // If both sides try to reset some streams at the same time (even if they're
   // disjoint sets), we can get reset failures.
@@ -792,7 +791,6 @@ void SctpDataMediaChannel::OnStreamResetEvent(
         sent_reset_streams_.begin(),
         sent_reset_streams_.end());
     sent_reset_streams_.clear();
-    local_stream_reset_acknowledged = true;
 
   } else if (evt->strreset_flags & SCTP_STREAM_RESET_INCOMING_SSN) {
     // Each side gets an event for each direction of a stream.  That is,
@@ -809,7 +807,6 @@ void SctpDataMediaChannel::OnStreamResetEvent(
       if (it != sent_reset_streams_.end()) {
         LOG(LS_VERBOSE) << "SCTP_STREAM_RESET_EVENT(" << debug_name_
                         << "): local sid " << stream_id << " acknowledged.";
-        local_stream_reset_acknowledged = true;
         sent_reset_streams_.erase(it);
 
       } else if ((it = open_streams_.find(stream_id))
@@ -840,11 +837,9 @@ void SctpDataMediaChannel::OnStreamResetEvent(
     }
   }
 
-  if (local_stream_reset_acknowledged) {
-    // This message acknowledges the last stream-reset request we sent out
-    // (only one can be outstanding at a time).  Send out the next one.
-    SendQueuedStreamResets();
-  }
+  // Always try to send the queued RESET because this call indicates that the
+  // last local RESET or remote RESET has made some progress.
+  SendQueuedStreamResets();
 }
 
 // Puts the specified |param| from the codec identified by |id| into |dest|
