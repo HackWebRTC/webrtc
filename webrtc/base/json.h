@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-#if !defined(WEBRTC_CHROMIUM_BUILD)
+#if !defined(WEBRTC_EXTERNAL)
 #include "json/json.h"
 #else
 #include "third_party/jsoncpp/json.h"
