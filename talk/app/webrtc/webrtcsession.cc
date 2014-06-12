@@ -932,31 +932,18 @@ bool WebRtcSession::UpdateIce(PeerConnectionInterface::IceTransportsType type) {
   return false;
 }
 
-bool WebRtcSession::GetTrackIdBySsrc(uint32 ssrc, std::string* id) {
-  if (GetLocalTrackId(ssrc, id)) {
-    if (GetRemoteTrackId(ssrc, id)) {
-      LOG(LS_WARNING) << "SSRC " << ssrc
-                      << " exists in both local and remote descriptions";
-      return true;  // We return the remote track id.
-    }
-    return true;
-  } else {
-    return GetRemoteTrackId(ssrc, id);
-  }
-}
-
-bool WebRtcSession::GetLocalTrackId(uint32 ssrc, std::string* track_id) {
+bool WebRtcSession::GetLocalTrackIdBySsrc(uint32 ssrc, std::string* track_id) {
   if (!BaseSession::local_description())
     return false;
   return webrtc::GetTrackIdBySsrc(
-    BaseSession::local_description(), ssrc, track_id);
+      BaseSession::local_description(), ssrc, track_id);
 }
 
-bool WebRtcSession::GetRemoteTrackId(uint32 ssrc, std::string* track_id) {
+bool WebRtcSession::GetRemoteTrackIdBySsrc(uint32 ssrc, std::string* track_id) {
   if (!BaseSession::remote_description())
-      return false;
+    return false;
   return webrtc::GetTrackIdBySsrc(
-    BaseSession::remote_description(), ssrc, track_id);
+      BaseSession::remote_description(), ssrc, track_id);
 }
 
 std::string WebRtcSession::BadStateErrMsg(State state) {

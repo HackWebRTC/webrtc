@@ -38,7 +38,8 @@
 #include "talk/base/gunit.h"
 #include "talk/media/base/fakevideocapturer.h"
 #include "talk/media/base/mediachannel.h"
-#include "testing/base/public/gmock.h"
+#include "testing/gmock/include/gmock/gmock.h"
+#include "testing/gtest/include/gtest/gtest.h"
 
 using ::testing::_;
 using ::testing::Exactly;

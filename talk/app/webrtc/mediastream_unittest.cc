@@ -33,7 +33,8 @@
 #include "talk/base/refcount.h"
 #include "talk/base/scoped_ptr.h"
 #include "talk/base/gunit.h"
-#include "testing/base/public/gmock.h"
+#include "testing/gmock/include/gmock/gmock.h"
+#include "testing/gtest/include/gtest/gtest.h"
 
 static const char kStreamLabel1[] = "local_stream_1";
 static const char kVideoTrackId[] = "dummy_video_cam_1";
