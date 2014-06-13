@@ -1000,6 +1000,8 @@ class FakeWebRtcVideoEngine
     return 0;
   }
 
+  WEBRTC_STUB(SetPadWithRedundantPayloads, (int, bool));
+
   WEBRTC_FUNC(SetRtxReceivePayloadType, (const int channel,
                                          const uint8 payload_type)) {
     WEBRTC_CHECK_CHANNEL(channel);

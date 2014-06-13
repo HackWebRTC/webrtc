@@ -331,6 +331,7 @@ struct VideoOptions {
     screencast_min_bitrate.SetFrom(change.screencast_min_bitrate);
     use_improved_wifi_bandwidth_estimator.SetFrom(
         change.use_improved_wifi_bandwidth_estimator);
+    use_payload_padding.SetFrom(change.use_payload_padding);
   }
 
   bool operator==(const VideoOptions& o) const {
@@ -366,7 +367,8 @@ struct VideoOptions {
         skip_encoding_unused_streams == o.skip_encoding_unused_streams &&
         screencast_min_bitrate == o.screencast_min_bitrate &&
         use_improved_wifi_bandwidth_estimator ==
-            o.use_improved_wifi_bandwidth_estimator;
+            o.use_improved_wifi_bandwidth_estimator &&
+        use_payload_padding == o.use_payload_padding;
   }
 
   std::string ToString() const {
@@ -409,6 +411,7 @@ struct VideoOptions {
     ost << ToStringIfSet("screencast min bitrate", screencast_min_bitrate);
     ost << ToStringIfSet("improved wifi bwe",
                          use_improved_wifi_bandwidth_estimator);
+    ost << ToStringIfSet("payload padding", use_payload_padding);
     ost << "}";
     return ost.str();
   }
@@ -477,6 +480,8 @@ struct VideoOptions {
   Settable<int> screencast_min_bitrate;
   // Enable improved bandwidth estiamtor on wifi.
   Settable<bool> use_improved_wifi_bandwidth_estimator;
+  // Enable payload padding.
+  Settable<bool> use_payload_padding;
 };
 
 // A class for playing out soundclips.
