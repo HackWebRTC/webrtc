@@ -276,19 +276,19 @@ WebRtcVideoChannel2* FakeWebRtcVideoMediaChannelFactory::Create(
 
 class WebRtcVideoEngine2Test : public testing::Test {
  public:
-  WebRtcVideoEngine2Test()
-      : engine_(&factory_), engine_codecs_(engine_.codecs()) {
-    assert(!engine_codecs_.empty());
+  WebRtcVideoEngine2Test() : engine_(&factory_) {
+    std::vector<VideoCodec> engine_codecs = engine_.codecs();
+    assert(!engine_codecs.empty());
     bool codec_set = false;
-    for (size_t i = 0; i < engine_codecs_.size(); ++i) {
-      if (engine_codecs_[i].name == "red") {
-        default_red_codec_ = engine_codecs_[i];
-      } else if (engine_codecs_[i].name == "ulpfec") {
-        default_ulpfec_codec_ = engine_codecs_[i];
-      } else if (engine_codecs_[i].name == "rtx") {
-        default_rtx_codec_ = engine_codecs_[i];
+    for (size_t i = 0; i < engine_codecs.size(); ++i) {
+      if (engine_codecs[i].name == "red") {
+        default_red_codec_ = engine_codecs[i];
+      } else if (engine_codecs[i].name == "ulpfec") {
+        default_ulpfec_codec_ = engine_codecs[i];
+      } else if (engine_codecs[i].name == "rtx") {
+        default_rtx_codec_ = engine_codecs[i];
       } else if (!codec_set) {
-        default_codec_ = engine_codecs_[i];
+        default_codec_ = engine_codecs[i];
         codec_set = true;
       }
     }
@@ -303,8 +303,6 @@ class WebRtcVideoEngine2Test : public testing::Test {
   VideoCodec default_red_codec_;
   VideoCodec default_ulpfec_codec_;
   VideoCodec default_rtx_codec_;
-  // TODO(pbos): Remove engine_codecs_ unless used a lot.
-  std::vector<VideoCodec> engine_codecs_;
 };
 
 TEST_F(WebRtcVideoEngine2Test, CreateChannel) {
@@ -822,12 +820,12 @@ TEST_F(WebRtcVideoEngine2Test, FindCodec) {
 }
 
 TEST_F(WebRtcVideoEngine2Test, DefaultRtxCodecHasAssociatedPayloadTypeSet) {
-  for (size_t i = 0; i < engine_codecs_.size(); ++i) {
-    if (engine_codecs_[i].name != kRtxCodecName)
+  for (size_t i = 0; i < engine_.codecs().size(); ++i) {
+    if (engine_.codecs()[i].name != kRtxCodecName)
       continue;
     int associated_payload_type;
-    EXPECT_TRUE(engine_codecs_[i].GetParam(kCodecParamAssociatedPayloadType,
-                                           &associated_payload_type));
+    EXPECT_TRUE(engine_.codecs()[i].GetParam(kCodecParamAssociatedPayloadType,
+                                             &associated_payload_type));
     EXPECT_EQ(default_codec_.id, associated_payload_type);
     return;
   }
@@ -835,11 +833,11 @@ TEST_F(WebRtcVideoEngine2Test, DefaultRtxCodecHasAssociatedPayloadTypeSet) {
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetDefaultSendCodecs) {
-  ASSERT_TRUE(channel_->SetSendCodecs(engine_codecs_));
+  ASSERT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
 
   VideoCodec codec;
   EXPECT_TRUE(channel_->GetSendCodec(&codec));
-  EXPECT_TRUE(codec.Matches(engine_codecs_[0]));
+  EXPECT_TRUE(codec.Matches(engine_.codecs()[0]));
 
   // Using a RTX setup to verify that the default RTX payload type is good.
   const std::vector<uint32> ssrcs = MAKE_VECTOR(kSsrcs1);
@@ -848,7 +846,7 @@ TEST_F(WebRtcVideoChannel2Test, SetDefaultSendCodecs) {
       cricket::CreateSimWithRtxStreamParams("cname", ssrcs, rtx_ssrcs));
   webrtc::VideoSendStream::Config config = stream->GetConfig();
   // TODO(pbos): Replace ExpectEqualCodecs.
-  // ExpectEqualCodecs(engine_codecs_[0], config.codec);
+  // ExpectEqualCodecs(engine_.codecs()[0], config.codec);
 
   // Make sure NACK and FEC are enabled on the correct payload types.
   EXPECT_EQ(1000, config.rtp.nack.rtp_history_ms);
@@ -904,9 +902,10 @@ TEST_F(WebRtcVideoChannel2Test, SetSendCodecsWithMinMaxBitrate) {
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetSendCodecsRejectsMaxLessThanMinBitrate) {
-  engine_codecs_[0].params[kCodecParamMinBitrate] = "30";
-  engine_codecs_[0].params[kCodecParamMaxBitrate] = "20";
-  EXPECT_FALSE(channel_->SetSendCodecs(engine_codecs_));
+  std::vector<VideoCodec> video_codecs = engine_.codecs();
+  video_codecs[0].params[kCodecParamMinBitrate] = "30";
+  video_codecs[0].params[kCodecParamMaxBitrate] = "20";
+  EXPECT_FALSE(channel_->SetSendCodecs(video_codecs));
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetSendCodecsAcceptLargeMinMaxBitrate) {
