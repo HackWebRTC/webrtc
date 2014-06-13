@@ -57,6 +57,9 @@ void WebRtcAec_InitAec_SSE2(void);
 #if defined(MIPS_FPU_LE)
 void WebRtcAec_InitAec_mips(void);
 #endif
+#if defined(WEBRTC_DETECT_ARM_NEON) || defined(WEBRTC_ARCH_ARM_NEON)
+void WebRtcAec_InitAec_neon(void);
+#endif
 
 void WebRtcAec_BufferFarendPartition(AecCore* aec, const float* farend);
 void WebRtcAec_ProcessFrame(AecCore* aec,

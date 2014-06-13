@@ -67,7 +67,7 @@ static const float sqrtHanning[65] = {
 // Matlab code to produce table:
 // weightCurve = [0 ; 0.3 * sqrt(linspace(0,1,64))' + 0.1];
 // fprintf(1, '\t%.4f, %.4f, %.4f, %.4f, %.4f, %.4f,\n', weightCurve);
-const float WebRtcAec_weightCurve[65] = {
+ALIGN16_BEG const float ALIGN16_END WebRtcAec_weightCurve[65] = {
     0.0000f, 0.1000f, 0.1378f, 0.1535f, 0.1655f, 0.1756f, 0.1845f, 0.1926f,
     0.2000f, 0.2069f, 0.2134f, 0.2195f, 0.2254f, 0.2309f, 0.2363f, 0.2414f,
     0.2464f, 0.2512f, 0.2558f, 0.2604f, 0.2648f, 0.2690f, 0.2732f, 0.2773f,
@@ -81,7 +81,7 @@ const float WebRtcAec_weightCurve[65] = {
 // Matlab code to produce table:
 // overDriveCurve = [sqrt(linspace(0,1,65))' + 1];
 // fprintf(1, '\t%.4f, %.4f, %.4f, %.4f, %.4f, %.4f,\n', overDriveCurve);
-const float WebRtcAec_overDriveCurve[65] = {
+ALIGN16_BEG const float ALIGN16_END WebRtcAec_overDriveCurve[65] = {
     1.0000f, 1.1250f, 1.1768f, 1.2165f, 1.2500f, 1.2795f, 1.3062f, 1.3307f,
     1.3536f, 1.3750f, 1.3953f, 1.4146f, 1.4330f, 1.4507f, 1.4677f, 1.4841f,
     1.5000f, 1.5154f, 1.5303f, 1.5449f, 1.5590f, 1.5728f, 1.5863f, 1.5995f,
@@ -580,6 +580,10 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
 
 #if defined(MIPS_FPU_LE)
   WebRtcAec_InitAec_mips();
+#endif
+
+#if defined(WEBRTC_DETECT_ARM_NEON) || defined(WEBRTC_ARCH_ARM_NEON)
+  WebRtcAec_InitAec_neon();
 #endif
 
   aec_rdft_init();

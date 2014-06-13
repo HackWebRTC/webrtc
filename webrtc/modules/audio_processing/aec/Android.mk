@@ -47,3 +47,12 @@ ifndef NDK_ROOT
 include external/stlport/libstlport.mk
 endif
 include $(BUILD_STATIC_LIBRARY)
+
+#########################
+# Build the neon library.
+ifeq ($(WEBRTC_BUILD_NEON_LIBS),true)
+
+LOCAL_SRC_FILES += \
+    aec_core_neon.c
+
+endif # ifeq ($(WEBRTC_BUILD_NEON_LIBS),true)

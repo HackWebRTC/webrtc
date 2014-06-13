@@ -199,6 +199,7 @@
           '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
         ],
         'sources': [
+          'aec/aec_core_neon.c',
           'aecm/aecm_core_neon.c',
           'ns/nsx_core_neon.c',
         ],
