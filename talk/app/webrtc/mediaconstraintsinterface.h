@@ -126,7 +126,6 @@ class MediaConstraintsInterface {
   static const char kHighStartBitrate[];  // googHighStartBitrate
   static const char kHighBitrate[];  // googHighBitrate
   static const char kVeryHighBitrate[];  // googVeryHighBitrate
-  static const char kPayloadPadding[];  // googPayloadPadding
 
   // The prefix of internal-only constraints whose JS set values should be
   // stripped by Chrome before passed down to Libjingle.

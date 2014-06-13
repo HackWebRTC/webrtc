@@ -2976,11 +2976,6 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
       options_.use_improved_wifi_bandwidth_estimator !=
           options.use_improved_wifi_bandwidth_estimator;
 
-#ifdef USE_WEBRTC_DEV_BRANCH
-  bool payload_padding_changed = options.use_payload_padding.IsSet() &&
-      options_.use_payload_padding != options.use_payload_padding;
-#endif
-
 
   // Save the options, to be interpreted where appropriate.
   // Use options_.SetAll() instead of assignment so that unset value in options
@@ -3110,17 +3105,6 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
           it->second->channel_id(), config);
     }
   }
-#ifdef USE_WEBRTC_DEV_BRANCH
-  if (payload_padding_changed) {
-    LOG(LS_INFO) << "Payload-based padding called.";
-    for (SendChannelMap::iterator it = send_channels_.begin();
-            it != send_channels_.end(); ++it) {
-      engine()->vie()->rtp()->SetPadWithRedundantPayloads(
-          it->second->channel_id(),
-          options_.use_payload_padding.GetWithDefaultIfUnset(false));
-    }
-  }
-#endif
   webrtc::CpuOveruseOptions overuse_options;
   if (GetCpuOveruseOptions(options_, &overuse_options)) {
     for (SendChannelMap::iterator it = send_channels_.begin();

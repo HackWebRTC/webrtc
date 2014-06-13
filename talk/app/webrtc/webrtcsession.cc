@@ -371,15 +371,14 @@ static std::string MakeTdErrorString(const std::string& desc) {
 
 // Set |option| to the highest-priority value of |key| in the optional
 // constraints if the key is found and has a valid value.
-template<typename T>
 static void SetOptionFromOptionalConstraint(
     const MediaConstraintsInterface* constraints,
-    const std::string& key, cricket::Settable<T>* option) {
+    const std::string& key, cricket::Settable<int>* option) {
   if (!constraints) {
     return;
   }
   std::string string_value;
-  T value;
+  int value;
   if (constraints->GetOptional().FindFirst(key, &string_value)) {
     if (talk_base::FromString(string_value, &value)) {
       option->Set(value);
@@ -565,17 +564,21 @@ bool WebRtcSession::Initialize(
   SetOptionFromOptionalConstraint(constraints,
       MediaConstraintsInterface::kCpuOveruseThreshold,
       &video_options_.cpu_overuse_threshold);
-  SetOptionFromOptionalConstraint(constraints,
-      MediaConstraintsInterface::kCpuOveruseDetection,
-      &video_options_.cpu_overuse_detection);
-  SetOptionFromOptionalConstraint(constraints,
-      MediaConstraintsInterface::kCpuOveruseEncodeUsage,
-      &video_options_.cpu_overuse_encode_usage);
 
-  // Find payload padding constraint.
-  SetOptionFromOptionalConstraint(constraints,
-      MediaConstraintsInterface::kPayloadPadding,
-      &video_options_.use_payload_padding);
+  if (FindConstraint(
+      constraints,
+      MediaConstraintsInterface::kCpuOveruseDetection,
+      &value,
+      NULL)) {
+    video_options_.cpu_overuse_detection.Set(value);
+  }
+  if (FindConstraint(
+      constraints,
+      MediaConstraintsInterface::kCpuOveruseEncodeUsage,
+      &value,
+      NULL)) {
+    video_options_.cpu_overuse_encode_usage.Set(value);
+  }
 
   // Find improved wifi bwe constraint.
   if (FindConstraint(
@@ -589,9 +592,13 @@ bool WebRtcSession::Initialize(
     video_options_.use_improved_wifi_bandwidth_estimator.Set(true);
   }
 
-  SetOptionFromOptionalConstraint(constraints,
-      MediaConstraintsInterface::kHighStartBitrate,
-      &video_options_.video_start_bitrate);
+  if (FindConstraint(
+        constraints,
+        MediaConstraintsInterface::kHighStartBitrate,
+        &value,
+        NULL)) {
+    video_options_.video_start_bitrate.Set(cricket::kHighStartBitrate);
+  }
 
   if (FindConstraint(
       constraints,
