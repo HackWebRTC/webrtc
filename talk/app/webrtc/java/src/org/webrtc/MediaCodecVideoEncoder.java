@@ -155,9 +155,10 @@ class MediaCodecVideoEncoder {
   }
 
   // Return the array of input buffers, or null on failure.
-  private ByteBuffer[] initEncode(int width, int height, int kbps) {
+  private ByteBuffer[] initEncode(int width, int height, int kbps, int fps) {
     Log.d(TAG, "initEncode: " + width + " x " + height +
-        ". @ " + kbps + " kbps. Color: 0x" + Integer.toHexString(colorFormat));
+        ". @ " + kbps + " kbps. Fps: " + fps +
+        ". Color: 0x" + Integer.toHexString(colorFormat));
     if (mediaCodecThread != null) {
       throw new RuntimeException("Forgot to release()?");
     }
@@ -173,7 +174,7 @@ class MediaCodecVideoEncoder {
       format.setInteger("bitrate-mode", VIDEO_ControlRateConstant);
       format.setInteger(MediaFormat.KEY_COLOR_FORMAT, properties.colorFormat);
       // Default WebRTC settings
-      format.setInteger(MediaFormat.KEY_FRAME_RATE, 30);
+      format.setInteger(MediaFormat.KEY_FRAME_RATE, fps);
       format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 100);
       Log.d(TAG, "  Format: " + format);
       mediaCodec = MediaCodec.createByCodecName(properties.codecName);
@@ -237,7 +238,7 @@ class MediaCodecVideoEncoder {
     // frameRate argument is ignored - HW encoder is supposed to use
     // video frame timestamps for bit allocation.
     checkOnMediaCodecThread();
-    Log.v(TAG, "setRates: " + kbps + " kbps");
+    Log.v(TAG, "setRates: " + kbps + " kbps. Fps: " + frameRateIgnored);
     try {
       Bundle params = new Bundle();
       params.putInt(MediaCodec.PARAMETER_KEY_VIDEO_BITRATE, bitRate(kbps));
@@ -294,6 +295,9 @@ class MediaCodecVideoEncoder {
         outputBuffer.limit(info.offset + info.size);
         boolean isKeyFrame =
             (info.flags & MediaCodec.BUFFER_FLAG_SYNC_FRAME) != 0;
+        if (isKeyFrame) {
+          Log.d(TAG, "Sync frame generated");
+        }
         return new OutputBufferInfo(
             result, outputBuffer.slice(), isKeyFrame, info.presentationTimeUs);
       } else if (result == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {

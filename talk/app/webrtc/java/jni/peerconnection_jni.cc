@@ -1134,6 +1134,15 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
 // into its own .h/.cc pair, if/when the JNI helper stuff above is extracted
 // from this file.
 
+//#define TRACK_BUFFER_TIMING
+#ifdef TRACK_BUFFER_TIMING
+#include <android/log.h>
+#define TAG "MediaCodecVideoEncoder"
+#define ALOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, TAG, __VA_ARGS__)
+#else
+#define ALOGV(...)
+#endif
+
 // Color formats supported by encoder - should mirror supportedColorList
 // from MediaCodecVideoEncoder.java
 enum COLOR_FORMATTYPE {
@@ -1195,7 +1204,7 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   // If width==0 then this is assumed to be a re-initialization and the
   // previously-current values are reused instead of the passed parameters
   // (makes it easier to reason about thread-safety).
-  int32_t InitEncodeOnCodecThread(int width, int height, int kbps);
+  int32_t InitEncodeOnCodecThread(int width, int height, int kbps, int fps);
   int32_t EncodeOnCodecThread(
       const webrtc::I420VideoFrame& input_image,
       const std::vector<webrtc::VideoFrameType>* frame_types);
@@ -1247,8 +1256,12 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   int height_;  // Frame height in pixels.
   enum libyuv::FourCC encoder_fourcc_; // Encoder color space format.
   int last_set_bitrate_kbps_;  // Last-requested bitrate in kbps.
+  int last_set_fps_;  // Last-requested frame rate.
   int frames_received_; // Number of frames received by encoder.
   int frames_dropped_; // Number of frames dropped by encoder.
+  int frames_in_queue_; // Number of frames in encoder queue.
+  int64_t last_input_timestamp_ms_; // Timestamp of last received yuv frame.
+  int64_t last_output_timestamp_ms_; // Timestamp of last encoded frame.
   // Frame size in bytes fed to MediaCodec.
   int yuv_size_;
   // True only when between a callback_->Encoded() call return a positive value
@@ -1295,7 +1308,7 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(JNIEnv* jni)
   j_init_encode_method_ = GetMethodID(jni,
                                       *j_media_codec_video_encoder_class_,
                                       "initEncode",
-                                      "(III)[Ljava/nio/ByteBuffer;");
+                                      "(IIII)[Ljava/nio/ByteBuffer;");
   j_dequeue_input_buffer_method_ = GetMethodID(
       jni, *j_media_codec_video_encoder_class_, "dequeueInputBuffer", "()I");
   j_encode_method_ = GetMethodID(
@@ -1337,7 +1350,8 @@ int32_t MediaCodecVideoEncoder::InitEncode(
            this,
            codec_settings->width,
            codec_settings->height,
-           codec_settings->startBitrate));
+           codec_settings->startBitrate,
+           codec_settings->maxFramerate));
 }
 
 int32_t MediaCodecVideoEncoder::Encode(
@@ -1401,8 +1415,8 @@ void MediaCodecVideoEncoder::ResetCodec() {
   LOG(LS_ERROR) << "ResetCodec";
   if (Release() != WEBRTC_VIDEO_CODEC_OK ||
       codec_thread_->Invoke<int32_t>(Bind(
-          &MediaCodecVideoEncoder::InitEncodeOnCodecThread, this, 0, 0, 0)) !=
-          WEBRTC_VIDEO_CODEC_OK) {
+          &MediaCodecVideoEncoder::InitEncodeOnCodecThread, this, 0, 0, 0, 0))
+            != WEBRTC_VIDEO_CODEC_OK) {
     // TODO(fischman): wouldn't it be nice if there was a way to gracefully
     // degrade to a SW encoder at this point?  There isn't one AFAICT :(
     // https://code.google.com/p/webrtc/issues/detail?id=2920
@@ -1410,7 +1424,7 @@ void MediaCodecVideoEncoder::ResetCodec() {
 }
 
 int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
-    int width, int height, int kbps) {
+    int width, int height, int kbps, int fps) {
   CheckOnCodecThread();
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
@@ -1420,21 +1434,27 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
     width = width_;
     height = height_;
     kbps = last_set_bitrate_kbps_;
+    fps = last_set_fps_;
   }
 
   width_ = width;
   height_ = height;
   last_set_bitrate_kbps_ = kbps;
+  last_set_fps_ = fps;
   yuv_size_ = width_ * height_ * 3 / 2;
   frames_received_ = 0;
   frames_dropped_ = 0;
+  frames_in_queue_ = 0;
+  last_input_timestamp_ms_ = -1;
+  last_output_timestamp_ms_ = -1;
   // We enforce no extra stride/padding in the format creation step.
   jobjectArray input_buffers = reinterpret_cast<jobjectArray>(
       jni->CallObjectMethod(*j_media_codec_video_encoder_,
                             j_init_encode_method_,
                             width_,
                             height_,
-                            kbps));
+                            kbps,
+                            fps));
   CHECK_EXCEPTION(jni, "");
   if (IsNull(jni, input_buffers))
     return WEBRTC_VIDEO_CODEC_ERROR;
@@ -1494,11 +1514,26 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   CHECK(frame.width() == width_, "Unexpected resolution change");
   CHECK(frame.height() == height_, "Unexpected resolution change");
 
+  // Check if we accumulated too many frames in encoder input buffers
+  // so the encoder latency exceeds 100ms and drop frame if so.
+  if (frames_in_queue_ > 0 && last_input_timestamp_ms_ > 0 &&
+      last_output_timestamp_ms_ > 0) {
+    int encoder_latency_ms = last_input_timestamp_ms_ -
+        last_output_timestamp_ms_;
+    if (encoder_latency_ms > 100) {
+      ALOGV("Drop frame - encoder is behind by %d ms. Q size: %d",
+          encoder_latency_ms, frames_in_queue_);
+      frames_dropped_++;
+      return WEBRTC_VIDEO_CODEC_OK;
+    }
+  }
+
   int j_input_buffer_index = jni->CallIntMethod(*j_media_codec_video_encoder_,
                                                 j_dequeue_input_buffer_method_);
   CHECK_EXCEPTION(jni, "");
   if (j_input_buffer_index == -1) {
     // Video codec falls behind - no input buffer available.
+    ALOGV("Drop frame - no input buffers available");
     frames_dropped_++;
     return WEBRTC_VIDEO_CODEC_OK;  // TODO(fischman): see webrtc bug 2887.
   }
@@ -1506,6 +1541,9 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     ResetCodec();
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
+
+  ALOGV("Frame # %d. Buffer # %d. TS: %lld.",
+      frames_received_, j_input_buffer_index, frame.render_time_ms());
 
   jobject j_input_buffer = input_buffers_[j_input_buffer_index];
   uint8* yuv_buffer =
@@ -1521,7 +1559,8 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
           encoder_fourcc_),
       "ConvertFromI420 failed");
   jlong timestamp_us = frame.render_time_ms() * 1000;
-  int64_t start = talk_base::Time();
+  last_input_timestamp_ms_ = frame.render_time_ms();
+  frames_in_queue_++;
   bool encode_status = jni->CallBooleanMethod(*j_media_codec_video_encoder_,
                                               j_encode_method_,
                                               key_frame,
@@ -1564,12 +1603,14 @@ int32_t MediaCodecVideoEncoder::ReleaseOnCodecThread() {
 int32_t MediaCodecVideoEncoder::SetRatesOnCodecThread(uint32_t new_bit_rate,
                                                       uint32_t frame_rate) {
   CheckOnCodecThread();
-  if (last_set_bitrate_kbps_ == new_bit_rate) {
+  if (last_set_bitrate_kbps_ == new_bit_rate &&
+      last_set_fps_ == frame_rate) {
     return WEBRTC_VIDEO_CODEC_OK;
   }
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
   last_set_bitrate_kbps_ = new_bit_rate;
+  last_set_fps_ = frame_rate;
   bool ret = jni->CallBooleanMethod(*j_media_codec_video_encoder_,
                                        j_set_rates_method_,
                                        new_bit_rate,
@@ -1635,6 +1676,11 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
     jlong capture_time_ms =
         GetOutputBufferInfoPresentationTimestampUs(jni, j_output_buffer_info) /
         1000;
+    last_output_timestamp_ms_ = capture_time_ms;
+    frames_in_queue_--;
+    ALOGV("Got output buffer # %d. TS: %lld. Latency: %lld",
+        output_buffer_index, last_output_timestamp_ms_,
+        last_input_timestamp_ms_ - last_output_timestamp_ms_);
 
     int32_t callback_status = 0;
     if (callback_) {
