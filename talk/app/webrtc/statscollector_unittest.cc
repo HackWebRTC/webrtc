@@ -318,6 +318,8 @@ void VerifyVoiceReceiverInfoReport(
   EXPECT_TRUE(GetValue(
       report, StatsReport::kStatsValueNameDecodingPLCCNG, &value_in_report));
   EXPECT_EQ(talk_base::ToString<int>(info.decoding_plc_cng), value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameCodecName, &value_in_report));
 }
 
 
@@ -1254,6 +1256,7 @@ TEST_F(StatsCollectorTest, GetStatsFromRemoteStream) {
 
   cricket::VoiceReceiverInfo voice_receiver_info;
   InitVoiceReceiverInfo(&voice_receiver_info);
+  voice_receiver_info.codec_name = "fake_codec";
 
   // Constructs an ssrc stats update.
   cricket::VoiceMediaInfo stats_read;

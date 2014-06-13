@@ -3270,6 +3270,9 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
 #ifdef USE_WEBRTC_DEV_BRANCH
       rinfo.capture_start_ntp_time_ms = cs.capture_start_ntp_time_ms_;
 #endif
+      if (codec.pltype != -1) {
+        rinfo.codec_name = codec.plname;
+      }
       // Convert samples to milliseconds.
       if (codec.plfreq / 1000 > 0) {
         rinfo.jitter_ms = cs.jitterSamples / (codec.plfreq / 1000);

@@ -787,6 +787,7 @@ struct MediaReceiverInfo {
   int packets_rcvd;
   int packets_lost;
   float fraction_lost;
+  std::string codec_name;
   std::vector<SsrcReceiverInfo> local_stats;
   std::vector<SsrcSenderInfo> remote_stats;
 };

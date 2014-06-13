@@ -312,6 +312,7 @@ void ExtractStats(const cricket::VoiceReceiverInfo& info, StatsReport* report) {
                    info.decoding_plc_cng);
   report->AddValue(StatsReport::kStatsValueNameCaptureStartNtpTimeMs,
                    info.capture_start_ntp_time_ms);
+  report->AddValue(StatsReport::kStatsValueNameCodecName, info.codec_name);
 }
 
 void ExtractStats(const cricket::VoiceSenderInfo& info, StatsReport* report) {

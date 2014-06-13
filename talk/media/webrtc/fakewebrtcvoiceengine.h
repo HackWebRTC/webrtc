@@ -36,6 +36,7 @@
 #include "talk/base/gunit.h"
 #include "talk/base/stringutils.h"
 #include "talk/media/base/codec.h"
+#include "talk/media/base/rtputils.h"
 #include "talk/media/base/voiceprocessor.h"
 #include "talk/media/webrtc/fakewebrtccommon.h"
 #include "talk/media/webrtc/webrtcvoe.h"
@@ -437,7 +438,26 @@ class FakeWebRtcVoiceEngine
   WEBRTC_STUB(RemoveSecondarySendCodec, (int channel));
   WEBRTC_STUB(GetSecondarySendCodec, (int channel,
                                       webrtc::CodecInst& codec));
-  WEBRTC_STUB(GetRecCodec, (int channel, webrtc::CodecInst& codec));
+  WEBRTC_FUNC(GetRecCodec, (int channel, webrtc::CodecInst& codec)) {
+    WEBRTC_CHECK_CHANNEL(channel);
+    const Channel* c = channels_[channel];
+    for (std::list<std::string>::const_iterator it_packet = c->packets.begin();
+        it_packet != c->packets.end(); ++it_packet) {
+      int pltype;
+      if (!GetRtpPayloadType(it_packet->data(), it_packet->length(), &pltype)) {
+        continue;
+      }
+      for (std::vector<webrtc::CodecInst>::const_iterator it_codec =
+          c->recv_codecs.begin(); it_codec != c->recv_codecs.end();
+          ++it_codec) {
+        if (it_codec->pltype == pltype) {
+          codec = *it_codec;
+          return 0;
+        }
+      }
+    }
+    return -1;
+  }
   WEBRTC_STUB(SetAMREncFormat, (int channel, webrtc::AmrMode mode));
   WEBRTC_STUB(SetAMRDecFormat, (int channel, webrtc::AmrMode mode));
   WEBRTC_STUB(SetAMRWbEncFormat, (int channel, webrtc::AmrMode mode));
