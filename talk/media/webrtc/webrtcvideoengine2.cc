@@ -161,6 +161,22 @@ static bool FindBestVideoFormat(int max_width,
   return false;
 }
 
+static void AddDefaultFeedbackParams(VideoCodec* codec) {
+  const FeedbackParam kFir(kRtcpFbParamCcm, kRtcpFbCcmParamFir);
+  codec->AddFeedbackParam(kFir);
+  const FeedbackParam kNack(kRtcpFbParamNack, kParamValueEmpty);
+  codec->AddFeedbackParam(kNack);
+  const FeedbackParam kPli(kRtcpFbParamNack, kRtcpFbNackParamPli);
+  codec->AddFeedbackParam(kPli);
+  const FeedbackParam kRemb(kRtcpFbParamRemb, kParamValueEmpty);
+  codec->AddFeedbackParam(kRemb);
+}
+
+static bool IsNackEnabled(const VideoCodec& codec) {
+  return codec.HasFeedbackParam(
+      FeedbackParam(kRtcpFbParamNack, kParamValueEmpty));
+}
+
 static VideoCodec DefaultVideoCodec() {
   VideoCodec default_codec(kDefaultVideoCodecPref.payload_type,
                            kDefaultVideoCodecPref.name,
@@ -168,6 +184,7 @@ static VideoCodec DefaultVideoCodec() {
                            kDefaultVideoFormat.height,
                            kDefaultFramerate,
                            0);
+  AddDefaultFeedbackParams(&default_codec);
   return default_codec;
 }
 
@@ -950,7 +967,9 @@ bool WebRtcVideoChannel2::AddSendStream(const StreamParams& sp) {
     config.rtp.rtx.payload_type = codec_settings.rtx_payload_type;
   }
 
-  config.rtp.nack.rtp_history_ms = kNackHistoryMs;
+  if (IsNackEnabled(codec_settings.codec)) {
+    config.rtp.nack.rtp_history_ms = kNackHistoryMs;
+  }
   config.rtp.max_packet_size = kVideoMtu;
 
   WebRtcVideoSendStream* stream =
@@ -1024,7 +1043,9 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp) {
   config.rtp.remote_ssrc = ssrc;
   config.rtp.local_ssrc = rtcp_receiver_report_ssrc_;
 
-  config.rtp.nack.rtp_history_ms = kNackHistoryMs;
+  if (IsNackEnabled(recv_codecs_.begin()->codec)) {
+    config.rtp.nack.rtp_history_ms = kNackHistoryMs;
+  }
   config.rtp.remb = true;
   // TODO(pbos): This protection is against setting the same local ssrc as
   // remote which is not permitted by the lower-level API. RTCP requires a

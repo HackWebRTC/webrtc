@@ -48,6 +48,18 @@ static const cricket::VideoCodec kUlpfecCodec(117, "ulpfec", 0, 0, 0, 0);
 
 static const uint32 kSsrcs1[] = {1};
 static const uint32 kRtxSsrcs1[] = {4};
+
+void VerifyCodecHasDefaultFeedbackParams(const cricket::VideoCodec& codec) {
+  EXPECT_TRUE(codec.HasFeedbackParam(cricket::FeedbackParam(
+      cricket::kRtcpFbParamNack, cricket::kParamValueEmpty)));
+  EXPECT_TRUE(codec.HasFeedbackParam(cricket::FeedbackParam(
+      cricket::kRtcpFbParamNack, cricket::kRtcpFbNackParamPli)));
+  EXPECT_TRUE(codec.HasFeedbackParam(cricket::FeedbackParam(
+      cricket::kRtcpFbParamRemb, cricket::kParamValueEmpty)));
+  EXPECT_TRUE(codec.HasFeedbackParam(cricket::FeedbackParam(
+      cricket::kRtcpFbParamCcm, cricket::kRtcpFbCcmParamFir)));
+}
+
 }  // namespace
 
 namespace cricket {
@@ -744,7 +756,9 @@ TEST_F(WebRtcVideoChannel2Test, DISABLED_RembOnOff) {
   FAIL() << "Not implemented.";  // TODO(pbos): Implement.
 }
 
-TEST_F(WebRtcVideoChannel2Test, NackIsEnabled) {
+TEST_F(WebRtcVideoChannel2Test, NackIsEnabledByDefault) {
+  VerifyCodecHasDefaultFeedbackParams(default_codec_);
+
   EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
   EXPECT_TRUE(channel_->SetSend(true));
 
@@ -761,6 +775,23 @@ TEST_F(WebRtcVideoChannel2Test, NackIsEnabled) {
   // Nack history size should match between sender and receiver.
   EXPECT_EQ(send_stream->GetConfig().rtp.nack.rtp_history_ms,
             recv_stream->GetConfig().rtp.nack.rtp_history_ms);
+}
+
+TEST_F(WebRtcVideoChannel2Test, NackCanBeDisabled) {
+  std::vector<VideoCodec> codecs;
+  codecs.push_back(kVp8Codec);
+
+  // Send side.
+  ASSERT_TRUE(channel_->SetSendCodecs(codecs));
+  FakeVideoSendStream* send_stream =
+      AddSendStream(cricket::StreamParams::CreateLegacy(1));
+  EXPECT_EQ(0, send_stream->GetConfig().rtp.nack.rtp_history_ms);
+
+  // Receiver side.
+  ASSERT_TRUE(channel_->SetRecvCodecs(codecs));
+  FakeVideoReceiveStream* recv_stream =
+      AddRecvStream(cricket::StreamParams::CreateLegacy(1));
+  EXPECT_EQ(0, recv_stream->GetConfig().rtp.nack.rtp_history_ms);
 }
 
 TEST_F(WebRtcVideoChannel2Test, DISABLED_VideoProtectionInterop) {
