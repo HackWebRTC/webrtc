@@ -329,6 +329,7 @@ WebRtcVideoChannel2* WebRtcVideoEngine2::CreateChannel(
     delete channel;
     return NULL;
   }
+  channel->SetRecvCodecs(video_codecs_);
   return channel;
 }
 
@@ -725,15 +726,6 @@ bool WebRtcVideoChannel2::Init() { return true; }
 
 namespace {
 
-static bool ValidateCodecFormats(const std::vector<VideoCodec>& codecs) {
-  for (size_t i = 0; i < codecs.size(); ++i) {
-    if (!codecs[i].ValidateCodecFormat()) {
-      return false;
-    }
-  }
-  return true;
-}
-
 static std::string CodecVectorToString(const std::vector<VideoCodec>& codecs) {
   std::stringstream out;
   out << '{';
@@ -745,6 +737,24 @@ static std::string CodecVectorToString(const std::vector<VideoCodec>& codecs) {
   }
   out << '}';
   return out.str();
+}
+
+static bool ValidateCodecFormats(const std::vector<VideoCodec>& codecs) {
+  bool has_video = false;
+  for (size_t i = 0; i < codecs.size(); ++i) {
+    if (!codecs[i].ValidateCodecFormat()) {
+      return false;
+    }
+    if (codecs[i].GetCodecType() == VideoCodec::CODEC_VIDEO) {
+      has_video = true;
+    }
+  }
+  if (!has_video) {
+    LOG(LS_ERROR) << "Setting codecs without a video codec is invalid: "
+                  << CodecVectorToString(codecs);
+    return false;
+  }
+  return true;
 }
 
 }  // namespace
@@ -852,30 +862,37 @@ static bool ConfigureSendSsrcs(webrtc::VideoSendStream::Config* config,
     return false;
   }
 
+  // Map RTX SSRCs.
+  std::vector<uint32_t> ssrcs;
+  std::vector<uint32_t> rtx_ssrcs;
   const SsrcGroup* sim_group = sp.get_ssrc_group(kSimSsrcGroupSemantics);
   if (sim_group == NULL) {
-    LOG(LS_ERROR) << "Grouped StreamParams without regular SSRC group: "
-                  << sp.ToString();
-    return false;
-  }
-
-  // Map RTX SSRCs.
-  std::vector<uint32_t> rtx_ssrcs;
-  for (size_t i = 0; i < sim_group->ssrcs.size(); ++i) {
+    ssrcs.push_back(sp.first_ssrc());
     uint32_t rtx_ssrc;
-    if (!sp.GetFidSsrc(sim_group->ssrcs[i], &rtx_ssrc)) {
-      continue;
+    if (!sp.GetFidSsrc(sp.first_ssrc(), &rtx_ssrc)) {
+      LOG(LS_ERROR) << "Could not find FID ssrc for primary SSRC '"
+                    << sp.first_ssrc() << "':" << sp.ToString();
+      return false;
     }
     rtx_ssrcs.push_back(rtx_ssrc);
+  } else {
+    ssrcs = sim_group->ssrcs;
+    for (size_t i = 0; i < sim_group->ssrcs.size(); ++i) {
+      uint32_t rtx_ssrc;
+      if (!sp.GetFidSsrc(sim_group->ssrcs[i], &rtx_ssrc)) {
+        continue;
+      }
+      rtx_ssrcs.push_back(rtx_ssrc);
+    }
   }
-  if (!rtx_ssrcs.empty() && sim_group->ssrcs.size() != rtx_ssrcs.size()) {
+  if (!rtx_ssrcs.empty() && ssrcs.size() != rtx_ssrcs.size()) {
     LOG(LS_ERROR)
         << "RTX SSRCs exist, but don't cover all SSRCs (unsupported): "
         << sp.ToString();
     return false;
   }
   config->rtp.rtx.ssrcs = rtx_ssrcs;
-  config->rtp.ssrcs = sim_group->ssrcs;
+  config->rtp.ssrcs = ssrcs;
   return true;
 }
 
@@ -1006,13 +1023,6 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp) {
   webrtc::VideoReceiveStream::Config config = call_->GetDefaultReceiveConfig();
   config.rtp.remote_ssrc = ssrc;
   config.rtp.local_ssrc = rtcp_receiver_report_ssrc_;
-  uint32 rtx_ssrc = 0;
-  if (sp.GetFidSsrc(ssrc, &rtx_ssrc)) {
-    // TODO(pbos): Right now, VideoReceiveStream accepts any rtx payload, this
-    //             should use the actual codec payloads that may be received.
-    //             (for each receive payload, set rtx[payload].ssrc = rtx_ssrc.
-    config.rtp.rtx[0].ssrc = rtx_ssrc;
-  }
 
   config.rtp.nack.rtp_history_ms = kNackHistoryMs;
   config.rtp.remb = true;
@@ -1068,7 +1078,9 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp) {
     for (size_t i = 0; i < recv_codecs_.size(); ++i) {
       if (recv_codecs_[i].codec.id == codec.plType) {
         config.rtp.fec = recv_codecs_[i].fec;
-        if (recv_codecs_[i].rtx_payload_type != -1 && rtx_ssrc != 0) {
+        uint32 rtx_ssrc;
+        if (recv_codecs_[i].rtx_payload_type != -1 &&
+            sp.GetFidSsrc(ssrc, &rtx_ssrc)) {
           config.rtp.rtx[codec.plType].ssrc = rtx_ssrc;
           config.rtp.rtx[codec.plType].payload_type =
               recv_codecs_[i].rtx_payload_type;
@@ -1607,6 +1619,7 @@ WebRtcVideoChannel2::MapCodecs(const std::vector<VideoCodec>& codecs) {
 
   std::vector<VideoCodecSettings> video_codecs;
   std::map<int, bool> payload_used;
+  std::map<int, VideoCodec::CodecType> payload_codec_type;
   std::map<int, int> rtx_mapping;  // video payload type -> rtx payload type.
 
   webrtc::FecConfig fec_settings;
@@ -1621,6 +1634,7 @@ WebRtcVideoChannel2::MapCodecs(const std::vector<VideoCodec>& codecs) {
       return std::vector<VideoCodecSettings>();
     }
     payload_used[payload_type] = true;
+    payload_codec_type[payload_type] = in_codec.GetCodecType();
 
     switch (in_codec.GetCodecType()) {
       case VideoCodec::CODEC_RED: {
@@ -1660,6 +1674,19 @@ WebRtcVideoChannel2::MapCodecs(const std::vector<VideoCodec>& codecs) {
   // One of these codecs should have been a video codec. Only having FEC
   // parameters into this code is a logic error.
   assert(!video_codecs.empty());
+
+  for (std::map<int, int>::const_iterator it = rtx_mapping.begin();
+       it != rtx_mapping.end();
+       ++it) {
+    if (!payload_used[it->first]) {
+      LOG(LS_ERROR) << "RTX mapped to payload not in codec list.";
+      return std::vector<VideoCodecSettings>();
+    }
+    if (payload_codec_type[it->first] != VideoCodec::CODEC_VIDEO) {
+      LOG(LS_ERROR) << "RTX not mapped to regular video codec.";
+      return std::vector<VideoCodecSettings>();
+    }
+  }
 
   // TODO(pbos): Write tests that figure out that I have not verified that RTX
   // codecs aren't mapped to bogus payloads.
