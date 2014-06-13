@@ -113,6 +113,7 @@
 
         # Path variables are used to replace file paths when loading a .isolate
         # file
+        '--path-variable', 'DEPTH', '<(DEPTH)',
         '--path-variable', 'PRODUCT_DIR', '<(PRODUCT_DIR) ',
 
         '--config-variable', 'OS=<(OS)',
