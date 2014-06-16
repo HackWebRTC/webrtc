@@ -16,6 +16,7 @@
 #include "webrtc/modules/audio_coding/neteq/interface/neteq.h"
 #include "webrtc/modules/audio_coding/neteq/interface/audio_decoder.h"
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
+#include "webrtc/system_wrappers/interface/thread_annotations.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 #define MAX_FRAME_SIZE_10MSEC 6
@@ -616,7 +617,8 @@ class ACMGenericCodec {
   virtual int32_t Add10MsDataSafe(const uint32_t timestamp,
                                   const int16_t* data,
                                   const uint16_t length,
-                                  const uint8_t audio_channel);
+                                  const uint8_t audio_channel)
+      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
 
   ///////////////////////////////////////////////////////////////////////////
   // See EncoderParam() for the description of function, input(s)/output(s)
@@ -628,14 +630,15 @@ class ACMGenericCodec {
   // See ResetEncoder() for the description of function, input(s)/output(s)
   // and return value.
   //
-  int16_t ResetEncoderSafe();
+  int16_t ResetEncoderSafe() EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
 
   ///////////////////////////////////////////////////////////////////////////
   // See InitEncoder() for the description of function, input(s)/output(s)
   // and return value.
   //
   int16_t InitEncoderSafe(WebRtcACMCodecParams* codec_params,
-                          bool force_initialization);
+                          bool force_initialization)
+      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
 
   ///////////////////////////////////////////////////////////////////////////
   // See InitDecoder() for the description of function, input(s)/output(s)
@@ -681,7 +684,8 @@ class ACMGenericCodec {
   // See SetVAD() for the description of function, input(s)/output(s) and
   // return value.
   //
-  int16_t SetVADSafe(bool* enable_dtx, bool* enable_vad, ACMVADMode* mode);
+  int16_t SetVADSafe(bool* enable_dtx, bool* enable_vad, ACMVADMode* mode)
+      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
 
   ///////////////////////////////////////////////////////////////////////////
   // See ReplaceInternalDTX() for the description of function, input and
@@ -718,7 +722,8 @@ class ACMGenericCodec {
   //   -1 if failed,
   //    0 if succeeded.
   //
-  int16_t EnableVAD(ACMVADMode mode);
+  int16_t EnableVAD(ACMVADMode mode)
+      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
 
   ///////////////////////////////////////////////////////////////////////////
   // int16_t DisableVAD()
@@ -728,7 +733,7 @@ class ACMGenericCodec {
   //   -1 if failed,
   //    0 if succeeded.
   //
-  int16_t DisableVAD();
+  int16_t DisableVAD() EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
 
   ///////////////////////////////////////////////////////////////////////////
   // int16_t EnableDTX()
@@ -739,7 +744,7 @@ class ACMGenericCodec {
   //   -1 if failed,
   //    0 if succeeded.
   //
-  virtual int16_t EnableDTX();
+  virtual int16_t EnableDTX() EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
 
   ///////////////////////////////////////////////////////////////////////////
   // int16_t DisableDTX()
@@ -750,7 +755,7 @@ class ACMGenericCodec {
   //   -1 if failed,
   //    0 if succeeded.
   //
-  virtual int16_t DisableDTX();
+  virtual int16_t DisableDTX() EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
 
   ///////////////////////////////////////////////////////////////////////////
   // int16_t InternalEncode()
@@ -878,7 +883,8 @@ class ACMGenericCodec {
   //
   int16_t ProcessFrameVADDTX(uint8_t* bitstream,
                              int16_t* bitstream_len_byte,
-                             int16_t* samples_processed);
+                             int16_t* samples_processed)
+      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
 
   ///////////////////////////////////////////////////////////////////////////
   // CurrentRate()
@@ -925,19 +931,20 @@ class ACMGenericCodec {
   // True if the encoder instance initialized
   bool encoder_initialized_;
 
-  bool registered_in_neteq_;
+  const bool registered_in_neteq_;  // TODO(henrik.lundin) Remove?
 
   // VAD/DTX
   bool has_internal_dtx_;
-  WebRtcVadInst* ptr_vad_inst_;
-  bool vad_enabled_;
-  ACMVADMode vad_mode_;
-  int16_t vad_label_[MAX_FRAME_SIZE_10MSEC];
-  bool dtx_enabled_;
-  WebRtcCngEncInst* ptr_dtx_inst_;
-  uint8_t num_lpc_params_;
-  bool sent_cn_previous_;
-  int16_t prev_frame_cng_;
+  WebRtcVadInst* ptr_vad_inst_ GUARDED_BY(codec_wrapper_lock_);
+  bool vad_enabled_ GUARDED_BY(codec_wrapper_lock_);
+  ACMVADMode vad_mode_ GUARDED_BY(codec_wrapper_lock_);
+  int16_t vad_label_[MAX_FRAME_SIZE_10MSEC] GUARDED_BY(codec_wrapper_lock_);
+  bool dtx_enabled_ GUARDED_BY(codec_wrapper_lock_);
+  WebRtcCngEncInst* ptr_dtx_inst_ GUARDED_BY(codec_wrapper_lock_);
+  uint8_t num_lpc_params_               // TODO(henrik.lundin) Delete and
+      GUARDED_BY(codec_wrapper_lock_);  // replace with kNewCNGNumLPCParams.
+  bool sent_cn_previous_ GUARDED_BY(codec_wrapper_lock_);
+  int16_t prev_frame_cng_ GUARDED_BY(codec_wrapper_lock_);
 
   // FEC.
   bool has_internal_fec_;
@@ -952,7 +959,7 @@ class ACMGenericCodec {
   // such as buffers and state variables.
   RWLockWrapper& codec_wrapper_lock_;
 
-  uint32_t last_timestamp_;
+  uint32_t last_timestamp_ GUARDED_BY(codec_wrapper_lock_);
   uint32_t unique_id_;
 };
 
