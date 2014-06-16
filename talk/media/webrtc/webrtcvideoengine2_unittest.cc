@@ -396,6 +396,31 @@ TEST_F(WebRtcVideoEngine2Test, DefaultRtxCodecHasAssociatedPayloadTypeSet) {
   FAIL() << "No RTX codec found among default codecs.";
 }
 
+TEST_F(WebRtcVideoEngine2Test, SupportsTimestampOffsetHeaderExtension) {
+  std::vector<RtpHeaderExtension> extensions = engine_.rtp_header_extensions();
+  ASSERT_FALSE(extensions.empty());
+  for (size_t i = 0; i < extensions.size(); ++i) {
+    if (extensions[i].uri == kRtpTimestampOffsetHeaderExtension) {
+      EXPECT_EQ(kRtpTimestampOffsetHeaderExtensionDefaultId, extensions[i].id);
+      return;
+    }
+  }
+  FAIL() << "Timestamp offset extension not in header-extension list.";
+}
+
+TEST_F(WebRtcVideoEngine2Test, SupportsAbsoluteSenderTimeHeaderExtension) {
+  std::vector<RtpHeaderExtension> extensions = engine_.rtp_header_extensions();
+  ASSERT_FALSE(extensions.empty());
+  for (size_t i = 0; i < extensions.size(); ++i) {
+    if (extensions[i].uri == kRtpAbsoluteSenderTimeHeaderExtension) {
+      EXPECT_EQ(kRtpAbsoluteSenderTimeHeaderExtensionDefaultId,
+                extensions[i].id);
+      return;
+    }
+  }
+  FAIL() << "Absolute Sender Time extension not in header-extension list.";
+}
+
 class WebRtcVideoChannel2BaseTest
     : public VideoMediaChannelTest<WebRtcVideoEngine2, WebRtcVideoChannel2> {
  protected:
@@ -598,6 +623,67 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
     EXPECT_EQ(video_codec.height, webrtc_codec.height);
     EXPECT_EQ(video_codec.framerate, webrtc_codec.maxFramerate);
   }
+
+  void TestSetSendRtpHeaderExtensions(const std::string& cricket_ext,
+                                      const std::string& webrtc_ext) {
+    // Enable extension.
+    const int id = 1;
+    std::vector<cricket::RtpHeaderExtension> extensions;
+    extensions.push_back(cricket::RtpHeaderExtension(cricket_ext, id));
+    EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
+
+    FakeVideoSendStream* send_stream =
+        AddSendStream(cricket::StreamParams::CreateLegacy(123));
+
+    // Verify the send extension id.
+    ASSERT_EQ(1u, send_stream->GetConfig().rtp.extensions.size());
+    EXPECT_EQ(id, send_stream->GetConfig().rtp.extensions[0].id);
+    EXPECT_EQ(webrtc_ext, send_stream->GetConfig().rtp.extensions[0].name);
+    // Verify call with same set of extensions returns true.
+    EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
+    // Verify that SetSendRtpHeaderExtensions doesn't implicitly add them for
+    // receivers.
+    EXPECT_TRUE(AddRecvStream(cricket::StreamParams::CreateLegacy(123))
+                    ->GetConfig()
+                    .rtp.extensions.empty());
+
+    // Remove the extension id, verify that this doesn't reset extensions as
+    // they should be set before creating channels.
+    std::vector<cricket::RtpHeaderExtension> empty_extensions;
+    EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(empty_extensions));
+    EXPECT_FALSE(send_stream->GetConfig().rtp.extensions.empty());
+  }
+
+  void TestSetRecvRtpHeaderExtensions(const std::string& cricket_ext,
+                                      const std::string& webrtc_ext) {
+    // Enable extension.
+    const int id = 1;
+    std::vector<cricket::RtpHeaderExtension> extensions;
+    extensions.push_back(cricket::RtpHeaderExtension(cricket_ext, id));
+    EXPECT_TRUE(channel_->SetRecvRtpHeaderExtensions(extensions));
+
+    FakeVideoReceiveStream* recv_stream =
+        AddRecvStream(cricket::StreamParams::CreateLegacy(123));
+
+    // Verify the recv extension id.
+    ASSERT_EQ(1u, recv_stream->GetConfig().rtp.extensions.size());
+    EXPECT_EQ(id, recv_stream->GetConfig().rtp.extensions[0].id);
+    EXPECT_EQ(webrtc_ext, recv_stream->GetConfig().rtp.extensions[0].name);
+    // Verify call with same set of extensions returns true.
+    EXPECT_TRUE(channel_->SetRecvRtpHeaderExtensions(extensions));
+    // Verify that SetRecvRtpHeaderExtensions doesn't implicitly add them for
+    // senders.
+    EXPECT_TRUE(AddSendStream(cricket::StreamParams::CreateLegacy(123))
+                    ->GetConfig()
+                    .rtp.extensions.empty());
+
+    // Remove the extension id, verify that this doesn't reset extensions as
+    // they should be set before creating channels.
+    std::vector<cricket::RtpHeaderExtension> empty_extensions;
+    EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(empty_extensions));
+    EXPECT_FALSE(recv_stream->GetConfig().rtp.extensions.empty());
+  }
+
   talk_base::scoped_ptr<VideoMediaChannel> channel_;
   FakeWebRtcVideoChannel2* fake_channel_;
   uint32 last_ssrc_;
@@ -723,12 +809,34 @@ TEST_F(WebRtcVideoChannel2Test, RecvStreamNoRtx) {
   ASSERT_TRUE(recv_stream->GetConfig().rtp.rtx.empty());
 }
 
-TEST_F(WebRtcVideoChannel2Test, DISABLED_RtpTimestampOffsetHeaderExtensions) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
+TEST_F(WebRtcVideoChannel2Test, NoHeaderExtesionsByDefault) {
+  FakeVideoSendStream* send_stream =
+      AddSendStream(cricket::StreamParams::CreateLegacy(kSsrcs1[0]));
+  ASSERT_TRUE(send_stream->GetConfig().rtp.extensions.empty());
+
+  FakeVideoReceiveStream* recv_stream =
+      AddRecvStream(cricket::StreamParams::CreateLegacy(kSsrcs1[0]));
+  ASSERT_TRUE(recv_stream->GetConfig().rtp.extensions.empty());
 }
 
-TEST_F(WebRtcVideoChannel2Test, DISABLED_AbsoluteSendTimeHeaderExtensions) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
+// Test support for RTP timestamp offset header extension.
+TEST_F(WebRtcVideoChannel2Test, SendRtpTimestampOffsetHeaderExtensions) {
+  TestSetSendRtpHeaderExtensions(kRtpTimestampOffsetHeaderExtension,
+                                 webrtc::RtpExtension::kTOffset);
+}
+TEST_F(WebRtcVideoChannel2Test, RecvRtpTimestampOffsetHeaderExtensions) {
+  TestSetRecvRtpHeaderExtensions(kRtpTimestampOffsetHeaderExtension,
+                                 webrtc::RtpExtension::kTOffset);
+}
+
+// Test support for absolute send time header extension.
+TEST_F(WebRtcVideoChannel2Test, SendAbsoluteSendTimeHeaderExtensions) {
+  TestSetSendRtpHeaderExtensions(kRtpAbsoluteSenderTimeHeaderExtension,
+                                 webrtc::RtpExtension::kAbsSendTime);
+}
+TEST_F(WebRtcVideoChannel2Test, RecvAbsoluteSendTimeHeaderExtensions) {
+  TestSetRecvRtpHeaderExtensions(kRtpAbsoluteSenderTimeHeaderExtension,
+                                 webrtc::RtpExtension::kAbsSendTime);
 }
 
 TEST_F(WebRtcVideoChannel2Test, DISABLED_LeakyBucketTest) {

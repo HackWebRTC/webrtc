@@ -278,6 +278,13 @@ void WebRtcVideoEngine2::Construct(WebRtcVideoChannelFactory* channel_factory,
 
   video_codecs_ = DefaultVideoCodecs();
   default_codec_format_ = VideoFormat(kDefaultVideoFormat);
+
+  rtp_header_extensions_.push_back(
+      RtpHeaderExtension(kRtpTimestampOffsetHeaderExtension,
+                         kRtpTimestampOffsetHeaderExtensionDefaultId));
+  rtp_header_extensions_.push_back(
+      RtpHeaderExtension(kRtpAbsoluteSenderTimeHeaderExtension,
+                         kRtpAbsoluteSenderTimeHeaderExtensionDefaultId));
 }
 
 WebRtcVideoEngine2::~WebRtcVideoEngine2() {
@@ -774,6 +781,20 @@ static bool ValidateCodecFormats(const std::vector<VideoCodec>& codecs) {
   return true;
 }
 
+static std::string RtpExtensionsToString(
+    const std::vector<RtpHeaderExtension>& extensions) {
+  std::stringstream out;
+  out << '{';
+  for (size_t i = 0; i < extensions.size(); ++i) {
+    out << "{" << extensions[i].uri << ": " << extensions[i].id << "}";
+    if (i != extensions.size() - 1) {
+      out << ", ";
+    }
+  }
+  out << '}';
+  return out.str();
+}
+
 }  // namespace
 
 bool WebRtcVideoChannel2::SetRecvCodecs(const std::vector<VideoCodec>& codecs) {
@@ -967,6 +988,8 @@ bool WebRtcVideoChannel2::AddSendStream(const StreamParams& sp) {
     config.rtp.rtx.payload_type = codec_settings.rtx_payload_type;
   }
 
+  config.rtp.extensions = send_rtp_extensions_;
+
   if (IsNackEnabled(codec_settings.codec)) {
     config.rtp.nack.rtp_history_ms = kNackHistoryMs;
   }
@@ -1047,6 +1070,7 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp) {
     config.rtp.nack.rtp_history_ms = kNackHistoryMs;
   }
   config.rtp.remb = true;
+  config.rtp.extensions = recv_rtp_extensions_;
   // TODO(pbos): This protection is against setting the same local ssrc as
   // remote which is not permitted by the lower-level API. RTCP requires a
   // corresponding sender SSRC. Figure out what to do when we don't have
@@ -1280,15 +1304,31 @@ bool WebRtcVideoChannel2::MuteStream(uint32 ssrc, bool mute) {
 
 bool WebRtcVideoChannel2::SetRecvRtpHeaderExtensions(
     const std::vector<RtpHeaderExtension>& extensions) {
-  // TODO(pbos): Implement.
-  LOG(LS_VERBOSE) << "SetRecvRtpHeaderExtensions()";
+  LOG(LS_INFO) << "SetRecvRtpHeaderExtensions: "
+               << RtpExtensionsToString(extensions);
+  std::vector<webrtc::RtpExtension> webrtc_extensions;
+  for (size_t i = 0; i < extensions.size(); ++i) {
+    // TODO(pbos): Make sure we don't pass unsupported extensions!
+    webrtc::RtpExtension webrtc_extension(extensions[i].uri.c_str(),
+                                          extensions[i].id);
+    webrtc_extensions.push_back(webrtc_extension);
+  }
+  recv_rtp_extensions_ = webrtc_extensions;
   return true;
 }
 
 bool WebRtcVideoChannel2::SetSendRtpHeaderExtensions(
     const std::vector<RtpHeaderExtension>& extensions) {
-  // TODO(pbos): Implement.
-  LOG(LS_VERBOSE) << "SetSendRtpHeaderExtensions()";
+  LOG(LS_INFO) << "SetSendRtpHeaderExtensions: "
+               << RtpExtensionsToString(extensions);
+  std::vector<webrtc::RtpExtension> webrtc_extensions;
+  for (size_t i = 0; i < extensions.size(); ++i) {
+    // TODO(pbos): Make sure we don't pass unsupported extensions!
+    webrtc::RtpExtension webrtc_extension(extensions[i].uri.c_str(),
+                                          extensions[i].id);
+    webrtc_extensions.push_back(webrtc_extension);
+  }
+  send_rtp_extensions_ = webrtc_extensions;
   return true;
 }
 

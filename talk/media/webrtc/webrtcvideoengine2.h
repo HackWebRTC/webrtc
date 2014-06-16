@@ -236,6 +236,9 @@ class WebRtcVideoChannel2 : public talk_base::MessageHandler,
       OVERRIDE;
   virtual void OnReadyToSend(bool ready) OVERRIDE;
   virtual bool MuteStream(uint32 ssrc, bool mute) OVERRIDE;
+
+  // Set send/receive RTP header extensions. This must be done before creating
+  // streams as it only has effect on future streams.
   virtual bool SetRecvRtpHeaderExtensions(
       const std::vector<RtpHeaderExtension>& extensions) OVERRIDE;
   virtual bool SetSendRtpHeaderExtensions(
@@ -351,8 +354,11 @@ class WebRtcVideoChannel2 : public talk_base::MessageHandler,
   std::map<uint32, webrtc::VideoReceiveStream*> receive_streams_;
 
   Settable<VideoCodecSettings> send_codec_;
+  std::vector<webrtc::RtpExtension> send_rtp_extensions_;
+
   WebRtcVideoEncoderFactory2* const encoder_factory_;
   std::vector<VideoCodecSettings> recv_codecs_;
+  std::vector<webrtc::RtpExtension> recv_rtp_extensions_;
   VideoOptions options_;
 };
 
