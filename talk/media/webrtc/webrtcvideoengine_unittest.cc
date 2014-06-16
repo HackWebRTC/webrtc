@@ -1186,6 +1186,11 @@ TEST_F(WebRtcVideoEngineTestFake, SetCpuOveruseOptionsWithEncodeUsageMethod) {
   EXPECT_EQ(20, cpu_option.high_encode_usage_threshold_percent);
   EXPECT_FALSE(cpu_option.enable_capture_jitter_method);
   EXPECT_TRUE(cpu_option.enable_encode_usage_method);
+#ifdef USE_WEBRTC_DEV_BRANCH
+  // Verify that optional encode rsd thresholds are not set.
+  EXPECT_EQ(-1, cpu_option.low_encode_time_rsd_threshold);
+  EXPECT_EQ(-1, cpu_option.high_encode_time_rsd_threshold);
+#endif
 
   // Add a new send stream and verify that cpu options are set from start.
   EXPECT_TRUE(channel_->AddSendStream(cricket::StreamParams::CreateLegacy(3)));
@@ -1196,6 +1201,51 @@ TEST_F(WebRtcVideoEngineTestFake, SetCpuOveruseOptionsWithEncodeUsageMethod) {
   EXPECT_EQ(20, cpu_option.high_encode_usage_threshold_percent);
   EXPECT_FALSE(cpu_option.enable_capture_jitter_method);
   EXPECT_TRUE(cpu_option.enable_encode_usage_method);
+#ifdef USE_WEBRTC_DEV_BRANCH
+  // Verify that optional encode rsd thresholds are not set.
+  EXPECT_EQ(-1, cpu_option.low_encode_time_rsd_threshold);
+  EXPECT_EQ(-1, cpu_option.high_encode_time_rsd_threshold);
+#endif
+}
+
+TEST_F(WebRtcVideoEngineTestFake, SetCpuOveruseOptionsWithEncodeRsdThresholds) {
+  EXPECT_TRUE(SetupEngine());
+  EXPECT_TRUE(channel_->AddSendStream(cricket::StreamParams::CreateLegacy(1)));
+  int first_send_channel = vie_.GetLastChannel();
+
+  // Set optional encode rsd thresholds and verify cpu options.
+  cricket::VideoOptions options;
+  options.conference_mode.Set(true);
+  options.cpu_underuse_threshold.Set(10);
+  options.cpu_overuse_threshold.Set(20);
+  options.cpu_underuse_encode_rsd_threshold.Set(30);
+  options.cpu_overuse_encode_rsd_threshold.Set(40);
+  options.cpu_overuse_encode_usage.Set(true);
+  EXPECT_TRUE(channel_->SetOptions(options));
+  webrtc::CpuOveruseOptions cpu_option =
+      vie_.GetCpuOveruseOptions(first_send_channel);
+  EXPECT_EQ(10, cpu_option.low_encode_usage_threshold_percent);
+  EXPECT_EQ(20, cpu_option.high_encode_usage_threshold_percent);
+  EXPECT_FALSE(cpu_option.enable_capture_jitter_method);
+  EXPECT_TRUE(cpu_option.enable_encode_usage_method);
+#ifdef USE_WEBRTC_DEV_BRANCH
+  EXPECT_EQ(30, cpu_option.low_encode_time_rsd_threshold);
+  EXPECT_EQ(40, cpu_option.high_encode_time_rsd_threshold);
+#endif
+
+  // Add a new send stream and verify that cpu options are set from start.
+  EXPECT_TRUE(channel_->AddSendStream(cricket::StreamParams::CreateLegacy(3)));
+  int second_send_channel = vie_.GetLastChannel();
+  EXPECT_NE(first_send_channel, second_send_channel);
+  cpu_option = vie_.GetCpuOveruseOptions(second_send_channel);
+  EXPECT_EQ(10, cpu_option.low_encode_usage_threshold_percent);
+  EXPECT_EQ(20, cpu_option.high_encode_usage_threshold_percent);
+  EXPECT_FALSE(cpu_option.enable_capture_jitter_method);
+  EXPECT_TRUE(cpu_option.enable_encode_usage_method);
+#ifdef USE_WEBRTC_DEV_BRANCH
+  EXPECT_EQ(30, cpu_option.low_encode_time_rsd_threshold);
+  EXPECT_EQ(40, cpu_option.high_encode_time_rsd_threshold);
+#endif
 }
 
 // Test that AddRecvStream doesn't create new channel for 1:1 call.

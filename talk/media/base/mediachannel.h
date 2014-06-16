@@ -314,6 +314,10 @@ struct VideoOptions {
     cpu_overuse_detection.SetFrom(change.cpu_overuse_detection);
     cpu_underuse_threshold.SetFrom(change.cpu_underuse_threshold);
     cpu_overuse_threshold.SetFrom(change.cpu_overuse_threshold);
+    cpu_underuse_encode_rsd_threshold.SetFrom(
+        change.cpu_underuse_encode_rsd_threshold);
+    cpu_overuse_encode_rsd_threshold.SetFrom(
+        change.cpu_overuse_encode_rsd_threshold);
     cpu_overuse_encode_usage.SetFrom(change.cpu_overuse_encode_usage);
     conference_mode.SetFrom(change.conference_mode);
     process_adaptation_threshhold.SetFrom(change.process_adaptation_threshhold);
@@ -350,6 +354,10 @@ struct VideoOptions {
         cpu_overuse_detection == o.cpu_overuse_detection &&
         cpu_underuse_threshold == o.cpu_underuse_threshold &&
         cpu_overuse_threshold == o.cpu_overuse_threshold &&
+        cpu_underuse_encode_rsd_threshold ==
+            o.cpu_underuse_encode_rsd_threshold &&
+        cpu_overuse_encode_rsd_threshold ==
+            o.cpu_overuse_encode_rsd_threshold &&
         cpu_overuse_encode_usage == o.cpu_overuse_encode_usage &&
         conference_mode == o.conference_mode &&
         process_adaptation_threshhold == o.process_adaptation_threshhold &&
@@ -390,6 +398,10 @@ struct VideoOptions {
     ost << ToStringIfSet("cpu overuse detection", cpu_overuse_detection);
     ost << ToStringIfSet("cpu underuse threshold", cpu_underuse_threshold);
     ost << ToStringIfSet("cpu overuse threshold", cpu_overuse_threshold);
+    ost << ToStringIfSet("cpu underuse encode rsd threshold",
+                         cpu_underuse_encode_rsd_threshold);
+    ost << ToStringIfSet("cpu overuse encode rsd threshold",
+                         cpu_overuse_encode_rsd_threshold);
     ost << ToStringIfSet("cpu overuse encode usage",
                          cpu_overuse_encode_usage);
     ost << ToStringIfSet("conference mode", conference_mode);
@@ -443,10 +455,22 @@ struct VideoOptions {
   // adaptation algorithm. So this option will override the
   // |adapt_input_to_cpu_usage|.
   Settable<bool> cpu_overuse_detection;
-  // Low threshold for cpu overuse adaptation in ms.  (Adapt up)
+  // Low threshold (t1) for cpu overuse adaptation.  (Adapt up)
+  // Metric: encode usage (m1). m1 < t1 => underuse.
   Settable<int> cpu_underuse_threshold;
-  // High threshold for cpu overuse adaptation in ms.  (Adapt down)
+  // High threshold (t1) for cpu overuse adaptation.  (Adapt down)
+  // Metric: encode usage (m1). m1 > t1 => overuse.
   Settable<int> cpu_overuse_threshold;
+  // Low threshold (t2) for cpu overuse adaptation. (Adapt up)
+  // Metric: relative standard deviation of encode time (m2).
+  // Optional threshold. If set, (m1 < t1 && m2 < t2) => underuse.
+  // Note: t2 will have no effect if t1 is not set.
+  Settable<int> cpu_underuse_encode_rsd_threshold;
+  // High threshold (t2) for cpu overuse adaptation. (Adapt down)
+  // Metric: relative standard deviation of encode time (m2).
+  // Optional threshold. If set, (m1 > t1 || m2 > t2) => overuse.
+  // Note: t2 will have no effect if t1 is not set.
+  Settable<int> cpu_overuse_encode_rsd_threshold;
   // Use encode usage for cpu detection.
   Settable<bool> cpu_overuse_encode_usage;
   // Use conference mode?

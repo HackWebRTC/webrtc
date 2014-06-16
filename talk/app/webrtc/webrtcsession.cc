@@ -564,6 +564,12 @@ bool WebRtcSession::Initialize(
   SetOptionFromOptionalConstraint(constraints,
       MediaConstraintsInterface::kCpuOveruseThreshold,
       &video_options_.cpu_overuse_threshold);
+  SetOptionFromOptionalConstraint(constraints,
+      MediaConstraintsInterface::kCpuUnderuseEncodeRsdThreshold,
+      &video_options_.cpu_underuse_encode_rsd_threshold);
+  SetOptionFromOptionalConstraint(constraints,
+      MediaConstraintsInterface::kCpuOveruseEncodeRsdThreshold,
+      &video_options_.cpu_overuse_encode_rsd_threshold);
 
   if (FindConstraint(
       constraints,

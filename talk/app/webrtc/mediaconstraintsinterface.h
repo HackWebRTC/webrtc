@@ -122,6 +122,12 @@ class MediaConstraintsInterface {
   static const char kCpuOveruseDetection[];  // googCpuOveruseDetection
   static const char kCpuUnderuseThreshold[];  // googCpuUnderuseThreshold
   static const char kCpuOveruseThreshold[];  // googCpuOveruseThreshold
+  // Low cpu adaptation threshold for relative standard deviation of encode
+  // time.
+  static const char kCpuUnderuseEncodeRsdThreshold[];
+  // High cpu adaptation threshold for relative standard deviation of encode
+  // time.
+  static const char kCpuOveruseEncodeRsdThreshold[];
   static const char kCpuOveruseEncodeUsage[];  // googCpuOveruseEncodeUsage
   static const char kHighStartBitrate[];  // googHighStartBitrate
   static const char kHighBitrate[];  // googHighBitrate

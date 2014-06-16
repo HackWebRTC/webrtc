@@ -106,6 +106,10 @@ const char MediaConstraintsInterface::kCpuUnderuseThreshold[] =
     "googCpuUnderuseThreshold";
 const char MediaConstraintsInterface::kCpuOveruseThreshold[] =
     "googCpuOveruseThreshold";
+const char MediaConstraintsInterface::kCpuUnderuseEncodeRsdThreshold[] =
+    "googCpuUnderuseEncodeRsdThreshold";
+const char MediaConstraintsInterface::kCpuOveruseEncodeRsdThreshold[] =
+    "googCpuOveruseEncodeRsdThreshold";
 const char MediaConstraintsInterface::kCpuOveruseEncodeUsage[] =
     "googCpuOveruseEncodeUsage";
 const char MediaConstraintsInterface::kHighStartBitrate[] =
