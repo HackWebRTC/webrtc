@@ -22,6 +22,7 @@
         'gunit.h',
         'testbase64.h',
         'testechoserver.h',
+        'testutils.h',
         'win32toolhelp.h',
       ],
       'dependencies': [
@@ -83,6 +84,8 @@
         'sharedexclusivelock_unittest.cc',
         'signalthread_unittest.cc',
         'sigslot_unittest.cc',
+        'sigslottester.h',
+        'sigslottester.h.pump',
         'socket_unittest.cc',
         'socket_unittest.h',
         'socketaddress_unittest.cc',
