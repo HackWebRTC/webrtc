@@ -578,6 +578,29 @@ bool ChannelManager::SetAudioOptions_w(
   return ret;
 }
 
+// Sets Engine-specific audio options according to enabled experiments.
+bool ChannelManager::SetEngineAudioOptions(const AudioOptions& options) {
+  // If we're initialized, pass the settings to the media engine.
+  bool ret = false;
+  if (initialized_) {
+    ret = worker_thread_->Invoke<bool>(
+        Bind(&ChannelManager::SetEngineAudioOptions_w, this, options));
+  }
+
+  // If all worked well, save the audio options.
+  if (ret) {
+    audio_options_ = options;
+  }
+  return ret;
+}
+
+bool ChannelManager::SetEngineAudioOptions_w(const AudioOptions& options) {
+  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(initialized_);
+
+  return media_engine_->SetAudioOptions(options);
+}
+
 bool ChannelManager::GetOutputVolume(int* level) {
   if (!initialized_) {
     return false;

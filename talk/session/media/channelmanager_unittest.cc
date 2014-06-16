@@ -321,6 +321,25 @@ TEST_F(ChannelManagerTest, SetAudioOptions) {
   EXPECT_FALSE(cm_->SetAudioOptions("audio-in9", "audio-out2", options));
 }
 
+TEST_F(ChannelManagerTest, SetEngineAudioOptions) {
+  EXPECT_TRUE(cm_->Init());
+  // Test setting specific values.
+  AudioOptions options;
+  options.experimental_ns.Set(true);
+  EXPECT_TRUE(cm_->SetEngineAudioOptions(options));
+  bool experimental_ns = false;
+  EXPECT_TRUE(fme_->audio_options().experimental_ns.Get(&experimental_ns));
+  EXPECT_TRUE(experimental_ns);
+}
+
+TEST_F(ChannelManagerTest, SetEngineAudioOptionsBeforeInitFails) {
+  // Test that values that we set before Init are not applied.
+  AudioOptions options;
+  options.experimental_ns.Set(true);
+  EXPECT_FALSE(cm_->SetEngineAudioOptions(options));
+  EXPECT_FALSE(fme_->audio_options().experimental_ns.IsSet());
+}
+
 TEST_F(ChannelManagerTest, SetCaptureDeviceBeforeInit) {
   // Test that values that we set before Init are applied.
   EXPECT_TRUE(cm_->SetCaptureDevice("video-in2"));
