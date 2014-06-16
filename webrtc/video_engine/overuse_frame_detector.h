@@ -124,6 +124,7 @@ class OveruseFrameDetector : public Module {
 
   int64_t last_overuse_time_;
   int checks_above_threshold_;
+  int num_overuse_detections_;
 
   int64_t last_rampup_time_;
   bool in_quick_rampup_;

@@ -42,8 +42,8 @@ const int kMaxRampUpDelayMs = 240 * 1000;
 // Expontential back-off factor, to prevent annoying up-down behaviour.
 const double kRampUpBackoffFactor = 2.0;
 
-// The initial average encode time (set to a fairly small value).
-const float kInitialAvgEncodeTimeMs = 5.0f;
+// Max number of overuses detected before always applying the rampup delay.
+const int kMaxOverusesBeforeApplyRampupDelay = 7;
 
 // The maximum exponent to use in VCMExpFilter.
 const float kSampleDiffMs = 33.0f;
@@ -115,6 +115,7 @@ class OveruseFrameDetector::EncodeTimeAvg {
  public:
   EncodeTimeAvg()
       : kWeightFactor(0.5f),
+        kInitialAvgEncodeTimeMs(5.0f),
         filtered_encode_time_ms_(new VCMExpFilter(kWeightFactor)) {
     filtered_encode_time_ms_->Apply(1.0f, kInitialAvgEncodeTimeMs);
   }
@@ -132,6 +133,7 @@ class OveruseFrameDetector::EncodeTimeAvg {
 
  private:
   const float kWeightFactor;
+  const float kInitialAvgEncodeTimeMs;
   scoped_ptr<VCMExpFilter> filtered_encode_time_ms_;
 };
 
@@ -378,6 +380,7 @@ OveruseFrameDetector::OveruseFrameDetector(Clock* clock)
       last_capture_time_(0),
       last_overuse_time_(0),
       checks_above_threshold_(0),
+      num_overuse_detections_(0),
       last_rampup_time_(0),
       in_quick_rampup_(false),
       current_rampup_delay_ms_(kStandardRampUpDelayMs),
@@ -514,7 +517,8 @@ int32_t OveruseFrameDetector::Process() {
     // back and forth between this load, the system doesn't seem to handle it.
     bool check_for_backoff = last_rampup_time_ > last_overuse_time_;
     if (check_for_backoff) {
-      if (now - last_rampup_time_ < kStandardRampUpDelayMs) {
+      if (now - last_rampup_time_ < kStandardRampUpDelayMs ||
+          num_overuse_detections_ > kMaxOverusesBeforeApplyRampupDelay) {
         // Going up was not ok for very long, back off.
         current_rampup_delay_ms_ *= kRampUpBackoffFactor;
         if (current_rampup_delay_ms_ > kMaxRampUpDelayMs)
@@ -528,6 +532,7 @@ int32_t OveruseFrameDetector::Process() {
     last_overuse_time_ = now;
     in_quick_rampup_ = false;
     checks_above_threshold_ = 0;
+    ++num_overuse_detections_;
 
     if (observer_ != NULL)
       observer_->OveruseDetected();
@@ -541,11 +546,12 @@ int32_t OveruseFrameDetector::Process() {
 
   int rampup_delay =
       in_quick_rampup_ ? kQuickRampUpDelayMs : current_rampup_delay_ms_;
-  LOG(LS_INFO) << " Frame stats: capture avg: " << capture_deltas_.Mean()
-               << " capture stddev " << capture_deltas_.StdDev()
-               << " encode usage " << encode_usage_->Value()
-               << " encode rsd " << encode_rsd_->Value()
-               << " rampup delay " << rampup_delay;
+  LOG(LS_VERBOSE) << " Frame stats: capture avg: " << capture_deltas_.Mean()
+                  << " capture stddev " << capture_deltas_.StdDev()
+                  << " encode usage " << encode_usage_->Value()
+                  << " encode rsd " << encode_rsd_->Value()
+                  << " overuse detections " << num_overuse_detections_
+                  << " rampup delay " << rampup_delay;
   return 0;
 }
 
