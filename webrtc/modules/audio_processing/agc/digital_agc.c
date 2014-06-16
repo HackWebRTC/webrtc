@@ -773,7 +773,7 @@ int16_t WebRtcAgc_ProcessVad(AgcVad_t *state, // (i) VAD state
     tmp16 = WEBRTC_SPL_LSHIFT_W16(3, 12);
     tmp32 = WEBRTC_SPL_MUL_16_16(tmp16, (dB - state->meanLongTerm));
     tmp32 = WebRtcSpl_DivW32W16(tmp32, state->stdLongTerm);
-    tmpU16 = WEBRTC_SPL_LSHIFT_U16((uint16_t)13, 12);
+    tmpU16 = (13 << 12);
     tmp32b = WEBRTC_SPL_MUL_16_U16(state->logRatio, tmpU16);
     tmp32 += WEBRTC_SPL_RSHIFT_W32(tmp32b, 10);
 

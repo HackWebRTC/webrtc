@@ -1407,7 +1407,7 @@ void WebRtcNsx_DataAnalysis(NsxInst_t* inst, short* speechFrame, uint16_t* magnU
     tmpU32no1 = WEBRTC_SPL_RSHIFT_U32((uint32_t)sum_log_i_log_magn, 12); // Q5
 
     // Shift the largest value of sum_log_i and tmp32no3 before multiplication
-    tmp_u16 = WEBRTC_SPL_LSHIFT_U16((uint16_t)sum_log_i, 1); // Q6
+    tmp_u16 = ((uint16_t)sum_log_i << 1);  // Q6
     if ((uint32_t)sum_log_i > tmpU32no1) {
       tmp_u16 >>= zeros;
     } else {
