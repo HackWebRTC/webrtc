@@ -6,3 +6,6 @@ WebRtcVideoChannel2BaseTest.TwoStreamsReUseFirstStream
 
 # https://code.google.com/p/webrtc/issues/detail?id=3158
 WebRtcVideoMediaChannelTest.SendVp8HdAndReceiveAdaptedVp8Vga
+
+# https://code.google.com/p/webrtc/issues/detail?id=3482
+WebRtcVideoMediaChannelTest.GetStats
