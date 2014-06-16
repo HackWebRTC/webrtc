@@ -426,6 +426,16 @@ static int GetOpusBitrateFromParams(const AudioCodec& codec) {
   return bitrate;
 }
 
+// True if params["useinbandfec"] == "1"
+static bool IsOpusFecEnabled(const AudioCodec& codec) {
+  CodecParameterMap::const_iterator param =
+      codec.params.find(kCodecParamUseInbandFec);
+  if (param == codec.params.end())
+    return false;
+
+  return param->second == kParamValueTrue;
+}
+
 void WebRtcVoiceEngine::ConstructCodecs() {
   LOG(LS_INFO) << "WebRtc VoiceEngine codecs:";
   int ncodecs = voe_wrapper_->codec()->NumOfCodecs();
@@ -1943,10 +1953,16 @@ bool WebRtcVoiceMediaChannel::SetRecvCodecs(
 
 bool WebRtcVoiceMediaChannel::SetSendCodecs(
     int channel, const std::vector<AudioCodec>& codecs) {
-  // Disable VAD, and FEC unless we know the other side wants them.
+  // Disable VAD, FEC, and RED unless we know the other side wants them.
   engine()->voe()->codec()->SetVADStatus(channel, false);
   engine()->voe()->rtp()->SetNACKStatus(channel, false, 0);
+#ifdef USE_WEBRTC_DEV_BRANCH
+  engine()->voe()->rtp()->SetREDStatus(channel, false);
+  engine()->voe()->codec()->SetFECStatus(channel, false);
+#else
+  // TODO(minyue): Remove code under #else case after new WebRTC roll.
   engine()->voe()->rtp()->SetFECStatus(channel, false);
+#endif  // USE_WEBRTC_DEV_BRANCH
 
   // Scan through the list to figure out the codec to use for sending, along
   // with the proper configuration for VAD and DTMF.
@@ -2005,11 +2021,24 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
       if (bitrate_from_params != 0) {
         voe_codec.rate = bitrate_from_params;
       }
+
+      // If FEC is enabled.
+      if (IsOpusFecEnabled(*it)) {
+        LOG(LS_INFO) << "Enabling Opus FEC on channel " << channel;
+#ifdef USE_WEBRTC_DEV_BRANCH
+        if (engine()->voe()->codec()->SetFECStatus(channel, true) == -1) {
+          // Enable in-band FEC of the Opus codec. Treat any failure as a fatal
+          // internal error.
+          LOG_RTCERR2(SetFECStatus, channel, true);
+          return false;
+        }
+#endif  // USE_WEBRTC_DEV_BRANCH
+      }
     }
 
     // We'll use the first codec in the list to actually send audio data.
     // Be sure to use the payload type requested by the remote side.
-    // "red", for FEC audio, is a special case where the actual codec to be
+    // "red", for RED audio, is a special case where the actual codec to be
     // used is specified in params.
     if (IsRedCodec(it->name)) {
       // Parse out the RED parameters. If we fail, just ignore RED;
@@ -2020,9 +2049,16 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
 
       // Enable redundant encoding of the specified codec. Treat any
       // failure as a fatal internal error.
+#ifdef USE_WEBRTC_DEV_BRANCH
+      LOG(LS_INFO) << "Enabling RED on channel " << channel;
+      if (engine()->voe()->rtp()->SetREDStatus(channel, true, it->id) == -1) {
+        LOG_RTCERR3(SetREDStatus, channel, true, it->id);
+#else
+      // TODO(minyue): Remove code under #else case after new WebRTC roll.
       LOG(LS_INFO) << "Enabling FEC";
       if (engine()->voe()->rtp()->SetFECStatus(channel, true, it->id) == -1) {
         LOG_RTCERR3(SetFECStatus, channel, true, it->id);
+#endif  // USE_WEBRTC_DEV_BRANCH
         return false;
       }
     } else {
