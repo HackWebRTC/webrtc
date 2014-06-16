@@ -54,6 +54,12 @@
     'webrtc_vp8_dir%': '<(webrtc_vp8_dir)',
     'include_opus%': '<(include_opus)',
     'rbe_components_path%': '<(rbe_components_path)',
+    'external_libraries%': '0',
+    'json_root%': '<(DEPTH)/third_party/jsoncpp/source/include/',
+    # openssl needs to be defined or gyp will complain. Is is only used when
+    # when providing external libraries so just use current directory as a
+    # placeholder.
+    'ssl_root%': '.',
 
     # The Chromium common.gypi we use treats all gyp files without
     # chromium_code==1 as third party code. This disables many of the

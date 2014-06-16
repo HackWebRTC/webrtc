@@ -452,8 +452,22 @@
             ],
           },
         }, {
-          'dependencies': [
-            '<(DEPTH)/third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
+          'conditions': [
+            ['external_libraries==0', {
+              'dependencies': [
+                '<(DEPTH)/third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
+              ],
+            }, {
+              'include_dirs': [
+                '<(json_root)',
+              ],
+              'defines': [
+                # When defined changes the include path for json.h to where it
+                # is expected to be when building json outside of the standalone
+                # build.
+                'WEBRTC_EXTERNAL',
+              ],
+            }],
           ],
           'sources!': [
             '../overrides/webrtc/base/basictypes.h',
@@ -474,8 +488,16 @@
               'HAVE_OPENSSL_SSL_H',
             ],
           },
-          'dependencies': [
-            '<(DEPTH)/third_party/openssl/openssl.gyp:openssl',
+          'conditions': [
+            ['external_libraries==0', {
+              'dependencies': [
+                '<(DEPTH)/third_party/openssl/openssl.gyp:openssl',
+              ],
+            }, {
+              'include_dirs': [
+                '<(ssl_root)',
+              ],
+            }],
           ],
         }, {
           'defines': [
@@ -533,8 +555,16 @@
               ],
             },
           },
-          'dependencies': [
-            '<(DEPTH)/net/third_party/nss/ssl.gyp:libssl',
+           'conditions': [
+            ['external_libraries==0', {
+              'dependencies': [
+                '<(DEPTH)/net/third_party/nss/ssl.gyp:libssl',
+              ]
+            }, {
+              'include_dirs': [
+                '<(ssl_root)',
+              ],
+            }],
           ],
         }],
         ['OS=="linux"', {
@@ -693,15 +723,31 @@
           ],
         }],
         ['OS == "mac" or OS == "ios" or OS == "win"', {
-          'dependencies': [
-            '<(DEPTH)/net/third_party/nss/ssl.gyp:libssl',
-            '<(DEPTH)/third_party/nss/nss.gyp:nspr',
-            '<(DEPTH)/third_party/nss/nss.gyp:nss',
+          'conditions': [
+            ['external_libraries==0', {
+              'dependencies': [
+                '<(DEPTH)/net/third_party/nss/ssl.gyp:libssl',
+                '<(DEPTH)/third_party/nss/nss.gyp:nspr',
+                '<(DEPTH)/third_party/nss/nss.gyp:nss',
+              ],
+            }, {
+              'include_dirs': [
+                '<(ssl_root)',
+              ],
+            }],
           ],
         }],
         ['os_posix == 1 and OS != "mac" and OS != "ios" and OS != "android"', {
-          'dependencies': [
-            '<(DEPTH)/build/linux/system.gyp:ssl',
+          'conditions': [
+            ['external_libraries==0', {
+              'dependencies': [
+                '<(DEPTH)/build/linux/system.gyp:ssl',
+              ],
+            }, {
+              'include_dirs': [
+                '<(ssl_root)',
+              ],
+            }],
           ],
         }],
       ],
