@@ -40,6 +40,7 @@ namespace webrtc {
 namespace {
 static const int kTransmissionTimeOffsetExtensionId = 6;
 static const int kMaxPacketSize = 1500;
+static const unsigned int kSingleStreamTargetBps = 1000000;
 
 class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
  public:
@@ -57,6 +58,7 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
             new RTPPayloadRegistry(RTPPayloadStrategy::CreateStrategy(false))),
         crit_(CriticalSectionWrapper::CreateCriticalSection()),
         expected_bitrate_bps_(0),
+        start_bitrate_bps_(0),
         rtx_media_ssrcs_(rtx_media_ssrcs),
         total_sent_(0),
         padding_sent_(0),
@@ -89,10 +91,25 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
     expected_bitrate_bps_ = expected_bitrate_bps;
   }
 
+  void set_start_bitrate_bps(unsigned int start_bitrate_bps) {
+    CriticalSectionScoped lock(crit_.get());
+    start_bitrate_bps_ = start_bitrate_bps;
+  }
+
   virtual void OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
                                        unsigned int bitrate) OVERRIDE {
     CriticalSectionScoped lock(crit_.get());
     assert(expected_bitrate_bps_ > 0);
+    if (start_bitrate_bps_ != 0) {
+      // For tests with an explicitly set start bitrate, verify the first
+      // bitrate estimate is close to the start bitrate and lower than the
+      // test target bitrate. This is to verify a call respects the configured
+      // start bitrate, but due to the BWE implementation we can't guarantee the
+      // first estimate really is as high as the start bitrate.
+      EXPECT_GT(bitrate, 0.9 * start_bitrate_bps_);
+      EXPECT_LT(bitrate, expected_bitrate_bps_);
+      start_bitrate_bps_ = 0;
+    }
     if (bitrate >= expected_bitrate_bps_) {
       // Just trigger if there was any rtx padding packet.
       if (rtx_media_ssrcs_.empty() || rtx_media_sent_ > 0) {
@@ -178,6 +195,7 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
 
   const scoped_ptr<CriticalSectionWrapper> crit_;
   unsigned int expected_bitrate_bps_ GUARDED_BY(crit_);
+  unsigned int start_bitrate_bps_ GUARDED_BY(crit_);
   SsrcMap rtx_media_ssrcs_ GUARDED_BY(crit_);
   size_t total_sent_ GUARDED_BY(crit_);
   size_t padding_sent_ GUARDED_BY(crit_);
@@ -400,14 +418,16 @@ class LowRateStreamObserver : public test::DirectTransport,
   size_t total_overuse_bytes_ GUARDED_BY(crit_);
   bool suspended_in_stats_ GUARDED_BY(crit_);
 };
-}
+}  // namespace
 
 class RampUpTest : public ::testing::Test {
  public:
   virtual void SetUp() { reserved_ssrcs_.clear(); }
 
  protected:
-  void RunRampUpTest(bool rtx, size_t num_streams) {
+  void RunRampUpTest(bool rtx,
+                     size_t num_streams,
+                     unsigned int start_bitrate_bps) {
     std::vector<uint32_t> ssrcs(GenerateSsrcs(num_streams, 100));
     std::vector<uint32_t> rtx_ssrcs(GenerateSsrcs(num_streams, 200));
     StreamObserver::SsrcMap rtx_ssrc_map;
@@ -421,6 +441,10 @@ class RampUpTest : public ::testing::Test {
                                    Clock::GetRealTimeClock());
 
     Call::Config call_config(&stream_observer);
+    if (start_bitrate_bps != 0) {
+      call_config.start_bitrate_bps = start_bitrate_bps;
+      stream_observer.set_start_bitrate_bps(start_bitrate_bps);
+    }
     scoped_ptr<Call> call(Call::Create(call_config));
     VideoSendStream::Config send_config = call->GetDefaultSendConfig();
 
@@ -451,10 +475,10 @@ class RampUpTest : public ::testing::Test {
 
     if (num_streams == 1) {
       // For single stream rampup until 1mbps
-      stream_observer.set_expected_bitrate_bps(1000000);
+      stream_observer.set_expected_bitrate_bps(kSingleStreamTargetBps);
     } else {
       // For multi stream rampup until all streams are being sent. That means
-      // enough birate to sent all the target streams plus the min bitrate of
+      // enough birate to send all the target streams plus the min bitrate of
       // the last one.
       int expected_bitrate_bps = video_streams.back().min_bitrate_bps;
       for (size_t i = 0; i < video_streams.size() - 1; ++i) {
@@ -564,15 +588,19 @@ class RampUpTest : public ::testing::Test {
 };
 
 TEST_F(RampUpTest, SingleStream) {
-  RunRampUpTest(false, 1);
+  RunRampUpTest(false, 1, 0);
 }
 
 TEST_F(RampUpTest, Simulcast) {
-  RunRampUpTest(false, 3);
+  RunRampUpTest(false, 3, 0);
 }
 
 TEST_F(RampUpTest, SimulcastWithRtx) {
-  RunRampUpTest(true, 3);
+  RunRampUpTest(true, 3, 0);
+}
+
+TEST_F(RampUpTest, SingleStreamWithHighStartBitrate) {
+  RunRampUpTest(false, 1, 0.9 * kSingleStreamTargetBps);
 }
 
 TEST_F(RampUpTest, UpDownUpOneStream) { RunRampUpDownUpTest(1, false); }

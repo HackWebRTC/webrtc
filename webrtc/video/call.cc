@@ -131,6 +131,8 @@ Call* Call::Create(const Call::Config& config) {
 
 namespace internal {
 
+const int kDefaultVideoStreamBitrateBps = 300000;
+
 Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
     : config_(config),
       receive_lock_(RWLockWrapper::CreateRWLock()),
@@ -182,14 +184,18 @@ VideoSendStream* Call::CreateVideoSendStream(
     const void* encoder_settings) {
   assert(config.rtp.ssrcs.size() > 0);
 
-  VideoSendStream* send_stream =
-      new VideoSendStream(config_.send_transport,
-                          overuse_observer_proxy_.get(),
-                          video_engine_,
-                          config,
-                          video_streams,
-                          encoder_settings,
-                          base_channel_id_);
+  // TODO(mflodman): Base the start bitrate on a current bandwidth estimate, if
+  // the call has already started.
+  VideoSendStream* send_stream = new VideoSendStream(
+      config_.send_transport,
+      overuse_observer_proxy_.get(),
+      video_engine_,
+      config,
+      video_streams,
+      encoder_settings,
+      base_channel_id_,
+      config_.start_bitrate_bps != -1 ? config_.start_bitrate_bps
+                                      : kDefaultVideoStreamBitrateBps);
 
   WriteLockScoped write_lock(*send_lock_);
   for (size_t i = 0; i < config.rtp.ssrcs.size(); ++i) {

@@ -44,7 +44,8 @@ class VideoSendStream : public webrtc::VideoSendStream,
                   const VideoSendStream::Config& config,
                   const std::vector<VideoStream> video_streams,
                   const void* encoder_settings,
-                  int base_channel);
+                  int base_channel,
+                  int start_bitrate);
 
   virtual ~VideoSendStream();
 
@@ -73,6 +74,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
   TransportAdapter transport_adapter_;
   EncodedFrameCallbackAdapter encoded_frame_proxy_;
   const VideoSendStream::Config config_;
+  const int start_bitrate_bps_;
 
   ViEBase* video_engine_base_;
   ViECapture* capture_;

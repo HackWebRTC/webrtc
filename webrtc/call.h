@@ -61,7 +61,8 @@ class Call {
         : webrtc_config(NULL),
           send_transport(send_transport),
           voice_engine(NULL),
-          overuse_callback(NULL) {}
+          overuse_callback(NULL),
+          start_bitrate_bps(-1) {}
 
     webrtc::Config* webrtc_config;
 
@@ -73,6 +74,11 @@ class Call {
     // Callback for overuse and normal usage based on the jitter of incoming
     // captured frames. 'NULL' disables the callback.
     OveruseCallback* overuse_callback;
+
+    // Start bitrate used before a valid bitrate estimate is calculated. '-1'
+    // lets the call decide start bitrate.
+    // Note: This currently only affects video.
+    int start_bitrate_bps;
   };
 
   static Call* Create(const Call::Config& config);

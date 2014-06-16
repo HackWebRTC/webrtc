@@ -61,6 +61,8 @@ void Loopback() {
 
   test::DirectTransport transport;
   Call::Config call_config(&transport);
+  call_config.start_bitrate_bps =
+      static_cast<int>(flags::StartBitrate()) * 1000;
   scoped_ptr<Call> call(Call::Create(call_config));
 
   // Loopback, call sends to itself.

@@ -114,16 +114,19 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
                                  const VideoSendStream::Config& config,
                                  const std::vector<VideoStream> video_streams,
                                  const void* encoder_settings,
-                                 int base_channel)
+                                 int base_channel,
+                                 int start_bitrate_bps)
     : transport_adapter_(transport),
       encoded_frame_proxy_(config.post_encode_callback),
       config_(config),
+      start_bitrate_bps_(start_bitrate_bps),
       external_codec_(NULL),
       channel_(-1),
       stats_proxy_(new SendStatisticsProxy(config, this)) {
   video_engine_base_ = ViEBase::GetInterface(video_engine);
   video_engine_base_->CreateChannel(channel_, base_channel);
   assert(channel_ != -1);
+  assert(start_bitrate_bps_ > 0);
 
   rtp_rtcp_ = ViERTP_RTCP::GetInterface(video_engine);
   assert(rtp_rtcp_ != NULL);
@@ -350,13 +353,17 @@ bool VideoSendStream::ReconfigureVideoEncoder(
     video_codec.qpMax = std::max(video_codec.qpMax,
                                  static_cast<unsigned int>(streams[i].max_qp));
   }
+  video_codec.startBitrate =
+      static_cast<unsigned int>(start_bitrate_bps_) / 1000;
 
   if (video_codec.minBitrate < kViEMinCodecBitrate)
     video_codec.minBitrate = kViEMinCodecBitrate;
   if (video_codec.maxBitrate < kViEMinCodecBitrate)
     video_codec.maxBitrate = kViEMinCodecBitrate;
-
-  video_codec.startBitrate = 300;
+  if (video_codec.startBitrate < video_codec.minBitrate)
+    video_codec.startBitrate = video_codec.minBitrate;
+  if (video_codec.startBitrate > video_codec.maxBitrate)
+    video_codec.startBitrate = video_codec.maxBitrate;
 
   if (video_codec.startBitrate < video_codec.minBitrate)
     video_codec.startBitrate = video_codec.minBitrate;
