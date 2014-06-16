@@ -49,6 +49,7 @@
 namespace cricket {
 
 struct AudioInfo;
+class Call;
 class MediaSessionClient;
 class BaseChannel;
 class VoiceChannel;

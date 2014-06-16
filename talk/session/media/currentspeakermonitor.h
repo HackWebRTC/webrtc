@@ -39,7 +39,6 @@
 namespace cricket {
 
 class BaseSession;
-class Call;
 class Session;
 struct AudioInfo;
 struct MediaStreams;
@@ -66,7 +65,8 @@ class AudioSourceContext {
 // It's recommended that the audio monitor be started with a 100 ms period.
 class CurrentSpeakerMonitor : public sigslot::has_slots<> {
  public:
-  CurrentSpeakerMonitor(AudioSourceContext* call, BaseSession* session);
+  CurrentSpeakerMonitor(AudioSourceContext* audio_source_context,
+                        BaseSession* session);
   ~CurrentSpeakerMonitor();
 
   BaseSession* session() const { return session_; }
@@ -80,13 +80,14 @@ class CurrentSpeakerMonitor : public sigslot::has_slots<> {
   void set_min_time_between_switches(uint32 min_time_between_switches);
 
   // This is fired when the current speaker changes, and provides his audio
-  // SSRC.  This only fires after the audio monitor on the underlying Call has
-  // been started.
+  // SSRC.  This only fires after the audio monitor on the underlying
+  // AudioSourceContext has been started.
   sigslot::signal2<CurrentSpeakerMonitor*, uint32> SignalUpdate;
 
  private:
-  void OnAudioMonitor(AudioSourceContext* call, const AudioInfo& info);
-  void OnMediaStreamsUpdate(AudioSourceContext* call,
+  void OnAudioMonitor(AudioSourceContext* audio_source_context,
+                      const AudioInfo& info);
+  void OnMediaStreamsUpdate(AudioSourceContext* audio_source_context,
                             BaseSession* session,
                             const MediaStreams& added,
                             const MediaStreams& removed);
