@@ -9,6 +9,7 @@
 {
   'variables': {
     'libjingle_root%': '<(DEPTH)',
+    'include_tests%': 1,
   },
   'targets': [
     {
@@ -19,12 +20,16 @@
         'webrtc/webrtc.gyp:*',
         '<(libjingle_root)/talk/libjingle.gyp:*',
         '<(libjingle_root)/talk/libjingle_examples.gyp:*',
-        '<(libjingle_root)/talk/libjingle_tests.gyp:*',
       ],
       'conditions': [
         ['OS=="android"', {
           'dependencies': [
             'webrtc/webrtc_examples.gyp:*',
+          ],
+        }],
+        ['include_tests==1', {
+          'dependencies': [
+            '<(libjingle_root)/talk/libjingle_tests.gyp:*',
           ],
         }],
       ],
