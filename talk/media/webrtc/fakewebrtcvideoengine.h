@@ -1000,6 +1000,10 @@ class FakeWebRtcVideoEngine
     return 0;
   }
 
+#ifdef USE_WEBRTC_DEV_BRANCH
+  WEBRTC_STUB(SetPadWithRedundantPayloads, (int, bool));
+#endif
+
   WEBRTC_FUNC(SetRtxReceivePayloadType, (const int channel,
                                          const uint8 payload_type)) {
     WEBRTC_CHECK_CHANNEL(channel);
@@ -1111,7 +1115,7 @@ class FakeWebRtcVideoEngine
     channels_[channel]->transmission_smoothing_ = enable;
     return 0;
   }
-  WEBRTC_FUNC(SetReservedTransmitBitrate, (int channel, 
+  WEBRTC_FUNC(SetReservedTransmitBitrate, (int channel,
       unsigned int reserved_transmit_bitrate_bps)) {
     WEBRTC_CHECK_CHANNEL(channel);
     channels_[channel]->reserved_transmit_bitrate_bps_ =

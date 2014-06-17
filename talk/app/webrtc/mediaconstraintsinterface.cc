@@ -118,6 +118,8 @@ const char MediaConstraintsInterface::kHighBitrate[] =
     "googHighBitrate";
 const char MediaConstraintsInterface::kVeryHighBitrate[] =
     "googVeryHighBitrate";
+const char MediaConstraintsInterface::kPayloadPadding[] = "googPayloadPadding";
+
 
 // Set |value| to the value associated with the first appearance of |key|, or
 // return false if |key| is not found.

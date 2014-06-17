@@ -371,14 +371,15 @@ static std::string MakeTdErrorString(const std::string& desc) {
 
 // Set |option| to the highest-priority value of |key| in the optional
 // constraints if the key is found and has a valid value.
+template<typename T>
 static void SetOptionFromOptionalConstraint(
     const MediaConstraintsInterface* constraints,
-    const std::string& key, cricket::Settable<int>* option) {
+    const std::string& key, cricket::Settable<T>* option) {
   if (!constraints) {
     return;
   }
   std::string string_value;
-  int value;
+  T value;
   if (constraints->GetOptional().FindFirst(key, &string_value)) {
     if (talk_base::FromString(string_value, &value)) {
       option->Set(value);
@@ -565,26 +566,22 @@ bool WebRtcSession::Initialize(
       MediaConstraintsInterface::kCpuOveruseThreshold,
       &video_options_.cpu_overuse_threshold);
   SetOptionFromOptionalConstraint(constraints,
+      MediaConstraintsInterface::kCpuOveruseDetection,
+      &video_options_.cpu_overuse_detection);
+  SetOptionFromOptionalConstraint(constraints,
+      MediaConstraintsInterface::kCpuOveruseEncodeUsage,
+      &video_options_.cpu_overuse_encode_usage);
+  SetOptionFromOptionalConstraint(constraints,
       MediaConstraintsInterface::kCpuUnderuseEncodeRsdThreshold,
       &video_options_.cpu_underuse_encode_rsd_threshold);
   SetOptionFromOptionalConstraint(constraints,
       MediaConstraintsInterface::kCpuOveruseEncodeRsdThreshold,
       &video_options_.cpu_overuse_encode_rsd_threshold);
 
-  if (FindConstraint(
-      constraints,
-      MediaConstraintsInterface::kCpuOveruseDetection,
-      &value,
-      NULL)) {
-    video_options_.cpu_overuse_detection.Set(value);
-  }
-  if (FindConstraint(
-      constraints,
-      MediaConstraintsInterface::kCpuOveruseEncodeUsage,
-      &value,
-      NULL)) {
-    video_options_.cpu_overuse_encode_usage.Set(value);
-  }
+  // Find payload padding constraint.
+  SetOptionFromOptionalConstraint(constraints,
+      MediaConstraintsInterface::kPayloadPadding,
+      &video_options_.use_payload_padding);
 
   // Find improved wifi bwe constraint.
   if (FindConstraint(
@@ -598,13 +595,9 @@ bool WebRtcSession::Initialize(
     video_options_.use_improved_wifi_bandwidth_estimator.Set(true);
   }
 
-  if (FindConstraint(
-        constraints,
-        MediaConstraintsInterface::kHighStartBitrate,
-        &value,
-        NULL)) {
-    video_options_.video_start_bitrate.Set(cricket::kHighStartBitrate);
-  }
+  SetOptionFromOptionalConstraint(constraints,
+      MediaConstraintsInterface::kHighStartBitrate,
+      &video_options_.video_start_bitrate);
 
   if (FindConstraint(
       constraints,
