@@ -91,9 +91,11 @@
     'enable_protobuf%': 1,
 
     # Disable these to not build components which can be externally provided.
+    'build_json%': 1,
     'build_libjpeg%': 1,
     'build_libyuv%': 1,
     'build_libvpx%': 1,
+    'build_ssl%': 1,
 
     # Disable by default
     'have_dbus_glib%': 0,

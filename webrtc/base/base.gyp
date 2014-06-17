@@ -453,7 +453,7 @@
           },
         }, {
           'conditions': [
-            ['external_libraries==0', {
+            ['build_json==1', {
               'dependencies': [
                 '<(DEPTH)/third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
               ],
@@ -465,7 +465,7 @@
                 # When defined changes the include path for json.h to where it
                 # is expected to be when building json outside of the standalone
                 # build.
-                'WEBRTC_EXTERNAL',
+                'WEBRTC_EXTERNAL_JSON',
               ],
             }],
           ],
@@ -489,7 +489,7 @@
             ],
           },
           'conditions': [
-            ['external_libraries==0', {
+            ['build_ssl==1', {
               'dependencies': [
                 '<(DEPTH)/third_party/openssl/openssl.gyp:openssl',
               ],
@@ -556,7 +556,7 @@
             },
           },
            'conditions': [
-            ['external_libraries==0', {
+            ['build_ssl==1', {
               'dependencies': [
                 '<(DEPTH)/net/third_party/nss/ssl.gyp:libssl',
               ]
@@ -724,7 +724,7 @@
         }],
         ['OS == "mac" or OS == "ios" or OS == "win"', {
           'conditions': [
-            ['external_libraries==0', {
+            ['build_ssl==1', {
               'dependencies': [
                 '<(DEPTH)/net/third_party/nss/ssl.gyp:libssl',
                 '<(DEPTH)/third_party/nss/nss.gyp:nspr',
@@ -739,7 +739,7 @@
         }],
         ['os_posix == 1 and OS != "mac" and OS != "ios" and OS != "android"', {
           'conditions': [
-            ['external_libraries==0', {
+            ['build_ssl==1', {
               'dependencies': [
                 '<(DEPTH)/build/linux/system.gyp:ssl',
               ],
