@@ -52,15 +52,16 @@ Notice that this requires the site you're browsing to use HTTPS.
   </p>
 
   <div id="log"></div>
-  <video id="local-view" autoplay="autoplay" muted="true"></video>
-
   <!-- These files are in place when executing on W3C. -->
   <script src="/resources/testharness.js"></script>
   <script src="/resources/testharnessreport.js"></script>
   <script src="/common/vendor-prefix.js"
-          data-prefixed-objects=   '[{"ancestors":["navigator"], "name":"getUserMedia"},
-                                     {"ancestors":["window"], "name":"RTCPeerConnection"}]'
-          data-prefixed-prototypes='[{"ancestors":["HTMLMediaElement"],"name":"srcObject"}]'></script>
+          data-prefixed-objects=
+              '[{"ancestors":["navigator"], "name":"getUserMedia"},
+                {"ancestors":["window"], "name":"RTCPeerConnection"}]'
+          data-prefixed-prototypes=
+              '[{"ancestors":["HTMLMediaElement"],"name":"srcObject"}]'>
+  </script>
 
   <script src="getusermedia_conformance_test.js"></script>
 </body>
