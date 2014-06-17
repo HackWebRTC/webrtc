@@ -743,7 +743,7 @@ TEST(FecPayloadSplitter, MixedPayload) {
   // Check first packet.
   packet = packet_list.front();
   EXPECT_EQ(0, packet->header.payloadType);
-  EXPECT_EQ(kBaseTimestamp - 20 * 32, packet->header.timestamp);
+  EXPECT_EQ(kBaseTimestamp - 20 * 48, packet->header.timestamp);
   EXPECT_EQ(10, packet->payload_length);
   EXPECT_FALSE(packet->primary);
   delete [] packet->payload;
