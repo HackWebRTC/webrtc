@@ -558,6 +558,7 @@ class WebRtcOveruseObserver : public webrtc::CpuOveruseObserver {
   }
 
   void Enable(bool enable) {
+    LOG(LS_INFO) << "WebRtcOveruseObserver enable: " << enable;
     talk_base::CritScope cs(&crit_);
     enabled_ = enable;
   }
@@ -586,8 +587,7 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
         external_capture_(external_capture),
         capturer_updated_(false),
         interval_(0),
-        cpu_monitor_(cpu_monitor),
-        overuse_observer_enabled_(false) {
+        cpu_monitor_(cpu_monitor) {
   }
 
   int channel_id() const { return channel_id_; }
@@ -679,7 +679,8 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
     vie_wrapper->base()->RegisterCpuOveruseObserver(channel_id_,
                                                     overuse_observer_.get());
     // (Dis)connect the video adapter from the cpu monitor as appropriate.
-    SetCpuOveruseDetection(overuse_observer_enabled_);
+    SetCpuOveruseDetection(
+        video_options_.cpu_overuse_detection.GetWithDefaultIfUnset(false));
 
     SignalCpuAdaptationUnable.repeat(adapter->SignalCpuAdaptationUnable);
   }
@@ -698,10 +699,18 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
   }
 
   void ApplyCpuOptions(const VideoOptions& video_options) {
+    bool cpu_overuse_detection_changed =
+        video_options.cpu_overuse_detection.IsSet() &&
+        (video_options.cpu_overuse_detection.GetWithDefaultIfUnset(false) !=
+         video_options_.cpu_overuse_detection.GetWithDefaultIfUnset(false));
     // Use video_options_.SetAll() instead of assignment so that unset value in
     // video_options will not overwrite the previous option value.
     video_options_.SetAll(video_options);
     UpdateAdapterCpuOptions();
+    if (cpu_overuse_detection_changed) {
+      SetCpuOveruseDetection(
+          video_options_.cpu_overuse_detection.GetWithDefaultIfUnset(false));
+    }
   }
 
   void UpdateAdapterCpuOptions() {
@@ -709,15 +718,19 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
       return;
     }
 
-    bool cpu_adapt, cpu_smoothing, adapt_third;
+    bool cpu_smoothing, adapt_third;
     float low, med, high;
+    bool cpu_adapt =
+        video_options_.adapt_input_to_cpu_usage.GetWithDefaultIfUnset(false);
+    bool cpu_overuse_detection =
+        video_options_.cpu_overuse_detection.GetWithDefaultIfUnset(false);
 
     // TODO(thorcarpenter): Have VideoAdapter be responsible for setting
     // all these video options.
     CoordinatedVideoAdapter* video_adapter = video_capturer_->video_adapter();
-    if (video_options_.adapt_input_to_cpu_usage.Get(&cpu_adapt) ||
-        overuse_observer_enabled_) {
-      video_adapter->set_cpu_adaptation(cpu_adapt || overuse_observer_enabled_);
+    if (video_options_.adapt_input_to_cpu_usage.IsSet() ||
+        video_options_.cpu_overuse_detection.IsSet()) {
+      video_adapter->set_cpu_adaptation(cpu_adapt || cpu_overuse_detection);
     }
     if (video_options_.adapt_cpu_with_smoothing.Get(&cpu_smoothing)) {
       video_adapter->set_cpu_smoothing(cpu_smoothing);
@@ -737,8 +750,6 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
   }
 
   void SetCpuOveruseDetection(bool enable) {
-    overuse_observer_enabled_ = enable;
-
     if (overuse_observer_) {
       overuse_observer_->Enable(enable);
     }
@@ -747,10 +758,6 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
     // it will be signaled by cpu monitor.
     CoordinatedVideoAdapter* adapter = video_adapter();
     if (adapter) {
-      bool cpu_adapt = false;
-      video_options_.adapt_input_to_cpu_usage.Get(&cpu_adapt);
-      adapter->set_cpu_adaptation(
-          adapter->cpu_adaptation() || cpu_adapt || enable);
       if (cpu_monitor_) {
         if (enable) {
           cpu_monitor_->SignalUpdate.disconnect(adapter);
@@ -815,7 +822,6 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
 
   talk_base::CpuMonitor* cpu_monitor_;
   talk_base::scoped_ptr<WebRtcOveruseObserver> overuse_observer_;
-  bool overuse_observer_enabled_;
 
   VideoOptions video_options_;
 };
@@ -2967,9 +2973,6 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
   bool buffer_latency_changed = options.buffered_mode_latency.IsSet() &&
       (options_.buffered_mode_latency != options.buffered_mode_latency);
 
-  bool cpu_overuse_detection_changed = options.cpu_overuse_detection.IsSet() &&
-      (options_.cpu_overuse_detection != options.cpu_overuse_detection);
-
   bool dscp_option_changed = (options_.dscp != options.dscp);
 
   bool suspend_below_min_bitrate_changed =
@@ -3079,17 +3082,6 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
         LOG_RTCERR2(SetReceiverBufferingMode, it->second->channel_id(),
                     buffer_latency);
       }
-    }
-  }
-  if (cpu_overuse_detection_changed) {
-    bool cpu_overuse_detection =
-        options_.cpu_overuse_detection.GetWithDefaultIfUnset(false);
-    LOG(LS_INFO) << "CPU overuse detection is enabled? "
-                 << cpu_overuse_detection;
-    for (SendChannelMap::iterator iter = send_channels_.begin();
-         iter != send_channels_.end(); ++iter) {
-      WebRtcVideoChannelSendInfo* send_channel = iter->second;
-      send_channel->SetCpuOveruseDetection(cpu_overuse_detection);
     }
   }
   if (dscp_option_changed) {
@@ -3575,10 +3567,6 @@ bool WebRtcVideoMediaChannel::ConfigureSending(int channel_id,
   send_channel->ApplyCpuOptions(options_);
   send_channel->SignalCpuAdaptationUnable.connect(this,
       &WebRtcVideoMediaChannel::OnCpuAdaptationUnable);
-
-  if (options_.cpu_overuse_detection.GetWithDefaultIfUnset(false)) {
-    send_channel->SetCpuOveruseDetection(true);
-  }
 
   webrtc::CpuOveruseOptions overuse_options;
   if (GetCpuOveruseOptions(options_, &overuse_options)) {
