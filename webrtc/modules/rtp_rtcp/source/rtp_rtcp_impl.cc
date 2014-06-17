@@ -17,11 +17,6 @@
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
-#ifdef MATLAB
-#include "webrtc/modules/rtp_rtcp/test/BWEStandAlone/MatlabPlot.h"
-extern MatlabEngine eng;  // Global variable defined elsewhere.
-#endif
-
 #ifdef _WIN32
 // Disable warning C4355: 'this' : used in base member initializer list.
 #pragma warning(disable : 4355)
@@ -66,7 +61,9 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                   configuration.outgoing_transport,
                   configuration.audio_messages,
                   configuration.paced_sender),
-      rtcp_sender_(configuration.id, configuration.audio, configuration.clock,
+      rtcp_sender_(configuration.id,
+                   configuration.audio,
+                   configuration.clock,
                    configuration.receive_statistics),
       rtcp_receiver_(configuration.id, configuration.clock, this),
       clock_(configuration.clock),
@@ -83,15 +80,13 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
           CriticalSectionWrapper::CreateCriticalSection()),
       default_module_(
           static_cast<ModuleRtpRtcpImpl*>(configuration.default_module)),
+      padding_index_(-1),  // Start padding at the first child module.
       nack_method_(kNackOff),
       nack_last_time_sent_full_(0),
       nack_last_seq_number_sent_(0),
       simulcast_(false),
       key_frame_req_method_(kKeyFrameReqFirRtp),
       remote_bitrate_(configuration.remote_bitrate_estimator),
-#ifdef MATLAB
-      , plot1_(NULL),
-#endif
       rtt_stats_(configuration.rtt_stats),
       critical_section_rtt_(CriticalSectionWrapper::CreateCriticalSection()),
       rtt_ms_(0) {
@@ -121,12 +116,6 @@ ModuleRtpRtcpImpl::~ModuleRtpRtcpImpl() {
   if (default_module_) {
     default_module_->DeRegisterChildModule(this);
   }
-#ifdef MATLAB
-  if (plot1_) {
-    eng.DeletePlot(plot1_);
-    plot1_ = NULL;
-  }
-#endif
 }
 
 void ModuleRtpRtcpImpl::RegisterChildModule(RtpRtcp* module) {
@@ -148,7 +137,7 @@ void ModuleRtpRtcpImpl::DeRegisterChildModule(RtpRtcp* remove_module) {
   CriticalSectionScoped double_lock(
       critical_section_module_ptrs_feedback_.get());
 
-  std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
+  std::vector<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
   while (it != child_modules_.end()) {
     RtpRtcp* module = *it;
     if (module == remove_module) {
@@ -252,8 +241,9 @@ void ModuleRtpRtcpImpl::SetRTXSendStatus(int mode) {
   rtp_sender_.SetRTXStatus(mode);
 }
 
-void ModuleRtpRtcpImpl::RTXSendStatus(int* mode, uint32_t* ssrc,
-                                         int* payload_type) const {
+void ModuleRtpRtcpImpl::RTXSendStatus(int* mode,
+                                      uint32_t* ssrc,
+                                      int* payload_type) const {
   rtp_sender_.RTXStatus(mode, ssrc, payload_type);
 }
 
@@ -372,7 +362,7 @@ int32_t ModuleRtpRtcpImpl::SetCSRCs(
     // For default we need to update all child modules too.
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
 
-    std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
+    std::vector<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
     while (it != child_modules_.end()) {
       RtpRtcp* module = *it;
       if (module) {
@@ -443,7 +433,7 @@ bool ModuleRtpRtcpImpl::SendingMedia() const {
   }
 
   CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-  std::list<ModuleRtpRtcpImpl*>::const_iterator it = child_modules_.begin();
+  std::vector<ModuleRtpRtcpImpl*>::const_iterator it = child_modules_.begin();
   while (it != child_modules_.end()) {
     RTPSender& rtp_sender = (*it)->rtp_sender_;
     if (rtp_sender.SendingMedia()) {
@@ -488,7 +478,7 @@ int32_t ModuleRtpRtcpImpl::SendOutgoingData(
       return -1;
     }
     int idx = 0;
-    std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
+    std::vector<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
     for (; idx < rtp_video_hdr->simulcastIdx; ++it) {
       if (it == child_modules_.end()) {
         return -1;
@@ -515,7 +505,7 @@ int32_t ModuleRtpRtcpImpl::SendOutgoingData(
                                    fragmentation,
                                    rtp_video_hdr);
   } else {
-    std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
+    std::vector<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
     // Send to all "child" modules
     while (it != child_modules_.end()) {
       if ((*it)->SendingMedia()) {
@@ -546,7 +536,7 @@ bool ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
     }
   } else {
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-    std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
+    std::vector<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
     while (it != child_modules_.end()) {
       if ((*it)->SendingMedia() && ssrc == (*it)->rtp_sender_.SSRC()) {
         return (*it)->rtp_sender_.TimeToSendPacket(sequence_number,
@@ -568,13 +558,15 @@ int ModuleRtpRtcpImpl::TimeToSendPadding(int bytes) {
     }
   } else {
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-    std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
-    while (it != child_modules_.end()) {
+    // Decide what media stream to pad on based on a round-robin scheme.
+    for (size_t i = 0; i < child_modules_.size(); ++i) {
+      padding_index_ = (padding_index_ + 1) % child_modules_.size();
       // Send padding on one of the modules sending media.
-      if ((*it)->SendingMedia()) {
-        return (*it)->rtp_sender_.TimeToSendPadding(bytes);
+      if (child_modules_[padding_index_]->SendingMedia() &&
+          child_modules_[padding_index_]->rtp_sender_.GetTargetBitrate() > 0) {
+        return child_modules_[padding_index_]->rtp_sender_.TimeToSendPadding(
+            bytes);
       }
-      ++it;
     }
   }
   return 0;
@@ -603,8 +595,7 @@ uint16_t ModuleRtpRtcpImpl::MaxDataPayloadLength() const {
   if (IsDefaultModule()) {
     // For default we need to update all child modules too.
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-    std::list<ModuleRtpRtcpImpl*>::const_iterator it =
-      child_modules_.begin();
+    std::vector<ModuleRtpRtcpImpl*>::const_iterator it = child_modules_.begin();
     while (it != child_modules_.end()) {
       RtpRtcp* module = *it;
       if (module) {
@@ -1001,28 +992,28 @@ void ModuleRtpRtcpImpl::SetTargetSendBitrate(
   if (IsDefaultModule()) {
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
     if (simulcast_) {
-      std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
+      std::vector<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
       for (size_t i = 0;
            it != child_modules_.end() && i < stream_bitrates.size(); ++it) {
         if ((*it)->SendingMedia()) {
           RTPSender& rtp_sender = (*it)->rtp_sender_;
-          rtp_sender.SetTargetSendBitrate(stream_bitrates[i]);
+          rtp_sender.SetTargetBitrate(stream_bitrates[i]);
           ++i;
         }
       }
     } else {
       if (stream_bitrates.size() > 1)
         return;
-      std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
+      std::vector<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
       for (; it != child_modules_.end(); ++it) {
         RTPSender& rtp_sender = (*it)->rtp_sender_;
-        rtp_sender.SetTargetSendBitrate(stream_bitrates[0]);
+        rtp_sender.SetTargetBitrate(stream_bitrates[0]);
       }
     }
   } else {
     if (stream_bitrates.size() > 1)
       return;
-    rtp_sender_.SetTargetSendBitrate(stream_bitrates[0]);
+    rtp_sender_.SetTargetBitrate(stream_bitrates[0]);
   }
 }
 
@@ -1054,7 +1045,7 @@ int32_t ModuleRtpRtcpImpl::SendRTCPSliceLossIndication(
 int32_t ModuleRtpRtcpImpl::SetCameraDelay(const int32_t delay_ms) {
   if (IsDefaultModule()) {
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-    std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
+    std::vector<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
     while (it != child_modules_.end()) {
       RtpRtcp* module = *it;
       if (module) {
@@ -1084,7 +1075,7 @@ int32_t ModuleRtpRtcpImpl::GenericFECStatus(
   if (IsDefaultModule()) {
     // For default we need to check all child modules too.
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-    std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
+    std::vector<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
     while (it != child_modules_.end()) {
       RtpRtcp* module = *it;
       if (module)  {
@@ -1118,7 +1109,7 @@ int32_t ModuleRtpRtcpImpl::SetFecParameters(
     // For default we need to update all child modules too.
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
 
-    std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
+    std::vector<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
     while (it != child_modules_.end()) {
       RtpRtcp* module = *it;
       if (module) {
@@ -1172,8 +1163,7 @@ void ModuleRtpRtcpImpl::BitrateSent(uint32_t* total_rate,
     if (nack_rate != NULL)
       *nack_rate = 0;
 
-    std::list<ModuleRtpRtcpImpl*>::const_iterator it =
-      child_modules_.begin();
+    std::vector<ModuleRtpRtcpImpl*>::const_iterator it = child_modules_.begin();
     while (it != child_modules_.end()) {
       RtpRtcp* module = *it;
       if (module) {

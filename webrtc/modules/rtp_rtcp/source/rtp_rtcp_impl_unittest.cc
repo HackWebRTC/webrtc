@@ -12,13 +12,22 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/common_types.h"
+#include "webrtc/modules/pacing/include/mock/mock_paced_sender.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
+#include "webrtc/system_wrappers/interface/scoped_vector.h"
+
+using ::testing::_;
+using ::testing::NiceMock;
+using ::testing::Return;
+using ::testing::SaveArg;
 
 namespace webrtc {
 namespace {
 const uint32_t kSenderSsrc = 0x12345;
 const uint32_t kReceiverSsrc = 0x23456;
+const uint32_t kSenderRtxSsrc = 0x32345;
 const uint32_t kOneWayNetworkDelayMs = 100;
 
 class RtcpRttStatsTestImpl : public RtcpRttStats {
@@ -214,5 +223,246 @@ TEST_F(RtpRtcpImplTest, RtcpPacketTypeCounter_FirAndPli) {
   // Send module receives the FIR and PLI.
   EXPECT_EQ(2U, sender_.RtcpReceived().fir_packets);
   EXPECT_EQ(1U, sender_.RtcpReceived().pli_packets);
+}
+
+class RtpSendingTestTransport : public Transport {
+ public:
+  void ResetCounters() { bytes_received_.clear(); }
+
+  virtual int SendPacket(int channel, const void* data, int length) {
+    RTPHeader header;
+    scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
+    EXPECT_TRUE(
+        parser->Parse(static_cast<const uint8_t*>(data), length, &header));
+    bytes_received_[header.ssrc] += length;
+    ++packets_received_[header.ssrc];
+    return length;
+  }
+
+  virtual int SendRTCPPacket(int channel, const void* data, int length) {
+    return length;
+  }
+
+  int GetPacketsReceived(uint32_t ssrc) const {
+    std::map<uint32_t, int>::const_iterator it = packets_received_.find(ssrc);
+    if (it == packets_received_.end())
+      return 0;
+    return it->second;
+  }
+
+  int GetBytesReceived(uint32_t ssrc) const {
+    std::map<uint32_t, int>::const_iterator it = bytes_received_.find(ssrc);
+    if (it == bytes_received_.end())
+      return 0;
+    return it->second;
+  }
+
+  int GetTotalBytesReceived() const {
+    int sum = 0;
+    for (std::map<uint32_t, int>::const_iterator it = bytes_received_.begin();
+         it != bytes_received_.end();
+         ++it) {
+      sum += it->second;
+    }
+    return sum;
+  }
+
+ private:
+  std::map<uint32_t, int> bytes_received_;
+  std::map<uint32_t, int> packets_received_;
+};
+
+class RtpSendingTest : public ::testing::Test {
+ protected:
+  // Map from SSRC to number of received packets and bytes.
+  typedef std::map<uint32_t, std::pair<int, int> > PaddingMap;
+
+  RtpSendingTest() {
+    // Send module.
+    RtpRtcp::Configuration config;
+    config.audio = false;
+    config.clock = Clock::GetRealTimeClock();
+    config.outgoing_transport = &transport_;
+    config.receive_statistics = receive_statistics_.get();
+    config.rtt_stats = &rtt_stats_;
+    config.paced_sender = &pacer_;
+    memset(&codec_, 0, sizeof(VideoCodec));
+    codec_.plType = 100;
+    strncpy(codec_.plName, "VP8", 3);
+    codec_.numberOfSimulcastStreams = 3;
+    codec_.simulcastStream[0].width = 320;
+    codec_.simulcastStream[0].height = 180;
+    codec_.simulcastStream[0].maxBitrate = 300;
+    codec_.simulcastStream[1].width = 640;
+    codec_.simulcastStream[1].height = 360;
+    codec_.simulcastStream[1].maxBitrate = 600;
+    codec_.simulcastStream[2].width = 1280;
+    codec_.simulcastStream[2].height = 720;
+    codec_.simulcastStream[2].maxBitrate = 1200;
+    // We need numberOfSimulcastStreams + 1 RTP modules since we need one
+    // default module.
+    for (int i = 0; i < codec_.numberOfSimulcastStreams + 1; ++i) {
+      RtpRtcp* sender = RtpRtcp::CreateRtpRtcp(config);
+      EXPECT_EQ(0, sender->RegisterSendPayload(codec_));
+      EXPECT_EQ(0, sender->SetSendingStatus(true));
+      EXPECT_EQ(0, sender->SetSendingMediaStatus(true));
+      sender->SetSSRC(kSenderSsrc + i);
+      sender->SetRemoteSSRC(kReceiverSsrc + i);
+      senders_.push_back(sender);
+      config.default_module = senders_[0];
+    }
+    std::vector<uint32_t> bitrates;
+    bitrates.push_back(codec_.simulcastStream[0].maxBitrate);
+    bitrates.push_back(codec_.simulcastStream[1].maxBitrate);
+    bitrates.push_back(codec_.simulcastStream[2].maxBitrate);
+    senders_[0]->SetTargetSendBitrate(bitrates);
+  }
+
+  ~RtpSendingTest() {
+    for (int i = senders_.size() - 1; i >= 0; --i) {
+      delete senders_[i];
+    }
+  }
+
+  void SendFrameOnSender(int sender_index,
+                         const uint8_t* payload,
+                         size_t length) {
+    RTPVideoHeader rtp_video_header = {
+        codec_.simulcastStream[sender_index].width,
+        codec_.simulcastStream[sender_index].height,
+        true,
+        0,
+        kRtpVideoVp8,
+        {}};
+    uint32_t seq_num = 0;
+    uint32_t ssrc = 0;
+    int64_t capture_time_ms = 0;
+    bool retransmission = false;
+    EXPECT_CALL(pacer_, SendPacket(_, _, _, _, _, _))
+        .WillRepeatedly(DoAll(SaveArg<1>(&ssrc),
+                              SaveArg<2>(&seq_num),
+                              SaveArg<3>(&capture_time_ms),
+                              SaveArg<5>(&retransmission),
+                              Return(true)));
+    EXPECT_EQ(0,
+              senders_[sender_index]->SendOutgoingData(kVideoFrameKey,
+                                                       codec_.plType,
+                                                       0,
+                                                       0,
+                                                       payload,
+                                                       length,
+                                                       NULL,
+                                                       &rtp_video_header));
+    EXPECT_TRUE(senders_[sender_index]->TimeToSendPacket(
+        ssrc, seq_num, capture_time_ms, retransmission));
+  }
+
+  void ExpectPadding(const PaddingMap& expected_padding) {
+    int expected_total_bytes = 0;
+    for (PaddingMap::const_iterator it = expected_padding.begin();
+         it != expected_padding.end();
+         ++it) {
+      int packets_received = transport_.GetBytesReceived(it->first);
+      if (it->second.first > 0) {
+        EXPECT_GE(packets_received, it->second.first)
+            << "On SSRC: " << it->first;
+      }
+      int bytes_received = transport_.GetBytesReceived(it->first);
+      expected_total_bytes += bytes_received;
+      if (it->second.second > 0) {
+        EXPECT_GE(bytes_received, it->second.second)
+            << "On SSRC: " << it->first;
+      } else {
+        EXPECT_EQ(0, bytes_received) << "On SSRC: " << it->first;
+      }
+    }
+    EXPECT_EQ(expected_total_bytes, transport_.GetTotalBytesReceived());
+  }
+
+  scoped_ptr<ReceiveStatistics> receive_statistics_;
+  RtcpRttStatsTestImpl rtt_stats_;
+  std::vector<RtpRtcp*> senders_;
+  RtpSendingTestTransport transport_;
+  NiceMock<MockPacedSender> pacer_;
+  VideoCodec codec_;
+};
+
+TEST_F(RtpSendingTest, RoundRobinPadding) {
+  // We have to send on an SSRC to be allowed to pad, since a marker bit must
+  // be sent prior to padding packets.
+  const uint8_t payload[200] = {0};
+  for (int i = 0; i < codec_.numberOfSimulcastStreams; ++i) {
+    SendFrameOnSender(i + 1, payload, sizeof(payload));
+  }
+  transport_.ResetCounters();
+  senders_[0]->TimeToSendPadding(500);
+  PaddingMap expected_padding;
+  expected_padding[kSenderSsrc + 1] = std::make_pair(2, 500);
+  expected_padding[kSenderSsrc + 2] = std::make_pair(0, 0);
+  expected_padding[kSenderSsrc + 3] = std::make_pair(0, 0);
+  ExpectPadding(expected_padding);
+  senders_[0]->TimeToSendPadding(1000);
+  expected_padding[kSenderSsrc + 2] = std::make_pair(4, 1000);
+  ExpectPadding(expected_padding);
+  senders_[0]->TimeToSendPadding(1500);
+  expected_padding[kSenderSsrc + 3] = std::make_pair(6, 1500);
+  ExpectPadding(expected_padding);
+}
+
+TEST_F(RtpSendingTest, RoundRobinPaddingRtx) {
+  // Enable RTX to allow padding to be sent prior to media.
+  for (int i = 1; i < codec_.numberOfSimulcastStreams + 1; ++i) {
+    senders_[i]->SetRtxSendPayloadType(96);
+    senders_[i]->SetRtxSsrc(kSenderRtxSsrc + i);
+    senders_[i]->SetRTXSendStatus(kRtxRetransmitted);
+  }
+  transport_.ResetCounters();
+  senders_[0]->TimeToSendPadding(500);
+  PaddingMap expected_padding;
+  expected_padding[kSenderSsrc + 1] = std::make_pair(0, 0);
+  expected_padding[kSenderSsrc + 2] = std::make_pair(0, 0);
+  expected_padding[kSenderSsrc + 3] = std::make_pair(0, 0);
+  expected_padding[kSenderRtxSsrc + 1] = std::make_pair(2, 500);
+  expected_padding[kSenderRtxSsrc + 2] = std::make_pair(0, 0);
+  expected_padding[kSenderRtxSsrc + 3] = std::make_pair(0, 0);
+  ExpectPadding(expected_padding);
+  senders_[0]->TimeToSendPadding(1000);
+  expected_padding[kSenderRtxSsrc + 2] = std::make_pair(4, 500);
+  ExpectPadding(expected_padding);
+  senders_[0]->TimeToSendPadding(1500);
+
+  expected_padding[kSenderRtxSsrc + 3] = std::make_pair(6, 500);
+  ExpectPadding(expected_padding);
+}
+
+TEST_F(RtpSendingTest, RoundRobinPaddingRtxRedundantPayloads) {
+  for (int i = 1; i < codec_.numberOfSimulcastStreams + 1; ++i) {
+    senders_[i]->SetRtxSendPayloadType(96);
+    senders_[i]->SetRtxSsrc(kSenderRtxSsrc + i);
+    senders_[i]->SetRTXSendStatus(kRtxRetransmitted | kRtxRedundantPayloads);
+    senders_[i]->SetStorePacketsStatus(true, 100);
+  }
+  // First send payloads so that we have something to retransmit.
+  const size_t kPayloadSize = 500;
+  const uint8_t payload[kPayloadSize] = {0};
+  for (int i = 0; i < codec_.numberOfSimulcastStreams; ++i) {
+    SendFrameOnSender(i + 1, payload, sizeof(payload));
+  }
+  transport_.ResetCounters();
+  senders_[0]->TimeToSendPadding(500);
+  PaddingMap expected_padding;
+  expected_padding[kSenderSsrc + 1] = std::make_pair<int, int>(0, 0);
+  expected_padding[kSenderSsrc + 2] = std::make_pair<int, int>(0, 0);
+  expected_padding[kSenderSsrc + 3] = std::make_pair<int, int>(0, 0);
+  expected_padding[kSenderRtxSsrc + 1] = std::make_pair<int, int>(1, 500);
+  expected_padding[kSenderRtxSsrc + 2] = std::make_pair<int, int>(0, 0);
+  expected_padding[kSenderRtxSsrc + 3] = std::make_pair<int, int>(0, 0);
+  ExpectPadding(expected_padding);
+  senders_[0]->TimeToSendPadding(1000);
+  expected_padding[kSenderRtxSsrc + 2] = std::make_pair<int, int>(2, 1000);
+  ExpectPadding(expected_padding);
+  senders_[0]->TimeToSendPadding(1500);
+  expected_padding[kSenderRtxSsrc + 3] = std::make_pair<int, int>(3, 1500);
+  ExpectPadding(expected_padding);
 }
 }  // namespace webrtc

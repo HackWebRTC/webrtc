@@ -21,10 +21,6 @@
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/testsupport/gtest_prod_util.h"
 
-#ifdef MATLAB
-class MatlabPlot;
-#endif
-
 namespace webrtc {
 
 class ModuleRtpRtcpImpl : public RtpRtcp {
@@ -426,7 +422,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   scoped_ptr<CriticalSectionWrapper> critical_section_module_ptrs_;
   scoped_ptr<CriticalSectionWrapper> critical_section_module_ptrs_feedback_;
   ModuleRtpRtcpImpl*            default_module_;
-  std::list<ModuleRtpRtcpImpl*> child_modules_;
+  std::vector<ModuleRtpRtcpImpl*> child_modules_;
+  size_t padding_index_;
 
   // Send side
   NACKMethod            nack_method_;
@@ -438,10 +435,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   KeyFrameRequestMethod key_frame_req_method_;
 
   RemoteBitrateEstimator* remote_bitrate_;
-
-#ifdef MATLAB
-  MatlabPlot*           plot1_;
-#endif
 
   RtcpRttStats* rtt_stats_;
 

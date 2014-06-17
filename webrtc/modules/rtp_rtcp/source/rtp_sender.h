@@ -83,7 +83,8 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
   // was sent within the statistics window.
   bool GetSendSideDelay(int* avg_send_delay_ms, int* max_send_delay_ms) const;
 
-  void SetTargetSendBitrate(const uint32_t bits);
+  void SetTargetBitrate(uint32_t bitrate);
+  uint32_t GetTargetBitrate();
 
   virtual uint16_t MaxDataPayloadLength() const
       OVERRIDE;  // with RTP and FEC headers.
@@ -329,9 +330,6 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
                       bool is_retransmit);
   bool IsFecPacket(const uint8_t* buffer, const RTPHeader& header) const;
 
-  void SetTargetBitrateKbps(uint16_t bitrate_kbps);
-  uint16_t GetTargetBitrateKbps();
-
   Clock* clock_;
   Bitrate bitrate_sent_;
 
@@ -399,7 +397,7 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
   // that by the time the function returns there is no guarantee
   // that the target bitrate is still valid.
   scoped_ptr<CriticalSectionWrapper> target_bitrate_critsect_;
-  uint16_t target_bitrate_kbps_ GUARDED_BY(target_bitrate_critsect_);
+  uint16_t target_bitrate_ GUARDED_BY(target_bitrate_critsect_);
 };
 
 }  // namespace webrtc
