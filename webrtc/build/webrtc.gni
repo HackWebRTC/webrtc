@@ -1,0 +1,57 @@
+# Copyright (c) 2014 The WebRTC project authors. All Rights Reserved.
+#
+# Use of this source code is governed by a BSD-style license
+# that can be found in the LICENSE file in the root of the source
+# tree. An additional intellectual property rights grant can be found
+# in the file PATENTS.  All contributing project authors may
+# be found in the AUTHORS file in the root of the source tree.
+
+declare_args() {
+  # Assume Chromium build for now, since that's the priority case for getting GN
+  # up and running with WebRTC.
+  build_with_chromium = true
+  build_with_libjingle = true
+
+  if (build_with_libjingle) {
+    include_tests = false
+    restrict_webrtc_logging = true
+  } else {
+    include_tests = true
+    restrict_webrtc_logging = false
+  }
+
+  # Adds video support to dependencies shared by voice and video engine.
+  # This should normally be enabled; the intended use is to disable only
+  # when building voice engine exclusively.
+  enable_video = true
+
+  # Selects fixed-point code where possible.
+  prefer_fixed_point = false
+
+  build_libjpeg = true
+  # Enables the use of protocol buffers for debug recordings.
+  enable_protobuf = true
+
+  # Disable by default.
+  have_dbus_glib = false
+
+  # Enable to use the Mozilla internal settings.
+  build_with_mozilla = false
+
+  # Define MIPS architecture variant, MIPS DSP variant and MIPS FPU
+  # This may be subject to change in accordance to Chromium's MIPS flags
+  mips_arch_variant = "mips32r1"
+  mips_dsp_rev = 0
+  mips_fpu = true
+
+  enable_android_opensl = true
+
+  if (is_ios) {
+    build_libjpeg = false
+    enable_protobuf = false
+  }
+
+  if (cpu_arch == "arm") {
+    prefer_fixed_point = true
+  }
+}

@@ -122,6 +122,9 @@ deps = {
   "tools/clang":
     Var("chromium_trunk") + "/src/tools/clang@" + Var("chromium_revision"),
 
+  "tools/generate_library_loader":
+    Var("chromium_trunk") + "/src/tools/generate_library_loader@" + Var("chromium_revision"),
+
   "tools/gn":
     Var("chromium_trunk") + "/src/tools/gn@" + Var("chromium_revision"),
 

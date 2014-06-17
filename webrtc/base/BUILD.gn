@@ -1,0 +1,723 @@
+# Copyright (c) 2014 The WebRTC project authors. All Rights Reserved.
+#
+# Use of this source code is governed by a BSD-style license
+# that can be found in the LICENSE file in the root of the source
+# tree. An additional intellectual property rights grant can be found
+# in the file PATENTS.  All contributing project authors may
+# be found in the AUTHORS file in the root of the source tree.
+
+import("//build/config/crypto.gni")
+import("../build/webrtc.gni")
+
+config("webrtc_base_config") {
+  include_dirs = [
+    "//third_party/jsoncpp/overrides/include",
+    "//third_party/jsoncpp/source/include",
+  ]
+
+  defines = [
+    "FEATURE_ENABLE_SSL",
+    "GTEST_RELATIVE_PATH",
+  ]
+
+  # TODO(henrike): issue 3307, make webrtc_base build without disabling
+  # these flags.
+  cflags_cc = [ "-Wno-non-virtual-dtor" ]
+}
+
+config("webrtc_base_chromium_config") {
+  defines = [
+    "NO_MAIN_THREAD_WRAPPING",
+    "SSL_USE_NSS",
+  ]
+}
+
+config("openssl_config") {
+  defines = [
+    "SSL_USE_OPENSSL",
+    "HAVE_OPENSSL_SSL_H",
+  ]
+}
+
+config("no_openssl_config") {
+  defines = [
+    "SSL_USE_NSS",
+    "HAVE_NSS_SSL_H",
+    "SSL_USE_NSS_RNG",
+  ]
+}
+
+config("android_config") {
+  defines = [ "HAVE_OPENSSL_SSL_H" ]
+}
+
+config("no_android_config") {
+  defines = [
+    "HAVE_NSS_SSL_H",
+    "SSL_USE_NSS_RNG",
+  ]
+}
+
+config("ios_config") {
+  ldflags = [
+    #"Foundation.framework",  # Already included in //build/config:default_libs.
+    "Security.framework",
+    "SystemConfiguration.framework",
+    #"UIKit.framework",  # Already included in //build/config:default_libs.
+  ]
+}
+
+config("mac_config") {
+  ldflags = [
+    "Cocoa.framework",
+    #"Foundation.framework",  # Already included in //build/config:default_libs.
+    #"IOKit.framework",  # Already included in //build/config:default_libs.
+    #"Security.framework",  # Already included in //build/config:default_libs.
+    "SystemConfiguration.framework",
+  ]
+}
+
+config("mac_x86_config") {
+  libs = [
+    #"Carbon.framework",  # Already included in //build/config:default_libs.
+  ]
+}
+
+config("linux_system_ssl_config") {
+  visibility = ":*"  # Only targets in this file can depend on this.
+
+  # TODO(kjellander): Find out how to convert GYP include_dirs+ (i.e. insert
+  # first in the include path?).
+  include_dirs = [ "//net/third_party/nss/ssl" ]
+
+  configs = [ "//third_party/nss:system_nss_no_ssl_config" ]
+}
+
+# Provides the same functionality as the build/linux/system.gyp:ssl GYP target.
+# This cannot be in build/linux/BUILD.gn since targets in build/ are not allowed
+# to depend on targets outside of it. This could be replaced by the Chromium
+# //crypto:platform target, but as WebRTC currently don't sync src/crypto from
+# Chromium, it is not possible today.
+config("linux_system_ssl") {
+  if (use_openssl) {
+    deps = [ "//third_party/openssl" ]
+  } else {
+    deps = [ "//net/third_party/nss/ssl:libssl" ]
+
+    direct_dependent_configs = [
+      ":linux_system_ssl_config",
+    ]
+
+    if (is_clang) {
+      cflags = [
+        # There is a broken header guard in /usr/include/nss/secmod.h:
+        # https://bugzilla.mozilla.org/show_bug.cgi?id=884072
+        "-Wno-header-guard",
+      ]
+    }
+  }
+}
+
+static_library("webrtc_base") {
+  cflags = []
+  cflags_cc = []
+
+  configs -= [ "//build/config/compiler:chromium_code" ]
+  configs += [ "//build/config/compiler:no_chromium_code" ]
+  configs += [
+    "..:common_inherited_config",
+    "..:common_config",
+    ":webrtc_base_config",
+  ]
+
+  direct_dependent_configs = [
+    "..:common_inherited_config",
+    ":webrtc_base_config",
+  ]
+
+  defines = [
+    "LOGGING=1",
+    "USE_WEBRTC_DEV_BRANCH",
+  ]
+
+  sources = [
+    "asyncfile.cc",
+    "asyncfile.h",
+    "asynchttprequest.cc",
+    "asynchttprequest.h",
+    "asyncinvoker.cc",
+    "asyncinvoker.h",
+    "asyncinvoker-inl.h",
+    "asyncpacketsocket.h",
+    "asyncresolverinterface.h",
+    "asyncsocket.cc",
+    "asyncsocket.h",
+    "asynctcpsocket.cc",
+    "asynctcpsocket.h",
+    "asyncudpsocket.cc",
+    "asyncudpsocket.h",
+    "atomicops.h",
+    "autodetectproxy.cc",
+    "autodetectproxy.h",
+    "bandwidthsmoother.cc",
+    "bandwidthsmoother.h",
+    "base64.cc",
+    "base64.h",
+    "basicdefs.h",
+    "basictypes.h",
+    "bind.h",
+    "bind.h.pump",
+    "buffer.h",
+    "bytebuffer.cc",
+    "bytebuffer.h",
+    "byteorder.h",
+    "callback.h",
+    "callback.h.pump",
+    "checks.cc",
+    "checks.h",
+    "common.cc",
+    "common.h",
+    "constructormagic.h",
+    "cpumonitor.cc",
+    "cpumonitor.h",
+    "crc32.cc",
+    "crc32.h",
+    "criticalsection.h",
+    "cryptstring.h",
+    "dbus.cc",
+    "dbus.h",
+    "diskcache.cc",
+    "diskcache.h",
+    "event.cc",
+    "event.h",
+    "filelock.cc",
+    "filelock.h",
+    "fileutils.cc",
+    "fileutils.h",
+    "fileutils_mock.h",
+    "firewallsocketserver.cc",
+    "firewallsocketserver.h",
+    "flags.cc",
+    "flags.h",
+    "genericslot.h",
+    "genericslot.h.pump",
+    "gunit_prod.h",
+    "helpers.cc",
+    "helpers.h",
+    "httpbase.cc",
+    "httpbase.h",
+    "httpclient.cc",
+    "httpclient.h",
+    "httpcommon-inl.h",
+    "httpcommon.cc",
+    "httpcommon.h",
+    "httprequest.cc",
+    "httprequest.h",
+    "httpserver.cc",
+    "httpserver.h",
+    "ifaddrs-android.cc",
+    "ifaddrs-android.h",
+    "iosfilesystem.mm",
+    "ipaddress.cc",
+    "ipaddress.h",
+    "json.cc",
+    "json.h",
+    "latebindingsymboltable.cc",
+    "latebindingsymboltable.cc.def",
+    "latebindingsymboltable.h",
+    "latebindingsymboltable.h.def",
+    "libdbusglibsymboltable.cc",
+    "libdbusglibsymboltable.h",
+    "linux.cc",
+    "linux.h",
+    "linuxfdwalk.c",
+    "linuxfdwalk.h",
+    "linuxwindowpicker.cc",
+    "linuxwindowpicker.h",
+    "linked_ptr.h",
+    "logging.cc",
+    "logging.h",
+    "macasyncsocket.cc",
+    "macasyncsocket.h",
+    "maccocoasocketserver.h",
+    "maccocoasocketserver.mm",
+    "maccocoathreadhelper.h",
+    "maccocoathreadhelper.mm",
+    "macconversion.cc",
+    "macconversion.h",
+    "macsocketserver.cc",
+    "macsocketserver.h",
+    "macutils.cc",
+    "macutils.h",
+    "macwindowpicker.cc",
+    "macwindowpicker.h",
+    "mathutils.h",
+    "md5.cc",
+    "md5.h",
+    "md5digest.h",
+    "messagedigest.cc",
+    "messagedigest.h",
+    "messagehandler.cc",
+    "messagehandler.h",
+    "messagequeue.cc",
+    "messagequeue.h",
+    "multipart.cc",
+    "multipart.h",
+    "natserver.cc",
+    "natserver.h",
+    "natsocketfactory.cc",
+    "natsocketfactory.h",
+    "nattypes.cc",
+    "nattypes.h",
+    "nethelpers.cc",
+    "nethelpers.h",
+    "network.cc",
+    "network.h",
+    "nssidentity.cc",
+    "nssidentity.h",
+    "nssstreamadapter.cc",
+    "nssstreamadapter.h",
+    "nullsocketserver.h",
+    "openssl.h",
+    "openssladapter.cc",
+    "openssladapter.h",
+    "openssldigest.cc",
+    "openssldigest.h",
+    "opensslidentity.cc",
+    "opensslidentity.h",
+    "opensslstreamadapter.cc",
+    "opensslstreamadapter.h",
+    "optionsfile.cc",
+    "optionsfile.h",
+    "pathutils.cc",
+    "pathutils.h",
+    "physicalsocketserver.cc",
+    "physicalsocketserver.h",
+    "posix.cc",
+    "posix.h",
+    "profiler.cc",
+    "profiler.h",
+    "proxydetect.cc",
+    "proxydetect.h",
+    "proxyinfo.cc",
+    "proxyinfo.h",
+    "proxyserver.cc",
+    "proxyserver.h",
+    "ratelimiter.cc",
+    "ratelimiter.h",
+    "ratetracker.cc",
+    "ratetracker.h",
+    "refcount.h",
+    "referencecountedsingletonfactory.h",
+    "rollingaccumulator.h",
+    "schanneladapter.cc",
+    "schanneladapter.h",
+    "scoped_autorelease_pool.h",
+    "scoped_autorelease_pool.mm",
+    "scoped_ptr.h",
+    "scoped_ref_ptr.h",
+    "scopedptrcollection.h",
+    "sec_buffer.h",
+    "sha1.cc",
+    "sha1.h",
+    "sha1digest.h",
+    "sharedexclusivelock.cc",
+    "sharedexclusivelock.h",
+    "signalthread.cc",
+    "signalthread.h",
+    "sigslot.h",
+    "sigslotrepeater.h",
+    "socket.h",
+    "socketadapters.cc",
+    "socketadapters.h",
+    "socketaddress.cc",
+    "socketaddress.h",
+    "socketaddresspair.cc",
+    "socketaddresspair.h",
+    "socketfactory.h",
+    "socketpool.cc",
+    "socketpool.h",
+    "socketserver.h",
+    "socketstream.cc",
+    "socketstream.h",
+    "ssladapter.cc",
+    "ssladapter.h",
+    "sslconfig.h",
+    "sslfingerprint.cc",
+    "sslfingerprint.h",
+    "sslidentity.cc",
+    "sslidentity.h",
+    "sslroots.h",
+    "sslsocketfactory.cc",
+    "sslsocketfactory.h",
+    "sslstreamadapter.cc",
+    "sslstreamadapter.h",
+    "sslstreamadapterhelper.cc",
+    "sslstreamadapterhelper.h",
+    "stream.cc",
+    "stream.h",
+    "stringdigest.h",
+    "stringencode.cc",
+    "stringencode.h",
+    "stringutils.cc",
+    "stringutils.h",
+    "systeminfo.cc",
+    "systeminfo.h",
+    "task.cc",
+    "task.h",
+    "taskparent.cc",
+    "taskparent.h",
+    "taskrunner.cc",
+    "taskrunner.h",
+    "testclient.cc",
+    "testclient.h",
+    "thread.cc",
+    "thread.h",
+    "timeutils.cc",
+    "timeutils.h",
+    "timing.cc",
+    "timing.h",
+    "transformadapter.cc",
+    "transformadapter.h",
+    "unixfilesystem.cc",
+    "unixfilesystem.h",
+    "urlencode.cc",
+    "urlencode.h",
+    "versionparsing.cc",
+    "versionparsing.h",
+    "virtualsocketserver.cc",
+    "virtualsocketserver.h",
+    "win32.cc",
+    "win32.h",
+    "win32filesystem.cc",
+    "win32filesystem.h",
+    "win32regkey.cc",
+    "win32regkey.h",
+    "win32securityerrors.cc",
+    "win32socketinit.cc",
+    "win32socketinit.h",
+    "win32socketserver.cc",
+    "win32socketserver.h",
+    "win32window.cc",
+    "win32window.h",
+    "win32windowpicker.cc",
+    "win32windowpicker.h",
+    "window.h",
+    "windowpicker.h",
+    "windowpickerfactory.h",
+    "winfirewall.cc",
+    "winfirewall.h",
+    "winping.cc",
+    "winping.h",
+    "worker.cc",
+    "worker.h",
+  ]
+
+  if (build_with_chromium) {
+    sources += [
+      "../overrides/webrtc/base/basictypes.h",
+      "../overrides/webrtc/base/constructormagic.h",
+      "../overrides/webrtc/base/logging.cc",
+      "../overrides/webrtc/base/logging.h",
+    ]
+    if (is_win) {
+      sources += [ "../overrides/webrtc/base/win32socketinit.cc" ]
+    }
+    sources -= [
+      "asyncinvoker.cc",
+      "asyncinvoker.h",
+      "asyncinvoker-inl.h",
+      "asyncresolverinterface.h",
+      "atomicops.h",
+      "bandwidthsmoother.cc",
+      "bandwidthsmoother.h",
+      "basictypes.h",
+      "bind.h",
+      "bind.h.pump",
+      "buffer.h",
+      "callback.h",
+      "callback.h.pump",
+      "constructormagic.h",
+      "dbus.cc",
+      "dbus.h",
+      "filelock.cc",
+      "filelock.h",
+      "fileutils_mock.h",
+      "genericslot.h",
+      "genericslot.h.pump",
+      "httpserver.cc",
+      "httpserver.h",
+      "json.cc",
+      "json.h",
+      "latebindingsymboltable.cc",
+      "latebindingsymboltable.cc.def",
+      "latebindingsymboltable.h",
+      "latebindingsymboltable.h.def",
+      "libdbusglibsymboltable.cc",
+      "libdbusglibsymboltable.h",
+      "linuxfdwalk.c",
+      "linuxfdwalk.h",
+      "linuxwindowpicker.cc",
+      "linuxwindowpicker.h",
+      "logging.cc",
+      "logging.h",
+      #"macasyncsocket.cc",
+      #"macasyncsocket.h",
+      #"maccocoasocketserver.h",
+      #"maccocoasocketserver.mm",
+      #"macsocketserver.cc",
+      #"macsocketserver.h",
+      #"macwindowpicker.cc",
+      #"macwindowpicker.h",
+      "mathutils.h",
+      "multipart.cc",
+      "multipart.h",
+      "natserver.cc",
+      "natserver.h",
+      "natsocketfactory.cc",
+      "natsocketfactory.h",
+      "nattypes.cc",
+      "nattypes.h",
+      "openssl.h",
+      "optionsfile.cc",
+      "optionsfile.h",
+      "posix.cc",
+      "posix.h",
+      "profiler.cc",
+      "profiler.h",
+      "proxyserver.cc",
+      "proxyserver.h",
+      "refcount.h",
+      "referencecountedsingletonfactory.h",
+      "rollingaccumulator.h",
+      #"safe_conversions.h",
+      #"safe_conversions_impl.h",
+      "scopedptrcollection.h",
+      "scoped_ref_ptr.h",
+      "sec_buffer.h",
+      "sharedexclusivelock.cc",
+      "sharedexclusivelock.h",
+      "sslconfig.h",
+      "sslroots.h",
+      "stringdigest.h",
+      #"testbase64.h",
+      "testclient.cc",
+      "testclient.h",
+      #"testutils.h",
+      "transformadapter.cc",
+      "transformadapter.h",
+      "versionparsing.cc",
+      "versionparsing.h",
+      "virtualsocketserver.cc",
+      "virtualsocketserver.h",
+      #"win32regkey.cc",
+      #"win32regkey.h",
+      #"win32socketinit.cc",
+      #"win32socketinit.h",
+      #"win32socketserver.cc",
+      #"win32socketserver.h",
+      #"win32toolhelp.h",
+      "window.h",
+      "windowpickerfactory.h",
+      "windowpicker.h",
+    ]
+
+    include_dirs = [
+      "../overrides",
+      "../../openssl/openssl/include",
+    ]
+
+    direct_dependent_configs += [ ":webrtc_base_chromium_config" ]
+  } else {
+    if (is_win) {
+      sources += [
+        "diskcache_win32.cc",
+        "diskcache_win32.h",
+      ]
+    }
+
+    deps = [ "//third_party/jsoncpp" ]
+  }
+
+  # TODO(henrike): issue 3307, make webrtc_base build without disabling
+  # these flags.
+  cflags += [
+    "-Wno-extra",
+    "-Wno-all",
+  ]
+  cflags_cc += [ "-Wno-non-virtual-dtor" ]
+
+  if (use_openssl) {
+    direct_dependent_configs += [ ":openssl_config" ]
+
+    deps = [ "//third_party/openssl" ]
+  } else {
+    direct_dependent_configs += [ ":no_openssl_config" ]
+  }
+
+  if (is_android) {
+    direct_dependent_configs += [ ":android_config" ]
+
+    libs = [
+      "log",
+      "GLESv2"
+    ]
+  } else {
+    direct_dependent_configs += [ ":no_android_config" ]
+
+    sources -= [
+      "ifaddrs-android.cc",
+      "ifaddrs-android.h",
+    ]
+  }
+
+  if (is_ios) {
+    all_dependent_configs += [ ":ios_config" ]
+
+    deps = [ "//net/third_party/nss/ssl:libssl" ]
+  }
+
+  if (is_linux) {
+    libs = [
+      "crypto",
+      "dl",
+      "rt",
+      "Xext",
+      "X11",
+      "Xcomposite",
+      "Xrender",
+    ]
+    configs += [ "//third_party/nss:system_nss_no_ssl_config" ]
+  } else {
+    sources -= [
+      "dbus.cc",
+      "dbus.h",
+      "libdbusglibsymboltable.cc",
+      "libdbusglibsymboltable.h",
+      "linuxfdwalk.c",
+      "linuxfdwalk.h",
+      "linuxwindowpicker.cc",
+      "linuxwindowpicker.h",
+    ]
+  }
+
+  if (is_mac) {
+    all_dependent_configs = [ ":mac_config" ]
+
+    libs = [
+      "crypto",  # $(SDKROOT)/usr/lib/libcrypto.dylib
+      "ssl",  # $(SDKROOT)/usr/lib/libssl.dylib
+    ]
+    if (cpu_arch == "x86") {
+      all_dependent_configs += [ ":mac_x86_config" ]
+    }
+  } else {
+    sources -= [
+      "macasyncsocket.cc",
+      "macasyncsocket.h",
+      "maccocoasocketserver.h",
+      #"maccocoasocketserver.mm",  # Seems to be excluded by default with GN.
+      "macconversion.cc",
+      "macconversion.h",
+      "macsocketserver.cc",
+      "macsocketserver.h",
+      "macutils.cc",
+      "macutils.h",
+      "macwindowpicker.cc",
+      "macwindowpicker.h",
+    ]
+  }
+
+  if (is_win) {
+    libs = [
+      "crypt32.lib",
+      "iphlpapi.lib",
+      "secur32.lib",
+    ]
+
+    cflags += [
+      # Suppress warnings about WIN32_LEAN_AND_MEAN.
+      "/wd4005",
+      "/wd4703",
+    ]
+
+    defines += [ "_CRT_NONSTDC_NO_DEPRECATE" ]
+  } else {
+    sources -= [
+      "schanneladapter.cc",
+      "schanneladapter.h",
+      "winping.cc",
+      "winping.h",
+      "winfirewall.cc",
+      "winfirewall.h",
+      # The files below were covered by a regex exclude in GYP.
+      "win32.cc",
+      "win32.h",
+      "win32filesystem.cc",
+      "win32filesystem.h",
+      "win32regkey.cc",
+      "win32regkey.h",
+      "win32securityerrors.cc",
+      "win32socketinit.cc",
+      "win32socketinit.h",
+      "win32socketserver.cc",
+      "win32socketserver.h",
+      "win32window.cc",
+      "win32window.h",
+      "win32windowpicker.cc",
+      "win32windowpicker.h",
+    ]
+  }
+
+  if (is_posix) {
+    if (is_debug) {
+      defines += [ "_DEBUG" ]
+    }
+  } else {
+    sources -= [
+      "latebindingsymboltable.cc",
+      "latebindingsymboltable.h",
+      "posix.cc",
+      "posix.h",
+      "unixfilesystem.cc",
+      "unixfilesystem.h",
+    ]
+  }
+
+  if (is_ios || (is_mac && cpu_arch != "x86")) {
+    defines += [ "CARBON_DEPRECATED=YES" ]
+  }
+
+  if (is_ios || !is_posix) {
+    sources -= [
+      "openssl.h",
+      "openssladapter.cc",
+      "openssladapter.h",
+      "openssldigest.cc",
+      "openssldigest.h",
+      "opensslidentity.cc",
+      "opensslidentity.h",
+      "opensslstreamadapter.cc",
+      "opensslstreamadapter.h",
+    ]
+  }
+
+  if (!is_linux && !is_android) {
+    sources -= [
+      "linux.cc",
+      "linux.h",
+    ]
+  }
+
+  if (is_mac || is_ios || is_win) {
+    deps += [
+      "//net/third_party/nss/ssl:libssl",
+      "//third_party/nss:nspr",
+      "//third_party/nss:nss",
+    ]
+  }
+
+  if (is_posix && !is_mac && !is_ios && !is_android) {
+    configs += [ ":linux_system_ssl" ]
+  }
+}
