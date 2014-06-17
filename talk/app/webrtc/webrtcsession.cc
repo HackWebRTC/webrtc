@@ -1144,6 +1144,8 @@ void WebRtcSession::AddSctpDataStream(uint32 sid) {
 }
 
 void WebRtcSession::RemoveSctpDataStream(uint32 sid) {
+  mediastream_signaling_->RemoveSctpDataChannel(static_cast<int>(sid));
+
   if (!data_channel_.get()) {
     LOG(LS_ERROR) << "RemoveDataChannelStreams called when data_channel_ is "
                   << "NULL.";

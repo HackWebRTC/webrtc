@@ -78,4 +78,12 @@ void LogAssert(const char* function, const char* file, int line,
   }
 }
 
+bool IsOdd(int n) {
+  return (n & 0x1);
+}
+
+bool IsEven(int n) {
+  return !IsOdd(n);
+}
+
 } // namespace talk_base

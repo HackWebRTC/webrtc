@@ -274,6 +274,23 @@ bool MediaStreamSignaling::AddDataChannelFromOpenMessage(
   return true;
 }
 
+void MediaStreamSignaling::RemoveSctpDataChannel(int sid) {
+  for (SctpDataChannels::iterator iter = sctp_data_channels_.begin();
+       iter != sctp_data_channels_.end();
+       ++iter) {
+    if ((*iter)->id() == sid) {
+      sctp_data_channels_.erase(iter);
+
+      if (talk_base::IsEven(sid) && sid <= last_allocated_sctp_even_sid_) {
+        last_allocated_sctp_even_sid_ = sid - 2;
+      } else if (talk_base::IsOdd(sid) && sid <= last_allocated_sctp_odd_sid_) {
+        last_allocated_sctp_odd_sid_ = sid - 2;
+      }
+      return;
+    }
+  }
+}
+
 bool MediaStreamSignaling::AddLocalStream(MediaStreamInterface* local_stream) {
   if (local_streams_->find(local_stream->label()) != NULL) {
     LOG(LS_WARNING) << "MediaStream with label " << local_stream->label()
@@ -481,12 +498,19 @@ void MediaStreamSignaling::OnVideoChannelClose() {
 }
 
 void MediaStreamSignaling::OnDataChannelClose() {
-  RtpDataChannels::iterator it1 = rtp_data_channels_.begin();
-  for (; it1 != rtp_data_channels_.end(); ++it1) {
+  // Use a temporary copy of the RTP/SCTP DataChannel list because the
+  // DataChannel may callback to us and try to modify the list.
+  RtpDataChannels temp_rtp_dcs;
+  temp_rtp_dcs.swap(rtp_data_channels_);
+  RtpDataChannels::iterator it1 = temp_rtp_dcs.begin();
+  for (; it1 != temp_rtp_dcs.end(); ++it1) {
     it1->second->OnDataEngineClose();
   }
-  SctpDataChannels::iterator it2 = sctp_data_channels_.begin();
-  for (; it2 != sctp_data_channels_.end(); ++it2) {
+
+  SctpDataChannels temp_sctp_dcs;
+  temp_sctp_dcs.swap(sctp_data_channels_);
+  SctpDataChannels::iterator it2 = temp_sctp_dcs.begin();
+  for (; it2 != temp_sctp_dcs.end(); ++it2) {
     (*it2)->OnDataEngineClose();
   }
 }

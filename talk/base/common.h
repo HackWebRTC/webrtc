@@ -116,6 +116,10 @@ typedef void (*AssertLogger)(const char* function,
 // only by one component.
 void SetCustomAssertLogger(AssertLogger logger);
 
+bool IsOdd(int n);
+
+bool IsEven(int n);
+
 }  // namespace talk_base
 
 #if ENABLE_DEBUG

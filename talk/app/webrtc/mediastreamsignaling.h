@@ -198,6 +198,7 @@ class MediaStreamSignaling : public sigslot::has_slots<> {
   // After we receive an OPEN message, create a data channel and add it.
   bool AddDataChannelFromOpenMessage(const cricket::ReceiveDataParams& params,
                                      const talk_base::Buffer& payload);
+  void RemoveSctpDataChannel(int sid);
 
   // Returns a MediaSessionOptions struct with options decided by |constraints|,
   // the local MediaStreams and DataChannels.

@@ -1141,6 +1141,47 @@ TEST_F(MediaStreamSignalingTest, SctpIdAllocationNoReuse) {
   EXPECT_NE(old_id, new_id);
 }
 
+// Verifies that SCTP ids of removed DataChannels can be reused.
+TEST_F(MediaStreamSignalingTest, SctpIdReusedForRemovedDataChannel) {
+  int odd_id = 1;
+  int even_id = 0;
+  AddDataChannel(cricket::DCT_SCTP, "a", odd_id);
+  AddDataChannel(cricket::DCT_SCTP, "a", even_id);
+
+  int allocated_id = -1;
+  ASSERT_TRUE(signaling_->AllocateSctpSid(talk_base::SSL_SERVER,
+                                          &allocated_id));
+  EXPECT_EQ(odd_id + 2, allocated_id);
+  AddDataChannel(cricket::DCT_SCTP, "a", allocated_id);
+
+  ASSERT_TRUE(signaling_->AllocateSctpSid(talk_base::SSL_CLIENT,
+                                          &allocated_id));
+  EXPECT_EQ(even_id + 2, allocated_id);
+  AddDataChannel(cricket::DCT_SCTP, "a", allocated_id);
+
+  signaling_->RemoveSctpDataChannel(odd_id);
+  signaling_->RemoveSctpDataChannel(even_id);
+
+  // Verifies that removed DataChannel ids are reused.
+  ASSERT_TRUE(signaling_->AllocateSctpSid(talk_base::SSL_SERVER,
+                                          &allocated_id));
+  EXPECT_EQ(odd_id, allocated_id);
+
+  ASSERT_TRUE(signaling_->AllocateSctpSid(talk_base::SSL_CLIENT,
+                                          &allocated_id));
+  EXPECT_EQ(even_id, allocated_id);
+
+  // Verifies that used higher DataChannel ids are not reused.
+  ASSERT_TRUE(signaling_->AllocateSctpSid(talk_base::SSL_SERVER,
+                                          &allocated_id));
+  EXPECT_NE(odd_id + 2, allocated_id);
+
+  ASSERT_TRUE(signaling_->AllocateSctpSid(talk_base::SSL_CLIENT,
+                                          &allocated_id));
+  EXPECT_NE(even_id + 2, allocated_id);
+
+}
+
 // Verifies that duplicated label is not allowed for RTP data channel.
 TEST_F(MediaStreamSignalingTest, RtpDuplicatedLabelNotAllowed) {
   AddDataChannel(cricket::DCT_RTP, "a", -1);
