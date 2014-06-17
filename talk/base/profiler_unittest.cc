@@ -47,13 +47,15 @@ namespace talk_base {
 
 TEST(ProfilerTest, TestFunction) {
   ASSERT_TRUE(Profiler::Instance()->Clear());
+
   // Profile a long-running function.
   const char* function_name = TestFunc();
   const ProfilerEvent* event = Profiler::Instance()->GetEvent(function_name);
   ASSERT_TRUE(event != NULL);
   EXPECT_FALSE(event->is_started());
   EXPECT_EQ(1, event->event_count());
-  EXPECT_NEAR(kWaitSec, event->mean(), kTolerance);
+  EXPECT_NEAR(kWaitSec, event->mean(), kTolerance * 3);
+
   // Run it a second time.
   TestFunc();
   EXPECT_FALSE(event->is_started());
@@ -95,7 +97,9 @@ TEST(ProfilerTest, TestScopedEvents) {
   // Check the result.
   EXPECT_FALSE(event2->is_started());
   EXPECT_EQ(1, event2->event_count());
-  EXPECT_NEAR(kEvent2WaitSec, event2->mean(), kTolerance);
+
+  // The difference here can be as much as 0.33, so we need high tolerance.
+  EXPECT_NEAR(kEvent2WaitSec, event2->mean(), kTolerance * 4);
   // Make sure event1 is unchanged.
   EXPECT_FALSE(event1->is_started());
   EXPECT_EQ(1, event1->event_count());
