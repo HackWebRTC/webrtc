@@ -252,14 +252,10 @@ TEST(TimestampScaler, TestG722Reset) {
   EXPECT_CALL(db, Die());  // Called when database object is deleted.
 }
 
-// TODO(minyue): This test becomes trivial since Opus does not need a timestamp
-// scaler. Therefore, this test may be removed in future. There is no harm to
-// keep it, since it can be taken as a test case for the situation of a trivial
-// timestamp scaler.
 TEST(TimestampScaler, TestOpusLargeStep) {
   MockDecoderDatabase db;
   DecoderDatabase::DecoderInfo info;
-  info.codec_type = kDecoderOpus;
+  info.codec_type = kDecoderOpus;  // Uses a factor 2/3 scaling.
   static const uint8_t kRtpPayloadType = 17;
   EXPECT_CALL(db, GetDecoderInfo(kRtpPayloadType))
       .WillRepeatedly(Return(&info));
@@ -277,7 +273,8 @@ TEST(TimestampScaler, TestOpusLargeStep) {
               scaler.ToInternal(external_timestamp, kRtpPayloadType));
     // Scale back.
     EXPECT_EQ(external_timestamp, scaler.ToExternal(internal_timestamp));
-    internal_timestamp += kStep;
+    // Internal timestamp should be incremented with twice the step.
+    internal_timestamp += 2 * kStep / 3;
   }
 
   EXPECT_CALL(db, Die());  // Called when database object is deleted.
@@ -286,7 +283,7 @@ TEST(TimestampScaler, TestOpusLargeStep) {
 TEST(TimestampScaler, TestIsacFbLargeStep) {
   MockDecoderDatabase db;
   DecoderDatabase::DecoderInfo info;
-  info.codec_type = kDecoderISACfb;
+  info.codec_type = kDecoderISACfb;  // Uses a factor 2/3 scaling.
   static const uint8_t kRtpPayloadType = 17;
   EXPECT_CALL(db, GetDecoderInfo(kRtpPayloadType))
       .WillRepeatedly(Return(&info));
@@ -304,7 +301,7 @@ TEST(TimestampScaler, TestIsacFbLargeStep) {
               scaler.ToInternal(external_timestamp, kRtpPayloadType));
     // Scale back.
     EXPECT_EQ(external_timestamp, scaler.ToExternal(internal_timestamp));
-    // Internal timestamp should be incremented with two-thirds the step.
+    // Internal timestamp should be incremented with twice the step.
     internal_timestamp += 2 * kStep / 3;
   }
 

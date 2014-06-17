@@ -18,7 +18,8 @@ using ::testing::ValuesIn;
 namespace webrtc {
 
 static const int kOpusBlockDurationMs = 20;
-static const int kOpusSamplingKhz = 48;
+static const int kOpusInputSamplingKhz = 48;
+static const int kOpustOutputSamplingKhz = 32;
 
 class OpusSpeedTest : public AudioCodecSpeedTest {
  protected:
@@ -35,8 +36,8 @@ class OpusSpeedTest : public AudioCodecSpeedTest {
 
 OpusSpeedTest::OpusSpeedTest()
     : AudioCodecSpeedTest(kOpusBlockDurationMs,
-                          kOpusSamplingKhz,
-                          kOpusSamplingKhz),
+                          kOpusInputSamplingKhz,
+                          kOpustOutputSamplingKhz),
       opus_encoder_(NULL),
       opus_decoder_(NULL) {
 }

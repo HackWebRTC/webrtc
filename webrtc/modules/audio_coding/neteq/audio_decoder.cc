@@ -162,7 +162,7 @@ int AudioDecoder::CodecSampleRateHz(NetEqDecoder codec_type) {
 #ifdef WEBRTC_CODEC_OPUS
     case kDecoderOpus:
     case kDecoderOpus_2ch: {
-      return 48000;
+      return 32000;
     }
 #endif
     case kDecoderCNGswb48kHz: {

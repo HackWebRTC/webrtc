@@ -15,6 +15,9 @@
 
 #include "opus.h"
 
+#include "webrtc/common_audio/signal_processing/resample_by_2_internal.h"
+#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+
 enum {
   /* Maximum supported frame size in WebRTC is 60 ms. */
   kWebRtcOpusMaxEncodeFrameSizeMs = 60,
@@ -27,6 +30,17 @@ enum {
   /* Maximum sample count per channel is 48 kHz * maximum frame size in
    * milliseconds. */
   kWebRtcOpusMaxFrameSizePerChannel = 48 * kWebRtcOpusMaxDecodeFrameSizeMs,
+
+  /* Maximum sample count per frame is 48 kHz * maximum frame size in
+   * milliseconds * maximum number of channels. */
+  kWebRtcOpusMaxFrameSize = kWebRtcOpusMaxFrameSizePerChannel * 2,
+
+  /* Maximum sample count per channel for output resampled to 32 kHz,
+   * 32 kHz * maximum frame size in milliseconds. */
+  kWebRtcOpusMaxFrameSizePerChannel32kHz = 32 * kWebRtcOpusMaxDecodeFrameSizeMs,
+
+  /* Number of samples in resampler state. */
+  kWebRtcOpusStateSize = 7,
 
   /* Default frame size, 20 ms @ 48 kHz, in samples (for one channel). */
   kWebRtcOpusDefaultFrameSize = 960,
@@ -129,6 +143,8 @@ int16_t WebRtcOpus_SetComplexity(OpusEncInst* inst, int32_t complexity) {
 }
 
 struct WebRtcOpusDecInst {
+  int16_t state_48_32_left[8];
+  int16_t state_48_32_right[8];
   OpusDecoder* decoder_left;
   OpusDecoder* decoder_right;
   int prev_decoded_samples;
@@ -189,6 +205,8 @@ int WebRtcOpus_DecoderChannels(OpusDecInst* inst) {
 int16_t WebRtcOpus_DecoderInitNew(OpusDecInst* inst) {
   int error = opus_decoder_ctl(inst->decoder_left, OPUS_RESET_STATE);
   if (error == OPUS_OK) {
+    memset(inst->state_48_32_left, 0, sizeof(inst->state_48_32_left));
+    memset(inst->state_48_32_right, 0, sizeof(inst->state_48_32_right));
     return 0;
   }
   return -1;
@@ -197,6 +215,7 @@ int16_t WebRtcOpus_DecoderInitNew(OpusDecInst* inst) {
 int16_t WebRtcOpus_DecoderInit(OpusDecInst* inst) {
   int error = opus_decoder_ctl(inst->decoder_left, OPUS_RESET_STATE);
   if (error == OPUS_OK) {
+    memset(inst->state_48_32_left, 0, sizeof(inst->state_48_32_left));
     return 0;
   }
   return -1;
@@ -205,6 +224,7 @@ int16_t WebRtcOpus_DecoderInit(OpusDecInst* inst) {
 int16_t WebRtcOpus_DecoderInitSlave(OpusDecInst* inst) {
   int error = opus_decoder_ctl(inst->decoder_right, OPUS_RESET_STATE);
   if (error == OPUS_OK) {
+    memset(inst->state_48_32_right, 0, sizeof(inst->state_48_32_right));
     return 0;
   }
   return -1;
@@ -247,29 +267,124 @@ static int DecodeFec(OpusDecoder* inst, const int16_t* encoded,
   return -1;
 }
 
+/* Resample from 48 to 32 kHz. Length of state is assumed to be
+ * kWebRtcOpusStateSize (7).
+ */
+static int WebRtcOpus_Resample48to32(const int16_t* samples_in, int length,
+                                     int16_t* state, int16_t* samples_out) {
+  int i;
+  int blocks;
+  int16_t output_samples;
+  int32_t buffer32[kWebRtcOpusMaxFrameSizePerChannel + kWebRtcOpusStateSize];
+
+  /* Resample from 48 kHz to 32 kHz. */
+  for (i = 0; i < kWebRtcOpusStateSize; i++) {
+    buffer32[i] = state[i];
+    state[i] = samples_in[length - kWebRtcOpusStateSize + i];
+  }
+  for (i = 0; i < length; i++) {
+    buffer32[kWebRtcOpusStateSize + i] = samples_in[i];
+  }
+  /* Resampling 3 samples to 2. Function divides the input in |blocks| number
+   * of 3-sample groups, and output is |blocks| number of 2-sample groups.
+   * When this is removed, the compensation in WebRtcOpus_DurationEst should be
+   * removed too. */
+  blocks = length / 3;
+  WebRtcSpl_Resample48khzTo32khz(buffer32, buffer32, blocks);
+  output_samples = (int16_t) (blocks * 2);
+  WebRtcSpl_VectorBitShiftW32ToW16(samples_out, output_samples, buffer32, 15);
+
+  return output_samples;
+}
+
+static int WebRtcOpus_DeInterleaveResample(OpusDecInst* inst, int16_t* input,
+                                           int sample_pairs, int16_t* output) {
+  int i;
+  int16_t buffer_left[kWebRtcOpusMaxFrameSizePerChannel];
+  int16_t buffer_right[kWebRtcOpusMaxFrameSizePerChannel];
+  int16_t buffer_out[kWebRtcOpusMaxFrameSizePerChannel32kHz];
+  int resampled_samples;
+
+  /* De-interleave the signal in left and right channel. */
+  for (i = 0; i < sample_pairs; i++) {
+    /* Take every second sample, starting at the first sample. */
+    buffer_left[i] = input[i * 2];
+    buffer_right[i] = input[i * 2 + 1];
+  }
+
+  /* Resample from 48 kHz to 32 kHz for left channel. */
+  resampled_samples = WebRtcOpus_Resample48to32(
+      buffer_left, sample_pairs, inst->state_48_32_left, buffer_out);
+
+  /* Add samples interleaved to output vector. */
+  for (i = 0; i < resampled_samples; i++) {
+    output[i * 2] = buffer_out[i];
+  }
+
+  /* Resample from 48 kHz to 32 kHz for right channel. */
+  resampled_samples = WebRtcOpus_Resample48to32(
+      buffer_right, sample_pairs, inst->state_48_32_right, buffer_out);
+
+  /* Add samples interleaved to output vector. */
+  for (i = 0; i < resampled_samples; i++) {
+    output[i * 2 + 1] = buffer_out[i];
+  }
+
+  return resampled_samples;
+}
+
 int16_t WebRtcOpus_DecodeNew(OpusDecInst* inst, const uint8_t* encoded,
                              int16_t encoded_bytes, int16_t* decoded,
                              int16_t* audio_type) {
+  /* |buffer| is big enough for 120 ms (the largest Opus packet size) of stereo
+   * audio at 48 kHz. */
+  int16_t buffer[kWebRtcOpusMaxFrameSize];
   int16_t* coded = (int16_t*)encoded;
   int decoded_samples;
+  int resampled_samples;
 
+  /* If mono case, just do a regular call to the decoder.
+   * If stereo, we need to de-interleave the stereo output into blocks with
+   * left and right channel. Each block is resampled to 32 kHz, and then
+   * interleaved again. */
+
+  /* Decode to a temporary buffer. */
   decoded_samples = DecodeNative(inst->decoder_left, coded, encoded_bytes,
                                  kWebRtcOpusMaxFrameSizePerChannel,
-                                 decoded, audio_type);
+                                 buffer, audio_type);
   if (decoded_samples < 0) {
     return -1;
+  }
+
+  if (inst->channels == 2) {
+    /* De-interleave and resample. */
+    resampled_samples = WebRtcOpus_DeInterleaveResample(inst,
+                                                        buffer,
+                                                        decoded_samples,
+                                                        decoded);
+  } else {
+    /* Resample from 48 kHz to 32 kHz. Filter state memory for left channel is
+     * used for mono signals. */
+    resampled_samples = WebRtcOpus_Resample48to32(buffer,
+                                                  decoded_samples,
+                                                  inst->state_48_32_left,
+                                                  decoded);
   }
 
   /* Update decoded sample memory, to be used by the PLC in case of losses. */
   inst->prev_decoded_samples = decoded_samples;
 
-  return decoded_samples;
+  return resampled_samples;
 }
 
 int16_t WebRtcOpus_Decode(OpusDecInst* inst, const int16_t* encoded,
                           int16_t encoded_bytes, int16_t* decoded,
                           int16_t* audio_type) {
+  /* |buffer16| is big enough for 120 ms (the largestOpus packet size) of
+   * stereo audio at 48 kHz. */
+  int16_t buffer16[kWebRtcOpusMaxFrameSize];
   int decoded_samples;
+  int16_t output_samples;
   int i;
 
   /* If mono case, just do a regular call to the decoder.
@@ -278,82 +393,120 @@ int16_t WebRtcOpus_Decode(OpusDecInst* inst, const int16_t* encoded,
    * This is to make stereo work with the current setup of NetEQ, which
    * requires two calls to the decoder to produce stereo. */
 
+  /* Decode to a temporary buffer. */
   decoded_samples = DecodeNative(inst->decoder_left, encoded, encoded_bytes,
-                                 kWebRtcOpusMaxFrameSizePerChannel, decoded,
+                                 kWebRtcOpusMaxFrameSizePerChannel, buffer16,
                                  audio_type);
   if (decoded_samples < 0) {
     return -1;
   }
   if (inst->channels == 2) {
     /* The parameter |decoded_samples| holds the number of samples pairs, in
-     * case of stereo. Number of samples in |decoded| equals |decoded_samples|
+     * case of stereo. Number of samples in |buffer16| equals |decoded_samples|
      * times 2. */
     for (i = 0; i < decoded_samples; i++) {
       /* Take every second sample, starting at the first sample. This gives
        * the left channel. */
-      decoded[i] = decoded[i * 2];
+      buffer16[i] = buffer16[i * 2];
     }
   }
+
+  /* Resample from 48 kHz to 32 kHz. */
+  output_samples = WebRtcOpus_Resample48to32(buffer16, decoded_samples,
+                                             inst->state_48_32_left, decoded);
 
   /* Update decoded sample memory, to be used by the PLC in case of losses. */
   inst->prev_decoded_samples = decoded_samples;
 
-  return decoded_samples;
+  return output_samples;
 }
 
 int16_t WebRtcOpus_DecodeSlave(OpusDecInst* inst, const int16_t* encoded,
                                int16_t encoded_bytes, int16_t* decoded,
                                int16_t* audio_type) {
+  /* |buffer16| is big enough for 120 ms (the largestOpus packet size) of
+   * stereo audio at 48 kHz. */
+  int16_t buffer16[kWebRtcOpusMaxFrameSize];
   int decoded_samples;
+  int16_t output_samples;
   int i;
 
+  /* Decode to a temporary buffer. */
   decoded_samples = DecodeNative(inst->decoder_right, encoded, encoded_bytes,
-                                 kWebRtcOpusMaxFrameSizePerChannel, decoded,
+                                 kWebRtcOpusMaxFrameSizePerChannel, buffer16,
                                  audio_type);
   if (decoded_samples < 0) {
     return -1;
   }
   if (inst->channels == 2) {
     /* The parameter |decoded_samples| holds the number of samples pairs, in
-     * case of stereo. Number of samples in |decoded| equals |decoded_samples|
+     * case of stereo. Number of samples in |buffer16| equals |decoded_samples|
      * times 2. */
     for (i = 0; i < decoded_samples; i++) {
       /* Take every second sample, starting at the second sample. This gives
        * the right channel. */
-      decoded[i] = decoded[i * 2 + 1];
+      buffer16[i] = buffer16[i * 2 + 1];
     }
   } else {
     /* Decode slave should never be called for mono packets. */
     return -1;
   }
+  /* Resample from 48 kHz to 32 kHz. */
+  output_samples = WebRtcOpus_Resample48to32(buffer16, decoded_samples,
+                                             inst->state_48_32_right, decoded);
 
-  return decoded_samples;
+  return output_samples;
 }
 
 int16_t WebRtcOpus_DecodePlc(OpusDecInst* inst, int16_t* decoded,
                              int16_t number_of_lost_frames) {
+  int16_t buffer[kWebRtcOpusMaxFrameSize];
   int16_t audio_type = 0;
   int decoded_samples;
+  int resampled_samples;
   int plc_samples;
 
-  /* The number of samples we ask for is |number_of_lost_frames| times
-   * |prev_decoded_samples_|. Limit the number of samples to maximum
-   * |kWebRtcOpusMaxFrameSizePerChannel|. */
+  /* If mono case, just do a regular call to the plc function, before
+   * resampling.
+   * If stereo, we need to de-interleave the stereo output into blocks with
+   * left and right channel. Each block is resampled to 32 kHz, and then
+   * interleaved again. */
+
+  /* Decode to a temporary buffer. The number of samples we ask for is
+   * |number_of_lost_frames| times |prev_decoded_samples_|. Limit the number
+   * of samples to maximum |kWebRtcOpusMaxFrameSizePerChannel|. */
   plc_samples = number_of_lost_frames * inst->prev_decoded_samples;
   plc_samples = (plc_samples <= kWebRtcOpusMaxFrameSizePerChannel) ?
       plc_samples : kWebRtcOpusMaxFrameSizePerChannel;
   decoded_samples = DecodeNative(inst->decoder_left, NULL, 0, plc_samples,
-                                 decoded, &audio_type);
+                                 buffer, &audio_type);
   if (decoded_samples < 0) {
     return -1;
   }
 
-  return decoded_samples;
+  if (inst->channels == 2) {
+     /* De-interleave and resample. */
+     resampled_samples = WebRtcOpus_DeInterleaveResample(inst,
+                                                         buffer,
+                                                         decoded_samples,
+                                                         decoded);
+   } else {
+     /* Resample from 48 kHz to 32 kHz. Filter state memory for left channel is
+      * used for mono signals. */
+     resampled_samples = WebRtcOpus_Resample48to32(buffer,
+                                                   decoded_samples,
+                                                   inst->state_48_32_left,
+                                                   decoded);
+   }
+
+  return resampled_samples;
 }
 
 int16_t WebRtcOpus_DecodePlcMaster(OpusDecInst* inst, int16_t* decoded,
                                    int16_t number_of_lost_frames) {
+  int16_t buffer[kWebRtcOpusMaxFrameSize];
   int decoded_samples;
+  int resampled_samples;
   int16_t audio_type = 0;
   int plc_samples;
   int i;
@@ -364,35 +517,42 @@ int16_t WebRtcOpus_DecodePlcMaster(OpusDecInst* inst, int16_t* decoded,
    * output. This is to make stereo work with the current setup of NetEQ, which
    * requires two calls to the decoder to produce stereo. */
 
-  /* The number of samples we ask for is |number_of_lost_frames| times
-   * |prev_decoded_samples_|. Limit the number of samples to maximum
-   * |kWebRtcOpusMaxFrameSizePerChannel|. */
+  /* Decode to a temporary buffer. The number of samples we ask for is
+   * |number_of_lost_frames| times |prev_decoded_samples_|. Limit the number
+   * of samples to maximum |kWebRtcOpusMaxFrameSizePerChannel|. */
   plc_samples = number_of_lost_frames * inst->prev_decoded_samples;
   plc_samples = (plc_samples <= kWebRtcOpusMaxFrameSizePerChannel) ?
       plc_samples : kWebRtcOpusMaxFrameSizePerChannel;
   decoded_samples = DecodeNative(inst->decoder_left, NULL, 0, plc_samples,
-                                 decoded, &audio_type);
+                                 buffer, &audio_type);
   if (decoded_samples < 0) {
     return -1;
   }
 
   if (inst->channels == 2) {
     /* The parameter |decoded_samples| holds the number of sample pairs, in
-     * case of stereo. The original number of samples in |decoded| equals
+     * case of stereo. The original number of samples in |buffer| equals
      * |decoded_samples| times 2. */
     for (i = 0; i < decoded_samples; i++) {
       /* Take every second sample, starting at the first sample. This gives
        * the left channel. */
-      decoded[i] = decoded[i * 2];
+      buffer[i] = buffer[i * 2];
     }
   }
 
-  return decoded_samples;
+  /* Resample from 48 kHz to 32 kHz for left channel. */
+  resampled_samples = WebRtcOpus_Resample48to32(buffer,
+                                                decoded_samples,
+                                                inst->state_48_32_left,
+                                                decoded);
+  return resampled_samples;
 }
 
 int16_t WebRtcOpus_DecodePlcSlave(OpusDecInst* inst, int16_t* decoded,
                                   int16_t number_of_lost_frames) {
+  int16_t buffer[kWebRtcOpusMaxFrameSize];
   int decoded_samples;
+  int resampled_samples;
   int16_t audio_type = 0;
   int plc_samples;
   int i;
@@ -403,35 +563,44 @@ int16_t WebRtcOpus_DecodePlcSlave(OpusDecInst* inst, int16_t* decoded,
     return -1;
   }
 
-  /* The number of samples we ask for is |number_of_lost_frames| times
-   *  |prev_decoded_samples_|. Limit the number of samples to maximum
-   *  |kWebRtcOpusMaxFrameSizePerChannel|. */
+  /* Decode to a temporary buffer. The number of samples we ask for is
+   * |number_of_lost_frames| times |prev_decoded_samples_|. Limit the number
+   * of samples to maximum |kWebRtcOpusMaxFrameSizePerChannel|. */
   plc_samples = number_of_lost_frames * inst->prev_decoded_samples;
   plc_samples = (plc_samples <= kWebRtcOpusMaxFrameSizePerChannel)
       ? plc_samples : kWebRtcOpusMaxFrameSizePerChannel;
   decoded_samples = DecodeNative(inst->decoder_right, NULL, 0, plc_samples,
-                                 decoded, &audio_type);
+                                 buffer, &audio_type);
   if (decoded_samples < 0) {
     return -1;
   }
 
   /* The parameter |decoded_samples| holds the number of sample pairs,
-   * The original number of samples in |decoded| equals |decoded_samples|
+   * The original number of samples in |buffer| equals |decoded_samples|
    * times 2. */
   for (i = 0; i < decoded_samples; i++) {
     /* Take every second sample, starting at the second sample. This gives
      * the right channel. */
-    decoded[i] = decoded[i * 2 + 1];
+    buffer[i] = buffer[i * 2 + 1];
   }
 
-  return decoded_samples;
+  /* Resample from 48 kHz to 32 kHz for left channel. */
+  resampled_samples = WebRtcOpus_Resample48to32(buffer,
+                                                decoded_samples,
+                                                inst->state_48_32_right,
+                                                decoded);
+  return resampled_samples;
 }
 
 int16_t WebRtcOpus_DecodeFec(OpusDecInst* inst, const uint8_t* encoded,
                              int16_t encoded_bytes, int16_t* decoded,
                              int16_t* audio_type) {
+  /* |buffer| is big enough for 120 ms (the largest Opus packet size) of stereo
+   * audio at 48 kHz. */
+  int16_t buffer[kWebRtcOpusMaxFrameSize];
   int16_t* coded = (int16_t*)encoded;
   int decoded_samples;
+  int resampled_samples;
   int fec_samples;
 
   if (WebRtcOpus_PacketHasFec(encoded, encoded_bytes) != 1) {
@@ -440,13 +609,33 @@ int16_t WebRtcOpus_DecodeFec(OpusDecInst* inst, const uint8_t* encoded,
 
   fec_samples = opus_packet_get_samples_per_frame(encoded, 48000);
 
+  /* Decode to a temporary buffer. */
   decoded_samples = DecodeFec(inst->decoder_left, coded, encoded_bytes,
-                              fec_samples, decoded, audio_type);
+                              fec_samples, buffer, audio_type);
   if (decoded_samples < 0) {
     return -1;
   }
 
-  return decoded_samples;
+  /* If mono case, just do a regular call to the decoder.
+   * If stereo, we need to de-interleave the stereo output into blocks with
+   * left and right channel. Each block is resampled to 32 kHz, and then
+   * interleaved again. */
+  if (inst->channels == 2) {
+    /* De-interleave and resample. */
+    resampled_samples = WebRtcOpus_DeInterleaveResample(inst,
+                                                        buffer,
+                                                        decoded_samples,
+                                                        decoded);
+  } else {
+    /* Resample from 48 kHz to 32 kHz. Filter state memory for left channel is
+     * used for mono signals. */
+    resampled_samples = WebRtcOpus_Resample48to32(buffer,
+                                                  decoded_samples,
+                                                  inst->state_48_32_left,
+                                                  decoded);
+  }
+
+  return resampled_samples;
 }
 
 int WebRtcOpus_DurationEst(OpusDecInst* inst,
@@ -463,6 +652,10 @@ int WebRtcOpus_DurationEst(OpusDecInst* inst,
     /* Invalid payload duration. */
     return 0;
   }
+  /* Compensate for the down-sampling from 48 kHz to 32 kHz.
+   * This should be removed when the resampling in WebRtcOpus_Decode is
+   * removed. */
+  samples = samples * 2 / 3;
   return samples;
 }
 
@@ -478,6 +671,10 @@ int WebRtcOpus_FecDurationEst(const uint8_t* payload,
     /* Invalid payload duration. */
     return 0;
   }
+  /* Compensate for the down-sampling from 48 kHz to 32 kHz.
+   * This should be removed when the resampling in WebRtcOpus_Decode is
+   * removed. */
+  samples = samples * 2 / 3;
   return samples;
 }
 

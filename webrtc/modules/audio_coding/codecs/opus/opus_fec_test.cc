@@ -32,7 +32,8 @@ struct mode {
 };
 
 const int kOpusBlockDurationMs = 20;
-const int kOpusSamplingKhz = 48;
+const int kOpusInputSamplingKhz = 48;
+const int kOpusOutputSamplingKhz = 32;
 
 class OpusFecTest : public TestWithParam<coding_param> {
  protected:
@@ -46,8 +47,14 @@ class OpusFecTest : public TestWithParam<coding_param> {
   virtual void DecodeABlock(bool lost_previous, bool lost_current);
 
   int block_duration_ms_;
-  int sampling_khz_;
-  int block_length_sample_;
+  int input_sampling_khz_;
+  int output_sampling_khz_;
+
+  // Number of samples-per-channel in a frame.
+  int input_length_sample_;
+
+  // Expected output number of samples-per-channel in a frame.
+  int output_length_sample_;
 
   int channels_;
   int bit_rate_;
@@ -84,7 +91,7 @@ void OpusFecTest::SetUp() {
 
   // Allocate memory to contain the whole file.
   in_data_.reset(new int16_t[loop_length_samples_ +
-      block_length_sample_ * channels_]);
+      input_length_sample_ * channels_]);
 
   // Copy the file into the buffer.
   ASSERT_EQ(fread(&in_data_[0], sizeof(int16_t), loop_length_samples_, fp),
@@ -97,12 +104,12 @@ void OpusFecTest::SetUp() {
   // beginning of the array. Audio frames cross the end of the excerpt always
   // appear as a continuum of memory.
   memcpy(&in_data_[loop_length_samples_], &in_data_[0],
-         block_length_sample_ * channels_ * sizeof(int16_t));
+         input_length_sample_ * channels_ * sizeof(int16_t));
 
   // Maximum number of bytes in output bitstream.
-  max_bytes_ = block_length_sample_ * channels_ * sizeof(int16_t);
+  max_bytes_ = input_length_sample_ * channels_ * sizeof(int16_t);
 
-  out_data_.reset(new int16_t[2 * block_length_sample_ * channels_]);
+  out_data_.reset(new int16_t[2 * output_length_sample_ * channels_]);
   bit_stream_.reset(new uint8_t[max_bytes_]);
 
   // Create encoder memory.
@@ -120,8 +127,10 @@ void OpusFecTest::TearDown() {
 
 OpusFecTest::OpusFecTest()
     : block_duration_ms_(kOpusBlockDurationMs),
-      sampling_khz_(kOpusSamplingKhz),
-      block_length_sample_(block_duration_ms_ * sampling_khz_),
+      input_sampling_khz_(kOpusInputSamplingKhz),
+      output_sampling_khz_(kOpusOutputSamplingKhz),
+      input_length_sample_(block_duration_ms_ * input_sampling_khz_),
+      output_length_sample_(block_duration_ms_ * output_sampling_khz_),
       data_pointer_(0),
       max_bytes_(0),
       encoded_bytes_(0),
@@ -132,7 +141,7 @@ OpusFecTest::OpusFecTest()
 void OpusFecTest::EncodeABlock() {
   int16_t value = WebRtcOpus_Encode(opus_encoder_,
                                     &in_data_[data_pointer_],
-                                    block_length_sample_,
+                                    input_length_sample_,
                                     max_bytes_, &bit_stream_[0]);
   EXPECT_GT(value, 0);
 
@@ -153,7 +162,7 @@ void OpusFecTest::DecodeABlock(bool lost_previous, bool lost_current) {
     } else {
       value_1 = WebRtcOpus_DecodePlc(opus_decoder_, &out_data_[0], 1);
     }
-    EXPECT_EQ(block_length_sample_, value_1);
+    EXPECT_EQ(output_length_sample_, value_1);
   }
 
   if (!lost_current) {
@@ -162,7 +171,7 @@ void OpusFecTest::DecodeABlock(bool lost_previous, bool lost_current) {
                                    encoded_bytes_,
                                    &out_data_[value_1 * channels_],
                                    &audio_type);
-    EXPECT_EQ(block_length_sample_, value_2);
+    EXPECT_EQ(output_length_sample_, value_2);
   }
 }
 
@@ -215,7 +224,7 @@ TEST_P(OpusFecTest, RandomPacketLossTest) {
 
       // |data_pointer_| is incremented and wrapped across
       // |loop_length_samples_|.
-      data_pointer_ = (data_pointer_ + block_length_sample_ * channels_) %
+      data_pointer_ = (data_pointer_ + input_length_sample_ * channels_) %
         loop_length_samples_;
     }
     if (mode_set[i].fec) {
