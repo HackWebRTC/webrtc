@@ -10,20 +10,18 @@
 # and gen_core_neon_offsets_chromium.gyp
 {
   'variables': {
-    'unpack_lib': '<(shared_generated_dir)/lib_core_neon_offsets.a',
-    'unpack_lib_search_path' : '<(shared_generated_dir)/lib_core_neon_offsets.a',
     'conditions' : [
       ['android_webview_build==1', {
         'unpack_lib' : '$(call intermediates-dir-for,STATIC_LIBRARIES,lib_core_neon_offsets,,,$(gyp_var_prefix))/lib_core_neon_offsets.a',
-        'unpack_lib_search_path' : '$(abspath $(call intermediates-dir-for,STATIC_LIBRARIES,lib_core_neon_offsets,,,$(gyp_var_prefix)))/lib_core_neon_offsets.a',
+        'unpack_lib_search_path_list' : ['-a', '$(abspath $(call intermediates-dir-for,STATIC_LIBRARIES,lib_core_neon_offsets,,,$(gyp_var_prefix)))/lib_core_neon_offsets.a'],
+      }, {
+        'unpack_lib': '<(shared_generated_dir)/lib_core_neon_offsets.a',
+        'unpack_lib_search_path_list' : ['-a', '<(shared_generated_dir)/lib_core_neon_offsets.a'],
       }],
     ],
     'shared_generated_dir': '<(SHARED_INTERMEDIATE_DIR)/audio_processing/asm_offsets',
     'output_dir': '<(shared_generated_dir)',
     'output_format': 'cheader',
-    'unpack_lib_search_path_list': [
-      '-a', '<(unpack_lib_search_path)',
-    ],
     'object_file_output_dir':'<(shared_generated_dir)',
   },
   'includes': [
