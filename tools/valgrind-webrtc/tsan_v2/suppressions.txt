@@ -31,3 +31,7 @@ race:talk/base/logging.cc
 race:talk/base/sharedexclusivelock_unittest.cc
 race:talk/base/signalthread_unittest.cc
 race:talk/base/thread.cc
+
+# third_party/usrsctp
+# TODO(jiayl): https://code.google.com/p/webrtc/issues/detail?id=3492
+race:third_party/usrsctp/usrsctplib/user_sctp_timer_iterate.c

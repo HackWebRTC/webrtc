@@ -287,9 +287,7 @@
         'media/base/videoengine_unittest.h',
         'media/devices/dummydevicemanager_unittest.cc',
         'media/devices/filevideocapturer_unittest.cc',
-        # TODO(jiayl): Enable the SCTP test once the memcheck and tsan bots
-        # failures are fixed (issue 2846).
-        #'media/sctp/sctpdataengine_unittest.cc',
+        'media/sctp/sctpdataengine_unittest.cc',
         'media/webrtc/webrtcpassthroughrender_unittest.cc',
         'media/webrtc/webrtcvideocapturer_unittest.cc',
         # Omitted because depends on non-open-source testdata files.
