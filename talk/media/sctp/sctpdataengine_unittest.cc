@@ -81,13 +81,13 @@ class SctpFakeNetworkInterface : public cricket::MediaChannel::NetworkInterface,
   // an SCTP packet.
   virtual void OnMessage(talk_base::Message* msg) {
     LOG(LS_VERBOSE) << "SctpFakeNetworkInterface::OnMessage";
-    talk_base::Buffer* buffer =
+    talk_base::scoped_ptr<talk_base::Buffer> buffer(
         static_cast<talk_base::TypedMessageData<talk_base::Buffer*>*>(
-            msg->pdata)->data();
+            msg->pdata)->data());
     if (dest_) {
-      dest_->OnPacketReceived(buffer, talk_base::PacketTime());
+      dest_->OnPacketReceived(buffer.get(), talk_base::PacketTime());
     }
-    delete buffer;
+    delete msg->pdata;
   }
 
   // Unsupported functions required to exist by NetworkInterface.
