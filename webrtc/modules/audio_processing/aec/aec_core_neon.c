@@ -18,12 +18,92 @@
 
 #include <arm_neon.h>
 #include <math.h>
+#include <string.h>  // memset
 
 #include "webrtc/modules/audio_processing/aec/aec_core_internal.h"
 #include "webrtc/modules/audio_processing/aec/aec_rdft.h"
 
 enum { kShiftExponentIntoTopMantissa = 8 };
 enum { kFloatExponentShift = 23 };
+
+__inline static float MulRe(float aRe, float aIm, float bRe, float bIm) {
+  return aRe * bRe - aIm * bIm;
+}
+
+static void FilterAdaptationNEON(AecCore* aec,
+                                 float* fft,
+                                 float ef[2][PART_LEN1]) {
+  int i;
+  const int num_partitions = aec->num_partitions;
+  for (i = 0; i < num_partitions; i++) {
+    int xPos = (i + aec->xfBufBlockPos) * PART_LEN1;
+    int pos = i * PART_LEN1;
+    int j;
+    // Check for wrap
+    if (i + aec->xfBufBlockPos >= num_partitions) {
+      xPos -= num_partitions * PART_LEN1;
+    }
+
+    // Process the whole array...
+    for (j = 0; j < PART_LEN; j += 4) {
+      // Load xfBuf and ef.
+      const float32x4_t xfBuf_re = vld1q_f32(&aec->xfBuf[0][xPos + j]);
+      const float32x4_t xfBuf_im = vld1q_f32(&aec->xfBuf[1][xPos + j]);
+      const float32x4_t ef_re = vld1q_f32(&ef[0][j]);
+      const float32x4_t ef_im = vld1q_f32(&ef[1][j]);
+      // Calculate the product of conjugate(xfBuf) by ef.
+      //   re(conjugate(a) * b) = aRe * bRe + aIm * bIm
+      //   im(conjugate(a) * b)=  aRe * bIm - aIm * bRe
+      const float32x4_t a = vmulq_f32(xfBuf_re, ef_re);
+      const float32x4_t e = vmlaq_f32(a, xfBuf_im, ef_im);
+      const float32x4_t c = vmulq_f32(xfBuf_re, ef_im);
+      const float32x4_t f = vmlsq_f32(c, xfBuf_im, ef_re);
+      // Interleave real and imaginary parts.
+      const float32x4x2_t g_n_h = vzipq_f32(e, f);
+      // Store
+      vst1q_f32(&fft[2 * j + 0], g_n_h.val[0]);
+      vst1q_f32(&fft[2 * j + 4], g_n_h.val[1]);
+    }
+    // ... and fixup the first imaginary entry.
+    fft[1] = MulRe(aec->xfBuf[0][xPos + PART_LEN],
+                   -aec->xfBuf[1][xPos + PART_LEN],
+                   ef[0][PART_LEN],
+                   ef[1][PART_LEN]);
+
+    aec_rdft_inverse_128(fft);
+    memset(fft + PART_LEN, 0, sizeof(float) * PART_LEN);
+
+    // fft scaling
+    {
+      const float scale = 2.0f / PART_LEN2;
+      const float32x4_t scale_ps = vmovq_n_f32(scale);
+      for (j = 0; j < PART_LEN; j += 4) {
+        const float32x4_t fft_ps = vld1q_f32(&fft[j]);
+        const float32x4_t fft_scale = vmulq_f32(fft_ps, scale_ps);
+        vst1q_f32(&fft[j], fft_scale);
+      }
+    }
+    aec_rdft_forward_128(fft);
+
+    {
+      const float wt1 = aec->wfBuf[1][pos];
+      aec->wfBuf[0][pos + PART_LEN] += fft[1];
+      for (j = 0; j < PART_LEN; j += 4) {
+        float32x4_t wtBuf_re = vld1q_f32(&aec->wfBuf[0][pos + j]);
+        float32x4_t wtBuf_im = vld1q_f32(&aec->wfBuf[1][pos + j]);
+        const float32x4_t fft0 = vld1q_f32(&fft[2 * j + 0]);
+        const float32x4_t fft4 = vld1q_f32(&fft[2 * j + 4]);
+        const float32x4x2_t fft_re_im = vuzpq_f32(fft0, fft4);
+        wtBuf_re = vaddq_f32(wtBuf_re, fft_re_im.val[0]);
+        wtBuf_im = vaddq_f32(wtBuf_im, fft_re_im.val[1]);
+
+        vst1q_f32(&aec->wfBuf[0][pos + j], wtBuf_re);
+        vst1q_f32(&aec->wfBuf[1][pos + j], wtBuf_im);
+      }
+      aec->wfBuf[1][pos] = wt1;
+    }
+  }
+}
 
 extern const float WebRtcAec_weightCurve[65];
 extern const float WebRtcAec_overDriveCurve[65];
@@ -218,6 +298,7 @@ static void OverdriveAndSuppressNEON(AecCore* aec,
 }
 
 void WebRtcAec_InitAec_neon(void) {
+  WebRtcAec_FilterAdaptation = FilterAdaptationNEON;
   WebRtcAec_OverdriveAndSuppress = OverdriveAndSuppressNEON;
 }
 
