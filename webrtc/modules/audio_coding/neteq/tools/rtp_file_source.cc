@@ -47,47 +47,54 @@ bool RtpFileSource::RegisterRtpHeaderExtension(RTPExtensionType type,
 }
 
 Packet* RtpFileSource::NextPacket() {
-  uint16_t length;
-  if (fread(&length, sizeof(uint16_t), 1, in_file_) == 0) {
-    assert(false);
-    return NULL;
-  }
-  length = ntohs(length);
+  while (!EndOfFile()) {
+    uint16_t length;
+    if (fread(&length, sizeof(length), 1, in_file_) == 0) {
+      assert(false);
+      return NULL;
+    }
+    length = ntohs(length);
 
-  uint16_t plen;
-  if (fread(&plen, sizeof(uint16_t), 1, in_file_) == 0) {
-    assert(false);
-    return NULL;
-  }
-  plen = ntohs(plen);
+    uint16_t plen;
+    if (fread(&plen, sizeof(plen), 1, in_file_) == 0) {
+      assert(false);
+      return NULL;
+    }
+    plen = ntohs(plen);
 
-  uint32_t offset;
-  if (fread(&offset, sizeof(uint32_t), 1, in_file_) == 0) {
-    assert(false);
-    return NULL;
-  }
+    uint32_t offset;
+    if (fread(&offset, sizeof(offset), 1, in_file_) == 0) {
+      assert(false);
+      return NULL;
+    }
+    offset = ntohl(offset);
 
-  // Use length here because a plen of 0 specifies RTCP.
-  size_t packet_size_bytes = length - kPacketHeaderSize;
-  if (packet_size_bytes <= 0) {
-    // May be an RTCP packet.
-    return NULL;
+    // Use length here because a plen of 0 specifies RTCP.
+    assert(length >= kPacketHeaderSize);
+    size_t packet_size_bytes = length - kPacketHeaderSize;
+    if (packet_size_bytes == 0) {
+      // May be an RTCP packet.
+      // Read the next one.
+      continue;
+    }
+    scoped_ptr<uint8_t> packet_memory(new uint8_t[packet_size_bytes]);
+    if (fread(packet_memory.get(), 1, packet_size_bytes, in_file_) !=
+        packet_size_bytes) {
+      assert(false);
+      return NULL;
+    }
+    scoped_ptr<Packet> packet(new Packet(packet_memory.release(),
+                                         packet_size_bytes,
+                                         plen,
+                                         offset,
+                                         *parser_.get()));
+    if (!packet->valid_header()) {
+      assert(false);
+      return NULL;
+    }
+    return packet.release();
   }
-  uint8_t* packet_memory = new uint8_t[packet_size_bytes];
-  if (fread(packet_memory, 1, packet_size_bytes, in_file_) !=
-      packet_size_bytes) {
-    assert(false);
-    delete[] packet_memory;
-    return NULL;
-  }
-  Packet* packet = new Packet(
-      packet_memory, packet_size_bytes, plen, ntohl(offset), *parser_.get());
-  if (!packet->valid_header()) {
-    assert(false);
-    delete packet;
-    return NULL;
-  }
-  return packet;
+  return NULL;
 }
 
 bool RtpFileSource::EndOfFile() const {

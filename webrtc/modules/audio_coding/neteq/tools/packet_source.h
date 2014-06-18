@@ -24,7 +24,8 @@ class PacketSource {
   PacketSource() {}
   virtual ~PacketSource() {}
 
-  // Returns a pointer to the next packet.
+  // Returns a pointer to the next packet. Returns NULL if the source is
+  // depleted, or if an error occurred.
   virtual Packet* NextPacket() = 0;
 
  private:

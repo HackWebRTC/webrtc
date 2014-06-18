@@ -37,7 +37,8 @@ class RtpFileSource : public PacketSource {
   // Registers an RTP header extension and binds it to |id|.
   virtual bool RegisterRtpHeaderExtension(RTPExtensionType type, uint8_t id);
 
-  // Returns a pointer to the next packet.
+  // Returns a pointer to the next packet. Returns NULL if end of file was
+  // reached, or if a the data was corrupt.
   virtual Packet* NextPacket();
 
   // Returns true if the end of file has been reached.
