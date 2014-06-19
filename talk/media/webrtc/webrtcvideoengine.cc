@@ -3707,7 +3707,7 @@ bool WebRtcVideoMediaChannel::SetSendCodec(
     target_codec.codecSpecific.VP8.resilience = webrtc::kResilienceOff;
 
     bool enable_denoising =
-        options_.video_noise_reduction.GetWithDefaultIfUnset(false);
+        options_.video_noise_reduction.GetWithDefaultIfUnset(true);
     target_codec.codecSpecific.VP8.denoisingOn = enable_denoising;
   }
 
@@ -3980,17 +3980,21 @@ bool WebRtcVideoMediaChannel::MaybeResetVieSendCodec(
   // Turn off VP8 frame dropping when screensharing as the current model does
   // not work well at low fps.
   bool vp8_frame_dropping = !is_screencast;
-  // Disable denoising for screencasting.
+  // TODO(pbos): Remove |video_noise_reduction| and enable it for all
+  // non-screencast.
   bool enable_denoising =
-      options_.video_noise_reduction.GetWithDefaultIfUnset(false);
+      options_.video_noise_reduction.GetWithDefaultIfUnset(true);
+  // Disable denoising for screencasting.
+  if (is_screencast) {
+    enable_denoising = false;
+  }
   int screencast_min_bitrate =
       options_.screencast_min_bitrate.GetWithDefaultIfUnset(0);
   bool leaky_bucket = options_.video_leaky_bucket.GetWithDefaultIfUnset(true);
-  bool denoising = !is_screencast && enable_denoising;
   bool reset_send_codec =
       target_width != cur_width || target_height != cur_height ||
       automatic_resize != vie_codec.codecSpecific.VP8.automaticResizeOn ||
-      denoising != vie_codec.codecSpecific.VP8.denoisingOn ||
+      enable_denoising != vie_codec.codecSpecific.VP8.denoisingOn ||
       vp8_frame_dropping != vie_codec.codecSpecific.VP8.frameDroppingOn;
 
   if (reset_send_codec) {
@@ -4003,7 +4007,7 @@ bool WebRtcVideoMediaChannel::MaybeResetVieSendCodec(
     vie_codec.maxBitrate = target_codec.maxBitrate;
     vie_codec.targetBitrate = 0;
     vie_codec.codecSpecific.VP8.automaticResizeOn = automatic_resize;
-    vie_codec.codecSpecific.VP8.denoisingOn = denoising;
+    vie_codec.codecSpecific.VP8.denoisingOn = enable_denoising;
     vie_codec.codecSpecific.VP8.frameDroppingOn = vp8_frame_dropping;
     MaybeChangeBitrates(channel_id, &vie_codec);
 
