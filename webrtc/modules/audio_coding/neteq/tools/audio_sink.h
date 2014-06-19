@@ -22,7 +22,7 @@ namespace test {
 // applications.
 class AudioSink {
  public:
-  AudioSink();
+  AudioSink() {}
   virtual ~AudioSink() {}
 
   // Writes |num_samples| from |audio| to the AudioSink. Returns true if
