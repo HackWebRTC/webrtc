@@ -608,14 +608,10 @@ int16_t WebRtcIsacfix_UpdateBwEstimate1(ISACFIX_MainStruct *ISAC_main_inst,
 {
   ISACFIX_SubStruct *ISAC_inst;
   Bitstr_dec streamdata;
-  uint16_t partOfStream[5];
 #ifndef WEBRTC_ARCH_BIG_ENDIAN
   int k;
 #endif
   int16_t err;
-
-  /* Set stream pointer to point at partOfStream */
-  streamdata.stream = (uint16_t *)partOfStream;
 
   /* typecast pointer to real structure */
   ISAC_inst = (ISACFIX_SubStruct *)ISAC_main_inst;
@@ -696,14 +692,10 @@ int16_t WebRtcIsacfix_UpdateBwEstimate(ISACFIX_MainStruct *ISAC_main_inst,
 {
   ISACFIX_SubStruct *ISAC_inst;
   Bitstr_dec streamdata;
-  uint16_t partOfStream[5];
 #ifndef WEBRTC_ARCH_BIG_ENDIAN
   int k;
 #endif
   int16_t err;
-
-  /* Set stream pointer to point at partOfStream */
-  streamdata.stream = (uint16_t *)partOfStream;
 
   /* typecast pointer to real structure */
   ISAC_inst = (ISACFIX_SubStruct *)ISAC_main_inst;
@@ -811,7 +803,6 @@ int16_t WebRtcIsacfix_Decode(ISACFIX_MainStruct *ISAC_main_inst,
     return -1;
   }
 
-  (ISAC_inst->ISACdec_obj.bitstr_obj).stream = (uint16_t *)encoded;
   ISAC_inst->ISACdec_obj.bitstr_obj.stream_size = (len + 1) >> 1;
 
   /* convert bitstream from int16_t to bytes */
@@ -913,7 +904,7 @@ int16_t WebRtcIsacfix_DecodeNb(ISACFIX_MainStruct *ISAC_main_inst,
     return -1;
   }
 
-  (ISAC_inst->ISACdec_obj.bitstr_obj).stream = (uint16_t *)encoded;
+  ISAC_inst->ISACdec_obj.bitstr_obj.stream_size = (len + 1) >> 1;
 
   /* convert bitstream from int16_t to bytes */
 #ifndef WEBRTC_ARCH_BIG_ENDIAN
@@ -1288,14 +1279,10 @@ int16_t WebRtcIsacfix_ReadFrameLen(const int16_t* encoded,
                                    int16_t* frameLength)
 {
   Bitstr_dec streamdata;
-  uint16_t partOfStream[5];
 #ifndef WEBRTC_ARCH_BIG_ENDIAN
   int k;
 #endif
   int16_t err;
-
-  /* Set stream pointer to point at partOfStream */
-  streamdata.stream = (uint16_t *)partOfStream;
 
   streamdata.W_upper = 0xFFFFFFFF;
   streamdata.streamval = 0;
@@ -1337,14 +1324,10 @@ int16_t WebRtcIsacfix_ReadBwIndex(const int16_t* encoded,
                                   int16_t* rateIndex)
 {
   Bitstr_dec streamdata;
-  uint16_t partOfStream[5];
 #ifndef WEBRTC_ARCH_BIG_ENDIAN
   int k;
 #endif
   int16_t err;
-
-  /* Set stream pointer to point at partOfStream */
-  streamdata.stream = (uint16_t *)partOfStream;
 
   streamdata.W_upper = 0xFFFFFFFF;
   streamdata.streamval = 0;
