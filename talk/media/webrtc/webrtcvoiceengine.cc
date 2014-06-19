@@ -423,7 +423,7 @@ static int GetOpusBitrateFromParams(const AudioCodec& codec) {
   return bitrate;
 }
 
-// Return true params[kCodecParamUseInbandFec] == kParamValueTrue, false
+// Return true if params[kCodecParamUseInbandFec] == "1", false
 // otherwise.
 static bool IsOpusFecEnabled(const AudioCodec& codec) {
   int value;
@@ -431,11 +431,11 @@ static bool IsOpusFecEnabled(const AudioCodec& codec) {
 }
 
 // Set params[kCodecParamUseInbandFec]. Caller should make sure codec is Opus.
-static void SetOpusFec(AudioCodec *codec, bool opus_fec) {
+static void SetOpusFec(AudioCodec* codec, bool opus_fec) {
   if (opus_fec) {
-    codec->params[kCodecParamUseInbandFec] = kParamValueTrue;
+    codec->SetParam(kCodecParamUseInbandFec, 1);
   } else {
-    codec->params.erase(kCodecParamUseInbandFec);
+    codec->RemoveParam(kCodecParamUseInbandFec);
   }
 }
 
@@ -909,7 +909,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     }
   }
 
-  bool opus_fec = false;
+  bool opus_fec;
   if (options.opus_fec.Get(&opus_fec)) {
     LOG(LS_INFO) << "Opus FEC is enabled? " << opus_fec;
     for (std::vector<AudioCodec>::iterator it = codecs_.begin();

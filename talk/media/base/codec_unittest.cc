@@ -278,7 +278,7 @@ TEST_F(CodecTest, TestDataCodecMatches) {
   EXPECT_FALSE(c1.Matches(DataCodec(95, "D", 0)));
 }
 
-TEST_F(CodecTest, TestSetParamAndGetParam) {
+TEST_F(CodecTest, TestSetParamGetParamAndRemoveParam) {
   AudioCodec codec;
   codec.SetParam("a", "1");
   codec.SetParam("b", "x");
@@ -295,6 +295,8 @@ TEST_F(CodecTest, TestSetParamAndGetParam) {
   EXPECT_TRUE(codec.GetParam("b", &str_value));
   EXPECT_EQ("x", str_value);
   EXPECT_FALSE(codec.GetParam("c", &str_value));
+  EXPECT_TRUE(codec.RemoveParam("a"));
+  EXPECT_FALSE(codec.RemoveParam("c"));
 }
 
 TEST_F(CodecTest, TestIntersectFeedbackParams) {

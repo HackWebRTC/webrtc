@@ -118,6 +118,10 @@ void Codec::SetParam(const std::string& name, int value)  {
   params[name] = talk_base::ToString(value);
 }
 
+bool Codec::RemoveParam(const std::string& name) {
+  return params.erase(name) == 1;
+}
+
 void Codec::AddFeedbackParam(const FeedbackParam& param) {
   feedback_params.Add(param);
 }
