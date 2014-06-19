@@ -42,6 +42,7 @@
 #include "talk/base/stringutils.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videorenderer.h"
+#include "talk/media/webrtc/constants.h"
 #include "talk/media/webrtc/webrtcvideocapturer.h"
 #include "talk/media/webrtc/webrtcvideoframe.h"
 #include "talk/media/webrtc/webrtcvoiceengine.h"
@@ -55,20 +56,9 @@
 
 namespace cricket {
 
-static const int kCpuMonitorPeriodMs = 2000;  // 2 seconds.
-
 // This constant is really an on/off, lower-level configurable NACK history
 // duration hasn't been implemented.
 static const int kNackHistoryMs = 1000;
-
-static const int kDefaultFramerate = 30;
-static const int kMinVideoBitrate = 50;
-static const int kMaxVideoBitrate = 2000;
-
-static const int kVideoMtu = 1200;
-static const int kVideoRtpBufferSize = 65536;
-
-static const char kVp8PayloadName[] = "VP8";
 
 static const int kDefaultRtcpReceiverReportSsrc = 1;
 
@@ -76,7 +66,7 @@ struct VideoCodecPref {
   int payload_type;
   const char* name;
   int rtx_payload_type;
-} kDefaultVideoCodecPref = {100, kVp8PayloadName, 96};
+} kDefaultVideoCodecPref = {100, kVp8CodecName, 96};
 
 VideoCodecPref kRedPref = {116, kRedCodecName, -1};
 VideoCodecPref kUlpfecPref = {117, kUlpfecCodecName, -1};
@@ -251,7 +241,7 @@ webrtc::VideoEncoder* WebRtcVideoEncoderFactory2::CreateVideoEncoder(
 }
 
 bool WebRtcVideoEncoderFactory2::SupportsCodec(const VideoCodec& codec) {
-  return _stricmp(codec.name.c_str(), kVp8PayloadName) == 0;
+  return _stricmp(codec.name.c_str(), kVp8CodecName) == 0;
 }
 
 WebRtcVideoEngine2::WebRtcVideoEngine2() {
@@ -814,7 +804,7 @@ bool WebRtcVideoChannel2::SetRecvCodecs(const std::vector<VideoCodec>& codecs) {
   // TODO(pbos): Add a decoder factory which controls supported codecs.
   // Blocked on webrtc:2854.
   for (size_t i = 0; i < mapped_codecs.size(); ++i) {
-    if (_stricmp(mapped_codecs[i].codec.name.c_str(), kVp8PayloadName) != 0) {
+    if (_stricmp(mapped_codecs[i].codec.name.c_str(), kVp8CodecName) != 0) {
       LOG(LS_ERROR) << "SetRecvCodecs called with unsupported codec: '"
                     << mapped_codecs[i].codec.name << "'";
       return false;
