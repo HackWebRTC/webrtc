@@ -105,6 +105,15 @@ static const unsigned char kRtcpPacketNonCompoundRtcpPliFeedback[] = {
     0x81, 0xCE, 0x00, 0x0C, 0x00, 0x00, 0x11, 0x11, 0x00, 0x00, 0x11, 0x11,
 };
 
+// An SCTP packet.
+static const unsigned char kSctpPacket[] = {
+    0x00, 0x01, 0x00, 0x01,
+    0xff, 0xff, 0xff, 0xff,
+    0x00, 0x00, 0x00, 0x00,
+    0x03, 0x00, 0x00, 0x04,
+    0x00, 0x00, 0x00, 0x00,
+};
+
 TEST(BundleFilterTest, AddRemoveStreamTest) {
   cricket::BundleFilter bundle_filter;
   EXPECT_FALSE(bundle_filter.HasStreams());
@@ -193,4 +202,12 @@ TEST(BundleFilterTest, RtcpPacketTest) {
   EXPECT_TRUE(bundle_filter.DemuxPacket(
       reinterpret_cast<const char*>(kRtcpPacketSrSsrc2),
       sizeof(kRtcpPacketSrSsrc2), true));
+}
+
+TEST(BundleFilterTest, InvalidRtpPacket) {
+  cricket::BundleFilter bundle_filter;
+  EXPECT_TRUE(bundle_filter.AddStream(StreamParams::CreateLegacy(kSsrc1)));
+  EXPECT_FALSE(bundle_filter.DemuxPacket(
+      reinterpret_cast<const char*>(kSctpPacket),
+      sizeof(kSctpPacket), false));
 }

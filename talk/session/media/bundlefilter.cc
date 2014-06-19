@@ -47,6 +47,10 @@ bool BundleFilter::DemuxPacket(const char* data, size_t len, bool rtcp) {
   // |streams_| is empty, we will allow all rtcp packets pass through provided
   // that they are valid rtcp packets in case that they are for early media.
   if (!rtcp) {
+    // It may not be a RTP packet (e.g. SCTP).
+    if (!IsRtpPacket(data, len))
+      return false;
+
     int payload_type = 0;
     if (!GetRtpPayloadType(data, len, &payload_type)) {
       return false;

@@ -2168,21 +2168,11 @@ const ContentInfo* DataChannel::GetFirstContent(
   return GetFirstDataContent(sdesc);
 }
 
-
-static bool IsRtpPacket(const talk_base::Buffer* packet) {
-  int version;
-  if (!GetRtpVersion(packet->data(), packet->length(), &version)) {
-    return false;
-  }
-
-  return version == 2;
-}
-
 bool DataChannel::WantsPacket(bool rtcp, talk_base::Buffer* packet) {
   if (data_channel_type_ == DCT_SCTP) {
     // TODO(pthatcher): Do this in a more robust way by checking for
     // SCTP or DTLS.
-    return !IsRtpPacket(packet);
+    return !IsRtpPacket(packet->data(), packet->length());
   } else if (data_channel_type_ == DCT_RTP) {
     return BaseChannel::WantsPacket(rtcp, packet);
   }

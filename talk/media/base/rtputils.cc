@@ -223,4 +223,15 @@ bool SetRtpHeader(void* data, size_t len, const RtpHeader& header) {
           SetRtpSsrc(data, len, header.ssrc));
 }
 
+bool IsRtpPacket(const void* data, size_t len) {
+  if (len < kMinRtpPacketLen)
+    return false;
+
+  int version = 0;
+  if (!GetRtpVersion(data, len, &version))
+    return false;
+
+  return version == kRtpVersion;
+}
+
 }  // namespace cricket
