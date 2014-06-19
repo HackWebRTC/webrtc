@@ -182,10 +182,13 @@
             'tools',
           ],
           'sources': [
+            'tools/audio_checksum.h',
             'tools/audio_loop.cc',
             'tools/audio_loop.h',
+            'tools/audio_sink.h',
             'tools/input_audio_file.cc',
             'tools/input_audio_file.h',
+            'tools/output_audio_file.h',
             'tools/packet.cc',
             'tools/packet.h',
             'tools/packet_source.h',
