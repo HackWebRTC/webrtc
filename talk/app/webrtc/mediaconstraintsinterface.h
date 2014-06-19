@@ -134,6 +134,11 @@ class MediaConstraintsInterface {
   static const char kVeryHighBitrate[];  // googVeryHighBitrate
   static const char kPayloadPadding[];  // googPayloadPadding
 
+  // PeerConnection codec constraint keys. This should be combined with the
+  // values above.
+  // kOpusFec controls whether we ask the other side to turn on FEC for Opus.
+  static const char kOpusFec[];  // googOpusFec
+
   // The prefix of internal-only constraints whose JS set values should be
   // stripped by Chrome before passed down to Libjingle.
   static const char kInternalConstraintPrefix[];
