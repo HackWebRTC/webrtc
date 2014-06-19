@@ -78,6 +78,7 @@ void usage() {
   printf("  --no_delay_logging\n");
   printf("  --aec_suppression_level LEVEL  [0 - 2]\n");
   printf("  --extended_filter\n");
+  printf("  --no_reported_delay\n");
   printf("\n  -aecm    Echo control mobile\n");
   printf("  --aecm_echo_path_in_file FILE\n");
   printf("  --aecm_echo_path_out_file FILE\n");
@@ -255,6 +256,11 @@ void void_main(int argc, char* argv[]) {
     } else if (strcmp(argv[i], "--extended_filter") == 0) {
       Config config;
       config.Set<DelayCorrection>(new DelayCorrection(true));
+      apm->SetExtraOptions(config);
+
+    } else if (strcmp(argv[i], "--no_reported_delay") == 0) {
+      Config config;
+      config.Set<ReportedDelay>(new ReportedDelay(false));
       apm->SetExtraOptions(config);
 
     } else if (strcmp(argv[i], "-aecm") == 0) {

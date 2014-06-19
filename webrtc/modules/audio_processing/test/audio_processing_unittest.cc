@@ -827,7 +827,7 @@ TEST_F(ApmTest, EchoCancellation) {
   EXPECT_FALSE(apm_->echo_cancellation()->aec_core() != NULL);
 }
 
-TEST_F(ApmTest, EchoCancellationReportsCorrectDelays) {
+TEST_F(ApmTest, DISABLED_EchoCancellationReportsCorrectDelays) {
   // Enable AEC only.
   EXPECT_EQ(apm_->kNoError,
             apm_->echo_cancellation()->enable_drift_compensation(false));
