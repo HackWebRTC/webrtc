@@ -139,6 +139,21 @@ void BitrateControllerImpl::SetBitrateObserver(
     it->second->start_bitrate_ = start_bitrate;
     it->second->min_bitrate_ = min_bitrate;
     it->second->max_bitrate_ = max_bitrate;
+    // Set the send-side bandwidth to the max of the sum of start bitrates and
+    // the current estimate, so that if the user wants to immediately use more
+    // bandwidth, that can be enforced.
+    uint32_t sum_start_bitrate = 0;
+    BitrateObserverConfList::iterator it;
+    for (it = bitrate_observers_.begin(); it != bitrate_observers_.end();
+         ++it) {
+      sum_start_bitrate += it->second->start_bitrate_;
+    }
+    uint32_t current_estimate;
+    uint8_t loss;
+    uint32_t rtt;
+    bandwidth_estimation_.CurrentEstimate(&current_estimate, &loss, &rtt);
+    bandwidth_estimation_.SetSendBitrate(std::max(sum_start_bitrate,
+                                                  current_estimate));
   } else {
     // Add new settings.
     bitrate_observers_.push_back(BitrateObserverConfiguration(observer,
@@ -159,12 +174,10 @@ void BitrateControllerImpl::SetBitrateObserver(
 }
 
 void BitrateControllerImpl::UpdateMinMaxBitrate() {
-  uint32_t sum_start_bitrate = 0;
   uint32_t sum_min_bitrate = 0;
   uint32_t sum_max_bitrate = 0;
   BitrateObserverConfList::iterator it;
   for (it = bitrate_observers_.begin(); it != bitrate_observers_.end(); ++it) {
-    sum_start_bitrate += it->second->start_bitrate_;
     sum_min_bitrate += it->second->min_bitrate_;
     sum_max_bitrate += it->second->max_bitrate_;
   }

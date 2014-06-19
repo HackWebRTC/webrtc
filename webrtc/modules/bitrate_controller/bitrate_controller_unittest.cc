@@ -83,6 +83,24 @@ TEST_F(BitrateControllerTest, Basic) {
   controller_->RemoveBitrateObserver(&bitrate_observer);
 }
 
+TEST_F(BitrateControllerTest, UpdatingBitrateObserver) {
+  TestBitrateObserver bitrate_observer;
+  controller_->SetBitrateObserver(&bitrate_observer, 200000, 100000, 1500000);
+  clock_.AdvanceTimeMilliseconds(25);
+  controller_->Process();
+  EXPECT_EQ(200000u, bitrate_observer.last_bitrate_);
+
+  controller_->SetBitrateObserver(&bitrate_observer, 1500000, 100000, 1500000);
+  clock_.AdvanceTimeMilliseconds(25);
+  controller_->Process();
+  EXPECT_EQ(1500000u, bitrate_observer.last_bitrate_);
+
+  controller_->SetBitrateObserver(&bitrate_observer, 500000, 100000, 1500000);
+  clock_.AdvanceTimeMilliseconds(25);
+  controller_->Process();
+  EXPECT_EQ(1500000u, bitrate_observer.last_bitrate_);
+}
+
 TEST_F(BitrateControllerTest, OneBitrateObserverOneRtcpObserver) {
   TestBitrateObserver bitrate_observer;
   controller_->SetBitrateObserver(&bitrate_observer, 200000, 100000, 300000);
