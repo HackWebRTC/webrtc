@@ -827,7 +827,7 @@ TEST_F(ApmTest, EchoCancellation) {
   EXPECT_FALSE(apm_->echo_cancellation()->aec_core() != NULL);
 }
 
-TEST_F(ApmTest, DISABLED_ON_ANDROID(EchoCancellationReportsCorrectDelays)) {
+TEST_F(ApmTest, EchoCancellationReportsCorrectDelays) {
   // Enable AEC only.
   EXPECT_EQ(apm_->kNoError,
             apm_->echo_cancellation()->enable_drift_compensation(false));
@@ -836,6 +836,9 @@ TEST_F(ApmTest, DISABLED_ON_ANDROID(EchoCancellationReportsCorrectDelays)) {
   EXPECT_EQ(apm_->kNoError,
             apm_->echo_cancellation()->enable_delay_logging(true));
   EXPECT_EQ(apm_->kNoError, apm_->echo_cancellation()->Enable(true));
+  Config config;
+  config.Set<ReportedDelay>(new ReportedDelay(true));
+  apm_->SetExtraOptions(config);
 
   // Internally in the AEC the amount of lookahead the delay estimation can
   // handle is 15 blocks and the maximum delay is set to 60 blocks.
