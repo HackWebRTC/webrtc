@@ -174,6 +174,16 @@ TEST_F(SctpDataChannelTest, OpenMessageSent) {
             static_cast<uint32>(webrtc_data_channel_->id()));
 }
 
+TEST_F(SctpDataChannelTest, QueuedOpenMessageSent) {
+  provider_.set_send_blocked(true);
+  SetChannelReady();
+  provider_.set_send_blocked(false);
+
+  EXPECT_EQ(cricket::DMT_CONTROL, provider_.last_send_data_params().type);
+  EXPECT_EQ(provider_.last_send_data_params().ssrc,
+            static_cast<uint32>(webrtc_data_channel_->id()));
+}
+
 // Tests that the DataChannel created after transport gets ready can enter OPEN
 // state.
 TEST_F(SctpDataChannelTest, LateCreatedChannelTransitionToOpen) {
@@ -330,11 +340,17 @@ TEST_F(SctpDataChannelTest, OpenAckRoleInitialization) {
 // Tests that the DataChannel is closed if the sending buffer is full.
 TEST_F(SctpDataChannelTest, ClosedWhenSendBufferFull) {
   SetChannelReady();
-  webrtc::DataBuffer buffer("abcd");
+
+  const size_t buffer_size = 1024;
+  talk_base::Buffer buffer;
+  buffer.SetLength(buffer_size);
+  memset(buffer.data(), 0, buffer_size);
+
+  webrtc::DataBuffer packet(buffer, true);
   provider_.set_send_blocked(true);
 
-  for (size_t i = 0; i < 101; ++i) {
-    EXPECT_TRUE(webrtc_data_channel_->Send(buffer));
+  for (size_t i = 0; i < 16 * 1024 + 1; ++i) {
+    EXPECT_TRUE(webrtc_data_channel_->Send(packet));
   }
 
   EXPECT_EQ(webrtc::DataChannelInterface::kClosed,
@@ -376,3 +392,21 @@ TEST_F(SctpDataChannelTest, RemotePeerRequestClose) {
             webrtc_data_channel_->state());
 }
 
+// Tests that the DataChannel is closed if the received buffer is full.
+TEST_F(SctpDataChannelTest, ClosedWhenReceivedBufferFull) {
+  SetChannelReady();
+  const size_t buffer_size = 1024;
+  talk_base::Buffer buffer;
+  buffer.SetLength(buffer_size);
+  memset(buffer.data(), 0, buffer_size);
+
+  cricket::ReceiveDataParams params;
+  params.ssrc = 0;
+
+  // Receiving data without having an observer will overflow the buffer.
+  for (size_t i = 0; i < 16 * 1024 + 1; ++i) {
+    webrtc_data_channel_->OnDataReceived(NULL, params, buffer);
+  }
+  EXPECT_EQ(webrtc::DataChannelInterface::kClosed,
+            webrtc_data_channel_->state());
+}

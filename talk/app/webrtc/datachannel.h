@@ -29,7 +29,7 @@
 #define TALK_APP_WEBRTC_DATACHANNEL_H_
 
 #include <string>
-#include <queue>
+#include <deque>
 
 #include "talk/app/webrtc/datachannelinterface.h"
 #include "talk/app/webrtc/proxy.h"
@@ -149,7 +149,8 @@ class DataChannel : public DataChannelInterface,
 
   // The following methods are for SCTP only.
 
-  // Sets the SCTP sid and adds to transport layer if not set yet.
+  // Sets the SCTP sid and adds to transport layer if not set yet. Should only
+  // be called once.
   void SetSctpSid(int sid);
   // Called when the transport channel is created.
   void OnTransportChannelCreated();
@@ -175,23 +176,49 @@ class DataChannel : public DataChannelInterface,
   virtual ~DataChannel();
 
  private:
+  // A packet queue which tracks the total queued bytes. Queued packets are
+  // owned by this class.
+  class PacketQueue {
+   public:
+    PacketQueue();
+    ~PacketQueue();
+
+    size_t byte_count() const {
+      return byte_count_;
+    }
+
+    bool Empty() const;
+
+    DataBuffer* Front();
+
+    void Pop();
+
+    void Push(DataBuffer* packet);
+
+    void Clear();
+
+    void Swap(PacketQueue* other);
+
+   private:
+    std::deque<DataBuffer*> packets_;
+    size_t byte_count_;
+  };
+
   bool Init(const InternalDataChannelInit& config);
   void DoClose();
   void UpdateState();
   void SetState(DataState state);
   void DisconnectFromTransport();
-  void DeliverQueuedControlData();
-  void QueueControl(const talk_base::Buffer* buffer);
-  void ClearQueuedControlData();
+
   void DeliverQueuedReceivedData();
-  void ClearQueuedReceivedData();
-  void DeliverQueuedSendData();
-  void ClearQueuedSendData();
-  bool InternalSendWithoutQueueing(const DataBuffer& buffer,
-                                   cricket::SendDataResult* send_result);
-  bool QueueSendData(const DataBuffer& buffer);
-  bool SendOpenMessage(const talk_base::Buffer* buffer);
-  bool SendOpenAckMessage(const talk_base::Buffer* buffer);
+
+  void SendQueuedDataMessages();
+  bool SendDataMessage(const DataBuffer& buffer);
+  bool QueueSendDataMessage(const DataBuffer& buffer);
+
+  void SendQueuedControlMessages();
+  void QueueControlMessage(const talk_base::Buffer& buffer);
+  bool SendControlMessage(const talk_base::Buffer& buffer);
 
   std::string label_;
   InternalDataChannelInit config_;
@@ -208,9 +235,9 @@ class DataChannel : public DataChannelInterface,
   uint32 receive_ssrc_;
   // Control messages that always have to get sent out before any queued
   // data.
-  std::queue<const talk_base::Buffer*> queued_control_data_;
-  std::queue<DataBuffer*> queued_received_data_;
-  std::deque<DataBuffer*> queued_send_data_;
+  PacketQueue queued_control_data_;
+  PacketQueue queued_received_data_;
+  PacketQueue queued_send_data_;
 };
 
 class DataChannelFactory {
