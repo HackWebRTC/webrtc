@@ -120,7 +120,7 @@ void ChannelManager::Construct(MediaEngineInterface* me,
   audio_options_ = media_engine_->GetAudioOptions();
   audio_in_device_ = DeviceManagerInterface::kDefaultDeviceName;
   audio_out_device_ = DeviceManagerInterface::kDefaultDeviceName;
-  audio_delay_offset_ = MediaEngineInterface::kDefaultAudioDelayOffset;
+  audio_delay_offset_ = kDefaultAudioDelayOffset;
   audio_output_volume_ = kNotSetOutputVolume;
   local_renderer_ = NULL;
   capturing_ = false;
