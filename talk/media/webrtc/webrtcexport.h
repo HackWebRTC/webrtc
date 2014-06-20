@@ -27,6 +27,9 @@
 #ifndef TALK_MEDIA_WEBRTC_WEBRTCEXPORT_H_
 #define TALK_MEDIA_WEBRTC_WEBRTCEXPORT_H_
 
+// When building for Chrome a part of the code can be built into
+// a shared library, which is controlled by these macros.
+// For all other builds, we always build a static library.
 #if !defined(GOOGLE_CHROME_BUILD) && !defined(CHROMIUM_BUILD)
 #define LIBPEERCONNECTION_LIB 1
 #endif

@@ -3176,4 +3176,3 @@ TEST(WebRtcVoiceEngineTest, CoInitialize) {
   CoUninitialize();
 }
 #endif
-
