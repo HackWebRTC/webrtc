@@ -234,7 +234,6 @@ int32_t VideoCaptureAndroid::CaptureSettings(
 
 int32_t VideoCaptureAndroid::SetCaptureRotation(
     VideoCaptureRotation rotation) {
-  CriticalSectionScoped cs(&_apiCs);
   int32_t status = VideoCaptureImpl::SetCaptureRotation(rotation);
   if (status != 0)
     return status;
