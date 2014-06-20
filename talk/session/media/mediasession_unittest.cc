@@ -31,6 +31,7 @@
 #include "talk/base/gunit.h"
 #include "talk/base/fakesslidentity.h"
 #include "talk/base/messagedigest.h"
+#include "talk/base/ssladapter.h"
 #include "talk/media/base/codec.h"
 #include "talk/media/base/testutils.h"
 #include "talk/p2p/base/constants.h"
@@ -97,13 +98,13 @@ static const AudioCodec kAudioCodecs1[] = {
 
 static const AudioCodec kAudioCodecs2[] = {
   AudioCodec(126, "speex",  16000, 22000, 1, 3),
-  AudioCodec(127, "iLBC",   8000,  13300, 1, 2),
-  AudioCodec(0,   "PCMU",   8000,  64000, 1, 1),
+  AudioCodec(0,   "PCMU",   8000,  64000, 1, 2),
+  AudioCodec(127, "iLBC",   8000,  13300, 1, 1),
 };
 
 static const AudioCodec kAudioCodecsAnswer[] = {
-  AudioCodec(102, "iLBC",   8000,  13300, 1, 2),
-  AudioCodec(0,   "PCMU",   8000,  64000, 1, 1),
+  AudioCodec(102, "iLBC",   8000,  13300, 1, 5),
+  AudioCodec(0,   "PCMU",   8000,  64000, 1, 4),
 };
 
 static const VideoCodec kVideoCodecs1[] = {
@@ -117,7 +118,7 @@ static const VideoCodec kVideoCodecs2[] = {
 };
 
 static const VideoCodec kVideoCodecsAnswer[] = {
-  VideoCodec(97, "H264", 320, 200, 30, 2)
+  VideoCodec(97, "H264", 320, 200, 30, 1)
 };
 
 static const DataCodec kDataCodecs1[] = {
@@ -194,6 +195,14 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
     f2_.set_data_codecs(MAKE_VECTOR(kDataCodecs2));
     tdf1_.set_identity(&id1_);
     tdf2_.set_identity(&id2_);
+  }
+
+  static void SetUpTestCase() {
+    talk_base::InitializeSSL();
+  }
+
+  static void TearDownTestCase() {
+    talk_base::CleanupSSL();
   }
 
   // Create a video StreamParamsVec object with:
@@ -1379,10 +1388,12 @@ TEST_F(MediaSessionDescriptionFactoryTest,
   // The expected audio codecs are the common audio codecs from the first
   // offer/answer exchange plus the audio codecs only |f2_| offer, sorted in
   // preference order.
+  // TODO(wu): |updated_offer| should not include the codec
+  // (i.e. |kAudioCodecs2[0]|) the other side doesn't support.
   const AudioCodec kUpdatedAudioCodecOffer[] = {
-    kAudioCodecs2[0],
     kAudioCodecsAnswer[0],
     kAudioCodecsAnswer[1],
+    kAudioCodecs2[0],
   };
 
   // The expected video codecs are the common video codecs from the first

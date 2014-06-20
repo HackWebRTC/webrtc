@@ -39,6 +39,8 @@ namespace cricket {
 
 typedef std::map<std::string, std::string> CodecParameterMap;
 
+extern const int kMaxPayloadId;
+
 class FeedbackParam {
  public:
   FeedbackParam(const std::string& id, const std::string& param)

@@ -373,6 +373,7 @@ bool ParseGingleAudioContent(const buzz::XmlElement* content_elem,
                              ParseError* error) {
   AudioContentDescription* audio = new AudioContentDescription();
 
+  int preference = kMaxPayloadId;
   if (content_elem->FirstElement()) {
     for (const buzz::XmlElement* codec_elem =
              content_elem->FirstNamed(QN_GINGLE_AUDIO_PAYLOADTYPE);
@@ -380,6 +381,7 @@ bool ParseGingleAudioContent(const buzz::XmlElement* content_elem,
          codec_elem = codec_elem->NextNamed(QN_GINGLE_AUDIO_PAYLOADTYPE)) {
       AudioCodec codec;
       if (ParseGingleAudioCodec(codec_elem, &codec)) {
+        codec.preference = preference--;
         audio->AddCodec(codec);
       }
     }
@@ -406,12 +408,14 @@ bool ParseGingleVideoContent(const buzz::XmlElement* content_elem,
                              ParseError* error) {
   VideoContentDescription* video = new VideoContentDescription();
 
+  int preference = kMaxPayloadId;
   for (const buzz::XmlElement* codec_elem =
            content_elem->FirstNamed(QN_GINGLE_VIDEO_PAYLOADTYPE);
        codec_elem != NULL;
        codec_elem = codec_elem->NextNamed(QN_GINGLE_VIDEO_PAYLOADTYPE)) {
     VideoCodec codec;
     if (ParseGingleVideoCodec(codec_elem, &codec)) {
+      codec.preference = preference--;
       video->AddCodec(codec);
     }
   }
@@ -571,6 +575,7 @@ bool ParseJingleAudioContent(const buzz::XmlElement* content_elem,
   FeedbackParams content_feedback_params;
   ParseFeedbackParams(content_elem, &content_feedback_params);
 
+  int preference = kMaxPayloadId;
   for (const buzz::XmlElement* payload_elem =
            content_elem->FirstNamed(QN_JINGLE_RTP_PAYLOADTYPE);
       payload_elem != NULL;
@@ -578,6 +583,7 @@ bool ParseJingleAudioContent(const buzz::XmlElement* content_elem,
     AudioCodec codec;
     if (ParseJingleAudioCodec(payload_elem, &codec)) {
       AddFeedbackParams(content_feedback_params, &codec.feedback_params);
+      codec.preference = preference--;
       audio->AddCodec(codec);
     }
   }
@@ -611,6 +617,7 @@ bool ParseJingleVideoContent(const buzz::XmlElement* content_elem,
   FeedbackParams content_feedback_params;
   ParseFeedbackParams(content_elem, &content_feedback_params);
 
+  int preference = kMaxPayloadId;
   for (const buzz::XmlElement* payload_elem =
            content_elem->FirstNamed(QN_JINGLE_RTP_PAYLOADTYPE);
       payload_elem != NULL;
@@ -618,6 +625,7 @@ bool ParseJingleVideoContent(const buzz::XmlElement* content_elem,
     VideoCodec codec;
     if (ParseJingleVideoCodec(payload_elem, &codec)) {
       AddFeedbackParams(content_feedback_params, &codec.feedback_params);
+      codec.preference = preference--;
       video->AddCodec(codec);
     }
   }
@@ -681,6 +689,7 @@ bool ParseJingleRtpDataContent(const buzz::XmlElement* content_elem,
   FeedbackParams content_feedback_params;
   ParseFeedbackParams(content_elem, &content_feedback_params);
 
+  int preference = kMaxPayloadId;
   for (const buzz::XmlElement* payload_elem =
            content_elem->FirstNamed(QN_JINGLE_RTP_PAYLOADTYPE);
       payload_elem != NULL;
@@ -688,6 +697,7 @@ bool ParseJingleRtpDataContent(const buzz::XmlElement* content_elem,
     DataCodec codec;
     if (ParseJingleDataCodec(payload_elem, &codec)) {
       AddFeedbackParams(content_feedback_params, &codec.feedback_params);
+      codec.preference = preference--;
       data->AddCodec(codec);
     }
   }

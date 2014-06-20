@@ -38,6 +38,7 @@
 namespace cricket {
 
 static const int kMaxStaticPayloadId = 95;
+const int kMaxPayloadId = 127;
 
 bool FeedbackParam::operator==(const FeedbackParam& other) const {
   return _stricmp(other.id().c_str(), id().c_str()) == 0 &&

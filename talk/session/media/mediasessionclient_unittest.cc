@@ -32,6 +32,7 @@
 #include "talk/base/logging.h"
 #include "talk/base/scoped_ptr.h"
 #include "talk/media/base/fakemediaengine.h"
+#include "talk/media/base/testutils.h"
 #include "talk/media/devices/fakedevicemanager.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/client/basicportallocator.h"
@@ -67,6 +68,29 @@ static const cricket::AudioCodec kAudioCodecs[] = {
   cricket::AudioCodec(101, "EG711A", 8000,  64000, 1, 8),
   cricket::AudioCodec(0,   "PCMU",   8000,  64000, 1, 7),
   cricket::AudioCodec(8,   "PCMA",   8000,  64000, 1, 6),
+  cricket::AudioCodec(126, "CN",     32000, 0,     1, 5),
+  cricket::AudioCodec(105, "CN",     16000, 0,     1, 4),
+  cricket::AudioCodec(13,  "CN",     8000,  0,     1, 3),
+  cricket::AudioCodec(117, "red",    8000,  0,     1, 2),
+  cricket::AudioCodec(106, "telephone-event", 8000, 0, 1, 1)
+};
+
+// The codecs that our FakeMediaEngine will support with a different order of
+// supported codecs.
+static const cricket::AudioCodec kAudioCodecsDifferentPreference[] = {
+  cricket::AudioCodec(104, "ISAC",   32000, -1,    1, 17),
+  cricket::AudioCodec(97,  "IPCMWB", 16000, 80000, 1, 14),
+  cricket::AudioCodec(9,   "G722",   16000, 64000, 1, 13),
+  cricket::AudioCodec(119, "ISACLC", 16000, 40000, 1, 16),
+  cricket::AudioCodec(103, "ISAC",   16000, -1,    1, 18),
+  cricket::AudioCodec(99,  "speex",  16000, 22000, 1, 15),
+  cricket::AudioCodec(100, "EG711U", 8000,  64000, 1, 9),
+  cricket::AudioCodec(101, "EG711A", 8000,  64000, 1, 8),
+  cricket::AudioCodec(0,   "PCMU",   8000,  64000, 1, 7),
+  cricket::AudioCodec(8,   "PCMA",   8000,  64000, 1, 6),
+  cricket::AudioCodec(102, "iLBC",   8000,  13300, 1, 12),
+  cricket::AudioCodec(3,   "GSM",    8000,  13000, 1, 10),
+  cricket::AudioCodec(98,  "speex",  8000,  11000, 1, 11),
   cricket::AudioCodec(126, "CN",     32000, 0,     1, 5),
   cricket::AudioCodec(105, "CN",     16000, 0,     1, 4),
   cricket::AudioCodec(13,  "CN",     8000,  0,     1, 3),
@@ -253,123 +277,6 @@ const std::string kJingleInitiate(
      "        <payload-type                                             " \
      "          id='8' name='PCMA' clockrate='8000'>                    " \
      "          <parameter name='bitrate' value='64000'/>               " \
-     "        </payload-type>                                           " \
-     "        <payload-type                                             " \
-     "          id='126' name='CN' clockrate='32000' />                 " \
-     "        <payload-type                                             " \
-     "          id='105' name='CN' clockrate='16000' />                 " \
-     "        <payload-type                                             " \
-     "          id='13' name='CN' clockrate='8000' />                   " \
-     "        <payload-type                                             " \
-     "          id='117' name='red' clockrate='8000' />                 " \
-     "        <payload-type                                             " \
-     "          id='106' name='telephone-event' clockrate='8000' />     " \
-     "      </description>                                              " \
-     "     <transport xmlns=\"http://www.google.com/transport/p2p\"/>   " \
-     "    </content>                                                    " \
-     "  </jingle>                                                       " \
-     "</iq>                                                             ");
-
-// Initiate string with a different order of supported codecs.
-// Should accept the supported ones, but with our desired order.
-const std::string kGingleInitiateDifferentPreference(
-     "<iq xmlns='jabber:client' from='me@domain.com/resource'         " \
-     "    to='user@domain.com/resource' type='set' id='123'>          " \
-     "  <session xmlns='http://www.google.com/session' type='initiate'" \
-     "    id='abcdef' initiator='me@domain.com/resource'>             " \
-     "    <description xmlns='http://www.google.com/session/phone'>   " \
-     "      <payload-type xmlns='http://www.google.com/session/phone' " \
-     "        id='104' name='ISAC' clockrate='32000' />               " \
-     "      <payload-type xmlns='http://www.google.com/session/phone' " \
-     "        id='97' name='IPCMWB' clockrate='16000' bitrate='80000' />   " \
-     "      <payload-type xmlns='http://www.google.com/session/phone' " \
-     "        id='9' name='G722' clockrate='16000' bitrate='64000' /> " \
-     "      <payload-type xmlns='http://www.google.com/session/phone' " \
-     "        id='119' name='ISACLC' clockrate='16000' bitrate='40000' />  " \
-     "      <payload-type xmlns='http://www.google.com/session/phone' " \
-     "        id='103' name='ISAC' clockrate='16000' />               " \
-     "      <payload-type xmlns='http://www.google.com/session/phone' " \
-     "        id='99' name='speex' clockrate='16000' bitrate='22000' />    " \
-     "      <payload-type xmlns='http://www.google.com/session/phone' " \
-     "        id='100' name='EG711U' clockrate='8000' bitrate='64000' />   " \
-     "      <payload-type xmlns='http://www.google.com/session/phone' " \
-     "        id='101' name='EG711A' clockrate='8000' bitrate='64000' />   " \
-     "      <payload-type xmlns='http://www.google.com/session/phone' " \
-     "        id='0' name='PCMU' clockrate='8000' bitrate='64000' />  " \
-     "      <payload-type xmlns='http://www.google.com/session/phone' " \
-     "        id='8' name='PCMA' clockrate='8000' bitrate='64000' />  " \
-     "      <payload-type xmlns='http://www.google.com/session/phone' " \
-     "        id='102' name='iLBC' clockrate='8000' bitrate='13300' />" \
-     "      <payload-type xmlns='http://www.google.com/session/phone' " \
-     "        id='3' name='GSM' clockrate='8000' bitrate='13000' />   " \
-     "      <payload-type xmlns='http://www.google.com/session/phone' " \
-     "        id='98' name='speex' clockrate='8000' bitrate='11000' />" \
-     "      <payload-type xmlns='http://www.google.com/session/phone' " \
-     "        id='126' name='CN' clockrate='32000' />                 " \
-     "      <payload-type xmlns='http://www.google.com/session/phone' " \
-     "        id='105' name='CN' clockrate='16000' />                 " \
-     "      <payload-type xmlns='http://www.google.com/session/phone' " \
-     "        id='13' name='CN' clockrate='8000' />                   " \
-     "      <payload-type xmlns='http://www.google.com/session/phone' " \
-     "        id='117' name='red' clockrate='8000' />                 " \
-     "      <payload-type xmlns='http://www.google.com/session/phone' " \
-     "        id='106' name='telephone-event' clockrate='8000' />     " \
-     "    </description>                                              " \
-     "  </session>                                                    " \
-     "</iq>                                                           ");
-
-const std::string kJingleInitiateDifferentPreference(
-     "<iq xmlns='jabber:client' from='me@domain.com/resource'           " \
-     "    to='user@domain.com/resource' type='set' id='123'>            " \
-     "  <jingle xmlns='urn:xmpp:jingle:1' action='session-initiate'     " \
-     "          sid='abcdef' initiator='me@domain.com/resource'>        " \
-     "    <content name='test audio'>                                   " \
-     "      <description xmlns='urn:xmpp:jingle:apps:rtp:1' media='audio'> " \
-     "        <payload-type id='104' name='ISAC' clockrate='32000'/>    " \
-     "        <payload-type                                             " \
-     "          id='97' name='IPCMWB' clockrate='16000'>                " \
-     "          <parameter name='bitrate' value='80000'/>               " \
-     "        </payload-type>                                           " \
-     "        <payload-type                                             " \
-     "          id='9' name='G722' clockrate='16000'>                   " \
-     "          <parameter name='bitrate' value='64000'/>               " \
-     "        </payload-type>                                           " \
-     "        <payload-type                                             " \
-     "          id='119' name='ISACLC' clockrate='16000'>               " \
-     "          <parameter name='bitrate' value='40000'/>               " \
-     "        </payload-type>                                           " \
-     "        <payload-type id='103' name='ISAC' clockrate='16000'/>    " \
-     "        <payload-type                                             " \
-     "          id='99' name='speex' clockrate='16000'>                 " \
-     "          <parameter name='bitrate' value='22000'/>               " \
-     "        </payload-type>                                           " \
-     "        <payload-type                                             " \
-     "          id='100' name='EG711U' clockrate='8000'>                " \
-     "          <parameter name='bitrate' value='64000'/>               " \
-     "        </payload-type>                                           " \
-     "        <payload-type                                             " \
-     "          id='101' name='EG711A' clockrate='8000'>                " \
-     "          <parameter name='bitrate' value='64000'/>               " \
-     "        </payload-type>                                           " \
-     "        <payload-type                                             " \
-     "          id='0' name='PCMU' clockrate='8000'>                    " \
-     "          <parameter name='bitrate' value='64000'/>               " \
-     "        </payload-type>                                           " \
-     "        <payload-type                                             " \
-     "          id='8' name='PCMA' clockrate='8000'>                    " \
-     "          <parameter name='bitrate' value='64000'/>               " \
-     "        </payload-type>                                           " \
-     "        <payload-type                                             " \
-     "          id='102' name='iLBC' clockrate='8000'>                  " \
-     "          <parameter name='bitrate' value='13300'/>               " \
-     "        </payload-type>                                           " \
-     "        <payload-type                                             " \
-     "          id='3' name='GSM' clockrate='8000'>                     " \
-     "          <parameter name='bitrate' value='13000'/>               " \
-     "        </payload-type>                                           " \
-     "        <payload-type                                             " \
-     "          id='98' name='speex' clockrate='8000'>                  " \
-     "          <parameter name='bitrate' value='11000'/>               " \
      "        </payload-type>                                           " \
      "        <payload-type                                             " \
      "          id='126' name='CN' clockrate='32000' />                 " \
@@ -2793,6 +2700,8 @@ class MediaSessionClientTest : public sigslot::has_slots<> {
     expected_data_fb_params_ = params_nack;
   }
 
+  cricket::FakeMediaEngine* fme() { return fme_; }
+
  private:
   void OnSendStanza(cricket::SessionManager* manager,
                     const buzz::XmlElement* stanza) {
@@ -2949,11 +2858,15 @@ TEST(MediaSessionTest, JingleGoodInitiateAllSupportedAudioCodecs) {
   test->TestHasAllSupportedAudioCodecs(elem.get());
 }
 
+// Changes the codecs that our FakeMediaEngine will support with a different
+// preference order than the incoming offer.
+// Verifies the answer accepts the preference order of the remote peer.
 TEST(MediaSessionTest, JingleGoodInitiateDifferentPreferenceAudioCodecs) {
   talk_base::scoped_ptr<MediaSessionClientTest> test(JingleTest());
+  test->fme()->SetAudioCodecs(MAKE_VECTOR(kAudioCodecsDifferentPreference));
   talk_base::scoped_ptr<buzz::XmlElement> elem;
   test->TestGoodIncomingInitiate(
-      kJingleInitiateDifferentPreference, AudioCallOptions(), elem.use());
+      kJingleInitiate, AudioCallOptions(), elem.use());
   test->TestHasAllSupportedAudioCodecs(elem.get());
 }
 
@@ -3213,11 +3126,15 @@ TEST(MediaSessionTest, GingleGoodInitiateAllSupportedAudioCodecsWithCrypto) {
   test->TestHasAllSupportedAudioCodecs(elem.get());
 }
 
+// Changes the codecs that our FakeMediaEngine will support with a different
+// preference order than the incoming offer.
+// Verifies the answer accepts the preference order of the remote peer.
 TEST(MediaSessionTest, GingleGoodInitiateDifferentPreferenceAudioCodecs) {
-  talk_base::scoped_ptr<buzz::XmlElement> elem;
   talk_base::scoped_ptr<MediaSessionClientTest> test(GingleTest());
+  test->fme()->SetAudioCodecs(MAKE_VECTOR(kAudioCodecsDifferentPreference));
+  talk_base::scoped_ptr<buzz::XmlElement> elem;
   test->TestGoodIncomingInitiate(
-      kGingleInitiateDifferentPreference, AudioCallOptions(), elem.use());
+      kGingleInitiate, AudioCallOptions(), elem.use());
   test->TestHasAllSupportedAudioCodecs(elem.get());
 }
 
