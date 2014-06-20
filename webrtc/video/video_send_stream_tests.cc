@@ -13,6 +13,8 @@
 
 #include "webrtc/call.h"
 #include "webrtc/common_video/interface/i420_video_frame.h"
+#include "webrtc/common_video/interface/native_handle.h"
+#include "webrtc/common_video/interface/texture_video_frame.h"
 #include "webrtc/frame_callback.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
@@ -20,7 +22,9 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/system_wrappers/interface/ref_count.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/scoped_vector.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/test/direct_transport.h"
@@ -37,6 +41,23 @@
 namespace webrtc {
 
 enum VideoFormat { kGeneric, kVP8, };
+
+void ExpectEqualFrames(const I420VideoFrame& frame1,
+                       const I420VideoFrame& frame2);
+void ExpectEqualTextureFrames(const I420VideoFrame& frame1,
+                              const I420VideoFrame& frame2);
+void ExpectEqualBufferFrames(const I420VideoFrame& frame1,
+                             const I420VideoFrame& frame2);
+void ExpectEqualFramesVector(const std::vector<I420VideoFrame*>& frames1,
+                             const std::vector<I420VideoFrame*>& frames2);
+I420VideoFrame* CreateI420VideoFrame(int width, int height, uint8_t data);
+
+class FakeNativeHandle : public NativeHandle {
+ public:
+  FakeNativeHandle() {}
+  virtual ~FakeNativeHandle() {}
+  virtual void* GetHandle() { return NULL; }
+};
 
 class VideoSendStreamTest : public ::testing::Test {
  public:
@@ -1217,6 +1238,153 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
   frame_generator_capturer->Stop();
   send_stream_->Stop();
   call->DestroyVideoSendStream(send_stream_);
+}
+
+TEST_F(VideoSendStreamTest, CapturesTextureAndI420VideoFrames) {
+  class FrameObserver : public I420FrameCallback {
+   public:
+    FrameObserver() : output_frame_event_(EventWrapper::Create()) {}
+
+    void FrameCallback(I420VideoFrame* video_frame) OVERRIDE {
+      // Clone the frame because the caller owns it.
+      output_frames_.push_back(video_frame->CloneFrame());
+      output_frame_event_->Set();
+    }
+
+    void WaitOutputFrame() {
+      const unsigned long kWaitFrameTimeoutMs = 3000;
+      EXPECT_EQ(kEventSignaled, output_frame_event_->Wait(kWaitFrameTimeoutMs))
+          << "Timeout while waiting for output frames.";
+    }
+
+    const std::vector<I420VideoFrame*>& output_frames() const {
+      return output_frames_.get();
+    }
+
+   private:
+    // Delivered output frames.
+    ScopedVector<I420VideoFrame> output_frames_;
+
+    // Indicate an output frame has arrived.
+    scoped_ptr<EventWrapper> output_frame_event_;
+  };
+
+  // Initialize send stream.
+  test::NullTransport transport;
+  Call::Config call_config(&transport);
+  scoped_ptr<Call> call(Call::Create(call_config));
+  CreateTestConfig(call.get(), 1);
+  FrameObserver observer;
+  send_config_.pre_encode_callback = &observer;
+  send_stream_ =
+      call->CreateVideoSendStream(send_config_, video_streams_, NULL);
+
+  // Prepare five input frames. Send I420VideoFrame and TextureVideoFrame
+  // alternatively.
+  ScopedVector<I420VideoFrame> input_frames;
+  int width = static_cast<int>(video_streams_[0].width);
+  int height = static_cast<int>(video_streams_[0].height);
+  webrtc::RefCountImpl<FakeNativeHandle>* handle1 =
+      new webrtc::RefCountImpl<FakeNativeHandle>();
+  webrtc::RefCountImpl<FakeNativeHandle>* handle2 =
+      new webrtc::RefCountImpl<FakeNativeHandle>();
+  webrtc::RefCountImpl<FakeNativeHandle>* handle3 =
+      new webrtc::RefCountImpl<FakeNativeHandle>();
+  input_frames.push_back(new TextureVideoFrame(handle1, width, height, 1, 1));
+  input_frames.push_back(new TextureVideoFrame(handle2, width, height, 2, 2));
+  input_frames.push_back(CreateI420VideoFrame(width, height, 1));
+  input_frames.push_back(CreateI420VideoFrame(width, height, 2));
+  input_frames.push_back(new TextureVideoFrame(handle3, width, height, 3, 3));
+
+  send_stream_->Start();
+  for (size_t i = 0; i < input_frames.size(); i++) {
+    // Make a copy of the input frame because the buffer will be swapped.
+    scoped_ptr<I420VideoFrame> frame(input_frames[i]->CloneFrame());
+    send_stream_->Input()->SwapFrame(frame.get());
+    // Do not send the next frame too fast, so the frame dropper won't drop it.
+    if (i < input_frames.size() - 1)
+      SleepMs(1000 / video_streams_[0].max_framerate);
+    // Wait until the output frame is received before sending the next input
+    // frame. Or the previous input frame may be replaced without delivering.
+    observer.WaitOutputFrame();
+  }
+  send_stream_->Stop();
+
+  // Test if the input and output frames are the same. render_time_ms and
+  // timestamp are not compared because capturer sets those values.
+  ExpectEqualFramesVector(input_frames.get(), observer.output_frames());
+
+  call->DestroyVideoSendStream(send_stream_);
+}
+
+void ExpectEqualFrames(const I420VideoFrame& frame1,
+                       const I420VideoFrame& frame2) {
+  if (frame1.native_handle() != NULL || frame2.native_handle() != NULL)
+    ExpectEqualTextureFrames(frame1, frame2);
+  else
+    ExpectEqualBufferFrames(frame1, frame2);
+}
+
+void ExpectEqualTextureFrames(const I420VideoFrame& frame1,
+                              const I420VideoFrame& frame2) {
+  EXPECT_EQ(frame1.native_handle(), frame2.native_handle());
+  EXPECT_EQ(frame1.width(), frame2.width());
+  EXPECT_EQ(frame1.height(), frame2.height());
+}
+
+void ExpectEqualBufferFrames(const I420VideoFrame& frame1,
+                             const I420VideoFrame& frame2) {
+  EXPECT_EQ(frame1.width(), frame2.width());
+  EXPECT_EQ(frame1.height(), frame2.height());
+  EXPECT_EQ(frame1.stride(kYPlane), frame2.stride(kYPlane));
+  EXPECT_EQ(frame1.stride(kUPlane), frame2.stride(kUPlane));
+  EXPECT_EQ(frame1.stride(kVPlane), frame2.stride(kVPlane));
+  EXPECT_EQ(frame1.ntp_time_ms(), frame2.ntp_time_ms());
+  ASSERT_EQ(frame1.allocated_size(kYPlane), frame2.allocated_size(kYPlane));
+  EXPECT_EQ(0,
+            memcmp(frame1.buffer(kYPlane),
+                   frame2.buffer(kYPlane),
+                   frame1.allocated_size(kYPlane)));
+  ASSERT_EQ(frame1.allocated_size(kUPlane), frame2.allocated_size(kUPlane));
+  EXPECT_EQ(0,
+            memcmp(frame1.buffer(kUPlane),
+                   frame2.buffer(kUPlane),
+                   frame1.allocated_size(kUPlane)));
+  ASSERT_EQ(frame1.allocated_size(kVPlane), frame2.allocated_size(kVPlane));
+  EXPECT_EQ(0,
+            memcmp(frame1.buffer(kVPlane),
+                   frame2.buffer(kVPlane),
+                   frame1.allocated_size(kVPlane)));
+}
+
+void ExpectEqualFramesVector(const std::vector<I420VideoFrame*>& frames1,
+                             const std::vector<I420VideoFrame*>& frames2) {
+  EXPECT_EQ(frames1.size(), frames2.size());
+  for (size_t i = 0; i < std::min(frames1.size(), frames2.size()); ++i)
+    ExpectEqualFrames(*frames1[i], *frames2[i]);
+}
+
+I420VideoFrame* CreateI420VideoFrame(int width, int height, uint8_t data) {
+  I420VideoFrame* frame = new I420VideoFrame();
+  const int kSizeY = width * height * 2;
+  const int kSizeUV = width * height;
+  scoped_ptr<uint8_t[]> buffer(new uint8_t[kSizeY]);
+  memset(buffer.get(), data, kSizeY);
+  frame->CreateFrame(kSizeY,
+                     buffer.get(),
+                     kSizeUV,
+                     buffer.get(),
+                     kSizeUV,
+                     buffer.get(),
+                     width,
+                     height,
+                     width,
+                     width / 2,
+                     width / 2);
+  frame->set_timestamp(data);
+  frame->set_ntp_time_ms(data);
+  frame->set_render_time_ms(data);
+  return frame;
 }
 
 }  // namespace webrtc
