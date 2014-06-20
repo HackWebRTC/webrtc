@@ -3261,7 +3261,7 @@ bool WebRtcVideoMediaChannel::SendFrame(
   }
   const VideoFrame* frame_out = frame;
   talk_base::scoped_ptr<VideoFrame> processed_frame;
-  // Disable muting for screencast.
+  // TODO(hellner): Remove the need for disabling mute when screencasting.
   const bool mute = (send_channel->muted() && !is_screencast);
   send_channel->ProcessFrame(*frame_out, mute, processed_frame.use());
   if (processed_frame) {
@@ -3766,7 +3766,6 @@ bool WebRtcVideoMediaChannel::SetSendCodec(
       cricket::VideoFormat::FpsToInterval(target_codec.maxFramerate));
   return true;
 }
-
 
 static std::string ToString(webrtc::VideoCodecComplexity complexity) {
   switch (complexity) {
