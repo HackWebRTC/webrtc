@@ -47,10 +47,6 @@
 
 #if !defined(LIBPEERCONNECTION_LIB) && \
     !defined(LIBPEERCONNECTION_IMPLEMENTATION)
-// If you hit this, then you've tried to include this header from outside
-// the shared library.  An instance of this class must only be created from
-// within the library that actually implements it.  Otherwise use the
-// WebRtcMediaEngine to construct an instance.
 #error "Bogus include."
 #endif
 

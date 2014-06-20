@@ -1002,9 +1002,6 @@ bool WebRtcVoiceEngine::SetDevices(const Device* in_device,
       LOG_RTCERR2(SetRecordingDevice, in_name, in_id);
       ret = false;
     }
-    webrtc::AudioProcessing* ap = voe()->base()->audio_processing();
-    if (ap)
-      ap->Initialize();
   }
 
   // Find the playout device id in VoiceEngine and set playout device.
@@ -3131,23 +3128,6 @@ bool WebRtcVoiceMediaChannel::MuteStream(uint32 ssrc, bool muted) {
     LOG_RTCERR2(SetInputMute, channel, muted);
     return false;
   }
-  // We set the AGC to mute state only when all the channels are muted.
-  // This implementation is not ideal, instead we should signal the AGC when
-  // the mic channel is muted/unmuted. We can't do it today because there
-  // is no good way to know which stream is mapping to the mic channel.
-  bool all_muted = muted;
-  for (ChannelMap::const_iterator iter = send_channels_.begin();
-       iter != send_channels_.end() && all_muted; ++iter) {
-    if (engine()->voe()->volume()->GetInputMute(iter->second->channel(),
-                                                all_muted)) {
-      LOG_RTCERR1(GetInputMute, iter->second->channel());
-      return false;
-    }
-  }
-
-  webrtc::AudioProcessing* ap = engine()->voe()->base()->audio_processing();
-  if (ap)
-    ap->set_output_will_be_muted(all_muted);
   return true;
 }
 
