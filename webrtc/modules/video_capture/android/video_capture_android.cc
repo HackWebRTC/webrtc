@@ -15,6 +15,7 @@
 #include "webrtc/modules/video_capture/android/device_info_android.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logcat_trace_context.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/ref_count.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
@@ -36,6 +37,7 @@ void JNICALL ProvideCameraFrame(
     jobject,
     jbyteArray javaCameraFrame,
     jint length,
+    jlong timeStamp,
     jlong context) {
   webrtc::videocapturemodule::VideoCaptureAndroid* captureModule =
       reinterpret_cast<webrtc::videocapturemodule::VideoCaptureAndroid*>(
@@ -90,7 +92,7 @@ int32_t SetCaptureAndroidVM(JavaVM* javaVM, jobject context) {
          "(JI)V",
          reinterpret_cast<void*>(&OnOrientationChanged)},
         {"ProvideCameraFrame",
-         "([BIJ)V",
+         "([BIJJ)V",
          reinterpret_cast<void*>(&ProvideCameraFrame)}};
     if (ats.env()->RegisterNatives(g_java_capturer_class,
                                    native_methods, 3) != 0)
@@ -146,18 +148,18 @@ int32_t VideoCaptureAndroid::Init(const int32_t id,
     return -1;
 
   // Store the device name
+  LOG(LS_INFO) << "VideoCaptureAndroid::Init: " << deviceUniqueIdUTF8;
+  size_t camera_id = 0;
+  if (!_deviceInfo.FindCameraIndex(deviceUniqueIdUTF8, &camera_id))
+    return -1;
   _deviceUniqueId = new char[nameLength + 1];
   memcpy(_deviceUniqueId, deviceUniqueIdUTF8, nameLength + 1);
 
   AttachThreadScoped ats(g_jvm);
   JNIEnv* env = ats.env();
-
   jmethodID ctor = env->GetMethodID(g_java_capturer_class, "<init>", "(IJ)V");
   assert(ctor);
   jlong j_this = reinterpret_cast<intptr_t>(this);
-  size_t camera_id = 0;
-  if (!_deviceInfo.FindCameraIndex(deviceUniqueIdUTF8, &camera_id))
-    return -1;
   _jCapturer = env->NewGlobalRef(
       env->NewObject(g_java_capturer_class, ctor, camera_id, j_this));
   assert(_jCapturer);

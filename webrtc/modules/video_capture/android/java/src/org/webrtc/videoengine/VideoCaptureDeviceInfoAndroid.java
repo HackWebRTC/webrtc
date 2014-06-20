@@ -10,14 +10,8 @@
 
 package org.webrtc.videoengine;
 
-import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
-import android.content.Context;
 import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.Parameters;
 import android.hardware.Camera.Size;
@@ -99,6 +93,7 @@ public class VideoCaptureDeviceInfoAndroid {
             .put("mfpsRanges", mfpsRanges);
       }
       String ret = devices.toString(2);
+      Log.d(TAG, ret);
       return ret;
     } catch (JSONException e) {
       throw new RuntimeException(e);
