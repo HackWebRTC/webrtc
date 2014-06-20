@@ -430,8 +430,10 @@ class IceRestartAnswerLatch {
         // No transport description exist. This is not an ice restart.
         continue;
       }
-      if (new_transport_desc->ice_pwd != old_transport_desc->ice_pwd &&
-          new_transport_desc->ice_ufrag != old_transport_desc->ice_ufrag) {
+      if (cricket::IceCredentialsChanged(old_transport_desc->ice_ufrag,
+                                         old_transport_desc->ice_pwd,
+                                         new_transport_desc->ice_ufrag,
+                                         new_transport_desc->ice_pwd)) {
         LOG(LS_INFO) << "Remote peer request ice restart.";
         ice_restart_ = true;
         break;

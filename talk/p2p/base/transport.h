@@ -189,6 +189,11 @@ struct TransportStats {
 
 bool BadTransportDescription(const std::string& desc, std::string* err_desc);
 
+bool IceCredentialsChanged(const std::string& old_ufrag,
+                           const std::string& old_pwd,
+                           const std::string& new_ufrag,
+                           const std::string& new_pwd);
+
 class Transport : public talk_base::MessageHandler,
                   public sigslot::has_slots<> {
  public:

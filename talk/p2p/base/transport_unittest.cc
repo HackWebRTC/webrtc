@@ -52,6 +52,9 @@ using talk_base::SocketAddress;
 static const char kIceUfrag1[] = "TESTICEUFRAG0001";
 static const char kIcePwd1[] = "TESTICEPWD00000000000001";
 
+static const char kIceUfrag2[] = "TESTICEUFRAG0002";
+static const char kIcePwd2[] = "TESTICEPWD00000000000002";
+
 class TransportTest : public testing::Test,
                       public sigslot::has_slots<> {
  public:
@@ -182,6 +185,96 @@ TEST_F(TransportTest, TestChannelIceParameters) {
   EXPECT_EQ(cricket::ICEMODE_FULL, channel_->remote_ice_mode());
   EXPECT_EQ(kIceUfrag1, channel_->remote_ice_ufrag());
   EXPECT_EQ(kIcePwd1, channel_->remote_ice_pwd());
+}
+
+// Verifies that IceCredentialsChanged returns true when either ufrag or pwd
+// changed, and false in other cases.
+TEST_F(TransportTest, TestIceCredentialsChanged) {
+  EXPECT_TRUE(cricket::IceCredentialsChanged("u1", "p1", "u2", "p2"));
+  EXPECT_TRUE(cricket::IceCredentialsChanged("u1", "p1", "u2", "p1"));
+  EXPECT_TRUE(cricket::IceCredentialsChanged("u1", "p1", "u1", "p2"));
+  EXPECT_FALSE(cricket::IceCredentialsChanged("u1", "p1", "u1", "p1"));
+}
+
+// This test verifies that the callee's ICE role changes from controlled to
+// controlling when the callee triggers an ICE restart.
+TEST_F(TransportTest, TestIceControlledToControllingOnIceRestart) {
+  EXPECT_TRUE(SetupChannel());
+  transport_->SetIceRole(cricket::ICEROLE_CONTROLLED);
+
+  cricket::TransportDescription desc(
+      cricket::NS_JINGLE_ICE_UDP, kIceUfrag1, kIcePwd1);
+  ASSERT_TRUE(transport_->SetRemoteTransportDescription(desc,
+                                                        cricket::CA_OFFER,
+                                                        NULL));
+  ASSERT_TRUE(transport_->SetLocalTransportDescription(desc,
+                                                       cricket::CA_ANSWER,
+                                                       NULL));
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLED, transport_->ice_role());
+
+  cricket::TransportDescription new_local_desc(
+      cricket::NS_JINGLE_ICE_UDP, kIceUfrag2, kIcePwd2);
+  ASSERT_TRUE(transport_->SetLocalTransportDescription(new_local_desc,
+                                                       cricket::CA_OFFER,
+                                                       NULL));
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLING, transport_->ice_role());
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLING, channel_->GetIceRole());
+}
+
+// This test verifies that the caller's ICE role changes from controlling to
+// controlled when the callee triggers an ICE restart.
+TEST_F(TransportTest, TestIceControllingToControlledOnIceRestart) {
+  EXPECT_TRUE(SetupChannel());
+  transport_->SetIceRole(cricket::ICEROLE_CONTROLLING);
+
+  cricket::TransportDescription desc(
+      cricket::NS_JINGLE_ICE_UDP, kIceUfrag1, kIcePwd1);
+  ASSERT_TRUE(transport_->SetLocalTransportDescription(desc,
+                                                       cricket::CA_OFFER,
+                                                       NULL));
+  ASSERT_TRUE(transport_->SetRemoteTransportDescription(desc,
+                                                        cricket::CA_ANSWER,
+                                                        NULL));
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLING, transport_->ice_role());
+
+  cricket::TransportDescription new_local_desc(
+      cricket::NS_JINGLE_ICE_UDP, kIceUfrag2, kIcePwd2);
+  ASSERT_TRUE(transport_->SetLocalTransportDescription(new_local_desc,
+                                                       cricket::CA_ANSWER,
+                                                       NULL));
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLED, transport_->ice_role());
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLED, channel_->GetIceRole());
+}
+
+// This test verifies that the caller's ICE role is still controlling after the
+// callee triggers ICE restart if the callee's ICE mode is LITE.
+TEST_F(TransportTest, TestIceControllingOnIceRestartIfRemoteIsIceLite) {
+  EXPECT_TRUE(SetupChannel());
+  transport_->SetIceRole(cricket::ICEROLE_CONTROLLING);
+
+  cricket::TransportDescription desc(
+      cricket::NS_JINGLE_ICE_UDP, kIceUfrag1, kIcePwd1);
+  ASSERT_TRUE(transport_->SetLocalTransportDescription(desc,
+                                                       cricket::CA_OFFER,
+                                                       NULL));
+
+  cricket::TransportDescription remote_desc(
+      cricket::NS_JINGLE_ICE_UDP, std::vector<std::string>(),
+      kIceUfrag1, kIcePwd1, cricket::ICEMODE_LITE,
+      cricket::CONNECTIONROLE_NONE, NULL, cricket::Candidates());
+  ASSERT_TRUE(transport_->SetRemoteTransportDescription(remote_desc,
+                                                        cricket::CA_ANSWER,
+                                                        NULL));
+
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLING, transport_->ice_role());
+
+  cricket::TransportDescription new_local_desc(
+      cricket::NS_JINGLE_ICE_UDP, kIceUfrag2, kIcePwd2);
+  ASSERT_TRUE(transport_->SetLocalTransportDescription(new_local_desc,
+                                                       cricket::CA_ANSWER,
+                                                       NULL));
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLING, transport_->ice_role());
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLING, channel_->GetIceRole());
 }
 
 // This test verifies that the Completed and Failed states can be reached.
