@@ -324,6 +324,13 @@ class BaseChannel
   void MaybeCacheRtpAbsSendTimeHeaderExtension(
     const std::vector<RtpHeaderExtension>& extensions);
 
+  bool SetRecvRtpHeaderExtensions_w(const MediaContentDescription* content,
+                                    MediaChannel* media_channel,
+                                    std::string* error_desc);
+  bool SetSendRtpHeaderExtensions_w(const MediaContentDescription* content,
+                                    MediaChannel* media_channel,
+                                    std::string* error_desc);
+
   bool CheckSrtpConfig(const std::vector<CryptoParams>& cryptos,
                        bool* dtls,
                        std::string* error_desc);
