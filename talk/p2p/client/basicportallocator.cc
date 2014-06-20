@@ -398,8 +398,6 @@ void BasicPortAllocatorSession::OnAllocate() {
     DoAllocate();
 
   allocation_started_ = true;
-  if (running_)
-    network_thread_->PostDelayed(ALLOCATE_DELAY, this, MSG_ALLOCATE);
 }
 
 // For each network, see if we have a sequence that covers it already.  If not,

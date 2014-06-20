@@ -280,6 +280,19 @@ TEST_F(PortAllocatorTest, TestBasic) {
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
 }
 
+// Tests that we allocator session not trying to allocate ports for every 250ms.
+TEST_F(PortAllocatorTest, TestNoNetworkInterface) {
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  // Waiting for one second to make sure BasicPortAllocatorSession has not
+  // called OnAllocate multiple times. In old behavior it's called every 250ms.
+  // When there are no network interfaces, each execution of OnAllocate will
+  // result in SignalCandidatesAllocationDone signal.
+  talk_base::Thread::Current()->ProcessMessages(1000);
+  EXPECT_TRUE(candidate_allocation_done_);
+  EXPECT_EQ(0U, candidates_.size());
+}
+
 // Tests that we can get all the desired addresses successfully.
 TEST_F(PortAllocatorTest, TestGetAllPortsWithMinimumStepDelay) {
   AddInterface(kClientAddr);
