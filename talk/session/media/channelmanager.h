@@ -42,8 +42,6 @@
 
 namespace cricket {
 
-const int kDefaultAudioDelayOffset = 0;
-
 class Soundclip;
 class VideoProcessor;
 class VoiceChannel;
