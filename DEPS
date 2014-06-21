@@ -51,6 +51,9 @@ deps = {
   "third_party/clang_format/script":
     From("chromium_deps", "src/third_party/clang_format/script"),
 
+  "third_party/colorama/src":
+    From("chromium_deps", "src/third_party/colorama/src"),
+
   "third_party/expat":
     Var("chromium_trunk") + "/src/third_party/expat@" + Var("chromium_revision"),
 
