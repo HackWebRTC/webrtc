@@ -170,5 +170,6 @@ config("common_config") {
 static_library("webrtc") {
   deps = [
     "base:webrtc_base",
+    "system_wrappers",
   ]
 }

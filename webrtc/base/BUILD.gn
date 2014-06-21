@@ -122,10 +122,7 @@ static_library("webrtc_base") {
   cflags = []
   cflags_cc = []
 
-  configs -= [ "//build/config/compiler:chromium_code" ]
-  configs += [ "//build/config/compiler:no_chromium_code" ]
   configs += [
-    "..:common_inherited_config",
     "..:common_config",
     ":webrtc_base_config",
   ]
