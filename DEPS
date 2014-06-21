@@ -11,7 +11,7 @@ vars = {
   "googlecode_url": "http://%s.googlecode.com/svn",
   "sourceforge_url": "http://svn.code.sf.net/p/%(repo)s/code",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-  "chromium_revision": "272489",
+  "chromium_revision": "277350",
 
   # A small subset of WebKit is needed for the Android Python test framework.
   "webkit_trunk": "http://src.chromium.org/blink/trunk",
@@ -137,8 +137,14 @@ deps = {
   "tools/python":
     Var("chromium_trunk") + "/src/tools/python@" + Var("chromium_revision"),
 
+  "tools/sanitizer_options":
+    File(Var("chromium_trunk") + "/src/base/debug/sanitizer_options.cc@" + Var("chromium_revision")),
+
   "tools/swarming_client":
     From("chromium_deps", "src/tools/swarming_client"),
+
+  "tools/tsan_suppressions":
+    File(Var("chromium_trunk") + "/src/base/debug/tsan_suppressions.cc@" + Var("chromium_revision")),
 
   "tools/valgrind":
     Var("chromium_trunk") + "/src/tools/valgrind@" + Var("chromium_revision"),
@@ -160,7 +166,7 @@ deps = {
 deps_os = {
   "win": {
     "third_party/drmemory":
-      Var("chromium_trunk") + "/src/third_party/drmemory@275048",
+      Var("chromium_trunk") + "/src/third_party/drmemory@" + Var("chromium_revision"),
 
     "third_party/winsdk_samples/src":
       (Var("googlecode_url") % "webrtc") + "/deps/third_party/winsdk_samples_v71@3145",
@@ -172,10 +178,6 @@ deps_os = {
     # NSS, for SSLClientSocketNSS.
     "third_party/nss":
       From("chromium_deps", "src/third_party/nss"),
-
-    # SyzyASan to make it possible to run tests under ASan on Windows.
-    "third_party/syzygy/binaries":
-      From("chromium_deps", "src/third_party/syzygy/binaries"),
 
     "tools/find_depot_tools":
       File(Var("chromium_trunk") + "/src/tools/find_depot_tools.py@" + Var("chromium_revision")),
@@ -344,6 +346,17 @@ hooks = [
                 "--no_auth",
                 "--bucket", "chromium-drmemory",
                 "-s", Var("root_dir") + "/third_party/drmemory/drmemory-windows-sfx.exe.sha1",
+    ],
+  },
+  {
+    # Pull the Syzygy binaries, used for optimization and instrumentation.
+    "name": "syzygy-binaries",
+    "pattern": ".",
+    "action": ["python",
+               Var("root_dir") + "/build/get_syzygy_binaries.py",
+               "--output-dir=%s/third_party/syzygy/binaries" % Var("root_dir"),
+               "--revision=b08fb72610963d31cc3eae33f746a04e263bd860",
+               "--overwrite",
     ],
   },
   {

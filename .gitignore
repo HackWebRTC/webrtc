@@ -97,7 +97,9 @@
 /tools/gyp
 /tools/protoc_wrapper
 /tools/python
+/tools/sanitizer_options
 /tools/swarming_client
+/tools/tsan_suppressions
 /tools/valgrind
 /tools/win
 /webrtc/examples/android/media_demo/bin

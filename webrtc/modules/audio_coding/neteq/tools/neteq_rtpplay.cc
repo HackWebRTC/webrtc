@@ -575,7 +575,6 @@ size_t ReplacePayload(webrtc::test::InputAudioFile* replacement_audio_file,
             " not supported or unknown." << std::endl;
         webrtc::Trace::ReturnTrace();
         exit(1);
-        assert(false);
     }
   }
   return payload_len;
