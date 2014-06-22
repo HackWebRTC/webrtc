@@ -55,6 +55,7 @@
 /third_party/asan
 /third_party/binutils
 /third_party/clang_format
+/third_party/colorama
 /third_party/cygwin
 /third_party/directxsdk
 /third_party/expat

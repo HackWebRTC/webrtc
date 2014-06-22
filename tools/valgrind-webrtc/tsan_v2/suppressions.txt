@@ -35,3 +35,12 @@ race:talk/base/thread.cc
 # third_party/usrsctp
 # TODO(jiayl): https://code.google.com/p/webrtc/issues/detail?id=3492
 race:third_party/usrsctp/usrsctplib/user_sctp_timer_iterate.c
+
+# Potential deadlocks detected after roll in r6516.
+# https://code.google.com/p/webrtc/issues/detail?id=3509
+deadlock:talk/base/criticalsection.h
+deadlock:talk/base/sigslot.h
+deadlock:webrtc/system_wrappers/source/critical_section_posix.cc
+deadlock:webrtc/system_wrappers/source/rw_lock_posix.cc
+deadlock:webrtc/system_wrappers/source/thread_posix.cc
+
