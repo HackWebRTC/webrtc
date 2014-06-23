@@ -98,6 +98,10 @@ typedef void (*AssertLogger)(const char* function,
 // only by one component.
 void SetCustomAssertLogger(AssertLogger logger);
 
+bool IsOdd(int n);
+
+bool IsEven(int n);
+
 }  // namespace rtc
 
 #if ENABLE_DEBUG
