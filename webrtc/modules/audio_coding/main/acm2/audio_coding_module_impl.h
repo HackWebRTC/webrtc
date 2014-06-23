@@ -214,6 +214,7 @@ class AudioCodingModuleImpl : public AudioCodingModule {
 
   // GET RED payload for iSAC. The method id called when 'this' ACM is
   // the default ACM.
+  // TODO(henrik.lundin) Not used. Remove?
   int REDPayloadISAC(int isac_rate,
                      int isac_bw_estimate,
                      uint8_t* payload,
@@ -248,7 +249,8 @@ class AudioCodingModuleImpl : public AudioCodingModule {
 
   int InitializeReceiverSafe() EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
 
-  bool HaveValidEncoder(const char* caller_name) const;
+  bool HaveValidEncoder(const char* caller_name) const
+      EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
 
   // Set VAD/DTX status. This function does not acquire a lock, and it is
   // created to be called only from inside a critical section.
@@ -303,7 +305,8 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   // codec owns the decoder-instance. For such codecs |*decoder| should be a
   // valid pointer, otherwise it will be NULL.
   int GetAudioDecoder(const CodecInst& codec, int codec_id,
-                      int mirror_id, AudioDecoder** decoder);
+                      int mirror_id, AudioDecoder** decoder)
+      EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
 
   CriticalSectionWrapper* acm_crit_sect_;
   int id_;  // TODO(henrik.lundin) Make const.
@@ -320,13 +323,14 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   bool vad_enabled_ GUARDED_BY(acm_crit_sect_);
   bool dtx_enabled_ GUARDED_BY(acm_crit_sect_);
   ACMVADMode vad_mode_ GUARDED_BY(acm_crit_sect_);
-  ACMGenericCodec* codecs_[ACMCodecDB::kMaxNumCodecs];
-  int mirror_codec_idx_[ACMCodecDB::kMaxNumCodecs];
+  ACMGenericCodec* codecs_[ACMCodecDB::kMaxNumCodecs]
+      GUARDED_BY(acm_crit_sect_);
+  int mirror_codec_idx_[ACMCodecDB::kMaxNumCodecs] GUARDED_BY(acm_crit_sect_);
   bool stereo_send_ GUARDED_BY(acm_crit_sect_);
-  int current_send_codec_idx_;
-  bool send_codec_registered_;
+  int current_send_codec_idx_ GUARDED_BY(acm_crit_sect_);
+  bool send_codec_registered_ GUARDED_BY(acm_crit_sect_);
   ACMResampler resampler_ GUARDED_BY(acm_crit_sect_);
-  AcmReceiver receiver_;
+  AcmReceiver receiver_;  // AcmReceiver has it's own internal lock.
 
   // RED.
   bool is_first_red_ GUARDED_BY(acm_crit_sect_);
@@ -345,7 +349,7 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   uint32_t last_red_timestamp_ GUARDED_BY(acm_crit_sect_);
 
   // Codec internal FEC
-  bool codec_fec_enabled_;
+  bool codec_fec_enabled_ GUARDED_BY(acm_crit_sect_);
 
   // This is to keep track of CN instances where we can send DTMFs.
   uint8_t previous_pltype_ GUARDED_BY(acm_crit_sect_);

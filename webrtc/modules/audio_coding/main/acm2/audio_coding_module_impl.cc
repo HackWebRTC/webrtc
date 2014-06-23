@@ -1203,6 +1203,7 @@ int AudioCodingModuleImpl::SendBitrate() const {
 // Set available bandwidth, inform the encoder about the estimated bandwidth
 // received from the remote party.
 int AudioCodingModuleImpl::SetReceivedEstimatedBandwidth(int bw) {
+  CriticalSectionScoped lock(acm_crit_sect_);
   return codecs_[current_send_codec_idx_]->SetEstimatedBandwidth(bw);
 }
 
@@ -1452,6 +1453,7 @@ int AudioCodingModuleImpl::SetREDStatus(
 //
 
 bool AudioCodingModuleImpl::CodecFEC() const {
+  CriticalSectionScoped lock(acm_crit_sect_);
   return codec_fec_enabled_;
 }
 
@@ -1476,6 +1478,7 @@ int AudioCodingModuleImpl::SetCodecFEC(bool enable_codec_fec) {
 }
 
 int AudioCodingModuleImpl::SetPacketLossRate(int loss_rate) {
+  CriticalSectionScoped lock(acm_crit_sect_);
   if (HaveValidEncoder("SetPacketLossRate") &&
       codecs_[current_send_codec_idx_]->SetPacketLossRate(loss_rate) < 0) {
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
@@ -1950,6 +1953,7 @@ int AudioCodingModuleImpl::REDPayloadISAC(int isac_rate,
                                           int isac_bw_estimate,
                                           uint8_t* payload,
                                           int16_t* length_bytes) {
+  CriticalSectionScoped lock(acm_crit_sect_);
   if (!HaveValidEncoder("EncodeData")) {
     return -1;
   }

@@ -330,6 +330,7 @@ class AudioCodingModule: public Module {
   //   -1 if error occurred in setting the bandwidth,
   //    0 bandwidth is set successfully.
   //
+  // TODO(henrik.lundin) Unused. Remove?
   virtual int32_t SetReceivedEstimatedBandwidth(
       const int32_t bw) = 0;
 
