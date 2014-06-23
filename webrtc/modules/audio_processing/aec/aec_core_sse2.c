@@ -354,8 +354,8 @@ static __m128 mm_pow_ps(__m128 a, __m128 b) {
   return a_exp_b;
 }
 
-extern const float WebRtcAec_weightCurve[65];
-extern const float WebRtcAec_overDriveCurve[65];
+extern ALIGN16_BEG const float ALIGN16_END WebRtcAec_weightCurve[65];
+extern ALIGN16_BEG const float ALIGN16_END WebRtcAec_overDriveCurve[65];
 
 static void OverdriveAndSuppressSSE2(AecCore* aec,
                                      float hNl[PART_LEN1],
