@@ -168,8 +168,42 @@ config("common_config") {
 }
 
 static_library("webrtc") {
+  sources = [
+    "call.h",
+    "config.h",
+    "experiments.h",
+    "frame_callback.h",
+    "transport.h",
+  ]
+
   deps = [
+    ":webrtc_common",
     "base:webrtc_base",
+    "common_audio",
+    "common_video",
+    "modules/audio_coding",
+    "modules/audio_conference_mixer",
+    "modules/audio_device",
+    "modules/audio_processing",
+    "modules/bitrate_controller",
+    "modules/desktop_capture",
+    "modules/media_file",
+    "modules/rtp_rtcp",
+    "modules/utility",
+    "modules/video_capture",
+    "modules/video_coding",
+    "modules/video_processing",
+    "modules/video_render",
     "system_wrappers",
+    "video",
+    "video_engine",
+    "voice_engine",
+  ]
+}
+
+source_set("webrtc_common") {
+  sources = [
+    "config.h",
+    "config.cc",
   ]
 }

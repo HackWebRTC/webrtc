@@ -6,6 +6,7 @@ tina.legrand@webrtc.org
 tommi@webrtc.org
 per-file .gitignore=*
 per-file AUTHORS=*
+per-file BUILD.gn=kjellander@webrtc.org
 per-file DEPS=*
 per-file WATCHLISTS=*
 per-file webrtc_examples.gyp=*

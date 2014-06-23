@@ -1,0 +1,41 @@
+# Copyright (c) 2014 The WebRTC project authors. All Rights Reserved.
+#
+# Use of this source code is governed by a BSD-style license
+# that can be found in the LICENSE file in the root of the source
+# tree. An additional intellectual property rights grant can be found
+# in the file PATENTS.  All contributing project authors may
+# be found in the AUTHORS file in the root of the source tree.
+
+import("../../build/webrtc.gni")
+
+config("internal_config") {
+  visibility = ":*"  # Only targets in this file can depend on this.
+  include_dirs = [
+    "interface",
+    "../interface",
+  ]
+}
+
+source_set("media_file") {
+  sources = [
+    "interface/media_file.h",
+    "interface/media_file_defines.h",
+    "source/avi_file.cc",
+    "source/avi_file.h",
+    "source/media_file_impl.cc",
+    "source/media_file_impl.h",
+    "source/media_file_utility.cc",
+    "source/media_file_utility.h",
+  ]
+
+  if (is_win) {
+    cflags = [
+      # TODO(jschuh): Bug 1348: fix this warning.
+      "/wd4267",  # size_t to int truncations
+    ]
+  }
+
+  direct_dependent_configs = [ ":internal_config" ]
+
+  deps = [ "../../system_wrappers" ]
+}
