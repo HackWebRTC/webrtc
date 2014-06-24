@@ -694,7 +694,10 @@ int32_t ACMISAC::ConfigISACBandwidthEstimator(
                  "Couldn't config iSAC BWE.");
     return -1;
   }
-  UpdateFrameLen();
+  {
+    WriteLockScoped wl(codec_wrapper_lock_);
+    UpdateFrameLen();
+  }
   CriticalSectionScoped lock(codec_inst_crit_sect_.get());
   ACM_ISAC_GETSENDBITRATE(codec_inst_ptr_->inst, &isac_current_bn_);
   return 0;
@@ -792,6 +795,7 @@ int ACMISAC::ErrorCode() {
 
 AudioDecoder* ACMISAC::Decoder(int codec_id) {
   // Create iSAC instance if it does not exist.
+  WriteLockScoped wl(codec_wrapper_lock_);
   if (!encoder_exist_) {
     CriticalSectionScoped lock(codec_inst_crit_sect_.get());
     assert(codec_inst_ptr_->inst == NULL);

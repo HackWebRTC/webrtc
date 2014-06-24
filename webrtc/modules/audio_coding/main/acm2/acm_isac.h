@@ -34,19 +34,23 @@ class ACMISAC : public ACMGenericCodec, AudioDecoder {
   explicit ACMISAC(int16_t codec_id);
   ~ACMISAC();
 
-  int16_t InternalInitDecoder(WebRtcACMCodecParams* codec_params);
+  int16_t InternalInitDecoder(WebRtcACMCodecParams* codec_params)
+      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
 
   // Methods below are inherited from ACMGenericCodec.
   ACMGenericCodec* CreateInstance(void) OVERRIDE;
 
   int16_t InternalEncode(uint8_t* bitstream,
-                         int16_t* bitstream_len_byte) OVERRIDE;
+                         int16_t* bitstream_len_byte) OVERRIDE
+      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
 
-  int16_t InternalInitEncoder(WebRtcACMCodecParams* codec_params) OVERRIDE;
+  int16_t InternalInitEncoder(WebRtcACMCodecParams* codec_params) OVERRIDE
+      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
 
   int16_t UpdateDecoderSampFreq(int16_t codec_id) OVERRIDE;
 
-  int16_t UpdateEncoderSampFreq(uint16_t samp_freq_hz) OVERRIDE;
+  int16_t UpdateEncoderSampFreq(uint16_t samp_freq_hz) OVERRIDE
+      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
 
   int16_t EncoderSampFreq(uint16_t* samp_freq_hz) OVERRIDE;
 
@@ -95,12 +99,14 @@ class ACMISAC : public ACMGenericCodec, AudioDecoder {
                     int32_t rate,
                     bool is_red);
 
-  void UpdateFrameLen();
+  void UpdateFrameLen() EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
 
   // Methods below are inherited from ACMGenericCodec.
-  void DestructEncoderSafe() OVERRIDE;
+  void DestructEncoderSafe() OVERRIDE
+      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
 
-  int16_t SetBitRateSafe(const int32_t bit_rate) OVERRIDE;
+  int16_t SetBitRateSafe(const int32_t bit_rate) OVERRIDE
+      EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
 
   int32_t GetEstimatedBandwidthSafe() OVERRIDE;
 
