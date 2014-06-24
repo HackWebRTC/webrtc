@@ -1575,7 +1575,7 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithBufferLatency) {
 
 TEST_F(WebRtcSdpTest, SerializeCandidates) {
   std::string message = webrtc::SdpSerializeCandidate(*jcandidate_);
-  EXPECT_EQ(std::string(kSdpOneCandidate), message);
+  EXPECT_EQ(std::string(kRawCandidate), message);
 }
 
 TEST_F(WebRtcSdpTest, DeserializeSessionDescription) {
