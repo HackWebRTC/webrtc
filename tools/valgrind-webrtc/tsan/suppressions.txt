@@ -688,7 +688,7 @@
   ...
 }
 {
-  bug_1205_33
+  bug_1205_33_tmp
   ThreadSanitizer:Race
   fun:webrtc::PeerConnectionProxy::~PeerConnectionProxy
   fun:talk_base::RefCountedObject::~RefCountedObject
@@ -698,7 +698,7 @@
   ...
 }
 {
-  bug_1205_34
+  bug_1205_34_tmp
   ThreadSanitizer:Race
   fun:talk_base::AtomicOps::Increment
   fun:talk_base::RefCountedObject::AddRef
@@ -708,7 +708,7 @@
   ...
 }
 {
-  bug_1205_35
+  bug_1205_35_tmp
   ThreadSanitizer:Race
   fun:talk_base::scoped_refptr::scoped_refptr
   fun:webrtc::PeerConnectionFactory::CreatePeerConnection
@@ -716,7 +716,7 @@
   ...
 }
 {
-  bug_1205_36
+  bug_1205_36_tmp
   ThreadSanitizer:Race
   fun:talk_base::MessageHandler::~MessageHandler
   fun:FakeAudioCaptureModule::~FakeAudioCaptureModule
@@ -742,7 +742,7 @@
   ...
 }
 {
-  bug_1205_39
+  bug_1205_39_tmp
   ThreadSanitizer:Race
   fun:talk_base::Thread::Send
   fun:FakeAudioCaptureModule::UpdateProcessing
@@ -759,7 +759,7 @@
   ...
 }
 {
-  bug_1205_41
+  bug_1205_41_tmp
   ThreadSanitizer:Race
   fun:talk_base::Thread::Send
   fun:FakeAudioCaptureModule::~FakeAudioCaptureModule
@@ -789,7 +789,7 @@
   ...
 }
 {
-  bug_2078_2
+  bug_2078_2_tmp
   ThreadSanitizer:Race
   ...
   fun:talk_base::MemoryStreamBase::Read
@@ -798,7 +798,7 @@
   ...
 }
 {
-  bug_2078_3
+  bug_2078_3_tmp
   ThreadSanitizer:Race
   fun:cricket::RtpSenderReceiver::OnMessage
   fun:talk_base::MessageQueue::Dispatch
@@ -807,7 +807,7 @@
   fun:talk_base::Thread::PreRun
 }
 {
-  bug_2078_4
+  bug_2078_4_tmp
   ThreadSanitizer:Race
   fun:cricket::FileNetworkInterface::SendPacket
   fun:cricket::RtpSenderReceiver::SendRtpPacket
@@ -832,14 +832,14 @@
   ...
 }
 {
-  bug_2078_7
+  bug_2078_7_tmp
   ThreadSanitizer:Race
   fun:talk_base::MemoryStreamBase::~MemoryStreamBase
   fun:talk_base::MemoryStream::~MemoryStream
   ...
 }
 {
-  bug_2078_8
+  bug_2078_8_tmp
   ThreadSanitizer:Race
   fun:talk_base::MemoryStreamBase::SetPosition
   fun:talk_base::StreamInterface::Rewind
@@ -847,7 +847,7 @@
   ...
 }
 {
-  bug_2078_13
+  bug_2078_13_tmp
   ThreadSanitizer:Race
   fun:std::_Vector_base::~_Vector_base
   fun:std::vector::~vector
@@ -858,7 +858,7 @@
   ...
 }
 {
-  bug_2078_14
+  bug_2078_14_tmp
   ThreadSanitizer:Race
   fun:cricket::RtpDumpReader::~RtpDumpReader
   fun:cricket::RtpDumpLoopReader::~RtpDumpLoopReader
@@ -870,7 +870,7 @@
   ...
 }
 {
-  bug_2078_15
+  bug_2078_15_tmp
   ThreadSanitizer:Race
   fun:talk_base::FileStream::Close
   fun:talk_base::FileStream::~FileStream
@@ -882,7 +882,7 @@
   ...
 }
 {
-  bug_2078_16
+  bug_2078_16_tmp
   ThreadSanitizer:Race
   fun:talk_base::StreamInterface::~StreamInterface
   fun:talk_base::FileStream::~FileStream
@@ -894,7 +894,7 @@
   ...
 }
 {
-  bug_2078_18
+  bug_2078_18_tmp
   ThreadSanitizer:Race
   fun:talk_base::MemoryStream::~MemoryStream
   ...
@@ -906,14 +906,14 @@
   ...
 }
 {
-  bug_2078_22
+  bug_2078_22_tmp
   ThreadSanitizer:Race
   fun:talk_base::MessageQueue::Quit
   fun:talk_base::Thread::Stop
   ...
 }
 {
-  bug_2078_23
+  bug_2078_23_tmp
   ThreadSanitizer:Race
   fun:::FileVideoCapturerTest::VideoCapturerListener::OnFrameCaptured
   fun:sigslot::_connection2::emit
@@ -927,14 +927,14 @@
   fun:talk_base::Thread::PreRun
 }
 {
-  bug_2078_24
+  bug_2078_24_tmp
   ThreadSanitizer:Race
   fun:talk_base::MemoryStreamBase::SetPosition
   fun:talk_base::StreamInterface::Rewind
   ...
 }
 {
-  bug_2078_25
+  bug_2078_25_tmp
   ThreadSanitizer:Race
   fun:cricket::FileNetworkInterface::SendPacket
   fun:cricket::MediaChannel::DoSendPacket
@@ -947,7 +947,7 @@
   fun:talk_base::Thread::PreRun
 }
 {
-  bug_2079_1
+  bug_2079_1_tmp
   ThreadSanitizer:Race
   fun:talk_base::VirtualSocketServer::AddPacketToNetwork
   fun:talk_base::VirtualSocketServer::SendUdp
@@ -967,7 +967,7 @@
   ...
 }
 {
-  bug_2079_5
+  bug_2079_5_tmp
   ThreadSanitizer:Race
   fun:talk_base::Thread::Send
   fun:cricket::Transport::SetRole
@@ -979,7 +979,7 @@
   ...
 }
 {
-  bug_2079_6
+  bug_2079_6_tmp
   ThreadSanitizer:Race
   fun:talk_base::Thread::ReceiveSends
   fun:talk_base::Thread::Send
@@ -993,14 +993,14 @@
   ...
 }
 {
-  bug_2079_8
+  bug_2079_8_tmp
   ThreadSanitizer:Race
   fun:talk_base::Thread::Invoke
   fun:cricket::ChannelManager::SetCaptureDevice
   ...
 }
 {
-  bug_2079_9
+  bug_2079_9_tmp
   ThreadSanitizer:Race
   fun:talk_base::Thread::Send
   fun:cricket::Transport::SetIceRole
@@ -1012,14 +1012,14 @@
   ...
 }
 {
-  bug_2080_1
+  bug_2080_1_tmp
   ThreadSanitizer:Race
   fun:talk_base::MessageQueue::Quit
   fun:talk_base::SignalThread::Destroy
   ...
 }
 {
-  bug_2080_2
+  bug_2080_2_tmp
   ThreadSanitizer:Race
   fun:talk_base::MessageQueue::Quit
   fun:talk_base::AsyncHttpRequest::OnComplete
@@ -1027,14 +1027,14 @@
   ...
 }
 {
-  bug_2080_3
+  bug_2080_3_tmp
   ThreadSanitizer:Race
   fun:talk_base::LogMessage::UpdateMinLogSeverity
   fun:talk_base::LogMessage::AddLogToStream
   ...
 }
 {
-  bug_2080_8
+  bug_2080_8_tmp
   ThreadSanitizer:Race
   ...
   fun:talk_base::AsyncUDPSocket::OnReadEvent
@@ -1042,7 +1042,7 @@
   ...
 }
 {
-  bug_2080_9
+  bug_2080_9_tmp
   ThreadSanitizer:Race
   ...
   fun:talk_base::AsyncUDPSocket::OnWriteEvent
@@ -1056,7 +1056,7 @@
   ...
 }
 {
-  bug_2080_14
+  bug_2080_14_tmp
   ThreadSanitizer:Race
   fun:talk_base::IPAddress::IPAddress
   fun:talk_base::SocketAddress::ToSockAddrStorage
@@ -1066,20 +1066,20 @@
   ...
 }
 {
-  bug_2080_16
+  bug_2080_16_tmp
   ThreadSanitizer:Race
   ...
   fun:talk_base::IPAddress::operator<
   ...
 }
 {
-  bug_2080_18
+  bug_2080_18_tmp
   ThreadSanitizer:Race
   fun:talk_base::SocketAddress::port
   ...
 }
 {
-  bug_2080_19
+  bug_2080_19_tmp
   ThreadSanitizer:Race
   fun:std::vector::_M_insert_aux
   fun:std::vector::push_back
@@ -1087,7 +1087,7 @@
   ...
 }
 {
-  bug_2080_20
+  bug_2080_20_tmp
   ThreadSanitizer:Race
   fun:talk_base::VirtualSocketServer::AddPacketToNetwork
   fun:talk_base::VirtualSocketServer::SendUdp
@@ -1098,13 +1098,13 @@
   ...
 }
 {
-  bug_2080_21
+  bug_2080_21_tmp
   ThreadSanitizer:Race
   fun:talk_base::SharedExclusiveTask::waiting_time_in_ms
   ...
 }
 {
-  bug_2080_22
+  bug_2080_22_tmp
   ThreadSanitizer:Race
   fun:talk_base::SharedExclusiveTask::~SharedExclusiveTask
   fun:talk_base::ReadTask::~ReadTask
@@ -1118,14 +1118,14 @@
   ...
 }
 {
-  bug_2080_24
+  bug_2080_24_tmp
   ThreadSanitizer:Race
   ...
   fun:OwnerThread::Run
   fun:talk_base::Thread::PreRun
 }
 {
-  bug_2080_25
+  bug_2080_25_tmp
   ThreadSanitizer:Race
   fun:sigslot::has_slots::~has_slots
   fun:OwnerThread::~OwnerThread
@@ -1143,7 +1143,7 @@
   ...
 }
 {
-  bug_2080_27
+  bug_2080_27_tmp
   ThreadSanitizer:Race
   ...
   fun:std::_Rb_tree::clear
@@ -1158,14 +1158,14 @@
   ...
 }
 {
-  bug_2080_29
+  bug_2080_29_tmp
   ThreadSanitizer:Race
   fun:talk_base::Thread::Release
   fun:ThreadTest_Release_Test::TestBody
   ...
 }
 {
-  bug_2080_30
+  bug_2080_30_tmp
   ThreadSanitizer:Race
   fun:talk_base::Thread::Invoke
   fun:MessageQueueTest::IsLocked
@@ -1173,27 +1173,27 @@
   ...
 }
 {
-  bug_2080_31
+  bug_2080_31_tmp
   ThreadSanitizer:Race
   fun:talk_base::MessageHandler::~MessageHandler
   fun:talk_base::Thread::FunctorMessageHandler::~FunctorMessageHandler
   ...
 }
 {
-  bug_2080_32
+  bug_2080_32_tmp
   ThreadSanitizer:Race
   fun:talk_base::ReadTask::OnMessage
   fun:talk_base::MessageQueue::Dispatch
   ...
 }
 {
-  bug_2080_33
+  bug_2080_33_tmp
   ThreadSanitizer:Race
   fun:talk_base::SharedExclusiveLockTest_TestSharedShared_Test::TestBody
   fun:testing::internal::HandleSehExceptionsInMethodIfSupported
 }
 {
-  bug_2080_34
+  bug_2080_34_tmp
   ThreadSanitizer:Race
   fun:talk_base::WriteTask::OnMessage
   fun:talk_base::MessageQueue::Dispatch
@@ -1202,7 +1202,7 @@
   fun:talk_base::Thread::PreRun
 }
 {
-  bug_2080_35
+  bug_2080_35_tmp
   ThreadSanitizer:UnlockNonLocked
   fun:pthread_mutex_unlock
   fun:talk_base::CriticalSection::Leave
@@ -1215,7 +1215,7 @@
   fun:talk_base::Thread::PreRun
 }
 {
-  bug_2080_36
+  bug_2080_36_tmp
   ThreadSanitizer:Race
   ...
   fun:talk_base::FunctorMessageHandler::OnMessage
@@ -1225,7 +1225,7 @@
   fun:talk_base::Thread::PreRun
 }
 {
-  bug_2931_1
+  bug_2931_1_tmp
   ThreadSanitizer:Race
   ...
   fun:talk_base::FireAndForgetAsyncClosure::Execute
@@ -1236,7 +1236,7 @@
   fun:talk_base::Thread::PreRun
 }
 {
-  bug_2931_2
+  bug_2931_2_tmp
   ThreadSanitizer:Race
   ...
   fun:talk_base::Callback0::HelperImpl::~HelperImpl

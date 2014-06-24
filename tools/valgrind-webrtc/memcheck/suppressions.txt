@@ -480,7 +480,7 @@
 #-----------------------------------------------------------------------
 # 2. libjingle stuff (talk folder)
 {
-   bug_1976_1
+   bug_1976_1_tmp
    Memcheck:Unaddressable
    fun:pthread_mutex_unlock
    fun:_ZN9talk_base15CriticalSection5LeaveEv
@@ -491,7 +491,7 @@
    fun:_ZN9talk_base6Thread6PreRunEPv
 }
 {
-   bug_1976_2
+   bug_1976_2_tmp
    Memcheck:Leak
    fun:calloc
    obj:/usr/lib/x86_64-linux-gnu/libnss3.so
@@ -531,7 +531,7 @@
    ...
 }
 {
-   bug_2100_3
+   bug_2100_3_tmp
    Memcheck:Uninitialized
    fun:tls1_enc
    fun:ssl3_get_record
@@ -543,7 +543,7 @@
    ...
 }
 {
-   bug_2100_4
+   bug_2100_4_tmp
    Memcheck:Uninitialized
    fun:_ZN7testing8internal11CmpHelperEQIjhEENS_15AssertionResultEPKcS4_RKT_RKT0_
    fun:_ZN7testing8internal8EqHelperILb0EE7CompareIjhEENS_15AssertionResultEPKcS6_RKT_RKT0_
@@ -551,7 +551,7 @@
    ...
 }
 {
-   bug_2100_5
+   bug_2100_5_tmp
    Memcheck:Uninitialized
    fun:dtls1_process_record
    fun:dtls1_get_record
@@ -565,7 +565,7 @@
 # For BIO_new_mem_buf
 # http://www.openssl.org/support/faq.html#PROG13
 {
-   BIO_new_mem_buf_1
+   BIO_new_mem_buf_1_tmp
    Memcheck:Leak
    fun:malloc
    fun:default_malloc_ex
@@ -579,7 +579,7 @@
    ...
 }
 {
-   BIO_new_mem_buf_2
+   BIO_new_mem_buf_2_tmp
    Memcheck:Leak
    fun:malloc
    fun:default_malloc_ex
@@ -593,7 +593,7 @@
 }
 # For HttpServer.SignalsCloseAfterForcedCloseAll
 {
-   SignalsCloseAfterForcedCloseAll
+   SignalsCloseAfterForcedCloseAll_tmp
    Memcheck:Leak
    fun:_Znw*
    fun:_ZN9talk_base10HttpServer10Connection12BeginProcessEPNS_15StreamInterfaceE
@@ -650,7 +650,7 @@
 }
 # For tests that leaks by design.
 {
-   DoNotDeleteTask2
+   DoNotDeleteTask2_tmp
    Memcheck:Leak
    fun:_Znw*
    ...
