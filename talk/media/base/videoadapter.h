@@ -72,6 +72,8 @@ class VideoAdapter {
   void set_scale_third(bool enable);
   bool scale_third() const { return scale_third_; }
 
+  int adaptation_changes() const { return adaption_changes_; }
+
  protected:
   float FindClosestScale(int width, int height, int target_num_pixels);
   float FindClosestViewScale(int width, int height, int target_num_pixels);

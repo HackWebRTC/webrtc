@@ -586,9 +586,9 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
         video_capturer_(NULL),
         encoder_observer_(channel_id),
         external_capture_(external_capture),
-        capturer_updated_(false),
         interval_(0),
-        cpu_monitor_(cpu_monitor) {
+        cpu_monitor_(cpu_monitor),
+        old_adaptation_changes_(0) {
   }
 
   int channel_id() const { return channel_id_; }
@@ -625,11 +625,16 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
   int64 interval() { return interval_; }
 
   int CurrentAdaptReason() const {
-    const CoordinatedVideoAdapter* adapter = video_adapter();
-    if (!adapter) {
+    if (!video_adapter()) {
       return CoordinatedVideoAdapter::ADAPTREASON_NONE;
     }
     return video_adapter()->adapt_reason();
+  }
+  int AdaptChanges() const {
+    if (!video_adapter()) {
+      return old_adaptation_changes_;
+    }
+    return old_adaptation_changes_ + video_adapter()->adaptation_changes();
   }
 
   StreamParams* stream_params() { return stream_params_.get(); }
@@ -655,6 +660,8 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
 
     CoordinatedVideoAdapter* old_video_adapter = video_adapter();
     if (old_video_adapter) {
+      // Get adaptation changes from old video adapter.
+      old_adaptation_changes_ += old_video_adapter->adaptation_changes();
       // Disconnect signals from old video adapter.
       SignalCpuAdaptationUnable.disconnect(old_video_adapter);
       if (cpu_monitor_) {
@@ -662,7 +669,6 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
       }
     }
 
-    capturer_updated_ = true;
     video_capturer_ = video_capturer;
 
     vie_wrapper->base()->RegisterCpuOveruseObserver(channel_id_, NULL);
@@ -817,12 +823,12 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
 
   WebRtcLocalStreamInfo local_stream_info_;
 
-  bool capturer_updated_;
-
   int64 interval_;
 
   talk_base::CpuMonitor* cpu_monitor_;
   talk_base::scoped_ptr<WebRtcOveruseObserver> overuse_observer_;
+
+  int old_adaptation_changes_;
 
   VideoOptions video_options_;
 };
@@ -2506,6 +2512,7 @@ bool WebRtcVideoMediaChannel::GetStats(const StatsOptions& options,
             send_codec_->maxBitrate, kMaxVideoBitrate);
       }
       sinfo.adapt_reason = send_channel->CurrentAdaptReason();
+      sinfo.adapt_changes = send_channel->AdaptChanges();
 
 #ifdef USE_WEBRTC_DEV_BRANCH
       webrtc::CpuOveruseMetrics metrics;

@@ -901,6 +901,7 @@ struct VideoSenderInfo : public MediaSenderInfo {
         nominal_bitrate(0),
         preferred_bitrate(0),
         adapt_reason(0),
+        adapt_changes(0),
         capture_jitter_ms(0),
         avg_encode_ms(0),
         encode_usage_percent(0),
@@ -922,6 +923,7 @@ struct VideoSenderInfo : public MediaSenderInfo {
   int nominal_bitrate;
   int preferred_bitrate;
   int adapt_reason;
+  int adapt_changes;
   int capture_jitter_ms;
   int avg_encode_ms;
   int encode_usage_percent;

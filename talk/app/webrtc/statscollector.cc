@@ -137,6 +137,8 @@ const char StatsReport::kStatsValueNameLocalCandidateType[] =
     "googLocalCandidateType";
 const char StatsReport::kStatsValueNameLocalCertificateId[] =
     "googLocalCertificateId";
+const char StatsReport::kStatsValueNameAdaptationChanges[] =
+    "googAdaptationChanges";
 const char StatsReport::kStatsValueNameNacksReceived[] = "googNacksReceived";
 const char StatsReport::kStatsValueNameNacksSent[] = "googNacksSent";
 const char StatsReport::kStatsValueNamePlisReceived[] = "googPlisReceived";
@@ -422,6 +424,8 @@ void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {
                      (info.adapt_reason & 0x2) > 0);
   report->AddBoolean(StatsReport::kStatsValueNameViewLimitedResolution,
                      (info.adapt_reason & 0x4) > 0);
+  report->AddValue(StatsReport::kStatsValueNameAdaptationChanges,
+                   info.adapt_changes);
   report->AddValue(StatsReport::kStatsValueNameAvgEncodeMs, info.avg_encode_ms);
   report->AddValue(StatsReport::kStatsValueNameCaptureJitterMs,
                    info.capture_jitter_ms);

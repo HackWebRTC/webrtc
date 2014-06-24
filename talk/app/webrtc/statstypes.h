@@ -141,6 +141,7 @@ class StatsReport {
   static const char kStatsValueNameBandwidthLimitedResolution[];
   static const char kStatsValueNameCpuLimitedResolution[];
   static const char kStatsValueNameViewLimitedResolution[];
+  static const char kStatsValueNameAdaptationChanges[];
   static const char kStatsValueNameEchoCancellationQualityMin[];
   static const char kStatsValueNameEchoDelayMedian[];
   static const char kStatsValueNameEchoDelayStdDev[];
