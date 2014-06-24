@@ -915,3 +915,16 @@ name=name=https://code.google.com/p/webrtc/issues/detail?id=3183 (3)
 *!RtpRtcpRtxNackTest::RunRtxTest
 *!RtpRtcpRtxNackTest_RtxNack_Test::TestBody
 *!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+UNINITIALIZED READ
+name=https://code.google.com/p/webrtc/issues/detail?id=3490 (1)
+drmemorylib.dll!replace_memcmp
+*!talk_base::AsyncWriteTest_TestWrite_Test::TestBody
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+UNINITIALIZED READ
+name=https://code.google.com/p/webrtc/issues/detail?id=3490 (2)
+*!testing::internal::CmpHelperEQ<>
+*!testing::internal::EqHelper<>::Compare<>
+*!talk_base::AsyncWriteTest_TestWrite_Test::TestBody
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
