@@ -30,6 +30,104 @@ __inline static float MulRe(float aRe, float aIm, float bRe, float bIm) {
   return aRe * bRe - aIm * bIm;
 }
 
+static float32x4_t vdivq_f32(float32x4_t a, float32x4_t b) {
+  int i;
+  float32x4_t x = vrecpeq_f32(b);
+  // from arm documentation
+  // The Newton-Raphson iteration:
+  //     x[n+1] = x[n] * (2 - d * x[n])
+  // converges to (1/d) if x0 is the result of VRECPE applied to d.
+  //
+  // Note: The precision did not improve after 2 iterations.
+  for (i = 0; i < 2; i++) {
+    x = vmulq_f32(vrecpsq_f32(b, x), x);
+  }
+  // a/b = a*(1/b)
+  return vmulq_f32(a, x);
+}
+
+static float32x4_t vsqrtq_f32(float32x4_t s) {
+  int i;
+  float32x4_t x = vrsqrteq_f32(s);
+
+  // Code to handle sqrt(0).
+  // If the input to sqrtf() is zero, a zero will be returned.
+  // If the input to vrsqrteq_f32() is zero, positive infinity is returned.
+  const uint32x4_t vec_p_inf = vdupq_n_u32(0x7F800000);
+  // check for divide by zero
+  const uint32x4_t div_by_zero = vceqq_u32(vec_p_inf, vreinterpretq_u32_f32(x));
+  // zero out the positive infinity results
+  x = vreinterpretq_f32_u32(vandq_u32(vmvnq_u32(div_by_zero),
+                                      vreinterpretq_u32_f32(x)));
+  // from arm documentation
+  // The Newton-Raphson iteration:
+  //     x[n+1] = x[n] * (3 - d * (x[n] * x[n])) / 2)
+  // converges to (1/√d) if x0 is the result of VRSQRTE applied to d.
+  //
+  // Note: The precision did not improve after 2 iterations.
+  for (i = 0; i < 2; i++) {
+    x = vmulq_f32(vrsqrtsq_f32(vmulq_f32(x, x), s), x);
+  }
+  // sqrt(s) = s * 1/sqrt(s)
+  return vmulq_f32(s, x);;
+}
+
+static void ScaleErrorSignalNEON(AecCore* aec, float ef[2][PART_LEN1]) {
+  const float mu = aec->extended_filter_enabled ? kExtendedMu : aec->normal_mu;
+  const float error_threshold = aec->extended_filter_enabled ?
+      kExtendedErrorThreshold : aec->normal_error_threshold;
+  const float32x4_t k1e_10f = vdupq_n_f32(1e-10f);
+  const float32x4_t kMu = vmovq_n_f32(mu);
+  const float32x4_t kThresh = vmovq_n_f32(error_threshold);
+  int i;
+  // vectorized code (four at once)
+  for (i = 0; i + 3 < PART_LEN1; i += 4) {
+    const float32x4_t xPow = vld1q_f32(&aec->xPow[i]);
+    const float32x4_t ef_re_base = vld1q_f32(&ef[0][i]);
+    const float32x4_t ef_im_base = vld1q_f32(&ef[1][i]);
+    const float32x4_t xPowPlus = vaddq_f32(xPow, k1e_10f);
+    float32x4_t ef_re = vdivq_f32(ef_re_base, xPowPlus);
+    float32x4_t ef_im = vdivq_f32(ef_im_base, xPowPlus);
+    const float32x4_t ef_re2 = vmulq_f32(ef_re, ef_re);
+    const float32x4_t ef_sum2 = vmlaq_f32(ef_re2, ef_im, ef_im);
+    const float32x4_t absEf = vsqrtq_f32(ef_sum2);
+    const uint32x4_t bigger = vcgtq_f32(absEf, kThresh);
+    const float32x4_t absEfPlus = vaddq_f32(absEf, k1e_10f);
+    const float32x4_t absEfInv = vdivq_f32(kThresh, absEfPlus);
+    uint32x4_t ef_re_if = vreinterpretq_u32_f32(vmulq_f32(ef_re, absEfInv));
+    uint32x4_t ef_im_if = vreinterpretq_u32_f32(vmulq_f32(ef_im, absEfInv));
+    uint32x4_t ef_re_u32 = vandq_u32(vmvnq_u32(bigger),
+                                     vreinterpretq_u32_f32(ef_re));
+    uint32x4_t ef_im_u32 = vandq_u32(vmvnq_u32(bigger),
+                                     vreinterpretq_u32_f32(ef_im));
+    ef_re_if = vandq_u32(bigger, ef_re_if);
+    ef_im_if = vandq_u32(bigger, ef_im_if);
+    ef_re_u32 = vorrq_u32(ef_re_u32, ef_re_if);
+    ef_im_u32 = vorrq_u32(ef_im_u32, ef_im_if);
+    ef_re = vmulq_f32(vreinterpretq_f32_u32(ef_re_u32), kMu);
+    ef_im = vmulq_f32(vreinterpretq_f32_u32(ef_im_u32), kMu);
+    vst1q_f32(&ef[0][i], ef_re);
+    vst1q_f32(&ef[1][i], ef_im);
+  }
+  // scalar code for the remaining items.
+  for (; i < PART_LEN1; i++) {
+    float abs_ef;
+    ef[0][i] /= (aec->xPow[i] + 1e-10f);
+    ef[1][i] /= (aec->xPow[i] + 1e-10f);
+    abs_ef = sqrtf(ef[0][i] * ef[0][i] + ef[1][i] * ef[1][i]);
+
+    if (abs_ef > error_threshold) {
+      abs_ef = error_threshold / (abs_ef + 1e-10f);
+      ef[0][i] *= abs_ef;
+      ef[1][i] *= abs_ef;
+    }
+
+    // Stepsize factor
+    ef[0][i] *= mu;
+    ef[1][i] *= mu;
+  }
+}
+
 static void FilterAdaptationNEON(AecCore* aec,
                                  float* fft,
                                  float ef[2][PART_LEN1]) {
@@ -298,6 +396,7 @@ static void OverdriveAndSuppressNEON(AecCore* aec,
 }
 
 void WebRtcAec_InitAec_neon(void) {
+  WebRtcAec_ScaleErrorSignal = ScaleErrorSignalNEON;
   WebRtcAec_FilterAdaptation = FilterAdaptationNEON;
   WebRtcAec_OverdriveAndSuppress = OverdriveAndSuppressNEON;
 }
