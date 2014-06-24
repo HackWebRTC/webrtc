@@ -60,7 +60,6 @@ ACMGenericCodec::ACMGenericCodec()
       sent_cn_previous_(false),
       prev_frame_cng_(0),
       has_internal_fec_(false),
-      neteq_decode_lock_(NULL),
       codec_wrapper_lock_(*RWLockWrapper::CreateRWLock()),
       last_timestamp_(0xD87F3F9F),
       unique_id_(0) {
@@ -210,7 +209,6 @@ int16_t ACMGenericCodec::Encode(uint8_t* bitstream,
     return 0;
   }
   WriteLockScoped lockCodec(codec_wrapper_lock_);
-  ReadLockScoped lockNetEq(*neteq_decode_lock_);
 
   // Not all codecs accept the whole frame to be pushed into encoder at once.
   // Some codecs needs to be feed with a specific number of samples different
@@ -394,7 +392,6 @@ int16_t ACMGenericCodec::EncoderParamsSafe(WebRtcACMCodecParams* enc_params) {
 
 int16_t ACMGenericCodec::ResetEncoder() {
   WriteLockScoped lockCodec(codec_wrapper_lock_);
-  ReadLockScoped lockNetEq(*neteq_decode_lock_);
   return ResetEncoderSafe();
 }
 
@@ -443,7 +440,6 @@ int16_t ACMGenericCodec::InternalResetEncoder() {
 int16_t ACMGenericCodec::InitEncoder(WebRtcACMCodecParams* codec_params,
                                      bool force_initialization) {
   WriteLockScoped lockCodec(codec_wrapper_lock_);
-  ReadLockScoped lockNetEq(*neteq_decode_lock_);
   return InitEncoderSafe(codec_params, force_initialization);
 }
 
@@ -629,7 +625,6 @@ int16_t ACMGenericCodec::CreateEncoder() {
 void ACMGenericCodec::DestructEncoderInst(void* ptr_inst) {
   if (ptr_inst != NULL) {
     WriteLockScoped lockCodec(codec_wrapper_lock_);
-    ReadLockScoped lockNetEq(*neteq_decode_lock_);
     InternalDestructEncoderInst(ptr_inst);
   }
 }

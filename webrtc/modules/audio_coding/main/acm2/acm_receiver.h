@@ -30,7 +30,6 @@ namespace webrtc {
 
 struct CodecInst;
 class CriticalSectionWrapper;
-class RWLockWrapper;
 class NetEq;
 
 namespace acm2 {
@@ -210,13 +209,6 @@ class AcmReceiver {
   bool vad_enabled() const { return vad_enabled_; }
 
   //
-  // Get the decode lock used to protect decoder instances while decoding.
-  //
-  // Return value             : Pointer to the decode lock.
-  //
-  RWLockWrapper* DecodeLock() const { return decode_lock_; }
-
-  //
   // Flushes the NetEq packet and speech buffers.
   //
   void FlushBuffers();
@@ -354,7 +346,6 @@ class AcmReceiver {
   CallStatistics call_stats_ GUARDED_BY(crit_sect_);
   NetEq* neteq_;
   Decoder decoders_[ACMCodecDB::kMaxNumCodecs];
-  RWLockWrapper* decode_lock_;
   bool vad_enabled_;
   Clock* clock_;  // TODO(henrik.lundin) Make const if possible.
 

@@ -294,17 +294,6 @@ class ACMGenericCodec {
   int32_t IsInternalDTXReplaced(bool* internal_dtx_replaced);
 
   ///////////////////////////////////////////////////////////////////////////
-  // void SetNetEqDecodeLock()
-  // Passes the NetEq lock to the codec.
-  //
-  // Input:
-  //   -neteq_decode_lock  : pointer to the lock associated with NetEQ of ACM.
-  //
-  void SetNetEqDecodeLock(RWLockWrapper* neteq_decode_lock) {
-    neteq_decode_lock_ = neteq_decode_lock;
-  }
-
-  ///////////////////////////////////////////////////////////////////////////
   // bool HasInternalDTX()
   // Used to check if the codec has internal DTX.
   //
@@ -964,10 +953,6 @@ class ACMGenericCodec {
   bool has_internal_fec_ GUARDED_BY(codec_wrapper_lock_);
 
   WebRtcACMCodecParams encoder_params_ GUARDED_BY(codec_wrapper_lock_);
-
-  // Used as a global lock for all available decoders
-  // so that no decoder is used when NetEQ decodes.
-  RWLockWrapper* neteq_decode_lock_;
 
   // Used to lock wrapper internal data
   // such as buffers and state variables.

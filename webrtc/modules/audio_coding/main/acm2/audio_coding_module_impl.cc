@@ -749,7 +749,6 @@ ACMGenericCodec* AudioCodingModuleImpl::CreateCodec(const CodecInst& codec) {
     return my_codec;
   }
   my_codec->SetUniqueID(id_);
-  my_codec->SetNetEqDecodeLock(receiver_.DecodeLock());
 
   return my_codec;
 }
