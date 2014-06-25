@@ -30,6 +30,53 @@ __inline static float MulRe(float aRe, float aIm, float bRe, float bIm) {
   return aRe * bRe - aIm * bIm;
 }
 
+__inline static float MulIm(float aRe, float aIm, float bRe, float bIm) {
+  return aRe * bIm + aIm * bRe;
+}
+
+static void FilterFarNEON(AecCore* aec, float yf[2][PART_LEN1]) {
+  int i;
+  const int num_partitions = aec->num_partitions;
+  for (i = 0; i < num_partitions; i++) {
+    int j;
+    int xPos = (i + aec->xfBufBlockPos) * PART_LEN1;
+    int pos = i * PART_LEN1;
+    // Check for wrap
+    if (i + aec->xfBufBlockPos >= num_partitions) {
+      xPos -= num_partitions * PART_LEN1;
+    }
+
+    // vectorized code (four at once)
+    for (j = 0; j + 3 < PART_LEN1; j += 4) {
+      const float32x4_t xfBuf_re = vld1q_f32(&aec->xfBuf[0][xPos + j]);
+      const float32x4_t xfBuf_im = vld1q_f32(&aec->xfBuf[1][xPos + j]);
+      const float32x4_t wfBuf_re = vld1q_f32(&aec->wfBuf[0][pos + j]);
+      const float32x4_t wfBuf_im = vld1q_f32(&aec->wfBuf[1][pos + j]);
+      const float32x4_t yf_re = vld1q_f32(&yf[0][j]);
+      const float32x4_t yf_im = vld1q_f32(&yf[1][j]);
+      const float32x4_t a = vmulq_f32(xfBuf_re, wfBuf_re);
+      const float32x4_t e = vmlsq_f32(a, xfBuf_im, wfBuf_im);
+      const float32x4_t c = vmulq_f32(xfBuf_re, wfBuf_im);
+      const float32x4_t f = vmlaq_f32(c, xfBuf_im, wfBuf_re);
+      const float32x4_t g = vaddq_f32(yf_re, e);
+      const float32x4_t h = vaddq_f32(yf_im, f);
+      vst1q_f32(&yf[0][j], g);
+      vst1q_f32(&yf[1][j], h);
+    }
+    // scalar code for the remaining items.
+    for (; j < PART_LEN1; j++) {
+      yf[0][j] += MulRe(aec->xfBuf[0][xPos + j],
+                        aec->xfBuf[1][xPos + j],
+                        aec->wfBuf[0][pos + j],
+                        aec->wfBuf[1][pos + j]);
+      yf[1][j] += MulIm(aec->xfBuf[0][xPos + j],
+                        aec->xfBuf[1][xPos + j],
+                        aec->wfBuf[0][pos + j],
+                        aec->wfBuf[1][pos + j]);
+    }
+  }
+}
+
 static float32x4_t vdivq_f32(float32x4_t a, float32x4_t b) {
   int i;
   float32x4_t x = vrecpeq_f32(b);
@@ -396,6 +443,7 @@ static void OverdriveAndSuppressNEON(AecCore* aec,
 }
 
 void WebRtcAec_InitAec_neon(void) {
+  WebRtcAec_FilterFar = FilterFarNEON;
   WebRtcAec_ScaleErrorSignal = ScaleErrorSignalNEON;
   WebRtcAec_FilterAdaptation = FilterAdaptationNEON;
   WebRtcAec_OverdriveAndSuppress = OverdriveAndSuppressNEON;
