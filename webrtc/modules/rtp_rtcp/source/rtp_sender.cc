@@ -705,7 +705,7 @@ void RTPSender::OnReceivedNACK(
 bool RTPSender::ProcessNACKBitRate(const uint32_t now) {
   uint32_t num = 0;
   int byte_count = 0;
-  const int kAvgIntervalMs = 1000;
+  const uint32_t kAvgIntervalMs = 1000;
   uint32_t target_bitrate = GetTargetBitrate();
 
   CriticalSectionScoped cs(send_critsect_);
@@ -721,13 +721,12 @@ bool RTPSender::ProcessNACKBitRate(const uint32_t now) {
       byte_count += nack_byte_count_[num];
     }
   }
-  int time_interval = kAvgIntervalMs;
+  uint32_t time_interval = kAvgIntervalMs;
   if (num == NACK_BYTECOUNT_SIZE) {
     // More than NACK_BYTECOUNT_SIZE nack messages has been received
     // during the last msg_interval.
-    time_interval = now - nack_byte_count_times_[num - 1];
-    if (time_interval < 0) {
-      time_interval = kAvgIntervalMs;
+    if (nack_byte_count_times_[num - 1] <= now) {
+      time_interval = now - nack_byte_count_times_[num - 1];
     }
   }
   return (byte_count * 8) <
