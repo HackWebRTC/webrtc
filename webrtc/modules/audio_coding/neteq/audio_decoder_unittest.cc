@@ -54,6 +54,7 @@ class AudioDecoderTest : public ::testing::Test {
     // Create arrays.
     ASSERT_GT(data_length_, 0u) << "The test must set data_length_ > 0";
     input_ = new int16_t[data_length_];
+    // Longest encoded data is produced by PCM16b with 2 bytes per sample.
     encoded_ = new uint8_t[data_length_ * 2];
     decoded_ = new int16_t[data_length_ * channels_];
     // Open input file.
@@ -172,24 +173,18 @@ class AudioDecoderTest : public ::testing::Test {
   // Encodes a payload and decodes it twice with decoder re-init before each
   // decode. Verifies that the decoded result is the same.
   void ReInitTest() {
-    uint8_t* encoded = encoded_;
-    uint8_t* encoded_copy = encoded_ + 2 * frame_size_;
     int16_t* output1 = decoded_;
     int16_t* output2 = decoded_ + frame_size_;
     InitEncoder();
-    size_t enc_len = EncodeFrame(input_, frame_size_, encoded);
+    size_t enc_len = EncodeFrame(input_, frame_size_, encoded_);
     size_t dec_len;
-    // Copy payload since iSAC fix destroys it during decode.
-    // Issue: http://code.google.com/p/webrtc/issues/detail?id=845.
-    // TODO(hlundin): Remove if the iSAC bug gets fixed.
-    memcpy(encoded_copy, encoded, enc_len);
     AudioDecoder::SpeechType speech_type1, speech_type2;
     EXPECT_EQ(0, decoder_->Init());
-    dec_len = decoder_->Decode(encoded, enc_len, output1, &speech_type1);
+    dec_len = decoder_->Decode(encoded_, enc_len, output1, &speech_type1);
     EXPECT_EQ(frame_size_ * channels_, dec_len);
     // Re-init decoder and decode again.
     EXPECT_EQ(0, decoder_->Init());
-    dec_len = decoder_->Decode(encoded_copy, enc_len, output2, &speech_type2);
+    dec_len = decoder_->Decode(encoded_, enc_len, output2, &speech_type2);
     EXPECT_EQ(frame_size_ * channels_, dec_len);
     for (unsigned int n = 0; n < frame_size_; ++n) {
       ASSERT_EQ(output1[n], output2[n]) << "Exit test on first diff; n = " << n;
