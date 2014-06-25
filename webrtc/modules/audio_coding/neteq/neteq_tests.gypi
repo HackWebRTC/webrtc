@@ -203,6 +203,22 @@
     },
 
     {
+      'target_name': 'neteq_isac_quality_test',
+      'type': 'executable',
+      'dependencies': [
+        'neteq',
+        'neteq_test_support',
+        'iSACFix',
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+        '<(webrtc_root)/test/test.gyp:test_support_main',
+      ],
+      'sources': [
+        'test/neteq_isac_quality_test.cc',
+      ],
+    },
+
+    {
      'target_name': 'neteq_test_tools',
       # Collection of useful functions used in other tests.
       'type': 'static_library',
