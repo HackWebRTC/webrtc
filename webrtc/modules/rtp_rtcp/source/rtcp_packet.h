@@ -26,7 +26,10 @@ namespace rtcp {
 enum { kCommonFbFmtLength = 12 };
 enum { kReportBlockLength = 24 };
 
+class Dlrr;
 class RawPacket;
+class Rrtr;
+class VoipMetric;
 
 // Class for building RTCP packets.
 //
@@ -82,12 +85,16 @@ class RtcpPacket {
 
 class Empty : public RtcpPacket {
  public:
-  Empty() {}
+  Empty() : RtcpPacket() {}
 
   virtual ~Empty() {}
 
  protected:
-  virtual void Create(uint8_t* packet, size_t* length, size_t max_length) const;
+  virtual void Create(
+      uint8_t* packet, size_t* length, size_t max_length) const OVERRIDE;
+
+ private:
+  DISALLOW_COPY_AND_ASSIGN(Empty);
 };
 
 // From RFC 3550, RTP: A Transport Protocol for Real-Time Applications.
@@ -212,6 +219,8 @@ class SenderReport : public RtcpPacket {
 
   RTCPUtility::RTCPPacketSR sr_;
   std::vector<RTCPUtility::RTCPPacketReportBlockItem> report_blocks_;
+
+  DISALLOW_COPY_AND_ASSIGN(SenderReport);
 };
 
 //
@@ -254,6 +263,8 @@ class ReceiverReport : public RtcpPacket {
 
   RTCPUtility::RTCPPacketRR rr_;
   std::vector<RTCPUtility::RTCPPacketReportBlockItem> report_blocks_;
+
+  DISALLOW_COPY_AND_ASSIGN(ReceiverReport);
 };
 
 // Transmission Time Offsets in RTP Streams (RFC 5450).
@@ -394,6 +405,8 @@ class Bye : public RtcpPacket {
 
   RTCPUtility::RTCPPacketBYE bye_;
   std::vector<uint32_t> csrcs_;
+
+  DISALLOW_COPY_AND_ASSIGN(Bye);
 };
 
 // Application-Defined packet (APP) (RFC 3550).
@@ -660,8 +673,7 @@ class Rpsi : public RtcpPacket {
 
 class Fir : public RtcpPacket {
  public:
-  Fir()
-      : RtcpPacket() {
+  Fir() : RtcpPacket() {
     memset(&fir_, 0, sizeof(fir_));
     memset(&fir_item_, 0, sizeof(fir_item_));
   }
@@ -690,6 +702,354 @@ class Fir : public RtcpPacket {
 
   RTCPUtility::RTCPPacketPSFBFIR fir_;
   RTCPUtility::RTCPPacketPSFBFIRItem fir_item_;
+};
+
+// Temporary Maximum Media Stream Bit Rate Request (TMMBR) (RFC 5104).
+//
+// FCI:
+//
+//    0                   1                   2                   3
+//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |                              SSRC                             |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   | MxTBR Exp |  MxTBR Mantissa                 |Measured Overhead|
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+class Tmmbr : public RtcpPacket {
+ public:
+  Tmmbr() : RtcpPacket() {
+    memset(&tmmbr_, 0, sizeof(tmmbr_));
+    memset(&tmmbr_item_, 0, sizeof(tmmbr_item_));
+  }
+
+  virtual ~Tmmbr() {}
+
+  void From(uint32_t ssrc) {
+    tmmbr_.SenderSSRC = ssrc;
+  }
+  void To(uint32_t ssrc) {
+    tmmbr_item_.SSRC = ssrc;
+  }
+  void WithBitrateKbps(uint32_t bitrate_kbps) {
+    tmmbr_item_.MaxTotalMediaBitRate = bitrate_kbps;
+  }
+  void WithOverhead(uint16_t overhead) {
+    assert(overhead <= 0x1ff);
+    tmmbr_item_.MeasuredOverhead = overhead;
+  }
+
+ protected:
+  virtual void Create(
+      uint8_t* packet, size_t* length, size_t max_length) const OVERRIDE;
+
+ private:
+  size_t BlockLength() const {
+    const size_t kFciLen = 8;
+    return kCommonFbFmtLength + kFciLen;
+  }
+
+  RTCPUtility::RTCPPacketRTPFBTMMBR tmmbr_;
+  RTCPUtility::RTCPPacketRTPFBTMMBRItem tmmbr_item_;
+
+  DISALLOW_COPY_AND_ASSIGN(Tmmbr);
+};
+
+// Temporary Maximum Media Stream Bit Rate Notification (TMMBN) (RFC 5104).
+//
+// FCI:
+//
+//    0                   1                   2                   3
+//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |                              SSRC                             |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   | MxTBR Exp |  MxTBR Mantissa                 |Measured Overhead|
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+class Tmmbn : public RtcpPacket {
+ public:
+  Tmmbn() : RtcpPacket() {
+    memset(&tmmbn_, 0, sizeof(tmmbn_));
+  }
+
+  virtual ~Tmmbn() {}
+
+  void From(uint32_t ssrc) {
+    tmmbn_.SenderSSRC = ssrc;
+  }
+  void WithTmmbr(uint32_t ssrc, uint32_t bitrate_kbps, uint16_t overhead);
+
+ protected:
+  virtual void Create(
+      uint8_t* packet, size_t* length, size_t max_length) const OVERRIDE;
+
+ private:
+  enum { kMaxNumberOfTmmbrs = 50 };
+
+  size_t BlockLength() const {
+    const size_t kFciLen = 8;
+    return kCommonFbFmtLength + kFciLen * tmmbn_items_.size();
+  }
+
+  RTCPUtility::RTCPPacketRTPFBTMMBN tmmbn_;
+  std::vector<RTCPUtility::RTCPPacketRTPFBTMMBRItem> tmmbn_items_;
+
+  DISALLOW_COPY_AND_ASSIGN(Tmmbn);
+};
+
+// Receiver Estimated Max Bitrate (REMB) (draft-alvestrand-rmcat-remb).
+//
+//    0                   1                   2                   3
+//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |V=2|P| FMT=15  |   PT=206      |             length            |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |                  SSRC of packet sender                        |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |                  SSRC of media source                         |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |  Unique identifier 'R' 'E' 'M' 'B'                            |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |  Num SSRC     | BR Exp    |  BR Mantissa                      |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |   SSRC feedback                                               |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |  ...
+
+class Remb : public RtcpPacket {
+ public:
+  Remb() : RtcpPacket() {
+    memset(&remb_, 0, sizeof(remb_));
+    memset(&remb_item_, 0, sizeof(remb_item_));
+  }
+
+  virtual ~Remb() {}
+
+  void From(uint32_t ssrc) {
+    remb_.SenderSSRC = ssrc;
+  }
+  void AppliesTo(uint32_t ssrc);
+
+  void WithBitrateBps(uint32_t bitrate_bps) {
+    remb_item_.BitRate = bitrate_bps;
+  }
+
+ protected:
+  virtual void Create(
+      uint8_t* packet, size_t* length, size_t max_length) const OVERRIDE;
+
+ private:
+  enum { kMaxNumberOfSsrcs = 0xff };
+
+  size_t BlockLength() const {
+    return (remb_item_.NumberOfSSRCs + 5) * 4;
+  }
+
+  RTCPUtility::RTCPPacketPSFBAPP remb_;
+  RTCPUtility::RTCPPacketPSFBREMBItem remb_item_;
+
+  DISALLOW_COPY_AND_ASSIGN(Remb);
+};
+
+// From RFC 3611: RTP Control Protocol Extended Reports (RTCP XR).
+//
+// Format for XR packets:
+//
+//   0                   1                   2                   3
+//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |V=2|P|reserved |   PT=XR=207   |             length            |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |                              SSRC                             |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  :                         report blocks                         :
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+class Xr : public RtcpPacket {
+ public:
+  typedef std::vector<RTCPUtility::RTCPPacketXRDLRRReportBlockItem> DlrrBlock;
+  Xr() : RtcpPacket() {
+    memset(&xr_header_, 0, sizeof(xr_header_));
+  }
+
+  virtual ~Xr() {}
+
+  void From(uint32_t ssrc) {
+    xr_header_.OriginatorSSRC = ssrc;
+  }
+  void WithRrtr(Rrtr* rrtr);
+  void WithDlrr(Dlrr* dlrr);
+  void WithVoipMetric(VoipMetric* voip_metric);
+
+ protected:
+  virtual void Create(
+      uint8_t* packet, size_t* length, size_t max_length) const OVERRIDE;
+
+ private:
+  enum { kMaxNumberOfRrtrBlocks = 50 };
+  enum { kMaxNumberOfDlrrBlocks = 50 };
+  enum { kMaxNumberOfVoipMetricBlocks = 50 };
+
+  size_t BlockLength() const {
+    const size_t kXrHeaderLength = 8;
+    return kXrHeaderLength + RrtrLength() + DlrrLength() + VoipMetricLength();
+  }
+
+  size_t RrtrLength() const {
+    const size_t kRrtrBlockLength = 12;
+    return kRrtrBlockLength * rrtr_blocks_.size();
+  }
+
+  size_t DlrrLength() const;
+
+  size_t VoipMetricLength() const {
+    const size_t kVoipMetricBlockLength = 36;
+    return kVoipMetricBlockLength * voip_metric_blocks_.size();
+  }
+
+  RTCPUtility::RTCPPacketXR xr_header_;
+  std::vector<RTCPUtility::RTCPPacketXRReceiverReferenceTimeItem> rrtr_blocks_;
+  std::vector<DlrrBlock> dlrr_blocks_;
+  std::vector<RTCPUtility::RTCPPacketXRVOIPMetricItem> voip_metric_blocks_;
+
+  DISALLOW_COPY_AND_ASSIGN(Xr);
+};
+
+// Receiver Reference Time Report Block (RFC 3611).
+//
+//   0                   1                   2                   3
+//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |     BT=4      |   reserved    |       block length = 2        |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |              NTP timestamp, most significant word             |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |             NTP timestamp, least significant word             |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+class Rrtr {
+ public:
+  Rrtr() {
+    memset(&rrtr_block_, 0, sizeof(rrtr_block_));
+  }
+  ~Rrtr() {}
+
+  void WithNtpSec(uint32_t sec) {
+    rrtr_block_.NTPMostSignificant = sec;
+  }
+  void WithNtpFrac(uint32_t frac) {
+    rrtr_block_.NTPLeastSignificant = frac;
+  }
+
+ private:
+  friend class Xr;
+  RTCPUtility::RTCPPacketXRReceiverReferenceTimeItem rrtr_block_;
+
+  DISALLOW_COPY_AND_ASSIGN(Rrtr);
+};
+
+// DLRR Report Block (RFC 3611).
+//
+//   0                   1                   2                   3
+//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |     BT=5      |   reserved    |         block length          |
+//  +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+//  |                 SSRC_1 (SSRC of first receiver)               | sub-
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ block
+//  |                         last RR (LRR)                         |   1
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |                   delay since last RR (DLRR)                  |
+//  +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+//  |                 SSRC_2 (SSRC of second receiver)              | sub-
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ block
+//  :                               ...                             :   2
+
+class Dlrr {
+ public:
+  Dlrr() {}
+  ~Dlrr() {}
+
+  void WithDlrrItem(uint32_t ssrc, uint32_t last_rr, uint32_t delay_last_rr);
+
+ private:
+  friend class Xr;
+  enum { kMaxNumberOfDlrrItems = 100 };
+
+  std::vector<RTCPUtility::RTCPPacketXRDLRRReportBlockItem> dlrr_block_;
+
+  DISALLOW_COPY_AND_ASSIGN(Dlrr);
+};
+
+// VoIP Metrics Report Block (RFC 3611).
+//
+//   0                   1                   2                   3
+//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |     BT=7      |   reserved    |       block length = 8        |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |                        SSRC of source                         |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |   loss rate   | discard rate  | burst density |  gap density  |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |       burst duration          |         gap duration          |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |     round trip delay          |       end system delay        |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  | signal level  |  noise level  |     RERL      |     Gmin      |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |   R factor    | ext. R factor |    MOS-LQ     |    MOS-CQ     |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |   RX config   |   reserved    |          JB nominal           |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |          JB maximum           |          JB abs max           |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+class VoipMetric {
+ public:
+  VoipMetric() {
+    memset(&metric_, 0, sizeof(metric_));
+  }
+  ~VoipMetric() {}
+
+  void To(uint32_t ssrc) { metric_.SSRC = ssrc; }
+  void LossRate(uint8_t loss_rate) { metric_.lossRate = loss_rate; }
+  void DiscardRate(uint8_t discard_rate) { metric_.discardRate = discard_rate; }
+  void BurstDensity(uint8_t burst_density) {
+    metric_.burstDensity = burst_density;
+  }
+  void GapDensity(uint8_t gap_density) { metric_.gapDensity = gap_density; }
+  void BurstDuration(uint16_t burst_duration) {
+    metric_.burstDuration = burst_duration;
+  }
+  void GapDuration(uint16_t gap_duration) {
+    metric_.gapDuration = gap_duration;
+  }
+  void RoundTripDelay(uint16_t round_trip_delay) {
+    metric_.roundTripDelay = round_trip_delay;
+  }
+  void EndSystemDelay(uint16_t end_system_delay) {
+    metric_.endSystemDelay = end_system_delay;
+  }
+  void SignalLevel(uint8_t signal_level) { metric_.signalLevel = signal_level; }
+  void NoiseLevel(uint8_t noise_level) { metric_.noiseLevel = noise_level; }
+  void Rerl(uint8_t rerl) { metric_.RERL = rerl; }
+  void Gmin(uint8_t gmin) { metric_.Gmin = gmin; }
+  void Rfactor(uint8_t rfactor) { metric_.Rfactor = rfactor; }
+  void ExtRfactor(uint8_t extrfactor) { metric_.extRfactor = extrfactor; }
+  void MosLq(uint8_t moslq) { metric_.MOSLQ = moslq; }
+  void MosCq(uint8_t moscq) { metric_.MOSCQ = moscq; }
+  void RxConfig(uint8_t rxconfig) { metric_.RXconfig = rxconfig; }
+  void JbNominal(uint16_t jbnominal) { metric_.JBnominal = jbnominal; }
+  void JbMax(uint16_t jbmax) { metric_.JBmax = jbmax; }
+  void JbAbsMax(uint16_t jbabsmax) { metric_.JBabsMax = jbabsmax; }
+
+ private:
+  friend class Xr;
+  RTCPUtility::RTCPPacketXRVOIPMetricItem metric_;
+
+  DISALLOW_COPY_AND_ASSIGN(VoipMetric);
 };
 
 // Class holding a RTCP packet.

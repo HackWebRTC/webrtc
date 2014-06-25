@@ -17,6 +17,7 @@
 
 using webrtc::rtcp::App;
 using webrtc::rtcp::Bye;
+using webrtc::rtcp::Dlrr;
 using webrtc::rtcp::Empty;
 using webrtc::rtcp::Fir;
 using webrtc::rtcp::Ij;
@@ -27,8 +28,15 @@ using webrtc::rtcp::SenderReport;
 using webrtc::rtcp::Sli;
 using webrtc::rtcp::RawPacket;
 using webrtc::rtcp::ReceiverReport;
+using webrtc::rtcp::Remb;
 using webrtc::rtcp::ReportBlock;
 using webrtc::rtcp::Rpsi;
+using webrtc::rtcp::Rrtr;
+using webrtc::rtcp::SenderReport;
+using webrtc::rtcp::Tmmbn;
+using webrtc::rtcp::Tmmbr;
+using webrtc::rtcp::VoipMetric;
+using webrtc::rtcp::Xr;
 using webrtc::test::RtcpPacketParser;
 
 namespace webrtc {
@@ -588,5 +596,308 @@ TEST(RtcpPacketTest, BuildWithTooSmallBuffer_LastBlockFits) {
   EXPECT_EQ(0, parser.receiver_report()->num_packets());
   EXPECT_EQ(0, parser.report_block()->num_packets());
   EXPECT_EQ(1, parser.fir()->num_packets());
+}
+
+TEST(RtcpPacketTest, Remb) {
+  Remb remb;
+  remb.From(kSenderSsrc);
+  remb.AppliesTo(kRemoteSsrc);
+  remb.AppliesTo(kRemoteSsrc + 1);
+  remb.AppliesTo(kRemoteSsrc + 2);
+  remb.WithBitrateBps(261011);
+
+  RawPacket packet = remb.Build();
+  RtcpPacketParser parser;
+  parser.Parse(packet.buffer(), packet.buffer_length());
+  EXPECT_EQ(1, parser.psfb_app()->num_packets());
+  EXPECT_EQ(kSenderSsrc, parser.psfb_app()->Ssrc());
+  EXPECT_EQ(1, parser.remb_item()->num_packets());
+  EXPECT_EQ(261011, parser.remb_item()->last_bitrate_bps());
+  std::vector<uint32_t> ssrcs = parser.remb_item()->last_ssrc_list();
+  EXPECT_EQ(kRemoteSsrc, ssrcs[0]);
+  EXPECT_EQ(kRemoteSsrc + 1, ssrcs[1]);
+  EXPECT_EQ(kRemoteSsrc + 2, ssrcs[2]);
+}
+
+TEST(RtcpPacketTest, Tmmbr) {
+  Tmmbr tmmbr;
+  tmmbr.From(kSenderSsrc);
+  tmmbr.To(kRemoteSsrc);
+  tmmbr.WithBitrateKbps(312);
+  tmmbr.WithOverhead(60);
+
+  RawPacket packet = tmmbr.Build();
+  RtcpPacketParser parser;
+  parser.Parse(packet.buffer(), packet.buffer_length());
+  EXPECT_EQ(1, parser.tmmbr()->num_packets());
+  EXPECT_EQ(kSenderSsrc, parser.tmmbr()->Ssrc());
+  EXPECT_EQ(1, parser.tmmbr_item()->num_packets());
+  EXPECT_EQ(312U, parser.tmmbr_item()->BitrateKbps());
+  EXPECT_EQ(60U, parser.tmmbr_item()->Overhead());
+}
+
+TEST(RtcpPacketTest, TmmbnWithNoItem) {
+  Tmmbn tmmbn;
+  tmmbn.From(kSenderSsrc);
+
+  RawPacket packet = tmmbn.Build();
+  RtcpPacketParser parser;
+  parser.Parse(packet.buffer(), packet.buffer_length());
+  EXPECT_EQ(1, parser.tmmbn()->num_packets());
+  EXPECT_EQ(kSenderSsrc, parser.tmmbn()->Ssrc());
+  EXPECT_EQ(0, parser.tmmbn_items()->num_packets());
+}
+
+TEST(RtcpPacketTest, TmmbnWithOneItem) {
+  Tmmbn tmmbn;
+  tmmbn.From(kSenderSsrc);
+  tmmbn.WithTmmbr(kRemoteSsrc, 312, 60);
+
+  RawPacket packet = tmmbn.Build();
+  RtcpPacketParser parser;
+  parser.Parse(packet.buffer(), packet.buffer_length());
+  EXPECT_EQ(1, parser.tmmbn()->num_packets());
+  EXPECT_EQ(kSenderSsrc, parser.tmmbn()->Ssrc());
+  EXPECT_EQ(1, parser.tmmbn_items()->num_packets());
+  EXPECT_EQ(kRemoteSsrc, parser.tmmbn_items()->Ssrc(0));
+  EXPECT_EQ(312U, parser.tmmbn_items()->BitrateKbps(0));
+  EXPECT_EQ(60U, parser.tmmbn_items()->Overhead(0));
+}
+
+TEST(RtcpPacketTest, TmmbnWithTwoItems) {
+  Tmmbn tmmbn;
+  tmmbn.From(kSenderSsrc);
+  tmmbn.WithTmmbr(kRemoteSsrc, 312, 60);
+  tmmbn.WithTmmbr(kRemoteSsrc + 1, 1288, 40);
+
+  RawPacket packet = tmmbn.Build();
+  RtcpPacketParser parser;
+  parser.Parse(packet.buffer(), packet.buffer_length());
+  EXPECT_EQ(1, parser.tmmbn()->num_packets());
+  EXPECT_EQ(kSenderSsrc, parser.tmmbn()->Ssrc());
+  EXPECT_EQ(2, parser.tmmbn_items()->num_packets());
+  EXPECT_EQ(kRemoteSsrc, parser.tmmbn_items()->Ssrc(0));
+  EXPECT_EQ(312U, parser.tmmbn_items()->BitrateKbps(0));
+  EXPECT_EQ(60U, parser.tmmbn_items()->Overhead(0));
+  EXPECT_EQ(kRemoteSsrc + 1, parser.tmmbn_items()->Ssrc(1));
+  EXPECT_EQ(1288U, parser.tmmbn_items()->BitrateKbps(1));
+  EXPECT_EQ(40U, parser.tmmbn_items()->Overhead(1));
+}
+
+TEST(RtcpPacketTest, XrWithNoReportBlocks) {
+  Xr xr;
+  xr.From(kSenderSsrc);
+
+  RawPacket packet = xr.Build();
+  RtcpPacketParser parser;
+  parser.Parse(packet.buffer(), packet.buffer_length());
+  EXPECT_EQ(1, parser.xr_header()->num_packets());
+  EXPECT_EQ(kSenderSsrc, parser.xr_header()->Ssrc());
+}
+
+TEST(RtcpPacketTest, XrWithRrtr) {
+  Rrtr rrtr;
+  rrtr.WithNtpSec(0x11111111);
+  rrtr.WithNtpFrac(0x22222222);
+  Xr xr;
+  xr.From(kSenderSsrc);
+  xr.WithRrtr(&rrtr);
+
+  RawPacket packet = xr.Build();
+  RtcpPacketParser parser;
+  parser.Parse(packet.buffer(), packet.buffer_length());
+  EXPECT_EQ(1, parser.xr_header()->num_packets());
+  EXPECT_EQ(kSenderSsrc, parser.xr_header()->Ssrc());
+  EXPECT_EQ(1, parser.rrtr()->num_packets());
+  EXPECT_EQ(0x11111111U, parser.rrtr()->NtpSec());
+  EXPECT_EQ(0x22222222U, parser.rrtr()->NtpFrac());
+}
+
+TEST(RtcpPacketTest, XrWithTwoRrtrBlocks) {
+  Rrtr rrtr1;
+  rrtr1.WithNtpSec(0x11111111);
+  rrtr1.WithNtpFrac(0x22222222);
+  Rrtr rrtr2;
+  rrtr2.WithNtpSec(0x33333333);
+  rrtr2.WithNtpFrac(0x44444444);
+  Xr xr;
+  xr.From(kSenderSsrc);
+  xr.WithRrtr(&rrtr1);
+  xr.WithRrtr(&rrtr2);
+
+  RawPacket packet = xr.Build();
+  RtcpPacketParser parser;
+  parser.Parse(packet.buffer(), packet.buffer_length());
+  EXPECT_EQ(1, parser.xr_header()->num_packets());
+  EXPECT_EQ(kSenderSsrc, parser.xr_header()->Ssrc());
+  EXPECT_EQ(2, parser.rrtr()->num_packets());
+  EXPECT_EQ(0x33333333U, parser.rrtr()->NtpSec());
+  EXPECT_EQ(0x44444444U, parser.rrtr()->NtpFrac());
+}
+
+TEST(RtcpPacketTest, XrWithDlrrWithOneSubBlock) {
+  Dlrr dlrr;
+  dlrr.WithDlrrItem(0x11111111, 0x22222222, 0x33333333);
+  Xr xr;
+  xr.From(kSenderSsrc);
+  xr.WithDlrr(&dlrr);
+
+  RawPacket packet = xr.Build();
+  RtcpPacketParser parser;
+  parser.Parse(packet.buffer(), packet.buffer_length());
+  EXPECT_EQ(1, parser.xr_header()->num_packets());
+  EXPECT_EQ(kSenderSsrc, parser.xr_header()->Ssrc());
+  EXPECT_EQ(1, parser.dlrr()->num_packets());
+  EXPECT_EQ(1, parser.dlrr_items()->num_packets());
+  EXPECT_EQ(0x11111111U, parser.dlrr_items()->Ssrc(0));
+  EXPECT_EQ(0x22222222U, parser.dlrr_items()->LastRr(0));
+  EXPECT_EQ(0x33333333U, parser.dlrr_items()->DelayLastRr(0));
+}
+
+TEST(RtcpPacketTest, XrWithDlrrWithTwoSubBlocks) {
+  Dlrr dlrr;
+  dlrr.WithDlrrItem(0x11111111, 0x22222222, 0x33333333);
+  dlrr.WithDlrrItem(0x44444444, 0x55555555, 0x66666666);
+  Xr xr;
+  xr.From(kSenderSsrc);
+  xr.WithDlrr(&dlrr);
+
+  RawPacket packet = xr.Build();
+  RtcpPacketParser parser;
+  parser.Parse(packet.buffer(), packet.buffer_length());
+  EXPECT_EQ(1, parser.xr_header()->num_packets());
+  EXPECT_EQ(kSenderSsrc, parser.xr_header()->Ssrc());
+  EXPECT_EQ(1, parser.dlrr()->num_packets());
+  EXPECT_EQ(2, parser.dlrr_items()->num_packets());
+  EXPECT_EQ(0x11111111U, parser.dlrr_items()->Ssrc(0));
+  EXPECT_EQ(0x22222222U, parser.dlrr_items()->LastRr(0));
+  EXPECT_EQ(0x33333333U, parser.dlrr_items()->DelayLastRr(0));
+  EXPECT_EQ(0x44444444U, parser.dlrr_items()->Ssrc(1));
+  EXPECT_EQ(0x55555555U, parser.dlrr_items()->LastRr(1));
+  EXPECT_EQ(0x66666666U, parser.dlrr_items()->DelayLastRr(1));
+}
+
+TEST(RtcpPacketTest, XrWithTwoDlrrBlocks) {
+  Dlrr dlrr1;
+  dlrr1.WithDlrrItem(0x11111111, 0x22222222, 0x33333333);
+  Dlrr dlrr2;
+  dlrr2.WithDlrrItem(0x44444444, 0x55555555, 0x66666666);
+  Xr xr;
+  xr.From(kSenderSsrc);
+  xr.WithDlrr(&dlrr1);
+  xr.WithDlrr(&dlrr2);
+
+  RawPacket packet = xr.Build();
+  RtcpPacketParser parser;
+  parser.Parse(packet.buffer(), packet.buffer_length());
+  EXPECT_EQ(1, parser.xr_header()->num_packets());
+  EXPECT_EQ(kSenderSsrc, parser.xr_header()->Ssrc());
+  EXPECT_EQ(2, parser.dlrr()->num_packets());
+  EXPECT_EQ(2, parser.dlrr_items()->num_packets());
+  EXPECT_EQ(0x11111111U, parser.dlrr_items()->Ssrc(0));
+  EXPECT_EQ(0x22222222U, parser.dlrr_items()->LastRr(0));
+  EXPECT_EQ(0x33333333U, parser.dlrr_items()->DelayLastRr(0));
+  EXPECT_EQ(0x44444444U, parser.dlrr_items()->Ssrc(1));
+  EXPECT_EQ(0x55555555U, parser.dlrr_items()->LastRr(1));
+  EXPECT_EQ(0x66666666U, parser.dlrr_items()->DelayLastRr(1));
+}
+
+TEST(RtcpPacketTest, XrWithVoipMetric) {
+  VoipMetric metric;
+  metric.To(kRemoteSsrc);
+  metric.LossRate(1);
+  metric.DiscardRate(2);
+  metric.BurstDensity(3);
+  metric.GapDensity(4);
+  metric.BurstDuration(0x1111);
+  metric.GapDuration(0x2222);
+  metric.RoundTripDelay(0x3333);
+  metric.EndSystemDelay(0x4444);
+  metric.SignalLevel(5);
+  metric.NoiseLevel(6);
+  metric.Rerl(7);
+  metric.Gmin(8);
+  metric.Rfactor(9);
+  metric.ExtRfactor(10);
+  metric.MosLq(11);
+  metric.MosCq(12);
+  metric.RxConfig(13);
+  metric.JbNominal(0x5555);
+  metric.JbMax(0x6666);
+  metric.JbAbsMax(0x7777);
+
+  Xr xr;
+  xr.From(kSenderSsrc);
+  xr.WithVoipMetric(&metric);
+
+  RawPacket packet = xr.Build();
+  RtcpPacketParser parser;
+  parser.Parse(packet.buffer(), packet.buffer_length());
+  EXPECT_EQ(1, parser.xr_header()->num_packets());
+  EXPECT_EQ(kSenderSsrc, parser.xr_header()->Ssrc());
+  EXPECT_EQ(1, parser.voip_metric()->num_packets());
+  EXPECT_EQ(kRemoteSsrc, parser.voip_metric()->Ssrc());
+  EXPECT_EQ(1, parser.voip_metric()->LossRate());
+  EXPECT_EQ(2, parser.voip_metric()->DiscardRate());
+  EXPECT_EQ(3, parser.voip_metric()->BurstDensity());
+  EXPECT_EQ(4, parser.voip_metric()->GapDensity());
+  EXPECT_EQ(0x1111, parser.voip_metric()->BurstDuration());
+  EXPECT_EQ(0x2222, parser.voip_metric()->GapDuration());
+  EXPECT_EQ(0x3333, parser.voip_metric()->RoundTripDelay());
+  EXPECT_EQ(0x4444, parser.voip_metric()->EndSystemDelay());
+  EXPECT_EQ(5, parser.voip_metric()->SignalLevel());
+  EXPECT_EQ(6, parser.voip_metric()->NoiseLevel());
+  EXPECT_EQ(7, parser.voip_metric()->Rerl());
+  EXPECT_EQ(8, parser.voip_metric()->Gmin());
+  EXPECT_EQ(9, parser.voip_metric()->Rfactor());
+  EXPECT_EQ(10, parser.voip_metric()->ExtRfactor());
+  EXPECT_EQ(11, parser.voip_metric()->MosLq());
+  EXPECT_EQ(12, parser.voip_metric()->MosCq());
+  EXPECT_EQ(13, parser.voip_metric()->RxConfig());
+  EXPECT_EQ(0x5555, parser.voip_metric()->JbNominal());
+  EXPECT_EQ(0x6666, parser.voip_metric()->JbMax());
+  EXPECT_EQ(0x7777, parser.voip_metric()->JbAbsMax());
+}
+
+TEST(RtcpPacketTest, XrWithMultipleReportBlocks) {
+  Rrtr rrtr;
+  Dlrr dlrr;
+  dlrr.WithDlrrItem(1, 2, 3);
+  VoipMetric metric;
+  Xr xr;
+  xr.From(kSenderSsrc);
+  xr.WithRrtr(&rrtr);
+  xr.WithDlrr(&dlrr);
+  xr.WithVoipMetric(&metric);
+
+  RawPacket packet = xr.Build();
+  RtcpPacketParser parser;
+  parser.Parse(packet.buffer(), packet.buffer_length());
+  EXPECT_EQ(1, parser.xr_header()->num_packets());
+  EXPECT_EQ(kSenderSsrc, parser.xr_header()->Ssrc());
+  EXPECT_EQ(1, parser.rrtr()->num_packets());
+  EXPECT_EQ(1, parser.dlrr()->num_packets());
+  EXPECT_EQ(1, parser.dlrr_items()->num_packets());
+  EXPECT_EQ(1, parser.voip_metric()->num_packets());
+}
+
+TEST(RtcpPacketTest, DlrrWithoutItemNotIncludedInPacket) {
+  Rrtr rrtr;
+  Dlrr dlrr;
+  VoipMetric metric;
+  Xr xr;
+  xr.From(kSenderSsrc);
+  xr.WithRrtr(&rrtr);
+  xr.WithDlrr(&dlrr);
+  xr.WithVoipMetric(&metric);
+
+  RawPacket packet = xr.Build();
+  RtcpPacketParser parser;
+  parser.Parse(packet.buffer(), packet.buffer_length());
+  EXPECT_EQ(1, parser.xr_header()->num_packets());
+  EXPECT_EQ(kSenderSsrc, parser.xr_header()->Ssrc());
+  EXPECT_EQ(1, parser.rrtr()->num_packets());
+  EXPECT_EQ(0, parser.dlrr()->num_packets());
+  EXPECT_EQ(1, parser.voip_metric()->num_packets());
 }
 }  // namespace webrtc

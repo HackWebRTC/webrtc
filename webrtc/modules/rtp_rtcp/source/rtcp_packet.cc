@@ -13,6 +13,10 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 
+using webrtc::RTCPUtility::kBtDlrr;
+using webrtc::RTCPUtility::kBtReceiverReferenceTime;
+using webrtc::RTCPUtility::kBtVoipMetric;
+
 using webrtc::RTCPUtility::PT_APP;
 using webrtc::RTCPUtility::PT_BYE;
 using webrtc::RTCPUtility::PT_IJ;
@@ -67,6 +71,24 @@ void AssignUWord24(uint8_t* buffer, size_t* offset, uint32_t value) {
 void AssignUWord32(uint8_t* buffer, size_t* offset, uint32_t value) {
   ModuleRTPUtility::AssignUWord32ToBuffer(buffer + *offset, value);
   *offset += 4;
+}
+
+void ComputeMantissaAnd6bitBase2Exponent(uint32_t input_base10,
+                                         uint8_t bits_mantissa,
+                                         uint32_t* mantissa,
+                                         uint8_t* exp) {
+  // input_base10 = mantissa * 2^exp
+  assert(bits_mantissa <= 32);
+  uint32_t mantissa_max = (1 << bits_mantissa) - 1;
+  uint8_t exponent = 0;
+  for (uint32_t i = 0; i < 64; ++i) {
+    if (input_base10 <= (mantissa_max << i)) {
+      exponent = i;
+      break;
+    }
+  }
+  *exp = exponent;
+  *mantissa = (input_base10 >> exponent);
 }
 
 size_t BlockToHeaderLength(size_t length_in_bytes) {
@@ -440,6 +462,264 @@ void CreateFir(const RTCPPacketPSFBFIR& fir,
   AssignUWord8(buffer, pos, fir_item.CommandSequenceNumber);
   AssignUWord24(buffer, pos, 0);
 }
+
+void CreateTmmbrItem(const RTCPPacketRTPFBTMMBRItem& tmmbr_item,
+                     uint8_t* buffer,
+                     size_t* pos) {
+  uint32_t bitrate_bps = tmmbr_item.MaxTotalMediaBitRate * 1000;
+  uint32_t mantissa = 0;
+  uint8_t exp = 0;
+  ComputeMantissaAnd6bitBase2Exponent(bitrate_bps, 17, &mantissa, &exp);
+
+  AssignUWord32(buffer, pos, tmmbr_item.SSRC);
+  AssignUWord8(buffer, pos, (exp << 2) + ((mantissa >> 15) & 0x03));
+  AssignUWord8(buffer, pos, mantissa >> 7);
+  AssignUWord8(buffer, pos, (mantissa << 1) +
+                            ((tmmbr_item.MeasuredOverhead >> 8) & 0x01));
+  AssignUWord8(buffer, pos, tmmbr_item.MeasuredOverhead);
+}
+
+// Temporary Maximum Media Stream Bit Rate Request (TMMBR) (RFC 5104).
+//
+// FCI:
+//
+//    0                   1                   2                   3
+//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |                              SSRC                             |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   | MxTBR Exp |  MxTBR Mantissa                 |Measured Overhead|
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+void CreateTmmbr(const RTCPPacketRTPFBTMMBR& tmmbr,
+                 const RTCPPacketRTPFBTMMBRItem& tmmbr_item,
+                 size_t length,
+                 uint8_t* buffer,
+                 size_t* pos) {
+  const uint8_t kFmt = 3;
+  CreateHeader(kFmt, PT_RTPFB, length, buffer, pos);
+  AssignUWord32(buffer, pos, tmmbr.SenderSSRC);
+  AssignUWord32(buffer, pos, kUnusedMediaSourceSsrc0);
+  CreateTmmbrItem(tmmbr_item, buffer, pos);
+}
+
+// Temporary Maximum Media Stream Bit Rate Notification (TMMBN) (RFC 5104).
+//
+// FCI:
+//
+//    0                   1                   2                   3
+//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |                              SSRC                             |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   | MxTBR Exp |  MxTBR Mantissa                 |Measured Overhead|
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+void CreateTmmbn(const RTCPPacketRTPFBTMMBN& tmmbn,
+                 const std::vector<RTCPPacketRTPFBTMMBRItem>& tmmbn_items,
+                 size_t length,
+                 uint8_t* buffer,
+                 size_t* pos) {
+  const uint8_t kFmt = 4;
+  CreateHeader(kFmt, PT_RTPFB, length, buffer, pos);
+  AssignUWord32(buffer, pos, tmmbn.SenderSSRC);
+  AssignUWord32(buffer, pos, kUnusedMediaSourceSsrc0);
+  for (uint8_t i = 0; i < tmmbn_items.size(); ++i) {
+    CreateTmmbrItem(tmmbn_items[i], buffer, pos);
+  }
+}
+
+// Receiver Estimated Max Bitrate (REMB) (draft-alvestrand-rmcat-remb).
+//
+//    0                   1                   2                   3
+//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |V=2|P| FMT=15  |   PT=206      |             length            |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |                  SSRC of packet sender                        |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |                  SSRC of media source                         |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |  Unique identifier 'R' 'E' 'M' 'B'                            |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |  Num SSRC     | BR Exp    |  BR Mantissa                      |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |   SSRC feedback                                               |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |  ...                                                          |
+
+void CreateRemb(const RTCPPacketPSFBAPP& remb,
+                const RTCPPacketPSFBREMBItem& remb_item,
+                size_t length,
+                uint8_t* buffer,
+                size_t* pos) {
+  uint32_t mantissa = 0;
+  uint8_t exp = 0;
+  ComputeMantissaAnd6bitBase2Exponent(remb_item.BitRate, 18, &mantissa, &exp);
+
+  const uint8_t kFmt = 15;
+  CreateHeader(kFmt, PT_PSFB, length, buffer, pos);
+  AssignUWord32(buffer, pos, remb.SenderSSRC);
+  AssignUWord32(buffer, pos, kUnusedMediaSourceSsrc0);
+  AssignUWord8(buffer, pos, 'R');
+  AssignUWord8(buffer, pos, 'E');
+  AssignUWord8(buffer, pos, 'M');
+  AssignUWord8(buffer, pos, 'B');
+  AssignUWord8(buffer, pos, remb_item.NumberOfSSRCs);
+  AssignUWord8(buffer, pos, (exp << 2) + ((mantissa >> 16) & 0x03));
+  AssignUWord8(buffer, pos, mantissa >> 8);
+  AssignUWord8(buffer, pos, mantissa);
+  for (uint8_t i = 0; i < remb_item.NumberOfSSRCs; ++i) {
+    AssignUWord32(buffer, pos, remb_item.SSRCs[i]);
+  }
+}
+
+// From RFC 3611: RTP Control Protocol Extended Reports (RTCP XR).
+//
+// Format for XR packets:
+//
+//   0                   1                   2                   3
+//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |V=2|P|reserved |   PT=XR=207   |             length            |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |                              SSRC                             |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  :                         report blocks                         :
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+void CreateXrHeader(const RTCPPacketXR& header,
+                    size_t length,
+                    uint8_t* buffer,
+                    size_t* pos) {
+  CreateHeader(0U, PT_XR, length, buffer, pos);
+  AssignUWord32(buffer, pos, header.OriginatorSSRC);
+}
+
+void CreateXrBlockHeader(uint8_t block_type,
+                         uint16_t block_length,
+                         uint8_t* buffer,
+                         size_t* pos) {
+  AssignUWord8(buffer, pos, block_type);
+  AssignUWord8(buffer, pos, 0);
+  AssignUWord16(buffer, pos, block_length);
+}
+
+// Receiver Reference Time Report Block (RFC 3611).
+//
+//   0                   1                   2                   3
+//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |     BT=4      |   reserved    |       block length = 2        |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |              NTP timestamp, most significant word             |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |             NTP timestamp, least significant word             |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+void CreateRrtr(const std::vector<RTCPPacketXRReceiverReferenceTimeItem>& rrtrs,
+                uint8_t* buffer,
+                size_t* pos) {
+  const uint16_t kBlockLength = 2;
+  for (std::vector<RTCPPacketXRReceiverReferenceTimeItem>::const_iterator it =
+       rrtrs.begin(); it != rrtrs.end(); ++it) {
+    CreateXrBlockHeader(kBtReceiverReferenceTime, kBlockLength, buffer, pos);
+    AssignUWord32(buffer, pos, (*it).NTPMostSignificant);
+    AssignUWord32(buffer, pos, (*it).NTPLeastSignificant);
+  }
+}
+
+// DLRR Report Block (RFC 3611).
+//
+//   0                   1                   2                   3
+//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |     BT=5      |   reserved    |         block length          |
+//  +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+//  |                 SSRC_1 (SSRC of first receiver)               | sub-
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ block
+//  |                         last RR (LRR)                         |   1
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |                   delay since last RR (DLRR)                  |
+//  +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+//  |                 SSRC_2 (SSRC of second receiver)              | sub-
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ block
+//  :                               ...                             :   2
+
+void CreateDlrr(const std::vector<Xr::DlrrBlock>& dlrrs,
+                uint8_t* buffer,
+                size_t* pos) {
+  for (std::vector<Xr::DlrrBlock>::const_iterator it = dlrrs.begin();
+       it != dlrrs.end(); ++it) {
+    if ((*it).empty()) {
+      continue;
+    }
+    uint16_t block_length = 3 * (*it).size();
+    CreateXrBlockHeader(kBtDlrr, block_length, buffer, pos);
+    for (Xr::DlrrBlock::const_iterator it_block = (*it).begin();
+         it_block != (*it).end(); ++it_block) {
+      AssignUWord32(buffer, pos, (*it_block).SSRC);
+      AssignUWord32(buffer, pos, (*it_block).LastRR);
+      AssignUWord32(buffer, pos, (*it_block).DelayLastRR);
+    }
+  }
+}
+
+// VoIP Metrics Report Block (RFC 3611).
+//
+//   0                   1                   2                   3
+//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |     BT=7      |   reserved    |       block length = 8        |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |                        SSRC of source                         |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |   loss rate   | discard rate  | burst density |  gap density  |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |       burst duration          |         gap duration          |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |     round trip delay          |       end system delay        |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  | signal level  |  noise level  |     RERL      |     Gmin      |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |   R factor    | ext. R factor |    MOS-LQ     |    MOS-CQ     |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |   RX config   |   reserved    |          JB nominal           |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  |          JB maximum           |          JB abs max           |
+//  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+void CreateVoipMetric(const std::vector<RTCPPacketXRVOIPMetricItem>& metrics,
+                      uint8_t* buffer,
+                      size_t* pos) {
+  const uint16_t kBlockLength = 8;
+  for (std::vector<RTCPPacketXRVOIPMetricItem>::const_iterator it =
+       metrics.begin(); it != metrics.end(); ++it) {
+    CreateXrBlockHeader(kBtVoipMetric, kBlockLength, buffer, pos);
+    AssignUWord32(buffer, pos, (*it).SSRC);
+    AssignUWord8(buffer, pos, (*it).lossRate);
+    AssignUWord8(buffer, pos, (*it).discardRate);
+    AssignUWord8(buffer, pos, (*it).burstDensity);
+    AssignUWord8(buffer, pos, (*it).gapDensity);
+    AssignUWord16(buffer, pos, (*it).burstDuration);
+    AssignUWord16(buffer, pos, (*it).gapDuration);
+    AssignUWord16(buffer, pos, (*it).roundTripDelay);
+    AssignUWord16(buffer, pos, (*it).endSystemDelay);
+    AssignUWord8(buffer, pos, (*it).signalLevel);
+    AssignUWord8(buffer, pos, (*it).noiseLevel);
+    AssignUWord8(buffer, pos, (*it).RERL);
+    AssignUWord8(buffer, pos, (*it).Gmin);
+    AssignUWord8(buffer, pos, (*it).Rfactor);
+    AssignUWord8(buffer, pos, (*it).extRfactor);
+    AssignUWord8(buffer, pos, (*it).MOSLQ);
+    AssignUWord8(buffer, pos, (*it).MOSCQ);
+    AssignUWord8(buffer, pos, (*it).RXconfig);
+    AssignUWord8(buffer, pos, 0);
+    AssignUWord16(buffer, pos, (*it).JBnominal);
+    AssignUWord16(buffer, pos, (*it).JBmax);
+    AssignUWord16(buffer, pos, (*it).JBabsMax);
+  }
+}
 }  // namespace
 
 void RtcpPacket::Append(RtcpPacket* packet) {
@@ -691,5 +971,120 @@ void Fir::Create(uint8_t* packet, size_t* length, size_t max_length) const {
   CreateFir(fir_, fir_item_, BlockToHeaderLength(BlockLength()), packet,
             length);
 }
+
+void Remb::Create(uint8_t* packet, size_t* length, size_t max_length) const {
+  if (*length + BlockLength() > max_length) {
+    LOG(LS_WARNING) << "Max packet size reached.";
+    return;
+  }
+  CreateRemb(remb_, remb_item_, BlockToHeaderLength(BlockLength()), packet,
+             length);
+}
+
+void Remb::AppliesTo(uint32_t ssrc) {
+  if (remb_item_.NumberOfSSRCs >= kMaxNumberOfSsrcs) {
+    LOG(LS_WARNING) << "Max number of REMB feedback SSRCs reached.";
+    return;
+  }
+  remb_item_.SSRCs[remb_item_.NumberOfSSRCs++] = ssrc;
+}
+
+void Tmmbr::Create(uint8_t* packet, size_t* length, size_t max_length) const {
+  if (*length + BlockLength() > max_length) {
+    LOG(LS_WARNING) << "Max packet size reached.";
+    return;
+  }
+  CreateTmmbr(tmmbr_, tmmbr_item_, BlockToHeaderLength(BlockLength()), packet,
+              length);
+}
+
+void Tmmbn::WithTmmbr(uint32_t ssrc, uint32_t bitrate_kbps, uint16_t overhead) {
+  assert(overhead <= 0x1ff);
+  if (tmmbn_items_.size() >= kMaxNumberOfTmmbrs) {
+    LOG(LS_WARNING) << "Max TMMBN size reached.";
+    return;
+  }
+  RTCPPacketRTPFBTMMBRItem tmmbn_item;
+  tmmbn_item.SSRC = ssrc;
+  tmmbn_item.MaxTotalMediaBitRate = bitrate_kbps;
+  tmmbn_item.MeasuredOverhead = overhead;
+  tmmbn_items_.push_back(tmmbn_item);
+}
+
+void Tmmbn::Create(uint8_t* packet, size_t* length, size_t max_length) const {
+  if (*length + BlockLength() > max_length) {
+    LOG(LS_WARNING) << "Max packet size reached.";
+    return;
+  }
+  CreateTmmbn(tmmbn_, tmmbn_items_, BlockToHeaderLength(BlockLength()), packet,
+              length);
+}
+
+void Xr::Create(uint8_t* packet, size_t* length, size_t max_length) const {
+  if (*length + BlockLength() > max_length) {
+    LOG(LS_WARNING) << "Max packet size reached.";
+    return;
+  }
+  CreateXrHeader(xr_header_, BlockToHeaderLength(BlockLength()), packet,
+                 length);
+  CreateRrtr(rrtr_blocks_, packet, length);
+  CreateDlrr(dlrr_blocks_, packet, length);
+  CreateVoipMetric(voip_metric_blocks_, packet, length);
+}
+
+void Xr::WithRrtr(Rrtr* rrtr) {
+  assert(rrtr);
+  if (rrtr_blocks_.size() >= kMaxNumberOfRrtrBlocks) {
+    LOG(LS_WARNING) << "Max RRTR blocks reached.";
+    return;
+  }
+  rrtr_blocks_.push_back(rrtr->rrtr_block_);
+}
+
+void Xr::WithDlrr(Dlrr* dlrr) {
+  assert(dlrr);
+  if (dlrr_blocks_.size() >= kMaxNumberOfDlrrBlocks) {
+    LOG(LS_WARNING) << "Max DLRR blocks reached.";
+    return;
+  }
+  dlrr_blocks_.push_back(dlrr->dlrr_block_);
+}
+
+void Xr::WithVoipMetric(VoipMetric* voip_metric) {
+  assert(voip_metric);
+  if (voip_metric_blocks_.size() >= kMaxNumberOfVoipMetricBlocks) {
+    LOG(LS_WARNING) << "Max Voip Metric blocks reached.";
+    return;
+  }
+  voip_metric_blocks_.push_back(voip_metric->metric_);
+}
+
+size_t Xr::DlrrLength() const {
+  const size_t kBlockHeaderLen = 4;
+  const size_t kSubBlockLen = 12;
+  size_t length = 0;
+  for (std::vector<DlrrBlock>::const_iterator it = dlrr_blocks_.begin();
+       it != dlrr_blocks_.end(); ++it) {
+    if (!(*it).empty()) {
+      length += kBlockHeaderLen + kSubBlockLen * (*it).size();
+    }
+  }
+  return length;
+}
+
+void Dlrr::WithDlrrItem(uint32_t ssrc,
+                        uint32_t last_rr,
+                        uint32_t delay_last_rr) {
+  if (dlrr_block_.size() >= kMaxNumberOfDlrrItems) {
+    LOG(LS_WARNING) << "Max DLRR items reached.";
+    return;
+  }
+  RTCPPacketXRDLRRReportBlockItem dlrr;
+  dlrr.SSRC = ssrc;
+  dlrr.LastRR = last_rr;
+  dlrr.DelayLastRR = delay_last_rr;
+  dlrr_block_.push_back(dlrr);
+}
+
 }  // namespace rtcp
 }  // namespace webrtc
