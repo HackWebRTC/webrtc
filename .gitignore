@@ -36,6 +36,7 @@
 .sw?
 /Makefile
 /build
+/buildtools
 /chromium_deps
 /chromium_gn
 /google_apis/build

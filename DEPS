@@ -29,6 +29,9 @@ deps = {
   "build":
     Var("chromium_trunk") + "/src/build@" + Var("chromium_revision"),
 
+  "buildtools":
+    From("chromium_deps", "src/buildtools"),
+
   # Needed by common.gypi.
   "google_apis/build":
     Var("chromium_trunk") + "/src/google_apis/build@" + Var("chromium_revision"),
@@ -244,46 +247,46 @@ hooks = [
   # Pull GN binaries. This needs to be before running GYP below.
   {
     "name": "gn_win",
-    "pattern": "tools/gn/bin/win/gn.exe.sha1",
+    "pattern": ".",
     "action": [ "download_from_google_storage",
                 "--no_resume",
                 "--platform=win32",
                 "--no_auth",
                 "--bucket", "chromium-gn",
-                "-s", Var("root_dir") + "/tools/gn/bin/win/gn.exe.sha1",
+                "-s", Var("root_dir") + "/buildtools/win/gn.exe.sha1",
     ],
   },
   {
     "name": "gn_mac",
-    "pattern": "tools/gn/bin/mac/gn.sha1",
+    "pattern": ".",
     "action": [ "download_from_google_storage",
                 "--no_resume",
                 "--platform=darwin",
                 "--no_auth",
                 "--bucket", "chromium-gn",
-                "-s", Var("root_dir") + "/tools/gn/bin/mac/gn.sha1",
+                "-s", Var("root_dir") + "/buildtools/mac/gn.sha1",
     ],
   },
   {
     "name": "gn_linux",
-    "pattern": "tools/gn/bin/linux/gn.sha1",
+    "pattern": ".",
     "action": [ "download_from_google_storage",
                 "--no_resume",
                 "--platform=linux*",
                 "--no_auth",
                 "--bucket", "chromium-gn",
-                "-s", Var("root_dir") + "/tools/gn/bin/linux/gn.sha1",
+                "-s", Var("root_dir") + "/buildtools/linux64/gn.sha1",
     ],
   },
   {
     "name": "gn_linux32",
-    "pattern": "tools/gn/bin/linux/gn32.sha1",
+    "pattern": ".",
     "action": [ "download_from_google_storage",
                 "--no_resume",
                 "--platform=linux*",
                 "--no_auth",
                 "--bucket", "chromium-gn",
-                "-s", Var("root_dir") + "/tools/gn/bin/linux/gn32.sha1",
+                "-s", Var("root_dir") + "/buildtools/linux32/gn.sha1",
     ],
   },
   # Pull clang-format binaries using checked-in hashes.
