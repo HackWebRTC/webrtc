@@ -1003,9 +1003,9 @@ TEST_F(WebRtcVideoChannel2Test, SetDefaultSendCodecs) {
   EXPECT_EQ(1000, config.rtp.nack.rtp_history_ms);
   EXPECT_EQ(default_ulpfec_codec_.id, config.rtp.fec.ulpfec_payload_type);
   EXPECT_EQ(default_red_codec_.id, config.rtp.fec.red_payload_type);
-  // TODO(pbos): Verify that the rtx ssrc is set, correct, not taken by anything
-  //             else.
-  // ASSERT_EQ(1u, config.rtp.rtx.ssrcs.size());
+
+  EXPECT_EQ(1u, config.rtp.rtx.ssrcs.size());
+  EXPECT_EQ(kRtxSsrcs1[0], config.rtp.rtx.ssrcs[0]);
   EXPECT_EQ(static_cast<int>(default_rtx_codec_.id),
             config.rtp.rtx.payload_type);
   // TODO(juberti): Check RTCP, PLI, TMMBR.
@@ -1024,18 +1024,49 @@ TEST_F(WebRtcVideoChannel2Test, SetSendCodecsWithoutFec) {
 }
 
 TEST_F(WebRtcVideoChannel2Test,
-       DISABLED_SetSendCodecRejectsRtxWithoutAssociatedPayloadType) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
+       SetSendCodecRejectsRtxWithoutAssociatedPayloadType) {
+  std::vector<VideoCodec> codecs;
+  cricket::VideoCodec rtx_codec(96, "rtx", 0, 0, 0, 0);
+  codecs.push_back(rtx_codec);
+  EXPECT_FALSE(channel_->SetSendCodecs(codecs))
+      << "RTX codec without associated payload type should be rejected.";
 }
 
 TEST_F(WebRtcVideoChannel2Test,
-       DISABLED_SetSendCodecRejectsRtxWithoutMatchingVideoCodec) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
+       SetSendCodecRejectsRtxWithoutMatchingVideoCodec) {
+  std::vector<VideoCodec> codecs;
+  cricket::VideoCodec rtx_codec =
+      cricket::VideoCodec::CreateRtxCodec(96, kVp8Codec.id);
+  codecs.push_back(kVp8Codec);
+  codecs.push_back(rtx_codec);
+  ASSERT_TRUE(channel_->SetSendCodecs(codecs));
+
+  cricket::VideoCodec rtx_codec2 =
+      cricket::VideoCodec::CreateRtxCodec(96, kVp8Codec.id + 1);
+  codecs.pop_back();
+  codecs.push_back(rtx_codec2);
+  EXPECT_FALSE(channel_->SetSendCodecs(codecs))
+      << "RTX without matching video codec should be rejected.";
 }
 
-TEST_F(WebRtcVideoChannel2Test,
-       DISABLED_SetCodecsWithoutFecDisablesCurrentFec) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
+TEST_F(WebRtcVideoChannel2Test, SetSendCodecsWithoutFecDisablesFec) {
+  std::vector<VideoCodec> codecs;
+  codecs.push_back(kVp8Codec);
+  codecs.push_back(kUlpfecCodec);
+  ASSERT_TRUE(channel_->SetSendCodecs(codecs));
+
+  FakeVideoSendStream* stream = AddSendStream();
+  webrtc::VideoSendStream::Config config = stream->GetConfig();
+
+  EXPECT_EQ(kUlpfecCodec.id, config.rtp.fec.ulpfec_payload_type);
+
+  codecs.pop_back();
+  ASSERT_TRUE(channel_->SetSendCodecs(codecs));
+  stream = fake_channel_->GetFakeCall()->GetVideoSendStreams()[0];
+  ASSERT_TRUE(stream != NULL);
+  config = stream->GetConfig();
+  EXPECT_EQ(-1, config.rtp.fec.ulpfec_payload_type)
+      << "SetSendCodec without FEC should disable current FEC.";
 }
 
 TEST_F(WebRtcVideoChannel2Test, DISABLED_SetSendCodecsChangesExistingStreams) {
@@ -1187,6 +1218,10 @@ TEST_F(WebRtcVideoChannel2Test,
   codecs.push_back(kVp9Codec);
   EXPECT_TRUE(channel_->SetRecvCodecs(codecs));
   FAIL();  // TODO(pbos): Verify that the FEC parameters are set for all codecs.
+}
+
+TEST_F(WebRtcVideoChannel2Test, DISABLED_SetRecvCodecsWithoutFecDisablesFec) {
+  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetSendCodecsRejectDuplicateFecPayloads) {
