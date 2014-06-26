@@ -117,6 +117,19 @@
     ['include_tests==1', {
       'targets': [
         {
+          'target_name': 'acm_receive_test',
+          'type': 'static_library',
+          'dependencies': [
+            'audio_coding_module',
+            'neteq_unittest_tools',
+            '<(DEPTH)/testing/gtest.gyp:gtest',
+          ],
+          'sources': [
+            'acm_receive_test.cc',
+            'acm_receive_test.h',
+          ],
+        }, # acm_receive_test
+        {
           'target_name': 'delay_test',
           'type': 'executable',
           'dependencies': [

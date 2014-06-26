@@ -92,6 +92,10 @@ Packet* RtpFileSource::NextPacket() {
       assert(false);
       return NULL;
     }
+    if (filter_.test(packet->header().payloadType)) {
+      // This payload type should be filtered out. Continue to the next packet.
+      continue;
+    }
     return packet.release();
   }
   return NULL;

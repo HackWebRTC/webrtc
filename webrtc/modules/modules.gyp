@@ -68,6 +68,7 @@
             '<@(audio_coding_defines)',
           ],
           'dependencies': [
+            'acm_receive_test',
             'audio_coding_module',
             'audio_processing',
             'bitrate_controller',
