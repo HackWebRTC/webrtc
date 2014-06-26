@@ -11,13 +11,12 @@
 #ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_CLOCK_H_
 #define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_CLOCK_H_
 
+#include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/thread_annotations.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-
-class RWLockWrapper;
 
 // January 1970, in NTP seconds.
 const uint32_t kNtpJan1970 = 2208988800UL;
