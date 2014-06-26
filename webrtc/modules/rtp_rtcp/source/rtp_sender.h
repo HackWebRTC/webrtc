@@ -397,7 +397,7 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
   // that by the time the function returns there is no guarantee
   // that the target bitrate is still valid.
   scoped_ptr<CriticalSectionWrapper> target_bitrate_critsect_;
-  uint16_t target_bitrate_ GUARDED_BY(target_bitrate_critsect_);
+  uint32_t target_bitrate_ GUARDED_BY(target_bitrate_critsect_);
 };
 
 }  // namespace webrtc
