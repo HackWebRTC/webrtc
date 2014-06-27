@@ -11,7 +11,7 @@ vars = {
   "googlecode_url": "http://%s.googlecode.com/svn",
   "sourceforge_url": "http://svn.code.sf.net/p/%(repo)s/code",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-  "chromium_revision": "277350",
+  "chromium_revision": "280149",
 
   # A small subset of WebKit is needed for the Android Python test framework.
   "webkit_trunk": "http://src.chromium.org/blink/trunk",
@@ -136,6 +136,9 @@ deps = {
 
   "tools/gyp":
     From("chromium_deps", "src/tools/gyp"),
+
+  "tools/memory":
+    Var("chromium_trunk") + "/src/tools/memory@" + Var("chromium_revision"),
 
   "tools/protoc_wrapper":
     Var("chromium_trunk") + "/src/tools/protoc_wrapper@" + Var("chromium_revision"),
@@ -288,6 +291,13 @@ hooks = [
                 "--bucket", "chromium-gn",
                 "-s", Var("root_dir") + "/buildtools/linux32/gn.sha1",
     ],
+  },
+  {
+    # Remove GN binaries from tools/gn/bin that aren't used anymore.
+    # TODO(kjellander) remove after the end of July, 2014.
+    "name": "remove_old_gn_binaries",
+    "pattern": ".",
+    "action": ["python", Var("root_dir") + "/tools/gn/bin/rm_binaries.py"],
   },
   # Pull clang-format binaries using checked-in hashes.
   {
