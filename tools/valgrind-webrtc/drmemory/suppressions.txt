@@ -928,3 +928,16 @@ name=https://code.google.com/p/webrtc/issues/detail?id=3490 (2)
 *!testing::internal::EqHelper<>::Compare<>
 *!talk_base::AsyncWriteTest_TestWrite_Test::TestBody
 *!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+UNINITIALIZED READ
+name=https://code.google.com/p/webrtc/issues/detail?id=3490 (3)
+drmemorylib.dll!replace_memcmp
+*!rtc::AsyncWriteTest_TestWrite_Test::TestBody
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+UNINITIALIZED READ
+name=https://code.google.com/p/webrtc/issues/detail?id=3490 (4)
+*!testing::internal::CmpHelperEQ<>
+*!testing::internal::EqHelper<>::Compare<>
+*!rtc::AsyncWriteTest_TestWrite_Test::TestBody
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
