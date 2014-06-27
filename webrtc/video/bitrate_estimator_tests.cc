@@ -19,6 +19,7 @@
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/thread_annotations.h"
 #include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/test/call_test.h"
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/fake_decoder.h"
@@ -30,12 +31,7 @@ namespace webrtc {
 static const int kTOFExtensionId = 4;
 static const int kASTExtensionId = 5;
 
-static unsigned int kDefaultTimeoutMs = 30 * 1000;
-static const uint32_t kSendSsrc = 0x654321;
-static const uint32_t kReceiverLocalSsrc = 0x123456;
-static const uint8_t kSendPayloadType = 125;
-
-class BitrateEstimatorTest : public ::testing::Test {
+class BitrateEstimatorTest : public test::CallTest {
  public:
   BitrateEstimatorTest()
       : receiver_trace_(),
@@ -43,7 +39,6 @@ class BitrateEstimatorTest : public ::testing::Test {
         receive_transport_(),
         sender_call_(),
         receiver_call_(),
-        send_config_(),
         receive_config_(),
         streams_() {
   }
@@ -68,11 +63,11 @@ class BitrateEstimatorTest : public ::testing::Test {
     receive_transport_.SetReceiver(sender_call_->Receiver());
 
     send_config_ = sender_call_->GetDefaultSendConfig();
-    send_config_.rtp.ssrcs.push_back(kSendSsrc);
+    send_config_.rtp.ssrcs.push_back(kSendSsrcs[0]);
     // Encoders will be set separately per stream.
     send_config_.encoder_settings.encoder = NULL;
     send_config_.encoder_settings.payload_name = "FAKE";
-    send_config_.encoder_settings.payload_type = kSendPayloadType;
+    send_config_.encoder_settings.payload_type = kFakeSendPayloadType;
     video_streams_ = test::CreateVideoStreams(1);
 
     receive_config_ = receiver_call_->GetDefaultReceiveConfig();
@@ -228,8 +223,6 @@ class BitrateEstimatorTest : public ::testing::Test {
   test::DirectTransport receive_transport_;
   scoped_ptr<Call> sender_call_;
   scoped_ptr<Call> receiver_call_;
-  VideoSendStream::Config send_config_;
-  std::vector<VideoStream> video_streams_;
   VideoReceiveStream::Config receive_config_;
   std::vector<Stream*> streams_;
 };

@@ -14,6 +14,8 @@
       'target_name': 'webrtc_test_common',
       'type': 'static_library',
       'sources': [
+        'call_test.cc',
+        'call_test.h',
         'configurable_frame_size_encoder.cc',
         'configurable_frame_size_encoder.h',
         'direct_transport.cc',
@@ -54,10 +56,11 @@
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
-        '<(webrtc_root)/modules/modules.gyp:video_capture_module',
         '<(webrtc_root)/modules/modules.gyp:media_file',
+        '<(webrtc_root)/modules/modules.gyp:video_capture_module',
         '<(webrtc_root)/test/test.gyp:frame_generator',
         '<(webrtc_root)/test/test.gyp:test_support',
+        '<(webrtc_root)/webrtc.gyp:webrtc',
       ],
     },
     {

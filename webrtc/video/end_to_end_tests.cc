@@ -24,6 +24,7 @@
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
+#include "webrtc/test/call_test.h"
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/fake_audio_device.h"
@@ -39,66 +40,19 @@
 
 namespace webrtc {
 
-static unsigned int kDefaultTimeoutMs = 30 * 1000;
-static unsigned int kLongTimeoutMs = 120 * 1000;
-static const uint32_t kSendSsrc = 0x654321;
-static const uint32_t kSendRtxSsrc = 0x424242;
-static const uint32_t kReceiverLocalSsrc = 0x123456;
-static const uint8_t kSendPayloadType = 125;
-static const uint8_t kSendRtxPayloadType = 126;
 static const int kRedPayloadType = 118;
 static const int kUlpfecPayloadType = 119;
 
-class CallTest : public ::testing::Test {
+class EndToEndTest : public test::CallTest {
  public:
-  CallTest()
-      : send_stream_(NULL),
-        receive_stream_(NULL),
-        fake_encoder_(Clock::GetRealTimeClock()) {}
+  EndToEndTest() {}
 
-  virtual ~CallTest() {
+  virtual ~EndToEndTest() {
     EXPECT_EQ(NULL, send_stream_);
     EXPECT_EQ(NULL, receive_stream_);
   }
 
  protected:
-  void CreateCalls(const Call::Config& sender_config,
-                   const Call::Config& receiver_config) {
-    sender_call_.reset(Call::Create(sender_config));
-    receiver_call_.reset(Call::Create(receiver_config));
-  }
-
-  void CreateTestConfigs() {
-    send_config_ = sender_call_->GetDefaultSendConfig();
-    receive_config_ = receiver_call_->GetDefaultReceiveConfig();
-
-    send_config_.rtp.ssrcs.push_back(kSendSsrc);
-    send_config_.encoder_settings.encoder = &fake_encoder_;
-    send_config_.encoder_settings.payload_name = "FAKE";
-    send_config_.encoder_settings.payload_type = kSendPayloadType;
-    video_streams_ = test::CreateVideoStreams(1);
-
-    assert(receive_config_.codecs.empty());
-    VideoCodec codec =
-        test::CreateDecoderVideoCodec(send_config_.encoder_settings);
-    receive_config_.codecs.push_back(codec);
-    ExternalVideoDecoder decoder;
-    decoder.decoder = &fake_decoder_;
-    decoder.payload_type = send_config_.encoder_settings.payload_type;
-    receive_config_.external_decoders.push_back(decoder);
-    receive_config_.rtp.remote_ssrc = send_config_.rtp.ssrcs[0];
-    receive_config_.rtp.local_ssrc = kReceiverLocalSsrc;
-  }
-
-  void CreateStreams() {
-    assert(send_stream_ == NULL);
-    assert(receive_stream_ == NULL);
-
-    send_stream_ =
-        sender_call_->CreateVideoSendStream(send_config_, video_streams_, NULL);
-    receive_stream_ = receiver_call_->CreateVideoReceiveStream(receive_config_);
-  }
-
   void CreateFrameGenerator() {
     frame_generator_capturer_.reset(
         test::FrameGeneratorCapturer::Create(send_stream_->Input(),
@@ -124,113 +78,19 @@ class CallTest : public ::testing::Test {
       receive_stream_->Stop();
   }
 
-  void DestroyStreams() {
-    if (send_stream_ != NULL)
-      sender_call_->DestroyVideoSendStream(send_stream_);
-    if (receive_stream_ != NULL)
-      receiver_call_->DestroyVideoReceiveStream(receive_stream_);
-    send_stream_ = NULL;
-    receive_stream_ = NULL;
-  }
-
   void DecodesRetransmittedFrame(bool retransmit_over_rtx);
   void ReceivesPliAndRecovers(int rtp_history_ms);
   void RespectsRtcpMode(newapi::RtcpMode rtcp_mode);
   void TestXrReceiverReferenceTimeReport(bool enable_rrtr);
-
-  scoped_ptr<Call> sender_call_;
-  scoped_ptr<Call> receiver_call_;
-
-  VideoSendStream::Config send_config_;
-  std::vector<VideoStream> video_streams_;
-  VideoReceiveStream::Config receive_config_;
-
-  VideoSendStream* send_stream_;
-  VideoReceiveStream* receive_stream_;
-
-  scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer_;
-
-  test::FakeEncoder fake_encoder_;
-  test::FakeDecoder fake_decoder_;
 };
 
-class NackObserver : public test::RtpRtcpObserver {
-  static const int kNumberOfNacksToObserve = 2;
-  static const int kLossBurstSize = 2;
-  static const int kPacketsBetweenLossBursts = 9;
-
- public:
-  NackObserver()
-      : test::RtpRtcpObserver(kLongTimeoutMs),
-        rtp_parser_(RtpHeaderParser::Create()),
-        sent_rtp_packets_(0),
-        packets_left_to_drop_(0),
-        nacks_left_(kNumberOfNacksToObserve) {}
-
- private:
-  virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
-    RTPHeader header;
-    EXPECT_TRUE(rtp_parser_->Parse(packet, static_cast<int>(length), &header));
-
-    // Never drop retransmitted packets.
-    if (dropped_packets_.find(header.sequenceNumber) !=
-        dropped_packets_.end()) {
-      retransmitted_packets_.insert(header.sequenceNumber);
-      if (nacks_left_ == 0 &&
-          retransmitted_packets_.size() == dropped_packets_.size()) {
-        observation_complete_->Set();
-      }
-      return SEND_PACKET;
-    }
-
-    ++sent_rtp_packets_;
-
-    // Enough NACKs received, stop dropping packets.
-    if (nacks_left_ == 0)
-      return SEND_PACKET;
-
-    // Check if it's time for a new loss burst.
-    if (sent_rtp_packets_ % kPacketsBetweenLossBursts == 0)
-      packets_left_to_drop_ = kLossBurstSize;
-
-    if (packets_left_to_drop_ > 0) {
-      --packets_left_to_drop_;
-      dropped_packets_.insert(header.sequenceNumber);
-      return DROP_PACKET;
-    }
-
-    return SEND_PACKET;
-  }
-
-  virtual Action OnReceiveRtcp(const uint8_t* packet, size_t length) OVERRIDE {
-    RTCPUtility::RTCPParserV2 parser(packet, length, true);
-    EXPECT_TRUE(parser.IsValid());
-
-    RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
-    while (packet_type != RTCPUtility::kRtcpNotValidCode) {
-      if (packet_type == RTCPUtility::kRtcpRtpfbNackCode) {
-        --nacks_left_;
-        break;
-      }
-      packet_type = parser.Iterate();
-    }
-    return SEND_PACKET;
-  }
-
- private:
-  scoped_ptr<RtpHeaderParser> rtp_parser_;
-  std::set<uint16_t> dropped_packets_;
-  std::set<uint16_t> retransmitted_packets_;
-  uint64_t sent_rtp_packets_;
-  int packets_left_to_drop_;
-  int nacks_left_;
-};
-
-TEST_F(CallTest, ReceiverCanBeStartedTwice) {
+TEST_F(EndToEndTest, ReceiverCanBeStartedTwice) {
   test::NullTransport transport;
   CreateCalls(Call::Config(&transport), Call::Config(&transport));
 
-  CreateTestConfigs();
+  CreateSendConfig(1);
+  CreateMatchingReceiveConfigs();
+
   CreateStreams();
 
   receive_stream_->Start();
@@ -239,11 +99,13 @@ TEST_F(CallTest, ReceiverCanBeStartedTwice) {
   DestroyStreams();
 }
 
-TEST_F(CallTest, ReceiverCanBeStoppedTwice) {
+TEST_F(EndToEndTest, ReceiverCanBeStoppedTwice) {
   test::NullTransport transport;
   CreateCalls(Call::Config(&transport), Call::Config(&transport));
 
-  CreateTestConfigs();
+  CreateSendConfig(1);
+  CreateMatchingReceiveConfigs();
+
   CreateStreams();
 
   receive_stream_->Stop();
@@ -252,7 +114,7 @@ TEST_F(CallTest, ReceiverCanBeStoppedTwice) {
   DestroyStreams();
 }
 
-TEST_F(CallTest, RendersSingleDelayedFrame) {
+TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
   static const int kWidth = 320;
   static const int kHeight = 240;
   // This constant is chosen to be higher than the timeout in the video_render
@@ -297,7 +159,8 @@ TEST_F(CallTest, RendersSingleDelayedFrame) {
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateTestConfigs();
+  CreateSendConfig(1);
+  CreateMatchingReceiveConfigs();
 
   TestFrameCallback pre_render_callback;
   receive_config_.pre_render_callback = &pre_render_callback;
@@ -324,7 +187,7 @@ TEST_F(CallTest, RendersSingleDelayedFrame) {
   DestroyStreams();
 }
 
-TEST_F(CallTest, TransmitsFirstFrame) {
+TEST_F(EndToEndTest, TransmitsFirstFrame) {
   class Renderer : public VideoRenderer {
    public:
     Renderer() : event_(EventWrapper::Create()) {}
@@ -347,7 +210,8 @@ TEST_F(CallTest, TransmitsFirstFrame) {
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateTestConfigs();
+  CreateSendConfig(1);
+  CreateMatchingReceiveConfigs();
   receive_config_.renderer = &renderer;
 
   CreateStreams();
@@ -368,10 +232,10 @@ TEST_F(CallTest, TransmitsFirstFrame) {
   DestroyStreams();
 }
 
-TEST_F(CallTest, ReceiverUsesLocalSsrc) {
-  class SyncRtcpObserver : public test::RtpRtcpObserver {
+TEST_F(EndToEndTest, ReceiverUsesLocalSsrc) {
+  class SyncRtcpObserver : public test::EndToEndTest {
    public:
-    SyncRtcpObserver() : test::RtpRtcpObserver(kDefaultTimeoutMs) {}
+    SyncRtcpObserver() : EndToEndTest(kDefaultTimeoutMs) {}
 
     virtual Action OnReceiveRtcp(const uint8_t* packet,
                                  size_t length) OVERRIDE {
@@ -387,63 +251,112 @@ TEST_F(CallTest, ReceiverUsesLocalSsrc) {
 
       return SEND_PACKET;
     }
-  } observer;
 
-  CreateCalls(Call::Config(observer.SendTransport()),
-              Call::Config(observer.ReceiveTransport()));
+    virtual void PerformTest() OVERRIDE {
+      EXPECT_EQ(kEventSignaled, Wait())
+          << "Timed out while waiting for a receiver RTCP packet to be sent.";
+    }
+  } test;
 
-  observer.SetReceivers(receiver_call_->Receiver(), sender_call_->Receiver());
-
-  CreateTestConfigs();
-
-  CreateStreams();
-  CreateFrameGenerator();
-  StartSending();
-
-  EXPECT_EQ(kEventSignaled, observer.Wait())
-      << "Timed out while waiting for a receiver RTCP packet to be sent.";
-
-  StopSending();
-
-  observer.StopSending();
-
-  DestroyStreams();
+  RunBaseTest(&test);
 }
 
-TEST_F(CallTest, ReceivesAndRetransmitsNack) {
-  NackObserver observer;
+TEST_F(EndToEndTest, ReceivesAndRetransmitsNack) {
+  static const int kNumberOfNacksToObserve = 2;
+  static const int kLossBurstSize = 2;
+  static const int kPacketsBetweenLossBursts = 9;
+  class NackObserver : public test::EndToEndTest {
+   public:
+    NackObserver()
+        : EndToEndTest(kLongTimeoutMs),
+          rtp_parser_(RtpHeaderParser::Create()),
+          sent_rtp_packets_(0),
+          packets_left_to_drop_(0),
+          nacks_left_(kNumberOfNacksToObserve) {}
 
-  CreateCalls(Call::Config(observer.SendTransport()),
-              Call::Config(observer.ReceiveTransport()));
+   private:
+    virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
+      RTPHeader header;
+      EXPECT_TRUE(
+          rtp_parser_->Parse(packet, static_cast<int>(length), &header));
 
-  observer.SetReceivers(receiver_call_->Receiver(), sender_call_->Receiver());
+      // Never drop retransmitted packets.
+      if (dropped_packets_.find(header.sequenceNumber) !=
+          dropped_packets_.end()) {
+        retransmitted_packets_.insert(header.sequenceNumber);
+        if (nacks_left_ == 0 &&
+            retransmitted_packets_.size() == dropped_packets_.size()) {
+          observation_complete_->Set();
+        }
+        return SEND_PACKET;
+      }
 
-  CreateTestConfigs();
-  int rtp_history_ms = 1000;
-  send_config_.rtp.nack.rtp_history_ms = rtp_history_ms;
-  receive_config_.rtp.nack.rtp_history_ms = rtp_history_ms;
+      ++sent_rtp_packets_;
 
-  CreateStreams();
-  CreateFrameGenerator();
-  StartSending();
+      // Enough NACKs received, stop dropping packets.
+      if (nacks_left_ == 0)
+        return SEND_PACKET;
 
-  // Wait() waits for an event triggered when NACKs have been received, NACKed
-  // packets retransmitted and frames rendered again.
-  EXPECT_EQ(kEventSignaled, observer.Wait());
+      // Check if it's time for a new loss burst.
+      if (sent_rtp_packets_ % kPacketsBetweenLossBursts == 0)
+        packets_left_to_drop_ = kLossBurstSize;
 
-  StopSending();
+      if (packets_left_to_drop_ > 0) {
+        --packets_left_to_drop_;
+        dropped_packets_.insert(header.sequenceNumber);
+        return DROP_PACKET;
+      }
 
-  observer.StopSending();
+      return SEND_PACKET;
+    }
 
-  DestroyStreams();
+    virtual Action OnReceiveRtcp(const uint8_t* packet,
+                                 size_t length) OVERRIDE {
+      RTCPUtility::RTCPParserV2 parser(packet, length, true);
+      EXPECT_TRUE(parser.IsValid());
+
+      RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
+      while (packet_type != RTCPUtility::kRtcpNotValidCode) {
+        if (packet_type == RTCPUtility::kRtcpRtpfbNackCode) {
+          --nacks_left_;
+          break;
+        }
+        packet_type = parser.Iterate();
+      }
+      return SEND_PACKET;
+    }
+
+    virtual void ModifyConfigs(
+        VideoSendStream::Config* send_config,
+        VideoReceiveStream::Config* receive_config,
+        std::vector<VideoStream>* video_streams) OVERRIDE {
+      send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+      receive_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+    }
+
+    virtual void PerformTest() OVERRIDE {
+      EXPECT_EQ(kEventSignaled, Wait())
+          << "Timed out waiting for packets to be NACKed, retransmitted and "
+             "rendered.";
+    }
+
+    scoped_ptr<RtpHeaderParser> rtp_parser_;
+    std::set<uint16_t> dropped_packets_;
+    std::set<uint16_t> retransmitted_packets_;
+    uint64_t sent_rtp_packets_;
+    int packets_left_to_drop_;
+    int nacks_left_;
+  } test;
+
+  RunBaseTest(&test);
 }
 
 // TODO(pbos): Flaky, webrtc:3269
-TEST_F(CallTest, DISABLED_CanReceiveFec) {
-  class FecRenderObserver : public test::RtpRtcpObserver, public VideoRenderer {
+TEST_F(EndToEndTest, DISABLED_CanReceiveFec) {
+  class FecRenderObserver : public test::EndToEndTest, public VideoRenderer {
    public:
     FecRenderObserver()
-        : RtpRtcpObserver(kDefaultTimeoutMs),
+        : EndToEndTest(kDefaultTimeoutMs),
           state_(kFirstPacket),
           protected_sequence_number_(0),
           protected_frame_timestamp_(0) {}
@@ -457,10 +370,10 @@ TEST_F(CallTest, DISABLED_CanReceiveFec) {
       EXPECT_EQ(kRedPayloadType, header.payloadType);
       int encapsulated_payload_type =
           static_cast<int>(packet[header.headerLength]);
-      if (encapsulated_payload_type != kSendPayloadType)
+      if (encapsulated_payload_type != kFakeSendPayloadType)
         EXPECT_EQ(kUlpfecPayloadType, encapsulated_payload_type);
 
-      switch(state_) {
+      switch (state_) {
         case kFirstPacket:
           state_ = kDropEveryOtherPacketUntilFec;
           break;
@@ -473,7 +386,7 @@ TEST_F(CallTest, DISABLED_CanReceiveFec) {
             return DROP_PACKET;
           break;
         case kDropNextMediaPacket:
-          if (encapsulated_payload_type == kSendPayloadType) {
+          if (encapsulated_payload_type == kFakeSendPayloadType) {
             protected_sequence_number_ = header.sequenceNumber;
             protected_frame_timestamp_ = header.timestamp;
             state_ = kProtectedPacketDropped;
@@ -507,54 +420,47 @@ TEST_F(CallTest, DISABLED_CanReceiveFec) {
       kProtectedPacketDropped,
     } state_;
 
+    virtual void ModifyConfigs(
+        VideoSendStream::Config* send_config,
+        VideoReceiveStream::Config* receive_config,
+        std::vector<VideoStream>* video_streams) OVERRIDE {
+      // TODO(pbos): Run this test with combined NACK/FEC enabled as well.
+      // int rtp_history_ms = 1000;
+      // receive_config->rtp.nack.rtp_history_ms = rtp_history_ms;
+      // send_config->rtp.nack.rtp_history_ms = rtp_history_ms;
+      send_config->rtp.fec.red_payload_type = kRedPayloadType;
+      send_config->rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+
+      receive_config->rtp.fec.red_payload_type = kRedPayloadType;
+      receive_config->rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+      receive_config->renderer = this;
+    }
+
+    virtual void PerformTest() OVERRIDE {
+      EXPECT_EQ(kEventSignaled, Wait())
+          << "Timed out while waiting for retransmitted NACKed frames to be "
+             "rendered again.";
+    }
+
     uint32_t protected_sequence_number_ GUARDED_BY(crit_);
     uint32_t protected_frame_timestamp_ GUARDED_BY(crit_);
-  } observer;
+  } test;
 
-  CreateCalls(Call::Config(observer.SendTransport()),
-              Call::Config(observer.ReceiveTransport()));
-
-  observer.SetReceivers(receiver_call_->Receiver(), sender_call_->Receiver());
-
-  CreateTestConfigs();
-  // TODO(pbos): Run this test with combined NACK/FEC enabled as well.
-  // int rtp_history_ms = 1000;
-  // receive_config_.rtp.nack.rtp_history_ms = rtp_history_ms;
-  // send_config_.rtp.nack.rtp_history_ms = rtp_history_ms;
-  send_config_.rtp.fec.red_payload_type = kRedPayloadType;
-  send_config_.rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
-
-  receive_config_.rtp.fec.red_payload_type = kRedPayloadType;
-  receive_config_.rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
-  receive_config_.renderer = &observer;
-
-  CreateStreams();
-  CreateFrameGenerator();
-  StartSending();
-
-  // Wait() waits for an event triggered when NACKs have been received, NACKed
-  // packets retransmitted and frames rendered again.
-  EXPECT_EQ(kEventSignaled, observer.Wait());
-
-  StopSending();
-
-  observer.StopSending();
-
-  DestroyStreams();
+  RunBaseTest(&test);
 }
 
 // This test drops second RTP packet with a marker bit set, makes sure it's
 // retransmitted and renders. Retransmission SSRCs are also checked.
-void CallTest::DecodesRetransmittedFrame(bool retransmit_over_rtx) {
+void EndToEndTest::DecodesRetransmittedFrame(bool retransmit_over_rtx) {
   static const int kDroppedFrameNumber = 2;
-  class RetransmissionObserver : public test::RtpRtcpObserver,
+  class RetransmissionObserver : public test::EndToEndTest,
                                  public I420FrameCallback {
    public:
-    RetransmissionObserver(bool expect_rtx)
-        : RtpRtcpObserver(kDefaultTimeoutMs),
-          retransmission_ssrc_(expect_rtx ? kSendRtxSsrc : kSendSsrc),
+    explicit RetransmissionObserver(bool expect_rtx)
+        : EndToEndTest(kDefaultTimeoutMs),
+          retransmission_ssrc_(expect_rtx ? kSendRtxSsrc : kSendSsrcs[0]),
           retransmission_payload_type_(expect_rtx ? kSendRtxPayloadType
-                                                  : kSendPayloadType),
+                                                  : kFakeSendPayloadType),
           marker_bits_observed_(0),
           retransmitted_timestamp_(0),
           frame_retransmitted_(false) {}
@@ -571,8 +477,8 @@ void CallTest::DecodesRetransmittedFrame(bool retransmit_over_rtx) {
         return SEND_PACKET;
       }
 
-      EXPECT_EQ(kSendSsrc, header.ssrc);
-      EXPECT_EQ(kSendPayloadType, header.payloadType);
+      EXPECT_EQ(kSendSsrcs[0], header.ssrc);
+      EXPECT_EQ(kFakeSendPayloadType, header.payloadType);
 
       // Found the second frame's final packet, drop this and expect a
       // retransmission.
@@ -592,51 +498,46 @@ void CallTest::DecodesRetransmittedFrame(bool retransmit_over_rtx) {
       }
     }
 
+    virtual void ModifyConfigs(
+        VideoSendStream::Config* send_config,
+        VideoReceiveStream::Config* receive_config,
+        std::vector<VideoStream>* video_streams) OVERRIDE {
+      send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+      receive_config->pre_render_callback = this;
+      receive_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+      if (retransmission_ssrc_ == kSendRtxSsrc) {
+        send_config->rtp.rtx.ssrcs.push_back(kSendRtxSsrc);
+        send_config->rtp.rtx.payload_type = kSendRtxPayloadType;
+        receive_config->rtp.rtx[kSendRtxPayloadType].ssrc = kSendRtxSsrc;
+        receive_config->rtp.rtx[kSendRtxPayloadType].payload_type =
+            kSendRtxPayloadType;
+      }
+    }
+
+    virtual void PerformTest() OVERRIDE {
+      EXPECT_EQ(kEventSignaled, Wait())
+          << "Timed out while waiting for retransmission to render.";
+    }
+
     const uint32_t retransmission_ssrc_;
     const int retransmission_payload_type_;
     int marker_bits_observed_;
     uint32_t retransmitted_timestamp_;
     bool frame_retransmitted_;
-  } observer(retransmit_over_rtx);
+  } test(retransmit_over_rtx);
 
-  CreateCalls(Call::Config(observer.SendTransport()),
-              Call::Config(observer.ReceiveTransport()));
-
-  observer.SetReceivers(receiver_call_->Receiver(), sender_call_->Receiver());
-
-  CreateTestConfigs();
-  send_config_.rtp.nack.rtp_history_ms =
-      receive_config_.rtp.nack.rtp_history_ms = 1000;
-  if (retransmit_over_rtx) {
-    send_config_.rtp.rtx.ssrcs.push_back(kSendRtxSsrc);
-    send_config_.rtp.rtx.payload_type = kSendRtxPayloadType;
-    int payload_type = send_config_.encoder_settings.payload_type;
-    receive_config_.rtp.rtx[payload_type].ssrc = kSendRtxSsrc;
-    receive_config_.rtp.rtx[payload_type].payload_type = kSendRtxPayloadType;
-  }
-  receive_config_.pre_render_callback = &observer;
-
-  CreateStreams();
-  CreateFrameGenerator();
-  StartSending();
-
-  EXPECT_EQ(kEventSignaled, observer.Wait())
-      << "Timed out while waiting for retransmission to render.";
-
-  StopSending();
-  observer.StopSending();
-  DestroyStreams();
+  RunBaseTest(&test);
 }
 
-TEST_F(CallTest, DecodesRetransmittedFrame) {
+TEST_F(EndToEndTest, DecodesRetransmittedFrame) {
   DecodesRetransmittedFrame(false);
 }
 
-TEST_F(CallTest, DecodesRetransmittedFrameOverRtx) {
+TEST_F(EndToEndTest, DecodesRetransmittedFrameOverRtx) {
   DecodesRetransmittedFrame(true);
 }
 
-TEST_F(CallTest, UsesFrameCallbacks) {
+TEST_F(EndToEndTest, UsesFrameCallbacks) {
   static const int kWidth = 320;
   static const int kHeight = 240;
 
@@ -700,7 +601,7 @@ TEST_F(CallTest, UsesFrameCallbacks) {
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateTestConfigs();
+  CreateSendConfig(1);
   scoped_ptr<VP8Encoder> encoder(VP8Encoder::Create());
   send_config_.encoder_settings.encoder = encoder.get();
   send_config_.encoder_settings.payload_name = "VP8";
@@ -708,11 +609,8 @@ TEST_F(CallTest, UsesFrameCallbacks) {
   video_streams_[0].width = kWidth;
   video_streams_[0].height = kHeight;
   send_config_.pre_encode_callback = &pre_encode_callback;
-  receive_config_.codecs.clear();
-  VideoCodec codec =
-      test::CreateDecoderVideoCodec(send_config_.encoder_settings);
-  receive_config_.external_decoders.clear();
-  receive_config_.codecs.push_back(codec);
+
+  CreateMatchingReceiveConfigs();
   receive_config_.pre_render_callback = &pre_render_callback;
   receive_config_.renderer = &renderer;
 
@@ -740,109 +638,102 @@ TEST_F(CallTest, UsesFrameCallbacks) {
   DestroyStreams();
 }
 
-class PliObserver : public test::RtpRtcpObserver, public VideoRenderer {
-  static const int kInverseDropProbability = 16;
-
- public:
-  explicit PliObserver(bool nack_enabled)
-      : test::RtpRtcpObserver(kLongTimeoutMs),
-        nack_enabled_(nack_enabled),
-        highest_dropped_timestamp_(0),
-        frames_to_drop_(0),
-        received_pli_(false) {}
-
-  virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
-    RTPHeader header;
-    EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
-
-    // Drop all retransmitted packets to force a PLI.
-    if (header.timestamp <= highest_dropped_timestamp_)
-      return DROP_PACKET;
-
-    if (frames_to_drop_ > 0) {
-      highest_dropped_timestamp_ = header.timestamp;
-      --frames_to_drop_;
-      return DROP_PACKET;
-    }
-
-    return SEND_PACKET;
-  }
-
-  virtual Action OnReceiveRtcp(const uint8_t* packet, size_t length) OVERRIDE {
-    RTCPUtility::RTCPParserV2 parser(packet, length, true);
-    EXPECT_TRUE(parser.IsValid());
-
-    for (RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
-         packet_type != RTCPUtility::kRtcpNotValidCode;
-         packet_type = parser.Iterate()) {
-      if (!nack_enabled_)
-        EXPECT_NE(packet_type, RTCPUtility::kRtcpRtpfbNackCode);
-
-      if (packet_type == RTCPUtility::kRtcpPsfbPliCode) {
-        received_pli_ = true;
-        break;
-      }
-    }
-    return SEND_PACKET;
-  }
-
-  virtual void RenderFrame(const I420VideoFrame& video_frame,
-                           int time_to_render_ms) OVERRIDE {
-    CriticalSectionScoped lock(crit_.get());
-    if (received_pli_ && video_frame.timestamp() > highest_dropped_timestamp_) {
-      observation_complete_->Set();
-    }
-    if (!received_pli_)
-      frames_to_drop_ = kPacketsToDrop;
-  }
-
- private:
+void EndToEndTest::ReceivesPliAndRecovers(int rtp_history_ms) {
   static const int kPacketsToDrop = 1;
 
-  bool nack_enabled_;
-  uint32_t highest_dropped_timestamp_;
-  int frames_to_drop_;
-  bool received_pli_;
-};
+  class PliObserver : public test::EndToEndTest, public VideoRenderer {
+   public:
+    explicit PliObserver(int rtp_history_ms)
+        : EndToEndTest(kLongTimeoutMs),
+          rtp_history_ms_(rtp_history_ms),
+          nack_enabled_(rtp_history_ms > 0),
+          highest_dropped_timestamp_(0),
+          frames_to_drop_(0),
+          received_pli_(false) {}
 
-void CallTest::ReceivesPliAndRecovers(int rtp_history_ms) {
-  PliObserver observer(rtp_history_ms > 0);
+   private:
+    virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
+      RTPHeader header;
+      EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
 
-  CreateCalls(Call::Config(observer.SendTransport()),
-              Call::Config(observer.ReceiveTransport()));
+      // Drop all retransmitted packets to force a PLI.
+      if (header.timestamp <= highest_dropped_timestamp_)
+        return DROP_PACKET;
 
-  observer.SetReceivers(receiver_call_->Receiver(), sender_call_->Receiver());
+      if (frames_to_drop_ > 0) {
+        highest_dropped_timestamp_ = header.timestamp;
+        --frames_to_drop_;
+        return DROP_PACKET;
+      }
 
-  CreateTestConfigs();
-  send_config_.rtp.nack.rtp_history_ms = rtp_history_ms;
-  receive_config_.rtp.nack.rtp_history_ms = rtp_history_ms;
-  receive_config_.renderer = &observer;
+      return SEND_PACKET;
+    }
 
-  CreateStreams();
-  CreateFrameGenerator();
-  StartSending();
+    virtual Action OnReceiveRtcp(const uint8_t* packet,
+                                 size_t length) OVERRIDE {
+      RTCPUtility::RTCPParserV2 parser(packet, length, true);
+      EXPECT_TRUE(parser.IsValid());
 
-  // Wait() waits for an event triggered when Pli has been received and frames
-  // have been rendered afterwards.
-  EXPECT_EQ(kEventSignaled, observer.Wait());
+      for (RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
+           packet_type != RTCPUtility::kRtcpNotValidCode;
+           packet_type = parser.Iterate()) {
+        if (!nack_enabled_)
+          EXPECT_NE(packet_type, RTCPUtility::kRtcpRtpfbNackCode);
 
-  StopSending();
+        if (packet_type == RTCPUtility::kRtcpPsfbPliCode) {
+          received_pli_ = true;
+          break;
+        }
+      }
+      return SEND_PACKET;
+    }
 
-  observer.StopSending();
+    virtual void RenderFrame(const I420VideoFrame& video_frame,
+                             int time_to_render_ms) OVERRIDE {
+      CriticalSectionScoped lock(crit_.get());
+      if (received_pli_ &&
+          video_frame.timestamp() > highest_dropped_timestamp_) {
+        observation_complete_->Set();
+      }
+      if (!received_pli_)
+        frames_to_drop_ = kPacketsToDrop;
+    }
 
-  DestroyStreams();
+    virtual void ModifyConfigs(
+        VideoSendStream::Config* send_config,
+        VideoReceiveStream::Config* receive_config,
+        std::vector<VideoStream>* video_streams) OVERRIDE {
+      send_config->rtp.nack.rtp_history_ms = rtp_history_ms_;
+      receive_config->rtp.nack.rtp_history_ms = rtp_history_ms_;
+      receive_config->renderer = this;
+    }
+
+    virtual void PerformTest() OVERRIDE {
+      EXPECT_EQ(kEventSignaled, Wait()) << "Timed out waiting for PLI to be "
+                                           "received and a frame to be "
+                                           "rendered afterwards.";
+    }
+
+    int rtp_history_ms_;
+    bool nack_enabled_;
+    uint32_t highest_dropped_timestamp_;
+    int frames_to_drop_;
+    bool received_pli_;
+  } test(rtp_history_ms);
+
+  RunBaseTest(&test);
 }
 
-TEST_F(CallTest, ReceivesPliAndRecoversWithNack) {
+TEST_F(EndToEndTest, ReceivesPliAndRecoversWithNack) {
   ReceivesPliAndRecovers(1000);
 }
 
 // TODO(pbos): Enable this when 2250 is resolved.
-TEST_F(CallTest, DISABLED_ReceivesPliAndRecoversWithoutNack) {
+TEST_F(EndToEndTest, DISABLED_ReceivesPliAndRecoversWithoutNack) {
   ReceivesPliAndRecovers(0);
 }
 
-TEST_F(CallTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
+TEST_F(EndToEndTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
   class PacketInputObserver : public PacketReceiver {
    public:
     explicit PacketInputObserver(PacketReceiver* receiver)
@@ -878,7 +769,8 @@ TEST_F(CallTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
   send_transport.SetReceiver(&input_observer);
   receive_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateTestConfigs();
+  CreateSendConfig(1);
+  CreateMatchingReceiveConfigs();
 
   CreateStreams();
   CreateFrameGenerator();
@@ -898,13 +790,12 @@ TEST_F(CallTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
   receive_transport.StopSending();
 }
 
-void CallTest::RespectsRtcpMode(newapi::RtcpMode rtcp_mode) {
-  static const int kRtpHistoryMs = 1000;
+void EndToEndTest::RespectsRtcpMode(newapi::RtcpMode rtcp_mode) {
   static const int kNumCompoundRtcpPacketsToObserve = 10;
-  class RtcpModeObserver : public test::RtpRtcpObserver {
+  class RtcpModeObserver : public test::EndToEndTest {
    public:
     explicit RtcpModeObserver(newapi::RtcpMode rtcp_mode)
-        : test::RtpRtcpObserver(kDefaultTimeoutMs),
+        : EndToEndTest(kDefaultTimeoutMs),
           rtcp_mode_(rtcp_mode),
           sent_rtp_(0),
           sent_rtcp_(0) {}
@@ -955,40 +846,35 @@ void CallTest::RespectsRtcpMode(newapi::RtcpMode rtcp_mode) {
       return SEND_PACKET;
     }
 
+    virtual void ModifyConfigs(
+        VideoSendStream::Config* send_config,
+        VideoReceiveStream::Config* receive_config,
+        std::vector<VideoStream>* video_streams) OVERRIDE {
+      send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+      receive_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+      receive_config->rtp.rtcp_mode = rtcp_mode_;
+    }
+
+    virtual void PerformTest() OVERRIDE {
+      EXPECT_EQ(kEventSignaled, Wait())
+          << (rtcp_mode_ == newapi::kRtcpCompound
+                  ? "Timed out before observing enough compound packets."
+                  : "Timed out before receiving a non-compound RTCP packet.");
+    }
+
     newapi::RtcpMode rtcp_mode_;
     int sent_rtp_;
     int sent_rtcp_;
-  } observer(rtcp_mode);
+  } test(rtcp_mode);
 
-  CreateCalls(Call::Config(observer.SendTransport()),
-              Call::Config(observer.ReceiveTransport()));
-
-  observer.SetReceivers(receiver_call_->Receiver(), sender_call_->Receiver());
-
-  CreateTestConfigs();
-  send_config_.rtp.nack.rtp_history_ms = kRtpHistoryMs;
-  receive_config_.rtp.nack.rtp_history_ms = kRtpHistoryMs;
-  receive_config_.rtp.rtcp_mode = rtcp_mode;
-
-  CreateStreams();
-  CreateFrameGenerator();
-  StartSending();
-
-  EXPECT_EQ(kEventSignaled, observer.Wait())
-      << (rtcp_mode == newapi::kRtcpCompound
-              ? "Timed out before observing enough compound packets."
-              : "Timed out before receiving a non-compound RTCP packet.");
-
-  StopSending();
-  observer.StopSending();
-  DestroyStreams();
+  RunBaseTest(&test);
 }
 
-TEST_F(CallTest, UsesRtcpCompoundMode) {
+TEST_F(EndToEndTest, UsesRtcpCompoundMode) {
   RespectsRtcpMode(newapi::kRtcpCompound);
 }
 
-TEST_F(CallTest, UsesRtcpReducedSizeMode) {
+TEST_F(EndToEndTest, UsesRtcpReducedSizeMode) {
   RespectsRtcpMode(newapi::kRtcpReducedSize);
 }
 
@@ -996,7 +882,7 @@ TEST_F(CallTest, UsesRtcpReducedSizeMode) {
 // Another is set up to receive all three of these with different renderers.
 // Each renderer verifies that it receives the expected resolution, and as soon
 // as every renderer has received a frame, the test finishes.
-TEST_F(CallTest, SendsAndReceivesMultipleStreams) {
+TEST_F(EndToEndTest, SendsAndReceivesMultipleStreams) {
   static const size_t kNumStreams = 3;
 
   class VideoOutputObserver : public VideoRenderer {
@@ -1103,9 +989,9 @@ TEST_F(CallTest, SendsAndReceivesMultipleStreams) {
 
   sender_transport.StopSending();
   receiver_transport.StopSending();
-};
+}
 
-TEST_F(CallTest, ObserversEncodedFrames) {
+TEST_F(EndToEndTest, ObserversEncodedFrames) {
   class EncodedFrameTestObserver : public EncodedFrameObserver {
    public:
     EncodedFrameTestObserver()
@@ -1151,7 +1037,8 @@ TEST_F(CallTest, ObserversEncodedFrames) {
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateTestConfigs();
+  CreateSendConfig(1);
+  CreateMatchingReceiveConfigs();
   send_config_.post_encode_callback = &post_encode_observer;
   receive_config_.pre_decode_callback = &pre_decode_observer;
 
@@ -1178,10 +1065,10 @@ TEST_F(CallTest, ObserversEncodedFrames) {
   DestroyStreams();
 }
 
-TEST_F(CallTest, ReceiveStreamSendsRemb) {
-  class RembObserver : public test::RtpRtcpObserver {
+TEST_F(EndToEndTest, ReceiveStreamSendsRemb) {
+  class RembObserver : public test::EndToEndTest {
    public:
-    RembObserver() : test::RtpRtcpObserver(kDefaultTimeoutMs) {}
+    RembObserver() : EndToEndTest(kDefaultTimeoutMs) {}
 
     virtual Action OnReceiveRtcp(const uint8_t* packet,
                                  size_t length) OVERRIDE {
@@ -1200,7 +1087,7 @@ TEST_F(CallTest, ReceiveStreamSendsRemb) {
           const RTCPUtility::RTCPPacket& packet = parser.Packet();
           EXPECT_GT(packet.REMBItem.BitRate, 0u);
           EXPECT_EQ(packet.REMBItem.NumberOfSSRCs, 1u);
-          EXPECT_EQ(packet.REMBItem.SSRCs[0], kSendSsrc);
+          EXPECT_EQ(packet.REMBItem.SSRCs[0], kSendSsrcs[0]);
           received_remb = true;
         }
         packet_type = parser.Iterate();
@@ -1209,30 +1096,22 @@ TEST_F(CallTest, ReceiveStreamSendsRemb) {
         observation_complete_->Set();
       return SEND_PACKET;
     }
-  } observer;
+    virtual void PerformTest() OVERRIDE {
+      EXPECT_EQ(kEventSignaled, Wait()) << "Timed out while waiting for a "
+                                           "receiver RTCP REMB packet to be "
+                                           "sent.";
+    }
+  } test;
 
-  CreateCalls(Call::Config(observer.SendTransport()),
-              Call::Config(observer.ReceiveTransport()));
-  observer.SetReceivers(receiver_call_->Receiver(), sender_call_->Receiver());
-  CreateTestConfigs();
-  CreateStreams();
-  CreateFrameGenerator();
-  StartSending();
-
-  EXPECT_EQ(kEventSignaled, observer.Wait())
-      << "Timed out while waiting for a receiver RTCP REMB packet to be sent.";
-
-  StopSending();
-  observer.StopSending();
-  DestroyStreams();
+  RunBaseTest(&test);
 }
 
-void CallTest::TestXrReceiverReferenceTimeReport(bool enable_rrtr) {
+void EndToEndTest::TestXrReceiverReferenceTimeReport(bool enable_rrtr) {
   static const int kNumRtcpReportPacketsToObserve = 5;
-  class RtcpXrObserver : public test::RtpRtcpObserver {
+  class RtcpXrObserver : public test::EndToEndTest {
    public:
     explicit RtcpXrObserver(bool enable_rrtr)
-        : test::RtpRtcpObserver(kDefaultTimeoutMs),
+        : EndToEndTest(kDefaultTimeoutMs),
           enable_rrtr_(enable_rrtr),
           sent_rtcp_sr_(0),
           sent_rtcp_rr_(0),
@@ -1288,293 +1167,271 @@ void CallTest::TestXrReceiverReferenceTimeReport(bool enable_rrtr) {
       }
       return SEND_PACKET;
     }
+
+    virtual void ModifyConfigs(
+        VideoSendStream::Config* send_config,
+        VideoReceiveStream::Config* receive_config,
+        std::vector<VideoStream>* video_streams) OVERRIDE {
+      receive_config->rtp.rtcp_mode = newapi::kRtcpReducedSize;
+      receive_config->rtp.rtcp_xr.receiver_reference_time_report = enable_rrtr_;
+    }
+
+    virtual void PerformTest() OVERRIDE {
+      EXPECT_EQ(kEventSignaled, Wait())
+          << "Timed out while waiting for RTCP SR/RR packets to be sent.";
+    }
+
     bool enable_rrtr_;
     int sent_rtcp_sr_;
     int sent_rtcp_rr_;
     int sent_rtcp_rrtr_;
     int sent_rtcp_dlrr_;
-  } observer(enable_rrtr);
+  } test(enable_rrtr);
 
-  CreateCalls(Call::Config(observer.SendTransport()),
-              Call::Config(observer.ReceiveTransport()));
-  observer.SetReceivers(receiver_call_->Receiver(), sender_call_->Receiver());
-
-  CreateTestConfigs();
-  receive_config_.rtp.rtcp_mode = newapi::kRtcpReducedSize;
-  receive_config_.rtp.rtcp_xr.receiver_reference_time_report = enable_rrtr;
-
-  CreateStreams();
-  CreateFrameGenerator();
-  StartSending();
-
-  EXPECT_EQ(kEventSignaled, observer.Wait())
-      << "Timed out while waiting for RTCP SR/RR packets to be sent.";
-
-  StopSending();
-  observer.StopSending();
-  DestroyStreams();
+  RunBaseTest(&test);
 }
 
-class StatsObserver : public test::RtpRtcpObserver, public I420FrameCallback {
- public:
-  StatsObserver()
-      : test::RtpRtcpObserver(kLongTimeoutMs),
-        receive_stream_(NULL),
-        send_stream_(NULL),
-        expected_receive_ssrc_(),
-        expected_send_ssrcs_(),
-        check_stats_event_(EventWrapper::Create()) {}
+TEST_F(EndToEndTest, GetStats) {
+  class StatsObserver : public test::EndToEndTest, public I420FrameCallback {
+   public:
+    StatsObserver()
+        : EndToEndTest(kLongTimeoutMs),
+          receive_stream_(NULL),
+          send_stream_(NULL),
+          expected_receive_ssrc_(),
+          expected_send_ssrcs_(),
+          check_stats_event_(EventWrapper::Create()) {}
 
-  void SetExpectedReceiveSsrc(uint32_t ssrc) { expected_receive_ssrc_ = ssrc; }
-
-  void SetExpectedSendSsrcs(const std::vector<uint32_t>& ssrcs) {
-    for (std::vector<uint32_t>::const_iterator it = ssrcs.begin();
-         it != ssrcs.end();
-         ++it) {
-      expected_send_ssrcs_.insert(*it);
-    }
-  }
-
-  void SetExpectedCName(std::string cname) { expected_cname_ = cname; }
-
-  void SetReceiveStream(VideoReceiveStream* stream) {
-    receive_stream_ = stream;
-  }
-
-  void SetSendStream(VideoSendStream* stream) { send_stream_ = stream; }
-
-  void WaitForFilledStats() {
-    Clock* clock = Clock::GetRealTimeClock();
-    int64_t now = clock->TimeInMilliseconds();
-    int64_t stop_time = now + kLongTimeoutMs;
-    bool receive_ok = false;
-    bool send_ok = false;
-
-    while (now < stop_time) {
-      if (!receive_ok)
-        receive_ok = CheckReceiveStats();
-      if (!send_ok)
-        send_ok = CheckSendStats();
-
-      if (receive_ok && send_ok)
-        return;
-
-      int64_t time_until_timout_ = stop_time - now;
-      if (time_until_timout_ > 0)
-        check_stats_event_->Wait(time_until_timout_);
-      now = clock->TimeInMilliseconds();
+   private:
+    virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
+      check_stats_event_->Set();
+      return SEND_PACKET;
     }
 
-    ADD_FAILURE() << "Timed out waiting for filled stats.";
-    for (std::map<std::string, bool>::const_iterator it =
-             receive_stats_filled_.begin();
-         it != receive_stats_filled_.end();
-         ++it) {
-      if (!it->second) {
-        ADD_FAILURE() << "Missing receive stats: " << it->first;
+    virtual Action OnSendRtcp(const uint8_t* packet, size_t length) OVERRIDE {
+      check_stats_event_->Set();
+      return SEND_PACKET;
+    }
+
+    virtual Action OnReceiveRtp(const uint8_t* packet, size_t length) OVERRIDE {
+      check_stats_event_->Set();
+      return SEND_PACKET;
+    }
+
+    virtual Action OnReceiveRtcp(const uint8_t* packet,
+                                 size_t length) OVERRIDE {
+      check_stats_event_->Set();
+      return SEND_PACKET;
+    }
+
+    virtual void FrameCallback(I420VideoFrame* video_frame) OVERRIDE {
+      // Ensure that we have at least 5ms send side delay.
+      int64_t render_time = video_frame->render_time_ms();
+      if (render_time > 0)
+        video_frame->set_render_time_ms(render_time - 5);
+    }
+
+    bool CheckReceiveStats() {
+      assert(receive_stream_ != NULL);
+      VideoReceiveStream::Stats stats = receive_stream_->GetStats();
+      EXPECT_EQ(expected_receive_ssrc_, stats.ssrc);
+
+      // Make sure all fields have been populated.
+
+      receive_stats_filled_["IncomingRate"] |=
+          stats.network_frame_rate != 0 || stats.bitrate_bps != 0;
+
+      receive_stats_filled_["FrameCallback"] |= stats.decode_frame_rate != 0;
+
+      receive_stats_filled_["FrameRendered"] |= stats.render_frame_rate != 0;
+
+      receive_stats_filled_["StatisticsUpdated"] |=
+          stats.rtcp_stats.cumulative_lost != 0 ||
+          stats.rtcp_stats.extended_max_sequence_number != 0 ||
+          stats.rtcp_stats.fraction_lost != 0 || stats.rtcp_stats.jitter != 0;
+
+      receive_stats_filled_["DataCountersUpdated"] |=
+          stats.rtp_stats.bytes != 0 || stats.rtp_stats.fec_packets != 0 ||
+          stats.rtp_stats.header_bytes != 0 || stats.rtp_stats.packets != 0 ||
+          stats.rtp_stats.padding_bytes != 0 ||
+          stats.rtp_stats.retransmitted_packets != 0;
+
+      receive_stats_filled_["CodecStats"] |=
+          stats.avg_delay_ms != 0 || stats.discarded_packets != 0 ||
+          stats.key_frames != 0 || stats.delta_frames != 0;
+
+      receive_stats_filled_["CName"] |= stats.c_name == expected_cname_;
+
+      return AllStatsFilled(receive_stats_filled_);
+    }
+
+    bool CheckSendStats() {
+      assert(send_stream_ != NULL);
+      VideoSendStream::Stats stats = send_stream_->GetStats();
+
+      send_stats_filled_["NumStreams"] |=
+          stats.substreams.size() == expected_send_ssrcs_.size();
+
+      send_stats_filled_["Delay"] |=
+          stats.avg_delay_ms != 0 || stats.max_delay_ms != 0;
+
+      receive_stats_filled_["CName"] |= stats.c_name == expected_cname_;
+
+      for (std::map<uint32_t, StreamStats>::const_iterator it =
+               stats.substreams.begin();
+           it != stats.substreams.end();
+           ++it) {
+        EXPECT_TRUE(expected_send_ssrcs_.find(it->first) !=
+                    expected_send_ssrcs_.end());
+
+        send_stats_filled_[CompoundKey("IncomingRate", it->first)] |=
+            stats.input_frame_rate != 0;
+
+        const StreamStats& stream_stats = it->second;
+
+        send_stats_filled_[CompoundKey("StatisticsUpdated", it->first)] |=
+            stream_stats.rtcp_stats.cumulative_lost != 0 ||
+            stream_stats.rtcp_stats.extended_max_sequence_number != 0 ||
+            stream_stats.rtcp_stats.fraction_lost != 0;
+
+        send_stats_filled_[CompoundKey("DataCountersUpdated", it->first)] |=
+            stream_stats.rtp_stats.fec_packets != 0 ||
+            stream_stats.rtp_stats.padding_bytes != 0 ||
+            stream_stats.rtp_stats.retransmitted_packets != 0 ||
+            stream_stats.rtp_stats.packets != 0;
+
+        send_stats_filled_[CompoundKey("BitrateStatisticsObserver",
+                                       it->first)] |=
+            stream_stats.bitrate_bps != 0;
+
+        send_stats_filled_[CompoundKey("FrameCountObserver", it->first)] |=
+            stream_stats.delta_frames != 0 || stream_stats.key_frames != 0;
+
+        send_stats_filled_[CompoundKey("OutgoingRate", it->first)] |=
+            stats.encode_frame_rate != 0;
+      }
+
+      return AllStatsFilled(send_stats_filled_);
+    }
+
+    std::string CompoundKey(const char* name, uint32_t ssrc) {
+      std::ostringstream oss;
+      oss << name << "_" << ssrc;
+      return oss.str();
+    }
+
+    bool AllStatsFilled(const std::map<std::string, bool>& stats_map) {
+      for (std::map<std::string, bool>::const_iterator it = stats_map.begin();
+           it != stats_map.end();
+           ++it) {
+        if (!it->second)
+          return false;
+      }
+      return true;
+    }
+
+    virtual void ModifyConfigs(
+        VideoSendStream::Config* send_config,
+        VideoReceiveStream::Config* receive_config,
+        std::vector<VideoStream>* video_streams) OVERRIDE {
+      send_config->pre_encode_callback = this;  // Used to inject delay.
+      send_config->rtp.c_name = "SomeCName";
+
+      expected_receive_ssrc_ = receive_config->rtp.local_ssrc;
+      const std::vector<uint32_t>& ssrcs = send_config->rtp.ssrcs;
+      for (size_t i = 0; i < ssrcs.size(); ++i)
+        expected_send_ssrcs_.insert(ssrcs[i]);
+
+      expected_cname_ = send_config->rtp.c_name;
+    }
+
+    virtual void OnStreamsCreated(VideoSendStream* send_stream,
+                                  VideoReceiveStream* receive_stream) OVERRIDE {
+      send_stream_ = send_stream;
+      receive_stream_ = receive_stream;
+    }
+
+    virtual void PerformTest() OVERRIDE {
+      Clock* clock = Clock::GetRealTimeClock();
+      int64_t now = clock->TimeInMilliseconds();
+      int64_t stop_time = now + test::CallTest::kLongTimeoutMs;
+      bool receive_ok = false;
+      bool send_ok = false;
+
+      while (now < stop_time) {
+        if (!receive_ok)
+          receive_ok = CheckReceiveStats();
+        if (!send_ok)
+          send_ok = CheckSendStats();
+
+        if (receive_ok && send_ok)
+          return;
+
+        int64_t time_until_timout_ = stop_time - now;
+        if (time_until_timout_ > 0)
+          check_stats_event_->Wait(time_until_timout_);
+        now = clock->TimeInMilliseconds();
+      }
+
+      ADD_FAILURE() << "Timed out waiting for filled stats.";
+      for (std::map<std::string, bool>::const_iterator it =
+               receive_stats_filled_.begin();
+           it != receive_stats_filled_.end();
+           ++it) {
+        if (!it->second) {
+          ADD_FAILURE() << "Missing receive stats: " << it->first;
+        }
+      }
+
+      for (std::map<std::string, bool>::const_iterator it =
+               send_stats_filled_.begin();
+           it != send_stats_filled_.end();
+           ++it) {
+        if (!it->second) {
+          ADD_FAILURE() << "Missing send stats: " << it->first;
+        }
       }
     }
 
-    for (std::map<std::string, bool>::const_iterator it =
-             send_stats_filled_.begin();
-         it != send_stats_filled_.end();
-         ++it) {
-      if (!it->second) {
-        ADD_FAILURE() << "Missing send stats: " << it->first;
-      }
-    }
-  }
+    VideoReceiveStream* receive_stream_;
+    std::map<std::string, bool> receive_stats_filled_;
 
- private:
-  virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
-    check_stats_event_->Set();
-    return SEND_PACKET;
-  }
+    VideoSendStream* send_stream_;
+    std::map<std::string, bool> send_stats_filled_;
 
-  virtual Action OnSendRtcp(const uint8_t* packet, size_t length) OVERRIDE {
-    check_stats_event_->Set();
-    return SEND_PACKET;
-  }
+    uint32_t expected_receive_ssrc_;
+    std::set<uint32_t> expected_send_ssrcs_;
+    std::string expected_cname_;
 
-  virtual Action OnReceiveRtp(const uint8_t* packet, size_t length) OVERRIDE {
-    check_stats_event_->Set();
-    return SEND_PACKET;
-  }
+    scoped_ptr<EventWrapper> check_stats_event_;
+  } test;
 
-  virtual Action OnReceiveRtcp(const uint8_t* packet, size_t length) OVERRIDE {
-    check_stats_event_->Set();
-    return SEND_PACKET;
-  }
-
-  virtual void FrameCallback(I420VideoFrame* video_frame) OVERRIDE {
-    // Ensure that we have at least 5ms send side delay.
-    int64_t render_time = video_frame->render_time_ms();
-    if (render_time > 0)
-      video_frame->set_render_time_ms(render_time - 5);
-  }
-
-  bool CheckReceiveStats() {
-    assert(receive_stream_ != NULL);
-    VideoReceiveStream::Stats stats = receive_stream_->GetStats();
-    EXPECT_EQ(expected_receive_ssrc_, stats.ssrc);
-
-    // Make sure all fields have been populated.
-
-    receive_stats_filled_["IncomingRate"] |=
-        stats.network_frame_rate != 0 || stats.bitrate_bps != 0;
-
-    receive_stats_filled_["FrameCallback"] |= stats.decode_frame_rate != 0;
-
-    receive_stats_filled_["FrameRendered"] |= stats.render_frame_rate != 0;
-
-    receive_stats_filled_["StatisticsUpdated"] |=
-        stats.rtcp_stats.cumulative_lost != 0 ||
-        stats.rtcp_stats.extended_max_sequence_number != 0 ||
-        stats.rtcp_stats.fraction_lost != 0 || stats.rtcp_stats.jitter != 0;
-
-    receive_stats_filled_["DataCountersUpdated"] |=
-        stats.rtp_stats.bytes != 0 || stats.rtp_stats.fec_packets != 0 ||
-        stats.rtp_stats.header_bytes != 0 || stats.rtp_stats.packets != 0 ||
-        stats.rtp_stats.padding_bytes != 0 ||
-        stats.rtp_stats.retransmitted_packets != 0;
-
-    receive_stats_filled_["CodecStats"] |=
-        stats.avg_delay_ms != 0 || stats.discarded_packets != 0 ||
-        stats.key_frames != 0 || stats.delta_frames != 0;
-
-    receive_stats_filled_["CName"] |= stats.c_name == expected_cname_;
-
-    return AllStatsFilled(receive_stats_filled_);
-  }
-
-  bool CheckSendStats() {
-    assert(send_stream_ != NULL);
-    VideoSendStream::Stats stats = send_stream_->GetStats();
-
-    send_stats_filled_["NumStreams"] |=
-        stats.substreams.size() == expected_send_ssrcs_.size();
-
-    send_stats_filled_["Delay"] |=
-        stats.avg_delay_ms != 0 || stats.max_delay_ms != 0;
-
-    receive_stats_filled_["CName"] |= stats.c_name == expected_cname_;
-
-    for (std::map<uint32_t, StreamStats>::const_iterator it =
-             stats.substreams.begin();
-         it != stats.substreams.end();
-         ++it) {
-      EXPECT_TRUE(expected_send_ssrcs_.find(it->first) !=
-                  expected_send_ssrcs_.end());
-
-      send_stats_filled_[CompoundKey("IncomingRate", it->first)] |=
-          stats.input_frame_rate != 0;
-
-      const StreamStats& stream_stats = it->second;
-
-      send_stats_filled_[CompoundKey("StatisticsUpdated", it->first)] |=
-          stream_stats.rtcp_stats.cumulative_lost != 0 ||
-          stream_stats.rtcp_stats.extended_max_sequence_number != 0 ||
-          stream_stats.rtcp_stats.fraction_lost != 0;
-
-      send_stats_filled_[CompoundKey("DataCountersUpdated", it->first)] |=
-          stream_stats.rtp_stats.fec_packets != 0 ||
-          stream_stats.rtp_stats.padding_bytes != 0 ||
-          stream_stats.rtp_stats.retransmitted_packets != 0 ||
-          stream_stats.rtp_stats.packets != 0;
-
-      send_stats_filled_[CompoundKey("BitrateStatisticsObserver", it->first)] |=
-          stream_stats.bitrate_bps != 0;
-
-      send_stats_filled_[CompoundKey("FrameCountObserver", it->first)] |=
-          stream_stats.delta_frames != 0 || stream_stats.key_frames != 0;
-
-      send_stats_filled_[CompoundKey("OutgoingRate", it->first)] |=
-          stats.encode_frame_rate != 0;
-    }
-
-    return AllStatsFilled(send_stats_filled_);
-  }
-
-  std::string CompoundKey(const char* name, uint32_t ssrc) {
-    std::ostringstream oss;
-    oss << name << "_" << ssrc;
-    return oss.str();
-  }
-
-  bool AllStatsFilled(const std::map<std::string, bool>& stats_map) {
-    for (std::map<std::string, bool>::const_iterator it = stats_map.begin();
-         it != stats_map.end();
-         ++it) {
-      if (!it->second)
-        return false;
-    }
-    return true;
-  }
-
-  VideoReceiveStream* receive_stream_;
-  std::map<std::string, bool> receive_stats_filled_;
-
-  VideoSendStream* send_stream_;
-  std::map<std::string, bool> send_stats_filled_;
-
-  uint32_t expected_receive_ssrc_;
-  std::set<uint32_t> expected_send_ssrcs_;
-  std::string expected_cname_;
-
-  scoped_ptr<EventWrapper> check_stats_event_;
-};
-
-TEST_F(CallTest, GetStats) {
-  StatsObserver observer;
-
-  CreateCalls(Call::Config(observer.SendTransport()),
-              Call::Config(observer.ReceiveTransport()));
-
-  observer.SetReceivers(receiver_call_->Receiver(), sender_call_->Receiver());
-
-  CreateTestConfigs();
-  send_config_.pre_encode_callback = &observer;  // Used to inject delay.
-  send_config_.rtp.c_name = "SomeCName";
-
-  observer.SetExpectedReceiveSsrc(receive_config_.rtp.local_ssrc);
-  observer.SetExpectedSendSsrcs(send_config_.rtp.ssrcs);
-  observer.SetExpectedCName(send_config_.rtp.c_name);
-
-  CreateStreams();
-  observer.SetReceiveStream(receive_stream_);
-  observer.SetSendStream(send_stream_);
-  CreateFrameGenerator();
-  StartSending();
-
-  observer.WaitForFilledStats();
-
-  StopSending();
-  observer.StopSending();
-  DestroyStreams();
+  RunBaseTest(&test);
 }
 
-TEST_F(CallTest, ReceiverReferenceTimeReportEnabled) {
+TEST_F(EndToEndTest, ReceiverReferenceTimeReportEnabled) {
   TestXrReceiverReferenceTimeReport(true);
 }
 
-TEST_F(CallTest, ReceiverReferenceTimeReportDisabled) {
+TEST_F(EndToEndTest, ReceiverReferenceTimeReportDisabled) {
   TestXrReceiverReferenceTimeReport(false);
 }
 
-TEST_F(CallTest, TestReceivedRtpPacketStats) {
+TEST_F(EndToEndTest, TestReceivedRtpPacketStats) {
   static const size_t kNumRtpPacketsToSend = 5;
-  class ReceivedRtpStatsObserver : public test::RtpRtcpObserver {
+  class ReceivedRtpStatsObserver : public test::EndToEndTest {
    public:
     ReceivedRtpStatsObserver()
-        : test::RtpRtcpObserver(kDefaultTimeoutMs),
+        : EndToEndTest(kDefaultTimeoutMs),
           receive_stream_(NULL),
           sent_rtp_(0) {}
 
-    void SetReceiveStream(VideoReceiveStream* stream) {
-      receive_stream_ = stream;
+   private:
+    virtual void OnStreamsCreated(VideoSendStream* send_stream,
+                                  VideoReceiveStream* receive_stream) OVERRIDE {
+      receive_stream_ = receive_stream;
     }
 
-   private:
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
       if (sent_rtp_ >= kNumRtpPacketsToSend) {
         VideoReceiveStream::Stats stats = receive_stream_->GetStats();
@@ -1587,26 +1444,16 @@ TEST_F(CallTest, TestReceivedRtpPacketStats) {
       return SEND_PACKET;
     }
 
+    virtual void PerformTest() OVERRIDE {
+      EXPECT_EQ(kEventSignaled, Wait())
+          << "Timed out while verifying number of received RTP packets.";
+    }
+
     VideoReceiveStream* receive_stream_;
     uint32_t sent_rtp_;
-  } observer;
+  } test;
 
-  CreateCalls(Call::Config(observer.SendTransport()),
-              Call::Config(observer.ReceiveTransport()));
-  observer.SetReceivers(receiver_call_->Receiver(), sender_call_->Receiver());
-
-  CreateTestConfigs();
-  CreateStreams();
-  observer.SetReceiveStream(receive_stream_);
-  CreateFrameGenerator();
-  StartSending();
-
-  EXPECT_EQ(kEventSignaled, observer.Wait())
-      << "Timed out while verifying number of received RTP packets.";
-
-  StopSending();
-  observer.StopSending();
-  DestroyStreams();
+  RunBaseTest(&test);
 }
 
 }  // namespace webrtc

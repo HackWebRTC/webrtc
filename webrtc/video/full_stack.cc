@@ -24,6 +24,7 @@
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/thread_annotations.h"
+#include "webrtc/test/call_test.h"
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/fake_encoder.h"
@@ -34,7 +35,6 @@
 
 namespace webrtc {
 
-static const uint32_t kSendSsrc = 0x654321;
 static const int kFullStackTestDurationSecs = 10;
 
 struct FullStackTestParams {
@@ -49,20 +49,9 @@ struct FullStackTestParams {
   double avg_ssim_threshold;
 };
 
-FullStackTestParams paris_qcif = {
-    "net_delay_0_0_plr_0", {"paris_qcif", 176, 144, 30}, 300, 36.0, 0.96};
-
-// TODO(pbos): Decide on psnr/ssim thresholds for foreman_cif.
-FullStackTestParams foreman_cif = {
-    "foreman_cif_net_delay_0_0_plr_0",
-    {"foreman_cif", 352, 288, 30},
-    700,
-    0.0,
-    0.0};
-
-class FullStackTest : public ::testing::TestWithParam<FullStackTestParams> {
+class FullStackTest : public test::CallTest {
  protected:
-  std::map<uint32_t, bool> reserved_ssrcs_;
+  void TestWithoutPacketLoss(const FullStackTestParams& params);
 };
 
 class VideoAnalyzer : public PacketReceiver,
@@ -200,7 +189,9 @@ class VideoAnalyzer : public PacketReceiver,
     last_rendered_frame_.CopyFrame(video_frame);
   }
 
-  void Wait() { done_->Wait(120 * 1000); }
+  void Wait() {
+    EXPECT_EQ(kEventSignaled, done_->Wait(FullStackTest::kLongTimeoutMs));
+  }
 
   VideoSendStreamInput* input_;
   Transport* transport_;
@@ -376,10 +367,7 @@ class VideoAnalyzer : public PacketReceiver,
   const scoped_ptr<EventWrapper> done_;
 };
 
-TEST_P(FullStackTest, NoPacketLoss) {
-  static const uint32_t kReceiverLocalSsrc = 0x123456;
-  FullStackTestParams params = GetParam();
-
+void FullStackTest::TestWithoutPacketLoss(const FullStackTestParams& params) {
   test::DirectTransport transport;
   VideoAnalyzer analyzer(NULL,
                          &transport,
@@ -388,32 +376,32 @@ TEST_P(FullStackTest, NoPacketLoss) {
                          params.avg_ssim_threshold,
                          kFullStackTestDurationSecs * params.clip.fps);
 
-  Call::Config call_config(&analyzer);
+  CreateCalls(Call::Config(&analyzer), Call::Config(&analyzer));
 
-  scoped_ptr<Call> call(Call::Create(call_config));
-  analyzer.SetReceiver(call->Receiver());
+  analyzer.SetReceiver(receiver_call_->Receiver());
   transport.SetReceiver(&analyzer);
 
-  VideoSendStream::Config send_config = call->GetDefaultSendConfig();
-  send_config.rtp.ssrcs.push_back(kSendSsrc);
+  CreateSendConfig(1);
 
   scoped_ptr<VP8Encoder> encoder(VP8Encoder::Create());
-  send_config.encoder_settings.encoder = encoder.get();
-  send_config.encoder_settings.payload_name = "VP8";
-  send_config.encoder_settings.payload_type = 124;
-  std::vector<VideoStream> video_streams = test::CreateVideoStreams(1);
-  VideoStream* stream = &video_streams[0];
+  send_config_.encoder_settings.encoder = encoder.get();
+  send_config_.encoder_settings.payload_name = "VP8";
+  send_config_.encoder_settings.payload_type = 124;
+
+  VideoStream* stream = &video_streams_[0];
   stream->width = params.clip.width;
   stream->height = params.clip.height;
   stream->min_bitrate_bps = stream->target_bitrate_bps =
       stream->max_bitrate_bps = params.bitrate * 1000;
   stream->max_framerate = params.clip.fps;
 
-  VideoSendStream* send_stream =
-      call->CreateVideoSendStream(send_config, video_streams, NULL);
-  analyzer.input_ = send_stream->Input();
+  CreateMatchingReceiveConfigs();
+  receive_config_.renderer = &analyzer;
 
-  scoped_ptr<test::FrameGeneratorCapturer> file_capturer(
+  CreateStreams();
+  analyzer.input_ = send_stream_->Input();
+
+  frame_generator_capturer_.reset(
       test::FrameGeneratorCapturer::CreateFromYuvFile(
           &analyzer,
           test::ResourcePath(params.clip.name, "yuv").c_str(),
@@ -421,39 +409,41 @@ TEST_P(FullStackTest, NoPacketLoss) {
           params.clip.height,
           params.clip.fps,
           Clock::GetRealTimeClock()));
-  ASSERT_TRUE(file_capturer.get() != NULL)
+
+  ASSERT_TRUE(frame_generator_capturer_.get() != NULL)
       << "Could not create capturer for " << params.clip.name
       << ".yuv. Is this resource file present?";
 
-  VideoReceiveStream::Config receive_config = call->GetDefaultReceiveConfig();
-  VideoCodec codec =
-      test::CreateDecoderVideoCodec(send_config.encoder_settings);
-  receive_config.codecs.push_back(codec);
-  receive_config.rtp.remote_ssrc = send_config.rtp.ssrcs[0];
-  receive_config.rtp.local_ssrc = kReceiverLocalSsrc;
-  receive_config.renderer = &analyzer;
-
-  VideoReceiveStream* receive_stream =
-      call->CreateVideoReceiveStream(receive_config);
-
-  receive_stream->Start();
-  send_stream->Start();
-  file_capturer->Start();
+  Start();
 
   analyzer.Wait();
 
-  file_capturer->Stop();
-  send_stream->Stop();
-  receive_stream->Stop();
-
-  call->DestroyVideoReceiveStream(receive_stream);
-  call->DestroyVideoSendStream(send_stream);
-
   transport.StopSending();
+
+  Stop();
+
+  DestroyStreams();
 }
 
-INSTANTIATE_TEST_CASE_P(FullStack,
-                        FullStackTest,
-                        ::testing::Values(paris_qcif, foreman_cif));
+FullStackTestParams paris_qcif = {"net_delay_0_0_plr_0",
+                                  {"paris_qcif", 176, 144, 30},
+                                  300,
+                                  36.0,
+                                  0.96};
+
+// TODO(pbos): Decide on psnr/ssim thresholds for foreman_cif.
+FullStackTestParams foreman_cif = {"foreman_cif_net_delay_0_0_plr_0",
+                                   {"foreman_cif", 352, 288, 30},
+                                   700,
+                                   0.0,
+                                   0.0};
+
+TEST_F(FullStackTest, ParisQcifWithoutPacketLoss) {
+  TestWithoutPacketLoss(paris_qcif);
+}
+
+TEST_F(FullStackTest, ForemanCifWithoutPacketLoss) {
+  TestWithoutPacketLoss(foreman_cif);
+}
 
 }  // namespace webrtc

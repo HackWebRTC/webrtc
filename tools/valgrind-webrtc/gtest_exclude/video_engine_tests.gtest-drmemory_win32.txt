@@ -1,6 +1,6 @@
 # Never completes on Dr Memory Full.
 # https://code.google.com/p/webrtc/issues/detail?id=3159
-CallTest.SendsAndReceivesMultipleStreams
-CallTest.ReceivesAndRetransmitsNack
+EndToEndTest.SendsAndReceivesMultipleStreams
+EndToEndTest.ReceivesAndRetransmitsNack
 # https://code.google.com/p/webrtc/issues/detail?id=3471
 VideoSendStreamTest.RetransmitsNackOverRtxWithPacing

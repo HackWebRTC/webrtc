@@ -16,6 +16,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
+#include "webrtc/test/direct_transport.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_send_stream.h"
 
