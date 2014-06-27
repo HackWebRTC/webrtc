@@ -39,7 +39,7 @@
         }],
         ['tsan==1', {
           'sources': [
-            '<(DEPTH)/tools/tsan_suppressions/tsan_suppressions.cc',
+            'tsan_suppressions.cc',
           ],
         }],
       ],

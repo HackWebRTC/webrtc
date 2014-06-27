@@ -15,7 +15,7 @@
       # GYP_DEFINES="asan=1".
       ['OS=="linux" and (chromeos==0 or target_arch!="ia32")', {
         'dependencies': [
-          '<(webrtc_root)/sanitizer_options.gyp:sanitizer_options',
+          '<(webrtc_root)/build/sanitizer_options.gyp:sanitizer_options',
         ],
       }],
     ],

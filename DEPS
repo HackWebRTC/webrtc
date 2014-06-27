@@ -152,9 +152,6 @@ deps = {
   "tools/swarming_client":
     From("chromium_deps", "src/tools/swarming_client"),
 
-  "tools/tsan_suppressions":
-    File(Var("chromium_trunk") + "/src/base/debug/tsan_suppressions.cc@" + Var("chromium_revision")),
-
   "tools/valgrind":
     Var("chromium_trunk") + "/src/tools/valgrind@" + Var("chromium_revision"),
 
