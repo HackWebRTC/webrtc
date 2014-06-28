@@ -6,6 +6,8 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+# TODO(kjellander): Rebase this to base.gyp changes after r6438.
+
 import("//build/config/crypto.gni")
 import("../build/webrtc.gni")
 
@@ -121,6 +123,7 @@ config("linux_system_ssl") {
 static_library("webrtc_base") {
   cflags = []
   cflags_cc = []
+  deps= []
 
   configs += [
     "..:common_config",
@@ -142,62 +145,41 @@ static_library("webrtc_base") {
     "asyncfile.h",
     "asynchttprequest.cc",
     "asynchttprequest.h",
-    "asyncinvoker.cc",
-    "asyncinvoker.h",
-    "asyncinvoker-inl.h",
     "asyncpacketsocket.h",
-    "asyncresolverinterface.h",
     "asyncsocket.cc",
     "asyncsocket.h",
     "asynctcpsocket.cc",
     "asynctcpsocket.h",
     "asyncudpsocket.cc",
     "asyncudpsocket.h",
-    "atomicops.h",
     "autodetectproxy.cc",
     "autodetectproxy.h",
-    "bandwidthsmoother.cc",
-    "bandwidthsmoother.h",
     "base64.cc",
     "base64.h",
     "basicdefs.h",
-    "basictypes.h",
-    "bind.h",
-    "bind.h.pump",
-    "buffer.h",
     "bytebuffer.cc",
     "bytebuffer.h",
     "byteorder.h",
-    "callback.h",
-    "callback.h.pump",
     "checks.cc",
     "checks.h",
     "common.cc",
     "common.h",
-    "constructormagic.h",
     "cpumonitor.cc",
     "cpumonitor.h",
     "crc32.cc",
     "crc32.h",
     "criticalsection.h",
     "cryptstring.h",
-    "dbus.cc",
-    "dbus.h",
     "diskcache.cc",
     "diskcache.h",
     "event.cc",
     "event.h",
-    "filelock.cc",
-    "filelock.h",
     "fileutils.cc",
     "fileutils.h",
-    "fileutils_mock.h",
     "firewallsocketserver.cc",
     "firewallsocketserver.h",
     "flags.cc",
     "flags.h",
-    "genericslot.h",
-    "genericslot.h.pump",
     "gunit_prod.h",
     "helpers.cc",
     "helpers.h",
@@ -210,44 +192,10 @@ static_library("webrtc_base") {
     "httpcommon.h",
     "httprequest.cc",
     "httprequest.h",
-    "httpserver.cc",
-    "httpserver.h",
-    "ifaddrs-android.cc",
-    "ifaddrs-android.h",
     "iosfilesystem.mm",
     "ipaddress.cc",
     "ipaddress.h",
-    "json.cc",
-    "json.h",
-    "latebindingsymboltable.cc",
-    "latebindingsymboltable.cc.def",
-    "latebindingsymboltable.h",
-    "latebindingsymboltable.h.def",
-    "libdbusglibsymboltable.cc",
-    "libdbusglibsymboltable.h",
-    "linux.cc",
-    "linux.h",
-    "linuxfdwalk.c",
-    "linuxfdwalk.h",
-    "linuxwindowpicker.cc",
-    "linuxwindowpicker.h",
     "linked_ptr.h",
-    "logging.cc",
-    "logging.h",
-    "macasyncsocket.cc",
-    "macasyncsocket.h",
-    "maccocoasocketserver.h",
-    "maccocoasocketserver.mm",
-    "maccocoathreadhelper.h",
-    "maccocoathreadhelper.mm",
-    "macconversion.cc",
-    "macconversion.h",
-    "macsocketserver.cc",
-    "macsocketserver.h",
-    "macutils.cc",
-    "macutils.h",
-    "macwindowpicker.cc",
-    "macwindowpicker.h",
     "mathutils.h",
     "md5.cc",
     "md5.h",
@@ -258,14 +206,6 @@ static_library("webrtc_base") {
     "messagehandler.h",
     "messagequeue.cc",
     "messagequeue.h",
-    "multipart.cc",
-    "multipart.h",
-    "natserver.cc",
-    "natserver.h",
-    "natsocketfactory.cc",
-    "natsocketfactory.h",
-    "nattypes.cc",
-    "nattypes.h",
     "nethelpers.cc",
     "nethelpers.h",
     "network.cc",
@@ -275,51 +215,26 @@ static_library("webrtc_base") {
     "nssstreamadapter.cc",
     "nssstreamadapter.h",
     "nullsocketserver.h",
-    "openssl.h",
-    "openssladapter.cc",
-    "openssladapter.h",
-    "openssldigest.cc",
-    "openssldigest.h",
-    "opensslidentity.cc",
-    "opensslidentity.h",
-    "opensslstreamadapter.cc",
-    "opensslstreamadapter.h",
-    "optionsfile.cc",
-    "optionsfile.h",
     "pathutils.cc",
     "pathutils.h",
     "physicalsocketserver.cc",
     "physicalsocketserver.h",
-    "posix.cc",
-    "posix.h",
-    "profiler.cc",
-    "profiler.h",
     "proxydetect.cc",
     "proxydetect.h",
     "proxyinfo.cc",
     "proxyinfo.h",
-    "proxyserver.cc",
-    "proxyserver.h",
     "ratelimiter.cc",
     "ratelimiter.h",
     "ratetracker.cc",
     "ratetracker.h",
-    "refcount.h",
-    "referencecountedsingletonfactory.h",
-    "rollingaccumulator.h",
-    "schanneladapter.cc",
-    "schanneladapter.h",
+    "safe_conversions.h",
+    "safe_conversions_impl.h",
     "scoped_autorelease_pool.h",
     "scoped_autorelease_pool.mm",
     "scoped_ptr.h",
-    "scoped_ref_ptr.h",
-    "scopedptrcollection.h",
-    "sec_buffer.h",
     "sha1.cc",
     "sha1.h",
     "sha1digest.h",
-    "sharedexclusivelock.cc",
-    "sharedexclusivelock.h",
     "signalthread.cc",
     "signalthread.h",
     "sigslot.h",
@@ -339,12 +254,10 @@ static_library("webrtc_base") {
     "socketstream.h",
     "ssladapter.cc",
     "ssladapter.h",
-    "sslconfig.h",
     "sslfingerprint.cc",
     "sslfingerprint.h",
     "sslidentity.cc",
     "sslidentity.h",
-    "sslroots.h",
     "sslsocketfactory.cc",
     "sslsocketfactory.h",
     "sslstreamadapter.cc",
@@ -353,7 +266,6 @@ static_library("webrtc_base") {
     "sslstreamadapterhelper.h",
     "stream.cc",
     "stream.h",
-    "stringdigest.h",
     "stringencode.cc",
     "stringencode.h",
     "stringutils.cc",
@@ -366,49 +278,24 @@ static_library("webrtc_base") {
     "taskparent.h",
     "taskrunner.cc",
     "taskrunner.h",
-    "testclient.cc",
-    "testclient.h",
     "thread.cc",
     "thread.h",
     "timeutils.cc",
     "timeutils.h",
     "timing.cc",
     "timing.h",
-    "transformadapter.cc",
-    "transformadapter.h",
-    "unixfilesystem.cc",
-    "unixfilesystem.h",
     "urlencode.cc",
     "urlencode.h",
-    "versionparsing.cc",
-    "versionparsing.h",
-    "virtualsocketserver.cc",
-    "virtualsocketserver.h",
-    "win32.cc",
-    "win32.h",
-    "win32filesystem.cc",
-    "win32filesystem.h",
-    "win32regkey.cc",
-    "win32regkey.h",
-    "win32securityerrors.cc",
-    "win32socketinit.cc",
-    "win32socketinit.h",
-    "win32socketserver.cc",
-    "win32socketserver.h",
-    "win32window.cc",
-    "win32window.h",
-    "win32windowpicker.cc",
-    "win32windowpicker.h",
-    "window.h",
-    "windowpicker.h",
-    "windowpickerfactory.h",
-    "winfirewall.cc",
-    "winfirewall.h",
-    "winping.cc",
-    "winping.h",
     "worker.cc",
     "worker.h",
   ]
+
+  if (is_posix) {
+    sources += [
+      "unixfilesystem.cc",
+      "unixfilesystem.h",
+    ]
+  }
 
   if (build_with_chromium) {
     sources += [
@@ -417,10 +304,19 @@ static_library("webrtc_base") {
       "../overrides/webrtc/base/logging.cc",
       "../overrides/webrtc/base/logging.h",
     ]
+
     if (is_win) {
       sources += [ "../overrides/webrtc/base/win32socketinit.cc" ]
     }
-    sources -= [
+
+    include_dirs = [
+      "../overrides",
+      "../../openssl/openssl/include",
+    ]
+
+    direct_dependent_configs += [ ":webrtc_base_chromium_config" ]
+  } else {
+    sources += [
       "asyncinvoker.cc",
       "asyncinvoker.h",
       "asyncinvoker-inl.h",
@@ -435,8 +331,6 @@ static_library("webrtc_base") {
       "callback.h",
       "callback.h.pump",
       "constructormagic.h",
-      "dbus.cc",
-      "dbus.h",
       "filelock.cc",
       "filelock.h",
       "fileutils_mock.h",
@@ -446,26 +340,8 @@ static_library("webrtc_base") {
       "httpserver.h",
       "json.cc",
       "json.h",
-      "latebindingsymboltable.cc",
-      "latebindingsymboltable.cc.def",
-      "latebindingsymboltable.h",
-      "latebindingsymboltable.h.def",
-      "libdbusglibsymboltable.cc",
-      "libdbusglibsymboltable.h",
-      "linuxfdwalk.c",
-      "linuxfdwalk.h",
-      "linuxwindowpicker.cc",
-      "linuxwindowpicker.h",
       "logging.cc",
       "logging.h",
-      #"macasyncsocket.cc",
-      #"macasyncsocket.h",
-      #"maccocoasocketserver.h",
-      #"maccocoasocketserver.mm",
-      #"macsocketserver.cc",
-      #"macsocketserver.h",
-      #"macwindowpicker.cc",
-      #"macwindowpicker.h",
       "mathutils.h",
       "multipart.cc",
       "multipart.h",
@@ -478,8 +354,6 @@ static_library("webrtc_base") {
       "openssl.h",
       "optionsfile.cc",
       "optionsfile.h",
-      "posix.cc",
-      "posix.h",
       "profiler.cc",
       "profiler.h",
       "proxyserver.cc",
@@ -487,8 +361,6 @@ static_library("webrtc_base") {
       "refcount.h",
       "referencecountedsingletonfactory.h",
       "rollingaccumulator.h",
-      #"safe_conversions.h",
-      #"safe_conversions_impl.h",
       "scopedptrcollection.h",
       "scoped_ref_ptr.h",
       "sec_buffer.h",
@@ -497,44 +369,71 @@ static_library("webrtc_base") {
       "sslconfig.h",
       "sslroots.h",
       "stringdigest.h",
-      #"testbase64.h",
       "testclient.cc",
       "testclient.h",
-      #"testutils.h",
       "transformadapter.cc",
       "transformadapter.h",
       "versionparsing.cc",
       "versionparsing.h",
       "virtualsocketserver.cc",
       "virtualsocketserver.h",
-      #"win32regkey.cc",
-      #"win32regkey.h",
-      #"win32socketinit.cc",
-      #"win32socketinit.h",
-      #"win32socketserver.cc",
-      #"win32socketserver.h",
-      #"win32toolhelp.h",
       "window.h",
       "windowpickerfactory.h",
       "windowpicker.h",
     ]
 
-    include_dirs = [
-      "../overrides",
-      "../../openssl/openssl/include",
-    ]
+    if (is_posix) {
+      sources += [
+        "latebindingsymboltable.cc",
+        "latebindingsymboltable.cc.def",
+        "latebindingsymboltable.h",
+        "latebindingsymboltable.h.def",
+        "posix.cc",
+        "posix.h",
+      ]
+    }
 
-    direct_dependent_configs += [ ":webrtc_base_chromium_config" ]
-  } else {
+    if (is_linux) {
+      sources += [
+        "dbus.cc",
+        "dbus.h",
+        "libdbusglibsymboltable.cc",
+        "libdbusglibsymboltable.h",
+        "linuxfdwalk.c",
+        "linuxfdwalk.h",
+        "linuxwindowpicker.cc",
+        "linuxwindowpicker.h",
+      ]
+    }
+
+    if (is_mac) {
+      sources += [
+        "macasyncsocket.cc",
+        "macasyncsocket.h",
+        "maccocoasocketserver.h",
+        "maccocoasocketserver.mm",
+        "macsocketserver.cc",
+        "macsocketserver.h",
+        "macwindowpicker.cc",
+        "macwindowpicker.h",
+      ]
+    }
+
     if (is_win) {
       sources += [
         "diskcache_win32.cc",
         "diskcache_win32.h",
+        "win32regkey.cc",
+        "win32regkey.h",
+        "win32socketinit.cc",
+        "win32socketinit.h",
+        "win32socketserver.cc",
+        "win32socketserver.h",
       ]
     }
 
-    deps = [ "//third_party/jsoncpp" ]
-  }
+    deps += [ "//third_party/jsoncpp" ]
+  }  # !build_with_chromium
 
   # TODO(henrike): issue 3307, make webrtc_base build without disabling
   # these flags.
@@ -547,12 +446,17 @@ static_library("webrtc_base") {
   if (use_openssl) {
     direct_dependent_configs += [ ":openssl_config" ]
 
-    deps = [ "//third_party/openssl" ]
+    deps += [ "//third_party/openssl" ]
   } else {
     direct_dependent_configs += [ ":no_openssl_config" ]
   }
 
   if (is_android) {
+    sources += [
+      "ifaddrs-android.cc",
+      "ifaddrs-android.h",
+    ]
+
     direct_dependent_configs += [ ":android_config" ]
 
     libs = [
@@ -561,17 +465,12 @@ static_library("webrtc_base") {
     ]
   } else {
     direct_dependent_configs += [ ":no_android_config" ]
-
-    sources -= [
-      "ifaddrs-android.cc",
-      "ifaddrs-android.h",
-    ]
   }
 
   if (is_ios) {
     all_dependent_configs += [ ":ios_config" ]
 
-    deps = [ "//net/third_party/nss/ssl:libssl" ]
+    deps += [ "//net/third_party/nss/ssl:libssl" ]
   }
 
   if (is_linux) {
@@ -585,20 +484,18 @@ static_library("webrtc_base") {
       "Xrender",
     ]
     configs += [ "//third_party/nss:system_nss_no_ssl_config" ]
-  } else {
-    sources -= [
-      "dbus.cc",
-      "dbus.h",
-      "libdbusglibsymboltable.cc",
-      "libdbusglibsymboltable.h",
-      "linuxfdwalk.c",
-      "linuxfdwalk.h",
-      "linuxwindowpicker.cc",
-      "linuxwindowpicker.h",
-    ]
   }
 
   if (is_mac) {
+    sources += [
+      "maccocoathreadhelper.h",
+      "maccocoathreadhelper.mm",
+      "macconversion.cc",
+      "macconversion.h",
+      "macutils.cc",
+      "macutils.h",
+    ]
+
     all_dependent_configs = [ ":mac_config" ]
 
     libs = [
@@ -608,24 +505,27 @@ static_library("webrtc_base") {
     if (cpu_arch == "x86") {
       all_dependent_configs += [ ":mac_x86_config" ]
     }
-  } else {
-    sources -= [
-      "macasyncsocket.cc",
-      "macasyncsocket.h",
-      "maccocoasocketserver.h",
-      #"maccocoasocketserver.mm",  # Seems to be excluded by default with GN.
-      "macconversion.cc",
-      "macconversion.h",
-      "macsocketserver.cc",
-      "macsocketserver.h",
-      "macutils.cc",
-      "macutils.h",
-      "macwindowpicker.cc",
-      "macwindowpicker.h",
-    ]
   }
 
   if (is_win) {
+    sources += [
+      "schanneladapter.cc",
+      "schanneladapter.h",
+      "win32.cc",
+      "win32.h",
+      "win32filesystem.cc",
+      "win32filesystem.h",
+      "win32securityerrors.cc",
+      "win32window.cc",
+      "win32window.h",
+      "win32windowpicker.cc",
+      "win32windowpicker.h",
+      "winfirewall.cc",
+      "winfirewall.h",
+      "winping.cc",
+      "winping.h",
+    ]
+
     libs = [
       "crypt32.lib",
       "iphlpapi.lib",
@@ -639,54 +539,21 @@ static_library("webrtc_base") {
     ]
 
     defines += [ "_CRT_NONSTDC_NO_DEPRECATE" ]
-  } else {
-    sources -= [
-      "schanneladapter.cc",
-      "schanneladapter.h",
-      "winping.cc",
-      "winping.h",
-      "winfirewall.cc",
-      "winfirewall.h",
-      # The files below were covered by a regex exclude in GYP.
-      "win32.cc",
-      "win32.h",
-      "win32filesystem.cc",
-      "win32filesystem.h",
-      "win32regkey.cc",
-      "win32regkey.h",
-      "win32securityerrors.cc",
-      "win32socketinit.cc",
-      "win32socketinit.h",
-      "win32socketserver.cc",
-      "win32socketserver.h",
-      "win32window.cc",
-      "win32window.h",
-      "win32windowpicker.cc",
-      "win32windowpicker.h",
-    ]
   }
 
-  if (is_posix) {
-    if (is_debug) {
-      defines += [ "_DEBUG" ]
-    }
-  } else {
-    sources -= [
-      "latebindingsymboltable.cc",
-      "latebindingsymboltable.h",
-      "posix.cc",
-      "posix.h",
-      "unixfilesystem.cc",
-      "unixfilesystem.h",
-    ]
+  if (is_posix && is_debug) {
+    # Chromium's build/common.gypi defines this for all posix
+    # _except_ for ios & mac.  We want it there as well, e.g.
+    # because ASSERT and friends trigger off of it.
+    defines += [ "_DEBUG" ]
   }
 
   if (is_ios || (is_mac && cpu_arch != "x86")) {
     defines += [ "CARBON_DEPRECATED=YES" ]
   }
 
-  if (is_ios || !is_posix) {
-    sources -= [
+  if (!is_ios && is_posix) {
+    sources += [
       "openssl.h",
       "openssladapter.cc",
       "openssladapter.h",
@@ -699,8 +566,8 @@ static_library("webrtc_base") {
     ]
   }
 
-  if (!is_linux && !is_android) {
-    sources -= [
+  if (is_linux || is_android) {
+    sources += [
       "linux.cc",
       "linux.h",
     ]

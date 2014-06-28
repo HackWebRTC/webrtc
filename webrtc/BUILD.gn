@@ -6,6 +6,8 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+# TODO(kjellander): Rebase this to webrtc/build/common.gypi changes after r6330.
+
 import("//build/config/arm.gni")
 import("//build/config/crypto.gni")
 import("//build/config/linux/pkg_config.gni")
@@ -61,8 +63,10 @@ config("common_inherited_config") {
   }
 }
 
-pkg_config("dbus-glib") {
-  packages = [ "dbus-glib-1" ]
+if (have_dbus_glib) {
+  pkg_config("dbus-glib") {
+    packages = [ "dbus-glib-1" ]
+  }
 }
 
 config("common_config") {
