@@ -102,7 +102,7 @@ deps = {
     From("chromium_deps", "src/third_party/libsrtp"),
 
   "third_party/libvpx":
-    Var("chromium_trunk") + "/deps/third_party/libvpx@" + Var("chromium_revision"),
+    From("chromium_deps", "src/third_party/libvpx"),
 
   "third_party/libyuv":
     (Var("googlecode_url") % "libyuv") + "/trunk@1000",
