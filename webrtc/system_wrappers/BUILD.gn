@@ -6,6 +6,7 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+import("//build/config/android/config.gni")
 import("../build/webrtc.gni")
 
 config("system_wrappers_inherited_config") {
@@ -120,6 +121,7 @@ static_library("system_wrappers") {
 
   defines = []
   libs = []
+  deps = []
 
   if (is_android) {
     sources += [
@@ -136,7 +138,7 @@ static_library("system_wrappers") {
       "WEBRTC_CLOCK_TYPE_REALTIME",
     ]
 
-    deps = [ "cpu_features_android" ]
+    deps += [ ":cpu_features_android" ]
 
     libs += [ "log" ]
   }
@@ -184,7 +186,7 @@ static_library("system_wrappers") {
     "source/spreadsortlib",
   ]
 
-  deps = [
+  deps += [
     "../base:webrtc_base",
   ]
 }
