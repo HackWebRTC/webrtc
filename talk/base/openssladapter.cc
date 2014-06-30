@@ -41,6 +41,7 @@
 #include <openssl/err.h>
 #include <openssl/opensslv.h>
 #include <openssl/rand.h>
+#include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
 #if HAVE_CONFIG_H
@@ -735,7 +736,7 @@ bool OpenSSLAdapter::VerifyServerName(SSL* ssl, const char* host,
   }
 
   char data[256];
-  X509_name_st* subject;
+  X509_NAME* subject;
   if (!ok
       && ((subject = X509_get_subject_name(certificate)) != NULL)
       && (X509_NAME_get_text_by_NID(subject, NID_commonName,
