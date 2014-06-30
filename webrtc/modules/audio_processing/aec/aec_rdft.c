@@ -287,6 +287,9 @@ static void cft1st_128_C(float* a) {
   float wk1r, wk1i, wk2r, wk2i, wk3r, wk3i;
   float x0r, x0i, x1r, x1i, x2r, x2i, x3r, x3i;
 
+  // The processing of the first set of elements was simplified in C to avoid
+  // some operations (multiplication by zero or one, addition of two elements
+  // multiplied by the same weight, ...).
   x0r = a[0] + a[2];
   x0i = a[1] + a[3];
   x1r = a[0] - a[2];
@@ -659,6 +662,9 @@ void aec_rdft_init(void) {
 #endif
 #if defined(MIPS_FPU_LE)
   aec_rdft_init_mips();
+#endif
+#if defined(WEBRTC_DETECT_ARM_NEON) || defined(WEBRTC_ARCH_ARM_NEON)
+  aec_rdft_init_neon();
 #endif
   // init library constants.
   makewt_32();

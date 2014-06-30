@@ -200,6 +200,7 @@
         ],
         'sources': [
           'aec/aec_core_neon.c',
+          'aec/aec_rdft_neon.c',
           'aecm/aecm_core_neon.c',
           'ns/nsx_core_neon.c',
         ],

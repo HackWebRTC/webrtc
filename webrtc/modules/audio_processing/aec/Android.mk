@@ -53,6 +53,7 @@ include $(BUILD_STATIC_LIBRARY)
 ifeq ($(WEBRTC_BUILD_NEON_LIBS),true)
 
 LOCAL_SRC_FILES += \
-    aec_core_neon.c
+    aec_core_neon.c \
+    aec_rdft_neon.c
 
 endif # ifeq ($(WEBRTC_BUILD_NEON_LIBS),true)
