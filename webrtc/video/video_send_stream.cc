@@ -173,6 +173,8 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
     rtp_rtcp_->SetNACKStatus(channel_, config_.rtp.nack.rtp_history_ms > 0);
   }
 
+  ConfigureSsrcs();
+
   char rtcp_cname[ViERTP_RTCP::KMaxRTCPCNameLength];
   assert(config_.rtp.c_name.length() < ViERTP_RTCP::KMaxRTCPCNameLength);
   strncpy(rtcp_cname, config_.rtp.c_name.c_str(), sizeof(rtcp_cname) - 1);
@@ -373,38 +375,7 @@ bool VideoSendStream::ReconfigureVideoEncoder(
   assert(streams[0].max_framerate > 0);
   video_codec.maxFramerate = streams[0].max_framerate;
 
-  if (codec_->SetSendCodec(channel_, video_codec) != 0)
-    return false;
-
-  for (size_t i = 0; i < config_.rtp.ssrcs.size(); ++i) {
-    rtp_rtcp_->SetLocalSSRC(channel_,
-                            config_.rtp.ssrcs[i],
-                            kViEStreamTypeNormal,
-                            static_cast<unsigned char>(i));
-  }
-
-  if (config_.rtp.rtx.ssrcs.empty()) {
-    assert(!config_.rtp.rtx.pad_with_redundant_payloads);
-    return true;
-  }
-
-  // Set up RTX.
-  assert(config_.rtp.rtx.ssrcs.size() == config_.rtp.ssrcs.size());
-  for (size_t i = 0; i < config_.rtp.ssrcs.size(); ++i) {
-    rtp_rtcp_->SetLocalSSRC(channel_,
-                            config_.rtp.rtx.ssrcs[i],
-                            kViEStreamTypeRtx,
-                            static_cast<unsigned char>(i));
-  }
-
-  if (config_.rtp.rtx.pad_with_redundant_payloads) {
-    rtp_rtcp_->SetPadWithRedundantPayloads(channel_, true);
-  }
-
-  assert(config_.rtp.rtx.payload_type >= 0);
-  rtp_rtcp_->SetRtxSendPayloadType(channel_, config_.rtp.rtx.payload_type);
-
-  return true;
+  return codec_->SetSendCodec(channel_, video_codec) == 0;
 }
 
 bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
@@ -425,6 +396,35 @@ std::string VideoSendStream::GetCName() {
   char rtcp_cname[ViERTP_RTCP::KMaxRTCPCNameLength];
   rtp_rtcp_->GetRTCPCName(channel_, rtcp_cname);
   return rtcp_cname;
+}
+
+void VideoSendStream::ConfigureSsrcs() {
+  for (size_t i = 0; i < config_.rtp.ssrcs.size(); ++i) {
+    uint32_t ssrc = config_.rtp.ssrcs[i];
+    rtp_rtcp_->SetLocalSSRC(
+        channel_, ssrc, kViEStreamTypeNormal, static_cast<unsigned char>(i));
+  }
+
+  if (config_.rtp.rtx.ssrcs.empty()) {
+    assert(!config_.rtp.rtx.pad_with_redundant_payloads);
+    return;
+  }
+
+  // Set up RTX.
+  assert(config_.rtp.rtx.ssrcs.size() == config_.rtp.ssrcs.size());
+  for (size_t i = 0; i < config_.rtp.ssrcs.size(); ++i) {
+    rtp_rtcp_->SetLocalSSRC(channel_,
+                            config_.rtp.rtx.ssrcs[i],
+                            kViEStreamTypeRtx,
+                            static_cast<unsigned char>(i));
+  }
+
+  if (config_.rtp.rtx.pad_with_redundant_payloads) {
+    rtp_rtcp_->SetPadWithRedundantPayloads(channel_, true);
+  }
+
+  assert(config_.rtp.rtx.payload_type >= 0);
+  rtp_rtcp_->SetRtxSendPayloadType(channel_, config_.rtp.rtx.payload_type);
 }
 
 }  // namespace internal

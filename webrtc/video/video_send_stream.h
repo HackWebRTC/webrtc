@@ -71,6 +71,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
   virtual std::string GetCName() OVERRIDE;
 
  private:
+  void ConfigureSsrcs();
   TransportAdapter transport_adapter_;
   EncodedFrameCallbackAdapter encoded_frame_proxy_;
   const VideoSendStream::Config config_;

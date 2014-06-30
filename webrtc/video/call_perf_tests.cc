@@ -254,8 +254,8 @@ TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSync) {
   CreateSendConfig(1);
   CreateMatchingReceiveConfigs();
 
-  receive_config_.renderer = &observer;
-  receive_config_.audio_channel_id = channel;
+  receive_configs_[0].renderer = &observer;
+  receive_configs_[0].audio_channel_id = channel;
 
   CreateStreams();
 
@@ -379,11 +379,11 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
 
     virtual void ModifyConfigs(
         VideoSendStream::Config* send_config,
-        VideoReceiveStream::Config* receive_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
         std::vector<VideoStream>* video_streams) OVERRIDE {
-      receive_config->renderer = this;
+      (*receive_configs)[0].renderer = this;
       // Enable the receiver side rtt calculation.
-      receive_config->rtp.rtcp_xr.receiver_reference_time_report = true;
+      (*receive_configs)[0].rtp.rtcp_xr.receiver_reference_time_report = true;
     }
 
     virtual void PerformTest() OVERRIDE {
@@ -518,14 +518,15 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
       return send_transport_receiver_->DeliverPacket(packet, length);
     }
 
-    virtual void OnStreamsCreated(VideoSendStream* send_stream,
-                                  VideoReceiveStream* receive_stream) {
+    virtual void OnStreamsCreated(
+        VideoSendStream* send_stream,
+        const std::vector<VideoReceiveStream*>& receive_streams) OVERRIDE {
       send_stream_ = send_stream;
     }
 
     virtual void ModifyConfigs(
         VideoSendStream::Config* send_config,
-        VideoReceiveStream::Config* receive_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
         std::vector<VideoStream>* video_streams) OVERRIDE {
       if (pad_to_min_bitrate_) {
         send_config->rtp.min_transmit_bitrate_bps = kMinTransmitBitrateBps;

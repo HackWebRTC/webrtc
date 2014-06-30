@@ -49,39 +49,15 @@ class EndToEndTest : public test::CallTest {
 
   virtual ~EndToEndTest() {
     EXPECT_EQ(NULL, send_stream_);
-    EXPECT_EQ(NULL, receive_stream_);
+    EXPECT_TRUE(receive_streams_.empty());
   }
 
  protected:
-  void CreateFrameGenerator() {
-    frame_generator_capturer_.reset(
-        test::FrameGeneratorCapturer::Create(send_stream_->Input(),
-                                             video_streams_[0].width,
-                                             video_streams_[0].height,
-                                             30,
-                                             Clock::GetRealTimeClock()));
-  }
-
-  void StartSending() {
-    receive_stream_->Start();
-    send_stream_->Start();
-    if (frame_generator_capturer_.get() != NULL)
-      frame_generator_capturer_->Start();
-  }
-
-  void StopSending() {
-    if (frame_generator_capturer_.get() != NULL)
-      frame_generator_capturer_->Stop();
-    if (send_stream_ != NULL)
-      send_stream_->Stop();
-    if (receive_stream_ != NULL)
-      receive_stream_->Stop();
-  }
-
   void DecodesRetransmittedFrame(bool retransmit_over_rtx);
   void ReceivesPliAndRecovers(int rtp_history_ms);
   void RespectsRtcpMode(newapi::RtcpMode rtcp_mode);
   void TestXrReceiverReferenceTimeReport(bool enable_rrtr);
+  void TestSendsSetSsrcs(size_t num_ssrcs, bool send_single_ssrc_first);
 };
 
 TEST_F(EndToEndTest, ReceiverCanBeStartedTwice) {
@@ -93,8 +69,8 @@ TEST_F(EndToEndTest, ReceiverCanBeStartedTwice) {
 
   CreateStreams();
 
-  receive_stream_->Start();
-  receive_stream_->Start();
+  receive_streams_[0]->Start();
+  receive_streams_[0]->Start();
 
   DestroyStreams();
 }
@@ -108,8 +84,8 @@ TEST_F(EndToEndTest, ReceiverCanBeStoppedTwice) {
 
   CreateStreams();
 
-  receive_stream_->Stop();
-  receive_stream_->Stop();
+  receive_streams_[0]->Stop();
+  receive_streams_[0]->Stop();
 
   DestroyStreams();
 }
@@ -163,11 +139,11 @@ TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
   CreateMatchingReceiveConfigs();
 
   TestFrameCallback pre_render_callback;
-  receive_config_.pre_render_callback = &pre_render_callback;
-  receive_config_.renderer = &renderer;
+  receive_configs_[0].pre_render_callback = &pre_render_callback;
+  receive_configs_[0].renderer = &renderer;
 
   CreateStreams();
-  StartSending();
+  Start();
 
   // Create frames that are smaller than the send width/height, this is done to
   // check that the callbacks are done after processing video.
@@ -179,7 +155,7 @@ TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
   EXPECT_EQ(kEventSignaled, renderer.Wait())
       << "Timed out while waiting for the frame to render.";
 
-  StopSending();
+  Stop();
 
   sender_transport.StopSending();
   receiver_transport.StopSending();
@@ -212,10 +188,10 @@ TEST_F(EndToEndTest, TransmitsFirstFrame) {
 
   CreateSendConfig(1);
   CreateMatchingReceiveConfigs();
-  receive_config_.renderer = &renderer;
+  receive_configs_[0].renderer = &renderer;
 
   CreateStreams();
-  StartSending();
+  Start();
 
   scoped_ptr<test::FrameGenerator> frame_generator(test::FrameGenerator::Create(
       video_streams_[0].width, video_streams_[0].height));
@@ -224,7 +200,7 @@ TEST_F(EndToEndTest, TransmitsFirstFrame) {
   EXPECT_EQ(kEventSignaled, renderer.Wait())
       << "Timed out while waiting for the frame to render.";
 
-  StopSending();
+  Stop();
 
   sender_transport.StopSending();
   receiver_transport.StopSending();
@@ -328,10 +304,10 @@ TEST_F(EndToEndTest, ReceivesAndRetransmitsNack) {
 
     virtual void ModifyConfigs(
         VideoSendStream::Config* send_config,
-        VideoReceiveStream::Config* receive_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
         std::vector<VideoStream>* video_streams) OVERRIDE {
       send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
-      receive_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+      (*receive_configs)[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
     }
 
     virtual void PerformTest() OVERRIDE {
@@ -422,18 +398,18 @@ TEST_F(EndToEndTest, DISABLED_CanReceiveFec) {
 
     virtual void ModifyConfigs(
         VideoSendStream::Config* send_config,
-        VideoReceiveStream::Config* receive_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
         std::vector<VideoStream>* video_streams) OVERRIDE {
       // TODO(pbos): Run this test with combined NACK/FEC enabled as well.
       // int rtp_history_ms = 1000;
-      // receive_config->rtp.nack.rtp_history_ms = rtp_history_ms;
+      // (*receive_configs)[0].rtp.nack.rtp_history_ms = rtp_history_ms;
       // send_config->rtp.nack.rtp_history_ms = rtp_history_ms;
       send_config->rtp.fec.red_payload_type = kRedPayloadType;
       send_config->rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
 
-      receive_config->rtp.fec.red_payload_type = kRedPayloadType;
-      receive_config->rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
-      receive_config->renderer = this;
+      (*receive_configs)[0].rtp.fec.red_payload_type = kRedPayloadType;
+      (*receive_configs)[0].rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+      (*receive_configs)[0].renderer = this;
     }
 
     virtual void PerformTest() OVERRIDE {
@@ -500,16 +476,16 @@ void EndToEndTest::DecodesRetransmittedFrame(bool retransmit_over_rtx) {
 
     virtual void ModifyConfigs(
         VideoSendStream::Config* send_config,
-        VideoReceiveStream::Config* receive_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
         std::vector<VideoStream>* video_streams) OVERRIDE {
       send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
-      receive_config->pre_render_callback = this;
-      receive_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+      (*receive_configs)[0].pre_render_callback = this;
+      (*receive_configs)[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
       if (retransmission_ssrc_ == kSendRtxSsrc) {
         send_config->rtp.rtx.ssrcs.push_back(kSendRtxSsrc);
         send_config->rtp.rtx.payload_type = kSendRtxPayloadType;
-        receive_config->rtp.rtx[kSendRtxPayloadType].ssrc = kSendRtxSsrc;
-        receive_config->rtp.rtx[kSendRtxPayloadType].payload_type =
+        (*receive_configs)[0].rtp.rtx[kSendRtxPayloadType].ssrc = kSendRtxSsrc;
+        (*receive_configs)[0].rtp.rtx[kSendRtxPayloadType].payload_type =
             kSendRtxPayloadType;
       }
     }
@@ -611,11 +587,11 @@ TEST_F(EndToEndTest, UsesFrameCallbacks) {
   send_config_.pre_encode_callback = &pre_encode_callback;
 
   CreateMatchingReceiveConfigs();
-  receive_config_.pre_render_callback = &pre_render_callback;
-  receive_config_.renderer = &renderer;
+  receive_configs_[0].pre_render_callback = &pre_render_callback;
+  receive_configs_[0].renderer = &renderer;
 
   CreateStreams();
-  StartSending();
+  Start();
 
   // Create frames that are smaller than the send width/height, this is done to
   // check that the callbacks are done after processing video.
@@ -630,7 +606,7 @@ TEST_F(EndToEndTest, UsesFrameCallbacks) {
   EXPECT_EQ(kEventSignaled, renderer.Wait())
       << "Timed out while waiting for the frame to render.";
 
-  StopSending();
+  Stop();
 
   sender_transport.StopSending();
   receiver_transport.StopSending();
@@ -701,11 +677,11 @@ void EndToEndTest::ReceivesPliAndRecovers(int rtp_history_ms) {
 
     virtual void ModifyConfigs(
         VideoSendStream::Config* send_config,
-        VideoReceiveStream::Config* receive_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
         std::vector<VideoStream>* video_streams) OVERRIDE {
       send_config->rtp.nack.rtp_history_ms = rtp_history_ms_;
-      receive_config->rtp.nack.rtp_history_ms = rtp_history_ms_;
-      receive_config->renderer = this;
+      (*receive_configs)[0].rtp.nack.rtp_history_ms = rtp_history_ms_;
+      (*receive_configs)[0].renderer = this;
     }
 
     virtual void PerformTest() OVERRIDE {
@@ -773,16 +749,16 @@ TEST_F(EndToEndTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
   CreateMatchingReceiveConfigs();
 
   CreateStreams();
-  CreateFrameGenerator();
-  StartSending();
+  CreateFrameGeneratorCapturer();
+  Start();
 
-  receiver_call_->DestroyVideoReceiveStream(receive_stream_);
-  receive_stream_ = NULL;
+  receiver_call_->DestroyVideoReceiveStream(receive_streams_[0]);
+  receive_streams_.clear();
 
   // Wait() waits for a received packet.
   EXPECT_EQ(kEventSignaled, input_observer.Wait());
 
-  StopSending();
+  Stop();
 
   DestroyStreams();
 
@@ -848,11 +824,11 @@ void EndToEndTest::RespectsRtcpMode(newapi::RtcpMode rtcp_mode) {
 
     virtual void ModifyConfigs(
         VideoSendStream::Config* send_config,
-        VideoReceiveStream::Config* receive_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
         std::vector<VideoStream>* video_streams) OVERRIDE {
       send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
-      receive_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
-      receive_config->rtp.rtcp_mode = rtcp_mode_;
+      (*receive_configs)[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+      (*receive_configs)[0].rtp.rtcp_mode = rtcp_mode_;
     }
 
     virtual void PerformTest() OVERRIDE {
@@ -1040,10 +1016,10 @@ TEST_F(EndToEndTest, ObserversEncodedFrames) {
   CreateSendConfig(1);
   CreateMatchingReceiveConfigs();
   send_config_.post_encode_callback = &post_encode_observer;
-  receive_config_.pre_decode_callback = &pre_decode_observer;
+  receive_configs_[0].pre_decode_callback = &pre_decode_observer;
 
   CreateStreams();
-  StartSending();
+  Start();
 
   scoped_ptr<test::FrameGenerator> frame_generator(test::FrameGenerator::Create(
       video_streams_[0].width, video_streams_[0].height));
@@ -1057,7 +1033,7 @@ TEST_F(EndToEndTest, ObserversEncodedFrames) {
 
   post_encode_observer.ExpectEqualFrames(pre_decode_observer);
 
-  StopSending();
+  Stop();
 
   sender_transport.StopSending();
   receiver_transport.StopSending();
@@ -1170,10 +1146,11 @@ void EndToEndTest::TestXrReceiverReferenceTimeReport(bool enable_rrtr) {
 
     virtual void ModifyConfigs(
         VideoSendStream::Config* send_config,
-        VideoReceiveStream::Config* receive_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
         std::vector<VideoStream>* video_streams) OVERRIDE {
-      receive_config->rtp.rtcp_mode = newapi::kRtcpReducedSize;
-      receive_config->rtp.rtcp_xr.receiver_reference_time_report = enable_rrtr_;
+      (*receive_configs)[0].rtp.rtcp_mode = newapi::kRtcpReducedSize;
+      (*receive_configs)[0].rtp.rtcp_xr.receiver_reference_time_report =
+          enable_rrtr_;
     }
 
     virtual void PerformTest() OVERRIDE {
@@ -1187,6 +1164,104 @@ void EndToEndTest::TestXrReceiverReferenceTimeReport(bool enable_rrtr) {
     int sent_rtcp_rrtr_;
     int sent_rtcp_dlrr_;
   } test(enable_rrtr);
+
+  RunBaseTest(&test);
+}
+
+void EndToEndTest::TestSendsSetSsrcs(size_t num_ssrcs,
+                                     bool send_single_ssrc_first) {
+  class SendsSetSsrcs : public test::EndToEndTest {
+   public:
+    SendsSetSsrcs(const uint32_t* ssrcs,
+                  size_t num_ssrcs,
+                  bool send_single_ssrc_first)
+        : EndToEndTest(kDefaultTimeoutMs),
+          num_ssrcs_(num_ssrcs),
+          send_single_ssrc_first_(send_single_ssrc_first),
+          ssrcs_to_observe_(num_ssrcs),
+          expect_single_ssrc_(send_single_ssrc_first) {
+      for (size_t i = 0; i < num_ssrcs; ++i)
+        valid_ssrcs_[ssrcs[i]] = true;
+    }
+
+   private:
+    virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
+      RTPHeader header;
+      EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
+
+      EXPECT_TRUE(valid_ssrcs_[header.ssrc])
+          << "Received unknown SSRC: " << header.ssrc;
+
+      if (!valid_ssrcs_[header.ssrc])
+        observation_complete_->Set();
+
+      if (!is_observed_[header.ssrc]) {
+        is_observed_[header.ssrc] = true;
+        --ssrcs_to_observe_;
+        if (expect_single_ssrc_) {
+          expect_single_ssrc_ = false;
+          observation_complete_->Set();
+        }
+      }
+
+      if (ssrcs_to_observe_ == 0)
+        observation_complete_->Set();
+
+      return SEND_PACKET;
+    }
+
+    virtual size_t GetNumStreams() const OVERRIDE { return num_ssrcs_; }
+
+    virtual void ModifyConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        std::vector<VideoStream>* video_streams) OVERRIDE {
+      if (num_ssrcs_ > 1) {
+        // Set low simulcast bitrates to not have to wait for bandwidth ramp-up.
+        for (size_t i = 0; i < video_streams->size(); ++i) {
+          (*video_streams)[i].min_bitrate_bps = 10000;
+          (*video_streams)[i].target_bitrate_bps = 15000;
+          (*video_streams)[i].max_bitrate_bps = 20000;
+        }
+      }
+
+      all_streams_ = *video_streams;
+      if (send_single_ssrc_first_)
+        video_streams->resize(1);
+    }
+
+    virtual void OnStreamsCreated(
+        VideoSendStream* send_stream,
+        const std::vector<VideoReceiveStream*>& receive_streams) OVERRIDE {
+      send_stream_ = send_stream;
+    }
+
+    virtual void PerformTest() OVERRIDE {
+      EXPECT_EQ(kEventSignaled, Wait())
+          << "Timed out while waiting for "
+          << (send_single_ssrc_first_ ? "first SSRC." : "SSRCs.");
+
+      if (send_single_ssrc_first_) {
+        // Set full simulcast and continue with the rest of the SSRCs.
+        send_stream_->ReconfigureVideoEncoder(all_streams_, NULL);
+        EXPECT_EQ(kEventSignaled, Wait())
+            << "Timed out while waiting on additional SSRCs.";
+      }
+    }
+
+   private:
+    std::map<uint32_t, bool> valid_ssrcs_;
+    std::map<uint32_t, bool> is_observed_;
+
+    const size_t num_ssrcs_;
+    const bool send_single_ssrc_first_;
+
+    size_t ssrcs_to_observe_;
+    bool expect_single_ssrc_;
+
+    VideoSendStream* send_stream_;
+    std::vector<VideoStream> all_streams_;
+  } test(kSendSsrcs, num_ssrcs, send_single_ssrc_first);
 
   RunBaseTest(&test);
 }
@@ -1332,12 +1407,12 @@ TEST_F(EndToEndTest, GetStats) {
 
     virtual void ModifyConfigs(
         VideoSendStream::Config* send_config,
-        VideoReceiveStream::Config* receive_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
         std::vector<VideoStream>* video_streams) OVERRIDE {
       send_config->pre_encode_callback = this;  // Used to inject delay.
       send_config->rtp.c_name = "SomeCName";
 
-      expected_receive_ssrc_ = receive_config->rtp.local_ssrc;
+      expected_receive_ssrc_ = (*receive_configs)[0].rtp.local_ssrc;
       const std::vector<uint32_t>& ssrcs = send_config->rtp.ssrcs;
       for (size_t i = 0; i < ssrcs.size(); ++i)
         expected_send_ssrcs_.insert(ssrcs[i]);
@@ -1345,10 +1420,11 @@ TEST_F(EndToEndTest, GetStats) {
       expected_cname_ = send_config->rtp.c_name;
     }
 
-    virtual void OnStreamsCreated(VideoSendStream* send_stream,
-                                  VideoReceiveStream* receive_stream) OVERRIDE {
+    virtual void OnStreamsCreated(
+        VideoSendStream* send_stream,
+        const std::vector<VideoReceiveStream*>& receive_streams) OVERRIDE {
       send_stream_ = send_stream;
-      receive_stream_ = receive_stream;
+      receive_stream_ = receive_streams[0];
     }
 
     virtual void PerformTest() OVERRIDE {
@@ -1427,9 +1503,10 @@ TEST_F(EndToEndTest, TestReceivedRtpPacketStats) {
           sent_rtp_(0) {}
 
    private:
-    virtual void OnStreamsCreated(VideoSendStream* send_stream,
-                                  VideoReceiveStream* receive_stream) OVERRIDE {
-      receive_stream_ = receive_stream;
+    virtual void OnStreamsCreated(
+        VideoSendStream* send_stream,
+        const std::vector<VideoReceiveStream*>& receive_streams) OVERRIDE {
+      receive_stream_ = receive_streams[0];
     }
 
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
@@ -1454,6 +1531,16 @@ TEST_F(EndToEndTest, TestReceivedRtpPacketStats) {
   } test;
 
   RunBaseTest(&test);
+}
+
+TEST_F(EndToEndTest, SendsSetSsrc) { TestSendsSetSsrcs(1, false); }
+
+TEST_F(EndToEndTest, SendsSetSimulcastSsrcs) {
+  TestSendsSetSsrcs(kNumSsrcs, false);
+}
+
+TEST_F(EndToEndTest, CanSwitchToUseAllSsrcs) {
+  TestSendsSetSsrcs(kNumSsrcs, true);
 }
 
 }  // namespace webrtc

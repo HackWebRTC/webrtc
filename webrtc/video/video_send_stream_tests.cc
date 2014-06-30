@@ -60,112 +60,7 @@ class VideoSendStreamTest : public test::CallTest {
   void TestNackRetransmission(uint32_t retransmit_ssrc,
                               uint8_t retransmit_payload_type);
   void TestPacketFragmentationSize(VideoFormat format, bool with_fec);
-  void SendsSetSsrcs(size_t num_ssrcs, bool send_single_ssrc_first);
-
 };
-
-void VideoSendStreamTest::SendsSetSsrcs(size_t num_ssrcs,
-                                        bool send_single_ssrc_first) {
-  class SendsSetSsrcs : public test::SendTest {
-   public:
-    SendsSetSsrcs(const uint32_t* ssrcs,
-                  size_t num_ssrcs,
-                  bool send_single_ssrc_first)
-        : SendTest(kDefaultTimeoutMs),
-          num_ssrcs_(num_ssrcs),
-          send_single_ssrc_first_(send_single_ssrc_first),
-          ssrcs_to_observe_(num_ssrcs),
-          expect_single_ssrc_(send_single_ssrc_first) {
-      for (size_t i = 0; i < num_ssrcs; ++i)
-        valid_ssrcs_[ssrcs[i]] = true;
-    }
-
-   private:
-    virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
-      RTPHeader header;
-      EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
-
-      // TODO(pbos): Reenable this part of the test when #1695 is resolved and
-      //             all SSRCs are allocated on startup. This test was
-      //             observed
-      //             to fail on TSan as the codec gets set before the SSRCs
-      //             are
-      //             set up and some frames are sent on a random-generated
-      //             SSRC
-      //             before the correct SSRC gets set.
-      // EXPECT_TRUE(valid_ssrcs_[header.ssrc])
-      //    << "Received unknown SSRC: " << header.ssrc;
-      //
-      // if (!valid_ssrcs_[header.ssrc])
-      //  observation_complete_->Set();
-
-      if (!is_observed_[header.ssrc]) {
-        is_observed_[header.ssrc] = true;
-        --ssrcs_to_observe_;
-        if (expect_single_ssrc_) {
-          expect_single_ssrc_ = false;
-          observation_complete_->Set();
-        }
-      }
-
-      if (ssrcs_to_observe_ == 0)
-        observation_complete_->Set();
-
-      return SEND_PACKET;
-    }
-
-    virtual void ModifyConfigs(
-        VideoSendStream::Config* send_config,
-        VideoReceiveStream::Config* receive_config,
-        std::vector<VideoStream>* video_streams) OVERRIDE {
-      if (num_ssrcs_ > 1) {
-        // Set low simulcast bitrates to not have to wait for bandwidth ramp-up.
-        for (size_t i = 0; i < video_streams->size(); ++i) {
-          (*video_streams)[i].min_bitrate_bps = 10000;
-          (*video_streams)[i].target_bitrate_bps = 10000;
-          (*video_streams)[i].max_bitrate_bps = 10000;
-        }
-      }
-
-      all_streams_ = *video_streams;
-      if (send_single_ssrc_first_)
-        video_streams->resize(1);
-    }
-
-    virtual void OnStreamsCreated(VideoSendStream* send_stream,
-                                  VideoReceiveStream* receive_stream) OVERRIDE {
-      send_stream_ = send_stream;
-    }
-
-    virtual void PerformTest() OVERRIDE {
-      EXPECT_EQ(kEventSignaled, Wait())
-          << "Timed out while waiting for "
-          << (send_single_ssrc_first_ ? "first SSRC." : "SSRCs.");
-
-      if (send_single_ssrc_first_) {
-        // Set full simulcast and continue with the rest of the SSRCs.
-        send_stream_->ReconfigureVideoEncoder(all_streams_, NULL);
-        EXPECT_EQ(kEventSignaled, Wait())
-            << "Timed out while waiting on additional SSRCs.";
-      }
-    }
-
-   private:
-    std::map<uint32_t, bool> valid_ssrcs_;
-    std::map<uint32_t, bool> is_observed_;
-
-    const size_t num_ssrcs_;
-    const bool send_single_ssrc_first_;
-
-    size_t ssrcs_to_observe_;
-    bool expect_single_ssrc_;
-
-    VideoSendStream* send_stream_;
-    std::vector<VideoStream> all_streams_;
-  } test(kSendSsrcs, num_ssrcs, send_single_ssrc_first);
-
-  RunBaseTest(&test);
-}
 
 TEST_F(VideoSendStreamTest, CanStartStartedStream) {
   test::NullTransport transport;
@@ -189,16 +84,6 @@ TEST_F(VideoSendStreamTest, CanStopStoppedStream) {
   send_stream_->Stop();
   send_stream_->Stop();
   DestroyStreams();
-}
-
-TEST_F(VideoSendStreamTest, SendsSetSsrc) { SendsSetSsrcs(1, false); }
-
-TEST_F(VideoSendStreamTest, DISABLED_SendsSetSimulcastSsrcs) {
-  SendsSetSsrcs(kNumSsrcs, false);
-}
-
-TEST_F(VideoSendStreamTest, DISABLED_CanSwitchToUseAllSsrcs) {
-  SendsSetSsrcs(kNumSsrcs, true);
 }
 
 TEST_F(VideoSendStreamTest, SupportsCName) {
@@ -227,7 +112,7 @@ TEST_F(VideoSendStreamTest, SupportsCName) {
 
     virtual void ModifyConfigs(
         VideoSendStream::Config* send_config,
-        VideoReceiveStream::Config* receive_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
         std::vector<VideoStream>* video_streams) OVERRIDE {
       send_config->rtp.c_name = kCName;
     }
@@ -265,7 +150,7 @@ TEST_F(VideoSendStreamTest, SupportsAbsoluteSendTime) {
 
     virtual void ModifyConfigs(
         VideoSendStream::Config* send_config,
-        VideoReceiveStream::Config* receive_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
         std::vector<VideoStream>* video_streams) OVERRIDE {
       send_config->rtp.extensions.push_back(
           RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeExtensionId));
@@ -306,7 +191,7 @@ TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
 
     virtual void ModifyConfigs(
         VideoSendStream::Config* send_config,
-        VideoReceiveStream::Config* receive_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
         std::vector<VideoStream>* video_streams) OVERRIDE {
       send_config->encoder_settings.encoder = &encoder_;
       send_config->rtp.extensions.push_back(
@@ -475,7 +360,7 @@ TEST_F(VideoSendStreamTest, SupportsFec) {
 
     virtual void ModifyConfigs(
         VideoSendStream::Config* send_config,
-        VideoReceiveStream::Config* receive_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
         std::vector<VideoStream>* video_streams) OVERRIDE {
       send_config->rtp.fec.red_payload_type = kRedPayloadType;
       send_config->rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
@@ -555,9 +440,9 @@ void VideoSendStreamTest::TestNackRetransmission(
 
     virtual void ModifyConfigs(
         VideoSendStream::Config* send_config,
-        VideoReceiveStream::Config* receive_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
         std::vector<VideoStream>* video_streams) OVERRIDE {
-      send_config->rtp.nack.rtp_history_ms = 1000;
+      send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
       send_config->rtp.rtx.payload_type = retransmit_payload_type_;
       if (retransmit_ssrc_ != kSendSsrcs[0])
         send_config->rtp.rtx.ssrcs.push_back(retransmit_ssrc_);
@@ -730,7 +615,7 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
 
     virtual void ModifyConfigs(
         VideoSendStream::Config* send_config,
-        VideoReceiveStream::Config* receive_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
         std::vector<VideoStream>* video_streams) OVERRIDE {
       if (use_fec_) {
         send_config->rtp.fec.red_payload_type = kRedPayloadType;
@@ -897,16 +782,17 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
       transport_.SetReceiver(send_transport_receiver);
     }
 
-    virtual void OnStreamsCreated(VideoSendStream* send_stream,
-                                  VideoReceiveStream* receive_stream) OVERRIDE {
+    virtual void OnStreamsCreated(
+        VideoSendStream* send_stream,
+        const std::vector<VideoReceiveStream*>& receive_streams) OVERRIDE {
       stream_ = send_stream;
     }
 
     virtual void ModifyConfigs(
         VideoSendStream::Config* send_config,
-        VideoReceiveStream::Config* receive_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
         std::vector<VideoStream>* video_streams) OVERRIDE {
-      send_config->rtp.nack.rtp_history_ms = 1000;
+      send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
       send_config->pre_encode_callback = this;
       send_config->suspend_below_min_bitrate = true;
       int min_bitrate_bps = (*video_streams)[0].min_bitrate_bps;
@@ -1095,14 +981,15 @@ TEST_F(VideoSendStreamTest, ProducesStats) {
 
     virtual void ModifyConfigs(
         VideoSendStream::Config* send_config,
-        VideoReceiveStream::Config* receive_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
         std::vector<VideoStream>* video_streams) OVERRIDE {
       send_config->rtp.c_name = kCName;
       SetConfig(*send_config);
     }
 
-    virtual void OnStreamsCreated(VideoSendStream* send_stream,
-                                  VideoReceiveStream* receive_stream) OVERRIDE {
+    virtual void OnStreamsCreated(
+        VideoSendStream* send_stream,
+        const std::vector<VideoReceiveStream*>& receive_streams) OVERRIDE {
       stream_ = send_stream;
     }
 
@@ -1145,8 +1032,9 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
       rtp_rtcp_->SetRTCPStatus(kRtcpNonCompound);
     }
 
-    virtual void OnStreamsCreated(VideoSendStream* send_stream,
-                                  VideoReceiveStream* receive_stream) OVERRIDE {
+    virtual void OnStreamsCreated(
+        VideoSendStream* send_stream,
+        const std::vector<VideoReceiveStream*>& receive_streams) OVERRIDE {
       stream_ = send_stream;
     }
 
@@ -1191,7 +1079,7 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
 
     virtual void ModifyConfigs(
         VideoSendStream::Config* send_config,
-        VideoReceiveStream::Config* receive_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
         std::vector<VideoStream>* video_streams) OVERRIDE {
       send_config->rtp.min_transmit_bitrate_bps = kMinTransmitBitrateBps;
     }

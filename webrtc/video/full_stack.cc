@@ -396,7 +396,7 @@ void FullStackTest::TestWithoutPacketLoss(const FullStackTestParams& params) {
   stream->max_framerate = params.clip.fps;
 
   CreateMatchingReceiveConfigs();
-  receive_config_.renderer = &analyzer;
+  receive_configs_[0].renderer = &analyzer;
 
   CreateStreams();
   analyzer.input_ = send_stream_->Input();

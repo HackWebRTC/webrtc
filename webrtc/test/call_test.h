@@ -64,8 +64,8 @@ class CallTest : public ::testing::Test {
   VideoSendStream* send_stream_;
 
   scoped_ptr<Call> receiver_call_;
-  VideoReceiveStream::Config receive_config_;
-  VideoReceiveStream* receive_stream_;
+  std::vector<VideoReceiveStream::Config> receive_configs_;
+  std::vector<VideoReceiveStream*> receive_streams_;
 
   scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer_;
   test::FakeEncoder fake_encoder_;
@@ -87,11 +87,13 @@ class BaseTest : public RtpRtcpObserver {
   virtual Call::Config GetReceiverCallConfig();
   virtual void OnCallsCreated(Call* sender_call, Call* receiver_call);
 
-  virtual void ModifyConfigs(VideoSendStream::Config* send_config,
-                             VideoReceiveStream::Config* receive_config,
-                             std::vector<VideoStream>* video_streams);
-  virtual void OnStreamsCreated(VideoSendStream* send_stream,
-                                VideoReceiveStream* receive_stream);
+  virtual void ModifyConfigs(
+      VideoSendStream::Config* send_config,
+      std::vector<VideoReceiveStream::Config>* receive_configs,
+      std::vector<VideoStream>* video_streams);
+  virtual void OnStreamsCreated(
+      VideoSendStream* send_stream,
+      const std::vector<VideoReceiveStream*>& receive_streams);
 
   virtual void OnFrameGeneratorCapturerCreated(
       FrameGeneratorCapturer* frame_generator_capturer);

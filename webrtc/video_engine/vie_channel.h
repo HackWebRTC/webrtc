@@ -362,6 +362,11 @@ class ViEChannel
   void OnRttUpdate(uint32_t rtt);
 
  private:
+  void ReserveRtpRtcpModules(size_t total_modules)
+      EXCLUSIVE_LOCKS_REQUIRED(rtp_rtcp_cs_);
+  RtpRtcp* GetRtpRtcpModule(size_t simulcast_idx) const
+      EXCLUSIVE_LOCKS_REQUIRED(rtp_rtcp_cs_);
+  RtpRtcp* CreateRtpRtcpModule();
   // Assumed to be protected.
   int32_t StartDecodeThread();
   int32_t StopDecodeThread();
