@@ -71,7 +71,115 @@ static void cft1st_128_neon(float* a) {
   }
 }
 
+static void cftmdl_128_neon(float* a) {
+  int j;
+  const int l = 8;
+  const float32x4_t vec_swap_sign = vld1q_f32((float32_t*)k_swap_sign);
+  float32x4_t wk1rv = vld1q_f32(cftmdl_wk1r);
+
+  for (j = 0; j < l; j += 2) {
+    const float32x2_t a_00 = vld1_f32(&a[j + 0]);
+    const float32x2_t a_08 = vld1_f32(&a[j + 8]);
+    const float32x2_t a_32 = vld1_f32(&a[j + 32]);
+    const float32x2_t a_40 = vld1_f32(&a[j + 40]);
+    const float32x4_t a_00_32 = vcombine_f32(a_00, a_32);
+    const float32x4_t a_08_40 = vcombine_f32(a_08, a_40);
+    const float32x4_t x0r0_0i0_0r1_x0i1 = vaddq_f32(a_00_32, a_08_40);
+    const float32x4_t x1r0_1i0_1r1_x1i1 = vsubq_f32(a_00_32, a_08_40);
+    const float32x2_t a_16 = vld1_f32(&a[j + 16]);
+    const float32x2_t a_24 = vld1_f32(&a[j + 24]);
+    const float32x2_t a_48 = vld1_f32(&a[j + 48]);
+    const float32x2_t a_56 = vld1_f32(&a[j + 56]);
+    const float32x4_t a_16_48 = vcombine_f32(a_16, a_48);
+    const float32x4_t a_24_56 = vcombine_f32(a_24, a_56);
+    const float32x4_t x2r0_2i0_2r1_x2i1 = vaddq_f32(a_16_48, a_24_56);
+    const float32x4_t x3r0_3i0_3r1_x3i1 = vsubq_f32(a_16_48, a_24_56);
+    const float32x4_t xx0 = vaddq_f32(x0r0_0i0_0r1_x0i1, x2r0_2i0_2r1_x2i1);
+    const float32x4_t xx1 = vsubq_f32(x0r0_0i0_0r1_x0i1, x2r0_2i0_2r1_x2i1);
+    const float32x4_t x3i0_3r0_3i1_x3r1 = vrev64q_f32(x3r0_3i0_3r1_x3i1);
+    const float32x4_t x1_x3_add =
+        vmlaq_f32(x1r0_1i0_1r1_x1i1, vec_swap_sign, x3i0_3r0_3i1_x3r1);
+    const float32x4_t x1_x3_sub =
+        vmlsq_f32(x1r0_1i0_1r1_x1i1, vec_swap_sign, x3i0_3r0_3i1_x3r1);
+    const float32x2_t yy0_a = vdup_lane_f32(vget_high_f32(x1_x3_add), 0);
+    const float32x2_t yy0_s = vdup_lane_f32(vget_high_f32(x1_x3_sub), 0);
+    const float32x4_t yy0_as = vcombine_f32(yy0_a, yy0_s);
+    const float32x2_t yy1_a = vdup_lane_f32(vget_high_f32(x1_x3_add), 1);
+    const float32x2_t yy1_s = vdup_lane_f32(vget_high_f32(x1_x3_sub), 1);
+    const float32x4_t yy1_as = vcombine_f32(yy1_a, yy1_s);
+    const float32x4_t yy0 = vmlaq_f32(yy0_as, vec_swap_sign, yy1_as);
+    const float32x4_t yy4 = vmulq_f32(wk1rv, yy0);
+    const float32x4_t xx1_rev = vrev64q_f32(xx1);
+    const float32x4_t yy4_rev = vrev64q_f32(yy4);
+
+    vst1_f32(&a[j + 0], vget_low_f32(xx0));
+    vst1_f32(&a[j + 32], vget_high_f32(xx0));
+    vst1_f32(&a[j + 16], vget_low_f32(xx1));
+    vst1_f32(&a[j + 48], vget_high_f32(xx1_rev));
+
+    a[j + 48] = -a[j + 48];
+
+    vst1_f32(&a[j + 8], vget_low_f32(x1_x3_add));
+    vst1_f32(&a[j + 24], vget_low_f32(x1_x3_sub));
+    vst1_f32(&a[j + 40], vget_low_f32(yy4));
+    vst1_f32(&a[j + 56], vget_high_f32(yy4_rev));
+  }
+
+  {
+    const int k = 64;
+    const int k1 = 2;
+    const int k2 = 2 * k1;
+    const float32x4_t wk2rv = vld1q_f32(&rdft_wk2r[k2 + 0]);
+    const float32x4_t wk2iv = vld1q_f32(&rdft_wk2i[k2 + 0]);
+    const float32x4_t wk1iv = vld1q_f32(&rdft_wk1i[k2 + 0]);
+    const float32x4_t wk3rv = vld1q_f32(&rdft_wk3r[k2 + 0]);
+    const float32x4_t wk3iv = vld1q_f32(&rdft_wk3i[k2 + 0]);
+    wk1rv = vld1q_f32(&rdft_wk1r[k2 + 0]);
+    for (j = k; j < l + k; j += 2) {
+      const float32x2_t a_00 = vld1_f32(&a[j + 0]);
+      const float32x2_t a_08 = vld1_f32(&a[j + 8]);
+      const float32x2_t a_32 = vld1_f32(&a[j + 32]);
+      const float32x2_t a_40 = vld1_f32(&a[j + 40]);
+      const float32x4_t a_00_32 = vcombine_f32(a_00, a_32);
+      const float32x4_t a_08_40 = vcombine_f32(a_08, a_40);
+      const float32x4_t x0r0_0i0_0r1_x0i1 = vaddq_f32(a_00_32, a_08_40);
+      const float32x4_t x1r0_1i0_1r1_x1i1 = vsubq_f32(a_00_32, a_08_40);
+      const float32x2_t a_16 = vld1_f32(&a[j + 16]);
+      const float32x2_t a_24 = vld1_f32(&a[j + 24]);
+      const float32x2_t a_48 = vld1_f32(&a[j + 48]);
+      const float32x2_t a_56 = vld1_f32(&a[j + 56]);
+      const float32x4_t a_16_48 = vcombine_f32(a_16, a_48);
+      const float32x4_t a_24_56 = vcombine_f32(a_24, a_56);
+      const float32x4_t x2r0_2i0_2r1_x2i1 = vaddq_f32(a_16_48, a_24_56);
+      const float32x4_t x3r0_3i0_3r1_x3i1 = vsubq_f32(a_16_48, a_24_56);
+      const float32x4_t xx = vaddq_f32(x0r0_0i0_0r1_x0i1, x2r0_2i0_2r1_x2i1);
+      const float32x4_t xx1 = vsubq_f32(x0r0_0i0_0r1_x0i1, x2r0_2i0_2r1_x2i1);
+      const float32x4_t x3i0_3r0_3i1_x3r1 = vrev64q_f32(x3r0_3i0_3r1_x3i1);
+      const float32x4_t x1_x3_add =
+          vmlaq_f32(x1r0_1i0_1r1_x1i1, vec_swap_sign, x3i0_3r0_3i1_x3r1);
+      const float32x4_t x1_x3_sub =
+          vmlsq_f32(x1r0_1i0_1r1_x1i1, vec_swap_sign, x3i0_3r0_3i1_x3r1);
+      float32x4_t xx4 = vmulq_f32(wk2rv, xx1);
+      float32x4_t xx12 = vmulq_f32(wk1rv, x1_x3_add);
+      float32x4_t xx22 = vmulq_f32(wk3rv, x1_x3_sub);
+      xx4 = vmlaq_f32(xx4, wk2iv, vrev64q_f32(xx1));
+      xx12 = vmlaq_f32(xx12, wk1iv, vrev64q_f32(x1_x3_add));
+      xx22 = vmlaq_f32(xx22, wk3iv, vrev64q_f32(x1_x3_sub));
+
+      vst1_f32(&a[j + 0], vget_low_f32(xx));
+      vst1_f32(&a[j + 32], vget_high_f32(xx));
+      vst1_f32(&a[j + 16], vget_low_f32(xx4));
+      vst1_f32(&a[j + 48], vget_high_f32(xx4));
+      vst1_f32(&a[j + 8], vget_low_f32(xx12));
+      vst1_f32(&a[j + 40], vget_high_f32(xx12));
+      vst1_f32(&a[j + 24], vget_low_f32(xx22));
+      vst1_f32(&a[j + 56], vget_high_f32(xx22));
+    }
+  }
+}
+
 void aec_rdft_init_neon(void) {
   cft1st_128 = cft1st_128_neon;
+  cftmdl_128 = cftmdl_128_neon;
 }
 
