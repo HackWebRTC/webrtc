@@ -485,9 +485,9 @@ void RunTest(std::string out_path) {
           printf("\n NS is now off! \n");
       } else if (option_selection == option_index++) {
         experimental_ns_enabled = !experimental_ns_enabled;
-        res = base1->audio_processing()->EnableExperimentalNs(
-            experimental_ns_enabled);
-        VALIDATE;
+        Config config;
+        config.Set<ExperimentalNs>(new ExperimentalNs(experimental_ns_enabled));
+        base1->audio_processing()->SetExtraOptions(config);
         if (experimental_ns_enabled) {
           printf("\n Experimental NS is now on!\n");
         } else {

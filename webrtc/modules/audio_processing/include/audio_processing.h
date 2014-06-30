@@ -73,6 +73,14 @@ struct ExperimentalAgc {
   bool enabled;
 };
 
+// Use to enable experimental noise suppression. It can be set in the
+// constructor or using AudioProcessing::SetExtraOptions().
+struct ExperimentalNs {
+  ExperimentalNs() : enabled(false) {}
+  explicit ExperimentalNs(bool enabled) : enabled(enabled) {}
+  bool enabled;
+};
+
 static const int kAudioProcMaxNativeSampleRateHz = 32000;
 
 // The Audio Processing Module (APM) provides a collection of voice processing

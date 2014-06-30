@@ -400,7 +400,9 @@ void void_main(int argc, char* argv[]) {
       vad_out_filename = argv[i];
 
     } else if (strcmp(argv[i], "-expns") == 0) {
-      ASSERT_EQ(apm->kNoError, apm->EnableExperimentalNs(true));
+      Config config;
+      config.Set<ExperimentalNs>(new ExperimentalNs(true));
+      apm->SetExtraOptions(config);
 
     } else if (strcmp(argv[i], "--noasm") == 0) {
       WebRtc_GetCPUInfo = WebRtc_GetCPUInfoNoASM;
