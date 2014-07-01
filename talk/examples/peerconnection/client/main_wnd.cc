@@ -36,6 +36,8 @@
 ATOM MainWnd::wnd_class_ = 0;
 const wchar_t MainWnd::kClassName[] = L"WebRTC_MainWnd";
 
+using talk_base::sprintfn;
+
 namespace {
 
 const char kConnecting[] = "Connecting... ";
@@ -79,10 +81,15 @@ void AddListBoxItem(HWND listbox, const std::string& str, LPARAM item_data) {
 
 }  // namespace
 
-MainWnd::MainWnd()
+MainWnd::MainWnd(const char* server, int port, bool auto_connect,
+                 bool auto_call)
   : ui_(CONNECT_TO_SERVER), wnd_(NULL), edit1_(NULL), edit2_(NULL),
     label1_(NULL), label2_(NULL), button_(NULL), listbox_(NULL),
-    destroyed_(false), callback_(NULL), nested_msg_(NULL) {
+    destroyed_(false), callback_(NULL), nested_msg_(NULL),
+    server_(server), auto_connect_(auto_connect), auto_call_(auto_call) {
+  char buffer[10] = {0};
+  sprintfn(buffer, sizeof(buffer), "%i", port);
+  port_ = buffer;
 }
 
 MainWnd::~MainWnd() {
@@ -158,6 +165,9 @@ void MainWnd::SwitchToConnectUI() {
   ui_ = CONNECT_TO_SERVER;
   LayoutConnectUI(true);
   ::SetFocus(edit1_);
+
+  if (auto_connect_)
+    ::PostMessage(button_, BM_CLICK, 0, 0);
 }
 
 void MainWnd::SwitchToPeerList(const Peers& peers) {
@@ -173,6 +183,19 @@ void MainWnd::SwitchToPeerList(const Peers& peers) {
   ui_ = LIST_PEERS;
   LayoutPeerListUI(true);
   ::SetFocus(listbox_);
+
+  if (auto_call_ && peers.begin() != peers.end()) {
+    // Get the number of items in the list
+    LRESULT count = ::SendMessage(listbox_, LB_GETCOUNT, 0, 0);
+    if (count != LB_ERR) {
+      // Select the last item in the list
+      LRESULT selection = ::SendMessage(listbox_, LB_SETCURSEL , count - 1, 0);
+      if (selection != LB_ERR)
+        ::PostMessage(wnd_, WM_COMMAND, MAKEWPARAM(GetDlgCtrlID(listbox_),
+                                                   LBN_DBLCLK),
+                      reinterpret_cast<LPARAM>(listbox_));
+    }
+  }
 }
 
 void MainWnd::SwitchToStreamingUI() {
@@ -465,8 +488,8 @@ void MainWnd::CreateChildWindows() {
   CreateChildWindow(&listbox_, LISTBOX_ID, L"ListBox",
                     LBS_HASSTRINGS | LBS_NOTIFY, WS_EX_CLIENTEDGE);
 
-  ::SetWindowTextA(edit1_, GetDefaultServerName().c_str());
-  ::SetWindowTextA(edit2_, "8888");
+  ::SetWindowTextA(edit1_, server_.c_str());
+  ::SetWindowTextA(edit2_, port_.c_str());
 }
 
 void MainWnd::LayoutConnectUI(bool show) {

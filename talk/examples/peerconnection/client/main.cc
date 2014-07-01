@@ -26,6 +26,7 @@
  */
 
 #include "talk/examples/peerconnection/client/conductor.h"
+#include "talk/examples/peerconnection/client/flagdefs.h"
 #include "talk/examples/peerconnection/client/main_wnd.h"
 #include "talk/examples/peerconnection/client/peer_connection_client.h"
 #include "talk/base/ssladapter.h"
@@ -39,7 +40,24 @@ int PASCAL wWinMain(HINSTANCE instance, HINSTANCE prev_instance,
   talk_base::Win32Thread w32_thread;
   talk_base::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 
-  MainWnd wnd;
+  WindowsCommandLineArguments win_args;
+  int argc = win_args.argc();
+  char **argv = win_args.argv();
+
+  FlagList::SetFlagsFromCommandLine(&argc, argv, true);
+  if (FLAG_help) {
+    FlagList::Print(NULL, false);
+    return 0;
+  }
+
+  // Abort if the user specifies a port that is outside the allowed
+  // range [1, 65535].
+  if ((FLAG_port < 1) || (FLAG_port > 65535)) {
+    printf("Error: %i is not a valid port.\n", FLAG_port);
+    return -1;
+  }
+
+  MainWnd wnd(FLAG_server, FLAG_port, FLAG_autoconnect, FLAG_autocall);
   if (!wnd.Create()) {
     ASSERT(false);
     return -1;
