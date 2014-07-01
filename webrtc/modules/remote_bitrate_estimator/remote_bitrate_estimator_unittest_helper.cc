@@ -226,7 +226,8 @@ void RemoteBitrateEstimatorTest::IncomingPacket(uint32_t ssrc,
   header.ssrc = ssrc;
   header.timestamp = rtp_timestamp;
   header.extension.absoluteSendTime = absolute_send_time;
-  bitrate_estimator_->IncomingPacket(arrival_time, payload_size, header);
+  bitrate_estimator_->IncomingPacket(arrival_time + kArrivalTimeClockOffsetMs,
+      payload_size, header);
 }
 
 // Generates a frame of packets belonging to a stream at a given bitrate and
@@ -245,6 +246,10 @@ bool RemoteBitrateEstimatorTest::GenerateAndProcessFrame(unsigned int ssrc,
   while (!packets.empty()) {
     testing::RtpStream::RtpPacket* packet = packets.front();
     bitrate_observer_->Reset();
+    // The simulated clock should match the time of packet->arrival_time
+    // since both are used in IncomingPacket().
+    clock_.AdvanceTimeMicroseconds(packet->arrival_time -
+                                   clock_.TimeInMicroseconds());
     IncomingPacket(packet->ssrc,
                    packet->size,
                    (packet->arrival_time + 500) / 1000,
@@ -256,8 +261,6 @@ bool RemoteBitrateEstimatorTest::GenerateAndProcessFrame(unsigned int ssrc,
       overuse = true;
       EXPECT_LE(bitrate_observer_->latest_bitrate(), bitrate_bps);
     }
-    clock_.AdvanceTimeMicroseconds(packet->arrival_time -
-                                   clock_.TimeInMicroseconds());
     delete packet;
     packets.pop_front();
   }

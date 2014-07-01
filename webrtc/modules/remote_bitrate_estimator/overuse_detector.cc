@@ -36,8 +36,7 @@ OveruseDetector::OveruseDetector(const OverUseDetectorOptions& options)
       prev_offset_(0.0),
       time_over_using_(-1),
       over_use_counter_(0),
-      hypothesis_(kBwNormal),
-      time_of_last_received_packet_(-1) {
+      hypothesis_(kBwNormal) {
   memcpy(E_, options_.initial_e, sizeof(E_));
   memcpy(process_noise_, options_.initial_process_noise,
          sizeof(process_noise_));
@@ -50,8 +49,7 @@ OveruseDetector::~OveruseDetector() {
 void OveruseDetector::Update(uint16_t packet_size,
                              int64_t timestamp_ms,
                              uint32_t timestamp,
-                             const int64_t now_ms) {
-  time_of_last_received_packet_ = now_ms;
+                             const int64_t arrival_time_ms) {
   bool new_timestamp = (timestamp != current_frame_.timestamp);
   if (timestamp_ms >= 0) {
     if (prev_frame_.timestamp_ms == -1 && current_frame_.timestamp_ms == -1) {
@@ -82,7 +80,7 @@ void OveruseDetector::Update(uint16_t packet_size,
   }
   // Accumulate the frame size
   current_frame_.size += packet_size;
-  current_frame_.complete_time_ms = now_ms;
+  current_frame_.complete_time_ms = arrival_time_ms;
 }
 
 BandwidthUsage OveruseDetector::State() const {
@@ -105,10 +103,6 @@ void OveruseDetector::SetRateControlRegion(RateControlRegion region) {
       break;
     }
   }
-}
-
-int64_t OveruseDetector::time_of_last_received_packet() const {
-  return time_of_last_received_packet_;
 }
 
 void OveruseDetector::SwitchTimeBase() {

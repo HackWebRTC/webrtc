@@ -198,6 +198,7 @@ class RemoteBitrateEstimatorTest : public ::testing::Test {
                               unsigned int expected_bitrate_drop_delta);
 
   static const unsigned int kDefaultSsrc;
+  static const int kArrivalTimeClockOffsetMs = 60000;
 
   SimulatedClock clock_;  // Time at the receiver.
   scoped_ptr<testing::TestBitrateObserver> bitrate_observer_;

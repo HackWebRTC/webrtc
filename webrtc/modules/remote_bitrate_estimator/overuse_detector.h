@@ -28,11 +28,10 @@ class OveruseDetector {
   void Update(uint16_t packet_size,
               int64_t timestamp_ms,
               uint32_t rtp_timestamp,
-              int64_t now_ms);
+              int64_t arrival_time_ms);
   BandwidthUsage State() const;
   double NoiseVar() const;
   void SetRateControlRegion(RateControlRegion region);
-  int64_t time_of_last_received_packet() const;
 
  private:
   struct FrameSample {
@@ -89,7 +88,6 @@ class OveruseDetector {
   double time_over_using_;
   uint16_t over_use_counter_;
   BandwidthUsage hypothesis_;
-  int64_t time_of_last_received_packet_;
 };
 }  // namespace webrtc
 
