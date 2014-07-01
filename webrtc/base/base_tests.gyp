@@ -29,6 +29,9 @@
         'base.gyp:webrtc_base',
         '<(DEPTH)/testing/gtest.gyp:gtest',
       ],
+      'export_dependent_settings': [
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+      ],
     },
     {
       'target_name': 'webrtc_base_tests',
