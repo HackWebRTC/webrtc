@@ -1214,6 +1214,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecIsacNoFec) {
   int channel_num = voe_.GetLastChannel();
   std::vector<cricket::AudioCodec> codecs;
   codecs.push_back(kIsacCodec);
+  EXPECT_EQ(-1, voe_.SetFECStatus(channel_num, true));
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
   EXPECT_FALSE(voe_.GetCodecFEC(channel_num));
 }
