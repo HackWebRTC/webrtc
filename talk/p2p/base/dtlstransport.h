@@ -49,7 +49,8 @@ class DtlsTransport : public Base {
                 PortAllocator* allocator,
                 talk_base::SSLIdentity* identity)
       : Base(signaling_thread, worker_thread, content_name, allocator),
-        identity_(identity) {
+        identity_(identity),
+        secure_role_(talk_base::SSL_CLIENT) {
   }
 
   ~DtlsTransport() {

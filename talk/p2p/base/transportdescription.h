@@ -99,7 +99,9 @@ bool ConnectionRoleToString(const ConnectionRole& role, std::string* role_str);
 typedef std::vector<Candidate> Candidates;
 
 struct TransportDescription {
-  TransportDescription() : ice_mode(ICEMODE_FULL) {}
+  TransportDescription()
+      : ice_mode(ICEMODE_FULL),
+        connection_role(CONNECTIONROLE_NONE) {}
 
   TransportDescription(const std::string& transport_type,
                        const std::vector<std::string>& transport_options,
