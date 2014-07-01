@@ -2412,6 +2412,9 @@ TEST_F(WebRtcVideoMediaChannelTest, TestSetDscpOptions) {
   channel_->SetInterface(NULL);
 }
 
+TEST_F(WebRtcVideoMediaChannelTest, HighAspectHighHeightCapturer) {
+  Base::HighAspectHighHeightCapturer();
+}
 
 TEST_F(WebRtcVideoMediaChannelTest, SetOptionsSucceedsWhenSending) {
   cricket::VideoOptions options;

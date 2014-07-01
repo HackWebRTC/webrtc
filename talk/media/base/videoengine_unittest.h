@@ -1452,7 +1452,6 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(talk_base::Thread::Current()->ProcessMessages(30));
     EXPECT_TRUE(capturer->CaptureCustomFrame(kWidth, kHeight,
                                              cricket::FOURCC_ARGB));
-    EXPECT_TRUE(capturer->CaptureFrame());
     EXPECT_GT_FRAME_ON_RENDERER_WAIT(
         renderer, 2, kScaledWidth, kScaledHeight, kTimeout);
     EXPECT_TRUE(channel_->SetCapturer(kSsrc, NULL));
