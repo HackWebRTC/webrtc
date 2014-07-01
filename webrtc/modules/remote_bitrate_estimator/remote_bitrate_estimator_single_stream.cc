@@ -201,7 +201,7 @@ void RemoteBitrateEstimatorSingleStream::UpdateEstimate(int64_t now_ms) {
     observer_->OnReceiveBitrateChanged(ssrcs, target_bitrate);
   }
   for (it = overuse_detectors_.begin(); it != overuse_detectors_.end(); ++it) {
-    GetDetector(it).SetRateControlRegion(region);
+    GetDetector(it)->SetRateControlRegion(region);
   }
 }
 
