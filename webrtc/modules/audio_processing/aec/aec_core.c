@@ -415,11 +415,167 @@ static void OverdriveAndSuppress(AecCore* aec,
   }
 }
 
+static int PartitionDelay(const AecCore* aec) {
+  // Measures the energy in each filter partition and returns the partition with
+  // highest energy.
+  // TODO(bjornv): Spread computational cost by computing one partition per
+  // block?
+  float wfEnMax = 0;
+  int i;
+  int delay = 0;
+
+  for (i = 0; i < aec->num_partitions; i++) {
+    int j;
+    int pos = i * PART_LEN1;
+    float wfEn = 0;
+    for (j = 0; j < PART_LEN1; j++) {
+      wfEn += aec->wfBuf[0][pos + j] * aec->wfBuf[0][pos + j] +
+          aec->wfBuf[1][pos + j] * aec->wfBuf[1][pos + j];
+    }
+
+    if (wfEn > wfEnMax) {
+      wfEnMax = wfEn;
+      delay = i;
+    }
+  }
+  return delay;
+}
+
+// Threshold to protect against the ill-effects of a zero far-end.
+static const float kMinFarendPSD = 15;
+
+// Updates the following smoothed  Power Spectral Densities (PSD):
+//  - sd  : near-end
+//  - se  : residual echo
+//  - sx  : far-end
+//  - sde : cross-PSD of near-end and residual echo
+//  - sxd : cross-PSD of near-end and far-end
+//
+// In addition to updating the PSDs, also the filter diverge state is determined
+// upon actions are taken.
+static void SmoothedPSD(AecCore* aec,
+                        float efw[2][PART_LEN1],
+                        float dfw[2][PART_LEN1],
+                        float xfw[2][PART_LEN1]) {
+  // Power estimate smoothing coefficients.
+  const float* ptrGCoh = aec->extended_filter_enabled
+                             ? kExtendedSmoothingCoefficients[aec->mult - 1]
+                             : kNormalSmoothingCoefficients[aec->mult - 1];
+  int i;
+  float sdSum = 0, seSum = 0;
+
+  for (i = 0; i < PART_LEN1; i++) {
+    aec->sd[i] = ptrGCoh[0] * aec->sd[i] +
+                 ptrGCoh[1] * (dfw[0][i] * dfw[0][i] + dfw[1][i] * dfw[1][i]);
+    aec->se[i] = ptrGCoh[0] * aec->se[i] +
+                 ptrGCoh[1] * (efw[0][i] * efw[0][i] + efw[1][i] * efw[1][i]);
+    // We threshold here to protect against the ill-effects of a zero farend.
+    // The threshold is not arbitrarily chosen, but balances protection and
+    // adverse interaction with the algorithm's tuning.
+    // TODO(bjornv): investigate further why this is so sensitive.
+    aec->sx[i] =
+        ptrGCoh[0] * aec->sx[i] +
+        ptrGCoh[1] * WEBRTC_SPL_MAX(
+            xfw[0][i] * xfw[0][i] + xfw[1][i] * xfw[1][i], kMinFarendPSD);
+
+    aec->sde[i][0] =
+        ptrGCoh[0] * aec->sde[i][0] +
+        ptrGCoh[1] * (dfw[0][i] * efw[0][i] + dfw[1][i] * efw[1][i]);
+    aec->sde[i][1] =
+        ptrGCoh[0] * aec->sde[i][1] +
+        ptrGCoh[1] * (dfw[0][i] * efw[1][i] - dfw[1][i] * efw[0][i]);
+
+    aec->sxd[i][0] =
+        ptrGCoh[0] * aec->sxd[i][0] +
+        ptrGCoh[1] * (dfw[0][i] * xfw[0][i] + dfw[1][i] * xfw[1][i]);
+    aec->sxd[i][1] =
+        ptrGCoh[0] * aec->sxd[i][1] +
+        ptrGCoh[1] * (dfw[0][i] * xfw[1][i] - dfw[1][i] * xfw[0][i]);
+
+    sdSum += aec->sd[i];
+    seSum += aec->se[i];
+  }
+
+  // Divergent filter safeguard.
+  aec->divergeState = (aec->divergeState ? 1.05f : 1.0f) * seSum > sdSum;
+
+  if (aec->divergeState)
+    memcpy(efw, dfw, sizeof(efw[0][0]) * 2 * PART_LEN1);
+
+  // Reset if error is significantly larger than nearend (13 dB).
+  if (!aec->extended_filter_enabled && seSum > (19.95f * sdSum))
+    memset(aec->wfBuf, 0, sizeof(aec->wfBuf));
+}
+
+// Window time domain data to be used by the fft.
+__inline static void WindowData(float* x_windowed, const float* x) {
+  int i;
+  for (i = 0; i < PART_LEN; i++) {
+    x_windowed[i] = x[i] * sqrtHanning[i];
+    x_windowed[PART_LEN + i] = x[PART_LEN + i] * sqrtHanning[PART_LEN - i];
+  }
+}
+
+// Puts fft output data into a complex valued array.
+__inline static void StoreAsComplex(const float* data,
+                                    float data_complex[2][PART_LEN1]) {
+  int i;
+  data_complex[0][0] = data[0];
+  data_complex[1][0] = 0;
+  for (i = 1; i < PART_LEN; i++) {
+    data_complex[0][i] = data[2 * i];
+    data_complex[1][i] = data[2 * i + 1];
+  }
+  data_complex[0][PART_LEN] = data[1];
+  data_complex[1][PART_LEN] = 0;
+}
+
+static void SubbandCoherence(AecCore* aec,
+                             float efw[2][PART_LEN1],
+                             float xfw[2][PART_LEN1],
+                             float* fft,
+                             float* cohde,
+                             float* cohxd) {
+  float dfw[2][PART_LEN1];
+  int i;
+
+  if (aec->delayEstCtr == 0)
+    aec->delayIdx = PartitionDelay(aec);
+
+  // Use delayed far.
+  memcpy(xfw,
+         aec->xfwBuf + aec->delayIdx * PART_LEN1,
+         sizeof(xfw[0][0]) * 2 * PART_LEN1);
+
+  // Windowed near fft
+  WindowData(fft, aec->dBuf);
+  aec_rdft_forward_128(fft);
+  StoreAsComplex(fft, dfw);
+
+  // Windowed error fft
+  WindowData(fft, aec->eBuf);
+  aec_rdft_forward_128(fft);
+  StoreAsComplex(fft, efw);
+
+  SmoothedPSD(aec, efw, dfw, xfw);
+
+  // Subband coherence
+  for (i = 0; i < PART_LEN1; i++) {
+    cohde[i] =
+        (aec->sde[i][0] * aec->sde[i][0] + aec->sde[i][1] * aec->sde[i][1]) /
+        (aec->sd[i] * aec->se[i] + 1e-10f);
+    cohxd[i] =
+        (aec->sxd[i][0] * aec->sxd[i][0] + aec->sxd[i][1] * aec->sxd[i][1]) /
+        (aec->sx[i] * aec->sd[i] + 1e-10f);
+  }
+}
+
 WebRtcAec_FilterFar_t WebRtcAec_FilterFar;
 WebRtcAec_ScaleErrorSignal_t WebRtcAec_ScaleErrorSignal;
 WebRtcAec_FilterAdaptation_t WebRtcAec_FilterAdaptation;
 WebRtcAec_OverdriveAndSuppress_t WebRtcAec_OverdriveAndSuppress;
 WebRtcAec_ComfortNoise_t WebRtcAec_ComfortNoise;
+WebRtcAec_SubbandCoherence_t WebRtcAec_SubbandCoherence;
 
 int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   int i;
@@ -571,6 +727,7 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   WebRtcAec_FilterAdaptation = FilterAdaptation;
   WebRtcAec_OverdriveAndSuppress = OverdriveAndSuppress;
   WebRtcAec_ComfortNoise = ComfortNoise;
+  WebRtcAec_SubbandCoherence = SubbandCoherence;
 
 #if defined(WEBRTC_ARCH_X86_FAMILY)
   if (WebRtc_GetCPUInfo(kSSE2)) {
@@ -1024,12 +1181,12 @@ static void ProcessBlock(AecCore* aec) {
 }
 
 static void NonLinearProcessing(AecCore* aec, float* output, float* outputH) {
-  float efw[2][PART_LEN1], dfw[2][PART_LEN1], xfw[2][PART_LEN1];
+  float efw[2][PART_LEN1], xfw[2][PART_LEN1];
   complex_t comfortNoiseHband[PART_LEN1];
   float fft[PART_LEN2];
   float scale, dtmp;
   float nlpGainHband;
-  int i, j, pos;
+  int i;
 
   // Coherence and non-linear filter
   float cohde[PART_LEN1], cohxd[PART_LEN1];
@@ -1040,20 +1197,12 @@ static void NonLinearProcessing(AecCore* aec, float* output, float* outputH) {
   const float prefBandQuant = 0.75f, prefBandQuantLow = 0.5f;
   const int prefBandSize = kPrefBandSize / aec->mult;
   const int minPrefBand = 4 / aec->mult;
-
-  // Near and error power sums
-  float sdSum = 0, seSum = 0;
-
   // Power estimate smoothing coefficients.
-  const float* ptrGCoh = aec->extended_filter_enabled
-                             ? kExtendedSmoothingCoefficients[aec->mult - 1]
-                             : kNormalSmoothingCoefficients[aec->mult - 1];
   const float* min_overdrive = aec->extended_filter_enabled
                                    ? kExtendedMinOverDrive
                                    : kNormalMinOverDrive;
 
   // Filter energy
-  float wfEnMax = 0, wfEn = 0;
   const int delayEstInterval = 10 * aec->mult;
 
   float* xfw_ptr = NULL;
@@ -1068,26 +1217,6 @@ static void NonLinearProcessing(AecCore* aec, float* output, float* outputH) {
   nlpGainHband = (float)0.0;
   dtmp = (float)0.0;
 
-  // Measure energy in each filter partition to determine delay.
-  // TODO: Spread by computing one partition per block?
-  if (aec->delayEstCtr == 0) {
-    wfEnMax = 0;
-    aec->delayIdx = 0;
-    for (i = 0; i < aec->num_partitions; i++) {
-      pos = i * PART_LEN1;
-      wfEn = 0;
-      for (j = 0; j < PART_LEN1; j++) {
-        wfEn += aec->wfBuf[0][pos + j] * aec->wfBuf[0][pos + j] +
-                aec->wfBuf[1][pos + j] * aec->wfBuf[1][pos + j];
-      }
-
-      if (wfEn > wfEnMax) {
-        wfEnMax = wfEn;
-        aec->delayIdx = i;
-      }
-    }
-  }
-
   // We should always have at least one element stored in |far_buf|.
   assert(WebRtc_available_read(aec->far_buf_windowed) > 0);
   // NLP
@@ -1098,104 +1227,7 @@ static void NonLinearProcessing(AecCore* aec, float* output, float* outputH) {
   // Buffer far.
   memcpy(aec->xfwBuf, xfw_ptr, sizeof(float) * 2 * PART_LEN1);
 
-  // Use delayed far.
-  memcpy(xfw, aec->xfwBuf + aec->delayIdx * PART_LEN1, sizeof(xfw));
-
-  // Windowed near fft
-  for (i = 0; i < PART_LEN; i++) {
-    fft[i] = aec->dBuf[i] * sqrtHanning[i];
-    fft[PART_LEN + i] = aec->dBuf[PART_LEN + i] * sqrtHanning[PART_LEN - i];
-  }
-  aec_rdft_forward_128(fft);
-
-  dfw[1][0] = 0;
-  dfw[1][PART_LEN] = 0;
-  dfw[0][0] = fft[0];
-  dfw[0][PART_LEN] = fft[1];
-  for (i = 1; i < PART_LEN; i++) {
-    dfw[0][i] = fft[2 * i];
-    dfw[1][i] = fft[2 * i + 1];
-  }
-
-  // Windowed error fft
-  for (i = 0; i < PART_LEN; i++) {
-    fft[i] = aec->eBuf[i] * sqrtHanning[i];
-    fft[PART_LEN + i] = aec->eBuf[PART_LEN + i] * sqrtHanning[PART_LEN - i];
-  }
-  aec_rdft_forward_128(fft);
-  efw[1][0] = 0;
-  efw[1][PART_LEN] = 0;
-  efw[0][0] = fft[0];
-  efw[0][PART_LEN] = fft[1];
-  for (i = 1; i < PART_LEN; i++) {
-    efw[0][i] = fft[2 * i];
-    efw[1][i] = fft[2 * i + 1];
-  }
-
-  // Smoothed PSD
-  for (i = 0; i < PART_LEN1; i++) {
-    aec->sd[i] = ptrGCoh[0] * aec->sd[i] +
-                 ptrGCoh[1] * (dfw[0][i] * dfw[0][i] + dfw[1][i] * dfw[1][i]);
-    aec->se[i] = ptrGCoh[0] * aec->se[i] +
-                 ptrGCoh[1] * (efw[0][i] * efw[0][i] + efw[1][i] * efw[1][i]);
-    // We threshold here to protect against the ill-effects of a zero farend.
-    // The threshold is not arbitrarily chosen, but balances protection and
-    // adverse interaction with the algorithm's tuning.
-    // TODO: investigate further why this is so sensitive.
-    aec->sx[i] =
-        ptrGCoh[0] * aec->sx[i] +
-        ptrGCoh[1] *
-            WEBRTC_SPL_MAX(xfw[0][i] * xfw[0][i] + xfw[1][i] * xfw[1][i], 15);
-
-    aec->sde[i][0] =
-        ptrGCoh[0] * aec->sde[i][0] +
-        ptrGCoh[1] * (dfw[0][i] * efw[0][i] + dfw[1][i] * efw[1][i]);
-    aec->sde[i][1] =
-        ptrGCoh[0] * aec->sde[i][1] +
-        ptrGCoh[1] * (dfw[0][i] * efw[1][i] - dfw[1][i] * efw[0][i]);
-
-    aec->sxd[i][0] =
-        ptrGCoh[0] * aec->sxd[i][0] +
-        ptrGCoh[1] * (dfw[0][i] * xfw[0][i] + dfw[1][i] * xfw[1][i]);
-    aec->sxd[i][1] =
-        ptrGCoh[0] * aec->sxd[i][1] +
-        ptrGCoh[1] * (dfw[0][i] * xfw[1][i] - dfw[1][i] * xfw[0][i]);
-
-    sdSum += aec->sd[i];
-    seSum += aec->se[i];
-  }
-
-  // Divergent filter safeguard.
-  if (aec->divergeState == 0) {
-    if (seSum > sdSum) {
-      aec->divergeState = 1;
-    }
-  } else {
-    if (seSum * 1.05f < sdSum) {
-      aec->divergeState = 0;
-    }
-  }
-
-  if (aec->divergeState == 1) {
-    memcpy(efw, dfw, sizeof(efw));
-  }
-
-  if (!aec->extended_filter_enabled) {
-    // Reset if error is significantly larger than nearend (13 dB).
-    if (seSum > (19.95f * sdSum)) {
-      memset(aec->wfBuf, 0, sizeof(aec->wfBuf));
-    }
-  }
-
-  // Subband coherence
-  for (i = 0; i < PART_LEN1; i++) {
-    cohde[i] =
-        (aec->sde[i][0] * aec->sde[i][0] + aec->sde[i][1] * aec->sde[i][1]) /
-        (aec->sd[i] * aec->se[i] + 1e-10f);
-    cohxd[i] =
-        (aec->sxd[i][0] * aec->sxd[i][0] + aec->sxd[i][1] * aec->sxd[i][1]) /
-        (aec->sx[i] * aec->sd[i] + 1e-10f);
-  }
+  WebRtcAec_SubbandCoherence(aec, efw, xfw, fft, cohde, cohxd);
 
   hNlXdAvg = 0;
   for (i = minPrefBand; i < prefBandSize + minPrefBand; i++) {
