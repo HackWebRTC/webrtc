@@ -59,13 +59,21 @@ char kTSanDefaultSuppressions[] =
 
 // Potential deadlocks detected after roll in r6516.
 // https://code.google.com/p/webrtc/issues/detail?id=3509
-"deadlock:talk/base/criticalsection.h\n"
-"deadlock:talk/base/sigslot.h\n"
-"deadlock:webrtc/system_wrappers/source/critical_section_posix.cc\n"
-"deadlock:webrtc/system_wrappers/source/rw_lock_posix.cc\n"
-"deadlock:webrtc/system_wrappers/source/thread_posix.cc\n"
-
-
+"deadlock:cricket::WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame\n"
+"deadlock:cricket::WebRtcVideoChannel2::WebRtcVideoSendStream::SetCapturer\n"
+"deadlock:talk_base::AsyncResolver::~AsyncResolver\n"
+"deadlock:webrtc::ProcessThreadImpl::RegisterModule\n"
+"deadlock:webrtc::RTCPReceiver::SetSsrcs\n"
+"deadlock:webrtc::RTPSenderAudio::RegisterAudioPayload\n"
+"deadlock:webrtc/system_wrappers/source/logging_unittest.cc\n"
+"deadlock:webrtc::test::UdpSocketManagerPosixImpl::RemoveSocket\n"
+"deadlock:webrtc::vcm::VideoReceiver::RegisterPacketRequestCallback\n"
+"deadlock:webrtc::VideoSendStreamTest_SuspendBelowMinBitrate_Test::TestBody\n"
+"deadlock:webrtc::ViECaptureImpl::ConnectCaptureDevice\n"
+"deadlock:webrtc::ViEChannel::StartSend\n"
+"deadlock:webrtc::ViECodecImpl::GetSendSideDelay\n"
+"deadlock:webrtc::ViEEncoder::OnLocalSsrcChanged\n"
+"deadlock:webrtc::ViESender::RegisterSendTransport\n"
 
 // From Chromium's tsan_suppressions.cc file.
 
