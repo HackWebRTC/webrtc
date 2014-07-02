@@ -1985,6 +1985,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
   memset(&send_codec, 0, sizeof(send_codec));
 
   bool nack_enabled = nack_enabled_;
+  bool enable_codec_fec = false;
 
   // Set send codec (the first non-telephone-event/CN codec)
   for (std::vector<AudioCodec>::const_iterator it = codecs.begin();
@@ -2035,19 +2036,6 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
       if (bitrate_from_params != 0) {
         voe_codec.rate = bitrate_from_params;
       }
-
-      // For Opus, we also enable inband FEC if it is requested.
-      if (IsOpusFecEnabled(*it)) {
-        LOG(LS_INFO) << "Enabling Opus FEC on channel " << channel;
-#ifdef USE_WEBRTC_DEV_BRANCH
-        if (engine()->voe()->codec()->SetFECStatus(channel, true) == -1) {
-          // Enable in-band FEC of the Opus codec. Treat any failure as a fatal
-          // internal error.
-          LOG_RTCERR2(SetFECStatus, channel, true);
-          return false;
-        }
-#endif  // USE_WEBRTC_DEV_BRANCH
-      }
     }
 
     // We'll use the first codec in the list to actually send audio data.
@@ -2078,6 +2066,8 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
     } else {
       send_codec = voe_codec;
       nack_enabled = IsNackEnabled(*it);
+      // For Opus as the send codec, we enable inband FEC if requested.
+      enable_codec_fec = IsOpus(*it) && IsOpusFecEnabled(*it);
     }
     found_send_codec = true;
     break;
@@ -2097,6 +2087,19 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
   // the current codec is mono or stereo.
   if (!SetSendCodec(channel, send_codec))
     return false;
+
+  // FEC should be enabled after SetSendCodec.
+  if (enable_codec_fec) {
+    LOG(LS_INFO) << "Attempt to enable codec internal FEC on channel "
+                 << channel;
+#ifdef USE_WEBRTC_DEV_BRANCH
+    if (engine()->voe()->codec()->SetFECStatus(channel, true) == -1) {
+      // Enable codec internal FEC. Treat any failure as fatal internal error.
+      LOG_RTCERR2(SetFECStatus, channel, true);
+      return false;
+    }
+#endif  // USE_WEBRTC_DEV_BRANCH
+  }
 
   // Always update the |send_codec_| to the currently set send codec.
   send_codec_.reset(new webrtc::CodecInst(send_codec));

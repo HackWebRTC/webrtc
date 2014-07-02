@@ -539,6 +539,11 @@ class FakeWebRtcVoiceEngine
 #ifdef USE_WEBRTC_DEV_BRANCH
   WEBRTC_FUNC(SetFECStatus, (int channel, bool enable)) {
     WEBRTC_CHECK_CHANNEL(channel);
+    if (strcmp(channels_[channel]->send_codec.plname, "opus")) {
+      // Return -1 if current send codec is not Opus.
+      // TODO(minyue): Excludes other codecs if they support inband FEC.
+      return -1;
+    }
     channels_[channel]->codec_fec = enable;
     return 0;
   }
