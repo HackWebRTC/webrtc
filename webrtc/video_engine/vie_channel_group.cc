@@ -32,12 +32,12 @@ static const uint32_t kTimeOffsetSwitchThreshold = 30;
 
 class WrappingBitrateEstimator : public RemoteBitrateEstimator {
  public:
-  WrappingBitrateEstimator(int engine_id, RemoteBitrateObserver* observer,
-                           Clock* clock, ProcessThread* process_thread,
+  WrappingBitrateEstimator(int engine_id,
+                           RemoteBitrateObserver* observer,
+                           Clock* clock,
                            const Config& config)
       : observer_(observer),
         clock_(clock),
-        process_thread_(process_thread),
         crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
         engine_id_(engine_id),
         min_bitrate_bps_(config.Get<RemoteBitrateEstimatorMinRate>().min_rate),
@@ -48,12 +48,9 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
                                                     min_bitrate_bps_)),
         using_absolute_send_time_(false),
         packets_since_absolute_send_time_(0) {
-    assert(process_thread_ != NULL);
-    process_thread_->RegisterModule(rbe_.get());
   }
-  virtual ~WrappingBitrateEstimator() {
-    process_thread_->DeRegisterModule(rbe_.get());
-  }
+
+  virtual ~WrappingBitrateEstimator() {}
 
   virtual void IncomingPacket(int64_t arrival_time_ms,
                               int payload_size,
@@ -64,13 +61,13 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
   }
 
   virtual int32_t Process() {
-    assert(false && "Not supposed to register the WrappingBitrateEstimator!");
-    return 0;
+    CriticalSectionScoped cs(crit_sect_.get());
+    return rbe_->Process();
   }
 
   virtual int32_t TimeUntilNextProcess() {
-    assert(false && "Not supposed to register the WrappingBitrateEstimator!");
-    return 0;
+    CriticalSectionScoped cs(crit_sect_.get());
+    return rbe_->TimeUntilNextProcess();
   }
 
   virtual void OnRttUpdate(uint32_t rtt) {
@@ -133,7 +130,6 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
 
   // Instantiate RBE for Time Offset or Absolute Send Time extensions.
   void PickEstimator() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_.get()) {
-    process_thread_->DeRegisterModule(rbe_.get());
     if (using_absolute_send_time_) {
       rbe_.reset(AbsoluteSendTimeRemoteBitrateEstimatorFactory().Create(
           observer_, clock_, rate_control_type_, min_bitrate_bps_));
@@ -141,12 +137,10 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
       rbe_.reset(RemoteBitrateEstimatorFactory().Create(
           observer_, clock_, rate_control_type_, min_bitrate_bps_));
     }
-    process_thread_->RegisterModule(rbe_.get());
   }
 
   RemoteBitrateObserver* observer_;
   Clock* clock_;
-  ProcessThread* process_thread_;
   scoped_ptr<CriticalSectionWrapper> crit_sect_;
   const int engine_id_;
   const uint32_t min_bitrate_bps_;
@@ -176,14 +170,16 @@ ChannelGroup::ChannelGroup(int engine_id,
     config_ = own_config_.get();
   }
   assert(config_);  // Must have a valid config pointer here.
+
   remote_bitrate_estimator_.reset(
       new WrappingBitrateEstimator(engine_id,
                                    remb_.get(),
                                    Clock::GetRealTimeClock(),
-                                   process_thread,
-                                   *config_)),
-      call_stats_->RegisterStatsObserver(remote_bitrate_estimator_.get());
+                                   *config_));
 
+  call_stats_->RegisterStatsObserver(remote_bitrate_estimator_.get());
+
+  process_thread->RegisterModule(remote_bitrate_estimator_.get());
   process_thread->RegisterModule(call_stats_.get());
   process_thread->RegisterModule(bitrate_controller_.get());
 }
@@ -191,6 +187,7 @@ ChannelGroup::ChannelGroup(int engine_id,
 ChannelGroup::~ChannelGroup() {
   process_thread_->DeRegisterModule(bitrate_controller_.get());
   process_thread_->DeRegisterModule(call_stats_.get());
+  process_thread_->DeRegisterModule(remote_bitrate_estimator_.get());
   call_stats_->DeregisterStatsObserver(remote_bitrate_estimator_.get());
   assert(channels_.empty());
   assert(!remb_->InUse());
