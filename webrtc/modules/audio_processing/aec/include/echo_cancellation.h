@@ -114,7 +114,7 @@ int32_t WebRtcAec_Init(void* aecInst, int32_t sampFreq, int32_t scSampFreq);
  * Inputs                       Description
  * -------------------------------------------------------------------
  * void*          aecInst       Pointer to the AEC instance
- * int16_t*       farend        In buffer containing one frame of
+ * const float*   farend        In buffer containing one frame of
  *                              farend signal for L band
  * int16_t        nrOfSamples   Number of samples in farend buffer
  *
@@ -124,7 +124,7 @@ int32_t WebRtcAec_Init(void* aecInst, int32_t sampFreq, int32_t scSampFreq);
  *                             -1: error
  */
 int32_t WebRtcAec_BufferFarend(void* aecInst,
-                               const int16_t* farend,
+                               const float* farend,
                                int16_t nrOfSamples);
 
 /*

@@ -294,17 +294,12 @@ int32_t WebRtcAec_Init(void* aecInst, int32_t sampFreq, int32_t scSampFreq) {
 
 // only buffer L band for farend
 int32_t WebRtcAec_BufferFarend(void* aecInst,
-                               const int16_t* farend,
+                               const float* farend,
                                int16_t nrOfSamples) {
   aecpc_t* aecpc = aecInst;
-  int32_t retVal = 0;
   int newNrOfSamples = (int)nrOfSamples;
-  short newFarend[MAX_RESAMP_LEN];
-  const int16_t* farend_ptr = farend;
-  float tmp_farend[MAX_RESAMP_LEN];
-  const float* farend_float = tmp_farend;
-  float skew;
-  int i = 0;
+  float new_farend[MAX_RESAMP_LEN];
+  const float* farend_ptr = farend;
 
   if (farend == NULL) {
     aecpc->lastError = AEC_NULL_POINTER_ERROR;
@@ -322,17 +317,15 @@ int32_t WebRtcAec_BufferFarend(void* aecInst,
     return -1;
   }
 
-  skew = aecpc->skew;
-
   if (aecpc->skewMode == kAecTrue && aecpc->resample == kAecTrue) {
     // Resample and get a new number of samples
     WebRtcAec_ResampleLinear(aecpc->resampler,
                              farend,
                              nrOfSamples,
-                             skew,
-                             newFarend,
+                             aecpc->skew,
+                             new_farend,
                              &newNrOfSamples);
-    farend_ptr = (const int16_t*)newFarend;
+    farend_ptr = new_farend;
   }
 
   aecpc->farend_started = 1;
@@ -343,32 +336,31 @@ int32_t WebRtcAec_BufferFarend(void* aecInst,
   WebRtc_WriteBuffer(
       aecpc->far_pre_buf_s16, farend_ptr, (size_t)newNrOfSamples);
 #endif
-  // Cast to float and write the time-domain data to |far_pre_buf|.
-  for (i = 0; i < newNrOfSamples; i++) {
-    tmp_farend[i] = (float)farend_ptr[i];
-  }
-  WebRtc_WriteBuffer(aecpc->far_pre_buf, farend_float, (size_t)newNrOfSamples);
+  // Write the time-domain data to |far_pre_buf|.
+  WebRtc_WriteBuffer(aecpc->far_pre_buf, farend_ptr, (size_t)newNrOfSamples);
 
   // Transform to frequency domain if we have enough data.
   while (WebRtc_available_read(aecpc->far_pre_buf) >= PART_LEN2) {
     // We have enough data to pass to the FFT, hence read PART_LEN2 samples.
-    WebRtc_ReadBuffer(
-        aecpc->far_pre_buf, (void**)&farend_float, tmp_farend, PART_LEN2);
-
-    WebRtcAec_BufferFarendPartition(aecpc->aec, farend_float);
+    {
+      float* ptmp;
+      float tmp[PART_LEN2];
+      WebRtc_ReadBuffer(aecpc->far_pre_buf, (void**)&ptmp, tmp, PART_LEN2);
+      WebRtcAec_BufferFarendPartition(aecpc->aec, ptmp);
+    }
 
     // Rewind |far_pre_buf| PART_LEN samples for overlap before continuing.
     WebRtc_MoveReadPtr(aecpc->far_pre_buf, -PART_LEN);
 #ifdef WEBRTC_AEC_DEBUG_DUMP
     WebRtc_ReadBuffer(
-        aecpc->far_pre_buf_s16, (void**)&farend_ptr, newFarend, PART_LEN2);
+        aecpc->far_pre_buf_s16, (void**)&farend_ptr, new_farend, PART_LEN2);
     WebRtc_WriteBuffer(
         WebRtcAec_far_time_buf(aecpc->aec), &farend_ptr[PART_LEN], 1);
     WebRtc_MoveReadPtr(aecpc->far_pre_buf_s16, -PART_LEN);
 #endif
   }
 
-  return retVal;
+  return 0;
 }
 
 int32_t WebRtcAec_Process(void* aecInst,

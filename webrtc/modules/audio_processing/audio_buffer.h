@@ -69,8 +69,11 @@ class AudioBuffer {
   // Float versions of the accessors, with automatic conversion back and forth
   // as necessary. The range of the numbers are the same as for int16_t.
   float* data_f(int channel);
+  const float* data_f(int channel) const;
   float* low_pass_split_data_f(int channel);
+  const float* low_pass_split_data_f(int channel) const;
   float* high_pass_split_data_f(int channel);
+  const float* high_pass_split_data_f(int channel) const;
 
   const float* keyboard_data() const;
 

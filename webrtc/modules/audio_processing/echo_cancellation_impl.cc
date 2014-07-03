@@ -89,7 +89,7 @@ int EchoCancellationImpl::ProcessRenderAudio(const AudioBuffer* audio) {
       Handle* my_handle = static_cast<Handle*>(handle(handle_index));
       err = WebRtcAec_BufferFarend(
           my_handle,
-          audio->low_pass_split_data(j),
+          audio->low_pass_split_data_f(j),
           static_cast<int16_t>(audio->samples_per_split_channel()));
 
       if (err != apm_->kNoError) {
