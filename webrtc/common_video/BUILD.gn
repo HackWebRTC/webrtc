@@ -8,6 +8,38 @@
 
 import("../build/webrtc.gni")
 
+config("common_video_config") {
+  include_dirs = [
+    "interface",
+    "libyuv/include",
+  ]
+}
+
 source_set("common_video") {
-  # TODO(pbos): Implement.
+  sources = [
+    "i420_video_frame.cc",
+    "interface/i420_video_frame.h",
+    "interface/native_handle.h",
+    "interface/texture_video_frame.h",
+    "libyuv/include/scaler.h",
+    "libyuv/include/webrtc_libyuv.h",
+    "libyuv/scaler.cc",
+    "libyuv/webrtc_libyuv.cc",
+    "plane.cc",
+    "plane.h",
+    "texture_video_frame.cc"
+  ]
+
+  include_dirs = [ "../modules/interface" ]
+
+  direct_dependent_configs = [ ":common_video_config" ]
+
+  deps = [ "../system_wrappers" ]
+
+  if (build_libyuv) {
+    deps += [ "//third_party/libyuv" ]
+  } else {
+    # Need to add a directory normally exported by libyuv.
+    include_dirs += [ "//third_party/libyuv/include" ]
+  }
 }

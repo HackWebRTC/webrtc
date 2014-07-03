@@ -32,9 +32,15 @@ declare_args() {
   # which can be easily parsed for offline processing.
   enable_data_logging = false
 
-  build_libjpeg = true
   # Enables the use of protocol buffers for debug recordings.
   enable_protobuf = true
+
+  # Disable these to not build components which can be externally provided.
+  build_json = true
+  build_libjpeg = true
+  build_libyuv = true
+  build_libvpx = true
+  build_ssl = true
 
   # Disable by default.
   have_dbus_glib = false

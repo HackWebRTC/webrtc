@@ -48,6 +48,9 @@ deps = {
   "third_party/binutils":
     Var("chromium_trunk") + "/src/third_party/binutils@" + Var("chromium_revision"),
 
+  "third_party/build_gn":
+    File(Var("chromium_trunk") + "/src/third_party/BUILD.gn@" + Var("chromium_revision")),
+
   "third_party/clang_format":
     Var("chromium_trunk") + "/src/third_party/clang_format@" + Var("chromium_revision"),
 
@@ -243,6 +246,14 @@ hooks = [
     "action": ["python", Var("root_dir") + "/build/cp.py",
                Var("root_dir") + "/../chromium_gn/.gn",
                Var("root_dir")],
+  },
+  {
+    # Copy BUILD.gn from temporary place (third_party/build_gn) to third_party.
+    "name": "copy third_party/BUILD.gn",
+    "pattern": ".",
+    "action": ["python", Var("root_dir") + "/build/cp.py",
+               Var("root_dir") + "/third_party/build_gn/BUILD.gn",
+               Var("root_dir") + "/third_party"],
   },
   # Pull GN binaries. This needs to be before running GYP below.
   {
