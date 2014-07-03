@@ -261,8 +261,7 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
 
   // Enables/disables RTCP Receiver Reference Time Report Block extension/
   // DLRR Report Block extension (RFC 3611).
-  // TODO(asapersson): Remove default implementation.
-  virtual int SetRtcpXrRrtrStatus(int video_channel, bool enable) { return -1; }
+  virtual int SetRtcpXrRrtrStatus(int video_channel, bool enable) = 0;
 
   // Enables transmission smoothening, i.e. packets belonging to the same frame
   // will be sent over a longer period of time instead of sending them

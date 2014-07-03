@@ -43,29 +43,11 @@ class CpuOveruseObserver {
   virtual ~CpuOveruseObserver() {}
 };
 
-// Limits on standard deviation for under/overuse.
-#ifdef WEBRTC_ANDROID
-const float kOveruseStdDevMs = 32.0f;
-const float kNormalUseStdDevMs = 27.0f;
-#elif WEBRTC_LINUX
-const float kOveruseStdDevMs = 20.0f;
-const float kNormalUseStdDevMs = 14.0f;
-#elif WEBRTC_MAC
-const float kOveruseStdDevMs = 27.0f;
-const float kNormalUseStdDevMs = 21.0f;
-#elif WEBRTC_WIN
-const float kOveruseStdDevMs = 20.0f;
-const float kNormalUseStdDevMs = 14.0f;
-#else
-const float kOveruseStdDevMs = 30.0f;
-const float kNormalUseStdDevMs = 20.0f;
-#endif
-
 struct CpuOveruseOptions {
   CpuOveruseOptions()
       : enable_capture_jitter_method(true),
-        low_capture_jitter_threshold_ms(kNormalUseStdDevMs),
-        high_capture_jitter_threshold_ms(kOveruseStdDevMs),
+        low_capture_jitter_threshold_ms(20.0f),
+        high_capture_jitter_threshold_ms(30.0f),
         enable_encode_usage_method(false),
         low_encode_usage_threshold_percent(60),
         high_encode_usage_threshold_percent(90),
@@ -216,26 +198,11 @@ class WEBRTC_DLLEXPORT ViEBase {
                                          CpuOveruseObserver* observer) = 0;
 
   // Sets options for cpu overuse detector.
-  // TODO(asapersson): Remove default implementation.
   virtual int SetCpuOveruseOptions(int channel,
-                                   const CpuOveruseOptions& options) {
-    return -1;
-  }
+                                   const CpuOveruseOptions& options) = 0;
 
   // Gets cpu overuse measures.
-  // TODO(asapersson): Remove default implementation.
-  virtual int GetCpuOveruseMetrics(int channel,
-                                   CpuOveruseMetrics* metrics) {
-    return -1;
-  }
-  // TODO(asapersson): Remove this function when libjingle has been updated.
-  virtual int CpuOveruseMeasures(int channel,
-                                 int* capture_jitter_ms,
-                                 int* avg_encode_time_ms,
-                                 int* encode_usage_percent,
-                                 int* capture_queue_delay_ms_per_s) {
-    return -1;
-  }
+  virtual int GetCpuOveruseMetrics(int channel, CpuOveruseMetrics* metrics) = 0;
 
   // Specifies the VoiceEngine and VideoEngine channel pair to use for
   // audio/video synchronization.
