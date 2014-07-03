@@ -79,7 +79,6 @@ TEST_F(SplTest, MacroTest) {
     // Shifting with negative numbers allowed
     int shift_amount = 1;  // Workaround compiler warning using variable here.
     // Positive means left shift
-    EXPECT_EQ(32766, WEBRTC_SPL_SHIFT_W16(a, shift_amount));
     EXPECT_EQ(32766, WEBRTC_SPL_SHIFT_W32(a, shift_amount));
 
     // Shifting with negative numbers not allowed

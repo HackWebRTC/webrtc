@@ -111,8 +111,6 @@
 
 // Shifting with negative numbers allowed
 // Positive means left shift
-#define WEBRTC_SPL_SHIFT_W16(x, c) \
-    (((c) >= 0) ? ((x) << (c)) : ((x) >> (-(c))))
 #define WEBRTC_SPL_SHIFT_W32(x, c) \
     (((c) >= 0) ? ((x) << (c)) : ((x) >> (-(c))))
 

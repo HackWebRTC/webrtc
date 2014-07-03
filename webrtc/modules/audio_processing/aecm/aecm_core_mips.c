@@ -836,7 +836,7 @@ int WebRtcAecm_ProcessBlock(AecmCore_t* aecm,
   int16_t zeros32, zeros16;
   int16_t zerosDBufNoisy, zerosDBufClean, zerosXBuf;
   int far_q;
-  int16_t resolutionDiff, qDomainDiff;
+  int16_t resolutionDiff, qDomainDiff, dfa_clean_q_domain_diff;
 
   const int kMinPrefBand = 4;
   const int kMaxPrefBand = 24;
@@ -1002,15 +1002,16 @@ int WebRtcAecm_ProcessBlock(AecmCore_t* aecm,
     }
 
     zeros16 = WebRtcSpl_NormW16(aecm->nearFilt[i]);
-    if ((zeros16 < (aecm->dfaCleanQDomain - aecm->dfaCleanQDomainOld))
-         & (aecm->nearFilt[i])) {
-      tmp16no1 = WEBRTC_SPL_SHIFT_W16(aecm->nearFilt[i], zeros16);
-      qDomainDiff = zeros16 - aecm->dfaCleanQDomain + aecm->dfaCleanQDomainOld;
-      tmp16no2 = WEBRTC_SPL_SHIFT_W16(ptrDfaClean[i], qDomainDiff);
+    assert(zeros16 >= 0);  // |zeros16| is a norm, hence non-negative.
+    dfa_clean_q_domain_diff = aecm->dfaCleanQDomain - aecm->dfaCleanQDomainOld;
+    if (zeros16 < dfa_clean_q_domain_diff && aecm->nearFilt[i]) {
+      tmp16no1 = aecm->nearFilt[i] << zeros16;
+      qDomainDiff = zeros16 - dfa_clean_q_domain_diff;
+      tmp16no2 = ptrDfaClean[i] >> -qDomainDiff;
     } else {
-      tmp16no1 = WEBRTC_SPL_SHIFT_W16(aecm->nearFilt[i],
-                                      aecm->dfaCleanQDomain
-                                        - aecm->dfaCleanQDomainOld);
+      tmp16no1 = dfa_clean_q_domain_diff < 0
+          ? aecm->nearFilt[i] >> -dfa_clean_q_domain_diff
+          : aecm->nearFilt[i] << dfa_clean_q_domain_diff;
       qDomainDiff = 0;
       tmp16no2 = ptrDfaClean[i];
     }
@@ -1022,7 +1023,8 @@ int WebRtcAecm_ProcessBlock(AecmCore_t* aecm,
     if ((tmp16no2) & (-qDomainDiff > zeros16)) {
       aecm->nearFilt[i] = WEBRTC_SPL_WORD16_MAX;
     } else {
-      aecm->nearFilt[i] = WEBRTC_SPL_SHIFT_W16(tmp16no2, -qDomainDiff);
+      aecm->nearFilt[i] = qDomainDiff < 0 ? tmp16no2 << -qDomainDiff
+                                          : tmp16no2 >> qDomainDiff;
     }
 
     // Wiener filter coefficients, resulting hnl in Q14
