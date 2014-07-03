@@ -259,7 +259,7 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
   public void setTrace(boolean enable) {
     if (enable) {
       vie.setTraceFile("/sdcard/trace.txt", false);
-      vie.setTraceFilter(VideoEngine.TraceLevel.TRACE_ERROR);
+      vie.setTraceFilter(VideoEngine.TraceLevel.TRACE_ALL);
       return;
     }
     vie.setTraceFilter(VideoEngine.TraceLevel.TRACE_NONE);
@@ -560,6 +560,14 @@ public class MediaEngine implements VideoDecodeEncodeObserver {
     if (videoTxPort != 0) {
       check(vie.setSendDestination(videoChannel, videoTxPort, remoteIp) == 0,
           "Failed setSendDestination");
+    }
+
+    // Setting localSSRC manually (arbitrary value) for loopback test,
+    // As otherwise we will get a clash and a new SSRC will be set,
+    // Which will reset the receiver and other minor issues.
+    if (remoteIp.equals("127.0.0.1")) {
+      check(vie.setLocalSSRC(videoChannel, 0x01234567) == 0,
+           "Failed setLocalSSRC");
     }
   }
 

@@ -710,3 +710,9 @@ JOWW(void, VideoCodecInst_setMaxFrameRate)(JNIEnv* jni, jobject j_codec,
 JOWW(void, CameraDesc_dispose)(JNIEnv* jni, jobject j_camera) {
   delete GetCameraDesc(jni, j_camera);
 }
+
+JOWW(jint, VideoEngine_setLocalSSRC)(JNIEnv* jni, jobject j_vie, jint channel,
+                                      jint ssrc) {
+  VideoEngineData* vie_data = GetVideoEngineData(jni, j_vie);
+  return vie_data->rtp->SetLocalSSRC(channel, ssrc);
+}

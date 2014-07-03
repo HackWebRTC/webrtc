@@ -116,4 +116,5 @@ public class VideoEngine {
     return stopRtpDump(channel, direction.ordinal());
   }
   private native int stopRtpDump(int channel, int direction);
+  public native int setLocalSSRC(int channel, int ssrc);
 }
