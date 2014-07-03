@@ -603,6 +603,23 @@ void ForwardErrorCorrection::InsertPackets(
   while (!received_packet_list->empty()) {
     ReceivedPacket* rx_packet = received_packet_list->front();
 
+    // Check for discarding oldest FEC packet, to avoid wrong FEC decoding from
+    // sequence number wrap-around. Detection of old FEC packet is based on
+    // sequence number difference of received packet and oldest packet in FEC
+    // packet list.
+    // TODO(marpan/holmer): We should be able to improve detection/discarding of
+    // old FEC packets based on timestamp information or better sequence number
+    // thresholding (e.g., to distinguish between wrap-around and reordering).
+    if (!fec_packet_list_.empty()) {
+      uint16_t seq_num_diff = abs(
+          static_cast<int>(rx_packet->seq_num) -
+          static_cast<int>(fec_packet_list_.front()->seq_num));
+      if (seq_num_diff > 0x3fff) {
+        DiscardFECPacket(fec_packet_list_.front());
+        fec_packet_list_.pop_front();
+      }
+    }
+
     if (rx_packet->is_fec) {
       InsertFECPacket(rx_packet, recovered_packet_list);
     } else {

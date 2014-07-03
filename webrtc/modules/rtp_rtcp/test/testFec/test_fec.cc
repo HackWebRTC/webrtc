@@ -134,7 +134,7 @@ TEST(FecTest, FecTest) {
   fclose(randomSeedFile);
   randomSeedFile = NULL;
 
-  uint16_t seqNum = static_cast<uint16_t>(rand());
+  uint16_t seqNum = 0;
   uint32_t timeStamp = static_cast<uint32_t>(rand());
   const uint32_t ssrc = static_cast<uint32_t>(rand());
 
@@ -224,6 +224,11 @@ TEST(FecTest, FecTest) {
             }
 
             // Construct media packets.
+            // Reset the sequence number here for each FEC code/mask tested
+            // below, to avoid sequence number wrap-around. In actual decoding,
+            // old FEC packets in list are dropped if sequence number wrap
+            // around is detected. This case is currently not handled below.
+            seqNum = 0;
             for (uint32_t i = 0; i < numMediaPackets; ++i) {
               mediaPacket = new ForwardErrorCorrection::Packet;
               mediaPacketList.push_back(mediaPacket);
