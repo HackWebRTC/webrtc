@@ -147,7 +147,7 @@ void* WebRtc_CreateDelayEstimatorFarend(int spectrum_size, int history_size) {
   COMPILE_ASSERT(kBandLast - kBandFirst < 32);
 
   if (spectrum_size >= kBandLast) {
-    self = malloc(sizeof(DelayEstimator));
+    self = malloc(sizeof(DelayEstimatorFarend));
   }
 
   if (self != NULL) {
@@ -322,6 +322,29 @@ int WebRtc_SoftResetDelayEstimator(void* handle, int delay_shift) {
   DelayEstimator* self = (DelayEstimator*) handle;
   assert(self != NULL);
   return WebRtc_SoftResetBinaryDelayEstimator(self->binary_handle, delay_shift);
+}
+
+int WebRtc_set_history_size(void* handle, int history_size) {
+  DelayEstimator* self = handle;
+
+  if ((self == NULL) || (history_size <= 1)) {
+    return -1;
+  }
+  return WebRtc_AllocateHistoryBufferMemory(self->binary_handle, history_size);
+}
+
+int WebRtc_history_size(const void* handle) {
+  const DelayEstimator* self = handle;
+
+  if (self == NULL) {
+    return -1;
+  }
+  if (self->binary_handle->farend->history_size !=
+      self->binary_handle->history_size) {
+    // Non matching history sizes.
+    return -1;
+  }
+  return self->binary_handle->history_size;
 }
 
 int WebRtc_set_lookahead(void* handle, int lookahead) {

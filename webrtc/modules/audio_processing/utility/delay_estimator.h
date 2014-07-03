@@ -36,6 +36,7 @@ typedef struct {
   // Binary history variables.
   uint32_t* binary_near_history;
   int near_history_size;
+  int history_size;
 
   // Delay estimation variables.
   int32_t minimum_probability;
@@ -84,6 +85,19 @@ void WebRtc_FreeBinaryDelayEstimatorFarend(BinaryDelayEstimatorFarend* self);
 //
 BinaryDelayEstimatorFarend* WebRtc_CreateBinaryDelayEstimatorFarend(
     int history_size);
+
+// Re-allocates the buffers.
+//
+// Inputs:
+//      - self            : Pointer to the binary estimation far-end instance
+//                          which is the return value of
+//                          WebRtc_CreateBinaryDelayEstimatorFarend().
+//      - history_size    : Size of the far-end binary spectrum history.
+//
+// Return value:
+//      - history_size    : The history size allocated.
+int WebRtc_AllocateFarendBufferMemory(BinaryDelayEstimatorFarend* self,
+                                      int history_size);
 
 // Initializes the delay estimation far-end instance created with
 // WebRtc_CreateBinaryDelayEstimatorFarend(...).
@@ -140,6 +154,20 @@ void WebRtc_FreeBinaryDelayEstimator(BinaryDelayEstimator* self);
 // description.
 BinaryDelayEstimator* WebRtc_CreateBinaryDelayEstimator(
     BinaryDelayEstimatorFarend* farend, int max_lookahead);
+
+// Re-allocates |history_size| dependent buffers. The far-end buffers will be
+// updated at the same time if needed.
+//
+// Input:
+//      - self            : Pointer to the binary estimation instance which is
+//                          the return value of
+//                          WebRtc_CreateBinaryDelayEstimator().
+//      - history_size    : Size of the history buffers.
+//
+// Return value:
+//      - history_size    : The history size allocated.
+int WebRtc_AllocateHistoryBufferMemory(BinaryDelayEstimator* self,
+                                       int history_size);
 
 // Initializes the delay estimation instance created with
 // WebRtc_CreateBinaryDelayEstimator(...).
@@ -219,6 +247,5 @@ float WebRtc_binary_last_delay_quality(BinaryDelayEstimator* self);
 void WebRtc_MeanEstimatorFix(int32_t new_value,
                              int factor,
                              int32_t* mean_value);
-
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_UTILITY_DELAY_ESTIMATOR_H_

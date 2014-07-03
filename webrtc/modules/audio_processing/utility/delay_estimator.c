@@ -98,6 +98,7 @@ static void UpdateRobustValidationStatistics(BinaryDelayEstimator* self,
       kMaxHitsWhenPossiblyNonCausal : kMaxHitsWhenPossiblyCausal;
   int i = 0;
 
+  assert(self->history_size == self->farend->history_size);
   // Reset |candidate_hits| if we have a new candidate.
   if (candidate_delay != self->last_candidate_delay) {
     self->candidate_hits = 0;
@@ -130,7 +131,7 @@ static void UpdateRobustValidationStatistics(BinaryDelayEstimator* self,
   // 4. All other bins are decreased with |valley_depth|.
   // TODO(bjornv): Investigate how to make this loop more efficient.  Split up
   // the loop?  Remove parts that doesn't add too much.
-  for (i = 0; i < self->farend->history_size; ++i) {
+  for (i = 0; i < self->history_size; ++i) {
     int is_in_last_set = (i >= self->last_delay - 2) &&
         (i <= self->last_delay + 1) && (i != candidate_delay);
     int is_in_candidate_set = (i >= candidate_delay - 2) &&
@@ -277,25 +278,45 @@ BinaryDelayEstimatorFarend* WebRtc_CreateBinaryDelayEstimatorFarend(
     // Sanity conditions fulfilled.
     self = malloc(sizeof(BinaryDelayEstimatorFarend));
   }
-  if (self != NULL) {
-    int malloc_fail = 0;
-
-    self->history_size = history_size;
-
-    // Allocate memory for history buffers.
-    self->binary_far_history = malloc(history_size * sizeof(uint32_t));
-    malloc_fail |= (self->binary_far_history == NULL);
-
-    self->far_bit_counts = malloc(history_size * sizeof(int));
-    malloc_fail |= (self->far_bit_counts == NULL);
-
-    if (malloc_fail) {
-      WebRtc_FreeBinaryDelayEstimatorFarend(self);
-      self = NULL;
-    }
+  if (self == NULL) {
+    return NULL;
   }
 
+  self->history_size = 0;
+  self->binary_far_history = NULL;
+  self->far_bit_counts = NULL;
+  if (WebRtc_AllocateFarendBufferMemory(self, history_size) == 0) {
+    WebRtc_FreeBinaryDelayEstimatorFarend(self);
+    self = NULL;
+  }
   return self;
+}
+
+int WebRtc_AllocateFarendBufferMemory(BinaryDelayEstimatorFarend* self,
+                                      int history_size) {
+  assert(self != NULL);
+  // (Re-)Allocate memory for history buffers.
+  self->binary_far_history =
+      realloc(self->binary_far_history,
+              history_size * sizeof(*self->binary_far_history));
+  self->far_bit_counts = realloc(self->far_bit_counts,
+                                 history_size * sizeof(*self->far_bit_counts));
+  if ((self->binary_far_history == NULL) || (self->far_bit_counts == NULL)) {
+    history_size = 0;
+  }
+  // Fill with zeros if we have expanded the buffers.
+  if (history_size > self->history_size) {
+    int size_diff = history_size - self->history_size;
+    memset(&self->binary_far_history[self->history_size],
+           0,
+           sizeof(*self->binary_far_history) * size_diff);
+    memset(&self->far_bit_counts[self->history_size],
+           0,
+           sizeof(*self->far_bit_counts) * size_diff);
+  }
+  self->history_size = history_size;
+
+  return self->history_size;
 }
 
 void WebRtc_InitBinaryDelayEstimatorFarend(BinaryDelayEstimatorFarend* self) {
@@ -385,51 +406,84 @@ BinaryDelayEstimator* WebRtc_CreateBinaryDelayEstimator(
     // Sanity conditions fulfilled.
     self = malloc(sizeof(BinaryDelayEstimator));
   }
+  if (self == NULL) {
+    return NULL;
+  }
 
-  if (self != NULL) {
-    int malloc_fail = 0;
+  self->farend = farend;
+  self->near_history_size = max_lookahead + 1;
+  self->history_size = 0;
+  self->robust_validation_enabled = 0;  // Disabled by default.
+  self->allowed_offset = 0;
 
-    self->farend = farend;
-    self->near_history_size = max_lookahead + 1;
-    self->robust_validation_enabled = 0;  // Disabled by default.
-    self->allowed_offset = 0;
+  self->lookahead = max_lookahead;
 
-    self->lookahead = max_lookahead;
-
-    // Allocate memory for spectrum buffers.  The extra array element in
-    // |mean_bit_counts| and |histogram| is a dummy element only used while
-    // |last_delay| == -2, i.e., before we have a valid estimate.
-    self->mean_bit_counts =
-        malloc((farend->history_size + 1) * sizeof(int32_t));
-    malloc_fail |= (self->mean_bit_counts == NULL);
-
-    self->bit_counts = malloc(farend->history_size * sizeof(int32_t));
-    malloc_fail |= (self->bit_counts == NULL);
-
-    // Allocate memory for history buffers.
-    self->binary_near_history = malloc((max_lookahead + 1) * sizeof(uint32_t));
-    malloc_fail |= (self->binary_near_history == NULL);
-
-    self->histogram = malloc((farend->history_size + 1) * sizeof(float));
-    malloc_fail |= (self->histogram == NULL);
-
-    if (malloc_fail) {
-      WebRtc_FreeBinaryDelayEstimator(self);
-      self = NULL;
-    }
+  // Allocate memory for spectrum and history buffers.
+  self->mean_bit_counts = NULL;
+  self->bit_counts = NULL;
+  self->histogram = NULL;
+  self->binary_near_history =
+      malloc((max_lookahead + 1) * sizeof(*self->binary_near_history));
+  if (self->binary_near_history == NULL ||
+      WebRtc_AllocateHistoryBufferMemory(self, farend->history_size) == 0) {
+    WebRtc_FreeBinaryDelayEstimator(self);
+    self = NULL;
   }
 
   return self;
+}
+
+int WebRtc_AllocateHistoryBufferMemory(BinaryDelayEstimator* self,
+                                       int history_size) {
+  BinaryDelayEstimatorFarend* far = self->farend;
+  // (Re-)Allocate memory for spectrum and history buffers.
+  if (history_size != far->history_size) {
+    // Only update far-end buffers if we need.
+    history_size = WebRtc_AllocateFarendBufferMemory(far, history_size);
+  }
+  // The extra array element in |mean_bit_counts| and |histogram| is a dummy
+  // element only used while |last_delay| == -2, i.e., before we have a valid
+  // estimate.
+  self->mean_bit_counts =
+      realloc(self->mean_bit_counts,
+              (history_size + 1) * sizeof(*self->mean_bit_counts));
+  self->bit_counts =
+      realloc(self->bit_counts, history_size * sizeof(*self->bit_counts));
+  self->histogram =
+      realloc(self->histogram, (history_size + 1) * sizeof(*self->histogram));
+
+  if ((self->mean_bit_counts == NULL) ||
+      (self->bit_counts == NULL) ||
+      (self->histogram == NULL)) {
+    history_size = 0;
+  }
+  // Fill with zeros if we have expanded the buffers.
+  if (history_size > self->history_size) {
+    int size_diff = history_size - self->history_size;
+    memset(&self->mean_bit_counts[self->history_size],
+           0,
+           sizeof(*self->mean_bit_counts) * size_diff);
+    memset(&self->bit_counts[self->history_size],
+           0,
+           sizeof(*self->bit_counts) * size_diff);
+    memset(&self->histogram[self->history_size],
+           0,
+           sizeof(*self->histogram) * size_diff);
+  }
+  self->history_size = history_size;
+
+  return self->history_size;
 }
 
 void WebRtc_InitBinaryDelayEstimator(BinaryDelayEstimator* self) {
   int i = 0;
   assert(self != NULL);
 
-  memset(self->bit_counts, 0, sizeof(int32_t) * self->farend->history_size);
-  memset(self->binary_near_history, 0,
+  memset(self->bit_counts, 0, sizeof(int32_t) * self->history_size);
+  memset(self->binary_near_history,
+         0,
          sizeof(uint32_t) * self->near_history_size);
-  for (i = 0; i <= self->farend->history_size; ++i) {
+  for (i = 0; i <= self->history_size; ++i) {
     self->mean_bit_counts[i] = (20 << 9);  // 20 in Q9.
     self->histogram[i] = 0.f;
   }
@@ -440,7 +494,7 @@ void WebRtc_InitBinaryDelayEstimator(BinaryDelayEstimator* self) {
   self->last_delay = -2;
 
   self->last_candidate_delay = -2;
-  self->compare_delay = self->farend->history_size;
+  self->compare_delay = self->history_size;
   self->candidate_hits = 0;
   self->last_delay_histogram = 0.f;
 }
@@ -471,6 +525,10 @@ int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator* self,
   int32_t valley_depth = 0;
 
   assert(self != NULL);
+  if (self->farend->history_size != self->history_size) {
+    // Non matching history sizes.
+    return -1;
+  }
   if (self->near_history_size > 1) {
     // If we apply lookahead, shift near-end binary spectrum history. Insert
     // current |binary_near_spectrum| and pull out the delayed one.
@@ -482,10 +540,10 @@ int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator* self,
 
   // Compare with delayed spectra and store the |bit_counts| for each delay.
   BitCountComparison(binary_near_spectrum, self->farend->binary_far_history,
-                     self->farend->history_size, self->bit_counts);
+                     self->history_size, self->bit_counts);
 
   // Update |mean_bit_counts|, which is the smoothed version of |bit_counts|.
-  for (i = 0; i < self->farend->history_size; i++) {
+  for (i = 0; i < self->history_size; i++) {
     // |bit_counts| is constrained to [0, 32], meaning we can smooth with a
     // factor up to 2^26. We use Q9.
     int32_t bit_count = (self->bit_counts[i] << 9);  // Q9.
@@ -503,7 +561,7 @@ int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator* self,
 
   // Find |candidate_delay|, |value_best_candidate| and |value_worst_candidate|
   // of |mean_bit_counts|.
-  for (i = 0; i < self->farend->history_size; i++) {
+  for (i = 0; i < self->history_size; i++) {
     if (self->mean_bit_counts[i] < value_best_candidate) {
       value_best_candidate = self->mean_bit_counts[i];
       candidate_delay = i;
