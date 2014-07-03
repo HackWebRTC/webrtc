@@ -209,8 +209,8 @@ class AudioProcessing {
   // ensures the options are applied immediately.
   virtual void SetExtraOptions(const Config& config) = 0;
 
-  virtual int EnableExperimentalNs(bool enable) = 0;
-  virtual bool experimental_ns_enabled() const = 0;
+  virtual int EnableExperimentalNs(bool enable) { return kNoError; }
+  virtual bool experimental_ns_enabled() const { return false; }
 
   // DEPRECATED.
   // TODO(ajm): Remove after Chromium has upgraded to using Initialize().

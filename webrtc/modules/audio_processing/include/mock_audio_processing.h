@@ -186,10 +186,6 @@ class MockAudioProcessing : public AudioProcessing {
           ChannelLayout reverse_layout));
   MOCK_METHOD1(SetExtraOptions,
       void(const Config& config));
-  MOCK_METHOD1(EnableExperimentalNs,
-      int(bool enable));
-  MOCK_CONST_METHOD0(experimental_ns_enabled,
-      bool());
   MOCK_METHOD1(set_sample_rate_hz,
       int(int rate));
   MOCK_CONST_METHOD0(input_sample_rate_hz,

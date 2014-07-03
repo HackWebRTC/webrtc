@@ -92,10 +92,6 @@ class AudioProcessingImpl : public AudioProcessing {
                          ChannelLayout output_layout,
                          ChannelLayout reverse_layout) OVERRIDE;
   virtual void SetExtraOptions(const Config& config) OVERRIDE;
-  virtual int EnableExperimentalNs(bool enable) OVERRIDE;
-  virtual bool experimental_ns_enabled() const OVERRIDE {
-    return false;
-  }
   virtual int set_sample_rate_hz(int rate) OVERRIDE;
   virtual int input_sample_rate_hz() const OVERRIDE;
   virtual int sample_rate_hz() const OVERRIDE;

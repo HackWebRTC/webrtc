@@ -303,10 +303,6 @@ void AudioProcessingImpl::SetExtraOptions(const Config& config) {
     (*it)->SetExtraOptions(config);
 }
 
-int AudioProcessingImpl::EnableExperimentalNs(bool enable) {
-  return kNoError;
-}
-
 int AudioProcessingImpl::input_sample_rate_hz() const {
   CriticalSectionScoped crit_scoped(crit_);
   return fwd_in_format_.rate();
