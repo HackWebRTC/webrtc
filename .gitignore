@@ -97,6 +97,7 @@
 /tools/grit
 /tools/gritsettings
 /tools/gyp
+/tools/memory
 /tools/protoc_wrapper
 /tools/python
 /tools/sanitizer_options
