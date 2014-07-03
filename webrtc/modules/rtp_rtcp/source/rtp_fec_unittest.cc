@@ -178,6 +178,7 @@ TEST_F(RtpFecTest, FecRecoveryWithSeqNumGapTwoFrames) {
   EXPECT_EQ(1, static_cast<int>(fec_packet_list_.size()));
   // Add FEC packet (seq#2) of this first frame to received list (i.e., assume
   // the two media packet were lost).
+  memset(fec_loss_mask_, 0, sizeof(fec_loss_mask_));
   ReceivedPackets(fec_packet_list_, fec_loss_mask_, true);
 
   // Construct media packets for second frame, with sequence number wrap.
