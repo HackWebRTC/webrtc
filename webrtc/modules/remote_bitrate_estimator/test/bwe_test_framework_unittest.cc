@@ -500,7 +500,7 @@ TEST(BweTestFramework_JitterFilterTest, Jitter1031) {
   TestJitterFilter(1031);
 }
 
-static void TestReorderFilter(uint32_t reorder_percent, uint32_t near) {
+static void TestReorderFilter(uint32_t reorder_percent, uint32_t near_value) {
   const uint32_t kPacketCount = 10000;
 
   // Generate packets with 10 ms interval.
@@ -533,7 +533,8 @@ static void TestReorderFilter(uint32_t reorder_percent, uint32_t near) {
 
   // Because reordering is random, we allow a threshold when comparing. The
   // maximum distance a packet can be moved is PacketCount - 1.
-  EXPECT_NEAR(((kPacketCount - 1) * reorder_percent) / 100, distance, near);
+  EXPECT_NEAR(
+    ((kPacketCount - 1) * reorder_percent) / 100, distance, near_value);
 }
 
 TEST(BweTestFramework_ReorderFilterTest, Reorder0) {
