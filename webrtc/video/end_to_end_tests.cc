@@ -1543,4 +1543,80 @@ TEST_F(EndToEndTest, CanSwitchToUseAllSsrcs) {
   TestSendsSetSsrcs(kNumSsrcs, true);
 }
 
+TEST_F(EndToEndTest, RedundantPayloadsTransmittedOnAllSsrcs) {
+  // TODO(pbos): Use CallTest::kSendRtxSsrcs when they're an array (pending CL).
+  static const uint32_t kSendRtxSsrcs[kNumSsrcs] = {
+      0xBADCAFD, 0xBADCAFE, 0xBADCAFF};
+  class ObserveRedundantPayloads: public test::EndToEndTest {
+   public:
+    ObserveRedundantPayloads()
+        : EndToEndTest(kDefaultTimeoutMs), ssrcs_to_observe_(kNumSsrcs) {
+          for(size_t i = 0; i < kNumSsrcs; ++i) {
+            registered_rtx_ssrc_[kSendRtxSsrcs[i]] = true;
+          }
+        }
+
+   private:
+    virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
+      RTPHeader header;
+      EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
+
+      if (!registered_rtx_ssrc_[header.ssrc])
+        return SEND_PACKET;
+
+      EXPECT_LE(static_cast<size_t>(header.headerLength + header.paddingLength),
+                length);
+      const bool packet_is_redundant_payload =
+          static_cast<size_t>(header.headerLength + header.paddingLength) <
+          length;
+
+      if (!packet_is_redundant_payload)
+        return SEND_PACKET;
+
+      if (!observed_redundant_retransmission_[header.ssrc]) {
+        observed_redundant_retransmission_[header.ssrc] = true;
+        if (--ssrcs_to_observe_ == 0)
+          observation_complete_->Set();
+      }
+
+      return SEND_PACKET;
+    }
+
+    virtual size_t GetNumStreams() const OVERRIDE { return kNumSsrcs; }
+
+    virtual void ModifyConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        std::vector<VideoStream>* video_streams) OVERRIDE {
+      // Set low simulcast bitrates to not have to wait for bandwidth ramp-up.
+      for (size_t i = 0; i < video_streams->size(); ++i) {
+        (*video_streams)[i].min_bitrate_bps = 10000;
+        (*video_streams)[i].target_bitrate_bps = 15000;
+        (*video_streams)[i].max_bitrate_bps = 20000;
+      }
+      // Significantly higher than max bitrates for all video streams -> forcing
+      // padding to trigger redundant padding on all RTX SSRCs.
+      send_config->rtp.min_transmit_bitrate_bps = 100000;
+
+      send_config->rtp.rtx.payload_type = kSendRtxPayloadType;
+      send_config->rtp.rtx.pad_with_redundant_payloads = true;
+
+      for (size_t i = 0; i < kNumSsrcs; ++i)
+        send_config->rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[i]);
+    }
+
+    virtual void PerformTest() OVERRIDE {
+      EXPECT_EQ(kEventSignaled, Wait())
+          << "Timed out while waiting for redundant payloads on all SSRCs.";
+    }
+
+   private:
+    size_t ssrcs_to_observe_;
+    std::map<uint32_t, bool> observed_redundant_retransmission_;
+    std::map<uint32_t, bool> registered_rtx_ssrc_;
+  } test;
+
+  RunBaseTest(&test);
+}
+
 }  // namespace webrtc

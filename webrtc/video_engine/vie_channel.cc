@@ -278,6 +278,11 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       rtp_rtcp->SetSendingStatus(rtp_rtcp_->Sending());
       rtp_rtcp->SetSendingMediaStatus(rtp_rtcp_->SendingMedia());
 
+      int mode;
+      uint32_t ssrc;
+      int payload_type;
+      rtp_rtcp_->RTXSendStatus(&mode, &ssrc, &payload_type);
+      rtp_rtcp->SetRTXSendStatus(mode);
       simulcast_rtp_rtcp_.push_back(rtp_rtcp);
 
       // Silently ignore error.
