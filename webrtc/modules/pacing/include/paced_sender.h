@@ -16,11 +16,12 @@
 
 #include "webrtc/modules/interface/module.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
-#include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
+class Clock;
 class CriticalSectionWrapper;
+
 namespace paced_sender {
 class IntervalBudget;
 struct Packet;
@@ -48,6 +49,7 @@ class PacedSender : public Module {
                                   int64_t capture_time_ms,
                                   bool retransmission) = 0;
     // Called when it's a good time to send a padding data.
+    // Returns the number of bytes sent.
     virtual int TimeToSendPadding(int bytes) = 0;
 
    protected:
@@ -55,8 +57,17 @@ class PacedSender : public Module {
   };
 
   static const int kDefaultMaxQueueLengthMs = 2000;
+  // Pace in kbits/s until we receive first estimate.
+  static const int kDefaultInitialPaceKbps = 2000;
+  // Pacing-rate relative to our target send rate.
+  // Multiplicative factor that is applied to the target bitrate to calculate
+  // the number of bytes that can be transmitted per interval.
+  // Increasing this factor will result in lower delays in cases of bitrate
+  // overshoots from the encoder.
+  static const float kDefaultPaceMultiplier;
 
-  PacedSender(Callback* callback, int max_bitrate_kbps, int min_bitrate_kbps);
+  PacedSender(Clock* clock, Callback* callback, int max_bitrate_kbps,
+              int min_bitrate_kbps);
 
   virtual ~PacedSender();
 
@@ -114,6 +125,7 @@ class PacedSender : public Module {
   // Updates the buffers with the number of bytes that we sent.
   void UpdateMediaBytesSent(int num_bytes);
 
+  Clock* clock_;
   Callback* callback_;
   bool enabled_;
   bool paused_;
@@ -127,8 +139,8 @@ class PacedSender : public Module {
   // utilized when there's no media to send.
   scoped_ptr<paced_sender::IntervalBudget> padding_budget_;
 
-  TickTime time_last_update_;
-  TickTime time_last_send_;
+  int64_t time_last_update_;
+  int64_t time_last_send_;
   int64_t capture_time_ms_last_queued_;
   int64_t capture_time_ms_last_sent_;
 

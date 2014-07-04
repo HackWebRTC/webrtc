@@ -23,6 +23,7 @@
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/modules/video_coding/main/source/encoded_frame.h"
+#include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
@@ -33,16 +34,6 @@
 #include "webrtc/video_engine/vie_defines.h"
 
 namespace webrtc {
-
-// Pace in kbits/s until we receive first estimate.
-static const int kInitialPace = 2000;
-
-// Pacing-rate relative to our target send rate.
-// Multiplicative factor that is applied to the target bitrate to calculate the
-// number of bytes that can be transmitted per interval.
-// Increasing this factor will result in lower delays in cases of bitrate
-// overshoots from the encoder.
-static const float kPaceMultiplier = 2.5f;
 
 // Margin on when we pause the encoder when the pacing buffer overflows relative
 // to the configured buffer delay.
@@ -172,7 +163,8 @@ ViEEncoder::ViEEncoder(int32_t engine_id,
   bitrate_observer_.reset(new ViEBitrateObserver(this));
   pacing_callback_.reset(new ViEPacedSenderCallback(this));
   paced_sender_.reset(
-      new PacedSender(pacing_callback_.get(), kInitialPace, kPaceMultiplier));
+      new PacedSender(Clock::GetRealTimeClock(), pacing_callback_.get(),
+                      PacedSender::kDefaultInitialPaceKbps, 0));
 }
 
 bool ViEEncoder::Init() {
@@ -383,8 +375,9 @@ int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
   if (pad_up_to_bitrate_kbps < min_transmit_bitrate_kbps_)
     pad_up_to_bitrate_kbps = min_transmit_bitrate_kbps_;
 
-  paced_sender_->UpdateBitrate(kPaceMultiplier * video_codec.startBitrate,
-                               pad_up_to_bitrate_kbps);
+  paced_sender_->UpdateBitrate(
+      PacedSender::kDefaultPaceMultiplier * video_codec.startBitrate,
+      pad_up_to_bitrate_kbps);
 
   return 0;
 }
@@ -894,8 +887,9 @@ void ViEEncoder::OnNetworkChanged(const uint32_t bitrate_bps,
     if (pad_up_to_bitrate_kbps > bitrate_kbps)
       pad_up_to_bitrate_kbps = bitrate_kbps;
 
-    paced_sender_->UpdateBitrate(kPaceMultiplier * bitrate_kbps,
-                                 pad_up_to_bitrate_kbps);
+    paced_sender_->UpdateBitrate(
+        PacedSender::kDefaultPaceMultiplier * bitrate_kbps,
+        pad_up_to_bitrate_kbps);
     default_rtp_rtcp_->SetTargetSendBitrate(stream_bitrates);
     if (video_suspended_ == video_is_suspended)
       return;

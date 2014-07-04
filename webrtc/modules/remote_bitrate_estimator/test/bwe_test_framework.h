@@ -22,7 +22,9 @@
 #include <vector>
 
 #include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/pacing/include/paced_sender.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
+#include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
@@ -161,6 +163,7 @@ class Packet {
   int64_t creation_time_us() const { return creation_time_us_; }
   void set_send_time_us(int64_t send_time_us);
   int64_t send_time_us() const { return send_time_us_; }
+  void SetAbsSendTimeMs(int64_t abs_send_time_ms);
   uint32_t payload_size() const { return payload_size_; }
   const RTPHeader& header() const { return header_; }
 
@@ -391,9 +394,9 @@ class VideoSender : public PacketSender {
   uint32_t max_payload_size_bytes() const { return kMaxPayloadSizeBytes; }
   uint32_t bytes_per_second() const { return bytes_per_second_; }
 
-  virtual uint32_t GetCapacityKbps() const;
+  virtual uint32_t GetCapacityKbps() const OVERRIDE;
 
-  virtual void RunFor(int64_t time_ms, Packets* in_out);
+  virtual void RunFor(int64_t time_ms, Packets* in_out) OVERRIDE;
 
  protected:
   const uint32_t kMaxPayloadSizeBytes;
@@ -417,11 +420,42 @@ class AdaptiveVideoSender : public VideoSender {
                       float first_frame_offset);
   virtual ~AdaptiveVideoSender() {}
 
-  virtual int GetFeedbackIntervalMs() const { return 100; }
-  virtual void GiveFeedback(const Feedback& feedback);
+  virtual int GetFeedbackIntervalMs() const OVERRIDE { return 100; }
+  virtual void GiveFeedback(const Feedback& feedback) OVERRIDE;
 
-private:
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(AdaptiveVideoSender);
+};
+
+class PacedVideoSender : public PacketSender, public PacedSender::Callback {
+ public:
+  PacedVideoSender(PacketProcessorListener* listener,
+                   uint32_t kbps, AdaptiveVideoSender* source);
+  virtual ~PacedVideoSender() {}
+
+  virtual int GetFeedbackIntervalMs() const OVERRIDE { return 100; }
+  virtual void GiveFeedback(const Feedback& feedback) OVERRIDE;
+  virtual void RunFor(int64_t time_ms, Packets* in_out) OVERRIDE;
+
+  // Implements PacedSender::Callback.
+  virtual bool TimeToSendPacket(uint32_t ssrc,
+                                uint16_t sequence_number,
+                                int64_t capture_time_ms,
+                                bool retransmission) OVERRIDE;
+  virtual int TimeToSendPadding(int bytes) OVERRIDE;
+
+ private:
+  void QueuePackets(Packets* batch, int64_t end_of_batch_time_us);
+
+  static const int64_t kInitialTimeMs = 0;
+  SimulatedClock clock_;
+  int64_t start_of_run_ms_;
+  PacedSender pacer_;
+  Packets pacer_queue_;
+  Packets queue_;
+  AdaptiveVideoSender* source_;
+
+  DISALLOW_IMPLICIT_CONSTRUCTORS(PacedVideoSender);
 };
 }  // namespace bwe
 }  // namespace testing

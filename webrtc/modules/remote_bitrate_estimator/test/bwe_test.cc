@@ -76,11 +76,11 @@ class TestedEstimator : public RemoteBitrateObserver {
       }
     }
 
-    int64_t step_ms = estimator_->TimeUntilNextProcess();
+    int64_t step_ms = std::max(estimator_->TimeUntilNextProcess(), 0);
     while ((clock_.TimeInMilliseconds() + step_ms) < packet_time_ms) {
       clock_.AdvanceTimeMilliseconds(step_ms);
       estimator_->Process();
-      step_ms = estimator_->TimeUntilNextProcess();
+      step_ms = std::max(estimator_->TimeUntilNextProcess(), 0);
     }
     estimator_->IncomingPacket(packet_time_ms, packet.payload_size(),
                                packet.header());
@@ -195,13 +195,13 @@ class PacketProcessorRunner {
     if (queue_.empty()) {
       return;
     }
-    Packets to_transfer;
     Packets::iterator it = queue_.begin();
     for (; it != queue_.end(); ++it) {
       if (it->send_time_us() > end_of_batch_time_us) {
         break;
       }
     }
+    Packets to_transfer;
     to_transfer.splice(to_transfer.begin(), queue_, queue_.begin(), it);
     batch->merge(to_transfer);
   }

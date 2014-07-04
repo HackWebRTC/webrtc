@@ -12,6 +12,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/modules/pacing/include/paced_sender.h"
+#include "webrtc/system_wrappers/interface/clock.h"
 
 using testing::_;
 using testing::Return;
@@ -55,12 +56,12 @@ class PacedSenderPadding : public PacedSender::Callback {
 
 class PacedSenderTest : public ::testing::Test {
  protected:
-  PacedSenderTest() {
+  PacedSenderTest() : clock_(123456) {
     srand(0);
-    TickTime::UseFakeClock(123456);
     // Need to initialize PacedSender after we initialize clock.
     send_bucket_.reset(
-        new PacedSender(&callback_, kPaceMultiplier * kTargetBitrate, 0));
+        new PacedSender(
+            &clock_, &callback_, kPaceMultiplier * kTargetBitrate, 0));
   }
 
   void SendAndExpectPacket(PacedSender::Priority priority,
@@ -75,6 +76,7 @@ class PacedSenderTest : public ::testing::Test {
         .WillRepeatedly(Return(true));
   }
 
+  SimulatedClock clock_;
   MockPacedSenderCallback callback_;
   scoped_ptr<PacedSender> send_bucket_;
 };
@@ -84,20 +86,20 @@ TEST_F(PacedSenderTest, QueuePacket) {
   uint16_t sequence_number = 1234;
   // Due to the multiplicative factor we can send 3 packets not 2 packets.
   SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                      TickTime::MillisecondTimestamp(), 250, false);
+                      clock_.TimeInMilliseconds(), 250, false);
   SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                      TickTime::MillisecondTimestamp(), 250, false);
+                      clock_.TimeInMilliseconds(), 250, false);
   SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                      TickTime::MillisecondTimestamp(), 250, false);
-  int64_t queued_packet_timestamp = TickTime::MillisecondTimestamp();
+                      clock_.TimeInMilliseconds(), 250, false);
+  int64_t queued_packet_timestamp = clock_.TimeInMilliseconds();
   EXPECT_FALSE(send_bucket_->SendPacket(PacedSender::kNormalPriority, ssrc,
       sequence_number, queued_packet_timestamp, 250, false));
   send_bucket_->Process();
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
   EXPECT_CALL(callback_, TimeToSendPadding(_)).Times(0);
-  TickTime::AdvanceFakeClock(4);
+  clock_.AdvanceTimeMilliseconds(4);
   EXPECT_EQ(1, send_bucket_->TimeUntilNextProcess());
-  TickTime::AdvanceFakeClock(1);
+  clock_.AdvanceTimeMilliseconds(1);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
   EXPECT_CALL(callback_, TimeToSendPacket(
       ssrc, sequence_number++, queued_packet_timestamp, false))
@@ -106,11 +108,11 @@ TEST_F(PacedSenderTest, QueuePacket) {
   send_bucket_->Process();
   sequence_number++;
   SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                      TickTime::MillisecondTimestamp(), 250, false);
+                      clock_.TimeInMilliseconds(), 250, false);
   SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                      TickTime::MillisecondTimestamp(), 250, false);
+                      clock_.TimeInMilliseconds(), 250, false);
   EXPECT_FALSE(send_bucket_->SendPacket(PacedSender::kNormalPriority, ssrc,
-      sequence_number++, TickTime::MillisecondTimestamp(), 250, false));
+      sequence_number++, clock_.TimeInMilliseconds(), 250, false));
   send_bucket_->Process();
 }
 
@@ -121,17 +123,17 @@ TEST_F(PacedSenderTest, PaceQueuedPackets) {
   // Due to the multiplicative factor we can send 3 packets not 2 packets.
   for (int i = 0; i < 3; ++i) {
     SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                        TickTime::MillisecondTimestamp(), 250, false);
+                        clock_.TimeInMilliseconds(), 250, false);
   }
   for (int j = 0; j < 30; ++j) {
     EXPECT_FALSE(send_bucket_->SendPacket(PacedSender::kNormalPriority, ssrc,
-        sequence_number++, TickTime::MillisecondTimestamp(), 250, false));
+        sequence_number++, clock_.TimeInMilliseconds(), 250, false));
   }
   send_bucket_->Process();
   EXPECT_CALL(callback_, TimeToSendPadding(_)).Times(0);
   for (int k = 0; k < 10; ++k) {
     EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
-    TickTime::AdvanceFakeClock(5);
+    clock_.AdvanceTimeMilliseconds(5);
     EXPECT_CALL(callback_,
         TimeToSendPacket(ssrc, _, _, false))
         .Times(3)
@@ -140,17 +142,17 @@ TEST_F(PacedSenderTest, PaceQueuedPackets) {
     EXPECT_EQ(0, send_bucket_->Process());
   }
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
-  TickTime::AdvanceFakeClock(5);
+  clock_.AdvanceTimeMilliseconds(5);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
   EXPECT_EQ(0, send_bucket_->Process());
   SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                      TickTime::MillisecondTimestamp(), 250, false);
+                      clock_.TimeInMilliseconds(), 250, false);
   SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                      TickTime::MillisecondTimestamp(), 250, false);
+                      clock_.TimeInMilliseconds(), 250, false);
   SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                      TickTime::MillisecondTimestamp(), 250, false);
+                      clock_.TimeInMilliseconds(), 250, false);
   EXPECT_FALSE(send_bucket_->SendPacket(PacedSender::kNormalPriority, ssrc,
-      sequence_number, TickTime::MillisecondTimestamp(), 250, false));
+      sequence_number, clock_.TimeInMilliseconds(), 250, false));
   send_bucket_->Process();
 }
 
@@ -162,22 +164,22 @@ TEST_F(PacedSenderTest, PaceQueuedPacketsWithDuplicates) {
   // Due to the multiplicative factor we can send 3 packets not 2 packets.
   for (int i = 0; i < 3; ++i) {
     SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                        TickTime::MillisecondTimestamp(), 250, false);
+                        clock_.TimeInMilliseconds(), 250, false);
   }
   queued_sequence_number = sequence_number;
 
   for (int j = 0; j < 30; ++j) {
     // Send in duplicate packets.
     EXPECT_FALSE(send_bucket_->SendPacket(PacedSender::kNormalPriority, ssrc,
-        sequence_number, TickTime::MillisecondTimestamp(), 250, false));
+        sequence_number, clock_.TimeInMilliseconds(), 250, false));
     EXPECT_FALSE(send_bucket_->SendPacket(PacedSender::kNormalPriority, ssrc,
-        sequence_number++, TickTime::MillisecondTimestamp(), 250, false));
+        sequence_number++, clock_.TimeInMilliseconds(), 250, false));
   }
   EXPECT_CALL(callback_, TimeToSendPadding(_)).Times(0);
   send_bucket_->Process();
   for (int k = 0; k < 10; ++k) {
     EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
-    TickTime::AdvanceFakeClock(5);
+    clock_.AdvanceTimeMilliseconds(5);
 
     for (int i = 0; i < 3; ++i) {
       EXPECT_CALL(callback_, TimeToSendPacket(ssrc, queued_sequence_number++,
@@ -190,17 +192,17 @@ TEST_F(PacedSenderTest, PaceQueuedPacketsWithDuplicates) {
     EXPECT_EQ(0, send_bucket_->Process());
   }
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
-  TickTime::AdvanceFakeClock(5);
+  clock_.AdvanceTimeMilliseconds(5);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
   EXPECT_EQ(0, send_bucket_->Process());
   SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                      TickTime::MillisecondTimestamp(), 250, false);
+                      clock_.TimeInMilliseconds(), 250, false);
   SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                      TickTime::MillisecondTimestamp(), 250, false);
+                      clock_.TimeInMilliseconds(), 250, false);
   SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                      TickTime::MillisecondTimestamp(), 250, false);
+                      clock_.TimeInMilliseconds(), 250, false);
   EXPECT_FALSE(send_bucket_->SendPacket(PacedSender::kNormalPriority, ssrc,
-      sequence_number++, TickTime::MillisecondTimestamp(), 250, false));
+      sequence_number++, clock_.TimeInMilliseconds(), 250, false));
   send_bucket_->Process();
 }
 
@@ -211,15 +213,15 @@ TEST_F(PacedSenderTest, Padding) {
   send_bucket_->UpdateBitrate(kPaceMultiplier * kTargetBitrate, kTargetBitrate);
   // Due to the multiplicative factor we can send 3 packets not 2 packets.
   SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                      TickTime::MillisecondTimestamp(), 250, false);
+                      clock_.TimeInMilliseconds(), 250, false);
   SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                      TickTime::MillisecondTimestamp(), 250, false);
+                      clock_.TimeInMilliseconds(), 250, false);
   SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                      TickTime::MillisecondTimestamp(), 250, false);
+                      clock_.TimeInMilliseconds(), 250, false);
   // No padding is expected since we have sent too much already.
   EXPECT_CALL(callback_, TimeToSendPadding(_)).Times(0);
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
-  TickTime::AdvanceFakeClock(5);
+  clock_.AdvanceTimeMilliseconds(5);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
   EXPECT_EQ(0, send_bucket_->Process());
 
@@ -227,7 +229,7 @@ TEST_F(PacedSenderTest, Padding) {
   EXPECT_CALL(callback_, TimeToSendPadding(250)).Times(1).
       WillOnce(Return(250));
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
-  TickTime::AdvanceFakeClock(5);
+  clock_.AdvanceTimeMilliseconds(5);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
   EXPECT_EQ(0, send_bucket_->Process());
 }
@@ -238,12 +240,12 @@ TEST_F(PacedSenderTest, NoPaddingWhenDisabled) {
   // No padding is expected since the pacer is disabled.
   EXPECT_CALL(callback_, TimeToSendPadding(_)).Times(0);
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
-  TickTime::AdvanceFakeClock(5);
+  clock_.AdvanceTimeMilliseconds(5);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
   EXPECT_EQ(0, send_bucket_->Process());
   EXPECT_CALL(callback_, TimeToSendPadding(_)).Times(0);
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
-  TickTime::AdvanceFakeClock(5);
+  clock_.AdvanceTimeMilliseconds(5);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
   EXPECT_EQ(0, send_bucket_->Process());
 }
@@ -255,11 +257,11 @@ TEST_F(PacedSenderTest, VerifyPaddingUpToBitrate) {
   const int kTimeStep = 5;
   const int64_t kBitrateWindow = 100;
   send_bucket_->UpdateBitrate(kPaceMultiplier * kTargetBitrate, kTargetBitrate);
-  int64_t start_time = TickTime::MillisecondTimestamp();
-  while (TickTime::MillisecondTimestamp() - start_time < kBitrateWindow) {
+  int64_t start_time = clock_.TimeInMilliseconds();
+  while (clock_.TimeInMilliseconds() - start_time < kBitrateWindow) {
     SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
                         capture_time_ms, 250, false);
-    TickTime::AdvanceFakeClock(kTimeStep);
+    clock_.AdvanceTimeMilliseconds(kTimeStep);
     EXPECT_CALL(callback_, TimeToSendPadding(250)).Times(1).
         WillOnce(Return(250));
     send_bucket_->Process();
@@ -274,17 +276,17 @@ TEST_F(PacedSenderTest, VerifyAverageBitrateVaryingMediaPayload) {
   const int64_t kBitrateWindow = 10000;
   PacedSenderPadding callback;
   send_bucket_.reset(
-      new PacedSender(&callback, kPaceMultiplier * kTargetBitrate, 0));
+      new PacedSender(&clock_, &callback, kPaceMultiplier * kTargetBitrate, 0));
   send_bucket_->UpdateBitrate(kPaceMultiplier * kTargetBitrate, kTargetBitrate);
-  int64_t start_time = TickTime::MillisecondTimestamp();
+  int64_t start_time = clock_.TimeInMilliseconds();
   int media_bytes = 0;
-  while (TickTime::MillisecondTimestamp() - start_time < kBitrateWindow) {
+  while (clock_.TimeInMilliseconds() - start_time < kBitrateWindow) {
     int media_payload = rand() % 100 + 200;  // [200, 300] bytes.
     EXPECT_FALSE(send_bucket_->SendPacket(PacedSender::kNormalPriority, ssrc,
                                           sequence_number++, capture_time_ms,
                                           media_payload, false));
     media_bytes += media_payload;
-    TickTime::AdvanceFakeClock(kTimeStep);
+    clock_.AdvanceTimeMilliseconds(kTimeStep);
     send_bucket_->Process();
   }
   EXPECT_NEAR(kTargetBitrate, 8 * (media_bytes + callback.padding_sent()) /
@@ -325,7 +327,7 @@ TEST_F(PacedSenderTest, Priority) {
       .WillRepeatedly(Return(true));
 
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
-  TickTime::AdvanceFakeClock(5);
+  clock_.AdvanceTimeMilliseconds(5);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
   EXPECT_EQ(0, send_bucket_->Process());
 
@@ -335,7 +337,7 @@ TEST_F(PacedSenderTest, Priority) {
       .WillRepeatedly(Return(true));
 
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
-  TickTime::AdvanceFakeClock(5);
+  clock_.AdvanceTimeMilliseconds(5);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
   EXPECT_EQ(0, send_bucket_->Process());
 }
@@ -344,7 +346,7 @@ TEST_F(PacedSenderTest, Pause) {
   uint32_t ssrc_low_priority = 12345;
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
-  int64_t capture_time_ms = TickTime::MillisecondTimestamp();
+  int64_t capture_time_ms = clock_.TimeInMilliseconds();
 
   EXPECT_EQ(0, send_bucket_->QueueInMs());
 
@@ -366,15 +368,15 @@ TEST_F(PacedSenderTest, Pause) {
   EXPECT_FALSE(send_bucket_->SendPacket(PacedSender::kHighPriority,
       ssrc, sequence_number++, capture_time_ms, 250, false));
 
-  TickTime::AdvanceFakeClock(10000);
-  int64_t second_capture_time_ms = TickTime::MillisecondTimestamp();
+  clock_.AdvanceTimeMilliseconds(10000);
+  int64_t second_capture_time_ms = clock_.TimeInMilliseconds();
 
   // Expect everything to be queued.
   EXPECT_FALSE(send_bucket_->SendPacket(PacedSender::kLowPriority,
       ssrc_low_priority, sequence_number++, second_capture_time_ms, 250,
       false));
 
-  EXPECT_EQ(TickTime::MillisecondTimestamp() - capture_time_ms,
+  EXPECT_EQ(clock_.TimeInMilliseconds() - capture_time_ms,
             send_bucket_->QueueInMs());
 
   // Expect no packet to come out while paused.
@@ -382,7 +384,7 @@ TEST_F(PacedSenderTest, Pause) {
   EXPECT_CALL(callback_, TimeToSendPacket(_, _, _, _)).Times(0);
 
   for (int i = 0; i < 10; ++i) {
-    TickTime::AdvanceFakeClock(5);
+    clock_.AdvanceTimeMilliseconds(5);
     EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
     EXPECT_EQ(0, send_bucket_->Process());
   }
@@ -394,7 +396,7 @@ TEST_F(PacedSenderTest, Pause) {
   send_bucket_->Resume();
 
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
-  TickTime::AdvanceFakeClock(5);
+  clock_.AdvanceTimeMilliseconds(5);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
   EXPECT_EQ(0, send_bucket_->Process());
 
@@ -403,7 +405,7 @@ TEST_F(PacedSenderTest, Pause) {
       .Times(1)
       .WillRepeatedly(Return(true));
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
-  TickTime::AdvanceFakeClock(5);
+  clock_.AdvanceTimeMilliseconds(5);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
   EXPECT_EQ(0, send_bucket_->Process());
   EXPECT_EQ(0, send_bucket_->QueueInMs());
@@ -412,7 +414,7 @@ TEST_F(PacedSenderTest, Pause) {
 TEST_F(PacedSenderTest, ResendPacket) {
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
-  int64_t capture_time_ms = TickTime::MillisecondTimestamp();
+  int64_t capture_time_ms = clock_.TimeInMilliseconds();
   EXPECT_EQ(0, send_bucket_->QueueInMs());
 
   EXPECT_FALSE(send_bucket_->SendPacket(PacedSender::kNormalPriority,
@@ -421,26 +423,26 @@ TEST_F(PacedSenderTest, ResendPacket) {
                                         capture_time_ms,
                                         250,
                                         false));
-  TickTime::AdvanceFakeClock(1);
+  clock_.AdvanceTimeMilliseconds(1);
   EXPECT_FALSE(send_bucket_->SendPacket(PacedSender::kNormalPriority,
                                         ssrc,
                                         sequence_number + 1,
                                         capture_time_ms + 1,
                                         250,
                                         false));
-  TickTime::AdvanceFakeClock(9999);
-  EXPECT_EQ(TickTime::MillisecondTimestamp() - capture_time_ms,
+  clock_.AdvanceTimeMilliseconds(9999);
+  EXPECT_EQ(clock_.TimeInMilliseconds() - capture_time_ms,
             send_bucket_->QueueInMs());
   // Fails to send first packet so only one call.
   EXPECT_CALL(callback_, TimeToSendPacket(
       ssrc, sequence_number, capture_time_ms, false))
       .Times(1)
       .WillOnce(Return(false));
-  TickTime::AdvanceFakeClock(10000);
+  clock_.AdvanceTimeMilliseconds(10000);
   send_bucket_->Process();
 
   // Queue remains unchanged.
-  EXPECT_EQ(TickTime::MillisecondTimestamp() - capture_time_ms,
+  EXPECT_EQ(clock_.TimeInMilliseconds() - capture_time_ms,
             send_bucket_->QueueInMs());
 
   // Fails to send second packet.
@@ -452,11 +454,11 @@ TEST_F(PacedSenderTest, ResendPacket) {
       ssrc, sequence_number + 1, capture_time_ms + 1, false))
       .Times(1)
       .WillOnce(Return(false));
-  TickTime::AdvanceFakeClock(10000);
+  clock_.AdvanceTimeMilliseconds(10000);
   send_bucket_->Process();
 
   // Queue is reduced by 1 packet.
-  EXPECT_EQ(TickTime::MillisecondTimestamp() - capture_time_ms - 1,
+  EXPECT_EQ(clock_.TimeInMilliseconds() - capture_time_ms - 1,
             send_bucket_->QueueInMs());
 
   // Send second packet and queue becomes empty.
@@ -464,7 +466,7 @@ TEST_F(PacedSenderTest, ResendPacket) {
       ssrc, sequence_number + 1, capture_time_ms + 1, false))
       .Times(1)
       .WillOnce(Return(true));
-  TickTime::AdvanceFakeClock(10000);
+  clock_.AdvanceTimeMilliseconds(10000);
   send_bucket_->Process();
   EXPECT_EQ(0, send_bucket_->QueueInMs());
 }
@@ -479,22 +481,22 @@ TEST_F(PacedSenderTest, MaxQueueLength) {
     SendAndExpectPacket(PacedSender::kNormalPriority,
                         ssrc,
                         sequence_number++,
-                        TickTime::MillisecondTimestamp(),
+                        clock_.TimeInMilliseconds(),
                         1200,
                         false);
   }
 
-  TickTime::AdvanceFakeClock(2001);
+  clock_.AdvanceTimeMilliseconds(2001);
   SendAndExpectPacket(PacedSender::kNormalPriority,
                       ssrc,
                       sequence_number++,
-                      TickTime::MillisecondTimestamp(),
+                      clock_.TimeInMilliseconds(),
                       1200,
                       false);
   EXPECT_EQ(2001, send_bucket_->QueueInMs());
   send_bucket_->Process();
   EXPECT_EQ(0, send_bucket_->QueueInMs());
-  TickTime::AdvanceFakeClock(31);
+  clock_.AdvanceTimeMilliseconds(31);
   send_bucket_->Process();
 }
 
@@ -507,11 +509,11 @@ TEST_F(PacedSenderTest, QueueTimeGrowsOverTime) {
   SendAndExpectPacket(PacedSender::kNormalPriority,
                       ssrc,
                       sequence_number,
-                      TickTime::MillisecondTimestamp(),
+                      clock_.TimeInMilliseconds(),
                       1200,
                       false);
 
-  TickTime::AdvanceFakeClock(500);
+  clock_.AdvanceTimeMilliseconds(500);
   EXPECT_EQ(500, send_bucket_->QueueInMs());
   send_bucket_->Process();
   EXPECT_EQ(0, send_bucket_->QueueInMs());

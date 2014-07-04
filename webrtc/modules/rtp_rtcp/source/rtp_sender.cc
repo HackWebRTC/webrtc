@@ -16,6 +16,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_video.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc {
@@ -610,10 +611,15 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
       assert(false);
       return -1;
     }
+    // Convert from TickTime to Clock since capture_time_ms is based on
+    // TickTime.
+    // TODO(holmer): Remove this conversion when we remove the use of TickTime.
+    int64_t clock_delta_ms = clock_->TimeInMilliseconds() -
+        TickTime::MillisecondTimestamp();
     if (!paced_sender_->SendPacket(PacedSender::kHighPriority,
                                    header.ssrc,
                                    header.sequenceNumber,
-                                   capture_time_ms,
+                                   capture_time_ms + clock_delta_ms,
                                    length - header.headerLength,
                                    true)) {
       // We can't send the packet right now.
@@ -930,8 +936,11 @@ int32_t RTPSender::SendToNetwork(
   }
 
   if (paced_sender_ && storage != kDontStore) {
+    int64_t clock_delta_ms = clock_->TimeInMilliseconds() -
+        TickTime::MillisecondTimestamp();
     if (!paced_sender_->SendPacket(priority, rtp_header.ssrc,
-                                   rtp_header.sequenceNumber, capture_time_ms,
+                                   rtp_header.sequenceNumber,
+                                   capture_time_ms + clock_delta_ms,
                                    payload_length, false)) {
       // We can't send the packet right now.
       // We will be called when it is time.
