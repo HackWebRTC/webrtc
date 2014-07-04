@@ -135,7 +135,7 @@ PacedSender::PacedSender(Clock* clock,
       critsect_(CriticalSectionWrapper::CreateCriticalSection()),
       media_budget_(new paced_sender::IntervalBudget(max_bitrate_kbps)),
       padding_budget_(new paced_sender::IntervalBudget(min_bitrate_kbps)),
-      time_last_update_(clock_->TimeInMilliseconds()),
+      time_last_update_(TickTime::Now()),
       capture_time_ms_last_queued_(0),
       capture_time_ms_last_sent_(0),
       high_priority_packets_(new paced_sender::PacketList),
@@ -242,7 +242,7 @@ int PacedSender::QueueInMs() const {
 int32_t PacedSender::TimeUntilNextProcess() {
   CriticalSectionScoped cs(critsect_.get());
   int64_t elapsed_time_ms =
-      clock_->TimeInMilliseconds() - time_last_update_;
+      (TickTime::Now() - time_last_update_).Milliseconds();
   if (elapsed_time_ms <= 0) {
     return kMinPacketLimitMs;
   }
@@ -253,10 +253,10 @@ int32_t PacedSender::TimeUntilNextProcess() {
 }
 
 int32_t PacedSender::Process() {
-  int64_t now_ms = clock_->TimeInMilliseconds();
+  TickTime now = TickTime::Now();
   CriticalSectionScoped cs(critsect_.get());
-  int elapsed_time_ms = now_ms - time_last_update_;
-  time_last_update_ = now_ms;
+  int elapsed_time_ms = (now - time_last_update_).Milliseconds();
+  time_last_update_ = now;
   if (!enabled_) {
     return 0;
   }
@@ -328,7 +328,7 @@ bool PacedSender::ShouldSendNextPacket(paced_sender::PacketList** packet_list) {
   if (media_budget_->bytes_remaining() <= 0) {
     // All bytes consumed for this interval.
     // Check if we have not sent in a too long time.
-    if (clock_->TimeInMilliseconds() - time_last_send_ >
+    if ((TickTime::Now() - time_last_send_).Milliseconds() >
         kMaxQueueTimeWithoutSendingMs) {
       if (!high_priority_packets_->empty()) {
         *packet_list = high_priority_packets_.get();
@@ -381,7 +381,7 @@ paced_sender::Packet PacedSender::GetNextPacketFromList(
 
 // MUST have critsect_ when calling.
 void PacedSender::UpdateMediaBytesSent(int num_bytes) {
-  time_last_send_ = clock_->TimeInMilliseconds();
+  time_last_send_ = TickTime::Now();
   media_budget_->UseBudget(num_bytes);
   padding_budget_->UseBudget(num_bytes);
 }

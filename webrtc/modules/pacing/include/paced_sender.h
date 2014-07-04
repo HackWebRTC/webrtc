@@ -16,6 +16,7 @@
 
 #include "webrtc/modules/interface/module.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -139,8 +140,8 @@ class PacedSender : public Module {
   // utilized when there's no media to send.
   scoped_ptr<paced_sender::IntervalBudget> padding_budget_;
 
-  int64_t time_last_update_;
-  int64_t time_last_send_;
+  TickTime time_last_update_;
+  TickTime time_last_send_;
   int64_t capture_time_ms_last_queued_;
   int64_t capture_time_ms_last_sent_;
 
