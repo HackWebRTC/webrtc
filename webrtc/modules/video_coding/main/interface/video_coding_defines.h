@@ -40,6 +40,7 @@ namespace webrtc {
 #define VCM_ULPFEC_PAYLOAD_TYPE     97
 #define VCM_VP8_PAYLOAD_TYPE       100
 #define VCM_I420_PAYLOAD_TYPE      124
+#define VCM_H264_PAYLOAD_TYPE      127
 
 enum VCMVideoProtection {
   kProtectionNack,                // Both send-side and receive-side

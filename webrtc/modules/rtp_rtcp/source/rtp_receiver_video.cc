@@ -113,6 +113,8 @@ int32_t RTPReceiverVideo::ParseVideoCodecSpecific(
       return ReceiveGenericCodec(rtp_header, payload_data, payload_data_length);
     case kRtpVideoVp8:
       return ReceiveVp8Codec(rtp_header, payload_data, payload_data_length);
+    case kRtpVideoH264:
+      assert(false);  // Not yet supported.
     case kRtpVideoNone:
       break;
   }

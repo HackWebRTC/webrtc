@@ -90,6 +90,8 @@ int32_t RTPSenderVideo::RegisterVideoPayload(
   RtpVideoCodecTypes videoType = kRtpVideoGeneric;
   if (ModuleRTPUtility::StringCompare(payloadName, "VP8",3)) {
     videoType = kRtpVideoVp8;
+  } else if (ModuleRTPUtility::StringCompare(payloadName, "H264", 4))  {
+    videoType = kRtpVideoH264;
   } else if (ModuleRTPUtility::StringCompare(payloadName, "I420", 4)) {
     videoType = kRtpVideoGeneric;
   } else {

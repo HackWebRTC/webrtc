@@ -48,6 +48,9 @@ size_t StartBitrate() { return static_cast<size_t>(FLAGS_start_bitrate); }
 
 DEFINE_int32(max_bitrate, 800, "Maximum video bitrate.");
 size_t MaxBitrate() { return static_cast<size_t>(FLAGS_max_bitrate); }
+
+DEFINE_string(codec, "VP8", "Video codec to use.");
+std::string Codec() { return static_cast<std::string>(FLAGS_codec); }
 }  // namespace flags
 
 static const uint32_t kSendSsrc = 0x654321;
@@ -72,10 +75,16 @@ void Loopback() {
   send_config.rtp.ssrcs.push_back(kSendSsrc);
 
   send_config.local_renderer = local_preview.get();
-
-  scoped_ptr<VP8Encoder> encoder(VP8Encoder::Create());
+  scoped_ptr<VideoEncoder> encoder;
+  if (flags::Codec() == "VP8") {
+    encoder.reset(VP8Encoder::Create());
+  } else {
+    // Codec not supported.
+    assert(false && "Codec not supported!");
+    return;
+  }
   send_config.encoder_settings.encoder = encoder.get();
-  send_config.encoder_settings.payload_name = "VP8";
+  send_config.encoder_settings.payload_name = flags::Codec();
   send_config.encoder_settings.payload_type = 124;
   std::vector<VideoStream> video_streams = test::CreateVideoStreams(1);
   VideoStream* stream = &video_streams[0];

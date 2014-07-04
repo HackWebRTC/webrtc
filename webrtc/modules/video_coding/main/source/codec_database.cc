@@ -102,6 +102,30 @@ bool VCMCodecDataBase::Codec(int list_id,
       return true;
     }
 #endif
+#ifdef VIDEOCODEC_H264
+    case VCM_H264_IDX: {
+      strncpy(settings->plName, "H264", 5);
+      settings->codecType = kVideoCodecH264;
+      // 96 to 127 dynamic payload types for video codecs.
+      settings->plType = VCM_H264_PAYLOAD_TYPE;
+      settings->startBitrate = 100;
+      settings->minBitrate = VCM_MIN_BITRATE;
+      settings->maxBitrate = 0;
+      settings->maxFramerate = VCM_DEFAULT_FRAME_RATE;
+      settings->width = VCM_DEFAULT_CODEC_WIDTH;
+      settings->height = VCM_DEFAULT_CODEC_HEIGHT;
+      settings->numberOfSimulcastStreams = 0;
+      settings->qpMax = 56;
+      settings->codecSpecific.H264.profile = kProfileBase;
+      settings->codecSpecific.H264.frameDroppingOn = true;
+      settings->codecSpecific.H264.keyFrameInterval = 3000;
+      settings->codecSpecific.H264.spsData = NULL;
+      settings->codecSpecific.H264.spsLen = 0;
+      settings->codecSpecific.H264.ppsData = NULL;
+      settings->codecSpecific.H264.ppsLen = 0;
+      return true;
+    }
+#endif
 #ifdef VIDEOCODEC_I420
     case VCM_I420_IDX: {
       strncpy(settings->plName, "I420", 5);
@@ -316,8 +340,7 @@ bool VCMCodecDataBase::RequiresEncoderReset(const VideoCodec& new_send_codec) {
     case kVideoCodecVP8:
       if (memcmp(&new_send_codec.codecSpecific.VP8,
                  &send_codec_.codecSpecific.VP8,
-                 sizeof(new_send_codec.codecSpecific.VP8)) !=
-          0) {
+                 sizeof(new_send_codec.codecSpecific.VP8)) != 0) {
         return true;
       }
       break;
@@ -327,6 +350,12 @@ bool VCMCodecDataBase::RequiresEncoderReset(const VideoCodec& new_send_codec) {
     case kVideoCodecI420:
     case kVideoCodecRED:
     case kVideoCodecULPFEC:
+    case kVideoCodecH264:
+      if (memcmp(&new_send_codec.codecSpecific.H264,
+                 &send_codec_.codecSpecific.H264,
+                 sizeof(new_send_codec.codecSpecific.H264)) != 0) {
+        return true;
+      }
       break;
     // Unknown codec type, reset just to be sure.
     case kVideoCodecUnknown:
@@ -619,6 +648,7 @@ VCMGenericDecoder* VCMCodecDataBase::CreateDecoder(VideoCodecType type) const {
       return new VCMGenericDecoder(*(new I420Decoder));
 #endif
     default:
+      LOG(LS_WARNING) << "No internal decoder of this type exists.";
       return NULL;
   }
 }

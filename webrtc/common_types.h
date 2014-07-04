@@ -587,10 +587,24 @@ struct VideoCodecVP8 {
   }
 };
 
+// H264 specific.
+struct VideoCodecH264
+{
+    VideoCodecProfile profile;
+    bool           frameDroppingOn;
+    int            keyFrameInterval;
+    // These are NULL/0 if not externally negotiated.
+    const uint8_t* spsData;
+    size_t         spsLen;
+    const uint8_t* ppsData;
+    size_t         ppsLen;
+};
+
 // Video codec types
 enum VideoCodecType
 {
     kVideoCodecVP8,
+    kVideoCodecH264,
     kVideoCodecI420,
     kVideoCodecRED,
     kVideoCodecULPFEC,
@@ -601,6 +615,7 @@ enum VideoCodecType
 union VideoCodecUnion
 {
     VideoCodecVP8       VP8;
+    VideoCodecH264      H264;
 };
 
 

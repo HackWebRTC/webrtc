@@ -59,9 +59,13 @@ VideoCodec CreateDecoderVideoCodec(
 
   codec.plType = encoder_settings.payload_type;
   strcpy(codec.plName, encoder_settings.payload_name.c_str());
-  codec.codecType =
-      (encoder_settings.payload_name == "VP8" ? kVideoCodecVP8
-                                              : kVideoCodecGeneric);
+  if (encoder_settings.payload_name == "VP8") {
+    codec.codecType = kVideoCodecVP8;
+  } else if (encoder_settings.payload_name == "H264") {
+    codec.codecType = kVideoCodecH264;
+  } else {
+    codec.codecType = kVideoCodecGeneric;
+  }
 
   if (codec.codecType == kVideoCodecVP8) {
     codec.codecSpecific.VP8.resilience = kResilientStream;
@@ -71,6 +75,12 @@ VideoCodec CreateDecoderVideoCodec(
     codec.codecSpecific.VP8.automaticResizeOn = false;
     codec.codecSpecific.VP8.frameDroppingOn = true;
     codec.codecSpecific.VP8.keyFrameInterval = 3000;
+  }
+
+  if (codec.codecType == kVideoCodecH264) {
+    codec.codecSpecific.H264.profile = kProfileBase;
+    codec.codecSpecific.H264.frameDroppingOn = true;
+    codec.codecSpecific.H264.keyFrameInterval = 3000;
   }
 
   codec.width = 320;

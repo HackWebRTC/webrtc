@@ -69,6 +69,18 @@ static void LogCodec(const VideoCodec& codec) {
                    << ", qp max "
                    << codec.simulcastStream[idx].qpMax;
     }
+  } else if (codec.codecType == kVideoCodecH264) {
+    LOG(LS_INFO) << "H264 specific settings";
+    LOG(LS_INFO) << "profile: "
+                 <<  codec.codecSpecific.H264.profile
+                 << ", framedropping: "
+                 << codec.codecSpecific.H264.frameDroppingOn
+                 << ", keyFrameInterval: "
+                 << codec.codecSpecific.H264.keyFrameInterval
+                 << ", spslen: "
+                 << codec.codecSpecific.H264.spsLen
+                 << ", ppslen: "
+                 << codec.codecSpecific.H264.ppsLen;
   }
 }
 
@@ -629,7 +641,9 @@ bool ViECodecImpl::CodecValid(const VideoCodec& video_codec) {
   } else if ((video_codec.codecType == kVideoCodecVP8 &&
               strncmp(video_codec.plName, "VP8", 4) == 0) ||
              (video_codec.codecType == kVideoCodecI420 &&
-              strncmp(video_codec.plName, "I420", 4) == 0)) {
+              strncmp(video_codec.plName, "I420", 4) == 0) ||
+             (video_codec.codecType == kVideoCodecH264 &&
+              strncmp(video_codec.plName, "H264", 4) == 0)) {
     // OK.
   } else if (video_codec.codecType != kVideoCodecGeneric) {
     LOG(LS_ERROR) << "Codec type and name mismatch.";
