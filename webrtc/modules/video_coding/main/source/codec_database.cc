@@ -344,18 +344,19 @@ bool VCMCodecDataBase::RequiresEncoderReset(const VideoCodec& new_send_codec) {
         return true;
       }
       break;
-    case kVideoCodecGeneric:
-      break;
-    // Known codecs without payload-specifics
-    case kVideoCodecI420:
-    case kVideoCodecRED:
-    case kVideoCodecULPFEC:
     case kVideoCodecH264:
       if (memcmp(&new_send_codec.codecSpecific.H264,
                  &send_codec_.codecSpecific.H264,
                  sizeof(new_send_codec.codecSpecific.H264)) != 0) {
         return true;
       }
+      break;
+    case kVideoCodecGeneric:
+      break;
+    // Known codecs without payload-specifics
+    case kVideoCodecI420:
+    case kVideoCodecRED:
+    case kVideoCodecULPFEC:
       break;
     // Unknown codec type, reset just to be sure.
     case kVideoCodecUnknown:
