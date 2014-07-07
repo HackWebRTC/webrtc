@@ -90,7 +90,7 @@ class VideoReceiveStream {
           : remote_ssrc(0),
             local_ssrc(0),
             rtcp_mode(newapi::kRtcpReducedSize),
-            remb(false) {}
+            remb(true) {}
 
       // Synchronization source (stream identifier) to be received.
       uint32_t remote_ssrc;

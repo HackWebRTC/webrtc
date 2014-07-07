@@ -62,7 +62,7 @@ class BitrateEstimatorTest : public test::CallTest {
     send_transport_.SetReceiver(receiver_call_->Receiver());
     receive_transport_.SetReceiver(sender_call_->Receiver());
 
-    send_config_ = sender_call_->GetDefaultSendConfig();
+    send_config_ = VideoSendStream::Config();
     send_config_.rtp.ssrcs.push_back(kSendSsrcs[0]);
     // Encoders will be set separately per stream.
     send_config_.encoder_settings.encoder = NULL;
@@ -70,7 +70,7 @@ class BitrateEstimatorTest : public test::CallTest {
     send_config_.encoder_settings.payload_type = kFakeSendPayloadType;
     video_streams_ = test::CreateVideoStreams(1);
 
-    receive_config_ = receiver_call_->GetDefaultReceiveConfig();
+    receive_config_ = VideoReceiveStream::Config();
     assert(receive_config_.codecs.empty());
     VideoCodec codec =
         test::CreateDecoderVideoCodec(send_config_.encoder_settings);

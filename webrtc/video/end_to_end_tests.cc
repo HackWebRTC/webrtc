@@ -917,7 +917,7 @@ TEST_F(EndToEndTest, SendsAndReceivesMultipleStreams) {
     int height = codec_settings[i].height;
     observers[i] = new VideoOutputObserver(&frame_generators[i], width, height);
 
-    VideoSendStream::Config send_config = sender_call->GetDefaultSendConfig();
+    VideoSendStream::Config send_config;
     send_config.rtp.ssrcs.push_back(ssrc);
     send_config.encoder_settings.encoder = encoders[i].get();
     send_config.encoder_settings.payload_name = "VP8";
@@ -933,8 +933,7 @@ TEST_F(EndToEndTest, SendsAndReceivesMultipleStreams) {
         sender_call->CreateVideoSendStream(send_config, video_streams, NULL);
     send_streams[i]->Start();
 
-    VideoReceiveStream::Config receive_config =
-        receiver_call->GetDefaultReceiveConfig();
+    VideoReceiveStream::Config receive_config;
     receive_config.renderer = observers[i];
     receive_config.rtp.remote_ssrc = ssrc;
     receive_config.rtp.local_ssrc = kReceiverLocalSsrc;

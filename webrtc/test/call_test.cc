@@ -85,7 +85,7 @@ void CallTest::CreateReceiverCall(const Call::Config& config) {
 
 void CallTest::CreateSendConfig(size_t num_streams) {
   assert(num_streams <= kNumSsrcs);
-  send_config_ = sender_call_->GetDefaultSendConfig();
+  send_config_ = VideoSendStream::Config();
   send_config_.encoder_settings.encoder = &fake_encoder_;
   send_config_.encoder_settings.payload_name = "FAKE";
   send_config_.encoder_settings.payload_type = kFakeSendPayloadType;
@@ -97,7 +97,7 @@ void CallTest::CreateSendConfig(size_t num_streams) {
 void CallTest::CreateMatchingReceiveConfigs() {
   assert(!send_config_.rtp.ssrcs.empty());
   assert(receive_configs_.empty());
-  VideoReceiveStream::Config config = receiver_call_->GetDefaultReceiveConfig();
+  VideoReceiveStream::Config config;
   VideoCodec codec =
       test::CreateDecoderVideoCodec(send_config_.encoder_settings);
   config.codecs.push_back(codec);

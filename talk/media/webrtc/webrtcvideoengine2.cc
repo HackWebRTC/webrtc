@@ -940,7 +940,7 @@ bool WebRtcVideoChannel2::AddSendStream(const StreamParams& sp) {
     return false;
   }
 
-  webrtc::VideoSendStream::Config config = call_->GetDefaultSendConfig();
+  webrtc::VideoSendStream::Config config;
 
   if (!ConfigureSendSsrcs(&config, sp)) {
     return false;
@@ -1052,7 +1052,7 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp) {
     return false;
   }
 
-  webrtc::VideoReceiveStream::Config config = call_->GetDefaultReceiveConfig();
+  webrtc::VideoReceiveStream::Config config;
   config.rtp.remote_ssrc = ssrc;
   config.rtp.local_ssrc = rtcp_receiver_report_ssrc_;
 

@@ -71,7 +71,7 @@ void Loopback() {
   // Loopback, call sends to itself.
   transport.SetReceiver(call->Receiver());
 
-  VideoSendStream::Config send_config = call->GetDefaultSendConfig();
+  VideoSendStream::Config send_config;
   send_config.rtp.ssrcs.push_back(kSendSsrc);
 
   send_config.local_renderer = local_preview.get();
@@ -108,7 +108,7 @@ void Loopback() {
                                   flags::Fps(),
                                   test_clock));
 
-  VideoReceiveStream::Config receive_config = call->GetDefaultReceiveConfig();
+  VideoReceiveStream::Config receive_config;
   receive_config.rtp.remote_ssrc = send_config.rtp.ssrcs[0];
   receive_config.rtp.local_ssrc = kReceiverLocalSsrc;
   receive_config.renderer = loopback_video.get();

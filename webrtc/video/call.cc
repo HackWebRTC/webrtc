@@ -67,8 +67,6 @@ class Call : public webrtc::Call, public PacketReceiver {
 
   virtual PacketReceiver* Receiver() OVERRIDE;
 
-  virtual VideoSendStream::Config GetDefaultSendConfig() OVERRIDE;
-
   virtual VideoSendStream* CreateVideoSendStream(
       const VideoSendStream::Config& config,
       const std::vector<VideoStream>& video_streams,
@@ -76,8 +74,6 @@ class Call : public webrtc::Call, public PacketReceiver {
 
   virtual void DestroyVideoSendStream(webrtc::VideoSendStream* send_stream)
       OVERRIDE;
-
-  virtual VideoReceiveStream::Config GetDefaultReceiveConfig() OVERRIDE;
 
   virtual VideoReceiveStream* CreateVideoReceiveStream(
       const VideoReceiveStream::Config& config) OVERRIDE;
@@ -173,11 +169,6 @@ Call::~Call() {
 
 PacketReceiver* Call::Receiver() { return this; }
 
-VideoSendStream::Config Call::GetDefaultSendConfig() {
-  VideoSendStream::Config config;
-  return config;
-}
-
 VideoSendStream* Call::CreateVideoSendStream(
     const VideoSendStream::Config& config,
     const std::vector<VideoStream>& video_streams,
@@ -225,12 +216,6 @@ void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
 
   assert(send_stream_impl != NULL);
   delete send_stream_impl;
-}
-
-VideoReceiveStream::Config Call::GetDefaultReceiveConfig() {
-  VideoReceiveStream::Config config;
-  config.rtp.remb = true;
-  return config;
 }
 
 VideoReceiveStream* Call::CreateVideoReceiveStream(

@@ -98,8 +98,6 @@ class FakeCall : public webrtc::Call {
   std::vector<webrtc::VideoCodec> GetDefaultVideoCodecs();
 
  private:
-  virtual webrtc::VideoSendStream::Config GetDefaultSendConfig() OVERRIDE;
-
   virtual webrtc::VideoSendStream* CreateVideoSendStream(
       const webrtc::VideoSendStream::Config& config,
       const std::vector<webrtc::VideoStream>& video_streams,
@@ -107,8 +105,6 @@ class FakeCall : public webrtc::Call {
 
   virtual void DestroyVideoSendStream(
       webrtc::VideoSendStream* send_stream) OVERRIDE;
-
-  virtual webrtc::VideoReceiveStream::Config GetDefaultReceiveConfig() OVERRIDE;
 
   virtual webrtc::VideoReceiveStream* CreateVideoReceiveStream(
       const webrtc::VideoReceiveStream::Config& config) OVERRIDE;

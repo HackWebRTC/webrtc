@@ -186,13 +186,6 @@ std::vector<webrtc::VideoCodec> FakeCall::GetDefaultVideoCodecs() {
   return codecs;
 }
 
-webrtc::VideoSendStream::Config FakeCall::GetDefaultSendConfig() {
-  webrtc::VideoSendStream::Config config;
-  // TODO(pbos): Encoder settings.
-  //    config.codec = GetVideoCodecVp8();
-  return config;
-}
-
 webrtc::VideoSendStream* FakeCall::CreateVideoSendStream(
     const webrtc::VideoSendStream::Config& config,
     const std::vector<webrtc::VideoStream>& video_streams,
@@ -214,10 +207,6 @@ void FakeCall::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
     }
   }
   ADD_FAILURE() << "DestroyVideoSendStream called with unknown paramter.";
-}
-
-webrtc::VideoReceiveStream::Config FakeCall::GetDefaultReceiveConfig() {
-  return webrtc::VideoReceiveStream::Config();
 }
 
 webrtc::VideoReceiveStream* FakeCall::CreateVideoReceiveStream(

@@ -86,16 +86,12 @@ class Call {
   static Call* Create(const Call::Config& config,
                       const webrtc::Config& webrtc_config);
 
-  virtual VideoSendStream::Config GetDefaultSendConfig() = 0;
-
   virtual VideoSendStream* CreateVideoSendStream(
       const VideoSendStream::Config& config,
       const std::vector<VideoStream>& video_streams,
       const void* encoder_settings) = 0;
 
   virtual void DestroyVideoSendStream(VideoSendStream* send_stream) = 0;
-
-  virtual VideoReceiveStream::Config GetDefaultReceiveConfig() = 0;
 
   virtual VideoReceiveStream* CreateVideoReceiveStream(
       const VideoReceiveStream::Config& config) = 0;
