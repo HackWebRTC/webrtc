@@ -711,7 +711,7 @@
             'scoped_autorelease_pool.mm',
           ],
         }],
-        ['OS=="ios" or os_posix==0', {
+        ['OS=="ios"', {
           'sources!': [
             'openssl.h',
             'openssladapter.cc',
