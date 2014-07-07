@@ -1244,4 +1244,129 @@ I420VideoFrame* CreateI420VideoFrame(int width, int height, uint8_t data) {
   return frame;
 }
 
+TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
+  class EncoderStateObserver : public test::SendTest, public VideoEncoder {
+   public:
+    EncoderStateObserver()
+        : SendTest(kDefaultTimeoutMs),
+          crit_(CriticalSectionWrapper::CreateCriticalSection()),
+          initialized_(false),
+          callback_registered_(false),
+          num_releases_(0),
+          released_(false) {}
+
+    bool IsReleased() {
+      CriticalSectionScoped lock(crit_.get());
+      return released_;
+    }
+
+    bool IsReadyForEncode() {
+      CriticalSectionScoped lock(crit_.get());
+      return initialized_ && callback_registered_;
+    }
+
+    size_t num_releases() {
+      CriticalSectionScoped lock(crit_.get());
+      return num_releases_;
+    }
+
+   private:
+    virtual int32_t InitEncode(const VideoCodec* codecSettings,
+                               int32_t numberOfCores,
+                               uint32_t maxPayloadSize) OVERRIDE {
+      CriticalSectionScoped lock(crit_.get());
+      EXPECT_FALSE(initialized_);
+      initialized_ = true;
+      released_ = false;
+      return 0;
+    }
+
+    virtual int32_t Encode(
+        const I420VideoFrame& inputImage,
+        const CodecSpecificInfo* codecSpecificInfo,
+        const std::vector<VideoFrameType>* frame_types) OVERRIDE {
+      EXPECT_TRUE(IsReadyForEncode());
+
+      observation_complete_->Set();
+      return 0;
+    }
+
+    virtual int32_t RegisterEncodeCompleteCallback(
+        EncodedImageCallback* callback) OVERRIDE {
+      CriticalSectionScoped lock(crit_.get());
+      EXPECT_TRUE(initialized_);
+      callback_registered_ = true;
+      return 0;
+    }
+
+    virtual int32_t Release() OVERRIDE {
+      CriticalSectionScoped lock(crit_.get());
+      EXPECT_TRUE(IsReadyForEncode());
+      EXPECT_FALSE(released_);
+      initialized_ = false;
+      callback_registered_ = false;
+      released_ = true;
+      ++num_releases_;
+      return 0;
+    }
+
+    virtual int32_t SetChannelParameters(uint32_t packetLoss,
+                                         int rtt) OVERRIDE {
+      EXPECT_TRUE(IsReadyForEncode());
+      return 0;
+    }
+
+    virtual int32_t SetRates(uint32_t newBitRate, uint32_t frameRate) OVERRIDE {
+      EXPECT_TRUE(IsReadyForEncode());
+      return 0;
+    }
+
+    virtual void OnStreamsCreated(
+        VideoSendStream* send_stream,
+        const std::vector<VideoReceiveStream*>& receive_streams) OVERRIDE {
+      // Encoder initialization should be done in stream construction before
+      // starting.
+      EXPECT_TRUE(IsReadyForEncode());
+      stream_ = send_stream;
+    }
+
+    virtual void ModifyConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        std::vector<VideoStream>* video_streams) OVERRIDE {
+      send_config->encoder_settings.encoder = this;
+      video_streams_ = *video_streams;
+    }
+
+    virtual void PerformTest() OVERRIDE {
+      EXPECT_EQ(kEventSignaled, Wait())
+          << "Timed out while waiting for Encode.";
+      EXPECT_EQ(0u, num_releases());
+      stream_->ReconfigureVideoEncoder(video_streams_, NULL);
+      EXPECT_EQ(0u, num_releases());
+      stream_->Stop();
+      // Encoder should not be released before destroying the VideoSendStream.
+      EXPECT_FALSE(IsReleased());
+      EXPECT_TRUE(IsReadyForEncode());
+      stream_->Start();
+      // Sanity check, make sure we still encode frames with this encoder.
+      EXPECT_EQ(kEventSignaled, Wait())
+          << "Timed out while waiting for Encode.";
+    }
+
+    scoped_ptr<CriticalSectionWrapper> crit_;
+    VideoSendStream* stream_;
+    bool initialized_ GUARDED_BY(crit_);
+    bool callback_registered_ GUARDED_BY(crit_);
+    size_t num_releases_ GUARDED_BY(crit_);
+    bool released_ GUARDED_BY(crit_);
+    std::vector<VideoStream> video_streams_;
+  } test_encoder;
+
+  RunBaseTest(&test_encoder);
+
+  EXPECT_TRUE(test_encoder.IsReleased());
+  EXPECT_EQ(1u, test_encoder.num_releases());
+}
+
 }  // namespace webrtc
