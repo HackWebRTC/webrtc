@@ -65,7 +65,6 @@ char kTSanDefaultSuppressions[] =
 "deadlock:webrtc::ProcessThreadImpl::RegisterModule\n"
 "deadlock:webrtc::RTCPReceiver::SetSsrcs\n"
 "deadlock:webrtc::RTPSenderAudio::RegisterAudioPayload\n"
-"deadlock:webrtc/system_wrappers/source/logging_unittest.cc\n"
 "deadlock:webrtc::test::UdpSocketManagerPosixImpl::RemoveSocket\n"
 "deadlock:webrtc::vcm::VideoReceiver::RegisterPacketRequestCallback\n"
 "deadlock:webrtc::VideoSendStreamTest_SuspendBelowMinBitrate_Test::TestBody\n"
