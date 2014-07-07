@@ -35,7 +35,6 @@
         'stl_util_unittest.cc',
         'thread_unittest.cc',
         'thread_posix_unittest.cc',
-        'unittest_utilities_unittest.cc',
       ],
       'conditions': [
         ['enable_data_logging==1', {
