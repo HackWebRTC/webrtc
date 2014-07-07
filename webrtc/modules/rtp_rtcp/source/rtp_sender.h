@@ -43,12 +43,13 @@ class RTPSenderInterface {
   virtual uint32_t SSRC() const = 0;
   virtual uint32_t Timestamp() const = 0;
 
-  virtual int32_t BuildRTPheader(
-      uint8_t *data_buffer, const int8_t payload_type,
-      const bool marker_bit, const uint32_t capture_time_stamp,
-      int64_t capture_time_ms,
-      const bool time_stamp_provided = true,
-      const bool inc_sequence_number = true) = 0;
+  virtual int32_t BuildRTPheader(uint8_t* data_buffer,
+                                 const int8_t payload_type,
+                                 const bool marker_bit,
+                                 const uint32_t capture_timestamp,
+                                 int64_t capture_time_ms,
+                                 const bool timestamp_provided = true,
+                                 const bool inc_sequence_number = true) = 0;
 
   virtual uint16_t RTPHeaderLength() const = 0;
   virtual uint16_t IncrementSequenceNumber() = 0;
@@ -132,13 +133,15 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
   int32_t SetMaxPayloadLength(const uint16_t length,
                               const uint16_t packet_over_head);
 
-  int32_t SendOutgoingData(
-      const FrameType frame_type, const int8_t payload_type,
-      const uint32_t time_stamp, int64_t capture_time_ms,
-      const uint8_t *payload_data, const uint32_t payload_size,
-      const RTPFragmentationHeader *fragmentation,
-      VideoCodecInformation *codec_info = NULL,
-      const RTPVideoTypeHeader * rtp_type_hdr = NULL);
+  int32_t SendOutgoingData(const FrameType frame_type,
+                           const int8_t payload_type,
+                           const uint32_t timestamp,
+                           int64_t capture_time_ms,
+                           const uint8_t* payload_data,
+                           const uint32_t payload_size,
+                           const RTPFragmentationHeader* fragmentation,
+                           VideoCodecInformation* codec_info = NULL,
+                           const RTPVideoTypeHeader* rtp_type_hdr = NULL);
 
   // RTP header extension
   int32_t SetTransmissionTimeOffset(
@@ -189,16 +192,19 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
 
   void RTXStatus(int* mode, uint32_t* ssrc, int* payload_type) const;
 
+  uint32_t RtxSsrc() const;
   void SetRtxSsrc(uint32_t ssrc);
 
   void SetRtxPayloadType(int payloadType);
 
   // Functions wrapping RTPSenderInterface.
   virtual int32_t BuildRTPheader(
-      uint8_t *data_buffer, const int8_t payload_type,
-      const bool marker_bit, const uint32_t capture_time_stamp,
+      uint8_t* data_buffer,
+      const int8_t payload_type,
+      const bool marker_bit,
+      const uint32_t capture_timestamp,
       int64_t capture_time_ms,
-      const bool time_stamp_provided = true,
+      const bool timestamp_provided = true,
       const bool inc_sequence_number = true) OVERRIDE;
 
   virtual uint16_t RTPHeaderLength() const OVERRIDE;
@@ -276,6 +282,11 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
   uint32_t BitrateSent() const;
 
   virtual void BitrateUpdated(const BitrateStatistics& stats) OVERRIDE;
+
+  void SetRtpState(const RtpState& rtp_state);
+  RtpState GetRtpState() const;
+  void SetRtxRtpState(const RtpState& rtp_state);
+  RtpState GetRtxRtpState() const;
 
  protected:
   int32_t CheckPayloadType(const int8_t payload_type,
@@ -363,34 +374,34 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
 
   // Statistics
   scoped_ptr<CriticalSectionWrapper> statistics_crit_;
-  SendDelayMap send_delays_;
-  std::map<FrameType, uint32_t> frame_counts_;
-  FrameCountObserver* frame_count_observer_;
-  StreamDataCounters rtp_stats_;
-  StreamDataCounters rtx_rtp_stats_;
-  StreamDataCountersCallback* rtp_stats_callback_;
-  BitrateStatisticsObserver* bitrate_callback_;
+  SendDelayMap send_delays_ GUARDED_BY(statistics_crit_);
+  std::map<FrameType, uint32_t> frame_counts_ GUARDED_BY(statistics_crit_);
+  FrameCountObserver* frame_count_observer_ GUARDED_BY(statistics_crit_);
+  StreamDataCounters rtp_stats_ GUARDED_BY(statistics_crit_);
+  StreamDataCounters rtx_rtp_stats_ GUARDED_BY(statistics_crit_);
+  StreamDataCountersCallback* rtp_stats_callback_ GUARDED_BY(statistics_crit_);
+  BitrateStatisticsObserver* bitrate_callback_ GUARDED_BY(statistics_crit_);
 
   // RTP variables
-  bool start_time_stamp_forced_;
-  uint32_t start_time_stamp_;
-  SSRCDatabase &ssrc_db_;
-  uint32_t remote_ssrc_;
-  bool sequence_number_forced_;
-  uint16_t sequence_number_;
-  uint16_t sequence_number_rtx_;
-  bool ssrc_forced_;
-  uint32_t ssrc_;
-  uint32_t timestamp_;
-  int64_t capture_time_ms_;
-  int64_t last_timestamp_time_ms_;
-  bool last_packet_marker_bit_;
-  uint8_t num_csrcs_;
-  uint32_t csrcs_[kRtpCsrcSize];
-  bool include_csrcs_;
-  int rtx_;
-  uint32_t ssrc_rtx_;
-  int payload_type_rtx_;
+  bool start_timestamp_forced_ GUARDED_BY(send_critsect_);
+  uint32_t start_timestamp_ GUARDED_BY(send_critsect_);
+  SSRCDatabase& ssrc_db_ GUARDED_BY(send_critsect_);
+  uint32_t remote_ssrc_ GUARDED_BY(send_critsect_);
+  bool sequence_number_forced_ GUARDED_BY(send_critsect_);
+  uint16_t sequence_number_ GUARDED_BY(send_critsect_);
+  uint16_t sequence_number_rtx_ GUARDED_BY(send_critsect_);
+  bool ssrc_forced_ GUARDED_BY(send_critsect_);
+  uint32_t ssrc_ GUARDED_BY(send_critsect_);
+  uint32_t timestamp_ GUARDED_BY(send_critsect_);
+  int64_t capture_time_ms_ GUARDED_BY(send_critsect_);
+  int64_t last_timestamp_time_ms_ GUARDED_BY(send_critsect_);
+  bool last_packet_marker_bit_ GUARDED_BY(send_critsect_);
+  uint8_t num_csrcs_ GUARDED_BY(send_critsect_);
+  uint32_t csrcs_[kRtpCsrcSize] GUARDED_BY(send_critsect_);
+  bool include_csrcs_ GUARDED_BY(send_critsect_);
+  int rtx_ GUARDED_BY(send_critsect_);
+  uint32_t ssrc_rtx_ GUARDED_BY(send_critsect_);
+  int payload_type_rtx_ GUARDED_BY(send_critsect_);
 
   // Note: Don't access this variable directly, always go through
   // SetTargetBitrateKbps or GetTargetBitrateKbps. Also remember

@@ -256,6 +256,30 @@ int ViERTP_RTCPImpl::SetStartSequenceNumber(const int video_channel,
   return 0;
 }
 
+void ViERTP_RTCPImpl::SetRtpStateForSsrc(int video_channel,
+                                         uint32_t ssrc,
+                                         const RtpState& rtp_state) {
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel)
+    return;
+
+  if (vie_channel->Sending()) {
+    LOG_F(LS_ERROR) << "channel " << video_channel << " is already sending.";
+    return;
+  }
+  vie_channel->SetRtpStateForSsrc(ssrc, rtp_state);
+}
+
+RtpState ViERTP_RTCPImpl::GetRtpStateForSsrc(int video_channel, uint32_t ssrc) {
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel)
+    return RtpState();
+
+  return vie_channel->GetRtpStateForSsrc(ssrc);
+}
+
 int ViERTP_RTCPImpl::SetRTCPStatus(const int video_channel,
                                    const ViERTCPMode rtcp_mode) {
   LOG_F(LS_INFO) << "channel: " << video_channel

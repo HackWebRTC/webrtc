@@ -23,6 +23,7 @@
 #define WEBRTC_VIDEO_ENGINE_INCLUDE_VIE_RTP_RTCP_H_
 
 #include "webrtc/common_types.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 
 namespace webrtc {
 
@@ -150,6 +151,17 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
   // start sequence number is normally a random number.
   virtual int SetStartSequenceNumber(const int video_channel,
                                      unsigned short sequence_number) = 0;
+
+  // TODO(pbos): Remove default implementation once this has been implemented
+  // in libjingle.
+  virtual void SetRtpStateForSsrc(int video_channel,
+                                  uint32_t ssrc,
+                                  const RtpState& rtp_state) {}
+  // TODO(pbos): Remove default implementation once this has been implemented
+  // in libjingle.
+  virtual RtpState GetRtpStateForSsrc(int video_channel, uint32_t ssrc) {
+    return RtpState();
+  }
 
   // This function sets the RTCP status for the specified channel.
   // Default mode is kRtcpCompound_RFC4585.

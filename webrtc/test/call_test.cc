@@ -15,8 +15,9 @@ namespace webrtc {
 namespace test {
 
 CallTest::CallTest()
-    : send_stream_(NULL),
-      fake_encoder_(Clock::GetRealTimeClock()) {
+    : clock_(Clock::GetRealTimeClock()),
+      send_stream_(NULL),
+      fake_encoder_(clock_) {
 }
 CallTest::~CallTest() {
 }
@@ -121,7 +122,7 @@ void CallTest::CreateFrameGeneratorCapturer() {
                                            stream.width,
                                            stream.height,
                                            stream.max_framerate,
-                                           Clock::GetRealTimeClock()));
+                                           clock_));
 }
 void CallTest::CreateStreams() {
   assert(send_stream_ == NULL);
@@ -150,7 +151,8 @@ const unsigned int CallTest::kLongTimeoutMs = 120 * 1000;
 const uint8_t CallTest::kSendPayloadType = 100;
 const uint8_t CallTest::kFakeSendPayloadType = 125;
 const uint8_t CallTest::kSendRtxPayloadType = 98;
-const uint32_t CallTest::kSendRtxSsrc = 0xBADCAFE;
+const uint32_t CallTest::kSendRtxSsrcs[kNumSsrcs] = {0xBADCAFD, 0xBADCAFE,
+                                                     0xBADCAFF};
 const uint32_t CallTest::kSendSsrcs[kNumSsrcs] = {0xC0FFED, 0xC0FFEE, 0xC0FFEF};
 const uint32_t CallTest::kReceiverLocalSsrc = 0x123456;
 const int CallTest::kNackRtpHistoryMs = 1000;

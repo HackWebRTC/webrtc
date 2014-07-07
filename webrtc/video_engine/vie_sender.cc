@@ -11,6 +11,7 @@
 #include "webrtc/video_engine/vie_sender.h"
 
 #include <assert.h>
+#include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
 
 #include "webrtc/modules/utility/interface/rtp_dump.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"

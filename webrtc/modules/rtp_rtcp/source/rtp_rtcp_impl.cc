@@ -333,6 +333,42 @@ int32_t ModuleRtpRtcpImpl::SetSequenceNumber(
   return 0;  // TODO(pwestin): change to void.
 }
 
+void ModuleRtpRtcpImpl::SetRtpStateForSsrc(uint32_t ssrc,
+                                           const RtpState& rtp_state) {
+  if (rtp_sender_.SSRC() == ssrc) {
+    rtp_sender_.SetRtpState(rtp_state);
+    return;
+  }
+  if (rtp_sender_.RtxSsrc() == ssrc) {
+    rtp_sender_.SetRtxRtpState(rtp_state);
+    return;
+  }
+
+  CriticalSectionScoped lock(critical_section_module_ptrs_.get());
+  for (size_t i = 0; i < child_modules_.size(); ++i) {
+    child_modules_[i]->SetRtpStateForSsrc(ssrc, rtp_state);
+  }
+}
+
+bool ModuleRtpRtcpImpl::GetRtpStateForSsrc(uint32_t ssrc, RtpState* rtp_state) {
+  if (rtp_sender_.SSRC() == ssrc) {
+    *rtp_state = rtp_sender_.GetRtpState();
+    return true;
+  }
+
+  if (rtp_sender_.RtxSsrc() == ssrc) {
+    *rtp_state = rtp_sender_.GetRtxRtpState();
+    return true;
+  }
+
+  CriticalSectionScoped lock(critical_section_module_ptrs_.get());
+  for (size_t i = 0; i < child_modules_.size(); ++i) {
+    if (child_modules_[i]->GetRtpStateForSsrc(ssrc, rtp_state))
+      return true;
+  }
+  return false;
+}
+
 uint32_t ModuleRtpRtcpImpl::SSRC() const {
   return rtp_sender_.SSRC();
 }

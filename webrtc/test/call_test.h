@@ -35,7 +35,7 @@ class CallTest : public ::testing::Test {
   static const uint8_t kSendPayloadType;
   static const uint8_t kSendRtxPayloadType;
   static const uint8_t kFakeSendPayloadType;
-  static const uint32_t kSendRtxSsrc;
+  static const uint32_t kSendRtxSsrcs[kNumSsrcs];
   static const uint32_t kSendSsrcs[kNumSsrcs];
   static const uint32_t kReceiverLocalSsrc;
   static const int kNackRtpHistoryMs;
@@ -57,6 +57,8 @@ class CallTest : public ::testing::Test {
   void Start();
   void Stop();
   void DestroyStreams();
+
+  Clock* const clock_;
 
   scoped_ptr<Call> sender_call_;
   VideoSendStream::Config send_config_;

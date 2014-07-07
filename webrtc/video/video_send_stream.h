@@ -11,7 +11,10 @@
 #ifndef WEBRTC_VIDEO_VIDEO_SEND_STREAM_H_
 #define WEBRTC_VIDEO_VIDEO_SEND_STREAM_H_
 
+#include <map>
+
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/video/encoded_frame_callback_adapter.h"
 #include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video/transport_adapter.h"
@@ -44,6 +47,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
                   const VideoSendStream::Config& config,
                   const std::vector<VideoStream> video_streams,
                   const void* encoder_settings,
+                  const std::map<uint32_t, RtpState>& suspended_ssrcs,
                   int base_channel,
                   int start_bitrate);
 
@@ -65,6 +69,9 @@ class VideoSendStream : public webrtc::VideoSendStream,
   // From webrtc::VideoSendStream.
   virtual VideoSendStreamInput* Input() OVERRIDE;
 
+  typedef std::map<uint32_t, RtpState> RtpStateMap;
+  RtpStateMap GetRtpStates() const;
+
  protected:
   // From SendStatisticsProxy::StreamStatsProvider.
   virtual bool GetSendSideDelay(VideoSendStream::Stats* stats) OVERRIDE;
@@ -76,6 +83,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
   EncodedFrameCallbackAdapter encoded_frame_proxy_;
   const VideoSendStream::Config config_;
   const int start_bitrate_bps_;
+  std::map<uint32_t, RtpState> suspended_ssrcs_;
 
   ViEBase* video_engine_base_;
   ViECapture* capture_;

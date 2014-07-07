@@ -192,6 +192,20 @@ struct RtcpReceiveTimeInfo {
 
 typedef std::list<RTCPReportBlock> ReportBlockList;
 
+struct RtpState {
+  RtpState()
+      : sequence_number(0),
+        start_timestamp(0),
+        timestamp(0),
+        capture_time_ms(-1),
+        last_timestamp_time_ms(-1) {}
+  uint16_t sequence_number;
+  uint32_t start_timestamp;
+  uint32_t timestamp;
+  int64_t capture_time_ms;
+  int64_t last_timestamp_time_ms;
+};
+
 class RtpData
 {
 public:

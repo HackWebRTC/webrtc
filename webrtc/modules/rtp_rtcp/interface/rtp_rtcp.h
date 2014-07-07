@@ -203,6 +203,10 @@ class RtpRtcp : public Module {
     */
     virtual int32_t SetSequenceNumber(const uint16_t seq) = 0;
 
+    virtual void SetRtpStateForSsrc(uint32_t ssrc,
+                                    const RtpState& rtp_state) = 0;
+    virtual bool GetRtpStateForSsrc(uint32_t ssrc, RtpState* rtp_state) = 0;
+
     /*
     *   Get SSRC
     */

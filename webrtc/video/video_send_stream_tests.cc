@@ -470,7 +470,7 @@ TEST_F(VideoSendStreamTest, RetransmitsNack) {
 
 TEST_F(VideoSendStreamTest, RetransmitsNackOverRtx) {
   // NACKs over RTX should use a separate SSRC.
-  TestNackRetransmission(kSendRtxSsrc, kSendRtxPayloadType);
+  TestNackRetransmission(kSendRtxSsrcs[0], kSendRtxPayloadType);
 }
 
 void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,

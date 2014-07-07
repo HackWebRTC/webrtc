@@ -106,6 +106,8 @@ class Call : public webrtc::Call, public PacketReceiver {
 
   scoped_ptr<CpuOveruseObserverProxy> overuse_observer_proxy_;
 
+  VideoSendStream::RtpStateMap suspended_send_ssrcs_;
+
   VideoEngine* video_engine_;
   ViERTP_RTCP* rtp_rtcp_;
   ViECodec* codec_;
@@ -184,6 +186,7 @@ VideoSendStream* Call::CreateVideoSendStream(
       config,
       video_streams,
       encoder_settings,
+      suspended_send_ssrcs_,
       base_channel_id_,
       config_.start_bitrate_bps != -1 ? config_.start_bitrate_bps
                                       : kDefaultVideoStreamBitrateBps);
@@ -199,19 +202,28 @@ VideoSendStream* Call::CreateVideoSendStream(
 void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
   assert(send_stream != NULL);
 
+  send_stream->Stop();
+
   VideoSendStream* send_stream_impl = NULL;
   {
     WriteLockScoped write_lock(*send_lock_);
-    for (std::map<uint32_t, VideoSendStream*>::iterator it =
-             send_ssrcs_.begin();
-         it != send_ssrcs_.end();
-         ++it) {
+    std::map<uint32_t, VideoSendStream*>::iterator it = send_ssrcs_.begin();
+    while (it != send_ssrcs_.end()) {
       if (it->second == static_cast<VideoSendStream*>(send_stream)) {
         send_stream_impl = it->second;
-        send_ssrcs_.erase(it);
-        break;
+        send_ssrcs_.erase(it++);
+      } else {
+        ++it;
       }
     }
+  }
+
+  VideoSendStream::RtpStateMap rtp_state = send_stream_impl->GetRtpStates();
+
+  for (VideoSendStream::RtpStateMap::iterator it = rtp_state.begin();
+       it != rtp_state.end();
+       ++it) {
+    suspended_send_ssrcs_[it->first] = it->second;
   }
 
   assert(send_stream_impl != NULL);

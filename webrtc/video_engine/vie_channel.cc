@@ -893,6 +893,21 @@ int32_t ViEChannel::SetStartSequenceNumber(uint16_t sequence_number) {
   return rtp_rtcp_->SetSequenceNumber(sequence_number);
 }
 
+void ViEChannel::SetRtpStateForSsrc(uint32_t ssrc, const RtpState& rtp_state) {
+  assert(!rtp_rtcp_->Sending());
+  default_rtp_rtcp_->SetRtpStateForSsrc(ssrc, rtp_state);
+}
+
+RtpState ViEChannel::GetRtpStateForSsrc(uint32_t ssrc) {
+  assert(!rtp_rtcp_->Sending());
+
+  RtpState rtp_state;
+  if (!default_rtp_rtcp_->GetRtpStateForSsrc(ssrc, &rtp_state)) {
+    LOG(LS_ERROR) << "Couldn't get RTP state for ssrc: " << ssrc;
+  }
+  return rtp_state;
+}
+
 int32_t ViEChannel::SetRTCPCName(const char rtcp_cname[]) {
   if (rtp_rtcp_->Sending()) {
     return -1;

@@ -1361,8 +1361,6 @@ int32_t RTCPReceiver::UpdateTMMBR() {
 void RTCPReceiver::RegisterRtcpStatisticsCallback(
     RtcpStatisticsCallback* callback) {
   CriticalSectionScoped cs(_criticalSectionFeedbacks);
-  if (callback != NULL)
-    assert(stats_callback_ == NULL);
   stats_callback_ = callback;
 }
 

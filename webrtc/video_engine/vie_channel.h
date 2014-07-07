@@ -152,6 +152,9 @@ class ViEChannel
   // Sets the starting sequence number, must be called before StartSend.
   int32_t SetStartSequenceNumber(uint16_t sequence_number);
 
+  void SetRtpStateForSsrc(uint32_t ssrc, const RtpState& rtp_state);
+  RtpState GetRtpStateForSsrc(uint32_t ssrc);
+
   // Sets the CName for the outgoing stream on the channel.
   int32_t SetRTCPCName(const char rtcp_cname[]);
 

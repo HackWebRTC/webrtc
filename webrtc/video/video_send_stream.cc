@@ -108,18 +108,21 @@ std::string VideoSendStream::Config::ToString() const {
 }
 
 namespace internal {
-VideoSendStream::VideoSendStream(newapi::Transport* transport,
-                                 CpuOveruseObserver* overuse_observer,
-                                 webrtc::VideoEngine* video_engine,
-                                 const VideoSendStream::Config& config,
-                                 const std::vector<VideoStream> video_streams,
-                                 const void* encoder_settings,
-                                 int base_channel,
-                                 int start_bitrate_bps)
+VideoSendStream::VideoSendStream(
+    newapi::Transport* transport,
+    CpuOveruseObserver* overuse_observer,
+    webrtc::VideoEngine* video_engine,
+    const VideoSendStream::Config& config,
+    const std::vector<VideoStream> video_streams,
+    const void* encoder_settings,
+    const std::map<uint32_t, RtpState>& suspended_ssrcs,
+    int base_channel,
+    int start_bitrate_bps)
     : transport_adapter_(transport),
       encoded_frame_proxy_(config.post_encode_callback),
       config_(config),
       start_bitrate_bps_(start_bitrate_bps),
+      suspended_ssrcs_(suspended_ssrcs),
       external_codec_(NULL),
       channel_(-1),
       stats_proxy_(new SendStatisticsProxy(config, this)) {
@@ -403,6 +406,9 @@ void VideoSendStream::ConfigureSsrcs() {
     uint32_t ssrc = config_.rtp.ssrcs[i];
     rtp_rtcp_->SetLocalSSRC(
         channel_, ssrc, kViEStreamTypeNormal, static_cast<unsigned char>(i));
+    RtpStateMap::iterator it = suspended_ssrcs_.find(ssrc);
+    if (it != suspended_ssrcs_.end())
+      rtp_rtcp_->SetRtpStateForSsrc(channel_, ssrc, it->second);
   }
 
   if (config_.rtp.rtx.ssrcs.empty()) {
@@ -412,11 +418,15 @@ void VideoSendStream::ConfigureSsrcs() {
 
   // Set up RTX.
   assert(config_.rtp.rtx.ssrcs.size() == config_.rtp.ssrcs.size());
-  for (size_t i = 0; i < config_.rtp.ssrcs.size(); ++i) {
+  for (size_t i = 0; i < config_.rtp.rtx.ssrcs.size(); ++i) {
+    uint32_t ssrc = config_.rtp.rtx.ssrcs[i];
     rtp_rtcp_->SetLocalSSRC(channel_,
                             config_.rtp.rtx.ssrcs[i],
                             kViEStreamTypeRtx,
                             static_cast<unsigned char>(i));
+    RtpStateMap::iterator it = suspended_ssrcs_.find(ssrc);
+    if (it != suspended_ssrcs_.end())
+      rtp_rtcp_->SetRtpStateForSsrc(channel_, ssrc, it->second);
   }
 
   if (config_.rtp.rtx.pad_with_redundant_payloads) {
@@ -425,6 +435,21 @@ void VideoSendStream::ConfigureSsrcs() {
 
   assert(config_.rtp.rtx.payload_type >= 0);
   rtp_rtcp_->SetRtxSendPayloadType(channel_, config_.rtp.rtx.payload_type);
+}
+
+std::map<uint32_t, RtpState> VideoSendStream::GetRtpStates() const {
+  std::map<uint32_t, RtpState> rtp_states;
+  for (size_t i = 0; i < config_.rtp.ssrcs.size(); ++i) {
+    uint32_t ssrc = config_.rtp.ssrcs[i];
+    rtp_states[ssrc] = rtp_rtcp_->GetRtpStateForSsrc(channel_, ssrc);
+  }
+
+  for (size_t i = 0; i < config_.rtp.rtx.ssrcs.size(); ++i) {
+    uint32_t ssrc = config_.rtp.rtx.ssrcs[i];
+    rtp_states[ssrc] = rtp_rtcp_->GetRtpStateForSsrc(channel_, ssrc);
+  }
+
+  return rtp_states;
 }
 
 }  // namespace internal
