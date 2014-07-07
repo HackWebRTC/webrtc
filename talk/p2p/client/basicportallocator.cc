@@ -1018,7 +1018,9 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
     TurnPort* port = NULL;
     // Shared socket mode must be enabled only for UDP based ports. Hence
     // don't pass shared socket for ports which will create TCP sockets.
-    if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET) &&
+    // TODO(mallinath) - Enable shared socket mode for TURN ports. Disabled
+    // due to webrtc bug https://code.google.com/p/webrtc/issues/detail?id=3537
+    if (IsFlagSet(PORTALLOCATOR_ENABLE_TURN_SHARED_SOCKET) &&
         relay_port->proto == PROTO_UDP) {
       port = TurnPort::Create(session_->network_thread(),
                               session_->socket_factory(),
