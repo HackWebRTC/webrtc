@@ -27,6 +27,92 @@
 #include "webrtc/test/frame_generator_capturer.h"
 
 namespace webrtc {
+namespace {
+// Note: consider to write tests that don't depend on the trace system instead
+// of re-using this class.
+class TraceObserver {
+ public:
+  TraceObserver() {
+    Trace::set_level_filter(kTraceTerseInfo);
+
+    Trace::CreateTrace();
+    Trace::SetTraceCallback(&callback_);
+
+    // Call webrtc trace to initialize the tracer that would otherwise trigger a
+    // data-race if left to be initialized by multiple threads (i.e. threads
+    // spawned by test::DirectTransport members in BitrateEstimatorTest).
+    WEBRTC_TRACE(kTraceStateInfo,
+                 kTraceUtility,
+                 -1,
+                 "Instantiate without data races.");
+  }
+
+  ~TraceObserver() {
+    Trace::SetTraceCallback(NULL);
+    Trace::ReturnTrace();
+  }
+
+  void PushExpectedLogLine(const std::string& expected_log_line) {
+    callback_.PushExpectedLogLine(expected_log_line);
+  }
+
+  EventTypeWrapper Wait() {
+    return callback_.Wait();
+  }
+
+ private:
+  class Callback : public TraceCallback {
+   public:
+    Callback()
+        : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
+          done_(EventWrapper::Create()) {}
+
+    virtual void Print(TraceLevel level,
+                       const char* message,
+                       int length) OVERRIDE {
+      CriticalSectionScoped lock(crit_sect_.get());
+      std::string msg(message);
+      if (msg.find("BitrateEstimator") != std::string::npos) {
+        received_log_lines_.push_back(msg);
+      }
+      int num_popped = 0;
+      while (!received_log_lines_.empty() && !expected_log_lines_.empty()) {
+        std::string a = received_log_lines_.front();
+        std::string b = expected_log_lines_.front();
+        received_log_lines_.pop_front();
+        expected_log_lines_.pop_front();
+        num_popped++;
+        EXPECT_TRUE(a.find(b) != std::string::npos);
+      }
+      if (expected_log_lines_.size() <= 0) {
+        if (num_popped > 0) {
+          done_->Set();
+        }
+        return;
+      }
+    }
+
+    EventTypeWrapper Wait() {
+      return done_->Wait(test::CallTest::kDefaultTimeoutMs);
+    }
+
+    void PushExpectedLogLine(const std::string& expected_log_line) {
+      CriticalSectionScoped lock(crit_sect_.get());
+      expected_log_lines_.push_back(expected_log_line);
+    }
+
+   private:
+    typedef std::list<std::string> Strings;
+    const scoped_ptr<CriticalSectionWrapper> crit_sect_;
+    Strings received_log_lines_ GUARDED_BY(crit_sect_);
+    Strings expected_log_lines_ GUARDED_BY(crit_sect_);
+    scoped_ptr<EventWrapper> done_;
+
+  };
+
+  Callback callback_;
+};
+}  // namespace
 
 static const int kTOFExtensionId = 4;
 static const int kASTExtensionId = 5;
@@ -48,11 +134,6 @@ class BitrateEstimatorTest : public test::CallTest {
   }
 
   virtual void SetUp() {
-    Trace::CreateTrace();
-    Trace::SetTraceCallback(&receiver_trace_);
-    // Reduce the chance that spurious traces will ruin the test.
-    Trace::set_level_filter(kTraceTerseInfo);
-
     Call::Config receiver_call_config(&receive_transport_);
     receiver_call_.reset(Call::Create(receiver_call_config));
 
@@ -97,62 +178,10 @@ class BitrateEstimatorTest : public test::CallTest {
     }
 
     receiver_call_.reset();
-
-    Trace::SetTraceCallback(NULL);
-    Trace::ReturnTrace();
   }
 
  protected:
   friend class Stream;
-
-  class TraceObserver : public TraceCallback {
-   public:
-    TraceObserver()
-        : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
-          received_log_lines_(),
-          expected_log_lines_(),
-          done_(EventWrapper::Create()) {
-    }
-
-    void PushExpectedLogLine(const std::string& expected_log_line) {
-      CriticalSectionScoped lock(crit_sect_.get());
-      expected_log_lines_.push_back(expected_log_line);
-    }
-
-    virtual void Print(TraceLevel level,
-                       const char* message,
-                       int length) OVERRIDE {
-      CriticalSectionScoped lock(crit_sect_.get());
-      std::string msg(message);
-      if (msg.find("BitrateEstimator") != std::string::npos) {
-        received_log_lines_.push_back(msg);
-      }
-      int num_popped = 0;
-      while (!received_log_lines_.empty() && !expected_log_lines_.empty()) {
-        std::string a = received_log_lines_.front();
-        std::string b = expected_log_lines_.front();
-        received_log_lines_.pop_front();
-        expected_log_lines_.pop_front();
-        num_popped++;
-        EXPECT_TRUE(a.find(b) != std::string::npos);
-      }
-      if (expected_log_lines_.size() <= 0) {
-        if (num_popped > 0) {
-          done_->Set();
-        }
-        return;
-      }
-    }
-
-    EventTypeWrapper Wait() { return done_->Wait(kDefaultTimeoutMs); }
-
-   private:
-    typedef std::list<std::string> Strings;
-    const scoped_ptr<CriticalSectionWrapper> crit_sect_;
-    Strings received_log_lines_ GUARDED_BY(crit_sect_);
-    Strings expected_log_lines_ GUARDED_BY(crit_sect_);
-    scoped_ptr<EventWrapper> done_;
-  };
 
   class Stream {
    public:
