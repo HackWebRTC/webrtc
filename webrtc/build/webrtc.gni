@@ -25,6 +25,9 @@ declare_args() {
   # when building voice engine exclusively.
   enable_video = true
 
+  # Disable this to not build libvpx and instead use an externally provided lib.
+  build_libvpx = true
+
   # Selects fixed-point code where possible.
   prefer_fixed_point = false
 

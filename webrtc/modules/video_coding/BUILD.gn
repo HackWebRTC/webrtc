@@ -74,13 +74,49 @@ source_set("video_coding") {
 }
 
 source_set("video_coding_utility") {
-  # TODO(stefan): Implement.
+  sources = [
+    "utility/exp_filter.cc",
+    "utility/include/exp_filter.h",
+    "utility/include/frame_dropper.h",
+    "utility/frame_dropper.cc",
+  ]
+
+  deps = [ "../../system_wrappers" ]
 }
 
 source_set("webrtc_i420") {
-  # TODO(stefan): Implement.
+  sources = [
+    "codecs/i420/main/source/i420.cc",
+    "codecs/i420/main/interface/i420.h",
+  ]
+
+  deps = [ "../../system_wrappers" ]
 }
 
+# TODO(holmer): Some files below has been commented out since libvpx is still
+# missing a BUILD.gn file.
 source_set("webrtc_vp8") {
-  # TODO(stefan): Implement.
+  sources = [
+#    "codecs/vp8/default_temporal_layers.cc",
+#    "codecs/vp8/default_temporal_layers.h",
+#    "codecs/vp8/realtime_temporal_layers.cc",
+#    "codecs/vp8/reference_picture_selection.cc",
+#    "codecs/vp8/reference_picture_selection.h",
+    "codecs/vp8/include/vp8.h",
+    "codecs/vp8/include/vp8_common_types.h",
+    "codecs/vp8/temporal_layers.h",
+    "codecs/vp8/vp8_factory.cc",
+#    "codecs/vp8/vp8_impl.cc",
+#    "codecs/vp8/vp8_impl.h",
+  ]
+  deps = [
+    ":video_coding_utility",
+    "../../common_video",
+    "../../system_wrappers",
+  ]
+#  if (build_libvpx) {
+#    deps += [
+#      "//third_party/libvpx",
+#    ]
+#  }
 }
