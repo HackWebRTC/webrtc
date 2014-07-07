@@ -5,3 +5,6 @@ EndToEndTest.SendsAndReceivesMultipleStreams
 EndToEndTest.ReceivesAndRetransmitsNack
 # https://code.google.com/p/webrtc/issues/detail?id=3471
 VideoSendStreamTest.RetransmitsNackOverRtxWithPacing
+# Flaky: https://code.google.com/p/webrtc/issues/detail?id=3552
+EndToEndTest.RestartingSendStreamPreservesRtpState
+EndToEndTest.RestartingSendStreamPreservesRtpStatesWithRtx
