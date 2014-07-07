@@ -213,6 +213,30 @@ TEST_F(PacedSenderTest, PaceQueuedPacketsWithDuplicates) {
   send_bucket_->Process();
 }
 
+TEST_F(PacedSenderTest, CanQueuePacketsWithSameSequenceNumberOnDifferentSsrcs) {
+  uint32_t ssrc = 12345;
+  uint16_t sequence_number = 1234;
+
+  SendAndExpectPacket(PacedSender::kNormalPriority,
+                      ssrc,
+                      sequence_number,
+                      clock_.TimeInMilliseconds(),
+                      250,
+                      false);
+
+  // Expect packet on second ssrc to be queued and sent as well.
+  SendAndExpectPacket(PacedSender::kNormalPriority,
+                      ssrc + 1,
+                      sequence_number,
+                      clock_.TimeInMilliseconds(),
+                      250,
+                      false);
+
+  clock_.AdvanceTimeMilliseconds(1000);
+  TickTime::AdvanceFakeClock(1000);
+  send_bucket_->Process();
+}
+
 TEST_F(PacedSenderTest, Padding) {
   uint32_t ssrc = 12345;
   uint16_t sequence_number = 1234;

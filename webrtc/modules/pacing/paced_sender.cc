@@ -12,6 +12,9 @@
 
 #include <assert.h>
 
+#include <map>
+#include <set>
+
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -36,21 +39,24 @@ namespace webrtc {
 
 namespace paced_sender {
 struct Packet {
-  Packet(uint32_t ssrc, uint16_t seq_number, int64_t capture_time_ms,
-         int64_t enqueue_time_ms, int length_in_bytes, bool retransmission)
-      : ssrc_(ssrc),
-        sequence_number_(seq_number),
-        capture_time_ms_(capture_time_ms),
-        enqueue_time_ms_(enqueue_time_ms),
-        bytes_(length_in_bytes),
-        retransmission_(retransmission) {
-  }
-  uint32_t ssrc_;
-  uint16_t sequence_number_;
-  int64_t capture_time_ms_;
-  int64_t enqueue_time_ms_;
-  int bytes_;
-  bool retransmission_;
+  Packet(uint32_t ssrc,
+         uint16_t seq_number,
+         int64_t capture_time_ms,
+         int64_t enqueue_time_ms,
+         int length_in_bytes,
+         bool retransmission)
+      : ssrc(ssrc),
+        sequence_number(seq_number),
+        capture_time_ms(capture_time_ms),
+        enqueue_time_ms(enqueue_time_ms),
+        bytes(length_in_bytes),
+        retransmission(retransmission) {}
+  uint32_t ssrc;
+  uint16_t sequence_number;
+  int64_t capture_time_ms;
+  int64_t enqueue_time_ms;
+  int bytes;
+  bool retransmission;
 };
 
 // STL list style class which prevents duplicates in the list.
@@ -68,23 +74,24 @@ class PacketList {
 
   void pop_front() {
     Packet& packet = packet_list_.front();
-    uint16_t sequence_number = packet.sequence_number_;
+    uint16_t sequence_number = packet.sequence_number;
+    uint32_t ssrc = packet.ssrc;
     packet_list_.pop_front();
-    sequence_number_set_.erase(sequence_number);
+    sequence_number_set_[ssrc].erase(sequence_number);
   }
 
   void push_back(const Packet& packet) {
-    if (sequence_number_set_.find(packet.sequence_number_) ==
-        sequence_number_set_.end()) {
+    if (sequence_number_set_[packet.ssrc].find(packet.sequence_number) ==
+        sequence_number_set_[packet.ssrc].end()) {
       // Don't insert duplicates.
       packet_list_.push_back(packet);
-      sequence_number_set_.insert(packet.sequence_number_);
+      sequence_number_set_[packet.ssrc].insert(packet.sequence_number);
     }
   }
 
  private:
   std::list<Packet> packet_list_;
-  std::set<uint16_t> sequence_number_set_;
+  std::map<uint32_t, std::set<uint16_t> > sequence_number_set_;
 };
 
 class IntervalBudget {
@@ -129,10 +136,10 @@ PacedSender::PacedSender(Clock* clock,
                          int min_bitrate_kbps)
     : clock_(clock),
       callback_(callback),
+      critsect_(CriticalSectionWrapper::CreateCriticalSection()),
       enabled_(true),
       paused_(false),
       max_queue_length_ms_(kDefaultMaxQueueLengthMs),
-      critsect_(CriticalSectionWrapper::CreateCriticalSection()),
       media_budget_(new paced_sender::IntervalBudget(max_bitrate_kbps)),
       padding_budget_(new paced_sender::IntervalBudget(min_bitrate_kbps)),
       time_last_update_(TickTime::Now()),
@@ -222,19 +229,19 @@ int PacedSender::QueueInMs() const {
   int64_t now_ms = clock_->TimeInMilliseconds();
   int64_t oldest_packet_enqueue_time = now_ms;
   if (!high_priority_packets_->empty()) {
-    oldest_packet_enqueue_time = std::min(
-        oldest_packet_enqueue_time,
-        high_priority_packets_->front().enqueue_time_ms_);
+    oldest_packet_enqueue_time =
+        std::min(oldest_packet_enqueue_time,
+                 high_priority_packets_->front().enqueue_time_ms);
   }
   if (!normal_priority_packets_->empty()) {
-    oldest_packet_enqueue_time = std::min(
-        oldest_packet_enqueue_time,
-        normal_priority_packets_->front().enqueue_time_ms_);
+    oldest_packet_enqueue_time =
+        std::min(oldest_packet_enqueue_time,
+                 normal_priority_packets_->front().enqueue_time_ms);
   }
   if (!low_priority_packets_->empty()) {
-    oldest_packet_enqueue_time = std::min(
-        oldest_packet_enqueue_time,
-        low_priority_packets_->front().enqueue_time_ms_);
+    oldest_packet_enqueue_time =
+        std::min(oldest_packet_enqueue_time,
+                 low_priority_packets_->front().enqueue_time_ms);
   }
   return now_ms - oldest_packet_enqueue_time;
 }
@@ -291,10 +298,10 @@ bool PacedSender::SendPacketFromList(paced_sender::PacketList* packet_list)
   paced_sender::Packet packet = GetNextPacketFromList(packet_list);
   critsect_->Leave();
 
-  const bool success = callback_->TimeToSendPacket(packet.ssrc_,
-                                                   packet.sequence_number_,
-                                                   packet.capture_time_ms_,
-                                                   packet.retransmission_);
+  const bool success = callback_->TimeToSendPacket(packet.ssrc,
+                                                   packet.sequence_number,
+                                                   packet.capture_time_ms,
+                                                   packet.retransmission);
   critsect_->Enter();
   // If packet cannot be sent then keep it in packet list and exit early.
   // There's no need to send more packets.
@@ -302,15 +309,15 @@ bool PacedSender::SendPacketFromList(paced_sender::PacketList* packet_list)
     return false;
   }
   packet_list->pop_front();
-  const bool last_packet = packet_list->empty() ||
-      packet_list->front().capture_time_ms_ > packet.capture_time_ms_;
+  const bool last_packet =
+      packet_list->empty() ||
+      packet_list->front().capture_time_ms > packet.capture_time_ms;
   if (packet_list != high_priority_packets_.get()) {
-    if (packet.capture_time_ms_ > capture_time_ms_last_sent_) {
-      capture_time_ms_last_sent_ = packet.capture_time_ms_;
-    } else if (packet.capture_time_ms_ == capture_time_ms_last_sent_ &&
+    if (packet.capture_time_ms > capture_time_ms_last_sent_) {
+      capture_time_ms_last_sent_ = packet.capture_time_ms;
+    } else if (packet.capture_time_ms == capture_time_ms_last_sent_ &&
                last_packet) {
-      TRACE_EVENT_ASYNC_END0("webrtc_rtp", "PacedSend",
-          packet.capture_time_ms_);
+      TRACE_EVENT_ASYNC_END0("webrtc_rtp", "PacedSend", packet.capture_time_ms);
     }
   }
   return true;
@@ -344,12 +351,13 @@ bool PacedSender::ShouldSendNextPacket(paced_sender::PacketList** packet_list) {
       int64_t high_priority_capture_time = -1;
       if (!high_priority_packets_->empty()) {
         high_priority_capture_time =
-            high_priority_packets_->front().capture_time_ms_;
+            high_priority_packets_->front().capture_time_ms;
         *packet_list = high_priority_packets_.get();
       }
       if (!normal_priority_packets_->empty() &&
-          (high_priority_capture_time == -1 || high_priority_capture_time >
-          normal_priority_packets_->front().capture_time_ms_)) {
+          (high_priority_capture_time == -1 ||
+           high_priority_capture_time >
+               normal_priority_packets_->front().capture_time_ms)) {
         *packet_list = normal_priority_packets_.get();
       }
       if (*packet_list)
@@ -375,7 +383,7 @@ bool PacedSender::ShouldSendNextPacket(paced_sender::PacketList** packet_list) {
 paced_sender::Packet PacedSender::GetNextPacketFromList(
     paced_sender::PacketList* packets) {
   paced_sender::Packet packet = packets->front();
-  UpdateMediaBytesSent(packet.bytes_);
+  UpdateMediaBytesSent(packet.bytes);
   return packet;
 }
 
