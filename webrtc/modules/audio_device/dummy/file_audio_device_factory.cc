@@ -32,6 +32,12 @@ FileAudioDevice* FileAudioDeviceFactory::CreateFileAudioDevice(
 
 void FileAudioDeviceFactory::SetFilenamesToUse(
     const char* inputAudioFilename, const char* outputAudioFilename) {
+#ifndef WEBRTC_DUMMY_FILE_DEVICES
+  // Sanity: must be compiled with the right define to run this.
+  printf("Trying to use dummy file devices, but is not compiled "
+         "with WEBRTC_DUMMY_FILE_DEVICES. Bailing out.\n");
+  exit(1);
+#endif
   assert(strlen(inputAudioFilename) < MAX_FILENAME_LEN &&
          strlen(outputAudioFilename) < MAX_FILENAME_LEN);
 
