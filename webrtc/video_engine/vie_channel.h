@@ -16,6 +16,7 @@
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/typedefs.h"
@@ -381,6 +382,43 @@ class ViEChannel
   // Compute NACK list parameters for the buffering mode.
   int GetRequiredNackListSize(int target_delay_ms);
   void SetRtxSendStatus(bool enable);
+
+  // ViEChannel exposes methods that allow to modify observers and callbacks
+  // to be modified. Such an API-style is cumbersome to implement and maintain
+  // at all the levels when comparing to only setting them at construction. As
+  // so this class instantiates its children with a wrapper that can be modified
+  // at a later time.
+  template <class T>
+  class RegisterableCallback : public T {
+   public:
+    RegisterableCallback()
+        : critsect_(CriticalSectionWrapper::CreateCriticalSection()),
+          callback_(NULL) {}
+
+    void Set(T* callback) {
+      CriticalSectionScoped cs(critsect_.get());
+      callback_ = callback;
+    }
+
+   protected:
+    // Note: this should be implemented with a RW-lock to allow simultaneous
+    // calls into the callback. However that doesn't seem to be needed for the
+    // current type of callbacks covered by this class.
+    scoped_ptr<CriticalSectionWrapper> critsect_;
+    T* callback_ GUARDED_BY(critsect_);
+
+   private:
+    DISALLOW_COPY_AND_ASSIGN(RegisterableCallback);
+  };
+
+  class : public RegisterableCallback<BitrateStatisticsObserver> {
+    virtual void Notify(const BitrateStatistics& stats, uint32_t ssrc) {
+      CriticalSectionScoped cs(critsect_.get());
+      if (callback_)
+        callback_->Notify(stats, ssrc);
+    }
+  }
+  send_bitrate_observer_;
 
   int32_t channel_id_;
   int32_t engine_id_;

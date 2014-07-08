@@ -45,7 +45,8 @@ RTPSender::RTPSender(const int32_t id,
                      Clock* clock,
                      Transport* transport,
                      RtpAudioFeedback* audio_feedback,
-                     PacedSender* paced_sender)
+                     PacedSender* paced_sender,
+                     BitrateStatisticsObserver* bitrate_callback)
     : clock_(clock),
       bitrate_sent_(clock, this),
       id_(id),
@@ -72,7 +73,7 @@ RTPSender::RTPSender(const int32_t id,
       statistics_crit_(CriticalSectionWrapper::CreateCriticalSection()),
       frame_count_observer_(NULL),
       rtp_stats_callback_(NULL),
-      bitrate_callback_(NULL),
+      bitrate_callback_(bitrate_callback),
       // RTP variables
       start_timestamp_forced_(false),
       start_timestamp_(0),
@@ -1684,16 +1685,6 @@ StreamDataCountersCallback* RTPSender::GetRtpStatisticsCallback() const {
   return rtp_stats_callback_;
 }
 
-void RTPSender::RegisterBitrateObserver(BitrateStatisticsObserver* observer) {
-  CriticalSectionScoped cs(statistics_crit_.get());
-  bitrate_callback_ = observer;
-}
-
-BitrateStatisticsObserver* RTPSender::GetBitrateObserver() const {
-  CriticalSectionScoped cs(statistics_crit_.get());
-  return bitrate_callback_;
-}
-
 uint32_t RTPSender::BitrateSent() const { return bitrate_sent_.BitrateLast(); }
 
 void RTPSender::BitrateUpdated(const BitrateStatistics& stats) {
@@ -1702,7 +1693,6 @@ void RTPSender::BitrateUpdated(const BitrateStatistics& stats) {
     CriticalSectionScoped ssrc_lock(send_critsect_);
     ssrc = ssrc_;
   }
-  CriticalSectionScoped cs(statistics_crit_.get());
   if (bitrate_callback_) {
     bitrate_callback_->Notify(stats, ssrc);
   }

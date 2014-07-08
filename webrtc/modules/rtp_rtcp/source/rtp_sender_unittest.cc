@@ -94,7 +94,7 @@ class RtpSenderTest : public ::testing::Test {
 
   virtual void SetUp() {
     rtp_sender_.reset(new RTPSender(0, false, &fake_clock_, &transport_, NULL,
-                                    &mock_paced_sender_));
+                                    &mock_paced_sender_, NULL));
     rtp_sender_->SetSequenceNumber(kSeqNum);
   }
 
@@ -672,7 +672,7 @@ TEST_F(RtpSenderTest, SendPadding) {
 TEST_F(RtpSenderTest, SendRedundantPayloads) {
   MockTransport transport;
   rtp_sender_.reset(new RTPSender(0, false, &fake_clock_, &transport, NULL,
-                                  &mock_paced_sender_));
+                                  &mock_paced_sender_, NULL));
   rtp_sender_->SetSequenceNumber(kSeqNum);
   // Make all packets go through the pacer.
   EXPECT_CALL(mock_paced_sender_,
@@ -865,6 +865,8 @@ TEST_F(RtpSenderTest, BitrateCallbacks) {
     uint32_t ssrc_;
     BitrateStatistics bitrate_;
   } callback;
+  rtp_sender_.reset(new RTPSender(0, false, &fake_clock_, &transport_, NULL,
+                                  &mock_paced_sender_, &callback));
 
   // Simulate kNumPackets sent with kPacketInterval ms intervals.
   const uint32_t kNumPackets = 15;
@@ -880,8 +882,6 @@ TEST_F(RtpSenderTest, BitrateCallbacks) {
   uint8_t payload[] = {47, 11, 32, 93, 89};
   rtp_sender_->SetStorePacketsStatus(true, 1);
   uint32_t ssrc = rtp_sender_->SSRC();
-
-  rtp_sender_->RegisterBitrateObserver(&callback);
 
   // Initial process call so we get a new time window.
   rtp_sender_->ProcessBitrate();
@@ -912,7 +912,7 @@ TEST_F(RtpSenderTest, BitrateCallbacks) {
   EXPECT_EQ((kPacketOverhead + sizeof(payload)) * 8 * expected_packet_rate,
             callback.bitrate_.bitrate_bps);
 
-  rtp_sender_->RegisterBitrateObserver(NULL);
+  rtp_sender_.reset();
 }
 
 class RtpSenderAudioTest : public RtpSenderTest {
@@ -922,7 +922,7 @@ class RtpSenderAudioTest : public RtpSenderTest {
   virtual void SetUp() {
     payload_ = kAudioPayload;
     rtp_sender_.reset(new RTPSender(0, true, &fake_clock_, &transport_, NULL,
-                                    &mock_paced_sender_));
+                                    &mock_paced_sender_, NULL));
     rtp_sender_->SetSequenceNumber(kSeqNum);
   }
 };

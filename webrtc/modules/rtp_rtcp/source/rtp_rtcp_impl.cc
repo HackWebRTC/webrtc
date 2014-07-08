@@ -37,7 +37,8 @@ RtpRtcp::Configuration::Configuration()
       rtt_stats(NULL),
       audio_messages(NullObjectRtpAudioFeedback()),
       remote_bitrate_estimator(NULL),
-      paced_sender(NULL) {
+      paced_sender(NULL),
+      send_bitrate_observer(NULL) {
 }
 
 RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
@@ -60,7 +61,8 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                   configuration.clock,
                   configuration.outgoing_transport,
                   configuration.audio_messages,
-                  configuration.paced_sender),
+                  configuration.paced_sender,
+                  configuration.send_bitrate_observer),
       rtcp_sender_(configuration.id,
                    configuration.audio,
                    configuration.clock,
@@ -1232,16 +1234,6 @@ void ModuleRtpRtcpImpl::BitrateSent(uint32_t* total_rate,
     *fec_rate = rtp_sender_.FecOverheadRate();
   if (nack_rate != NULL)
     *nack_rate = rtp_sender_.NackOverheadRate();
-}
-
-void ModuleRtpRtcpImpl::RegisterVideoBitrateObserver(
-    BitrateStatisticsObserver* observer) {
-  assert(!IsDefaultModule());
-  rtp_sender_.RegisterBitrateObserver(observer);
-}
-
-BitrateStatisticsObserver* ModuleRtpRtcpImpl::GetVideoBitrateObserver() const {
-  return rtp_sender_.GetBitrateObserver();
 }
 
 void ModuleRtpRtcpImpl::OnRequestIntraFrame() {
