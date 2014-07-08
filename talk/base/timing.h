@@ -41,7 +41,8 @@ class Timing {
 
   // WallTimeNow() returns the current wall-clock time in seconds,
   // within 10 milliseconds resolution.
-  virtual double WallTimeNow();
+  // WallTimeNow is static and does not require a timer_handle_ on Windows.
+  static double WallTimeNow();
 
   // TimerNow() is like WallTimeNow(), but is monotonically
   // increasing.  It returns seconds in resolution of 10 microseconds

@@ -46,6 +46,7 @@ Timing::~Timing() {
 #endif
 }
 
+// static
 double Timing::WallTimeNow() {
 #if defined(WEBRTC_POSIX)
   struct timeval time;

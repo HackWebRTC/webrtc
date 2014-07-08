@@ -32,6 +32,7 @@
 
 #include "talk/base/base64.h"
 #include "talk/base/scoped_ptr.h"
+#include "talk/base/timing.h"
 #include "talk/session/media/channel.h"
 
 namespace webrtc {
@@ -924,7 +925,7 @@ void StatsCollector::ExtractVideoInfo(
 }
 
 double StatsCollector::GetTimeNow() {
-  return timing_.WallTimeNow() * talk_base::kNumMillisecsPerSec;
+  return talk_base::Timing::WallTimeNow() * talk_base::kNumMillisecsPerSec;
 }
 
 bool StatsCollector::GetTransportIdFromProxy(const std::string& proxy,

@@ -40,8 +40,6 @@
 #include "talk/app/webrtc/statstypes.h"
 #include "talk/app/webrtc/webrtcsession.h"
 
-#include "talk/base/timing.h"
-
 namespace webrtc {
 
 class StatsCollector {
@@ -130,7 +128,6 @@ class StatsCollector {
   // Raw pointer to the session the statistics are gathered from.
   WebRtcSession* session_;
   double stats_gathering_started_;
-  talk_base::Timing timing_;
   cricket::ProxyTransportMap proxy_to_transport_;
 
   typedef std::vector<std::pair<AudioTrackInterface*, uint32> >

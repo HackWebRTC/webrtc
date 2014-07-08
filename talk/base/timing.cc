@@ -63,6 +63,7 @@ Timing::~Timing() {
 #endif
 }
 
+// static
 double Timing::WallTimeNow() {
 #if defined(POSIX)
   struct timeval time;
