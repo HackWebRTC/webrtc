@@ -32,18 +32,19 @@ FileAudioDevice* FileAudioDeviceFactory::CreateFileAudioDevice(
 
 void FileAudioDeviceFactory::SetFilenamesToUse(
     const char* inputAudioFilename, const char* outputAudioFilename) {
-#ifndef WEBRTC_DUMMY_FILE_DEVICES
-  // Sanity: must be compiled with the right define to run this.
-  printf("Trying to use dummy file devices, but is not compiled "
-         "with WEBRTC_DUMMY_FILE_DEVICES. Bailing out.\n");
-  exit(1);
-#endif
+#ifdef WEBRTC_DUMMY_FILE_DEVICES
   assert(strlen(inputAudioFilename) < MAX_FILENAME_LEN &&
          strlen(outputAudioFilename) < MAX_FILENAME_LEN);
 
   // Copy the strings since we don't know the lifetime of the input pointers.
   strncpy(_inputAudioFilename, inputAudioFilename, MAX_FILENAME_LEN);
   strncpy(_outputAudioFilename, outputAudioFilename, MAX_FILENAME_LEN);
+#else
+  // Sanity: must be compiled with the right define to run this.
+  printf("Trying to use dummy file devices, but is not compiled "
+         "with WEBRTC_DUMMY_FILE_DEVICES. Bailing out.\n");
+  exit(1);
+#endif
 }
 
 }  // namespace webrtc
