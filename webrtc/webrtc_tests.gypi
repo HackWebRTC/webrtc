@@ -79,6 +79,7 @@
         'video/call_perf_tests.cc',
         'video/full_stack.cc',
         'video/rampup_tests.cc',
+        'video/rampup_tests.h',
       ],
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
