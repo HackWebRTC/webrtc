@@ -23,9 +23,11 @@ char kTSanDefaultSuppressions[] =
 
 // WebRTC specific suppressions.
 
-// False positive in system wrappers.
-// https://code.google.com/p/webrtc/issues/detail?id=300
-"race:webrtc/system_wrappers/source/thread_posix.cc\n"
+// Usage of trace callback and trace level is racy in libjingle_media_unittests.
+// https://code.google.com/p/webrtc/issues/detail?id=3372
+"race:webrtc::TraceImpl::WriteToFile\n"
+"race:webrtc::VideoEngine::SetTraceFilter\n"
+"race:webrtc::VoiceEngine::SetTraceFilter\n"
 
 // Audio processing
 // https://code.google.com/p/webrtc/issues/detail?id=2521 for details.
