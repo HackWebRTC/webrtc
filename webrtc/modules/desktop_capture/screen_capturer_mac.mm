@@ -20,13 +20,13 @@
 #include <OpenGL/CGLMacro.h>
 #include <OpenGL/OpenGL.h>
 
+#include "webrtc/base/macutils.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
 #include "webrtc/modules/desktop_capture/mac/desktop_configuration.h"
 #include "webrtc/modules/desktop_capture/mac/desktop_configuration_monitor.h"
-#include "webrtc/modules/desktop_capture/mac/osx_version.h"
 #include "webrtc/modules/desktop_capture/mac/scoped_pixel_buffer_object.h"
 #include "webrtc/modules/desktop_capture/mouse_cursor_shape.h"
 #include "webrtc/modules/desktop_capture/screen_capture_frame_queue.h"
@@ -425,7 +425,7 @@ void ScreenCapturerMac::Capture(const DesktopRegion& region_to_capture) {
   DesktopFrame* current_frame = queue_.current_frame();
 
   bool flip = false;  // GL capturers need flipping.
-  if (IsOSLionOrLater()) {
+  if (rtc::GetOSVersionName() >= rtc::kMacOSLion) {
     // Lion requires us to use their new APIs for doing screen capture. These
     // APIS currently crash on 10.6.8 if there is no monitor attached.
     if (!CgBlitPostLion(*current_frame, region)) {
@@ -478,7 +478,7 @@ void ScreenCapturerMac::SetMouseShapeObserver(
 
 bool ScreenCapturerMac::GetScreenList(ScreenList* screens) {
   assert(screens->size() == 0);
-  if (!IsOSLionOrLater()) {
+  if (rtc::GetOSVersionName() < rtc::kMacOSLion) {
     // Single monitor cast is not supported on pre OS X 10.7.
     Screen screen;
     screen.id = kFullDesktopScreenId;
@@ -496,7 +496,7 @@ bool ScreenCapturerMac::GetScreenList(ScreenList* screens) {
 }
 
 bool ScreenCapturerMac::SelectScreen(ScreenId id) {
-  if (!IsOSLionOrLater()) {
+  if (rtc::GetOSVersionName() < rtc::kMacOSLion) {
     // Ignore the screen selection on unsupported OS.
     assert(!current_display_);
     return id == kFullDesktopScreenId;
@@ -874,7 +874,7 @@ void ScreenCapturerMac::ScreenConfigurationChanged() {
   // contents. Although the API exists in OS 10.6, it crashes the caller if
   // the machine has no monitor connected, so we fall back to depcreated APIs
   // when running on 10.6.
-  if (IsOSLionOrLater()) {
+  if (rtc::GetOSVersionName() >= rtc::kMacOSLion) {
     LOG(LS_INFO) << "Using CgBlitPostLion.";
     // No need for any OpenGL support on Lion
     return;
@@ -922,10 +922,11 @@ void ScreenCapturerMac::ScreenConfigurationChanged() {
   LOG(LS_INFO) << "Using GlBlit";
 
   CGLPixelFormatAttribute attributes[] = {
-    // This function does an early return if IsOSLionOrLater(), this code only
-    // runs on 10.6 and can be deleted once 10.6 support is dropped.  So just
-    // keep using kCGLPFAFullScreen even though it was deprecated in 10.6 --
-    // it's still functional there, and it's not used on newer OS X versions.
+    // This function does an early return if GetOSVersionName() >= kMacOSLion,
+    // this code only runs on 10.6 and can be deleted once 10.6 support is
+    // dropped.  So just keep using kCGLPFAFullScreen even though it was
+    // deprecated in 10.6 -- it's still functional there, and it's not used on
+    // newer OS X versions.
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
     kCGLPFAFullScreen,

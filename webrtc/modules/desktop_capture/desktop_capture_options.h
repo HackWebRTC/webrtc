@@ -19,6 +19,7 @@
 
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
 #include "webrtc/modules/desktop_capture/mac/desktop_configuration_monitor.h"
+#include "webrtc/modules/desktop_capture/mac/full_screen_chrome_window_detector.h"
 #endif
 
 namespace webrtc {
@@ -49,6 +50,14 @@ class DesktopCaptureOptions {
   }
   void set_configuration_monitor(scoped_refptr<DesktopConfigurationMonitor> m) {
     configuration_monitor_ = m;
+  }
+
+  FullScreenChromeWindowDetector* full_screen_chrome_window_detector() const {
+    return full_screen_window_detector_;
+  }
+  void set_full_screen_chrome_window_detector(
+      scoped_refptr<FullScreenChromeWindowDetector> detector) {
+    full_screen_window_detector_ = detector;
   }
 #endif
 
@@ -82,6 +91,7 @@ class DesktopCaptureOptions {
 
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
   scoped_refptr<DesktopConfigurationMonitor> configuration_monitor_;
+  scoped_refptr<FullScreenChromeWindowDetector> full_screen_window_detector_;
 #endif
 
 #if defined(WEBRTC_WIN)

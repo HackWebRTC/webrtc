@@ -8,9 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_WINDOW_LIST_UTILS_H_
+#define WEBRTC_MODULES_DESKTOP_CAPTURE_WINDOW_LIST_UTILS_H_
+
+#include "webrtc/modules/desktop_capture/window_capturer.h"
+
 namespace webrtc {
 
-// Returns true if the OS version >= OSX 10.7.
-bool IsOSLionOrLater();
+// A helper function to get the on-screen windows.
+bool GetWindowList(WindowCapturer::WindowList* windows);
 
 }  // namespace webrtc
+
+#endif  // WEBRTC_MODULES_DESKTOP_CAPTURE_WINDOW_LIST_UTILS_H_
+
