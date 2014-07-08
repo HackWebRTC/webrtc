@@ -39,11 +39,10 @@ public:
 
     uint16_t FECPacketOverhead() const;
 
-    int32_t RegisterVideoPayload(
-        const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-        const int8_t payloadType,
-        const uint32_t maxBitRate,
-        ModuleRTPUtility::Payload*& payload);
+    int32_t RegisterVideoPayload(const char payloadName[RTP_PAYLOAD_NAME_SIZE],
+                                 const int8_t payloadType,
+                                 const uint32_t maxBitRate,
+                                 RtpUtility::Payload*& payload);
 
     int32_t SendVideo(const RtpVideoCodecTypes videoType,
                       const FrameType frameType,

@@ -137,7 +137,7 @@ TEST_F(VideoSendStreamTest, SupportsAbsoluteSendTime) {
 
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
       RTPHeader header;
-      EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
+      EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
       EXPECT_FALSE(header.extension.hasTransmissionTimeOffset);
       EXPECT_TRUE(header.extension.hasAbsoluteSendTime);
@@ -178,7 +178,7 @@ TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
    private:
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
       RTPHeader header;
-      EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
+      EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
       EXPECT_TRUE(header.extension.hasTransmissionTimeOffset);
       EXPECT_FALSE(header.extension.hasAbsoluteSendTime);
@@ -323,7 +323,7 @@ TEST_F(VideoSendStreamTest, SupportsFec) {
    private:
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
       RTPHeader header;
-      EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
+      EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
       // Send lossy receive reports to trigger FEC enabling.
       if (send_count_++ % 2 != 0) {
@@ -398,7 +398,7 @@ void VideoSendStreamTest::TestNackRetransmission(
    private:
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
       RTPHeader header;
-      EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
+      EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
       // Nack second packet after receiving the third one.
       if (++send_count_ == 3) {
@@ -724,7 +724,7 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
       CriticalSectionScoped lock(crit_.get());
       ++rtp_count_;
       RTPHeader header;
-      EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
+      EXPECT_TRUE(parser_->Parse(packet, length, &header));
       last_sequence_number_ = header.sequenceNumber;
 
       if (test_state_ == kBeforeSuspend) {
@@ -1041,11 +1041,11 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
    private:
     virtual DeliveryStatus DeliverPacket(const uint8_t* packet,
                                          size_t length) OVERRIDE {
-      if (RtpHeaderParser::IsRtcp(packet, static_cast<int>(length)))
+      if (RtpHeaderParser::IsRtcp(packet, length))
         return DELIVERY_OK;
 
       RTPHeader header;
-      if (!parser_->Parse(packet, static_cast<int>(length), &header))
+      if (!parser_->Parse(packet, length, &header))
         return DELIVERY_PACKET_ERROR;
       assert(stream_ != NULL);
       VideoSendStream::Stats stats = stream_->GetStats();

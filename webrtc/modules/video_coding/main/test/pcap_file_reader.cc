@@ -268,8 +268,7 @@ class PcapFileReaderImpl : public RtpPacketSourceInterface {
     }
     TRY(Read(read_buffer_, marker.payload_length));
 
-    ModuleRTPUtility::RTPHeaderParser rtp_parser(read_buffer_,
-                                                 marker.payload_length);
+    RtpUtility::RtpHeaderParser rtp_parser(read_buffer_, marker.payload_length);
     if (rtp_parser.RTCP()) {
       rtp_parser.ParseRtcp(&marker.rtp_header);
       packets_.push_back(marker);

@@ -31,7 +31,7 @@ class RtcpCollectorTransport : public webrtc::Transport {
   }
   virtual int SendRTCPPacket(int channel, const void* data, int len) {
     const uint8_t* buf = static_cast<const uint8_t*>(data);
-    webrtc::ModuleRTPUtility::RTPHeaderParser parser(buf, len);
+    webrtc::RtpUtility::RtpHeaderParser parser(buf, len);
     if (parser.RTCP()) {
       Packet p;
       p.channel = channel;

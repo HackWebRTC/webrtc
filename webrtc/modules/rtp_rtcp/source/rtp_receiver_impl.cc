@@ -22,10 +22,10 @@
 
 namespace webrtc {
 
-using ModuleRTPUtility::GetCurrentRTP;
-using ModuleRTPUtility::Payload;
-using ModuleRTPUtility::RTPPayloadParser;
-using ModuleRTPUtility::StringCompare;
+using RtpUtility::GetCurrentRTP;
+using RtpUtility::Payload;
+using RtpUtility::RTPPayloadParser;
+using RtpUtility::StringCompare;
 
 RtpReceiver* RtpReceiver::CreateVideoReceiver(
     int id, Clock* clock,

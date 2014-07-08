@@ -259,12 +259,10 @@ TEST(FecTest, FecTest) {
               // Only push one (fake) frame to the FEC.
               mediaPacket->data[1] &= 0x7f;
 
-              ModuleRTPUtility::AssignUWord16ToBuffer(&mediaPacket->data[2],
-                                                      seqNum);
-              ModuleRTPUtility::AssignUWord32ToBuffer(&mediaPacket->data[4],
-                                                      timeStamp);
-              ModuleRTPUtility::AssignUWord32ToBuffer(&mediaPacket->data[8],
-                                                      ssrc);
+              RtpUtility::AssignUWord16ToBuffer(&mediaPacket->data[2], seqNum);
+              RtpUtility::AssignUWord32ToBuffer(&mediaPacket->data[4],
+                                                timeStamp);
+              RtpUtility::AssignUWord32ToBuffer(&mediaPacket->data[8], ssrc);
               // Generate random values for payload
               for (int32_t j = 12; j < mediaPacket->length; ++j) {
                 mediaPacket->data[j] = static_cast<uint8_t>(rand() % 256);
@@ -303,7 +301,7 @@ TEST(FecTest, FecTest) {
                 memcpy(receivedPacket->pkt->data, mediaPacket->data,
                        mediaPacket->length);
                 receivedPacket->seq_num =
-                    ModuleRTPUtility::BufferToUWord16(&mediaPacket->data[2]);
+                    RtpUtility::BufferToUWord16(&mediaPacket->data[2]);
                 receivedPacket->is_fec = false;
               }
               mediaPacketIdx++;

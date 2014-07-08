@@ -254,8 +254,7 @@ TEST_F(EndToEndTest, ReceivesAndRetransmitsNack) {
    private:
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
       RTPHeader header;
-      EXPECT_TRUE(
-          rtp_parser_->Parse(packet, static_cast<int>(length), &header));
+      EXPECT_TRUE(rtp_parser_->Parse(packet, length, &header));
 
       // Never drop retransmitted packets.
       if (dropped_packets_.find(header.sequenceNumber) !=
@@ -342,7 +341,7 @@ TEST_F(EndToEndTest, DISABLED_CanReceiveFec) {
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE
         EXCLUSIVE_LOCKS_REQUIRED(crit_) {
       RTPHeader header;
-      EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
+      EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
       EXPECT_EQ(kRedPayloadType, header.payloadType);
       int encapsulated_payload_type =
@@ -445,7 +444,7 @@ void EndToEndTest::DecodesRetransmittedFrame(bool retransmit_over_rtx) {
    private:
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
       RTPHeader header;
-      EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
+      EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
       if (header.timestamp == retransmitted_timestamp_) {
         EXPECT_EQ(retransmission_ssrc_, header.ssrc);
@@ -632,7 +631,7 @@ void EndToEndTest::ReceivesPliAndRecovers(int rtp_history_ms) {
    private:
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
       RTPHeader header;
-      EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
+      EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
       // Drop all retransmitted packets to force a PLI.
       if (header.timestamp <= highest_dropped_timestamp_)
@@ -724,7 +723,7 @@ TEST_F(EndToEndTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
    private:
     virtual DeliveryStatus DeliverPacket(const uint8_t* packet,
                                          size_t length) OVERRIDE {
-      if (RtpHeaderParser::IsRtcp(packet, static_cast<int>(length))) {
+      if (RtpHeaderParser::IsRtcp(packet, length)) {
         return receiver_->DeliverPacket(packet, length);
       } else {
         DeliveryStatus delivery_status =
@@ -1188,7 +1187,7 @@ void EndToEndTest::TestSendsSetSsrcs(size_t num_ssrcs,
    private:
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
       RTPHeader header;
-      EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
+      EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
       EXPECT_TRUE(valid_ssrcs_[header.ssrc])
           << "Received unknown SSRC: " << header.ssrc;
@@ -1557,7 +1556,7 @@ TEST_F(EndToEndTest, RedundantPayloadsTransmittedOnAllSsrcs) {
    private:
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
       RTPHeader header;
-      EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
+      EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
       if (!registered_rtx_ssrc_[header.ssrc])
         return SEND_PACKET;
@@ -1642,7 +1641,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
    private:
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
       RTPHeader header;
-      EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
+      EXPECT_TRUE(parser_->Parse(packet, length, &header));
       const uint32_t ssrc = header.ssrc;
       const uint16_t sequence_number = header.sequenceNumber;
       const uint32_t timestamp = header.timestamp;

@@ -866,7 +866,7 @@ void RtpFecTest::ReceivedPackets(const PacketList& packet_list, int* loss_mask,
         // For media packets, the sequence number and marker bit is
         // obtained from RTP header. These were set in ConstructMediaPackets().
         received_packet->seq_num =
-            webrtc::ModuleRTPUtility::BufferToUWord16(&packet->data[2]);
+            webrtc::RtpUtility::BufferToUWord16(&packet->data[2]);
       } else {
         // The sequence number, marker bit, and ssrc number are defined in the
         // RTP header of the FEC packet, which is not constructed in this test.
@@ -921,12 +921,11 @@ int RtpFecTest::ConstructMediaPacketsSeqNum(int num_media_packets,
     // Only push one (fake) frame to the FEC.
     media_packet->data[1] &= 0x7f;
 
-    webrtc::ModuleRTPUtility::AssignUWord16ToBuffer(&media_packet->data[2],
-                                                    sequence_number);
-    webrtc::ModuleRTPUtility::AssignUWord32ToBuffer(&media_packet->data[4],
-                                                    time_stamp);
-    webrtc::ModuleRTPUtility::AssignUWord32ToBuffer(&media_packet->data[8],
-                                                    ssrc_);
+    webrtc::RtpUtility::AssignUWord16ToBuffer(&media_packet->data[2],
+                                              sequence_number);
+    webrtc::RtpUtility::AssignUWord32ToBuffer(&media_packet->data[4],
+                                              time_stamp);
+    webrtc::RtpUtility::AssignUWord32ToBuffer(&media_packet->data[8], ssrc_);
 
     // Generate random values for payload.
     for (int j = 12; j < media_packet->length; ++j) {

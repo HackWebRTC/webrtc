@@ -125,7 +125,7 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
   virtual bool SendRtp(const uint8_t* packet, size_t length) OVERRIDE {
     CriticalSectionScoped lock(crit_.get());
     RTPHeader header;
-    EXPECT_TRUE(rtp_parser_->Parse(packet, static_cast<int>(length), &header));
+    EXPECT_TRUE(rtp_parser_->Parse(packet, length, &header));
     receive_stats_->IncomingPacket(header, length, false);
     payload_registry_->SetIncomingPayloadType(header);
     remote_bitrate_estimator_->IncomingPacket(
@@ -151,8 +151,7 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
                                                rtx_media_ssrcs_[header.ssrc],
                                                header);
       length = restored_length;
-      EXPECT_TRUE(rtp_parser_->Parse(
-          restored_packet, static_cast<int>(length), &header));
+      EXPECT_TRUE(rtp_parser_->Parse(restored_packet, length, &header));
     } else {
       rtp_rtcp_->SetRemoteSSRC(header.ssrc);
     }
@@ -291,7 +290,7 @@ class LowRateStreamObserver : public test::DirectTransport,
                                        size_t length) OVERRIDE {
     CriticalSectionScoped lock(crit_.get());
     RTPHeader header;
-    EXPECT_TRUE(rtp_parser_->Parse(packet, static_cast<int>(length), &header));
+    EXPECT_TRUE(rtp_parser_->Parse(packet, length, &header));
     receive_stats_->IncomingPacket(header, length, false);
     remote_bitrate_estimator_->IncomingPacket(
         clock_->TimeInMilliseconds(), static_cast<int>(length - 12), header);

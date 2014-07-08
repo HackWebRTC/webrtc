@@ -104,7 +104,7 @@ class VideoAnalyzer : public PacketReceiver,
                                        size_t length) OVERRIDE {
     scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
     RTPHeader header;
-    parser->Parse(packet, static_cast<int>(length), &header);
+    parser->Parse(packet, length, &header);
     {
       CriticalSectionScoped lock(crit_.get());
       recv_times_[header.timestamp - rtp_timestamp_delta_] =
@@ -143,7 +143,7 @@ class VideoAnalyzer : public PacketReceiver,
   virtual bool SendRtp(const uint8_t* packet, size_t length) OVERRIDE {
     scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
     RTPHeader header;
-    parser->Parse(packet, static_cast<int>(length), &header);
+    parser->Parse(packet, length, &header);
 
     {
       CriticalSectionScoped lock(crit_.get());

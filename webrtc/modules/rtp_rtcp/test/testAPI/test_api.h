@@ -52,7 +52,9 @@ class LoopBackTransport : public webrtc::Transport {
     }
     RTPHeader header;
     scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
-    if (!parser->Parse(static_cast<const uint8_t*>(data), len, &header)) {
+    if (!parser->Parse(static_cast<const uint8_t*>(data),
+                       static_cast<size_t>(len),
+                       &header)) {
       return -1;
     }
     PayloadUnion payload_specific;

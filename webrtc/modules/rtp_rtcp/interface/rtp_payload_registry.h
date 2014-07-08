@@ -25,17 +25,15 @@ class RTPPayloadStrategy {
 
   virtual bool CodecsMustBeUnique() const = 0;
 
-  virtual bool PayloadIsCompatible(
-      const ModuleRTPUtility::Payload& payload,
-      const uint32_t frequency,
-      const uint8_t channels,
-      const uint32_t rate) const = 0;
+  virtual bool PayloadIsCompatible(const RtpUtility::Payload& payload,
+                                   const uint32_t frequency,
+                                   const uint8_t channels,
+                                   const uint32_t rate) const = 0;
 
-  virtual void UpdatePayloadRate(
-      ModuleRTPUtility::Payload* payload,
-      const uint32_t rate) const = 0;
+  virtual void UpdatePayloadRate(RtpUtility::Payload* payload,
+                                 const uint32_t rate) const = 0;
 
-  virtual ModuleRTPUtility::Payload* CreatePayloadType(
+  virtual RtpUtility::Payload* CreatePayloadType(
       const char payloadName[RTP_PAYLOAD_NAME_SIZE],
       const int8_t payloadType,
       const uint32_t frequency,
@@ -43,7 +41,7 @@ class RTPPayloadStrategy {
       const uint32_t rate) const = 0;
 
   virtual int GetPayloadTypeFrequency(
-      const ModuleRTPUtility::Payload& payload) const = 0;
+      const RtpUtility::Payload& payload) const = 0;
 
   static RTPPayloadStrategy* CreateStrategy(const bool handling_audio);
 
@@ -99,9 +97,8 @@ class RTPPayloadRegistry {
 
   int GetPayloadTypeFrequency(uint8_t payload_type) const;
 
-  bool PayloadTypeToPayload(
-    const uint8_t payload_type,
-    ModuleRTPUtility::Payload*& payload) const;
+  bool PayloadTypeToPayload(const uint8_t payload_type,
+                            RtpUtility::Payload*& payload) const;
 
   void ResetLastReceivedPayloadTypes() {
     CriticalSectionScoped cs(crit_sect_.get());
@@ -151,7 +148,7 @@ class RTPPayloadRegistry {
   bool IsRtxInternal(const RTPHeader& header) const;
 
   scoped_ptr<CriticalSectionWrapper> crit_sect_;
-  ModuleRTPUtility::PayloadTypeMap payload_type_map_;
+  RtpUtility::PayloadTypeMap payload_type_map_;
   scoped_ptr<RTPPayloadStrategy> rtp_payload_strategy_;
   int8_t  red_payload_type_;
   int8_t ulpfec_payload_type_;

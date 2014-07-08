@@ -159,10 +159,10 @@ int32_t RTPReceiverAudio::OnNewPayloadTypeCreated(
     uint32_t frequency) {
   CriticalSectionScoped lock(crit_sect_.get());
 
-  if (ModuleRTPUtility::StringCompare(payload_name, "telephone-event", 15)) {
+  if (RtpUtility::StringCompare(payload_name, "telephone-event", 15)) {
     telephone_event_payload_type_ = payload_type;
   }
-  if (ModuleRTPUtility::StringCompare(payload_name, "cn", 2)) {
+  if (RtpUtility::StringCompare(payload_name, "cn", 2)) {
     //  we can have three CNG on 8000Hz, 16000Hz and 32000Hz
     if (frequency == 8000) {
       cng_nb_payload_type_ = payload_type;

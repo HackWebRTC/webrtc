@@ -26,13 +26,12 @@ public:
                    RTPSender* rtpSender);
     virtual ~RTPSenderAudio();
 
-    int32_t RegisterAudioPayload(
-        const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-        const int8_t payloadType,
-        const uint32_t frequency,
-        const uint8_t channels,
-        const uint32_t rate,
-        ModuleRTPUtility::Payload*& payload);
+    int32_t RegisterAudioPayload(const char payloadName[RTP_PAYLOAD_NAME_SIZE],
+                                 const int8_t payloadType,
+                                 const uint32_t frequency,
+                                 const uint8_t channels,
+                                 const uint32_t rate,
+                                 RtpUtility::Payload*& payload);
 
     int32_t SendAudio(const FrameType frameType,
                       const int8_t payloadType,

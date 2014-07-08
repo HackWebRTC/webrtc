@@ -359,7 +359,7 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
   uint16_t packet_over_head_;
 
   int8_t payload_type_ GUARDED_BY(send_critsect_);
-  std::map<int8_t, ModuleRTPUtility::Payload *> payload_type_map_;
+  std::map<int8_t, RtpUtility::Payload*> payload_type_map_;
 
   RtpHeaderExtensionMap rtp_header_extension_map_;
   int32_t transmission_time_offset_;

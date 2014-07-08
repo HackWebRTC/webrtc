@@ -100,8 +100,6 @@ class Call : public webrtc::Call, public PacketReceiver {
   std::map<uint32_t, VideoSendStream*> send_ssrcs_ GUARDED_BY(send_lock_);
   scoped_ptr<RWLockWrapper> send_lock_;
 
-  scoped_ptr<RtpHeaderParser> rtp_header_parser_;
-
   scoped_ptr<CpuOveruseObserverProxy> overuse_observer_proxy_;
 
   VideoSendStream::RtpStateMap suspended_send_ssrcs_;
@@ -133,7 +131,6 @@ Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
     : config_(config),
       receive_lock_(RWLockWrapper::CreateRWLock()),
       send_lock_(RWLockWrapper::CreateRWLock()),
-      rtp_header_parser_(RtpHeaderParser::Create()),
       video_engine_(video_engine),
       base_channel_id_(-1) {
   assert(video_engine != NULL);
@@ -339,7 +336,7 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(const uint8_t* packet,
 
 PacketReceiver::DeliveryStatus Call::DeliverPacket(const uint8_t* packet,
                                                    size_t length) {
-  if (RtpHeaderParser::IsRtcp(packet, static_cast<int>(length)))
+  if (RtpHeaderParser::IsRtcp(packet, length))
     return DeliverRtcp(packet, length);
 
   return DeliverRtp(packet, length);

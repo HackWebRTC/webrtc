@@ -61,15 +61,15 @@ void AssignUWord8(uint8_t* buffer, size_t* offset, uint8_t value) {
   buffer[(*offset)++] = value;
 }
 void AssignUWord16(uint8_t* buffer, size_t* offset, uint16_t value) {
-  ModuleRTPUtility::AssignUWord16ToBuffer(buffer + *offset, value);
+  RtpUtility::AssignUWord16ToBuffer(buffer + *offset, value);
   *offset += 2;
 }
 void AssignUWord24(uint8_t* buffer, size_t* offset, uint32_t value) {
-  ModuleRTPUtility::AssignUWord24ToBuffer(buffer + *offset, value);
+  RtpUtility::AssignUWord24ToBuffer(buffer + *offset, value);
   *offset += 3;
 }
 void AssignUWord32(uint8_t* buffer, size_t* offset, uint32_t value) {
-  ModuleRTPUtility::AssignUWord32ToBuffer(buffer + *offset, value);
+  RtpUtility::AssignUWord32ToBuffer(buffer + *offset, value);
   *offset += 4;
 }
 

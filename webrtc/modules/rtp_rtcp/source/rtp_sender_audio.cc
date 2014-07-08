@@ -89,10 +89,10 @@ int32_t RTPSenderAudio::RegisterAudioPayload(
     const uint32_t frequency,
     const uint8_t channels,
     const uint32_t rate,
-    ModuleRTPUtility::Payload*& payload) {
+    RtpUtility::Payload*& payload) {
   CriticalSectionScoped cs(_sendAudioCritsect);
 
-  if (ModuleRTPUtility::StringCompare(payloadName, "cn", 2))  {
+  if (RtpUtility::StringCompare(payloadName, "cn", 2)) {
     //  we can have multiple CNG payload types
     if (frequency == 8000) {
       _cngNBPayloadType = payloadType;
@@ -110,14 +110,14 @@ int32_t RTPSenderAudio::RegisterAudioPayload(
       return -1;
     }
   }
-  if (ModuleRTPUtility::StringCompare(payloadName, "telephone-event", 15)) {
+  if (RtpUtility::StringCompare(payloadName, "telephone-event", 15)) {
     // Don't add it to the list
     // we dont want to allow send with a DTMF payloadtype
     _dtmfPayloadType = payloadType;
     return 0;
     // The default timestamp rate is 8000 Hz, but other rates may be defined.
   }
-  payload = new ModuleRTPUtility::Payload;
+  payload = new RtpUtility::Payload;
   payload->typeSpecific.Audio.frequency = frequency;
   payload->typeSpecific.Audio.channels = channels;
   payload->typeSpecific.Audio.rate = rate;
@@ -388,8 +388,8 @@ int32_t RTPSenderAudio::SendAudio(
           return -1;
         }
         uint32_t REDheader = (timestampOffset << 10) + blockLength;
-        ModuleRTPUtility::AssignUWord24ToBuffer(dataBuffer + rtpHeaderLength,
-                                                REDheader);
+        RtpUtility::AssignUWord24ToBuffer(dataBuffer + rtpHeaderLength,
+                                          REDheader);
         rtpHeaderLength += 3;
 
         dataBuffer[rtpHeaderLength++] = fragmentation->fragmentationPlType[0];
@@ -436,7 +436,7 @@ int32_t RTPSenderAudio::SendAudio(
     // Update audio level extension, if included.
     {
       uint16_t packetSize = payloadSize + rtpHeaderLength;
-      ModuleRTPUtility::RTPHeaderParser rtp_parser(dataBuffer, packetSize);
+      RtpUtility::RtpHeaderParser rtp_parser(dataBuffer, packetSize);
       RTPHeader rtp_header;
       rtp_parser.Parse(rtp_header);
       _rtpSender->UpdateAudioLevel(dataBuffer, packetSize, rtp_header,
@@ -558,7 +558,7 @@ RTPSenderAudio::SendTelephoneEventPacket(const bool ended,
         // First byte is Event number, equals key number
         dtmfbuffer[12] = _dtmfKey;
         dtmfbuffer[13] = E|R|volume;
-        ModuleRTPUtility::AssignUWord16ToBuffer(dtmfbuffer+14, duration);
+        RtpUtility::AssignUWord16ToBuffer(dtmfbuffer + 14, duration);
 
         _sendAudioCritsect->Leave();
         TRACE_EVENT_INSTANT2("webrtc_rtp",

@@ -354,7 +354,7 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
 
     virtual Action OnSendRtp(const uint8_t* packet, size_t length) {
       RTPHeader header;
-      EXPECT_TRUE(parser_->Parse(packet, static_cast<int>(length), &header));
+      EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
       if (!rtp_start_timestamp_set_) {
         // Calculate the rtp timestamp offset in order to calculate the real

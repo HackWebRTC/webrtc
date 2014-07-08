@@ -66,7 +66,7 @@ ReceiveStatistics* NullObjectReceiveStatistics() {
   return &null_receive_statistics;
 }
 
-namespace ModuleRTPUtility {
+namespace RtpUtility {
 
 enum {
   kRtcpExpectedVersion = 2,
@@ -215,16 +215,16 @@ void RTPPayload::SetType(RtpVideoCodecTypes videoType) {
   }
 }
 
-RTPHeaderParser::RTPHeaderParser(const uint8_t* rtpData,
-                                 const uint32_t rtpDataLength)
-  : _ptrRTPDataBegin(rtpData),
-    _ptrRTPDataEnd(rtpData ? (rtpData + rtpDataLength) : NULL) {
+RtpHeaderParser::RtpHeaderParser(const uint8_t* rtpData,
+                                 const size_t rtpDataLength)
+    : _ptrRTPDataBegin(rtpData),
+      _ptrRTPDataEnd(rtpData ? (rtpData + rtpDataLength) : NULL) {
 }
 
-RTPHeaderParser::~RTPHeaderParser() {
+RtpHeaderParser::~RtpHeaderParser() {
 }
 
-bool RTPHeaderParser::RTCP() const {
+bool RtpHeaderParser::RTCP() const {
   // 72 to 76 is reserved for RTP
   // 77 to 79 is not reserver but  they are not assigned we will block them
   // for RTCP 200 SR  == marker bit + 72
@@ -299,7 +299,7 @@ bool RTPHeaderParser::RTCP() const {
   return RTCP;
 }
 
-bool RTPHeaderParser::ParseRtcp(RTPHeader* header) const {
+bool RtpHeaderParser::ParseRtcp(RTPHeader* header) const {
   assert(header != NULL);
 
   const ptrdiff_t length = _ptrRTPDataEnd - _ptrRTPDataBegin;
@@ -328,7 +328,7 @@ bool RTPHeaderParser::ParseRtcp(RTPHeader* header) const {
   return true;
 }
 
-bool RTPHeaderParser::Parse(RTPHeader& header,
+bool RtpHeaderParser::Parse(RTPHeader& header,
                             RtpHeaderExtensionMap* ptrExtensionMap) const {
   const ptrdiff_t length = _ptrRTPDataEnd - _ptrRTPDataBegin;
   if (length < kRtpMinParseLength) {
@@ -441,7 +441,7 @@ bool RTPHeaderParser::Parse(RTPHeader& header,
   return true;
 }
 
-void RTPHeaderParser::ParseOneByteExtensionHeader(
+void RtpHeaderParser::ParseOneByteExtensionHeader(
     RTPHeader& header,
     const RtpHeaderExtensionMap* ptrExtensionMap,
     const uint8_t* ptrRTPDataExtensionEnd,
@@ -552,10 +552,9 @@ void RTPHeaderParser::ParseOneByteExtensionHeader(
   }
 }
 
-uint8_t RTPHeaderParser::ParsePaddingBytes(
-  const uint8_t* ptrRTPDataExtensionEnd,
-  const uint8_t* ptr) const {
-
+uint8_t RtpHeaderParser::ParsePaddingBytes(
+    const uint8_t* ptrRTPDataExtensionEnd,
+    const uint8_t* ptr) const {
   uint8_t num_zero_bytes = 0;
   while (ptrRTPDataExtensionEnd - ptr > 0) {
     if (*ptr != 0) {
@@ -768,6 +767,6 @@ int RTPPayloadParser::ParseVP8TIDAndKeyIdx(RTPPayloadVP8* vp8,
   return 0;
 }
 
-}  // namespace ModuleRTPUtility
+}  // namespace RtpUtility
 
 }  // namespace webrtc

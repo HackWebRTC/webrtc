@@ -133,11 +133,12 @@ void StreamStatisticianImpl::UpdateCounters(const RTPHeader& header,
 void StreamStatisticianImpl::UpdateJitter(const RTPHeader& header,
                                           uint32_t receive_time_secs,
                                           uint32_t receive_time_frac) {
-  uint32_t receive_time_rtp = ModuleRTPUtility::ConvertNTPTimeToRTP(
-          receive_time_secs, receive_time_frac, header.payload_type_frequency);
-  uint32_t last_receive_time_rtp = ModuleRTPUtility::ConvertNTPTimeToRTP(
-      last_receive_time_secs_, last_receive_time_frac_,
-      header.payload_type_frequency);
+  uint32_t receive_time_rtp = RtpUtility::ConvertNTPTimeToRTP(
+      receive_time_secs, receive_time_frac, header.payload_type_frequency);
+  uint32_t last_receive_time_rtp =
+      RtpUtility::ConvertNTPTimeToRTP(last_receive_time_secs_,
+                                      last_receive_time_frac_,
+                                      header.payload_type_frequency);
   int32_t time_diff_samples = (receive_time_rtp - last_receive_time_rtp) -
       (header.timestamp - last_received_timestamp_);
 

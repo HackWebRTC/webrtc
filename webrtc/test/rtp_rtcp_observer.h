@@ -129,7 +129,7 @@ class RtpRtcpObserver {
 
   private:
     virtual bool SendRtp(const uint8_t* packet, size_t length) OVERRIDE {
-      EXPECT_FALSE(RtpHeaderParser::IsRtcp(packet, static_cast<int>(length)));
+      EXPECT_FALSE(RtpHeaderParser::IsRtcp(packet, length));
       Action action;
       {
         CriticalSectionScoped lock(crit_);
@@ -146,7 +146,7 @@ class RtpRtcpObserver {
     }
 
     virtual bool SendRtcp(const uint8_t* packet, size_t length) OVERRIDE {
-      EXPECT_TRUE(RtpHeaderParser::IsRtcp(packet, static_cast<int>(length)));
+      EXPECT_TRUE(RtpHeaderParser::IsRtcp(packet, length));
       Action action;
       {
         CriticalSectionScoped lock(crit_);

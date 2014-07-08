@@ -35,7 +35,7 @@ private:
     inline uint16_t RtpDumpHtons(uint16_t x) const;
 
     // Return true if the packet starts with a valid RTCP header.
-    // Note: See ModuleRTPUtility::RTPHeaderParser::RTCP() for details on how
+    // Note: See RtpUtility::RtpHeaderParser::RTCP() for details on how
     //       to determine if the packet is an RTCP packet.
     bool RTCP(const uint8_t* packet) const;
 

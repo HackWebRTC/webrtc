@@ -31,7 +31,9 @@ class ExtensionVerifyTransport : public webrtc::Transport {
 
   virtual int SendPacket(int channel, const void* data, int len) {
     webrtc::RTPHeader header;
-    if (parser_->Parse(static_cast<const uint8_t*>(data), len, &header)) {
+    if (parser_->Parse(reinterpret_cast<const uint8_t*>(data),
+                       static_cast<size_t>(len),
+                       &header)) {
       bool ok = true;
       if (audio_level_id_ >= 0 &&
           !header.extension.hasAudioLevel) {

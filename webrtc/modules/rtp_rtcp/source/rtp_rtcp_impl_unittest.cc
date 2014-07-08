@@ -232,8 +232,9 @@ class RtpSendingTestTransport : public Transport {
   virtual int SendPacket(int channel, const void* data, int length) {
     RTPHeader header;
     scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
-    EXPECT_TRUE(
-        parser->Parse(static_cast<const uint8_t*>(data), length, &header));
+    EXPECT_TRUE(parser->Parse(static_cast<const uint8_t*>(data),
+                              static_cast<size_t>(length),
+                              &header));
     bytes_received_[header.ssrc] += length;
     ++packets_received_[header.ssrc];
     return length;

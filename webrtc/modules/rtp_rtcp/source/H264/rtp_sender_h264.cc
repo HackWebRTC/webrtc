@@ -238,9 +238,14 @@ RTPSenderH264::SendH264FillerData(const WebRtcRTPHeader* rtpHeader,
 
     dataBuffer[0] = static_cast<uint8_t>(0x80);            // version 2
     dataBuffer[1] = rtpHeader->header.payloadType;
-    ModuleRTPUtility::AssignUWord16ToBuffer(dataBuffer+2, _rtpSender.IncrementSequenceNumber()); // get the current SequenceNumber and add by 1 after returning
-    ModuleRTPUtility::AssignUWord32ToBuffer(dataBuffer+4, rtpHeader->header.timestamp);
-    ModuleRTPUtility::AssignUWord32ToBuffer(dataBuffer+8, rtpHeader->header.ssrc);
+    RtpUtility::AssignUWord16ToBuffer(
+        dataBuffer + 2,
+        _rtpSender.IncrementSequenceNumber());  // get the current
+                                                // SequenceNumber and add by 1
+                                                // after returning
+    RtpUtility::AssignUWord32ToBuffer(dataBuffer + 4,
+                                      rtpHeader->header.timestamp);
+    RtpUtility::AssignUWord32ToBuffer(dataBuffer + 8, rtpHeader->header.ssrc);
 
     // set filler NALU type
     dataBuffer[12] = 12;        // NRI field = 0, type 12
@@ -361,8 +366,12 @@ RTPSenderH264::SendH264SVCRelayPacket(const WebRtcRTPHeader* rtpHeader,
 
     // _sequenceNumber will not work for re-ordering by NACK from original sender
     // engine responsible for this
-    ModuleRTPUtility::AssignUWord16ToBuffer(dataBuffer+2, _rtpSender.IncrementSequenceNumber()); // get the current SequenceNumber and add by 1 after returning
-    //ModuleRTPUtility::AssignUWord32ToBuffer(dataBuffer+8, ssrc);
+    RtpUtility::AssignUWord16ToBuffer(
+        dataBuffer + 2,
+        _rtpSender.IncrementSequenceNumber());  // get the current
+                                                // SequenceNumber and add by 1
+                                                // after returning
+    // RtpUtility::AssignUWord32ToBuffer(dataBuffer+8, ssrc);
 
     // how do we know it's the last relayed packet in a frame?
     // 1) packets arrive in order, the engine manages that

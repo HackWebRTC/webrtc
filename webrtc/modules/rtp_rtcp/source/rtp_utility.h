@@ -28,8 +28,7 @@ RtpFeedback* NullObjectRtpFeedback();
 RtpAudioFeedback* NullObjectRtpAudioFeedback();
 ReceiveStatistics* NullObjectReceiveStatistics();
 
-namespace ModuleRTPUtility
-{
+namespace RtpUtility {
     // January 1970, in NTP seconds.
     const uint32_t NTP_JAN_1970 = 2208988800UL;
 
@@ -92,12 +91,10 @@ namespace ModuleRTPUtility
      */
     uint32_t BufferToUWord32(const uint8_t* dataBuffer);
 
-    class RTPHeaderParser
-    {
+    class RtpHeaderParser {
     public:
-        RTPHeaderParser(const uint8_t* rtpData,
-                        const uint32_t rtpDataLength);
-        ~RTPHeaderParser();
+     RtpHeaderParser(const uint8_t* rtpData, size_t rtpDataLength);
+     ~RtpHeaderParser();
 
         bool RTCP() const;
         bool ParseRtcp(RTPHeader* header) const;
@@ -207,7 +204,7 @@ namespace ModuleRTPUtility
         const RtpVideoCodecTypes    _videoType;
     };
 
-}  // namespace ModuleRTPUtility
+    }  // namespace RtpUtility
 
 }  // namespace webrtc
 

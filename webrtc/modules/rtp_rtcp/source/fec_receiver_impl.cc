@@ -171,7 +171,7 @@ int32_t FecReceiverImpl::AddReceivedRedPacket(
         payload_data_length - REDHeaderLength);
     received_packet->pkt->length = payload_data_length - REDHeaderLength;
     received_packet->ssrc =
-        ModuleRTPUtility::BufferToUWord32(&incoming_rtp_packet[8]);
+        RtpUtility::BufferToUWord32(&incoming_rtp_packet[8]);
 
   } else {
     // copy the RTP header

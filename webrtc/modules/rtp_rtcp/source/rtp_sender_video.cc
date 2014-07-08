@@ -84,20 +84,20 @@ int32_t RTPSenderVideo::RegisterVideoPayload(
     const char payloadName[RTP_PAYLOAD_NAME_SIZE],
     const int8_t payloadType,
     const uint32_t maxBitRate,
-    ModuleRTPUtility::Payload*& payload) {
+    RtpUtility::Payload*& payload) {
   CriticalSectionScoped cs(_sendVideoCritsect);
 
   RtpVideoCodecTypes videoType = kRtpVideoGeneric;
-  if (ModuleRTPUtility::StringCompare(payloadName, "VP8",3)) {
+  if (RtpUtility::StringCompare(payloadName, "VP8", 3)) {
     videoType = kRtpVideoVp8;
-  } else if (ModuleRTPUtility::StringCompare(payloadName, "H264", 4))  {
+  } else if (RtpUtility::StringCompare(payloadName, "H264", 4)) {
     videoType = kRtpVideoH264;
-  } else if (ModuleRTPUtility::StringCompare(payloadName, "I420", 4)) {
+  } else if (RtpUtility::StringCompare(payloadName, "I420", 4)) {
     videoType = kRtpVideoGeneric;
   } else {
     videoType = kRtpVideoGeneric;
   }
-  payload = new ModuleRTPUtility::Payload;
+  payload = new RtpUtility::Payload;
   payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
   strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
   payload->typeSpecific.Video.videoCodecType = videoType;
@@ -213,7 +213,7 @@ RTPSenderVideo::SendRTPIntraRequest()
     data[2] = 0;
     data[3] = 1; // length
 
-    ModuleRTPUtility::AssignUWord32ToBuffer(data+4, _rtpSender.SSRC());
+    RtpUtility::AssignUWord32ToBuffer(data + 4, _rtpSender.SSRC());
 
     TRACE_EVENT_INSTANT1("webrtc_rtp",
                          "Video::IntraRequest",

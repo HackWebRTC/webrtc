@@ -83,11 +83,9 @@ class RtpRtcpVideoTest : public ::testing::Test {
                                uint32_t sequence_number) {
     dataBuffer[0] = static_cast<uint8_t>(0x80);  // version 2
     dataBuffer[1] = static_cast<uint8_t>(kPayloadType);
-    ModuleRTPUtility::AssignUWord16ToBuffer(dataBuffer + 2,
-                                                    sequence_number);
-    ModuleRTPUtility::AssignUWord32ToBuffer(dataBuffer + 4, timestamp);
-    ModuleRTPUtility::AssignUWord32ToBuffer(dataBuffer + 8,
-                                                    0x1234);  // SSRC.
+    RtpUtility::AssignUWord16ToBuffer(dataBuffer + 2, sequence_number);
+    RtpUtility::AssignUWord32ToBuffer(dataBuffer + 4, timestamp);
+    RtpUtility::AssignUWord32ToBuffer(dataBuffer + 8, 0x1234);  // SSRC.
     int32_t rtpHeaderLength = 12;
     return rtpHeaderLength;
   }
