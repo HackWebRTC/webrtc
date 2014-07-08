@@ -89,9 +89,7 @@ class Call : public webrtc::Call, public PacketReceiver {
 
  private:
   DeliveryStatus DeliverRtcp(const uint8_t* packet, size_t length);
-  DeliveryStatus DeliverRtp(const RTPHeader& header,
-                            const uint8_t* packet,
-                            size_t length);
+  DeliveryStatus DeliverRtp(const uint8_t* packet, size_t length);
 
   Call::Config config_;
 
@@ -288,7 +286,7 @@ uint32_t Call::ReceiveBitrateEstimate() {
   return 0;
 }
 
-Call::PacketReceiver::DeliveryStatus Call::DeliverRtcp(const uint8_t* packet,
+PacketReceiver::DeliveryStatus Call::DeliverRtcp(const uint8_t* packet,
                                                        size_t length) {
   // TODO(pbos): Figure out what channel needs it actually.
   //             Do NOT broadcast! Also make sure it's a valid packet.
@@ -319,32 +317,32 @@ Call::PacketReceiver::DeliveryStatus Call::DeliverRtcp(const uint8_t* packet,
   return rtcp_delivered ? DELIVERY_OK : DELIVERY_PACKET_ERROR;
 }
 
-Call::PacketReceiver::DeliveryStatus Call::DeliverRtp(const RTPHeader& header,
-                                                      const uint8_t* packet,
-                                                      size_t length) {
+PacketReceiver::DeliveryStatus Call::DeliverRtp(const uint8_t* packet,
+                                                size_t length) {
+  // Minimum RTP header size.
+  if (length < 12)
+    return DELIVERY_PACKET_ERROR;
+
+  const uint8_t* ptr = &packet[8];
+  uint32_t ssrc = ptr[0] << 24 | ptr[1] << 16 | ptr[2] << 8 | ptr[3] ;
+
   ReadLockScoped read_lock(*receive_lock_);
   std::map<uint32_t, VideoReceiveStream*>::iterator it =
-      receive_ssrcs_.find(header.ssrc);
+      receive_ssrcs_.find(ssrc);
 
   if (it == receive_ssrcs_.end())
     return DELIVERY_UNKNOWN_SSRC;
 
-  return it->second->DeliverRtp(static_cast<const uint8_t*>(packet), length)
-             ? DELIVERY_OK
-             : DELIVERY_PACKET_ERROR;
+  return it->second->DeliverRtp(packet, length) ? DELIVERY_OK
+                                                : DELIVERY_PACKET_ERROR;
 }
 
-Call::PacketReceiver::DeliveryStatus Call::DeliverPacket(const uint8_t* packet,
-                                                         size_t length) {
-  // TODO(pbos): ExtensionMap if there are extensions.
+PacketReceiver::DeliveryStatus Call::DeliverPacket(const uint8_t* packet,
+                                                   size_t length) {
   if (RtpHeaderParser::IsRtcp(packet, static_cast<int>(length)))
     return DeliverRtcp(packet, length);
 
-  RTPHeader rtp_header;
-  if (!rtp_header_parser_->Parse(packet, static_cast<int>(length), &rtp_header))
-    return DELIVERY_PACKET_ERROR;
-
-  return DeliverRtp(rtp_header, packet, length);
+  return DeliverRtp(packet, length);
 }
 
 }  // namespace internal
