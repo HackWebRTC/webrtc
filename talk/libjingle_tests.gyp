@@ -62,6 +62,7 @@
       'dependencies': [
         '<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv',
         'gunit',
+        '<@(libjingle_tests_additional_deps)',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
