@@ -28,6 +28,8 @@ char kTSanDefaultSuppressions[] =
 "race:webrtc::TraceImpl::WriteToFile\n"
 "race:webrtc::VideoEngine::SetTraceFilter\n"
 "race:webrtc::VoiceEngine::SetTraceFilter\n"
+"race:webrtc::Trace::set_level_filter\n"
+"race:webrtc::GetStaticInstance<webrtc::TraceImpl>\n"
 
 // Audio processing
 // https://code.google.com/p/webrtc/issues/detail?id=2521 for details.
@@ -57,7 +59,7 @@ char kTSanDefaultSuppressions[] =
 
 // third_party/usrsctp
 // TODO(jiayl): https://code.google.com/p/webrtc/issues/detail?id=3492
-"race:third_party/usrsctp/usrsctplib/user_sctp_timer_iterate.c\n"
+"race:user_sctp_timer_iterate\n"
 
 // Potential deadlocks detected after roll in r6516.
 // https://code.google.com/p/webrtc/issues/detail?id=3509
@@ -78,31 +80,6 @@ char kTSanDefaultSuppressions[] =
 
 // From Chromium's tsan_suppressions.cc file.
 
-// False positives in libglib.so. Since we don't instrument them, we cannot
-// reason about the synchronization in them.
-"race:libglib*.so\n"
-
-// Races in libevent, http://crbug.com/23244.
-"race:libevent/event.c\n"
-
-// http://crbug.com/84094.
-"race:sqlite3StatusSet\n"
-"race:pcache1EnforceMaxPage\n"
-"race:pcache1AllocPage\n"
-
-// http://crbug.com/157586
-"race:third_party/libvpx/source/libvpx/vp8/decoder/threading.c\n"
-
-// http://crbug.com/158922
-"race:third_party/libvpx/source/libvpx/vp8/encoder/*\n"
-
-// http://crbug.com/223352
-"race:uprv_malloc_46\n"
-"race:uprv_realloc_46\n"
-
-// http://crbug.com/244385
-"race:unixTempFileDir\n"
-
 // http://crbug.com/244774
 "race:webrtc::RTPReceiver::ProcessBitrate\n"
 "race:webrtc::RTPSender::ProcessBitrate\n"
@@ -114,63 +91,6 @@ char kTSanDefaultSuppressions[] =
 "race:webrtc::vcm::VideoReceiver::Decode\n"
 "race:webrtc::VCMReceiver::FrameForDecoding\n"
 "race:*trace_event_unique_catstatic*\n"
-
-// http://crbug.com/244856
-"race:AutoPulseLock\n"
-
-// http://crbug.com/246968
-"race:webrtc::VideoCodingModuleImpl::RegisterPacketRequestCallback\n"
-
-// http://crbug.com/246970
-"race:webrtc::EventPosix::StartTimer\n"
-
-// http://crbug.com/258479
-"race:SamplingStateScope\n"
-"race:g_trace_state\n"
-
-// http://crbug.com/270037
-"race:gLibCleanupFunctions\n"
-
-// http://crbug.com/272987
-"race:webrtc::MediaStreamTrack<webrtc::AudioTrackInterface>::set_enabled\n"
-
-// http://crbug.com/345245
-"race:jingle_glue::JingleThreadWrapper::~JingleThreadWrapper\n"
-"race:webrtc::voe::Channel::UpdatePacketDelay\n"
-"race:webrtc::voe::Channel::GetDelayEstimate\n"
-"race:webrtc::VCMCodecDataBase::DeregisterReceiveCodec\n"
-"race:webrtc::GainControlImpl::set_stream_analog_level\n"
-
-// http://crbug.com/347538
-"race:sctp_timer_start\n"
-
-// http://crbug.com/347548
-"race:cricket::WebRtcVideoMediaChannel::MaybeResetVieSendCodec\n"
-"race:cricket::WebRtcVideoMediaChannel::SetSendCodec\n"
-
-// http://crbug.com/348511
-"race:webrtc::acm1::AudioCodingModuleImpl::PlayoutData10Ms\n"
-
-// http://crbug.com/348982
-"race:cricket::P2PTransportChannel::OnConnectionDestroyed\n"
-"race:cricket::P2PTransportChannel::AddConnection\n"
-
-// http://crbug.com/348984
-"race:sctp_express_handle_sack\n"
-
-// http://crbug.com/350982
-"race:libvpx/vp9/decoder/vp9_thread.c\n"
-
-// http://crbug.com/372807
-"deadlock:net::X509Certificate::CreateCertificateListFromBytes\n"
-"deadlock:net::X509Certificate::CreateFromBytes\n"
-"deadlock:net::SSLClientSocketNSS::Core::DoHandshakeLoop\n"
-
-// False positive in libc's tzset_internal, http://crbug.com/379738.
-"race:tzset_internal\n"
-
-// http://crbug.com/380554
-"deadlock:g_type_add_interface_static\n"
 
 // End of suppressions.
 ;  // Please keep this semicolon.
