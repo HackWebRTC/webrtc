@@ -57,45 +57,12 @@ SSRCDatabase::CreateSSRC()
 
     uint32_t ssrc = GenerateRandom();
 
-#ifndef WEBRTC_NO_STL
-
     while(_ssrcMap.find(ssrc) != _ssrcMap.end())
     {
         ssrc = GenerateRandom();
     }
     _ssrcMap[ssrc] = 0;
 
-#else
-    if(_sizeOfSSRC <= _numberOfSSRC)
-    {
-        // allocate more space
-        const int newSize = _sizeOfSSRC + 10;
-        uint32_t* tempSSRCVector = new uint32_t[newSize];
-        memcpy(tempSSRCVector, _ssrcVector, _sizeOfSSRC*sizeof(uint32_t));
-        delete [] _ssrcVector;
-
-        _ssrcVector = tempSSRCVector;
-        _sizeOfSSRC = newSize;
-    }
-
-    // check if in DB
-    if(_ssrcVector)
-    {
-        for (int i=0; i<_numberOfSSRC; i++)
-        {
-            if (_ssrcVector[i] == ssrc)
-            {
-                // we have a match
-                i = 0; // start over with a new ssrc
-                ssrc = GenerateRandom();
-            }
-
-        }
-        //  add to database
-        _ssrcVector[_numberOfSSRC] = ssrc;
-        _numberOfSSRC++;
-    }
-#endif
     return ssrc;
 }
 
@@ -103,39 +70,7 @@ int32_t
 SSRCDatabase::RegisterSSRC(const uint32_t ssrc)
 {
     CriticalSectionScoped lock(_critSect);
-
-#ifndef WEBRTC_NO_STL
-
     _ssrcMap[ssrc] = 0;
-
-#else
-    if(_sizeOfSSRC <= _numberOfSSRC)
-    {
-        // allocate more space
-        const int newSize = _sizeOfSSRC + 10;
-        uint32_t* tempSSRCVector = new uint32_t[newSize];
-        memcpy(tempSSRCVector, _ssrcVector, _sizeOfSSRC*sizeof(uint32_t));
-        delete [] _ssrcVector;
-
-        _ssrcVector = tempSSRCVector;
-        _sizeOfSSRC = newSize;
-    }
-    // check if in DB
-    if(_ssrcVector)
-    {
-        for (int i=0; i<_numberOfSSRC; i++)
-        {
-            if (_ssrcVector[i] == ssrc)
-            {
-                // we have a match
-                return -1;
-            }
-        }
-        //  add to database
-        _ssrcVector[_numberOfSSRC] = ssrc;
-        _numberOfSSRC++;
-    }
-#endif
     return 0;
 }
 
@@ -143,26 +78,7 @@ int32_t
 SSRCDatabase::ReturnSSRC(const uint32_t ssrc)
 {
     CriticalSectionScoped lock(_critSect);
-
-#ifndef WEBRTC_NO_STL
     _ssrcMap.erase(ssrc);
-
-#else
-    if(_ssrcVector)
-    {
-        for (int i=0; i<_numberOfSSRC; i++)
-        {
-            if (_ssrcVector[i] == ssrc)
-            {
-                // we have a match
-                // remove from database
-                _ssrcVector[i] = _ssrcVector[_numberOfSSRC-1];
-                _numberOfSSRC--;
-                break;
-            }
-        }
-    }
-#endif
     return 0;
 }
 
@@ -178,22 +94,12 @@ SSRCDatabase::SSRCDatabase()
     srand(tv.tv_usec);
 #endif
 
-#ifdef WEBRTC_NO_STL
-    _sizeOfSSRC = 10;
-    _numberOfSSRC = 0;
-    _ssrcVector = new uint32_t[10];
-#endif
     _critSect = CriticalSectionWrapper::CreateCriticalSection();
 }
 
 SSRCDatabase::~SSRCDatabase()
 {
-#ifdef WEBRTC_NO_STL
-    delete [] _ssrcVector;
-#else
     _ssrcMap.clear();
-#endif
-    delete _critSect;
 }
 
 uint32_t SSRCDatabase::GenerateRandom()
