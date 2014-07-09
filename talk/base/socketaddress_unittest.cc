@@ -290,10 +290,18 @@ TEST(SocketAddressTest, TestEqualityOperators) {
 
   addr2 = SocketAddress("fe80::1", 5678);
   EXPECT_PRED2(AreUnequal, addr1, addr2);
+
+  SocketAddress addr3("a.b.c.d", 1);
+  SocketAddress addr4("b.b.c.d", 1);
+  EXPECT_PRED2(AreUnequal, addr3, addr4);
+  EXPECT_PRED2(AreEqual, addr3, addr3);
+
+  addr3.SetIP(addr1.ip());
+  addr4.SetIP(addr1.ip());
+  EXPECT_PRED2(AreEqual,addr3, addr4);
 }
 
-bool IsLessThan(const SocketAddress& addr1,
-                                      const SocketAddress& addr2) {
+bool IsLessThan(const SocketAddress& addr1, const SocketAddress& addr2) {
   return addr1 < addr2 &&
       !(addr2 < addr1) &&
       !(addr1 == addr2);
@@ -324,6 +332,10 @@ TEST(SocketAddressTest, TestComparisonOperator) {
   addr2 = SocketAddress("fe80::1", 5678);
   EXPECT_FALSE(addr1 < addr2);
   EXPECT_FALSE(addr2 < addr1);
+
+  SocketAddress addr3("a.b.c.d", 1);
+  SocketAddress addr4("b.b.c.d", 1);
+  EXPECT_PRED2(IsLessThan, addr3, addr4);
 }
 
 TEST(SocketAddressTest, TestToSensitiveString) {

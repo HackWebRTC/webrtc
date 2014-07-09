@@ -244,25 +244,20 @@ bool SocketAddress::operator==(const SocketAddress& addr) const {
 }
 
 bool SocketAddress::operator<(const SocketAddress& addr) const {
-  if (ip_ < addr.ip_)
-    return true;
-  else if (addr.ip_ < ip_)
-    return false;
+  if (ip_ != addr.ip_)
+    return ip_ < addr.ip_;
 
-  // We only check hostnames if both IPs are zero.  This matches EqualIPs()
-  if (addr.IsAnyIP()) {
-    if (hostname_ < addr.hostname_)
-      return true;
-    else if (addr.hostname_ < hostname_)
-      return false;
-  }
+  // We only check hostnames if both IPs are ANY or unspecified.  This matches
+  // EqualIPs().
+  if ((IPIsAny(ip_) || IPIsUnspec(ip_)) && hostname_ != addr.hostname_)
+    return hostname_ < addr.hostname_;
 
   return port_ < addr.port_;
 }
 
 bool SocketAddress::EqualIPs(const SocketAddress& addr) const {
   return (ip_ == addr.ip_) &&
-      ((!IPIsAny(ip_)) || (hostname_ == addr.hostname_));
+      ((!IPIsAny(ip_) && !IPIsUnspec(ip_)) || (hostname_ == addr.hostname_));
 }
 
 bool SocketAddress::EqualPorts(const SocketAddress& addr) const {
