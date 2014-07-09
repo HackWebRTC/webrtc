@@ -220,7 +220,7 @@ LowRateStreamObserver::LowRateStreamObserver(
                          kRemoteBitrateEstimatorMinBitrateBps));
   forward_transport_config_.link_capacity_kbps =
       kHighBandwidthLimitBps / 1000;
-  forward_transport_config_.queue_length = 100;  // Something large.
+  forward_transport_config_.queue_length_packets = 100;  // Something large.
   test::DirectTransport::SetConfig(forward_transport_config_);
   test::DirectTransport::SetReceiver(this);
 }

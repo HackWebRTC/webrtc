@@ -35,7 +35,7 @@
 
 namespace webrtc {
 
-static const int kFullStackTestDurationSecs = 10;
+static const int kFullStackTestDurationSecs = 60;
 
 struct FullStackTestParams {
   const char* test_label;
@@ -44,14 +44,17 @@ struct FullStackTestParams {
     size_t width, height;
     int fps;
   } clip;
-  unsigned int bitrate;
+  int min_bitrate_bps;
+  int target_bitrate_bps;
+  int max_bitrate_bps;
   double avg_psnr_threshold;
   double avg_ssim_threshold;
+  FakeNetworkPipe::Config link;
 };
 
 class FullStackTest : public test::CallTest {
  protected:
-  void TestWithoutPacketLoss(const FullStackTestParams& params);
+  void RunTest(const FullStackTestParams& params);
 };
 
 class VideoAnalyzer : public PacketReceiver,
@@ -367,19 +370,21 @@ class VideoAnalyzer : public PacketReceiver,
   const scoped_ptr<EventWrapper> done_;
 };
 
-void FullStackTest::TestWithoutPacketLoss(const FullStackTestParams& params) {
-  test::DirectTransport transport;
+void FullStackTest::RunTest(const FullStackTestParams& params) {
+  test::DirectTransport send_transport(params.link);
+  test::DirectTransport recv_transport(params.link);
   VideoAnalyzer analyzer(NULL,
-                         &transport,
+                         &send_transport,
                          params.test_label,
                          params.avg_psnr_threshold,
                          params.avg_ssim_threshold,
                          kFullStackTestDurationSecs * params.clip.fps);
 
-  CreateCalls(Call::Config(&analyzer), Call::Config(&analyzer));
+  CreateCalls(Call::Config(&analyzer), Call::Config(&recv_transport));
 
   analyzer.SetReceiver(receiver_call_->Receiver());
-  transport.SetReceiver(&analyzer);
+  send_transport.SetReceiver(&analyzer);
+  recv_transport.SetReceiver(sender_call_->Receiver());
 
   CreateSendConfig(1);
 
@@ -391,8 +396,9 @@ void FullStackTest::TestWithoutPacketLoss(const FullStackTestParams& params) {
   VideoStream* stream = &video_streams_[0];
   stream->width = params.clip.width;
   stream->height = params.clip.height;
-  stream->min_bitrate_bps = stream->target_bitrate_bps =
-      stream->max_bitrate_bps = params.bitrate * 1000;
+  stream->min_bitrate_bps = params.min_bitrate_bps;
+  stream->target_bitrate_bps = params.target_bitrate_bps;
+  stream->max_bitrate_bps = params.max_bitrate_bps;
   stream->max_framerate = params.clip.fps;
 
   CreateMatchingReceiveConfigs();
@@ -418,32 +424,111 @@ void FullStackTest::TestWithoutPacketLoss(const FullStackTestParams& params) {
 
   analyzer.Wait();
 
-  transport.StopSending();
+  send_transport.StopSending();
+  recv_transport.StopSending();
 
   Stop();
 
   DestroyStreams();
 }
 
-FullStackTestParams paris_qcif = {"net_delay_0_0_plr_0",
-                                  {"paris_qcif", 176, 144, 30},
-                                  300,
-                                  36.0,
-                                  0.96};
-
-// TODO(pbos): Decide on psnr/ssim thresholds for foreman_cif.
-FullStackTestParams foreman_cif = {"foreman_cif_net_delay_0_0_plr_0",
-                                   {"foreman_cif", 352, 288, 30},
-                                   700,
-                                   0.0,
-                                   0.0};
-
 TEST_F(FullStackTest, ParisQcifWithoutPacketLoss) {
-  TestWithoutPacketLoss(paris_qcif);
+  FullStackTestParams paris_qcif = {"net_delay_0_0_plr_0",
+                                    {"paris_qcif", 176, 144, 30},
+                                    300000,
+                                    300000,
+                                    300000,
+                                    36.0,
+                                    0.96
+                                   };
+  RunTest(paris_qcif);
 }
 
 TEST_F(FullStackTest, ForemanCifWithoutPacketLoss) {
-  TestWithoutPacketLoss(foreman_cif);
+  // TODO(pbos): Decide on psnr/ssim thresholds for foreman_cif.
+  FullStackTestParams foreman_cif = {"foreman_cif_net_delay_0_0_plr_0",
+                                     {"foreman_cif", 352, 288, 30},
+                                     700000,
+                                     700000,
+                                     700000,
+                                     0.0,
+                                     0.0
+                                    };
+  RunTest(foreman_cif);
 }
 
+TEST_F(FullStackTest, ForemanCif500kbps) {
+  FullStackTestParams foreman_cif = {"foreman_cif_500kbps",
+                                     {"foreman_cif", 352, 288, 30},
+                                     30000,
+                                     500000,
+                                     2000000,
+                                     0.0,
+                                     0.0
+                                    };
+  foreman_cif.link.queue_length_packets = 0;
+  foreman_cif.link.queue_delay_ms = 0;
+  foreman_cif.link.link_capacity_kbps = 500;
+  RunTest(foreman_cif);
+}
+
+TEST_F(FullStackTest, ForemanCif500kbpsLimitedQueue) {
+  FullStackTestParams foreman_cif = {"foreman_cif_500kbps_32pkts_queue",
+                                     {"foreman_cif", 352, 288, 30},
+                                     30000,
+                                     500000,
+                                     2000000,
+                                     0.0,
+                                     0.0
+                                    };
+  foreman_cif.link.queue_length_packets = 32;
+  foreman_cif.link.queue_delay_ms = 0;
+  foreman_cif.link.link_capacity_kbps = 500;
+  RunTest(foreman_cif);
+}
+
+TEST_F(FullStackTest, ForemanCif500kbps100ms) {
+  FullStackTestParams foreman_cif = {"foreman_cif_500kbps_100ms",
+                                     {"foreman_cif", 352, 288, 30},
+                                     30000,
+                                     500000,
+                                     2000000,
+                                     0.0,
+                                     0.0
+                                    };
+  foreman_cif.link.queue_length_packets = 0;
+  foreman_cif.link.queue_delay_ms = 100;
+  foreman_cif.link.link_capacity_kbps = 500;
+  RunTest(foreman_cif);
+}
+
+TEST_F(FullStackTest, ForemanCif500kbps100msLimitedQueue) {
+  FullStackTestParams foreman_cif = {"foreman_cif_500kbps_100ms_32pkts_queue",
+                                     {"foreman_cif", 352, 288, 30},
+                                     30000,
+                                     500000,
+                                     2000000,
+                                     0.0,
+                                     0.0
+                                    };
+  foreman_cif.link.queue_length_packets = 32;
+  foreman_cif.link.queue_delay_ms = 100;
+  foreman_cif.link.link_capacity_kbps = 500;
+  RunTest(foreman_cif);
+}
+
+TEST_F(FullStackTest, ForemanCif1000kbps100msLimitedQueue) {
+  FullStackTestParams foreman_cif = {"foreman_cif_1000kbps_100ms_32pkts_queue",
+                                     {"foreman_cif", 352, 288, 30},
+                                     30000,
+                                     2000000,
+                                     2000000,
+                                     0.0,
+                                     0.0
+                                    };
+  foreman_cif.link.queue_length_packets = 32;
+  foreman_cif.link.queue_delay_ms = 100;
+  foreman_cif.link.link_capacity_kbps = 1000;
+  RunTest(foreman_cif);
+}
 }  // namespace webrtc

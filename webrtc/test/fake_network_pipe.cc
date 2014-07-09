@@ -104,8 +104,8 @@ void FakeNetworkPipe::SendPacket(const uint8_t* data, size_t data_length) {
   if (packet_receiver_ == NULL)
     return;
   CriticalSectionScoped crit(lock_.get());
-  if (config_.queue_length > 0 &&
-      capacity_link_.size() >= config_.queue_length) {
+  if (config_.queue_length_packets > 0 &&
+      capacity_link_.size() >= config_.queue_length_packets) {
     // Too many packet on the link, drop this one.
     ++dropped_packets_;
     return;
