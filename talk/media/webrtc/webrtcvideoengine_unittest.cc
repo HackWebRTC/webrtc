@@ -2495,7 +2495,6 @@ TEST_F(WebRtcVideoMediaChannelTest, DISABLED_TwoStreamsSendAndUnsignalledRecv) {
 
 TEST_F(WebRtcVideoMediaChannelTest,
        TwoStreamsSendAndFailUnsignalledRecv) {
-  webrtc::Trace::set_level_filter(webrtc::kTraceAll);
   Base::TwoStreamsSendAndFailUnsignalledRecv(
       cricket::VideoCodec(100, "VP8", 640, 400, 30, 0));
 }
