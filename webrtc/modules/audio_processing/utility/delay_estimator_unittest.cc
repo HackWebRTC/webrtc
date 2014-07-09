@@ -383,14 +383,23 @@ TEST_F(DelayEstimatorTest, VerifyEnableRobustValidation) {
 
 TEST_F(DelayEstimatorTest, InitializedSpectrumAfterProcess) {
   // In this test we verify that the mean spectra are initialized after first
-  // time we call WebRtc_AddFarSpectrum() and Process() respectively.
+  // time we call WebRtc_AddFarSpectrum() and Process() respectively. The test
+  // also verifies the state is not left for zero spectra.
+  const float kZerosFloat[kSpectrumSize] = { 0.0 };
+  const uint16_t kZerosU16[kSpectrumSize] = { 0 };
 
   // For floating point operations, process one frame and verify initialization
   // flag.
   Init();
+  EXPECT_EQ(0, WebRtc_AddFarSpectrumFloat(farend_handle_, kZerosFloat,
+                                          spectrum_size_));
+  EXPECT_EQ(0, farend_self_->far_spectrum_initialized);
   EXPECT_EQ(0, WebRtc_AddFarSpectrumFloat(farend_handle_, far_f_,
                                            spectrum_size_));
   EXPECT_EQ(1, farend_self_->far_spectrum_initialized);
+  EXPECT_EQ(-2, WebRtc_DelayEstimatorProcessFloat(handle_, kZerosFloat,
+                                                  spectrum_size_));
+  EXPECT_EQ(0, self_->near_spectrum_initialized);
   EXPECT_EQ(-2, WebRtc_DelayEstimatorProcessFloat(handle_, near_f_,
                                                   spectrum_size_));
   EXPECT_EQ(1, self_->near_spectrum_initialized);
@@ -398,9 +407,15 @@ TEST_F(DelayEstimatorTest, InitializedSpectrumAfterProcess) {
   // For fixed point operations, process one frame and verify initialization
   // flag.
   Init();
+  EXPECT_EQ(0, WebRtc_AddFarSpectrumFix(farend_handle_, kZerosU16,
+                                        spectrum_size_, 0));
+  EXPECT_EQ(0, farend_self_->far_spectrum_initialized);
   EXPECT_EQ(0, WebRtc_AddFarSpectrumFix(farend_handle_, far_u16_,
                                          spectrum_size_, 0));
   EXPECT_EQ(1, farend_self_->far_spectrum_initialized);
+  EXPECT_EQ(-2, WebRtc_DelayEstimatorProcessFix(handle_, kZerosU16,
+                                                spectrum_size_, 0));
+  EXPECT_EQ(0, self_->near_spectrum_initialized);
   EXPECT_EQ(-2, WebRtc_DelayEstimatorProcessFix(handle_, near_u16_,
                                                 spectrum_size_, 0));
   EXPECT_EQ(1, self_->near_spectrum_initialized);

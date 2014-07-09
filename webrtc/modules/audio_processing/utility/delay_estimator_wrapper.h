@@ -57,11 +57,18 @@ void WebRtc_SoftResetDelayEstimatorFarend(void* handle, int delay_shift);
 //    - spectrum_size   : The size of the data arrays (same for both far- and
 //                        near-end).
 //    - far_q           : The Q-domain of the far-end data.
-int WebRtc_AddFarSpectrumFix(void* handle, uint16_t* far_spectrum,
-                             int spectrum_size, int far_q);
+//
+// Output:
+//    - handle          : Updated far-end instance.
+//
+int WebRtc_AddFarSpectrumFix(void* handle,
+                             const uint16_t* far_spectrum,
+                             int spectrum_size,
+                             int far_q);
 
 // See WebRtc_AddFarSpectrumFix() for description.
-int WebRtc_AddFarSpectrumFloat(void* handle, float* far_spectrum,
+int WebRtc_AddFarSpectrumFloat(void* handle,
+                               const float* far_spectrum,
                                int spectrum_size);
 
 // Releases the memory allocated by WebRtc_CreateDelayEstimator(...)
@@ -204,13 +211,13 @@ int WebRtc_is_robust_validation_enabled(const void* handle);
 //                        -1    - Error.
 //                        -2    - Insufficient data for estimation.
 int WebRtc_DelayEstimatorProcessFix(void* handle,
-                                    uint16_t* near_spectrum,
+                                    const uint16_t* near_spectrum,
                                     int spectrum_size,
                                     int near_q);
 
 // See WebRtc_DelayEstimatorProcessFix() for description.
 int WebRtc_DelayEstimatorProcessFloat(void* handle,
-                                      float* near_spectrum,
+                                      const float* near_spectrum,
                                       int spectrum_size);
 
 // Returns the last calculated delay updated by the function
