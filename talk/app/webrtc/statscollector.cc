@@ -270,17 +270,20 @@ bool ExtractValueFromReport(
   return false;
 }
 
+void AddTrackReport(StatsMap* reports, const std::string& track_id) {
+  // Adds an empty track report.
+  StatsReport report;
+  report.type = StatsReport::kStatsReportTypeTrack;
+  report.id = StatsId(StatsReport::kStatsReportTypeTrack, track_id);
+  report.AddValue(StatsReport::kStatsValueNameTrackId, track_id);
+  (*reports)[report.id] = report;
+}
+
 template <class TrackVector>
 void CreateTrackReports(const TrackVector& tracks, StatsMap* reports) {
   for (size_t j = 0; j < tracks.size(); ++j) {
     webrtc::MediaStreamTrackInterface* track = tracks[j];
-    // Adds an empty track report.
-    StatsReport report;
-    report.type = StatsReport::kStatsReportTypeTrack;
-    report.id = StatsId(StatsReport::kStatsReportTypeTrack, track->id());
-    report.AddValue(StatsReport::kStatsValueNameTrackId,
-                    track->id());
-    (*reports)[report.id] = report;
+    AddTrackReport(reports, track->id());
   }
 }
 
@@ -543,13 +546,19 @@ void StatsCollector::AddStream(MediaStreamInterface* stream) {
 void StatsCollector::AddLocalAudioTrack(AudioTrackInterface* audio_track,
                                         uint32 ssrc) {
   ASSERT(audio_track != NULL);
-#ifdef _DEBUG
   for (LocalAudioTrackVector::iterator it = local_audio_tracks_.begin();
        it != local_audio_tracks_.end(); ++it) {
     ASSERT(it->first != audio_track || it->second != ssrc);
   }
-#endif
+
   local_audio_tracks_.push_back(std::make_pair(audio_track, ssrc));
+
+  // Create the kStatsReportTypeTrack report for the new track if there is no
+  // report yet.
+  StatsMap::iterator it = reports_.find(
+      StatsId(StatsReport::kStatsReportTypeTrack, audio_track->id()));
+  if (it == reports_.end())
+    AddTrackReport(&reports_, audio_track->id());
 }
 
 void StatsCollector::RemoveLocalAudioTrack(AudioTrackInterface* audio_track,
@@ -617,7 +626,8 @@ StatsCollector::UpdateStats(PeerConnectionInterface::StatsOutputLevel level) {
   // Calls to UpdateStats() that occur less than kMinGatherStatsPeriod number of
   // ms apart will be ignored.
   const double kMinGatherStatsPeriod = 50;
-  if (stats_gathering_started_ + kMinGatherStatsPeriod > time_now) {
+  if (stats_gathering_started_ != 0 &&
+      stats_gathering_started_ + kMinGatherStatsPeriod > time_now) {
     return;
   }
   stats_gathering_started_ = time_now;
@@ -637,13 +647,17 @@ StatsReport* StatsCollector::PrepareLocalReport(
   StatsMap::iterator it = reports_.find(StatsId(
       StatsReport::kStatsReportTypeSsrc, ssrc_id, direction));
 
+  // Use the ID of the track that is currently mapped to the SSRC, if any.
   std::string track_id;
-  if (it == reports_.end()) {
-    if (!GetTrackIdBySsrc(ssrc, &track_id, direction))
+  if (!GetTrackIdBySsrc(ssrc, &track_id, direction)) {
+    if (it == reports_.end()) {
+      // The ssrc is not used by any track or existing report, return NULL
+      // in such case to indicate no report is prepared for the ssrc.
       return NULL;
-  } else {
-    // Keeps the old track id since we want to report the stats for inactive
-    // tracks.
+    }
+
+    // The ssrc is not used by any existing track. Keeps the old track id
+    // since we want to report the stats for inactive ssrc.
     ExtractValueFromReport(it->second,
                            StatsReport::kStatsValueNameTrackId,
                            &track_id);
@@ -653,10 +667,12 @@ StatsReport* StatsCollector::PrepareLocalReport(
                                           ssrc_id, direction);
 
   // Clear out stats from previous GatherStats calls if any.
-  if (report->timestamp != stats_gathering_started_) {
-    report->values.clear();
-    report->timestamp = stats_gathering_started_;
-  }
+  // This is required since the report will be returned for the new values.
+  // Having the old values in the report will lead to multiple values with
+  // the same name.
+  // TODO(xians): Consider changing StatsReport to use map instead of vector.
+  report->values.clear();
+  report->timestamp = stats_gathering_started_;
 
   report->AddValue(StatsReport::kStatsValueNameSsrc, ssrc_id);
   report->AddValue(StatsReport::kStatsValueNameTrackId, track_id);
@@ -674,13 +690,17 @@ StatsReport* StatsCollector::PrepareRemoteReport(
   StatsMap::iterator it = reports_.find(StatsId(
       StatsReport::kStatsReportTypeRemoteSsrc, ssrc_id, direction));
 
+  // Use the ID of the track that is currently mapped to the SSRC, if any.
   std::string track_id;
-  if (it == reports_.end()) {
-    if (!GetTrackIdBySsrc(ssrc, &track_id, direction))
+  if (!GetTrackIdBySsrc(ssrc, &track_id, direction)) {
+    if (it == reports_.end()) {
+      // The ssrc is not used by any track or existing report, return NULL
+      // in such case to indicate no report is prepared for the ssrc.
       return NULL;
-  } else {
-    // Keeps the old track id since we want to report the stats for inactive
-    // tracks.
+    }
+
+    // The ssrc is not used by any existing track. Keeps the old track id
+    // since we want to report the stats for inactive ssrc.
     ExtractValueFromReport(it->second,
                            StatsReport::kStatsValueNameTrackId,
                            &track_id);
@@ -1058,6 +1078,10 @@ bool StatsCollector::GetTrackIdBySsrc(uint32 ssrc, std::string* track_id,
   }
 
   return true;
+}
+
+void StatsCollector::ClearUpdateStatsCache() {
+  stats_gathering_started_ = 0;
 }
 
 }  // namespace webrtc

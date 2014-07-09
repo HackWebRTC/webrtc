@@ -89,6 +89,11 @@ class StatsCollector {
   bool GetTransportIdFromProxy(const std::string& proxy,
                                std::string* transport_id);
 
+  // Method used by the unittest to force a update of stats since UpdateStats()
+  // that occur less than kMinGatherStatsPeriod number of ms apart will be
+  // ignored.
+  void ClearUpdateStatsCache();
+
  private:
   bool CopySelectedReports(const std::string& selector, StatsReports* reports);
 
