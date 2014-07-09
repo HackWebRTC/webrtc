@@ -35,6 +35,8 @@ DesktopCaptureOptions DesktopCaptureOptions::CreateDefault() {
 #endif
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
   result.set_configuration_monitor(new DesktopConfigurationMonitor());
+  result.set_full_screen_chrome_window_detector(
+      new FullScreenChromeWindowDetector());
 #endif
   return result;
 }
