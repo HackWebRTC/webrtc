@@ -11,7 +11,7 @@ vars = {
   "googlecode_url": "http://%s.googlecode.com/svn",
   "sourceforge_url": "http://svn.code.sf.net/p/%(repo)s/code",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-  "chromium_revision": "280876",
+  "chromium_revision": "281479",
 
   # A small subset of WebKit is needed for the Android Python test framework.
   "webkit_trunk": "http://src.chromium.org/blink/trunk",
@@ -53,9 +53,6 @@ deps = {
 
   "third_party/clang_format":
     Var("chromium_trunk") + "/src/third_party/clang_format@" + Var("chromium_revision"),
-
-  "third_party/clang_format/script":
-    From("chromium_deps", "src/third_party/clang_format/script"),
 
   "third_party/colorama/src":
     From("chromium_deps", "src/third_party/colorama/src"),
@@ -316,7 +313,7 @@ hooks = [
                 "--platform=win32",
                 "--no_auth",
                 "--bucket", "chromium-clang-format",
-                "-s", Var("root_dir") + "/third_party/clang_format/bin/win/clang-format.exe.sha1",
+                "-s", Var("root_dir") + "/buildtools/win/clang-format.exe.sha1",
     ],
   },
   {
@@ -327,7 +324,7 @@ hooks = [
                 "--platform=darwin",
                 "--no_auth",
                 "--bucket", "chromium-clang-format",
-                "-s", Var("root_dir") + "/third_party/clang_format/bin/mac/clang-format.sha1",
+                "-s", Var("root_dir") + "/buildtools/mac/clang-format.sha1",
     ],
   },
   {
@@ -338,8 +335,17 @@ hooks = [
                 "--platform=linux*",
                 "--no_auth",
                 "--bucket", "chromium-clang-format",
-                "-s", Var("root_dir") + "/third_party/clang_format/bin/linux/clang-format.sha1",
+                "-s", Var("root_dir") + "/buildtools/linux64/clang-format.sha1",
     ],
+  },
+  {
+    # Remove clang-format binaries from third_party/clang_format/bin that
+    # aren't used anymore.
+    # TODO(kjellander) remove this and the .gitignore entry after the end of
+    # July, 2014.
+    "name": "remove_old_clang_format_binaries",
+    "pattern": ".",
+    "action": ["python", Var("root_dir") + "/third_party/clang_format/bin/rm_binaries.py"],
   },
   {
     # Pull clang if on Mac or clang is requested via GYP_DEFINES.
