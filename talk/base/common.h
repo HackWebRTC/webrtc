@@ -131,9 +131,17 @@ inline bool Assert(bool result, const char* function, const char* file,
   if (!result) {
     LogAssert(function, file, line, expression);
     Break();
-    return false;
   }
-  return true;
+  return result;
+}
+
+// Same as Assert above, but does not call Break().  Used in assert macros
+// that implement their own breaking.
+inline bool AssertNoBreak(bool result, const char* function, const char* file,
+                          int line, const char* expression) {
+  if (!result)
+    LogAssert(function, file, line, expression);
+  return result;
 }
 
 }  // namespace talk_base
@@ -143,12 +151,27 @@ inline bool Assert(bool result, const char* function, const char* file,
 #endif
 
 #ifndef ASSERT
+#if defined(WIN32)
+// Using debugbreak() inline on Windows directly in the ASSERT macro, has the
+// benefit of breaking exactly where the failing expression is and not two
+// calls up the stack.
+#define ASSERT(x) \
+    (talk_base::AssertNoBreak((x), __FUNCTION__, __FILE__, __LINE__, #x) ? \
+     (void)(1) : __debugbreak())
+#else
 #define ASSERT(x) \
     (void)talk_base::Assert((x), __FUNCTION__, __FILE__, __LINE__, #x)
 #endif
+#endif
 
 #ifndef VERIFY
+#if defined(WIN32)
+#define VERIFY(x) \
+    (talk_base::AssertNoBreak((x), __FUNCTION__, __FILE__, __LINE__, #x) ? \
+     true : (__debugbreak(), false))
+#else
 #define VERIFY(x) talk_base::Assert((x), __FUNCTION__, __FILE__, __LINE__, #x)
+#endif
 #endif
 
 #else  // !ENABLE_DEBUG
