@@ -553,16 +553,19 @@ void ViEEncoder::DeliverFrame(int id,
   if (vcm_.SendCodec() == webrtc::kVideoCodecVP8) {
     webrtc::CodecSpecificInfo codec_specific_info;
     codec_specific_info.codecType = webrtc::kVideoCodecVP8;
-    codec_specific_info.codecSpecific.VP8.hasReceivedRPSI =
-        has_received_rpsi_;
-    codec_specific_info.codecSpecific.VP8.hasReceivedSLI =
-        has_received_sli_;
-    codec_specific_info.codecSpecific.VP8.pictureIdRPSI =
-        picture_id_rpsi_;
-    codec_specific_info.codecSpecific.VP8.pictureIdSLI  =
-        picture_id_sli_;
-    has_received_sli_ = false;
-    has_received_rpsi_ = false;
+    {
+      CriticalSectionScoped cs(data_cs_.get());
+      codec_specific_info.codecSpecific.VP8.hasReceivedRPSI =
+          has_received_rpsi_;
+      codec_specific_info.codecSpecific.VP8.hasReceivedSLI =
+          has_received_sli_;
+      codec_specific_info.codecSpecific.VP8.pictureIdRPSI =
+          picture_id_rpsi_;
+      codec_specific_info.codecSpecific.VP8.pictureIdSLI  =
+          picture_id_sli_;
+      has_received_sli_ = false;
+      has_received_rpsi_ = false;
+    }
 
     vcm_.AddVideoFrame(*decimated_frame, vpm_.ContentMetrics(),
                        &codec_specific_info);
@@ -744,12 +747,14 @@ int32_t ViEEncoder::RegisterCodecObserver(ViEEncoderObserver* observer) {
 
 void ViEEncoder::OnReceivedSLI(uint32_t /*ssrc*/,
                                uint8_t picture_id) {
+  CriticalSectionScoped cs(data_cs_.get());
   picture_id_sli_ = picture_id;
   has_received_sli_ = true;
 }
 
 void ViEEncoder::OnReceivedRPSI(uint32_t /*ssrc*/,
                                 uint64_t picture_id) {
+  CriticalSectionScoped cs(data_cs_.get());
   picture_id_rpsi_ = picture_id;
   has_received_rpsi_ = true;
 }

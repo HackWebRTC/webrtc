@@ -189,7 +189,7 @@ class ViEEncoder
                         int64_t capture_time_ms, bool retransmission);
   int TimeToSendPadding(int bytes);
  private:
-  bool EncoderPaused() const;
+  bool EncoderPaused() const EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
 
   int32_t engine_id_;
   const int channel_id_;
@@ -206,32 +206,33 @@ class ViEEncoder
 
   BitrateController* bitrate_controller_;
 
-  int64_t time_of_last_incoming_frame_ms_;
-  bool send_padding_;
+  int64_t time_of_last_incoming_frame_ms_ GUARDED_BY(data_cs_);
+  bool send_padding_ GUARDED_BY(data_cs_);
   int min_transmit_bitrate_kbps_ GUARDED_BY(data_cs_);
-  int target_delay_ms_;
-  bool network_is_transmitting_;
-  bool encoder_paused_;
-  bool encoder_paused_and_dropped_frame_;
-  std::map<unsigned int, int64_t> time_last_intra_request_ms_;
+  int target_delay_ms_ GUARDED_BY(data_cs_);
+  bool network_is_transmitting_ GUARDED_BY(data_cs_);
+  bool encoder_paused_ GUARDED_BY(data_cs_);
+  bool encoder_paused_and_dropped_frame_ GUARDED_BY(data_cs_);
+  std::map<unsigned int, int64_t> time_last_intra_request_ms_
+      GUARDED_BY(data_cs_);
 
   bool fec_enabled_;
   bool nack_enabled_;
 
   ViEEncoderObserver* codec_observer_ GUARDED_BY(callback_cs_);
-  ViEEffectFilter* effect_filter_;
+  ViEEffectFilter* effect_filter_ GUARDED_BY(callback_cs_);
   ProcessThread& module_process_thread_;
 
-  bool has_received_sli_;
-  uint8_t picture_id_sli_;
-  bool has_received_rpsi_;
-  uint64_t picture_id_rpsi_;
-  std::map<unsigned int, int> ssrc_streams_;
+  bool has_received_sli_ GUARDED_BY(data_cs_);
+  uint8_t picture_id_sli_ GUARDED_BY(data_cs_);
+  bool has_received_rpsi_ GUARDED_BY(data_cs_);
+  uint64_t picture_id_rpsi_ GUARDED_BY(data_cs_);
+  std::map<unsigned int, int> ssrc_streams_ GUARDED_BY(data_cs_);
 
   // Quality modes callback
   QMVideoSettingsCallback* qm_callback_;
-  bool video_suspended_;
-  I420FrameCallback* pre_encode_callback_;
+  bool video_suspended_ GUARDED_BY(data_cs_);
+  I420FrameCallback* pre_encode_callback_ GUARDED_BY(callback_cs_);
 };
 
 }  // namespace webrtc
