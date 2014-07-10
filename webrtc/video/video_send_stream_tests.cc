@@ -1419,6 +1419,14 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesVp8Config) {
              "new encoder settings.";
     }
 
+    int32_t Encode(
+        const I420VideoFrame& input_image,
+        const CodecSpecificInfo* codec_specific_info,
+        const std::vector<VideoFrameType>* frame_types) {
+      // Silently skip the encode, FakeEncoder::Encode doesn't produce VP8.
+      return 0;
+    }
+
     virtual const void* GetEncoderSettings() OVERRIDE { return &vp8_settings_; }
 
     VideoCodecVP8 vp8_settings_;
