@@ -187,19 +187,18 @@ __inline static float32x4_t reverse_order_f32x4(float32x4_t in) {
 
 static void rftfsub_128_neon(float* a) {
   const float* c = rdft_w + 32;
-  int j1, j2, k1, k2;
-  float wkr, wki, xr, xi, yr, yi;
+  int j1, j2;
   const float32x4_t mm_half = vdupq_n_f32(0.5f);
 
   // Vectorized code (four at once).
   // Note: commented number are indexes for the first iteration of the loop.
   for (j1 = 1, j2 = 2; j2 + 7 < 64; j1 += 4, j2 += 8) {
     // Load 'wk'.
-    const float32x4_t c_j1 = vld1q_f32(&c[j1]);          //   1,  2,  3,  4,
-    const float32x4_t c_k1 = vld1q_f32(&c[29 - j1]);     //  28, 29, 30, 31,
-    const float32x4_t wkrt = vsubq_f32(mm_half, c_k1);   //  28, 29, 30, 31,
-    const float32x4_t wkr_ = reverse_order_f32x4(wkrt);
-    const float32x4_t wki_ = c_j1;                       //   1,  2,  3,  4,
+    const float32x4_t c_j1 = vld1q_f32(&c[j1]);          //  1,  2,  3,  4,
+    const float32x4_t c_k1 = vld1q_f32(&c[29 - j1]);     // 28, 29, 30, 31,
+    const float32x4_t wkrt = vsubq_f32(mm_half, c_k1);   // 28, 29, 30, 31,
+    const float32x4_t wkr_ = reverse_order_f32x4(wkrt);  // 31, 30, 29, 28,
+    const float32x4_t wki_ = c_j1;                       //  1,  2,  3,  4,
     // Load and shuffle 'a'.
     //   2,   4,   6,   8,   3,   5,   7,   9
     float32x4x2_t a_j2_p = vld2q_f32(&a[0 + j2]);
@@ -250,14 +249,14 @@ static void rftfsub_128_neon(float* a) {
 
   // Scalar code for the remaining items.
   for (; j2 < 64; j1 += 1, j2 += 2) {
-    k2 = 128 - j2;
-    k1 = 32 - j1;
-    wkr = 0.5f - c[k1];
-    wki = c[j1];
-    xr = a[j2 + 0] - a[k2 + 0];
-    xi = a[j2 + 1] + a[k2 + 1];
-    yr = wkr * xr - wki * xi;
-    yi = wkr * xi + wki * xr;
+    const int k2 = 128 - j2;
+    const int k1 = 32 - j1;
+    const float wkr = 0.5f - c[k1];
+    const float wki = c[j1];
+    const float xr = a[j2 + 0] - a[k2 + 0];
+    const float xi = a[j2 + 1] + a[k2 + 1];
+    const float yr = wkr * xr - wki * xi;
+    const float yi = wkr * xi + wki * xr;
     a[j2 + 0] -= yr;
     a[j2 + 1] -= yi;
     a[k2 + 0] += yr;
@@ -265,9 +264,92 @@ static void rftfsub_128_neon(float* a) {
   }
 }
 
+static void rftbsub_128_neon(float* a) {
+  const float* c = rdft_w + 32;
+  int j1, j2;
+  const float32x4_t mm_half = vdupq_n_f32(0.5f);
+
+  a[1] = -a[1];
+  // Vectorized code (four at once).
+  //    Note: commented number are indexes for the first iteration of the loop.
+  for (j1 = 1, j2 = 2; j2 + 7 < 64; j1 += 4, j2 += 8) {
+    // Load 'wk'.
+    const float32x4_t c_j1 = vld1q_f32(&c[j1]);         //  1,  2,  3,  4,
+    const float32x4_t c_k1 = vld1q_f32(&c[29 - j1]);    // 28, 29, 30, 31,
+    const float32x4_t wkrt = vsubq_f32(mm_half, c_k1);  // 28, 29, 30, 31,
+    const float32x4_t wkr_ = reverse_order_f32x4(wkrt); // 31, 30, 29, 28,
+    const float32x4_t wki_ = c_j1;                      //  1,  2,  3,  4,
+    // Load and shuffle 'a'.
+    //   2,   4,   6,   8,   3,   5,   7,   9
+    float32x4x2_t a_j2_p = vld2q_f32(&a[0 + j2]);
+    // 120, 122, 124, 126, 121, 123, 125, 127,
+    const float32x4x2_t k2_0_4 = vld2q_f32(&a[122 - j2]);
+    // 126, 124, 122, 120
+    const float32x4_t a_k2_p0 = reverse_order_f32x4(k2_0_4.val[0]);
+    // 127, 125, 123, 121
+    const float32x4_t a_k2_p1 = reverse_order_f32x4(k2_0_4.val[1]);
+    // Calculate 'x'.
+    const float32x4_t xr_ = vsubq_f32(a_j2_p.val[0], a_k2_p0);
+    // 2-126, 4-124, 6-122, 8-120,
+    const float32x4_t xi_ = vaddq_f32(a_j2_p.val[1], a_k2_p1);
+    // 3-127, 5-125, 7-123, 9-121,
+    // Calculate product into 'y'.
+    //    yr = wkr * xr - wki * xi;
+    //    yi = wkr * xi + wki * xr;
+    const float32x4_t a_ = vmulq_f32(wkr_, xr_);
+    const float32x4_t b_ = vmulq_f32(wki_, xi_);
+    const float32x4_t c_ = vmulq_f32(wkr_, xi_);
+    const float32x4_t d_ = vmulq_f32(wki_, xr_);
+    const float32x4_t yr_ = vaddq_f32(a_, b_);  // 2-126, 4-124, 6-122, 8-120,
+    const float32x4_t yi_ = vsubq_f32(c_, d_);  // 3-127, 5-125, 7-123, 9-121,
+                                                // Update 'a'.
+                                                //    a[j2 + 0] -= yr;
+                                                //    a[j2 + 1] -= yi;
+                                                //    a[k2 + 0] += yr;
+                                                //    a[k2 + 1] -= yi;
+    // 126, 124, 122, 120,
+    const float32x4_t a_k2_p0n = vaddq_f32(a_k2_p0, yr_);
+    // 127, 125, 123, 121,
+    const float32x4_t a_k2_p1n = vsubq_f32(yi_, a_k2_p1);
+    // Shuffle in right order and store.
+    //   2,   3,   4,   5,   6,   7,   8,   9,
+    const float32x4_t a_k2_p0nr = vrev64q_f32(a_k2_p0n);
+    const float32x4_t a_k2_p1nr = vrev64q_f32(a_k2_p1n);
+    // 124, 125, 126, 127, 120, 121, 122, 123
+    const float32x4x2_t a_k2_n = vzipq_f32(a_k2_p0nr, a_k2_p1nr);
+    //   2,   4,   6,   8,
+    a_j2_p.val[0] = vsubq_f32(a_j2_p.val[0], yr_);
+    //   3,   5,   7,   9,
+    a_j2_p.val[1] = vsubq_f32(yi_, a_j2_p.val[1]);
+    //   2,   3,   4,   5,   6,   7,   8,   9,
+    vst2q_f32(&a[0 + j2], a_j2_p);
+
+    vst1q_f32(&a[122 - j2], a_k2_n.val[1]);
+    vst1q_f32(&a[126 - j2], a_k2_n.val[0]);
+  }
+
+  // Scalar code for the remaining items.
+  for (; j2 < 64; j1 += 1, j2 += 2) {
+    const int k2 = 128 - j2;
+    const int k1 = 32 - j1;
+    const float wkr = 0.5f - c[k1];
+    const float wki = c[j1];
+    const float xr = a[j2 + 0] - a[k2 + 0];
+    const float xi = a[j2 + 1] + a[k2 + 1];
+    const float yr = wkr * xr + wki * xi;
+    const float yi = wkr * xi - wki * xr;
+    a[j2 + 0] = a[j2 + 0] - yr;
+    a[j2 + 1] = yi - a[j2 + 1];
+    a[k2 + 0] = yr + a[k2 + 0];
+    a[k2 + 1] = yi - a[k2 + 1];
+  }
+  a[65] = -a[65];
+}
+
 void aec_rdft_init_neon(void) {
   cft1st_128 = cft1st_128_neon;
   cftmdl_128 = cftmdl_128_neon;
   rftfsub_128 = rftfsub_128_neon;
+  rftbsub_128 = rftbsub_128_neon;
 }
 
