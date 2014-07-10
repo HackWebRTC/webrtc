@@ -117,6 +117,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
   configuration.paced_sender = paced_sender;
   configuration.receive_statistics = vie_receiver_.GetReceiveStatistics();
   configuration.send_bitrate_observer = &send_bitrate_observer_;
+  configuration.send_frame_count_observer = &send_frame_count_observer_;
 
   rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(configuration));
   vie_receiver_.SetRtpRtcpModule(rtp_rtcp_.get());
@@ -298,7 +299,6 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       module_process_thread_.DeRegisterModule(rtp_rtcp);
       rtp_rtcp->SetSendingStatus(false);
       rtp_rtcp->SetSendingMediaStatus(false);
-      rtp_rtcp->RegisterSendFrameCountObserver(NULL);
       rtp_rtcp->RegisterSendChannelRtcpStatisticsCallback(NULL);
       rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(NULL);
       simulcast_rtp_rtcp_.pop_back();
@@ -346,8 +346,6 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
         rtp_rtcp->DeregisterSendRtpHeaderExtension(
             kRtpExtensionAbsoluteSendTime);
       }
-      rtp_rtcp->RegisterSendFrameCountObserver(
-          rtp_rtcp_->GetSendFrameCountObserver());
       rtp_rtcp->RegisterSendChannelRtcpStatisticsCallback(
           rtp_rtcp_->GetSendChannelRtcpStatisticsCallback());
       rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(
@@ -362,7 +360,6 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       module_process_thread_.DeRegisterModule(rtp_rtcp);
       rtp_rtcp->SetSendingStatus(false);
       rtp_rtcp->SetSendingMediaStatus(false);
-      rtp_rtcp->RegisterSendFrameCountObserver(NULL);
       rtp_rtcp->RegisterSendChannelRtcpStatisticsCallback(NULL);
       rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(NULL);
       simulcast_rtp_rtcp_.pop_back();
@@ -1524,7 +1521,6 @@ void ViEChannel::ReserveRtpRtcpModules(size_t num_modules) {
     RtpRtcp* rtp_rtcp = CreateRtpRtcpModule();
     rtp_rtcp->SetSendingStatus(false);
     rtp_rtcp->SetSendingMediaStatus(false);
-    rtp_rtcp->RegisterSendFrameCountObserver(NULL);
     rtp_rtcp->RegisterSendChannelRtcpStatisticsCallback(NULL);
     rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(NULL);
     removed_rtp_rtcp_.push_back(rtp_rtcp);
@@ -1714,13 +1710,7 @@ void ViEChannel::ResetStatistics(uint32_t ssrc) {
 
 void ViEChannel::RegisterSendFrameCountObserver(
     FrameCountObserver* observer) {
-  rtp_rtcp_->RegisterSendFrameCountObserver(observer);
-  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
-  for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
-       it != simulcast_rtp_rtcp_.end();
-       it++) {
-    (*it)->RegisterSendFrameCountObserver(observer);
-  }
+  send_frame_count_observer_.Set(observer);
 }
 
 void ViEChannel::ReceivedBWEPacket(int64_t arrival_time_ms,

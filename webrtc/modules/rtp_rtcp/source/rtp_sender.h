@@ -70,7 +70,8 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
   RTPSender(const int32_t id, const bool audio, Clock *clock,
             Transport *transport, RtpAudioFeedback *audio_feedback,
             PacedSender *paced_sender,
-            BitrateStatisticsObserver* bitrate_callback);
+            BitrateStatisticsObserver* bitrate_callback,
+            FrameCountObserver* frame_count_observer);
   virtual ~RTPSender();
 
   void ProcessBitrate();
@@ -265,9 +266,6 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
   int32_t SetFecParameters(const FecProtectionParams *delta_params,
                            const FecProtectionParams *key_params);
 
-  virtual void RegisterFrameCountObserver(FrameCountObserver* observer);
-  virtual FrameCountObserver* GetFrameCountObserver() const;
-
   int SendPadData(int payload_type, uint32_t timestamp, int64_t capture_time_ms,
                   int32_t bytes, StorageType store,
                   bool force_full_size_packets, bool only_pad_after_markerbit);
@@ -373,11 +371,11 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
   scoped_ptr<CriticalSectionWrapper> statistics_crit_;
   SendDelayMap send_delays_ GUARDED_BY(statistics_crit_);
   std::map<FrameType, uint32_t> frame_counts_ GUARDED_BY(statistics_crit_);
-  FrameCountObserver* frame_count_observer_ GUARDED_BY(statistics_crit_);
   StreamDataCounters rtp_stats_ GUARDED_BY(statistics_crit_);
   StreamDataCounters rtx_rtp_stats_ GUARDED_BY(statistics_crit_);
   StreamDataCountersCallback* rtp_stats_callback_ GUARDED_BY(statistics_crit_);
   BitrateStatisticsObserver* const bitrate_callback_;
+  FrameCountObserver* const frame_count_observer_;
 
   // RTP variables
   bool start_timestamp_forced_ GUARDED_BY(send_critsect_);

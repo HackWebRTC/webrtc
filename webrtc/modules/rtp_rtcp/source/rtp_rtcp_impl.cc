@@ -38,7 +38,8 @@ RtpRtcp::Configuration::Configuration()
       audio_messages(NullObjectRtpAudioFeedback()),
       remote_bitrate_estimator(NULL),
       paced_sender(NULL),
-      send_bitrate_observer(NULL) {
+      send_bitrate_observer(NULL),
+      send_frame_count_observer(NULL) {
 }
 
 RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
@@ -62,7 +63,8 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                   configuration.outgoing_transport,
                   configuration.audio_messages,
                   configuration.paced_sender,
-                  configuration.send_bitrate_observer),
+                  configuration.send_bitrate_observer,
+                  configuration.send_frame_count_observer),
       rtcp_sender_(configuration.id,
                    configuration.audio,
                    configuration.clock,
@@ -1348,15 +1350,6 @@ void ModuleRtpRtcpImpl::RegisterSendChannelRtpStatisticsCallback(
 StreamDataCountersCallback*
     ModuleRtpRtcpImpl::GetSendChannelRtpStatisticsCallback() const {
   return rtp_sender_.GetRtpStatisticsCallback();
-}
-
-void ModuleRtpRtcpImpl::RegisterSendFrameCountObserver(
-    FrameCountObserver* observer) {
-  rtp_sender_.RegisterFrameCountObserver(observer);
-}
-
-FrameCountObserver* ModuleRtpRtcpImpl::GetSendFrameCountObserver() const {
-  return rtp_sender_.GetFrameCountObserver();
 }
 
 bool ModuleRtpRtcpImpl::IsDefaultModule() const {

@@ -68,6 +68,7 @@ class RtpRtcp : public Module {
     RemoteBitrateEstimator* remote_bitrate_estimator;
     PacedSender* paced_sender;
     BitrateStatisticsObserver* send_bitrate_observer;
+    FrameCountObserver* send_frame_count_observer;
   };
 
   /*
@@ -339,10 +340,6 @@ class RtpRtcp : public Module {
                                   bool retransmission) = 0;
 
     virtual int TimeToSendPadding(int bytes) = 0;
-
-    virtual void RegisterSendFrameCountObserver(
-        FrameCountObserver* observer) = 0;
-    virtual FrameCountObserver* GetSendFrameCountObserver() const = 0;
 
     virtual bool GetSendSideDelay(int* avg_send_delay_ms,
                                   int* max_send_delay_ms) const = 0;

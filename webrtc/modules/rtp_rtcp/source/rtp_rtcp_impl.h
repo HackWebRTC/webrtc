@@ -373,10 +373,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   void OnRequestSendReport();
 
-  virtual void RegisterSendFrameCountObserver(
-      FrameCountObserver* observer) OVERRIDE;
-  virtual FrameCountObserver* GetSendFrameCountObserver() const OVERRIDE;
-
  protected:
   void RegisterChildModule(RtpRtcp* module);
 

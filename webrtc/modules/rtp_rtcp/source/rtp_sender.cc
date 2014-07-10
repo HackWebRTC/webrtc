@@ -46,7 +46,8 @@ RTPSender::RTPSender(const int32_t id,
                      Transport* transport,
                      RtpAudioFeedback* audio_feedback,
                      PacedSender* paced_sender,
-                     BitrateStatisticsObserver* bitrate_callback)
+                     BitrateStatisticsObserver* bitrate_callback,
+                     FrameCountObserver* frame_count_observer)
     : clock_(clock),
       bitrate_sent_(clock, this),
       id_(id),
@@ -71,9 +72,9 @@ RTPSender::RTPSender(const int32_t id,
       packet_history_(clock),
       // Statistics
       statistics_crit_(CriticalSectionWrapper::CreateCriticalSection()),
-      frame_count_observer_(NULL),
       rtp_stats_callback_(NULL),
       bitrate_callback_(bitrate_callback),
+      frame_count_observer_(frame_count_observer),
       // RTP variables
       start_timestamp_forced_(false),
       start_timestamp_(0),
@@ -1662,16 +1663,6 @@ void RTPSender::BuildRtxPacket(uint8_t* buffer, uint16_t* length,
   memcpy(ptr, buffer + rtp_header.headerLength,
          *length - rtp_header.headerLength);
   *length += 2;
-}
-
-void RTPSender::RegisterFrameCountObserver(FrameCountObserver* observer) {
-  CriticalSectionScoped cs(statistics_crit_.get());
-  frame_count_observer_ = observer;
-}
-
-FrameCountObserver* RTPSender::GetFrameCountObserver() const {
-  CriticalSectionScoped cs(statistics_crit_.get());
-  return frame_count_observer_;
 }
 
 void RTPSender::RegisterRtpStatisticsCallback(

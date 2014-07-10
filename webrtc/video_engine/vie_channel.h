@@ -411,7 +411,8 @@ class ViEChannel
     DISALLOW_COPY_AND_ASSIGN(RegisterableCallback);
   };
 
-  class : public RegisterableCallback<BitrateStatisticsObserver> {
+  class RegisterableBitrateStatisticsObserver:
+    public RegisterableCallback<BitrateStatisticsObserver> {
     virtual void Notify(const BitrateStatistics& stats, uint32_t ssrc) {
       CriticalSectionScoped cs(critsect_.get());
       if (callback_)
@@ -419,6 +420,17 @@ class ViEChannel
     }
   }
   send_bitrate_observer_;
+
+  class RegisterableFrameCountObserver
+      : public RegisterableCallback<FrameCountObserver> {
+    virtual void FrameCountUpdated(FrameType frame_type,
+                                   uint32_t frame_count,
+                                   const unsigned int ssrc) {
+      CriticalSectionScoped cs(critsect_.get());
+      if (callback_)
+        callback_->FrameCountUpdated(frame_type, frame_count, ssrc);
+    }
+  } send_frame_count_observer_;
 
   int32_t channel_id_;
   int32_t engine_id_;
