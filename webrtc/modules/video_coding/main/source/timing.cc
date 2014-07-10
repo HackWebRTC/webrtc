@@ -58,6 +58,7 @@ void VCMTiming::Reset() {
 }
 
 void VCMTiming::ResetDecodeTime() {
+  CriticalSectionScoped lock(crit_sect_);
   codec_timer_.Reset();
 }
 
