@@ -12,12 +12,11 @@
  * The core AEC algorithm, SSE2 version of speed-critical functions.
  */
 
-#include "webrtc/modules/audio_processing/aec/aec_core.h"
-
 #include <emmintrin.h>
 #include <math.h>
 #include <string.h>  // memset
 
+#include "webrtc/modules/audio_processing/aec/aec_common.h"
 #include "webrtc/modules/audio_processing/aec/aec_core_internal.h"
 #include "webrtc/modules/audio_processing/aec/aec_rdft.h"
 
@@ -353,9 +352,6 @@ static __m128 mm_pow_ps(__m128 a, __m128 b) {
   }
   return a_exp_b;
 }
-
-extern ALIGN16_BEG const float ALIGN16_END WebRtcAec_weightCurve[65];
-extern ALIGN16_BEG const float ALIGN16_END WebRtcAec_overDriveCurve[65];
 
 static void OverdriveAndSuppressSSE2(AecCore* aec,
                                      float hNl[PART_LEN1],
