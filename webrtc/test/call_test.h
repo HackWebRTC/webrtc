@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "webrtc/call.h"
+#include "webrtc/system_wrappers/interface/scoped_vector.h"
 #include "webrtc/test/fake_decoder.h"
 #include "webrtc/test/fake_encoder.h"
 #include "webrtc/test/frame_generator_capturer.h"
@@ -72,7 +73,7 @@ class CallTest : public ::testing::Test {
 
   scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer_;
   test::FakeEncoder fake_encoder_;
-  test::FakeDecoder fake_decoder_;
+  ScopedVector<test::FakeDecoder> fake_decoders_;
 };
 
 class BaseTest : public RtpRtcpObserver {

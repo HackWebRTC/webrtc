@@ -100,18 +100,23 @@ void CallTest::CreateSendConfig(size_t num_streams) {
 void CallTest::CreateMatchingReceiveConfigs() {
   assert(!send_config_.rtp.ssrcs.empty());
   assert(receive_configs_.empty());
+  assert(fake_decoders_.empty());
   VideoReceiveStream::Config config;
   VideoCodec codec =
       test::CreateDecoderVideoCodec(send_config_.encoder_settings);
   config.codecs.push_back(codec);
-  if (send_config_.encoder_settings.encoder == &fake_encoder_) {
-    ExternalVideoDecoder decoder;
-    decoder.decoder = &fake_decoder_;
-    decoder.payload_type = send_config_.encoder_settings.payload_type;
-    config.external_decoders.push_back(decoder);
-  }
   config.rtp.local_ssrc = kReceiverLocalSsrc;
+  if (send_config_.encoder_settings.encoder == &fake_encoder_) {
+    config.external_decoders.resize(1);
+    config.external_decoders[0].payload_type =
+        send_config_.encoder_settings.payload_type;
+  }
   for (size_t i = 0; i < send_config_.rtp.ssrcs.size(); ++i) {
+    if (send_config_.encoder_settings.encoder == &fake_encoder_) {
+      FakeDecoder* decoder = new FakeDecoder();
+      fake_decoders_.push_back(decoder);
+      config.external_decoders[0].decoder = decoder;
+    }
     config.rtp.remote_ssrc = send_config_.rtp.ssrcs[i];
     receive_configs_.push_back(config);
   }
@@ -146,6 +151,7 @@ void CallTest::DestroyStreams() {
   for (size_t i = 0; i < receive_streams_.size(); ++i)
     receiver_call_->DestroyVideoReceiveStream(receive_streams_[i]);
   receive_streams_.clear();
+  fake_decoders_.clear();
 }
 
 const unsigned int CallTest::kDefaultTimeoutMs = 30 * 1000;
