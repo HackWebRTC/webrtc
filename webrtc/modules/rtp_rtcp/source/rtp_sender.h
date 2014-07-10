@@ -266,9 +266,12 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
   int32_t SetFecParameters(const FecProtectionParams *delta_params,
                            const FecProtectionParams *key_params);
 
-  int SendPadData(int payload_type, uint32_t timestamp, int64_t capture_time_ms,
-                  int32_t bytes, StorageType store,
-                  bool force_full_size_packets, bool only_pad_after_markerbit);
+  int SendPadData(int payload_type,
+                  uint32_t timestamp,
+                  int64_t capture_time_ms,
+                  int32_t bytes,
+                  bool force_full_size_packets,
+                  bool only_pad_after_markerbit);
 
   // Called on update of RTP statistics.
   void RegisterRtpStatisticsCallback(StreamDataCountersCallback* callback);

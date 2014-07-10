@@ -225,6 +225,7 @@ struct StreamDataCounters {
      retransmitted_packets(0),
      fec_packets(0) {}
 
+  // TODO(pbos): Rename bytes -> media_bytes.
   uint32_t bytes;  // Payload bytes, excluding RTP headers and padding.
   uint32_t header_bytes;  // Number of bytes used by RTP headers.
   uint32_t padding_bytes;  // Number of padding bytes.
