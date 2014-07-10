@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/modules/audio_processing/aec/aec_common.h"
 #include "webrtc/modules/audio_processing/aec/aec_core_internal.h"
 #include "webrtc/modules/audio_processing/aec/aec_rdft.h"
 #include "webrtc/modules/audio_processing/utility/delay_estimator_wrapper.h"
@@ -45,7 +46,7 @@ static const int freqAvgIc = PART_LEN / 2;
 // Matlab code to produce table:
 // win = sqrt(hanning(63)); win = [0 ; win(1:32)];
 // fprintf(1, '\t%.14f, %.14f, %.14f,\n', win);
-static const float sqrtHanning[65] = {
+ALIGN16_BEG const float ALIGN16_END WebRtcAec_sqrtHanning[65] = {
     0.00000000000000f, 0.02454122852291f, 0.04906767432742f, 0.07356456359967f,
     0.09801714032956f, 0.12241067519922f, 0.14673047445536f, 0.17096188876030f,
     0.19509032201613f, 0.21910124015687f, 0.24298017990326f, 0.26671275747490f,
@@ -99,10 +100,10 @@ static const float kTargetSupp[3] = {-6.9f, -11.5f, -18.4f};
 // Two sets of parameters, one for the extended filter mode.
 static const float kExtendedMinOverDrive[3] = {3.0f, 6.0f, 15.0f};
 static const float kNormalMinOverDrive[3] = {1.0f, 2.0f, 5.0f};
-static const float kExtendedSmoothingCoefficients[2][2] = {{0.9f, 0.1f},
-                                                           {0.92f, 0.08f}};
-static const float kNormalSmoothingCoefficients[2][2] = {{0.9f, 0.1f},
-                                                         {0.93f, 0.07f}};
+const float WebRtcAec_kExtendedSmoothingCoefficients[2][2] = {{0.9f, 0.1f},
+                                                              {0.92f, 0.08f}};
+const float WebRtcAec_kNormalSmoothingCoefficients[2][2] = {{0.9f, 0.1f},
+                                                            {0.93f, 0.07f}};
 
 // Number of partitions forming the NLP's "preferred" bands.
 enum {
@@ -442,7 +443,7 @@ static int PartitionDelay(const AecCore* aec) {
 }
 
 // Threshold to protect against the ill-effects of a zero far-end.
-static const float kMinFarendPSD = 15;
+const float WebRtcAec_kMinFarendPSD = 15;
 
 // Updates the following smoothed  Power Spectral Densities (PSD):
 //  - sd  : near-end
@@ -459,8 +460,8 @@ static void SmoothedPSD(AecCore* aec,
                         float xfw[2][PART_LEN1]) {
   // Power estimate smoothing coefficients.
   const float* ptrGCoh = aec->extended_filter_enabled
-                             ? kExtendedSmoothingCoefficients[aec->mult - 1]
-                             : kNormalSmoothingCoefficients[aec->mult - 1];
+      ? WebRtcAec_kExtendedSmoothingCoefficients[aec->mult - 1]
+      : WebRtcAec_kNormalSmoothingCoefficients[aec->mult - 1];
   int i;
   float sdSum = 0, seSum = 0;
 
@@ -476,7 +477,8 @@ static void SmoothedPSD(AecCore* aec,
     aec->sx[i] =
         ptrGCoh[0] * aec->sx[i] +
         ptrGCoh[1] * WEBRTC_SPL_MAX(
-            xfw[0][i] * xfw[0][i] + xfw[1][i] * xfw[1][i], kMinFarendPSD);
+            xfw[0][i] * xfw[0][i] + xfw[1][i] * xfw[1][i],
+            WebRtcAec_kMinFarendPSD);
 
     aec->sde[i][0] =
         ptrGCoh[0] * aec->sde[i][0] +
@@ -511,8 +513,9 @@ static void SmoothedPSD(AecCore* aec,
 __inline static void WindowData(float* x_windowed, const float* x) {
   int i;
   for (i = 0; i < PART_LEN; i++) {
-    x_windowed[i] = x[i] * sqrtHanning[i];
-    x_windowed[PART_LEN + i] = x[PART_LEN + i] * sqrtHanning[PART_LEN - i];
+    x_windowed[i] = x[i] * WebRtcAec_sqrtHanning[i];
+    x_windowed[PART_LEN + i] =
+        x[PART_LEN + i] * WebRtcAec_sqrtHanning[PART_LEN - i];
   }
 }
 
@@ -1347,10 +1350,10 @@ static void NonLinearProcessing(AecCore* aec, float* output, float* outputH) {
   scale = 2.0f / PART_LEN2;
   for (i = 0; i < PART_LEN; i++) {
     fft[i] *= scale;  // fft scaling
-    fft[i] = fft[i] * sqrtHanning[i] + aec->outBuf[i];
+    fft[i] = fft[i] * WebRtcAec_sqrtHanning[i] + aec->outBuf[i];
 
     fft[PART_LEN + i] *= scale;  // fft scaling
-    aec->outBuf[i] = fft[PART_LEN + i] * sqrtHanning[PART_LEN - i];
+    aec->outBuf[i] = fft[PART_LEN + i] * WebRtcAec_sqrtHanning[PART_LEN - i];
 
     // Saturate output to keep it in the allowed range.
     output[i] = WEBRTC_SPL_SAT(
@@ -1737,8 +1740,8 @@ static void TimeToFrequency(float time_data[PART_LEN2],
   // TODO(bjornv): Should we have a different function/wrapper for windowed FFT?
   if (window) {
     for (i = 0; i < PART_LEN; i++) {
-      time_data[i] *= sqrtHanning[i];
-      time_data[PART_LEN + i] *= sqrtHanning[PART_LEN - i];
+      time_data[i] *= WebRtcAec_sqrtHanning[i];
+      time_data[PART_LEN + i] *= WebRtcAec_sqrtHanning[PART_LEN - i];
     }
   }
 

@@ -14,12 +14,12 @@
  * Based on aec_core_sse2.c.
  */
 
-#include "webrtc/modules/audio_processing/aec/aec_core.h"
-
 #include <arm_neon.h>
 #include <math.h>
 #include <string.h>  // memset
 
+#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/modules/audio_processing/aec/aec_common.h"
 #include "webrtc/modules/audio_processing/aec/aec_core_internal.h"
 #include "webrtc/modules/audio_processing/aec/aec_rdft.h"
 
@@ -250,9 +250,6 @@ static void FilterAdaptationNEON(AecCore* aec,
   }
 }
 
-extern const float WebRtcAec_weightCurve[65];
-extern const float WebRtcAec_overDriveCurve[65];
-
 static float32x4_t vpowq_f32(float32x4_t a, float32x4_t b) {
   // a^b = exp2(b * log2(a))
   //   exp2(x) and log2(x) are calculated using polynomial approximations.
@@ -442,10 +439,295 @@ static void OverdriveAndSuppressNEON(AecCore* aec,
   }
 }
 
+static int PartitionDelay(const AecCore* aec) {
+  // Measures the energy in each filter partition and returns the partition with
+  // highest energy.
+  // TODO(bjornv): Spread computational cost by computing one partition per
+  // block?
+  float wfEnMax = 0;
+  int i;
+  int delay = 0;
+
+  for (i = 0; i < aec->num_partitions; i++) {
+    int j;
+    int pos = i * PART_LEN1;
+    float wfEn = 0;
+    float32x4_t vec_wfEn = vdupq_n_f32(0.0f);
+    // vectorized code (four at once)
+    for (j = 0; j + 3 < PART_LEN1; j += 4) {
+      const float32x4_t vec_wfBuf0 = vld1q_f32(&aec->wfBuf[0][pos + j]);
+      const float32x4_t vec_wfBuf1 = vld1q_f32(&aec->wfBuf[1][pos + j]);
+      vec_wfEn = vmlaq_f32(vec_wfEn, vec_wfBuf0, vec_wfBuf0);
+      vec_wfEn = vmlaq_f32(vec_wfEn, vec_wfBuf1, vec_wfBuf1);
+    }
+    {
+      float32x2_t vec_total;
+      // A B C D
+      vec_total = vpadd_f32(vget_low_f32(vec_wfEn), vget_high_f32(vec_wfEn));
+      // A+B C+D
+      vec_total = vpadd_f32(vec_total, vec_total);
+      // A+B+C+D A+B+C+D
+      wfEn = vget_lane_f32(vec_total, 0);
+    }
+
+    // scalar code for the remaining items.
+    for (; j < PART_LEN1; j++) {
+      wfEn += aec->wfBuf[0][pos + j] * aec->wfBuf[0][pos + j] +
+              aec->wfBuf[1][pos + j] * aec->wfBuf[1][pos + j];
+    }
+
+    if (wfEn > wfEnMax) {
+      wfEnMax = wfEn;
+      delay = i;
+    }
+  }
+  return delay;
+}
+
+// Updates the following smoothed  Power Spectral Densities (PSD):
+//  - sd  : near-end
+//  - se  : residual echo
+//  - sx  : far-end
+//  - sde : cross-PSD of near-end and residual echo
+//  - sxd : cross-PSD of near-end and far-end
+//
+// In addition to updating the PSDs, also the filter diverge state is determined
+// upon actions are taken.
+static void SmoothedPSD(AecCore* aec,
+                        float efw[2][PART_LEN1],
+                        float dfw[2][PART_LEN1],
+                        float xfw[2][PART_LEN1]) {
+  // Power estimate smoothing coefficients.
+  const float* ptrGCoh = aec->extended_filter_enabled
+      ? WebRtcAec_kExtendedSmoothingCoefficients[aec->mult - 1]
+      : WebRtcAec_kNormalSmoothingCoefficients[aec->mult - 1];
+  int i;
+  float sdSum = 0, seSum = 0;
+  const float32x4_t vec_15 =  vdupq_n_f32(WebRtcAec_kMinFarendPSD);
+  float32x4_t vec_sdSum = vdupq_n_f32(0.0f);
+  float32x4_t vec_seSum = vdupq_n_f32(0.0f);
+
+  for (i = 0; i + 3 < PART_LEN1; i += 4) {
+    const float32x4_t vec_dfw0 = vld1q_f32(&dfw[0][i]);
+    const float32x4_t vec_dfw1 = vld1q_f32(&dfw[1][i]);
+    const float32x4_t vec_efw0 = vld1q_f32(&efw[0][i]);
+    const float32x4_t vec_efw1 = vld1q_f32(&efw[1][i]);
+    const float32x4_t vec_xfw0 = vld1q_f32(&xfw[0][i]);
+    const float32x4_t vec_xfw1 = vld1q_f32(&xfw[1][i]);
+    float32x4_t vec_sd = vmulq_n_f32(vld1q_f32(&aec->sd[i]), ptrGCoh[0]);
+    float32x4_t vec_se = vmulq_n_f32(vld1q_f32(&aec->se[i]), ptrGCoh[0]);
+    float32x4_t vec_sx = vmulq_n_f32(vld1q_f32(&aec->sx[i]), ptrGCoh[0]);
+    float32x4_t vec_dfw_sumsq = vmulq_f32(vec_dfw0, vec_dfw0);
+    float32x4_t vec_efw_sumsq = vmulq_f32(vec_efw0, vec_efw0);
+    float32x4_t vec_xfw_sumsq = vmulq_f32(vec_xfw0, vec_xfw0);
+
+    vec_dfw_sumsq = vmlaq_f32(vec_dfw_sumsq, vec_dfw1, vec_dfw1);
+    vec_efw_sumsq = vmlaq_f32(vec_efw_sumsq, vec_efw1, vec_efw1);
+    vec_xfw_sumsq = vmlaq_f32(vec_xfw_sumsq, vec_xfw1, vec_xfw1);
+    vec_xfw_sumsq = vmaxq_f32(vec_xfw_sumsq, vec_15);
+    vec_sd = vmlaq_n_f32(vec_sd, vec_dfw_sumsq, ptrGCoh[1]);
+    vec_se = vmlaq_n_f32(vec_se, vec_efw_sumsq, ptrGCoh[1]);
+    vec_sx = vmlaq_n_f32(vec_sx, vec_xfw_sumsq, ptrGCoh[1]);
+
+    vst1q_f32(&aec->sd[i], vec_sd);
+    vst1q_f32(&aec->se[i], vec_se);
+    vst1q_f32(&aec->sx[i], vec_sx);
+
+    {
+      float32x4x2_t vec_sde = vld2q_f32(&aec->sde[i][0]);
+      float32x4_t vec_dfwefw0011 = vmulq_f32(vec_dfw0, vec_efw0);
+      float32x4_t vec_dfwefw0110 = vmulq_f32(vec_dfw0, vec_efw1);
+      vec_sde.val[0] = vmulq_n_f32(vec_sde.val[0], ptrGCoh[0]);
+      vec_sde.val[1] = vmulq_n_f32(vec_sde.val[1], ptrGCoh[0]);
+      vec_dfwefw0011 = vmlaq_f32(vec_dfwefw0011, vec_dfw1, vec_efw1);
+      vec_dfwefw0110 = vmlsq_f32(vec_dfwefw0110, vec_dfw1, vec_efw0);
+      vec_sde.val[0] = vmlaq_n_f32(vec_sde.val[0], vec_dfwefw0011, ptrGCoh[1]);
+      vec_sde.val[1] = vmlaq_n_f32(vec_sde.val[1], vec_dfwefw0110, ptrGCoh[1]);
+      vst2q_f32(&aec->sde[i][0], vec_sde);
+    }
+
+    {
+      float32x4x2_t vec_sxd = vld2q_f32(&aec->sxd[i][0]);
+      float32x4_t vec_dfwxfw0011 = vmulq_f32(vec_dfw0, vec_xfw0);
+      float32x4_t vec_dfwxfw0110 = vmulq_f32(vec_dfw0, vec_xfw1);
+      vec_sxd.val[0] = vmulq_n_f32(vec_sxd.val[0], ptrGCoh[0]);
+      vec_sxd.val[1] = vmulq_n_f32(vec_sxd.val[1], ptrGCoh[0]);
+      vec_dfwxfw0011 = vmlaq_f32(vec_dfwxfw0011, vec_dfw1, vec_xfw1);
+      vec_dfwxfw0110 = vmlsq_f32(vec_dfwxfw0110, vec_dfw1, vec_xfw0);
+      vec_sxd.val[0] = vmlaq_n_f32(vec_sxd.val[0], vec_dfwxfw0011, ptrGCoh[1]);
+      vec_sxd.val[1] = vmlaq_n_f32(vec_sxd.val[1], vec_dfwxfw0110, ptrGCoh[1]);
+      vst2q_f32(&aec->sxd[i][0], vec_sxd);
+    }
+
+    vec_sdSum = vaddq_f32(vec_sdSum, vec_sd);
+    vec_seSum = vaddq_f32(vec_seSum, vec_se);
+  }
+  {
+    float32x2_t vec_sdSum_total;
+    float32x2_t vec_seSum_total;
+    // A B C D
+    vec_sdSum_total = vpadd_f32(vget_low_f32(vec_sdSum),
+                                vget_high_f32(vec_sdSum));
+    vec_seSum_total = vpadd_f32(vget_low_f32(vec_seSum),
+                                vget_high_f32(vec_seSum));
+    // A+B C+D
+    vec_sdSum_total = vpadd_f32(vec_sdSum_total, vec_sdSum_total);
+    vec_seSum_total = vpadd_f32(vec_seSum_total, vec_seSum_total);
+    // A+B+C+D A+B+C+D
+    sdSum = vget_lane_f32(vec_sdSum_total, 0);
+    seSum = vget_lane_f32(vec_seSum_total, 0);
+  }
+
+  // scalar code for the remaining items.
+  for (; i < PART_LEN1; i++) {
+    aec->sd[i] = ptrGCoh[0] * aec->sd[i] +
+                 ptrGCoh[1] * (dfw[0][i] * dfw[0][i] + dfw[1][i] * dfw[1][i]);
+    aec->se[i] = ptrGCoh[0] * aec->se[i] +
+                 ptrGCoh[1] * (efw[0][i] * efw[0][i] + efw[1][i] * efw[1][i]);
+    // We threshold here to protect against the ill-effects of a zero farend.
+    // The threshold is not arbitrarily chosen, but balances protection and
+    // adverse interaction with the algorithm's tuning.
+    // TODO(bjornv): investigate further why this is so sensitive.
+    aec->sx[i] =
+        ptrGCoh[0] * aec->sx[i] +
+        ptrGCoh[1] * WEBRTC_SPL_MAX(
+            xfw[0][i] * xfw[0][i] + xfw[1][i] * xfw[1][i],
+            WebRtcAec_kMinFarendPSD);
+
+    aec->sde[i][0] =
+        ptrGCoh[0] * aec->sde[i][0] +
+        ptrGCoh[1] * (dfw[0][i] * efw[0][i] + dfw[1][i] * efw[1][i]);
+    aec->sde[i][1] =
+        ptrGCoh[0] * aec->sde[i][1] +
+        ptrGCoh[1] * (dfw[0][i] * efw[1][i] - dfw[1][i] * efw[0][i]);
+
+    aec->sxd[i][0] =
+        ptrGCoh[0] * aec->sxd[i][0] +
+        ptrGCoh[1] * (dfw[0][i] * xfw[0][i] + dfw[1][i] * xfw[1][i]);
+    aec->sxd[i][1] =
+        ptrGCoh[0] * aec->sxd[i][1] +
+        ptrGCoh[1] * (dfw[0][i] * xfw[1][i] - dfw[1][i] * xfw[0][i]);
+
+    sdSum += aec->sd[i];
+    seSum += aec->se[i];
+  }
+
+  // Divergent filter safeguard.
+  aec->divergeState = (aec->divergeState ? 1.05f : 1.0f) * seSum > sdSum;
+
+  if (aec->divergeState)
+    memcpy(efw, dfw, sizeof(efw[0][0]) * 2 * PART_LEN1);
+
+  // Reset if error is significantly larger than nearend (13 dB).
+  if (!aec->extended_filter_enabled && seSum > (19.95f * sdSum))
+    memset(aec->wfBuf, 0, sizeof(aec->wfBuf));
+}
+
+// Window time domain data to be used by the fft.
+__inline static void WindowData(float* x_windowed, const float* x) {
+  int i;
+  for (i = 0; i < PART_LEN; i += 4) {
+    const float32x4_t vec_Buf1 = vld1q_f32(&x[i]);
+    const float32x4_t vec_Buf2 = vld1q_f32(&x[PART_LEN + i]);
+    const float32x4_t vec_sqrtHanning = vld1q_f32(&WebRtcAec_sqrtHanning[i]);
+    // A B C D
+    float32x4_t vec_sqrtHanning_rev =
+        vld1q_f32(&WebRtcAec_sqrtHanning[PART_LEN - i - 3]);
+    // B A D C
+    vec_sqrtHanning_rev = vrev64q_f32(vec_sqrtHanning_rev);
+    // D C B A
+    vec_sqrtHanning_rev = vcombine_f32(vget_high_f32(vec_sqrtHanning_rev),
+                                       vget_low_f32(vec_sqrtHanning_rev));
+    vst1q_f32(&x_windowed[i], vmulq_f32(vec_Buf1, vec_sqrtHanning));
+    vst1q_f32(&x_windowed[PART_LEN + i],
+            vmulq_f32(vec_Buf2, vec_sqrtHanning_rev));
+  }
+}
+
+// Puts fft output data into a complex valued array.
+__inline static void StoreAsComplex(const float* data,
+                                    float data_complex[2][PART_LEN1]) {
+  int i;
+  for (i = 0; i < PART_LEN; i += 4) {
+    const float32x4x2_t vec_data = vld2q_f32(&data[2 * i]);
+    vst1q_f32(&data_complex[0][i], vec_data.val[0]);
+    vst1q_f32(&data_complex[1][i], vec_data.val[1]);
+  }
+  // fix beginning/end values
+  data_complex[1][0] = 0;
+  data_complex[1][PART_LEN] = 0;
+  data_complex[0][0] = data[0];
+  data_complex[0][PART_LEN] = data[1];
+}
+
+static void SubbandCoherenceNEON(AecCore* aec,
+                                 float efw[2][PART_LEN1],
+                                 float xfw[2][PART_LEN1],
+                                 float* fft,
+                                 float* cohde,
+                                 float* cohxd) {
+  float dfw[2][PART_LEN1];
+  int i;
+
+  if (aec->delayEstCtr == 0)
+    aec->delayIdx = PartitionDelay(aec);
+
+  // Use delayed far.
+  memcpy(xfw,
+         aec->xfwBuf + aec->delayIdx * PART_LEN1,
+         sizeof(xfw[0][0]) * 2 * PART_LEN1);
+
+  // Windowed near fft
+  WindowData(fft, aec->dBuf);
+  aec_rdft_forward_128(fft);
+  StoreAsComplex(fft, dfw);
+
+  // Windowed error fft
+  WindowData(fft, aec->eBuf);
+  aec_rdft_forward_128(fft);
+  StoreAsComplex(fft, efw);
+
+  SmoothedPSD(aec, efw, dfw, xfw);
+
+  {
+    const float32x4_t vec_1eminus10 =  vdupq_n_f32(1e-10f);
+
+    // Subband coherence
+    for (i = 0; i + 3 < PART_LEN1; i += 4) {
+      const float32x4_t vec_sd = vld1q_f32(&aec->sd[i]);
+      const float32x4_t vec_se = vld1q_f32(&aec->se[i]);
+      const float32x4_t vec_sx = vld1q_f32(&aec->sx[i]);
+      const float32x4_t vec_sdse = vmlaq_f32(vec_1eminus10, vec_sd, vec_se);
+      const float32x4_t vec_sdsx = vmlaq_f32(vec_1eminus10, vec_sd, vec_sx);
+      float32x4x2_t vec_sde = vld2q_f32(&aec->sde[i][0]);
+      float32x4x2_t vec_sxd = vld2q_f32(&aec->sxd[i][0]);
+      float32x4_t vec_cohde = vmulq_f32(vec_sde.val[0], vec_sde.val[0]);
+      float32x4_t vec_cohxd = vmulq_f32(vec_sxd.val[0], vec_sxd.val[0]);
+      vec_cohde = vmlaq_f32(vec_cohde, vec_sde.val[1], vec_sde.val[1]);
+      vec_cohde = vdivq_f32(vec_cohde, vec_sdse);
+      vec_cohxd = vmlaq_f32(vec_cohxd, vec_sxd.val[1], vec_sxd.val[1]);
+      vec_cohxd = vdivq_f32(vec_cohxd, vec_sdsx);
+
+      vst1q_f32(&cohde[i], vec_cohde);
+      vst1q_f32(&cohxd[i], vec_cohxd);
+    }
+  }
+  // scalar code for the remaining items.
+  for (; i < PART_LEN1; i++) {
+    cohde[i] =
+        (aec->sde[i][0] * aec->sde[i][0] + aec->sde[i][1] * aec->sde[i][1]) /
+        (aec->sd[i] * aec->se[i] + 1e-10f);
+    cohxd[i] =
+        (aec->sxd[i][0] * aec->sxd[i][0] + aec->sxd[i][1] * aec->sxd[i][1]) /
+        (aec->sx[i] * aec->sd[i] + 1e-10f);
+  }
+}
+
 void WebRtcAec_InitAec_neon(void) {
   WebRtcAec_FilterFar = FilterFarNEON;
   WebRtcAec_ScaleErrorSignal = ScaleErrorSignalNEON;
   WebRtcAec_FilterAdaptation = FilterAdaptationNEON;
   WebRtcAec_OverdriveAndSuppress = OverdriveAndSuppressNEON;
+  WebRtcAec_SubbandCoherence = SubbandCoherenceNEON;
 }
 
