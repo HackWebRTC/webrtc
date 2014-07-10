@@ -1369,4 +1369,65 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
   EXPECT_EQ(1u, test_encoder.num_releases());
 }
 
+TEST_F(VideoSendStreamTest, EncoderSetupPropagatesVp8Config) {
+  class VideoCodecConfigObserver : public test::SendTest,
+                                   public test::FakeEncoder {
+   public:
+    VideoCodecConfigObserver()
+        : SendTest(kDefaultTimeoutMs),
+          FakeEncoder(Clock::GetRealTimeClock()),
+          num_initializations_(0) {
+      memset(&vp8_settings_, 0, sizeof(vp8_settings_));
+    }
+
+   private:
+    virtual void ModifyConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        std::vector<VideoStream>* video_streams) OVERRIDE {
+      send_config->encoder_settings.encoder = this;
+      send_config->encoder_settings.payload_name = "VP8";
+
+      video_streams_ = *video_streams;
+    }
+
+    virtual void OnStreamsCreated(
+        VideoSendStream* send_stream,
+        const std::vector<VideoReceiveStream*>& receive_streams) OVERRIDE {
+      stream_ = send_stream;
+    }
+
+    virtual int32_t InitEncode(const VideoCodec* config,
+                               int32_t number_of_cores,
+                               uint32_t max_payload_size) OVERRIDE {
+      EXPECT_EQ(kVideoCodecVP8, config->codecType);
+      EXPECT_EQ(0,
+                memcmp(&config->codecSpecific.VP8,
+                       &vp8_settings_,
+                       sizeof(vp8_settings_)));
+      ++num_initializations_;
+      return FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
+    }
+
+    virtual void PerformTest() OVERRIDE {
+      EXPECT_EQ(1u, num_initializations_) << "VideoEncoder not initialized.";
+
+      vp8_settings_.denoisingOn = true;
+      stream_->ReconfigureVideoEncoder(video_streams_, &vp8_settings_);
+      EXPECT_EQ(2u, num_initializations_)
+          << "ReconfigureVideoEncoder did not reinitialize the encoder with "
+             "new encoder settings.";
+    }
+
+    virtual const void* GetEncoderSettings() OVERRIDE { return &vp8_settings_; }
+
+    VideoCodecVP8 vp8_settings_;
+    size_t num_initializations_;
+    VideoSendStream* stream_;
+    std::vector<VideoStream> video_streams_;
+  } test;
+
+  RunBaseTest(&test);
+}
+
 }  // namespace webrtc

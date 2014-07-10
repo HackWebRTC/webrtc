@@ -63,6 +63,7 @@ class CallTest : public ::testing::Test {
   scoped_ptr<Call> sender_call_;
   VideoSendStream::Config send_config_;
   std::vector<VideoStream> video_streams_;
+  const void* encoder_settings_;
   VideoSendStream* send_stream_;
 
   scoped_ptr<Call> receiver_call_;
@@ -89,6 +90,7 @@ class BaseTest : public RtpRtcpObserver {
   virtual Call::Config GetReceiverCallConfig();
   virtual void OnCallsCreated(Call* sender_call, Call* receiver_call);
 
+  virtual const void* GetEncoderSettings();
   virtual void ModifyConfigs(
       VideoSendStream::Config* send_config,
       std::vector<VideoReceiveStream::Config>* receive_configs,

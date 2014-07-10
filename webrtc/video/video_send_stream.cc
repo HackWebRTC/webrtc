@@ -298,8 +298,6 @@ bool VideoSendStream::ReconfigureVideoEncoder(
     const void* encoder_settings) {
   assert(!streams.empty());
   assert(config_.rtp.ssrcs.size() >= streams.size());
-  // TODO(pbos): Wire encoder_settings.
-  assert(encoder_settings == NULL);
 
   VideoCodec video_codec;
   memset(&video_codec, 0, sizeof(video_codec));
@@ -315,6 +313,16 @@ bool VideoSendStream::ReconfigureVideoEncoder(
     video_codec.codecSpecific.VP8.automaticResizeOn = false;
     video_codec.codecSpecific.VP8.frameDroppingOn = true;
     video_codec.codecSpecific.VP8.keyFrameInterval = 3000;
+  }
+
+  if (video_codec.codecType == kVideoCodecVP8) {
+    if (encoder_settings != NULL) {
+      video_codec.codecSpecific.VP8 =
+          *reinterpret_cast<const VideoCodecVP8*>(encoder_settings);
+    }
+  } else {
+    // TODO(pbos): Support encoder_settings codec-agnostically.
+    assert(encoder_settings == NULL);
   }
 
   strncpy(video_codec.plName,

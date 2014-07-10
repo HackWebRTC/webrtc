@@ -16,6 +16,7 @@ namespace test {
 
 CallTest::CallTest()
     : clock_(Clock::GetRealTimeClock()),
+      encoder_settings_(NULL),
       send_stream_(NULL),
       fake_encoder_(clock_) {
 }
@@ -39,6 +40,7 @@ void CallTest::RunBaseTest(BaseTest* test) {
   if (test->ShouldCreateReceivers()) {
     CreateMatchingReceiveConfigs();
   }
+  encoder_settings_ = test->GetEncoderSettings();
   test->ModifyConfigs(&send_config_, &receive_configs_, &video_streams_);
   CreateStreams();
   test->OnStreamsCreated(send_stream_, receive_streams_);
@@ -128,8 +130,8 @@ void CallTest::CreateStreams() {
   assert(send_stream_ == NULL);
   assert(receive_streams_.empty());
 
-  send_stream_ =
-      sender_call_->CreateVideoSendStream(send_config_, video_streams_, NULL);
+  send_stream_ = sender_call_->CreateVideoSendStream(
+      send_config_, video_streams_, encoder_settings_);
 
   for (size_t i = 0; i < receive_configs_.size(); ++i) {
     receive_streams_.push_back(
@@ -181,6 +183,10 @@ void BaseTest::OnCallsCreated(Call* sender_call, Call* receiver_call) {
 
 size_t BaseTest::GetNumStreams() const {
   return 1;
+}
+
+const void* BaseTest::GetEncoderSettings() {
+  return NULL;
 }
 
 void BaseTest::ModifyConfigs(
