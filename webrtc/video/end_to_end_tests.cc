@@ -1335,8 +1335,6 @@ TEST_F(EndToEndTest, GetStats) {
           stats.avg_delay_ms != 0 || stats.discarded_packets != 0 ||
           stats.key_frames != 0 || stats.delta_frames != 0;
 
-      receive_stats_filled_["CName"] |= stats.c_name == expected_cname_;
-
       return AllStatsFilled(receive_stats_filled_);
     }
 
@@ -1349,8 +1347,6 @@ TEST_F(EndToEndTest, GetStats) {
 
       send_stats_filled_["Delay"] |=
           stats.avg_delay_ms != 0 || stats.max_delay_ms != 0;
-
-      receive_stats_filled_["CName"] |= stats.c_name == expected_cname_;
 
       for (std::map<uint32_t, StreamStats>::const_iterator it =
                stats.substreams.begin();

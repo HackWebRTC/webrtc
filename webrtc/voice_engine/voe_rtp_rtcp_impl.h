@@ -27,8 +27,6 @@ public:
 
     virtual int SetRTCP_CNAME(int channel, const char cName[256]);
 
-    virtual int GetRTCP_CNAME(int channel, char cName[256]);
-
     virtual int GetRemoteRTCP_CNAME(int channel, char cName[256]);
 
     virtual int GetRemoteRTCPData(int channel,

@@ -327,7 +327,6 @@ public:
     int SetRTCPStatus(bool enable);
     int GetRTCPStatus(bool& enabled);
     int SetRTCP_CNAME(const char cName[256]);
-    int GetRTCP_CNAME(char cName[256]);
     int GetRemoteRTCP_CNAME(char cName[256]);
     int GetRemoteRTCPData(unsigned int& NTPHigh, unsigned int& NTPLow,
                           unsigned int& timestamp,

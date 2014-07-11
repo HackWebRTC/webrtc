@@ -38,7 +38,6 @@ class SendStatisticsProxy : public RtcpStatisticsCallback,
 
    public:
     virtual bool GetSendSideDelay(VideoSendStream::Stats* stats) = 0;
-    virtual std::string GetCName() = 0;
   };
 
   SendStatisticsProxy(const VideoSendStream::Config& config,

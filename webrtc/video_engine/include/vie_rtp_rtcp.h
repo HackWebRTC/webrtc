@@ -177,10 +177,12 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
   virtual int SetRTCPCName(const int video_channel,
                            const char rtcp_cname[KMaxRTCPCNameLength]) = 0;
 
-  // This function gets the RTCP canonical name (CNAME) for the RTCP reports
-  // sent the specified channel.
+  // TODO(holmer): Remove this API once it has been removed from
+  // fakewebrtcvideoengine.h.
   virtual int GetRTCPCName(const int video_channel,
-                           char rtcp_cname[KMaxRTCPCNameLength]) const = 0;
+                           char rtcp_cname[KMaxRTCPCNameLength]) const {
+    return -1;
+  }
 
   // This function gets the RTCP canonical name (CNAME) for the RTCP reports
   // received on the specified channel.

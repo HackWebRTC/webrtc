@@ -50,7 +50,6 @@ class VideoSendStream {
     int avg_delay_ms;
     int max_delay_ms;
     bool suspended;
-    std::string c_name;
     std::map<uint32_t, StreamStats> substreams;
   };
 

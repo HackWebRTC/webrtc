@@ -99,10 +99,6 @@ TEST_F(RtpRtcpAPITest, RTCP) {
 
   EXPECT_EQ(0, module->SetCNAME("john.doe@test.test"));
 
-  char cName[RTCP_CNAME_SIZE];
-  EXPECT_EQ(0, module->CNAME(cName));
-  EXPECT_STRCASEEQ(cName, "john.doe@test.test");
-
   EXPECT_FALSE(module->TMMBR());
   EXPECT_EQ(0, module->SetTMMBRStatus(true));
   EXPECT_TRUE(module->TMMBR());

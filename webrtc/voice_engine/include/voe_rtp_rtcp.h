@@ -171,9 +171,11 @@ public:
     // specific |channel|.
     virtual int SetRTCP_CNAME(int channel, const char cName[256]) = 0;
 
-    // Gets the canonical name (CNAME) parameter for RTCP reports on a
-    // specific |channel|.
-    virtual int GetRTCP_CNAME(int channel, char cName[256]) = 0;
+    // TODO(holmer): Remove this API once it has been removed from
+    // fakewebrtcvoiceengine.h.
+    virtual int GetRTCP_CNAME(int channel, char cName[256]) {
+      return -1;
+    }
 
     // Gets the canonical name (CNAME) parameter for incoming RTCP reports
     // on a specific channel.

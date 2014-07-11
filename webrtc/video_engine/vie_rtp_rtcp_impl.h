@@ -57,8 +57,6 @@ class ViERTP_RTCPImpl
                             ViERTCPMode& rtcp_mode) const;
   virtual int SetRTCPCName(const int video_channel,
                            const char rtcp_cname[KMaxRTCPCNameLength]);
-  virtual int GetRTCPCName(const int video_channel,
-                           char rtcp_cname[KMaxRTCPCNameLength]) const;
   virtual int GetRemoteRTCPCName(const int video_channel,
                                  char rtcp_cname[KMaxRTCPCNameLength]) const;
   virtual int SendApplicationDefinedRTCPPacket(

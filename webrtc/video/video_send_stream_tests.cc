@@ -924,8 +924,6 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
 }
 
 TEST_F(VideoSendStreamTest, ProducesStats) {
-  static const std::string kCName =
-      "PjQatC14dGfbVwGPUOA9IH7RlsFDbWl4AhXEiDsBizo=";
   class ProducesStats : public test::SendTest {
    public:
     ProducesStats()
@@ -959,8 +957,7 @@ TEST_F(VideoSendStreamTest, ProducesStats) {
       VideoSendStream::Stats stats = stream_->GetStats();
       // Check that all applicable data sources have been used.
       if (stats.input_frame_rate > 0 && stats.encode_frame_rate > 0 &&
-          stats.avg_delay_ms > 0 && stats.c_name == kCName &&
-          !stats.substreams.empty()) {
+          stats.avg_delay_ms > 0 && !stats.substreams.empty()) {
         uint32_t ssrc = stats.substreams.begin()->first;
         EXPECT_NE(
             config_.rtp.ssrcs.end(),
@@ -983,7 +980,6 @@ TEST_F(VideoSendStreamTest, ProducesStats) {
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         std::vector<VideoStream>* video_streams) OVERRIDE {
-      send_config->rtp.c_name = kCName;
       SetConfig(*send_config);
     }
 

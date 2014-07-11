@@ -100,7 +100,6 @@ public:
 
     int32_t SetCameraDelay(const int32_t delayMS);
 
-    int32_t CNAME(char cName[RTCP_CNAME_SIZE]);
     int32_t SetCNAME(const char cName[RTCP_CNAME_SIZE]);
 
     int32_t AddMixedCNAME(const uint32_t SSRC,
@@ -320,7 +319,7 @@ private:
     // Full intra request
     uint8_t         _sequenceNumberFIR;
 
-    // REMB    
+    // REMB
     uint8_t       _lengthRembSSRC;
     uint8_t       _sizeRembSSRC;
     uint32_t*     _rembSSRC;

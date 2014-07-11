@@ -31,7 +31,6 @@ struct RtpStatistics {
   int fraction_loss;
   int cumulative_loss;
   int extended_max_sequence_number;
-  std::string c_name;
 };
 
 struct StreamStats {

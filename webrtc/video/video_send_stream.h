@@ -75,7 +75,6 @@ class VideoSendStream : public webrtc::VideoSendStream,
  protected:
   // From SendStatisticsProxy::StreamStatsProvider.
   virtual bool GetSendSideDelay(VideoSendStream::Stats* stats) OVERRIDE;
-  virtual std::string GetCName() OVERRIDE;
 
  private:
   void ConfigureSsrcs();

@@ -330,17 +330,17 @@ RTCPSender::SetREMBData(const uint32_t bitrate,
 {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
     _rembBitrate = bitrate;
- 
+
     if(_sizeRembSSRC < numberOfSSRC)
     {
         delete [] _rembSSRC;
         _rembSSRC = new uint32_t[numberOfSSRC];
         _sizeRembSSRC = numberOfSSRC;
-    } 
+    }
 
     _lengthRembSSRC = numberOfSSRC;
     for (int i = 0; i < numberOfSSRC; i++)
-    {  
+    {
         _rembSSRC[i] = SSRC[i];
     }
     _sendREMB = true;
@@ -429,14 +429,6 @@ RTCPSender::SetCameraDelay(const int32_t delayMS)
     }
     _cameraDelayMS = delayMS;
     return 0;
-}
-
-int32_t RTCPSender::CNAME(char cName[RTCP_CNAME_SIZE]) {
-  assert(cName);
-  CriticalSectionScoped lock(_criticalSectionRTCPSender);
-  cName[RTCP_CNAME_SIZE - 1] = 0;
-  strncpy(cName, _CNAME, RTCP_CNAME_SIZE - 1);
-  return 0;
 }
 
 int32_t RTCPSender::SetCNAME(const char cName[RTCP_CNAME_SIZE]) {
@@ -1175,7 +1167,7 @@ RTCPSender::BuildREMB(uint8_t* rtcpbuffer, int& pos)
     rtcpbuffer[pos++]=(uint8_t)(brMantissa >> 8);
     rtcpbuffer[pos++]=(uint8_t)(brMantissa);
 
-    for (int i = 0; i < _lengthRembSSRC; i++) 
+    for (int i = 0; i < _lengthRembSSRC; i++)
     {
       RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _rembSSRC[i]);
         pos += 4;

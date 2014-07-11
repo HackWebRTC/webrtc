@@ -378,13 +378,6 @@ class RtpRtcp : public Module {
     virtual int32_t SetCNAME(const char cName[RTCP_CNAME_SIZE]) = 0;
 
     /*
-    *   Get RTCP CName (i.e unique identifier)
-    *
-    *   return -1 on failure else 0
-    */
-    virtual int32_t CNAME(char cName[RTCP_CNAME_SIZE]) = 0;
-
-    /*
     *   Get remote CName
     *
     *   return -1 on failure else 0

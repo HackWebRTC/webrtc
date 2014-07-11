@@ -3179,22 +3179,6 @@ Channel::SetRTCP_CNAME(const char cName[256])
 }
 
 int
-Channel::GetRTCP_CNAME(char cName[256])
-{
-    if (_rtpRtcpModule->CNAME(cName) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_RTP_RTCP_MODULE_ERROR, kTraceError,
-            "GetRTCP_CNAME() failed to retrieve RTCP CNAME");
-        return -1;
-    }
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
-                 VoEId(_instanceId, _channelId),
-                 "GetRTCP_CNAME() => cName=%s", cName);
-    return 0;
-}
-
-int
 Channel::GetRemoteRTCP_CNAME(char cName[256])
 {
     if (cName == NULL)

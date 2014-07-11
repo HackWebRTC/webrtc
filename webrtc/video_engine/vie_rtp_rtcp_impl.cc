@@ -338,21 +338,6 @@ int ViERTP_RTCPImpl::SetRTCPCName(const int video_channel,
   return 0;
 }
 
-int ViERTP_RTCPImpl::GetRTCPCName(const int video_channel,
-                                  char rtcp_cname[KMaxRTCPCNameLength]) const {
-  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
-  ViEChannel* vie_channel = cs.Channel(video_channel);
-  if (!vie_channel) {
-    shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
-    return -1;
-  }
-  if (vie_channel->GetRTCPCName(rtcp_cname) != 0) {
-    shared_data_->SetLastError(kViERtpRtcpUnknownError);
-    return -1;
-  }
-  return 0;
-}
-
 int ViERTP_RTCPImpl::GetRemoteRTCPCName(
     const int video_channel,
     char rtcp_cname[KMaxRTCPCNameLength]) const {

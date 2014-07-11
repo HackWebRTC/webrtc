@@ -135,8 +135,6 @@ class MockRtpRtcp : public RtpRtcp {
       int32_t(const RTCPMethod method));
   MOCK_METHOD1(SetCNAME,
       int32_t(const char cName[RTCP_CNAME_SIZE]));
-  MOCK_METHOD1(CNAME,
-      int32_t(char cName[RTCP_CNAME_SIZE]));
   MOCK_CONST_METHOD2(RemoteCNAME,
       int32_t(const uint32_t remoteSSRC,
               char cName[RTCP_CNAME_SIZE]));

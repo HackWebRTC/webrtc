@@ -403,12 +403,6 @@ bool VideoSendStream::GetSendSideDelay(VideoSendStream::Stats* stats) {
       channel_, &stats->avg_delay_ms, &stats->max_delay_ms);
 }
 
-std::string VideoSendStream::GetCName() {
-  char rtcp_cname[ViERTP_RTCP::KMaxRTCPCNameLength];
-  rtp_rtcp_->GetRTCPCName(channel_, rtcp_cname);
-  return rtcp_cname;
-}
-
 void VideoSendStream::ConfigureSsrcs() {
   for (size_t i = 0; i < config_.rtp.ssrcs.size(); ++i) {
     uint32_t ssrc = config_.rtp.ssrcs[i];

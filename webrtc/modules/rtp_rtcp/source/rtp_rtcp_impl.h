@@ -148,9 +148,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   // Set RTCP CName.
   virtual int32_t SetCNAME(const char c_name[RTCP_CNAME_SIZE]) OVERRIDE;
 
-  // Get RTCP CName.
-  virtual int32_t CNAME(char c_name[RTCP_CNAME_SIZE]) OVERRIDE;
-
   // Get remote CName.
   virtual int32_t RemoteCNAME(const uint32_t remote_ssrc,
                               char c_name[RTCP_CNAME_SIZE]) const OVERRIDE;

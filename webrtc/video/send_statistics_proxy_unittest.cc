@@ -46,8 +46,6 @@ class SendStatisticsProxyTest : public ::testing::Test,
     return true;
   }
 
-  virtual std::string GetCName() { return cname_; }
-
   void ExpectEqual(VideoSendStream::Stats one, VideoSendStream::Stats other) {
     EXPECT_EQ(one.avg_delay_ms, other.avg_delay_ms);
     EXPECT_EQ(one.input_frame_rate, other.input_frame_rate);
@@ -55,7 +53,6 @@ class SendStatisticsProxyTest : public ::testing::Test,
     EXPECT_EQ(one.avg_delay_ms, other.avg_delay_ms);
     EXPECT_EQ(one.max_delay_ms, other.max_delay_ms);
     EXPECT_EQ(one.suspended, other.suspended);
-    EXPECT_EQ(one.c_name, other.c_name);
 
     EXPECT_EQ(one.substreams.size(), other.substreams.size());
     for (std::map<uint32_t, StreamStats>::const_iterator it =
@@ -92,7 +89,6 @@ class SendStatisticsProxyTest : public ::testing::Test,
   VideoSendStream::Config config_;
   int avg_delay_ms_;
   int max_delay_ms_;
-  std::string cname_;
   VideoSendStream::Stats expected_;
   typedef std::map<uint32_t, StreamStats>::const_iterator StreamIterator;
 };
@@ -206,13 +202,11 @@ TEST_F(SendStatisticsProxyTest, Bitrate) {
 TEST_F(SendStatisticsProxyTest, StreamStats) {
   avg_delay_ms_ = 1;
   max_delay_ms_ = 2;
-  cname_ = "qwertyuiop";
 
   VideoSendStream::Stats stats = statistics_proxy_->GetStats();
 
   EXPECT_EQ(avg_delay_ms_, stats.avg_delay_ms);
   EXPECT_EQ(max_delay_ms_, stats.max_delay_ms);
-  EXPECT_EQ(cname_, stats.c_name);
 }
 
 TEST_F(SendStatisticsProxyTest, NoSubstreams) {

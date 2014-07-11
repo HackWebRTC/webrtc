@@ -909,10 +909,6 @@ int32_t ViEChannel::SetRTCPCName(const char rtcp_cname[]) {
   return rtp_rtcp_->SetCNAME(rtcp_cname);
 }
 
-int32_t ViEChannel::GetRTCPCName(char rtcp_cname[]) {
-  return rtp_rtcp_->CNAME(rtcp_cname);
-}
-
 int32_t ViEChannel::GetRemoteRTCPCName(char rtcp_cname[]) {
   uint32_t remoteSSRC = vie_receiver_.GetRemoteSsrc();
   return rtp_rtcp_->RemoteCNAME(remoteSSRC, rtcp_cname);

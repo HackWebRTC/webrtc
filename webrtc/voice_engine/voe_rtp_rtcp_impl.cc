@@ -292,26 +292,6 @@ int VoERTP_RTCPImpl::SetRTCP_CNAME(int channel, const char cName[256])
     return channelPtr->SetRTCP_CNAME(cName);
 }
 
-int VoERTP_RTCPImpl::GetRTCP_CNAME(int channel, char cName[256])
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "GetRTCP_CNAME(channel=%d, cName=?)", channel);
-    if (!_shared->statistics().Initialized())
-    {
-        _shared->SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-    voe::Channel* channelPtr = ch.channel();
-    if (channelPtr == NULL)
-    {
-        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-            "GetRTCP_CNAME() failed to locate channel");
-        return -1;
-    }
-    return channelPtr->GetRTCP_CNAME(cName);
-}
-
 int VoERTP_RTCPImpl::GetRemoteRTCP_CNAME(int channel, char cName[256])
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),

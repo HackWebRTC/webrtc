@@ -51,7 +51,6 @@ VideoSendStream::Stats SendStatisticsProxy::GetStats() const {
     stats = stats_;
   }
   stats_provider_->GetSendSideDelay(&stats);
-  stats.c_name = stats_provider_->GetCName();
   return stats;
 }
 

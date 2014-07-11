@@ -724,10 +724,6 @@ int32_t ModuleRtpRtcpImpl::SetCNAME(const char c_name[RTCP_CNAME_SIZE]) {
   return rtcp_sender_.SetCNAME(c_name);
 }
 
-int32_t ModuleRtpRtcpImpl::CNAME(char c_name[RTCP_CNAME_SIZE]) {
-  return rtcp_sender_.CNAME(c_name);
-}
-
 int32_t ModuleRtpRtcpImpl::AddMixedCNAME(
   const uint32_t ssrc,
   const char c_name[RTCP_CNAME_SIZE]) {
