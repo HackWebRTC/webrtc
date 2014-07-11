@@ -20,12 +20,6 @@
 
 #include "webrtc/modules/audio_device/audio_device_config.h"
 
-#if defined(WEBRTC_WINDOWS_CORE_AUDIO_BUILD)
-#pragma message(">> INFO: WEBRTC_WINDOWS_CORE_AUDIO_BUILD is defined")
-#else
-#pragma message(">> INFO: WEBRTC_WINDOWS_CORE_AUDIO_BUILD is *not* defined")
-#endif
-
 #ifdef WEBRTC_WINDOWS_CORE_AUDIO_BUILD
 
 #include "webrtc/modules/audio_device/win/audio_device_core_win.h"
