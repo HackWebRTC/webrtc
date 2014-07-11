@@ -604,15 +604,6 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
     EXPECT_EQ(max_bitrate, codec.params[kCodecParamMaxBitrate]);
   }
 
-  void ExpectEqualCodecs(const VideoCodec video_codec,
-                         const webrtc::VideoCodec& webrtc_codec) {
-    EXPECT_STREQ(video_codec.name.c_str(), webrtc_codec.plName);
-    EXPECT_EQ(video_codec.id, webrtc_codec.plType);
-    EXPECT_EQ(video_codec.width, webrtc_codec.width);
-    EXPECT_EQ(video_codec.height, webrtc_codec.height);
-    EXPECT_EQ(video_codec.framerate, webrtc_codec.maxFramerate);
-  }
-
   void TestSetSendRtpHeaderExtensions(const std::string& cricket_ext,
                                       const std::string& webrtc_ext) {
     // Enable extension.
@@ -985,8 +976,6 @@ TEST_F(WebRtcVideoChannel2Test, SetDefaultSendCodecs) {
   FakeVideoSendStream* stream = AddSendStream(
       cricket::CreateSimWithRtxStreamParams("cname", ssrcs, rtx_ssrcs));
   webrtc::VideoSendStream::Config config = stream->GetConfig();
-  // TODO(pbos): Replace ExpectEqualCodecs.
-  // ExpectEqualCodecs(engine_.codecs()[0], config.codec);
 
   // Make sure NACK and FEC are enabled on the correct payload types.
   EXPECT_EQ(1000, config.rtp.nack.rtp_history_ms);
@@ -1178,10 +1167,13 @@ TEST_F(WebRtcVideoChannel2Test, SetRecvCodecsDifferentPayloadType) {
   EXPECT_TRUE(channel_->SetRecvCodecs(codecs));
 }
 
-TEST_F(WebRtcVideoChannel2Test, DISABLED_SetRecvCodecsAcceptDefaultCodecs) {
+TEST_F(WebRtcVideoChannel2Test, SetRecvCodecsAcceptDefaultCodecs) {
   EXPECT_TRUE(channel_->SetRecvCodecs(engine_.codecs()));
-  // (I've added this one.) Make sure they propagate down to VideoReceiveStream!
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
+
+  FakeVideoReceiveStream* stream = AddRecvStream();
+  webrtc::VideoReceiveStream::Config config = stream->GetConfig();
+  EXPECT_STREQ(engine_.codecs()[0].name.c_str(), config.codecs[0].plName);
+  EXPECT_EQ(engine_.codecs()[0].id, config.codecs[0].plType);
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetRecvCodecsRejectUnsupportedCodec) {
