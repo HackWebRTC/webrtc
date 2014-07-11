@@ -56,6 +56,7 @@ class AudioBuffer {
   int samples_per_split_channel() const;
   int samples_per_keyboard_channel() const;
 
+  // It can be assumed that channels are stored contiguously.
   int16_t* data(int channel);
   const int16_t* data(int channel) const;
   int16_t* low_pass_split_data(int channel);
