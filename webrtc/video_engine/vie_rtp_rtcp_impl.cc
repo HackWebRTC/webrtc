@@ -194,7 +194,7 @@ int ViERTP_RTCPImpl::GetRemoteCSRCs(const int video_channel,
 int ViERTP_RTCPImpl::SetRtxSendPayloadType(const int video_channel,
                                            const uint8_t payload_type) {
   LOG_F(LS_INFO) << "channel: " << video_channel
-                 << " payload_type: " << payload_type;
+                 << " payload_type: " << static_cast<int>(payload_type);
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
@@ -225,7 +225,7 @@ int ViERTP_RTCPImpl::SetPadWithRedundantPayloads(int video_channel,
 int ViERTP_RTCPImpl::SetRtxReceivePayloadType(const int video_channel,
                                               const uint8_t payload_type) {
   LOG_F(LS_INFO) << "channel: " << video_channel
-               << " payload_type: " << payload_type;
+               << " payload_type: " << static_cast<int>(payload_type);
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
@@ -413,8 +413,8 @@ int ViERTP_RTCPImpl::SetFECStatus(const int video_channel, const bool enable,
                                   const unsigned char payload_typeFEC) {
   LOG_F(LS_INFO) << "channel: " << video_channel
                  << " enable: " << (enable ? "on" : "off")
-                 << " payload_typeRED: " << payload_typeRED
-                 << " payload_typeFEC: " << payload_typeFEC;
+                 << " payload_typeRED: " << static_cast<int>(payload_typeRED)
+                 << " payload_typeFEC: " << static_cast<int>(payload_typeFEC);
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
@@ -443,8 +443,8 @@ int ViERTP_RTCPImpl::SetHybridNACKFECStatus(
     const unsigned char payload_typeFEC) {
   LOG_F(LS_INFO) << "channel: " << video_channel
                  << " enable: " << (enable ? "on" : "off")
-                 << " payload_typeRED: " << payload_typeRED
-                 << " payload_typeFEC: " << payload_typeFEC;
+                 << " payload_typeRED: " << static_cast<int>(payload_typeRED)
+                 << " payload_typeFEC: " << static_cast<int>(payload_typeFEC);
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
