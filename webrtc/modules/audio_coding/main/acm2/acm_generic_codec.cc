@@ -838,7 +838,7 @@ int16_t ACMGenericCodec::ProcessFrameVADDTX(uint8_t* bitstream,
   // Calculate number of samples in 10 ms blocks, and number ms in one frame.
   int16_t samples_in_10ms = static_cast<int16_t>(freq_hz / 100);
   int32_t frame_len_ms = static_cast<int32_t>(frame_len_smpl_) * 1000 / freq_hz;
-  int16_t status;
+  int16_t status = -1;
 
   // Vector for storing maximum 30 ms of mono audio at 48 kHz.
   int16_t audio[1440];

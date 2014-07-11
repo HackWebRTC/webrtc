@@ -421,7 +421,7 @@ unsigned int ViECodecImpl::GetDiscardedPackets(const int video_channel) const {
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
     shared_data_->SetLastError(kViECodecInvalidChannelId);
-    return -1;
+    return static_cast<unsigned int>(-1);
   }
   return vie_channel->DiscardedPackets();
 }

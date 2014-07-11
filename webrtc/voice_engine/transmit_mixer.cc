@@ -1236,7 +1236,7 @@ int32_t TransmitMixer::MixOrReplaceAudioWithFile(
         // Currently file stream is always mono.
         // TODO(xians): Change the code when FilePlayer supports real stereo.
         _audioFrame.UpdateFrame(-1,
-                                -1,
+                                0xFFFFFFFF,
                                 fileBuffer.get(),
                                 fileSamples,
                                 mixingFrequency,

@@ -20,11 +20,6 @@
 #include "webrtc/common_types.h"
 #include "webrtc/typedefs.h"
 
-#ifdef _WIN32
-// Remove warning "new behavior: elements of array will be default initialized".
-#pragma warning(disable : 4351)
-#endif
-
 namespace webrtc {
 
 struct RTPAudioHeader {
@@ -34,21 +29,10 @@ struct RTPAudioHeader {
   uint8_t channel;                    // number of channels 2 = stereo
 };
 
-enum {
-  kNoPictureId = -1
-};
-enum {
-  kNoTl0PicIdx = -1
-};
-enum {
-  kNoTemporalIdx = -1
-};
-enum {
-  kNoKeyIdx = -1
-};
-enum {
-  kNoSimulcastIdx = 0
-};
+const int16_t kNoPictureId = -1;
+const int16_t kNoTl0PicIdx = -1;
+const uint8_t kNoTemporalIdx = 0xFF;
+const int kNoKeyIdx = -1;
 
 struct RTPVideoHeaderVP8 {
   void InitRTPVideoHeaderVP8() {
@@ -67,7 +51,7 @@ struct RTPVideoHeaderVP8 {
                               // kNoPictureId if PictureID does not exist.
   int16_t tl0PicIdx;          // TL0PIC_IDX, 8 bits;
                               // kNoTl0PicIdx means no value provided.
-  int8_t temporalIdx;         // Temporal layer index, or kNoTemporalIdx.
+  uint8_t temporalIdx;        // Temporal layer index, or kNoTemporalIdx.
   bool layerSync;             // This frame is a layer sync frame.
                               // Disabled if temporalIdx == kNoTemporalIdx.
   int keyIdx;                 // 5 bits; kNoKeyIdx means not used.

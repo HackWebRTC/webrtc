@@ -30,7 +30,7 @@ ACMSPEEX::ACMSPEEX(int16_t /* codec_id */)
       vbr_enabled_(false),
       encoding_rate_(-1),
       sampling_frequency_(-1),
-      samples_in_20ms_audio_(-1) {
+      samples_in_20ms_audio_(0xFFFF) {
   return;
 }
 

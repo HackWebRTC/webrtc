@@ -85,7 +85,7 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
           CriticalSectionWrapper::CreateCriticalSection()),
       default_module_(
           static_cast<ModuleRtpRtcpImpl*>(configuration.default_module)),
-      padding_index_(-1),  // Start padding at the first child module.
+      padding_index_(static_cast<size_t>(-1)),  // Start padding at first child.
       nack_method_(kNackOff),
       nack_last_time_sent_full_(0),
       nack_last_seq_number_sent_(0),

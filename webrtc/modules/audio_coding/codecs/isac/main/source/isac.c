@@ -2243,8 +2243,6 @@ int16_t WebRtcIsac_SetEncSampRate(ISACStruct* ISAC_main_inst,
   } else {
     ISACUBStruct* instUB = &(instISAC->instUB);
     ISACLBStruct* instLB = &(instISAC->instLB);
-    double bottleneckLB;
-    double bottleneckUB;
     int32_t bottleneck = instISAC->bottleneck;
     int16_t codingMode = instISAC->codingMode;
     int16_t frameSizeMs = instLB->ISACencLB_obj.new_framelength /
@@ -2263,6 +2261,8 @@ int16_t WebRtcIsac_SetEncSampRate(ISACStruct* ISAC_main_inst,
       instISAC->maxRateBytesPer30Ms = STREAM_SIZE_MAX_30;
     } else if ((encoder_operational_rate == kIsacSuperWideband) &&
                (instISAC->encoderSamplingRateKHz == kIsacWideband)) {
+      double bottleneckLB = 0;
+      double bottleneckUB = 0;
       if (codingMode == 1) {
         WebRtcIsac_RateAllocation(bottleneck, &bottleneckLB, &bottleneckUB,
                                   &(instISAC->bandwidthKHz));

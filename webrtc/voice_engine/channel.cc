@@ -3765,7 +3765,7 @@ Channel::PrepareEncodeAndSend(int mixingFrequency)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,_channelId),
                      "Channel::PrepareEncodeAndSend() invalid audio frame");
-        return -1;
+        return 0xFFFFFFFF;
     }
 
     if (channel_state_.Get().input_file_playing)
@@ -3819,7 +3819,7 @@ Channel::EncodeAndSend()
     {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,_channelId),
                      "Channel::EncodeAndSend() invalid audio frame");
-        return -1;
+        return 0xFFFFFFFF;
     }
 
     _audioFrame.id_ = _channelId;
@@ -3832,7 +3832,7 @@ Channel::EncodeAndSend()
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId,_channelId),
                      "Channel::EncodeAndSend() ACM encoding failed");
-        return -1;
+        return 0xFFFFFFFF;
     }
 
     _timeStamp += _audioFrame.samples_per_channel_;
@@ -4182,7 +4182,7 @@ Channel::MixOrReplaceAudioWithFile(int mixingFrequency)
         // Currently file stream is always mono.
         // TODO(xians): Change the code when FilePlayer supports real stereo.
         _audioFrame.UpdateFrame(_channelId,
-                                -1,
+                                0xFFFFFFFF,
                                 fileBuffer.get(),
                                 fileSamples,
                                 mixingFrequency,

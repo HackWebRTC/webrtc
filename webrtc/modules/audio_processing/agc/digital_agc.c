@@ -310,7 +310,7 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
     int32_t gain32, delta;
     int16_t logratio;
     int16_t lower_thr, upper_thr;
-    int16_t zeros, zeros_fast, frac;
+    int16_t zeros = 0, zeros_fast, frac = 0;
     int16_t decay;
     int16_t gate, gain_adj;
     int16_t k, n;

@@ -120,14 +120,6 @@ inline int ChannelId(const int moduleId) {
 #if defined(_WIN32)
   #define RENDER_MODULE_TYPE kRenderWindows
 
-  // Warning pragmas.
-  // new behavior: elements of array 'XXX' will be default initialized.
-  #pragma warning(disable: 4351)
-  // 'this' : used in base member initializer list.
-  #pragma warning(disable: 4355)
-  // Frame pointer register 'ebp' modified by inline assembly code.
-  #pragma warning(disable: 4731)
-
   // Include libraries.
   #pragma comment(lib, "winmm.lib")
 

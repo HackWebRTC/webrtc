@@ -80,7 +80,7 @@ ACMOpus::ACMOpus(int16_t codec_id)
   if (codec_id_ != ACMCodecDB::kOpus) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
                  "Wrong codec id for Opus.");
-    sample_freq_ = -1;
+    sample_freq_ = 0xFFFF;
     bitrate_ = -1;
   }
   return;
