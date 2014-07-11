@@ -604,7 +604,7 @@
    HangoutPubSubClientTest
    Memcheck:Leak
    fun:_Znw*
-   fun:_ZN23HangoutPubSubClientTestC1Ev
+   fun:_ZN*HangoutPubSubClientTest*Ev
 }
 {
    MucRoomConfigTaskTest
@@ -640,13 +640,13 @@
    PubSubClientTest
    Memcheck:Leak
    fun:_Znw*
-   fun:_ZN16PubSubClientTestC1Ev
+   fun:_ZN*PubSubClientTest*Ev
 }
 {
    PubSubTasksTest
    Memcheck:Leak
    fun:_Znw*
-   fun:_ZN15PubSubTasksTestC1Ev
+   fun:_ZN*PubSubTasksTest*Ev
 }
 # For tests that leaks by design.
 {
