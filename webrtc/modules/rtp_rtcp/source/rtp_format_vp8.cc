@@ -420,7 +420,7 @@ int RtpFormatVp8::WriteTIDAndKeyIdxFields(uint8_t* x_field,
   *data_field = 0;
   if (TIDFieldPresent()) {
     *x_field |= kTBit;
-    assert(hdr_info_.temporalIdx >= 0 && hdr_info_.temporalIdx <= 3);
+    assert(hdr_info_.temporalIdx <= 3);
     *data_field |= hdr_info_.temporalIdx << 6;
     *data_field |= hdr_info_.layerSync ? kYBit : 0;
   }
