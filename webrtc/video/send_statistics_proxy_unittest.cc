@@ -19,8 +19,7 @@
 
 namespace webrtc {
 
-class SendStatisticsProxyTest : public ::testing::Test,
-                                protected SendStatisticsProxy::StatsProvider {
+class SendStatisticsProxyTest : public ::testing::Test {
  public:
   SendStatisticsProxyTest() : avg_delay_ms_(0), max_delay_ms_(0) {}
   virtual ~SendStatisticsProxyTest() {}
@@ -28,7 +27,7 @@ class SendStatisticsProxyTest : public ::testing::Test,
  protected:
   virtual void SetUp() {
     statistics_proxy_.reset(
-        new SendStatisticsProxy(GetTestConfig(), this));
+        new SendStatisticsProxy(GetTestConfig()));
     config_ = GetTestConfig();
     expected_ = VideoSendStream::Stats();
   }
@@ -40,18 +39,9 @@ class SendStatisticsProxyTest : public ::testing::Test,
     return config;
   }
 
-  virtual bool GetSendSideDelay(VideoSendStream::Stats* stats) OVERRIDE {
-    stats->avg_delay_ms = avg_delay_ms_;
-    stats->max_delay_ms = max_delay_ms_;
-    return true;
-  }
-
   void ExpectEqual(VideoSendStream::Stats one, VideoSendStream::Stats other) {
-    EXPECT_EQ(one.avg_delay_ms, other.avg_delay_ms);
     EXPECT_EQ(one.input_frame_rate, other.input_frame_rate);
     EXPECT_EQ(one.encode_frame_rate, other.encode_frame_rate);
-    EXPECT_EQ(one.avg_delay_ms, other.avg_delay_ms);
-    EXPECT_EQ(one.max_delay_ms, other.max_delay_ms);
     EXPECT_EQ(one.suspended, other.suspended);
 
     EXPECT_EQ(one.substreams.size(), other.substreams.size());
@@ -68,6 +58,8 @@ class SendStatisticsProxyTest : public ::testing::Test,
       EXPECT_EQ(a.key_frames, b.key_frames);
       EXPECT_EQ(a.delta_frames, b.delta_frames);
       EXPECT_EQ(a.bitrate_bps, b.bitrate_bps);
+      EXPECT_EQ(a.avg_delay_ms, b.avg_delay_ms);
+      EXPECT_EQ(a.max_delay_ms, b.max_delay_ms);
 
       EXPECT_EQ(a.rtp_stats.bytes, b.rtp_stats.bytes);
       EXPECT_EQ(a.rtp_stats.header_bytes, b.rtp_stats.header_bytes);
@@ -190,6 +182,7 @@ TEST_F(SendStatisticsProxyTest, Bitrate) {
        ++it) {
     const uint32_t ssrc = *it;
     BitrateStatistics bitrate;
+    // Use ssrc as bitrate_bps to get a unique value for each stream.
     bitrate.bitrate_bps = ssrc;
     observer->Notify(bitrate, ssrc);
     expected_.substreams[ssrc].bitrate_bps = ssrc;
@@ -199,14 +192,23 @@ TEST_F(SendStatisticsProxyTest, Bitrate) {
   ExpectEqual(expected_, stats);
 }
 
-TEST_F(SendStatisticsProxyTest, StreamStats) {
-  avg_delay_ms_ = 1;
-  max_delay_ms_ = 2;
+TEST_F(SendStatisticsProxyTest, SendSideDelay) {
+  SendSideDelayObserver* observer = statistics_proxy_.get();
+  for (std::vector<uint32_t>::const_iterator it = config_.rtp.ssrcs.begin();
+       it != config_.rtp.ssrcs.end();
+       ++it) {
+    const uint32_t ssrc = *it;
+    // Use ssrc as avg_delay_ms and max_delay_ms to get a unique value for each
+    // stream.
+    int avg_delay_ms = ssrc;
+    int max_delay_ms = ssrc + 1;
+    observer->SendSideDelayUpdated(avg_delay_ms, max_delay_ms, ssrc);
+    expected_.substreams[ssrc].avg_delay_ms = avg_delay_ms;
+    expected_.substreams[ssrc].max_delay_ms = max_delay_ms;
+  }
 
   VideoSendStream::Stats stats = statistics_proxy_->GetStats();
-
-  EXPECT_EQ(avg_delay_ms_, stats.avg_delay_ms);
-  EXPECT_EQ(max_delay_ms_, stats.max_delay_ms);
+  ExpectEqual(expected_, stats);
 }
 
 TEST_F(SendStatisticsProxyTest, NoSubstreams) {

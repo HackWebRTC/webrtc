@@ -71,7 +71,8 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
             Transport *transport, RtpAudioFeedback *audio_feedback,
             PacedSender *paced_sender,
             BitrateStatisticsObserver* bitrate_callback,
-            FrameCountObserver* frame_count_observer);
+            FrameCountObserver* frame_count_observer,
+            SendSideDelayObserver* send_side_delay_observer);
   virtual ~RTPSender();
 
   void ProcessBitrate();
@@ -379,6 +380,7 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
   StreamDataCountersCallback* rtp_stats_callback_ GUARDED_BY(statistics_crit_);
   BitrateStatisticsObserver* const bitrate_callback_;
   FrameCountObserver* const frame_count_observer_;
+  SendSideDelayObserver* const send_side_delay_observer_;
 
   // RTP variables
   bool start_timestamp_forced_ GUARDED_BY(send_critsect_);

@@ -41,14 +41,9 @@ class VideoSendStream {
     Stats()
         : input_frame_rate(0),
           encode_frame_rate(0),
-          avg_delay_ms(0),
-          max_delay_ms(0),
           suspended(false) {}
-
     int input_frame_rate;
     int encode_frame_rate;
-    int avg_delay_ms;
-    int max_delay_ms;
     bool suspended;
     std::map<uint32_t, StreamStats> substreams;
   };

@@ -118,6 +118,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
   configuration.receive_statistics = vie_receiver_.GetReceiveStatistics();
   configuration.send_bitrate_observer = &send_bitrate_observer_;
   configuration.send_frame_count_observer = &send_frame_count_observer_;
+  configuration.send_side_delay_observer = &send_side_delay_observer_;
 
   rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(configuration));
   vie_receiver_.SetRtpRtcpModule(rtp_rtcp_.get());
@@ -1200,6 +1201,11 @@ bool ViEChannel::GetSendSideDelay(int* avg_send_delay,
   return valid_estimate;
 }
 
+void ViEChannel::RegisterSendSideDelayObserver(
+    SendSideDelayObserver* observer) {
+  send_side_delay_observer_.Set(observer);
+}
+
 void ViEChannel::RegisterSendBitrateObserver(
     BitrateStatisticsObserver* observer) {
   send_bitrate_observer_.Set(observer);
@@ -1558,6 +1564,7 @@ RtpRtcp* ViEChannel::CreateRtpRtcpModule() {
   configuration.bandwidth_callback = bandwidth_observer_.get();
   configuration.rtt_stats = rtt_stats_;
   configuration.paced_sender = paced_sender_;
+  configuration.send_side_delay_observer = &send_side_delay_observer_;
 
   return RtpRtcp::CreateRtpRtcp(configuration);
 }

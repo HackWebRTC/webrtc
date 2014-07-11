@@ -47,7 +47,8 @@ RTPSender::RTPSender(const int32_t id,
                      RtpAudioFeedback* audio_feedback,
                      PacedSender* paced_sender,
                      BitrateStatisticsObserver* bitrate_callback,
-                     FrameCountObserver* frame_count_observer)
+                     FrameCountObserver* frame_count_observer,
+                     SendSideDelayObserver* send_side_delay_observer)
     : clock_(clock),
       bitrate_sent_(clock, this),
       id_(id),
@@ -75,6 +76,7 @@ RTPSender::RTPSender(const int32_t id,
       rtp_stats_callback_(NULL),
       bitrate_callback_(bitrate_callback),
       frame_count_observer_(frame_count_observer),
+      send_side_delay_observer_(send_side_delay_observer),
       // RTP variables
       start_timestamp_forced_(false),
       start_timestamp_(0),
@@ -164,9 +166,7 @@ uint32_t RTPSender::NackOverheadRate() const {
 
 bool RTPSender::GetSendSideDelay(int* avg_send_delay_ms,
                                  int* max_send_delay_ms) const {
-  if (!SendingMedia())
-    return false;
-  CriticalSectionScoped cs(statistics_crit_.get());
+  CriticalSectionScoped lock(statistics_crit_.get());
   SendDelayMap::const_iterator it = send_delays_.upper_bound(
       clock_->TimeInMilliseconds() - kSendSideDelayWindowMs);
   if (it == send_delays_.end())
@@ -997,10 +997,26 @@ int32_t RTPSender::SendToNetwork(
 }
 
 void RTPSender::UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms) {
-  CriticalSectionScoped cs(statistics_crit_.get());
-  send_delays_[now_ms] = now_ms - capture_time_ms;
-  send_delays_.erase(send_delays_.begin(),
-                     send_delays_.lower_bound(now_ms - kSendSideDelayWindowMs));
+  uint32_t ssrc;
+  int avg_delay_ms = 0;
+  int max_delay_ms = 0;
+  {
+    CriticalSectionScoped lock(send_critsect_);
+    ssrc = ssrc_;
+  }
+  {
+    CriticalSectionScoped cs(statistics_crit_.get());
+    // TODO(holmer): Compute this iteratively instead.
+    send_delays_[now_ms] = now_ms - capture_time_ms;
+    send_delays_.erase(send_delays_.begin(),
+                       send_delays_.lower_bound(now_ms -
+                       kSendSideDelayWindowMs));
+  }
+  if (send_side_delay_observer_ &&
+      GetSendSideDelay(&avg_delay_ms, &max_delay_ms)) {
+    send_side_delay_observer_->SendSideDelayUpdated(avg_delay_ms,
+        max_delay_ms, ssrc);
+  }
 }
 
 void RTPSender::ProcessBitrate() {

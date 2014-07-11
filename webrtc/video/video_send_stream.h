@@ -38,8 +38,7 @@ class ViERTP_RTCP;
 namespace internal {
 
 class VideoSendStream : public webrtc::VideoSendStream,
-                        public VideoSendStreamInput,
-                        public SendStatisticsProxy::StatsProvider {
+                        public VideoSendStreamInput {
  public:
   VideoSendStream(newapi::Transport* transport,
                   CpuOveruseObserver* overuse_observer,
@@ -72,10 +71,6 @@ class VideoSendStream : public webrtc::VideoSendStream,
   typedef std::map<uint32_t, RtpState> RtpStateMap;
   RtpStateMap GetRtpStates() const;
 
- protected:
-  // From SendStatisticsProxy::StreamStatsProvider.
-  virtual bool GetSendSideDelay(VideoSendStream::Stats* stats) OVERRIDE;
-
  private:
   void ConfigureSsrcs();
   TransportAdapter transport_adapter_;
@@ -96,7 +91,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
   int channel_;
   int capture_id_;
 
-  const scoped_ptr<SendStatisticsProxy> stats_proxy_;
+  SendStatisticsProxy stats_proxy_;
 };
 }  // namespace internal
 }  // namespace webrtc

@@ -204,6 +204,13 @@ class WEBRTC_DLLEXPORT ViEBase {
   // Gets cpu overuse measures.
   virtual int GetCpuOveruseMetrics(int channel, CpuOveruseMetrics* metrics) = 0;
 
+  // Registers a callback which is called when send-side delay statistics has
+  // been updated.
+  // TODO(holmer): Remove the default implementation when fakevideoengine.h has
+  // been updated.
+  virtual void RegisterSendSideDelayObserver(
+      int channel, SendSideDelayObserver* observer) {}
+
   // Specifies the VoiceEngine and VideoEngine channel pair to use for
   // audio/video synchronization.
   virtual int ConnectAudioChannel(const int video_channel,

@@ -27,6 +27,7 @@
 #include "webrtc/system_wrappers/interface/scoped_vector.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/test/call_test.h"
 #include "webrtc/test/configurable_frame_size_encoder.h"
 #include "webrtc/test/null_transport.h"
@@ -956,8 +957,8 @@ TEST_F(VideoSendStreamTest, ProducesStats) {
     bool CheckStats() {
       VideoSendStream::Stats stats = stream_->GetStats();
       // Check that all applicable data sources have been used.
-      if (stats.input_frame_rate > 0 && stats.encode_frame_rate > 0 &&
-          stats.avg_delay_ms > 0 && !stats.substreams.empty()) {
+      if (stats.input_frame_rate > 0 && stats.encode_frame_rate > 0
+          && !stats.substreams.empty()) {
         uint32_t ssrc = stats.substreams.begin()->first;
         EXPECT_NE(
             config_.rtp.ssrcs.end(),
@@ -967,7 +968,8 @@ TEST_F(VideoSendStreamTest, ProducesStats) {
         // data is received from remote side. Tested in call tests instead.
         const StreamStats& entry = stats.substreams[ssrc];
         if (entry.key_frames > 0u && entry.bitrate_bps > 0 &&
-            entry.rtp_stats.packets > 0u) {
+            entry.rtp_stats.packets > 0u && entry.avg_delay_ms > 0 &&
+            entry.max_delay_ms > 0) {
           return true;
         }
       }

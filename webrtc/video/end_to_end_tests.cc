@@ -1345,9 +1345,6 @@ TEST_F(EndToEndTest, GetStats) {
       send_stats_filled_["NumStreams"] |=
           stats.substreams.size() == expected_send_ssrcs_.size();
 
-      send_stats_filled_["Delay"] |=
-          stats.avg_delay_ms != 0 || stats.max_delay_ms != 0;
-
       for (std::map<uint32_t, StreamStats>::const_iterator it =
                stats.substreams.begin();
            it != stats.substreams.end();
@@ -1380,6 +1377,9 @@ TEST_F(EndToEndTest, GetStats) {
 
         send_stats_filled_[CompoundKey("OutgoingRate", it->first)] |=
             stats.encode_frame_rate != 0;
+
+        send_stats_filled_[CompoundKey("Delay", it->first)] |=
+            stream_stats.avg_delay_ms != 0 || stream_stats.max_delay_ms != 0;
       }
 
       return AllStatsFilled(send_stats_filled_);

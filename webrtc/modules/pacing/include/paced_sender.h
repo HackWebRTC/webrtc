@@ -17,7 +17,6 @@
 #include "webrtc/modules/interface/module.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/thread_annotations.h"
-#include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -147,8 +146,8 @@ class PacedSender : public Module {
   scoped_ptr<paced_sender::IntervalBudget> padding_budget_
       GUARDED_BY(critsect_);
 
-  TickTime time_last_update_ GUARDED_BY(critsect_);
-  TickTime time_last_send_ GUARDED_BY(critsect_);
+  int64_t time_last_update_ GUARDED_BY(critsect_);
+  int64_t time_last_send_ GUARDED_BY(critsect_);
   int64_t capture_time_ms_last_queued_ GUARDED_BY(critsect_);
   int64_t capture_time_ms_last_sent_ GUARDED_BY(critsect_);
 

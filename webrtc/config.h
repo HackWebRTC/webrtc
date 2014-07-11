@@ -34,10 +34,17 @@ struct RtpStatistics {
 };
 
 struct StreamStats {
-  StreamStats() : key_frames(0), delta_frames(0), bitrate_bps(0) {}
+  StreamStats()
+      : key_frames(0),
+        delta_frames(0),
+        bitrate_bps(0),
+        avg_delay_ms(0),
+        max_delay_ms(0) {}
   uint32_t key_frames;
   uint32_t delta_frames;
   int32_t bitrate_bps;
+  int avg_delay_ms;
+  int max_delay_ms;
   StreamDataCounters rtp_stats;
   RtcpStatistics rtcp_stats;
 };

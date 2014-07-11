@@ -17,10 +17,8 @@
 namespace webrtc {
 
 SendStatisticsProxy::SendStatisticsProxy(
-    const VideoSendStream::Config& config,
-    SendStatisticsProxy::StatsProvider* stats_provider)
+    const VideoSendStream::Config& config)
     : config_(config),
-      stats_provider_(stats_provider),
       crit_(CriticalSectionWrapper::CreateCriticalSection()) {
 }
 
@@ -45,13 +43,8 @@ void SendStatisticsProxy::CapturedFrameRate(const int capture_id,
 }
 
 VideoSendStream::Stats SendStatisticsProxy::GetStats() const {
-  VideoSendStream::Stats stats;
-  {
-    CriticalSectionScoped lock(crit_.get());
-    stats = stats_;
-  }
-  stats_provider_->GetSendSideDelay(&stats);
-  return stats;
+  CriticalSectionScoped lock(crit_.get());
+  return stats_;
 }
 
 StreamStats* SendStatisticsProxy::GetStatsEntry(uint32_t ssrc) {
@@ -117,6 +110,17 @@ void SendStatisticsProxy::FrameCountUpdated(FrameType frame_type,
     case kAudioFrameCN:
       break;
   }
+}
+
+void SendStatisticsProxy::SendSideDelayUpdated(int avg_delay_ms,
+                                               int max_delay_ms,
+                                               uint32_t ssrc) {
+  CriticalSectionScoped lock(crit_.get());
+  StreamStats* stats = GetStatsEntry(ssrc);
+  if (stats == NULL)
+    return;
+  stats->avg_delay_ms = avg_delay_ms;
+  stats->max_delay_ms = max_delay_ms;
 }
 
 }  // namespace webrtc

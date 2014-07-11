@@ -71,7 +71,6 @@ char kTSanDefaultSuppressions[] =
 "deadlock:webrtc::RTPSenderAudio::RegisterAudioPayload\n"
 "deadlock:webrtc::test::UdpSocketManagerPosixImpl::RemoveSocket\n"
 "deadlock:webrtc::vcm::VideoReceiver::RegisterPacketRequestCallback\n"
-"deadlock:webrtc::VideoSendStreamTest_SuspendBelowMinBitrate_Test::TestBody\n"
 "deadlock:webrtc::ViECaptureImpl::ConnectCaptureDevice\n"
 "deadlock:webrtc::ViEChannel::StartSend\n"
 "deadlock:webrtc::ViECodecImpl::GetSendSideDelay\n"

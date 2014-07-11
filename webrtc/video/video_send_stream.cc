@@ -125,7 +125,7 @@ VideoSendStream::VideoSendStream(
       suspended_ssrcs_(suspended_ssrcs),
       external_codec_(NULL),
       channel_(-1),
-      stats_proxy_(new SendStatisticsProxy(config, this)) {
+      stats_proxy_(config) {
   video_engine_base_ = ViEBase::GetInterface(video_engine);
   video_engine_base_->CreateChannel(channel_, base_channel);
   assert(channel_ != -1);
@@ -216,6 +216,8 @@ VideoSendStream::VideoSendStream(
   if (overuse_observer)
     video_engine_base_->RegisterCpuOveruseObserver(channel_, overuse_observer);
 
+  video_engine_base_->RegisterSendSideDelayObserver(channel_, &stats_proxy_);
+
   image_process_ = ViEImageProcess::GetInterface(video_engine);
   image_process_->RegisterPreEncodeCallback(channel_,
                                             config_.pre_encode_callback);
@@ -228,26 +230,26 @@ VideoSendStream::VideoSendStream(
     codec_->SuspendBelowMinBitrate(channel_);
 
   rtp_rtcp_->RegisterSendChannelRtcpStatisticsCallback(channel_,
-                                                       stats_proxy_.get());
+                                                       &stats_proxy_);
   rtp_rtcp_->RegisterSendChannelRtpStatisticsCallback(channel_,
-                                                      stats_proxy_.get());
-  rtp_rtcp_->RegisterSendBitrateObserver(channel_, stats_proxy_.get());
-  rtp_rtcp_->RegisterSendFrameCountObserver(channel_, stats_proxy_.get());
+                                                      &stats_proxy_);
+  rtp_rtcp_->RegisterSendBitrateObserver(channel_, &stats_proxy_);
+  rtp_rtcp_->RegisterSendFrameCountObserver(channel_, &stats_proxy_);
 
-  codec_->RegisterEncoderObserver(channel_, *stats_proxy_);
-  capture_->RegisterObserver(capture_id_, *stats_proxy_);
+  codec_->RegisterEncoderObserver(channel_, stats_proxy_);
+  capture_->RegisterObserver(capture_id_, stats_proxy_);
 }
 
 VideoSendStream::~VideoSendStream() {
   capture_->DeregisterObserver(capture_id_);
   codec_->DeregisterEncoderObserver(channel_);
 
-  rtp_rtcp_->DeregisterSendFrameCountObserver(channel_, stats_proxy_.get());
-  rtp_rtcp_->DeregisterSendBitrateObserver(channel_, stats_proxy_.get());
+  rtp_rtcp_->DeregisterSendFrameCountObserver(channel_, &stats_proxy_);
+  rtp_rtcp_->DeregisterSendBitrateObserver(channel_, &stats_proxy_);
   rtp_rtcp_->DeregisterSendChannelRtpStatisticsCallback(channel_,
-                                                        stats_proxy_.get());
+                                                        &stats_proxy_);
   rtp_rtcp_->DeregisterSendChannelRtcpStatisticsCallback(channel_,
-                                                         stats_proxy_.get());
+                                                         &stats_proxy_);
 
   image_process_->DeRegisterPreEncodeCallback(channel_);
 
@@ -395,12 +397,7 @@ bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
 }
 
 VideoSendStream::Stats VideoSendStream::GetStats() const {
-  return stats_proxy_->GetStats();
-}
-
-bool VideoSendStream::GetSendSideDelay(VideoSendStream::Stats* stats) {
-  return codec_->GetSendSideDelay(
-      channel_, &stats->avg_delay_ms, &stats->max_delay_ms);
+  return stats_proxy_.GetStats();
 }
 
 void VideoSendStream::ConfigureSsrcs() {

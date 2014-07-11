@@ -212,7 +212,10 @@ class ViEChannel
                          uint32_t* video_bitrate_sent,
                          uint32_t* fec_bitrate_sent,
                          uint32_t* nackBitrateSent) const;
+  // TODO(holmer): Deprecated. We should use the SendSideDelayObserver instead
+  // to avoid deadlocks.
   bool GetSendSideDelay(int* avg_send_delay, int* max_send_delay) const;
+  void RegisterSendSideDelayObserver(SendSideDelayObserver* observer);
   void GetReceiveBandwidthEstimatorStats(
       ReceiveBandwidthEstimatorStats* output) const;
 
@@ -428,6 +431,17 @@ class ViEChannel
         callback_->FrameCountUpdated(frame_type, frame_count, ssrc);
     }
   } send_frame_count_observer_;
+
+  class RegisterableSendSideDelayObserver :
+      public RegisterableCallback<SendSideDelayObserver> {
+    virtual void SendSideDelayUpdated(int avg_delay_ms,
+                                      int max_delay_ms,
+                                      uint32_t ssrc) OVERRIDE {
+      CriticalSectionScoped cs(critsect_.get());
+      if (callback_)
+        callback_->SendSideDelayUpdated(avg_delay_ms, max_delay_ms, ssrc);
+    }
+  } send_side_delay_observer_;
 
   int32_t channel_id_;
   int32_t engine_id_;

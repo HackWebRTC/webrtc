@@ -39,7 +39,8 @@ RtpRtcp::Configuration::Configuration()
       remote_bitrate_estimator(NULL),
       paced_sender(NULL),
       send_bitrate_observer(NULL),
-      send_frame_count_observer(NULL) {
+      send_frame_count_observer(NULL),
+      send_side_delay_observer(NULL) {
 }
 
 RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
@@ -64,7 +65,8 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                   configuration.audio_messages,
                   configuration.paced_sender,
                   configuration.send_bitrate_observer,
-                  configuration.send_frame_count_observer),
+                  configuration.send_frame_count_observer,
+                  configuration.send_side_delay_observer),
       rtcp_sender_(configuration.id,
                    configuration.audio,
                    configuration.clock,

@@ -269,6 +269,15 @@ class FrameCountObserver {
                                  const unsigned int ssrc) = 0;
 };
 
+// Callback, used to notify an observer whenever the send-side delay is updated.
+class SendSideDelayObserver {
+ public:
+  virtual ~SendSideDelayObserver() {}
+  virtual void SendSideDelayUpdated(int avg_delay_ms,
+                                    int max_delay_ms,
+                                    uint32_t ssrc) = 0;
+};
+
 // ==================================================================
 // Voice specific types
 // ==================================================================

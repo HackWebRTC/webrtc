@@ -144,6 +144,14 @@ int ViEBaseImpl::GetCpuOveruseMetrics(int video_channel,
   return -1;
 }
 
+void ViEBaseImpl::RegisterSendSideDelayObserver(
+    int channel, SendSideDelayObserver* observer) {
+  ViEChannelManagerScoped cs(*(shared_data_.channel_manager()));
+  ViEChannel* vie_channel = cs.Channel(channel);
+  assert(vie_channel);
+  vie_channel->RegisterSendSideDelayObserver(observer);
+}
+
 int ViEBaseImpl::CreateChannel(int& video_channel) {  // NOLINT
   return CreateChannel(video_channel, static_cast<const Config*>(NULL));
 }

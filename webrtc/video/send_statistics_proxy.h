@@ -29,19 +29,10 @@ class SendStatisticsProxy : public RtcpStatisticsCallback,
                             public BitrateStatisticsObserver,
                             public FrameCountObserver,
                             public ViEEncoderObserver,
-                            public ViECaptureObserver {
+                            public ViECaptureObserver,
+                            public SendSideDelayObserver {
  public:
-  class StatsProvider {
-   protected:
-    StatsProvider() {}
-    virtual ~StatsProvider() {}
-
-   public:
-    virtual bool GetSendSideDelay(VideoSendStream::Stats* stats) = 0;
-  };
-
-  SendStatisticsProxy(const VideoSendStream::Config& config,
-                      StatsProvider* stats_provider);
+  explicit SendStatisticsProxy(const VideoSendStream::Config& config);
   virtual ~SendStatisticsProxy();
 
   VideoSendStream::Stats GetStats() const;
@@ -79,11 +70,14 @@ class SendStatisticsProxy : public RtcpStatisticsCallback,
   virtual void NoPictureAlarm(const int capture_id,
                               const CaptureAlarm alarm) OVERRIDE {}
 
+  virtual void SendSideDelayUpdated(int avg_delay_ms,
+                                    int max_delay_ms,
+                                    uint32_t ssrc) OVERRIDE;
+
  private:
   StreamStats* GetStatsEntry(uint32_t ssrc) EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   const VideoSendStream::Config config_;
-  StatsProvider* const stats_provider_;
   scoped_ptr<CriticalSectionWrapper> crit_;
   VideoSendStream::Stats stats_ GUARDED_BY(crit_);
 };
