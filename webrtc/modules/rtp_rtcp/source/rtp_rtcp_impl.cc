@@ -47,13 +47,12 @@ RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
   if (configuration.clock) {
     return new ModuleRtpRtcpImpl(configuration);
   } else {
+    // No clock implementation provided, use default clock.
     RtpRtcp::Configuration configuration_copy;
     memcpy(&configuration_copy, &configuration,
            sizeof(RtpRtcp::Configuration));
     configuration_copy.clock = Clock::GetRealTimeClock();
-    ModuleRtpRtcpImpl* rtp_rtcp_instance =
-        new ModuleRtpRtcpImpl(configuration_copy);
-    return rtp_rtcp_instance;
+    return new ModuleRtpRtcpImpl(configuration_copy);
   }
 }
 

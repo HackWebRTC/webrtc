@@ -304,7 +304,6 @@ class RtcpSenderTest : public ::testing::Test {
     rtcp_receiver_ = new RTCPReceiver(0, &clock_, rtp_rtcp_impl_);
     test_transport_->SetRTCPReceiver(rtcp_receiver_);
     // Initialize
-    EXPECT_EQ(0, rtcp_sender_->Init());
     EXPECT_EQ(0, rtcp_sender_->RegisterSendTransport(test_transport_));
   }
   ~RtcpSenderTest() {

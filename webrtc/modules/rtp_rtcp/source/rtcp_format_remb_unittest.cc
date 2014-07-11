@@ -97,7 +97,6 @@ void RtcpFormatRembTest::SetUp() {
   rtcp_receiver_ = new RTCPReceiver(0, system_clock_, dummy_rtp_rtcp_impl_);
   test_transport_ = new TestTransport(rtcp_receiver_);
 
-  EXPECT_EQ(0, rtcp_sender_->Init());
   EXPECT_EQ(0, rtcp_sender_->RegisterSendTransport(test_transport_));
 }
 
