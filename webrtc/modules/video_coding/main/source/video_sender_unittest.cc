@@ -141,10 +141,10 @@ class PacketizationCallback : public VCMPacketizationCallback {
     int frames = 0;
     for (size_t i = 0; i < frame_data_.size(); ++i) {
       EXPECT_EQ(kRtpVideoVp8, frame_data_[i].rtp_video_header.codec);
-      if (frame_data_[i].rtp_video_header.codecHeader.VP8.temporalIdx <=
-          temporal_layer) {
+      const uint8_t temporal_idx =
+          frame_data_[i].rtp_video_header.codecHeader.VP8.temporalIdx;
+      if (temporal_idx <= temporal_layer || temporal_idx == kNoTemporalIdx)
         frames++;
-      }
     }
     return frames;
   }
@@ -153,10 +153,10 @@ class PacketizationCallback : public VCMPacketizationCallback {
     int payload_size = 0;
     for (size_t i = 0; i < frame_data_.size(); ++i) {
       EXPECT_EQ(kRtpVideoVp8, frame_data_[i].rtp_video_header.codec);
-      if (frame_data_[i].rtp_video_header.codecHeader.VP8.temporalIdx <=
-          temporal_layer) {
+      const uint8_t temporal_idx =
+          frame_data_[i].rtp_video_header.codecHeader.VP8.temporalIdx;
+      if (temporal_idx <= temporal_layer || temporal_idx == kNoTemporalIdx)
         payload_size += frame_data_[i].payload_size;
-      }
     }
     return payload_size;
   }
