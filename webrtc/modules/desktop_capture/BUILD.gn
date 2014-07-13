@@ -105,6 +105,8 @@ source_set("desktop_capture") {
     ]
   }
 
+  configs += [ "../../:common_inherited_config"]
+
   deps = ["../../system_wrappers"]
 
   if (use_desktop_capture_differ_sse2) {
@@ -120,6 +122,8 @@ if (use_desktop_capture_differ_sse2) {
       "differ_block_sse2.cc",
       "differ_block_sse2.h",
     ]
+
+    configs += [ "../../:common_inherited_config"]
 
     if (is_posix && !is_mac) {
       cflags = ["-msse2"]

@@ -180,6 +180,8 @@ static_library("webrtc") {
     "transport.h",
   ]
 
+  direct_dependent_configs = [ ":common_inherited_config"]
+
   deps = [
     ":webrtc_common",
     "base:webrtc_base",
@@ -210,4 +212,6 @@ source_set("webrtc_common") {
     "config.h",
     "config.cc",
   ]
+
+  configs += [ ":common_inherited_config"]
 }

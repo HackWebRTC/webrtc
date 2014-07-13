@@ -14,4 +14,6 @@ source_set("remote_bitrate_estimator") {
     "remote_rate_control.cc",
     "remote_rate_control.h",
   ]
+
+  configs += [ "../../:common_inherited_config"]
 }
