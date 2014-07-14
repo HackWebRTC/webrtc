@@ -263,21 +263,7 @@ void LogMultiline(LoggingSeverity level, const char* label, bool input,
                   const void* data, size_t len, bool hex_mode,
                   LogMultilineState* state);
 
-//////////////////////////////////////////////////////////////////////
-// Macros which automatically disable logging when LOGGING == 0
-//////////////////////////////////////////////////////////////////////
-
-// If LOGGING is not explicitly defined, default to enabled in debug mode
-#if !defined(LOGGING)
-#if defined(_DEBUG) && !defined(NDEBUG)
-#define LOGGING 1
-#else
-#define LOGGING 0
-#endif
-#endif  // !defined(LOGGING)
-
 #ifndef LOG
-#if LOGGING
 
 // The following non-obvious technique for implementation of a
 // conditional log stream was stolen from google3/base/logging.h.
@@ -333,30 +319,6 @@ inline bool LogCheckLevel(LoggingSeverity sev) {
         .stream()
 
 #define LOG_T(sev) LOG(sev) << this << ": "
-
-#else  // !LOGGING
-
-// Hopefully, the compiler will optimize away some of this code.
-// Note: syntax of "1 ? (void)0 : LogMessage" was causing errors in g++,
-//   converted to "while (false)"
-#define LOG(sev) \
-  while (false)talk_base:: LogMessage(NULL, 0, talk_base::sev).stream()
-#define LOG_V(sev) \
-  while (false) talk_base::LogMessage(NULL, 0, sev).stream()
-#define LOG_F(sev) LOG(sev) << __FUNCTION__ << ": "
-#define LOG_CHECK_LEVEL(sev) \
-  false
-#define LOG_CHECK_LEVEL_V(sev) \
-  false
-
-#define LOG_E(sev, ctx, err, ...) \
-  while (false) talk_base::LogMessage(__FILE__, __LINE__, talk_base::sev, \
-                          talk_base::ERRCTX_ ## ctx, err , ##__VA_ARGS__) \
-      .stream()
-
-#define LOG_T(sev) LOG(sev) << this << ": "
-#define LOG_T_F(sev) LOG(sev) << this << ": " << __FUNCTION__ <<
-#endif  // !LOGGING
 
 #define LOG_ERRNO_EX(sev, err) \
   LOG_E(sev, ERRNO, err)
