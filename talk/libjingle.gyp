@@ -1021,13 +1021,6 @@
             # libjpeg which pulls in libyuv which currently disabled.
             '../third_party/libyuv/include',
           ],
-          'dependencies!': [
-            '<(DEPTH)/third_party/usrsctp/usrsctp.gyp:usrsctplib',
-          ],
-          'sources!': [
-            'media/sctp/sctpdataengine.cc',
-            'media/sctp/sctpdataengine.h',
-          ],
         }],
         ['OS=="android"', {
           'sources': [

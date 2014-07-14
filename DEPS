@@ -166,7 +166,7 @@ deps = {
     Var("chromium_trunk") + "/src/third_party/usrsctp@" + Var("chromium_revision"),
 
   "third_party/usrsctp/usrsctplib":
-    (Var("googlecode_url") % "sctp-refimpl") + "/trunk/KERN/usrsctp/usrsctplib@8875",
+    From("chromium_deps", "src/third_party/usrsctp/usrsctplib"),
 }
 
 deps_os = {

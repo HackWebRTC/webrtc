@@ -67,6 +67,7 @@
       'FEATURE_ENABLE_PSTN',
       # TODO(eric): enable HAVE_NSS_SSL_H and SSL_USE_NSS once they are ready.
       # 'HAVE_NSS_SSL_H=1',
+      'HAVE_SCTP',
       'HAVE_SRTP',
       'HAVE_WEBRTC_VIDEO',
       'HAVE_WEBRTC_VOICE',
@@ -106,10 +107,6 @@
       ['OS=="ios"', {
         'defines': [
           'IOS',
-        ],
-      }, {
-        'defines': [
-          'HAVE_SCTP',
         ],
       }],
       ['OS=="ios" or (OS=="mac" and target_arch!="ia32")', {
