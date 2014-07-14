@@ -528,8 +528,12 @@ void ExtractStatsFromList(const std::vector<T>& data,
 
 }  // namespace
 
-StatsCollector::StatsCollector()
-    : session_(NULL), stats_gathering_started_(0) {
+StatsCollector::StatsCollector(WebRtcSession* session)
+    : session_(session), stats_gathering_started_(0) {
+  ASSERT(session_);
+}
+
+StatsCollector::~StatsCollector() {
 }
 
 // Adds a MediaStream with tracks that can be used as a |selector| in a call
@@ -1063,14 +1067,14 @@ void StatsCollector::UpdateReportFromAudioTrack(AudioTrackInterface* track,
 bool StatsCollector::GetTrackIdBySsrc(uint32 ssrc, std::string* track_id,
                                       TrackDirection direction) {
   if (direction == kSending) {
-    if (!session()->GetLocalTrackIdBySsrc(ssrc, track_id)) {
+    if (!session_->GetLocalTrackIdBySsrc(ssrc, track_id)) {
       LOG(LS_WARNING) << "The SSRC " << ssrc
                       << " is not associated with a sending track";
       return false;
     }
   } else {
     ASSERT(direction == kReceiving);
-    if (!session()->GetRemoteTrackIdBySsrc(ssrc, track_id)) {
+    if (!session_->GetRemoteTrackIdBySsrc(ssrc, track_id)) {
       LOG(LS_WARNING) << "The SSRC " << ssrc
                       << " is not associated with a receiving track";
       return false;

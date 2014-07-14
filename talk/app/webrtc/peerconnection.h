@@ -196,7 +196,7 @@ class PeerConnection : public PeerConnectionInterface,
   talk_base::scoped_ptr<WebRtcSession> session_;
   talk_base::scoped_ptr<MediaStreamSignaling> mediastream_signaling_;
   talk_base::scoped_ptr<MediaStreamHandlerContainer> stream_handler_container_;
-  StatsCollector stats_;
+  talk_base::scoped_ptr<StatsCollector> stats_;
 };
 
 }  // namespace webrtc

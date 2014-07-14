@@ -373,7 +373,7 @@ bool PeerConnection::DoInitialize(
                                    mediastream_signaling_.get()));
   stream_handler_container_.reset(new MediaStreamHandlerContainer(
       session_.get(), session_.get()));
-  stats_.set_session(session_.get());
+  stats_.reset(new StatsCollector(session_.get()));
 
   // Initialize the WebRtcSession. It creates transport channels etc.
   if (!session_->Initialize(factory_->options(), constraints,
@@ -410,7 +410,7 @@ bool PeerConnection::AddStream(MediaStreamInterface* local_stream,
   if (!mediastream_signaling_->AddLocalStream(local_stream)) {
     return false;
   }
-  stats_.AddStream(local_stream);
+  stats_->AddStream(local_stream);
   observer_->OnRenegotiationNeeded();
   return true;
 }
@@ -451,9 +451,9 @@ bool PeerConnection::GetStats(StatsObserver* observer,
     return false;
   }
 
-  stats_.UpdateStats(level);
+  stats_->UpdateStats(level);
   talk_base::scoped_ptr<GetStatsMsg> msg(new GetStatsMsg(observer));
-  if (!stats_.GetStats(track, &(msg->reports))) {
+  if (!stats_->GetStats(track, &(msg->reports))) {
     return false;
   }
   signaling_thread()->Post(this, MSG_GETSTATS, msg.release());
@@ -534,7 +534,7 @@ void PeerConnection::SetLocalDescription(
   }
   // Update stats here so that we have the most recent stats for tracks and
   // streams that might be removed by updating the session description.
-  stats_.UpdateStats(kStatsOutputLevelStandard);
+  stats_->UpdateStats(kStatsOutputLevelStandard);
   std::string error;
   if (!session_->SetLocalDescription(desc, &error)) {
     PostSetSessionDescriptionFailure(observer, error);
@@ -557,7 +557,7 @@ void PeerConnection::SetRemoteDescription(
   }
   // Update stats here so that we have the most recent stats for tracks and
   // streams that might be removed by updating the session description.
-  stats_.UpdateStats(kStatsOutputLevelStandard);
+  stats_->UpdateStats(kStatsOutputLevelStandard);
   std::string error;
   if (!session_->SetRemoteDescription(desc, &error)) {
     PostSetSessionDescriptionFailure(observer, error);
@@ -649,7 +649,7 @@ const SessionDescriptionInterface* PeerConnection::remote_description() const {
 void PeerConnection::Close() {
   // Update stats here so that we have the most recent stats for tracks and
   // streams before the channels are closed.
-  stats_.UpdateStats(kStatsOutputLevelStandard);
+  stats_->UpdateStats(kStatsOutputLevelStandard);
 
   session_->Terminate();
 }
@@ -713,7 +713,7 @@ void PeerConnection::OnMessage(talk_base::Message* msg) {
 }
 
 void PeerConnection::OnAddRemoteStream(MediaStreamInterface* stream) {
-  stats_.AddStream(stream);
+  stats_->AddStream(stream);
   observer_->OnAddStream(stream);
 }
 
@@ -754,7 +754,7 @@ void PeerConnection::OnAddLocalAudioTrack(MediaStreamInterface* stream,
                                           AudioTrackInterface* audio_track,
                                           uint32 ssrc) {
   stream_handler_container_->AddLocalAudioTrack(stream, audio_track, ssrc);
-  stats_.AddLocalAudioTrack(audio_track, ssrc);
+  stats_->AddLocalAudioTrack(audio_track, ssrc);
 }
 void PeerConnection::OnAddLocalVideoTrack(MediaStreamInterface* stream,
                                           VideoTrackInterface* video_track,
@@ -766,7 +766,7 @@ void PeerConnection::OnRemoveLocalAudioTrack(MediaStreamInterface* stream,
                                              AudioTrackInterface* audio_track,
                                              uint32 ssrc) {
   stream_handler_container_->RemoveLocalTrack(stream, audio_track);
-  stats_.RemoveLocalAudioTrack(audio_track, ssrc);
+  stats_->RemoveLocalAudioTrack(audio_track, ssrc);
 }
 
 void PeerConnection::OnRemoveLocalVideoTrack(MediaStreamInterface* stream,

@@ -49,13 +49,10 @@ class StatsCollector {
     kReceiving,
   };
 
-  StatsCollector();
-
-  // Register the session Stats should operate on.
-  // Set to NULL if the session has ended.
-  void set_session(WebRtcSession* session) {
-    session_ = session;
-  }
+  // The caller is responsible for ensuring that the session outlives the
+  // StatsCollector instance.
+  explicit StatsCollector(WebRtcSession* session);
+  virtual ~StatsCollector();
 
   // Adds a MediaStream with tracks that can be used as a |selector| in a call
   // to GetStats.
@@ -110,7 +107,6 @@ class StatsCollector {
   void ExtractVideoInfo(PeerConnectionInterface::StatsOutputLevel level);
   double GetTimeNow();
   void BuildSsrcToTransportId();
-  WebRtcSession* session() { return session_; }
   webrtc::StatsReport* GetOrCreateReport(const std::string& type,
                                          const std::string& id,
                                          TrackDirection direction);
@@ -131,7 +127,7 @@ class StatsCollector {
   // A map from the report id to the report.
   std::map<std::string, StatsReport> reports_;
   // Raw pointer to the session the statistics are gathered from.
-  WebRtcSession* session_;
+  WebRtcSession* const session_;
   double stats_gathering_started_;
   cricket::ProxyTransportMap proxy_to_transport_;
 
