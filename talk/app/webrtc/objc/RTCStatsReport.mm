@@ -57,7 +57,7 @@
         [NSMutableArray arrayWithCapacity:statsReport.values.size()];
     webrtc::StatsReport::Values::const_iterator it = statsReport.values.begin();
     for (; it != statsReport.values.end(); ++it) {
-      RTCPair* pair = [[RTCPair alloc] initWithKey:@(it->name.c_str())
+      RTCPair* pair = [[RTCPair alloc] initWithKey:@(it->display_name())
                                              value:@(it->value.c_str())];
       [values addObject:pair];
     }

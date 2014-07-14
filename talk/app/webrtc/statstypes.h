@@ -43,25 +43,54 @@ class StatsReport {
  public:
   StatsReport() : timestamp(0) { }
 
+  // TODO(tommi): Change this to be an enum type that holds all the
+  // kStatsValueName constants.
+  typedef const char* StatsValueName;
+
   std::string id;  // See below for contents.
   std::string type;  // See below for contents.
 
   struct Value {
-    std::string name;
+    Value() : name(NULL) {}
+    // The copy ctor can't be declared as explicit due to problems with STL.
+    Value(const Value& other) : name(other.name), value(other.value) {}
+    explicit Value(StatsValueName name) : name(name) {}
+    Value(StatsValueName name, const std::string& value)
+        : name(name), value(value) {
+    }
+
+    // TODO(tommi): Remove this operator once we don't need it.
+    // The operator is provided for compatibility with STL containers.
+    // The public |name| member variable is otherwise meant to be read-only.
+    Value& operator=(const Value& other) {
+      const_cast<StatsValueName&>(name) = other.name;
+      value = other.value;
+      return *this;
+    }
+
+    // TODO(tommi): Change implementation to do a simple enum value-to-static-
+    // string conversion when client code has been updated to use this method
+    // instead of the |name| member variable.
+    const char* display_name() const { return name; }
+
+    const StatsValueName name;
+
     std::string value;
   };
 
-  void AddValue(const std::string& name, const std::string& value);
-  void AddValue(const std::string& name, int64 value);
+  void AddValue(StatsValueName name, const std::string& value);
+  void AddValue(StatsValueName name, int64 value);
   template <typename T>
-  void AddValue(const std::string& name, const std::vector<T>& value);
-  void AddBoolean(const std::string& name, bool value);
+  void AddValue(StatsValueName name, const std::vector<T>& value);
+  void AddBoolean(StatsValueName name, bool value);
 
-  void ReplaceValue(const std::string& name, const std::string& value);
+  void ReplaceValue(StatsValueName name, const std::string& value);
 
   double timestamp;  // Time since 1970-01-01T00:00:00Z in milliseconds.
   typedef std::vector<Value> Values;
   Values values;
+
+  // TODO(tommi): These should all be enum values.
 
   // StatsReport types.
   // A StatsReport of |type| = "googSession" contains overall information

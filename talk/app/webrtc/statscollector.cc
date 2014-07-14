@@ -193,19 +193,17 @@ const char StatsReport::kStatsReportTypeCertificate[] = "googCertificate";
 const char StatsReport::kStatsReportVideoBweId[] = "bweforvideo";
 
 // Implementations of functions in statstypes.h
-void StatsReport::AddValue(const std::string& name, const std::string& value) {
-  Value temp;
-  temp.name = name;
-  temp.value = value;
-  values.push_back(temp);
+void StatsReport::AddValue(StatsReport::StatsValueName name,
+                           const std::string& value) {
+  values.push_back(Value(name, value));
 }
 
-void StatsReport::AddValue(const std::string& name, int64 value) {
+void StatsReport::AddValue(StatsReport::StatsValueName name, int64 value) {
   AddValue(name, talk_base::ToString<int64>(value));
 }
 
 template <typename T>
-void StatsReport::AddValue(const std::string& name,
+void StatsReport::AddValue(StatsReport::StatsValueName name,
                            const std::vector<T>& value) {
   std::ostringstream oss;
   oss << "[";
@@ -218,11 +216,11 @@ void StatsReport::AddValue(const std::string& name,
   AddValue(name, oss.str());
 }
 
-void StatsReport::AddBoolean(const std::string& name, bool value) {
+void StatsReport::AddBoolean(StatsReport::StatsValueName name, bool value) {
   AddValue(name, value ? "true" : "false");
 }
 
-void StatsReport::ReplaceValue(const std::string& name,
+void StatsReport::ReplaceValue(StatsReport::StatsValueName name,
                                const std::string& value) {
   for (Values::iterator it = values.begin(); it != values.end(); ++it) {
     if ((*it).name == name) {
@@ -258,7 +256,7 @@ std::string StatsId(const std::string& type, const std::string& id,
 
 bool ExtractValueFromReport(
     const StatsReport& report,
-    const std::string& name,
+    StatsReport::StatsValueName name,
     std::string* value) {
   StatsReport::Values::const_iterator it = report.values.begin();
   for (; it != report.values.end(); ++it) {

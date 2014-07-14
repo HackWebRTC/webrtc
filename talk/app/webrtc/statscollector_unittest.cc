@@ -149,7 +149,7 @@ class FakeAudioTrack
 };
 
 bool GetValue(const StatsReport* report,
-              const std::string& name,
+              StatsReport::StatsValueName name,
               std::string* value) {
   StatsReport::Values::const_iterator it = report->values.begin();
   for (; it != report->values.end(); ++it) {
@@ -163,7 +163,7 @@ bool GetValue(const StatsReport* report,
 
 std::string ExtractStatsValue(const std::string& type,
                               const StatsReports& reports,
-                              const std::string name) {
+                              StatsReport::StatsValueName name) {
   if (reports.empty()) {
     return kNoReports;
   }
@@ -204,13 +204,13 @@ const StatsReport* FindReportById(const StatsReports& reports,
 }
 
 std::string ExtractSsrcStatsValue(StatsReports reports,
-                                  const std::string& name) {
+                                  StatsReport::StatsValueName name) {
   return ExtractStatsValue(
       StatsReport::kStatsReportTypeSsrc, reports, name);
 }
 
 std::string ExtractBweStatsValue(StatsReports reports,
-                                  const std::string& name) {
+                                 StatsReport::StatsValueName name) {
   return ExtractStatsValue(
       StatsReport::kStatsReportTypeBwe, reports, name);
 }
@@ -446,7 +446,7 @@ class StatsCollectorTest : public testing::Test {
   // This creates a standard setup with a transport called "trspname"
   // having one transport channel
   // and the specified virtual connection name.
-  void InitSessionStats(const std::string vc_name) {
+  void InitSessionStats(const std::string& vc_name) {
     const std::string kTransportName("trspname");
     cricket::TransportStats transport_stats;
     cricket::TransportChannelStats channel_stats;
@@ -687,11 +687,12 @@ TEST_F(StatsCollectorTest, BytesCounterHandles64Bits) {
   EXPECT_CALL(session_, video_channel()).WillRepeatedly(Return(&video_channel));
   EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
   EXPECT_CALL(*media_channel, GetStats(_, _))
-    .WillOnce(DoAll(SetArgPointee<1>(stats_read),
-                    Return(true)));
+      .WillOnce(DoAll(SetArgPointee<1>(stats_read),
+                      Return(true)));
   stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.GetStats(NULL, &reports);
-  std::string result = ExtractSsrcStatsValue(reports, "bytesSent");
+  std::string result = ExtractSsrcStatsValue(reports,
+      StatsReport::kStatsValueNameBytesSent);
   EXPECT_EQ(kBytesSentString, result);
 }
 
@@ -730,9 +731,11 @@ TEST_F(StatsCollectorTest, BandwidthEstimationInfoIsReported) {
 
   stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.GetStats(NULL, &reports);
-  std::string result = ExtractSsrcStatsValue(reports, "bytesSent");
+  std::string result = ExtractSsrcStatsValue(reports,
+      StatsReport::kStatsValueNameBytesSent);
   EXPECT_EQ(kBytesSentString, result);
-  result = ExtractBweStatsValue(reports, "googTargetEncBitrate");
+  result = ExtractBweStatsValue(reports,
+      StatsReport::kStatsValueNameTargetEncBitrate);
   EXPECT_EQ(kTargetEncBitrateString, result);
 }
 
@@ -850,6 +853,9 @@ TEST_F(StatsCollectorTest, TrackAndSsrcObjectExistAfterUpdateSsrcStats) {
 // stats object, and that this transport stats object exists in stats.
 TEST_F(StatsCollectorTest, TransportObjectLinkedFromSsrcObject) {
   webrtc::StatsCollector stats(&session_);  // Implementation under test.
+  // Ignore unused callback (logspam).
+  EXPECT_CALL(session_, GetTransport(_))
+      .WillOnce(Return(static_cast<cricket::Transport*>(NULL)));
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
   // The content_name known by the video channel.
   const std::string kVcName("vcname");
@@ -919,6 +925,9 @@ TEST_F(StatsCollectorTest, RemoteSsrcInfoIsAbsent) {
 // an outgoing SSRC where stats are returned.
 TEST_F(StatsCollectorTest, RemoteSsrcInfoIsPresent) {
   webrtc::StatsCollector stats(&session_);  // Implementation under test.
+  // Ignore unused callback (logspam).
+  EXPECT_CALL(session_, GetTransport(_))
+      .WillOnce(Return(static_cast<cricket::Transport*>(NULL)));
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
   // The content_name known by the video channel.
   const std::string kVcName("vcname");
@@ -1190,13 +1199,15 @@ TEST_F(StatsCollectorTest, StatsOutputLevelVerbose) {
   StatsReports reports;  // returned values.
   stats.GetStats(NULL, &reports);
   std::string result = ExtractBweStatsValue(
-      reports, "googReceivedPacketGroupPropagationDeltaSumDebug");
+      reports,
+      StatsReport::kStatsValueNameRecvPacketGroupPropagationDeltaSumDebug);
   EXPECT_EQ("10", result);
   result = ExtractBweStatsValue(
-      reports, "googReceivedPacketGroupPropagationDeltaDebug");
+      reports,
+      StatsReport::kStatsValueNameRecvPacketGroupPropagationDeltaDebug);
   EXPECT_EQ("[100, 200]", result);
   result = ExtractBweStatsValue(
-      reports, "googReceivedPacketGroupArrivalTimeDebug");
+      reports, StatsReport::kStatsValueNameRecvPacketGroupArrivalTimeDebug);
   EXPECT_EQ("[1000, 2000]", result);
 }
 
@@ -1204,6 +1215,10 @@ TEST_F(StatsCollectorTest, StatsOutputLevelVerbose) {
 // AudioTrackInterface::GetStats() method.
 TEST_F(StatsCollectorTest, GetStatsFromLocalAudioTrack) {
   webrtc::StatsCollector stats(&session_);  // Implementation under test.
+  // Ignore unused callback (logspam).
+  EXPECT_CALL(session_, GetTransport(_))
+      .WillOnce(Return(static_cast<cricket::Transport*>(NULL)));
+
   MockVoiceMediaChannel* media_channel = new MockVoiceMediaChannel();
   // The content_name known by the voice channel.
   const std::string kVcName("vcname");
@@ -1233,6 +1248,9 @@ TEST_F(StatsCollectorTest, GetStatsFromLocalAudioTrack) {
 // correctly.
 TEST_F(StatsCollectorTest, GetStatsFromRemoteStream) {
   webrtc::StatsCollector stats(&session_);  // Implementation under test.
+  // Ignore unused callback (logspam).
+  EXPECT_CALL(session_, GetTransport(_))
+      .WillOnce(Return(static_cast<cricket::Transport*>(NULL)));
   MockVoiceMediaChannel* media_channel = new MockVoiceMediaChannel();
   // The content_name known by the voice channel.
   const std::string kVcName("vcname");
@@ -1256,6 +1274,9 @@ TEST_F(StatsCollectorTest, GetStatsFromRemoteStream) {
 // after a RemoveLocalAudioTrack() call.
 TEST_F(StatsCollectorTest, GetStatsAfterRemoveAudioStream) {
   webrtc::StatsCollector stats(&session_);  // Implementation under test.
+  // Ignore unused callback (logspam).
+  EXPECT_CALL(session_, GetTransport(_))
+      .WillOnce(Return(static_cast<cricket::Transport*>(NULL)));
   MockVoiceMediaChannel* media_channel = new MockVoiceMediaChannel();
   // The content_name known by the voice channel.
   const std::string kVcName("vcname");
@@ -1310,6 +1331,9 @@ TEST_F(StatsCollectorTest, GetStatsAfterRemoveAudioStream) {
 // the same ssrc, they populate stats reports correctly.
 TEST_F(StatsCollectorTest, LocalAndRemoteTracksWithSameSsrc) {
   webrtc::StatsCollector stats(&session_);  // Implementation under test.
+  // Ignore unused callback (logspam).
+  EXPECT_CALL(session_, GetTransport(_))
+      .WillOnce(Return(static_cast<cricket::Transport*>(NULL)));
   MockVoiceMediaChannel* media_channel = new MockVoiceMediaChannel();
   // The content_name known by the voice channel.
   const std::string kVcName("vcname");
@@ -1388,6 +1412,9 @@ TEST_F(StatsCollectorTest, LocalAndRemoteTracksWithSameSsrc) {
 // avoid duplication of code in test cases.
 TEST_F(StatsCollectorTest, TwoLocalTracksWithSameSsrc) {
   webrtc::StatsCollector stats(&session_);  // Implementation under test.
+  // Ignore unused callback (logspam).
+  EXPECT_CALL(session_, GetTransport(_))
+      .WillRepeatedly(Return(static_cast<cricket::Transport*>(NULL)));
   MockVoiceMediaChannel* media_channel = new MockVoiceMediaChannel();
   // The content_name known by the voice channel.
   const std::string kVcName("vcname");
