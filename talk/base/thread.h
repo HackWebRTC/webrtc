@@ -125,19 +125,6 @@ class Thread : public MessageQueue {
 
   static Thread* Current();
 
-  // Used to catch performance regressions. Use this to disallow blocking calls
-  // (Invoke) for a given scope.  If a synchronous call is made while this is in
-  // effect, an assert will be triggered.
-  // Note that this is a single threaded class.
-  class ScopedDisallowBlockingCalls {
-   public:
-    ScopedDisallowBlockingCalls();
-    ~ScopedDisallowBlockingCalls();
-   private:
-    Thread* const thread_;
-    const bool previous_state_;
-  };
-
   bool IsCurrent() const {
     return Current() == this;
   }
@@ -178,11 +165,8 @@ class Thread : public MessageQueue {
   // Uses Send() internally, which blocks the current thread until execution
   // is complete.
   // Ex: bool result = thread.Invoke<bool>(&MyFunctionReturningBool);
-  // NOTE: This function can only be called when synchronous calls are allowed.
-  // See ScopedDisallowBlockingCalls for details.
   template <class ReturnT, class FunctorT>
   ReturnT Invoke(const FunctorT& functor) {
-    AssertBlockingIsAllowedOnCurrentThread();
     FunctorMessageHandler<ReturnT, FunctorT> handler(functor);
     Send(&handler);
     return handler.result();
@@ -245,14 +229,6 @@ class Thread : public MessageQueue {
   // Blocks the calling thread until this thread has terminated.
   void Join();
 
-  // Sets the per-thread allow-blocking-calls flag and returns the previous
-  // value.
-  bool SetAllowBlockingCalls(bool allow);
-
-  static void AssertBlockingIsAllowedOnCurrentThread();
-
-  friend class ScopedDisallowBlockingCalls;
-
  private:
   static void *PreRun(void *pv);
 
@@ -279,7 +255,6 @@ class Thread : public MessageQueue {
 #endif
 
   bool owned_;
-  bool blocking_calls_allowed_;  // By default set to |true|.
 
   friend class ThreadManager;
 

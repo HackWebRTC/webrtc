@@ -142,16 +142,6 @@ struct ThreadInit {
   Runnable* runnable;
 };
 
-Thread::ScopedDisallowBlockingCalls::ScopedDisallowBlockingCalls()
-  : thread_(Thread::Current()),
-    previous_state_(thread_->SetAllowBlockingCalls(false)) {
-}
-
-Thread::ScopedDisallowBlockingCalls::~ScopedDisallowBlockingCalls() {
-  ASSERT(thread_->IsCurrent());
-  thread_->SetAllowBlockingCalls(previous_state_);
-}
-
 Thread::Thread(SocketServer* ss)
     : MessageQueue(ss),
       priority_(PRIORITY_NORMAL),
@@ -160,8 +150,7 @@ Thread::Thread(SocketServer* ss)
       thread_(NULL),
       thread_id_(0),
 #endif
-      owned_(true),
-      blocking_calls_allowed_(true) {
+      owned_(true) {
   SetName("Thread", this);  // default name
 }
 
@@ -171,8 +160,6 @@ Thread::~Thread() {
 }
 
 bool Thread::SleepMs(int milliseconds) {
-  AssertBlockingIsAllowedOnCurrentThread();
-
 #ifdef WIN32
   ::Sleep(milliseconds);
   return true;
@@ -306,8 +293,6 @@ bool Thread::Start(Runnable* runnable) {
 }
 
 void Thread::Join() {
-  AssertBlockingIsAllowedOnCurrentThread();
-
   if (running()) {
     ASSERT(!IsCurrent());
 #if defined(WIN32)
@@ -321,21 +306,6 @@ void Thread::Join() {
 #endif
     running_.Reset();
   }
-}
-
-bool Thread::SetAllowBlockingCalls(bool allow) {
-  ASSERT(IsCurrent());
-  bool previous = blocking_calls_allowed_;
-  blocking_calls_allowed_ = allow;
-  return previous;
-}
-
-// static
-void Thread::AssertBlockingIsAllowedOnCurrentThread() {
-#ifdef _DEBUG
-  Thread* current = Thread::Current();
-  ASSERT(!current || current->blocking_calls_allowed_);
-#endif
 }
 
 #ifdef WIN32
@@ -404,8 +374,6 @@ void Thread::Stop() {
 }
 
 void Thread::Send(MessageHandler *phandler, uint32 id, MessageData *pdata) {
-  AssertBlockingIsAllowedOnCurrentThread();
-
   if (fStop_)
     return;
 
