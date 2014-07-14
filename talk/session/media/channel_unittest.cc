@@ -1597,12 +1597,12 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
                           new cricket::AudioContentDescription());
     sdesc_loc->AddContent(cricket::CN_VIDEO, cricket::NS_JINGLE_RTP,
                           new cricket::VideoContentDescription());
-    EXPECT_TRUE(session1_.set_local_description(sdesc_loc));
+    session1_.set_local_description(sdesc_loc);
     sdesc_rem->AddContent(cricket::CN_AUDIO, cricket::NS_JINGLE_RTP,
                           new cricket::AudioContentDescription());
     sdesc_rem->AddContent(cricket::CN_VIDEO, cricket::NS_JINGLE_RTP,
                           new cricket::VideoContentDescription());
-    EXPECT_TRUE(session1_.set_remote_description(sdesc_rem));
+    session1_.set_remote_description(sdesc_rem);
 
     // Test failures in SetLocalContent.
     media_channel1_->set_fail_set_recv_codecs(true);
@@ -1630,7 +1630,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     // Set up the initial session description.
     cricket::SessionDescription* sdesc = CreateSessionDescriptionWithStream(1);
-    EXPECT_TRUE(session1_.set_local_description(sdesc));
+    session1_.set_local_description(sdesc);
 
     session1_.SetError(cricket::BaseSession::ERROR_NONE, "");
     session1_.SetState(cricket::Session::STATE_SENTINITIATE);
@@ -1639,7 +1639,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     // Update the local description and set the state again.
     sdesc = CreateSessionDescriptionWithStream(2);
-    EXPECT_TRUE(session1_.set_local_description(sdesc));
+    session1_.set_local_description(sdesc);
 
     session1_.SetState(cricket::Session::STATE_SENTINITIATE);
     EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());
@@ -1652,7 +1652,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     // Set up the initial session description.
     cricket::SessionDescription* sdesc = CreateSessionDescriptionWithStream(1);
-    EXPECT_TRUE(session1_.set_remote_description(sdesc));
+    session1_.set_remote_description(sdesc);
 
     session1_.SetError(cricket::BaseSession::ERROR_NONE, "");
     session1_.SetState(cricket::Session::STATE_RECEIVEDINITIATE);
@@ -1660,7 +1660,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(media_channel1_->HasRecvStream(1));
 
     sdesc = CreateSessionDescriptionWithStream(2);
-    EXPECT_TRUE(session1_.set_remote_description(sdesc));
+    session1_.set_remote_description(sdesc);
     session1_.SetState(cricket::Session::STATE_RECEIVEDINITIATE);
     EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());
     EXPECT_FALSE(media_channel1_->HasRecvStream(1));
@@ -1672,7 +1672,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     // Set up the initial session description.
     cricket::SessionDescription* sdesc = CreateSessionDescriptionWithStream(1);
-    EXPECT_TRUE(session1_.set_remote_description(sdesc));
+    session1_.set_remote_description(sdesc);
 
     session1_.SetError(cricket::BaseSession::ERROR_NONE, "");
     session1_.SetState(cricket::Session::STATE_RECEIVEDINITIATE);
@@ -1681,7 +1681,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     // Send PRANSWER
     sdesc = CreateSessionDescriptionWithStream(2);
-    EXPECT_TRUE(session1_.set_local_description(sdesc));
+    session1_.set_local_description(sdesc);
 
     session1_.SetState(cricket::Session::STATE_SENTPRACCEPT);
     EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());
@@ -1690,7 +1690,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     // Send ACCEPT
     sdesc = CreateSessionDescriptionWithStream(3);
-    EXPECT_TRUE(session1_.set_local_description(sdesc));
+    session1_.set_local_description(sdesc);
 
     session1_.SetState(cricket::Session::STATE_SENTACCEPT);
     EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());
@@ -1704,7 +1704,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     // Set up the initial session description.
     cricket::SessionDescription* sdesc = CreateSessionDescriptionWithStream(1);
-    EXPECT_TRUE(session1_.set_local_description(sdesc));
+    session1_.set_local_description(sdesc);
 
     session1_.SetError(cricket::BaseSession::ERROR_NONE, "");
     session1_.SetState(cricket::Session::STATE_SENTINITIATE);
@@ -1713,7 +1713,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     // Receive PRANSWER
     sdesc = CreateSessionDescriptionWithStream(2);
-    EXPECT_TRUE(session1_.set_remote_description(sdesc));
+    session1_.set_remote_description(sdesc);
 
     session1_.SetState(cricket::Session::STATE_RECEIVEDPRACCEPT);
     EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());
@@ -1722,7 +1722,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     // Receive ACCEPT
     sdesc = CreateSessionDescriptionWithStream(3);
-    EXPECT_TRUE(session1_.set_remote_description(sdesc));
+    session1_.set_remote_description(sdesc);
 
     session1_.SetState(cricket::Session::STATE_RECEIVEDACCEPT);
     EXPECT_EQ(cricket::BaseSession::ERROR_NONE, session1_.error());

@@ -64,7 +64,7 @@ TransportProxy::~TransportProxy() {
   }
 }
 
-std::string TransportProxy::type() const {
+const std::string& TransportProxy::type() const {
   return transport_->get()->type();
 }
 
@@ -396,8 +396,6 @@ BaseSession::BaseSession(talk_base::Thread* signaling_thread,
       transport_type_(NS_GINGLE_P2P),
       initiator_(initiator),
       identity_(NULL),
-      local_description_(NULL),
-      remote_description_(NULL),
       ice_tiebreaker_(talk_base::CreateRandomId64()),
       role_switch_(false) {
   ASSERT(signaling_thread->IsCurrent());
@@ -415,9 +413,38 @@ BaseSession::~BaseSession() {
        iter != transports_.end(); ++iter) {
     delete iter->second;
   }
+}
 
-  delete remote_description_;
-  delete local_description_;
+const SessionDescription* BaseSession::local_description() const {
+  // TODO(tommi): Assert on thread correctness.
+  return local_description_.get();
+}
+
+const SessionDescription* BaseSession::remote_description() const {
+  // TODO(tommi): Assert on thread correctness.
+  return remote_description_.get();
+}
+
+SessionDescription* BaseSession::remote_description() {
+  // TODO(tommi): Assert on thread correctness.
+  return remote_description_.get();
+}
+
+void BaseSession::set_local_description(const SessionDescription* sdesc) {
+  // TODO(tommi): Assert on thread correctness.
+  if (sdesc != local_description_.get())
+    local_description_.reset(sdesc);
+}
+
+void BaseSession::set_remote_description(SessionDescription* sdesc) {
+  // TODO(tommi): Assert on thread correctness.
+  if (sdesc != remote_description_)
+    remote_description_.reset(sdesc);
+}
+
+const SessionDescription* BaseSession::initiator_description() const {
+  // TODO(tommi): Assert on thread correctness.
+  return initiator_ ? local_description_.get() : remote_description_.get();
 }
 
 bool BaseSession::SetIdentity(talk_base::SSLIdentity* identity) {
@@ -435,11 +462,11 @@ bool BaseSession::PushdownTransportDescription(ContentSource source,
                                                ContentAction action,
                                                std::string* error_desc) {
   if (source == CS_LOCAL) {
-    return PushdownLocalTransportDescription(local_description_,
+    return PushdownLocalTransportDescription(local_description(),
                                              action,
                                              error_desc);
   }
-  return PushdownRemoteTransportDescription(remote_description_,
+  return PushdownRemoteTransportDescription(remote_description(),
                                             action,
                                             error_desc);
 }
@@ -509,8 +536,8 @@ TransportChannel* BaseSession::GetChannel(const std::string& content_name,
   TransportProxy* transproxy = GetTransportProxy(content_name);
   if (transproxy == NULL)
     return NULL;
-  else
-    return transproxy->GetChannel(component);
+
+  return transproxy->GetChannel(component);
 }
 
 void BaseSession::DestroyChannel(const std::string& content_name,
@@ -819,6 +846,7 @@ void BaseSession::LogState(State old_state, State new_state) {
                << " Transport:" << transport_type();
 }
 
+// static
 bool BaseSession::GetTransportDescription(const SessionDescription* description,
                                           const std::string& content_name,
                                           TransportDescription* tdesc) {
@@ -928,7 +956,7 @@ Session::~Session() {
   delete transport_parser_;
 }
 
-bool Session::Initiate(const std::string &to,
+bool Session::Initiate(const std::string& to,
                        const SessionDescription* sdesc) {
   ASSERT(signaling_thread()->IsCurrent());
   SessionError error;
@@ -1260,10 +1288,10 @@ void Session::OnIncomingResponse(const buzz::XmlElement* orig_stanza,
 }
 
 void Session::OnInitiateAcked() {
-    // TODO: This is to work around server re-ordering
-    // messages.  We send the candidates once the session-initiate
-    // is acked.  Once we have fixed the server to guarantee message
-    // order, we can remove this case.
+  // TODO: This is to work around server re-ordering
+  // messages.  We send the candidates once the session-initiate
+  // is acked.  Once we have fixed the server to guarantee message
+  // order, we can remove this case.
   if (!initiate_acked_) {
     initiate_acked_ = true;
     SessionError error;

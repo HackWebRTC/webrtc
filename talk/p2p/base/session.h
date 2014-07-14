@@ -110,12 +110,12 @@ class TransportProxy : public sigslot::has_slots<>,
   }
   ~TransportProxy();
 
-  std::string content_name() const { return content_name_; }
+  const std::string& content_name() const { return content_name_; }
   // TODO(juberti): It's not good form to expose the object you're wrapping,
   // since callers can mutate it. Can we make this return a const Transport*?
   Transport* impl() const { return transport_->get(); }
 
-  std::string type() const;
+  const std::string& type() const;
   bool negotiated() const { return negotiated_; }
   const Candidates& sent_candidates() const { return sent_candidates_; }
   const Candidates& unsent_candidates() const { return unsent_candidates_; }
@@ -195,9 +195,9 @@ class TransportProxy : public sigslot::has_slots<>,
   void ReplaceChannelProxyImpl_w(TransportChannelProxy* proxy,
                                  TransportChannelImpl* impl);
 
-  talk_base::Thread* worker_thread_;
-  std::string sid_;
-  std::string content_name_;
+  talk_base::Thread* const worker_thread_;
+  const std::string sid_;
+  const std::string content_name_;
   talk_base::scoped_refptr<TransportWrapper> transport_;
   bool connecting_;
   bool negotiated_;
@@ -275,9 +275,10 @@ class BaseSession : public sigslot::has_slots<>,
               bool initiator);
   virtual ~BaseSession();
 
-  talk_base::Thread* signaling_thread() { return signaling_thread_; }
-  talk_base::Thread* worker_thread() { return worker_thread_; }
-  PortAllocator* port_allocator() { return port_allocator_; }
+  // These are const to allow them to be called from const methods.
+  talk_base::Thread* signaling_thread() const { return signaling_thread_; }
+  talk_base::Thread* worker_thread() const { return worker_thread_; }
+  PortAllocator* port_allocator() const { return port_allocator_; }
 
   // The ID of this session.
   const std::string& id() const { return sid_; }
@@ -294,43 +295,21 @@ class BaseSession : public sigslot::has_slots<>,
 
   // Returns the application-level description given by our client.
   // If we are the recipient, this will be NULL until we send an accept.
-  const SessionDescription* local_description() const {
-    return local_description_;
-  }
+  const SessionDescription* local_description() const;
+
   // Returns the application-level description given by the other client.
   // If we are the initiator, this will be NULL until we receive an accept.
-  const SessionDescription* remote_description() const {
-    return remote_description_;
-  }
-  SessionDescription* remote_description() {
-    return remote_description_;
-  }
+  const SessionDescription* remote_description() const;
+
+  SessionDescription* remote_description();
 
   // Takes ownership of SessionDescription*
-  bool set_local_description(const SessionDescription* sdesc) {
-    if (sdesc != local_description_) {
-      delete local_description_;
-      local_description_ = sdesc;
-    }
-    return true;
-  }
+  void set_local_description(const SessionDescription* sdesc);
 
   // Takes ownership of SessionDescription*
-  bool set_remote_description(SessionDescription* sdesc) {
-    if (sdesc != remote_description_) {
-      delete remote_description_;
-      remote_description_ = sdesc;
-    }
-    return true;
-  }
+  void set_remote_description(SessionDescription* sdesc);
 
-  const SessionDescription* initiator_description() const {
-    if (initiator_) {
-      return local_description_;
-    } else {
-      return remote_description_;
-    }
-  }
+  const SessionDescription* initiator_description() const;
 
   // Returns the current state of the session.  See the enum above for details.
   // Each time the state changes, we will fire this signal.
@@ -515,9 +494,9 @@ class BaseSession : public sigslot::has_slots<>,
 
   // Returns true and the TransportInfo of the given |content_name|
   // from |description|. Returns false if it's not available.
-  bool GetTransportDescription(const SessionDescription* description,
-                               const std::string& content_name,
-                               TransportDescription* info);
+  static bool GetTransportDescription(const SessionDescription* description,
+                                      const std::string& content_name,
+                                      TransportDescription* info);
 
   // Fires the new description signal according to the current state.
   void SignalNewDescription();
@@ -525,16 +504,16 @@ class BaseSession : public sigslot::has_slots<>,
   // Gets the ContentAction and ContentSource according to the session state.
   bool GetContentAction(ContentAction* action, ContentSource* source);
 
-  talk_base::Thread* signaling_thread_;
-  talk_base::Thread* worker_thread_;
-  PortAllocator* port_allocator_;
-  std::string sid_;
-  std::string content_type_;
-  std::string transport_type_;
+  talk_base::Thread* const signaling_thread_;
+  talk_base::Thread* const worker_thread_;
+  PortAllocator* const port_allocator_;
+  const std::string sid_;
+  const std::string content_type_;
+  const std::string transport_type_;
   bool initiator_;
   talk_base::SSLIdentity* identity_;
-  const SessionDescription* local_description_;
-  SessionDescription* remote_description_;
+  talk_base::scoped_ptr<const SessionDescription> local_description_;
+  talk_base::scoped_ptr<SessionDescription> remote_description_;
   uint64 ice_tiebreaker_;
   // This flag will be set to true after the first role switch. This flag
   // will enable us to stop any role switch during the call.
