@@ -84,13 +84,13 @@ class FakeAdmTest : public testing::Test,
                                    const uint8_t nChannels,
                                    const uint32_t samplesPerSec,
                                    void* audioSamples,
-#ifdef USE_WEBRTC_DEV_BRANCH
                                    uint32_t& nSamplesOut,
+#ifdef USE_WEBRTC_DEV_BRANCH
                                    int64_t* elapsed_time_ms,
-                                   int64_t* ntp_time_ms) {
 #else
-                                   uint32_t& nSamplesOut) {
+                                   uint32_t* rtp_timestamp,
 #endif
+                                   int64_t* ntp_time_ms) {
     ++pull_iterations_;
     const uint32_t audio_buffer_size = nSamples * nBytesPerSample;
     const uint32_t bytes_out = RecordedDataReceived() ?
@@ -99,8 +99,10 @@ class FakeAdmTest : public testing::Test,
     nSamplesOut = bytes_out / nBytesPerSample;
 #ifdef USE_WEBRTC_DEV_BRANCH
     *elapsed_time_ms = 0;
-    *ntp_time_ms = 0;
+#else
+    *rtp_timestamp = 0;
 #endif
+    *ntp_time_ms = 0;
     return 0;
   }
 

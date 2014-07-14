@@ -211,9 +211,7 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
   virtual int DeliverFrame(unsigned char* buffer,
                            int buffer_size,
                            uint32_t rtp_time_stamp,
-#ifdef USE_WEBRTC_DEV_BRANCH
                            int64_t ntp_time_ms,
-#endif
                            int64_t render_time,
                            void* handle) {
     talk_base::CritScope cs(&crit_);
@@ -226,11 +224,9 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
     int64 elapsed_time_ms =
         (rtp_ts_wraparound_handler_.Unwrap(rtp_time_stamp) -
          capture_start_rtp_time_stamp_) / kVideoCodecClockratekHz;
-#ifdef USE_WEBRTC_DEV_BRANCH
     if (ntp_time_ms > 0) {
       capture_start_ntp_time_ms_ = ntp_time_ms - elapsed_time_ms;
     }
-#endif
     frame_rate_tracker_.Update(1);
     if (renderer_ == NULL) {
       return 0;

@@ -789,7 +789,6 @@ class FakeWebRtcVoiceEngine
     channels_[channel]->send_audio_level_ext_ = (enable) ? id : -1;
     return 0;
   }
-#ifdef USE_WEBRTC_DEV_BRANCH
   WEBRTC_FUNC(SetReceiveAudioLevelIndicationStatus, (int channel, bool enable,
       unsigned char id)) {
     WEBRTC_CHECK_CHANNEL(channel);
@@ -797,7 +796,6 @@ class FakeWebRtcVoiceEngine
     channels_[channel]->receive_audio_level_ext_ = (enable) ? id : -1;
    return 0;
   }
-#endif  // USE_WEBRTC_DEV_BRANCH
   WEBRTC_FUNC(SetSendAbsoluteSenderTimeStatus, (int channel, bool enable,
       unsigned char id)) {
     WEBRTC_CHECK_CHANNEL(channel);

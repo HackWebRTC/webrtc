@@ -2280,7 +2280,6 @@ bool WebRtcVoiceMediaChannel::SetRecvRtpHeaderExtensions(
 
 bool WebRtcVoiceMediaChannel::SetChannelRecvRtpHeaderExtensions(
     int channel_id, const std::vector<RtpHeaderExtension>& extensions) {
-#ifdef USE_WEBRTC_DEV_BRANCH
   const RtpHeaderExtension* audio_level_extension =
       FindHeaderExtension(extensions, kRtpAudioLevelHeaderExtension);
   if (!SetHeaderExtension(
@@ -2288,7 +2287,6 @@ bool WebRtcVoiceMediaChannel::SetChannelRecvRtpHeaderExtensions(
       audio_level_extension)) {
     return false;
   }
-#endif  // USE_WEBRTC_DEV_BRANCH
 
   const RtpHeaderExtension* send_time_extension =
       FindHeaderExtension(extensions, kRtpAbsoluteSenderTimeHeaderExtension);

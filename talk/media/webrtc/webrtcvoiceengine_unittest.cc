@@ -1692,11 +1692,9 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsBadRED5) {
 TEST_F(WebRtcVoiceEngineTestFake, SendAudioLevelHeaderExtensions) {
   TestSetSendRtpHeaderExtensions(kRtpAudioLevelHeaderExtension);
 }
-#ifdef USE_WEBRTC_DEV_BRANCH
 TEST_F(WebRtcVoiceEngineTestFake, RecvAudioLevelHeaderExtensions) {
   TestSetRecvRtpHeaderExtensions(kRtpAudioLevelHeaderExtension);
 }
-#endif  // USE_WEBRTC_DEV_BRANCH
 
 // Test support for absolute send time header extension.
 TEST_F(WebRtcVoiceEngineTestFake, SendAbsoluteSendTimeHeaderExtensions) {
