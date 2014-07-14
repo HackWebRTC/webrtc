@@ -130,6 +130,8 @@ VideoCaptureModule* VideoCaptureImpl::Create(
 int32_t VideoCaptureAndroid::OnIncomingFrame(uint8_t* videoFrame,
                                              int32_t videoFrameLength,
                                              int64_t captureTime) {
+  if (!_captureStarted)
+    return 0;
   return IncomingFrame(
       videoFrame, videoFrameLength, _captureCapability, captureTime);
 }
@@ -209,13 +211,16 @@ int32_t VideoCaptureAndroid::StartCapture(
 }
 
 int32_t VideoCaptureAndroid::StopCapture() {
-  CriticalSectionScoped cs(&_apiCs);
+  _apiCs.Enter();
   AttachThreadScoped ats(g_jvm);
   JNIEnv* env = ats.env();
 
   memset(&_requestedCapability, 0, sizeof(_requestedCapability));
   memset(&_captureCapability, 0, sizeof(_captureCapability));
   _captureStarted = false;
+  // Exit critical section to avoid blocking camera thread inside
+  // onIncomingFrame() call.
+  _apiCs.Leave();
 
   jmethodID j_stop =
       env->GetMethodID(g_java_capturer_class, "stopCapture", "()Z");
