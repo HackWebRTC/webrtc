@@ -59,8 +59,9 @@ const char SessionDescriptionInterface::kAnswer[] = "answer";
 const int JsepSessionDescription::kDefaultVideoCodecId = 100;
 const int JsepSessionDescription::kDefaultVideoCodecFramerate = 30;
 const char JsepSessionDescription::kDefaultVideoCodecName[] = "VP8";
-const int JsepSessionDescription::kMaxVideoCodecWidth = 1280;
-const int JsepSessionDescription::kMaxVideoCodecHeight = 720;
+// Used as default max video codec size before we have it in signaling.
+const int JsepSessionDescription::kMaxVideoCodecWidth = 3840;
+const int JsepSessionDescription::kMaxVideoCodecHeight = 2160;
 const int JsepSessionDescription::kDefaultVideoCodecPreference = 1;
 
 SessionDescriptionInterface* CreateSessionDescription(const std::string& type,

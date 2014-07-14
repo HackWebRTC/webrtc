@@ -841,32 +841,9 @@ const WebRtcVideoEngine::VideoCodecPref
     {kRtxCodecName, 96, 100, 3},
 };
 
-// The formats are sorted by the descending order of width. We use the order to
-// find the next format for CPU and bandwidth adaptation.
-const VideoFormatPod WebRtcVideoEngine::kVideoFormats[] = {
-  {1280, 800, FPS_TO_INTERVAL(30), FOURCC_ANY},
-  {1280, 720, FPS_TO_INTERVAL(30), FOURCC_ANY},
-  {960, 600, FPS_TO_INTERVAL(30), FOURCC_ANY},
-  {960, 540, FPS_TO_INTERVAL(30), FOURCC_ANY},
-  {640, 400, FPS_TO_INTERVAL(30), FOURCC_ANY},
-  {640, 360, FPS_TO_INTERVAL(30), FOURCC_ANY},
-  {640, 480, FPS_TO_INTERVAL(30), FOURCC_ANY},
-  {480, 300, FPS_TO_INTERVAL(30), FOURCC_ANY},
-  {480, 270, FPS_TO_INTERVAL(30), FOURCC_ANY},
-  {480, 360, FPS_TO_INTERVAL(30), FOURCC_ANY},
-  {320, 200, FPS_TO_INTERVAL(30), FOURCC_ANY},
-  {320, 180, FPS_TO_INTERVAL(30), FOURCC_ANY},
-  {320, 240, FPS_TO_INTERVAL(30), FOURCC_ANY},
-  {240, 150, FPS_TO_INTERVAL(30), FOURCC_ANY},
-  {240, 135, FPS_TO_INTERVAL(30), FOURCC_ANY},
-  {240, 180, FPS_TO_INTERVAL(30), FOURCC_ANY},
-  {160, 100, FPS_TO_INTERVAL(30), FOURCC_ANY},
-  {160, 90, FPS_TO_INTERVAL(30), FOURCC_ANY},
-  {160, 120, FPS_TO_INTERVAL(30), FOURCC_ANY},
-};
-
-const VideoFormatPod WebRtcVideoEngine::kDefaultVideoFormat =
+const VideoFormatPod WebRtcVideoEngine::kDefaultMaxVideoFormat =
   {640, 400, FPS_TO_INTERVAL(30), FOURCC_ANY};
+// TODO(ronghuawu): Change to 640x360.
 
 static void UpdateVideoCodec(const cricket::VideoFormat& video_format,
                              webrtc::VideoCodec* target_codec) {
@@ -970,9 +947,10 @@ void WebRtcVideoEngine::Construct(ViEWrapper* vie_wrapper,
   // by the server with a jec in response to our reported system info.
   VideoCodec max_codec(kVideoCodecPrefs[0].payload_type,
                        kVideoCodecPrefs[0].name,
-                       kDefaultVideoFormat.width,
-                       kDefaultVideoFormat.height,
-                       VideoFormat::IntervalToFps(kDefaultVideoFormat.interval),
+                       kDefaultMaxVideoFormat.width,
+                       kDefaultMaxVideoFormat.height,
+                       VideoFormat::IntervalToFps(
+                           kDefaultMaxVideoFormat.interval),
                        0);
   if (!SetDefaultCodec(max_codec)) {
     LOG(LS_ERROR) << "Failed to initialize list of supported codec types";
@@ -1163,37 +1141,31 @@ int WebRtcVideoEngine::GetLastEngineError() {
 
 // Checks to see whether we comprehend and could receive a particular codec
 bool WebRtcVideoEngine::FindCodec(const VideoCodec& in) {
-  for (int i = 0; i < ARRAY_SIZE(kVideoFormats); ++i) {
-    const VideoFormat fmt(kVideoFormats[i]);
-    if ((in.width == 0 && in.height == 0) ||
-        (fmt.width == in.width && fmt.height == in.height)) {
-      if (encoder_factory_) {
-        const std::vector<WebRtcVideoEncoderFactory::VideoCodec>& codecs =
-            encoder_factory_->codecs();
-        for (size_t j = 0; j < codecs.size(); ++j) {
-          VideoCodec codec(GetExternalVideoPayloadType(static_cast<int>(j)),
-                           codecs[j].name, 0, 0, 0, 0);
-          if (codec.Matches(in))
-            return true;
-        }
-      }
-      for (size_t j = 0; j < ARRAY_SIZE(kVideoCodecPrefs); ++j) {
-        VideoCodec codec(kVideoCodecPrefs[j].payload_type,
-                         kVideoCodecPrefs[j].name, 0, 0, 0, 0);
-        if (codec.Matches(in)) {
-          return true;
-        }
-      }
+  if (encoder_factory_) {
+    const std::vector<WebRtcVideoEncoderFactory::VideoCodec>& codecs =
+        encoder_factory_->codecs();
+    for (size_t j = 0; j < codecs.size(); ++j) {
+      VideoCodec codec(GetExternalVideoPayloadType(static_cast<int>(j)),
+                       codecs[j].name, 0, 0, 0, 0);
+      if (codec.Matches(in))
+        return true;
+    }
+  }
+  for (size_t j = 0; j < ARRAY_SIZE(kVideoCodecPrefs); ++j) {
+    VideoCodec codec(kVideoCodecPrefs[j].payload_type,
+                     kVideoCodecPrefs[j].name, 0, 0, 0, 0);
+    if (codec.Matches(in)) {
+      return true;
     }
   }
   return false;
 }
 
 // Given the requested codec, returns true if we can send that codec type and
-// updates out with the best quality we could send for that codec. If current is
-// not empty, we constrain out so that its aspect ratio matches current's.
+// updates out with the best quality we could send for that codec.
+// TODO(ronghuawu): Remove |current| from the interface.
 bool WebRtcVideoEngine::CanSendCodec(const VideoCodec& requested,
-                                     const VideoCodec& current,
+                                     const VideoCodec& /* current */,
                                      VideoCodec* out) {
   if (!out) {
     return false;
@@ -1226,44 +1198,16 @@ bool WebRtcVideoEngine::CanSendCodec(const VideoCodec& requested,
       return false;
     }
 
-    // Pick the best quality that is within their and our bounds and has the
-    // correct aspect ratio.
-    for (int j = 0; j < ARRAY_SIZE(kVideoFormats); ++j) {
-      const VideoFormat format(kVideoFormats[j]);
-
-      // Skip any format that is larger than the local or remote maximums, or
-      // smaller than the current best match
-      if (format.width > requested.width || format.height > requested.height ||
-          format.width > local_max->width ||
-          (format.width < out->width && format.height < out->height)) {
-        continue;
-      }
-
-      bool better = false;
-
-      // Check any further constraints on this prospective format
-      if (!out->width || !out->height) {
-        // If we don't have any matches yet, this is the best so far.
-        better = true;
-      } else if (current.width && current.height) {
-        // current is set so format must match its ratio exactly.
-        better =
-            (format.width * current.height == format.height * current.width);
-      } else {
-        // Prefer closer aspect ratios i.e
-        // format.aspect - requested.aspect < out.aspect - requested.aspect
-        better = abs(format.width * requested.height * out->height -
-                     requested.width * format.height * out->height) <
-                 abs(out->width * format.height * requested.height -
-                     requested.width * format.height * out->height);
-      }
-
-      if (better) {
-        out->width = format.width;
-        out->height = format.height;
-      }
+    // Reduce the requested size by /= 2 until it's width under
+    // |local_max->width|.
+    out->width = requested.width;
+    out->height = requested.height;
+    while (out->width > local_max->width) {
+      out->width /= 2;
+      out->height /= 2;
     }
-    if (out->width > 0) {
+
+    if (out->width > 0 && out->height > 0) {
       return true;
     }
   }
@@ -1703,10 +1647,7 @@ bool WebRtcVideoMediaChannel::SetSendCodecs(
   // Match with local video codec list.
   std::vector<webrtc::VideoCodec> send_codecs;
   VideoCodec checked_codec;
-  VideoCodec current;  // defaults to 0x0
-  if (sending_) {
-    ConvertToCricketVideoCodec(*send_codec_, &current);
-  }
+  VideoCodec dummy_current;  // Will be ignored by CanSendCodec.
   std::map<int, int> primary_rtx_pt_mapping;
   bool nack_enabled = nack_enabled_;
   bool remb_enabled = remb_enabled_;
@@ -1722,7 +1663,7 @@ bool WebRtcVideoMediaChannel::SetSendCodecs(
       if (iter->GetParam(kCodecParamAssociatedPayloadType, &rtx_primary_type)) {
         primary_rtx_pt_mapping[rtx_primary_type] = rtx_type;
       }
-    } else if (engine()->CanSendCodec(*iter, current, &checked_codec)) {
+    } else if (engine()->CanSendCodec(*iter, dummy_current, &checked_codec)) {
       webrtc::VideoCodec wcodec;
       if (engine()->ConvertFromCricketVideoCodec(checked_codec, &wcodec)) {
         if (send_codecs.empty()) {
@@ -4084,6 +4025,7 @@ void WebRtcVideoMediaChannel::MaybeChangeBitrates(
       codec->startBitrate = current_target_bitrate;
     }
   }
+
 }
 
 void WebRtcVideoMediaChannel::OnMessage(talk_base::Message* msg) {

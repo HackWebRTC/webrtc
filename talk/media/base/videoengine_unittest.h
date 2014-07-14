@@ -178,7 +178,7 @@ class VideoEngineTest : public testing::Test {
                                      engine_.codecs()[0].name,
                                      1280, 800, 30, 0);
 
-    // set max settings of 1280x960x30
+    // set max settings of 1280x800x30
     EXPECT_TRUE(engine_.SetDefaultEncoderConfig(
         cricket::VideoEncoderConfig(max_settings)));
 
@@ -311,6 +311,43 @@ class VideoEngineTest : public testing::Test {
     in.framerate = 10;
     EXPECT_TRUE(engine_.CanSendCodec(in, empty, &out));
     EXPECT_PRED4(IsEqualRes, out, 160, 120, 10);
+  }
+
+  // This is the new way of constraining codec size, where we no longer maintain
+  // a list of the supported formats. Instead, CanSendCodec will just downscale
+  // the resolution by 2 until the width is below clamp.
+  void ConstrainNewCodec2Body() {
+    cricket::VideoCodec empty, in, out;
+    cricket::VideoCodec max_settings(engine_.codecs()[0].id,
+                                     engine_.codecs()[0].name,
+                                     1280, 800, 30, 0);
+
+    // Set max settings of 1280x800x30
+    EXPECT_TRUE(engine_.SetDefaultEncoderConfig(
+        cricket::VideoEncoderConfig(max_settings)));
+
+    // Don't constrain the max resolution
+    in = max_settings;
+    EXPECT_TRUE(engine_.CanSendCodec(in, empty, &out));
+    EXPECT_PRED2(IsEqualCodec, out, in);
+
+    // Constrain resolution greater than the max width.
+    in.width = 1380;
+    in.height = 800;
+    EXPECT_TRUE(engine_.CanSendCodec(in, empty, &out));
+    EXPECT_PRED4(IsEqualRes, out, 690, 400, 30);
+
+    // Don't constrain resolution when only the height is greater than max.
+    in.width = 960;
+    in.height = 1280;
+    EXPECT_TRUE(engine_.CanSendCodec(in, empty, &out));
+    EXPECT_PRED4(IsEqualRes, out, 960, 1280, 30);
+
+    // Don't constrain smaller format.
+    in.width = 640;
+    in.height = 480;
+    EXPECT_TRUE(engine_.CanSendCodec(in, empty, &out));
+    EXPECT_PRED4(IsEqualRes, out, 640, 480, 30);
   }
 
   void ConstrainRunningCodecBody() {

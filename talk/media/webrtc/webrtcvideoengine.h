@@ -189,7 +189,7 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
 
   static const VideoCodecPref kVideoCodecPrefs[];
   static const VideoFormatPod kVideoFormats[];
-  static const VideoFormatPod kDefaultVideoFormat;
+  static const VideoFormatPod kDefaultMaxVideoFormat;
 
   void Construct(ViEWrapper* vie_wrapper,
                  ViETraceWrapper* tracing,

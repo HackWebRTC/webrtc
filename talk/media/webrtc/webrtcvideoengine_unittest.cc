@@ -2188,7 +2188,9 @@ TEST_F(WebRtcVideoEngineTest, FindCodec) {
   EXPECT_TRUE(engine_.FindCodec(vp8_diff_id));
 
   cricket::VideoCodec vp8_diff_res(104, "VP8", 320, 111, 30, 0);
-  EXPECT_FALSE(engine_.FindCodec(vp8_diff_res));
+  // FindCodec ignores the codec size.
+  // Test that FindCodec can accept uncommon codec size.
+  EXPECT_TRUE(engine_.FindCodec(vp8_diff_res));
 
   // PeerConnection doesn't negotiate the resolution at this point.
   // Test that FindCodec can handle the case when width/height is 0.
@@ -2232,11 +2234,8 @@ TEST_F(WebRtcVideoEngineTest, StartupShutdown) {
   engine_.Terminate();
 }
 
-TEST_PRE_VIDEOENGINE_INIT(WebRtcVideoEngineTest, ConstrainNewCodec)
-TEST_POST_VIDEOENGINE_INIT(WebRtcVideoEngineTest, ConstrainNewCodec)
-
-TEST_PRE_VIDEOENGINE_INIT(WebRtcVideoEngineTest, ConstrainRunningCodec)
-TEST_POST_VIDEOENGINE_INIT(WebRtcVideoEngineTest, ConstrainRunningCodec)
+TEST_PRE_VIDEOENGINE_INIT(WebRtcVideoEngineTest, ConstrainNewCodec2)
+TEST_POST_VIDEOENGINE_INIT(WebRtcVideoEngineTest, ConstrainNewCodec2)
 
 // TODO(juberti): Figure out why ViE is munging the COM refcount.
 #ifdef WIN32
