@@ -14,8 +14,6 @@
 #ifndef WEBRTC_BASE_CHECKS_H_
 #define WEBRTC_BASE_CHECKS_H_
 
-#include <string.h>
-
 namespace rtc {
 
 // Prints an error message to stderr and aborts execution.
