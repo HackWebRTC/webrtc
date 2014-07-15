@@ -121,15 +121,6 @@ TEST_F(ChannelManagerTest, StartupShutdownOnThread) {
   EXPECT_FALSE(cm_->initialized());
 }
 
-// Test that we fail to startup if we're given an unstarted thread.
-// TODO(fischman): delete once Thread::RunningForChannelManager() is gone
-// (webrtc:3388).
-TEST_F(ChannelManagerTest, DISABLED_StartupShutdownOnUnstartedThread) {
-  EXPECT_TRUE(cm_->set_worker_thread(&worker_));
-  EXPECT_FALSE(cm_->Init());
-  EXPECT_FALSE(cm_->initialized());
-}
-
 // Test that we can create and destroy a voice and video channel.
 TEST_F(ChannelManagerTest, CreateDestroyChannels) {
   EXPECT_TRUE(cm_->Init());

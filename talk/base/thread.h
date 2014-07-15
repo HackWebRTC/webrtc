@@ -235,11 +235,6 @@ class Thread : public MessageQueue {
   // question to guarantee that the returned value remains true for the duration
   // of whatever code is conditionally executing because of the return value!
   bool RunningForTest() { return running(); }
-  // This is a legacy call-site that probably doesn't need to exist in the first
-  // place.
-  // TODO(fischman): delete once the ASSERT added in channelmanager.cc sticks
-  // for a month (ETA 2014/06/22).
-  bool RunningForChannelManager() { return running(); }
 
  protected:
   // Blocks the calling thread until this thread has terminated.
