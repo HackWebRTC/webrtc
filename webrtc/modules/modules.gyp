@@ -249,7 +249,6 @@
             'video_processing/main/test/unit_test/color_enhancement_test.cc',
             'video_processing/main/test/unit_test/content_metrics_test.cc',
             'video_processing/main/test/unit_test/deflickering_test.cc',
-            'video_processing/main/test/unit_test/denoising_test.cc',
             'video_processing/main/test/unit_test/video_processing_unittest.cc',
             'video_processing/main/test/unit_test/video_processing_unittest.h',
           ],

@@ -198,20 +198,6 @@ void ViEAutoTest::ViEImageProcessAPITest()
         tbCapture.captureId, effectFilter));
 
     //
-    // Denoising
-    //
-    EXPECT_EQ(0, ViE.image_process->EnableDenoising(tbCapture.captureId, true));
-    // If the denoising is already enabled, it will just reuturn 0.
-    EXPECT_EQ(0, ViE.image_process->EnableDenoising(tbCapture.captureId, true));
-    EXPECT_EQ(0, ViE.image_process->EnableDenoising(
-        tbCapture.captureId, false));
-    // If the denoising is already disabled, it will just reuturn 0.
-    EXPECT_EQ(0, ViE.image_process->EnableDenoising(
-        tbCapture.captureId, false));
-    EXPECT_NE(0, ViE.image_process->EnableDenoising(
-        tbChannel.videoChannel, true));
-
-    //
     // Deflickering
     //
     EXPECT_EQ(0, ViE.image_process->EnableDeflickering(

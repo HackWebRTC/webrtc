@@ -11,7 +11,6 @@
 // This sub-API supports the following functionalities:
 //  - Effect filters
 //  - Deflickering
-//  - Denoising
 //  - Color enhancement
 
 #ifndef WEBRTC_VIDEO_ENGINE_INCLUDE_VIE_IMAGE_PROCESS_H_
@@ -85,9 +84,10 @@ class WEBRTC_DLLEXPORT ViEImageProcess {
   // not all of them succeed. Enabling this function will remove the flicker.
   virtual int EnableDeflickering(const int capture_id, const bool enable) = 0;
 
-  // Some cameras produce very noisy captured images, especially in low‐light
-  // conditions. This functionality will reduce the camera noise.
-  virtual int EnableDenoising(const int capture_id, const bool enable) = 0;
+  // TODO(pbos): Remove this function when removed from fakewebrtcvideoengine.h.
+  virtual int EnableDenoising(const int capture_id, const bool enable) {
+    return -1;
+  }
 
   // This function enhances the colors on the decoded video stream, enabled by
   // default.

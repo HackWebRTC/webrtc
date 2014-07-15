@@ -25,8 +25,6 @@ source_set("video_processing") {
     "main/source/content_analysis.h",
     "main/source/deflickering.cc",
     "main/source/deflickering.h",
-    "main/source/denoising.cc",
-    "main/source/denoising.h",
     "main/source/frame_preprocessor.cc",
     "main/source/frame_preprocessor.h",
     "main/source/spatial_resampler.cc",

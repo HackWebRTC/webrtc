@@ -182,29 +182,6 @@ int ViEImageProcessImpl::EnableDeflickering(const int capture_id,
   return 0;
 }
 
-int ViEImageProcessImpl::EnableDenoising(const int capture_id,
-                                         const bool enable) {
-  LOG_F(LS_INFO) << "capture_id: " << capture_id
-                 << " enable: " << (enable ? "on" : "off");
-
-  ViEInputManagerScoped is(*(shared_data_->input_manager()));
-  ViECapturer* vie_capture = is.Capture(capture_id);
-  if (!vie_capture) {
-    shared_data_->SetLastError(kViEImageProcessInvalidCaptureId);
-    return -1;
-  }
-
-  if (vie_capture->EnableDenoising(enable) != 0) {
-    if (enable) {
-      shared_data_->SetLastError(kViEImageProcessAlreadyEnabled);
-    } else {
-      shared_data_->SetLastError(kViEImageProcessAlreadyDisabled);
-    }
-    return -1;
-  }
-  return 0;
-}
-
 int ViEImageProcessImpl::EnableColorEnhancement(const int video_channel,
                                                 const bool enable) {
   LOG_F(LS_INFO) << "video_channel: " << video_channel

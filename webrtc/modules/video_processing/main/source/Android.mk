@@ -23,7 +23,6 @@ LOCAL_SRC_FILES := \
     color_enhancement.cc \
     content_analysis.cc \
     deflickering.cc \
-    denoising.cc \
     frame_preprocessor.cc \
     spatial_resampler.cc \
     video_decimator.cc \

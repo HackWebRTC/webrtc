@@ -56,7 +56,6 @@ ViECapturer::ViECapturer(int capture_id,
       brightness_frame_stats_(NULL),
       current_brightness_level_(Normal),
       reported_brightness_level_(Normal),
-      denoising_enabled_(false),
       observer_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       observer_(NULL),
       overuse_detector_(new OveruseFrameDetector(Clock::GetRealTimeClock())) {
@@ -404,28 +403,6 @@ int32_t ViECapturer::DecImageProcRefCount() {
   return 0;
 }
 
-int32_t ViECapturer::EnableDenoising(bool enable) {
-  CriticalSectionScoped cs(deliver_cs_.get());
-  if (enable) {
-    if (denoising_enabled_) {
-      // Already enabled, nothing need to be done.
-      return 0;
-    }
-    denoising_enabled_ = true;
-    if (IncImageProcRefCount() != 0) {
-      return -1;
-    }
-  } else {
-    if (denoising_enabled_ == false) {
-      // Already disabled, nothing need to be done.
-      return 0;
-    }
-    denoising_enabled_ = false;
-    DecImageProcRefCount();
-  }
-  return 0;
-}
-
 int32_t ViECapturer::EnableDeflickering(bool enable) {
   CriticalSectionScoped cs(deliver_cs_.get());
   if (enable) {
@@ -515,9 +492,6 @@ void ViECapturer::DeliverI420Frame(I420VideoFrame* video_frame) {
     } else {
       LOG_F(LS_ERROR) << "Could not get frame stats.";
     }
-  }
-  if (denoising_enabled_) {
-    image_proc_module_->Denoising(video_frame);
   }
   if (brightness_frame_stats_) {
     if (image_proc_module_->GetFrameStats(brightness_frame_stats_,

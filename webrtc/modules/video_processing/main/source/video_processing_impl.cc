@@ -51,7 +51,6 @@ int32_t VideoProcessingModuleImpl::ChangeUniqueId(const int32_t id) {
   id_ = id;
   brightness_detection_.ChangeUniqueId(id);
   deflickering_.ChangeUniqueId(id);
-  denoising_.ChangeUniqueId(id);
   frame_pre_processor_.ChangeUniqueId(id);
   return VPM_OK;
 }
@@ -66,7 +65,6 @@ VideoProcessingModuleImpl::VideoProcessingModuleImpl(const int32_t id)
     mutex_(*CriticalSectionWrapper::CreateCriticalSection()) {
   brightness_detection_.ChangeUniqueId(id);
   deflickering_.ChangeUniqueId(id);
-  denoising_.ChangeUniqueId(id);
   frame_pre_processor_.ChangeUniqueId(id);
 }
 
@@ -77,7 +75,6 @@ VideoProcessingModuleImpl::~VideoProcessingModuleImpl() {
 void VideoProcessingModuleImpl::Reset() {
   CriticalSectionScoped mutex(&mutex_);
   deflickering_.Reset();
-  denoising_.Reset();
   brightness_detection_.Reset();
   frame_pre_processor_.Reset();
 }
@@ -144,11 +141,6 @@ int32_t VideoProcessingModuleImpl::Deflickering(I420VideoFrame* frame,
                                                 FrameStats* stats) {
   CriticalSectionScoped mutex(&mutex_);
   return deflickering_.ProcessFrame(frame, stats);
-}
-
-int32_t VideoProcessingModuleImpl::Denoising(I420VideoFrame* frame) {
-  CriticalSectionScoped mutex(&mutex_);
-  return denoising_.ProcessFrame(frame);
 }
 
 int32_t VideoProcessingModuleImpl::BrightnessDetection(

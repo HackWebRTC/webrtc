@@ -16,7 +16,6 @@
 #include "webrtc/modules/video_processing/main/source/brightness_detection.h"
 #include "webrtc/modules/video_processing/main/source/color_enhancement.h"
 #include "webrtc/modules/video_processing/main/source/deflickering.h"
-#include "webrtc/modules/video_processing/main/source/denoising.h"
 #include "webrtc/modules/video_processing/main/source/frame_preprocessor.h"
 
 namespace webrtc {
@@ -35,8 +34,6 @@ class VideoProcessingModuleImpl : public VideoProcessingModule {
   virtual void Reset();
 
   virtual int32_t Deflickering(I420VideoFrame* frame, FrameStats* stats);
-
-  virtual int32_t Denoising(I420VideoFrame* frame);
 
   virtual int32_t BrightnessDetection(const I420VideoFrame& frame,
                                       const FrameStats& stats);
@@ -74,7 +71,6 @@ class VideoProcessingModuleImpl : public VideoProcessingModule {
   int32_t  id_;
   CriticalSectionWrapper& mutex_;
   VPMDeflickering deflickering_;
-  VPMDenoising  denoising_;
   VPMBrightnessDetection brightness_detection_;
   VPMFramePreprocessor  frame_pre_processor_;
 };

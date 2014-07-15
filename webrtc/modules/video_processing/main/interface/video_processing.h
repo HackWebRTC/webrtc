@@ -177,17 +177,6 @@ class VideoProcessingModule : public Module {
   virtual int32_t Deflickering(I420VideoFrame* frame, FrameStats* stats) = 0;
 
   /**
-     Denoises a video frame. Every frame from the stream should be passed in.
-     Has a fixed-point implementation.
-
-     \param[in,out] frame
-         Pointer to the video frame.
-
-     \return The number of modified pixels on success, -1 on failure.
-  */
-  virtual int32_t Denoising(I420VideoFrame* frame) = 0;
-
-  /**
      Detects if a video frame is excessively bright or dark. Returns a
      warning if this is the case. Multiple frames should be passed in before
      expecting a warning. Has a floating-point implementation.

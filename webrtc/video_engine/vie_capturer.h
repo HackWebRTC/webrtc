@@ -94,7 +94,6 @@ class ViECapturer
 
   // Effect filter.
   int32_t RegisterEffectFilter(ViEEffectFilter* effect_filter);
-  int32_t EnableDenoising(bool enable);
   int32_t EnableDeflickering(bool enable);
   int32_t EnableBrightnessAlarm(bool enable);
 
@@ -180,7 +179,6 @@ class ViECapturer
   VideoProcessingModule::FrameStats* brightness_frame_stats_;
   Brightness current_brightness_level_;
   Brightness reported_brightness_level_;
-  bool denoising_enabled_;
 
   // Statistics observer.
   scoped_ptr<CriticalSectionWrapper> observer_cs_;

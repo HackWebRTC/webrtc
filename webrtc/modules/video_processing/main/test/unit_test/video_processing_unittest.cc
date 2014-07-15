@@ -82,8 +82,6 @@ TEST_F(VideoProcessingModuleTest, HandleNullBuffer) {
 
   EXPECT_EQ(-1, vpm_->Deflickering(&videoFrame, &stats));
 
-  EXPECT_EQ(-1, vpm_->Denoising(&videoFrame));
-
   EXPECT_EQ(-3, vpm_->BrightnessDetection(videoFrame, stats));
 }
 
@@ -113,8 +111,6 @@ TEST_F(VideoProcessingModuleTest, HandleBadSize) {
 
   EXPECT_EQ(-1, vpm_->Deflickering(&video_frame_, &stats));
 
-  EXPECT_EQ(-1, vpm_->Denoising(&video_frame_));
-
   EXPECT_EQ(-3, vpm_->BrightnessDetection(video_frame_, stats));
 
   EXPECT_EQ(VPM_PARAMETER_ERROR, vpm_->SetTargetResolution(0,0,0));
@@ -141,19 +137,6 @@ TEST_F(VideoProcessingModuleTest, IdenticalResultsAfterReset) {
   // Retrieve frame stats again in case Deflickering() has zeroed them.
   ASSERT_EQ(0, vpm_->GetFrameStats(&stats, video_frame2));
   ASSERT_EQ(0, vpm_->Deflickering(&video_frame2, &stats));
-  EXPECT_TRUE(CompareFrames(video_frame_, video_frame2));
-
-  ASSERT_EQ(frame_length_, fread(video_buffer.get(), 1, frame_length_,
-                                 source_file_));
-  // Using ConvertToI420 to add stride to the image.
-  EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0,
-                             width_, height_,
-                             0, kRotateNone, &video_frame_));
-  video_frame2.CopyFrame(video_frame_);
-  EXPECT_TRUE(CompareFrames(video_frame_, video_frame2));
-  ASSERT_GE(vpm_->Denoising(&video_frame_), 0);
-  vpm_->Reset();
-  ASSERT_GE(vpm_->Denoising(&video_frame2), 0);
   EXPECT_TRUE(CompareFrames(video_frame_, video_frame2));
 
   ASSERT_EQ(frame_length_, fread(video_buffer.get(), 1, frame_length_,
