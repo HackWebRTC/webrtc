@@ -146,8 +146,8 @@ class PacedSender : public Module {
   scoped_ptr<paced_sender::IntervalBudget> padding_budget_
       GUARDED_BY(critsect_);
 
-  int64_t time_last_update_ GUARDED_BY(critsect_);
-  int64_t time_last_send_ GUARDED_BY(critsect_);
+  int64_t time_last_update_us_ GUARDED_BY(critsect_);
+  int64_t time_last_send_us_ GUARDED_BY(critsect_);
   int64_t capture_time_ms_last_queued_ GUARDED_BY(critsect_);
   int64_t capture_time_ms_last_sent_ GUARDED_BY(critsect_);
 
