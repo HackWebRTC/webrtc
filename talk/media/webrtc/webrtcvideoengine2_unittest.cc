@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "talk/base/gunit.h"
+#include "talk/base/stringutils.h"
 #include "talk/media/base/testutils.h"
 #include "talk/media/base/videoengine_unittest.h"
 #include "talk/media/webrtc/webrtcvideoengine2.h"
@@ -162,7 +163,8 @@ webrtc::VideoCodec FakeCall::GetEmptyVideoCodec() {
 webrtc::VideoCodec FakeCall::GetVideoCodecVp8() {
   webrtc::VideoCodec vp8_codec = GetEmptyVideoCodec();
   vp8_codec.codecType = webrtc::kVideoCodecVP8;
-  strcpy(vp8_codec.plName, kVp8Codec.name.c_str());
+  talk_base::strcpyn(vp8_codec.plName, ARRAY_SIZE(vp8_codec.plName),
+      kVp8Codec.name.c_str());
   vp8_codec.plType = kVp8Codec.id;
 
   return vp8_codec;
@@ -172,7 +174,8 @@ webrtc::VideoCodec FakeCall::GetVideoCodecVp9() {
   webrtc::VideoCodec vp9_codec = GetEmptyVideoCodec();
   // TODO(pbos): Add a correct codecType when webrtc has one.
   vp9_codec.codecType = webrtc::kVideoCodecVP8;
-  strcpy(vp9_codec.plName, kVp9Codec.name.c_str());
+  talk_base::strcpyn(vp9_codec.plName, ARRAY_SIZE(vp9_codec.plName),
+      kVp9Codec.name.c_str());
   vp9_codec.plType = kVp9Codec.id;
 
   return vp9_codec;

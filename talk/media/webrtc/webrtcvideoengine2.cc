@@ -1097,7 +1097,8 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp) {
     memset(&codec, 0, sizeof(codec));
 
     codec.plType = kDefaultVideoCodecPref.payload_type;
-    strcpy(codec.plName, kDefaultVideoCodecPref.name);
+    talk_base::strcpyn(codec.plName, ARRAY_SIZE(codec.plName),
+        kDefaultVideoCodecPref.name);
     codec.codecType = webrtc::kVideoCodecVP8;
     codec.codecSpecific.VP8.resilience = webrtc::kResilientStream;
     codec.codecSpecific.VP8.numberOfTemporalLayers = 1;
