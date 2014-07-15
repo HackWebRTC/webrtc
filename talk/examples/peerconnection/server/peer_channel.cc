@@ -59,6 +59,8 @@ enum RequestPathIndex {
   kMessage,
 };
 
+const size_t kMaxNameLength = 512;
+
 //
 // ChannelMember
 //
@@ -72,8 +74,11 @@ ChannelMember::ChannelMember(DataSocket* socket)
   assert(socket->method() == DataSocket::GET);
   assert(socket->PathEquals("/sign_in"));
   name_ = socket->request_arguments();  // TODO: urldecode
-  if (!name_.length())
+  if (name_.empty())
     name_ = "peer_" + int2str(id_);
+  else if (name_.length() > kMaxNameLength)
+    name_.resize(kMaxNameLength);
+
   std::replace(name_.begin(), name_.end(), ',', '_');
 }
 
@@ -100,8 +105,9 @@ bool ChannelMember::NotifyOfOtherMember(const ChannelMember& other) {
   return true;
 }
 
-// Returns a string in the form "name,id\n".
+// Returns a string in the form "name,id,connected\n".
 std::string ChannelMember::GetEntry() const {
+  assert(name_.length() <= kMaxNameLength);
   char entry[1024] = {0};
   sprintf(entry, "%s,%i,%i\n", name_.c_str(), id_, connected_);  // NOLINT
   return entry;
@@ -168,7 +174,6 @@ void ChannelMember::SetWaitingSocket(DataSocket* ds) {
     waiting_socket_ = ds;
   }
 }
-
 
 //
 // PeerChannel
