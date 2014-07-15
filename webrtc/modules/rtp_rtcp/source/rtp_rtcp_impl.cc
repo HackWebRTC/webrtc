@@ -765,7 +765,9 @@ int32_t ModuleRtpRtcpImpl::RemoteNTP(
                             received_ntpfrac,
                             rtcp_arrival_time_secs,
                             rtcp_arrival_time_frac,
-                            rtcp_timestamp);
+                            rtcp_timestamp)
+             ? 0
+             : -1;
 }
 
 // Get RoundTripTime.
