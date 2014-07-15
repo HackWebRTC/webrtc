@@ -82,9 +82,6 @@ class StatsCollector {
   // Prepare an SSRC report for the given remote ssrc. Used internally.
   StatsReport* PrepareRemoteReport(uint32 ssrc, const std::string& transport,
                                    TrackDirection direction);
-  // Extracts the ID of a Transport belonging to an SSRC. Used internally.
-  bool GetTransportIdFromProxy(const std::string& proxy,
-                               std::string* transport_id);
 
   // Method used by the unittest to force a update of stats since UpdateStats()
   // that occur less than kMinGatherStatsPeriod number of ms apart will be
@@ -105,7 +102,6 @@ class StatsCollector {
   void ExtractSessionInfo();
   void ExtractVoiceInfo();
   void ExtractVideoInfo(PeerConnectionInterface::StatsOutputLevel level);
-  double GetTimeNow();
   void BuildSsrcToTransportId();
   webrtc::StatsReport* GetOrCreateReport(const std::string& type,
                                          const std::string& id,

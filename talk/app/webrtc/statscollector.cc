@@ -236,6 +236,32 @@ void StatsReport::ReplaceValue(StatsReport::StatsValueName name,
 namespace {
 typedef std::map<std::string, StatsReport> StatsMap;
 
+double GetTimeNow() {
+  return talk_base::Timing::WallTimeNow() * talk_base::kNumMillisecsPerSec;
+}
+
+bool GetTransportIdFromProxy(const cricket::ProxyTransportMap& map,
+                             const std::string& proxy,
+                             std::string* transport) {
+  // TODO(hta): Remove handling of empty proxy name once tests do not use it.
+  if (proxy.empty()) {
+    transport->clear();
+    return true;
+  }
+
+  cricket::ProxyTransportMap::const_iterator found = map.find(proxy);
+  if (found == map.end()) {
+    LOG(LS_ERROR) << "No transport ID mapping for " << proxy;
+    return false;
+  }
+
+  std::ostringstream ost;
+  // Component 1 is always used for RTP.
+  ost << "Channel-" << found->second << "-1";
+  *transport = ost.str();
+  return true;
+}
+
 std::string StatsId(const std::string& type, const std::string& id) {
   return type + "_" + id;
 }
@@ -902,7 +928,8 @@ void StatsCollector::ExtractVoiceInfo() {
     return;
   }
   std::string transport_id;
-  if (!GetTransportIdFromProxy(session_->voice_channel()->content_name(),
+  if (!GetTransportIdFromProxy(proxy_to_transport_,
+                               session_->voice_channel()->content_name(),
                                &transport_id)) {
     LOG(LS_ERROR) << "Failed to get transport name for proxy "
                   << session_->voice_channel()->content_name();
@@ -929,7 +956,8 @@ void StatsCollector::ExtractVideoInfo(
     return;
   }
   std::string transport_id;
-  if (!GetTransportIdFromProxy(session_->video_channel()->content_name(),
+  if (!GetTransportIdFromProxy(proxy_to_transport_,
+                               session_->video_channel()->content_name(),
                                &transport_id)) {
     LOG(LS_ERROR) << "Failed to get transport name for proxy "
                   << session_->video_channel()->content_name();
@@ -944,28 +972,6 @@ void StatsCollector::ExtractVideoInfo(
     ExtractStats(
         video_info.bw_estimations[0], stats_gathering_started_, level, report);
   }
-}
-
-double StatsCollector::GetTimeNow() {
-  return talk_base::Timing::WallTimeNow() * talk_base::kNumMillisecsPerSec;
-}
-
-bool StatsCollector::GetTransportIdFromProxy(const std::string& proxy,
-                                             std::string* transport) {
-  // TODO(hta): Remove handling of empty proxy name once tests do not use it.
-  if (proxy.empty()) {
-    transport->clear();
-    return true;
-  }
-  if (proxy_to_transport_.find(proxy) == proxy_to_transport_.end()) {
-    LOG(LS_ERROR) << "No transport ID mapping for " << proxy;
-    return false;
-  }
-  std::ostringstream ost;
-  // Component 1 is always used for RTP.
-  ost << "Channel-" << proxy_to_transport_[proxy] << "-1";
-  *transport = ost.str();
-  return true;
 }
 
 StatsReport* StatsCollector::GetReport(const std::string& type,
