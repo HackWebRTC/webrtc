@@ -43,6 +43,7 @@ using namespace webrtc::videocapturemodule;
     _owner = owner;
     _captureId = captureId;
     _captureSession = [[AVCaptureSession alloc] init];
+    _captureSession.usesApplicationAudioSession = NO;
     _captureChanging = NO;
     _captureChangingCondition = [[NSCondition alloc] init];
 

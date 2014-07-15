@@ -349,15 +349,15 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
 #if defined(WEBRTC_IOS)
     if (audioLayer == kPlatformDefaultAudio)
     {
-        // Create *iPhone Audio* implementation
-        ptrAudioDevice = new AudioDeviceIPhone(Id());
+        // Create iOS Audio Device implementation.
+        ptrAudioDevice = new AudioDeviceIOS(Id());
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "iPhone Audio APIs will be utilized");
     }
 
     if (ptrAudioDevice != NULL)
     {
-        // Create the Mac implementation of the Device Utility.
-        ptrAudioDeviceUtility = new AudioDeviceUtilityIPhone(Id());
+        // Create iOS Device Utility implementation.
+        ptrAudioDeviceUtility = new AudioDeviceUtilityIOS(Id());
     }
     // END #if defined(WEBRTC_IOS)
 

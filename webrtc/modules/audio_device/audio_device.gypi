@@ -98,7 +98,7 @@
             'linux/audio_mixer_manager_alsa_linux.h',
             'linux/latebindingsymboltable_linux.cc',
             'linux/latebindingsymboltable_linux.h',
-            'ios/audio_device_ios.cc',
+            'ios/audio_device_ios.mm',
             'ios/audio_device_ios.h',
             'ios/audio_device_utility_ios.cc',
             'ios/audio_device_utility_ios.h',
@@ -175,12 +175,25 @@
                 }],
               ],
             }],
-            ['OS=="mac" or OS=="ios"', {
+            ['OS=="mac"', {
               'link_settings': {
                 'libraries': [
                   '$(SDKROOT)/System/Library/Frameworks/AudioToolbox.framework',
                   '$(SDKROOT)/System/Library/Frameworks/CoreAudio.framework',
                 ],
+              },
+            }],
+            ['OS=="ios"', {
+              'xcode_settings': {
+                'CLANG_ENABLE_OBJC_ARC': 'YES',
+              },
+              'link_settings': {
+                'xcode_settings': {
+                  'OTHER_LDFLAGS': [
+                    '-framework AudioToolbox',
+                    '-framework AVFoundation',
+                  ],
+                },
               },
             }],
             ['OS=="win"', {
