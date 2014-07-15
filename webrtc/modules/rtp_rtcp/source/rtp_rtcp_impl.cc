@@ -230,8 +230,7 @@ int32_t ModuleRtpRtcpImpl::Process() {
     }
 
     if (rtcp_sender_.TimeToSendRTCPReport()) {
-      RTCPSender::FeedbackState feedback_state(this);
-      rtcp_sender_.SendRTCP(feedback_state, kRtcpReport);
+      rtcp_sender_.SendRTCP(GetFeedbackState(), kRtcpReport);
     }
   }
 
@@ -418,12 +417,29 @@ int32_t ModuleRtpRtcpImpl::SetCSRCs(
   return 0;  // TODO(pwestin): change to void.
 }
 
-uint32_t ModuleRtpRtcpImpl::PacketCountSent() const {
-  return rtp_sender_.Packets();
-}
+// TODO(pbos): Handle media and RTX streams separately (separate RTCP
+// feedbacks).
+RTCPSender::FeedbackState ModuleRtpRtcpImpl::GetFeedbackState() {
+  StreamDataCounters rtp_stats;
+  StreamDataCounters rtx_stats;
+  rtp_sender_.GetDataCounters(&rtp_stats, &rtx_stats);
 
-uint32_t ModuleRtpRtcpImpl::ByteCountSent() const {
-  return rtp_sender_.Bytes();
+  RTCPSender::FeedbackState state;
+  state.send_payload_type = SendPayloadType();
+  state.frequency_hz = CurrentSendFrequencyHz();
+  state.packets_sent = rtp_stats.packets + rtx_stats.packets;
+  state.media_bytes_sent = rtp_stats.bytes + rtx_stats.bytes;
+  state.module = this;
+
+  LastReceivedNTP(&state.last_rr_ntp_secs,
+                  &state.last_rr_ntp_frac,
+                  &state.remote_sr);
+
+  state.has_last_xr_rr = LastReceivedXrReferenceTimeInfo(&state.last_xr_rr);
+
+  uint32_t tmp;
+  BitrateSent(&state.send_bitrate, &tmp, &tmp, &tmp);
+  return state;
 }
 
 int ModuleRtpRtcpImpl::CurrentSendFrequencyHz() const {
@@ -433,8 +449,7 @@ int ModuleRtpRtcpImpl::CurrentSendFrequencyHz() const {
 int32_t ModuleRtpRtcpImpl::SetSendingStatus(const bool sending) {
   if (rtcp_sender_.Sending() != sending) {
     // Sends RTCP BYE when going from true to false
-    RTCPSender::FeedbackState feedback_state(this);
-    if (rtcp_sender_.SetSendingStatus(feedback_state, sending) != 0) {
+    if (rtcp_sender_.SetSendingStatus(GetFeedbackState(), sending) != 0) {
       LOG(LS_WARNING) << "Failed to send RTCP BYE";
     }
 
@@ -499,8 +514,7 @@ int32_t ModuleRtpRtcpImpl::SendOutgoingData(
   if (!IsDefaultModule()) {
     // Don't send RTCP from default module.
     if (rtcp_sender_.TimeToSendRTCPReport(kVideoFrameKey == frame_type)) {
-      RTCPSender::FeedbackState feedback_state(this);
-      rtcp_sender_.SendRTCP(feedback_state, kRtcpReport);
+      rtcp_sender_.SendRTCP(GetFeedbackState(), kRtcpReport);
     }
     return rtp_sender_.SendOutgoingData(frame_type,
                                         payload_type,
@@ -782,8 +796,7 @@ int32_t ModuleRtpRtcpImpl::ResetSendDataCountersRTP() {
 // Force a send of an RTCP packet.
 // Normal SR and RR are triggered via the process function.
 int32_t ModuleRtpRtcpImpl::SendRTCP(uint32_t rtcp_packet_type) {
-  RTCPSender::FeedbackState feedback_state(this);
-  return rtcp_sender_.SendRTCP(feedback_state, rtcp_packet_type);
+  return rtcp_sender_.SendRTCP(GetFeedbackState(), rtcp_packet_type);
 }
 
 int32_t ModuleRtpRtcpImpl::SetRTCPApplicationSpecificData(
@@ -811,11 +824,17 @@ bool ModuleRtpRtcpImpl::RtcpXrRrtrStatus() const {
 int32_t ModuleRtpRtcpImpl::DataCountersRTP(
     uint32_t* bytes_sent,
     uint32_t* packets_sent) const {
+  StreamDataCounters rtp_stats;
+  StreamDataCounters rtx_stats;
+  rtp_sender_.GetDataCounters(&rtp_stats, &rtx_stats);
+
   if (bytes_sent) {
-    *bytes_sent = rtp_sender_.Bytes();
+    *bytes_sent = rtp_stats.bytes + rtp_stats.padding_bytes +
+                  rtp_stats.header_bytes + rtx_stats.bytes +
+                  rtx_stats.padding_bytes + rtx_stats.header_bytes;
   }
   if (packets_sent) {
-    *packets_sent = rtp_sender_.Packets();
+    *packets_sent = rtp_stats.packets + rtx_stats.packets;
   }
   return 0;
 }
@@ -955,9 +974,8 @@ int32_t ModuleRtpRtcpImpl::SendNACK(const uint16_t* nack_list,
   }
   nack_last_seq_number_sent_ = nack_list[start_id + nackLength - 1];
 
-  RTCPSender::FeedbackState feedback_state(this);
   return rtcp_sender_.SendRTCP(
-      feedback_state, kRtcpNack, nackLength, &nack_list[start_id]);
+      GetFeedbackState(), kRtcpNack, nackLength, &nack_list[start_id]);
 }
 
 // Store the sent packets, needed to answer to a Negative acknowledgment
@@ -1074,9 +1092,8 @@ int32_t ModuleRtpRtcpImpl::RequestKeyFrame() {
 
 int32_t ModuleRtpRtcpImpl::SendRTCPSliceLossIndication(
     const uint8_t picture_id) {
-  RTCPSender::FeedbackState feedback_state(this);
   return rtcp_sender_.SendRTCP(
-      feedback_state, kRtcpSli, 0, 0, false, picture_id);
+      GetFeedbackState(), kRtcpSli, 0, 0, false, picture_id);
 }
 
 int32_t ModuleRtpRtcpImpl::SetCameraDelay(const int32_t delay_ms) {
@@ -1245,9 +1262,8 @@ void ModuleRtpRtcpImpl::OnRequestSendReport() {
 
 int32_t ModuleRtpRtcpImpl::SendRTCPReferencePictureSelection(
     const uint64_t picture_id) {
-  RTCPSender::FeedbackState feedback_state(this);
   return rtcp_sender_.SendRTCP(
-      feedback_state, kRtcpRpsi, 0, 0, false, picture_id);
+      GetFeedbackState(), kRtcpRpsi, 0, 0, false, picture_id);
 }
 
 uint32_t ModuleRtpRtcpImpl::SendTimeOfSendReport(
@@ -1274,23 +1290,24 @@ void ModuleRtpRtcpImpl::OnReceivedNACK(
   rtp_sender_.OnReceivedNACK(nack_sequence_numbers, rtt);
 }
 
-int32_t ModuleRtpRtcpImpl::LastReceivedNTP(
-    uint32_t& rtcp_arrival_time_secs,  // When we got the last report.
-    uint32_t& rtcp_arrival_time_frac,
-    uint32_t& remote_sr) {
+bool ModuleRtpRtcpImpl::LastReceivedNTP(
+    uint32_t* rtcp_arrival_time_secs,  // When we got the last report.
+    uint32_t* rtcp_arrival_time_frac,
+    uint32_t* remote_sr) const {
   // Remote SR: NTP inside the last received (mid 16 bits from sec and frac).
   uint32_t ntp_secs = 0;
   uint32_t ntp_frac = 0;
 
-  if (-1 == rtcp_receiver_.NTP(&ntp_secs,
-                               &ntp_frac,
-                               &rtcp_arrival_time_secs,
-                               &rtcp_arrival_time_frac,
-                               NULL)) {
-    return -1;
+  if (!rtcp_receiver_.NTP(&ntp_secs,
+                          &ntp_frac,
+                          rtcp_arrival_time_secs,
+                          rtcp_arrival_time_frac,
+                          NULL)) {
+    return false;
   }
-  remote_sr = ((ntp_secs & 0x0000ffff) << 16) + ((ntp_frac & 0xffff0000) >> 16);
-  return 0;
+  *remote_sr =
+      ((ntp_secs & 0x0000ffff) << 16) + ((ntp_frac & 0xffff0000) >> 16);
+  return true;
 }
 
 bool ModuleRtpRtcpImpl::LastReceivedXrReferenceTimeInfo(

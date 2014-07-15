@@ -63,11 +63,11 @@ public:
                   char cName[RTCP_CNAME_SIZE]) const;
 
     // get received NTP
-    int32_t NTP(uint32_t *ReceivedNTPsecs,
-                uint32_t *ReceivedNTPfrac,
-                uint32_t *RTCPArrivalTimeSecs,
-                uint32_t *RTCPArrivalTimeFrac,
-                uint32_t *rtcp_timestamp) const;
+    bool NTP(uint32_t* ReceivedNTPsecs,
+             uint32_t* ReceivedNTPfrac,
+             uint32_t* RTCPArrivalTimeSecs,
+             uint32_t* RTCPArrivalTimeFrac,
+             uint32_t* rtcp_timestamp) const;
 
    bool LastReceivedXrReferenceTimeInfo(RtcpReceiveTimeInfo* info) const;
 

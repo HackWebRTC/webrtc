@@ -1436,4 +1436,48 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesVp8Config) {
   RunBaseTest(&test);
 }
 
+TEST_F(VideoSendStreamTest, RtcpSenderReportContainsMediaBytesSent) {
+  class RtcpByeTest : public test::SendTest {
+   public:
+    RtcpByeTest() : SendTest(kDefaultTimeoutMs), media_bytes_sent_(0) {}
+
+   private:
+    virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
+      RTPHeader header;
+      EXPECT_TRUE(parser_->Parse(packet, length, &header));
+      media_bytes_sent_ += length - header.headerLength - header.paddingLength;
+      return SEND_PACKET;
+    }
+
+    virtual Action OnSendRtcp(const uint8_t* packet, size_t length) OVERRIDE {
+      RTCPUtility::RTCPParserV2 parser(packet, length, true);
+      EXPECT_TRUE(parser.IsValid());
+
+      RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
+      uint32_t sender_octet_count = 0;
+      while (packet_type != RTCPUtility::kRtcpNotValidCode) {
+        if (packet_type == RTCPUtility::kRtcpSrCode) {
+          sender_octet_count = parser.Packet().SR.SenderOctetCount;
+          EXPECT_EQ(sender_octet_count, media_bytes_sent_);
+          if (sender_octet_count > 0)
+            observation_complete_->Set();
+        }
+
+        packet_type = parser.Iterate();
+      }
+
+      return SEND_PACKET;
+    }
+
+    virtual void PerformTest() OVERRIDE {
+      EXPECT_EQ(kEventSignaled, Wait())
+          << "Timed out while waiting for RTCP sender report.";
+    }
+
+    size_t media_bytes_sent_;
+  } test;
+
+  RunBaseTest(&test);
+}
+
 }  // namespace webrtc

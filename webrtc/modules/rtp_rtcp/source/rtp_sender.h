@@ -109,11 +109,8 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
   void SetSendingMediaStatus(const bool enabled);
   bool SendingMedia() const;
 
-  // Number of sent RTP packets.
-  uint32_t Packets() const;
-
-  // Number of sent RTP bytes.
-  uint32_t Bytes() const;
+  void GetDataCounters(StreamDataCounters* rtp_stats,
+                       StreamDataCounters* rtx_stats) const;
 
   void ResetDataCounters();
 

@@ -51,13 +51,12 @@ class RTCPSender
 {
 public:
  struct FeedbackState {
-   explicit FeedbackState(ModuleRtpRtcpImpl* module);
    FeedbackState();
 
    uint8_t send_payload_type;
    uint32_t frequency_hz;
-   uint32_t packet_count_sent;
-   uint32_t byte_count_sent;
+   uint32_t packets_sent;
+   uint32_t media_bytes_sent;
    uint32_t send_bitrate;
 
    uint32_t last_rr_ntp_secs;

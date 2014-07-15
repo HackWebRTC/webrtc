@@ -39,6 +39,7 @@ const uint8_t kAudioLevel = 0x5a;
 const uint8_t kAudioLevelExtensionId = 9;
 const int kAudioPayload = 103;
 const uint64_t kStartTime = 123456789;
+const size_t kMaxPaddingSize = 224u;
 }  // namespace
 
 using testing::_;
@@ -700,7 +701,7 @@ TEST_F(RtpSenderTest, SendRedundantPayloads) {
                                          kAbsoluteSendTimeExtensionId);
   rtp_sender_->SetTargetBitrate(300000);
   const size_t kNumPayloadSizes = 10;
-  const int kPayloadSizes[kNumPayloadSizes] = {500, 550, 600, 650, 700, 750,
+  const size_t kPayloadSizes[kNumPayloadSizes] = {500, 550, 600, 650, 700, 750,
       800, 850, 900, 950};
   // Send 10 packets of increasing size.
   for (size_t i = 0; i < kNumPayloadSizes; ++i) {
@@ -711,25 +712,27 @@ TEST_F(RtpSenderTest, SendRedundantPayloads) {
     rtp_sender_->TimeToSendPacket(seq_num++, capture_time_ms, false);
     fake_clock_.AdvanceTimeMilliseconds(33);
   }
-  const int kPaddingPayloadSize = 224;
   // The amount of padding to send it too small to send a payload packet.
-  EXPECT_CALL(transport, SendPacket(_, _, kPaddingPayloadSize + rtp_header_len))
+  EXPECT_CALL(transport,
+              SendPacket(_, _, kMaxPaddingSize + rtp_header_len))
       .WillOnce(testing::ReturnArg<2>());
-  EXPECT_EQ(kPaddingPayloadSize, rtp_sender_->TimeToSendPadding(49));
+  EXPECT_EQ(kMaxPaddingSize,
+            static_cast<size_t>(rtp_sender_->TimeToSendPadding(49)));
 
   const int kRtxHeaderSize = 2;
   EXPECT_CALL(transport, SendPacket(_, _, kPayloadSizes[0] +
                                     rtp_header_len + kRtxHeaderSize))
       .WillOnce(testing::ReturnArg<2>());
-  EXPECT_EQ(kPayloadSizes[0], rtp_sender_->TimeToSendPadding(500));
+  EXPECT_EQ(kPayloadSizes[0],
+            static_cast<size_t>(rtp_sender_->TimeToSendPadding(500)));
 
   EXPECT_CALL(transport, SendPacket(_, _, kPayloadSizes[kNumPayloadSizes - 1] +
                                     rtp_header_len + kRtxHeaderSize))
       .WillOnce(testing::ReturnArg<2>());
-  EXPECT_CALL(transport, SendPacket(_, _, kPaddingPayloadSize + rtp_header_len))
+  EXPECT_CALL(transport, SendPacket(_, _, kMaxPaddingSize + rtp_header_len))
       .WillOnce(testing::ReturnArg<2>());
-  EXPECT_EQ(kPayloadSizes[kNumPayloadSizes - 1] + kPaddingPayloadSize,
-            rtp_sender_->TimeToSendPadding(999));
+  EXPECT_EQ(kPayloadSizes[kNumPayloadSizes - 1] + kMaxPaddingSize,
+            static_cast<size_t>(rtp_sender_->TimeToSendPadding(999)));
 }
 
 TEST_F(RtpSenderTest, SendGenericVideo) {
@@ -959,7 +962,6 @@ TEST_F(RtpSenderTest, StreamDataCountersCallbacks) {
 
   const uint8_t kRedPayloadType = 96;
   const uint8_t kUlpfecPayloadType = 97;
-  const uint32_t kMaxPaddingSize = 224;
   char payload_name[RTP_PAYLOAD_NAME_SIZE] = "GENERIC";
   const uint8_t payload_type = 127;
   ASSERT_EQ(0, rtp_sender_->RegisterPayload(payload_name, payload_type, 90000,
@@ -988,7 +990,7 @@ TEST_F(RtpSenderTest, StreamDataCountersCallbacks) {
   // Send padding.
   rtp_sender_->TimeToSendPadding(kMaxPaddingSize);
   // {bytes = 6, header = 24, padding = 224, packets = 3, retrans = 1, fec = 0}
-  EXPECT_TRUE(callback.Matches(ssrc, 6, 24, 224, 3, 1, 0));
+  EXPECT_TRUE(callback.Matches(ssrc, 6, 24, kMaxPaddingSize, 3, 1, 0));
 
   // Send FEC.
   rtp_sender_->SetGenericFECStatus(true, kRedPayloadType, kUlpfecPayloadType);
@@ -1003,7 +1005,7 @@ TEST_F(RtpSenderTest, StreamDataCountersCallbacks) {
                                              sizeof(payload), NULL));
 
   // {bytes = 34, header = 48, padding = 224, packets = 5, retrans = 1, fec = 1}
-  EXPECT_TRUE(callback.Matches(ssrc, 34, 48, 224, 5, 1, 1));
+  EXPECT_TRUE(callback.Matches(ssrc, 34, 48, kMaxPaddingSize, 5, 1, 1));
 
   rtp_sender_->RegisterRtpStatisticsCallback(NULL);
 }
@@ -1093,13 +1095,25 @@ TEST_F(RtpSenderTest, BytesReportedCorrectly) {
                                           sizeof(payload),
                                           0));
 
-  EXPECT_GT(transport_.total_bytes_sent_, 0u);
-  EXPECT_EQ(transport_.total_bytes_sent_, rtp_sender_->Bytes());
-  size_t last_bytes_sent = transport_.total_bytes_sent_;
+  // Will send 2 full-size padding packets.
+  rtp_sender_->TimeToSendPadding(1);
+  rtp_sender_->TimeToSendPadding(1);
 
-  rtp_sender_->TimeToSendPadding(42);
+  StreamDataCounters rtp_stats;
+  StreamDataCounters rtx_stats;
+  rtp_sender_->GetDataCounters(&rtp_stats, &rtx_stats);
 
-  EXPECT_GT(transport_.total_bytes_sent_, last_bytes_sent);
-  EXPECT_EQ(transport_.total_bytes_sent_, rtp_sender_->Bytes());
+  // Payload + 1-byte generic header.
+  EXPECT_EQ(rtp_stats.bytes, sizeof(payload) + 1);
+  EXPECT_EQ(rtp_stats.header_bytes, 12u);
+  EXPECT_EQ(rtp_stats.padding_bytes, 0u);
+  EXPECT_EQ(rtx_stats.bytes, 0u);
+  EXPECT_EQ(rtx_stats.header_bytes, 24u);
+  EXPECT_EQ(rtx_stats.padding_bytes, 2 * kMaxPaddingSize);
+
+  EXPECT_EQ(transport_.total_bytes_sent_,
+            rtp_stats.bytes + rtp_stats.header_bytes + rtp_stats.padding_bytes +
+                rtx_stats.bytes + rtx_stats.header_bytes +
+                rtx_stats.padding_bytes);
 }
 }  // namespace webrtc

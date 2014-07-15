@@ -89,11 +89,9 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   virtual int32_t SetCSRCStatus(const bool include) OVERRIDE;
 
-  virtual uint32_t PacketCountSent() const;
+  virtual RTCPSender::FeedbackState GetFeedbackState();
 
   virtual int CurrentSendFrequencyHz() const;
-
-  virtual uint32_t ByteCountSent() const;
 
   virtual void SetRTXSendStatus(const int mode) OVERRIDE;
 
@@ -328,9 +326,9 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
       const FecProtectionParams* delta_params,
       const FecProtectionParams* key_params) OVERRIDE;
 
-  virtual int32_t LastReceivedNTP(uint32_t& NTPsecs,
-                                  uint32_t& NTPfrac,
-                                  uint32_t& remote_sr);
+  virtual bool LastReceivedNTP(uint32_t* NTPsecs,
+                               uint32_t* NTPfrac,
+                               uint32_t* remote_sr) const;
 
   virtual bool LastReceivedXrReferenceTimeInfo(RtcpReceiveTimeInfo* info) const;
 

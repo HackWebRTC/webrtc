@@ -1061,17 +1061,11 @@ void RTPSender::ResetDataCounters() {
   }
 }
 
-uint32_t RTPSender::Packets() const {
+void RTPSender::GetDataCounters(StreamDataCounters* rtp_stats,
+                                StreamDataCounters* rtx_stats) const {
   CriticalSectionScoped lock(statistics_crit_.get());
-  return rtp_stats_.packets + rtx_rtp_stats_.packets;
-}
-
-// Number of sent RTP bytes.
-uint32_t RTPSender::Bytes() const {
-  CriticalSectionScoped lock(statistics_crit_.get());
-  return rtp_stats_.bytes + rtp_stats_.header_bytes + rtp_stats_.padding_bytes +
-         rtx_rtp_stats_.bytes + rtx_rtp_stats_.header_bytes +
-         rtx_rtp_stats_.padding_bytes;
+  *rtp_stats = rtp_stats_;
+  *rtx_stats = rtx_rtp_stats_;
 }
 
 int RTPSender::CreateRTPHeader(

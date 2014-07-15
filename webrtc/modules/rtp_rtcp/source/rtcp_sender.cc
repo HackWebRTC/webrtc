@@ -65,30 +65,11 @@ std::string NACKStringBuilder::GetResult()
     return _stream.str();
 }
 
-RTCPSender::FeedbackState::FeedbackState(ModuleRtpRtcpImpl* module)
-    : send_payload_type(module->SendPayloadType()),
-      frequency_hz(module->CurrentSendFrequencyHz()),
-      packet_count_sent(module->PacketCountSent()),
-      byte_count_sent(module->ByteCountSent()),
-      module(module) {
-  uint32_t last_ntp_secs = 0, last_ntp_frac = 0, last_remote_sr = 0;
-  module->LastReceivedNTP(last_ntp_secs, last_ntp_frac, last_remote_sr);
-  last_rr_ntp_secs = last_ntp_secs;
-  last_rr_ntp_frac = last_ntp_frac;
-  remote_sr = last_remote_sr;
-
-  has_last_xr_rr = module->LastReceivedXrReferenceTimeInfo(&last_xr_rr);
-
-  uint32_t send_bitrate = 0, tmp;
-  module->BitrateSent(&send_bitrate, &tmp, &tmp, &tmp);
-  this->send_bitrate = send_bitrate;
-}
-
 RTCPSender::FeedbackState::FeedbackState()
     : send_payload_type(0),
       frequency_hz(0),
-      packet_count_sent(0),
-      byte_count_sent(0),
+      packets_sent(0),
+      media_bytes_sent(0),
       send_bitrate(0),
       last_rr_ntp_secs(0),
       last_rr_ntp_frac(0),
@@ -654,12 +635,12 @@ int32_t RTCPSender::BuildSR(const FeedbackState& feedback_state,
 
     //sender's packet count
     RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos,
-                                      feedback_state.packet_count_sent);
+                                      feedback_state.packets_sent);
     pos += 4;
 
     //sender's octet count
     RtpUtility::AssignUWord32ToBuffer(rtcpbuffer + pos,
-                                      feedback_state.byte_count_sent);
+                                      feedback_state.media_bytes_sent);
     pos += 4;
 
     uint8_t numberOfReportBlocks = 0;
