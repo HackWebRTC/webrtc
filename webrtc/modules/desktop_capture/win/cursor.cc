@@ -197,7 +197,7 @@ MouseCursor* CreateMouseCursorFromHCursor(HDC dc, HCURSOR cursor) {
 
     // The XOR mask becomes the color bitmap.
     memcpy(
-        image->data(), mask_plane + (width * height), image->stride() * width);
+        image->data(), mask_plane + (width * height), image->stride() * height);
   }
 
   // Reconstruct transparency from the mask if the color image does not has
