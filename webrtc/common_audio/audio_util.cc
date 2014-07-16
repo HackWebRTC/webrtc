@@ -14,18 +14,18 @@
 
 namespace webrtc {
 
-void RoundToInt16(const float* src, int size, int16_t* dest) {
-  for (int i = 0; i < size; ++i)
+void RoundToInt16(const float* src, size_t size, int16_t* dest) {
+  for (size_t i = 0; i < size; ++i)
     dest[i] = RoundToInt16(src[i]);
 }
 
-void ScaleAndRoundToInt16(const float* src, int size, int16_t* dest) {
-  for (int i = 0; i < size; ++i)
+void ScaleAndRoundToInt16(const float* src, size_t size, int16_t* dest) {
+  for (size_t i = 0; i < size; ++i)
     dest[i] = ScaleAndRoundToInt16(src[i]);
 }
 
-void ScaleToFloat(const int16_t* src, int size, float* dest) {
-  for (int i = 0; i < size; ++i)
+void ScaleToFloat(const int16_t* src, size_t size, float* dest) {
+  for (size_t i = 0; i < size; ++i)
     dest[i] = ScaleToFloat(src[i]);
 }
 

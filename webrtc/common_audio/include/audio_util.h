@@ -47,14 +47,14 @@ static inline float ScaleToFloat(int16_t v) {
 }
 
 // Round |size| elements of |src| to int16 with clamping and write to |dest|.
-void RoundToInt16(const float* src, int size, int16_t* dest);
+void RoundToInt16(const float* src, size_t size, int16_t* dest);
 
 // Scale (from [-1, 1]) and round |size| elements of |src| to full-range int16
 // with clamping and write to |dest|.
-void ScaleAndRoundToInt16(const float* src, int size, int16_t* dest);
+void ScaleAndRoundToInt16(const float* src, size_t size, int16_t* dest);
 
 // Scale |size| elements of |src| to float [-1, 1] and write to |dest|.
-void ScaleToFloat(const int16_t* src, int size, float* dest);
+void ScaleToFloat(const int16_t* src, size_t size, float* dest);
 
 // Deinterleave audio from |interleaved| to the channel buffers pointed to
 // by |deinterleaved|. There must be sufficient space allocated in the
