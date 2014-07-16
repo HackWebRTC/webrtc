@@ -820,6 +820,12 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   if (options.experimental_ns.Get(&experimental_ns)) {
     webrtc::AudioProcessing* audioproc =
         voe_wrapper_->base()->audio_processing();
+#ifdef USE_WEBRTC_DEV_BRANCH
+    webrtc::Config config;
+    config.Set<webrtc::ExperimentalNs>(new webrtc::ExperimentalNs(
+        experimental_ns));
+    audioproc->SetExtraOptions(config);
+#else
     // We check audioproc for the benefit of tests, since FakeWebRtcVoiceEngine
     // returns NULL on audio_processing().
     if (audioproc) {
@@ -831,6 +837,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
       LOG(LS_VERBOSE) << "Experimental noise suppression set to "
                       << experimental_ns;
     }
+#endif
   }
 
   bool highpass_filter;

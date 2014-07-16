@@ -3186,3 +3186,21 @@ TEST(WebRtcVoiceEngineTest, CoInitialize) {
 }
 #endif
 
+
+#ifdef USE_WEBRTC_DEV_BRANCH
+TEST_F(WebRtcVoiceEngineTestFake, ExperimentalNsConfigViaOptions) {
+  EXPECT_TRUE(SetupEngine());
+
+  cricket::FakeAudioProcessing* audio_processing =
+      static_cast<cricket::FakeAudioProcessing*>(
+          engine_.voe()->base()->audio_processing());
+
+  EXPECT_FALSE(audio_processing->experimental_ns_enabled());
+
+  cricket::AudioOptions options;
+  options.experimental_ns.Set(true);
+  EXPECT_TRUE(engine_.SetOptions(options));
+
+  EXPECT_TRUE(audio_processing->experimental_ns_enabled());
+}
+#endif

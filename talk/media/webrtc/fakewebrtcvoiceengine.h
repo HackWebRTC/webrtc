@@ -40,6 +40,9 @@
 #include "talk/media/base/voiceprocessor.h"
 #include "talk/media/webrtc/fakewebrtccommon.h"
 #include "talk/media/webrtc/webrtcvoe.h"
+#ifdef USE_WEBRTC_DEV_BRANCH
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
+#endif
 
 namespace webrtc {
 class ViENetwork;
@@ -69,6 +72,88 @@ static const int kFakeDeviceId = 1;
       return -1; \
     } \
   } while (0);
+
+#ifdef USE_WEBRTC_DEV_BRANCH
+class FakeAudioProcessing : public webrtc::AudioProcessing {
+ public:
+  FakeAudioProcessing() : experimental_ns_enabled_(false) {}
+
+  WEBRTC_STUB(Initialize, ())
+  WEBRTC_STUB(Initialize, (
+      int input_sample_rate_hz,
+      int output_sample_rate_hz,
+      int reverse_sample_rate_hz,
+      webrtc::AudioProcessing::ChannelLayout input_layout,
+      webrtc::AudioProcessing::ChannelLayout output_layout,
+      webrtc::AudioProcessing::ChannelLayout reverse_layout));
+
+  WEBRTC_VOID_FUNC(SetExtraOptions, (const webrtc::Config& config)) {
+    experimental_ns_enabled_ = config.Get<webrtc::ExperimentalNs>().enabled;
+  }
+
+  WEBRTC_STUB(set_sample_rate_hz, (int rate));
+  WEBRTC_STUB_CONST(input_sample_rate_hz, ());
+  WEBRTC_STUB_CONST(sample_rate_hz, ());
+  WEBRTC_STUB_CONST(proc_sample_rate_hz, ());
+  WEBRTC_STUB_CONST(proc_split_sample_rate_hz, ());
+  WEBRTC_STUB_CONST(num_input_channels, ());
+  WEBRTC_STUB_CONST(num_output_channels, ());
+  WEBRTC_STUB_CONST(num_reverse_channels, ());
+  WEBRTC_VOID_STUB(set_output_will_be_muted, (bool muted));
+  WEBRTC_BOOL_STUB_CONST(output_will_be_muted, ());
+  WEBRTC_STUB(ProcessStream, (webrtc::AudioFrame* frame));
+  WEBRTC_STUB(ProcessStream, (
+      const float* const* src,
+      int samples_per_channel,
+      int input_sample_rate_hz,
+      webrtc::AudioProcessing::ChannelLayout input_layout,
+      int output_sample_rate_hz,
+      webrtc::AudioProcessing::ChannelLayout output_layout,
+      float* const* dest));
+  WEBRTC_STUB(AnalyzeReverseStream, (webrtc::AudioFrame* frame));
+  WEBRTC_STUB(AnalyzeReverseStream, (
+      const float* const* data,
+      int samples_per_channel,
+      int sample_rate_hz,
+      webrtc::AudioProcessing::ChannelLayout layout));
+  WEBRTC_STUB(set_stream_delay_ms, (int delay));
+  WEBRTC_STUB_CONST(stream_delay_ms, ());
+  WEBRTC_BOOL_STUB_CONST(was_stream_delay_set, ());
+  WEBRTC_VOID_STUB(set_stream_key_pressed, (bool key_pressed));
+  WEBRTC_BOOL_STUB_CONST(stream_key_pressed, ());
+  WEBRTC_VOID_STUB(set_delay_offset_ms, (int offset));
+  WEBRTC_STUB_CONST(delay_offset_ms, ());
+  WEBRTC_STUB(StartDebugRecording, (const char filename[kMaxFilenameSize]));
+  WEBRTC_STUB(StartDebugRecording, (FILE* handle));
+  WEBRTC_STUB(StopDebugRecording, ());
+  virtual webrtc::EchoCancellation* echo_cancellation() const OVERRIDE {
+    return NULL;
+  }
+  virtual webrtc::EchoControlMobile* echo_control_mobile() const OVERRIDE {
+    return NULL;
+  }
+  virtual webrtc::GainControl* gain_control() const OVERRIDE { return NULL; }
+  virtual webrtc::HighPassFilter* high_pass_filter() const OVERRIDE {
+    return NULL;
+  }
+  virtual webrtc::LevelEstimator* level_estimator() const OVERRIDE {
+    return NULL;
+  }
+  virtual webrtc::NoiseSuppression* noise_suppression() const OVERRIDE {
+    return NULL;
+  }
+  virtual webrtc::VoiceDetection* voice_detection() const OVERRIDE {
+    return NULL;
+  }
+
+  bool experimental_ns_enabled() {
+    return experimental_ns_enabled_;
+  }
+
+ private:
+  bool experimental_ns_enabled_;
+};
+#endif
 
 class FakeWebRtcVoiceEngine
     : public webrtc::VoEAudioProcessing,
@@ -347,7 +432,11 @@ class FakeWebRtcVoiceEngine
     return 0;
   }
   virtual webrtc::AudioProcessing* audio_processing() OVERRIDE {
+#ifdef USE_WEBRTC_DEV_BRANCH
+    return &audio_processing_;
+#else
     return NULL;
+#endif
   }
   WEBRTC_FUNC(CreateChannel, ()) {
     return AddChannel();
@@ -1197,6 +1286,9 @@ class FakeWebRtcVoiceEngine
   int playout_sample_rate_;
   DtmfInfo dtmf_info_;
   webrtc::VoEMediaProcess* media_processor_;
+#ifdef USE_WEBRTC_DEV_BRANCH
+  FakeAudioProcessing audio_processing_;
+#endif
 };
 
 #undef WEBRTC_CHECK_HEADER_EXTENSION_ID

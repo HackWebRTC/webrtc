@@ -41,6 +41,11 @@ namespace cricket {
 #define WEBRTC_BOOL_STUB(method, args) \
   virtual bool method args OVERRIDE { return true; }
 
+#ifdef USE_WEBRTC_DEV_BRANCH
+#define WEBRTC_BOOL_STUB_CONST(method, args) \
+  virtual bool method args const OVERRIDE { return true; }
+#endif
+
 #define WEBRTC_VOID_STUB(method, args) \
   virtual void method args OVERRIDE {}
 
