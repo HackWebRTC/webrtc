@@ -267,9 +267,7 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
   int SendPadData(int payload_type,
                   uint32_t timestamp,
                   int64_t capture_time_ms,
-                  int32_t bytes,
-                  bool force_full_size_packets,
-                  bool only_pad_after_markerbit);
+                  int32_t bytes);
 
   // Called on update of RTP statistics.
   void RegisterRtpStatisticsCallback(StreamDataCountersCallback* callback);
@@ -309,9 +307,6 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
 
   int SendRedundantPayloads(int payload_type, int bytes);
 
-  bool SendPaddingAccordingToBitrate(int8_t payload_type,
-                                     uint32_t capture_timestamp,
-                                     int64_t capture_time_ms);
   int BuildPaddingPacket(uint8_t* packet, int header_length, int32_t bytes);
 
   void BuildRtxPacket(uint8_t* buffer, uint16_t* length,
