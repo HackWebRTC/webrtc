@@ -934,7 +934,8 @@ Channel::Channel(int32_t channelId,
                                                    true)),
     rtcp_bandwidth_observer_(
         bitrate_controller_->CreateRtcpBandwidthObserver()),
-    send_bitrate_observer_(new VoEBitrateObserver(this))
+    send_bitrate_observer_(new VoEBitrateObserver(this)),
+    network_predictor_(new NetworkPredictor(Clock::GetRealTimeClock()))
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::Channel() - ctor");
@@ -1537,8 +1538,13 @@ Channel::OnNetworkChanged(const uint32_t bitrate_bps,
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
       "Channel::OnNetworkChanged(bitrate_bps=%d, fration_lost=%d, rtt=%d)",
       bitrate_bps, fraction_lost, rtt);
+  // |fraction_lost| from BitrateObserver is short time observation of packet
+  // loss rate from past. We use network predictor to make a more reasonable
+  // loss rate estimation.
+  network_predictor_->UpdatePacketLossRate(fraction_lost);
+  uint8_t loss_rate = network_predictor_->GetLossRate();
   // Normalizes rate to 0 - 100.
-  if (audio_coding_->SetPacketLossRate(100 * fraction_lost / 255) != 0) {
+  if (audio_coding_->SetPacketLossRate(100 * loss_rate / 255) != 0) {
     _engineStatisticsPtr->SetLastError(VE_AUDIO_CODING_MODULE_ERROR,
         kTraceError, "OnNetworkChanged() failed to set packet loss rate");
     assert(false);  // This should not happen.

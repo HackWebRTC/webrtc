@@ -27,6 +27,7 @@
 #include "webrtc/voice_engine/include/voe_audio_processing.h"
 #include "webrtc/voice_engine/include/voe_network.h"
 #include "webrtc/voice_engine/level_indicator.h"
+#include "webrtc/voice_engine/network_predictor.h"
 #include "webrtc/voice_engine/shared_data.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
 
@@ -621,6 +622,7 @@ private:
     scoped_ptr<BitrateController> bitrate_controller_;
     scoped_ptr<RtcpBandwidthObserver> rtcp_bandwidth_observer_;
     scoped_ptr<BitrateObserver> send_bitrate_observer_;
+    scoped_ptr<NetworkPredictor> network_predictor_;
 };
 
 }  // namespace voe

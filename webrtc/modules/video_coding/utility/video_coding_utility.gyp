@@ -18,9 +18,7 @@
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'sources': [
-        'include/exp_filter.h',
         'include/frame_dropper.h',
-        'exp_filter.cc',
         'frame_dropper.cc',
       ],
     },

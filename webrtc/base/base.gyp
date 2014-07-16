@@ -85,6 +85,8 @@
         'diskcache_win32.h',
         'event.cc',
         'event.h',
+        'exp_filter.cc',
+        'exp_filter.h',
         'filelock.cc',
         'filelock.h',
         'fileutils.cc',

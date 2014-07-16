@@ -12,6 +12,7 @@
 #define WEBRTC_VIDEO_ENGINE_OVERUSE_FRAME_DETECTOR_H_
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/exp_filter.h"
 #include "webrtc/modules/interface/module.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/video_engine/include/vie_base.h"
@@ -21,7 +22,6 @@ namespace webrtc {
 class Clock;
 class CpuOveruseObserver;
 class CriticalSectionWrapper;
-class VCMExpFilter;
 
 // TODO(pbos): Move this somewhere appropriate.
 class Statistics {
@@ -43,8 +43,8 @@ class Statistics {
   float sum_;
   uint64_t count_;
   CpuOveruseOptions options_;
-  scoped_ptr<VCMExpFilter> filtered_samples_;
-  scoped_ptr<VCMExpFilter> filtered_variance_;
+  scoped_ptr<rtc::ExpFilter> filtered_samples_;
+  scoped_ptr<rtc::ExpFilter> filtered_variance_;
 };
 
 // Use to detect system overuse based on jitter in incoming frames.

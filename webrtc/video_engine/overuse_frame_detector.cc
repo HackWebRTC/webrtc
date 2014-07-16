@@ -17,7 +17,7 @@
 #include <list>
 #include <map>
 
-#include "webrtc/modules/video_coding/utility/include/exp_filter.h"
+#include "webrtc/base/exp_filter.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
@@ -54,8 +54,8 @@ const float kMaxExp = 7.0f;
 Statistics::Statistics() :
     sum_(0.0),
     count_(0),
-    filtered_samples_(new VCMExpFilter(kWeightFactorMean)),
-    filtered_variance_(new VCMExpFilter(kWeightFactor)) {
+    filtered_samples_(new rtc::ExpFilter(kWeightFactorMean)),
+    filtered_variance_(new rtc::ExpFilter(kWeightFactor)) {
   Reset();
 }
 
@@ -84,8 +84,8 @@ void Statistics::AddSample(float sample_ms) {
   float exp = sample_ms / kSampleDiffMs;
   exp = std::min(exp, kMaxExp);
   filtered_samples_->Apply(exp, sample_ms);
-  filtered_variance_->Apply(exp, (sample_ms - filtered_samples_->Value()) *
-                                 (sample_ms - filtered_samples_->Value()));
+  filtered_variance_->Apply(exp, (sample_ms - filtered_samples_->filtered()) *
+                                 (sample_ms - filtered_samples_->filtered()));
 }
 
 float Statistics::InitialMean() const {
@@ -101,10 +101,10 @@ float Statistics::InitialVariance() const {
   return average_stddev * average_stddev;
 }
 
-float Statistics::Mean() const { return filtered_samples_->Value(); }
+float Statistics::Mean() const { return filtered_samples_->filtered(); }
 
 float Statistics::StdDev() const {
-  return sqrt(std::max(filtered_variance_->Value(), 0.0f));
+  return sqrt(std::max(filtered_variance_->filtered(), 0.0f));
 }
 
 uint64_t Statistics::Count() const { return count_; }
@@ -116,7 +116,7 @@ class OveruseFrameDetector::EncodeTimeAvg {
   EncodeTimeAvg()
       : kWeightFactor(0.5f),
         kInitialAvgEncodeTimeMs(5.0f),
-        filtered_encode_time_ms_(new VCMExpFilter(kWeightFactor)) {
+        filtered_encode_time_ms_(new rtc::ExpFilter(kWeightFactor)) {
     filtered_encode_time_ms_->Apply(1.0f, kInitialAvgEncodeTimeMs);
   }
   ~EncodeTimeAvg() {}
@@ -128,13 +128,13 @@ class OveruseFrameDetector::EncodeTimeAvg {
   }
 
   int Value() const {
-    return static_cast<int>(filtered_encode_time_ms_->Value() + 0.5);
+    return static_cast<int>(filtered_encode_time_ms_->filtered() + 0.5);
   }
 
  private:
   const float kWeightFactor;
   const float kInitialAvgEncodeTimeMs;
-  scoped_ptr<VCMExpFilter> filtered_encode_time_ms_;
+  scoped_ptr<rtc::ExpFilter> filtered_encode_time_ms_;
 };
 
 // Class for calculating the encode usage.
@@ -146,8 +146,8 @@ class OveruseFrameDetector::EncodeUsage {
         kInitialSampleDiffMs(40.0f),
         kMaxSampleDiffMs(45.0f),
         count_(0),
-        filtered_encode_time_ms_(new VCMExpFilter(kWeightFactorEncodeTime)),
-        filtered_frame_diff_ms_(new VCMExpFilter(kWeightFactorFrameDiff)) {
+        filtered_encode_time_ms_(new rtc::ExpFilter(kWeightFactorEncodeTime)),
+        filtered_frame_diff_ms_(new rtc::ExpFilter(kWeightFactorFrameDiff)) {
     Reset();
   }
   ~EncodeUsage() {}
@@ -181,10 +181,10 @@ class OveruseFrameDetector::EncodeUsage {
     if (count_ < static_cast<uint32_t>(options_.min_frame_samples)) {
       return static_cast<int>(InitialUsageInPercent() + 0.5f);
     }
-    float frame_diff_ms = std::max(filtered_frame_diff_ms_->Value(), 1.0f);
+    float frame_diff_ms = std::max(filtered_frame_diff_ms_->filtered(), 1.0f);
     frame_diff_ms = std::min(frame_diff_ms, kMaxSampleDiffMs);
     float encode_usage_percent =
-        100.0f * filtered_encode_time_ms_->Value() / frame_diff_ms;
+        100.0f * filtered_encode_time_ms_->filtered() / frame_diff_ms;
     return static_cast<int>(encode_usage_percent + 0.5);
   }
 
@@ -205,8 +205,8 @@ class OveruseFrameDetector::EncodeUsage {
   const float kMaxSampleDiffMs;
   uint64_t count_;
   CpuOveruseOptions options_;
-  scoped_ptr<VCMExpFilter> filtered_encode_time_ms_;
-  scoped_ptr<VCMExpFilter> filtered_frame_diff_ms_;
+  scoped_ptr<rtc::ExpFilter> filtered_encode_time_ms_;
+  scoped_ptr<rtc::ExpFilter> filtered_frame_diff_ms_;
 };
 
 // Class for calculating the relative standard deviation of encode times.
@@ -215,7 +215,7 @@ class OveruseFrameDetector::EncodeTimeRsd {
   EncodeTimeRsd(Clock* clock)
       : kWeightFactor(0.6f),
         count_(0),
-        filtered_rsd_(new VCMExpFilter(kWeightFactor)),
+        filtered_rsd_(new rtc::ExpFilter(kWeightFactor)),
         hist_samples_(0),
         hist_sum_(0.0f),
         last_process_time_ms_(clock->TimeInMilliseconds()) {
@@ -294,7 +294,7 @@ class OveruseFrameDetector::EncodeTimeRsd {
   }
 
   int Value() const {
-    return static_cast<int>(filtered_rsd_->Value() + 0.5);
+    return static_cast<int>(filtered_rsd_->filtered() + 0.5);
   }
 
  private:
@@ -307,7 +307,7 @@ class OveruseFrameDetector::EncodeTimeRsd {
   const float kWeightFactor;
   uint32_t count_;  // Number of encode samples since last reset.
   CpuOveruseOptions options_;
-  scoped_ptr<VCMExpFilter> filtered_rsd_;
+  scoped_ptr<rtc::ExpFilter> filtered_rsd_;
   int hist_samples_;
   float hist_sum_;
   std::map<int,int> hist_;  // Histogram of encode time of frames.
@@ -320,7 +320,7 @@ class OveruseFrameDetector::CaptureQueueDelay {
   CaptureQueueDelay()
       : kWeightFactor(0.5f),
         delay_ms_(0),
-        filtered_delay_ms_per_s_(new VCMExpFilter(kWeightFactor)) {
+        filtered_delay_ms_per_s_(new rtc::ExpFilter(kWeightFactor)) {
     filtered_delay_ms_per_s_->Apply(1.0f, 0.0f);
   }
   ~CaptureQueueDelay() {}
@@ -361,14 +361,14 @@ class OveruseFrameDetector::CaptureQueueDelay {
   }
 
   int Value() const {
-    return static_cast<int>(filtered_delay_ms_per_s_->Value() + 0.5);
+    return static_cast<int>(filtered_delay_ms_per_s_->filtered() + 0.5);
   }
 
  private:
   const float kWeightFactor;
   std::list<int64_t> frames_;
   int delay_ms_;
-  scoped_ptr<VCMExpFilter> filtered_delay_ms_per_s_;
+  scoped_ptr<rtc::ExpFilter> filtered_delay_ms_per_s_;
 };
 
 OveruseFrameDetector::OveruseFrameDetector(Clock* clock)
