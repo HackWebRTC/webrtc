@@ -322,7 +322,10 @@ int32_t ViEEncoder::DeRegisterExternalEncoder(uint8_t pl_type) {
     current_send_codec.extra_options = NULL;
     if (vcm_.RegisterSendCodec(&current_send_codec, number_of_cores_,
                                max_data_payload_length) != VCM_OK) {
-      return -1;
+      LOG(LS_INFO) << "De-registered the currently used external encoder ("
+                   << static_cast<int>(pl_type) << ") and therefore tried to "
+                   << "register the corresponding internal encoder, but none "
+                   << "was supported.";
     }
   }
   return 0;
