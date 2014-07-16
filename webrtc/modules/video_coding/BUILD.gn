@@ -75,8 +75,6 @@ source_set("video_coding") {
 
 source_set("video_coding_utility") {
   sources = [
-    "utility/exp_filter.cc",
-    "utility/include/exp_filter.h",
     "utility/include/frame_dropper.h",
     "utility/frame_dropper.cc",
   ]
