@@ -21,8 +21,17 @@ void Fatal(const char* file, int line, const char* format, ...);
 
 }  // namespace rtc
 
+// Trigger a fatal error (which aborts the process and prints an error
+// message). FATAL_ERROR_IF may seem a lot like assert, but there's a crucial
+// difference: it's always "on". This means that it can be used to check for
+// regular errors that could actually happen, not just programming errors that
+// supposedly can't happen---but triggering a fatal error will kill the process
+// in an ugly way, so it's not suitable for catching errors that might happen
+// in production.
+#define FATAL_ERROR(msg) do { rtc::Fatal(__FILE__, __LINE__, msg); } while (0)
+#define FATAL_ERROR_IF(x) do { if (x) FATAL_ERROR("check failed"); } while (0)
+
 // The UNREACHABLE macro is very useful during development.
-#define UNREACHABLE()                                   \
-  rtc::Fatal(__FILE__, __LINE__, "unreachable code")
+#define UNREACHABLE() FATAL_ERROR("unreachable code")
 
 #endif  // WEBRTC_BASE_CHECKS_H_
