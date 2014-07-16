@@ -1485,7 +1485,7 @@ static void ComfortNoise(AecmCore_t* aecm,
       "mul    %[tmp321],  %[tmp321],      %[tmp161]               \n\t"
       "sra    %[nrsh1],   %[tmp32],       14                      \n\t"
       "sra    %[nrsh2],   %[tmp321],      14                      \n\t"
-      : [nrsh1] "=r" (nrsh1), [nrsh2] "=r" (nrsh2)
+      : [nrsh1] "=&r" (nrsh1), [nrsh2] "=r" (nrsh2)
       : [tmp16] "r" (tmp16), [tmp161] "r" (tmp161), [tmp32] "r" (tmp32),
         [tmp321] "r" (tmp321)
       : "memory", "hi", "lo"
