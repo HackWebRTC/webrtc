@@ -1050,9 +1050,23 @@ TEST_F(WebRtcVideoChannel2Test, SetSendCodecsWithoutFecDisablesFec) {
       << "SetSendCodec without FEC should disable current FEC.";
 }
 
-TEST_F(WebRtcVideoChannel2Test, DISABLED_SetSendCodecsChangesExistingStreams) {
-  FAIL();  // TODO(pbos): Implement, make sure that it's changing running
-           //             streams. Should it?
+TEST_F(WebRtcVideoChannel2Test, SetSendCodecsChangesExistingStreams) {
+  std::vector<VideoCodec> codecs;
+  codecs.push_back(kVp8Codec720p);
+  ASSERT_TRUE(channel_->SetSendCodecs(codecs));
+
+  std::vector<webrtc::VideoStream> streams =
+      AddSendStream()->GetVideoStreams();
+  EXPECT_EQ(kVp8Codec720p.width, streams[0].width);
+  EXPECT_EQ(kVp8Codec720p.height, streams[0].height);
+
+  codecs.clear();
+  codecs.push_back(kVp8Codec360p);
+  ASSERT_TRUE(channel_->SetSendCodecs(codecs));
+  streams = fake_channel_->GetFakeCall()->GetVideoSendStreams()[0]
+      ->GetVideoStreams();
+  EXPECT_EQ(kVp8Codec360p.width, streams[0].width);
+  EXPECT_EQ(kVp8Codec360p.height, streams[0].height);
 }
 
 TEST_F(WebRtcVideoChannel2Test,
