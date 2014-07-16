@@ -231,15 +231,12 @@ struct SsrcInfo {
 typedef std::vector<SsrcInfo> SsrcInfoVec;
 typedef std::vector<SsrcGroup> SsrcGroupVec;
 
-// Serializes the passed in SessionDescription to a SDP string.
-// desc - The SessionDescription object to be serialized.
-static std::string SdpSerializeSessionDescription(
-    const JsepSessionDescription& jdesc);
 template <class T>
 static void AddFmtpLine(const T& codec, std::string* message);
 static void BuildMediaDescription(const ContentInfo* content_info,
                                   const TransportInfo* transport_info,
                                   const MediaType media_type,
+                                  const std::vector<Candidate>& candidates,
                                   std::string* message);
 static void BuildSctpContentAttributes(std::string* message, int sctp_port);
 static void BuildRtpContentAttributes(
@@ -712,21 +709,20 @@ static bool GetDefaultDestination(const std::vector<Candidate>& candidates,
   return true;
 }
 
-// Update the media default destination.
+// Update |mline|'s default destination and append a c line after it.
 static void UpdateMediaDefaultDestination(
-    const std::vector<Candidate>& candidates, std::string* mline) {
+    const std::vector<Candidate>& candidates,
+    const std::string mline,
+    std::string* message) {
+  std::string new_lines;
+  AddLine(mline, &new_lines);
   // RFC 4566
   // m=<media> <port> <proto> <fmt> ...
   std::vector<std::string> fields;
-  talk_base::split(*mline, kSdpDelimiterSpace, &fields);
+  talk_base::split(mline, kSdpDelimiterSpace, &fields);
   if (fields.size() < 3) {
     return;
   }
-
-  bool is_rtp =
-      fields[2].empty() ||
-      talk_base::starts_with(fields[2].data(),
-                             cricket::kMediaProtocolRtpPrefix);
 
   std::ostringstream os;
   std::string rtp_port, rtp_ip;
@@ -742,39 +738,43 @@ static void UpdateMediaDefaultDestination(
     // Update the port in the m line.
     // If this is a m-line with port equal to 0, we don't change it.
     if (fields[1] != kMediaPortRejected) {
-      mline->replace(fields[0].size() + 1,
-                     fields[1].size(),
-                     rtp_port);
+      new_lines.replace(fields[0].size() + 1,
+                        fields[1].size(),
+                        rtp_port);
     }
     // Add the c line.
     // RFC 4566
     // c=<nettype> <addrtype> <connection-address>
     InitLine(kLineTypeConnection, kConnectionNettype, &os);
     os << " " << kConnectionAddrtype << " " << rtp_ip;
-    AddLine(os.str(), mline);
+    AddLine(os.str(), &new_lines);
   }
+  message->append(new_lines);
+}
 
-  if (is_rtp) {
-    std::string rtcp_port, rtcp_ip;
-    if (GetDefaultDestination(candidates, ICE_CANDIDATE_COMPONENT_RTCP,
-                              &rtcp_port, &rtcp_ip)) {
-      // Found default RTCP candidate.
-      // RFC 5245
-      // If the agent is utilizing RTCP, it MUST encode the RTCP candidate
-      // using the a=rtcp attribute as defined in RFC 3605.
+// Gets "a=rtcp" line if found default RTCP candidate from |candidates|.
+static std::string GetRtcpLine(const std::vector<Candidate>& candidates) {
+  std::string rtcp_line, rtcp_port, rtcp_ip;
+  if (GetDefaultDestination(candidates, ICE_CANDIDATE_COMPONENT_RTCP,
+                            &rtcp_port, &rtcp_ip)) {
+    // Found default RTCP candidate.
+    // RFC 5245
+    // If the agent is utilizing RTCP, it MUST encode the RTCP candidate
+    // using the a=rtcp attribute as defined in RFC 3605.
 
-      // RFC 3605
-      // rtcp-attribute =  "a=rtcp:" port  [nettype space addrtype space
-      // connection-address] CRLF
-      InitAttrLine(kAttributeRtcp, &os);
-      os << kSdpDelimiterColon
-         << rtcp_port << " "
-         << kConnectionNettype << " "
-         << kConnectionAddrtype << " "
-         << rtcp_ip;
-      AddLine(os.str(), mline);
-    }
+    // RFC 3605
+    // rtcp-attribute =  "a=rtcp:" port  [nettype space addrtype space
+    // connection-address] CRLF
+    std::ostringstream os;
+    InitAttrLine(kAttributeRtcp, &os);
+    os << kSdpDelimiterColon
+       << rtcp_port << " "
+       << kConnectionNettype << " "
+       << kConnectionAddrtype << " "
+       << rtcp_ip;
+    rtcp_line = os.str();
   }
+  return rtcp_line;
 }
 
 // Get candidates according to the mline index from SessionDescriptionInterface.
@@ -792,36 +792,6 @@ static void GetCandidatesByMindex(const SessionDescriptionInterface& desci,
 }
 
 std::string SdpSerialize(const JsepSessionDescription& jdesc) {
-  std::string sdp = SdpSerializeSessionDescription(jdesc);
-
-  std::string sdp_with_candidates;
-  size_t pos = 0;
-  std::string line;
-  int mline_index = -1;
-  while (GetLine(sdp, &pos, &line)) {
-    if (IsLineType(line, kLineTypeMedia)) {
-      ++mline_index;
-      std::vector<Candidate> candidates;
-      GetCandidatesByMindex(jdesc, mline_index, &candidates);
-      // Media line may append other lines inside the
-      // UpdateMediaDefaultDestination call, so add the kLineBreak here first.
-      line.append(kLineBreak);
-      UpdateMediaDefaultDestination(candidates, &line);
-      sdp_with_candidates.append(line);
-      // Build the a=candidate lines.
-      BuildCandidate(candidates, &sdp_with_candidates);
-    } else {
-      // Copy old line to new sdp without change.
-      AddLine(line, &sdp_with_candidates);
-    }
-  }
-  sdp = sdp_with_candidates;
-
-  return sdp;
-}
-
-std::string SdpSerializeSessionDescription(
-    const JsepSessionDescription& jdesc) {
   const cricket::SessionDescription* desc = jdesc.description();
   if (!desc) {
     return "";
@@ -868,40 +838,36 @@ std::string SdpSerializeSessionDescription(
   // MediaStream semantics
   InitAttrLine(kAttributeMsidSemantics, &os);
   os << kSdpDelimiterColon << " " << kMediaStreamSemantic;
+
   std::set<std::string> media_stream_labels;
   const ContentInfo* audio_content = GetFirstAudioContent(desc);
   if (audio_content)
     GetMediaStreamLabels(audio_content, &media_stream_labels);
+
   const ContentInfo* video_content = GetFirstVideoContent(desc);
   if (video_content)
     GetMediaStreamLabels(video_content, &media_stream_labels);
+
   for (std::set<std::string>::const_iterator it =
       media_stream_labels.begin(); it != media_stream_labels.end(); ++it) {
     os << " " << *it;
   }
   AddLine(os.str(), &message);
 
-  if (audio_content) {
-    BuildMediaDescription(audio_content,
-                          desc->GetTransportInfoByName(audio_content->name),
-                          cricket::MEDIA_TYPE_AUDIO, &message);
+  // Preserve the order of the media contents.
+  int mline_index = -1;
+  for (cricket::ContentInfos::const_iterator it = desc->contents().begin();
+       it != desc->contents().end(); ++it) {
+    const MediaContentDescription* mdesc =
+      static_cast<const MediaContentDescription*>(it->description);
+    std::vector<Candidate> candidates;
+    GetCandidatesByMindex(jdesc, ++mline_index, &candidates);
+    BuildMediaDescription(&*it,
+                          desc->GetTransportInfoByName(it->name),
+                          mdesc->type(),
+                          candidates,
+                          &message);
   }
-
-
-  if (video_content) {
-    BuildMediaDescription(video_content,
-                          desc->GetTransportInfoByName(video_content->name),
-                          cricket::MEDIA_TYPE_VIDEO, &message);
-  }
-
-  const ContentInfo* data_content = GetFirstDataContent(desc);
-  if (data_content) {
-    BuildMediaDescription(data_content,
-                          desc->GetTransportInfoByName(data_content->name),
-                          cricket::MEDIA_TYPE_DATA, &message);
-  }
-
-
   return message;
 }
 
@@ -1157,6 +1123,7 @@ bool ParseExtmap(const std::string& line, RtpHeaderExtension* extmap,
 void BuildMediaDescription(const ContentInfo* content_info,
                            const TransportInfo* transport_info,
                            const MediaType media_type,
+                           const std::vector<Candidate>& candidates,
                            std::string* message) {
   ASSERT(message != NULL);
   if (content_info == NULL || message == NULL) {
@@ -1249,9 +1216,43 @@ void BuildMediaDescription(const ContentInfo* content_info,
   talk_base::SSLFingerprint* fp = (transport_info) ?
       transport_info->description.identity_fingerprint.get() : NULL;
 
+  // Add the m and c lines.
   InitLine(kLineTypeMedia, type, &os);
   os << " " << port << " " << media_desc->protocol() << fmt;
-  AddLine(os.str(), message);
+  std::string mline = os.str();
+  UpdateMediaDefaultDestination(candidates, mline, message);
+
+  // RFC 4566
+  // b=AS:<bandwidth>
+  // We should always use the default bandwidth for RTP-based data
+  // channels.  Don't allow SDP to set the bandwidth, because that
+  // would give JS the opportunity to "break the Internet".
+  // TODO(pthatcher): But we need to temporarily allow the SDP to control
+  // this for backwards-compatibility.  Once we don't need that any
+  // more, remove this.
+  bool support_dc_sdp_bandwidth_temporarily = true;
+  if (media_desc->bandwidth() >= 1000 &&
+      (media_type != cricket::MEDIA_TYPE_DATA ||
+       support_dc_sdp_bandwidth_temporarily)) {
+    InitLine(kLineTypeSessionBandwidth, kApplicationSpecificMaximum, &os);
+    os << kSdpDelimiterColon << (media_desc->bandwidth() / 1000);
+    AddLine(os.str(), message);
+  }
+
+  // Add the a=rtcp line.
+  bool is_rtp =
+      media_desc->protocol().empty() ||
+      talk_base::starts_with(media_desc->protocol().data(),
+                             cricket::kMediaProtocolRtpPrefix);
+  if (is_rtp) {
+    std::string rtcp_line = GetRtcpLine(candidates);
+    if (!rtcp_line.empty()) {
+      AddLine(rtcp_line, message);
+    }
+  }
+
+  // Build the a=candidate lines.
+  BuildCandidate(candidates, message);
 
   // Use the transport_info to build the media level ice-ufrag and ice-pwd.
   if (transport_info) {
@@ -1362,23 +1363,6 @@ void BuildRtpContentAttributes(
       break;
   }
   AddLine(os.str(), message);
-
-  // RFC 4566
-  // b=AS:<bandwidth>
-  // We should always use the default bandwidth for RTP-based data
-  // channels.  Don't allow SDP to set the bandwidth, because that
-  // would give JS the opportunity to "break the Internet".
-  // TODO(pthatcher): But we need to temporarily allow the SDP to control
-  // this for backwards-compatibility.  Once we don't need that any
-  // more, remove this.
-  bool support_dc_sdp_bandwidth_temporarily = true;
-  if (media_desc->bandwidth() >= 1000 &&
-      (media_type != cricket::MEDIA_TYPE_DATA ||
-       support_dc_sdp_bandwidth_temporarily)) {
-    InitLine(kLineTypeSessionBandwidth, kApplicationSpecificMaximum, &os);
-    os << kSdpDelimiterColon << (media_desc->bandwidth() / 1000);
-    AddLine(os.str(), message);
-  }
 
   // RFC 5761
   // a=rtcp-mux

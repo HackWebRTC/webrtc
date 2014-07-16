@@ -1408,10 +1408,10 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithBandwidth) {
                                 jdesc_.session_version()));
   std::string message = webrtc::SdpSerialize(jdesc_);
   std::string sdp_with_bandwidth = kSdpFullString;
-  InjectAfter("a=mid:video_content_name\r\na=sendrecv\r\n",
+  InjectAfter("c=IN IP4 74.125.224.39\r\n",
               "b=AS:100\r\n",
               &sdp_with_bandwidth);
-  InjectAfter("a=mid:audio_content_name\r\na=sendrecv\r\n",
+  InjectAfter("c=IN IP4 74.125.127.126\r\n",
               "b=AS:50\r\n",
               &sdp_with_bandwidth);
   EXPECT_EQ(sdp_with_bandwidth, message);
@@ -1535,7 +1535,7 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithDataChannelAndBandwidth) {
   // TODO(pthatcher): We need to temporarily allow the SDP to control
   // this for backwards-compatibility.  Once we don't need that any
   // more, remove this.
-  InjectAfter("a=mid:data_content_name\r\na=sendrecv\r\n",
+  InjectAfter("m=application 1 RTP/SAVPF 101\r\nc=IN IP4 0.0.0.0\r\n",
               "b=AS:100\r\n",
               &expected_sdp);
   EXPECT_EQ(expected_sdp, message);
