@@ -281,6 +281,7 @@
         'media/base/rtpdataengine_unittest.cc',
         'media/base/rtpdump_unittest.cc',
         'media/base/rtputils_unittest.cc',
+        'media/base/streamparams_unittest.cc',
         'media/base/testutils.cc',
         'media/base/testutils.h',
         'media/base/videocapturer_unittest.cc',

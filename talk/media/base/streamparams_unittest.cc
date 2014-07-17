@@ -159,6 +159,38 @@ TEST(StreamParams, FidFunctions) {
   EXPECT_FALSE(sp_invalid.GetFidSsrc(13, &fid_ssrc));
 }
 
+TEST(StreamParams, GetPrimaryAndFidSsrcs) {
+  cricket::StreamParams sp;
+  sp.ssrcs.push_back(1);
+  sp.ssrcs.push_back(2);
+  sp.ssrcs.push_back(3);
+
+  std::vector<uint32> primary_ssrcs;
+  sp.GetPrimarySsrcs(&primary_ssrcs);
+  std::vector<uint32> fid_ssrcs;
+  sp.GetFidSsrcs(primary_ssrcs, &fid_ssrcs);
+  ASSERT_EQ(1u, primary_ssrcs.size());
+  EXPECT_EQ(1u, primary_ssrcs[0]);
+  ASSERT_EQ(0u, fid_ssrcs.size());
+
+  sp.ssrc_groups.push_back(
+      cricket::SsrcGroup(cricket::kSimSsrcGroupSemantics, sp.ssrcs));
+  sp.AddFidSsrc(1, 10);
+  sp.AddFidSsrc(2, 20);
+
+  primary_ssrcs.clear();
+  sp.GetPrimarySsrcs(&primary_ssrcs);
+  fid_ssrcs.clear();
+  sp.GetFidSsrcs(primary_ssrcs, &fid_ssrcs);
+  ASSERT_EQ(3u, primary_ssrcs.size());
+  EXPECT_EQ(1u, primary_ssrcs[0]);
+  EXPECT_EQ(2u, primary_ssrcs[1]);
+  EXPECT_EQ(3u, primary_ssrcs[2]);
+  ASSERT_EQ(2u, fid_ssrcs.size());
+  EXPECT_EQ(10u, fid_ssrcs[0]);
+  EXPECT_EQ(20u, fid_ssrcs[1]);
+}
+
 TEST(StreamParams, ToString) {
   cricket::StreamParams sp =
       CreateStreamParamsWithSsrcGroup("XYZ", kSsrcs2, ARRAY_SIZE(kSsrcs2));

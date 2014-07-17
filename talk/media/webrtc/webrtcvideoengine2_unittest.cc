@@ -413,6 +413,17 @@ TEST_F(WebRtcVideoEngine2Test, SupportsAbsoluteSenderTimeHeaderExtension) {
   FAIL() << "Absolute Sender Time extension not in header-extension list.";
 }
 
+TEST_F(WebRtcVideoEngine2Test, SetSendFailsBeforeSettingCodecs) {
+  talk_base::scoped_ptr<VideoMediaChannel> channel(engine_.CreateChannel(NULL));
+
+  EXPECT_TRUE(channel->AddSendStream(StreamParams::CreateLegacy(123)));
+
+  EXPECT_FALSE(channel->SetSend(true))
+      << "Channel should not start without codecs.";
+  EXPECT_TRUE(channel->SetSend(false))
+      << "Channel should be stoppable even without set codecs.";
+}
+
 class WebRtcVideoChannel2BaseTest
     : public VideoMediaChannelTest<WebRtcVideoEngine2, WebRtcVideoChannel2> {
  protected:
@@ -551,6 +562,7 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
     last_ssrc_ = 123;
     ASSERT_TRUE(fake_channel_ != NULL)
         << "Channel not created through factory.";
+    EXPECT_TRUE(fake_channel_->SetSendCodecs(engine_.codecs()));
   }
 
  protected:
@@ -1257,19 +1269,7 @@ TEST_F(WebRtcVideoChannel2Test, DISABLED_ReceiveStreamReceivingByDefault) {
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetSend) {
-  AddSendStream();
-  EXPECT_FALSE(channel_->SetSend(true))
-      << "Channel should not start without codecs.";
-  EXPECT_TRUE(channel_->SetSend(false))
-      << "Channel should be stoppable even without set codecs.";
-
-  std::vector<cricket::VideoCodec> codecs;
-  codecs.push_back(kVp8Codec);
-  channel_->SetSendCodecs(codecs);
-  std::vector<FakeVideoSendStream*> streams = GetFakeSendStreams();
-  ASSERT_EQ(1u, streams.size());
-  FakeVideoSendStream* stream = streams.back();
-
+  FakeVideoSendStream* stream = AddSendStream();
   EXPECT_FALSE(stream->IsSending());
 
   // false->true

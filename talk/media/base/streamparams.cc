@@ -97,6 +97,26 @@ std::string StreamParams::ToString() const {
   ost << "}";
   return ost.str();
 }
+void StreamParams::GetPrimarySsrcs(std::vector<uint32>* ssrcs) const {
+  const SsrcGroup* sim_group = get_ssrc_group(kSimSsrcGroupSemantics);
+  if (sim_group == NULL) {
+    ssrcs->push_back(first_ssrc());
+  } else {
+    for (size_t i = 0; i < sim_group->ssrcs.size(); ++i) {
+      ssrcs->push_back(sim_group->ssrcs[i]);
+    }
+  }
+}
+
+void StreamParams::GetFidSsrcs(const std::vector<uint32>& primary_ssrcs,
+                               std::vector<uint32>* fid_ssrcs) const {
+  for (size_t i = 0; i < primary_ssrcs.size(); ++i) {
+    uint32 fid_ssrc;
+    if (GetFidSsrc(primary_ssrcs[i], &fid_ssrc)) {
+      fid_ssrcs->push_back(fid_ssrc);
+    }
+  }
+}
 
 bool StreamParams::AddSecondarySsrc(const std::string& semantics,
                                     uint32 primary_ssrc,

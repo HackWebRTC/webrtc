@@ -271,14 +271,17 @@ class WebRtcVideoChannel2 : public talk_base::MessageHandler,
 
   class WebRtcVideoSendStream : public sigslot::has_slots<> {
    public:
-    WebRtcVideoSendStream(webrtc::Call* call,
-                          const webrtc::VideoSendStream::Config& config,
-                          const VideoOptions& options,
-                          const VideoCodec& codec,
-                          const std::vector<webrtc::VideoStream>& video_streams,
-                          WebRtcVideoEncoderFactory2* encoder_factory);
+    WebRtcVideoSendStream(
+        webrtc::Call* call,
+        WebRtcVideoEncoderFactory2* encoder_factory,
+        const VideoOptions& options,
+        const Settable<VideoCodecSettings>& codec_settings,
+        const StreamParams& sp,
+        const std::vector<webrtc::RtpExtension>& rtp_extensions);
+
     ~WebRtcVideoSendStream();
-    void SetCodec(const VideoOptions& options, const VideoCodecSettings& codec);
+    void SetOptions(const VideoOptions& options);
+    void SetCodec(const VideoCodecSettings& codec);
 
     void InputFrame(VideoCapturer* capturer, const VideoFrame* frame);
     bool SetCapturer(VideoCapturer* capturer);
@@ -298,17 +301,18 @@ class WebRtcVideoChannel2 : public talk_base::MessageHandler,
       VideoSendStreamParameters(
           const webrtc::VideoSendStream::Config& config,
           const VideoOptions& options,
-          const VideoCodec& codec,
-          const std::vector<webrtc::VideoStream>& video_streams);
+          const Settable<VideoCodecSettings>& codec_settings);
       webrtc::VideoSendStream::Config config;
       VideoOptions options;
-      VideoCodec codec;
+      Settable<VideoCodecSettings> codec_settings;
       // Sent resolutions + bitrates etc. by the underlying VideoSendStream,
       // typically changes when setting a new resolution or reconfiguring
       // bitrates.
       std::vector<webrtc::VideoStream> video_streams;
     };
 
+    void SetCodecAndOptions(const VideoCodecSettings& codec,
+                            const VideoOptions& options);
     void RecreateWebRtcStream();
     void SetDimensions(int width, int height);
 

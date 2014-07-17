@@ -141,6 +141,16 @@ struct StreamParams {
     return GetSecondarySsrc(kFidSsrcGroupSemantics, primary_ssrc, fid_ssrc);
   }
 
+  // Convenience to get all the SIM SSRCs if there are SIM ssrcs, or
+  // the first SSRC otherwise.
+  void GetPrimarySsrcs(std::vector<uint32>* ssrcs) const;
+
+  // Convenience to get all the FID SSRCs for the given primary ssrcs.
+  // If a given primary SSRC does not have a FID SSRC, the list of FID
+  // SSRCS will be smaller than the list of primary SSRCs.
+  void GetFidSsrcs(const std::vector<uint32>& primary_ssrcs,
+                   std::vector<uint32>* fid_ssrcs) const;
+
   std::string ToString() const;
 
   // Resource of the MUC jid of the participant of with this stream.
