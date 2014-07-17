@@ -285,7 +285,6 @@ void AudioBuffer::InitForNewData() {
 }
 
 const int16_t* AudioBuffer::data(int channel) const {
-  assert(channel >= 0 && channel < num_proc_channels_);
   return channels_->ibuf()->channel(channel);
 }
 
@@ -295,7 +294,6 @@ int16_t* AudioBuffer::data(int channel) {
 }
 
 const float* AudioBuffer::data_f(int channel) const {
-  assert(channel >= 0 && channel < num_proc_channels_);
   return channels_->fbuf()->channel(channel);
 }
 
@@ -305,7 +303,6 @@ float* AudioBuffer::data_f(int channel) {
 }
 
 const int16_t* AudioBuffer::low_pass_split_data(int channel) const {
-  assert(channel >= 0 && channel < num_proc_channels_);
   return split_channels_.get() ? split_channels_->low_channel(channel)
                                : data(channel);
 }
@@ -316,7 +313,6 @@ int16_t* AudioBuffer::low_pass_split_data(int channel) {
 }
 
 const float* AudioBuffer::low_pass_split_data_f(int channel) const {
-  assert(channel >= 0 && channel < num_proc_channels_);
   return split_channels_.get() ? split_channels_->low_channel_f(channel)
                                : data_f(channel);
 }
@@ -327,7 +323,6 @@ float* AudioBuffer::low_pass_split_data_f(int channel) {
 }
 
 const int16_t* AudioBuffer::high_pass_split_data(int channel) const {
-  assert(channel >= 0 && channel < num_proc_channels_);
   return split_channels_.get() ? split_channels_->high_channel(channel) : NULL;
 }
 
@@ -337,7 +332,6 @@ int16_t* AudioBuffer::high_pass_split_data(int channel) {
 }
 
 const float* AudioBuffer::high_pass_split_data_f(int channel) const {
-  assert(channel >= 0 && channel < num_proc_channels_);
   return split_channels_.get() ? split_channels_->high_channel_f(channel)
                                : NULL;
 }
@@ -348,19 +342,14 @@ float* AudioBuffer::high_pass_split_data_f(int channel) {
 }
 
 const int16_t* AudioBuffer::mixed_data(int channel) const {
-  assert(channel >= 0 && channel < num_mixed_channels_);
-
   return mixed_channels_->channel(channel);
 }
 
 const int16_t* AudioBuffer::mixed_low_pass_data(int channel) const {
-  assert(channel >= 0 && channel < num_mixed_low_pass_channels_);
-
   return mixed_low_pass_channels_->channel(channel);
 }
 
 const int16_t* AudioBuffer::low_pass_reference(int channel) const {
-  assert(channel >= 0 && channel < num_proc_channels_);
   if (!reference_copied_) {
     return NULL;
   }

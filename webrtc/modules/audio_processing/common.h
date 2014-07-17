@@ -55,7 +55,7 @@ class ChannelBuffer {
 
   T* data() { return data_.get(); }
   T* channel(int i) {
-    assert(i < num_channels_);
+    assert(i >= 0 && i < num_channels_);
     return channels_[i];
   }
   T** channels() { return channels_.get(); }
