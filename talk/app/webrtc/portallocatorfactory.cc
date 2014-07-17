@@ -77,6 +77,8 @@ cricket::PortAllocator* PortAllocatorFactory::CreatePortAllocator(
       relay_server.ports.push_back(cricket::ProtocolAddress(
           turn[i].server, protocol, turn[i].secure));
       relay_server.credentials = credentials;
+      // First in the list gets highest priority.
+      relay_server.priority = static_cast<int>(turn.size() - i - 1);
       allocator->AddRelay(relay_server);
     } else {
       LOG(LS_WARNING) << "Ignoring TURN server " << turn[i].server << ". "

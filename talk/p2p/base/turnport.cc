@@ -175,7 +175,8 @@ TurnPort::TurnPort(talk_base::Thread* thread,
                    const std::string& username,
                    const std::string& password,
                    const ProtocolAddress& server_address,
-                   const RelayCredentials& credentials)
+                   const RelayCredentials& credentials,
+                   int server_priority)
     : Port(thread, factory, network, socket->GetLocalAddress().ipaddr(),
            username, password),
       server_address_(server_address),
@@ -185,7 +186,8 @@ TurnPort::TurnPort(talk_base::Thread* thread,
       error_(0),
       request_manager_(thread),
       next_channel_number_(TURN_CHANNEL_NUMBER_START),
-      connected_(false) {
+      connected_(false),
+      server_priority_(server_priority) {
   request_manager_.SignalSendPacket.connect(this, &TurnPort::OnSendStunPacket);
 }
 
@@ -197,7 +199,8 @@ TurnPort::TurnPort(talk_base::Thread* thread,
                    const std::string& username,
                    const std::string& password,
                    const ProtocolAddress& server_address,
-                   const RelayCredentials& credentials)
+                   const RelayCredentials& credentials,
+                   int server_priority)
     : Port(thread, RELAY_PORT_TYPE, factory, network, ip, min_port, max_port,
            username, password),
       server_address_(server_address),
@@ -207,7 +210,8 @@ TurnPort::TurnPort(talk_base::Thread* thread,
       error_(0),
       request_manager_(thread),
       next_channel_number_(TURN_CHANNEL_NUMBER_START),
-      connected_(false) {
+      connected_(false),
+      server_priority_(server_priority) {
   request_manager_.SignalSendPacket.connect(this, &TurnPort::OnSendStunPacket);
 }
 
@@ -501,6 +505,7 @@ void TurnPort::OnAllocateSuccess(const talk_base::SocketAddress& address,
              UDP_PROTOCOL_NAME,
              RELAY_PORT_TYPE,
              GetRelayPreference(server_address_.proto, server_address_.secure),
+             server_priority_,
              true);
 }
 

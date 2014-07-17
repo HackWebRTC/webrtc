@@ -253,13 +253,26 @@ void Port::AddAddress(const talk_base::SocketAddress& address,
                       const std::string& type,
                       uint32 type_preference,
                       bool final) {
+  AddAddress(address, base_address, related_address, protocol,
+             type, type_preference, 0, final);
+}
+
+void Port::AddAddress(const talk_base::SocketAddress& address,
+                      const talk_base::SocketAddress& base_address,
+                      const talk_base::SocketAddress& related_address,
+                      const std::string& protocol,
+                      const std::string& type,
+                      uint32 type_preference,
+                      uint32 relay_preference,
+                      bool final) {
   Candidate c;
   c.set_id(talk_base::CreateRandomString(8));
   c.set_component(component_);
   c.set_type(type);
   c.set_protocol(protocol);
   c.set_address(address);
-  c.set_priority(c.GetPriority(type_preference, network_->preference()));
+  c.set_priority(c.GetPriority(type_preference, network_->preference(),
+                               relay_preference));
   c.set_username(username_fragment());
   c.set_password(password_);
   c.set_network_name(network_->name());

@@ -481,7 +481,7 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
                                       addr.ipaddr(), 0, 0,
                                       username_, password_, ProtocolAddress(
                                           server_addr, PROTO_UDP),
-                                      kRelayCredentials);
+                                      kRelayCredentials, 0);
     port->SetIceProtocolType(ice_protocol_);
     return port;
   }

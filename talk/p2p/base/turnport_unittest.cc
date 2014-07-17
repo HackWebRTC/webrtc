@@ -184,7 +184,7 @@ class TurnPortTest : public testing::Test,
     turn_port_.reset(TurnPort::Create(main_, &socket_factory_, &network_,
                                  local_address.ipaddr(), 0, 0,
                                  kIceUfrag1, kIcePwd1,
-                                 server_address, credentials));
+                                 server_address, credentials, 0));
     // Set ICE protocol type to ICEPROTO_RFC5245, as port by default will be
     // in Hybrid mode. Protocol type is necessary to send correct type STUN ping
     // messages.
@@ -207,7 +207,7 @@ class TurnPortTest : public testing::Test,
     cricket::RelayCredentials credentials(username, password);
     turn_port_.reset(cricket::TurnPort::Create(
         main_, &socket_factory_, &network_, socket_.get(),
-        kIceUfrag1, kIcePwd1, server_address, credentials));
+        kIceUfrag1, kIcePwd1, server_address, credentials, 0));
     // Set ICE protocol type to ICEPROTO_RFC5245, as port by default will be
     // in Hybrid mode. Protocol type is necessary to send correct type STUN ping
     // messages.

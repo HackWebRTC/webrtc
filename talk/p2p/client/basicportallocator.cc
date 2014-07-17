@@ -1026,7 +1026,7 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
                               session_->socket_factory(),
                               network_, udp_socket_.get(),
                               session_->username(), session_->password(),
-                              *relay_port, config.credentials);
+                              *relay_port, config.credentials, config.priority);
       // If we are using shared socket for TURN and udp ports, we need to
       // find a way to demux the packets to the correct port when received.
       // Mapping against server_address is one way of doing this. When packet
@@ -1051,7 +1051,7 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
                               session_->allocator()->max_port(),
                               session_->username(),
                               session_->password(),
-                              *relay_port, config.credentials);
+                              *relay_port, config.credentials, config.priority);
     }
     ASSERT(port != NULL);
     session_->AddAllocatedPort(port, this, true);

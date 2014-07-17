@@ -494,7 +494,7 @@ void P2PTransportChannel::OnUnknownAddress(
         talk_base::ToString<uint32>(talk_base::ComputeCrc32(id)));
     new_remote_candidate.set_priority(
         new_remote_candidate.GetPriority(ICE_TYPE_PREFERENCE_SRFLX,
-                                         port->Network()->preference()));
+                                         port->Network()->preference(), 0));
   }
 
   if (port->IceProtocol() == ICEPROTO_RFC5245) {

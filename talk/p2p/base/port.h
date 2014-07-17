@@ -312,6 +312,12 @@ class Port : public PortInterface, public talk_base::MessageHandler,
                   const std::string& protocol, const std::string& type,
                   uint32 type_preference, bool final);
 
+  void AddAddress(const talk_base::SocketAddress& address,
+                  const talk_base::SocketAddress& base_address,
+                  const talk_base::SocketAddress& related_address,
+                  const std::string& protocol, const std::string& type,
+                  uint32 type_preference, uint32 relay_preference, bool final);
+
   // Adds the given connection to the list.  (Deleting removes them.)
   void AddConnection(Connection* conn);
 

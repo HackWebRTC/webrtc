@@ -166,7 +166,8 @@ class Candidate {
   }
 
   uint32 GetPriority(uint32 type_preference,
-                     int network_adapter_preference) const {
+                     int network_adapter_preference,
+                     int relay_preference) const {
     // RFC 5245 - 4.1.2.1.
     // priority = (2^24)*(type preference) +
     //            (2^8)*(local preference) +
@@ -181,10 +182,11 @@ class Candidate {
     //      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     // NIC Type - Type of the network adapter e.g. 3G/Wifi/Wired.
     // Addr Pref - Address preference value as per RFC 3484.
-    // local preference is calculated as - NIC Type << 8 | Addr_Pref.
+    // local preference =  (NIC Type << 8 | Addr_Pref) - relay preference.
 
     int addr_pref = IPAddressPrecedence(address_.ipaddr());
-    int local_preference = (network_adapter_preference << 8) | addr_pref;
+    int local_preference = ((network_adapter_preference << 8) | addr_pref) +
+        relay_preference;
 
     return (type_preference << 24) |
            (local_preference << 8) |

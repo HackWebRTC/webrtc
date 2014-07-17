@@ -54,11 +54,12 @@ struct RelayCredentials {
 
 typedef std::vector<ProtocolAddress> PortList;
 struct RelayServerConfig {
-  RelayServerConfig(RelayType type) : type(type) {}
+  RelayServerConfig(RelayType type) : type(type), priority(0) {}
 
   RelayType type;
   PortList ports;
   RelayCredentials credentials;
+  int priority;
 };
 
 class BasicPortAllocator : public PortAllocator {
