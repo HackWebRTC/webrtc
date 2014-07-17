@@ -68,9 +68,9 @@ class BasicPortAllocator : public PortAllocator {
   explicit BasicPortAllocator(talk_base::NetworkManager* network_manager);
   BasicPortAllocator(talk_base::NetworkManager* network_manager,
                      talk_base::PacketSocketFactory* socket_factory,
-                     const ServerAddresses& stun_servers);
+                     const talk_base::SocketAddress& stun_server);
   BasicPortAllocator(talk_base::NetworkManager* network_manager,
-                     const ServerAddresses& stun_servers,
+                     const talk_base::SocketAddress& stun_server,
                      const talk_base::SocketAddress& relay_server_udp,
                      const talk_base::SocketAddress& relay_server_tcp,
                      const talk_base::SocketAddress& relay_server_ssl);
@@ -82,8 +82,8 @@ class BasicPortAllocator : public PortAllocator {
   // creates its own socket factory.
   talk_base::PacketSocketFactory* socket_factory() { return socket_factory_; }
 
-  const ServerAddresses& stun_servers() const {
-    return stun_servers_;
+  const talk_base::SocketAddress& stun_address() const {
+    return stun_address_;
   }
 
   const std::vector<RelayServerConfig>& relays() const {
@@ -104,7 +104,7 @@ class BasicPortAllocator : public PortAllocator {
 
   talk_base::NetworkManager* network_manager_;
   talk_base::PacketSocketFactory* socket_factory_;
-  const ServerAddresses stun_servers_;
+  const talk_base::SocketAddress stun_address_;
   std::vector<RelayServerConfig> relays_;
   bool allow_tcp_listen_;
 };
@@ -217,26 +217,16 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
 
 // Records configuration information useful in creating ports.
 struct PortConfiguration : public talk_base::MessageData {
-  // TODO(jiayl): remove |stun_address| when Chrome is updated.
   talk_base::SocketAddress stun_address;
-  ServerAddresses stun_servers;
   std::string username;
   std::string password;
 
   typedef std::vector<RelayServerConfig> RelayList;
   RelayList relays;
 
-  // TODO(jiayl): remove this ctor when Chrome is updated.
   PortConfiguration(const talk_base::SocketAddress& stun_address,
                     const std::string& username,
                     const std::string& password);
-
-  PortConfiguration(const ServerAddresses& stun_servers,
-                    const std::string& username,
-                    const std::string& password);
-
-  // TODO(jiayl): remove when |stun_address| is removed.
-  ServerAddresses StunServers();
 
   // Adds another relay server, with the given ports and modifier, to the list.
   void AddRelay(const RelayServerConfig& config);
@@ -245,9 +235,9 @@ struct PortConfiguration : public talk_base::MessageData {
   bool SupportsProtocol(const RelayServerConfig& relay,
                         ProtocolType type) const;
   bool SupportsProtocol(RelayType turn_type, ProtocolType type) const;
-  // Helper method returns the server addresses for the matching RelayType and
-  // Protocol type.
-  ServerAddresses GetRelayServerAddresses(
+  // Helper method returns the first server address for the matching
+  // RelayType and Protocol type.
+  talk_base::SocketAddress GetFirstRelayServerAddress(
       RelayType turn_type, ProtocolType type) const;
 };
 

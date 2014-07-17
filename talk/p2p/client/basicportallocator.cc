@@ -186,23 +186,23 @@ BasicPortAllocator::BasicPortAllocator(
 BasicPortAllocator::BasicPortAllocator(
     talk_base::NetworkManager* network_manager,
     talk_base::PacketSocketFactory* socket_factory,
-    const ServerAddresses& stun_servers)
+    const talk_base::SocketAddress& stun_address)
     : network_manager_(network_manager),
       socket_factory_(socket_factory),
-      stun_servers_(stun_servers) {
+      stun_address_(stun_address) {
   ASSERT(socket_factory_ != NULL);
   Construct();
 }
 
 BasicPortAllocator::BasicPortAllocator(
     talk_base::NetworkManager* network_manager,
-    const ServerAddresses& stun_servers,
+    const talk_base::SocketAddress& stun_address,
     const talk_base::SocketAddress& relay_address_udp,
     const talk_base::SocketAddress& relay_address_tcp,
     const talk_base::SocketAddress& relay_address_ssl)
     : network_manager_(network_manager),
       socket_factory_(NULL),
-      stun_servers_(stun_servers) {
+      stun_address_(stun_address) {
 
   RelayServerConfig config(RELAY_GTURN);
   if (!relay_address_udp.IsNil())
@@ -333,7 +333,7 @@ void BasicPortAllocatorSession::OnMessage(talk_base::Message *message) {
 }
 
 void BasicPortAllocatorSession::GetPortConfigurations() {
-  PortConfiguration* config = new PortConfiguration(allocator_->stun_servers(),
+  PortConfiguration* config = new PortConfiguration(allocator_->stun_address(),
                                                     username(),
                                                     password());
 
@@ -422,7 +422,7 @@ void BasicPortAllocatorSession::DoAllocate() {
       }
 
       // Disables phases that are not specified in this config.
-      if (!config || config->StunServers().empty()) {
+      if (!config || config->stun_address.IsNil()) {
         // No STUN ports specified in this config.
         sequence_flags |= PORTALLOCATOR_DISABLE_STUN;
       }
@@ -753,8 +753,8 @@ void AllocationSequence::DisableEquivalentPhases(talk_base::Network* network,
   *flags |= PORTALLOCATOR_DISABLE_TCP;
 
   if (config_ && config) {
-    if (config_->StunServers() == config->StunServers()) {
-      // Already got this STUN servers covered.
+    if (config_->stun_address == config->stun_address) {
+      // Already got this STUN server covered.
       *flags |= PORTALLOCATOR_DISABLE_STUN;
     }
     if (!config_->relays.empty()) {
@@ -878,15 +878,15 @@ void AllocationSequence::CreateUDPPorts() {
 
       // If STUN is not disabled, setting stun server address to port.
       if (!IsFlagSet(PORTALLOCATOR_DISABLE_STUN)) {
-        // If config has stun_servers, use it to get server reflexive candidate
+        // If config has stun_address, use it to get server reflexive candidate
         // otherwise use first TURN server which supports UDP.
-        if (config_ && !config_->StunServers().empty()) {
+        if (config_ && !config_->stun_address.IsNil()) {
           LOG(LS_INFO) << "AllocationSequence: UDPPort will be handling the "
                        <<  "STUN candidate generation.";
-          port->set_server_addresses(config_->StunServers());
+          port->set_server_addr(config_->stun_address);
         } else if (config_ &&
                    config_->SupportsProtocol(RELAY_TURN, PROTO_UDP)) {
-          port->set_server_addresses(config_->GetRelayServerAddresses(
+          port->set_server_addr(config_->GetFirstRelayServerAddress(
               RELAY_TURN, PROTO_UDP));
           LOG(LS_INFO) << "AllocationSequence: TURN Server address will be "
                        << " used for generating STUN candidate.";
@@ -931,8 +931,8 @@ void AllocationSequence::CreateStunPorts() {
 
   // If BasicPortAllocatorSession::OnAllocate left STUN ports enabled then we
   // ought to have an address for them here.
-  ASSERT(config_ && !config_->StunServers().empty());
-  if (!(config_ && !config_->StunServers().empty())) {
+  ASSERT(config_ && !config_->stun_address.IsNil());
+  if (!(config_ && !config_->stun_address.IsNil())) {
     LOG(LS_WARNING)
         << "AllocationSequence: No STUN server configured, skipping.";
     return;
@@ -944,7 +944,7 @@ void AllocationSequence::CreateStunPorts() {
                                 session_->allocator()->min_port(),
                                 session_->allocator()->max_port(),
                                 session_->username(), session_->password(),
-                                config_->StunServers());
+                                config_->stun_address);
   if (port) {
     session_->AddAllocatedPort(port, this, true);
     // Since StunPort is not created using shared socket, |port| will not be
@@ -1115,27 +1115,9 @@ PortConfiguration::PortConfiguration(
     const talk_base::SocketAddress& stun_address,
     const std::string& username,
     const std::string& password)
-    : stun_address(stun_address), username(username), password(password) {
-  if (!stun_address.IsNil())
-    stun_servers.insert(stun_address);
-}
-
-PortConfiguration::PortConfiguration(const ServerAddresses& stun_servers,
-                                     const std::string& username,
-                                     const std::string& password)
-    : stun_servers(stun_servers),
+    : stun_address(stun_address),
       username(username),
       password(password) {
-  if (!stun_servers.empty())
-    stun_address = *(stun_servers.begin());
-}
-
-ServerAddresses PortConfiguration::StunServers() {
-  if (!stun_address.IsNil() &&
-      stun_servers.find(stun_address) == stun_servers.end()) {
-    stun_servers.insert(stun_address);
-  }
-  return stun_servers;
 }
 
 void PortConfiguration::AddRelay(const RelayServerConfig& config) {
@@ -1164,15 +1146,14 @@ bool PortConfiguration::SupportsProtocol(RelayType turn_type,
   return false;
 }
 
-ServerAddresses PortConfiguration::GetRelayServerAddresses(
+talk_base::SocketAddress PortConfiguration::GetFirstRelayServerAddress(
     RelayType turn_type, ProtocolType type) const {
-  ServerAddresses servers;
   for (size_t i = 0; i < relays.size(); ++i) {
     if (relays[i].type == turn_type && SupportsProtocol(relays[i], type)) {
-      servers.insert(relays[i].ports.front().address);
+      return relays[i].ports.front().address;
     }
   }
-  return servers;
+  return talk_base::SocketAddress();
 }
 
 }  // namespace cricket

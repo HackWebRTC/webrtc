@@ -96,7 +96,7 @@ struct NicInfo {
   talk_base::IPAddress ip;
   talk_base::ProxyInfo proxy_info;
   talk_base::SocketAddress external_address;
-  ServerAddresses stun_server_addresses;
+  talk_base::SocketAddress stun_server_address;
   talk_base::SocketAddress media_server_address;
   ConnectInfo stun;
   ConnectInfo http;
