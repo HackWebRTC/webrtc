@@ -87,6 +87,7 @@ RTPSender::RTPSender(const int32_t id,
       timestamp_(0),
       capture_time_ms_(0),
       last_timestamp_time_ms_(0),
+      media_has_been_sent_(false),
       last_packet_marker_bit_(false),
       num_csrcs_(0),
       csrcs_(),
@@ -520,6 +521,11 @@ int RTPSender::SendPadData(int payload_type,
         ++sequence_number_;
         over_rtx = false;
       } else {
+        // Without abs-send-time a media packet must be sent before padding so
+        // that the timestamps used for estimation are correct.
+        if (!media_has_been_sent_ && !rtp_header_extension_map_.IsRegistered(
+            kRtpExtensionAbsoluteSendTime))
+          return bytes_sent;
         ssrc = ssrc_rtx_;
         sequence_number = sequence_number_rtx_;
         ++sequence_number_rtx_;
@@ -603,10 +609,13 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
       return length;
     }
   }
-
-  CriticalSectionScoped lock(send_critsect_);
+  int rtx = kRtxOff;
+  {
+    CriticalSectionScoped lock(send_critsect_);
+    rtx = rtx_;
+  }
   return PrepareAndSendPacket(data_buffer, length, capture_time_ms,
-                              (rtx_ & kRtxRetransmitted) > 0, true) ?
+                              (rtx & kRtxRetransmitted) > 0, true) ?
       length : -1;
 }
 
@@ -799,6 +808,10 @@ bool RTPSender::PrepareAndSendPacket(uint8_t* buffer,
                                diff_ms);
   UpdateAbsoluteSendTime(buffer_to_send_ptr, length, rtp_header, now_ms);
   bool ret = SendPacketToNetwork(buffer_to_send_ptr, length);
+  if (ret) {
+    CriticalSectionScoped lock(send_critsect_);
+    media_has_been_sent_ = true;
+  }
   UpdateRtpStats(buffer_to_send_ptr, length, rtp_header, send_over_rtx,
                  is_retransmit);
   return ret;
@@ -936,6 +949,11 @@ int32_t RTPSender::SendToNetwork(
   uint32_t length = payload_length + rtp_header_length;
   if (!SendPacketToNetwork(buffer, length))
     return -1;
+  assert(payload_length - rtp_header.paddingLength > 0);
+  {
+    CriticalSectionScoped lock(send_critsect_);
+    media_has_been_sent_ = true;
+  }
   UpdateRtpStats(buffer, length, rtp_header, false, false);
   return 0;
 }
@@ -1670,6 +1688,7 @@ void RTPSender::SetRtpState(const RtpState& rtp_state) {
   timestamp_ = rtp_state.timestamp;
   capture_time_ms_ = rtp_state.capture_time_ms;
   last_timestamp_time_ms_ = rtp_state.last_timestamp_time_ms;
+  media_has_been_sent_ = rtp_state.media_has_been_sent;
 }
 
 RtpState RTPSender::GetRtpState() const {
@@ -1681,6 +1700,7 @@ RtpState RTPSender::GetRtpState() const {
   state.timestamp = timestamp_;
   state.capture_time_ms = capture_time_ms_;
   state.last_timestamp_time_ms = last_timestamp_time_ms_;
+  state.media_has_been_sent = media_has_been_sent_;
 
   return state;
 }

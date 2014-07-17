@@ -413,6 +413,10 @@ TEST_F(RtpSendingTest, RoundRobinPadding) {
 TEST_F(RtpSendingTest, RoundRobinPaddingRtx) {
   // Enable RTX to allow padding to be sent prior to media.
   for (int i = 1; i < codec_.numberOfSimulcastStreams + 1; ++i) {
+    // Abs-send-time is needed to be allowed to send padding prior to media,
+    // as otherwise the timestmap used for BWE will be broken.
+    senders_[i]->RegisterSendRtpHeaderExtension(kRtpExtensionAbsoluteSendTime,
+                                                1);
     senders_[i]->SetRtxSendPayloadType(96);
     senders_[i]->SetRtxSsrc(kSenderRtxSsrc + i);
     senders_[i]->SetRTXSendStatus(kRtxRetransmitted);

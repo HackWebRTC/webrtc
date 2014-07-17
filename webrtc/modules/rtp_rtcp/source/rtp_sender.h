@@ -387,6 +387,7 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
   uint32_t timestamp_ GUARDED_BY(send_critsect_);
   int64_t capture_time_ms_ GUARDED_BY(send_critsect_);
   int64_t last_timestamp_time_ms_ GUARDED_BY(send_critsect_);
+  bool media_has_been_sent_ GUARDED_BY(send_critsect_);
   bool last_packet_marker_bit_ GUARDED_BY(send_critsect_);
   uint8_t num_csrcs_ GUARDED_BY(send_critsect_);
   uint32_t csrcs_[kRtpCsrcSize] GUARDED_BY(send_critsect_);
