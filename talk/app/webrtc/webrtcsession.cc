@@ -892,36 +892,16 @@ bool WebRtcSession::ProcessIceMessage(const IceCandidateInterface* candidate) {
     return false;
   }
 
-  cricket::TransportProxy* transport_proxy = NULL;
-  if (remote_description()) {
-    size_t mediacontent_index =
-        static_cast<size_t>(candidate->sdp_mline_index());
-    size_t remote_content_size =
-        BaseSession::remote_description()->contents().size();
-    if (mediacontent_index >= remote_content_size) {
-      LOG(LS_ERROR)
-          << "ProcessIceMessage: Invalid candidate media index.";
-      return false;
+  bool valid = false;
+  if (!ReadyToUseRemoteCandidate(candidate, NULL, &valid)) {
+    if (valid) {
+      LOG(LS_INFO) << "ProcessIceMessage: Candidate saved";
+      saved_candidates_.push_back(
+          new JsepIceCandidate(candidate->sdp_mid(),
+                               candidate->sdp_mline_index(),
+                               candidate->candidate()));
     }
-
-    cricket::ContentInfo content =
-        BaseSession::remote_description()->contents()[mediacontent_index];
-    transport_proxy = GetTransportProxy(content.name);
-  }
-
-  // We need to check the local/remote description for the Transport instead of
-  // the session, because a new Transport added during renegotiation may have
-  // them unset while the session has them set from the previou negotiation. Not
-  // doing so may trigger the auto generation of transport description and mess
-  // up DTLS identity information, ICE credential, etc.
-  if (!transport_proxy || !(transport_proxy->local_description_set() &&
-                            transport_proxy->remote_description_set())) {
-    LOG(LS_INFO) << "ProcessIceMessage: Local/Remote description not set "
-                 << "on the Transport, save the candidate for later use.";
-    saved_candidates_.push_back(
-        new JsepIceCandidate(candidate->sdp_mid(), candidate->sdp_mline_index(),
-                             candidate->candidate()));
-    return true;
+    return valid;
   }
 
   // Add this candidate to the remote session description.
@@ -1386,10 +1366,24 @@ bool WebRtcSession::UseCandidatesInSessionDescription(
   if (!remote_desc)
     return true;
   bool ret = true;
+
   for (size_t m = 0; m < remote_desc->number_of_mediasections(); ++m) {
     const IceCandidateCollection* candidates = remote_desc->candidates(m);
     for  (size_t n = 0; n < candidates->count(); ++n) {
-      ret = UseCandidate(candidates->at(n));
+      const IceCandidateInterface* candidate = candidates->at(n);
+      bool valid = false;
+      if (!ReadyToUseRemoteCandidate(candidate, remote_desc, &valid)) {
+        if (valid) {
+          LOG(LS_INFO) << "UseCandidatesInSessionDescription: Candidate saved.";
+          saved_candidates_.push_back(
+              new JsepIceCandidate(candidate->sdp_mid(),
+                                   candidate->sdp_mline_index(),
+                                   candidate->candidate()));
+        }
+        continue;
+      }
+
+      ret = UseCandidate(candidate);
       if (!ret)
         break;
     }
@@ -1694,6 +1688,44 @@ std::string WebRtcSession::GetSessionErrorMsg() {
   desc << kSessionError << GetErrorCodeString(error()) << ". ";
   desc << kSessionErrorDesc << error_desc() << ".";
   return desc.str();
+}
+
+// We need to check the local/remote description for the Transport instead of
+// the session, because a new Transport added during renegotiation may have
+// them unset while the session has them set from the previous negotiation.
+// Not doing so may trigger the auto generation of transport description and
+// mess up DTLS identity information, ICE credential, etc.
+bool WebRtcSession::ReadyToUseRemoteCandidate(
+    const IceCandidateInterface* candidate,
+    const SessionDescriptionInterface* remote_desc,
+    bool* valid) {
+  *valid = true;;
+  cricket::TransportProxy* transport_proxy = NULL;
+
+  const SessionDescriptionInterface* current_remote_desc =
+      remote_desc ? remote_desc : remote_description();
+
+  if (!current_remote_desc)
+    return false;
+
+  size_t mediacontent_index =
+      static_cast<size_t>(candidate->sdp_mline_index());
+  size_t remote_content_size =
+      current_remote_desc->description()->contents().size();
+  if (mediacontent_index >= remote_content_size) {
+    LOG(LS_ERROR)
+        << "ReadyToUseRemoteCandidate: Invalid candidate media index.";
+
+    *valid = false;
+    return false;
+  }
+
+  cricket::ContentInfo content =
+      current_remote_desc->description()->contents()[mediacontent_index];
+  transport_proxy = GetTransportProxy(content.name);
+
+  return transport_proxy && transport_proxy->local_description_set() &&
+      transport_proxy->remote_description_set();
 }
 
 }  // namespace webrtc

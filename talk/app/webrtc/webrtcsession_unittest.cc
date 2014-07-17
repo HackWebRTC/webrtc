@@ -3246,6 +3246,66 @@ TEST_F(WebRtcSessionTest, TestSuspendBelowMinBitrateConstraint) {
       video_options.suspend_below_min_bitrate.GetWithDefaultIfUnset(false));
 }
 
+// Tests that we can renegotiate new media content with ICE candidates in the
+// new remote SDP.
+TEST_F(WebRtcSessionTest, TestRenegotiateNewMediaWithCandidatesInSdp) {
+  MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
+  InitWithDtls();
+  SetFactoryDtlsSrtp();
+
+  mediastream_signaling_.UseOptionsAudioOnly();
+  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SetLocalDescriptionWithoutError(offer);
+
+  SessionDescriptionInterface* answer = CreateRemoteAnswer(offer);
+  SetRemoteDescriptionWithoutError(answer);
+
+  cricket::MediaSessionOptions options;
+  options.has_video = true;
+  offer = CreateRemoteOffer(options, cricket::SEC_DISABLED);
+
+  cricket::Candidate candidate1;
+  candidate1.set_address(talk_base::SocketAddress("1.1.1.1", 5000));
+  candidate1.set_component(1);
+  JsepIceCandidate ice_candidate(kMediaContentName1, kMediaContentIndex1,
+                                 candidate1);
+  EXPECT_TRUE(offer->AddCandidate(&ice_candidate));
+  SetRemoteDescriptionWithoutError(offer);
+
+  answer = CreateAnswer(NULL);
+  SetLocalDescriptionWithoutError(answer);
+}
+
+// Tests that we can renegotiate new media content with ICE candidates separated
+// from the remote SDP.
+TEST_F(WebRtcSessionTest, TestRenegotiateNewMediaWithCandidatesSeparated) {
+  MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
+  InitWithDtls();
+  SetFactoryDtlsSrtp();
+
+  mediastream_signaling_.UseOptionsAudioOnly();
+  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SetLocalDescriptionWithoutError(offer);
+
+  SessionDescriptionInterface* answer = CreateRemoteAnswer(offer);
+  SetRemoteDescriptionWithoutError(answer);
+
+  cricket::MediaSessionOptions options;
+  options.has_video = true;
+  offer = CreateRemoteOffer(options, cricket::SEC_DISABLED);
+  SetRemoteDescriptionWithoutError(offer);
+
+  cricket::Candidate candidate1;
+  candidate1.set_address(talk_base::SocketAddress("1.1.1.1", 5000));
+  candidate1.set_component(1);
+  JsepIceCandidate ice_candidate(kMediaContentName1, kMediaContentIndex1,
+                                 candidate1);
+  EXPECT_TRUE(session_->ProcessIceMessage(&ice_candidate));
+
+  answer = CreateAnswer(NULL);
+  SetLocalDescriptionWithoutError(answer);
+}
+
 // TODO(bemasc): Add a TestIceStatesBundle with BUNDLE enabled.  That test
 // currently fails because upon disconnection and reconnection OnIceComplete is
 // called more than once without returning to IceGatheringGathering.

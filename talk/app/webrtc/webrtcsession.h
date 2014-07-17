@@ -309,6 +309,14 @@ class WebRtcSession : public cricket::BaseSession,
   bool ValidateDtlsSetupAttribute(const cricket::SessionDescription* desc,
                                   Action action);
 
+  // Returns true if we are ready to push down the remote candidate.
+  // |remote_desc| is the new remote description, or NULL if the current remote
+  // description should be used. Output |valid| is true if the candidate media
+  // index is valid.
+  bool ReadyToUseRemoteCandidate(const IceCandidateInterface* candidate,
+                                 const SessionDescriptionInterface* remote_desc,
+                                 bool* valid);
+
   std::string GetSessionErrorMsg();
 
   talk_base::scoped_ptr<cricket::VoiceChannel> voice_channel_;
