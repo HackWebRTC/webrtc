@@ -52,8 +52,8 @@ static int CheckIncrementingData(int* data, int num_elements,
 // We use ASSERTs in this test to avoid obscuring the seed in the case of a
 // failure.
 static void RandomStressTest(int** data_ptr) {
-  const int kNumTests = 100;
-  const int kNumOps = 10000;
+  const int kNumTests = 10;
+  const int kNumOps = 1000;
   const int kMaxBufferSize = 1000;
 
   unsigned int seed = time(NULL);
