@@ -955,7 +955,7 @@ int32_t AudioConferenceMixerImpl::MixFromList(
         return 0;
     }
 
-    if (audioFrameList->size() == 1) {
+    if (_numMixedParticipants == 1) {
       mixedAudio.timestamp_ = audioFrameList->front()->timestamp_;
       mixedAudio.elapsed_time_ms_ = audioFrameList->front()->elapsed_time_ms_;
     } else {
