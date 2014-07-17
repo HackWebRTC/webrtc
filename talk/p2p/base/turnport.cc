@@ -256,48 +256,55 @@ void TurnPort::PrepareAddress() {
     LOG_J(LS_INFO, this) << "Trying to connect to TURN server via "
                          << ProtoToString(server_address_.proto) << " @ "
                          << server_address_.address.ToSensitiveString();
-    if (server_address_.proto == PROTO_UDP && !SharedSocket()) {
-      socket_ = socket_factory()->CreateUdpSocket(
-          talk_base::SocketAddress(ip(), 0), min_port(), max_port());
-    } else if (server_address_.proto == PROTO_TCP) {
-      ASSERT(!SharedSocket());
-      int opts = talk_base::PacketSocketFactory::OPT_STUN;
-      // If secure bit is enabled in server address, use TLS over TCP.
-      if (server_address_.secure) {
-        opts |= talk_base::PacketSocketFactory::OPT_TLS;
-      }
-      socket_ = socket_factory()->CreateClientTcpSocket(
-          talk_base::SocketAddress(ip(), 0), server_address_.address,
-          proxy(), user_agent(), opts);
-    }
-
-    if (!socket_) {
+    if (!CreateTurnClientSocket()) {
       OnAllocateError();
-      return;
-    }
-
-    // Apply options if any.
-    for (SocketOptionsMap::iterator iter = socket_options_.begin();
-         iter != socket_options_.end(); ++iter) {
-      socket_->SetOption(iter->first, iter->second);
-    }
-
-    if (!SharedSocket()) {
-      // If socket is shared, AllocationSequence will receive the packet.
-      socket_->SignalReadPacket.connect(this, &TurnPort::OnReadPacket);
-    }
-
-    socket_->SignalReadyToSend.connect(this, &TurnPort::OnReadyToSend);
-
-    if (server_address_.proto == PROTO_TCP) {
-      socket_->SignalConnect.connect(this, &TurnPort::OnSocketConnect);
-      socket_->SignalClose.connect(this, &TurnPort::OnSocketClose);
-    } else {
+    } else if (server_address_.proto == PROTO_UDP) {
       // If its UDP, send AllocateRequest now.
       // For TCP and TLS AllcateRequest will be sent by OnSocketConnect.
       SendRequest(new TurnAllocateRequest(this), 0);
     }
   }
+}
+
+bool TurnPort::CreateTurnClientSocket() {
+  if (server_address_.proto == PROTO_UDP && !SharedSocket()) {
+    socket_ = socket_factory()->CreateUdpSocket(
+        talk_base::SocketAddress(ip(), 0), min_port(), max_port());
+  } else if (server_address_.proto == PROTO_TCP) {
+    ASSERT(!SharedSocket());
+    int opts = talk_base::PacketSocketFactory::OPT_STUN;
+    // If secure bit is enabled in server address, use TLS over TCP.
+    if (server_address_.secure) {
+      opts |= talk_base::PacketSocketFactory::OPT_TLS;
+    }
+    socket_ = socket_factory()->CreateClientTcpSocket(
+        talk_base::SocketAddress(ip(), 0), server_address_.address,
+        proxy(), user_agent(), opts);
+  }
+
+  if (!socket_) {
+    error_ = SOCKET_ERROR;
+    return false;
+  }
+
+  // Apply options if any.
+  for (SocketOptionsMap::iterator iter = socket_options_.begin();
+       iter != socket_options_.end(); ++iter) {
+    socket_->SetOption(iter->first, iter->second);
+  }
+
+  if (!SharedSocket()) {
+    // If socket is shared, AllocationSequence will receive the packet.
+    socket_->SignalReadPacket.connect(this, &TurnPort::OnReadPacket);
+  }
+
+  socket_->SignalReadyToSend.connect(this, &TurnPort::OnReadyToSend);
+
+  if (server_address_.proto == PROTO_TCP) {
+    socket_->SignalConnect.connect(this, &TurnPort::OnSocketConnect);
+    socket_->SignalClose.connect(this, &TurnPort::OnSocketClose);
+  }
+  return true;
 }
 
 void TurnPort::OnSocketConnect(talk_base::AsyncPacketSocket* socket) {
@@ -311,6 +318,10 @@ void TurnPort::OnSocketConnect(talk_base::AsyncPacketSocket* socket) {
                     << "local port. Discarding TURN port.";
     OnAllocateError();
     return;
+  }
+
+  if (server_address_.address.IsUnresolved()) {
+    server_address_.address = socket_->GetRemoteAddress();
   }
 
   LOG(LS_INFO) << "TurnPort connected to " << socket->GetRemoteAddress()
@@ -458,6 +469,17 @@ void TurnPort::ResolveTurnAddress(const talk_base::SocketAddress& address) {
 
 void TurnPort::OnResolveResult(talk_base::AsyncResolverInterface* resolver) {
   ASSERT(resolver == resolver_);
+  // If DNS resolve is failed when trying to connect to the server using TCP,
+  // one of the reason could be due to DNS queries blocked by firewall.
+  // In such cases we will try to connect to the server with hostname, assuming
+  // socket layer will resolve the hostname through a HTTP proxy (if any).
+  if (resolver_->GetError() != 0 && server_address_.proto == PROTO_TCP) {
+    if (!CreateTurnClientSocket()) {
+      OnAllocateError();
+    }
+    return;
+  }
+
   // Copy the original server address in |resolved_address|. For TLS based
   // sockets we need hostname along with resolved address.
   talk_base::SocketAddress resolved_address = server_address_.address;
@@ -465,6 +487,7 @@ void TurnPort::OnResolveResult(talk_base::AsyncResolverInterface* resolver) {
       !resolver_->GetResolvedAddress(ip().family(), &resolved_address)) {
     LOG_J(LS_WARNING, this) << "TURN host lookup received error "
                             << resolver_->GetError();
+    error_ = resolver_->GetError();
     OnAllocateError();
     return;
   }

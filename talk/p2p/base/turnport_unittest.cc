@@ -38,6 +38,7 @@
 #include "talk/base/physicalsocketserver.h"
 #include "talk/base/scoped_ptr.h"
 #include "talk/base/socketaddress.h"
+#include "talk/base/ssladapter.h"
 #include "talk/base/thread.h"
 #include "talk/base/virtualsocketserver.h"
 #include "talk/p2p/base/basicpacketsocketfactory.h"
@@ -119,6 +120,14 @@ class TurnPortTest : public testing::Test,
         udp_ready_(false),
         test_finish_(false) {
     network_.AddIP(talk_base::IPAddress(INADDR_ANY));
+  }
+
+  static void SetUpTestCase() {
+    talk_base::InitializeSSL();
+  }
+
+  static void TearDownTestCase() {
+    talk_base::CleanupSSL();
   }
 
   virtual void OnMessage(talk_base::Message* msg) {
@@ -301,9 +310,9 @@ class TurnPortTest : public testing::Test,
     // Send some data.
     size_t num_packets = 256;
     for (size_t i = 0; i < num_packets; ++i) {
-      char buf[256];
+      unsigned char buf[256] = { 0 };
       for (size_t j = 0; j < i + 1; ++j) {
-        buf[j] = 0xFF - j;
+        buf[j] = 0xFF - static_cast<unsigned char>(j);
       }
       conn1->Send(buf, i + 1, options);
       conn2->Send(buf, i + 1, options);
@@ -354,6 +363,7 @@ TEST_F(TurnPortTest, TestTurnAllocate) {
   EXPECT_NE(0, turn_port_->Candidates()[0].address().port());
 }
 
+// Testing a normal UDP allocation using TCP connection.
 TEST_F(TurnPortTest, TestTurnTcpAllocate) {
   turn_server_.AddInternalSocket(kTurnTcpIntAddr, cricket::PROTO_TCP);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
@@ -364,6 +374,33 @@ TEST_F(TurnPortTest, TestTurnTcpAllocate) {
   EXPECT_EQ(kTurnUdpExtAddr.ipaddr(),
             turn_port_->Candidates()[0].address().ipaddr());
   EXPECT_NE(0, turn_port_->Candidates()[0].address().port());
+}
+
+// Testing turn port will attempt to create TCP socket on address resolution
+// failure.
+TEST_F(TurnPortTest, TestTurnTcpOnAddressResolveFailure) {
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, cricket::PROTO_TCP);
+  CreateTurnPort(kTurnUsername, kTurnPassword, cricket::ProtocolAddress(
+      talk_base::SocketAddress("www.webrtc-blah-blah.com", 3478),
+      cricket::PROTO_TCP));
+  turn_port_->PrepareAddress();
+  EXPECT_TRUE_WAIT(turn_error_, kTimeout);
+  // As VSS doesn't provide a DNS resolution, name resolve will fail. TurnPort
+  // will proceed in creating a TCP socket which will fail as there is no
+  // server on the above domain and error will be set to SOCKET_ERROR.
+  EXPECT_EQ(SOCKET_ERROR, turn_port_->error());
+}
+
+// In case of UDP on address resolve failure, TurnPort will not create socket
+// and return allocate failure.
+TEST_F(TurnPortTest, TestTurnUdpOnAdressResolveFailure) {
+  CreateTurnPort(kTurnUsername, kTurnPassword, cricket::ProtocolAddress(
+      talk_base::SocketAddress("www.webrtc-blah-blah.com", 3478),
+      cricket::PROTO_UDP));
+  turn_port_->PrepareAddress();
+  EXPECT_TRUE_WAIT(turn_error_, kTimeout);
+  // Error from turn port will not be socket error.
+  EXPECT_NE(SOCKET_ERROR, turn_port_->error());
 }
 
 // Try to do a TURN allocation with an invalid password.

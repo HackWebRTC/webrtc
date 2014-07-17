@@ -356,6 +356,7 @@
         'p2p/base/testturnserver.h',
         'p2p/base/transport_unittest.cc',
         'p2p/base/transportdescriptionfactory_unittest.cc',
+        'p2p/base/turnport_unittest.cc',
         'p2p/client/connectivitychecker_unittest.cc',
         'p2p/client/fakeportallocator.h',
         'p2p/client/portallocator_unittest.cc',

@@ -117,6 +117,8 @@ class TurnPort : public Port {
   const std::string& hash() const { return hash_; }
   const std::string& nonce() const { return nonce_; }
 
+  int error() const { return error_; }
+
   // Signal with resolved server address.
   // Parameters are port, server address and resolved server address.
   // This signal will be sent only if server address is resolved successfully.
@@ -157,6 +159,8 @@ class TurnPort : public Port {
   typedef std::map<talk_base::Socket::Option, int> SocketOptionsMap;
 
   virtual void OnMessage(talk_base::Message* pmsg);
+
+  bool CreateTurnClientSocket();
 
   void set_nonce(const std::string& nonce) { nonce_ = nonce; }
   void set_realm(const std::string& realm) {
