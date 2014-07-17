@@ -63,8 +63,9 @@ class AudioBuffer {
   const int16_t* low_pass_split_data(int channel) const;
   int16_t* high_pass_split_data(int channel);
   const int16_t* high_pass_split_data(int channel) const;
-  const int16_t* mixed_data(int channel) const;
-  const int16_t* mixed_low_pass_data(int channel) const;
+  // Returns a pointer to the low-pass data downmixed to mono. If this data
+  // isn't already available it re-calculates it.
+  const int16_t* mixed_low_pass_data();
   const int16_t* low_pass_reference(int channel) const;
 
   // Float versions of the accessors, with automatic conversion back and forth
@@ -85,7 +86,6 @@ class AudioBuffer {
 
   // Use for int16 interleaved data.
   void DeinterleaveFrom(AudioFrame* audioFrame);
-  void InterleaveTo(AudioFrame* audioFrame) const;
   // If |data_changed| is false, only the non-audio data members will be copied
   // to |frame|.
   void InterleaveTo(AudioFrame* frame, bool data_changed) const;
@@ -97,9 +97,6 @@ class AudioBuffer {
   void CopyTo(int samples_per_channel,
               AudioProcessing::ChannelLayout layout,
               float* const* data);
-
-  void CopyAndMix(int num_mixed_channels);
-  void CopyAndMixLowPass(int num_mixed_channels);
   void CopyLowPassToReference();
 
  private:
@@ -112,8 +109,7 @@ class AudioBuffer {
   const int num_proc_channels_;
   const int output_samples_per_channel_;
   int samples_per_split_channel_;
-  int num_mixed_channels_;
-  int num_mixed_low_pass_channels_;
+  bool mixed_low_pass_valid_;
   bool reference_copied_;
   AudioFrame::VADActivity activity_;
 
@@ -121,7 +117,6 @@ class AudioBuffer {
   scoped_ptr<IFChannelBuffer> channels_;
   scoped_ptr<SplitChannelBuffer> split_channels_;
   scoped_ptr<SplitFilterStates[]> filter_states_;
-  scoped_ptr<ChannelBuffer<int16_t> > mixed_channels_;
   scoped_ptr<ChannelBuffer<int16_t> > mixed_low_pass_channels_;
   scoped_ptr<ChannelBuffer<int16_t> > low_pass_reference_channels_;
   scoped_ptr<ChannelBuffer<float> > input_buffer_;

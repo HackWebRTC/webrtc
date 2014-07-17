@@ -51,7 +51,6 @@ int KeyboardChannelIndex(AudioProcessing::ChannelLayout layout) {
   return -1;
 }
 
-
 void StereoToMono(const float* left, const float* right, float* out,
                   int samples_per_channel) {
   for (int i = 0; i < samples_per_channel; ++i) {
@@ -155,8 +154,7 @@ AudioBuffer::AudioBuffer(int input_samples_per_channel,
     num_proc_channels_(num_process_channels),
     output_samples_per_channel_(output_samples_per_channel),
     samples_per_split_channel_(proc_samples_per_channel_),
-    num_mixed_channels_(0),
-    num_mixed_low_pass_channels_(0),
+    mixed_low_pass_valid_(false),
     reference_copied_(false),
     activity_(AudioFrame::kVadUnknown),
     keyboard_data_(NULL),
@@ -278,8 +276,7 @@ void AudioBuffer::CopyTo(int samples_per_channel,
 
 void AudioBuffer::InitForNewData() {
   keyboard_data_ = NULL;
-  num_mixed_channels_ = 0;
-  num_mixed_low_pass_channels_ = 0;
+  mixed_low_pass_valid_ = false;
   reference_copied_ = false;
   activity_ = AudioFrame::kVadUnknown;
 }
@@ -289,6 +286,7 @@ const int16_t* AudioBuffer::data(int channel) const {
 }
 
 int16_t* AudioBuffer::data(int channel) {
+  mixed_low_pass_valid_ = false;
   const AudioBuffer* t = this;
   return const_cast<int16_t*>(t->data(channel));
 }
@@ -298,6 +296,7 @@ const float* AudioBuffer::data_f(int channel) const {
 }
 
 float* AudioBuffer::data_f(int channel) {
+  mixed_low_pass_valid_ = false;
   const AudioBuffer* t = this;
   return const_cast<float*>(t->data_f(channel));
 }
@@ -308,6 +307,7 @@ const int16_t* AudioBuffer::low_pass_split_data(int channel) const {
 }
 
 int16_t* AudioBuffer::low_pass_split_data(int channel) {
+  mixed_low_pass_valid_ = false;
   const AudioBuffer* t = this;
   return const_cast<int16_t*>(t->low_pass_split_data(channel));
 }
@@ -318,6 +318,7 @@ const float* AudioBuffer::low_pass_split_data_f(int channel) const {
 }
 
 float* AudioBuffer::low_pass_split_data_f(int channel) {
+  mixed_low_pass_valid_ = false;
   const AudioBuffer* t = this;
   return const_cast<float*>(t->low_pass_split_data_f(channel));
 }
@@ -341,12 +342,26 @@ float* AudioBuffer::high_pass_split_data_f(int channel) {
   return const_cast<float*>(t->high_pass_split_data_f(channel));
 }
 
-const int16_t* AudioBuffer::mixed_data(int channel) const {
-  return mixed_channels_->channel(channel);
-}
+const int16_t* AudioBuffer::mixed_low_pass_data() {
+  // Currently only mixing stereo to mono is supported.
+  assert(num_proc_channels_ == 1 || num_proc_channels_ == 2);
 
-const int16_t* AudioBuffer::mixed_low_pass_data(int channel) const {
-  return mixed_low_pass_channels_->channel(channel);
+  if (num_proc_channels_ == 1) {
+    return low_pass_split_data(0);
+  }
+
+  if (!mixed_low_pass_valid_) {
+    if (!mixed_low_pass_channels_.get()) {
+      mixed_low_pass_channels_.reset(
+          new ChannelBuffer<int16_t>(samples_per_split_channel_, 1));
+    }
+    StereoToMono(low_pass_split_data(0),
+                 low_pass_split_data(1),
+                 mixed_low_pass_channels_->data(),
+                 samples_per_split_channel_);
+    mixed_low_pass_valid_ = true;
+  }
+  return mixed_low_pass_channels_->data();
 }
 
 const int16_t* AudioBuffer::low_pass_reference(int channel) const {
@@ -431,42 +446,6 @@ void AudioBuffer::InterleaveTo(AudioFrame* frame, bool data_changed) const {
       interleaved_idx += num_proc_channels_;
     }
   }
-}
-
-void AudioBuffer::CopyAndMix(int num_mixed_channels) {
-  // We currently only support the stereo to mono case.
-  assert(num_proc_channels_ == 2);
-  assert(num_mixed_channels == 1);
-  if (!mixed_channels_.get()) {
-    mixed_channels_.reset(
-        new ChannelBuffer<int16_t>(proc_samples_per_channel_,
-                                   num_mixed_channels));
-  }
-
-  StereoToMono(channels_->ibuf()->channel(0),
-               channels_->ibuf()->channel(1),
-               mixed_channels_->channel(0),
-               proc_samples_per_channel_);
-
-  num_mixed_channels_ = num_mixed_channels;
-}
-
-void AudioBuffer::CopyAndMixLowPass(int num_mixed_channels) {
-  // We currently only support the stereo to mono case.
-  assert(num_proc_channels_ == 2);
-  assert(num_mixed_channels == 1);
-  if (!mixed_low_pass_channels_.get()) {
-    mixed_low_pass_channels_.reset(
-        new ChannelBuffer<int16_t>(samples_per_split_channel_,
-                                   num_mixed_channels));
-  }
-
-  StereoToMono(low_pass_split_data(0),
-               low_pass_split_data(1),
-               mixed_low_pass_channels_->channel(0),
-               samples_per_split_channel_);
-
-  num_mixed_low_pass_channels_ = num_mixed_channels;
 }
 
 void AudioBuffer::CopyLowPassToReference() {

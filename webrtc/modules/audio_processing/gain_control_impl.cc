@@ -59,17 +59,11 @@ int GainControlImpl::ProcessRenderAudio(AudioBuffer* audio) {
 
   assert(audio->samples_per_split_channel() <= 160);
 
-  const int16_t* mixed_data = audio->low_pass_split_data(0);
-  if (audio->num_channels() > 1) {
-    audio->CopyAndMixLowPass(1);
-    mixed_data = audio->mixed_low_pass_data(0);
-  }
-
   for (int i = 0; i < num_handles(); i++) {
     Handle* my_handle = static_cast<Handle*>(handle(i));
     int err = WebRtcAgc_AddFarend(
         my_handle,
-        mixed_data,
+        audio->mixed_low_pass_data(),
         static_cast<int16_t>(audio->samples_per_split_channel()));
 
     if (err != apm_->kNoError) {

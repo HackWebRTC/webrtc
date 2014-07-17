@@ -61,17 +61,11 @@ int VoiceDetectionImpl::ProcessCaptureAudio(AudioBuffer* audio) {
   }
   assert(audio->samples_per_split_channel() <= 160);
 
-  const int16_t* mixed_data = audio->low_pass_split_data(0);
-  if (audio->num_channels() > 1) {
-    audio->CopyAndMixLowPass(1);
-    mixed_data = audio->mixed_low_pass_data(0);
-  }
-
   // TODO(ajm): concatenate data in frame buffer here.
 
   int vad_ret = WebRtcVad_Process(static_cast<Handle*>(handle(0)),
                                   apm_->proc_split_sample_rate_hz(),
-                                  mixed_data,
+                                  audio->mixed_low_pass_data(),
                                   frame_size_samples_);
   if (vad_ret == 0) {
     stream_has_voice_ = false;
