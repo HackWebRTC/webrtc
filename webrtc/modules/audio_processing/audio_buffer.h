@@ -55,7 +55,9 @@ class AudioBuffer {
   int samples_per_split_channel() const;
   int samples_per_keyboard_channel() const;
 
-  // It can be assumed that channels are stored contiguously.
+  // Sample array accessors. Channels are guaranteed to be stored contiguously
+  // in memory. Prefer to use the const variants of each accessor when
+  // possible, since they incur less float<->int16 conversion overhead.
   int16_t* data(int channel);
   const int16_t* data(int channel) const;
   int16_t* low_pass_split_data(int channel);

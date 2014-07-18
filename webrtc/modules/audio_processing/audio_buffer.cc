@@ -70,8 +70,9 @@ void StereoToMono(const int16_t* left, const int16_t* right, int16_t* out,
 // One int16_t and one float ChannelBuffer that are kept in sync. The sync is
 // broken when someone requests write access to either ChannelBuffer, and
 // reestablished when someone requests the outdated ChannelBuffer. It is
-// therefore safe to use the return value of ibuf() and fbuf() until the next
-// call to the other method.
+// therefore safe to use the return value of ibuf_const() and fbuf_const()
+// until the next call to ibuf() or fbuf(), and the return value of ibuf() and
+// fbuf() until the next call to any of the other functions.
 class IFChannelBuffer {
  public:
   IFChannelBuffer(int samples_per_channel, int num_channels)
@@ -80,19 +81,24 @@ class IFChannelBuffer {
         fvalid_(true),
         fbuf_(samples_per_channel, num_channels) {}
 
-  ChannelBuffer<int16_t>* ibuf() {
+  ChannelBuffer<int16_t>* ibuf() { return ibuf(false); }
+  ChannelBuffer<float>* fbuf() { return fbuf(false); }
+  const ChannelBuffer<int16_t>* ibuf_const() { return ibuf(true); }
+  const ChannelBuffer<float>* fbuf_const() { return fbuf(true); }
+
+ private:
+  ChannelBuffer<int16_t>* ibuf(bool readonly) {
     RefreshI();
-    fvalid_ = false;
+    fvalid_ = readonly;
     return &ibuf_;
   }
 
-  ChannelBuffer<float>* fbuf() {
+  ChannelBuffer<float>* fbuf(bool readonly) {
     RefreshF();
-    ivalid_ = false;
+    ivalid_ = readonly;
     return &fbuf_;
   }
 
- private:
   void RefreshF() {
     if (!fvalid_) {
       assert(ivalid_);
@@ -266,69 +272,71 @@ void AudioBuffer::InitForNewData() {
 }
 
 const int16_t* AudioBuffer::data(int channel) const {
-  return channels_->ibuf()->channel(channel);
+  return channels_->ibuf_const()->channel(channel);
 }
 
 int16_t* AudioBuffer::data(int channel) {
   mixed_low_pass_valid_ = false;
-  const AudioBuffer* t = this;
-  return const_cast<int16_t*>(t->data(channel));
+  return channels_->ibuf()->channel(channel);
 }
 
 const float* AudioBuffer::data_f(int channel) const {
-  return channels_->fbuf()->channel(channel);
+  return channels_->fbuf_const()->channel(channel);
 }
 
 float* AudioBuffer::data_f(int channel) {
   mixed_low_pass_valid_ = false;
-  const AudioBuffer* t = this;
-  return const_cast<float*>(t->data_f(channel));
+  return channels_->fbuf()->channel(channel);
 }
 
 const int16_t* AudioBuffer::low_pass_split_data(int channel) const {
   return split_channels_low_.get()
-      ? split_channels_low_->ibuf()->channel(channel)
+      ? split_channels_low_->ibuf_const()->channel(channel)
       : data(channel);
 }
 
 int16_t* AudioBuffer::low_pass_split_data(int channel) {
   mixed_low_pass_valid_ = false;
-  const AudioBuffer* t = this;
-  return const_cast<int16_t*>(t->low_pass_split_data(channel));
+  return split_channels_low_.get()
+      ? split_channels_low_->ibuf()->channel(channel)
+      : data(channel);
 }
 
 const float* AudioBuffer::low_pass_split_data_f(int channel) const {
   return split_channels_low_.get()
-      ? split_channels_low_->fbuf()->channel(channel)
+      ? split_channels_low_->fbuf_const()->channel(channel)
       : data_f(channel);
 }
 
 float* AudioBuffer::low_pass_split_data_f(int channel) {
   mixed_low_pass_valid_ = false;
-  const AudioBuffer* t = this;
-  return const_cast<float*>(t->low_pass_split_data_f(channel));
+  return split_channels_low_.get()
+      ? split_channels_low_->fbuf()->channel(channel)
+      : data_f(channel);
 }
 
 const int16_t* AudioBuffer::high_pass_split_data(int channel) const {
+  return split_channels_high_.get()
+      ? split_channels_high_->ibuf_const()->channel(channel)
+      : NULL;
+}
+
+int16_t* AudioBuffer::high_pass_split_data(int channel) {
   return split_channels_high_.get()
       ? split_channels_high_->ibuf()->channel(channel)
       : NULL;
 }
 
-int16_t* AudioBuffer::high_pass_split_data(int channel) {
-  const AudioBuffer* t = this;
-  return const_cast<int16_t*>(t->high_pass_split_data(channel));
-}
-
 const float* AudioBuffer::high_pass_split_data_f(int channel) const {
   return split_channels_high_.get()
-      ? split_channels_high_->fbuf()->channel(channel)
+      ? split_channels_high_->fbuf_const()->channel(channel)
       : NULL;
 }
 
 float* AudioBuffer::high_pass_split_data_f(int channel) {
-  const AudioBuffer* t = this;
-  return const_cast<float*>(t->high_pass_split_data_f(channel));
+  return split_channels_high_.get()
+      ? split_channels_high_->fbuf()->channel(channel)
+      : NULL;
 }
 
 const int16_t* AudioBuffer::mixed_low_pass_data() {

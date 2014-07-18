@@ -54,9 +54,13 @@ class ChannelBuffer {
   }
 
   T* data() { return data_.get(); }
-  T* channel(int i) {
+  const T* channel(int i) const {
     assert(i >= 0 && i < num_channels_);
     return channels_[i];
+  }
+  T* channel(int i) {
+    const ChannelBuffer<T>* t = this;
+    return const_cast<T*>(t->channel(i));
   }
   T** channels() { return channels_.get(); }
 
