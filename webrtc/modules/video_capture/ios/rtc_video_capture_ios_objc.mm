@@ -44,7 +44,10 @@ using namespace webrtc::videocapturemodule;
     _captureId = captureId;
     _captureSession = [[AVCaptureSession alloc] init];
 #if defined(__IPHONE_7_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_7_0
-    _captureSession.usesApplicationAudioSession = NO;
+    NSString* version = [[UIDevice currentDevice] systemVersion];
+    if ([version integerValue] >= 7) {
+      _captureSession.usesApplicationAudioSession = NO;
+    }
 #endif
     _captureChanging = NO;
     _captureChangingCondition = [[NSCondition alloc] init];
