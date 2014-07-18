@@ -410,3 +410,16 @@ TEST_F(SctpDataChannelTest, ClosedWhenReceivedBufferFull) {
   EXPECT_EQ(webrtc::DataChannelInterface::kClosed,
             webrtc_data_channel_->state());
 }
+
+// Tests that sending empty data returns no error and keeps the channel open.
+TEST_F(SctpDataChannelTest, SendEmptyData) {
+  webrtc_data_channel_->SetSctpSid(1);
+  SetChannelReady();
+  EXPECT_EQ(webrtc::DataChannelInterface::kOpen,
+            webrtc_data_channel_->state());
+
+  webrtc::DataBuffer buffer("");
+  EXPECT_TRUE(webrtc_data_channel_->Send(buffer));
+  EXPECT_EQ(webrtc::DataChannelInterface::kOpen,
+            webrtc_data_channel_->state());
+}

@@ -45,7 +45,7 @@ class FakeDataChannelProvider : public webrtc::DataChannelProviderInterface {
       return false;
     }
 
-    if (transport_error_) {
+    if (transport_error_ || payload.length() == 0) {
       *result = cricket::SDR_ERROR;
       return false;
     }

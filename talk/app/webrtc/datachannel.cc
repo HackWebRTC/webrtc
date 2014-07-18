@@ -195,6 +195,14 @@ bool DataChannel::Send(const DataBuffer& buffer) {
   if (state_ != kOpen) {
     return false;
   }
+
+  // TODO(jiayl): the spec is unclear about if the remote side should get the
+  // onmessage event. We need to figure out the expected behavior and change the
+  // code accordingly.
+  if (buffer.size() == 0) {
+    return true;
+  }
+
   // If the queue is non-empty, we're waiting for SignalReadyToSend,
   // so just add to the end of the queue and keep waiting.
   if (!queued_send_data_.Empty()) {
