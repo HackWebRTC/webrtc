@@ -192,6 +192,9 @@ private:
     MixerParticipantList _additionalParticipantList;
 
     size_t _numMixedParticipants;
+    // Determines if we will use a limiter for clipping protection during
+    // mixing.
+    bool use_limiter_;
 
     uint32_t _timeStamp;
 
