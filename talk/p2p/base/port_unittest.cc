@@ -453,9 +453,11 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
   }
   StunPort* CreateStunPort(const SocketAddress& addr,
                            talk_base::PacketSocketFactory* factory) {
+    ServerAddresses stun_servers;
+    stun_servers.insert(kStunAddr);
     StunPort* port = StunPort::Create(main_, factory, &network_,
                                       addr.ipaddr(), 0, 0,
-                                      username_, password_, kStunAddr);
+                                      username_, password_, stun_servers);
     port->SetIceProtocolType(ice_protocol_);
     return port;
   }

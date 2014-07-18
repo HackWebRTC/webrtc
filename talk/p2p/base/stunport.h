@@ -82,9 +82,12 @@ class UDPPort : public Port {
     return socket_->GetLocalAddress();
   }
 
-  const talk_base::SocketAddress& server_addr() const { return server_addr_; }
-  void set_server_addr(const talk_base::SocketAddress& addr) {
-    server_addr_ = addr;
+  const ServerAddresses server_addresses() const {
+    return server_addresses_;
+  }
+  void
+  set_server_addresses(const ServerAddresses& addresses) {
+    server_addresses_ = addresses;
   }
 
   virtual void PrepareAddress();
@@ -140,29 +143,64 @@ class UDPPort : public Port {
   // This method will send STUN binding request if STUN server address is set.
   void MaybePrepareStunCandidate();
 
-  void SendStunBindingRequest();
+  void SendStunBindingRequests();
 
  private:
+  // A helper class which can be called repeatedly to resolve multiple
+  // addresses, as opposed to talk_base::AsyncResolverInterface, which can only
+  // resolve one address per instance.
+  class AddressResolver : public sigslot::has_slots<> {
+   public:
+    explicit AddressResolver(talk_base::PacketSocketFactory* factory);
+    ~AddressResolver();
+
+    void Resolve(const talk_base::SocketAddress& address);
+    bool GetResolvedAddress(const talk_base::SocketAddress& input,
+                            int family,
+                            talk_base::SocketAddress* output) const;
+
+    // The signal is sent when resolving the specified address is finished. The
+    // first argument is the input address, the second argument is the error
+    // or 0 if it succeeded.
+    sigslot::signal2<const talk_base::SocketAddress&, int> SignalDone;
+
+   private:
+    typedef std::map<talk_base::SocketAddress,
+                     talk_base::AsyncResolverInterface*> ResolverMap;
+
+    void OnResolveResult(talk_base::AsyncResolverInterface* resolver);
+
+    talk_base::PacketSocketFactory* socket_factory_;
+    ResolverMap resolvers_;
+  };
+
   // DNS resolution of the STUN server.
-  void ResolveStunAddress();
-  void OnResolveResult(talk_base::AsyncResolverInterface* resolver);
+  void ResolveStunAddress(const talk_base::SocketAddress& stun_addr);
+  void OnResolveResult(const talk_base::SocketAddress& input, int error);
+
+  void SendStunBindingRequest(const talk_base::SocketAddress& stun_addr);
 
   // Below methods handles binding request responses.
-  void OnStunBindingRequestSucceeded(const talk_base::SocketAddress& stun_addr);
-  void OnStunBindingOrResolveRequestFailed();
+  void OnStunBindingRequestSucceeded(
+      const talk_base::SocketAddress& stun_server_addr,
+      const talk_base::SocketAddress& stun_reflected_addr);
+  void OnStunBindingOrResolveRequestFailed(
+      const talk_base::SocketAddress& stun_server_addr);
 
   // Sends STUN requests to the server.
   void OnSendPacket(const void* data, size_t size, StunRequest* req);
 
   // TODO(mallinaht) - Move this up to cricket::Port when SignalAddressReady is
   // changed to SignalPortReady.
-  void SetResult(bool success);
+  void MaybeSetPortCompleteOrError();
 
-  talk_base::SocketAddress server_addr_;
+  ServerAddresses server_addresses_;
+  ServerAddresses bind_request_succeeded_servers_;
+  ServerAddresses bind_request_failed_servers_;
   StunRequestManager requests_;
   talk_base::AsyncPacketSocket* socket_;
   int error_;
-  talk_base::AsyncResolverInterface* resolver_;
+  talk_base::scoped_ptr<AddressResolver> resolver_;
   bool ready_;
   int stun_keepalive_delay_;
 
@@ -171,17 +209,18 @@ class UDPPort : public Port {
 
 class StunPort : public UDPPort {
  public:
-  static StunPort* Create(talk_base::Thread* thread,
-                          talk_base::PacketSocketFactory* factory,
-                          talk_base::Network* network,
-                          const talk_base::IPAddress& ip,
-                          int min_port, int max_port,
-                          const std::string& username,
-                          const std::string& password,
-                          const talk_base::SocketAddress& server_addr) {
+  static StunPort* Create(
+      talk_base::Thread* thread,
+      talk_base::PacketSocketFactory* factory,
+      talk_base::Network* network,
+      const talk_base::IPAddress& ip,
+      int min_port, int max_port,
+      const std::string& username,
+      const std::string& password,
+      const ServerAddresses& servers) {
     StunPort* port = new StunPort(thread, factory, network,
                                   ip, min_port, max_port,
-                                  username, password, server_addr);
+                                  username, password, servers);
     if (!port->Init()) {
       delete port;
       port = NULL;
@@ -192,7 +231,7 @@ class StunPort : public UDPPort {
   virtual ~StunPort() {}
 
   virtual void PrepareAddress() {
-    SendStunBindingRequest();
+    SendStunBindingRequests();
   }
 
  protected:
@@ -200,12 +239,12 @@ class StunPort : public UDPPort {
            talk_base::Network* network, const talk_base::IPAddress& ip,
            int min_port, int max_port,
            const std::string& username, const std::string& password,
-           const talk_base::SocketAddress& server_address)
+           const ServerAddresses& servers)
      : UDPPort(thread, factory, network, ip, min_port, max_port, username,
                password) {
     // UDPPort will set these to local udp, updating these to STUN.
     set_type(STUN_PORT_TYPE);
-    set_server_addr(server_address);
+    set_server_addresses(servers);
   }
 };
 
