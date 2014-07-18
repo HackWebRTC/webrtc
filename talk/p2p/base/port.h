@@ -31,7 +31,6 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <set>
 
 #include "talk/base/asyncpacketsocket.h"
 #include "talk/base/network.h"
@@ -109,8 +108,6 @@ struct ProtocolAddress {
   ProtocolAddress(const talk_base::SocketAddress& a, ProtocolType p, bool sec)
       : address(a), proto(p), secure(sec) { }
 };
-
-typedef std::set<talk_base::SocketAddress> ServerAddresses;
 
 // Represents a local communication mechanism that can be used to create
 // connections to similar mechanisms of the other client.  Subclasses of this

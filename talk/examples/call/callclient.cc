@@ -490,10 +490,8 @@ void CallClient::InitMedia() {
 
   // TODO: Decide if the relay address should be specified here.
   talk_base::SocketAddress stun_addr("stun.l.google.com", 19302);
-  cricket::ServerAddresses stun_servers;
-  stun_servers.insert(stun_addr);
   port_allocator_ =  new cricket::BasicPortAllocator(
-      network_manager_, stun_servers, talk_base::SocketAddress(),
+      network_manager_, stun_addr, talk_base::SocketAddress(),
       talk_base::SocketAddress(), talk_base::SocketAddress());
 
   if (portallocator_flags_ != 0) {

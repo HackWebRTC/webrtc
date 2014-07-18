@@ -69,10 +69,10 @@ class StunBindingRequest : public StunRequest {
       LOG(LS_ERROR) << "Binding address has bad family";
     } else {
       talk_base::SocketAddress addr(addr_attr->ipaddr(), addr_attr->port());
-      port_->OnStunBindingRequestSucceeded(server_addr_, addr);
+      port_->OnStunBindingRequestSucceeded(addr);
     }
 
-    // We will do a keep-alive regardless of whether this request succeeds.
+    // We will do a keep-alive regardless of whether this request suceeds.
     // This should have almost no impact on network usage.
     if (keep_alive_) {
       port_->requests_.SendDelayed(
@@ -92,7 +92,7 @@ class StunBindingRequest : public StunRequest {
                  << " reason='" << attr->reason() << "'";
     }
 
-    port_->OnStunBindingOrResolveRequestFailed(server_addr_);
+    port_->OnStunBindingOrResolveRequestFailed();
 
     if (keep_alive_
         && (talk_base::TimeSince(start_time_) <= RETRY_TIMEOUT)) {
@@ -107,7 +107,7 @@ class StunBindingRequest : public StunRequest {
       << port_->GetLocalAddress().ToSensitiveString()
       << " (" << port_->Network()->name() << ")";
 
-    port_->OnStunBindingOrResolveRequestFailed(server_addr_);
+    port_->OnStunBindingOrResolveRequestFailed();
 
     if (keep_alive_
         && (talk_base::TimeSince(start_time_) <= RETRY_TIMEOUT)) {
@@ -120,59 +120,9 @@ class StunBindingRequest : public StunRequest {
  private:
   UDPPort* port_;
   bool keep_alive_;
-  const talk_base::SocketAddress server_addr_;
+  talk_base::SocketAddress server_addr_;
   uint32 start_time_;
 };
-
-UDPPort::AddressResolver::AddressResolver(
-    talk_base::PacketSocketFactory* factory)
-    : socket_factory_(factory) {}
-
-UDPPort::AddressResolver::~AddressResolver() {
-  for (ResolverMap::iterator it = resolvers_.begin();
-       it != resolvers_.end(); ++it) {
-    it->second->Destroy(true);
-  }
-}
-
-void UDPPort::AddressResolver::Resolve(
-    const talk_base::SocketAddress& address) {
-  if (resolvers_.find(address) != resolvers_.end())
-    return;
-
-  talk_base::AsyncResolverInterface* resolver =
-      socket_factory_->CreateAsyncResolver();
-  resolvers_.insert(
-      std::pair<talk_base::SocketAddress, talk_base::AsyncResolverInterface*>(
-          address, resolver));
-
-  resolver->SignalDone.connect(this,
-                               &UDPPort::AddressResolver::OnResolveResult);
-
-  resolver->Start(address);
-}
-
-bool UDPPort::AddressResolver::GetResolvedAddress(
-    const talk_base::SocketAddress& input,
-    int family,
-    talk_base::SocketAddress* output) const {
-  ResolverMap::const_iterator it = resolvers_.find(input);
-  if (it == resolvers_.end())
-    return false;
-
-  return it->second->GetResolvedAddress(family, output);
-}
-
-void UDPPort::AddressResolver::OnResolveResult(
-    talk_base::AsyncResolverInterface* resolver) {
-  for (ResolverMap::iterator it = resolvers_.begin();
-       it != resolvers_.end(); ++it) {
-    if (it->second == resolver) {
-      SignalDone(it->first, resolver->GetError());
-      return;
-    }
-  }
-}
 
 UDPPort::UDPPort(talk_base::Thread* thread,
                  talk_base::PacketSocketFactory* factory,
@@ -184,6 +134,7 @@ UDPPort::UDPPort(talk_base::Thread* thread,
       requests_(thread),
       socket_(socket),
       error_(0),
+      resolver_(NULL),
       ready_(false),
       stun_keepalive_delay_(KEEPALIVE_DELAY) {
 }
@@ -198,6 +149,7 @@ UDPPort::UDPPort(talk_base::Thread* thread,
       requests_(thread),
       socket_(NULL),
       error_(0),
+      resolver_(NULL),
       ready_(false),
       stun_keepalive_delay_(KEEPALIVE_DELAY) {
 }
@@ -220,6 +172,9 @@ bool UDPPort::Init() {
 }
 
 UDPPort::~UDPPort() {
+  if (resolver_) {
+    resolver_->Destroy(true);
+  }
   if (!SharedSocket())
     delete socket_;
 }
@@ -234,11 +189,11 @@ void UDPPort::PrepareAddress() {
 void UDPPort::MaybePrepareStunCandidate() {
   // Sending binding request to the STUN server if address is available to
   // prepare STUN candidate.
-  if (!server_addresses_.empty()) {
-    SendStunBindingRequests();
+  if (!server_addr_.IsNil()) {
+    SendStunBindingRequest();
   } else {
     // Port is done allocating candidates.
-    MaybeSetPortCompleteOrError();
+    SetResult(true);
   }
 }
 
@@ -299,13 +254,12 @@ void UDPPort::OnReadPacket(
   const talk_base::SocketAddress& remote_addr,
   const talk_base::PacketTime& packet_time) {
   ASSERT(socket == socket_);
-  ASSERT(!remote_addr.IsUnresolved());
 
   // Look for a response from the STUN server.
   // Even if the response doesn't match one of our outstanding requests, we
   // will eat it because it might be a response to a retransmitted packet, and
   // we already cleared the request when we got the first response.
-  if (server_addresses_.find(remote_addr) != server_addresses_.end()) {
+  if (!server_addr_.IsUnresolved() && remote_addr == server_addr_) {
     requests_.CheckResponse(data, size);
     return;
   }
@@ -321,114 +275,76 @@ void UDPPort::OnReadyToSend(talk_base::AsyncPacketSocket* socket) {
   Port::OnReadyToSend();
 }
 
-void UDPPort::SendStunBindingRequests() {
+void UDPPort::SendStunBindingRequest() {
   // We will keep pinging the stun server to make sure our NAT pin-hole stays
   // open during the call.
+  // TODO: Support multiple stun servers, or make ResolveStunAddress find a
+  // server with the correct family, or something similar.
   ASSERT(requests_.empty());
-
-  for (ServerAddresses::const_iterator it = server_addresses_.begin();
-       it != server_addresses_.end(); ++it) {
-    SendStunBindingRequest(*it);
-  }
-}
-
-void UDPPort::ResolveStunAddress(const talk_base::SocketAddress& stun_addr) {
-  if (!resolver_) {
-    resolver_.reset(new AddressResolver(socket_factory()));
-    resolver_->SignalDone.connect(this, &UDPPort::OnResolveResult);
-  }
-
-  resolver_->Resolve(stun_addr);
-}
-
-void UDPPort::OnResolveResult(const talk_base::SocketAddress& input,
-                              int error) {
-  ASSERT(resolver_.get());
-
-  talk_base::SocketAddress resolved;
-  if (error != 0 ||
-      !resolver_->GetResolvedAddress(input, ip().family(), &resolved))  {
-    LOG_J(LS_WARNING, this) << "StunPort: stun host lookup received error "
-                            << error;
-    OnStunBindingOrResolveRequestFailed(input);
-    return;
-  }
-
-  server_addresses_.erase(input);
-
-  if (server_addresses_.find(resolved) == server_addresses_.end()) {
-    server_addresses_.insert(resolved);
-    SendStunBindingRequest(resolved);
-  }
-}
-
-void UDPPort::SendStunBindingRequest(
-    const talk_base::SocketAddress& stun_addr) {
-  if (stun_addr.IsUnresolved()) {
-    ResolveStunAddress(stun_addr);
-
+  if (server_addr_.IsUnresolved()) {
+    ResolveStunAddress();
   } else if (socket_->GetState() == talk_base::AsyncPacketSocket::STATE_BOUND) {
     // Check if |server_addr_| is compatible with the port's ip.
-    if (IsCompatibleAddress(stun_addr)) {
-      requests_.Send(new StunBindingRequest(this, true, stun_addr));
+    if (IsCompatibleAddress(server_addr_)) {
+      requests_.Send(new StunBindingRequest(this, true, server_addr_));
     } else {
       // Since we can't send stun messages to the server, we should mark this
       // port ready.
-      LOG(LS_WARNING) << "STUN server address is incompatible.";
-      OnStunBindingOrResolveRequestFailed(stun_addr);
+      OnStunBindingOrResolveRequestFailed();
     }
   }
 }
 
-void UDPPort::OnStunBindingRequestSucceeded(
-    const talk_base::SocketAddress& stun_server_addr,
-    const talk_base::SocketAddress& stun_reflected_addr) {
-  if (bind_request_succeeded_servers_.find(stun_server_addr) !=
-          bind_request_succeeded_servers_.end()) {
+void UDPPort::ResolveStunAddress() {
+  if (resolver_)
+    return;
+
+  resolver_ = socket_factory()->CreateAsyncResolver();
+  resolver_->SignalDone.connect(this, &UDPPort::OnResolveResult);
+  resolver_->Start(server_addr_);
+}
+
+void UDPPort::OnResolveResult(talk_base::AsyncResolverInterface* resolver) {
+  ASSERT(resolver == resolver_);
+  if (resolver_->GetError() != 0 ||
+      !resolver_->GetResolvedAddress(ip().family(), &server_addr_))  {
+    LOG_J(LS_WARNING, this) << "StunPort: stun host lookup received error "
+                            << resolver_->GetError();
+    OnStunBindingOrResolveRequestFailed();
     return;
   }
-  bind_request_succeeded_servers_.insert(stun_server_addr);
 
-  if (!SharedSocket() || stun_reflected_addr != socket_->GetLocalAddress()) {
-    // If socket is shared and |stun_reflected_addr| is equal to local socket
+  SendStunBindingRequest();
+}
+
+void UDPPort::OnStunBindingRequestSucceeded(
+    const talk_base::SocketAddress& stun_addr) {
+  if (ready_)  // Discarding the binding response if port is already enabled.
+    return;
+
+  if (!SharedSocket() || stun_addr != socket_->GetLocalAddress()) {
+    // If socket is shared and |stun_addr| is equal to local socket
     // address then discarding the stun address.
     // For STUN related address is local socket address.
-    AddAddress(stun_reflected_addr, socket_->GetLocalAddress(),
+    AddAddress(stun_addr, socket_->GetLocalAddress(),
                socket_->GetLocalAddress(), UDP_PROTOCOL_NAME,
                STUN_PORT_TYPE, ICE_TYPE_PREFERENCE_SRFLX, false);
   }
-  MaybeSetPortCompleteOrError();
+  SetResult(true);
 }
 
-void UDPPort::OnStunBindingOrResolveRequestFailed(
-    const talk_base::SocketAddress& stun_server_addr) {
-  if (bind_request_failed_servers_.find(stun_server_addr) !=
-          bind_request_failed_servers_.end()) {
+void UDPPort::OnStunBindingOrResolveRequestFailed() {
+  if (ready_)  // Discarding failure response if port is already enabled.
     return;
-  }
-  bind_request_failed_servers_.insert(stun_server_addr);
-  MaybeSetPortCompleteOrError();
+
+  // If socket is shared, we should process local udp candidate.
+  SetResult(SharedSocket());
 }
 
-void UDPPort::MaybeSetPortCompleteOrError() {
-  if (ready_)
-    return;
-
-  // Do not set port ready if we are still waiting for bind responses.
-  const size_t servers_done_bind_request = bind_request_failed_servers_.size() +
-      bind_request_succeeded_servers_.size();
-  if (server_addresses_.size() != servers_done_bind_request) {
-    return;
-  }
-
+void UDPPort::SetResult(bool success) {
   // Setting ready status.
   ready_ = true;
-
-  // The port is "completed" if there is no stun server provided, or the bind
-  // request succeeded for any stun server, or the socket is shared.
-  if (server_addresses_.empty() ||
-      bind_request_succeeded_servers_.size() > 0 ||
-      SharedSocket()) {
+  if (success) {
     SignalPortComplete(this);
   } else {
     SignalPortError(this);

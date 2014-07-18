@@ -50,7 +50,6 @@ using cricket::kMinimumStepDelay;
 using cricket::kDefaultStepDelay;
 using cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG;
 using cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET;
-using cricket::ServerAddresses;
 using talk_base::SocketAddress;
 
 static const int kDefaultTimeout = 1000;
@@ -153,14 +152,12 @@ class P2PTransportChannelTestBase : public testing::Test,
     ep1_.role_ = cricket::ICEROLE_CONTROLLING;
     ep2_.role_ = cricket::ICEROLE_CONTROLLED;
 
-    ServerAddresses stun_servers;
-    stun_servers.insert(kStunAddr);
     ep1_.allocator_.reset(new cricket::BasicPortAllocator(
-        &ep1_.network_manager_,
-        stun_servers, kRelayUdpIntAddr, kRelayTcpIntAddr, kRelaySslTcpIntAddr));
+        &ep1_.network_manager_, kStunAddr, kRelayUdpIntAddr,
+        kRelayTcpIntAddr, kRelaySslTcpIntAddr));
     ep2_.allocator_.reset(new cricket::BasicPortAllocator(
-        &ep2_.network_manager_,
-        stun_servers, kRelayUdpIntAddr, kRelayTcpIntAddr, kRelaySslTcpIntAddr));
+        &ep2_.network_manager_, kStunAddr, kRelayUdpIntAddr,
+        kRelayTcpIntAddr, kRelaySslTcpIntAddr));
   }
 
  protected:
@@ -809,17 +806,13 @@ class P2PTransportChannelTest : public P2PTransportChannelTestBase {
     // Ideally we want to use TURN server for both GICE and ICE, but in case
     // of GICE, TURN server usage is not producing results reliabally.
     // TODO(mallinath): Remove Relay and use TURN server for all tests.
-    ServerAddresses stun_servers;
-    stun_servers.insert(kStunAddr);
     GetEndpoint(0)->allocator_.reset(
         new cricket::BasicPortAllocator(&(GetEndpoint(0)->network_manager_),
-        stun_servers,
-        talk_base::SocketAddress(), talk_base::SocketAddress(),
+        kStunAddr, talk_base::SocketAddress(), talk_base::SocketAddress(),
         talk_base::SocketAddress()));
     GetEndpoint(1)->allocator_.reset(
         new cricket::BasicPortAllocator(&(GetEndpoint(1)->network_manager_),
-        stun_servers,
-        talk_base::SocketAddress(), talk_base::SocketAddress(),
+        kStunAddr, talk_base::SocketAddress(), talk_base::SocketAddress(),
         talk_base::SocketAddress()));
 
     cricket::RelayServerConfig relay_server(cricket::RELAY_GTURN);
