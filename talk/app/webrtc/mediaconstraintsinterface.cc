@@ -97,6 +97,8 @@ const char MediaConstraintsInterface::kImprovedWifiBwe[] =
     "googImprovedWifiBwe";
 const char MediaConstraintsInterface::kScreencastMinBitrate[] =
     "googScreencastMinBitrate";
+const char MediaConstraintsInterface::kSkipEncodingUnusedStreams[] =
+    "googSkipEncodingUnusedStreams";
 // TODO(ronghuawu): Remove once cpu overuse detection is stable.
 const char MediaConstraintsInterface::kCpuOveruseDetection[] =
     "googCpuOveruseDetection";
