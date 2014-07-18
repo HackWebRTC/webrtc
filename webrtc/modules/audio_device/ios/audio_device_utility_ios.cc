@@ -27,8 +27,9 @@ AudioDeviceUtilityIOS::AudioDeviceUtilityIOS(const int32_t id)
 AudioDeviceUtilityIOS::~AudioDeviceUtilityIOS() {
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, _id,
                  "%s destroyed", __FUNCTION__);
-    CriticalSectionScoped lock(&_critSect);
-
+    {
+        CriticalSectionScoped lock(&_critSect);
+    }
     delete &_critSect;
 }
 
