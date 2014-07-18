@@ -312,8 +312,6 @@ struct VideoOptions {
     video_start_bitrate.SetFrom(change.video_start_bitrate);
     video_temporal_layer_screencast.SetFrom(
         change.video_temporal_layer_screencast);
-    video_temporal_layer_realtime.SetFrom(
-        change.video_temporal_layer_realtime);
     video_leaky_bucket.SetFrom(change.video_leaky_bucket);
     video_highest_bitrate.SetFrom(change.video_highest_bitrate);
     cpu_overuse_detection.SetFrom(change.cpu_overuse_detection);
@@ -336,7 +334,6 @@ struct VideoOptions {
     suspend_below_min_bitrate.SetFrom(change.suspend_below_min_bitrate);
     unsignalled_recv_stream_limit.SetFrom(change.unsignalled_recv_stream_limit);
     use_simulcast_adapter.SetFrom(change.use_simulcast_adapter);
-    skip_encoding_unused_streams.SetFrom(change.skip_encoding_unused_streams);
     screencast_min_bitrate.SetFrom(change.screencast_min_bitrate);
     use_improved_wifi_bandwidth_estimator.SetFrom(
         change.use_improved_wifi_bandwidth_estimator);
@@ -354,7 +351,6 @@ struct VideoOptions {
         video_high_bitrate == o.video_high_bitrate &&
         video_start_bitrate == o.video_start_bitrate &&
         video_temporal_layer_screencast == o.video_temporal_layer_screencast &&
-        video_temporal_layer_realtime == o.video_temporal_layer_realtime &&
         video_leaky_bucket == o.video_leaky_bucket &&
         video_highest_bitrate == o.video_highest_bitrate &&
         cpu_overuse_detection == o.cpu_overuse_detection &&
@@ -377,7 +373,6 @@ struct VideoOptions {
         suspend_below_min_bitrate == o.suspend_below_min_bitrate &&
         unsignalled_recv_stream_limit == o.unsignalled_recv_stream_limit &&
         use_simulcast_adapter == o.use_simulcast_adapter &&
-        skip_encoding_unused_streams == o.skip_encoding_unused_streams &&
         screencast_min_bitrate == o.screencast_min_bitrate &&
         use_improved_wifi_bandwidth_estimator ==
             o.use_improved_wifi_bandwidth_estimator &&
@@ -398,8 +393,6 @@ struct VideoOptions {
     ost << ToStringIfSet("start bitrate", video_start_bitrate);
     ost << ToStringIfSet("video temporal layer screencast",
                          video_temporal_layer_screencast);
-    ost << ToStringIfSet("video temporal layer realtime",
-                         video_temporal_layer_realtime);
     ost << ToStringIfSet("leaky bucket", video_leaky_bucket);
     ost << ToStringIfSet("highest video bitrate", video_highest_bitrate);
     ost << ToStringIfSet("cpu overuse detection", cpu_overuse_detection);
@@ -423,8 +416,6 @@ struct VideoOptions {
     ost << ToStringIfSet("num channels for early receive",
                          unsignalled_recv_stream_limit);
     ost << ToStringIfSet("use simulcast adapter", use_simulcast_adapter);
-    ost << ToStringIfSet("skip encoding unused streams",
-                         skip_encoding_unused_streams);
     ost << ToStringIfSet("screencast min bitrate", screencast_min_bitrate);
     ost << ToStringIfSet("improved wifi bwe",
                          use_improved_wifi_bandwidth_estimator);
@@ -453,8 +444,6 @@ struct VideoOptions {
   Settable<int> video_start_bitrate;
   // Experimental: Enable WebRTC layered screencast.
   Settable<bool> video_temporal_layer_screencast;
-  // Experimental: Enable WebRTC temporal layer strategy for realtime video.
-  Settable<bool> video_temporal_layer_realtime;
   // Enable WebRTC leaky bucket when sending media packets.
   Settable<bool> video_leaky_bucket;
   // Set highest bitrate mode for video.
@@ -502,9 +491,6 @@ struct VideoOptions {
   Settable<int> unsignalled_recv_stream_limit;
   // Enable use of simulcast adapter.
   Settable<bool> use_simulcast_adapter;
-  // Enables the encoder to skip encoding stream not actually sent due to too
-  // low available bit rate.
-  Settable<bool> skip_encoding_unused_streams;
   // Force screencast to use a minimum bitrate
   Settable<int> screencast_min_bitrate;
   // Enable improved bandwidth estiamtor on wifi.
