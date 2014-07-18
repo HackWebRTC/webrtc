@@ -638,8 +638,6 @@ class WebRtcVideoRenderFrame : public VideoFrame {
   const webrtc::I420VideoFrame* const frame_;
 };
 
-// WebRtcVideoChannel2
-
 WebRtcVideoChannel2::WebRtcVideoChannel2(
     WebRtcVideoEngine2* engine,
     VoiceMediaChannel* voice_channel,
@@ -1048,8 +1046,34 @@ bool WebRtcVideoChannel2::GetRenderer(uint32 ssrc, VideoRenderer** renderer) {
 
 bool WebRtcVideoChannel2::GetStats(const StatsOptions& options,
                                    VideoMediaInfo* info) {
-  // TODO(pbos): Implement.
+  info->Clear();
+  FillSenderStats(info);
+  FillReceiverStats(info);
+  FillBandwidthEstimationStats(info);
   return true;
+}
+
+void WebRtcVideoChannel2::FillSenderStats(VideoMediaInfo* video_media_info) {
+  for (std::map<uint32, WebRtcVideoSendStream*>::iterator it =
+           send_streams_.begin();
+       it != send_streams_.end();
+       ++it) {
+    video_media_info->senders.push_back(it->second->GetVideoSenderInfo());
+  }
+}
+
+void WebRtcVideoChannel2::FillReceiverStats(VideoMediaInfo* video_media_info) {
+  for (std::map<uint32, WebRtcVideoReceiveStream*>::iterator it =
+           receive_streams_.begin();
+       it != receive_streams_.end();
+       ++it) {
+    video_media_info->receivers.push_back(it->second->GetVideoReceiverInfo());
+  }
+}
+
+void WebRtcVideoChannel2::FillBandwidthEstimationStats(
+    VideoMediaInfo* video_media_info) {
+  // TODO(pbos): Implement.
 }
 
 bool WebRtcVideoChannel2::SetCapturer(uint32 ssrc, VideoCapturer* capturer) {
@@ -1549,6 +1573,60 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::Stop() {
   sending_ = false;
 }
 
+VideoSenderInfo
+WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
+  VideoSenderInfo info;
+  talk_base::CritScope cs(&lock_);
+  for (size_t i = 0; i < parameters_.config.rtp.ssrcs.size(); ++i) {
+    info.add_ssrc(parameters_.config.rtp.ssrcs[i]);
+  }
+
+  webrtc::VideoSendStream::Stats stats = stream_->GetStats();
+  info.framerate_input = stats.input_frame_rate;
+  info.framerate_sent = stats.encode_frame_rate;
+
+  for (std::map<uint32_t, webrtc::StreamStats>::iterator it =
+           stats.substreams.begin();
+       it != stats.substreams.end();
+       ++it) {
+    // TODO(pbos): Wire up additional stats, such as padding bytes.
+    webrtc::StreamStats stream_stats = it->second;
+    info.bytes_sent += stream_stats.rtp_stats.bytes +
+                       stream_stats.rtp_stats.header_bytes +
+                       stream_stats.rtp_stats.padding_bytes;
+    info.packets_sent += stream_stats.rtp_stats.packets;
+    info.packets_lost += stream_stats.rtcp_stats.cumulative_lost;
+  }
+
+  if (!stats.substreams.empty()) {
+    // TODO(pbos): Report fraction lost per SSRC.
+    webrtc::StreamStats first_stream_stats = stats.substreams.begin()->second;
+    info.fraction_lost =
+        static_cast<float>(first_stream_stats.rtcp_stats.fraction_lost) /
+        (1 << 8);
+  }
+
+  if (capturer_ != NULL && !capturer_->IsMuted()) {
+    VideoFormat last_captured_frame_format;
+    capturer_->GetStats(&info.adapt_frame_drops,
+                        &info.effects_frame_drops,
+                        &info.capturer_frame_time,
+                        &last_captured_frame_format);
+    info.input_frame_width = last_captured_frame_format.width;
+    info.input_frame_height = last_captured_frame_format.height;
+    info.send_frame_width =
+        static_cast<int>(parameters_.video_streams.front().width);
+    info.send_frame_height =
+        static_cast<int>(parameters_.video_streams.front().height);
+  }
+
+  // TODO(pbos): Support or remove the following stats.
+  info.packets_cached = -1;
+  info.rtt_ms = -1;
+
+  return info;
+}
+
 void WebRtcVideoChannel2::WebRtcVideoSendStream::RecreateWebRtcStream() {
   if (stream_ != NULL) {
     call_->DestroyVideoSendStream(stream_);
@@ -1669,6 +1747,29 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetSize(int width,
   }
   last_width_ = width;
   last_height_ = height;
+}
+
+VideoReceiverInfo
+WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetVideoReceiverInfo() {
+  VideoReceiverInfo info;
+  info.add_ssrc(config_.rtp.remote_ssrc);
+  webrtc::VideoReceiveStream::Stats stats = stream_->GetStats();
+  info.bytes_rcvd = stats.rtp_stats.bytes + stats.rtp_stats.header_bytes +
+                    stats.rtp_stats.padding_bytes;
+  info.packets_rcvd = stats.rtp_stats.packets;
+
+  info.framerate_rcvd = stats.network_frame_rate;
+  info.framerate_decoded = stats.decode_frame_rate;
+  info.framerate_output = stats.render_frame_rate;
+
+  talk_base::CritScope frame_cs(&renderer_lock_);
+  info.frame_width = last_width_;
+  info.frame_height = last_height_;
+
+  // TODO(pbos): Support or remove the following stats.
+  info.packets_concealed = -1;
+
+  return info;
 }
 
 WebRtcVideoChannel2::VideoCodecSettings::VideoCodecSettings()

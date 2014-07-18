@@ -451,15 +451,13 @@ TEST_F(WebRtcVideoChannel2BaseTest, SetSendSetsTransportBufferSizes) {
   Base::SetSendSetsTransportBufferSizes();
 }
 
-// TODO(juberti): Fix this test to tolerate missing stats.
-TEST_F(WebRtcVideoChannel2BaseTest, DISABLED_GetStats) { Base::GetStats(); }
+TEST_F(WebRtcVideoChannel2BaseTest, GetStats) { Base::GetStats(); }
 
-// TODO(juberti): Fix this test to tolerate missing stats.
-TEST_F(WebRtcVideoChannel2BaseTest, DISABLED_GetStatsMultipleRecvStreams) {
+TEST_F(WebRtcVideoChannel2BaseTest, GetStatsMultipleRecvStreams) {
   Base::GetStatsMultipleRecvStreams();
 }
 
-TEST_F(WebRtcVideoChannel2BaseTest, DISABLED_GetStatsMultipleSendStreams) {
+TEST_F(WebRtcVideoChannel2BaseTest, GetStatsMultipleSendStreams) {
   Base::GetStatsMultipleSendStreams();
 }
 

@@ -80,6 +80,7 @@ struct Device;
 
 class WebRtcVideoEngine2;
 class WebRtcVideoChannel2;
+class WebRtcVideoRenderer;
 
 class WebRtcVideoEncoderFactory2 {
  public:
@@ -277,6 +278,8 @@ class WebRtcVideoChannel2 : public talk_base::MessageHandler,
     void Start();
     void Stop();
 
+    VideoSenderInfo GetVideoSenderInfo();
+
    private:
     // Parameters needed to reconstruct the underlying stream.
     // webrtc::VideoSendStream doesn't support setting a lot of options on the
@@ -337,6 +340,8 @@ class WebRtcVideoChannel2 : public talk_base::MessageHandler,
     void SetRenderer(cricket::VideoRenderer* renderer);
     cricket::VideoRenderer* GetRenderer();
 
+    VideoReceiverInfo GetVideoReceiverInfo();
+
    private:
     void SetSize(int width, int height);
     void RecreateWebRtcStream();
@@ -348,8 +353,8 @@ class WebRtcVideoChannel2 : public talk_base::MessageHandler,
 
     talk_base::CriticalSection renderer_lock_;
     cricket::VideoRenderer* renderer_ GUARDED_BY(renderer_lock_);
-    int last_width_;
-    int last_height_;
+    int last_width_ GUARDED_BY(renderer_lock_);
+    int last_height_ GUARDED_BY(renderer_lock_);
   };
 
   void Construct(webrtc::Call* call, WebRtcVideoEngine2* engine);
@@ -364,6 +369,10 @@ class WebRtcVideoChannel2 : public talk_base::MessageHandler,
       const std::vector<VideoCodec>& codecs);
   std::vector<VideoCodecSettings> FilterSupportedCodecs(
       const std::vector<VideoCodecSettings>& mapped_codecs);
+
+  void FillSenderStats(VideoMediaInfo* info);
+  void FillReceiverStats(VideoMediaInfo* info);
+  void FillBandwidthEstimationStats(VideoMediaInfo* info);
 
   uint32_t rtcp_receiver_report_ssrc_;
   bool sending_;
