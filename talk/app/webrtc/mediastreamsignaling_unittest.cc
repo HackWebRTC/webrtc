@@ -148,6 +148,21 @@ static const char kSdpStringWithoutStreamsAudioOnly[] =
     "a=mid:audio\r\n"
     "a=rtpmap:103 ISAC/16000\r\n";
 
+// Reference SENDONLY SDP without MediaStreams. Msid is not supported.
+static const char kSdpStringSendOnlyWithWithoutStreams[] =
+    "v=0\r\n"
+    "o=- 0 0 IN IP4 127.0.0.1\r\n"
+    "s=-\r\n"
+    "t=0 0\r\n"
+    "m=audio 1 RTP/AVPF 103\r\n"
+    "a=mid:audio\r\n"
+    "a=sendonly"
+    "a=rtpmap:103 ISAC/16000\r\n"
+    "m=video 1 RTP/AVPF 120\r\n"
+    "a=mid:video\r\n"
+    "a=sendonly"
+    "a=rtpmap:120 VP8/90000\r\n";
+
 static const char kSdpStringInit[] =
     "v=0\r\n"
     "o=- 0 0 IN IP4 127.0.0.1\r\n"
@@ -911,6 +926,25 @@ TEST_F(MediaStreamSignalingTest, SdpWithoutMsidCreatesDefaultStream) {
   EXPECT_EQ("defaultv0", remote_stream->GetVideoTracks()[0]->id());
   observer_->VerifyRemoteAudioTrack("default", "defaulta0", 0);
   observer_->VerifyRemoteVideoTrack("default", "defaultv0", 0);
+}
+
+// This tests that a default MediaStream is created if a remote session
+// description doesn't contain any streams and media direction is send only.
+TEST_F(MediaStreamSignalingTest, RecvOnlySdpWithoutMsidCreatesDefaultStream) {
+  talk_base::scoped_ptr<SessionDescriptionInterface> desc(
+      webrtc::CreateSessionDescription(SessionDescriptionInterface::kOffer,
+                                       kSdpStringSendOnlyWithWithoutStreams,
+                                       NULL));
+  ASSERT_TRUE(desc != NULL);
+  signaling_->OnRemoteDescriptionChanged(desc.get());
+
+  EXPECT_EQ(1u, signaling_->remote_streams()->count());
+  ASSERT_EQ(1u, observer_->remote_streams()->count());
+  MediaStreamInterface* remote_stream = observer_->remote_streams()->at(0);
+
+  EXPECT_EQ(1u, remote_stream->GetAudioTracks().size());
+  EXPECT_EQ(1u, remote_stream->GetVideoTracks().size());
+  EXPECT_EQ("default", remote_stream->label());
 }
 
 // This tests that it won't crash when MediaStreamSignaling tries to remove

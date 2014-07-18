@@ -123,6 +123,10 @@ static bool EvaluateNeedForBundle(const cricket::MediaSessionOptions& options) {
       (options.has_audio || options.has_video || options.has_data());
 }
 
+static bool MediaContentDirectionHasSend(cricket::MediaContentDirection dir) {
+  return dir == cricket::MD_SENDONLY || dir == cricket::MD_SENDRECV;
+}
+
 // Factory class for creating remote MediaStreams and MediaStreamTracks.
 class RemoteMediaStreamFactory {
  public:
@@ -406,7 +410,8 @@ void MediaStreamSignaling::OnRemoteDescriptionChanged(
             audio_content->description);
     UpdateRemoteStreamsList(desc->streams(), desc->type(), new_streams);
     remote_info_.default_audio_track_needed =
-        desc->direction() == cricket::MD_SENDRECV && desc->streams().empty();
+        MediaContentDirectionHasSend(desc->direction()) &&
+            desc->streams().empty();
   }
 
   // Find all video rtp streams and create corresponding remote VideoTracks
@@ -418,7 +423,8 @@ void MediaStreamSignaling::OnRemoteDescriptionChanged(
             video_content->description);
     UpdateRemoteStreamsList(desc->streams(), desc->type(), new_streams);
     remote_info_.default_video_track_needed =
-        desc->direction() == cricket::MD_SENDRECV && desc->streams().empty();
+        MediaContentDirectionHasSend(desc->direction()) &&
+            desc->streams().empty();
   }
 
   // Update the DataChannels with the information from the remote peer.
