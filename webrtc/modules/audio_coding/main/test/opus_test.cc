@@ -218,6 +218,8 @@ void OpusTest::Run(TestPackStereo* channel, int channels, int bitrate,
   int written_samples = 0;
   int read_samples = 0;
   int decoded_samples = 0;
+  bool first_packet = true;
+  uint32_t start_time_stamp = 0;
 
   channel->reset_payload_size();
   counter_ = 0;
@@ -324,6 +326,10 @@ void OpusTest::Run(TestPackStereo* channel, int channels, int bitrate,
         // Send data to the channel. "channel" will handle the loss simulation.
         channel->SendData(kAudioFrameSpeech, payload_type_, rtp_timestamp_,
                           bitstream, bitstream_len_byte, NULL);
+        if (first_packet) {
+          first_packet = false;
+          start_time_stamp = rtp_timestamp_;
+        }
         rtp_timestamp_ += frame_length;
         read_samples += frame_length * channels;
       }
@@ -344,9 +350,11 @@ void OpusTest::Run(TestPackStereo* channel, int channels, int bitrate,
     // Write stand-alone speech to file.
     out_file_standalone_.Write10MsData(out_audio, decoded_samples * channels);
 
-    // Number of channels should be the same for both stand-alone and
-    // ACM-decoding.
-    EXPECT_EQ(audio_frame.num_channels_, channels);
+    if (audio_frame.timestamp_ > start_time_stamp) {
+      // Number of channels should be the same for both stand-alone and
+      // ACM-decoding.
+      EXPECT_EQ(audio_frame.num_channels_, channels);
+    }
 
     decoded_samples = 0;
   }
@@ -367,13 +375,13 @@ void OpusTest::OpenOutFile(int test_number) {
   file_stream << webrtc::test::OutputPath() << "opustest_out_"
       << test_number << ".pcm";
   file_name = file_stream.str();
-  out_file_.Open(file_name, 32000, "wb");
+  out_file_.Open(file_name, 48000, "wb");
   file_stream.str("");
   file_name = file_stream.str();
   file_stream << webrtc::test::OutputPath() << "opusstandalone_out_"
       << test_number << ".pcm";
   file_name = file_stream.str();
-  out_file_standalone_.Open(file_name, 32000, "wb");
+  out_file_standalone_.Open(file_name, 48000, "wb");
 }
 
 }  // namespace webrtc

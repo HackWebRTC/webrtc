@@ -1618,14 +1618,8 @@ int AudioCodingModuleImpl::ReceiveFrequency() const {
 
   int codec_id = receiver_.last_audio_codec_id();
 
-  int sample_rate_hz;
-  if (codec_id < 0)
-    sample_rate_hz = receiver_.current_sample_rate_hz();
-  else
-    sample_rate_hz = ACMCodecDB::database_[codec_id].plfreq;
-
-  // TODO(tlegrand): Remove this option when we have full 48 kHz support.
-  return (sample_rate_hz > 32000) ? 32000 : sample_rate_hz;
+  return codec_id < 0 ? receiver_.current_sample_rate_hz() :
+                        ACMCodecDB::database_[codec_id].plfreq;
 }
 
 // Get current playout frequency.

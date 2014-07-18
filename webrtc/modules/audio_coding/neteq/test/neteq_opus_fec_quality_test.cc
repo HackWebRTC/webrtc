@@ -21,8 +21,7 @@ namespace webrtc {
 namespace test {
 
 static const int kOpusBlockDurationMs = 20;
-static const int kOpusInputSamplingKhz = 48;
-static const int kOpusOutputSamplingKhz = 32;
+static const int kOpusSamplingKhz = 48;
 
 // Define switch for input file name.
 static bool ValidateInFilename(const char* flagname, const string& value) {
@@ -128,8 +127,8 @@ class NetEqOpusFecQualityTest : public NetEqQualityTest {
 };
 
 NetEqOpusFecQualityTest::NetEqOpusFecQualityTest()
-    : NetEqQualityTest(kOpusBlockDurationMs, kOpusInputSamplingKhz,
-                       kOpusOutputSamplingKhz,
+    : NetEqQualityTest(kOpusBlockDurationMs, kOpusSamplingKhz,
+                       kOpusSamplingKhz,
                        (FLAGS_channels == 1) ? kDecoderOpus : kDecoderOpus_2ch,
                        FLAGS_channels,
                        FLAGS_in_filename,
