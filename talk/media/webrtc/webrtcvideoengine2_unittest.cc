@@ -621,6 +621,7 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
 
   void TestSetSendRtpHeaderExtensions(const std::string& cricket_ext,
                                       const std::string& webrtc_ext) {
+    FakeCall* call = fake_channel_->GetFakeCall();
     // Enable extension.
     const int id = 1;
     std::vector<cricket::RtpHeaderExtension> extensions;
@@ -642,15 +643,25 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
                     ->GetConfig()
                     .rtp.extensions.empty());
 
-    // Remove the extension id, verify that this doesn't reset extensions as
-    // they should be set before creating channels.
+    // Verify that existing RTP header extensions can be removed.
     std::vector<cricket::RtpHeaderExtension> empty_extensions;
     EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(empty_extensions));
-    EXPECT_FALSE(send_stream->GetConfig().rtp.extensions.empty());
+    ASSERT_EQ(1u, call->GetVideoSendStreams().size());
+    send_stream = call->GetVideoSendStreams()[0];
+    EXPECT_TRUE(send_stream->GetConfig().rtp.extensions.empty());
+
+    // Verify that adding receive RTP header extensions adds them for existing
+    // streams.
+    EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
+    send_stream = call->GetVideoSendStreams()[0];
+    ASSERT_EQ(1u, send_stream->GetConfig().rtp.extensions.size());
+    EXPECT_EQ(id, send_stream->GetConfig().rtp.extensions[0].id);
+    EXPECT_EQ(webrtc_ext, send_stream->GetConfig().rtp.extensions[0].name);
   }
 
   void TestSetRecvRtpHeaderExtensions(const std::string& cricket_ext,
                                       const std::string& webrtc_ext) {
+    FakeCall* call = fake_channel_->GetFakeCall();
     // Enable extension.
     const int id = 1;
     std::vector<cricket::RtpHeaderExtension> extensions;
@@ -666,17 +677,27 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
     EXPECT_EQ(webrtc_ext, recv_stream->GetConfig().rtp.extensions[0].name);
     // Verify call with same set of extensions returns true.
     EXPECT_TRUE(channel_->SetRecvRtpHeaderExtensions(extensions));
+
     // Verify that SetRecvRtpHeaderExtensions doesn't implicitly add them for
     // senders.
     EXPECT_TRUE(AddSendStream(cricket::StreamParams::CreateLegacy(123))
                     ->GetConfig()
                     .rtp.extensions.empty());
 
-    // Remove the extension id, verify that this doesn't reset extensions as
-    // they should be set before creating channels.
+    // Verify that existing RTP header extensions can be removed.
     std::vector<cricket::RtpHeaderExtension> empty_extensions;
-    EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(empty_extensions));
-    EXPECT_FALSE(recv_stream->GetConfig().rtp.extensions.empty());
+    EXPECT_TRUE(channel_->SetRecvRtpHeaderExtensions(empty_extensions));
+    ASSERT_EQ(1u, call->GetVideoReceiveStreams().size());
+    recv_stream = call->GetVideoReceiveStreams()[0];
+    EXPECT_TRUE(recv_stream->GetConfig().rtp.extensions.empty());
+
+    // Verify that adding receive RTP header extensions adds them for existing
+    // streams.
+    EXPECT_TRUE(channel_->SetRecvRtpHeaderExtensions(extensions));
+    recv_stream = call->GetVideoReceiveStreams()[0];
+    ASSERT_EQ(1u, recv_stream->GetConfig().rtp.extensions.size());
+    EXPECT_EQ(id, recv_stream->GetConfig().rtp.extensions[0].id);
+    EXPECT_EQ(webrtc_ext, recv_stream->GetConfig().rtp.extensions[0].name);
   }
 
   talk_base::scoped_ptr<VideoMediaChannel> channel_;
@@ -1230,8 +1251,24 @@ TEST_F(WebRtcVideoChannel2Test,
   FAIL();  // TODO(pbos): Verify that the FEC parameters are set for all codecs.
 }
 
-TEST_F(WebRtcVideoChannel2Test, DISABLED_SetRecvCodecsWithoutFecDisablesFec) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
+TEST_F(WebRtcVideoChannel2Test, SetRecvCodecsWithoutFecDisablesFec) {
+  std::vector<VideoCodec> codecs;
+  codecs.push_back(kVp8Codec);
+  codecs.push_back(kUlpfecCodec);
+  ASSERT_TRUE(channel_->SetSendCodecs(codecs));
+
+  FakeVideoReceiveStream* stream = AddRecvStream();
+  webrtc::VideoReceiveStream::Config config = stream->GetConfig();
+
+  EXPECT_EQ(kUlpfecCodec.id, config.rtp.fec.ulpfec_payload_type);
+
+  codecs.pop_back();
+  ASSERT_TRUE(channel_->SetRecvCodecs(codecs));
+  stream = fake_channel_->GetFakeCall()->GetVideoReceiveStreams()[0];
+  ASSERT_TRUE(stream != NULL);
+  config = stream->GetConfig();
+  EXPECT_EQ(-1, config.rtp.fec.ulpfec_payload_type)
+      << "SetSendCodec without FEC should disable current FEC.";
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetSendCodecsRejectDuplicateFecPayloads) {

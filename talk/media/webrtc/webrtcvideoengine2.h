@@ -41,6 +41,7 @@
 #include "webrtc/transport.h"
 #include "webrtc/video_renderer.h"
 #include "webrtc/video_send_stream.h"
+#include "webrtc/video_receive_stream.h"
 
 namespace webrtc {
 class Call;
@@ -170,29 +171,6 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
   WebRtcVideoEncoderFactory2 default_video_encoder_factory_;
 };
 
-// Adapter between webrtc::VideoRenderer and cricket::VideoRenderer.
-// The webrtc::VideoRenderer is set once, whereas the cricket::VideoRenderer can
-// be set after initialization. This adapter will also convert the incoming
-// webrtc::I420VideoFrame to a frame type that cricket::VideoRenderer can
-// render.
-class WebRtcVideoRenderer : public webrtc::VideoRenderer {
- public:
-  WebRtcVideoRenderer();
-
-  virtual void RenderFrame(const webrtc::I420VideoFrame& frame,
-                           int time_to_render_ms) OVERRIDE;
-
-  void SetRenderer(cricket::VideoRenderer* renderer);
-  cricket::VideoRenderer* GetRenderer();
-
- private:
-  void SetSize(int width, int height);
-  int last_width_;
-  int last_height_;
-  talk_base::CriticalSection lock_;
-  cricket::VideoRenderer* renderer_ GUARDED_BY(lock_);
-};
-
 class WebRtcVideoChannel2 : public talk_base::MessageHandler,
                             public VideoMediaChannel,
                             public webrtc::newapi::Transport {
@@ -261,6 +239,9 @@ class WebRtcVideoChannel2 : public talk_base::MessageHandler,
   bool GetRenderer(uint32 ssrc, VideoRenderer** renderer);
 
  private:
+  void ConfigureReceiverRtp(webrtc::VideoReceiveStream::Config* config,
+                            const StreamParams& sp) const;
+
   struct VideoCodecSettings {
     VideoCodecSettings();
 
@@ -269,6 +250,8 @@ class WebRtcVideoChannel2 : public talk_base::MessageHandler,
     int rtx_payload_type;
   };
 
+  // Wrapper for the sender part, this is where the capturer is connected and
+  // frames are then converted from cricket frames to webrtc frames.
   class WebRtcVideoSendStream : public sigslot::has_slots<> {
    public:
     WebRtcVideoSendStream(
@@ -282,6 +265,8 @@ class WebRtcVideoChannel2 : public talk_base::MessageHandler,
     ~WebRtcVideoSendStream();
     void SetOptions(const VideoOptions& options);
     void SetCodec(const VideoCodecSettings& codec);
+    void SetRtpExtensions(
+        const std::vector<webrtc::RtpExtension>& rtp_extensions);
 
     void InputFrame(VideoCapturer* capturer, const VideoFrame* frame);
     bool SetCapturer(VideoCapturer* capturer);
@@ -332,6 +317,41 @@ class WebRtcVideoChannel2 : public talk_base::MessageHandler,
     webrtc::I420VideoFrame video_frame_ GUARDED_BY(frame_lock_);
   };
 
+  // Wrapper for the receiver part, contains configs etc. that are needed to
+  // reconstruct the underlying VideoReceiveStream. Also serves as a wrapper
+  // between webrtc::VideoRenderer and cricket::VideoRenderer.
+  class WebRtcVideoReceiveStream : public webrtc::VideoRenderer {
+   public:
+    WebRtcVideoReceiveStream(
+        webrtc::Call*,
+        const webrtc::VideoReceiveStream::Config& config,
+        const std::vector<VideoCodecSettings>& recv_codecs);
+    ~WebRtcVideoReceiveStream();
+
+    void SetRecvCodecs(const std::vector<VideoCodecSettings>& recv_codecs);
+    void SetRtpExtensions(const std::vector<webrtc::RtpExtension>& extensions);
+
+    virtual void RenderFrame(const webrtc::I420VideoFrame& frame,
+                             int time_to_render_ms) OVERRIDE;
+
+    void SetRenderer(cricket::VideoRenderer* renderer);
+    cricket::VideoRenderer* GetRenderer();
+
+   private:
+    void SetSize(int width, int height);
+    void RecreateWebRtcStream();
+
+    webrtc::Call* const call_;
+
+    webrtc::VideoReceiveStream* stream_;
+    webrtc::VideoReceiveStream::Config config_;
+
+    talk_base::CriticalSection renderer_lock_;
+    cricket::VideoRenderer* renderer_ GUARDED_BY(renderer_lock_);
+    int last_width_;
+    int last_height_;
+  };
+
   void Construct(webrtc::Call* call, WebRtcVideoEngine2* engine);
 
   virtual bool SendRtp(const uint8_t* data, size_t len) OVERRIDE;
@@ -339,7 +359,7 @@ class WebRtcVideoChannel2 : public talk_base::MessageHandler,
 
   void StartAllSendStreams();
   void StopAllSendStreams();
-  void SetCodecForAllSendStreams(const VideoCodecSettings& codec);
+
   static std::vector<VideoCodecSettings> MapCodecs(
       const std::vector<VideoCodec>& codecs);
   std::vector<VideoCodecSettings> FilterSupportedCodecs(
@@ -348,14 +368,13 @@ class WebRtcVideoChannel2 : public talk_base::MessageHandler,
   uint32_t rtcp_receiver_report_ssrc_;
   bool sending_;
   talk_base::scoped_ptr<webrtc::Call> call_;
-  std::map<uint32, WebRtcVideoRenderer*> renderers_;
-  VideoRenderer* default_renderer_;
   uint32_t default_send_ssrc_;
   uint32_t default_recv_ssrc_;
+  VideoRenderer* default_renderer_;
 
   // Using primary-ssrc (first ssrc) as key.
   std::map<uint32, WebRtcVideoSendStream*> send_streams_;
-  std::map<uint32, webrtc::VideoReceiveStream*> receive_streams_;
+  std::map<uint32, WebRtcVideoReceiveStream*> receive_streams_;
 
   Settable<VideoCodecSettings> send_codec_;
   std::vector<webrtc::RtpExtension> send_rtp_extensions_;
