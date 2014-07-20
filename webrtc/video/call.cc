@@ -33,6 +33,12 @@ namespace webrtc {
 const char* RtpExtension::kTOffset = "urn:ietf:params:rtp-hdrext:toffset";
 const char* RtpExtension::kAbsSendTime =
     "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
+
+bool RtpExtension::IsSupported(const std::string& name) {
+  return name == webrtc::RtpExtension::kTOffset ||
+         name == webrtc::RtpExtension::kAbsSendTime;
+}
+
 namespace internal {
 
 class CpuOveruseObserverProxy : public webrtc::CpuOveruseObserver {

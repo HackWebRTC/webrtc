@@ -10,8 +10,8 @@
 
 // TODO(pbos): Move Config from common.h to here.
 
-#ifndef WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_CONFIG_H_
-#define WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_CONFIG_H_
+#ifndef WEBRTC_CONFIG_H_
+#define WEBRTC_CONFIG_H_
 
 #include <string>
 #include <vector>
@@ -73,9 +73,10 @@ struct FecConfig {
 
 // RTP header extension to use for the video stream, see RFC 5285.
 struct RtpExtension {
-  RtpExtension(const char* name, int id) : name(name), id(id) {}
+  RtpExtension(const std::string& name, int id) : name(name), id(id) {}
   std::string ToString() const;
-  // TODO(mflodman) Add API to query supported extensions.
+  static bool IsSupported(const std::string& name);
+
   static const char* kTOffset;
   static const char* kAbsSendTime;
   std::string name;
@@ -109,4 +110,4 @@ struct VideoStream {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_CONFIG_H_
+#endif  // WEBRTC_CONFIG_H_

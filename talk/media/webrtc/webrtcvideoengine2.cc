@@ -34,6 +34,7 @@
 
 #include <math.h>
 
+#include <set>
 #include <string>
 
 #include "libyuv/convert_from.h"
@@ -134,6 +135,34 @@ static std::vector<VideoCodec> DefaultVideoCodecs() {
                                    kDefaultVideoCodecPref.payload_type));
   }
   return codecs;
+}
+
+static bool ValidateRtpHeaderExtensionIds(
+    const std::vector<RtpHeaderExtension>& extensions) {
+  std::set<int> extensions_used;
+  for (size_t i = 0; i < extensions.size(); ++i) {
+    if (extensions[i].id < 0 || extensions[i].id >= 15 ||
+        !extensions_used.insert(extensions[i].id).second) {
+      LOG(LS_ERROR) << "RTP extensions are with incorrect or duplicate ids.";
+      return false;
+    }
+  }
+  return true;
+}
+
+static std::vector<webrtc::RtpExtension> FilterRtpExtensions(
+    const std::vector<RtpHeaderExtension>& extensions) {
+  std::vector<webrtc::RtpExtension> webrtc_extensions;
+  for (size_t i = 0; i < extensions.size(); ++i) {
+    // Unsupported extensions will be ignored.
+    if (webrtc::RtpExtension::IsSupported(extensions[i].uri)) {
+      webrtc_extensions.push_back(webrtc::RtpExtension(
+          extensions[i].uri, extensions[i].id));
+    } else {
+      LOG(LS_WARNING) << "Unsupported RTP extension: " << extensions[i].uri;
+    }
+  }
+  return webrtc_extensions;
 }
 
 WebRtcVideoEncoderFactory2::~WebRtcVideoEncoderFactory2() {
@@ -1099,22 +1128,16 @@ bool WebRtcVideoChannel2::SetRecvRtpHeaderExtensions(
     const std::vector<RtpHeaderExtension>& extensions) {
   LOG(LS_INFO) << "SetRecvRtpHeaderExtensions: "
                << RtpExtensionsToString(extensions);
-  std::vector<webrtc::RtpExtension> webrtc_extensions;
-  for (size_t i = 0; i < extensions.size(); ++i) {
-    // TODO(pbos): Make sure we don't pass unsupported extensions!
-    webrtc::RtpExtension webrtc_extension(extensions[i].uri.c_str(),
-                                          extensions[i].id);
-    webrtc_extensions.push_back(webrtc_extension);
-  }
-  recv_rtp_extensions_ = webrtc_extensions;
+  if (!ValidateRtpHeaderExtensionIds(extensions))
+    return false;
 
+  recv_rtp_extensions_ = FilterRtpExtensions(extensions);
   for (std::map<uint32, WebRtcVideoReceiveStream*>::iterator it =
            receive_streams_.begin();
        it != receive_streams_.end();
        ++it) {
     it->second->SetRtpExtensions(recv_rtp_extensions_);
   }
-
   return true;
 }
 
@@ -1122,14 +1145,10 @@ bool WebRtcVideoChannel2::SetSendRtpHeaderExtensions(
     const std::vector<RtpHeaderExtension>& extensions) {
   LOG(LS_INFO) << "SetSendRtpHeaderExtensions: "
                << RtpExtensionsToString(extensions);
-  std::vector<webrtc::RtpExtension> webrtc_extensions;
-  for (size_t i = 0; i < extensions.size(); ++i) {
-    // TODO(pbos): Make sure we don't pass unsupported extensions!
-    webrtc::RtpExtension webrtc_extension(extensions[i].uri.c_str(),
-                                          extensions[i].id);
-    webrtc_extensions.push_back(webrtc_extension);
-  }
-  send_rtp_extensions_ = webrtc_extensions;
+  if (!ValidateRtpHeaderExtensionIds(extensions))
+    return false;
+
+  send_rtp_extensions_ = FilterRtpExtensions(extensions);
   for (std::map<uint32, WebRtcVideoSendStream*>::iterator it =
            send_streams_.begin();
        it != send_streams_.end();

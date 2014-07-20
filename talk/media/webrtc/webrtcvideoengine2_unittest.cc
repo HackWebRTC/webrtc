@@ -49,6 +49,8 @@ static const cricket::VideoCodec kUlpfecCodec(117, "ulpfec", 0, 0, 0, 0);
 
 static const uint32 kSsrcs1[] = {1};
 static const uint32 kRtxSsrcs1[] = {4};
+static const char kUnsupportedExtensionName[] =
+    "urn:ietf:params:rtp-hdrext:unsupported";
 
 void VerifyCodecHasDefaultFeedbackParams(const cricket::VideoCodec& codec) {
   EXPECT_TRUE(codec.HasFeedbackParam(cricket::FeedbackParam(
@@ -820,6 +822,110 @@ TEST_F(WebRtcVideoChannel2Test, SendAbsoluteSendTimeHeaderExtensions) {
 TEST_F(WebRtcVideoChannel2Test, RecvAbsoluteSendTimeHeaderExtensions) {
   TestSetRecvRtpHeaderExtensions(kRtpAbsoluteSenderTimeHeaderExtension,
                                  webrtc::RtpExtension::kAbsSendTime);
+}
+
+TEST_F(WebRtcVideoChannel2Test,
+    SetSendRtpHeaderExtensionsExcludeUnsupportedExtensions) {
+  const int kUnsupportedId = 1;
+  const int kTOffsetId = 2;
+
+  std::vector<cricket::RtpHeaderExtension> extensions;
+  extensions.push_back(cricket::RtpHeaderExtension(
+      kUnsupportedExtensionName, kUnsupportedId));
+  extensions.push_back(cricket::RtpHeaderExtension(
+      webrtc::RtpExtension::kTOffset, kTOffsetId));
+  EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
+  FakeVideoSendStream* send_stream =
+      AddSendStream(cricket::StreamParams::CreateLegacy(123));
+
+  // Only timestamp offset extension is set to send stream,
+  // unsupported rtp extension is ignored.
+  ASSERT_EQ(1u, send_stream->GetConfig().rtp.extensions.size());
+  EXPECT_STREQ(webrtc::RtpExtension::kTOffset,
+      send_stream->GetConfig().rtp.extensions[0].name.c_str());
+}
+
+TEST_F(WebRtcVideoChannel2Test,
+    SetRecvRtpHeaderExtensionsExcludeUnsupportedExtensions) {
+  const int kUnsupportedId = 1;
+  const int kTOffsetId = 2;
+
+  std::vector<cricket::RtpHeaderExtension> extensions;
+  extensions.push_back(cricket::RtpHeaderExtension(
+      kUnsupportedExtensionName, kUnsupportedId));
+  extensions.push_back(cricket::RtpHeaderExtension(
+      webrtc::RtpExtension::kTOffset, kTOffsetId));
+  EXPECT_TRUE(channel_->SetRecvRtpHeaderExtensions(extensions));
+  FakeVideoReceiveStream* recv_stream =
+      AddRecvStream(cricket::StreamParams::CreateLegacy(123));
+
+  // Only timestamp offset extension is set to receive stream,
+  // unsupported rtp extension is ignored.
+  ASSERT_EQ(1u, recv_stream->GetConfig().rtp.extensions.size());
+  EXPECT_STREQ(webrtc::RtpExtension::kTOffset,
+      recv_stream->GetConfig().rtp.extensions[0].name.c_str());
+}
+
+TEST_F(WebRtcVideoChannel2Test,
+    SetSendRtpHeaderExtensionsRejectsIncorrectIds) {
+  const size_t kNumIncorrectIds = 4;
+  const int kIncorrectIds[kNumIncorrectIds] = {-2, -1, 15, 16};
+  for (size_t i = 0; i < kNumIncorrectIds; ++i) {
+    std::vector<cricket::RtpHeaderExtension> extensions;
+    extensions.push_back(cricket::RtpHeaderExtension(
+        webrtc::RtpExtension::kTOffset, kIncorrectIds[i]));
+    EXPECT_FALSE(channel_->SetSendRtpHeaderExtensions(extensions))
+        << "Bad extension id '" << kIncorrectIds[i] << "' accepted.";
+  }
+}
+
+TEST_F(WebRtcVideoChannel2Test,
+    SetRecvRtpHeaderExtensionsRejectsIncorrectIds) {
+  const size_t kNumIncorrectIds = 4;
+  const int kIncorrectIds[kNumIncorrectIds] = {-2, -1, 15, 16};
+  for (size_t i = 0; i < kNumIncorrectIds; ++i) {
+    std::vector<cricket::RtpHeaderExtension> extensions;
+    extensions.push_back(cricket::RtpHeaderExtension(
+        webrtc::RtpExtension::kTOffset, kIncorrectIds[i]));
+    EXPECT_FALSE(channel_->SetRecvRtpHeaderExtensions(extensions))
+        << "Bad extension id '" << kIncorrectIds[i] << "' accepted.";
+  }
+}
+
+TEST_F(WebRtcVideoChannel2Test,
+    SetSendRtpHeaderExtensionsRejectsDuplicateIds) {
+  const int id = 1;
+  std::vector<cricket::RtpHeaderExtension> extensions;
+  extensions.push_back(cricket::RtpHeaderExtension(
+      webrtc::RtpExtension::kTOffset, id));
+  extensions.push_back(cricket::RtpHeaderExtension(
+      kRtpAbsoluteSenderTimeHeaderExtension, id));
+  EXPECT_FALSE(channel_->SetSendRtpHeaderExtensions(extensions));
+
+  // Duplicate entries are also not supported.
+  extensions.clear();
+  extensions.push_back(cricket::RtpHeaderExtension(
+      webrtc::RtpExtension::kTOffset, id));
+  extensions.push_back(extensions.back());
+  EXPECT_FALSE(channel_->SetSendRtpHeaderExtensions(extensions));
+}
+
+TEST_F(WebRtcVideoChannel2Test,
+    SetRecvRtpHeaderExtensionsRejectsDuplicateIds) {
+  const int id = 1;
+  std::vector<cricket::RtpHeaderExtension> extensions;
+  extensions.push_back(cricket::RtpHeaderExtension(
+      webrtc::RtpExtension::kTOffset, id));
+  extensions.push_back(cricket::RtpHeaderExtension(
+      kRtpAbsoluteSenderTimeHeaderExtension, id));
+  EXPECT_FALSE(channel_->SetRecvRtpHeaderExtensions(extensions));
+
+  // Duplicate entries are also not supported.
+  extensions.clear();
+  extensions.push_back(cricket::RtpHeaderExtension(
+      webrtc::RtpExtension::kTOffset, id));
+  extensions.push_back(extensions.back());
+  EXPECT_FALSE(channel_->SetRecvRtpHeaderExtensions(extensions));
 }
 
 TEST_F(WebRtcVideoChannel2Test, DISABLED_LeakyBucketTest) {
