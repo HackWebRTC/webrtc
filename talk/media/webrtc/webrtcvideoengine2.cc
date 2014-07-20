@@ -73,28 +73,8 @@ VideoCodecPref kUlpfecPref = {117, kUlpfecCodecName, -1};
 
 // The formats are sorted by the descending order of width. We use the order to
 // find the next format for CPU and bandwidth adaptation.
-const VideoFormatPod kDefaultVideoFormat = {
+const VideoFormatPod kDefaultMaxVideoFormat = {
     640, 400, FPS_TO_INTERVAL(kDefaultFramerate), FOURCC_ANY};
-const VideoFormatPod kVideoFormats[] = {
-    {1280, 800, FPS_TO_INTERVAL(kDefaultFramerate), FOURCC_ANY},
-    {1280, 720, FPS_TO_INTERVAL(kDefaultFramerate), FOURCC_ANY},
-    {960, 600, FPS_TO_INTERVAL(kDefaultFramerate), FOURCC_ANY},
-    {960, 540, FPS_TO_INTERVAL(kDefaultFramerate), FOURCC_ANY},
-    kDefaultVideoFormat,
-    {640, 360, FPS_TO_INTERVAL(kDefaultFramerate), FOURCC_ANY},
-    {640, 480, FPS_TO_INTERVAL(kDefaultFramerate), FOURCC_ANY},
-    {480, 300, FPS_TO_INTERVAL(kDefaultFramerate), FOURCC_ANY},
-    {480, 270, FPS_TO_INTERVAL(kDefaultFramerate), FOURCC_ANY},
-    {480, 360, FPS_TO_INTERVAL(kDefaultFramerate), FOURCC_ANY},
-    {320, 200, FPS_TO_INTERVAL(kDefaultFramerate), FOURCC_ANY},
-    {320, 180, FPS_TO_INTERVAL(kDefaultFramerate), FOURCC_ANY},
-    {320, 240, FPS_TO_INTERVAL(kDefaultFramerate), FOURCC_ANY},
-    {240, 150, FPS_TO_INTERVAL(kDefaultFramerate), FOURCC_ANY},
-    {240, 135, FPS_TO_INTERVAL(kDefaultFramerate), FOURCC_ANY},
-    {240, 180, FPS_TO_INTERVAL(kDefaultFramerate), FOURCC_ANY},
-    {160, 100, FPS_TO_INTERVAL(kDefaultFramerate), FOURCC_ANY},
-    {160, 90, FPS_TO_INTERVAL(kDefaultFramerate), FOURCC_ANY},
-    {160, 120, FPS_TO_INTERVAL(kDefaultFramerate), FOURCC_ANY}, };
 
 static bool FindFirstMatchingCodec(const std::vector<VideoCodec>& codecs,
                                    const VideoCodec& requested_codec,
@@ -104,49 +84,6 @@ static bool FindFirstMatchingCodec(const std::vector<VideoCodec>& codecs,
       *matching_codec = codecs[i];
       return true;
     }
-  }
-  return false;
-}
-static bool FindBestVideoFormat(int max_width,
-                                int max_height,
-                                int aspect_width,
-                                int aspect_height,
-                                VideoFormat* video_format) {
-  assert(max_width > 0);
-  assert(max_height > 0);
-  assert(aspect_width > 0);
-  assert(aspect_height > 0);
-  VideoFormat best_format;
-  for (int i = 0; i < ARRAY_SIZE(kVideoFormats); ++i) {
-    const VideoFormat format(kVideoFormats[i]);
-
-    // Skip any format that is larger than the local or remote maximums, or
-    // smaller than the current best match
-    if (format.width > max_width || format.height > max_height ||
-        (format.width < best_format.width &&
-         format.height < best_format.height)) {
-      continue;
-    }
-
-    // If we don't have any matches yet, this is the best so far.
-    if (best_format.width == 0) {
-      best_format = format;
-      continue;
-    }
-
-    // Prefer closer aspect ratios i.e:
-    // |format| aspect - requested aspect <
-    // |best_format| aspect - requested aspect
-    if (abs(format.width * aspect_height * best_format.height -
-            aspect_width * format.height * best_format.height) <
-        abs(best_format.width * aspect_height * format.height -
-            aspect_width * format.height * best_format.height)) {
-      best_format = format;
-    }
-  }
-  if (best_format.width != 0) {
-    *video_format = best_format;
-    return true;
   }
   return false;
 }
@@ -170,8 +107,8 @@ static bool IsNackEnabled(const VideoCodec& codec) {
 static VideoCodec DefaultVideoCodec() {
   VideoCodec default_codec(kDefaultVideoCodecPref.payload_type,
                            kDefaultVideoCodecPref.name,
-                           kDefaultVideoFormat.width,
-                           kDefaultVideoFormat.height,
+                           kDefaultMaxVideoFormat.width,
+                           kDefaultMaxVideoFormat.height,
                            kDefaultFramerate,
                            0);
   AddDefaultFeedbackParams(&default_codec);
@@ -267,7 +204,7 @@ void WebRtcVideoEngine2::Construct(WebRtcVideoChannelFactory* channel_factory,
   channel_factory_ = channel_factory;
 
   video_codecs_ = DefaultVideoCodecs();
-  default_codec_format_ = VideoFormat(kDefaultVideoFormat);
+  default_codec_format_ = VideoFormat(kDefaultMaxVideoFormat);
 
   rtp_header_extensions_.push_back(
       RtpHeaderExtension(kRtpTimestampOffsetHeaderExtension,
@@ -320,8 +257,21 @@ bool WebRtcVideoEngine2::SetOptions(const VideoOptions& options) {
 
 bool WebRtcVideoEngine2::SetDefaultEncoderConfig(
     const VideoEncoderConfig& config) {
-  // TODO(pbos): Implement. Should be covered by corresponding unit tests.
-  LOG(LS_VERBOSE) << "SetDefaultEncoderConfig()";
+  const VideoCodec& codec = config.max_codec;
+  // TODO(pbos): Make use of external encoder factory.
+  if (!GetVideoEncoderFactory()->SupportsCodec(codec)) {
+    LOG(LS_ERROR) << "SetDefaultEncoderConfig, codec not supported:"
+                  << codec.ToString();
+    return false;
+  }
+
+  default_codec_format_ =
+      VideoFormat(codec.width,
+                  codec.height,
+                  VideoFormat::FpsToInterval(codec.framerate),
+                  FOURCC_ANY);
+  video_codecs_.clear();
+  video_codecs_.push_back(codec);
   return true;
 }
 
@@ -382,17 +332,10 @@ bool WebRtcVideoEngine2::FindCodec(const VideoCodec& in) {
   // TODO(pbos): Probe encoder factory to figure out that the codec is supported
   // if supported by the encoder factory. Add a corresponding test that fails
   // with this code (that doesn't ask the factory).
-  for (int i = 0; i < ARRAY_SIZE(kVideoFormats); ++i) {
-    const VideoFormat fmt(kVideoFormats[i]);
-    if ((in.width != 0 || in.height != 0) &&
-        (fmt.width != in.width || fmt.height != in.height)) {
-      continue;
-    }
-    for (size_t j = 0; j < video_codecs_.size(); ++j) {
-      VideoCodec codec(video_codecs_[j].id, video_codecs_[j].name, 0, 0, 0, 0);
-      if (codec.Matches(in)) {
-        return true;
-      }
+  for (size_t j = 0; j < video_codecs_.size(); ++j) {
+    VideoCodec codec(video_codecs_[j].id, video_codecs_[j].name, 0, 0, 0, 0);
+    if (codec.Matches(in)) {
+      return true;
     }
   }
   return false;
@@ -406,7 +349,6 @@ bool WebRtcVideoEngine2::CanSendCodec(const VideoCodec& requested,
                                       const VideoCodec& current,
                                       VideoCodec* out) {
   assert(out != NULL);
-  // TODO(pbos): Implement.
 
   if (requested.width != requested.height &&
       (requested.height == 0 || requested.width == 0)) {
@@ -420,37 +362,26 @@ bool WebRtcVideoEngine2::CanSendCodec(const VideoCodec& requested,
     return false;
   }
 
-  // Pick the best quality that is within their and our bounds and has the
-  // correct aspect ratio.
-  VideoFormat format;
-  if (requested.width == 0 && requested.height == 0) {
-    // Special case with resolution 0. The channel should not send frames.
-  } else {
-    int max_width = talk_base::_min(requested.width, matching_codec.width);
-    int max_height = talk_base::_min(requested.height, matching_codec.height);
-    int aspect_width = max_width;
-    int aspect_height = max_height;
-    if (current.width > 0 && current.height > 0) {
-      aspect_width = current.width;
-      aspect_height = current.height;
-    }
-    if (!FindBestVideoFormat(
-            max_width, max_height, aspect_width, aspect_height, &format)) {
-      return false;
-    }
-  }
-
   out->id = requested.id;
   out->name = requested.name;
   out->preference = requested.preference;
   out->params = requested.params;
   out->framerate =
       talk_base::_min(requested.framerate, matching_codec.framerate);
-  out->width = format.width;
-  out->height = format.height;
   out->params = requested.params;
   out->feedback_params = requested.feedback_params;
-  return true;
+  out->width = requested.width;
+  out->height = requested.height;
+  if (requested.width == 0 && requested.height == 0) {
+    return true;
+  }
+
+  while (out->width > matching_codec.width) {
+    out->width /= 2;
+    out->height /= 2;
+  }
+
+  return out->width > 0 && out->height > 0;
 }
 
 bool WebRtcVideoEngine2::SetVoiceEngine(WebRtcVoiceEngine* voice_engine) {

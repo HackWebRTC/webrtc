@@ -350,8 +350,10 @@ TEST_F(WebRtcVideoEngine2Test, FindCodec) {
   vp8_diff_id.id = 97;
   EXPECT_TRUE(engine_.FindCodec(vp8_diff_id));
 
+  // FindCodec ignores the codec size.
+  // Test that FindCodec can accept uncommon codec size.
   cricket::VideoCodec vp8_diff_res(104, "VP8", 320, 111, 30, 0);
-  EXPECT_FALSE(engine_.FindCodec(vp8_diff_res));
+  EXPECT_TRUE(engine_.FindCodec(vp8_diff_res));
 
   // PeerConnection doesn't negotiate the resolution at this point.
   // Test that FindCodec can handle the case when width/height is 0.
@@ -424,6 +426,17 @@ TEST_F(WebRtcVideoEngine2Test, SetSendFailsBeforeSettingCodecs) {
       << "Channel should be stoppable even without set codecs.";
 }
 
+class WebRtcVideoEngine2BaseTest
+    : public VideoEngineTest<cricket::WebRtcVideoEngine2> {
+ protected:
+  typedef VideoEngineTest<cricket::WebRtcVideoEngine2> Base;
+};
+
+#define WEBRTC_ENGINE_BASE_TEST(test) \
+  TEST_F(WebRtcVideoEngine2BaseTest, test) { Base::test##Body(); }
+
+WEBRTC_ENGINE_BASE_TEST(ConstrainNewCodec2);
+
 class WebRtcVideoChannel2BaseTest
     : public VideoMediaChannelTest<WebRtcVideoEngine2, WebRtcVideoChannel2> {
  protected:
@@ -431,118 +444,74 @@ class WebRtcVideoChannel2BaseTest
   typedef VideoMediaChannelTest<WebRtcVideoEngine2, WebRtcVideoChannel2> Base;
 };
 
+#define WEBRTC_BASE_TEST(test) \
+  TEST_F(WebRtcVideoChannel2BaseTest, test) { Base::test(); }
+
+#define WEBRTC_DISABLED_BASE_TEST(test) \
+  TEST_F(WebRtcVideoChannel2BaseTest, DISABLED_ ## test) { Base::test(); }
+
 // TODO(pbos): Fix WebRtcVideoEngine2BaseTest, where we want CheckCoInitialize.
 #if 0
 // TODO(juberti): Figure out why ViE is munging the COM refcount.
 #ifdef WIN32
-TEST_F(WebRtcVideoChannel2BaseTest, DISABLED_CheckCoInitialize) {
+WEBRTC_DISABLED_BASE_TEST(CheckCoInitialize) {
   Base::CheckCoInitialize();
 }
 #endif
 #endif
 
-TEST_F(WebRtcVideoChannel2BaseTest, SetSend) { Base::SetSend(); }
+WEBRTC_BASE_TEST(SetSend);
+WEBRTC_BASE_TEST(SetSendWithoutCodecs);
+WEBRTC_BASE_TEST(SetSendSetsTransportBufferSizes);
 
-TEST_F(WebRtcVideoChannel2BaseTest, SetSendWithoutCodecs) {
-  Base::SetSendWithoutCodecs();
-}
+WEBRTC_BASE_TEST(GetStats);
+WEBRTC_BASE_TEST(GetStatsMultipleRecvStreams);
+WEBRTC_BASE_TEST(GetStatsMultipleSendStreams);
 
-TEST_F(WebRtcVideoChannel2BaseTest, SetSendSetsTransportBufferSizes) {
-  Base::SetSendSetsTransportBufferSizes();
-}
+WEBRTC_BASE_TEST(SetSendBandwidth);
 
-TEST_F(WebRtcVideoChannel2BaseTest, GetStats) { Base::GetStats(); }
+WEBRTC_BASE_TEST(SetSendSsrc);
+WEBRTC_BASE_TEST(SetSendSsrcAfterSetCodecs);
 
-TEST_F(WebRtcVideoChannel2BaseTest, GetStatsMultipleRecvStreams) {
-  Base::GetStatsMultipleRecvStreams();
-}
+WEBRTC_BASE_TEST(SetRenderer);
+WEBRTC_BASE_TEST(AddRemoveRecvStreams);
 
-TEST_F(WebRtcVideoChannel2BaseTest, GetStatsMultipleSendStreams) {
-  Base::GetStatsMultipleSendStreams();
-}
+WEBRTC_DISABLED_BASE_TEST(AddRemoveRecvStreamAndRender);
 
-TEST_F(WebRtcVideoChannel2BaseTest, SetSendBandwidth) {
-  Base::SetSendBandwidth();
-}
-TEST_F(WebRtcVideoChannel2BaseTest, SetSendSsrc) { Base::SetSendSsrc(); }
-TEST_F(WebRtcVideoChannel2BaseTest, SetSendSsrcAfterSetCodecs) {
-  Base::SetSendSsrcAfterSetCodecs();
-}
+WEBRTC_BASE_TEST(AddRemoveRecvStreamsNoConference);
 
-TEST_F(WebRtcVideoChannel2BaseTest, SetRenderer) { Base::SetRenderer(); }
+WEBRTC_BASE_TEST(AddRemoveSendStreams);
 
-TEST_F(WebRtcVideoChannel2BaseTest, AddRemoveRecvStreams) {
-  Base::AddRemoveRecvStreams();
-}
+WEBRTC_BASE_TEST(SimulateConference);
 
-TEST_F(WebRtcVideoChannel2BaseTest, DISABLED_AddRemoveRecvStreamAndRender) {
-  Base::AddRemoveRecvStreamAndRender();
-}
+WEBRTC_BASE_TEST(AddRemoveCapturer);
 
-TEST_F(WebRtcVideoChannel2BaseTest, AddRemoveRecvStreamsNoConference) {
-  Base::AddRemoveRecvStreamsNoConference();
-}
+WEBRTC_BASE_TEST(RemoveCapturerWithoutAdd);
 
-TEST_F(WebRtcVideoChannel2BaseTest, AddRemoveSendStreams) {
-  Base::AddRemoveSendStreams();
-}
-
-TEST_F(WebRtcVideoChannel2BaseTest, SimulateConference) {
-  Base::SimulateConference();
-}
-
-TEST_F(WebRtcVideoChannel2BaseTest, AddRemoveCapturer) {
-  Base::AddRemoveCapturer();
-}
-
-TEST_F(WebRtcVideoChannel2BaseTest, RemoveCapturerWithoutAdd) {
-  Base::RemoveCapturerWithoutAdd();
-}
-
-TEST_F(WebRtcVideoChannel2BaseTest, AddRemoveCapturerMultipleSources) {
-  Base::AddRemoveCapturerMultipleSources();
-}
+WEBRTC_BASE_TEST(AddRemoveCapturerMultipleSources);
 
 // TODO(pbos): Figure out why this fails so often.
-TEST_F(WebRtcVideoChannel2BaseTest, DISABLED_HighAspectHighHeightCapturer) {
-  Base::HighAspectHighHeightCapturer();
-}
+WEBRTC_DISABLED_BASE_TEST(HighAspectHighHeightCapturer);
 
-TEST_F(WebRtcVideoChannel2BaseTest, RejectEmptyStreamParams) {
-  Base::RejectEmptyStreamParams();
-}
+WEBRTC_BASE_TEST(RejectEmptyStreamParams);
 
-TEST_F(WebRtcVideoChannel2BaseTest, AdaptResolution16x10) {
-  Base::AdaptResolution16x10();
-}
+WEBRTC_BASE_TEST(AdaptResolution16x10);
 
-TEST_F(WebRtcVideoChannel2BaseTest, AdaptResolution4x3) {
-  Base::AdaptResolution4x3();
-}
+WEBRTC_BASE_TEST(AdaptResolution4x3);
 
-TEST_F(WebRtcVideoChannel2BaseTest, MuteStream) { Base::MuteStream(); }
+WEBRTC_BASE_TEST(MuteStream);
 
-TEST_F(WebRtcVideoChannel2BaseTest, MultipleSendStreams) {
-  Base::MultipleSendStreams();
-}
+WEBRTC_BASE_TEST(MultipleSendStreams);
 
 // TODO(juberti): Restore this test once we support sending 0 fps.
-TEST_F(WebRtcVideoChannel2BaseTest, DISABLED_AdaptDropAllFrames) {
-  Base::AdaptDropAllFrames();
-}
+WEBRTC_DISABLED_BASE_TEST(AdaptDropAllFrames);
 // TODO(juberti): Understand why we get decode errors on this test.
-TEST_F(WebRtcVideoChannel2BaseTest, DISABLED_AdaptFramerate) {
-  Base::AdaptFramerate();
-}
+WEBRTC_DISABLED_BASE_TEST(AdaptFramerate);
 
-TEST_F(WebRtcVideoChannel2BaseTest, SetSendStreamFormat0x0) {
-  Base::SetSendStreamFormat0x0();
-}
+WEBRTC_BASE_TEST(SetSendStreamFormat0x0);
 
 // TODO(zhurunz): Fix the flakey test.
-TEST_F(WebRtcVideoChannel2BaseTest, DISABLED_SetSendStreamFormat) {
-  Base::SetSendStreamFormat();
-}
+WEBRTC_DISABLED_BASE_TEST(SetSendStreamFormat);
 
 TEST_F(WebRtcVideoChannel2BaseTest, TwoStreamsSendAndReceive) {
   Base::TwoStreamsSendAndReceive(kVp8Codec);
