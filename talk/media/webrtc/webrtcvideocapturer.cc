@@ -53,10 +53,10 @@ struct kVideoFourCCEntry {
 static kVideoFourCCEntry kSupportedFourCCs[] = {
   { FOURCC_I420, webrtc::kVideoI420 },   // 12 bpp, no conversion.
   { FOURCC_YV12, webrtc::kVideoYV12 },   // 12 bpp, no conversion.
-  { FOURCC_NV12, webrtc::kVideoNV12 },   // 12 bpp, fast conversion.
-  { FOURCC_NV21, webrtc::kVideoNV21 },   // 12 bpp, fast conversion.
   { FOURCC_YUY2, webrtc::kVideoYUY2 },   // 16 bpp, fast conversion.
   { FOURCC_UYVY, webrtc::kVideoUYVY },   // 16 bpp, fast conversion.
+  { FOURCC_NV12, webrtc::kVideoNV12 },   // 12 bpp, fast conversion.
+  { FOURCC_NV21, webrtc::kVideoNV21 },   // 12 bpp, fast conversion.
   { FOURCC_MJPG, webrtc::kVideoMJPEG },  // compressed, slow conversion.
   { FOURCC_ARGB, webrtc::kVideoARGB },   // 32 bpp, slow conversion.
   { FOURCC_24BG, webrtc::kVideoRGB24 },  // 24 bpp, slow conversion.
