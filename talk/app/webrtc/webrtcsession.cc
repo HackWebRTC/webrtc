@@ -548,14 +548,6 @@ bool WebRtcSession::Initialize(
     video_options_.suspend_below_min_bitrate.Set(value);
   }
 
-  if (FindConstraint(
-      constraints,
-      MediaConstraintsInterface::kSkipEncodingUnusedStreams,
-      &value,
-      NULL)) {
-    video_options_.skip_encoding_unused_streams.Set(value);
-  }
-
   SetOptionFromOptionalConstraint(constraints,
       MediaConstraintsInterface::kScreencastMinBitrate,
       &video_options_.screencast_min_bitrate);
