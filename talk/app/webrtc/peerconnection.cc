@@ -85,11 +85,12 @@ struct SetSessionDescriptionMsg : public talk_base::MessageData {
 };
 
 struct GetStatsMsg : public talk_base::MessageData {
-  explicit GetStatsMsg(webrtc::StatsObserver* observer)
-      : observer(observer) {
+  GetStatsMsg(webrtc::StatsObserver* observer,
+              webrtc::MediaStreamTrackInterface* track)
+      : observer(observer), track(track) {
   }
-  webrtc::StatsReports reports;
   talk_base::scoped_refptr<webrtc::StatsObserver> observer;
+  talk_base::scoped_refptr<webrtc::MediaStreamTrackInterface> track;
 };
 
 // |in_str| should be of format
@@ -446,17 +447,15 @@ talk_base::scoped_refptr<DtmfSenderInterface> PeerConnection::CreateDtmfSender(
 bool PeerConnection::GetStats(StatsObserver* observer,
                               MediaStreamTrackInterface* track,
                               StatsOutputLevel level) {
+  ASSERT(signaling_thread()->IsCurrent());
   if (!VERIFY(observer != NULL)) {
     LOG(LS_ERROR) << "GetStats - observer is NULL.";
     return false;
   }
 
   stats_->UpdateStats(level);
-  talk_base::scoped_ptr<GetStatsMsg> msg(new GetStatsMsg(observer));
-  if (!stats_->GetStats(track, &(msg->reports))) {
-    return false;
-  }
-  signaling_thread()->Post(this, MSG_GETSTATS, msg.release());
+  signaling_thread()->Post(this, MSG_GETSTATS,
+                           new GetStatsMsg(observer, track));
   return true;
 }
 
@@ -702,7 +701,9 @@ void PeerConnection::OnMessage(talk_base::Message* msg) {
     }
     case MSG_GETSTATS: {
       GetStatsMsg* param = static_cast<GetStatsMsg*>(msg->pdata);
-      param->observer->OnComplete(param->reports);
+      StatsReports reports;
+      stats_->GetStats(param->track, &reports);
+      param->observer->OnComplete(reports);
       delete param;
       break;
     }
