@@ -101,6 +101,16 @@ void WebRtcIsacfix_Spec2TimeNeon(int16_t* inreQ7,
                                  int32_t* outre2Q16);
 #endif
 
+#if defined(MIPS32_LE)
+void WebRtcIsacfix_Time2SpecMIPS(int16_t* inre1Q9,
+                                 int16_t* inre2Q9,
+                                 int16_t* outre,
+                                 int16_t* outim);
+void WebRtcIsacfix_Spec2TimeMIPS(int16_t* inreQ7,
+                                 int16_t* inimQ7,
+                                 int32_t* outre1Q16,
+                                 int32_t* outre2Q16);
+#endif
 
 /* filterbank functions */
 

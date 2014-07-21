@@ -47,12 +47,14 @@
         'lpc_masking_model.c',
         'lpc_tables.c',
         'pitch_estimator.c',
+        'pitch_estimator_c.c',
         'pitch_filter.c',
         'pitch_filter_c.c',
         'pitch_gain_tables.c',
         'pitch_lag_tables.c',
         'spectrum_ar_model_tables.c',
         'transform.c',
+        'transform_tables.c',
         'arith_routins.h',
         'bandwidth_estimator.h',
         'codec.h',
@@ -89,9 +91,12 @@
           'sources': [
             'filters_mips.c',
             'lattice_mips.c',
+            'pitch_estimator_mips.c',
+            'transform_mips.c',
           ],
           'sources!': [
             'lattice_c.c',
+            'pitch_estimator_c.c',
           ],
           'conditions': [
             ['mips_dsp_rev>0', {
@@ -101,6 +106,7 @@
             }],
             ['mips_dsp_rev>1', {
               'sources': [
+                'lpc_masking_model_mips.c',
                 'pitch_filter_mips.c',
               ],
               'sources!': [

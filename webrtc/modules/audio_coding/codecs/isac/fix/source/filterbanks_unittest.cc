@@ -86,6 +86,13 @@ TEST_F(FilterBanksTest, HighpassFilterFixDec32Test) {
     -1280, -8554, -14496, -7561, -23541, -27263, -30560, -32768, -3441, -32768,
     25203, -27550, 22419};
 #endif
+  HighpassFilterFixDec32 WebRtcIsacfix_HighpassFilterFixDec32;
+#if defined(MIPS_DSP_R1_LE)
+  WebRtcIsacfix_HighpassFilterFixDec32 =
+      WebRtcIsacfix_HighpassFilterFixDec32MIPS;
+#else
+  WebRtcIsacfix_HighpassFilterFixDec32 = WebRtcIsacfix_HighpassFilterFixDec32C;
+#endif
 
   for (int i = 0; i < kSamples; i++) {
     in[i] = WEBRTC_SPL_WORD32_MAX / (i + 1);

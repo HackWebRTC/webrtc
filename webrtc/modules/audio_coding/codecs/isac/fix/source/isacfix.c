@@ -209,9 +209,17 @@ static void WebRtcIsacfix_InitNeon(void) {
 static void WebRtcIsacfix_InitMIPS(void) {
   WebRtcIsacfix_AutocorrFix = WebRtcIsacfix_AutocorrMIPS;
   WebRtcIsacfix_FilterMaLoopFix = WebRtcIsacfix_FilterMaLoopMIPS;
+  WebRtcIsacfix_Spec2Time = WebRtcIsacfix_Spec2TimeMIPS;
+  WebRtcIsacfix_Time2Spec = WebRtcIsacfix_Time2SpecMIPS;
 #if defined(MIPS_DSP_R1_LE)
   WebRtcIsacfix_AllpassFilter2FixDec16 =
       WebRtcIsacfix_AllpassFilter2FixDec16MIPS;
+  WebRtcIsacfix_HighpassFilterFixDec32 =
+      WebRtcIsacfix_HighpassFilterFixDec32MIPS;
+#endif
+#if defined(MIPS_DSP_R2_LE)
+  WebRtcIsacfix_CalculateResidualEnergy =
+      WebRtcIsacfix_CalculateResidualEnergyMIPS;
 #endif
 }
 #endif
@@ -300,10 +308,11 @@ int16_t WebRtcIsacfix_EncoderInit(ISACFIX_MainStruct *ISAC_main_inst,
   WebRtcIsacfix_CalculateResidualEnergy =
       WebRtcIsacfix_CalculateResidualEnergyC;
   WebRtcIsacfix_AllpassFilter2FixDec16 = WebRtcIsacfix_AllpassFilter2FixDec16C;
+  WebRtcIsacfix_HighpassFilterFixDec32 = WebRtcIsacfix_HighpassFilterFixDec32C;
   WebRtcIsacfix_Time2Spec = WebRtcIsacfix_Time2SpecC;
   WebRtcIsacfix_Spec2Time = WebRtcIsacfix_Spec2TimeC;
   WebRtcIsacfix_MatrixProduct1 = WebRtcIsacfix_MatrixProduct1C;
-  WebRtcIsacfix_MatrixProduct2 = WebRtcIsacfix_MatrixProduct2C ;
+  WebRtcIsacfix_MatrixProduct2 = WebRtcIsacfix_MatrixProduct2C;
 
 #ifdef WEBRTC_DETECT_ARM_NEON
   if ((WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON) != 0) {

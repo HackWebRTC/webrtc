@@ -86,10 +86,13 @@ void WebRtcIsacfix_AllpassFilter2FixDec16C(
   filter_state_ch2[1] = state1_ch2;
 }
 
-void WebRtcIsacfix_HighpassFilterFixDec32(int16_t *io,
-                                          int16_t len,
-                                          const int16_t *coefficient,
-                                          int32_t *state)
+// Declare a function pointer.
+HighpassFilterFixDec32 WebRtcIsacfix_HighpassFilterFixDec32;
+
+void WebRtcIsacfix_HighpassFilterFixDec32C(int16_t *io,
+                                           int16_t len,
+                                           const int16_t *coefficient,
+                                           int32_t *state)
 {
   int k;
   int32_t a1 = 0, b1 = 0, c = 0, in = 0;
