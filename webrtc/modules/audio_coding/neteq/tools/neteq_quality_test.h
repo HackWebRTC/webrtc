@@ -38,9 +38,10 @@ class NoLoss : public LossModel {
 
 class UniformLoss : public LossModel {
  public:
-  UniformLoss(int loss_rate);
+  UniformLoss(double loss_rate);
   virtual bool Lost() OVERRIDE;
   void set_loss_rate(double loss_rate) { loss_rate_ = loss_rate; }
+
  private:
   double loss_rate_;
 };
@@ -49,6 +50,7 @@ class GilbertElliotLoss : public LossModel {
  public:
   GilbertElliotLoss(double prob_trans_11, double prob_trans_01);
   virtual bool Lost() OVERRIDE;
+
  private:
   // Prob. of losing current packet, when previous packet is lost.
   double prob_trans_11_;

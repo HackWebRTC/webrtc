@@ -158,7 +158,7 @@ bool NoLoss::Lost() {
   return false;
 }
 
-UniformLoss::UniformLoss(int loss_rate)
+UniformLoss::UniformLoss(double loss_rate)
     : loss_rate_(loss_rate) {
 }
 
@@ -204,8 +204,6 @@ void NetEqQualityTest::SetUp() {
       // a full packet duration is drawn with a loss, |unit_loss_rate| fulfills
       // (1 - unit_loss_rate) ^ (block_duration_ms_ / kPacketLossTimeUnitMs) ==
       // 1 - packet_loss_rate.
-      // |unit_loss_rate| is usually small. To increase its resolution, we
-      // magnify it by |RAND_MAX|.
       double unit_loss_rate = (1.0f - pow(1.0f - 0.01f * packet_loss_rate_,
           1.0f / units));
       loss_model_.reset(new UniformLoss(unit_loss_rate));
