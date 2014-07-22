@@ -68,8 +68,13 @@ void VerifyCodecHasDefaultFeedbackParams(const cricket::VideoCodec& codec) {
 namespace cricket {
 FakeVideoSendStream::FakeVideoSendStream(
     const webrtc::VideoSendStream::Config& config,
-    const std::vector<webrtc::VideoStream>& video_streams)
-    : sending_(false), config_(config), video_streams_(video_streams) {
+    const std::vector<webrtc::VideoStream>& video_streams,
+    const void* encoder_settings)
+    : sending_(false),
+      config_(config),
+      codec_settings_set_(false) {
+  assert(config.encoder_settings.encoder != NULL);
+  ReconfigureVideoEncoder(video_streams, encoder_settings);
 }
 
 webrtc::VideoSendStream::Config FakeVideoSendStream::GetConfig() {
@@ -84,6 +89,16 @@ bool FakeVideoSendStream::IsSending() const {
   return sending_;
 }
 
+bool FakeVideoSendStream::GetVp8Settings(
+    webrtc::VideoCodecVP8* settings) const {
+  if (!codec_settings_set_) {
+    return false;
+  }
+
+  *settings = vp8_settings_;
+  return true;
+}
+
 webrtc::VideoSendStream::Stats FakeVideoSendStream::GetStats() const {
   return webrtc::VideoSendStream::Stats();
 }
@@ -92,6 +107,12 @@ bool FakeVideoSendStream::ReconfigureVideoEncoder(
     const std::vector<webrtc::VideoStream>& streams,
     const void* encoder_specific) {
   video_streams_ = streams;
+  if (encoder_specific != NULL) {
+    assert(config_.encoder_settings.payload_name == "VP8");
+    vp8_settings_ =
+        *reinterpret_cast<const webrtc::VideoCodecVP8*>(encoder_specific);
+  }
+  codec_settings_set_ = encoder_specific != NULL;
   return true;
 }
 
@@ -202,7 +223,7 @@ webrtc::VideoSendStream* FakeCall::CreateVideoSendStream(
     const std::vector<webrtc::VideoStream>& video_streams,
     const void* encoder_settings) {
   FakeVideoSendStream* fake_stream =
-      new FakeVideoSendStream(config, video_streams);
+      new FakeVideoSendStream(config, video_streams, encoder_settings);
   video_send_streams_.push_back(fake_stream);
   return fake_stream;
 }
@@ -1046,8 +1067,29 @@ TEST_F(WebRtcVideoChannel2Test,
   FAIL() << "Not implemented.";  // TODO(pbos): Implement.
 }
 
-TEST_F(WebRtcVideoChannel2Test, DISABLED_SetOptionsWithDenoising) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
+TEST_F(WebRtcVideoChannel2Test, Vp8DenoisingEnabledByDefault) {
+  FakeVideoSendStream* stream = AddSendStream();
+  webrtc::VideoCodecVP8 vp8_settings;
+  ASSERT_TRUE(stream->GetVp8Settings(&vp8_settings)) << "No VP8 config set.";
+  EXPECT_TRUE(vp8_settings.denoisingOn);
+}
+
+TEST_F(WebRtcVideoChannel2Test, SetOptionsWithDenoising) {
+  VideoOptions options;
+  options.video_noise_reduction.Set(false);
+  channel_->SetOptions(options);
+
+  FakeVideoSendStream* stream = AddSendStream();
+  webrtc::VideoCodecVP8 vp8_settings;
+  ASSERT_TRUE(stream->GetVp8Settings(&vp8_settings)) << "No VP8 config set.";
+  EXPECT_FALSE(vp8_settings.denoisingOn);
+
+  options.video_noise_reduction.Set(true);
+  channel_->SetOptions(options);
+
+  stream = fake_channel_->GetFakeCall()->GetVideoSendStreams()[0];
+  ASSERT_TRUE(stream->GetVp8Settings(&vp8_settings)) << "No VP8 config set.";
+  EXPECT_TRUE(vp8_settings.denoisingOn);
 }
 
 TEST_F(WebRtcVideoChannel2Test, DISABLED_MultipleSendStreamsWithOneCapturer) {

@@ -197,7 +197,47 @@ webrtc::VideoEncoder* WebRtcVideoEncoderFactory2::CreateVideoEncoder(
     const VideoCodec& codec,
     const VideoOptions& options) {
   assert(SupportsCodec(codec));
-  return webrtc::VP8Encoder::Create();
+  if (_stricmp(codec.name.c_str(), kVp8CodecName) == 0) {
+    return webrtc::VP8Encoder::Create();
+  }
+  // This shouldn't happen, we should be able to create encoders for all codecs
+  // we support.
+  assert(false);
+  return NULL;
+}
+
+void* WebRtcVideoEncoderFactory2::CreateVideoEncoderSettings(
+    const VideoCodec& codec,
+    const VideoOptions& options) {
+  assert(SupportsCodec(codec));
+  if (_stricmp(codec.name.c_str(), kVp8CodecName) == 0) {
+    webrtc::VideoCodecVP8* settings = new webrtc::VideoCodecVP8();
+    settings->resilience = webrtc::kResilientStream;
+    settings->numberOfTemporalLayers = 1;
+    options.video_noise_reduction.Get(&settings->denoisingOn);
+    settings->errorConcealmentOn = false;
+    settings->automaticResizeOn = false;
+    settings->frameDroppingOn = true;
+    settings->keyFrameInterval = 3000;
+    return settings;
+  }
+  return NULL;
+}
+
+void WebRtcVideoEncoderFactory2::DestroyVideoEncoderSettings(
+    const VideoCodec& codec,
+    void* encoder_settings) {
+  assert(SupportsCodec(codec));
+  if (encoder_settings == NULL) {
+    return;
+  }
+
+  if (_stricmp(codec.name.c_str(), kVp8CodecName) == 0) {
+    delete reinterpret_cast<webrtc::VideoCodecVP8*>(encoder_settings);
+    return;
+  }
+  // We should be able to destroy all encoder settings we've allocated.
+  assert(false);
 }
 
 bool WebRtcVideoEncoderFactory2::SupportsCodec(const VideoCodec& codec) {
@@ -618,6 +658,12 @@ void WebRtcVideoChannel2::Construct(webrtc::Call* call,
   default_renderer_ = NULL;
   default_send_ssrc_ = 0;
   default_recv_ssrc_ = 0;
+
+  SetDefaultOptions();
+}
+
+void WebRtcVideoChannel2::SetDefaultOptions() {
+  options_.video_noise_reduction.Set(true);
 }
 
 WebRtcVideoChannel2::~WebRtcVideoChannel2() {
@@ -1494,8 +1540,18 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetDimensions(int width,
   parameters_.video_streams.back().width = width;
   parameters_.video_streams.back().height = height;
 
-  // TODO(pbos): Wire up encoder_parameters, webrtc:3424.
-  if (!stream_->ReconfigureVideoEncoder(parameters_.video_streams, NULL)) {
+  VideoCodecSettings codec_settings;
+  parameters_.codec_settings.Get(&codec_settings);
+  void* encoder_settings = encoder_factory_->CreateVideoEncoderSettings(
+      codec_settings.codec, parameters_.options);
+
+  bool stream_reconfigured = stream_->ReconfigureVideoEncoder(
+      parameters_.video_streams, encoder_settings);
+
+  encoder_factory_->DestroyVideoEncoderSettings(codec_settings.codec,
+                                                encoder_settings);
+
+  if (!stream_reconfigured) {
     LOG(LS_WARNING) << "Failed to reconfigure video encoder for dimensions: "
                     << width << "x" << height;
     return;
@@ -1576,9 +1632,17 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::RecreateWebRtcStream() {
     call_->DestroyVideoSendStream(stream_);
   }
 
-  // TODO(pbos): Wire up encoder_parameters, webrtc:3424.
+  VideoCodecSettings codec_settings;
+  parameters_.codec_settings.Get(&codec_settings);
+  void* encoder_settings = encoder_factory_->CreateVideoEncoderSettings(
+      codec_settings.codec, parameters_.options);
+
   stream_ = call_->CreateVideoSendStream(
-      parameters_.config, parameters_.video_streams, NULL);
+      parameters_.config, parameters_.video_streams, encoder_settings);
+
+  encoder_factory_->DestroyVideoEncoderSettings(codec_settings.codec,
+                                                encoder_settings);
+
   if (sending_) {
     stream_->Start();
   }

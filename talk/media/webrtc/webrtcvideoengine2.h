@@ -94,6 +94,13 @@ class WebRtcVideoEncoderFactory2 {
       const VideoCodec& codec,
       const VideoOptions& options);
 
+  virtual void* CreateVideoEncoderSettings(
+      const VideoCodec& codec,
+      const VideoOptions& options);
+
+  virtual void DestroyVideoEncoderSettings(const VideoCodec& codec,
+                                           void* encoder_settings);
+
   virtual bool SupportsCodec(const cricket::VideoCodec& codec);
 };
 
@@ -358,6 +365,7 @@ class WebRtcVideoChannel2 : public talk_base::MessageHandler,
   };
 
   void Construct(webrtc::Call* call, WebRtcVideoEngine2* engine);
+  void SetDefaultOptions();
 
   virtual bool SendRtp(const uint8_t* data, size_t len) OVERRIDE;
   virtual bool SendRtcp(const uint8_t* data, size_t len) OVERRIDE;

@@ -39,11 +39,13 @@ namespace cricket {
 class FakeVideoSendStream : public webrtc::VideoSendStream {
  public:
   FakeVideoSendStream(const webrtc::VideoSendStream::Config& config,
-                      const std::vector<webrtc::VideoStream>& video_streams);
+                      const std::vector<webrtc::VideoStream>& video_streams,
+                      const void* encoder_settings);
   webrtc::VideoSendStream::Config GetConfig();
   std::vector<webrtc::VideoStream> GetVideoStreams();
 
   bool IsSending() const;
+  bool GetVp8Settings(webrtc::VideoCodecVP8* settings) const;
 
  private:
   virtual webrtc::VideoSendStream::Stats GetStats() const OVERRIDE;
@@ -60,6 +62,8 @@ class FakeVideoSendStream : public webrtc::VideoSendStream {
   bool sending_;
   webrtc::VideoSendStream::Config config_;
   std::vector<webrtc::VideoStream> video_streams_;
+  bool codec_settings_set_;
+  webrtc::VideoCodecVP8 vp8_settings_;
 };
 
 class FakeVideoReceiveStream : public webrtc::VideoReceiveStream {
