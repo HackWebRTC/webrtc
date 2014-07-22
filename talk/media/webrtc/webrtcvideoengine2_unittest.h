@@ -43,7 +43,7 @@ class FakeVideoSendStream : public webrtc::VideoSendStream {
   webrtc::VideoSendStream::Config GetConfig();
   std::vector<webrtc::VideoStream> GetVideoStreams();
 
-  bool IsSending();
+  bool IsSending() const;
 
  private:
   virtual webrtc::VideoSendStream::Stats GetStats() const OVERRIDE;
@@ -68,6 +68,8 @@ class FakeVideoReceiveStream : public webrtc::VideoReceiveStream {
       const webrtc::VideoReceiveStream::Config& config);
 
   webrtc::VideoReceiveStream::Config GetConfig();
+
+  bool IsReceiving() const;
 
  private:
   virtual webrtc::VideoReceiveStream::Stats GetStats() const OVERRIDE;

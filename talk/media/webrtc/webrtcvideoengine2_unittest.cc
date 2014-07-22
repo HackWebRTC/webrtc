@@ -80,7 +80,7 @@ std::vector<webrtc::VideoStream> FakeVideoSendStream::GetVideoStreams() {
   return video_streams_;
 }
 
-bool FakeVideoSendStream::IsSending() {
+bool FakeVideoSendStream::IsSending() const {
   return sending_;
 }
 
@@ -117,6 +117,10 @@ webrtc::VideoReceiveStream::Config FakeVideoReceiveStream::GetConfig() {
   return config_;
 }
 
+bool FakeVideoReceiveStream::IsReceiving() const {
+  return receiving_;
+}
+
 webrtc::VideoReceiveStream::Stats FakeVideoReceiveStream::GetStats() const {
   return webrtc::VideoReceiveStream::Stats();
 }
@@ -124,9 +128,11 @@ webrtc::VideoReceiveStream::Stats FakeVideoReceiveStream::GetStats() const {
 void FakeVideoReceiveStream::Start() {
   receiving_ = true;
 }
+
 void FakeVideoReceiveStream::Stop() {
   receiving_ = false;
 }
+
 void FakeVideoReceiveStream::GetCurrentReceiveCodec(webrtc::VideoCodec* codec) {
 }
 
@@ -1373,9 +1379,8 @@ TEST_F(WebRtcVideoChannel2Test, SendStreamNotSendingByDefault) {
   EXPECT_FALSE(AddSendStream()->IsSending());
 }
 
-TEST_F(WebRtcVideoChannel2Test, DISABLED_ReceiveStreamReceivingByDefault) {
-  // Is this test correct though? Auto-receive? Enable receive on first packet?
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
+TEST_F(WebRtcVideoChannel2Test, ReceiveStreamReceivingByDefault) {
+  EXPECT_TRUE(AddRecvStream()->IsReceiving());
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetSend) {
