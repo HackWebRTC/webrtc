@@ -21,15 +21,6 @@ struct RemoteBitrateEstimatorMinRate {
   uint32_t min_rate;
 };
 
-struct SkipEncodingUnusedStreams {
-  SkipEncodingUnusedStreams() : enabled(false) {}
-  explicit SkipEncodingUnusedStreams(bool set_enabled)
-    : enabled(set_enabled) {}
-  virtual ~SkipEncodingUnusedStreams() {}
-
-  const bool enabled;
-};
-
 struct AimdRemoteRateControl {
   AimdRemoteRateControl() : enabled(false) {}
   explicit AimdRemoteRateControl(bool set_enabled)
