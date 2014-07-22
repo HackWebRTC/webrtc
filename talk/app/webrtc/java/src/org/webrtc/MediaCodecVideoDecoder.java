@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2013, Google Inc.
+ * Copyright 2014, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,42 +25,39 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 package org.webrtc;
 
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
+import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCodecList;
 import android.media.MediaFormat;
-import android.media.MediaCodecInfo.CodecCapabilities;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
-
 import java.nio.ByteBuffer;
 
-// Java-side of peerconnection_jni.cc:MediaCodecVideoEncoder.
+// Java-side of peerconnection_jni.cc:MediaCodecVideoDecoder.
 // This class is an implementation detail of the Java PeerConnection API.
 // MediaCodec is thread-hostile so this class must be operated on a single
 // thread.
-class MediaCodecVideoEncoder {
+class MediaCodecVideoDecoder {
   // This class is constructed, operated, and destroyed by its C++ incarnation,
   // so the class and its methods have non-public visibility.  The API this
-  // class exposes aims to mimic the webrtc::VideoEncoder API as closely as
+  // class exposes aims to mimic the webrtc::VideoDecoder API as closely as
   // possibly to minimize the amount of translation work necessary.
 
-  private static final String TAG = "MediaCodecVideoEncoder";
+  private static final String TAG = "MediaCodecVideoDecoder";
 
-  private static final int DEQUEUE_TIMEOUT = 0;  // Non-blocking, no wait.
+  private static final int DEQUEUE_TIMEOUT = 1000000;  // 1 sec timeout.
   private Thread mediaCodecThread;
   private MediaCodec mediaCodec;
+  private ByteBuffer[] inputBuffers;
   private ByteBuffer[] outputBuffers;
   private static final String VP8_MIME_TYPE = "video/x-vnd.on2.vp8";
-  // List of supported HW VP8 codecs.
+  // List of supported HW VP8 decoders.
   private static final String[] supportedHwCodecPrefixes =
-    {"OMX.qcom.", "OMX.Nvidia." };
-  // Bitrate mode
-  private static final int VIDEO_ControlRateConstant = 2;
+    {"OMX.Nvidia."};
   // NV12 color format supported by QCOM codec, but not declared in MediaCodec -
   // see /hardware/qcom/media/mm-core/inc/OMX_QCOMExtns.h
   private static final int
@@ -73,12 +70,16 @@ class MediaCodecVideoEncoder {
     COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m
   };
   private int colorFormat;
+  private int width;
+  private int height;
+  private int stride;
+  private int sliceHeight;
 
-  private MediaCodecVideoEncoder() {}
+  private MediaCodecVideoDecoder() { }
 
-  // Helper struct for findVp8HwEncoder() below.
-  private static class EncoderProperties {
-    EncoderProperties(String codecName, int colorFormat) {
+  // Helper struct for findVp8HwDecoder() below.
+  private static class DecoderProperties {
+    DecoderProperties(String codecName, int colorFormat) {
       this.codecName = codecName;
       this.colorFormat = colorFormat;
     }
@@ -86,13 +87,13 @@ class MediaCodecVideoEncoder {
     public final int colorFormat;  // Color format supported by codec.
   }
 
-  private static EncoderProperties findVp8HwEncoder() {
+  private static DecoderProperties findVp8HwDecoder() {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT)
       return null; // MediaCodec.setParameters is missing.
 
     for (int i = 0; i < MediaCodecList.getCodecCount(); ++i) {
       MediaCodecInfo info = MediaCodecList.getCodecInfoAt(i);
-      if (!info.isEncoder()) {
+      if (info.isEncoder()) {
         continue;
       }
       String name = null;
@@ -105,14 +106,14 @@ class MediaCodecVideoEncoder {
       if (name == null) {
         continue;  // No VP8 support in this codec; try the next one.
       }
-      Log.d(TAG, "Found candidate encoder " + name);
+      Log.d(TAG, "Found candidate decoder " + name);
       CodecCapabilities capabilities =
           info.getCapabilitiesForType(VP8_MIME_TYPE);
       for (int colorFormat : capabilities.colorFormats) {
         Log.d(TAG, "   Color: 0x" + Integer.toHexString(colorFormat));
       }
 
-      // Check if this is supported HW encoder
+      // Check if this is supported HW decoder
       for (String hwCodecPrefix : supportedHwCodecPrefixes) {
         if (!name.startsWith(hwCodecPrefix)) {
           continue;
@@ -121,108 +122,70 @@ class MediaCodecVideoEncoder {
         for (int supportedColorFormat : supportedColorList) {
           for (int codecColorFormat : capabilities.colorFormats) {
             if (codecColorFormat == supportedColorFormat) {
-              // Found supported HW VP8 encoder
-              Log.d(TAG, "Found target encoder " + name +
+              // Found supported HW VP8 decoder
+              Log.d(TAG, "Found target decoder " + name +
                   ". Color: 0x" + Integer.toHexString(codecColorFormat));
-              return new EncoderProperties(name, codecColorFormat);
+              return new DecoderProperties(name, codecColorFormat);
             }
           }
         }
       }
     }
-    return null;  // No HW VP8 encoder.
+    return null;  // No HW VP8 decoder.
   }
 
   private static boolean isPlatformSupported() {
-    return findVp8HwEncoder() != null;
-  }
-
-  private static int bitRate(int kbps) {
-    // webrtc "kilo" means 1000, not 1024.  Apparently.
-    // (and the price for overshooting is frame-dropping as webrtc enforces its
-    // bandwidth estimation, which is unpleasant).
-    // Since the HW encoder in the N5 overshoots, we clamp to a bit less than
-    // the requested rate.  Sad but true.  Bug 3194.
-    return kbps * 950;
+    return findVp8HwDecoder() != null;
   }
 
   private void checkOnMediaCodecThread() {
     if (mediaCodecThread.getId() != Thread.currentThread().getId()) {
       throw new RuntimeException(
-          "MediaCodecVideoEncoder previously operated on " + mediaCodecThread +
+          "MediaCodecVideoDecoder previously operated on " + mediaCodecThread +
           " but is now called on " + Thread.currentThread());
     }
   }
 
-  // Return the array of input buffers, or null on failure.
-  private ByteBuffer[] initEncode(int width, int height, int kbps, int fps) {
-    Log.d(TAG, "Java initEncode: " + width + " x " + height +
-        ". @ " + kbps + " kbps. Fps: " + fps +
-        ". Color: 0x" + Integer.toHexString(colorFormat));
+  private boolean initDecode(int width, int height) {
     if (mediaCodecThread != null) {
       throw new RuntimeException("Forgot to release()?");
     }
-    EncoderProperties properties = findVp8HwEncoder();
+    DecoderProperties properties = findVp8HwDecoder();
     if (properties == null) {
-      throw new RuntimeException("Can not find HW VP8 encoder");
+      throw new RuntimeException("Cannot find HW VP8 decoder");
     }
+    Log.d(TAG, "Java initDecode: " + width + " x " + height +
+        ". Color: 0x" + Integer.toHexString(properties.colorFormat));
     mediaCodecThread = Thread.currentThread();
     try {
+      this.width = width;
+      this.height = height;
+      stride = width;
+      sliceHeight = height;
       MediaFormat format =
           MediaFormat.createVideoFormat(VP8_MIME_TYPE, width, height);
-      format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate(kbps));
-      format.setInteger("bitrate-mode", VIDEO_ControlRateConstant);
       format.setInteger(MediaFormat.KEY_COLOR_FORMAT, properties.colorFormat);
-      // Default WebRTC settings
-      format.setInteger(MediaFormat.KEY_FRAME_RATE, fps);
-      format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 100);
       Log.d(TAG, "  Format: " + format);
       mediaCodec = MediaCodec.createByCodecName(properties.codecName);
       if (mediaCodec == null) {
-        return null;
+        return false;
       }
-      mediaCodec.configure(
-          format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+      mediaCodec.configure(format, null, null, 0);
       mediaCodec.start();
       colorFormat = properties.colorFormat;
       outputBuffers = mediaCodec.getOutputBuffers();
-      ByteBuffer[] inputBuffers = mediaCodec.getInputBuffers();
+      inputBuffers = mediaCodec.getInputBuffers();
       Log.d(TAG, "Input buffers: " + inputBuffers.length +
           ". Output buffers: " + outputBuffers.length);
-      return inputBuffers;
-    } catch (IllegalStateException e) {
-      Log.e(TAG, "initEncode failed", e);
-      return null;
-    }
-  }
-
-  private boolean encode(
-      boolean isKeyframe, int inputBuffer, int size,
-      long presentationTimestampUs) {
-    checkOnMediaCodecThread();
-    try {
-      if (isKeyframe) {
-        // Ideally MediaCodec would honor BUFFER_FLAG_SYNC_FRAME so we could
-        // indicate this in queueInputBuffer() below and guarantee _this_ frame
-        // be encoded as a key frame, but sadly that flag is ignored.  Instead,
-        // we request a key frame "soon".
-        Log.d(TAG, "Sync frame request");
-        Bundle b = new Bundle();
-        b.putInt(MediaCodec.PARAMETER_KEY_REQUEST_SYNC_FRAME, 0);
-        mediaCodec.setParameters(b);
-      }
-      mediaCodec.queueInputBuffer(
-          inputBuffer, 0, size, presentationTimestampUs, 0);
       return true;
-    }
-    catch (IllegalStateException e) {
-      Log.e(TAG, "encode failed", e);
+    } catch (IllegalStateException e) {
+      Log.e(TAG, "initDecode failed", e);
       return false;
     }
   }
 
   private void release() {
-    Log.d(TAG, "Java releaseEncoder");
+    Log.d(TAG, "Java releaseDecoder");
     checkOnMediaCodecThread();
     try {
       mediaCodec.stop();
@@ -232,22 +195,6 @@ class MediaCodecVideoEncoder {
     }
     mediaCodec = null;
     mediaCodecThread = null;
-  }
-
-  private boolean setRates(int kbps, int frameRateIgnored) {
-    // frameRate argument is ignored - HW encoder is supposed to use
-    // video frame timestamps for bit allocation.
-    checkOnMediaCodecThread();
-    Log.v(TAG, "setRates: " + kbps + " kbps. Fps: " + frameRateIgnored);
-    try {
-      Bundle params = new Bundle();
-      params.putInt(MediaCodec.PARAMETER_KEY_VIDEO_BITRATE, bitRate(kbps));
-      mediaCodec.setParameters(params);
-      return true;
-    } catch (IllegalStateException e) {
-      Log.e(TAG, "setRates failed", e);
-      return false;
-    }
   }
 
   // Dequeue an input buffer and return its index, -1 if no input buffer is
@@ -262,56 +209,70 @@ class MediaCodecVideoEncoder {
     }
   }
 
-  // Helper struct for dequeueOutputBuffer() below.
-  private static class OutputBufferInfo {
-    public OutputBufferInfo(
-        int index, ByteBuffer buffer, boolean isKeyFrame,
-        long presentationTimestampUs) {
-      this.index = index;
-      this.buffer = buffer;
-      this.isKeyFrame = isKeyFrame;
-      this.presentationTimestampUs = presentationTimestampUs;
+  private boolean queueInputBuffer(
+      int inputBufferIndex, int size, long timestampUs) {
+    checkOnMediaCodecThread();
+    try {
+      inputBuffers[inputBufferIndex].position(0);
+      inputBuffers[inputBufferIndex].limit(size);
+      mediaCodec.queueInputBuffer(inputBufferIndex, 0, size, timestampUs, 0);
+      return true;
     }
-
-    private final int index;
-    private final ByteBuffer buffer;
-    private final boolean isKeyFrame;
-    private final long presentationTimestampUs;
+    catch (IllegalStateException e) {
+      Log.e(TAG, "decode failed", e);
+      return false;
+    }
   }
 
-  // Dequeue and return an output buffer, or null if no output is ready.  Return
-  // a fake OutputBufferInfo with index -1 if the codec is no longer operable.
-  private OutputBufferInfo dequeueOutputBuffer() {
+  // Dequeue and return an output buffer index, -1 if no output
+  // buffer available or -2 if error happened.
+  private int dequeueOutputBuffer() {
     checkOnMediaCodecThread();
     try {
       MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
       int result = mediaCodec.dequeueOutputBuffer(info, DEQUEUE_TIMEOUT);
-      if (result >= 0) {
-        // MediaCodec doesn't care about Buffer position/remaining/etc so we can
-        // mess with them to get a slice and avoid having to pass extra
-        // (BufferInfo-related) parameters back to C++.
-        ByteBuffer outputBuffer = outputBuffers[result].duplicate();
-        outputBuffer.position(info.offset);
-        outputBuffer.limit(info.offset + info.size);
-        boolean isKeyFrame =
-            (info.flags & MediaCodec.BUFFER_FLAG_SYNC_FRAME) != 0;
-        if (isKeyFrame) {
-          Log.d(TAG, "Sync frame generated");
+      while (result == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED ||
+          result == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+        if (result == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
+          outputBuffers = mediaCodec.getOutputBuffers();
+        } else if (result == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+          MediaFormat format = mediaCodec.getOutputFormat();
+          Log.d(TAG, "Format changed: " + format.toString());
+          width = format.getInteger(MediaFormat.KEY_WIDTH);
+          height = format.getInteger(MediaFormat.KEY_HEIGHT);
+          if (format.containsKey(MediaFormat.KEY_COLOR_FORMAT)) {
+            colorFormat = format.getInteger(MediaFormat.KEY_COLOR_FORMAT);
+            Log.d(TAG, "Color: 0x" + Integer.toHexString(colorFormat));
+            // Check if new color space is supported.
+            boolean validColorFormat = false;
+            for (int supportedColorFormat : supportedColorList) {
+              if (colorFormat == supportedColorFormat) {
+                validColorFormat = true;
+                break;
+              }
+            }
+            if (!validColorFormat) {
+              Log.e(TAG, "Non supported color format");
+              return -2;
+            }
+          }
+          if (format.containsKey("stride")) {
+            stride = format.getInteger("stride");
+          }
+          if (format.containsKey("slice-height")) {
+            sliceHeight = format.getInteger("slice-height");
+          }
+          Log.d(TAG, "Frame stride and slice height: "
+              + stride + " x " + sliceHeight);
+          stride = Math.max(width, stride);
+          sliceHeight = Math.max(height, sliceHeight);
         }
-        return new OutputBufferInfo(
-            result, outputBuffer.slice(), isKeyFrame, info.presentationTimeUs);
-      } else if (result == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
-        outputBuffers = mediaCodec.getOutputBuffers();
-        return dequeueOutputBuffer();
-      } else if (result == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-        return dequeueOutputBuffer();
-      } else if (result == MediaCodec.INFO_TRY_AGAIN_LATER) {
-        return null;
+        result = mediaCodec.dequeueOutputBuffer(info, DEQUEUE_TIMEOUT);
       }
-      throw new RuntimeException("dequeueOutputBuffer: " + result);
+      return result;
     } catch (IllegalStateException e) {
       Log.e(TAG, "dequeueOutputBuffer failed", e);
-      return new OutputBufferInfo(-1, null, false, -1);
+      return -2;
     }
   }
 
