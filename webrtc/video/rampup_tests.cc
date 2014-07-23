@@ -99,7 +99,6 @@ void StreamObserver::OnReceiveBitrateChanged(
     // start bitrate, but due to the BWE implementation we can't guarantee the
     // first estimate really is as high as the start bitrate.
     EXPECT_GT(bitrate, 0.9 * start_bitrate_bps_);
-    EXPECT_LT(bitrate, expected_bitrate_bps_);
     start_bitrate_bps_ = 0;
   }
   if (bitrate >= expected_bitrate_bps_) {
