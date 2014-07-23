@@ -68,7 +68,7 @@ static const cricket::VideoCodec* const kVideoCodecs[] = {
 };
 
 static const unsigned int kStartBandwidthKbps = 300;
-static const unsigned int kMinBandwidthKbps = 50;
+static const unsigned int kMinBandwidthKbps = 30;
 static const unsigned int kMaxBandwidthKbps = 2000;
 
 static const uint32 kSsrcs1[] = {1};
@@ -430,8 +430,13 @@ TEST_F(WebRtcVideoEngineTestFake, SetSendCodecsWithStartBitrate) {
   codecs[0].params[cricket::kCodecParamStartBitrate] = "450";
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
 
-  VerifyVP8SendCodec(
-      channel_num, kVP8Codec.width, kVP8Codec.height, 0, 2000, 50, 450);
+  VerifyVP8SendCodec(channel_num,
+                     kVP8Codec.width,
+                     kVP8Codec.height,
+                     0,
+                     kMaxBandwidthKbps,
+                     kMinBandwidthKbps,
+                     450);
 
   cricket::VideoCodec codec;
   EXPECT_TRUE(channel_->GetSendCodec(&codec));
@@ -470,11 +475,11 @@ TEST_F(WebRtcVideoEngineTestFake, SetSendCodecsWithLargeMinMaxBitrate) {
   int channel_num = vie_.GetLastChannel();
   std::vector<cricket::VideoCodec> codecs(engine_.codecs());
   codecs[0].params[cricket::kCodecParamMinBitrate] = "1000";
-  codecs[0].params[cricket::kCodecParamMaxBitrate] = "2000";
+  codecs[0].params[cricket::kCodecParamMaxBitrate] = "3000";
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
 
   VerifyVP8SendCodec(
-      channel_num, kVP8Codec.width, kVP8Codec.height, 0, 2000, 1000,
+      channel_num, kVP8Codec.width, kVP8Codec.height, 0, 3000, 1000,
       1000);
 }
 
@@ -485,9 +490,15 @@ TEST_F(WebRtcVideoEngineTestFake, SetSendCodecsWithMaxQuantization) {
   codecs[0].params[cricket::kCodecParamMaxQuantization] = "21";
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
 
-  VerifyVP8SendCodec(
-      channel_num, kVP8Codec.width, kVP8Codec.height, 0, 2000, 50, 300,
-      30, 21);
+  VerifyVP8SendCodec(channel_num,
+                     kVP8Codec.width,
+                     kVP8Codec.height,
+                     0,
+                     kMaxBandwidthKbps,
+                     kMinBandwidthKbps,
+                     300,
+                     30,
+                     21);
 
   cricket::VideoCodec codec;
   EXPECT_TRUE(channel_->GetSendCodec(&codec));
@@ -517,25 +528,6 @@ TEST_F(WebRtcVideoEngineTestFake, SetOptionsWithMaxBitrate) {
   EXPECT_TRUE(channel_->SetOptions(options));
   VerifyVP8SendCodec(
       channel_num, kVP8Codec.width, kVP8Codec.height, 0, 20, 10, 20);
-}
-
-TEST_F(WebRtcVideoEngineTestFake, SetOptionsWithLoweredBitrate) {
-  EXPECT_TRUE(SetupEngine());
-  int channel_num = vie_.GetLastChannel();
-  std::vector<cricket::VideoCodec> codecs(engine_.codecs());
-  codecs[0].params[cricket::kCodecParamMinBitrate] = "50";
-  codecs[0].params[cricket::kCodecParamMaxBitrate] = "100";
-  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
-
-  VerifyVP8SendCodec(
-      channel_num, kVP8Codec.width, kVP8Codec.height, 0, 100, 50, 100);
-
-  // Verify that min bitrate changes after SetOptions().
-  cricket::VideoOptions options;
-  options.lower_min_bitrate.Set(true);
-  EXPECT_TRUE(channel_->SetOptions(options));
-  VerifyVP8SendCodec(
-      channel_num, kVP8Codec.width, kVP8Codec.height, 0, 100, 30, 100);
 }
 
 TEST_F(WebRtcVideoEngineTestFake, MaxBitrateResetWithConferenceMode) {
@@ -570,36 +562,33 @@ TEST_F(WebRtcVideoEngineTestFake, StartSendBitrate) {
   std::vector<cricket::VideoCodec> codec_list;
   codec_list.push_back(codec);
   EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
-  const unsigned int kVideoMaxSendBitrateKbps = 2000;
-  const unsigned int kVideoMinSendBitrateKbps = 50;
-  const unsigned int kVideoDefaultStartSendBitrateKbps = 300;
   VerifyVP8SendCodec(send_channel, kVP8Codec.width, kVP8Codec.height, 0,
-                     kVideoMaxSendBitrateKbps, kVideoMinSendBitrateKbps,
-                     kVideoDefaultStartSendBitrateKbps);
+                     kMaxBandwidthKbps, kMinBandwidthKbps,
+                     kStartBandwidthKbps);
   EXPECT_EQ(0, vie_.StartSend(send_channel));
 
   // Increase the send bitrate and verify it is used as start bitrate.
-  const unsigned int kVideoSendBitrateBps = 768000;
-  vie_.SetSendBitrates(send_channel, kVideoSendBitrateBps, 0, 0);
+  const unsigned int kIncreasedSendBitrateBps = 768000;
+  vie_.SetSendBitrates(send_channel, kIncreasedSendBitrateBps, 0, 0);
   EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
   VerifyVP8SendCodec(send_channel, kVP8Codec.width, kVP8Codec.height, 0,
-                     kVideoMaxSendBitrateKbps, kVideoMinSendBitrateKbps,
-                     kVideoSendBitrateBps / 1000);
+                     kMaxBandwidthKbps, kMinBandwidthKbps,
+                     kIncreasedSendBitrateBps / 1000);
 
   // Never set a start bitrate higher than the max bitrate.
-  vie_.SetSendBitrates(send_channel, kVideoMaxSendBitrateKbps + 500, 0, 0);
+  vie_.SetSendBitrates(send_channel, kMaxBandwidthKbps + 500, 0, 0);
   EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
   VerifyVP8SendCodec(send_channel, kVP8Codec.width, kVP8Codec.height, 0,
-                     kVideoMaxSendBitrateKbps, kVideoMinSendBitrateKbps,
-                     kVideoDefaultStartSendBitrateKbps);
+                     kMaxBandwidthKbps, kMinBandwidthKbps,
+                     kStartBandwidthKbps);
 
   // Use the default start bitrate if the send bitrate is lower.
-  vie_.SetSendBitrates(send_channel, kVideoDefaultStartSendBitrateKbps - 50, 0,
+  vie_.SetSendBitrates(send_channel, kStartBandwidthKbps - 50, 0,
                        0);
   EXPECT_TRUE(channel_->SetSendCodecs(codec_list));
   VerifyVP8SendCodec(send_channel, kVP8Codec.width, kVP8Codec.height, 0,
-                     kVideoMaxSendBitrateKbps, kVideoMinSendBitrateKbps,
-                     kVideoDefaultStartSendBitrateKbps);
+                     kMaxBandwidthKbps, kMinBandwidthKbps,
+                     kStartBandwidthKbps);
 }
 
 

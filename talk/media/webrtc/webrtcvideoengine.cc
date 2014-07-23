@@ -75,7 +75,7 @@ const int kVideoRtpBufferSize = 65536;
 const char kVp8CodecName[] = "VP8";
 
 const int kDefaultFramerate = 30;
-const int kMinVideoBitrate = 50;
+const int kMinVideoBitrate = 30;
 const int kStartVideoBitrate = 300;
 const int kMaxVideoBitrate = 2000;
 
@@ -83,9 +83,6 @@ const int kCpuMonitorPeriodMs = 2000;  // 2 seconds.
 
 
 static const int kDefaultLogSeverity = talk_base::LS_WARNING;
-
-// Controlled by exp, try a super low minimum bitrate for poor connections.
-static const int kLowerMinBitrate = 30;
 
 static const int kDefaultNumberOfTemporalLayers = 1;  // 1:1
 
@@ -2957,13 +2954,6 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
   if (send_codec_) {
     bool reset_send_codec_needed = denoiser_changed;
     webrtc::VideoCodec new_codec = *send_codec_;
-
-    // TODO(pthatcher): Remove this.  We don't need 4 ways to set bitrates.
-    bool lower_min_bitrate;
-    if (options.lower_min_bitrate.Get(&lower_min_bitrate)) {
-      new_codec.minBitrate = kLowerMinBitrate;
-      reset_send_codec_needed = true;
-    }
 
     if (conference_mode_turned_off) {
       // This is a special case for turning conference mode off.
