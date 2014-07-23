@@ -172,6 +172,7 @@
           'dependencies': [
             '<(DEPTH)/third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
             'libjingle.gyp:libjingle_peerconnection',
+            '<@(libjingle_tests_additional_deps)',
           ],
           'conditions': [
             # TODO(ronghuawu): Move these files to a win/ directory then they
