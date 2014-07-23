@@ -1402,18 +1402,20 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetCapturer(
   {
     talk_base::CritScope cs(&lock_);
 
-    if (capturer == NULL && stream_ != NULL) {
-      LOG(LS_VERBOSE) << "Disabling capturer, sending black frame.";
-      webrtc::I420VideoFrame black_frame;
+    if (capturer == NULL) {
+      if (stream_ != NULL) {
+        LOG(LS_VERBOSE) << "Disabling capturer, sending black frame.";
+        webrtc::I420VideoFrame black_frame;
 
-      int width = format_.width;
-      int height = format_.height;
-      int half_width = (width + 1) / 2;
-      black_frame.CreateEmptyFrame(
-          width, height, width, half_width, half_width);
-      SetWebRtcFrameToBlack(&black_frame);
-      SetDimensions(width, height);
-      stream_->Input()->SwapFrame(&black_frame);
+        int width = format_.width;
+        int height = format_.height;
+        int half_width = (width + 1) / 2;
+        black_frame.CreateEmptyFrame(
+            width, height, width, half_width, half_width);
+        SetWebRtcFrameToBlack(&black_frame);
+        SetDimensions(width, height);
+        stream_->Input()->SwapFrame(&black_frame);
+      }
 
       capturer_ = NULL;
       return true;

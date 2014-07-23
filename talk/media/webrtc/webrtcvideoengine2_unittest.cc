@@ -542,12 +542,50 @@ WEBRTC_BASE_TEST(SetSendStreamFormat0x0);
 // TODO(zhurunz): Fix the flakey test.
 WEBRTC_DISABLED_BASE_TEST(SetSendStreamFormat);
 
+TEST_F(WebRtcVideoChannel2BaseTest, SendAndReceiveVp8Vga) {
+  SendAndReceive(cricket::VideoCodec(100, "VP8", 640, 400, 30, 0));
+}
+
+TEST_F(WebRtcVideoChannel2BaseTest, SendAndReceiveVp8Qvga) {
+  SendAndReceive(cricket::VideoCodec(100, "VP8", 320, 200, 30, 0));
+}
+
+TEST_F(WebRtcVideoChannel2BaseTest, SendAndReceiveVp8SvcQqvga) {
+  SendAndReceive(cricket::VideoCodec(100, "VP8", 160, 100, 30, 0));
+}
+
 TEST_F(WebRtcVideoChannel2BaseTest, TwoStreamsSendAndReceive) {
   Base::TwoStreamsSendAndReceive(kVp8Codec);
 }
 
 TEST_F(WebRtcVideoChannel2BaseTest, TwoStreamsReUseFirstStream) {
   Base::TwoStreamsReUseFirstStream(kVp8Codec);
+}
+
+WEBRTC_BASE_TEST(SendManyResizeOnce);
+
+// TODO(pbos): Enable and figure out why this fails (or should work).
+TEST_F(WebRtcVideoChannel2BaseTest, DISABLED_SendVp8HdAndReceiveAdaptedVp8Vga) {
+  EXPECT_TRUE(channel_->SetCapturer(kSsrc, NULL));
+  EXPECT_TRUE(channel_->SetRenderer(kDefaultReceiveSsrc, &renderer_));
+  channel_->UpdateAspectRatio(1280, 720);
+  video_capturer_.reset(new cricket::FakeVideoCapturer);
+  const std::vector<cricket::VideoFormat>* formats =
+      video_capturer_->GetSupportedFormats();
+  cricket::VideoFormat capture_format_hd = (*formats)[0];
+  EXPECT_EQ(cricket::CS_RUNNING, video_capturer_->Start(capture_format_hd));
+  EXPECT_TRUE(channel_->SetCapturer(kSsrc, video_capturer_.get()));
+
+  // Capture format HD -> adapt (OnOutputFormatRequest VGA) -> VGA.
+  cricket::VideoCodec codec(100, "VP8", 1280, 720, 30, 0);
+  EXPECT_TRUE(SetOneCodec(codec));
+  codec.width /= 2;
+  codec.height /= 2;
+  EXPECT_TRUE(SetSend(true));
+  EXPECT_TRUE(channel_->SetRender(true));
+  EXPECT_EQ(0, renderer_.num_rendered_frames());
+  EXPECT_TRUE(SendFrame());
+  EXPECT_FRAME_WAIT(1, codec.width, codec.height, kTimeout);
 }
 
 class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
@@ -1492,26 +1530,6 @@ TEST_F(WebRtcVideoChannel2Test, SetSend) {
   FakeVideoSendStream* new_stream = AddSendStream();
   EXPECT_TRUE(new_stream->IsSending())
       << "Send stream created after SetSend(true) not sending initially.";
-}
-
-TEST_F(WebRtcVideoChannel2Test, DISABLED_SendAndReceiveVp8Vga) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
-}
-
-TEST_F(WebRtcVideoChannel2Test, DISABLED_SendAndReceiveVp8Qvga) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
-}
-
-TEST_F(WebRtcVideoChannel2Test, DISABLED_SendAndReceiveH264SvcQqvga) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
-}
-
-TEST_F(WebRtcVideoChannel2Test, DISABLED_SendManyResizeOnce) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
-}
-
-TEST_F(WebRtcVideoChannel2Test, DISABLED_SendVp8HdAndReceiveAdaptedVp8Vga) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
 }
 
 TEST_F(WebRtcVideoChannel2Test, DISABLED_TestSetDscpOptions) {
