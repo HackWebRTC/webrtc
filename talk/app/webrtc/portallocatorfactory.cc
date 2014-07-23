@@ -55,19 +55,15 @@ PortAllocatorFactory::~PortAllocatorFactory() {}
 cricket::PortAllocator* PortAllocatorFactory::CreatePortAllocator(
     const std::vector<StunConfiguration>& stun,
     const std::vector<TurnConfiguration>& turn) {
-  std::vector<talk_base::SocketAddress> stun_hosts;
+  cricket::ServerAddresses stun_hosts;
   typedef std::vector<StunConfiguration>::const_iterator StunIt;
   for (StunIt stun_it = stun.begin(); stun_it != stun.end(); ++stun_it) {
-    stun_hosts.push_back(stun_it->server);
+    stun_hosts.insert(stun_it->server);
   }
 
-  talk_base::SocketAddress stun_addr;
-  if (!stun_hosts.empty()) {
-    stun_addr = stun_hosts.front();
-  }
   scoped_ptr<cricket::BasicPortAllocator> allocator(
       new cricket::BasicPortAllocator(
-          network_manager_.get(), socket_factory_.get(), stun_addr));
+          network_manager_.get(), socket_factory_.get(), stun_hosts));
 
   for (size_t i = 0; i < turn.size(); ++i) {
     cricket::RelayCredentials credentials(turn[i].username, turn[i].password);

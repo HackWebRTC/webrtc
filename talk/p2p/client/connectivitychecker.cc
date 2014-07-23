@@ -288,7 +288,9 @@ void ConnectivityChecker::OnStunPortComplete(Port* port) {
     uint32 now = talk_base::Time();
     NicInfo* nic_info = &i->second;
     nic_info->external_address = c.address();
-    nic_info->stun_server_address = static_cast<StunPort*>(port)->server_addr();
+
+    nic_info->stun_server_addresses =
+        static_cast<StunPort*>(port)->server_addresses();
     nic_info->stun.rtt = now - nic_info->stun.start_time_ms;
   } else {
     LOG(LS_ERROR) << "Got stun address for non-existing nic";
@@ -303,7 +305,9 @@ void ConnectivityChecker::OnStunPortError(Port* port) {
   if (i != nics_.end()) {
     // We have it already, add the new information.
     NicInfo* nic_info = &i->second;
-    nic_info->stun_server_address = static_cast<StunPort*>(port)->server_addr();
+
+    nic_info->stun_server_addresses =
+        static_cast<StunPort*>(port)->server_addresses();
   }
 }
 
@@ -335,7 +339,7 @@ StunPort* ConnectivityChecker::CreateStunPort(
     const PortConfiguration* config, talk_base::Network* network) {
   return StunPort::Create(worker_, socket_factory_.get(),
                           network, network->ip(), 0, 0,
-                          username, password, config->stun_address);
+                          username, password, config->stun_servers);
 }
 
 RelayPort* ConnectivityChecker::CreateRelayPort(
@@ -407,7 +411,9 @@ void ConnectivityChecker::CreateRelayPorts(
 void ConnectivityChecker::AllocatePorts() {
   const std::string username = talk_base::CreateRandomString(ICE_UFRAG_LENGTH);
   const std::string password = talk_base::CreateRandomString(ICE_PWD_LENGTH);
-  PortConfiguration config(stun_address_, username, password);
+  ServerAddresses stun_servers;
+  stun_servers.insert(stun_address_);
+  PortConfiguration config(stun_servers, username, password);
   std::vector<talk_base::Network*> networks;
   network_manager_->GetNetworks(&networks);
   if (networks.empty()) {
