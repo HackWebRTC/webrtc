@@ -665,7 +665,6 @@ void WebRtcVideoChannel2::Construct(webrtc::Call* call,
 void WebRtcVideoChannel2::SetDefaultOptions() {
   options_.video_noise_reduction.Set(true);
   options_.use_payload_padding.Set(false);
-  options_.suspend_below_min_bitrate.Set(false);
 }
 
 WebRtcVideoChannel2::~WebRtcVideoChannel2() {
@@ -1518,9 +1517,6 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodecAndOptions(
   if (IsNackEnabled(codec_settings.codec)) {
     parameters_.config.rtp.nack.rtp_history_ms = kNackHistoryMs;
   }
-
-  options.suspend_below_min_bitrate.Get(
-      &parameters_.config.suspend_below_min_bitrate);
 
   parameters_.codec_settings.Set(codec_settings);
   parameters_.options = options;

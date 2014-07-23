@@ -1067,26 +1067,6 @@ TEST_F(WebRtcVideoChannel2Test,
   FAIL() << "Not implemented.";  // TODO(pbos): Implement.
 }
 
-TEST_F(WebRtcVideoChannel2Test, SuspendBelowMinBitrateDisabledByDefault) {
-  FakeVideoSendStream* stream = AddSendStream();
-  EXPECT_FALSE(stream->GetConfig().suspend_below_min_bitrate);
-}
-
-TEST_F(WebRtcVideoChannel2Test, SetOptionsWithSuspendBelowMinBitrate) {
-  VideoOptions options;
-  options.suspend_below_min_bitrate.Set(true);
-  channel_->SetOptions(options);
-
-  FakeVideoSendStream* stream = AddSendStream();
-  EXPECT_TRUE(stream->GetConfig().suspend_below_min_bitrate);
-
-  options.suspend_below_min_bitrate.Set(false);
-  channel_->SetOptions(options);
-
-  stream = fake_channel_->GetFakeCall()->GetVideoSendStreams()[0];
-  EXPECT_FALSE(stream->GetConfig().suspend_below_min_bitrate);
-}
-
 TEST_F(WebRtcVideoChannel2Test, RedundantPayloadsDisabledByDefault) {
   const std::vector<uint32> ssrcs = MAKE_VECTOR(kSsrcs1);
   const std::vector<uint32> rtx_ssrcs = MAKE_VECTOR(kRtxSsrcs1);
