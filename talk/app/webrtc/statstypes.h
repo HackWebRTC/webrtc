@@ -64,9 +64,6 @@ class StatsReport {
   explicit StatsReport(const std::string& id) : id(id), timestamp(0) {}
 
  public:
-  // TODO(tommi): Remove this ctor.
-  StatsReport() : timestamp(0) {}
-
   // Operators provided for STL container/algorithm support.
   bool operator<(const StatsReport& other) const { return id < other.id; }
   bool operator==(const StatsReport& other) const { return id == other.id; }
@@ -81,9 +78,7 @@ class StatsReport {
   // The unique identifier for this object.
   // This is used as a key for this report in ordered containers,
   // so it must never be changed.
-
-  // TODO(tommi): Make const again.
-  /*const*/ std::string id;  // See below for contents.
+  const std::string id;  // See below for contents.
   std::string type;  // See below for contents.
 
   struct Value {
