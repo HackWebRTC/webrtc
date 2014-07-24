@@ -613,14 +613,10 @@ int ModuleRtpRtcpImpl::TimeToSendPadding(int bytes) {
     }
   } else {
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-    // Decide what media stream to pad on based on a round-robin scheme.
     for (size_t i = 0; i < child_modules_.size(); ++i) {
-      padding_index_ = (padding_index_ + 1) % child_modules_.size();
       // Send padding on one of the modules sending media.
-      if (child_modules_[padding_index_]->SendingMedia() &&
-          child_modules_[padding_index_]->rtp_sender_.GetTargetBitrate() > 0) {
-        return child_modules_[padding_index_]->rtp_sender_.TimeToSendPadding(
-            bytes);
+      if (child_modules_[i]->SendingMedia()) {
+        return child_modules_[i]->rtp_sender_.TimeToSendPadding(bytes);
       }
     }
   }
