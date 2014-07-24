@@ -840,19 +840,27 @@ void StatsCollector::ExtractSessionInfo() {
       // Attempt to get a copy of the certificates from the transport and
       // expose them in stats reports.  All channels in a transport share the
       // same local and remote certificates.
+      //
+      // Note that Transport::GetIdentity and Transport::GetRemoteCertificate
+      // invoke method calls on the worker thread and block this thread, but
+      // messages are still processed on this thread, which may blow way the
+      // existing transports. So we cannot reuse |transport| after these calls.
       std::string local_cert_report_id, remote_cert_report_id;
+
       cricket::Transport* transport =
           session_->GetTransport(transport_iter->second.content_name);
-      if (transport) {
-        talk_base::scoped_ptr<talk_base::SSLIdentity> identity;
-        if (transport->GetIdentity(identity.accept()))
-          local_cert_report_id = AddCertificateReports(
-              &(identity->certificate()));
-
-        talk_base::scoped_ptr<talk_base::SSLCertificate> cert;
-        if (transport->GetRemoteCertificate(cert.accept()))
-          remote_cert_report_id = AddCertificateReports(cert.get());
+      talk_base::scoped_ptr<talk_base::SSLIdentity> identity;
+      if (transport && transport->GetIdentity(identity.accept())) {
+        local_cert_report_id =
+            AddCertificateReports(&(identity->certificate()));
       }
+
+      transport = session_->GetTransport(transport_iter->second.content_name);
+      talk_base::scoped_ptr<talk_base::SSLCertificate> cert;
+      if (transport && transport->GetRemoteCertificate(cert.accept())) {
+        remote_cert_report_id = AddCertificateReports(cert.get());
+      }
+
       for (cricket::TransportChannelStatsList::iterator channel_iter
                = transport_iter->second.channel_stats.begin();
            channel_iter != transport_iter->second.channel_stats.end();

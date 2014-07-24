@@ -614,7 +614,7 @@ class StatsCollectorTest : public testing::Test {
 
     // Configure MockWebRtcSession
     EXPECT_CALL(session_, GetTransport(transport_stats.content_name))
-      .WillOnce(Return(transport.get()));
+      .WillRepeatedly(Return(transport.get()));
     EXPECT_CALL(session_, GetStats(_))
       .WillOnce(DoAll(SetArgPointee<0>(session_stats),
                       Return(true)));
@@ -855,7 +855,7 @@ TEST_F(StatsCollectorTest, TransportObjectLinkedFromSsrcObject) {
   webrtc::StatsCollector stats(&session_);  // Implementation under test.
   // Ignore unused callback (logspam).
   EXPECT_CALL(session_, GetTransport(_))
-      .WillOnce(Return(static_cast<cricket::Transport*>(NULL)));
+      .WillRepeatedly(Return(static_cast<cricket::Transport*>(NULL)));
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
   // The content_name known by the video channel.
   const std::string kVcName("vcname");
@@ -927,7 +927,7 @@ TEST_F(StatsCollectorTest, RemoteSsrcInfoIsPresent) {
   webrtc::StatsCollector stats(&session_);  // Implementation under test.
   // Ignore unused callback (logspam).
   EXPECT_CALL(session_, GetTransport(_))
-      .WillOnce(Return(static_cast<cricket::Transport*>(NULL)));
+      .WillRepeatedly(Return(static_cast<cricket::Transport*>(NULL)));
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
   // The content_name known by the video channel.
   const std::string kVcName("vcname");
@@ -1072,7 +1072,7 @@ TEST_F(StatsCollectorTest, NoTransport) {
 
   // Configure MockWebRtcSession
   EXPECT_CALL(session_, GetTransport(transport_stats.content_name))
-    .WillOnce(ReturnNull());
+    .WillRepeatedly(ReturnNull());
   EXPECT_CALL(session_, GetStats(_))
     .WillOnce(DoAll(SetArgPointee<0>(session_stats),
                     Return(true)));
@@ -1125,7 +1125,7 @@ TEST_F(StatsCollectorTest, NoCertificates) {
 
   // Configure MockWebRtcSession
   EXPECT_CALL(session_, GetTransport(transport_stats.content_name))
-    .WillOnce(Return(transport.get()));
+    .WillRepeatedly(Return(transport.get()));
   EXPECT_CALL(session_, GetStats(_))
     .WillOnce(DoAll(SetArgPointee<0>(session_stats),
                     Return(true)));
@@ -1217,7 +1217,7 @@ TEST_F(StatsCollectorTest, GetStatsFromLocalAudioTrack) {
   webrtc::StatsCollector stats(&session_);  // Implementation under test.
   // Ignore unused callback (logspam).
   EXPECT_CALL(session_, GetTransport(_))
-      .WillOnce(Return(static_cast<cricket::Transport*>(NULL)));
+      .WillRepeatedly(Return(static_cast<cricket::Transport*>(NULL)));
 
   MockVoiceMediaChannel* media_channel = new MockVoiceMediaChannel();
   // The content_name known by the voice channel.
@@ -1250,7 +1250,7 @@ TEST_F(StatsCollectorTest, GetStatsFromRemoteStream) {
   webrtc::StatsCollector stats(&session_);  // Implementation under test.
   // Ignore unused callback (logspam).
   EXPECT_CALL(session_, GetTransport(_))
-      .WillOnce(Return(static_cast<cricket::Transport*>(NULL)));
+      .WillRepeatedly(Return(static_cast<cricket::Transport*>(NULL)));
   MockVoiceMediaChannel* media_channel = new MockVoiceMediaChannel();
   // The content_name known by the voice channel.
   const std::string kVcName("vcname");
@@ -1276,7 +1276,7 @@ TEST_F(StatsCollectorTest, GetStatsAfterRemoveAudioStream) {
   webrtc::StatsCollector stats(&session_);  // Implementation under test.
   // Ignore unused callback (logspam).
   EXPECT_CALL(session_, GetTransport(_))
-      .WillOnce(Return(static_cast<cricket::Transport*>(NULL)));
+      .WillRepeatedly(Return(static_cast<cricket::Transport*>(NULL)));
   MockVoiceMediaChannel* media_channel = new MockVoiceMediaChannel();
   // The content_name known by the voice channel.
   const std::string kVcName("vcname");
@@ -1333,7 +1333,7 @@ TEST_F(StatsCollectorTest, LocalAndRemoteTracksWithSameSsrc) {
   webrtc::StatsCollector stats(&session_);  // Implementation under test.
   // Ignore unused callback (logspam).
   EXPECT_CALL(session_, GetTransport(_))
-      .WillOnce(Return(static_cast<cricket::Transport*>(NULL)));
+      .WillRepeatedly(Return(static_cast<cricket::Transport*>(NULL)));
   MockVoiceMediaChannel* media_channel = new MockVoiceMediaChannel();
   // The content_name known by the voice channel.
   const std::string kVcName("vcname");
