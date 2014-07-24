@@ -306,16 +306,12 @@ class WebRtcSessionTest : public testing::Test {
                                                  cricket::STUN_SERVER_PORT)),
       stun_server_(Thread::Current(), stun_socket_addr_),
       turn_server_(Thread::Current(), kTurnUdpIntAddr, kTurnUdpExtAddr),
+      allocator_(new cricket::BasicPortAllocator(
+          &network_manager_, stun_socket_addr_,
+          SocketAddress(), SocketAddress(), SocketAddress())),
       mediastream_signaling_(channel_manager_.get()),
       ice_type_(PeerConnectionInterface::kAll) {
     tdesc_factory_->set_protocol(cricket::ICEPROTO_HYBRID);
-
-    cricket::ServerAddresses stun_servers;
-    stun_servers.insert(stun_socket_addr_);
-    allocator_.reset(new cricket::BasicPortAllocator(
-        &network_manager_,
-        stun_servers,
-        SocketAddress(), SocketAddress(), SocketAddress()));
     allocator_->set_flags(cricket::PORTALLOCATOR_DISABLE_TCP |
                          cricket::PORTALLOCATOR_DISABLE_RELAY |
                          cricket::PORTALLOCATOR_ENABLE_BUNDLE);

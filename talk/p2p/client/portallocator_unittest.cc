@@ -48,7 +48,6 @@
 #include "talk/p2p/client/basicportallocator.h"
 #include "talk/p2p/client/httpportallocator.h"
 
-using cricket::ServerAddresses;
 using talk_base::SocketAddress;
 using talk_base::Thread;
 
@@ -116,13 +115,10 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
                       kRelayTcpIntAddr, kRelayTcpExtAddr,
                       kRelaySslTcpIntAddr, kRelaySslTcpExtAddr),
         turn_server_(Thread::Current(), kTurnUdpIntAddr, kTurnUdpExtAddr),
+        allocator_(new cricket::BasicPortAllocator(
+            &network_manager_, kStunAddr,
+            kRelayUdpIntAddr, kRelayTcpIntAddr, kRelaySslTcpIntAddr)),
         candidate_allocation_done_(false) {
-    cricket::ServerAddresses stun_servers;
-    stun_servers.insert(kStunAddr);
-    allocator_.reset(new cricket::BasicPortAllocator(
-        &network_manager_,
-        stun_servers,
-        kRelayUdpIntAddr, kRelayTcpIntAddr, kRelaySslTcpIntAddr));
     allocator_->set_step_delay(cricket::kMinimumStepDelay);
   }
 
@@ -269,7 +265,7 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
 // Tests that we can init the port allocator and create a session.
 TEST_F(PortAllocatorTest, TestBasic) {
   EXPECT_EQ(&network_manager_, allocator().network_manager());
-  EXPECT_EQ(kStunAddr, *allocator().stun_servers().begin());
+  EXPECT_EQ(kStunAddr, allocator().stun_address());
   ASSERT_EQ(1u, allocator().relays().size());
   EXPECT_EQ(cricket::RELAY_GTURN, allocator().relays()[0].type);
   // Empty relay credentials are used for GTURN.
@@ -700,10 +696,8 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithNat) {
   AddInterface(kClientAddr);
   talk_base::scoped_ptr<talk_base::NATServer> nat_server(
       CreateNatServer(kNatAddr, talk_base::NAT_OPEN_CONE));
-  ServerAddresses stun_servers;
-  stun_servers.insert(kStunAddr);
   allocator_.reset(new cricket::BasicPortAllocator(
-      &network_manager_, &nat_socket_factory_, stun_servers));
+      &network_manager_, &nat_socket_factory_, kStunAddr));
   allocator_->set_step_delay(cricket::kMinimumStepDelay);
   allocator_->set_flags(allocator().flags() |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
@@ -792,10 +786,8 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithNatUsingTurn) {
   AddInterface(kClientAddr);
   talk_base::scoped_ptr<talk_base::NATServer> nat_server(
       CreateNatServer(kNatAddr, talk_base::NAT_OPEN_CONE));
-  ServerAddresses stun_servers;
-  stun_servers.insert(kStunAddr);
   allocator_.reset(new cricket::BasicPortAllocator(
-      &network_manager_, &nat_socket_factory_, stun_servers));
+      &network_manager_, &nat_socket_factory_, kStunAddr));
   cricket::RelayServerConfig relay_server(cricket::RELAY_TURN);
   cricket::RelayCredentials credentials(kTurnUsername, kTurnPassword);
   relay_server.credentials = credentials;
@@ -903,7 +895,6 @@ TEST(HttpPortAllocatorTest, TestHttpPortAllocatorHostLists) {
       talk_base::SocketAddress("1.unittest.corp.google.com", 0));
   stun_servers.push_back(
       talk_base::SocketAddress("2.unittest.corp.google.com", 0));
-
   alloc.SetRelayHosts(relay_servers);
   alloc.SetStunHosts(stun_servers);
   EXPECT_EQ(2U, alloc.relay_hosts().size());
