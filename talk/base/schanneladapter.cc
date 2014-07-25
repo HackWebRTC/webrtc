@@ -149,8 +149,9 @@ SChannelAdapter::BeginSSL() {
   //sc_cred.dwMinimumCipherStrength = 128; // Note: use system default
   sc_cred.dwFlags = SCH_CRED_NO_DEFAULT_CREDS | SCH_CRED_AUTO_CRED_VALIDATION;
 
-  ret = AcquireCredentialsHandle(NULL, UNISP_NAME, SECPKG_CRED_OUTBOUND, NULL,
-                                 &sc_cred, NULL, NULL, &impl_->cred, NULL);
+  ret = AcquireCredentialsHandle(NULL, const_cast<LPTSTR>(UNISP_NAME),
+                                 SECPKG_CRED_OUTBOUND, NULL, &sc_cred, NULL,
+                                 NULL, &impl_->cred, NULL);
   if (ret != SEC_E_OK) {
     LOG(LS_ERROR) << "AcquireCredentialsHandle error: "
                   << ErrorName(ret, SECURITY_ERRORS);
