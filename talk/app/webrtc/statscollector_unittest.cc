@@ -168,10 +168,10 @@ std::string ExtractStatsValue(const std::string& type,
     return kNoReports;
   }
   for (size_t i = 0; i < reports.size(); ++i) {
-    if (reports[i].type != type)
+    if (reports[i]->type != type)
       continue;
     std::string ret;
-    if (GetValue(&reports[i], name, &ret)) {
+    if (GetValue(reports[i], name, &ret)) {
       return ret;
     }
   }
@@ -184,10 +184,10 @@ std::string ExtractStatsValue(const std::string& type,
 const StatsReport* FindNthReportByType(
     const StatsReports& reports, const std::string& type, int n) {
   for (size_t i = 0; i < reports.size(); ++i) {
-    if (reports[i].type == type) {
+    if (reports[i]->type == type) {
       n--;
       if (n == 0)
-        return &reports[i];
+        return reports[i];
     }
   }
   return NULL;
@@ -196,8 +196,8 @@ const StatsReport* FindNthReportByType(
 const StatsReport* FindReportById(const StatsReports& reports,
                                   const std::string& id) {
   for (size_t i = 0; i < reports.size(); ++i) {
-    if (reports[i].id == id) {
-      return &reports[i];
+    if (reports[i]->id == id) {
+      return reports[i];
     }
   }
   return NULL;
@@ -433,7 +433,7 @@ void InitVoiceReceiverInfo(cricket::VoiceReceiverInfo* voice_receiver_info) {
 class StatsCollectorTest : public testing::Test {
  protected:
   StatsCollectorTest()
-    : media_engine_(new cricket::FakeMediaEngine),
+    : media_engine_(new cricket::FakeMediaEngine()),
       channel_manager_(
           new cricket::ChannelManager(media_engine_,
                                       new cricket::FakeDeviceManager(),
@@ -442,6 +442,8 @@ class StatsCollectorTest : public testing::Test {
     // By default, we ignore session GetStats calls.
     EXPECT_CALL(session_, GetStats(_)).WillRepeatedly(Return(false));
   }
+
+  ~StatsCollectorTest() {}
 
   // This creates a standard setup with a transport called "trspname"
   // having one transport channel
@@ -786,7 +788,7 @@ TEST_F(StatsCollectorTest, TrackObjectExistsWithoutUpdateStats) {
   stats.GetStats(NULL, &reports);
   EXPECT_EQ((size_t)1, reports.size());
   EXPECT_EQ(std::string(StatsReport::kStatsReportTypeTrack),
-            reports[0].type);
+            reports[0]->type);
 
   std::string trackValue =
       ExtractStatsValue(StatsReport::kStatsReportTypeTrack,
@@ -832,6 +834,7 @@ TEST_F(StatsCollectorTest, TrackAndSsrcObjectExistAfterUpdateSsrcStats) {
   EXPECT_TRUE(track_report);
 
   // Get report for the specific |track|.
+  reports.clear();
   stats.GetStats(track_, &reports);
   // |reports| should contain at least one session report, one track report,
   // and one ssrc report.
@@ -1396,6 +1399,7 @@ TEST_F(StatsCollectorTest, LocalAndRemoteTracksWithSameSsrc) {
   VerifyVoiceSenderInfoReport(track_report, voice_sender_info);
 
   // Get stats for the remote track.
+  reports.clear();
   stats.GetStats(remote_track.get(), &reports);
   track_report = FindNthReportByType(reports,
                                      StatsReport::kStatsReportTypeSsrc, 1);
@@ -1452,6 +1456,7 @@ TEST_F(StatsCollectorTest, TwoLocalTracksWithSameSsrc) {
   cricket::VoiceSenderInfo new_voice_sender_info;
   InitVoiceSenderInfo(&new_voice_sender_info);
   cricket::VoiceMediaInfo new_stats_read;
+  reports.clear();
   SetupAndVerifyAudioTrackStats(
       new_audio_track.get(), stream_.get(), &stats, &voice_channel, kVcName,
       media_channel, &new_voice_sender_info, NULL, &new_stats_read, &reports);
