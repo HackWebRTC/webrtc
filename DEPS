@@ -339,15 +339,6 @@ hooks = [
     ],
   },
   {
-    # Remove clang-format binaries from third_party/clang_format/bin that
-    # aren't used anymore.
-    # TODO(kjellander) remove this and the .gitignore entry after the end of
-    # July, 2014.
-    "name": "remove_old_clang_format_binaries",
-    "pattern": ".",
-    "action": ["python", Var("root_dir") + "/third_party/clang_format/bin/rm_binaries.py"],
-  },
-  {
     # Pull clang if on Mac or clang is requested via GYP_DEFINES.
     "pattern": ".",
     "action": ["python", Var("root_dir") + "/tools/clang/scripts/update.py",
