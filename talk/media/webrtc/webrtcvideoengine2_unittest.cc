@@ -793,24 +793,6 @@ TEST_F(WebRtcVideoChannel2Test, DISABLED_StartSendBitrate) {
 #endif
 }
 
-TEST_F(WebRtcVideoChannel2Test, DISABLED_RtcpEnabled) {
-  // Note(pbos): This is a receiver-side setting, dumbo.
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
-}
-
-TEST_F(WebRtcVideoChannel2Test, DISABLED_KeyFrameRequestEnabled) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
-}
-
-TEST_F(WebRtcVideoChannel2Test, RembIsEnabledByDefault) {
-  FakeVideoReceiveStream* stream = AddRecvStream();
-  EXPECT_TRUE(stream->GetConfig().rtp.remb);
-}
-
-TEST_F(WebRtcVideoChannel2Test, DISABLED_RembEnabledOnReceiveChannels) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
-}
-
 TEST_F(WebRtcVideoChannel2Test, RecvStreamWithSimAndRtx) {
   EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
   EXPECT_TRUE(channel_->SetSend(true));
@@ -1010,12 +992,28 @@ TEST_F(WebRtcVideoChannel2Test, AddRecvStreamOnlyUsesOneReceiveStream) {
   EXPECT_EQ(1u, fake_channel_->GetFakeCall()->GetVideoReceiveStreams().size());
 }
 
-TEST_F(WebRtcVideoChannel2Test, DISABLED_NoRembChangeAfterAddRecvStream) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
+TEST_F(WebRtcVideoChannel2Test, RembIsEnabledByDefault) {
+  FakeVideoReceiveStream* stream = AddRecvStream();
+  EXPECT_TRUE(stream->GetConfig().rtp.remb);
 }
 
-TEST_F(WebRtcVideoChannel2Test, DISABLED_RembOnOff) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
+TEST_F(WebRtcVideoChannel2Test, RembCanBeEnabledAndDisabled) {
+  FakeVideoReceiveStream* stream = AddRecvStream();
+  EXPECT_TRUE(stream->GetConfig().rtp.remb);
+
+  // Verify that REMB is turned off when codecs without REMB are set.
+  std::vector<VideoCodec> codecs;
+  codecs.push_back(kVp8Codec);
+  EXPECT_TRUE(codecs[0].feedback_params.params().empty());
+  EXPECT_TRUE(channel_->SetRecvCodecs(codecs));
+  stream = fake_channel_->GetFakeCall()->GetVideoReceiveStreams()[0];
+  EXPECT_FALSE(stream->GetConfig().rtp.remb);
+
+  // Verify that REMB is turned on when setting default codecs since the
+  // default codecs have REMB enabled.
+  EXPECT_TRUE(channel_->SetRecvCodecs(engine_.codecs()));
+  stream = fake_channel_->GetFakeCall()->GetVideoReceiveStreams()[0];
+  EXPECT_TRUE(stream->GetConfig().rtp.remb);
 }
 
 TEST_F(WebRtcVideoChannel2Test, NackIsEnabledByDefault) {

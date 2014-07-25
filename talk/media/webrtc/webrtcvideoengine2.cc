@@ -99,6 +99,11 @@ static bool IsNackEnabled(const VideoCodec& codec) {
       FeedbackParam(kRtcpFbParamNack, kParamValueEmpty));
 }
 
+static bool IsRembEnabled(const VideoCodec& codec) {
+  return codec.HasFeedbackParam(
+      FeedbackParam(kRtcpFbParamRemb, kParamValueEmpty));
+}
+
 static VideoCodec DefaultVideoCodec() {
   VideoCodec default_codec(kDefaultVideoCodecPref.payload_type,
                            kDefaultVideoCodecPref.name,
@@ -736,8 +741,6 @@ static std::string RtpExtensionsToString(
 }  // namespace
 
 bool WebRtcVideoChannel2::SetRecvCodecs(const std::vector<VideoCodec>& codecs) {
-  // TODO(pbos): Must these receive codecs propagate to existing receive
-  // streams?
   LOG(LS_INFO) << "SetRecvCodecs: " << CodecVectorToString(codecs);
   if (!ValidateCodecFormats(codecs)) {
     return false;
@@ -951,11 +954,8 @@ void WebRtcVideoChannel2::ConfigureReceiverRtp(
   config->rtp.remote_ssrc = ssrc;
   config->rtp.local_ssrc = rtcp_receiver_report_ssrc_;
 
-  if (IsNackEnabled(recv_codecs_.begin()->codec)) {
-    config->rtp.nack.rtp_history_ms = kNackHistoryMs;
-  }
-  config->rtp.remb = true;
   config->rtp.extensions = recv_rtp_extensions_;
+
   // TODO(pbos): This protection is against setting the same local ssrc as
   // remote which is not permitted by the lower-level API. RTCP requires a
   // corresponding sender SSRC. Figure out what to do when we don't have
@@ -1704,6 +1704,10 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRecvCodecs(
   config_.codecs.push_back(codec);
 
   config_.rtp.fec = recv_codecs.front().fec;
+
+  config_.rtp.nack.rtp_history_ms =
+      IsNackEnabled(recv_codecs.begin()->codec) ? kNackHistoryMs : 0;
+  config_.rtp.remb = IsRembEnabled(recv_codecs.begin()->codec);
 
   RecreateWebRtcStream();
 }
