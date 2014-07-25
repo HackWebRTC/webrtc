@@ -67,8 +67,8 @@ class DirectoryIterator {
   // returns the size of the file currently pointed to
   virtual size_t FileSize() const;
 
-  // returns the last modified time of the file currently pointed to
-  virtual time_t FileModifyTime() const;
+  // returns true if the file is older than seconds
+  virtual bool OlderThan(int seconds) const;
 
   // checks whether current file is a special directory file "." or ".."
   bool IsDots() const {

@@ -132,15 +132,14 @@ size_t DirectoryIterator::FileSize() const {
 #endif
 }
 
-  // returns the last modified time of this file
-time_t DirectoryIterator::FileModifyTime() const {
+bool DirectoryIterator::OlderThan(int seconds) const {
+  time_t file_modify_time;
 #if defined(WEBRTC_WIN)
-  time_t val;
-  FileTimeToUnixTime(data_.ftLastWriteTime, &val);
-  return val;
+  FileTimeToUnixTime(data_.ftLastWriteTime, &file_modify_time);
 #else
-  return stat_.st_mtime;
+  file_modify_time = stat_.st_mtime;
 #endif
+  return TimeDiff(time(NULL), file_modify_time) >= seconds;
 }
 
 FilesystemInterface* Filesystem::default_filesystem_ = NULL;
