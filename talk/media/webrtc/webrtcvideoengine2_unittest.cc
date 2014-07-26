@@ -1178,7 +1178,7 @@ TEST_F(WebRtcVideoChannel2Test, DISABLED_MultipleSendStreamsWithOneCapturer) {
   FAIL() << "Not implemented.";  // TODO(pbos): Implement.
 }
 
-TEST_F(WebRtcVideoChannel2Test, DISABLED_DISABLED_SendReceiveBitratesStats) {
+TEST_F(WebRtcVideoChannel2Test, DISABLED_SendReceiveBitratesStats) {
   FAIL() << "Not implemented.";  // TODO(pbos): Implement.
 }
 
@@ -1303,11 +1303,6 @@ TEST_F(WebRtcVideoChannel2Test, SetSendCodecsChangesExistingStreams) {
       ->GetVideoStreams();
   EXPECT_EQ(kVp8Codec360p.width, streams[0].width);
   EXPECT_EQ(kVp8Codec360p.height, streams[0].height);
-}
-
-TEST_F(WebRtcVideoChannel2Test,
-       DISABLED_ConstrainsSetCodecsAccordingToEncoderConfig) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetSendCodecsWithMinMaxBitrate) {
