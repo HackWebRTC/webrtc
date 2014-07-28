@@ -142,7 +142,13 @@ void HttpPortAllocatorSessionBase::GetPortConfigurations() {
   // but for now is done here and added to the initial config.  Note any later
   // configs will have unresolved stun ips and will be discarded by the
   // AllocationSequence.
-  PortConfiguration* config = new PortConfiguration(stun_hosts_[0],
+  ServerAddresses hosts;
+  for (std::vector<talk_base::SocketAddress>::iterator it = stun_hosts_.begin();
+      it != stun_hosts_.end(); ++it) {
+    hosts.insert(*it);
+  }
+
+  PortConfiguration* config = new PortConfiguration(hosts,
                                                     username(),
                                                     password());
   ConfigReady(config);
@@ -206,7 +212,13 @@ void HttpPortAllocatorSessionBase::ReceiveSessionResponse(
   std::string relay_tcp_port = map["relay.tcp_port"];
   std::string relay_ssltcp_port = map["relay.ssltcp_port"];
 
-  PortConfiguration* config = new PortConfiguration(stun_hosts_[0],
+  ServerAddresses hosts;
+  for (std::vector<talk_base::SocketAddress>::iterator it = stun_hosts_.begin();
+      it != stun_hosts_.end(); ++it) {
+    hosts.insert(*it);
+  }
+
+  PortConfiguration* config = new PortConfiguration(hosts,
                                                     map["username"],
                                                     map["password"]);
 

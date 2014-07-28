@@ -66,7 +66,7 @@ class FakeStunPort : public StunPort {
                const talk_base::IPAddress& ip,
                int min_port, int max_port,
                const std::string& username, const std::string& password,
-               const talk_base::SocketAddress& server_addr)
+               const ServerAddresses& server_addr)
       : StunPort(thread, factory, network, ip, min_port, max_port,
                  username, password, server_addr) {
   }
@@ -215,7 +215,7 @@ class ConnectivityCheckerForTest : public ConnectivityChecker {
                             network, network->ip(),
                             kMinPort, kMaxPort,
                             username, password,
-                            config->stun_address);
+                            config->stun_servers);
   }
   virtual RelayPort* CreateRelayPort(
       const std::string& username, const std::string& password,
@@ -254,7 +254,8 @@ class ConnectivityCheckerTest : public testing::Test {
     EXPECT_EQ(kExternalAddr, info.external_address);
 
     // Verify that the stun server address has been set.
-    EXPECT_EQ(kStunAddr, info.stun_server_address);
+    EXPECT_EQ(1U, info.stun_server_addresses.size());
+    EXPECT_EQ(kStunAddr, *(info.stun_server_addresses.begin()));
 
     // Verify that the media server address has been set. Don't care
     // about port since it is different for different protocols.
