@@ -33,9 +33,9 @@
 
 #include "talk/app/webrtc/datachannelinterface.h"
 #include "talk/app/webrtc/proxy.h"
-#include "talk/base/messagehandler.h"
-#include "talk/base/scoped_ref_ptr.h"
-#include "talk/base/sigslot.h"
+#include "webrtc/base/messagehandler.h"
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/sigslot.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/session/media/channel.h"
 
@@ -47,7 +47,7 @@ class DataChannelProviderInterface {
  public:
   // Sends the data to the transport.
   virtual bool SendData(const cricket::SendDataParams& params,
-                        const talk_base::Buffer& payload,
+                        const rtc::Buffer& payload,
                         cricket::SendDataResult* result) = 0;
   // Connects to the transport signals.
   virtual bool ConnectDataChannel(DataChannel* data_channel) = 0;
@@ -100,9 +100,9 @@ struct InternalDataChannelInit : public DataChannelInit {
 //          SSRC==0.
 class DataChannel : public DataChannelInterface,
                     public sigslot::has_slots<>,
-                    public talk_base::MessageHandler {
+                    public rtc::MessageHandler {
  public:
-  static talk_base::scoped_refptr<DataChannel> Create(
+  static rtc::scoped_refptr<DataChannel> Create(
       DataChannelProviderInterface* provider,
       cricket::DataChannelType dct,
       const std::string& label,
@@ -128,8 +128,8 @@ class DataChannel : public DataChannelInterface,
   virtual DataState state() const { return state_; }
   virtual bool Send(const DataBuffer& buffer);
 
-  // talk_base::MessageHandler override.
-  virtual void OnMessage(talk_base::Message* msg);
+  // rtc::MessageHandler override.
+  virtual void OnMessage(rtc::Message* msg);
 
   // Called if the underlying data engine is closing.
   void OnDataEngineClose();
@@ -142,7 +142,7 @@ class DataChannel : public DataChannelInterface,
   // Sigslots from cricket::DataChannel
   void OnDataReceived(cricket::DataChannel* channel,
                       const cricket::ReceiveDataParams& params,
-                      const talk_base::Buffer& payload);
+                      const rtc::Buffer& payload);
 
   // The remote peer request that this channel should be closed.
   void RemotePeerRequestClose();
@@ -217,8 +217,8 @@ class DataChannel : public DataChannelInterface,
   bool QueueSendDataMessage(const DataBuffer& buffer);
 
   void SendQueuedControlMessages();
-  void QueueControlMessage(const talk_base::Buffer& buffer);
-  bool SendControlMessage(const talk_base::Buffer& buffer);
+  void QueueControlMessage(const rtc::Buffer& buffer);
+  bool SendControlMessage(const rtc::Buffer& buffer);
 
   std::string label_;
   InternalDataChannelInit config_;
@@ -242,7 +242,7 @@ class DataChannel : public DataChannelInterface,
 
 class DataChannelFactory {
  public:
-  virtual talk_base::scoped_refptr<DataChannel> CreateDataChannel(
+  virtual rtc::scoped_refptr<DataChannel> CreateDataChannel(
       const std::string& label,
       const InternalDataChannelInit* config) = 0;
 

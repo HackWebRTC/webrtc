@@ -40,7 +40,7 @@
 @implementation RTCMediaStream {
   NSMutableArray* _audioTracks;
   NSMutableArray* _videoTracks;
-  talk_base::scoped_refptr<webrtc::MediaStreamInterface> _mediaStream;
+  rtc::scoped_refptr<webrtc::MediaStreamInterface> _mediaStream;
 }
 
 - (NSString*)description {
@@ -105,7 +105,7 @@
 @implementation RTCMediaStream (Internal)
 
 - (id)initWithMediaStream:
-          (talk_base::scoped_refptr<webrtc::MediaStreamInterface>)mediaStream {
+          (rtc::scoped_refptr<webrtc::MediaStreamInterface>)mediaStream {
   if (!mediaStream) {
     NSAssert(NO, @"nil arguments not allowed");
     self = nil;
@@ -120,7 +120,7 @@
     _mediaStream = mediaStream;
 
     for (size_t i = 0; i < audio_tracks.size(); ++i) {
-      talk_base::scoped_refptr<webrtc::AudioTrackInterface> track =
+      rtc::scoped_refptr<webrtc::AudioTrackInterface> track =
           audio_tracks[i];
       RTCAudioTrack* audioTrack =
           [[RTCAudioTrack alloc] initWithMediaTrack:track];
@@ -128,7 +128,7 @@
     }
 
     for (size_t i = 0; i < video_tracks.size(); ++i) {
-      talk_base::scoped_refptr<webrtc::VideoTrackInterface> track =
+      rtc::scoped_refptr<webrtc::VideoTrackInterface> track =
           video_tracks[i];
       RTCVideoTrack* videoTrack =
           [[RTCVideoTrack alloc] initWithMediaTrack:track];
@@ -138,7 +138,7 @@
   return self;
 }
 
-- (talk_base::scoped_refptr<webrtc::MediaStreamInterface>)mediaStream {
+- (rtc::scoped_refptr<webrtc::MediaStreamInterface>)mediaStream {
   return _mediaStream;
 }
 

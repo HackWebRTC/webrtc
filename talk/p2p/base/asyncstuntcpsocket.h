@@ -28,29 +28,29 @@
 #ifndef TALK_BASE_ASYNCSTUNTCPSOCKET_H_
 #define TALK_BASE_ASYNCSTUNTCPSOCKET_H_
 
-#include "talk/base/asynctcpsocket.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/socketfactory.h"
+#include "webrtc/base/asynctcpsocket.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/socketfactory.h"
 
 namespace cricket {
 
-class AsyncStunTCPSocket : public talk_base::AsyncTCPSocketBase {
+class AsyncStunTCPSocket : public rtc::AsyncTCPSocketBase {
  public:
   // Binds and connects |socket| and creates AsyncTCPSocket for
   // it. Takes ownership of |socket|. Returns NULL if bind() or
   // connect() fail (|socket| is destroyed in that case).
   static AsyncStunTCPSocket* Create(
-      talk_base::AsyncSocket* socket,
-      const talk_base::SocketAddress& bind_address,
-      const talk_base::SocketAddress& remote_address);
+      rtc::AsyncSocket* socket,
+      const rtc::SocketAddress& bind_address,
+      const rtc::SocketAddress& remote_address);
 
-  AsyncStunTCPSocket(talk_base::AsyncSocket* socket, bool listen);
+  AsyncStunTCPSocket(rtc::AsyncSocket* socket, bool listen);
   virtual ~AsyncStunTCPSocket() {}
 
   virtual int Send(const void* pv, size_t cb,
-                   const talk_base::PacketOptions& options);
+                   const rtc::PacketOptions& options);
   virtual void ProcessInput(char* data, size_t* len);
-  virtual void HandleIncomingConnection(talk_base::AsyncSocket* socket);
+  virtual void HandleIncomingConnection(rtc::AsyncSocket* socket);
 
  private:
   // This method returns the message hdr + length written in the header.

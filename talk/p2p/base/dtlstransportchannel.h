@@ -32,22 +32,22 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/buffer.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/sslstreamadapter.h"
-#include "talk/base/stream.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/sslstreamadapter.h"
+#include "webrtc/base/stream.h"
 #include "talk/p2p/base/transportchannelimpl.h"
 
 namespace cricket {
 
 // A bridge between a packet-oriented/channel-type interface on
 // the bottom and a StreamInterface on the top.
-class StreamInterfaceChannel : public talk_base::StreamInterface,
+class StreamInterfaceChannel : public rtc::StreamInterface,
                                public sigslot::has_slots<> {
  public:
-  StreamInterfaceChannel(talk_base::Thread* owner, TransportChannel* channel)
+  StreamInterfaceChannel(rtc::Thread* owner, TransportChannel* channel)
       : channel_(channel),
-        state_(talk_base::SS_OPEN),
+        state_(rtc::SS_OPEN),
         fifo_(kFifoSize, owner) {
     fifo_.SignalEvent.connect(this, &StreamInterfaceChannel::OnEvent);
   }
@@ -56,22 +56,22 @@ class StreamInterfaceChannel : public talk_base::StreamInterface,
   bool OnPacketReceived(const char* data, size_t size);
 
   // Implementations of StreamInterface
-  virtual talk_base::StreamState GetState() const { return state_; }
-  virtual void Close() { state_ = talk_base::SS_CLOSED; }
-  virtual talk_base::StreamResult Read(void* buffer, size_t buffer_len,
+  virtual rtc::StreamState GetState() const { return state_; }
+  virtual void Close() { state_ = rtc::SS_CLOSED; }
+  virtual rtc::StreamResult Read(void* buffer, size_t buffer_len,
                                        size_t* read, int* error);
-  virtual talk_base::StreamResult Write(const void* data, size_t data_len,
+  virtual rtc::StreamResult Write(const void* data, size_t data_len,
                                         size_t* written, int* error);
 
  private:
   static const size_t kFifoSize = 8192;
 
   // Forward events
-  virtual void OnEvent(talk_base::StreamInterface* stream, int sig, int err);
+  virtual void OnEvent(rtc::StreamInterface* stream, int sig, int err);
 
   TransportChannel* channel_;  // owned by DtlsTransportChannelWrapper
-  talk_base::StreamState state_;
-  talk_base::FifoBuffer fifo_;
+  rtc::StreamState state_;
+  rtc::FifoBuffer fifo_;
 
   DISALLOW_COPY_AND_ASSIGN(StreamInterfaceChannel);
 };
@@ -130,8 +130,8 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   virtual size_t GetConnectionCount() const {
     return channel_->GetConnectionCount();
   }
-  virtual bool SetLocalIdentity(talk_base::SSLIdentity *identity);
-  virtual bool GetLocalIdentity(talk_base::SSLIdentity** identity) const;
+  virtual bool SetLocalIdentity(rtc::SSLIdentity *identity);
+  virtual bool GetLocalIdentity(rtc::SSLIdentity** identity) const;
 
   virtual bool SetRemoteFingerprint(const std::string& digest_alg,
                                     const uint8* digest,
@@ -140,11 +140,11 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
 
   // Called to send a packet (via DTLS, if turned on).
   virtual int SendPacket(const char* data, size_t size,
-                         const talk_base::PacketOptions& options,
+                         const rtc::PacketOptions& options,
                          int flags);
 
   // TransportChannel calls that we forward to the wrapped transport.
-  virtual int SetOption(talk_base::Socket::Option opt, int value) {
+  virtual int SetOption(rtc::Socket::Option opt, int value) {
     return channel_->SetOption(opt, value);
   }
   virtual int GetError() {
@@ -165,12 +165,12 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   // Find out which DTLS-SRTP cipher was negotiated
   virtual bool GetSrtpCipher(std::string* cipher);
 
-  virtual bool GetSslRole(talk_base::SSLRole* role) const;
-  virtual bool SetSslRole(talk_base::SSLRole role);
+  virtual bool GetSslRole(rtc::SSLRole* role) const;
+  virtual bool SetSslRole(rtc::SSLRole role);
 
   // Once DTLS has been established, this method retrieves the certificate in
   // use by the remote peer, for use in external identity verification.
-  virtual bool GetRemoteCertificate(talk_base::SSLCertificate** cert) const;
+  virtual bool GetRemoteCertificate(rtc::SSLCertificate** cert) const;
 
   // Once DTLS has established (i.e., this channel is writable), this method
   // extracts the keys negotiated during the DTLS handshake, for use in external
@@ -231,9 +231,9 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   void OnReadableState(TransportChannel* channel);
   void OnWritableState(TransportChannel* channel);
   void OnReadPacket(TransportChannel* channel, const char* data, size_t size,
-                    const talk_base::PacketTime& packet_time, int flags);
+                    const rtc::PacketTime& packet_time, int flags);
   void OnReadyToSend(TransportChannel* channel);
-  void OnDtlsEvent(talk_base::StreamInterface* stream_, int sig, int err);
+  void OnDtlsEvent(rtc::StreamInterface* stream_, int sig, int err);
   bool SetupDtls();
   bool MaybeStartDtls();
   bool HandleDtlsPacket(const char* data, size_t size);
@@ -245,15 +245,15 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   void OnConnectionRemoved(TransportChannelImpl* channel);
 
   Transport* transport_;  // The transport_ that created us.
-  talk_base::Thread* worker_thread_;  // Everything should occur on this thread.
+  rtc::Thread* worker_thread_;  // Everything should occur on this thread.
   TransportChannelImpl* channel_;  // Underlying channel, owned by transport_.
-  talk_base::scoped_ptr<talk_base::SSLStreamAdapter> dtls_;  // The DTLS stream
+  rtc::scoped_ptr<rtc::SSLStreamAdapter> dtls_;  // The DTLS stream
   StreamInterfaceChannel* downward_;  // Wrapper for channel_, owned by dtls_.
   std::vector<std::string> srtp_ciphers_;  // SRTP ciphers to use with DTLS.
   State dtls_state_;
-  talk_base::SSLIdentity* local_identity_;
-  talk_base::SSLRole ssl_role_;
-  talk_base::Buffer remote_fingerprint_value_;
+  rtc::SSLIdentity* local_identity_;
+  rtc::SSLRole ssl_role_;
+  rtc::Buffer remote_fingerprint_value_;
   std::string remote_fingerprint_algorithm_;
 
   DISALLOW_COPY_AND_ASSIGN(DtlsTransportChannelWrapper);

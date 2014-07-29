@@ -36,13 +36,13 @@
 #include "talk/app/webrtc/mediastream.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/app/webrtc/streamcollection.h"
-#include "talk/base/scoped_ref_ptr.h"
-#include "talk/base/sigslot.h"
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/sigslot.h"
 #include "talk/session/media/mediasession.h"
 
-namespace talk_base {
+namespace rtc {
 class Thread;
-}  // namespace talk_base
+}  // namespace rtc
 
 namespace webrtc {
 
@@ -160,7 +160,7 @@ class MediaStreamSignalingObserver {
 
 class MediaStreamSignaling : public sigslot::has_slots<> {
  public:
-  MediaStreamSignaling(talk_base::Thread* signaling_thread,
+  MediaStreamSignaling(rtc::Thread* signaling_thread,
                        MediaStreamSignalingObserver* stream_observer,
                        cricket::ChannelManager* channel_manager);
   virtual ~MediaStreamSignaling();
@@ -180,7 +180,7 @@ class MediaStreamSignaling : public sigslot::has_slots<> {
 
   // Gets the first available SCTP id that is not assigned to any existing
   // data channels.
-  bool AllocateSctpSid(talk_base::SSLRole role, int* sid);
+  bool AllocateSctpSid(rtc::SSLRole role, int* sid);
 
   // Adds |local_stream| to the collection of known MediaStreams that will be
   // offered in a SessionDescription.
@@ -197,7 +197,7 @@ class MediaStreamSignaling : public sigslot::has_slots<> {
   bool AddDataChannel(DataChannel* data_channel);
   // After we receive an OPEN message, create a data channel and add it.
   bool AddDataChannelFromOpenMessage(const cricket::ReceiveDataParams& params,
-                                     const talk_base::Buffer& payload);
+                                     const rtc::Buffer& payload);
   void RemoveSctpDataChannel(int sid);
 
   // Returns a MediaSessionOptions struct with options decided by |constraints|,
@@ -249,7 +249,7 @@ class MediaStreamSignaling : public sigslot::has_slots<> {
     return remote_streams_.get();
   }
   void OnDataTransportCreatedForSctp();
-  void OnDtlsRoleReadyForSctp(talk_base::SSLRole role);
+  void OnDtlsRoleReadyForSctp(rtc::SSLRole role);
   void OnRemoteSctpDataChannelClosed(uint32 sid);
 
  private:
@@ -376,13 +376,13 @@ class MediaStreamSignaling : public sigslot::has_slots<> {
   int FindDataChannelBySid(int sid) const;
 
   RemotePeerInfo remote_info_;
-  talk_base::Thread* signaling_thread_;
+  rtc::Thread* signaling_thread_;
   DataChannelFactory* data_channel_factory_;
   cricket::MediaSessionOptions options_;
   MediaStreamSignalingObserver* stream_observer_;
-  talk_base::scoped_refptr<StreamCollection> local_streams_;
-  talk_base::scoped_refptr<StreamCollection> remote_streams_;
-  talk_base::scoped_ptr<RemoteMediaStreamFactory> remote_stream_factory_;
+  rtc::scoped_refptr<StreamCollection> local_streams_;
+  rtc::scoped_refptr<StreamCollection> remote_streams_;
+  rtc::scoped_ptr<RemoteMediaStreamFactory> remote_stream_factory_;
 
   TrackInfos remote_audio_tracks_;
   TrackInfos remote_video_tracks_;
@@ -392,9 +392,9 @@ class MediaStreamSignaling : public sigslot::has_slots<> {
   int last_allocated_sctp_even_sid_;
   int last_allocated_sctp_odd_sid_;
 
-  typedef std::map<std::string, talk_base::scoped_refptr<DataChannel> >
+  typedef std::map<std::string, rtc::scoped_refptr<DataChannel> >
       RtpDataChannels;
-  typedef std::vector<talk_base::scoped_refptr<DataChannel> > SctpDataChannels;
+  typedef std::vector<rtc::scoped_refptr<DataChannel> > SctpDataChannels;
 
   RtpDataChannels rtp_data_channels_;
   SctpDataChannels sctp_data_channels_;

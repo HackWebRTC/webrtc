@@ -1,9 +1,9 @@
 #include "talk/media/devices/yuvframescapturer.h"
 
-#include "talk/base/bytebuffer.h"
-#include "talk/base/criticalsection.h"
-#include "talk/base/logging.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/bytebuffer.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/thread.h"
 
 #include "webrtc/system_wrappers/interface/clock.h"
 
@@ -13,7 +13,7 @@ namespace cricket {
 // frames.
 ///////////////////////////////////////////////////////////////////////
 class YuvFramesCapturer::YuvFramesThread
-    : public talk_base::Thread, public talk_base::MessageHandler {
+    : public rtc::Thread, public rtc::MessageHandler {
  public:
   explicit YuvFramesThread(YuvFramesCapturer* capturer)
       : capturer_(capturer),
@@ -35,12 +35,12 @@ class YuvFramesCapturer::YuvFramesThread
       Thread::Run();
     }
 
-    talk_base::CritScope cs(&crit_);
+    rtc::CritScope cs(&crit_);
     finished_ = true;
   }
 
   // Override virtual method of parent MessageHandler. Context: Worker Thread.
-  virtual void OnMessage(talk_base::Message* /*pmsg*/) {
+  virtual void OnMessage(rtc::Message* /*pmsg*/) {
     int waiting_time_ms = 0;
     if (capturer_) {
       capturer_->ReadFrame(false);
@@ -52,13 +52,13 @@ class YuvFramesCapturer::YuvFramesThread
 
   // Check if Run() is finished.
   bool Finished() const {
-    talk_base::CritScope cs(&crit_);
+    rtc::CritScope cs(&crit_);
     return finished_;
   }
 
  private:
   YuvFramesCapturer* capturer_;
-  mutable talk_base::CriticalSection crit_;
+  mutable rtc::CriticalSection crit_;
   bool finished_;
 
   DISALLOW_COPY_AND_ASSIGN(YuvFramesThread);
@@ -113,7 +113,7 @@ CaptureState YuvFramesCapturer::Start(const VideoFormat& capture_format) {
   SetCaptureFormat(&capture_format);
 
   barcode_reference_timestamp_millis_ =
-      static_cast<int64>(talk_base::Time()) * 1000;
+      static_cast<int64>(rtc::Time()) * 1000;
   // Create a thread to generate frames.
   frames_generator_thread = new YuvFramesThread(this);
   bool ret = frames_generator_thread->Start();
@@ -166,7 +166,7 @@ int32 YuvFramesCapturer::GetBarcodeValue() {
        frame_index_ % barcode_interval_ != 0) {
      return -1;
   }
-  int64 now_millis = static_cast<int64>(talk_base::Time()) * 1000;
+  int64 now_millis = static_cast<int64>(rtc::Time()) * 1000;
   return static_cast<int32>(now_millis - barcode_reference_timestamp_millis_);
 }
 

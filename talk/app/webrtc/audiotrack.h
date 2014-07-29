@@ -31,14 +31,14 @@
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/mediastreamtrack.h"
 #include "talk/app/webrtc/notifier.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/scoped_ref_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 
 namespace webrtc {
 
 class AudioTrack : public MediaStreamTrack<AudioTrackInterface> {
  public:
-  static talk_base::scoped_refptr<AudioTrack> Create(
+  static rtc::scoped_refptr<AudioTrack> Create(
       const std::string& id, AudioSourceInterface* source);
 
   // AudioTrackInterface implementation.
@@ -49,7 +49,7 @@ class AudioTrack : public MediaStreamTrack<AudioTrackInterface> {
   virtual void AddSink(AudioTrackSinkInterface* sink) OVERRIDE {}
   virtual void RemoveSink(AudioTrackSinkInterface* sink) OVERRIDE {}
   virtual bool GetSignalLevel(int* level) OVERRIDE { return false; }
-  virtual talk_base::scoped_refptr<AudioProcessorInterface> GetAudioProcessor()
+  virtual rtc::scoped_refptr<AudioProcessorInterface> GetAudioProcessor()
       OVERRIDE { return NULL; }
   virtual cricket::AudioRenderer* GetRenderer() OVERRIDE {
     return NULL;
@@ -62,7 +62,7 @@ class AudioTrack : public MediaStreamTrack<AudioTrackInterface> {
   AudioTrack(const std::string& label, AudioSourceInterface* audio_source);
 
  private:
-  talk_base::scoped_refptr<AudioSourceInterface> audio_source_;
+  rtc::scoped_refptr<AudioSourceInterface> audio_source_;
 };
 
 }  // namespace webrtc

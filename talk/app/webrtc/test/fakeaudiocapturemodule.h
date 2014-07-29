@@ -37,22 +37,22 @@
 #ifndef TALK_APP_WEBRTC_TEST_FAKEAUDIOCAPTUREMODULE_H_
 #define TALK_APP_WEBRTC_TEST_FAKEAUDIOCAPTUREMODULE_H_
 
-#include "talk/base/basictypes.h"
-#include "talk/base/criticalsection.h"
-#include "talk/base/messagehandler.h"
-#include "talk/base/scoped_ref_ptr.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/messagehandler.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 
-namespace talk_base {
+namespace rtc {
 
 class Thread;
 
-}  // namespace talk_base
+}  // namespace rtc
 
 class FakeAudioCaptureModule
     : public webrtc::AudioDeviceModule,
-      public talk_base::MessageHandler {
+      public rtc::MessageHandler {
  public:
   typedef uint16 Sample;
 
@@ -64,8 +64,8 @@ class FakeAudioCaptureModule
   // Creates a FakeAudioCaptureModule or returns NULL on failure.
   // |process_thread| is used to push and pull audio frames to and from the
   // returned instance. Note: ownership of |process_thread| is not handed over.
-  static talk_base::scoped_refptr<FakeAudioCaptureModule> Create(
-      talk_base::Thread* process_thread);
+  static rtc::scoped_refptr<FakeAudioCaptureModule> Create(
+      rtc::Thread* process_thread);
 
   // Returns the number of frames that have been successfully pulled by the
   // instance. Note that correctly detecting success can only be done if the
@@ -201,8 +201,8 @@ class FakeAudioCaptureModule
   virtual int32_t GetLoudspeakerStatus(bool* enabled) const;
   // End of functions inherited from webrtc::AudioDeviceModule.
 
-  // The following function is inherited from talk_base::MessageHandler.
-  virtual void OnMessage(talk_base::Message* msg);
+  // The following function is inherited from rtc::MessageHandler.
+  virtual void OnMessage(rtc::Message* msg);
 
  protected:
   // The constructor is protected because the class needs to be created as a
@@ -210,7 +210,7 @@ class FakeAudioCaptureModule
   // exposed in which case the burden of proper instantiation would be put on
   // the creator of a FakeAudioCaptureModule instance. To create an instance of
   // this class use the Create(..) API.
-  explicit FakeAudioCaptureModule(talk_base::Thread* process_thread);
+  explicit FakeAudioCaptureModule(rtc::Thread* process_thread);
   // The destructor is protected because it is reference counted and should not
   // be deleted directly.
   virtual ~FakeAudioCaptureModule();
@@ -271,7 +271,7 @@ class FakeAudioCaptureModule
   uint32 next_frame_time_;
 
   // User provided thread context.
-  talk_base::Thread* process_thread_;
+  rtc::Thread* process_thread_;
 
   // Buffer for storing samples received from the webrtc::AudioTransport.
   char rec_buffer_[kNumberSamples * kNumberBytesPerSample];
@@ -285,10 +285,10 @@ class FakeAudioCaptureModule
 
   // Protects variables that are accessed from process_thread_ and
   // the main thread.
-  mutable talk_base::CriticalSection crit_;
+  mutable rtc::CriticalSection crit_;
   // Protects |audio_callback_| that is accessed from process_thread_ and
   // the main thread.
-  talk_base::CriticalSection crit_callback_;
+  rtc::CriticalSection crit_callback_;
 };
 
 #endif  // TALK_APP_WEBRTC_TEST_FAKEAUDIOCAPTUREMODULE_H_

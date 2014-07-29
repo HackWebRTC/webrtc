@@ -39,8 +39,8 @@ namespace webrtc {
 class FakePortAllocatorFactory : public PortAllocatorFactoryInterface {
  public:
   static FakePortAllocatorFactory* Create() {
-    talk_base::RefCountedObject<FakePortAllocatorFactory>* allocator =
-          new talk_base::RefCountedObject<FakePortAllocatorFactory>();
+    rtc::RefCountedObject<FakePortAllocatorFactory>* allocator =
+          new rtc::RefCountedObject<FakePortAllocatorFactory>();
     return allocator;
   }
 
@@ -49,7 +49,7 @@ class FakePortAllocatorFactory : public PortAllocatorFactoryInterface {
       const std::vector<TurnConfiguration>& turn_configurations) {
     stun_configs_ = stun_configurations;
     turn_configs_ = turn_configurations;
-    return new cricket::FakePortAllocator(talk_base::Thread::Current(), NULL);
+    return new cricket::FakePortAllocator(rtc::Thread::Current(), NULL);
   }
 
   const std::vector<StunConfiguration>& stun_configs() const {

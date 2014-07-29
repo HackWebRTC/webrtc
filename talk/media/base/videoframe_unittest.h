@@ -35,10 +35,10 @@
 #include "libyuv/format_conversion.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
-#include "talk/base/gunit.h"
-#include "talk/base/pathutils.h"
-#include "talk/base/stream.h"
-#include "talk/base/stringutils.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/pathutils.h"
+#include "webrtc/base/stream.h"
+#include "webrtc/base/stringutils.h"
 #include "talk/media/base/testutils.h"
 #include "talk/media/base/videocommon.h"
 #include "talk/media/base/videoframe.h"
@@ -89,16 +89,16 @@ class VideoFrameTest : public testing::Test {
   bool LoadFrame(const std::string& filename, uint32 format,
                  int32 width, int32 height, int dw, int dh, int rotation,
                  T* frame) {
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(LoadSample(filename));
+    rtc::scoped_ptr<rtc::MemoryStream> ms(LoadSample(filename));
     return LoadFrame(ms.get(), format, width, height, dw, dh, rotation, frame);
   }
   // Load a video frame from a memory stream.
-  bool LoadFrame(talk_base::MemoryStream* ms, uint32 format,
+  bool LoadFrame(rtc::MemoryStream* ms, uint32 format,
                  int32 width, int32 height, T* frame) {
     return LoadFrame(ms, format, width, height,
                      width, abs(height), 0, frame);
   }
-  bool LoadFrame(talk_base::MemoryStream* ms, uint32 format,
+  bool LoadFrame(rtc::MemoryStream* ms, uint32 format,
                  int32 width, int32 height, int dw, int dh, int rotation,
                  T* frame) {
     if (!ms) {
@@ -130,19 +130,19 @@ class VideoFrameTest : public testing::Test {
     return ret;
   }
 
-  talk_base::MemoryStream* LoadSample(const std::string& filename) {
-    talk_base::Pathname path(cricket::GetTestFilePath(filename));
-    talk_base::scoped_ptr<talk_base::FileStream> fs(
-        talk_base::Filesystem::OpenFile(path, "rb"));
+  rtc::MemoryStream* LoadSample(const std::string& filename) {
+    rtc::Pathname path(cricket::GetTestFilePath(filename));
+    rtc::scoped_ptr<rtc::FileStream> fs(
+        rtc::Filesystem::OpenFile(path, "rb"));
     if (!fs.get()) {
       return NULL;
     }
 
     char buf[4096];
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
-        new talk_base::MemoryStream());
-    talk_base::StreamResult res = Flow(fs.get(), buf, sizeof(buf), ms.get());
-    if (res != talk_base::SR_SUCCESS) {
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
+        new rtc::MemoryStream());
+    rtc::StreamResult res = Flow(fs.get(), buf, sizeof(buf), ms.get());
+    if (res != rtc::SR_SUCCESS) {
       return NULL;
     }
 
@@ -153,24 +153,24 @@ class VideoFrameTest : public testing::Test {
   bool DumpFrame(const std::string& prefix,
                  const cricket::VideoFrame& frame) {
     char filename[256];
-    talk_base::sprintfn(filename, sizeof(filename), "%s.%dx%d_P420.yuv",
+    rtc::sprintfn(filename, sizeof(filename), "%s.%dx%d_P420.yuv",
                         prefix.c_str(), frame.GetWidth(), frame.GetHeight());
     size_t out_size = cricket::VideoFrame::SizeOf(frame.GetWidth(),
                                                   frame.GetHeight());
-    talk_base::scoped_ptr<uint8[]> out(new uint8[out_size]);
+    rtc::scoped_ptr<uint8[]> out(new uint8[out_size]);
     frame.CopyToBuffer(out.get(), out_size);
     return DumpSample(filename, out.get(), out_size);
   }
 
   bool DumpSample(const std::string& filename, const void* buffer, int size) {
-    talk_base::Pathname path(filename);
-    talk_base::scoped_ptr<talk_base::FileStream> fs(
-        talk_base::Filesystem::OpenFile(path, "wb"));
+    rtc::Pathname path(filename);
+    rtc::scoped_ptr<rtc::FileStream> fs(
+        rtc::Filesystem::OpenFile(path, "wb"));
     if (!fs.get()) {
       return false;
     }
 
-    return (fs->Write(buffer, size, NULL, NULL) == talk_base::SR_SUCCESS);
+    return (fs->Write(buffer, size, NULL, NULL) == rtc::SR_SUCCESS);
   }
 
   // Create a test image in the desired color space.
@@ -179,15 +179,15 @@ class VideoFrameTest : public testing::Test {
   // The pattern is { { green, orange }, { blue, purple } }
   // There is also a gradient within each square to ensure that the luma
   // values are handled properly.
-  talk_base::MemoryStream* CreateYuv422Sample(uint32 fourcc,
+  rtc::MemoryStream* CreateYuv422Sample(uint32 fourcc,
                                               uint32 width, uint32 height) {
     int y1_pos, y2_pos, u_pos, v_pos;
     if (!GetYuv422Packing(fourcc, &y1_pos, &y2_pos, &u_pos, &v_pos)) {
       return NULL;
     }
 
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
-        new talk_base::MemoryStream);
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
+        new rtc::MemoryStream);
     int awidth = (width + 1) & ~1;
     int size = awidth * 2 * height;
     if (!ms->ReserveSize(size)) {
@@ -207,10 +207,10 @@ class VideoFrameTest : public testing::Test {
   }
 
   // Create a test image for YUV 420 formats with 12 bits per pixel.
-  talk_base::MemoryStream* CreateYuvSample(uint32 width, uint32 height,
+  rtc::MemoryStream* CreateYuvSample(uint32 width, uint32 height,
                                            uint32 bpp) {
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
-        new talk_base::MemoryStream);
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
+        new rtc::MemoryStream);
     if (!ms->ReserveSize(width * height * bpp / 8)) {
       return NULL;
     }
@@ -222,15 +222,15 @@ class VideoFrameTest : public testing::Test {
     return ms.release();
   }
 
-  talk_base::MemoryStream* CreateRgbSample(uint32 fourcc,
+  rtc::MemoryStream* CreateRgbSample(uint32 fourcc,
                                            uint32 width, uint32 height) {
     int r_pos, g_pos, b_pos, bytes;
     if (!GetRgbPacking(fourcc, &r_pos, &g_pos, &b_pos, &bytes)) {
       return NULL;
     }
 
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
-        new talk_base::MemoryStream);
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
+        new rtc::MemoryStream);
     if (!ms->ReserveSize(width * height * bytes)) {
       return NULL;
     }
@@ -249,7 +249,7 @@ class VideoFrameTest : public testing::Test {
 
   // Simple conversion routines to verify the optimized VideoFrame routines.
   // Converts from the specified colorspace to I420.
-  bool ConvertYuv422(const talk_base::MemoryStream* ms,
+  bool ConvertYuv422(const rtc::MemoryStream* ms,
                      uint32 fourcc, uint32 width, uint32 height,
                      T* frame) {
     int y1_pos, y2_pos, u_pos, v_pos;
@@ -287,7 +287,7 @@ class VideoFrameTest : public testing::Test {
 
   // Convert RGB to 420.
   // A negative height inverts the image.
-  bool ConvertRgb(const talk_base::MemoryStream* ms,
+  bool ConvertRgb(const rtc::MemoryStream* ms,
                   uint32 fourcc, int32 width, int32 height,
                   T* frame) {
     int r_pos, g_pos, b_pos, bytes;
@@ -482,7 +482,7 @@ class VideoFrameTest : public testing::Test {
   void ConstructI420() {
     T frame;
     EXPECT_TRUE(IsNull(frame));
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateYuvSample(kWidth, kHeight, 12));
     EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_I420,
                           kWidth, kHeight, &frame));
@@ -497,7 +497,7 @@ class VideoFrameTest : public testing::Test {
   // Test constructing an image from a YV12 buffer.
   void ConstructYV12() {
     T frame;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateYuvSample(kWidth, kHeight, 12));
     EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_YV12,
                           kWidth, kHeight, &frame));
@@ -514,7 +514,7 @@ class VideoFrameTest : public testing::Test {
     T frame1, frame2;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
     size_t buf_size = kWidth * kHeight * 2;
-    talk_base::scoped_ptr<uint8[]> buf(new uint8[buf_size + kAlignment]);
+    rtc::scoped_ptr<uint8[]> buf(new uint8[buf_size + kAlignment]);
     uint8* y = ALIGNP(buf.get(), kAlignment);
     uint8* u = y + kWidth * kHeight;
     uint8* v = u + (kWidth / 2) * kHeight;
@@ -535,7 +535,7 @@ class VideoFrameTest : public testing::Test {
     T frame1, frame2;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
     size_t buf_size = kWidth * kHeight * 2;
-    talk_base::scoped_ptr<uint8[]> buf(new uint8[buf_size + kAlignment]);
+    rtc::scoped_ptr<uint8[]> buf(new uint8[buf_size + kAlignment]);
     uint8* yuy2 = ALIGNP(buf.get(), kAlignment);
     EXPECT_EQ(0, libyuv::I420ToYUY2(frame1.GetYPlane(), frame1.GetYPitch(),
                                     frame1.GetUPlane(), frame1.GetUPitch(),
@@ -552,7 +552,7 @@ class VideoFrameTest : public testing::Test {
     T frame1, frame2;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
     size_t buf_size = kWidth * kHeight * 2;
-    talk_base::scoped_ptr<uint8[]> buf(new uint8[buf_size + kAlignment + 1]);
+    rtc::scoped_ptr<uint8[]> buf(new uint8[buf_size + kAlignment + 1]);
     uint8* yuy2 = ALIGNP(buf.get(), kAlignment) + 1;
     EXPECT_EQ(0, libyuv::I420ToYUY2(frame1.GetYPlane(), frame1.GetYPitch(),
                                     frame1.GetUPlane(), frame1.GetUPitch(),
@@ -568,7 +568,7 @@ class VideoFrameTest : public testing::Test {
   // Normal is 1280x720.  Wide is 12800x72
   void ConstructYuy2Wide() {
     T frame1, frame2;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateYuv422Sample(cricket::FOURCC_YUY2, kWidth * 10, kHeight / 10));
     ASSERT_TRUE(ms.get() != NULL);
     EXPECT_TRUE(ConvertYuv422(ms.get(), cricket::FOURCC_YUY2,
@@ -582,7 +582,7 @@ class VideoFrameTest : public testing::Test {
   // Test constructing an image from a UYVY buffer.
   void ConstructUyvy() {
     T frame1, frame2;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateYuv422Sample(cricket::FOURCC_UYVY, kWidth, kHeight));
     ASSERT_TRUE(ms.get() != NULL);
     EXPECT_TRUE(ConvertYuv422(ms.get(), cricket::FOURCC_UYVY, kWidth, kHeight,
@@ -596,7 +596,7 @@ class VideoFrameTest : public testing::Test {
   // We are merely verifying that the code succeeds and is free of crashes.
   void ConstructM420() {
     T frame;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateYuvSample(kWidth, kHeight, 12));
     ASSERT_TRUE(ms.get() != NULL);
     EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_M420,
@@ -605,7 +605,7 @@ class VideoFrameTest : public testing::Test {
 
   void ConstructQ420() {
     T frame;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateYuvSample(kWidth, kHeight, 12));
     ASSERT_TRUE(ms.get() != NULL);
     EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_Q420,
@@ -614,7 +614,7 @@ class VideoFrameTest : public testing::Test {
 
   void ConstructNV21() {
     T frame;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateYuvSample(kWidth, kHeight, 12));
     ASSERT_TRUE(ms.get() != NULL);
     EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_NV21,
@@ -623,7 +623,7 @@ class VideoFrameTest : public testing::Test {
 
   void ConstructNV12() {
     T frame;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateYuvSample(kWidth, kHeight, 12));
     ASSERT_TRUE(ms.get() != NULL);
     EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_NV12,
@@ -634,7 +634,7 @@ class VideoFrameTest : public testing::Test {
   // Due to rounding, some pixels may differ slightly from the VideoFrame impl.
   void ConstructABGR() {
     T frame1, frame2;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateRgbSample(cricket::FOURCC_ABGR, kWidth, kHeight));
     ASSERT_TRUE(ms.get() != NULL);
     EXPECT_TRUE(ConvertRgb(ms.get(), cricket::FOURCC_ABGR, kWidth, kHeight,
@@ -648,7 +648,7 @@ class VideoFrameTest : public testing::Test {
   // Due to rounding, some pixels may differ slightly from the VideoFrame impl.
   void ConstructARGB() {
     T frame1, frame2;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateRgbSample(cricket::FOURCC_ARGB, kWidth, kHeight));
     ASSERT_TRUE(ms.get() != NULL);
     EXPECT_TRUE(ConvertRgb(ms.get(), cricket::FOURCC_ARGB, kWidth, kHeight,
@@ -662,7 +662,7 @@ class VideoFrameTest : public testing::Test {
   // Normal is 1280x720.  Wide is 12800x72
   void ConstructARGBWide() {
     T frame1, frame2;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateRgbSample(cricket::FOURCC_ARGB, kWidth * 10, kHeight / 10));
     ASSERT_TRUE(ms.get() != NULL);
     EXPECT_TRUE(ConvertRgb(ms.get(), cricket::FOURCC_ARGB,
@@ -676,7 +676,7 @@ class VideoFrameTest : public testing::Test {
   // Due to rounding, some pixels may differ slightly from the VideoFrame impl.
   void ConstructBGRA() {
     T frame1, frame2;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateRgbSample(cricket::FOURCC_BGRA, kWidth, kHeight));
     ASSERT_TRUE(ms.get() != NULL);
     EXPECT_TRUE(ConvertRgb(ms.get(), cricket::FOURCC_BGRA, kWidth, kHeight,
@@ -690,7 +690,7 @@ class VideoFrameTest : public testing::Test {
   // Due to rounding, some pixels may differ slightly from the VideoFrame impl.
   void Construct24BG() {
     T frame1, frame2;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateRgbSample(cricket::FOURCC_24BG, kWidth, kHeight));
     ASSERT_TRUE(ms.get() != NULL);
     EXPECT_TRUE(ConvertRgb(ms.get(), cricket::FOURCC_24BG, kWidth, kHeight,
@@ -704,7 +704,7 @@ class VideoFrameTest : public testing::Test {
   // Due to rounding, some pixels may differ slightly from the VideoFrame impl.
   void ConstructRaw() {
     T frame1, frame2;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateRgbSample(cricket::FOURCC_RAW, kWidth, kHeight));
     ASSERT_TRUE(ms.get() != NULL);
     EXPECT_TRUE(ConvertRgb(ms.get(), cricket::FOURCC_RAW, kWidth, kHeight,
@@ -718,7 +718,7 @@ class VideoFrameTest : public testing::Test {
   void ConstructRGB565() {
     T frame1, frame2;
     size_t out_size = kWidth * kHeight * 2;
-    talk_base::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment]);
+    rtc::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment]);
     uint8 *out = ALIGNP(outbuf.get(), kAlignment);
     T frame;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
@@ -734,7 +734,7 @@ class VideoFrameTest : public testing::Test {
   void ConstructARGB1555() {
     T frame1, frame2;
     size_t out_size = kWidth * kHeight * 2;
-    talk_base::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment]);
+    rtc::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment]);
     uint8 *out = ALIGNP(outbuf.get(), kAlignment);
     T frame;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
@@ -750,7 +750,7 @@ class VideoFrameTest : public testing::Test {
   void ConstructARGB4444() {
     T frame1, frame2;
     size_t out_size = kWidth * kHeight * 2;
-    talk_base::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment]);
+    rtc::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment]);
     uint8 *out = ALIGNP(outbuf.get(), kAlignment);
     T frame;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
@@ -769,11 +769,11 @@ class VideoFrameTest : public testing::Test {
   #define TEST_BYR(NAME, BAYER)                                                \
   void NAME() {                                                                \
     size_t bayer_size = kWidth * kHeight;                                      \
-    talk_base::scoped_ptr<uint8[]> bayerbuf(new uint8[                         \
+    rtc::scoped_ptr<uint8[]> bayerbuf(new uint8[                         \
         bayer_size + kAlignment]);                                             \
     uint8 *bayer = ALIGNP(bayerbuf.get(), kAlignment);                         \
     T frame1, frame2;                                                          \
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(                         \
+    rtc::scoped_ptr<rtc::MemoryStream> ms(                         \
         CreateRgbSample(cricket::FOURCC_ARGB, kWidth, kHeight));               \
     ASSERT_TRUE(ms.get() != NULL);                                             \
     libyuv::ARGBToBayer##BAYER(reinterpret_cast<uint8 *>(ms->GetBuffer()),     \
@@ -798,7 +798,7 @@ class VideoFrameTest : public testing::Test {
 #define TEST_MIRROR(FOURCC, BPP)                                               \
 void Construct##FOURCC##Mirror() {                                             \
     T frame1, frame2, frame3;                                                  \
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(                         \
+    rtc::scoped_ptr<rtc::MemoryStream> ms(                         \
         CreateYuvSample(kWidth, kHeight, BPP));                                \
     ASSERT_TRUE(ms.get() != NULL);                                             \
     EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_##FOURCC,                  \
@@ -831,7 +831,7 @@ void Construct##FOURCC##Mirror() {                                             \
 #define TEST_ROTATE(FOURCC, BPP, ROTATE)                                       \
 void Construct##FOURCC##Rotate##ROTATE() {                                     \
     T frame1, frame2, frame3;                                                  \
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(                         \
+    rtc::scoped_ptr<rtc::MemoryStream> ms(                         \
         CreateYuvSample(kWidth, kHeight, BPP));                                \
     ASSERT_TRUE(ms.get() != NULL);                                             \
     EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_##FOURCC,                  \
@@ -887,7 +887,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
   // Test constructing an image from a UYVY buffer rotated 90 degrees.
   void ConstructUyvyRotate90() {
     T frame2;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateYuv422Sample(cricket::FOURCC_UYVY, kWidth, kHeight));
     ASSERT_TRUE(ms.get() != NULL);
     EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_UYVY,
@@ -898,7 +898,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
   // Test constructing an image from a UYVY buffer rotated 180 degrees.
   void ConstructUyvyRotate180() {
     T frame2;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateYuv422Sample(cricket::FOURCC_UYVY, kWidth, kHeight));
     ASSERT_TRUE(ms.get() != NULL);
     EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_UYVY,
@@ -909,7 +909,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
   // Test constructing an image from a UYVY buffer rotated 270 degrees.
   void ConstructUyvyRotate270() {
     T frame2;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateYuv422Sample(cricket::FOURCC_UYVY, kWidth, kHeight));
     ASSERT_TRUE(ms.get() != NULL);
     EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_UYVY,
@@ -920,7 +920,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
   // Test constructing an image from a YUY2 buffer rotated 90 degrees.
   void ConstructYuy2Rotate90() {
     T frame2;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateYuv422Sample(cricket::FOURCC_YUY2, kWidth, kHeight));
     ASSERT_TRUE(ms.get() != NULL);
     EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_YUY2,
@@ -931,7 +931,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
   // Test constructing an image from a YUY2 buffer rotated 180 degrees.
   void ConstructYuy2Rotate180() {
     T frame2;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateYuv422Sample(cricket::FOURCC_YUY2, kWidth, kHeight));
     ASSERT_TRUE(ms.get() != NULL);
     EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_YUY2,
@@ -942,7 +942,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
   // Test constructing an image from a YUY2 buffer rotated 270 degrees.
   void ConstructYuy2Rotate270() {
     T frame2;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateYuv422Sample(cricket::FOURCC_YUY2, kWidth, kHeight));
     ASSERT_TRUE(ms.get() != NULL);
     EXPECT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_YUY2,
@@ -994,7 +994,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     }
     // Convert back to ARGB.
     size_t out_size = 4;
-    talk_base::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment]);
+    rtc::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment]);
     uint8 *out = ALIGNP(outbuf.get(), kAlignment);
 
     EXPECT_EQ(out_size, frame.ConvertToRgbBuffer(cricket::FOURCC_ARGB,
@@ -1031,7 +1031,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     }
     // Convert back to ARGB
     size_t out_size = 10 * 4;
-    talk_base::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment]);
+    rtc::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment]);
     uint8 *out = ALIGNP(outbuf.get(), kAlignment);
 
     EXPECT_EQ(out_size, frame.ConvertToRgbBuffer(cricket::FOURCC_ARGB,
@@ -1055,7 +1055,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
   // Test constructing an image from a YUY2 buffer with horizontal cropping.
   void ConstructYuy2CropHorizontal() {
     T frame1, frame2;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateYuv422Sample(cricket::FOURCC_YUY2, kWidth, kHeight));
     ASSERT_TRUE(ms.get() != NULL);
     EXPECT_TRUE(ConvertYuv422(ms.get(), cricket::FOURCC_YUY2, kWidth, kHeight,
@@ -1068,7 +1068,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
   // Test constructing an image from an ARGB buffer with horizontal cropping.
   void ConstructARGBCropHorizontal() {
     T frame1, frame2;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateRgbSample(cricket::FOURCC_ARGB, kWidth, kHeight));
     ASSERT_TRUE(ms.get() != NULL);
     EXPECT_TRUE(ConvertRgb(ms.get(), cricket::FOURCC_ARGB, kWidth, kHeight,
@@ -1153,7 +1153,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
   void ValidateFrame(const char* name, uint32 fourcc, int data_adjust,
                      int size_adjust, bool expected_result) {
     T frame;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(LoadSample(name));
+    rtc::scoped_ptr<rtc::MemoryStream> ms(LoadSample(name));
     ASSERT_TRUE(ms.get() != NULL);
     const uint8* sample = reinterpret_cast<const uint8*>(ms.get()->GetBuffer());
     size_t sample_size;
@@ -1163,7 +1163,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
 
     // Allocate a buffer with end page aligned.
     const int kPadToHeapSized = 16 * 1024 * 1024;
-    talk_base::scoped_ptr<uint8[]> page_buffer(
+    rtc::scoped_ptr<uint8[]> page_buffer(
         new uint8[((data_size + kPadToHeapSized + 4095) & ~4095)]);
     uint8* data_ptr = page_buffer.get();
     if (!data_ptr) {
@@ -1172,7 +1172,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
       return;
     }
     data_ptr += kPadToHeapSized + (-(static_cast<int>(data_size)) & 4095);
-    memcpy(data_ptr, sample, talk_base::_min(data_size, sample_size));
+    memcpy(data_ptr, sample, rtc::_min(data_size, sample_size));
     for (int i = 0; i < repeat_; ++i) {
       EXPECT_EQ(expected_result, frame.Validate(fourcc, kWidth, kHeight,
                                                 data_ptr,
@@ -1269,7 +1269,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
   // Test constructing an image from a YUY2 buffer (and synonymous formats).
   void ConstructYuy2Aliases() {
     T frame1, frame2, frame3, frame4;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateYuv422Sample(cricket::FOURCC_YUY2, kWidth, kHeight));
     ASSERT_TRUE(ms.get() != NULL);
     EXPECT_TRUE(ConvertYuv422(ms.get(), cricket::FOURCC_YUY2, kWidth, kHeight,
@@ -1288,7 +1288,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
   // Test constructing an image from a UYVY buffer (and synonymous formats).
   void ConstructUyvyAliases() {
     T frame1, frame2, frame3, frame4;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateYuv422Sample(cricket::FOURCC_UYVY, kWidth, kHeight));
     ASSERT_TRUE(ms.get() != NULL);
     EXPECT_TRUE(ConvertYuv422(ms.get(), cricket::FOURCC_UYVY, kWidth, kHeight,
@@ -1343,7 +1343,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     T frame1, frame2;
     for (int height = kMinHeightAll; height <= kMaxHeightAll; ++height) {
       for (int width = kMinWidthAll; width <= kMaxWidthAll; ++width) {
-        talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+        rtc::scoped_ptr<rtc::MemoryStream> ms(
             CreateYuv422Sample(cricket::FOURCC_YUY2, width, height));
         ASSERT_TRUE(ms.get() != NULL);
         EXPECT_TRUE(ConvertYuv422(ms.get(), cricket::FOURCC_YUY2, width, height,
@@ -1361,7 +1361,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     T frame1, frame2;
     for (int height = kMinHeightAll; height <= kMaxHeightAll; ++height) {
       for (int width = kMinWidthAll; width <= kMaxWidthAll; ++width) {
-        talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+        rtc::scoped_ptr<rtc::MemoryStream> ms(
             CreateRgbSample(cricket::FOURCC_ARGB, width, height));
         ASSERT_TRUE(ms.get() != NULL);
         EXPECT_TRUE(ConvertRgb(ms.get(), cricket::FOURCC_ARGB, width, height,
@@ -1376,7 +1376,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     const int kOddHeight = 260;
     for (int j = 0; j < 2; ++j) {
       for (int i = 0; i < 2; ++i) {
-        talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+        rtc::scoped_ptr<rtc::MemoryStream> ms(
         CreateRgbSample(cricket::FOURCC_ARGB, kOddWidth + i, kOddHeight + j));
         ASSERT_TRUE(ms.get() != NULL);
         EXPECT_TRUE(ConvertRgb(ms.get(), cricket::FOURCC_ARGB,
@@ -1392,7 +1392,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
   // Tests re-initing an existing image.
   void Reset() {
     T frame1, frame2;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         LoadSample(kImageFilename));
     ASSERT_TRUE(ms.get() != NULL);
     size_t data_size;
@@ -1429,7 +1429,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
 
     int astride = kWidth * bpp + rowpad;
     size_t out_size = astride * kHeight;
-    talk_base::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment + 1]);
+    rtc::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment + 1]);
     memset(outbuf.get(), 0, out_size + kAlignment + 1);
     uint8 *outtop = ALIGNP(outbuf.get(), kAlignment);
     uint8 *out = outtop;
@@ -1843,7 +1843,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
   void ConvertToI422Buffer() {
     T frame1, frame2;
     size_t out_size = kWidth * kHeight * 2;
-    talk_base::scoped_ptr<uint8[]> buf(new uint8[out_size + kAlignment]);
+    rtc::scoped_ptr<uint8[]> buf(new uint8[out_size + kAlignment]);
     uint8* y = ALIGNP(buf.get(), kAlignment);
     uint8* u = y + kWidth * kHeight;
     uint8* v = u + (kWidth / 2) * kHeight;
@@ -1867,11 +1867,11 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
   #define TEST_TOBYR(NAME, BAYER)                                              \
   void NAME() {                                                                \
     size_t bayer_size = kWidth * kHeight;                                      \
-    talk_base::scoped_ptr<uint8[]> bayerbuf(new uint8[                         \
+    rtc::scoped_ptr<uint8[]> bayerbuf(new uint8[                         \
         bayer_size + kAlignment]);                                             \
     uint8 *bayer = ALIGNP(bayerbuf.get(), kAlignment);                         \
     T frame;                                                                   \
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(                         \
+    rtc::scoped_ptr<rtc::MemoryStream> ms(                         \
         CreateRgbSample(cricket::FOURCC_ARGB, kWidth, kHeight));               \
     ASSERT_TRUE(ms.get() != NULL);                                             \
     for (int i = 0; i < repeat_; ++i) {                                        \
@@ -1880,7 +1880,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
                                  bayer, kWidth,                                \
                                  kWidth, kHeight);                             \
     }                                                                          \
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms2(                        \
+    rtc::scoped_ptr<rtc::MemoryStream> ms2(                        \
         CreateRgbSample(cricket::FOURCC_ARGB, kWidth, kHeight));               \
     size_t data_size;                                                          \
     bool ret = ms2->GetSize(&data_size);                                       \
@@ -1896,11 +1896,11 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
   }                                                                            \
   void NAME##Unaligned() {                                                     \
     size_t bayer_size = kWidth * kHeight;                                      \
-    talk_base::scoped_ptr<uint8[]> bayerbuf(new uint8[                         \
+    rtc::scoped_ptr<uint8[]> bayerbuf(new uint8[                         \
         bayer_size + 1 + kAlignment]);                                         \
     uint8 *bayer = ALIGNP(bayerbuf.get(), kAlignment) + 1;                     \
     T frame;                                                                   \
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(                         \
+    rtc::scoped_ptr<rtc::MemoryStream> ms(                         \
         CreateRgbSample(cricket::FOURCC_ARGB, kWidth, kHeight));               \
     ASSERT_TRUE(ms.get() != NULL);                                             \
     for (int i = 0; i < repeat_; ++i) {                                        \
@@ -1909,7 +1909,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
                                  bayer, kWidth,                                \
                                  kWidth, kHeight);                             \
     }                                                                          \
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms2(                        \
+    rtc::scoped_ptr<rtc::MemoryStream> ms2(                        \
         CreateRgbSample(cricket::FOURCC_ARGB, kWidth, kHeight));               \
     size_t data_size;                                                          \
     bool ret = ms2->GetSize(&data_size);                                       \
@@ -1933,14 +1933,14 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
   #define TEST_BYRTORGB(NAME, BAYER)                                           \
   void NAME() {                                                                \
     size_t bayer_size = kWidth * kHeight;                                      \
-    talk_base::scoped_ptr<uint8[]> bayerbuf(new uint8[                         \
+    rtc::scoped_ptr<uint8[]> bayerbuf(new uint8[                         \
         bayer_size + kAlignment]);                                             \
     uint8 *bayer1 = ALIGNP(bayerbuf.get(), kAlignment);                        \
     for (int i = 0; i < kWidth * kHeight; ++i) {                               \
       bayer1[i] = static_cast<uint8>(i * 33u + 183u);                          \
     }                                                                          \
     T frame;                                                                   \
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(                         \
+    rtc::scoped_ptr<rtc::MemoryStream> ms(                         \
         CreateRgbSample(cricket::FOURCC_ARGB, kWidth, kHeight));               \
     ASSERT_TRUE(ms.get() != NULL);                                             \
     for (int i = 0; i < repeat_; ++i) {                                        \
@@ -1949,7 +1949,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
                              kWidth * 4,                                       \
                              kWidth, kHeight);                                 \
     }                                                                          \
-    talk_base::scoped_ptr<uint8[]> bayer2buf(new uint8[                        \
+    rtc::scoped_ptr<uint8[]> bayer2buf(new uint8[                        \
         bayer_size + kAlignment]);                                             \
     uint8 *bayer2 = ALIGNP(bayer2buf.get(), kAlignment);                       \
     libyuv::ARGBToBayer##BAYER(reinterpret_cast<uint8*>(ms->GetBuffer()),      \
@@ -1973,8 +1973,8 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
   ///////////////////
 
   void Copy() {
-    talk_base::scoped_ptr<T> source(new T);
-    talk_base::scoped_ptr<cricket::VideoFrame> target;
+    rtc::scoped_ptr<T> source(new T);
+    rtc::scoped_ptr<cricket::VideoFrame> target;
     ASSERT_TRUE(LoadFrameNoRepeat(source.get()));
     target.reset(source->Copy());
     EXPECT_TRUE(IsEqual(*source, *target, 0));
@@ -1983,8 +1983,8 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
   }
 
   void CopyIsRef() {
-    talk_base::scoped_ptr<T> source(new T);
-    talk_base::scoped_ptr<cricket::VideoFrame> target;
+    rtc::scoped_ptr<T> source(new T);
+    rtc::scoped_ptr<cricket::VideoFrame> target;
     ASSERT_TRUE(LoadFrameNoRepeat(source.get()));
     target.reset(source->Copy());
     EXPECT_TRUE(IsEqual(*source, *target, 0));
@@ -1994,8 +1994,8 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
   }
 
   void MakeExclusive() {
-    talk_base::scoped_ptr<T> source(new T);
-    talk_base::scoped_ptr<cricket::VideoFrame> target;
+    rtc::scoped_ptr<T> source(new T);
+    rtc::scoped_ptr<cricket::VideoFrame> target;
     ASSERT_TRUE(LoadFrameNoRepeat(source.get()));
     target.reset(source->Copy());
     EXPECT_TRUE(target->MakeExclusive());
@@ -2007,13 +2007,13 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
 
   void CopyToBuffer() {
     T frame;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         LoadSample(kImageFilename));
     ASSERT_TRUE(ms.get() != NULL);
     ASSERT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_I420, kWidth, kHeight,
                           &frame));
     size_t out_size = kWidth * kHeight * 3 / 2;
-    talk_base::scoped_ptr<uint8[]> out(new uint8[out_size]);
+    rtc::scoped_ptr<uint8[]> out(new uint8[out_size]);
     for (int i = 0; i < repeat_; ++i) {
       EXPECT_EQ(out_size, frame.CopyToBuffer(out.get(), out_size));
     }
@@ -2022,7 +2022,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
 
   void CopyToFrame() {
     T source;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         LoadSample(kImageFilename));
     ASSERT_TRUE(ms.get() != NULL);
     ASSERT_TRUE(LoadFrame(ms.get(), cricket::FOURCC_I420, kWidth, kHeight,
@@ -2041,10 +2041,10 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
 
   void Write() {
     T frame;
-    talk_base::scoped_ptr<talk_base::MemoryStream> ms(
+    rtc::scoped_ptr<rtc::MemoryStream> ms(
         LoadSample(kImageFilename));
     ASSERT_TRUE(ms.get() != NULL);
-    talk_base::MemoryStream ms2;
+    rtc::MemoryStream ms2;
     size_t size;
     ASSERT_TRUE(ms->GetSize(&size));
     ASSERT_TRUE(ms2.ReserveSize(size));
@@ -2053,7 +2053,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     for (int i = 0; i < repeat_; ++i) {
       ms2.SetPosition(0u);  // Useful when repeat_ > 1.
       int error;
-      EXPECT_EQ(talk_base::SR_SUCCESS, frame.Write(&ms2, &error));
+      EXPECT_EQ(rtc::SR_SUCCESS, frame.Write(&ms2, &error));
     }
     size_t out_size = cricket::VideoFrame::SizeOf(kWidth, kHeight);
     EXPECT_EQ(0, memcmp(ms2.GetBuffer(), ms->GetBuffer(), out_size));
@@ -2061,7 +2061,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
 
   void CopyToBuffer1Pixel() {
     size_t out_size = 3;
-    talk_base::scoped_ptr<uint8[]> out(new uint8[out_size + 1]);
+    rtc::scoped_ptr<uint8[]> out(new uint8[out_size + 1]);
     memset(out.get(), 0xfb, out_size + 1);  // Fill buffer
     uint8 pixel[3] = { 1, 2, 3 };
     T frame;

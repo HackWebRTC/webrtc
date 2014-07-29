@@ -26,12 +26,12 @@
  */
 
 #include <string>
-#include "talk/base/gunit.h"
-#include "talk/base/messagehandler.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/stream.h"
-#include "talk/base/thread.h"
-#include "talk/base/timeutils.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/messagehandler.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/stream.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/base/timeutils.h"
 #include "talk/p2p/base/sessionmanager.h"
 #include "talk/p2p/base/transport.h"
 #include "talk/p2p/client/fakeportallocator.h"
@@ -45,14 +45,14 @@ static const buzz::Jid kRemoteJid("remote@localhost");
 // This test fixture creates the necessary plumbing to create and run
 // two TunnelSessionClients that talk to each other.
 class TunnelSessionClientTest : public testing::Test,
-                                public talk_base::MessageHandler,
+                                public rtc::MessageHandler,
                                 public sigslot::has_slots<> {
  public:
   TunnelSessionClientTest()
-      : local_pa_(talk_base::Thread::Current(), NULL),
-        remote_pa_(talk_base::Thread::Current(), NULL),
-        local_sm_(&local_pa_, talk_base::Thread::Current()),
-        remote_sm_(&remote_pa_, talk_base::Thread::Current()),
+      : local_pa_(rtc::Thread::Current(), NULL),
+        remote_pa_(rtc::Thread::Current(), NULL),
+        local_sm_(&local_pa_, rtc::Thread::Current()),
+        remote_sm_(&remote_pa_, rtc::Thread::Current()),
         local_client_(kLocalJid, &local_sm_),
         remote_client_(kRemoteJid, &remote_sm_),
         done_(false) {
@@ -104,19 +104,19 @@ class TunnelSessionClientTest : public testing::Test,
   void OnOutgoingMessage(cricket::SessionManager* manager,
                          const buzz::XmlElement* stanza) {
     if (manager == &local_sm_) {
-      talk_base::Thread::Current()->Post(this, MSG_LSIGNAL,
-          talk_base::WrapMessageData(*stanza));
+      rtc::Thread::Current()->Post(this, MSG_LSIGNAL,
+          rtc::WrapMessageData(*stanza));
     } else if (manager == &remote_sm_) {
-      talk_base::Thread::Current()->Post(this, MSG_RSIGNAL,
-          talk_base::WrapMessageData(*stanza));
+      rtc::Thread::Current()->Post(this, MSG_RSIGNAL,
+          rtc::WrapMessageData(*stanza));
     }
   }
 
   // Need to add a "from=" attribute (normally added by the server)
   // Then route the incoming signaling message to the "other" session manager.
-  virtual void OnMessage(talk_base::Message* message) {
-    talk_base::TypedMessageData<buzz::XmlElement>* data =
-        static_cast<talk_base::TypedMessageData<buzz::XmlElement>*>(
+  virtual void OnMessage(rtc::Message* message) {
+    rtc::TypedMessageData<buzz::XmlElement>* data =
+        static_cast<rtc::TypedMessageData<buzz::XmlElement>*>(
             message->pdata);
     bool response = data->data().Attr(buzz::QN_TYPE) == buzz::STR_RESULT;
     if (message->message_id == MSG_RSIGNAL) {
@@ -150,14 +150,14 @@ class TunnelSessionClientTest : public testing::Test,
   // Read bytes out into recv_stream_ as they arrive.
   // End the test when we are notified that the local side has closed the
   // tunnel. All data has been read out at this point.
-  void OnStreamEvent(talk_base::StreamInterface* stream, int events,
+  void OnStreamEvent(rtc::StreamInterface* stream, int events,
                      int error) {
-    if (events & talk_base::SE_READ) {
+    if (events & rtc::SE_READ) {
       if (stream == remote_tunnel_.get()) {
         ReadData();
       }
     }
-    if (events & talk_base::SE_WRITE) {
+    if (events & rtc::SE_WRITE) {
       if (stream == local_tunnel_.get()) {
         bool done = false;
         WriteData(&done);
@@ -166,7 +166,7 @@ class TunnelSessionClientTest : public testing::Test,
         }
       }
     }
-    if (events & talk_base::SE_CLOSE) {
+    if (events & rtc::SE_CLOSE) {
       if (stream == remote_tunnel_.get()) {
         remote_tunnel_->Close();
         done_ = true;
@@ -179,12 +179,12 @@ class TunnelSessionClientTest : public testing::Test,
   void ReadData() {
     char block[kBlockSize];
     size_t read, position;
-    talk_base::StreamResult res;
+    rtc::StreamResult res;
     while ((res = remote_tunnel_->Read(block, sizeof(block), &read, NULL)) ==
-        talk_base::SR_SUCCESS) {
+        rtc::SR_SUCCESS) {
       recv_stream_.Write(block, read, NULL, NULL);
     }
-    ASSERT(res != talk_base::SR_EOS);
+    ASSERT(res != rtc::SR_EOS);
     recv_stream_.GetPosition(&position);
     LOG(LS_VERBOSE) << "Recv position: " << position;
   }
@@ -192,14 +192,14 @@ class TunnelSessionClientTest : public testing::Test,
   void WriteData(bool* done) {
     char block[kBlockSize];
     size_t leftover = 0, position;
-    talk_base::StreamResult res = talk_base::Flow(&send_stream_,
+    rtc::StreamResult res = rtc::Flow(&send_stream_,
         block, sizeof(block), local_tunnel_.get(), &leftover);
-    if (res == talk_base::SR_BLOCK) {
+    if (res == rtc::SR_BLOCK) {
       send_stream_.GetPosition(&position);
       send_stream_.SetPosition(position - leftover);
       LOG(LS_VERBOSE) << "Send position: " << position - leftover;
       *done = false;
-    } else if (res == talk_base::SR_SUCCESS) {
+    } else if (res == rtc::SR_SUCCESS) {
       *done = true;
     } else {
       ASSERT(false);  // shouldn't happen
@@ -213,10 +213,10 @@ class TunnelSessionClientTest : public testing::Test,
   cricket::SessionManager remote_sm_;
   cricket::TunnelSessionClient local_client_;
   cricket::TunnelSessionClient remote_client_;
-  talk_base::scoped_ptr<talk_base::StreamInterface> local_tunnel_;
-  talk_base::scoped_ptr<talk_base::StreamInterface> remote_tunnel_;
-  talk_base::MemoryStream send_stream_;
-  talk_base::MemoryStream recv_stream_;
+  rtc::scoped_ptr<rtc::StreamInterface> local_tunnel_;
+  rtc::scoped_ptr<rtc::StreamInterface> remote_tunnel_;
+  rtc::MemoryStream send_stream_;
+  rtc::MemoryStream recv_stream_;
   bool done_;
 };
 

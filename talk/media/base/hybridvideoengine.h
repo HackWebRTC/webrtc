@@ -31,8 +31,8 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/logging.h"
-#include "talk/base/sigslotrepeater.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/sigslotrepeater.h"
 #include "talk/media/base/codec.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/videocapturer.h"
@@ -88,10 +88,10 @@ class HybridVideoMediaChannel : public VideoMediaChannel {
 
   virtual bool GetStats(const StatsOptions& options, VideoMediaInfo* info);
 
-  virtual void OnPacketReceived(talk_base::Buffer* packet,
-                                const talk_base::PacketTime& packet_time);
-  virtual void OnRtcpReceived(talk_base::Buffer* packet,
-                              const talk_base::PacketTime& packet_time);
+  virtual void OnPacketReceived(rtc::Buffer* packet,
+                                const rtc::PacketTime& packet_time);
+  virtual void OnRtcpReceived(rtc::Buffer* packet,
+                              const rtc::PacketTime& packet_time);
   virtual void OnReadyToSend(bool ready);
 
   virtual void UpdateAspectRatio(int ratio_w, int ratio_h);
@@ -110,8 +110,8 @@ class HybridVideoMediaChannel : public VideoMediaChannel {
   void OnMediaError(uint32 ssrc, Error error);
 
   HybridVideoEngineInterface* engine_;
-  talk_base::scoped_ptr<VideoMediaChannel> channel1_;
-  talk_base::scoped_ptr<VideoMediaChannel> channel2_;
+  rtc::scoped_ptr<VideoMediaChannel> channel1_;
+  rtc::scoped_ptr<VideoMediaChannel> channel2_;
   VideoMediaChannel* active_channel_;
   bool sending_;
 };
@@ -149,7 +149,7 @@ class HybridVideoEngine : public HybridVideoEngineInterface {
     SignalCaptureStateChange.repeat(video2_.SignalCaptureStateChange);
   }
 
-  bool Init(talk_base::Thread* worker_thread) {
+  bool Init(rtc::Thread* worker_thread) {
     if (!video1_.Init(worker_thread)) {
       LOG(LS_ERROR) << "Failed to init VideoEngine1";
       return false;
@@ -170,13 +170,13 @@ class HybridVideoEngine : public HybridVideoEngineInterface {
     return (video1_.GetCapabilities() | video2_.GetCapabilities());
   }
   HybridVideoMediaChannel* CreateChannel(VoiceMediaChannel* channel) {
-    talk_base::scoped_ptr<VideoMediaChannel> channel1(
+    rtc::scoped_ptr<VideoMediaChannel> channel1(
         video1_.CreateChannel(channel));
     if (!channel1) {
       LOG(LS_ERROR) << "Failed to create VideoMediaChannel1";
       return NULL;
     }
-    talk_base::scoped_ptr<VideoMediaChannel> channel2(
+    rtc::scoped_ptr<VideoMediaChannel> channel2(
         video2_.CreateChannel(channel));
     if (!channel2) {
       LOG(LS_ERROR) << "Failed to create VideoMediaChannel2";

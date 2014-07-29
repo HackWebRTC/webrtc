@@ -32,10 +32,10 @@
 #include <set>
 #include <utility>
 
-#include "talk/base/helpers.h"
-#include "talk/base/logging.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/stringutils.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/stringutils.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/cryptoparams.h"
 #include "talk/p2p/base/constants.h"
@@ -55,7 +55,7 @@ const char kInline[] = "inline:";
 
 namespace cricket {
 
-using talk_base::scoped_ptr;
+using rtc::scoped_ptr;
 
 // RTP Profile names
 // http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xml
@@ -89,7 +89,7 @@ static bool CreateCryptoParams(int tag, const std::string& cipher,
   std::string key;
   key.reserve(SRTP_MASTER_KEY_BASE64_LEN);
 
-  if (!talk_base::CreateRandomString(SRTP_MASTER_KEY_BASE64_LEN, &key)) {
+  if (!rtc::CreateRandomString(SRTP_MASTER_KEY_BASE64_LEN, &key)) {
     return false;
   }
   out->tag = tag;
@@ -236,7 +236,7 @@ static bool GenerateCname(const StreamParamsVec& params_vec,
   // Generate a random string for the RTCP CNAME, as stated in RFC 6222.
   // This string is only used for synchronization, and therefore is opaque.
   do {
-    if (!talk_base::CreateRandomString(16, cname)) {
+    if (!rtc::CreateRandomString(16, cname)) {
       ASSERT(false);
       return false;
     }
@@ -254,7 +254,7 @@ static void GenerateSsrcs(const StreamParamsVec& params_vec,
   for (int i = 0; i < num_ssrcs; i++) {
     uint32 candidate;
     do {
-      candidate = talk_base::CreateRandomNonZeroId();
+      candidate = rtc::CreateRandomNonZeroId();
     } while (GetStreamBySsrc(params_vec, candidate, NULL) ||
              std::count(ssrcs->begin(), ssrcs->end(), candidate) > 0);
     ssrcs->push_back(candidate);
@@ -270,7 +270,7 @@ static bool GenerateSctpSid(const StreamParamsVec& params_vec,
     return false;
   }
   while (true) {
-    uint32 candidate = talk_base::CreateRandomNonZeroId() % kMaxSctpSid;
+    uint32 candidate = rtc::CreateRandomNonZeroId() % kMaxSctpSid;
     if (!GetStreamBySsrc(params_vec, candidate, NULL)) {
       *sid = candidate;
       return true;
@@ -610,7 +610,7 @@ static bool IsRtpContent(SessionDescription* sdesc,
       return false;
     }
     is_rtp = media_desc->protocol().empty() ||
-             talk_base::starts_with(media_desc->protocol().data(),
+             rtc::starts_with(media_desc->protocol().data(),
                                     kMediaProtocolRtpPrefix);
   }
   return is_rtp;
@@ -820,7 +820,7 @@ static void FindCodecsToOffer(
     if (!FindMatchingCodec<C>(*offered_codecs, *it, NULL) && IsRtxCodec(*it)) {
       C rtx_codec = *it;
       int referenced_pl_type =
-          talk_base::FromString<int>(0,
+          rtc::FromString<int>(0,
               rtx_codec.params[kCodecParamAssociatedPayloadType]);
       new_rtx_codecs.insert(std::pair<int, C>(referenced_pl_type,
                                               rtx_codec));
@@ -843,7 +843,7 @@ static void FindCodecsToOffer(
       if (rtx_it != new_rtx_codecs.end()) {
         C& rtx_codec = rtx_it->second;
         rtx_codec.params[kCodecParamAssociatedPayloadType] =
-            talk_base::ToString(codec.id);
+            rtc::ToString(codec.id);
       }
     }
   }
@@ -1592,7 +1592,7 @@ bool MediaSessionDescriptionFactory::AddTransportOffer(
      return false;
   const TransportDescription* current_tdesc =
       GetTransportDescription(content_name, current_desc);
-  talk_base::scoped_ptr<TransportDescription> new_tdesc(
+  rtc::scoped_ptr<TransportDescription> new_tdesc(
       transport_desc_factory_->CreateOffer(transport_options, current_tdesc));
   bool ret = (new_tdesc.get() != NULL &&
       offer_desc->AddTransportInfo(TransportInfo(content_name, *new_tdesc)));

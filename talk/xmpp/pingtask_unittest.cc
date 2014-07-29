@@ -28,9 +28,9 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/faketaskrunner.h"
-#include "talk/base/gunit.h"
-#include "talk/base/sigslot.h"
+#include "webrtc/base/faketaskrunner.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/sigslot.h"
 #include "talk/xmllite/xmlelement.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/fakexmppclient.h"
@@ -40,7 +40,7 @@ class PingTaskTest;
 
 class PingXmppClient : public buzz::FakeXmppClient {
  public:
-  PingXmppClient(talk_base::TaskParent* parent, PingTaskTest* tst) :
+  PingXmppClient(rtc::TaskParent* parent, PingTaskTest* tst) :
       FakeXmppClient(parent), test(tst) {
   }
 
@@ -56,7 +56,7 @@ class PingTaskTest : public testing::Test, public sigslot::has_slots<> {
   }
 
   virtual void SetUp() {
-    runner = new talk_base::FakeTaskRunner();
+    runner = new rtc::FakeTaskRunner();
     xmpp_client = new PingXmppClient(runner, this);
   }
 
@@ -73,7 +73,7 @@ class PingTaskTest : public testing::Test, public sigslot::has_slots<> {
     timed_out = true;
   }
 
-  talk_base::FakeTaskRunner* runner;
+  rtc::FakeTaskRunner* runner;
   PingXmppClient* xmpp_client;
   bool respond_to_pings;
   bool timed_out;
@@ -93,7 +93,7 @@ buzz::XmppReturnStatus PingXmppClient::SendStanza(
 TEST_F(PingTaskTest, TestSuccess) {
   uint32 ping_period_millis = 100;
   buzz::PingTask* task = new buzz::PingTask(xmpp_client,
-      talk_base::Thread::Current(),
+      rtc::Thread::Current(),
       ping_period_millis, ping_period_millis / 10);
   ConnectTimeoutSignal(task);
   task->Start();
@@ -108,7 +108,7 @@ TEST_F(PingTaskTest, TestTimeout) {
   respond_to_pings = false;
   uint32 ping_timeout_millis = 200;
   buzz::PingTask* task = new buzz::PingTask(xmpp_client,
-      talk_base::Thread::Current(),
+      rtc::Thread::Current(),
       ping_timeout_millis * 10, ping_timeout_millis);
   ConnectTimeoutSignal(task);
   task->Start();

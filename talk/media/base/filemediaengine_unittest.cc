@@ -27,11 +27,11 @@
 
 #include <set>
 
-#include "talk/base/buffer.h"
-#include "talk/base/gunit.h"
-#include "talk/base/helpers.h"
-#include "talk/base/pathutils.h"
-#include "talk/base/stream.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/pathutils.h"
+#include "webrtc/base/stream.h"
 #include "talk/media/base/filemediaengine.h"
 #include "talk/media/base/rtpdump.h"
 #include "talk/media/base/streamparams.h"
@@ -49,7 +49,7 @@ static const std::string kFakeFileName = "foobar";
 //////////////////////////////////////////////////////////////////////////////
 class FileNetworkInterface : public MediaChannel::NetworkInterface {
  public:
-  FileNetworkInterface(talk_base::StreamInterface* output, MediaChannel* ch)
+  FileNetworkInterface(rtc::StreamInterface* output, MediaChannel* ch)
       : media_channel_(ch),
         num_sent_packets_(0) {
     if (output) {
@@ -58,15 +58,15 @@ class FileNetworkInterface : public MediaChannel::NetworkInterface {
   }
 
   // Implement pure virtual methods of NetworkInterface.
-  virtual bool SendPacket(talk_base::Buffer* packet,
-                          talk_base::DiffServCodePoint dscp) {
+  virtual bool SendPacket(rtc::Buffer* packet,
+                          rtc::DiffServCodePoint dscp) {
     if (!packet) return false;
 
     if (media_channel_) {
-      media_channel_->OnPacketReceived(packet, talk_base::PacketTime());
+      media_channel_->OnPacketReceived(packet, rtc::PacketTime());
     }
     if (dump_writer_.get() &&
-        talk_base::SR_SUCCESS != dump_writer_->WriteRtpPacket(
+        rtc::SR_SUCCESS != dump_writer_->WriteRtpPacket(
             packet->data(), packet->length())) {
       return false;
     }
@@ -75,19 +75,19 @@ class FileNetworkInterface : public MediaChannel::NetworkInterface {
     return true;
   }
 
-  virtual bool SendRtcp(talk_base::Buffer* packet,
-                        talk_base::DiffServCodePoint dscp) { return false; }
+  virtual bool SendRtcp(rtc::Buffer* packet,
+                        rtc::DiffServCodePoint dscp) { return false; }
   virtual int SetOption(MediaChannel::NetworkInterface::SocketType type,
-      talk_base::Socket::Option opt, int option) {
+      rtc::Socket::Option opt, int option) {
     return 0;
   }
-  virtual void SetDefaultDSCPCode(talk_base::DiffServCodePoint dscp) {}
+  virtual void SetDefaultDSCPCode(rtc::DiffServCodePoint dscp) {}
 
   size_t num_sent_packets() const { return num_sent_packets_; }
 
  private:
   MediaChannel* media_channel_;
-  talk_base::scoped_ptr<RtpDumpWriter> dump_writer_;
+  rtc::scoped_ptr<RtpDumpWriter> dump_writer_;
   size_t num_sent_packets_;
 
   DISALLOW_COPY_AND_ASSIGN(FileNetworkInterface);
@@ -136,7 +136,7 @@ class FileMediaEngineTest : public testing::Test {
     engine_->set_voice_output_filename(voice_out);
     engine_->set_video_input_filename(video_in);
     engine_->set_video_output_filename(video_out);
-    engine_->set_rtp_sender_thread(talk_base::Thread::Current());
+    engine_->set_rtp_sender_thread(rtc::Thread::Current());
 
     voice_channel_.reset(engine_->CreateChannel());
     video_channel_.reset(engine_->CreateVideoChannel(NULL));
@@ -145,12 +145,12 @@ class FileMediaEngineTest : public testing::Test {
   }
 
   bool GetTempFilename(std::string* filename) {
-    talk_base::Pathname temp_path;
-    if (!talk_base::Filesystem::GetTemporaryFolder(temp_path, true, NULL)) {
+    rtc::Pathname temp_path;
+    if (!rtc::Filesystem::GetTemporaryFolder(temp_path, true, NULL)) {
       return false;
     }
     temp_path.SetPathname(
-        talk_base::Filesystem::TempFilename(temp_path, "fme-test-"));
+        rtc::Filesystem::TempFilename(temp_path, "fme-test-"));
 
     if (filename) {
       *filename = temp_path.pathname();
@@ -159,8 +159,8 @@ class FileMediaEngineTest : public testing::Test {
   }
 
   bool WriteTestPacketsToFile(const std::string& filename, size_t ssrc_count) {
-    talk_base::scoped_ptr<talk_base::StreamInterface> stream(
-        talk_base::Filesystem::OpenFile(talk_base::Pathname(filename), "wb"));
+    rtc::scoped_ptr<rtc::StreamInterface> stream(
+        rtc::Filesystem::OpenFile(rtc::Pathname(filename), "wb"));
     bool ret = (NULL != stream.get());
     RtpDumpWriter writer(stream.get());
 
@@ -174,19 +174,19 @@ class FileMediaEngineTest : public testing::Test {
   }
 
   void DeleteTempFile(std::string filename) {
-    talk_base::Pathname pathname(filename);
-    if (talk_base::Filesystem::IsFile(talk_base::Pathname(pathname))) {
-      talk_base::Filesystem::DeleteFile(pathname);
+    rtc::Pathname pathname(filename);
+    if (rtc::Filesystem::IsFile(rtc::Pathname(pathname))) {
+      rtc::Filesystem::DeleteFile(pathname);
     }
   }
 
-  bool GetSsrcAndPacketCounts(talk_base::StreamInterface* stream,
+  bool GetSsrcAndPacketCounts(rtc::StreamInterface* stream,
                               size_t* ssrc_count, size_t* packet_count) {
-    talk_base::scoped_ptr<RtpDumpReader> reader(new RtpDumpReader(stream));
+    rtc::scoped_ptr<RtpDumpReader> reader(new RtpDumpReader(stream));
     size_t count = 0;
     RtpDumpPacket packet;
     std::set<uint32> ssrcs;
-    while (talk_base::SR_SUCCESS == reader->ReadPacket(&packet)) {
+    while (rtc::SR_SUCCESS == reader->ReadPacket(&packet)) {
       count++;
       uint32 ssrc;
       if (!packet.GetRtpSsrc(&ssrc)) {
@@ -209,14 +209,14 @@ class FileMediaEngineTest : public testing::Test {
   std::string voice_output_filename_;
   std::string video_input_filename_;
   std::string video_output_filename_;
-  talk_base::scoped_ptr<FileMediaEngine> engine_;
-  talk_base::scoped_ptr<VoiceMediaChannel> voice_channel_;
-  talk_base::scoped_ptr<VideoMediaChannel> video_channel_;
+  rtc::scoped_ptr<FileMediaEngine> engine_;
+  rtc::scoped_ptr<VoiceMediaChannel> voice_channel_;
+  rtc::scoped_ptr<VideoMediaChannel> video_channel_;
 };
 
 TEST_F(FileMediaEngineTest, TestDefaultImplementation) {
   EXPECT_TRUE(CreateEngineAndChannels("", "", "", "", 1));
-  EXPECT_TRUE(engine_->Init(talk_base::Thread::Current()));
+  EXPECT_TRUE(engine_->Init(rtc::Thread::Current()));
   EXPECT_EQ(0, engine_->GetCapabilities());
   EXPECT_TRUE(NULL == voice_channel_.get());
   EXPECT_TRUE(NULL == video_channel_.get());
@@ -313,12 +313,12 @@ TEST_F(FileMediaEngineTest, TestVoiceChannelSetSend) {
   EXPECT_TRUE(CreateEngineAndChannels(voice_input_filename_,
                                       voice_output_filename_, "", "", 1));
   EXPECT_TRUE(NULL != voice_channel_.get());
-  talk_base::MemoryStream net_dump;
+  rtc::MemoryStream net_dump;
   FileNetworkInterface net_interface(&net_dump, voice_channel_.get());
   voice_channel_->SetInterface(&net_interface);
 
   // The channel is not sending yet.
-  talk_base::Thread::Current()->ProcessMessages(kWaitTimeMs);
+  rtc::Thread::Current()->ProcessMessages(kWaitTimeMs);
   EXPECT_EQ(0U, net_interface.num_sent_packets());
 
   // The channel starts sending.
@@ -328,9 +328,9 @@ TEST_F(FileMediaEngineTest, TestVoiceChannelSetSend) {
   // The channel stops sending.
   voice_channel_->SetSend(SEND_NOTHING);
   // Wait until packets are all delivered.
-  talk_base::Thread::Current()->ProcessMessages(kWaitTimeMs);
+  rtc::Thread::Current()->ProcessMessages(kWaitTimeMs);
   size_t old_number = net_interface.num_sent_packets();
-  talk_base::Thread::Current()->ProcessMessages(kWaitTimeMs);
+  rtc::Thread::Current()->ProcessMessages(kWaitTimeMs);
   EXPECT_EQ(old_number, net_interface.num_sent_packets());
 
   // The channel starts sending again.
@@ -342,7 +342,7 @@ TEST_F(FileMediaEngineTest, TestVoiceChannelSetSend) {
   // fault. We hence stop sending and wait until all packets are delivered
   // before we exit this function.
   voice_channel_->SetSend(SEND_NOTHING);
-  talk_base::Thread::Current()->ProcessMessages(kWaitTimeMs);
+  rtc::Thread::Current()->ProcessMessages(kWaitTimeMs);
 }
 
 // Test the sender thread of the channel. The sender sends RTP packets
@@ -351,7 +351,7 @@ TEST_F(FileMediaEngineTest, TestVoiceChannelSenderThread) {
   EXPECT_TRUE(CreateEngineAndChannels(voice_input_filename_,
                                       voice_output_filename_, "", "", 1));
   EXPECT_TRUE(NULL != voice_channel_.get());
-  talk_base::MemoryStream net_dump;
+  rtc::MemoryStream net_dump;
   FileNetworkInterface net_interface(&net_dump, voice_channel_.get());
   voice_channel_->SetInterface(&net_interface);
 
@@ -363,7 +363,7 @@ TEST_F(FileMediaEngineTest, TestVoiceChannelSenderThread) {
       kWaitTimeout);
   voice_channel_->SetSend(SEND_NOTHING);
   // Wait until packets are all delivered.
-  talk_base::Thread::Current()->ProcessMessages(kWaitTimeMs);
+  rtc::Thread::Current()->ProcessMessages(kWaitTimeMs);
   EXPECT_TRUE(RtpTestUtility::VerifyTestPacketsFromStream(
       2 * RtpTestUtility::GetTestPacketCount(), &net_dump,
       RtpTestUtility::kDefaultSsrc));
@@ -372,9 +372,9 @@ TEST_F(FileMediaEngineTest, TestVoiceChannelSenderThread) {
   // via OnPacketReceived, which in turn writes the packets into voice_output_.
   // We next verify the packets in voice_output_.
   voice_channel_.reset();  // Force to close the files.
-  talk_base::scoped_ptr<talk_base::StreamInterface> voice_output_;
-  voice_output_.reset(talk_base::Filesystem::OpenFile(
-      talk_base::Pathname(voice_output_filename_), "rb"));
+  rtc::scoped_ptr<rtc::StreamInterface> voice_output_;
+  voice_output_.reset(rtc::Filesystem::OpenFile(
+      rtc::Pathname(voice_output_filename_), "rb"));
   EXPECT_TRUE(voice_output_.get() != NULL);
   EXPECT_TRUE(RtpTestUtility::VerifyTestPacketsFromStream(
       2 * RtpTestUtility::GetTestPacketCount(), voice_output_.get(),
@@ -389,7 +389,7 @@ TEST_F(FileMediaEngineTest, TestVoiceChannelSendSsrc) {
   const uint32 send_ssrc = RtpTestUtility::kDefaultSsrc + 1;
   voice_channel_->AddSendStream(StreamParams::CreateLegacy(send_ssrc));
 
-  talk_base::MemoryStream net_dump;
+  rtc::MemoryStream net_dump;
   FileNetworkInterface net_interface(&net_dump, voice_channel_.get());
   voice_channel_->SetInterface(&net_interface);
 
@@ -401,7 +401,7 @@ TEST_F(FileMediaEngineTest, TestVoiceChannelSendSsrc) {
       kWaitTimeout);
   voice_channel_->SetSend(SEND_NOTHING);
   // Wait until packets are all delivered.
-  talk_base::Thread::Current()->ProcessMessages(kWaitTimeMs);
+  rtc::Thread::Current()->ProcessMessages(kWaitTimeMs);
   EXPECT_TRUE(RtpTestUtility::VerifyTestPacketsFromStream(
       2 * RtpTestUtility::GetTestPacketCount(), &net_dump, send_ssrc));
 
@@ -409,9 +409,9 @@ TEST_F(FileMediaEngineTest, TestVoiceChannelSendSsrc) {
   // via OnPacketReceived, which in turn writes the packets into voice_output_.
   // We next verify the packets in voice_output_.
   voice_channel_.reset();  // Force to close the files.
-  talk_base::scoped_ptr<talk_base::StreamInterface> voice_output_;
-  voice_output_.reset(talk_base::Filesystem::OpenFile(
-      talk_base::Pathname(voice_output_filename_), "rb"));
+  rtc::scoped_ptr<rtc::StreamInterface> voice_output_;
+  voice_output_.reset(rtc::Filesystem::OpenFile(
+      rtc::Pathname(voice_output_filename_), "rb"));
   EXPECT_TRUE(voice_output_.get() != NULL);
   EXPECT_TRUE(RtpTestUtility::VerifyTestPacketsFromStream(
       2 * RtpTestUtility::GetTestPacketCount(), voice_output_.get(),
@@ -425,9 +425,9 @@ TEST_F(FileMediaEngineTest, TestVoiceChannelSenderThreadTwoSsrcs) {
   // Verify that voice_input_filename_ contains 2 *
   // RtpTestUtility::GetTestPacketCount() packets
   // with different SSRCs.
-  talk_base::scoped_ptr<talk_base::StreamInterface> input_stream(
-      talk_base::Filesystem::OpenFile(
-          talk_base::Pathname(voice_input_filename_), "rb"));
+  rtc::scoped_ptr<rtc::StreamInterface> input_stream(
+      rtc::Filesystem::OpenFile(
+          rtc::Pathname(voice_input_filename_), "rb"));
   ASSERT_TRUE(NULL != input_stream.get());
   size_t ssrc_count;
   size_t packet_count;
@@ -441,7 +441,7 @@ TEST_F(FileMediaEngineTest, TestVoiceChannelSenderThreadTwoSsrcs) {
   // these packets have the same SSRCs (that is, the packets with different
   // SSRCs are skipped by the filemediaengine).
   EXPECT_TRUE(NULL != voice_channel_.get());
-  talk_base::MemoryStream net_dump;
+  rtc::MemoryStream net_dump;
   FileNetworkInterface net_interface(&net_dump, voice_channel_.get());
   voice_channel_->SetInterface(&net_interface);
   voice_channel_->SetSend(SEND_MICROPHONE);
@@ -451,7 +451,7 @@ TEST_F(FileMediaEngineTest, TestVoiceChannelSenderThreadTwoSsrcs) {
       kWaitTimeout);
   voice_channel_->SetSend(SEND_NOTHING);
   // Wait until packets are all delivered.
-  talk_base::Thread::Current()->ProcessMessages(kWaitTimeMs);
+  rtc::Thread::Current()->ProcessMessages(kWaitTimeMs);
   net_dump.Rewind();
   EXPECT_TRUE(GetSsrcAndPacketCounts(&net_dump, &ssrc_count, &packet_count));
   EXPECT_EQ(1U, ssrc_count);

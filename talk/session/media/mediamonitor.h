@@ -30,33 +30,33 @@
 #ifndef TALK_SESSION_MEDIA_MEDIAMONITOR_H_
 #define TALK_SESSION_MEDIA_MEDIAMONITOR_H_
 
-#include "talk/base/criticalsection.h"
-#include "talk/base/sigslot.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/thread.h"
 #include "talk/media/base/mediachannel.h"
 
 namespace cricket {
 
 // The base MediaMonitor class, independent of voice and video.
-class MediaMonitor : public talk_base::MessageHandler,
+class MediaMonitor : public rtc::MessageHandler,
     public sigslot::has_slots<> {
  public:
-  MediaMonitor(talk_base::Thread* worker_thread,
-               talk_base::Thread* monitor_thread);
+  MediaMonitor(rtc::Thread* worker_thread,
+               rtc::Thread* monitor_thread);
   ~MediaMonitor();
 
   void Start(uint32 milliseconds);
   void Stop();
 
  protected:
-  void OnMessage(talk_base::Message *message);
+  void OnMessage(rtc::Message *message);
   void PollMediaChannel();
   virtual void GetStats() = 0;
   virtual void Update() = 0;
 
-  talk_base::CriticalSection crit_;
-  talk_base::Thread* worker_thread_;
-  talk_base::Thread* monitor_thread_;
+  rtc::CriticalSection crit_;
+  rtc::Thread* worker_thread_;
+  rtc::Thread* monitor_thread_;
   bool monitoring_;
   uint32 rate_;
 };
@@ -65,8 +65,8 @@ class MediaMonitor : public talk_base::MessageHandler,
 template<class MC, class MI>
 class MediaMonitorT : public MediaMonitor {
  public:
-  MediaMonitorT(MC* media_channel, talk_base::Thread* worker_thread,
-                talk_base::Thread* monitor_thread)
+  MediaMonitorT(MC* media_channel, rtc::Thread* worker_thread,
+                rtc::Thread* monitor_thread)
       : MediaMonitor(worker_thread, monitor_thread),
         media_channel_(media_channel) {}
   sigslot::signal2<MC*, const MI&> SignalUpdate;

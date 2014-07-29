@@ -30,15 +30,15 @@
 
 #include <stdio.h>
 
-#include "talk/base/thread.h"
-#include "talk/base/messagequeue.h"
-#include "talk/base/scoped_ptr.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/base/messagequeue.h"
+#include "webrtc/base/scoped_ptr.h"
 
 class CallClient;
 
-class Console : public talk_base::MessageHandler {
+class Console : public rtc::MessageHandler {
  public:
-  Console(talk_base::Thread *thread, CallClient *client);
+  Console(rtc::Thread *thread, CallClient *client);
   ~Console();
 
   // Starts reading lines from the console and giving them to the CallClient.
@@ -46,7 +46,7 @@ class Console : public talk_base::MessageHandler {
   // Stops reading lines. Cannot be restarted.
   void Stop();
 
-  virtual void OnMessage(talk_base::Message *msg);
+  virtual void OnMessage(rtc::Message *msg);
 
   void PrintLine(const char* format, ...);
 
@@ -62,8 +62,8 @@ class Console : public talk_base::MessageHandler {
   void ParseLine(std::string &str);
 
   CallClient *client_;
-  talk_base::Thread *client_thread_;
-  talk_base::scoped_ptr<talk_base::Thread> console_thread_;
+  rtc::Thread *client_thread_;
+  rtc::scoped_ptr<rtc::Thread> console_thread_;
   bool stopped_;
 };
 

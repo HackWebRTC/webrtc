@@ -27,7 +27,7 @@
 
 #include <time.h>
 #include <sstream>
-#include "talk/base/stringencode.h"
+#include "webrtc/base/stringencode.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/presenceouttask.h"
 #include "talk/xmpp/xmppclient.h"
@@ -117,7 +117,7 @@ PresenceOutTask::TranslateStatus(const PresenceStatus & s) {
     }
 
     std::string pri;
-    talk_base::ToString(s.priority(), &pri);
+    rtc::ToString(s.priority(), &pri);
 
     result->AddElement(new XmlElement(QN_PRIORITY));
     result->AddText(pri, 1);

@@ -33,8 +33,8 @@
 #include <utility>
 #include <vector>
 
-#include "talk/base/sigslot.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/thread.h"
 #include "talk/p2p/base/portallocator.h"
 #include "talk/p2p/base/transportdescriptionfactory.h"
 
@@ -53,12 +53,12 @@ class SessionClient;
 class SessionManager : public sigslot::has_slots<> {
  public:
   SessionManager(PortAllocator *allocator,
-                 talk_base::Thread *worker_thread = NULL);
+                 rtc::Thread *worker_thread = NULL);
   virtual ~SessionManager();
 
   PortAllocator *port_allocator() const { return allocator_; }
-  talk_base::Thread *worker_thread() const { return worker_thread_; }
-  talk_base::Thread *signaling_thread() const { return signaling_thread_; }
+  rtc::Thread *worker_thread() const { return worker_thread_; }
+  rtc::Thread *signaling_thread() const { return signaling_thread_; }
 
   int session_timeout() const { return timeout_; }
   void set_session_timeout(int timeout) { timeout_ = timeout; }
@@ -72,7 +72,7 @@ class SessionManager : public sigslot::has_slots<> {
   void set_secure(SecurePolicy policy) {
     transport_desc_factory_.set_secure(policy);
   }
-  void set_identity(talk_base::SSLIdentity* identity) {
+  void set_identity(rtc::SSLIdentity* identity) {
     transport_desc_factory_.set_identity(identity);
   }
   const TransportDescriptionFactory* transport_desc_factory() const {
@@ -198,8 +198,8 @@ class SessionManager : public sigslot::has_slots<> {
                       const buzz::XmlElement* extra_info);
 
   PortAllocator *allocator_;
-  talk_base::Thread *signaling_thread_;
-  talk_base::Thread *worker_thread_;
+  rtc::Thread *signaling_thread_;
+  rtc::Thread *worker_thread_;
   int timeout_;
   TransportDescriptionFactory transport_desc_factory_;
   SessionMap session_map_;

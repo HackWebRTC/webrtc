@@ -30,9 +30,9 @@
 
 #include <string>
 #include <deque>
-#include "talk/base/sigslot.h"
-#include "talk/base/task.h"
-#include "talk/base/taskparent.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/task.h"
+#include "webrtc/base/taskparent.h"
 #include "talk/xmpp/xmppengine.h"
 
 namespace buzz {
@@ -94,9 +94,9 @@ class XmppClientInterface {
 // We really ought to inherit from a TaskParentInterface, but we tried
 // that and it's way too complicated to change
 // Task/TaskParent/TaskRunner.  For now, this works.
-class XmppTaskParentInterface : public talk_base::Task {
+class XmppTaskParentInterface : public rtc::Task {
  public:
-  explicit XmppTaskParentInterface(talk_base::TaskParent* parent)
+  explicit XmppTaskParentInterface(rtc::TaskParent* parent)
       : Task(parent) {
   }
   virtual ~XmppTaskParentInterface() {}
@@ -176,7 +176,7 @@ private:
 
   bool stopped_;
   std::deque<XmlElement*> stanza_queue_;
-  talk_base::scoped_ptr<XmlElement> next_stanza_;
+  rtc::scoped_ptr<XmlElement> next_stanza_;
   std::string id_;
 
 #ifdef _DEBUG

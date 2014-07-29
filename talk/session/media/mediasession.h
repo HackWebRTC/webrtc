@@ -34,7 +34,7 @@
 #include <vector>
 #include <algorithm>
 
-#include "talk/base/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "talk/media/base/codec.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/cryptoparams.h"

@@ -37,9 +37,9 @@ BEGIN_PROXY_MAP(MediaStream)
   PROXY_CONSTMETHOD0(std::string, label)
   PROXY_METHOD0(AudioTrackVector, GetAudioTracks)
   PROXY_METHOD0(VideoTrackVector, GetVideoTracks)
-  PROXY_METHOD1(talk_base::scoped_refptr<AudioTrackInterface>,
+  PROXY_METHOD1(rtc::scoped_refptr<AudioTrackInterface>,
                 FindAudioTrack, const std::string&)
-  PROXY_METHOD1(talk_base::scoped_refptr<VideoTrackInterface>,
+  PROXY_METHOD1(rtc::scoped_refptr<VideoTrackInterface>,
                 FindVideoTrack, const std::string&)
   PROXY_METHOD1(bool, AddTrack, AudioTrackInterface*)
   PROXY_METHOD1(bool, AddTrack, VideoTrackInterface*)

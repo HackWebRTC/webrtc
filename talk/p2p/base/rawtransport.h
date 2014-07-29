@@ -39,8 +39,8 @@ namespace cricket {
 // that it thinks will work.
 class RawTransport : public Transport, public TransportParser {
  public:
-  RawTransport(talk_base::Thread* signaling_thread,
-               talk_base::Thread* worker_thread,
+  RawTransport(rtc::Thread* signaling_thread,
+               rtc::Thread* worker_thread,
                const std::string& content_name,
                PortAllocator* allocator);
   virtual ~RawTransport();
@@ -66,7 +66,7 @@ class RawTransport : public Transport, public TransportParser {
   // given channel.  This will return false and signal an error if the address
   // or channel name is bad.
   bool ParseRawAddress(const buzz::XmlElement* elem,
-                       talk_base::SocketAddress* addr,
+                       rtc::SocketAddress* addr,
                        ParseError* error);
 
   friend class RawTransportChannel;  // For ParseAddress.

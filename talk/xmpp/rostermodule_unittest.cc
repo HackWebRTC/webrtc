@@ -29,8 +29,8 @@
 #include <sstream>
 #include <iostream>
 
-#include "talk/base/gunit.h"
-#include "talk/base/scoped_ptr.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "talk/xmllite/xmlelement.h"
 #include "talk/xmpp/xmppengine.h"
 #include "talk/xmpp/rostermodule.h"
@@ -267,7 +267,7 @@ TEST_F(RosterModuleTest, TestPresence) {
   status->AddAttr(QN_STATUS, STR_PSTN_CONFERENCE_STATUS_CONNECTING);
   XmlElement presence_xml(QN_PRESENCE);
   presence_xml.AddElement(status);
-  talk_base::scoped_ptr<XmppPresence> presence(XmppPresence::Create());
+  rtc::scoped_ptr<XmppPresence> presence(XmppPresence::Create());
   presence->set_raw_xml(&presence_xml);
   EXPECT_EQ(presence->connection_status(), XMPP_CONNECTION_STATUS_CONNECTING);
 }
@@ -275,11 +275,11 @@ TEST_F(RosterModuleTest, TestPresence) {
 TEST_F(RosterModuleTest, TestOutgoingPresence) {
   std::stringstream dump;
 
-  talk_base::scoped_ptr<XmppEngine> engine(XmppEngine::Create());
+  rtc::scoped_ptr<XmppEngine> engine(XmppEngine::Create());
   XmppTestHandler handler(engine.get());
   XmppTestRosterHandler roster_handler;
 
-  talk_base::scoped_ptr<XmppRosterModule> roster(XmppRosterModule::Create());
+  rtc::scoped_ptr<XmppRosterModule> roster(XmppRosterModule::Create());
   roster->set_roster_handler(&roster_handler);
 
   // Configure the roster module
@@ -381,7 +381,7 @@ TEST_F(RosterModuleTest, TestOutgoingPresence) {
   EXPECT_EQ(handler.SessionActivity(), "");
 
   // Construct a directed presence
-  talk_base::scoped_ptr<XmppPresence> directed_presence(XmppPresence::Create());
+  rtc::scoped_ptr<XmppPresence> directed_presence(XmppPresence::Create());
   TEST_OK(directed_presence->set_available(XMPP_PRESENCE_AVAILABLE));
   TEST_OK(directed_presence->set_priority(120));
   TEST_OK(directed_presence->set_status("*very* available"));
@@ -398,11 +398,11 @@ TEST_F(RosterModuleTest, TestOutgoingPresence) {
 }
 
 TEST_F(RosterModuleTest, TestIncomingPresence) {
-  talk_base::scoped_ptr<XmppEngine> engine(XmppEngine::Create());
+  rtc::scoped_ptr<XmppEngine> engine(XmppEngine::Create());
   XmppTestHandler handler(engine.get());
   XmppTestRosterHandler roster_handler;
 
-  talk_base::scoped_ptr<XmppRosterModule> roster(XmppRosterModule::Create());
+  rtc::scoped_ptr<XmppRosterModule> roster(XmppRosterModule::Create());
   roster->set_roster_handler(&roster_handler);
 
   // Configure the roster module
@@ -530,11 +530,11 @@ TEST_F(RosterModuleTest, TestIncomingPresence) {
 }
 
 TEST_F(RosterModuleTest, TestPresenceSubscription) {
-  talk_base::scoped_ptr<XmppEngine> engine(XmppEngine::Create());
+  rtc::scoped_ptr<XmppEngine> engine(XmppEngine::Create());
   XmppTestHandler handler(engine.get());
   XmppTestRosterHandler roster_handler;
 
-  talk_base::scoped_ptr<XmppRosterModule> roster(XmppRosterModule::Create());
+  rtc::scoped_ptr<XmppRosterModule> roster(XmppRosterModule::Create());
   roster->set_roster_handler(&roster_handler);
 
   // Configure the roster module
@@ -593,11 +593,11 @@ TEST_F(RosterModuleTest, TestPresenceSubscription) {
 }
 
 TEST_F(RosterModuleTest, TestRosterReceive) {
-  talk_base::scoped_ptr<XmppEngine> engine(XmppEngine::Create());
+  rtc::scoped_ptr<XmppEngine> engine(XmppEngine::Create());
   XmppTestHandler handler(engine.get());
   XmppTestRosterHandler roster_handler;
 
-  talk_base::scoped_ptr<XmppRosterModule> roster(XmppRosterModule::Create());
+  rtc::scoped_ptr<XmppRosterModule> roster(XmppRosterModule::Create());
   roster->set_roster_handler(&roster_handler);
 
   // Configure the roster module
@@ -713,7 +713,7 @@ TEST_F(RosterModuleTest, TestRosterReceive) {
   EXPECT_EQ(handler.SessionActivity(), "");
 
   // Request that someone be added
-  talk_base::scoped_ptr<XmppRosterContact> contact(XmppRosterContact::Create());
+  rtc::scoped_ptr<XmppRosterContact> contact(XmppRosterContact::Create());
   TEST_OK(contact->set_jid(Jid("brandt@example.net")));
   TEST_OK(contact->set_name("Brandt"));
   TEST_OK(contact->AddGroup("Business Partners"));

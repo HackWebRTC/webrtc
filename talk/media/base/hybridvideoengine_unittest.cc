@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/base/gunit.h"
+#include "webrtc/base/gunit.h"
 #include "talk/media/base/fakemediaengine.h"
 #include "talk/media/base/fakenetworkinterface.h"
 #include "talk/media/base/fakevideocapturer.h"
@@ -116,7 +116,7 @@ class HybridVideoEngineTest : public testing::Test {
     engine_.Terminate();
   }
   bool SetupEngine() {
-    bool result = engine_.Init(talk_base::Thread::Current());
+    bool result = engine_.Init(rtc::Thread::Current());
     if (result) {
       channel_.reset(engine_.CreateChannel(NULL));
       result = (channel_.get() != NULL);
@@ -134,12 +134,12 @@ class HybridVideoEngineTest : public testing::Test {
         channel_->SetRender(true);
   }
   void DeliverPacket(const void* data, int len) {
-    talk_base::Buffer packet(data, len);
-    channel_->OnPacketReceived(&packet, talk_base::CreatePacketTime(0));
+    rtc::Buffer packet(data, len);
+    channel_->OnPacketReceived(&packet, rtc::CreatePacketTime(0));
   }
   void DeliverRtcp(const void* data, int len) {
-    talk_base::Buffer packet(data, len);
-    channel_->OnRtcpReceived(&packet, talk_base::CreatePacketTime(0));
+    rtc::Buffer packet(data, len);
+    channel_->OnRtcpReceived(&packet, rtc::CreatePacketTime(0));
   }
 
  protected:
@@ -166,14 +166,14 @@ class HybridVideoEngineTest : public testing::Test {
     EXPECT_EQ(max_bitrate, sub_channel->max_bps());
   }
   HybridVideoEngineForTest engine_;
-  talk_base::scoped_ptr<cricket::HybridVideoMediaChannel> channel_;
-  talk_base::scoped_ptr<cricket::FakeNetworkInterface> transport_;
+  rtc::scoped_ptr<cricket::HybridVideoMediaChannel> channel_;
+  rtc::scoped_ptr<cricket::FakeNetworkInterface> transport_;
   cricket::FakeVideoMediaChannel* sub_channel1_;
   cricket::FakeVideoMediaChannel* sub_channel2_;
 };
 
 TEST_F(HybridVideoEngineTest, StartupShutdown) {
-  EXPECT_TRUE(engine_.Init(talk_base::Thread::Current()));
+  EXPECT_TRUE(engine_.Init(rtc::Thread::Current()));
   engine_.Terminate();
 }
 

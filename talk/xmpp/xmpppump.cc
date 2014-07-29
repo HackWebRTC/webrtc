@@ -63,14 +63,14 @@ void XmppPump::OnStateChange(buzz::XmppEngine::State state) {
 }
 
 void XmppPump::WakeTasks() {
-  talk_base::Thread::Current()->Post(this);
+  rtc::Thread::Current()->Post(this);
 }
 
 int64 XmppPump::CurrentTime() {
-  return (int64)talk_base::Time();
+  return (int64)rtc::Time();
 }
 
-void XmppPump::OnMessage(talk_base::Message *pmsg) {
+void XmppPump::OnMessage(rtc::Message *pmsg) {
   RunTasks();
 }
 

@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/base/gunit.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/thread.h"
 #include "talk/session/media/call.h"
 #include "talk/session/media/currentspeakermonitor.h"
 
@@ -165,7 +165,7 @@ TEST_F(CurrentSpeakerMonitorTest, SpeakerChange) {
   EXPECT_EQ(num_changes_, 1);
 
   // Wait so the changes don't come so rapidly.
-  talk_base::Thread::SleepMs(kSleepTimeBetweenSwitches);
+  rtc::Thread::SleepMs(kSleepTimeBetweenSwitches);
 
   info.active_streams.push_back(std::make_pair(kSsrc1, 9));
   info.active_streams.push_back(std::make_pair(kSsrc2, 1));
@@ -201,7 +201,7 @@ TEST_F(CurrentSpeakerMonitorTest, InterwordSilence) {
   EXPECT_EQ(num_changes_, 1);
 
   // Wait so the changes don't come so rapidly.
-  talk_base::Thread::SleepMs(kSleepTimeBetweenSwitches);
+  rtc::Thread::SleepMs(kSleepTimeBetweenSwitches);
 
   info.active_streams.push_back(std::make_pair(kSsrc1, 3));
   info.active_streams.push_back(std::make_pair(kSsrc2, 0));

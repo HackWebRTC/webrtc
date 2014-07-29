@@ -38,11 +38,11 @@ extern "C" {
 
 #include "talk/media/other/linphonemediaengine.h"
 
-#include "talk/base/buffer.h"
-#include "talk/base/event.h"
-#include "talk/base/logging.h"
-#include "talk/base/pathutils.h"
-#include "talk/base/stream.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/event.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/pathutils.h"
+#include "webrtc/base/stream.h"
 #include "talk/media/base/rtpdump.h"
 
 #ifndef WIN32
@@ -137,11 +137,11 @@ LinphoneVoiceChannel::LinphoneVoiceChannel(LinphoneMediaEngine*eng)
       ring_stream_(0)
 {
 
-  talk_base::Thread *thread = talk_base::ThreadManager::CurrentThread();
-  talk_base::SocketServer *ss = thread->socketserver();
+  rtc::Thread *thread = rtc::ThreadManager::CurrentThread();
+  rtc::SocketServer *ss = thread->socketserver();
   socket_.reset(ss->CreateAsyncSocket(SOCK_DGRAM));
 
-  socket_->Bind(talk_base::SocketAddress("localhost",3000));
+  socket_->Bind(rtc::SocketAddress("localhost",3000));
   socket_->SignalReadEvent.connect(this, &LinphoneVoiceChannel::OnIncomingData);
 
 }
@@ -216,7 +216,7 @@ bool LinphoneVoiceChannel::SetSend(SendFlags flag) {
   return true;
 }
 
-void LinphoneVoiceChannel::OnPacketReceived(talk_base::Buffer* packet) {
+void LinphoneVoiceChannel::OnPacketReceived(rtc::Buffer* packet) {
   const void* data = packet->data();
   int len = packet->length();
   uint8 buf[2048];
@@ -227,7 +227,7 @@ void LinphoneVoiceChannel::OnPacketReceived(talk_base::Buffer* packet) {
    */
   int payloadtype = buf[1] & 0x7f;
   if (play_ && payloadtype != 13)
-    socket_->SendTo(buf, len, talk_base::SocketAddress("localhost",2000));
+    socket_->SendTo(buf, len, rtc::SocketAddress("localhost",2000));
 }
 
 void LinphoneVoiceChannel::StartRing(bool bIncomingCall)
@@ -263,12 +263,12 @@ void LinphoneVoiceChannel::StopRing()
   }
 }
 
-void LinphoneVoiceChannel::OnIncomingData(talk_base::AsyncSocket *s)
+void LinphoneVoiceChannel::OnIncomingData(rtc::AsyncSocket *s)
 {
   char *buf[2048];
   int len;
   len = s->Recv(buf, sizeof(buf));
-  talk_base::Buffer packet(buf, len);
+  rtc::Buffer packet(buf, len);
   if (network_interface_ && !mute_)
     network_interface_->SendPacket(&packet);
 }

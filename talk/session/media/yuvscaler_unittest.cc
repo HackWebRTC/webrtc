@@ -29,10 +29,10 @@
 
 #include "libyuv/cpu_id.h"
 #include "libyuv/scale.h"
-#include "talk/base/basictypes.h"
-#include "talk/base/flags.h"
-#include "talk/base/gunit.h"
-#include "talk/base/scoped_ptr.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/flags.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "talk/media/base/testutils.h"
 
 #if defined(_MSC_VER)
@@ -43,7 +43,7 @@
 
 using cricket::LoadPlanarYuvTestImage;
 using cricket::DumpPlanarYuvTestImage;
-using talk_base::scoped_ptr;
+using rtc::scoped_ptr;
 
 DEFINE_bool(yuvscaler_dump, false,
     "whether to write out scaled images for inspection");
@@ -88,8 +88,8 @@ static void FlushCache(uint8* dst, int count) {
 class YuvScalerTest : public testing::Test {
  protected:
   virtual void SetUp() {
-    dump_ = *FlagList::Lookup("yuvscaler_dump")->bool_variable();
-    repeat_ = *FlagList::Lookup("yuvscaler_repeat")->int_variable();
+    dump_ = *rtc::FlagList::Lookup("yuvscaler_dump")->bool_variable();
+    repeat_ = *rtc::FlagList::Lookup("yuvscaler_repeat")->int_variable();
   }
 
   // Scale an image and compare against a Lanczos-filtered test image.

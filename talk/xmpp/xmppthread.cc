@@ -36,7 +36,7 @@ namespace {
 const uint32 MSG_LOGIN = 1;
 const uint32 MSG_DISCONNECT = 2;
 
-struct LoginData: public talk_base::MessageData {
+struct LoginData: public rtc::MessageData {
   LoginData(const buzz::XmppClientSettings& s) : xcs(s) {}
   virtual ~LoginData() {}
 
@@ -55,7 +55,7 @@ XmppThread::~XmppThread() {
 }
 
 void XmppThread::ProcessMessages(int cms) {
-  talk_base::Thread::ProcessMessages(cms);
+  rtc::Thread::ProcessMessages(cms);
 }
 
 void XmppThread::Login(const buzz::XmppClientSettings& xcs) {
@@ -69,7 +69,7 @@ void XmppThread::Disconnect() {
 void XmppThread::OnStateChange(buzz::XmppEngine::State state) {
 }
 
-void XmppThread::OnMessage(talk_base::Message* pmsg) {
+void XmppThread::OnMessage(rtc::Message* pmsg) {
   if (pmsg->message_id == MSG_LOGIN) {
     ASSERT(pmsg->pdata != NULL);
     LoginData* data = reinterpret_cast<LoginData*>(pmsg->pdata);

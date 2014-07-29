@@ -31,9 +31,9 @@
 
 #include <string>
 
-#include "talk/base/byteorder.h"
-#include "talk/base/logging.h"
-#include "talk/base/timeutils.h"
+#include "webrtc/base/byteorder.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/timeutils.h"
 #include "talk/media/base/rtputils.h"
 
 namespace {
@@ -53,7 +53,7 @@ RtpDumpFileHeader::RtpDumpFileHeader(uint32 start_ms, uint32 s, uint16 p)
       padding(0) {
 }
 
-void RtpDumpFileHeader::WriteToByteBuffer(talk_base::ByteBuffer* buf) {
+void RtpDumpFileHeader::WriteToByteBuffer(rtc::ByteBuffer* buf) {
   buf->WriteUInt32(start_sec);
   buf->WriteUInt32(start_usec);
   buf->WriteUInt32(source);
@@ -111,14 +111,14 @@ void RtpDumpReader::SetSsrc(uint32 ssrc) {
   ssrc_override_ = ssrc;
 }
 
-talk_base::StreamResult RtpDumpReader::ReadPacket(RtpDumpPacket* packet) {
-  if (!packet) return talk_base::SR_ERROR;
+rtc::StreamResult RtpDumpReader::ReadPacket(RtpDumpPacket* packet) {
+  if (!packet) return rtc::SR_ERROR;
 
-  talk_base::StreamResult res = talk_base::SR_SUCCESS;
+  rtc::StreamResult res = rtc::SR_SUCCESS;
   // Read the file header if it has not been read yet.
   if (!file_header_read_) {
     res = ReadFileHeader();
-    if (res != talk_base::SR_SUCCESS) {
+    if (res != rtc::SR_SUCCESS) {
       return res;
     }
     file_header_read_ = true;
@@ -127,10 +127,10 @@ talk_base::StreamResult RtpDumpReader::ReadPacket(RtpDumpPacket* packet) {
   // Read the RTP dump packet header.
   char header[RtpDumpPacket::kHeaderLength];
   res = stream_->ReadAll(header, sizeof(header), NULL, NULL);
-  if (res != talk_base::SR_SUCCESS) {
+  if (res != rtc::SR_SUCCESS) {
     return res;
   }
-  talk_base::ByteBuffer buf(header, sizeof(header));
+  rtc::ByteBuffer buf(header, sizeof(header));
   uint16 dump_packet_len;
   uint16 data_len;
   // Read the full length of the rtpdump packet, including the rtpdump header.
@@ -150,31 +150,31 @@ talk_base::StreamResult RtpDumpReader::ReadPacket(RtpDumpPacket* packet) {
 
   // If the packet is RTP and we have specified a ssrc, replace the RTP ssrc
   // with the specified ssrc.
-  if (res == talk_base::SR_SUCCESS &&
+  if (res == rtc::SR_SUCCESS &&
       packet->IsValidRtpPacket() &&
       ssrc_override_ != 0) {
-    talk_base::SetBE32(&packet->data[kRtpSsrcOffset], ssrc_override_);
+    rtc::SetBE32(&packet->data[kRtpSsrcOffset], ssrc_override_);
   }
 
   return res;
 }
 
-talk_base::StreamResult RtpDumpReader::ReadFileHeader() {
+rtc::StreamResult RtpDumpReader::ReadFileHeader() {
   // Read the first line.
   std::string first_line;
-  talk_base::StreamResult res = stream_->ReadLine(&first_line);
-  if (res != talk_base::SR_SUCCESS) {
+  rtc::StreamResult res = stream_->ReadLine(&first_line);
+  if (res != rtc::SR_SUCCESS) {
     return res;
   }
   if (!CheckFirstLine(first_line)) {
-    return talk_base::SR_ERROR;
+    return rtc::SR_ERROR;
   }
 
   // Read the 16 byte file header.
   char header[RtpDumpFileHeader::kHeaderLength];
   res = stream_->ReadAll(header, sizeof(header), NULL, NULL);
-  if (res == talk_base::SR_SUCCESS) {
-    talk_base::ByteBuffer buf(header, sizeof(header));
+  if (res == rtc::SR_SUCCESS) {
+    rtc::ByteBuffer buf(header, sizeof(header));
     uint32 start_sec;
     uint32 start_usec;
     buf.ReadUInt32(&start_sec);
@@ -204,7 +204,7 @@ bool RtpDumpReader::CheckFirstLine(const std::string& first_line) {
 ///////////////////////////////////////////////////////////////////////////
 // Implementation of RtpDumpLoopReader.
 ///////////////////////////////////////////////////////////////////////////
-RtpDumpLoopReader::RtpDumpLoopReader(talk_base::StreamInterface* stream)
+RtpDumpLoopReader::RtpDumpLoopReader(rtc::StreamInterface* stream)
     : RtpDumpReader(stream),
       loop_count_(0),
       elapsed_time_increases_(0),
@@ -220,16 +220,16 @@ RtpDumpLoopReader::RtpDumpLoopReader(talk_base::StreamInterface* stream)
       prev_rtp_timestamp_(0) {
 }
 
-talk_base::StreamResult RtpDumpLoopReader::ReadPacket(RtpDumpPacket* packet) {
-  if (!packet) return talk_base::SR_ERROR;
+rtc::StreamResult RtpDumpLoopReader::ReadPacket(RtpDumpPacket* packet) {
+  if (!packet) return rtc::SR_ERROR;
 
-  talk_base::StreamResult res = RtpDumpReader::ReadPacket(packet);
-  if (talk_base::SR_SUCCESS == res) {
+  rtc::StreamResult res = RtpDumpReader::ReadPacket(packet);
+  if (rtc::SR_SUCCESS == res) {
     if (0 == loop_count_) {
       // During the first loop, we update the statistics of the input stream.
       UpdateStreamStatistics(*packet);
     }
-  } else if (talk_base::SR_EOS == res) {
+  } else if (rtc::SR_EOS == res) {
     if (0 == loop_count_) {
       // At the end of the first loop, calculate elapsed_time_increases_,
       // rtp_seq_num_increase_, and rtp_timestamp_increase_, which will be
@@ -244,7 +244,7 @@ talk_base::StreamResult RtpDumpLoopReader::ReadPacket(RtpDumpPacket* packet) {
     }
   }
 
-  if (talk_base::SR_SUCCESS == res && loop_count_ > 0) {
+  if (rtc::SR_SUCCESS == res && loop_count_ > 0) {
     // During the second and later loops, we update the elapsed time of the dump
     // packet. If the dumped packet is a RTP packet, we also update its RTP
     // sequence number and timestamp.
@@ -307,7 +307,7 @@ void RtpDumpLoopReader::UpdateDumpPacket(RtpDumpPacket* packet) {
     sequence += loop_count_ * rtp_seq_num_increase_;
     timestamp += loop_count_ * rtp_timestamp_increase_;
     // Write the updated sequence number and timestamp back to the RTP packet.
-    talk_base::ByteBuffer buffer;
+    rtc::ByteBuffer buffer;
     buffer.WriteUInt16(sequence);
     buffer.WriteUInt32(timestamp);
     memcpy(&packet->data[2], buffer.Data(), buffer.Length());
@@ -318,11 +318,11 @@ void RtpDumpLoopReader::UpdateDumpPacket(RtpDumpPacket* packet) {
 // Implementation of RtpDumpWriter.
 ///////////////////////////////////////////////////////////////////////////
 
-RtpDumpWriter::RtpDumpWriter(talk_base::StreamInterface* stream)
+RtpDumpWriter::RtpDumpWriter(rtc::StreamInterface* stream)
     : stream_(stream),
       packet_filter_(PF_ALL),
       file_header_written_(false),
-      start_time_ms_(talk_base::Time()),
+      start_time_ms_(rtc::Time()),
       warn_slow_writes_delay_(kWarnSlowWritesDelayMs) {
 }
 
@@ -332,32 +332,32 @@ void RtpDumpWriter::set_packet_filter(int filter) {
 }
 
 uint32 RtpDumpWriter::GetElapsedTime() const {
-  return talk_base::TimeSince(start_time_ms_);
+  return rtc::TimeSince(start_time_ms_);
 }
 
-talk_base::StreamResult RtpDumpWriter::WriteFileHeader() {
-  talk_base::StreamResult res = WriteToStream(
+rtc::StreamResult RtpDumpWriter::WriteFileHeader() {
+  rtc::StreamResult res = WriteToStream(
       RtpDumpFileHeader::kFirstLine,
       strlen(RtpDumpFileHeader::kFirstLine));
-  if (res != talk_base::SR_SUCCESS) {
+  if (res != rtc::SR_SUCCESS) {
     return res;
   }
 
-  talk_base::ByteBuffer buf;
-  RtpDumpFileHeader file_header(talk_base::Time(), 0, 0);
+  rtc::ByteBuffer buf;
+  RtpDumpFileHeader file_header(rtc::Time(), 0, 0);
   file_header.WriteToByteBuffer(&buf);
   return WriteToStream(buf.Data(), buf.Length());
 }
 
-talk_base::StreamResult RtpDumpWriter::WritePacket(
+rtc::StreamResult RtpDumpWriter::WritePacket(
     const void* data, size_t data_len, uint32 elapsed, bool rtcp) {
-  if (!stream_ || !data || 0 == data_len) return talk_base::SR_ERROR;
+  if (!stream_ || !data || 0 == data_len) return rtc::SR_ERROR;
 
-  talk_base::StreamResult res = talk_base::SR_SUCCESS;
+  rtc::StreamResult res = rtc::SR_SUCCESS;
   // Write the file header if it has not been written yet.
   if (!file_header_written_) {
     res = WriteFileHeader();
-    if (res != talk_base::SR_SUCCESS) {
+    if (res != rtc::SR_SUCCESS) {
       return res;
     }
     file_header_written_ = true;
@@ -366,17 +366,17 @@ talk_base::StreamResult RtpDumpWriter::WritePacket(
   // Figure out what to write.
   size_t write_len = FilterPacket(data, data_len, rtcp);
   if (write_len == 0) {
-    return talk_base::SR_SUCCESS;
+    return rtc::SR_SUCCESS;
   }
 
   // Write the dump packet header.
-  talk_base::ByteBuffer buf;
+  rtc::ByteBuffer buf;
   buf.WriteUInt16(static_cast<uint16>(
                       RtpDumpPacket::kHeaderLength + write_len));
   buf.WriteUInt16(static_cast<uint16>(rtcp ? 0 : data_len));
   buf.WriteUInt32(elapsed);
   res = WriteToStream(buf.Data(), buf.Length());
-  if (res != talk_base::SR_SUCCESS) {
+  if (res != rtc::SR_SUCCESS) {
     return res;
   }
 
@@ -408,12 +408,12 @@ size_t RtpDumpWriter::FilterPacket(const void* data, size_t data_len,
   return filtered_len;
 }
 
-talk_base::StreamResult RtpDumpWriter::WriteToStream(
+rtc::StreamResult RtpDumpWriter::WriteToStream(
     const void* data, size_t data_len) {
-  uint32 before = talk_base::Time();
-  talk_base::StreamResult result =
+  uint32 before = rtc::Time();
+  rtc::StreamResult result =
       stream_->WriteAll(data, data_len, NULL, NULL);
-  uint32 delay = talk_base::TimeSince(before);
+  uint32 delay = rtc::TimeSince(before);
   if (delay >= warn_slow_writes_delay_) {
     LOG(LS_WARNING) << "Slow RtpDump: took " << delay << "ms to write "
                     << data_len << " bytes.";

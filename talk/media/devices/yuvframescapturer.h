@@ -4,13 +4,13 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/stream.h"
-#include "talk/base/stringutils.h"
+#include "webrtc/base/stream.h"
+#include "webrtc/base/stringutils.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/yuvframegenerator.h"
 
 
-namespace talk_base {
+namespace rtc {
 class FileStream;
 }
 
@@ -31,7 +31,7 @@ class YuvFramesCapturer : public VideoCapturer {
     return Device(id.str(), id.str());
   }
   static bool IsYuvFramesCapturerDevice(const Device& device) {
-    return talk_base::starts_with(device.id.c_str(), kYuvFrameDeviceName);
+    return rtc::starts_with(device.id.c_str(), kYuvFrameDeviceName);
   }
 
   void Init();

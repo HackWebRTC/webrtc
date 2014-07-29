@@ -31,7 +31,7 @@
 
 #include <vector>
 
-#include "talk/base/flags.h"
+#include "webrtc/base/flags.h"
 #include "talk/examples/peerconnection/server/data_socket.h"
 #include "talk/examples/peerconnection/server/peer_channel.h"
 #include "talk/examples/peerconnection/server/utils.h"
@@ -67,9 +67,9 @@ void HandleBrowserRequest(DataSocket* ds, bool* quit) {
 }
 
 int main(int argc, char** argv) {
-  FlagList::SetFlagsFromCommandLine(&argc, argv, true);
+  rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true);
   if (FLAG_help) {
-    FlagList::Print(NULL, false);
+    rtc::FlagList::Print(NULL, false);
     return 0;
   }
 

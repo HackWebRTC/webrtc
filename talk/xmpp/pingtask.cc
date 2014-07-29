@@ -3,14 +3,14 @@
 
 #include "talk/xmpp/pingtask.h"
 
-#include "talk/base/logging.h"
-#include "talk/base/scoped_ptr.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "talk/xmpp/constants.h"
 
 namespace buzz {
 
 PingTask::PingTask(buzz::XmppTaskParentInterface* parent,
-                   talk_base::MessageQueue* message_queue,
+                   rtc::MessageQueue* message_queue,
                    uint32 ping_period_millis,
                    uint32 ping_timeout_millis)
     : buzz::XmppTask(parent, buzz::XmppEngine::HL_SINGLE),
@@ -49,7 +49,7 @@ int PingTask::ProcessStart() {
     ping_response_deadline_ = 0;
   }
 
-  uint32 now = talk_base::Time();
+  uint32 now = rtc::Time();
 
   // If the ping timed out, signal.
   if (ping_response_deadline_ != 0 && now >= ping_response_deadline_) {
@@ -59,7 +59,7 @@ int PingTask::ProcessStart() {
 
   // Send a ping if it's time.
   if (now >= next_ping_time_) {
-    talk_base::scoped_ptr<buzz::XmlElement> stanza(
+    rtc::scoped_ptr<buzz::XmlElement> stanza(
         MakeIq(buzz::STR_GET, Jid(STR_EMPTY), task_id()));
     stanza->AddElement(new buzz::XmlElement(QN_PING));
     SendStanza(stanza.get());
@@ -76,7 +76,7 @@ int PingTask::ProcessStart() {
   return STATE_BLOCKED;
 }
 
-void PingTask::OnMessage(talk_base::Message* msg) {
+void PingTask::OnMessage(rtc::Message* msg) {
   // Get the task manager to run this task so we can send a ping or signal or
   // process a ping response.
   Wake();

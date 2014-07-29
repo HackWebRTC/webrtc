@@ -4,7 +4,7 @@
 
 #include <string>
 
-#include "talk/base/gunit.h"
+#include "webrtc/base/gunit.h"
 #include "talk/media/base/testutils.h"
 #include "talk/media/webrtc/webrtcpassthroughrender.h"
 
@@ -67,7 +67,7 @@ class WebRtcPassthroughRenderTest : public testing::Test {
   }
 
  private:
-  talk_base::scoped_ptr<cricket::WebRtcPassthroughRender> renderer_;
+  rtc::scoped_ptr<cricket::WebRtcPassthroughRender> renderer_;
 };
 
 TEST_F(WebRtcPassthroughRenderTest, Streams) {

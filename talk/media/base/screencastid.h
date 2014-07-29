@@ -9,8 +9,8 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/window.h"
-#include "talk/base/windowpicker.h"
+#include "webrtc/base/window.h"
+#include "webrtc/base/windowpicker.h"
 
 namespace cricket {
 
@@ -24,16 +24,16 @@ class ScreencastId {
 
   // Default constructor indicates invalid ScreencastId.
   ScreencastId() : type_(INVALID) {}
-  explicit ScreencastId(const talk_base::WindowId& id)
+  explicit ScreencastId(const rtc::WindowId& id)
       : type_(WINDOW), window_(id) {
   }
-  explicit ScreencastId(const talk_base::DesktopId& id)
+  explicit ScreencastId(const rtc::DesktopId& id)
       : type_(DESKTOP), desktop_(id) {
   }
 
   Type type() const { return type_; }
-  const talk_base::WindowId& window() const { return window_; }
-  const talk_base::DesktopId& desktop() const { return desktop_; }
+  const rtc::WindowId& window() const { return window_; }
+  const rtc::DesktopId& desktop() const { return desktop_; }
 
   // Title is an optional parameter.
   const std::string& title() const { return title_; }
@@ -78,8 +78,8 @@ class ScreencastId {
 
  private:
   Type type_;
-  talk_base::WindowId window_;
-  talk_base::DesktopId desktop_;
+  rtc::WindowId window_;
+  rtc::DesktopId desktop_;
   std::string title_;  // Optional.
 };
 

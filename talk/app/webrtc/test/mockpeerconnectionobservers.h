@@ -61,7 +61,7 @@ class MockCreateSessionDescriptionObserver
  private:
   bool called_;
   bool result_;
-  talk_base::scoped_ptr<SessionDescriptionInterface> desc_;
+  rtc::scoped_ptr<SessionDescriptionInterface> desc_;
 };
 
 class MockSetSessionDescriptionObserver
@@ -109,7 +109,7 @@ class MockDataChannelObserver : public webrtc::DataChannelObserver {
   size_t received_message_count() const { return received_message_count_; }
 
  private:
-  talk_base::scoped_refptr<webrtc::DataChannelInterface> channel_;
+  rtc::scoped_refptr<webrtc::DataChannelInterface> channel_;
   DataChannelInterface::DataState state_;
   std::string last_message_;
   size_t received_message_count_;
@@ -159,7 +159,7 @@ class MockStatsObserver : public webrtc::StatsObserver {
           reports_[i].values.begin();
       for (; it != reports_[i].values.end(); ++it) {
         if (it->name == name) {
-          return talk_base::FromString<int>(it->value);
+          return rtc::FromString<int>(it->value);
         }
       }
     }

@@ -25,9 +25,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/base/asyncpacketsocket.h"
-#include "talk/base/helpers.h"
-#include "talk/base/logging.h"
+#include "webrtc/base/asyncpacketsocket.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
 #include "talk/p2p/base/relayport.h"
 
 namespace cricket {
@@ -44,16 +44,16 @@ static const int kSoftConnectTimeoutMs     = 3 * 1000;
 class RelayConnection : public sigslot::has_slots<> {
  public:
   RelayConnection(const ProtocolAddress* protocol_address,
-                  talk_base::AsyncPacketSocket* socket,
-                  talk_base::Thread* thread);
+                  rtc::AsyncPacketSocket* socket,
+                  rtc::Thread* thread);
   ~RelayConnection();
-  talk_base::AsyncPacketSocket* socket() const { return socket_; }
+  rtc::AsyncPacketSocket* socket() const { return socket_; }
 
   const ProtocolAddress* protocol_address() {
     return protocol_address_;
   }
 
-  talk_base::SocketAddress GetAddress() const {
+  rtc::SocketAddress GetAddress() const {
     return protocol_address_->address;
   }
 
@@ -61,13 +61,13 @@ class RelayConnection : public sigslot::has_slots<> {
     return protocol_address_->proto;
   }
 
-  int SetSocketOption(talk_base::Socket::Option opt, int value);
+  int SetSocketOption(rtc::Socket::Option opt, int value);
 
   // Validates a response to a STUN allocate request.
   bool CheckResponse(StunMessage* msg);
 
   // Sends data to the relay server.
-  int Send(const void* pv, size_t cb, const talk_base::PacketOptions& options);
+  int Send(const void* pv, size_t cb, const rtc::PacketOptions& options);
 
   // Sends a STUN allocate request message to the relay server.
   void SendAllocateRequest(RelayEntry* entry, int delay);
@@ -80,7 +80,7 @@ class RelayConnection : public sigslot::has_slots<> {
   void OnSendPacket(const void* data, size_t size, StunRequest* req);
 
  private:
-  talk_base::AsyncPacketSocket* socket_;
+  rtc::AsyncPacketSocket* socket_;
   const ProtocolAddress* protocol_address_;
   StunRequestManager *request_manager_;
 };
@@ -89,16 +89,16 @@ class RelayConnection : public sigslot::has_slots<> {
 // available protocol. We aim to use each connection for only a
 // specific destination address so that we can avoid wrapping every
 // packet in a STUN send / data indication.
-class RelayEntry : public talk_base::MessageHandler,
+class RelayEntry : public rtc::MessageHandler,
                    public sigslot::has_slots<> {
  public:
-  RelayEntry(RelayPort* port, const talk_base::SocketAddress& ext_addr);
+  RelayEntry(RelayPort* port, const rtc::SocketAddress& ext_addr);
   ~RelayEntry();
 
   RelayPort* port() { return port_; }
 
-  const talk_base::SocketAddress& address() const { return ext_addr_; }
-  void set_address(const talk_base::SocketAddress& addr) { ext_addr_ = addr; }
+  const rtc::SocketAddress& address() const { return ext_addr_; }
+  void set_address(const rtc::SocketAddress& addr) { ext_addr_ = addr; }
 
   bool connected() const { return connected_; }
   bool locked() const { return locked_; }
@@ -117,14 +117,14 @@ class RelayEntry : public talk_base::MessageHandler,
 
   // Called when this entry becomes connected.  The address given is the one
   // exposed to the outside world on the relay server.
-  void OnConnect(const talk_base::SocketAddress& mapped_addr,
+  void OnConnect(const rtc::SocketAddress& mapped_addr,
                  RelayConnection* socket);
 
   // Sends a packet to the given destination address using the socket of this
   // entry.  This will wrap the packet in STUN if necessary.
   int SendTo(const void* data, size_t size,
-             const talk_base::SocketAddress& addr,
-             const talk_base::PacketOptions& options);
+             const rtc::SocketAddress& addr,
+             const rtc::PacketOptions& options);
 
   // Schedules a keep-alive allocate request.
   void ScheduleKeepAlive();
@@ -132,41 +132,41 @@ class RelayEntry : public talk_base::MessageHandler,
   void SetServerIndex(size_t sindex) { server_index_ = sindex; }
 
   // Sets this option on the socket of each connection.
-  int SetSocketOption(talk_base::Socket::Option opt, int value);
+  int SetSocketOption(rtc::Socket::Option opt, int value);
 
   size_t ServerIndex() const { return server_index_; }
 
   // Try a different server address
-  void HandleConnectFailure(talk_base::AsyncPacketSocket* socket);
+  void HandleConnectFailure(rtc::AsyncPacketSocket* socket);
 
   // Implementation of the MessageHandler Interface.
-  virtual void OnMessage(talk_base::Message *pmsg);
+  virtual void OnMessage(rtc::Message *pmsg);
 
  private:
   RelayPort* port_;
-  talk_base::SocketAddress ext_addr_;
+  rtc::SocketAddress ext_addr_;
   size_t server_index_;
   bool connected_;
   bool locked_;
   RelayConnection* current_connection_;
 
   // Called when a TCP connection is established or fails
-  void OnSocketConnect(talk_base::AsyncPacketSocket* socket);
-  void OnSocketClose(talk_base::AsyncPacketSocket* socket, int error);
+  void OnSocketConnect(rtc::AsyncPacketSocket* socket);
+  void OnSocketClose(rtc::AsyncPacketSocket* socket, int error);
 
   // Called when a packet is received on this socket.
   void OnReadPacket(
-    talk_base::AsyncPacketSocket* socket,
+    rtc::AsyncPacketSocket* socket,
     const char* data, size_t size,
-    const talk_base::SocketAddress& remote_addr,
-    const talk_base::PacketTime& packet_time);
+    const rtc::SocketAddress& remote_addr,
+    const rtc::PacketTime& packet_time);
   // Called when the socket is currently able to send.
-  void OnReadyToSend(talk_base::AsyncPacketSocket* socket);
+  void OnReadyToSend(rtc::AsyncPacketSocket* socket);
 
   // Sends the given data on the socket to the server with no wrapping.  This
   // returns the number of bytes written or -1 if an error occurred.
   int SendPacket(const void* data, size_t size,
-                 const talk_base::PacketOptions& options);
+                 const rtc::PacketOptions& options);
 };
 
 // Handles an allocate request for a particular RelayEntry.
@@ -190,8 +190,8 @@ class AllocateRequest : public StunRequest {
 };
 
 RelayPort::RelayPort(
-    talk_base::Thread* thread, talk_base::PacketSocketFactory* factory,
-    talk_base::Network* network, const talk_base::IPAddress& ip,
+    rtc::Thread* thread, rtc::PacketSocketFactory* factory,
+    rtc::Network* network, const rtc::IPAddress& ip,
     int min_port, int max_port, const std::string& username,
     const std::string& password)
     : Port(thread, RELAY_PORT_TYPE, factory, network, ip, min_port, max_port,
@@ -199,7 +199,7 @@ RelayPort::RelayPort(
       ready_(false),
       error_(0) {
   entries_.push_back(
-      new RelayEntry(this, talk_base::SocketAddress()));
+      new RelayEntry(this, rtc::SocketAddress()));
   // TODO: set local preference value for TCP based candidates.
 }
 
@@ -213,8 +213,8 @@ void RelayPort::AddServerAddress(const ProtocolAddress& addr) {
   // Since HTTP proxies usually only allow 443,
   // let's up the priority on PROTO_SSLTCP
   if (addr.proto == PROTO_SSLTCP &&
-      (proxy().type == talk_base::PROXY_HTTPS ||
-       proxy().type == talk_base::PROXY_UNKNOWN)) {
+      (proxy().type == rtc::PROXY_HTTPS ||
+       proxy().type == rtc::PROXY_UNKNOWN)) {
     server_addr_.push_front(addr);
   } else {
     server_addr_.push_back(addr);
@@ -243,7 +243,7 @@ void RelayPort::SetReady() {
       // In case of Gturn, related address is set to null socket address.
       // This is due to as mapped address stun attribute is used for allocated
       // address.
-      AddAddress(iter->address, iter->address, talk_base::SocketAddress(),
+      AddAddress(iter->address, iter->address, rtc::SocketAddress(),
                  proto_name, RELAY_PORT_TYPE, ICE_TYPE_PREFERENCE_RELAY, false);
     }
     ready_ = true;
@@ -307,8 +307,8 @@ Connection* RelayPort::CreateConnection(const Candidate& address,
 }
 
 int RelayPort::SendTo(const void* data, size_t size,
-                      const talk_base::SocketAddress& addr,
-                      const talk_base::PacketOptions& options,
+                      const rtc::SocketAddress& addr,
+                      const rtc::PacketOptions& options,
                       bool payload) {
   // Try to find an entry for this specific address.  Note that the first entry
   // created was not given an address initially, so it can be set to the first
@@ -361,7 +361,7 @@ int RelayPort::SendTo(const void* data, size_t size,
   return static_cast<int>(size);
 }
 
-int RelayPort::SetOption(talk_base::Socket::Option opt, int value) {
+int RelayPort::SetOption(rtc::Socket::Option opt, int value) {
   int result = 0;
   for (size_t i = 0; i < entries_.size(); ++i) {
     if (entries_[i]->SetSocketOption(opt, value) < 0) {
@@ -373,7 +373,7 @@ int RelayPort::SetOption(talk_base::Socket::Option opt, int value) {
   return result;
 }
 
-int RelayPort::GetOption(talk_base::Socket::Option opt, int* value) {
+int RelayPort::GetOption(rtc::Socket::Option opt, int* value) {
   std::vector<OptionValue>::iterator it;
   for (it = options_.begin(); it < options_.end(); ++it) {
     if (it->first == opt) {
@@ -390,9 +390,9 @@ int RelayPort::GetError() {
 
 void RelayPort::OnReadPacket(
     const char* data, size_t size,
-    const talk_base::SocketAddress& remote_addr,
+    const rtc::SocketAddress& remote_addr,
     ProtocolType proto,
-    const talk_base::PacketTime& packet_time) {
+    const rtc::PacketTime& packet_time) {
   if (Connection* conn = GetConnection(remote_addr)) {
     conn->OnReadPacket(data, size, packet_time);
   } else {
@@ -401,8 +401,8 @@ void RelayPort::OnReadPacket(
 }
 
 RelayConnection::RelayConnection(const ProtocolAddress* protocol_address,
-                                 talk_base::AsyncPacketSocket* socket,
-                                 talk_base::Thread* thread)
+                                 rtc::AsyncPacketSocket* socket,
+                                 rtc::Thread* thread)
     : socket_(socket),
       protocol_address_(protocol_address) {
   request_manager_ = new StunRequestManager(thread);
@@ -415,7 +415,7 @@ RelayConnection::~RelayConnection() {
   delete socket_;
 }
 
-int RelayConnection::SetSocketOption(talk_base::Socket::Option opt,
+int RelayConnection::SetSocketOption(rtc::Socket::Option opt,
                                      int value) {
   if (socket_) {
     return socket_->SetOption(opt, value);
@@ -430,7 +430,7 @@ bool RelayConnection::CheckResponse(StunMessage* msg) {
 void RelayConnection::OnSendPacket(const void* data, size_t size,
                                    StunRequest* req) {
   // TODO(mallinath) Find a way to get DSCP value from Port.
-  talk_base::PacketOptions options;  // Default dscp set to NO_CHANGE.
+  rtc::PacketOptions options;  // Default dscp set to NO_CHANGE.
   int sent = socket_->SendTo(data, size, GetAddress(), options);
   if (sent <= 0) {
     LOG(LS_VERBOSE) << "OnSendPacket: failed sending to " << GetAddress() <<
@@ -440,7 +440,7 @@ void RelayConnection::OnSendPacket(const void* data, size_t size,
 }
 
 int RelayConnection::Send(const void* pv, size_t cb,
-                          const talk_base::PacketOptions& options) {
+                          const rtc::PacketOptions& options) {
   return socket_->SendTo(pv, cb, GetAddress(), options);
 }
 
@@ -449,7 +449,7 @@ void RelayConnection::SendAllocateRequest(RelayEntry* entry, int delay) {
 }
 
 RelayEntry::RelayEntry(RelayPort* port,
-                       const talk_base::SocketAddress& ext_addr)
+                       const rtc::SocketAddress& ext_addr)
     : port_(port), ext_addr_(ext_addr),
       server_index_(0), connected_(false), locked_(false),
       current_connection_(NULL) {
@@ -483,18 +483,18 @@ void RelayEntry::Connect() {
   LOG(LS_INFO) << "Connecting to relay via " << ProtoToString(ra->proto) <<
       " @ " << ra->address.ToSensitiveString();
 
-  talk_base::AsyncPacketSocket* socket = NULL;
+  rtc::AsyncPacketSocket* socket = NULL;
 
   if (ra->proto == PROTO_UDP) {
     // UDP sockets are simple.
     socket = port_->socket_factory()->CreateUdpSocket(
-        talk_base::SocketAddress(port_->ip(), 0),
+        rtc::SocketAddress(port_->ip(), 0),
         port_->min_port(), port_->max_port());
   } else if (ra->proto == PROTO_TCP || ra->proto == PROTO_SSLTCP) {
     int opts = (ra->proto == PROTO_SSLTCP) ?
-     talk_base::PacketSocketFactory::OPT_SSLTCP : 0;
+     rtc::PacketSocketFactory::OPT_SSLTCP : 0;
     socket = port_->socket_factory()->CreateClientTcpSocket(
-        talk_base::SocketAddress(port_->ip(), 0), ra->address,
+        rtc::SocketAddress(port_->ip(), 0), ra->address,
         port_->proxy(), port_->user_agent(), opts);
   } else {
     LOG(LS_WARNING) << "Unknown protocol (" << ra->proto << ")";
@@ -543,7 +543,7 @@ RelayConnection* RelayEntry::GetBestConnection(RelayConnection* conn1,
   return conn1->GetProtocol() <= conn2->GetProtocol() ? conn1 : conn2;
 }
 
-void RelayEntry::OnConnect(const talk_base::SocketAddress& mapped_addr,
+void RelayEntry::OnConnect(const rtc::SocketAddress& mapped_addr,
                            RelayConnection* connection) {
   // We are connected, notify our parent.
   ProtocolType proto = PROTO_UDP;
@@ -556,8 +556,8 @@ void RelayEntry::OnConnect(const talk_base::SocketAddress& mapped_addr,
 }
 
 int RelayEntry::SendTo(const void* data, size_t size,
-                       const talk_base::SocketAddress& addr,
-                       const talk_base::PacketOptions& options) {
+                       const rtc::SocketAddress& addr,
+                       const rtc::PacketOptions& options) {
   // If this connection is locked to the address given, then we can send the
   // packet with no wrapper.
   if (locked_ && (ext_addr_ == addr))
@@ -606,7 +606,7 @@ int RelayEntry::SendTo(const void* data, size_t size,
 
   // TODO: compute the HMAC.
 
-  talk_base::ByteBuffer buf;
+  rtc::ByteBuffer buf;
   request.Write(&buf);
 
   return SendPacket(buf.Data(), buf.Length(), options);
@@ -618,7 +618,7 @@ void RelayEntry::ScheduleKeepAlive() {
   }
 }
 
-int RelayEntry::SetSocketOption(talk_base::Socket::Option opt, int value) {
+int RelayEntry::SetSocketOption(rtc::Socket::Option opt, int value) {
   // Set the option on all available sockets.
   int socket_error = 0;
   if (current_connection_) {
@@ -628,7 +628,7 @@ int RelayEntry::SetSocketOption(talk_base::Socket::Option opt, int value) {
 }
 
 void RelayEntry::HandleConnectFailure(
-    talk_base::AsyncPacketSocket* socket) {
+    rtc::AsyncPacketSocket* socket) {
   // Make sure it's the current connection that has failed, it might
   // be an old socked that has not yet been disposed.
   if (!socket ||
@@ -642,7 +642,7 @@ void RelayEntry::HandleConnectFailure(
   }
 }
 
-void RelayEntry::OnMessage(talk_base::Message *pmsg) {
+void RelayEntry::OnMessage(rtc::Message *pmsg) {
   ASSERT(pmsg->message_id == kMessageConnectTimeout);
   if (current_connection_) {
     const ProtocolAddress* ra = current_connection_->protocol_address();
@@ -663,7 +663,7 @@ void RelayEntry::OnMessage(talk_base::Message *pmsg) {
   }
 }
 
-void RelayEntry::OnSocketConnect(talk_base::AsyncPacketSocket* socket) {
+void RelayEntry::OnSocketConnect(rtc::AsyncPacketSocket* socket) {
   LOG(INFO) << "relay tcp connected to " <<
       socket->GetRemoteAddress().ToSensitiveString();
   if (current_connection_ != NULL) {
@@ -671,17 +671,17 @@ void RelayEntry::OnSocketConnect(talk_base::AsyncPacketSocket* socket) {
   }
 }
 
-void RelayEntry::OnSocketClose(talk_base::AsyncPacketSocket* socket,
+void RelayEntry::OnSocketClose(rtc::AsyncPacketSocket* socket,
                                int error) {
   PLOG(LERROR, error) << "Relay connection failed: socket closed";
   HandleConnectFailure(socket);
 }
 
 void RelayEntry::OnReadPacket(
-    talk_base::AsyncPacketSocket* socket,
+    rtc::AsyncPacketSocket* socket,
     const char* data, size_t size,
-    const talk_base::SocketAddress& remote_addr,
-    const talk_base::PacketTime& packet_time) {
+    const rtc::SocketAddress& remote_addr,
+    const rtc::PacketTime& packet_time) {
   // ASSERT(remote_addr == port_->server_addr());
   // TODO: are we worried about this?
 
@@ -702,7 +702,7 @@ void RelayEntry::OnReadPacket(
     return;
   }
 
-  talk_base::ByteBuffer buf(data, size);
+  rtc::ByteBuffer buf(data, size);
   RelayMessage msg;
   if (!msg.Read(&buf)) {
     LOG(INFO) << "Incoming packet was not STUN";
@@ -738,7 +738,7 @@ void RelayEntry::OnReadPacket(
     return;
   }
 
-  talk_base::SocketAddress remote_addr2(addr_attr->ipaddr(), addr_attr->port());
+  rtc::SocketAddress remote_addr2(addr_attr->ipaddr(), addr_attr->port());
 
   const StunByteStringAttribute* data_attr = msg.GetByteString(STUN_ATTR_DATA);
   if (!data_attr) {
@@ -751,14 +751,14 @@ void RelayEntry::OnReadPacket(
                       PROTO_UDP, packet_time);
 }
 
-void RelayEntry::OnReadyToSend(talk_base::AsyncPacketSocket* socket) {
+void RelayEntry::OnReadyToSend(rtc::AsyncPacketSocket* socket) {
   if (connected()) {
     port_->OnReadyToSend();
   }
 }
 
 int RelayEntry::SendPacket(const void* data, size_t size,
-                           const talk_base::PacketOptions& options) {
+                           const rtc::PacketOptions& options) {
   int sent = 0;
   if (current_connection_) {
     // We are connected, no need to send packets anywere else than to
@@ -773,7 +773,7 @@ AllocateRequest::AllocateRequest(RelayEntry* entry,
     : StunRequest(new RelayMessage()),
       entry_(entry),
       connection_(connection) {
-  start_time_ = talk_base::Time();
+  start_time_ = rtc::Time();
 }
 
 void AllocateRequest::Prepare(StunMessage* request) {
@@ -788,7 +788,7 @@ void AllocateRequest::Prepare(StunMessage* request) {
 }
 
 int AllocateRequest::GetNextDelay() {
-  int delay = 100 * talk_base::_max(1 << count_, 2);
+  int delay = 100 * rtc::_max(1 << count_, 2);
   count_ += 1;
   if (count_ == 5)
     timeout_ = true;
@@ -803,7 +803,7 @@ void AllocateRequest::OnResponse(StunMessage* response) {
   } else if (addr_attr->family() != 1) {
     LOG(INFO) << "Mapped address has bad family";
   } else {
-    talk_base::SocketAddress addr(addr_attr->ipaddr(), addr_attr->port());
+    rtc::SocketAddress addr(addr_attr->ipaddr(), addr_attr->port());
     entry_->OnConnect(addr, connection_);
   }
 
@@ -822,7 +822,7 @@ void AllocateRequest::OnErrorResponse(StunMessage* response) {
               << " reason='" << attr->reason() << "'";
   }
 
-  if (talk_base::TimeSince(start_time_) <= kRetryTimeout)
+  if (rtc::TimeSince(start_time_) <= kRetryTimeout)
     entry_->ScheduleKeepAlive();
 }
 

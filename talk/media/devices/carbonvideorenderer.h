@@ -31,8 +31,8 @@
 
 #include <Carbon/Carbon.h>
 
-#include "talk/base/criticalsection.h"
-#include "talk/base/scoped_ptr.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "talk/media/base/videorenderer.h"
 
 namespace cricket {
@@ -57,8 +57,8 @@ class CarbonVideoRenderer : public VideoRenderer {
   static OSStatus DrawEventHandler(EventHandlerCallRef handler,
                                    EventRef event,
                                    void* data);
-  talk_base::scoped_ptr<uint8[]> image_;
-  talk_base::CriticalSection image_crit_;
+  rtc::scoped_ptr<uint8[]> image_;
+  rtc::CriticalSection image_crit_;
   int image_width_;
   int image_height_;
   int x_;

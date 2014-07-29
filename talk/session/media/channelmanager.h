@@ -31,10 +31,10 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/criticalsection.h"
-#include "talk/base/fileutils.h"
-#include "talk/base/sigslotrepeater.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/fileutils.h"
+#include "webrtc/base/sigslotrepeater.h"
+#include "webrtc/base/thread.h"
 #include "talk/media/base/capturemanager.h"
 #include "talk/media/base/mediaengine.h"
 #include "talk/p2p/base/session.h"
@@ -55,12 +55,12 @@ class VoiceProcessor;
 // voice or just video channels.
 // ChannelManager also allows the application to discover what devices it has
 // using device manager.
-class ChannelManager : public talk_base::MessageHandler,
+class ChannelManager : public rtc::MessageHandler,
                        public sigslot::has_slots<> {
  public:
 #if !defined(DISABLE_MEDIA_ENGINE_FACTORY)
   // Creates the channel manager, and specifies the worker thread to use.
-  explicit ChannelManager(talk_base::Thread* worker);
+  explicit ChannelManager(rtc::Thread* worker);
 #endif
 
   // For testing purposes. Allows the media engine and data media
@@ -70,17 +70,17 @@ class ChannelManager : public talk_base::MessageHandler,
                  DataEngineInterface* dme,
                  DeviceManagerInterface* dm,
                  CaptureManager* cm,
-                 talk_base::Thread* worker);
+                 rtc::Thread* worker);
   // Same as above, but gives an easier default DataEngine.
   ChannelManager(MediaEngineInterface* me,
                  DeviceManagerInterface* dm,
-                 talk_base::Thread* worker);
+                 rtc::Thread* worker);
   ~ChannelManager();
 
   // Accessors for the worker thread, allowing it to be set after construction,
   // but before Init. set_worker_thread will return false if called after Init.
-  talk_base::Thread* worker_thread() const { return worker_thread_; }
-  bool set_worker_thread(talk_base::Thread* thread) {
+  rtc::Thread* worker_thread() const { return worker_thread_; }
+  bool set_worker_thread(rtc::Thread* thread) {
     if (initialized_) return false;
     worker_thread_ = thread;
     return true;
@@ -218,7 +218,7 @@ class ChannelManager : public talk_base::MessageHandler,
                                       const VideoFormat& max_format);
 
   // Starts AEC dump using existing file.
-  bool StartAecDump(talk_base::PlatformFile file);
+  bool StartAecDump(rtc::PlatformFile file);
 
   sigslot::repeater0<> SignalDevicesChange;
   sigslot::signal2<VideoCapturer*, CaptureState> SignalVideoCaptureStateChange;
@@ -251,7 +251,7 @@ class ChannelManager : public talk_base::MessageHandler,
                  DataEngineInterface* dme,
                  DeviceManagerInterface* dm,
                  CaptureManager* cm,
-                 talk_base::Thread* worker_thread);
+                 rtc::Thread* worker_thread);
   void Terminate_w();
   VoiceChannel* CreateVoiceChannel_w(
       BaseSession* session, const std::string& content_name, bool rtcp);
@@ -277,15 +277,15 @@ class ChannelManager : public talk_base::MessageHandler,
   bool UnregisterVideoProcessor_w(VideoCapturer* capturer,
                                   VideoProcessor* processor);
   bool IsScreencastRunning_w() const;
-  virtual void OnMessage(talk_base::Message *message);
+  virtual void OnMessage(rtc::Message *message);
 
-  talk_base::scoped_ptr<MediaEngineInterface> media_engine_;
-  talk_base::scoped_ptr<DataEngineInterface> data_media_engine_;
-  talk_base::scoped_ptr<DeviceManagerInterface> device_manager_;
-  talk_base::scoped_ptr<CaptureManager> capture_manager_;
+  rtc::scoped_ptr<MediaEngineInterface> media_engine_;
+  rtc::scoped_ptr<DataEngineInterface> data_media_engine_;
+  rtc::scoped_ptr<DeviceManagerInterface> device_manager_;
+  rtc::scoped_ptr<CaptureManager> capture_manager_;
   bool initialized_;
-  talk_base::Thread* main_thread_;
-  talk_base::Thread* worker_thread_;
+  rtc::Thread* main_thread_;
+  rtc::Thread* worker_thread_;
 
   VoiceChannels voice_channels_;
   VideoChannels video_channels_;

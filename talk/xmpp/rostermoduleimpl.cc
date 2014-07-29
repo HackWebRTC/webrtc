@@ -31,8 +31,8 @@
 #include <algorithm>
 #include <sstream>
 #include <iostream>
-#include "talk/base/common.h"
-#include "talk/base/stringencode.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/stringencode.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/rostermoduleimpl.h"
 
@@ -217,7 +217,7 @@ XmppPresenceImpl::priority() const {
     return 0;
 
   int raw_priority = 0;
-  if (!talk_base::FromString(raw_xml_->TextNamed(QN_PRIORITY), &raw_priority))
+  if (!rtc::FromString(raw_xml_->TextNamed(QN_PRIORITY), &raw_priority))
     raw_priority = 0;
   if (raw_priority < -128)
     raw_priority = -128;
@@ -238,7 +238,7 @@ XmppPresenceImpl::set_priority(int priority) {
   raw_xml_->ClearNamedChildren(QN_PRIORITY);
   if (0 != priority) {
     std::string priority_string;
-    if (talk_base::ToString(priority, &priority_string)) {
+    if (rtc::ToString(priority, &priority_string)) {
       raw_xml_->AddElement(new XmlElement(QN_PRIORITY));
       raw_xml_->AddText(priority_string, 1);
     }

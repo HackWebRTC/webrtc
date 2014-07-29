@@ -30,12 +30,12 @@
 #include <algorithm>
 #include <functional>
 
-#include "talk/base/logging.h"
+#include "webrtc/base/logging.h"
 
 namespace webrtc {
 
-talk_base::scoped_refptr<RemoteAudioSource> RemoteAudioSource::Create() {
-  return new talk_base::RefCountedObject<RemoteAudioSource>();
+rtc::scoped_refptr<RemoteAudioSource> RemoteAudioSource::Create() {
+  return new rtc::RefCountedObject<RemoteAudioSource>();
 }
 
 RemoteAudioSource::RemoteAudioSource() {

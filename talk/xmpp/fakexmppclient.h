@@ -42,7 +42,7 @@ class XmlElement;
 class FakeXmppClient : public XmppTaskParentInterface,
                        public XmppClientInterface {
  public:
-  explicit FakeXmppClient(talk_base::TaskParent* parent)
+  explicit FakeXmppClient(rtc::TaskParent* parent)
       : XmppTaskParentInterface(parent) {
   }
 

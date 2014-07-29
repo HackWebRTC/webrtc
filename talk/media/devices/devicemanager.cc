@@ -27,13 +27,13 @@
 
 #include "talk/media/devices/devicemanager.h"
 
-#include "talk/base/fileutils.h"
-#include "talk/base/logging.h"
-#include "talk/base/pathutils.h"
-#include "talk/base/stringutils.h"
-#include "talk/base/thread.h"
-#include "talk/base/windowpicker.h"
-#include "talk/base/windowpickerfactory.h"
+#include "webrtc/base/fileutils.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/pathutils.h"
+#include "webrtc/base/stringutils.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/base/windowpicker.h"
+#include "webrtc/base/windowpickerfactory.h"
 #include "talk/media/base/mediacommon.h"
 #include "talk/media/devices/deviceinfo.h"
 #include "talk/media/devices/filevideocapturer.h"
@@ -54,7 +54,7 @@ namespace {
 bool StringMatchWithWildcard(
     const std::pair<const std::basic_string<char>, cricket::VideoFormat> key,
     const std::string& val) {
-  return talk_base::string_match(val.c_str(), key.first.c_str());
+  return rtc::string_match(val.c_str(), key.first.c_str());
 }
 
 }  // namespace
@@ -86,7 +86,7 @@ class DefaultVideoCapturerFactory : public VideoCapturerFactory {
 DeviceManager::DeviceManager()
     : initialized_(false),
       device_video_capturer_factory_(new DefaultVideoCapturerFactory),
-      window_picker_(talk_base::WindowPickerFactory::CreateWindowPicker()) {
+      window_picker_(rtc::WindowPickerFactory::CreateWindowPicker()) {
 }
 
 DeviceManager::~DeviceManager() {
@@ -187,7 +187,7 @@ bool DeviceManager::GetVideoCaptureDevice(const std::string& name,
 
 bool DeviceManager::GetFakeVideoCaptureDevice(const std::string& name,
                                               Device* out) const {
-  if (talk_base::Filesystem::IsFile(name)) {
+  if (rtc::Filesystem::IsFile(name)) {
     *out = FileVideoCapturer::CreateFileVideoCapturerDevice(name);
     return true;
   }
@@ -242,7 +242,7 @@ VideoCapturer* DeviceManager::ConstructFakeVideoCapturer(
       return NULL;
     }
     LOG(LS_INFO) << "Created file video capturer " << device.name;
-    capturer->set_repeat(talk_base::kForever);
+    capturer->set_repeat(rtc::kForever);
     return capturer;
   }
 
@@ -255,14 +255,14 @@ VideoCapturer* DeviceManager::ConstructFakeVideoCapturer(
 }
 
 bool DeviceManager::GetWindows(
-    std::vector<talk_base::WindowDescription>* descriptions) {
+    std::vector<rtc::WindowDescription>* descriptions) {
   if (!window_picker_) {
     return false;
   }
   return window_picker_->GetWindowList(descriptions);
 }
 
-VideoCapturer* DeviceManager::CreateWindowCapturer(talk_base::WindowId window) {
+VideoCapturer* DeviceManager::CreateWindowCapturer(rtc::WindowId window) {
 #if defined(WINDOW_CAPTURER_NAME)
   WINDOW_CAPTURER_NAME* window_capturer = new WINDOW_CAPTURER_NAME();
   if (!window_capturer->Init(window)) {
@@ -276,7 +276,7 @@ VideoCapturer* DeviceManager::CreateWindowCapturer(talk_base::WindowId window) {
 }
 
 bool DeviceManager::GetDesktops(
-    std::vector<talk_base::DesktopDescription>* descriptions) {
+    std::vector<rtc::DesktopDescription>* descriptions) {
   if (!window_picker_) {
     return false;
   }
@@ -284,7 +284,7 @@ bool DeviceManager::GetDesktops(
 }
 
 VideoCapturer* DeviceManager::CreateDesktopCapturer(
-    talk_base::DesktopId desktop) {
+    rtc::DesktopId desktop) {
 #if defined(DESKTOP_CAPTURER_NAME)
   DESKTOP_CAPTURER_NAME* desktop_capturer = new DESKTOP_CAPTURER_NAME();
   if (!desktop_capturer->Init(desktop.index())) {

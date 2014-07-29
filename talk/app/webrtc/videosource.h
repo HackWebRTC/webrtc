@@ -32,8 +32,8 @@
 #include "talk/app/webrtc/notifier.h"
 #include "talk/app/webrtc/videosourceinterface.h"
 #include "talk/app/webrtc/videotrackrenderers.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/sigslot.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/sigslot.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videocommon.h"
 
@@ -61,7 +61,7 @@ class VideoSource : public Notifier<VideoSourceInterface>,
   // VideoSource take ownership of |capturer|.
   // |constraints| can be NULL and in that case the camera is opened using a
   // default resolution.
-  static talk_base::scoped_refptr<VideoSource> Create(
+  static rtc::scoped_refptr<VideoSource> Create(
       cricket::ChannelManager* channel_manager,
       cricket::VideoCapturer* capturer,
       const webrtc::MediaConstraintsInterface* constraints);
@@ -90,8 +90,8 @@ class VideoSource : public Notifier<VideoSourceInterface>,
   void SetState(SourceState new_state);
 
   cricket::ChannelManager* channel_manager_;
-  talk_base::scoped_ptr<cricket::VideoCapturer> video_capturer_;
-  talk_base::scoped_ptr<cricket::VideoRenderer> frame_input_;
+  rtc::scoped_ptr<cricket::VideoCapturer> video_capturer_;
+  rtc::scoped_ptr<cricket::VideoRenderer> frame_input_;
 
   cricket::VideoFormat format_;
   cricket::VideoOptions options_;

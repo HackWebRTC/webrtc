@@ -68,7 +68,7 @@ class WebRtcMediaEngine : public cricket::MediaEngineInterface {
   virtual ~WebRtcMediaEngine() {
     DestroyWebRtcMediaEngine(delegate_);
   }
-  virtual bool Init(talk_base::Thread* worker_thread) OVERRIDE {
+  virtual bool Init(rtc::Thread* worker_thread) OVERRIDE {
     return delegate_->Init(worker_thread);
   }
   virtual void Terminate() OVERRIDE {
@@ -145,7 +145,7 @@ class WebRtcMediaEngine : public cricket::MediaEngineInterface {
   virtual void SetVideoLogging(int min_sev, const char* filter) OVERRIDE {
     delegate_->SetVideoLogging(min_sev, filter);
   }
-  virtual bool StartAecDump(talk_base::PlatformFile file) OVERRIDE {
+  virtual bool StartAecDump(rtc::PlatformFile file) OVERRIDE {
     return delegate_->StartAecDump(file);
   }
   virtual bool RegisterVoiceProcessor(

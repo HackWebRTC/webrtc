@@ -32,8 +32,8 @@
 #include <vector>
 #include <string>
 
-#include "talk/base/cpumonitor.h"
-#include "talk/base/scoped_ptr.h"
+#include "webrtc/base/cpumonitor.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "talk/media/base/mediaengine.h"
 #include "talk/media/webrtc/webrtcvideochannelfactory.h"
 #include "webrtc/common_video/interface/i420_video_frame.h"
@@ -53,10 +53,10 @@ class VideoSendStreamInput;
 class VideoReceiveStream;
 }
 
-namespace talk_base {
+namespace rtc {
 class CpuMonitor;
 class Thread;
-}  // namespace talk_base
+}  // namespace rtc
 
 namespace cricket {
 
@@ -114,7 +114,7 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
   ~WebRtcVideoEngine2();
 
   // Basic video engine implementation.
-  bool Init(talk_base::Thread* worker_thread);
+  bool Init(rtc::Thread* worker_thread);
   void Terminate();
 
   int GetCapabilities();
@@ -151,16 +151,16 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
 
   VideoFormat GetStartCaptureFormat() const { return default_codec_format_; }
 
-  talk_base::CpuMonitor* cpu_monitor() { return cpu_monitor_.get(); }
+  rtc::CpuMonitor* cpu_monitor() { return cpu_monitor_.get(); }
 
   virtual WebRtcVideoEncoderFactory2* GetVideoEncoderFactory();
 
  private:
   void Construct(WebRtcVideoChannelFactory* channel_factory,
                  WebRtcVoiceEngine* voice_engine,
-                 talk_base::CpuMonitor* cpu_monitor);
+                 rtc::CpuMonitor* cpu_monitor);
 
-  talk_base::Thread* worker_thread_;
+  rtc::Thread* worker_thread_;
   WebRtcVoiceEngine* voice_engine_;
   std::vector<VideoCodec> video_codecs_;
   std::vector<RtpHeaderExtension> rtp_header_extensions_;
@@ -172,14 +172,14 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
 
   // Critical section to protect the media processor register/unregister
   // while processing a frame
-  talk_base::CriticalSection signal_media_critical_;
+  rtc::CriticalSection signal_media_critical_;
 
-  talk_base::scoped_ptr<talk_base::CpuMonitor> cpu_monitor_;
+  rtc::scoped_ptr<rtc::CpuMonitor> cpu_monitor_;
   WebRtcVideoChannelFactory* channel_factory_;
   WebRtcVideoEncoderFactory2 default_video_encoder_factory_;
 };
 
-class WebRtcVideoChannel2 : public talk_base::MessageHandler,
+class WebRtcVideoChannel2 : public rtc::MessageHandler,
                             public VideoMediaChannel,
                             public webrtc::newapi::Transport {
  public:
@@ -214,11 +214,11 @@ class WebRtcVideoChannel2 : public talk_base::MessageHandler,
   virtual bool SendIntraFrame() OVERRIDE;
   virtual bool RequestIntraFrame() OVERRIDE;
 
-  virtual void OnPacketReceived(talk_base::Buffer* packet,
-                                const talk_base::PacketTime& packet_time)
+  virtual void OnPacketReceived(rtc::Buffer* packet,
+                                const rtc::PacketTime& packet_time)
       OVERRIDE;
-  virtual void OnRtcpReceived(talk_base::Buffer* packet,
-                              const talk_base::PacketTime& packet_time)
+  virtual void OnRtcpReceived(rtc::Buffer* packet,
+                              const rtc::PacketTime& packet_time)
       OVERRIDE;
   virtual void OnReadyToSend(bool ready) OVERRIDE;
   virtual bool MuteStream(uint32 ssrc, bool mute) OVERRIDE;
@@ -239,7 +239,7 @@ class WebRtcVideoChannel2 : public talk_base::MessageHandler,
   virtual void SetInterface(NetworkInterface* iface) OVERRIDE;
   virtual void UpdateAspectRatio(int ratio_w, int ratio_h) OVERRIDE;
 
-  virtual void OnMessage(talk_base::Message* msg) OVERRIDE;
+  virtual void OnMessage(rtc::Message* msg) OVERRIDE;
 
   // Implemented for VideoMediaChannelTest.
   bool sending() const { return sending_; }
@@ -314,7 +314,7 @@ class WebRtcVideoChannel2 : public talk_base::MessageHandler,
     webrtc::Call* const call_;
     WebRtcVideoEncoderFactory2* const encoder_factory_;
 
-    talk_base::CriticalSection lock_;
+    rtc::CriticalSection lock_;
     webrtc::VideoSendStream* stream_ GUARDED_BY(lock_);
     VideoSendStreamParameters parameters_ GUARDED_BY(lock_);
 
@@ -323,7 +323,7 @@ class WebRtcVideoChannel2 : public talk_base::MessageHandler,
     bool muted_ GUARDED_BY(lock_);
     VideoFormat format_ GUARDED_BY(lock_);
 
-    talk_base::CriticalSection frame_lock_;
+    rtc::CriticalSection frame_lock_;
     webrtc::I420VideoFrame video_frame_ GUARDED_BY(frame_lock_);
   };
 
@@ -358,7 +358,7 @@ class WebRtcVideoChannel2 : public talk_base::MessageHandler,
     webrtc::VideoReceiveStream* stream_;
     webrtc::VideoReceiveStream::Config config_;
 
-    talk_base::CriticalSection renderer_lock_;
+    rtc::CriticalSection renderer_lock_;
     cricket::VideoRenderer* renderer_ GUARDED_BY(renderer_lock_);
     int last_width_ GUARDED_BY(renderer_lock_);
     int last_height_ GUARDED_BY(renderer_lock_);
@@ -384,7 +384,7 @@ class WebRtcVideoChannel2 : public talk_base::MessageHandler,
 
   uint32_t rtcp_receiver_report_ssrc_;
   bool sending_;
-  talk_base::scoped_ptr<webrtc::Call> call_;
+  rtc::scoped_ptr<webrtc::Call> call_;
   uint32_t default_send_ssrc_;
   uint32_t default_recv_ssrc_;
   VideoRenderer* default_renderer_;

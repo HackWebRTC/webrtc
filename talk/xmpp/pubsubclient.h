@@ -31,9 +31,9 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/sigslot.h"
-#include "talk/base/sigslotrepeater.h"
-#include "talk/base/task.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/sigslotrepeater.h"
+#include "webrtc/base/task.h"
 #include "talk/xmpp/jid.h"
 #include "talk/xmpp/pubsubtasks.h"
 

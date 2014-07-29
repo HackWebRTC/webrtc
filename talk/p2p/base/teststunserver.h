@@ -28,8 +28,8 @@
 #ifndef TALK_P2P_BASE_TESTSTUNSERVER_H_
 #define TALK_P2P_BASE_TESTSTUNSERVER_H_
 
-#include "talk/base/socketaddress.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/socketaddress.h"
+#include "webrtc/base/thread.h"
 #include "talk/p2p/base/stunserver.h"
 
 namespace cricket {
@@ -37,16 +37,16 @@ namespace cricket {
 // A test STUN server. Useful for unit tests.
 class TestStunServer {
  public:
-  TestStunServer(talk_base::Thread* thread,
-                 const talk_base::SocketAddress& addr)
+  TestStunServer(rtc::Thread* thread,
+                 const rtc::SocketAddress& addr)
       : socket_(thread->socketserver()->CreateAsyncSocket(addr.family(),
                                                           SOCK_DGRAM)),
-        udp_socket_(talk_base::AsyncUDPSocket::Create(socket_, addr)),
+        udp_socket_(rtc::AsyncUDPSocket::Create(socket_, addr)),
         server_(udp_socket_) {
   }
  private:
-  talk_base::AsyncSocket* socket_;
-  talk_base::AsyncUDPSocket* udp_socket_;
+  rtc::AsyncSocket* socket_;
+  rtc::AsyncUDPSocket* udp_socket_;
   cricket::StunServer server_;
 };
 

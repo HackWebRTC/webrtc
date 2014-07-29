@@ -28,13 +28,13 @@
 #ifndef TALK_SESSION_TUNNEL_PSEUDOTCPCHANNEL_H_
 #define TALK_SESSION_TUNNEL_PSEUDOTCPCHANNEL_H_
 
-#include "talk/base/criticalsection.h"
-#include "talk/base/messagequeue.h"
-#include "talk/base/stream.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/messagequeue.h"
+#include "webrtc/base/stream.h"
 #include "talk/p2p/base/pseudotcp.h"
 #include "talk/p2p/base/session.h"
 
-namespace talk_base {
+namespace rtc {
 class Thread;
 }
 
@@ -64,17 +64,17 @@ class TransportChannel;
 
 class PseudoTcpChannel
     : public IPseudoTcpNotify,
-      public talk_base::MessageHandler,
+      public rtc::MessageHandler,
       public sigslot::has_slots<> {
  public:
   // Signal thread methods
-  PseudoTcpChannel(talk_base::Thread* stream_thread,
+  PseudoTcpChannel(rtc::Thread* stream_thread,
                    Session* session);
 
   bool Connect(const std::string& content_name,
                const std::string& channel_name,
                int component);
-  talk_base::StreamInterface* GetStream();
+  rtc::StreamInterface* GetStream();
 
   sigslot::signal1<PseudoTcpChannel*> SignalChannelClosed;
 
@@ -93,15 +93,15 @@ class PseudoTcpChannel
   virtual ~PseudoTcpChannel();
 
   // Stream thread methods
-  talk_base::StreamState GetState() const;
-  talk_base::StreamResult Read(void* buffer, size_t buffer_len,
+  rtc::StreamState GetState() const;
+  rtc::StreamResult Read(void* buffer, size_t buffer_len,
                                size_t* read, int* error);
-  talk_base::StreamResult Write(const void* data, size_t data_len,
+  rtc::StreamResult Write(const void* data, size_t data_len,
                                 size_t* written, int* error);
   void Close();
 
   // Multi-thread methods
-  void OnMessage(talk_base::Message* pmsg);
+  void OnMessage(rtc::Message* pmsg);
   void AdjustClock(bool clear = true);
   void CheckDestroy();
 
@@ -111,7 +111,7 @@ class PseudoTcpChannel
   // Worker thread methods
   void OnChannelWritableState(TransportChannel* channel);
   void OnChannelRead(TransportChannel* channel, const char* data, size_t size,
-                     const talk_base::PacketTime& packet_time, int flags);
+                     const rtc::PacketTime& packet_time, int flags);
   void OnChannelConnectionChanged(TransportChannel* channel,
                                   const Candidate& candidate);
 
@@ -123,7 +123,7 @@ class PseudoTcpChannel
                                                        const char* buffer,
                                                        size_t len);
 
-  talk_base::Thread* signal_thread_, * worker_thread_, * stream_thread_;
+  rtc::Thread* signal_thread_, * worker_thread_, * stream_thread_;
   Session* session_;
   TransportChannel* channel_;
   std::string content_name_;
@@ -132,7 +132,7 @@ class PseudoTcpChannel
   InternalStream* stream_;
   bool stream_readable_, pending_read_event_;
   bool ready_to_connect_;
-  mutable talk_base::CriticalSection cs_;
+  mutable rtc::CriticalSection cs_;
 };
 
 }  // namespace cricket

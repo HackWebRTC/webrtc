@@ -28,14 +28,14 @@
 // SecureTunnelSessionClient and SecureTunnelSession implementation.
 
 #include "talk/session/tunnel/securetunnelsessionclient.h"
-#include "talk/base/basicdefs.h"
-#include "talk/base/basictypes.h"
-#include "talk/base/common.h"
-#include "talk/base/helpers.h"
-#include "talk/base/logging.h"
-#include "talk/base/stringutils.h"
-#include "talk/base/sslidentity.h"
-#include "talk/base/sslstreamadapter.h"
+#include "webrtc/base/basicdefs.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/stringutils.h"
+#include "webrtc/base/sslidentity.h"
+#include "webrtc/base/sslstreamadapter.h"
 #include "talk/p2p/base/transportchannel.h"
 #include "talk/xmllite/xmlelement.h"
 #include "talk/session/tunnel/pseudotcpchannel.h"
@@ -84,14 +84,14 @@ SecureTunnelSessionClient::SecureTunnelSessionClient(
     : TunnelSessionClient(jid, manager, NS_SECURE_TUNNEL) {
 }
 
-void SecureTunnelSessionClient::SetIdentity(talk_base::SSLIdentity* identity) {
+void SecureTunnelSessionClient::SetIdentity(rtc::SSLIdentity* identity) {
   ASSERT(identity_.get() == NULL);
   identity_.reset(identity);
 }
 
 bool SecureTunnelSessionClient::GenerateIdentity() {
   ASSERT(identity_.get() == NULL);
-  identity_.reset(talk_base::SSLIdentity::Generate(
+  identity_.reset(rtc::SSLIdentity::Generate(
       // The name on the certificate does not matter: the peer will
       // make sure the cert it gets during SSL negotiation matches the
       // one it got from XMPP. It would be neat to put something
@@ -112,7 +112,7 @@ bool SecureTunnelSessionClient::GenerateIdentity() {
   return true;
 }
 
-talk_base::SSLIdentity& SecureTunnelSessionClient::GetIdentity() const {
+rtc::SSLIdentity& SecureTunnelSessionClient::GetIdentity() const {
   ASSERT(identity_.get() != NULL);
   return *identity_;
 }
@@ -120,15 +120,15 @@ talk_base::SSLIdentity& SecureTunnelSessionClient::GetIdentity() const {
 // Parses a certificate from a PEM encoded string.
 // Returns NULL on failure.
 // The caller is responsible for freeing the returned object.
-static talk_base::SSLCertificate* ParseCertificate(
+static rtc::SSLCertificate* ParseCertificate(
     const std::string& pem_cert) {
   if (pem_cert.empty())
     return NULL;
-  return talk_base::SSLCertificate::FromPEMString(pem_cert);
+  return rtc::SSLCertificate::FromPEMString(pem_cert);
 }
 
 TunnelSession* SecureTunnelSessionClient::MakeTunnelSession(
-    Session* session, talk_base::Thread* stream_thread,
+    Session* session, rtc::Thread* stream_thread,
     TunnelSessionRole role) {
   return new SecureTunnelSession(this, session, stream_thread, role);
 }
@@ -156,7 +156,7 @@ void SecureTunnelSessionClient::OnIncomingTunnel(const buzz::Jid &jid,
   }
 
   // Validate the certificate
-  talk_base::scoped_ptr<talk_base::SSLCertificate> peer_cert(
+  rtc::scoped_ptr<rtc::SSLCertificate> peer_cert(
       ParseCertificate(content->client_pem_certificate));
   if (peer_cert.get() == NULL) {
     LOG(LS_ERROR)
@@ -309,16 +309,16 @@ SessionDescription* SecureTunnelSessionClient::CreateAnswer(
 
 SecureTunnelSession::SecureTunnelSession(
     SecureTunnelSessionClient* client, Session* session,
-    talk_base::Thread* stream_thread, TunnelSessionRole role)
+    rtc::Thread* stream_thread, TunnelSessionRole role)
     : TunnelSession(client, session, stream_thread),
       role_(role) {
 }
 
-talk_base::StreamInterface* SecureTunnelSession::MakeSecureStream(
-    talk_base::StreamInterface* stream) {
-  talk_base::SSLStreamAdapter* ssl_stream =
-      talk_base::SSLStreamAdapter::Create(stream);
-  talk_base::SSLIdentity* identity =
+rtc::StreamInterface* SecureTunnelSession::MakeSecureStream(
+    rtc::StreamInterface* stream) {
+  rtc::SSLStreamAdapter* ssl_stream =
+      rtc::SSLStreamAdapter::Create(stream);
+  rtc::SSLIdentity* identity =
       static_cast<SecureTunnelSessionClient*>(client_)->
       GetIdentity().GetReference();
   ssl_stream->SetIdentity(identity);
@@ -334,11 +334,11 @@ talk_base::StreamInterface* SecureTunnelSession::MakeSecureStream(
   // OnAccept()). We won't Connect() the PseudoTcpChannel until we get
   // that, so the stream will stay closed until then.  Keep a handle
   // on the streem so we can configure the peer certificate later.
-  ssl_stream_reference_.reset(new talk_base::StreamReference(ssl_stream));
+  ssl_stream_reference_.reset(new rtc::StreamReference(ssl_stream));
   return ssl_stream_reference_->NewReference();
 }
 
-talk_base::StreamInterface* SecureTunnelSession::GetStream() {
+rtc::StreamInterface* SecureTunnelSession::GetStream() {
   ASSERT(channel_ != NULL);
   ASSERT(ssl_stream_reference_.get() == NULL);
   return MakeSecureStream(channel_->GetStream());
@@ -360,7 +360,7 @@ void SecureTunnelSession::OnAccept() {
   const std::string& cert_pem =
       role_ == INITIATOR ? remote_tunnel->server_pem_certificate :
                            remote_tunnel->client_pem_certificate;
-  talk_base::scoped_ptr<talk_base::SSLCertificate> peer_cert(
+  rtc::scoped_ptr<rtc::SSLCertificate> peer_cert(
       ParseCertificate(cert_pem));
   if (peer_cert == NULL) {
     ASSERT(role_ == INITIATOR);  // when RESPONDER we validated it earlier
@@ -370,8 +370,8 @@ void SecureTunnelSession::OnAccept() {
     return;
   }
   ASSERT(ssl_stream_reference_.get() != NULL);
-  talk_base::SSLStreamAdapter* ssl_stream =
-      static_cast<talk_base::SSLStreamAdapter*>(
+  rtc::SSLStreamAdapter* ssl_stream =
+      static_cast<rtc::SSLStreamAdapter*>(
           ssl_stream_reference_->GetStream());
 
   std::string algorithm;
@@ -379,7 +379,7 @@ void SecureTunnelSession::OnAccept() {
     LOG(LS_ERROR) << "Failed to get the algorithm for the peer cert signature";
     return;
   }
-  unsigned char digest[talk_base::MessageDigest::kMaxSize];
+  unsigned char digest[rtc::MessageDigest::kMaxSize];
   size_t digest_len;
   peer_cert->ComputeDigest(algorithm, digest, ARRAY_SIZE(digest), &digest_len);
   ssl_stream->SetPeerCertificateDigest(algorithm, digest, digest_len);

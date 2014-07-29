@@ -30,9 +30,9 @@
 #include <stdio.h>
 #include <string>
 
-#include "talk/base/logging.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/stringutils.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/stringutils.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/p2ptransport.h"
 #include "talk/p2p/base/parsing.h"
@@ -491,7 +491,7 @@ bool WriteGingleCandidates(const Candidates& candidates,
     return false;
 
   for (size_t i = 0; i < candidates.size(); ++i) {
-    talk_base::scoped_ptr<buzz::XmlElement> element;
+    rtc::scoped_ptr<buzz::XmlElement> element;
     if (!trans_parser->WriteGingleCandidate(candidates[i], translator,
                                             element.accept(), error)) {
       return false;
@@ -627,7 +627,7 @@ bool ParseGingleContentInfos(const buzz::XmlElement* session,
     // namespace and only parse the codecs relevant to that namespace.
     // We use this to control which codecs get parsed: first audio,
     // then video.
-    talk_base::scoped_ptr<buzz::XmlElement> audio_elem(
+    rtc::scoped_ptr<buzz::XmlElement> audio_elem(
         new buzz::XmlElement(QN_GINGLE_AUDIO_CONTENT));
     CopyXmlChildren(content_elem, audio_elem.get());
     if (!ParseContentInfo(PROTOCOL_GINGLE, CN_AUDIO, NS_JINGLE_RTP,

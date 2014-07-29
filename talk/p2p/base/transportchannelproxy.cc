@@ -26,9 +26,9 @@
  */
 
 #include "talk/p2p/base/transportchannelproxy.h"
-#include "talk/base/common.h"
-#include "talk/base/logging.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/thread.h"
 #include "talk/p2p/base/transport.h"
 #include "talk/p2p/base/transportchannelimpl.h"
 
@@ -44,7 +44,7 @@ TransportChannelProxy::TransportChannelProxy(const std::string& content_name,
     : TransportChannel(content_name, component),
       name_(name),
       impl_(NULL) {
-  worker_thread_ = talk_base::Thread::Current();
+  worker_thread_ = rtc::Thread::Current();
 }
 
 TransportChannelProxy::~TransportChannelProxy() {
@@ -55,7 +55,7 @@ TransportChannelProxy::~TransportChannelProxy() {
 }
 
 void TransportChannelProxy::SetImplementation(TransportChannelImpl* impl) {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  ASSERT(rtc::Thread::Current() == worker_thread_);
 
   if (impl == impl_) {
     // Ignore if the |impl| has already been set.
@@ -101,9 +101,9 @@ void TransportChannelProxy::SetImplementation(TransportChannelImpl* impl) {
 }
 
 int TransportChannelProxy::SendPacket(const char* data, size_t len,
-                                      const talk_base::PacketOptions& options,
+                                      const rtc::PacketOptions& options,
                                       int flags) {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   // Fail if we don't have an impl yet.
   if (!impl_) {
     return -1;
@@ -111,8 +111,8 @@ int TransportChannelProxy::SendPacket(const char* data, size_t len,
   return impl_->SendPacket(data, len, options, flags);
 }
 
-int TransportChannelProxy::SetOption(talk_base::Socket::Option opt, int value) {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+int TransportChannelProxy::SetOption(rtc::Socket::Option opt, int value) {
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   if (!impl_) {
     pending_options_.push_back(OptionPair(opt, value));
     return 0;
@@ -121,7 +121,7 @@ int TransportChannelProxy::SetOption(talk_base::Socket::Option opt, int value) {
 }
 
 int TransportChannelProxy::GetError() {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   if (!impl_) {
     return 0;
   }
@@ -129,7 +129,7 @@ int TransportChannelProxy::GetError() {
 }
 
 bool TransportChannelProxy::GetStats(ConnectionInfos* infos) {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   if (!impl_) {
     return false;
   }
@@ -137,23 +137,23 @@ bool TransportChannelProxy::GetStats(ConnectionInfos* infos) {
 }
 
 bool TransportChannelProxy::IsDtlsActive() const {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   if (!impl_) {
     return false;
   }
   return impl_->IsDtlsActive();
 }
 
-bool TransportChannelProxy::GetSslRole(talk_base::SSLRole* role) const {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+bool TransportChannelProxy::GetSslRole(rtc::SSLRole* role) const {
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   if (!impl_) {
     return false;
   }
   return impl_->GetSslRole(role);
 }
 
-bool TransportChannelProxy::SetSslRole(talk_base::SSLRole role) {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+bool TransportChannelProxy::SetSslRole(rtc::SSLRole role) {
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   if (!impl_) {
     return false;
   }
@@ -162,7 +162,7 @@ bool TransportChannelProxy::SetSslRole(talk_base::SSLRole role) {
 
 bool TransportChannelProxy::SetSrtpCiphers(const std::vector<std::string>&
                                            ciphers) {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   pending_srtp_ciphers_ = ciphers;  // Cache so we can send later, but always
                                     // set so it stays consistent.
   if (impl_) {
@@ -172,7 +172,7 @@ bool TransportChannelProxy::SetSrtpCiphers(const std::vector<std::string>&
 }
 
 bool TransportChannelProxy::GetSrtpCipher(std::string* cipher) {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   if (!impl_) {
     return false;
   }
@@ -180,8 +180,8 @@ bool TransportChannelProxy::GetSrtpCipher(std::string* cipher) {
 }
 
 bool TransportChannelProxy::GetLocalIdentity(
-    talk_base::SSLIdentity** identity) const {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+    rtc::SSLIdentity** identity) const {
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   if (!impl_) {
     return false;
   }
@@ -189,8 +189,8 @@ bool TransportChannelProxy::GetLocalIdentity(
 }
 
 bool TransportChannelProxy::GetRemoteCertificate(
-    talk_base::SSLCertificate** cert) const {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+    rtc::SSLCertificate** cert) const {
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   if (!impl_) {
     return false;
   }
@@ -203,7 +203,7 @@ bool TransportChannelProxy::ExportKeyingMaterial(const std::string& label,
                                                  bool use_context,
                                                  uint8* result,
                                                  size_t result_len) {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   if (!impl_) {
     return false;
   }
@@ -212,7 +212,7 @@ bool TransportChannelProxy::ExportKeyingMaterial(const std::string& label,
 }
 
 IceRole TransportChannelProxy::GetIceRole() const {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   if (!impl_) {
     return ICEROLE_UNKNOWN;
   }
@@ -220,14 +220,14 @@ IceRole TransportChannelProxy::GetIceRole() const {
 }
 
 void TransportChannelProxy::OnReadableState(TransportChannel* channel) {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   ASSERT(channel == impl_);
   set_readable(impl_->readable());
   // Note: SignalReadableState fired by set_readable.
 }
 
 void TransportChannelProxy::OnWritableState(TransportChannel* channel) {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   ASSERT(channel == impl_);
   set_writable(impl_->writable());
   // Note: SignalWritableState fired by set_readable.
@@ -235,27 +235,27 @@ void TransportChannelProxy::OnWritableState(TransportChannel* channel) {
 
 void TransportChannelProxy::OnReadPacket(
     TransportChannel* channel, const char* data, size_t size,
-    const talk_base::PacketTime& packet_time, int flags) {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+    const rtc::PacketTime& packet_time, int flags) {
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   ASSERT(channel == impl_);
   SignalReadPacket(this, data, size, packet_time, flags);
 }
 
 void TransportChannelProxy::OnReadyToSend(TransportChannel* channel) {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   ASSERT(channel == impl_);
   SignalReadyToSend(this);
 }
 
 void TransportChannelProxy::OnRouteChange(TransportChannel* channel,
                                           const Candidate& candidate) {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   ASSERT(channel == impl_);
   SignalRouteChange(this, candidate);
 }
 
-void TransportChannelProxy::OnMessage(talk_base::Message* msg) {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+void TransportChannelProxy::OnMessage(rtc::Message* msg) {
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   if (msg->message_id == MSG_UPDATESTATE) {
      // If impl_ is already readable or writable, push up those signals.
      set_readable(impl_ ? impl_->readable() : false);

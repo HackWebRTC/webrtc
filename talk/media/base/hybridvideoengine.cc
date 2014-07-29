@@ -27,7 +27,7 @@
 
 #include "talk/media/base/hybridvideoengine.h"
 
-#include "talk/base/logging.h"
+#include "webrtc/base/logging.h"
 
 namespace cricket {
 
@@ -281,7 +281,7 @@ bool HybridVideoMediaChannel::GetStats(
 }
 
 void HybridVideoMediaChannel::OnPacketReceived(
-    talk_base::Buffer* packet, const talk_base::PacketTime& packet_time) {
+    rtc::Buffer* packet, const rtc::PacketTime& packet_time) {
   // Eat packets until we have an active channel;
   if (active_channel_) {
     active_channel_->OnPacketReceived(packet, packet_time);
@@ -291,7 +291,7 @@ void HybridVideoMediaChannel::OnPacketReceived(
 }
 
 void HybridVideoMediaChannel::OnRtcpReceived(
-    talk_base::Buffer* packet, const talk_base::PacketTime& packet_time) {
+    rtc::Buffer* packet, const rtc::PacketTime& packet_time) {
   // Eat packets until we have an active channel;
   if (active_channel_) {
     active_channel_->OnRtcpReceived(packet, packet_time);

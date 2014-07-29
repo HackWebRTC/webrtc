@@ -30,8 +30,8 @@
 
 #include <string>
 
-#include "talk/base/asyncudpsocket.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/asyncudpsocket.h"
+#include "webrtc/base/thread.h"
 #include "talk/p2p/base/basicpacketsocketfactory.h"
 #include "talk/p2p/base/stun.h"
 #include "talk/p2p/base/turnserver.h"
@@ -43,12 +43,12 @@ static const char kTestSoftware[] = "TestTurnServer";
 
 class TestTurnServer : public TurnAuthInterface {
  public:
-  TestTurnServer(talk_base::Thread* thread,
-                 const talk_base::SocketAddress& udp_int_addr,
-                 const talk_base::SocketAddress& udp_ext_addr)
+  TestTurnServer(rtc::Thread* thread,
+                 const rtc::SocketAddress& udp_int_addr,
+                 const rtc::SocketAddress& udp_ext_addr)
       : server_(thread) {
     AddInternalSocket(udp_int_addr, cricket::PROTO_UDP);
-    server_.SetExternalSocketFactory(new talk_base::BasicPacketSocketFactory(),
+    server_.SetExternalSocketFactory(new rtc::BasicPacketSocketFactory(),
         udp_ext_addr);
     server_.set_realm(kTestRealm);
     server_.set_software(kTestSoftware);
@@ -61,16 +61,16 @@ class TestTurnServer : public TurnAuthInterface {
 
   TurnServer* server() { return &server_; }
 
-  void AddInternalSocket(const talk_base::SocketAddress& int_addr,
+  void AddInternalSocket(const rtc::SocketAddress& int_addr,
                          ProtocolType proto) {
-    talk_base::Thread* thread = talk_base::Thread::Current();
+    rtc::Thread* thread = rtc::Thread::Current();
     if (proto == cricket::PROTO_UDP) {
-      server_.AddInternalSocket(talk_base::AsyncUDPSocket::Create(
+      server_.AddInternalSocket(rtc::AsyncUDPSocket::Create(
           thread->socketserver(), int_addr), proto);
     } else if (proto == cricket::PROTO_TCP) {
       // For TCP we need to create a server socket which can listen for incoming
       // new connections.
-      talk_base::AsyncSocket* socket =
+      rtc::AsyncSocket* socket =
           thread->socketserver()->CreateAsyncSocket(SOCK_STREAM);
       socket->Bind(int_addr);
       socket->Listen(5);

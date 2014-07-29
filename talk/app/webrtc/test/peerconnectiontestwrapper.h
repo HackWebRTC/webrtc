@@ -32,8 +32,8 @@
 #include "talk/app/webrtc/test/fakeaudiocapturemodule.h"
 #include "talk/app/webrtc/test/fakeconstraints.h"
 #include "talk/app/webrtc/test/fakevideotrackrenderer.h"
-#include "talk/base/sigslot.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/thread.h"
 
 namespace webrtc {
 class PortAllocatorFactoryInterface;
@@ -52,7 +52,7 @@ class PeerConnectionTestWrapper
 
   bool CreatePc(const webrtc::MediaConstraintsInterface* constraints);
 
-  talk_base::scoped_refptr<webrtc::DataChannelInterface> CreateDataChannel(
+  rtc::scoped_refptr<webrtc::DataChannelInterface> CreateDataChannel(
       const std::string& label,
       const webrtc::DataChannelInit& init);
 
@@ -106,19 +106,19 @@ class PeerConnectionTestWrapper
   bool CheckForConnection();
   bool CheckForAudio();
   bool CheckForVideo();
-  talk_base::scoped_refptr<webrtc::MediaStreamInterface> GetUserMedia(
+  rtc::scoped_refptr<webrtc::MediaStreamInterface> GetUserMedia(
       bool audio, const webrtc::FakeConstraints& audio_constraints,
       bool video, const webrtc::FakeConstraints& video_constraints);
 
   std::string name_;
-  talk_base::Thread audio_thread_;
-  talk_base::scoped_refptr<webrtc::PortAllocatorFactoryInterface>
+  rtc::Thread audio_thread_;
+  rtc::scoped_refptr<webrtc::PortAllocatorFactoryInterface>
       allocator_factory_;
-  talk_base::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
-  talk_base::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
+  rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
+  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
       peer_connection_factory_;
-  talk_base::scoped_refptr<FakeAudioCaptureModule> fake_audio_capture_module_;
-  talk_base::scoped_ptr<webrtc::FakeVideoTrackRenderer> renderer_;
+  rtc::scoped_refptr<FakeAudioCaptureModule> fake_audio_capture_module_;
+  rtc::scoped_ptr<webrtc::FakeVideoTrackRenderer> renderer_;
 };
 
 #endif  // TALK_APP_WEBRTC_TEST_PEERCONNECTIONTESTWRAPPER_H_

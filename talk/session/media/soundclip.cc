@@ -33,7 +33,7 @@ enum {
   MSG_PLAYSOUND = 1,
 };
 
-struct PlaySoundMessageData : talk_base::MessageData {
+struct PlaySoundMessageData : rtc::MessageData {
   PlaySoundMessageData(const void *c,
                        int l,
                        SoundclipMedia::SoundclipFlags f)
@@ -49,7 +49,7 @@ struct PlaySoundMessageData : talk_base::MessageData {
   bool result;
 };
 
-Soundclip::Soundclip(talk_base::Thread *thread, SoundclipMedia *soundclip_media)
+Soundclip::Soundclip(rtc::Thread *thread, SoundclipMedia *soundclip_media)
     : worker_thread_(thread),
       soundclip_media_(soundclip_media) {
 }
@@ -70,7 +70,7 @@ bool Soundclip::PlaySound_w(const void *clip,
                                      flags);
 }
 
-void Soundclip::OnMessage(talk_base::Message *message) {
+void Soundclip::OnMessage(rtc::Message *message) {
   ASSERT(message->message_id == MSG_PLAYSOUND);
   PlaySoundMessageData *data =
       static_cast<PlaySoundMessageData *>(message->pdata);

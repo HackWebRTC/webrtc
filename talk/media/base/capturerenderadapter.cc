@@ -27,7 +27,7 @@
 
 #include "talk/media/base/capturerenderadapter.h"
 
-#include "talk/base/logging.h"
+#include "webrtc/base/logging.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videoprocessor.h"
 #include "talk/media/base/videorenderer.h"
@@ -66,7 +66,7 @@ bool CaptureRenderAdapter::AddRenderer(VideoRenderer* video_renderer) {
   if (!video_renderer) {
     return false;
   }
-  talk_base::CritScope cs(&capture_crit_);
+  rtc::CritScope cs(&capture_crit_);
   if (IsRendererRegistered(*video_renderer)) {
     return false;
   }
@@ -78,7 +78,7 @@ bool CaptureRenderAdapter::RemoveRenderer(VideoRenderer* video_renderer) {
   if (!video_renderer) {
     return false;
   }
-  talk_base::CritScope cs(&capture_crit_);
+  rtc::CritScope cs(&capture_crit_);
   for (VideoRenderers::iterator iter = video_renderers_.begin();
        iter != video_renderers_.end(); ++iter) {
     if (video_renderer == iter->renderer) {
@@ -97,7 +97,7 @@ void CaptureRenderAdapter::Init() {
 
 void CaptureRenderAdapter::OnVideoFrame(VideoCapturer* capturer,
                                         const VideoFrame* video_frame) {
-  talk_base::CritScope cs(&capture_crit_);
+  rtc::CritScope cs(&capture_crit_);
   if (video_renderers_.empty()) {
     return;
   }

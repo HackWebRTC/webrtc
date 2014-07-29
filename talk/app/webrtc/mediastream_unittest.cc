@@ -30,9 +30,9 @@
 #include "talk/app/webrtc/audiotrack.h"
 #include "talk/app/webrtc/mediastream.h"
 #include "talk/app/webrtc/videotrack.h"
-#include "talk/base/refcount.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/gunit.h"
+#include "webrtc/base/refcount.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/gunit.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -40,7 +40,7 @@ static const char kStreamLabel1[] = "local_stream_1";
 static const char kVideoTrackId[] = "dummy_video_cam_1";
 static const char kAudioTrackId[] = "dummy_microphone_1";
 
-using talk_base::scoped_refptr;
+using rtc::scoped_refptr;
 using ::testing::Exactly;
 
 namespace webrtc {

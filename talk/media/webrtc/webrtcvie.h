@@ -29,7 +29,7 @@
 #ifndef TALK_MEDIA_WEBRTCVIE_H_
 #define TALK_MEDIA_WEBRTCVIE_H_
 
-#include "talk/base/common.h"
+#include "webrtc/base/common.h"
 #include "talk/media/webrtc/webrtccommon.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/interface/module_common_types.h"

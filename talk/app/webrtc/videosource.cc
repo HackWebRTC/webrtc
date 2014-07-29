@@ -93,10 +93,10 @@ void SetUpperLimitFromConstraint(
     const MediaConstraintsInterface::Constraint& constraint,
     cricket::VideoFormat* format_upper_limit) {
   if (constraint.key == MediaConstraintsInterface::kMaxWidth) {
-    int value = talk_base::FromString<int>(constraint.value);
+    int value = rtc::FromString<int>(constraint.value);
     SetUpperLimit(value, &(format_upper_limit->width));
   } else if (constraint.key == MediaConstraintsInterface::kMaxHeight) {
-    int value = talk_base::FromString<int>(constraint.value);
+    int value = rtc::FromString<int>(constraint.value);
     SetUpperLimit(value, &(format_upper_limit->height));
   }
 }
@@ -131,22 +131,22 @@ bool NewFormatWithConstraints(
   *format_out = format_in;
 
   if (constraint.key == MediaConstraintsInterface::kMinWidth) {
-    int value = talk_base::FromString<int>(constraint.value);
+    int value = rtc::FromString<int>(constraint.value);
     return (value <= format_in.width);
   } else if (constraint.key == MediaConstraintsInterface::kMaxWidth) {
-    int value = talk_base::FromString<int>(constraint.value);
+    int value = rtc::FromString<int>(constraint.value);
     return (value >= format_in.width);
   } else if (constraint.key == MediaConstraintsInterface::kMinHeight) {
-    int value = talk_base::FromString<int>(constraint.value);
+    int value = rtc::FromString<int>(constraint.value);
     return (value <= format_in.height);
   } else if (constraint.key == MediaConstraintsInterface::kMaxHeight) {
-    int value = talk_base::FromString<int>(constraint.value);
+    int value = rtc::FromString<int>(constraint.value);
     return (value >= format_in.height);
   } else if (constraint.key == MediaConstraintsInterface::kMinFrameRate) {
-    int value = talk_base::FromString<int>(constraint.value);
+    int value = rtc::FromString<int>(constraint.value);
     return (value <= cricket::VideoFormat::IntervalToFps(format_in.interval));
   } else if (constraint.key == MediaConstraintsInterface::kMaxFrameRate) {
-    int value = talk_base::FromString<int>(constraint.value);
+    int value = rtc::FromString<int>(constraint.value);
     if (value == 0) {
       if (mandatory) {
         // TODO(ronghuawu): Convert the constraint value to float when sub-1fps
@@ -163,7 +163,7 @@ bool NewFormatWithConstraints(
       return false;
     }
   } else if (constraint.key == MediaConstraintsInterface::kMinAspectRatio) {
-    double value = talk_base::FromString<double>(constraint.value);
+    double value = rtc::FromString<double>(constraint.value);
     // The aspect ratio in |constraint.value| has been converted to a string and
     // back to a double, so it may have a rounding error.
     // E.g if the value 1/3 is converted to a string, the string will not have
@@ -173,7 +173,7 @@ bool NewFormatWithConstraints(
     double ratio = static_cast<double>(format_in.width) / format_in.height;
     return  (value <= ratio + kRoundingTruncation);
   } else if (constraint.key == MediaConstraintsInterface::kMaxAspectRatio) {
-    double value = talk_base::FromString<double>(constraint.value);
+    double value = rtc::FromString<double>(constraint.value);
     double ratio = static_cast<double>(format_in.width) / format_in.height;
     // Subtract 0.0005 to avoid rounding problems. Same as above.
     const double kRoundingTruncation = 0.0005;
@@ -337,14 +337,14 @@ class FrameInputWrapper : public cricket::VideoRenderer {
 
 namespace webrtc {
 
-talk_base::scoped_refptr<VideoSource> VideoSource::Create(
+rtc::scoped_refptr<VideoSource> VideoSource::Create(
     cricket::ChannelManager* channel_manager,
     cricket::VideoCapturer* capturer,
     const webrtc::MediaConstraintsInterface* constraints) {
   ASSERT(channel_manager != NULL);
   ASSERT(capturer != NULL);
-  talk_base::scoped_refptr<VideoSource> source(
-      new talk_base::RefCountedObject<VideoSource>(channel_manager,
+  rtc::scoped_refptr<VideoSource> source(
+      new rtc::RefCountedObject<VideoSource>(channel_manager,
                                                    capturer));
   source->Initialize(constraints);
   return source;

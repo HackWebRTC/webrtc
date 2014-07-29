@@ -31,8 +31,8 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/logging.h"
-#include "talk/base/scoped_ptr.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "talk/xmpp/jid.h"
 #include "talk/xmpp/xmppengine.h"
 
@@ -87,15 +87,15 @@ private:
   const XmlElement * pelStanza_;
   bool isStart_;
   std::string iqId_;
-  talk_base::scoped_ptr<XmlElement> pelFeatures_;
+  rtc::scoped_ptr<XmlElement> pelFeatures_;
   Jid fullJid_;
   std::string streamId_;
-  talk_base::scoped_ptr<std::vector<XmlElement *> > pvecQueuedStanzas_;
+  rtc::scoped_ptr<std::vector<XmlElement *> > pvecQueuedStanzas_;
 
-  talk_base::scoped_ptr<SaslMechanism> sasl_mech_;
+  rtc::scoped_ptr<SaslMechanism> sasl_mech_;
 
 #ifdef _DEBUG
-  static const talk_base::ConstantLabel LOGINTASK_STATES[];
+  static const rtc::ConstantLabel LOGINTASK_STATES[];
 #endif  // _DEBUG
 };
 

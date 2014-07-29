@@ -25,21 +25,21 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/base/logging.h"
-#include "talk/base/gunit.h"
-#include "talk/base/helpers.h"
-#include "talk/base/physicalsocketserver.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/socketadapters.h"
-#include "talk/base/socketaddress.h"
-#include "talk/base/ssladapter.h"
-#include "talk/base/thread.h"
-#include "talk/base/virtualsocketserver.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/physicalsocketserver.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/socketadapters.h"
+#include "webrtc/base/socketaddress.h"
+#include "webrtc/base/ssladapter.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/base/virtualsocketserver.h"
 #include "talk/p2p/base/basicpacketsocketfactory.h"
 #include "talk/p2p/base/relayport.h"
 #include "talk/p2p/base/relayserver.h"
 
-using talk_base::SocketAddress;
+using rtc::SocketAddress;
 
 static const SocketAddress kLocalAddress = SocketAddress("192.168.1.2", 0);
 static const SocketAddress kRelayUdpAddr = SocketAddress("99.99.99.1", 5000);
@@ -61,15 +61,15 @@ class RelayPortTest : public testing::Test,
                       public sigslot::has_slots<> {
  public:
   RelayPortTest()
-      : main_(talk_base::Thread::Current()),
-        physical_socket_server_(new talk_base::PhysicalSocketServer),
-        virtual_socket_server_(new talk_base::VirtualSocketServer(
+      : main_(rtc::Thread::Current()),
+        physical_socket_server_(new rtc::PhysicalSocketServer),
+        virtual_socket_server_(new rtc::VirtualSocketServer(
             physical_socket_server_.get())),
         ss_scope_(virtual_socket_server_.get()),
-        network_("unittest", "unittest", talk_base::IPAddress(INADDR_ANY), 32),
-        socket_factory_(talk_base::Thread::Current()),
-        username_(talk_base::CreateRandomString(16)),
-        password_(talk_base::CreateRandomString(16)),
+        network_("unittest", "unittest", rtc::IPAddress(INADDR_ANY), 32),
+        socket_factory_(rtc::Thread::Current()),
+        username_(rtc::CreateRandomString(16)),
+        password_(rtc::CreateRandomString(16)),
         relay_port_(cricket::RelayPort::Create(main_, &socket_factory_,
                                                &network_,
                                                kLocalAddress.ipaddr(),
@@ -77,10 +77,10 @@ class RelayPortTest : public testing::Test,
         relay_server_(new cricket::RelayServer(main_)) {
   }
 
-  void OnReadPacket(talk_base::AsyncPacketSocket* socket,
+  void OnReadPacket(rtc::AsyncPacketSocket* socket,
                     const char* data, size_t size,
-                    const talk_base::SocketAddress& remote_addr,
-                    const talk_base::PacketTime& packet_time) {
+                    const rtc::SocketAddress& remote_addr,
+                    const rtc::PacketTime& packet_time) {
     received_packet_count_[socket]++;
   }
 
@@ -94,17 +94,17 @@ class RelayPortTest : public testing::Test,
 
  protected:
   static void SetUpTestCase() {
-    talk_base::InitializeSSL();
+    rtc::InitializeSSL();
   }
 
   static void TearDownTestCase() {
-    talk_base::CleanupSSL();
+    rtc::CleanupSSL();
   }
 
 
   virtual void SetUp() {
     // The relay server needs an external socket to work properly.
-    talk_base::AsyncUDPSocket* ext_socket =
+    rtc::AsyncUDPSocket* ext_socket =
         CreateAsyncUdpSocket(kRelayExtAddr);
     relay_server_->AddExternalSocket(ext_socket);
 
@@ -126,9 +126,9 @@ class RelayPortTest : public testing::Test,
   // abort any other connection attempts.
   void TestConnectUdp() {
     // Add a UDP socket to the relay server.
-    talk_base::AsyncUDPSocket* internal_udp_socket =
+    rtc::AsyncUDPSocket* internal_udp_socket =
         CreateAsyncUdpSocket(kRelayUdpAddr);
-    talk_base::AsyncSocket* server_socket = CreateServerSocket(kRelayTcpAddr);
+    rtc::AsyncSocket* server_socket = CreateServerSocket(kRelayTcpAddr);
 
     relay_server_->AddInternalSocket(internal_udp_socket);
     relay_server_->AddInternalServerSocket(server_socket, cricket::PROTO_TCP);
@@ -165,7 +165,7 @@ class RelayPortTest : public testing::Test,
         cricket::ProtocolAddress(kRelayUdpAddr, cricket::PROTO_UDP);
 
     // Create a server socket for the RelayServer.
-    talk_base::AsyncSocket* server_socket = CreateServerSocket(kRelayTcpAddr);
+    rtc::AsyncSocket* server_socket = CreateServerSocket(kRelayTcpAddr);
     relay_server_->AddInternalServerSocket(server_socket, cricket::PROTO_TCP);
 
     // Add server addresses to the relay port and let it start.
@@ -198,14 +198,14 @@ class RelayPortTest : public testing::Test,
         cricket::ProtocolAddress(kRelayTcpAddr, cricket::PROTO_TCP);
 
     // Create a ssl server socket for the RelayServer.
-    talk_base::AsyncSocket* ssl_server_socket =
+    rtc::AsyncSocket* ssl_server_socket =
         CreateServerSocket(kRelaySslAddr);
     relay_server_->AddInternalServerSocket(ssl_server_socket,
                                            cricket::PROTO_SSLTCP);
 
     // Create a tcp server socket that listens on the fake address so
     // the relay port can attempt to connect to it.
-    talk_base::scoped_ptr<talk_base::AsyncSocket> tcp_server_socket(
+    rtc::scoped_ptr<rtc::AsyncSocket> tcp_server_socket(
         CreateServerSocket(kRelayTcpAddr));
 
     // Add server addresses to the relay port and let it start.
@@ -229,18 +229,18 @@ class RelayPortTest : public testing::Test,
   }
 
  private:
-  talk_base::AsyncUDPSocket* CreateAsyncUdpSocket(const SocketAddress addr) {
-    talk_base::AsyncSocket* socket =
+  rtc::AsyncUDPSocket* CreateAsyncUdpSocket(const SocketAddress addr) {
+    rtc::AsyncSocket* socket =
         virtual_socket_server_->CreateAsyncSocket(SOCK_DGRAM);
-    talk_base::AsyncUDPSocket* packet_socket =
-        talk_base::AsyncUDPSocket::Create(socket, addr);
+    rtc::AsyncUDPSocket* packet_socket =
+        rtc::AsyncUDPSocket::Create(socket, addr);
     EXPECT_TRUE(packet_socket != NULL);
     packet_socket->SignalReadPacket.connect(this, &RelayPortTest::OnReadPacket);
     return packet_socket;
   }
 
-  talk_base::AsyncSocket* CreateServerSocket(const SocketAddress addr) {
-    talk_base::AsyncSocket* socket =
+  rtc::AsyncSocket* CreateServerSocket(const SocketAddress addr) {
+    rtc::AsyncSocket* socket =
         virtual_socket_server_->CreateAsyncSocket(SOCK_STREAM);
     EXPECT_GE(socket->Bind(addr), 0);
     EXPECT_GE(socket->Listen(5), 0);
@@ -267,19 +267,19 @@ class RelayPortTest : public testing::Test,
     return false;
   }
 
-  typedef std::map<talk_base::AsyncPacketSocket*, int> PacketMap;
+  typedef std::map<rtc::AsyncPacketSocket*, int> PacketMap;
 
-  talk_base::Thread* main_;
-  talk_base::scoped_ptr<talk_base::PhysicalSocketServer>
+  rtc::Thread* main_;
+  rtc::scoped_ptr<rtc::PhysicalSocketServer>
       physical_socket_server_;
-  talk_base::scoped_ptr<talk_base::VirtualSocketServer> virtual_socket_server_;
-  talk_base::SocketServerScope ss_scope_;
-  talk_base::Network network_;
-  talk_base::BasicPacketSocketFactory socket_factory_;
+  rtc::scoped_ptr<rtc::VirtualSocketServer> virtual_socket_server_;
+  rtc::SocketServerScope ss_scope_;
+  rtc::Network network_;
+  rtc::BasicPacketSocketFactory socket_factory_;
   std::string username_;
   std::string password_;
-  talk_base::scoped_ptr<cricket::RelayPort> relay_port_;
-  talk_base::scoped_ptr<cricket::RelayServer> relay_server_;
+  rtc::scoped_ptr<cricket::RelayPort> relay_port_;
+  rtc::scoped_ptr<cricket::RelayServer> relay_server_;
   std::vector<cricket::ProtocolAddress> failed_connections_;
   std::vector<cricket::ProtocolAddress> soft_timedout_connections_;
   PacketMap received_packet_count_;

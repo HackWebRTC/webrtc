@@ -28,7 +28,7 @@
 #ifndef TALK_MEDIA_BASE_MUTEDVIDEOCAPTURER_H_
 #define TALK_MEDIA_BASE_MUTEDVIDEOCAPTURER_H_
 
-#include "talk/base/thread.h"
+#include "webrtc/base/thread.h"
 #include "talk/media/base/videocapturer.h"
 
 namespace cricket {
@@ -52,7 +52,7 @@ class MutedVideoCapturer : public VideoCapturer {
  protected:
   void OnMutedFrame(VideoFrame* muted_frame);
 
-  talk_base::scoped_ptr<MutedFramesGenerator> frame_generator_;
+  rtc::scoped_ptr<MutedFramesGenerator> frame_generator_;
 };
 
 }  // namespace cricket

@@ -32,17 +32,17 @@
 #endif
 
 #include <errno.h>
-#include "talk/base/basicdefs.h"
-#include "talk/base/logging.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/basicdefs.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/thread.h"
 #ifdef FEATURE_ENABLE_SSL
-#include "talk/base/ssladapter.h"
+#include "webrtc/base/ssladapter.h"
 #endif
 
 #ifdef USE_SSLSTREAM
-#include "talk/base/socketstream.h"
+#include "webrtc/base/socketstream.h"
 #ifdef FEATURE_ENABLE_SSL
-#include "talk/base/sslstreamadapter.h"
+#include "webrtc/base/sslstreamadapter.h"
 #endif  // FEATURE_ENABLE_SSL
 #endif  // USE_SSLSTREAM
 
@@ -54,16 +54,16 @@ XmppSocket::XmppSocket(buzz::TlsOptions tls) : cricket_socket_(NULL),
 }
 
 void XmppSocket::CreateCricketSocket(int family) {
-  talk_base::Thread* pth = talk_base::Thread::Current();
+  rtc::Thread* pth = rtc::Thread::Current();
   if (family == AF_UNSPEC) {
     family = AF_INET;
   }
-  talk_base::AsyncSocket* socket =
+  rtc::AsyncSocket* socket =
       pth->socketserver()->CreateAsyncSocket(family, SOCK_STREAM);
 #ifndef USE_SSLSTREAM
 #ifdef FEATURE_ENABLE_SSL
   if (tls_ != buzz::TLS_DISABLED) {
-    socket = talk_base::SSLAdapter::Create(socket);
+    socket = rtc::SSLAdapter::Create(socket);
   }
 #endif  // FEATURE_ENABLE_SSL
   cricket_socket_ = socket;
@@ -74,10 +74,10 @@ void XmppSocket::CreateCricketSocket(int family) {
   cricket_socket_->SignalCloseEvent.connect(this, &XmppSocket::OnCloseEvent);
 #else  // USE_SSLSTREAM
   cricket_socket_ = socket;
-  stream_ = new talk_base::SocketStream(cricket_socket_);
+  stream_ = new rtc::SocketStream(cricket_socket_);
 #ifdef FEATURE_ENABLE_SSL
   if (tls_ != buzz::TLS_DISABLED)
-    stream_ = talk_base::SSLStreamAdapter::Create(stream_);
+    stream_ = rtc::SSLStreamAdapter::Create(stream_);
 #endif  // FEATURE_ENABLE_SSL
   stream_->SignalEvent.connect(this, &XmppSocket::OnEvent);
 #endif  // USE_SSLSTREAM
@@ -93,11 +93,11 @@ XmppSocket::~XmppSocket() {
 }
 
 #ifndef USE_SSLSTREAM
-void XmppSocket::OnReadEvent(talk_base::AsyncSocket * socket) {
+void XmppSocket::OnReadEvent(rtc::AsyncSocket * socket) {
   SignalRead();
 }
 
-void XmppSocket::OnWriteEvent(talk_base::AsyncSocket * socket) {
+void XmppSocket::OnWriteEvent(rtc::AsyncSocket * socket) {
   // Write bytes if there are any
   while (buffer_.Length() != 0) {
     int written = cricket_socket_->Send(buffer_.Data(), buffer_.Length());
@@ -111,7 +111,7 @@ void XmppSocket::OnWriteEvent(talk_base::AsyncSocket * socket) {
   }
 }
 
-void XmppSocket::OnConnectEvent(talk_base::AsyncSocket * socket) {
+void XmppSocket::OnConnectEvent(rtc::AsyncSocket * socket) {
 #if defined(FEATURE_ENABLE_SSL)
   if (state_ == buzz::AsyncSocket::STATE_TLS_CONNECTING) {
     state_ = buzz::AsyncSocket::STATE_TLS_OPEN;
@@ -124,20 +124,20 @@ void XmppSocket::OnConnectEvent(talk_base::AsyncSocket * socket) {
   SignalConnected();
 }
 
-void XmppSocket::OnCloseEvent(talk_base::AsyncSocket * socket, int error) {
+void XmppSocket::OnCloseEvent(rtc::AsyncSocket * socket, int error) {
   SignalCloseEvent(error);
 }
 
 #else  // USE_SSLSTREAM
 
-void XmppSocket::OnEvent(talk_base::StreamInterface* stream,
+void XmppSocket::OnEvent(rtc::StreamInterface* stream,
                          int events, int err) {
-  if ((events & talk_base::SE_OPEN)) {
+  if ((events & rtc::SE_OPEN)) {
 #if defined(FEATURE_ENABLE_SSL)
     if (state_ == buzz::AsyncSocket::STATE_TLS_CONNECTING) {
       state_ = buzz::AsyncSocket::STATE_TLS_OPEN;
       SignalSSLConnected();
-      events |= talk_base::SE_WRITE;
+      events |= rtc::SE_WRITE;
     } else
 #endif
     {
@@ -145,28 +145,28 @@ void XmppSocket::OnEvent(talk_base::StreamInterface* stream,
       SignalConnected();
     }
   }
-  if ((events & talk_base::SE_READ))
+  if ((events & rtc::SE_READ))
     SignalRead();
-  if ((events & talk_base::SE_WRITE)) {
+  if ((events & rtc::SE_WRITE)) {
     // Write bytes if there are any
     while (buffer_.Length() != 0) {
-      talk_base::StreamResult result;
+      rtc::StreamResult result;
       size_t written;
       int error;
       result = stream_->Write(buffer_.Data(), buffer_.Length(),
                               &written, &error);
-      if (result == talk_base::SR_ERROR) {
+      if (result == rtc::SR_ERROR) {
         LOG(LS_ERROR) << "Send error: " << error;
         return;
       }
-      if (result == talk_base::SR_BLOCK)
+      if (result == rtc::SR_BLOCK)
         return;
-      ASSERT(result == talk_base::SR_SUCCESS);
+      ASSERT(result == rtc::SR_SUCCESS);
       ASSERT(written > 0);
       buffer_.Shift(written);
     }
   }
-  if ((events & talk_base::SE_CLOSE))
+  if ((events & rtc::SE_CLOSE))
     SignalCloseEvent(err);
 }
 #endif  // USE_SSLSTREAM
@@ -183,7 +183,7 @@ int XmppSocket::GetError() {
   return 0;
 }
 
-bool XmppSocket::Connect(const talk_base::SocketAddress& addr) {
+bool XmppSocket::Connect(const rtc::SocketAddress& addr) {
   if (cricket_socket_ == NULL) {
     CreateCricketSocket(addr.family());
   }
@@ -201,8 +201,8 @@ bool XmppSocket::Read(char * data, size_t len, size_t* len_read) {
     return true;
   }
 #else  // USE_SSLSTREAM
-  talk_base::StreamResult result = stream_->Read(data, len, len_read, NULL);
-  if (result == talk_base::SR_SUCCESS)
+  rtc::StreamResult result = stream_->Read(data, len, len_read, NULL);
+  if (result == rtc::SR_SUCCESS)
     return true;
 #endif  // USE_SSLSTREAM
   return false;
@@ -213,7 +213,7 @@ bool XmppSocket::Write(const char * data, size_t len) {
 #ifndef USE_SSLSTREAM
   OnWriteEvent(cricket_socket_);
 #else  // USE_SSLSTREAM
-  OnEvent(stream_, talk_base::SE_WRITE, 0);
+  OnEvent(stream_, rtc::SE_WRITE, 0);
 #endif  // USE_SSLSTREAM
   return true;
 }
@@ -241,13 +241,13 @@ bool XmppSocket::StartTls(const std::string & domainname) {
   if (tls_ == buzz::TLS_DISABLED)
     return false;
 #ifndef USE_SSLSTREAM
-  talk_base::SSLAdapter* ssl_adapter =
-    static_cast<talk_base::SSLAdapter *>(cricket_socket_);
+  rtc::SSLAdapter* ssl_adapter =
+    static_cast<rtc::SSLAdapter *>(cricket_socket_);
   if (ssl_adapter->StartSSL(domainname.c_str(), false) != 0)
     return false;
 #else  // USE_SSLSTREAM
-  talk_base::SSLStreamAdapter* ssl_stream =
-    static_cast<talk_base::SSLStreamAdapter *>(stream_);
+  rtc::SSLStreamAdapter* ssl_stream =
+    static_cast<rtc::SSLStreamAdapter *>(stream_);
   if (ssl_stream->StartSSLWithServer(domainname.c_str()) != 0)
     return false;
 #endif  // USE_SSLSTREAM

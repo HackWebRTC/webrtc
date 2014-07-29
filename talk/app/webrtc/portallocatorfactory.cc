@@ -27,27 +27,27 @@
 
 #include "talk/app/webrtc/portallocatorfactory.h"
 
-#include "talk/base/logging.h"
-#include "talk/base/network.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/network.h"
+#include "webrtc/base/thread.h"
 #include "talk/p2p/base/basicpacketsocketfactory.h"
 #include "talk/p2p/client/basicportallocator.h"
 
 namespace webrtc {
 
-using talk_base::scoped_ptr;
+using rtc::scoped_ptr;
 
-talk_base::scoped_refptr<PortAllocatorFactoryInterface>
+rtc::scoped_refptr<PortAllocatorFactoryInterface>
 PortAllocatorFactory::Create(
-    talk_base::Thread* worker_thread) {
-  talk_base::RefCountedObject<PortAllocatorFactory>* allocator =
-        new talk_base::RefCountedObject<PortAllocatorFactory>(worker_thread);
+    rtc::Thread* worker_thread) {
+  rtc::RefCountedObject<PortAllocatorFactory>* allocator =
+        new rtc::RefCountedObject<PortAllocatorFactory>(worker_thread);
   return allocator;
 }
 
-PortAllocatorFactory::PortAllocatorFactory(talk_base::Thread* worker_thread)
-    : network_manager_(new talk_base::BasicNetworkManager()),
-      socket_factory_(new talk_base::BasicPacketSocketFactory(worker_thread)) {
+PortAllocatorFactory::PortAllocatorFactory(rtc::Thread* worker_thread)
+    : network_manager_(new rtc::BasicNetworkManager()),
+      socket_factory_(new rtc::BasicPacketSocketFactory(worker_thread)) {
 }
 
 PortAllocatorFactory::~PortAllocatorFactory() {}

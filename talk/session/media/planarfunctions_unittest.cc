@@ -31,9 +31,9 @@
 #include "libyuv/format_conversion.h"
 #include "libyuv/mjpeg_decoder.h"
 #include "libyuv/planar_functions.h"
-#include "talk/base/flags.h"
-#include "talk/base/gunit.h"
-#include "talk/base/scoped_ptr.h"
+#include "webrtc/base/flags.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "talk/media/base/testutils.h"
 #include "talk/media/base/videocommon.h"
 
@@ -512,12 +512,12 @@ class PlanarFunctionsTest : public testing::TestWithParam<int> {
   int repeat_;
 
   // Y, U, V and R, G, B channels of testing colors.
-  talk_base::scoped_ptr<uint8[]> testing_color_y_;
-  talk_base::scoped_ptr<uint8[]> testing_color_u_;
-  talk_base::scoped_ptr<uint8[]> testing_color_v_;
-  talk_base::scoped_ptr<uint8[]> testing_color_r_;
-  talk_base::scoped_ptr<uint8[]> testing_color_g_;
-  talk_base::scoped_ptr<uint8[]> testing_color_b_;
+  rtc::scoped_ptr<uint8[]> testing_color_y_;
+  rtc::scoped_ptr<uint8[]> testing_color_u_;
+  rtc::scoped_ptr<uint8[]> testing_color_v_;
+  rtc::scoped_ptr<uint8[]> testing_color_r_;
+  rtc::scoped_ptr<uint8[]> testing_color_g_;
+  rtc::scoped_ptr<uint8[]> testing_color_b_;
 };
 
 TEST_F(PlanarFunctionsTest, I420Copy) {
@@ -529,12 +529,12 @@ TEST_F(PlanarFunctionsTest, I420Copy) {
   int uv_size = ((kHeight + 1) >> 1) * ((kWidth + 1) >> 1);
   int block_size = 3;
   // Generate a fake input image.
-  talk_base::scoped_ptr<uint8[]> yuv_input(
+  rtc::scoped_ptr<uint8[]> yuv_input(
       CreateFakeYuvTestingImage(kHeight, kWidth, block_size,
                                 libyuv::kJpegYuv420,
                                 y_pointer, u_pointer, v_pointer));
   // Allocate space for the output image.
-  talk_base::scoped_ptr<uint8[]> yuv_output(
+  rtc::scoped_ptr<uint8[]> yuv_output(
       new uint8[I420_SIZE(kHeight, kWidth) + kAlignment]);
   uint8 *y_output_pointer = ALIGNP(yuv_output.get(), kAlignment);
   uint8 *u_output_pointer = y_output_pointer + y_size;
@@ -566,12 +566,12 @@ TEST_F(PlanarFunctionsTest, I422ToI420) {
   int uv_size = ((kHeight + 1) >> 1) * ((kWidth + 1) >> 1);
   int block_size = 2;
   // Generate a fake input image.
-  talk_base::scoped_ptr<uint8[]> yuv_input(
+  rtc::scoped_ptr<uint8[]> yuv_input(
       CreateFakeYuvTestingImage(kHeight, kWidth, block_size,
                                 libyuv::kJpegYuv422,
                                 y_pointer, u_pointer, v_pointer));
   // Allocate space for the output image.
-  talk_base::scoped_ptr<uint8[]> yuv_output(
+  rtc::scoped_ptr<uint8[]> yuv_output(
       new uint8[I420_SIZE(kHeight, kWidth) + kAlignment]);
   uint8 *y_output_pointer = ALIGNP(yuv_output.get(), kAlignment);
   uint8 *u_output_pointer = y_output_pointer + y_size;
@@ -579,7 +579,7 @@ TEST_F(PlanarFunctionsTest, I422ToI420) {
   // Generate the expected output.
   uint8 *y_expected_pointer = NULL, *u_expected_pointer = NULL,
         *v_expected_pointer = NULL;
-  talk_base::scoped_ptr<uint8[]> yuv_output_expected(
+  rtc::scoped_ptr<uint8[]> yuv_output_expected(
       CreateFakeYuvTestingImage(kHeight, kWidth, block_size,
           libyuv::kJpegYuv420,
           y_expected_pointer, u_expected_pointer, v_expected_pointer));
@@ -615,11 +615,11 @@ TEST_P(PlanarFunctionsTest, Q420ToI420) {
   int uv_size = ((kHeight + 1) >> 1) * ((kWidth + 1) >> 1);
   int block_size = 2;
   // Generate a fake input image.
-  talk_base::scoped_ptr<uint8[]> yuv_input(
+  rtc::scoped_ptr<uint8[]> yuv_input(
       CreateFakeQ420TestingImage(kHeight, kWidth, block_size,
                                  y_pointer, yuy2_pointer));
   // Allocate space for the output image.
-  talk_base::scoped_ptr<uint8[]> yuv_output(
+  rtc::scoped_ptr<uint8[]> yuv_output(
       new uint8[I420_SIZE(kHeight, kWidth) + kAlignment + unalignment]);
   uint8 *y_output_pointer = ALIGNP(yuv_output.get(), kAlignment) +
       unalignment;
@@ -628,7 +628,7 @@ TEST_P(PlanarFunctionsTest, Q420ToI420) {
   // Generate the expected output.
   uint8 *y_expected_pointer = NULL, *u_expected_pointer = NULL,
         *v_expected_pointer = NULL;
-  talk_base::scoped_ptr<uint8[]> yuv_output_expected(
+  rtc::scoped_ptr<uint8[]> yuv_output_expected(
       CreateFakeYuvTestingImage(kHeight, kWidth, block_size,
           libyuv::kJpegYuv420,
           y_expected_pointer, u_expected_pointer, v_expected_pointer));
@@ -662,10 +662,10 @@ TEST_P(PlanarFunctionsTest, M420ToI420) {
   int uv_size = ((kHeight + 1) >> 1) * ((kWidth + 1) >> 1);
   int block_size = 2;
   // Generate a fake input image.
-  talk_base::scoped_ptr<uint8[]> yuv_input(
+  rtc::scoped_ptr<uint8[]> yuv_input(
       CreateFakeM420TestingImage(kHeight, kWidth, block_size, m420_pointer));
   // Allocate space for the output image.
-  talk_base::scoped_ptr<uint8[]> yuv_output(
+  rtc::scoped_ptr<uint8[]> yuv_output(
       new uint8[I420_SIZE(kHeight, kWidth) + kAlignment + unalignment]);
   uint8 *y_output_pointer = ALIGNP(yuv_output.get(), kAlignment) + unalignment;
   uint8 *u_output_pointer = y_output_pointer + y_size;
@@ -673,7 +673,7 @@ TEST_P(PlanarFunctionsTest, M420ToI420) {
   // Generate the expected output.
   uint8 *y_expected_pointer = NULL, *u_expected_pointer = NULL,
         *v_expected_pointer = NULL;
-  talk_base::scoped_ptr<uint8[]> yuv_output_expected(
+  rtc::scoped_ptr<uint8[]> yuv_output_expected(
       CreateFakeYuvTestingImage(kHeight, kWidth, block_size,
           libyuv::kJpegYuv420,
           y_expected_pointer, u_expected_pointer, v_expected_pointer));
@@ -706,11 +706,11 @@ TEST_P(PlanarFunctionsTest, NV12ToI420) {
   int uv_size = ((kHeight + 1) >> 1) * ((kWidth + 1) >> 1);
   int block_size = 2;
   // Generate a fake input image.
-  talk_base::scoped_ptr<uint8[]> yuv_input(
+  rtc::scoped_ptr<uint8[]> yuv_input(
       CreateFakeNV12TestingImage(kHeight, kWidth, block_size,
                                  y_pointer, uv_pointer));
   // Allocate space for the output image.
-  talk_base::scoped_ptr<uint8[]> yuv_output(
+  rtc::scoped_ptr<uint8[]> yuv_output(
       new uint8[I420_SIZE(kHeight, kWidth) + kAlignment + unalignment]);
   uint8 *y_output_pointer = ALIGNP(yuv_output.get(), kAlignment) + unalignment;
   uint8 *u_output_pointer = y_output_pointer + y_size;
@@ -718,7 +718,7 @@ TEST_P(PlanarFunctionsTest, NV12ToI420) {
   // Generate the expected output.
   uint8 *y_expected_pointer = NULL, *u_expected_pointer = NULL,
         *v_expected_pointer = NULL;
-  talk_base::scoped_ptr<uint8[]> yuv_output_expected(
+  rtc::scoped_ptr<uint8[]> yuv_output_expected(
       CreateFakeYuvTestingImage(kHeight, kWidth, block_size,
           libyuv::kJpegYuv420,
           y_expected_pointer, u_expected_pointer, v_expected_pointer));
@@ -754,11 +754,11 @@ TEST_P(PlanarFunctionsTest, SRC_NAME##ToI420) { \
   int uv_size = ((kHeight + 1) >> 1) * ((kWidth + 1) >> 1); \
   int block_size = 2; \
   /* Generate a fake input image.*/ \
-  talk_base::scoped_ptr<uint8[]> yuv_input( \
+  rtc::scoped_ptr<uint8[]> yuv_input( \
       CreateFakeInterleaveYuvTestingImage(kHeight, kWidth, BLOCK_SIZE, \
           yuv_pointer, FOURCC_##SRC_NAME)); \
   /* Allocate space for the output image.*/ \
-  talk_base::scoped_ptr<uint8[]> yuv_output( \
+  rtc::scoped_ptr<uint8[]> yuv_output( \
       new uint8[I420_SIZE(kHeight, kWidth) + kAlignment + unalignment]); \
   uint8 *y_output_pointer = ALIGNP(yuv_output.get(), kAlignment) + \
       unalignment; \
@@ -767,7 +767,7 @@ TEST_P(PlanarFunctionsTest, SRC_NAME##ToI420) { \
   /* Generate the expected output.*/ \
   uint8 *y_expected_pointer = NULL, *u_expected_pointer = NULL, \
         *v_expected_pointer = NULL; \
-  talk_base::scoped_ptr<uint8[]> yuv_output_expected( \
+  rtc::scoped_ptr<uint8[]> yuv_output_expected( \
       CreateFakeYuvTestingImage(kHeight, kWidth, block_size, \
           libyuv::kJpegYuv420, \
           y_expected_pointer, u_expected_pointer, v_expected_pointer)); \
@@ -800,15 +800,15 @@ TEST_F(PlanarFunctionsTest, SRC_NAME##To##DST_NAME) { \
   int u_pitch = (kWidth + 1) >> 1; \
   int v_pitch = (kWidth + 1) >> 1; \
   /* Generate a fake input image.*/ \
-  talk_base::scoped_ptr<uint8[]> yuv_input( \
+  rtc::scoped_ptr<uint8[]> yuv_input( \
       CreateFakeYuvTestingImage(kHeight, kWidth, BLOCK_SIZE, JPG_TYPE, \
                                 y_pointer, u_pointer, v_pointer)); \
   /* Generate the expected output.*/ \
-  talk_base::scoped_ptr<uint8[]> argb_expected( \
+  rtc::scoped_ptr<uint8[]> argb_expected( \
       CreateFakeArgbTestingImage(kHeight, kWidth, BLOCK_SIZE, \
                                  argb_expected_pointer, FOURCC_##DST_NAME)); \
   /* Allocate space for the output.*/ \
-  talk_base::scoped_ptr<uint8[]> argb_output( \
+  rtc::scoped_ptr<uint8[]> argb_output( \
     new uint8[kHeight * kWidth * 4 + kAlignment]); \
   uint8 *argb_pointer = ALIGNP(argb_expected.get(), kAlignment); \
   for (int i = 0; i < repeat_; ++i) { \
@@ -844,7 +844,7 @@ TEST_F(PlanarFunctionsTest, I400ToARGB_Reference) {
   int v_pitch = (kWidth + 1) >> 1;
   int block_size = 3;
   // Generate a fake input image.
-  talk_base::scoped_ptr<uint8[]> yuv_input(
+  rtc::scoped_ptr<uint8[]> yuv_input(
       CreateFakeYuvTestingImage(kHeight, kWidth, block_size,
                                 libyuv::kJpegYuv420,
                                 y_pointer, u_pointer, v_pointer));
@@ -852,14 +852,14 @@ TEST_F(PlanarFunctionsTest, I400ToARGB_Reference) {
   // U and V channels to be 128) using an I420 converter.
   int uv_size = ((kHeight + 1) >> 1) * ((kWidth + 1) >> 1);
 
-  talk_base::scoped_ptr<uint8[]> uv(new uint8[uv_size + kAlignment]);
+  rtc::scoped_ptr<uint8[]> uv(new uint8[uv_size + kAlignment]);
   u_pointer = v_pointer = ALIGNP(uv.get(), kAlignment);
   memset(u_pointer, 128, uv_size);
 
   // Allocate space for the output image and generate the expected output.
-  talk_base::scoped_ptr<uint8[]> argb_expected(
+  rtc::scoped_ptr<uint8[]> argb_expected(
       new uint8[kHeight * kWidth * 4 + kAlignment]);
-  talk_base::scoped_ptr<uint8[]> argb_output(
+  rtc::scoped_ptr<uint8[]> argb_output(
       new uint8[kHeight * kWidth * 4 + kAlignment]);
   uint8 *argb_expected_pointer = ALIGNP(argb_expected.get(), kAlignment);
   uint8 *argb_pointer = ALIGNP(argb_output.get(), kAlignment);
@@ -890,7 +890,7 @@ TEST_P(PlanarFunctionsTest, I400ToARGB) {
   int v_pitch = (kWidth + 1) >> 1;
   int block_size = 3;
   // Generate a fake input image.
-  talk_base::scoped_ptr<uint8[]> yuv_input(
+  rtc::scoped_ptr<uint8[]> yuv_input(
       CreateFakeYuvTestingImage(kHeight, kWidth, block_size,
                                 libyuv::kJpegYuv420,
                                 y_pointer, u_pointer, v_pointer));
@@ -899,17 +899,17 @@ TEST_P(PlanarFunctionsTest, I400ToARGB) {
   int uv_size = ((kHeight + 1) >> 1) * ((kWidth + 1) >> 1);
 
   // 1 byte extra if in the unaligned mode.
-  talk_base::scoped_ptr<uint8[]> uv(new uint8[uv_size * 2 + kAlignment]);
+  rtc::scoped_ptr<uint8[]> uv(new uint8[uv_size * 2 + kAlignment]);
   u_pointer = ALIGNP(uv.get(), kAlignment);
   v_pointer = u_pointer + uv_size;
   memset(u_pointer, 128, uv_size);
   memset(v_pointer, 128, uv_size);
 
   // Allocate space for the output image and generate the expected output.
-  talk_base::scoped_ptr<uint8[]> argb_expected(
+  rtc::scoped_ptr<uint8[]> argb_expected(
       new uint8[kHeight * kWidth * 4 + kAlignment]);
   // 1 byte extra if in the misalinged mode.
-  talk_base::scoped_ptr<uint8[]> argb_output(
+  rtc::scoped_ptr<uint8[]> argb_output(
       new uint8[kHeight * kWidth * 4 + kAlignment + unalignment]);
   uint8 *argb_expected_pointer = ALIGNP(argb_expected.get(), kAlignment);
   uint8 *argb_pointer = ALIGNP(argb_output.get(), kAlignment) + unalignment;
@@ -940,16 +940,16 @@ TEST_P(PlanarFunctionsTest, ARGBToI400) {
   uint8 *argb_pointer = NULL;
   int block_size = 3;
   // Generate a fake input image.
-  talk_base::scoped_ptr<uint8[]> argb_input(
+  rtc::scoped_ptr<uint8[]> argb_input(
       CreateFakeArgbTestingImage(kHeight, kWidth, block_size,
                                  argb_pointer, FOURCC_ARGB));
   // Generate the expected output. Only Y channel is used
-  talk_base::scoped_ptr<uint8[]> yuv_expected(
+  rtc::scoped_ptr<uint8[]> yuv_expected(
       CreateFakeYuvTestingImage(kHeight, kWidth, block_size,
                                 libyuv::kJpegYuv420,
                                 y_pointer, u_pointer, v_pointer));
   // Allocate space for the Y output.
-  talk_base::scoped_ptr<uint8[]> y_output(
+  rtc::scoped_ptr<uint8[]> y_output(
     new uint8[kHeight * kWidth + kAlignment + unalignment]);
   uint8 *y_output_pointer = ALIGNP(y_output.get(), kAlignment) + unalignment;
 
@@ -972,15 +972,15 @@ TEST_P(PlanarFunctionsTest, SRC_NAME##ToARGB) { \
   int unalignment = GetParam();  /* Get the unalignment offset.*/ \
   uint8 *argb_expected_pointer = NULL, *src_pointer = NULL; \
   /* Generate a fake input image.*/ \
-  talk_base::scoped_ptr<uint8[]> src_input(  \
+  rtc::scoped_ptr<uint8[]> src_input(  \
       CreateFakeArgbTestingImage(kHeight, kWidth, BLOCK_SIZE, \
                                  src_pointer, FOURCC_##FC_ID)); \
   /* Generate the expected output.*/ \
-  talk_base::scoped_ptr<uint8[]> argb_expected( \
+  rtc::scoped_ptr<uint8[]> argb_expected( \
       CreateFakeArgbTestingImage(kHeight, kWidth, BLOCK_SIZE, \
                                  argb_expected_pointer, FOURCC_ARGB)); \
   /* Allocate space for the output; 1 byte extra if in the unaligned mode.*/ \
-  talk_base::scoped_ptr<uint8[]> argb_output( \
+  rtc::scoped_ptr<uint8[]> argb_output( \
       new uint8[kHeight * kWidth * 4 + kAlignment + unalignment]); \
   uint8 *argb_pointer = ALIGNP(argb_output.get(), kAlignment) + unalignment; \
   for (int i = 0; i < repeat_; ++i) { \

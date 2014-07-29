@@ -27,10 +27,10 @@
 
 #include "talk/app/webrtc/test/fakeaudiocapturemodule.h"
 
-#include "talk/base/common.h"
-#include "talk/base/refcount.h"
-#include "talk/base/thread.h"
-#include "talk/base/timeutils.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/refcount.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/base/timeutils.h"
 
 // Audio sample value that is high enough that it doesn't occur naturally when
 // frames are being faked. E.g. NetEq will not generate this large sample value
@@ -58,7 +58,7 @@ enum {
 };
 
 FakeAudioCaptureModule::FakeAudioCaptureModule(
-    talk_base::Thread* process_thread)
+    rtc::Thread* process_thread)
     : last_process_time_ms_(0),
       audio_callback_(NULL),
       recording_(false),
@@ -77,12 +77,12 @@ FakeAudioCaptureModule::~FakeAudioCaptureModule() {
   process_thread_->Send(this, MSG_STOP_PROCESS);
 }
 
-talk_base::scoped_refptr<FakeAudioCaptureModule> FakeAudioCaptureModule::Create(
-    talk_base::Thread* process_thread) {
+rtc::scoped_refptr<FakeAudioCaptureModule> FakeAudioCaptureModule::Create(
+    rtc::Thread* process_thread) {
   if (process_thread == NULL) return NULL;
 
-  talk_base::scoped_refptr<FakeAudioCaptureModule> capture_module(
-      new talk_base::RefCountedObject<FakeAudioCaptureModule>(process_thread));
+  rtc::scoped_refptr<FakeAudioCaptureModule> capture_module(
+      new rtc::RefCountedObject<FakeAudioCaptureModule>(process_thread));
   if (!capture_module->Initialize()) {
     return NULL;
   }
@@ -90,7 +90,7 @@ talk_base::scoped_refptr<FakeAudioCaptureModule> FakeAudioCaptureModule::Create(
 }
 
 int FakeAudioCaptureModule::frames_received() const {
-  talk_base::CritScope cs(&crit_);
+  rtc::CritScope cs(&crit_);
   return frames_received_;
 }
 
@@ -102,7 +102,7 @@ int32_t FakeAudioCaptureModule::Version(char* /*version*/,
 }
 
 int32_t FakeAudioCaptureModule::TimeUntilNextProcess() {
-  const uint32 current_time = talk_base::Time();
+  const uint32 current_time = rtc::Time();
   if (current_time < last_process_time_ms_) {
     // TODO: wraparound could be handled more gracefully.
     return 0;
@@ -115,7 +115,7 @@ int32_t FakeAudioCaptureModule::TimeUntilNextProcess() {
 }
 
 int32_t FakeAudioCaptureModule::Process() {
-  last_process_time_ms_ = talk_base::Time();
+  last_process_time_ms_ = rtc::Time();
   return 0;
 }
 
@@ -144,7 +144,7 @@ int32_t FakeAudioCaptureModule::RegisterEventObserver(
 
 int32_t FakeAudioCaptureModule::RegisterAudioCallback(
     webrtc::AudioTransport* audio_callback) {
-  talk_base::CritScope cs(&crit_callback_);
+  rtc::CritScope cs(&crit_callback_);
   audio_callback_ = audio_callback;
   return 0;
 }
@@ -249,7 +249,7 @@ int32_t FakeAudioCaptureModule::StartPlayout() {
     return -1;
   }
   {
-    talk_base::CritScope cs(&crit_);
+    rtc::CritScope cs(&crit_);
     playing_ = true;
   }
   bool start = true;
@@ -260,7 +260,7 @@ int32_t FakeAudioCaptureModule::StartPlayout() {
 int32_t FakeAudioCaptureModule::StopPlayout() {
   bool start = false;
   {
-    talk_base::CritScope cs(&crit_);
+    rtc::CritScope cs(&crit_);
     playing_ = false;
     start = ShouldStartProcessing();
   }
@@ -269,7 +269,7 @@ int32_t FakeAudioCaptureModule::StopPlayout() {
 }
 
 bool FakeAudioCaptureModule::Playing() const {
-  talk_base::CritScope cs(&crit_);
+  rtc::CritScope cs(&crit_);
   return playing_;
 }
 
@@ -278,7 +278,7 @@ int32_t FakeAudioCaptureModule::StartRecording() {
     return -1;
   }
   {
-    talk_base::CritScope cs(&crit_);
+    rtc::CritScope cs(&crit_);
     recording_ = true;
   }
   bool start = true;
@@ -289,7 +289,7 @@ int32_t FakeAudioCaptureModule::StartRecording() {
 int32_t FakeAudioCaptureModule::StopRecording() {
   bool start = false;
   {
-    talk_base::CritScope cs(&crit_);
+    rtc::CritScope cs(&crit_);
     recording_ = false;
     start = ShouldStartProcessing();
   }
@@ -298,7 +298,7 @@ int32_t FakeAudioCaptureModule::StopRecording() {
 }
 
 bool FakeAudioCaptureModule::Recording() const {
-  talk_base::CritScope cs(&crit_);
+  rtc::CritScope cs(&crit_);
   return recording_;
 }
 
@@ -397,13 +397,13 @@ int32_t FakeAudioCaptureModule::MicrophoneVolumeIsAvailable(
 }
 
 int32_t FakeAudioCaptureModule::SetMicrophoneVolume(uint32_t volume) {
-  talk_base::CritScope cs(&crit_);
+  rtc::CritScope cs(&crit_);
   current_mic_level_ = volume;
   return 0;
 }
 
 int32_t FakeAudioCaptureModule::MicrophoneVolume(uint32_t* volume) const {
-  talk_base::CritScope cs(&crit_);
+  rtc::CritScope cs(&crit_);
   *volume = current_mic_level_;
   return 0;
 }
@@ -617,7 +617,7 @@ int32_t FakeAudioCaptureModule::GetLoudspeakerStatus(bool* /*enabled*/) const {
   return 0;
 }
 
-void FakeAudioCaptureModule::OnMessage(talk_base::Message* msg) {
+void FakeAudioCaptureModule::OnMessage(rtc::Message* msg) {
   switch (msg->message_id) {
     case MSG_START_PROCESS:
       StartProcessP();
@@ -641,7 +641,7 @@ bool FakeAudioCaptureModule::Initialize() {
   // sent to it. Note that the audio processing pipeline will likely distort the
   // original signal.
   SetSendBuffer(kHighSampleValue);
-  last_process_time_ms_ = talk_base::Time();
+  last_process_time_ms_ = rtc::Time();
   return true;
 }
 
@@ -681,7 +681,7 @@ void FakeAudioCaptureModule::UpdateProcessing(bool start) {
 }
 
 void FakeAudioCaptureModule::StartProcessP() {
-  ASSERT(talk_base::Thread::Current() == process_thread_);
+  ASSERT(rtc::Thread::Current() == process_thread_);
   if (started_) {
     // Already started.
     return;
@@ -690,16 +690,16 @@ void FakeAudioCaptureModule::StartProcessP() {
 }
 
 void FakeAudioCaptureModule::ProcessFrameP() {
-  ASSERT(talk_base::Thread::Current() == process_thread_);
+  ASSERT(rtc::Thread::Current() == process_thread_);
   if (!started_) {
-    next_frame_time_ = talk_base::Time();
+    next_frame_time_ = rtc::Time();
     started_ = true;
   }
 
   bool playing;
   bool recording;
   {
-    talk_base::CritScope cs(&crit_);
+    rtc::CritScope cs(&crit_);
     playing = playing_;
     recording = recording_;
   }
@@ -713,16 +713,16 @@ void FakeAudioCaptureModule::ProcessFrameP() {
   }
 
   next_frame_time_ += kTimePerFrameMs;
-  const uint32 current_time = talk_base::Time();
+  const uint32 current_time = rtc::Time();
   const uint32 wait_time = (next_frame_time_ > current_time) ?
       next_frame_time_ - current_time : 0;
   process_thread_->PostDelayed(wait_time, this, MSG_RUN_PROCESS);
 }
 
 void FakeAudioCaptureModule::ReceiveFrameP() {
-  ASSERT(talk_base::Thread::Current() == process_thread_);
+  ASSERT(rtc::Thread::Current() == process_thread_);
   {
-    talk_base::CritScope cs(&crit_callback_);
+    rtc::CritScope cs(&crit_callback_);
     if (!audio_callback_) {
       return;
     }
@@ -753,14 +753,14 @@ void FakeAudioCaptureModule::ReceiveFrameP() {
   // has been received from the remote side (i.e. faked frames are not being
   // pulled).
   if (CheckRecBuffer(kHighSampleValue)) {
-    talk_base::CritScope cs(&crit_);
+    rtc::CritScope cs(&crit_);
     ++frames_received_;
   }
 }
 
 void FakeAudioCaptureModule::SendFrameP() {
-  ASSERT(talk_base::Thread::Current() == process_thread_);
-  talk_base::CritScope cs(&crit_callback_);
+  ASSERT(rtc::Thread::Current() == process_thread_);
+  rtc::CritScope cs(&crit_callback_);
   if (!audio_callback_) {
     return;
   }
@@ -780,7 +780,7 @@ void FakeAudioCaptureModule::SendFrameP() {
 }
 
 void FakeAudioCaptureModule::StopProcessP() {
-  ASSERT(talk_base::Thread::Current() == process_thread_);
+  ASSERT(rtc::Thread::Current() == process_thread_);
   started_ = false;
   process_thread_->Clear(this);
 }

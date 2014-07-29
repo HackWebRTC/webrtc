@@ -29,58 +29,25 @@
   'includes': ['build/common.gypi'],
   'targets': [
     {
-      # TODO(ronghuawu): Use gtest.gyp from chromium.
-      'target_name': 'gunit',
-      'type': 'static_library',
-      'sources': [
-        '<(DEPTH)/testing/gtest/src/gtest-all.cc',
-      ],
-      'include_dirs': [
-        '<(DEPTH)/testing/gtest/include',
-        '<(DEPTH)/testing/gtest',
-      ],
-      'defines': ['_VARIADIC_MAX=10'],
-      'direct_dependent_settings': {
-        'defines': [
-          '_VARIADIC_MAX=10',
-        ],
-        'include_dirs': [
-          '<(DEPTH)/testing/gtest/include',
-        ],
-      },
-      'conditions': [
-        ['OS=="android"', {
-          'include_dirs': [
-            '<(android_ndk_include)',
-          ]
-        }],
-      ],
-    },  # target gunit
-    {
       'target_name': 'libjingle_unittest_main',
       'type': 'static_library',
       'dependencies': [
         '<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv',
-        'gunit',
+        '<(webrtc_root)/base/base_tests.gyp:webrtc_base_tests_utils',
         '<@(libjingle_tests_additional_deps)',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
           '<(DEPTH)/third_party/libyuv/include',
+          '<(DEPTH)/testing/gtest/include',
+          '<(DEPTH)/testing/gtest',
         ],
       },
+      'include_dirs': [
+         '<(DEPTH)/testing/gtest/include',
+         '<(DEPTH)/testing/gtest',
+       ],
       'sources': [
-        'base/unittest_main.cc',
-        # Also use this as a convenient dumping ground for misc files that are
-        # included by multiple targets below.
-        'base/fakecpumonitor.h',
-        'base/fakenetwork.h',
-        'base/fakesslidentity.h',
-        'base/faketaskrunner.h',
-        'base/gunit.h',
-        'base/testbase64.h',
-        'base/testechoserver.h',
-        'base/win32toolhelp.h',
         'media/base/fakecapturemanager.h',
         'media/base/fakemediaengine.h',
         'media/base/fakemediaprocessor.h',
@@ -107,73 +74,12 @@
       'type': 'executable',
       'includes': [ 'build/ios_tests.gypi', ],
       'dependencies': [
-        'gunit',
+        '<(webrtc_root)/base/base.gyp:webrtc_base',
+        '<(webrtc_root)/base/base_tests.gyp:webrtc_base_tests_utils',
         'libjingle.gyp:libjingle',
         'libjingle_unittest_main',
       ],
       'sources': [
-        'base/asynchttprequest_unittest.cc',
-        'base/atomicops_unittest.cc',
-        'base/autodetectproxy_unittest.cc',
-        'base/bandwidthsmoother_unittest.cc',
-        'base/base64_unittest.cc',
-        'base/basictypes_unittest.cc',
-        'base/bind_unittest.cc',
-        'base/buffer_unittest.cc',
-        'base/bytebuffer_unittest.cc',
-        'base/byteorder_unittest.cc',
-        'base/callback_unittest.cc',
-        'base/cpumonitor_unittest.cc',
-        'base/crc32_unittest.cc',
-        'base/criticalsection_unittest.cc',
-        'base/event_unittest.cc',
-        'base/filelock_unittest.cc',
-        'base/fileutils_unittest.cc',
-        'base/helpers_unittest.cc',
-        'base/httpbase_unittest.cc',
-        'base/httpcommon_unittest.cc',
-        'base/httpserver_unittest.cc',
-        'base/ipaddress_unittest.cc',
-        'base/logging_unittest.cc',
-        'base/md5digest_unittest.cc',
-        'base/messagedigest_unittest.cc',
-        'base/messagequeue_unittest.cc',
-        'base/multipart_unittest.cc',
-        'base/nat_unittest.cc',
-        'base/network_unittest.cc',
-        'base/nullsocketserver_unittest.cc',
-        'base/optionsfile_unittest.cc',
-        'base/pathutils_unittest.cc',
-        'base/physicalsocketserver_unittest.cc',
-        'base/profiler_unittest.cc',
-        'base/proxy_unittest.cc',
-        'base/proxydetect_unittest.cc',
-        'base/ratelimiter_unittest.cc',
-        'base/ratetracker_unittest.cc',
-        'base/referencecountedsingletonfactory_unittest.cc',
-        'base/rollingaccumulator_unittest.cc',
-        'base/scopedptrcollection_unittest.cc',
-        'base/sha1digest_unittest.cc',
-        'base/sharedexclusivelock_unittest.cc',
-        'base/signalthread_unittest.cc',
-        'base/sigslot_unittest.cc',
-        'base/socket_unittest.cc',
-        'base/socket_unittest.h',
-        'base/socketaddress_unittest.cc',
-        'base/stream_unittest.cc',
-        'base/stringencode_unittest.cc',
-        'base/stringutils_unittest.cc',
-        # TODO(ronghuawu): Reenable this test.
-        # 'base/systeminfo_unittest.cc',
-        'base/task_unittest.cc',
-        'base/testclient_unittest.cc',
-        'base/thread_unittest.cc',
-        'base/timeutils_unittest.cc',
-        'base/urlencode_unittest.cc',
-        'base/versionparsing_unittest.cc',
-        'base/virtualsocket_unittest.cc',
-        # TODO(ronghuawu): Reenable this test.
-        # 'base/windowpicker_unittest.cc',
         'xmllite/qname_unittest.cc',
         'xmllite/xmlbuilder_unittest.cc',
         'xmllite/xmlelement_unittest.cc',
@@ -196,54 +102,12 @@
         'xmpp/xmpplogintask_unittest.cc',
         'xmpp/xmppstanzaparser_unittest.cc',
       ],  # sources
-      'conditions': [
-        ['OS=="linux"', {
-          'sources': [
-            'base/latebindingsymboltable_unittest.cc',
-            # TODO(ronghuawu): Reenable this test.
-            # 'base/linux_unittest.cc',
-            'base/linuxfdwalk_unittest.cc',
-          ],
-        }],
-        ['OS=="win"', {
-          'sources': [
-            'base/win32_unittest.cc',
-            'base/win32regkey_unittest.cc',
-            'base/win32socketserver_unittest.cc',
-            'base/win32toolhelp_unittest.cc',
-            'base/win32window_unittest.cc',
-            'base/win32windowpicker_unittest.cc',
-            'base/winfirewall_unittest.cc',
-          ],
-          'sources!': [
-            # TODO(ronghuawu): Fix TestUdpReadyToSendIPv6 on windows bot
-            # then reenable these tests.
-            'base/physicalsocketserver_unittest.cc',
-            'base/socket_unittest.cc',
-            'base/win32socketserver_unittest.cc',
-            'base/win32windowpicker_unittest.cc',
-          ],
-        }],
-        ['OS=="mac"', {
-          'sources': [
-            'base/macsocketserver_unittest.cc',
-            'base/macutils_unittest.cc',
-            'base/macwindowpicker_unittest.cc',
-          ],
-        }],
-        ['os_posix==1', {
-          'sources': [
-            'base/sslidentity_unittest.cc',
-            'base/sslstreamadapter_unittest.cc',
-          ],
-        }],
-      ],  # conditions
     },  # target libjingle_unittest
     {
       'target_name': 'libjingle_sound_unittest',
       'type': 'executable',
       'dependencies': [
-        'gunit',
+        '<(webrtc_root)/base/base_tests.gyp:webrtc_base_tests_utils',
         'libjingle.gyp:libjingle_sound',
         'libjingle_unittest_main',
       ],
@@ -255,7 +119,7 @@
       'target_name': 'libjingle_media_unittest',
       'type': 'executable',
       'dependencies': [
-        'gunit',
+        '<(webrtc_root)/base/base_tests.gyp:webrtc_base_tests_utils',
         'libjingle.gyp:libjingle_media',
         'libjingle_unittest_main',
       ],
@@ -329,7 +193,7 @@
       'type': 'executable',
       'dependencies': [
         '<(DEPTH)/third_party/libsrtp/libsrtp.gyp:libsrtp',
-        'gunit',
+        '<(webrtc_root)/base/base_tests.gyp:webrtc_base_tests_utils',
         'libjingle.gyp:libjingle',
         'libjingle.gyp:libjingle_p2p',
         'libjingle_unittest_main',
@@ -388,7 +252,7 @@
       'type': 'executable',
       'dependencies': [
         '<(DEPTH)/testing/gmock.gyp:gmock',
-        'gunit',
+        '<(webrtc_root)/base/base_tests.gyp:webrtc_base_tests_utils',
         'libjingle.gyp:libjingle',
         'libjingle.gyp:libjingle_p2p',
         'libjingle.gyp:libjingle_peerconnection',
@@ -521,7 +385,7 @@
           'type': 'executable',
           'includes': [ 'build/ios_tests.gypi', ],
           'dependencies': [
-            'gunit',
+            '<(webrtc_root)/base/base_tests.gyp:webrtc_base_tests_utils',
             'libjingle.gyp:libjingle_peerconnection_objc',
           ],
           'sources': [

@@ -27,11 +27,11 @@
 
 // Main function for all unit tests in talk/examples/call
 
-#include "talk/base/logging.h"
+#include "webrtc/base/logging.h"
 #include "testing/base/public/gunit.h"
 
 int main(int argc, char **argv) {
-  talk_base::LogMessage::LogToDebug(talk_base::LogMessage::NO_LOGGING);
+  rtc::LogMessage::LogToDebug(rtc::LogMessage::NO_LOGGING);
   testing::ParseGUnitFlags(&argc, argv);
   return RUN_ALL_TESTS();
 }

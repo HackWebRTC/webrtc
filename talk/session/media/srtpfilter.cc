@@ -33,10 +33,10 @@
 
 #include <algorithm>
 
-#include "talk/base/base64.h"
-#include "talk/base/logging.h"
-#include "talk/base/stringencode.h"
-#include "talk/base/timeutils.h"
+#include "webrtc/base/base64.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/stringencode.h"
+#include "webrtc/base/timeutils.h"
 #include "talk/media/base/rtputils.h"
 
 // Enable this line to turn on SRTP debugging
@@ -449,7 +449,7 @@ bool SrtpFilter::ParseKeyParams(const std::string& key_params,
 
   // Fail if base64 decode fails, or the key is the wrong size.
   std::string key_b64(key_params.substr(7)), key_str;
-  if (!talk_base::Base64::Decode(key_b64, talk_base::Base64::DO_STRICT,
+  if (!rtc::Base64::Decode(key_b64, rtc::Base64::DO_STRICT,
                                  &key_str, NULL) ||
       static_cast<int>(key_str.size()) != len) {
     return false;
@@ -869,9 +869,9 @@ void SrtpStat::HandleSrtpResult(const SrtpStat::FailureKey& key) {
   if (key.error != SrtpFilter::ERROR_NONE) {
     // For errors, signal first time and wait for 1 sec.
     FailureStat* stat = &(failures_[key]);
-    uint32 current_time = talk_base::Time();
+    uint32 current_time = rtc::Time();
     if (stat->last_signal_time == 0 ||
-        talk_base::TimeDiff(current_time, stat->last_signal_time) >
+        rtc::TimeDiff(current_time, stat->last_signal_time) >
         static_cast<int>(signal_silent_time_)) {
       SignalSrtpError(key.ssrc, key.mode, key.error);
       stat->last_signal_time = current_time;

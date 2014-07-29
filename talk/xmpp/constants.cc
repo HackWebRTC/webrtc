@@ -29,7 +29,7 @@
 
 #include <string>
 
-#include "talk/base/basicdefs.h"
+#include "webrtc/base/basicdefs.h"
 #include "talk/xmllite/xmlconstants.h"
 #include "talk/xmllite/xmlelement.h"
 #include "talk/xmllite/qname.h"

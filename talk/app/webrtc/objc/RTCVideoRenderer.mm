@@ -61,7 +61,7 @@ class RTCVideoRendererAdapter : public VideoRendererInterface {
 }
 
 @implementation RTCVideoRenderer {
-  talk_base::scoped_ptr<webrtc::RTCVideoRendererAdapter> _adapter;
+  rtc::scoped_ptr<webrtc::RTCVideoRendererAdapter> _adapter;
 #if TARGET_OS_IPHONE
   RTCEAGLVideoView* _videoView;
 #endif

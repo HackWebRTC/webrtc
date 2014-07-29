@@ -3,9 +3,9 @@
 #include <stdio.h>
 #include <vector>
 
-#include "talk/base/gunit.h"
-#include "talk/base/logging.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/thread.h"
 #include "talk/media/base/fakemediaprocessor.h"
 #include "talk/media/base/fakevideocapturer.h"
 #include "talk/media/base/fakevideorenderer.h"
@@ -113,7 +113,7 @@ TEST_F(VideoCapturerTest, CaptureState) {
   EXPECT_EQ_WAIT(cricket::CS_STOPPED, capture_state(), kMsCallbackWait);
   EXPECT_EQ(2, num_state_changes());
   capturer_.Stop();
-  talk_base::Thread::Current()->ProcessMessages(100);
+  rtc::Thread::Current()->ProcessMessages(100);
   EXPECT_EQ(2, num_state_changes());
 }
 
@@ -135,7 +135,7 @@ TEST_F(VideoCapturerTest, TestRestart) {
   EXPECT_TRUE(capturer_.IsRunning());
   EXPECT_GE(1, num_state_changes());
   capturer_.Stop();
-  talk_base::Thread::Current()->ProcessMessages(100);
+  rtc::Thread::Current()->ProcessMessages(100);
   EXPECT_FALSE(capturer_.IsRunning());
 }
 

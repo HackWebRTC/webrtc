@@ -34,7 +34,7 @@
 @interface RTCPeerConnection (Internal)
 
 @property(nonatomic, assign, readonly)
-    talk_base::scoped_refptr<webrtc::PeerConnectionInterface> peerConnection;
+    rtc::scoped_refptr<webrtc::PeerConnectionInterface> peerConnection;
 
 - (instancetype)initWithFactory:(webrtc::PeerConnectionFactoryInterface*)factory
      iceServers:(const webrtc::PeerConnectionInterface::IceServers&)iceServers

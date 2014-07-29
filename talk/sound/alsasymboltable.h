@@ -30,7 +30,7 @@
 
 #include <alsa/asoundlib.h>
 
-#include "talk/base/latebindingsymboltable.h"
+#include "webrtc/base/latebindingsymboltable.h"
 
 namespace cricket {
 
@@ -59,7 +59,7 @@ namespace cricket {
 
 #define LATE_BINDING_SYMBOL_TABLE_CLASS_NAME ALSA_SYMBOLS_CLASS_NAME
 #define LATE_BINDING_SYMBOL_TABLE_SYMBOLS_LIST ALSA_SYMBOLS_LIST
-#include "talk/base/latebindingsymboltable.h.def"
+#include "webrtc/base/latebindingsymboltable.h.def"
 
 }  // namespace cricket
 

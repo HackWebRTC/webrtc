@@ -32,13 +32,13 @@
 #endif
 
 #ifdef HAVE_WEBRTC_VIDEO
-#include "talk/base/criticalsection.h"
-#include "talk/base/logging.h"
-#include "talk/base/thread.h"
-#include "talk/base/timeutils.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/base/timeutils.h"
 #include "talk/media/webrtc/webrtcvideoframe.h"
 
-#include "talk/base/win32.h"  // Need this to #include the impl files.
+#include "webrtc/base/win32.h"  // Need this to #include the impl files.
 #include "webrtc/modules/video_capture/include/video_capture_factory.h"
 
 namespace cricket {
@@ -252,7 +252,7 @@ CaptureState WebRtcVideoCapturer::Start(const VideoFormat& capture_format) {
     return CS_NO_DEVICE;
   }
 
-  talk_base::CritScope cs(&critical_section_stopping_);
+  rtc::CritScope cs(&critical_section_stopping_);
   // TODO(hellner): weird to return failure when it is in fact actually running.
   if (IsRunning()) {
     LOG(LS_ERROR) << "The capturer is already running";
@@ -268,7 +268,7 @@ CaptureState WebRtcVideoCapturer::Start(const VideoFormat& capture_format) {
   }
 
   std::string camera_id(GetId());
-  uint32 start = talk_base::Time();
+  uint32 start = rtc::Time();
   module_->RegisterCaptureDataCallback(*this);
   if (module_->StartCapture(cap) != 0) {
     LOG(LS_ERROR) << "Camera '" << camera_id << "' failed to start";
@@ -277,7 +277,7 @@ CaptureState WebRtcVideoCapturer::Start(const VideoFormat& capture_format) {
 
   LOG(LS_INFO) << "Camera '" << camera_id << "' started with format "
                << capture_format.ToString() << ", elapsed time "
-               << talk_base::TimeSince(start) << " ms";
+               << rtc::TimeSince(start) << " ms";
 
   captured_frames_ = 0;
   SetCaptureState(CS_RUNNING);
@@ -290,9 +290,9 @@ CaptureState WebRtcVideoCapturer::Start(const VideoFormat& capture_format) {
 // controlling the camera is reversed: system frame -> OnIncomingCapturedFrame;
 // Stop -> system stop camera).
 void WebRtcVideoCapturer::Stop() {
-  talk_base::CritScope cs(&critical_section_stopping_);
+  rtc::CritScope cs(&critical_section_stopping_);
   if (IsRunning()) {
-    talk_base::Thread::Current()->Clear(this);
+    rtc::Thread::Current()->Clear(this);
     module_->StopCapture();
     module_->DeRegisterCaptureDataCallback();
 
@@ -331,7 +331,7 @@ void WebRtcVideoCapturer::OnIncomingCapturedFrame(const int32_t id,
   // the same lock. Due to the reversed order, we have to try-lock in order to
   // avoid a potential deadlock. Besides, if we can't enter because we're
   // stopping, we may as well drop the frame.
-  talk_base::TryCritScope cs(&critical_section_stopping_);
+  rtc::TryCritScope cs(&critical_section_stopping_);
   if (!cs.locked() || !IsRunning()) {
     // Capturer has been stopped or is in the process of stopping.
     return;
@@ -373,7 +373,7 @@ WebRtcCapturedFrame::WebRtcCapturedFrame(const webrtc::I420VideoFrame& sample,
   pixel_width = 1;
   pixel_height = 1;
   // Convert units from VideoFrame RenderTimeMs to CapturedFrame (nanoseconds).
-  elapsed_time = sample.render_time_ms() * talk_base::kNumNanosecsPerMillisec;
+  elapsed_time = sample.render_time_ms() * rtc::kNumNanosecsPerMillisec;
   time_stamp = elapsed_time;
   data_size = length;
   data = buffer;

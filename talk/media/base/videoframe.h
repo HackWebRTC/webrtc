@@ -28,8 +28,8 @@
 #ifndef TALK_MEDIA_BASE_VIDEOFRAME_H_
 #define TALK_MEDIA_BASE_VIDEOFRAME_H_
 
-#include "talk/base/basictypes.h"
-#include "talk/base/stream.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/stream.h"
 
 namespace cricket {
 
@@ -126,10 +126,10 @@ class VideoFrame {
   virtual void CopyToFrame(VideoFrame* target) const;
 
   // Writes the frame into the given stream and returns the StreamResult.
-  // See talk/base/stream.h for a description of StreamResult and error.
+  // See webrtc/base/stream.h for a description of StreamResult and error.
   // Error may be NULL. If a non-success value is returned from
   // StreamInterface::Write(), we immediately return with that value.
-  virtual talk_base::StreamResult Write(talk_base::StreamInterface *stream,
+  virtual rtc::StreamResult Write(rtc::StreamInterface *stream,
                                         int *error);
 
   // Converts the I420 data to RGB of a certain type such as ARGB and ABGR.

@@ -33,8 +33,8 @@
 
 #include <map>
 
-#include "talk/base/basictypes.h"
-#include "talk/base/sigslot.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/sigslot.h"
 
 namespace cricket {
 

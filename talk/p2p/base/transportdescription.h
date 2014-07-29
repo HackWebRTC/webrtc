@@ -32,8 +32,8 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/sslfingerprint.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/sslfingerprint.h"
 #include "talk/p2p/base/candidate.h"
 #include "talk/p2p/base/constants.h"
 
@@ -109,7 +109,7 @@ struct TransportDescription {
                        const std::string& ice_pwd,
                        IceMode ice_mode,
                        ConnectionRole role,
-                       const talk_base::SSLFingerprint* identity_fingerprint,
+                       const rtc::SSLFingerprint* identity_fingerprint,
                        const Candidates& candidates)
       : transport_type(transport_type),
         transport_options(transport_options),
@@ -164,12 +164,12 @@ struct TransportDescription {
   }
   bool secure() const { return identity_fingerprint != NULL; }
 
-  static talk_base::SSLFingerprint* CopyFingerprint(
-      const talk_base::SSLFingerprint* from) {
+  static rtc::SSLFingerprint* CopyFingerprint(
+      const rtc::SSLFingerprint* from) {
     if (!from)
       return NULL;
 
-    return new talk_base::SSLFingerprint(*from);
+    return new rtc::SSLFingerprint(*from);
   }
 
   std::string transport_type;  // xmlns of <transport>
@@ -179,7 +179,7 @@ struct TransportDescription {
   IceMode ice_mode;
   ConnectionRole connection_role;
 
-  talk_base::scoped_ptr<talk_base::SSLFingerprint> identity_fingerprint;
+  rtc::scoped_ptr<rtc::SSLFingerprint> identity_fingerprint;
   Candidates candidates;
 };
 

@@ -28,7 +28,7 @@
 #ifndef TALK_MEDIA_BASE_RTPUTILS_H_
 #define TALK_MEDIA_BASE_RTPUTILS_H_
 
-#include "talk/base/byteorder.h"
+#include "webrtc/base/byteorder.h"
 
 namespace cricket {
 

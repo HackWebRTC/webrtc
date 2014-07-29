@@ -27,36 +27,36 @@
 
 #include <string>
 
-#include "talk/base/gunit.h"
-#include "talk/base/logging.h"
-#include "talk/base/physicalsocketserver.h"
-#include "talk/base/virtualsocketserver.h"
-#include "talk/base/testclient.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/physicalsocketserver.h"
+#include "webrtc/base/virtualsocketserver.h"
+#include "webrtc/base/testclient.h"
+#include "webrtc/base/thread.h"
 #include "talk/p2p/base/stunserver.h"
 
 using namespace cricket;
 
-static const talk_base::SocketAddress server_addr("99.99.99.1", 3478);
-static const talk_base::SocketAddress client_addr("1.2.3.4", 1234);
+static const rtc::SocketAddress server_addr("99.99.99.1", 3478);
+static const rtc::SocketAddress client_addr("1.2.3.4", 1234);
 
 class StunServerTest : public testing::Test {
  public:
   StunServerTest()
-    : pss_(new talk_base::PhysicalSocketServer),
-      ss_(new talk_base::VirtualSocketServer(pss_.get())),
+    : pss_(new rtc::PhysicalSocketServer),
+      ss_(new rtc::VirtualSocketServer(pss_.get())),
       worker_(ss_.get()) {
   }
   virtual void SetUp() {
     server_.reset(new StunServer(
-        talk_base::AsyncUDPSocket::Create(ss_.get(), server_addr)));
-    client_.reset(new talk_base::TestClient(
-        talk_base::AsyncUDPSocket::Create(ss_.get(), client_addr)));
+        rtc::AsyncUDPSocket::Create(ss_.get(), server_addr)));
+    client_.reset(new rtc::TestClient(
+        rtc::AsyncUDPSocket::Create(ss_.get(), client_addr)));
 
     worker_.Start();
   }
   void Send(const StunMessage& msg) {
-    talk_base::ByteBuffer buf;
+    rtc::ByteBuffer buf;
     msg.Write(&buf);
     Send(buf.Data(), static_cast<int>(buf.Length()));
   }
@@ -65,9 +65,9 @@ class StunServerTest : public testing::Test {
   }
   StunMessage* Receive() {
     StunMessage* msg = NULL;
-    talk_base::TestClient::Packet* packet = client_->NextPacket();
+    rtc::TestClient::Packet* packet = client_->NextPacket();
     if (packet) {
-      talk_base::ByteBuffer buf(packet->buf, packet->size);
+      rtc::ByteBuffer buf(packet->buf, packet->size);
       msg = new StunMessage();
       msg->Read(&buf);
       delete packet;
@@ -75,11 +75,11 @@ class StunServerTest : public testing::Test {
     return msg;
   }
  private:
-  talk_base::scoped_ptr<talk_base::PhysicalSocketServer> pss_;
-  talk_base::scoped_ptr<talk_base::VirtualSocketServer> ss_;
-  talk_base::Thread worker_;
-  talk_base::scoped_ptr<StunServer> server_;
-  talk_base::scoped_ptr<talk_base::TestClient> client_;
+  rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
+  rtc::scoped_ptr<rtc::VirtualSocketServer> ss_;
+  rtc::Thread worker_;
+  rtc::scoped_ptr<StunServer> server_;
+  rtc::scoped_ptr<rtc::TestClient> client_;
 };
 
 // Disable for TSan v2, see

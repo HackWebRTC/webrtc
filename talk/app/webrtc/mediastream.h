@@ -40,7 +40,7 @@ namespace webrtc {
 
 class MediaStream : public Notifier<MediaStreamInterface> {
  public:
-  static talk_base::scoped_refptr<MediaStream> Create(const std::string& label);
+  static rtc::scoped_refptr<MediaStream> Create(const std::string& label);
 
   virtual std::string label() const OVERRIDE { return label_; }
 
@@ -48,9 +48,9 @@ class MediaStream : public Notifier<MediaStreamInterface> {
   virtual bool AddTrack(VideoTrackInterface* track) OVERRIDE;
   virtual bool RemoveTrack(AudioTrackInterface* track) OVERRIDE;
   virtual bool RemoveTrack(VideoTrackInterface* track) OVERRIDE;
-  virtual talk_base::scoped_refptr<AudioTrackInterface>
+  virtual rtc::scoped_refptr<AudioTrackInterface>
       FindAudioTrack(const std::string& track_id);
-  virtual talk_base::scoped_refptr<VideoTrackInterface>
+  virtual rtc::scoped_refptr<VideoTrackInterface>
       FindVideoTrack(const std::string& track_id);
 
   virtual AudioTrackVector GetAudioTracks() OVERRIDE { return audio_tracks_; }

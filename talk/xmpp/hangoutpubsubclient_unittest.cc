@@ -3,9 +3,9 @@
 
 #include <string>
 
-#include "talk/base/faketaskrunner.h"
-#include "talk/base/gunit.h"
-#include "talk/base/sigslot.h"
+#include "webrtc/base/faketaskrunner.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/sigslot.h"
 #include "talk/xmllite/qname.h"
 #include "talk/xmllite/xmlelement.h"
 #include "talk/xmpp/constants.h"
@@ -181,7 +181,7 @@ class HangoutPubSubClientTest : public testing::Test {
       pubsubjid("room@domain.com"),
       nick("me") {
 
-    runner.reset(new talk_base::FakeTaskRunner());
+    runner.reset(new rtc::FakeTaskRunner());
     xmpp_client = new buzz::FakeXmppClient(runner.get());
     client.reset(new buzz::HangoutPubSubClient(xmpp_client, pubsubjid, nick));
     listener.reset(new TestHangoutPubSubListener());
@@ -221,11 +221,11 @@ class HangoutPubSubClientTest : public testing::Test {
         listener.get(), &TestHangoutPubSubListener::OnMediaBlockError);
   }
 
-  talk_base::scoped_ptr<talk_base::FakeTaskRunner> runner;
+  rtc::scoped_ptr<rtc::FakeTaskRunner> runner;
   // xmpp_client deleted by deleting runner.
   buzz::FakeXmppClient* xmpp_client;
-  talk_base::scoped_ptr<buzz::HangoutPubSubClient> client;
-  talk_base::scoped_ptr<TestHangoutPubSubListener> listener;
+  rtc::scoped_ptr<buzz::HangoutPubSubClient> client;
+  rtc::scoped_ptr<TestHangoutPubSubListener> listener;
   buzz::Jid pubsubjid;
   std::string nick;
 };

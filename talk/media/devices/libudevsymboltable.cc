@@ -29,20 +29,20 @@
 
 #include <dlfcn.h>
 
-#include "talk/base/logging.h"
+#include "webrtc/base/logging.h"
 
 namespace cricket {
 
 #define LATE_BINDING_SYMBOL_TABLE_CLASS_NAME LIBUDEV_SYMBOLS_CLASS_NAME
 #define LATE_BINDING_SYMBOL_TABLE_SYMBOLS_LIST LIBUDEV_SYMBOLS_LIST
 #define LATE_BINDING_SYMBOL_TABLE_DLL_NAME "libudev.so.0"
-#include "talk/base/latebindingsymboltable.cc.def"
+#include "webrtc/base/latebindingsymboltable.cc.def"
 #undef LATE_BINDING_SYMBOL_TABLE_CLASS_NAME
 #undef LATE_BINDING_SYMBOL_TABLE_SYMBOLS_LIST
 #undef LATE_BINDING_SYMBOL_TABLE_DLL_NAME
 
-bool IsWrongLibUDevAbiVersion(talk_base::DllHandle libudev_0) {
-  talk_base::DllHandle libudev_1 = dlopen("libudev.so.1",
+bool IsWrongLibUDevAbiVersion(rtc::DllHandle libudev_0) {
+  rtc::DllHandle libudev_1 = dlopen("libudev.so.1",
                                           RTLD_NOW|RTLD_LOCAL|RTLD_NOLOAD);
   bool unsafe_symlink = (libudev_0 == libudev_1);
   if (unsafe_symlink) {

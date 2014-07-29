@@ -28,9 +28,9 @@
 #ifndef TALK_MEDIA_WEBRTCVIDEOFRAME_H_
 #define TALK_MEDIA_WEBRTCVIDEOFRAME_H_
 
-#include "talk/base/buffer.h"
-#include "talk/base/refcount.h"
-#include "talk/base/scoped_ref_ptr.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/refcount.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "talk/media/base/videoframe.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/interface/module_common_types.h"
@@ -108,7 +108,7 @@ class WebRtcVideoFrame : public VideoFrame {
 
  private:
   class FrameBuffer;
-  typedef talk_base::RefCountedObject<FrameBuffer> RefCountedBuffer;
+  typedef rtc::RefCountedObject<FrameBuffer> RefCountedBuffer;
 
   void Attach(RefCountedBuffer* video_buffer, size_t buffer_size, int w, int h,
               size_t pixel_width, size_t pixel_height, int64 elapsed_time,
@@ -120,7 +120,7 @@ class WebRtcVideoFrame : public VideoFrame {
   void InitToEmptyBuffer(int w, int h, size_t pixel_width, size_t pixel_height,
                          int64 elapsed_time, int64 time_stamp);
 
-  talk_base::scoped_refptr<RefCountedBuffer> video_buffer_;
+  rtc::scoped_refptr<RefCountedBuffer> video_buffer_;
   bool is_black_;
   size_t pixel_width_;
   size_t pixel_height_;

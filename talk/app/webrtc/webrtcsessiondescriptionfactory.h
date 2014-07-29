@@ -29,7 +29,7 @@
 #define TALK_APP_WEBRTC_WEBRTCSESSIONDESCRIPTIONFACTORY_H_
 
 #include "talk/app/webrtc/peerconnectioninterface.h"
-#include "talk/base/messagehandler.h"
+#include "webrtc/base/messagehandler.h"
 #include "talk/p2p/base/transportdescriptionfactory.h"
 #include "talk/session/media/mediasession.h"
 
@@ -77,7 +77,7 @@ struct CreateSessionDescriptionRequest {
         options(options) {}
 
   Type type;
-  talk_base::scoped_refptr<CreateSessionDescriptionObserver> observer;
+  rtc::scoped_refptr<CreateSessionDescriptionObserver> observer;
   cricket::MediaSessionOptions options;
 };
 
@@ -86,11 +86,11 @@ struct CreateSessionDescriptionRequest {
 // It queues the create offer/answer request until the DTLS identity
 // request has completed, i.e. when OnIdentityRequestFailed or OnIdentityReady
 // is called.
-class WebRtcSessionDescriptionFactory : public talk_base::MessageHandler,
+class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
                                         public sigslot::has_slots<>  {
  public:
   WebRtcSessionDescriptionFactory(
-      talk_base::Thread* signaling_thread,
+      rtc::Thread* signaling_thread,
       cricket::ChannelManager* channel_manager,
       MediaStreamSignaling* mediastream_signaling,
       DTLSIdentityServiceInterface* dtls_identity_service,
@@ -115,7 +115,7 @@ class WebRtcSessionDescriptionFactory : public talk_base::MessageHandler,
   void SetSdesPolicy(cricket::SecurePolicy secure_policy);
   cricket::SecurePolicy SdesPolicy() const;
 
-  sigslot::signal1<talk_base::SSLIdentity*> SignalIdentityReady;
+  sigslot::signal1<rtc::SSLIdentity*> SignalIdentityReady;
 
   // For testing.
   bool waiting_for_identity() const {
@@ -131,7 +131,7 @@ class WebRtcSessionDescriptionFactory : public talk_base::MessageHandler,
   };
 
   // MessageHandler implementation.
-  virtual void OnMessage(talk_base::Message* msg);
+  virtual void OnMessage(rtc::Message* msg);
 
   void InternalCreateOffer(CreateSessionDescriptionRequest request);
   void InternalCreateAnswer(CreateSessionDescriptionRequest request);
@@ -145,17 +145,17 @@ class WebRtcSessionDescriptionFactory : public talk_base::MessageHandler,
   void OnIdentityRequestFailed(int error);
   void OnIdentityReady(const std::string& der_cert,
                        const std::string& der_private_key);
-  void SetIdentity(talk_base::SSLIdentity* identity);
+  void SetIdentity(rtc::SSLIdentity* identity);
 
   std::queue<CreateSessionDescriptionRequest>
       create_session_description_requests_;
-  talk_base::Thread* signaling_thread_;
+  rtc::Thread* signaling_thread_;
   MediaStreamSignaling* mediastream_signaling_;
   cricket::TransportDescriptionFactory transport_desc_factory_;
   cricket::MediaSessionDescriptionFactory session_desc_factory_;
   uint64 session_version_;
-  talk_base::scoped_ptr<DTLSIdentityServiceInterface> identity_service_;
-  talk_base::scoped_refptr<WebRtcIdentityRequestObserver>
+  rtc::scoped_ptr<DTLSIdentityServiceInterface> identity_service_;
+  rtc::scoped_refptr<WebRtcIdentityRequestObserver>
       identity_request_observer_;
   WebRtcSession* session_;
   std::string session_id_;

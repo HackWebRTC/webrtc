@@ -36,7 +36,7 @@
 #include "talk/app/webrtc/statscollector.h"
 #include "talk/app/webrtc/streamcollection.h"
 #include "talk/app/webrtc/webrtcsession.h"
-#include "talk/base/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 
 namespace webrtc {
 class MediaStreamHandlerContainer;
@@ -52,7 +52,7 @@ typedef std::vector<PortAllocatorFactoryInterface::TurnConfiguration>
 class PeerConnection : public PeerConnectionInterface,
                        public MediaStreamSignalingObserver,
                        public IceObserver,
-                       public talk_base::MessageHandler,
+                       public rtc::MessageHandler,
                        public sigslot::has_slots<> {
  public:
   explicit PeerConnection(PeerConnectionFactory* factory);
@@ -63,16 +63,16 @@ class PeerConnection : public PeerConnectionInterface,
       PortAllocatorFactoryInterface* allocator_factory,
       DTLSIdentityServiceInterface* dtls_identity_service,
       PeerConnectionObserver* observer);
-  virtual talk_base::scoped_refptr<StreamCollectionInterface> local_streams();
-  virtual talk_base::scoped_refptr<StreamCollectionInterface> remote_streams();
+  virtual rtc::scoped_refptr<StreamCollectionInterface> local_streams();
+  virtual rtc::scoped_refptr<StreamCollectionInterface> remote_streams();
   virtual bool AddStream(MediaStreamInterface* local_stream,
                          const MediaConstraintsInterface* constraints);
   virtual void RemoveStream(MediaStreamInterface* local_stream);
 
-  virtual talk_base::scoped_refptr<DtmfSenderInterface> CreateDtmfSender(
+  virtual rtc::scoped_refptr<DtmfSenderInterface> CreateDtmfSender(
       AudioTrackInterface* track);
 
-  virtual talk_base::scoped_refptr<DataChannelInterface> CreateDataChannel(
+  virtual rtc::scoped_refptr<DataChannelInterface> CreateDataChannel(
       const std::string& label,
       const DataChannelInit* config);
   virtual bool GetStats(StatsObserver* observer,
@@ -114,7 +114,7 @@ class PeerConnection : public PeerConnectionInterface,
 
  private:
   // Implements MessageHandler.
-  virtual void OnMessage(talk_base::Message* msg);
+  virtual void OnMessage(rtc::Message* msg);
 
   // Implements MediaStreamSignalingObserver.
   virtual void OnAddRemoteStream(MediaStreamInterface* stream) OVERRIDE;
@@ -166,7 +166,7 @@ class PeerConnection : public PeerConnectionInterface,
                     DTLSIdentityServiceInterface* dtls_identity_service,
                     PeerConnectionObserver* observer);
 
-  talk_base::Thread* signaling_thread() const {
+  rtc::Thread* signaling_thread() const {
     return factory_->signaling_thread();
   }
 
@@ -183,7 +183,7 @@ class PeerConnection : public PeerConnectionInterface,
   // However, since the reference counting is done in the
   // PeerConnectionFactoryInteface all instances created using the raw pointer
   // will refer to the same reference count.
-  talk_base::scoped_refptr<PeerConnectionFactory> factory_;
+  rtc::scoped_refptr<PeerConnectionFactory> factory_;
   PeerConnectionObserver* observer_;
   UMAObserver* uma_observer_;
   SignalingState signaling_state_;
@@ -192,11 +192,11 @@ class PeerConnection : public PeerConnectionInterface,
   IceConnectionState ice_connection_state_;
   IceGatheringState ice_gathering_state_;
 
-  talk_base::scoped_ptr<cricket::PortAllocator> port_allocator_;
-  talk_base::scoped_ptr<WebRtcSession> session_;
-  talk_base::scoped_ptr<MediaStreamSignaling> mediastream_signaling_;
-  talk_base::scoped_ptr<MediaStreamHandlerContainer> stream_handler_container_;
-  talk_base::scoped_ptr<StatsCollector> stats_;
+  rtc::scoped_ptr<cricket::PortAllocator> port_allocator_;
+  rtc::scoped_ptr<WebRtcSession> session_;
+  rtc::scoped_ptr<MediaStreamSignaling> mediastream_signaling_;
+  rtc::scoped_ptr<MediaStreamHandlerContainer> stream_handler_container_;
+  rtc::scoped_ptr<StatsCollector> stats_;
 };
 
 }  // namespace webrtc

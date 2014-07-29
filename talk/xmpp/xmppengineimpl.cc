@@ -31,7 +31,7 @@
 #include <sstream>
 #include <vector>
 
-#include "talk/base/common.h"
+#include "webrtc/base/common.h"
 #include "talk/xmllite/xmlelement.h"
 #include "talk/xmllite/xmlprinter.h"
 #include "talk/xmpp/constants.h"

@@ -34,8 +34,8 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/buffer.h"
-#include "talk/base/stringutils.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/stringutils.h"
 #include "talk/media/base/audiorenderer.h"
 #include "talk/media/base/mediaengine.h"
 #include "talk/media/base/rtputils.h"
@@ -73,11 +73,11 @@ template <class Base> class RtpHelper : public Base {
     if (!sending_) {
       return false;
     }
-    talk_base::Buffer packet(data, len, kMaxRtpPacketLen);
+    rtc::Buffer packet(data, len, kMaxRtpPacketLen);
     return Base::SendPacket(&packet);
   }
   bool SendRtcp(const void* data, int len) {
-    talk_base::Buffer packet(data, len, kMaxRtpPacketLen);
+    rtc::Buffer packet(data, len, kMaxRtpPacketLen);
     return Base::SendRtcp(&packet);
   }
 
@@ -191,12 +191,12 @@ template <class Base> class RtpHelper : public Base {
     return true;
   }
   void set_playout(bool playout) { playout_ = playout; }
-  virtual void OnPacketReceived(talk_base::Buffer* packet,
-                                const talk_base::PacketTime& packet_time) {
+  virtual void OnPacketReceived(rtc::Buffer* packet,
+                                const rtc::PacketTime& packet_time) {
     rtp_packets_.push_back(std::string(packet->data(), packet->length()));
   }
-  virtual void OnRtcpReceived(talk_base::Buffer* packet,
-                              const talk_base::PacketTime& packet_time) {
+  virtual void OnRtcpReceived(rtc::Buffer* packet,
+                              const rtc::PacketTime& packet_time) {
     rtcp_packets_.push_back(std::string(packet->data(), packet->length()));
   }
   virtual void OnReadyToSend(bool ready) {
@@ -690,7 +690,7 @@ class FakeDataMediaChannel : public RtpHelper<DataMediaChannel> {
   }
 
   virtual bool SendData(const SendDataParams& params,
-                        const talk_base::Buffer& payload,
+                        const rtc::Buffer& payload,
                         SendDataResult* result) {
     if (send_blocked_) {
       *result = SDR_BLOCK;
@@ -724,7 +724,7 @@ class FakeBaseEngine {
       : loglevel_(-1),
         options_changed_(false),
         fail_create_channel_(false) {}
-  bool Init(talk_base::Thread* worker_thread) { return true; }
+  bool Init(rtc::Thread* worker_thread) { return true; }
   void Terminate() {}
 
   void SetLogging(int level, const char* filter) {
@@ -824,7 +824,7 @@ class FakeVoiceEngine : public FakeBaseEngine {
 
   bool SetLocalMonitor(bool enable) { return true; }
 
-  bool StartAecDump(talk_base::PlatformFile file) { return false; }
+  bool StartAecDump(rtc::PlatformFile file) { return false; }
 
   bool RegisterProcessor(uint32 ssrc, VoiceProcessor* voice_processor,
                          MediaProcessorDirection direction) {

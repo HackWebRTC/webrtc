@@ -28,7 +28,7 @@
 #import "RTCDataChannel.h"
 
 #include "talk/app/webrtc/datachannelinterface.h"
-#include "talk/base/scoped_ref_ptr.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 
 @interface RTCDataBuffer (Internal)
 
@@ -47,9 +47,9 @@
 @interface RTCDataChannel (Internal)
 
 @property(nonatomic, readonly)
-    talk_base::scoped_refptr<webrtc::DataChannelInterface> dataChannel;
+    rtc::scoped_refptr<webrtc::DataChannelInterface> dataChannel;
 
 - (instancetype)initWithDataChannel:
-        (talk_base::scoped_refptr<webrtc::DataChannelInterface>)dataChannel;
+        (rtc::scoped_refptr<webrtc::DataChannelInterface>)dataChannel;
 
 @end

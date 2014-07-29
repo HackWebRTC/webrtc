@@ -26,10 +26,10 @@
 #ifndef TALK_MEDIA_BASE_VIDEOADAPTER_H_  // NOLINT
 #define TALK_MEDIA_BASE_VIDEOADAPTER_H_
 
-#include "talk/base/common.h"  // For ASSERT
-#include "talk/base/criticalsection.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/sigslot.h"
+#include "webrtc/base/common.h"  // For ASSERT
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/sigslot.h"
 #include "talk/media/base/videocommon.h"
 
 namespace cricket {
@@ -99,9 +99,9 @@ class VideoAdapter {
   bool black_output_;  // Flag to tell if we need to black output_frame_.
   bool is_black_;  // Flag to tell if output_frame_ is currently black.
   int64 interval_next_frame_;
-  talk_base::scoped_ptr<VideoFrame> output_frame_;
+  rtc::scoped_ptr<VideoFrame> output_frame_;
   // The critical section to protect the above variables.
-  talk_base::CriticalSection critical_section_;
+  rtc::CriticalSection critical_section_;
 
   DISALLOW_COPY_AND_ASSIGN(VideoAdapter);
 };
@@ -206,7 +206,7 @@ class CoordinatedVideoAdapter
   int cpu_desired_num_pixels_;
   CoordinatedVideoAdapter::AdaptReason adapt_reason_;
   // The critical section to protect handling requests.
-  talk_base::CriticalSection request_critical_section_;
+  rtc::CriticalSection request_critical_section_;
 
   // The weighted average of cpu load over time. It's always updated (if cpu
   // adaptation is on), but only used if cpu_smoothing_ is set.

@@ -25,19 +25,19 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/base/fakenetwork.h"
-#include "talk/base/firewallsocketserver.h"
-#include "talk/base/gunit.h"
-#include "talk/base/helpers.h"
-#include "talk/base/logging.h"
-#include "talk/base/natserver.h"
-#include "talk/base/natsocketfactory.h"
-#include "talk/base/network.h"
-#include "talk/base/physicalsocketserver.h"
-#include "talk/base/socketaddress.h"
-#include "talk/base/ssladapter.h"
-#include "talk/base/thread.h"
-#include "talk/base/virtualsocketserver.h"
+#include "webrtc/base/fakenetwork.h"
+#include "webrtc/base/firewallsocketserver.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/natserver.h"
+#include "webrtc/base/natsocketfactory.h"
+#include "webrtc/base/network.h"
+#include "webrtc/base/physicalsocketserver.h"
+#include "webrtc/base/socketaddress.h"
+#include "webrtc/base/ssladapter.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/base/virtualsocketserver.h"
 #include "talk/p2p/base/basicpacketsocketfactory.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/p2ptransportchannel.h"
@@ -49,14 +49,14 @@
 #include "talk/p2p/client/httpportallocator.h"
 
 using cricket::ServerAddresses;
-using talk_base::SocketAddress;
-using talk_base::Thread;
+using rtc::SocketAddress;
+using rtc::Thread;
 
 static const SocketAddress kClientAddr("11.11.11.11", 0);
 static const SocketAddress kClientIPv6Addr(
     "2401:fa00:4:1000:be30:5bff:fee5:c3", 0);
 static const SocketAddress kClientAddr2("22.22.22.22", 0);
-static const SocketAddress kNatAddr("77.77.77.77", talk_base::NAT_SERVER_PORT);
+static const SocketAddress kNatAddr("77.77.77.77", rtc::NAT_SERVER_PORT);
 static const SocketAddress kRemoteClientAddr("22.22.22.22", 0);
 static const SocketAddress kStunAddr("99.99.99.1", cricket::STUN_SERVER_PORT);
 static const SocketAddress kRelayUdpIntAddr("99.99.99.2", 5000);
@@ -97,17 +97,17 @@ std::ostream& operator<<(std::ostream& os, const cricket::Candidate& c) {
 class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
  public:
   static void SetUpTestCase() {
-    talk_base::InitializeSSL();
+    rtc::InitializeSSL();
   }
 
   static void TearDownTestCase() {
-    talk_base::CleanupSSL();
+    rtc::CleanupSSL();
   }
 
   PortAllocatorTest()
-      : pss_(new talk_base::PhysicalSocketServer),
-        vss_(new talk_base::VirtualSocketServer(pss_.get())),
-        fss_(new talk_base::FirewallSocketServer(vss_.get())),
+      : pss_(new rtc::PhysicalSocketServer),
+        vss_(new rtc::VirtualSocketServer(pss_.get())),
+        fss_(new rtc::FirewallSocketServer(vss_.get())),
         ss_scope_(fss_.get()),
         nat_factory_(vss_.get(), kNatAddr),
         nat_socket_factory_(&nat_factory_),
@@ -132,9 +132,9 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
   bool SetPortRange(int min_port, int max_port) {
     return allocator_->SetPortRange(min_port, max_port);
   }
-  talk_base::NATServer* CreateNatServer(const SocketAddress& addr,
-                                        talk_base::NATType type) {
-    return new talk_base::NATServer(type, vss_.get(), addr, vss_.get(), addr);
+  rtc::NATServer* CreateNatServer(const SocketAddress& addr,
+                                        rtc::NATType type) {
+    return new rtc::NATServer(type, vss_.get(), addr, vss_.get(), addr);
   }
 
   bool CreateSession(int component) {
@@ -185,7 +185,7 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
         ((addr.port() == 0 && (c.address().port() != 0)) ||
         (c.address().port() == addr.port())));
   }
-  static bool CheckPort(const talk_base::SocketAddress& addr,
+  static bool CheckPort(const rtc::SocketAddress& addr,
                         int min_port, int max_port) {
     return (addr.port() >= min_port && addr.port() <= max_port);
   }
@@ -207,10 +207,10 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
       int send_buffer_size;
       if (expected == -1) {
         EXPECT_EQ(SOCKET_ERROR,
-                  (*it)->GetOption(talk_base::Socket::OPT_SNDBUF,
+                  (*it)->GetOption(rtc::Socket::OPT_SNDBUF,
                                    &send_buffer_size));
       } else {
-        EXPECT_EQ(0, (*it)->GetOption(talk_base::Socket::OPT_SNDBUF,
+        EXPECT_EQ(0, (*it)->GetOption(rtc::Socket::OPT_SNDBUF,
                                       &send_buffer_size));
         ASSERT_EQ(expected, send_buffer_size);
       }
@@ -249,18 +249,18 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
     return false;
   }
 
-  talk_base::scoped_ptr<talk_base::PhysicalSocketServer> pss_;
-  talk_base::scoped_ptr<talk_base::VirtualSocketServer> vss_;
-  talk_base::scoped_ptr<talk_base::FirewallSocketServer> fss_;
-  talk_base::SocketServerScope ss_scope_;
-  talk_base::NATSocketFactory nat_factory_;
-  talk_base::BasicPacketSocketFactory nat_socket_factory_;
+  rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
+  rtc::scoped_ptr<rtc::VirtualSocketServer> vss_;
+  rtc::scoped_ptr<rtc::FirewallSocketServer> fss_;
+  rtc::SocketServerScope ss_scope_;
+  rtc::NATSocketFactory nat_factory_;
+  rtc::BasicPacketSocketFactory nat_socket_factory_;
   cricket::TestStunServer stun_server_;
   cricket::TestRelayServer relay_server_;
   cricket::TestTurnServer turn_server_;
-  talk_base::FakeNetworkManager network_manager_;
-  talk_base::scoped_ptr<cricket::BasicPortAllocator> allocator_;
-  talk_base::scoped_ptr<cricket::PortAllocatorSession> session_;
+  rtc::FakeNetworkManager network_manager_;
+  rtc::scoped_ptr<cricket::BasicPortAllocator> allocator_;
+  rtc::scoped_ptr<cricket::PortAllocatorSession> session_;
   std::vector<cricket::PortInterface*> ports_;
   std::vector<cricket::Candidate> candidates_;
   bool candidate_allocation_done_;
@@ -292,7 +292,7 @@ TEST_F(PortAllocatorTest, TestNoNetworkInterface) {
   // called OnAllocate multiple times. In old behavior it's called every 250ms.
   // When there are no network interfaces, each execution of OnAllocate will
   // result in SignalCandidatesAllocationDone signal.
-  talk_base::Thread::Current()->ProcessMessages(1000);
+  rtc::Thread::Current()->ProcessMessages(1000);
   EXPECT_TRUE(candidate_allocation_done_);
   EXPECT_EQ(0U, candidates_.size());
 }
@@ -408,7 +408,7 @@ TEST_F(PortAllocatorTest, TestGetAllPortsPortRange) {
 TEST_F(PortAllocatorTest, TestGetAllPortsNoAdapters) {
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  talk_base::Thread::Current()->ProcessMessages(100);
+  rtc::Thread::Current()->ProcessMessages(100);
   // Without network adapter, we should not get any candidate.
   EXPECT_EQ(0U, candidates_.size());
   EXPECT_TRUE(candidate_allocation_done_);
@@ -424,7 +424,7 @@ TEST_F(PortAllocatorTest, TestDisableAllPorts) {
                       cricket::PORTALLOCATOR_DISABLE_RELAY |
                       cricket::PORTALLOCATOR_DISABLE_TCP);
   session_->StartGettingPorts();
-  talk_base::Thread::Current()->ProcessMessages(100);
+  rtc::Thread::Current()->ProcessMessages(100);
   EXPECT_EQ(0U, candidates_.size());
   EXPECT_TRUE(candidate_allocation_done_);
 }
@@ -491,7 +491,7 @@ TEST_F(PortAllocatorTest, TestGetAllPortsNoSockets) {
 
 // Testing STUN timeout.
 TEST_F(PortAllocatorTest, TestGetAllPortsNoUdpAllowed) {
-  fss_->AddRule(false, talk_base::FP_UDP, talk_base::FD_ANY, kClientAddr);
+  fss_->AddRule(false, rtc::FP_UDP, rtc::FD_ANY, kClientAddr);
   AddInterface(kClientAddr);
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
@@ -550,9 +550,9 @@ TEST_F(PortAllocatorTest, TestBasicMuxFeatures) {
   AddInterface(kClientAddr);
   allocator().set_flags(cricket::PORTALLOCATOR_ENABLE_BUNDLE);
   // Session ID - session1.
-  talk_base::scoped_ptr<cricket::PortAllocatorSession> session1(
+  rtc::scoped_ptr<cricket::PortAllocatorSession> session1(
       CreateSession("session1", cricket::ICE_CANDIDATE_COMPONENT_RTP));
-  talk_base::scoped_ptr<cricket::PortAllocatorSession> session2(
+  rtc::scoped_ptr<cricket::PortAllocatorSession> session2(
       CreateSession("session1", cricket::ICE_CANDIDATE_COMPONENT_RTCP));
   session1->StartGettingPorts();
   session2->StartGettingPorts();
@@ -560,7 +560,7 @@ TEST_F(PortAllocatorTest, TestBasicMuxFeatures) {
   ASSERT_EQ_WAIT(14U, candidates_.size(), kDefaultAllocationTimeout);
   EXPECT_EQ(8U, ports_.size());
 
-  talk_base::scoped_ptr<cricket::PortAllocatorSession> session3(
+  rtc::scoped_ptr<cricket::PortAllocatorSession> session3(
       CreateSession("session1", cricket::ICE_CANDIDATE_COMPONENT_RTP));
   session3->StartGettingPorts();
   // Already allocated candidates and ports will be sent to the newly
@@ -577,7 +577,7 @@ TEST_F(PortAllocatorTest, TestBundleIceRestart) {
   AddInterface(kClientAddr);
   allocator().set_flags(cricket::PORTALLOCATOR_ENABLE_BUNDLE);
   // Session ID - session1.
-  talk_base::scoped_ptr<cricket::PortAllocatorSession> session1(
+  rtc::scoped_ptr<cricket::PortAllocatorSession> session1(
       CreateSession("session1", kContentName,
                     cricket::ICE_CANDIDATE_COMPONENT_RTP,
                     kIceUfrag0, kIcePwd0));
@@ -586,7 +586,7 @@ TEST_F(PortAllocatorTest, TestBundleIceRestart) {
   EXPECT_EQ(4U, ports_.size());
 
   // Allocate a different session with sid |session1| and different ice_ufrag.
-  talk_base::scoped_ptr<cricket::PortAllocatorSession> session2(
+  rtc::scoped_ptr<cricket::PortAllocatorSession> session2(
       CreateSession("session1", kContentName,
                     cricket::ICE_CANDIDATE_COMPONENT_RTP,
                     "TestIceUfrag", kIcePwd0));
@@ -601,7 +601,7 @@ TEST_F(PortAllocatorTest, TestBundleIceRestart) {
 
   // Allocating a different session with sid |session1| and
   // different ice_pwd.
-  talk_base::scoped_ptr<cricket::PortAllocatorSession> session3(
+  rtc::scoped_ptr<cricket::PortAllocatorSession> session3(
       CreateSession("session1", kContentName,
                     cricket::ICE_CANDIDATE_COMPONENT_RTP,
                     kIceUfrag0, "TestIcePwd"));
@@ -614,7 +614,7 @@ TEST_F(PortAllocatorTest, TestBundleIceRestart) {
   EXPECT_NE(candidates_[8].address(), candidates_[15].address());
 
   // Allocating a session with by changing both ice_ufrag and ice_pwd.
-  talk_base::scoped_ptr<cricket::PortAllocatorSession> session4(
+  rtc::scoped_ptr<cricket::PortAllocatorSession> session4(
       CreateSession("session1", kContentName,
                     cricket::ICE_CANDIDATE_COMPONENT_RTP,
                     "TestIceUfrag", "TestIcePwd"));
@@ -698,8 +698,8 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithoutNat) {
 // local candidates as client behind a nat.
 TEST_F(PortAllocatorTest, TestSharedSocketWithNat) {
   AddInterface(kClientAddr);
-  talk_base::scoped_ptr<talk_base::NATServer> nat_server(
-      CreateNatServer(kNatAddr, talk_base::NAT_OPEN_CONE));
+  rtc::scoped_ptr<rtc::NATServer> nat_server(
+      CreateNatServer(kNatAddr, rtc::NAT_OPEN_CONE));
   ServerAddresses stun_servers;
   stun_servers.insert(kStunAddr);
   allocator_.reset(new cricket::BasicPortAllocator(
@@ -716,7 +716,7 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithNat) {
       cricket::ICE_CANDIDATE_COMPONENT_RTP, "local", "udp", kClientAddr);
   EXPECT_PRED5(CheckCandidate, candidates_[1],
       cricket::ICE_CANDIDATE_COMPONENT_RTP, "stun", "udp",
-      talk_base::SocketAddress(kNatAddr.ipaddr(), 0));
+      rtc::SocketAddress(kNatAddr.ipaddr(), 0));
   EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
   EXPECT_EQ(3U, candidates_.size());
 }
@@ -750,10 +750,10 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithoutNatUsingTurn) {
       cricket::ICE_CANDIDATE_COMPONENT_RTP, "local", "udp", kClientAddr);
   EXPECT_PRED5(CheckCandidate, candidates_[1],
       cricket::ICE_CANDIDATE_COMPONENT_RTP, "relay", "udp",
-      talk_base::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
+      rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
   EXPECT_PRED5(CheckCandidate, candidates_[2],
       cricket::ICE_CANDIDATE_COMPONENT_RTP, "relay", "udp",
-      talk_base::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
+      rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
   EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
   EXPECT_EQ(3U, candidates_.size());
 }
@@ -761,7 +761,7 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithoutNatUsingTurn) {
 // Testing DNS resolve for the TURN server, this will test AllocationSequence
 // handling the unresolved address signal from TurnPort.
 TEST_F(PortAllocatorTest, TestSharedSocketWithServerAddressResolve) {
-  turn_server_.AddInternalSocket(talk_base::SocketAddress("127.0.0.1", 3478),
+  turn_server_.AddInternalSocket(rtc::SocketAddress("127.0.0.1", 3478),
                                  cricket::PROTO_UDP);
   AddInterface(kClientAddr);
   allocator_.reset(new cricket::BasicPortAllocator(&network_manager_));
@@ -769,7 +769,7 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithServerAddressResolve) {
   cricket::RelayCredentials credentials(kTurnUsername, kTurnPassword);
   relay_server.credentials = credentials;
   relay_server.ports.push_back(cricket::ProtocolAddress(
-      talk_base::SocketAddress("localhost", 3478),
+      rtc::SocketAddress("localhost", 3478),
       cricket::PROTO_UDP, false));
   allocator_->AddRelay(relay_server);
 
@@ -790,8 +790,8 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithServerAddressResolve) {
 // stun and turn candidates.
 TEST_F(PortAllocatorTest, TestSharedSocketWithNatUsingTurn) {
   AddInterface(kClientAddr);
-  talk_base::scoped_ptr<talk_base::NATServer> nat_server(
-      CreateNatServer(kNatAddr, talk_base::NAT_OPEN_CONE));
+  rtc::scoped_ptr<rtc::NATServer> nat_server(
+      CreateNatServer(kNatAddr, rtc::NAT_OPEN_CONE));
   ServerAddresses stun_servers;
   stun_servers.insert(kStunAddr);
   allocator_.reset(new cricket::BasicPortAllocator(
@@ -818,10 +818,10 @@ TEST_F(PortAllocatorTest, TestSharedSocketWithNatUsingTurn) {
       cricket::ICE_CANDIDATE_COMPONENT_RTP, "local", "udp", kClientAddr);
   EXPECT_PRED5(CheckCandidate, candidates_[1],
       cricket::ICE_CANDIDATE_COMPONENT_RTP, "stun", "udp",
-      talk_base::SocketAddress(kNatAddr.ipaddr(), 0));
+      rtc::SocketAddress(kNatAddr.ipaddr(), 0));
   EXPECT_PRED5(CheckCandidate, candidates_[2],
       cricket::ICE_CANDIDATE_COMPONENT_RTP, "relay", "udp",
-      talk_base::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
+      rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
   EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
   EXPECT_EQ(3U, candidates_.size());
   // Local port will be created first and then TURN port.
@@ -838,7 +838,7 @@ TEST_F(PortAllocatorTest, TestSharedSocketNoUdpAllowed) {
                         cricket::PORTALLOCATOR_DISABLE_TCP |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
                         cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
-  fss_->AddRule(false, talk_base::FP_UDP, talk_base::FD_ANY, kClientAddr);
+  fss_->AddRule(false, rtc::FP_UDP, rtc::FD_ANY, kClientAddr);
   AddInterface(kClientAddr);
   EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
@@ -884,13 +884,13 @@ TEST_F(PortAllocatorTest, TestEnableIPv6Addresses) {
 // Test that the httpportallocator correctly maintains its lists of stun and
 // relay servers, by never allowing an empty list.
 TEST(HttpPortAllocatorTest, TestHttpPortAllocatorHostLists) {
-  talk_base::FakeNetworkManager network_manager;
+  rtc::FakeNetworkManager network_manager;
   cricket::HttpPortAllocator alloc(&network_manager, "unit test agent");
   EXPECT_EQ(1U, alloc.relay_hosts().size());
   EXPECT_EQ(1U, alloc.stun_hosts().size());
 
   std::vector<std::string> relay_servers;
-  std::vector<talk_base::SocketAddress> stun_servers;
+  std::vector<rtc::SocketAddress> stun_servers;
 
   alloc.SetRelayHosts(relay_servers);
   alloc.SetStunHosts(stun_servers);
@@ -900,9 +900,9 @@ TEST(HttpPortAllocatorTest, TestHttpPortAllocatorHostLists) {
   relay_servers.push_back("1.unittest.corp.google.com");
   relay_servers.push_back("2.unittest.corp.google.com");
   stun_servers.push_back(
-      talk_base::SocketAddress("1.unittest.corp.google.com", 0));
+      rtc::SocketAddress("1.unittest.corp.google.com", 0));
   stun_servers.push_back(
-      talk_base::SocketAddress("2.unittest.corp.google.com", 0));
+      rtc::SocketAddress("2.unittest.corp.google.com", 0));
 
   alloc.SetRelayHosts(relay_servers);
   alloc.SetStunHosts(stun_servers);
@@ -912,12 +912,12 @@ TEST(HttpPortAllocatorTest, TestHttpPortAllocatorHostLists) {
 
 // Test that the HttpPortAllocator uses correct URL to create sessions.
 TEST(HttpPortAllocatorTest, TestSessionRequestUrl) {
-  talk_base::FakeNetworkManager network_manager;
+  rtc::FakeNetworkManager network_manager;
   cricket::HttpPortAllocator alloc(&network_manager, "unit test agent");
 
   // Disable PORTALLOCATOR_ENABLE_SHARED_UFRAG.
   alloc.set_flags(alloc.flags() & ~cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG);
-  talk_base::scoped_ptr<cricket::HttpPortAllocatorSessionBase> session(
+  rtc::scoped_ptr<cricket::HttpPortAllocatorSessionBase> session(
       static_cast<cricket::HttpPortAllocatorSession*>(
           alloc.CreateSessionInternal(
               "test content", 0, kIceUfrag0, kIcePwd0)));
@@ -932,19 +932,19 @@ TEST(HttpPortAllocatorTest, TestSessionRequestUrl) {
   url = session->GetSessionRequestUrl();
   LOG(LS_INFO) << "url: " << url;
   std::vector<std::string> parts;
-  talk_base::split(url, '?', &parts);
+  rtc::split(url, '?', &parts);
   ASSERT_EQ(2U, parts.size());
 
   std::vector<std::string> args_parts;
-  talk_base::split(parts[1], '&', &args_parts);
+  rtc::split(parts[1], '&', &args_parts);
 
   std::map<std::string, std::string> args;
   for (std::vector<std::string>::iterator it = args_parts.begin();
        it != args_parts.end(); ++it) {
     std::vector<std::string> parts;
-    talk_base::split(*it, '=', &parts);
+    rtc::split(*it, '=', &parts);
     ASSERT_EQ(2U, parts.size());
-    args[talk_base::s_url_decode(parts[0])] = talk_base::s_url_decode(parts[1]);
+    args[rtc::s_url_decode(parts[0])] = rtc::s_url_decode(parts[1]);
   }
 
   EXPECT_EQ(kIceUfrag0, args["username"]);

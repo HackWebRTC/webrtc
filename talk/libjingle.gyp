@@ -303,6 +303,7 @@
       'dependencies': [
         '<(DEPTH)/third_party/expat/expat.gyp:expat',
         '<(DEPTH)/third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
+        '<(webrtc_root)/base/base.gyp:webrtc_base',
       ],
       'export_dependent_settings': [
         '<(DEPTH)/third_party/expat/expat.gyp:expat',

@@ -39,7 +39,7 @@
 }
 
 - (id)initWithMediaTrack:
-          (talk_base::scoped_refptr<webrtc::MediaStreamTrackInterface>)
+          (rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)
       mediaTrack {
   if (self = [super initWithMediaTrack:mediaTrack]) {
     _rendererArray = [NSMutableArray array];
@@ -71,7 +71,7 @@
 
 @implementation RTCVideoTrack (Internal)
 
-- (talk_base::scoped_refptr<webrtc::VideoTrackInterface>)videoTrack {
+- (rtc::scoped_refptr<webrtc::VideoTrackInterface>)videoTrack {
   return static_cast<webrtc::VideoTrackInterface*>(self.mediaTrack.get());
 }
 

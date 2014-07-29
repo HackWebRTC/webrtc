@@ -30,7 +30,7 @@
 
 #include "talk/p2p/base/transportdescription.h"
 
-namespace talk_base {
+namespace rtc {
 class SSLIdentity;
 }
 
@@ -51,14 +51,14 @@ class TransportDescriptionFactory {
   TransportDescriptionFactory();
   SecurePolicy secure() const { return secure_; }
   // The identity to use when setting up DTLS.
-  talk_base::SSLIdentity* identity() const { return identity_; }
+  rtc::SSLIdentity* identity() const { return identity_; }
 
   // Specifies the transport protocol to be use.
   void set_protocol(TransportProtocol protocol) { protocol_ = protocol; }
   // Specifies the transport security policy to use.
   void set_secure(SecurePolicy s) { secure_ = s; }
   // Specifies the identity to use (only used when secure is not SEC_DISABLED).
-  void set_identity(talk_base::SSLIdentity* identity) { identity_ = identity; }
+  void set_identity(rtc::SSLIdentity* identity) { identity_ = identity; }
 
   // Creates a transport description suitable for use in an offer.
   TransportDescription* CreateOffer(const TransportOptions& options,
@@ -75,7 +75,7 @@ class TransportDescriptionFactory {
 
   TransportProtocol protocol_;
   SecurePolicy secure_;
-  talk_base::SSLIdentity* identity_;
+  rtc::SSLIdentity* identity_;
 };
 
 }  // namespace cricket

@@ -33,8 +33,8 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/basictypes.h"
-#include "talk/base/refcount.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/refcount.h"
 
 namespace cricket {
 class SessionDescription;
@@ -138,7 +138,7 @@ SessionDescriptionInterface* CreateSessionDescription(const std::string& type,
                                                       SdpParseError* error);
 
 // Jsep CreateOffer and CreateAnswer callback interface.
-class CreateSessionDescriptionObserver : public talk_base::RefCountInterface {
+class CreateSessionDescriptionObserver : public rtc::RefCountInterface {
  public:
   // The implementation of the CreateSessionDescriptionObserver takes
   // the ownership of the |desc|.
@@ -150,7 +150,7 @@ class CreateSessionDescriptionObserver : public talk_base::RefCountInterface {
 };
 
 // Jsep SetLocalDescription and SetRemoteDescription callback interface.
-class SetSessionDescriptionObserver : public talk_base::RefCountInterface {
+class SetSessionDescriptionObserver : public rtc::RefCountInterface {
  public:
   virtual void OnSuccess() = 0;
   virtual void OnFailure(const std::string& error) = 0;

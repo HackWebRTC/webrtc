@@ -27,11 +27,11 @@
 
 #import "RTCI420Frame.h"
 
-#include "talk/base/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "talk/media/base/videoframe.h"
 
 @implementation RTCI420Frame {
-  talk_base::scoped_ptr<cricket::VideoFrame> _videoFrame;
+  rtc::scoped_ptr<cricket::VideoFrame> _videoFrame;
 }
 
 - (NSUInteger)width {

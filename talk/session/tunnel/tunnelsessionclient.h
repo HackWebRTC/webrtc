@@ -30,8 +30,8 @@
 
 #include <vector>
 
-#include "talk/base/criticalsection.h"
-#include "talk/base/stream.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/stream.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/pseudotcp.h"
 #include "talk/p2p/base/session.h"
@@ -54,7 +54,7 @@ enum TunnelSessionRole { INITIATOR, RESPONDER };
 
 // Base class is still abstract
 class TunnelSessionClientBase
-  : public SessionClient, public talk_base::MessageHandler {
+  : public SessionClient, public rtc::MessageHandler {
 public:
   TunnelSessionClientBase(const buzz::Jid& jid, SessionManager* manager,
                           const std::string &ns);
@@ -69,10 +69,10 @@ public:
   // This can be called on any thread.  The stream interface is
   // thread-safe, but notifications must be registered on the creating
   // thread.
-  talk_base::StreamInterface* CreateTunnel(const buzz::Jid& to,
+  rtc::StreamInterface* CreateTunnel(const buzz::Jid& to,
                                            const std::string& description);
 
-  talk_base::StreamInterface* AcceptTunnel(Session* session);
+  rtc::StreamInterface* AcceptTunnel(Session* session);
   void DeclineTunnel(Session* session);
 
   // Invoked on an incoming tunnel
@@ -88,13 +88,13 @@ public:
 
 protected:
 
-  void OnMessage(talk_base::Message* pmsg);
+  void OnMessage(rtc::Message* pmsg);
 
   // helper method to instantiate TunnelSession. By overriding this,
   // subclasses of TunnelSessionClient are able to instantiate
   // subclasses of TunnelSession instead.
   virtual TunnelSession* MakeTunnelSession(Session* session,
-                                           talk_base::Thread* stream_thread,
+                                           rtc::Thread* stream_thread,
                                            TunnelSessionRole role);
 
   buzz::Jid jid_;
@@ -155,9 +155,9 @@ class TunnelSession : public sigslot::has_slots<> {
  public:
   // Signalling thread methods
   TunnelSession(TunnelSessionClientBase* client, Session* session,
-                talk_base::Thread* stream_thread);
+                rtc::Thread* stream_thread);
 
-  virtual talk_base::StreamInterface* GetStream();
+  virtual rtc::StreamInterface* GetStream();
   bool HasSession(Session* session);
   Session* ReleaseSession(bool channel_exists);
 

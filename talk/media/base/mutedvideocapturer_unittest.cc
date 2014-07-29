@@ -27,7 +27,7 @@
 
 #include "talk/media/base/mutedvideocapturer.h"
 
-#include "talk/base/gunit.h"
+#include "webrtc/base/gunit.h"
 #include "talk/media/base/videoframe.h"
 
 class MutedVideoCapturerTest : public sigslot::has_slots<>,

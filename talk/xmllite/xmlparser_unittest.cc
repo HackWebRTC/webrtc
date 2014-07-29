@@ -28,8 +28,8 @@
 #include <string>
 #include <sstream>
 #include <iostream>
-#include "talk/base/common.h"
-#include "talk/base/gunit.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/gunit.h"
 #include "talk/xmllite/qname.h"
 #include "talk/xmllite/xmlparser.h"
 
@@ -51,17 +51,17 @@ class XmlParserTestHandler : public XmlParseHandler {
     ss_ << ") ";
   }
   virtual void EndElement(XmlParseContext * pctx, const char * name) {
-    UNUSED(pctx);
-    UNUSED(name);
+    RTC_UNUSED(pctx);
+    RTC_UNUSED(name);
     ss_ << "END ";
   }
   virtual void CharacterData(XmlParseContext * pctx,
                              const char * text, int len) {
-    UNUSED(pctx);
+    RTC_UNUSED(pctx);
     ss_ << "TEXT (" << std::string(text, len) << ") ";
   }
   virtual void Error(XmlParseContext * pctx, XML_Error code) {
-    UNUSED(pctx);
+    RTC_UNUSED(pctx);
     ss_ << "ERROR (" << static_cast<int>(code) << ") ";
   }
   virtual ~XmlParserTestHandler() {

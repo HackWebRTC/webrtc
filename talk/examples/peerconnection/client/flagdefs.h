@@ -29,7 +29,7 @@
 #define TALK_EXAMPLES_PEERCONNECTION_CLIENT_FLAGDEFS_H_
 #pragma once
 
-#include "talk/base/flags.h"
+#include "webrtc/base/flags.h"
 
 extern const uint16 kDefaultServerPort;  // From defaults.[h|cc]
 

@@ -29,13 +29,13 @@
 
 #include <functional>
 
-#include "talk/base/asyncpacketsocket.h"
-#include "talk/base/byteorder.h"
-#include "talk/base/common.h"
-#include "talk/base/logging.h"
-#include "talk/base/nethelpers.h"
-#include "talk/base/socketaddress.h"
-#include "talk/base/stringencode.h"
+#include "webrtc/base/asyncpacketsocket.h"
+#include "webrtc/base/byteorder.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/nethelpers.h"
+#include "webrtc/base/socketaddress.h"
+#include "webrtc/base/stringencode.h"
 #include "talk/p2p/base/common.h"
 #include "talk/p2p/base/stun.h"
 
@@ -99,7 +99,7 @@ class TurnCreatePermissionRequest : public StunRequest,
                                     public sigslot::has_slots<> {
  public:
   TurnCreatePermissionRequest(TurnPort* port, TurnEntry* entry,
-                              const talk_base::SocketAddress& ext_addr);
+                              const rtc::SocketAddress& ext_addr);
   virtual void Prepare(StunMessage* request);
   virtual void OnResponse(StunMessage* response);
   virtual void OnErrorResponse(StunMessage* response);
@@ -110,14 +110,14 @@ class TurnCreatePermissionRequest : public StunRequest,
 
   TurnPort* port_;
   TurnEntry* entry_;
-  talk_base::SocketAddress ext_addr_;
+  rtc::SocketAddress ext_addr_;
 };
 
 class TurnChannelBindRequest : public StunRequest,
                                public sigslot::has_slots<> {
  public:
   TurnChannelBindRequest(TurnPort* port, TurnEntry* entry, int channel_id,
-                         const talk_base::SocketAddress& ext_addr);
+                         const rtc::SocketAddress& ext_addr);
   virtual void Prepare(StunMessage* request);
   virtual void OnResponse(StunMessage* response);
   virtual void OnErrorResponse(StunMessage* response);
@@ -129,7 +129,7 @@ class TurnChannelBindRequest : public StunRequest,
   TurnPort* port_;
   TurnEntry* entry_;
   int channel_id_;
-  talk_base::SocketAddress ext_addr_;
+  rtc::SocketAddress ext_addr_;
 };
 
 // Manages a "connection" to a remote destination. We will attempt to bring up
@@ -138,12 +138,12 @@ class TurnEntry : public sigslot::has_slots<> {
  public:
   enum BindState { STATE_UNBOUND, STATE_BINDING, STATE_BOUND };
   TurnEntry(TurnPort* port, int channel_id,
-            const talk_base::SocketAddress& ext_addr);
+            const rtc::SocketAddress& ext_addr);
 
   TurnPort* port() { return port_; }
 
   int channel_id() const { return channel_id_; }
-  const talk_base::SocketAddress& address() const { return ext_addr_; }
+  const rtc::SocketAddress& address() const { return ext_addr_; }
   BindState state() const { return state_; }
 
   // Helper methods to send permission and channel bind requests.
@@ -152,7 +152,7 @@ class TurnEntry : public sigslot::has_slots<> {
   // Sends a packet to the given destination address.
   // This will wrap the packet in STUN if necessary.
   int Send(const void* data, size_t size, bool payload,
-           const talk_base::PacketOptions& options);
+           const rtc::PacketOptions& options);
 
   void OnCreatePermissionSuccess();
   void OnCreatePermissionError(StunMessage* response, int code);
@@ -164,14 +164,14 @@ class TurnEntry : public sigslot::has_slots<> {
  private:
   TurnPort* port_;
   int channel_id_;
-  talk_base::SocketAddress ext_addr_;
+  rtc::SocketAddress ext_addr_;
   BindState state_;
 };
 
-TurnPort::TurnPort(talk_base::Thread* thread,
-                   talk_base::PacketSocketFactory* factory,
-                   talk_base::Network* network,
-                   talk_base::AsyncPacketSocket* socket,
+TurnPort::TurnPort(rtc::Thread* thread,
+                   rtc::PacketSocketFactory* factory,
+                   rtc::Network* network,
+                   rtc::AsyncPacketSocket* socket,
                    const std::string& username,
                    const std::string& password,
                    const ProtocolAddress& server_address,
@@ -191,10 +191,10 @@ TurnPort::TurnPort(talk_base::Thread* thread,
   request_manager_.SignalSendPacket.connect(this, &TurnPort::OnSendStunPacket);
 }
 
-TurnPort::TurnPort(talk_base::Thread* thread,
-                   talk_base::PacketSocketFactory* factory,
-                   talk_base::Network* network,
-                   const talk_base::IPAddress& ip,
+TurnPort::TurnPort(rtc::Thread* thread,
+                   rtc::PacketSocketFactory* factory,
+                   rtc::Network* network,
+                   const rtc::IPAddress& ip,
                    int min_port, int max_port,
                    const std::string& username,
                    const std::string& password,
@@ -269,16 +269,16 @@ void TurnPort::PrepareAddress() {
 bool TurnPort::CreateTurnClientSocket() {
   if (server_address_.proto == PROTO_UDP && !SharedSocket()) {
     socket_ = socket_factory()->CreateUdpSocket(
-        talk_base::SocketAddress(ip(), 0), min_port(), max_port());
+        rtc::SocketAddress(ip(), 0), min_port(), max_port());
   } else if (server_address_.proto == PROTO_TCP) {
     ASSERT(!SharedSocket());
-    int opts = talk_base::PacketSocketFactory::OPT_STUN;
+    int opts = rtc::PacketSocketFactory::OPT_STUN;
     // If secure bit is enabled in server address, use TLS over TCP.
     if (server_address_.secure) {
-      opts |= talk_base::PacketSocketFactory::OPT_TLS;
+      opts |= rtc::PacketSocketFactory::OPT_TLS;
     }
     socket_ = socket_factory()->CreateClientTcpSocket(
-        talk_base::SocketAddress(ip(), 0), server_address_.address,
+        rtc::SocketAddress(ip(), 0), server_address_.address,
         proxy(), user_agent(), opts);
   }
 
@@ -307,7 +307,7 @@ bool TurnPort::CreateTurnClientSocket() {
   return true;
 }
 
-void TurnPort::OnSocketConnect(talk_base::AsyncPacketSocket* socket) {
+void TurnPort::OnSocketConnect(rtc::AsyncPacketSocket* socket) {
   ASSERT(server_address_.proto == PROTO_TCP);
   // Do not use this port if the socket bound to a different address than
   // the one we asked for. This is seen in Chrome, where TCP sockets cannot be
@@ -329,7 +329,7 @@ void TurnPort::OnSocketConnect(talk_base::AsyncPacketSocket* socket) {
   SendRequest(new TurnAllocateRequest(this), 0);
 }
 
-void TurnPort::OnSocketClose(talk_base::AsyncPacketSocket* socket, int error) {
+void TurnPort::OnSocketClose(rtc::AsyncPacketSocket* socket, int error) {
   LOG_J(LS_WARNING, this) << "Connection with server failed, error=" << error;
   if (!connected_) {
     OnAllocateError();
@@ -364,7 +364,7 @@ Connection* TurnPort::CreateConnection(const Candidate& address,
   return NULL;
 }
 
-int TurnPort::SetOption(talk_base::Socket::Option opt, int value) {
+int TurnPort::SetOption(rtc::Socket::Option opt, int value) {
   if (!socket_) {
     // If socket is not created yet, these options will be applied during socket
     // creation.
@@ -374,7 +374,7 @@ int TurnPort::SetOption(talk_base::Socket::Option opt, int value) {
   return socket_->SetOption(opt, value);
 }
 
-int TurnPort::GetOption(talk_base::Socket::Option opt, int* value) {
+int TurnPort::GetOption(rtc::Socket::Option opt, int* value) {
   if (!socket_) {
     SocketOptionsMap::const_iterator it = socket_options_.find(opt);
     if (it == socket_options_.end()) {
@@ -392,8 +392,8 @@ int TurnPort::GetError() {
 }
 
 int TurnPort::SendTo(const void* data, size_t size,
-                     const talk_base::SocketAddress& addr,
-                     const talk_base::PacketOptions& options,
+                     const rtc::SocketAddress& addr,
+                     const rtc::PacketOptions& options,
                      bool payload) {
   // Try to find an entry for this specific address; we should have one.
   TurnEntry* entry = FindEntry(addr);
@@ -419,9 +419,9 @@ int TurnPort::SendTo(const void* data, size_t size,
 }
 
 void TurnPort::OnReadPacket(
-    talk_base::AsyncPacketSocket* socket, const char* data, size_t size,
-    const talk_base::SocketAddress& remote_addr,
-    const talk_base::PacketTime& packet_time) {
+    rtc::AsyncPacketSocket* socket, const char* data, size_t size,
+    const rtc::SocketAddress& remote_addr,
+    const rtc::PacketTime& packet_time) {
   ASSERT(socket == socket_);
   ASSERT(remote_addr == server_address_.address);
 
@@ -434,7 +434,7 @@ void TurnPort::OnReadPacket(
   // Check the message type, to see if is a Channel Data message.
   // The message will either be channel data, a TURN data indication, or
   // a response to a previous request.
-  uint16 msg_type = talk_base::GetBE16(data);
+  uint16 msg_type = rtc::GetBE16(data);
   if (IsTurnChannelData(msg_type)) {
     HandleChannelData(msg_type, data, size, packet_time);
   } else if (msg_type == TURN_DATA_INDICATION) {
@@ -452,13 +452,13 @@ void TurnPort::OnReadPacket(
   }
 }
 
-void TurnPort::OnReadyToSend(talk_base::AsyncPacketSocket* socket) {
+void TurnPort::OnReadyToSend(rtc::AsyncPacketSocket* socket) {
   if (connected_) {
     Port::OnReadyToSend();
   }
 }
 
-void TurnPort::ResolveTurnAddress(const talk_base::SocketAddress& address) {
+void TurnPort::ResolveTurnAddress(const rtc::SocketAddress& address) {
   if (resolver_)
     return;
 
@@ -467,7 +467,7 @@ void TurnPort::ResolveTurnAddress(const talk_base::SocketAddress& address) {
   resolver_->Start(address);
 }
 
-void TurnPort::OnResolveResult(talk_base::AsyncResolverInterface* resolver) {
+void TurnPort::OnResolveResult(rtc::AsyncResolverInterface* resolver) {
   ASSERT(resolver == resolver_);
   // If DNS resolve is failed when trying to connect to the server using TCP,
   // one of the reason could be due to DNS queries blocked by firewall.
@@ -482,7 +482,7 @@ void TurnPort::OnResolveResult(talk_base::AsyncResolverInterface* resolver) {
 
   // Copy the original server address in |resolved_address|. For TLS based
   // sockets we need hostname along with resolved address.
-  talk_base::SocketAddress resolved_address = server_address_.address;
+  rtc::SocketAddress resolved_address = server_address_.address;
   if (resolver_->GetError() != 0 ||
       !resolver_->GetResolvedAddress(ip().family(), &resolved_address)) {
     LOG_J(LS_WARNING, this) << "TURN host lookup received error "
@@ -501,14 +501,14 @@ void TurnPort::OnResolveResult(talk_base::AsyncResolverInterface* resolver) {
 
 void TurnPort::OnSendStunPacket(const void* data, size_t size,
                                 StunRequest* request) {
-  talk_base::PacketOptions options(DefaultDscpValue());
+  rtc::PacketOptions options(DefaultDscpValue());
   if (Send(data, size, options) < 0) {
     LOG_J(LS_ERROR, this) << "Failed to send TURN message, err="
                           << socket_->GetError();
   }
 }
 
-void TurnPort::OnStunAddress(const talk_base::SocketAddress& address) {
+void TurnPort::OnStunAddress(const rtc::SocketAddress& address) {
   // STUN Port will discover STUN candidate, as it's supplied with first TURN
   // server address.
   // Why not using this address? - P2PTransportChannel will start creating
@@ -518,8 +518,8 @@ void TurnPort::OnStunAddress(const talk_base::SocketAddress& address) {
   // handle to UDPPort to pass back the address.
 }
 
-void TurnPort::OnAllocateSuccess(const talk_base::SocketAddress& address,
-                                 const talk_base::SocketAddress& stun_address) {
+void TurnPort::OnAllocateSuccess(const rtc::SocketAddress& address,
+                                 const rtc::SocketAddress& stun_address) {
   connected_ = true;
   // For relayed candidate, Base is the candidate itself.
   AddAddress(address,  // Candidate address.
@@ -539,7 +539,7 @@ void TurnPort::OnAllocateError() {
   thread()->Post(this, MSG_ERROR);
 }
 
-void TurnPort::OnMessage(talk_base::Message* message) {
+void TurnPort::OnMessage(rtc::Message* message) {
   if (message->message_id == MSG_ERROR) {
     SignalPortError(this);
     return;
@@ -553,9 +553,9 @@ void TurnPort::OnAllocateRequestTimeout() {
 }
 
 void TurnPort::HandleDataIndication(const char* data, size_t size,
-                                    const talk_base::PacketTime& packet_time) {
+                                    const rtc::PacketTime& packet_time) {
   // Read in the message, and process according to RFC5766, Section 10.4.
-  talk_base::ByteBuffer buf(data, size);
+  rtc::ByteBuffer buf(data, size);
   TurnMessage msg;
   if (!msg.Read(&buf)) {
     LOG_J(LS_WARNING, this) << "Received invalid TURN data indication";
@@ -580,7 +580,7 @@ void TurnPort::HandleDataIndication(const char* data, size_t size,
   }
 
   // Verify that the data came from somewhere we think we have a permission for.
-  talk_base::SocketAddress ext_addr(addr_attr->GetAddress());
+  rtc::SocketAddress ext_addr(addr_attr->GetAddress());
   if (!HasPermission(ext_addr.ipaddr())) {
     LOG_J(LS_WARNING, this) << "Received TURN data indication with invalid "
                             << "peer address, addr="
@@ -594,7 +594,7 @@ void TurnPort::HandleDataIndication(const char* data, size_t size,
 
 void TurnPort::HandleChannelData(int channel_id, const char* data,
                                  size_t size,
-                                 const talk_base::PacketTime& packet_time) {
+                                 const rtc::PacketTime& packet_time) {
   // Read the message, and process according to RFC5766, Section 11.6.
   //    0                   1                   2                   3
   //    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -610,7 +610,7 @@ void TurnPort::HandleChannelData(int channel_id, const char* data,
   //   +-------------------------------+
 
   // Extract header fields from the message.
-  uint16 len = talk_base::GetBE16(data + 2);
+  uint16 len = rtc::GetBE16(data + 2);
   if (len > size - TURN_CHANNEL_HEADER_SIZE) {
     LOG_J(LS_WARNING, this) << "Received TURN channel data message with "
                             << "incorrect length, len=" << len;
@@ -630,8 +630,8 @@ void TurnPort::HandleChannelData(int channel_id, const char* data,
 }
 
 void TurnPort::DispatchPacket(const char* data, size_t size,
-    const talk_base::SocketAddress& remote_addr,
-    ProtocolType proto, const talk_base::PacketTime& packet_time) {
+    const rtc::SocketAddress& remote_addr,
+    ProtocolType proto, const rtc::PacketTime& packet_time) {
   if (Connection* conn = GetConnection(remote_addr)) {
     conn->OnReadPacket(data, size, packet_time);
   } else {
@@ -668,7 +668,7 @@ void TurnPort::AddRequestAuthInfo(StunMessage* msg) {
 }
 
 int TurnPort::Send(const void* data, size_t len,
-                   const talk_base::PacketOptions& options) {
+                   const rtc::PacketOptions& options) {
   return socket_->SendTo(data, len, server_address_.address, options);
 }
 
@@ -701,18 +701,18 @@ bool TurnPort::UpdateNonce(StunMessage* response) {
   return true;
 }
 
-static bool MatchesIP(TurnEntry* e, talk_base::IPAddress ipaddr) {
+static bool MatchesIP(TurnEntry* e, rtc::IPAddress ipaddr) {
   return e->address().ipaddr() == ipaddr;
 }
-bool TurnPort::HasPermission(const talk_base::IPAddress& ipaddr) const {
+bool TurnPort::HasPermission(const rtc::IPAddress& ipaddr) const {
   return (std::find_if(entries_.begin(), entries_.end(),
       std::bind2nd(std::ptr_fun(MatchesIP), ipaddr)) != entries_.end());
 }
 
-static bool MatchesAddress(TurnEntry* e, talk_base::SocketAddress addr) {
+static bool MatchesAddress(TurnEntry* e, rtc::SocketAddress addr) {
   return e->address() == addr;
 }
-TurnEntry* TurnPort::FindEntry(const talk_base::SocketAddress& addr) const {
+TurnEntry* TurnPort::FindEntry(const rtc::SocketAddress& addr) const {
   EntryList::const_iterator it = std::find_if(entries_.begin(), entries_.end(),
       std::bind2nd(std::ptr_fun(MatchesAddress), addr));
   return (it != entries_.end()) ? *it : NULL;
@@ -727,14 +727,14 @@ TurnEntry* TurnPort::FindEntry(int channel_id) const {
   return (it != entries_.end()) ? *it : NULL;
 }
 
-TurnEntry* TurnPort::CreateEntry(const talk_base::SocketAddress& addr) {
+TurnEntry* TurnPort::CreateEntry(const rtc::SocketAddress& addr) {
   ASSERT(FindEntry(addr) == NULL);
   TurnEntry* entry = new TurnEntry(this, next_channel_number_++, addr);
   entries_.push_back(entry);
   return entry;
 }
 
-void TurnPort::DestroyEntry(const talk_base::SocketAddress& addr) {
+void TurnPort::DestroyEntry(const rtc::SocketAddress& addr) {
   TurnEntry* entry = FindEntry(addr);
   ASSERT(entry != NULL);
   entry->SignalDestroyed(entry);
@@ -893,7 +893,7 @@ void TurnRefreshRequest::OnTimeout() {
 
 TurnCreatePermissionRequest::TurnCreatePermissionRequest(
     TurnPort* port, TurnEntry* entry,
-    const talk_base::SocketAddress& ext_addr)
+    const rtc::SocketAddress& ext_addr)
     : StunRequest(new TurnMessage()),
       port_(port),
       entry_(entry),
@@ -934,7 +934,7 @@ void TurnCreatePermissionRequest::OnEntryDestroyed(TurnEntry* entry) {
 
 TurnChannelBindRequest::TurnChannelBindRequest(
     TurnPort* port, TurnEntry* entry,
-    int channel_id, const talk_base::SocketAddress& ext_addr)
+    int channel_id, const rtc::SocketAddress& ext_addr)
     : StunRequest(new TurnMessage()),
       port_(port),
       entry_(entry),
@@ -982,7 +982,7 @@ void TurnChannelBindRequest::OnEntryDestroyed(TurnEntry* entry) {
 }
 
 TurnEntry::TurnEntry(TurnPort* port, int channel_id,
-                     const talk_base::SocketAddress& ext_addr)
+                     const rtc::SocketAddress& ext_addr)
     : port_(port),
       channel_id_(channel_id),
       ext_addr_(ext_addr),
@@ -1002,14 +1002,14 @@ void TurnEntry::SendChannelBindRequest(int delay) {
 }
 
 int TurnEntry::Send(const void* data, size_t size, bool payload,
-                    const talk_base::PacketOptions& options) {
-  talk_base::ByteBuffer buf;
+                    const rtc::PacketOptions& options) {
+  rtc::ByteBuffer buf;
   if (state_ != STATE_BOUND) {
     // If we haven't bound the channel yet, we have to use a Send Indication.
     TurnMessage msg;
     msg.SetType(TURN_SEND_INDICATION);
     msg.SetTransactionID(
-        talk_base::CreateRandomString(kStunTransactionIdLength));
+        rtc::CreateRandomString(kStunTransactionIdLength));
     VERIFY(msg.AddAttribute(new StunXorAddressAttribute(
         STUN_ATTR_XOR_PEER_ADDRESS, ext_addr_)));
     VERIFY(msg.AddAttribute(new StunByteStringAttribute(

@@ -31,14 +31,14 @@
 #include <deque>
 #include <map>
 
-#include "talk/base/base64.h"
-#include "talk/base/common.h"
-#include "talk/base/gunit.h"
-#include "talk/base/helpers.h"
-#include "talk/base/logging.h"
-#include "talk/base/natserver.h"
-#include "talk/base/natsocketfactory.h"
-#include "talk/base/stringencode.h"
+#include "webrtc/base/base64.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/natserver.h"
+#include "webrtc/base/natsocketfactory.h"
+#include "webrtc/base/stringencode.h"
 #include "talk/p2p/base/basicpacketsocketfactory.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/parsing.h"
@@ -82,17 +82,17 @@ int GetPort(int port_index) {
 }
 
 std::string GetPortString(int port_index) {
-  return talk_base::ToString(GetPort(port_index));
+  return rtc::ToString(GetPort(port_index));
 }
 
 // Only works for port_index < 10, which is fine for our purposes.
 std::string GetUsername(int port_index) {
-  return "username" + std::string(8, talk_base::ToString(port_index)[0]);
+  return "username" + std::string(8, rtc::ToString(port_index)[0]);
 }
 
 // Only works for port_index < 10, which is fine for our purposes.
 std::string GetPassword(int port_index) {
-  return "password" + std::string(8, talk_base::ToString(port_index)[0]);
+  return "password" + std::string(8, rtc::ToString(port_index)[0]);
 }
 
 std::string IqAck(const std::string& id,
@@ -164,7 +164,7 @@ std::string P2pCandidateXml(const std::string& name, int port_index) {
   if (name == "rtcp" || name == "video_rtcp" || name == "chanb") {
     char next_ch = username[username.size() - 1];
     ASSERT(username.size() > 0);
-    talk_base::Base64::GetNextBase64Char(next_ch, &next_ch);
+    rtc::Base64::GetNextBase64Char(next_ch, &next_ch);
     username[username.size() - 1] = next_ch;
   }
   return "<candidate"
@@ -599,8 +599,8 @@ class TestPortAllocatorSession : public cricket::PortAllocatorSession {
         ports_(kNumPorts),
         address_("127.0.0.1", 0),
         network_("network", "unittest",
-                 talk_base::IPAddress(INADDR_LOOPBACK), 8),
-        socket_factory_(talk_base::Thread::Current()),
+                 rtc::IPAddress(INADDR_LOOPBACK), 8),
+        socket_factory_(rtc::Thread::Current()),
         running_(false),
         port_(28653) {
     network_.AddIP(address_.ipaddr());
@@ -615,7 +615,7 @@ class TestPortAllocatorSession : public cricket::PortAllocatorSession {
     for (int i = 0; i < kNumPorts; i++) {
       int index = port_offset_ + i;
       ports_[i] = cricket::UDPPort::Create(
-          talk_base::Thread::Current(), &socket_factory_,
+          rtc::Thread::Current(), &socket_factory_,
           &network_, address_.ipaddr(), GetPort(index), GetPort(index),
           GetUsername(index), GetPassword(index));
       AddPort(ports_[i]);
@@ -651,9 +651,9 @@ class TestPortAllocatorSession : public cricket::PortAllocatorSession {
  private:
   int port_offset_;
   std::vector<cricket::Port*> ports_;
-  talk_base::SocketAddress address_;
-  talk_base::Network network_;
-  talk_base::BasicPacketSocketFactory socket_factory_;
+  rtc::SocketAddress address_;
+  rtc::Network network_;
+  rtc::BasicPacketSocketFactory socket_factory_;
   bool running_;
   int port_;
 };
@@ -801,7 +801,7 @@ struct ChannelHandler : sigslot::has_slots<> {
   }
 
   void OnReadPacket(cricket::TransportChannel* p, const char* buf,
-                    size_t size, const talk_base::PacketTime& time, int flags) {
+                    size_t size, const rtc::PacketTime& time, int flags) {
     if (memcmp(buf, name.c_str(), name.size()) != 0)
       return;  // drop packet if packet doesn't belong to this channel. This
                // can happen when transport channels are muxed together.
@@ -815,7 +815,7 @@ struct ChannelHandler : sigslot::has_slots<> {
   }
 
   void Send(const char* data, size_t size) {
-    talk_base::PacketOptions options;
+    rtc::PacketOptions options;
     std::string data_with_id(name);
     data_with_id += data;
     int result = channel->SendPacket(data_with_id.c_str(), data_with_id.size(),
@@ -1108,15 +1108,15 @@ class TestClient : public sigslot::has_slots<> {
   cricket::ContentAction last_content_action;
   cricket::ContentSource last_content_source;
   std::deque<buzz::XmlElement*> sent_stanzas;
-  talk_base::scoped_ptr<buzz::XmlElement> last_expected_sent_stanza;
+  rtc::scoped_ptr<buzz::XmlElement> last_expected_sent_stanza;
 
   cricket::SessionManager* session_manager;
   TestSessionClient* client;
   cricket::PortAllocator* port_allocator_;
   cricket::Session* session;
   cricket::BaseSession::State last_session_state;
-  talk_base::scoped_ptr<ChannelHandler> chan_a;
-  talk_base::scoped_ptr<ChannelHandler> chan_b;
+  rtc::scoped_ptr<ChannelHandler> chan_a;
+  rtc::scoped_ptr<ChannelHandler> chan_b;
   bool blow_up_on_error;
   int error_count;
 };
@@ -1125,11 +1125,11 @@ class SessionTest : public testing::Test {
  protected:
   virtual void SetUp() {
     // Seed needed for each test to satisfy expectations.
-    talk_base::SetRandomTestMode(true);
+    rtc::SetRandomTestMode(true);
   }
 
   virtual void TearDown() {
-    talk_base::SetRandomTestMode(false);
+    rtc::SetRandomTestMode(false);
   }
 
   // Tests sending data between two clients, over two channels.
@@ -1185,17 +1185,17 @@ class SessionTest : public testing::Test {
                    const std::string& transport_info_reply_b_xml,
                    const std::string& accept_xml,
                    bool bundle = false) {
-    talk_base::scoped_ptr<cricket::PortAllocator> allocator(
+    rtc::scoped_ptr<cricket::PortAllocator> allocator(
         new TestPortAllocator());
     int next_message_id = 0;
 
-    talk_base::scoped_ptr<TestClient> initiator(
+    rtc::scoped_ptr<TestClient> initiator(
         new TestClient(allocator.get(), &next_message_id,
                        kInitiator, initiator_protocol,
                        content_type,
                        content_name_a,  channel_name_a,
                        content_name_b,  channel_name_b));
-    talk_base::scoped_ptr<TestClient> responder(
+    rtc::scoped_ptr<TestClient> responder(
         new TestClient(allocator.get(), &next_message_id,
                        kResponder, responder_protocol,
                        content_type,
@@ -1624,18 +1624,18 @@ class SessionTest : public testing::Test {
         protocol, content_name, content_type);
     std::string responder_full = kResponder + "/full";
 
-    talk_base::scoped_ptr<cricket::PortAllocator> allocator(
+    rtc::scoped_ptr<cricket::PortAllocator> allocator(
         new TestPortAllocator());
     int next_message_id = 0;
 
-    talk_base::scoped_ptr<TestClient> initiator(
+    rtc::scoped_ptr<TestClient> initiator(
         new TestClient(allocator.get(), &next_message_id,
                        kInitiator, protocol,
                        content_type,
                        content_name, channel_name_a,
                        content_name, channel_name_b));
 
-    talk_base::scoped_ptr<TestClient> responder(
+    rtc::scoped_ptr<TestClient> responder(
         new TestClient(allocator.get(), &next_message_id,
                        responder_full, protocol,
                        content_type,
@@ -1676,7 +1676,7 @@ class SessionTest : public testing::Test {
     // Send an unauthorized redirect to the initiator and expect it be ignored.
     initiator->blow_up_on_error = false;
     const buzz::XmlElement* initiate_stanza = initiator->stanza();
-    talk_base::scoped_ptr<buzz::XmlElement> redirect_stanza(
+    rtc::scoped_ptr<buzz::XmlElement> redirect_stanza(
         buzz::XmlElement::ForStr(
             IqError("ER", kResponder, kInitiator,
                     RedirectXml(protocol, initiate_xml, "not@allowed.com"))));
@@ -1706,18 +1706,18 @@ class SessionTest : public testing::Test {
         protocol, content_name, content_type);
     std::string responder_full = kResponder + "/full";
 
-    talk_base::scoped_ptr<cricket::PortAllocator> allocator(
+    rtc::scoped_ptr<cricket::PortAllocator> allocator(
         new TestPortAllocator());
     int next_message_id = 0;
 
-    talk_base::scoped_ptr<TestClient> initiator(
+    rtc::scoped_ptr<TestClient> initiator(
         new TestClient(allocator.get(), &next_message_id,
                        kInitiator, protocol,
                        content_type,
                        content_name, channel_name_a,
                        content_name, channel_name_b));
 
-    talk_base::scoped_ptr<TestClient> responder(
+    rtc::scoped_ptr<TestClient> responder(
         new TestClient(allocator.get(), &next_message_id,
                        responder_full, protocol,
                        content_type,
@@ -1758,7 +1758,7 @@ class SessionTest : public testing::Test {
     // Send a redirect to the initiator and expect all of the message
     // to be resent.
     const buzz::XmlElement* initiate_stanza = initiator->stanza();
-    talk_base::scoped_ptr<buzz::XmlElement> redirect_stanza(
+    rtc::scoped_ptr<buzz::XmlElement> redirect_stanza(
         buzz::XmlElement::ForStr(
             IqError("ER2", kResponder, kInitiator,
                     RedirectXml(protocol, initiate_xml, responder_full))));
@@ -1851,18 +1851,18 @@ class SessionTest : public testing::Test {
     std::string channel_name_b = "rtcp";
     cricket::SignalingProtocol protocol = PROTOCOL_JINGLE;
 
-    talk_base::scoped_ptr<cricket::PortAllocator> allocator(
+    rtc::scoped_ptr<cricket::PortAllocator> allocator(
         new TestPortAllocator());
     int next_message_id = 0;
 
-    talk_base::scoped_ptr<TestClient> initiator(
+    rtc::scoped_ptr<TestClient> initiator(
         new TestClient(allocator.get(), &next_message_id,
                        kInitiator, protocol,
                        content_type,
                        content_name,  channel_name_a,
                        content_name,  channel_name_b));
 
-    talk_base::scoped_ptr<TestClient> responder(
+    rtc::scoped_ptr<TestClient> responder(
         new TestClient(allocator.get(), &next_message_id,
                        kResponder, protocol,
                        content_type,
@@ -1988,18 +1988,18 @@ class SessionTest : public testing::Test {
     std::string content_name = "main";
     std::string content_type = "http://oink.splat/session";
 
-    talk_base::scoped_ptr<cricket::PortAllocator> allocator(
+    rtc::scoped_ptr<cricket::PortAllocator> allocator(
         new TestPortAllocator());
     int next_message_id = 0;
 
-    talk_base::scoped_ptr<TestClient> initiator(
+    rtc::scoped_ptr<TestClient> initiator(
         new TestClient(allocator.get(), &next_message_id,
                        kInitiator, protocol,
                        content_type,
                        content_name, "a",
                        content_name, "b"));
 
-    talk_base::scoped_ptr<TestClient> responder(
+    rtc::scoped_ptr<TestClient> responder(
         new TestClient(allocator.get(), &next_message_id,
                        kResponder, protocol,
                        content_type,
@@ -2042,11 +2042,11 @@ class SessionTest : public testing::Test {
     std::string content_name = "main";
     std::string content_type = "http://oink.splat/session";
 
-    talk_base::scoped_ptr<cricket::PortAllocator> allocator(
+    rtc::scoped_ptr<cricket::PortAllocator> allocator(
         new TestPortAllocator());
     int next_message_id = 0;
 
-    talk_base::scoped_ptr<TestClient> initiator(
+    rtc::scoped_ptr<TestClient> initiator(
         new TestClient(allocator.get(), &next_message_id,
                        kInitiator, protocol,
                        content_type,
@@ -2124,13 +2124,13 @@ class SessionTest : public testing::Test {
   }
 
   void TestSendDescriptionInfo() {
-    talk_base::scoped_ptr<cricket::PortAllocator> allocator(
+    rtc::scoped_ptr<cricket::PortAllocator> allocator(
         new TestPortAllocator());
     int next_message_id = 0;
 
     std::string content_name = "content-name";
     std::string content_type = "content-type";
-    talk_base::scoped_ptr<TestClient> initiator(
+    rtc::scoped_ptr<TestClient> initiator(
         new TestClient(allocator.get(), &next_message_id,
                        kInitiator, PROTOCOL_JINGLE,
                        content_type,
@@ -2178,13 +2178,13 @@ class SessionTest : public testing::Test {
   }
 
   void TestCallerSignalNewDescription() {
-    talk_base::scoped_ptr<cricket::PortAllocator> allocator(
+    rtc::scoped_ptr<cricket::PortAllocator> allocator(
         new TestPortAllocator());
     int next_message_id = 0;
 
     std::string content_name = "content-name";
     std::string content_type = "content-type";
-    talk_base::scoped_ptr<TestClient> initiator(
+    rtc::scoped_ptr<TestClient> initiator(
         new TestClient(allocator.get(), &next_message_id,
                        kInitiator, PROTOCOL_JINGLE,
                        content_type,
@@ -2218,13 +2218,13 @@ class SessionTest : public testing::Test {
   }
 
   void TestCalleeSignalNewDescription() {
-    talk_base::scoped_ptr<cricket::PortAllocator> allocator(
+    rtc::scoped_ptr<cricket::PortAllocator> allocator(
         new TestPortAllocator());
     int next_message_id = 0;
 
     std::string content_name = "content-name";
     std::string content_type = "content-type";
-    talk_base::scoped_ptr<TestClient> initiator(
+    rtc::scoped_ptr<TestClient> initiator(
         new TestClient(allocator.get(), &next_message_id,
                        kInitiator, PROTOCOL_JINGLE,
                        content_type,
@@ -2258,13 +2258,13 @@ class SessionTest : public testing::Test {
   }
 
   void TestGetTransportStats() {
-    talk_base::scoped_ptr<cricket::PortAllocator> allocator(
+    rtc::scoped_ptr<cricket::PortAllocator> allocator(
         new TestPortAllocator());
     int next_message_id = 0;
 
     std::string content_name = "content-name";
     std::string content_type = "content-type";
-    talk_base::scoped_ptr<TestClient> initiator(
+    rtc::scoped_ptr<TestClient> initiator(
         new TestClient(allocator.get(), &next_message_id,
                        kInitiator, PROTOCOL_JINGLE,
                        content_type,

@@ -25,11 +25,11 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/base/gunit.h"
-#include "talk/base/helpers.h"
-#include "talk/base/logging.h"
-#include "talk/base/ssladapter.h"
-#include "talk/base/timeutils.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/ssladapter.h"
+#include "webrtc/base/timeutils.h"
 #include "talk/p2p/base/stunrequest.h"
 
 using namespace cricket;
@@ -38,15 +38,15 @@ class StunRequestTest : public testing::Test,
                         public sigslot::has_slots<> {
  public:
   static void SetUpTestCase() {
-    talk_base::InitializeSSL();
+    rtc::InitializeSSL();
   }
 
   static void TearDownTestCase() {
-    talk_base::CleanupSSL();
+    rtc::CleanupSSL();
   }
 
   StunRequestTest()
-      : manager_(talk_base::Thread::Current()),
+      : manager_(rtc::Thread::Current()),
         request_count_(0), response_(NULL),
         success_(false), failure_(false), timeout_(false) {
     manager_.SignalSendPacket.connect(this, &StunRequestTest::OnSendPacket);
@@ -171,13 +171,13 @@ TEST_F(StunRequestTest, TestUnexpected) {
 TEST_F(StunRequestTest, TestBackoff) {
   StunMessage* req = CreateStunMessage(STUN_BINDING_REQUEST, NULL);
 
-  uint32 start = talk_base::Time();
+  uint32 start = rtc::Time();
   manager_.Send(new StunRequestThunker(req, this));
   StunMessage* res = CreateStunMessage(STUN_BINDING_RESPONSE, req);
   for (int i = 0; i < 9; ++i) {
     while (request_count_ == i)
-      talk_base::Thread::Current()->ProcessMessages(1);
-    int32 elapsed = talk_base::TimeSince(start);
+      rtc::Thread::Current()->ProcessMessages(1);
+    int32 elapsed = rtc::TimeSince(start);
     LOG(LS_INFO) << "STUN request #" << (i + 1)
                  << " sent at " << elapsed << " ms";
     EXPECT_GE(TotalDelay(i + 1), elapsed);
@@ -197,7 +197,7 @@ TEST_F(StunRequestTest, TestTimeout) {
   StunMessage* res = CreateStunMessage(STUN_BINDING_RESPONSE, req);
 
   manager_.Send(new StunRequestThunker(req, this));
-  talk_base::Thread::Current()->ProcessMessages(10000);  // > STUN timeout
+  rtc::Thread::Current()->ProcessMessages(10000);  // > STUN timeout
   EXPECT_FALSE(manager_.CheckResponse(res));
 
   EXPECT_TRUE(response_ == NULL);

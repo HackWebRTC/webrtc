@@ -30,7 +30,7 @@
 #include <vector>
 
 #include "talk/app/webrtc/webrtcsdp.h"
-#include "talk/base/stringencode.h"
+#include "webrtc/base/stringencode.h"
 
 namespace webrtc {
 

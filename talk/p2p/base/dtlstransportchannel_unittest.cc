@@ -28,21 +28,21 @@
 
 #include <set>
 
-#include "talk/base/common.h"
-#include "talk/base/dscp.h"
-#include "talk/base/gunit.h"
-#include "talk/base/helpers.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/stringutils.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/dscp.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/stringutils.h"
+#include "webrtc/base/thread.h"
 #include "talk/p2p/base/fakesession.h"
-#include "talk/base/ssladapter.h"
-#include "talk/base/sslidentity.h"
-#include "talk/base/sslstreamadapter.h"
+#include "webrtc/base/ssladapter.h"
+#include "webrtc/base/sslidentity.h"
+#include "webrtc/base/sslstreamadapter.h"
 #include "talk/p2p/base/dtlstransport.h"
 
 #define MAYBE_SKIP_TEST(feature)                    \
-  if (!(talk_base::SSLStreamAdapter::feature())) {  \
+  if (!(rtc::SSLStreamAdapter::feature())) {  \
     LOG(LS_INFO) << "Feature disabled... skipping"; \
     return;                                         \
   }
@@ -64,8 +64,8 @@ enum Flags { NF_REOFFER = 0x1, NF_EXPECT_FAILURE = 0x2 };
 class DtlsTestClient : public sigslot::has_slots<> {
  public:
   DtlsTestClient(const std::string& name,
-                 talk_base::Thread* signaling_thread,
-                 talk_base::Thread* worker_thread) :
+                 rtc::Thread* signaling_thread,
+                 rtc::Thread* worker_thread) :
       name_(name),
       signaling_thread_(signaling_thread),
       worker_thread_(worker_thread),
@@ -80,9 +80,9 @@ class DtlsTestClient : public sigslot::has_slots<> {
     protocol_ = proto;
   }
   void CreateIdentity() {
-    identity_.reset(talk_base::SSLIdentity::Generate(name_));
+    identity_.reset(rtc::SSLIdentity::Generate(name_));
   }
-  talk_base::SSLIdentity* identity() { return identity_.get(); }
+  rtc::SSLIdentity* identity() { return identity_.get(); }
   void SetupSrtp() {
     ASSERT(identity_.get() != NULL);
     use_dtls_srtp_ = true;
@@ -135,22 +135,22 @@ class DtlsTestClient : public sigslot::has_slots<> {
   }
 
   // Allow any DTLS configuration to be specified (including invalid ones).
-  void Negotiate(talk_base::SSLIdentity* local_identity,
-                 talk_base::SSLIdentity* remote_identity,
+  void Negotiate(rtc::SSLIdentity* local_identity,
+                 rtc::SSLIdentity* remote_identity,
                  cricket::ContentAction action,
                  ConnectionRole local_role,
                  ConnectionRole remote_role,
                  int flags) {
-    talk_base::scoped_ptr<talk_base::SSLFingerprint> local_fingerprint;
-    talk_base::scoped_ptr<talk_base::SSLFingerprint> remote_fingerprint;
+    rtc::scoped_ptr<rtc::SSLFingerprint> local_fingerprint;
+    rtc::scoped_ptr<rtc::SSLFingerprint> remote_fingerprint;
     if (local_identity) {
-      local_fingerprint.reset(talk_base::SSLFingerprint::Create(
-          talk_base::DIGEST_SHA_1, local_identity));
+      local_fingerprint.reset(rtc::SSLFingerprint::Create(
+          rtc::DIGEST_SHA_1, local_identity));
       ASSERT_TRUE(local_fingerprint.get() != NULL);
     }
     if (remote_identity) {
-      remote_fingerprint.reset(talk_base::SSLFingerprint::Create(
-          talk_base::DIGEST_SHA_1, remote_identity));
+      remote_fingerprint.reset(rtc::SSLFingerprint::Create(
+          rtc::DIGEST_SHA_1, remote_identity));
       ASSERT_TRUE(remote_fingerprint.get() != NULL);
     }
 
@@ -205,8 +205,8 @@ class DtlsTestClient : public sigslot::has_slots<> {
 
   bool writable() const { return transport_->writable(); }
 
-  void CheckRole(talk_base::SSLRole role) {
-    if (role == talk_base::SSL_CLIENT) {
+  void CheckRole(rtc::SSLRole role) {
+    if (role == rtc::SSL_CLIENT) {
       ASSERT_FALSE(received_dtls_client_hello_);
       ASSERT_TRUE(received_dtls_server_hello_);
     } else {
@@ -233,19 +233,19 @@ class DtlsTestClient : public sigslot::has_slots<> {
 
   void SendPackets(size_t channel, size_t size, size_t count, bool srtp) {
     ASSERT(channel < channels_.size());
-    talk_base::scoped_ptr<char[]> packet(new char[size]);
+    rtc::scoped_ptr<char[]> packet(new char[size]);
     size_t sent = 0;
     do {
       // Fill the packet with a known value and a sequence number to check
       // against, and make sure that it doesn't look like DTLS.
       memset(packet.get(), sent & 0xff, size);
       packet[0] = (srtp) ? 0x80 : 0x00;
-      talk_base::SetBE32(packet.get() + kPacketNumOffset,
+      rtc::SetBE32(packet.get() + kPacketNumOffset,
                          static_cast<uint32>(sent));
 
       // Only set the bypass flag if we've activated DTLS.
       int flags = (identity_.get() && srtp) ? cricket::PF_SRTP_BYPASS : 0;
-      talk_base::PacketOptions packet_options;
+      rtc::PacketOptions packet_options;
       int rv = channels_[channel]->SendPacket(
           packet.get(), size, packet_options, flags);
       ASSERT_GT(rv, 0);
@@ -256,11 +256,11 @@ class DtlsTestClient : public sigslot::has_slots<> {
 
   int SendInvalidSrtpPacket(size_t channel, size_t size) {
     ASSERT(channel < channels_.size());
-    talk_base::scoped_ptr<char[]> packet(new char[size]);
+    rtc::scoped_ptr<char[]> packet(new char[size]);
     // Fill the packet with 0 to form an invalid SRTP packet.
     memset(packet.get(), 0, size);
 
-    talk_base::PacketOptions packet_options;
+    rtc::PacketOptions packet_options;
     return channels_[channel]->SendPacket(
         packet.get(), size, packet_options, cricket::PF_SRTP_BYPASS);
   }
@@ -279,7 +279,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
         (data[0] != 0 && static_cast<uint8>(data[0]) != 0x80)) {
       return false;
     }
-    uint32 packet_num = talk_base::GetBE32(data + kPacketNumOffset);
+    uint32 packet_num = rtc::GetBE32(data + kPacketNumOffset);
     for (size_t i = kPacketHeaderLen; i < size; ++i) {
       if (static_cast<uint8>(data[i]) != (packet_num & 0xff)) {
         return false;
@@ -296,7 +296,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
     if (size <= packet_size_) {
       return false;
     }
-    uint32 packet_num = talk_base::GetBE32(data + kPacketNumOffset);
+    uint32 packet_num = rtc::GetBE32(data + kPacketNumOffset);
     int num_matches = 0;
     for (size_t i = kPacketNumOffset; i < size; ++i) {
       if (static_cast<uint8>(data[i]) == (packet_num & 0xff)) {
@@ -319,7 +319,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
 
   void OnTransportChannelReadPacket(cricket::TransportChannel* channel,
                                     const char* data, size_t size,
-                                    const talk_base::PacketTime& packet_time,
+                                    const rtc::PacketTime& packet_time,
                                     int flags) {
     uint32 packet_num = 0;
     ASSERT_TRUE(VerifyPacket(data, size, &packet_num));
@@ -333,7 +333,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
   // Hook into the raw packet stream to make sure DTLS packets are encrypted.
   void OnFakeTransportChannelReadPacket(cricket::TransportChannel* channel,
                                         const char* data, size_t size,
-                                        const talk_base::PacketTime& time,
+                                        const rtc::PacketTime& time,
                                         int flags) {
     // Flags shouldn't be set on the underlying TransportChannel packets.
     ASSERT_EQ(0, flags);
@@ -360,11 +360,11 @@ class DtlsTestClient : public sigslot::has_slots<> {
 
  private:
   std::string name_;
-  talk_base::Thread* signaling_thread_;
-  talk_base::Thread* worker_thread_;
+  rtc::Thread* signaling_thread_;
+  rtc::Thread* worker_thread_;
   cricket::TransportProtocol protocol_;
-  talk_base::scoped_ptr<talk_base::SSLIdentity> identity_;
-  talk_base::scoped_ptr<cricket::FakeTransport> transport_;
+  rtc::scoped_ptr<rtc::SSLIdentity> identity_;
+  rtc::scoped_ptr<cricket::FakeTransport> transport_;
   std::vector<cricket::DtlsTransportChannelWrapper*> channels_;
   size_t packet_size_;
   std::set<int> received_;
@@ -378,18 +378,18 @@ class DtlsTestClient : public sigslot::has_slots<> {
 class DtlsTransportChannelTest : public testing::Test {
  public:
   static void SetUpTestCase() {
-    talk_base::InitializeSSL();
+    rtc::InitializeSSL();
   }
 
   static void TearDownTestCase() {
-    talk_base::CleanupSSL();
+    rtc::CleanupSSL();
   }
 
   DtlsTransportChannelTest() :
-      client1_("P1", talk_base::Thread::Current(),
-               talk_base::Thread::Current()),
-      client2_("P2", talk_base::Thread::Current(),
-               talk_base::Thread::Current()),
+      client1_("P1", rtc::Thread::Current(),
+               rtc::Thread::Current()),
+      client2_("P2", rtc::Thread::Current(),
+               rtc::Thread::Current()),
       channel_ct_(1),
       use_dtls_(false),
       use_dtls_srtp_(false) {
@@ -435,17 +435,17 @@ class DtlsTransportChannelTest : public testing::Test {
 
     // Check that we used the right roles.
     if (use_dtls_) {
-      talk_base::SSLRole client1_ssl_role =
+      rtc::SSLRole client1_ssl_role =
           (client1_role == cricket::CONNECTIONROLE_ACTIVE ||
            (client2_role == cricket::CONNECTIONROLE_PASSIVE &&
             client1_role == cricket::CONNECTIONROLE_ACTPASS)) ?
-              talk_base::SSL_CLIENT : talk_base::SSL_SERVER;
+              rtc::SSL_CLIENT : rtc::SSL_SERVER;
 
-      talk_base::SSLRole client2_ssl_role =
+      rtc::SSLRole client2_ssl_role =
           (client2_role == cricket::CONNECTIONROLE_ACTIVE ||
            (client1_role == cricket::CONNECTIONROLE_PASSIVE &&
             client2_role == cricket::CONNECTIONROLE_ACTPASS)) ?
-              talk_base::SSL_CLIENT : talk_base::SSL_SERVER;
+              rtc::SSL_CLIENT : rtc::SSL_SERVER;
 
       client1_.CheckRole(client1_ssl_role);
       client2_.CheckRole(client2_ssl_role);
@@ -701,12 +701,12 @@ TEST_F(DtlsTransportChannelTest, TestDtlsSetupWithLegacyAsAnswerer) {
   MAYBE_SKIP_TEST(HaveDtlsSrtp);
   PrepareDtls(true, true);
   NegotiateWithLegacy();
-  talk_base::SSLRole channel1_role;
-  talk_base::SSLRole channel2_role;
+  rtc::SSLRole channel1_role;
+  rtc::SSLRole channel2_role;
   EXPECT_TRUE(client1_.transport()->GetSslRole(&channel1_role));
   EXPECT_TRUE(client2_.transport()->GetSslRole(&channel2_role));
-  EXPECT_EQ(talk_base::SSL_SERVER, channel1_role);
-  EXPECT_EQ(talk_base::SSL_CLIENT, channel2_role);
+  EXPECT_EQ(rtc::SSL_SERVER, channel1_role);
+  EXPECT_EQ(rtc::SSL_CLIENT, channel2_role);
 }
 
 // Testing re offer/answer after the session is estbalished. Roles will be
@@ -801,10 +801,10 @@ TEST_F(DtlsTransportChannelTest, TestCertificatesBeforeConnect) {
   PrepareDtls(true, true);
   Negotiate();
 
-  talk_base::scoped_ptr<talk_base::SSLIdentity> identity1;
-  talk_base::scoped_ptr<talk_base::SSLIdentity> identity2;
-  talk_base::scoped_ptr<talk_base::SSLCertificate> remote_cert1;
-  talk_base::scoped_ptr<talk_base::SSLCertificate> remote_cert2;
+  rtc::scoped_ptr<rtc::SSLIdentity> identity1;
+  rtc::scoped_ptr<rtc::SSLIdentity> identity2;
+  rtc::scoped_ptr<rtc::SSLCertificate> remote_cert1;
+  rtc::scoped_ptr<rtc::SSLCertificate> remote_cert2;
 
   // After negotiation, each side has a distinct local certificate, but still no
   // remote certificate, because connection has not yet occurred.
@@ -826,10 +826,10 @@ TEST_F(DtlsTransportChannelTest, TestCertificatesAfterConnect) {
   PrepareDtls(true, true);
   ASSERT_TRUE(Connect());
 
-  talk_base::scoped_ptr<talk_base::SSLIdentity> identity1;
-  talk_base::scoped_ptr<talk_base::SSLIdentity> identity2;
-  talk_base::scoped_ptr<talk_base::SSLCertificate> remote_cert1;
-  talk_base::scoped_ptr<talk_base::SSLCertificate> remote_cert2;
+  rtc::scoped_ptr<rtc::SSLIdentity> identity1;
+  rtc::scoped_ptr<rtc::SSLIdentity> identity2;
+  rtc::scoped_ptr<rtc::SSLCertificate> remote_cert1;
+  rtc::scoped_ptr<rtc::SSLCertificate> remote_cert2;
 
   // After connection, each side has a distinct local certificate.
   ASSERT_TRUE(client1_.transport()->GetIdentity(identity1.accept()));

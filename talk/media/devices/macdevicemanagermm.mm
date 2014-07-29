@@ -35,7 +35,7 @@
 #import <assert.h>
 #import <QTKit/QTKit.h>
 
-#include "talk/base/logging.h"
+#include "webrtc/base/logging.h"
 
 @interface DeviceWatcherImpl : NSObject {
  @private

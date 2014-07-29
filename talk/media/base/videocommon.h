@@ -30,8 +30,8 @@
 
 #include <string>
 
-#include "talk/base/basictypes.h"
-#include "talk/base/timeutils.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/timeutils.h"
 
 namespace cricket {
 
@@ -44,8 +44,8 @@ const uint32 kDummyVideoSsrc = 0xFFFFFFFF;
 
 // Minimum interval is 10k fps.
 #define FPS_TO_INTERVAL(fps) \
-    (fps ? talk_base::kNumNanosecsPerSec / fps : \
-    talk_base::kNumNanosecsPerSec / 10000)
+    (fps ? rtc::kNumNanosecsPerSec / fps : \
+    rtc::kNumNanosecsPerSec / 10000)
 
 //////////////////////////////////////////////////////////////////////////////
 // Definition of FourCC codes
@@ -186,7 +186,7 @@ struct VideoFormatPod {
 
 struct VideoFormat : VideoFormatPod {
   static const int64 kMinimumInterval =
-      talk_base::kNumNanosecsPerSec / 10000;  // 10k fps.
+      rtc::kNumNanosecsPerSec / 10000;  // 10k fps.
 
   VideoFormat() {
     Construct(0, 0, 0, 0);
@@ -208,21 +208,21 @@ struct VideoFormat : VideoFormatPod {
   }
 
   static int64 FpsToInterval(int fps) {
-    return fps ? talk_base::kNumNanosecsPerSec / fps : kMinimumInterval;
+    return fps ? rtc::kNumNanosecsPerSec / fps : kMinimumInterval;
   }
 
   static int IntervalToFps(int64 interval) {
     if (!interval) {
       return 0;
     }
-    return static_cast<int>(talk_base::kNumNanosecsPerSec / interval);
+    return static_cast<int>(rtc::kNumNanosecsPerSec / interval);
   }
 
   static float IntervalToFpsFloat(int64 interval) {
     if (!interval) {
       return 0.f;
     }
-    return static_cast<float>(talk_base::kNumNanosecsPerSec) /
+    return static_cast<float>(rtc::kNumNanosecsPerSec) /
         static_cast<float>(interval);
   }
 

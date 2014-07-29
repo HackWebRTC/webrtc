@@ -32,13 +32,13 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/sigslot.h"
-#include "talk/base/stringencode.h"
-#include "talk/base/window.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/stringencode.h"
+#include "webrtc/base/window.h"
 #include "talk/media/base/videocommon.h"
 
-namespace talk_base {
+namespace rtc {
 
 class DesktopDescription;
 class WindowDescription;
@@ -54,7 +54,7 @@ struct Device {
   Device() {}
   Device(const std::string& first, int second)
       : name(first),
-        id(talk_base::ToString(second)) {
+        id(rtc::ToString(second)) {
   }
   Device(const std::string& first, const std::string& second)
       : name(first), id(second) {}
@@ -108,13 +108,13 @@ class DeviceManagerInterface {
   virtual VideoCapturer* CreateVideoCapturer(const Device& device) const = 0;
 
   virtual bool GetWindows(
-      std::vector<talk_base::WindowDescription>* descriptions) = 0;
-  virtual VideoCapturer* CreateWindowCapturer(talk_base::WindowId window) = 0;
+      std::vector<rtc::WindowDescription>* descriptions) = 0;
+  virtual VideoCapturer* CreateWindowCapturer(rtc::WindowId window) = 0;
 
   virtual bool GetDesktops(
-      std::vector<talk_base::DesktopDescription>* descriptions) = 0;
+      std::vector<rtc::DesktopDescription>* descriptions) = 0;
   virtual VideoCapturer* CreateDesktopCapturer(
-      talk_base::DesktopId desktop) = 0;
+      rtc::DesktopId desktop) = 0;
 
   sigslot::signal0<> SignalDevicesChange;
 
@@ -171,12 +171,12 @@ class DeviceManager : public DeviceManagerInterface {
   virtual VideoCapturer* CreateVideoCapturer(const Device& device) const;
 
   virtual bool GetWindows(
-      std::vector<talk_base::WindowDescription>* descriptions);
-  virtual VideoCapturer* CreateWindowCapturer(talk_base::WindowId window);
+      std::vector<rtc::WindowDescription>* descriptions);
+  virtual VideoCapturer* CreateWindowCapturer(rtc::WindowId window);
 
   virtual bool GetDesktops(
-      std::vector<talk_base::DesktopDescription>* descriptions);
-  virtual VideoCapturer* CreateDesktopCapturer(talk_base::DesktopId desktop);
+      std::vector<rtc::DesktopDescription>* descriptions);
+  virtual VideoCapturer* CreateDesktopCapturer(rtc::DesktopId desktop);
 
   // The exclusion_list MUST be a NULL terminated list.
   static bool FilterDevices(std::vector<Device>* devices,
@@ -205,10 +205,10 @@ class DeviceManager : public DeviceManagerInterface {
   VideoCapturer* ConstructFakeVideoCapturer(const Device& device) const;
 
   bool initialized_;
-  talk_base::scoped_ptr<VideoCapturerFactory> device_video_capturer_factory_;
+  rtc::scoped_ptr<VideoCapturerFactory> device_video_capturer_factory_;
   std::map<std::string, VideoFormat> max_formats_;
-  talk_base::scoped_ptr<DeviceWatcher> watcher_;
-  talk_base::scoped_ptr<talk_base::WindowPicker> window_picker_;
+  rtc::scoped_ptr<DeviceWatcher> watcher_;
+  rtc::scoped_ptr<rtc::WindowPicker> window_picker_;
 };
 
 }  // namespace cricket

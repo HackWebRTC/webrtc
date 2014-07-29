@@ -33,7 +33,7 @@
 #include <string>
 
 #include "talk/app/webrtc/mediastreaminterface.h"
-#include "talk/base/win32.h"
+#include "webrtc/base/win32.h"
 #include "talk/examples/peerconnection/client/peer_connection_client.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/videocommon.h"
@@ -147,9 +147,9 @@ class MainWnd : public MainWindow {
 
     HWND wnd_;
     BITMAPINFO bmi_;
-    talk_base::scoped_ptr<uint8[]> image_;
+    rtc::scoped_ptr<uint8[]> image_;
     CRITICAL_SECTION buffer_lock_;
-    talk_base::scoped_refptr<webrtc::VideoTrackInterface> rendered_track_;
+    rtc::scoped_refptr<webrtc::VideoTrackInterface> rendered_track_;
   };
 
   // A little helper class to make sure we always to proper locking and
@@ -192,8 +192,8 @@ class MainWnd : public MainWindow {
   void HandleTabbing();
 
  private:
-  talk_base::scoped_ptr<VideoRenderer> local_renderer_;
-  talk_base::scoped_ptr<VideoRenderer> remote_renderer_;
+  rtc::scoped_ptr<VideoRenderer> local_renderer_;
+  rtc::scoped_ptr<VideoRenderer> remote_renderer_;
   UI ui_;
   HWND wnd_;
   DWORD ui_thread_id_;

@@ -42,7 +42,7 @@ const std::string& PortProxy::Type() const {
   return impl_->Type();
 }
 
-talk_base::Network* PortProxy::Network() const {
+rtc::Network* PortProxy::Network() const {
   ASSERT(impl_ != NULL);
   return impl_->Network();
 }
@@ -96,20 +96,20 @@ Connection* PortProxy::CreateConnection(const Candidate& remote_candidate,
 
 int PortProxy::SendTo(const void* data,
                       size_t size,
-                      const talk_base::SocketAddress& addr,
-                      const talk_base::PacketOptions& options,
+                      const rtc::SocketAddress& addr,
+                      const rtc::PacketOptions& options,
                       bool payload) {
   ASSERT(impl_ != NULL);
   return impl_->SendTo(data, size, addr, options, payload);
 }
 
-int PortProxy::SetOption(talk_base::Socket::Option opt,
+int PortProxy::SetOption(rtc::Socket::Option opt,
                          int value) {
   ASSERT(impl_ != NULL);
   return impl_->SetOption(opt, value);
 }
 
-int PortProxy::GetOption(talk_base::Socket::Option opt,
+int PortProxy::GetOption(rtc::Socket::Option opt,
                          int* value) {
   ASSERT(impl_ != NULL);
   return impl_->GetOption(opt, value);
@@ -126,19 +126,19 @@ const std::vector<Candidate>& PortProxy::Candidates() const {
 }
 
 void PortProxy::SendBindingResponse(
-    StunMessage* request, const talk_base::SocketAddress& addr) {
+    StunMessage* request, const rtc::SocketAddress& addr) {
   ASSERT(impl_ != NULL);
   impl_->SendBindingResponse(request, addr);
 }
 
 Connection* PortProxy::GetConnection(
-    const talk_base::SocketAddress& remote_addr) {
+    const rtc::SocketAddress& remote_addr) {
   ASSERT(impl_ != NULL);
   return impl_->GetConnection(remote_addr);
 }
 
 void PortProxy::SendBindingErrorResponse(
-    StunMessage* request, const talk_base::SocketAddress& addr,
+    StunMessage* request, const rtc::SocketAddress& addr,
     int error_code, const std::string& reason) {
   ASSERT(impl_ != NULL);
   impl_->SendBindingErrorResponse(request, addr, error_code, reason);
@@ -156,7 +156,7 @@ std::string PortProxy::ToString() const {
 
 void PortProxy::OnUnknownAddress(
     PortInterface *port,
-    const talk_base::SocketAddress &addr,
+    const rtc::SocketAddress &addr,
     ProtocolType proto,
     IceMessage *stun_msg,
     const std::string &remote_username,

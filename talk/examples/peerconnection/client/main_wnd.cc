@@ -29,14 +29,14 @@
 
 #include <math.h>
 
-#include "talk/base/common.h"
-#include "talk/base/logging.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/logging.h"
 #include "talk/examples/peerconnection/client/defaults.h"
 
 ATOM MainWnd::wnd_class_ = 0;
 const wchar_t MainWnd::kClassName[] = L"WebRTC_MainWnd";
 
-using talk_base::sprintfn;
+using rtc::sprintfn;
 
 namespace {
 

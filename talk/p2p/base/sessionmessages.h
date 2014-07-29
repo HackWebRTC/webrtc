@@ -32,7 +32,7 @@
 #include <vector>
 #include <map>
 
-#include "talk/base/basictypes.h"
+#include "webrtc/base/basictypes.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/parsing.h"
 #include "talk/p2p/base/sessiondescription.h"  // Needed to delete contents.

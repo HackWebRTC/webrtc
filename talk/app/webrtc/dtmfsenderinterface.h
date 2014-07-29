@@ -31,8 +31,8 @@
 #include <string>
 
 #include "talk/app/webrtc/mediastreaminterface.h"
-#include "talk/base/common.h"
-#include "talk/base/refcount.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/refcount.h"
 
 // This file contains interfaces for DtmfSender.
 
@@ -53,7 +53,7 @@ class DtmfSenderObserverInterface {
 
 // The interface of native implementation of the RTCDTMFSender defined by the
 // WebRTC W3C Editor's Draft.
-class DtmfSenderInterface : public talk_base::RefCountInterface {
+class DtmfSenderInterface : public rtc::RefCountInterface {
  public:
   virtual void RegisterObserver(DtmfSenderObserverInterface* observer) = 0;
   virtual void UnregisterObserver() = 0;

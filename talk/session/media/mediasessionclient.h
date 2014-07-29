@@ -32,10 +32,10 @@
 #include <vector>
 #include <map>
 #include <algorithm>
-#include "talk/base/messagequeue.h"
-#include "talk/base/sigslot.h"
-#include "talk/base/sigslotrepeater.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/messagequeue.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/sigslotrepeater.h"
+#include "webrtc/base/thread.h"
 #include "talk/media/base/cryptoparams.h"
 #include "talk/p2p/base/session.h"
 #include "talk/p2p/base/sessionclient.h"

@@ -29,7 +29,7 @@
 
 #include <string>
 #include <vector>
-#include "talk/base/common.h"
+#include "webrtc/base/common.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/portallocator.h"
 #include "talk/p2p/base/portinterface.h"
@@ -45,7 +45,7 @@
 
 namespace {
 
-const uint32 MSG_DESTROY_UNUSED_PORTS = 1;
+const uint32 MSG_DESTROY_RTC_UNUSED_PORTS = 1;
 
 }  // namespace
 
@@ -54,7 +54,7 @@ namespace cricket {
 RawTransportChannel::RawTransportChannel(const std::string& content_name,
                                          int component,
                                          RawTransport* transport,
-                                         talk_base::Thread *worker_thread,
+                                         rtc::Thread *worker_thread,
                                          PortAllocator *allocator)
   : TransportChannelImpl(content_name, component),
     raw_transport_(transport),
@@ -75,7 +75,7 @@ RawTransportChannel::~RawTransportChannel() {
 }
 
 int RawTransportChannel::SendPacket(const char *data, size_t size,
-                                    const talk_base::PacketOptions& options,
+                                    const rtc::PacketOptions& options,
                                     int flags) {
   if (port_ == NULL)
     return -1;
@@ -86,7 +86,7 @@ int RawTransportChannel::SendPacket(const char *data, size_t size,
   return port_->SendTo(data, size, remote_address_, options, true);
 }
 
-int RawTransportChannel::SetOption(talk_base::Socket::Option opt, int value) {
+int RawTransportChannel::SetOption(rtc::Socket::Option opt, int value) {
   // TODO: allow these to be set before we have a port
   if (port_ == NULL)
     return -1;
@@ -130,7 +130,7 @@ void RawTransportChannel::Reset() {
   stun_port_ = NULL;
   relay_port_ = NULL;
   port_ = NULL;
-  remote_address_ = talk_base::SocketAddress();
+  remote_address_ = rtc::SocketAddress();
 }
 
 void RawTransportChannel::OnCandidate(const Candidate& candidate) {
@@ -144,7 +144,7 @@ void RawTransportChannel::OnCandidate(const Candidate& candidate) {
 }
 
 void RawTransportChannel::OnRemoteAddress(
-    const talk_base::SocketAddress& remote_address) {
+    const rtc::SocketAddress& remote_address) {
   remote_address_ = remote_address;
   set_readable(true);
 
@@ -225,7 +225,7 @@ void RawTransportChannel::SetPort(PortInterface* port) {
   // We don't need any ports other than the one we picked.
   allocator_session_->StopGettingPorts();
   worker_thread_->Post(
-      this, MSG_DESTROY_UNUSED_PORTS, NULL);
+      this, MSG_DESTROY_RTC_UNUSED_PORTS, NULL);
 
   // Send a message to the other client containing our address.
 
@@ -255,13 +255,13 @@ void RawTransportChannel::SetWritable() {
 
 void RawTransportChannel::OnReadPacket(
     PortInterface* port, const char* data, size_t size,
-    const talk_base::SocketAddress& addr) {
+    const rtc::SocketAddress& addr) {
   ASSERT(port_ == port);
-  SignalReadPacket(this, data, size, talk_base::CreatePacketTime(0), 0);
+  SignalReadPacket(this, data, size, rtc::CreatePacketTime(0), 0);
 }
 
-void RawTransportChannel::OnMessage(talk_base::Message* msg) {
-  ASSERT(msg->message_id == MSG_DESTROY_UNUSED_PORTS);
+void RawTransportChannel::OnMessage(rtc::Message* msg) {
+  ASSERT(msg->message_id == MSG_DESTROY_RTC_UNUSED_PORTS);
   ASSERT(port_ != NULL);
   if (port_ != stun_port_) {
     stun_port_->Destroy();

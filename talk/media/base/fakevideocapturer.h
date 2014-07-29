@@ -32,7 +32,7 @@
 
 #include <vector>
 
-#include "talk/base/timeutils.h"
+#include "webrtc/base/timeutils.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videocommon.h"
 #include "talk/media/base/videoframe.h"
@@ -44,8 +44,8 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
  public:
   FakeVideoCapturer()
       : running_(false),
-        initial_unix_timestamp_(time(NULL) * talk_base::kNumNanosecsPerSec),
-        next_timestamp_(talk_base::kNumNanosecsPerMillisec),
+        initial_unix_timestamp_(time(NULL) * rtc::kNumNanosecsPerSec),
+        next_timestamp_(rtc::kNumNanosecsPerMillisec),
         is_screencast_(false) {
     // Default supported formats. Use ResetSupportedFormats to over write.
     std::vector<cricket::VideoFormat> formats;
@@ -101,7 +101,7 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
     frame.time_stamp = initial_unix_timestamp_ + next_timestamp_;
     next_timestamp_ += 33333333;  // 30 fps
 
-    talk_base::scoped_ptr<char[]> data(new char[size]);
+    rtc::scoped_ptr<char[]> data(new char[size]);
     frame.data = data.get();
     // Copy something non-zero into the buffer so Validate wont complain that
     // the frame is all duplicate.

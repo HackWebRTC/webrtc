@@ -27,7 +27,7 @@
 
 #include "talk/media/devices/carbonvideorenderer.h"
 
-#include "talk/base/logging.h"
+#include "webrtc/base/logging.h"
 #include "talk/media/base/videocommon.h"
 #include "talk/media/base/videoframe.h"
 
@@ -65,7 +65,7 @@ OSStatus CarbonVideoRenderer::DrawEventHandler(EventHandlerCallRef handler,
 
 bool CarbonVideoRenderer::DrawFrame() {
   // Grab the image lock to make sure it is not changed why we'll draw it.
-  talk_base::CritScope cs(&image_crit_);
+  rtc::CritScope cs(&image_crit_);
 
   if (image_.get() == NULL) {
     // Nothing to draw, just return.
@@ -111,7 +111,7 @@ bool CarbonVideoRenderer::DrawFrame() {
 bool CarbonVideoRenderer::SetSize(int width, int height, int reserved) {
   if (width != image_width_ || height != image_height_) {
     // Grab the image lock while changing its size.
-    talk_base::CritScope cs(&image_crit_);
+    rtc::CritScope cs(&image_crit_);
     image_width_ = width;
     image_height_ = height;
     image_.reset(new uint8[width * height * 4]);
@@ -126,7 +126,7 @@ bool CarbonVideoRenderer::RenderFrame(const VideoFrame* frame) {
   }
   {
     // Grab the image lock so we are not trashing up the image being drawn.
-    talk_base::CritScope cs(&image_crit_);
+    rtc::CritScope cs(&image_crit_);
     frame->ConvertToRgbBuffer(cricket::FOURCC_ABGR,
                               image_.get(),
                               frame->GetWidth() * frame->GetHeight() * 4,

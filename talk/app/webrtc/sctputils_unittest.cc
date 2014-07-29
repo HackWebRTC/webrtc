@@ -25,13 +25,13 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/base/bytebuffer.h"
-#include "talk/base/gunit.h"
+#include "webrtc/base/bytebuffer.h"
+#include "webrtc/base/gunit.h"
 #include "talk/app/webrtc/sctputils.h"
 
 class SctpUtilsTest : public testing::Test {
  public:
-  void VerifyOpenMessageFormat(const talk_base::Buffer& packet,
+  void VerifyOpenMessageFormat(const rtc::Buffer& packet,
                                const std::string& label,
                                const webrtc::DataChannelInit& config) {
     uint8 message_type;
@@ -41,7 +41,7 @@ class SctpUtilsTest : public testing::Test {
     uint16 label_length;
     uint16 protocol_length;
 
-    talk_base::ByteBuffer buffer(packet.data(), packet.length());
+    rtc::ByteBuffer buffer(packet.data(), packet.length());
     ASSERT_TRUE(buffer.ReadUInt8(&message_type));
     EXPECT_EQ(0x03, message_type);
 
@@ -84,7 +84,7 @@ TEST_F(SctpUtilsTest, WriteParseOpenMessageWithOrderedReliable) {
   std::string label = "abc";
   config.protocol = "y";
 
-  talk_base::Buffer packet;
+  rtc::Buffer packet;
   ASSERT_TRUE(webrtc::WriteDataChannelOpenMessage(label, config, &packet));
 
   VerifyOpenMessageFormat(packet, label, config);
@@ -108,7 +108,7 @@ TEST_F(SctpUtilsTest, WriteParseOpenMessageWithMaxRetransmitTime) {
   config.maxRetransmitTime = 10;
   config.protocol = "y";
 
-  talk_base::Buffer packet;
+  rtc::Buffer packet;
   ASSERT_TRUE(webrtc::WriteDataChannelOpenMessage(label, config, &packet));
 
   VerifyOpenMessageFormat(packet, label, config);
@@ -131,7 +131,7 @@ TEST_F(SctpUtilsTest, WriteParseOpenMessageWithMaxRetransmits) {
   config.maxRetransmits = 10;
   config.protocol = "y";
 
-  talk_base::Buffer packet;
+  rtc::Buffer packet;
   ASSERT_TRUE(webrtc::WriteDataChannelOpenMessage(label, config, &packet));
 
   VerifyOpenMessageFormat(packet, label, config);
@@ -149,11 +149,11 @@ TEST_F(SctpUtilsTest, WriteParseOpenMessageWithMaxRetransmits) {
 }
 
 TEST_F(SctpUtilsTest, WriteParseAckMessage) {
-  talk_base::Buffer packet;
+  rtc::Buffer packet;
   webrtc::WriteDataChannelOpenAckMessage(&packet);
 
   uint8 message_type;
-  talk_base::ByteBuffer buffer(packet.data(), packet.length());
+  rtc::ByteBuffer buffer(packet.data(), packet.length());
   ASSERT_TRUE(buffer.ReadUInt8(&message_type));
   EXPECT_EQ(0x02, message_type);
 

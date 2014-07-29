@@ -31,20 +31,20 @@
 
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/thread.h"
 #include "talk/session/media/channelmanager.h"
 
 namespace webrtc {
 
 class PeerConnectionFactory : public PeerConnectionFactoryInterface,
-                              public talk_base::MessageHandler {
+                              public rtc::MessageHandler {
  public:
   virtual void SetOptions(const Options& options) {
     options_ = options;
   }
 
-  virtual talk_base::scoped_refptr<PeerConnectionInterface>
+  virtual rtc::scoped_refptr<PeerConnectionInterface>
       CreatePeerConnection(
           const PeerConnectionInterface::RTCConfiguration& configuration,
           const MediaConstraintsInterface* constraints,
@@ -54,36 +54,36 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface,
 
   bool Initialize();
 
-  virtual talk_base::scoped_refptr<MediaStreamInterface>
+  virtual rtc::scoped_refptr<MediaStreamInterface>
       CreateLocalMediaStream(const std::string& label);
 
-  virtual talk_base::scoped_refptr<AudioSourceInterface> CreateAudioSource(
+  virtual rtc::scoped_refptr<AudioSourceInterface> CreateAudioSource(
       const MediaConstraintsInterface* constraints);
 
-  virtual talk_base::scoped_refptr<VideoSourceInterface> CreateVideoSource(
+  virtual rtc::scoped_refptr<VideoSourceInterface> CreateVideoSource(
       cricket::VideoCapturer* capturer,
       const MediaConstraintsInterface* constraints);
 
-  virtual talk_base::scoped_refptr<VideoTrackInterface>
+  virtual rtc::scoped_refptr<VideoTrackInterface>
       CreateVideoTrack(const std::string& id,
                        VideoSourceInterface* video_source);
 
-  virtual talk_base::scoped_refptr<AudioTrackInterface>
+  virtual rtc::scoped_refptr<AudioTrackInterface>
       CreateAudioTrack(const std::string& id,
                        AudioSourceInterface* audio_source);
 
-  virtual bool StartAecDump(talk_base::PlatformFile file);
+  virtual bool StartAecDump(rtc::PlatformFile file);
 
   virtual cricket::ChannelManager* channel_manager();
-  virtual talk_base::Thread* signaling_thread();
-  virtual talk_base::Thread* worker_thread();
+  virtual rtc::Thread* signaling_thread();
+  virtual rtc::Thread* worker_thread();
   const Options& options() const { return options_; }
 
  protected:
   PeerConnectionFactory();
   PeerConnectionFactory(
-      talk_base::Thread* worker_thread,
-      talk_base::Thread* signaling_thread,
+      rtc::Thread* worker_thread,
+      rtc::Thread* signaling_thread,
       AudioDeviceModule* default_adm,
       cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
       cricket::WebRtcVideoDecoderFactory* video_decoder_factory);
@@ -92,39 +92,39 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface,
  private:
   bool Initialize_s();
   void Terminate_s();
-  talk_base::scoped_refptr<AudioSourceInterface> CreateAudioSource_s(
+  rtc::scoped_refptr<AudioSourceInterface> CreateAudioSource_s(
       const MediaConstraintsInterface* constraints);
-  talk_base::scoped_refptr<VideoSourceInterface> CreateVideoSource_s(
+  rtc::scoped_refptr<VideoSourceInterface> CreateVideoSource_s(
       cricket::VideoCapturer* capturer,
       const MediaConstraintsInterface* constraints);
 
-  talk_base::scoped_refptr<PeerConnectionInterface> CreatePeerConnection_s(
+  rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection_s(
       const PeerConnectionInterface::RTCConfiguration& configuration,
       const MediaConstraintsInterface* constraints,
       PortAllocatorFactoryInterface* allocator_factory,
       DTLSIdentityServiceInterface* dtls_identity_service,
       PeerConnectionObserver* observer);
 
-  bool StartAecDump_s(talk_base::PlatformFile file);
+  bool StartAecDump_s(rtc::PlatformFile file);
 
-  // Implements talk_base::MessageHandler.
-  void OnMessage(talk_base::Message* msg);
+  // Implements rtc::MessageHandler.
+  void OnMessage(rtc::Message* msg);
 
   bool owns_ptrs_;
-  talk_base::Thread* signaling_thread_;
-  talk_base::Thread* worker_thread_;
+  rtc::Thread* signaling_thread_;
+  rtc::Thread* worker_thread_;
   Options options_;
-  talk_base::scoped_refptr<PortAllocatorFactoryInterface> allocator_factory_;
+  rtc::scoped_refptr<PortAllocatorFactoryInterface> allocator_factory_;
   // External Audio device used for audio playback.
-  talk_base::scoped_refptr<AudioDeviceModule> default_adm_;
-  talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;
+  rtc::scoped_refptr<AudioDeviceModule> default_adm_;
+  rtc::scoped_ptr<cricket::ChannelManager> channel_manager_;
   // External Video encoder factory. This can be NULL if the client has not
   // injected any. In that case, video engine will use the internal SW encoder.
-  talk_base::scoped_ptr<cricket::WebRtcVideoEncoderFactory>
+  rtc::scoped_ptr<cricket::WebRtcVideoEncoderFactory>
       video_encoder_factory_;
   // External Video decoder factory. This can be NULL if the client has not
   // injected any. In that case, video engine will use the internal SW decoder.
-  talk_base::scoped_ptr<cricket::WebRtcVideoDecoderFactory>
+  rtc::scoped_ptr<cricket::WebRtcVideoDecoderFactory>
       video_decoder_factory_;
 };
 

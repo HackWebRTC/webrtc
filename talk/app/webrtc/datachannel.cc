@@ -30,8 +30,8 @@
 
 #include "talk/app/webrtc/mediastreamprovider.h"
 #include "talk/app/webrtc/sctputils.h"
-#include "talk/base/logging.h"
-#include "talk/base/refcount.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/refcount.h"
 
 namespace webrtc {
 
@@ -86,13 +86,13 @@ void DataChannel::PacketQueue::Swap(PacketQueue* other) {
   other->packets_.swap(packets_);
 }
 
-talk_base::scoped_refptr<DataChannel> DataChannel::Create(
+rtc::scoped_refptr<DataChannel> DataChannel::Create(
     DataChannelProviderInterface* provider,
     cricket::DataChannelType dct,
     const std::string& label,
     const InternalDataChannelInit& config) {
-  talk_base::scoped_refptr<DataChannel> channel(
-      new talk_base::RefCountedObject<DataChannel>(provider, dct, label));
+  rtc::scoped_refptr<DataChannel> channel(
+      new rtc::RefCountedObject<DataChannel>(provider, dct, label));
   if (!channel->Init(config)) {
     return NULL;
   }
@@ -151,7 +151,7 @@ bool DataChannel::Init(const InternalDataChannelInit& config) {
     // Chrome glue and WebKit) are not wired up properly until after this
     // function returns.
     if (provider_->ReadyToSendData()) {
-      talk_base::Thread::Current()->Post(this, MSG_CHANNELREADY, NULL);
+      rtc::Thread::Current()->Post(this, MSG_CHANNELREADY, NULL);
     }
   }
 
@@ -271,7 +271,7 @@ void DataChannel::SetSendSsrc(uint32 send_ssrc) {
   UpdateState();
 }
 
-void DataChannel::OnMessage(talk_base::Message* msg) {
+void DataChannel::OnMessage(rtc::Message* msg) {
   switch (msg->message_id) {
     case MSG_CHANNELREADY:
       OnChannelReady(true);
@@ -288,7 +288,7 @@ void DataChannel::OnDataEngineClose() {
 
 void DataChannel::OnDataReceived(cricket::DataChannel* channel,
                                  const cricket::ReceiveDataParams& params,
-                                 const talk_base::Buffer& payload) {
+                                 const rtc::Buffer& payload) {
   uint32 expected_ssrc =
       (data_channel_type_ == cricket::DCT_RTP) ? receive_ssrc_ : config_.id;
   if (params.ssrc != expected_ssrc) {
@@ -325,7 +325,7 @@ void DataChannel::OnDataReceived(cricket::DataChannel* channel,
   waiting_for_open_ack_ = false;
 
   bool binary = (params.type == cricket::DMT_BINARY);
-  talk_base::scoped_ptr<DataBuffer> buffer(new DataBuffer(payload, binary));
+  rtc::scoped_ptr<DataBuffer> buffer(new DataBuffer(payload, binary));
   if (was_ever_writable_ && observer_) {
     observer_->OnMessage(*buffer.get());
   } else {
@@ -355,7 +355,7 @@ void DataChannel::OnChannelReady(bool writable) {
     was_ever_writable_ = true;
 
     if (data_channel_type_ == cricket::DCT_SCTP) {
-      talk_base::Buffer payload;
+      rtc::Buffer payload;
 
       if (config_.open_handshake_role == InternalDataChannelInit::kOpener) {
         WriteDataChannelOpenMessage(label_, config_, &payload);
@@ -452,7 +452,7 @@ void DataChannel::DeliverQueuedReceivedData() {
   }
 
   while (!queued_received_data_.Empty()) {
-    talk_base::scoped_ptr<DataBuffer> buffer(queued_received_data_.Front());
+    rtc::scoped_ptr<DataBuffer> buffer(queued_received_data_.Front());
     observer_->OnMessage(*buffer);
     queued_received_data_.Pop();
   }
@@ -465,7 +465,7 @@ void DataChannel::SendQueuedDataMessages() {
   packet_buffer.Swap(&queued_send_data_);
 
   while (!packet_buffer.Empty()) {
-    talk_base::scoped_ptr<DataBuffer> buffer(packet_buffer.Front());
+    rtc::scoped_ptr<DataBuffer> buffer(packet_buffer.Front());
     SendDataMessage(*buffer);
     packet_buffer.Pop();
   }
@@ -520,17 +520,17 @@ void DataChannel::SendQueuedControlMessages() {
   control_packets.Swap(&queued_control_data_);
 
   while (!control_packets.Empty()) {
-    talk_base::scoped_ptr<DataBuffer> buf(control_packets.Front());
+    rtc::scoped_ptr<DataBuffer> buf(control_packets.Front());
     SendControlMessage(buf->data);
     control_packets.Pop();
   }
 }
 
-void DataChannel::QueueControlMessage(const talk_base::Buffer& buffer) {
+void DataChannel::QueueControlMessage(const rtc::Buffer& buffer) {
   queued_control_data_.Push(new DataBuffer(buffer, true));
 }
 
-bool DataChannel::SendControlMessage(const talk_base::Buffer& buffer) {
+bool DataChannel::SendControlMessage(const rtc::Buffer& buffer) {
   bool is_open_message =
       (config_.open_handshake_role == InternalDataChannelInit::kOpener);
 

@@ -27,7 +27,7 @@
 
 #include "talk/session/media/currentspeakermonitor.h"
 
-#include "talk/base/logging.h"
+#include "webrtc/base/logging.h"
 #include "talk/media/base/streamparams.h"
 #include "talk/session/media/audiomonitor.h"
 #include "talk/session/media/mediamessages.h"
@@ -183,7 +183,7 @@ void CurrentSpeakerMonitor::OnAudioMonitor(
 
   // We avoid over-switching by disabling switching for a period of time after
   // a switch is done.
-  uint32 now = talk_base::Time();
+  uint32 now = rtc::Time();
   if (earliest_permitted_switch_time_ <= now &&
       current_speaker_ssrc_ != loudest_speaker_ssrc) {
     current_speaker_ssrc_ = loudest_speaker_ssrc;

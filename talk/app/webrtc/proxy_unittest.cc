@@ -29,10 +29,10 @@
 
 #include <string>
 
-#include "talk/base/refcount.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/thread.h"
-#include "talk/base/gunit.h"
+#include "webrtc/base/refcount.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/base/gunit.h"
 #include "testing/base/public/gmock.h"
 
 using ::testing::_;
@@ -44,7 +44,7 @@ using ::testing::Return;
 namespace webrtc {
 
 // Interface used for testing here.
-class FakeInterface : public talk_base::RefCountInterface {
+class FakeInterface : public rtc::RefCountInterface {
  public:
   virtual void VoidMethod0() = 0;
   virtual std::string Method0() = 0;
@@ -70,8 +70,8 @@ END_PROXY()
 // Implementation of the test interface.
 class Fake : public FakeInterface {
  public:
-  static talk_base::scoped_refptr<Fake> Create() {
-    return new talk_base::RefCountedObject<Fake>();
+  static rtc::scoped_refptr<Fake> Create() {
+    return new rtc::RefCountedObject<Fake>();
   }
 
   MOCK_METHOD0(VoidMethod0, void());
@@ -92,21 +92,21 @@ class ProxyTest: public testing::Test {
  public:
   // Checks that the functions is called on the |signaling_thread_|.
   void CheckThread() {
-    EXPECT_EQ(talk_base::Thread::Current(), signaling_thread_.get());
+    EXPECT_EQ(rtc::Thread::Current(), signaling_thread_.get());
   }
 
  protected:
   virtual void SetUp() {
-    signaling_thread_.reset(new talk_base::Thread());
+    signaling_thread_.reset(new rtc::Thread());
     ASSERT_TRUE(signaling_thread_->Start());
     fake_ = Fake::Create();
     fake_proxy_ = FakeProxy::Create(signaling_thread_.get(), fake_.get());
   }
 
  protected:
-  talk_base::scoped_ptr<talk_base::Thread> signaling_thread_;
-  talk_base::scoped_refptr<FakeInterface> fake_proxy_;
-  talk_base::scoped_refptr<Fake> fake_;
+  rtc::scoped_ptr<rtc::Thread> signaling_thread_;
+  rtc::scoped_refptr<FakeInterface> fake_proxy_;
+  rtc::scoped_refptr<Fake> fake_;
 };
 
 TEST_F(ProxyTest, VoidMethod0) {

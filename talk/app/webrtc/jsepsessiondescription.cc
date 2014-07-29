@@ -27,10 +27,10 @@
 #include "talk/app/webrtc/jsepsessiondescription.h"
 
 #include "talk/app/webrtc/webrtcsdp.h"
-#include "talk/base/stringencode.h"
+#include "webrtc/base/stringencode.h"
 #include "talk/session/media/mediasession.h"
 
-using talk_base::scoped_ptr;
+using rtc::scoped_ptr;
 using cricket::SessionDescription;
 
 namespace webrtc {

@@ -32,9 +32,9 @@
 #if !defined(DISABLE_YUV)
 #include "libyuv/scale_argb.h"
 #endif
-#include "talk/base/common.h"
-#include "talk/base/logging.h"
-#include "talk/base/systeminfo.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/systeminfo.h"
 #include "talk/media/base/videoprocessor.h"
 
 #if defined(HAVE_WEBRTC_VIDEO)
@@ -63,7 +63,7 @@ static const int64 kMaxDistance = ~(static_cast<int64>(1) << 63);
 static const int kYU12Penalty = 16;  // Needs to be higher than MJPG index.
 #endif
 static const int kDefaultScreencastFps = 5;
-typedef talk_base::TypedMessageData<CaptureState> StateChangeParams;
+typedef rtc::TypedMessageData<CaptureState> StateChangeParams;
 
 // Limit stats data collections to ~20 seconds of 30fps data before dropping
 // old data in case stats aren't reset for long periods of time.
@@ -99,14 +99,14 @@ bool CapturedFrame::GetDataSize(uint32* size) const {
 // Implementation of class VideoCapturer
 /////////////////////////////////////////////////////////////////////
 VideoCapturer::VideoCapturer()
-    : thread_(talk_base::Thread::Current()),
+    : thread_(rtc::Thread::Current()),
       adapt_frame_drops_data_(kMaxAccumulatorSize),
       effect_frame_drops_data_(kMaxAccumulatorSize),
       frame_time_data_(kMaxAccumulatorSize) {
   Construct();
 }
 
-VideoCapturer::VideoCapturer(talk_base::Thread* thread)
+VideoCapturer::VideoCapturer(rtc::Thread* thread)
     : thread_(thread),
       adapt_frame_drops_data_(kMaxAccumulatorSize),
       effect_frame_drops_data_(kMaxAccumulatorSize),
@@ -176,7 +176,7 @@ bool VideoCapturer::Pause(bool pause) {
       return false;
     }
     LOG(LS_INFO) << "Pausing a camera.";
-    talk_base::scoped_ptr<VideoFormat> capture_format_when_paused(
+    rtc::scoped_ptr<VideoFormat> capture_format_when_paused(
         capture_format_ ? new VideoFormat(*capture_format_) : NULL);
     Stop();
     SetCaptureState(CS_PAUSED);
@@ -284,14 +284,14 @@ bool VideoCapturer::GetBestCaptureFormat(const VideoFormat& format,
 }
 
 void VideoCapturer::AddVideoProcessor(VideoProcessor* video_processor) {
-  talk_base::CritScope cs(&crit_);
+  rtc::CritScope cs(&crit_);
   ASSERT(std::find(video_processors_.begin(), video_processors_.end(),
                    video_processor) == video_processors_.end());
   video_processors_.push_back(video_processor);
 }
 
 bool VideoCapturer::RemoveVideoProcessor(VideoProcessor* video_processor) {
-  talk_base::CritScope cs(&crit_);
+  rtc::CritScope cs(&crit_);
   VideoProcessors::iterator found = std::find(
       video_processors_.begin(), video_processors_.end(), video_processor);
   if (found == video_processors_.end()) {
@@ -328,7 +328,7 @@ void VideoCapturer::GetStats(VariableInfo<int>* adapt_drops_stats,
                              VariableInfo<int>* effect_drops_stats,
                              VariableInfo<double>* frame_time_stats,
                              VideoFormat* last_captured_frame_format) {
-  talk_base::CritScope cs(&frame_stats_crit_);
+  rtc::CritScope cs(&frame_stats_crit_);
   GetVariableSnapshot(adapt_frame_drops_data_, adapt_drops_stats);
   GetVariableSnapshot(effect_frame_drops_data_, effect_drops_stats);
   GetVariableSnapshot(frame_time_data_, frame_time_stats);
@@ -407,7 +407,7 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
   // TODO(fbarchard): Avoid scale and convert if muted.
   // Temporary buffer is scoped here so it will persist until i420_frame.Init()
   // makes a copy of the frame, converting to I420.
-  talk_base::scoped_ptr<uint8[]> temp_buffer;
+  rtc::scoped_ptr<uint8[]> temp_buffer;
   // YUY2 can be scaled vertically using an ARGB scaler.  Aspect ratio is only
   // a problem on OSX.  OSX always converts webcams to YUY2 or UYVY.
   bool can_scale =
@@ -547,10 +547,10 @@ void VideoCapturer::SetCaptureState(CaptureState state) {
   thread_->Post(this, MSG_STATE_CHANGE, state_params);
 }
 
-void VideoCapturer::OnMessage(talk_base::Message* message) {
+void VideoCapturer::OnMessage(rtc::Message* message) {
   switch (message->message_id) {
     case MSG_STATE_CHANGE: {
-      talk_base::scoped_ptr<StateChangeParams> p(
+      rtc::scoped_ptr<StateChangeParams> p(
           static_cast<StateChangeParams*>(message->pdata));
       SignalStateChange(this, p->data());
       break;
@@ -667,7 +667,7 @@ int64 VideoCapturer::GetFormatDistance(const VideoFormat& desired,
 
 bool VideoCapturer::ApplyProcessors(VideoFrame* video_frame) {
   bool drop_frame = false;
-  talk_base::CritScope cs(&crit_);
+  rtc::CritScope cs(&crit_);
   for (VideoProcessors::iterator iter = video_processors_.begin();
        iter != video_processors_.end(); ++iter) {
     (*iter)->OnFrame(kDummyVideoSsrc, video_frame, &drop_frame);
@@ -710,7 +710,7 @@ bool VideoCapturer::ShouldFilterFormat(const VideoFormat& format) const {
 
 void VideoCapturer::UpdateStats(const CapturedFrame* captured_frame) {
   // Update stats protected from fetches from different thread.
-  talk_base::CritScope cs(&frame_stats_crit_);
+  rtc::CritScope cs(&frame_stats_crit_);
 
   last_captured_frame_format_.width = captured_frame->width;
   last_captured_frame_format_.height = captured_frame->height;
@@ -731,7 +731,7 @@ void VideoCapturer::UpdateStats(const CapturedFrame* captured_frame) {
 
 template<class T>
 void VideoCapturer::GetVariableSnapshot(
-    const talk_base::RollingAccumulator<T>& data,
+    const rtc::RollingAccumulator<T>& data,
     VariableInfo<T>* stats) {
   stats->max_val = data.ComputeMax();
   stats->mean = data.ComputeMean();

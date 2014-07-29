@@ -33,12 +33,12 @@
 
 #include <algorithm>
 
-#include "talk/base/bind.h"
-#include "talk/base/common.h"
-#include "talk/base/logging.h"
-#include "talk/base/sigslotrepeater.h"
-#include "talk/base/stringencode.h"
-#include "talk/base/stringutils.h"
+#include "webrtc/base/bind.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/sigslotrepeater.h"
+#include "webrtc/base/stringencode.h"
+#include "webrtc/base/stringutils.h"
 #include "talk/media/base/capturemanager.h"
 #include "talk/media/base/hybriddataengine.h"
 #include "talk/media/base/rtpdataengine.h"
@@ -56,11 +56,11 @@ enum {
   MSG_VIDEOCAPTURESTATE = 1,
 };
 
-using talk_base::Bind;
+using rtc::Bind;
 
 static const int kNotSetOutputVolume = -1;
 
-struct CaptureStateParams : public talk_base::MessageData {
+struct CaptureStateParams : public rtc::MessageData {
   CaptureStateParams(cricket::VideoCapturer* c, cricket::CaptureState s)
       : capturer(c),
         state(s) {}
@@ -77,7 +77,7 @@ static DataEngineInterface* ConstructDataEngine() {
 }
 
 #if !defined(DISABLE_MEDIA_ENGINE_FACTORY)
-ChannelManager::ChannelManager(talk_base::Thread* worker_thread) {
+ChannelManager::ChannelManager(rtc::Thread* worker_thread) {
   Construct(MediaEngineFactory::Create(),
             ConstructDataEngine(),
             cricket::DeviceManagerFactory::Create(),
@@ -90,13 +90,13 @@ ChannelManager::ChannelManager(MediaEngineInterface* me,
                                DataEngineInterface* dme,
                                DeviceManagerInterface* dm,
                                CaptureManager* cm,
-                               talk_base::Thread* worker_thread) {
+                               rtc::Thread* worker_thread) {
   Construct(me, dme, dm, cm, worker_thread);
 }
 
 ChannelManager::ChannelManager(MediaEngineInterface* me,
                                DeviceManagerInterface* dm,
-                               talk_base::Thread* worker_thread) {
+                               rtc::Thread* worker_thread) {
   Construct(me,
             ConstructDataEngine(),
             dm,
@@ -108,13 +108,13 @@ void ChannelManager::Construct(MediaEngineInterface* me,
                                DataEngineInterface* dme,
                                DeviceManagerInterface* dm,
                                CaptureManager* cm,
-                               talk_base::Thread* worker_thread) {
+                               rtc::Thread* worker_thread) {
   media_engine_.reset(me);
   data_media_engine_.reset(dme);
   device_manager_.reset(dm);
   capture_manager_.reset(cm);
   initialized_ = false;
-  main_thread_ = talk_base::Thread::Current();
+  main_thread_ = rtc::Thread::Current();
   worker_thread_ = worker_thread;
   // Get the default audio options from the media engine.
   audio_options_ = media_engine_->GetAudioOptions();
@@ -297,7 +297,7 @@ void ChannelManager::Terminate() {
 }
 
 void ChannelManager::Terminate_w() {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
   // Need to destroy the voice/video channels
   while (!video_channels_.empty()) {
     DestroyVideoChannel_w(video_channels_.back());
@@ -470,7 +470,7 @@ Soundclip* ChannelManager::CreateSoundclip() {
 
 Soundclip* ChannelManager::CreateSoundclip_w() {
   ASSERT(initialized_);
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
 
   SoundclipMedia* soundclip_media = media_engine_->CreateSoundclip();
   if (!soundclip_media) {
@@ -556,7 +556,7 @@ bool ChannelManager::SetAudioOptions(const std::string& in_name,
 bool ChannelManager::SetAudioOptions_w(
     const AudioOptions& options, int delay_offset,
     const Device* in_dev, const Device* out_dev) {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
   ASSERT(initialized_);
 
   // Set audio options
@@ -591,7 +591,7 @@ bool ChannelManager::SetEngineAudioOptions(const AudioOptions& options) {
 }
 
 bool ChannelManager::SetEngineAudioOptions_w(const AudioOptions& options) {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
   ASSERT(initialized_);
 
   return media_engine_->SetAudioOptions(options);
@@ -711,7 +711,7 @@ VideoCapturer* ChannelManager::CreateVideoCapturer() {
 }
 
 bool ChannelManager::SetCaptureDevice_w(const Device* cam_device) {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
   ASSERT(initialized_);
 
   if (!cam_device) {
@@ -900,7 +900,7 @@ void ChannelManager::OnVideoCaptureStateChange(VideoCapturer* capturer,
                      new CaptureStateParams(capturer, result));
 }
 
-void ChannelManager::OnMessage(talk_base::Message* message) {
+void ChannelManager::OnMessage(rtc::Message* message) {
   switch (message->message_id) {
     case MSG_VIDEOCAPTURESTATE: {
       CaptureStateParams* data =
@@ -962,7 +962,7 @@ VideoFormat ChannelManager::GetStartCaptureFormat() {
       Bind(&MediaEngineInterface::GetStartCaptureFormat, media_engine_.get()));
 }
 
-bool ChannelManager::StartAecDump(talk_base::PlatformFile file) {
+bool ChannelManager::StartAecDump(rtc::PlatformFile file) {
   return worker_thread_->Invoke<bool>(
       Bind(&MediaEngineInterface::StartAecDump, media_engine_.get(), file));
 }

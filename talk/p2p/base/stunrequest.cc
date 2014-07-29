@@ -27,9 +27,9 @@
 
 #include "talk/p2p/base/stunrequest.h"
 
-#include "talk/base/common.h"
-#include "talk/base/helpers.h"
-#include "talk/base/logging.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
 
 namespace cricket {
 
@@ -39,7 +39,7 @@ const int MAX_SENDS = 9;
 const int DELAY_UNIT = 100;  // 100 milliseconds
 const int DELAY_MAX_FACTOR = 16;
 
-StunRequestManager::StunRequestManager(talk_base::Thread* thread)
+StunRequestManager::StunRequestManager(rtc::Thread* thread)
     : thread_(thread) {
 }
 
@@ -122,8 +122,8 @@ bool StunRequestManager::CheckResponse(const char* data, size_t size) {
 
   // Parse the STUN message and continue processing as usual.
 
-  talk_base::ByteBuffer buf(data, size);
-  talk_base::scoped_ptr<StunMessage> response(iter->second->msg_->CreateNew());
+  rtc::ByteBuffer buf(data, size);
+  rtc::scoped_ptr<StunMessage> response(iter->second->msg_->CreateNew());
   if (!response->Read(&buf))
     return false;
 
@@ -134,14 +134,14 @@ StunRequest::StunRequest()
     : count_(0), timeout_(false), manager_(0),
       msg_(new StunMessage()), tstamp_(0) {
   msg_->SetTransactionID(
-      talk_base::CreateRandomString(kStunTransactionIdLength));
+      rtc::CreateRandomString(kStunTransactionIdLength));
 }
 
 StunRequest::StunRequest(StunMessage* request)
     : count_(0), timeout_(false), manager_(0),
       msg_(request), tstamp_(0) {
   msg_->SetTransactionID(
-      talk_base::CreateRandomString(kStunTransactionIdLength));
+      rtc::CreateRandomString(kStunTransactionIdLength));
 }
 
 StunRequest::~StunRequest() {
@@ -170,7 +170,7 @@ const StunMessage* StunRequest::msg() const {
 }
 
 uint32 StunRequest::Elapsed() const {
-  return talk_base::TimeSince(tstamp_);
+  return rtc::TimeSince(tstamp_);
 }
 
 
@@ -179,7 +179,7 @@ void StunRequest::set_manager(StunRequestManager* manager) {
   manager_ = manager;
 }
 
-void StunRequest::OnMessage(talk_base::Message* pmsg) {
+void StunRequest::OnMessage(rtc::Message* pmsg) {
   ASSERT(manager_ != NULL);
   ASSERT(pmsg->message_id == MSG_STUN_SEND);
 
@@ -189,9 +189,9 @@ void StunRequest::OnMessage(talk_base::Message* pmsg) {
     return;
   }
 
-  tstamp_ = talk_base::Time();
+  tstamp_ = rtc::Time();
 
-  talk_base::ByteBuffer buf;
+  rtc::ByteBuffer buf;
   msg_->Write(&buf);
   manager_->SignalSendPacket(buf.Data(), buf.Length(), this);
 
@@ -200,7 +200,7 @@ void StunRequest::OnMessage(talk_base::Message* pmsg) {
 }
 
 int StunRequest::GetNextDelay() {
-  int delay = DELAY_UNIT * talk_base::_min(1 << count_, DELAY_MAX_FACTOR);
+  int delay = DELAY_UNIT * rtc::_min(1 << count_, DELAY_MAX_FACTOR);
   count_ += 1;
   if (count_ == MAX_SENDS)
     timeout_ = true;

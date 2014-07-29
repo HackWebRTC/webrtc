@@ -30,7 +30,7 @@
 
 #include <string>
 #include <vector>
-#include "talk/base/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "talk/xmllite/qname.h"
 
 namespace buzz {
@@ -54,8 +54,8 @@ public:
 
 private:
 
-  talk_base::scoped_ptr<std::vector<std::string> > pxmlnsStack_;
-  talk_base::scoped_ptr<std::vector<size_t> > pxmlnsDepthStack_;
+  rtc::scoped_ptr<std::vector<std::string> > pxmlnsStack_;
+  rtc::scoped_ptr<std::vector<size_t> > pxmlnsDepthStack_;
 };
 }
 

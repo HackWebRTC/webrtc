@@ -27,11 +27,11 @@
 
 #include "talk/media/base/rtpdataengine.h"
 
-#include "talk/base/buffer.h"
-#include "talk/base/helpers.h"
-#include "talk/base/logging.h"
-#include "talk/base/ratelimiter.h"
-#include "talk/base/timing.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/ratelimiter.h"
+#include "webrtc/base/timing.h"
 #include "talk/media/base/codec.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/rtputils.h"
@@ -55,7 +55,7 @@ RtpDataEngine::RtpDataEngine() {
   data_codecs_.push_back(
       DataCodec(kGoogleRtpDataCodecId,
                 kGoogleRtpDataCodecName, 0));
-  SetTiming(new talk_base::Timing());
+  SetTiming(new rtc::Timing());
 }
 
 DataMediaChannel* RtpDataEngine::CreateChannel(
@@ -92,7 +92,7 @@ bool FindCodecByName(const std::vector<DataCodec>& codecs,
   return false;
 }
 
-RtpDataMediaChannel::RtpDataMediaChannel(talk_base::Timing* timing) {
+RtpDataMediaChannel::RtpDataMediaChannel(rtc::Timing* timing) {
   Construct(timing);
 }
 
@@ -100,11 +100,11 @@ RtpDataMediaChannel::RtpDataMediaChannel() {
   Construct(NULL);
 }
 
-void RtpDataMediaChannel::Construct(talk_base::Timing* timing) {
+void RtpDataMediaChannel::Construct(rtc::Timing* timing) {
   sending_ = false;
   receiving_ = false;
   timing_ = timing;
-  send_limiter_.reset(new talk_base::RateLimiter(kDataMaxBandwidth / 8, 1.0));
+  send_limiter_.reset(new rtc::RateLimiter(kDataMaxBandwidth / 8, 1.0));
 }
 
 
@@ -187,7 +187,7 @@ bool RtpDataMediaChannel::AddSendStream(const StreamParams& stream) {
   // And we should probably allow more than one per stream.
   rtp_clock_by_send_ssrc_[stream.first_ssrc()] = new RtpClock(
       kDataCodecClockrate,
-      talk_base::CreateRandomNonZeroId(), talk_base::CreateRandomNonZeroId());
+      rtc::CreateRandomNonZeroId(), rtc::CreateRandomNonZeroId());
 
   LOG(LS_INFO) << "Added data send stream '" << stream.id
                << "' with ssrc=" << stream.first_ssrc();
@@ -231,7 +231,7 @@ bool RtpDataMediaChannel::RemoveRecvStream(uint32 ssrc) {
 }
 
 void RtpDataMediaChannel::OnPacketReceived(
-    talk_base::Buffer* packet, const talk_base::PacketTime& packet_time) {
+    rtc::Buffer* packet, const rtc::PacketTime& packet_time) {
   RtpHeader header;
   if (!GetRtpHeader(packet->data(), packet->length(), &header)) {
     // Don't want to log for every corrupt packet.
@@ -294,14 +294,14 @@ bool RtpDataMediaChannel::SetMaxSendBandwidth(int bps) {
   if (bps <= 0) {
     bps = kDataMaxBandwidth;
   }
-  send_limiter_.reset(new talk_base::RateLimiter(bps / 8, 1.0));
+  send_limiter_.reset(new rtc::RateLimiter(bps / 8, 1.0));
   LOG(LS_INFO) << "RtpDataMediaChannel::SetSendBandwidth to " << bps << "bps.";
   return true;
 }
 
 bool RtpDataMediaChannel::SendData(
     const SendDataParams& params,
-    const talk_base::Buffer& payload,
+    const rtc::Buffer& payload,
     SendDataResult* result) {
   if (result) {
     // If we return true, we'll set this to SDR_SUCCESS.
@@ -353,7 +353,7 @@ bool RtpDataMediaChannel::SendData(
   rtp_clock_by_send_ssrc_[header.ssrc]->Tick(
       now, &header.seq_num, &header.timestamp);
 
-  talk_base::Buffer packet;
+  rtc::Buffer packet;
   packet.SetCapacity(packet_len);
   packet.SetLength(kMinRtpPacketLen);
   if (!SetRtpHeader(packet.data(), packet.length(), header)) {

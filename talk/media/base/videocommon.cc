@@ -29,7 +29,7 @@
 #include <math.h>
 #include <sstream>
 
-#include "talk/base/common.h"
+#include "webrtc/base/common.h"
 
 namespace cricket {
 

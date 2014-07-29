@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/base/gunit.h"
+#include "webrtc/base/gunit.h"
 #include "talk/media/base/fakemediaengine.h"
 #include "talk/p2p/base/fakesession.h"
 #include "talk/session/media/channel.h"
@@ -37,13 +37,13 @@ namespace cricket {
 class TypingMonitorTest : public testing::Test {
  protected:
   TypingMonitorTest() : session_(true) {
-    vc_.reset(new VoiceChannel(talk_base::Thread::Current(), &engine_,
+    vc_.reset(new VoiceChannel(rtc::Thread::Current(), &engine_,
                                engine_.CreateChannel(), &session_, "", false));
     engine_.GetVoiceChannel(0)->set_time_since_last_typing(1000);
 
     TypingMonitorOptions settings = {10, 20, 30, 40, 50};
     monitor_.reset(new TypingMonitor(vc_.get(),
-                                     talk_base::Thread::Current(),
+                                     rtc::Thread::Current(),
                                      settings));
   }
 
@@ -51,8 +51,8 @@ class TypingMonitorTest : public testing::Test {
     vc_.reset();
   }
 
-  talk_base::scoped_ptr<TypingMonitor> monitor_;
-  talk_base::scoped_ptr<VoiceChannel> vc_;
+  rtc::scoped_ptr<TypingMonitor> monitor_;
+  rtc::scoped_ptr<VoiceChannel> vc_;
   FakeMediaEngine engine_;
   FakeSession session_;
 };

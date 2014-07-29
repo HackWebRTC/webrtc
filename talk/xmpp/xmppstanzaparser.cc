@@ -28,7 +28,7 @@
 #include "talk/xmpp/xmppstanzaparser.h"
 
 #include "talk/xmllite/xmlelement.h"
-#include "talk/base/common.h"
+#include "webrtc/base/common.h"
 #include "talk/xmpp/constants.h"
 #ifdef EXPAT_RELATIVE_PATH
 #include "expat.h"
@@ -98,8 +98,8 @@ XmppStanzaParser::IncomingEndElement(
 void
 XmppStanzaParser::IncomingError(
     XmlParseContext * pctx, XML_Error errCode) {
-  UNUSED(pctx);
-  UNUSED(errCode);
+  RTC_UNUSED(pctx);
+  RTC_UNUSED(errCode);
   psph_->XmlError();
 }
 

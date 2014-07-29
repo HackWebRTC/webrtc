@@ -31,7 +31,7 @@
 #include <algorithm>
 #include <sstream>
 #include <iostream>
-#include "talk/base/common.h"
+#include "webrtc/base/common.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/moduleimpl.h"
 #include "talk/xmpp/chatroommodule.h"
@@ -74,7 +74,7 @@ public:
   virtual XmppReturnStatus SendMessage(const XmlElement& message);
 
   // XmppModule
-  virtual void IqResponse(XmppIqCookie cookie, const XmlElement * pelStanza) {UNUSED2(cookie, pelStanza);}
+  virtual void IqResponse(XmppIqCookie cookie, const XmlElement * pelStanza) {RTC_UNUSED2(cookie, pelStanza);}
   virtual bool HandleStanza(const XmlElement *);
 
 private:
@@ -121,7 +121,7 @@ public:
   const XmppPresence* presence() const;
 
 private:
-  talk_base::scoped_ptr<XmppPresence>  presence_;
+  rtc::scoped_ptr<XmppPresence>  presence_;
 };
 
 class XmppChatroomMemberEnumeratorImpl :
@@ -276,7 +276,7 @@ XmppChatroomModuleImpl::RequestEnterChatroom(
     const std::string& password,
     const std::string& client_version,
     const std::string& locale) {
-  UNUSED(password);
+  RTC_UNUSED(password);
   if (!engine())
     return XMPP_RETURN_BADSTATE;
 
@@ -446,7 +446,7 @@ void
 XmppChatroomModuleImpl::FireEnteredStatus(const XmlElement* presence,
                                           XmppChatroomEnteredStatus status) {
   if (chatroom_handler_) {
-    talk_base::scoped_ptr<XmppPresence> xmpp_presence(XmppPresence::Create());
+    rtc::scoped_ptr<XmppPresence> xmpp_presence(XmppPresence::Create());
     xmpp_presence->set_raw_xml(presence);
     chatroom_handler_->ChatroomEnteredStatus(this, xmpp_presence.get(), status);
   }
@@ -488,7 +488,7 @@ XmppReturnStatus
 XmppChatroomModuleImpl::ServerChangedOtherPresence(const XmlElement&
                                                    presence_element) {
   XmppReturnStatus xmpp_status = XMPP_RETURN_OK;
-  talk_base::scoped_ptr<XmppPresence> presence(XmppPresence::Create());
+  rtc::scoped_ptr<XmppPresence> presence(XmppPresence::Create());
   IFR(presence->set_raw_xml(&presence_element));
 
   JidMemberMap::iterator pos = chatroom_jid_members_.find(presence->jid());
@@ -542,7 +542,7 @@ XmppReturnStatus
 XmppChatroomModuleImpl::ChangePresence(XmppChatroomState new_state,
                                        const XmlElement* presence,
                                        bool isServer) {
-  UNUSED(presence);
+  RTC_UNUSED(presence);
 
   XmppChatroomState old_state = chatroom_state_;
 

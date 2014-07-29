@@ -31,20 +31,20 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/basictypes.h"
-#include "talk/base/buffer.h"
-#include "talk/base/dscp.h"
-#include "talk/base/logging.h"
-#include "talk/base/sigslot.h"
-#include "talk/base/socket.h"
-#include "talk/base/window.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/dscp.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/socket.h"
+#include "webrtc/base/window.h"
 #include "talk/media/base/codec.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/streamparams.h"
 // TODO(juberti): re-evaluate this include
 #include "talk/session/media/audiomonitor.h"
 
-namespace talk_base {
+namespace rtc {
 class Buffer;
 class RateLimiter;
 class Timing;
@@ -104,7 +104,7 @@ class Settable {
   }
 
   std::string ToString() const {
-    return set_ ? talk_base::ToString(val_) : "";
+    return set_ ? rtc::ToString(val_) : "";
   }
 
   bool operator==(const Settable<T>& o) const {
@@ -560,12 +560,12 @@ class MediaChannel : public sigslot::has_slots<> {
    public:
     enum SocketType { ST_RTP, ST_RTCP };
     virtual bool SendPacket(
-        talk_base::Buffer* packet,
-        talk_base::DiffServCodePoint dscp = talk_base::DSCP_NO_CHANGE) = 0;
+        rtc::Buffer* packet,
+        rtc::DiffServCodePoint dscp = rtc::DSCP_NO_CHANGE) = 0;
     virtual bool SendRtcp(
-        talk_base::Buffer* packet,
-        talk_base::DiffServCodePoint dscp = talk_base::DSCP_NO_CHANGE) = 0;
-    virtual int SetOption(SocketType type, talk_base::Socket::Option opt,
+        rtc::Buffer* packet,
+        rtc::DiffServCodePoint dscp = rtc::DSCP_NO_CHANGE) = 0;
+    virtual int SetOption(SocketType type, rtc::Socket::Option opt,
                           int option) = 0;
     virtual ~NetworkInterface() {}
   };
@@ -575,16 +575,16 @@ class MediaChannel : public sigslot::has_slots<> {
 
   // Sets the abstract interface class for sending RTP/RTCP data.
   virtual void SetInterface(NetworkInterface *iface) {
-    talk_base::CritScope cs(&network_interface_crit_);
+    rtc::CritScope cs(&network_interface_crit_);
     network_interface_ = iface;
   }
 
   // Called when a RTP packet is received.
-  virtual void OnPacketReceived(talk_base::Buffer* packet,
-                                const talk_base::PacketTime& packet_time) = 0;
+  virtual void OnPacketReceived(rtc::Buffer* packet,
+                                const rtc::PacketTime& packet_time) = 0;
   // Called when a RTCP packet is received.
-  virtual void OnRtcpReceived(talk_base::Buffer* packet,
-                              const talk_base::PacketTime& packet_time) = 0;
+  virtual void OnRtcpReceived(rtc::Buffer* packet,
+                              const rtc::PacketTime& packet_time) = 0;
   // Called when the socket's ability to send has changed.
   virtual void OnReadyToSend(bool ready) = 0;
   // Creates a new outgoing media stream with SSRCs and CNAME as described
@@ -620,18 +620,18 @@ class MediaChannel : public sigslot::has_slots<> {
   virtual bool SetMaxSendBandwidth(int bps) = 0;
 
   // Base method to send packet using NetworkInterface.
-  bool SendPacket(talk_base::Buffer* packet) {
+  bool SendPacket(rtc::Buffer* packet) {
     return DoSendPacket(packet, false);
   }
 
-  bool SendRtcp(talk_base::Buffer* packet) {
+  bool SendRtcp(rtc::Buffer* packet) {
     return DoSendPacket(packet, true);
   }
 
   int SetOption(NetworkInterface::SocketType type,
-                talk_base::Socket::Option opt,
+                rtc::Socket::Option opt,
                 int option) {
-    talk_base::CritScope cs(&network_interface_crit_);
+    rtc::CritScope cs(&network_interface_crit_);
     if (!network_interface_)
       return -1;
 
@@ -640,22 +640,22 @@ class MediaChannel : public sigslot::has_slots<> {
 
  protected:
   // This method sets DSCP |value| on both RTP and RTCP channels.
-  int SetDscp(talk_base::DiffServCodePoint value) {
+  int SetDscp(rtc::DiffServCodePoint value) {
     int ret;
     ret = SetOption(NetworkInterface::ST_RTP,
-                    talk_base::Socket::OPT_DSCP,
+                    rtc::Socket::OPT_DSCP,
                     value);
     if (ret == 0) {
       ret = SetOption(NetworkInterface::ST_RTCP,
-                      talk_base::Socket::OPT_DSCP,
+                      rtc::Socket::OPT_DSCP,
                       value);
     }
     return ret;
   }
 
  private:
-  bool DoSendPacket(talk_base::Buffer* packet, bool rtcp) {
-    talk_base::CritScope cs(&network_interface_crit_);
+  bool DoSendPacket(rtc::Buffer* packet, bool rtcp) {
+    rtc::CritScope cs(&network_interface_crit_);
     if (!network_interface_)
       return false;
 
@@ -666,7 +666,7 @@ class MediaChannel : public sigslot::has_slots<> {
   // |network_interface_| can be accessed from the worker_thread and
   // from any MediaEngine threads. This critical section is to protect accessing
   // of network_interface_ object.
-  talk_base::CriticalSection network_interface_crit_;
+  rtc::CriticalSection network_interface_crit_;
   NetworkInterface* network_interface_;
 };
 
@@ -1288,7 +1288,7 @@ class DataMediaChannel : public MediaChannel {
 
   virtual bool SendData(
       const SendDataParams& params,
-      const talk_base::Buffer& payload,
+      const rtc::Buffer& payload,
       SendDataResult* result = NULL) = 0;
   // Signals when data is received (params, data, len)
   sigslot::signal3<const ReceiveDataParams&,

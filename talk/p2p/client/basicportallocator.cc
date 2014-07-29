@@ -30,9 +30,9 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/common.h"
-#include "talk/base/helpers.h"
-#include "talk/base/logging.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
 #include "talk/p2p/base/basicpacketsocketfactory.h"
 #include "talk/p2p/base/common.h"
 #include "talk/p2p/base/port.h"
@@ -42,8 +42,8 @@
 #include "talk/p2p/base/turnport.h"
 #include "talk/p2p/base/udpport.h"
 
-using talk_base::CreateRandomId;
-using talk_base::CreateRandomString;
+using rtc::CreateRandomId;
+using rtc::CreateRandomString;
 
 namespace {
 
@@ -82,7 +82,7 @@ const uint32 DISABLE_ALL_PHASES =
 
 // Performs the allocation of ports, in a sequenced (timed) manner, for a given
 // network and IP address.
-class AllocationSequence : public talk_base::MessageHandler,
+class AllocationSequence : public rtc::MessageHandler,
                            public sigslot::has_slots<> {
  public:
   enum State {
@@ -95,7 +95,7 @@ class AllocationSequence : public talk_base::MessageHandler,
   };
 
   AllocationSequence(BasicPortAllocatorSession* session,
-                     talk_base::Network* network,
+                     rtc::Network* network,
                      PortConfiguration* config,
                      uint32 flags);
   ~AllocationSequence();
@@ -106,7 +106,7 @@ class AllocationSequence : public talk_base::MessageHandler,
 
   // Disables the phases for a new sequence that this one already covers for an
   // equivalent network setup.
-  void DisableEquivalentPhases(talk_base::Network* network,
+  void DisableEquivalentPhases(rtc::Network* network,
       PortConfiguration* config, uint32* flags);
 
   // Starts and stops the sequence.  When started, it will continue allocating
@@ -115,7 +115,7 @@ class AllocationSequence : public talk_base::MessageHandler,
   void Stop();
 
   // MessageHandler
-  void OnMessage(talk_base::Message* msg);
+  void OnMessage(rtc::Message* msg);
 
   void EnableProtocol(ProtocolType proto);
   bool ProtocolEnabled(ProtocolType proto) const;
@@ -141,35 +141,35 @@ class AllocationSequence : public talk_base::MessageHandler,
   void CreateGturnPort(const RelayServerConfig& config);
   void CreateTurnPort(const RelayServerConfig& config);
 
-  void OnReadPacket(talk_base::AsyncPacketSocket* socket,
+  void OnReadPacket(rtc::AsyncPacketSocket* socket,
                     const char* data, size_t size,
-                    const talk_base::SocketAddress& remote_addr,
-                    const talk_base::PacketTime& packet_time);
+                    const rtc::SocketAddress& remote_addr,
+                    const rtc::PacketTime& packet_time);
 
   void OnPortDestroyed(PortInterface* port);
   void OnResolvedTurnServerAddress(
-    TurnPort* port, const talk_base::SocketAddress& server_address,
-    const talk_base::SocketAddress& resolved_server_address);
+    TurnPort* port, const rtc::SocketAddress& server_address,
+    const rtc::SocketAddress& resolved_server_address);
 
   BasicPortAllocatorSession* session_;
-  talk_base::Network* network_;
-  talk_base::IPAddress ip_;
+  rtc::Network* network_;
+  rtc::IPAddress ip_;
   PortConfiguration* config_;
   State state_;
   uint32 flags_;
   ProtocolList protocols_;
-  talk_base::scoped_ptr<talk_base::AsyncPacketSocket> udp_socket_;
+  rtc::scoped_ptr<rtc::AsyncPacketSocket> udp_socket_;
   // There will be only one udp port per AllocationSequence.
   UDPPort* udp_port_;
   // Keeping a map for turn ports keyed with server addresses.
-  std::map<talk_base::SocketAddress, Port*> turn_ports_;
+  std::map<rtc::SocketAddress, Port*> turn_ports_;
   int phase_;
 };
 
 // BasicPortAllocator
 BasicPortAllocator::BasicPortAllocator(
-    talk_base::NetworkManager* network_manager,
-    talk_base::PacketSocketFactory* socket_factory)
+    rtc::NetworkManager* network_manager,
+    rtc::PacketSocketFactory* socket_factory)
     : network_manager_(network_manager),
       socket_factory_(socket_factory) {
   ASSERT(socket_factory_ != NULL);
@@ -177,15 +177,15 @@ BasicPortAllocator::BasicPortAllocator(
 }
 
 BasicPortAllocator::BasicPortAllocator(
-    talk_base::NetworkManager* network_manager)
+    rtc::NetworkManager* network_manager)
     : network_manager_(network_manager),
       socket_factory_(NULL) {
   Construct();
 }
 
 BasicPortAllocator::BasicPortAllocator(
-    talk_base::NetworkManager* network_manager,
-    talk_base::PacketSocketFactory* socket_factory,
+    rtc::NetworkManager* network_manager,
+    rtc::PacketSocketFactory* socket_factory,
     const ServerAddresses& stun_servers)
     : network_manager_(network_manager),
       socket_factory_(socket_factory),
@@ -195,11 +195,11 @@ BasicPortAllocator::BasicPortAllocator(
 }
 
 BasicPortAllocator::BasicPortAllocator(
-    talk_base::NetworkManager* network_manager,
+    rtc::NetworkManager* network_manager,
     const ServerAddresses& stun_servers,
-    const talk_base::SocketAddress& relay_address_udp,
-    const talk_base::SocketAddress& relay_address_tcp,
-    const talk_base::SocketAddress& relay_address_ssl)
+    const rtc::SocketAddress& relay_address_udp,
+    const rtc::SocketAddress& relay_address_tcp,
+    const rtc::SocketAddress& relay_address_ssl)
     : network_manager_(network_manager),
       socket_factory_(NULL),
       stun_servers_(stun_servers) {
@@ -275,10 +275,10 @@ BasicPortAllocatorSession::~BasicPortAllocatorSession() {
 }
 
 void BasicPortAllocatorSession::StartGettingPorts() {
-  network_thread_ = talk_base::Thread::Current();
+  network_thread_ = rtc::Thread::Current();
   if (!socket_factory_) {
     owned_socket_factory_.reset(
-        new talk_base::BasicPacketSocketFactory(network_thread_));
+        new rtc::BasicPacketSocketFactory(network_thread_));
     socket_factory_ = owned_socket_factory_.get();
   }
 
@@ -290,7 +290,7 @@ void BasicPortAllocatorSession::StartGettingPorts() {
 }
 
 void BasicPortAllocatorSession::StopGettingPorts() {
-  ASSERT(talk_base::Thread::Current() == network_thread_);
+  ASSERT(rtc::Thread::Current() == network_thread_);
   running_ = false;
   network_thread_->Clear(this, MSG_ALLOCATE);
   for (uint32 i = 0; i < sequences_.size(); ++i)
@@ -298,33 +298,33 @@ void BasicPortAllocatorSession::StopGettingPorts() {
   network_thread_->Post(this, MSG_CONFIG_STOP);
 }
 
-void BasicPortAllocatorSession::OnMessage(talk_base::Message *message) {
+void BasicPortAllocatorSession::OnMessage(rtc::Message *message) {
   switch (message->message_id) {
   case MSG_CONFIG_START:
-    ASSERT(talk_base::Thread::Current() == network_thread_);
+    ASSERT(rtc::Thread::Current() == network_thread_);
     GetPortConfigurations();
     break;
 
   case MSG_CONFIG_READY:
-    ASSERT(talk_base::Thread::Current() == network_thread_);
+    ASSERT(rtc::Thread::Current() == network_thread_);
     OnConfigReady(static_cast<PortConfiguration*>(message->pdata));
     break;
 
   case MSG_ALLOCATE:
-    ASSERT(talk_base::Thread::Current() == network_thread_);
+    ASSERT(rtc::Thread::Current() == network_thread_);
     OnAllocate();
     break;
 
   case MSG_SHAKE:
-    ASSERT(talk_base::Thread::Current() == network_thread_);
+    ASSERT(rtc::Thread::Current() == network_thread_);
     OnShake();
     break;
   case MSG_SEQUENCEOBJECTS_CREATED:
-    ASSERT(talk_base::Thread::Current() == network_thread_);
+    ASSERT(rtc::Thread::Current() == network_thread_);
     OnAllocationSequenceObjectsCreated();
     break;
   case MSG_CONFIG_STOP:
-    ASSERT(talk_base::Thread::Current() == network_thread_);
+    ASSERT(rtc::Thread::Current() == network_thread_);
     OnConfigStop();
     break;
   default:
@@ -356,7 +356,7 @@ void BasicPortAllocatorSession::OnConfigReady(PortConfiguration* config) {
 }
 
 void BasicPortAllocatorSession::OnConfigStop() {
-  ASSERT(talk_base::Thread::Current() == network_thread_);
+  ASSERT(rtc::Thread::Current() == network_thread_);
 
   // If any of the allocated ports have not completed the candidates allocation,
   // mark those as error. Since session doesn't need any new candidates
@@ -387,7 +387,7 @@ void BasicPortAllocatorSession::OnConfigStop() {
 }
 
 void BasicPortAllocatorSession::AllocatePorts() {
-  ASSERT(talk_base::Thread::Current() == network_thread_);
+  ASSERT(rtc::Thread::Current() == network_thread_);
   network_thread_->Post(this, MSG_ALLOCATE);
 }
 
@@ -402,7 +402,7 @@ void BasicPortAllocatorSession::OnAllocate() {
 // create a new sequence to create the appropriate ports.
 void BasicPortAllocatorSession::DoAllocate() {
   bool done_signal_needed = false;
-  std::vector<talk_base::Network*> networks;
+  std::vector<rtc::Network*> networks;
   allocator_->network_manager()->GetNetworks(&networks);
   if (networks.empty()) {
     LOG(LS_WARNING) << "Machine has no networks; no ports will be allocated";
@@ -472,7 +472,7 @@ void BasicPortAllocatorSession::OnNetworksChanged() {
 }
 
 void BasicPortAllocatorSession::DisableEquivalentPhases(
-    talk_base::Network* network, PortConfiguration* config, uint32* flags) {
+    rtc::Network* network, PortConfiguration* config, uint32* flags) {
   for (uint32 i = 0; i < sequences_.size() &&
       (*flags & DISABLE_ALL_PHASES) != DISABLE_ALL_PHASES; ++i) {
     sequences_[i]->DisableEquivalentPhases(network, config, flags);
@@ -489,7 +489,7 @@ void BasicPortAllocatorSession::AddAllocatedPort(Port* port,
   port->set_content_name(content_name());
   port->set_component(component_);
   port->set_generation(generation());
-  if (allocator_->proxy().type != talk_base::PROXY_NONE)
+  if (allocator_->proxy().type != rtc::PROXY_NONE)
     port->set_proxy(allocator_->user_agent(), allocator_->proxy());
   port->set_send_retransmit_count_attribute((allocator_->flags() &
       PORTALLOCATOR_ENABLE_STUN_RETRANSMIT_ATTRIBUTE) != 0);
@@ -519,7 +519,7 @@ void BasicPortAllocatorSession::OnAllocationSequenceObjectsCreated() {
 
 void BasicPortAllocatorSession::OnCandidateReady(
     Port* port, const Candidate& c) {
-  ASSERT(talk_base::Thread::Current() == network_thread_);
+  ASSERT(rtc::Thread::Current() == network_thread_);
   PortData* data = FindPort(port);
   ASSERT(data != NULL);
   // Discarding any candidate signal if port allocation status is
@@ -549,7 +549,7 @@ void BasicPortAllocatorSession::OnCandidateReady(
 }
 
 void BasicPortAllocatorSession::OnPortComplete(Port* port) {
-  ASSERT(talk_base::Thread::Current() == network_thread_);
+  ASSERT(rtc::Thread::Current() == network_thread_);
   PortData* data = FindPort(port);
   ASSERT(data != NULL);
 
@@ -564,7 +564,7 @@ void BasicPortAllocatorSession::OnPortComplete(Port* port) {
 }
 
 void BasicPortAllocatorSession::OnPortError(Port* port) {
-  ASSERT(talk_base::Thread::Current() == network_thread_);
+  ASSERT(rtc::Thread::Current() == network_thread_);
   PortData* data = FindPort(port);
   ASSERT(data != NULL);
   // We might have already given up on this port and stopped it.
@@ -636,7 +636,7 @@ void BasicPortAllocatorSession::MaybeSignalCandidatesAllocationDone() {
 
 void BasicPortAllocatorSession::OnPortDestroyed(
     PortInterface* port) {
-  ASSERT(talk_base::Thread::Current() == network_thread_);
+  ASSERT(rtc::Thread::Current() == network_thread_);
   for (std::vector<PortData>::iterator iter = ports_.begin();
        iter != ports_.end(); ++iter) {
     if (port == iter->port()) {
@@ -693,7 +693,7 @@ BasicPortAllocatorSession::PortData* BasicPortAllocatorSession::FindPort(
 // AllocationSequence
 
 AllocationSequence::AllocationSequence(BasicPortAllocatorSession* session,
-                                       talk_base::Network* network,
+                                       rtc::Network* network,
                                        PortConfiguration* config,
                                        uint32 flags)
     : session_(session),
@@ -718,7 +718,7 @@ bool AllocationSequence::Init() {
 
   if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET)) {
     udp_socket_.reset(session_->socket_factory()->CreateUdpSocket(
-        talk_base::SocketAddress(ip_, 0), session_->allocator()->min_port(),
+        rtc::SocketAddress(ip_, 0), session_->allocator()->min_port(),
         session_->allocator()->max_port()));
     if (udp_socket_) {
       udp_socket_->SignalReadPacket.connect(
@@ -739,7 +739,7 @@ AllocationSequence::~AllocationSequence() {
   session_->network_thread()->Clear(this);
 }
 
-void AllocationSequence::DisableEquivalentPhases(talk_base::Network* network,
+void AllocationSequence::DisableEquivalentPhases(rtc::Network* network,
     PortConfiguration* config, uint32* flags) {
   if (!((network == network_) && (ip_ == network->ip()))) {
     // Different network setup; nothing is equivalent.
@@ -781,8 +781,8 @@ void AllocationSequence::Stop() {
   }
 }
 
-void AllocationSequence::OnMessage(talk_base::Message* msg) {
-  ASSERT(talk_base::Thread::Current() == session_->network_thread());
+void AllocationSequence::OnMessage(rtc::Message* msg) {
+  ASSERT(rtc::Thread::Current() == session_->network_thread());
   ASSERT(msg->message_id == MSG_ALLOCATION_PHASE);
 
   const char* const PHASE_NAMES[kNumPhases] = {
@@ -1059,15 +1059,15 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
 }
 
 void AllocationSequence::OnReadPacket(
-    talk_base::AsyncPacketSocket* socket, const char* data, size_t size,
-    const talk_base::SocketAddress& remote_addr,
-    const talk_base::PacketTime& packet_time) {
+    rtc::AsyncPacketSocket* socket, const char* data, size_t size,
+    const rtc::SocketAddress& remote_addr,
+    const rtc::PacketTime& packet_time) {
   ASSERT(socket == udp_socket_.get());
   // If the packet is received from one of the TURN server in the config, then
   // pass down the packet to that port, otherwise it will be handed down to
   // the local udp port.
   Port* port = NULL;
-  std::map<talk_base::SocketAddress, Port*>::iterator iter =
+  std::map<rtc::SocketAddress, Port*>::iterator iter =
       turn_ports_.find(remote_addr);
   if (iter != turn_ports_.end()) {
     port = iter->second;
@@ -1084,7 +1084,7 @@ void AllocationSequence::OnPortDestroyed(PortInterface* port) {
   if (udp_port_ == port) {
     udp_port_ = NULL;
   } else {
-    std::map<talk_base::SocketAddress, Port*>::iterator iter;
+    std::map<rtc::SocketAddress, Port*>::iterator iter;
     for (iter = turn_ports_.begin(); iter != turn_ports_.end(); ++iter) {
       if (iter->second == port) {
         turn_ports_.erase(iter);
@@ -1095,9 +1095,9 @@ void AllocationSequence::OnPortDestroyed(PortInterface* port) {
 }
 
 void AllocationSequence::OnResolvedTurnServerAddress(
-    TurnPort* port, const talk_base::SocketAddress& server_address,
-    const talk_base::SocketAddress& resolved_server_address) {
-  std::map<talk_base::SocketAddress, Port*>::iterator iter;
+    TurnPort* port, const rtc::SocketAddress& server_address,
+    const rtc::SocketAddress& resolved_server_address) {
+  std::map<rtc::SocketAddress, Port*>::iterator iter;
   iter = turn_ports_.find(server_address);
   if (iter == turn_ports_.end()) {
     LOG(LS_INFO) << "TurnPort entry is not found in the map.";
@@ -1112,7 +1112,7 @@ void AllocationSequence::OnResolvedTurnServerAddress(
 
 // PortConfiguration
 PortConfiguration::PortConfiguration(
-    const talk_base::SocketAddress& stun_address,
+    const rtc::SocketAddress& stun_address,
     const std::string& username,
     const std::string& password)
     : stun_address(stun_address), username(username), password(password) {

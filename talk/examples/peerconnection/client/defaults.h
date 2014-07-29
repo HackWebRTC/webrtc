@@ -31,7 +31,7 @@
 
 #include <string>
 
-#include "talk/base/basictypes.h"
+#include "webrtc/base/basictypes.h"
 
 extern const char kAudioLabel[];
 extern const char kVideoLabel[];

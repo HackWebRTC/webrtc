@@ -28,9 +28,9 @@
 #ifndef TALK_SOUND_AUTOMATICALLYCHOSENSOUNDSYSTEM_H_
 #define TALK_SOUND_AUTOMATICALLYCHOSENSOUNDSYSTEM_H_
 
-#include "talk/base/common.h"
-#include "talk/base/logging.h"
-#include "talk/base/scoped_ptr.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "talk/sound/soundsysteminterface.h"
 #include "talk/sound/soundsystemproxy.h"
 
@@ -54,7 +54,7 @@ class AutomaticallyChosenSoundSystem : public SoundSystemProxy {
   virtual const char *GetName() const;
 
  private:
-  talk_base::scoped_ptr<SoundSystemInterface> sound_systems_[kNumSoundSystems];
+  rtc::scoped_ptr<SoundSystemInterface> sound_systems_[kNumSoundSystems];
 };
 
 template <const SoundSystemCreator kSoundSystemCreators[], int kNumSoundSystems>

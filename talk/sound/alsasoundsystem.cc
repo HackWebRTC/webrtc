@@ -27,12 +27,12 @@
 
 #include "talk/sound/alsasoundsystem.h"
 
-#include "talk/base/common.h"
-#include "talk/base/logging.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/stringutils.h"
-#include "talk/base/timeutils.h"
-#include "talk/base/worker.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/stringutils.h"
+#include "webrtc/base/timeutils.h"
+#include "webrtc/base/worker.h"
 #include "talk/sound/sounddevicelocator.h"
 #include "talk/sound/soundinputstreaminterface.h"
 #include "talk/sound/soundoutputstreaminterface.h"
@@ -71,7 +71,7 @@ class AlsaDeviceLocator : public SoundDeviceLocator {
       : SoundDeviceLocator(name, device_name) {
     // The ALSA descriptions have newlines in them, which won't show up in
     // a drop-down box. Replace them with hyphens.
-    talk_base::replace_substrs(kAlsaDescriptionSearch,
+    rtc::replace_substrs(kAlsaDescriptionSearch,
                                sizeof(kAlsaDescriptionSearch) - 1,
                                kAlsaDescriptionReplace,
                                sizeof(kAlsaDescriptionReplace) - 1,
@@ -163,7 +163,7 @@ class AlsaStream {
       return 0;
     }
     // The delay is in frames. Convert to microseconds.
-    return delay * talk_base::kNumMicrosecsPerSec / freq_;
+    return delay * rtc::kNumMicrosecsPerSec / freq_;
   }
 
   // Used to recover from certain recoverable errors, principally buffer overrun
@@ -246,7 +246,7 @@ class AlsaStream {
 // thread-safety.
 class AlsaInputStream :
     public SoundInputStreamInterface,
-    private talk_base::Worker {
+    private rtc::Worker {
  public:
   AlsaInputStream(AlsaSoundSystem *alsa,
                   snd_pcm_t *handle,
@@ -342,7 +342,7 @@ class AlsaInputStream :
   }
 
   AlsaStream stream_;
-  talk_base::scoped_ptr<char[]> buffer_;
+  rtc::scoped_ptr<char[]> buffer_;
   size_t buffer_size_;
 
   DISALLOW_COPY_AND_ASSIGN(AlsaInputStream);
@@ -352,7 +352,7 @@ class AlsaInputStream :
 // regarding thread-safety.
 class AlsaOutputStream :
     public SoundOutputStreamInterface,
-    private talk_base::Worker {
+    private rtc::Worker {
  public:
   AlsaOutputStream(AlsaSoundSystem *alsa,
                    snd_pcm_t *handle,
@@ -584,7 +584,7 @@ bool AlsaSoundSystem::EnumerateDevices(
     if (strcmp(name, ignore_default) != 0 &&
         strcmp(name, ignore_null) != 0 &&
         strcmp(name, ignore_pulse) != 0 &&
-        !talk_base::starts_with(name, ignore_prefix)) {
+        !rtc::starts_with(name, ignore_prefix)) {
 
       // Yes, we do.
       char *desc = symbol_table_.snd_device_name_get_hint()(*list, "DESC");
@@ -672,12 +672,12 @@ StreamInterface *AlsaSoundSystem::OpenDevice(
   } else {
     // kLowLatency is 0, so we treat it the same as a request for zero latency.
     // Compute what the user asked for.
-    latency = talk_base::kNumMicrosecsPerSec *
+    latency = rtc::kNumMicrosecsPerSec *
         params.latency /
         params.freq /
         FrameSize(params);
     // And this is what we'll actually use.
-    latency = talk_base::_max(latency, kMinimumLatencyUsecs);
+    latency = rtc::_max(latency, kMinimumLatencyUsecs);
   }
 
   ASSERT(static_cast<int>(params.format) <
@@ -708,7 +708,7 @@ StreamInterface *AlsaSoundSystem::OpenDevice(
       FrameSize(params),
       // We set the wait time to twice the requested latency, so that wait
       // timeouts should be rare.
-      2 * latency / talk_base::kNumMicrosecsPerMillisec,
+      2 * latency / rtc::kNumMicrosecsPerMillisec,
       params.flags,
       params.freq);
   if (stream) {

@@ -28,10 +28,10 @@
 #include "talk/p2p/base/p2ptransportchannel.h"
 
 #include <set>
-#include "talk/base/common.h"
-#include "talk/base/crc32.h"
-#include "talk/base/logging.h"
-#include "talk/base/stringencode.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/crc32.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/stringencode.h"
 #include "talk/p2p/base/common.h"
 #include "talk/p2p/base/relayport.h"  // For RELAY_PORT_TYPE.
 #include "talk/p2p/base/stunport.h"  // For STUN_PORT_TYPE.
@@ -159,7 +159,7 @@ P2PTransportChannel::P2PTransportChannel(const std::string& content_name,
     TransportChannelImpl(content_name, component),
     transport_(transport),
     allocator_(allocator),
-    worker_thread_(talk_base::Thread::Current()),
+    worker_thread_(rtc::Thread::Current()),
     incoming_only_(false),
     waiting_for_signaling_(false),
     error_(0),
@@ -175,7 +175,7 @@ P2PTransportChannel::P2PTransportChannel(const std::string& content_name,
 }
 
 P2PTransportChannel::~P2PTransportChannel() {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
 
   for (uint32 i = 0; i < allocator_sessions_.size(); ++i)
     delete allocator_sessions_[i];
@@ -216,7 +216,7 @@ void P2PTransportChannel::AddConnection(Connection* connection) {
 }
 
 void P2PTransportChannel::SetIceRole(IceRole ice_role) {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
   if (ice_role_ != ice_role) {
     ice_role_ = ice_role;
     for (std::vector<PortInterface *>::iterator it = ports_.begin();
@@ -227,7 +227,7 @@ void P2PTransportChannel::SetIceRole(IceRole ice_role) {
 }
 
 void P2PTransportChannel::SetIceTiebreaker(uint64 tiebreaker) {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
   if (!ports_.empty()) {
     LOG(LS_ERROR)
         << "Attempt to change tiebreaker after Port has been allocated.";
@@ -243,7 +243,7 @@ bool P2PTransportChannel::GetIceProtocolType(IceProtocolType* type) const {
 }
 
 void P2PTransportChannel::SetIceProtocolType(IceProtocolType type) {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
 
   protocol_type_ = type;
   for (std::vector<PortInterface *>::iterator it = ports_.begin();
@@ -254,7 +254,7 @@ void P2PTransportChannel::SetIceProtocolType(IceProtocolType type) {
 
 void P2PTransportChannel::SetIceCredentials(const std::string& ice_ufrag,
                                             const std::string& ice_pwd) {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
   bool ice_restart = false;
   if (!ice_ufrag_.empty() && !ice_pwd_.empty()) {
     // Restart candidate allocation if there is any change in either
@@ -274,7 +274,7 @@ void P2PTransportChannel::SetIceCredentials(const std::string& ice_ufrag,
 
 void P2PTransportChannel::SetRemoteIceCredentials(const std::string& ice_ufrag,
                                                   const std::string& ice_pwd) {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
   bool ice_restart = false;
   if (!remote_ice_ufrag_.empty() && !remote_ice_pwd_.empty()) {
     ice_restart = (remote_ice_ufrag_ != ice_ufrag) ||
@@ -298,7 +298,7 @@ void P2PTransportChannel::SetRemoteIceMode(IceMode mode) {
 
 // Go into the state of processing candidates, and running in general
 void P2PTransportChannel::Connect() {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
   if (ice_ufrag_.empty() || ice_pwd_.empty()) {
     ASSERT(false);
     LOG(LS_ERROR) << "P2PTransportChannel::Connect: The ice_ufrag_ and the "
@@ -315,7 +315,7 @@ void P2PTransportChannel::Connect() {
 
 // Reset the socket, clear up any previous allocations and start over
 void P2PTransportChannel::Reset() {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
 
   // Get rid of all the old allocators.  This should clean up everything.
   for (uint32 i = 0; i < allocator_sessions_.size(); ++i)
@@ -349,7 +349,7 @@ void P2PTransportChannel::Reset() {
 // A new port is available, attempt to make connections for it
 void P2PTransportChannel::OnPortReady(PortAllocatorSession *session,
                                       PortInterface* port) {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
 
   // Set in-effect options on the new port
   for (OptionMap::const_iterator it = options_.begin();
@@ -392,7 +392,7 @@ void P2PTransportChannel::OnPortReady(PortAllocatorSession *session,
 // A new candidate is available, let listeners know
 void P2PTransportChannel::OnCandidatesReady(
     PortAllocatorSession *session, const std::vector<Candidate>& candidates) {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
   for (size_t i = 0; i < candidates.size(); ++i) {
     SignalCandidateReady(this, candidates[i]);
   }
@@ -400,17 +400,17 @@ void P2PTransportChannel::OnCandidatesReady(
 
 void P2PTransportChannel::OnCandidatesAllocationDone(
     PortAllocatorSession* session) {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
   SignalCandidatesAllocationDone(this);
 }
 
 // Handle stun packets
 void P2PTransportChannel::OnUnknownAddress(
     PortInterface* port,
-    const talk_base::SocketAddress& address, ProtocolType proto,
+    const rtc::SocketAddress& address, ProtocolType proto,
     IceMessage* stun_msg, const std::string &remote_username,
     bool port_muxed) {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
 
   // Port has received a valid stun packet from an address that no Connection
   // is currently available for. See if we already have a candidate with the
@@ -486,12 +486,12 @@ void P2PTransportChannel::OnUnknownAddress(
       }
     }
 
-    std::string id = talk_base::CreateRandomString(8);
+    std::string id = rtc::CreateRandomString(8);
     new_remote_candidate = Candidate(
         id, component(), ProtoToString(proto), address,
         0, remote_username, remote_password, type,
         port->Network()->name(), 0U,
-        talk_base::ToString<uint32>(talk_base::ComputeCrc32(id)));
+        rtc::ToString<uint32>(rtc::ComputeCrc32(id)));
     new_remote_candidate.set_priority(
         new_remote_candidate.GetPriority(ICE_TYPE_PREFERENCE_SRFLX,
                                          port->Network()->preference(), 0));
@@ -591,7 +591,7 @@ void P2PTransportChannel::OnRoleConflict(PortInterface* port) {
 
 // When the signalling channel is ready, we can really kick off the allocator
 void P2PTransportChannel::OnSignalingReady() {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
   if (waiting_for_signaling_) {
     waiting_for_signaling_ = false;
     AddAllocatorSession(allocator_->CreateSession(
@@ -600,7 +600,7 @@ void P2PTransportChannel::OnSignalingReady() {
 }
 
 void P2PTransportChannel::OnUseCandidate(Connection* conn) {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
   ASSERT(ice_role_ == ICEROLE_CONTROLLED);
   ASSERT(protocol_type_ == ICEPROTO_RFC5245);
   if (conn->write_state() == Connection::STATE_WRITABLE) {
@@ -617,7 +617,7 @@ void P2PTransportChannel::OnUseCandidate(Connection* conn) {
 }
 
 void P2PTransportChannel::OnCandidate(const Candidate& candidate) {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
 
   // Create connections to this remote candidate.
   CreateConnections(candidate, NULL, false);
@@ -632,7 +632,7 @@ void P2PTransportChannel::OnCandidate(const Candidate& candidate) {
 bool P2PTransportChannel::CreateConnections(const Candidate& remote_candidate,
                                             PortInterface* origin_port,
                                             bool readable) {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
 
   Candidate new_remote_candidate(remote_candidate);
   new_remote_candidate.set_generation(
@@ -794,7 +794,7 @@ void P2PTransportChannel::RememberRemoteCandidate(
 
 // Set options on ourselves is simply setting options on all of our available
 // port objects.
-int P2PTransportChannel::SetOption(talk_base::Socket::Option opt, int value) {
+int P2PTransportChannel::SetOption(rtc::Socket::Option opt, int value) {
   OptionMap::iterator it = options_.find(opt);
   if (it == options_.end()) {
     options_.insert(std::make_pair(opt, value));
@@ -818,9 +818,9 @@ int P2PTransportChannel::SetOption(talk_base::Socket::Option opt, int value) {
 
 // Send data to the other side, using our best connection.
 int P2PTransportChannel::SendPacket(const char *data, size_t len,
-                                    const talk_base::PacketOptions& options,
+                                    const rtc::PacketOptions& options,
                                     int flags) {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
   if (flags != 0) {
     error_ = EINVAL;
     return -1;
@@ -839,7 +839,7 @@ int P2PTransportChannel::SendPacket(const char *data, size_t len,
 }
 
 bool P2PTransportChannel::GetStats(ConnectionInfos *infos) {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
   // Gather connection infos.
   infos->clear();
 
@@ -870,12 +870,12 @@ bool P2PTransportChannel::GetStats(ConnectionInfos *infos) {
   return true;
 }
 
-talk_base::DiffServCodePoint P2PTransportChannel::DefaultDscpValue() const {
-  OptionMap::const_iterator it = options_.find(talk_base::Socket::OPT_DSCP);
+rtc::DiffServCodePoint P2PTransportChannel::DefaultDscpValue() const {
+  OptionMap::const_iterator it = options_.find(rtc::Socket::OPT_DSCP);
   if (it == options_.end()) {
-    return talk_base::DSCP_NO_CHANGE;
+    return rtc::DSCP_NO_CHANGE;
   }
-  return static_cast<talk_base::DiffServCodePoint> (it->second);
+  return static_cast<rtc::DiffServCodePoint> (it->second);
 }
 
 // Begin allocate (or immediately re-allocate, if MSG_ALLOCATE pending)
@@ -888,7 +888,7 @@ void P2PTransportChannel::Allocate() {
 
 // Monitor connection states.
 void P2PTransportChannel::UpdateConnectionStates() {
-  uint32 now = talk_base::Time();
+  uint32 now = rtc::Time();
 
   // We need to copy the list of connections since some may delete themselves
   // when we call UpdateState.
@@ -907,7 +907,7 @@ void P2PTransportChannel::RequestSort() {
 // Sort the available connections to find the best one.  We also monitor
 // the number of available connections and the current state.
 void P2PTransportChannel::SortConnections() {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
 
   // Make sure the connection states are up-to-date since this affects how they
   // will be sorted.
@@ -926,7 +926,7 @@ void P2PTransportChannel::SortConnections() {
   sort_dirty_ = false;
 
   // Get a list of the networks that we are using.
-  std::set<talk_base::Network*> networks;
+  std::set<rtc::Network*> networks;
   for (uint32 i = 0; i < connections_.size(); ++i)
     networks.insert(connections_[i]->port()->Network());
 
@@ -962,7 +962,7 @@ void P2PTransportChannel::SortConnections() {
   // we would prune out the current best connection).  We leave connections on
   // other networks because they may not be using the same resources and they
   // may represent very distinct paths over which we can switch.
-  std::set<talk_base::Network*>::iterator network;
+  std::set<rtc::Network*>::iterator network;
   for (network = networks.begin(); network != networks.end(); ++network) {
     Connection* primier = GetBestConnectionOnNetwork(*network);
     if (!primier || (primier->write_state() != Connection::STATE_WRITABLE))
@@ -1044,7 +1044,7 @@ void P2PTransportChannel::UpdateChannelState() {
 // We checked the status of our connections and we had at least one that
 // was writable, go into the writable state.
 void P2PTransportChannel::HandleWritable() {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
   if (!writable()) {
     for (uint32 i = 0; i < allocator_sessions_.size(); ++i) {
       if (allocator_sessions_[i]->IsGettingPorts()) {
@@ -1059,7 +1059,7 @@ void P2PTransportChannel::HandleWritable() {
 
 // Notify upper layer about channel not writable state, if it was before.
 void P2PTransportChannel::HandleNotWritable() {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
   if (was_writable_) {
     was_writable_ = false;
     set_writable(false);
@@ -1074,7 +1074,7 @@ void P2PTransportChannel::HandleAllTimedOut() {
 // If we have a best connection, return it, otherwise return top one in the
 // list (later we will mark it best).
 Connection* P2PTransportChannel::GetBestConnectionOnNetwork(
-    talk_base::Network* network) {
+    rtc::Network* network) {
   // If the best connection is on this network, then it wins.
   if (best_connection_ && (best_connection_->port()->Network() == network))
     return best_connection_;
@@ -1089,7 +1089,7 @@ Connection* P2PTransportChannel::GetBestConnectionOnNetwork(
 }
 
 // Handle any queued up requests
-void P2PTransportChannel::OnMessage(talk_base::Message *pmsg) {
+void P2PTransportChannel::OnMessage(rtc::Message *pmsg) {
   switch (pmsg->message_id) {
     case MSG_SORT:
       OnSort();
@@ -1151,7 +1151,7 @@ bool P2PTransportChannel::IsPingable(Connection* conn) {
 // pingable connection unless we have a writable connection that is past the
 // maximum acceptable ping delay.
 Connection* P2PTransportChannel::FindNextPingableConnection() {
-  uint32 now = talk_base::Time();
+  uint32 now = rtc::Time();
   if (best_connection_ &&
       (best_connection_->write_state() == Connection::STATE_WRITABLE) &&
       (best_connection_->last_ping_sent()
@@ -1197,13 +1197,13 @@ void P2PTransportChannel::PingConnection(Connection* conn) {
     }
   }
   conn->set_use_candidate_attr(use_candidate);
-  conn->Ping(talk_base::Time());
+  conn->Ping(rtc::Time());
 }
 
 // When a connection's state changes, we need to figure out who to use as
 // the best connection again.  It could have become usable, or become unusable.
 void P2PTransportChannel::OnConnectionStateChange(Connection* connection) {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
 
   // Update the best connection if the state change is from pending best
   // connection and role is controlled.
@@ -1222,7 +1222,7 @@ void P2PTransportChannel::OnConnectionStateChange(Connection* connection) {
 // When a connection is removed, edit it out, and then update our best
 // connection.
 void P2PTransportChannel::OnConnectionDestroyed(Connection* connection) {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
 
   // Note: the previous best_connection_ may be destroyed by now, so don't
   // use it.
@@ -1256,7 +1256,7 @@ void P2PTransportChannel::OnConnectionDestroyed(Connection* connection) {
 // When a port is destroyed remove it from our list of ports to use for
 // connection attempts.
 void P2PTransportChannel::OnPortDestroyed(PortInterface* port) {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+  ASSERT(worker_thread_ == rtc::Thread::Current());
 
   // Remove this port from the list (if we didn't drop it already).
   std::vector<PortInterface*>::iterator iter =
@@ -1271,8 +1271,8 @@ void P2PTransportChannel::OnPortDestroyed(PortInterface* port) {
 // We data is available, let listeners know
 void P2PTransportChannel::OnReadPacket(
     Connection *connection, const char *data, size_t len,
-    const talk_base::PacketTime& packet_time) {
-  ASSERT(worker_thread_ == talk_base::Thread::Current());
+    const rtc::PacketTime& packet_time) {
+  ASSERT(worker_thread_ == rtc::Thread::Current());
 
   // Do not deliver, if packet doesn't belong to the correct transport channel.
   if (!FindConnection(connection))

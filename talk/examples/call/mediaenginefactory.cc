@@ -27,7 +27,7 @@
 
 #include "talk/examples/call/mediaenginefactory.h"
 
-#include "talk/base/stringutils.h"
+#include "webrtc/base/stringutils.h"
 #include "talk/media/base/fakemediaengine.h"
 #include "talk/media/base/filemediaengine.h"
 #include "talk/media/base/mediaengine.h"

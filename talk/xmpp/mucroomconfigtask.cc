@@ -30,7 +30,7 @@
 
 #include "talk/xmpp/mucroomconfigtask.h"
 
-#include "talk/base/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "talk/xmpp/constants.h"
 
 namespace buzz {

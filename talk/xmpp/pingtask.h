@@ -28,8 +28,8 @@
 #ifndef TALK_XMPP_PINGTASK_H_
 #define TALK_XMPP_PINGTASK_H_
 
-#include "talk/base/messagehandler.h"
-#include "talk/base/messagequeue.h"
+#include "webrtc/base/messagehandler.h"
+#include "webrtc/base/messagequeue.h"
 #include "talk/xmpp/xmpptask.h"
 
 namespace buzz {
@@ -42,10 +42,10 @@ namespace buzz {
 //    proxies.
 // 2. It detects when the server has crashed or any other case in which the
 //    connection has broken without a fin or reset packet being sent to us.
-class PingTask : public buzz::XmppTask, private talk_base::MessageHandler {
+class PingTask : public buzz::XmppTask, private rtc::MessageHandler {
  public:
   PingTask(buzz::XmppTaskParentInterface* parent,
-      talk_base::MessageQueue* message_queue, uint32 ping_period_millis,
+      rtc::MessageQueue* message_queue, uint32 ping_period_millis,
       uint32 ping_timeout_millis);
 
   virtual bool HandleStanza(const buzz::XmlElement* stanza);
@@ -57,9 +57,9 @@ class PingTask : public buzz::XmppTask, private talk_base::MessageHandler {
 
  private:
   // Implementation of MessageHandler.
-  virtual void OnMessage(talk_base::Message* msg);
+  virtual void OnMessage(rtc::Message* msg);
 
-  talk_base::MessageQueue* message_queue_;
+  rtc::MessageQueue* message_queue_;
   uint32 ping_period_millis_;
   uint32 ping_timeout_millis_;
   uint32 next_ping_time_;

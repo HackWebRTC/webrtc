@@ -30,7 +30,7 @@
 
 #include <libudev.h>
 
-#include "talk/base/latebindingsymboltable.h"
+#include "webrtc/base/latebindingsymboltable.h"
 
 namespace cricket {
 
@@ -62,7 +62,7 @@ namespace cricket {
 
 #define LATE_BINDING_SYMBOL_TABLE_CLASS_NAME LIBUDEV_SYMBOLS_CLASS_NAME
 #define LATE_BINDING_SYMBOL_TABLE_SYMBOLS_LIST LIBUDEV_SYMBOLS_LIST
-#include "talk/base/latebindingsymboltable.h.def"
+#include "webrtc/base/latebindingsymboltable.h.def"
 #undef LATE_BINDING_SYMBOL_TABLE_CLASS_NAME
 #undef LATE_BINDING_SYMBOL_TABLE_SYMBOLS_LIST
 
@@ -72,7 +72,7 @@ namespace cricket {
 // it has caused crashes in the wild. This function checks if the DllHandle that
 // we got back for libudev.so.0 is actually for libudev.so.1. If so, the library
 // cannot safely be used.
-bool IsWrongLibUDevAbiVersion(talk_base::DllHandle libudev_0);
+bool IsWrongLibUDevAbiVersion(rtc::DllHandle libudev_0);
 
 }  // namespace cricket
 

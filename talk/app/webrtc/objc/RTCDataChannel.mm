@@ -135,13 +135,13 @@ std::string StdStringFromNSString(NSString* nsString) {
 @end
 
 @implementation RTCDataBuffer {
-  talk_base::scoped_ptr<webrtc::DataBuffer> _dataBuffer;
+  rtc::scoped_ptr<webrtc::DataBuffer> _dataBuffer;
 }
 
 - (instancetype)initWithData:(NSData*)data isBinary:(BOOL)isBinary {
   NSAssert(data, @"data cannot be nil");
   if (self = [super init]) {
-    talk_base::Buffer buffer([data bytes], [data length]);
+    rtc::Buffer buffer([data bytes], [data length]);
     _dataBuffer.reset(new webrtc::DataBuffer(buffer, isBinary));
   }
   return self;
@@ -174,8 +174,8 @@ std::string StdStringFromNSString(NSString* nsString) {
 @end
 
 @implementation RTCDataChannel {
-  talk_base::scoped_refptr<webrtc::DataChannelInterface> _dataChannel;
-  talk_base::scoped_ptr<webrtc::RTCDataChannelObserver> _observer;
+  rtc::scoped_refptr<webrtc::DataChannelInterface> _dataChannel;
+  rtc::scoped_ptr<webrtc::RTCDataChannelObserver> _observer;
   BOOL _isObserverRegistered;
 }
 
@@ -256,7 +256,7 @@ std::string StdStringFromNSString(NSString* nsString) {
 @implementation RTCDataChannel (Internal)
 
 - (instancetype)initWithDataChannel:
-                    (talk_base::scoped_refptr<webrtc::DataChannelInterface>)
+                    (rtc::scoped_refptr<webrtc::DataChannelInterface>)
                 dataChannel {
   NSAssert(dataChannel != NULL, @"dataChannel cannot be NULL");
   if (self = [super init]) {
@@ -266,7 +266,7 @@ std::string StdStringFromNSString(NSString* nsString) {
   return self;
 }
 
-- (talk_base::scoped_refptr<webrtc::DataChannelInterface>)dataChannel {
+- (rtc::scoped_refptr<webrtc::DataChannelInterface>)dataChannel {
   return _dataChannel;
 }
 

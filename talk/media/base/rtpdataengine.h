@@ -31,7 +31,7 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/timing.h"
+#include "webrtc/base/timing.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/mediaengine.h"
@@ -51,13 +51,13 @@ class RtpDataEngine : public DataEngineInterface {
   }
 
   // Mostly for testing with a fake clock.  Ownership is passed in.
-  void SetTiming(talk_base::Timing* timing) {
+  void SetTiming(rtc::Timing* timing) {
     timing_.reset(timing);
   }
 
  private:
   std::vector<DataCodec> data_codecs_;
-  talk_base::scoped_ptr<talk_base::Timing> timing_;
+  rtc::scoped_ptr<rtc::Timing> timing_;
 };
 
 // Keep track of sequence number and timestamp of an RTP stream.  The
@@ -86,13 +86,13 @@ class RtpClock {
 class RtpDataMediaChannel : public DataMediaChannel {
  public:
   // Timing* Used for the RtpClock
-  explicit RtpDataMediaChannel(talk_base::Timing* timing);
+  explicit RtpDataMediaChannel(rtc::Timing* timing);
   // Sets Timing == NULL, so you'll need to call set_timer() before
   // using it.  This is needed by FakeMediaEngine.
   RtpDataMediaChannel();
   virtual ~RtpDataMediaChannel();
 
-  void set_timing(talk_base::Timing* timing) {
+  void set_timing(rtc::Timing* timing) {
     timing_ = timing;
   }
 
@@ -116,28 +116,28 @@ class RtpDataMediaChannel : public DataMediaChannel {
     receiving_ = receive;
     return true;
   }
-  virtual void OnPacketReceived(talk_base::Buffer* packet,
-                                const talk_base::PacketTime& packet_time);
-  virtual void OnRtcpReceived(talk_base::Buffer* packet,
-                              const talk_base::PacketTime& packet_time) {}
+  virtual void OnPacketReceived(rtc::Buffer* packet,
+                                const rtc::PacketTime& packet_time);
+  virtual void OnRtcpReceived(rtc::Buffer* packet,
+                              const rtc::PacketTime& packet_time) {}
   virtual void OnReadyToSend(bool ready) {}
   virtual bool SendData(
     const SendDataParams& params,
-    const talk_base::Buffer& payload,
+    const rtc::Buffer& payload,
     SendDataResult* result);
 
  private:
-  void Construct(talk_base::Timing* timing);
+  void Construct(rtc::Timing* timing);
 
   bool sending_;
   bool receiving_;
-  talk_base::Timing* timing_;
+  rtc::Timing* timing_;
   std::vector<DataCodec> send_codecs_;
   std::vector<DataCodec> recv_codecs_;
   std::vector<StreamParams> send_streams_;
   std::vector<StreamParams> recv_streams_;
   std::map<uint32, RtpClock*> rtp_clock_by_send_ssrc_;
-  talk_base::scoped_ptr<talk_base::RateLimiter> send_limiter_;
+  rtc::scoped_ptr<rtc::RateLimiter> send_limiter_;
 };
 
 }  // namespace cricket

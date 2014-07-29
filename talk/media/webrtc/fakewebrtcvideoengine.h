@@ -32,9 +32,9 @@
 #include <set>
 #include <vector>
 
-#include "talk/base/basictypes.h"
-#include "talk/base/gunit.h"
-#include "talk/base/stringutils.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/stringutils.h"
 #include "talk/media/base/codec.h"
 #include "talk/media/webrtc/fakewebrtccommon.h"
 #include "talk/media/webrtc/webrtcvideodecoderfactory.h"
@@ -742,7 +742,7 @@ class FakeWebRtcVideoEngine
     } else {
       out_codec.codecType = webrtc::kVideoCodecUnknown;
     }
-    talk_base::strcpyn(out_codec.plName, sizeof(out_codec.plName),
+    rtc::strcpyn(out_codec.plName, sizeof(out_codec.plName),
                        c.name.c_str());
     out_codec.plType = c.id;
     out_codec.width = c.width;
@@ -1032,7 +1032,7 @@ class FakeWebRtcVideoEngine
   WEBRTC_FUNC_CONST(GetRTCPCName, (const int channel,
                                    char rtcp_cname[KMaxRTCPCNameLength])) {
     WEBRTC_CHECK_CHANNEL(channel);
-    talk_base::strcpyn(rtcp_cname, KMaxRTCPCNameLength,
+    rtc::strcpyn(rtcp_cname, KMaxRTCPCNameLength,
                        channels_.find(channel)->second->cname_.c_str());
     return 0;
   }

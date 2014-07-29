@@ -32,8 +32,8 @@
 #include <algorithm>
 #include <string>
 
-#include "talk/base/common.h"
-#include "talk/base/logging.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/logging.h"
 #include "talk/xmpp/constants.h"
 
 namespace buzz {

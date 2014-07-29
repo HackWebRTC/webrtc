@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/base/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/discoitemsquerytask.h"
 #include "talk/xmpp/xmpptask.h"

@@ -28,14 +28,14 @@
 #include "talk/media/devices/linuxdevicemanager.h"
 
 #include <unistd.h>
-#include "talk/base/fileutils.h"
-#include "talk/base/linux.h"
-#include "talk/base/logging.h"
-#include "talk/base/pathutils.h"
-#include "talk/base/physicalsocketserver.h"
-#include "talk/base/stream.h"
-#include "talk/base/stringutils.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/fileutils.h"
+#include "webrtc/base/linux.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/pathutils.h"
+#include "webrtc/base/physicalsocketserver.h"
+#include "webrtc/base/stream.h"
+#include "webrtc/base/stringutils.h"
+#include "webrtc/base/thread.h"
 #include "talk/media/base/mediacommon.h"
 #include "talk/media/devices/libudevsymboltable.h"
 #include "talk/media/devices/v4llookup.h"
@@ -52,7 +52,7 @@ DeviceManagerInterface* DeviceManagerFactory::Create() {
 
 class LinuxDeviceWatcher
     : public DeviceWatcher,
-      private talk_base::Dispatcher {
+      private rtc::Dispatcher {
  public:
   explicit LinuxDeviceWatcher(DeviceManagerInterface* dm);
   virtual ~LinuxDeviceWatcher();
@@ -135,10 +135,10 @@ enum MetaType { M2_4, M2_6, NONE };
 
 static void ScanDeviceDirectory(const std::string& devdir,
                                 std::vector<Device>* devices) {
-  talk_base::scoped_ptr<talk_base::DirectoryIterator> directoryIterator(
-      talk_base::Filesystem::IterateDirectory());
+  rtc::scoped_ptr<rtc::DirectoryIterator> directoryIterator(
+      rtc::Filesystem::IterateDirectory());
 
-  if (directoryIterator->Iterate(talk_base::Pathname(devdir))) {
+  if (directoryIterator->Iterate(rtc::Pathname(devdir))) {
     do {
       std::string filename = directoryIterator->Name();
       std::string device_name = devdir + filename;
@@ -155,11 +155,11 @@ static void ScanDeviceDirectory(const std::string& devdir,
 static std::string GetVideoDeviceNameK2_6(const std::string& device_meta_path) {
   std::string device_name;
 
-  talk_base::scoped_ptr<talk_base::FileStream> device_meta_stream(
-      talk_base::Filesystem::OpenFile(device_meta_path, "r"));
+  rtc::scoped_ptr<rtc::FileStream> device_meta_stream(
+      rtc::Filesystem::OpenFile(device_meta_path, "r"));
 
   if (device_meta_stream) {
-    if (device_meta_stream->ReadLine(&device_name) != talk_base::SR_SUCCESS) {
+    if (device_meta_stream->ReadLine(&device_name) != rtc::SR_SUCCESS) {
       LOG(LS_ERROR) << "Failed to read V4L2 device meta " << device_meta_path;
     }
     device_meta_stream->Close();
@@ -179,20 +179,20 @@ static std::string Trim(const std::string& s, const std::string& drop = " \t") {
 }
 
 static std::string GetVideoDeviceNameK2_4(const std::string& device_meta_path) {
-  talk_base::ConfigParser::MapVector all_values;
+  rtc::ConfigParser::MapVector all_values;
 
-  talk_base::ConfigParser config_parser;
-  talk_base::FileStream* file_stream =
-      talk_base::Filesystem::OpenFile(device_meta_path, "r");
+  rtc::ConfigParser config_parser;
+  rtc::FileStream* file_stream =
+      rtc::Filesystem::OpenFile(device_meta_path, "r");
 
   if (file_stream == NULL) return "";
 
   config_parser.Attach(file_stream);
   config_parser.Parse(&all_values);
 
-  for (talk_base::ConfigParser::MapVector::iterator i = all_values.begin();
+  for (rtc::ConfigParser::MapVector::iterator i = all_values.begin();
       i != all_values.end(); ++i) {
-    talk_base::ConfigParser::SimpleMap::iterator device_name_i =
+    rtc::ConfigParser::SimpleMap::iterator device_name_i =
         i->find("name");
 
     if (device_name_i != i->end()) {
@@ -244,8 +244,8 @@ static void ScanV4L2Devices(std::vector<Device>* devices) {
   MetaType meta;
   std::string metadata_dir;
 
-  talk_base::scoped_ptr<talk_base::DirectoryIterator> directoryIterator(
-      talk_base::Filesystem::IterateDirectory());
+  rtc::scoped_ptr<rtc::DirectoryIterator> directoryIterator(
+      rtc::Filesystem::IterateDirectory());
 
   // Try and guess kernel version
   if (directoryIterator->Iterate(kVideoMetaPathK2_6)) {
@@ -302,10 +302,10 @@ LinuxDeviceWatcher::LinuxDeviceWatcher(DeviceManagerInterface* dm)
 LinuxDeviceWatcher::~LinuxDeviceWatcher() {
 }
 
-static talk_base::PhysicalSocketServer* CurrentSocketServer() {
-  talk_base::SocketServer* ss =
-      talk_base::ThreadManager::Instance()->WrapCurrentThread()->socketserver();
-  return reinterpret_cast<talk_base::PhysicalSocketServer*>(ss);
+static rtc::PhysicalSocketServer* CurrentSocketServer() {
+  rtc::SocketServer* ss =
+      rtc::ThreadManager::Instance()->WrapCurrentThread()->socketserver();
+  return reinterpret_cast<rtc::PhysicalSocketServer*>(ss);
 }
 
 bool LinuxDeviceWatcher::Start() {
@@ -369,7 +369,7 @@ void LinuxDeviceWatcher::Stop() {
 }
 
 uint32 LinuxDeviceWatcher::GetRequestedEvents() {
-  return talk_base::DE_READ;
+  return rtc::DE_READ;
 }
 
 void LinuxDeviceWatcher::OnPreEvent(uint32 ff) {

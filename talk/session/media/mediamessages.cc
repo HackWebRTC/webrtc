@@ -31,8 +31,8 @@
 
 #include "talk/session/media/mediamessages.h"
 
-#include "talk/base/logging.h"
-#include "talk/base/stringencode.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/stringencode.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/parsing.h"
 #include "talk/session/media/mediasessionclient.h"
@@ -49,7 +49,7 @@ void AddStream(std::vector<StreamParams>* streams, const StreamParams& stream) {
 }
 
 bool ParseSsrc(const std::string& string, uint32* ssrc) {
-  return talk_base::FromString(string, ssrc);
+  return rtc::FromString(string, ssrc);
 }
 
 // Builds a <view> element according to the following spec:

@@ -84,6 +84,7 @@
       ['OS=="linux"', {
         'defines': [
           'LINUX',
+          'WEBRTC_LINUX',
         ],
         'conditions': [
           ['clang==1', {
@@ -102,11 +103,19 @@
       ['OS=="mac"', {
         'defines': [
           'OSX',
+          'WEBRTC_MAC',
+        ],
+      }],
+      ['OS=="win"', {
+        'defines': [
+          'WEBRTC_WIN',
         ],
       }],
       ['OS=="ios"', {
         'defines': [
           'IOS',
+          'WEBRTC_MAC',
+          'WEBRTC_IOS',
         ],
       }],
       ['OS=="ios" or (OS=="mac" and target_arch!="ia32")', {
@@ -128,6 +137,7 @@
         'defines': [
           'HASH_NAMESPACE=__gnu_cxx',
           'POSIX',
+          'WEBRTC_POSIX',
           'DISABLE_DYNAMIC_CAST',
           # The POSIX standard says we have to define this.
           '_REENTRANT',

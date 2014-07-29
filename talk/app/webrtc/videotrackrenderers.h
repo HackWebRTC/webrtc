@@ -31,7 +31,7 @@
 #include <vector>
 
 #include "talk/app/webrtc/mediastreaminterface.h"
-#include "talk/base/criticalsection.h"
+#include "webrtc/base/criticalsection.h"
 #include "talk/media/base/videorenderer.h"
 
 namespace webrtc {
@@ -69,7 +69,7 @@ class VideoTrackRenderers : public cricket::VideoRenderer {
   bool enabled_;
   std::vector<RenderObserver> renderers_;
 
-  talk_base::CriticalSection critical_section_;  // Protects the above variables
+  rtc::CriticalSection critical_section_;  // Protects the above variables
 };
 
 }  // namespace webrtc

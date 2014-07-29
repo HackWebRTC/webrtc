@@ -41,8 +41,8 @@ enum PreservedErrno {
 };
 }  // namespace cricket
 
-#include "talk/base/buffer.h"
-#include "talk/base/scoped_ptr.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "talk/media/base/codec.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/mediaengine.h"
@@ -107,7 +107,7 @@ class SctpDataEngine : public DataEngineInterface {
 struct SctpInboundPacket;
 
 class SctpDataMediaChannel : public DataMediaChannel,
-                             public talk_base::MessageHandler {
+                             public rtc::MessageHandler {
  public:
   // DataMessageType is used for the SCTP "Payload Protocol Identifier", as
   // defined in http://tools.ietf.org/html/rfc4960#section-14.4
@@ -132,7 +132,7 @@ class SctpDataMediaChannel : public DataMediaChannel,
 
   // Given a thread which will be used to post messages (received data) to this
   // SctpDataMediaChannel instance.
-  explicit SctpDataMediaChannel(talk_base::Thread* thread);
+  explicit SctpDataMediaChannel(rtc::Thread* thread);
   virtual ~SctpDataMediaChannel();
 
   // When SetSend is set to true, connects. When set to false, disconnects.
@@ -149,19 +149,19 @@ class SctpDataMediaChannel : public DataMediaChannel,
 
   // Called when Sctp gets data. The data may be a notification or data for
   // OnSctpInboundData. Called from the worker thread.
-  virtual void OnMessage(talk_base::Message* msg);
+  virtual void OnMessage(rtc::Message* msg);
   // Send data down this channel (will be wrapped as SCTP packets then given to
   // sctp that will then post the network interface by OnMessage).
   // Returns true iff successful data somewhere on the send-queue/network.
   virtual bool SendData(const SendDataParams& params,
-                        const talk_base::Buffer& payload,
+                        const rtc::Buffer& payload,
                         SendDataResult* result = NULL);
   // A packet is received from the network interface. Posted to OnMessage.
-  virtual void OnPacketReceived(talk_base::Buffer* packet,
-                                const talk_base::PacketTime& packet_time);
+  virtual void OnPacketReceived(rtc::Buffer* packet,
+                                const rtc::PacketTime& packet_time);
 
   // Exposed to allow Post call from c-callbacks.
-  talk_base::Thread* worker_thread() const { return worker_thread_; }
+  rtc::Thread* worker_thread() const { return worker_thread_; }
 
   // TODO(ldixon): add a DataOptions class to mediachannel.h
   virtual bool SetOptions(int options) { return false; }
@@ -180,8 +180,8 @@ class SctpDataMediaChannel : public DataMediaChannel,
       const std::vector<RtpHeaderExtension>& extensions) { return true; }
   virtual bool SetSendCodecs(const std::vector<DataCodec>& codecs);
   virtual bool SetRecvCodecs(const std::vector<DataCodec>& codecs);
-  virtual void OnRtcpReceived(talk_base::Buffer* packet,
-                              const talk_base::PacketTime& packet_time) {}
+  virtual void OnRtcpReceived(rtc::Buffer* packet,
+                              const rtc::PacketTime& packet_time) {}
   virtual void OnReadyToSend(bool ready) {}
 
   // Helper for debugging.
@@ -213,19 +213,19 @@ class SctpDataMediaChannel : public DataMediaChannel,
   bool ResetStream(uint32 ssrc);
 
   // Called by OnMessage to send packet on the network.
-  void OnPacketFromSctpToNetwork(talk_base::Buffer* buffer);
+  void OnPacketFromSctpToNetwork(rtc::Buffer* buffer);
   // Called by OnMessage to decide what to do with the packet.
   void OnInboundPacketFromSctpToChannel(SctpInboundPacket* packet);
   void OnDataFromSctpToChannel(const ReceiveDataParams& params,
-                               talk_base::Buffer* buffer);
-  void OnNotificationFromSctp(talk_base::Buffer* buffer);
+                               rtc::Buffer* buffer);
+  void OnNotificationFromSctp(rtc::Buffer* buffer);
   void OnNotificationAssocChange(const sctp_assoc_change& change);
 
   void OnStreamResetEvent(const struct sctp_stream_reset_event* evt);
 
   // Responsible for marshalling incoming data to the channels listeners, and
   // outgoing data to the network interface.
-  talk_base::Thread* worker_thread_;
+  rtc::Thread* worker_thread_;
   // The local and remote SCTP port to use. These are passed along the wire
   // and the listener and connector must be using the same port. It is not
   // related to the ports at the IP level.  If set to -1, we default to

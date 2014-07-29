@@ -27,8 +27,8 @@
 
 #include "talk/media/base/capturemanager.h"
 
-#include "talk/base/gunit.h"
-#include "talk/base/sigslot.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/sigslot.h"
 #include "talk/media/base/fakemediaprocessor.h"
 #include "talk/media/base/fakevideocapturer.h"
 #include "talk/media/base/fakevideorenderer.h"

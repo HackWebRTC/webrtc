@@ -27,7 +27,7 @@
 
 #include "talk/p2p/client/socketmonitor.h"
 
-#include "talk/base/common.h"
+#include "webrtc/base/common.h"
 
 namespace cricket {
 
@@ -39,8 +39,8 @@ enum {
 };
 
 SocketMonitor::SocketMonitor(TransportChannel* channel,
-                             talk_base::Thread* worker_thread,
-                             talk_base::Thread* monitor_thread) {
+                             rtc::Thread* worker_thread,
+                             rtc::Thread* monitor_thread) {
   channel_ = channel;
   channel_thread_ = worker_thread;
   monitoring_thread_ = monitor_thread;
@@ -63,11 +63,11 @@ void SocketMonitor::Stop() {
   channel_thread_->Post(this, MSG_MONITOR_STOP);
 }
 
-void SocketMonitor::OnMessage(talk_base::Message *message) {
-  talk_base::CritScope cs(&crit_);
+void SocketMonitor::OnMessage(rtc::Message *message) {
+  rtc::CritScope cs(&crit_);
   switch (message->message_id) {
     case MSG_MONITOR_START:
-      ASSERT(talk_base::Thread::Current() == channel_thread_);
+      ASSERT(rtc::Thread::Current() == channel_thread_);
       if (!monitoring_) {
         monitoring_ = true;
         PollSocket(true);
@@ -75,7 +75,7 @@ void SocketMonitor::OnMessage(talk_base::Message *message) {
       break;
 
     case MSG_MONITOR_STOP:
-      ASSERT(talk_base::Thread::Current() == channel_thread_);
+      ASSERT(rtc::Thread::Current() == channel_thread_);
       if (monitoring_) {
         monitoring_ = false;
         channel_thread_->Clear(this);
@@ -83,12 +83,12 @@ void SocketMonitor::OnMessage(talk_base::Message *message) {
       break;
 
     case MSG_MONITOR_POLL:
-      ASSERT(talk_base::Thread::Current() == channel_thread_);
+      ASSERT(rtc::Thread::Current() == channel_thread_);
       PollSocket(true);
       break;
 
     case MSG_MONITOR_SIGNAL: {
-      ASSERT(talk_base::Thread::Current() == monitoring_thread_);
+      ASSERT(rtc::Thread::Current() == monitoring_thread_);
       std::vector<ConnectionInfo> infos = connection_infos_;
       crit_.Leave();
       SignalUpdate(this, infos);
@@ -99,8 +99,8 @@ void SocketMonitor::OnMessage(talk_base::Message *message) {
 }
 
 void SocketMonitor::PollSocket(bool poll) {
-  ASSERT(talk_base::Thread::Current() == channel_thread_);
-  talk_base::CritScope cs(&crit_);
+  ASSERT(rtc::Thread::Current() == channel_thread_);
+  rtc::CritScope cs(&crit_);
 
   // Gather connection infos
   channel_->GetStats(&connection_infos_);

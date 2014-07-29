@@ -35,9 +35,9 @@
 #include <unistd.h>
 #endif  // POSIX
 
-#include "talk/base/logging.h"
-#include "talk/base/messagequeue.h"
-#include "talk/base/stringutils.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/messagequeue.h"
+#include "webrtc/base/stringutils.h"
 #include "talk/examples/call/console.h"
 #include "talk/examples/call/callclient.h"
 
@@ -45,7 +45,7 @@
 static void DoNothing(int unused) {}
 #endif
 
-Console::Console(talk_base::Thread *thread, CallClient *client) :
+Console::Console(rtc::Thread *thread, CallClient *client) :
   client_(client),
   client_thread_(thread),
   stopped_(false) {}
@@ -64,7 +64,7 @@ void Console::Start() {
     LOG(LS_WARNING) << "Already started";
     return;
   }
-  console_thread_.reset(new talk_base::Thread());
+  console_thread_.reset(new rtc::Thread());
   console_thread_->Start();
   console_thread_->Post(this, MSG_START);
 }
@@ -140,11 +140,11 @@ void Console::RunConsole() {
   char input_buffer[128];
   while (fgets(input_buffer, sizeof(input_buffer), stdin) != NULL) {
     client_thread_->Post(this, MSG_INPUT,
-        new talk_base::TypedMessageData<std::string>(input_buffer));
+        new rtc::TypedMessageData<std::string>(input_buffer));
   }
 }
 
-void Console::OnMessage(talk_base::Message *msg) {
+void Console::OnMessage(rtc::Message *msg) {
   switch (msg->message_id) {
     case MSG_START:
 #ifdef POSIX
@@ -161,8 +161,8 @@ void Console::OnMessage(talk_base::Message *msg) {
       RunConsole();
       break;
     case MSG_INPUT:
-      talk_base::TypedMessageData<std::string> *data =
-          static_cast<talk_base::TypedMessageData<std::string>*>(msg->pdata);
+      rtc::TypedMessageData<std::string> *data =
+          static_cast<rtc::TypedMessageData<std::string>*>(msg->pdata);
       client_->ParseLine(data->data());
       break;
   }

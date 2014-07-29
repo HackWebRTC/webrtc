@@ -33,10 +33,10 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/refcount.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/scoped_ref_ptr.h"
-#include "talk/base/socketaddress.h"
+#include "webrtc/base/refcount.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/socketaddress.h"
 #include "talk/p2p/base/parsing.h"
 #include "talk/p2p/base/port.h"
 #include "talk/p2p/base/sessionclient.h"
@@ -55,7 +55,7 @@ class TransportChannel;
 class TransportChannelProxy;
 class TransportChannelImpl;
 
-typedef talk_base::RefCountedObject<talk_base::scoped_ptr<Transport> >
+typedef rtc::RefCountedObject<rtc::scoped_ptr<Transport> >
 TransportWrapper;
 
 // Used for errors that will send back a specific error message to the
@@ -91,7 +91,7 @@ class TransportProxy : public sigslot::has_slots<>,
                        public CandidateTranslator {
  public:
   TransportProxy(
-      talk_base::Thread* worker_thread,
+      rtc::Thread* worker_thread,
       const std::string& sid,
       const std::string& content_name,
       TransportWrapper* transport)
@@ -145,7 +145,7 @@ class TransportProxy : public sigslot::has_slots<>,
 
   // Simple functions that thunk down to the same functions on Transport.
   void SetIceRole(IceRole role);
-  void SetIdentity(talk_base::SSLIdentity* identity);
+  void SetIdentity(rtc::SSLIdentity* identity);
   bool SetLocalTransportDescription(const TransportDescription& description,
                                     ContentAction action,
                                     std::string* error_desc);
@@ -195,10 +195,10 @@ class TransportProxy : public sigslot::has_slots<>,
   void ReplaceChannelProxyImpl_w(TransportChannelProxy* proxy,
                                  TransportChannelImpl* impl);
 
-  talk_base::Thread* const worker_thread_;
+  rtc::Thread* const worker_thread_;
   const std::string sid_;
   const std::string content_name_;
-  talk_base::scoped_refptr<TransportWrapper> transport_;
+  rtc::scoped_refptr<TransportWrapper> transport_;
   bool connecting_;
   bool negotiated_;
   ChannelMap channels_;
@@ -228,7 +228,7 @@ struct SessionStats {
 // packets are represented by TransportChannels.  The application-level protocol
 // is represented by SessionDecription objects.
 class BaseSession : public sigslot::has_slots<>,
-                    public talk_base::MessageHandler {
+                    public rtc::MessageHandler {
  public:
   enum {
     MSG_TIMEOUT = 0,
@@ -267,8 +267,8 @@ class BaseSession : public sigslot::has_slots<>,
   // Convert State to a readable string.
   static std::string StateToString(State state);
 
-  BaseSession(talk_base::Thread* signaling_thread,
-              talk_base::Thread* worker_thread,
+  BaseSession(rtc::Thread* signaling_thread,
+              rtc::Thread* worker_thread,
               PortAllocator* port_allocator,
               const std::string& sid,
               const std::string& content_type,
@@ -276,8 +276,8 @@ class BaseSession : public sigslot::has_slots<>,
   virtual ~BaseSession();
 
   // These are const to allow them to be called from const methods.
-  talk_base::Thread* signaling_thread() const { return signaling_thread_; }
-  talk_base::Thread* worker_thread() const { return worker_thread_; }
+  rtc::Thread* signaling_thread() const { return signaling_thread_; }
+  rtc::Thread* worker_thread() const { return worker_thread_; }
   PortAllocator* port_allocator() const { return port_allocator_; }
 
   // The ID of this session.
@@ -371,11 +371,11 @@ class BaseSession : public sigslot::has_slots<>,
   // This avoids exposing the internal structures used to track them.
   virtual bool GetStats(SessionStats* stats);
 
-  talk_base::SSLIdentity* identity() { return identity_; }
+  rtc::SSLIdentity* identity() { return identity_; }
 
  protected:
   // Specifies the identity to use in this session.
-  bool SetIdentity(talk_base::SSLIdentity* identity);
+  bool SetIdentity(rtc::SSLIdentity* identity);
 
   bool PushdownTransportDescription(ContentSource source,
                                     ContentAction action,
@@ -464,7 +464,7 @@ class BaseSession : public sigslot::has_slots<>,
   virtual void OnRoleConflict();
 
   // Handles messages posted to us.
-  virtual void OnMessage(talk_base::Message *pmsg);
+  virtual void OnMessage(rtc::Message *pmsg);
 
  protected:
   State state_;
@@ -504,16 +504,16 @@ class BaseSession : public sigslot::has_slots<>,
   // Gets the ContentAction and ContentSource according to the session state.
   bool GetContentAction(ContentAction* action, ContentSource* source);
 
-  talk_base::Thread* const signaling_thread_;
-  talk_base::Thread* const worker_thread_;
+  rtc::Thread* const signaling_thread_;
+  rtc::Thread* const worker_thread_;
   PortAllocator* const port_allocator_;
   const std::string sid_;
   const std::string content_type_;
   const std::string transport_type_;
   bool initiator_;
-  talk_base::SSLIdentity* identity_;
-  talk_base::scoped_ptr<const SessionDescription> local_description_;
-  talk_base::scoped_ptr<SessionDescription> remote_description_;
+  rtc::SSLIdentity* identity_;
+  rtc::scoped_ptr<const SessionDescription> local_description_;
+  rtc::scoped_ptr<SessionDescription> remote_description_;
   uint64 ice_tiebreaker_;
   // This flag will be set to true after the first role switch. This flag
   // will enable us to stop any role switch during the call.
@@ -628,7 +628,7 @@ class Session : public BaseSession {
                                     const std::string& type,
                                     const std::string& text,
                                     const buzz::XmlElement* extra_info);
-  virtual void OnMessage(talk_base::Message *pmsg);
+  virtual void OnMessage(rtc::Message *pmsg);
 
   // Send various kinds of session messages.
   bool SendInitiateMessage(const SessionDescription* sdesc,

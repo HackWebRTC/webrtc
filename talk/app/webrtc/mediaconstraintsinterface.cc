@@ -27,7 +27,7 @@
 
 #include "talk/app/webrtc/mediaconstraintsinterface.h"
 
-#include "talk/base/stringencode.h"
+#include "webrtc/base/stringencode.h"
 
 namespace webrtc {
 
@@ -153,10 +153,10 @@ bool FindConstraint(const MediaConstraintsInterface* constraints,
   if (constraints->GetMandatory().FindFirst(key, &string_value)) {
     if (mandatory_constraints)
       ++*mandatory_constraints;
-    return talk_base::FromString(string_value, value);
+    return rtc::FromString(string_value, value);
   }
   if (constraints->GetOptional().FindFirst(key, &string_value)) {
-    return talk_base::FromString(string_value, value);
+    return rtc::FromString(string_value, value);
   }
   return false;
 }

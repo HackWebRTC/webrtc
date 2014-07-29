@@ -28,8 +28,8 @@
 #ifndef TALK_P2P_BASE_STUNREQUEST_H_
 #define TALK_P2P_BASE_STUNREQUEST_H_
 
-#include "talk/base/sigslot.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/thread.h"
 #include "talk/p2p/base/stun.h"
 #include <map>
 #include <string>
@@ -42,7 +42,7 @@ class StunRequest;
 // response or determine that the request has timed out.
 class StunRequestManager {
 public:
-  StunRequestManager(talk_base::Thread* thread);
+  StunRequestManager(rtc::Thread* thread);
   ~StunRequestManager();
 
   // Starts sending the given request (perhaps after a delay).
@@ -69,7 +69,7 @@ public:
 private:
   typedef std::map<std::string, StunRequest*> RequestMap;
 
-  talk_base::Thread* thread_;
+  rtc::Thread* thread_;
   RequestMap requests_;
 
   friend class StunRequest;
@@ -77,7 +77,7 @@ private:
 
 // Represents an individual request to be sent.  The STUN message can either be
 // constructed beforehand or built on demand.
-class StunRequest : public talk_base::MessageHandler {
+class StunRequest : public rtc::MessageHandler {
 public:
   StunRequest();
   StunRequest(StunMessage* request);
@@ -119,7 +119,7 @@ private:
   void set_manager(StunRequestManager* manager);
 
   // Handles messages for sending and timeout.
-  void OnMessage(talk_base::Message* pmsg);
+  void OnMessage(rtc::Message* pmsg);
 
   StunRequestManager* manager_;
   StunMessage* msg_;

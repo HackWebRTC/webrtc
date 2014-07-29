@@ -3,8 +3,8 @@
 #include <string.h>
 #include <sstream>
 
-#include "talk/base/basictypes.h"
-#include "talk/base/common.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/common.h"
 
 namespace cricket {
 

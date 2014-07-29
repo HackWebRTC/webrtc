@@ -38,11 +38,11 @@
 #include <functiondiscoverykeys_devpkey.h>
 #include <uuids.h>
 
-#include "talk/base/logging.h"
-#include "talk/base/stringutils.h"
-#include "talk/base/thread.h"
-#include "talk/base/win32.h"  // ToUtf8
-#include "talk/base/win32window.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/stringutils.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/base/win32.h"  // ToUtf8
+#include "webrtc/base/win32window.h"
 #include "talk/media/base/mediacommon.h"
 #ifdef HAVE_LOGITECH_HEADERS
 #include "third_party/logitech/files/logitechquickcam.h"
@@ -56,7 +56,7 @@ DeviceManagerInterface* DeviceManagerFactory::Create() {
 
 class Win32DeviceWatcher
     : public DeviceWatcher,
-      public talk_base::Win32Window {
+      public rtc::Win32Window {
  public:
   explicit Win32DeviceWatcher(Win32DeviceManager* dm);
   virtual ~Win32DeviceWatcher();
@@ -151,7 +151,7 @@ bool Win32DeviceManager::GetAudioDevices(bool input,
                                          std::vector<Device>* devs) {
   devs->clear();
 
-  if (talk_base::IsWindowsVistaOrLater()) {
+  if (rtc::IsWindowsVistaOrLater()) {
     if (!GetCoreAudioDevices(input, devs))
       return false;
   } else {
@@ -199,11 +199,11 @@ bool GetDevices(const CLSID& catid, std::vector<Device>* devices) {
         std::string name_str, path_str;
         if (SUCCEEDED(bag->Read(kFriendlyName, &name, 0)) &&
             name.vt == VT_BSTR) {
-          name_str = talk_base::ToUtf8(name.bstrVal);
+          name_str = rtc::ToUtf8(name.bstrVal);
           // Get the device id if one exists.
           if (SUCCEEDED(bag->Read(kDevicePath, &path, 0)) &&
               path.vt == VT_BSTR) {
-            path_str = talk_base::ToUtf8(path.bstrVal);
+            path_str = rtc::ToUtf8(path.bstrVal);
           }
 
           devices->push_back(Device(name_str, path_str));
@@ -224,7 +224,7 @@ HRESULT GetStringProp(IPropertyStore* bag, PROPERTYKEY key, std::string* out) {
   HRESULT hr = bag->GetValue(key, &var);
   if (SUCCEEDED(hr)) {
     if (var.pwszVal)
-      *out = talk_base::ToUtf8(var.pwszVal);
+      *out = rtc::ToUtf8(var.pwszVal);
     else
       hr = E_FAIL;
   }
@@ -312,8 +312,8 @@ bool GetWaveDevices(bool input, std::vector<Device>* devs) {
       WAVEINCAPS caps;
       if (waveInGetDevCaps(i, &caps, sizeof(caps)) == MMSYSERR_NOERROR &&
           caps.wChannels > 0) {
-        devs->push_back(Device(talk_base::ToUtf8(caps.szPname),
-                               talk_base::ToString(i)));
+        devs->push_back(Device(rtc::ToUtf8(caps.szPname),
+                               rtc::ToString(i)));
       }
     }
   } else {
@@ -322,7 +322,7 @@ bool GetWaveDevices(bool input, std::vector<Device>* devs) {
       WAVEOUTCAPS caps;
       if (waveOutGetDevCaps(i, &caps, sizeof(caps)) == MMSYSERR_NOERROR &&
           caps.wChannels > 0) {
-        devs->push_back(Device(talk_base::ToUtf8(caps.szPname), i));
+        devs->push_back(Device(rtc::ToUtf8(caps.szPname), i));
       }
     }
   }

@@ -30,7 +30,7 @@
 
 #include <string>
 #include <list>
-#include "talk/base/asyncpacketsocket.h"
+#include "webrtc/base/asyncpacketsocket.h"
 #include "talk/p2p/base/port.h"
 
 namespace cricket {
@@ -45,10 +45,10 @@ class TCPConnection;
 // call this TCPPort::OnReadPacket (3 arg) to dispatch to a connection.
 class TCPPort : public Port {
  public:
-  static TCPPort* Create(talk_base::Thread* thread,
-                         talk_base::PacketSocketFactory* factory,
-                         talk_base::Network* network,
-                         const talk_base::IPAddress& ip,
+  static TCPPort* Create(rtc::Thread* thread,
+                         rtc::PacketSocketFactory* factory,
+                         rtc::Network* network,
+                         const rtc::IPAddress& ip,
                          int min_port, int max_port,
                          const std::string& username,
                          const std::string& password,
@@ -69,51 +69,51 @@ class TCPPort : public Port {
 
   virtual void PrepareAddress();
 
-  virtual int GetOption(talk_base::Socket::Option opt, int* value);
-  virtual int SetOption(talk_base::Socket::Option opt, int value);
+  virtual int GetOption(rtc::Socket::Option opt, int* value);
+  virtual int SetOption(rtc::Socket::Option opt, int value);
   virtual int GetError();
 
  protected:
-  TCPPort(talk_base::Thread* thread, talk_base::PacketSocketFactory* factory,
-          talk_base::Network* network, const talk_base::IPAddress& ip,
+  TCPPort(rtc::Thread* thread, rtc::PacketSocketFactory* factory,
+          rtc::Network* network, const rtc::IPAddress& ip,
           int min_port, int max_port, const std::string& username,
           const std::string& password, bool allow_listen);
   bool Init();
 
   // Handles sending using the local TCP socket.
   virtual int SendTo(const void* data, size_t size,
-                     const talk_base::SocketAddress& addr,
-                     const talk_base::PacketOptions& options,
+                     const rtc::SocketAddress& addr,
+                     const rtc::PacketOptions& options,
                      bool payload);
 
   // Accepts incoming TCP connection.
-  void OnNewConnection(talk_base::AsyncPacketSocket* socket,
-                       talk_base::AsyncPacketSocket* new_socket);
+  void OnNewConnection(rtc::AsyncPacketSocket* socket,
+                       rtc::AsyncPacketSocket* new_socket);
 
  private:
   struct Incoming {
-    talk_base::SocketAddress addr;
-    talk_base::AsyncPacketSocket* socket;
+    rtc::SocketAddress addr;
+    rtc::AsyncPacketSocket* socket;
   };
 
-  talk_base::AsyncPacketSocket* GetIncoming(
-      const talk_base::SocketAddress& addr, bool remove = false);
+  rtc::AsyncPacketSocket* GetIncoming(
+      const rtc::SocketAddress& addr, bool remove = false);
 
   // Receives packet signal from the local TCP Socket.
-  void OnReadPacket(talk_base::AsyncPacketSocket* socket,
+  void OnReadPacket(rtc::AsyncPacketSocket* socket,
                     const char* data, size_t size,
-                    const talk_base::SocketAddress& remote_addr,
-                    const talk_base::PacketTime& packet_time);
+                    const rtc::SocketAddress& remote_addr,
+                    const rtc::PacketTime& packet_time);
 
-  void OnReadyToSend(talk_base::AsyncPacketSocket* socket);
+  void OnReadyToSend(rtc::AsyncPacketSocket* socket);
 
-  void OnAddressReady(talk_base::AsyncPacketSocket* socket,
-                      const talk_base::SocketAddress& address);
+  void OnAddressReady(rtc::AsyncPacketSocket* socket,
+                      const rtc::SocketAddress& address);
 
   // TODO: Is this still needed?
   bool incoming_only_;
   bool allow_listen_;
-  talk_base::AsyncPacketSocket* socket_;
+  rtc::AsyncPacketSocket* socket_;
   int error_;
   std::list<Incoming> incoming_;
 
@@ -124,25 +124,25 @@ class TCPConnection : public Connection {
  public:
   // Connection is outgoing unless socket is specified
   TCPConnection(TCPPort* port, const Candidate& candidate,
-                talk_base::AsyncPacketSocket* socket = 0);
+                rtc::AsyncPacketSocket* socket = 0);
   virtual ~TCPConnection();
 
   virtual int Send(const void* data, size_t size,
-                   const talk_base::PacketOptions& options);
+                   const rtc::PacketOptions& options);
   virtual int GetError();
 
-  talk_base::AsyncPacketSocket* socket() { return socket_; }
+  rtc::AsyncPacketSocket* socket() { return socket_; }
 
  private:
-  void OnConnect(talk_base::AsyncPacketSocket* socket);
-  void OnClose(talk_base::AsyncPacketSocket* socket, int error);
-  void OnReadPacket(talk_base::AsyncPacketSocket* socket,
+  void OnConnect(rtc::AsyncPacketSocket* socket);
+  void OnClose(rtc::AsyncPacketSocket* socket, int error);
+  void OnReadPacket(rtc::AsyncPacketSocket* socket,
                     const char* data, size_t size,
-                    const talk_base::SocketAddress& remote_addr,
-                    const talk_base::PacketTime& packet_time);
-  void OnReadyToSend(talk_base::AsyncPacketSocket* socket);
+                    const rtc::SocketAddress& remote_addr,
+                    const rtc::PacketTime& packet_time);
+  void OnReadyToSend(rtc::AsyncPacketSocket* socket);
 
-  talk_base::AsyncPacketSocket* socket_;
+  rtc::AsyncPacketSocket* socket_;
   int error_;
 
   friend class TCPPort;

@@ -39,7 +39,7 @@
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/mediastreamprovider.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/thread.h"
 #include "talk/media/base/audiorenderer.h"
 
 namespace webrtc {
@@ -62,7 +62,7 @@ class TrackHandler : public ObserverInterface {
   virtual void OnEnabledChanged() = 0;
 
  private:
-  talk_base::scoped_refptr<MediaStreamTrackInterface> track_;
+  rtc::scoped_refptr<MediaStreamTrackInterface> track_;
   uint32 ssrc_;
   MediaStreamTrackInterface::TrackState state_;
   bool enabled_;
@@ -87,7 +87,7 @@ class LocalAudioSinkAdapter : public AudioTrackSinkInterface,
 
   cricket::AudioRenderer::Sink* sink_;
   // Critical section protecting |sink_|.
-  talk_base::CriticalSection lock_;
+  rtc::CriticalSection lock_;
 };
 
 // LocalAudioTrackHandler listen to events on a local AudioTrack instance
@@ -112,7 +112,7 @@ class LocalAudioTrackHandler : public TrackHandler {
 
   // Used to pass the data callback from the |audio_track_| to the other
   // end of cricket::AudioRenderer.
-  talk_base::scoped_ptr<LocalAudioSinkAdapter> sink_adapter_;
+  rtc::scoped_ptr<LocalAudioSinkAdapter> sink_adapter_;
 };
 
 // RemoteAudioTrackHandler listen to events on a remote AudioTrack instance
@@ -196,7 +196,7 @@ class MediaStreamHandler : public ObserverInterface {
 
  protected:
   TrackHandler* FindTrackHandler(MediaStreamTrackInterface* track);
-  talk_base::scoped_refptr<MediaStreamInterface> stream_;
+  rtc::scoped_refptr<MediaStreamInterface> stream_;
   AudioProviderInterface* audio_provider_;
   VideoProviderInterface* video_provider_;
   typedef std::vector<TrackHandler*> TrackHandlers;

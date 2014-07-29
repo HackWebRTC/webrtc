@@ -49,16 +49,16 @@
 #include <string>
 #include <map>
 #include <vector>
-#include "talk/base/criticalsection.h"
-#include "talk/base/messagequeue.h"
-#include "talk/base/sigslot.h"
-#include "talk/base/sslstreamadapter.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/messagequeue.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/sslstreamadapter.h"
 #include "talk/p2p/base/candidate.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/sessiondescription.h"
 #include "talk/p2p/base/transportinfo.h"
 
-namespace talk_base {
+namespace rtc {
 class Thread;
 }
 
@@ -123,7 +123,7 @@ class TransportParser {
   bool ParseAddress(const buzz::XmlElement* elem,
                     const buzz::QName& address_name,
                     const buzz::QName& port_name,
-                    talk_base::SocketAddress* address,
+                    rtc::SocketAddress* address,
                     ParseError* error);
 
   virtual ~TransportParser() {}
@@ -194,20 +194,20 @@ bool IceCredentialsChanged(const std::string& old_ufrag,
                            const std::string& new_ufrag,
                            const std::string& new_pwd);
 
-class Transport : public talk_base::MessageHandler,
+class Transport : public rtc::MessageHandler,
                   public sigslot::has_slots<> {
  public:
-  Transport(talk_base::Thread* signaling_thread,
-            talk_base::Thread* worker_thread,
+  Transport(rtc::Thread* signaling_thread,
+            rtc::Thread* worker_thread,
             const std::string& content_name,
             const std::string& type,
             PortAllocator* allocator);
   virtual ~Transport();
 
   // Returns the signaling thread. The app talks to Transport on this thread.
-  talk_base::Thread* signaling_thread() { return signaling_thread_; }
+  rtc::Thread* signaling_thread() { return signaling_thread_; }
   // Returns the worker thread. The actual networking is done on this thread.
-  talk_base::Thread* worker_thread() { return worker_thread_; }
+  rtc::Thread* worker_thread() { return worker_thread_; }
 
   // Returns the content_name of this transport.
   const std::string& content_name() const { return content_name_; }
@@ -254,13 +254,13 @@ class Transport : public talk_base::MessageHandler,
   uint64 IceTiebreaker() { return tiebreaker_; }
 
   // Must be called before applying local session description.
-  void SetIdentity(talk_base::SSLIdentity* identity);
+  void SetIdentity(rtc::SSLIdentity* identity);
 
   // Get a copy of the local identity provided by SetIdentity.
-  bool GetIdentity(talk_base::SSLIdentity** identity);
+  bool GetIdentity(rtc::SSLIdentity** identity);
 
   // Get a copy of the remote certificate in use by the specified channel.
-  bool GetRemoteCertificate(talk_base::SSLCertificate** cert);
+  bool GetRemoteCertificate(rtc::SSLCertificate** cert);
 
   TransportProtocol protocol() const { return protocol_; }
 
@@ -341,7 +341,7 @@ class Transport : public talk_base::MessageHandler,
   // Forwards the signal from TransportChannel to BaseSession.
   sigslot::signal0<> SignalRoleConflict;
 
-  virtual bool GetSslRole(talk_base::SSLRole* ssl_role) const;
+  virtual bool GetSslRole(rtc::SSLRole* ssl_role) const;
 
  protected:
   // These are called by Create/DestroyChannel above in order to create or
@@ -364,9 +364,9 @@ class Transport : public talk_base::MessageHandler,
     return remote_description_.get();
   }
 
-  virtual void SetIdentity_w(talk_base::SSLIdentity* identity) {}
+  virtual void SetIdentity_w(rtc::SSLIdentity* identity) {}
 
-  virtual bool GetIdentity_w(talk_base::SSLIdentity** identity) {
+  virtual bool GetIdentity_w(rtc::SSLIdentity** identity) {
     return false;
   }
 
@@ -395,7 +395,7 @@ class Transport : public talk_base::MessageHandler,
   virtual bool ApplyNegotiatedTransportDescription_w(
       TransportChannelImpl* channel, std::string* error_desc);
 
-  virtual bool GetSslRole_w(talk_base::SSLRole* ssl_role) const {
+  virtual bool GetSslRole_w(rtc::SSLRole* ssl_role) const {
     return false;
   }
 
@@ -452,7 +452,7 @@ class Transport : public talk_base::MessageHandler,
   void OnChannelConnectionRemoved(TransportChannelImpl* channel);
 
   // Dispatches messages to the appropriate handler (below).
-  void OnMessage(talk_base::Message* msg);
+  void OnMessage(rtc::Message* msg);
 
   // These are versions of the above methods that are called only on a
   // particular thread (s = signaling, w = worker).  The above methods post or
@@ -489,13 +489,13 @@ class Transport : public talk_base::MessageHandler,
                                        ContentAction action,
                                        std::string* error_desc);
   bool GetStats_w(TransportStats* infos);
-  bool GetRemoteCertificate_w(talk_base::SSLCertificate** cert);
+  bool GetRemoteCertificate_w(rtc::SSLCertificate** cert);
 
   // Sends SignalCompleted if we are now in that state.
   void MaybeCompleted_w();
 
-  talk_base::Thread* signaling_thread_;
-  talk_base::Thread* worker_thread_;
+  rtc::Thread* signaling_thread_;
+  rtc::Thread* worker_thread_;
   std::string content_name_;
   std::string type_;
   PortAllocator* allocator_;
@@ -508,15 +508,15 @@ class Transport : public talk_base::MessageHandler,
   uint64 tiebreaker_;
   TransportProtocol protocol_;
   IceMode remote_ice_mode_;
-  talk_base::scoped_ptr<TransportDescription> local_description_;
-  talk_base::scoped_ptr<TransportDescription> remote_description_;
+  rtc::scoped_ptr<TransportDescription> local_description_;
+  rtc::scoped_ptr<TransportDescription> remote_description_;
 
   ChannelMap channels_;
   // Buffers the ready_candidates so that SignalCanidatesReady can
   // provide them in multiples.
   std::vector<Candidate> ready_candidates_;
   // Protects changes to channels and messages
-  talk_base::CriticalSection crit_;
+  rtc::CriticalSection crit_;
 
   DISALLOW_EVIL_CONSTRUCTORS(Transport);
 };

@@ -30,7 +30,7 @@
 
 #include <vector>
 
-#include "talk/base/sigslot.h"
+#include "webrtc/base/sigslot.h"
 #include "talk/xmpp/iqtask.h"
 #include "talk/xmpp/receivetask.h"
 

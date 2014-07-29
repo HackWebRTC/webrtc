@@ -27,11 +27,11 @@
 
 #include "talk/p2p/base/transportdescriptionfactory.h"
 
-#include "talk/base/helpers.h"
-#include "talk/base/logging.h"
-#include "talk/base/messagedigest.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/sslfingerprint.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/messagedigest.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/sslfingerprint.h"
 #include "talk/p2p/base/transportdescription.h"
 
 namespace cricket {
@@ -47,7 +47,7 @@ TransportDescriptionFactory::TransportDescriptionFactory()
 TransportDescription* TransportDescriptionFactory::CreateOffer(
     const TransportOptions& options,
     const TransportDescription* current_description) const {
-  talk_base::scoped_ptr<TransportDescription> desc(new TransportDescription());
+  rtc::scoped_ptr<TransportDescription> desc(new TransportDescription());
 
   // Set the transport type depending on the selected protocol.
   if (protocol_ == ICEPROTO_RFC5245) {
@@ -61,8 +61,8 @@ TransportDescription* TransportDescriptionFactory::CreateOffer(
 
   // Generate the ICE credentials if we don't already have them.
   if (!current_description || options.ice_restart) {
-    desc->ice_ufrag = talk_base::CreateRandomString(ICE_UFRAG_LENGTH);
-    desc->ice_pwd = talk_base::CreateRandomString(ICE_PWD_LENGTH);
+    desc->ice_ufrag = rtc::CreateRandomString(ICE_UFRAG_LENGTH);
+    desc->ice_pwd = rtc::CreateRandomString(ICE_PWD_LENGTH);
   } else {
     desc->ice_ufrag = current_description->ice_ufrag;
     desc->ice_pwd = current_description->ice_pwd;
@@ -86,7 +86,7 @@ TransportDescription* TransportDescriptionFactory::CreateAnswer(
     const TransportDescription* current_description) const {
   // A NULL offer is treated as a GICE transport description.
   // TODO(juberti): Figure out why we get NULL offers, and fix this upstream.
-  talk_base::scoped_ptr<TransportDescription> desc(new TransportDescription());
+  rtc::scoped_ptr<TransportDescription> desc(new TransportDescription());
 
   // Figure out which ICE variant to negotiate; prefer RFC 5245 ICE, but fall
   // back to G-ICE if needed. Note that we never create a hybrid answer, since
@@ -114,8 +114,8 @@ TransportDescription* TransportDescriptionFactory::CreateAnswer(
   // Generate the ICE credentials if we don't already have them or ice is
   // being restarted.
   if (!current_description || options.ice_restart) {
-    desc->ice_ufrag = talk_base::CreateRandomString(ICE_UFRAG_LENGTH);
-    desc->ice_pwd = talk_base::CreateRandomString(ICE_PWD_LENGTH);
+    desc->ice_ufrag = rtc::CreateRandomString(ICE_UFRAG_LENGTH);
+    desc->ice_pwd = rtc::CreateRandomString(ICE_PWD_LENGTH);
   } else {
     desc->ice_ufrag = current_description->ice_ufrag;
     desc->ice_pwd = current_description->ice_pwd;
@@ -161,7 +161,7 @@ bool TransportDescriptionFactory::SetSecurityInfo(
   }
 
   desc->identity_fingerprint.reset(
-      talk_base::SSLFingerprint::Create(digest_alg, identity_));
+      rtc::SSLFingerprint::Create(digest_alg, identity_));
   if (!desc->identity_fingerprint.get()) {
     LOG(LS_ERROR) << "Failed to create identity fingerprint, alg="
                   << digest_alg;

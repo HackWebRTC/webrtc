@@ -29,11 +29,11 @@
 
 #include "talk/app/webrtc/jsepicecandidate.h"
 #include "talk/app/webrtc/jsepsessiondescription.h"
-#include "talk/base/gunit.h"
-#include "talk/base/helpers.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/ssladapter.h"
-#include "talk/base/stringencode.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/ssladapter.h"
+#include "webrtc/base/stringencode.h"
 #include "talk/p2p/base/candidate.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/sessiondescription.h"
@@ -44,7 +44,7 @@ using webrtc::IceCandidateInterface;
 using webrtc::JsepIceCandidate;
 using webrtc::JsepSessionDescription;
 using webrtc::SessionDescriptionInterface;
-using talk_base::scoped_ptr;
+using rtc::scoped_ptr;
 
 static const char kCandidateUfrag[] = "ufrag";
 static const char kCandidatePwd[] = "pwd";
@@ -98,24 +98,24 @@ static cricket::SessionDescription* CreateCricketSessionDescription() {
 class JsepSessionDescriptionTest : public testing::Test {
  protected:
   static void SetUpTestCase() {
-    talk_base::InitializeSSL();
+    rtc::InitializeSSL();
   }
 
   static void TearDownTestCase() {
-    talk_base::CleanupSSL();
+    rtc::CleanupSSL();
   }
 
   virtual void SetUp() {
     int port = 1234;
-    talk_base::SocketAddress address("127.0.0.1", port++);
+    rtc::SocketAddress address("127.0.0.1", port++);
     cricket::Candidate candidate("rtp", cricket::ICE_CANDIDATE_COMPONENT_RTP,
                                  "udp", address, 1, "",
                                  "", "local", "eth0", 0, "1");
     candidate_ = candidate;
     const std::string session_id =
-        talk_base::ToString(talk_base::CreateRandomId64());
+        rtc::ToString(rtc::CreateRandomId64());
     const std::string session_version =
-        talk_base::ToString(talk_base::CreateRandomId());
+        rtc::ToString(rtc::CreateRandomId());
     jsep_desc_.reset(new JsepSessionDescription("dummy"));
     ASSERT_TRUE(jsep_desc_->Initialize(CreateCricketSessionDescription(),
         session_id, session_version));
@@ -135,7 +135,7 @@ class JsepSessionDescriptionTest : public testing::Test {
   }
 
   cricket::Candidate candidate_;
-  talk_base::scoped_ptr<JsepSessionDescription> jsep_desc_;
+  rtc::scoped_ptr<JsepSessionDescription> jsep_desc_;
 };
 
 // Test that number_of_mediasections() returns the number of media contents in

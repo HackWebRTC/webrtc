@@ -50,7 +50,7 @@ bool GetUint16(const void* data, size_t offset, int* value) {
     return false;
   }
   *value = static_cast<int>(
-      talk_base::GetBE16(static_cast<const uint8*>(data) + offset));
+      rtc::GetBE16(static_cast<const uint8*>(data) + offset));
   return true;
 }
 
@@ -58,7 +58,7 @@ bool GetUint32(const void* data, size_t offset, uint32* value) {
   if (!data || !value) {
     return false;
   }
-  *value = talk_base::GetBE32(static_cast<const uint8*>(data) + offset);
+  *value = rtc::GetBE32(static_cast<const uint8*>(data) + offset);
   return true;
 }
 
@@ -66,7 +66,7 @@ bool SetUint8(void* data, size_t offset, int value) {
   if (!data) {
     return false;
   }
-  talk_base::Set8(data, offset, value);
+  rtc::Set8(data, offset, value);
   return true;
 }
 
@@ -74,7 +74,7 @@ bool SetUint16(void* data, size_t offset, int value) {
   if (!data) {
     return false;
   }
-  talk_base::SetBE16(static_cast<uint8*>(data) + offset, value);
+  rtc::SetBE16(static_cast<uint8*>(data) + offset, value);
   return true;
 }
 
@@ -82,7 +82,7 @@ bool SetUint32(void* data, size_t offset, uint32 value) {
   if (!data) {
     return false;
   }
-  talk_base::SetBE32(static_cast<uint8*>(data) + offset, value);
+  rtc::SetBE32(static_cast<uint8*>(data) + offset, value);
   return true;
 }
 
@@ -134,7 +134,7 @@ bool GetRtpHeaderLen(const void* data, size_t len, size_t* value) {
   // If there's an extension, read and add in the extension size.
   if (header[0] & 0x10) {
     if (len < header_size + sizeof(uint32)) return false;
-    header_size += ((talk_base::GetBE16(header + header_size + 2) + 1) *
+    header_size += ((rtc::GetBE16(header + header_size + 2) + 1) *
                     sizeof(uint32));
     if (len < header_size) return false;
   }
@@ -176,7 +176,7 @@ bool GetRtcpSsrc(const void* data, size_t len, uint32* value) {
   if (!GetRtcpType(data, len, &pl_type)) return false;
   // SDES packet parsing is not supported.
   if (pl_type == kRtcpTypeSDES) return false;
-  *value = talk_base::GetBE32(static_cast<const uint8*>(data) + 4);
+  *value = rtc::GetBE32(static_cast<const uint8*>(data) + 4);
   return true;
 }
 

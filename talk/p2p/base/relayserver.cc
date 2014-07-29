@@ -33,10 +33,10 @@
 
 #include <algorithm>
 
-#include "talk/base/asynctcpsocket.h"
-#include "talk/base/helpers.h"
-#include "talk/base/logging.h"
-#include "talk/base/socketadapters.h"
+#include "webrtc/base/asynctcpsocket.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/socketadapters.h"
 
 namespace cricket {
 
@@ -47,9 +47,9 @@ const int MAX_LIFETIME = 15 * 60 * 1000;
 const uint32 USERNAME_LENGTH = 16;
 
 // Calls SendTo on the given socket and logs any bad results.
-void Send(talk_base::AsyncPacketSocket* socket, const char* bytes, size_t size,
-          const talk_base::SocketAddress& addr) {
-  talk_base::PacketOptions options;
+void Send(rtc::AsyncPacketSocket* socket, const char* bytes, size_t size,
+          const rtc::SocketAddress& addr) {
+  rtc::PacketOptions options;
   int result = socket->SendTo(bytes, size, addr, options);
   if (result < static_cast<int>(size)) {
     LOG(LS_ERROR) << "SendTo wrote only " << result << " of " << size
@@ -61,16 +61,16 @@ void Send(talk_base::AsyncPacketSocket* socket, const char* bytes, size_t size,
 
 // Sends the given STUN message on the given socket.
 void SendStun(const StunMessage& msg,
-              talk_base::AsyncPacketSocket* socket,
-              const talk_base::SocketAddress& addr) {
-  talk_base::ByteBuffer buf;
+              rtc::AsyncPacketSocket* socket,
+              const rtc::SocketAddress& addr) {
+  rtc::ByteBuffer buf;
   msg.Write(&buf);
   Send(socket, buf.Data(), buf.Length(), addr);
 }
 
 // Constructs a STUN error response and sends it on the given socket.
-void SendStunError(const StunMessage& msg, talk_base::AsyncPacketSocket* socket,
-                   const talk_base::SocketAddress& remote_addr, int error_code,
+void SendStunError(const StunMessage& msg, rtc::AsyncPacketSocket* socket,
+                   const rtc::SocketAddress& remote_addr, int error_code,
                    const char* error_desc, const std::string& magic_cookie) {
   RelayMessage err_msg;
   err_msg.SetType(GetStunErrorResponseType(msg.type()));
@@ -95,7 +95,7 @@ void SendStunError(const StunMessage& msg, talk_base::AsyncPacketSocket* socket,
   SendStun(err_msg, socket, remote_addr);
 }
 
-RelayServer::RelayServer(talk_base::Thread* thread)
+RelayServer::RelayServer(rtc::Thread* thread)
   : thread_(thread), log_bindings_(true) {
 }
 
@@ -110,20 +110,20 @@ RelayServer::~RelayServer() {
   for (size_t i = 0; i < removed_sockets_.size(); ++i)
     delete removed_sockets_[i];
   while (!server_sockets_.empty()) {
-    talk_base::AsyncSocket* socket = server_sockets_.begin()->first;
+    rtc::AsyncSocket* socket = server_sockets_.begin()->first;
     server_sockets_.erase(server_sockets_.begin()->first);
     delete socket;
   }
 }
 
-void RelayServer::AddInternalSocket(talk_base::AsyncPacketSocket* socket) {
+void RelayServer::AddInternalSocket(rtc::AsyncPacketSocket* socket) {
   ASSERT(internal_sockets_.end() ==
       std::find(internal_sockets_.begin(), internal_sockets_.end(), socket));
   internal_sockets_.push_back(socket);
   socket->SignalReadPacket.connect(this, &RelayServer::OnInternalPacket);
 }
 
-void RelayServer::RemoveInternalSocket(talk_base::AsyncPacketSocket* socket) {
+void RelayServer::RemoveInternalSocket(rtc::AsyncPacketSocket* socket) {
   SocketList::iterator iter =
       std::find(internal_sockets_.begin(), internal_sockets_.end(), socket);
   ASSERT(iter != internal_sockets_.end());
@@ -132,14 +132,14 @@ void RelayServer::RemoveInternalSocket(talk_base::AsyncPacketSocket* socket) {
   socket->SignalReadPacket.disconnect(this);
 }
 
-void RelayServer::AddExternalSocket(talk_base::AsyncPacketSocket* socket) {
+void RelayServer::AddExternalSocket(rtc::AsyncPacketSocket* socket) {
   ASSERT(external_sockets_.end() ==
       std::find(external_sockets_.begin(), external_sockets_.end(), socket));
   external_sockets_.push_back(socket);
   socket->SignalReadPacket.connect(this, &RelayServer::OnExternalPacket);
 }
 
-void RelayServer::RemoveExternalSocket(talk_base::AsyncPacketSocket* socket) {
+void RelayServer::RemoveExternalSocket(rtc::AsyncPacketSocket* socket) {
   SocketList::iterator iter =
       std::find(external_sockets_.begin(), external_sockets_.end(), socket);
   ASSERT(iter != external_sockets_.end());
@@ -148,7 +148,7 @@ void RelayServer::RemoveExternalSocket(talk_base::AsyncPacketSocket* socket) {
   socket->SignalReadPacket.disconnect(this);
 }
 
-void RelayServer::AddInternalServerSocket(talk_base::AsyncSocket* socket,
+void RelayServer::AddInternalServerSocket(rtc::AsyncSocket* socket,
                                           cricket::ProtocolType proto) {
   ASSERT(server_sockets_.end() ==
          server_sockets_.find(socket));
@@ -157,7 +157,7 @@ void RelayServer::AddInternalServerSocket(talk_base::AsyncSocket* socket,
 }
 
 void RelayServer::RemoveInternalServerSocket(
-    talk_base::AsyncSocket* socket) {
+    rtc::AsyncSocket* socket) {
   ServerSocketMap::iterator iter = server_sockets_.find(socket);
   ASSERT(iter != server_sockets_.end());
   server_sockets_.erase(iter);
@@ -168,7 +168,7 @@ int RelayServer::GetConnectionCount() const {
   return static_cast<int>(connections_.size());
 }
 
-talk_base::SocketAddressPair RelayServer::GetConnection(int connection) const {
+rtc::SocketAddressPair RelayServer::GetConnection(int connection) const {
   int i = 0;
   for (ConnectionMap::const_iterator it = connections_.begin();
        it != connections_.end(); ++it) {
@@ -177,10 +177,10 @@ talk_base::SocketAddressPair RelayServer::GetConnection(int connection) const {
     }
     ++i;
   }
-  return talk_base::SocketAddressPair();
+  return rtc::SocketAddressPair();
 }
 
-bool RelayServer::HasConnection(const talk_base::SocketAddress& address) const {
+bool RelayServer::HasConnection(const rtc::SocketAddress& address) const {
   for (ConnectionMap::const_iterator it = connections_.begin();
        it != connections_.end(); ++it) {
     if (it->second->addr_pair().destination() == address) {
@@ -190,18 +190,18 @@ bool RelayServer::HasConnection(const talk_base::SocketAddress& address) const {
   return false;
 }
 
-void RelayServer::OnReadEvent(talk_base::AsyncSocket* socket) {
+void RelayServer::OnReadEvent(rtc::AsyncSocket* socket) {
   ASSERT(server_sockets_.find(socket) != server_sockets_.end());
   AcceptConnection(socket);
 }
 
 void RelayServer::OnInternalPacket(
-    talk_base::AsyncPacketSocket* socket, const char* bytes, size_t size,
-    const talk_base::SocketAddress& remote_addr,
-    const talk_base::PacketTime& packet_time) {
+    rtc::AsyncPacketSocket* socket, const char* bytes, size_t size,
+    const rtc::SocketAddress& remote_addr,
+    const rtc::PacketTime& packet_time) {
 
   // Get the address of the connection we just received on.
-  talk_base::SocketAddressPair ap(remote_addr, socket->GetLocalAddress());
+  rtc::SocketAddressPair ap(remote_addr, socket->GetLocalAddress());
   ASSERT(!ap.destination().IsNil());
 
   // If this did not come from an existing connection, it should be a STUN
@@ -241,12 +241,12 @@ void RelayServer::OnInternalPacket(
 }
 
 void RelayServer::OnExternalPacket(
-    talk_base::AsyncPacketSocket* socket, const char* bytes, size_t size,
-    const talk_base::SocketAddress& remote_addr,
-    const talk_base::PacketTime& packet_time) {
+    rtc::AsyncPacketSocket* socket, const char* bytes, size_t size,
+    const rtc::SocketAddress& remote_addr,
+    const rtc::PacketTime& packet_time) {
 
   // Get the address of the connection we just received on.
-  talk_base::SocketAddressPair ap(remote_addr, socket->GetLocalAddress());
+  rtc::SocketAddressPair ap(remote_addr, socket->GetLocalAddress());
   ASSERT(!ap.destination().IsNil());
 
   // If this connection already exists, then forward the traffic.
@@ -266,7 +266,7 @@ void RelayServer::OnExternalPacket(
   // The first packet should always be a STUN / TURN packet.  If it isn't, then
   // we should just ignore this packet.
   RelayMessage msg;
-  talk_base::ByteBuffer buf(bytes, size);
+  rtc::ByteBuffer buf(bytes, size);
   if (!msg.Read(&buf)) {
     LOG(LS_WARNING) << "Dropping packet: first packet not STUN";
     return;
@@ -280,7 +280,7 @@ void RelayServer::OnExternalPacket(
     return;
   }
 
-  uint32 length = talk_base::_min(static_cast<uint32>(username_attr->length()),
+  uint32 length = rtc::_min(static_cast<uint32>(username_attr->length()),
                                   USERNAME_LENGTH);
   std::string username(username_attr->bytes(), length);
   // TODO: Check the HMAC.
@@ -310,12 +310,12 @@ void RelayServer::OnExternalPacket(
 }
 
 bool RelayServer::HandleStun(
-    const char* bytes, size_t size, const talk_base::SocketAddress& remote_addr,
-    talk_base::AsyncPacketSocket* socket, std::string* username,
+    const char* bytes, size_t size, const rtc::SocketAddress& remote_addr,
+    rtc::AsyncPacketSocket* socket, std::string* username,
     StunMessage* msg) {
 
   // Parse this into a stun message. Eat the message if this fails.
-  talk_base::ByteBuffer buf(bytes, size);
+  rtc::ByteBuffer buf(bytes, size);
   if (!msg->Read(&buf)) {
     return false;
   }
@@ -338,8 +338,8 @@ bool RelayServer::HandleStun(
 }
 
 void RelayServer::HandleStunAllocate(
-    const char* bytes, size_t size, const talk_base::SocketAddressPair& ap,
-    talk_base::AsyncPacketSocket* socket) {
+    const char* bytes, size_t size, const rtc::SocketAddressPair& ap,
+    rtc::AsyncPacketSocket* socket) {
 
   // Make sure this is a valid STUN request.
   RelayMessage request;
@@ -376,7 +376,7 @@ void RelayServer::HandleStunAllocate(
     const StunUInt32Attribute* lifetime_attr =
         request.GetUInt32(STUN_ATTR_LIFETIME);
     if (lifetime_attr)
-      lifetime = talk_base::_min(lifetime, lifetime_attr->value() * 1000);
+      lifetime = rtc::_min(lifetime, lifetime_attr->value() * 1000);
 
     binding = new RelayServerBinding(this, username, "0", lifetime);
     binding->SignalTimeout.connect(this, &RelayServer::OnTimeout);
@@ -442,7 +442,7 @@ void RelayServer::HandleStunAllocate(
   response.AddAttribute(magic_cookie_attr);
 
   size_t index = rand() % external_sockets_.size();
-  talk_base::SocketAddress ext_addr =
+  rtc::SocketAddress ext_addr =
       external_sockets_[index]->GetLocalAddress();
 
   StunAddressAttribute* addr_attr =
@@ -481,14 +481,14 @@ void RelayServer::HandleStunSend(
     return;
   }
 
-  talk_base::SocketAddress ext_addr(addr_attr->ipaddr(), addr_attr->port());
+  rtc::SocketAddress ext_addr(addr_attr->ipaddr(), addr_attr->port());
   RelayServerConnection* ext_conn =
       int_conn->binding()->GetExternalConnection(ext_addr);
   if (!ext_conn) {
     // Create a new connection to establish the relationship with this binding.
     ASSERT(external_sockets_.size() == 1);
-    talk_base::AsyncPacketSocket* socket = external_sockets_[0];
-    talk_base::SocketAddressPair ap(ext_addr, socket->GetLocalAddress());
+    rtc::AsyncPacketSocket* socket = external_sockets_[0];
+    rtc::SocketAddressPair ap(ext_addr, socket->GetLocalAddress());
     ext_conn = new RelayServerConnection(int_conn->binding(), ap, socket);
     ext_conn->binding()->AddExternalConnection(ext_conn);
     AddConnection(ext_conn);
@@ -545,14 +545,14 @@ void RelayServer::RemoveBinding(RelayServerBinding* binding) {
   }
 }
 
-void RelayServer::OnMessage(talk_base::Message *pmsg) {
+void RelayServer::OnMessage(rtc::Message *pmsg) {
 #if ENABLE_DEBUG
   static const uint32 kMessageAcceptConnection = 1;
   ASSERT(pmsg->message_id == kMessageAcceptConnection);
 #endif
-  talk_base::MessageData* data = pmsg->pdata;
-  talk_base::AsyncSocket* socket =
-      static_cast <talk_base::TypedMessageData<talk_base::AsyncSocket*>*>
+  rtc::MessageData* data = pmsg->pdata;
+  rtc::AsyncSocket* socket =
+      static_cast <rtc::TypedMessageData<rtc::AsyncSocket*>*>
       (data)->data();
   AcceptConnection(socket);
   delete data;
@@ -564,10 +564,10 @@ void RelayServer::OnTimeout(RelayServerBinding* binding) {
   thread_->Dispose(binding);
 }
 
-void RelayServer::AcceptConnection(talk_base::AsyncSocket* server_socket) {
+void RelayServer::AcceptConnection(rtc::AsyncSocket* server_socket) {
   // Check if someone is trying to connect to us.
-  talk_base::SocketAddress accept_addr;
-  talk_base::AsyncSocket* accepted_socket =
+  rtc::SocketAddress accept_addr;
+  rtc::AsyncSocket* accepted_socket =
       server_socket->Accept(&accept_addr);
   if (accepted_socket != NULL) {
     // We had someone trying to connect, now check which protocol to
@@ -575,10 +575,10 @@ void RelayServer::AcceptConnection(talk_base::AsyncSocket* server_socket) {
     ASSERT(server_sockets_[server_socket] == cricket::PROTO_TCP ||
            server_sockets_[server_socket] == cricket::PROTO_SSLTCP);
     if (server_sockets_[server_socket] == cricket::PROTO_SSLTCP) {
-      accepted_socket = new talk_base::AsyncSSLServerSocket(accepted_socket);
+      accepted_socket = new rtc::AsyncSSLServerSocket(accepted_socket);
     }
-    talk_base::AsyncTCPSocket* tcp_socket =
-        new talk_base::AsyncTCPSocket(accepted_socket, false);
+    rtc::AsyncTCPSocket* tcp_socket =
+        new rtc::AsyncTCPSocket(accepted_socket, false);
 
     // Finally add the socket so it can start communicating with the client.
     AddInternalSocket(tcp_socket);
@@ -586,8 +586,8 @@ void RelayServer::AcceptConnection(talk_base::AsyncSocket* server_socket) {
 }
 
 RelayServerConnection::RelayServerConnection(
-    RelayServerBinding* binding, const talk_base::SocketAddressPair& addrs,
-    talk_base::AsyncPacketSocket* socket)
+    RelayServerBinding* binding, const rtc::SocketAddressPair& addrs,
+    rtc::AsyncPacketSocket* socket)
   : binding_(binding), addr_pair_(addrs), socket_(socket), locked_(false) {
   // The creation of a new connection constitutes a use of the binding.
   binding_->NoteUsed();
@@ -606,7 +606,7 @@ void RelayServerConnection::Send(const char* data, size_t size) {
 }
 
 void RelayServerConnection::Send(
-    const char* data, size_t size, const talk_base::SocketAddress& from_addr) {
+    const char* data, size_t size, const rtc::SocketAddress& from_addr) {
   // If the from address is known to the client, we don't need to send it.
   if (locked() && (from_addr == default_dest_)) {
     Send(data, size);
@@ -707,7 +707,7 @@ void RelayServerBinding::AddExternalConnection(RelayServerConnection* conn) {
 }
 
 void RelayServerBinding::NoteUsed() {
-  last_used_ = talk_base::Time();
+  last_used_ = rtc::Time();
 }
 
 bool RelayServerBinding::HasMagicCookie(const char* bytes, size_t size) const {
@@ -719,7 +719,7 @@ bool RelayServerBinding::HasMagicCookie(const char* bytes, size_t size) const {
 }
 
 RelayServerConnection* RelayServerBinding::GetInternalConnection(
-    const talk_base::SocketAddress& ext_addr) {
+    const rtc::SocketAddress& ext_addr) {
 
   // Look for an internal connection that is locked to this address.
   for (size_t i = 0; i < internal_connections_.size(); ++i) {
@@ -734,7 +734,7 @@ RelayServerConnection* RelayServerBinding::GetInternalConnection(
 }
 
 RelayServerConnection* RelayServerBinding::GetExternalConnection(
-    const talk_base::SocketAddress& ext_addr) {
+    const rtc::SocketAddress& ext_addr) {
   for (size_t i = 0; i < external_connections_.size(); ++i) {
     if (ext_addr == external_connections_[i]->addr_pair().source())
       return external_connections_[i];
@@ -742,13 +742,13 @@ RelayServerConnection* RelayServerBinding::GetExternalConnection(
   return 0;
 }
 
-void RelayServerBinding::OnMessage(talk_base::Message *pmsg) {
+void RelayServerBinding::OnMessage(rtc::Message *pmsg) {
   if (pmsg->message_id == MSG_LIFETIME_TIMER) {
     ASSERT(!pmsg->pdata);
 
     // If the lifetime timeout has been exceeded, then send a signal.
     // Otherwise, just keep waiting.
-    if (talk_base::Time() >= last_used_ + lifetime_) {
+    if (rtc::Time() >= last_used_ + lifetime_) {
       LOG(LS_INFO) << "Expiring binding " << username_;
       SignalTimeout(this);
     } else {

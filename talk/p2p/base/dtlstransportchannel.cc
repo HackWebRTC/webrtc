@@ -28,12 +28,12 @@
 
 #include "talk/p2p/base/dtlstransportchannel.h"
 
-#include "talk/base/buffer.h"
-#include "talk/base/dscp.h"
-#include "talk/base/messagequeue.h"
-#include "talk/base/stream.h"
-#include "talk/base/sslstreamadapter.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/dscp.h"
+#include "webrtc/base/messagequeue.h"
+#include "webrtc/base/stream.h"
+#include "webrtc/base/sslstreamadapter.h"
+#include "webrtc/base/thread.h"
 #include "talk/p2p/base/common.h"
 
 namespace cricket {
@@ -52,45 +52,45 @@ static bool IsRtpPacket(const char* data, size_t len) {
   return (len >= kMinRtpPacketLen && (u[0] & 0xC0) == 0x80);
 }
 
-talk_base::StreamResult StreamInterfaceChannel::Read(void* buffer,
+rtc::StreamResult StreamInterfaceChannel::Read(void* buffer,
                                                      size_t buffer_len,
                                                      size_t* read,
                                                      int* error) {
-  if (state_ == talk_base::SS_CLOSED)
-    return talk_base::SR_EOS;
-  if (state_ == talk_base::SS_OPENING)
-    return talk_base::SR_BLOCK;
+  if (state_ == rtc::SS_CLOSED)
+    return rtc::SR_EOS;
+  if (state_ == rtc::SS_OPENING)
+    return rtc::SR_BLOCK;
 
   return fifo_.Read(buffer, buffer_len, read, error);
 }
 
-talk_base::StreamResult StreamInterfaceChannel::Write(const void* data,
+rtc::StreamResult StreamInterfaceChannel::Write(const void* data,
                                                       size_t data_len,
                                                       size_t* written,
                                                       int* error) {
   // Always succeeds, since this is an unreliable transport anyway.
   // TODO: Should this block if channel_'s temporarily unwritable?
-  talk_base::PacketOptions packet_options;
+  rtc::PacketOptions packet_options;
   channel_->SendPacket(static_cast<const char*>(data), data_len,
                        packet_options);
   if (written) {
     *written = data_len;
   }
-  return talk_base::SR_SUCCESS;
+  return rtc::SR_SUCCESS;
 }
 
 bool StreamInterfaceChannel::OnPacketReceived(const char* data, size_t size) {
   // We force a read event here to ensure that we don't overflow our FIFO.
   // Under high packet rate this can occur if we wait for the FIFO to post its
   // own SE_READ.
-  bool ret = (fifo_.WriteAll(data, size, NULL, NULL) == talk_base::SR_SUCCESS);
+  bool ret = (fifo_.WriteAll(data, size, NULL, NULL) == rtc::SR_SUCCESS);
   if (ret) {
-    SignalEvent(this, talk_base::SE_READ, 0);
+    SignalEvent(this, rtc::SE_READ, 0);
   }
   return ret;
 }
 
-void StreamInterfaceChannel::OnEvent(talk_base::StreamInterface* stream,
+void StreamInterfaceChannel::OnEvent(rtc::StreamInterface* stream,
                                      int sig, int err) {
   SignalEvent(this, sig, err);
 }
@@ -100,12 +100,12 @@ DtlsTransportChannelWrapper::DtlsTransportChannelWrapper(
                                            TransportChannelImpl* channel)
     : TransportChannelImpl(channel->content_name(), channel->component()),
       transport_(transport),
-      worker_thread_(talk_base::Thread::Current()),
+      worker_thread_(rtc::Thread::Current()),
       channel_(channel),
       downward_(NULL),
       dtls_state_(STATE_NONE),
       local_identity_(NULL),
-      ssl_role_(talk_base::SSL_CLIENT) {
+      ssl_role_(rtc::SSL_CLIENT) {
   channel_->SignalReadableState.connect(this,
       &DtlsTransportChannelWrapper::OnReadableState);
   channel_->SignalWritableState.connect(this,
@@ -155,7 +155,7 @@ void DtlsTransportChannelWrapper::Reset() {
 }
 
 bool DtlsTransportChannelWrapper::SetLocalIdentity(
-    talk_base::SSLIdentity* identity) {
+    rtc::SSLIdentity* identity) {
   if (dtls_state_ != STATE_NONE) {
     if (identity == local_identity_) {
       // This may happen during renegotiation.
@@ -178,7 +178,7 @@ bool DtlsTransportChannelWrapper::SetLocalIdentity(
 }
 
 bool DtlsTransportChannelWrapper::GetLocalIdentity(
-    talk_base::SSLIdentity** identity) const {
+    rtc::SSLIdentity** identity) const {
   if (!local_identity_)
     return false;
 
@@ -186,7 +186,7 @@ bool DtlsTransportChannelWrapper::GetLocalIdentity(
   return true;
 }
 
-bool DtlsTransportChannelWrapper::SetSslRole(talk_base::SSLRole role) {
+bool DtlsTransportChannelWrapper::SetSslRole(rtc::SSLRole role) {
   if (dtls_state_ == STATE_OPEN) {
     if (ssl_role_ != role) {
       LOG(LS_ERROR) << "SSL Role can't be reversed after the session is setup.";
@@ -199,7 +199,7 @@ bool DtlsTransportChannelWrapper::SetSslRole(talk_base::SSLRole role) {
   return true;
 }
 
-bool DtlsTransportChannelWrapper::GetSslRole(talk_base::SSLRole* role) const {
+bool DtlsTransportChannelWrapper::GetSslRole(rtc::SSLRole* role) const {
   *role = ssl_role_;
   return true;
 }
@@ -209,7 +209,7 @@ bool DtlsTransportChannelWrapper::SetRemoteFingerprint(
     const uint8* digest,
     size_t digest_len) {
 
-  talk_base::Buffer remote_fingerprint_value(digest, digest_len);
+  rtc::Buffer remote_fingerprint_value(digest, digest_len);
 
   if (dtls_state_ != STATE_NONE &&
       remote_fingerprint_value_ == remote_fingerprint_value &&
@@ -247,7 +247,7 @@ bool DtlsTransportChannelWrapper::SetRemoteFingerprint(
 }
 
 bool DtlsTransportChannelWrapper::GetRemoteCertificate(
-    talk_base::SSLCertificate** cert) const {
+    rtc::SSLCertificate** cert) const {
   if (!dtls_)
     return false;
 
@@ -258,7 +258,7 @@ bool DtlsTransportChannelWrapper::SetupDtls() {
   StreamInterfaceChannel* downward =
       new StreamInterfaceChannel(worker_thread_, channel_);
 
-  dtls_.reset(talk_base::SSLStreamAdapter::Create(downward));
+  dtls_.reset(rtc::SSLStreamAdapter::Create(downward));
   if (!dtls_) {
     LOG_J(LS_ERROR, this) << "Failed to create DTLS adapter.";
     delete downward;
@@ -268,7 +268,7 @@ bool DtlsTransportChannelWrapper::SetupDtls() {
   downward_ = downward;
 
   dtls_->SetIdentity(local_identity_->GetReference());
-  dtls_->SetMode(talk_base::SSL_MODE_DTLS);
+  dtls_->SetMode(rtc::SSL_MODE_DTLS);
   dtls_->SetServerRole(ssl_role_);
   dtls_->SignalEvent.connect(this, &DtlsTransportChannelWrapper::OnDtlsEvent);
   if (!dtls_->SetPeerCertificateDigest(
@@ -347,7 +347,7 @@ bool DtlsTransportChannelWrapper::GetSrtpCipher(std::string* cipher) {
 // Called from upper layers to send a media packet.
 int DtlsTransportChannelWrapper::SendPacket(
     const char* data, size_t size,
-    const talk_base::PacketOptions& options, int flags) {
+    const rtc::PacketOptions& options, int flags) {
   int result = -1;
 
   switch (dtls_state_) {
@@ -374,7 +374,7 @@ int DtlsTransportChannelWrapper::SendPacket(
         result = channel_->SendPacket(data, size, options);
       } else {
         result = (dtls_->WriteAll(data, size, NULL, NULL) ==
-          talk_base::SR_SUCCESS) ? static_cast<int>(size) : -1;
+          rtc::SR_SUCCESS) ? static_cast<int>(size) : -1;
       }
       break;
       // Not doing DTLS.
@@ -400,7 +400,7 @@ int DtlsTransportChannelWrapper::SendPacket(
 //     - Once the DTLS handshake completes, the state is that of the
 //       impl again
 void DtlsTransportChannelWrapper::OnReadableState(TransportChannel* channel) {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   ASSERT(channel == channel_);
   LOG_J(LS_VERBOSE, this)
       << "DTLSTransportChannelWrapper: channel readable state changed.";
@@ -412,7 +412,7 @@ void DtlsTransportChannelWrapper::OnReadableState(TransportChannel* channel) {
 }
 
 void DtlsTransportChannelWrapper::OnWritableState(TransportChannel* channel) {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   ASSERT(channel == channel_);
   LOG_J(LS_VERBOSE, this)
       << "DTLSTransportChannelWrapper: channel writable state changed.";
@@ -454,8 +454,8 @@ void DtlsTransportChannelWrapper::OnWritableState(TransportChannel* channel) {
 
 void DtlsTransportChannelWrapper::OnReadPacket(
     TransportChannel* channel, const char* data, size_t size,
-    const talk_base::PacketTime& packet_time, int flags) {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+    const rtc::PacketTime& packet_time, int flags) {
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   ASSERT(channel == channel_);
   ASSERT(flags == 0);
 
@@ -521,14 +521,14 @@ void DtlsTransportChannelWrapper::OnReadyToSend(TransportChannel* channel) {
   }
 }
 
-void DtlsTransportChannelWrapper::OnDtlsEvent(talk_base::StreamInterface* dtls,
+void DtlsTransportChannelWrapper::OnDtlsEvent(rtc::StreamInterface* dtls,
                                               int sig, int err) {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   ASSERT(dtls == dtls_.get());
-  if (sig & talk_base::SE_OPEN) {
+  if (sig & rtc::SE_OPEN) {
     // This is the first time.
     LOG_J(LS_INFO, this) << "DTLS handshake complete.";
-    if (dtls_->GetState() == talk_base::SS_OPEN) {
+    if (dtls_->GetState() == rtc::SS_OPEN) {
       // The check for OPEN shouldn't be necessary but let's make
       // sure we don't accidentally frob the state if it's closed.
       dtls_state_ = STATE_OPEN;
@@ -537,15 +537,15 @@ void DtlsTransportChannelWrapper::OnDtlsEvent(talk_base::StreamInterface* dtls,
       set_writable(true);
     }
   }
-  if (sig & talk_base::SE_READ) {
+  if (sig & rtc::SE_READ) {
     char buf[kMaxDtlsPacketLen];
     size_t read;
-    if (dtls_->Read(buf, sizeof(buf), &read, NULL) == talk_base::SR_SUCCESS) {
-      SignalReadPacket(this, buf, read, talk_base::CreatePacketTime(0), 0);
+    if (dtls_->Read(buf, sizeof(buf), &read, NULL) == rtc::SR_SUCCESS) {
+      SignalReadPacket(this, buf, read, rtc::CreatePacketTime(0), 0);
     }
   }
-  if (sig & talk_base::SE_CLOSE) {
-    ASSERT(sig == talk_base::SE_CLOSE);  // SE_CLOSE should be by itself.
+  if (sig & rtc::SE_CLOSE) {
+    ASSERT(sig == rtc::SE_CLOSE);  // SE_CLOSE should be by itself.
     if (!err) {
       LOG_J(LS_INFO, this) << "DTLS channel closed";
     } else {

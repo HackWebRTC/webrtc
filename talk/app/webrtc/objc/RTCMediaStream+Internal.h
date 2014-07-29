@@ -32,9 +32,9 @@
 @interface RTCMediaStream (Internal)
 
 @property(nonatomic, assign, readonly)
-    talk_base::scoped_refptr<webrtc::MediaStreamInterface> mediaStream;
+    rtc::scoped_refptr<webrtc::MediaStreamInterface> mediaStream;
 
 - (id)initWithMediaStream:
-        (talk_base::scoped_refptr<webrtc::MediaStreamInterface>)mediaStream;
+        (rtc::scoped_refptr<webrtc::MediaStreamInterface>)mediaStream;
 
 @end

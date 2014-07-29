@@ -30,8 +30,8 @@
 
 #include <list>
 
-#include "talk/base/basictypes.h"
-#include "talk/base/stream.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/stream.h"
 
 namespace cricket {
 
@@ -219,13 +219,13 @@ class PseudoTcp {
   RList m_rlist;
   uint32 m_rbuf_len, m_rcv_nxt, m_rcv_wnd, m_lastrecv;
   uint8 m_rwnd_scale;  // Window scale factor.
-  talk_base::FifoBuffer m_rbuf;
+  rtc::FifoBuffer m_rbuf;
 
   // Outgoing data
   SList m_slist;
   uint32 m_sbuf_len, m_snd_nxt, m_snd_wnd, m_lastsend, m_snd_una;
   uint8 m_swnd_scale;  // Window scale factor.
-  talk_base::FifoBuffer m_sbuf;
+  rtc::FifoBuffer m_sbuf;
 
   // Maximum segment size, estimated protocol level, largest segment sent
   uint32 m_mss, m_msslevel, m_largest, m_mtu_advise;

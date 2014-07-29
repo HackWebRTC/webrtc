@@ -28,13 +28,13 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/fakesslidentity.h"
-#include "talk/base/gunit.h"
+#include "webrtc/base/fakesslidentity.h"
+#include "webrtc/base/gunit.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/transportdescription.h"
 #include "talk/p2p/base/transportdescriptionfactory.h"
 
-using talk_base::scoped_ptr;
+using rtc::scoped_ptr;
 using cricket::TransportDescriptionFactory;
 using cricket::TransportDescription;
 using cricket::TransportOptions;
@@ -42,8 +42,8 @@ using cricket::TransportOptions;
 class TransportDescriptionFactoryTest : public testing::Test {
  public:
   TransportDescriptionFactoryTest()
-      : id1_(new talk_base::FakeSSLIdentity("User1")),
-        id2_(new talk_base::FakeSSLIdentity("User2")) {
+      : id1_(new rtc::FakeSSLIdentity("User1")),
+        id2_(new rtc::FakeSSLIdentity("User2")) {
   }
   void CheckDesc(const TransportDescription* desc, const std::string& type,
                  const std::string& opt, const std::string& ice_ufrag,
@@ -86,22 +86,22 @@ class TransportDescriptionFactoryTest : public testing::Test {
 
     cricket::TransportOptions options;
     // The initial offer / answer exchange.
-    talk_base::scoped_ptr<TransportDescription> offer(f1_.CreateOffer(
+    rtc::scoped_ptr<TransportDescription> offer(f1_.CreateOffer(
         options, NULL));
-    talk_base::scoped_ptr<TransportDescription> answer(
+    rtc::scoped_ptr<TransportDescription> answer(
         f2_.CreateAnswer(offer.get(),
                          options, NULL));
 
     // Create an updated offer where we restart ice.
     options.ice_restart = true;
-    talk_base::scoped_ptr<TransportDescription> restart_offer(f1_.CreateOffer(
+    rtc::scoped_ptr<TransportDescription> restart_offer(f1_.CreateOffer(
         options, offer.get()));
 
     VerifyUfragAndPasswordChanged(dtls, offer.get(), restart_offer.get());
 
     // Create a new answer. The transport ufrag and password is changed since
     // |options.ice_restart == true|
-    talk_base::scoped_ptr<TransportDescription> restart_answer(
+    rtc::scoped_ptr<TransportDescription> restart_answer(
         f2_.CreateAnswer(restart_offer.get(), options, answer.get()));
     ASSERT_TRUE(restart_answer.get() != NULL);
 
@@ -129,8 +129,8 @@ class TransportDescriptionFactoryTest : public testing::Test {
  protected:
   TransportDescriptionFactory f1_;
   TransportDescriptionFactory f2_;
-  scoped_ptr<talk_base::SSLIdentity> id1_;
-  scoped_ptr<talk_base::SSLIdentity> id2_;
+  scoped_ptr<rtc::SSLIdentity> id1_;
+  scoped_ptr<rtc::SSLIdentity> id2_;
 };
 
 // Test that in the default case, we generate the expected G-ICE offer.

@@ -35,8 +35,8 @@
 #include <sstream>
 #include <iomanip>
 
-#include "talk/base/basictypes.h"
-#include "talk/base/socketaddress.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/socketaddress.h"
 #include "talk/p2p/base/constants.h"
 
 namespace cricket {
@@ -49,7 +49,7 @@ class Candidate {
   // candidate-attribute syntax. http://tools.ietf.org/html/rfc5245#section-15.1
   Candidate() : component_(0), priority_(0), generation_(0) {}
   Candidate(const std::string& id, int component, const std::string& protocol,
-            const talk_base::SocketAddress& address, uint32 priority,
+            const rtc::SocketAddress& address, uint32 priority,
             const std::string& username, const std::string& password,
             const std::string& type, const std::string& network_name,
             uint32 generation, const std::string& foundation)
@@ -68,8 +68,8 @@ class Candidate {
   const std::string & protocol() const { return protocol_; }
   void set_protocol(const std::string & protocol) { protocol_ = protocol; }
 
-  const talk_base::SocketAddress & address() const { return address_; }
-  void set_address(const talk_base::SocketAddress & address) {
+  const rtc::SocketAddress & address() const { return address_; }
+  void set_address(const rtc::SocketAddress & address) {
     address_ = address;
   }
 
@@ -94,7 +94,7 @@ class Candidate {
     // This can happen for e.g. when preference = 3.
     uint64 prio_val = static_cast<uint64>(preference * 127) << 24;
     priority_ = static_cast<uint32>(
-      talk_base::_min(prio_val, static_cast<uint64>(UINT_MAX)));
+      rtc::_min(prio_val, static_cast<uint64>(UINT_MAX)));
   }
 
   const std::string & username() const { return username_; }
@@ -132,11 +132,11 @@ class Candidate {
     foundation_ = foundation;
   }
 
-  const talk_base::SocketAddress & related_address() const {
+  const rtc::SocketAddress & related_address() const {
     return related_address_;
   }
   void set_related_address(
-      const talk_base::SocketAddress & related_address) {
+      const rtc::SocketAddress & related_address) {
     related_address_ = related_address;
   }
 
@@ -208,7 +208,7 @@ class Candidate {
   std::string id_;
   int component_;
   std::string protocol_;
-  talk_base::SocketAddress address_;
+  rtc::SocketAddress address_;
   uint32 priority_;
   std::string username_;
   std::string password_;
@@ -216,7 +216,7 @@ class Candidate {
   std::string network_name_;
   uint32 generation_;
   std::string foundation_;
-  talk_base::SocketAddress related_address_;
+  rtc::SocketAddress related_address_;
 };
 
 }  // namespace cricket

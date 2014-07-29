@@ -31,10 +31,10 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/messagequeue.h"
-#include "talk/base/network.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/messagequeue.h"
+#include "webrtc/base/network.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/thread.h"
 #include "talk/p2p/base/port.h"
 #include "talk/p2p/base/portallocator.h"
 
@@ -64,24 +64,24 @@ struct RelayServerConfig {
 
 class BasicPortAllocator : public PortAllocator {
  public:
-  BasicPortAllocator(talk_base::NetworkManager* network_manager,
-                     talk_base::PacketSocketFactory* socket_factory);
-  explicit BasicPortAllocator(talk_base::NetworkManager* network_manager);
-  BasicPortAllocator(talk_base::NetworkManager* network_manager,
-                     talk_base::PacketSocketFactory* socket_factory,
+  BasicPortAllocator(rtc::NetworkManager* network_manager,
+                     rtc::PacketSocketFactory* socket_factory);
+  explicit BasicPortAllocator(rtc::NetworkManager* network_manager);
+  BasicPortAllocator(rtc::NetworkManager* network_manager,
+                     rtc::PacketSocketFactory* socket_factory,
                      const ServerAddresses& stun_servers);
-  BasicPortAllocator(talk_base::NetworkManager* network_manager,
+  BasicPortAllocator(rtc::NetworkManager* network_manager,
                      const ServerAddresses& stun_servers,
-                     const talk_base::SocketAddress& relay_server_udp,
-                     const talk_base::SocketAddress& relay_server_tcp,
-                     const talk_base::SocketAddress& relay_server_ssl);
+                     const rtc::SocketAddress& relay_server_udp,
+                     const rtc::SocketAddress& relay_server_tcp,
+                     const rtc::SocketAddress& relay_server_ssl);
   virtual ~BasicPortAllocator();
 
-  talk_base::NetworkManager* network_manager() { return network_manager_; }
+  rtc::NetworkManager* network_manager() { return network_manager_; }
 
   // If socket_factory() is set to NULL each PortAllocatorSession
   // creates its own socket factory.
-  talk_base::PacketSocketFactory* socket_factory() { return socket_factory_; }
+  rtc::PacketSocketFactory* socket_factory() { return socket_factory_; }
 
   const ServerAddresses& stun_servers() const {
     return stun_servers_;
@@ -103,8 +103,8 @@ class BasicPortAllocator : public PortAllocator {
  private:
   void Construct();
 
-  talk_base::NetworkManager* network_manager_;
-  talk_base::PacketSocketFactory* socket_factory_;
+  rtc::NetworkManager* network_manager_;
+  rtc::PacketSocketFactory* socket_factory_;
   const ServerAddresses stun_servers_;
   std::vector<RelayServerConfig> relays_;
   bool allow_tcp_listen_;
@@ -114,7 +114,7 @@ struct PortConfiguration;
 class AllocationSequence;
 
 class BasicPortAllocatorSession : public PortAllocatorSession,
-                                  public talk_base::MessageHandler {
+                                  public rtc::MessageHandler {
  public:
   BasicPortAllocatorSession(BasicPortAllocator* allocator,
                             const std::string& content_name,
@@ -124,8 +124,8 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   ~BasicPortAllocatorSession();
 
   virtual BasicPortAllocator* allocator() { return allocator_; }
-  talk_base::Thread* network_thread() { return network_thread_; }
-  talk_base::PacketSocketFactory* socket_factory() { return socket_factory_; }
+  rtc::Thread* network_thread() { return network_thread_; }
+  rtc::PacketSocketFactory* socket_factory() { return socket_factory_; }
 
   virtual void StartGettingPorts();
   virtual void StopGettingPorts();
@@ -140,7 +140,7 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   virtual void ConfigReady(PortConfiguration* config);
 
   // MessageHandler.  Can be overriden if message IDs do not conflict.
-  virtual void OnMessage(talk_base::Message *message);
+  virtual void OnMessage(rtc::Message *message);
 
  private:
   class PortData {
@@ -187,7 +187,7 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   void DoAllocate();
   void OnNetworksChanged();
   void OnAllocationSequenceObjectsCreated();
-  void DisableEquivalentPhases(talk_base::Network* network,
+  void DisableEquivalentPhases(rtc::Network* network,
                                PortConfiguration* config, uint32* flags);
   void AddAllocatedPort(Port* port, AllocationSequence* seq,
                         bool prepare_address);
@@ -202,9 +202,9 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   PortData* FindPort(Port* port);
 
   BasicPortAllocator* allocator_;
-  talk_base::Thread* network_thread_;
-  talk_base::scoped_ptr<talk_base::PacketSocketFactory> owned_socket_factory_;
-  talk_base::PacketSocketFactory* socket_factory_;
+  rtc::Thread* network_thread_;
+  rtc::scoped_ptr<rtc::PacketSocketFactory> owned_socket_factory_;
+  rtc::PacketSocketFactory* socket_factory_;
   bool allocation_started_;
   bool network_manager_started_;
   bool running_;  // set when StartGetAllPorts is called
@@ -217,9 +217,9 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
 };
 
 // Records configuration information useful in creating ports.
-struct PortConfiguration : public talk_base::MessageData {
+struct PortConfiguration : public rtc::MessageData {
   // TODO(jiayl): remove |stun_address| when Chrome is updated.
-  talk_base::SocketAddress stun_address;
+  rtc::SocketAddress stun_address;
   ServerAddresses stun_servers;
   std::string username;
   std::string password;
@@ -228,7 +228,7 @@ struct PortConfiguration : public talk_base::MessageData {
   RelayList relays;
 
   // TODO(jiayl): remove this ctor when Chrome is updated.
-  PortConfiguration(const talk_base::SocketAddress& stun_address,
+  PortConfiguration(const rtc::SocketAddress& stun_address,
                     const std::string& username,
                     const std::string& password);
 

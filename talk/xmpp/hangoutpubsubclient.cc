@@ -27,7 +27,7 @@
 
 #include "talk/xmpp/hangoutpubsubclient.h"
 
-#include "talk/base/logging.h"
+#include "webrtc/base/logging.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/jid.h"
 #include "talk/xmllite/qname.h"

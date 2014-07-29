@@ -48,8 +48,8 @@ class RTCMediaStreamTrackObserver : public ObserverInterface {
 }
 
 @implementation RTCMediaStreamTrack {
-  talk_base::scoped_refptr<webrtc::MediaStreamTrackInterface> _mediaTrack;
-  talk_base::scoped_ptr<webrtc::RTCMediaStreamTrackObserver> _observer;
+  rtc::scoped_refptr<webrtc::MediaStreamTrackInterface> _mediaTrack;
+  rtc::scoped_ptr<webrtc::RTCMediaStreamTrackObserver> _observer;
 }
 
 @synthesize label;
@@ -100,7 +100,7 @@ class RTCMediaStreamTrackObserver : public ObserverInterface {
 @implementation RTCMediaStreamTrack (Internal)
 
 - (id)initWithMediaTrack:
-          (talk_base::scoped_refptr<webrtc::MediaStreamTrackInterface>)
+          (rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)
       mediaTrack {
   if (!mediaTrack) {
     NSAssert(NO, @"nil arguments not allowed");
@@ -120,7 +120,7 @@ class RTCMediaStreamTrackObserver : public ObserverInterface {
   _mediaTrack->UnregisterObserver(_observer.get());
 }
 
-- (talk_base::scoped_refptr<webrtc::MediaStreamTrackInterface>)mediaTrack {
+- (rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)mediaTrack {
   return _mediaTrack;
 }
 

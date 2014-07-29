@@ -35,19 +35,19 @@ namespace webrtc {
 
 // Define proxy for PeerConnectionInterface.
 BEGIN_PROXY_MAP(PeerConnection)
-  PROXY_METHOD0(talk_base::scoped_refptr<StreamCollectionInterface>,
+  PROXY_METHOD0(rtc::scoped_refptr<StreamCollectionInterface>,
                 local_streams)
-  PROXY_METHOD0(talk_base::scoped_refptr<StreamCollectionInterface>,
+  PROXY_METHOD0(rtc::scoped_refptr<StreamCollectionInterface>,
                 remote_streams)
   PROXY_METHOD2(bool, AddStream, MediaStreamInterface*,
                 const MediaConstraintsInterface*)
   PROXY_METHOD1(void, RemoveStream, MediaStreamInterface*)
-  PROXY_METHOD1(talk_base::scoped_refptr<DtmfSenderInterface>,
+  PROXY_METHOD1(rtc::scoped_refptr<DtmfSenderInterface>,
                 CreateDtmfSender, AudioTrackInterface*)
   PROXY_METHOD3(bool, GetStats, StatsObserver*,
                 MediaStreamTrackInterface*,
                 StatsOutputLevel)
-  PROXY_METHOD2(talk_base::scoped_refptr<DataChannelInterface>,
+  PROXY_METHOD2(rtc::scoped_refptr<DataChannelInterface>,
                 CreateDataChannel, const std::string&, const DataChannelInit*)
   PROXY_CONSTMETHOD0(const SessionDescriptionInterface*, local_description)
   PROXY_CONSTMETHOD0(const SessionDescriptionInterface*, remote_description)

@@ -27,7 +27,7 @@
 
 #include "talk/xmpp/jingleinfotask.h"
 
-#include "talk/base/socketaddress.h"
+#include "webrtc/base/socketaddress.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/xmppclient.h"
 #include "talk/xmpp/xmpptask.h"
@@ -41,7 +41,7 @@ class JingleInfoTask::JingleInfoGetTask : public XmppTask {
         done_(false) {}
 
   virtual int ProcessStart() {
-    talk_base::scoped_ptr<XmlElement> get(
+    rtc::scoped_ptr<XmlElement> get(
         MakeIq(STR_GET, Jid(), task_id()));
     get->AddElement(new XmlElement(QN_JINGLE_INFO_QUERY, true));
     if (SendStanza(get.get()) != XMPP_RETURN_OK) {
@@ -101,7 +101,7 @@ JingleInfoTask::HandleStanza(const XmlElement * stanza) {
 int
 JingleInfoTask::ProcessStart() {
   std::vector<std::string> relay_hosts;
-  std::vector<talk_base::SocketAddress> stun_hosts;
+  std::vector<rtc::SocketAddress> stun_hosts;
   std::string relay_token;
   const XmlElement * stanza = NextStanza();
   if (stanza == NULL)
@@ -116,7 +116,7 @@ JingleInfoTask::ProcessStart() {
       std::string host = server->Attr(QN_JINGLE_INFO_HOST);
       std::string port = server->Attr(QN_JINGLE_INFO_UDP);
       if (host != STR_EMPTY && host != STR_EMPTY) {
-        stun_hosts.push_back(talk_base::SocketAddress(host, atoi(port.c_str())));
+        stun_hosts.push_back(rtc::SocketAddress(host, atoi(port.c_str())));
       }
     }
   }

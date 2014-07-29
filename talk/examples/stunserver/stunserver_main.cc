@@ -31,7 +31,7 @@
 
 #include <iostream>
 
-#include "talk/base/thread.h"
+#include "webrtc/base/thread.h"
 #include "talk/p2p/base/stunserver.h"
 
 using namespace cricket;
@@ -42,16 +42,16 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  talk_base::SocketAddress server_addr;
+  rtc::SocketAddress server_addr;
   if (!server_addr.FromString(argv[1])) {
     std::cerr << "Unable to parse IP address: " << argv[1];
     return 1;
   }
 
-  talk_base::Thread *pthMain = talk_base::Thread::Current();
+  rtc::Thread *pthMain = rtc::Thread::Current();
 
-  talk_base::AsyncUDPSocket* server_socket =
-      talk_base::AsyncUDPSocket::Create(pthMain->socketserver(), server_addr);
+  rtc::AsyncUDPSocket* server_socket =
+      rtc::AsyncUDPSocket::Create(pthMain->socketserver(), server_addr);
   if (!server_socket) {
     std::cerr << "Failed to create a UDP socket" << std::endl;
     return 1;

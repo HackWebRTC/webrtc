@@ -27,10 +27,10 @@
 
 #include "talk/media/devices/filevideocapturer.h"
 
-#include "talk/base/bytebuffer.h"
-#include "talk/base/criticalsection.h"
-#include "talk/base/logging.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/bytebuffer.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/thread.h"
 
 namespace cricket {
 
@@ -53,7 +53,7 @@ void VideoRecorder::Stop() {
 }
 
 bool VideoRecorder::RecordFrame(const CapturedFrame& frame) {
-  if (talk_base::SS_CLOSED == video_file_.GetState()) {
+  if (rtc::SS_CLOSED == video_file_.GetState()) {
     LOG(LS_ERROR) << "File not opened yet";
     return false;
   }
@@ -66,7 +66,7 @@ bool VideoRecorder::RecordFrame(const CapturedFrame& frame) {
 
   if (write_header_) {
     // Convert the frame header to bytebuffer.
-    talk_base::ByteBuffer buffer;
+    rtc::ByteBuffer buffer;
     buffer.WriteUInt32(frame.width);
     buffer.WriteUInt32(frame.height);
     buffer.WriteUInt32(frame.fourcc);
@@ -77,7 +77,7 @@ bool VideoRecorder::RecordFrame(const CapturedFrame& frame) {
     buffer.WriteUInt32(size);
 
     // Write the bytebuffer to file.
-    if (talk_base::SR_SUCCESS != video_file_.Write(buffer.Data(),
+    if (rtc::SR_SUCCESS != video_file_.Write(buffer.Data(),
                                                    buffer.Length(),
                                                    NULL,
                                                    NULL)) {
@@ -86,7 +86,7 @@ bool VideoRecorder::RecordFrame(const CapturedFrame& frame) {
     }
   }
   // Write the frame data to file.
-  if (talk_base::SR_SUCCESS != video_file_.Write(frame.data,
+  if (rtc::SR_SUCCESS != video_file_.Write(frame.data,
                                                  size,
                                                  NULL,
                                                  NULL)) {
@@ -102,7 +102,7 @@ bool VideoRecorder::RecordFrame(const CapturedFrame& frame) {
 // frames from a file.
 ///////////////////////////////////////////////////////////////////////
 class FileVideoCapturer::FileReadThread
-    : public talk_base::Thread, public talk_base::MessageHandler {
+    : public rtc::Thread, public rtc::MessageHandler {
  public:
   explicit FileReadThread(FileVideoCapturer* capturer)
       : capturer_(capturer),
@@ -123,12 +123,12 @@ class FileVideoCapturer::FileReadThread
       Thread::Run();
     }
 
-    talk_base::CritScope cs(&crit_);
+    rtc::CritScope cs(&crit_);
     finished_ = true;
   }
 
   // Override virtual method of parent MessageHandler. Context: Worker Thread.
-  virtual void OnMessage(talk_base::Message* /*pmsg*/) {
+  virtual void OnMessage(rtc::Message* /*pmsg*/) {
     int waiting_time_ms = 0;
     if (capturer_ && capturer_->ReadFrame(false, &waiting_time_ms)) {
       PostDelayed(waiting_time_ms, this);
@@ -139,13 +139,13 @@ class FileVideoCapturer::FileReadThread
 
   // Check if Run() is finished.
   bool Finished() const {
-    talk_base::CritScope cs(&crit_);
+    rtc::CritScope cs(&crit_);
     return finished_;
   }
 
  private:
   FileVideoCapturer* capturer_;
-  mutable talk_base::CriticalSection crit_;
+  mutable rtc::CriticalSection crit_;
   bool finished_;
 
   DISALLOW_COPY_AND_ASSIGN(FileReadThread);
@@ -188,7 +188,7 @@ bool FileVideoCapturer::Init(const Device& device) {
   }
   // Read the first frame's header to determine the supported format.
   CapturedFrame frame;
-  if (talk_base::SR_SUCCESS != ReadFrameHeader(&frame)) {
+  if (rtc::SR_SUCCESS != ReadFrameHeader(&frame)) {
     LOG(LS_ERROR) << "Failed to read the first frame header";
     video_file_.Close();
     return false;
@@ -230,7 +230,7 @@ CaptureState FileVideoCapturer::Start(const VideoFormat& capture_format) {
     return CS_FAILED;
   }
 
-  if (talk_base::SS_CLOSED == video_file_.GetState()) {
+  if (rtc::SS_CLOSED == video_file_.GetState()) {
     LOG(LS_ERROR) << "File not opened yet";
     return CS_NO_DEVICE;
   } else if (!video_file_.SetPosition(0)) {
@@ -242,7 +242,7 @@ CaptureState FileVideoCapturer::Start(const VideoFormat& capture_format) {
   // Create a thread to read the file.
   file_read_thread_ = new FileReadThread(this);
   start_time_ns_ = kNumNanoSecsPerMilliSec *
-      static_cast<int64>(talk_base::Time());
+      static_cast<int64>(rtc::Time());
   bool ret = file_read_thread_->Start();
   if (ret) {
     LOG(LS_INFO) << "File video capturer '" << GetId() << "' started";
@@ -275,13 +275,13 @@ bool FileVideoCapturer::GetPreferredFourccs(std::vector<uint32>* fourccs) {
   return true;
 }
 
-talk_base::StreamResult FileVideoCapturer::ReadFrameHeader(
+rtc::StreamResult FileVideoCapturer::ReadFrameHeader(
     CapturedFrame* frame) {
   // We first read kFrameHeaderSize bytes from the file stream to a memory
   // buffer, then construct a bytebuffer from the memory buffer, and finally
   // read the frame header from the bytebuffer.
   char header[CapturedFrame::kFrameHeaderSize];
-  talk_base::StreamResult sr;
+  rtc::StreamResult sr;
   size_t bytes_read;
   int error;
   sr = video_file_.Read(header,
@@ -290,11 +290,11 @@ talk_base::StreamResult FileVideoCapturer::ReadFrameHeader(
                         &error);
   LOG(LS_VERBOSE) << "Read frame header: stream_result = " << sr
                   << ", bytes read = " << bytes_read << ", error = " << error;
-  if (talk_base::SR_SUCCESS == sr) {
+  if (rtc::SR_SUCCESS == sr) {
     if (CapturedFrame::kFrameHeaderSize != bytes_read) {
-      return talk_base::SR_EOS;
+      return rtc::SR_EOS;
     }
-    talk_base::ByteBuffer buffer(header, CapturedFrame::kFrameHeaderSize);
+    rtc::ByteBuffer buffer(header, CapturedFrame::kFrameHeaderSize);
     buffer.ReadUInt32(reinterpret_cast<uint32*>(&frame->width));
     buffer.ReadUInt32(reinterpret_cast<uint32*>(&frame->height));
     buffer.ReadUInt32(&frame->fourcc);
@@ -310,7 +310,7 @@ talk_base::StreamResult FileVideoCapturer::ReadFrameHeader(
 
 // Executed in the context of FileReadThread.
 bool FileVideoCapturer::ReadFrame(bool first_frame, int* wait_time_ms) {
-  uint32 start_read_time_ms = talk_base::Time();
+  uint32 start_read_time_ms = rtc::Time();
 
   // 1. Signal the previously read frame to downstream.
   if (!first_frame) {
@@ -321,14 +321,14 @@ bool FileVideoCapturer::ReadFrame(bool first_frame, int* wait_time_ms) {
   }
 
   // 2. Read the next frame.
-  if (talk_base::SS_CLOSED == video_file_.GetState()) {
+  if (rtc::SS_CLOSED == video_file_.GetState()) {
     LOG(LS_ERROR) << "File not opened yet";
     return false;
   }
   // 2.1 Read the frame header.
-  talk_base::StreamResult result = ReadFrameHeader(&captured_frame_);
-  if (talk_base::SR_EOS == result) {  // Loop back if repeat.
-    if (repeat_ != talk_base::kForever) {
+  rtc::StreamResult result = ReadFrameHeader(&captured_frame_);
+  if (rtc::SR_EOS == result) {  // Loop back if repeat.
+    if (repeat_ != rtc::kForever) {
       if (repeat_ > 0) {
         --repeat_;
       } else {
@@ -340,7 +340,7 @@ bool FileVideoCapturer::ReadFrame(bool first_frame, int* wait_time_ms) {
       result = ReadFrameHeader(&captured_frame_);
     }
   }
-  if (talk_base::SR_SUCCESS != result) {
+  if (rtc::SR_SUCCESS != result) {
     LOG(LS_ERROR) << "Failed to read the frame header";
     return false;
   }
@@ -351,7 +351,7 @@ bool FileVideoCapturer::ReadFrame(bool first_frame, int* wait_time_ms) {
     captured_frame_.data = new char[frame_buffer_size_];
   }
   // 2.3 Read the frame adata.
-  if (talk_base::SR_SUCCESS != video_file_.Read(captured_frame_.data,
+  if (rtc::SR_SUCCESS != video_file_.Read(captured_frame_.data,
                                                 captured_frame_.data_size,
                                                 NULL, NULL)) {
     LOG(LS_ERROR) << "Failed to read frame data";
@@ -370,7 +370,7 @@ bool FileVideoCapturer::ReadFrame(bool first_frame, int* wait_time_ms) {
         GetCaptureFormat()->interval :
         captured_frame_.time_stamp - last_frame_timestamp_ns_;
     int interval_ms = static_cast<int>(interval_ns / kNumNanoSecsPerMilliSec);
-    interval_ms -= talk_base::Time() - start_read_time_ms;
+    interval_ms -= rtc::Time() - start_read_time_ms;
     if (interval_ms > 0) {
       *wait_time_ms = interval_ms;
     }

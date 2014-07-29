@@ -31,7 +31,7 @@
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/notifier.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
-#include "talk/base/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "talk/media/base/mediachannel.h"
 
 // LocalAudioSource implements AudioSourceInterface.
@@ -44,7 +44,7 @@ class MediaConstraintsInterface;
 class LocalAudioSource : public Notifier<AudioSourceInterface> {
  public:
   // Creates an instance of LocalAudioSource.
-  static talk_base::scoped_refptr<LocalAudioSource> Create(
+  static rtc::scoped_refptr<LocalAudioSource> Create(
       const PeerConnectionFactoryInterface::Options& options,
       const MediaConstraintsInterface* constraints);
 

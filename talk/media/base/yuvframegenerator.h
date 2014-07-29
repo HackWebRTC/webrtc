@@ -12,7 +12,7 @@
 #ifndef TALK_MEDIA_BASE_YUVFRAMEGENERATOR_H_
 #define TALK_MEDIA_BASE_YUVFRAMEGENERATOR_H_
 
-#include "talk/base/basictypes.h"
+#include "webrtc/base/basictypes.h"
 
 namespace cricket {
 

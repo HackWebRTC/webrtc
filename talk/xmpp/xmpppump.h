@@ -28,10 +28,10 @@
 #ifndef TALK_XMPP_XMPPPUMP_H_
 #define TALK_XMPP_XMPPPUMP_H_
 
-#include "talk/base/messagequeue.h"
-#include "talk/base/taskrunner.h"
-#include "talk/base/thread.h"
-#include "talk/base/timeutils.h"
+#include "webrtc/base/messagequeue.h"
+#include "webrtc/base/taskrunner.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/base/timeutils.h"
 #include "talk/xmpp/xmppclient.h"
 #include "talk/xmpp/xmppengine.h"
 #include "talk/xmpp/xmpptask.h"
@@ -46,7 +46,7 @@ public:
   virtual void OnStateChange(buzz::XmppEngine::State state) = 0;
 };
 
-class XmppPump : public talk_base::MessageHandler, public talk_base::TaskRunner {
+class XmppPump : public rtc::MessageHandler, public rtc::TaskRunner {
 public:
   XmppPump(buzz::XmppPumpNotify * notify = NULL);
 
@@ -63,7 +63,7 @@ public:
 
   int64 CurrentTime();
 
-  void OnMessage(talk_base::Message *pmsg);
+  void OnMessage(rtc::Message *pmsg);
 
   buzz::XmppReturnStatus SendStanza(const buzz::XmlElement *stanza);
 

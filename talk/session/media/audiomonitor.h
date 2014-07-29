@@ -28,8 +28,8 @@
 #ifndef TALK_SESSION_MEDIA_AUDIOMONITOR_H_
 #define TALK_SESSION_MEDIA_AUDIOMONITOR_H_
 
-#include "talk/base/sigslot.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/thread.h"
 #include "talk/p2p/base/port.h"
 #include <vector>
 
@@ -44,28 +44,28 @@ struct AudioInfo {
   StreamList active_streams; // ssrcs contributing to output_level
 };
 
-class AudioMonitor : public talk_base::MessageHandler,
+class AudioMonitor : public rtc::MessageHandler,
     public sigslot::has_slots<> {
  public:
-  AudioMonitor(VoiceChannel* voice_channel, talk_base::Thread *monitor_thread);
+  AudioMonitor(VoiceChannel* voice_channel, rtc::Thread *monitor_thread);
   ~AudioMonitor();
 
   void Start(int cms);
   void Stop();
 
   VoiceChannel* voice_channel();
-  talk_base::Thread *monitor_thread();
+  rtc::Thread *monitor_thread();
 
   sigslot::signal2<AudioMonitor*, const AudioInfo&> SignalUpdate;
 
  protected:
-  void OnMessage(talk_base::Message *message);
+  void OnMessage(rtc::Message *message);
   void PollVoiceChannel();
 
   AudioInfo audio_info_;
   VoiceChannel* voice_channel_;
-  talk_base::Thread* monitoring_thread_;
-  talk_base::CriticalSection crit_;
+  rtc::Thread* monitoring_thread_;
+  rtc::CriticalSection crit_;
   uint32 rate_;
   bool monitoring_;
 };

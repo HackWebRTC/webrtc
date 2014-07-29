@@ -29,8 +29,8 @@
 #ifndef TALK_MEDIA_DEVICES_GTKVIDEORENDERER_H_
 #define TALK_MEDIA_DEVICES_GTKVIDEORENDERER_H_
 
-#include "talk/base/basictypes.h"
-#include "talk/base/scoped_ptr.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "talk/media/base/videorenderer.h"
 
 typedef struct _GtkWidget GtkWidget;  // forward declaration, defined in gtk.h
@@ -56,7 +56,7 @@ class GtkVideoRenderer : public VideoRenderer {
   // Check if the window has been closed.
   bool IsClosed() const;
 
-  talk_base::scoped_ptr<uint8[]> image_;
+  rtc::scoped_ptr<uint8[]> image_;
   GtkWidget* window_;
   GtkWidget* draw_area_;
   // The initial position of the window.

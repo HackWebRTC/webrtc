@@ -47,7 +47,7 @@ MobileDeviceManager::~MobileDeviceManager() {}
 
 bool MobileDeviceManager::GetVideoCaptureDevices(std::vector<Device>* devs) {
   devs->clear();
-  talk_base::scoped_ptr<webrtc::VideoCaptureModule::DeviceInfo> info(
+  rtc::scoped_ptr<webrtc::VideoCaptureModule::DeviceInfo> info(
       webrtc::VideoCaptureFactory::CreateDeviceInfo(0));
   if (!info)
     return false;

@@ -30,9 +30,9 @@
 #include <utility>
 #include <vector>
 
-#include "talk/base/base64.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/timing.h"
+#include "webrtc/base/base64.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/timing.h"
 #include "talk/session/media/channel.h"
 
 namespace webrtc {
@@ -199,7 +199,7 @@ void StatsReport::AddValue(StatsReport::StatsValueName name,
 }
 
 void StatsReport::AddValue(StatsReport::StatsValueName name, int64 value) {
-  AddValue(name, talk_base::ToString<int64>(value));
+  AddValue(name, rtc::ToString<int64>(value));
 }
 
 template <typename T>
@@ -208,7 +208,7 @@ void StatsReport::AddValue(StatsReport::StatsValueName name,
   std::ostringstream oss;
   oss << "[";
   for (size_t i = 0; i < value.size(); ++i) {
-    oss << talk_base::ToString<T>(value[i]);
+    oss << rtc::ToString<T>(value[i]);
     if (i != value.size() - 1)
       oss << ", ";
   }
@@ -237,7 +237,7 @@ namespace {
 typedef std::map<std::string, StatsReport> StatsMap;
 
 double GetTimeNow() {
-  return talk_base::Timing::WallTimeNow() * talk_base::kNumMillisecsPerSec;
+  return rtc::Timing::WallTimeNow() * rtc::kNumMillisecsPerSec;
 }
 
 bool GetTransportIdFromProxy(const cricket::ProxyTransportMap& map,
@@ -325,7 +325,7 @@ void ExtractStats(const cricket::VoiceReceiverInfo& info, StatsReport* report) {
   report->AddValue(StatsReport::kStatsValueNameCurrentDelayMs,
                    info.delay_estimate_ms);
   report->AddValue(StatsReport::kStatsValueNameExpandRate,
-                   talk_base::ToString<float>(info.expand_rate));
+                   rtc::ToString<float>(info.expand_rate));
   report->AddValue(StatsReport::kStatsValueNamePacketsReceived,
                    info.packets_rcvd);
   report->AddValue(StatsReport::kStatsValueNamePacketsLost,
@@ -360,7 +360,7 @@ void ExtractStats(const cricket::VoiceSenderInfo& info, StatsReport* report) {
                    info.jitter_ms);
   report->AddValue(StatsReport::kStatsValueNameRtt, info.rtt_ms);
   report->AddValue(StatsReport::kStatsValueNameEchoCancellationQualityMin,
-                   talk_base::ToString<float>(info.aec_quality_min));
+                   rtc::ToString<float>(info.aec_quality_min));
   report->AddValue(StatsReport::kStatsValueNameEchoDelayMedian,
                    info.echo_delay_median_ms);
   report->AddValue(StatsReport::kStatsValueNameEchoDelayStdDev,
@@ -671,7 +671,7 @@ StatsReport* StatsCollector::PrepareLocalReport(
     uint32 ssrc,
     const std::string& transport_id,
     TrackDirection direction) {
-  const std::string ssrc_id = talk_base::ToString<uint32>(ssrc);
+  const std::string ssrc_id = rtc::ToString<uint32>(ssrc);
   StatsMap::iterator it = reports_.find(StatsId(
       StatsReport::kStatsReportTypeSsrc, ssrc_id, direction));
 
@@ -714,7 +714,7 @@ StatsReport* StatsCollector::PrepareRemoteReport(
     uint32 ssrc,
     const std::string& transport_id,
     TrackDirection direction) {
-  const std::string ssrc_id = talk_base::ToString<uint32>(ssrc);
+  const std::string ssrc_id = rtc::ToString<uint32>(ssrc);
   StatsMap::iterator it = reports_.find(StatsId(
       StatsReport::kStatsReportTypeRemoteSsrc, ssrc_id, direction));
 
@@ -751,7 +751,7 @@ StatsReport* StatsCollector::PrepareRemoteReport(
 }
 
 std::string StatsCollector::AddOneCertificateReport(
-    const talk_base::SSLCertificate* cert, const std::string& issuer_id) {
+    const rtc::SSLCertificate* cert, const std::string& issuer_id) {
   // TODO(bemasc): Move this computation to a helper class that caches these
   // values to reduce CPU use in GetStats.  This will require adding a fast
   // SSLCertificate::Equals() method to detect certificate changes.
@@ -760,8 +760,8 @@ std::string StatsCollector::AddOneCertificateReport(
   if (!cert->GetSignatureDigestAlgorithm(&digest_algorithm))
     return std::string();
 
-  talk_base::scoped_ptr<talk_base::SSLFingerprint> ssl_fingerprint(
-      talk_base::SSLFingerprint::Create(digest_algorithm, cert));
+  rtc::scoped_ptr<rtc::SSLFingerprint> ssl_fingerprint(
+      rtc::SSLFingerprint::Create(digest_algorithm, cert));
 
   // SSLFingerprint::Create can fail if the algorithm returned by
   // SSLCertificate::GetSignatureDigestAlgorithm is not supported by the
@@ -772,10 +772,10 @@ std::string StatsCollector::AddOneCertificateReport(
 
   std::string fingerprint = ssl_fingerprint->GetRfc4572Fingerprint();
 
-  talk_base::Buffer der_buffer;
+  rtc::Buffer der_buffer;
   cert->ToDER(&der_buffer);
   std::string der_base64;
-  talk_base::Base64::EncodeFromArray(
+  rtc::Base64::EncodeFromArray(
       der_buffer.data(), der_buffer.length(), &der_base64);
 
   StatsReport report;
@@ -793,7 +793,7 @@ std::string StatsCollector::AddOneCertificateReport(
 }
 
 std::string StatsCollector::AddCertificateReports(
-    const talk_base::SSLCertificate* cert) {
+    const rtc::SSLCertificate* cert) {
   // Produces a chain of StatsReports representing this certificate and the rest
   // of its chain, and adds those reports to |reports_|.  The return value is
   // the id of the leaf report.  The provided cert must be non-null, so at least
@@ -802,14 +802,14 @@ std::string StatsCollector::AddCertificateReports(
   ASSERT(cert != NULL);
 
   std::string issuer_id;
-  talk_base::scoped_ptr<talk_base::SSLCertChain> chain;
+  rtc::scoped_ptr<rtc::SSLCertChain> chain;
   if (cert->GetChain(chain.accept())) {
     // This loop runs in reverse, i.e. from root to leaf, so that each
     // certificate's issuer's report ID is known before the child certificate's
     // report is generated.  The root certificate does not have an issuer ID
     // value.
     for (ptrdiff_t i = chain->GetSize() - 1; i >= 0; --i) {
-      const talk_base::SSLCertificate& cert_i = chain->Get(i);
+      const rtc::SSLCertificate& cert_i = chain->Get(i);
       issuer_id = AddOneCertificateReport(&cert_i, issuer_id);
     }
   }
@@ -849,14 +849,14 @@ void StatsCollector::ExtractSessionInfo() {
 
       cricket::Transport* transport =
           session_->GetTransport(transport_iter->second.content_name);
-      talk_base::scoped_ptr<talk_base::SSLIdentity> identity;
+      rtc::scoped_ptr<rtc::SSLIdentity> identity;
       if (transport && transport->GetIdentity(identity.accept())) {
         local_cert_report_id =
             AddCertificateReports(&(identity->certificate()));
       }
 
       transport = session_->GetTransport(transport_iter->second.content_name);
-      talk_base::scoped_ptr<talk_base::SSLCertificate> cert;
+      rtc::scoped_ptr<rtc::SSLCertificate> cert;
       if (transport && transport->GetRemoteCertificate(cert.accept())) {
         remote_cert_report_id = AddCertificateReports(cert.get());
       }
@@ -1018,7 +1018,7 @@ void StatsCollector::UpdateStatsFromExistingLocalAudioTracks() {
        it != local_audio_tracks_.end(); ++it) {
     AudioTrackInterface* track = it->first;
     uint32 ssrc = it->second;
-    std::string ssrc_id = talk_base::ToString<uint32>(ssrc);
+    std::string ssrc_id = rtc::ToString<uint32>(ssrc);
     StatsReport* report = GetReport(StatsReport::kStatsReportTypeSsrc,
                                     ssrc_id,
                                     kSending);
@@ -1051,10 +1051,10 @@ void StatsCollector::UpdateReportFromAudioTrack(AudioTrackInterface* track,
   int signal_level = 0;
   if (track->GetSignalLevel(&signal_level)) {
     report->ReplaceValue(StatsReport::kStatsValueNameAudioInputLevel,
-                         talk_base::ToString<int>(signal_level));
+                         rtc::ToString<int>(signal_level));
   }
 
-  talk_base::scoped_refptr<AudioProcessorInterface> audio_processor(
+  rtc::scoped_refptr<AudioProcessorInterface> audio_processor(
       track->GetAudioProcessor());
   if (audio_processor.get() == NULL)
     return;
@@ -1064,16 +1064,16 @@ void StatsCollector::UpdateReportFromAudioTrack(AudioTrackInterface* track,
   report->ReplaceValue(StatsReport::kStatsValueNameTypingNoiseState,
                        stats.typing_noise_detected ? "true" : "false");
   report->ReplaceValue(StatsReport::kStatsValueNameEchoReturnLoss,
-                       talk_base::ToString<int>(stats.echo_return_loss));
+                       rtc::ToString<int>(stats.echo_return_loss));
   report->ReplaceValue(
       StatsReport::kStatsValueNameEchoReturnLossEnhancement,
-      talk_base::ToString<int>(stats.echo_return_loss_enhancement));
+      rtc::ToString<int>(stats.echo_return_loss_enhancement));
   report->ReplaceValue(StatsReport::kStatsValueNameEchoDelayMedian,
-                       talk_base::ToString<int>(stats.echo_delay_median_ms));
+                       rtc::ToString<int>(stats.echo_delay_median_ms));
   report->ReplaceValue(StatsReport::kStatsValueNameEchoCancellationQualityMin,
-                       talk_base::ToString<float>(stats.aec_quality_min));
+                       rtc::ToString<float>(stats.aec_quality_min));
   report->ReplaceValue(StatsReport::kStatsValueNameEchoDelayStdDev,
-                       talk_base::ToString<int>(stats.echo_delay_std_ms));
+                       rtc::ToString<int>(stats.echo_delay_std_ms));
 }
 
 bool StatsCollector::GetTrackIdBySsrc(uint32 ssrc, std::string* track_id,

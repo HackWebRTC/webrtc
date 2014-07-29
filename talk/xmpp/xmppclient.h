@@ -29,9 +29,9 @@
 #define TALK_XMPP_XMPPCLIENT_H_
 
 #include <string>
-#include "talk/base/basicdefs.h"
-#include "talk/base/sigslot.h"
-#include "talk/base/task.h"
+#include "webrtc/base/basicdefs.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/task.h"
 #include "talk/xmpp/asyncsocket.h"
 #include "talk/xmpp/xmppclientsettings.h"
 #include "talk/xmpp/xmppengine.h"
@@ -73,7 +73,7 @@ class XmppClient : public XmppTaskParentInterface,
                    public sigslot::has_slots<>
 {
 public:
-  explicit XmppClient(talk_base::TaskParent * parent);
+  explicit XmppClient(rtc::TaskParent * parent);
   virtual ~XmppClient();
 
   XmppReturnStatus Connect(const XmppClientSettings & settings,
@@ -154,7 +154,7 @@ public:
 
   class Private;
   friend class Private;
-  talk_base::scoped_ptr<Private> d_;
+  rtc::scoped_ptr<Private> d_;
 
   bool delivering_signal_;
   bool valid_;

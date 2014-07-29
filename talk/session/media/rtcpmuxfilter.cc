@@ -27,7 +27,7 @@
 
 #include "talk/session/media/rtcpmuxfilter.h"
 
-#include "talk/base/logging.h"
+#include "webrtc/base/logging.h"
 
 namespace cricket {
 

@@ -28,9 +28,9 @@
 #include <string>
 #include <sstream>
 #include <iostream>
-#include "talk/base/common.h"
-#include "talk/base/gunit.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/thread.h"
 #include "talk/xmllite/xmlelement.h"
 
 using buzz::QName;
@@ -230,7 +230,7 @@ TEST(XmlElementTest, TestNameSearch) {
   delete element;
 }
 
-class XmlElementCreatorThread : public talk_base::Thread {
+class XmlElementCreatorThread : public rtc::Thread {
  public:
   XmlElementCreatorThread(int count, buzz::QName qname) :
       count_(count), qname_(qname) {}
@@ -261,7 +261,7 @@ TEST(XmlElementTest, TestMultithread) {
   int elem_count = 100;  // Was 100000, but that's too slow.
   buzz::QName qname("foo", "bar");
 
-  std::vector<talk_base::Thread*> threads;
+  std::vector<rtc::Thread*> threads;
   for (int i = 0; i < thread_count; i++) {
     threads.push_back(
         new XmlElementCreatorThread(elem_count, qname));

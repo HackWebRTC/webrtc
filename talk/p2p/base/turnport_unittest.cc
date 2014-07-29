@@ -28,19 +28,19 @@
 #include <dirent.h>
 #endif
 
-#include "talk/base/asynctcpsocket.h"
-#include "talk/base/buffer.h"
-#include "talk/base/dscp.h"
-#include "talk/base/firewallsocketserver.h"
-#include "talk/base/logging.h"
-#include "talk/base/gunit.h"
-#include "talk/base/helpers.h"
-#include "talk/base/physicalsocketserver.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/socketaddress.h"
-#include "talk/base/ssladapter.h"
-#include "talk/base/thread.h"
-#include "talk/base/virtualsocketserver.h"
+#include "webrtc/base/asynctcpsocket.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/dscp.h"
+#include "webrtc/base/firewallsocketserver.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/physicalsocketserver.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/socketaddress.h"
+#include "webrtc/base/ssladapter.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/base/virtualsocketserver.h"
 #include "talk/p2p/base/basicpacketsocketfactory.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/tcpport.h"
@@ -48,7 +48,7 @@
 #include "talk/p2p/base/turnport.h"
 #include "talk/p2p/base/udpport.h"
 
-using talk_base::SocketAddress;
+using rtc::SocketAddress;
 using cricket::Connection;
 using cricket::Port;
 using cricket::PortInterface;
@@ -103,15 +103,15 @@ static int GetFDCount() {
 
 class TurnPortTest : public testing::Test,
                      public sigslot::has_slots<>,
-                     public talk_base::MessageHandler {
+                     public rtc::MessageHandler {
  public:
   TurnPortTest()
-      : main_(talk_base::Thread::Current()),
-        pss_(new talk_base::PhysicalSocketServer),
-        ss_(new talk_base::VirtualSocketServer(pss_.get())),
+      : main_(rtc::Thread::Current()),
+        pss_(new rtc::PhysicalSocketServer),
+        ss_(new rtc::VirtualSocketServer(pss_.get())),
         ss_scope_(ss_.get()),
-        network_("unittest", "unittest", talk_base::IPAddress(INADDR_ANY), 32),
-        socket_factory_(talk_base::Thread::Current()),
+        network_("unittest", "unittest", rtc::IPAddress(INADDR_ANY), 32),
+        socket_factory_(rtc::Thread::Current()),
         turn_server_(main_, kTurnUdpIntAddr, kTurnUdpExtAddr),
         turn_ready_(false),
         turn_error_(false),
@@ -119,18 +119,18 @@ class TurnPortTest : public testing::Test,
         turn_create_permission_success_(false),
         udp_ready_(false),
         test_finish_(false) {
-    network_.AddIP(talk_base::IPAddress(INADDR_ANY));
+    network_.AddIP(rtc::IPAddress(INADDR_ANY));
   }
 
   static void SetUpTestCase() {
-    talk_base::InitializeSSL();
+    rtc::InitializeSSL();
   }
 
   static void TearDownTestCase() {
-    talk_base::CleanupSSL();
+    rtc::CleanupSSL();
   }
 
-  virtual void OnMessage(talk_base::Message* msg) {
+  virtual void OnMessage(rtc::Message* msg) {
     ASSERT(msg->message_id == MSG_TESTFINISH);
     if (msg->message_id == MSG_TESTFINISH)
       test_finish_ = true;
@@ -156,25 +156,25 @@ class TurnPortTest : public testing::Test,
     }
   }
   void OnTurnReadPacket(Connection* conn, const char* data, size_t size,
-                        const talk_base::PacketTime& packet_time) {
-    turn_packets_.push_back(talk_base::Buffer(data, size));
+                        const rtc::PacketTime& packet_time) {
+    turn_packets_.push_back(rtc::Buffer(data, size));
   }
   void OnUdpPortComplete(Port* port) {
     udp_ready_ = true;
   }
   void OnUdpReadPacket(Connection* conn, const char* data, size_t size,
-                       const talk_base::PacketTime& packet_time) {
-    udp_packets_.push_back(talk_base::Buffer(data, size));
+                       const rtc::PacketTime& packet_time) {
+    udp_packets_.push_back(rtc::Buffer(data, size));
   }
-  void OnSocketReadPacket(talk_base::AsyncPacketSocket* socket,
+  void OnSocketReadPacket(rtc::AsyncPacketSocket* socket,
                           const char* data, size_t size,
-                          const talk_base::SocketAddress& remote_addr,
-                          const talk_base::PacketTime& packet_time) {
+                          const rtc::SocketAddress& remote_addr,
+                          const rtc::PacketTime& packet_time) {
     turn_port_->HandleIncomingPacket(socket, data, size, remote_addr,
                                      packet_time);
   }
-  talk_base::AsyncSocket* CreateServerSocket(const SocketAddress addr) {
-    talk_base::AsyncSocket* socket = ss_->CreateAsyncSocket(SOCK_STREAM);
+  rtc::AsyncSocket* CreateServerSocket(const SocketAddress addr) {
+    rtc::AsyncSocket* socket = ss_->CreateAsyncSocket(SOCK_STREAM);
     EXPECT_GE(socket->Bind(addr), 0);
     EXPECT_GE(socket->Listen(5), 0);
     return socket;
@@ -185,7 +185,7 @@ class TurnPortTest : public testing::Test,
                       const cricket::ProtocolAddress& server_address) {
     CreateTurnPort(kLocalAddr1, username, password, server_address);
   }
-  void CreateTurnPort(const talk_base::SocketAddress& local_address,
+  void CreateTurnPort(const rtc::SocketAddress& local_address,
                       const std::string& username,
                       const std::string& password,
                       const cricket::ProtocolAddress& server_address) {
@@ -209,7 +209,7 @@ class TurnPortTest : public testing::Test,
     ASSERT(server_address.proto == cricket::PROTO_UDP);
 
     socket_.reset(socket_factory_.CreateUdpSocket(
-        talk_base::SocketAddress(kLocalAddr1.ipaddr(), 0), 0, 0));
+        rtc::SocketAddress(kLocalAddr1.ipaddr(), 0), 0, 0));
     ASSERT_TRUE(socket_ != NULL);
     socket_->SignalReadPacket.connect(this, &TurnPortTest::OnSocketReadPacket);
 
@@ -330,31 +330,31 @@ class TurnPortTest : public testing::Test,
   }
 
  protected:
-  talk_base::Thread* main_;
-  talk_base::scoped_ptr<talk_base::PhysicalSocketServer> pss_;
-  talk_base::scoped_ptr<talk_base::VirtualSocketServer> ss_;
-  talk_base::SocketServerScope ss_scope_;
-  talk_base::Network network_;
-  talk_base::BasicPacketSocketFactory socket_factory_;
-  talk_base::scoped_ptr<talk_base::AsyncPacketSocket> socket_;
+  rtc::Thread* main_;
+  rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
+  rtc::scoped_ptr<rtc::VirtualSocketServer> ss_;
+  rtc::SocketServerScope ss_scope_;
+  rtc::Network network_;
+  rtc::BasicPacketSocketFactory socket_factory_;
+  rtc::scoped_ptr<rtc::AsyncPacketSocket> socket_;
   cricket::TestTurnServer turn_server_;
-  talk_base::scoped_ptr<TurnPort> turn_port_;
-  talk_base::scoped_ptr<UDPPort> udp_port_;
+  rtc::scoped_ptr<TurnPort> turn_port_;
+  rtc::scoped_ptr<UDPPort> udp_port_;
   bool turn_ready_;
   bool turn_error_;
   bool turn_unknown_address_;
   bool turn_create_permission_success_;
   bool udp_ready_;
   bool test_finish_;
-  std::vector<talk_base::Buffer> turn_packets_;
-  std::vector<talk_base::Buffer> udp_packets_;
-  talk_base::PacketOptions options;
+  std::vector<rtc::Buffer> turn_packets_;
+  std::vector<rtc::Buffer> udp_packets_;
+  rtc::PacketOptions options;
 };
 
 // Do a normal TURN allocation.
 TEST_F(TurnPortTest, TestTurnAllocate) {
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
-  EXPECT_EQ(0, turn_port_->SetOption(talk_base::Socket::OPT_SNDBUF, 10*1024));
+  EXPECT_EQ(0, turn_port_->SetOption(rtc::Socket::OPT_SNDBUF, 10*1024));
   turn_port_->PrepareAddress();
   EXPECT_TRUE_WAIT(turn_ready_, kTimeout);
   ASSERT_EQ(1U, turn_port_->Candidates().size());
@@ -367,7 +367,7 @@ TEST_F(TurnPortTest, TestTurnAllocate) {
 TEST_F(TurnPortTest, TestTurnTcpAllocate) {
   turn_server_.AddInternalSocket(kTurnTcpIntAddr, cricket::PROTO_TCP);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
-  EXPECT_EQ(0, turn_port_->SetOption(talk_base::Socket::OPT_SNDBUF, 10*1024));
+  EXPECT_EQ(0, turn_port_->SetOption(rtc::Socket::OPT_SNDBUF, 10*1024));
   turn_port_->PrepareAddress();
   EXPECT_TRUE_WAIT(turn_ready_, kTimeout);
   ASSERT_EQ(1U, turn_port_->Candidates().size());
@@ -381,7 +381,7 @@ TEST_F(TurnPortTest, TestTurnTcpAllocate) {
 TEST_F(TurnPortTest, TestTurnTcpOnAddressResolveFailure) {
   turn_server_.AddInternalSocket(kTurnTcpIntAddr, cricket::PROTO_TCP);
   CreateTurnPort(kTurnUsername, kTurnPassword, cricket::ProtocolAddress(
-      talk_base::SocketAddress("www.webrtc-blah-blah.com", 3478),
+      rtc::SocketAddress("www.webrtc-blah-blah.com", 3478),
       cricket::PROTO_TCP));
   turn_port_->PrepareAddress();
   EXPECT_TRUE_WAIT(turn_error_, kTimeout);
@@ -395,7 +395,7 @@ TEST_F(TurnPortTest, TestTurnTcpOnAddressResolveFailure) {
 // and return allocate failure.
 TEST_F(TurnPortTest, TestTurnUdpOnAdressResolveFailure) {
   CreateTurnPort(kTurnUsername, kTurnPassword, cricket::ProtocolAddress(
-      talk_base::SocketAddress("www.webrtc-blah-blah.com", 3478),
+      rtc::SocketAddress("www.webrtc-blah-blah.com", 3478),
       cricket::PROTO_UDP));
   turn_port_->PrepareAddress();
   EXPECT_TRUE_WAIT(turn_error_, kTimeout);
@@ -503,13 +503,13 @@ TEST_F(TurnPortTest, TestResolverShutdown) {
   int last_fd_count = GetFDCount();
   // Need to supply unresolved address to kick off resolver.
   CreateTurnPort(kLocalIPv6Addr, kTurnUsername, kTurnPassword,
-                 cricket::ProtocolAddress(talk_base::SocketAddress(
+                 cricket::ProtocolAddress(rtc::SocketAddress(
                     "stun.l.google.com", 3478), cricket::PROTO_UDP));
   turn_port_->PrepareAddress();
   ASSERT_TRUE_WAIT(turn_error_, kTimeout);
   EXPECT_TRUE(turn_port_->Candidates().empty());
   turn_port_.reset();
-  talk_base::Thread::Current()->Post(this, MSG_TESTFINISH);
+  rtc::Thread::Current()->Post(this, MSG_TESTFINISH);
   // Waiting for above message to be processed.
   ASSERT_TRUE_WAIT(test_finish_, kTimeout);
   EXPECT_EQ(last_fd_count, GetFDCount());

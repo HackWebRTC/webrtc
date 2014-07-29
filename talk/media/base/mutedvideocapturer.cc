@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/base/logging.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/thread.h"
 #include "talk/media/base/mutedvideocapturer.h"
 #include "talk/media/base/videoframe.h"
 
@@ -39,7 +39,7 @@ namespace cricket {
 
 const char MutedVideoCapturer::kCapturerId[] = "muted_camera";
 
-class MutedFramesGenerator : public talk_base::MessageHandler {
+class MutedFramesGenerator : public rtc::MessageHandler {
  public:
   explicit MutedFramesGenerator(const VideoFormat& format);
   virtual ~MutedFramesGenerator();
@@ -49,11 +49,11 @@ class MutedFramesGenerator : public talk_base::MessageHandler {
   sigslot::signal1<VideoFrame*> SignalFrame;
 
  protected:
-  virtual void OnMessage(talk_base::Message* message);
+  virtual void OnMessage(rtc::Message* message);
 
  private:
-  talk_base::Thread capture_thread_;
-  talk_base::scoped_ptr<VideoFrame> muted_frame_;
+  rtc::Thread capture_thread_;
+  rtc::scoped_ptr<VideoFrame> muted_frame_;
   const VideoFormat format_;
   const int interval_;
   uint32 create_time_;
@@ -62,15 +62,15 @@ class MutedFramesGenerator : public talk_base::MessageHandler {
 MutedFramesGenerator::MutedFramesGenerator(const VideoFormat& format)
     : format_(format),
       interval_(static_cast<int>(format.interval /
-                                 talk_base::kNumNanosecsPerMillisec)),
-      create_time_(talk_base::Time()) {
+                                 rtc::kNumNanosecsPerMillisec)),
+      create_time_(rtc::Time()) {
   capture_thread_.Start();
   capture_thread_.PostDelayed(interval_, this);
 }
 
 MutedFramesGenerator::~MutedFramesGenerator() { capture_thread_.Clear(this); }
 
-void MutedFramesGenerator::OnMessage(talk_base::Message* message) {
+void MutedFramesGenerator::OnMessage(rtc::Message* message) {
   // Queue a new frame as soon as possible to minimize drift.
   capture_thread_.PostDelayed(interval_, this);
   if (!muted_frame_) {
@@ -83,7 +83,7 @@ void MutedFramesGenerator::OnMessage(talk_base::Message* message) {
     return;
 #endif
   }
-  uint32 current_timestamp = talk_base::Time();
+  uint32 current_timestamp = rtc::Time();
   // Delta between create time and current time will be correct even if there is
   // a wraparound since they are unsigned integers.
   uint32 elapsed_time = current_timestamp - create_time_;

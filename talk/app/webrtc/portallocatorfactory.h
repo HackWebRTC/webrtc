@@ -34,13 +34,13 @@
 #define TALK_APP_WEBRTC_PORTALLOCATORFACTORY_H_
 
 #include "talk/app/webrtc/peerconnectioninterface.h"
-#include "talk/base/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 
 namespace cricket {
 class PortAllocator;
 }
 
-namespace talk_base {
+namespace rtc {
 class BasicNetworkManager;
 class BasicPacketSocketFactory;
 }
@@ -49,20 +49,20 @@ namespace webrtc {
 
 class PortAllocatorFactory : public PortAllocatorFactoryInterface {
  public:
-  static talk_base::scoped_refptr<PortAllocatorFactoryInterface> Create(
-      talk_base::Thread* worker_thread);
+  static rtc::scoped_refptr<PortAllocatorFactoryInterface> Create(
+      rtc::Thread* worker_thread);
 
   virtual cricket::PortAllocator* CreatePortAllocator(
       const std::vector<StunConfiguration>& stun,
       const std::vector<TurnConfiguration>& turn);
 
  protected:
-  explicit PortAllocatorFactory(talk_base::Thread* worker_thread);
+  explicit PortAllocatorFactory(rtc::Thread* worker_thread);
   ~PortAllocatorFactory();
 
  private:
-  talk_base::scoped_ptr<talk_base::BasicNetworkManager> network_manager_;
-  talk_base::scoped_ptr<talk_base::BasicPacketSocketFactory> socket_factory_;
+  rtc::scoped_ptr<rtc::BasicNetworkManager> network_manager_;
+  rtc::scoped_ptr<rtc::BasicPacketSocketFactory> socket_factory_;
 };
 
 }  // namespace webrtc

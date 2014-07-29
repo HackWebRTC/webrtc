@@ -4,9 +4,9 @@
 #include <string>
 #include <sstream>
 #include <iostream>
-#include "talk/base/common.h"
-#include "talk/base/cryptstring.h"
-#include "talk/base/gunit.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/cryptstring.h"
+#include "webrtc/base/gunit.h"
 #include "talk/xmllite/xmlelement.h"
 #include "talk/xmpp/util_unittest.h"
 #include "talk/xmpp/constants.h"
@@ -43,14 +43,14 @@ class XmppLoginTaskTest : public testing::Test {
     handler_.reset(new XmppTestHandler(engine_.get()));
 
     Jid jid("david@my-server");
-    talk_base::InsecureCryptStringImpl pass;
+    rtc::InsecureCryptStringImpl pass;
     pass.password() = "david";
     engine_->SetSessionHandler(handler_.get());
     engine_->SetOutputHandler(handler_.get());
     engine_->AddStanzaHandler(handler_.get());
     engine_->SetUser(jid);
     engine_->SetSaslHandler(
-        new buzz::PlainSaslHandler(jid, talk_base::CryptString(pass), true));
+        new buzz::PlainSaslHandler(jid, rtc::CryptString(pass), true));
   }
   virtual void TearDown() {
     handler_.reset();
@@ -60,8 +60,8 @@ class XmppLoginTaskTest : public testing::Test {
   void SetTlsOptions(buzz::TlsOptions option);
 
  private:
-  talk_base::scoped_ptr<XmppEngine> engine_;
-  talk_base::scoped_ptr<XmppTestHandler> handler_;
+  rtc::scoped_ptr<XmppEngine> engine_;
+  rtc::scoped_ptr<XmppTestHandler> handler_;
 };
 
 void XmppLoginTaskTest::SetTlsOptions(buzz::TlsOptions option) {

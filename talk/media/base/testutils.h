@@ -34,14 +34,14 @@
 #if !defined(DISABLE_YUV)
 #include "libyuv/compare.h"
 #endif
-#include "talk/base/basictypes.h"
-#include "talk/base/sigslot.h"
-#include "talk/base/window.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/window.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videocommon.h"
 
-namespace talk_base {
+namespace rtc {
 class ByteBuffer;
 class StreamInterface;
 }
@@ -63,8 +63,8 @@ class RtpDumpWriter;
 class VideoFrame;
 
 struct RawRtpPacket {
-  void WriteToByteBuffer(uint32 in_ssrc, talk_base::ByteBuffer* buf) const;
-  bool ReadFromByteBuffer(talk_base::ByteBuffer* buf);
+  void WriteToByteBuffer(uint32 in_ssrc, rtc::ByteBuffer* buf) const;
+  bool ReadFromByteBuffer(rtc::ByteBuffer* buf);
   // Check if this packet is the same as the specified packet except the
   // sequence number and timestamp, which should be the same as the specified
   // parameters.
@@ -81,8 +81,8 @@ struct RawRtpPacket {
 };
 
 struct RawRtcpPacket {
-  void WriteToByteBuffer(talk_base::ByteBuffer* buf) const;
-  bool ReadFromByteBuffer(talk_base::ByteBuffer* buf);
+  void WriteToByteBuffer(rtc::ByteBuffer* buf) const;
+  bool ReadFromByteBuffer(rtc::ByteBuffer* buf);
   bool EqualsTo(const RawRtcpPacket& packet) const;
 
   uint8 ver_to_count;
@@ -107,7 +107,7 @@ class RtpTestUtility {
   // payload. If the stream is a RTCP stream, verify the RTCP header and
   // payload.
   static bool VerifyTestPacketsFromStream(
-      size_t count, talk_base::StreamInterface* stream, uint32 ssrc);
+      size_t count, rtc::StreamInterface* stream, uint32 ssrc);
 
   // Verify the dump packet is the same as the raw RTP packet.
   static bool VerifyPacket(const RtpDumpPacket* dump,
@@ -153,16 +153,16 @@ class VideoCapturerListener : public sigslot::has_slots<> {
 
 class ScreencastEventCatcher : public sigslot::has_slots<> {
  public:
-  ScreencastEventCatcher() : ssrc_(0), ev_(talk_base::WE_RESIZE) { }
+  ScreencastEventCatcher() : ssrc_(0), ev_(rtc::WE_RESIZE) { }
   uint32 ssrc() const { return ssrc_; }
-  talk_base::WindowEvent event() const { return ev_; }
-  void OnEvent(uint32 ssrc, talk_base::WindowEvent ev) {
+  rtc::WindowEvent event() const { return ev_; }
+  void OnEvent(uint32 ssrc, rtc::WindowEvent ev) {
     ssrc_ = ssrc;
     ev_ = ev;
   }
  private:
   uint32 ssrc_;
-  talk_base::WindowEvent ev_;
+  rtc::WindowEvent ev_;
 };
 
 class VideoMediaErrorCatcher : public sigslot::has_slots<> {

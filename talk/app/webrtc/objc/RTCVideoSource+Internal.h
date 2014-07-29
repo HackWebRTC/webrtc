@@ -32,6 +32,6 @@
 @interface RTCVideoSource (Internal)
 
 @property(nonatomic, assign, readonly)
-    talk_base::scoped_refptr<webrtc::VideoSourceInterface>videoSource;
+    rtc::scoped_refptr<webrtc::VideoSourceInterface>videoSource;
 
 @end

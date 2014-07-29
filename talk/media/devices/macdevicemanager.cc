@@ -30,9 +30,9 @@
 #include <CoreAudio/CoreAudio.h>
 #include <QuickTime/QuickTime.h>
 
-#include "talk/base/logging.h"
-#include "talk/base/stringutils.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/stringutils.h"
+#include "webrtc/base/thread.h"
 #include "talk/media/base/mediacommon.h"
 
 class DeviceWatcherImpl;
@@ -119,7 +119,7 @@ static bool GetAudioDeviceIDs(bool input,
   }
 
   size_t num_devices = propsize / sizeof(AudioDeviceID);
-  talk_base::scoped_ptr<AudioDeviceID[]> device_ids(
+  rtc::scoped_ptr<AudioDeviceID[]> device_ids(
       new AudioDeviceID[num_devices]);
 
   err = AudioHardwareGetProperty(kAudioHardwarePropertyDevices,

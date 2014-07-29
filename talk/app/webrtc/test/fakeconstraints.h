@@ -32,7 +32,7 @@
 #include <vector>
 
 #include "talk/app/webrtc/mediaconstraintsinterface.h"
-#include "talk/base/stringencode.h"
+#include "webrtc/base/stringencode.h"
 
 namespace webrtc {
 
@@ -51,7 +51,7 @@ class FakeConstraints : public webrtc::MediaConstraintsInterface {
 
   template <class T>
   void AddMandatory(const std::string& key, const T& value) {
-    mandatory_.push_back(Constraint(key, talk_base::ToString<T>(value)));
+    mandatory_.push_back(Constraint(key, rtc::ToString<T>(value)));
   }
 
   template <class T>
@@ -66,12 +66,12 @@ class FakeConstraints : public webrtc::MediaConstraintsInterface {
         }
       }
     }
-    mandatory_.push_back(Constraint(key, talk_base::ToString<T>(value)));
+    mandatory_.push_back(Constraint(key, rtc::ToString<T>(value)));
   }
 
   template <class T>
   void AddOptional(const std::string& key, const T& value) {
-    optional_.push_back(Constraint(key, talk_base::ToString<T>(value)));
+    optional_.push_back(Constraint(key, rtc::ToString<T>(value)));
   }
 
   void SetMandatoryMinAspectRatio(double ratio) {

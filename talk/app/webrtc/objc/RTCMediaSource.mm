@@ -34,7 +34,7 @@
 #import "RTCEnumConverter.h"
 
 @implementation RTCMediaSource {
-  talk_base::scoped_refptr<webrtc::MediaSourceInterface> _mediaSource;
+  rtc::scoped_refptr<webrtc::MediaSourceInterface> _mediaSource;
 }
 
 - (RTCSourceState)state {
@@ -46,7 +46,7 @@
 @implementation RTCMediaSource (Internal)
 
 - (id)initWithMediaSource:
-        (talk_base::scoped_refptr<webrtc::MediaSourceInterface>)mediaSource {
+        (rtc::scoped_refptr<webrtc::MediaSourceInterface>)mediaSource {
   if (!mediaSource) {
     NSAssert(NO, @"nil arguments not allowed");
     self = nil;
@@ -58,7 +58,7 @@
   return self;
 }
 
-- (talk_base::scoped_refptr<webrtc::MediaSourceInterface>)mediaSource {
+- (rtc::scoped_refptr<webrtc::MediaSourceInterface>)mediaSource {
   return _mediaSource;
 }
 

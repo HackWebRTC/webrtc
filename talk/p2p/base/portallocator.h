@@ -31,9 +31,9 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/helpers.h"
-#include "talk/base/proxyinfo.h"
-#include "talk/base/sigslot.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/proxyinfo.h"
+#include "webrtc/base/sigslot.h"
 #include "talk/p2p/base/portinterface.h"
 
 namespace cricket {
@@ -137,8 +137,8 @@ class PortAllocator : public sigslot::has_slots<> {
   void set_flags(uint32 flags) { flags_ = flags; }
 
   const std::string& user_agent() const { return agent_; }
-  const talk_base::ProxyInfo& proxy() const { return proxy_; }
-  void set_proxy(const std::string& agent, const talk_base::ProxyInfo& proxy) {
+  const rtc::ProxyInfo& proxy() const { return proxy_; }
+  void set_proxy(const std::string& agent, const rtc::ProxyInfo& proxy) {
     agent_ = agent;
     proxy_ = proxy;
   }
@@ -178,7 +178,7 @@ class PortAllocator : public sigslot::has_slots<> {
 
   uint32 flags_;
   std::string agent_;
-  talk_base::ProxyInfo proxy_;
+  rtc::ProxyInfo proxy_;
   int min_port_;
   int max_port_;
   uint32 step_delay_;

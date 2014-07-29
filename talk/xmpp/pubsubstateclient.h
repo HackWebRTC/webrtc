@@ -32,9 +32,9 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/sigslot.h"
-#include "talk/base/sigslotrepeater.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/sigslotrepeater.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/jid.h"
 #include "talk/xmpp/pubsubclient.h"
@@ -273,8 +273,8 @@ class PubSubStateClient : public sigslot::has_slots<> {
   PubSubClient* client_;
   const QName state_name_;
   C default_state_;
-  talk_base::scoped_ptr<PubSubStateKeySerializer> key_serializer_;
-  talk_base::scoped_ptr<PubSubStateSerializer<C> > state_serializer_;
+  rtc::scoped_ptr<PubSubStateKeySerializer> key_serializer_;
+  rtc::scoped_ptr<PubSubStateSerializer<C> > state_serializer_;
   // key => state
   std::map<std::string, C> state_by_key_;
   // itemid => StateItemInfo

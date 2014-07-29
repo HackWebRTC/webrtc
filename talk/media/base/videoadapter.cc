@@ -27,8 +27,8 @@
 
 #include <limits.h>  // For INT_MAX
 
-#include "talk/base/logging.h"
-#include "talk/base/timeutils.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/timeutils.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/videocommon.h"
 #include "talk/media/base/videoframe.h"
@@ -178,10 +178,10 @@ VideoAdapter::~VideoAdapter() {
 }
 
 void VideoAdapter::SetInputFormat(const VideoFormat& format) {
-  talk_base::CritScope cs(&critical_section_);
+  rtc::CritScope cs(&critical_section_);
   int64 old_input_interval = input_format_.interval;
   input_format_ = format;
-  output_format_.interval = talk_base::_max(
+  output_format_.interval = rtc::_max(
       output_format_.interval, input_format_.interval);
   if (old_input_interval != input_format_.interval) {
     LOG(LS_INFO) << "VAdapt input interval changed from "
@@ -219,11 +219,11 @@ void CoordinatedVideoAdapter::set_cpu_smoothing(bool enable) {
 }
 
 void VideoAdapter::SetOutputFormat(const VideoFormat& format) {
-  talk_base::CritScope cs(&critical_section_);
+  rtc::CritScope cs(&critical_section_);
   int64 old_output_interval = output_format_.interval;
   output_format_ = format;
   output_num_pixels_ = output_format_.width * output_format_.height;
-  output_format_.interval = talk_base::_max(
+  output_format_.interval = rtc::_max(
       output_format_.interval, input_format_.interval);
   if (old_output_interval != output_format_.interval) {
     LOG(LS_INFO) << "VAdapt output interval changed from "
@@ -232,7 +232,7 @@ void VideoAdapter::SetOutputFormat(const VideoFormat& format) {
 }
 
 const VideoFormat& VideoAdapter::input_format() {
-  talk_base::CritScope cs(&critical_section_);
+  rtc::CritScope cs(&critical_section_);
   return input_format_;
 }
 
@@ -241,12 +241,12 @@ bool VideoAdapter::drops_all_frames() const {
 }
 
 const VideoFormat& VideoAdapter::output_format() {
-  talk_base::CritScope cs(&critical_section_);
+  rtc::CritScope cs(&critical_section_);
   return output_format_;
 }
 
 void VideoAdapter::SetBlackOutput(bool black) {
-  talk_base::CritScope cs(&critical_section_);
+  rtc::CritScope cs(&critical_section_);
   black_output_ = black;
 }
 
@@ -263,7 +263,7 @@ int VideoAdapter::GetOutputNumPixels() const {
 // not resolution.
 bool VideoAdapter::AdaptFrame(VideoFrame* in_frame,
                               VideoFrame** out_frame) {
-  talk_base::CritScope cs(&critical_section_);
+  rtc::CritScope cs(&critical_section_);
   if (!in_frame || !out_frame) {
     return false;
   }
@@ -489,7 +489,7 @@ CoordinatedVideoAdapter::AdaptRequest CoordinatedVideoAdapter::FindCpuRequest(
 
 // A remote view request for a new resolution.
 void CoordinatedVideoAdapter::OnOutputFormatRequest(const VideoFormat& format) {
-  talk_base::CritScope cs(&request_critical_section_);
+  rtc::CritScope cs(&request_critical_section_);
   if (!view_adaptation_) {
     return;
   }
@@ -553,7 +553,7 @@ void CoordinatedVideoAdapter::set_process_threshold(float process_threshold) {
 // A Bandwidth GD request for new resolution
 void CoordinatedVideoAdapter::OnEncoderResolutionRequest(
     int width, int height, AdaptRequest request) {
-  talk_base::CritScope cs(&request_critical_section_);
+  rtc::CritScope cs(&request_critical_section_);
   if (!gd_adaptation_) {
     return;
   }
@@ -589,7 +589,7 @@ void CoordinatedVideoAdapter::OnEncoderResolutionRequest(
 
 // A Bandwidth GD request for new resolution
 void CoordinatedVideoAdapter::OnCpuResolutionRequest(AdaptRequest request) {
-  talk_base::CritScope cs(&request_critical_section_);
+  rtc::CritScope cs(&request_critical_section_);
   if (!cpu_adaptation_) {
     return;
   }
@@ -644,7 +644,7 @@ void CoordinatedVideoAdapter::OnCpuResolutionRequest(AdaptRequest request) {
 // TODO(fbarchard): Move outside adapter.
 void CoordinatedVideoAdapter::OnCpuLoadUpdated(
     int current_cpus, int max_cpus, float process_load, float system_load) {
-  talk_base::CritScope cs(&request_critical_section_);
+  rtc::CritScope cs(&request_critical_section_);
   if (!cpu_adaptation_) {
     return;
   }

@@ -30,14 +30,14 @@
 #include <algorithm>
 #include <vector>
 
-#include "talk/base/base64.h"
-#include "talk/base/crc32.h"
-#include "talk/base/helpers.h"
-#include "talk/base/logging.h"
-#include "talk/base/messagedigest.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/stringencode.h"
-#include "talk/base/stringutils.h"
+#include "webrtc/base/base64.h"
+#include "webrtc/base/crc32.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/messagedigest.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/stringencode.h"
+#include "webrtc/base/stringutils.h"
 #include "talk/p2p/base/common.h"
 
 namespace {
@@ -81,7 +81,7 @@ std::string GetRtcpUfragFromRtpUfrag(const std::string& rtp_ufrag) {
   }
   // Change the last character to the one next to it in the base64 table.
   char new_last_char;
-  if (!talk_base::Base64::GetNextBase64Char(rtp_ufrag[rtp_ufrag.size() - 1],
+  if (!rtc::Base64::GetNextBase64Char(rtp_ufrag[rtp_ufrag.size() - 1],
                                             &new_last_char)) {
     // Should not be here.
     ASSERT(false);
@@ -103,7 +103,7 @@ const uint32 DEFAULT_RTT = MAXIMUM_RTT;
 
 // Computes our estimate of the RTT given the current estimate.
 inline uint32 ConservativeRTTEstimate(uint32 rtt) {
-  return talk_base::_max(MINIMUM_RTT, talk_base::_min(MAXIMUM_RTT, 2 * rtt));
+  return rtc::_max(MINIMUM_RTT, rtc::_min(MAXIMUM_RTT, 2 * rtt));
 }
 
 // Weighting of the old rtt value to new data.
@@ -156,14 +156,14 @@ bool StringToProto(const char* value, ProtocolType* proto) {
 static std::string ComputeFoundation(
     const std::string& type,
     const std::string& protocol,
-    const talk_base::SocketAddress& base_address) {
+    const rtc::SocketAddress& base_address) {
   std::ostringstream ost;
   ost << type << base_address.ipaddr().ToString() << protocol;
-  return talk_base::ToString<uint32>(talk_base::ComputeCrc32(ost.str()));
+  return rtc::ToString<uint32>(rtc::ComputeCrc32(ost.str()));
 }
 
-Port::Port(talk_base::Thread* thread, talk_base::PacketSocketFactory* factory,
-           talk_base::Network* network, const talk_base::IPAddress& ip,
+Port::Port(rtc::Thread* thread, rtc::PacketSocketFactory* factory,
+           rtc::Network* network, const rtc::IPAddress& ip,
            const std::string& username_fragment, const std::string& password)
     : thread_(thread),
       factory_(factory),
@@ -185,9 +185,9 @@ Port::Port(talk_base::Thread* thread, talk_base::PacketSocketFactory* factory,
   Construct();
 }
 
-Port::Port(talk_base::Thread* thread, const std::string& type,
-           talk_base::PacketSocketFactory* factory,
-           talk_base::Network* network, const talk_base::IPAddress& ip,
+Port::Port(rtc::Thread* thread, const std::string& type,
+           rtc::PacketSocketFactory* factory,
+           rtc::Network* network, const rtc::IPAddress& ip,
            int min_port, int max_port, const std::string& username_fragment,
            const std::string& password)
     : thread_(thread),
@@ -216,8 +216,8 @@ void Port::Construct() {
   // If the username_fragment and password are empty, we should just create one.
   if (ice_username_fragment_.empty()) {
     ASSERT(password_.empty());
-    ice_username_fragment_ = talk_base::CreateRandomString(ICE_UFRAG_LENGTH);
-    password_ = talk_base::CreateRandomString(ICE_PWD_LENGTH);
+    ice_username_fragment_ = rtc::CreateRandomString(ICE_UFRAG_LENGTH);
+    password_ = rtc::CreateRandomString(ICE_PWD_LENGTH);
   }
   LOG_J(LS_INFO, this) << "Port created";
 }
@@ -238,7 +238,7 @@ Port::~Port() {
     delete list[i];
 }
 
-Connection* Port::GetConnection(const talk_base::SocketAddress& remote_addr) {
+Connection* Port::GetConnection(const rtc::SocketAddress& remote_addr) {
   AddressMap::const_iterator iter = connections_.find(remote_addr);
   if (iter != connections_.end())
     return iter->second;
@@ -246,9 +246,9 @@ Connection* Port::GetConnection(const talk_base::SocketAddress& remote_addr) {
     return NULL;
 }
 
-void Port::AddAddress(const talk_base::SocketAddress& address,
-                      const talk_base::SocketAddress& base_address,
-                      const talk_base::SocketAddress& related_address,
+void Port::AddAddress(const rtc::SocketAddress& address,
+                      const rtc::SocketAddress& base_address,
+                      const rtc::SocketAddress& related_address,
                       const std::string& protocol,
                       const std::string& type,
                       uint32 type_preference,
@@ -257,16 +257,16 @@ void Port::AddAddress(const talk_base::SocketAddress& address,
              type, type_preference, 0, final);
 }
 
-void Port::AddAddress(const talk_base::SocketAddress& address,
-                      const talk_base::SocketAddress& base_address,
-                      const talk_base::SocketAddress& related_address,
+void Port::AddAddress(const rtc::SocketAddress& address,
+                      const rtc::SocketAddress& base_address,
+                      const rtc::SocketAddress& related_address,
                       const std::string& protocol,
                       const std::string& type,
                       uint32 type_preference,
                       uint32 relay_preference,
                       bool final) {
   Candidate c;
-  c.set_id(talk_base::CreateRandomString(8));
+  c.set_id(rtc::CreateRandomString(8));
   c.set_component(component_);
   c.set_type(type);
   c.set_protocol(protocol);
@@ -294,7 +294,7 @@ void Port::AddConnection(Connection* conn) {
 }
 
 void Port::OnReadPacket(
-    const char* data, size_t size, const talk_base::SocketAddress& addr,
+    const char* data, size_t size, const rtc::SocketAddress& addr,
     ProtocolType proto) {
   // If the user has enabled port packets, just hand this over.
   if (enable_port_packets_) {
@@ -304,7 +304,7 @@ void Port::OnReadPacket(
 
   // If this is an authenticated STUN request, then signal unknown address and
   // send back a proper binding response.
-  talk_base::scoped_ptr<IceMessage> msg;
+  rtc::scoped_ptr<IceMessage> msg;
   std::string remote_username;
   if (!GetStunMessage(data, size, addr, msg.accept(), &remote_username)) {
     LOG_J(LS_ERROR, this) << "Received non-STUN packet from unknown address ("
@@ -358,7 +358,7 @@ bool Port::IsHybridIce() const {
 }
 
 bool Port::GetStunMessage(const char* data, size_t size,
-                          const talk_base::SocketAddress& addr,
+                          const rtc::SocketAddress& addr,
                           IceMessage** out_msg, std::string* out_username) {
   // NOTE: This could clearly be optimized to avoid allocating any memory.
   //       However, at the data rates we'll be looking at on the client side,
@@ -376,8 +376,8 @@ bool Port::GetStunMessage(const char* data, size_t size,
 
   // Parse the request message.  If the packet is not a complete and correct
   // STUN message, then ignore it.
-  talk_base::scoped_ptr<IceMessage> stun_msg(new IceMessage());
-  talk_base::ByteBuffer buf(data, size);
+  rtc::scoped_ptr<IceMessage> stun_msg(new IceMessage());
+  rtc::ByteBuffer buf(data, size);
   if (!stun_msg->Read(&buf) || (buf.Length() > 0)) {
     return false;
   }
@@ -465,7 +465,7 @@ bool Port::GetStunMessage(const char* data, size_t size,
   return true;
 }
 
-bool Port::IsCompatibleAddress(const talk_base::SocketAddress& addr) {
+bool Port::IsCompatibleAddress(const rtc::SocketAddress& addr) {
   int family = ip().family();
   // We use single-stack sockets, so families must match.
   if (addr.family() != family) {
@@ -524,7 +524,7 @@ bool Port::ParseStunUsername(const StunMessage* stun_msg,
 }
 
 bool Port::MaybeIceRoleConflict(
-    const talk_base::SocketAddress& addr, IceMessage* stun_msg,
+    const rtc::SocketAddress& addr, IceMessage* stun_msg,
     const std::string& remote_ufrag) {
   // Validate ICE_CONTROLLING or ICE_CONTROLLED attributes.
   bool ret = true;
@@ -596,7 +596,7 @@ void Port::CreateStunUsername(const std::string& remote_username,
 }
 
 void Port::SendBindingResponse(StunMessage* request,
-                               const talk_base::SocketAddress& addr) {
+                               const rtc::SocketAddress& addr) {
   ASSERT(request->type() == STUN_BINDING_REQUEST);
 
   // Retrieve the username from the request.
@@ -642,9 +642,9 @@ void Port::SendBindingResponse(StunMessage* request,
   }
 
   // Send the response message.
-  talk_base::ByteBuffer buf;
+  rtc::ByteBuffer buf;
   response.Write(&buf);
-  talk_base::PacketOptions options(DefaultDscpValue());
+  rtc::PacketOptions options(DefaultDscpValue());
   if (SendTo(buf.Data(), buf.Length(), addr, options, false) < 0) {
     LOG_J(LS_ERROR, this) << "Failed to send STUN ping response to "
                           << addr.ToSensitiveString();
@@ -659,7 +659,7 @@ void Port::SendBindingResponse(StunMessage* request,
 }
 
 void Port::SendBindingErrorResponse(StunMessage* request,
-                                    const talk_base::SocketAddress& addr,
+                                    const rtc::SocketAddress& addr,
                                     int error_code, const std::string& reason) {
   ASSERT(request->type() == STUN_BINDING_REQUEST);
 
@@ -697,15 +697,15 @@ void Port::SendBindingErrorResponse(StunMessage* request,
   }
 
   // Send the response message.
-  talk_base::ByteBuffer buf;
+  rtc::ByteBuffer buf;
   response.Write(&buf);
-  talk_base::PacketOptions options(DefaultDscpValue());
+  rtc::PacketOptions options(DefaultDscpValue());
   SendTo(buf.Data(), buf.Length(), addr, options, false);
   LOG_J(LS_INFO, this) << "Sending STUN binding error: reason=" << reason
                        << " to " << addr.ToSensitiveString();
 }
 
-void Port::OnMessage(talk_base::Message *pmsg) {
+void Port::OnMessage(rtc::Message *pmsg) {
   ASSERT(pmsg->message_id == MSG_CHECKTIMEOUT);
   CheckTimeout();
 }
@@ -899,9 +899,9 @@ uint64 Connection::priority() const {
       g = remote_candidate_.priority();
       d = local_candidate().priority();
     }
-    priority = talk_base::_min(g, d);
+    priority = rtc::_min(g, d);
     priority = priority << 32;
-    priority += 2 * talk_base::_max(g, d) + (g > d ? 1 : 0);
+    priority += 2 * rtc::_max(g, d) + (g > d ? 1 : 0);
   }
   return priority;
 }
@@ -948,7 +948,7 @@ void Connection::set_use_candidate_attr(bool enable) {
 
 void Connection::OnSendStunPacket(const void* data, size_t size,
                                   StunRequest* req) {
-  talk_base::PacketOptions options(port_->DefaultDscpValue());
+  rtc::PacketOptions options(port_->DefaultDscpValue());
   if (port_->SendTo(data, size, remote_candidate_.address(),
                     options, false) < 0) {
     LOG_J(LS_WARNING, this) << "Failed to send STUN ping " << req->id();
@@ -956,10 +956,10 @@ void Connection::OnSendStunPacket(const void* data, size_t size,
 }
 
 void Connection::OnReadPacket(
-  const char* data, size_t size, const talk_base::PacketTime& packet_time) {
-  talk_base::scoped_ptr<IceMessage> msg;
+  const char* data, size_t size, const rtc::PacketTime& packet_time) {
+  rtc::scoped_ptr<IceMessage> msg;
   std::string remote_ufrag;
-  const talk_base::SocketAddress& addr(remote_candidate_.address());
+  const rtc::SocketAddress& addr(remote_candidate_.address());
   if (!port_->GetStunMessage(data, size, addr, msg.accept(), &remote_ufrag)) {
     // The packet did not parse as a valid STUN message
 
@@ -968,7 +968,7 @@ void Connection::OnReadPacket(
       // readable means data from this address is acceptable
       // Send it on!
 
-      last_data_received_ = talk_base::Time();
+      last_data_received_ = rtc::Time();
       recv_rate_tracker_.Update(size);
       SignalReadPacket(this, data, size, packet_time);
 
@@ -1091,7 +1091,7 @@ void Connection::UpdateState(uint32 now) {
   std::string pings;
   for (size_t i = 0; i < pings_since_last_response_.size(); ++i) {
     char buf[32];
-    talk_base::sprintfn(buf, sizeof(buf), "%u",
+    rtc::sprintfn(buf, sizeof(buf), "%u",
         pings_since_last_response_[i]);
     pings.append(buf).append(" ");
   }
@@ -1176,7 +1176,7 @@ void Connection::Ping(uint32 now) {
 }
 
 void Connection::ReceivedPing() {
-  last_ping_received_ = talk_base::Time();
+  last_ping_received_ = rtc::Time();
   set_read_state(STATE_READABLE);
 }
 
@@ -1251,21 +1251,21 @@ void Connection::OnConnectionRequestResponse(ConnectionRequest* request,
   std::string pings;
   for (size_t i = 0; i < pings_since_last_response_.size(); ++i) {
     char buf[32];
-    talk_base::sprintfn(buf, sizeof(buf), "%u",
+    rtc::sprintfn(buf, sizeof(buf), "%u",
         pings_since_last_response_[i]);
     pings.append(buf).append(" ");
   }
 
-  talk_base::LoggingSeverity level =
+  rtc::LoggingSeverity level =
       (pings_since_last_response_.size() > CONNECTION_WRITE_CONNECT_FAILURES) ?
-          talk_base::LS_INFO : talk_base::LS_VERBOSE;
+          rtc::LS_INFO : rtc::LS_VERBOSE;
 
   LOG_JV(level, this) << "Received STUN ping response " << request->id()
                       << ", pings_since_last_response_=" << pings
                       << ", rtt=" << rtt;
 
   pings_since_last_response_.clear();
-  last_ping_response_received_ = talk_base::Time();
+  last_ping_response_received_ = rtc::Time();
   rtt_ = (RTT_RATIO * rtt_ + rtt) / (RTT_RATIO + 1);
 
   // Peer reflexive candidate is only for RFC 5245 ICE.
@@ -1307,8 +1307,8 @@ void Connection::OnConnectionRequestErrorResponse(ConnectionRequest* request,
 
 void Connection::OnConnectionRequestTimeout(ConnectionRequest* request) {
   // Log at LS_INFO if we miss a ping on a writable connection.
-  talk_base::LoggingSeverity sev = (write_state_ == STATE_WRITABLE) ?
-      talk_base::LS_INFO : talk_base::LS_VERBOSE;
+  rtc::LoggingSeverity sev = (write_state_ == STATE_WRITABLE) ?
+      rtc::LS_INFO : rtc::LS_VERBOSE;
   LOG_JV(sev, this) << "Timing-out STUN ping " << request->id()
                     << " after " << request->Elapsed() << " ms";
 }
@@ -1330,7 +1330,7 @@ void Connection::HandleRoleConflictFromPeer() {
   port_->SignalRoleConflict(port_);
 }
 
-void Connection::OnMessage(talk_base::Message *pmsg) {
+void Connection::OnMessage(rtc::Message *pmsg) {
   ASSERT(pmsg->message_id == MSG_DELETE);
 
   LOG_J(LS_INFO, this) << "Connection deleted";
@@ -1393,7 +1393,7 @@ void Connection::MaybeAddPrflxCandidate(ConnectionRequest* request,
     return;
   }
   const uint32 priority = priority_attr->value();
-  std::string id = talk_base::CreateRandomString(8);
+  std::string id = rtc::CreateRandomString(8);
 
   Candidate new_local_candidate;
   new_local_candidate.set_id(id);
@@ -1424,7 +1424,7 @@ ProxyConnection::ProxyConnection(Port* port, size_t index,
 }
 
 int ProxyConnection::Send(const void* data, size_t size,
-                          const talk_base::PacketOptions& options) {
+                          const rtc::PacketOptions& options) {
   if (write_state_ == STATE_WRITE_INIT || write_state_ == STATE_WRITE_TIMEOUT) {
     error_ = EWOULDBLOCK;
     return SOCKET_ERROR;

@@ -30,8 +30,8 @@
 
 #include <string>
 #include <vector>
-#include "talk/base/basictypes.h"
-#include "talk/base/stringencode.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/stringencode.h"
 #include "talk/xmllite/xmlelement.h"  // Needed to delete ParseError.extra.
 
 namespace cricket {
@@ -97,7 +97,7 @@ bool GetXmlAttr(const buzz::XmlElement* elem,
     return false;
   }
   std::string unparsed = elem->Attr(name);
-  return talk_base::FromString(unparsed, val_out);
+  return rtc::FromString(unparsed, val_out);
 }
 
 template <class T>
@@ -116,7 +116,7 @@ template <class T>
 bool AddXmlAttr(buzz::XmlElement* elem,
                 const buzz::QName& name, const T& val) {
   std::string buf;
-  if (!talk_base::ToString(val, &buf)) {
+  if (!rtc::ToString(val, &buf)) {
     return false;
   }
   elem->AddAttr(name, buf);
@@ -126,7 +126,7 @@ bool AddXmlAttr(buzz::XmlElement* elem,
 template <class T>
 bool SetXmlBody(buzz::XmlElement* elem, const T& val) {
   std::string buf;
-  if (!talk_base::ToString(val, &buf)) {
+  if (!rtc::ToString(val, &buf)) {
     return false;
   }
   elem->SetBodyText(buf);

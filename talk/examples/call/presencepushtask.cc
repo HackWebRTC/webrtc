@@ -27,7 +27,7 @@
 
 #include "talk/examples/call/presencepushtask.h"
 
-#include "talk/base/stringencode.h"
+#include "webrtc/base/stringencode.h"
 #include "talk/examples/call/muc.h"
 #include "talk/xmpp/constants.h"
 
@@ -153,7 +153,7 @@ void PresencePushTask::FillStatus(const Jid& from, const XmlElement* stanza,
     const XmlElement * priority = stanza->FirstNamed(QN_PRIORITY);
     if (priority != NULL) {
       int pri;
-      if (talk_base::FromString(priority->BodyText(), &pri)) {
+      if (rtc::FromString(priority->BodyText(), &pri)) {
         s->set_priority(pri);
       }
     }

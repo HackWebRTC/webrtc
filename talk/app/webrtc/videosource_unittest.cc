@@ -31,7 +31,7 @@
 #include "talk/app/webrtc/test/fakeconstraints.h"
 #include "talk/app/webrtc/remotevideocapturer.h"
 #include "talk/app/webrtc/videosource.h"
-#include "talk/base/gunit.h"
+#include "webrtc/base/gunit.h"
 #include "talk/media/base/fakemediaengine.h"
 #include "talk/media/base/fakevideorenderer.h"
 #include "talk/media/devices/fakedevicemanager.h"
@@ -121,7 +121,7 @@ class StateObserver : public ObserverInterface {
 
  private:
   MediaSourceInterface::SourceState state_;
-  talk_base::scoped_refptr<VideoSourceInterface> source_;
+  rtc::scoped_refptr<VideoSourceInterface> source_;
 };
 
 class VideoSourceTest : public testing::Test {
@@ -131,7 +131,7 @@ class VideoSourceTest : public testing::Test {
         capturer_(capturer_cleanup_.get()),
         channel_manager_(new cricket::ChannelManager(
           new cricket::FakeMediaEngine(),
-          new cricket::FakeDeviceManager(), talk_base::Thread::Current())) {
+          new cricket::FakeDeviceManager(), rtc::Thread::Current())) {
   }
 
   void SetUp() {
@@ -157,12 +157,12 @@ class VideoSourceTest : public testing::Test {
     source_->AddSink(&renderer_);
   }
 
-  talk_base::scoped_ptr<TestVideoCapturer> capturer_cleanup_;
+  rtc::scoped_ptr<TestVideoCapturer> capturer_cleanup_;
   TestVideoCapturer* capturer_;
   cricket::FakeVideoRenderer renderer_;
-  talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;
-  talk_base::scoped_ptr<StateObserver> state_observer_;
-  talk_base::scoped_refptr<VideoSource> source_;
+  rtc::scoped_ptr<cricket::ChannelManager> channel_manager_;
+  rtc::scoped_ptr<StateObserver> state_observer_;
+  rtc::scoped_refptr<VideoSource> source_;
 };
 
 

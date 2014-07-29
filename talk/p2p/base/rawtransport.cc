@@ -28,7 +28,7 @@
 #include <string>
 #include <vector>
 #include "talk/p2p/base/rawtransport.h"
-#include "talk/base/common.h"
+#include "webrtc/base/common.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/parsing.h"
 #include "talk/p2p/base/sessionmanager.h"
@@ -40,8 +40,8 @@
 #if defined(FEATURE_ENABLE_PSTN)
 namespace cricket {
 
-RawTransport::RawTransport(talk_base::Thread* signaling_thread,
-                           talk_base::Thread* worker_thread,
+RawTransport::RawTransport(rtc::Thread* signaling_thread,
+                           rtc::Thread* worker_thread,
                            const std::string& content_name,
                            PortAllocator* allocator)
     : Transport(signaling_thread, worker_thread,
@@ -67,7 +67,7 @@ bool RawTransport::ParseCandidates(SignalingProtocol protocol,
       if (type() != cand_elem->Attr(buzz::QN_NAME)) {
         return BadParse("channel named does not exist", error);
       }
-      talk_base::SocketAddress addr;
+      rtc::SocketAddress addr;
       if (!ParseRawAddress(cand_elem, &addr, error))
         return false;
 
@@ -91,7 +91,7 @@ bool RawTransport::WriteCandidates(SignalingProtocol protocol,
        ++cand) {
     ASSERT(cand->component() == 1);
     ASSERT(cand->protocol() == "udp");
-    talk_base::SocketAddress addr = cand->address();
+    rtc::SocketAddress addr = cand->address();
 
     buzz::XmlElement* elem = new buzz::XmlElement(QN_GINGLE_RAW_CHANNEL);
     elem->SetAttr(buzz::QN_NAME, type());
@@ -103,7 +103,7 @@ bool RawTransport::WriteCandidates(SignalingProtocol protocol,
 }
 
 bool RawTransport::ParseRawAddress(const buzz::XmlElement* elem,
-                                   talk_base::SocketAddress* addr,
+                                   rtc::SocketAddress* addr,
                                    ParseError* error) {
   // Make sure the required attributes exist
   if (!elem->HasAttr(QN_ADDRESS) ||

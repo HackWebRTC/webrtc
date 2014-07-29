@@ -28,7 +28,7 @@
 #ifndef TALK_SOUND_SOUNDSYSTEMPROXY_H_
 #define TALK_SOUND_SOUNDSYSTEMPROXY_H_
 
-#include "talk/base/basictypes.h"  // for NULL
+#include "webrtc/base/basictypes.h"  // for NULL
 #include "talk/sound/soundsysteminterface.h"
 
 namespace cricket {

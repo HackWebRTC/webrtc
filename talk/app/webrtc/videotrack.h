@@ -33,13 +33,13 @@
 #include "talk/app/webrtc/mediastreamtrack.h"
 #include "talk/app/webrtc/videosourceinterface.h"
 #include "talk/app/webrtc/videotrackrenderers.h"
-#include "talk/base/scoped_ref_ptr.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 
 namespace webrtc {
 
 class VideoTrack : public MediaStreamTrack<VideoTrackInterface> {
  public:
-  static talk_base::scoped_refptr<VideoTrack> Create(
+  static rtc::scoped_refptr<VideoTrack> Create(
       const std::string& label, VideoSourceInterface* source);
 
   virtual void AddRenderer(VideoRendererInterface* renderer);
@@ -56,7 +56,7 @@ class VideoTrack : public MediaStreamTrack<VideoTrackInterface> {
 
  private:
   VideoTrackRenderers renderers_;
-  talk_base::scoped_refptr<VideoSourceInterface> video_source_;
+  rtc::scoped_refptr<VideoSourceInterface> video_source_;
 };
 
 }  // namespace webrtc

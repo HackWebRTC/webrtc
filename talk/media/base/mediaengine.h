@@ -37,8 +37,8 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/fileutils.h"
-#include "talk/base/sigslotrepeater.h"
+#include "webrtc/base/fileutils.h"
+#include "webrtc/base/sigslotrepeater.h"
 #include "talk/media/base/codec.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/mediacommon.h"
@@ -69,7 +69,7 @@ class MediaEngineInterface {
 
   // Initialization
   // Starts the engine.
-  virtual bool Init(talk_base::Thread* worker_thread) = 0;
+  virtual bool Init(rtc::Thread* worker_thread) = 0;
   // Shuts down the engine.
   virtual void Terminate() = 0;
   // Returns what the engine is capable of, as a set of Capabilities, above.
@@ -138,7 +138,7 @@ class MediaEngineInterface {
   virtual void SetVideoLogging(int min_sev, const char* filter) = 0;
 
   // Starts AEC dump using existing file.
-  virtual bool StartAecDump(talk_base::PlatformFile file) = 0;
+  virtual bool StartAecDump(rtc::PlatformFile file) = 0;
 
   // Voice processors for effects.
   virtual bool RegisterVoiceProcessor(uint32 ssrc,
@@ -180,7 +180,7 @@ class CompositeMediaEngine : public MediaEngineInterface {
  public:
   CompositeMediaEngine() {}
   virtual ~CompositeMediaEngine() {}
-  virtual bool Init(talk_base::Thread* worker_thread) {
+  virtual bool Init(rtc::Thread* worker_thread) {
     if (!voice_.Init(worker_thread))
       return false;
     if (!video_.Init(worker_thread)) {
@@ -269,7 +269,7 @@ class CompositeMediaEngine : public MediaEngineInterface {
     video_.SetLogging(min_sev, filter);
   }
 
-  virtual bool StartAecDump(talk_base::PlatformFile file) {
+  virtual bool StartAecDump(rtc::PlatformFile file) {
     return voice_.StartAecDump(file);
   }
 
@@ -301,7 +301,7 @@ class CompositeMediaEngine : public MediaEngineInterface {
 // a video engine is desired.
 class NullVoiceEngine {
  public:
-  bool Init(talk_base::Thread* worker_thread) { return true; }
+  bool Init(rtc::Thread* worker_thread) { return true; }
   void Terminate() {}
   int GetCapabilities() { return 0; }
   // If you need this to return an actual channel, use FakeMediaEngine instead.
@@ -329,7 +329,7 @@ class NullVoiceEngine {
     return rtp_header_extensions_;
   }
   void SetLogging(int min_sev, const char* filter) {}
-  bool StartAecDump(talk_base::PlatformFile file) { return false; }
+  bool StartAecDump(rtc::PlatformFile file) { return false; }
   bool RegisterProcessor(uint32 ssrc,
                          VoiceProcessor* voice_processor,
                          MediaProcessorDirection direction) { return true; }
@@ -346,7 +346,7 @@ class NullVoiceEngine {
 // a voice engine is desired.
 class NullVideoEngine {
  public:
-  bool Init(talk_base::Thread* worker_thread) { return true; }
+  bool Init(rtc::Thread* worker_thread) { return true; }
   void Terminate() {}
   int GetCapabilities() { return 0; }
   // If you need this to return an actual channel, use FakeMediaEngine instead.

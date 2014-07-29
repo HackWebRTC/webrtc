@@ -28,14 +28,14 @@
 #ifndef TALK_SOUND_SOUNDINPUTSTREAMINTERFACE_H_
 #define TALK_SOUND_SOUNDINPUTSTREAMINTERFACE_H_
 
-#include "talk/base/constructormagic.h"
-#include "talk/base/sigslot.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/sigslot.h"
 
 namespace cricket {
 
 // Interface for consuming an input stream from a recording device.
 // Semantics and thread-safety of StartReading()/StopReading() are the same as
-// for talk_base::Worker.
+// for rtc::Worker.
 class SoundInputStreamInterface {
  public:
   virtual ~SoundInputStreamInterface() {}

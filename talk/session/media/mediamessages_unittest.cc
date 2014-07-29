@@ -30,8 +30,8 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/gunit.h"
-#include "talk/base/scoped_ptr.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/session/media/mediasessionclient.h"
 #include "talk/xmllite/xmlelement.h"
@@ -161,7 +161,7 @@ class MediaMessagesTest : public testing::Test {
     return size;
   }
 
-  talk_base::scoped_ptr<cricket::SessionDescription> remote_description_;
+  rtc::scoped_ptr<cricket::SessionDescription> remote_description_;
 };
 
 }  // anonymous namespace
@@ -170,7 +170,7 @@ class MediaMessagesTest : public testing::Test {
 TEST_F(MediaMessagesTest, ViewNoneToFromXml) {
   buzz::XmlElement* expected_view_elem =
       buzz::XmlElement::ForStr(kViewVideoNoneXml);
-  talk_base::scoped_ptr<buzz::XmlElement> action_elem(
+  rtc::scoped_ptr<buzz::XmlElement> action_elem(
       new buzz::XmlElement(QN_JINGLE));
 
   EXPECT_FALSE(cricket::IsJingleViewRequest(action_elem.get()));
@@ -197,7 +197,7 @@ TEST_F(MediaMessagesTest, ViewNoneToFromXml) {
 
 // Test serializing/deserializing an a simple vga <view> message.
 TEST_F(MediaMessagesTest, ViewVgaToFromXml) {
-  talk_base::scoped_ptr<buzz::XmlElement> action_elem(
+  rtc::scoped_ptr<buzz::XmlElement> action_elem(
       new buzz::XmlElement(QN_JINGLE));
   buzz::XmlElement* expected_view_elem1 =
       buzz::XmlElement::ForStr(ViewVideoStaticVgaXml("1234"));
@@ -238,7 +238,7 @@ TEST_F(MediaMessagesTest, ViewVgaToFromXml) {
 
 // Test deserializing bad view XML.
 TEST_F(MediaMessagesTest, ParseBadViewXml) {
-  talk_base::scoped_ptr<buzz::XmlElement> action_elem(
+  rtc::scoped_ptr<buzz::XmlElement> action_elem(
       new buzz::XmlElement(QN_JINGLE));
   buzz::XmlElement* view_elem =
       buzz::XmlElement::ForStr(ViewVideoStaticVgaXml("not-an-ssrc"));
@@ -253,7 +253,7 @@ TEST_F(MediaMessagesTest, ParseBadViewXml) {
 
 // Test serializing/deserializing typical streams xml.
 TEST_F(MediaMessagesTest, StreamsToFromXml) {
-  talk_base::scoped_ptr<buzz::XmlElement> expected_streams_elem(
+  rtc::scoped_ptr<buzz::XmlElement> expected_streams_elem(
       buzz::XmlElement::ForStr(
           StreamsXml(
               StreamXml("nick1", "stream1", "101", "102",
@@ -267,7 +267,7 @@ TEST_F(MediaMessagesTest, StreamsToFromXml) {
   expected_streams.push_back(CreateStream("nick2", "stream2", 201U, 202U,
                                           "semantics2", "type2", "display2"));
 
-  talk_base::scoped_ptr<buzz::XmlElement> actual_desc_elem(
+  rtc::scoped_ptr<buzz::XmlElement> actual_desc_elem(
       new buzz::XmlElement(QN_JINGLE_RTP_CONTENT));
   cricket::WriteJingleStreams(expected_streams, actual_desc_elem.get());
 
@@ -276,7 +276,7 @@ TEST_F(MediaMessagesTest, StreamsToFromXml) {
   ASSERT_TRUE(actual_streams_elem != NULL);
   EXPECT_EQ(expected_streams_elem->Str(), actual_streams_elem->Str());
 
-  talk_base::scoped_ptr<buzz::XmlElement> expected_desc_elem(
+  rtc::scoped_ptr<buzz::XmlElement> expected_desc_elem(
       new buzz::XmlElement(QN_JINGLE_RTP_CONTENT));
   expected_desc_elem->AddElement(new buzz::XmlElement(
       *expected_streams_elem));
@@ -293,14 +293,14 @@ TEST_F(MediaMessagesTest, StreamsToFromXml) {
 
 // Test deserializing bad streams xml.
 TEST_F(MediaMessagesTest, StreamsFromBadXml) {
-  talk_base::scoped_ptr<buzz::XmlElement> streams_elem(
+  rtc::scoped_ptr<buzz::XmlElement> streams_elem(
       buzz::XmlElement::ForStr(
           StreamsXml(
               StreamXml("nick1", "name1", "101", "not-an-ssrc",
                         "semantics1", "type1", "display1"),
               StreamXml("nick2", "name2", "202", "not-an-ssrc",
                         "semantics2", "type2", "display2"))));
-  talk_base::scoped_ptr<buzz::XmlElement> desc_elem(
+  rtc::scoped_ptr<buzz::XmlElement> desc_elem(
       new buzz::XmlElement(QN_JINGLE_RTP_CONTENT));
   desc_elem->AddElement(new buzz::XmlElement(*streams_elem));
 
@@ -312,7 +312,7 @@ TEST_F(MediaMessagesTest, StreamsFromBadXml) {
 
 // Test serializing/deserializing typical RTP Header Extension xml.
 TEST_F(MediaMessagesTest, HeaderExtensionsToFromXml) {
-  talk_base::scoped_ptr<buzz::XmlElement> expected_desc_elem(
+  rtc::scoped_ptr<buzz::XmlElement> expected_desc_elem(
       buzz::XmlElement::ForStr(
           HeaderExtensionsXml(
               HeaderExtensionXml("abc", "123"),
@@ -322,7 +322,7 @@ TEST_F(MediaMessagesTest, HeaderExtensionsToFromXml) {
   expected_hdrexts.push_back(RtpHeaderExtension("abc", 123));
   expected_hdrexts.push_back(RtpHeaderExtension("def", 456));
 
-  talk_base::scoped_ptr<buzz::XmlElement> actual_desc_elem(
+  rtc::scoped_ptr<buzz::XmlElement> actual_desc_elem(
       new buzz::XmlElement(QN_JINGLE_RTP_CONTENT));
   cricket::WriteJingleRtpHeaderExtensions(expected_hdrexts, actual_desc_elem.get());
 
@@ -343,7 +343,7 @@ TEST_F(MediaMessagesTest, HeaderExtensionsFromBadXml) {
   std::vector<cricket::RtpHeaderExtension> actual_hdrexts;
   cricket::ParseError parse_error;
 
-  talk_base::scoped_ptr<buzz::XmlElement> desc_elem(
+  rtc::scoped_ptr<buzz::XmlElement> desc_elem(
       buzz::XmlElement::ForStr(
           HeaderExtensionsXml(
               HeaderExtensionXml("abc", "123"),

@@ -27,18 +27,18 @@
 
 #include "talk/p2p/base/basicpacketsocketfactory.h"
 
-#include "talk/base/asyncudpsocket.h"
-#include "talk/base/asynctcpsocket.h"
-#include "talk/base/logging.h"
-#include "talk/base/nethelpers.h"
-#include "talk/base/physicalsocketserver.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/socketadapters.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/asyncudpsocket.h"
+#include "webrtc/base/asynctcpsocket.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/nethelpers.h"
+#include "webrtc/base/physicalsocketserver.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/socketadapters.h"
+#include "webrtc/base/thread.h"
 #include "talk/p2p/base/asyncstuntcpsocket.h"
 #include "talk/p2p/base/stun.h"
 
-namespace talk_base {
+namespace rtc {
 
 BasicPacketSocketFactory::BasicPacketSocketFactory()
     : thread_(Thread::Current()),
@@ -62,7 +62,7 @@ BasicPacketSocketFactory::~BasicPacketSocketFactory() {
 AsyncPacketSocket* BasicPacketSocketFactory::CreateUdpSocket(
     const SocketAddress& address, int min_port, int max_port) {
   // UDP sockets are simple.
-  talk_base::AsyncSocket* socket =
+  rtc::AsyncSocket* socket =
       socket_factory()->CreateAsyncSocket(
           address.family(), SOCK_DGRAM);
   if (!socket) {
@@ -74,7 +74,7 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateUdpSocket(
     delete socket;
     return NULL;
   }
-  return new talk_base::AsyncUDPSocket(socket);
+  return new rtc::AsyncUDPSocket(socket);
 }
 
 AsyncPacketSocket* BasicPacketSocketFactory::CreateServerTcpSocket(
@@ -86,7 +86,7 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateServerTcpSocket(
     return NULL;
   }
 
-  talk_base::AsyncSocket* socket =
+  rtc::AsyncSocket* socket =
       socket_factory()->CreateAsyncSocket(local_address.family(),
                                           SOCK_STREAM);
   if (!socket) {
@@ -103,17 +103,17 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateServerTcpSocket(
   // If using SSLTCP, wrap the TCP socket in a pseudo-SSL socket.
   if (opts & PacketSocketFactory::OPT_SSLTCP) {
     ASSERT(!(opts & PacketSocketFactory::OPT_TLS));
-    socket = new talk_base::AsyncSSLSocket(socket);
+    socket = new rtc::AsyncSSLSocket(socket);
   }
 
   // Set TCP_NODELAY (via OPT_NODELAY) for improved performance.
   // See http://go/gtalktcpnodelayexperiment
-  socket->SetOption(talk_base::Socket::OPT_NODELAY, 1);
+  socket->SetOption(rtc::Socket::OPT_NODELAY, 1);
 
   if (opts & PacketSocketFactory::OPT_STUN)
     return new cricket::AsyncStunTCPSocket(socket, true);
 
-  return new talk_base::AsyncTCPSocket(socket, true);
+  return new rtc::AsyncTCPSocket(socket, true);
 }
 
 AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
@@ -126,7 +126,7 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
     return NULL;
   }
 
-  talk_base::AsyncSocket* socket =
+  rtc::AsyncSocket* socket =
       socket_factory()->CreateAsyncSocket(local_address.family(), SOCK_STREAM);
   if (!socket) {
     return NULL;
@@ -140,11 +140,11 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
   }
 
   // If using a proxy, wrap the socket in a proxy socket.
-  if (proxy_info.type == talk_base::PROXY_SOCKS5) {
-    socket = new talk_base::AsyncSocksProxySocket(
+  if (proxy_info.type == rtc::PROXY_SOCKS5) {
+    socket = new rtc::AsyncSocksProxySocket(
         socket, proxy_info.address, proxy_info.username, proxy_info.password);
-  } else if (proxy_info.type == talk_base::PROXY_HTTPS) {
-    socket = new talk_base::AsyncHttpsProxySocket(
+  } else if (proxy_info.type == rtc::PROXY_HTTPS) {
+    socket = new rtc::AsyncHttpsProxySocket(
         socket, user_agent, proxy_info.address,
         proxy_info.username, proxy_info.password);
   }
@@ -152,7 +152,7 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
   // If using SSLTCP, wrap the TCP socket in a pseudo-SSL socket.
   if (opts & PacketSocketFactory::OPT_SSLTCP) {
     ASSERT(!(opts & PacketSocketFactory::OPT_TLS));
-    socket = new talk_base::AsyncSSLSocket(socket);
+    socket = new rtc::AsyncSSLSocket(socket);
   }
 
   if (socket->Connect(remote_address) < 0) {
@@ -167,18 +167,18 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
   if (opts & PacketSocketFactory::OPT_STUN) {
     tcp_socket = new cricket::AsyncStunTCPSocket(socket, false);
   } else {
-    tcp_socket = new talk_base::AsyncTCPSocket(socket, false);
+    tcp_socket = new rtc::AsyncTCPSocket(socket, false);
   }
 
   // Set TCP_NODELAY (via OPT_NODELAY) for improved performance.
   // See http://go/gtalktcpnodelayexperiment
-  tcp_socket->SetOption(talk_base::Socket::OPT_NODELAY, 1);
+  tcp_socket->SetOption(rtc::Socket::OPT_NODELAY, 1);
 
   return tcp_socket;
 }
 
 AsyncResolverInterface* BasicPacketSocketFactory::CreateAsyncResolver() {
-  return new talk_base::AsyncResolver();
+  return new rtc::AsyncResolver();
 }
 
 int BasicPacketSocketFactory::BindSocket(
@@ -191,7 +191,7 @@ int BasicPacketSocketFactory::BindSocket(
   } else {
     // Otherwise, try to find a port in the provided range.
     for (int port = min_port; ret < 0 && port <= max_port; ++port) {
-      ret = socket->Bind(talk_base::SocketAddress(local_address.ipaddr(),
+      ret = socket->Bind(rtc::SocketAddress(local_address.ipaddr(),
                                                   port));
     }
   }
@@ -207,4 +207,4 @@ SocketFactory* BasicPacketSocketFactory::socket_factory() {
   }
 }
 
-}  // namespace talk_base
+}  // namespace rtc

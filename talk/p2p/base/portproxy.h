@@ -28,10 +28,10 @@
 #ifndef TALK_P2P_BASE_PORTPROXY_H_
 #define TALK_P2P_BASE_PORTPROXY_H_
 
-#include "talk/base/sigslot.h"
+#include "webrtc/base/sigslot.h"
 #include "talk/p2p/base/portinterface.h"
 
-namespace talk_base {
+namespace rtc {
 class Network;
 }
 
@@ -46,7 +46,7 @@ class PortProxy : public PortInterface, public sigslot::has_slots<> {
   void set_impl(PortInterface* port);
 
   virtual const std::string& Type() const;
-  virtual talk_base::Network* Network() const;
+  virtual rtc::Network* Network() const;
 
   virtual void SetIceProtocolType(IceProtocolType protocol);
   virtual IceProtocolType IceProtocol() const;
@@ -65,22 +65,22 @@ class PortProxy : public PortInterface, public sigslot::has_slots<> {
   virtual Connection* CreateConnection(const Candidate& remote_candidate,
                                        CandidateOrigin origin);
   virtual Connection* GetConnection(
-      const talk_base::SocketAddress& remote_addr);
+      const rtc::SocketAddress& remote_addr);
 
   virtual int SendTo(const void* data, size_t size,
-                     const talk_base::SocketAddress& addr,
-                     const talk_base::PacketOptions& options,
+                     const rtc::SocketAddress& addr,
+                     const rtc::PacketOptions& options,
                      bool payload);
-  virtual int SetOption(talk_base::Socket::Option opt, int value);
-  virtual int GetOption(talk_base::Socket::Option opt, int* value);
+  virtual int SetOption(rtc::Socket::Option opt, int value);
+  virtual int GetOption(rtc::Socket::Option opt, int* value);
   virtual int GetError();
 
   virtual const std::vector<Candidate>& Candidates() const;
 
   virtual void SendBindingResponse(StunMessage* request,
-                                   const talk_base::SocketAddress& addr);
+                                   const rtc::SocketAddress& addr);
   virtual void SendBindingErrorResponse(
-        StunMessage* request, const talk_base::SocketAddress& addr,
+        StunMessage* request, const rtc::SocketAddress& addr,
         int error_code, const std::string& reason);
 
   virtual void EnablePortPackets();
@@ -88,7 +88,7 @@ class PortProxy : public PortInterface, public sigslot::has_slots<> {
 
  private:
   void OnUnknownAddress(PortInterface *port,
-                        const talk_base::SocketAddress &addr,
+                        const rtc::SocketAddress &addr,
                         ProtocolType proto,
                         IceMessage *stun_msg,
                         const std::string &remote_username,

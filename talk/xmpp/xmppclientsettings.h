@@ -29,7 +29,7 @@
 #define TALK_XMPP_XMPPCLIENTSETTINGS_H_
 
 #include "talk/p2p/base/port.h"
-#include "talk/base/cryptstring.h"
+#include "webrtc/base/cryptstring.h"
 #include "talk/xmpp/xmppengine.h"
 
 namespace buzz {
@@ -43,7 +43,7 @@ class XmppUserSettings {
 
   void set_user(const std::string& user) { user_ = user; }
   void set_host(const std::string& host) { host_ = host; }
-  void set_pass(const talk_base::CryptString& pass) { pass_ = pass; }
+  void set_pass(const rtc::CryptString& pass) { pass_ = pass; }
   void set_auth_token(const std::string& mechanism,
                       const std::string& token) {
     auth_mechanism_ = mechanism;
@@ -61,7 +61,7 @@ class XmppUserSettings {
 
   const std::string& user() const { return user_; }
   const std::string& host() const { return host_; }
-  const talk_base::CryptString& pass() const { return pass_; }
+  const rtc::CryptString& pass() const { return pass_; }
   const std::string& auth_mechanism() const { return auth_mechanism_; }
   const std::string& auth_token() const { return auth_token_; }
   const std::string& resource() const { return resource_; }
@@ -73,7 +73,7 @@ class XmppUserSettings {
  private:
   std::string user_;
   std::string host_;
-  talk_base::CryptString pass_;
+  rtc::CryptString pass_;
   std::string auth_mechanism_;
   std::string auth_token_;
   std::string resource_;
@@ -87,40 +87,40 @@ class XmppClientSettings : public XmppUserSettings {
  public:
   XmppClientSettings()
     : protocol_(cricket::PROTO_TCP),
-      proxy_(talk_base::PROXY_NONE),
+      proxy_(rtc::PROXY_NONE),
       proxy_port_(80),
       use_proxy_auth_(false) {
   }
 
-  void set_server(const talk_base::SocketAddress& server) {
+  void set_server(const rtc::SocketAddress& server) {
       server_ = server;
   }
   void set_protocol(cricket::ProtocolType protocol) { protocol_ = protocol; }
-  void set_proxy(talk_base::ProxyType f) { proxy_ = f; }
+  void set_proxy(rtc::ProxyType f) { proxy_ = f; }
   void set_proxy_host(const std::string& host) { proxy_host_ = host; }
   void set_proxy_port(int port) { proxy_port_ = port; };
   void set_use_proxy_auth(bool f) { use_proxy_auth_ = f; }
   void set_proxy_user(const std::string& user) { proxy_user_ = user; }
-  void set_proxy_pass(const talk_base::CryptString& pass) { proxy_pass_ = pass; }
+  void set_proxy_pass(const rtc::CryptString& pass) { proxy_pass_ = pass; }
 
-  const talk_base::SocketAddress& server() const { return server_; }
+  const rtc::SocketAddress& server() const { return server_; }
   cricket::ProtocolType protocol() const { return protocol_; }
-  talk_base::ProxyType proxy() const { return proxy_; }
+  rtc::ProxyType proxy() const { return proxy_; }
   const std::string& proxy_host() const { return proxy_host_; }
   int proxy_port() const { return proxy_port_; }
   bool use_proxy_auth() const { return use_proxy_auth_; }
   const std::string& proxy_user() const { return proxy_user_; }
-  const talk_base::CryptString& proxy_pass() const { return proxy_pass_; }
+  const rtc::CryptString& proxy_pass() const { return proxy_pass_; }
 
  private:
-  talk_base::SocketAddress server_;
+  rtc::SocketAddress server_;
   cricket::ProtocolType protocol_;
-  talk_base::ProxyType proxy_;
+  rtc::ProxyType proxy_;
   std::string proxy_host_;
   int proxy_port_;
   bool use_proxy_auth_;
   std::string proxy_user_;
-  talk_base::CryptString proxy_pass_;
+  rtc::CryptString proxy_pass_;
 };
 
 }

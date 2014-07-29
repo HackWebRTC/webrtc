@@ -29,10 +29,10 @@
 
 #include "talk/session/media/mediasessionclient.h"
 
-#include "talk/base/helpers.h"
-#include "talk/base/logging.h"
-#include "talk/base/stringencode.h"
-#include "talk/base/stringutils.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/stringencode.h"
+#include "webrtc/base/stringutils.h"
 #include "talk/media/base/cryptoparams.h"
 #include "talk/media/base/capturemanager.h"
 #include "talk/media/sctp/sctpdataengine.h"
@@ -283,7 +283,7 @@ bool ParseSsrcAsLegacyStream(const std::string& ssrc_str,
                              ParseError* error) {
   if (!ssrc_str.empty()) {
     uint32 ssrc;
-    if (!talk_base::FromString(ssrc_str, &ssrc)) {
+    if (!rtc::FromString(ssrc_str, &ssrc)) {
       return BadParse("Missing or invalid ssrc.", error);
     }
 
@@ -361,7 +361,7 @@ void ParseBandwidth(const buzz::XmlElement* parent_elem,
                     MediaContentDescription* media) {
   const buzz::XmlElement* bw_elem = GetXmlChild(parent_elem, LN_BANDWIDTH);
   int bandwidth_kbps = -1;
-  if (bw_elem && talk_base::FromString(bw_elem->BodyText(), &bandwidth_kbps)) {
+  if (bw_elem && rtc::FromString(bw_elem->BodyText(), &bandwidth_kbps)) {
     if (bandwidth_kbps >= 0) {
       media->set_bandwidth(bandwidth_kbps * 1000);
     }
@@ -569,7 +569,7 @@ bool ParseJingleStreamsOrLegacySsrc(const buzz::XmlElement* desc_elem,
 bool ParseJingleAudioContent(const buzz::XmlElement* content_elem,
                              ContentDescription** content,
                              ParseError* error) {
-  talk_base::scoped_ptr<AudioContentDescription> audio(
+  rtc::scoped_ptr<AudioContentDescription> audio(
       new AudioContentDescription());
 
   FeedbackParams content_feedback_params;
@@ -611,7 +611,7 @@ bool ParseJingleAudioContent(const buzz::XmlElement* content_elem,
 bool ParseJingleVideoContent(const buzz::XmlElement* content_elem,
                              ContentDescription** content,
                              ParseError* error) {
-  talk_base::scoped_ptr<VideoContentDescription> video(
+  rtc::scoped_ptr<VideoContentDescription> video(
       new VideoContentDescription());
 
   FeedbackParams content_feedback_params;
@@ -654,7 +654,7 @@ bool ParseJingleVideoContent(const buzz::XmlElement* content_elem,
 bool ParseJingleSctpDataContent(const buzz::XmlElement* content_elem,
                                 ContentDescription** content,
                                 ParseError* error) {
-  talk_base::scoped_ptr<DataContentDescription> data(
+  rtc::scoped_ptr<DataContentDescription> data(
       new DataContentDescription());
   data->set_protocol(kMediaProtocolSctp);
 
@@ -666,7 +666,7 @@ bool ParseJingleSctpDataContent(const buzz::XmlElement* content_elem,
     stream.groupid = stream_elem->Attr(QN_NICK);
     stream.id = stream_elem->Attr(QN_NAME);
     uint32 sid;
-    if (!talk_base::FromString(stream_elem->Attr(QN_SID), &sid)) {
+    if (!rtc::FromString(stream_elem->Attr(QN_SID), &sid)) {
       return BadParse("Missing or invalid sid.", error);
     }
     if (sid > kMaxSctpSid) {
@@ -1152,7 +1152,7 @@ bool MediaSessionClient::WriteContent(SignalingProtocol protocol,
     }
   } else {
     return BadWrite("Unknown content type: " +
-                    talk_base::ToString<int>(media->type()), error);
+                    rtc::ToString<int>(media->type()), error);
   }
 
   return true;

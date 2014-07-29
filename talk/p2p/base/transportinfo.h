@@ -31,7 +31,7 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/helpers.h"
+#include "webrtc/base/helpers.h"
 #include "talk/p2p/base/candidate.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/transportdescription.h"

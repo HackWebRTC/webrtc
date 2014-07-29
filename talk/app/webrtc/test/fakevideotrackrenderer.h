@@ -62,7 +62,7 @@ class FakeVideoTrackRenderer : public VideoRendererInterface {
 
  private:
   cricket::FakeVideoRenderer fake_renderer_;
-  talk_base::scoped_refptr<VideoTrackInterface> video_track_;
+  rtc::scoped_refptr<VideoTrackInterface> video_track_;
 };
 
 }  // namespace webrtc

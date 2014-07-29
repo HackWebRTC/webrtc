@@ -41,7 +41,7 @@ using webrtc::AudioSourceInterface;
 class RemoteAudioSource : public Notifier<AudioSourceInterface> {
  public:
   // Creates an instance of RemoteAudioSource.
-  static talk_base::scoped_refptr<RemoteAudioSource> Create();
+  static rtc::scoped_refptr<RemoteAudioSource> Create();
 
  protected:
   RemoteAudioSource();

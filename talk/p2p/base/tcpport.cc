@@ -27,15 +27,15 @@
 
 #include "talk/p2p/base/tcpport.h"
 
-#include "talk/base/common.h"
-#include "talk/base/logging.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/logging.h"
 #include "talk/p2p/base/common.h"
 
 namespace cricket {
 
-TCPPort::TCPPort(talk_base::Thread* thread,
-                 talk_base::PacketSocketFactory* factory,
-                 talk_base::Network* network, const talk_base::IPAddress& ip,
+TCPPort::TCPPort(rtc::Thread* thread,
+                 rtc::PacketSocketFactory* factory,
+                 rtc::Network* network, const rtc::IPAddress& ip,
                  int min_port, int max_port, const std::string& username,
                  const std::string& password, bool allow_listen)
     : Port(thread, LOCAL_PORT_TYPE, factory, network, ip, min_port, max_port,
@@ -53,7 +53,7 @@ bool TCPPort::Init() {
     // Treat failure to create or bind a TCP socket as fatal.  This
     // should never happen.
     socket_ = socket_factory()->CreateServerTcpSocket(
-        talk_base::SocketAddress(ip(), 0), min_port(), max_port(),
+        rtc::SocketAddress(ip(), 0), min_port(), max_port(),
         false /* ssl */);
     if (!socket_) {
       LOG_J(LS_ERROR, this) << "TCP socket creation failed.";
@@ -100,7 +100,7 @@ Connection* TCPPort::CreateConnection(const Candidate& address,
   }
 
   TCPConnection* conn = NULL;
-  if (talk_base::AsyncPacketSocket* socket =
+  if (rtc::AsyncPacketSocket* socket =
       GetIncoming(address.address(), true)) {
     socket->SignalReadPacket.disconnect(this);
     conn = new TCPConnection(this, address, socket);
@@ -118,28 +118,28 @@ void TCPPort::PrepareAddress() {
     // failed, we still want ot add the socket address.
     LOG(LS_VERBOSE) << "Preparing TCP address, current state: "
                     << socket_->GetState();
-    if (socket_->GetState() == talk_base::AsyncPacketSocket::STATE_BOUND ||
-        socket_->GetState() == talk_base::AsyncPacketSocket::STATE_CLOSED)
+    if (socket_->GetState() == rtc::AsyncPacketSocket::STATE_BOUND ||
+        socket_->GetState() == rtc::AsyncPacketSocket::STATE_CLOSED)
       AddAddress(socket_->GetLocalAddress(), socket_->GetLocalAddress(),
-                 talk_base::SocketAddress(),
+                 rtc::SocketAddress(),
                  TCP_PROTOCOL_NAME, LOCAL_PORT_TYPE,
                  ICE_TYPE_PREFERENCE_HOST_TCP, true);
   } else {
     LOG_J(LS_INFO, this) << "Not listening due to firewall restrictions.";
     // Note: We still add the address, since otherwise the remote side won't
     // recognize our incoming TCP connections.
-    AddAddress(talk_base::SocketAddress(ip(), 0),
-               talk_base::SocketAddress(ip(), 0), talk_base::SocketAddress(),
+    AddAddress(rtc::SocketAddress(ip(), 0),
+               rtc::SocketAddress(ip(), 0), rtc::SocketAddress(),
                TCP_PROTOCOL_NAME, LOCAL_PORT_TYPE, ICE_TYPE_PREFERENCE_HOST_TCP,
                true);
   }
 }
 
 int TCPPort::SendTo(const void* data, size_t size,
-                    const talk_base::SocketAddress& addr,
-                    const talk_base::PacketOptions& options,
+                    const rtc::SocketAddress& addr,
+                    const rtc::PacketOptions& options,
                     bool payload) {
-  talk_base::AsyncPacketSocket * socket = NULL;
+  rtc::AsyncPacketSocket * socket = NULL;
   if (TCPConnection * conn = static_cast<TCPConnection*>(GetConnection(addr))) {
     socket = conn->socket();
   } else {
@@ -160,7 +160,7 @@ int TCPPort::SendTo(const void* data, size_t size,
   return sent;
 }
 
-int TCPPort::GetOption(talk_base::Socket::Option opt, int* value) {
+int TCPPort::GetOption(rtc::Socket::Option opt, int* value) {
   if (socket_) {
     return socket_->GetOption(opt, value);
   } else {
@@ -168,7 +168,7 @@ int TCPPort::GetOption(talk_base::Socket::Option opt, int* value) {
   }
 }
 
-int TCPPort::SetOption(talk_base::Socket::Option opt, int value) {
+int TCPPort::SetOption(rtc::Socket::Option opt, int value) {
   if (socket_) {
     return socket_->SetOption(opt, value);
   } else {
@@ -180,8 +180,8 @@ int TCPPort::GetError() {
   return error_;
 }
 
-void TCPPort::OnNewConnection(talk_base::AsyncPacketSocket* socket,
-                              talk_base::AsyncPacketSocket* new_socket) {
+void TCPPort::OnNewConnection(rtc::AsyncPacketSocket* socket,
+                              rtc::AsyncPacketSocket* new_socket) {
   ASSERT(socket == socket_);
 
   Incoming incoming;
@@ -195,9 +195,9 @@ void TCPPort::OnNewConnection(talk_base::AsyncPacketSocket* socket,
   incoming_.push_back(incoming);
 }
 
-talk_base::AsyncPacketSocket* TCPPort::GetIncoming(
-    const talk_base::SocketAddress& addr, bool remove) {
-  talk_base::AsyncPacketSocket* socket = NULL;
+rtc::AsyncPacketSocket* TCPPort::GetIncoming(
+    const rtc::SocketAddress& addr, bool remove) {
+  rtc::AsyncPacketSocket* socket = NULL;
   for (std::list<Incoming>::iterator it = incoming_.begin();
        it != incoming_.end(); ++it) {
     if (it->addr == addr) {
@@ -210,34 +210,34 @@ talk_base::AsyncPacketSocket* TCPPort::GetIncoming(
   return socket;
 }
 
-void TCPPort::OnReadPacket(talk_base::AsyncPacketSocket* socket,
+void TCPPort::OnReadPacket(rtc::AsyncPacketSocket* socket,
                            const char* data, size_t size,
-                           const talk_base::SocketAddress& remote_addr,
-                           const talk_base::PacketTime& packet_time) {
+                           const rtc::SocketAddress& remote_addr,
+                           const rtc::PacketTime& packet_time) {
   Port::OnReadPacket(data, size, remote_addr, PROTO_TCP);
 }
 
-void TCPPort::OnReadyToSend(talk_base::AsyncPacketSocket* socket) {
+void TCPPort::OnReadyToSend(rtc::AsyncPacketSocket* socket) {
   Port::OnReadyToSend();
 }
 
-void TCPPort::OnAddressReady(talk_base::AsyncPacketSocket* socket,
-                             const talk_base::SocketAddress& address) {
-  AddAddress(address, address, talk_base::SocketAddress(), "tcp",
+void TCPPort::OnAddressReady(rtc::AsyncPacketSocket* socket,
+                             const rtc::SocketAddress& address) {
+  AddAddress(address, address, rtc::SocketAddress(), "tcp",
              LOCAL_PORT_TYPE, ICE_TYPE_PREFERENCE_HOST_TCP,
              true);
 }
 
 TCPConnection::TCPConnection(TCPPort* port, const Candidate& candidate,
-                             talk_base::AsyncPacketSocket* socket)
+                             rtc::AsyncPacketSocket* socket)
     : Connection(port, 0, candidate), socket_(socket), error_(0) {
   bool outgoing = (socket_ == NULL);
   if (outgoing) {
     // TODO: Handle failures here (unlikely since TCP).
     int opts = (candidate.protocol() == SSLTCP_PROTOCOL_NAME) ?
-        talk_base::PacketSocketFactory::OPT_SSLTCP : 0;
+        rtc::PacketSocketFactory::OPT_SSLTCP : 0;
     socket_ = port->socket_factory()->CreateClientTcpSocket(
-        talk_base::SocketAddress(port->ip(), 0),
+        rtc::SocketAddress(port->ip(), 0),
         candidate.address(), port->proxy(), port->user_agent(), opts);
     if (socket_) {
       LOG_J(LS_VERBOSE, this) << "Connecting from "
@@ -267,7 +267,7 @@ TCPConnection::~TCPConnection() {
 }
 
 int TCPConnection::Send(const void* data, size_t size,
-                        const talk_base::PacketOptions& options) {
+                        const rtc::PacketOptions& options) {
   if (!socket_) {
     error_ = ENOTCONN;
     return SOCKET_ERROR;
@@ -291,7 +291,7 @@ int TCPConnection::GetError() {
   return error_;
 }
 
-void TCPConnection::OnConnect(talk_base::AsyncPacketSocket* socket) {
+void TCPConnection::OnConnect(rtc::AsyncPacketSocket* socket) {
   ASSERT(socket == socket_);
   // Do not use this connection if the socket bound to a different address than
   // the one we asked for. This is seen in Chrome, where TCP sockets cannot be
@@ -308,7 +308,7 @@ void TCPConnection::OnConnect(talk_base::AsyncPacketSocket* socket) {
   }
 }
 
-void TCPConnection::OnClose(talk_base::AsyncPacketSocket* socket, int error) {
+void TCPConnection::OnClose(rtc::AsyncPacketSocket* socket, int error) {
   ASSERT(socket == socket_);
   LOG_J(LS_VERBOSE, this) << "Connection closed with error " << error;
   set_connected(false);
@@ -316,14 +316,14 @@ void TCPConnection::OnClose(talk_base::AsyncPacketSocket* socket, int error) {
 }
 
 void TCPConnection::OnReadPacket(
-  talk_base::AsyncPacketSocket* socket, const char* data, size_t size,
-  const talk_base::SocketAddress& remote_addr,
-  const talk_base::PacketTime& packet_time) {
+  rtc::AsyncPacketSocket* socket, const char* data, size_t size,
+  const rtc::SocketAddress& remote_addr,
+  const rtc::PacketTime& packet_time) {
   ASSERT(socket == socket_);
   Connection::OnReadPacket(data, size, packet_time);
 }
 
-void TCPConnection::OnReadyToSend(talk_base::AsyncPacketSocket* socket) {
+void TCPConnection::OnReadyToSend(rtc::AsyncPacketSocket* socket) {
   ASSERT(socket == socket_);
   Connection::OnReadyToSend();
 }

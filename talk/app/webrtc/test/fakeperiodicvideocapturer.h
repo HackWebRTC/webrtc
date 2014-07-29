@@ -31,7 +31,7 @@
 #ifndef TALK_APP_WEBRTC_TEST_FAKEPERIODICVIDEOCAPTURER_H_
 #define TALK_APP_WEBRTC_TEST_FAKEPERIODICVIDEOCAPTURER_H_
 
-#include "talk/base/thread.h"
+#include "webrtc/base/thread.h"
 #include "talk/media/base/fakevideocapturer.h"
 
 namespace webrtc {
@@ -56,20 +56,20 @@ class FakePeriodicVideoCapturer : public cricket::FakeVideoCapturer {
   virtual cricket::CaptureState Start(const cricket::VideoFormat& format) {
     cricket::CaptureState state = FakeVideoCapturer::Start(format);
     if (state != cricket::CS_FAILED) {
-      talk_base::Thread::Current()->Post(this, MSG_CREATEFRAME);
+      rtc::Thread::Current()->Post(this, MSG_CREATEFRAME);
     }
     return state;
   }
   virtual void Stop() {
-    talk_base::Thread::Current()->Clear(this);
+    rtc::Thread::Current()->Clear(this);
   }
   // Inherited from MesageHandler.
-  virtual void OnMessage(talk_base::Message* msg) {
+  virtual void OnMessage(rtc::Message* msg) {
     if (msg->message_id == MSG_CREATEFRAME) {
       if (IsRunning()) {
         CaptureFrame();
-        talk_base::Thread::Current()->PostDelayed(static_cast<int>(
-            GetCaptureFormat()->interval / talk_base::kNumNanosecsPerMillisec),
+        rtc::Thread::Current()->PostDelayed(static_cast<int>(
+            GetCaptureFormat()->interval / rtc::kNumNanosecsPerMillisec),
             this, MSG_CREATEFRAME);
         }
     } else {

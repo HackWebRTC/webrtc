@@ -25,10 +25,10 @@
 
 #include <stdio.h>
 #include <vector>
-#include "talk/base/gunit.h"
-#include "talk/base/logging.h"
-#include "talk/base/stringutils.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/stringutils.h"
+#include "webrtc/base/thread.h"
 #include "talk/media/base/testutils.h"
 #include "talk/media/base/videocommon.h"
 #include "talk/media/webrtc/fakewebrtcvcmfactory.h"
@@ -59,7 +59,7 @@ class WebRtcVideoCapturerTest : public testing::Test {
 
  protected:
   FakeWebRtcVcmFactory* factory_;  // owned by capturer_
-  talk_base::scoped_ptr<cricket::WebRtcVideoCapturer> capturer_;
+  rtc::scoped_ptr<cricket::WebRtcVideoCapturer> capturer_;
   cricket::VideoCapturerListener listener_;
 };
 

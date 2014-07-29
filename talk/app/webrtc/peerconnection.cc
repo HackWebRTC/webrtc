@@ -35,8 +35,8 @@
 #include "talk/app/webrtc/mediaconstraintsinterface.h"
 #include "talk/app/webrtc/mediastreamhandler.h"
 #include "talk/app/webrtc/streamcollection.h"
-#include "talk/base/logging.h"
-#include "talk/base/stringencode.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/stringencode.h"
 #include "talk/p2p/client/basicportallocator.h"
 #include "talk/session/media/channelmanager.h"
 
@@ -74,22 +74,22 @@ enum {
   MSG_GETSTATS,
 };
 
-struct SetSessionDescriptionMsg : public talk_base::MessageData {
+struct SetSessionDescriptionMsg : public rtc::MessageData {
   explicit SetSessionDescriptionMsg(
       webrtc::SetSessionDescriptionObserver* observer)
       : observer(observer) {
   }
 
-  talk_base::scoped_refptr<webrtc::SetSessionDescriptionObserver> observer;
+  rtc::scoped_refptr<webrtc::SetSessionDescriptionObserver> observer;
   std::string error;
 };
 
-struct GetStatsMsg : public talk_base::MessageData {
+struct GetStatsMsg : public rtc::MessageData {
   explicit GetStatsMsg(webrtc::StatsObserver* observer)
       : observer(observer) {
   }
   webrtc::StatsReports reports;
-  talk_base::scoped_refptr<webrtc::StatsObserver> observer;
+  rtc::scoped_refptr<webrtc::StatsObserver> observer;
 };
 
 // |in_str| should be of format
@@ -136,7 +136,7 @@ bool ParseHostnameAndPortFromString(const std::string& in_str,
       *host = in_str.substr(1, closebracket - 1);
       std::string::size_type colonpos = in_str.find(':', closebracket);
       if (std::string::npos != colonpos) {
-        if (!talk_base::FromString(
+        if (!rtc::FromString(
             in_str.substr(closebracket + 2, std::string::npos), port)) {
           return false;
         }
@@ -148,7 +148,7 @@ bool ParseHostnameAndPortFromString(const std::string& in_str,
     std::string::size_type colonpos = in_str.find(':');
     if (std::string::npos != colonpos) {
       *host = in_str.substr(0, colonpos);
-      if (!talk_base::FromString(
+      if (!rtc::FromString(
           in_str.substr(colonpos + 1, std::string::npos), port)) {
         return false;
       }
@@ -189,12 +189,12 @@ bool ParseIceServers(const PeerConnectionInterface::IceServers& configuration,
     }
     std::vector<std::string> tokens;
     std::string turn_transport_type = kUdpTransportType;
-    talk_base::tokenize(server.uri, '?', &tokens);
+    rtc::tokenize(server.uri, '?', &tokens);
     std::string uri_without_transport = tokens[0];
     // Let's look into transport= param, if it exists.
     if (tokens.size() == kTurnTransportTokensNum) {  // ?transport= is present.
       std::string uri_transport_param = tokens[1];
-      talk_base::tokenize(uri_transport_param, '=', &tokens);
+      rtc::tokenize(uri_transport_param, '=', &tokens);
       if (tokens[0] == kTransport) {
         // As per above grammar transport param will be consist of lower case
         // letters.
@@ -218,10 +218,10 @@ bool ParseIceServers(const PeerConnectionInterface::IceServers& configuration,
 
     // Let's break hostname.
     tokens.clear();
-    talk_base::tokenize(hoststring, '@', &tokens);
+    rtc::tokenize(hoststring, '@', &tokens);
     hoststring = tokens[0];
     if (tokens.size() == kTurnHostTokensNum) {
-      server.username = talk_base::s_url_decode(tokens[0]);
+      server.username = rtc::s_url_decode(tokens[0]);
       hoststring = tokens[1];
     }
 
@@ -253,9 +253,9 @@ bool ParseIceServers(const PeerConnectionInterface::IceServers& configuration,
         if (server.username.empty()) {
           // Turn url example from the spec |url:"turn:user@turn.example.org"|.
           std::vector<std::string> turn_tokens;
-          talk_base::tokenize(address, '@', &turn_tokens);
+          rtc::tokenize(address, '@', &turn_tokens);
           if (turn_tokens.size() == kTurnHostTokensNum) {
-            server.username = talk_base::s_url_decode(turn_tokens[0]);
+            server.username = rtc::s_url_decode(turn_tokens[0]);
             address = turn_tokens[1];
           }
         }
@@ -387,12 +387,12 @@ bool PeerConnection::DoInitialize(
   return true;
 }
 
-talk_base::scoped_refptr<StreamCollectionInterface>
+rtc::scoped_refptr<StreamCollectionInterface>
 PeerConnection::local_streams() {
   return mediastream_signaling_->local_streams();
 }
 
-talk_base::scoped_refptr<StreamCollectionInterface>
+rtc::scoped_refptr<StreamCollectionInterface>
 PeerConnection::remote_streams() {
   return mediastream_signaling_->remote_streams();
 }
@@ -423,7 +423,7 @@ void PeerConnection::RemoveStream(MediaStreamInterface* local_stream) {
   observer_->OnRenegotiationNeeded();
 }
 
-talk_base::scoped_refptr<DtmfSenderInterface> PeerConnection::CreateDtmfSender(
+rtc::scoped_refptr<DtmfSenderInterface> PeerConnection::CreateDtmfSender(
     AudioTrackInterface* track) {
   if (!track) {
     LOG(LS_ERROR) << "CreateDtmfSender - track is NULL.";
@@ -434,7 +434,7 @@ talk_base::scoped_refptr<DtmfSenderInterface> PeerConnection::CreateDtmfSender(
     return NULL;
   }
 
-  talk_base::scoped_refptr<DtmfSenderInterface> sender(
+  rtc::scoped_refptr<DtmfSenderInterface> sender(
       DtmfSender::Create(track, signaling_thread(), session_.get()));
   if (!sender.get()) {
     LOG(LS_ERROR) << "CreateDtmfSender failed on DtmfSender::Create.";
@@ -452,7 +452,7 @@ bool PeerConnection::GetStats(StatsObserver* observer,
   }
 
   stats_->UpdateStats(level);
-  talk_base::scoped_ptr<GetStatsMsg> msg(new GetStatsMsg(observer));
+  rtc::scoped_ptr<GetStatsMsg> msg(new GetStatsMsg(observer));
   if (!stats_->GetStats(track, &(msg->reports))) {
     return false;
   }
@@ -478,17 +478,17 @@ PeerConnection::ice_gathering_state() {
   return ice_gathering_state_;
 }
 
-talk_base::scoped_refptr<DataChannelInterface>
+rtc::scoped_refptr<DataChannelInterface>
 PeerConnection::CreateDataChannel(
     const std::string& label,
     const DataChannelInit* config) {
   bool first_datachannel = !mediastream_signaling_->HasDataChannels();
 
-  talk_base::scoped_ptr<InternalDataChannelInit> internal_config;
+  rtc::scoped_ptr<InternalDataChannelInit> internal_config;
   if (config) {
     internal_config.reset(new InternalDataChannelInit(*config));
   }
-  talk_base::scoped_refptr<DataChannelInterface> channel(
+  rtc::scoped_refptr<DataChannelInterface> channel(
       session_->CreateDataChannel(label, internal_config.get()));
   if (!channel.get())
     return NULL;
@@ -588,13 +588,13 @@ bool PeerConnection::UpdateIce(const RTCConfiguration& config) {
       return false;
     }
 
-    std::vector<talk_base::SocketAddress> stun_hosts;
+    std::vector<rtc::SocketAddress> stun_hosts;
     typedef std::vector<StunConfiguration>::const_iterator StunIt;
     for (StunIt stun_it = stuns.begin(); stun_it != stuns.end(); ++stun_it) {
       stun_hosts.push_back(stun_it->server);
     }
 
-    talk_base::SocketAddress stun_addr;
+    rtc::SocketAddress stun_addr;
     if (!stun_hosts.empty()) {
       stun_addr = stun_hosts.front();
       LOG(LS_INFO) << "UpdateIce: StunServer Address: " << stun_addr.ToString();
@@ -684,7 +684,7 @@ void PeerConnection::OnSessionStateChange(cricket::BaseSession* /*session*/,
   }
 }
 
-void PeerConnection::OnMessage(talk_base::Message* msg) {
+void PeerConnection::OnMessage(rtc::Message* msg) {
   switch (msg->message_id) {
     case MSG_SET_SESSIONDESCRIPTION_SUCCESS: {
       SetSessionDescriptionMsg* param =

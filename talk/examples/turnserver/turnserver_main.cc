@@ -27,10 +27,10 @@
 
 #include <iostream>  // NOLINT
 
-#include "talk/base/asyncudpsocket.h"
-#include "talk/base/optionsfile.h"
-#include "talk/base/thread.h"
-#include "talk/base/stringencode.h"
+#include "webrtc/base/asyncudpsocket.h"
+#include "webrtc/base/optionsfile.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/base/stringencode.h"
 #include "talk/p2p/base/basicpacketsocketfactory.h"
 #include "talk/p2p/base/turnserver.h"
 
@@ -49,13 +49,13 @@ class TurnFileAuth : public cricket::TurnAuthInterface {
     bool ret = file_.GetStringValue(username, &hex);
     if (ret) {
       char buf[32];
-      size_t len = talk_base::hex_decode(buf, sizeof(buf), hex);
+      size_t len = rtc::hex_decode(buf, sizeof(buf), hex);
       *key = std::string(buf, len);
     }
     return ret;
   }
  private:
-  talk_base::OptionsFile file_;
+  rtc::OptionsFile file_;
 };
 
 int main(int argc, char **argv) {
@@ -65,21 +65,21 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  talk_base::SocketAddress int_addr;
+  rtc::SocketAddress int_addr;
   if (!int_addr.FromString(argv[1])) {
     std::cerr << "Unable to parse IP address: " << argv[1] << std::endl;
     return 1;
   }
 
-  talk_base::IPAddress ext_addr;
+  rtc::IPAddress ext_addr;
   if (!IPFromString(argv[2], &ext_addr)) {
     std::cerr << "Unable to parse IP address: " << argv[2] << std::endl;
     return 1;
   }
 
-  talk_base::Thread* main = talk_base::Thread::Current();
-  talk_base::AsyncUDPSocket* int_socket =
-      talk_base::AsyncUDPSocket::Create(main->socketserver(), int_addr);
+  rtc::Thread* main = rtc::Thread::Current();
+  rtc::AsyncUDPSocket* int_socket =
+      rtc::AsyncUDPSocket::Create(main->socketserver(), int_addr);
   if (!int_socket) {
     std::cerr << "Failed to create a UDP socket bound at"
               << int_addr.ToString() << std::endl;
@@ -92,8 +92,8 @@ int main(int argc, char **argv) {
   server.set_software(kSoftware);
   server.set_auth_hook(&auth);
   server.AddInternalSocket(int_socket, cricket::PROTO_UDP);
-  server.SetExternalSocketFactory(new talk_base::BasicPacketSocketFactory(),
-                                  talk_base::SocketAddress(ext_addr, 0));
+  server.SetExternalSocketFactory(new rtc::BasicPacketSocketFactory(),
+                                  rtc::SocketAddress(ext_addr, 0));
 
   std::cout << "Listening internally at " << int_addr.ToString() << std::endl;
 

@@ -37,11 +37,11 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/stream.h"
-#include "talk/base/stringutils.h"
+#include "webrtc/base/stream.h"
+#include "webrtc/base/stringutils.h"
 #include "talk/media/base/videocapturer.h"
 
-namespace talk_base {
+namespace rtc {
 class FileStream;
 }
 
@@ -65,7 +65,7 @@ class VideoRecorder {
   bool RecordFrame(const CapturedFrame& frame);
 
  private:
-  talk_base::FileStream video_file_;
+  rtc::FileStream video_file_;
   bool write_header_;
 
   DISALLOW_COPY_AND_ASSIGN(VideoRecorder);
@@ -80,7 +80,7 @@ class FileVideoCapturer : public VideoCapturer {
   // Determines if the given device is actually a video file, to be captured
   // with a FileVideoCapturer.
   static bool IsFileVideoCapturerDevice(const Device& device) {
-    return talk_base::starts_with(device.id.c_str(), kVideoFileDevicePrefix);
+    return rtc::starts_with(device.id.c_str(), kVideoFileDevicePrefix);
   }
 
   // Creates a fake device for the given filename.
@@ -91,7 +91,7 @@ class FileVideoCapturer : public VideoCapturer {
   }
 
   // Set how many times to repeat reading the file. Repeat forever if the
-  // parameter is talk_base::kForever(-1); no repeat if the parameter is 0 or
+  // parameter is rtc::kForever(-1); no repeat if the parameter is 0 or
   // less than -1.
   void set_repeat(int repeat) { repeat_ = repeat; }
 
@@ -120,7 +120,7 @@ class FileVideoCapturer : public VideoCapturer {
   virtual bool GetPreferredFourccs(std::vector<uint32>* fourccs);
 
   // Read the frame header from the file stream, video_file_.
-  talk_base::StreamResult ReadFrameHeader(CapturedFrame* frame);
+  rtc::StreamResult ReadFrameHeader(CapturedFrame* frame);
 
   // Read a frame and determine how long to wait for the next frame. If the
   // frame is read successfully, Set the output parameter, wait_time_ms and
@@ -138,7 +138,7 @@ class FileVideoCapturer : public VideoCapturer {
   class FileReadThread;  // Forward declaration, defined in .cc.
 
   static const char* kVideoFileDevicePrefix;
-  talk_base::FileStream video_file_;
+  rtc::FileStream video_file_;
   CapturedFrame captured_frame_;
   // The number of bytes allocated buffer for captured_frame_.data.
   uint32 frame_buffer_size_;

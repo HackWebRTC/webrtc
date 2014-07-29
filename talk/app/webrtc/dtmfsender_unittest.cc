@@ -32,9 +32,9 @@
 #include <vector>
 
 #include "talk/app/webrtc/audiotrack.h"
-#include "talk/base/gunit.h"
-#include "talk/base/logging.h"
-#include "talk/base/timeutils.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/timeutils.h"
 
 using webrtc::AudioTrackInterface;
 using webrtc::AudioTrack;
@@ -97,12 +97,12 @@ class FakeDtmfProvider : public DtmfProviderInterface {
   virtual bool InsertDtmf(const std::string& track_label,
                           int code, int duration) OVERRIDE {
     int gap = 0;
-    // TODO(ronghuawu): Make the timer (basically the talk_base::TimeNanos)
+    // TODO(ronghuawu): Make the timer (basically the rtc::TimeNanos)
     // mockable and use a fake timer in the unit tests.
     if (last_insert_dtmf_call_ > 0) {
-      gap = static_cast<int>(talk_base::Time() - last_insert_dtmf_call_);
+      gap = static_cast<int>(rtc::Time() - last_insert_dtmf_call_);
     }
-    last_insert_dtmf_call_ = talk_base::Time();
+    last_insert_dtmf_call_ = rtc::Time();
 
     LOG(LS_VERBOSE) << "FakeDtmfProvider::InsertDtmf code=" << code
                     << " duration=" << duration
@@ -139,10 +139,10 @@ class DtmfSenderTest : public testing::Test {
  protected:
   DtmfSenderTest()
       : track_(AudioTrack::Create(kTestAudioLabel, NULL)),
-        observer_(new talk_base::RefCountedObject<FakeDtmfObserver>()),
+        observer_(new rtc::RefCountedObject<FakeDtmfObserver>()),
         provider_(new FakeDtmfProvider()) {
     provider_->AddCanInsertDtmfTrack(kTestAudioLabel);
-    dtmf_ = DtmfSender::Create(track_, talk_base::Thread::Current(),
+    dtmf_ = DtmfSender::Create(track_, rtc::Thread::Current(),
                                provider_.get());
     dtmf_->RegisterObserver(observer_.get());
   }
@@ -229,10 +229,10 @@ class DtmfSenderTest : public testing::Test {
     }
   }
 
-  talk_base::scoped_refptr<AudioTrackInterface> track_;
-  talk_base::scoped_ptr<FakeDtmfObserver> observer_;
-  talk_base::scoped_ptr<FakeDtmfProvider> provider_;
-  talk_base::scoped_refptr<DtmfSender> dtmf_;
+  rtc::scoped_refptr<AudioTrackInterface> track_;
+  rtc::scoped_ptr<FakeDtmfObserver> observer_;
+  rtc::scoped_ptr<FakeDtmfProvider> provider_;
+  rtc::scoped_refptr<DtmfSender> dtmf_;
 };
 
 TEST_F(DtmfSenderTest, CanInsertDtmf) {

@@ -35,6 +35,6 @@
 @interface RTCVideoTrack (Internal)
 
 @property(nonatomic, assign, readonly)
-    talk_base::scoped_refptr<webrtc::VideoTrackInterface> videoTrack;
+    rtc::scoped_refptr<webrtc::VideoTrackInterface> videoTrack;
 
 @end

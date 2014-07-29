@@ -32,24 +32,24 @@
 
 #include "talk/app/webrtc/datachannelinterface.h"
 
-namespace talk_base {
+namespace rtc {
 class Buffer;
-}  // namespace talk_base
+}  // namespace rtc
 
 namespace webrtc {
 struct DataChannelInit;
 
-bool ParseDataChannelOpenMessage(const talk_base::Buffer& payload,
+bool ParseDataChannelOpenMessage(const rtc::Buffer& payload,
                                  std::string* label,
                                  DataChannelInit* config);
 
-bool ParseDataChannelOpenAckMessage(const talk_base::Buffer& payload);
+bool ParseDataChannelOpenAckMessage(const rtc::Buffer& payload);
 
 bool WriteDataChannelOpenMessage(const std::string& label,
                                  const DataChannelInit& config,
-                                 talk_base::Buffer* payload);
+                                 rtc::Buffer* payload);
 
-void WriteDataChannelOpenAckMessage(talk_base::Buffer* payload);
+void WriteDataChannelOpenAckMessage(rtc::Buffer* payload);
 }  // namespace webrtc
 
 #endif  // TALK_APP_WEBRTC_SCTPUTILS_H_

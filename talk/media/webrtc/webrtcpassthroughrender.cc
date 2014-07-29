@@ -27,8 +27,8 @@
 
 #include "talk/media/webrtc/webrtcpassthroughrender.h"
 
-#include "talk/base/common.h"
-#include "talk/base/logging.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/logging.h"
 
 namespace cricket {
 
@@ -45,7 +45,7 @@ class PassthroughStream: public webrtc::VideoRenderCallback {
   }
   virtual int32_t RenderFrame(const uint32_t stream_id,
                               webrtc::I420VideoFrame& videoFrame) {
-    talk_base::CritScope cs(&stream_critical_);
+    rtc::CritScope cs(&stream_critical_);
     // Send frame for rendering directly
     if (running_ && renderer_) {
       renderer_->RenderFrame(stream_id, videoFrame);
@@ -53,19 +53,19 @@ class PassthroughStream: public webrtc::VideoRenderCallback {
     return 0;
   }
   int32_t SetRenderer(VideoRenderCallback* renderer) {
-    talk_base::CritScope cs(&stream_critical_);
+    rtc::CritScope cs(&stream_critical_);
     renderer_ = renderer;
     return 0;
   }
 
   int32_t StartRender() {
-    talk_base::CritScope cs(&stream_critical_);
+    rtc::CritScope cs(&stream_critical_);
     running_ = true;
     return 0;
   }
 
   int32_t StopRender() {
-    talk_base::CritScope cs(&stream_critical_);
+    rtc::CritScope cs(&stream_critical_);
     running_ = false;
     return 0;
   }
@@ -73,7 +73,7 @@ class PassthroughStream: public webrtc::VideoRenderCallback {
  private:
   uint32_t stream_id_;
   VideoRenderCallback* renderer_;
-  talk_base::CriticalSection stream_critical_;
+  rtc::CriticalSection stream_critical_;
   bool running_;
 };
 
@@ -94,7 +94,7 @@ webrtc::VideoRenderCallback* WebRtcPassthroughRender::AddIncomingRenderStream(
     const uint32_t zOrder,
     const float left, const float top,
     const float right, const float bottom) {
-  talk_base::CritScope cs(&render_critical_);
+  rtc::CritScope cs(&render_critical_);
   // Stream already exist.
   if (FindStream(stream_id) != NULL) {
     LOG(LS_ERROR) << "AddIncomingRenderStream - Stream already exists: "
@@ -110,7 +110,7 @@ webrtc::VideoRenderCallback* WebRtcPassthroughRender::AddIncomingRenderStream(
 
 int32_t WebRtcPassthroughRender::DeleteIncomingRenderStream(
     const uint32_t stream_id) {
-  talk_base::CritScope cs(&render_critical_);
+  rtc::CritScope cs(&render_critical_);
   PassthroughStream* stream = FindStream(stream_id);
   if (stream == NULL) {
     LOG_FIND_STREAM_ERROR("DeleteIncomingRenderStream", stream_id);
@@ -124,7 +124,7 @@ int32_t WebRtcPassthroughRender::DeleteIncomingRenderStream(
 int32_t WebRtcPassthroughRender::AddExternalRenderCallback(
     const uint32_t stream_id,
     webrtc::VideoRenderCallback* render_object) {
-  talk_base::CritScope cs(&render_critical_);
+  rtc::CritScope cs(&render_critical_);
   PassthroughStream* stream = FindStream(stream_id);
   if (stream == NULL) {
     LOG_FIND_STREAM_ERROR("AddExternalRenderCallback", stream_id);
@@ -143,7 +143,7 @@ webrtc::RawVideoType WebRtcPassthroughRender::PreferredVideoType() const {
 }
 
 int32_t WebRtcPassthroughRender::StartRender(const uint32_t stream_id) {
-  talk_base::CritScope cs(&render_critical_);
+  rtc::CritScope cs(&render_critical_);
   PassthroughStream* stream = FindStream(stream_id);
   if (stream == NULL) {
     LOG_FIND_STREAM_ERROR("StartRender", stream_id);
@@ -153,7 +153,7 @@ int32_t WebRtcPassthroughRender::StartRender(const uint32_t stream_id) {
 }
 
 int32_t WebRtcPassthroughRender::StopRender(const uint32_t stream_id) {
-  talk_base::CritScope cs(&render_critical_);
+  rtc::CritScope cs(&render_critical_);
   PassthroughStream* stream = FindStream(stream_id);
   if (stream == NULL) {
     LOG_FIND_STREAM_ERROR("StopRender", stream_id);

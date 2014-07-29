@@ -40,8 +40,8 @@ XmppAuth::~XmppAuth() {
 }
 
 void XmppAuth::StartPreXmppAuth(const buzz::Jid& jid,
-                                const talk_base::SocketAddress& server,
-                                const talk_base::CryptString& pass,
+                                const rtc::SocketAddress& server,
+                                const rtc::CryptString& pass,
                                 const std::string& auth_mechanism,
                                 const std::string& auth_token) {
   jid_ = jid;

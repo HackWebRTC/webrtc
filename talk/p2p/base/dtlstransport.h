@@ -31,7 +31,7 @@
 #include "talk/p2p/base/dtlstransportchannel.h"
 #include "talk/p2p/base/transport.h"
 
-namespace talk_base {
+namespace rtc {
 class SSLIdentity;
 }
 
@@ -43,23 +43,23 @@ class PortAllocator;
 template<class Base>
 class DtlsTransport : public Base {
  public:
-  DtlsTransport(talk_base::Thread* signaling_thread,
-                talk_base::Thread* worker_thread,
+  DtlsTransport(rtc::Thread* signaling_thread,
+                rtc::Thread* worker_thread,
                 const std::string& content_name,
                 PortAllocator* allocator,
-                talk_base::SSLIdentity* identity)
+                rtc::SSLIdentity* identity)
       : Base(signaling_thread, worker_thread, content_name, allocator),
         identity_(identity),
-        secure_role_(talk_base::SSL_CLIENT) {
+        secure_role_(rtc::SSL_CLIENT) {
   }
 
   ~DtlsTransport() {
     Base::DestroyAllChannels();
   }
-  virtual void SetIdentity_w(talk_base::SSLIdentity* identity) {
+  virtual void SetIdentity_w(rtc::SSLIdentity* identity) {
     identity_ = identity;
   }
-  virtual bool GetIdentity_w(talk_base::SSLIdentity** identity) {
+  virtual bool GetIdentity_w(rtc::SSLIdentity** identity) {
     if (!identity_)
       return false;
 
@@ -69,14 +69,14 @@ class DtlsTransport : public Base {
 
   virtual bool ApplyLocalTransportDescription_w(TransportChannelImpl* channel,
                                                 std::string* error_desc) {
-    talk_base::SSLFingerprint* local_fp =
+    rtc::SSLFingerprint* local_fp =
         Base::local_description()->identity_fingerprint.get();
 
     if (local_fp) {
       // Sanity check local fingerprint.
       if (identity_) {
-        talk_base::scoped_ptr<talk_base::SSLFingerprint> local_fp_tmp(
-            talk_base::SSLFingerprint::Create(local_fp->algorithm,
+        rtc::scoped_ptr<rtc::SSLFingerprint> local_fp_tmp(
+            rtc::SSLFingerprint::Create(local_fp->algorithm,
                                               identity_));
         ASSERT(local_fp_tmp.get() != NULL);
         if (!(*local_fp_tmp == *local_fp)) {
@@ -112,13 +112,13 @@ class DtlsTransport : public Base {
       return BadTransportDescription(msg, error_desc);
     }
 
-    talk_base::SSLFingerprint* local_fp =
+    rtc::SSLFingerprint* local_fp =
         Base::local_description()->identity_fingerprint.get();
-    talk_base::SSLFingerprint* remote_fp =
+    rtc::SSLFingerprint* remote_fp =
         Base::remote_description()->identity_fingerprint.get();
 
     if (remote_fp && local_fp) {
-      remote_fingerprint_.reset(new talk_base::SSLFingerprint(*remote_fp));
+      remote_fingerprint_.reset(new rtc::SSLFingerprint(*remote_fp));
 
       // From RFC 4145, section-4.1, The following are the values that the
       // 'setup' attribute can take in an offer/answer exchange:
@@ -188,8 +188,8 @@ class DtlsTransport : public Base {
         // If local is passive, local will act as server.
       }
 
-      secure_role_ = is_remote_server ? talk_base::SSL_CLIENT :
-                                        talk_base::SSL_SERVER;
+      secure_role_ = is_remote_server ? rtc::SSL_CLIENT :
+                                        rtc::SSL_SERVER;
 
     } else if (local_fp && (local_role == CA_ANSWER)) {
       return BadTransportDescription(
@@ -197,7 +197,7 @@ class DtlsTransport : public Base {
           error_desc);
     } else {
       // We are not doing DTLS
-      remote_fingerprint_.reset(new talk_base::SSLFingerprint(
+      remote_fingerprint_.reset(new rtc::SSLFingerprint(
           "", NULL, 0));
     }
 
@@ -219,7 +219,7 @@ class DtlsTransport : public Base {
     Base::DestroyTransportChannel(base_channel);
   }
 
-  virtual bool GetSslRole_w(talk_base::SSLRole* ssl_role) const {
+  virtual bool GetSslRole_w(rtc::SSLRole* ssl_role) const {
     ASSERT(ssl_role != NULL);
     *ssl_role = secure_role_;
     return true;
@@ -247,9 +247,9 @@ class DtlsTransport : public Base {
     return Base::ApplyNegotiatedTransportDescription_w(channel, error_desc);
   }
 
-  talk_base::SSLIdentity* identity_;
-  talk_base::SSLRole secure_role_;
-  talk_base::scoped_ptr<talk_base::SSLFingerprint> remote_fingerprint_;
+  rtc::SSLIdentity* identity_;
+  rtc::SSLRole secure_role_;
+  rtc::scoped_ptr<rtc::SSLFingerprint> remote_fingerprint_;
 };
 
 }  // namespace cricket

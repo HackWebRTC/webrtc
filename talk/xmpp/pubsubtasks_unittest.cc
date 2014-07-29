@@ -3,9 +3,9 @@
 
 #include <string>
 
-#include "talk/base/faketaskrunner.h"
-#include "talk/base/gunit.h"
-#include "talk/base/sigslot.h"
+#include "webrtc/base/faketaskrunner.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/sigslot.h"
 #include "talk/xmllite/qname.h"
 #include "talk/xmllite/xmlelement.h"
 #include "talk/xmpp/constants.h"
@@ -68,15 +68,15 @@ class PubSubTasksTest : public testing::Test {
       pubsubjid("room@domain.com"),
       node("topic"),
       itemid("key") {
-    runner.reset(new talk_base::FakeTaskRunner());
+    runner.reset(new rtc::FakeTaskRunner());
     client = new buzz::FakeXmppClient(runner.get());
     listener.reset(new TestPubSubTasksListener());
   }
 
-  talk_base::scoped_ptr<talk_base::FakeTaskRunner> runner;
+  rtc::scoped_ptr<rtc::FakeTaskRunner> runner;
   // Client deleted by deleting runner.
   buzz::FakeXmppClient* client;
-  talk_base::scoped_ptr<TestPubSubTasksListener> listener;
+  rtc::scoped_ptr<TestPubSubTasksListener> listener;
   buzz::Jid pubsubjid;
   std::string node;
   std::string itemid;

@@ -29,9 +29,9 @@
 
 #include <iostream>
 
-#include "talk/base/basictypes.h"
-#include "talk/base/gunit.h"
-#include "talk/base/systeminfo.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/systeminfo.h"
 
 TEST(CpuInfoTest, CpuId) {
   LOG(LS_INFO) << "ARM: "

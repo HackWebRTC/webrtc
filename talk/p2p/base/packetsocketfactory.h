@@ -28,9 +28,9 @@
 #ifndef TALK_BASE_PACKETSOCKETFACTORY_H_
 #define TALK_BASE_PACKETSOCKETFACTORY_H_
 
-#include "talk/base/proxyinfo.h"
+#include "webrtc/base/proxyinfo.h"
 
-namespace talk_base {
+namespace rtc {
 
 class AsyncPacketSocket;
 class AsyncResolverInterface;
@@ -64,6 +64,6 @@ class PacketSocketFactory {
   DISALLOW_EVIL_CONSTRUCTORS(PacketSocketFactory);
 };
 
-}  // namespace talk_base
+}  // namespace rtc
 
 #endif  // TALK_BASE_PACKETSOCKETFACTORY_H_

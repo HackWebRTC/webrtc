@@ -30,7 +30,7 @@
 
 #include <string>
 #include <vector>
-#include "talk/base/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "talk/xmllite/xmlparser.h"
 
 #ifdef EXPAT_RELATIVE_PATH
@@ -69,8 +69,8 @@ public:
 
 private:
   XmlElement * pelCurrent_;
-  talk_base::scoped_ptr<XmlElement> pelRoot_;
-  talk_base::scoped_ptr<std::vector<XmlElement*> > pvParents_;
+  rtc::scoped_ptr<XmlElement> pelRoot_;
+  rtc::scoped_ptr<std::vector<XmlElement*> > pvParents_;
 };
 
 }

@@ -30,12 +30,12 @@
 
 #include <string>
 
-#include "talk/base/asyncpacketsocket.h"
+#include "webrtc/base/asyncpacketsocket.h"
 #include "talk/p2p/base/port.h"
 #include "talk/p2p/base/stunrequest.h"
 
 // TODO(mallinath) - Rename stunport.cc|h to udpport.cc|h.
-namespace talk_base {
+namespace rtc {
 class AsyncResolver;
 class SignalThread;
 }
@@ -45,10 +45,10 @@ namespace cricket {
 // Communicates using the address on the outside of a NAT.
 class UDPPort : public Port {
  public:
-  static UDPPort* Create(talk_base::Thread* thread,
-                         talk_base::PacketSocketFactory* factory,
-                         talk_base::Network* network,
-                         talk_base::AsyncPacketSocket* socket,
+  static UDPPort* Create(rtc::Thread* thread,
+                         rtc::PacketSocketFactory* factory,
+                         rtc::Network* network,
+                         rtc::AsyncPacketSocket* socket,
                          const std::string& username,
                          const std::string& password) {
     UDPPort* port = new UDPPort(thread, factory, network, socket,
@@ -60,10 +60,10 @@ class UDPPort : public Port {
     return port;
   }
 
-  static UDPPort* Create(talk_base::Thread* thread,
-                         talk_base::PacketSocketFactory* factory,
-                         talk_base::Network* network,
-                         const talk_base::IPAddress& ip,
+  static UDPPort* Create(rtc::Thread* thread,
+                         rtc::PacketSocketFactory* factory,
+                         rtc::Network* network,
+                         const rtc::IPAddress& ip,
                          int min_port, int max_port,
                          const std::string& username,
                          const std::string& password) {
@@ -78,7 +78,7 @@ class UDPPort : public Port {
   }
   virtual ~UDPPort();
 
-  talk_base::SocketAddress GetLocalAddress() const {
+  rtc::SocketAddress GetLocalAddress() const {
     return socket_->GetLocalAddress();
   }
 
@@ -94,14 +94,14 @@ class UDPPort : public Port {
 
   virtual Connection* CreateConnection(const Candidate& address,
                                        CandidateOrigin origin);
-  virtual int SetOption(talk_base::Socket::Option opt, int value);
-  virtual int GetOption(talk_base::Socket::Option opt, int* value);
+  virtual int SetOption(rtc::Socket::Option opt, int value);
+  virtual int GetOption(rtc::Socket::Option opt, int* value);
   virtual int GetError();
 
   virtual bool HandleIncomingPacket(
-      talk_base::AsyncPacketSocket* socket, const char* data, size_t size,
-      const talk_base::SocketAddress& remote_addr,
-      const talk_base::PacketTime& packet_time) {
+      rtc::AsyncPacketSocket* socket, const char* data, size_t size,
+      const rtc::SocketAddress& remote_addr,
+      const rtc::PacketTime& packet_time) {
     // All packets given to UDP port will be consumed.
     OnReadPacket(socket, data, size, remote_addr, packet_time);
     return true;
@@ -115,30 +115,30 @@ class UDPPort : public Port {
   }
 
  protected:
-  UDPPort(talk_base::Thread* thread, talk_base::PacketSocketFactory* factory,
-          talk_base::Network* network, const talk_base::IPAddress& ip,
+  UDPPort(rtc::Thread* thread, rtc::PacketSocketFactory* factory,
+          rtc::Network* network, const rtc::IPAddress& ip,
           int min_port, int max_port,
           const std::string& username, const std::string& password);
 
-  UDPPort(talk_base::Thread* thread, talk_base::PacketSocketFactory* factory,
-          talk_base::Network* network, talk_base::AsyncPacketSocket* socket,
+  UDPPort(rtc::Thread* thread, rtc::PacketSocketFactory* factory,
+          rtc::Network* network, rtc::AsyncPacketSocket* socket,
           const std::string& username, const std::string& password);
 
   bool Init();
 
   virtual int SendTo(const void* data, size_t size,
-                     const talk_base::SocketAddress& addr,
-                     const talk_base::PacketOptions& options,
+                     const rtc::SocketAddress& addr,
+                     const rtc::PacketOptions& options,
                      bool payload);
 
-  void OnLocalAddressReady(talk_base::AsyncPacketSocket* socket,
-                           const talk_base::SocketAddress& address);
-  void OnReadPacket(talk_base::AsyncPacketSocket* socket,
+  void OnLocalAddressReady(rtc::AsyncPacketSocket* socket,
+                           const rtc::SocketAddress& address);
+  void OnReadPacket(rtc::AsyncPacketSocket* socket,
                     const char* data, size_t size,
-                    const talk_base::SocketAddress& remote_addr,
-                    const talk_base::PacketTime& packet_time);
+                    const rtc::SocketAddress& remote_addr,
+                    const rtc::PacketTime& packet_time);
 
-  void OnReadyToSend(talk_base::AsyncPacketSocket* socket);
+  void OnReadyToSend(rtc::AsyncPacketSocket* socket);
 
   // This method will send STUN binding request if STUN server address is set.
   void MaybePrepareStunCandidate();
@@ -147,45 +147,45 @@ class UDPPort : public Port {
 
  private:
   // A helper class which can be called repeatedly to resolve multiple
-  // addresses, as opposed to talk_base::AsyncResolverInterface, which can only
+  // addresses, as opposed to rtc::AsyncResolverInterface, which can only
   // resolve one address per instance.
   class AddressResolver : public sigslot::has_slots<> {
    public:
-    explicit AddressResolver(talk_base::PacketSocketFactory* factory);
+    explicit AddressResolver(rtc::PacketSocketFactory* factory);
     ~AddressResolver();
 
-    void Resolve(const talk_base::SocketAddress& address);
-    bool GetResolvedAddress(const talk_base::SocketAddress& input,
+    void Resolve(const rtc::SocketAddress& address);
+    bool GetResolvedAddress(const rtc::SocketAddress& input,
                             int family,
-                            talk_base::SocketAddress* output) const;
+                            rtc::SocketAddress* output) const;
 
     // The signal is sent when resolving the specified address is finished. The
     // first argument is the input address, the second argument is the error
     // or 0 if it succeeded.
-    sigslot::signal2<const talk_base::SocketAddress&, int> SignalDone;
+    sigslot::signal2<const rtc::SocketAddress&, int> SignalDone;
 
    private:
-    typedef std::map<talk_base::SocketAddress,
-                     talk_base::AsyncResolverInterface*> ResolverMap;
+    typedef std::map<rtc::SocketAddress,
+                     rtc::AsyncResolverInterface*> ResolverMap;
 
-    void OnResolveResult(talk_base::AsyncResolverInterface* resolver);
+    void OnResolveResult(rtc::AsyncResolverInterface* resolver);
 
-    talk_base::PacketSocketFactory* socket_factory_;
+    rtc::PacketSocketFactory* socket_factory_;
     ResolverMap resolvers_;
   };
 
   // DNS resolution of the STUN server.
-  void ResolveStunAddress(const talk_base::SocketAddress& stun_addr);
-  void OnResolveResult(const talk_base::SocketAddress& input, int error);
+  void ResolveStunAddress(const rtc::SocketAddress& stun_addr);
+  void OnResolveResult(const rtc::SocketAddress& input, int error);
 
-  void SendStunBindingRequest(const talk_base::SocketAddress& stun_addr);
+  void SendStunBindingRequest(const rtc::SocketAddress& stun_addr);
 
   // Below methods handles binding request responses.
   void OnStunBindingRequestSucceeded(
-      const talk_base::SocketAddress& stun_server_addr,
-      const talk_base::SocketAddress& stun_reflected_addr);
+      const rtc::SocketAddress& stun_server_addr,
+      const rtc::SocketAddress& stun_reflected_addr);
   void OnStunBindingOrResolveRequestFailed(
-      const talk_base::SocketAddress& stun_server_addr);
+      const rtc::SocketAddress& stun_server_addr);
 
   // Sends STUN requests to the server.
   void OnSendPacket(const void* data, size_t size, StunRequest* req);
@@ -198,9 +198,9 @@ class UDPPort : public Port {
   ServerAddresses bind_request_succeeded_servers_;
   ServerAddresses bind_request_failed_servers_;
   StunRequestManager requests_;
-  talk_base::AsyncPacketSocket* socket_;
+  rtc::AsyncPacketSocket* socket_;
   int error_;
-  talk_base::scoped_ptr<AddressResolver> resolver_;
+  rtc::scoped_ptr<AddressResolver> resolver_;
   bool ready_;
   int stun_keepalive_delay_;
 
@@ -210,10 +210,10 @@ class UDPPort : public Port {
 class StunPort : public UDPPort {
  public:
   static StunPort* Create(
-      talk_base::Thread* thread,
-      talk_base::PacketSocketFactory* factory,
-      talk_base::Network* network,
-      const talk_base::IPAddress& ip,
+      rtc::Thread* thread,
+      rtc::PacketSocketFactory* factory,
+      rtc::Network* network,
+      const rtc::IPAddress& ip,
       int min_port, int max_port,
       const std::string& username,
       const std::string& password,
@@ -235,8 +235,8 @@ class StunPort : public UDPPort {
   }
 
  protected:
-  StunPort(talk_base::Thread* thread, talk_base::PacketSocketFactory* factory,
-           talk_base::Network* network, const talk_base::IPAddress& ip,
+  StunPort(rtc::Thread* thread, rtc::PacketSocketFactory* factory,
+           rtc::Network* network, const rtc::IPAddress& ip,
            int min_port, int max_port,
            const std::string& username, const std::string& password,
            const ServerAddresses& servers)

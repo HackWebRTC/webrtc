@@ -37,9 +37,9 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/basictypes.h"
-#include "talk/base/refcount.h"
-#include "talk/base/scoped_ref_ptr.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/refcount.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 
 namespace cricket {
 
@@ -73,7 +73,7 @@ class NotifierInterface {
 // provide media. A source can be shared with multiple tracks.
 // TODO(perkj): Implement sources for local and remote audio tracks and
 // remote video tracks.
-class MediaSourceInterface : public talk_base::RefCountInterface,
+class MediaSourceInterface : public rtc::RefCountInterface,
                              public NotifierInterface {
  public:
   enum SourceState {
@@ -90,7 +90,7 @@ class MediaSourceInterface : public talk_base::RefCountInterface,
 };
 
 // Information about a track.
-class MediaStreamTrackInterface : public talk_base::RefCountInterface,
+class MediaStreamTrackInterface : public rtc::RefCountInterface,
                                   public NotifierInterface {
  public:
   enum TrackState {
@@ -176,7 +176,7 @@ class AudioTrackSinkInterface {
 
 // Interface of the audio processor used by the audio track to collect
 // statistics.
-class AudioProcessorInterface : public talk_base::RefCountInterface {
+class AudioProcessorInterface : public rtc::RefCountInterface {
  public:
   struct AudioProcessorStats {
     AudioProcessorStats() : typing_noise_detected(false),
@@ -220,7 +220,7 @@ class AudioTrackInterface : public MediaStreamTrackInterface {
   // Get the audio processor used by the audio track. Return NULL if the track
   // does not have any processor.
   // TODO(xians): Make the interface pure virtual.
-  virtual talk_base::scoped_refptr<AudioProcessorInterface>
+  virtual rtc::scoped_refptr<AudioProcessorInterface>
       GetAudioProcessor() { return NULL; }
 
   // Get a pointer to the audio renderer of this AudioTrack.
@@ -233,21 +233,21 @@ class AudioTrackInterface : public MediaStreamTrackInterface {
   virtual ~AudioTrackInterface() {}
 };
 
-typedef std::vector<talk_base::scoped_refptr<AudioTrackInterface> >
+typedef std::vector<rtc::scoped_refptr<AudioTrackInterface> >
     AudioTrackVector;
-typedef std::vector<talk_base::scoped_refptr<VideoTrackInterface> >
+typedef std::vector<rtc::scoped_refptr<VideoTrackInterface> >
     VideoTrackVector;
 
-class MediaStreamInterface : public talk_base::RefCountInterface,
+class MediaStreamInterface : public rtc::RefCountInterface,
                              public NotifierInterface {
  public:
   virtual std::string label() const = 0;
 
   virtual AudioTrackVector GetAudioTracks() = 0;
   virtual VideoTrackVector GetVideoTracks() = 0;
-  virtual talk_base::scoped_refptr<AudioTrackInterface>
+  virtual rtc::scoped_refptr<AudioTrackInterface>
       FindAudioTrack(const std::string& track_id) = 0;
-  virtual talk_base::scoped_refptr<VideoTrackInterface>
+  virtual rtc::scoped_refptr<VideoTrackInterface>
       FindVideoTrack(const std::string& track_id) = 0;
 
   virtual bool AddTrack(AudioTrackInterface* track) = 0;

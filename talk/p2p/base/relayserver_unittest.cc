@@ -27,17 +27,17 @@
 
 #include <string>
 
-#include "talk/base/gunit.h"
-#include "talk/base/helpers.h"
-#include "talk/base/logging.h"
-#include "talk/base/physicalsocketserver.h"
-#include "talk/base/socketaddress.h"
-#include "talk/base/ssladapter.h"
-#include "talk/base/testclient.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/physicalsocketserver.h"
+#include "webrtc/base/socketaddress.h"
+#include "webrtc/base/ssladapter.h"
+#include "webrtc/base/testclient.h"
+#include "webrtc/base/thread.h"
 #include "talk/p2p/base/relayserver.h"
 
-using talk_base::SocketAddress;
+using rtc::SocketAddress;
 using namespace cricket;
 
 static const uint32 LIFETIME = 4;  // seconds
@@ -54,35 +54,35 @@ static const char* msg2 = "Lobster Thermidor a Crevette with a mornay sauce...";
 class RelayServerTest : public testing::Test {
  public:
   static void SetUpTestCase() {
-    talk_base::InitializeSSL();
+    rtc::InitializeSSL();
   }
 
   static void TearDownTestCase() {
-    talk_base::CleanupSSL();
+    rtc::CleanupSSL();
   }
 
   RelayServerTest()
-      : main_(talk_base::Thread::Current()), ss_(main_->socketserver()),
-        username_(talk_base::CreateRandomString(12)),
-        password_(talk_base::CreateRandomString(12)) {
+      : main_(rtc::Thread::Current()), ss_(main_->socketserver()),
+        username_(rtc::CreateRandomString(12)),
+        password_(rtc::CreateRandomString(12)) {
   }
  protected:
   virtual void SetUp() {
     server_.reset(new RelayServer(main_));
 
     server_->AddInternalSocket(
-        talk_base::AsyncUDPSocket::Create(ss_, server_int_addr));
+        rtc::AsyncUDPSocket::Create(ss_, server_int_addr));
     server_->AddExternalSocket(
-        talk_base::AsyncUDPSocket::Create(ss_, server_ext_addr));
+        rtc::AsyncUDPSocket::Create(ss_, server_ext_addr));
 
-    client1_.reset(new talk_base::TestClient(
-        talk_base::AsyncUDPSocket::Create(ss_, client1_addr)));
-    client2_.reset(new talk_base::TestClient(
-        talk_base::AsyncUDPSocket::Create(ss_, client2_addr)));
+    client1_.reset(new rtc::TestClient(
+        rtc::AsyncUDPSocket::Create(ss_, client1_addr)));
+    client2_.reset(new rtc::TestClient(
+        rtc::AsyncUDPSocket::Create(ss_, client2_addr)));
   }
 
   void Allocate() {
-    talk_base::scoped_ptr<StunMessage> req(
+    rtc::scoped_ptr<StunMessage> req(
         CreateStunMessage(STUN_ALLOCATE_REQUEST));
     AddUsernameAttr(req.get(), username_);
     AddLifetimeAttr(req.get(), LIFETIME);
@@ -90,7 +90,7 @@ class RelayServerTest : public testing::Test {
     delete Receive1();
   }
   void Bind() {
-    talk_base::scoped_ptr<StunMessage> req(
+    rtc::scoped_ptr<StunMessage> req(
         CreateStunMessage(STUN_BINDING_REQUEST));
     AddUsernameAttr(req.get(), username_);
     Send2(req.get());
@@ -98,12 +98,12 @@ class RelayServerTest : public testing::Test {
   }
 
   void Send1(const StunMessage* msg) {
-    talk_base::ByteBuffer buf;
+    rtc::ByteBuffer buf;
     msg->Write(&buf);
     SendRaw1(buf.Data(), static_cast<int>(buf.Length()));
   }
   void Send2(const StunMessage* msg) {
-    talk_base::ByteBuffer buf;
+    rtc::ByteBuffer buf;
     msg->Write(&buf);
     SendRaw2(buf.Data(), static_cast<int>(buf.Length()));
   }
@@ -113,7 +113,7 @@ class RelayServerTest : public testing::Test {
   void SendRaw2(const char* data, int len) {
     return Send(client2_.get(), data, len, server_ext_addr);
   }
-  void Send(talk_base::TestClient* client, const char* data,
+  void Send(rtc::TestClient* client, const char* data,
             int len, const SocketAddress& addr) {
     client->SendTo(data, len, addr);
   }
@@ -130,20 +130,20 @@ class RelayServerTest : public testing::Test {
   std::string ReceiveRaw2() {
     return ReceiveRaw(client2_.get());
   }
-  StunMessage* Receive(talk_base::TestClient* client) {
+  StunMessage* Receive(rtc::TestClient* client) {
     StunMessage* msg = NULL;
-    talk_base::TestClient::Packet* packet = client->NextPacket();
+    rtc::TestClient::Packet* packet = client->NextPacket();
     if (packet) {
-      talk_base::ByteBuffer buf(packet->buf, packet->size);
+      rtc::ByteBuffer buf(packet->buf, packet->size);
       msg = new RelayMessage();
       msg->Read(&buf);
       delete packet;
     }
     return msg;
   }
-  std::string ReceiveRaw(talk_base::TestClient* client) {
+  std::string ReceiveRaw(rtc::TestClient* client) {
     std::string raw;
-    talk_base::TestClient::Packet* packet = client->NextPacket();
+    rtc::TestClient::Packet* packet = client->NextPacket();
     if (packet) {
       raw = std::string(packet->buf, packet->size);
       delete packet;
@@ -155,7 +155,7 @@ class RelayServerTest : public testing::Test {
     StunMessage* msg = new RelayMessage();
     msg->SetType(type);
     msg->SetTransactionID(
-        talk_base::CreateRandomString(kStunTransactionIdLength));
+        rtc::CreateRandomString(kStunTransactionIdLength));
     return msg;
   }
   static void AddMagicCookieAttr(StunMessage* msg) {
@@ -184,18 +184,18 @@ class RelayServerTest : public testing::Test {
     msg->AddAttribute(attr);
   }
 
-  talk_base::Thread* main_;
-  talk_base::SocketServer* ss_;
-  talk_base::scoped_ptr<RelayServer> server_;
-  talk_base::scoped_ptr<talk_base::TestClient> client1_;
-  talk_base::scoped_ptr<talk_base::TestClient> client2_;
+  rtc::Thread* main_;
+  rtc::SocketServer* ss_;
+  rtc::scoped_ptr<RelayServer> server_;
+  rtc::scoped_ptr<rtc::TestClient> client1_;
+  rtc::scoped_ptr<rtc::TestClient> client2_;
   std::string username_;
   std::string password_;
 };
 
 // Send a complete nonsense message and verify that it is eaten.
 TEST_F(RelayServerTest, TestBadRequest) {
-  talk_base::scoped_ptr<StunMessage> res;
+  rtc::scoped_ptr<StunMessage> res;
 
   SendRaw1(bad, static_cast<int>(strlen(bad)));
   res.reset(Receive1());
@@ -205,7 +205,7 @@ TEST_F(RelayServerTest, TestBadRequest) {
 
 // Send an allocate request without a username and verify it is rejected.
 TEST_F(RelayServerTest, TestAllocateNoUsername) {
-  talk_base::scoped_ptr<StunMessage> req(
+  rtc::scoped_ptr<StunMessage> req(
       CreateStunMessage(STUN_ALLOCATE_REQUEST)), res;
 
   Send1(req.get());
@@ -224,7 +224,7 @@ TEST_F(RelayServerTest, TestAllocateNoUsername) {
 
 // Send a binding request and verify that it is rejected.
 TEST_F(RelayServerTest, TestBindingRequest) {
-  talk_base::scoped_ptr<StunMessage> req(
+  rtc::scoped_ptr<StunMessage> req(
       CreateStunMessage(STUN_BINDING_REQUEST)), res;
   AddUsernameAttr(req.get(), username_);
 
@@ -244,7 +244,7 @@ TEST_F(RelayServerTest, TestBindingRequest) {
 
 // Send an allocate request and verify that it is accepted.
 TEST_F(RelayServerTest, TestAllocate) {
-  talk_base::scoped_ptr<StunMessage> req(
+  rtc::scoped_ptr<StunMessage> req(
       CreateStunMessage(STUN_ALLOCATE_REQUEST)), res;
   AddUsernameAttr(req.get(), username_);
   AddLifetimeAttr(req.get(), LIFETIME);
@@ -274,7 +274,7 @@ TEST_F(RelayServerTest, TestAllocate) {
 TEST_F(RelayServerTest, TestReallocate) {
   Allocate();
 
-  talk_base::scoped_ptr<StunMessage> req(
+  rtc::scoped_ptr<StunMessage> req(
       CreateStunMessage(STUN_ALLOCATE_REQUEST)), res;
   AddMagicCookieAttr(req.get());
   AddUsernameAttr(req.get(), username_);
@@ -304,7 +304,7 @@ TEST_F(RelayServerTest, TestReallocate) {
 TEST_F(RelayServerTest, TestRemoteBind) {
   Allocate();
 
-  talk_base::scoped_ptr<StunMessage> req(
+  rtc::scoped_ptr<StunMessage> req(
       CreateStunMessage(STUN_BINDING_REQUEST)), res;
   AddUsernameAttr(req.get(), username_);
 
@@ -318,8 +318,8 @@ TEST_F(RelayServerTest, TestRemoteBind) {
       res->GetByteString(STUN_ATTR_DATA);
   ASSERT_TRUE(recv_data != NULL);
 
-  talk_base::ByteBuffer buf(recv_data->bytes(), recv_data->length());
-  talk_base::scoped_ptr<StunMessage> res2(new StunMessage());
+  rtc::ByteBuffer buf(recv_data->bytes(), recv_data->length());
+  rtc::scoped_ptr<StunMessage> res2(new StunMessage());
   EXPECT_TRUE(res2->Read(&buf));
   EXPECT_EQ(STUN_BINDING_REQUEST, res2->type());
   EXPECT_EQ(req->transaction_id(), res2->transaction_id());
@@ -350,7 +350,7 @@ TEST_F(RelayServerTest, TestSendRequestMissingUsername) {
   Allocate();
   Bind();
 
-  talk_base::scoped_ptr<StunMessage> req(
+  rtc::scoped_ptr<StunMessage> req(
       CreateStunMessage(STUN_SEND_REQUEST)), res;
   AddMagicCookieAttr(req.get());
 
@@ -373,7 +373,7 @@ TEST_F(RelayServerTest, TestSendRequestBadUsername) {
   Allocate();
   Bind();
 
-  talk_base::scoped_ptr<StunMessage> req(
+  rtc::scoped_ptr<StunMessage> req(
       CreateStunMessage(STUN_SEND_REQUEST)), res;
   AddMagicCookieAttr(req.get());
   AddUsernameAttr(req.get(), "foobarbizbaz");
@@ -398,7 +398,7 @@ TEST_F(RelayServerTest, TestSendRequestNoDestinationAddress) {
   Allocate();
   Bind();
 
-  talk_base::scoped_ptr<StunMessage> req(
+  rtc::scoped_ptr<StunMessage> req(
       CreateStunMessage(STUN_SEND_REQUEST)), res;
   AddMagicCookieAttr(req.get());
   AddUsernameAttr(req.get(), username_);
@@ -422,7 +422,7 @@ TEST_F(RelayServerTest, TestSendRequestNoData) {
   Allocate();
   Bind();
 
-  talk_base::scoped_ptr<StunMessage> req(
+  rtc::scoped_ptr<StunMessage> req(
       CreateStunMessage(STUN_SEND_REQUEST)), res;
   AddMagicCookieAttr(req.get());
   AddUsernameAttr(req.get(), username_);
@@ -447,7 +447,7 @@ TEST_F(RelayServerTest, TestSendRequestWrongType) {
   Allocate();
   Bind();
 
-  talk_base::scoped_ptr<StunMessage> req(
+  rtc::scoped_ptr<StunMessage> req(
       CreateStunMessage(STUN_BINDING_REQUEST)), res;
   AddMagicCookieAttr(req.get());
   AddUsernameAttr(req.get(), username_);
@@ -473,7 +473,7 @@ TEST_F(RelayServerTest, TestSendRaw) {
   Bind();
 
   for (int i = 0; i < 10; i++) {
-    talk_base::scoped_ptr<StunMessage> req(
+    rtc::scoped_ptr<StunMessage> req(
         CreateStunMessage(STUN_SEND_REQUEST)), res;
     AddMagicCookieAttr(req.get());
     AddUsernameAttr(req.get(), username_);
@@ -513,9 +513,9 @@ TEST_F(RelayServerTest, TestExpiration) {
   Bind();
 
   // Wait twice the lifetime to make sure the server has expired the binding.
-  talk_base::Thread::Current()->ProcessMessages((LIFETIME * 2) * 1000);
+  rtc::Thread::Current()->ProcessMessages((LIFETIME * 2) * 1000);
 
-  talk_base::scoped_ptr<StunMessage> req(
+  rtc::scoped_ptr<StunMessage> req(
       CreateStunMessage(STUN_SEND_REQUEST)), res;
   AddMagicCookieAttr(req.get());
   AddUsernameAttr(req.get(), username_);

@@ -31,13 +31,13 @@
 #include <map>
 #include <string>
 
-#include "talk/base/criticalsection.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/sigslot.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/sigslot.h"
 #include "talk/session/media/channel.h"
 #include "talk/session/media/mediasink.h"
 
-namespace talk_base {
+namespace rtc {
 class Pathname;
 class FileStream;
 }
@@ -54,7 +54,7 @@ class RtpDumpWriter;
 class RtpDumpSink : public MediaSinkInterface, public sigslot::has_slots<> {
  public:
   // Takes ownership of stream.
-  explicit RtpDumpSink(talk_base::StreamInterface* stream);
+  explicit RtpDumpSink(rtc::StreamInterface* stream);
   virtual ~RtpDumpSink();
 
   virtual void SetMaxSize(size_t size);
@@ -69,9 +69,9 @@ class RtpDumpSink : public MediaSinkInterface, public sigslot::has_slots<> {
   size_t max_size_;
   bool recording_;
   int packet_filter_;
-  talk_base::scoped_ptr<talk_base::StreamInterface> stream_;
-  talk_base::scoped_ptr<RtpDumpWriter> writer_;
-  talk_base::CriticalSection critical_section_;
+  rtc::scoped_ptr<rtc::StreamInterface> stream_;
+  rtc::scoped_ptr<RtpDumpWriter> writer_;
+  rtc::CriticalSection critical_section_;
 
   DISALLOW_COPY_AND_ASSIGN(RtpDumpSink);
 };
@@ -82,12 +82,12 @@ class MediaRecorder {
   virtual ~MediaRecorder();
 
   bool AddChannel(VoiceChannel* channel,
-                  talk_base::StreamInterface* send_stream,
-                  talk_base::StreamInterface* recv_stream,
+                  rtc::StreamInterface* send_stream,
+                  rtc::StreamInterface* recv_stream,
                   int filter);
   bool AddChannel(VideoChannel* channel,
-                  talk_base::StreamInterface* send_stream,
-                  talk_base::StreamInterface* recv_stream,
+                  rtc::StreamInterface* send_stream,
+                  rtc::StreamInterface* recv_stream,
                   int filter);
   void RemoveChannel(BaseChannel* channel, SinkType type);
   bool EnableChannel(BaseChannel* channel, bool enable_send, bool enable_recv,
@@ -98,18 +98,18 @@ class MediaRecorder {
   struct SinkPair {
     bool video_channel;
     int filter;
-    talk_base::scoped_ptr<RtpDumpSink> send_sink;
-    talk_base::scoped_ptr<RtpDumpSink> recv_sink;
+    rtc::scoped_ptr<RtpDumpSink> send_sink;
+    rtc::scoped_ptr<RtpDumpSink> recv_sink;
   };
 
   bool InternalAddChannel(BaseChannel* channel,
                           bool video_channel,
-                          talk_base::StreamInterface* send_stream,
-                          talk_base::StreamInterface* recv_stream,
+                          rtc::StreamInterface* send_stream,
+                          rtc::StreamInterface* recv_stream,
                           int filter);
 
   std::map<BaseChannel*, SinkPair*> sinks_;
-  talk_base::CriticalSection critical_section_;
+  rtc::CriticalSection critical_section_;
 
   DISALLOW_COPY_AND_ASSIGN(MediaRecorder);
 };

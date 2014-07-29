@@ -83,7 +83,7 @@
 #ifndef TALK_SESSION_PHONE_TYPEWRAPPING_H_
 #define TALK_SESSION_PHONE_TYPEWRAPPING_H_
 
-#include "talk/base/common.h"
+#include "webrtc/base/common.h"
 
 #ifdef OSX
 // XCode's GCC doesn't respect typedef-equivalence when casting function pointer

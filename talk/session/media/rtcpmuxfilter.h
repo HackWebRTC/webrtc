@@ -28,7 +28,7 @@
 #ifndef TALK_SESSION_MEDIA_RTCPMUXFILTER_H_
 #define TALK_SESSION_MEDIA_RTCPMUXFILTER_H_
 
-#include "talk/base/basictypes.h"
+#include "webrtc/base/basictypes.h"
 #include "talk/p2p/base/sessiondescription.h"
 
 namespace cricket {

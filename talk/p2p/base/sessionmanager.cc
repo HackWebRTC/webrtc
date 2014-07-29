@@ -27,11 +27,11 @@
 
 #include "talk/p2p/base/sessionmanager.h"
 
-#include "talk/base/common.h"
-#include "talk/base/helpers.h"
-#include "talk/base/logging.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/stringencode.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/stringencode.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/session.h"
 #include "talk/p2p/base/sessionmessages.h"
@@ -41,11 +41,11 @@
 namespace cricket {
 
 SessionManager::SessionManager(PortAllocator *allocator,
-                               talk_base::Thread *worker) {
+                               rtc::Thread *worker) {
   allocator_ = allocator;
-  signaling_thread_ = talk_base::Thread::Current();
+  signaling_thread_ = rtc::Thread::Current();
   if (worker == NULL) {
-    worker_thread_ = talk_base::Thread::Current();
+    worker_thread_ = rtc::Thread::Current();
   } else {
     worker_thread_ = worker;
   }
@@ -87,7 +87,7 @@ Session* SessionManager::CreateSession(const std::string& id,
                                        const std::string& local_name,
                                        const std::string& content_type) {
   std::string sid =
-      id.empty() ? talk_base::ToString(talk_base::CreateRandomId64()) : id;
+      id.empty() ? rtc::ToString(rtc::CreateRandomId64()) : id;
   return CreateSession(local_name, local_name, sid, content_type, false);
 }
 
@@ -231,7 +231,7 @@ void SessionManager::OnFailedSend(const buzz::XmlElement* orig_stanza,
 
   Session* session = FindSession(msg.sid, msg.to);
   if (session) {
-    talk_base::scoped_ptr<buzz::XmlElement> synthetic_error;
+    rtc::scoped_ptr<buzz::XmlElement> synthetic_error;
     if (!error_stanza) {
       // A failed send is semantically equivalent to an error response, so we
       // can just turn the former into the latter.
@@ -250,7 +250,7 @@ void SessionManager::SendErrorMessage(const buzz::XmlElement* stanza,
                                       const std::string& type,
                                       const std::string& text,
                                       const buzz::XmlElement* extra_info) {
-  talk_base::scoped_ptr<buzz::XmlElement> msg(
+  rtc::scoped_ptr<buzz::XmlElement> msg(
       CreateErrorMessage(stanza, name, type, text, extra_info));
   SignalOutgoingMessage(this, msg.get());
 }

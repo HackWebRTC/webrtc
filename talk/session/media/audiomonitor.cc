@@ -37,7 +37,7 @@ const uint32 MSG_MONITOR_STOP = 3;
 const uint32 MSG_MONITOR_SIGNAL = 4;
 
 AudioMonitor::AudioMonitor(VoiceChannel *voice_channel,
-                           talk_base::Thread *monitor_thread) {
+                           rtc::Thread *monitor_thread) {
   voice_channel_ = voice_channel;
   monitoring_thread_ = monitor_thread;
   monitoring_ = false;
@@ -59,12 +59,12 @@ void AudioMonitor::Stop() {
   voice_channel_->worker_thread()->Post(this, MSG_MONITOR_STOP);
 }
 
-void AudioMonitor::OnMessage(talk_base::Message *message) {
-  talk_base::CritScope cs(&crit_);
+void AudioMonitor::OnMessage(rtc::Message *message) {
+  rtc::CritScope cs(&crit_);
 
   switch (message->message_id) {
   case MSG_MONITOR_START:
-    assert(talk_base::Thread::Current() == voice_channel_->worker_thread());
+    assert(rtc::Thread::Current() == voice_channel_->worker_thread());
     if (!monitoring_) {
       monitoring_ = true;
       PollVoiceChannel();
@@ -72,7 +72,7 @@ void AudioMonitor::OnMessage(talk_base::Message *message) {
     break;
 
   case MSG_MONITOR_STOP:
-    assert(talk_base::Thread::Current() == voice_channel_->worker_thread());
+    assert(rtc::Thread::Current() == voice_channel_->worker_thread());
     if (monitoring_) {
       monitoring_ = false;
       voice_channel_->worker_thread()->Clear(this);
@@ -80,13 +80,13 @@ void AudioMonitor::OnMessage(talk_base::Message *message) {
     break;
 
   case MSG_MONITOR_POLL:
-    assert(talk_base::Thread::Current() == voice_channel_->worker_thread());
+    assert(rtc::Thread::Current() == voice_channel_->worker_thread());
     PollVoiceChannel();
     break;
 
   case MSG_MONITOR_SIGNAL:
     {
-      assert(talk_base::Thread::Current() == monitoring_thread_);
+      assert(rtc::Thread::Current() == monitoring_thread_);
       AudioInfo info = audio_info_;
       crit_.Leave();
       SignalUpdate(this, info);
@@ -97,8 +97,8 @@ void AudioMonitor::OnMessage(talk_base::Message *message) {
 }
 
 void AudioMonitor::PollVoiceChannel() {
-  talk_base::CritScope cs(&crit_);
-  assert(talk_base::Thread::Current() == voice_channel_->worker_thread());
+  rtc::CritScope cs(&crit_);
+  assert(rtc::Thread::Current() == voice_channel_->worker_thread());
 
   // Gather connection infos
   audio_info_.input_level = voice_channel_->GetInputLevel_w();
@@ -114,7 +114,7 @@ VoiceChannel *AudioMonitor::voice_channel() {
   return voice_channel_;
 }
 
-talk_base::Thread *AudioMonitor::monitor_thread() {
+rtc::Thread *AudioMonitor::monitor_thread() {
   return monitoring_thread_;
 }
 

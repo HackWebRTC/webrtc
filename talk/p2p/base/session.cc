@@ -27,12 +27,12 @@
 
 #include "talk/p2p/base/session.h"
 
-#include "talk/base/bind.h"
-#include "talk/base/common.h"
-#include "talk/base/logging.h"
-#include "talk/base/helpers.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/sslstreamadapter.h"
+#include "webrtc/base/bind.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/sslstreamadapter.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/jid.h"
 #include "talk/p2p/base/dtlstransport.h"
@@ -46,7 +46,7 @@
 
 namespace cricket {
 
-using talk_base::Bind;
+using rtc::Bind;
 
 bool BadMessage(const buzz::QName type,
                 const std::string& text,
@@ -69,13 +69,13 @@ const std::string& TransportProxy::type() const {
 }
 
 TransportChannel* TransportProxy::GetChannel(int component) {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   return GetChannelProxy(component);
 }
 
 TransportChannel* TransportProxy::CreateChannel(
     const std::string& name, int component) {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   ASSERT(GetChannel(component) == NULL);
   ASSERT(!transport_->get()->HasChannel(component));
 
@@ -99,7 +99,7 @@ bool TransportProxy::HasChannel(int component) {
 }
 
 void TransportProxy::DestroyChannel(int component) {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   TransportChannel* channel = GetChannel(component);
   if (channel) {
     // If the state of TransportProxy is not NEGOTIATED
@@ -204,7 +204,7 @@ TransportChannelImpl* TransportProxy::GetOrCreateChannelProxyImpl(
 
 TransportChannelImpl* TransportProxy::GetOrCreateChannelProxyImpl_w(
     int component) {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   TransportChannelImpl* impl = transport_->get()->GetChannel(component);
   if (impl == NULL) {
     impl = transport_->get()->CreateChannel(component);
@@ -220,7 +220,7 @@ void TransportProxy::SetupChannelProxy(
 
 void TransportProxy::SetupChannelProxy_w(
     int component, TransportChannelProxy* transproxy) {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   TransportChannelImpl* impl = GetOrCreateChannelProxyImpl(component);
   ASSERT(impl != NULL);
   transproxy->SetImplementation(impl);
@@ -234,7 +234,7 @@ void TransportProxy::ReplaceChannelProxyImpl(TransportChannelProxy* proxy,
 
 void TransportProxy::ReplaceChannelProxyImpl_w(TransportChannelProxy* proxy,
                                                TransportChannelImpl* impl) {
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  ASSERT(rtc::Thread::Current() == worker_thread_);
   ASSERT(proxy != NULL);
   proxy->SetImplementation(impl);
 }
@@ -336,7 +336,7 @@ bool TransportProxy::OnRemoteCandidates(const Candidates& candidates,
 }
 
 void TransportProxy::SetIdentity(
-    talk_base::SSLIdentity* identity) {
+    rtc::SSLIdentity* identity) {
   transport_->get()->SetIdentity(identity);
 }
 
@@ -377,11 +377,11 @@ std::string BaseSession::StateToString(State state) {
     default:
       break;
   }
-  return "STATE_" + talk_base::ToString(state);
+  return "STATE_" + rtc::ToString(state);
 }
 
-BaseSession::BaseSession(talk_base::Thread* signaling_thread,
-                         talk_base::Thread* worker_thread,
+BaseSession::BaseSession(rtc::Thread* signaling_thread,
+                         rtc::Thread* worker_thread,
                          PortAllocator* port_allocator,
                          const std::string& sid,
                          const std::string& content_type,
@@ -396,7 +396,7 @@ BaseSession::BaseSession(talk_base::Thread* signaling_thread,
       transport_type_(NS_GINGLE_P2P),
       initiator_(initiator),
       identity_(NULL),
-      ice_tiebreaker_(talk_base::CreateRandomId64()),
+      ice_tiebreaker_(rtc::CreateRandomId64()),
       role_switch_(false) {
   ASSERT(signaling_thread->IsCurrent());
 }
@@ -447,7 +447,7 @@ const SessionDescription* BaseSession::initiator_description() const {
   return initiator_ ? local_description_.get() : remote_description_.get();
 }
 
-bool BaseSession::SetIdentity(talk_base::SSLIdentity* identity) {
+bool BaseSession::SetIdentity(rtc::SSLIdentity* identity) {
   if (identity_)
     return false;
   identity_ = identity;
@@ -910,7 +910,7 @@ bool BaseSession::GetContentAction(ContentAction* action,
   return true;
 }
 
-void BaseSession::OnMessage(talk_base::Message *pmsg) {
+void BaseSession::OnMessage(rtc::Message *pmsg) {
   switch (pmsg->message_id) {
   case MSG_TIMEOUT:
     // Session timeout has occured.
@@ -1562,7 +1562,7 @@ void Session::SetError(Error error, const std::string& error_desc) {
     signaling_thread()->Post(this, MSG_ERROR);
 }
 
-void Session::OnMessage(talk_base::Message* pmsg) {
+void Session::OnMessage(rtc::Message* pmsg) {
   // preserve this because BaseSession::OnMessage may modify it
   State orig_state = state();
 
@@ -1710,7 +1710,7 @@ bool Session::SendMessage(ActionType type, const XmlElements& action_elems,
 
 bool Session::SendMessage(ActionType type, const XmlElements& action_elems,
                           const std::string& remote_name, SessionError* error) {
-  talk_base::scoped_ptr<buzz::XmlElement> stanza(
+  rtc::scoped_ptr<buzz::XmlElement> stanza(
       new buzz::XmlElement(buzz::QN_IQ));
 
   SessionMessage msg(current_protocol_, type, id(), initiator_name());
@@ -1724,7 +1724,7 @@ bool Session::SendMessage(ActionType type, const XmlElements& action_elems,
 template <typename Action>
 bool Session::SendMessage(ActionType type, const Action& action,
                           SessionError* error) {
-  talk_base::scoped_ptr<buzz::XmlElement> stanza(
+  rtc::scoped_ptr<buzz::XmlElement> stanza(
       new buzz::XmlElement(buzz::QN_IQ));
   if (!WriteActionMessage(type, action, stanza.get(), error))
     return false;
@@ -1765,7 +1765,7 @@ bool Session::WriteActionMessage(SignalingProtocol protocol,
 }
 
 void Session::SendAcknowledgementMessage(const buzz::XmlElement* stanza) {
-  talk_base::scoped_ptr<buzz::XmlElement> ack(
+  rtc::scoped_ptr<buzz::XmlElement> ack(
       new buzz::XmlElement(buzz::QN_IQ));
   ack->SetAttr(buzz::QN_TO, remote_name());
   ack->SetAttr(buzz::QN_ID, stanza->Attr(buzz::QN_ID));

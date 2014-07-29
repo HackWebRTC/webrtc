@@ -33,15 +33,15 @@
 #include <iostream>
 #include <vector>
 
-#include "talk/base/flags.h"
-#include "talk/base/logging.h"
+#include "webrtc/base/flags.h"
+#include "webrtc/base/logging.h"
 #ifdef OSX
-#include "talk/base/maccocoasocketserver.h"
+#include "webrtc/base/maccocoasocketserver.h"
 #endif
-#include "talk/base/pathutils.h"
-#include "talk/base/ssladapter.h"
-#include "talk/base/stream.h"
-#include "talk/base/win32socketserver.h"
+#include "webrtc/base/pathutils.h"
+#include "webrtc/base/ssladapter.h"
+#include "webrtc/base/stream.h"
+#include "webrtc/base/win32socketserver.h"
 #include "talk/examples/call/callclient.h"
 #include "talk/examples/call/console.h"
 #include "talk/examples/call/mediaenginefactory.h"
@@ -257,9 +257,9 @@ int main(int argc, char **argv) {
       "Enable roster messages printed in console.");
 
   // parse options
-  FlagList::SetFlagsFromCommandLine(&argc, argv, true);
+  rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true);
   if (FLAG_help) {
-    FlagList::Print(NULL, false);
+    rtc::FlagList::Print(NULL, false);
     return 0;
   }
 
@@ -283,19 +283,19 @@ int main(int argc, char **argv) {
   bool render = FLAG_render;
   std::string data_channel = FLAG_datachannel;
   bool multisession_enabled = FLAG_multisession;
-  talk_base::SSLIdentity* ssl_identity = NULL;
+  rtc::SSLIdentity* ssl_identity = NULL;
   bool show_roster_messages = FLAG_roster;
 
   // Set up debugging.
   if (debug) {
-    talk_base::LogMessage::LogToDebug(talk_base::LS_VERBOSE);
+    rtc::LogMessage::LogToDebug(rtc::LS_VERBOSE);
   }
 
   if (!log.empty()) {
-    talk_base::StreamInterface* stream =
-        talk_base::Filesystem::OpenFile(log, "a");
+    rtc::StreamInterface* stream =
+        rtc::Filesystem::OpenFile(log, "a");
     if (stream) {
-      talk_base::LogMessage::LogToStream(stream, talk_base::LS_VERBOSE);
+      rtc::LogMessage::LogToStream(stream, rtc::LS_VERBOSE);
     } else {
       Print(("Cannot open debug log " + log + "\n").c_str());
       return 1;
@@ -307,12 +307,12 @@ int main(int argc, char **argv) {
   }
 
   // Set up the crypto subsystem.
-  talk_base::InitializeSSL();
+  rtc::InitializeSSL();
 
   // Parse username and password, if present.
   buzz::Jid jid;
   std::string username;
-  talk_base::InsecureCryptStringImpl pass;
+  rtc::InsecureCryptStringImpl pass;
   if (argc > 1) {
     username = argv[1];
     if (argc > 2) {
@@ -364,7 +364,7 @@ int main(int argc, char **argv) {
     xcs.set_use_tls(buzz::TLS_DISABLED);
     xcs.set_test_server_domain("google.com");
   }
-  xcs.set_pass(talk_base::CryptString(pass));
+  xcs.set_pass(rtc::CryptString(pass));
   if (!oauth_token.empty()) {
     xcs.set_auth_token(buzz::AUTH_MECHANISM_OAUTH2, oauth_token);
   }
@@ -381,7 +381,7 @@ int main(int argc, char **argv) {
     port = atoi(server.substr(colon + 1).c_str());
   }
 
-  xcs.set_server(talk_base::SocketAddress(host, port));
+  xcs.set_server(rtc::SocketAddress(host, port));
 
   // Decide on the signaling and crypto settings.
   cricket::SignalingProtocol signaling_protocol = cricket::PROTOCOL_HYBRID;
@@ -428,7 +428,7 @@ int main(int argc, char **argv) {
     return 1;
   }
   if (dtls_policy != cricket::SEC_DISABLED) {
-    ssl_identity = talk_base::SSLIdentity::Generate(jid.Str());
+    ssl_identity = rtc::SSLIdentity::Generate(jid.Str());
     if (!ssl_identity) {
       Print("Failed to generate identity for DTLS.\n");
       return 1;
@@ -441,13 +441,13 @@ int main(int argc, char **argv) {
 
 #if WIN32
   // Need to pump messages on our main thread on Windows.
-  talk_base::Win32Thread w32_thread;
-  talk_base::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
+  rtc::Win32Thread w32_thread;
+  rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 #endif
-  talk_base::Thread* main_thread = talk_base::Thread::Current();
+  rtc::Thread* main_thread = rtc::Thread::Current();
 #ifdef OSX
-  talk_base::MacCocoaSocketServer ss;
-  talk_base::SocketServerScope ss_scope(&ss);
+  rtc::MacCocoaSocketServer ss;
+  rtc::SocketServerScope ss_scope(&ss);
 #endif
 
   buzz::XmppPump pump;

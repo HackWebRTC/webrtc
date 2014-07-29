@@ -32,11 +32,11 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/buffer.h"
-#include "talk/base/fakesslidentity.h"
-#include "talk/base/sigslot.h"
-#include "talk/base/sslfingerprint.h"
-#include "talk/base/messagequeue.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/fakesslidentity.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/sslfingerprint.h"
+#include "webrtc/base/messagequeue.h"
 #include "talk/p2p/base/session.h"
 #include "talk/p2p/base/transport.h"
 #include "talk/p2p/base/transportchannel.h"
@@ -46,17 +46,17 @@ namespace cricket {
 
 class FakeTransport;
 
-struct PacketMessageData : public talk_base::MessageData {
+struct PacketMessageData : public rtc::MessageData {
   PacketMessageData(const char* data, size_t len) : packet(data, len) {
   }
-  talk_base::Buffer packet;
+  rtc::Buffer packet;
 };
 
 // Fake transport channel class, which can be passed to anything that needs a
 // transport channel. Can be informed of another FakeTransportChannel via
 // SetDestination.
 class FakeTransportChannel : public TransportChannelImpl,
-                             public talk_base::MessageHandler {
+                             public rtc::MessageHandler {
  public:
   explicit FakeTransportChannel(Transport* transport,
                                 const std::string& content_name,
@@ -73,7 +73,7 @@ class FakeTransportChannel : public TransportChannelImpl,
         ice_proto_(ICEPROTO_HYBRID),
         remote_ice_mode_(ICEMODE_FULL),
         dtls_fingerprint_("", NULL, 0),
-        ssl_role_(talk_base::SSL_CLIENT),
+        ssl_role_(rtc::SSL_CLIENT),
         connection_count_(0) {
   }
   ~FakeTransportChannel() {
@@ -87,7 +87,7 @@ class FakeTransportChannel : public TransportChannelImpl,
   const std::string& ice_pwd() const { return ice_pwd_; }
   const std::string& remote_ice_ufrag() const { return remote_ice_ufrag_; }
   const std::string& remote_ice_pwd() const { return remote_ice_pwd_; }
-  const talk_base::SSLFingerprint& dtls_fingerprint() const {
+  const rtc::SSLFingerprint& dtls_fingerprint() const {
     return dtls_fingerprint_;
   }
 
@@ -122,14 +122,14 @@ class FakeTransportChannel : public TransportChannelImpl,
   virtual void SetRemoteIceMode(IceMode mode) { remote_ice_mode_ = mode; }
   virtual bool SetRemoteFingerprint(const std::string& alg, const uint8* digest,
                                     size_t digest_len) {
-    dtls_fingerprint_ = talk_base::SSLFingerprint(alg, digest, digest_len);
+    dtls_fingerprint_ = rtc::SSLFingerprint(alg, digest, digest_len);
     return true;
   }
-  virtual bool SetSslRole(talk_base::SSLRole role) {
+  virtual bool SetSslRole(rtc::SSLRole role) {
     ssl_role_ = role;
     return true;
   }
-  virtual bool GetSslRole(talk_base::SSLRole* role) const {
+  virtual bool GetSslRole(rtc::SSLRole* role) const {
     *role = ssl_role_;
     return true;
   }
@@ -184,7 +184,7 @@ class FakeTransportChannel : public TransportChannelImpl,
   }
 
   virtual int SendPacket(const char* data, size_t len,
-                         const talk_base::PacketOptions& options, int flags) {
+                         const rtc::PacketOptions& options, int flags) {
     if (state_ != STATE_CONNECTED) {
       return -1;
     }
@@ -195,13 +195,13 @@ class FakeTransportChannel : public TransportChannelImpl,
 
     PacketMessageData* packet = new PacketMessageData(data, len);
     if (async_) {
-      talk_base::Thread::Current()->Post(this, 0, packet);
+      rtc::Thread::Current()->Post(this, 0, packet);
     } else {
-      talk_base::Thread::Current()->Send(this, 0, packet);
+      rtc::Thread::Current()->Send(this, 0, packet);
     }
     return static_cast<int>(len);
   }
-  virtual int SetOption(talk_base::Socket::Option opt, int value) {
+  virtual int SetOption(rtc::Socket::Option opt, int value) {
     return true;
   }
   virtual int GetError() {
@@ -213,22 +213,22 @@ class FakeTransportChannel : public TransportChannelImpl,
   virtual void OnCandidate(const Candidate& candidate) {
   }
 
-  virtual void OnMessage(talk_base::Message* msg) {
+  virtual void OnMessage(rtc::Message* msg) {
     PacketMessageData* data = static_cast<PacketMessageData*>(
         msg->pdata);
     dest_->SignalReadPacket(dest_, data->packet.data(),
                             data->packet.length(),
-                            talk_base::CreatePacketTime(0), 0);
+                            rtc::CreatePacketTime(0), 0);
     delete data;
   }
 
-  bool SetLocalIdentity(talk_base::SSLIdentity* identity) {
+  bool SetLocalIdentity(rtc::SSLIdentity* identity) {
     identity_ = identity;
     return true;
   }
 
 
-  void SetRemoteCertificate(talk_base::FakeSSLCertificate* cert) {
+  void SetRemoteCertificate(rtc::FakeSSLCertificate* cert) {
     remote_cert_ = cert;
   }
 
@@ -249,7 +249,7 @@ class FakeTransportChannel : public TransportChannelImpl,
     return false;
   }
 
-  virtual bool GetLocalIdentity(talk_base::SSLIdentity** identity) const {
+  virtual bool GetLocalIdentity(rtc::SSLIdentity** identity) const {
     if (!identity_)
       return false;
 
@@ -257,7 +257,7 @@ class FakeTransportChannel : public TransportChannelImpl,
     return true;
   }
 
-  virtual bool GetRemoteCertificate(talk_base::SSLCertificate** cert) const {
+  virtual bool GetRemoteCertificate(rtc::SSLCertificate** cert) const {
     if (!remote_cert_)
       return false;
 
@@ -307,8 +307,8 @@ class FakeTransportChannel : public TransportChannelImpl,
   FakeTransportChannel* dest_;
   State state_;
   bool async_;
-  talk_base::SSLIdentity* identity_;
-  talk_base::FakeSSLCertificate* remote_cert_;
+  rtc::SSLIdentity* identity_;
+  rtc::FakeSSLCertificate* remote_cert_;
   bool do_dtls_;
   std::vector<std::string> srtp_ciphers_;
   std::string chosen_srtp_cipher_;
@@ -320,8 +320,8 @@ class FakeTransportChannel : public TransportChannelImpl,
   std::string remote_ice_ufrag_;
   std::string remote_ice_pwd_;
   IceMode remote_ice_mode_;
-  talk_base::SSLFingerprint dtls_fingerprint_;
-  talk_base::SSLRole ssl_role_;
+  rtc::SSLFingerprint dtls_fingerprint_;
+  rtc::SSLRole ssl_role_;
   size_t connection_count_;
 };
 
@@ -331,8 +331,8 @@ class FakeTransportChannel : public TransportChannelImpl,
 class FakeTransport : public Transport {
  public:
   typedef std::map<int, FakeTransportChannel*> ChannelMap;
-  FakeTransport(talk_base::Thread* signaling_thread,
-                talk_base::Thread* worker_thread,
+  FakeTransport(rtc::Thread* signaling_thread,
+                rtc::Thread* worker_thread,
                 const std::string& content_name,
                 PortAllocator* alllocator = NULL)
       : Transport(signaling_thread, worker_thread,
@@ -364,7 +364,7 @@ class FakeTransport : public Transport {
     }
   }
 
-  void set_identity(talk_base::SSLIdentity* identity) {
+  void set_identity(rtc::SSLIdentity* identity) {
     identity_ = identity;
   }
 
@@ -387,10 +387,10 @@ class FakeTransport : public Transport {
     channels_.erase(channel->component());
     delete channel;
   }
-  virtual void SetIdentity_w(talk_base::SSLIdentity* identity) {
+  virtual void SetIdentity_w(rtc::SSLIdentity* identity) {
     identity_ = identity;
   }
-  virtual bool GetIdentity_w(talk_base::SSLIdentity** identity) {
+  virtual bool GetIdentity_w(rtc::SSLIdentity** identity) {
     if (!identity_)
       return false;
 
@@ -420,7 +420,7 @@ class FakeTransport : public Transport {
   ChannelMap channels_;
   FakeTransport* dest_;
   bool async_;
-  talk_base::SSLIdentity* identity_;
+  rtc::SSLIdentity* identity_;
 };
 
 // Fake session class, which can be passed into a BaseChannel object for
@@ -428,19 +428,19 @@ class FakeTransport : public Transport {
 class FakeSession : public BaseSession {
  public:
   explicit FakeSession()
-      : BaseSession(talk_base::Thread::Current(),
-                    talk_base::Thread::Current(),
+      : BaseSession(rtc::Thread::Current(),
+                    rtc::Thread::Current(),
                     NULL, "", "", true),
       fail_create_channel_(false) {
   }
   explicit FakeSession(bool initiator)
-      : BaseSession(talk_base::Thread::Current(),
-                    talk_base::Thread::Current(),
+      : BaseSession(rtc::Thread::Current(),
+                    rtc::Thread::Current(),
                     NULL, "", "", initiator),
       fail_create_channel_(false) {
   }
-  FakeSession(talk_base::Thread* worker_thread, bool initiator)
-      : BaseSession(talk_base::Thread::Current(),
+  FakeSession(rtc::Thread* worker_thread, bool initiator)
+      : BaseSession(rtc::Thread::Current(),
                     worker_thread,
                     NULL, "", "", initiator),
       fail_create_channel_(false) {
@@ -477,7 +477,7 @@ class FakeSession : public BaseSession {
   }
 
   // TODO: Hoist this into Session when we re-work the Session code.
-  void set_ssl_identity(talk_base::SSLIdentity* identity) {
+  void set_ssl_identity(rtc::SSLIdentity* identity) {
     for (TransportMap::const_iterator it = transport_proxies().begin();
         it != transport_proxies().end(); ++it) {
       // We know that we have a FakeTransport*

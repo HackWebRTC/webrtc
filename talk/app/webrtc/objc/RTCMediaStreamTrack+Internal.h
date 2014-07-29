@@ -32,9 +32,9 @@
 @interface RTCMediaStreamTrack (Internal)
 
 @property(nonatomic, assign, readonly)
-    talk_base::scoped_refptr<webrtc::MediaStreamTrackInterface> mediaTrack;
+    rtc::scoped_refptr<webrtc::MediaStreamTrackInterface> mediaTrack;
 
 - (id)initWithMediaTrack:
-        (talk_base::scoped_refptr<webrtc::MediaStreamTrackInterface>)mediaTrack;
+        (rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)mediaTrack;
 
 @end

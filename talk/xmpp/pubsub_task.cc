@@ -30,7 +30,7 @@
 #include <map>
 #include <string>
 
-#include "talk/base/common.h"
+#include "webrtc/base/common.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/xmppengine.h"
 
@@ -99,7 +99,7 @@ int PubsubTask::ProcessResponse() {
 bool PubsubTask::SubscribeToNode(const std::string& pubsub_node,
                                  NodeHandler handler) {
   subscribed_nodes_[pubsub_node] = handler;
-  talk_base::scoped_ptr<buzz::XmlElement> get_iq_request(
+  rtc::scoped_ptr<buzz::XmlElement> get_iq_request(
       MakeIq(buzz::STR_GET, pubsub_node_jid_, task_id()));
   if (!get_iq_request) {
     return false;

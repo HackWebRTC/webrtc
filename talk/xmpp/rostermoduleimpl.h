@@ -103,7 +103,7 @@ private:
 
   // Store everything in the XML element. If this becomes a perf issue we can
   // cache the data.
-  talk_base::scoped_ptr<XmlElement> raw_xml_;
+  rtc::scoped_ptr<XmlElement> raw_xml_;
 };
 
 //! A contact as given by the server
@@ -168,7 +168,7 @@ private:
   int group_count_;
   int group_index_returned_;
   XmlElement * group_returned_;
-  talk_base::scoped_ptr<XmlElement> raw_xml_;
+  rtc::scoped_ptr<XmlElement> raw_xml_;
 };
 
 //! An XmppModule for handle roster and presence functionality
@@ -290,11 +290,11 @@ private:
 
   typedef std::vector<XmppPresenceImpl*> PresenceVector;
   typedef std::map<Jid, PresenceVector*> JidPresenceVectorMap;
-  talk_base::scoped_ptr<JidPresenceVectorMap> incoming_presence_map_;
-  talk_base::scoped_ptr<PresenceVector> incoming_presence_vector_;
+  rtc::scoped_ptr<JidPresenceVectorMap> incoming_presence_map_;
+  rtc::scoped_ptr<PresenceVector> incoming_presence_vector_;
 
   typedef std::vector<XmppRosterContactImpl*> ContactVector;
-  talk_base::scoped_ptr<ContactVector> contacts_;
+  rtc::scoped_ptr<ContactVector> contacts_;
 };
 
 }

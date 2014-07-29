@@ -32,7 +32,7 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/common.h"
+#include "webrtc/base/common.h"
 #include "talk/xmllite/qname.h"
 #include "talk/xmllite/xmlparser.h"
 #include "talk/xmllite/xmlbuilder.h"

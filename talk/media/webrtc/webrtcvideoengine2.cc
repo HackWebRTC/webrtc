@@ -32,9 +32,9 @@
 #include <string>
 
 #include "libyuv/convert_from.h"
-#include "talk/base/buffer.h"
-#include "talk/base/logging.h"
-#include "talk/base/stringutils.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/stringutils.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videorenderer.h"
 #include "talk/media/webrtc/constants.h"
@@ -251,18 +251,18 @@ bool WebRtcVideoEncoderFactory2::SupportsCodec(const VideoCodec& codec) {
 
 WebRtcVideoEngine2::WebRtcVideoEngine2() {
   // Construct without a factory or voice engine.
-  Construct(NULL, NULL, new talk_base::CpuMonitor(NULL));
+  Construct(NULL, NULL, new rtc::CpuMonitor(NULL));
 }
 
 WebRtcVideoEngine2::WebRtcVideoEngine2(
     WebRtcVideoChannelFactory* channel_factory) {
   // Construct without a voice engine.
-  Construct(channel_factory, NULL, new talk_base::CpuMonitor(NULL));
+  Construct(channel_factory, NULL, new rtc::CpuMonitor(NULL));
 }
 
 void WebRtcVideoEngine2::Construct(WebRtcVideoChannelFactory* channel_factory,
                                    WebRtcVoiceEngine* voice_engine,
-                                   talk_base::CpuMonitor* cpu_monitor) {
+                                   rtc::CpuMonitor* cpu_monitor) {
   LOG(LS_INFO) << "WebRtcVideoEngine2::WebRtcVideoEngine2";
   worker_thread_ = NULL;
   voice_engine_ = voice_engine;
@@ -290,7 +290,7 @@ WebRtcVideoEngine2::~WebRtcVideoEngine2() {
   }
 }
 
-bool WebRtcVideoEngine2::Init(talk_base::Thread* worker_thread) {
+bool WebRtcVideoEngine2::Init(rtc::Thread* worker_thread) {
   LOG(LS_INFO) << "WebRtcVideoEngine2::Init";
   worker_thread_ = worker_thread;
   ASSERT(worker_thread_ != NULL);
@@ -435,7 +435,7 @@ bool WebRtcVideoEngine2::CanSendCodec(const VideoCodec& requested,
   out->preference = requested.preference;
   out->params = requested.params;
   out->framerate =
-      talk_base::_min(requested.framerate, matching_codec.framerate);
+      rtc::_min(requested.framerate, matching_codec.framerate);
   out->params = requested.params;
   out->feedback_params = requested.feedback_params;
   out->width = requested.width;
@@ -559,11 +559,11 @@ class WebRtcVideoRenderFrame : public VideoFrame {
 
   virtual int64 GetElapsedTime() const OVERRIDE {
     // Convert millisecond render time to ns timestamp.
-    return frame_->render_time_ms() * talk_base::kNumNanosecsPerMillisec;
+    return frame_->render_time_ms() * rtc::kNumNanosecsPerMillisec;
   }
   virtual int64 GetTimeStamp() const OVERRIDE {
     // Convert 90K rtp timestamp to ns timestamp.
-    return (frame_->timestamp() / 90) * talk_base::kNumNanosecsPerMillisec;
+    return (frame_->timestamp() / 90) * rtc::kNumNanosecsPerMillisec;
   }
   virtual void SetElapsedTime(int64 elapsed_time) OVERRIDE { UNIMPLEMENTED; }
   virtual void SetTimeStamp(int64 time_stamp) OVERRIDE { UNIMPLEMENTED; }
@@ -1102,8 +1102,8 @@ bool WebRtcVideoChannel2::RequestIntraFrame() {
 }
 
 void WebRtcVideoChannel2::OnPacketReceived(
-    talk_base::Buffer* packet,
-    const talk_base::PacketTime& packet_time) {
+    rtc::Buffer* packet,
+    const rtc::PacketTime& packet_time) {
   const webrtc::PacketReceiver::DeliveryStatus delivery_result =
       call_->Receiver()->DeliverPacket(
           reinterpret_cast<const uint8_t*>(packet->data()), packet->length());
@@ -1142,8 +1142,8 @@ void WebRtcVideoChannel2::OnPacketReceived(
 }
 
 void WebRtcVideoChannel2::OnRtcpReceived(
-    talk_base::Buffer* packet,
-    const talk_base::PacketTime& packet_time) {
+    rtc::Buffer* packet,
+    const rtc::PacketTime& packet_time) {
   if (call_->Receiver()->DeliverPacket(
           reinterpret_cast<const uint8_t*>(packet->data()), packet->length()) !=
       webrtc::PacketReceiver::DELIVERY_OK) {
@@ -1228,14 +1228,14 @@ void WebRtcVideoChannel2::SetInterface(NetworkInterface* iface) {
   MediaChannel::SetInterface(iface);
   // Set the RTP recv/send buffer to a bigger size
   MediaChannel::SetOption(NetworkInterface::ST_RTP,
-                          talk_base::Socket::OPT_RCVBUF,
+                          rtc::Socket::OPT_RCVBUF,
                           kVideoRtpBufferSize);
 
   // TODO(sriniv): Remove or re-enable this.
   // As part of b/8030474, send-buffer is size now controlled through
   // portallocator flags.
   // network_interface_->SetOption(NetworkInterface::ST_RTP,
-  //                              talk_base::Socket::OPT_SNDBUF,
+  //                              rtc::Socket::OPT_SNDBUF,
   //                              kVideoRtpBufferSize);
 }
 
@@ -1243,17 +1243,17 @@ void WebRtcVideoChannel2::UpdateAspectRatio(int ratio_w, int ratio_h) {
   // TODO(pbos): Implement.
 }
 
-void WebRtcVideoChannel2::OnMessage(talk_base::Message* msg) {
+void WebRtcVideoChannel2::OnMessage(rtc::Message* msg) {
   // Ignored.
 }
 
 bool WebRtcVideoChannel2::SendRtp(const uint8_t* data, size_t len) {
-  talk_base::Buffer packet(data, len, kMaxRtpPacketLen);
+  rtc::Buffer packet(data, len, kMaxRtpPacketLen);
   return MediaChannel::SendPacket(&packet);
 }
 
 bool WebRtcVideoChannel2::SendRtcp(const uint8_t* data, size_t len) {
-  talk_base::Buffer packet(data, len, kMaxRtpPacketLen);
+  rtc::Buffer packet(data, len, kMaxRtpPacketLen);
   return MediaChannel::SendRtcp(&packet);
 }
 
@@ -1363,7 +1363,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
                   << frame->GetHeight();
   bool is_screencast = capturer->IsScreencast();
   // Lock before copying, can be called concurrently when swapping input source.
-  talk_base::CritScope frame_cs(&frame_lock_);
+  rtc::CritScope frame_cs(&frame_lock_);
   if (!muted_) {
     ConvertToI420VideoFrame(*frame, &video_frame_);
   } else {
@@ -1371,7 +1371,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
     CreateBlackFrame(&video_frame_, 1, 1);
     is_screencast = false;
   }
-  talk_base::CritScope cs(&lock_);
+  rtc::CritScope cs(&lock_);
   if (stream_ == NULL) {
     LOG(LS_WARNING) << "Capturer inputting frames before send codecs are "
                        "configured, dropping.";
@@ -1400,7 +1400,7 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetCapturer(
   }
 
   {
-    talk_base::CritScope cs(&lock_);
+    rtc::CritScope cs(&lock_);
 
     if (capturer == NULL) {
       if (stream_ != NULL) {
@@ -1438,7 +1438,7 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetVideoFormat(
     return false;
   }
 
-  talk_base::CritScope cs(&lock_);
+  rtc::CritScope cs(&lock_);
   if (format.width == 0 && format.height == 0) {
     LOG(LS_INFO)
         << "0x0 resolution selected. Captured frames will be dropped for ssrc: "
@@ -1455,14 +1455,14 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetVideoFormat(
 }
 
 bool WebRtcVideoChannel2::WebRtcVideoSendStream::MuteStream(bool mute) {
-  talk_base::CritScope cs(&lock_);
+  rtc::CritScope cs(&lock_);
   bool was_muted = muted_;
   muted_ = mute;
   return was_muted != mute;
 }
 
 bool WebRtcVideoChannel2::WebRtcVideoSendStream::DisconnectCapturer() {
-  talk_base::CritScope cs(&lock_);
+  rtc::CritScope cs(&lock_);
   if (capturer_ == NULL) {
     return false;
   }
@@ -1473,7 +1473,7 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::DisconnectCapturer() {
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::SetOptions(
     const VideoOptions& options) {
-  talk_base::CritScope cs(&lock_);
+  rtc::CritScope cs(&lock_);
   VideoCodecSettings codec_settings;
   if (parameters_.codec_settings.Get(&codec_settings)) {
     SetCodecAndOptions(codec_settings, options);
@@ -1483,7 +1483,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetOptions(
 }
 void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodec(
     const VideoCodecSettings& codec_settings) {
-  talk_base::CritScope cs(&lock_);
+  rtc::CritScope cs(&lock_);
   SetCodecAndOptions(codec_settings, parameters_.options);
 }
 void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodecAndOptions(
@@ -1533,7 +1533,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodecAndOptions(
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::SetRtpExtensions(
     const std::vector<webrtc::RtpExtension>& rtp_extensions) {
-  talk_base::CritScope cs(&lock_);
+  rtc::CritScope cs(&lock_);
   parameters_.config.rtp.extensions = rtp_extensions;
   RecreateWebRtcStream();
 }
@@ -1570,14 +1570,14 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetDimensions(int width,
 }
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::Start() {
-  talk_base::CritScope cs(&lock_);
+  rtc::CritScope cs(&lock_);
   assert(stream_ != NULL);
   stream_->Start();
   sending_ = true;
 }
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::Stop() {
-  talk_base::CritScope cs(&lock_);
+  rtc::CritScope cs(&lock_);
   if (stream_ != NULL) {
     stream_->Stop();
   }
@@ -1587,7 +1587,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::Stop() {
 VideoSenderInfo
 WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
   VideoSenderInfo info;
-  talk_base::CritScope cs(&lock_);
+  rtc::CritScope cs(&lock_);
   for (size_t i = 0; i < parameters_.config.rtp.ssrcs.size(); ++i) {
     info.add_ssrc(parameters_.config.rtp.ssrcs[i]);
   }
@@ -1729,7 +1729,7 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RecreateWebRtcStream() {
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RenderFrame(
     const webrtc::I420VideoFrame& frame,
     int time_to_render_ms) {
-  talk_base::CritScope crit(&renderer_lock_);
+  rtc::CritScope crit(&renderer_lock_);
   if (renderer_ == NULL) {
     LOG(LS_WARNING) << "VideoReceiveStream not connected to a VideoRenderer.";
     return;
@@ -1748,7 +1748,7 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RenderFrame(
 
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRenderer(
     cricket::VideoRenderer* renderer) {
-  talk_base::CritScope crit(&renderer_lock_);
+  rtc::CritScope crit(&renderer_lock_);
   renderer_ = renderer;
   if (renderer_ != NULL && last_width_ != -1) {
     SetSize(last_width_, last_height_);
@@ -1758,13 +1758,13 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRenderer(
 VideoRenderer* WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetRenderer() {
   // TODO(pbos): Remove GetRenderer and all uses of it, it's thread-unsafe by
   // design.
-  talk_base::CritScope crit(&renderer_lock_);
+  rtc::CritScope crit(&renderer_lock_);
   return renderer_;
 }
 
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetSize(int width,
                                                             int height) {
-  talk_base::CritScope crit(&renderer_lock_);
+  rtc::CritScope crit(&renderer_lock_);
   if (!renderer_->SetSize(width, height, 0)) {
     LOG(LS_ERROR) << "Could not set renderer size.";
   }
@@ -1785,7 +1785,7 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetVideoReceiverInfo() {
   info.framerate_decoded = stats.decode_frame_rate;
   info.framerate_output = stats.render_frame_rate;
 
-  talk_base::CritScope frame_cs(&renderer_lock_);
+  rtc::CritScope frame_cs(&renderer_lock_);
   info.frame_width = last_width_;
   info.frame_height = last_height_;
 

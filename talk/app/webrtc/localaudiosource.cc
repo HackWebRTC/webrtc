@@ -53,7 +53,7 @@ bool FromConstraints(const MediaConstraintsInterface::Constraints& constraints,
   for (iter = constraints.begin(); iter != constraints.end(); ++iter) {
     bool value = false;
 
-    if (!talk_base::FromString(iter->value, &value)) {
+    if (!rtc::FromString(iter->value, &value)) {
       success = false;
       continue;
     }
@@ -87,11 +87,11 @@ bool FromConstraints(const MediaConstraintsInterface::Constraints& constraints,
 
 }  // namespace
 
-talk_base::scoped_refptr<LocalAudioSource> LocalAudioSource::Create(
+rtc::scoped_refptr<LocalAudioSource> LocalAudioSource::Create(
     const PeerConnectionFactoryInterface::Options& options,
     const MediaConstraintsInterface* constraints) {
-  talk_base::scoped_refptr<LocalAudioSource> source(
-      new talk_base::RefCountedObject<LocalAudioSource>());
+  rtc::scoped_refptr<LocalAudioSource> source(
+      new rtc::RefCountedObject<LocalAudioSource>());
   source->Initialize(options, constraints);
   return source;
 }

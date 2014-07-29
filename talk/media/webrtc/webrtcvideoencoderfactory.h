@@ -28,7 +28,7 @@
 #ifndef TALK_MEDIA_WEBRTC_WEBRTCVIDEOENCODERFACTORY_H_
 #define TALK_MEDIA_WEBRTC_WEBRTCVIDEOENCODERFACTORY_H_
 
-#include "talk/base/refcount.h"
+#include "webrtc/base/refcount.h"
 #include "talk/media/base/codec.h"
 #include "webrtc/common_types.h"
 

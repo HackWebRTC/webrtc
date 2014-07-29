@@ -32,7 +32,7 @@
 #include <string>
 #endif  // _DEBUG
 
-#include "talk/base/sigslot.h"
+#include "webrtc/base/sigslot.h"
 
 namespace cricket {
 

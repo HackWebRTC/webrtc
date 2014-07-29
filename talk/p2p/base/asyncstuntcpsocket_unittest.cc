@@ -25,10 +25,10 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/base/asyncsocket.h"
-#include "talk/base/gunit.h"
-#include "talk/base/physicalsocketserver.h"
-#include "talk/base/virtualsocketserver.h"
+#include "webrtc/base/asyncsocket.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/physicalsocketserver.h"
+#include "webrtc/base/virtualsocketserver.h"
 #include "talk/p2p/base/asyncstuntcpsocket.h"
 
 namespace cricket {
@@ -77,14 +77,14 @@ static unsigned char kTurnChannelDataMessageWithOddLength[] = {
 };
 
 
-static const talk_base::SocketAddress kClientAddr("11.11.11.11", 0);
-static const talk_base::SocketAddress kServerAddr("22.22.22.22", 0);
+static const rtc::SocketAddress kClientAddr("11.11.11.11", 0);
+static const rtc::SocketAddress kServerAddr("22.22.22.22", 0);
 
 class AsyncStunTCPSocketTest : public testing::Test,
                                public sigslot::has_slots<> {
  protected:
   AsyncStunTCPSocketTest()
-      : vss_(new talk_base::VirtualSocketServer(NULL)),
+      : vss_(new rtc::VirtualSocketServer(NULL)),
         ss_scope_(vss_.get()) {
   }
 
@@ -93,14 +93,14 @@ class AsyncStunTCPSocketTest : public testing::Test,
   }
 
   void CreateSockets() {
-    talk_base::AsyncSocket* server = vss_->CreateAsyncSocket(
+    rtc::AsyncSocket* server = vss_->CreateAsyncSocket(
         kServerAddr.family(), SOCK_STREAM);
     server->Bind(kServerAddr);
     recv_socket_.reset(new AsyncStunTCPSocket(server, true));
     recv_socket_->SignalNewConnection.connect(
         this, &AsyncStunTCPSocketTest::OnNewConnection);
 
-    talk_base::AsyncSocket* client = vss_->CreateAsyncSocket(
+    rtc::AsyncSocket* client = vss_->CreateAsyncSocket(
         kClientAddr.family(), SOCK_STREAM);
     send_socket_.reset(AsyncStunTCPSocket::Create(
         client, kClientAddr, recv_socket_->GetLocalAddress()));
@@ -108,21 +108,21 @@ class AsyncStunTCPSocketTest : public testing::Test,
     vss_->ProcessMessagesUntilIdle();
   }
 
-  void OnReadPacket(talk_base::AsyncPacketSocket* socket, const char* data,
-                    size_t len, const talk_base::SocketAddress& remote_addr,
-                    const talk_base::PacketTime& packet_time) {
+  void OnReadPacket(rtc::AsyncPacketSocket* socket, const char* data,
+                    size_t len, const rtc::SocketAddress& remote_addr,
+                    const rtc::PacketTime& packet_time) {
     recv_packets_.push_back(std::string(data, len));
   }
 
-  void OnNewConnection(talk_base::AsyncPacketSocket* server,
-                       talk_base::AsyncPacketSocket* new_socket) {
+  void OnNewConnection(rtc::AsyncPacketSocket* server,
+                       rtc::AsyncPacketSocket* new_socket) {
     listen_socket_.reset(new_socket);
     new_socket->SignalReadPacket.connect(
         this, &AsyncStunTCPSocketTest::OnReadPacket);
   }
 
   bool Send(const void* data, size_t len) {
-    talk_base::PacketOptions options;
+    rtc::PacketOptions options;
     size_t ret = send_socket_->Send(
         reinterpret_cast<const char*>(data), len, options);
     vss_->ProcessMessagesUntilIdle();
@@ -139,11 +139,11 @@ class AsyncStunTCPSocketTest : public testing::Test,
     return ret;
   }
 
-  talk_base::scoped_ptr<talk_base::VirtualSocketServer> vss_;
-  talk_base::SocketServerScope ss_scope_;
-  talk_base::scoped_ptr<AsyncStunTCPSocket> send_socket_;
-  talk_base::scoped_ptr<AsyncStunTCPSocket> recv_socket_;
-  talk_base::scoped_ptr<talk_base::AsyncPacketSocket> listen_socket_;
+  rtc::scoped_ptr<rtc::VirtualSocketServer> vss_;
+  rtc::SocketServerScope ss_scope_;
+  rtc::scoped_ptr<AsyncStunTCPSocket> send_socket_;
+  rtc::scoped_ptr<AsyncStunTCPSocket> recv_socket_;
+  rtc::scoped_ptr<rtc::AsyncPacketSocket> listen_socket_;
   std::list<std::string> recv_packets_;
 };
 

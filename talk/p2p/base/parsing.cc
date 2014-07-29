@@ -29,7 +29,7 @@
 
 #include <algorithm>
 #include <stdlib.h>
-#include "talk/base/stringutils.h"
+#include "webrtc/base/stringutils.h"
 
 namespace {
 static const char kTrue[] = "true";

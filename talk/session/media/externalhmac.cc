@@ -37,7 +37,7 @@
 #include "third_party/libsrtp/include/srtp.h"
 #endif  // SRTP_RELATIVE_PATH
 
-#include "talk/base/logging.h"
+#include "webrtc/base/logging.h"
 
 // Begin test case 0 */
 static const uint8_t kExternalHmacTestCase0Key[20] = {

@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/base/gunit.h"
+#include "webrtc/base/gunit.h"
 #include "talk/session/media/bundlefilter.h"
 
 using cricket::StreamParams;

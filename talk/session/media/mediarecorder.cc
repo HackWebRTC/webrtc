@@ -31,9 +31,9 @@
 
 #include <string>
 
-#include "talk/base/fileutils.h"
-#include "talk/base/logging.h"
-#include "talk/base/pathutils.h"
+#include "webrtc/base/fileutils.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/pathutils.h"
 #include "talk/media/base/rtpdump.h"
 
 
@@ -42,7 +42,7 @@ namespace cricket {
 ///////////////////////////////////////////////////////////////////////////
 // Implementation of RtpDumpSink.
 ///////////////////////////////////////////////////////////////////////////
-RtpDumpSink::RtpDumpSink(talk_base::StreamInterface* stream)
+RtpDumpSink::RtpDumpSink(rtc::StreamInterface* stream)
     : max_size_(INT_MAX),
       recording_(false),
       packet_filter_(PF_NONE) {
@@ -52,12 +52,12 @@ RtpDumpSink::RtpDumpSink(talk_base::StreamInterface* stream)
 RtpDumpSink::~RtpDumpSink() {}
 
 void RtpDumpSink::SetMaxSize(size_t size) {
-  talk_base::CritScope cs(&critical_section_);
+  rtc::CritScope cs(&critical_section_);
   max_size_ = size;
 }
 
 bool RtpDumpSink::Enable(bool enable) {
-  talk_base::CritScope cs(&critical_section_);
+  rtc::CritScope cs(&critical_section_);
 
   recording_ = enable;
 
@@ -75,7 +75,7 @@ bool RtpDumpSink::Enable(bool enable) {
 }
 
 void RtpDumpSink::OnPacket(const void* data, size_t size, bool rtcp) {
-  talk_base::CritScope cs(&critical_section_);
+  rtc::CritScope cs(&critical_section_);
 
   if (recording_ && writer_) {
     size_t current_size;
@@ -91,7 +91,7 @@ void RtpDumpSink::OnPacket(const void* data, size_t size, bool rtcp) {
 }
 
 void RtpDumpSink::set_packet_filter(int filter) {
-  talk_base::CritScope cs(&critical_section_);
+  rtc::CritScope cs(&critical_section_);
   packet_filter_ = filter;
   if (writer_) {
     writer_->set_packet_filter(packet_filter_);
@@ -99,7 +99,7 @@ void RtpDumpSink::set_packet_filter(int filter) {
 }
 
 void RtpDumpSink::Flush() {
-  talk_base::CritScope cs(&critical_section_);
+  rtc::CritScope cs(&critical_section_);
   if (stream_) {
     stream_->Flush();
   }
@@ -111,7 +111,7 @@ void RtpDumpSink::Flush() {
 MediaRecorder::MediaRecorder() {}
 
 MediaRecorder::~MediaRecorder() {
-  talk_base::CritScope cs(&critical_section_);
+  rtc::CritScope cs(&critical_section_);
   std::map<BaseChannel*, SinkPair*>::iterator itr;
   for (itr = sinks_.begin(); itr != sinks_.end(); ++itr) {
     delete itr->second;
@@ -119,15 +119,15 @@ MediaRecorder::~MediaRecorder() {
 }
 
 bool MediaRecorder::AddChannel(VoiceChannel* channel,
-                               talk_base::StreamInterface* send_stream,
-                               talk_base::StreamInterface* recv_stream,
+                               rtc::StreamInterface* send_stream,
+                               rtc::StreamInterface* recv_stream,
                                int filter) {
   return InternalAddChannel(channel, false, send_stream, recv_stream,
                             filter);
 }
 bool MediaRecorder::AddChannel(VideoChannel* channel,
-                               talk_base::StreamInterface* send_stream,
-                               talk_base::StreamInterface* recv_stream,
+                               rtc::StreamInterface* send_stream,
+                               rtc::StreamInterface* recv_stream,
                                int filter) {
   return InternalAddChannel(channel, true, send_stream, recv_stream,
                             filter);
@@ -135,14 +135,14 @@ bool MediaRecorder::AddChannel(VideoChannel* channel,
 
 bool MediaRecorder::InternalAddChannel(BaseChannel* channel,
                                        bool video_channel,
-                                       talk_base::StreamInterface* send_stream,
-                                       talk_base::StreamInterface* recv_stream,
+                                       rtc::StreamInterface* send_stream,
+                                       rtc::StreamInterface* recv_stream,
                                        int filter) {
   if (!channel) {
     return false;
   }
 
-  talk_base::CritScope cs(&critical_section_);
+  rtc::CritScope cs(&critical_section_);
   if (sinks_.end() != sinks_.find(channel)) {
     return false;  // The channel was added already.
   }
@@ -161,7 +161,7 @@ bool MediaRecorder::InternalAddChannel(BaseChannel* channel,
 
 void MediaRecorder::RemoveChannel(BaseChannel* channel,
                                   SinkType type) {
-  talk_base::CritScope cs(&critical_section_);
+  rtc::CritScope cs(&critical_section_);
   std::map<BaseChannel*, SinkPair*>::iterator itr = sinks_.find(channel);
   if (sinks_.end() != itr) {
     channel->UnregisterSendSink(itr->second->send_sink.get(), type);
@@ -174,7 +174,7 @@ void MediaRecorder::RemoveChannel(BaseChannel* channel,
 bool MediaRecorder::EnableChannel(
     BaseChannel* channel, bool enable_send, bool enable_recv,
     SinkType type) {
-  talk_base::CritScope cs(&critical_section_);
+  rtc::CritScope cs(&critical_section_);
   std::map<BaseChannel*, SinkPair*>::iterator itr = sinks_.find(channel);
   if (sinks_.end() == itr) {
     return false;
@@ -213,7 +213,7 @@ bool MediaRecorder::EnableChannel(
 }
 
 void MediaRecorder::FlushSinks() {
-  talk_base::CritScope cs(&critical_section_);
+  rtc::CritScope cs(&critical_section_);
   std::map<BaseChannel*, SinkPair*>::iterator itr;
   for (itr = sinks_.begin(); itr != sinks_.end(); ++itr) {
     itr->second->send_sink->Flush();

@@ -27,9 +27,9 @@
 
 #include "talk/media/webrtc/webrtctexturevideoframe.h"
 
-#include "talk/base/common.h"
-#include "talk/base/logging.h"
-#include "talk/base/stream.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/stream.h"
 
 #define UNIMPLEMENTED \
   LOG(LS_ERROR) << "Call to unimplemented function "<< __FUNCTION__; \
@@ -137,10 +137,10 @@ void WebRtcTextureVideoFrame::CopyToFrame(VideoFrame* dst) const {
   UNIMPLEMENTED;
 }
 
-talk_base::StreamResult WebRtcTextureVideoFrame::Write(
-    talk_base::StreamInterface* stream, int* error) {
+rtc::StreamResult WebRtcTextureVideoFrame::Write(
+    rtc::StreamInterface* stream, int* error) {
   UNIMPLEMENTED;
-  return talk_base::SR_ERROR;
+  return rtc::SR_ERROR;
 }
 void WebRtcTextureVideoFrame::StretchToPlanes(
     uint8* dst_y, uint8* dst_u, uint8* dst_v, int32 dst_pitch_y,

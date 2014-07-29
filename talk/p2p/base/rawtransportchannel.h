@@ -30,14 +30,14 @@
 
 #include <string>
 #include <vector>
-#include "talk/base/messagequeue.h"
+#include "webrtc/base/messagequeue.h"
 #include "talk/p2p/base/transportchannelimpl.h"
 #include "talk/p2p/base/rawtransport.h"
 #include "talk/p2p/base/candidate.h"
 
 #if defined(FEATURE_ENABLE_PSTN)
 
-namespace talk_base {
+namespace rtc {
 class Thread;
 }
 
@@ -54,19 +54,19 @@ class StunPort;
 // address of the other side.  We pick a single address to send them based on
 // a simple investigation of NAT type.
 class RawTransportChannel : public TransportChannelImpl,
-    public talk_base::MessageHandler {
+    public rtc::MessageHandler {
  public:
   RawTransportChannel(const std::string& content_name,
                       int component,
                       RawTransport* transport,
-                      talk_base::Thread *worker_thread,
+                      rtc::Thread *worker_thread,
                       PortAllocator *allocator);
   virtual ~RawTransportChannel();
 
   // Implementation of normal channel packet sending.
   virtual int SendPacket(const char *data, size_t len,
-                         const talk_base::PacketOptions& options, int flags);
-  virtual int SetOption(talk_base::Socket::Option opt, int value);
+                         const rtc::PacketOptions& options, int flags);
+  virtual int SetOption(rtc::Socket::Option opt, int value);
   virtual int GetError();
 
   // Implements TransportChannelImpl.
@@ -91,7 +91,7 @@ class RawTransportChannel : public TransportChannelImpl,
   // have this since we now know where to send.
   virtual void OnCandidate(const Candidate& candidate);
 
-  void OnRemoteAddress(const talk_base::SocketAddress& remote_address);
+  void OnRemoteAddress(const rtc::SocketAddress& remote_address);
 
   // Below ICE specific virtual methods not implemented.
   virtual IceRole GetIceRole() const { return ICEROLE_UNKNOWN; }
@@ -114,11 +114,11 @@ class RawTransportChannel : public TransportChannelImpl,
   virtual bool IsDtlsActive() const { return false; }
 
   // Default implementation.
-  virtual bool GetSslRole(talk_base::SSLRole* role) const {
+  virtual bool GetSslRole(rtc::SSLRole* role) const {
     return false;
   }
 
-  virtual bool SetSslRole(talk_base::SSLRole role) {
+  virtual bool SetSslRole(rtc::SSLRole role) {
     return false;
   }
 
@@ -133,11 +133,11 @@ class RawTransportChannel : public TransportChannelImpl,
   }
 
   // Returns false because the channel is not DTLS.
-  virtual bool GetLocalIdentity(talk_base::SSLIdentity** identity) const {
+  virtual bool GetLocalIdentity(rtc::SSLIdentity** identity) const {
     return false;
   }
 
-  virtual bool GetRemoteCertificate(talk_base::SSLCertificate** cert) const {
+  virtual bool GetRemoteCertificate(rtc::SSLCertificate** cert) const {
     return false;
   }
 
@@ -152,7 +152,7 @@ class RawTransportChannel : public TransportChannelImpl,
     return false;
   }
 
-  virtual bool SetLocalIdentity(talk_base::SSLIdentity* identity) {
+  virtual bool SetLocalIdentity(rtc::SSLIdentity* identity) {
     return false;
   }
 
@@ -166,14 +166,14 @@ class RawTransportChannel : public TransportChannelImpl,
 
  private:
   RawTransport* raw_transport_;
-  talk_base::Thread *worker_thread_;
+  rtc::Thread *worker_thread_;
   PortAllocator* allocator_;
   PortAllocatorSession* allocator_session_;
   StunPort* stun_port_;
   RelayPort* relay_port_;
   PortInterface* port_;
   bool use_relay_;
-  talk_base::SocketAddress remote_address_;
+  rtc::SocketAddress remote_address_;
 
   // Called when the allocator creates another port.
   void OnPortReady(PortAllocatorSession* session, PortInterface* port);
@@ -192,10 +192,10 @@ class RawTransportChannel : public TransportChannelImpl,
 
   // Called when we receive a packet from the other client.
   void OnReadPacket(PortInterface* port, const char* data, size_t size,
-                    const talk_base::SocketAddress& addr);
+                    const rtc::SocketAddress& addr);
 
   // Handles a message to destroy unused ports.
-  virtual void OnMessage(talk_base::Message *msg);
+  virtual void OnMessage(rtc::Message *msg);
 
   DISALLOW_EVIL_CONSTRUCTORS(RawTransportChannel);
 };

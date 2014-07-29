@@ -36,7 +36,7 @@
 #include <unistd.h>
 #endif
 
-#include "talk/base/common.h"
+#include "webrtc/base/common.h"
 
 const char kAudioLabel[] = "audio_label";
 const char kVideoLabel[] = "video_label";

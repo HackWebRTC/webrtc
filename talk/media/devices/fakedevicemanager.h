@@ -31,8 +31,8 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/window.h"
-#include "talk/base/windowpicker.h"
+#include "webrtc/base/window.h"
+#include "webrtc/base/windowpicker.h"
 #include "talk/media/base/fakevideocapturer.h"
 #include "talk/media/base/mediacommon.h"
 #include "talk/media/devices/devicemanager.h"
@@ -98,35 +98,35 @@ class FakeDeviceManager : public DeviceManagerInterface {
     return new FakeVideoCapturer();
   }
   virtual bool GetWindows(
-      std::vector<talk_base::WindowDescription>* descriptions) {
+      std::vector<rtc::WindowDescription>* descriptions) {
     descriptions->clear();
     const uint32_t id = 1u;  // Note that 0 is not a valid ID.
-    const talk_base::WindowId window_id =
-        talk_base::WindowId::Cast(id);
+    const rtc::WindowId window_id =
+        rtc::WindowId::Cast(id);
     std::string title = "FakeWindow";
-    talk_base::WindowDescription window_description(window_id, title);
+    rtc::WindowDescription window_description(window_id, title);
     descriptions->push_back(window_description);
     return true;
   }
-  virtual VideoCapturer* CreateWindowCapturer(talk_base::WindowId window) {
+  virtual VideoCapturer* CreateWindowCapturer(rtc::WindowId window) {
     if (!window.IsValid()) {
       return NULL;
     }
     return new FakeVideoCapturer;
   }
   virtual bool GetDesktops(
-      std::vector<talk_base::DesktopDescription>* descriptions) {
+      std::vector<rtc::DesktopDescription>* descriptions) {
     descriptions->clear();
     const int id = 0;
     const int valid_index = 0;
-    const talk_base::DesktopId desktop_id =
-        talk_base::DesktopId::Cast(id, valid_index);
+    const rtc::DesktopId desktop_id =
+        rtc::DesktopId::Cast(id, valid_index);
     std::string title = "FakeDesktop";
-    talk_base::DesktopDescription desktop_description(desktop_id, title);
+    rtc::DesktopDescription desktop_description(desktop_id, title);
     descriptions->push_back(desktop_description);
     return true;
   }
-  virtual VideoCapturer* CreateDesktopCapturer(talk_base::DesktopId desktop) {
+  virtual VideoCapturer* CreateDesktopCapturer(rtc::DesktopId desktop) {
     if (!desktop.IsValid()) {
       return NULL;
     }

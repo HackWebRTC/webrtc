@@ -28,10 +28,10 @@
 #ifndef TALK_SESSION_MEDIA_SOUNDCLIP_H_
 #define TALK_SESSION_MEDIA_SOUNDCLIP_H_
 
-#include "talk/base/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "talk/media/base/mediaengine.h"
 
-namespace talk_base {
+namespace rtc {
 
 class Thread;
 
@@ -41,9 +41,9 @@ namespace cricket {
 
 // Soundclip wraps SoundclipMedia to support marshalling calls to the proper
 // thread.
-class Soundclip : private talk_base::MessageHandler {
+class Soundclip : private rtc::MessageHandler {
  public:
-  Soundclip(talk_base::Thread* thread, SoundclipMedia* soundclip_media);
+  Soundclip(rtc::Thread* thread, SoundclipMedia* soundclip_media);
 
   // Plays a sound out to the speakers with the given audio stream. The stream
   // must be 16-bit little-endian 16 kHz PCM. If a stream is already playing
@@ -59,10 +59,10 @@ class Soundclip : private talk_base::MessageHandler {
                    SoundclipMedia::SoundclipFlags flags);
 
   // From MessageHandler
-  virtual void OnMessage(talk_base::Message* message);
+  virtual void OnMessage(rtc::Message* message);
 
-  talk_base::Thread* worker_thread_;
-  talk_base::scoped_ptr<SoundclipMedia> soundclip_media_;
+  rtc::Thread* worker_thread_;
+  rtc::scoped_ptr<SoundclipMedia> soundclip_media_;
 };
 
 }  // namespace cricket

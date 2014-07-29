@@ -25,11 +25,11 @@
 
 #include <string>
 
-#include "talk/base/bytebuffer.h"
-#include "talk/base/fileutils.h"
-#include "talk/base/gunit.h"
-#include "talk/base/pathutils.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/bytebuffer.h"
+#include "webrtc/base/fileutils.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/pathutils.h"
+#include "webrtc/base/thread.h"
 #include "talk/media/base/fakemediaengine.h"
 #include "talk/media/base/rtpdump.h"
 #include "talk/media/base/testutils.h"
@@ -39,9 +39,9 @@
 
 namespace cricket {
 
-talk_base::StreamInterface* Open(const std::string& path) {
-  return talk_base::Filesystem::OpenFile(
-      talk_base::Pathname(path), "wb");
+rtc::StreamInterface* Open(const std::string& path) {
+  return rtc::Filesystem::OpenFile(
+      rtc::Pathname(path), "wb");
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -50,7 +50,7 @@ talk_base::StreamInterface* Open(const std::string& path) {
 class RtpDumpSinkTest : public testing::Test {
  public:
   virtual void SetUp() {
-    EXPECT_TRUE(talk_base::Filesystem::GetTemporaryFolder(path_, true, NULL));
+    EXPECT_TRUE(rtc::Filesystem::GetTemporaryFolder(path_, true, NULL));
     path_.SetFilename("sink-test.rtpdump");
     sink_.reset(new RtpDumpSink(Open(path_.pathname())));
 
@@ -62,30 +62,30 @@ class RtpDumpSinkTest : public testing::Test {
 
   virtual void TearDown() {
     stream_.reset();
-    EXPECT_TRUE(talk_base::Filesystem::DeleteFile(path_));
+    EXPECT_TRUE(rtc::Filesystem::DeleteFile(path_));
   }
 
  protected:
   void OnRtpPacket(const RawRtpPacket& raw) {
-    talk_base::ByteBuffer buf;
+    rtc::ByteBuffer buf;
     raw.WriteToByteBuffer(RtpTestUtility::kDefaultSsrc, &buf);
     sink_->OnPacket(buf.Data(), buf.Length(), false);
   }
 
-  talk_base::StreamResult ReadPacket(RtpDumpPacket* packet) {
+  rtc::StreamResult ReadPacket(RtpDumpPacket* packet) {
     if (!stream_.get()) {
       sink_.reset();  // This will close the file. So we can read it.
-      stream_.reset(talk_base::Filesystem::OpenFile(path_, "rb"));
+      stream_.reset(rtc::Filesystem::OpenFile(path_, "rb"));
       reader_.reset(new RtpDumpReader(stream_.get()));
     }
     return reader_->ReadPacket(packet);
   }
 
-  talk_base::Pathname path_;
-  talk_base::scoped_ptr<RtpDumpSink> sink_;
-  talk_base::ByteBuffer rtp_buf_[3];
-  talk_base::scoped_ptr<talk_base::StreamInterface> stream_;
-  talk_base::scoped_ptr<RtpDumpReader> reader_;
+  rtc::Pathname path_;
+  rtc::scoped_ptr<RtpDumpSink> sink_;
+  rtc::ByteBuffer rtp_buf_[3];
+  rtc::scoped_ptr<rtc::StreamInterface> stream_;
+  rtc::scoped_ptr<RtpDumpReader> reader_;
 };
 
 TEST_F(RtpDumpSinkTest, TestRtpDumpSink) {
@@ -97,7 +97,7 @@ TEST_F(RtpDumpSinkTest, TestRtpDumpSink) {
   // Enable the sink. The 2nd packet is written.
   EXPECT_TRUE(sink_->Enable(true));
   EXPECT_TRUE(sink_->IsEnabled());
-  EXPECT_TRUE(talk_base::Filesystem::IsFile(path_.pathname()));
+  EXPECT_TRUE(rtc::Filesystem::IsFile(path_.pathname()));
   OnRtpPacket(RtpTestUtility::kTestRawRtpPackets[1]);
 
   // Disable the sink. The 3rd packet is not written.
@@ -107,10 +107,10 @@ TEST_F(RtpDumpSinkTest, TestRtpDumpSink) {
 
   // Read the recorded file and verify it contains only the 2nd packet.
   RtpDumpPacket packet;
-  EXPECT_EQ(talk_base::SR_SUCCESS, ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_SUCCESS, ReadPacket(&packet));
   EXPECT_TRUE(RtpTestUtility::VerifyPacket(
       &packet, &RtpTestUtility::kTestRawRtpPackets[1], false));
-  EXPECT_EQ(talk_base::SR_EOS, ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_EOS, ReadPacket(&packet));
 }
 
 TEST_F(RtpDumpSinkTest, TestRtpDumpSinkMaxSize) {
@@ -128,10 +128,10 @@ TEST_F(RtpDumpSinkTest, TestRtpDumpSinkMaxSize) {
 
   // Read the recorded file and verify that it contains only the first packet.
   RtpDumpPacket packet;
-  EXPECT_EQ(talk_base::SR_SUCCESS, ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_SUCCESS, ReadPacket(&packet));
   EXPECT_TRUE(RtpTestUtility::VerifyPacket(
       &packet, &RtpTestUtility::kTestRawRtpPackets[0], false));
-  EXPECT_EQ(talk_base::SR_EOS, ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_EOS, ReadPacket(&packet));
 }
 
 TEST_F(RtpDumpSinkTest, TestRtpDumpSinkFilter) {
@@ -158,13 +158,13 @@ TEST_F(RtpDumpSinkTest, TestRtpDumpSinkFilter) {
   // Read the recorded file and verify the header of the first packet and
   // the whole packet for the second packet.
   RtpDumpPacket packet;
-  EXPECT_EQ(talk_base::SR_SUCCESS, ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_SUCCESS, ReadPacket(&packet));
   EXPECT_TRUE(RtpTestUtility::VerifyPacket(
       &packet, &RtpTestUtility::kTestRawRtpPackets[0], true));
-  EXPECT_EQ(talk_base::SR_SUCCESS, ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_SUCCESS, ReadPacket(&packet));
   EXPECT_TRUE(RtpTestUtility::VerifyPacket(
       &packet, &RtpTestUtility::kTestRawRtpPackets[1], false));
-  EXPECT_EQ(talk_base::SR_EOS, ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_EOS, ReadPacket(&packet));
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -174,7 +174,7 @@ void TestMediaRecorder(BaseChannel* channel,
                        FakeVideoMediaChannel* video_media_channel,
                        int filter) {
   // Create media recorder.
-  talk_base::scoped_ptr<MediaRecorder> recorder(new MediaRecorder);
+  rtc::scoped_ptr<MediaRecorder> recorder(new MediaRecorder);
   // Fail to EnableChannel before AddChannel.
   EXPECT_FALSE(recorder->EnableChannel(channel, true, true, SINK_PRE_CRYPTO));
   EXPECT_FALSE(channel->HasSendSinks(SINK_PRE_CRYPTO));
@@ -183,8 +183,8 @@ void TestMediaRecorder(BaseChannel* channel,
   EXPECT_FALSE(channel->HasRecvSinks(SINK_POST_CRYPTO));
 
   // Add the channel to the recorder.
-  talk_base::Pathname path;
-  EXPECT_TRUE(talk_base::Filesystem::GetTemporaryFolder(path, true, NULL));
+  rtc::Pathname path;
+  EXPECT_TRUE(rtc::Filesystem::GetTemporaryFolder(path, true, NULL));
   path.SetFilename("send.rtpdump");
   std::string send_file = path.pathname();
   path.SetFilename("recv.rtpdump");
@@ -247,8 +247,8 @@ void TestMediaRecorder(BaseChannel* channel,
 
   // Delete all files.
   recorder.reset();
-  EXPECT_TRUE(talk_base::Filesystem::DeleteFile(send_file));
-  EXPECT_TRUE(talk_base::Filesystem::DeleteFile(recv_file));
+  EXPECT_TRUE(rtc::Filesystem::DeleteFile(send_file));
+  EXPECT_TRUE(rtc::Filesystem::DeleteFile(recv_file));
 }
 
 // Fisrt start recording header and then start recording media. Verify that
@@ -256,10 +256,10 @@ void TestMediaRecorder(BaseChannel* channel,
 void TestRecordHeaderAndMedia(BaseChannel* channel,
                               FakeVideoMediaChannel* video_media_channel) {
   // Create RTP header recorder.
-  talk_base::scoped_ptr<MediaRecorder> header_recorder(new MediaRecorder);
+  rtc::scoped_ptr<MediaRecorder> header_recorder(new MediaRecorder);
 
-  talk_base::Pathname path;
-  EXPECT_TRUE(talk_base::Filesystem::GetTemporaryFolder(path, true, NULL));
+  rtc::Pathname path;
+  EXPECT_TRUE(rtc::Filesystem::GetTemporaryFolder(path, true, NULL));
   path.SetFilename("send-header.rtpdump");
   std::string send_header_file = path.pathname();
   path.SetFilename("recv-header.rtpdump");
@@ -287,11 +287,11 @@ void TestRecordHeaderAndMedia(BaseChannel* channel,
   }
 
   // Verify that header files are created.
-  EXPECT_TRUE(talk_base::Filesystem::IsFile(send_header_file));
-  EXPECT_TRUE(talk_base::Filesystem::IsFile(recv_header_file));
+  EXPECT_TRUE(rtc::Filesystem::IsFile(send_header_file));
+  EXPECT_TRUE(rtc::Filesystem::IsFile(recv_header_file));
 
   // Create RTP header recorder.
-  talk_base::scoped_ptr<MediaRecorder> recorder(new MediaRecorder);
+  rtc::scoped_ptr<MediaRecorder> recorder(new MediaRecorder);
   path.SetFilename("send.rtpdump");
   std::string send_file = path.pathname();
   path.SetFilename("recv.rtpdump");
@@ -318,23 +318,23 @@ void TestRecordHeaderAndMedia(BaseChannel* channel,
   }
 
   // Verify that media files are created.
-  EXPECT_TRUE(talk_base::Filesystem::IsFile(send_file));
-  EXPECT_TRUE(talk_base::Filesystem::IsFile(recv_file));
+  EXPECT_TRUE(rtc::Filesystem::IsFile(send_file));
+  EXPECT_TRUE(rtc::Filesystem::IsFile(recv_file));
 
   // Delete all files.
   header_recorder.reset();
   recorder.reset();
-  EXPECT_TRUE(talk_base::Filesystem::DeleteFile(send_header_file));
-  EXPECT_TRUE(talk_base::Filesystem::DeleteFile(recv_header_file));
-  EXPECT_TRUE(talk_base::Filesystem::DeleteFile(send_file));
-  EXPECT_TRUE(talk_base::Filesystem::DeleteFile(recv_file));
+  EXPECT_TRUE(rtc::Filesystem::DeleteFile(send_header_file));
+  EXPECT_TRUE(rtc::Filesystem::DeleteFile(recv_header_file));
+  EXPECT_TRUE(rtc::Filesystem::DeleteFile(send_file));
+  EXPECT_TRUE(rtc::Filesystem::DeleteFile(recv_file));
 }
 
 TEST(MediaRecorderTest, TestMediaRecorderVoiceChannel) {
   // Create the voice channel.
   FakeSession session(true);
   FakeMediaEngine media_engine;
-  VoiceChannel channel(talk_base::Thread::Current(), &media_engine,
+  VoiceChannel channel(rtc::Thread::Current(), &media_engine,
                        new FakeVoiceMediaChannel(NULL), &session, "", false);
   EXPECT_TRUE(channel.Init());
   TestMediaRecorder(&channel, NULL, PF_RTPPACKET);
@@ -347,7 +347,7 @@ TEST(MediaRecorderTest, TestMediaRecorderVideoChannel) {
   FakeSession session(true);
   FakeMediaEngine media_engine;
   FakeVideoMediaChannel* media_channel = new FakeVideoMediaChannel(NULL);
-  VideoChannel channel(talk_base::Thread::Current(), &media_engine,
+  VideoChannel channel(rtc::Thread::Current(), &media_engine,
                        media_channel, &session, "", false, NULL);
   EXPECT_TRUE(channel.Init());
   TestMediaRecorder(&channel, media_channel, PF_RTPPACKET);

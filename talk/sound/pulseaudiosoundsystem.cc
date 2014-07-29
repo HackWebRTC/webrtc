@@ -29,11 +29,11 @@
 
 #ifdef HAVE_LIBPULSE
 
-#include "talk/base/common.h"
-#include "talk/base/fileutils.h"  // for GetApplicationName()
-#include "talk/base/logging.h"
-#include "talk/base/worker.h"
-#include "talk/base/timeutils.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/fileutils.h"  // for GetApplicationName()
+#include "webrtc/base/logging.h"
+#include "webrtc/base/worker.h"
+#include "webrtc/base/timeutils.h"
 #include "talk/sound/sounddevicelocator.h"
 #include "talk/sound/soundinputstreaminterface.h"
 #include "talk/sound/soundoutputstreaminterface.h"
@@ -229,7 +229,7 @@ class PulseAudioStream {
 // thread-safety.
 class PulseAudioInputStream :
     public SoundInputStreamInterface,
-    private talk_base::Worker {
+    private rtc::Worker {
 
   struct GetVolumeCallbackData {
     PulseAudioInputStream *instance;
@@ -593,7 +593,7 @@ class PulseAudioInputStream :
 // regarding thread-safety.
 class PulseAudioOutputStream :
     public SoundOutputStreamInterface,
-    private talk_base::Worker {
+    private rtc::Worker {
 
   struct GetVolumeCallbackData {
     PulseAudioOutputStream *instance;
@@ -904,7 +904,7 @@ class PulseAudioOutputStream :
 
     int new_latency = configured_latency_ +
         bytes_per_sec * kPlaybackLatencyIncrementMsecs /
-        talk_base::kNumMicrosecsPerSec;
+        rtc::kNumMicrosecsPerSec;
 
     pa_buffer_attr new_attr = {0};
     FillPlaybackBufferAttr(new_latency, &new_attr);
@@ -1181,7 +1181,7 @@ pa_context *PulseAudioSoundSystem::CreateNewConnection() {
   std::string app_name;
   // TODO: Pulse etiquette says this name should be localized. Do
   // we care?
-  talk_base::Filesystem::GetApplicationName(&app_name);
+  rtc::Filesystem::GetApplicationName(&app_name);
   pa_context *context = symbol_table_.pa_context_new()(
       symbol_table_.pa_threaded_mainloop_get_api()(mainloop_),
       app_name.c_str());
@@ -1458,11 +1458,11 @@ SoundOutputStreamInterface *PulseAudioSoundSystem::ConnectOutputStream(
   if (latency != kNoLatencyRequirements) {
     // kLowLatency is 0, so we treat it the same as a request for zero latency.
     ssize_t bytes_per_sec = symbol_table_.pa_bytes_per_second()(&spec);
-    latency = talk_base::_max(
+    latency = rtc::_max(
         latency,
         static_cast<int>(
             bytes_per_sec * kPlaybackLatencyMinimumMsecs /
-            talk_base::kNumMicrosecsPerSec));
+            rtc::kNumMicrosecsPerSec));
     FillPlaybackBufferAttr(latency, &attr);
     pattr = &attr;
   }
@@ -1494,13 +1494,13 @@ SoundInputStreamInterface *PulseAudioSoundSystem::ConnectInputStream(
     size_t bytes_per_sec = symbol_table_.pa_bytes_per_second()(&spec);
     if (latency == kLowLatency) {
       latency = bytes_per_sec * kLowCaptureLatencyMsecs /
-          talk_base::kNumMicrosecsPerSec;
+          rtc::kNumMicrosecsPerSec;
     }
     // Note: fragsize specifies a maximum transfer size, not a minimum, so it is
     // not possible to force a high latency setting, only a low one.
     attr.fragsize = latency;
     attr.maxlength = latency + bytes_per_sec * kCaptureBufferExtraMsecs /
-        talk_base::kNumMicrosecsPerSec;
+        rtc::kNumMicrosecsPerSec;
     LOG(LS_VERBOSE) << "Configuring latency = " << attr.fragsize
                     << ", maxlength = " << attr.maxlength;
     pattr = &attr;

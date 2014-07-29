@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/base/common.h"
+#include "webrtc/base/common.h"
 #include "talk/session/media/channelmanager.h"
 #include "talk/session/media/mediamonitor.h"
 
@@ -38,8 +38,8 @@ enum {
   MSG_MONITOR_SIGNAL = 4
 };
 
-MediaMonitor::MediaMonitor(talk_base::Thread* worker_thread,
-                           talk_base::Thread* monitor_thread)
+MediaMonitor::MediaMonitor(rtc::Thread* worker_thread,
+                           rtc::Thread* monitor_thread)
     : worker_thread_(worker_thread),
       monitor_thread_(monitor_thread), monitoring_(false), rate_(0) {
 }
@@ -62,12 +62,12 @@ void MediaMonitor::Stop() {
   rate_ = 0;
 }
 
-void MediaMonitor::OnMessage(talk_base::Message* message) {
-  talk_base::CritScope cs(&crit_);
+void MediaMonitor::OnMessage(rtc::Message* message) {
+  rtc::CritScope cs(&crit_);
 
   switch (message->message_id) {
   case MSG_MONITOR_START:
-    ASSERT(talk_base::Thread::Current() == worker_thread_);
+    ASSERT(rtc::Thread::Current() == worker_thread_);
     if (!monitoring_) {
       monitoring_ = true;
       PollMediaChannel();
@@ -75,7 +75,7 @@ void MediaMonitor::OnMessage(talk_base::Message* message) {
     break;
 
   case MSG_MONITOR_STOP:
-    ASSERT(talk_base::Thread::Current() == worker_thread_);
+    ASSERT(rtc::Thread::Current() == worker_thread_);
     if (monitoring_) {
       monitoring_ = false;
       worker_thread_->Clear(this);
@@ -83,20 +83,20 @@ void MediaMonitor::OnMessage(talk_base::Message* message) {
     break;
 
   case MSG_MONITOR_POLL:
-    ASSERT(talk_base::Thread::Current() == worker_thread_);
+    ASSERT(rtc::Thread::Current() == worker_thread_);
     PollMediaChannel();
     break;
 
   case MSG_MONITOR_SIGNAL:
-    ASSERT(talk_base::Thread::Current() == monitor_thread_);
+    ASSERT(rtc::Thread::Current() == monitor_thread_);
     Update();
     break;
   }
 }
 
 void MediaMonitor::PollMediaChannel() {
-  talk_base::CritScope cs(&crit_);
-  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  rtc::CritScope cs(&crit_);
+  ASSERT(rtc::Thread::Current() == worker_thread_);
 
   GetStats();
 

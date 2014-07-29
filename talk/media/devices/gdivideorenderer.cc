@@ -29,9 +29,9 @@
 
 #include "talk/media/devices/gdivideorenderer.h"
 
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/thread.h"
-#include "talk/base/win32window.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/base/win32window.h"
 #include "talk/media/base/videocommon.h"
 #include "talk/media/base/videoframe.h"
 
@@ -41,7 +41,7 @@ namespace cricket {
 // Definition of private class VideoWindow. We use a worker thread to manage
 // the window.
 /////////////////////////////////////////////////////////////////////////////
-class GdiVideoRenderer::VideoWindow : public talk_base::Win32Window {
+class GdiVideoRenderer::VideoWindow : public rtc::Win32Window {
  public:
   VideoWindow(int x, int y, int width, int height);
   virtual ~VideoWindow();
@@ -58,14 +58,14 @@ class GdiVideoRenderer::VideoWindow : public talk_base::Win32Window {
   bool RenderFrame(const VideoFrame* frame);
 
  protected:
-  // Override virtual method of talk_base::Win32Window. Context: worker Thread.
+  // Override virtual method of rtc::Win32Window. Context: worker Thread.
   virtual bool OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam,
                          LRESULT& result);
 
  private:
   enum { kSetSizeMsg = WM_USER, kRenderFrameMsg};
 
-  class WindowThread : public talk_base::Thread {
+  class WindowThread : public rtc::Thread {
    public:
     explicit WindowThread(VideoWindow* window) : window_(window) {}
 
@@ -73,7 +73,7 @@ class GdiVideoRenderer::VideoWindow : public talk_base::Win32Window {
       Stop();
     }
 
-    // Override virtual method of talk_base::Thread. Context: worker Thread.
+    // Override virtual method of rtc::Thread. Context: worker Thread.
     virtual void Run() {
       // Initialize the window
       if (!window_ || !window_->Initialize()) {
@@ -98,8 +98,8 @@ class GdiVideoRenderer::VideoWindow : public talk_base::Win32Window {
   void OnRenderFrame(const VideoFrame* frame);
 
   BITMAPINFO bmi_;
-  talk_base::scoped_ptr<uint8[]> image_;
-  talk_base::scoped_ptr<WindowThread> window_thread_;
+  rtc::scoped_ptr<uint8[]> image_;
+  rtc::scoped_ptr<WindowThread> window_thread_;
   // The initial position of the window.
   int initial_x_;
   int initial_y_;
@@ -180,7 +180,7 @@ bool GdiVideoRenderer::VideoWindow::OnMessage(UINT uMsg, WPARAM wParam,
 }
 
 bool GdiVideoRenderer::VideoWindow::Initialize() {
-  if (!talk_base::Win32Window::Create(
+  if (!rtc::Win32Window::Create(
       NULL, L"Video Renderer",
       WS_OVERLAPPEDWINDOW | WS_SIZEBOX,
       WS_EX_APPWINDOW,

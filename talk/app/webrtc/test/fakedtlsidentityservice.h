@@ -65,7 +65,7 @@ static const char kCERT_PEM[] =
 using webrtc::DTLSIdentityRequestObserver;
 
 class FakeIdentityService : public webrtc::DTLSIdentityServiceInterface,
-                            public talk_base::MessageHandler {
+                            public rtc::MessageHandler {
  public:
   struct Request {
     Request(const std::string& common_name,
@@ -73,9 +73,9 @@ class FakeIdentityService : public webrtc::DTLSIdentityServiceInterface,
         : common_name(common_name), observer(observer) {}
 
     std::string common_name;
-    talk_base::scoped_refptr<DTLSIdentityRequestObserver> observer;
+    rtc::scoped_refptr<DTLSIdentityRequestObserver> observer;
   };
-  typedef talk_base::TypedMessageData<Request> MessageData;
+  typedef rtc::TypedMessageData<Request> MessageData;
 
   FakeIdentityService() : should_fail_(false) {}
 
@@ -89,9 +89,9 @@ class FakeIdentityService : public webrtc::DTLSIdentityServiceInterface,
                                DTLSIdentityRequestObserver* observer) {
     MessageData* msg = new MessageData(Request(common_name, observer));
     if (should_fail_) {
-      talk_base::Thread::Current()->Post(this, MSG_FAILURE, msg);
+      rtc::Thread::Current()->Post(this, MSG_FAILURE, msg);
     } else {
-      talk_base::Thread::Current()->Post(this, MSG_SUCCESS, msg);
+      rtc::Thread::Current()->Post(this, MSG_SUCCESS, msg);
     }
     return true;
   }
@@ -102,8 +102,8 @@ class FakeIdentityService : public webrtc::DTLSIdentityServiceInterface,
     MSG_FAILURE,
   };
 
-  // talk_base::MessageHandler implementation.
-  void OnMessage(talk_base::Message* msg) {
+  // rtc::MessageHandler implementation.
+  void OnMessage(rtc::Message* msg) {
     FakeIdentityService::MessageData* message_data =
         static_cast<FakeIdentityService::MessageData*>(msg->pdata);
     DTLSIdentityRequestObserver* observer = message_data->data().observer.get();
@@ -125,8 +125,8 @@ class FakeIdentityService : public webrtc::DTLSIdentityServiceInterface,
       const std::string& common_name,
       std::string* der_cert,
       std::string* der_key) {
-    talk_base::SSLIdentity::PemToDer("CERTIFICATE", kCERT_PEM, der_cert);
-    talk_base::SSLIdentity::PemToDer("RSA PRIVATE KEY",
+    rtc::SSLIdentity::PemToDer("CERTIFICATE", kCERT_PEM, der_cert);
+    rtc::SSLIdentity::PemToDer("RSA PRIVATE KEY",
                                      kRSA_PRIVATE_KEY_PEM,
                                      der_key);
   }

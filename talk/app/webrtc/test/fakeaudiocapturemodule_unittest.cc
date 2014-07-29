@@ -29,9 +29,9 @@
 
 #include <algorithm>
 
-#include "talk/base/gunit.h"
-#include "talk/base/scoped_ref_ptr.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/thread.h"
 
 using std::min;
 
@@ -49,7 +49,7 @@ class FakeAdmTest : public testing::Test,
 
   virtual void SetUp() {
     fake_audio_capture_module_ = FakeAudioCaptureModule::Create(
-        talk_base::Thread::Current());
+        rtc::Thread::Current());
     EXPECT_TRUE(fake_audio_capture_module_.get() != NULL);
   }
 
@@ -109,7 +109,7 @@ class FakeAdmTest : public testing::Test,
   int push_iterations() const { return push_iterations_; }
   int pull_iterations() const { return pull_iterations_; }
 
-  talk_base::scoped_refptr<FakeAudioCaptureModule> fake_audio_capture_module_;
+  rtc::scoped_refptr<FakeAudioCaptureModule> fake_audio_capture_module_;
 
  private:
   bool RecordedDataReceived() const {

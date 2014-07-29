@@ -30,8 +30,8 @@
 
 #include <vector>
 
-#include "talk/base/cryptstring.h"
-#include "talk/base/sigslot.h"
+#include "webrtc/base/cryptstring.h"
+#include "webrtc/base/sigslot.h"
 #include "talk/xmpp/jid.h"
 #include "talk/xmpp/saslhandler.h"
 #include "talk/xmpp/prexmppauth.h"
@@ -44,8 +44,8 @@ public:
   // TODO: Just have one "secret" that is either pass or
   // token?
   virtual void StartPreXmppAuth(const buzz::Jid& jid,
-                                const talk_base::SocketAddress& server,
-                                const talk_base::CryptString& pass,
+                                const rtc::SocketAddress& server,
+                                const rtc::CryptString& pass,
                                 const std::string& auth_mechanism,
                                 const std::string& auth_token);
 
@@ -68,7 +68,7 @@ public:
 
 private:
   buzz::Jid jid_;
-  talk_base::CryptString passwd_;
+  rtc::CryptString passwd_;
   std::string auth_mechanism_;
   std::string auth_token_;
   bool done_;

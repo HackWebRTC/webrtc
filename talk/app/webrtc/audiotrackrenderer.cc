@@ -26,7 +26,7 @@
  */
 
 #include "talk/app/webrtc/audiotrackrenderer.h"
-#include "talk/base/common.h"
+#include "webrtc/base/common.h"
 
 namespace webrtc {
 

@@ -30,7 +30,7 @@
 
 #include <map>
 
-#include "talk/base/criticalsection.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/video_render/include/video_render.h"
 
 namespace cricket {
@@ -56,12 +56,12 @@ class WebRtcPassthroughRender : public webrtc::VideoRender {
   virtual int32_t Process() { return 0; }
 
   virtual void* Window() {
-    talk_base::CritScope cs(&render_critical_);
+    rtc::CritScope cs(&render_critical_);
     return window_;
   }
 
   virtual int32_t ChangeWindow(void* window) {
-    talk_base::CritScope cs(&render_critical_);
+    rtc::CritScope cs(&render_critical_);
     window_ = window;
     return 0;
   }
@@ -204,7 +204,7 @@ class WebRtcPassthroughRender : public webrtc::VideoRender {
 
   void* window_;
   StreamMap stream_render_map_;
-  talk_base::CriticalSection render_critical_;
+  rtc::CriticalSection render_critical_;
 };
 }  // namespace cricket
 

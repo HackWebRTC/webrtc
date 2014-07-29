@@ -29,13 +29,13 @@
 
 #include <math.h>
 
-#include "talk/base/bytebuffer.h"
-#include "talk/base/fileutils.h"
-#include "talk/base/gunit.h"
-#include "talk/base/pathutils.h"
-#include "talk/base/stream.h"
-#include "talk/base/stringutils.h"
-#include "talk/base/testutils.h"
+#include "webrtc/base/bytebuffer.h"
+#include "webrtc/base/fileutils.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/pathutils.h"
+#include "webrtc/base/stream.h"
+#include "webrtc/base/stringutils.h"
+#include "webrtc/base/testutils.h"
 #include "talk/media/base/rtpdump.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videoframe.h"
@@ -46,7 +46,7 @@ namespace cricket {
 // Implementation of RawRtpPacket
 /////////////////////////////////////////////////////////////////////////
 void RawRtpPacket::WriteToByteBuffer(
-    uint32 in_ssrc, talk_base::ByteBuffer *buf) const {
+    uint32 in_ssrc, rtc::ByteBuffer *buf) const {
   if (!buf) return;
 
   buf->WriteUInt8(ver_to_cc);
@@ -57,7 +57,7 @@ void RawRtpPacket::WriteToByteBuffer(
   buf->WriteBytes(payload, sizeof(payload));
 }
 
-bool RawRtpPacket::ReadFromByteBuffer(talk_base::ByteBuffer* buf) {
+bool RawRtpPacket::ReadFromByteBuffer(rtc::ByteBuffer* buf) {
   if (!buf) return false;
 
   bool ret = true;
@@ -83,7 +83,7 @@ bool RawRtpPacket::SameExceptSeqNumTimestampSsrc(
 /////////////////////////////////////////////////////////////////////////
 // Implementation of RawRtcpPacket
 /////////////////////////////////////////////////////////////////////////
-void RawRtcpPacket::WriteToByteBuffer(talk_base::ByteBuffer *buf) const {
+void RawRtcpPacket::WriteToByteBuffer(rtc::ByteBuffer *buf) const {
   if (!buf) return;
 
   buf->WriteUInt8(ver_to_count);
@@ -92,7 +92,7 @@ void RawRtcpPacket::WriteToByteBuffer(talk_base::ByteBuffer *buf) const {
   buf->WriteBytes(payload, sizeof(payload));
 }
 
-bool RawRtcpPacket::ReadFromByteBuffer(talk_base::ByteBuffer* buf) {
+bool RawRtcpPacket::ReadFromByteBuffer(rtc::ByteBuffer* buf) {
   if (!buf) return false;
 
   bool ret = true;
@@ -128,7 +128,7 @@ const RawRtcpPacket RtpTestUtility::kTestRawRtcpPackets[] = {
 };
 
 size_t RtpTestUtility::GetTestPacketCount() {
-  return talk_base::_min(
+  return rtc::_min(
       ARRAY_SIZE(kTestRawRtpPackets),
       ARRAY_SIZE(kTestRawRtcpPackets));
 }
@@ -140,7 +140,7 @@ bool RtpTestUtility::WriteTestPackets(
   bool result = true;
   uint32 elapsed_time_ms = 0;
   for (size_t i = 0; i < count && result; ++i) {
-    talk_base::ByteBuffer buf;
+    rtc::ByteBuffer buf;
     if (rtcp) {
       kTestRawRtcpPackets[i].WriteToByteBuffer(&buf);
     } else {
@@ -149,13 +149,13 @@ bool RtpTestUtility::WriteTestPackets(
 
     RtpDumpPacket dump_packet(buf.Data(), buf.Length(), elapsed_time_ms, rtcp);
     elapsed_time_ms += kElapsedTimeInterval;
-    result &= (talk_base::SR_SUCCESS == writer->WritePacket(dump_packet));
+    result &= (rtc::SR_SUCCESS == writer->WritePacket(dump_packet));
   }
   return result;
 }
 
 bool RtpTestUtility::VerifyTestPacketsFromStream(
-    size_t count, talk_base::StreamInterface* stream, uint32 ssrc) {
+    size_t count, rtc::StreamInterface* stream, uint32 ssrc) {
   if (!stream) return false;
 
   uint32 prev_elapsed_time = 0;
@@ -168,13 +168,13 @@ bool RtpTestUtility::VerifyTestPacketsFromStream(
     size_t index = i % GetTestPacketCount();
 
     RtpDumpPacket packet;
-    result &= (talk_base::SR_SUCCESS == reader.ReadPacket(&packet));
+    result &= (rtc::SR_SUCCESS == reader.ReadPacket(&packet));
     // Check the elapsed time of the dump packet.
     result &= (packet.elapsed_time >= prev_elapsed_time);
     prev_elapsed_time = packet.elapsed_time;
 
     // Check the RTP or RTCP packet.
-    talk_base::ByteBuffer buf(reinterpret_cast<const char*>(&packet.data[0]),
+    rtc::ByteBuffer buf(reinterpret_cast<const char*>(&packet.data[0]),
                               packet.data.size());
     if (packet.is_rtcp()) {
       // RTCP packet.
@@ -204,7 +204,7 @@ bool RtpTestUtility::VerifyPacket(const RtpDumpPacket* dump,
                                   bool header_only) {
   if (!dump || !raw) return false;
 
-  talk_base::ByteBuffer buf;
+  rtc::ByteBuffer buf;
   raw->WriteToByteBuffer(RtpTestUtility::kDefaultSsrc, &buf);
 
   if (header_only) {
@@ -255,7 +255,7 @@ void VideoCapturerListener::OnFrameCaptured(VideoCapturer* capturer,
 // Returns the absolute path to a file in the testdata/ directory.
 std::string GetTestFilePath(const std::string& filename) {
   // Locate test data directory.
-  talk_base::Pathname path = testing::GetTalkDirectory();
+  rtc::Pathname path = testing::GetTalkDirectory();
   EXPECT_FALSE(path.empty());  // must be run from inside "talk"
   path.AppendFolder("media");
   path.AppendFolder("testdata");
@@ -269,25 +269,25 @@ bool LoadPlanarYuvTestImage(const std::string& prefix,
   std::stringstream ss;
   ss << prefix << "." << width << "x" << height << "_P420.yuv";
 
-  talk_base::scoped_ptr<talk_base::FileStream> stream(
-      talk_base::Filesystem::OpenFile(talk_base::Pathname(
+  rtc::scoped_ptr<rtc::FileStream> stream(
+      rtc::Filesystem::OpenFile(rtc::Pathname(
           GetTestFilePath(ss.str())), "rb"));
   if (!stream) {
     return false;
   }
 
-  talk_base::StreamResult res =
+  rtc::StreamResult res =
       stream->ReadAll(out, I420_SIZE(width, height), NULL, NULL);
-  return (res == talk_base::SR_SUCCESS);
+  return (res == rtc::SR_SUCCESS);
 }
 
 // Dumps the YUV image out to a file, for visual inspection.
 // PYUV tool can be used to view dump files.
 void DumpPlanarYuvTestImage(const std::string& prefix, const uint8* img,
                             int w, int h) {
-  talk_base::FileStream fs;
+  rtc::FileStream fs;
   char filename[256];
-  talk_base::sprintfn(filename, sizeof(filename), "%s.%dx%d_P420.yuv",
+  rtc::sprintfn(filename, sizeof(filename), "%s.%dx%d_P420.yuv",
                       prefix.c_str(), w, h);
   fs.Open(filename, "wb", NULL);
   fs.Write(img, I420_SIZE(w, h), NULL, NULL);
@@ -297,9 +297,9 @@ void DumpPlanarYuvTestImage(const std::string& prefix, const uint8* img,
 // ffplay tool can be used to view dump files.
 void DumpPlanarArgbTestImage(const std::string& prefix, const uint8* img,
                              int w, int h) {
-  talk_base::FileStream fs;
+  rtc::FileStream fs;
   char filename[256];
-  talk_base::sprintfn(filename, sizeof(filename), "%s.%dx%d_ARGB.raw",
+  rtc::sprintfn(filename, sizeof(filename), "%s.%dx%d_ARGB.raw",
                       prefix.c_str(), w, h);
   fs.Open(filename, "wb", NULL);
   fs.Write(img, ARGB_SIZE(w, h), NULL, NULL);

@@ -30,10 +30,10 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/base64.h"
-#include "talk/base/common.h"
-#include "talk/base/stringencode.h"
-#include "talk/base/stringutils.h"
+#include "webrtc/base/base64.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/stringencode.h"
+#include "webrtc/base/stringutils.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/p2ptransportchannel.h"
 #include "talk/p2p/base/parsing.h"
@@ -57,8 +57,8 @@ static buzz::XmlElement* NewTransportElement(const std::string& name) {
   return new buzz::XmlElement(buzz::QName(name, LN_TRANSPORT), true);
 }
 
-P2PTransport::P2PTransport(talk_base::Thread* signaling_thread,
-                           talk_base::Thread* worker_thread,
+P2PTransport::P2PTransport(rtc::Thread* signaling_thread,
+                           rtc::Thread* worker_thread,
                            const std::string& content_name,
                            PortAllocator* allocator)
     : Transport(signaling_thread, worker_thread,
@@ -112,7 +112,7 @@ bool P2PTransportParser::WriteTransportDescription(
     buzz::XmlElement** out_elem,
     WriteError* error) {
   TransportProtocol proto = TransportProtocolFromDescription(&desc);
-  talk_base::scoped_ptr<buzz::XmlElement> trans_elem(
+  rtc::scoped_ptr<buzz::XmlElement> trans_elem(
       NewTransportElement(desc.transport_type));
 
   // Fail if we get HYBRID or ICE right now.
@@ -124,7 +124,7 @@ bool P2PTransportParser::WriteTransportDescription(
 
   for (std::vector<Candidate>::const_iterator iter = desc.candidates.begin();
        iter != desc.candidates.end(); ++iter) {
-    talk_base::scoped_ptr<buzz::XmlElement> cand_elem(
+    rtc::scoped_ptr<buzz::XmlElement> cand_elem(
         new buzz::XmlElement(QN_GINGLE_P2P_CANDIDATE));
     if (!WriteCandidate(proto, *iter, translator, cand_elem.get(), error)) {
       return false;
@@ -149,7 +149,7 @@ bool P2PTransportParser::WriteGingleCandidate(
     const CandidateTranslator* translator,
     buzz::XmlElement** out_elem,
     WriteError* error) {
-  talk_base::scoped_ptr<buzz::XmlElement> elem(
+  rtc::scoped_ptr<buzz::XmlElement> elem(
       new buzz::XmlElement(QN_GINGLE_CANDIDATE));                                     
   bool ret = WriteCandidate(ICEPROTO_GOOGLE, candidate, translator, elem.get(),
                             error);
@@ -165,7 +165,7 @@ bool P2PTransportParser::VerifyUsernameFormat(TransportProtocol proto,
   if (proto == ICEPROTO_GOOGLE || proto == ICEPROTO_HYBRID) {
     if (username.size() > kMaxGiceUsernameSize)
       return BadParse("candidate username is too long", error);
-    if (!talk_base::Base64::IsBase64Encoded(username))
+    if (!rtc::Base64::IsBase64Encoded(username))
       return BadParse("candidate username has non-base64 encoded characters",
                       error);
   } else if (proto == ICEPROTO_RFC5245) {
@@ -192,7 +192,7 @@ bool P2PTransportParser::ParseCandidate(TransportProtocol proto,
     return BadParse("candidate missing required attribute", error);
   }
 
-  talk_base::SocketAddress address;
+  rtc::SocketAddress address;
   if (!ParseAddress(elem, QN_ADDRESS, QN_PORT, &address, error))
     return false;
 

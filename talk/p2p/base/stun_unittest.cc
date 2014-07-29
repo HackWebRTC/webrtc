@@ -27,12 +27,12 @@
 
 #include <string>
 
-#include "talk/base/bytebuffer.h"
-#include "talk/base/gunit.h"
-#include "talk/base/logging.h"
-#include "talk/base/messagedigest.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/socketaddress.h"
+#include "webrtc/base/bytebuffer.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/messagedigest.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/socketaddress.h"
 #include "talk/p2p/base/stun.h"
 
 namespace cricket {
@@ -56,7 +56,7 @@ class StunTest : public ::testing::Test {
   void CheckStunAddressAttribute(const StunAddressAttribute* addr,
                                  StunAddressFamily expected_family,
                                  int expected_port,
-                                 talk_base::IPAddress expected_address) {
+                                 rtc::IPAddress expected_address) {
     ASSERT_EQ(expected_family, addr->family());
     ASSERT_EQ(expected_port, addr->port());
 
@@ -78,7 +78,7 @@ class StunTest : public ::testing::Test {
                                  const unsigned char* testcase,
                                  size_t size) {
     const char* input = reinterpret_cast<const char*>(testcase);
-    talk_base::ByteBuffer buf(input, size);
+    rtc::ByteBuffer buf(input, size);
     if (msg->Read(&buf)) {
       // Returns the size the stun message should report itself as being
       return (size - 20);
@@ -267,9 +267,9 @@ static const char kRfc5769SampleMsgClientSoftware[] = "STUN test client";
 static const char kRfc5769SampleMsgServerSoftware[] = "test vector";
 static const char kRfc5769SampleMsgUsername[] = "evtj:h6vY";
 static const char kRfc5769SampleMsgPassword[] = "VOkJxbRl1RmTxUk/WvJxBt";
-static const talk_base::SocketAddress kRfc5769SampleMsgMappedAddress(
+static const rtc::SocketAddress kRfc5769SampleMsgMappedAddress(
     "192.0.2.1", 32853);
-static const talk_base::SocketAddress kRfc5769SampleMsgIPv6MappedAddress(
+static const rtc::SocketAddress kRfc5769SampleMsgIPv6MappedAddress(
     "2001:db8:1234:5678:11:2233:4455:6677", 32853);
 
 static const unsigned char kRfc5769SampleMsgWithAuthTransactionId[] = {
@@ -533,7 +533,7 @@ TEST_F(StunTest, ReadMessageWithIPv4AddressAttribute) {
   CheckStunTransactionID(msg, kTestTransactionId1, kStunTransactionIdLength);
 
   const StunAddressAttribute* addr = msg.GetAddress(STUN_ATTR_MAPPED_ADDRESS);
-  talk_base::IPAddress test_address(kIPv4TestAddress1);
+  rtc::IPAddress test_address(kIPv4TestAddress1);
   CheckStunAddressAttribute(addr, STUN_ADDRESS_IPV4,
                             kTestMessagePort4, test_address);
 }
@@ -547,7 +547,7 @@ TEST_F(StunTest, ReadMessageWithIPv4XorAddressAttribute) {
 
   const StunAddressAttribute* addr =
       msg.GetAddress(STUN_ATTR_XOR_MAPPED_ADDRESS);
-  talk_base::IPAddress test_address(kIPv4TestAddress1);
+  rtc::IPAddress test_address(kIPv4TestAddress1);
   CheckStunAddressAttribute(addr, STUN_ADDRESS_IPV4,
                             kTestMessagePort3, test_address);
 }
@@ -558,7 +558,7 @@ TEST_F(StunTest, ReadMessageWithIPv6AddressAttribute) {
   CheckStunHeader(msg, STUN_BINDING_REQUEST, size);
   CheckStunTransactionID(msg, kTestTransactionId1, kStunTransactionIdLength);
 
-  talk_base::IPAddress test_address(kIPv6TestAddress1);
+  rtc::IPAddress test_address(kIPv6TestAddress1);
 
   const StunAddressAttribute* addr = msg.GetAddress(STUN_ATTR_MAPPED_ADDRESS);
   CheckStunAddressAttribute(addr, STUN_ADDRESS_IPV6,
@@ -571,7 +571,7 @@ TEST_F(StunTest, ReadMessageWithInvalidAddressAttribute) {
   CheckStunHeader(msg, STUN_BINDING_REQUEST, size);
   CheckStunTransactionID(msg, kTestTransactionId1, kStunTransactionIdLength);
 
-  talk_base::IPAddress test_address(kIPv6TestAddress1);
+  rtc::IPAddress test_address(kIPv6TestAddress1);
 
   const StunAddressAttribute* addr = msg.GetAddress(STUN_ATTR_MAPPED_ADDRESS);
   CheckStunAddressAttribute(addr, STUN_ADDRESS_IPV6,
@@ -582,7 +582,7 @@ TEST_F(StunTest, ReadMessageWithIPv6XorAddressAttribute) {
   StunMessage msg;
   size_t size = ReadStunMessage(&msg, kStunMessageWithIPv6XorMappedAddress);
 
-  talk_base::IPAddress test_address(kIPv6TestAddress1);
+  rtc::IPAddress test_address(kIPv6TestAddress1);
 
   CheckStunHeader(msg, STUN_BINDING_RESPONSE, size);
   CheckStunTransactionID(msg, kTestTransactionId2, kStunTransactionIdLength);
@@ -711,7 +711,7 @@ TEST_F(StunTest, ReadLegacyMessage) {
   CheckStunTransactionID(msg, &rfc3489_packet[4], kStunTransactionIdLength + 4);
 
   const StunAddressAttribute* addr = msg.GetAddress(STUN_ATTR_MAPPED_ADDRESS);
-  talk_base::IPAddress test_address(kIPv4TestAddress1);
+  rtc::IPAddress test_address(kIPv4TestAddress1);
   CheckStunAddressAttribute(addr, STUN_ADDRESS_IPV4,
                             kTestMessagePort4, test_address);
 }
@@ -721,7 +721,7 @@ TEST_F(StunTest, SetIPv6XorAddressAttributeOwner) {
   StunMessage msg2;
   size_t size = ReadStunMessage(&msg, kStunMessageWithIPv6XorMappedAddress);
 
-  talk_base::IPAddress test_address(kIPv6TestAddress1);
+  rtc::IPAddress test_address(kIPv6TestAddress1);
 
   CheckStunHeader(msg, STUN_BINDING_RESPONSE, size);
   CheckStunTransactionID(msg, kTestTransactionId2, kStunTransactionIdLength);
@@ -740,8 +740,8 @@ TEST_F(StunTest, SetIPv6XorAddressAttributeOwner) {
   // The internal IP address shouldn't change.
   ASSERT_EQ(addr2.ipaddr(), addr->ipaddr());
 
-  talk_base::ByteBuffer correct_buf;
-  talk_base::ByteBuffer wrong_buf;
+  rtc::ByteBuffer correct_buf;
+  rtc::ByteBuffer wrong_buf;
   EXPECT_TRUE(addr->Write(&correct_buf));
   EXPECT_TRUE(addr2.Write(&wrong_buf));
   // But when written out, the buffers should look different.
@@ -768,7 +768,7 @@ TEST_F(StunTest, SetIPv4XorAddressAttributeOwner) {
   StunMessage msg2;
   size_t size = ReadStunMessage(&msg, kStunMessageWithIPv4XorMappedAddress);
 
-  talk_base::IPAddress test_address(kIPv4TestAddress1);
+  rtc::IPAddress test_address(kIPv4TestAddress1);
 
   CheckStunHeader(msg, STUN_BINDING_RESPONSE, size);
   CheckStunTransactionID(msg, kTestTransactionId1, kStunTransactionIdLength);
@@ -787,8 +787,8 @@ TEST_F(StunTest, SetIPv4XorAddressAttributeOwner) {
   // The internal IP address shouldn't change.
   ASSERT_EQ(addr2.ipaddr(), addr->ipaddr());
 
-  talk_base::ByteBuffer correct_buf;
-  talk_base::ByteBuffer wrong_buf;
+  rtc::ByteBuffer correct_buf;
+  rtc::ByteBuffer wrong_buf;
   EXPECT_TRUE(addr->Write(&correct_buf));
   EXPECT_TRUE(addr2.Write(&wrong_buf));
   // The same address data should be written.
@@ -807,11 +807,11 @@ TEST_F(StunTest, SetIPv4XorAddressAttributeOwner) {
 }
 
 TEST_F(StunTest, CreateIPv6AddressAttribute) {
-  talk_base::IPAddress test_ip(kIPv6TestAddress2);
+  rtc::IPAddress test_ip(kIPv6TestAddress2);
 
   StunAddressAttribute* addr =
       StunAttribute::CreateAddress(STUN_ATTR_MAPPED_ADDRESS);
-  talk_base::SocketAddress test_addr(test_ip, kTestMessagePort2);
+  rtc::SocketAddress test_addr(test_ip, kTestMessagePort2);
   addr->SetAddress(test_addr);
 
   CheckStunAddressAttribute(addr, STUN_ADDRESS_IPV6,
@@ -822,11 +822,11 @@ TEST_F(StunTest, CreateIPv6AddressAttribute) {
 TEST_F(StunTest, CreateIPv4AddressAttribute) {
   struct in_addr test_in_addr;
   test_in_addr.s_addr = 0xBEB0B0BE;
-  talk_base::IPAddress test_ip(test_in_addr);
+  rtc::IPAddress test_ip(test_in_addr);
 
   StunAddressAttribute* addr =
       StunAttribute::CreateAddress(STUN_ATTR_MAPPED_ADDRESS);
-  talk_base::SocketAddress test_addr(test_ip, kTestMessagePort2);
+  rtc::SocketAddress test_addr(test_ip, kTestMessagePort2);
   addr->SetAddress(test_addr);
 
   CheckStunAddressAttribute(addr, STUN_ADDRESS_IPV4,
@@ -840,17 +840,17 @@ TEST_F(StunTest, CreateAddressInArbitraryOrder) {
   StunAttribute::CreateAddress(STUN_ATTR_DESTINATION_ADDRESS);
   // Port first
   addr->SetPort(kTestMessagePort1);
-  addr->SetIP(talk_base::IPAddress(kIPv4TestAddress1));
+  addr->SetIP(rtc::IPAddress(kIPv4TestAddress1));
   ASSERT_EQ(kTestMessagePort1, addr->port());
-  ASSERT_EQ(talk_base::IPAddress(kIPv4TestAddress1), addr->ipaddr());
+  ASSERT_EQ(rtc::IPAddress(kIPv4TestAddress1), addr->ipaddr());
 
   StunAddressAttribute* addr2 =
   StunAttribute::CreateAddress(STUN_ATTR_DESTINATION_ADDRESS);
   // IP first
-  addr2->SetIP(talk_base::IPAddress(kIPv4TestAddress1));
+  addr2->SetIP(rtc::IPAddress(kIPv4TestAddress1));
   addr2->SetPort(kTestMessagePort2);
   ASSERT_EQ(kTestMessagePort2, addr2->port());
-  ASSERT_EQ(talk_base::IPAddress(kIPv4TestAddress1), addr2->ipaddr());
+  ASSERT_EQ(rtc::IPAddress(kIPv4TestAddress1), addr2->ipaddr());
 
   delete addr;
   delete addr2;
@@ -860,7 +860,7 @@ TEST_F(StunTest, WriteMessageWithIPv6AddressAttribute) {
   StunMessage msg;
   size_t size = sizeof(kStunMessageWithIPv6MappedAddress);
 
-  talk_base::IPAddress test_ip(kIPv6TestAddress1);
+  rtc::IPAddress test_ip(kIPv6TestAddress1);
 
   msg.SetType(STUN_BINDING_REQUEST);
   msg.SetTransactionID(
@@ -870,13 +870,13 @@ TEST_F(StunTest, WriteMessageWithIPv6AddressAttribute) {
 
   StunAddressAttribute* addr =
       StunAttribute::CreateAddress(STUN_ATTR_MAPPED_ADDRESS);
-  talk_base::SocketAddress test_addr(test_ip, kTestMessagePort2);
+  rtc::SocketAddress test_addr(test_ip, kTestMessagePort2);
   addr->SetAddress(test_addr);
   EXPECT_TRUE(msg.AddAttribute(addr));
 
   CheckStunHeader(msg, STUN_BINDING_REQUEST, (size - 20));
 
-  talk_base::ByteBuffer out;
+  rtc::ByteBuffer out;
   EXPECT_TRUE(msg.Write(&out));
   ASSERT_EQ(out.Length(), sizeof(kStunMessageWithIPv6MappedAddress));
   int len1 = static_cast<int>(out.Length());
@@ -889,7 +889,7 @@ TEST_F(StunTest, WriteMessageWithIPv4AddressAttribute) {
   StunMessage msg;
   size_t size = sizeof(kStunMessageWithIPv4MappedAddress);
 
-  talk_base::IPAddress test_ip(kIPv4TestAddress1);
+  rtc::IPAddress test_ip(kIPv4TestAddress1);
 
   msg.SetType(STUN_BINDING_RESPONSE);
   msg.SetTransactionID(
@@ -899,13 +899,13 @@ TEST_F(StunTest, WriteMessageWithIPv4AddressAttribute) {
 
   StunAddressAttribute* addr =
       StunAttribute::CreateAddress(STUN_ATTR_MAPPED_ADDRESS);
-  talk_base::SocketAddress test_addr(test_ip, kTestMessagePort4);
+  rtc::SocketAddress test_addr(test_ip, kTestMessagePort4);
   addr->SetAddress(test_addr);
   EXPECT_TRUE(msg.AddAttribute(addr));
 
   CheckStunHeader(msg, STUN_BINDING_RESPONSE, (size - 20));
 
-  talk_base::ByteBuffer out;
+  rtc::ByteBuffer out;
   EXPECT_TRUE(msg.Write(&out));
   ASSERT_EQ(out.Length(), sizeof(kStunMessageWithIPv4MappedAddress));
   int len1 = static_cast<int>(out.Length());
@@ -918,7 +918,7 @@ TEST_F(StunTest, WriteMessageWithIPv6XorAddressAttribute) {
   StunMessage msg;
   size_t size = sizeof(kStunMessageWithIPv6XorMappedAddress);
 
-  talk_base::IPAddress test_ip(kIPv6TestAddress1);
+  rtc::IPAddress test_ip(kIPv6TestAddress1);
 
   msg.SetType(STUN_BINDING_RESPONSE);
   msg.SetTransactionID(
@@ -928,13 +928,13 @@ TEST_F(StunTest, WriteMessageWithIPv6XorAddressAttribute) {
 
   StunAddressAttribute* addr =
       StunAttribute::CreateXorAddress(STUN_ATTR_XOR_MAPPED_ADDRESS);
-  talk_base::SocketAddress test_addr(test_ip, kTestMessagePort1);
+  rtc::SocketAddress test_addr(test_ip, kTestMessagePort1);
   addr->SetAddress(test_addr);
   EXPECT_TRUE(msg.AddAttribute(addr));
 
   CheckStunHeader(msg, STUN_BINDING_RESPONSE, (size - 20));
 
-  talk_base::ByteBuffer out;
+  rtc::ByteBuffer out;
   EXPECT_TRUE(msg.Write(&out));
   ASSERT_EQ(out.Length(), sizeof(kStunMessageWithIPv6XorMappedAddress));
   int len1 = static_cast<int>(out.Length());
@@ -948,7 +948,7 @@ TEST_F(StunTest, WriteMessageWithIPv4XoreAddressAttribute) {
   StunMessage msg;
   size_t size = sizeof(kStunMessageWithIPv4XorMappedAddress);
 
-  talk_base::IPAddress test_ip(kIPv4TestAddress1);
+  rtc::IPAddress test_ip(kIPv4TestAddress1);
 
   msg.SetType(STUN_BINDING_RESPONSE);
   msg.SetTransactionID(
@@ -958,13 +958,13 @@ TEST_F(StunTest, WriteMessageWithIPv4XoreAddressAttribute) {
 
   StunAddressAttribute* addr =
       StunAttribute::CreateXorAddress(STUN_ATTR_XOR_MAPPED_ADDRESS);
-  talk_base::SocketAddress test_addr(test_ip, kTestMessagePort3);
+  rtc::SocketAddress test_addr(test_ip, kTestMessagePort3);
   addr->SetAddress(test_addr);
   EXPECT_TRUE(msg.AddAttribute(addr));
 
   CheckStunHeader(msg, STUN_BINDING_RESPONSE, (size - 20));
 
-  talk_base::ByteBuffer out;
+  rtc::ByteBuffer out;
   EXPECT_TRUE(msg.Write(&out));
   ASSERT_EQ(out.Length(), sizeof(kStunMessageWithIPv4XorMappedAddress));
   int len1 = static_cast<int>(out.Length());
@@ -1052,7 +1052,7 @@ TEST_F(StunTest, WriteMessageWithAnErrorCodeAttribute) {
   EXPECT_TRUE(msg.AddAttribute(errorcode));
   CheckStunHeader(msg, STUN_BINDING_ERROR_RESPONSE, (size - 20));
 
-  talk_base::ByteBuffer out;
+  rtc::ByteBuffer out;
   EXPECT_TRUE(msg.Write(&out));
   ASSERT_EQ(size, out.Length());
   // No padding.
@@ -1075,7 +1075,7 @@ TEST_F(StunTest, WriteMessageWithAUInt16ListAttribute) {
   EXPECT_TRUE(msg.AddAttribute(list));
   CheckStunHeader(msg, STUN_BINDING_REQUEST, (size - 20));
 
-  talk_base::ByteBuffer out;
+  rtc::ByteBuffer out;
   EXPECT_TRUE(msg.Write(&out));
   ASSERT_EQ(size, out.Length());
   // Check everything up to the padding.
@@ -1087,7 +1087,7 @@ TEST_F(StunTest, WriteMessageWithAUInt16ListAttribute) {
 void CheckFailureToRead(const unsigned char* testcase, size_t length) {
   StunMessage msg;
   const char* input = reinterpret_cast<const char*>(testcase);
-  talk_base::ByteBuffer buf(input, length);
+  rtc::ByteBuffer buf(input, length);
   ASSERT_FALSE(msg.Read(&buf));
 }
 
@@ -1179,7 +1179,7 @@ TEST_F(StunTest, ValidateMessageIntegrity) {
 // the RFC5769 test messages used include attributes not found in basic STUN.
 TEST_F(StunTest, AddMessageIntegrity) {
   IceMessage msg;
-  talk_base::ByteBuffer buf(
+  rtc::ByteBuffer buf(
       reinterpret_cast<const char*>(kRfc5769SampleRequestWithoutMI),
       sizeof(kRfc5769SampleRequestWithoutMI));
   EXPECT_TRUE(msg.Read(&buf));
@@ -1190,14 +1190,14 @@ TEST_F(StunTest, AddMessageIntegrity) {
   EXPECT_EQ(0, memcmp(
       mi_attr->bytes(), kCalculatedHmac1, sizeof(kCalculatedHmac1)));
 
-  talk_base::ByteBuffer buf1;
+  rtc::ByteBuffer buf1;
   EXPECT_TRUE(msg.Write(&buf1));
   EXPECT_TRUE(StunMessage::ValidateMessageIntegrity(
         reinterpret_cast<const char*>(buf1.Data()), buf1.Length(),
         kRfc5769SampleMsgPassword));
 
   IceMessage msg2;
-  talk_base::ByteBuffer buf2(
+  rtc::ByteBuffer buf2(
       reinterpret_cast<const char*>(kRfc5769SampleResponseWithoutMI),
       sizeof(kRfc5769SampleResponseWithoutMI));
   EXPECT_TRUE(msg2.Read(&buf2));
@@ -1208,7 +1208,7 @@ TEST_F(StunTest, AddMessageIntegrity) {
   EXPECT_EQ(
       0, memcmp(mi_attr2->bytes(), kCalculatedHmac2, sizeof(kCalculatedHmac2)));
 
-  talk_base::ByteBuffer buf3;
+  rtc::ByteBuffer buf3;
   EXPECT_TRUE(msg2.Write(&buf3));
   EXPECT_TRUE(StunMessage::ValidateMessageIntegrity(
         reinterpret_cast<const char*>(buf3.Data()), buf3.Length(),
@@ -1254,13 +1254,13 @@ TEST_F(StunTest, ValidateFingerprint) {
 
 TEST_F(StunTest, AddFingerprint) {
   IceMessage msg;
-  talk_base::ByteBuffer buf(
+  rtc::ByteBuffer buf(
       reinterpret_cast<const char*>(kRfc5769SampleRequestWithoutMI),
       sizeof(kRfc5769SampleRequestWithoutMI));
   EXPECT_TRUE(msg.Read(&buf));
   EXPECT_TRUE(msg.AddFingerprint());
 
-  talk_base::ByteBuffer buf1;
+  rtc::ByteBuffer buf1;
   EXPECT_TRUE(msg.Write(&buf1));
   EXPECT_TRUE(StunMessage::ValidateFingerprint(
       reinterpret_cast<const char*>(buf1.Data()), buf1.Length()));
@@ -1303,7 +1303,7 @@ TEST_F(StunTest, ReadRelayMessage) {
 
   const char* input = reinterpret_cast<const char*>(kRelayMessage);
   size_t size = sizeof(kRelayMessage);
-  talk_base::ByteBuffer buf(input, size);
+  rtc::ByteBuffer buf(input, size);
   EXPECT_TRUE(msg.Read(&buf));
 
   EXPECT_EQ(STUN_BINDING_REQUEST, msg.type());
@@ -1315,7 +1315,7 @@ TEST_F(StunTest, ReadRelayMessage) {
 
   in_addr legacy_in_addr;
   legacy_in_addr.s_addr = htonl(17U);
-  talk_base::IPAddress legacy_ip(legacy_in_addr);
+  rtc::IPAddress legacy_ip(legacy_in_addr);
 
   const StunAddressAttribute* addr = msg.GetAddress(STUN_ATTR_MAPPED_ADDRESS);
   ASSERT_TRUE(addr != NULL);
@@ -1399,7 +1399,7 @@ TEST_F(StunTest, ReadRelayMessage) {
   bytes2->CopyBytes("abcdefg");
   EXPECT_TRUE(msg2.AddAttribute(bytes2));
 
-  talk_base::ByteBuffer out;
+  rtc::ByteBuffer out;
   EXPECT_TRUE(msg.Write(&out));
   EXPECT_EQ(size, out.Length());
   size_t len1 = out.Length();
@@ -1407,7 +1407,7 @@ TEST_F(StunTest, ReadRelayMessage) {
   out.ReadString(&outstring, len1);
   EXPECT_EQ(0, memcmp(outstring.c_str(), input, len1));
 
-  talk_base::ByteBuffer out2;
+  rtc::ByteBuffer out2;
   EXPECT_TRUE(msg2.Write(&out2));
   EXPECT_EQ(size, out2.Length());
   size_t len2 = out2.Length();

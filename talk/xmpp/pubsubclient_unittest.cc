@@ -3,9 +3,9 @@
 
 #include <string>
 
-#include "talk/base/faketaskrunner.h"
-#include "talk/base/gunit.h"
-#include "talk/base/sigslot.h"
+#include "webrtc/base/faketaskrunner.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/sigslot.h"
 #include "talk/xmllite/qname.h"
 #include "talk/xmllite/xmlelement.h"
 #include "talk/xmpp/constants.h"
@@ -78,7 +78,7 @@ class PubSubClientTest : public testing::Test {
       pubsubjid("room@domain.com"),
       node("topic"),
       itemid("key") {
-    runner.reset(new talk_base::FakeTaskRunner());
+    runner.reset(new rtc::FakeTaskRunner());
     xmpp_client = new buzz::FakeXmppClient(runner.get());
     client.reset(new buzz::PubSubClient(xmpp_client, pubsubjid, node));
     listener.reset(new TestPubSubItemsListener());
@@ -96,11 +96,11 @@ class PubSubClientTest : public testing::Test {
         listener.get(), &TestPubSubItemsListener::OnRetractError);
   }
 
-  talk_base::scoped_ptr<talk_base::FakeTaskRunner> runner;
+  rtc::scoped_ptr<rtc::FakeTaskRunner> runner;
   // xmpp_client deleted by deleting runner.
   buzz::FakeXmppClient* xmpp_client;
-  talk_base::scoped_ptr<buzz::PubSubClient> client;
-  talk_base::scoped_ptr<TestPubSubItemsListener> listener;
+  rtc::scoped_ptr<buzz::PubSubClient> client;
+  rtc::scoped_ptr<TestPubSubItemsListener> listener;
   buzz::Jid pubsubjid;
   std::string node;
   std::string itemid;

@@ -32,10 +32,10 @@
 #include <sstream>
 #include <vector>
 
-#include "talk/base/buffer.h"
-#include "talk/base/helpers.h"
-#include "talk/base/logging.h"
-#include "talk/base/safe_conversions.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/safe_conversions.h"
 #include "talk/media/base/codec.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/streamparams.h"
@@ -102,8 +102,8 @@ std::string ListArray(const uint16* array, int num_elems) {
 }  // namespace
 
 namespace cricket {
-typedef talk_base::ScopedMessageData<SctpInboundPacket> InboundPacketMessage;
-typedef talk_base::ScopedMessageData<talk_base::Buffer> OutboundPacketMessage;
+typedef rtc::ScopedMessageData<SctpInboundPacket> InboundPacketMessage;
+typedef rtc::ScopedMessageData<rtc::Buffer> OutboundPacketMessage;
 
 // TODO(ldixon): Find where this is defined, and also check is Sctp really
 // respects this.
@@ -111,11 +111,11 @@ static const size_t kSctpMtu = 1280;
 
 enum {
   MSG_SCTPINBOUNDPACKET = 1,   // MessageData is SctpInboundPacket
-  MSG_SCTPOUTBOUNDPACKET = 2,  // MessageData is talk_base:Buffer
+  MSG_SCTPOUTBOUNDPACKET = 2,  // MessageData is rtc:Buffer
 };
 
 struct SctpInboundPacket {
-  talk_base::Buffer buffer;
+  rtc::Buffer buffer;
   ReceiveDataParams params;
   // The |flags| parameter is used by SCTP to distinguish notification packets
   // from other types of packets.
@@ -187,7 +187,7 @@ static int OnSctpOutboundPacket(void* addr, void* data, size_t length,
                   << "; set_df: " << std::hex << static_cast<int>(set_df);
   // Note: We have to copy the data; the caller will delete it.
   OutboundPacketMessage* msg =
-      new OutboundPacketMessage(new talk_base::Buffer(data, length));
+      new OutboundPacketMessage(new rtc::Buffer(data, length));
   channel->worker_thread()->Post(channel, MSG_SCTPOUTBOUNDPACKET, msg);
   return 0;
 }
@@ -206,7 +206,7 @@ static int OnSctpInboundPacket(struct socket* sock, union sctp_sockstore addr,
   // memory cleanup. But this does simplify code.
   const SctpDataMediaChannel::PayloadProtocolIdentifier ppid =
       static_cast<SctpDataMediaChannel::PayloadProtocolIdentifier>(
-          talk_base::HostToNetwork32(rcv.rcv_ppid));
+          rtc::HostToNetwork32(rcv.rcv_ppid));
   cricket::DataMessageType type = cricket::DMT_NONE;
   if (!GetDataMediaType(ppid, &type) && !(flags & MSG_NOTIFICATION)) {
     // It's neither a notification nor a recognized data packet.  Drop it.
@@ -287,7 +287,7 @@ SctpDataEngine::~SctpDataEngine() {
       if (usrsctp_finish() == 0)
         return;
 
-      talk_base::Thread::SleepMs(10);
+      rtc::Thread::SleepMs(10);
     }
     LOG(LS_ERROR) << "Failed to shutdown usrsctp.";
   }
@@ -298,10 +298,10 @@ DataMediaChannel* SctpDataEngine::CreateChannel(
   if (data_channel_type != DCT_SCTP) {
     return NULL;
   }
-  return new SctpDataMediaChannel(talk_base::Thread::Current());
+  return new SctpDataMediaChannel(rtc::Thread::Current());
 }
 
-SctpDataMediaChannel::SctpDataMediaChannel(talk_base::Thread* thread)
+SctpDataMediaChannel::SctpDataMediaChannel(rtc::Thread* thread)
     : worker_thread_(thread),
       local_port_(kSctpDefaultPort),
       remote_port_(kSctpDefaultPort),
@@ -322,7 +322,7 @@ sockaddr_conn SctpDataMediaChannel::GetSctpSockAddr(int port) {
   sconn.sconn_len = sizeof(sockaddr_conn);
 #endif
   // Note: conversion from int to uint16_t happens here.
-  sconn.sconn_port = talk_base::HostToNetwork16(port);
+  sconn.sconn_port = rtc::HostToNetwork16(port);
   sconn.sconn_addr = this;
   return sconn;
 }
@@ -501,7 +501,7 @@ bool SctpDataMediaChannel::RemoveRecvStream(uint32 ssrc) {
 
 bool SctpDataMediaChannel::SendData(
     const SendDataParams& params,
-    const talk_base::Buffer& payload,
+    const rtc::Buffer& payload,
     SendDataResult* result) {
   if (result) {
     // Preset |result| to assume an error.  If SendData succeeds, we'll
@@ -530,7 +530,7 @@ bool SctpDataMediaChannel::SendData(
   struct sctp_sendv_spa spa = {0};
   spa.sendv_flags |= SCTP_SEND_SNDINFO_VALID;
   spa.sendv_sndinfo.snd_sid = params.ssrc;
-  spa.sendv_sndinfo.snd_ppid = talk_base::HostToNetwork32(
+  spa.sendv_sndinfo.snd_ppid = rtc::HostToNetwork32(
       GetPpid(params.type));
 
   // Ordered implies reliable.
@@ -551,7 +551,7 @@ bool SctpDataMediaChannel::SendData(
   send_res = usrsctp_sendv(sock_, payload.data(),
                            static_cast<size_t>(payload.length()),
                            NULL, 0, &spa,
-                           talk_base::checked_cast<socklen_t>(sizeof(spa)),
+                           rtc::checked_cast<socklen_t>(sizeof(spa)),
                            SCTP_SENDV_SPA, 0);
   if (send_res < 0) {
     if (errno == SCTP_EWOULDBLOCK) {
@@ -573,7 +573,7 @@ bool SctpDataMediaChannel::SendData(
 
 // Called by network interface when a packet has been received.
 void SctpDataMediaChannel::OnPacketReceived(
-    talk_base::Buffer* packet, const talk_base::PacketTime& packet_time) {
+    rtc::Buffer* packet, const rtc::PacketTime& packet_time) {
   LOG(LS_VERBOSE) << debug_name_ << "->OnPacketReceived(...): " << " length="
                   << packet->length() << ", sending: " << sending_;
   // Only give receiving packets to usrsctp after if connected. This enables two
@@ -613,7 +613,7 @@ void SctpDataMediaChannel::OnInboundPacketFromSctpToChannel(
 }
 
 void SctpDataMediaChannel::OnDataFromSctpToChannel(
-    const ReceiveDataParams& params, talk_base::Buffer* buffer) {
+    const ReceiveDataParams& params, rtc::Buffer* buffer) {
   if (receiving_) {
     LOG(LS_VERBOSE) << debug_name_ << "->OnDataFromSctpToChannel(...): "
                     << "Posting with length: " << buffer->length()
@@ -682,7 +682,7 @@ bool SctpDataMediaChannel::ResetStream(uint32 ssrc) {
   return true;
 }
 
-void SctpDataMediaChannel::OnNotificationFromSctp(talk_base::Buffer* buffer) {
+void SctpDataMediaChannel::OnNotificationFromSctp(rtc::Buffer* buffer) {
   const sctp_notification& notification =
       reinterpret_cast<const sctp_notification&>(*buffer->data());
   ASSERT(notification.sn_header.sn_length == buffer->length());
@@ -857,7 +857,7 @@ static bool GetCodecIntParameter(const std::vector<DataCodec>& codecs,
   for (size_t i = 0; i < codecs.size(); ++i) {
     if (codecs[i].Matches(match_pattern)) {
       if (codecs[i].GetParam(param, &value)) {
-        *dest = talk_base::FromString<int>(value);
+        *dest = rtc::FromString<int>(value);
         return true;
       }
     }
@@ -878,7 +878,7 @@ bool SctpDataMediaChannel::SetRecvCodecs(const std::vector<DataCodec>& codecs) {
 }
 
 void SctpDataMediaChannel::OnPacketFromSctpToNetwork(
-    talk_base::Buffer* buffer) {
+    rtc::Buffer* buffer) {
   if (buffer->length() > kSctpMtu) {
     LOG(LS_ERROR) << debug_name_ << "->OnPacketFromSctpToNetwork(...): "
                   << "SCTP seems to have made a packet that is bigger "
@@ -905,7 +905,7 @@ bool SctpDataMediaChannel::SendQueuedStreamResets() {
       &reset_stream_buf[0]);
   resetp->srs_assoc_id = SCTP_ALL_ASSOC;
   resetp->srs_flags = SCTP_STREAM_RESET_INCOMING | SCTP_STREAM_RESET_OUTGOING;
-  resetp->srs_number_streams = talk_base::checked_cast<uint16_t>(num_streams);
+  resetp->srs_number_streams = rtc::checked_cast<uint16_t>(num_streams);
   int result_idx = 0;
   for (StreamSet::iterator it = queued_reset_streams_.begin();
        it != queued_reset_streams_.end(); ++it) {
@@ -914,7 +914,7 @@ bool SctpDataMediaChannel::SendQueuedStreamResets() {
 
   int ret = usrsctp_setsockopt(
       sock_, IPPROTO_SCTP, SCTP_RESET_STREAMS, resetp,
-      talk_base::checked_cast<socklen_t>(reset_stream_buf.size()));
+      rtc::checked_cast<socklen_t>(reset_stream_buf.size()));
   if (ret < 0) {
     LOG_ERRNO(LS_ERROR) << debug_name_ << "Failed to send a stream reset for "
                         << num_streams << " streams";
@@ -927,16 +927,16 @@ bool SctpDataMediaChannel::SendQueuedStreamResets() {
   return true;
 }
 
-void SctpDataMediaChannel::OnMessage(talk_base::Message* msg) {
+void SctpDataMediaChannel::OnMessage(rtc::Message* msg) {
   switch (msg->message_id) {
     case MSG_SCTPINBOUNDPACKET: {
-      talk_base::scoped_ptr<InboundPacketMessage> pdata(
+      rtc::scoped_ptr<InboundPacketMessage> pdata(
           static_cast<InboundPacketMessage*>(msg->pdata));
       OnInboundPacketFromSctpToChannel(pdata->data().get());
       break;
     }
     case MSG_SCTPOUTBOUNDPACKET: {
-      talk_base::scoped_ptr<OutboundPacketMessage> pdata(
+      rtc::scoped_ptr<OutboundPacketMessage> pdata(
           static_cast<OutboundPacketMessage*>(msg->pdata));
       OnPacketFromSctpToNetwork(pdata->data().get());
       break;

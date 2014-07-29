@@ -30,9 +30,9 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/gunit.h"
-#include "talk/base/logging.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/thread.h"
 #include "talk/media/base/testutils.h"
 #include "talk/media/devices/filevideocapturer.h"
 
@@ -82,7 +82,7 @@ class FileVideoCapturerTest : public testing::Test {
     bool resolution_changed_;
   };
 
-  talk_base::scoped_ptr<cricket::FileVideoCapturer> capturer_;
+  rtc::scoped_ptr<cricket::FileVideoCapturer> capturer_;
   cricket::VideoFormat capture_format_;
 };
 
@@ -158,7 +158,7 @@ TEST_F(FileVideoCapturerTest, TestRepeatForever) {
   VideoCapturerListener listener;
   capturer_->SignalFrameCaptured.connect(
       &listener, &VideoCapturerListener::OnFrameCaptured);
-  capturer_->set_repeat(talk_base::kForever);
+  capturer_->set_repeat(rtc::kForever);
   capture_format_ = capturer_->GetSupportedFormats()->at(0);
   capture_format_.interval = cricket::VideoFormat::FpsToInterval(50);
   EXPECT_EQ(cricket::CS_RUNNING, capturer_->Start(capture_format_));

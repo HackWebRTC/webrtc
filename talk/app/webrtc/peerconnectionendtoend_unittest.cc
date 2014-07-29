@@ -27,12 +27,12 @@
 
 #include "talk/app/webrtc/test/peerconnectiontestwrapper.h"
 #include "talk/app/webrtc/test/mockpeerconnectionobservers.h"
-#include "talk/base/gunit.h"
-#include "talk/base/logging.h"
-#include "talk/base/ssladapter.h"
-#include "talk/base/sslstreamadapter.h"
-#include "talk/base/stringencode.h"
-#include "talk/base/stringutils.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/ssladapter.h"
+#include "webrtc/base/sslstreamadapter.h"
+#include "webrtc/base/stringencode.h"
+#include "webrtc/base/stringutils.h"
 
 #define MAYBE_SKIP_TEST(feature)                    \
   if (!(feature())) {                               \
@@ -68,14 +68,14 @@ void InjectAfter(const std::string& line,
                  const std::string& newlines,
                  std::string* message) {
   const std::string tmp = line + newlines;
-  talk_base::replace_substrs(line.c_str(), line.length(),
+  rtc::replace_substrs(line.c_str(), line.length(),
                              tmp.c_str(), tmp.length(), message);
 }
 
 void Replace(const std::string& line,
              const std::string& newlines,
              std::string* message) {
-  talk_base::replace_substrs(line.c_str(), line.length(),
+  rtc::replace_substrs(line.c_str(), line.length(),
                              newlines.c_str(), newlines.length(), message);
 }
 
@@ -126,15 +126,15 @@ class PeerConnectionEndToEndTest
     : public sigslot::has_slots<>,
       public testing::Test {
  public:
-  typedef std::vector<talk_base::scoped_refptr<DataChannelInterface> >
+  typedef std::vector<rtc::scoped_refptr<DataChannelInterface> >
       DataChannelList;
 
   PeerConnectionEndToEndTest()
-      : caller_(new talk_base::RefCountedObject<PeerConnectionTestWrapper>(
+      : caller_(new rtc::RefCountedObject<PeerConnectionTestWrapper>(
                     "caller")),
-        callee_(new talk_base::RefCountedObject<PeerConnectionTestWrapper>(
+        callee_(new rtc::RefCountedObject<PeerConnectionTestWrapper>(
                     "callee")) {
-    talk_base::InitializeSSL(NULL);
+    rtc::InitializeSSL(NULL);
   }
 
   void CreatePcs() {
@@ -222,10 +222,10 @@ class PeerConnectionEndToEndTest
   // Tests that |dc1| and |dc2| can send to and receive from each other.
   void TestDataChannelSendAndReceive(
       DataChannelInterface* dc1, DataChannelInterface* dc2) {
-    talk_base::scoped_ptr<webrtc::MockDataChannelObserver> dc1_observer(
+    rtc::scoped_ptr<webrtc::MockDataChannelObserver> dc1_observer(
         new webrtc::MockDataChannelObserver(dc1));
 
-    talk_base::scoped_ptr<webrtc::MockDataChannelObserver> dc2_observer(
+    rtc::scoped_ptr<webrtc::MockDataChannelObserver> dc2_observer(
         new webrtc::MockDataChannelObserver(dc2));
 
     static const std::string kDummyData = "abcdefg";
@@ -263,12 +263,12 @@ class PeerConnectionEndToEndTest
   }
 
   ~PeerConnectionEndToEndTest() {
-    talk_base::CleanupSSL();
+    rtc::CleanupSSL();
   }
 
  protected:
-  talk_base::scoped_refptr<PeerConnectionTestWrapper> caller_;
-  talk_base::scoped_refptr<PeerConnectionTestWrapper> callee_;
+  rtc::scoped_refptr<PeerConnectionTestWrapper> caller_;
+  rtc::scoped_refptr<PeerConnectionTestWrapper> callee_;
   DataChannelList caller_signaled_data_channels_;
   DataChannelList callee_signaled_data_channels_;
 };
@@ -300,14 +300,14 @@ TEST_F(PeerConnectionEndToEndTest, DISABLED_CallWithLegacySdp) {
 // Verifies that a DataChannel created before the negotiation can transition to
 // "OPEN" and transfer data.
 TEST_F(PeerConnectionEndToEndTest, CreateDataChannelBeforeNegotiate) {
-  MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
+  MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
 
   CreatePcs();
 
   webrtc::DataChannelInit init;
-  talk_base::scoped_refptr<DataChannelInterface> caller_dc(
+  rtc::scoped_refptr<DataChannelInterface> caller_dc(
       caller_->CreateDataChannel("data", init));
-  talk_base::scoped_refptr<DataChannelInterface> callee_dc(
+  rtc::scoped_refptr<DataChannelInterface> callee_dc(
       callee_->CreateDataChannel("data", init));
 
   Negotiate();
@@ -326,22 +326,22 @@ TEST_F(PeerConnectionEndToEndTest, CreateDataChannelBeforeNegotiate) {
 // Verifies that a DataChannel created after the negotiation can transition to
 // "OPEN" and transfer data.
 TEST_F(PeerConnectionEndToEndTest, CreateDataChannelAfterNegotiate) {
-  MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
+  MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
 
   CreatePcs();
 
   webrtc::DataChannelInit init;
 
   // This DataChannel is for creating the data content in the negotiation.
-  talk_base::scoped_refptr<DataChannelInterface> dummy(
+  rtc::scoped_refptr<DataChannelInterface> dummy(
       caller_->CreateDataChannel("data", init));
   Negotiate();
   WaitForConnection();
 
   // Creates new DataChannels after the negotiation and verifies their states.
-  talk_base::scoped_refptr<DataChannelInterface> caller_dc(
+  rtc::scoped_refptr<DataChannelInterface> caller_dc(
       caller_->CreateDataChannel("hello", init));
-  talk_base::scoped_refptr<DataChannelInterface> callee_dc(
+  rtc::scoped_refptr<DataChannelInterface> callee_dc(
       callee_->CreateDataChannel("hello", init));
 
   WaitForDataChannelsToOpen(caller_dc, callee_signaled_data_channels_, 1);
@@ -356,14 +356,14 @@ TEST_F(PeerConnectionEndToEndTest, CreateDataChannelAfterNegotiate) {
 
 // Verifies that DataChannel IDs are even/odd based on the DTLS roles.
 TEST_F(PeerConnectionEndToEndTest, DataChannelIdAssignment) {
-  MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
+  MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
 
   CreatePcs();
 
   webrtc::DataChannelInit init;
-  talk_base::scoped_refptr<DataChannelInterface> caller_dc_1(
+  rtc::scoped_refptr<DataChannelInterface> caller_dc_1(
       caller_->CreateDataChannel("data", init));
-  talk_base::scoped_refptr<DataChannelInterface> callee_dc_1(
+  rtc::scoped_refptr<DataChannelInterface> callee_dc_1(
       callee_->CreateDataChannel("data", init));
 
   Negotiate();
@@ -372,9 +372,9 @@ TEST_F(PeerConnectionEndToEndTest, DataChannelIdAssignment) {
   EXPECT_EQ(1U, caller_dc_1->id() % 2);
   EXPECT_EQ(0U, callee_dc_1->id() % 2);
 
-  talk_base::scoped_refptr<DataChannelInterface> caller_dc_2(
+  rtc::scoped_refptr<DataChannelInterface> caller_dc_2(
       caller_->CreateDataChannel("data", init));
-  talk_base::scoped_refptr<DataChannelInterface> callee_dc_2(
+  rtc::scoped_refptr<DataChannelInterface> callee_dc_2(
       callee_->CreateDataChannel("data", init));
 
   EXPECT_EQ(1U, caller_dc_2->id() % 2);
@@ -385,15 +385,15 @@ TEST_F(PeerConnectionEndToEndTest, DataChannelIdAssignment) {
 // there are multiple DataChannels.
 TEST_F(PeerConnectionEndToEndTest,
        MessageTransferBetweenTwoPairsOfDataChannels) {
-  MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
+  MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
 
   CreatePcs();
 
   webrtc::DataChannelInit init;
 
-  talk_base::scoped_refptr<DataChannelInterface> caller_dc_1(
+  rtc::scoped_refptr<DataChannelInterface> caller_dc_1(
       caller_->CreateDataChannel("data", init));
-  talk_base::scoped_refptr<DataChannelInterface> caller_dc_2(
+  rtc::scoped_refptr<DataChannelInterface> caller_dc_2(
       caller_->CreateDataChannel("data", init));
 
   Negotiate();
@@ -401,10 +401,10 @@ TEST_F(PeerConnectionEndToEndTest,
   WaitForDataChannelsToOpen(caller_dc_1, callee_signaled_data_channels_, 0);
   WaitForDataChannelsToOpen(caller_dc_2, callee_signaled_data_channels_, 1);
 
-  talk_base::scoped_ptr<webrtc::MockDataChannelObserver> dc_1_observer(
+  rtc::scoped_ptr<webrtc::MockDataChannelObserver> dc_1_observer(
       new webrtc::MockDataChannelObserver(callee_signaled_data_channels_[0]));
 
-  talk_base::scoped_ptr<webrtc::MockDataChannelObserver> dc_2_observer(
+  rtc::scoped_ptr<webrtc::MockDataChannelObserver> dc_2_observer(
       new webrtc::MockDataChannelObserver(callee_signaled_data_channels_[1]));
 
   const std::string message_1 = "hello 1";

@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/base/gunit.h"
+#include "webrtc/base/gunit.h"
 #include "talk/media/base/videocommon.h"
 
 namespace cricket {
@@ -55,8 +55,8 @@ TEST(VideoCommonTest, TestCanonicalFourCC) {
 // Test conversion between interval and fps
 TEST(VideoCommonTest, TestVideoFormatFps) {
   EXPECT_EQ(VideoFormat::kMinimumInterval, VideoFormat::FpsToInterval(0));
-  EXPECT_EQ(talk_base::kNumNanosecsPerSec / 20, VideoFormat::FpsToInterval(20));
-  EXPECT_EQ(20, VideoFormat::IntervalToFps(talk_base::kNumNanosecsPerSec / 20));
+  EXPECT_EQ(rtc::kNumNanosecsPerSec / 20, VideoFormat::FpsToInterval(20));
+  EXPECT_EQ(20, VideoFormat::IntervalToFps(rtc::kNumNanosecsPerSec / 20));
   EXPECT_EQ(0, VideoFormat::IntervalToFps(0));
 }
 

@@ -31,7 +31,7 @@
 #include <map>
 #include <vector>
 
-#include "talk/base/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "talk/media/base/codec.h"
 #include "talk/media/base/videocommon.h"
 #include "talk/media/webrtc/webrtccommon.h"
@@ -54,9 +54,9 @@ class ViEExternalCapture;
 class ViERTP_RTCP;
 }
 
-namespace talk_base {
+namespace rtc {
 class CpuMonitor;
-}  // namespace talk_base
+}  // namespace rtc
 
 namespace cricket {
 
@@ -93,15 +93,15 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   // TODO(juberti): Remove the 3-arg ctor once fake tracing is implemented.
   WebRtcVideoEngine(WebRtcVoiceEngine* voice_engine,
                     ViEWrapper* vie_wrapper,
-                    talk_base::CpuMonitor* cpu_monitor);
+                    rtc::CpuMonitor* cpu_monitor);
   WebRtcVideoEngine(WebRtcVoiceEngine* voice_engine,
                     ViEWrapper* vie_wrapper,
                     ViETraceWrapper* tracing,
-                    talk_base::CpuMonitor* cpu_monitor);
+                    rtc::CpuMonitor* cpu_monitor);
   ~WebRtcVideoEngine();
 
   // Basic video engine implementation.
-  bool Init(talk_base::Thread* worker_thread);
+  bool Init(rtc::Thread* worker_thread);
   void Terminate();
 
   int GetCapabilities();
@@ -149,7 +149,7 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   bool IsExternalEncoderCodecType(webrtc::VideoCodecType type) const;
 
   // Functions called by WebRtcVideoMediaChannel.
-  talk_base::Thread* worker_thread() { return worker_thread_; }
+  rtc::Thread* worker_thread() { return worker_thread_; }
   ViEWrapper* vie() { return vie_wrapper_.get(); }
   const VideoFormat& default_codec_format() const {
     return default_codec_format_;
@@ -168,7 +168,7 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
 
   VideoFormat GetStartCaptureFormat() const { return default_codec_format_; }
 
-  talk_base::CpuMonitor* cpu_monitor() { return cpu_monitor_.get(); }
+  rtc::CpuMonitor* cpu_monitor() { return cpu_monitor_.get(); }
 
  protected:
   // When a video processor registers with the engine.
@@ -194,7 +194,7 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   void Construct(ViEWrapper* vie_wrapper,
                  ViETraceWrapper* tracing,
                  WebRtcVoiceEngine* voice_engine,
-                 talk_base::CpuMonitor* cpu_monitor);
+                 rtc::CpuMonitor* cpu_monitor);
   bool SetDefaultCodec(const VideoCodec& codec);
   bool RebuildCodecList(const VideoCodec& max_codec);
   void SetTraceFilter(int filter);
@@ -208,12 +208,12 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   // WebRtcVideoEncoderFactory::Observer implementation.
   virtual void OnCodecsAvailable();
 
-  talk_base::Thread* worker_thread_;
-  talk_base::scoped_ptr<ViEWrapper> vie_wrapper_;
+  rtc::Thread* worker_thread_;
+  rtc::scoped_ptr<ViEWrapper> vie_wrapper_;
   bool vie_wrapper_base_initialized_;
-  talk_base::scoped_ptr<ViETraceWrapper> tracing_;
+  rtc::scoped_ptr<ViETraceWrapper> tracing_;
   WebRtcVoiceEngine* voice_engine_;
-  talk_base::scoped_ptr<webrtc::VideoRender> render_module_;
+  rtc::scoped_ptr<webrtc::VideoRender> render_module_;
   WebRtcVideoEncoderFactory* encoder_factory_;
   WebRtcVideoDecoderFactory* decoder_factory_;
   std::vector<VideoCodec> video_codecs_;
@@ -221,7 +221,7 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   VideoFormat default_codec_format_;
 
   bool initialized_;
-  talk_base::CriticalSection channels_crit_;
+  rtc::CriticalSection channels_crit_;
   VideoChannels channels_;
 
   bool capture_started_;
@@ -229,10 +229,10 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   int local_renderer_h_;
   VideoRenderer* local_renderer_;
 
-  talk_base::scoped_ptr<talk_base::CpuMonitor> cpu_monitor_;
+  rtc::scoped_ptr<rtc::CpuMonitor> cpu_monitor_;
 };
 
-class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
+class WebRtcVideoMediaChannel : public rtc::MessageHandler,
                                 public VideoMediaChannel,
                                 public webrtc::Transport {
  public:
@@ -267,10 +267,10 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   virtual bool SendIntraFrame();
   virtual bool RequestIntraFrame();
 
-  virtual void OnPacketReceived(talk_base::Buffer* packet,
-                                const talk_base::PacketTime& packet_time);
-  virtual void OnRtcpReceived(talk_base::Buffer* packet,
-                              const talk_base::PacketTime& packet_time);
+  virtual void OnPacketReceived(rtc::Buffer* packet,
+                                const rtc::PacketTime& packet_time);
+  virtual void OnRtcpReceived(rtc::Buffer* packet,
+                              const rtc::PacketTime& packet_time);
   virtual void OnReadyToSend(bool ready);
   virtual bool MuteStream(uint32 ssrc, bool on);
   virtual bool SetRecvRtpHeaderExtensions(
@@ -303,7 +303,7 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   void OnLocalFrameFormat(VideoCapturer* capturer, const VideoFormat* format) {
   }
 
-  virtual void OnMessage(talk_base::Message* msg);
+  virtual void OnMessage(rtc::Message* msg);
 
  protected:
   int GetLastEngineError() { return engine()->GetLastEngineError(); }
@@ -389,7 +389,7 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
   }
   bool RemoveCapturer(uint32 ssrc);
 
-  talk_base::MessageQueue* worker_thread() { return engine_->worker_thread(); }
+  rtc::MessageQueue* worker_thread() { return engine_->worker_thread(); }
   void QueueBlackFrame(uint32 ssrc, int64 timestamp, int framerate);
   void FlushBlackFrame(uint32 ssrc, int64 timestamp);
 
@@ -449,7 +449,7 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
 
   // Global send side state.
   SendChannelMap send_channels_;
-  talk_base::scoped_ptr<webrtc::VideoCodec> send_codec_;
+  rtc::scoped_ptr<webrtc::VideoCodec> send_codec_;
   int send_rtx_type_;
   int send_red_type_;
   int send_fec_type_;

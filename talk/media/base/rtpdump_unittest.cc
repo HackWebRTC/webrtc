@@ -27,9 +27,9 @@
 
 #include <string>
 
-#include "talk/base/bytebuffer.h"
-#include "talk/base/gunit.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/bytebuffer.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/thread.h"
 #include "talk/media/base/rtpdump.h"
 #include "talk/media/base/rtputils.h"
 #include "talk/media/base/testutils.h"
@@ -40,7 +40,7 @@ static const uint32 kTestSsrc = 1;
 
 // Test that we read the correct header fields from the RTP/RTCP packet.
 TEST(RtpDumpTest, ReadRtpDumpPacket) {
-  talk_base::ByteBuffer rtp_buf;
+  rtc::ByteBuffer rtp_buf;
   RtpTestUtility::kTestRawRtpPackets[0].WriteToByteBuffer(kTestSsrc, &rtp_buf);
   RtpDumpPacket rtp_packet(rtp_buf.Data(), rtp_buf.Length(), 0, false);
 
@@ -61,7 +61,7 @@ TEST(RtpDumpTest, ReadRtpDumpPacket) {
   EXPECT_EQ(kTestSsrc, ssrc);
   EXPECT_FALSE(rtp_packet.GetRtcpType(&type));
 
-  talk_base::ByteBuffer rtcp_buf;
+  rtc::ByteBuffer rtcp_buf;
   RtpTestUtility::kTestRawRtcpPackets[0].WriteToByteBuffer(&rtcp_buf);
   RtpDumpPacket rtcp_packet(rtcp_buf.Data(), rtcp_buf.Length(), 0, true);
 
@@ -75,48 +75,48 @@ TEST(RtpDumpTest, ReadRtpDumpPacket) {
 // Test that we read only the RTP dump file.
 TEST(RtpDumpTest, ReadRtpDumpFile) {
   RtpDumpPacket packet;
-  talk_base::MemoryStream stream;
+  rtc::MemoryStream stream;
   RtpDumpWriter writer(&stream);
-  talk_base::scoped_ptr<RtpDumpReader> reader;
+  rtc::scoped_ptr<RtpDumpReader> reader;
 
   // Write a RTP packet to the stream, which is a valid RTP dump. Next, we will
   // change the first line to make the RTP dump valid or invalid.
   ASSERT_TRUE(RtpTestUtility::WriteTestPackets(1, false, kTestSsrc, &writer));
   stream.Rewind();
   reader.reset(new RtpDumpReader(&stream));
-  EXPECT_EQ(talk_base::SR_SUCCESS, reader->ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_SUCCESS, reader->ReadPacket(&packet));
 
   // The first line is correct.
   stream.Rewind();
   const char new_line[] = "#!rtpplay1.0 1.1.1.1/1\n";
-  EXPECT_EQ(talk_base::SR_SUCCESS,
+  EXPECT_EQ(rtc::SR_SUCCESS,
             stream.WriteAll(new_line, strlen(new_line), NULL, NULL));
   stream.Rewind();
   reader.reset(new RtpDumpReader(&stream));
-  EXPECT_EQ(talk_base::SR_SUCCESS, reader->ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_SUCCESS, reader->ReadPacket(&packet));
 
   // The first line is not correct: not started with #!rtpplay1.0.
   stream.Rewind();
   const char new_line2[] = "#!rtpplaz1.0 0.0.0.0/0\n";
-  EXPECT_EQ(talk_base::SR_SUCCESS,
+  EXPECT_EQ(rtc::SR_SUCCESS,
             stream.WriteAll(new_line2, strlen(new_line2), NULL, NULL));
   stream.Rewind();
   reader.reset(new RtpDumpReader(&stream));
-  EXPECT_EQ(talk_base::SR_ERROR, reader->ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_ERROR, reader->ReadPacket(&packet));
 
   // The first line is not correct: no port.
   stream.Rewind();
   const char new_line3[] = "#!rtpplay1.0 0.0.0.0//\n";
-  EXPECT_EQ(talk_base::SR_SUCCESS,
+  EXPECT_EQ(rtc::SR_SUCCESS,
             stream.WriteAll(new_line3, strlen(new_line3), NULL, NULL));
   stream.Rewind();
   reader.reset(new RtpDumpReader(&stream));
-  EXPECT_EQ(talk_base::SR_ERROR, reader->ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_ERROR, reader->ReadPacket(&packet));
 }
 
 // Test that we read the same RTP packets that rtp dump writes.
 TEST(RtpDumpTest, WriteReadSameRtp) {
-  talk_base::MemoryStream stream;
+  rtc::MemoryStream stream;
   RtpDumpWriter writer(&stream);
   ASSERT_TRUE(RtpTestUtility::WriteTestPackets(
       RtpTestUtility::GetTestPacketCount(), false, kTestSsrc, &writer));
@@ -127,13 +127,13 @@ TEST(RtpDumpTest, WriteReadSameRtp) {
   RtpDumpPacket packet;
   RtpDumpReader reader(&stream);
   for (size_t i = 0; i < RtpTestUtility::GetTestPacketCount(); ++i) {
-    EXPECT_EQ(talk_base::SR_SUCCESS, reader.ReadPacket(&packet));
+    EXPECT_EQ(rtc::SR_SUCCESS, reader.ReadPacket(&packet));
     uint32 ssrc;
     EXPECT_TRUE(GetRtpSsrc(&packet.data[0], packet.data.size(), &ssrc));
     EXPECT_EQ(kTestSsrc, ssrc);
   }
   // No more packets to read.
-  EXPECT_EQ(talk_base::SR_EOS, reader.ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_EOS, reader.ReadPacket(&packet));
 
   // Rewind the stream and read again with a specified ssrc.
   stream.Rewind();
@@ -141,7 +141,7 @@ TEST(RtpDumpTest, WriteReadSameRtp) {
   const uint32 send_ssrc = kTestSsrc + 1;
   reader_w_ssrc.SetSsrc(send_ssrc);
   for (size_t i = 0; i < RtpTestUtility::GetTestPacketCount(); ++i) {
-    EXPECT_EQ(talk_base::SR_SUCCESS, reader_w_ssrc.ReadPacket(&packet));
+    EXPECT_EQ(rtc::SR_SUCCESS, reader_w_ssrc.ReadPacket(&packet));
     EXPECT_FALSE(packet.is_rtcp());
     EXPECT_EQ(packet.original_data_len, packet.data.size());
     uint32 ssrc;
@@ -149,12 +149,12 @@ TEST(RtpDumpTest, WriteReadSameRtp) {
     EXPECT_EQ(send_ssrc, ssrc);
   }
   // No more packets to read.
-  EXPECT_EQ(talk_base::SR_EOS, reader_w_ssrc.ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_EOS, reader_w_ssrc.ReadPacket(&packet));
 }
 
 // Test that we read the same RTCP packets that rtp dump writes.
 TEST(RtpDumpTest, WriteReadSameRtcp) {
-  talk_base::MemoryStream stream;
+  rtc::MemoryStream stream;
   RtpDumpWriter writer(&stream);
   ASSERT_TRUE(RtpTestUtility::WriteTestPackets(
       RtpTestUtility::GetTestPacketCount(), true, kTestSsrc, &writer));
@@ -166,17 +166,17 @@ TEST(RtpDumpTest, WriteReadSameRtcp) {
   RtpDumpReader reader(&stream);
   reader.SetSsrc(kTestSsrc + 1);  // Does not affect RTCP packet.
   for (size_t i = 0; i < RtpTestUtility::GetTestPacketCount(); ++i) {
-    EXPECT_EQ(talk_base::SR_SUCCESS, reader.ReadPacket(&packet));
+    EXPECT_EQ(rtc::SR_SUCCESS, reader.ReadPacket(&packet));
     EXPECT_TRUE(packet.is_rtcp());
     EXPECT_EQ(0U, packet.original_data_len);
   }
   // No more packets to read.
-  EXPECT_EQ(talk_base::SR_EOS, reader.ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_EOS, reader.ReadPacket(&packet));
 }
 
 // Test dumping only RTP packet headers.
 TEST(RtpDumpTest, WriteReadRtpHeadersOnly) {
-  talk_base::MemoryStream stream;
+  rtc::MemoryStream stream;
   RtpDumpWriter writer(&stream);
   writer.set_packet_filter(PF_RTPHEADER);
 
@@ -192,7 +192,7 @@ TEST(RtpDumpTest, WriteReadRtpHeadersOnly) {
   RtpDumpPacket packet;
   RtpDumpReader reader(&stream);
   for (size_t i = 0; i < RtpTestUtility::GetTestPacketCount(); ++i) {
-    EXPECT_EQ(talk_base::SR_SUCCESS, reader.ReadPacket(&packet));
+    EXPECT_EQ(rtc::SR_SUCCESS, reader.ReadPacket(&packet));
     EXPECT_FALSE(packet.is_rtcp());
     size_t len = 0;
     packet.GetRtpHeaderLen(&len);
@@ -200,12 +200,12 @@ TEST(RtpDumpTest, WriteReadRtpHeadersOnly) {
     EXPECT_GT(packet.original_data_len, packet.data.size());
   }
   // No more packets to read.
-  EXPECT_EQ(talk_base::SR_EOS, reader.ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_EOS, reader.ReadPacket(&packet));
 }
 
 // Test dumping only RTCP packets.
 TEST(RtpDumpTest, WriteReadRtcpOnly) {
-  talk_base::MemoryStream stream;
+  rtc::MemoryStream stream;
   RtpDumpWriter writer(&stream);
   writer.set_packet_filter(PF_RTCPPACKET);
 
@@ -220,18 +220,18 @@ TEST(RtpDumpTest, WriteReadRtcpOnly) {
   RtpDumpPacket packet;
   RtpDumpReader reader(&stream);
   for (size_t i = 0; i < RtpTestUtility::GetTestPacketCount(); ++i) {
-    EXPECT_EQ(talk_base::SR_SUCCESS, reader.ReadPacket(&packet));
+    EXPECT_EQ(rtc::SR_SUCCESS, reader.ReadPacket(&packet));
     EXPECT_TRUE(packet.is_rtcp());
     EXPECT_EQ(0U, packet.original_data_len);
   }
   // No more packets to read.
-  EXPECT_EQ(talk_base::SR_EOS, reader.ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_EOS, reader.ReadPacket(&packet));
 }
 
 // Test that RtpDumpLoopReader reads RTP packets continously and the elapsed
 // time, the sequence number, and timestamp are maintained properly.
 TEST(RtpDumpTest, LoopReadRtp) {
-  talk_base::MemoryStream stream;
+  rtc::MemoryStream stream;
   RtpDumpWriter writer(&stream);
   ASSERT_TRUE(RtpTestUtility::WriteTestPackets(
       RtpTestUtility::GetTestPacketCount(), false, kTestSsrc, &writer));
@@ -242,7 +242,7 @@ TEST(RtpDumpTest, LoopReadRtp) {
 // Test that RtpDumpLoopReader reads RTCP packets continously and the elapsed
 // time is maintained properly.
 TEST(RtpDumpTest, LoopReadRtcp) {
-  talk_base::MemoryStream stream;
+  rtc::MemoryStream stream;
   RtpDumpWriter writer(&stream);
   ASSERT_TRUE(RtpTestUtility::WriteTestPackets(
       RtpTestUtility::GetTestPacketCount(), true, kTestSsrc, &writer));
@@ -253,7 +253,7 @@ TEST(RtpDumpTest, LoopReadRtcp) {
 // Test that RtpDumpLoopReader reads continously from stream with a single RTP
 // packets.
 TEST(RtpDumpTest, LoopReadSingleRtp) {
-  talk_base::MemoryStream stream;
+  rtc::MemoryStream stream;
   RtpDumpWriter writer(&stream);
   ASSERT_TRUE(RtpTestUtility::WriteTestPackets(1, false, kTestSsrc, &writer));
 
@@ -261,21 +261,21 @@ TEST(RtpDumpTest, LoopReadSingleRtp) {
   RtpDumpPacket packet;
   stream.Rewind();
   RtpDumpReader reader(&stream);
-  EXPECT_EQ(talk_base::SR_SUCCESS, reader.ReadPacket(&packet));
-  EXPECT_EQ(talk_base::SR_EOS, reader.ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_SUCCESS, reader.ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_EOS, reader.ReadPacket(&packet));
 
   // The loop reader reads three packets from the input stream.
   stream.Rewind();
   RtpDumpLoopReader loop_reader(&stream);
-  EXPECT_EQ(talk_base::SR_SUCCESS, loop_reader.ReadPacket(&packet));
-  EXPECT_EQ(talk_base::SR_SUCCESS, loop_reader.ReadPacket(&packet));
-  EXPECT_EQ(talk_base::SR_SUCCESS, loop_reader.ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_SUCCESS, loop_reader.ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_SUCCESS, loop_reader.ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_SUCCESS, loop_reader.ReadPacket(&packet));
 }
 
 // Test that RtpDumpLoopReader reads continously from stream with a single RTCP
 // packets.
 TEST(RtpDumpTest, LoopReadSingleRtcp) {
-  talk_base::MemoryStream stream;
+  rtc::MemoryStream stream;
   RtpDumpWriter writer(&stream);
   ASSERT_TRUE(RtpTestUtility::WriteTestPackets(1, true, kTestSsrc, &writer));
 
@@ -283,15 +283,15 @@ TEST(RtpDumpTest, LoopReadSingleRtcp) {
   RtpDumpPacket packet;
   stream.Rewind();
   RtpDumpReader reader(&stream);
-  EXPECT_EQ(talk_base::SR_SUCCESS, reader.ReadPacket(&packet));
-  EXPECT_EQ(talk_base::SR_EOS, reader.ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_SUCCESS, reader.ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_EOS, reader.ReadPacket(&packet));
 
   // The loop reader reads three packets from the input stream.
   stream.Rewind();
   RtpDumpLoopReader loop_reader(&stream);
-  EXPECT_EQ(talk_base::SR_SUCCESS, loop_reader.ReadPacket(&packet));
-  EXPECT_EQ(talk_base::SR_SUCCESS, loop_reader.ReadPacket(&packet));
-  EXPECT_EQ(talk_base::SR_SUCCESS, loop_reader.ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_SUCCESS, loop_reader.ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_SUCCESS, loop_reader.ReadPacket(&packet));
+  EXPECT_EQ(rtc::SR_SUCCESS, loop_reader.ReadPacket(&packet));
 }
 
 }  // namespace cricket

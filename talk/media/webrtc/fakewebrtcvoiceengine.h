@@ -32,9 +32,9 @@
 #include <map>
 #include <vector>
 
-#include "talk/base/basictypes.h"
-#include "talk/base/gunit.h"
-#include "talk/base/stringutils.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/stringutils.h"
 #include "talk/media/base/codec.h"
 #include "talk/media/base/rtputils.h"
 #include "talk/media/base/voiceprocessor.h"
@@ -501,7 +501,7 @@ class FakeWebRtcVoiceEngine
     }
     const cricket::AudioCodec& c(*codecs_[index]);
     codec.pltype = c.id;
-    talk_base::strcpyn(codec.plname, sizeof(codec.plname), c.name.c_str());
+    rtc::strcpyn(codec.plname, sizeof(codec.plname), c.name.c_str());
     codec.plfreq = c.clockrate;
     codec.pacsize = 0;
     codec.channels = c.channels;

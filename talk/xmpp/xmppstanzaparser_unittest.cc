@@ -4,8 +4,8 @@
 #include <string>
 #include <sstream>
 #include <iostream>
-#include "talk/base/common.h"
-#include "talk/base/gunit.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/gunit.h"
 #include "talk/xmllite/xmlelement.h"
 #include "talk/xmpp/xmppstanzaparser.h"
 

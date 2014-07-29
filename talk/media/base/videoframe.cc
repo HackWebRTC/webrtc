@@ -35,7 +35,7 @@
 #include "libyuv/scale.h"
 #endif
 
-#include "talk/base/logging.h"
+#include "webrtc/base/logging.h"
 #include "talk/media/base/videocommon.h"
 
 namespace cricket {
@@ -43,9 +43,9 @@ namespace cricket {
 // Round to 2 pixels because Chroma channels are half size.
 #define ROUNDTO2(v) (v & ~1)
 
-talk_base::StreamResult VideoFrame::Write(talk_base::StreamInterface* stream,
+rtc::StreamResult VideoFrame::Write(rtc::StreamInterface* stream,
                                           int* error) {
-  talk_base::StreamResult result = talk_base::SR_SUCCESS;
+  rtc::StreamResult result = rtc::SR_SUCCESS;
   const uint8* src_y = GetYPlane();
   const uint8* src_u = GetUPlane();
   const uint8* src_v = GetVPlane();
@@ -62,21 +62,21 @@ talk_base::StreamResult VideoFrame::Write(talk_base::StreamInterface* stream,
   // Write Y.
   for (size_t row = 0; row < height; ++row) {
     result = stream->Write(src_y + row * y_pitch, width, NULL, error);
-    if (result != talk_base::SR_SUCCESS) {
+    if (result != rtc::SR_SUCCESS) {
       return result;
     }
   }
   // Write U.
   for (size_t row = 0; row < half_height; ++row) {
     result = stream->Write(src_u + row * u_pitch, half_width, NULL, error);
-    if (result != talk_base::SR_SUCCESS) {
+    if (result != rtc::SR_SUCCESS) {
       return result;
     }
   }
   // Write V.
   for (size_t row = 0; row < half_height; ++row) {
     result = stream->Write(src_v + row * v_pitch, half_width, NULL, error);
-    if (result != talk_base::SR_SUCCESS) {
+    if (result != rtc::SR_SUCCESS) {
       return result;
     }
   }

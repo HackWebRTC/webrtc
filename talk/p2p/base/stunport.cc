@@ -27,10 +27,10 @@
 
 #include "talk/p2p/base/stunport.h"
 
-#include "talk/base/common.h"
-#include "talk/base/logging.h"
-#include "talk/base/helpers.h"
-#include "talk/base/nethelpers.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/nethelpers.h"
 #include "talk/p2p/base/common.h"
 #include "talk/p2p/base/stun.h"
 
@@ -45,15 +45,15 @@ const int RETRY_TIMEOUT = 50 * 1000;    // ICE says 50 secs
 class StunBindingRequest : public StunRequest {
  public:
   StunBindingRequest(UDPPort* port, bool keep_alive,
-                     const talk_base::SocketAddress& addr)
+                     const rtc::SocketAddress& addr)
     : port_(port), keep_alive_(keep_alive), server_addr_(addr) {
-    start_time_ = talk_base::Time();
+    start_time_ = rtc::Time();
   }
 
   virtual ~StunBindingRequest() {
   }
 
-  const talk_base::SocketAddress& server_addr() const { return server_addr_; }
+  const rtc::SocketAddress& server_addr() const { return server_addr_; }
 
   virtual void Prepare(StunMessage* request) {
     request->SetType(STUN_BINDING_REQUEST);
@@ -68,7 +68,7 @@ class StunBindingRequest : public StunRequest {
                addr_attr->family() != STUN_ADDRESS_IPV6) {
       LOG(LS_ERROR) << "Binding address has bad family";
     } else {
-      talk_base::SocketAddress addr(addr_attr->ipaddr(), addr_attr->port());
+      rtc::SocketAddress addr(addr_attr->ipaddr(), addr_attr->port());
       port_->OnStunBindingRequestSucceeded(server_addr_, addr);
     }
 
@@ -95,7 +95,7 @@ class StunBindingRequest : public StunRequest {
     port_->OnStunBindingOrResolveRequestFailed(server_addr_);
 
     if (keep_alive_
-        && (talk_base::TimeSince(start_time_) <= RETRY_TIMEOUT)) {
+        && (rtc::TimeSince(start_time_) <= RETRY_TIMEOUT)) {
       port_->requests_.SendDelayed(
           new StunBindingRequest(port_, true, server_addr_),
           port_->stun_keepalive_delay());
@@ -110,7 +110,7 @@ class StunBindingRequest : public StunRequest {
     port_->OnStunBindingOrResolveRequestFailed(server_addr_);
 
     if (keep_alive_
-        && (talk_base::TimeSince(start_time_) <= RETRY_TIMEOUT)) {
+        && (rtc::TimeSince(start_time_) <= RETRY_TIMEOUT)) {
       port_->requests_.SendDelayed(
           new StunBindingRequest(port_, true, server_addr_),
           RETRY_DELAY);
@@ -120,12 +120,12 @@ class StunBindingRequest : public StunRequest {
  private:
   UDPPort* port_;
   bool keep_alive_;
-  const talk_base::SocketAddress server_addr_;
+  const rtc::SocketAddress server_addr_;
   uint32 start_time_;
 };
 
 UDPPort::AddressResolver::AddressResolver(
-    talk_base::PacketSocketFactory* factory)
+    rtc::PacketSocketFactory* factory)
     : socket_factory_(factory) {}
 
 UDPPort::AddressResolver::~AddressResolver() {
@@ -136,14 +136,14 @@ UDPPort::AddressResolver::~AddressResolver() {
 }
 
 void UDPPort::AddressResolver::Resolve(
-    const talk_base::SocketAddress& address) {
+    const rtc::SocketAddress& address) {
   if (resolvers_.find(address) != resolvers_.end())
     return;
 
-  talk_base::AsyncResolverInterface* resolver =
+  rtc::AsyncResolverInterface* resolver =
       socket_factory_->CreateAsyncResolver();
   resolvers_.insert(
-      std::pair<talk_base::SocketAddress, talk_base::AsyncResolverInterface*>(
+      std::pair<rtc::SocketAddress, rtc::AsyncResolverInterface*>(
           address, resolver));
 
   resolver->SignalDone.connect(this,
@@ -153,9 +153,9 @@ void UDPPort::AddressResolver::Resolve(
 }
 
 bool UDPPort::AddressResolver::GetResolvedAddress(
-    const talk_base::SocketAddress& input,
+    const rtc::SocketAddress& input,
     int family,
-    talk_base::SocketAddress* output) const {
+    rtc::SocketAddress* output) const {
   ResolverMap::const_iterator it = resolvers_.find(input);
   if (it == resolvers_.end())
     return false;
@@ -164,7 +164,7 @@ bool UDPPort::AddressResolver::GetResolvedAddress(
 }
 
 void UDPPort::AddressResolver::OnResolveResult(
-    talk_base::AsyncResolverInterface* resolver) {
+    rtc::AsyncResolverInterface* resolver) {
   for (ResolverMap::iterator it = resolvers_.begin();
        it != resolvers_.end(); ++it) {
     if (it->second == resolver) {
@@ -174,10 +174,10 @@ void UDPPort::AddressResolver::OnResolveResult(
   }
 }
 
-UDPPort::UDPPort(talk_base::Thread* thread,
-                 talk_base::PacketSocketFactory* factory,
-                 talk_base::Network* network,
-                 talk_base::AsyncPacketSocket* socket,
+UDPPort::UDPPort(rtc::Thread* thread,
+                 rtc::PacketSocketFactory* factory,
+                 rtc::Network* network,
+                 rtc::AsyncPacketSocket* socket,
                  const std::string& username, const std::string& password)
     : Port(thread, factory, network, socket->GetLocalAddress().ipaddr(),
            username, password),
@@ -188,10 +188,10 @@ UDPPort::UDPPort(talk_base::Thread* thread,
       stun_keepalive_delay_(KEEPALIVE_DELAY) {
 }
 
-UDPPort::UDPPort(talk_base::Thread* thread,
-                 talk_base::PacketSocketFactory* factory,
-                 talk_base::Network* network,
-                 const talk_base::IPAddress& ip, int min_port, int max_port,
+UDPPort::UDPPort(rtc::Thread* thread,
+                 rtc::PacketSocketFactory* factory,
+                 rtc::Network* network,
+                 const rtc::IPAddress& ip, int min_port, int max_port,
                  const std::string& username, const std::string& password)
     : Port(thread, LOCAL_PORT_TYPE, factory, network, ip, min_port, max_port,
            username, password),
@@ -206,7 +206,7 @@ bool UDPPort::Init() {
   if (!SharedSocket()) {
     ASSERT(socket_ == NULL);
     socket_ = socket_factory()->CreateUdpSocket(
-        talk_base::SocketAddress(ip(), 0), min_port(), max_port());
+        rtc::SocketAddress(ip(), 0), min_port(), max_port());
     if (!socket_) {
       LOG_J(LS_WARNING, this) << "UDP socket creation failed";
       return false;
@@ -226,7 +226,7 @@ UDPPort::~UDPPort() {
 
 void UDPPort::PrepareAddress() {
   ASSERT(requests_.empty());
-  if (socket_->GetState() == talk_base::AsyncPacketSocket::STATE_BOUND) {
+  if (socket_->GetState() == rtc::AsyncPacketSocket::STATE_BOUND) {
     OnLocalAddressReady(socket_, socket_->GetLocalAddress());
   }
 }
@@ -262,8 +262,8 @@ Connection* UDPPort::CreateConnection(const Candidate& address,
 }
 
 int UDPPort::SendTo(const void* data, size_t size,
-                    const talk_base::SocketAddress& addr,
-                    const talk_base::PacketOptions& options,
+                    const rtc::SocketAddress& addr,
+                    const rtc::PacketOptions& options,
                     bool payload) {
   int sent = socket_->SendTo(data, size, addr, options);
   if (sent < 0) {
@@ -274,11 +274,11 @@ int UDPPort::SendTo(const void* data, size_t size,
   return sent;
 }
 
-int UDPPort::SetOption(talk_base::Socket::Option opt, int value) {
+int UDPPort::SetOption(rtc::Socket::Option opt, int value) {
   return socket_->SetOption(opt, value);
 }
 
-int UDPPort::GetOption(talk_base::Socket::Option opt, int* value) {
+int UDPPort::GetOption(rtc::Socket::Option opt, int* value) {
   return socket_->GetOption(opt, value);
 }
 
@@ -286,18 +286,18 @@ int UDPPort::GetError() {
   return error_;
 }
 
-void UDPPort::OnLocalAddressReady(talk_base::AsyncPacketSocket* socket,
-                                  const talk_base::SocketAddress& address) {
-  AddAddress(address, address, talk_base::SocketAddress(),
+void UDPPort::OnLocalAddressReady(rtc::AsyncPacketSocket* socket,
+                                  const rtc::SocketAddress& address) {
+  AddAddress(address, address, rtc::SocketAddress(),
              UDP_PROTOCOL_NAME, LOCAL_PORT_TYPE,
              ICE_TYPE_PREFERENCE_HOST, false);
   MaybePrepareStunCandidate();
 }
 
 void UDPPort::OnReadPacket(
-  talk_base::AsyncPacketSocket* socket, const char* data, size_t size,
-  const talk_base::SocketAddress& remote_addr,
-  const talk_base::PacketTime& packet_time) {
+  rtc::AsyncPacketSocket* socket, const char* data, size_t size,
+  const rtc::SocketAddress& remote_addr,
+  const rtc::PacketTime& packet_time) {
   ASSERT(socket == socket_);
   ASSERT(!remote_addr.IsUnresolved());
 
@@ -317,7 +317,7 @@ void UDPPort::OnReadPacket(
   }
 }
 
-void UDPPort::OnReadyToSend(talk_base::AsyncPacketSocket* socket) {
+void UDPPort::OnReadyToSend(rtc::AsyncPacketSocket* socket) {
   Port::OnReadyToSend();
 }
 
@@ -332,7 +332,7 @@ void UDPPort::SendStunBindingRequests() {
   }
 }
 
-void UDPPort::ResolveStunAddress(const talk_base::SocketAddress& stun_addr) {
+void UDPPort::ResolveStunAddress(const rtc::SocketAddress& stun_addr) {
   if (!resolver_) {
     resolver_.reset(new AddressResolver(socket_factory()));
     resolver_->SignalDone.connect(this, &UDPPort::OnResolveResult);
@@ -341,11 +341,11 @@ void UDPPort::ResolveStunAddress(const talk_base::SocketAddress& stun_addr) {
   resolver_->Resolve(stun_addr);
 }
 
-void UDPPort::OnResolveResult(const talk_base::SocketAddress& input,
+void UDPPort::OnResolveResult(const rtc::SocketAddress& input,
                               int error) {
   ASSERT(resolver_.get() != NULL);
 
-  talk_base::SocketAddress resolved;
+  rtc::SocketAddress resolved;
   if (error != 0 ||
       !resolver_->GetResolvedAddress(input, ip().family(), &resolved))  {
     LOG_J(LS_WARNING, this) << "StunPort: stun host lookup received error "
@@ -363,11 +363,11 @@ void UDPPort::OnResolveResult(const talk_base::SocketAddress& input,
 }
 
 void UDPPort::SendStunBindingRequest(
-    const talk_base::SocketAddress& stun_addr) {
+    const rtc::SocketAddress& stun_addr) {
   if (stun_addr.IsUnresolved()) {
     ResolveStunAddress(stun_addr);
 
-  } else if (socket_->GetState() == talk_base::AsyncPacketSocket::STATE_BOUND) {
+  } else if (socket_->GetState() == rtc::AsyncPacketSocket::STATE_BOUND) {
     // Check if |server_addr_| is compatible with the port's ip.
     if (IsCompatibleAddress(stun_addr)) {
       requests_.Send(new StunBindingRequest(this, true, stun_addr));
@@ -381,8 +381,8 @@ void UDPPort::SendStunBindingRequest(
 }
 
 void UDPPort::OnStunBindingRequestSucceeded(
-    const talk_base::SocketAddress& stun_server_addr,
-    const talk_base::SocketAddress& stun_reflected_addr) {
+    const rtc::SocketAddress& stun_server_addr,
+    const rtc::SocketAddress& stun_reflected_addr) {
   if (bind_request_succeeded_servers_.find(stun_server_addr) !=
           bind_request_succeeded_servers_.end()) {
     return;
@@ -401,7 +401,7 @@ void UDPPort::OnStunBindingRequestSucceeded(
 }
 
 void UDPPort::OnStunBindingOrResolveRequestFailed(
-    const talk_base::SocketAddress& stun_server_addr) {
+    const rtc::SocketAddress& stun_server_addr) {
   if (bind_request_failed_servers_.find(stun_server_addr) !=
           bind_request_failed_servers_.end()) {
     return;
@@ -438,7 +438,7 @@ void UDPPort::MaybeSetPortCompleteOrError() {
 // TODO: merge this with SendTo above.
 void UDPPort::OnSendPacket(const void* data, size_t size, StunRequest* req) {
   StunBindingRequest* sreq = static_cast<StunBindingRequest*>(req);
-  talk_base::PacketOptions options(DefaultDscpValue());
+  rtc::PacketOptions options(DefaultDscpValue());
   if (socket_->SendTo(data, size, sreq->server_addr(), options) < 0)
     PLOG(LERROR, socket_->GetError()) << "sendto";
 }

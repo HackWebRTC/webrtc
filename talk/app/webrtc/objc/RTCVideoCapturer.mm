@@ -35,12 +35,12 @@
 #include "talk/media/devices/devicemanager.h"
 
 @implementation RTCVideoCapturer {
-  talk_base::scoped_ptr<cricket::VideoCapturer> _capturer;
+  rtc::scoped_ptr<cricket::VideoCapturer> _capturer;
 }
 
 + (RTCVideoCapturer*)capturerWithDeviceName:(NSString*)deviceName {
   const std::string& device_name = std::string([deviceName UTF8String]);
-  talk_base::scoped_ptr<cricket::DeviceManagerInterface> device_manager(
+  rtc::scoped_ptr<cricket::DeviceManagerInterface> device_manager(
       cricket::DeviceManagerFactory::Create());
   bool initialized = device_manager->Init();
   NSAssert(initialized, @"DeviceManager::Init() failed");
@@ -49,7 +49,7 @@
     LOG(LS_ERROR) << "GetVideoCaptureDevice failed";
     return 0;
   }
-  talk_base::scoped_ptr<cricket::VideoCapturer> capturer(
+  rtc::scoped_ptr<cricket::VideoCapturer> capturer(
       device_manager->CreateVideoCapturer(device));
   RTCVideoCapturer* rtcCapturer =
       [[RTCVideoCapturer alloc] initWithCapturer:capturer.release()];

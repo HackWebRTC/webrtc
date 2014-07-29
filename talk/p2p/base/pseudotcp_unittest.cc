@@ -27,12 +27,12 @@
 
 #include <vector>
 
-#include "talk/base/gunit.h"
-#include "talk/base/helpers.h"
-#include "talk/base/messagehandler.h"
-#include "talk/base/stream.h"
-#include "talk/base/thread.h"
-#include "talk/base/timeutils.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/messagehandler.h"
+#include "webrtc/base/stream.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/base/timeutils.h"
 #include "talk/p2p/base/pseudotcp.h"
 
 using cricket::PseudoTcp;
@@ -57,7 +57,7 @@ class PseudoTcpForTest : public cricket::PseudoTcp {
 };
 
 class PseudoTcpTestBase : public testing::Test,
-                      public talk_base::MessageHandler,
+                      public rtc::MessageHandler,
                       public cricket::IPseudoTcpNotify {
  public:
   PseudoTcpTestBase()
@@ -70,11 +70,11 @@ class PseudoTcpTestBase : public testing::Test,
         delay_(0),
         loss_(0) {
     // Set use of the test RNG to get predictable loss patterns.
-    talk_base::SetRandomTestMode(true);
+    rtc::SetRandomTestMode(true);
   }
   ~PseudoTcpTestBase() {
     // Put it back for the next test.
-    talk_base::SetRandomTestMode(false);
+    rtc::SetRandomTestMode(false);
   }
   void SetLocalMtu(int mtu) {
     local_.NotifyMTU(mtu);
@@ -157,16 +157,16 @@ class PseudoTcpTestBase : public testing::Test,
                                      const char* buffer, size_t len) {
     // Randomly drop the desired percentage of packets.
     // Also drop packets that are larger than the configured MTU.
-    if (talk_base::CreateRandomId() % 100 < static_cast<uint32>(loss_)) {
+    if (rtc::CreateRandomId() % 100 < static_cast<uint32>(loss_)) {
       LOG(LS_VERBOSE) << "Randomly dropping packet, size=" << len;
     } else if (len > static_cast<size_t>(
-        talk_base::_min(local_mtu_, remote_mtu_))) {
+        rtc::_min(local_mtu_, remote_mtu_))) {
       LOG(LS_VERBOSE) << "Dropping packet that exceeds path MTU, size=" << len;
     } else {
       int id = (tcp == &local_) ? MSG_RPACKET : MSG_LPACKET;
       std::string packet(buffer, len);
-      talk_base::Thread::Current()->PostDelayed(delay_, this, id,
-          talk_base::WrapMessageData(packet));
+      rtc::Thread::Current()->PostDelayed(delay_, this, id,
+          rtc::WrapMessageData(packet));
     }
     return WR_SUCCESS;
   }
@@ -176,23 +176,23 @@ class PseudoTcpTestBase : public testing::Test,
   void UpdateClock(PseudoTcp* tcp, uint32 message) {
     long interval = 0;  // NOLINT
     tcp->GetNextClock(PseudoTcp::Now(), interval);
-    interval = talk_base::_max<int>(interval, 0L);  // sometimes interval is < 0
-    talk_base::Thread::Current()->Clear(this, message);
-    talk_base::Thread::Current()->PostDelayed(interval, this, message);
+    interval = rtc::_max<int>(interval, 0L);  // sometimes interval is < 0
+    rtc::Thread::Current()->Clear(this, message);
+    rtc::Thread::Current()->PostDelayed(interval, this, message);
   }
 
-  virtual void OnMessage(talk_base::Message* message) {
+  virtual void OnMessage(rtc::Message* message) {
     switch (message->message_id) {
       case MSG_LPACKET: {
         const std::string& s(
-            talk_base::UseMessageData<std::string>(message->pdata));
+            rtc::UseMessageData<std::string>(message->pdata));
         local_.NotifyPacket(s.c_str(), s.size());
         UpdateLocalClock();
         break;
       }
       case MSG_RPACKET: {
         const std::string& s(
-            talk_base::UseMessageData<std::string>(message->pdata));
+            rtc::UseMessageData<std::string>(message->pdata));
         remote_.NotifyPacket(s.c_str(), s.size());
         UpdateRemoteClock();
         break;
@@ -213,8 +213,8 @@ class PseudoTcpTestBase : public testing::Test,
 
   PseudoTcpForTest local_;
   PseudoTcpForTest remote_;
-  talk_base::MemoryStream send_stream_;
-  talk_base::MemoryStream recv_stream_;
+  rtc::MemoryStream send_stream_;
+  rtc::MemoryStream recv_stream_;
   bool have_connected_;
   bool have_disconnected_;
   int local_mtu_;
@@ -238,13 +238,13 @@ class PseudoTcpTest : public PseudoTcpTestBase {
     // Prepare the receive stream.
     recv_stream_.ReserveSize(size);
     // Connect and wait until connected.
-    start = talk_base::Time();
+    start = rtc::Time();
     EXPECT_EQ(0, Connect());
     EXPECT_TRUE_WAIT(have_connected_, kConnectTimeoutMs);
     // Sending will start from OnTcpWriteable and complete when all data has
     // been received.
     EXPECT_TRUE_WAIT(have_disconnected_, kTransferTimeoutMs);
-    elapsed = talk_base::TimeSince(start);
+    elapsed = rtc::TimeSince(start);
     recv_stream_.GetSize(&received);
     // Ensure we closed down OK and we got the right data.
     // TODO: Ensure the errors are cleared properly.
@@ -308,7 +308,7 @@ class PseudoTcpTest : public PseudoTcpTestBase {
     do {
       send_stream_.GetPosition(&position);
       if (send_stream_.Read(block, sizeof(block), &tosend, NULL) !=
-          talk_base::SR_EOS) {
+          rtc::SR_EOS) {
         sent = local_.Send(block, tosend);
         UpdateLocalClock();
         if (sent != -1) {
@@ -326,8 +326,8 @@ class PseudoTcpTest : public PseudoTcpTestBase {
   }
 
  private:
-  talk_base::MemoryStream send_stream_;
-  talk_base::MemoryStream recv_stream_;
+  rtc::MemoryStream send_stream_;
+  rtc::MemoryStream recv_stream_;
 };
 
 
@@ -357,13 +357,13 @@ class PseudoTcpTestPingPong : public PseudoTcpTestBase {
     // Prepare the receive stream.
     recv_stream_.ReserveSize(size);
     // Connect and wait until connected.
-    start = talk_base::Time();
+    start = rtc::Time();
     EXPECT_EQ(0, Connect());
     EXPECT_TRUE_WAIT(have_connected_, kConnectTimeoutMs);
     // Sending will start from OnTcpWriteable and stop when the required
     // number of iterations have completed.
     EXPECT_TRUE_WAIT(have_disconnected_, kTransferTimeoutMs);
-    elapsed = talk_base::TimeSince(start);
+    elapsed = rtc::TimeSince(start);
     LOG(LS_INFO) << "Performed " << iterations << " pings in "
                  << elapsed << " ms";
   }
@@ -428,7 +428,7 @@ class PseudoTcpTestPingPong : public PseudoTcpTestBase {
       send_stream_.GetPosition(&position);
       tosend = bytes_per_send_ ? bytes_per_send_ : sizeof(block);
       if (send_stream_.Read(block, tosend, &tosend, NULL) !=
-          talk_base::SR_EOS) {
+          rtc::SR_EOS) {
         sent = sender_->Send(block, tosend);
         UpdateLocalClock();
         if (sent != -1) {
@@ -474,7 +474,7 @@ class PseudoTcpTestReceiveWindow : public PseudoTcpTestBase {
     EXPECT_EQ(0, Connect());
     EXPECT_TRUE_WAIT(have_connected_, kConnectTimeoutMs);
 
-    talk_base::Thread::Current()->Post(this, MSG_WRITE);
+    rtc::Thread::Current()->Post(this, MSG_WRITE);
     EXPECT_TRUE_WAIT(have_disconnected_, kTransferTimeoutMs);
 
     ASSERT_EQ(2u, send_position_.size());
@@ -492,7 +492,7 @@ class PseudoTcpTestReceiveWindow : public PseudoTcpTestBase {
     EXPECT_EQ(2 * estimated_recv_window, recv_position_[1]);
   }
 
-  virtual void OnMessage(talk_base::Message* message) {
+  virtual void OnMessage(rtc::Message* message) {
     int message_id = message->message_id;
     PseudoTcpTestBase::OnMessage(message);
 
@@ -555,7 +555,7 @@ class PseudoTcpTestReceiveWindow : public PseudoTcpTestBase {
     do {
       send_stream_.GetPosition(&position);
       if (send_stream_.Read(block, sizeof(block), &tosend, NULL) !=
-          talk_base::SR_EOS) {
+          rtc::SR_EOS) {
         sent = local_.Send(block, tosend);
         UpdateLocalClock();
         if (sent != -1) {
@@ -572,7 +572,7 @@ class PseudoTcpTestReceiveWindow : public PseudoTcpTestBase {
     // At this point, we've filled up the available space in the send queue.
 
     int message_queue_size =
-        static_cast<int>(talk_base::Thread::Current()->size());
+        static_cast<int>(rtc::Thread::Current()->size());
     // The message queue will always have at least 2 messages, an RCLOCK and
     // an LCLOCK, since they are added back on the delay queue at the same time
     // they are pulled off and therefore are never really removed.
@@ -580,7 +580,7 @@ class PseudoTcpTestReceiveWindow : public PseudoTcpTestBase {
       // If there are non-clock messages remaining, attempt to continue sending
       // after giving those messages time to process, which should free up the
       // send buffer.
-      talk_base::Thread::Current()->PostDelayed(10, this, MSG_WRITE);
+      rtc::Thread::Current()->PostDelayed(10, this, MSG_WRITE);
     } else {
       if (!remote_.isReceiveBufferFull()) {
         LOG(LS_ERROR) << "This shouldn't happen - the send buffer is full, "
@@ -596,8 +596,8 @@ class PseudoTcpTestReceiveWindow : public PseudoTcpTestBase {
   }
 
  private:
-  talk_base::MemoryStream send_stream_;
-  talk_base::MemoryStream recv_stream_;
+  rtc::MemoryStream send_stream_;
+  rtc::MemoryStream recv_stream_;
 
   std::vector<size_t> send_position_;
   std::vector<size_t> recv_position_;

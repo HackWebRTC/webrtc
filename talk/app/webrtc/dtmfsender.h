@@ -33,15 +33,15 @@
 #include "talk/app/webrtc/dtmfsenderinterface.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/proxy.h"
-#include "talk/base/common.h"
-#include "talk/base/messagehandler.h"
-#include "talk/base/refcount.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/messagehandler.h"
+#include "webrtc/base/refcount.h"
 
 // DtmfSender is the native implementation of the RTCDTMFSender defined by
 // the WebRTC W3C Editor's Draft.
 // http://dev.w3.org/2011/webrtc/editor/webrtc.html
 
-namespace talk_base {
+namespace rtc {
 class Thread;
 }
 
@@ -70,11 +70,11 @@ class DtmfProviderInterface {
 class DtmfSender
     : public DtmfSenderInterface,
       public sigslot::has_slots<>,
-      public talk_base::MessageHandler {
+      public rtc::MessageHandler {
  public:
-  static talk_base::scoped_refptr<DtmfSender> Create(
+  static rtc::scoped_refptr<DtmfSender> Create(
       AudioTrackInterface* track,
-      talk_base::Thread* signaling_thread,
+      rtc::Thread* signaling_thread,
       DtmfProviderInterface* provider);
 
   // Implements DtmfSenderInterface.
@@ -90,7 +90,7 @@ class DtmfSender
 
  protected:
   DtmfSender(AudioTrackInterface* track,
-             talk_base::Thread* signaling_thread,
+             rtc::Thread* signaling_thread,
              DtmfProviderInterface* provider);
   virtual ~DtmfSender();
 
@@ -98,7 +98,7 @@ class DtmfSender
   DtmfSender();
 
   // Implements MessageHandler.
-  virtual void OnMessage(talk_base::Message* msg);
+  virtual void OnMessage(rtc::Message* msg);
 
   // The DTMF sending task.
   void DoInsertDtmf();
@@ -107,9 +107,9 @@ class DtmfSender
 
   void StopSending();
 
-  talk_base::scoped_refptr<AudioTrackInterface> track_;
+  rtc::scoped_refptr<AudioTrackInterface> track_;
   DtmfSenderObserverInterface* observer_;
-  talk_base::Thread* signaling_thread_;
+  rtc::Thread* signaling_thread_;
   DtmfProviderInterface* provider_;
   std::string tones_;
   int duration_;

@@ -59,7 +59,7 @@ void TrackHandler::OnChanged() {
 LocalAudioSinkAdapter::LocalAudioSinkAdapter() : sink_(NULL) {}
 
 LocalAudioSinkAdapter::~LocalAudioSinkAdapter() {
-  talk_base::CritScope lock(&lock_);
+  rtc::CritScope lock(&lock_);
   if (sink_)
     sink_->OnClose();
 }
@@ -69,7 +69,7 @@ void LocalAudioSinkAdapter::OnData(const void* audio_data,
                                    int sample_rate,
                                    int number_of_channels,
                                    int number_of_frames) {
-  talk_base::CritScope lock(&lock_);
+  rtc::CritScope lock(&lock_);
   if (sink_) {
     sink_->OnData(audio_data, bits_per_sample, sample_rate,
                   number_of_channels, number_of_frames);
@@ -77,7 +77,7 @@ void LocalAudioSinkAdapter::OnData(const void* audio_data,
 }
 
 void LocalAudioSinkAdapter::SetSink(cricket::AudioRenderer::Sink* sink) {
-  talk_base::CritScope lock(&lock_);
+  rtc::CritScope lock(&lock_);
   ASSERT(!sink || !sink_);
   sink_ = sink;
 }

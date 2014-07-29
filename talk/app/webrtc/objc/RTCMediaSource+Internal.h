@@ -32,9 +32,9 @@
 @interface RTCMediaSource (Internal)
 
 @property(nonatomic, assign, readonly)
-    talk_base::scoped_refptr<webrtc::MediaSourceInterface> mediaSource;
+    rtc::scoped_refptr<webrtc::MediaSourceInterface> mediaSource;
 
 - (id)initWithMediaSource:
-        (talk_base::scoped_refptr<webrtc::MediaSourceInterface>)mediaSource;
+        (rtc::scoped_refptr<webrtc::MediaSourceInterface>)mediaSource;
 
 @end

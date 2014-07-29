@@ -33,13 +33,13 @@
 #include <map>
 #include <set>
 
-#include "talk/base/asyncpacketsocket.h"
-#include "talk/base/network.h"
-#include "talk/base/proxyinfo.h"
-#include "talk/base/ratetracker.h"
-#include "talk/base/sigslot.h"
-#include "talk/base/socketaddress.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/asyncpacketsocket.h"
+#include "webrtc/base/network.h"
+#include "webrtc/base/proxyinfo.h"
+#include "webrtc/base/ratetracker.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/socketaddress.h"
+#include "webrtc/base/thread.h"
 #include "talk/p2p/base/candidate.h"
 #include "talk/p2p/base/packetsocketfactory.h"
 #include "talk/p2p/base/portinterface.h"
@@ -100,36 +100,36 @@ const char* ProtoToString(ProtocolType proto);
 bool StringToProto(const char* value, ProtocolType* proto);
 
 struct ProtocolAddress {
-  talk_base::SocketAddress address;
+  rtc::SocketAddress address;
   ProtocolType proto;
   bool secure;
 
-  ProtocolAddress(const talk_base::SocketAddress& a, ProtocolType p)
+  ProtocolAddress(const rtc::SocketAddress& a, ProtocolType p)
       : address(a), proto(p), secure(false) { }
-  ProtocolAddress(const talk_base::SocketAddress& a, ProtocolType p, bool sec)
+  ProtocolAddress(const rtc::SocketAddress& a, ProtocolType p, bool sec)
       : address(a), proto(p), secure(sec) { }
 };
 
-typedef std::set<talk_base::SocketAddress> ServerAddresses;
+typedef std::set<rtc::SocketAddress> ServerAddresses;
 
 // Represents a local communication mechanism that can be used to create
 // connections to similar mechanisms of the other client.  Subclasses of this
 // one add support for specific mechanisms like local UDP ports.
-class Port : public PortInterface, public talk_base::MessageHandler,
+class Port : public PortInterface, public rtc::MessageHandler,
              public sigslot::has_slots<> {
  public:
-  Port(talk_base::Thread* thread, talk_base::PacketSocketFactory* factory,
-       talk_base::Network* network, const talk_base::IPAddress& ip,
+  Port(rtc::Thread* thread, rtc::PacketSocketFactory* factory,
+       rtc::Network* network, const rtc::IPAddress& ip,
        const std::string& username_fragment, const std::string& password);
-  Port(talk_base::Thread* thread, const std::string& type,
-       talk_base::PacketSocketFactory* factory,
-       talk_base::Network* network, const talk_base::IPAddress& ip,
+  Port(rtc::Thread* thread, const std::string& type,
+       rtc::PacketSocketFactory* factory,
+       rtc::Network* network, const rtc::IPAddress& ip,
        int min_port, int max_port, const std::string& username_fragment,
        const std::string& password);
   virtual ~Port();
 
   virtual const std::string& Type() const { return type_; }
-  virtual talk_base::Network* Network() const { return network_; }
+  virtual rtc::Network* Network() const { return network_; }
 
   // This method will set the flag which enables standard ICE/STUN procedures
   // in STUN connectivity checks. Currently this method does
@@ -151,11 +151,11 @@ class Port : public PortInterface, public talk_base::MessageHandler,
   virtual bool SharedSocket() const { return shared_socket_; }
 
   // The thread on which this port performs its I/O.
-  talk_base::Thread* thread() { return thread_; }
+  rtc::Thread* thread() { return thread_; }
 
   // The factory used to create the sockets of this port.
-  talk_base::PacketSocketFactory* socket_factory() const { return factory_; }
-  void set_socket_factory(talk_base::PacketSocketFactory* factory) {
+  rtc::PacketSocketFactory* socket_factory() const { return factory_; }
+  void set_socket_factory(rtc::PacketSocketFactory* factory) {
     factory_ = factory;
   }
 
@@ -217,12 +217,12 @@ class Port : public PortInterface, public talk_base::MessageHandler,
 
   // Returns a map containing all of the connections of this port, keyed by the
   // remote address.
-  typedef std::map<talk_base::SocketAddress, Connection*> AddressMap;
+  typedef std::map<rtc::SocketAddress, Connection*> AddressMap;
   const AddressMap& connections() { return connections_; }
 
   // Returns the connection to the given address or NULL if none exists.
   virtual Connection* GetConnection(
-      const talk_base::SocketAddress& remote_addr);
+      const rtc::SocketAddress& remote_addr);
 
   // Called each time a connection is created.
   sigslot::signal2<Port*, Connection*> SignalConnectionCreated;
@@ -232,9 +232,9 @@ class Port : public PortInterface, public talk_base::MessageHandler,
   // port implemented this method.
   // TODO(mallinath) - Make it pure virtual.
   virtual bool HandleIncomingPacket(
-      talk_base::AsyncPacketSocket* socket, const char* data, size_t size,
-      const talk_base::SocketAddress& remote_addr,
-      const talk_base::PacketTime& packet_time) {
+      rtc::AsyncPacketSocket* socket, const char* data, size_t size,
+      const rtc::SocketAddress& remote_addr,
+      const rtc::PacketTime& packet_time) {
     ASSERT(false);
     return false;
   }
@@ -243,29 +243,29 @@ class Port : public PortInterface, public talk_base::MessageHandler,
   // these methods should be called as a response to SignalUnknownAddress.
   // NOTE: You MUST call CreateConnection BEFORE SendBindingResponse.
   virtual void SendBindingResponse(StunMessage* request,
-                                   const talk_base::SocketAddress& addr);
+                                   const rtc::SocketAddress& addr);
   virtual void SendBindingErrorResponse(
-      StunMessage* request, const talk_base::SocketAddress& addr,
+      StunMessage* request, const rtc::SocketAddress& addr,
       int error_code, const std::string& reason);
 
   void set_proxy(const std::string& user_agent,
-                 const talk_base::ProxyInfo& proxy) {
+                 const rtc::ProxyInfo& proxy) {
     user_agent_ = user_agent;
     proxy_ = proxy;
   }
   const std::string& user_agent() { return user_agent_; }
-  const talk_base::ProxyInfo& proxy() { return proxy_; }
+  const rtc::ProxyInfo& proxy() { return proxy_; }
 
   virtual void EnablePortPackets();
 
   // Called if the port has no connections and is no longer useful.
   void Destroy();
 
-  virtual void OnMessage(talk_base::Message *pmsg);
+  virtual void OnMessage(rtc::Message *pmsg);
 
   // Debugging description of this port
   virtual std::string ToString() const;
-  talk_base::IPAddress& ip() { return ip_; }
+  rtc::IPAddress& ip() { return ip_; }
   int min_port() { return min_port_; }
   int max_port() { return max_port_; }
 
@@ -281,7 +281,7 @@ class Port : public PortInterface, public talk_base::MessageHandler,
   void CreateStunUsername(const std::string& remote_username,
                           std::string* stun_username_attr_str) const;
 
-  bool MaybeIceRoleConflict(const talk_base::SocketAddress& addr,
+  bool MaybeIceRoleConflict(const rtc::SocketAddress& addr,
                             IceMessage* stun_msg,
                             const std::string& remote_ufrag);
 
@@ -309,15 +309,15 @@ class Port : public PortInterface, public talk_base::MessageHandler,
 
   void set_type(const std::string& type) { type_ = type; }
   // Fills in the local address of the port.
-  void AddAddress(const talk_base::SocketAddress& address,
-                  const talk_base::SocketAddress& base_address,
-                  const talk_base::SocketAddress& related_address,
+  void AddAddress(const rtc::SocketAddress& address,
+                  const rtc::SocketAddress& base_address,
+                  const rtc::SocketAddress& related_address,
                   const std::string& protocol, const std::string& type,
                   uint32 type_preference, bool final);
 
-  void AddAddress(const talk_base::SocketAddress& address,
-                  const talk_base::SocketAddress& base_address,
-                  const talk_base::SocketAddress& related_address,
+  void AddAddress(const rtc::SocketAddress& address,
+                  const rtc::SocketAddress& base_address,
+                  const rtc::SocketAddress& related_address,
                   const std::string& protocol, const std::string& type,
                   uint32 type_preference, uint32 relay_preference, bool final);
 
@@ -328,7 +328,7 @@ class Port : public PortInterface, public talk_base::MessageHandler,
   // currently a connection.  If this is an authenticated STUN binding request,
   // then we will signal the client.
   void OnReadPacket(const char* data, size_t size,
-                    const talk_base::SocketAddress& addr,
+                    const rtc::SocketAddress& addr,
                     ProtocolType proto);
 
   // If the given data comprises a complete and correct STUN message then the
@@ -337,16 +337,16 @@ class Port : public PortInterface, public talk_base::MessageHandler,
   // message.  Otherwise, the function may send a STUN response internally.
   // remote_username contains the remote fragment of the STUN username.
   bool GetStunMessage(const char* data, size_t size,
-                      const talk_base::SocketAddress& addr,
+                      const rtc::SocketAddress& addr,
                       IceMessage** out_msg, std::string* out_username);
 
   // Checks if the address in addr is compatible with the port's ip.
-  bool IsCompatibleAddress(const talk_base::SocketAddress& addr);
+  bool IsCompatibleAddress(const rtc::SocketAddress& addr);
 
   // Returns default DSCP value.
-  talk_base::DiffServCodePoint DefaultDscpValue() const {
+  rtc::DiffServCodePoint DefaultDscpValue() const {
     // No change from what MediaChannel set.
-    return talk_base::DSCP_NO_CHANGE;
+    return rtc::DSCP_NO_CHANGE;
   }
 
  private:
@@ -357,12 +357,12 @@ class Port : public PortInterface, public talk_base::MessageHandler,
   // Checks if this port is useless, and hence, should be destroyed.
   void CheckTimeout();
 
-  talk_base::Thread* thread_;
-  talk_base::PacketSocketFactory* factory_;
+  rtc::Thread* thread_;
+  rtc::PacketSocketFactory* factory_;
   std::string type_;
   bool send_retransmit_count_attribute_;
-  talk_base::Network* network_;
-  talk_base::IPAddress ip_;
+  rtc::Network* network_;
+  rtc::IPAddress ip_;
   int min_port_;
   int max_port_;
   std::string content_name_;
@@ -388,14 +388,14 @@ class Port : public PortInterface, public talk_base::MessageHandler,
   bool shared_socket_;
   // Information to use when going through a proxy.
   std::string user_agent_;
-  talk_base::ProxyInfo proxy_;
+  rtc::ProxyInfo proxy_;
 
   friend class Connection;
 };
 
 // Represents a communication link between a port on the local client and a
 // port on the remote client.
-class Connection : public talk_base::MessageHandler,
+class Connection : public rtc::MessageHandler,
     public sigslot::has_slots<> {
  public:
   // States are from RFC 5245. http://tools.ietf.org/html/rfc5245#section-5.7.4
@@ -461,19 +461,19 @@ class Connection : public talk_base::MessageHandler,
   // the interface of AsyncPacketSocket, which may use UDP or TCP under the
   // covers.
   virtual int Send(const void* data, size_t size,
-                   const talk_base::PacketOptions& options) = 0;
+                   const rtc::PacketOptions& options) = 0;
 
   // Error if Send() returns < 0
   virtual int GetError() = 0;
 
   sigslot::signal4<Connection*, const char*, size_t,
-                   const talk_base::PacketTime&> SignalReadPacket;
+                   const rtc::PacketTime&> SignalReadPacket;
 
   sigslot::signal1<Connection*> SignalReadyToSend;
 
   // Called when a packet is received on this connection.
   void OnReadPacket(const char* data, size_t size,
-                    const talk_base::PacketTime& packet_time);
+                    const rtc::PacketTime& packet_time);
 
   // Called when the socket is currently able to send.
   void OnReadyToSend();
@@ -549,7 +549,7 @@ class Connection : public talk_base::MessageHandler,
   // Checks if this connection is useless, and hence, should be destroyed.
   void CheckTimeout();
 
-  void OnMessage(talk_base::Message *pmsg);
+  void OnMessage(rtc::Message *pmsg);
 
   Port* port_;
   size_t local_candidate_index_;
@@ -573,8 +573,8 @@ class Connection : public talk_base::MessageHandler,
   uint32 last_ping_response_received_;
   std::vector<uint32> pings_since_last_response_;
 
-  talk_base::RateTracker recv_rate_tracker_;
-  talk_base::RateTracker send_rate_tracker_;
+  rtc::RateTracker recv_rate_tracker_;
+  rtc::RateTracker send_rate_tracker_;
 
  private:
   void MaybeAddPrflxCandidate(ConnectionRequest* request,
@@ -593,7 +593,7 @@ class ProxyConnection : public Connection {
   ProxyConnection(Port* port, size_t index, const Candidate& candidate);
 
   virtual int Send(const void* data, size_t size,
-                   const talk_base::PacketOptions& options);
+                   const rtc::PacketOptions& options);
   virtual int GetError() { return error_; }
 
  private:

@@ -6,12 +6,12 @@
 #define TALK_P2P_CLIENT_FAKEPORTALLOCATOR_H_
 
 #include <string>
-#include "talk/base/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "talk/p2p/base/basicpacketsocketfactory.h"
 #include "talk/p2p/base/portallocator.h"
 #include "talk/p2p/base/udpport.h"
 
-namespace talk_base {
+namespace rtc {
 class SocketFactory;
 class Thread;
 }
@@ -20,8 +20,8 @@ namespace cricket {
 
 class FakePortAllocatorSession : public PortAllocatorSession {
  public:
-  FakePortAllocatorSession(talk_base::Thread* worker_thread,
-                           talk_base::PacketSocketFactory* factory,
+  FakePortAllocatorSession(rtc::Thread* worker_thread,
+                           rtc::PacketSocketFactory* factory,
                            const std::string& content_name,
                            int component,
                            const std::string& ice_ufrag,
@@ -31,10 +31,10 @@ class FakePortAllocatorSession : public PortAllocatorSession {
         worker_thread_(worker_thread),
         factory_(factory),
         network_("network", "unittest",
-                 talk_base::IPAddress(INADDR_LOOPBACK), 8),
+                 rtc::IPAddress(INADDR_LOOPBACK), 8),
         port_(), running_(false),
         port_config_count_(0) {
-    network_.AddIP(talk_base::IPAddress(INADDR_LOOPBACK));
+    network_.AddIP(rtc::IPAddress(INADDR_LOOPBACK));
   }
 
   virtual void StartGettingPorts() {
@@ -67,21 +67,21 @@ class FakePortAllocatorSession : public PortAllocatorSession {
   }
 
  private:
-  talk_base::Thread* worker_thread_;
-  talk_base::PacketSocketFactory* factory_;
-  talk_base::Network network_;
-  talk_base::scoped_ptr<cricket::Port> port_;
+  rtc::Thread* worker_thread_;
+  rtc::PacketSocketFactory* factory_;
+  rtc::Network network_;
+  rtc::scoped_ptr<cricket::Port> port_;
   bool running_;
   int port_config_count_;
 };
 
 class FakePortAllocator : public cricket::PortAllocator {
  public:
-  FakePortAllocator(talk_base::Thread* worker_thread,
-                    talk_base::PacketSocketFactory* factory)
+  FakePortAllocator(rtc::Thread* worker_thread,
+                    rtc::PacketSocketFactory* factory)
       : worker_thread_(worker_thread), factory_(factory) {
     if (factory_ == NULL) {
-      owned_factory_.reset(new talk_base::BasicPacketSocketFactory(
+      owned_factory_.reset(new rtc::BasicPacketSocketFactory(
           worker_thread_));
       factory_ = owned_factory_.get();
     }
@@ -97,9 +97,9 @@ class FakePortAllocator : public cricket::PortAllocator {
   }
 
  private:
-  talk_base::Thread* worker_thread_;
-  talk_base::PacketSocketFactory* factory_;
-  talk_base::scoped_ptr<talk_base::BasicPacketSocketFactory> owned_factory_;
+  rtc::Thread* worker_thread_;
+  rtc::PacketSocketFactory* factory_;
+  rtc::scoped_ptr<rtc::BasicPacketSocketFactory> owned_factory_;
 };
 
 }  // namespace cricket

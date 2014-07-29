@@ -31,8 +31,8 @@
 
 #include <string>
 
-#include "talk/base/logging.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/thread.h"
 
 namespace webrtc {
 
@@ -75,21 +75,21 @@ bool GetDtmfCode(char tone, int* code) {
   return true;
 }
 
-talk_base::scoped_refptr<DtmfSender> DtmfSender::Create(
+rtc::scoped_refptr<DtmfSender> DtmfSender::Create(
     AudioTrackInterface* track,
-    talk_base::Thread* signaling_thread,
+    rtc::Thread* signaling_thread,
     DtmfProviderInterface* provider) {
   if (!track || !signaling_thread) {
     return NULL;
   }
-  talk_base::scoped_refptr<DtmfSender> dtmf_sender(
-      new talk_base::RefCountedObject<DtmfSender>(track, signaling_thread,
+  rtc::scoped_refptr<DtmfSender> dtmf_sender(
+      new rtc::RefCountedObject<DtmfSender>(track, signaling_thread,
                                                   provider));
   return dtmf_sender;
 }
 
 DtmfSender::DtmfSender(AudioTrackInterface* track,
-                       talk_base::Thread* signaling_thread,
+                       rtc::Thread* signaling_thread,
                        DtmfProviderInterface* provider)
     : track_(track),
       observer_(NULL),
@@ -176,7 +176,7 @@ int DtmfSender::inter_tone_gap() const {
   return inter_tone_gap_;
 }
 
-void DtmfSender::OnMessage(talk_base::Message* msg) {
+void DtmfSender::OnMessage(rtc::Message* msg) {
   switch (msg->message_id) {
     case MSG_DO_INSERT_DTMF: {
       DoInsertDtmf();

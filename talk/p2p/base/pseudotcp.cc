@@ -32,15 +32,15 @@
 
 #include <set>
 
-#include "talk/base/basictypes.h"
-#include "talk/base/bytebuffer.h"
-#include "talk/base/byteorder.h"
-#include "talk/base/common.h"
-#include "talk/base/logging.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/socket.h"
-#include "talk/base/stringutils.h"
-#include "talk/base/timeutils.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/bytebuffer.h"
+#include "webrtc/base/byteorder.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/socket.h"
+#include "webrtc/base/stringutils.h"
+#include "webrtc/base/timeutils.h"
 
 // The following logging is for detailed (packet-level) analysis only.
 #define _DBG_NONE     0
@@ -151,23 +151,23 @@ const uint32 IDLE_TIMEOUT = 90 * 1000; // 90 seconds;
 //////////////////////////////////////////////////////////////////////
 
 inline void long_to_bytes(uint32 val, void* buf) {
-  *static_cast<uint32*>(buf) = talk_base::HostToNetwork32(val);
+  *static_cast<uint32*>(buf) = rtc::HostToNetwork32(val);
 }
 
 inline void short_to_bytes(uint16 val, void* buf) {
-  *static_cast<uint16*>(buf) = talk_base::HostToNetwork16(val);
+  *static_cast<uint16*>(buf) = rtc::HostToNetwork16(val);
 }
 
 inline uint32 bytes_to_long(const void* buf) {
-  return talk_base::NetworkToHost32(*static_cast<const uint32*>(buf));
+  return rtc::NetworkToHost32(*static_cast<const uint32*>(buf));
 }
 
 inline uint16 bytes_to_short(const void* buf) {
-  return talk_base::NetworkToHost16(*static_cast<const uint16*>(buf));
+  return rtc::NetworkToHost16(*static_cast<const uint16*>(buf));
 }
 
 uint32 bound(uint32 lower, uint32 middle, uint32 upper) {
-  return talk_base::_min(talk_base::_max(lower, middle), upper);
+  return rtc::_min(rtc::_max(lower, middle), upper);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -199,7 +199,7 @@ void ReportStats() {
   char buffer[256];
   size_t len = 0;
   for (int i = 0; i < S_NUM_STATS; ++i) {
-    len += talk_base::sprintfn(buffer, ARRAY_SIZE(buffer), "%s%s:%d",
+    len += rtc::sprintfn(buffer, ARRAY_SIZE(buffer), "%s%s:%d",
                                (i == 0) ? "" : ",", STAT_NAMES[i], g_stats[i]);
     g_stats[i] = 0;
   }
@@ -214,9 +214,9 @@ void ReportStats() {
 
 uint32 PseudoTcp::Now() {
 #if 0  // Use this to synchronize timers with logging timestamps (easier debug)
-  return talk_base::TimeSince(StartTime());
+  return rtc::TimeSince(StartTime());
 #else
-  return talk_base::Time();
+  return rtc::Time();
 #endif
 }
 
@@ -301,7 +301,7 @@ void PseudoTcp::NotifyClock(uint32 now) {
     return;
 
     // Check if it's time to retransmit a segment
-  if (m_rto_base && (talk_base::TimeDiff(m_rto_base + m_rx_rto, now) <= 0)) {
+  if (m_rto_base && (rtc::TimeDiff(m_rto_base + m_rx_rto, now) <= 0)) {
     if (m_slist.empty()) {
       ASSERT(false);
     } else {
@@ -320,21 +320,21 @@ void PseudoTcp::NotifyClock(uint32 now) {
       }
 
       uint32 nInFlight = m_snd_nxt - m_snd_una;
-      m_ssthresh = talk_base::_max(nInFlight / 2, 2 * m_mss);
+      m_ssthresh = rtc::_max(nInFlight / 2, 2 * m_mss);
       //LOG(LS_INFO) << "m_ssthresh: " << m_ssthresh << "  nInFlight: " << nInFlight << "  m_mss: " << m_mss;
       m_cwnd = m_mss;
 
       // Back off retransmit timer.  Note: the limit is lower when connecting.
       uint32 rto_limit = (m_state < TCP_ESTABLISHED) ? DEF_RTO : MAX_RTO;
-      m_rx_rto = talk_base::_min(rto_limit, m_rx_rto * 2);
+      m_rx_rto = rtc::_min(rto_limit, m_rx_rto * 2);
       m_rto_base = now;
     }
   }
 
   // Check if it's time to probe closed windows
   if ((m_snd_wnd == 0)
-        && (talk_base::TimeDiff(m_lastsend + m_rx_rto, now) <= 0)) {
-    if (talk_base::TimeDiff(now, m_lastrecv) >= 15000) {
+        && (rtc::TimeDiff(m_lastsend + m_rx_rto, now) <= 0)) {
+    if (rtc::TimeDiff(now, m_lastrecv) >= 15000) {
       closedown(ECONNABORTED);
       return;
     }
@@ -344,11 +344,11 @@ void PseudoTcp::NotifyClock(uint32 now) {
     m_lastsend = now;
 
     // back off retransmit timer
-    m_rx_rto = talk_base::_min(MAX_RTO, m_rx_rto * 2);
+    m_rx_rto = rtc::_min(MAX_RTO, m_rx_rto * 2);
   }
 
   // Check if it's time to send delayed acks
-  if (m_t_ack && (talk_base::TimeDiff(m_t_ack + m_ack_delay, now) <= 0)) {
+  if (m_t_ack && (rtc::TimeDiff(m_t_ack + m_ack_delay, now) <= 0)) {
     packet(m_snd_nxt, 0, 0, 0);
   }
 
@@ -436,21 +436,21 @@ int PseudoTcp::Recv(char* buffer, size_t len) {
   }
 
   size_t read = 0;
-  talk_base::StreamResult result = m_rbuf.Read(buffer, len, &read, NULL);
+  rtc::StreamResult result = m_rbuf.Read(buffer, len, &read, NULL);
 
   // If there's no data in |m_rbuf|.
-  if (result == talk_base::SR_BLOCK) {
+  if (result == rtc::SR_BLOCK) {
     m_bReadEnable = true;
     m_error = EWOULDBLOCK;
     return SOCKET_ERROR;
   }
-  ASSERT(result == talk_base::SR_SUCCESS);
+  ASSERT(result == rtc::SR_SUCCESS);
 
   size_t available_space = 0;
   m_rbuf.GetWriteRemaining(&available_space);
 
   if (uint32(available_space) - m_rcv_wnd >=
-      talk_base::_min<uint32>(m_rbuf_len / 2, m_mss)) {
+      rtc::_min<uint32>(m_rbuf_len / 2, m_mss)) {
     // TODO(jbeda): !?! Not sure about this was closed business
     bool bWasClosed = (m_rcv_wnd == 0);
     m_rcv_wnd = static_cast<uint32>(available_space);
@@ -528,7 +528,7 @@ IPseudoTcpNotify::WriteResult PseudoTcp::packet(uint32 seq, uint8 flags,
 
   uint32 now = Now();
 
-  talk_base::scoped_ptr<uint8[]> buffer(new uint8[MAX_PACKET]);
+  rtc::scoped_ptr<uint8[]> buffer(new uint8[MAX_PACKET]);
   long_to_bytes(m_conv, buffer.get());
   long_to_bytes(seq, buffer.get() + 4);
   long_to_bytes(m_rcv_nxt, buffer.get() + 8);
@@ -544,10 +544,10 @@ IPseudoTcpNotify::WriteResult PseudoTcp::packet(uint32 seq, uint8 flags,
 
   if (len) {
     size_t bytes_read = 0;
-    talk_base::StreamResult result = m_sbuf.ReadOffset(
+    rtc::StreamResult result = m_sbuf.ReadOffset(
         buffer.get() + HEADER_SIZE, len, offset, &bytes_read);
-    UNUSED(result);
-    ASSERT(result == talk_base::SR_SUCCESS);
+    RTC_UNUSED(result);
+    ASSERT(result == rtc::SR_SUCCESS);
     ASSERT(static_cast<uint32>(bytes_read) == len);
   }
 
@@ -631,20 +631,20 @@ bool PseudoTcp::clock_check(uint32 now, long& nTimeout) {
   nTimeout = DEFAULT_TIMEOUT;
 
   if (m_t_ack) {
-    nTimeout = talk_base::_min<int32>(nTimeout,
-      talk_base::TimeDiff(m_t_ack + m_ack_delay, now));
+    nTimeout = rtc::_min<int32>(nTimeout,
+      rtc::TimeDiff(m_t_ack + m_ack_delay, now));
   }
   if (m_rto_base) {
-    nTimeout = talk_base::_min<int32>(nTimeout,
-      talk_base::TimeDiff(m_rto_base + m_rx_rto, now));
+    nTimeout = rtc::_min<int32>(nTimeout,
+      rtc::TimeDiff(m_rto_base + m_rx_rto, now));
   }
   if (m_snd_wnd == 0) {
-    nTimeout = talk_base::_min<int32>(nTimeout, talk_base::TimeDiff(m_lastsend + m_rx_rto, now));
+    nTimeout = rtc::_min<int32>(nTimeout, rtc::TimeDiff(m_lastsend + m_rx_rto, now));
   }
 #if PSEUDO_KEEPALIVE
   if (m_state == TCP_ESTABLISHED) {
-    nTimeout = talk_base::_min<int32>(nTimeout,
-      talk_base::TimeDiff(m_lasttraffic + (m_bOutgoing ? IDLE_PING * 3/2 : IDLE_PING), now));
+    nTimeout = rtc::_min<int32>(nTimeout,
+      rtc::TimeDiff(m_lasttraffic + (m_bOutgoing ? IDLE_PING * 3/2 : IDLE_PING), now));
   }
 #endif // PSEUDO_KEEPALIVE
   return true;
@@ -717,7 +717,7 @@ bool PseudoTcp::process(Segment& seg) {
   if ((seg.ack > m_snd_una) && (seg.ack <= m_snd_nxt)) {
     // Calculate round-trip time
     if (seg.tsecr) {
-      int32 rtt = talk_base::TimeDiff(now, seg.tsecr);
+      int32 rtt = rtc::TimeDiff(now, seg.tsecr);
       if (rtt >= 0) {
         if (m_rx_srtt == 0) {
           m_rx_srtt = rtt;
@@ -730,7 +730,7 @@ bool PseudoTcp::process(Segment& seg) {
           m_rx_srtt = (7 * m_rx_srtt + rtt) / 8;
         }
         m_rx_rto = bound(MIN_RTO, m_rx_srtt +
-            talk_base::_max<uint32>(1, 4 * m_rx_rttvar), MAX_RTO);
+            rtc::_max<uint32>(1, 4 * m_rx_rttvar), MAX_RTO);
 #if _DEBUGMSG >= _DBG_VERBOSE
         LOG(LS_INFO) << "rtt: " << rtt
                      << "  srtt: " << m_rx_srtt
@@ -767,7 +767,7 @@ bool PseudoTcp::process(Segment& seg) {
     if (m_dup_acks >= 3) {
       if (m_snd_una >= m_recover) { // NewReno
         uint32 nInFlight = m_snd_nxt - m_snd_una;
-        m_cwnd = talk_base::_min(m_ssthresh, nInFlight + m_mss); // (Fast Retransmit)
+        m_cwnd = rtc::_min(m_ssthresh, nInFlight + m_mss); // (Fast Retransmit)
 #if _DEBUGMSG >= _DBG_NORMAL
         LOG(LS_INFO) << "exit recovery";
 #endif // _DEBUGMSG
@@ -780,7 +780,7 @@ bool PseudoTcp::process(Segment& seg) {
           closedown(ECONNABORTED);
           return false;
         }
-        m_cwnd += m_mss - talk_base::_min(nAcked, m_cwnd);
+        m_cwnd += m_mss - rtc::_min(nAcked, m_cwnd);
       }
     } else {
       m_dup_acks = 0;
@@ -788,7 +788,7 @@ bool PseudoTcp::process(Segment& seg) {
       if (m_cwnd < m_ssthresh) {
         m_cwnd += m_mss;
       } else {
-        m_cwnd += talk_base::_max<uint32>(1, m_mss * m_mss / m_cwnd);
+        m_cwnd += rtc::_max<uint32>(1, m_mss * m_mss / m_cwnd);
       }
     }
   } else if (seg.ack == m_snd_una) {
@@ -811,7 +811,7 @@ bool PseudoTcp::process(Segment& seg) {
         }
         m_recover = m_snd_nxt;
         uint32 nInFlight = m_snd_nxt - m_snd_una;
-        m_ssthresh = talk_base::_max(nInFlight / 2, 2 * m_mss);
+        m_ssthresh = rtc::_max(nInFlight / 2, 2 * m_mss);
         //LOG(LS_INFO) << "m_ssthresh: " << m_ssthresh << "  nInFlight: " << nInFlight << "  m_mss: " << m_mss;
         m_cwnd = m_ssthresh + 3 * m_mss;
       } else if (m_dup_acks > 3) {
@@ -908,10 +908,10 @@ bool PseudoTcp::process(Segment& seg) {
     } else {
       uint32 nOffset = seg.seq - m_rcv_nxt;
 
-      talk_base::StreamResult result = m_rbuf.WriteOffset(seg.data, seg.len,
+      rtc::StreamResult result = m_rbuf.WriteOffset(seg.data, seg.len,
                                                           nOffset, NULL);
-      ASSERT(result == talk_base::SR_SUCCESS);
-      UNUSED(result);
+      ASSERT(result == rtc::SR_SUCCESS);
+      RTC_UNUSED(result);
 
       if (seg.seq == m_rcv_nxt) {
         m_rbuf.ConsumeWriteBuffer(seg.len);
@@ -969,7 +969,7 @@ bool PseudoTcp::transmit(const SList::iterator& seg, uint32 now) {
     return false;
   }
 
-  uint32 nTransmit = talk_base::_min(seg->len, m_mss);
+  uint32 nTransmit = rtc::_min(seg->len, m_mss);
 
   while (true) {
     uint32 seq = seg->seq;
@@ -1035,13 +1035,13 @@ bool PseudoTcp::transmit(const SList::iterator& seg, uint32 now) {
 void PseudoTcp::attemptSend(SendFlags sflags) {
   uint32 now = Now();
 
-  if (talk_base::TimeDiff(now, m_lastsend) > static_cast<long>(m_rx_rto)) {
+  if (rtc::TimeDiff(now, m_lastsend) > static_cast<long>(m_rx_rto)) {
     m_cwnd = m_mss;
   }
 
 #if _DEBUGMSG
   bool bFirst = true;
-  UNUSED(bFirst);
+  RTC_UNUSED(bFirst);
 #endif // _DEBUGMSG
 
   while (true) {
@@ -1049,14 +1049,14 @@ void PseudoTcp::attemptSend(SendFlags sflags) {
     if ((m_dup_acks == 1) || (m_dup_acks == 2)) { // Limited Transmit
       cwnd += m_dup_acks * m_mss;
     }
-    uint32 nWindow = talk_base::_min(m_snd_wnd, cwnd);
+    uint32 nWindow = rtc::_min(m_snd_wnd, cwnd);
     uint32 nInFlight = m_snd_nxt - m_snd_una;
     uint32 nUseable = (nInFlight < nWindow) ? (nWindow - nInFlight) : 0;
 
     size_t snd_buffered = 0;
     m_sbuf.GetBuffered(&snd_buffered);
     uint32 nAvailable =
-        talk_base::_min(static_cast<uint32>(snd_buffered) - nInFlight, m_mss);
+        rtc::_min(static_cast<uint32>(snd_buffered) - nInFlight, m_mss);
 
     if (nAvailable > nUseable) {
       if (nUseable * 4 < nWindow) {
@@ -1153,8 +1153,8 @@ PseudoTcp::adjustMTU() {
   LOG(LS_INFO) << "Adjusting mss to " << m_mss << " bytes";
 #endif // _DEBUGMSG
   // Enforce minimums on ssthresh and cwnd
-  m_ssthresh = talk_base::_max(m_ssthresh, 2 * m_mss);
-  m_cwnd = talk_base::_max(m_cwnd, m_mss);
+  m_ssthresh = rtc::_max(m_ssthresh, 2 * m_mss);
+  m_cwnd = rtc::_max(m_cwnd, m_mss);
 }
 
 bool
@@ -1171,7 +1171,7 @@ PseudoTcp::disableWindowScale() {
 
 void
 PseudoTcp::queueConnectMessage() {
-  talk_base::ByteBuffer buf(talk_base::ByteBuffer::ORDER_NETWORK);
+  rtc::ByteBuffer buf(rtc::ByteBuffer::ORDER_NETWORK);
 
   buf.WriteUInt8(CTL_CONNECT);
   if (m_support_wnd_scale) {
@@ -1189,7 +1189,7 @@ PseudoTcp::parseOptions(const char* data, uint32 len) {
 
   // See http://www.freesoft.org/CIE/Course/Section4/8.htm for
   // parsing the options list.
-  talk_base::ByteBuffer buf(data, len);
+  rtc::ByteBuffer buf(data, len);
   while (buf.Length()) {
     uint8 kind = TCP_OPT_EOL;
     buf.ReadUInt8(&kind);
@@ -1204,7 +1204,7 @@ PseudoTcp::parseOptions(const char* data, uint32 len) {
 
     // Length of this option.
     ASSERT(len != 0);
-    UNUSED(len);
+    RTC_UNUSED(len);
     uint8 opt_len = 0;
     buf.ReadUInt8(&opt_len);
 
@@ -1278,7 +1278,7 @@ PseudoTcp::resizeReceiveBuffer(uint32 new_size) {
   // before connection is established or when peers are exchanging connect
   // messages.
   ASSERT(result);
-  UNUSED(result);
+  RTC_UNUSED(result);
   m_rbuf_len = new_size;
   m_rwnd_scale = scale_factor;
   m_ssthresh = new_size;

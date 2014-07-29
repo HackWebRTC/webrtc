@@ -66,10 +66,10 @@
 #include "talk/app/webrtc/mediaconstraintsinterface.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/app/webrtc/videosourceinterface.h"
-#include "talk/base/bind.h"
-#include "talk/base/logging.h"
-#include "talk/base/messagequeue.h"
-#include "talk/base/ssladapter.h"
+#include "webrtc/base/bind.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/messagequeue.h"
+#include "webrtc/base/ssladapter.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videorenderer.h"
 #include "talk/media/devices/videorendererfactory.h"
@@ -98,10 +98,10 @@ using webrtc::VideoCodec;
 #endif
 
 using icu::UnicodeString;
-using talk_base::Bind;
-using talk_base::Thread;
-using talk_base::ThreadManager;
-using talk_base::scoped_ptr;
+using rtc::Bind;
+using rtc::Thread;
+using rtc::ThreadManager;
+using rtc::scoped_ptr;
 using webrtc::AudioSourceInterface;
 using webrtc::AudioTrackInterface;
 using webrtc::AudioTrackVector;
@@ -1177,7 +1177,7 @@ enum { kMediaCodecPollMs = 10 };
 // MediaCodecVideoEncoder is created, operated, and destroyed on a single
 // thread, currently the libjingle Worker thread.
 class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
-                               public talk_base::MessageHandler {
+                               public rtc::MessageHandler {
  public:
   virtual ~MediaCodecVideoEncoder();
   explicit MediaCodecVideoEncoder(JNIEnv* jni);
@@ -1198,8 +1198,8 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
                                        int /* rtt */) OVERRIDE;
   virtual int32_t SetRates(uint32_t new_bit_rate, uint32_t frame_rate) OVERRIDE;
 
-  // talk_base::MessageHandler implementation.
-  virtual void OnMessage(talk_base::Message* msg) OVERRIDE;
+  // rtc::MessageHandler implementation.
+  virtual void OnMessage(rtc::Message* msg) OVERRIDE;
 
  private:
   // CHECK-fail if not running on |codec_thread_|.
@@ -1401,7 +1401,7 @@ int32_t MediaCodecVideoEncoder::SetRates(uint32_t new_bit_rate,
            frame_rate));
 }
 
-void MediaCodecVideoEncoder::OnMessage(talk_base::Message* msg) {
+void MediaCodecVideoEncoder::OnMessage(rtc::Message* msg) {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
 
@@ -1639,7 +1639,7 @@ int32_t MediaCodecVideoEncoder::SetRatesOnCodecThread(uint32_t new_bit_rate,
 }
 
 void MediaCodecVideoEncoder::ResetParameters(JNIEnv* jni) {
-  talk_base::MessageQueueManager::Clear(this);
+  rtc::MessageQueueManager::Clear(this);
   width_ = 0;
   height_ = 0;
   yuv_size_ = 0;
@@ -1818,7 +1818,7 @@ void MediaCodecVideoEncoderFactory::DestroyVideoEncoder(
 }
 
 class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
-                               public talk_base::MessageHandler {
+                               public rtc::MessageHandler {
  public:
   explicit MediaCodecVideoDecoder(JNIEnv* jni);
   virtual ~MediaCodecVideoDecoder();
@@ -1838,8 +1838,8 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
   virtual int32_t Release() OVERRIDE;
 
   virtual int32_t Reset() OVERRIDE;
-  // talk_base::MessageHandler implementation.
-  virtual void OnMessage(talk_base::Message* msg) OVERRIDE;
+  // rtc::MessageHandler implementation.
+  virtual void OnMessage(rtc::Message* msg) OVERRIDE;
 
  private:
   // CHECK-fail if not running on |codec_thread_|.
@@ -2196,7 +2196,7 @@ int32_t MediaCodecVideoDecoder::Reset() {
   return InitDecode(&codec_, 1);
 }
 
-void MediaCodecVideoDecoder::OnMessage(talk_base::Message* msg) {
+void MediaCodecVideoDecoder::OnMessage(rtc::Message* msg) {
 }
 
 class MediaCodecVideoDecoderFactory
@@ -2256,7 +2256,7 @@ extern "C" jint JNIEXPORT JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
 
   CHECK(!pthread_once(&g_jni_ptr_once, &CreateJNIPtrKey), "pthread_once");
 
-  CHECK(talk_base::InitializeSSL(), "Failed to InitializeSSL()");
+  CHECK(rtc::InitializeSSL(), "Failed to InitializeSSL()");
 
   JNIEnv* jni;
   if (jvm->GetEnv(reinterpret_cast<void**>(&jni), JNI_VERSION_1_6) != JNI_OK)
@@ -2270,7 +2270,7 @@ extern "C" void JNIEXPORT JNICALL JNI_OnUnLoad(JavaVM *jvm, void *reserved) {
   g_class_reference_holder->FreeReferences(AttachCurrentThreadIfNeeded());
   delete g_class_reference_holder;
   g_class_reference_holder = NULL;
-  CHECK(talk_base::CleanupSSL(), "Failed to CleanupSSL()");
+  CHECK(rtc::CleanupSSL(), "Failed to CleanupSSL()");
   g_jvm = NULL;
 }
 
@@ -2319,7 +2319,7 @@ JOW(jboolean, DataChannel_sendNative)(JNIEnv* jni, jobject j_dc,
                                       jbyteArray data, jboolean binary) {
   jbyte* bytes = jni->GetByteArrayElements(data, NULL);
   bool ret = ExtractNativeDC(jni, j_dc)->Send(DataBuffer(
-      talk_base::Buffer(bytes, jni->GetArrayLength(data)),
+      rtc::Buffer(bytes, jni->GetArrayLength(data)),
       binary));
   jni->ReleaseByteArrayElements(data, bytes, JNI_ABORT);
   return ret;
@@ -2348,7 +2348,7 @@ JOW(void, Logging_nativeEnableTracing)(
     }
 #endif
   }
-  talk_base::LogMessage::LogToDebug(nativeSeverity);
+  rtc::LogMessage::LogToDebug(nativeSeverity);
 }
 
 JOW(void, PeerConnection_freePeerConnection)(JNIEnv*, jclass, jlong j_p) {
@@ -2458,9 +2458,9 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnectionFactory)(
   // talk/ assumes pretty widely that the current Thread is ThreadManager'd, but
   // ThreadManager only WrapCurrentThread()s the thread where it is first
   // created.  Since the semantics around when auto-wrapping happens in
-  // talk/base/ are convoluted, we simply wrap here to avoid having to think
+  // webrtc/base/ are convoluted, we simply wrap here to avoid having to think
   // about ramifications of auto-wrapping there.
-  talk_base::ThreadManager::Instance()->WrapCurrentThread();
+  rtc::ThreadManager::Instance()->WrapCurrentThread();
   webrtc::Trace::CreateTrace();
   Thread* worker_thread = new Thread();
   worker_thread->SetName("worker_thread", NULL);
@@ -2474,7 +2474,7 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnectionFactory)(
   encoder_factory.reset(new MediaCodecVideoEncoderFactory());
   decoder_factory.reset(new MediaCodecVideoDecoderFactory());
 #endif
-  talk_base::scoped_refptr<PeerConnectionFactoryInterface> factory(
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       webrtc::CreatePeerConnectionFactory(worker_thread,
                                           signaling_thread,
                                           NULL,
@@ -2496,9 +2496,9 @@ static PeerConnectionFactoryInterface* factoryFromJava(jlong j_p) {
 
 JOW(jlong, PeerConnectionFactory_nativeCreateLocalMediaStream)(
     JNIEnv* jni, jclass, jlong native_factory, jstring label) {
-  talk_base::scoped_refptr<PeerConnectionFactoryInterface> factory(
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
-  talk_base::scoped_refptr<MediaStreamInterface> stream(
+  rtc::scoped_refptr<MediaStreamInterface> stream(
       factory->CreateLocalMediaStream(JavaToStdString(jni, label)));
   return (jlong)stream.release();
 }
@@ -2508,9 +2508,9 @@ JOW(jlong, PeerConnectionFactory_nativeCreateVideoSource)(
     jobject j_constraints) {
   scoped_ptr<ConstraintsWrapper> constraints(
       new ConstraintsWrapper(jni, j_constraints));
-  talk_base::scoped_refptr<PeerConnectionFactoryInterface> factory(
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
-  talk_base::scoped_refptr<VideoSourceInterface> source(
+  rtc::scoped_refptr<VideoSourceInterface> source(
       factory->CreateVideoSource(
           reinterpret_cast<cricket::VideoCapturer*>(native_capturer),
           constraints.get()));
@@ -2520,9 +2520,9 @@ JOW(jlong, PeerConnectionFactory_nativeCreateVideoSource)(
 JOW(jlong, PeerConnectionFactory_nativeCreateVideoTrack)(
     JNIEnv* jni, jclass, jlong native_factory, jstring id,
     jlong native_source) {
-  talk_base::scoped_refptr<PeerConnectionFactoryInterface> factory(
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
-  talk_base::scoped_refptr<VideoTrackInterface> track(
+  rtc::scoped_refptr<VideoTrackInterface> track(
       factory->CreateVideoTrack(
           JavaToStdString(jni, id),
           reinterpret_cast<VideoSourceInterface*>(native_source)));
@@ -2533,9 +2533,9 @@ JOW(jlong, PeerConnectionFactory_nativeCreateAudioSource)(
     JNIEnv* jni, jclass, jlong native_factory, jobject j_constraints) {
   scoped_ptr<ConstraintsWrapper> constraints(
       new ConstraintsWrapper(jni, j_constraints));
-  talk_base::scoped_refptr<PeerConnectionFactoryInterface> factory(
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
-  talk_base::scoped_refptr<AudioSourceInterface> source(
+  rtc::scoped_refptr<AudioSourceInterface> source(
       factory->CreateAudioSource(constraints.get()));
   return (jlong)source.release();
 }
@@ -2543,9 +2543,9 @@ JOW(jlong, PeerConnectionFactory_nativeCreateAudioSource)(
 JOW(jlong, PeerConnectionFactory_nativeCreateAudioTrack)(
     JNIEnv* jni, jclass, jlong native_factory, jstring id,
     jlong native_source) {
-  talk_base::scoped_refptr<PeerConnectionFactoryInterface> factory(
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
-  talk_base::scoped_refptr<AudioTrackInterface> track(factory->CreateAudioTrack(
+  rtc::scoped_refptr<AudioTrackInterface> track(factory->CreateAudioTrack(
       JavaToStdString(jni, id),
       reinterpret_cast<AudioSourceInterface*>(native_source)));
   return (jlong)track.release();
@@ -2592,24 +2592,24 @@ static void JavaIceServersToJsepIceServers(
 JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(
     JNIEnv *jni, jclass, jlong factory, jobject j_ice_servers,
     jobject j_constraints, jlong observer_p) {
-  talk_base::scoped_refptr<PeerConnectionFactoryInterface> f(
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> f(
       reinterpret_cast<PeerConnectionFactoryInterface*>(
           factoryFromJava(factory)));
   PeerConnectionInterface::IceServers servers;
   JavaIceServersToJsepIceServers(jni, j_ice_servers, &servers);
   PCOJava* observer = reinterpret_cast<PCOJava*>(observer_p);
   observer->SetConstraints(new ConstraintsWrapper(jni, j_constraints));
-  talk_base::scoped_refptr<PeerConnectionInterface> pc(f->CreatePeerConnection(
+  rtc::scoped_refptr<PeerConnectionInterface> pc(f->CreatePeerConnection(
       servers, observer->constraints(), NULL, NULL, observer));
   return (jlong)pc.release();
 }
 
-static talk_base::scoped_refptr<PeerConnectionInterface> ExtractNativePC(
+static rtc::scoped_refptr<PeerConnectionInterface> ExtractNativePC(
     JNIEnv* jni, jobject j_pc) {
   jfieldID native_pc_id = GetFieldID(jni,
       GetObjectClass(jni, j_pc), "nativePeerConnection", "J");
   jlong j_p = GetLongField(jni, j_pc, native_pc_id);
-  return talk_base::scoped_refptr<PeerConnectionInterface>(
+  return rtc::scoped_refptr<PeerConnectionInterface>(
       reinterpret_cast<PeerConnectionInterface*>(j_p));
 }
 
@@ -2628,7 +2628,7 @@ JOW(jobject, PeerConnection_getRemoteDescription)(JNIEnv* jni, jobject j_pc) {
 JOW(jobject, PeerConnection_createDataChannel)(
     JNIEnv* jni, jobject j_pc, jstring j_label, jobject j_init) {
   DataChannelInit init = JavaDataChannelInitToNative(jni, j_init);
-  talk_base::scoped_refptr<DataChannelInterface> channel(
+  rtc::scoped_refptr<DataChannelInterface> channel(
       ExtractNativePC(jni, j_pc)->CreateDataChannel(
           JavaToStdString(jni, j_label), &init));
   // Mustn't pass channel.get() directly through NewObject to avoid reading its
@@ -2652,8 +2652,8 @@ JOW(void, PeerConnection_createOffer)(
     JNIEnv* jni, jobject j_pc, jobject j_observer, jobject j_constraints) {
   ConstraintsWrapper* constraints =
       new ConstraintsWrapper(jni, j_constraints);
-  talk_base::scoped_refptr<CreateSdpObserverWrapper> observer(
-      new talk_base::RefCountedObject<CreateSdpObserverWrapper>(
+  rtc::scoped_refptr<CreateSdpObserverWrapper> observer(
+      new rtc::RefCountedObject<CreateSdpObserverWrapper>(
           jni, j_observer, constraints));
   ExtractNativePC(jni, j_pc)->CreateOffer(observer, constraints);
 }
@@ -2662,8 +2662,8 @@ JOW(void, PeerConnection_createAnswer)(
     JNIEnv* jni, jobject j_pc, jobject j_observer, jobject j_constraints) {
   ConstraintsWrapper* constraints =
       new ConstraintsWrapper(jni, j_constraints);
-  talk_base::scoped_refptr<CreateSdpObserverWrapper> observer(
-      new talk_base::RefCountedObject<CreateSdpObserverWrapper>(
+  rtc::scoped_refptr<CreateSdpObserverWrapper> observer(
+      new rtc::RefCountedObject<CreateSdpObserverWrapper>(
           jni, j_observer, constraints));
   ExtractNativePC(jni, j_pc)->CreateAnswer(observer, constraints);
 }
@@ -2695,8 +2695,8 @@ static SessionDescriptionInterface* JavaSdpToNativeSdp(
 JOW(void, PeerConnection_setLocalDescription)(
     JNIEnv* jni, jobject j_pc,
     jobject j_observer, jobject j_sdp) {
-  talk_base::scoped_refptr<SetSdpObserverWrapper> observer(
-      new talk_base::RefCountedObject<SetSdpObserverWrapper>(
+  rtc::scoped_refptr<SetSdpObserverWrapper> observer(
+      new rtc::RefCountedObject<SetSdpObserverWrapper>(
           jni, j_observer, reinterpret_cast<ConstraintsWrapper*>(NULL)));
   ExtractNativePC(jni, j_pc)->SetLocalDescription(
       observer, JavaSdpToNativeSdp(jni, j_sdp));
@@ -2705,8 +2705,8 @@ JOW(void, PeerConnection_setLocalDescription)(
 JOW(void, PeerConnection_setRemoteDescription)(
     JNIEnv* jni, jobject j_pc,
     jobject j_observer, jobject j_sdp) {
-  talk_base::scoped_refptr<SetSdpObserverWrapper> observer(
-      new talk_base::RefCountedObject<SetSdpObserverWrapper>(
+  rtc::scoped_refptr<SetSdpObserverWrapper> observer(
+      new rtc::RefCountedObject<SetSdpObserverWrapper>(
           jni, j_observer, reinterpret_cast<ConstraintsWrapper*>(NULL)));
   ExtractNativePC(jni, j_pc)->SetRemoteDescription(
       observer, JavaSdpToNativeSdp(jni, j_sdp));
@@ -2748,8 +2748,8 @@ JOW(void, PeerConnection_nativeRemoveLocalStream)(
 
 JOW(bool, PeerConnection_nativeGetStats)(
     JNIEnv* jni, jobject j_pc, jobject j_observer, jlong native_track) {
-  talk_base::scoped_refptr<StatsObserverWrapper> observer(
-      new talk_base::RefCountedObject<StatsObserverWrapper>(jni, j_observer));
+  rtc::scoped_refptr<StatsObserverWrapper> observer(
+      new rtc::RefCountedObject<StatsObserverWrapper>(jni, j_observer));
   return ExtractNativePC(jni, j_pc)->GetStats(
       observer,
       reinterpret_cast<MediaStreamTrackInterface*>(native_track),
@@ -2780,7 +2780,7 @@ JOW(void, PeerConnection_close)(JNIEnv* jni, jobject j_pc) {
 }
 
 JOW(jobject, MediaSource_nativeState)(JNIEnv* jni, jclass, jlong j_p) {
-  talk_base::scoped_refptr<MediaSourceInterface> p(
+  rtc::scoped_refptr<MediaSourceInterface> p(
       reinterpret_cast<MediaSourceInterface*>(j_p));
   return JavaEnumFromIndex(jni, "MediaSource$State", p->state());
 }

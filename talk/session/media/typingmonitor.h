@@ -28,10 +28,10 @@
 #ifndef TALK_SESSION_MEDIA_TYPINGMONITOR_H_
 #define TALK_SESSION_MEDIA_TYPINGMONITOR_H_
 
-#include "talk/base/messagehandler.h"
+#include "webrtc/base/messagehandler.h"
 #include "talk/media/base/mediachannel.h"
 
-namespace talk_base {
+namespace rtc {
 class Thread;
 }
 
@@ -57,9 +57,9 @@ struct TypingMonitorOptions {
  * a conference with loud keystroke audio signals.
  */
 class TypingMonitor
-    : public talk_base::MessageHandler, public sigslot::has_slots<> {
+    : public rtc::MessageHandler, public sigslot::has_slots<> {
  public:
-  TypingMonitor(VoiceChannel* channel, talk_base::Thread* worker_thread,
+  TypingMonitor(VoiceChannel* channel, rtc::Thread* worker_thread,
                 const TypingMonitorOptions& params);
   ~TypingMonitor();
 
@@ -69,10 +69,10 @@ class TypingMonitor
 
  private:
   void OnVoiceChannelError(uint32 ssrc, VoiceMediaChannel::Error error);
-  void OnMessage(talk_base::Message* msg);
+  void OnMessage(rtc::Message* msg);
 
   VoiceChannel* channel_;
-  talk_base::Thread* worker_thread_;
+  rtc::Thread* worker_thread_;
   int mute_period_;
   int muted_at_;
   bool has_pending_unmute_;

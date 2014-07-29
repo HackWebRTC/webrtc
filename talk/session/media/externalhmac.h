@@ -46,7 +46,7 @@
 // crypto_kernel_replace_auth_type function.
 #if defined(HAVE_SRTP) && defined(ENABLE_EXTERNAL_AUTH)
 
-#include "talk/base/basictypes.h"
+#include "webrtc/base/basictypes.h"
 #ifdef SRTP_RELATIVE_PATH
 #include "auth.h"  // NOLINT
 #else

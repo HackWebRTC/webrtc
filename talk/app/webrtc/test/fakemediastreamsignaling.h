@@ -45,7 +45,7 @@ class FakeMediaStreamSignaling : public webrtc::MediaStreamSignaling,
                                  public webrtc::MediaStreamSignalingObserver {
  public:
   explicit FakeMediaStreamSignaling(cricket::ChannelManager* channel_manager) :
-    webrtc::MediaStreamSignaling(talk_base::Thread::Current(), this,
+    webrtc::MediaStreamSignaling(rtc::Thread::Current(), this,
                                  channel_manager) {
   }
 
@@ -133,21 +133,21 @@ class FakeMediaStreamSignaling : public webrtc::MediaStreamSignaling,
   }
 
  private:
-  talk_base::scoped_refptr<webrtc::MediaStreamInterface> CreateStream(
+  rtc::scoped_refptr<webrtc::MediaStreamInterface> CreateStream(
       const std::string& stream_label,
       const std::string& audio_track_id,
       const std::string& video_track_id) {
-    talk_base::scoped_refptr<webrtc::MediaStreamInterface> stream(
+    rtc::scoped_refptr<webrtc::MediaStreamInterface> stream(
         webrtc::MediaStream::Create(stream_label));
 
     if (!audio_track_id.empty()) {
-      talk_base::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
+      rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
           webrtc::AudioTrack::Create(audio_track_id, NULL));
       stream->AddTrack(audio_track);
     }
 
     if (!video_track_id.empty()) {
-      talk_base::scoped_refptr<webrtc::VideoTrackInterface> video_track(
+      rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
           webrtc::VideoTrack::Create(video_track_id, NULL));
       stream->AddTrack(video_track);
     }

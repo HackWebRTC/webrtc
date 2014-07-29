@@ -31,14 +31,14 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/basictypes.h"
-#include "talk/base/criticalsection.h"
-#include "talk/base/messagehandler.h"
-#include "talk/base/rollingaccumulator.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/sigslot.h"
-#include "talk/base/thread.h"
-#include "talk/base/timing.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/messagehandler.h"
+#include "webrtc/base/rollingaccumulator.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/base/timing.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/videoadapter.h"
 #include "talk/media/base/videocommon.h"
@@ -125,14 +125,14 @@ struct CapturedFrame {
 //
 class VideoCapturer
     : public sigslot::has_slots<>,
-      public talk_base::MessageHandler {
+      public rtc::MessageHandler {
  public:
   typedef std::vector<VideoProcessor*> VideoProcessors;
 
   // All signals are marshalled to |thread| or the creating thread if
   // none is provided.
   VideoCapturer();
-  explicit VideoCapturer(talk_base::Thread* thread);
+  explicit VideoCapturer(rtc::Thread* thread);
   virtual ~VideoCapturer() {}
 
   // Gets the id of the underlying device, which is available after the capturer
@@ -273,7 +273,7 @@ class VideoCapturer
   // resolution of 2048 x 1280.
   int screencast_max_pixels() const { return screencast_max_pixels_; }
   void set_screencast_max_pixels(int p) {
-    screencast_max_pixels_ = talk_base::_max(0, p);
+    screencast_max_pixels_ = rtc::_max(0, p);
   }
 
   // If true, run video adaptation. By default, video adaptation is enabled
@@ -304,7 +304,7 @@ class VideoCapturer
   void SetCaptureState(CaptureState state);
 
   // Marshals SignalStateChange onto thread_.
-  void OnMessage(talk_base::Message* message);
+  void OnMessage(rtc::Message* message);
 
   // subclasses override this virtual method to provide a vector of fourccs, in
   // order of preference, that are expected by the media engine.
@@ -355,15 +355,15 @@ class VideoCapturer
   // RollingAccumulator into stats.
   template<class T>
   static void GetVariableSnapshot(
-      const talk_base::RollingAccumulator<T>& data,
+      const rtc::RollingAccumulator<T>& data,
       VariableInfo<T>* stats);
 
-  talk_base::Thread* thread_;
+  rtc::Thread* thread_;
   std::string id_;
   CaptureState capture_state_;
-  talk_base::scoped_ptr<VideoFormat> capture_format_;
+  rtc::scoped_ptr<VideoFormat> capture_format_;
   std::vector<VideoFormat> supported_formats_;
-  talk_base::scoped_ptr<VideoFormat> max_format_;
+  rtc::scoped_ptr<VideoFormat> max_format_;
   std::vector<VideoFormat> filtered_supported_formats_;
 
   int ratio_w_;  // View resolution. e.g. 1280 x 720.
@@ -379,19 +379,19 @@ class VideoCapturer
   bool enable_video_adapter_;
   CoordinatedVideoAdapter video_adapter_;
 
-  talk_base::Timing frame_length_time_reporter_;
-  talk_base::CriticalSection frame_stats_crit_;
+  rtc::Timing frame_length_time_reporter_;
+  rtc::CriticalSection frame_stats_crit_;
 
   int adapt_frame_drops_;
-  talk_base::RollingAccumulator<int> adapt_frame_drops_data_;
+  rtc::RollingAccumulator<int> adapt_frame_drops_data_;
   int effect_frame_drops_;
-  talk_base::RollingAccumulator<int> effect_frame_drops_data_;
+  rtc::RollingAccumulator<int> effect_frame_drops_data_;
   double previous_frame_time_;
-  talk_base::RollingAccumulator<double> frame_time_data_;
+  rtc::RollingAccumulator<double> frame_time_data_;
   // The captured frame format before potential adapation.
   VideoFormat last_captured_frame_format_;
 
-  talk_base::CriticalSection crit_;
+  rtc::CriticalSection crit_;
   VideoProcessors video_processors_;
 
   DISALLOW_COPY_AND_ASSIGN(VideoCapturer);

@@ -33,9 +33,9 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/basictypes.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/sigslotrepeater.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/sigslotrepeater.h"
 #include "talk/media/base/cryptoparams.h"
 #include "talk/p2p/base/sessiondescription.h"
 
@@ -182,10 +182,10 @@ class SrtpFilter {
   State state_;
   uint32 signal_silent_time_in_ms_;
   std::vector<CryptoParams> offer_params_;
-  talk_base::scoped_ptr<SrtpSession> send_session_;
-  talk_base::scoped_ptr<SrtpSession> recv_session_;
-  talk_base::scoped_ptr<SrtpSession> send_rtcp_session_;
-  talk_base::scoped_ptr<SrtpSession> recv_rtcp_session_;
+  rtc::scoped_ptr<SrtpSession> send_session_;
+  rtc::scoped_ptr<SrtpSession> recv_session_;
+  rtc::scoped_ptr<SrtpSession> send_rtcp_session_;
+  rtc::scoped_ptr<SrtpSession> recv_rtcp_session_;
   CryptoParams applied_send_params_;
   CryptoParams applied_recv_params_;
 };
@@ -241,7 +241,7 @@ class SrtpSession {
   srtp_t session_;
   int rtp_auth_tag_len_;
   int rtcp_auth_tag_len_;
-  talk_base::scoped_ptr<SrtpStat> srtp_stat_;
+  rtc::scoped_ptr<SrtpStat> srtp_stat_;
   static bool inited_;
   int last_send_seq_num_;
   DISALLOW_COPY_AND_ASSIGN(SrtpSession);

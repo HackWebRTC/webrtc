@@ -27,9 +27,9 @@
 
 #include <vector>
 
-#include "talk/base/fakenetwork.h"
-#include "talk/base/gunit.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/fakenetwork.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/thread.h"
 #include "talk/p2p/base/basicpacketsocketfactory.h"
 #include "talk/p2p/base/portallocatorsessionproxy.h"
 #include "talk/p2p/client/basicportallocator.h"
@@ -102,10 +102,10 @@ class TestSessionChannel : public sigslot::has_slots<> {
 class PortAllocatorSessionProxyTest : public testing::Test {
  public:
   PortAllocatorSessionProxyTest()
-      : socket_factory_(talk_base::Thread::Current()),
-        allocator_(talk_base::Thread::Current(), NULL),
+      : socket_factory_(rtc::Thread::Current()),
+        allocator_(rtc::Thread::Current(), NULL),
         session_(new cricket::FakePortAllocatorSession(
-                     talk_base::Thread::Current(), &socket_factory_,
+                     rtc::Thread::Current(), &socket_factory_,
                      "test content", 1,
                      kIceUfrag0, kIcePwd0)),
         session_muxer_(new PortAllocatorSessionMuxer(session_)) {
@@ -125,7 +125,7 @@ class PortAllocatorSessionProxyTest : public testing::Test {
   }
 
  protected:
-  talk_base::BasicPacketSocketFactory socket_factory_;
+  rtc::BasicPacketSocketFactory socket_factory_;
   cricket::FakePortAllocator allocator_;
   cricket::FakePortAllocatorSession* session_;
   // Muxer object will be delete itself after all registered session proxies

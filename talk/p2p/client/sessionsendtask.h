@@ -28,7 +28,7 @@
 #ifndef TALK_P2P_CLIENT_SESSIONSENDTASK_H_
 #define TALK_P2P_CLIENT_SESSIONSENDTASK_H_
 
-#include "talk/base/common.h"
+#include "webrtc/base/common.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/xmppclient.h"
 #include "talk/xmpp/xmppengine.h"
@@ -137,7 +137,7 @@ class SessionSendTask : public buzz::XmppTask {
 
  private:
   SessionManager *session_manager_;
-  talk_base::scoped_ptr<buzz::XmlElement> stanza_;
+  rtc::scoped_ptr<buzz::XmlElement> stanza_;
 };
 
 }

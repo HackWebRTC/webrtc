@@ -48,7 +48,7 @@
 #include <set>
 #include <vector>
 
-#include "talk/base/basictypes.h"
+#include "webrtc/base/basictypes.h"
 
 namespace cricket {
 

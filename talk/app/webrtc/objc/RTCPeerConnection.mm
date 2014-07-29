@@ -141,12 +141,12 @@ class RTCStatsObserver : public StatsObserver {
 
 @implementation RTCPeerConnection {
   NSMutableArray* _localStreams;
-  talk_base::scoped_ptr<webrtc::RTCPeerConnectionObserver> _observer;
-  talk_base::scoped_refptr<webrtc::PeerConnectionInterface> _peerConnection;
+  rtc::scoped_ptr<webrtc::RTCPeerConnectionObserver> _observer;
+  rtc::scoped_refptr<webrtc::PeerConnectionInterface> _peerConnection;
 }
 
 - (BOOL)addICECandidate:(RTCICECandidate*)candidate {
-  talk_base::scoped_ptr<const webrtc::IceCandidateInterface> iceCandidate(
+  rtc::scoped_ptr<const webrtc::IceCandidateInterface> iceCandidate(
       candidate.candidate);
   return self.peerConnection->AddIceCandidate(iceCandidate.get());
 }
@@ -165,7 +165,7 @@ class RTCStatsObserver : public StatsObserver {
 - (RTCDataChannel*)createDataChannelWithLabel:(NSString*)label
                                        config:(RTCDataChannelInit*)config {
   std::string labelString([label UTF8String]);
-  talk_base::scoped_refptr<webrtc::DataChannelInterface> dataChannel =
+  rtc::scoped_refptr<webrtc::DataChannelInterface> dataChannel =
       self.peerConnection->CreateDataChannel(labelString,
                                              config.dataChannelInit);
   return [[RTCDataChannel alloc] initWithDataChannel:dataChannel];
@@ -173,16 +173,16 @@ class RTCStatsObserver : public StatsObserver {
 
 - (void)createAnswerWithDelegate:(id<RTCSessionDescriptionDelegate>)delegate
                      constraints:(RTCMediaConstraints*)constraints {
-  talk_base::scoped_refptr<webrtc::RTCCreateSessionDescriptionObserver>
-      observer(new talk_base::RefCountedObject<
+  rtc::scoped_refptr<webrtc::RTCCreateSessionDescriptionObserver>
+      observer(new rtc::RefCountedObject<
           webrtc::RTCCreateSessionDescriptionObserver>(delegate, self));
   self.peerConnection->CreateAnswer(observer, constraints.constraints);
 }
 
 - (void)createOfferWithDelegate:(id<RTCSessionDescriptionDelegate>)delegate
                     constraints:(RTCMediaConstraints*)constraints {
-  talk_base::scoped_refptr<webrtc::RTCCreateSessionDescriptionObserver>
-      observer(new talk_base::RefCountedObject<
+  rtc::scoped_refptr<webrtc::RTCCreateSessionDescriptionObserver>
+      observer(new rtc::RefCountedObject<
           webrtc::RTCCreateSessionDescriptionObserver>(delegate, self));
   self.peerConnection->CreateOffer(observer, constraints.constraints);
 }
@@ -195,8 +195,8 @@ class RTCStatsObserver : public StatsObserver {
 - (void)setLocalDescriptionWithDelegate:
             (id<RTCSessionDescriptionDelegate>)delegate
                      sessionDescription:(RTCSessionDescription*)sdp {
-  talk_base::scoped_refptr<webrtc::RTCSetSessionDescriptionObserver> observer(
-      new talk_base::RefCountedObject<webrtc::RTCSetSessionDescriptionObserver>(
+  rtc::scoped_refptr<webrtc::RTCSetSessionDescriptionObserver> observer(
+      new rtc::RefCountedObject<webrtc::RTCSetSessionDescriptionObserver>(
           delegate, self));
   self.peerConnection->SetLocalDescription(observer, sdp.sessionDescription);
 }
@@ -204,8 +204,8 @@ class RTCStatsObserver : public StatsObserver {
 - (void)setRemoteDescriptionWithDelegate:
             (id<RTCSessionDescriptionDelegate>)delegate
                       sessionDescription:(RTCSessionDescription*)sdp {
-  talk_base::scoped_refptr<webrtc::RTCSetSessionDescriptionObserver> observer(
-      new talk_base::RefCountedObject<webrtc::RTCSetSessionDescriptionObserver>(
+  rtc::scoped_refptr<webrtc::RTCSetSessionDescriptionObserver> observer(
+      new rtc::RefCountedObject<webrtc::RTCSetSessionDescriptionObserver>(
           delegate, self));
   self.peerConnection->SetRemoteDescription(observer, sdp.sessionDescription);
 }
@@ -261,8 +261,8 @@ class RTCStatsObserver : public StatsObserver {
 - (BOOL)getStatsWithDelegate:(id<RTCStatsDelegate>)delegate
             mediaStreamTrack:(RTCMediaStreamTrack*)mediaStreamTrack
             statsOutputLevel:(RTCStatsOutputLevel)statsOutputLevel {
-  talk_base::scoped_refptr<webrtc::RTCStatsObserver> observer(
-      new talk_base::RefCountedObject<webrtc::RTCStatsObserver>(delegate,
+  rtc::scoped_refptr<webrtc::RTCStatsObserver> observer(
+      new rtc::RefCountedObject<webrtc::RTCStatsObserver>(delegate,
                                                                 self));
   webrtc::PeerConnectionInterface::StatsOutputLevel nativeOutputLevel =
       [RTCEnumConverter convertStatsOutputLevelToNative:statsOutputLevel];
@@ -287,7 +287,7 @@ class RTCStatsObserver : public StatsObserver {
   return self;
 }
 
-- (talk_base::scoped_refptr<webrtc::PeerConnectionInterface>)peerConnection {
+- (rtc::scoped_refptr<webrtc::PeerConnectionInterface>)peerConnection {
   return _peerConnection;
 }
 

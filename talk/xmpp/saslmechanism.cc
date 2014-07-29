@@ -25,12 +25,12 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/base/base64.h"
+#include "webrtc/base/base64.h"
 #include "talk/xmllite/xmlelement.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/saslmechanism.h"
 
-using talk_base::Base64;
+using rtc::Base64;
 
 namespace buzz {
 

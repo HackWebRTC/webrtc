@@ -26,7 +26,7 @@
  */
 
 #include "talk/app/webrtc/mediastream.h"
-#include "talk/base/logging.h"
+#include "webrtc/base/logging.h"
 
 namespace webrtc {
 
@@ -42,10 +42,10 @@ static typename V::iterator FindTrack(V* vector,
   return it;
 };
 
-talk_base::scoped_refptr<MediaStream> MediaStream::Create(
+rtc::scoped_refptr<MediaStream> MediaStream::Create(
     const std::string& label) {
-  talk_base::RefCountedObject<MediaStream>* stream =
-      new talk_base::RefCountedObject<MediaStream>(label);
+  rtc::RefCountedObject<MediaStream>* stream =
+      new rtc::RefCountedObject<MediaStream>(label);
   return stream;
 }
 
@@ -69,7 +69,7 @@ bool MediaStream::RemoveTrack(VideoTrackInterface* track) {
   return RemoveTrack<VideoTrackVector>(&video_tracks_, track);
 }
 
-talk_base::scoped_refptr<AudioTrackInterface>
+rtc::scoped_refptr<AudioTrackInterface>
 MediaStream::FindAudioTrack(const std::string& track_id) {
   AudioTrackVector::iterator it = FindTrack(&audio_tracks_, track_id);
   if (it == audio_tracks_.end())
@@ -77,7 +77,7 @@ MediaStream::FindAudioTrack(const std::string& track_id) {
   return *it;
 }
 
-talk_base::scoped_refptr<VideoTrackInterface>
+rtc::scoped_refptr<VideoTrackInterface>
 MediaStream::FindVideoTrack(const std::string& track_id) {
   VideoTrackVector::iterator it = FindTrack(&video_tracks_, track_id);
   if (it == video_tracks_.end())

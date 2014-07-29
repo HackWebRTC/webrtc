@@ -30,7 +30,7 @@
 
 #include "talk/p2p/base/packetsocketfactory.h"
 
-namespace talk_base {
+namespace rtc {
 
 class AsyncSocket;
 class SocketFactory;
@@ -63,6 +63,6 @@ class BasicPacketSocketFactory : public PacketSocketFactory {
   SocketFactory* socket_factory_;
 };
 
-}  // namespace talk_base
+}  // namespace rtc
 
 #endif  // TALK_BASE_BASICPACKETSOCKETFACTORY_H_

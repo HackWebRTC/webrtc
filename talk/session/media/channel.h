@@ -31,11 +31,11 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/asyncudpsocket.h"
-#include "talk/base/criticalsection.h"
-#include "talk/base/network.h"
-#include "talk/base/sigslot.h"
-#include "talk/base/window.h"
+#include "webrtc/base/asyncudpsocket.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/network.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/window.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/mediaengine.h"
 #include "talk/media/base/screencastid.h"
@@ -73,10 +73,10 @@ enum SinkType {
 // NetworkInterface.
 
 class BaseChannel
-    : public talk_base::MessageHandler, public sigslot::has_slots<>,
+    : public rtc::MessageHandler, public sigslot::has_slots<>,
       public MediaChannel::NetworkInterface {
  public:
-  BaseChannel(talk_base::Thread* thread, MediaEngineInterface* media_engine,
+  BaseChannel(rtc::Thread* thread, MediaEngineInterface* media_engine,
               MediaChannel* channel, BaseSession* session,
               const std::string& content_name, bool rtcp);
   virtual ~BaseChannel();
@@ -86,7 +86,7 @@ class BaseChannel
   // done.
   void Deinit();
 
-  talk_base::Thread* worker_thread() const { return worker_thread_; }
+  rtc::Thread* worker_thread() const { return worker_thread_; }
   BaseSession* session() const { return session_; }
   const std::string& content_name() { return content_name_; }
   TransportChannel* transport_channel() const {
@@ -151,7 +151,7 @@ class BaseChannel
   void RegisterSendSink(T* sink,
                         void (T::*OnPacket)(const void*, size_t, bool),
                         SinkType type) {
-    talk_base::CritScope cs(&signal_send_packet_cs_);
+    rtc::CritScope cs(&signal_send_packet_cs_);
     if (SINK_POST_CRYPTO == type) {
       SignalSendPacketPostCrypto.disconnect(sink);
       SignalSendPacketPostCrypto.connect(sink, OnPacket);
@@ -163,7 +163,7 @@ class BaseChannel
 
   void UnregisterSendSink(sigslot::has_slots<>* sink,
                           SinkType type) {
-    talk_base::CritScope cs(&signal_send_packet_cs_);
+    rtc::CritScope cs(&signal_send_packet_cs_);
     if (SINK_POST_CRYPTO == type) {
       SignalSendPacketPostCrypto.disconnect(sink);
     } else {
@@ -172,7 +172,7 @@ class BaseChannel
   }
 
   bool HasSendSinks(SinkType type) {
-    talk_base::CritScope cs(&signal_send_packet_cs_);
+    rtc::CritScope cs(&signal_send_packet_cs_);
     if (SINK_POST_CRYPTO == type) {
       return !SignalSendPacketPostCrypto.is_empty();
     } else {
@@ -184,7 +184,7 @@ class BaseChannel
   void RegisterRecvSink(T* sink,
                         void (T::*OnPacket)(const void*, size_t, bool),
                         SinkType type) {
-    talk_base::CritScope cs(&signal_recv_packet_cs_);
+    rtc::CritScope cs(&signal_recv_packet_cs_);
     if (SINK_POST_CRYPTO == type) {
       SignalRecvPacketPostCrypto.disconnect(sink);
       SignalRecvPacketPostCrypto.connect(sink, OnPacket);
@@ -196,7 +196,7 @@ class BaseChannel
 
   void UnregisterRecvSink(sigslot::has_slots<>* sink,
                           SinkType type) {
-    talk_base::CritScope cs(&signal_recv_packet_cs_);
+    rtc::CritScope cs(&signal_recv_packet_cs_);
     if (SINK_POST_CRYPTO == type) {
       SignalRecvPacketPostCrypto.disconnect(sink);
     } else {
@@ -205,7 +205,7 @@ class BaseChannel
   }
 
   bool HasRecvSinks(SinkType type) {
-    talk_base::CritScope cs(&signal_recv_packet_cs_);
+    rtc::CritScope cs(&signal_recv_packet_cs_);
     if (SINK_POST_CRYPTO == type) {
       return !SignalRecvPacketPostCrypto.is_empty();
     } else {
@@ -244,35 +244,35 @@ class BaseChannel
   }
   bool IsReadyToReceive() const;
   bool IsReadyToSend() const;
-  talk_base::Thread* signaling_thread() { return session_->signaling_thread(); }
+  rtc::Thread* signaling_thread() { return session_->signaling_thread(); }
   SrtpFilter* srtp_filter() { return &srtp_filter_; }
   bool rtcp() const { return rtcp_; }
 
   void FlushRtcpMessages();
 
   // NetworkInterface implementation, called by MediaEngine
-  virtual bool SendPacket(talk_base::Buffer* packet,
-                          talk_base::DiffServCodePoint dscp);
-  virtual bool SendRtcp(talk_base::Buffer* packet,
-                        talk_base::DiffServCodePoint dscp);
-  virtual int SetOption(SocketType type, talk_base::Socket::Option o, int val);
+  virtual bool SendPacket(rtc::Buffer* packet,
+                          rtc::DiffServCodePoint dscp);
+  virtual bool SendRtcp(rtc::Buffer* packet,
+                        rtc::DiffServCodePoint dscp);
+  virtual int SetOption(SocketType type, rtc::Socket::Option o, int val);
 
   // From TransportChannel
   void OnWritableState(TransportChannel* channel);
   virtual void OnChannelRead(TransportChannel* channel,
                              const char* data,
                              size_t len,
-                             const talk_base::PacketTime& packet_time,
+                             const rtc::PacketTime& packet_time,
                              int flags);
   void OnReadyToSend(TransportChannel* channel);
 
   bool PacketIsRtcp(const TransportChannel* channel, const char* data,
                     size_t len);
-  bool SendPacket(bool rtcp, talk_base::Buffer* packet,
-                  talk_base::DiffServCodePoint dscp);
-  virtual bool WantsPacket(bool rtcp, talk_base::Buffer* packet);
-  void HandlePacket(bool rtcp, talk_base::Buffer* packet,
-                    const talk_base::PacketTime& packet_time);
+  bool SendPacket(bool rtcp, rtc::Buffer* packet,
+                  rtc::DiffServCodePoint dscp);
+  virtual bool WantsPacket(bool rtcp, rtc::Buffer* packet);
+  void HandlePacket(bool rtcp, rtc::Buffer* packet,
+                    const rtc::PacketTime& packet_time);
 
   // Apply the new local/remote session description.
   void OnNewLocalDescription(BaseSession* session, ContentAction action);
@@ -344,7 +344,7 @@ class BaseChannel
                     std::string* error_desc);
 
   // From MessageHandler
-  virtual void OnMessage(talk_base::Message* pmsg);
+  virtual void OnMessage(rtc::Message* pmsg);
 
   // Handled in derived classes
   // Get the SRTP ciphers to use for RTP media
@@ -363,10 +363,10 @@ class BaseChannel
   sigslot::signal3<const void*, size_t, bool> SignalSendPacketPostCrypto;
   sigslot::signal3<const void*, size_t, bool> SignalRecvPacketPreCrypto;
   sigslot::signal3<const void*, size_t, bool> SignalRecvPacketPostCrypto;
-  talk_base::CriticalSection signal_send_packet_cs_;
-  talk_base::CriticalSection signal_recv_packet_cs_;
+  rtc::CriticalSection signal_send_packet_cs_;
+  rtc::CriticalSection signal_recv_packet_cs_;
 
-  talk_base::Thread* worker_thread_;
+  rtc::Thread* worker_thread_;
   MediaEngineInterface* media_engine_;
   BaseSession* session_;
   MediaChannel* media_channel_;
@@ -380,7 +380,7 @@ class BaseChannel
   SrtpFilter srtp_filter_;
   RtcpMuxFilter rtcp_mux_filter_;
   BundleFilter bundle_filter_;
-  talk_base::scoped_ptr<SocketMonitor> socket_monitor_;
+  rtc::scoped_ptr<SocketMonitor> socket_monitor_;
   bool enabled_;
   bool writable_;
   bool rtp_ready_to_send_;
@@ -399,7 +399,7 @@ class BaseChannel
 // and input/output level monitoring.
 class VoiceChannel : public BaseChannel {
  public:
-  VoiceChannel(talk_base::Thread* thread, MediaEngineInterface* media_engine,
+  VoiceChannel(rtc::Thread* thread, MediaEngineInterface* media_engine,
                VoiceMediaChannel* channel, BaseSession* session,
                const std::string& content_name, bool rtcp);
   ~VoiceChannel();
@@ -470,7 +470,7 @@ class VoiceChannel : public BaseChannel {
   // overrides from BaseChannel
   virtual void OnChannelRead(TransportChannel* channel,
                              const char* data, size_t len,
-                             const talk_base::PacketTime& packet_time,
+                             const rtc::PacketTime& packet_time,
                              int flags);
   virtual void ChangeState();
   virtual const ContentInfo* GetFirstContent(const SessionDescription* sdesc);
@@ -487,7 +487,7 @@ class VoiceChannel : public BaseChannel {
   bool SetOutputScaling_w(uint32 ssrc, double left, double right);
   bool GetStats_w(VoiceMediaInfo* stats);
 
-  virtual void OnMessage(talk_base::Message* pmsg);
+  virtual void OnMessage(rtc::Message* pmsg);
   virtual void GetSrtpCiphers(std::vector<std::string>* ciphers) const;
   virtual void OnConnectionMonitorUpdate(
       SocketMonitor* monitor, const std::vector<ConnectionInfo>& infos);
@@ -500,9 +500,9 @@ class VoiceChannel : public BaseChannel {
 
   static const int kEarlyMediaTimeout = 1000;
   bool received_media_;
-  talk_base::scoped_ptr<VoiceMediaMonitor> media_monitor_;
-  talk_base::scoped_ptr<AudioMonitor> audio_monitor_;
-  talk_base::scoped_ptr<TypingMonitor> typing_monitor_;
+  rtc::scoped_ptr<VoiceMediaMonitor> media_monitor_;
+  rtc::scoped_ptr<AudioMonitor> audio_monitor_;
+  rtc::scoped_ptr<TypingMonitor> typing_monitor_;
 };
 
 // VideoChannel is a specialization for video.
@@ -516,7 +516,7 @@ class VideoChannel : public BaseChannel {
     virtual ~ScreenCapturerFactory() {}
   };
 
-  VideoChannel(talk_base::Thread* thread, MediaEngineInterface* media_engine,
+  VideoChannel(rtc::Thread* thread, MediaEngineInterface* media_engine,
                VideoMediaChannel* channel, BaseSession* session,
                const std::string& content_name, bool rtcp,
                VoiceChannel* voice_channel);
@@ -545,7 +545,7 @@ class VideoChannel : public BaseChannel {
   void StartMediaMonitor(int cms);
   void StopMediaMonitor();
   sigslot::signal2<VideoChannel*, const VideoMediaInfo&> SignalMediaMonitor;
-  sigslot::signal2<uint32, talk_base::WindowEvent> SignalScreencastWindowEvent;
+  sigslot::signal2<uint32, rtc::WindowEvent> SignalScreencastWindowEvent;
 
   bool SendIntraFrame();
   bool RequestIntraFrame();
@@ -581,21 +581,21 @@ class VideoChannel : public BaseChannel {
 
   VideoCapturer* AddScreencast_w(uint32 ssrc, const ScreencastId& id);
   bool RemoveScreencast_w(uint32 ssrc);
-  void OnScreencastWindowEvent_s(uint32 ssrc, talk_base::WindowEvent we);
+  void OnScreencastWindowEvent_s(uint32 ssrc, rtc::WindowEvent we);
   bool IsScreencasting_w() const;
   void GetScreencastDetails_w(ScreencastDetailsData* d) const;
   void SetScreenCaptureFactory_w(
       ScreenCapturerFactory* screencapture_factory);
   bool GetStats_w(VideoMediaInfo* stats);
 
-  virtual void OnMessage(talk_base::Message* pmsg);
+  virtual void OnMessage(rtc::Message* pmsg);
   virtual void GetSrtpCiphers(std::vector<std::string>* ciphers) const;
   virtual void OnConnectionMonitorUpdate(
       SocketMonitor* monitor, const std::vector<ConnectionInfo>& infos);
   virtual void OnMediaMonitorUpdate(
       VideoMediaChannel* media_channel, const VideoMediaInfo& info);
   virtual void OnScreencastWindowEvent(uint32 ssrc,
-                                       talk_base::WindowEvent event);
+                                       rtc::WindowEvent event);
   virtual void OnStateChange(VideoCapturer* capturer, CaptureState ev);
   bool GetLocalSsrc(const VideoCapturer* capturer, uint32* ssrc);
 
@@ -604,17 +604,17 @@ class VideoChannel : public BaseChannel {
 
   VoiceChannel* voice_channel_;
   VideoRenderer* renderer_;
-  talk_base::scoped_ptr<ScreenCapturerFactory> screencapture_factory_;
+  rtc::scoped_ptr<ScreenCapturerFactory> screencapture_factory_;
   ScreencastMap screencast_capturers_;
-  talk_base::scoped_ptr<VideoMediaMonitor> media_monitor_;
+  rtc::scoped_ptr<VideoMediaMonitor> media_monitor_;
 
-  talk_base::WindowEvent previous_we_;
+  rtc::WindowEvent previous_we_;
 };
 
 // DataChannel is a specialization for data.
 class DataChannel : public BaseChannel {
  public:
-  DataChannel(talk_base::Thread* thread,
+  DataChannel(rtc::Thread* thread,
               DataMediaChannel* media_channel,
               BaseSession* session,
               const std::string& content_name,
@@ -623,7 +623,7 @@ class DataChannel : public BaseChannel {
   bool Init();
 
   virtual bool SendData(const SendDataParams& params,
-                        const talk_base::Buffer& payload,
+                        const rtc::Buffer& payload,
                         SendDataResult* result);
 
   void StartMediaMonitor(int cms);
@@ -641,7 +641,7 @@ class DataChannel : public BaseChannel {
       SignalMediaError;
   sigslot::signal3<DataChannel*,
                    const ReceiveDataParams&,
-                   const talk_base::Buffer&>
+                   const rtc::Buffer&>
       SignalDataReceived;
   // Signal for notifying when the channel becomes ready to send data.
   // That occurs when the channel is enabled, the transport is writable,
@@ -657,9 +657,9 @@ class DataChannel : public BaseChannel {
   }
 
  private:
-  struct SendDataMessageData : public talk_base::MessageData {
+  struct SendDataMessageData : public rtc::MessageData {
     SendDataMessageData(const SendDataParams& params,
-                        const talk_base::Buffer* payload,
+                        const rtc::Buffer* payload,
                         SendDataResult* result)
         : params(params),
           payload(payload),
@@ -668,12 +668,12 @@ class DataChannel : public BaseChannel {
     }
 
     const SendDataParams& params;
-    const talk_base::Buffer* payload;
+    const rtc::Buffer* payload;
     SendDataResult* result;
     bool succeeded;
   };
 
-  struct DataReceivedMessageData : public talk_base::MessageData {
+  struct DataReceivedMessageData : public rtc::MessageData {
     // We copy the data because the data will become invalid after we
     // handle DataMediaChannel::SignalDataReceived but before we fire
     // SignalDataReceived.
@@ -683,10 +683,10 @@ class DataChannel : public BaseChannel {
           payload(data, len) {
     }
     const ReceiveDataParams params;
-    const talk_base::Buffer payload;
+    const rtc::Buffer payload;
   };
 
-  typedef talk_base::TypedMessageData<bool> DataChannelReadyToSendMessageData;
+  typedef rtc::TypedMessageData<bool> DataChannelReadyToSendMessageData;
 
   // overrides from BaseChannel
   virtual const ContentInfo* GetFirstContent(const SessionDescription* sdesc);
@@ -706,9 +706,9 @@ class DataChannel : public BaseChannel {
                                   ContentAction action,
                                   std::string* error_desc);
   virtual void ChangeState();
-  virtual bool WantsPacket(bool rtcp, talk_base::Buffer* packet);
+  virtual bool WantsPacket(bool rtcp, rtc::Buffer* packet);
 
-  virtual void OnMessage(talk_base::Message* pmsg);
+  virtual void OnMessage(rtc::Message* pmsg);
   virtual void GetSrtpCiphers(std::vector<std::string>* ciphers) const;
   virtual void OnConnectionMonitorUpdate(
       SocketMonitor* monitor, const std::vector<ConnectionInfo>& infos);
@@ -722,7 +722,7 @@ class DataChannel : public BaseChannel {
   void OnSrtpError(uint32 ssrc, SrtpFilter::Mode mode, SrtpFilter::Error error);
   void OnStreamClosedRemotely(uint32 sid);
 
-  talk_base::scoped_ptr<DataMediaMonitor> media_monitor_;
+  rtc::scoped_ptr<DataMediaMonitor> media_monitor_;
   // TODO(pthatcher): Make a separate SctpDataChannel and
   // RtpDataChannel instead of using this.
   DataChannelType data_channel_type_;

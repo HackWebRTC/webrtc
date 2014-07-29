@@ -25,20 +25,20 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/base/dscp.h"
-#include "talk/base/fakenetwork.h"
-#include "talk/base/firewallsocketserver.h"
-#include "talk/base/gunit.h"
-#include "talk/base/helpers.h"
-#include "talk/base/logging.h"
-#include "talk/base/natserver.h"
-#include "talk/base/natsocketfactory.h"
-#include "talk/base/physicalsocketserver.h"
-#include "talk/base/proxyserver.h"
-#include "talk/base/socketaddress.h"
-#include "talk/base/ssladapter.h"
-#include "talk/base/thread.h"
-#include "talk/base/virtualsocketserver.h"
+#include "webrtc/base/dscp.h"
+#include "webrtc/base/fakenetwork.h"
+#include "webrtc/base/firewallsocketserver.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/natserver.h"
+#include "webrtc/base/natsocketfactory.h"
+#include "webrtc/base/physicalsocketserver.h"
+#include "webrtc/base/proxyserver.h"
+#include "webrtc/base/socketaddress.h"
+#include "webrtc/base/ssladapter.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/base/virtualsocketserver.h"
 #include "talk/p2p/base/p2ptransportchannel.h"
 #include "talk/p2p/base/testrelayserver.h"
 #include "talk/p2p/base/teststunserver.h"
@@ -51,7 +51,7 @@ using cricket::kDefaultStepDelay;
 using cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG;
 using cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET;
 using cricket::ServerAddresses;
-using talk_base::SocketAddress;
+using rtc::SocketAddress;
 
 static const int kDefaultTimeout = 1000;
 static const int kOnlyLocalPorts = cricket::PORTALLOCATOR_DISABLE_STUN |
@@ -129,15 +129,15 @@ static const uint64 kTiebreaker2 = 22222;
 // Note that this class is a base class for use by other tests, who will provide
 // specialized test behavior.
 class P2PTransportChannelTestBase : public testing::Test,
-                                    public talk_base::MessageHandler,
+                                    public rtc::MessageHandler,
                                     public sigslot::has_slots<> {
  public:
   P2PTransportChannelTestBase()
-      : main_(talk_base::Thread::Current()),
-        pss_(new talk_base::PhysicalSocketServer),
-        vss_(new talk_base::VirtualSocketServer(pss_.get())),
-        nss_(new talk_base::NATSocketServer(vss_.get())),
-        ss_(new talk_base::FirewallSocketServer(nss_.get())),
+      : main_(rtc::Thread::Current()),
+        pss_(new rtc::PhysicalSocketServer),
+        vss_(new rtc::VirtualSocketServer(pss_.get())),
+        nss_(new rtc::NATSocketServer(vss_.get())),
+        ss_(new rtc::FirewallSocketServer(nss_.get())),
         ss_scope_(ss_.get()),
         stun_server_(main_, kStunAddr),
         turn_server_(main_, kTurnUdpIntAddr, kTurnUdpExtAddr),
@@ -213,7 +213,7 @@ class P2PTransportChannelTestBase : public testing::Test,
 
     std::string name_;  // TODO - Currently not used.
     std::list<std::string> ch_packets_;
-    talk_base::scoped_ptr<cricket::P2PTransportChannel> ch_;
+    rtc::scoped_ptr<cricket::P2PTransportChannel> ch_;
   };
 
   struct Endpoint {
@@ -249,8 +249,8 @@ class P2PTransportChannelTestBase : public testing::Test,
       allocator_->set_allow_tcp_listen(allow_tcp_listen);
     }
 
-    talk_base::FakeNetworkManager network_manager_;
-    talk_base::scoped_ptr<cricket::BasicPortAllocator> allocator_;
+    rtc::FakeNetworkManager network_manager_;
+    rtc::scoped_ptr<cricket::BasicPortAllocator> allocator_;
     ChannelData cd1_;
     ChannelData cd2_;
     int signaling_delay_;
@@ -260,7 +260,7 @@ class P2PTransportChannelTestBase : public testing::Test,
     cricket::IceProtocolType protocol_type_;
   };
 
-  struct CandidateData : public talk_base::MessageData {
+  struct CandidateData : public rtc::MessageData {
     CandidateData(cricket::TransportChannel* ch, const cricket::Candidate& c)
         : channel(ch), candidate(c) {
     }
@@ -367,15 +367,15 @@ class P2PTransportChannelTestBase : public testing::Test,
   static const Result kPrflxTcpToLocalTcp;
 
   static void SetUpTestCase() {
-    talk_base::InitializeSSL();
+    rtc::InitializeSSL();
   }
 
   static void TearDownTestCase() {
-    talk_base::CleanupSSL();
+    rtc::CleanupSSL();
   }
 
-  talk_base::NATSocketServer* nat() { return nss_.get(); }
-  talk_base::FirewallSocketServer* fw() { return ss_.get(); }
+  rtc::NATSocketServer* nat() { return nss_.get(); }
+  rtc::FirewallSocketServer* fw() { return ss_.get(); }
 
   Endpoint* GetEndpoint(int endpoint) {
     if (endpoint == 0) {
@@ -395,10 +395,10 @@ class P2PTransportChannelTestBase : public testing::Test,
   void RemoveAddress(int endpoint, const SocketAddress& addr) {
     GetEndpoint(endpoint)->network_manager_.RemoveInterface(addr);
   }
-  void SetProxy(int endpoint, talk_base::ProxyType type) {
-    talk_base::ProxyInfo info;
+  void SetProxy(int endpoint, rtc::ProxyType type) {
+    rtc::ProxyInfo info;
     info.type = type;
-    info.address = (type == talk_base::PROXY_HTTPS) ?
+    info.address = (type == rtc::PROXY_HTTPS) ?
         kHttpsProxyAddrs[endpoint] : kSocksProxyAddrs[endpoint];
     GetAllocator(endpoint)->set_proxy("unittest/1.0", info);
   }
@@ -428,7 +428,7 @@ class P2PTransportChannelTestBase : public testing::Test,
   }
 
   void Test(const Result& expected) {
-    int32 connect_start = talk_base::Time(), connect_time;
+    int32 connect_start = rtc::Time(), connect_time;
 
     // Create the channels and wait for them to connect.
     CreateChannels(1);
@@ -440,7 +440,7 @@ class P2PTransportChannelTestBase : public testing::Test,
                             ep2_ch1()->writable(),
                             expected.connect_wait,
                             1000);
-    connect_time = talk_base::TimeSince(connect_start);
+    connect_time = rtc::TimeSince(connect_start);
     if (connect_time < expected.connect_wait) {
       LOG(LS_INFO) << "Connect time: " << connect_time << " ms";
     } else {
@@ -452,7 +452,7 @@ class P2PTransportChannelTestBase : public testing::Test,
     // This may take up to 2 seconds.
     if (ep1_ch1()->best_connection() &&
         ep2_ch1()->best_connection()) {
-      int32 converge_start = talk_base::Time(), converge_time;
+      int32 converge_start = rtc::Time(), converge_time;
       int converge_wait = 2000;
       EXPECT_TRUE_WAIT_MARGIN(
           LocalCandidate(ep1_ch1())->type() == expected.local_type &&
@@ -504,7 +504,7 @@ class P2PTransportChannelTestBase : public testing::Test,
         }
       }
 
-      converge_time = talk_base::TimeSince(converge_start);
+      converge_time = rtc::TimeSince(converge_start);
       if (converge_time < converge_wait) {
         LOG(LS_INFO) << "Converge time: " << converge_time << " ms";
       } else {
@@ -657,8 +657,8 @@ class P2PTransportChannelTestBase : public testing::Test,
     main_->PostDelayed(GetEndpoint(ch)->signaling_delay_, this, 0,
                        new CandidateData(ch, c));
   }
-  void OnMessage(talk_base::Message* msg) {
-    talk_base::scoped_ptr<CandidateData> data(
+  void OnMessage(rtc::Message* msg) {
+    rtc::scoped_ptr<CandidateData> data(
         static_cast<CandidateData*>(msg->pdata));
     cricket::P2PTransportChannel* rch = GetRemoteChannel(data->channel);
     cricket::Candidate c = data->candidate;
@@ -673,7 +673,7 @@ class P2PTransportChannelTestBase : public testing::Test,
     rch->OnCandidate(c);
   }
   void OnReadPacket(cricket::TransportChannel* channel, const char* data,
-                    size_t len, const talk_base::PacketTime& packet_time,
+                    size_t len, const rtc::PacketTime& packet_time,
                     int flags) {
     std::list<std::string>& packets = GetPacketList(channel);
     packets.push_front(std::string(data, len));
@@ -687,7 +687,7 @@ class P2PTransportChannelTestBase : public testing::Test,
   }
   int SendData(cricket::TransportChannel* channel,
                const char* data, size_t len) {
-    talk_base::PacketOptions options;
+    rtc::PacketOptions options;
     return channel->SendPacket(data, len, options, 0);
   }
   bool CheckDataOnChannel(cricket::TransportChannel* channel,
@@ -739,17 +739,17 @@ class P2PTransportChannelTestBase : public testing::Test,
   }
 
  private:
-  talk_base::Thread* main_;
-  talk_base::scoped_ptr<talk_base::PhysicalSocketServer> pss_;
-  talk_base::scoped_ptr<talk_base::VirtualSocketServer> vss_;
-  talk_base::scoped_ptr<talk_base::NATSocketServer> nss_;
-  talk_base::scoped_ptr<talk_base::FirewallSocketServer> ss_;
-  talk_base::SocketServerScope ss_scope_;
+  rtc::Thread* main_;
+  rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
+  rtc::scoped_ptr<rtc::VirtualSocketServer> vss_;
+  rtc::scoped_ptr<rtc::NATSocketServer> nss_;
+  rtc::scoped_ptr<rtc::FirewallSocketServer> ss_;
+  rtc::SocketServerScope ss_scope_;
   cricket::TestStunServer stun_server_;
   cricket::TestTurnServer turn_server_;
   cricket::TestRelayServer relay_server_;
-  talk_base::SocksProxyServer socks_server1_;
-  talk_base::SocksProxyServer socks_server2_;
+  rtc::SocksProxyServer socks_server1_;
+  rtc::SocksProxyServer socks_server2_;
   Endpoint ep1_;
   Endpoint ep2_;
   bool clear_remote_candidates_ufrag_pwd_;
@@ -814,13 +814,13 @@ class P2PTransportChannelTest : public P2PTransportChannelTestBase {
     GetEndpoint(0)->allocator_.reset(
         new cricket::BasicPortAllocator(&(GetEndpoint(0)->network_manager_),
         stun_servers,
-        talk_base::SocketAddress(), talk_base::SocketAddress(),
-        talk_base::SocketAddress()));
+        rtc::SocketAddress(), rtc::SocketAddress(),
+        rtc::SocketAddress()));
     GetEndpoint(1)->allocator_.reset(
         new cricket::BasicPortAllocator(&(GetEndpoint(1)->network_manager_),
         stun_servers,
-        talk_base::SocketAddress(), talk_base::SocketAddress(),
-        talk_base::SocketAddress()));
+        rtc::SocketAddress(), rtc::SocketAddress(),
+        rtc::SocketAddress()));
 
     cricket::RelayServerConfig relay_server(cricket::RELAY_GTURN);
     if (type == cricket::ICEPROTO_RFC5245) {
@@ -860,7 +860,7 @@ class P2PTransportChannelTest : public P2PTransportChannelTestBase {
         AddAddress(endpoint, kPrivateAddrs[endpoint]);
         // Add a single NAT of the desired type
         nat()->AddTranslator(kPublicAddrs[endpoint], kNatAddrs[endpoint],
-            static_cast<talk_base::NATType>(config - NAT_FULL_CONE))->
+            static_cast<rtc::NATType>(config - NAT_FULL_CONE))->
             AddClient(kPrivateAddrs[endpoint]);
         break;
       case NAT_DOUBLE_CONE:
@@ -869,9 +869,9 @@ class P2PTransportChannelTest : public P2PTransportChannelTestBase {
         // Add a two cascaded NATs of the desired types
         nat()->AddTranslator(kPublicAddrs[endpoint], kNatAddrs[endpoint],
             (config == NAT_DOUBLE_CONE) ?
-                talk_base::NAT_OPEN_CONE : talk_base::NAT_SYMMETRIC)->
+                rtc::NAT_OPEN_CONE : rtc::NAT_SYMMETRIC)->
             AddTranslator(kPrivateAddrs[endpoint], kCascadedNatAddrs[endpoint],
-                talk_base::NAT_OPEN_CONE)->
+                rtc::NAT_OPEN_CONE)->
                 AddClient(kCascadedPrivateAddrs[endpoint]);
         break;
       case BLOCK_UDP:
@@ -881,34 +881,34 @@ class P2PTransportChannelTest : public P2PTransportChannelTestBase {
       case PROXY_SOCKS:
         AddAddress(endpoint, kPublicAddrs[endpoint]);
         // Block all UDP
-        fw()->AddRule(false, talk_base::FP_UDP, talk_base::FD_ANY,
+        fw()->AddRule(false, rtc::FP_UDP, rtc::FD_ANY,
                       kPublicAddrs[endpoint]);
         if (config == BLOCK_UDP_AND_INCOMING_TCP) {
           // Block TCP inbound to the endpoint
-          fw()->AddRule(false, talk_base::FP_TCP, SocketAddress(),
+          fw()->AddRule(false, rtc::FP_TCP, SocketAddress(),
                         kPublicAddrs[endpoint]);
         } else if (config == BLOCK_ALL_BUT_OUTGOING_HTTP) {
           // Block all TCP to/from the endpoint except 80/443 out
-          fw()->AddRule(true, talk_base::FP_TCP, kPublicAddrs[endpoint],
-                        SocketAddress(talk_base::IPAddress(INADDR_ANY), 80));
-          fw()->AddRule(true, talk_base::FP_TCP, kPublicAddrs[endpoint],
-                        SocketAddress(talk_base::IPAddress(INADDR_ANY), 443));
-          fw()->AddRule(false, talk_base::FP_TCP, talk_base::FD_ANY,
+          fw()->AddRule(true, rtc::FP_TCP, kPublicAddrs[endpoint],
+                        SocketAddress(rtc::IPAddress(INADDR_ANY), 80));
+          fw()->AddRule(true, rtc::FP_TCP, kPublicAddrs[endpoint],
+                        SocketAddress(rtc::IPAddress(INADDR_ANY), 443));
+          fw()->AddRule(false, rtc::FP_TCP, rtc::FD_ANY,
                         kPublicAddrs[endpoint]);
         } else if (config == PROXY_HTTPS) {
           // Block all TCP to/from the endpoint except to the proxy server
-          fw()->AddRule(true, talk_base::FP_TCP, kPublicAddrs[endpoint],
+          fw()->AddRule(true, rtc::FP_TCP, kPublicAddrs[endpoint],
                         kHttpsProxyAddrs[endpoint]);
-          fw()->AddRule(false, talk_base::FP_TCP, talk_base::FD_ANY,
+          fw()->AddRule(false, rtc::FP_TCP, rtc::FD_ANY,
                         kPublicAddrs[endpoint]);
-          SetProxy(endpoint, talk_base::PROXY_HTTPS);
+          SetProxy(endpoint, rtc::PROXY_HTTPS);
         } else if (config == PROXY_SOCKS) {
           // Block all TCP to/from the endpoint except to the proxy server
-          fw()->AddRule(true, talk_base::FP_TCP, kPublicAddrs[endpoint],
+          fw()->AddRule(true, rtc::FP_TCP, kPublicAddrs[endpoint],
                         kSocksProxyAddrs[endpoint]);
-          fw()->AddRule(false, talk_base::FP_TCP, talk_base::FD_ANY,
+          fw()->AddRule(false, rtc::FP_TCP, rtc::FD_ANY,
                         kPublicAddrs[endpoint]);
-          SetProxy(endpoint, talk_base::PROXY_SOCKS5);
+          SetProxy(endpoint, rtc::PROXY_SOCKS5);
         }
         break;
       default:
@@ -1310,7 +1310,7 @@ TEST_F(P2PTransportChannelTest, IncomingOnlyBlocked) {
   ep1_ch1()->set_incoming_only(true);
 
   // Pump for 1 second and verify that the channels are not connected.
-  talk_base::Thread::Current()->ProcessMessages(1000);
+  rtc::Thread::Current()->ProcessMessages(1000);
 
   EXPECT_FALSE(ep1_ch1()->readable());
   EXPECT_FALSE(ep1_ch1()->writable());
@@ -1514,25 +1514,25 @@ TEST_F(P2PTransportChannelTest, TestDefaultDscpValue) {
   AddAddress(1, kPublicAddrs[1]);
 
   CreateChannels(1);
-  EXPECT_EQ(talk_base::DSCP_NO_CHANGE,
+  EXPECT_EQ(rtc::DSCP_NO_CHANGE,
             GetEndpoint(0)->cd1_.ch_->DefaultDscpValue());
-  EXPECT_EQ(talk_base::DSCP_NO_CHANGE,
+  EXPECT_EQ(rtc::DSCP_NO_CHANGE,
             GetEndpoint(1)->cd1_.ch_->DefaultDscpValue());
   GetEndpoint(0)->cd1_.ch_->SetOption(
-      talk_base::Socket::OPT_DSCP, talk_base::DSCP_CS6);
+      rtc::Socket::OPT_DSCP, rtc::DSCP_CS6);
   GetEndpoint(1)->cd1_.ch_->SetOption(
-      talk_base::Socket::OPT_DSCP, talk_base::DSCP_CS6);
-  EXPECT_EQ(talk_base::DSCP_CS6,
+      rtc::Socket::OPT_DSCP, rtc::DSCP_CS6);
+  EXPECT_EQ(rtc::DSCP_CS6,
             GetEndpoint(0)->cd1_.ch_->DefaultDscpValue());
-  EXPECT_EQ(talk_base::DSCP_CS6,
+  EXPECT_EQ(rtc::DSCP_CS6,
             GetEndpoint(1)->cd1_.ch_->DefaultDscpValue());
   GetEndpoint(0)->cd1_.ch_->SetOption(
-      talk_base::Socket::OPT_DSCP, talk_base::DSCP_AF41);
+      rtc::Socket::OPT_DSCP, rtc::DSCP_AF41);
   GetEndpoint(1)->cd1_.ch_->SetOption(
-      talk_base::Socket::OPT_DSCP, talk_base::DSCP_AF41);
-  EXPECT_EQ(talk_base::DSCP_AF41,
+      rtc::Socket::OPT_DSCP, rtc::DSCP_AF41);
+  EXPECT_EQ(rtc::DSCP_AF41,
             GetEndpoint(0)->cd1_.ch_->DefaultDscpValue());
-  EXPECT_EQ(talk_base::DSCP_AF41,
+  EXPECT_EQ(rtc::DSCP_AF41,
             GetEndpoint(1)->cd1_.ch_->DefaultDscpValue());
 }
 
@@ -1608,13 +1608,13 @@ class P2PTransportChannelSameNatTest : public P2PTransportChannelTestBase {
  protected:
   void ConfigureEndpoints(Config nat_type, Config config1, Config config2) {
     ASSERT(nat_type >= NAT_FULL_CONE && nat_type <= NAT_SYMMETRIC);
-    talk_base::NATSocketServer::Translator* outer_nat =
+    rtc::NATSocketServer::Translator* outer_nat =
         nat()->AddTranslator(kPublicAddrs[0], kNatAddrs[0],
-            static_cast<talk_base::NATType>(nat_type - NAT_FULL_CONE));
+            static_cast<rtc::NATType>(nat_type - NAT_FULL_CONE));
     ConfigureEndpoint(outer_nat, 0, config1);
     ConfigureEndpoint(outer_nat, 1, config2);
   }
-  void ConfigureEndpoint(talk_base::NATSocketServer::Translator* nat,
+  void ConfigureEndpoint(rtc::NATSocketServer::Translator* nat,
                          int endpoint, Config config) {
     ASSERT(config <= NAT_SYMMETRIC);
     if (config == OPEN) {
@@ -1623,7 +1623,7 @@ class P2PTransportChannelSameNatTest : public P2PTransportChannelTestBase {
     } else {
       AddAddress(endpoint, kCascadedPrivateAddrs[endpoint]);
       nat->AddTranslator(kPrivateAddrs[endpoint], kCascadedNatAddrs[endpoint],
-          static_cast<talk_base::NATType>(config - NAT_FULL_CONE))->AddClient(
+          static_cast<rtc::NATType>(config - NAT_FULL_CONE))->AddClient(
               kCascadedPrivateAddrs[endpoint]);
     }
   }
@@ -1673,7 +1673,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailover) {
 
   // Blackhole any traffic to or from the public addrs.
   LOG(LS_INFO) << "Failing over...";
-  fw()->AddRule(false, talk_base::FP_ANY, talk_base::FD_ANY,
+  fw()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY,
                 kPublicAddrs[1]);
 
   // We should detect loss of connectivity within 5 seconds or so.

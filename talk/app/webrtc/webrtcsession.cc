@@ -38,10 +38,10 @@
 #include "talk/app/webrtc/mediastreamsignaling.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/app/webrtc/webrtcsessiondescriptionfactory.h"
-#include "talk/base/helpers.h"
-#include "talk/base/logging.h"
-#include "talk/base/stringencode.h"
-#include "talk/base/stringutils.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/stringencode.h"
+#include "webrtc/base/stringutils.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/session/media/channel.h"
@@ -381,7 +381,7 @@ static void SetOptionFromOptionalConstraint(
   std::string string_value;
   T value;
   if (constraints->GetOptional().FindFirst(key, &string_value)) {
-    if (talk_base::FromString(string_value, &value)) {
+    if (rtc::FromString(string_value, &value)) {
       option->Set(value);
     }
   }
@@ -447,12 +447,12 @@ class IceRestartAnswerLatch {
 
 WebRtcSession::WebRtcSession(
     cricket::ChannelManager* channel_manager,
-    talk_base::Thread* signaling_thread,
-    talk_base::Thread* worker_thread,
+    rtc::Thread* signaling_thread,
+    rtc::Thread* worker_thread,
     cricket::PortAllocator* port_allocator,
     MediaStreamSignaling* mediastream_signaling)
     : cricket::BaseSession(signaling_thread, worker_thread, port_allocator,
-                           talk_base::ToString(talk_base::CreateRandomId64() &
+                           rtc::ToString(rtc::CreateRandomId64() &
                                                LLONG_MAX),
                            cricket::NS_JINGLE_RTP, false),
       // RFC 3264: The numeric value of the session id and version in the
@@ -673,7 +673,7 @@ cricket::SecurePolicy WebRtcSession::SdesPolicy() const {
   return webrtc_session_desc_factory_->SdesPolicy();
 }
 
-bool WebRtcSession::GetSslRole(talk_base::SSLRole* role) {
+bool WebRtcSession::GetSslRole(rtc::SSLRole* role) {
   if (local_description() == NULL || remote_description() == NULL) {
     LOG(LS_INFO) << "Local and Remote descriptions must be applied to get "
                  << "SSL Role of the session.";
@@ -706,7 +706,7 @@ void WebRtcSession::CreateAnswer(CreateSessionDescriptionObserver* observer,
 bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,
                                         std::string* err_desc) {
   // Takes the ownership of |desc| regardless of the result.
-  talk_base::scoped_ptr<SessionDescriptionInterface> desc_temp(desc);
+  rtc::scoped_ptr<SessionDescriptionInterface> desc_temp(desc);
 
   // Validate SDP.
   if (!ValidateSessionDescription(desc, cricket::CS_LOCAL, err_desc)) {
@@ -751,7 +751,7 @@ bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,
   // local session description.
   mediastream_signaling_->OnLocalDescriptionChanged(local_desc_.get());
 
-  talk_base::SSLRole role;
+  rtc::SSLRole role;
   if (data_channel_type_ == cricket::DCT_SCTP && GetSslRole(&role)) {
     mediastream_signaling_->OnDtlsRoleReadyForSctp(role);
   }
@@ -764,7 +764,7 @@ bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,
 bool WebRtcSession::SetRemoteDescription(SessionDescriptionInterface* desc,
                                          std::string* err_desc) {
   // Takes the ownership of |desc| regardless of the result.
-  talk_base::scoped_ptr<SessionDescriptionInterface> desc_temp(desc);
+  rtc::scoped_ptr<SessionDescriptionInterface> desc_temp(desc);
 
   // Validate SDP.
   if (!ValidateSessionDescription(desc, cricket::CS_REMOTE, err_desc)) {
@@ -807,7 +807,7 @@ bool WebRtcSession::SetRemoteDescription(SessionDescriptionInterface* desc,
                                                desc);
   remote_desc_.reset(desc_temp.release());
 
-  talk_base::SSLRole role;
+  rtc::SSLRole role;
   if (data_channel_type_ == cricket::DCT_SCTP && GetSslRole(&role)) {
     mediastream_signaling_->OnDtlsRoleReadyForSctp(role);
   }
@@ -1082,7 +1082,7 @@ sigslot::signal0<>* WebRtcSession::GetOnDestroyedSignal() {
 }
 
 bool WebRtcSession::SendData(const cricket::SendDataParams& params,
-                             const talk_base::Buffer& payload,
+                             const rtc::Buffer& payload,
                              cricket::SendDataResult* result) {
   if (!data_channel_.get()) {
     LOG(LS_ERROR) << "SendData called when data_channel_ is NULL.";
@@ -1137,7 +1137,7 @@ bool WebRtcSession::ReadyToSendData() const {
   return data_channel_.get() && data_channel_->ready_to_send_data();
 }
 
-talk_base::scoped_refptr<DataChannel> WebRtcSession::CreateDataChannel(
+rtc::scoped_refptr<DataChannel> WebRtcSession::CreateDataChannel(
     const std::string& label,
     const InternalDataChannelInit* config) {
   if (state() == STATE_RECEIVEDTERMINATE) {
@@ -1151,7 +1151,7 @@ talk_base::scoped_refptr<DataChannel> WebRtcSession::CreateDataChannel(
       config ? (*config) : InternalDataChannelInit();
   if (data_channel_type_ == cricket::DCT_SCTP) {
     if (new_config.id < 0) {
-      talk_base::SSLRole role;
+      rtc::SSLRole role;
       if (GetSslRole(&role) &&
           !mediastream_signaling_->AllocateSctpSid(role, &new_config.id)) {
         LOG(LS_ERROR) << "No id can be allocated for the SCTP data channel.";
@@ -1164,7 +1164,7 @@ talk_base::scoped_refptr<DataChannel> WebRtcSession::CreateDataChannel(
     }
   }
 
-  talk_base::scoped_refptr<DataChannel> channel(DataChannel::Create(
+  rtc::scoped_refptr<DataChannel> channel(DataChannel::Create(
       this, data_channel_type_, label, new_config));
   if (channel && !mediastream_signaling_->AddDataChannel(channel))
     return NULL;
@@ -1184,7 +1184,7 @@ void WebRtcSession::ResetIceRestartLatch() {
   ice_restart_latch_->Reset();
 }
 
-void WebRtcSession::OnIdentityReady(talk_base::SSLIdentity* identity) {
+void WebRtcSession::OnIdentityReady(rtc::SSLIdentity* identity) {
   SetIdentity(identity);
 }
 
@@ -1551,7 +1551,7 @@ void WebRtcSession::CopySavedCandidates(
 void WebRtcSession::OnDataChannelMessageReceived(
     cricket::DataChannel* channel,
     const cricket::ReceiveDataParams& params,
-    const talk_base::Buffer& payload) {
+    const rtc::Buffer& payload) {
   ASSERT(data_channel_type_ == cricket::DCT_SCTP);
   if (params.type == cricket::DMT_CONTROL &&
       mediastream_signaling_->IsSctpSidAvailable(params.ssrc)) {

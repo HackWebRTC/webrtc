@@ -25,9 +25,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/base/byteorder.h"
-#include "talk/base/gunit.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/byteorder.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/thread.h"
 #include "talk/media/base/cryptoparams.h"
 #include "talk/media/base/fakertp.h"
 #include "talk/p2p/base/sessiondescription.h"
@@ -94,7 +94,7 @@ class SrtpFilterTest : public testing::Test {
     memcpy(rtp_packet, kPcmuFrame, rtp_len);
     // In order to be able to run this test function multiple times we can not
     // use the same sequence number twice. Increase the sequence number by one.
-    talk_base::SetBE16(reinterpret_cast<uint8*>(rtp_packet) + 2,
+    rtc::SetBE16(reinterpret_cast<uint8*>(rtp_packet) + 2,
                        ++sequence_number_);
     memcpy(original_rtp_packet, rtp_packet, rtp_len);
     memcpy(rtcp_packet, kRtcpReport, rtcp_len);
@@ -679,36 +679,36 @@ TEST_F(SrtpSessionTest, TestReplay) {
   EXPECT_TRUE(s2_.SetRecv(CS_AES_CM_128_HMAC_SHA1_80, kTestKey1, kTestKeyLen));
 
   // Initial sequence number.
-  talk_base::SetBE16(reinterpret_cast<uint8*>(rtp_packet_) + 2, seqnum_big);
+  rtc::SetBE16(reinterpret_cast<uint8*>(rtp_packet_) + 2, seqnum_big);
   EXPECT_TRUE(s1_.ProtectRtp(rtp_packet_, rtp_len_, sizeof(rtp_packet_),
                              &out_len));
 
   // Replay within the 1024 window should succeed.
-  talk_base::SetBE16(reinterpret_cast<uint8*>(rtp_packet_) + 2,
+  rtc::SetBE16(reinterpret_cast<uint8*>(rtp_packet_) + 2,
                      seqnum_big - replay_window + 1);
   EXPECT_TRUE(s1_.ProtectRtp(rtp_packet_, rtp_len_, sizeof(rtp_packet_),
                              &out_len));
 
   // Replay out side of the 1024 window should fail.
-  talk_base::SetBE16(reinterpret_cast<uint8*>(rtp_packet_) + 2,
+  rtc::SetBE16(reinterpret_cast<uint8*>(rtp_packet_) + 2,
                      seqnum_big - replay_window - 1);
   EXPECT_FALSE(s1_.ProtectRtp(rtp_packet_, rtp_len_, sizeof(rtp_packet_),
                               &out_len));
 
   // Increment sequence number to a small number.
-  talk_base::SetBE16(reinterpret_cast<uint8*>(rtp_packet_) + 2, seqnum_small);
+  rtc::SetBE16(reinterpret_cast<uint8*>(rtp_packet_) + 2, seqnum_small);
   EXPECT_TRUE(s1_.ProtectRtp(rtp_packet_, rtp_len_, sizeof(rtp_packet_),
                              &out_len));
 
   // Replay around 0 but out side of the 1024 window should fail.
-  talk_base::SetBE16(reinterpret_cast<uint8*>(rtp_packet_) + 2,
+  rtc::SetBE16(reinterpret_cast<uint8*>(rtp_packet_) + 2,
                      kMaxSeqnum + seqnum_small - replay_window - 1);
   EXPECT_FALSE(s1_.ProtectRtp(rtp_packet_, rtp_len_, sizeof(rtp_packet_),
                               &out_len));
 
   // Replay around 0 but within the 1024 window should succeed.
   for (uint16 seqnum = 65000; seqnum < 65003; ++seqnum) {
-    talk_base::SetBE16(reinterpret_cast<uint8*>(rtp_packet_) + 2, seqnum);
+    rtc::SetBE16(reinterpret_cast<uint8*>(rtp_packet_) + 2, seqnum);
     EXPECT_TRUE(s1_.ProtectRtp(rtp_packet_, rtp_len_, sizeof(rtp_packet_),
                                &out_len));
   }
@@ -718,7 +718,7 @@ TEST_F(SrtpSessionTest, TestReplay) {
   // without the fix, the loop above would keep incrementing local sequence
   // number in libsrtp, eventually the new sequence number would go out side
   // of the window.
-  talk_base::SetBE16(reinterpret_cast<uint8*>(rtp_packet_) + 2,
+  rtc::SetBE16(reinterpret_cast<uint8*>(rtp_packet_) + 2,
                      seqnum_small + 1);
   EXPECT_TRUE(s1_.ProtectRtp(rtp_packet_, rtp_len_, sizeof(rtp_packet_),
                              &out_len));
@@ -782,7 +782,7 @@ TEST_F(SrtpStatTest, TestProtectRtpError) {
   EXPECT_EQ(cricket::SrtpFilter::ERROR_NONE, error_);
   // Now the error will be triggered again.
   Reset();
-  talk_base::Thread::Current()->SleepMs(210);
+  rtc::Thread::Current()->SleepMs(210);
   srtp_stat_.AddProtectRtpResult(1, err_status_fail);
   EXPECT_EQ(1U, ssrc_);
   EXPECT_EQ(cricket::SrtpFilter::PROTECT, mode_);
@@ -806,7 +806,7 @@ TEST_F(SrtpStatTest, TestUnprotectRtpError) {
   EXPECT_EQ(cricket::SrtpFilter::UNPROTECT, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_REPLAY, error_);
   Reset();
-  talk_base::Thread::Current()->SleepMs(210);
+  rtc::Thread::Current()->SleepMs(210);
   srtp_stat_.AddUnprotectRtpResult(1, err_status_replay_old);
   EXPECT_EQ(1U, ssrc_);
   EXPECT_EQ(cricket::SrtpFilter::UNPROTECT, mode_);
@@ -824,7 +824,7 @@ TEST_F(SrtpStatTest, TestUnprotectRtpError) {
   EXPECT_EQ(cricket::SrtpFilter::ERROR_NONE, error_);
   // Now the error will be triggered again.
   Reset();
-  talk_base::Thread::Current()->SleepMs(210);
+  rtc::Thread::Current()->SleepMs(210);
   srtp_stat_.AddUnprotectRtpResult(1, err_status_fail);
   EXPECT_EQ(1U, ssrc_);
   EXPECT_EQ(cricket::SrtpFilter::UNPROTECT, mode_);
@@ -851,7 +851,7 @@ TEST_F(SrtpStatTest, TestProtectRtcpError) {
   EXPECT_EQ(cricket::SrtpFilter::ERROR_NONE, error_);
   // Now the error will be triggered again.
   Reset();
-  talk_base::Thread::Current()->SleepMs(210);
+  rtc::Thread::Current()->SleepMs(210);
   srtp_stat_.AddProtectRtcpResult(err_status_fail);
   EXPECT_EQ(cricket::SrtpFilter::PROTECT, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_FAIL, error_);
@@ -871,7 +871,7 @@ TEST_F(SrtpStatTest, TestUnprotectRtcpError) {
   EXPECT_EQ(cricket::SrtpFilter::UNPROTECT, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_REPLAY, error_);
   Reset();
-  talk_base::Thread::Current()->SleepMs(210);
+  rtc::Thread::Current()->SleepMs(210);
   srtp_stat_.AddUnprotectRtcpResult(err_status_replay_fail);
   EXPECT_EQ(cricket::SrtpFilter::UNPROTECT, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_REPLAY, error_);
@@ -886,7 +886,7 @@ TEST_F(SrtpStatTest, TestUnprotectRtcpError) {
   EXPECT_EQ(cricket::SrtpFilter::ERROR_NONE, error_);
   // Now the error will be triggered again.
   Reset();
-  talk_base::Thread::Current()->SleepMs(210);
+  rtc::Thread::Current()->SleepMs(210);
   srtp_stat_.AddUnprotectRtcpResult(err_status_fail);
   EXPECT_EQ(cricket::SrtpFilter::UNPROTECT, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_FAIL, error_);

@@ -64,10 +64,10 @@ bool VideoTrack::set_enabled(bool enable) {
   return MediaStreamTrack<VideoTrackInterface>::set_enabled(enable);
 }
 
-talk_base::scoped_refptr<VideoTrack> VideoTrack::Create(
+rtc::scoped_refptr<VideoTrack> VideoTrack::Create(
     const std::string& id, VideoSourceInterface* source) {
-  talk_base::RefCountedObject<VideoTrack>* track =
-      new talk_base::RefCountedObject<VideoTrack>(id, source);
+  rtc::RefCountedObject<VideoTrack>* track =
+      new rtc::RefCountedObject<VideoTrack>(id, source);
   return track;
 }
 

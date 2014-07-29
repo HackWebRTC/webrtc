@@ -40,8 +40,8 @@
 #include <map>
 #include <vector>
 #include <string>
-#include "talk/base/asyncpacketsocket.h"
-#include "talk/base/sigslot.h"
+#include "webrtc/base/asyncpacketsocket.h"
+#include "webrtc/base/sigslot.h"
 #include "talk/p2p/base/candidate.h"
 #include "talk/p2p/base/portinterface.h"
 #include "talk/p2p/base/portallocator.h"
@@ -66,7 +66,7 @@ class RemoteCandidate : public Candidate {
 // P2PTransportChannel manages the candidates and connection process to keep
 // two P2P clients connected to each other.
 class P2PTransportChannel : public TransportChannelImpl,
-                            public talk_base::MessageHandler {
+                            public rtc::MessageHandler {
  public:
   P2PTransportChannel(const std::string& content_name,
                       int component,
@@ -94,8 +94,8 @@ class P2PTransportChannel : public TransportChannelImpl,
 
   // From TransportChannel:
   virtual int SendPacket(const char *data, size_t len,
-                         const talk_base::PacketOptions& options, int flags);
-  virtual int SetOption(talk_base::Socket::Option opt, int value);
+                         const rtc::PacketOptions& options, int flags);
+  virtual int SetOption(rtc::Socket::Option opt, int value);
   virtual int GetError() { return error_; }
   virtual bool GetStats(std::vector<ConnectionInfo>* stats);
 
@@ -112,11 +112,11 @@ class P2PTransportChannel : public TransportChannelImpl,
   virtual bool IsDtlsActive() const { return false; }
 
   // Default implementation.
-  virtual bool GetSslRole(talk_base::SSLRole* role) const {
+  virtual bool GetSslRole(rtc::SSLRole* role) const {
     return false;
   }
 
-  virtual bool SetSslRole(talk_base::SSLRole role) {
+  virtual bool SetSslRole(rtc::SSLRole role) {
     return false;
   }
 
@@ -131,11 +131,11 @@ class P2PTransportChannel : public TransportChannelImpl,
   }
 
   // Returns false because the channel is not encrypted by default.
-  virtual bool GetLocalIdentity(talk_base::SSLIdentity** identity) const {
+  virtual bool GetLocalIdentity(rtc::SSLIdentity** identity) const {
     return false;
   }
 
-  virtual bool GetRemoteCertificate(talk_base::SSLCertificate** cert) const {
+  virtual bool GetRemoteCertificate(rtc::SSLCertificate** cert) const {
     return false;
   }
 
@@ -150,7 +150,7 @@ class P2PTransportChannel : public TransportChannelImpl,
     return false;
   }
 
-  virtual bool SetLocalIdentity(talk_base::SSLIdentity* identity) {
+  virtual bool SetLocalIdentity(rtc::SSLIdentity* identity) {
     return false;
   }
 
@@ -163,10 +163,10 @@ class P2PTransportChannel : public TransportChannelImpl,
   }
 
   // Helper method used only in unittest.
-  talk_base::DiffServCodePoint DefaultDscpValue() const;
+  rtc::DiffServCodePoint DefaultDscpValue() const;
 
  private:
-  talk_base::Thread* thread() { return worker_thread_; }
+  rtc::Thread* thread() { return worker_thread_; }
   PortAllocatorSession* allocator_session() {
     return allocator_sessions_.back();
   }
@@ -181,7 +181,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   void HandleNotWritable();
   void HandleAllTimedOut();
 
-  Connection* GetBestConnectionOnNetwork(talk_base::Network* network);
+  Connection* GetBestConnectionOnNetwork(rtc::Network* network);
   bool CreateConnections(const Candidate &remote_candidate,
                          PortInterface* origin_port, bool readable);
   bool CreateConnection(PortInterface* port, const Candidate& remote_candidate,
@@ -203,7 +203,7 @@ class P2PTransportChannel : public TransportChannelImpl,
                          const std::vector<Candidate>& candidates);
   void OnCandidatesAllocationDone(PortAllocatorSession* session);
   void OnUnknownAddress(PortInterface* port,
-                        const talk_base::SocketAddress& addr,
+                        const rtc::SocketAddress& addr,
                         ProtocolType proto,
                         IceMessage* stun_msg,
                         const std::string& remote_username,
@@ -213,19 +213,19 @@ class P2PTransportChannel : public TransportChannelImpl,
 
   void OnConnectionStateChange(Connection* connection);
   void OnReadPacket(Connection *connection, const char *data, size_t len,
-                    const talk_base::PacketTime& packet_time);
+                    const rtc::PacketTime& packet_time);
   void OnReadyToSend(Connection* connection);
   void OnConnectionDestroyed(Connection *connection);
 
   void OnUseCandidate(Connection* conn);
 
-  virtual void OnMessage(talk_base::Message *pmsg);
+  virtual void OnMessage(rtc::Message *pmsg);
   void OnSort();
   void OnPing();
 
   P2PTransport* transport_;
   PortAllocator *allocator_;
-  talk_base::Thread *worker_thread_;
+  rtc::Thread *worker_thread_;
   bool incoming_only_;
   bool waiting_for_signaling_;
   int error_;
@@ -239,7 +239,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   std::vector<RemoteCandidate> remote_candidates_;
   bool sort_dirty_;  // indicates whether another sort is needed right now
   bool was_writable_;
-  typedef std::map<talk_base::Socket::Option, int> OptionMap;
+  typedef std::map<rtc::Socket::Option, int> OptionMap;
   OptionMap options_;
   std::string ice_ufrag_;
   std::string ice_pwd_;

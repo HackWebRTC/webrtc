@@ -7,17 +7,17 @@
 #include <map>
 #include <string>
 
-#include "talk/base/network.h"
-#include "talk/base/basictypes.h"
-#include "talk/base/messagehandler.h"
-#include "talk/base/proxyinfo.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/sigslot.h"
-#include "talk/base/socketaddress.h"
+#include "webrtc/base/network.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/messagehandler.h"
+#include "webrtc/base/proxyinfo.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/socketaddress.h"
 #include "talk/p2p/base/basicpacketsocketfactory.h"
 #include "talk/p2p/client/httpportallocator.h"
 
-namespace talk_base {
+namespace rtc {
 class AsyncHttpRequest;
 class AutoDetectProxy;
 class BasicPacketSocketFactory;
@@ -60,13 +60,13 @@ struct ConnectInfo {
 
 // Identifier for a network interface and proxy address pair.
 struct NicId {
-  NicId(const talk_base::IPAddress& ip,
-        const talk_base::SocketAddress& proxy_address)
+  NicId(const rtc::IPAddress& ip,
+        const rtc::SocketAddress& proxy_address)
       : ip(ip),
         proxy_address(proxy_address) {
   }
-  talk_base::IPAddress ip;
-  talk_base::SocketAddress proxy_address;
+  rtc::IPAddress ip;
+  rtc::SocketAddress proxy_address;
 };
 
 // Comparator implementation identifying unique network interface and
@@ -93,11 +93,11 @@ class NicIdComparator {
 // Contains information of a network interface and proxy address pair.
 struct NicInfo {
   NicInfo() {}
-  talk_base::IPAddress ip;
-  talk_base::ProxyInfo proxy_info;
-  talk_base::SocketAddress external_address;
+  rtc::IPAddress ip;
+  rtc::ProxyInfo proxy_info;
+  rtc::SocketAddress external_address;
   ServerAddresses stun_server_addresses;
-  talk_base::SocketAddress media_server_address;
+  rtc::SocketAddress media_server_address;
   ConnectInfo stun;
   ConnectInfo http;
   ConnectInfo https;
@@ -119,7 +119,7 @@ class TestHttpPortAllocatorSession : public HttpPortAllocatorSession {
       int component,
       const std::string& ice_ufrag,
       const std::string& ice_pwd,
-      const std::vector<talk_base::SocketAddress>& stun_hosts,
+      const std::vector<rtc::SocketAddress>& stun_hosts,
       const std::vector<std::string>& relay_hosts,
       const std::string& relay_token,
       const std::string& user_agent)
@@ -127,30 +127,30 @@ class TestHttpPortAllocatorSession : public HttpPortAllocatorSession {
           allocator, content_name, component, ice_ufrag, ice_pwd, stun_hosts,
           relay_hosts, relay_token, user_agent) {
   }
-  void set_proxy(const talk_base::ProxyInfo& proxy) {
+  void set_proxy(const rtc::ProxyInfo& proxy) {
     proxy_ = proxy;
   }
 
   void ConfigReady(PortConfiguration* config);
 
-  void OnRequestDone(talk_base::SignalThread* data);
+  void OnRequestDone(rtc::SignalThread* data);
 
   sigslot::signal4<const std::string&, const std::string&,
                    const PortConfiguration*,
-                   const talk_base::ProxyInfo&> SignalConfigReady;
-  sigslot::signal1<talk_base::AsyncHttpRequest*> SignalRequestDone;
+                   const rtc::ProxyInfo&> SignalConfigReady;
+  sigslot::signal1<rtc::AsyncHttpRequest*> SignalRequestDone;
 
  private:
-  talk_base::ProxyInfo proxy_;
+  rtc::ProxyInfo proxy_;
 };
 
 // Runs a request/response check on all network interface and proxy
 // address combinations. The check is considered done either when all
 // checks has been successful or when the check times out.
 class ConnectivityChecker
-    : public talk_base::MessageHandler, public sigslot::has_slots<> {
+    : public rtc::MessageHandler, public sigslot::has_slots<> {
  public:
-  ConnectivityChecker(talk_base::Thread* worker,
+  ConnectivityChecker(rtc::Thread* worker,
                       const std::string& jid,
                       const std::string& session_id,
                       const std::string& user_agent,
@@ -163,7 +163,7 @@ class ConnectivityChecker
   virtual void Start();
 
   // MessageHandler implementation.
-  virtual void OnMessage(talk_base::Message *msg);
+  virtual void OnMessage(rtc::Message *msg);
 
   // Instruct checker to stop and wait until that's done.
   // Virtual for gMock.
@@ -179,7 +179,7 @@ class ConnectivityChecker
     timeout_ms_ = timeout;
   }
 
-  void set_stun_address(const talk_base::SocketAddress& stun_address) {
+  void set_stun_address(const rtc::SocketAddress& stun_address) {
     stun_address_ = stun_address;
   }
 
@@ -200,72 +200,72 @@ class ConnectivityChecker
 
  protected:
   // Can be overridden for test.
-  virtual talk_base::NetworkManager* CreateNetworkManager() {
-    return new talk_base::BasicNetworkManager();
+  virtual rtc::NetworkManager* CreateNetworkManager() {
+    return new rtc::BasicNetworkManager();
   }
-  virtual talk_base::BasicPacketSocketFactory* CreateSocketFactory(
-      talk_base::Thread* thread) {
-    return new talk_base::BasicPacketSocketFactory(thread);
+  virtual rtc::BasicPacketSocketFactory* CreateSocketFactory(
+      rtc::Thread* thread) {
+    return new rtc::BasicPacketSocketFactory(thread);
   }
   virtual HttpPortAllocator* CreatePortAllocator(
-      talk_base::NetworkManager* network_manager,
+      rtc::NetworkManager* network_manager,
       const std::string& user_agent,
       const std::string& relay_token);
   virtual StunPort* CreateStunPort(
       const std::string& username, const std::string& password,
-      const PortConfiguration* config, talk_base::Network* network);
+      const PortConfiguration* config, rtc::Network* network);
   virtual RelayPort* CreateRelayPort(
       const std::string& username, const std::string& password,
-      const PortConfiguration* config, talk_base::Network* network);
+      const PortConfiguration* config, rtc::Network* network);
   virtual void InitiateProxyDetection();
-  virtual void SetProxyInfo(const talk_base::ProxyInfo& info);
-  virtual talk_base::ProxyInfo GetProxyInfo() const;
+  virtual void SetProxyInfo(const rtc::ProxyInfo& info);
+  virtual rtc::ProxyInfo GetProxyInfo() const;
 
-  talk_base::Thread* worker() {
+  rtc::Thread* worker() {
     return worker_;
   }
 
  private:
-  bool AddNic(const talk_base::IPAddress& ip,
-              const talk_base::SocketAddress& proxy_address);
+  bool AddNic(const rtc::IPAddress& ip,
+              const rtc::SocketAddress& proxy_address);
   void AllocatePorts();
   void AllocateRelayPorts();
   void CheckNetworks();
   void CreateRelayPorts(
       const std::string& username, const std::string& password,
-      const PortConfiguration* config, const talk_base::ProxyInfo& proxy_info);
+      const PortConfiguration* config, const rtc::ProxyInfo& proxy_info);
 
   // Must be called by the worker thread.
   void CleanUp();
 
-  void OnRequestDone(talk_base::AsyncHttpRequest* request);
+  void OnRequestDone(rtc::AsyncHttpRequest* request);
   void OnRelayPortComplete(Port* port);
   void OnStunPortComplete(Port* port);
   void OnRelayPortError(Port* port);
   void OnStunPortError(Port* port);
   void OnNetworksChanged();
-  void OnProxyDetect(talk_base::SignalThread* thread);
+  void OnProxyDetect(rtc::SignalThread* thread);
   void OnConfigReady(
       const std::string& username, const std::string& password,
-      const PortConfiguration* config, const talk_base::ProxyInfo& proxy);
+      const PortConfiguration* config, const rtc::ProxyInfo& proxy);
   void OnConfigWithProxyReady(const PortConfiguration*);
   void RegisterHttpStart(int port);
-  talk_base::Thread* worker_;
+  rtc::Thread* worker_;
   std::string jid_;
   std::string session_id_;
   std::string user_agent_;
   std::string relay_token_;
   std::string connection_;
-  talk_base::AutoDetectProxy* proxy_detect_;
-  talk_base::scoped_ptr<talk_base::NetworkManager> network_manager_;
-  talk_base::scoped_ptr<talk_base::BasicPacketSocketFactory> socket_factory_;
-  talk_base::scoped_ptr<HttpPortAllocator> port_allocator_;
+  rtc::AutoDetectProxy* proxy_detect_;
+  rtc::scoped_ptr<rtc::NetworkManager> network_manager_;
+  rtc::scoped_ptr<rtc::BasicPacketSocketFactory> socket_factory_;
+  rtc::scoped_ptr<HttpPortAllocator> port_allocator_;
   NicMap nics_;
   std::vector<Port*> ports_;
   std::vector<PortAllocatorSession*> sessions_;
   uint32 timeout_ms_;
-  talk_base::SocketAddress stun_address_;
-  talk_base::Thread* main_;
+  rtc::SocketAddress stun_address_;
+  rtc::Thread* main_;
   bool started_;
 };
 

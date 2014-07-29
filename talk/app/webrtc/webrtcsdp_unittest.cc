@@ -31,13 +31,13 @@
 
 #include "talk/app/webrtc/jsepsessiondescription.h"
 #include "talk/app/webrtc/webrtcsdp.h"
-#include "talk/base/gunit.h"
-#include "talk/base/logging.h"
-#include "talk/base/messagedigest.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/sslfingerprint.h"
-#include "talk/base/stringencode.h"
-#include "talk/base/stringutils.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/messagedigest.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/sslfingerprint.h"
+#include "webrtc/base/stringencode.h"
+#include "webrtc/base/stringutils.h"
 #include "talk/media/base/constants.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/session/media/mediasession.h"
@@ -390,14 +390,14 @@ static void InjectAfter(const std::string& line,
                         const std::string& newlines,
                         std::string* message) {
   const std::string tmp = line + newlines;
-  talk_base::replace_substrs(line.c_str(), line.length(),
+  rtc::replace_substrs(line.c_str(), line.length(),
                              tmp.c_str(), tmp.length(), message);
 }
 
 static void Replace(const std::string& line,
                     const std::string& newlines,
                     std::string* message) {
-  talk_base::replace_substrs(line.c_str(), line.length(),
+  rtc::replace_substrs(line.c_str(), line.length(),
                              newlines.c_str(), newlines.length(), message);
 }
 
@@ -474,7 +474,7 @@ class WebRtcSdpTest : public testing::Test {
     desc_.AddContent(kAudioContentName, NS_JINGLE_RTP, audio_desc_);
 
     // VideoContentDescription
-    talk_base::scoped_ptr<VideoContentDescription> video(
+    rtc::scoped_ptr<VideoContentDescription> video(
         new VideoContentDescription());
     video_desc_ = video.get();
     StreamParams video_stream1;
@@ -526,7 +526,7 @@ class WebRtcSdpTest : public testing::Test {
 
     // v4 host
     int port = 1234;
-    talk_base::SocketAddress address("192.168.1.5", port++);
+    rtc::SocketAddress address("192.168.1.5", port++);
     Candidate candidate1(
         "", ICE_CANDIDATE_COMPONENT_RTP, "udp", address, kCandidatePriority,
         "", "", LOCAL_PORT_TYPE,
@@ -548,7 +548,7 @@ class WebRtcSdpTest : public testing::Test {
         "", kCandidateGeneration, kCandidateFoundation1);
 
     // v6 host
-    talk_base::SocketAddress v6_address("::1", port++);
+    rtc::SocketAddress v6_address("::1", port++);
     cricket::Candidate candidate5(
         "", cricket::ICE_CANDIDATE_COMPONENT_RTP,
         "udp", v6_address, kCandidatePriority,
@@ -575,8 +575,8 @@ class WebRtcSdpTest : public testing::Test {
 
     // stun
     int port_stun = 2345;
-    talk_base::SocketAddress address_stun("74.125.127.126", port_stun++);
-    talk_base::SocketAddress rel_address_stun("192.168.1.5", port_stun++);
+    rtc::SocketAddress address_stun("74.125.127.126", port_stun++);
+    rtc::SocketAddress rel_address_stun("192.168.1.5", port_stun++);
     cricket::Candidate candidate9
         ("", cricket::ICE_CANDIDATE_COMPONENT_RTP,
          "udp", address_stun, kCandidatePriority,
@@ -595,7 +595,7 @@ class WebRtcSdpTest : public testing::Test {
 
     // relay
     int port_relay = 3456;
-    talk_base::SocketAddress address_relay("74.125.224.39", port_relay++);
+    rtc::SocketAddress address_relay("74.125.224.39", port_relay++);
     cricket::Candidate candidate11(
         "", cricket::ICE_CANDIDATE_COMPONENT_RTCP,
         "udp", address_relay, kCandidatePriority,
@@ -865,9 +865,9 @@ class WebRtcSdpTest : public testing::Test {
     const char ice_ufragx[] = "a=xice-ufrag";
     const char ice_pwd[] = "a=ice-pwd";
     const char ice_pwdx[] = "a=xice-pwd";
-    talk_base::replace_substrs(ice_ufrag, strlen(ice_ufrag),
+    rtc::replace_substrs(ice_ufrag, strlen(ice_ufrag),
         ice_ufragx, strlen(ice_ufragx), sdp);
-    talk_base::replace_substrs(ice_pwd, strlen(ice_pwd),
+    rtc::replace_substrs(ice_pwd, strlen(ice_pwd),
         ice_pwdx, strlen(ice_pwdx), sdp);
     return true;
   }
@@ -917,7 +917,7 @@ class WebRtcSdpTest : public testing::Test {
   void AddFingerprint() {
     desc_.RemoveTransportInfoByName(kAudioContentName);
     desc_.RemoveTransportInfoByName(kVideoContentName);
-    talk_base::SSLFingerprint fingerprint(talk_base::DIGEST_SHA_1,
+    rtc::SSLFingerprint fingerprint(rtc::DIGEST_SHA_1,
                                           kIdentityDigest,
                                           sizeof(kIdentityDigest));
     EXPECT_TRUE(desc_.AddTransportInfo(
@@ -1001,7 +1001,7 @@ class WebRtcSdpTest : public testing::Test {
   }
 
   void AddSctpDataChannel() {
-    talk_base::scoped_ptr<DataContentDescription> data(
+    rtc::scoped_ptr<DataContentDescription> data(
         new DataContentDescription());
     data_desc_ = data.get();
     data_desc_->set_protocol(cricket::kMediaProtocolDtlsSctp);
@@ -1018,7 +1018,7 @@ class WebRtcSdpTest : public testing::Test {
   }
 
   void AddRtpDataChannel() {
-    talk_base::scoped_ptr<DataContentDescription> data(
+    rtc::scoped_ptr<DataContentDescription> data(
         new DataContentDescription());
     data_desc_ = data.get();
 
@@ -1119,7 +1119,7 @@ class WebRtcSdpTest : public testing::Test {
       const std::string& name, int expected_value) {
     cricket::CodecParameterMap::const_iterator found = params.find(name);
     ASSERT_TRUE(found != params.end());
-    EXPECT_EQ(found->second, talk_base::ToString<int>(expected_value));
+    EXPECT_EQ(found->second, rtc::ToString<int>(expected_value));
   }
 
   void TestDeserializeCodecParams(const CodecParams& params,
@@ -1287,7 +1287,7 @@ class WebRtcSdpTest : public testing::Test {
   VideoContentDescription* video_desc_;
   DataContentDescription* data_desc_;
   Candidates candidates_;
-  talk_base::scoped_ptr<IceCandidateInterface> jcandidate_;
+  rtc::scoped_ptr<IceCandidateInterface> jcandidate_;
   JsepSessionDescription jdesc_;
 };
 
@@ -1509,10 +1509,10 @@ TEST_F(WebRtcSdpTest, SerializeWithSctpDataChannelAndNewPort) {
 
   char default_portstr[16];
   char new_portstr[16];
-  talk_base::sprintfn(default_portstr, sizeof(default_portstr), "%d",
+  rtc::sprintfn(default_portstr, sizeof(default_portstr), "%d",
                       kDefaultSctpPort);
-  talk_base::sprintfn(new_portstr, sizeof(new_portstr), "%d", kNewPort);
-  talk_base::replace_substrs(default_portstr, strlen(default_portstr),
+  rtc::sprintfn(new_portstr, sizeof(new_portstr), "%d", kNewPort);
+  rtc::replace_substrs(default_portstr, strlen(default_portstr),
                              new_portstr, strlen(new_portstr),
                              &expected_sdp);
 
@@ -1946,9 +1946,9 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelAndNewPort) {
   const uint16 kUnusualSctpPort = 9556;
   char default_portstr[16];
   char unusual_portstr[16];
-  talk_base::sprintfn(default_portstr, sizeof(default_portstr), "%d",
+  rtc::sprintfn(default_portstr, sizeof(default_portstr), "%d",
                       kDefaultSctpPort);
-  talk_base::sprintfn(unusual_portstr, sizeof(unusual_portstr), "%d",
+  rtc::sprintfn(unusual_portstr, sizeof(unusual_portstr), "%d",
                       kUnusualSctpPort);
 
   // First setup the expected JsepSessionDescription.
@@ -1970,7 +1970,7 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelAndNewPort) {
   // Then get the deserialized JsepSessionDescription.
   std::string sdp_with_data = kSdpString;
   sdp_with_data.append(kSdpSctpDataChannelString);
-  talk_base::replace_substrs(default_portstr, strlen(default_portstr),
+  rtc::replace_substrs(default_portstr, strlen(default_portstr),
                              unusual_portstr, strlen(unusual_portstr),
                              &sdp_with_data);
   JsepSessionDescription jdesc_output(kDummyString);

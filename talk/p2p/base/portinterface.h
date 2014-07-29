@@ -30,10 +30,10 @@
 
 #include <string>
 
-#include "talk/base/socketaddress.h"
+#include "webrtc/base/socketaddress.h"
 #include "talk/p2p/base/transport.h"
 
-namespace talk_base {
+namespace rtc {
 class Network;
 struct PacketOptions;
 }
@@ -58,7 +58,7 @@ class PortInterface {
   virtual ~PortInterface() {}
 
   virtual const std::string& Type() const = 0;
-  virtual talk_base::Network* Network() const = 0;
+  virtual rtc::Network* Network() const = 0;
 
   virtual void SetIceProtocolType(IceProtocolType protocol) = 0;
   virtual IceProtocolType IceProtocol() const = 0;
@@ -81,7 +81,7 @@ class PortInterface {
 
   // Returns the connection to the given address or NULL if none exists.
   virtual Connection* GetConnection(
-      const talk_base::SocketAddress& remote_addr) = 0;
+      const rtc::SocketAddress& remote_addr) = 0;
 
   // Creates a new connection to the given address.
   enum CandidateOrigin { ORIGIN_THIS_PORT, ORIGIN_OTHER_PORT, ORIGIN_MESSAGE };
@@ -89,8 +89,8 @@ class PortInterface {
       const Candidate& remote_candidate, CandidateOrigin origin) = 0;
 
   // Functions on the underlying socket(s).
-  virtual int SetOption(talk_base::Socket::Option opt, int value) = 0;
-  virtual int GetOption(talk_base::Socket::Option opt, int* value) = 0;
+  virtual int SetOption(rtc::Socket::Option opt, int value) = 0;
+  virtual int GetOption(rtc::Socket::Option opt, int* value) = 0;
   virtual int GetError() = 0;
 
   virtual const std::vector<Candidate>& Candidates() const = 0;
@@ -98,13 +98,13 @@ class PortInterface {
   // Sends the given packet to the given address, provided that the address is
   // that of a connection or an address that has sent to us already.
   virtual int SendTo(const void* data, size_t size,
-                     const talk_base::SocketAddress& addr,
-                     const talk_base::PacketOptions& options, bool payload) = 0;
+                     const rtc::SocketAddress& addr,
+                     const rtc::PacketOptions& options, bool payload) = 0;
 
   // Indicates that we received a successful STUN binding request from an
   // address that doesn't correspond to any current connection.  To turn this
   // into a real connection, call CreateConnection.
-  sigslot::signal6<PortInterface*, const talk_base::SocketAddress&,
+  sigslot::signal6<PortInterface*, const rtc::SocketAddress&,
                    ProtocolType, IceMessage*, const std::string&,
                    bool> SignalUnknownAddress;
 
@@ -112,9 +112,9 @@ class PortInterface {
   // these methods should be called as a response to SignalUnknownAddress.
   // NOTE: You MUST call CreateConnection BEFORE SendBindingResponse.
   virtual void SendBindingResponse(StunMessage* request,
-                                   const talk_base::SocketAddress& addr) = 0;
+                                   const rtc::SocketAddress& addr) = 0;
   virtual void SendBindingErrorResponse(
-      StunMessage* request, const talk_base::SocketAddress& addr,
+      StunMessage* request, const rtc::SocketAddress& addr,
       int error_code, const std::string& reason) = 0;
 
   // Signaled when this port decides to delete itself because it no longer has
@@ -130,7 +130,7 @@ class PortInterface {
   // through this port.
   virtual void EnablePortPackets() = 0;
   sigslot::signal4<PortInterface*, const char*, size_t,
-                   const talk_base::SocketAddress&> SignalReadPacket;
+                   const rtc::SocketAddress&> SignalReadPacket;
 
   virtual std::string ToString() const = 0;
 

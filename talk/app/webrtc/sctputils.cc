@@ -27,9 +27,9 @@
 
 #include "talk/app/webrtc/sctputils.h"
 
-#include "talk/base/buffer.h"
-#include "talk/base/bytebuffer.h"
-#include "talk/base/logging.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/bytebuffer.h"
+#include "webrtc/base/logging.h"
 
 namespace webrtc {
 
@@ -48,13 +48,13 @@ enum DataChannelOpenMessageChannelType {
   DCOMCT_UNORDERED_PARTIAL_TIME = 0x82,
 };
 
-bool ParseDataChannelOpenMessage(const talk_base::Buffer& payload,
+bool ParseDataChannelOpenMessage(const rtc::Buffer& payload,
                                  std::string* label,
                                  DataChannelInit* config) {
   // Format defined at
   // http://tools.ietf.org/html/draft-jesup-rtcweb-data-protocol-04
 
-  talk_base::ByteBuffer buffer(payload.data(), payload.length());
+  rtc::ByteBuffer buffer(payload.data(), payload.length());
 
   uint8 message_type;
   if (!buffer.ReadUInt8(&message_type)) {
@@ -125,8 +125,8 @@ bool ParseDataChannelOpenMessage(const talk_base::Buffer& payload,
   return true;
 }
 
-bool ParseDataChannelOpenAckMessage(const talk_base::Buffer& payload) {
-  talk_base::ByteBuffer buffer(payload.data(), payload.length());
+bool ParseDataChannelOpenAckMessage(const rtc::Buffer& payload) {
+  rtc::ByteBuffer buffer(payload.data(), payload.length());
 
   uint8 message_type;
   if (!buffer.ReadUInt8(&message_type)) {
@@ -143,7 +143,7 @@ bool ParseDataChannelOpenAckMessage(const talk_base::Buffer& payload) {
 
 bool WriteDataChannelOpenMessage(const std::string& label,
                                  const DataChannelInit& config,
-                                 talk_base::Buffer* payload) {
+                                 rtc::Buffer* payload) {
   // Format defined at
   // http://tools.ietf.org/html/draft-ietf-rtcweb-data-protocol-00#section-6.1
   uint8 channel_type = 0;
@@ -171,9 +171,9 @@ bool WriteDataChannelOpenMessage(const std::string& label,
     }
   }
 
-  talk_base::ByteBuffer buffer(
+  rtc::ByteBuffer buffer(
       NULL, 20 + label.length() + config.protocol.length(),
-      talk_base::ByteBuffer::ORDER_NETWORK);
+      rtc::ByteBuffer::ORDER_NETWORK);
   buffer.WriteUInt8(DATA_CHANNEL_OPEN_MESSAGE_TYPE);
   buffer.WriteUInt8(channel_type);
   buffer.WriteUInt16(priority);
@@ -186,8 +186,8 @@ bool WriteDataChannelOpenMessage(const std::string& label,
   return true;
 }
 
-void WriteDataChannelOpenAckMessage(talk_base::Buffer* payload) {
-  talk_base::ByteBuffer buffer(talk_base::ByteBuffer::ORDER_NETWORK);
+void WriteDataChannelOpenAckMessage(rtc::Buffer* payload) {
+  rtc::ByteBuffer buffer(rtc::ByteBuffer::ORDER_NETWORK);
   buffer.WriteUInt8(DATA_CHANNEL_OPEN_ACK_MESSAGE_TYPE);
   payload->SetData(buffer.Data(), buffer.Length());
 }

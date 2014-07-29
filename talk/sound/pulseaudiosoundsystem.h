@@ -30,7 +30,7 @@
 
 #ifdef HAVE_LIBPULSE
 
-#include "talk/base/constructormagic.h"
+#include "webrtc/base/constructormagic.h"
 #include "talk/sound/pulseaudiosymboltable.h"
 #include "talk/sound/soundsysteminterface.h"
 

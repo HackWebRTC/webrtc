@@ -33,7 +33,7 @@
 #include "talk/xmpp/xmppengine.h"
 #include "talk/xmpp/xmpptask.h"
 #include "talk/xmpp/presencestatus.h"
-#include "talk/base/sigslot.h"
+#include "webrtc/base/sigslot.h"
 #include "talk/examples/call/callclient.h"
 
 namespace buzz {

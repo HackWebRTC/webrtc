@@ -26,20 +26,20 @@
  */
 
 #include <string>
-#include "talk/base/basictypes.h"
-#include "talk/base/common.h"
-#include "talk/base/logging.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/stringutils.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/stringutils.h"
 #include "talk/p2p/base/candidate.h"
 #include "talk/p2p/base/transportchannel.h"
 #include "pseudotcpchannel.h"
 
-using namespace talk_base;
+using namespace rtc;
 
 namespace cricket {
 
-extern const talk_base::ConstantLabel SESSION_STATES[];
+extern const rtc::ConstantLabel SESSION_STATES[];
 
 // MSG_WK_* - worker thread messages
 // MSG_ST_* - stream thread messages
@@ -341,7 +341,7 @@ void PseudoTcpChannel::OnChannelWritableState(TransportChannel* channel) {
 
 void PseudoTcpChannel::OnChannelRead(TransportChannel* channel,
                                      const char* data, size_t size,
-                                     const talk_base::PacketTime& packet_time,
+                                     const rtc::PacketTime& packet_time,
                                      int flags) {
   //LOG_F(LS_VERBOSE) << "(" << size << ")";
   ASSERT(worker_thread_->IsCurrent());
@@ -378,7 +378,7 @@ void PseudoTcpChannel::OnChannelConnectionChanged(TransportChannel* channel,
   int family = candidate.address().family();
   Socket* socket =
       worker_thread_->socketserver()->CreateAsyncSocket(family, SOCK_DGRAM);
-  talk_base::scoped_ptr<Socket> mtu_socket(socket);
+  rtc::scoped_ptr<Socket> mtu_socket(socket);
   if (socket == NULL) {
     LOG_F(LS_WARNING) << "Couldn't create socket while estimating MTU.";
   } else {
@@ -504,7 +504,7 @@ IPseudoTcpNotify::WriteResult PseudoTcpChannel::TcpWritePacket(
   ASSERT(cs_.CurrentThreadIsOwner());
   ASSERT(tcp == tcp_);
   ASSERT(NULL != channel_);
-  talk_base::PacketOptions packet_options;
+  rtc::PacketOptions packet_options;
   int sent = channel_->SendPacket(buffer, len, packet_options);
   if (sent > 0) {
     //LOG_F(LS_VERBOSE) << "(" << sent << ") Sent";

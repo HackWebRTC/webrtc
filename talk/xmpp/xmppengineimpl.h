@@ -250,7 +250,7 @@ class XmppEngineImpl : public XmppEngine {
   TlsOptions tls_option_;
   std::string tls_server_hostname_;
   std::string tls_server_domain_;
-  talk_base::scoped_ptr<XmppLoginTask> login_task_;
+  rtc::scoped_ptr<XmppLoginTask> login_task_;
   std::string lang_;
 
   int next_id_;
@@ -259,7 +259,7 @@ class XmppEngineImpl : public XmppEngine {
   bool encrypted_;
   Error error_code_;
   int subcode_;
-  talk_base::scoped_ptr<XmlElement> stream_error_;
+  rtc::scoped_ptr<XmlElement> stream_error_;
   bool raised_reset_;
   XmppOutputHandler* output_handler_;
   XmppSessionHandler* session_handler_;
@@ -267,14 +267,14 @@ class XmppEngineImpl : public XmppEngine {
   XmlnsStack xmlns_stack_;
 
   typedef std::vector<XmppStanzaHandler*> StanzaHandlerVector;
-  talk_base::scoped_ptr<StanzaHandlerVector> stanza_handlers_[HL_COUNT];
+  rtc::scoped_ptr<StanzaHandlerVector> stanza_handlers_[HL_COUNT];
 
   typedef std::vector<XmppIqEntry*> IqEntryVector;
-  talk_base::scoped_ptr<IqEntryVector> iq_entries_;
+  rtc::scoped_ptr<IqEntryVector> iq_entries_;
 
-  talk_base::scoped_ptr<SaslHandler> sasl_handler_;
+  rtc::scoped_ptr<SaslHandler> sasl_handler_;
 
-  talk_base::scoped_ptr<std::stringstream> output_;
+  rtc::scoped_ptr<std::stringstream> output_;
 };
 
 }  // namespace buzz

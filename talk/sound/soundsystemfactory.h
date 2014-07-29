@@ -28,16 +28,16 @@
 #ifndef TALK_SOUND_SOUNDSYSTEMFACTORY_H_
 #define TALK_SOUND_SOUNDSYSTEMFACTORY_H_
 
-#include "talk/base/referencecountedsingletonfactory.h"
+#include "webrtc/base/referencecountedsingletonfactory.h"
 
 namespace cricket {
 
 class SoundSystemInterface;
 
-typedef talk_base::ReferenceCountedSingletonFactory<SoundSystemInterface>
+typedef rtc::ReferenceCountedSingletonFactory<SoundSystemInterface>
     SoundSystemFactory;
 
-typedef talk_base::rcsf_ptr<SoundSystemInterface> SoundSystemHandle;
+typedef rtc::rcsf_ptr<SoundSystemInterface> SoundSystemHandle;
 
 }  // namespace cricket
 

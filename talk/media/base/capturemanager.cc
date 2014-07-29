@@ -29,7 +29,7 @@
 
 #include <algorithm>
 
-#include "talk/base/logging.h"
+#include "webrtc/base/logging.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videoprocessor.h"
 #include "talk/media/base/videorenderer.h"
@@ -64,7 +64,7 @@ class VideoCapturerState {
 
   explicit VideoCapturerState(CaptureRenderAdapter* adapter);
 
-  talk_base::scoped_ptr<CaptureRenderAdapter> adapter_;
+  rtc::scoped_ptr<CaptureRenderAdapter> adapter_;
 
   int start_count_;
   CaptureFormats capture_formats_;

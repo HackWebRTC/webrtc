@@ -93,11 +93,11 @@ class StatsCollector {
 
   // Helper method for AddCertificateReports.
   std::string AddOneCertificateReport(
-      const talk_base::SSLCertificate* cert, const std::string& issuer_id);
+      const rtc::SSLCertificate* cert, const std::string& issuer_id);
 
   // Adds a report for this certificate and every certificate in its chain, and
   // returns the leaf certificate's report's ID.
-  std::string AddCertificateReports(const talk_base::SSLCertificate* cert);
+  std::string AddCertificateReports(const rtc::SSLCertificate* cert);
 
   void ExtractSessionInfo();
   void ExtractVoiceInfo();

@@ -32,9 +32,9 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/sigslot.h"
-#include "talk/base/sigslotrepeater.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/sigslotrepeater.h"
 #include "talk/xmpp/jid.h"
 #include "talk/xmpp/pubsubclient.h"
 #include "talk/xmpp/pubsubstateclient.h"
@@ -180,14 +180,14 @@ class HangoutPubSubClient : public sigslot::has_slots<> {
                                 const XmlElement* stanza);
   Jid mucjid_;
   std::string nick_;
-  talk_base::scoped_ptr<PubSubClient> media_client_;
-  talk_base::scoped_ptr<PubSubClient> presenter_client_;
-  talk_base::scoped_ptr<PubSubStateClient<bool> > presenter_state_client_;
-  talk_base::scoped_ptr<PubSubStateClient<bool> > audio_mute_state_client_;
-  talk_base::scoped_ptr<PubSubStateClient<bool> > video_mute_state_client_;
-  talk_base::scoped_ptr<PubSubStateClient<bool> > video_pause_state_client_;
-  talk_base::scoped_ptr<PubSubStateClient<bool> > recording_state_client_;
-  talk_base::scoped_ptr<PubSubStateClient<bool> > media_block_state_client_;
+  rtc::scoped_ptr<PubSubClient> media_client_;
+  rtc::scoped_ptr<PubSubClient> presenter_client_;
+  rtc::scoped_ptr<PubSubStateClient<bool> > presenter_state_client_;
+  rtc::scoped_ptr<PubSubStateClient<bool> > audio_mute_state_client_;
+  rtc::scoped_ptr<PubSubStateClient<bool> > video_mute_state_client_;
+  rtc::scoped_ptr<PubSubStateClient<bool> > video_pause_state_client_;
+  rtc::scoped_ptr<PubSubStateClient<bool> > recording_state_client_;
+  rtc::scoped_ptr<PubSubStateClient<bool> > media_block_state_client_;
 };
 
 }  // namespace buzz

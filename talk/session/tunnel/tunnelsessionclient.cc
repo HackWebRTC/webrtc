@@ -25,12 +25,12 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/base/basicdefs.h"
-#include "talk/base/basictypes.h"
-#include "talk/base/common.h"
-#include "talk/base/helpers.h"
-#include "talk/base/logging.h"
-#include "talk/base/stringutils.h"
+#include "webrtc/base/basicdefs.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/stringutils.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/transportchannel.h"
 #include "talk/xmllite/xmlelement.h"
@@ -52,21 +52,21 @@ enum {
   MSG_CREATE_TUNNEL,
 };
 
-struct EventData : public talk_base::MessageData {
+struct EventData : public rtc::MessageData {
   int event, error;
   EventData(int ev, int err = 0) : event(ev), error(err) { }
 };
 
-struct CreateTunnelData : public talk_base::MessageData {
+struct CreateTunnelData : public rtc::MessageData {
   buzz::Jid jid;
   std::string description;
-  talk_base::Thread* thread;
-  talk_base::StreamInterface* stream;
+  rtc::Thread* thread;
+  rtc::StreamInterface* stream;
 };
 
-extern const talk_base::ConstantLabel SESSION_STATES[];
+extern const rtc::ConstantLabel SESSION_STATES[];
 
-const talk_base::ConstantLabel SESSION_STATES[] = {
+const rtc::ConstantLabel SESSION_STATES[] = {
   KLABEL(Session::STATE_INIT),
   KLABEL(Session::STATE_SENTINITIATE),
   KLABEL(Session::STATE_RECEIVEDINITIATE),
@@ -124,7 +124,7 @@ void TunnelSessionClientBase::OnSessionCreate(Session* session, bool received) {
   ASSERT(session_manager_->signaling_thread()->IsCurrent());
   if (received)
     sessions_.push_back(
-        MakeTunnelSession(session, talk_base::Thread::Current(), RESPONDER));
+        MakeTunnelSession(session, rtc::Thread::Current(), RESPONDER));
 }
 
 void TunnelSessionClientBase::OnSessionDestroy(Session* session) {
@@ -143,19 +143,19 @@ void TunnelSessionClientBase::OnSessionDestroy(Session* session) {
   }
 }
 
-talk_base::StreamInterface* TunnelSessionClientBase::CreateTunnel(
+rtc::StreamInterface* TunnelSessionClientBase::CreateTunnel(
     const buzz::Jid& to, const std::string& description) {
   // Valid from any thread
   CreateTunnelData data;
   data.jid = to;
   data.description = description;
-  data.thread = talk_base::Thread::Current();
+  data.thread = rtc::Thread::Current();
   data.stream = NULL;
   session_manager_->signaling_thread()->Send(this, MSG_CREATE_TUNNEL, &data);
   return data.stream;
 }
 
-talk_base::StreamInterface* TunnelSessionClientBase::AcceptTunnel(
+rtc::StreamInterface* TunnelSessionClientBase::AcceptTunnel(
     Session* session) {
   ASSERT(session_manager_->signaling_thread()->IsCurrent());
   TunnelSession* tunnel = NULL;
@@ -182,7 +182,7 @@ void TunnelSessionClientBase::DeclineTunnel(Session* session) {
   session->Reject(STR_TERMINATE_DECLINE);
 }
 
-void TunnelSessionClientBase::OnMessage(talk_base::Message* pmsg) {
+void TunnelSessionClientBase::OnMessage(rtc::Message* pmsg) {
   if (pmsg->message_id == MSG_CREATE_TUNNEL) {
     ASSERT(session_manager_->signaling_thread()->IsCurrent());
     CreateTunnelData* data = static_cast<CreateTunnelData*>(pmsg->pdata);
@@ -201,7 +201,7 @@ void TunnelSessionClientBase::OnMessage(talk_base::Message* pmsg) {
 }
 
 TunnelSession* TunnelSessionClientBase::MakeTunnelSession(
-    Session* session, talk_base::Thread* stream_thread,
+    Session* session, rtc::Thread* stream_thread,
     TunnelSessionRole /*role*/) {
   return new TunnelSession(this, session, stream_thread);
 }
@@ -288,7 +288,7 @@ SessionDescription* TunnelSessionClient::CreateOffer(
     const buzz::Jid &jid, const std::string &description) {
   SessionDescription* offer = NewTunnelSessionDescription(
       CN_TUNNEL, new TunnelContentDescription(description));
-  talk_base::scoped_ptr<TransportDescription> tdesc(
+  rtc::scoped_ptr<TransportDescription> tdesc(
       session_manager_->transport_desc_factory()->CreateOffer(
           TransportOptions(), NULL));
   if (tdesc.get()) {
@@ -313,7 +313,7 @@ SessionDescription* TunnelSessionClient::CreateAnswer(
   if (tinfo) {
     const TransportDescription* offer_tdesc = &tinfo->description;
     ASSERT(offer_tdesc != NULL);
-    talk_base::scoped_ptr<TransportDescription> tdesc(
+    rtc::scoped_ptr<TransportDescription> tdesc(
       session_manager_->transport_desc_factory()->CreateAnswer(
           offer_tdesc, TransportOptions(),  NULL));
     if (tdesc.get()) {
@@ -334,7 +334,7 @@ SessionDescription* TunnelSessionClient::CreateAnswer(
 //
 
 TunnelSession::TunnelSession(TunnelSessionClientBase* client, Session* session,
-                             talk_base::Thread* stream_thread)
+                             rtc::Thread* stream_thread)
     : client_(client), session_(session), channel_(NULL) {
   ASSERT(client_ != NULL);
   ASSERT(session_ != NULL);
@@ -349,7 +349,7 @@ TunnelSession::~TunnelSession() {
   ASSERT(channel_ == NULL);
 }
 
-talk_base::StreamInterface* TunnelSession::GetStream() {
+rtc::StreamInterface* TunnelSession::GetStream() {
   ASSERT(channel_ != NULL);
   return channel_->GetStream();
 }
@@ -375,8 +375,8 @@ Session* TunnelSession::ReleaseSession(bool channel_exists) {
 void TunnelSession::OnSessionState(BaseSession* session,
                                    BaseSession::State state) {
   LOG(LS_INFO) << "TunnelSession::OnSessionState("
-               << talk_base::nonnull(
-                    talk_base::FindLabel(state, SESSION_STATES), "Unknown")
+               << rtc::nonnull(
+                    rtc::FindLabel(state, SESSION_STATES), "Unknown")
                << ")";
   ASSERT(session == session_);
 

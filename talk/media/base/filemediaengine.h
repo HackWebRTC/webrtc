@@ -29,13 +29,13 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/stream.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/stream.h"
 #include "talk/media/base/codec.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/mediaengine.h"
 
-namespace talk_base {
+namespace rtc {
 class StreamInterface;
 }
 
@@ -78,7 +78,7 @@ class FileMediaEngine : public MediaEngineInterface {
   }
 
   // Implement pure virtual methods of MediaEngine.
-  virtual bool Init(talk_base::Thread* worker_thread) {
+  virtual bool Init(rtc::Thread* worker_thread) {
     return true;
   }
   virtual void Terminate() {}
@@ -133,7 +133,7 @@ class FileMediaEngine : public MediaEngineInterface {
   virtual bool FindVideoCodec(const VideoCodec& codec) { return true; }
   virtual void SetVoiceLogging(int min_sev, const char* filter) {}
   virtual void SetVideoLogging(int min_sev, const char* filter) {}
-  virtual bool StartAecDump(talk_base::PlatformFile) { return false; }
+  virtual bool StartAecDump(rtc::PlatformFile) { return false; }
 
   virtual bool RegisterVideoProcessor(VideoProcessor* processor) {
     return true;
@@ -160,7 +160,7 @@ class FileMediaEngine : public MediaEngineInterface {
     return signal_state_change_;
   }
 
-  void set_rtp_sender_thread(talk_base::Thread* thread) {
+  void set_rtp_sender_thread(rtc::Thread* thread) {
     rtp_sender_thread_ = thread;
   }
 
@@ -175,7 +175,7 @@ class FileMediaEngine : public MediaEngineInterface {
   std::vector<RtpHeaderExtension> video_rtp_header_extensions_;
   sigslot::repeater2<VideoCapturer*, CaptureState>
      signal_state_change_;
-  talk_base::Thread* rtp_sender_thread_;
+  rtc::Thread* rtp_sender_thread_;
 
   DISALLOW_COPY_AND_ASSIGN(FileMediaEngine);
 };
@@ -184,9 +184,9 @@ class RtpSenderReceiver;  // Forward declaration. Defined in the .cc file.
 
 class FileVoiceChannel : public VoiceMediaChannel {
  public:
-  FileVoiceChannel(talk_base::StreamInterface* input_file_stream,
-      talk_base::StreamInterface* output_file_stream,
-      talk_base::Thread* rtp_sender_thread);
+  FileVoiceChannel(rtc::StreamInterface* input_file_stream,
+      rtc::StreamInterface* output_file_stream,
+      rtc::Thread* rtp_sender_thread);
   virtual ~FileVoiceChannel();
 
   // Implement pure virtual methods of VoiceMediaChannel.
@@ -233,10 +233,10 @@ class FileVoiceChannel : public VoiceMediaChannel {
   virtual bool GetStats(VoiceMediaInfo* info) { return true; }
 
   // Implement pure virtual methods of MediaChannel.
-  virtual void OnPacketReceived(talk_base::Buffer* packet,
-                                const talk_base::PacketTime& packet_time);
-  virtual void OnRtcpReceived(talk_base::Buffer* packet,
-                              const talk_base::PacketTime& packet_time) {}
+  virtual void OnPacketReceived(rtc::Buffer* packet,
+                                const rtc::PacketTime& packet_time);
+  virtual void OnRtcpReceived(rtc::Buffer* packet,
+                              const rtc::PacketTime& packet_time) {}
   virtual void OnReadyToSend(bool ready) {}
   virtual bool AddSendStream(const StreamParams& sp);
   virtual bool RemoveSendStream(uint32 ssrc);
@@ -256,7 +256,7 @@ class FileVoiceChannel : public VoiceMediaChannel {
 
  private:
   uint32 send_ssrc_;
-  talk_base::scoped_ptr<RtpSenderReceiver> rtp_sender_receiver_;
+  rtc::scoped_ptr<RtpSenderReceiver> rtp_sender_receiver_;
   AudioOptions options_;
 
   DISALLOW_COPY_AND_ASSIGN(FileVoiceChannel);
@@ -264,9 +264,9 @@ class FileVoiceChannel : public VoiceMediaChannel {
 
 class FileVideoChannel : public VideoMediaChannel {
  public:
-  FileVideoChannel(talk_base::StreamInterface* input_file_stream,
-      talk_base::StreamInterface* output_file_stream,
-      talk_base::Thread* rtp_sender_thread);
+  FileVideoChannel(rtc::StreamInterface* input_file_stream,
+      rtc::StreamInterface* output_file_stream,
+      rtc::Thread* rtp_sender_thread);
   virtual ~FileVideoChannel();
 
   // Implement pure virtual methods of VideoMediaChannel.
@@ -304,10 +304,10 @@ class FileVideoChannel : public VideoMediaChannel {
   virtual bool RequestIntraFrame() { return false; }
 
   // Implement pure virtual methods of MediaChannel.
-  virtual void OnPacketReceived(talk_base::Buffer* packet,
-                                const talk_base::PacketTime& packet_time);
-  virtual void OnRtcpReceived(talk_base::Buffer* packet,
-                              const talk_base::PacketTime& packet_time) {}
+  virtual void OnPacketReceived(rtc::Buffer* packet,
+                                const rtc::PacketTime& packet_time);
+  virtual void OnRtcpReceived(rtc::Buffer* packet,
+                              const rtc::PacketTime& packet_time) {}
   virtual void OnReadyToSend(bool ready) {}
   virtual bool AddSendStream(const StreamParams& sp);
   virtual bool RemoveSendStream(uint32 ssrc);
@@ -328,7 +328,7 @@ class FileVideoChannel : public VideoMediaChannel {
 
  private:
   uint32 send_ssrc_;
-  talk_base::scoped_ptr<RtpSenderReceiver> rtp_sender_receiver_;
+  rtc::scoped_ptr<RtpSenderReceiver> rtp_sender_receiver_;
   VideoOptions options_;
 
   DISALLOW_COPY_AND_ASSIGN(FileVideoChannel);

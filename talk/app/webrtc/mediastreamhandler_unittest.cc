@@ -35,7 +35,7 @@
 #include "talk/app/webrtc/streamcollection.h"
 #include "talk/app/webrtc/videosource.h"
 #include "talk/app/webrtc/videotrack.h"
-#include "talk/base/gunit.h"
+#include "webrtc/base/gunit.h"
 #include "talk/media/base/fakevideocapturer.h"
 #include "talk/media/base/mediachannel.h"
 #include "testing/gmock/include/gmock/gmock.h"
@@ -79,8 +79,8 @@ class MockVideoProvider : public VideoProviderInterface {
 
 class FakeVideoSource : public Notifier<VideoSourceInterface> {
  public:
-  static talk_base::scoped_refptr<FakeVideoSource> Create() {
-    return new talk_base::RefCountedObject<FakeVideoSource>();
+  static rtc::scoped_refptr<FakeVideoSource> Create() {
+    return new rtc::RefCountedObject<FakeVideoSource>();
   }
   virtual cricket::VideoCapturer* GetVideoCapturer() {
     return &fake_capturer_;
@@ -109,7 +109,7 @@ class MediaStreamHandlerTest : public testing::Test {
 
   virtual void SetUp() {
     stream_ = MediaStream::Create(kStreamLabel1);
-    talk_base::scoped_refptr<VideoSourceInterface> source(
+    rtc::scoped_refptr<VideoSourceInterface> source(
         FakeVideoSource::Create());
     video_track_ = VideoTrack::Create(kVideoTrackId, source);
     EXPECT_TRUE(stream_->AddTrack(video_track_));
@@ -175,9 +175,9 @@ class MediaStreamHandlerTest : public testing::Test {
   MockAudioProvider audio_provider_;
   MockVideoProvider video_provider_;
   MediaStreamHandlerContainer handlers_;
-  talk_base::scoped_refptr<MediaStreamInterface> stream_;
-  talk_base::scoped_refptr<VideoTrackInterface> video_track_;
-  talk_base::scoped_refptr<AudioTrackInterface> audio_track_;
+  rtc::scoped_refptr<MediaStreamInterface> stream_;
+  rtc::scoped_refptr<VideoTrackInterface> video_track_;
+  rtc::scoped_refptr<AudioTrackInterface> audio_track_;
 };
 
 // Test that |audio_provider_| is notified when an audio track is associated

@@ -29,7 +29,7 @@
 
 #include <vector>
 #include <set>
-#include "talk/base/common.h"
+#include "webrtc/base/common.h"
 #include "talk/xmllite/xmlconstants.h"
 #include "talk/xmllite/xmlelement.h"
 
@@ -107,8 +107,8 @@ XmlBuilder::StartElement(XmlParseContext * pctx,
 
 void
 XmlBuilder::EndElement(XmlParseContext * pctx, const char * name) {
-  UNUSED(pctx);
-  UNUSED(name);
+  RTC_UNUSED(pctx);
+  RTC_UNUSED(name);
   pelCurrent_ = pvParents_->back();
   pvParents_->pop_back();
 }
@@ -116,7 +116,7 @@ XmlBuilder::EndElement(XmlParseContext * pctx, const char * name) {
 void
 XmlBuilder::CharacterData(XmlParseContext * pctx,
                                const char * text, int len) {
-  UNUSED(pctx);
+  RTC_UNUSED(pctx);
   if (pelCurrent_) {
     pelCurrent_->AddParsedText(text, len);
   }
@@ -124,8 +124,8 @@ XmlBuilder::CharacterData(XmlParseContext * pctx,
 
 void
 XmlBuilder::Error(XmlParseContext * pctx, XML_Error err) {
-  UNUSED(pctx);
-  UNUSED(err);
+  RTC_UNUSED(pctx);
+  RTC_UNUSED(err);
   pelRoot_.reset(NULL);
   pelCurrent_ = NULL;
   pvParents_->clear();

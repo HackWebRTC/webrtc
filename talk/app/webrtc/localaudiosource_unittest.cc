@@ -31,7 +31,7 @@
 #include <vector>
 
 #include "talk/app/webrtc/test/fakeconstraints.h"
-#include "talk/base/gunit.h"
+#include "webrtc/base/gunit.h"
 #include "talk/media/base/fakemediaengine.h"
 #include "talk/media/base/fakevideorenderer.h"
 #include "talk/media/devices/fakedevicemanager.h"
@@ -52,7 +52,7 @@ TEST(LocalAudioSourceTest, SetValidOptions) {
   constraints.AddMandatory(MediaConstraintsInterface::kNoiseSuppression, false);
   constraints.AddOptional(MediaConstraintsInterface::kHighpassFilter, true);
 
-  talk_base::scoped_refptr<LocalAudioSource> source =
+  rtc::scoped_refptr<LocalAudioSource> source =
       LocalAudioSource::Create(PeerConnectionFactoryInterface::Options(),
                                &constraints);
 
@@ -73,7 +73,7 @@ TEST(LocalAudioSourceTest, SetValidOptions) {
 
 TEST(LocalAudioSourceTest, OptionNotSet) {
   webrtc::FakeConstraints constraints;
-  talk_base::scoped_refptr<LocalAudioSource> source =
+  rtc::scoped_refptr<LocalAudioSource> source =
       LocalAudioSource::Create(PeerConnectionFactoryInterface::Options(),
                                &constraints);
   bool value;
@@ -85,7 +85,7 @@ TEST(LocalAudioSourceTest, MandatoryOverridesOptional) {
   constraints.AddMandatory(MediaConstraintsInterface::kEchoCancellation, false);
   constraints.AddOptional(MediaConstraintsInterface::kEchoCancellation, true);
 
-  talk_base::scoped_refptr<LocalAudioSource> source =
+  rtc::scoped_refptr<LocalAudioSource> source =
       LocalAudioSource::Create(PeerConnectionFactoryInterface::Options(),
                                &constraints);
 
@@ -99,7 +99,7 @@ TEST(LocalAudioSourceTest, InvalidOptional) {
   constraints.AddOptional(MediaConstraintsInterface::kHighpassFilter, false);
   constraints.AddOptional("invalidKey", false);
 
-  talk_base::scoped_refptr<LocalAudioSource> source =
+  rtc::scoped_refptr<LocalAudioSource> source =
       LocalAudioSource::Create(PeerConnectionFactoryInterface::Options(),
                                &constraints);
 
@@ -114,7 +114,7 @@ TEST(LocalAudioSourceTest, InvalidMandatory) {
   constraints.AddMandatory(MediaConstraintsInterface::kHighpassFilter, false);
   constraints.AddMandatory("invalidKey", false);
 
-  talk_base::scoped_refptr<LocalAudioSource> source =
+  rtc::scoped_refptr<LocalAudioSource> source =
       LocalAudioSource::Create(PeerConnectionFactoryInterface::Options(),
                                &constraints);
 

@@ -72,15 +72,15 @@ enum {
   MSG_GENERATE_IDENTITY,
 };
 
-struct CreateSessionDescriptionMsg : public talk_base::MessageData {
+struct CreateSessionDescriptionMsg : public rtc::MessageData {
   explicit CreateSessionDescriptionMsg(
       webrtc::CreateSessionDescriptionObserver* observer)
       : observer(observer) {
   }
 
-  talk_base::scoped_refptr<webrtc::CreateSessionDescriptionObserver> observer;
+  rtc::scoped_refptr<webrtc::CreateSessionDescriptionObserver> observer;
   std::string error;
-  talk_base::scoped_ptr<webrtc::SessionDescriptionInterface> description;
+  rtc::scoped_ptr<webrtc::SessionDescriptionInterface> description;
 };
 }  // namespace
 
@@ -104,7 +104,7 @@ void WebRtcSessionDescriptionFactory::CopyCandidatesFromSessionDescription(
 }
 
 WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
-    talk_base::Thread* signaling_thread,
+    rtc::Thread* signaling_thread,
     cricket::ChannelManager* channel_manager,
     MediaStreamSignaling* mediastream_signaling,
     DTLSIdentityServiceInterface* dtls_identity_service,
@@ -136,7 +136,7 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
 
   if (identity_service_.get()) {
     identity_request_observer_ =
-      new talk_base::RefCountedObject<WebRtcIdentityRequestObserver>();
+      new rtc::RefCountedObject<WebRtcIdentityRequestObserver>();
 
     identity_request_observer_->SignalRequestFailed.connect(
         this, &WebRtcSessionDescriptionFactory::OnIdentityRequestFailed);
@@ -270,7 +270,7 @@ cricket::SecurePolicy WebRtcSessionDescriptionFactory::SdesPolicy() const {
   return session_desc_factory_.secure();
 }
 
-void WebRtcSessionDescriptionFactory::OnMessage(talk_base::Message* msg) {
+void WebRtcSessionDescriptionFactory::OnMessage(rtc::Message* msg) {
   switch (msg->message_id) {
     case MSG_CREATE_SESSIONDESCRIPTION_SUCCESS: {
       CreateSessionDescriptionMsg* param =
@@ -288,7 +288,7 @@ void WebRtcSessionDescriptionFactory::OnMessage(talk_base::Message* msg) {
     }
     case MSG_GENERATE_IDENTITY: {
       LOG(LS_INFO) << "Generating identity.";
-      SetIdentity(talk_base::SSLIdentity::Generate(kWebRTCIdentityName));
+      SetIdentity(rtc::SSLIdentity::Generate(kWebRTCIdentityName));
       break;
     }
     default:
@@ -316,7 +316,7 @@ void WebRtcSessionDescriptionFactory::InternalCreateOffer(
   JsepSessionDescription* offer(new JsepSessionDescription(
       JsepSessionDescription::kOffer));
   if (!offer->Initialize(desc, session_id_,
-                         talk_base::ToString(session_version_++))) {
+                         rtc::ToString(session_version_++))) {
     delete offer;
     PostCreateSessionDescriptionFailed(request.observer,
                                        "Failed to initialize the offer.");
@@ -339,10 +339,10 @@ void WebRtcSessionDescriptionFactory::InternalCreateAnswer(
   request.options.transport_options.ice_restart = session_->IceRestartPending();
   // We should pass current ssl role to the transport description factory, if
   // there is already an existing ongoing session.
-  talk_base::SSLRole ssl_role;
+  rtc::SSLRole ssl_role;
   if (session_->GetSslRole(&ssl_role)) {
     request.options.transport_options.prefer_passive_role =
-        (talk_base::SSL_SERVER == ssl_role);
+        (rtc::SSL_SERVER == ssl_role);
   }
 
   cricket::SessionDescription* desc(session_desc_factory_.CreateAnswer(
@@ -360,7 +360,7 @@ void WebRtcSessionDescriptionFactory::InternalCreateAnswer(
   JsepSessionDescription* answer(new JsepSessionDescription(
       JsepSessionDescription::kAnswer));
   if (!answer->Initialize(desc, session_id_,
-                          talk_base::ToString(session_version_++))) {
+                          rtc::ToString(session_version_++))) {
     delete answer;
     PostCreateSessionDescriptionFailed(request.observer,
                                        "Failed to initialize the answer.");
@@ -416,22 +416,22 @@ void WebRtcSessionDescriptionFactory::OnIdentityReady(
   ASSERT(signaling_thread_->IsCurrent());
   LOG(LS_VERBOSE) << "Identity is successfully generated.";
 
-  std::string pem_cert = talk_base::SSLIdentity::DerToPem(
-      talk_base::kPemTypeCertificate,
+  std::string pem_cert = rtc::SSLIdentity::DerToPem(
+      rtc::kPemTypeCertificate,
       reinterpret_cast<const unsigned char*>(der_cert.data()),
       der_cert.length());
-  std::string pem_key = talk_base::SSLIdentity::DerToPem(
-      talk_base::kPemTypeRsaPrivateKey,
+  std::string pem_key = rtc::SSLIdentity::DerToPem(
+      rtc::kPemTypeRsaPrivateKey,
       reinterpret_cast<const unsigned char*>(der_private_key.data()),
       der_private_key.length());
 
-  talk_base::SSLIdentity* identity =
-      talk_base::SSLIdentity::FromPEMStrings(pem_key, pem_cert);
+  rtc::SSLIdentity* identity =
+      rtc::SSLIdentity::FromPEMStrings(pem_key, pem_cert);
   SetIdentity(identity);
 }
 
 void WebRtcSessionDescriptionFactory::SetIdentity(
-    talk_base::SSLIdentity* identity) {
+    rtc::SSLIdentity* identity) {
   identity_request_state_ = IDENTITY_SUCCEEDED;
   SignalIdentityReady(identity);
 

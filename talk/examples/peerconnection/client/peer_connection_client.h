@@ -32,11 +32,11 @@
 #include <map>
 #include <string>
 
-#include "talk/base/nethelpers.h"
-#include "talk/base/signalthread.h"
-#include "talk/base/sigslot.h"
-#include "talk/base/physicalsocketserver.h"
-#include "talk/base/scoped_ptr.h"
+#include "webrtc/base/nethelpers.h"
+#include "webrtc/base/signalthread.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/physicalsocketserver.h"
+#include "webrtc/base/scoped_ptr.h"
 
 typedef std::map<int, std::string> Peers;
 
@@ -54,7 +54,7 @@ struct PeerConnectionClientObserver {
 };
 
 class PeerConnectionClient : public sigslot::has_slots<>,
-                             public talk_base::MessageHandler {
+                             public rtc::MessageHandler {
  public:
   enum State {
     NOT_CONNECTED,
@@ -84,15 +84,15 @@ class PeerConnectionClient : public sigslot::has_slots<>,
   bool SignOut();
 
   // implements the MessageHandler interface
-  void OnMessage(talk_base::Message* msg);
+  void OnMessage(rtc::Message* msg);
 
  protected:
   void DoConnect();
   void Close();
   void InitSocketSignals();
   bool ConnectControlSocket();
-  void OnConnect(talk_base::AsyncSocket* socket);
-  void OnHangingGetConnect(talk_base::AsyncSocket* socket);
+  void OnConnect(rtc::AsyncSocket* socket);
+  void OnHangingGetConnect(rtc::AsyncSocket* socket);
   void OnMessageFromPeer(int peer_id, const std::string& message);
 
   // Quick and dirty support for parsing HTTP header values.
@@ -103,12 +103,12 @@ class PeerConnectionClient : public sigslot::has_slots<>,
                       const char* header_pattern, std::string* value);
 
   // Returns true if the whole response has been read.
-  bool ReadIntoBuffer(talk_base::AsyncSocket* socket, std::string* data,
+  bool ReadIntoBuffer(rtc::AsyncSocket* socket, std::string* data,
                       size_t* content_length);
 
-  void OnRead(talk_base::AsyncSocket* socket);
+  void OnRead(rtc::AsyncSocket* socket);
 
-  void OnHangingGetRead(talk_base::AsyncSocket* socket);
+  void OnHangingGetRead(rtc::AsyncSocket* socket);
 
   // Parses a single line entry in the form "<name>,<id>,<connected>"
   bool ParseEntry(const std::string& entry, std::string* name, int* id,
@@ -119,15 +119,15 @@ class PeerConnectionClient : public sigslot::has_slots<>,
   bool ParseServerResponse(const std::string& response, size_t content_length,
                            size_t* peer_id, size_t* eoh);
 
-  void OnClose(talk_base::AsyncSocket* socket, int err);
+  void OnClose(rtc::AsyncSocket* socket, int err);
 
-  void OnResolveResult(talk_base::AsyncResolverInterface* resolver);
+  void OnResolveResult(rtc::AsyncResolverInterface* resolver);
 
   PeerConnectionClientObserver* callback_;
-  talk_base::SocketAddress server_address_;
-  talk_base::AsyncResolver* resolver_;
-  talk_base::scoped_ptr<talk_base::AsyncSocket> control_socket_;
-  talk_base::scoped_ptr<talk_base::AsyncSocket> hanging_get_;
+  rtc::SocketAddress server_address_;
+  rtc::AsyncResolver* resolver_;
+  rtc::scoped_ptr<rtc::AsyncSocket> control_socket_;
+  rtc::scoped_ptr<rtc::AsyncSocket> hanging_get_;
   std::string onconnect_data_;
   std::string control_data_;
   std::string notification_data_;

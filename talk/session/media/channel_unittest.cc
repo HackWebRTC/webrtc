@@ -23,15 +23,15 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "talk/base/fileutils.h"
-#include "talk/base/gunit.h"
-#include "talk/base/helpers.h"
-#include "talk/base/logging.h"
-#include "talk/base/pathutils.h"
-#include "talk/base/signalthread.h"
-#include "talk/base/ssladapter.h"
-#include "talk/base/sslidentity.h"
-#include "talk/base/window.h"
+#include "webrtc/base/fileutils.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/pathutils.h"
+#include "webrtc/base/signalthread.h"
+#include "webrtc/base/ssladapter.h"
+#include "webrtc/base/sslidentity.h"
+#include "webrtc/base/window.h"
 #include "talk/media/base/fakemediaengine.h"
 #include "talk/media/base/fakertp.h"
 #include "talk/media/base/fakevideocapturer.h"
@@ -47,7 +47,7 @@
 #include "talk/session/media/typingmonitor.h"
 
 #define MAYBE_SKIP_TEST(feature)                    \
-  if (!(talk_base::SSLStreamAdapter::feature())) {  \
+  if (!(rtc::SSLStreamAdapter::feature())) {  \
     LOG(LS_INFO) << "Feature disabled... skipping"; \
     return;                                         \
   }
@@ -60,7 +60,7 @@ using cricket::FakeVoiceMediaChannel;
 using cricket::ScreencastId;
 using cricket::StreamParams;
 using cricket::TransportChannel;
-using talk_base::WindowId;
+using rtc::WindowId;
 
 static const cricket::AudioCodec kPcmuCodec(0, "PCMU", 64000, 8000, 1, 0);
 static const cricket::AudioCodec kPcmaCodec(8, "PCMA", 64000, 8000, 1, 0);
@@ -157,9 +157,9 @@ class DataTraits : public Traits<cricket::DataChannel,
 };
 
 
-talk_base::StreamInterface* Open(const std::string& path) {
-  return talk_base::Filesystem::OpenFile(
-      talk_base::Pathname(path), "wb");
+rtc::StreamInterface* Open(const std::string& path) {
+  return rtc::Filesystem::OpenFile(
+      rtc::Pathname(path), "wb");
 }
 
 // Base class for Voice/VideoChannel tests
@@ -186,38 +186,38 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   }
 
   static void SetUpTestCase() {
-    talk_base::InitializeSSL();
+    rtc::InitializeSSL();
   }
 
   static void TearDownTestCase() {
-    talk_base::CleanupSSL();
+    rtc::CleanupSSL();
   }
 
   void CreateChannels(int flags1, int flags2) {
     CreateChannels(new typename T::MediaChannel(NULL),
                    new typename T::MediaChannel(NULL),
-                   flags1, flags2, talk_base::Thread::Current());
+                   flags1, flags2, rtc::Thread::Current());
   }
   void CreateChannels(int flags) {
      CreateChannels(new typename T::MediaChannel(NULL),
                     new typename T::MediaChannel(NULL),
-                    flags, talk_base::Thread::Current());
+                    flags, rtc::Thread::Current());
   }
   void CreateChannels(int flags1, int flags2,
-                      talk_base::Thread* thread) {
+                      rtc::Thread* thread) {
     CreateChannels(new typename T::MediaChannel(NULL),
                    new typename T::MediaChannel(NULL),
                    flags1, flags2, thread);
   }
   void CreateChannels(int flags,
-                      talk_base::Thread* thread) {
+                      rtc::Thread* thread) {
     CreateChannels(new typename T::MediaChannel(NULL),
                    new typename T::MediaChannel(NULL),
                    flags, thread);
   }
   void CreateChannels(
       typename T::MediaChannel* ch1, typename T::MediaChannel* ch2,
-      int flags1, int flags2, talk_base::Thread* thread) {
+      int flags1, int flags2, rtc::Thread* thread) {
     media_channel1_ = ch1;
     media_channel2_ = ch2;
     channel1_.reset(CreateChannel(thread, &media_engine_, ch1, &session1_,
@@ -246,11 +246,11 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     CopyContent(local_media_content2_, &remote_media_content2_);
 
     if (flags1 & DTLS) {
-      identity1_.reset(talk_base::SSLIdentity::Generate("session1"));
+      identity1_.reset(rtc::SSLIdentity::Generate("session1"));
       session1_.set_ssl_identity(identity1_.get());
     }
     if (flags2 & DTLS) {
-      identity2_.reset(talk_base::SSLIdentity::Generate("session2"));
+      identity2_.reset(rtc::SSLIdentity::Generate("session2"));
       session2_.set_ssl_identity(identity2_.get());
     }
 
@@ -271,7 +271,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
   void CreateChannels(
       typename T::MediaChannel* ch1, typename T::MediaChannel* ch2,
-      int flags, talk_base::Thread* thread) {
+      int flags, rtc::Thread* thread) {
     media_channel1_ = ch1;
     media_channel2_ = ch2;
 
@@ -304,7 +304,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     }
   }
 
-  typename T::Channel* CreateChannel(talk_base::Thread* thread,
+  typename T::Channel* CreateChannel(rtc::Thread* thread,
                                      cricket::MediaEngineInterface* engine,
                                      typename T::MediaChannel* ch,
                                      cricket::BaseSession* session,
@@ -470,17 +470,17 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   std::string CreateRtpData(uint32 ssrc, int sequence_number, int pl_type) {
     std::string data(rtp_packet_);
     // Set SSRC in the rtp packet copy.
-    talk_base::SetBE32(const_cast<char*>(data.c_str()) + 8, ssrc);
-    talk_base::SetBE16(const_cast<char*>(data.c_str()) + 2, sequence_number);
+    rtc::SetBE32(const_cast<char*>(data.c_str()) + 8, ssrc);
+    rtc::SetBE16(const_cast<char*>(data.c_str()) + 2, sequence_number);
     if (pl_type >= 0) {
-      talk_base::Set8(const_cast<char*>(data.c_str()), 1, pl_type);
+      rtc::Set8(const_cast<char*>(data.c_str()), 1, pl_type);
     }
     return data;
   }
   std::string CreateRtcpData(uint32 ssrc) {
     std::string data(rtcp_packet_);
     // Set SSRC in the rtcp packet copy.
-    talk_base::SetBE32(const_cast<char*>(data.c_str()) + 4, ssrc);
+    rtc::SetBE32(const_cast<char*>(data.c_str()) + 4, ssrc);
     return data;
   }
 
@@ -520,7 +520,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
      return sdesc;
   }
 
-  class CallThread : public talk_base::SignalThread {
+  class CallThread : public rtc::SignalThread {
    public:
     typedef bool (ChannelTest<T>::*Method)();
     CallThread(ChannelTest<T>* obj, Method method, bool* result)
@@ -1077,7 +1077,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     };
     CreateChannels(new LastWordMediaChannel(), new LastWordMediaChannel(),
                    RTCP | RTCP_MUX, RTCP | RTCP_MUX,
-                   talk_base::Thread::Current());
+                   rtc::Thread::Current());
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
     EXPECT_TRUE(SendTerminate());
@@ -1533,10 +1533,10 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_FALSE(channel1_->HasSendSinks(cricket::SINK_PRE_CRYPTO));
     EXPECT_FALSE(channel1_->HasRecvSinks(cricket::SINK_PRE_CRYPTO));
 
-    talk_base::Pathname path;
-    EXPECT_TRUE(talk_base::Filesystem::GetTemporaryFolder(path, true, NULL));
+    rtc::Pathname path;
+    EXPECT_TRUE(rtc::Filesystem::GetTemporaryFolder(path, true, NULL));
     path.SetFilename("sink-test.rtpdump");
-    talk_base::scoped_ptr<cricket::RtpDumpSink> sink(
+    rtc::scoped_ptr<cricket::RtpDumpSink> sink(
         new cricket::RtpDumpSink(Open(path.pathname())));
     sink->set_packet_filter(cricket::PF_ALL);
     EXPECT_TRUE(sink->Enable(true));
@@ -1562,27 +1562,27 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     sink.reset();  // This will close the file.
 
     // Read the recorded file and verify two packets.
-    talk_base::scoped_ptr<talk_base::StreamInterface> stream(
-        talk_base::Filesystem::OpenFile(path, "rb"));
+    rtc::scoped_ptr<rtc::StreamInterface> stream(
+        rtc::Filesystem::OpenFile(path, "rb"));
 
     cricket::RtpDumpReader reader(stream.get());
     cricket::RtpDumpPacket packet;
-    EXPECT_EQ(talk_base::SR_SUCCESS, reader.ReadPacket(&packet));
+    EXPECT_EQ(rtc::SR_SUCCESS, reader.ReadPacket(&packet));
     std::string read_packet(reinterpret_cast<const char*>(&packet.data[0]),
         packet.data.size());
     EXPECT_EQ(rtp_packet_, read_packet);
 
-    EXPECT_EQ(talk_base::SR_SUCCESS, reader.ReadPacket(&packet));
+    EXPECT_EQ(rtc::SR_SUCCESS, reader.ReadPacket(&packet));
     size_t len = 0;
     packet.GetRtpHeaderLen(&len);
     EXPECT_EQ(len, packet.data.size());
     EXPECT_EQ(0, memcmp(&packet.data[0], rtp_packet_.c_str(), len));
 
-    EXPECT_EQ(talk_base::SR_EOS, reader.ReadPacket(&packet));
+    EXPECT_EQ(rtc::SR_EOS, reader.ReadPacket(&packet));
 
     // Delete the file for media recording.
     stream.reset();
-    EXPECT_TRUE(talk_base::Filesystem::DeleteFile(path));
+    EXPECT_TRUE(rtc::Filesystem::DeleteFile(path));
   }
 
   void TestSetContentFailure() {
@@ -1796,7 +1796,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     // The next 1 sec failures will not trigger an error.
     EXPECT_FALSE(media_channel2_->SendRtp(kBadPacket, sizeof(kBadPacket)));
     // Wait for a while to ensure no message comes in.
-    talk_base::Thread::Current()->ProcessMessages(210);
+    rtc::Thread::Current()->ProcessMessages(210);
     EXPECT_EQ(T::MediaChannel::ERROR_NONE, error_);
     // The error will be triggered again.
     EXPECT_FALSE(media_channel2_->SendRtp(kBadPacket, sizeof(kBadPacket)));
@@ -1808,7 +1808,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
         channel2_->transport_channel();
     transport_channel->SignalReadPacket(
         transport_channel, reinterpret_cast<const char*>(kBadPacket),
-        sizeof(kBadPacket), talk_base::PacketTime(), 0);
+        sizeof(kBadPacket), rtc::PacketTime(), 0);
     EXPECT_EQ_WAIT(T::MediaChannel::ERROR_PLAY_SRTP_ERROR, error_, 500);
   }
 
@@ -1863,14 +1863,14 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   // The media channels are owned by the voice channel objects below.
   typename T::MediaChannel* media_channel1_;
   typename T::MediaChannel* media_channel2_;
-  talk_base::scoped_ptr<typename T::Channel> channel1_;
-  talk_base::scoped_ptr<typename T::Channel> channel2_;
+  rtc::scoped_ptr<typename T::Channel> channel1_;
+  rtc::scoped_ptr<typename T::Channel> channel2_;
   typename T::Content local_media_content1_;
   typename T::Content local_media_content2_;
   typename T::Content remote_media_content1_;
   typename T::Content remote_media_content2_;
-  talk_base::scoped_ptr<talk_base::SSLIdentity> identity1_;
-  talk_base::scoped_ptr<talk_base::SSLIdentity> identity2_;
+  rtc::scoped_ptr<rtc::SSLIdentity> identity1_;
+  rtc::scoped_ptr<rtc::SSLIdentity> identity2_;
   // The RTP and RTCP packets to send in the tests.
   std::string rtp_packet_;
   std::string rtcp_packet_;
@@ -1895,7 +1895,7 @@ void ChannelTest<VoiceTraits>::CreateContent(
   if (flags & SECURE) {
     audio->AddCrypto(cricket::CryptoParams(
         1, cricket::CS_AES_CM_128_HMAC_SHA1_32,
-        "inline:" + talk_base::CreateRandomString(40), ""));
+        "inline:" + rtc::CreateRandomString(40), ""));
   }
 }
 
@@ -1956,7 +1956,7 @@ class VoiceChannelTest
 // override to add NULL parameter
 template<>
 cricket::VideoChannel* ChannelTest<VideoTraits>::CreateChannel(
-    talk_base::Thread* thread, cricket::MediaEngineInterface* engine,
+    rtc::Thread* thread, cricket::MediaEngineInterface* engine,
     cricket::FakeVideoMediaChannel* ch, cricket::BaseSession* session,
     bool rtcp) {
   cricket::VideoChannel* channel = new cricket::VideoChannel(
@@ -1985,7 +1985,7 @@ void ChannelTest<VideoTraits>::CreateContent(
   if (flags & SECURE) {
     video->AddCrypto(cricket::CryptoParams(
         1, cricket::CS_AES_CM_128_HMAC_SHA1_80,
-        "inline:" + talk_base::CreateRandomString(40), ""));
+        "inline:" + rtc::CreateRandomString(40), ""));
   }
 }
 
@@ -2214,7 +2214,7 @@ TEST_F(VoiceChannelTest, DISABLED_TestKeyboardMute) {
 
   // Typing doesn't mute automatically unless typing monitor has been installed
   media_channel1_->TriggerError(0, e);
-  talk_base::Thread::Current()->ProcessMessages(0);
+  rtc::Thread::Current()->ProcessMessages(0);
   EXPECT_EQ(e, error_);
   EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
   EXPECT_FALSE(mute_callback_recved_);
@@ -2223,7 +2223,7 @@ TEST_F(VoiceChannelTest, DISABLED_TestKeyboardMute) {
   o.mute_period = 1500;
   channel1_->StartTypingMonitor(o);
   media_channel1_->TriggerError(0, e);
-  talk_base::Thread::Current()->ProcessMessages(0);
+  rtc::Thread::Current()->ProcessMessages(0);
   EXPECT_TRUE(media_channel1_->IsStreamMuted(0));
   EXPECT_TRUE(mute_callback_recved_);
 }
@@ -2482,13 +2482,13 @@ TEST_F(VideoChannelTest, TestScreencastEvents) {
                  kTimeoutMs);
   screencapture_factory->window_capturer()->SignalStateChange(
       screencapture_factory->window_capturer(), cricket::CS_PAUSED);
-  EXPECT_EQ_WAIT(talk_base::WE_MINIMIZE, catcher.event(), kTimeoutMs);
+  EXPECT_EQ_WAIT(rtc::WE_MINIMIZE, catcher.event(), kTimeoutMs);
   screencapture_factory->window_capturer()->SignalStateChange(
       screencapture_factory->window_capturer(), cricket::CS_RUNNING);
-  EXPECT_EQ_WAIT(talk_base::WE_RESTORE, catcher.event(), kTimeoutMs);
+  EXPECT_EQ_WAIT(rtc::WE_RESTORE, catcher.event(), kTimeoutMs);
   screencapture_factory->window_capturer()->SignalStateChange(
       screencapture_factory->window_capturer(), cricket::CS_STOPPED);
-  EXPECT_EQ_WAIT(talk_base::WE_CLOSE, catcher.event(), kTimeoutMs);
+  EXPECT_EQ_WAIT(rtc::WE_CLOSE, catcher.event(), kTimeoutMs);
   EXPECT_TRUE(channel1_->RemoveScreencast(0));
   ASSERT_TRUE(screencapture_factory->window_capturer() == NULL);
 }
@@ -2748,7 +2748,7 @@ class DataChannelTest
 // Override to avoid engine channel parameter.
 template<>
 cricket::DataChannel* ChannelTest<DataTraits>::CreateChannel(
-    talk_base::Thread* thread, cricket::MediaEngineInterface* engine,
+    rtc::Thread* thread, cricket::MediaEngineInterface* engine,
     cricket::FakeDataMediaChannel* ch, cricket::BaseSession* session,
     bool rtcp) {
   cricket::DataChannel* channel = new cricket::DataChannel(
@@ -2771,7 +2771,7 @@ void ChannelTest<DataTraits>::CreateContent(
   if (flags & SECURE) {
     data->AddCrypto(cricket::CryptoParams(
         1, cricket::CS_AES_CM_128_HMAC_SHA1_32,
-        "inline:" + talk_base::CreateRandomString(40), ""));
+        "inline:" + rtc::CreateRandomString(40), ""));
   }
 }
 
@@ -2929,7 +2929,7 @@ TEST_F(DataChannelTest, TestSendData) {
   unsigned char data[] = {
     'f', 'o', 'o'
   };
-  talk_base::Buffer payload(data, 3);
+  rtc::Buffer payload(data, 3);
   cricket::SendDataResult result;
   ASSERT_TRUE(media_channel1_->SendData(params, payload, &result));
   EXPECT_EQ(params.ssrc,

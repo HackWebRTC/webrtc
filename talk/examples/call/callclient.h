@@ -32,8 +32,8 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/sslidentity.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/sslidentity.h"
 #include "talk/examples/call/console.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/p2p/base/session.h"
@@ -62,10 +62,10 @@ struct AvailableMediaEntry;
 struct MucRoomInfo;
 }  // namespace buzz
 
-namespace talk_base {
+namespace rtc {
 class Thread;
 class NetworkManager;
-}  // namespace talk_base
+}  // namespace rtc
 
 namespace cricket {
 class PortAllocator;
@@ -166,7 +166,7 @@ class CallClient: public sigslot::has_slots<> {
     sdes_policy_ = sdes_policy;
     dtls_policy_ = dtls_policy;
   }
-  void SetSslIdentity(talk_base::SSLIdentity* identity) {
+  void SetSslIdentity(rtc::SSLIdentity* identity) {
     ssl_identity_.reset(identity);
   }
 
@@ -242,7 +242,7 @@ class CallClient: public sigslot::has_slots<> {
                          const buzz::XmlElement* stanza);
   void OnDataReceived(cricket::Call*,
                       const cricket::ReceiveDataParams& params,
-                      const talk_base::Buffer& payload);
+                      const rtc::Buffer& payload);
   buzz::Jid GenerateRandomMucJid();
 
   // Depending on |enable|, render (or don't) all the streams in |session|.
@@ -303,8 +303,8 @@ class CallClient: public sigslot::has_slots<> {
 
   Console *console_;
   buzz::XmppClient* xmpp_client_;
-  talk_base::Thread* worker_thread_;
-  talk_base::NetworkManager* network_manager_;
+  rtc::Thread* worker_thread_;
+  rtc::NetworkManager* network_manager_;
   cricket::PortAllocator* port_allocator_;
   cricket::SessionManager* session_manager_;
   cricket::SessionManagerTask* session_manager_task_;
@@ -343,7 +343,7 @@ class CallClient: public sigslot::has_slots<> {
   cricket::TransportProtocol transport_protocol_;
   cricket::SecurePolicy sdes_policy_;
   cricket::SecurePolicy dtls_policy_;
-  talk_base::scoped_ptr<talk_base::SSLIdentity> ssl_identity_;
+  rtc::scoped_ptr<rtc::SSLIdentity> ssl_identity_;
   std::string last_sent_to_;
 
   bool show_roster_messages_;

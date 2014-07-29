@@ -30,7 +30,7 @@
 
 #include <string>
 
-#include "talk/base/constructormagic.h"
+#include "webrtc/base/constructormagic.h"
 
 namespace cricket {
 

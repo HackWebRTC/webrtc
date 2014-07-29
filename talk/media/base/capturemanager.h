@@ -46,7 +46,7 @@
 #include <map>
 #include <vector>
 
-#include "talk/base/sigslotrepeater.h"
+#include "webrtc/base/sigslotrepeater.h"
 #include "talk/media/base/capturerenderadapter.h"
 #include "talk/media/base/videocommon.h"
 

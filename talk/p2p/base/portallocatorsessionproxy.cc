@@ -27,7 +27,7 @@
 
 #include "talk/p2p/base/portallocatorsessionproxy.h"
 
-#include "talk/base/thread.h"
+#include "webrtc/base/thread.h"
 #include "talk/p2p/base/portallocator.h"
 #include "talk/p2p/base/portproxy.h"
 
@@ -38,11 +38,11 @@ enum {
   MSG_SEND_ALLOCATED_PORTS,
 };
 
-typedef talk_base::TypedMessageData<PortAllocatorSessionProxy*> ProxyObjData;
+typedef rtc::TypedMessageData<PortAllocatorSessionProxy*> ProxyObjData;
 
 PortAllocatorSessionMuxer::PortAllocatorSessionMuxer(
     PortAllocatorSession* session)
-    : worker_thread_(talk_base::Thread::Current()),
+    : worker_thread_(rtc::Thread::Current()),
       session_(session),
       candidate_done_signal_received_(false) {
   session_->SignalPortReady.connect(
@@ -114,7 +114,7 @@ void PortAllocatorSessionMuxer::OnSessionProxyDestroyed(
   }
 }
 
-void PortAllocatorSessionMuxer::OnMessage(talk_base::Message *pmsg) {
+void PortAllocatorSessionMuxer::OnMessage(rtc::Message *pmsg) {
   ProxyObjData* proxy = static_cast<ProxyObjData*>(pmsg->pdata);
   switch (pmsg->message_id) {
     case MSG_SEND_ALLOCATION_DONE:

@@ -28,8 +28,8 @@
 #ifndef TALK_MEDIA_WEBRTC_WEBRTCTEXTUREVIDEOFRAME_H_
 #define TALK_MEDIA_WEBRTC_WEBRTCTEXTUREVIDEOFRAME_H_
 
-#include "talk/base/refcount.h"
-#include "talk/base/scoped_ref_ptr.h"
+#include "webrtc/base/refcount.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "talk/media/base/videoframe.h"
 #include "webrtc/common_video/interface/native_handle.h"
 
@@ -81,7 +81,7 @@ class WebRtcTextureVideoFrame : public VideoFrame {
       uint8* dst_y, uint8* dst_u, uint8* dst_v,
       int32 dst_pitch_y, int32 dst_pitch_u, int32 dst_pitch_v) const;
   virtual void CopyToFrame(VideoFrame* target) const;
-  virtual talk_base::StreamResult Write(talk_base::StreamInterface* stream,
+  virtual rtc::StreamResult Write(rtc::StreamInterface* stream,
                                         int* error);
   virtual void StretchToPlanes(
       uint8* y, uint8* u, uint8* v, int32 pitchY, int32 pitchU, int32 pitchV,
@@ -101,7 +101,7 @@ class WebRtcTextureVideoFrame : public VideoFrame {
 
  private:
   // The handle of the underlying video frame.
-  talk_base::scoped_refptr<webrtc::NativeHandle> handle_;
+  rtc::scoped_refptr<webrtc::NativeHandle> handle_;
   int width_;
   int height_;
   int64 elapsed_time_;

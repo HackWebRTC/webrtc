@@ -33,9 +33,9 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/basictypes.h"
-#include "talk/base/bytebuffer.h"
-#include "talk/base/stream.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/bytebuffer.h"
+#include "webrtc/base/stream.h"
 
 namespace cricket {
 
@@ -57,7 +57,7 @@ enum RtpDumpPacketFilter {
 
 struct RtpDumpFileHeader {
   RtpDumpFileHeader(uint32 start_ms, uint32 s, uint16 p);
-  void WriteToByteBuffer(talk_base::ByteBuffer* buf);
+  void WriteToByteBuffer(rtc::ByteBuffer* buf);
 
   static const char kFirstLine[];
   static const size_t kHeaderLength = 16;
@@ -104,7 +104,7 @@ struct RtpDumpPacket {
 
 class RtpDumpReader {
  public:
-  explicit RtpDumpReader(talk_base::StreamInterface* stream)
+  explicit RtpDumpReader(rtc::StreamInterface* stream)
       : stream_(stream),
         file_header_read_(false),
         first_line_and_file_header_len_(0),
@@ -115,10 +115,10 @@ class RtpDumpReader {
 
   // Use the specified ssrc, rather than the ssrc from dump, for RTP packets.
   void SetSsrc(uint32 ssrc);
-  virtual talk_base::StreamResult ReadPacket(RtpDumpPacket* packet);
+  virtual rtc::StreamResult ReadPacket(RtpDumpPacket* packet);
 
  protected:
-  talk_base::StreamResult ReadFileHeader();
+  rtc::StreamResult ReadFileHeader();
   bool RewindToFirstDumpPacket() {
     return stream_->SetPosition(first_line_and_file_header_len_);
   }
@@ -127,7 +127,7 @@ class RtpDumpReader {
   // Check if its matches "#!rtpplay1.0 address/port\n".
   bool CheckFirstLine(const std::string& first_line);
 
-  talk_base::StreamInterface* stream_;
+  rtc::StreamInterface* stream_;
   bool file_header_read_;
   size_t first_line_and_file_header_len_;
   uint32 start_time_ms_;
@@ -143,8 +143,8 @@ class RtpDumpReader {
 // RTP packets and RTCP packets.
 class RtpDumpLoopReader : public RtpDumpReader {
  public:
-  explicit RtpDumpLoopReader(talk_base::StreamInterface* stream);
-  virtual talk_base::StreamResult ReadPacket(RtpDumpPacket* packet);
+  explicit RtpDumpLoopReader(rtc::StreamInterface* stream);
+  virtual rtc::StreamResult ReadPacket(RtpDumpPacket* packet);
 
  private:
   // During the first loop, update the statistics, including packet count, frame
@@ -186,19 +186,19 @@ class RtpDumpLoopReader : public RtpDumpReader {
 
 class RtpDumpWriter {
  public:
-  explicit RtpDumpWriter(talk_base::StreamInterface* stream);
+  explicit RtpDumpWriter(rtc::StreamInterface* stream);
 
   // Filter to control what packets we actually record.
   void set_packet_filter(int filter);
   // Write a RTP or RTCP packet. The parameters data points to the packet and
   // data_len is its length.
-  talk_base::StreamResult WriteRtpPacket(const void* data, size_t data_len) {
+  rtc::StreamResult WriteRtpPacket(const void* data, size_t data_len) {
     return WritePacket(data, data_len, GetElapsedTime(), false);
   }
-  talk_base::StreamResult WriteRtcpPacket(const void* data, size_t data_len) {
+  rtc::StreamResult WriteRtcpPacket(const void* data, size_t data_len) {
     return WritePacket(data, data_len, GetElapsedTime(), true);
   }
-  talk_base::StreamResult WritePacket(const RtpDumpPacket& packet) {
+  rtc::StreamResult WritePacket(const RtpDumpPacket& packet) {
     return WritePacket(&packet.data[0], packet.data.size(), packet.elapsed_time,
                        packet.is_rtcp());
   }
@@ -211,15 +211,15 @@ class RtpDumpWriter {
   }
 
  protected:
-  talk_base::StreamResult WriteFileHeader();
+  rtc::StreamResult WriteFileHeader();
 
  private:
-  talk_base::StreamResult WritePacket(const void* data, size_t data_len,
+  rtc::StreamResult WritePacket(const void* data, size_t data_len,
                                       uint32 elapsed, bool rtcp);
   size_t FilterPacket(const void* data, size_t data_len, bool rtcp);
-  talk_base::StreamResult WriteToStream(const void* data, size_t data_len);
+  rtc::StreamResult WriteToStream(const void* data, size_t data_len);
 
-  talk_base::StreamInterface* stream_;
+  rtc::StreamInterface* stream_;
   int packet_filter_;
   bool file_header_written_;
   uint32 start_time_ms_;  // Time when the record starts.

@@ -28,11 +28,11 @@
 #ifndef TALK_XMPP_PREXMPPAUTH_H_
 #define TALK_XMPP_PREXMPPAUTH_H_
 
-#include "talk/base/cryptstring.h"
-#include "talk/base/sigslot.h"
+#include "webrtc/base/cryptstring.h"
+#include "webrtc/base/sigslot.h"
 #include "talk/xmpp/saslhandler.h"
 
-namespace talk_base {
+namespace rtc {
   class SocketAddress;
 }
 
@@ -67,8 +67,8 @@ public:
 
   virtual void StartPreXmppAuth(
     const Jid& jid,
-    const talk_base::SocketAddress& server,
-    const talk_base::CryptString& pass,
+    const rtc::SocketAddress& server,
+    const rtc::CryptString& pass,
     const std::string& auth_mechanism,
     const std::string& auth_token) = 0;
 

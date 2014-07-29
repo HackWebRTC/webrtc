@@ -30,7 +30,7 @@
 #include "libyuv/convert.h"
 #include "libyuv/convert_from.h"
 #include "libyuv/planar_functions.h"
-#include "talk/base/logging.h"
+#include "webrtc/base/logging.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videocommon.h"
 
@@ -56,7 +56,7 @@ class WebRtcVideoFrame::FrameBuffer {
   const webrtc::VideoFrame* frame() const;
 
  private:
-  talk_base::scoped_ptr<uint8[]> owned_data_;
+  rtc::scoped_ptr<uint8[]> owned_data_;
   webrtc::VideoFrame video_frame_;
 };
 
@@ -157,7 +157,7 @@ bool WebRtcVideoFrame::InitToBlack(int w, int h, size_t pixel_width,
 void WebRtcVideoFrame::Alias(
     uint8* buffer, size_t buffer_size, int w, int h, size_t pixel_width,
     size_t pixel_height, int64 elapsed_time, int64 time_stamp, int rotation) {
-  talk_base::scoped_refptr<RefCountedBuffer> video_buffer(
+  rtc::scoped_refptr<RefCountedBuffer> video_buffer(
       new RefCountedBuffer());
   video_buffer->Alias(buffer, buffer_size);
   Attach(video_buffer.get(), buffer_size, w, h, pixel_width, pixel_height,
@@ -324,7 +324,7 @@ bool WebRtcVideoFrame::Reset(
   }
 
   size_t desired_size = SizeOf(new_width, new_height);
-  talk_base::scoped_refptr<RefCountedBuffer> video_buffer(
+  rtc::scoped_refptr<RefCountedBuffer> video_buffer(
       new RefCountedBuffer(desired_size));
   // Since the libyuv::ConvertToI420 will handle the rotation, so the
   // new frame's rotation should always be 0.
@@ -368,7 +368,7 @@ void WebRtcVideoFrame::InitToEmptyBuffer(int w, int h, size_t pixel_width,
                                          size_t pixel_height,
                                          int64 elapsed_time, int64 time_stamp) {
   size_t buffer_size = VideoFrame::SizeOf(w, h);
-  talk_base::scoped_refptr<RefCountedBuffer> video_buffer(
+  rtc::scoped_refptr<RefCountedBuffer> video_buffer(
       new RefCountedBuffer(buffer_size));
   Attach(video_buffer.get(), buffer_size, w, h, pixel_width, pixel_height,
          elapsed_time, time_stamp, 0);

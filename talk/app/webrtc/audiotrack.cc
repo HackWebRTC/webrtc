@@ -42,10 +42,10 @@ std::string AudioTrack::kind() const {
   return kAudioTrackKind;
 }
 
-talk_base::scoped_refptr<AudioTrack> AudioTrack::Create(
+rtc::scoped_refptr<AudioTrack> AudioTrack::Create(
     const std::string& id, AudioSourceInterface* source) {
-  talk_base::RefCountedObject<AudioTrack>* track =
-      new talk_base::RefCountedObject<AudioTrack>(id, source);
+  rtc::RefCountedObject<AudioTrack>* track =
+      new rtc::RefCountedObject<AudioTrack>(id, source);
   return track;
 }
 

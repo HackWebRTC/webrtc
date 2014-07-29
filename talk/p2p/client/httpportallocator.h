@@ -36,7 +36,7 @@
 
 class HttpPortAllocatorTest_TestSessionRequestUrl_Test;
 
-namespace talk_base {
+namespace rtc {
 class AsyncHttpRequest;
 class SignalThread;
 }
@@ -51,10 +51,10 @@ class HttpPortAllocatorBase : public BasicPortAllocator {
   // Records the URL that we will GET in order to create a session.
   static const char kCreateSessionURL[];
 
-  HttpPortAllocatorBase(talk_base::NetworkManager* network_manager,
+  HttpPortAllocatorBase(rtc::NetworkManager* network_manager,
                         const std::string& user_agent);
-  HttpPortAllocatorBase(talk_base::NetworkManager* network_manager,
-                        talk_base::PacketSocketFactory* socket_factory,
+  HttpPortAllocatorBase(rtc::NetworkManager* network_manager,
+                        rtc::PacketSocketFactory* socket_factory,
                         const std::string& user_agent);
   virtual ~HttpPortAllocatorBase();
 
@@ -66,7 +66,7 @@ class HttpPortAllocatorBase : public BasicPortAllocator {
       const std::string& ice_ufrag,
       const std::string& ice_pwd) = 0;
 
-  void SetStunHosts(const std::vector<talk_base::SocketAddress>& hosts) {
+  void SetStunHosts(const std::vector<rtc::SocketAddress>& hosts) {
     if (!hosts.empty()) {
       stun_hosts_ = hosts;
     }
@@ -78,7 +78,7 @@ class HttpPortAllocatorBase : public BasicPortAllocator {
   }
   void SetRelayToken(const std::string& relay) { relay_token_ = relay; }
 
-  const std::vector<talk_base::SocketAddress>& stun_hosts() const {
+  const std::vector<rtc::SocketAddress>& stun_hosts() const {
     return stun_hosts_;
   }
 
@@ -95,7 +95,7 @@ class HttpPortAllocatorBase : public BasicPortAllocator {
   }
 
  private:
-  std::vector<talk_base::SocketAddress> stun_hosts_;
+  std::vector<rtc::SocketAddress> stun_hosts_;
   std::vector<std::string> relay_hosts_;
   std::string relay_token_;
   std::string agent_;
@@ -111,7 +111,7 @@ class HttpPortAllocatorSessionBase : public BasicPortAllocatorSession {
       int component,
       const std::string& ice_ufrag,
       const std::string& ice_pwd,
-      const std::vector<talk_base::SocketAddress>& stun_hosts,
+      const std::vector<rtc::SocketAddress>& stun_hosts,
       const std::vector<std::string>& relay_hosts,
       const std::string& relay,
       const std::string& agent);
@@ -141,7 +141,7 @@ class HttpPortAllocatorSessionBase : public BasicPortAllocatorSession {
 
  private:
   std::vector<std::string> relay_hosts_;
-  std::vector<talk_base::SocketAddress> stun_hosts_;
+  std::vector<rtc::SocketAddress> stun_hosts_;
   std::string relay_token_;
   std::string agent_;
   int attempts_;
@@ -149,10 +149,10 @@ class HttpPortAllocatorSessionBase : public BasicPortAllocatorSession {
 
 class HttpPortAllocator : public HttpPortAllocatorBase {
  public:
-  HttpPortAllocator(talk_base::NetworkManager* network_manager,
+  HttpPortAllocator(rtc::NetworkManager* network_manager,
                     const std::string& user_agent);
-  HttpPortAllocator(talk_base::NetworkManager* network_manager,
-                    talk_base::PacketSocketFactory* socket_factory,
+  HttpPortAllocator(rtc::NetworkManager* network_manager,
+                    rtc::PacketSocketFactory* socket_factory,
                     const std::string& user_agent);
   virtual ~HttpPortAllocator();
   virtual PortAllocatorSession* CreateSessionInternal(
@@ -169,7 +169,7 @@ class HttpPortAllocatorSession : public HttpPortAllocatorSessionBase {
       int component,
       const std::string& ice_ufrag,
       const std::string& ice_pwd,
-      const std::vector<talk_base::SocketAddress>& stun_hosts,
+      const std::vector<rtc::SocketAddress>& stun_hosts,
       const std::vector<std::string>& relay_hosts,
       const std::string& relay,
       const std::string& agent);
@@ -179,10 +179,10 @@ class HttpPortAllocatorSession : public HttpPortAllocatorSessionBase {
 
  protected:
   // Protected for diagnostics.
-  virtual void OnRequestDone(talk_base::SignalThread* request);
+  virtual void OnRequestDone(rtc::SignalThread* request);
 
  private:
-  std::list<talk_base::AsyncHttpRequest*> requests_;
+  std::list<rtc::AsyncHttpRequest*> requests_;
 };
 
 }  // namespace cricket

@@ -25,9 +25,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/base/fakesslidentity.h"
-#include "talk/base/gunit.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/fakesslidentity.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/thread.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/fakesession.h"
 #include "talk/p2p/base/parsing.h"
@@ -47,7 +47,7 @@ using cricket::IceRole;
 using cricket::TransportDescription;
 using cricket::WriteError;
 using cricket::ParseError;
-using talk_base::SocketAddress;
+using rtc::SocketAddress;
 
 static const char kIceUfrag1[] = "TESTICEUFRAG0001";
 static const char kIcePwd1[] = "TESTICEPWD00000000000001";
@@ -59,7 +59,7 @@ class TransportTest : public testing::Test,
                       public sigslot::has_slots<> {
  public:
   TransportTest()
-      : thread_(talk_base::Thread::Current()),
+      : thread_(rtc::Thread::Current()),
         transport_(new FakeTransport(
             thread_, thread_, "test content name", NULL)),
         channel_(NULL),
@@ -97,8 +97,8 @@ class TransportTest : public testing::Test,
     failed_ = true;
   }
 
-  talk_base::Thread* thread_;
-  talk_base::scoped_ptr<FakeTransport> transport_;
+  rtc::Thread* thread_;
+  rtc::scoped_ptr<FakeTransport> transport_;
   FakeTransportChannel* channel_;
   bool connecting_signalled_;
   bool completed_;
@@ -365,20 +365,20 @@ TEST_F(TransportTest, TestSetRemoteIceLiteInAnswer) {
 TEST_F(TransportTest, TestP2PTransportWriteAndParseCandidate) {
   Candidate test_candidate(
       "", 1, "udp",
-      talk_base::SocketAddress("2001:db8:fefe::1", 9999),
+      rtc::SocketAddress("2001:db8:fefe::1", 9999),
       738197504, "abcdef", "ghijkl", "foo", "testnet", 50, "");
   Candidate test_candidate2(
       "", 2, "tcp",
-      talk_base::SocketAddress("192.168.7.1", 9999),
+      rtc::SocketAddress("192.168.7.1", 9999),
       1107296256, "mnopqr", "stuvwx", "bar", "testnet2", 100, "");
-  talk_base::SocketAddress host_address("www.google.com", 24601);
-  host_address.SetResolvedIP(talk_base::IPAddress(0x0A000001));
+  rtc::SocketAddress host_address("www.google.com", 24601);
+  host_address.SetResolvedIP(rtc::IPAddress(0x0A000001));
   Candidate test_candidate3(
       "", 3, "spdy", host_address, 1476395008, "yzabcd",
       "efghij", "baz", "testnet3", 150, "");
   WriteError write_error;
   ParseError parse_error;
-  talk_base::scoped_ptr<buzz::XmlElement> elem;
+  rtc::scoped_ptr<buzz::XmlElement> elem;
   cricket::Candidate parsed_candidate;
   cricket::P2PTransportParser parser;
 

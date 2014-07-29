@@ -32,9 +32,9 @@
 #include "talk/app/webrtc/peerconnectionfactory.h"
 #include "talk/app/webrtc/videosourceinterface.h"
 #include "talk/app/webrtc/test/fakevideotrackrenderer.h"
-#include "talk/base/gunit.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/thread.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/thread.h"
 #include "talk/media/base/fakevideocapturer.h"
 #include "talk/media/webrtc/webrtccommon.h"
 #include "talk/media/webrtc/webrtcvoe.h"
@@ -102,8 +102,8 @@ class NullPeerConnectionObserver : public PeerConnectionObserver {
 
 class PeerConnectionFactoryTest : public testing::Test {
   void SetUp() {
-    factory_ = webrtc::CreatePeerConnectionFactory(talk_base::Thread::Current(),
-                                                   talk_base::Thread::Current(),
+    factory_ = webrtc::CreatePeerConnectionFactory(rtc::Thread::Current(),
+                                                   rtc::Thread::Current(),
                                                    NULL,
                                                    NULL,
                                                    NULL);
@@ -141,21 +141,21 @@ class PeerConnectionFactoryTest : public testing::Test {
     }
   }
 
-  talk_base::scoped_refptr<PeerConnectionFactoryInterface> factory_;
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory_;
   NullPeerConnectionObserver observer_;
-  talk_base::scoped_refptr<PortAllocatorFactoryInterface> allocator_factory_;
+  rtc::scoped_refptr<PortAllocatorFactoryInterface> allocator_factory_;
 };
 
 // Verify creation of PeerConnection using internal ADM, video factory and
 // internal libjingle threads.
 TEST(PeerConnectionFactoryTestInternal, CreatePCUsingInternalModules) {
-  talk_base::scoped_refptr<PeerConnectionFactoryInterface> factory(
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       webrtc::CreatePeerConnectionFactory());
 
   NullPeerConnectionObserver observer;
   webrtc::PeerConnectionInterface::IceServers servers;
 
-  talk_base::scoped_refptr<PeerConnectionInterface> pc(
+  rtc::scoped_refptr<PeerConnectionInterface> pc(
       factory->CreatePeerConnection(servers, NULL, NULL, NULL, &observer));
 
   EXPECT_TRUE(pc.get() != NULL);
@@ -174,7 +174,7 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingIceServers) {
   ice_server.uri = kTurnIceServerWithTransport;
   ice_server.password = kTurnPassword;
   config.servers.push_back(ice_server);
-  talk_base::scoped_refptr<PeerConnectionInterface> pc(
+  rtc::scoped_refptr<PeerConnectionInterface> pc(
       factory_->CreatePeerConnection(config, NULL,
                                      allocator_factory_.get(),
                                      NULL,
@@ -210,7 +210,7 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingIceServersOldSignature) {
   ice_server.uri = kTurnIceServerWithTransport;
   ice_server.password = kTurnPassword;
   ice_servers.push_back(ice_server);
-  talk_base::scoped_refptr<PeerConnectionInterface> pc(
+  rtc::scoped_refptr<PeerConnectionInterface> pc(
       factory_->CreatePeerConnection(ice_servers, NULL,
                                      allocator_factory_.get(),
                                      NULL,
@@ -240,7 +240,7 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingNoUsernameInUri) {
   ice_server.username = kTurnUsername;
   ice_server.password = kTurnPassword;
   config.servers.push_back(ice_server);
-  talk_base::scoped_refptr<PeerConnectionInterface> pc(
+  rtc::scoped_refptr<PeerConnectionInterface> pc(
       factory_->CreatePeerConnection(config, NULL,
                                      allocator_factory_.get(),
                                      NULL,
@@ -261,7 +261,7 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingTurnUrlWithTransportParam) {
   ice_server.uri = kTurnIceServerWithTransport;
   ice_server.password = kTurnPassword;
   config.servers.push_back(ice_server);
-  talk_base::scoped_refptr<PeerConnectionInterface> pc(
+  rtc::scoped_refptr<PeerConnectionInterface> pc(
       factory_->CreatePeerConnection(config, NULL,
                                      allocator_factory_.get(),
                                      NULL,
@@ -286,7 +286,7 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingSecureTurnUrl) {
   ice_server.uri = kSecureTurnIceServerWithoutTransportAndPortParam;
   ice_server.password = kTurnPassword;
   config.servers.push_back(ice_server);
-  talk_base::scoped_refptr<PeerConnectionInterface> pc(
+  rtc::scoped_refptr<PeerConnectionInterface> pc(
       factory_->CreatePeerConnection(config, NULL,
                                      allocator_factory_.get(),
                                      NULL,
@@ -323,7 +323,7 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingIPLiteralAddress) {
   ice_server.uri = kTurnIceServerWithIPv6Address;
   ice_server.password = kTurnPassword;
   config.servers.push_back(ice_server);
-  talk_base::scoped_refptr<PeerConnectionInterface> pc(
+  rtc::scoped_refptr<PeerConnectionInterface> pc(
       factory_->CreatePeerConnection(config, NULL,
                                      allocator_factory_.get(),
                                      NULL,
@@ -356,10 +356,10 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingIPLiteralAddress) {
 TEST_F(PeerConnectionFactoryTest, LocalRendering) {
   cricket::FakeVideoCapturer* capturer = new cricket::FakeVideoCapturer();
   // The source take ownership of |capturer|.
-  talk_base::scoped_refptr<VideoSourceInterface> source(
+  rtc::scoped_refptr<VideoSourceInterface> source(
       factory_->CreateVideoSource(capturer, NULL));
   ASSERT_TRUE(source.get() != NULL);
-  talk_base::scoped_refptr<VideoTrackInterface> track(
+  rtc::scoped_refptr<VideoTrackInterface> track(
       factory_->CreateVideoTrack("testlabel", source));
   ASSERT_TRUE(track.get() != NULL);
   FakeVideoTrackRenderer local_renderer(track);

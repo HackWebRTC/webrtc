@@ -38,7 +38,7 @@ VideoTrackRenderers::~VideoTrackRenderers() {
 }
 
 void VideoTrackRenderers::AddRenderer(VideoRendererInterface* renderer) {
-  talk_base::CritScope cs(&critical_section_);
+  rtc::CritScope cs(&critical_section_);
   std::vector<RenderObserver>::iterator it =  renderers_.begin();
   for (; it != renderers_.end(); ++it) {
     if (it->renderer_ == renderer)
@@ -48,7 +48,7 @@ void VideoTrackRenderers::AddRenderer(VideoRendererInterface* renderer) {
 }
 
 void VideoTrackRenderers::RemoveRenderer(VideoRendererInterface* renderer) {
-  talk_base::CritScope cs(&critical_section_);
+  rtc::CritScope cs(&critical_section_);
   std::vector<RenderObserver>::iterator it =  renderers_.begin();
   for (; it != renderers_.end(); ++it) {
     if (it->renderer_ == renderer) {
@@ -59,12 +59,12 @@ void VideoTrackRenderers::RemoveRenderer(VideoRendererInterface* renderer) {
 }
 
 void VideoTrackRenderers::SetEnabled(bool enable) {
-  talk_base::CritScope cs(&critical_section_);
+  rtc::CritScope cs(&critical_section_);
   enabled_ = enable;
 }
 
 bool VideoTrackRenderers::SetSize(int width, int height, int reserved) {
-  talk_base::CritScope cs(&critical_section_);
+  rtc::CritScope cs(&critical_section_);
   width_ = width;
   height_ = height;
   std::vector<RenderObserver>::iterator it = renderers_.begin();
@@ -76,7 +76,7 @@ bool VideoTrackRenderers::SetSize(int width, int height, int reserved) {
 }
 
 bool VideoTrackRenderers::RenderFrame(const cricket::VideoFrame* frame) {
-  talk_base::CritScope cs(&critical_section_);
+  rtc::CritScope cs(&critical_section_);
   if (!enabled_) {
     return true;
   }

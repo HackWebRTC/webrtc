@@ -34,9 +34,9 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/basictypes.h"
-#include "talk/base/bytebuffer.h"
-#include "talk/base/socketaddress.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/bytebuffer.h"
+#include "webrtc/base/socketaddress.h"
 
 namespace cricket {
 
@@ -195,11 +195,11 @@ class StunMessage {
 
   // Parses the STUN packet in the given buffer and records it here. The
   // return value indicates whether this was successful.
-  bool Read(talk_base::ByteBuffer* buf);
+  bool Read(rtc::ByteBuffer* buf);
 
   // Writes this object into a STUN packet. The return value indicates whether
   // this was successful.
-  bool Write(talk_base::ByteBuffer* buf) const;
+  bool Write(rtc::ByteBuffer* buf) const;
 
   // Creates an empty message. Overridable by derived classes.
   virtual StunMessage* CreateNew() const { return new StunMessage(); }
@@ -236,11 +236,11 @@ class StunAttribute {
 
   // Reads the body (not the type or length) for this type of attribute from
   // the given buffer.  Return value is true if successful.
-  virtual bool Read(talk_base::ByteBuffer* buf) = 0;
+  virtual bool Read(rtc::ByteBuffer* buf) = 0;
 
   // Writes the body (not the type or length) to the given buffer.  Return
   // value is true if successful.
-  virtual bool Write(talk_base::ByteBuffer* buf) const = 0;
+  virtual bool Write(rtc::ByteBuffer* buf) const = 0;
 
   // Creates an attribute object with the given type and smallest length.
   static StunAttribute* Create(StunAttributeValueType value_type, uint16 type,
@@ -258,8 +258,8 @@ class StunAttribute {
  protected:
   StunAttribute(uint16 type, uint16 length);
   void SetLength(uint16 length) { length_ = length; }
-  void WritePadding(talk_base::ByteBuffer* buf) const;
-  void ConsumePadding(talk_base::ByteBuffer* buf) const;
+  void WritePadding(rtc::ByteBuffer* buf) const;
+  void ConsumePadding(rtc::ByteBuffer* buf) const;
 
  private:
   uint16 type_;
@@ -272,7 +272,7 @@ class StunAddressAttribute : public StunAttribute {
   static const uint16 SIZE_UNDEF = 0;
   static const uint16 SIZE_IP4 = 8;
   static const uint16 SIZE_IP6 = 20;
-  StunAddressAttribute(uint16 type, const talk_base::SocketAddress& addr);
+  StunAddressAttribute(uint16 type, const rtc::SocketAddress& addr);
   StunAddressAttribute(uint16 type, uint16 length);
 
   virtual StunAttributeValueType value_type() const {
@@ -289,22 +289,22 @@ class StunAddressAttribute : public StunAttribute {
     return STUN_ADDRESS_UNDEF;
   }
 
-  const talk_base::SocketAddress& GetAddress() const { return address_; }
-  const talk_base::IPAddress& ipaddr() const { return address_.ipaddr(); }
+  const rtc::SocketAddress& GetAddress() const { return address_; }
+  const rtc::IPAddress& ipaddr() const { return address_.ipaddr(); }
   uint16 port() const { return address_.port(); }
 
-  void SetAddress(const talk_base::SocketAddress& addr) {
+  void SetAddress(const rtc::SocketAddress& addr) {
     address_ = addr;
     EnsureAddressLength();
   }
-  void SetIP(const talk_base::IPAddress& ip) {
+  void SetIP(const rtc::IPAddress& ip) {
     address_.SetIP(ip);
     EnsureAddressLength();
   }
   void SetPort(uint16 port) { address_.SetPort(port); }
 
-  virtual bool Read(talk_base::ByteBuffer* buf);
-  virtual bool Write(talk_base::ByteBuffer* buf) const;
+  virtual bool Read(rtc::ByteBuffer* buf);
+  virtual bool Write(rtc::ByteBuffer* buf) const;
 
  private:
   void EnsureAddressLength() {
@@ -323,7 +323,7 @@ class StunAddressAttribute : public StunAttribute {
       }
     }
   }
-  talk_base::SocketAddress address_;
+  rtc::SocketAddress address_;
 };
 
 // Implements STUN attributes that record an Internet address. When encoded
@@ -331,7 +331,7 @@ class StunAddressAttribute : public StunAttribute {
 // transaction ID of the message.
 class StunXorAddressAttribute : public StunAddressAttribute {
  public:
-  StunXorAddressAttribute(uint16 type, const talk_base::SocketAddress& addr);
+  StunXorAddressAttribute(uint16 type, const rtc::SocketAddress& addr);
   StunXorAddressAttribute(uint16 type, uint16 length,
                           StunMessage* owner);
 
@@ -341,11 +341,11 @@ class StunXorAddressAttribute : public StunAddressAttribute {
   virtual void SetOwner(StunMessage* owner) {
     owner_ = owner;
   }
-  virtual bool Read(talk_base::ByteBuffer* buf);
-  virtual bool Write(talk_base::ByteBuffer* buf) const;
+  virtual bool Read(rtc::ByteBuffer* buf);
+  virtual bool Write(rtc::ByteBuffer* buf) const;
 
  private:
-  talk_base::IPAddress GetXoredIP() const;
+  rtc::IPAddress GetXoredIP() const;
   StunMessage* owner_;
 };
 
@@ -366,8 +366,8 @@ class StunUInt32Attribute : public StunAttribute {
   bool GetBit(size_t index) const;
   void SetBit(size_t index, bool value);
 
-  virtual bool Read(talk_base::ByteBuffer* buf);
-  virtual bool Write(talk_base::ByteBuffer* buf) const;
+  virtual bool Read(rtc::ByteBuffer* buf);
+  virtual bool Write(rtc::ByteBuffer* buf) const;
 
  private:
   uint32 bits_;
@@ -386,8 +386,8 @@ class StunUInt64Attribute : public StunAttribute {
   uint64 value() const { return bits_; }
   void SetValue(uint64 bits) { bits_ = bits; }
 
-  virtual bool Read(talk_base::ByteBuffer* buf);
-  virtual bool Write(talk_base::ByteBuffer* buf) const;
+  virtual bool Read(rtc::ByteBuffer* buf);
+  virtual bool Write(rtc::ByteBuffer* buf) const;
 
  private:
   uint64 bits_;
@@ -415,8 +415,8 @@ class StunByteStringAttribute : public StunAttribute {
   uint8 GetByte(size_t index) const;
   void SetByte(size_t index, uint8 value);
 
-  virtual bool Read(talk_base::ByteBuffer* buf);
-  virtual bool Write(talk_base::ByteBuffer* buf) const;
+  virtual bool Read(rtc::ByteBuffer* buf);
+  virtual bool Write(rtc::ByteBuffer* buf) const;
 
  private:
   void SetBytes(char* bytes, size_t length);
@@ -448,8 +448,8 @@ class StunErrorCodeAttribute : public StunAttribute {
   void SetNumber(uint8 number) { number_ = number; }
   void SetReason(const std::string& reason);
 
-  bool Read(talk_base::ByteBuffer* buf);
-  bool Write(talk_base::ByteBuffer* buf) const;
+  bool Read(rtc::ByteBuffer* buf);
+  bool Write(rtc::ByteBuffer* buf) const;
 
  private:
   uint8 class_;
@@ -472,8 +472,8 @@ class StunUInt16ListAttribute : public StunAttribute {
   void SetType(int index, uint16 value);
   void AddType(uint16 value);
 
-  bool Read(talk_base::ByteBuffer* buf);
-  bool Write(talk_base::ByteBuffer* buf) const;
+  bool Read(rtc::ByteBuffer* buf);
+  bool Write(rtc::ByteBuffer* buf) const;
 
  private:
   std::vector<uint16>* attr_types_;

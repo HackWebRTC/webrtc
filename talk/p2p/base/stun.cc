@@ -29,15 +29,15 @@
 
 #include <string.h>
 
-#include "talk/base/byteorder.h"
-#include "talk/base/common.h"
-#include "talk/base/crc32.h"
-#include "talk/base/logging.h"
-#include "talk/base/messagedigest.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/stringencode.h"
+#include "webrtc/base/byteorder.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/crc32.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/messagedigest.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/stringencode.h"
 
-using talk_base::ByteBuffer;
+using rtc::ByteBuffer;
 
 namespace cricket {
 
@@ -151,7 +151,7 @@ bool StunMessage::ValidateMessageIntegrity(const char* data, size_t size,
   }
 
   // Getting the message length from the STUN header.
-  uint16 msg_length = talk_base::GetBE16(&data[2]);
+  uint16 msg_length = rtc::GetBE16(&data[2]);
   if (size != (msg_length + kStunHeaderSize)) {
     return false;
   }
@@ -162,8 +162,8 @@ bool StunMessage::ValidateMessageIntegrity(const char* data, size_t size,
   while (current_pos < size) {
     uint16 attr_type, attr_length;
     // Getting attribute type and length.
-    attr_type = talk_base::GetBE16(&data[current_pos]);
-    attr_length = talk_base::GetBE16(&data[current_pos + sizeof(attr_type)]);
+    attr_type = rtc::GetBE16(&data[current_pos]);
+    attr_length = rtc::GetBE16(&data[current_pos + sizeof(attr_type)]);
 
     // If M-I, sanity check it, and break out.
     if (attr_type == STUN_ATTR_MESSAGE_INTEGRITY) {
@@ -188,7 +188,7 @@ bool StunMessage::ValidateMessageIntegrity(const char* data, size_t size,
 
   // Getting length of the message to calculate Message Integrity.
   size_t mi_pos = current_pos;
-  talk_base::scoped_ptr<char[]> temp_data(new char[current_pos]);
+  rtc::scoped_ptr<char[]> temp_data(new char[current_pos]);
   memcpy(temp_data.get(), data, current_pos);
   if (size > mi_pos + kStunAttributeHeaderSize + kStunMessageIntegritySize) {
     // Stun message has other attributes after message integrity.
@@ -203,12 +203,12 @@ bool StunMessage::ValidateMessageIntegrity(const char* data, size_t size,
     //     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     //     |0 0|     STUN Message Type     |         Message Length        |
     //     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    talk_base::SetBE16(temp_data.get() + 2,
+    rtc::SetBE16(temp_data.get() + 2,
                        static_cast<uint16>(new_adjusted_len));
   }
 
   char hmac[kStunMessageIntegritySize];
-  size_t ret = talk_base::ComputeHmac(talk_base::DIGEST_SHA_1,
+  size_t ret = rtc::ComputeHmac(rtc::DIGEST_SHA_1,
                                       password.c_str(), password.size(),
                                       temp_data.get(), mi_pos,
                                       hmac, sizeof(hmac));
@@ -236,14 +236,14 @@ bool StunMessage::AddMessageIntegrity(const char* key,
   VERIFY(AddAttribute(msg_integrity_attr));
 
   // Calculate the HMAC for the message.
-  talk_base::ByteBuffer buf;
+  rtc::ByteBuffer buf;
   if (!Write(&buf))
     return false;
 
   int msg_len_for_hmac = static_cast<int>(
       buf.Length() - kStunAttributeHeaderSize - msg_integrity_attr->length());
   char hmac[kStunMessageIntegritySize];
-  size_t ret = talk_base::ComputeHmac(talk_base::DIGEST_SHA_1,
+  size_t ret = rtc::ComputeHmac(rtc::DIGEST_SHA_1,
                                       key, keylen,
                                       buf.Data(), msg_len_for_hmac,
                                       hmac, sizeof(hmac));
@@ -272,21 +272,21 @@ bool StunMessage::ValidateFingerprint(const char* data, size_t size) {
   // Skip the rest if the magic cookie isn't present.
   const char* magic_cookie =
       data + kStunTransactionIdOffset - kStunMagicCookieLength;
-  if (talk_base::GetBE32(magic_cookie) != kStunMagicCookie)
+  if (rtc::GetBE32(magic_cookie) != kStunMagicCookie)
     return false;
 
   // Check the fingerprint type and length.
   const char* fingerprint_attr_data = data + size - fingerprint_attr_size;
-  if (talk_base::GetBE16(fingerprint_attr_data) != STUN_ATTR_FINGERPRINT ||
-      talk_base::GetBE16(fingerprint_attr_data + sizeof(uint16)) !=
+  if (rtc::GetBE16(fingerprint_attr_data) != STUN_ATTR_FINGERPRINT ||
+      rtc::GetBE16(fingerprint_attr_data + sizeof(uint16)) !=
           StunUInt32Attribute::SIZE)
     return false;
 
   // Check the fingerprint value.
   uint32 fingerprint =
-      talk_base::GetBE32(fingerprint_attr_data + kStunAttributeHeaderSize);
+      rtc::GetBE32(fingerprint_attr_data + kStunAttributeHeaderSize);
   return ((fingerprint ^ STUN_FINGERPRINT_XOR_VALUE) ==
-      talk_base::ComputeCrc32(data, size - fingerprint_attr_size));
+      rtc::ComputeCrc32(data, size - fingerprint_attr_size));
 }
 
 bool StunMessage::AddFingerprint() {
@@ -297,13 +297,13 @@ bool StunMessage::AddFingerprint() {
   VERIFY(AddAttribute(fingerprint_attr));
 
   // Calculate the CRC-32 for the message and insert it.
-  talk_base::ByteBuffer buf;
+  rtc::ByteBuffer buf;
   if (!Write(&buf))
     return false;
 
   int msg_len_for_crc32 = static_cast<int>(
       buf.Length() - kStunAttributeHeaderSize - fingerprint_attr->length());
-  uint32 c = talk_base::ComputeCrc32(buf.Data(), msg_len_for_crc32);
+  uint32 c = rtc::ComputeCrc32(buf.Data(), msg_len_for_crc32);
 
   // Insert the correct CRC-32, XORed with a constant, into the attribute.
   fingerprint_attr->SetValue(c ^ STUN_FINGERPRINT_XOR_VALUE);
@@ -333,7 +333,7 @@ bool StunMessage::Read(ByteBuffer* buf) {
 
   uint32 magic_cookie_int =
       *reinterpret_cast<const uint32*>(magic_cookie.data());
-  if (talk_base::NetworkToHost32(magic_cookie_int) != kStunMagicCookie) {
+  if (rtc::NetworkToHost32(magic_cookie_int) != kStunMagicCookie) {
     // If magic cookie is invalid it means that the peer implements
     // RFC3489 instead of RFC5389.
     transaction_id.insert(0, magic_cookie);
@@ -433,14 +433,14 @@ StunAttribute::StunAttribute(uint16 type, uint16 length)
     : type_(type), length_(length) {
 }
 
-void StunAttribute::ConsumePadding(talk_base::ByteBuffer* buf) const {
+void StunAttribute::ConsumePadding(rtc::ByteBuffer* buf) const {
   int remainder = length_ % 4;
   if (remainder > 0) {
     buf->Consume(4 - remainder);
   }
 }
 
-void StunAttribute::WritePadding(talk_base::ByteBuffer* buf) const {
+void StunAttribute::WritePadding(rtc::ByteBuffer* buf) const {
   int remainder = length_ % 4;
   if (remainder > 0) {
     char zeroes[4] = {0};
@@ -501,7 +501,7 @@ StunUInt16ListAttribute* StunAttribute::CreateUnknownAttributes() {
 }
 
 StunAddressAttribute::StunAddressAttribute(uint16 type,
-   const talk_base::SocketAddress& addr)
+   const rtc::SocketAddress& addr)
    : StunAttribute(type, 0) {
   SetAddress(addr);
 }
@@ -530,8 +530,8 @@ bool StunAddressAttribute::Read(ByteBuffer* buf) {
     if (!buf->ReadBytes(reinterpret_cast<char*>(&v4addr), sizeof(v4addr))) {
       return false;
     }
-    talk_base::IPAddress ipaddr(v4addr);
-    SetAddress(talk_base::SocketAddress(ipaddr, port));
+    rtc::IPAddress ipaddr(v4addr);
+    SetAddress(rtc::SocketAddress(ipaddr, port));
   } else if (stun_family == STUN_ADDRESS_IPV6) {
     in6_addr v6addr;
     if (length() != SIZE_IP6) {
@@ -540,8 +540,8 @@ bool StunAddressAttribute::Read(ByteBuffer* buf) {
     if (!buf->ReadBytes(reinterpret_cast<char*>(&v6addr), sizeof(v6addr))) {
       return false;
     }
-    talk_base::IPAddress ipaddr(v6addr);
-    SetAddress(talk_base::SocketAddress(ipaddr, port));
+    rtc::IPAddress ipaddr(v6addr);
+    SetAddress(rtc::SocketAddress(ipaddr, port));
   } else {
     return false;
   }
@@ -573,7 +573,7 @@ bool StunAddressAttribute::Write(ByteBuffer* buf) const {
 }
 
 StunXorAddressAttribute::StunXorAddressAttribute(uint16 type,
-    const talk_base::SocketAddress& addr)
+    const rtc::SocketAddress& addr)
     : StunAddressAttribute(type, addr), owner_(NULL) {
 }
 
@@ -582,15 +582,15 @@ StunXorAddressAttribute::StunXorAddressAttribute(uint16 type,
                                                  StunMessage* owner)
     : StunAddressAttribute(type, length), owner_(owner) {}
 
-talk_base::IPAddress StunXorAddressAttribute::GetXoredIP() const {
+rtc::IPAddress StunXorAddressAttribute::GetXoredIP() const {
   if (owner_) {
-    talk_base::IPAddress ip = ipaddr();
+    rtc::IPAddress ip = ipaddr();
     switch (ip.family()) {
       case AF_INET: {
         in_addr v4addr = ip.ipv4_address();
         v4addr.s_addr =
-            (v4addr.s_addr ^ talk_base::HostToNetwork32(kStunMagicCookie));
-        return talk_base::IPAddress(v4addr);
+            (v4addr.s_addr ^ rtc::HostToNetwork32(kStunMagicCookie));
+        return rtc::IPAddress(v4addr);
       }
       case AF_INET6: {
         in6_addr v6addr = ip.ipv6_address();
@@ -603,11 +603,11 @@ talk_base::IPAddress StunXorAddressAttribute::GetXoredIP() const {
           // Transaction ID is in network byte order, but magic cookie
           // is stored in host byte order.
           ip_as_ints[0] =
-              (ip_as_ints[0] ^ talk_base::HostToNetwork32(kStunMagicCookie));
+              (ip_as_ints[0] ^ rtc::HostToNetwork32(kStunMagicCookie));
           ip_as_ints[1] = (ip_as_ints[1] ^ transactionid_as_ints[0]);
           ip_as_ints[2] = (ip_as_ints[2] ^ transactionid_as_ints[1]);
           ip_as_ints[3] = (ip_as_ints[3] ^ transactionid_as_ints[2]);
-          return talk_base::IPAddress(v6addr);
+          return rtc::IPAddress(v6addr);
         }
         break;
       }
@@ -615,15 +615,15 @@ talk_base::IPAddress StunXorAddressAttribute::GetXoredIP() const {
   }
   // Invalid ip family or transaction ID, or missing owner.
   // Return an AF_UNSPEC address.
-  return talk_base::IPAddress();
+  return rtc::IPAddress();
 }
 
 bool StunXorAddressAttribute::Read(ByteBuffer* buf) {
   if (!StunAddressAttribute::Read(buf))
     return false;
   uint16 xoredport = port() ^ (kStunMagicCookie >> 16);
-  talk_base::IPAddress xored_ip = GetXoredIP();
-  SetAddress(talk_base::SocketAddress(xored_ip, xoredport));
+  rtc::IPAddress xored_ip = GetXoredIP();
+  SetAddress(rtc::SocketAddress(xored_ip, xoredport));
   return true;
 }
 
@@ -633,7 +633,7 @@ bool StunXorAddressAttribute::Write(ByteBuffer* buf) const {
     LOG(LS_ERROR) << "Error writing xor-address attribute: unknown family.";
     return false;
   }
-  talk_base::IPAddress xored_ip = GetXoredIP();
+  rtc::IPAddress xored_ip = GetXoredIP();
   if (xored_ip.family() == AF_UNSPEC) {
     return false;
   }
@@ -916,9 +916,9 @@ bool ComputeStunCredentialHash(const std::string& username,
   input += ':';
   input += password;
 
-  char digest[talk_base::MessageDigest::kMaxSize];
-  size_t size = talk_base::ComputeDigest(
-      talk_base::DIGEST_MD5, input.c_str(), input.size(),
+  char digest[rtc::MessageDigest::kMaxSize];
+  size_t size = rtc::ComputeDigest(
+      rtc::DIGEST_MD5, input.c_str(), input.size(),
       digest, sizeof(digest));
   if (size == 0) {
     return false;

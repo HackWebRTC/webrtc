@@ -31,8 +31,8 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/criticalsection.h"
-#include "talk/base/messagehandler.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/messagehandler.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/webrtc/webrtcvideoframe.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
@@ -86,13 +86,13 @@ class WebRtcVideoCapturer : public VideoCapturer,
   virtual void OnCaptureDelayChanged(const int32_t id,
                                      const int32_t delay);
 
-  talk_base::scoped_ptr<WebRtcVcmFactoryInterface> factory_;
+  rtc::scoped_ptr<WebRtcVcmFactoryInterface> factory_;
   webrtc::VideoCaptureModule* module_;
   int captured_frames_;
   std::vector<uint8_t> capture_buffer_;
 
   // Critical section to avoid Stop during an OnIncomingCapturedFrame callback.
-  talk_base::CriticalSection critical_section_stopping_;
+  rtc::CriticalSection critical_section_stopping_;
 };
 
 struct WebRtcCapturedFrame : public CapturedFrame {

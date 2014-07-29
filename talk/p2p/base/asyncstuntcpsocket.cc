@@ -29,8 +29,8 @@
 
 #include <string.h>
 
-#include "talk/base/common.h"
-#include "talk/base/logging.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/logging.h"
 #include "talk/p2p/base/stun.h"
 
 namespace cricket {
@@ -53,20 +53,20 @@ inline bool IsStunMessage(uint16 msg_type) {
 // it. Takes ownership of |socket|. Returns NULL if bind() or
 // connect() fail (|socket| is destroyed in that case).
 AsyncStunTCPSocket* AsyncStunTCPSocket::Create(
-    talk_base::AsyncSocket* socket,
-    const talk_base::SocketAddress& bind_address,
-    const talk_base::SocketAddress& remote_address) {
+    rtc::AsyncSocket* socket,
+    const rtc::SocketAddress& bind_address,
+    const rtc::SocketAddress& remote_address) {
   return new AsyncStunTCPSocket(AsyncTCPSocketBase::ConnectSocket(
       socket, bind_address, remote_address), false);
 }
 
 AsyncStunTCPSocket::AsyncStunTCPSocket(
-    talk_base::AsyncSocket* socket, bool listen)
-    : talk_base::AsyncTCPSocketBase(socket, listen, kBufSize) {
+    rtc::AsyncSocket* socket, bool listen)
+    : rtc::AsyncTCPSocketBase(socket, listen, kBufSize) {
 }
 
 int AsyncStunTCPSocket::Send(const void *pv, size_t cb,
-                             const talk_base::PacketOptions& options) {
+                             const rtc::PacketOptions& options) {
   if (cb > kBufSize || cb < kPacketLenSize + kPacketLenOffset) {
     SetError(EMSGSIZE);
     return -1;
@@ -101,7 +101,7 @@ int AsyncStunTCPSocket::Send(const void *pv, size_t cb,
 }
 
 void AsyncStunTCPSocket::ProcessInput(char* data, size_t* len) {
-  talk_base::SocketAddress remote_addr(GetRemoteAddress());
+  rtc::SocketAddress remote_addr(GetRemoteAddress());
   // STUN packet - First 4 bytes. Total header size is 20 bytes.
   // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
   // |0 0|     STUN Message Type     |         Message Length        |
@@ -126,7 +126,7 @@ void AsyncStunTCPSocket::ProcessInput(char* data, size_t* len) {
     }
 
     SignalReadPacket(this, data, expected_pkt_len, remote_addr,
-                     talk_base::CreatePacketTime(0));
+                     rtc::CreatePacketTime(0));
 
     *len -= actual_length;
     if (*len > 0) {
@@ -136,7 +136,7 @@ void AsyncStunTCPSocket::ProcessInput(char* data, size_t* len) {
 }
 
 void AsyncStunTCPSocket::HandleIncomingConnection(
-    talk_base::AsyncSocket* socket) {
+    rtc::AsyncSocket* socket) {
   SignalNewConnection(this, new AsyncStunTCPSocket(socket, false));
 }
 
@@ -144,9 +144,9 @@ size_t AsyncStunTCPSocket::GetExpectedLength(const void* data, size_t len,
                                              int* pad_bytes) {
   *pad_bytes = 0;
   PacketLength pkt_len =
-      talk_base::GetBE16(static_cast<const char*>(data) + kPacketLenOffset);
+      rtc::GetBE16(static_cast<const char*>(data) + kPacketLenOffset);
   size_t expected_pkt_len;
-  uint16 msg_type = talk_base::GetBE16(data);
+  uint16 msg_type = rtc::GetBE16(data);
   if (IsStunMessage(msg_type)) {
     // STUN message.
     expected_pkt_len = kStunHeaderSize + pkt_len;
