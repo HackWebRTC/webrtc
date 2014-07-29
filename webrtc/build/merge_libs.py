@@ -78,7 +78,7 @@ def main(argv):
                     ' -and -not -name '.join(IGNORE_PATTERNS) +
                     ' -exec', cmd, output_lib, '{} +'])
   else:
-    cmd = ' '.join([cmd, output_lib] + FindFiles(search_path, pattern))
+    cmd = ' '.join([cmd + output_lib] + FindFiles(search_path, pattern))
   print cmd
   subprocess.check_call(cmd, shell=True)
   return 0
