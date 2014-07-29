@@ -55,6 +55,7 @@
 /third_party/android_tools
 /third_party/asan
 /third_party/binutils
+/third_party/boringssl
 /third_party/build_gn
 /third_party/BUILD.gn
 /third_party/clang_format

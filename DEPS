@@ -230,8 +230,8 @@ deps_os = {
     "third_party/WebKit/Tools/Scripts":
       Var("webkit_trunk") + "/Tools/Scripts@151677",
 
-    "third_party/openssl":
-      From("chromium_deps", "src/third_party/openssl"),
+    "third_party/boringssl":
+      Var("chromium_trunk") + "/src/third_party/boringssl@" + Var("chromium_revision"),
   },
 }
 
