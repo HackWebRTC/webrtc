@@ -110,6 +110,12 @@
         'defines': [
           'WEBRTC_WIN',
         ],
+        'msvs_disabled_warnings': [
+          # https://code.google.com/p/chromium/issues/detail?id=372451#c20
+          # Warning 4702 ("Unreachable code") should be re-enabled once
+          # users are updated to VS2013 Update 2.
+            4702,
+        ],
       }],
       ['OS=="ios"', {
         'defines': [
