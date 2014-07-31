@@ -33,6 +33,11 @@ static int GaussianRandom(int mean_delay_ms, int standard_deviation_ms) {
                           sqrt(-2 * log(uniform1)) * cos(2 * kPi * uniform2));
 }
 
+static bool UniformLoss(int loss_percent) {
+  int outcome = rand() % 100;
+  return outcome < loss_percent;
+}
+
 class NetworkPacket {
  public:
   NetworkPacket(const uint8_t* data, size_t length, int64_t send_time,
@@ -158,6 +163,12 @@ void FakeNetworkPipe::Process() {
       // Time to get this packet.
       NetworkPacket* packet = capacity_link_.front();
       capacity_link_.pop();
+
+      // Packets are randomly dropped after being affected by the bottleneck.
+      if (UniformLoss(config_.loss_percent)) {
+        delete packet;
+        continue;
+      }
 
       // Add extra delay and jitter, but make sure the arrival time is not
       // earlier than the last packet in the queue.

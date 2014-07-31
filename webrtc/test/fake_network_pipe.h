@@ -47,7 +47,7 @@ class FakeNetworkPipe {
     int delay_standard_deviation_ms;
     // Link capacity in kbps.
     int link_capacity_kbps;
-    // Random packet loss. Not implemented.
+    // Random packet loss.
     int loss_percent;
   };
 
