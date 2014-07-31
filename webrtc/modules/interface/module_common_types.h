@@ -61,8 +61,8 @@ struct RTPVideoHeaderVP8 {
 };
 
 struct RTPVideoHeaderH264 {
-  uint8_t nalu_header;
-  bool    single_nalu;
+  bool stap_a;
+  bool single_nalu;
 };
 
 union RTPVideoTypeHeader {

@@ -60,7 +60,7 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
 
   void SetPacketOverHead(uint16_t packet_over_head);
 
- protected:
+ private:
   int32_t ReceiveGenericCodec(WebRtcRTPHeader* rtp_header,
                               const uint8_t* payload_data,
                               uint16_t payload_data_length);
@@ -69,10 +69,13 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
                           const uint8_t* payload_data,
                           uint16_t payload_data_length);
 
+  int32_t ReceiveH264Codec(WebRtcRTPHeader* rtp_header,
+                           const uint8_t* payload_data,
+                           uint16_t payload_data_length);
+
   int32_t BuildRTPheader(const WebRtcRTPHeader* rtp_header,
                          uint8_t* data_buffer) const;
 
- private:
   int32_t ParseVideoCodecSpecific(
       WebRtcRTPHeader* rtp_header,
       const uint8_t* payload_data,

@@ -19,6 +19,17 @@
 
 namespace webrtc {
 
+class MockRtpData : public RtpData {
+ public:
+  MOCK_METHOD3(OnReceivedPayloadData,
+               int32_t(const uint8_t* payloadData,
+                       const uint16_t payloadSize,
+                       const WebRtcRTPHeader* rtpHeader));
+
+  MOCK_METHOD2(OnRecoveredPacket,
+               bool(const uint8_t* packet, int packet_length));
+};
+
 class MockRtpRtcp : public RtpRtcp {
  public:
   MOCK_METHOD1(ChangeUniqueId,

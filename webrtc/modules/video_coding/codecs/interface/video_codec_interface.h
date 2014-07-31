@@ -28,29 +28,30 @@ class RTPFragmentationHeader; // forward declaration
 
 // Note: if any pointers are added to this struct, it must be fitted
 // with a copy-constructor. See below.
-struct CodecSpecificInfoVP8
-{
-    bool             hasReceivedSLI;
-    uint8_t    pictureIdSLI;
-    bool             hasReceivedRPSI;
-    uint64_t   pictureIdRPSI;
-    int16_t    pictureId;         // negative value to skip pictureId
-    bool             nonReference;
-    uint8_t    simulcastIdx;
-    uint8_t    temporalIdx;
-    bool             layerSync;
-    int              tl0PicIdx;         // Negative value to skip tl0PicIdx
-    int8_t     keyIdx;            // negative value to skip keyIdx
+struct CodecSpecificInfoVP8 {
+  bool hasReceivedSLI;
+  uint8_t pictureIdSLI;
+  bool hasReceivedRPSI;
+  uint64_t pictureIdRPSI;
+  int16_t pictureId;  // Negative value to skip pictureId.
+  bool nonReference;
+  uint8_t simulcastIdx;
+  uint8_t temporalIdx;
+  bool layerSync;
+  int tl0PicIdx;  // Negative value to skip tl0PicIdx.
+  int8_t keyIdx;  // Negative value to skip keyIdx.
 };
 
 struct CodecSpecificInfoGeneric {
   uint8_t simulcast_idx;
 };
 
-union CodecSpecificInfoUnion
-{
-    CodecSpecificInfoGeneric   generic;
-    CodecSpecificInfoVP8       VP8;
+struct CodecSpecificInfoH264 {};
+
+union CodecSpecificInfoUnion {
+  CodecSpecificInfoGeneric generic;
+  CodecSpecificInfoVP8 VP8;
+  CodecSpecificInfoH264 H264;
 };
 
 // Note: if any pointers are added to this struct or its sub-structs, it

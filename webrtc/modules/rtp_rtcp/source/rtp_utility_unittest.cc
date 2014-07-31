@@ -251,10 +251,11 @@ TEST(ParseVP8Test, TestWithPacketizer) {
   inputHeader.layerSync = false;
   inputHeader.tl0PicIdx = kNoTl0PicIdx;  // Disable.
   inputHeader.keyIdx = 31;
-  RtpFormatVp8 packetizer(payload, 10, inputHeader, 20);
+  RtpPacketizerVp8 packetizer(inputHeader, 20);
+  packetizer.SetPayloadData(payload, 10, NULL);
   bool last;
-  int send_bytes;
-  ASSERT_EQ(0, packetizer.NextPacket(packet, &send_bytes, &last));
+  size_t send_bytes;
+  ASSERT_TRUE(packetizer.NextPacket(packet, &send_bytes, &last));
   ASSERT_TRUE(last);
 
   RTPPayloadParser rtpPayloadParser(kRtpVideoVp8, packet, send_bytes);

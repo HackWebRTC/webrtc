@@ -482,7 +482,6 @@ bool VCMJitterBuffer::NextMaybeIncompleteTimestamp(uint32_t* timestamp) {
 
 VCMEncodedFrame* VCMJitterBuffer::ExtractAndSetDecode(uint32_t timestamp) {
   CriticalSectionScoped cs(crit_sect_);
-
   if (!running_) {
     return NULL;
   }
@@ -611,7 +610,6 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
   if (error != kNoError && frame == NULL) {
     return error;
   }
-
   int64_t now_ms = clock_->TimeInMilliseconds();
   // We are keeping track of the first and latest seq numbers, and
   // the number of wraps to be able to calculate how many packets we expect.

@@ -116,6 +116,10 @@ class VCMSessionInfo {
                          const PacketIterator& prev_it);
   int InsertBuffer(uint8_t* frame_buffer,
                    PacketIterator packetIterator);
+  size_t Insert(const uint8_t* buffer,
+                size_t length,
+                bool insert_start_code,
+                uint8_t* frame_buffer);
   void ShiftSubsequentPackets(PacketIterator it, int steps_to_shift);
   PacketIterator FindNaluEnd(PacketIterator packet_iter) const;
   // Deletes the data of all packets between |start| and |end|, inclusively.

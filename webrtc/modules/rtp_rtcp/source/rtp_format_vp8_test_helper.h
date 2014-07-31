@@ -32,7 +32,7 @@ class RtpFormatVp8TestHelper {
   explicit RtpFormatVp8TestHelper(const RTPVideoHeaderVP8* hdr);
   ~RtpFormatVp8TestHelper();
   bool Init(const int* partition_sizes, int num_partitions);
-  void GetAllPacketsAndCheck(RtpFormatVp8* packetizer,
+  void GetAllPacketsAndCheck(RtpPacketizerVp8* packetizer,
                              const int* expected_sizes,
                              const int* expected_part,
                              const bool* expected_frag_start,

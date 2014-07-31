@@ -14,6 +14,7 @@
 #include <string.h>
 
 #include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_format.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_video_generic.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -113,8 +114,13 @@ int32_t RTPReceiverVideo::ParseVideoCodecSpecific(
       return ReceiveGenericCodec(rtp_header, payload_data, payload_data_length);
     case kRtpVideoVp8:
       return ReceiveVp8Codec(rtp_header, payload_data, payload_data_length);
-    case kRtpVideoH264:
-      assert(false);  // Not yet supported.
+    case kRtpVideoH264: {
+      scoped_ptr<RtpDepacketizer> depacketizer(RtpDepacketizer::Create(
+          rtp_header->type.Video.codec, data_callback_));
+      return depacketizer->Parse(rtp_header, payload_data, payload_data_length)
+                 ? 0
+                 : -1;
+    }
     case kRtpVideoNone:
       break;
   }
