@@ -35,12 +35,13 @@
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/systeminfo.h"
+#include "talk/media/base/videoframefactory.h"
 #include "talk/media/base/videoprocessor.h"
 
 #if defined(HAVE_WEBRTC_VIDEO)
 #include "talk/media/webrtc/webrtcvideoframe.h"
+#include "talk/media/webrtc/webrtcvideoframefactory.h"
 #endif  // HAVE_WEBRTC_VIDEO
-
 
 namespace cricket {
 
@@ -352,10 +353,6 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
   if (SignalVideoFrame.is_empty()) {
     return;
   }
-#if defined(HAVE_WEBRTC_VIDEO)
-#define VIDEO_FRAME_NAME WebRtcVideoFrame
-#endif
-#if defined(VIDEO_FRAME_NAME)
 #if !defined(DISABLE_YUV)
   if (IsScreencast()) {
     int scaled_width, scaled_height;
@@ -501,8 +498,15 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
                 &desired_width, &desired_height);
   }
 
-  VIDEO_FRAME_NAME i420_frame;
-  if (!i420_frame.Alias(captured_frame, desired_width, desired_height)) {
+  if (!frame_factory_) {
+    LOG(LS_ERROR) << "No video frame factory.";
+    return;
+  }
+
+  rtc::scoped_ptr<VideoFrame> i420_frame(
+      frame_factory_->CreateAliasedFrame(
+          captured_frame, desired_width, desired_height));
+  if (!i420_frame) {
     // TODO(fbarchard): LOG more information about captured frame attributes.
     LOG(LS_ERROR) << "Couldn't convert to I420! "
                   << "From " << ToString(captured_frame) << " To "
@@ -510,7 +514,7 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
     return;
   }
 
-  VideoFrame* adapted_frame = &i420_frame;
+  VideoFrame* adapted_frame = i420_frame.get();
   if (enable_video_adapter_ && !IsScreencast()) {
     VideoFrame* out_frame = NULL;
     video_adapter_.AdaptFrame(adapted_frame, &out_frame);
@@ -528,13 +532,12 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
     return;
   }
   if (muted_) {
+    // TODO(pthatcher): Use frame_factory_->CreateBlackFrame() instead.
     adapted_frame->SetToBlack();
   }
   SignalVideoFrame(this, adapted_frame);
 
   UpdateStats(captured_frame);
-
-#endif  // VIDEO_FRAME_NAME
 }
 
 void VideoCapturer::SetCaptureState(CaptureState state) {
