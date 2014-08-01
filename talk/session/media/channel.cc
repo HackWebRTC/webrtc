@@ -73,20 +73,6 @@ static void SafeSetError(const std::string& message, std::string* error_desc) {
   }
 }
 
-// TODO(hellner): use the device manager for creation of screen capturers when
-// the cl enabling it has landed.
-class NullScreenCapturerFactory : public VideoChannel::ScreenCapturerFactory {
- public:
-  VideoCapturer* CreateScreenCapturer(const ScreencastId& window) {
-    return NULL;
-  }
-};
-
-
-VideoChannel::ScreenCapturerFactory* CreateScreenCapturerFactory() {
-  return new NullScreenCapturerFactory();
-}
-
 struct PacketMessageData : public rtc::MessageData {
   rtc::Buffer packet;
   rtc::DiffServCodePoint dscp;
@@ -1674,7 +1660,6 @@ VideoChannel::VideoChannel(rtc::Thread* thread,
                   rtcp),
       voice_channel_(voice_channel),
       renderer_(NULL),
-      screencapture_factory_(CreateScreenCapturerFactory()),
       previous_we_(rtc::WE_CLOSE) {
 }
 
@@ -1729,10 +1714,9 @@ bool VideoChannel::ApplyViewRequest(const ViewRequest& request) {
   return InvokeOnWorker(Bind(&VideoChannel::ApplyViewRequest_w, this, request));
 }
 
-VideoCapturer* VideoChannel::AddScreencast(
-    uint32 ssrc, const ScreencastId& id) {
-  return worker_thread()->Invoke<VideoCapturer*>(Bind(
-      &VideoChannel::AddScreencast_w, this, ssrc, id));
+bool VideoChannel::AddScreencast(uint32 ssrc, VideoCapturer* capturer) {
+  return worker_thread()->Invoke<bool>(Bind(
+      &VideoChannel::AddScreencast_w, this, ssrc, capturer));
 }
 
 bool VideoChannel::SetCapturer(uint32 ssrc, VideoCapturer* capturer) {
@@ -1772,13 +1756,6 @@ bool VideoChannel::RequestIntraFrame() {
   worker_thread()->Invoke<void>(Bind(
       &VideoMediaChannel::RequestIntraFrame, media_channel()));
   return true;
-}
-
-void VideoChannel::SetScreenCaptureFactory(
-    ScreenCapturerFactory* screencapture_factory) {
-  worker_thread()->Invoke<void>(Bind(
-      &VideoChannel::SetScreenCaptureFactory_w,
-      this, screencapture_factory));
 }
 
 void VideoChannel::ChangeState() {
@@ -1960,20 +1937,13 @@ bool VideoChannel::ApplyViewRequest_w(const ViewRequest& request) {
   return ret;
 }
 
-VideoCapturer* VideoChannel::AddScreencast_w(
-    uint32 ssrc, const ScreencastId& id) {
+bool VideoChannel::AddScreencast_w(uint32 ssrc, VideoCapturer* capturer) {
   if (screencast_capturers_.find(ssrc) != screencast_capturers_.end()) {
-    return NULL;
+    return false;
   }
-  VideoCapturer* screen_capturer =
-      screencapture_factory_->CreateScreenCapturer(id);
-  if (!screen_capturer) {
-    return NULL;
-  }
-  screen_capturer->SignalStateChange.connect(this,
-                                             &VideoChannel::OnStateChange);
-  screencast_capturers_[ssrc] = screen_capturer;
-  return screen_capturer;
+  capturer->SignalStateChange.connect(this, &VideoChannel::OnStateChange);
+  screencast_capturers_[ssrc] = capturer;
+  return true;
 }
 
 bool VideoChannel::RemoveScreencast_w(uint32 ssrc) {
@@ -2001,15 +1971,6 @@ void VideoChannel::GetScreencastDetails_w(
   const VideoFormat* video_format = capturer->GetCaptureFormat();
   data->fps = VideoFormat::IntervalToFps(video_format->interval);
   data->screencast_max_pixels = capturer->screencast_max_pixels();
-}
-
-void VideoChannel::SetScreenCaptureFactory_w(
-    ScreenCapturerFactory* screencapture_factory) {
-  if (screencapture_factory == NULL) {
-    screencapture_factory_.reset(CreateScreenCapturerFactory());
-  } else {
-    screencapture_factory_.reset(screencapture_factory);
-  }
 }
 
 void VideoChannel::OnScreencastWindowEvent_s(uint32 ssrc,

@@ -710,6 +710,11 @@ VideoCapturer* ChannelManager::CreateVideoCapturer() {
   return capturer;
 }
 
+VideoCapturer* ChannelManager::CreateScreenCapturer(
+    const ScreencastId& screenid) {
+  return device_manager_->CreateScreenCapturer(screenid);
+}
+
 bool ChannelManager::SetCaptureDevice_w(const Device* cam_device) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
   ASSERT(initialized_);
