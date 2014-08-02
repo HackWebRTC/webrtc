@@ -32,14 +32,11 @@
 #include <string>
 #include <vector>
 
-#include "talk/media/base/device.h"
-#include "talk/media/base/screencastid.h"
-#include "talk/media/base/videocommon.h"
-#include "talk/media/base/videocapturerfactory.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/window.h"
+#include "talk/media/base/videocommon.h"
 
 namespace rtc {
 
@@ -51,6 +48,28 @@ class WindowPicker;
 namespace cricket {
 
 class VideoCapturer;
+
+// Used to represent an audio or video capture or render device.
+struct Device {
+  Device() {}
+  Device(const std::string& first, int second)
+      : name(first),
+        id(rtc::ToString(second)) {
+  }
+  Device(const std::string& first, const std::string& second)
+      : name(first), id(second) {}
+
+  std::string name;
+  std::string id;
+};
+
+class VideoCapturerFactory {
+ public:
+  VideoCapturerFactory() {}
+  virtual ~VideoCapturerFactory() {}
+
+  virtual VideoCapturer* Create(const Device& device) = 0;
+};
 
 // DeviceManagerInterface - interface to manage the audio and
 // video devices on the system.
@@ -75,14 +94,6 @@ class DeviceManagerInterface {
   virtual bool GetVideoCaptureDevices(std::vector<Device>* devs) = 0;
   virtual bool GetVideoCaptureDevice(const std::string& name, Device* out) = 0;
 
-  // If the device manager needs to create video capturers, here is
-  // how to control which video capturers are created.  These take
-  // ownership of the factories.
-  virtual void SetVideoDeviceCapturerFactory(
-      VideoDeviceCapturerFactory* video_device_capturer_factory) = 0;
-  virtual void SetScreenCapturerFactory(
-      ScreenCapturerFactory* screen_capturer_factory) = 0;
-
   // Caps the capture format according to max format for capturers created
   // by CreateVideoCapturer(). See ConstrainSupportedFormats() in
   // videocapturer.h for more detail.
@@ -98,10 +109,12 @@ class DeviceManagerInterface {
 
   virtual bool GetWindows(
       std::vector<rtc::WindowDescription>* descriptions) = 0;
+  virtual VideoCapturer* CreateWindowCapturer(rtc::WindowId window) = 0;
+
   virtual bool GetDesktops(
       std::vector<rtc::DesktopDescription>* descriptions) = 0;
-  virtual VideoCapturer* CreateScreenCapturer(
-      const ScreencastId& screenid) const = 0;
+  virtual VideoCapturer* CreateDesktopCapturer(
+      rtc::DesktopId desktop) = 0;
 
   sigslot::signal0<> SignalDevicesChange;
 
@@ -129,6 +142,11 @@ class DeviceManager : public DeviceManagerInterface {
   DeviceManager();
   virtual ~DeviceManager();
 
+  void set_device_video_capturer_factory(
+      VideoCapturerFactory* device_video_capturer_factory) {
+    device_video_capturer_factory_.reset(device_video_capturer_factory);
+  }
+
   // Initialization
   virtual bool Init();
   virtual void Terminate();
@@ -146,29 +164,19 @@ class DeviceManager : public DeviceManagerInterface {
   virtual bool GetVideoCaptureDevices(std::vector<Device>* devs);
   virtual bool GetVideoCaptureDevice(const std::string& name, Device* out);
 
-  virtual void SetVideoDeviceCapturerFactory(
-      VideoDeviceCapturerFactory* video_device_capturer_factory) {
-    video_device_capturer_factory_.reset(video_device_capturer_factory);
-  }
-  virtual void SetScreenCapturerFactory(
-      ScreenCapturerFactory* screen_capturer_factory) {
-    screen_capturer_factory_.reset(screen_capturer_factory);
-  }
-
-
   virtual void SetVideoCaptureDeviceMaxFormat(const std::string& usb_id,
                                               const VideoFormat& max_format);
   virtual void ClearVideoCaptureDeviceMaxFormat(const std::string& usb_id);
 
-  // TODO(pthatcher): Rename to CreateVideoDeviceCapturer.
   virtual VideoCapturer* CreateVideoCapturer(const Device& device) const;
 
   virtual bool GetWindows(
       std::vector<rtc::WindowDescription>* descriptions);
+  virtual VideoCapturer* CreateWindowCapturer(rtc::WindowId window);
+
   virtual bool GetDesktops(
       std::vector<rtc::DesktopDescription>* descriptions);
-  virtual VideoCapturer* CreateScreenCapturer(
-      const ScreencastId& screenid) const;
+  virtual VideoCapturer* CreateDesktopCapturer(rtc::DesktopId desktop);
 
   // The exclusion_list MUST be a NULL terminated list.
   static bool FilterDevices(std::vector<Device>* devices,
@@ -194,13 +202,10 @@ class DeviceManager : public DeviceManagerInterface {
   static bool ShouldDeviceBeIgnored(const std::string& device_name,
       const char* const exclusion_list[]);
   bool GetFakeVideoCaptureDevice(const std::string& name, Device* out) const;
-  VideoCapturer* MaybeConstructFakeVideoCapturer(const Device& device) const;
+  VideoCapturer* ConstructFakeVideoCapturer(const Device& device) const;
 
   bool initialized_;
-  rtc::scoped_ptr<
-    VideoDeviceCapturerFactory> video_device_capturer_factory_;
-  rtc::scoped_ptr<
-    ScreenCapturerFactory> screen_capturer_factory_;
+  rtc::scoped_ptr<VideoCapturerFactory> device_video_capturer_factory_;
   std::map<std::string, VideoFormat> max_formats_;
   rtc::scoped_ptr<DeviceWatcher> watcher_;
   rtc::scoped_ptr<rtc::WindowPicker> window_picker_;
