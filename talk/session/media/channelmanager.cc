@@ -33,12 +33,6 @@
 
 #include <algorithm>
 
-#include "webrtc/base/bind.h"
-#include "webrtc/base/common.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/sigslotrepeater.h"
-#include "webrtc/base/stringencode.h"
-#include "webrtc/base/stringutils.h"
 #include "talk/media/base/capturemanager.h"
 #include "talk/media/base/hybriddataengine.h"
 #include "talk/media/base/rtpdataengine.h"
@@ -49,6 +43,12 @@
 #endif
 #include "talk/session/media/soundclip.h"
 #include "talk/session/media/srtpfilter.h"
+#include "webrtc/base/bind.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/sigslotrepeater.h"
+#include "webrtc/base/stringencode.h"
+#include "webrtc/base/stringutils.h"
 
 namespace cricket {
 
@@ -708,6 +708,11 @@ VideoCapturer* ChannelManager::CreateVideoCapturer() {
         default_video_encoder_config_.max_codec.height);
   }
   return capturer;
+}
+
+VideoCapturer* ChannelManager::CreateScreenCapturer(
+    const ScreencastId& screenid) {
+  return device_manager_->CreateScreenCapturer(screenid);
 }
 
 bool ChannelManager::SetCaptureDevice_w(const Device* cam_device) {
