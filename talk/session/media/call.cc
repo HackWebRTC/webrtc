@@ -493,7 +493,7 @@ cricket::VideoFormat ScreencastFormatFromFps(int fps) {
 
 bool Call::StartScreencast(Session* session,
                            const std::string& streamid, uint32 ssrc,
-                           const ScreencastId& screenid, int fps) {
+                           const ScreencastId& screencastid, int fps) {
   MediaSessionMap::iterator it = media_session_map_.find(session->id());
   if (it == media_session_map_.end()) {
     return false;
@@ -506,16 +506,9 @@ bool Call::StartScreencast(Session* session,
     return false;
   }
 
-  VideoCapturer* capturer = session_client_->channel_manager()->
-      CreateScreenCapturer(screenid);
-  if (!capturer) {
+  VideoCapturer *capturer = video_channel->AddScreencast(ssrc, screencastid);
+  if (capturer == NULL) {
     LOG(LS_WARNING) << "Could not create screencast capturer.";
-    return false;
-  }
-
-  if (!video_channel->AddScreencast(ssrc, capturer)) {
-    delete capturer;
-    LOG(LS_WARNING) << "Could not add screencast capturer.";
     return false;
   }
 

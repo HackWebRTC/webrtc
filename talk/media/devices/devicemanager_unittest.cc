@@ -33,12 +33,6 @@
 #endif
 #include <string>
 
-#include "talk/media/base/fakevideocapturer.h"
-#include "talk/media/base/screencastid.h"
-#include "talk/media/base/testutils.h"
-#include "talk/media/base/videocapturerfactory.h"
-#include "talk/media/devices/filevideocapturer.h"
-#include "talk/media/devices/v4llookup.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
@@ -46,6 +40,10 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stream.h"
 #include "webrtc/base/windowpickerfactory.h"
+#include "talk/media/base/fakevideocapturer.h"
+#include "talk/media/base/testutils.h"
+#include "talk/media/devices/filevideocapturer.h"
+#include "talk/media/devices/v4llookup.h"
 
 #ifdef LINUX
 // TODO(juberti): Figure out why this doesn't compile on Windows.
@@ -67,24 +65,12 @@ const cricket::VideoFormat kHdFormat(1280, 720,
                                      cricket::VideoFormat::FpsToInterval(30),
                                      cricket::FOURCC_I420);
 
-class FakeVideoDeviceCapturerFactory :
-    public cricket::VideoDeviceCapturerFactory {
+class FakeVideoCapturerFactory : public cricket::VideoCapturerFactory {
  public:
-  FakeVideoDeviceCapturerFactory() {}
-  virtual ~FakeVideoDeviceCapturerFactory() {}
+  FakeVideoCapturerFactory() {}
+  virtual ~FakeVideoCapturerFactory() {}
 
   virtual cricket::VideoCapturer* Create(const cricket::Device& device) {
-    return new cricket::FakeVideoCapturer;
-  }
-};
-
-class FakeScreenCapturerFactory : public cricket::ScreenCapturerFactory {
- public:
-  FakeScreenCapturerFactory() {}
-  virtual ~FakeScreenCapturerFactory() {}
-
-  virtual cricket::VideoCapturer* Create(
-      const cricket::ScreencastId& screenid) {
     return new cricket::FakeVideoCapturer;
   }
 };
@@ -95,10 +81,8 @@ class DeviceManagerTestFake : public testing::Test {
     dm_.reset(DeviceManagerFactory::Create());
     EXPECT_TRUE(dm_->Init());
     DeviceManager* device_manager = static_cast<DeviceManager*>(dm_.get());
-    device_manager->SetVideoDeviceCapturerFactory(
-        new FakeVideoDeviceCapturerFactory());
-    device_manager->SetScreenCapturerFactory(
-        new FakeScreenCapturerFactory());
+    device_manager->set_device_video_capturer_factory(
+        new FakeVideoCapturerFactory());
   }
 
   virtual void TearDown() {
@@ -387,7 +371,6 @@ TEST(DeviceManagerTest, GetWindows) {
     return;
   }
   scoped_ptr<DeviceManagerInterface> dm(DeviceManagerFactory::Create());
-  dm->SetScreenCapturerFactory(new FakeScreenCapturerFactory());
   std::vector<rtc::WindowDescription> descriptions;
   EXPECT_TRUE(dm->Init());
   if (!dm->GetWindows(&descriptions) || descriptions.empty()) {
@@ -395,8 +378,8 @@ TEST(DeviceManagerTest, GetWindows) {
                  << "windows to capture.";
     return;
   }
-  scoped_ptr<cricket::VideoCapturer> capturer(dm->CreateScreenCapturer(
-      cricket::ScreencastId(descriptions.front().id())));
+  scoped_ptr<cricket::VideoCapturer> capturer(dm->CreateWindowCapturer(
+      descriptions.front().id()));
   EXPECT_FALSE(capturer.get() == NULL);
   // TODO(hellner): creating a window capturer and immediately deleting it
   // results in "Continuous Build and Test Mainline - Mac opt" failure (crash).
@@ -411,7 +394,6 @@ TEST(DeviceManagerTest, GetDesktops) {
     return;
   }
   scoped_ptr<DeviceManagerInterface> dm(DeviceManagerFactory::Create());
-  dm->SetScreenCapturerFactory(new FakeScreenCapturerFactory());
   std::vector<rtc::DesktopDescription> descriptions;
   EXPECT_TRUE(dm->Init());
   if (!dm->GetDesktops(&descriptions) || descriptions.empty()) {
@@ -419,8 +401,8 @@ TEST(DeviceManagerTest, GetDesktops) {
                  << "desktops to capture.";
     return;
   }
-  scoped_ptr<cricket::VideoCapturer> capturer(dm->CreateScreenCapturer(
-      cricket::ScreencastId(descriptions.front().id())));
+  scoped_ptr<cricket::VideoCapturer> capturer(dm->CreateDesktopCapturer(
+      descriptions.front().id()));
   EXPECT_FALSE(capturer.get() == NULL);
 }
 #endif  // !WIN32
