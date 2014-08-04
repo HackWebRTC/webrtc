@@ -3786,6 +3786,7 @@ bool WebRtcVideoMediaChannel::SetReceiveCodecs(
        it != receive_codecs_.end(); ++it) {
     pt_to_codec[it->plType] = &(*it);
   }
+  bool rtx_registered = false;
   for (std::vector<webrtc::VideoCodec>::iterator it = receive_codecs_.begin();
        it != receive_codecs_.end(); ++it) {
     if (it->codecType == webrtc::kVideoCodecRED) {
@@ -3796,16 +3797,18 @@ bool WebRtcVideoMediaChannel::SetReceiveCodecs(
     // If this is an RTX codec we have to verify that it is associated with
     // a valid video codec which we have RTX support for.
     if (_stricmp(it->plName, kRtxCodecName) == 0) {
+      // WebRTC only supports one RTX codec at a time.
+      if (rtx_registered) {
+        LOG(LS_ERROR) << "Only one RTX codec at a time is supported.";
+        return false;
+      }
       std::map<int, int>::iterator apt_it = associated_payload_types_.find(
           it->plType);
       bool valid_apt = false;
       if (apt_it != associated_payload_types_.end()) {
         std::map<int, webrtc::VideoCodec*>::iterator codec_it =
             pt_to_codec.find(apt_it->second);
-        // We currently only support RTX associated with VP8 due to limitations
-        // in webrtc where only one RTX payload type can be registered.
-        valid_apt = codec_it != pt_to_codec.end() &&
-            _stricmp(codec_it->second->plName, kVp8CodecName) == 0;
+        valid_apt = codec_it != pt_to_codec.end();
       }
       if (!valid_apt) {
         LOG(LS_ERROR) << "The RTX codec isn't associated with a known and "
@@ -3817,6 +3820,7 @@ bool WebRtcVideoMediaChannel::SetReceiveCodecs(
         LOG_RTCERR2(SetRtxReceivePayloadType, channel_id, it->plType);
         return false;
       }
+      rtx_registered = true;
       continue;
     }
     if (engine()->vie()->codec()->SetReceiveCodec(channel_id, *it) != 0) {
@@ -3926,10 +3930,13 @@ bool WebRtcVideoMediaChannel::MaybeResetVieSendCodec(
       options_.screencast_min_bitrate.GetWithDefaultIfUnset(0);
   bool leaky_bucket = options_.video_leaky_bucket.GetWithDefaultIfUnset(true);
   bool reset_send_codec =
-      target_width != cur_width || target_height != cur_height ||
+    target_width != cur_width || target_height != cur_height;
+  if (vie_codec.codecType == webrtc::kVideoCodecVP8) {
+    reset_send_codec = reset_send_codec ||
       automatic_resize != vie_codec.codecSpecific.VP8.automaticResizeOn ||
       enable_denoising != vie_codec.codecSpecific.VP8.denoisingOn ||
       vp8_frame_dropping != vie_codec.codecSpecific.VP8.frameDroppingOn;
+  }
 
   if (reset_send_codec) {
     // Set the new codec on vie.
@@ -3940,9 +3947,11 @@ bool WebRtcVideoMediaChannel::MaybeResetVieSendCodec(
     vie_codec.minBitrate = target_codec.minBitrate;
     vie_codec.maxBitrate = target_codec.maxBitrate;
     vie_codec.targetBitrate = 0;
-    vie_codec.codecSpecific.VP8.automaticResizeOn = automatic_resize;
-    vie_codec.codecSpecific.VP8.denoisingOn = enable_denoising;
-    vie_codec.codecSpecific.VP8.frameDroppingOn = vp8_frame_dropping;
+    if (vie_codec.codecType == webrtc::kVideoCodecVP8) {
+      vie_codec.codecSpecific.VP8.automaticResizeOn = automatic_resize;
+      vie_codec.codecSpecific.VP8.denoisingOn = enable_denoising;
+      vie_codec.codecSpecific.VP8.frameDroppingOn = vp8_frame_dropping;
+    }
     MaybeChangeBitrates(channel_id, &vie_codec);
 
     if (engine()->vie()->codec()->SetSendCodec(channel_id, vie_codec) != 0) {
