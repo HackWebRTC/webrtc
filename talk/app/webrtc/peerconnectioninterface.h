@@ -192,6 +192,38 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     explicit RTCConfiguration(IceTransportsType type) : type(type) {}
   };
 
+  struct RTCOfferAnswerOptions {
+    static const int kUndefined = -1;
+    static const int kMaxOfferToReceiveMedia = 1;
+
+    // The default value for constraint offerToReceiveX:true.
+    static const int kOfferToReceiveMediaTrue = 1;
+
+    int offer_to_receive_video;
+    int offer_to_receive_audio;
+    bool voice_activity_detection;
+    bool ice_restart;
+    bool use_rtp_mux;
+
+    RTCOfferAnswerOptions()
+        : offer_to_receive_video(kUndefined),
+          offer_to_receive_audio(kUndefined),
+          voice_activity_detection(true),
+          ice_restart(false),
+          use_rtp_mux(true) {}
+
+    RTCOfferAnswerOptions(int offer_to_receive_video,
+                          int offer_to_receive_audio,
+                          bool voice_activity_detection,
+                          bool ice_restart,
+                          bool use_rtp_mux)
+        : offer_to_receive_video(offer_to_receive_video),
+          offer_to_receive_audio(offer_to_receive_audio),
+          voice_activity_detection(voice_activity_detection),
+          ice_restart(ice_restart),
+          use_rtp_mux(use_rtp_mux) {}
+  };
+
   // Used by GetStats to decide which stats to include in the stats reports.
   // |kStatsOutputLevelStandard| includes the standard stats for Javascript API;
   // |kStatsOutputLevelDebug| includes both the standard stats and additional
@@ -239,7 +271,13 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // Create a new offer.
   // The CreateSessionDescriptionObserver callback will be called when done.
   virtual void CreateOffer(CreateSessionDescriptionObserver* observer,
-                           const MediaConstraintsInterface* constraints) = 0;
+                           const MediaConstraintsInterface* constraints) {}
+
+  // TODO(jiayl): remove the default impl and the old interface when chromium
+  // code is updated.
+  virtual void CreateOffer(CreateSessionDescriptionObserver* observer,
+                           const RTCOfferAnswerOptions& options) {}
+
   // Create an answer to an offer.
   // The CreateSessionDescriptionObserver callback will be called when done.
   virtual void CreateAnswer(CreateSessionDescriptionObserver* observer,

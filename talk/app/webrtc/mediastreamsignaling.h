@@ -200,11 +200,11 @@ class MediaStreamSignaling : public sigslot::has_slots<> {
                                      const rtc::Buffer& payload);
   void RemoveSctpDataChannel(int sid);
 
-  // Returns a MediaSessionOptions struct with options decided by |constraints|,
+  // Returns a MediaSessionOptions struct with options decided by |options|,
   // the local MediaStreams and DataChannels.
   virtual bool GetOptionsForOffer(
-      const MediaConstraintsInterface* constraints,
-      cricket::MediaSessionOptions* options);
+      const PeerConnectionInterface::RTCOfferAnswerOptions& rtc_options,
+      cricket::MediaSessionOptions* session_options);
 
   // Returns a MediaSessionOptions struct with options decided by
   // |constraints|, the local MediaStreams and DataChannels.

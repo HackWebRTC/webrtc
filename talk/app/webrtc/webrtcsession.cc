@@ -693,9 +693,10 @@ bool WebRtcSession::GetSslRole(rtc::SSLRole* role) {
   return false;
 }
 
-void WebRtcSession::CreateOffer(CreateSessionDescriptionObserver* observer,
-                                const MediaConstraintsInterface* constraints) {
-  webrtc_session_desc_factory_->CreateOffer(observer, constraints);
+void WebRtcSession::CreateOffer(
+    CreateSessionDescriptionObserver* observer,
+    const PeerConnectionInterface::RTCOfferAnswerOptions& options) {
+  webrtc_session_desc_factory_->CreateOffer(observer, options);
 }
 
 void WebRtcSession::CreateAnswer(CreateSessionDescriptionObserver* observer,

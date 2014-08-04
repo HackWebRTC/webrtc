@@ -508,7 +508,62 @@ void PeerConnection::CreateOffer(CreateSessionDescriptionObserver* observer,
     LOG(LS_ERROR) << "CreateOffer - observer is NULL.";
     return;
   }
-  session_->CreateOffer(observer, constraints);
+  RTCOfferAnswerOptions options;
+  // Defaults to receiving audio and not receiving video.
+  options.offer_to_receive_audio =
+      RTCOfferAnswerOptions::kOfferToReceiveMediaTrue;
+  options.offer_to_receive_video = 0;
+
+  bool value;
+  size_t mandatory_constraints = 0;
+
+  if (FindConstraint(constraints,
+                     MediaConstraintsInterface::kOfferToReceiveAudio,
+                     &value,
+                     &mandatory_constraints)) {
+    options.offer_to_receive_audio =
+        value ? RTCOfferAnswerOptions::kOfferToReceiveMediaTrue : 0;
+  }
+
+  if (FindConstraint(constraints,
+                     MediaConstraintsInterface::kOfferToReceiveVideo,
+                     &value,
+                     &mandatory_constraints)) {
+    options.offer_to_receive_video =
+        value ? RTCOfferAnswerOptions::kOfferToReceiveMediaTrue : 0;
+  }
+
+  if (FindConstraint(constraints,
+                     MediaConstraintsInterface::kVoiceActivityDetection,
+                     &value,
+                     &mandatory_constraints)) {
+    options.voice_activity_detection = value;
+  }
+
+  if (FindConstraint(constraints,
+                     MediaConstraintsInterface::kIceRestart,
+                     &value,
+                     &mandatory_constraints)) {
+    options.ice_restart = value;
+  }
+
+  if (FindConstraint(constraints,
+                     MediaConstraintsInterface::kUseRtpMux,
+                     &value,
+                     &mandatory_constraints)) {
+    options.use_rtp_mux = value;
+  }
+
+  CreateOffer(observer, options);
+}
+
+void PeerConnection::CreateOffer(CreateSessionDescriptionObserver* observer,
+                                 const RTCOfferAnswerOptions& options) {
+  if (!VERIFY(observer != NULL)) {
+    LOG(LS_ERROR) << "CreateOffer - observer is NULL.";
+    return;
+  }
+  session_->CreateOffer(observer, options);
 }
 
 void PeerConnection::CreateAnswer(

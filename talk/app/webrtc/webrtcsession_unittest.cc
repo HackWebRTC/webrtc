@@ -99,6 +99,8 @@ using webrtc::kSdpWithoutSdesCrypto;
 using webrtc::kSessionError;
 using webrtc::kSessionErrorDesc;
 
+typedef PeerConnectionInterface::RTCOfferAnswerOptions RTCOfferAnswerOptions;
+
 static const int kClientAddrPort = 0;
 static const char kClientAddrHost1[] = "11.11.11.11";
 static const char kClientAddrHost2[] = "22.22.22.22";
@@ -378,18 +380,26 @@ class WebRtcSessionTest : public testing::Test {
   // Call mediastream_signaling_.UseOptionsWithStreamX() before this function
   // to decide which streams to create.
   void InitiateCall() {
-    SessionDescriptionInterface* offer = CreateOffer(NULL);
+    SessionDescriptionInterface* offer = CreateOffer();
     SetLocalDescriptionWithoutError(offer);
     EXPECT_TRUE_WAIT(PeerConnectionInterface::kIceGatheringNew !=
         observer_.ice_gathering_state_,
         kIceCandidatesTimeout);
   }
 
+  SessionDescriptionInterface* CreateOffer() {
+    PeerConnectionInterface::RTCOfferAnswerOptions options;
+    options.offer_to_receive_audio =
+        RTCOfferAnswerOptions::kOfferToReceiveMediaTrue;
+
+    return CreateOffer(options);
+  }
+
   SessionDescriptionInterface* CreateOffer(
-      const webrtc::MediaConstraintsInterface* constraints) {
+      const PeerConnectionInterface::RTCOfferAnswerOptions& options) {
     rtc::scoped_refptr<WebRtcSessionCreateSDPObserverForTest>
         observer = new WebRtcSessionCreateSDPObserverForTest();
-    session_->CreateOffer(observer, constraints);
+    session_->CreateOffer(observer, options);
     EXPECT_TRUE_WAIT(
         observer->state() != WebRtcSessionCreateSDPObserverForTest::kInit,
         2000);
@@ -833,9 +843,11 @@ class WebRtcSessionTest : public testing::Test {
     AddInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
     Init(NULL);
     mediastream_signaling_.SendAudioVideoStream1();
-    FakeConstraints constraints;
-    constraints.SetMandatoryUseRtpMux(bundle);
-    SessionDescriptionInterface* offer = CreateOffer(&constraints);
+
+    PeerConnectionInterface::RTCOfferAnswerOptions options;
+    options.use_rtp_mux = bundle;
+
+    SessionDescriptionInterface* offer = CreateOffer(options);
     // SetLocalDescription and SetRemoteDescriptions takes ownership of offer
     // and answer.
     SetLocalDescriptionWithoutError(offer);
@@ -905,7 +917,7 @@ class WebRtcSessionTest : public testing::Test {
     AddInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
     Init(NULL);
     mediastream_signaling_.SendAudioVideoStream1();
-    SessionDescriptionInterface* offer = CreateOffer(NULL);
+    SessionDescriptionInterface* offer = CreateOffer();
 
     EXPECT_EQ(PeerConnectionInterface::kIceGatheringNew,
               observer_.ice_gathering_state_);
@@ -1005,7 +1017,7 @@ class WebRtcSessionTest : public testing::Test {
     webrtc::InternalDataChannelInit dci;
     dci.reliable = false;
     session_->CreateDataChannel("datachannel", &dci);
-    SessionDescriptionInterface* offer = CreateOffer(NULL);
+    SessionDescriptionInterface* offer = CreateOffer();
     SetLocalDescriptionWithoutError(offer);
   }
 
@@ -1021,13 +1033,14 @@ class WebRtcSessionTest : public testing::Test {
       SetRemoteDescriptionWithoutError(offer.release());
     }
 
+    PeerConnectionInterface::RTCOfferAnswerOptions options;
     const int kNumber = 3;
     rtc::scoped_refptr<WebRtcSessionCreateSDPObserverForTest>
         observers[kNumber];
     for (int i = 0; i < kNumber; ++i) {
       observers[i] = new WebRtcSessionCreateSDPObserverForTest();
       if (type == CreateSessionDescriptionRequest::kOffer) {
-        session_->CreateOffer(observers[i], NULL);
+        session_->CreateOffer(observers[i], options);
       } else {
         session_->CreateAnswer(observers[i], NULL);
       }
@@ -1140,7 +1153,7 @@ TEST_F(WebRtcSessionTest, SetSdpFailedOnInvalidSdp) {
 TEST_F(WebRtcSessionTest, TestCreateSdesOfferReceiveSdesAnswer) {
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream1();
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
   const std::string session_id_orig = offer->session_id();
   const std::string session_version_orig = offer->session_version();
   SetLocalDescriptionWithoutError(offer);
@@ -1166,7 +1179,7 @@ TEST_F(WebRtcSessionTest, TestCreateSdesOfferReceiveSdesAnswer) {
 
   // Create new offer without send streams.
   mediastream_signaling_.SendNothing();
-  offer = CreateOffer(NULL);
+  offer = CreateOffer();
 
   // Verify the session id is the same and the session version is
   // increased.
@@ -1195,7 +1208,7 @@ TEST_F(WebRtcSessionTest, TestCreateSdesOfferReceiveSdesAnswer) {
 TEST_F(WebRtcSessionTest, TestReceiveSdesOfferCreateSdesAnswer) {
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream2();
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
   VerifyCryptoParams(offer->description());
   SetRemoteDescriptionWithoutError(offer);
 
@@ -1222,7 +1235,7 @@ TEST_F(WebRtcSessionTest, TestReceiveSdesOfferCreateSdesAnswer) {
   EXPECT_TRUE(kAudioTrack1 == voice_channel_->send_streams()[0].id);
 
   mediastream_signaling_.SendAudioVideoStream1And2();
-  offer = CreateOffer(NULL);
+  offer = CreateOffer();
   SetRemoteDescriptionWithoutError(offer);
 
   // Answer by turning off all send streams.
@@ -1252,12 +1265,12 @@ TEST_F(WebRtcSessionTest, SetLocalSdpFailedOnCreateChannel) {
   Init(NULL);
   media_engine_->set_fail_create_channel(true);
 
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
   ASSERT_TRUE(offer != NULL);
   // SetRemoteDescription and SetLocalDescription will take the ownership of
   // the offer.
   SetRemoteDescriptionOfferExpectError(kCreateChannelFailed, offer);
-  offer = CreateOffer(NULL);
+  offer = CreateOffer();
   ASSERT_TRUE(offer != NULL);
   SetLocalDescriptionOfferExpectError(kCreateChannelFailed, offer);
 }
@@ -1374,7 +1387,7 @@ TEST_F(WebRtcSessionTest, TestCreateDtlsOfferReceiveDtlsAnswer) {
   SetFactoryDtlsSrtp();
 
   // Verify that we get a crypto fingerprint in the answer.
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
   ASSERT_TRUE(offer != NULL);
   VerifyFingerprintStatus(offer->description(), true);
   // Check that we don't have an a=crypto line in the offer.
@@ -1440,7 +1453,7 @@ TEST_F(WebRtcSessionTest, TestSetLocalNonDtlsAnswerWhenDtlsOn) {
 TEST_F(WebRtcSessionTest, TestSetRemoteNonDtlsAnswerWhenDtlsOn) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   InitWithDtls();
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
   cricket::MediaSessionOptions options;
   options.has_video = true;
   JsepSessionDescription* answer =
@@ -1461,7 +1474,7 @@ TEST_F(WebRtcSessionTest, TestCreateOfferReceiveAnswerWithoutEncryption) {
   InitWithDtls();
 
   // Verify that we get a crypto fingerprint in the answer.
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
   ASSERT_TRUE(offer != NULL);
   VerifyFingerprintStatus(offer->description(), false);
   // Check that we don't have an a=crypto line in the offer.
@@ -1514,11 +1527,11 @@ TEST_F(WebRtcSessionTest, TestSetLocalOfferTwice) {
   Init(NULL);
   mediastream_signaling_.SendNothing();
   // SetLocalDescription take ownership of offer.
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
   SetLocalDescriptionWithoutError(offer);
 
   // SetLocalDescription take ownership of offer.
-  SessionDescriptionInterface* offer2 = CreateOffer(NULL);
+  SessionDescriptionInterface* offer2 = CreateOffer();
   SetLocalDescriptionWithoutError(offer2);
 }
 
@@ -1526,19 +1539,19 @@ TEST_F(WebRtcSessionTest, TestSetRemoteOfferTwice) {
   Init(NULL);
   mediastream_signaling_.SendNothing();
   // SetLocalDescription take ownership of offer.
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
   SetRemoteDescriptionWithoutError(offer);
 
-  SessionDescriptionInterface* offer2 = CreateOffer(NULL);
+  SessionDescriptionInterface* offer2 = CreateOffer();
   SetRemoteDescriptionWithoutError(offer2);
 }
 
 TEST_F(WebRtcSessionTest, TestSetLocalAndRemoteOffer) {
   Init(NULL);
   mediastream_signaling_.SendNothing();
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
   SetLocalDescriptionWithoutError(offer);
-  offer = CreateOffer(NULL);
+  offer = CreateOffer();
   SetRemoteDescriptionOfferExpectError(
       "Called in wrong state: STATE_SENTINITIATE", offer);
 }
@@ -1546,9 +1559,9 @@ TEST_F(WebRtcSessionTest, TestSetLocalAndRemoteOffer) {
 TEST_F(WebRtcSessionTest, TestSetRemoteAndLocalOffer) {
   Init(NULL);
   mediastream_signaling_.SendNothing();
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
   SetRemoteDescriptionWithoutError(offer);
-  offer = CreateOffer(NULL);
+  offer = CreateOffer();
   SetLocalDescriptionOfferExpectError(
       "Called in wrong state: STATE_RECEIVEDINITIATE", offer);
 }
@@ -1579,7 +1592,7 @@ TEST_F(WebRtcSessionTest, TestSetLocalPrAnswer) {
 TEST_F(WebRtcSessionTest, TestSetRemotePrAnswer) {
   Init(NULL);
   mediastream_signaling_.SendNothing();
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
   SetLocalDescriptionExpectState(offer, BaseSession::STATE_SENTINITIATE);
 
   JsepSessionDescription* pranswer =
@@ -1606,8 +1619,8 @@ TEST_F(WebRtcSessionTest, TestSetRemotePrAnswer) {
 TEST_F(WebRtcSessionTest, TestSetLocalAnswerWithoutOffer) {
   Init(NULL);
   mediastream_signaling_.SendNothing();
-  rtc::scoped_ptr<SessionDescriptionInterface> offer(
-      CreateOffer(NULL));
+  rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
+
   SessionDescriptionInterface* answer =
       CreateRemoteAnswer(offer.get());
   SetLocalDescriptionAnswerExpectError("Called in wrong state: STATE_INIT",
@@ -1617,8 +1630,8 @@ TEST_F(WebRtcSessionTest, TestSetLocalAnswerWithoutOffer) {
 TEST_F(WebRtcSessionTest, TestSetRemoteAnswerWithoutOffer) {
   Init(NULL);
   mediastream_signaling_.SendNothing();
-  rtc::scoped_ptr<SessionDescriptionInterface> offer(
-        CreateOffer(NULL));
+  rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
+
   SessionDescriptionInterface* answer =
       CreateRemoteAnswer(offer.get());
   SetRemoteDescriptionAnswerExpectError(
@@ -1636,7 +1649,7 @@ TEST_F(WebRtcSessionTest, TestAddRemoteCandidate) {
   // Fail since we have not set a offer description.
   EXPECT_FALSE(session_->ProcessIceMessage(&ice_candidate1));
 
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
   SetLocalDescriptionWithoutError(offer);
   // Candidate should be allowed to add before remote description.
   EXPECT_TRUE(session_->ProcessIceMessage(&ice_candidate1));
@@ -1770,7 +1783,7 @@ TEST_F(WebRtcSessionTest, TestSetRemoteSessionDescriptionWithCandidates) {
   JsepIceCandidate ice_candidate(kMediaContentName0, kMediaContentIndex0,
                                  candidate1);
   mediastream_signaling_.SendAudioVideoStream1();
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
 
   EXPECT_TRUE(offer->AddCandidate(&ice_candidate));
   SetRemoteDescriptionWithoutError(offer);
@@ -1805,8 +1818,8 @@ TEST_F(WebRtcSessionTest, TestSetLocalAndRemoteDescriptionWithCandidates) {
   EXPECT_TRUE_WAIT(0u < observer_.mline_1_candidates_.size(),
                    kIceCandidatesTimeout);
 
-  rtc::scoped_ptr<SessionDescriptionInterface> local_offer(
-      CreateOffer(NULL));
+  rtc::scoped_ptr<SessionDescriptionInterface> local_offer(CreateOffer());
+
   ASSERT_TRUE(local_offer->candidates(kMediaContentIndex0) != NULL);
   EXPECT_LT(0u, local_offer->candidates(kMediaContentIndex0)->count());
   ASSERT_TRUE(local_offer->candidates(kMediaContentIndex1) != NULL);
@@ -1827,8 +1840,7 @@ TEST_F(WebRtcSessionTest, TestSetLocalAndRemoteDescriptionWithCandidates) {
 TEST_F(WebRtcSessionTest, TestChannelCreationsWithContentNames) {
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream1();
-  rtc::scoped_ptr<SessionDescriptionInterface> offer(
-      CreateOffer(NULL));
+  rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
 
   // CreateOffer creates session description with the content names "audio" and
   // "video". Goal is to modify these content names and verify transport channel
@@ -1871,8 +1883,8 @@ TEST_F(WebRtcSessionTest, TestChannelCreationsWithContentNames) {
 // the send streams when no constraints have been set.
 TEST_F(WebRtcSessionTest, CreateOfferWithoutConstraintsOrStreams) {
   Init(NULL);
-  rtc::scoped_ptr<SessionDescriptionInterface> offer(
-      CreateOffer(NULL));
+  rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
+
   ASSERT_TRUE(offer != NULL);
   const cricket::ContentInfo* content =
       cricket::GetFirstAudioContent(offer->description());
@@ -1887,8 +1899,8 @@ TEST_F(WebRtcSessionTest, CreateOfferWithoutConstraints) {
   Init(NULL);
   // Test Audio only offer.
   mediastream_signaling_.UseOptionsAudioOnly();
-  rtc::scoped_ptr<SessionDescriptionInterface> offer(
-        CreateOffer(NULL));
+  rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
+
   const cricket::ContentInfo* content =
       cricket::GetFirstAudioContent(offer->description());
   EXPECT_TRUE(content != NULL);
@@ -1897,7 +1909,7 @@ TEST_F(WebRtcSessionTest, CreateOfferWithoutConstraints) {
 
   // Test Audio / Video offer.
   mediastream_signaling_.SendAudioVideoStream1();
-  offer.reset(CreateOffer(NULL));
+  offer.reset(CreateOffer());
   content = cricket::GetFirstAudioContent(offer->description());
   EXPECT_TRUE(content != NULL);
   content = cricket::GetFirstVideoContent(offer->description());
@@ -1908,12 +1920,13 @@ TEST_F(WebRtcSessionTest, CreateOfferWithoutConstraints) {
 // kOfferToReceiveVideo and kOfferToReceiveAudio constraints are set to false.
 TEST_F(WebRtcSessionTest, CreateOfferWithConstraintsWithoutStreams) {
   Init(NULL);
-  webrtc::FakeConstraints constraints_no_receive;
-  constraints_no_receive.SetMandatoryReceiveAudio(false);
-  constraints_no_receive.SetMandatoryReceiveVideo(false);
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  options.offer_to_receive_audio = 0;
+  options.offer_to_receive_video = 0;
 
   rtc::scoped_ptr<SessionDescriptionInterface> offer(
-      CreateOffer(&constraints_no_receive));
+      CreateOffer(options));
+
   ASSERT_TRUE(offer != NULL);
   const cricket::ContentInfo* content =
       cricket::GetFirstAudioContent(offer->description());
@@ -1926,10 +1939,12 @@ TEST_F(WebRtcSessionTest, CreateOfferWithConstraintsWithoutStreams) {
 // kOfferToReceiveAudio constraints are set to true.
 TEST_F(WebRtcSessionTest, CreateAudioOnlyOfferWithConstraints) {
   Init(NULL);
-  webrtc::FakeConstraints constraints_audio_only;
-  constraints_audio_only.SetMandatoryReceiveAudio(true);
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  options.offer_to_receive_audio =
+      RTCOfferAnswerOptions::kOfferToReceiveMediaTrue;
+
   rtc::scoped_ptr<SessionDescriptionInterface> offer(
-        CreateOffer(&constraints_audio_only));
+        CreateOffer(options));
 
   const cricket::ContentInfo* content =
       cricket::GetFirstAudioContent(offer->description());
@@ -1943,11 +1958,15 @@ TEST_F(WebRtcSessionTest, CreateAudioOnlyOfferWithConstraints) {
 TEST_F(WebRtcSessionTest, CreateOfferWithConstraints) {
   Init(NULL);
   // Test Audio / Video offer.
-  webrtc::FakeConstraints constraints_audio_video;
-  constraints_audio_video.SetMandatoryReceiveAudio(true);
-  constraints_audio_video.SetMandatoryReceiveVideo(true);
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  options.offer_to_receive_audio =
+      RTCOfferAnswerOptions::kOfferToReceiveMediaTrue;
+  options.offer_to_receive_video =
+      RTCOfferAnswerOptions::kOfferToReceiveMediaTrue;
+
   rtc::scoped_ptr<SessionDescriptionInterface> offer(
-      CreateOffer(&constraints_audio_video));
+      CreateOffer(options));
+
   const cricket::ContentInfo* content =
       cricket::GetFirstAudioContent(offer->description());
 
@@ -1963,7 +1982,7 @@ TEST_F(WebRtcSessionTest, CreateOfferWithConstraints) {
 // an offer.
 TEST_F(WebRtcSessionTest, CreateAnswerWithoutAnOffer) {
   Init(NULL);
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
   SetLocalDescriptionWithoutError(offer);
   SessionDescriptionInterface* answer = CreateRemoteAnswer(offer);
   SetRemoteDescriptionWithoutError(answer);
@@ -2090,10 +2109,14 @@ TEST_F(WebRtcSessionTest, CreateAnswerWithConstraints) {
 TEST_F(WebRtcSessionTest, CreateOfferWithoutCNCodecs) {
   AddCNCodecs();
   Init(NULL);
-  webrtc::FakeConstraints constraints;
-  constraints.SetOptionalVAD(false);
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  options.offer_to_receive_audio =
+      RTCOfferAnswerOptions::kOfferToReceiveMediaTrue;
+  options.voice_activity_detection = false;
+
   rtc::scoped_ptr<SessionDescriptionInterface> offer(
-      CreateOffer(&constraints));
+      CreateOffer(options));
+
   const cricket::ContentInfo* content =
       cricket::GetFirstAudioContent(offer->description());
   EXPECT_TRUE(content != NULL);
@@ -2125,7 +2148,7 @@ TEST_F(WebRtcSessionTest, TestAVOfferWithAudioOnlyAnswer) {
   EXPECT_TRUE(media_engine_->GetVoiceChannel(0) == NULL);
 
   mediastream_signaling_.SendAudioVideoStream1();
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
 
   cricket::MediaSessionOptions options;
   options.has_video = false;
@@ -2182,7 +2205,7 @@ TEST_F(WebRtcSessionTest, TestAVOfferWithVideoOnlyAnswer) {
   EXPECT_TRUE(media_engine_->GetVideoChannel(0) == NULL);
   EXPECT_TRUE(media_engine_->GetVoiceChannel(0) == NULL);
   mediastream_signaling_.SendAudioVideoStream1();
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
 
   cricket::MediaSessionOptions options;
   options.has_audio = false;
@@ -2233,8 +2256,7 @@ TEST_F(WebRtcSessionTest, TestAVOfferWithVideoOnlyAnswer) {
 TEST_F(WebRtcSessionTest, VerifyCryptoParamsInSDP) {
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream1();
-  scoped_ptr<SessionDescriptionInterface> offer(
-      CreateOffer(NULL));
+  scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
   VerifyCryptoParams(offer->description());
   SetRemoteDescriptionWithoutError(offer.release());
   scoped_ptr<SessionDescriptionInterface> answer(CreateAnswer(NULL));
@@ -2245,8 +2267,7 @@ TEST_F(WebRtcSessionTest, VerifyNoCryptoParamsInSDP) {
   options_.disable_encryption = true;
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream1();
-  scoped_ptr<SessionDescriptionInterface> offer(
-        CreateOffer(NULL));
+  scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
   VerifyNoCryptoParams(offer->description(), false);
 }
 
@@ -2265,7 +2286,8 @@ TEST_F(WebRtcSessionTest, VerifyAnswerFromCryptoOffer) {
 TEST_F(WebRtcSessionTest, TestSetLocalDescriptionWithoutIce) {
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream1();
-  rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer(NULL));
+  rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
+
   std::string sdp;
   RemoveIceUfragPwdLines(offer.get(), &sdp);
   SessionDescriptionInterface* modified_offer =
@@ -2291,7 +2313,8 @@ TEST_F(WebRtcSessionTest, TestSetLocalDescriptionInvalidIceCredentials) {
   Init(NULL);
   tdesc_factory_->set_protocol(cricket::ICEPROTO_RFC5245);
   mediastream_signaling_.SendAudioVideoStream1();
-  rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer(NULL));
+  rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
+
   std::string sdp;
   // Modifying ice ufrag and pwd in local offer with strings smaller than the
   // recommended values of 4 and 22 bytes respectively.
@@ -2340,8 +2363,8 @@ TEST_F(WebRtcSessionTest, VerifyBundleFlagInPA) {
   Init(NULL);
   EXPECT_TRUE((cricket::PORTALLOCATOR_ENABLE_BUNDLE &
       allocator_->flags()) == cricket::PORTALLOCATOR_ENABLE_BUNDLE);
-  rtc::scoped_ptr<SessionDescriptionInterface> offer(
-      CreateOffer(NULL));
+  rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
+
   cricket::SessionDescription* offer_copy =
       offer->description()->Copy();
   offer_copy->RemoveGroupByName(cricket::GROUP_TYPE_BUNDLE);
@@ -2358,9 +2381,12 @@ TEST_F(WebRtcSessionTest, TestDisabledBundleInAnswer) {
   mediastream_signaling_.SendAudioVideoStream1();
   EXPECT_TRUE((cricket::PORTALLOCATOR_ENABLE_BUNDLE &
       allocator_->flags()) == cricket::PORTALLOCATOR_ENABLE_BUNDLE);
-  FakeConstraints constraints;
-  constraints.SetMandatoryUseRtpMux(true);
-  SessionDescriptionInterface* offer = CreateOffer(&constraints);
+
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  options.use_rtp_mux = true;
+
+  SessionDescriptionInterface* offer = CreateOffer(options);
+
   SetLocalDescriptionWithoutError(offer);
   mediastream_signaling_.SendAudioVideoStream2();
   rtc::scoped_ptr<SessionDescriptionInterface> answer(
@@ -2396,9 +2422,11 @@ TEST_F(WebRtcSessionTest, TestDisabledRtcpMuxWithBundleEnabled) {
   mediastream_signaling_.SendAudioVideoStream1();
   EXPECT_TRUE((cricket::PORTALLOCATOR_ENABLE_BUNDLE &
       allocator_->flags()) == cricket::PORTALLOCATOR_ENABLE_BUNDLE);
-  FakeConstraints constraints;
-  constraints.SetMandatoryUseRtpMux(true);
-  SessionDescriptionInterface* offer = CreateOffer(&constraints);
+
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  options.use_rtp_mux = true;
+
+  SessionDescriptionInterface* offer = CreateOffer(options);
   std::string offer_str;
   offer->ToString(&offer_str);
   // Disable rtcp-mux
@@ -2568,7 +2596,7 @@ TEST_F(WebRtcSessionTest, InsertDtmf) {
 TEST_F(WebRtcSessionTest, TestInitiatorFlagAsOriginator) {
   Init(NULL);
   EXPECT_FALSE(session_->initiator());
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
   SessionDescriptionInterface* answer = CreateRemoteAnswer(offer);
   SetLocalDescriptionWithoutError(offer);
   EXPECT_TRUE(session_->initiator());
@@ -2594,7 +2622,7 @@ TEST_F(WebRtcSessionTest, TestInitiatorFlagAsReceiver) {
 TEST_F(WebRtcSessionTest, TestInitiatorGIceInAnswer) {
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream1();
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
   rtc::scoped_ptr<SessionDescriptionInterface> answer(
       CreateRemoteAnswer(offer));
   SetLocalDescriptionWithoutError(offer);
@@ -2616,7 +2644,7 @@ TEST_F(WebRtcSessionTest, TestInitiatorGIceInAnswer) {
 TEST_F(WebRtcSessionTest, TestInitiatorIceInAnswer) {
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream1();
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
   SessionDescriptionInterface* answer = CreateRemoteAnswer(offer);
   SetLocalDescriptionWithoutError(offer);
 
@@ -2630,7 +2658,7 @@ TEST_F(WebRtcSessionTest, TestInitiatorIceInAnswer) {
 TEST_F(WebRtcSessionTest, TestReceiverGIceInOffer) {
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream1();
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
   SetRemoteDescriptionWithoutError(offer);
   rtc::scoped_ptr<SessionDescriptionInterface> answer(
       CreateAnswer(NULL));
@@ -2652,7 +2680,7 @@ TEST_F(WebRtcSessionTest, TestReceiverGIceInOffer) {
 TEST_F(WebRtcSessionTest, TestReceiverIceInOffer) {
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream1();
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
   SetRemoteDescriptionWithoutError(offer);
   SessionDescriptionInterface* answer = CreateAnswer(NULL);
   SetLocalDescriptionWithoutError(answer);
@@ -2665,8 +2693,8 @@ TEST_F(WebRtcSessionTest, TestReceiverIceInOffer) {
 TEST_F(WebRtcSessionTest, TestIceOfferGIceOnlyAnswer) {
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream1();
-  rtc::scoped_ptr<SessionDescriptionInterface> offer(
-      CreateOffer(NULL));
+  rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
+
   std::string offer_str;
   offer->ToString(&offer_str);
   // Disable google-ice
@@ -2697,7 +2725,7 @@ TEST_F(WebRtcSessionTest, TestIceOfferGIceOnlyAnswer) {
 TEST_F(WebRtcSessionTest, TestIncorrectMLinesInRemoteAnswer) {
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream1();
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
   SetLocalDescriptionWithoutError(offer);
   rtc::scoped_ptr<SessionDescriptionInterface> answer(
       CreateRemoteAnswer(session_->local_description()));
@@ -2798,8 +2826,7 @@ TEST_F(WebRtcSessionTest, TestIceStartAfterSetLocalDescriptionOnly) {
 TEST_F(WebRtcSessionTest, TestCryptoAfterSetLocalDescription) {
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream1();
-  rtc::scoped_ptr<SessionDescriptionInterface> offer(
-      CreateOffer(NULL));
+  rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
 
   // Making sure SetLocalDescription correctly sets crypto value in
   // SessionDescription object after de-serialization of sdp string. The value
@@ -2818,8 +2845,7 @@ TEST_F(WebRtcSessionTest, TestCryptoAfterSetLocalDescriptionWithDisabled) {
   options_.disable_encryption = true;
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream1();
-  rtc::scoped_ptr<SessionDescriptionInterface> offer(
-      CreateOffer(NULL));
+  rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
 
   // Making sure SetLocalDescription correctly sets crypto value in
   // SessionDescription object after de-serialization of sdp string. The value
@@ -2900,7 +2926,7 @@ TEST_F(WebRtcSessionTest, TestCreateAnswerWithOldUfragAndPassword) {
 TEST_F(WebRtcSessionTest, TestSessionContentError) {
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream1();
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
   const std::string session_id_orig = offer->session_id();
   const std::string session_version_orig = offer->session_version();
   SetLocalDescriptionWithoutError(offer);
@@ -2985,7 +3011,7 @@ TEST_F(WebRtcSessionTest, TestCreateOfferWithSctpEnabledWithoutStreams) {
 
   InitWithDtls();
 
-  rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer(NULL));
+  rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
   EXPECT_TRUE(offer->description()->GetContentByName("data") == NULL);
   EXPECT_TRUE(offer->description()->GetTransportInfoByName("data") == NULL);
 }
@@ -3099,7 +3125,8 @@ TEST_F(WebRtcSessionTest, TestCreateOfferBeforeIdentityRequestReturnSuccess) {
 
   EXPECT_TRUE(session_->waiting_for_identity());
   mediastream_signaling_.SendAudioVideoStream1();
-  rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer(NULL));
+  rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
+
   EXPECT_TRUE(offer != NULL);
   VerifyNoCryptoParams(offer->description(), true);
   VerifyFingerprintStatus(offer->description(), true);
@@ -3132,7 +3159,8 @@ TEST_F(WebRtcSessionTest, TestCreateOfferAfterIdentityRequestReturnSuccess) {
   InitWithDtls();
 
   EXPECT_TRUE_WAIT(!session_->waiting_for_identity(), 1000);
-  rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer(NULL));
+
+  rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
   EXPECT_TRUE(offer != NULL);
 }
 
@@ -3143,7 +3171,8 @@ TEST_F(WebRtcSessionTest, TestCreateOfferAfterIdentityRequestReturnFailure) {
   InitWithDtls(true);
 
   EXPECT_TRUE_WAIT(!session_->waiting_for_identity(), 1000);
-  rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer(NULL));
+
+  rtc::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer());
   EXPECT_TRUE(offer == NULL);
 }
 
@@ -3211,7 +3240,7 @@ TEST_F(WebRtcSessionTest, TestDscpConstraint) {
       webrtc::MediaConstraintsInterface::kEnableDscp, true);
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream1();
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
 
   SetLocalDescriptionWithoutError(offer);
 
@@ -3237,7 +3266,7 @@ TEST_F(WebRtcSessionTest, TestSuspendBelowMinBitrateConstraint) {
       true);
   Init(NULL);
   mediastream_signaling_.SendAudioVideoStream1();
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
 
   SetLocalDescriptionWithoutError(offer);
 
@@ -3258,7 +3287,7 @@ TEST_F(WebRtcSessionTest, TestRenegotiateNewMediaWithCandidatesInSdp) {
   SetFactoryDtlsSrtp();
 
   mediastream_signaling_.UseOptionsAudioOnly();
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
   SetLocalDescriptionWithoutError(offer);
 
   SessionDescriptionInterface* answer = CreateRemoteAnswer(offer);
@@ -3288,7 +3317,7 @@ TEST_F(WebRtcSessionTest, TestRenegotiateNewMediaWithCandidatesSeparated) {
   SetFactoryDtlsSrtp();
 
   mediastream_signaling_.UseOptionsAudioOnly();
-  SessionDescriptionInterface* offer = CreateOffer(NULL);
+  SessionDescriptionInterface* offer = CreateOffer();
   SetLocalDescriptionWithoutError(offer);
 
   SessionDescriptionInterface* answer = CreateRemoteAnswer(offer);

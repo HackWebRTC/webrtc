@@ -166,8 +166,9 @@ WebRtcSessionDescriptionFactory::~WebRtcSessionDescriptionFactory() {
 
 void WebRtcSessionDescriptionFactory::CreateOffer(
     CreateSessionDescriptionObserver* observer,
-    const MediaConstraintsInterface* constraints) {
-  cricket::MediaSessionOptions options;
+    const PeerConnectionInterface::RTCOfferAnswerOptions& options) {
+  cricket::MediaSessionOptions session_options;
+
   std::string error = "CreateOffer";
   if (identity_request_state_ == IDENTITY_FAILED) {
     error += kFailedDueToIdentityFailed;
@@ -176,14 +177,15 @@ void WebRtcSessionDescriptionFactory::CreateOffer(
     return;
   }
 
-  if (!mediastream_signaling_->GetOptionsForOffer(constraints, &options)) {
-    error += " called with invalid constraints.";
+  if (!mediastream_signaling_->GetOptionsForOffer(options,
+                                                  &session_options)) {
+    error += " called with invalid options.";
     LOG(LS_ERROR) << error;
     PostCreateSessionDescriptionFailed(observer, error);
     return;
   }
 
-  if (!ValidStreams(options.streams)) {
+  if (!ValidStreams(session_options.streams)) {
     error += " called with invalid media streams.";
     LOG(LS_ERROR) << error;
     PostCreateSessionDescriptionFailed(observer, error);
@@ -192,11 +194,11 @@ void WebRtcSessionDescriptionFactory::CreateOffer(
 
   if (data_channel_type_ == cricket::DCT_SCTP &&
       mediastream_signaling_->HasDataChannels()) {
-    options.data_channel_type = cricket::DCT_SCTP;
+    session_options.data_channel_type = cricket::DCT_SCTP;
   }
 
   CreateSessionDescriptionRequest request(
-      CreateSessionDescriptionRequest::kOffer, observer, options);
+      CreateSessionDescriptionRequest::kOffer, observer, session_options);
   if (identity_request_state_ == IDENTITY_WAITING) {
     create_session_description_requests_.push(request);
   } else {

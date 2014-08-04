@@ -107,7 +107,7 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
 
   void CreateOffer(
       CreateSessionDescriptionObserver* observer,
-      const MediaConstraintsInterface* constraints);
+      const PeerConnectionInterface::RTCOfferAnswerOptions& options);
   void CreateAnswer(
       CreateSessionDescriptionObserver* observer,
       const MediaConstraintsInterface* constraints);

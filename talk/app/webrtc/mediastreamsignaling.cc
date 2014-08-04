@@ -127,6 +127,12 @@ static bool MediaContentDirectionHasSend(cricket::MediaContentDirection dir) {
   return dir == cricket::MD_SENDONLY || dir == cricket::MD_SENDRECV;
 }
 
+static bool IsValidOfferToReceiveMedia(int value) {
+  typedef PeerConnectionInterface::RTCOfferAnswerOptions Options;
+  return (value >= Options::kUndefined) &&
+      (value <= Options::kMaxOfferToReceiveMedia);
+}
+
 // Factory class for creating remote MediaStreams and MediaStreamTracks.
 class RemoteMediaStreamFactory {
  public:
@@ -363,14 +369,32 @@ void MediaStreamSignaling::RemoveLocalStream(
 }
 
 bool MediaStreamSignaling::GetOptionsForOffer(
-    const MediaConstraintsInterface* constraints,
-    cricket::MediaSessionOptions* options) {
-  UpdateSessionOptions();
-  if (!ParseConstraints(constraints, &options_, false)) {
+    const PeerConnectionInterface::RTCOfferAnswerOptions& rtc_options,
+    cricket::MediaSessionOptions* session_options) {
+  typedef PeerConnectionInterface::RTCOfferAnswerOptions RTCOfferAnswerOptions;
+  if (!IsValidOfferToReceiveMedia(rtc_options.offer_to_receive_audio) ||
+      !IsValidOfferToReceiveMedia(rtc_options.offer_to_receive_video)) {
     return false;
   }
+
+  UpdateSessionOptions();
+
+  // |options.has_audio| and |options.has_video| can only change from false to
+  // true, but never change from true to false. This is to make sure
+  // CreateOffer / CreateAnswer doesn't remove a media content
+  // description that has been created.
+  if (rtc_options.offer_to_receive_audio > 0) {
+    options_.has_audio = true;
+  }
+  if (rtc_options.offer_to_receive_video > 0) {
+    options_.has_video = true;
+  }
+  options_.vad_enabled = rtc_options.voice_activity_detection;
+  options_.transport_options.ice_restart = rtc_options.ice_restart;
+  options_.bundle_enabled = rtc_options.use_rtp_mux;
+
   options_.bundle_enabled = EvaluateNeedForBundle(options_);
-  *options = options_;
+  *session_options = options_;
   return true;
 }
 

@@ -92,6 +92,8 @@ class PeerConnection : public PeerConnectionInterface,
   // JSEP01
   virtual void CreateOffer(CreateSessionDescriptionObserver* observer,
                            const MediaConstraintsInterface* constraints);
+  virtual void CreateOffer(CreateSessionDescriptionObserver* observer,
+                           const RTCOfferAnswerOptions& options);
   virtual void CreateAnswer(CreateSessionDescriptionObserver* observer,
                             const MediaConstraintsInterface* constraints);
   virtual void SetLocalDescription(SetSessionDescriptionObserver* observer,

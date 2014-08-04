@@ -62,10 +62,13 @@ using webrtc::IceCandidateInterface;
 using webrtc::MediaConstraintsInterface;
 using webrtc::MediaStreamInterface;
 using webrtc::MediaStreamTrackInterface;
+using webrtc::PeerConnectionInterface;
 using webrtc::SdpParseError;
 using webrtc::SessionDescriptionInterface;
 using webrtc::StreamCollection;
 using webrtc::StreamCollectionInterface;
+
+typedef PeerConnectionInterface::RTCOfferAnswerOptions RTCOfferAnswerOptions;
 
 // Reference SDP with a MediaStream with label "stream1" and audio track with
 // id "audio_1" and a video track with id "video_1;
@@ -588,115 +591,137 @@ class MediaStreamSignalingTest: public testing::Test {
   rtc::scoped_ptr<FakeDataChannelProvider> data_channel_provider_;
 };
 
+TEST_F(MediaStreamSignalingTest, GetOptionsForOfferWithInvalidAudioOption) {
+  RTCOfferAnswerOptions rtc_options;
+  rtc_options.offer_to_receive_audio = RTCOfferAnswerOptions::kUndefined - 1;
+
+  cricket::MediaSessionOptions options;
+  EXPECT_FALSE(signaling_->GetOptionsForOffer(rtc_options, &options));
+
+  rtc_options.offer_to_receive_audio =
+      RTCOfferAnswerOptions::kMaxOfferToReceiveMedia + 1;
+  EXPECT_FALSE(signaling_->GetOptionsForOffer(rtc_options, &options));
+}
+
+
+TEST_F(MediaStreamSignalingTest, GetOptionsForOfferWithInvalidVideoOption) {
+  RTCOfferAnswerOptions rtc_options;
+  rtc_options.offer_to_receive_video =
+      RTCOfferAnswerOptions::kUndefined - 1;
+
+  cricket::MediaSessionOptions options;
+  EXPECT_FALSE(signaling_->GetOptionsForOffer(rtc_options, &options));
+
+  rtc_options.offer_to_receive_video =
+      RTCOfferAnswerOptions::kMaxOfferToReceiveMedia + 1;
+  EXPECT_FALSE(signaling_->GetOptionsForOffer(rtc_options, &options));
+}
+
 // Test that a MediaSessionOptions is created for an offer if
-// kOfferToReceiveAudio and kOfferToReceiveVideo constraints are set but no
+// OfferToReceiveAudio and OfferToReceiveVideo options are set but no
 // MediaStreams are sent.
 TEST_F(MediaStreamSignalingTest, GetMediaSessionOptionsForOfferWithAudioVideo) {
-  FakeConstraints constraints;
-  constraints.SetMandatoryReceiveAudio(true);
-  constraints.SetMandatoryReceiveVideo(true);
+  RTCOfferAnswerOptions rtc_options;
+  rtc_options.offer_to_receive_audio = 1;
+  rtc_options.offer_to_receive_video = 1;
+
   cricket::MediaSessionOptions options;
-  EXPECT_TRUE(signaling_->GetOptionsForOffer(&constraints, &options));
+  EXPECT_TRUE(signaling_->GetOptionsForOffer(rtc_options, &options));
   EXPECT_TRUE(options.has_audio);
   EXPECT_TRUE(options.has_video);
   EXPECT_TRUE(options.bundle_enabled);
 }
 
 // Test that a correct MediaSessionOptions is created for an offer if
-// kOfferToReceiveAudio constraints is set but no MediaStreams are sent.
+// OfferToReceiveAudio is set but no MediaStreams are sent.
 TEST_F(MediaStreamSignalingTest, GetMediaSessionOptionsForOfferWithAudio) {
-  FakeConstraints constraints;
-  constraints.SetMandatoryReceiveAudio(true);
+  RTCOfferAnswerOptions rtc_options;
+  rtc_options.offer_to_receive_audio = 1;
+
   cricket::MediaSessionOptions options;
-  EXPECT_TRUE(signaling_->GetOptionsForOffer(&constraints, &options));
+  EXPECT_TRUE(signaling_->GetOptionsForOffer(rtc_options, &options));
   EXPECT_TRUE(options.has_audio);
   EXPECT_FALSE(options.has_video);
   EXPECT_TRUE(options.bundle_enabled);
 }
 
 // Test that a correct MediaSessionOptions is created for an offer if
-// no constraints or MediaStreams are sent.
+// the default OfferOptons is used or MediaStreams are sent.
 TEST_F(MediaStreamSignalingTest, GetDefaultMediaSessionOptionsForOffer) {
+  RTCOfferAnswerOptions rtc_options;
+
   cricket::MediaSessionOptions options;
-  EXPECT_TRUE(signaling_->GetOptionsForOffer(NULL, &options));
-  EXPECT_TRUE(options.has_audio);
+  EXPECT_TRUE(signaling_->GetOptionsForOffer(rtc_options, &options));
+  EXPECT_FALSE(options.has_audio);
   EXPECT_FALSE(options.has_video);
-  EXPECT_TRUE(options.bundle_enabled);
+  EXPECT_FALSE(options.bundle_enabled);
+  EXPECT_TRUE(options.vad_enabled);
+  EXPECT_FALSE(options.transport_options.ice_restart);
 }
 
 // Test that a correct MediaSessionOptions is created for an offer if
-// kOfferToReceiveVideo constraints is set but no MediaStreams are sent.
+// OfferToReceiveVideo is set but no MediaStreams are sent.
 TEST_F(MediaStreamSignalingTest, GetMediaSessionOptionsForOfferWithVideo) {
-  FakeConstraints constraints;
-  constraints.SetMandatoryReceiveAudio(false);
-  constraints.SetMandatoryReceiveVideo(true);
+  RTCOfferAnswerOptions rtc_options;
+  rtc_options.offer_to_receive_audio = 0;
+  rtc_options.offer_to_receive_video = 1;
+
   cricket::MediaSessionOptions options;
-  EXPECT_TRUE(signaling_->GetOptionsForOffer(&constraints, &options));
+  EXPECT_TRUE(signaling_->GetOptionsForOffer(rtc_options, &options));
   EXPECT_FALSE(options.has_audio);
   EXPECT_TRUE(options.has_video);
   EXPECT_TRUE(options.bundle_enabled);
 }
 
 // Test that a correct MediaSessionOptions is created for an offer if
-// kUseRtpMux constraints is set to false.
+// UseRtpMux is set to false.
 TEST_F(MediaStreamSignalingTest,
        GetMediaSessionOptionsForOfferWithBundleDisabled) {
-  FakeConstraints constraints;
-  constraints.SetMandatoryReceiveAudio(true);
-  constraints.SetMandatoryReceiveVideo(true);
-  constraints.SetMandatoryUseRtpMux(false);
+  RTCOfferAnswerOptions rtc_options;
+  rtc_options.offer_to_receive_audio = 1;
+  rtc_options.offer_to_receive_video = 1;
+  rtc_options.use_rtp_mux = false;
+
   cricket::MediaSessionOptions options;
-  EXPECT_TRUE(signaling_->GetOptionsForOffer(&constraints, &options));
+  EXPECT_TRUE(signaling_->GetOptionsForOffer(rtc_options, &options));
   EXPECT_TRUE(options.has_audio);
   EXPECT_TRUE(options.has_video);
   EXPECT_FALSE(options.bundle_enabled);
 }
 
 // Test that a correct MediaSessionOptions is created to restart ice if
-// kIceRestart constraints is set. It also tests that subsequent
-// MediaSessionOptions don't have |transport_options.ice_restart| set.
+// IceRestart is set. It also tests that subsequent MediaSessionOptions don't
+// have |transport_options.ice_restart| set.
 TEST_F(MediaStreamSignalingTest,
        GetMediaSessionOptionsForOfferWithIceRestart) {
-  FakeConstraints constraints;
-  constraints.SetMandatoryIceRestart(true);
+  RTCOfferAnswerOptions rtc_options;
+  rtc_options.ice_restart = true;
+
   cricket::MediaSessionOptions options;
-  EXPECT_TRUE(signaling_->GetOptionsForOffer(&constraints, &options));
+  EXPECT_TRUE(signaling_->GetOptionsForOffer(rtc_options, &options));
   EXPECT_TRUE(options.transport_options.ice_restart);
 
-  EXPECT_TRUE(signaling_->GetOptionsForOffer(NULL, &options));
+  rtc_options = RTCOfferAnswerOptions();
+  EXPECT_TRUE(signaling_->GetOptionsForOffer(rtc_options, &options));
   EXPECT_FALSE(options.transport_options.ice_restart);
-}
-
-// Test that GetMediaSessionOptionsForOffer and GetOptionsForAnswer work as
-// expected if unknown constraints are used.
-TEST_F(MediaStreamSignalingTest, GetMediaSessionOptionsWithBadConstraints) {
-  FakeConstraints mandatory;
-  mandatory.AddMandatory("bad_key", "bad_value");
-  cricket::MediaSessionOptions options;
-  EXPECT_FALSE(signaling_->GetOptionsForOffer(&mandatory, &options));
-  EXPECT_FALSE(signaling_->GetOptionsForAnswer(&mandatory, &options));
-
-  FakeConstraints optional;
-  optional.AddOptional("bad_key", "bad_value");
-  EXPECT_TRUE(signaling_->GetOptionsForOffer(&optional, &options));
-  EXPECT_TRUE(signaling_->GetOptionsForAnswer(&optional, &options));
 }
 
 // Test that a correct MediaSessionOptions are created for an offer if
 // a MediaStream is sent and later updated with a new track.
 // MediaConstraints are not used.
 TEST_F(MediaStreamSignalingTest, AddTrackToLocalMediaStream) {
+  RTCOfferAnswerOptions rtc_options;
   rtc::scoped_refptr<StreamCollection> local_streams(
       CreateStreamCollection(1));
   MediaStreamInterface* local_stream = local_streams->at(0);
   EXPECT_TRUE(signaling_->AddLocalStream(local_stream));
   cricket::MediaSessionOptions options;
-  EXPECT_TRUE(signaling_->GetOptionsForOffer(NULL, &options));
+  EXPECT_TRUE(signaling_->GetOptionsForOffer(rtc_options, &options));
   VerifyMediaOptions(local_streams, options);
 
   cricket::MediaSessionOptions updated_options;
   local_stream->AddTrack(AudioTrack::Create(kAudioTracks[1], NULL));
-  EXPECT_TRUE(signaling_->GetOptionsForOffer(NULL, &options));
+  EXPECT_TRUE(signaling_->GetOptionsForOffer(rtc_options, &options));
   VerifyMediaOptions(local_streams, options);
 }
 
@@ -714,21 +739,20 @@ TEST_F(MediaStreamSignalingTest, MediaConstraintsInAnswer) {
   EXPECT_TRUE(answer_options.has_audio);
   EXPECT_TRUE(answer_options.has_video);
 
-  FakeConstraints offer_c;
-  offer_c.SetMandatoryReceiveAudio(false);
-  offer_c.SetMandatoryReceiveVideo(false);
+  RTCOfferAnswerOptions rtc_offer_optoins;
 
   cricket::MediaSessionOptions offer_options;
-  EXPECT_TRUE(signaling_->GetOptionsForOffer(&offer_c, &offer_options));
+  EXPECT_TRUE(
+      signaling_->GetOptionsForOffer(rtc_offer_optoins, &offer_options));
   EXPECT_FALSE(offer_options.has_audio);
   EXPECT_FALSE(offer_options.has_video);
 
-  FakeConstraints updated_offer_c;
-  updated_offer_c.SetMandatoryReceiveAudio(true);
-  updated_offer_c.SetMandatoryReceiveVideo(true);
+  RTCOfferAnswerOptions updated_rtc_offer_optoins;
+  updated_rtc_offer_optoins.offer_to_receive_audio = 1;
+  updated_rtc_offer_optoins.offer_to_receive_video = 1;
 
   cricket::MediaSessionOptions updated_offer_options;
-  EXPECT_TRUE(signaling_->GetOptionsForOffer(&updated_offer_c,
+  EXPECT_TRUE(signaling_->GetOptionsForOffer(updated_rtc_offer_optoins,
                                              &updated_offer_options));
   EXPECT_TRUE(updated_offer_options.has_audio);
   EXPECT_TRUE(updated_offer_options.has_video);
@@ -748,7 +772,8 @@ TEST_F(MediaStreamSignalingTest, MediaConstraintsInAnswer) {
   EXPECT_TRUE(updated_answer_options.has_audio);
   EXPECT_TRUE(updated_answer_options.has_video);
 
-  EXPECT_TRUE(signaling_->GetOptionsForOffer(NULL,
+  RTCOfferAnswerOptions default_rtc_options;
+  EXPECT_TRUE(signaling_->GetOptionsForOffer(default_rtc_options,
                                              &updated_offer_options));
   EXPECT_TRUE(updated_offer_options.has_audio);
   EXPECT_TRUE(updated_offer_options.has_video);

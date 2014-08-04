@@ -144,8 +144,9 @@ class WebRtcSession : public cricket::BaseSession,
   // TODO - It may be necessary to supply error code as well.
   sigslot::signal0<> SignalError;
 
-  void CreateOffer(CreateSessionDescriptionObserver* observer,
-                   const MediaConstraintsInterface* constraints);
+  void CreateOffer(
+      CreateSessionDescriptionObserver* observer,
+      const PeerConnectionInterface::RTCOfferAnswerOptions& options);
   void CreateAnswer(CreateSessionDescriptionObserver* observer,
                     const MediaConstraintsInterface* constraints);
   // The ownership of |desc| will be transferred after this call.
