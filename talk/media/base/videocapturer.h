@@ -42,7 +42,6 @@
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/videoadapter.h"
 #include "talk/media/base/videocommon.h"
-#include "talk/media/base/videoframefactory.h"
 #include "talk/media/devices/devicemanager.h"
 
 
@@ -290,11 +289,6 @@ class VideoCapturer
     return &video_adapter_;
   }
 
-  // Takes ownership.
-  void set_frame_factory(VideoFrameFactory* frame_factory) {
-    frame_factory_.reset(frame_factory);
-  }
-
   // Gets statistics for tracked variables recorded since the last call to
   // GetStats.  Note that calling GetStats resets any gathered data so it
   // should be called only periodically to log statistics.
@@ -332,7 +326,6 @@ class VideoCapturer
   }
 
   void SetSupportedFormats(const std::vector<VideoFormat>& formats);
-  VideoFrameFactory* frame_factory() { return frame_factory_.get(); }
 
  private:
   void Construct();
@@ -368,7 +361,6 @@ class VideoCapturer
   rtc::Thread* thread_;
   std::string id_;
   CaptureState capture_state_;
-  rtc::scoped_ptr<VideoFrameFactory> frame_factory_;
   rtc::scoped_ptr<VideoFormat> capture_format_;
   std::vector<VideoFormat> supported_formats_;
   rtc::scoped_ptr<VideoFormat> max_format_;

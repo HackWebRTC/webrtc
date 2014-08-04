@@ -36,9 +36,6 @@
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videocommon.h"
 #include "talk/media/base/videoframe.h"
-#ifdef HAVE_WEBRTC_VIDEO
-#include "talk/media/webrtc/webrtcvideoframefactory.h"
-#endif
 
 namespace cricket {
 
@@ -50,9 +47,6 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
         initial_unix_timestamp_(time(NULL) * rtc::kNumNanosecsPerSec),
         next_timestamp_(rtc::kNumNanosecsPerMillisec),
         is_screencast_(false) {
-#ifdef HAVE_WEBRTC_VIDEO
-    set_frame_factory(new cricket::WebRtcVideoFrameFactory());
-#endif
     // Default supported formats. Use ResetSupportedFormats to over write.
     std::vector<cricket::VideoFormat> formats;
     formats.push_back(cricket::VideoFormat(1280, 720,
