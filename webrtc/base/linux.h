@@ -104,7 +104,7 @@ class ProcCpuInfo {
   ConfigParser::MapVector sections_;
 };
 
-#if !defined(WEBRTC_CHROMIUM_BUILDs)
+#if !defined(WEBRTC_CHROMIUM_BUILD)
 // Builds a string containing the info from lsb_release on a single line.
 std::string ReadLinuxLsbRelease();
 #endif

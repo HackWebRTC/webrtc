@@ -233,7 +233,7 @@ bool ConfigParser::ParseLine(std::string* key, std::string* value) {
   return true;
 }
 
-#if !defined(WEBRTC_CHROMIUM_BUILDs)
+#if !defined(WEBRTC_CHROMIUM_BUILD)
 static bool ExpectLineFromStream(FileStream* stream,
                                  std::string* out) {
   StreamResult res = stream->ReadLine(out);
