@@ -2,7 +2,6 @@
 # It acts as a place holder for future additions for WebRTC.
 # It must exist for the Python wrapper script to work properly.
 
-
 INVALID HEAP ARGUMENT
 name=https://code.google.com/p/webrtc/issues/detail?id=2321 (1)
 drmemorylib.dll!replace_operator_delete_array
@@ -121,6 +120,12 @@ system call NtUserGetThreadDesktop parameter value #1
 *!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>
 
 # libjingle_media_unittest fails on Win DrMemory Full
+UNINITIALIZED READ
+name=https://code.google.com/p/webrtc/issues/detail?id=3655
+*!testing::internal::CmpHelperNE<>
+*!cricket::VideoAdapterTest_BlackOutput_Test::TestBody
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
 UNINITIALIZED READ
 name=https://code.google.com/p/webrtc/issues/detail?id=3158 (1)
 *!_output_l
