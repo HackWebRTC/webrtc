@@ -437,6 +437,7 @@ RTPSenderVideo::SendVP8(const FrameType frameType,
         !(_retransmissionSettings & kRetransmitBaseLayer)) {
       storage = kDontRetransmit;
     } else if (rtpTypeHdr->VP8.temporalIdx != kNoTemporalIdx &&
+        rtpTypeHdr->VP8.temporalIdx > 0 &&
         !(_retransmissionSettings & kRetransmitHigherLayers)) {
       storage = kDontRetransmit;
     }
