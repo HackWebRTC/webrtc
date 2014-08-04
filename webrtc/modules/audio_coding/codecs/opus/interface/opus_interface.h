@@ -72,6 +72,27 @@ int16_t WebRtcOpus_SetBitRate(OpusEncInst* inst, int32_t rate);
  */
 int16_t WebRtcOpus_SetPacketLossRate(OpusEncInst* inst, int32_t loss_rate);
 
+/****************************************************************************
+ * WebRtcOpus_SetMaxBandwidth(...)
+ *
+ * Configures the maximum bandwidth for encoding. This can be taken as a hint
+ * about the maximum output bandwidth that the receiver is capable to render,
+ * due to hardware limitations. Sending signals with higher audio bandwidth
+ * results in higher than necessary network usage and encoding complexity.
+ *
+ * Input:
+ *      - inst               : Encoder context
+ *      - bandwidth          : Maximum encoding bandwidth in Hz.
+ *                             This parameter can take any value, but values
+ *                             other than Opus typical bandwidths: 4000, 6000,
+ *                             8000, 12000, and 20000 will be rounded up (values
+ *                             greater than 20000 will be rounded down) to
+ *                             these values.
+ * Return value              :  0 - Success
+ *                             -1 - Error
+ */
+int16_t WebRtcOpus_SetMaxBandwidth(OpusEncInst* inst, int32_t bandwidth);
+
 /* TODO(minyue): Check whether an API to check the FEC and the packet loss rate
  * is needed. It might not be very useful since there are not many use cases and
  * the caller can always maintain the states. */

@@ -28,6 +28,7 @@
       ],
       'sources': [
         'interface/opus_interface.h',
+        'opus_inst.h',
         'opus_interface.c',
       ],
     },

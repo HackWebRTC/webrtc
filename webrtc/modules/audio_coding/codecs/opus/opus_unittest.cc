@@ -11,10 +11,8 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/audio_coding/codecs/opus/interface/opus_interface.h"
+#include "webrtc/modules/audio_coding/codecs/opus/opus_inst.h"
 #include "webrtc/test/testsupport/fileutils.h"
-
-struct WebRtcOpusEncInst;
-struct WebRtcOpusDecInst;
 
 namespace webrtc {
 
@@ -31,6 +29,8 @@ class OpusTest : public ::testing::Test {
  protected:
   OpusTest();
   virtual void SetUp();
+
+  void TestSetMaxBandwidth(opus_int32 expect, int32_t set);
 
   WebRtcOpusEncInst* opus_mono_encoder_;
   WebRtcOpusEncInst* opus_stereo_encoder_;
@@ -64,6 +64,20 @@ void OpusTest::SetUp() {
                                        kOpusMaxFrameSamples, input_file)));
   fclose(input_file);
   input_file = NULL;
+}
+
+void OpusTest::TestSetMaxBandwidth(opus_int32 expect, int32_t set) {
+  opus_int32 bandwidth;
+  // Test mono encoder.
+  EXPECT_EQ(0, WebRtcOpus_SetMaxBandwidth(opus_mono_encoder_, set));
+  opus_encoder_ctl(opus_mono_encoder_->encoder,
+                   OPUS_GET_MAX_BANDWIDTH(&bandwidth));
+  EXPECT_EQ(expect, bandwidth);
+  // Test stereo encoder.
+  EXPECT_EQ(0, WebRtcOpus_SetMaxBandwidth(opus_stereo_encoder_, set));
+  opus_encoder_ctl(opus_stereo_encoder_->encoder,
+                   OPUS_GET_MAX_BANDWIDTH(&bandwidth));
+  EXPECT_EQ(expect, bandwidth);
 }
 
 // Test failing Create.
@@ -341,6 +355,27 @@ TEST_F(OpusTest, OpusSetPacketLossRate) {
   EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_stereo_encoder_));
 }
 
+TEST_F(OpusTest, OpusSetMaxBandwidth) {
+  // Test without creating encoder memory.
+  EXPECT_EQ(-1, WebRtcOpus_SetMaxBandwidth(opus_mono_encoder_, 20000));
+  EXPECT_EQ(-1, WebRtcOpus_SetMaxBandwidth(opus_stereo_encoder_, 20000));
+
+  // Create encoder memory, try with different bitrates.
+  EXPECT_EQ(0, WebRtcOpus_EncoderCreate(&opus_mono_encoder_, 1));
+  EXPECT_EQ(0, WebRtcOpus_EncoderCreate(&opus_stereo_encoder_, 2));
+
+  TestSetMaxBandwidth(OPUS_BANDWIDTH_FULLBAND, 24000);
+  TestSetMaxBandwidth(OPUS_BANDWIDTH_FULLBAND, 14000);
+  TestSetMaxBandwidth(OPUS_BANDWIDTH_SUPERWIDEBAND, 10000);
+  TestSetMaxBandwidth(OPUS_BANDWIDTH_WIDEBAND, 7000);
+  TestSetMaxBandwidth(OPUS_BANDWIDTH_MEDIUMBAND, 6000);
+  TestSetMaxBandwidth(OPUS_BANDWIDTH_NARROWBAND, 4000);
+  TestSetMaxBandwidth(OPUS_BANDWIDTH_NARROWBAND, 3000);
+
+  // Free memory.
+  EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_mono_encoder_));
+  EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_stereo_encoder_));
+}
 
 // PLC in mono mode.
 TEST_F(OpusTest, OpusDecodePlcMono) {

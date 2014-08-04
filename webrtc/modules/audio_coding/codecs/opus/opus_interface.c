@@ -9,11 +9,10 @@
  */
 
 #include "webrtc/modules/audio_coding/codecs/opus/interface/opus_interface.h"
+#include "webrtc/modules/audio_coding/codecs/opus/opus_inst.h"
 
 #include <stdlib.h>
 #include <string.h>
-
-#include "opus.h"
 
 enum {
   /* Maximum supported frame size in WebRTC is 60 ms. */
@@ -30,10 +29,6 @@ enum {
 
   /* Default frame size, 20 ms @ 48 kHz, in samples (for one channel). */
   kWebRtcOpusDefaultFrameSize = 960,
-};
-
-struct WebRtcOpusEncInst {
-  OpusEncoder* encoder;
 };
 
 int16_t WebRtcOpus_EncoderCreate(OpusEncInst** inst, int32_t channels) {
@@ -104,6 +99,27 @@ int16_t WebRtcOpus_SetPacketLossRate(OpusEncInst* inst, int32_t loss_rate) {
   }
 }
 
+int16_t WebRtcOpus_SetMaxBandwidth(OpusEncInst* inst, int32_t bandwidth) {
+  opus_int32 set_bandwidth;
+
+  if (!inst)
+    return -1;
+
+  if (bandwidth <= 4000) {
+    set_bandwidth = OPUS_BANDWIDTH_NARROWBAND;
+  } else if (bandwidth <= 6000) {
+    set_bandwidth = OPUS_BANDWIDTH_MEDIUMBAND;
+  } else if (bandwidth <= 8000) {
+    set_bandwidth = OPUS_BANDWIDTH_WIDEBAND;
+  } else if (bandwidth <= 12000) {
+    set_bandwidth = OPUS_BANDWIDTH_SUPERWIDEBAND;
+  } else {
+    set_bandwidth = OPUS_BANDWIDTH_FULLBAND;
+  }
+  return opus_encoder_ctl(inst->encoder,
+                          OPUS_SET_MAX_BANDWIDTH(set_bandwidth));
+}
+
 int16_t WebRtcOpus_EnableFec(OpusEncInst* inst) {
   if (inst) {
     return opus_encoder_ctl(inst->encoder, OPUS_SET_INBAND_FEC(1));
@@ -127,13 +143,6 @@ int16_t WebRtcOpus_SetComplexity(OpusEncInst* inst, int32_t complexity) {
     return -1;
   }
 }
-
-struct WebRtcOpusDecInst {
-  OpusDecoder* decoder_left;
-  OpusDecoder* decoder_right;
-  int prev_decoded_samples;
-  int channels;
-};
 
 int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst, int channels) {
   int error_l;
