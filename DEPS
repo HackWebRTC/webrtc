@@ -299,13 +299,6 @@ hooks = [
                 "-s", Var("root_dir") + "/buildtools/linux32/gn.sha1",
     ],
   },
-  {
-    # Remove GN binaries from tools/gn/bin that aren't used anymore.
-    # TODO(kjellander) remove after the end of July, 2014.
-    "name": "remove_old_gn_binaries",
-    "pattern": ".",
-    "action": ["python", Var("root_dir") + "/tools/gn/bin/rm_binaries.py"],
-  },
   # Pull clang-format binaries using checked-in hashes.
   {
     "name": "clang_format_win",
