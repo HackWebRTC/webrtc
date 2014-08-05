@@ -183,6 +183,13 @@ static const char kDataTrack1[] = "data_1";
 static const char kDataTrack2[] = "data_2";
 static const char kDataTrack3[] = "data_3";
 
+static bool IsMediaContentOfType(const ContentInfo* content,
+                                 MediaType media_type) {
+  const MediaContentDescription* mdesc =
+      static_cast<const MediaContentDescription*>(content->description);
+  return mdesc && mdesc->type() == media_type;
+}
+
 class MediaSessionDescriptionFactoryTest : public testing::Test {
  public:
   MediaSessionDescriptionFactoryTest()
@@ -644,6 +651,46 @@ TEST_F(MediaSessionDescriptionFactoryTest,
   EXPECT_FALSE(acd->has_ssrcs());             // No StreamParams.
 }
 
+// Verifies that the order of the media contents in the current
+// SessionDescription is preserved in the new SessionDescription.
+TEST_F(MediaSessionDescriptionFactoryTest, TestCreateOfferContentOrder) {
+  MediaSessionOptions opts;
+  opts.has_audio = false;
+  opts.has_video = false;
+  opts.data_channel_type = cricket::DCT_SCTP;
+
+  rtc::scoped_ptr<SessionDescription> offer1(f1_.CreateOffer(opts, NULL));
+  ASSERT_TRUE(offer1.get() != NULL);
+  EXPECT_EQ(1u, offer1->contents().size());
+  EXPECT_TRUE(IsMediaContentOfType(&offer1->contents()[0], MEDIA_TYPE_DATA));
+
+  opts.has_video = true;
+  rtc::scoped_ptr<SessionDescription> offer2(
+      f1_.CreateOffer(opts, offer1.get()));
+  ASSERT_TRUE(offer2.get() != NULL);
+  EXPECT_EQ(2u, offer2->contents().size());
+  EXPECT_TRUE(IsMediaContentOfType(&offer2->contents()[0], MEDIA_TYPE_DATA));
+  EXPECT_TRUE(IsMediaContentOfType(&offer2->contents()[1], MEDIA_TYPE_VIDEO));
+
+  opts.has_audio = true;
+  rtc::scoped_ptr<SessionDescription> offer3(
+      f1_.CreateOffer(opts, offer2.get()));
+  ASSERT_TRUE(offer3.get() != NULL);
+  EXPECT_EQ(3u, offer3->contents().size());
+  EXPECT_TRUE(IsMediaContentOfType(&offer3->contents()[0], MEDIA_TYPE_DATA));
+  EXPECT_TRUE(IsMediaContentOfType(&offer3->contents()[1], MEDIA_TYPE_VIDEO));
+  EXPECT_TRUE(IsMediaContentOfType(&offer3->contents()[2], MEDIA_TYPE_AUDIO));
+
+  // Verifies the default order is audio-video-data, so that the previous checks
+  // didn't pass by accident.
+  rtc::scoped_ptr<SessionDescription> offer4(f1_.CreateOffer(opts, NULL));
+  ASSERT_TRUE(offer4.get() != NULL);
+  EXPECT_EQ(3u, offer4->contents().size());
+  EXPECT_TRUE(IsMediaContentOfType(&offer4->contents()[0], MEDIA_TYPE_AUDIO));
+  EXPECT_TRUE(IsMediaContentOfType(&offer4->contents()[1], MEDIA_TYPE_VIDEO));
+  EXPECT_TRUE(IsMediaContentOfType(&offer4->contents()[2], MEDIA_TYPE_DATA));
+}
+
 // Create a typical audio answer, and ensure it matches what we expect.
 TEST_F(MediaSessionDescriptionFactoryTest, TestCreateAudioAnswer) {
   f1_.set_secure(SEC_ENABLED);
@@ -734,6 +781,38 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateDataAnswer) {
   EXPECT_TRUE(vcd->rtcp_mux());                 // negotiated rtcp-mux
   ASSERT_CRYPTO(vcd, 1U, CS_AES_CM_128_HMAC_SHA1_80);
   EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), vcd->protocol());
+}
+
+// Verifies that the order of the media contents in the offer is preserved in
+// the answer.
+TEST_F(MediaSessionDescriptionFactoryTest, TestCreateAnswerContentOrder) {
+  MediaSessionOptions opts;
+
+  // Creates a data only offer.
+  opts.has_audio = false;
+  opts.data_channel_type = cricket::DCT_SCTP;
+  rtc::scoped_ptr<SessionDescription> offer1(f1_.CreateOffer(opts, NULL));
+  ASSERT_TRUE(offer1.get() != NULL);
+
+  // Appends audio to the offer.
+  opts.has_audio = true;
+  rtc::scoped_ptr<SessionDescription> offer2(
+      f1_.CreateOffer(opts, offer1.get()));
+  ASSERT_TRUE(offer2.get() != NULL);
+
+  // Appends video to the offer.
+  opts.has_video = true;
+  rtc::scoped_ptr<SessionDescription> offer3(
+      f1_.CreateOffer(opts, offer2.get()));
+  ASSERT_TRUE(offer3.get() != NULL);
+
+  rtc::scoped_ptr<SessionDescription> answer(
+      f2_.CreateAnswer(offer3.get(), opts, NULL));
+  ASSERT_TRUE(answer.get() != NULL);
+  EXPECT_EQ(3u, answer->contents().size());
+  EXPECT_TRUE(IsMediaContentOfType(&answer->contents()[0], MEDIA_TYPE_DATA));
+  EXPECT_TRUE(IsMediaContentOfType(&answer->contents()[1], MEDIA_TYPE_AUDIO));
+  EXPECT_TRUE(IsMediaContentOfType(&answer->contents()[2], MEDIA_TYPE_VIDEO));
 }
 
 // This test that the media direction is set to send/receive in an answer if

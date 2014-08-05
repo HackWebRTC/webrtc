@@ -460,6 +460,54 @@ class MediaSessionDescriptionFactory {
       const TransportDescription& transport_desc,
       SessionDescription* answer_desc) const;
 
+  // Helpers for adding media contents to the SessionDescription. Returns true
+  // it succeeds or the media content is not needed, or false if there is any
+  // error.
+
+  bool AddAudioContentForOffer(
+      const MediaSessionOptions& options,
+      const SessionDescription* current_description,
+      const RtpHeaderExtensions& audio_rtp_extensions,
+      const AudioCodecs& audio_codecs,
+      StreamParamsVec* current_streams,
+      SessionDescription* desc) const;
+
+  bool AddVideoContentForOffer(
+      const MediaSessionOptions& options,
+      const SessionDescription* current_description,
+      const RtpHeaderExtensions& video_rtp_extensions,
+      const VideoCodecs& video_codecs,
+      StreamParamsVec* current_streams,
+      SessionDescription* desc) const;
+
+  bool AddDataContentForOffer(
+      const MediaSessionOptions& options,
+      const SessionDescription* current_description,
+      DataCodecs* data_codecs,
+      StreamParamsVec* current_streams,
+      SessionDescription* desc) const;
+
+  bool AddAudioContentForAnswer(
+      const SessionDescription* offer,
+      const MediaSessionOptions& options,
+      const SessionDescription* current_description,
+      StreamParamsVec* current_streams,
+      SessionDescription* answer) const;
+
+  bool AddVideoContentForAnswer(
+      const SessionDescription* offer,
+      const MediaSessionOptions& options,
+      const SessionDescription* current_description,
+      StreamParamsVec* current_streams,
+      SessionDescription* answer) const;
+
+  bool AddDataContentForAnswer(
+      const SessionDescription* offer,
+      const MediaSessionOptions& options,
+      const SessionDescription* current_description,
+      StreamParamsVec* current_streams,
+      SessionDescription* answer) const;
+
   AudioCodecs audio_codecs_;
   RtpHeaderExtensions audio_rtp_extensions_;
   VideoCodecs video_codecs_;

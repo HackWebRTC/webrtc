@@ -1314,7 +1314,6 @@ TEST_F(JsepPeerConnectionP2PTestClient, RegisterDataChannelObserver) {
 
   // Unregister the existing observer.
   receiving_client()->data_channel()->UnregisterObserver();
-
   std::string data = "hello world";
   SendRtpData(initializing_client()->data_channel(), data);
 
