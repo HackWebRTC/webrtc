@@ -105,9 +105,9 @@ namespace cricket {
 typedef rtc::ScopedMessageData<SctpInboundPacket> InboundPacketMessage;
 typedef rtc::ScopedMessageData<rtc::Buffer> OutboundPacketMessage;
 
-// TODO(ldixon): Find where this is defined, and also check is Sctp really
-// respects this.
-static const size_t kSctpMtu = 1280;
+// The biggest SCTP packet.  Starting from a 'safe' wire MTU value of 1280,
+// take off 80 bytes for DTLS/TURN/TCP/IP overhead.
+static const size_t kSctpMtu = 1200;
 
 enum {
   MSG_SCTPINBOUNDPACKET = 1,   // MessageData is SctpInboundPacket
@@ -375,6 +375,18 @@ bool SctpDataMediaChannel::OpenSctpSocket() {
   if (usrsctp_setsockopt(sock_, IPPROTO_SCTP, SCTP_NODELAY, &nodelay,
                          sizeof(nodelay))) {
     LOG_ERRNO(LS_ERROR) << debug_name_ << "Failed to set SCTP_NODELAY.";
+    return false;
+  }
+
+  // Disable MTU discovery
+  struct sctp_paddrparams params;
+  params.spp_assoc_id = 0;
+  params.spp_flags = SPP_PMTUD_DISABLE;
+  params.spp_pathmtu = kSctpMtu;
+  if (usrsctp_setsockopt(sock_, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &params,
+      sizeof(params))) {
+    LOG_ERRNO(LS_ERROR) << debug_name_
+                        << "Failed to set SCTP_PEER_ADDR_PARAMS.";
     return false;
   }
 
