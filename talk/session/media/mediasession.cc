@@ -1185,8 +1185,8 @@ SessionDescription* MediaSessionDescriptionFactory::CreateOffer(
           return NULL;
         }
         video_added = true;
-      } else if (options.has_data()) {
-        ASSERT(IsMediaContentOfType(&*it, MEDIA_TYPE_DATA));
+      } else if (IsMediaContentOfType(&*it, MEDIA_TYPE_DATA) &&
+                 options.has_data()) {
         if (!AddDataContentForOffer(options, current_description, &data_codecs,
                                     &current_streams, offer.get())) {
           return NULL;
