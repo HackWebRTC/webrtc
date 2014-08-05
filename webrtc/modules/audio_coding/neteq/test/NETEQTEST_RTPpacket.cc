@@ -105,7 +105,7 @@ int NETEQTEST_RTPpacket::readFromFile(FILE *fp)
 
     uint16_t length, plen;
     uint32_t offset;
-    int packetLen;
+    int packetLen = 0;
 
     bool readNextPacket = true;
     while (readNextPacket) {
