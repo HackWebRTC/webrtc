@@ -393,7 +393,7 @@ UnitTest::Perform()
     _inst.maxFramerate = 30;
 
     // Bad bitrate.
-    _inst.startBitrate = -1;
+    _inst.startBitrate = static_cast<unsigned int>(-1);
     EXPECT_TRUE(_encoder->InitEncode(&_inst, 1, 1440) ==
         WEBRTC_VIDEO_CODEC_ERR_PARAMETER);
     _inst.maxBitrate = _inst.startBitrate - 1;
