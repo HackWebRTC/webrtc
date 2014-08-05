@@ -12,6 +12,7 @@
 #define WEBRTC_VIDEO_VIDEO_SEND_STREAM_H_
 
 #include <map>
+#include <vector>
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"

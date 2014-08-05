@@ -40,7 +40,6 @@ namespace internal {
 class VideoReceiveStream : public webrtc::VideoReceiveStream,
                            public I420FrameCallback,
                            public VideoRenderCallback {
-
  public:
   VideoReceiveStream(webrtc::VideoEngine* video_engine,
                      const VideoReceiveStream::Config& config,

@@ -1544,7 +1544,7 @@ TEST_F(EndToEndTest, DISABLED_RedundantPayloadsTransmittedOnAllSsrcs) {
    public:
     ObserveRedundantPayloads()
         : EndToEndTest(kDefaultTimeoutMs), ssrcs_to_observe_(kNumSsrcs) {
-          for(size_t i = 0; i < kNumSsrcs; ++i) {
+          for (size_t i = 0; i < kNumSsrcs; ++i) {
             registered_rtx_ssrc_[kSendRtxSsrcs[i]] = true;
           }
         }
@@ -1617,7 +1617,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
   static const uint64_t kMaxTimestampGap = kDefaultTimeoutMs * 90;
   class RtpSequenceObserver : public test::RtpRtcpObserver {
    public:
-    RtpSequenceObserver(bool use_rtx)
+    explicit RtpSequenceObserver(bool use_rtx)
         : test::RtpRtcpObserver(kDefaultTimeoutMs),
           crit_(CriticalSectionWrapper::CreateCriticalSection()),
           ssrcs_to_observe_(kNumSsrcs) {

@@ -107,7 +107,6 @@ class TraceObserver {
     Strings received_log_lines_ GUARDED_BY(crit_sect_);
     Strings expected_log_lines_ GUARDED_BY(crit_sect_);
     scoped_ptr<EventWrapper> done_;
-
   };
 
   Callback callback_;

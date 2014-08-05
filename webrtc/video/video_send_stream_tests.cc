@@ -156,11 +156,11 @@ TEST_F(VideoSendStreamTest, SupportsAbsoluteSendTime) {
       send_config->rtp.extensions.push_back(
           RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeExtensionId));
     }
+
     virtual void PerformTest() OVERRIDE {
       EXPECT_EQ(kEventSignaled, Wait())
           << "Timed out while waiting for single RTP packet.";
     }
-
   } test;
 
   RunBaseTest(&test);

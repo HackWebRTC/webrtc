@@ -43,7 +43,7 @@ namespace internal {
 
 class CpuOveruseObserverProxy : public webrtc::CpuOveruseObserver {
  public:
-  CpuOveruseObserverProxy(OveruseCallback* overuse_callback)
+  explicit CpuOveruseObserverProxy(OveruseCallback* overuse_callback)
       : crit_(CriticalSectionWrapper::CreateCriticalSection()),
         overuse_callback_(overuse_callback) {
     assert(overuse_callback != NULL);
@@ -327,7 +327,7 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(const uint8_t* packet,
     return DELIVERY_PACKET_ERROR;
 
   const uint8_t* ptr = &packet[8];
-  uint32_t ssrc = ptr[0] << 24 | ptr[1] << 16 | ptr[2] << 8 | ptr[3] ;
+  uint32_t ssrc = ptr[0] << 24 | ptr[1] << 16 | ptr[2] << 8 | ptr[3];
 
   ReadLockScoped read_lock(*receive_lock_);
   std::map<uint32_t, VideoReceiveStream*>::iterator it =
