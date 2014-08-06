@@ -41,6 +41,8 @@ class FakeNetworkPipeTest : public ::testing::Test {
   virtual void SetUp() {
     TickTime::UseFakeClock(12345);
     receiver_.reset(new MockReceiver());
+    ON_CALL(*receiver_, DeliverPacket(_, _))
+        .WillByDefault(Return(PacketReceiver::DELIVERY_OK));
   }
 
   virtual void TearDown() {
