@@ -10,16 +10,19 @@
   'variables': {
     'libjingle_root%': '<(DEPTH)',
     'include_tests%': 1,
+    'webrtc_root_all_dependencies': [
+      'third_party/openmax_dl/dl/dl.gyp:*',
+      'webrtc/webrtc.gyp:*',
+      '<(DEPTH)/talk/libjingle.gyp:*',
+      '<(DEPTH)/talk/libjingle_examples.gyp:*',
+    ],
   },
   'targets': [
     {
       'target_name': 'All',
       'type': 'none',
       'dependencies': [
-        'third_party/openmax_dl/dl/dl.gyp:*',
-        'webrtc/webrtc.gyp:*',
-        '<(libjingle_root)/talk/libjingle.gyp:*',
-        '<(libjingle_root)/talk/libjingle_examples.gyp:*',
+        '<@(webrtc_root_all_dependencies)',
       ],
       'conditions': [
         ['OS=="android"', {
