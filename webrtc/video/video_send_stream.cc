@@ -304,9 +304,13 @@ bool VideoSendStream::ReconfigureVideoEncoder(
 
   VideoCodec video_codec;
   memset(&video_codec, 0, sizeof(video_codec));
-  video_codec.codecType =
-      (config_.encoder_settings.payload_name == "VP8" ? kVideoCodecVP8
-                                                      : kVideoCodecGeneric);
+  if (config_.encoder_settings.payload_name == "VP8") {
+    video_codec.codecType = kVideoCodecVP8;
+  } else if (config_.encoder_settings.payload_name == "H264") {
+    video_codec.codecType = kVideoCodecH264;
+  } else {
+    video_codec.codecType = kVideoCodecGeneric;
+  }
 
   if (video_codec.codecType == kVideoCodecVP8) {
     video_codec.codecSpecific.VP8.resilience = kResilientStream;
@@ -316,6 +320,10 @@ bool VideoSendStream::ReconfigureVideoEncoder(
     video_codec.codecSpecific.VP8.automaticResizeOn = false;
     video_codec.codecSpecific.VP8.frameDroppingOn = true;
     video_codec.codecSpecific.VP8.keyFrameInterval = 3000;
+  } else if (video_codec.codecType == kVideoCodecH264) {
+    video_codec.codecSpecific.H264.profile = kProfileBase;
+    video_codec.codecSpecific.H264.frameDroppingOn = true;
+    video_codec.codecSpecific.H264.keyFrameInterval = 3000;
   }
 
   if (video_codec.codecType == kVideoCodecVP8) {

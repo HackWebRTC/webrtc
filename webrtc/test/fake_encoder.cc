@@ -117,5 +117,60 @@ int32_t FakeEncoder::SetRates(uint32_t new_target_bitrate, uint32_t framerate) {
   return 0;
 }
 
+FakeH264Encoder::FakeH264Encoder(Clock* clock)
+    : FakeEncoder(clock), callback_(NULL), idr_counter_(0) {
+  FakeEncoder::RegisterEncodeCompleteCallback(this);
+}
+
+int32_t FakeH264Encoder::RegisterEncodeCompleteCallback(
+    EncodedImageCallback* callback) {
+  callback_ = callback;
+  return 0;
+}
+
+int32_t FakeH264Encoder::Encoded(EncodedImage& encoded_image,
+                                 const CodecSpecificInfo* codec_specific_info,
+                                 const RTPFragmentationHeader* fragments) {
+  const size_t kSpsSize = 8;
+  const size_t kPpsSize = 11;
+  const int kIdrFrequency = 10;
+  RTPFragmentationHeader fragmentation;
+  if (idr_counter_++ % kIdrFrequency == 0 &&
+      encoded_image._length > kSpsSize + kPpsSize + 1) {
+    const size_t kNumSlices = 3;
+    fragmentation.VerifyAndAllocateFragmentationHeader(kNumSlices);
+    fragmentation.fragmentationOffset[0] = 0;
+    fragmentation.fragmentationLength[0] = kSpsSize;
+    fragmentation.fragmentationOffset[1] = kSpsSize;
+    fragmentation.fragmentationLength[1] = kPpsSize;
+    fragmentation.fragmentationOffset[2] = kSpsSize + kPpsSize;
+    fragmentation.fragmentationLength[2] =
+        encoded_image._length - (kSpsSize + kPpsSize);
+    const uint8_t kSpsNalHeader = 0x37;
+    const uint8_t kPpsNalHeader = 0x38;
+    const uint8_t kIdrNalHeader = 0x15;
+    encoded_image._buffer[fragmentation.fragmentationOffset[0]] = kSpsNalHeader;
+    encoded_image._buffer[fragmentation.fragmentationOffset[1]] = kPpsNalHeader;
+    encoded_image._buffer[fragmentation.fragmentationOffset[2]] = kIdrNalHeader;
+  } else {
+    const size_t kNumSlices = 1;
+    fragmentation.VerifyAndAllocateFragmentationHeader(kNumSlices);
+    fragmentation.fragmentationOffset[0] = 0;
+    fragmentation.fragmentationLength[0] = encoded_image._length;
+    const uint8_t kNalHeader = 0x11;
+    encoded_image._buffer[fragmentation.fragmentationOffset[0]] = kNalHeader;
+  }
+  uint8_t value = 0;
+  int fragment_counter = 0;
+  for (size_t i = 0; i < encoded_image._length; ++i) {
+    if (fragment_counter == fragmentation.fragmentationVectorSize ||
+        i != fragmentation.fragmentationOffset[fragment_counter]) {
+      encoded_image._buffer[i] = value++;
+    } else {
+      ++fragment_counter;
+    }
+  }
+  return callback_->Encoded(encoded_image, NULL, &fragmentation);
+}
 }  // namespace test
 }  // namespace webrtc

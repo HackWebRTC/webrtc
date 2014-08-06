@@ -50,6 +50,24 @@ class FakeEncoder : public VideoEncoder {
   int64_t last_encode_time_ms_;
   uint8_t encoded_buffer_[100000];
 };
+
+class FakeH264Encoder : public FakeEncoder, public EncodedImageCallback {
+ public:
+  explicit FakeH264Encoder(Clock* clock);
+  virtual ~FakeH264Encoder() {}
+
+  virtual int32_t RegisterEncodeCompleteCallback(
+      EncodedImageCallback* callback) OVERRIDE;
+
+  virtual int32_t Encoded(
+      EncodedImage& encodedImage,
+      const CodecSpecificInfo* codecSpecificInfo = NULL,
+      const RTPFragmentationHeader* fragments = NULL) OVERRIDE;
+
+ private:
+  EncodedImageCallback* callback_;
+  int idr_counter_;
+};
 }  // namespace test
 }  // namespace webrtc
 

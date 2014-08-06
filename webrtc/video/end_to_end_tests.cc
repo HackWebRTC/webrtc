@@ -209,6 +209,57 @@ TEST_F(EndToEndTest, TransmitsFirstFrame) {
   DestroyStreams();
 }
 
+TEST_F(EndToEndTest, SendsAndReceivesH264) {
+  class H264Observer : public test::EndToEndTest, public VideoRenderer {
+   public:
+    H264Observer()
+        : EndToEndTest(2 * kDefaultTimeoutMs),
+          fake_encoder_(Clock::GetRealTimeClock()),
+          frame_counter_(0) {}
+
+    virtual void PerformTest() OVERRIDE {
+      EXPECT_EQ(kEventSignaled, Wait())
+          << "Timed out while waiting for enough frames to be decoded.";
+    }
+
+    virtual void ModifyConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        std::vector<VideoStream>* video_streams) {
+      send_config->encoder_settings.encoder = &fake_encoder_;
+      send_config->encoder_settings.payload_name = "H264";
+      send_config->encoder_settings.payload_type = kFakeSendPayloadType;
+      (*video_streams)[0].min_bitrate_bps = 50000;
+      (*video_streams)[0].target_bitrate_bps =
+          (*video_streams)[0].max_bitrate_bps = 2000000;
+
+      (*receive_configs)[0].renderer = this;
+      VideoCodec codec =
+          test::CreateDecoderVideoCodec(send_config->encoder_settings);
+      (*receive_configs)[0].codecs.resize(1);
+      (*receive_configs)[0].codecs[0] = codec;
+      (*receive_configs)[0].external_decoders.resize(1);
+      (*receive_configs)[0].external_decoders[0].payload_type =
+          send_config->encoder_settings.payload_type;
+      (*receive_configs)[0].external_decoders[0].decoder = &fake_decoder_;
+    }
+
+    virtual void RenderFrame(const I420VideoFrame& video_frame,
+                             int time_to_render_ms) OVERRIDE {
+      const int kRequiredFrames = 500;
+      if (++frame_counter_ == kRequiredFrames)
+        observation_complete_->Set();
+    }
+
+   private:
+    test::FakeH264Decoder fake_decoder_;
+    test::FakeH264Encoder fake_encoder_;
+    int frame_counter_;
+  } test;
+
+  RunBaseTest(&test);
+}
+
 TEST_F(EndToEndTest, ReceiverUsesLocalSsrc) {
   class SyncRtcpObserver : public test::EndToEndTest {
    public:
