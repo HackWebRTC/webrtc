@@ -326,11 +326,10 @@ TEST_F(RtpDepacketizerH264Test, TestSingleNalu) {
 }
 
 TEST_F(RtpDepacketizerH264Test, TestStapAKey) {
-  uint8_t packet[16] = {Nalu::kStapA,  // F=0, NRI=0, Type=24.
+  uint8_t packet[16] = {kStapA,  // F=0, NRI=0, Type=24.
                         // Length, nal header, payload.
-                        0,            0x02,       Nalu::kIdr, 0xFF, 0,
-                        0x03,         Nalu::kIdr, 0xFF,       0x00, 0,
-                        0x04,         Nalu::kIdr, 0xFF,       0x00, 0x11};
+                        0,      0x02, kIdr, 0xFF, 0,    0x03, kIdr, 0xFF,
+                        0x00,   0,    0x04, kIdr, 0xFF, 0x00, 0x11};
 
   WebRtcRTPHeader expected_header;
   memset(&expected_header, 0, sizeof(expected_header));
@@ -343,11 +342,10 @@ TEST_F(RtpDepacketizerH264Test, TestStapAKey) {
 }
 
 TEST_F(RtpDepacketizerH264Test, TestStapADelta) {
-  uint8_t packet[16] = {Nalu::kStapA,  // F=0, NRI=0, Type=24.
+  uint8_t packet[16] = {kStapA,  // F=0, NRI=0, Type=24.
                         // Length, nal header, payload.
-                        0,            0x02,         Nalu::kSlice, 0xFF, 0,
-                        0x03,         Nalu::kSlice, 0xFF,         0x00, 0,
-                        0x04,         Nalu::kSlice, 0xFF,         0x00, 0x11};
+                        0,      0x02, kSlice, 0xFF,   0,    0x03, kSlice, 0xFF,
+                        0x00,   0,    0x04,   kSlice, 0xFF, 0x00, 0x11};
 
   WebRtcRTPHeader expected_header;
   memset(&expected_header, 0, sizeof(expected_header));
@@ -361,23 +359,23 @@ TEST_F(RtpDepacketizerH264Test, TestStapADelta) {
 
 TEST_F(RtpDepacketizerH264Test, TestFuA) {
   uint8_t packet1[3] = {
-      Nalu::kFuA,                  // F=0, NRI=0, Type=28.
-      FuDefs::kSBit | Nalu::kIdr,  // FU header.
-      0x01                         // Payload.
+      kFuA,          // F=0, NRI=0, Type=28.
+      kSBit | kIdr,  // FU header.
+      0x01           // Payload.
   };
-  const uint8_t kExpected1[2] = {Nalu::kIdr, 0x01};
+  const uint8_t kExpected1[2] = {kIdr, 0x01};
 
   uint8_t packet2[3] = {
-      Nalu::kFuA,  // F=0, NRI=0, Type=28.
-      Nalu::kIdr,  // FU header.
-      0x02         // Payload.
+      kFuA,  // F=0, NRI=0, Type=28.
+      kIdr,  // FU header.
+      0x02   // Payload.
   };
   const uint8_t kExpected2[1] = {0x02};
 
   uint8_t packet3[3] = {
-      Nalu::kFuA,                  // F=0, NRI=0, Type=28.
-      FuDefs::kEBit | Nalu::kIdr,  // FU header.
-      0x03                         // Payload.
+      kFuA,          // F=0, NRI=0, Type=28.
+      kEBit | kIdr,  // FU header.
+      0x03           // Payload.
   };
   const uint8_t kExpected3[1] = {0x03};
 

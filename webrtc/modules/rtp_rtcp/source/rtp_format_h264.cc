@@ -45,16 +45,16 @@ void ParseSingleNalu(WebRtcRTPHeader* rtp_header,
   h264_header->single_nalu = true;
   h264_header->stap_a = false;
 
-  uint8_t nal_type = payload_data[0] & NalDefs::kTypeMask;
-  if (nal_type == Nalu::kStapA) {
-    nal_type = payload_data[3] & NalDefs::kTypeMask;
+  uint8_t nal_type = payload_data[0] & kTypeMask;
+  if (nal_type == kStapA) {
+    nal_type = payload_data[3] & kTypeMask;
     h264_header->stap_a = true;
   }
 
   switch (nal_type) {
-    case Nalu::kSps:
-    case Nalu::kPps:
-    case Nalu::kIdr:
+    case kSps:
+    case kPps:
+    case kIdr:
       rtp_header->frameType = kVideoFrameKey;
       break;
     default:
@@ -67,9 +67,9 @@ void ParseFuaNalu(WebRtcRTPHeader* rtp_header,
                   const uint8_t* payload_data,
                   size_t payload_data_length,
                   size_t* offset) {
-  uint8_t fnri = payload_data[0] & (NalDefs::kFBit | NalDefs::kNriMask);
-  uint8_t original_nal_type = payload_data[1] & NalDefs::kTypeMask;
-  bool first_fragment = (payload_data[1] & FuDefs::kSBit) > 0;
+  uint8_t fnri = payload_data[0] & (kFBit | kNriMask);
+  uint8_t original_nal_type = payload_data[1] & kTypeMask;
+  bool first_fragment = (payload_data[1] & kSBit) > 0;
 
   uint8_t original_nal_header = fnri | original_nal_type;
   if (first_fragment) {
@@ -80,7 +80,7 @@ void ParseFuaNalu(WebRtcRTPHeader* rtp_header,
     *offset = kFuAHeaderSize;
   }
 
-  if (original_nal_type == Nalu::kIdr) {
+  if (original_nal_type == kIdr) {
     rtp_header->frameType = kVideoFrameKey;
   } else {
     rtp_header->frameType = kVideoFrameDelta;
@@ -272,9 +272,9 @@ RtpDepacketizerH264::RtpDepacketizerH264(RtpData* const callback)
 bool RtpDepacketizerH264::Parse(WebRtcRTPHeader* rtp_header,
                                 const uint8_t* payload_data,
                                 size_t payload_data_length) {
-  uint8_t nal_type = payload_data[0] & NalDefs::kTypeMask;
+  uint8_t nal_type = payload_data[0] & kTypeMask;
   size_t offset = 0;
-  if (nal_type == Nalu::kFuA) {
+  if (nal_type == kFuA) {
     // Fragmented NAL units (FU-A).
     ParseFuaNalu(rtp_header, payload_data, payload_data_length, &offset);
   } else {
