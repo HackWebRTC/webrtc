@@ -433,7 +433,6 @@ void RunTest(std::string out_path) {
       printf("%i. Toggle receive-side NS \n", option_index++);
       printf("%i. AGC status \n", option_index++);
       printf("%i. Toggle microphone mute \n", option_index++);
-      printf("%i. Toggle on hold status \n", option_index++);
       printf("%i. Get last error code \n", option_index++);
       printf("%i. Toggle typing detection \n",
              option_index++);

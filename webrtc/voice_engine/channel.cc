@@ -4200,9 +4200,9 @@ int32_t
 Channel::MixAudioWithFile(AudioFrame& audioFrame,
                           int mixingFrequency)
 {
-    assert(mixingFrequency <= 32000);
+    assert(mixingFrequency <= 48000);
 
-    scoped_ptr<int16_t[]> fileBuffer(new int16_t[640]);
+    scoped_ptr<int16_t[]> fileBuffer(new int16_t[960]);
     int fileSamples(0);
 
     {
