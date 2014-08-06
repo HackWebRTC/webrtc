@@ -13,6 +13,7 @@
       'dependencies': [
         'video_engine_tests',
         'video_loopback',
+        'video_replay',
         'webrtc_perf_tests',
       ],
     },
@@ -38,6 +39,31 @@
         'test/webrtc_test_common.gyp:webrtc_test_common',
         'test/webrtc_test_common.gyp:webrtc_test_renderer',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:field_trial_default',
+        'webrtc',
+      ],
+    },
+    {
+      'target_name': 'video_replay',
+      'type': 'executable',
+      'sources': [
+        'test/mac/run_test.mm',
+        'test/run_test.cc',
+        'test/run_test.h',
+        'video/replay.cc',
+      ],
+      'conditions': [
+        ['OS=="mac"', {
+          'sources!': [
+            'test/run_test.cc',
+          ],
+        }],
+      ],
+      'dependencies': [
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+        'system_wrappers/source/system_wrappers.gyp:field_trial_default',
+        'test/webrtc_test_common.gyp:webrtc_test_common',
+        'test/webrtc_test_common.gyp:webrtc_test_renderer',
         'webrtc',
       ],
     },

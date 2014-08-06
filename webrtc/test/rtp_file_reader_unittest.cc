@@ -12,13 +12,38 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
-#include "webrtc/modules/video_coding/main/test/pcap_file_reader.h"
-#include "webrtc/modules/video_coding/main/test/rtp_player.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/test/rtp_file_reader.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
-namespace rtpplayer {
+
+class TestRtpFileReader : public ::testing::Test {
+ public:
+  void Init(const std::string& filename) {
+    std::string filepath =
+        test::ResourcePath("video_coding/" + filename, "rtp");
+    rtp_packet_source_.reset(
+        test::RtpFileReader::Create(test::RtpFileReader::kRtpDump, filepath));
+    ASSERT_TRUE(rtp_packet_source_.get() != NULL);
+  }
+
+  int CountRtpPackets() {
+    test::RtpFileReader::Packet packet;
+    int c = 0;
+    while (rtp_packet_source_->NextPacket(&packet))
+      c++;
+    return c;
+  }
+
+ private:
+  scoped_ptr<test::RtpFileReader> rtp_packet_source_;
+};
+
+TEST_F(TestRtpFileReader, Test60Packets) {
+  Init("pltype103");
+  EXPECT_EQ(60, CountRtpPackets());
+}
 
 typedef std::map<uint32_t, int> PacketsPerSsrc;
 
@@ -27,35 +52,24 @@ class TestPcapFileReader : public ::testing::Test {
   void Init(const std::string& filename) {
     std::string filepath =
         test::ResourcePath("video_coding/" + filename, "pcap");
-    rtp_packet_source_.reset(CreatePcapFileReader(filepath));
+    rtp_packet_source_.reset(
+        test::RtpFileReader::Create(test::RtpFileReader::kPcap, filepath));
     ASSERT_TRUE(rtp_packet_source_.get() != NULL);
   }
 
   int CountRtpPackets() {
-    const uint32_t kBufferSize = 4096;
-    uint8_t data[kBufferSize];
-    uint32_t length = kBufferSize;
-    uint32_t dummy_time_ms = 0;
     int c = 0;
-    while (rtp_packet_source_->NextPacket(data, &length, &dummy_time_ms) == 0) {
-      EXPECT_GE(kBufferSize, length);
-      length = kBufferSize;
+    test::RtpFileReader::Packet packet;
+    while (rtp_packet_source_->NextPacket(&packet))
       c++;
-    }
     return c;
   }
 
   PacketsPerSsrc CountRtpPacketsPerSsrc() {
-    const uint32_t kBufferSize = 4096;
-    uint8_t data[kBufferSize];
-    uint32_t length = kBufferSize;
-    uint32_t dummy_time_ms = 0;
     PacketsPerSsrc pps;
-    while (rtp_packet_source_->NextPacket(data, &length, &dummy_time_ms) == 0) {
-      EXPECT_GE(kBufferSize, length);
-      length = kBufferSize;
-
-      RtpUtility::RtpHeaderParser rtp_header_parser(data, length);
+    test::RtpFileReader::Packet packet;
+    while (rtp_packet_source_->NextPacket(&packet)) {
+      RtpUtility::RtpHeaderParser rtp_header_parser(packet.data, packet.length);
       webrtc::RTPHeader header;
       if (!rtp_header_parser.RTCP() && rtp_header_parser.Parse(header, NULL)) {
         pps[header.ssrc]++;
@@ -65,7 +79,7 @@ class TestPcapFileReader : public ::testing::Test {
   }
 
  private:
-  scoped_ptr<RtpPacketSourceInterface> rtp_packet_source_;
+  scoped_ptr<test::RtpFileReader> rtp_packet_source_;
 };
 
 TEST_F(TestPcapFileReader, TestEthernetIIFrame) {
@@ -94,6 +108,4 @@ TEST_F(TestPcapFileReader, TestThreeSsrc) {
   EXPECT_EQ(113, pps[0x59fe6ef0]);
   EXPECT_EQ(61, pps[0xed2bd2ac]);
 }
-
-}  // namespace rtpplayer
 }  // namespace webrtc

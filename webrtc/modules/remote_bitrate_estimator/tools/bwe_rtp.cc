@@ -16,10 +16,7 @@
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
-#include "webrtc/modules/video_coding/main/test/rtp_file_reader.h"
-#include "webrtc/modules/video_coding/main/test/rtp_player.h"
-
-using webrtc::rtpplayer::RtpPacketSourceInterface;
+#include "webrtc/test/rtp_file_reader.h"
 
 const int kMinBitrateBps = 30000;
 
@@ -27,11 +24,12 @@ bool ParseArgsAndSetupEstimator(int argc,
                                 char** argv,
                                 webrtc::Clock* clock,
                                 webrtc::RemoteBitrateObserver* observer,
-                                RtpPacketSourceInterface** rtp_reader,
+                                webrtc::test::RtpFileReader** rtp_reader,
                                 webrtc::RtpHeaderParser** parser,
                                 webrtc::RemoteBitrateEstimator** estimator,
                                 std::string* estimator_used) {
-  *rtp_reader = webrtc::rtpplayer::CreateRtpFileReader(argv[3]);
+  *rtp_reader = webrtc::test::RtpFileReader::Create(
+      webrtc::test::RtpFileReader::kRtpDump, argv[3]);
   if (!*rtp_reader) {
     fprintf(stderr, "Cannot open input file %s\n", argv[3]);
     return false;

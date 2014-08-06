@@ -56,8 +56,8 @@
       },
       'sources': [
         'tools/rtp_to_text.cc',
-        '<(webrtc_root)/modules/video_coding/main/test/rtp_file_reader.cc',
-        '<(webrtc_root)/modules/video_coding/main/test/rtp_file_reader.h',
+        '<(webrtc_root)/test/rtp_file_reader.cc',
+        '<(webrtc_root)/test/rtp_file_reader.h',
       ], # source
     },
     {
@@ -79,8 +79,8 @@
       },
       'sources': [
         'tools/bwe_rtp_play.cc',
-        '<(webrtc_root)/modules/video_coding/main/test/rtp_file_reader.cc',
-        '<(webrtc_root)/modules/video_coding/main/test/rtp_file_reader.h',
+        '<(webrtc_root)/test/rtp_file_reader.cc',
+        '<(webrtc_root)/test/rtp_file_reader.h',
       ], # source
     },
   ], # targets

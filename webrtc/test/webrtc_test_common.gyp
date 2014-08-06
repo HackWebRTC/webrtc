@@ -35,6 +35,8 @@
         'mock_transport.h',
         'null_transport.cc',
         'null_transport.h',
+        'rtp_file_reader.cc',
+        'rtp_file_reader.h',
         'rtp_rtcp_observer.h',
         'run_loop.cc',
         'run_loop.h',
@@ -184,6 +186,7 @@
           ],
           'sources': [
             'fake_network_pipe_unittest.cc',
+            'rtp_file_reader_unittest.cc',
           ],
         },
       ],  #targets
