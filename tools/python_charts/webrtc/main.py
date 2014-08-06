@@ -101,18 +101,21 @@ def main():
   # Loading it into gviz_api.DataTable objects and create JSON strings.
   description, data = helper.CreateConfigurationTable(test_configurations)
   configurations = gviz_api.DataTable(description, data)
-  json_configurations = configurations.ToJSon()
+  json_configurations = configurations.ToJSon()  # pylint: disable=W0612
 
   description, data = helper.CreateData('ssim')
   ssim = gviz_api.DataTable(description, data)
+  # pylint: disable=W0612
   json_ssim_data = ssim.ToJSon(helper.GetOrdering(description))
 
   description, data = helper.CreateData('psnr')
   psnr = gviz_api.DataTable(description, data)
+  # pylint: disable=W0612
   json_psnr_data = psnr.ToJSon(helper.GetOrdering(description))
 
   description, data = helper.CreateData('packets_dropped')
   packet_loss = gviz_api.DataTable(description, data)
+  # pylint: disable=W0612
   json_packet_loss_data = packet_loss.ToJSon(helper.GetOrdering(description))
 
   description, data = helper.CreateData('bit_rate')
@@ -129,6 +132,7 @@ def main():
   for row in data:
     row['desired_bit_rate'] = desired_bit_rate
   bit_rate = gviz_api.DataTable(description, data)
+  # pylint: disable=W0612
   json_bit_rate_data = bit_rate.ToJSon(helper.GetOrdering(description))
 
   # Format the messages list with newlines.

@@ -10,7 +10,6 @@
 
 """Connects all URLs with their respective handlers."""
 
-from google.appengine.ext.webapp import template
 import webapp2
 
 import add_coverage_data

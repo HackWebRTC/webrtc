@@ -29,6 +29,7 @@ def _CheckNoIOStreamInHeaders(input_api, output_api):
         files) ]
   return []
 
+
 def _CheckNoFRIEND_TEST(input_api, output_api):
   """Make sure that gtest's FRIEND_TEST() macro is not used, the
   FRIEND_TEST_ALL_PREFIXES() macro from testsupport/gtest_prod_util.h should be
@@ -46,6 +47,7 @@ def _CheckNoFRIEND_TEST(input_api, output_api):
   return [output_api.PresubmitPromptWarning('WebRTC\'s code should not use '
       'gtest\'s FRIEND_TEST() macro. Include testsupport/gtest_prod_util.h and '
       'use FRIEND_TEST_ALL_PREFIXES() instead.\n' + '\n'.join(problems))]
+
 
 def _CheckApprovedFilesLintClean(input_api, output_api,
                                  source_file_filter=None):
@@ -93,6 +95,24 @@ def _CheckApprovedFilesLintClean(input_api, output_api,
 
   return result
 
+
+def _CheckGypChanges(input_api, output_api):
+  source_file_filter = lambda x: input_api.FilterSourceFile(
+      x, white_list=(r'.+\.(gyp|gypi)$',))
+
+  gyp_files = []
+  for f in input_api.AffectedSourceFiles(source_file_filter):
+    gyp_files.append(f.LocalPath())
+
+  result = []
+  if gyp_files:
+    result.append(output_api.PresubmitNotifyResult(
+        'As you\'re changing GYP files: please make sure corresponding '
+        'BUILD.gn files are also updated.\nChanged GYP files:',
+        items=gyp_files))
+  return result
+
+
 def _CommonChecks(input_api, output_api):
   """Checks common to both upload and commit."""
   # TODO(kjellander): Use presubmit_canned_checks.PanProjectChecks too.
@@ -101,10 +121,14 @@ def _CommonChecks(input_api, output_api):
       black_list=(r'^.*gviz_api\.py$',
                   r'^.*gaeunit\.py$',
                   # Embedded shell-script fakes out pylint.
+                  r'^build/.*\.py$',
+                  r'^buildtools/.*\.py$',
+                  r'^out.*/.*\.py$',
                   r'^talk/site_scons/site_tools/talk_linux.py$',
-                  r'^third_party/.*\.py$',
                   r'^testing/.*\.py$',
+                  r'^third_party/.*\.py$',
                   r'^tools/clang/.*\.py$',
+                  r'^tools/gn/.*\.py$',
                   r'^tools/gyp/.*\.py$',
                   r'^tools/perf_expectations/.*\.py$',
                   r'^tools/protoc_wrapper/.*\.py$',
@@ -117,8 +141,8 @@ def _CommonChecks(input_api, output_api):
                   r'^tools/valgrind/.*\.py$',
                   # TODO(phoglund): should arguably be checked.
                   r'^webrtc/build/.*\.py$',
-                  r'^build/.*\.py$',
-                  r'^out.*/.*\.py$',),
+                  r'^xcodebuild.*/.*\.py$',),
+
       disabled_warnings=['F0401',  # Failed to import x
                          'E0611',  # No package y in x
                          'W0232',  # Class has no __init__ method
@@ -134,12 +158,15 @@ def _CommonChecks(input_api, output_api):
   results.extend(_CheckApprovedFilesLintClean(input_api, output_api))
   results.extend(_CheckNoIOStreamInHeaders(input_api, output_api))
   results.extend(_CheckNoFRIEND_TEST(input_api, output_api))
+  results.extend(_CheckGypChanges(input_api, output_api))
   return results
+
 
 def CheckChangeOnUpload(input_api, output_api):
   results = []
   results.extend(_CommonChecks(input_api, output_api))
   return results
+
 
 def CheckChangeOnCommit(input_api, output_api):
   results = []
@@ -158,6 +185,7 @@ def CheckChangeOnCommit(input_api, output_api):
       json_url='http://webrtc-status.appspot.com/current?format=json'))
   return results
 
+
 def GetDefaultTryConfigs(bots=None):
   """Returns a list of ('bot', set(['tests']), optionally filtered by [bots].
 
@@ -166,10 +194,15 @@ def GetDefaultTryConfigs(bots=None):
   """
   return { 'tryserver.webrtc': dict((bot, []) for bot in bots)}
 
+
 # pylint: disable=W0613
 def GetPreferredTryMasters(project, change):
   files = change.LocalPaths()
 
+  android_gn_bots = [
+      'android_gn',
+      'android_gn_rel',
+  ]
   android_bots = [
       'android',
       'android_arm64',
@@ -177,10 +210,14 @@ def GetPreferredTryMasters(project, change):
       'android_apk_rel',
       'android_rel',
       'android_clang',
-  ]
+  ] + android_gn_bots
   ios_bots = [
       'ios',
       'ios_rel',
+  ]
+  linux_gn_bots = [
+      'linux_gn',
+      'linux_gn_rel',
   ]
   linux_bots = [
       'linux',
@@ -189,7 +226,7 @@ def GetPreferredTryMasters(project, change):
       'linux_memcheck',
       'linux_rel',
       'linux_tsan2',
-  ]
+  ] + linux_gn_bots
   mac_bots = [
       'mac',
       'mac_asan',
@@ -207,7 +244,8 @@ def GetPreferredTryMasters(project, change):
   ]
   if not files or all(re.search(r'[\\/]OWNERS$', f) for f in files):
     return {}
-
+  if all(re.search(r'[\\/]BUILD.gn$', f) for f in files):
+    return GetDefaultTryConfigs(android_gn_bots + linux_gn_bots)
   if all(re.search('\.(m|mm)$|(^|[/_])mac[/_.]', f) for f in files):
     return GetDefaultTryConfigs(mac_bots)
   if all(re.search('(^|[/_])win[/_.]', f) for f in files):
