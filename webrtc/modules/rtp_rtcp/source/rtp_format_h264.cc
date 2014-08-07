@@ -168,11 +168,11 @@ int RtpPacketizerH264::PacketizeStapA(size_t fragment_index,
                            false,
                            true,
                            header));
+      payload_size_left -= fragment_length;
       // If we are going to try to aggregate more fragments into this packet
       // we need to add the STAP-A NALU header.
-      if (aggregated_fragments == 0)
+      if (aggregated_fragments == 0 && payload_size_left > 0)
         payload_size_left -= kNalHeaderSize;
-      payload_size_left -= fragment_length;
       ++aggregated_fragments;
     }
     // Next fragment.
