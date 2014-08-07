@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2012 Google Inc.
+ * Copyright 2014 Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,36 +25,23 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_MEDIA_BASE_MUTEDVIDEOCAPTURER_H_
-#define TALK_MEDIA_BASE_MUTEDVIDEOCAPTURER_H_
-
-#include "webrtc/base/thread.h"
-#include "talk/media/base/videocapturer.h"
+#include "talk/media/webrtc/webrtcvideoframe.h"
+#include "talk/media/webrtc/webrtcvideoframefactory.h"
+#include "webrtc/base/logging.h"
 
 namespace cricket {
 
-class MutedFramesGenerator;
-
-class MutedVideoCapturer : public VideoCapturer {
- public:
-  static const char kCapturerId[];
-
-  MutedVideoCapturer();
-  virtual ~MutedVideoCapturer();
-  virtual bool GetBestCaptureFormat(const VideoFormat& desired,
-                                    VideoFormat* best_format);
-  virtual CaptureState Start(const VideoFormat& capture_format);
-  virtual void Stop();
-  virtual bool IsRunning();
-  virtual bool IsScreencast() const { return false; }
-  virtual bool GetPreferredFourccs(std::vector<uint32>* fourccs);
-
- protected:
-  void OnMutedFrame(VideoFrame* muted_frame);
-
-  rtc::scoped_ptr<MutedFramesGenerator> frame_generator_;
-};
+VideoFrame* WebRtcVideoFrameFactory::CreateAliasedFrame(
+    const CapturedFrame* aliased_frame, int width, int height) const {
+  // TODO(pthatcher): Move Alias logic into the VideoFrameFactory and
+  // out of the VideoFrame.
+  rtc::scoped_ptr<WebRtcVideoFrame> frame(new WebRtcVideoFrame());
+  if (!frame->Alias(aliased_frame, width, height)) {
+    LOG(LS_ERROR) <<
+        "Failed to create WebRtcVideoFrame in CreateAliasedFrame.";
+    return NULL;
+  }
+  return frame.release();
+}
 
 }  // namespace cricket
-
-#endif  // TALK_MEDIA_BASE_MUTEDVIDEOCAPTURER_H_

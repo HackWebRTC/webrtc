@@ -1,4 +1,29 @@
-// Copyright 2008 Google Inc.
+/*
+ * libjingle
+ * Copyright 2008 Google Inc.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  1. Redistributions of source code must retain the above copyright notice,
+ *     this list of conditions and the following disclaimer.
+ *  2. Redistributions in binary form must reproduce the above copyright notice,
+ *     this list of conditions and the following disclaimer in the documentation
+ *     and/or other materials provided with the distribution.
+ *  3. The name of the author may not be used to endorse or promote products
+ *     derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+ * EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include <stdio.h>
 #include <vector>
@@ -12,15 +37,6 @@
 #include "talk/media/base/testutils.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videoprocessor.h"
-
-// If HAS_I420_FRAME is not defined the video capturer will not be able to
-// provide OnVideoFrame-callbacks since they require cricket::CapturedFrame to
-// be decoded as a cricket::VideoFrame (i.e. an I420 frame). This functionality
-// only exist if HAS_I420_FRAME is defined below. I420 frames are also a
-// requirement for the VideoProcessors so they will not be called either.
-#if defined(HAVE_WEBRTC_VIDEO)
-#define HAS_I420_FRAME
-#endif
 
 using cricket::FakeVideoCapturer;
 
@@ -682,7 +698,12 @@ TEST_F(VideoCapturerTest, TestRequest16x10_9) {
   EXPECT_EQ(360, best.height);
 }
 
-#if defined(HAS_I420_FRAME)
+// If HAVE_WEBRTC_VIDEO is not defined the video capturer will not be able to
+// provide OnVideoFrame-callbacks since they require cricket::CapturedFrame to
+// be decoded as a cricket::VideoFrame (i.e. an I420 frame). This functionality
+// only exist if HAVE_WEBRTC_VIDEO is defined below. I420 frames are also a
+// requirement for the VideoProcessors so they will not be called either.
+#if defined(HAVE_WEBRTC_VIDEO)
 TEST_F(VideoCapturerTest, VideoFrame) {
   EXPECT_EQ(cricket::CS_RUNNING, capturer_.Start(cricket::VideoFormat(
       640,
@@ -735,7 +756,7 @@ TEST_F(VideoCapturerTest, ProcessorDropFrame) {
   EXPECT_TRUE(capturer_.CaptureFrame());
   EXPECT_EQ(0, video_frames_received());
 }
-#endif  // HAS_I420_FRAME
+#endif  // HAVE_WEBRTC_VIDEO
 
 bool HdFormatInList(const std::vector<cricket::VideoFormat>& formats) {
   for (std::vector<cricket::VideoFormat>::const_iterator found =
