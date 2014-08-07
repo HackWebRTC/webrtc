@@ -23,16 +23,8 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "webrtc/base/fileutils.h"
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/helpers.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/pathutils.h"
-#include "webrtc/base/signalthread.h"
-#include "webrtc/base/ssladapter.h"
-#include "webrtc/base/sslidentity.h"
-#include "webrtc/base/window.h"
 #include "talk/media/base/fakemediaengine.h"
+#include "talk/media/base/fakescreencapturerfactory.h"
 #include "talk/media/base/fakertp.h"
 #include "talk/media/base/fakevideocapturer.h"
 #include "talk/media/base/mediachannel.h"
@@ -45,6 +37,15 @@
 #include "talk/session/media/mediarecorder.h"
 #include "talk/session/media/mediasessionclient.h"
 #include "talk/session/media/typingmonitor.h"
+#include "webrtc/base/fileutils.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/pathutils.h"
+#include "webrtc/base/signalthread.h"
+#include "webrtc/base/ssladapter.h"
+#include "webrtc/base/sslidentity.h"
+#include "webrtc/base/window.h"
 
 #define MAYBE_SKIP_TEST(feature)                    \
   if (!(rtc::SSLStreamAdapter::feature())) {  \
@@ -86,49 +87,6 @@ class Traits {
   typedef ContentT Content;
   typedef CodecT Codec;
   typedef MediaInfoT MediaInfo;
-};
-
-class FakeScreenCaptureFactory
-    : public cricket::VideoChannel::ScreenCapturerFactory,
-      public sigslot::has_slots<> {
- public:
-  FakeScreenCaptureFactory()
-      : window_capturer_(NULL),
-        capture_state_(cricket::CS_STOPPED) {}
-
-  virtual cricket::VideoCapturer* CreateScreenCapturer(
-      const ScreencastId& window) {
-    if (window_capturer_ != NULL) {
-      // Class is only designed to handle one fake screencapturer.
-      ADD_FAILURE();
-      return NULL;
-    }
-    window_capturer_ = new cricket::FakeVideoCapturer;
-    window_capturer_->SignalDestroyed.connect(
-        this,
-        &FakeScreenCaptureFactory::OnWindowCapturerDestroyed);
-    window_capturer_->SignalStateChange.connect(
-        this,
-        &FakeScreenCaptureFactory::OnStateChange);
-    return window_capturer_;
-  }
-
-  cricket::FakeVideoCapturer* window_capturer() { return window_capturer_; }
-
-  cricket::CaptureState capture_state() { return capture_state_; }
-
- private:
-  void OnWindowCapturerDestroyed(cricket::FakeVideoCapturer* capturer) {
-    if (capturer == window_capturer_) {
-      window_capturer_ = NULL;
-    }
-  }
-  void OnStateChange(cricket::VideoCapturer*, cricket::CaptureState state) {
-    capture_state_ = state;
-  }
-
-  cricket::FakeVideoCapturer* window_capturer_;
-  cricket::CaptureState capture_state_;
 };
 
 // Controls how long we wait for a session to send messages that we
@@ -2469,28 +2427,31 @@ TEST_F(VideoChannelTest, TestStreams) {
 TEST_F(VideoChannelTest, TestScreencastEvents) {
   const int kTimeoutMs = 500;
   TestInit();
-  FakeScreenCaptureFactory* screencapture_factory =
-      new FakeScreenCaptureFactory();
-  channel1_->SetScreenCaptureFactory(screencapture_factory);
   cricket::ScreencastEventCatcher catcher;
   channel1_->SignalScreencastWindowEvent.connect(
       &catcher,
       &cricket::ScreencastEventCatcher::OnEvent);
-  EXPECT_TRUE(channel1_->AddScreencast(0, ScreencastId(WindowId(0))) != NULL);
-  ASSERT_TRUE(screencapture_factory->window_capturer() != NULL);
-  EXPECT_EQ_WAIT(cricket::CS_STOPPED, screencapture_factory->capture_state(),
+
+  rtc::scoped_ptr<cricket::FakeScreenCapturerFactory>
+      screen_capturer_factory(new cricket::FakeScreenCapturerFactory());
+  cricket::VideoCapturer* screen_capturer = screen_capturer_factory->Create(
+      ScreencastId(WindowId(0)));
+  ASSERT_TRUE(screen_capturer != NULL);
+
+  EXPECT_TRUE(channel1_->AddScreencast(0, screen_capturer));
+  EXPECT_EQ_WAIT(cricket::CS_STOPPED, screen_capturer_factory->capture_state(),
                  kTimeoutMs);
-  screencapture_factory->window_capturer()->SignalStateChange(
-      screencapture_factory->window_capturer(), cricket::CS_PAUSED);
+
+  screen_capturer->SignalStateChange(screen_capturer, cricket::CS_PAUSED);
   EXPECT_EQ_WAIT(rtc::WE_MINIMIZE, catcher.event(), kTimeoutMs);
-  screencapture_factory->window_capturer()->SignalStateChange(
-      screencapture_factory->window_capturer(), cricket::CS_RUNNING);
+
+  screen_capturer->SignalStateChange(screen_capturer, cricket::CS_RUNNING);
   EXPECT_EQ_WAIT(rtc::WE_RESTORE, catcher.event(), kTimeoutMs);
-  screencapture_factory->window_capturer()->SignalStateChange(
-      screencapture_factory->window_capturer(), cricket::CS_STOPPED);
+
+  screen_capturer->SignalStateChange(screen_capturer, cricket::CS_STOPPED);
   EXPECT_EQ_WAIT(rtc::WE_CLOSE, catcher.event(), kTimeoutMs);
+
   EXPECT_TRUE(channel1_->RemoveScreencast(0));
-  ASSERT_TRUE(screencapture_factory->window_capturer() == NULL);
 }
 
 TEST_F(VideoChannelTest, TestUpdateStreamsInLocalContent) {

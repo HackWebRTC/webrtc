@@ -31,11 +31,11 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/window.h"
-#include "webrtc/base/windowpicker.h"
 #include "talk/media/base/fakevideocapturer.h"
 #include "talk/media/base/mediacommon.h"
 #include "talk/media/devices/devicemanager.h"
+#include "webrtc/base/window.h"
+#include "webrtc/base/windowpicker.h"
 
 namespace cricket {
 
@@ -79,6 +79,12 @@ class FakeDeviceManager : public DeviceManagerInterface {
     *devs = vidcap_devices_;
     return true;
   }
+  virtual void SetVideoDeviceCapturerFactory(
+      VideoDeviceCapturerFactory* video_device_capturer_factory) {
+  }
+  virtual void SetScreenCapturerFactory(
+      ScreenCapturerFactory* screen_capturer_factory) {
+  }
   virtual void SetVideoCaptureDeviceMaxFormat(const std::string& usb_id,
                                               const VideoFormat& max_format) {
     max_formats_[usb_id] = max_format;
@@ -95,6 +101,10 @@ class FakeDeviceManager : public DeviceManagerInterface {
     max_formats_.erase(usb_id);
   }
   virtual VideoCapturer* CreateVideoCapturer(const Device& device) const {
+    return new FakeVideoCapturer();
+  }
+  virtual VideoCapturer* CreateScreenCapturer(
+      const ScreencastId& screenid) const {
     return new FakeVideoCapturer();
   }
   virtual bool GetWindows(

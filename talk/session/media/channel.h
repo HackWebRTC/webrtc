@@ -38,7 +38,6 @@
 #include "webrtc/base/window.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/mediaengine.h"
-#include "talk/media/base/screencastid.h"
 #include "talk/media/base/streamparams.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/p2p/base/session.h"
@@ -508,14 +507,6 @@ class VoiceChannel : public BaseChannel {
 // VideoChannel is a specialization for video.
 class VideoChannel : public BaseChannel {
  public:
-  // Make screen capturer virtual so that it can be overriden in testing.
-  // E.g. used to test that window events are triggered correctly.
-  class ScreenCapturerFactory {
-   public:
-    virtual VideoCapturer* CreateScreenCapturer(const ScreencastId& window) = 0;
-    virtual ~ScreenCapturerFactory() {}
-  };
-
   VideoChannel(rtc::Thread* thread, MediaEngineInterface* media_engine,
                VideoMediaChannel* channel, BaseSession* session,
                const std::string& content_name, bool rtcp,
@@ -528,7 +519,8 @@ class VideoChannel : public BaseChannel {
 
   // TODO(pthatcher): Refactor to use a "capture id" instead of an
   // ssrc here as the "key".
-  VideoCapturer* AddScreencast(uint32 ssrc, const ScreencastId& id);
+  // Passes ownership of the capturer to the channel.
+  bool AddScreencast(uint32 ssrc, VideoCapturer* capturer);
   bool SetCapturer(uint32 ssrc, VideoCapturer* capturer);
   bool RemoveScreencast(uint32 ssrc);
   // True if we've added a screencast.  Doesn't matter if the capturer
@@ -551,9 +543,6 @@ class VideoChannel : public BaseChannel {
   bool RequestIntraFrame();
   sigslot::signal3<VideoChannel*, uint32, VideoMediaChannel::Error>
       SignalMediaError;
-
-  void SetScreenCaptureFactory(
-      ScreenCapturerFactory* screencapture_factory);
 
   // Configuration and setting.
   bool SetChannelOptions(const VideoOptions& options);
@@ -579,13 +568,11 @@ class VideoChannel : public BaseChannel {
                                   std::string* error_desc);
   bool ApplyViewRequest_w(const ViewRequest& request);
 
-  VideoCapturer* AddScreencast_w(uint32 ssrc, const ScreencastId& id);
+  bool AddScreencast_w(uint32 ssrc, VideoCapturer* capturer);
   bool RemoveScreencast_w(uint32 ssrc);
   void OnScreencastWindowEvent_s(uint32 ssrc, rtc::WindowEvent we);
   bool IsScreencasting_w() const;
   void GetScreencastDetails_w(ScreencastDetailsData* d) const;
-  void SetScreenCaptureFactory_w(
-      ScreenCapturerFactory* screencapture_factory);
   bool GetStats_w(VideoMediaInfo* stats);
 
   virtual void OnMessage(rtc::Message* pmsg);
@@ -604,7 +591,6 @@ class VideoChannel : public BaseChannel {
 
   VoiceChannel* voice_channel_;
   VideoRenderer* renderer_;
-  rtc::scoped_ptr<ScreenCapturerFactory> screencapture_factory_;
   ScreencastMap screencast_capturers_;
   rtc::scoped_ptr<VideoMediaMonitor> media_monitor_;
 
