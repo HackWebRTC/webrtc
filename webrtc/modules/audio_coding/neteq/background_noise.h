@@ -68,11 +68,11 @@ class BackgroundNoise {
 
   // Accessors.
   bool initialized() const { return initialized_; }
-  NetEqBackgroundNoiseMode mode() const { return mode_; }
+  NetEq::BackgroundNoiseMode mode() const { return mode_; }
 
   // Sets the mode of the background noise playout for cases when there is long
   // duration of packet loss.
-  void set_mode(NetEqBackgroundNoiseMode mode) { mode_ = mode; }
+  void set_mode(NetEq::BackgroundNoiseMode mode) { mode_ = mode; }
 
  private:
   static const int kThresholdIncrement = 229;  // 0.0035 in Q16.
@@ -128,7 +128,7 @@ class BackgroundNoise {
   size_t num_channels_;
   scoped_ptr<ChannelParameters[]> channel_parameters_;
   bool initialized_;
-  NetEqBackgroundNoiseMode mode_;
+  NetEq::BackgroundNoiseMode mode_;
 
   DISALLOW_COPY_AND_ASSIGN(BackgroundNoise);
 };

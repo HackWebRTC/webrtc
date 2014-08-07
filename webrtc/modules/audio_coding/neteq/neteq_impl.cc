@@ -49,7 +49,7 @@
 
 namespace webrtc {
 
-NetEqImpl::NetEqImpl(int fs,
+NetEqImpl::NetEqImpl(const NetEq::Config& config,
                      BufferLevelFilter* buffer_level_filter,
                      DecoderDatabase* decoder_database,
                      DelayManager* delay_manager,
@@ -90,8 +90,10 @@ NetEqImpl::NetEqImpl(int fs,
       first_packet_(true),
       error_code_(0),
       decoder_error_code_(0),
+      background_noise_mode_(config.background_noise_mode),
       decoded_packet_sequence_number_(-1),
       decoded_packet_timestamp_(0) {
+  int fs = config.sample_rate_hz;
   if (fs != 8000 && fs != 16000 && fs != 32000 && fs != 48000) {
     LOG(LS_ERROR) << "Sample rate " << fs << " Hz not supported. " <<
         "Changing to 8000 Hz.";
@@ -382,18 +384,6 @@ int NetEqImpl::DecodedRtpInfo(int* sequence_number, uint32_t* timestamp) const {
   *sequence_number = decoded_packet_sequence_number_;
   *timestamp = decoded_packet_timestamp_;
   return 0;
-}
-
-void NetEqImpl::SetBackgroundNoiseMode(NetEqBackgroundNoiseMode mode) {
-  CriticalSectionScoped lock(crit_sect_.get());
-  assert(background_noise_.get());
-  background_noise_->set_mode(mode);
-}
-
-NetEqBackgroundNoiseMode NetEqImpl::BackgroundNoiseMode() const {
-  CriticalSectionScoped lock(crit_sect_.get());
-  assert(background_noise_.get());
-  return background_noise_->mode();
 }
 
 const SyncBuffer* NetEqImpl::sync_buffer_for_test() const {
@@ -1873,14 +1863,9 @@ void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
   // Delete sync buffer and create a new one.
   sync_buffer_.reset(new SyncBuffer(channels, kSyncBufferSize * fs_mult_));
 
-
-  // Delete BackgroundNoise object and create a new one, while preserving its
-  // mode.
-  NetEqBackgroundNoiseMode current_mode = kBgnOn;
-  if (background_noise_.get())
-    current_mode = background_noise_->mode();
+  // Delete BackgroundNoise object and create a new one.
   background_noise_.reset(new BackgroundNoise(channels));
-  background_noise_->set_mode(current_mode);
+  background_noise_->set_mode(background_noise_mode_);
 
   // Reset random vector.
   random_vector_.Reset();

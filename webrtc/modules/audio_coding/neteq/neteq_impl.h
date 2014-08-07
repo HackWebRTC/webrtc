@@ -58,7 +58,7 @@ class NetEqImpl : public webrtc::NetEq {
  public:
   // Creates a new NetEqImpl object. The object will assume ownership of all
   // injected dependencies, and will delete them when done.
-  NetEqImpl(int fs,
+  NetEqImpl(const NetEq::Config& config,
             BufferLevelFilter* buffer_level_filter,
             DecoderDatabase* decoder_database,
             DelayManager* delay_manager,
@@ -190,12 +190,6 @@ class NetEqImpl : public webrtc::NetEq {
   // Get sequence number and timestamp of the latest RTP.
   // This method is to facilitate NACK.
   virtual int DecodedRtpInfo(int* sequence_number, uint32_t* timestamp) const;
-
-  // Sets background noise mode.
-  virtual void SetBackgroundNoiseMode(NetEqBackgroundNoiseMode mode);
-
-  // Gets background noise mode.
-  virtual NetEqBackgroundNoiseMode BackgroundNoiseMode() const;
 
   // This accessor method is only intended for testing purposes.
   virtual const SyncBuffer* sync_buffer_for_test() const;
@@ -387,6 +381,7 @@ class NetEqImpl : public webrtc::NetEq {
   bool first_packet_ GUARDED_BY(crit_sect_);
   int error_code_ GUARDED_BY(crit_sect_);  // Store last error code.
   int decoder_error_code_ GUARDED_BY(crit_sect_);
+  const BackgroundNoiseMode background_noise_mode_ GUARDED_BY(crit_sect_);
 
   // These values are used by NACK module to estimate time-to-play of
   // a missing packet. Occasionally, NetEq might decide to decode more

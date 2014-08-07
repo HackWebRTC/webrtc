@@ -210,29 +210,25 @@ int AcmReceiver::current_sample_rate_hz() const {
 
 // TODO(turajs): use one set of enumerators, e.g. the one defined in
 // common_types.h
+// TODO(henrik.lundin): This method is not used any longer. The call hierarchy
+// stops in voe::Channel::SetNetEQPlayoutMode(). Remove it.
 void AcmReceiver::SetPlayoutMode(AudioPlayoutMode mode) {
   enum NetEqPlayoutMode playout_mode = kPlayoutOn;
-  enum NetEqBackgroundNoiseMode bgn_mode = kBgnOn;
   switch (mode) {
     case voice:
       playout_mode = kPlayoutOn;
-      bgn_mode = kBgnOn;
       break;
     case fax:  // No change to background noise mode.
       playout_mode = kPlayoutFax;
-      bgn_mode = neteq_->BackgroundNoiseMode();
       break;
     case streaming:
       playout_mode = kPlayoutStreaming;
-      bgn_mode = kBgnOff;
       break;
     case off:
       playout_mode = kPlayoutOff;
-      bgn_mode = kBgnOff;
       break;
   }
   neteq_->SetPlayoutMode(playout_mode);
-  neteq_->SetBackgroundNoiseMode(bgn_mode);
 }
 
 AudioPlayoutMode AcmReceiver::PlayoutMode() const {
@@ -798,10 +794,6 @@ bool AcmReceiver::GetSilence(int desired_sample_rate_hz, AudioFrame* frame) {
   int samples = frame->samples_per_channel_ * frame->num_channels_;
   memset(frame->data_, 0, samples * sizeof(int16_t));
   return true;
-}
-
-NetEqBackgroundNoiseMode AcmReceiver::BackgroundNoiseModeForTest() const {
-  return neteq_->BackgroundNoiseMode();
 }
 
 int AcmReceiver::RtpHeaderToCodecIndex(

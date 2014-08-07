@@ -44,7 +44,7 @@ NetEq* NetEq::Create(const NetEq::Config& config) {
   ExpandFactory* expand_factory = new ExpandFactory;
   PreemptiveExpandFactory* preemptive_expand_factory =
       new PreemptiveExpandFactory;
-  return new NetEqImpl(config.sample_rate_hz,
+  return new NetEqImpl(config,
                        buffer_level_filter,
                        decoder_database,
                        delay_manager,

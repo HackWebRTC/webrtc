@@ -308,12 +308,6 @@ class AcmReceiver {
   std::vector<uint16_t> GetNackList(int round_trip_time_ms) const;
 
   //
-  // Returns the background noise mode. This is only for testing and ACM is not
-  // calling this function. Used in acm_receiver_unittest.cc.
-  //
-  NetEqBackgroundNoiseMode BackgroundNoiseModeForTest() const;
-
-  //
   // Get statistics of calls to GetAudio().
   void GetDecodingCallStatistics(AudioDecodingCallStats* stats) const;
 

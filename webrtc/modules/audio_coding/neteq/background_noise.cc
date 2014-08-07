@@ -24,7 +24,7 @@ namespace webrtc {
 BackgroundNoise::BackgroundNoise(size_t num_channels)
     : num_channels_(num_channels),
       channel_parameters_(new ChannelParameters[num_channels_]),
-      mode_(kBgnOn) {
+      mode_(NetEq::kBgnOn) {
   Reset();
 }
 

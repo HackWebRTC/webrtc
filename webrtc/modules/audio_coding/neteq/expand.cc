@@ -806,7 +806,7 @@ void Expand::GenerateBackgroundNoise(int16_t* random_vector,
                                      int16_t* buffer) {
   static const int kNoiseLpcOrder = BackgroundNoise::kMaxLpcOrder;
   int16_t scaled_random_vector[kMaxSampleRate / 8000 * 125];
-  assert(kMaxSampleRate / 8000 * 125 >= (int)num_noise_samples);
+  assert(static_cast<size_t>(kMaxSampleRate / 8000 * 125) >= num_noise_samples);
   int16_t* noise_samples = &buffer[kNoiseLpcOrder];
   if (background_noise_->initialized()) {
     // Use background noise parameters.
@@ -838,8 +838,9 @@ void Expand::GenerateBackgroundNoise(int16_t* random_vector,
 
     // Unmute the background noise.
     int16_t bgn_mute_factor = background_noise_->MuteFactor(channel);
-    NetEqBackgroundNoiseMode bgn_mode = background_noise_->mode();
-    if (bgn_mode == kBgnFade && too_many_expands && bgn_mute_factor > 0) {
+    NetEq::BackgroundNoiseMode bgn_mode = background_noise_->mode();
+    if (bgn_mode == NetEq::kBgnFade && too_many_expands &&
+        bgn_mute_factor > 0) {
       // Fade BGN to zero.
       // Calculate muting slope, approximately -2^18 / fs_hz.
       int16_t mute_slope;
@@ -862,8 +863,8 @@ void Expand::GenerateBackgroundNoise(int16_t* random_vector,
     } else if (bgn_mute_factor < 16384) {
       // If mode is kBgnOff, or if kBgnFade has started fading,
       // Use regular |mute_slope|.
-      if (!stop_muting_ && bgn_mode != kBgnOff &&
-          !(bgn_mode == kBgnFade && too_many_expands)) {
+      if (!stop_muting_ && bgn_mode != NetEq::kBgnOff &&
+          !(bgn_mode == NetEq::kBgnFade && too_many_expands)) {
         DspHelper::UnmuteSignal(noise_samples,
                                 static_cast<int>(num_noise_samples),
                                 &bgn_mute_factor,
@@ -893,7 +894,7 @@ void Expand::GenerateRandomVector(int seed_increment,
   // just as good to generate all of the vector in one call.
   size_t samples_generated = 0;
   const size_t kMaxRandSamples = RandomVector::kRandomTableSize;
-  while(samples_generated < length) {
+  while (samples_generated < length) {
     size_t rand_length = std::min(length - samples_generated, kMaxRandSamples);
     random_vector_->IncreaseSeedIncrement(seed_increment);
     random_vector_->Generate(rand_length, &random_vector[samples_generated]);

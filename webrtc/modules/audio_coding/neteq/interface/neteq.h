@@ -58,27 +58,29 @@ enum NetEqPlayoutMode {
   kPlayoutStreaming
 };
 
-enum NetEqBackgroundNoiseMode {
-  kBgnOn,    // Default behavior with eternal noise.
-  kBgnFade,  // Noise fades to zero after some time.
-  kBgnOff    // Background noise is always zero.
-};
-
 // This is the interface class for NetEq.
 class NetEq {
  public:
+  enum BackgroundNoiseMode {
+    kBgnOn,    // Default behavior with eternal noise.
+    kBgnFade,  // Noise fades to zero after some time.
+    kBgnOff    // Background noise is always zero.
+  };
+
   struct Config {
     Config()
         : sample_rate_hz(16000),
           enable_audio_classifier(false),
           max_packets_in_buffer(50),
           // |max_delay_ms| has the same effect as calling SetMaximumDelay().
-          max_delay_ms(2000) {}
+          max_delay_ms(2000),
+          background_noise_mode(kBgnOn) {}
 
     int sample_rate_hz;  // Initial vale. Will change with input data.
     bool enable_audio_classifier;
     int max_packets_in_buffer;
     int max_delay_ms;
+    BackgroundNoiseMode background_noise_mode;
   };
 
   enum ReturnCodes {
@@ -258,12 +260,6 @@ class NetEq {
   // This method is to facilitate NACK.
   virtual int DecodedRtpInfo(int* sequence_number,
                              uint32_t* timestamp) const = 0;
-
-  // Sets the background noise mode.
-  virtual void SetBackgroundNoiseMode(NetEqBackgroundNoiseMode mode) = 0;
-
-  // Gets the background noise mode.
-  virtual NetEqBackgroundNoiseMode BackgroundNoiseMode() const = 0;
 
  protected:
   NetEq() {}

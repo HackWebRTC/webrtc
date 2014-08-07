@@ -140,7 +140,7 @@ class NetEqImplTest : public ::testing::Test {
     PreemptiveExpandFactory* preemptive_expand_factory =
         new PreemptiveExpandFactory;
 
-    neteq_ = new NetEqImpl(config_.sample_rate_hz,
+    neteq_ = new NetEqImpl(config_,
                            buffer_level_filter_,
                            decoder_database_,
                            delay_manager_,
