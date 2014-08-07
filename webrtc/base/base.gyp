@@ -572,7 +572,6 @@
         ['OS=="linux"', {
           'link_settings': {
             'libraries': [
-              '-lcrypto',
               '-ldl',
               '-lrt',
               '-lXext',
