@@ -40,7 +40,7 @@ namespace flags {
 static bool ValidatePayloadType(const char* flagname, int32_t payload_type) {
   return payload_type > 0 && payload_type <= 127;
 }
-DEFINE_int32(payload_type, 0, "Payload type.");
+DEFINE_int32(payload_type, 0, "Payload type");
 static int PayloadType() { return static_cast<int>(FLAGS_payload_type); }
 static const bool payload_dummy =
     google::RegisterFlagValidator(&FLAGS_payload_type, &ValidatePayloadType);
@@ -50,7 +50,7 @@ static bool ValidateSsrc(const char* flagname, uint64_t ssrc) {
   return ssrc > 0 && ssrc <= 0xFFFFFFFFu;
 }
 
-DEFINE_uint64(ssrc, 0, "Incoming SSRC.");
+DEFINE_uint64(ssrc, 0, "Incoming SSRC");
 static uint32_t Ssrc() { return static_cast<uint32_t>(FLAGS_ssrc); }
 static const bool ssrc_dummy =
     google::RegisterFlagValidator(&FLAGS_ssrc, &ValidateSsrc);
@@ -61,7 +61,7 @@ static bool ValidateOptionalPayloadType(const char* flagname,
 }
 
 // Flag for RED payload type.
-DEFINE_int32(red_payload_type, -1, "RED payload type.");
+DEFINE_int32(red_payload_type, -1, "RED payload type");
 static int RedPayloadType() {
   return static_cast<int>(FLAGS_red_payload_type);
 }
@@ -70,7 +70,7 @@ static const bool red_dummy =
                                   &ValidateOptionalPayloadType);
 
 // Flag for ULPFEC payload type.
-DEFINE_int32(fec_payload_type, -1, "ULPFEC payload type.");
+DEFINE_int32(fec_payload_type, -1, "ULPFEC payload type");
 static int FecPayloadType() {
   return static_cast<int>(FLAGS_fec_payload_type);
 }
@@ -83,7 +83,7 @@ static bool ValidateRtpHeaderExtensionId(const char* flagname,
                                          int32_t extension_id) {
   return extension_id >= -1 || extension_id < 15;
 }
-DEFINE_int32(abs_send_time_id, -1, "RTP extension ID for abs-send-time.");
+DEFINE_int32(abs_send_time_id, -1, "RTP extension ID for abs-send-time");
 static int AbsSendTimeId() { return static_cast<int>(FLAGS_abs_send_time_id); }
 static const bool abs_send_time_dummy =
     google::RegisterFlagValidator(&FLAGS_abs_send_time_id,
@@ -92,7 +92,7 @@ static const bool abs_send_time_dummy =
 // Flag for transmission-offset id.
 DEFINE_int32(transmission_offset_id,
              -1,
-             "RTP extension ID for transmission-offset.");
+             "RTP extension ID for transmission-offset");
 static int TransmissionOffsetId() {
   return static_cast<int>(FLAGS_transmission_offset_id);
 }
@@ -101,19 +101,26 @@ static const bool timestamp_offset_dummy =
                                   &ValidateRtpHeaderExtensionId);
 
 // Flag for rtpdump input file.
-DEFINE_string(input_file, "", "rtpdump input file.");
+bool ValidateInputFilenameNotEmpty(const char* flagname,
+                                   const std::string& string) {
+  return string != "";
+}
+DEFINE_string(input_file, "", "input file");
 static std::string InputFile() {
   return static_cast<std::string>(FLAGS_input_file);
 }
+static const bool input_file_dummy =
+    google::RegisterFlagValidator(&FLAGS_input_file,
+                                  &ValidateInputFilenameNotEmpty);
 
 // Flag for raw output files.
-DEFINE_string(out_base, "", "Basename (excluding .yuv) for raw output.");
+DEFINE_string(out_base, "", "Basename (excluding .yuv) for raw output");
 static std::string OutBase() {
   return static_cast<std::string>(FLAGS_out_base);
 }
 
 // Flag for video codec.
-DEFINE_string(codec, "VP8", "Video codec.");
+DEFINE_string(codec, "VP8", "Video codec");
 static std::string Codec() { return static_cast<std::string>(FLAGS_codec); }
 
 }  // namespace flags
@@ -227,6 +234,7 @@ void RtpReplay() {
 
   uint32_t last_time_ms = 0;
   int num_packets = 0;
+  std::map<uint32_t, int> unknown_packets;
   while (true) {
     test::RtpFileReader::Packet packet;
     if (!rtp_reader->NextPacket(&packet))
@@ -239,7 +247,9 @@ void RtpReplay() {
         RTPHeader header;
         scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
         parser->Parse(packet.data, packet.length, &header);
-        fprintf(stderr, "Unknown SSRC: %u!\n", header.ssrc);
+        if (unknown_packets[header.ssrc] == 0)
+          fprintf(stderr, "Unknown SSRC: %u!\n", header.ssrc);
+        ++unknown_packets[header.ssrc];
         break;
       }
       case PacketReceiver::DELIVERY_PACKET_ERROR:
@@ -252,6 +262,13 @@ void RtpReplay() {
     last_time_ms = packet.time_ms;
   }
   fprintf(stderr, "num_packets: %d\n", num_packets);
+
+  for (std::map<uint32_t, int>::const_iterator it = unknown_packets.begin();
+       it != unknown_packets.end();
+       ++it) {
+    fprintf(
+        stderr, "Packets for unknown ssrc '%u': %d\n", it->first, it->second);
+  }
 
   call->DestroyVideoReceiveStream(receive_stream);
 }
