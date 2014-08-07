@@ -369,18 +369,6 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
     // Clear any previous modules.
     vie_receiver_.RegisterSimulcastRtpRtcpModules(simulcast_rtp_rtcp_);
   }
-  // Enable this if H264 is available.
-  // This sets the wanted packetization mode.
-  // if (video_codec.plType == kVideoCodecH264) {
-  //   if (video_codec.codecSpecific.H264.packetization ==  kH264SingleMode) {
-  //     rtp_rtcp_->SetH264PacketizationMode(H264_SINGLE_NAL_MODE);
-  //   } else {
-  //     rtp_rtcp_->SetH264PacketizationMode(H264_NON_INTERLEAVED_MODE);
-  //   }
-  //   if (video_codec.codecSpecific.H264.configParametersSize > 0) {
-  //     rtp_rtcp_->SetH264SendModeNALU_PPS_SPS(true);
-  //   }
-  // }
 
   // Don't log this error, no way to check in advance if this pl_type is
   // registered or not...
