@@ -116,6 +116,8 @@ class MediaConstraintsInterface {
   static const char kEnableVideoSuspendBelowMinBitrate[];
       // googSuspendBelowMinBitrate
   static const char kImprovedWifiBwe[];  // googImprovedWifiBwe
+  static const char kNumUnsignalledRecvStreams[];
+      // googNumUnsignalledRecvStreams
   static const char kScreencastMinBitrate[];  // googScreencastMinBitrate
   static const char kCpuOveruseDetection[];  // googCpuOveruseDetection
   static const char kCpuUnderuseThreshold[];  // googCpuUnderuseThreshold

@@ -95,6 +95,8 @@ const char MediaConstraintsInterface::kEnableVideoSuspendBelowMinBitrate[] =
     "googSuspendBelowMinBitrate";
 const char MediaConstraintsInterface::kImprovedWifiBwe[] =
     "googImprovedWifiBwe";
+const char MediaConstraintsInterface::kNumUnsignalledRecvStreams[] =
+    "googNumUnsignalledRecvStreams";
 const char MediaConstraintsInterface::kScreencastMinBitrate[] =
     "googScreencastMinBitrate";
 // TODO(ronghuawu): Remove once cpu overuse detection is stable.

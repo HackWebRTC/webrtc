@@ -73,6 +73,9 @@ extern const char kSdpWithoutIceUfragPwd[];
 extern const char kSdpWithoutSdesAndDtlsDisabled[];
 extern const char kSessionError[];
 extern const char kSessionErrorDesc[];
+// Maximum number of received video streams that will be processed by webrtc
+// even if they are not signalled beforehand.
+extern const int kMaxUnsignalledRecvStreams;
 
 // ICE state callback interface.
 class IceObserver {

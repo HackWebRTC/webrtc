@@ -98,6 +98,7 @@ using webrtc::kSdpWithoutDtlsFingerprint;
 using webrtc::kSdpWithoutSdesCrypto;
 using webrtc::kSessionError;
 using webrtc::kSessionErrorDesc;
+using webrtc::kMaxUnsignalledRecvStreams;
 
 typedef PeerConnectionInterface::RTCOfferAnswerOptions RTCOfferAnswerOptions;
 
@@ -535,6 +536,28 @@ class WebRtcSessionTest : public testing::Test {
     scoped_ptr<SessionDescriptionInterface> answer(CreateAnswer(NULL));
     ASSERT_TRUE(answer.get() != NULL);
     VerifyCryptoParams(answer->description());
+  }
+
+  void SetAndVerifyNumUnsignalledRecvStreams(
+      int value_set, int value_expected) {
+    constraints_.reset(new FakeConstraints());
+    constraints_->AddOptional(
+        webrtc::MediaConstraintsInterface::kNumUnsignalledRecvStreams,
+        value_set);
+    session_.reset();
+    Init(NULL);
+    mediastream_signaling_.SendAudioVideoStream1();
+    SessionDescriptionInterface* offer = CreateOffer();
+
+    SetLocalDescriptionWithoutError(offer);
+
+    video_channel_ = media_engine_->GetVideoChannel(0);
+
+    ASSERT_TRUE(video_channel_ != NULL);
+    cricket::VideoOptions video_options;
+    EXPECT_TRUE(video_channel_->GetOptions(&video_options));
+    EXPECT_EQ(value_expected,
+        video_options.unsignalled_recv_stream_limit.GetWithDefaultIfUnset(-1));
   }
 
   void CompareIceUfragAndPassword(const cricket::SessionDescription* desc1,
@@ -3277,6 +3300,15 @@ TEST_F(WebRtcSessionTest, TestSuspendBelowMinBitrateConstraint) {
   EXPECT_TRUE(video_channel_->GetOptions(&video_options));
   EXPECT_TRUE(
       video_options.suspend_below_min_bitrate.GetWithDefaultIfUnset(false));
+}
+
+TEST_F(WebRtcSessionTest, TestNumUnsignalledRecvStreamsConstraint) {
+  // Number of unsignalled receiving streams should be between 0 and
+  // kMaxUnsignalledRecvStreams.
+  SetAndVerifyNumUnsignalledRecvStreams(10, 10);
+  SetAndVerifyNumUnsignalledRecvStreams(kMaxUnsignalledRecvStreams + 1,
+                                        kMaxUnsignalledRecvStreams);
+  SetAndVerifyNumUnsignalledRecvStreams(-1, 0);
 }
 
 // Tests that we can renegotiate new media content with ICE candidates in the

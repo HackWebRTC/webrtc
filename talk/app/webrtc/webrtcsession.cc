@@ -38,6 +38,7 @@
 #include "talk/app/webrtc/mediastreamsignaling.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/app/webrtc/webrtcsessiondescriptionfactory.h"
+#include "webrtc/base/basictypes.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"
@@ -74,6 +75,7 @@ const char kSdpWithoutIceUfragPwd[] =
     "Called with SDP without ice-ufrag and ice-pwd.";
 const char kSessionError[] = "Session error code: ";
 const char kSessionErrorDesc[] = "Session error description: ";
+const int kMaxUnsignalledRecvStreams = 20;
 
 // Compares |answer| against |offer|. Comparision is done
 // for number of m-lines in answer against offer. If matches true will be
@@ -587,6 +589,17 @@ bool WebRtcSession::Initialize(
   } else {
     // Enable by default if the constraint is not set.
     video_options_.use_improved_wifi_bandwidth_estimator.Set(true);
+  }
+
+  SetOptionFromOptionalConstraint(constraints,
+      MediaConstraintsInterface::kNumUnsignalledRecvStreams,
+      &video_options_.unsignalled_recv_stream_limit);
+  if (video_options_.unsignalled_recv_stream_limit.IsSet()) {
+    int stream_limit;
+    video_options_.unsignalled_recv_stream_limit.Get(&stream_limit);
+    stream_limit = rtc::_min(kMaxUnsignalledRecvStreams, stream_limit);
+    stream_limit = rtc::_max(0, stream_limit);
+    video_options_.unsignalled_recv_stream_limit.Set(stream_limit);
   }
 
   SetOptionFromOptionalConstraint(constraints,
