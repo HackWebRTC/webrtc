@@ -34,6 +34,7 @@
 #include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/socketadapters.h"
+#include "webrtc/base/ssladapter.h"
 #include "webrtc/base/thread.h"
 #include "talk/p2p/base/asyncstuntcpsocket.h"
 #include "talk/p2p/base/stun.h"
@@ -120,12 +121,6 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
     const SocketAddress& local_address, const SocketAddress& remote_address,
     const ProxyInfo& proxy_info, const std::string& user_agent, int opts) {
 
-  // Fail if TLS is required.
-  if (opts & PacketSocketFactory::OPT_TLS) {
-    LOG(LS_ERROR) << "TLS support currently is not available.";
-    return NULL;
-  }
-
   rtc::AsyncSocket* socket =
       socket_factory()->CreateAsyncSocket(local_address.family(), SOCK_STREAM);
   if (!socket) {
@@ -149,8 +144,24 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
         proxy_info.username, proxy_info.password);
   }
 
+  // If using TLS, wrap the socket in an SSL adapter.
+  if (opts & PacketSocketFactory::OPT_TLS) {
+    ASSERT(!(opts & PacketSocketFactory::OPT_SSLTCP));
+
+    rtc::SSLAdapter* ssl_adapter = rtc::SSLAdapter::Create(socket);
+    if (!ssl_adapter) {
+      return NULL;
+    }
+
+    socket = ssl_adapter;
+
+    if (ssl_adapter->StartSSL(remote_address.hostname().c_str(), false) != 0) {
+      delete ssl_adapter;
+      return NULL;
+    }
+
   // If using SSLTCP, wrap the TCP socket in a pseudo-SSL socket.
-  if (opts & PacketSocketFactory::OPT_SSLTCP) {
+  } else if (opts & PacketSocketFactory::OPT_SSLTCP) {
     ASSERT(!(opts & PacketSocketFactory::OPT_TLS));
     socket = new rtc::AsyncSSLSocket(socket);
   }
