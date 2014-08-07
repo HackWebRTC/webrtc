@@ -31,14 +31,14 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/fileutils.h"
-#include "webrtc/base/sigslotrepeater.h"
-#include "webrtc/base/thread.h"
 #include "talk/media/base/capturemanager.h"
 #include "talk/media/base/mediaengine.h"
 #include "talk/p2p/base/session.h"
 #include "talk/session/media/voicechannel.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/fileutils.h"
+#include "webrtc/base/sigslotrepeater.h"
+#include "webrtc/base/thread.h"
 
 namespace cricket {
 
@@ -157,6 +157,8 @@ class ChannelManager : public rtc::MessageHandler,
   bool GetVideoCaptureDevice(Device* device);
   // Create capturer based on what has been set in SetCaptureDevice().
   VideoCapturer* CreateVideoCapturer();
+  // Create capturer from a screen.
+  VideoCapturer* CreateScreenCapturer(const ScreencastId& screenid);
   bool SetCaptureDevice(const std::string& cam_device);
   bool SetDefaultVideoEncoderConfig(const VideoEncoderConfig& config);
   // RTX will be enabled/disabled in engines that support it. The supporting
@@ -240,6 +242,9 @@ class ChannelManager : public rtc::MessageHandler,
                        const AudioOptions& options,
                        int delay_offset);
   int audio_delay_offset() const { return audio_delay_offset_; }
+  // This is here so that ChannelManager subclasses can set the video
+  // capturer factories to use.
+  DeviceManagerInterface* device_manager() { return device_manager_.get(); }
 
  private:
   typedef std::vector<VoiceChannel*> VoiceChannels;

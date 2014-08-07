@@ -31,11 +31,12 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/window.h"
-#include "webrtc/base/windowpicker.h"
 #include "talk/media/base/fakevideocapturer.h"
 #include "talk/media/base/mediacommon.h"
 #include "talk/media/devices/devicemanager.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/window.h"
+#include "webrtc/base/windowpicker.h"
 
 namespace cricket {
 
@@ -79,6 +80,13 @@ class FakeDeviceManager : public DeviceManagerInterface {
     *devs = vidcap_devices_;
     return true;
   }
+  virtual void SetVideoDeviceCapturerFactory(
+      VideoDeviceCapturerFactory* video_device_capturer_factory) {
+  }
+  virtual void SetScreenCapturerFactory(
+      ScreenCapturerFactory* screen_capturer_factory) {
+    screen_capturer_factory_.reset(screen_capturer_factory);
+  }
   virtual void SetVideoCaptureDeviceMaxFormat(const std::string& usb_id,
                                               const VideoFormat& max_format) {
     max_formats_[usb_id] = max_format;
@@ -96,6 +104,13 @@ class FakeDeviceManager : public DeviceManagerInterface {
   }
   virtual VideoCapturer* CreateVideoCapturer(const Device& device) const {
     return new FakeVideoCapturer();
+  }
+  virtual VideoCapturer* CreateScreenCapturer(
+      const ScreencastId& screenid) const {
+    if (!screen_capturer_factory_) {
+      return new FakeVideoCapturer();
+    }
+    return screen_capturer_factory_->Create(screenid);
   }
   virtual bool GetWindows(
       std::vector<rtc::WindowDescription>* descriptions) {
@@ -215,6 +230,8 @@ class FakeDeviceManager : public DeviceManagerInterface {
   std::vector<Device> output_devices_;
   std::vector<Device> vidcap_devices_;
   std::map<std::string, VideoFormat> max_formats_;
+  rtc::scoped_ptr<
+    ScreenCapturerFactory> screen_capturer_factory_;
 };
 
 }  // namespace cricket
