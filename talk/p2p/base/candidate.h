@@ -139,6 +139,10 @@ class Candidate {
       const rtc::SocketAddress & related_address) {
     related_address_ = related_address;
   }
+  const std::string& tcptype() const { return tcptype_; }
+  void set_tcptype(const std::string& tcptype){
+    tcptype_ = tcptype;
+  }
 
   // Determines whether this candidate is equivalent to the given one.
   bool IsEquivalent(const Candidate& c) const {
@@ -217,6 +221,7 @@ class Candidate {
   uint32 generation_;
   std::string foundation_;
   rtc::SocketAddress related_address_;
+  std::string tcptype_;
 };
 
 }  // namespace cricket

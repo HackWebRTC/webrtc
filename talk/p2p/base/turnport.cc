@@ -526,6 +526,7 @@ void TurnPort::OnAllocateSuccess(const rtc::SocketAddress& address,
              address,  // Base address.
              stun_address,  // Related address.
              UDP_PROTOCOL_NAME,
+             "",  // TCP canddiate type, empty for turn candidates.
              RELAY_PORT_TYPE,
              GetRelayPreference(server_address_.proto, server_address_.secure),
              server_priority_,

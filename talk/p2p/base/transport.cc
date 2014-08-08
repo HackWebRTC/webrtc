@@ -34,6 +34,7 @@
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/sessionmanager.h"
 #include "talk/p2p/base/parsing.h"
+#include "talk/p2p/base/port.h"
 #include "talk/p2p/base/transportchannelimpl.h"
 #include "talk/xmllite/xmlelement.h"
 #include "talk/xmpp/constants.h"
@@ -438,11 +439,12 @@ bool Transport::VerifyCandidate(const Candidate& cand, std::string* error) {
 
   // Disallow all ports below 1024, except for 80 and 443 on public addresses.
   int port = cand.address().port();
-  if (port == 0) {
+  if (cand.protocol() == TCP_PROTOCOL_NAME &&
+      (cand.tcptype() == TCPTYPE_ACTIVE_STR || port == 0)) {
     // Expected for active-only candidates per
     // http://tools.ietf.org/html/rfc6544#section-4.5 so no error.
-    *error = "";
-    return false;
+    // Libjingle clients emit port 0, in "active" mode.
+    return true;
   }
   if (port < 1024) {
     if ((port != 80) && (port != 443)) {

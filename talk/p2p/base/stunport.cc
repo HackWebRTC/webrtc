@@ -289,8 +289,8 @@ int UDPPort::GetError() {
 void UDPPort::OnLocalAddressReady(rtc::AsyncPacketSocket* socket,
                                   const rtc::SocketAddress& address) {
   AddAddress(address, address, rtc::SocketAddress(),
-             UDP_PROTOCOL_NAME, LOCAL_PORT_TYPE,
-             ICE_TYPE_PREFERENCE_HOST, false);
+             UDP_PROTOCOL_NAME, "", LOCAL_PORT_TYPE,
+             ICE_TYPE_PREFERENCE_HOST, 0, false);
   MaybePrepareStunCandidate();
 }
 
@@ -394,8 +394,8 @@ void UDPPort::OnStunBindingRequestSucceeded(
     // address then discarding the stun address.
     // For STUN related address is local socket address.
     AddAddress(stun_reflected_addr, socket_->GetLocalAddress(),
-               socket_->GetLocalAddress(), UDP_PROTOCOL_NAME,
-               STUN_PORT_TYPE, ICE_TYPE_PREFERENCE_SRFLX, false);
+               socket_->GetLocalAddress(), UDP_PROTOCOL_NAME, "",
+               STUN_PORT_TYPE, ICE_TYPE_PREFERENCE_SRFLX, 0, false);
   }
   MaybeSetPortCompleteOrError();
 }

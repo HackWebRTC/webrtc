@@ -147,6 +147,12 @@ bool StringToProto(const char* value, ProtocolType* proto) {
   return false;
 }
 
+// RFC 6544, TCP candidate encoding rules.
+const int DISCARD_PORT = 9;
+const char TCPTYPE_ACTIVE_STR[] = "active";
+const char TCPTYPE_PASSIVE_STR[] = "passive";
+const char TCPTYPE_SIMOPEN_STR[] = "so";
+
 // Foundation:  An arbitrary string that is the same for two candidates
 //   that have the same type, base IP address, protocol (UDP, TCP,
 //   etc.), and STUN or TURN server.  If any of these are different,
@@ -250,26 +256,21 @@ void Port::AddAddress(const rtc::SocketAddress& address,
                       const rtc::SocketAddress& base_address,
                       const rtc::SocketAddress& related_address,
                       const std::string& protocol,
-                      const std::string& type,
-                      uint32 type_preference,
-                      bool final) {
-  AddAddress(address, base_address, related_address, protocol,
-             type, type_preference, 0, final);
-}
-
-void Port::AddAddress(const rtc::SocketAddress& address,
-                      const rtc::SocketAddress& base_address,
-                      const rtc::SocketAddress& related_address,
-                      const std::string& protocol,
+                      const std::string& tcptype,
                       const std::string& type,
                       uint32 type_preference,
                       uint32 relay_preference,
                       bool final) {
+  if (protocol == TCP_PROTOCOL_NAME && type == LOCAL_PORT_TYPE) {
+    ASSERT(!tcptype.empty());
+  }
+
   Candidate c;
   c.set_id(rtc::CreateRandomString(8));
   c.set_component(component_);
   c.set_type(type);
   c.set_protocol(protocol);
+  c.set_tcptype(tcptype);
   c.set_address(address);
   c.set_priority(c.GetPriority(type_preference, network_->preference(),
                                relay_preference));

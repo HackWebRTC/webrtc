@@ -354,6 +354,19 @@ static const char kRawCandidate[] =
 static const char kSdpOneCandidate[] =
     "a=candidate:a0+B/1 1 udp 2130706432 192.168.1.5 1234 typ host "
     "generation 2\r\n";
+static const char kSdpTcpActiveCandidate[] =
+    "candidate:a0+B/1 1 tcp 2130706432 192.168.1.5 9 typ host "
+    "tcptype active generation 2";
+static const char kSdpTcpPassiveCandidate[] =
+    "candidate:a0+B/1 1 tcp 2130706432 192.168.1.5 9 typ host "
+    "tcptype passive generation 2";
+static const char kSdpTcpSOCandidate[] =
+    "candidate:a0+B/1 1 tcp 2130706432 192.168.1.5 9 typ host "
+    "tcptype so generation 2";
+static const char kSdpTcpInvalidCandidate[] =
+    "candidate:a0+B/1 1 tcp 2130706432 192.168.1.5 9 typ host "
+    "tcptype invalid generation 2";
+
 
 // One candidate reference string.
 static const char kSdpOneCandidateOldFormat[] =
@@ -1611,6 +1624,22 @@ TEST_F(WebRtcSdpTest, SerializeCandidates) {
   EXPECT_EQ(std::string(kRawCandidate), message);
 }
 
+// TODO(mallinath) : Enable this test once WebRTCSdp capable of parsing
+// RFC 6544.
+TEST_F(WebRtcSdpTest, DISABLED_SerializeTcpCandidates) {
+  Candidate candidate(
+      "", ICE_CANDIDATE_COMPONENT_RTP, "tcp",
+      rtc::SocketAddress("192.168.1.5", 9), kCandidatePriority,
+      "", "", LOCAL_PORT_TYPE,
+      "", kCandidateGeneration, kCandidateFoundation1);
+  candidate.set_tcptype(cricket::TCPTYPE_ACTIVE_STR);
+  rtc::scoped_ptr<IceCandidateInterface> jcandidate(
+    new JsepIceCandidate(std::string("audio_content_name"), 0, candidate));
+
+  std::string message = webrtc::SdpSerializeCandidate(*jcandidate);
+  EXPECT_EQ(std::string(kSdpTcpActiveCandidate), message);
+}
+
 TEST_F(WebRtcSdpTest, DeserializeSessionDescription) {
   JsepSessionDescription jdesc(kDummyString);
   // Deserialize
@@ -1897,6 +1926,25 @@ TEST_F(WebRtcSdpTest, DeserializeCandidate) {
   EXPECT_EQ(kDummyMid, jcandidate.sdp_mid());
   EXPECT_EQ(kDummyIndex, jcandidate.sdp_mline_index());
   EXPECT_TRUE(jcandidate.candidate().IsEquivalent(jcandidate_->candidate()));
+
+  sdp = kSdpTcpActiveCandidate;
+  EXPECT_TRUE(SdpDeserializeCandidate(sdp, &jcandidate));
+  // Make a cricket::Candidate equivalent to kSdpTcpCandidate string.
+  Candidate candidate(
+      "", ICE_CANDIDATE_COMPONENT_RTP, "tcp",
+      rtc::SocketAddress("192.168.1.5", 9), kCandidatePriority,
+      "", "", LOCAL_PORT_TYPE,
+      "", kCandidateGeneration, kCandidateFoundation1);
+  rtc::scoped_ptr<IceCandidateInterface> jcandidate_template(
+    new JsepIceCandidate(std::string("audio_content_name"), 0, candidate));
+  EXPECT_TRUE(jcandidate.candidate().IsEquivalent(
+                    jcandidate_template->candidate()));
+  sdp = kSdpTcpPassiveCandidate;
+  EXPECT_TRUE(SdpDeserializeCandidate(sdp, &jcandidate));
+  sdp = kSdpTcpSOCandidate;
+  EXPECT_TRUE(SdpDeserializeCandidate(sdp, &jcandidate));
+  sdp = kSdpTcpInvalidCandidate;
+  EXPECT_FALSE(SdpDeserializeCandidate(sdp, &jcandidate));
 }
 
 // This test verifies the deserialization of candidate-attribute

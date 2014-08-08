@@ -168,6 +168,7 @@ static const char kCandidateSrflx[] = "srflx";
 // TODO: How to map the prflx with circket candidate type
 // static const char kCandidatePrflx[] = "prflx";
 static const char kCandidateRelay[] = "relay";
+static const char kTcpCandidateType[] = "tcptype";
 
 static const char kSdpDelimiterEqual = '=';
 static const char kSdpDelimiterSpace = ' ';
@@ -1042,6 +1043,25 @@ bool ParseCandidate(const std::string& message, Candidate* candidate,
     ++current_position;
   }
 
+  // If this is a TCP candidate, it has additional extension as defined in
+  // RFC 6544.
+  std::string tcptype;
+  if (fields.size() >= (current_position + 2) &&
+      fields[current_position] == kTcpCandidateType) {
+    tcptype = fields[++current_position];
+    ++current_position;
+
+    if (tcptype != cricket::TCPTYPE_ACTIVE_STR &&
+        tcptype != cricket::TCPTYPE_PASSIVE_STR &&
+        tcptype != cricket::TCPTYPE_SIMOPEN_STR) {
+      return ParseFailed(first_line, "Invalid TCP candidate type.", error);
+    }
+
+    if (protocol != cricket::PROTO_TCP) {
+      return ParseFailed(first_line, "Invalid non-TCP candidate", error);
+    }
+  }
+
   // Extension
   // Empty string as the candidate username and password.
   // Will be updated later with the ice-ufrag and ice-pwd.
@@ -1074,6 +1094,7 @@ bool ParseCandidate(const std::string& message, Candidate* candidate,
       address, priority, username, password, candidate_type, network_name,
       generation, foundation);
   candidate->set_related_address(related_address);
+  candidate->set_tcptype(tcptype);
   return true;
 }
 
@@ -1694,11 +1715,14 @@ void BuildCandidate(const std::vector<Candidate>& candidates,
 
     InitAttrLine(kAttributeCandidate, &os);
     os << kSdpDelimiterColon
-       << it->foundation() << " " << it->component() << " "
-       << it->protocol() << " " << it->priority() << " "
+       << it->foundation() << " "
+       << it->component() << " "
+       << it->protocol() << " "
+       << it->priority() << " "
        << it->address().ipaddr().ToString() << " "
        << it->address().PortAsString() << " "
-       << kAttributeCandidateTyp << " " << type << " ";
+       << kAttributeCandidateTyp << " "
+       << type << " ";
 
     // Related address
     if (!it->related_address().IsNil()) {
@@ -1706,6 +1730,17 @@ void BuildCandidate(const std::vector<Candidate>& candidates,
          << it->related_address().ipaddr().ToString() << " "
          << kAttributeCandidateRport << " "
          << it->related_address().PortAsString() << " ";
+    }
+
+    if (it->protocol() == cricket::TCP_PROTOCOL_NAME) {
+      // In case of WebRTC, candidate must be always "active" only. That means
+      // it should have port number either 0 or 9.
+      ASSERT(it->address().port() == 0 ||
+             it->address().port() == cricket::DISCARD_PORT);
+      ASSERT(it->tcptype() == cricket::TCPTYPE_ACTIVE_STR);
+      // TODO(mallinath) : Uncomment below line once WebRTCSdp capable of
+      // parsing RFC 6544.
+      // os << kTcpCandidateType << " " << it->tcptype() << " ";
     }
 
     // Extensions

@@ -244,7 +244,8 @@ void RelayPort::SetReady() {
       // This is due to as mapped address stun attribute is used for allocated
       // address.
       AddAddress(iter->address, iter->address, rtc::SocketAddress(),
-                 proto_name, RELAY_PORT_TYPE, ICE_TYPE_PREFERENCE_RELAY, false);
+                 proto_name, "", RELAY_PORT_TYPE,
+                 ICE_TYPE_PREFERENCE_RELAY, 0, false);
     }
     ready_ = true;
     SignalPortComplete(this);

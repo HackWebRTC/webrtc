@@ -61,6 +61,12 @@ extern const char UDP_PROTOCOL_NAME[];
 extern const char TCP_PROTOCOL_NAME[];
 extern const char SSLTCP_PROTOCOL_NAME[];
 
+// RFC 6544, TCP candidate encoding rules.
+extern const int DISCARD_PORT;
+extern const char TCPTYPE_ACTIVE_STR[];
+extern const char TCPTYPE_PASSIVE_STR[];
+extern const char TCPTYPE_SIMOPEN_STR[];
+
 // The length of time we wait before timing out readability on a connection.
 const uint32 CONNECTION_READ_TIMEOUT = 30 * 1000;   // 30 seconds
 
@@ -308,18 +314,13 @@ class Port : public PortInterface, public rtc::MessageHandler,
   };
 
   void set_type(const std::string& type) { type_ = type; }
-  // Fills in the local address of the port.
-  void AddAddress(const rtc::SocketAddress& address,
-                  const rtc::SocketAddress& base_address,
-                  const rtc::SocketAddress& related_address,
-                  const std::string& protocol, const std::string& type,
-                  uint32 type_preference, bool final);
 
   void AddAddress(const rtc::SocketAddress& address,
                   const rtc::SocketAddress& base_address,
                   const rtc::SocketAddress& related_address,
-                  const std::string& protocol, const std::string& type,
-                  uint32 type_preference, uint32 relay_preference, bool final);
+                  const std::string& protocol, const std::string& tcptype,
+                  const std::string& type, uint32 type_preference,
+                  uint32 relay_preference, bool final);
 
   // Adds the given connection to the list.  (Deleting removes them.)
   void AddConnection(Connection* conn);

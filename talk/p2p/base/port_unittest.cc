@@ -146,22 +146,22 @@ class TestPort : public Port {
 
   virtual void PrepareAddress() {
     rtc::SocketAddress addr(ip(), min_port());
-    AddAddress(addr, addr, rtc::SocketAddress(), "udp", Type(),
-               ICE_TYPE_PREFERENCE_HOST, true);
+    AddAddress(addr, addr, rtc::SocketAddress(), "udp", "", Type(),
+               ICE_TYPE_PREFERENCE_HOST, 0, true);
   }
 
   // Exposed for testing candidate building.
   void AddCandidateAddress(const rtc::SocketAddress& addr) {
-    AddAddress(addr, addr, rtc::SocketAddress(), "udp", Type(),
-               type_preference_, false);
+    AddAddress(addr, addr, rtc::SocketAddress(), "udp", "", Type(),
+               type_preference_, 0, false);
   }
   void AddCandidateAddress(const rtc::SocketAddress& addr,
                            const rtc::SocketAddress& base_address,
                            const std::string& type,
                            int type_preference,
                            bool final) {
-    AddAddress(addr, base_address, rtc::SocketAddress(), "udp", type,
-               type_preference, final);
+    AddAddress(addr, base_address, rtc::SocketAddress(), "udp", "", type,
+               type_preference, 0, final);
   }
 
   virtual Connection* CreateConnection(const Candidate& remote_candidate,

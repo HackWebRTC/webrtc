@@ -81,6 +81,13 @@ Connection* TCPPort::CreateConnection(const Candidate& address,
     return NULL;
   }
 
+  if (address.tcptype() == TCPTYPE_ACTIVE_STR ||
+      (address.tcptype().empty() && address.address().port() == 0)) {
+    // It's active only candidate, we should not try to create connections
+    // for these candidates.
+    return NULL;
+  }
+
   // We can't accept TCP connections incoming on other ports
   if (origin == ORIGIN_OTHER_PORT)
     return NULL;
@@ -115,23 +122,23 @@ void TCPPort::PrepareAddress() {
   if (socket_) {
     // If socket isn't bound yet the address will be added in
     // OnAddressReady(). Socket may be in the CLOSED state if Listen()
-    // failed, we still want ot add the socket address.
+    // failed, we still want to add the socket address.
     LOG(LS_VERBOSE) << "Preparing TCP address, current state: "
                     << socket_->GetState();
     if (socket_->GetState() == rtc::AsyncPacketSocket::STATE_BOUND ||
         socket_->GetState() == rtc::AsyncPacketSocket::STATE_CLOSED)
       AddAddress(socket_->GetLocalAddress(), socket_->GetLocalAddress(),
                  rtc::SocketAddress(),
-                 TCP_PROTOCOL_NAME, LOCAL_PORT_TYPE,
-                 ICE_TYPE_PREFERENCE_HOST_TCP, true);
+                 TCP_PROTOCOL_NAME, TCPTYPE_PASSIVE_STR, LOCAL_PORT_TYPE,
+                 ICE_TYPE_PREFERENCE_HOST_TCP, 0, true);
   } else {
     LOG_J(LS_INFO, this) << "Not listening due to firewall restrictions.";
     // Note: We still add the address, since otherwise the remote side won't
     // recognize our incoming TCP connections.
     AddAddress(rtc::SocketAddress(ip(), 0),
                rtc::SocketAddress(ip(), 0), rtc::SocketAddress(),
-               TCP_PROTOCOL_NAME, LOCAL_PORT_TYPE, ICE_TYPE_PREFERENCE_HOST_TCP,
-               true);
+               TCP_PROTOCOL_NAME, TCPTYPE_ACTIVE_STR, LOCAL_PORT_TYPE,
+               ICE_TYPE_PREFERENCE_HOST_TCP, 0, true);
   }
 }
 
@@ -223,9 +230,9 @@ void TCPPort::OnReadyToSend(rtc::AsyncPacketSocket* socket) {
 
 void TCPPort::OnAddressReady(rtc::AsyncPacketSocket* socket,
                              const rtc::SocketAddress& address) {
-  AddAddress(address, address, rtc::SocketAddress(), "tcp",
-             LOCAL_PORT_TYPE, ICE_TYPE_PREFERENCE_HOST_TCP,
-             true);
+  AddAddress(address, address, rtc::SocketAddress(),
+             TCP_PROTOCOL_NAME, TCPTYPE_PASSIVE_STR, LOCAL_PORT_TYPE,
+             ICE_TYPE_PREFERENCE_HOST_TCP, 0, true);
 }
 
 TCPConnection::TCPConnection(TCPPort* port, const Candidate& candidate,
