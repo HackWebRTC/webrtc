@@ -478,16 +478,6 @@ static void AddAttributeLine(const std::string& attribute, int value,
   AddLine(os.str(), message);
 }
 
-// Returns the first line of the message without the line breaker.
-static bool GetFirstLine(const std::string& message, std::string* line) {
-  size_t pos = 0;
-  if (!GetLine(message, &pos, line)) {
-    // If GetLine failed, just return the full |message|.
-    *line = message;
-  }
-  return true;
-}
-
 static bool IsLineType(const std::string& message,
                        const char type,
                        size_t line_start) {
@@ -519,21 +509,6 @@ static bool GetLineWithType(const std::string& message, size_t* pos,
 static bool HasAttribute(const std::string& line,
                          const std::string& attribute) {
   return (line.compare(kLinePrefixLength, attribute.size(), attribute) == 0);
-}
-
-// Verifies the candiate to be of the format candidate:<blah>
-static bool IsRawCandidate(const std::string& line) {
-  // Checking candiadte-attribute is starting with "candidate" str.
-  if (line.compare(0, strlen(kAttributeCandidate), kAttributeCandidate) != 0) {
-    return false;
-  }
-  const size_t first_candidate = line.find(kSdpDelimiterColon);
-  if (first_candidate == std::string::npos)
-    return false;
-  // In this format we only expecting one candiate. If any additional
-  // candidates present, whole string will be discared.
-  const size_t any_other = line.find(kSdpDelimiterColon, first_candidate + 1);
-  return (any_other == std::string::npos);
 }
 
 static bool AddSsrcLine(uint32 ssrc_id, const std::string& attribute,
@@ -949,22 +924,36 @@ bool ParseCandidate(const std::string& message, Candidate* candidate,
   ASSERT(candidate != NULL);
 
   // Get the first line from |message|.
-  std::string first_line;
-  GetFirstLine(message, &first_line);
+  std::string first_line = message;
+  size_t pos = 0;
+  GetLine(message, &pos, &first_line);
 
-  size_t start_pos = kLinePrefixLength;  // Starting position to parse.
-  if (IsRawCandidate(first_line)) {
-    // From WebRTC draft section 4.8.1.1 candidate-attribute will be
-    // just candidate:<candidate> not a=candidate:<blah>CRLF
-    start_pos = 0;
-  } else if (!IsLineType(first_line, kLineTypeAttributes) ||
-             !HasAttribute(first_line, kAttributeCandidate)) {
-    // Must start with a=candidate line.
-    // Expecting to be of the format a=candidate:<blah>CRLF.
+  // Makes sure |message| contains only one line.
+  if (message.size() > first_line.size()) {
+    std::string left, right;
+    if (SplitByDelimiter(message, kNewLine, &left, &right) && !right.empty()) {
+      return ParseFailed(message, 0, "Expect one line only", error);
+    }
+  }
+
+  // From WebRTC draft section 4.8.1.1 candidate-attribute should be
+  // candidate:<candidate> when trickled, but we still support
+  // a=candidate:<blah>CRLF for backward compatibility and for parsing a line
+  // from the SDP.
+  if (IsLineType(first_line, kLineTypeAttributes)) {
+    first_line = first_line.substr(kLinePrefixLength);
+  }
+
+  std::string attribute_candidate;
+  std::string candidate_value;
+
+  // |first_line| must be in the form of "candidate:<value>".
+  if (!SplitByDelimiter(first_line, kSdpDelimiterColon,
+                        &attribute_candidate, &candidate_value) ||
+      attribute_candidate != kAttributeCandidate) {
     if (is_raw) {
       std::ostringstream description;
-      description << "Expect line: "
-                  << kAttributeCandidate
+      description << "Expect line: " << kAttributeCandidate
                   << ":" << "<candidate-str>";
       return ParseFailed(first_line, 0, description.str(), error);
     } else {
@@ -974,8 +963,8 @@ bool ParseCandidate(const std::string& message, Candidate* candidate,
   }
 
   std::vector<std::string> fields;
-  rtc::split(first_line.substr(start_pos),
-                   kSdpDelimiterSpace, &fields);
+  rtc::split(candidate_value, kSdpDelimiterSpace, &fields);
+
   // RFC 5245
   // a=candidate:<foundation> <component-id> <transport> <priority>
   // <connection-address> <port> typ <candidate-types>
@@ -986,10 +975,8 @@ bool ParseCandidate(const std::string& message, Candidate* candidate,
       (fields[6] != kAttributeCandidateTyp)) {
     return ParseFailedExpectMinFieldNum(first_line, expected_min_fields, error);
   }
-  std::string foundation;
-  if (!GetValue(fields[0], kAttributeCandidate, &foundation, error)) {
-    return false;
-  }
+  std::string foundation = fields[0];
+
   int component_id = 0;
   if (!GetValueFromString(first_line, fields[1], &component_id, error)) {
     return false;

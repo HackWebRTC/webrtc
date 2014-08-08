@@ -354,6 +354,7 @@ static const char kRawCandidate[] =
 static const char kSdpOneCandidate[] =
     "a=candidate:a0+B/1 1 udp 2130706432 192.168.1.5 1234 typ host "
     "generation 2\r\n";
+
 static const char kSdpTcpActiveCandidate[] =
     "candidate:a0+B/1 1 tcp 2130706432 192.168.1.5 9 typ host "
     "tcptype active generation 2";
@@ -367,6 +368,10 @@ static const char kSdpTcpInvalidCandidate[] =
     "candidate:a0+B/1 1 tcp 2130706432 192.168.1.5 9 typ host "
     "tcptype invalid generation 2";
 
+// One candidate reference string with IPV6 address.
+static const char kRawIPV6Candidate[] =
+    "candidate:a0+B/1 1 udp 2130706432 "
+    "abcd::abcd::abcd::abcd::abcd::abcd::abcd::abcd 1234 typ host generation 2";
 
 // One candidate reference string.
 static const char kSdpOneCandidateOldFormat[] =
@@ -1918,15 +1923,6 @@ TEST_F(WebRtcSdpTest, DeserializeCandidate) {
   expected.set_generation(0);
   EXPECT_TRUE(jcandidate.candidate().IsEquivalent(expected));
 
-  // Multiple candidate lines.
-  // Only the first line will be deserialized. The rest will be ignored.
-  sdp = kSdpOneCandidate;
-  sdp.append("a=candidate:1 2 tcp 1234 192.168.1.100 5678 typ host\r\n");
-  EXPECT_TRUE(SdpDeserializeCandidate(sdp, &jcandidate));
-  EXPECT_EQ(kDummyMid, jcandidate.sdp_mid());
-  EXPECT_EQ(kDummyIndex, jcandidate.sdp_mline_index());
-  EXPECT_TRUE(jcandidate.candidate().IsEquivalent(jcandidate_->candidate()));
-
   sdp = kSdpTcpActiveCandidate;
   EXPECT_TRUE(SdpDeserializeCandidate(sdp, &jcandidate));
   // Make a cricket::Candidate equivalent to kSdpTcpCandidate string.
@@ -1943,8 +1939,6 @@ TEST_F(WebRtcSdpTest, DeserializeCandidate) {
   EXPECT_TRUE(SdpDeserializeCandidate(sdp, &jcandidate));
   sdp = kSdpTcpSOCandidate;
   EXPECT_TRUE(SdpDeserializeCandidate(sdp, &jcandidate));
-  sdp = kSdpTcpInvalidCandidate;
-  EXPECT_FALSE(SdpDeserializeCandidate(sdp, &jcandidate));
 }
 
 // This test verifies the deserialization of candidate-attribute
@@ -1976,10 +1970,29 @@ TEST_F(WebRtcSdpTest, DeserializeRawCandidateAttribute) {
   Replace("candidate:", "", &candidate_attribute);
   EXPECT_FALSE(SdpDeserializeCandidate(candidate_attribute, &jcandidate));
 
-  // Concatenating additional candidate. Expecting deserialization to fail.
-  candidate_attribute = kRawCandidate;
-  candidate_attribute.append("candidate:1 2 udp 1234 192.168.1.1 typ host");
+  // Candidate line with IPV6 address.
+  EXPECT_TRUE(SdpDeserializeCandidate(kRawIPV6Candidate, &jcandidate));
+}
+
+// This test verifies that the deserialization of an invalid candidate string
+// fails.
+TEST_F(WebRtcSdpTest, DeserializeInvalidCandidiate) {
+    JsepIceCandidate jcandidate(kDummyMid, kDummyIndex);
+
+  std::string candidate_attribute = kRawCandidate;
+  candidate_attribute.replace(0, 1, "x");
   EXPECT_FALSE(SdpDeserializeCandidate(candidate_attribute, &jcandidate));
+
+  candidate_attribute = kSdpOneCandidate;
+  candidate_attribute.replace(0, 1, "x");
+  EXPECT_FALSE(SdpDeserializeCandidate(candidate_attribute, &jcandidate));
+
+  candidate_attribute = kRawCandidate;
+  candidate_attribute.append("\r\n");
+  candidate_attribute.append(kRawCandidate);
+  EXPECT_FALSE(SdpDeserializeCandidate(candidate_attribute, &jcandidate));
+
+  EXPECT_FALSE(SdpDeserializeCandidate(kSdpTcpInvalidCandidate, &jcandidate));
 }
 
 TEST_F(WebRtcSdpTest, DeserializeSdpWithRtpDataChannels) {
