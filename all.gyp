@@ -10,6 +10,8 @@
   'variables': {
     'libjingle_root%': '<(DEPTH)',
     'include_tests%': 1,
+    'webrtc_root_additional_dependencies': [
+    ],
   },
   'targets': [
     {
@@ -20,6 +22,7 @@
         'webrtc/webrtc.gyp:*',
         '<(libjingle_root)/talk/libjingle.gyp:*',
         '<(libjingle_root)/talk/libjingle_examples.gyp:*',
+        '<@(webrtc_root_additional_dependencies)',
       ],
       'conditions': [
         ['OS=="android"', {
