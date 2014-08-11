@@ -65,6 +65,7 @@ class FakeSSLCertificate : public rtc::SSLCertificate {
     std::vector<SSLCertificate*> new_certs(certs_.size());
     std::transform(certs_.begin(), certs_.end(), new_certs.begin(), DupCert);
     *chain = new SSLCertChain(new_certs);
+    std::for_each(new_certs.begin(), new_certs.end(), DeleteCert);
     return true;
   }
 
@@ -72,6 +73,7 @@ class FakeSSLCertificate : public rtc::SSLCertificate {
   static FakeSSLCertificate* DupCert(FakeSSLCertificate cert) {
     return cert.GetReference();
   }
+  static void DeleteCert(SSLCertificate* cert) { delete cert; }
   std::string data_;
   std::vector<FakeSSLCertificate> certs_;
   std::string digest_algorithm_;
