@@ -9,6 +9,10 @@
  */
 
 #include "webrtc/modules/audio_coding/neteq/tools/packet.h"
+
+#include <string.h>
+
+#include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 
 namespace webrtc {
@@ -115,6 +119,14 @@ void Packet::DeleteRedHeaders(std::list<RTPHeader*>* headers) {
     delete headers->front();
     headers->pop_front();
   }
+}
+
+void Packet::ConvertHeader(WebRtcRTPHeader* copy_to) const {
+  memcpy(&copy_to->header, &header_, sizeof(header_));
+  copy_to->frameType = kAudioFrameSpeech;
+  copy_to->type.Audio.numEnergy = 0;
+  copy_to->type.Audio.channel = 1;
+  copy_to->type.Audio.isCNG = false;
 }
 
 bool Packet::ParseHeader(const RtpHeaderParser& parser) {

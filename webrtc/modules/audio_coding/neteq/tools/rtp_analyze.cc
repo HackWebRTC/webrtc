@@ -59,11 +59,6 @@ int main(int argc, char* argv[]) {
     return 0;
   }
 
-  FILE* in_file = fopen(argv[1], "rb");
-  if (!in_file) {
-    printf("Cannot open input file %s\n", argv[1]);
-    return -1;
-  }
   printf("Input file: %s\n", argv[1]);
   webrtc::scoped_ptr<webrtc::test::RtpFileSource> file_source(
       webrtc::test::RtpFileSource::Create(argv[1]));
@@ -140,7 +135,6 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  fclose(in_file);
   fclose(out_file);
 
   return 0;

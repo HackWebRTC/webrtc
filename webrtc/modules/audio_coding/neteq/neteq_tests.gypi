@@ -13,7 +13,6 @@
       'type': 'executable',
       'dependencies': [
         'neteq',
-        'neteq_test_tools',
         'neteq_unittest_tools',
         'PCM16B',
         '<(webrtc_root)/test/test.gyp:test_support_main',
