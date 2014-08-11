@@ -66,13 +66,13 @@
 // GTP/Linux(ChromeOS): TBD, but for the moment we will trust the values.
 #if defined(WEBRTC_CHROMIUM_BUILD) && defined(WEBRTC_MAC)
 #define WEBRTC_UNTRUSTED_DELAY
+#endif
 
-#if defined(WEBRTC_MAC)
+#if defined(WEBRTC_UNTRUSTED_DELAY) && defined(WEBRTC_MAC)
 static const int kDelayDiffOffsetSamples = -160;
 #else
 // Not enabled for now.
 static const int kDelayDiffOffsetSamples = 0;
-#endif
 #endif
 
 #if defined(WEBRTC_MAC)
@@ -790,12 +790,11 @@ static void ProcessExtended(aecpc_t* self,
                             int32_t skew) {
   int i;
   const int num_frames = num_samples / FRAME_LEN;
-#if defined(WEBRTC_UNTRUSTED_DELAY)
   const int delay_diff_offset = kDelayDiffOffsetSamples;
+#if defined(WEBRTC_UNTRUSTED_DELAY)
   reported_delay_ms = kFixedDelayMs;
 #else
   // This is the usual mode where we trust the reported system delay values.
-  const int delay_diff_offset = 0;
   // Due to the longer filter, we no longer add 10 ms to the reported delay
   // to reduce chance of non-causality. Instead we apply a minimum here to avoid
   // issues with the read pointer jumping around needlessly.
