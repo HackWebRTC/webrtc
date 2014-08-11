@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
     ISACStruct*   ISAC_main_inst;
 
     int16_t   stream_len = 0;
-    int16_t   declen;
+    int16_t   declen = 0;
     int16_t   err;
     int16_t   cur_framesmpls;
     int           endfile;

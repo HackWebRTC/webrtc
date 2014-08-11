@@ -52,7 +52,7 @@ public:
     ViERtcpObserver() :
         _channel(-1),
         _subType(0),
-        _name(-1),
+        _name(0),
         _data(NULL),
         _dataLength(0)
     {

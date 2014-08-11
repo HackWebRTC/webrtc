@@ -52,7 +52,7 @@ class TestPackStereo : public AudioPacketizationCallback {
   uint32_t timestamp_diff_;
   uint32_t last_in_timestamp_;
   uint64_t total_bytes_;
-  uint16_t payload_size_;
+  int payload_size_;
   StereoMonoMode codec_mode_;
   // Simulate packet losses
   bool lost_packet_;

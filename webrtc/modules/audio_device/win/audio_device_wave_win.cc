@@ -428,7 +428,7 @@ DWORD AudioDeviceWindowsWave::DoGetCaptureVolumeThread()
             default:            // unexpected error
                 WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                     "  unknown wait termination on get volume thread");
-                return -1;
+                return 1;
         }
 
         if (AGC())
@@ -464,7 +464,7 @@ DWORD AudioDeviceWindowsWave::DoSetCaptureVolumeThread()
             default:                // unexpected error
                 WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                     "  unknown wait termination on set volume thread");
-                return -1;
+                return 1;
         }
 
         _critSect.Enter();
@@ -3310,7 +3310,7 @@ int32_t AudioDeviceWindowsWave::RecProc(LONGLONG& consumedTime)
         _sndCardPlayDelay = msecOnPlaySide;
         _sndCardRecDelay = msecOnRecordSide;
 
-        LARGE_INTEGER t1,t2;
+        LARGE_INTEGER t1={0},t2={0};
 
         if (send)
         {

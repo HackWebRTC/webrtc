@@ -102,7 +102,7 @@ config("linux_system_ssl_config") {
 # Chromium, it is not possible today.
 config("linux_system_ssl") {
   if (use_openssl) {
-    deps = [ "//third_party/openssl" ]
+    deps = [ "//third_party/boringssl" ]
   } else {
     deps = [ "//net/third_party/nss/ssl:libssl" ]
 
@@ -311,7 +311,7 @@ static_library("webrtc_base") {
 
     include_dirs = [
       "../overrides",
-      "../../openssl/openssl/include",
+      "../../boringssl/src/include",
     ]
 
     direct_dependent_configs += [ ":webrtc_base_chromium_config" ]
@@ -445,7 +445,7 @@ static_library("webrtc_base") {
   if (use_openssl) {
     direct_dependent_configs += [ ":openssl_config" ]
 
-    deps += [ "//third_party/openssl" ]
+    deps += [ "//third_party/boringssl" ]
   } else {
     direct_dependent_configs += [ ":no_openssl_config" ]
   }

@@ -710,10 +710,10 @@ void TestAllCodecs::RegisterSendCodec(char side, char* codec_name,
   }
 
   // Store the expected packet size in bytes, used to validate the received
-  // packet. If variable rate codec (extra_byte == -1), set to -1 (65535).
+  // packet. If variable rate codec (extra_byte == -1), set to -1.
   if (extra_byte != -1) {
     // Add 0.875 to always round up to a whole byte
-    packet_size_bytes_ = static_cast<uint16_t>(static_cast<float>(packet_size
+    packet_size_bytes_ = static_cast<int>(static_cast<float>(packet_size
         * rate) / static_cast<float>(sampling_freq_hz * 8) + 0.875)
         + extra_byte;
   } else {
@@ -768,8 +768,8 @@ void TestAllCodecs::Run(TestPack* channel) {
     // Verify that the received packet size matches the settings.
     receive_size = channel->payload_size();
     if (receive_size) {
-      if ((receive_size != packet_size_bytes_) &&
-          (packet_size_bytes_ < 65535)) {
+      if ((static_cast<int>(receive_size) != packet_size_bytes_) &&
+          (packet_size_bytes_ > -1)) {
         error_count++;
       }
 
@@ -777,8 +777,9 @@ void TestAllCodecs::Run(TestPack* channel) {
       // is used to avoid problems when switching codec or frame size in the
       // test.
       timestamp_diff = channel->timestamp_diff();
-      if ((counter > 10) && (timestamp_diff != packet_size_samples_) &&
-          (packet_size_samples_ < 65535))
+      if ((counter > 10) &&
+          (static_cast<int>(timestamp_diff) != packet_size_samples_) &&
+          (packet_size_samples_ > -1))
         error_count++;
     }
 
@@ -819,4 +820,3 @@ void TestAllCodecs::DisplaySendReceiveCodec() {
 }
 
 }  // namespace webrtc
-

@@ -348,8 +348,9 @@ class RtpPlayerImpl : public RtpPlayerInterface {
 
   virtual int NextPacket(int64_t time_now) {
     // Send any packets ready to be resent.
-    RawRtpPacket* packet;
-    while ((packet = lost_packets_.NextPacketToResend(time_now))) {
+    for (RawRtpPacket* packet = lost_packets_.NextPacketToResend(time_now);
+         packet != NULL;
+         packet = lost_packets_.NextPacketToResend(time_now)) {
       int ret = SendPacket(packet->data(), packet->length());
       if (ret > 0) {
         printf("Resend: %08x:%u\n", packet->ssrc(), packet->seq_num());

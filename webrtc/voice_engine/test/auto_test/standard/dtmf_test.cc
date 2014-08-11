@@ -67,7 +67,7 @@ TEST_F(DtmfTest, ManualCanDisableDtmfPlayoutExceptOnIphone) {
 // This test modifies the DTMF payload type from the default 106 to 88
 // and then runs through 16 DTMF out.of-band events.
 TEST_F(DtmfTest, ManualCanChangeDtmfPayloadType) {
-  webrtc::CodecInst codec_instance;
+  webrtc::CodecInst codec_instance = webrtc::CodecInst();
 
   TEST_LOG("Changing DTMF payload type.\n");
 

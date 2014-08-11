@@ -386,6 +386,8 @@ TEST_F(AudioDeviceAPITest, RecordingDevices) {
   EXPECT_GT(audio_device_->RecordingDevices(), 0);
 }
 
+// TODO(henrika): uncomment when you have decided what to do with issue 3675.
+#if 0
 TEST_F(AudioDeviceAPITest, PlayoutDeviceName) {
   char name[kAdmMaxDeviceNameSize];
   char guid[kAdmMaxGuidSize];
@@ -482,6 +484,7 @@ TEST_F(AudioDeviceAPITest, SetRecordingDevice) {
     EXPECT_EQ(0, audio_device_->SetRecordingDevice(i));
   }
 }
+#endif  // 0
 
 TEST_F(AudioDeviceAPITest, PlayoutIsAvailable) {
   bool available;

@@ -343,7 +343,7 @@
         ['build_with_chromium==1', {
           'include_dirs': [
             '../overrides',
-            '../../openssl/openssl/include',
+            '../../boringssl/src/include',
           ],
           'sources!': [
             'asyncinvoker.cc',
@@ -493,7 +493,7 @@
           'conditions': [
             ['build_ssl==1', {
               'dependencies': [
-                '<(DEPTH)/third_party/openssl/openssl.gyp:openssl',
+                '<(DEPTH)/third_party/boringssl/boringssl.gyp:boringssl',
               ],
             }, {
               'include_dirs': [

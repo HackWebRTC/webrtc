@@ -13,7 +13,7 @@ vars = {
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
   # chrome://version/ for revision of canary Chrome.
   # http://chromium-status.appspot.com/lkgr is a last known good revision.
-  "chromium_revision": "285412",
+  "chromium_revision": "288251",
 
   # A small subset of WebKit is needed for the Android Python test framework.
   "webkit_trunk": "http://src.chromium.org/blink/trunk",
@@ -162,7 +162,13 @@ deps = {
     Var("chromium_trunk") + "/src/tools/win/supalink@" + Var("chromium_revision"),
 
   "net/third_party/nss":
-      Var("chromium_trunk") + "/src/net/third_party/nss@" + Var("chromium_revision"),
+    Var("chromium_trunk") + "/src/net/third_party/nss@" + Var("chromium_revision"),
+
+  "third_party/boringssl":
+    Var("chromium_trunk") + "/src/third_party/boringssl@" + Var("chromium_revision"),
+
+  "third_party/boringssl/src":
+    From("chromium_deps", "src/third_party/boringssl/src"),
 
   "third_party/usrsctp/":
     Var("chromium_trunk") + "/src/third_party/usrsctp@" + Var("chromium_revision"),
@@ -232,8 +238,6 @@ deps_os = {
     "third_party/WebKit/Tools/Scripts":
       Var("webkit_trunk") + "/Tools/Scripts@151677",
 
-    "third_party/boringssl":
-      Var("chromium_trunk") + "/src/third_party/boringssl@" + Var("chromium_revision"),
   },
 }
 

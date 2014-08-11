@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
 
 	int i, errtype, VADusage = 0, packetLossPercent = 0;
 	int16_t CodingMode;
-	int32_t bottleneck;
+	int32_t bottleneck = 0;
 	int16_t framesize = 30;           /* ms */
 	int cur_framesmpls, err;
 
@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
 	double starttime, runtime, length_file;
 
 	int16_t stream_len = 0;
-	int16_t declen, lostFrame = 0, declenTC = 0;
+	int16_t declen = 0, lostFrame = 0, declenTC = 0;
 
 	int16_t shortdata[SWBFRAMESAMPLES_10ms];
 	int16_t vaddata[SWBFRAMESAMPLES_10ms*3];
@@ -609,8 +609,8 @@ int main(int argc, char* argv[])
     cout << "\n" << flush;
 
     length_file = 0;
-    int16_t bnIdxTC;
-    int16_t jitterInfoTC;
+    int16_t bnIdxTC = 0;
+    int16_t jitterInfoTC = 0;
     while (endfile == 0)
     {
         /* Call init functions at random, fault test number 7 */

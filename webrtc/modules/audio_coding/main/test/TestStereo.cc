@@ -75,7 +75,7 @@ int32_t TestPackStereo::SendData(const FrameType frame_type,
                                            rtp_info);
 
     if (frame_type != kAudioFrameCN) {
-      payload_size_ = payload_size;
+      payload_size_ = static_cast<int>(payload_size);
     } else {
       payload_size_ = -1;
     }
@@ -88,7 +88,7 @@ int32_t TestPackStereo::SendData(const FrameType frame_type,
 }
 
 uint16_t TestPackStereo::payload_size() {
-  return payload_size_;
+  return static_cast<uint16_t>(payload_size_);
 }
 
 uint32_t TestPackStereo::timestamp_diff() {

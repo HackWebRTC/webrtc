@@ -73,8 +73,8 @@ class TestAllCodecs : public ACMTest {
   PCMFile infile_a_;
   PCMFile outfile_b_;
   int test_count_;
-  uint16_t packet_size_samples_;
-  uint16_t packet_size_bytes_;
+  int packet_size_samples_;
+  int packet_size_bytes_;
 };
 
 }  // namespace webrtc

@@ -234,10 +234,10 @@ uint16_t RTPFile::Read(WebRtcRTPHeader* rtpInfo, uint8_t* payloadData,
     return 0;
   }
   if (payloadSize < (lengthBytes - 20)) {
-    return -1;
+    return 0;
   }
   if (lengthBytes < 20) {
-    return -1;
+    return 0;
   }
   lengthBytes -= 20;
   EXPECT_EQ(lengthBytes, fread(payloadData, 1, lengthBytes, _rtpFile));
