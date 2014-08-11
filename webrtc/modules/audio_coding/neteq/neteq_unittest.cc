@@ -200,11 +200,10 @@ class NetEqDecodingTest : public ::testing::Test {
   void LoadDecoders();
   void OpenInputFile(const std::string &rtp_file);
   void Process(NETEQTEST_RTPpacket* rtp_ptr, int* out_len);
-  void DecodeAndCompare(const std::string &rtp_file,
-                        const std::string &ref_file);
-  void DecodeAndCheckStats(const std::string &rtp_file,
-                           const std::string &stat_ref_file,
-                           const std::string &rtcp_ref_file);
+  void DecodeAndCompare(const std::string& rtp_file,
+                        const std::string& ref_file,
+                        const std::string& stat_ref_file,
+                        const std::string& rtcp_ref_file);
   static void PopulateRtpInfo(int frame_index,
                               int timestamp,
                               WebRtcRTPHeader* rtp_info);
@@ -337,8 +336,10 @@ void NetEqDecodingTest::Process(NETEQTEST_RTPpacket* rtp, int* out_len) {
   sim_clock_ += kTimeStepMs;
 }
 
-void NetEqDecodingTest::DecodeAndCompare(const std::string &rtp_file,
-                                         const std::string &ref_file) {
+void NetEqDecodingTest::DecodeAndCompare(const std::string& rtp_file,
+                                         const std::string& ref_file,
+                                         const std::string& stat_ref_file,
+                                         const std::string& rtcp_ref_file) {
   OpenInputFile(rtp_file);
 
   std::string ref_out_file = "";
@@ -346,6 +347,18 @@ void NetEqDecodingTest::DecodeAndCompare(const std::string &rtp_file,
     ref_out_file = webrtc::test::OutputPath() + "neteq_universal_ref.pcm";
   }
   RefFiles ref_files(ref_file, ref_out_file);
+
+  std::string stat_out_file = "";
+  if (stat_ref_file.empty()) {
+    stat_out_file = webrtc::test::OutputPath() + "neteq_network_stats.dat";
+  }
+  RefFiles network_stat_files(stat_ref_file, stat_out_file);
+
+  std::string rtcp_out_file = "";
+  if (rtcp_ref_file.empty()) {
+    rtcp_out_file = webrtc::test::OutputPath() + "neteq_rtcp_stats.dat";
+  }
+  RefFiles rtcp_stat_files(rtcp_ref_file, rtcp_out_file);
 
   NETEQTEST_RTPpacket rtp;
   ASSERT_GT(rtp.readFromFile(rtp_fp_), 0);
@@ -357,32 +370,6 @@ void NetEqDecodingTest::DecodeAndCompare(const std::string &rtp_file,
     int out_len = 0;
     ASSERT_NO_FATAL_FAILURE(Process(&rtp, &out_len));
     ASSERT_NO_FATAL_FAILURE(ref_files.ProcessReference(out_data_, out_len));
-  }
-}
-
-void NetEqDecodingTest::DecodeAndCheckStats(const std::string &rtp_file,
-                                            const std::string &stat_ref_file,
-                                            const std::string &rtcp_ref_file) {
-  OpenInputFile(rtp_file);
-  std::string stat_out_file = "";
-  if (stat_ref_file.empty()) {
-    stat_out_file = webrtc::test::OutputPath() +
-        "neteq_network_stats.dat";
-  }
-  RefFiles network_stat_files(stat_ref_file, stat_out_file);
-
-  std::string rtcp_out_file = "";
-  if (rtcp_ref_file.empty()) {
-    rtcp_out_file = webrtc::test::OutputPath() +
-        "neteq_rtcp_stats.dat";
-  }
-  RefFiles rtcp_stat_files(rtcp_ref_file, rtcp_out_file);
-
-  NETEQTEST_RTPpacket rtp;
-  ASSERT_GT(rtp.readFromFile(rtp_fp_), 0);
-  while (rtp.dataLen() >= 0) {
-    int out_len;
-    ASSERT_NO_FATAL_FAILURE(Process(&rtp, &out_len));
 
     // Query the network statistics API once per second
     if (sim_clock_ % 1000 == 0) {
@@ -432,17 +419,6 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(TestBitExactness)) {
   // have a copy of the file, the test will fail.
   const std::string input_ref_file =
       webrtc::test::ResourcePath("audio_coding/neteq4_universal_ref", "pcm");
-
-  if (FLAGS_gen_ref) {
-    DecodeAndCompare(input_rtp_file, "");
-  } else {
-    DecodeAndCompare(input_rtp_file, input_ref_file);
-  }
-}
-
-TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(TestNetworkStatistics)) {
-  const std::string input_rtp_file = webrtc::test::ProjectRootPath() +
-      "resources/audio_coding/neteq_universal_new.rtp";
 #if defined(_MSC_VER) && (_MSC_VER >= 1700)
   // For Visual Studio 2012 and later, we will have to use the generic reference
   // file, rather than the windows-specific one.
@@ -454,11 +430,14 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(TestNetworkStatistics)) {
 #endif
   const std::string rtcp_stat_ref_file =
       webrtc::test::ResourcePath("audio_coding/neteq4_rtcp_stats", "dat");
+
   if (FLAGS_gen_ref) {
-    DecodeAndCheckStats(input_rtp_file, "", "");
+    DecodeAndCompare(input_rtp_file, "", "", "");
   } else {
-    DecodeAndCheckStats(input_rtp_file, network_stat_ref_file,
-                        rtcp_stat_ref_file);
+    DecodeAndCompare(input_rtp_file,
+                     input_ref_file,
+                     network_stat_ref_file,
+                     rtcp_stat_ref_file);
   }
 }
 
