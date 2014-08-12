@@ -194,6 +194,7 @@ int32_t FileAudioDevice::StartPlayout() {
 
   _playing = true;
   _playoutFramesLeft = 0;
+  _playoutFramesIn10MS = kPlayoutFixedSampleRate/100;
 
   if (!_playoutBuffer)
       _playoutBuffer = new int8_t[2 *
