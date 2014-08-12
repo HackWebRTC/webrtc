@@ -61,10 +61,6 @@ TEST_F(SplTest, MacroTest) {
     EXPECT_EQ(-3, WEBRTC_SPL_MUL_16_32_RSFT14(a, b));
     EXPECT_EQ(-24, WEBRTC_SPL_MUL_16_32_RSFT11(a, b));
 
-    int a32a = (WEBRTC_SPL_WORD32_MAX >> 16);
-    int a32b = (WEBRTC_SPL_WORD32_MAX & 0x0000ffff);
-    EXPECT_EQ(5, WEBRTC_SPL_MUL_32_32_RSFT32(a32a, a32b, A));
-
     EXPECT_EQ(-12288, WEBRTC_SPL_MUL_16_16_RSFT(a, b, 2));
     EXPECT_EQ(-12287, WEBRTC_SPL_MUL_16_16_RSFT_WITH_ROUND(a, b, 2));
 
@@ -104,15 +100,10 @@ TEST_F(SplTest, MacroTest) {
     EXPECT_EQ(-1073741824,
               WEBRTC_SPL_MUL_16_32_RSFT16(WEBRTC_SPL_WORD16_MIN,
                                           WEBRTC_SPL_WORD32_MAX));
-    EXPECT_EQ(0x3fffffff, WEBRTC_SPL_MUL_32_32_RSFT32(WEBRTC_SPL_WORD16_MAX,
-              0xffff, WEBRTC_SPL_WORD32_MAX));
 #else
     EXPECT_EQ(-1073741823,
               WEBRTC_SPL_MUL_16_32_RSFT16(WEBRTC_SPL_WORD16_MIN,
                                           WEBRTC_SPL_WORD32_MAX));
-    // TODO(bjornv): fix issue 3674 and re-enable or delete the following test.
-    // EXPECT_EQ(0x3fff7ffe, WEBRTC_SPL_MUL_32_32_RSFT32(WEBRTC_SPL_WORD16_MAX,
-    //           0xffff, WEBRTC_SPL_WORD32_MAX));
 #endif
 }
 

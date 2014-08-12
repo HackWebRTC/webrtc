@@ -78,50 +78,6 @@ static __inline int32_t WEBRTC_SPL_MUL_32_32_RSFT32BI(int32_t a,
   return tmp;
 }
 
-static __inline int32_t WEBRTC_SPL_MUL_32_32_RSFT32(int16_t a,
-                                                    int16_t b,
-                                                    int32_t c) {
-  int32_t tmp1 = 0, tmp2 = 0, tmp3 = 0, tmp4 = 0;
-
-  __asm __volatile(
-    "sra                %[tmp1],   %[c],      16      \n\t"
-    "andi               %[tmp2],   %[c],      0xFFFF  \n\t"
-#if defined(MIPS32_R2_LE)
-    "seh                %[a],      %[a]               \n\t"
-    "seh                %[b],      %[b]               \n\t"
-#else
-    "sll                %[a],      %[a],      16      \n\t"
-    "sra                %[a],      %[a],      16      \n\t"
-    "sll                %[b],      %[b],      16      \n\t"
-    "sra                %[b],      %[b],      16      \n\t"
-#endif
-    "sra                %[tmp2],   %[tmp2],   1       \n\t"
-    "mul                %[tmp3],   %[a],      %[tmp2] \n\t"
-    "mul                %[tmp4],   %[b],      %[tmp2] \n\t"
-    "mul                %[tmp2],   %[a],      %[tmp1] \n\t"
-    "mul                %[tmp1],   %[b],      %[tmp1] \n\t"
-#if defined(MIPS_DSP_R1_LE)
-    "shra_r.w           %[tmp3],   %[tmp3],   15      \n\t"
-    "shra_r.w           %[tmp4],   %[tmp4],   15      \n\t"
-#else
-    "addiu              %[tmp3],   %[tmp3],   0x4000  \n\t"
-    "sra                %[tmp3],   %[tmp3],   15      \n\t"
-    "addiu              %[tmp4],   %[tmp4],   0x4000  \n\t"
-    "sra                %[tmp4],   %[tmp4],   15      \n\t"
-#endif
-    "addu               %[tmp3],   %[tmp3],   %[tmp2] \n\t"
-    "addu               %[tmp4],   %[tmp4],   %[tmp1] \n\t"
-    "sra                %[tmp4],   %[tmp4],   16      \n\t"
-    "addu               %[tmp1],   %[tmp3],   %[tmp4] \n\t"
-    : [tmp1] "=&r" (tmp1), [tmp2] "=&r" (tmp2),
-      [tmp3] "=&r" (tmp3), [tmp4] "=&r" (tmp4),
-      [a] "+r" (a), [b] "+r" (b)
-    : [c] "r" (c)
-    : "hi", "lo"
-  );
-  return tmp1;
-}
-
 #if defined(MIPS_DSP_R1_LE)
 static __inline int16_t WebRtcSpl_SatW32ToW16(int32_t value32) {
   __asm __volatile(

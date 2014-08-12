@@ -75,9 +75,6 @@
 #define WEBRTC_SPL_MUL_16_32_RSFT16(a, b) \
     (WEBRTC_SPL_MUL_16_16(a, b >> 16) \
      + ((WEBRTC_SPL_MUL_16_16(a, (b & 0xffff) >> 1) + 0x4000) >> 15))
-#define WEBRTC_SPL_MUL_32_32_RSFT32(a32a, a32b, b32) \
-    ((int32_t)(WEBRTC_SPL_MUL_16_32_RSFT16(a32a, b32) \
-    + (WEBRTC_SPL_MUL_16_32_RSFT16(a32b, b32) >> 16)))
 #endif
 #endif
 
