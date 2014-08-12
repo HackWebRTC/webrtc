@@ -136,11 +136,7 @@ TEST_F(SplTest, InlineTest) {
     EXPECT_EQ(4, WebRtcSpl_NormW16(b32));
 
     EXPECT_EQ(0, WebRtcSpl_NormU32(0u));
-    // TODO(bjornv): figure out what the following line is trying to test and
-    // test that.
-    // EXPECT_EQ(0, WebRtcSpl_NormU32(-1u));
-    EXPECT_EQ(0,
-              WebRtcSpl_NormU32(static_cast<uint32_t>(WEBRTC_SPL_WORD32_MIN)));
+    EXPECT_EQ(0, WebRtcSpl_NormU32(0xffffffff));
     EXPECT_EQ(15, WebRtcSpl_NormU32(static_cast<uint32_t>(a32)));
 
     EXPECT_EQ(104, WebRtcSpl_AddSatW16(a16, b16));
