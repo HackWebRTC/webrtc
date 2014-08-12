@@ -1592,6 +1592,10 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
     info.add_ssrc(parameters_.config.rtp.ssrcs[i]);
   }
 
+  if (stream_ == NULL) {
+    return info;
+  }
+
   webrtc::VideoSendStream::Stats stats = stream_->GetStats();
   info.framerate_input = stats.input_frame_rate;
   info.framerate_sent = stats.encode_frame_rate;

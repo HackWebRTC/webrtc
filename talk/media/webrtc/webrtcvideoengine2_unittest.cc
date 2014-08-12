@@ -455,6 +455,13 @@ TEST_F(WebRtcVideoEngine2Test, SetSendFailsBeforeSettingCodecs) {
       << "Channel should be stoppable even without set codecs.";
 }
 
+TEST_F(WebRtcVideoEngine2Test, GetStatsWithoutSendCodecsSetDoesNotCrash) {
+  rtc::scoped_ptr<VideoMediaChannel> channel(engine_.CreateChannel(NULL));
+  EXPECT_TRUE(channel->AddSendStream(StreamParams::CreateLegacy(123)));
+  VideoMediaInfo info;
+  channel->GetStats(&info);
+}
+
 class WebRtcVideoEngine2BaseTest
     : public VideoEngineTest<cricket::WebRtcVideoEngine2> {
  protected:
