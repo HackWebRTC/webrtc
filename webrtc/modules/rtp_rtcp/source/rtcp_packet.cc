@@ -938,7 +938,7 @@ void Rpsi::Create(uint8_t* packet, size_t* length, size_t max_length) const {
 
 void Rpsi::WithPictureId(uint64_t picture_id) {
   const uint32_t kPidBits = 7;
-  const uint64_t k7MsbZeroMask = 0x1ffffffffffffff;
+  const uint64_t k7MsbZeroMask = 0x1ffffffffffffffULL;
   uint8_t required_bytes = 0;
   uint64_t shifted_pid = picture_id;
   do {
