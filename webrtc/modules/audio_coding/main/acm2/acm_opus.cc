@@ -261,6 +261,11 @@ int ACMOpus::SetPacketLossRate(int loss_rate) {
   return -1;
 }
 
+int ACMOpus::SetOpusMaxBandwidth(int max_bandwidth) {
+  // Ask the encoder to change the maximum required bandwidth.
+  return WebRtcOpus_SetMaxBandwidth(encoder_inst_ptr_, max_bandwidth);
+}
+
 #endif  // WEBRTC_CODEC_OPUS
 
 }  // namespace acm2

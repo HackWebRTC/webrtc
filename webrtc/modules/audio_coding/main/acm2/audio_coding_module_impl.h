@@ -232,6 +232,10 @@ class AudioCodingModuleImpl : public AudioCodingModule {
                                    int rate_bit_per_sec,
                                    bool enforce_frame_size = false);
 
+  // If current send codec is Opus, informs it about the maximum audio
+  // bandwidth needs to be encoded.
+  int SetOpusMaxBandwidth(int bandwidth_hz);
+
   int UnregisterReceiveCodec(uint8_t payload_type);
 
   int EnableNack(size_t max_nack_list_size);

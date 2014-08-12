@@ -1911,6 +1911,15 @@ int AudioCodingModuleImpl::ConfigISACBandwidthEstimator(
       frame_size_ms, rate_bit_per_sec, enforce_frame_size);
 }
 
+// Informs Opus encoder about the maximum audio bandwidth needs to be encoded.
+int AudioCodingModuleImpl::SetOpusMaxBandwidth(int bandwidth_hz) {
+  CriticalSectionScoped lock(acm_crit_sect_);
+  if (!HaveValidEncoder("SetOpusMaxBandwidth")) {
+    return -1;
+  }
+  return codecs_[current_send_codec_idx_]->SetOpusMaxBandwidth(bandwidth_hz);
+}
+
 int AudioCodingModuleImpl::PlayoutTimestamp(uint32_t* timestamp) {
   return receiver_.GetPlayoutTimestamp(timestamp) ? 0 : -1;
 }

@@ -130,6 +130,33 @@ TEST_F(CodecTest, VoiceActivityDetectionCanBeTurnedOff) {
   EXPECT_EQ(webrtc::kVadConventional, vad_mode);
 }
 
+TEST_F(CodecTest, OpusMaxBandwidthCanBeSet) {
+  for (int i = 0; i < voe_codec_->NumOfCodecs(); ++i) {
+    voe_codec_->GetCodec(i, codec_instance_);
+    if (_stricmp("opus", codec_instance_.plname)) {
+      continue;
+    }
+    voe_codec_->SetSendCodec(channel_, codec_instance_);
+    // SetOpusMaxBandwidth can handle any integer as the bandwidth. Following
+    // tests some most commonly used numbers.
+    EXPECT_EQ(0, voe_codec_->SetOpusMaxBandwidth(channel_, 24000));
+    EXPECT_EQ(0, voe_codec_->SetOpusMaxBandwidth(channel_, 16000));
+    EXPECT_EQ(0, voe_codec_->SetOpusMaxBandwidth(channel_, 8000));
+    EXPECT_EQ(0, voe_codec_->SetOpusMaxBandwidth(channel_, 4000));
+  }
+}
+
+TEST_F(CodecTest, OpusMaxBandwidthCannotBeSetForNonOpus) {
+  for (int i = 0; i < voe_codec_->NumOfCodecs(); ++i) {
+    voe_codec_->GetCodec(i, codec_instance_);
+    if (!_stricmp("opus", codec_instance_.plname)) {
+      continue;
+    }
+    voe_codec_->SetSendCodec(channel_, codec_instance_);
+    EXPECT_EQ(-1, voe_codec_->SetOpusMaxBandwidth(channel_, 16000));
+  }
+}
+
 // TODO(xians, phoglund): Re-enable when issue 372 is resolved.
 TEST_F(CodecTest, DISABLED_ManualVerifySendCodecsForAllPacketSizes) {
   for (int i = 0; i < voe_codec_->NumOfCodecs(); ++i) {

@@ -38,6 +38,8 @@ class ACMOpus : public ACMGenericCodec {
 
   virtual int SetPacketLossRate(int loss_rate) OVERRIDE;
 
+  virtual int SetOpusMaxBandwidth(int max_bandwidth) OVERRIDE;
+
  protected:
   void DestructEncoderSafe();
 

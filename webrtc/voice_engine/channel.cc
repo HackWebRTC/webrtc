@@ -1749,6 +1749,19 @@ Channel::SetSendCNPayloadType(int type, PayloadFrequencies frequency)
     return 0;
 }
 
+int Channel::SetOpusMaxBandwidth(int bandwidth_hz) {
+  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
+               "Channel::SetOpusMaxBandwidth()");
+
+  if (audio_coding_->SetOpusMaxBandwidth(bandwidth_hz) != 0) {
+    _engineStatisticsPtr->SetLastError(
+        VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
+        "SetOpusMaxBandwidth() failed to set maximum encoding bandwidth");
+    return -1;
+  }
+  return 0;
+}
+
 int32_t Channel::RegisterExternalTransport(Transport& transport)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),

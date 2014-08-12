@@ -54,6 +54,8 @@ public:
                              VadModes& mode,
                              bool& disabledDTX);
 
+    virtual int SetOpusMaxBandwidth(int channel, int bandwidth_hz);
+
     // Dual-streaming
     virtual int SetSecondarySendCodec(int channel, const CodecInst& codec,
                                       int red_payload_type);

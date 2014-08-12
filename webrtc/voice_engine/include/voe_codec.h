@@ -126,6 +126,14 @@ public:
     virtual int GetVADStatus(int channel, bool& enabled, VadModes& mode,
                              bool& disabledDTX) = 0;
 
+    // Sets the maximum audio bandwidth needs to be encoded in Hz,
+    // |bandwidth_hz|, for the Opus encoder on a specific |channel|.
+    // TODO(minyue): Make SetOpusMaxBandwidth() pure virtual when
+    // fakewebrtcvoiceengine in talk is ready.
+    virtual int SetOpusMaxBandwidth(int channel, int bandwidth_hz) {
+      return -1;
+    }
+
     // Don't use. To be removed.
     virtual int SetAMREncFormat(int channel, AmrMode mode) { return -1; }
     virtual int SetAMRDecFormat(int channel, AmrMode mode) { return -1; }

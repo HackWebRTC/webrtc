@@ -1000,6 +1000,12 @@ int16_t ACMGenericCodec::REDPayloadISAC(const int32_t /* isac_rate */,
   return -1;
 }
 
+int ACMGenericCodec::SetOpusMaxBandwidth(int /* max_bandwidth */) {
+  WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceAudioCoding, unique_id_,
+               "The send-codec is not Opus, failed to set maximum bandwidth.");
+  return -1;
+}
+
 }  // namespace acm2
 
 }  // namespace webrtc
