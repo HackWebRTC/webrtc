@@ -82,6 +82,31 @@ class WebRtcVideoEngine2;
 class WebRtcVideoChannel2;
 class WebRtcVideoRenderer;
 
+class UnsignalledSsrcHandler {
+ public:
+  enum Action {
+    kDropPacket,
+    kDeliverPacket,
+  };
+  virtual Action OnUnsignalledSsrc(VideoMediaChannel* engine,
+                                   uint32_t ssrc) = 0;
+};
+
+// TODO(pbos): Remove, use external handlers only.
+class DefaultUnsignalledSsrcHandler : public UnsignalledSsrcHandler {
+ public:
+  DefaultUnsignalledSsrcHandler();
+  virtual Action OnUnsignalledSsrc(VideoMediaChannel* engine,
+                                   uint32_t ssrc) OVERRIDE;
+
+  VideoRenderer* GetDefaultRenderer() const;
+  void SetDefaultRenderer(VideoMediaChannel* channel, VideoRenderer* renderer);
+
+ private:
+  uint32_t default_recv_ssrc_;
+  VideoRenderer* default_renderer_;
+};
+
 class WebRtcVideoEncoderFactory2 {
  public:
   virtual ~WebRtcVideoEncoderFactory2();
@@ -386,8 +411,9 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   bool sending_;
   rtc::scoped_ptr<webrtc::Call> call_;
   uint32_t default_send_ssrc_;
-  uint32_t default_recv_ssrc_;
-  VideoRenderer* default_renderer_;
+
+  DefaultUnsignalledSsrcHandler default_unsignalled_ssrc_handler_;
+  UnsignalledSsrcHandler* const unsignalled_ssrc_handler_;
 
   // Using primary-ssrc (first ssrc) as key.
   std::map<uint32, WebRtcVideoSendStream*> send_streams_;

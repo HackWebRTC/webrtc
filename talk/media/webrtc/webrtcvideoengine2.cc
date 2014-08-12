@@ -249,6 +249,42 @@ bool WebRtcVideoEncoderFactory2::SupportsCodec(const VideoCodec& codec) {
   return _stricmp(codec.name.c_str(), kVp8CodecName) == 0;
 }
 
+DefaultUnsignalledSsrcHandler::DefaultUnsignalledSsrcHandler()
+    : default_recv_ssrc_(0), default_renderer_(NULL) {}
+
+UnsignalledSsrcHandler::Action DefaultUnsignalledSsrcHandler::OnUnsignalledSsrc(
+    VideoMediaChannel* channel,
+    uint32_t ssrc) {
+  if (default_recv_ssrc_ != 0) {  // Already one default stream.
+    LOG(LS_WARNING) << "Unknown SSRC, but default receive stream already set.";
+    return kDropPacket;
+  }
+
+  StreamParams sp;
+  sp.ssrcs.push_back(ssrc);
+  LOG(LS_INFO) << "Creating default receive stream for SSRC=" << ssrc << ".";
+  if (!channel->AddRecvStream(sp)) {
+    LOG(LS_WARNING) << "Could not create default receive stream.";
+  }
+
+  channel->SetRenderer(ssrc, default_renderer_);
+  default_recv_ssrc_ = ssrc;
+  return kDeliverPacket;
+}
+
+VideoRenderer* DefaultUnsignalledSsrcHandler::GetDefaultRenderer() const {
+  return default_renderer_;
+}
+
+void DefaultUnsignalledSsrcHandler::SetDefaultRenderer(
+    VideoMediaChannel* channel,
+    VideoRenderer* renderer) {
+  default_renderer_ = renderer;
+  if (default_recv_ssrc_ != 0) {
+    channel->SetRenderer(default_recv_ssrc_, default_renderer_);
+  }
+}
+
 WebRtcVideoEngine2::WebRtcVideoEngine2() {
   // Construct without a factory or voice engine.
   Construct(NULL, NULL, new rtc::CpuMonitor(NULL));
@@ -641,7 +677,8 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
     WebRtcVideoEngine2* engine,
     VoiceMediaChannel* voice_channel,
     WebRtcVideoEncoderFactory2* encoder_factory)
-    : encoder_factory_(encoder_factory) {
+    : encoder_factory_(encoder_factory),
+      unsignalled_ssrc_handler_(&default_unsignalled_ssrc_handler_) {
   // TODO(pbos): Connect the video and audio with |voice_channel|.
   webrtc::Call::Config config(this);
   Construct(webrtc::Call::Create(config), engine);
@@ -651,7 +688,8 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
     webrtc::Call* call,
     WebRtcVideoEngine2* engine,
     WebRtcVideoEncoderFactory2* encoder_factory)
-    : encoder_factory_(encoder_factory) {
+    : encoder_factory_(encoder_factory),
+      unsignalled_ssrc_handler_(&default_unsignalled_ssrc_handler_) {
   Construct(call, engine);
 }
 
@@ -660,9 +698,7 @@ void WebRtcVideoChannel2::Construct(webrtc::Call* call,
   rtcp_receiver_report_ssrc_ = kDefaultRtcpReceiverReportSsrc;
   sending_ = false;
   call_.reset(call);
-  default_renderer_ = NULL;
   default_send_ssrc_ = 0;
-  default_recv_ssrc_ = 0;
 
   SetDefaultOptions();
 }
@@ -928,9 +964,6 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp) {
 
   uint32 ssrc = sp.first_ssrc();
   assert(ssrc != 0);  // TODO(pbos): Is this ever valid?
-  if (default_recv_ssrc_ == 0) {
-    default_recv_ssrc_ = ssrc;
-  }
 
   // TODO(pbos): Check if any of the SSRCs overlap.
   if (receive_streams_.find(ssrc) != receive_streams_.end()) {
@@ -987,7 +1020,8 @@ void WebRtcVideoChannel2::ConfigureReceiverRtp(
 bool WebRtcVideoChannel2::RemoveRecvStream(uint32 ssrc) {
   LOG(LS_INFO) << "RemoveRecvStream: " << ssrc;
   if (ssrc == 0) {
-    ssrc = default_recv_ssrc_;
+    LOG(LS_ERROR) << "RemoveRecvStream with 0 ssrc is not supported.";
+    return false;
   }
 
   std::map<uint32, WebRtcVideoReceiveStream*>::iterator stream =
@@ -999,10 +1033,6 @@ bool WebRtcVideoChannel2::RemoveRecvStream(uint32 ssrc) {
   delete stream->second;
   receive_streams_.erase(stream);
 
-  if (ssrc == default_recv_ssrc_) {
-    default_recv_ssrc_ = 0;
-  }
-
   return true;
 }
 
@@ -1010,11 +1040,7 @@ bool WebRtcVideoChannel2::SetRenderer(uint32 ssrc, VideoRenderer* renderer) {
   LOG(LS_INFO) << "SetRenderer: ssrc:" << ssrc << " "
                << (renderer ? "(ptr)" : "NULL");
   if (ssrc == 0) {
-    if (default_recv_ssrc_!= 0) {
-      receive_streams_[default_recv_ssrc_]->SetRenderer(renderer);
-    }
-    ssrc = default_recv_ssrc_;
-    default_renderer_ = renderer;
+    default_unsignalled_ssrc_handler_.SetDefaultRenderer(this, renderer);
     return true;
   }
 
@@ -1030,11 +1056,8 @@ bool WebRtcVideoChannel2::SetRenderer(uint32 ssrc, VideoRenderer* renderer) {
 
 bool WebRtcVideoChannel2::GetRenderer(uint32 ssrc, VideoRenderer** renderer) {
   if (ssrc == 0) {
-    if (default_renderer_ == NULL) {
-      return false;
-    }
-    *renderer = default_renderer_;
-    return true;
+    *renderer = default_unsignalled_ssrc_handler_.GetDefaultRenderer();
+    return *renderer != NULL;
   }
 
   std::map<uint32, WebRtcVideoReceiveStream*>::iterator it =
@@ -1117,26 +1140,23 @@ void WebRtcVideoChannel2::OnPacketReceived(
   }
 
   uint32 ssrc = 0;
-  if (default_recv_ssrc_ != 0) {  // Already one default stream.
-    LOG(LS_WARNING) << "Unknown SSRC, but default receive stream already set.";
-    return;
-  }
-
   if (!GetRtpSsrc(packet->data(), packet->length(), &ssrc)) {
     return;
   }
 
-  StreamParams sp;
-  sp.ssrcs.push_back(ssrc);
-  LOG(LS_INFO) << "Creating default receive stream for SSRC=" << ssrc << ".";
-  AddRecvStream(sp);
-  SetRenderer(0, default_renderer_);
+  // TODO(pbos): Make sure that the unsignalled SSRC uses the video payload.
+  // Also figure out whether RTX needs to be handled.
+  switch (unsignalled_ssrc_handler_->OnUnsignalledSsrc(this, ssrc)) {
+    case UnsignalledSsrcHandler::kDropPacket:
+      return;
+    case UnsignalledSsrcHandler::kDeliverPacket:
+      break;
+  }
 
   if (call_->Receiver()->DeliverPacket(
           reinterpret_cast<const uint8_t*>(packet->data()), packet->length()) !=
       webrtc::PacketReceiver::DELIVERY_OK) {
-    LOG(LS_WARNING) << "Failed to deliver RTP packet after creating default "
-                       "receiver.";
+    LOG(LS_WARNING) << "Failed to deliver RTP packet on re-delivery.";
     return;
   }
 }
