@@ -122,6 +122,25 @@ system call NtUserGetThreadDesktop parameter value #1
 # libjingle_media_unittest fails on Win DrMemory Full
 UNADDRESSABLE ACCESS
 name=https://code.google.com/p/webrtc/issues/detail?id=3655 (1)
+*!cricket::VideoFrame::~VideoFrame
+*!cricket::VideoFrame::`scalar deleting destructor'
+*!rtc::DefaultDeleter<>::operator()
+*!rtc::internal::scoped_ptr_impl<>::reset
+*!rtc::scoped_ptr<>::reset
+*!cricket::VideoAdapterTest::VideoCapturerListener::OnFrameCaptured
+*!sigslot::_connection2<>::emit
+*!sigslot::signal2<>::operator()
+*!cricket::FileVideoCapturer::ReadFrame
+*!cricket::FileVideoCapturer::FileReadThread::OnMessage
+*!rtc::MessageQueue::Dispatch
+*!rtc::Thread::ProcessMessages
+*!rtc::Thread::Run
+*!cricket::FileVideoCapturer::FileReadThread::Run
+*!rtc::Thread::PreRun
+KERNEL32.dll!BaseThreadInitThunk
+
+UNADDRESSABLE ACCESS
+name=https://code.google.com/p/webrtc/issues/detail?id=3655 (2)
 *!rtc::DefaultDeleter<>::operator()
 *!rtc::internal::scoped_ptr_impl<>::reset
 *!rtc::scoped_ptr<>::reset
@@ -138,7 +157,7 @@ name=https://code.google.com/p/webrtc/issues/detail?id=3655 (1)
 KERNEL32.dll!BaseThreadInitThunk
 
 INVALID HEAP ARGUMENT
-name=https://code.google.com/p/webrtc/issues/detail?id=3655 (2)
+name=https://code.google.com/p/webrtc/issues/detail?id=3655 (3)
 drmemorylib.dll!replace_operator_delete
 *!cricket::VideoFrame::`scalar deleting destructor'
 *!rtc::DefaultDeleter<>::operator()
@@ -157,7 +176,7 @@ drmemorylib.dll!replace_operator_delete
 KERNEL32.dll!BaseThreadInitThunk
 
 UNINITIALIZED READ
-name=https://code.google.com/p/webrtc/issues/detail?id=3655 (3)
+name=https://code.google.com/p/webrtc/issues/detail?id=3655 (4)
 *!testing::internal::CmpHelperNE<>
 *!cricket::VideoAdapterTest_BlackOutput_Test::TestBody
 *!testing::internal::HandleSehExceptionsInMethodIfSupported<>
