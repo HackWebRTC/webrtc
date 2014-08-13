@@ -118,7 +118,8 @@ TEST(LocalAudioSourceTest, InvalidMandatory) {
       LocalAudioSource::Create(PeerConnectionFactoryInterface::Options(),
                                &constraints);
 
-  EXPECT_EQ(MediaSourceInterface::kEnded, source->state());
+  EXPECT_EQ(MediaSourceInterface::kLive, source->state());
   bool value;
-  EXPECT_FALSE(source->options().highpass_filter.Get(&value));
+  EXPECT_TRUE(source->options().highpass_filter.Get(&value));
+  EXPECT_FALSE(value);
 }

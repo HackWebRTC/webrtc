@@ -41,9 +41,8 @@ namespace {
 
 // Convert constraints to audio options. Return false if constraints are
 // invalid.
-bool FromConstraints(const MediaConstraintsInterface::Constraints& constraints,
+void FromConstraints(const MediaConstraintsInterface::Constraints& constraints,
                      cricket::AudioOptions* options) {
-  bool success = true;
   MediaConstraintsInterface::Constraints::const_iterator iter;
 
   // This design relies on the fact that all the audio constraints are actually
@@ -53,10 +52,8 @@ bool FromConstraints(const MediaConstraintsInterface::Constraints& constraints,
   for (iter = constraints.begin(); iter != constraints.end(); ++iter) {
     bool value = false;
 
-    if (!rtc::FromString(iter->value, &value)) {
-      success = false;
+    if (!rtc::FromString(iter->value, &value))
       continue;
-    }
 
     if (iter->key == MediaConstraintsInterface::kEchoCancellation)
       options->echo_cancellation.Set(value);
@@ -79,10 +76,7 @@ bool FromConstraints(const MediaConstraintsInterface::Constraints& constraints,
       options->typing_detection.Set(value);
     else if (iter->key == MediaConstraintsInterface::kAudioMirroring)
       options->stereo_swapping.Set(value);
-    else
-      success = false;
   }
-  return success;
 }
 
 }  // namespace
@@ -106,12 +100,9 @@ void LocalAudioSource::Initialize(
   // constraints.
   FromConstraints(constraints->GetOptional(), &options_);
 
-  cricket::AudioOptions audio_options;
-  if (!FromConstraints(constraints->GetMandatory(), &audio_options)) {
-    source_state_ = kEnded;
-    return;
-  }
-  options_.SetAll(audio_options);
+  cricket::AudioOptions mandatory_options;
+  FromConstraints(constraints->GetMandatory(), &mandatory_options);
+  options_.SetAll(mandatory_options);
   source_state_ = kLive;
 }
 
