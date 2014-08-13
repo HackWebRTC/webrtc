@@ -561,8 +561,6 @@ class AcmReceiverBitExactness : public ::testing::Test {
 };
 
 TEST_F(AcmReceiverBitExactness, 8kHzOutput) {
-  // TODO(henrik.lundin) Update the android checksum once the android bots are
-  // running this test again.
   Run(8000,
       PlatformChecksum("bd6f8d9602cd82444ea2539e674df747",
                        "6ac89c7145072c26bfeba602cd661afb",
@@ -570,8 +568,6 @@ TEST_F(AcmReceiverBitExactness, 8kHzOutput) {
 }
 
 TEST_F(AcmReceiverBitExactness, 16kHzOutput) {
-  // TODO(henrik.lundin) Update the android checksum once the android bots are
-  // running this test again.
   Run(16000,
       PlatformChecksum("a39bc6ee0c4eb15f3ad2f43cebcc571d",
                        "3e888eb04f57db2c6ef952fe64f17fe6",
@@ -579,8 +575,6 @@ TEST_F(AcmReceiverBitExactness, 16kHzOutput) {
 }
 
 TEST_F(AcmReceiverBitExactness, 32kHzOutput) {
-  // TODO(henrik.lundin) Update the android checksum once the android bots are
-  // running this test again.
   Run(32000,
       PlatformChecksum("80964572aaa2dc92f9e34896dd3802b3",
                        "aeca37e963310f5b6552b7edea23c2f1",
@@ -588,8 +582,6 @@ TEST_F(AcmReceiverBitExactness, 32kHzOutput) {
 }
 
 TEST_F(AcmReceiverBitExactness, 48kHzOutput) {
-  // TODO(henrik.lundin) Update the android checksum once the android bots are
-  // running this test again.
   Run(48000,
       PlatformChecksum("8aacde91f390e0d5a9c2ed571a25fd37",
                        "76b9e99e0a3998aa28355e7a2bd836f7",
