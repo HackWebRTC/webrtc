@@ -211,7 +211,8 @@ TEST(RtpPacketizerH264Test, TestSingleNaluTwoPackets) {
 }
 
 TEST(RtpPacketizerH264Test, TestStapA) {
-  const size_t kFrameSize = kMaxPayloadSize - 100;
+  const size_t kFrameSize = kMaxPayloadSize - 3 * kLengthFieldLength -
+      kNalHeaderSize;
   uint8_t frame[kFrameSize] = {0x07, 0xFF,  // F=0, NRI=0, Type=7.
                                0x08, 0xFF,  // F=0, NRI=0, Type=8.
                                0x05};       // F=0, NRI=0, Type=5.
@@ -241,6 +242,50 @@ TEST(RtpPacketizerH264Test, TestStapA) {
   EXPECT_TRUE(last);
   for (size_t i = 0; i < fragmentation.fragmentationVectorSize; ++i)
     VerifyStapAPayload(fragmentation, 0, i, frame, kFrameSize, packet, length);
+
+  EXPECT_FALSE(packetizer->NextPacket(packet, &length, &last));
+}
+
+TEST(RtpPacketizerH264Test, TestTooSmallForStapAHeaders) {
+  const size_t kFrameSize = kMaxPayloadSize - 1;
+  uint8_t frame[kFrameSize] = {0x07, 0xFF,  // F=0, NRI=0, Type=7.
+                               0x08, 0xFF,  // F=0, NRI=0, Type=8.
+                               0x05};       // F=0, NRI=0, Type=5.
+  const size_t kPayloadOffset = 5;
+  for (size_t i = 0; i < kFrameSize - kPayloadOffset; ++i)
+    frame[i + kPayloadOffset] = i;
+  RTPFragmentationHeader fragmentation;
+  fragmentation.VerifyAndAllocateFragmentationHeader(3);
+  fragmentation.fragmentationOffset[0] = 0;
+  fragmentation.fragmentationLength[0] = 2;
+  fragmentation.fragmentationOffset[1] = 2;
+  fragmentation.fragmentationLength[1] = 2;
+  fragmentation.fragmentationOffset[2] = 4;
+  fragmentation.fragmentationLength[2] =
+      kNalHeaderSize + kFrameSize - kPayloadOffset;
+  scoped_ptr<RtpPacketizer> packetizer(
+      RtpPacketizer::Create(kRtpVideoH264, kMaxPayloadSize));
+  packetizer->SetPayloadData(frame, kFrameSize, &fragmentation);
+
+  uint8_t packet[kMaxPayloadSize] = {0};
+  size_t length = 0;
+  bool last = false;
+  ASSERT_TRUE(packetizer->NextPacket(packet, &length, &last));
+  size_t expected_packet_size = kNalHeaderSize;
+  for (size_t i = 0; i < 2; ++i) {
+    expected_packet_size += kLengthFieldLength +
+        fragmentation.fragmentationLength[i];
+  }
+  ASSERT_EQ(expected_packet_size, length);
+  EXPECT_FALSE(last);
+  for (size_t i = 0; i < 2; ++i)
+    VerifyStapAPayload(fragmentation, 0, i, frame, kFrameSize, packet, length);
+
+  ASSERT_TRUE(packetizer->NextPacket(packet, &length, &last));
+  expected_packet_size = fragmentation.fragmentationLength[2];
+  ASSERT_EQ(expected_packet_size, length);
+  EXPECT_TRUE(last);
+  VerifySingleNaluPayload(fragmentation, 2, frame, kFrameSize, packet, length);
 
   EXPECT_FALSE(packetizer->NextPacket(packet, &length, &last));
 }
