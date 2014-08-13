@@ -561,30 +561,38 @@ class AcmReceiverBitExactness : public ::testing::Test {
 };
 
 TEST_F(AcmReceiverBitExactness, 8kHzOutput) {
+  // TODO(henrik.lundin) Update the android checksum once the android bots are
+  // running this test again.
   Run(8000,
-      PlatformChecksum("a53573d9a44a53ea852056e9550fbd53",
+      PlatformChecksum("bd6f8d9602cd82444ea2539e674df747",
                        "7924385273062b9f07aa3d4dff30d601",
-                       "c54fd4a532cdb400bca2758d3a941eee"));
+                       "8a8440f5511eb729221b9aac25cda3a0"));
 }
 
 TEST_F(AcmReceiverBitExactness, 16kHzOutput) {
+  // TODO(henrik.lundin) Update the android checksum once the android bots are
+  // running this test again.
   Run(16000,
-      PlatformChecksum("16ed8ee37bad45de2e1ad2b34c7c3910",
+      PlatformChecksum("a39bc6ee0c4eb15f3ad2f43cebcc571d",
                        "d1d3dde41da936f80fa63d718fbc0fc0",
-                       "68a8b57a0672356f846b3cea51e49903"));
+                       "7be583092c5adbcb0f6cd66eca20ea63"));
 }
 
 TEST_F(AcmReceiverBitExactness, 32kHzOutput) {
+  // TODO(henrik.lundin) Update the android checksum once the android bots are
+  // running this test again.
   Run(32000,
-      PlatformChecksum("f0f41f494d5d811f5a1cfce8fd89d9db",
+      PlatformChecksum("80964572aaa2dc92f9e34896dd3802b3",
                        "23b82b2605e3aab3d4d9e67dba341355",
-                       "f2a69bcdedca515e548cd2c5af75d046"));
+                       "3a84188abe9fca25fedd6034760f3e22"));
 }
 
 TEST_F(AcmReceiverBitExactness, 48kHzOutput) {
+  // TODO(henrik.lundin) Update the android checksum once the android bots are
+  // running this test again.
   Run(48000,
-      PlatformChecksum("77730099d995180ab6cb60379d4a9715",
+      PlatformChecksum("8aacde91f390e0d5a9c2ed571a25fd37",
                        "580c2d0b273ffa8fa0796d784908cbdb",
-                       "5c1bdee51750e13fbb9413bc9280c0dd"));
+                       "89b4b19bdb4de40f1d88302ef8cb9f9b"));
 }
 }  // namespace webrtc

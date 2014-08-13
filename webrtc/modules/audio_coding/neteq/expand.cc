@@ -861,8 +861,8 @@ void Expand::GenerateBackgroundNoise(int16_t* random_vector,
                               mute_slope,
                               noise_samples);
     } else if (bgn_mute_factor < 16384) {
-      // If mode is kBgnOff, or if kBgnFade has started fading,
-      // Use regular |mute_slope|.
+      // If mode is kBgnOn, or if kBgnFade has started fading,
+      // use regular |mute_slope|.
       if (!stop_muting_ && bgn_mode != NetEq::kBgnOff &&
           !(bgn_mode == NetEq::kBgnFade && too_many_expands)) {
         DspHelper::UnmuteSignal(noise_samples,

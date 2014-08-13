@@ -74,7 +74,7 @@ class NetEq {
           max_packets_in_buffer(50),
           // |max_delay_ms| has the same effect as calling SetMaximumDelay().
           max_delay_ms(2000),
-          background_noise_mode(kBgnOn) {}
+          background_noise_mode(kBgnOff) {}
 
     int sample_rate_hz;  // Initial vale. Will change with input data.
     bool enable_audio_classifier;
