@@ -120,13 +120,9 @@ class MockStatsObserver : public webrtc::StatsObserver {
   MockStatsObserver()
       : called_(false) {}
   virtual ~MockStatsObserver() {}
-  virtual void OnComplete(const StatsReports& reports) {
+  virtual void OnComplete(const std::vector<webrtc::StatsReport>& reports) {
     called_ = true;
-    reports_.clear();
-    reports_.reserve(reports.size());
-    StatsReports::const_iterator it;
-    for (it = reports.begin(); it != reports.end(); ++it)
-      reports_.push_back(StatsReportCopyable(*(*it)));
+    reports_ = reports;
   }
 
   bool called() const { return called_; }
@@ -152,7 +148,7 @@ class MockStatsObserver : public webrtc::StatsObserver {
   }
 
  private:
-  int GetSsrcStatsValue(StatsReport::StatsValueName name) {
+  int GetSsrcStatsValue(const std::string name) {
     if (reports_.empty()) {
       return 0;
     }
@@ -171,7 +167,7 @@ class MockStatsObserver : public webrtc::StatsObserver {
   }
 
   bool called_;
-  std::vector<StatsReportCopyable> reports_;
+  std::vector<webrtc::StatsReport> reports_;
 };
 
 }  // namespace webrtc
