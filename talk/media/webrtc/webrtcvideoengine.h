@@ -243,11 +243,11 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
 
   WebRtcVideoEngine* engine() { return engine_; }
   VoiceMediaChannel* voice_channel() { return voice_channel_; }
-  int video_channel() const { return vie_channel_; }
   bool sending() const { return sending_; }
 
   // Public for testing purpose.
-  uint32 GetDefaultChannelSsrc();
+  uint32 GetDefaultSendChannelSsrc();
+  int GetDefaultChannelId() const { return default_channel_id_; }
 
   // VideoMediaChannel implementation
   virtual bool SetRecvCodecs(const std::vector<VideoCodec> &codecs);
@@ -318,14 +318,15 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
 
   enum MediaDirection { MD_RECV, MD_SEND, MD_SENDRECV };
 
-  // Creates and initializes a ViE channel. When successful |channel_id| will
-  // contain the new channel's ID. If |receiving| is true |ssrc| is the
-  // remote ssrc. If |sending| is true the ssrc is local ssrc. If both
-  // |receiving| and |sending| is true the ssrc must be 0 and the channel will
-  // be created as a default channel. The ssrc must be different for receive
-  // channels and it must be different for send channels. If the same SSRC is
-  // being used for creating channel more than once, this function will fail
-  // returning false.
+  // Creates and initializes a ViE channel. When successful
+  // |channel_id| will contain the new channel's ID. If |receiving| is
+  // true |ssrc| is the remote ssrc. If |sending| is true the ssrc is
+  // local ssrc. If both |receiving| and |sending| is true the ssrc
+  // must be kDefaultChannelSsrcKey and the channel will be created as
+  // a default channel. The ssrc must be different for receive
+  // channels and it must be different for send channels. If the same
+  // SSRC is being used for creating channel more than once, this
+  // function will fail returning false.
   bool CreateChannel(uint32 ssrc_key, MediaDirection direction,
                      int* channel_id);
   bool CreateUnsignalledRecvChannel(uint32 ssrc_key, int* channel_id);
@@ -342,8 +343,8 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
   // Prepares the channel with channel id |info->channel_id()| to receive all
   // codecs in |receive_codecs_| and start receive packets.
   bool SetReceiveCodecs(WebRtcVideoChannelRecvInfo* info);
-  // Returns the channel number that receives the stream with SSRC |ssrc|.
-  int GetRecvChannelNum(uint32 ssrc);
+  // Returns the channel ID that receives the stream with SSRC |ssrc|.
+  int GetRecvChannelId(uint32 ssrc);
   bool MaybeSetRtxSsrc(const StreamParams& sp, int channel_id);
   // Given captured video frame size, checks if we need to reset vie send codec.
   // |reset| is set to whether resetting has happened on vie or not.
@@ -365,24 +366,33 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
   bool SendIntraFrame(int channel_id);
 
   bool HasReadySendChannels();
+  bool DefaultSendChannelInUse();
 
-  // Send channel key returns the key corresponding to the provided local SSRC
-  // in |key|. The return value is true upon success.
-  // If the local ssrc correspond to that of the default channel the key is 0.
-  // For all other channels the returned key will be the same as the local ssrc.
-  bool GetSendChannelKey(uint32 local_ssrc, uint32* key);
-  WebRtcVideoChannelSendInfo* GetSendChannel(uint32 local_ssrc);
-  // Creates a new unique key that can be used for inserting a new send channel
-  // into |send_channels_|
-  bool CreateSendChannelKey(uint32 local_ssrc, uint32* key);
+  // Returns the ssrc key corresponding to the provided local SSRC in
+  // |ssrc_key|. The return value is true upon success.  If the local
+  // ssrc correspond to that of the default channel the key is
+  // kDefaultChannelSsrcKey.
+  // For all other channels the returned ssrc key will be the same as
+  // the local ssrc.
+  bool GetSendChannelSsrcKey(uint32 local_ssrc, uint32* ssrc_key);
+  WebRtcVideoChannelSendInfo* GetDefaultSendChannel();
+  WebRtcVideoChannelSendInfo* GetSendChannelBySsrcKey(uint32 ssrc_key);
+  WebRtcVideoChannelSendInfo* GetSendChannelBySsrc(uint32 local_ssrc);
+  // Creates a new unique ssrc key that can be used for inserting a
+  // new send channel into |send_channels_|
+  bool CreateSendChannelSsrcKey(uint32 local_ssrc, uint32* ssrc_key);
   // Get the number of the send channels |capturer| registered with.
   int GetSendChannelNum(VideoCapturer* capturer);
 
-  bool IsDefaultChannel(int channel_id) const {
-    return channel_id == vie_channel_;
+  bool IsDefaultChannelId(int channel_id) const {
+    return channel_id == default_channel_id_;
   }
+  bool GetDefaultRenderer(VideoRenderer** renderer);
 
   bool DeleteSendChannel(uint32 ssrc_key);
+
+  WebRtcVideoChannelRecvInfo* GetDefaultRecvChannel();
+  WebRtcVideoChannelRecvInfo* GetRecvChannelBySsrc(uint32 ssrc);
 
   bool InConferenceMode() const {
     return options_.conference_mode.GetWithDefaultIfUnset(false);
@@ -420,17 +430,17 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
   // Global state.
   WebRtcVideoEngine* engine_;
   VoiceMediaChannel* voice_channel_;
-  int vie_channel_;
+  int default_channel_id_;
   bool nack_enabled_;
   // Receiver Estimated Max Bitrate
   bool remb_enabled_;
   VideoOptions options_;
 
   // Global recv side state.
-  // Note the default channel (vie_channel_), i.e. the send channel
+  // Note the default channel (default_channel_id_), i.e. the send channel
   // corresponding to all the receive channels (this must be done for REMB to
   // work properly), resides in both recv_channels_ and send_channels_ with the
-  // ssrc key 0.
+  // ssrc key kDefaultChannelSsrcKey.
   RecvChannelMap recv_channels_;  // Contains all receive channels.
   // A map from the SSRCs on which RTX packets are received to the media SSRCs
   // the RTX packets are associated with. RTX packets will be delivered to the

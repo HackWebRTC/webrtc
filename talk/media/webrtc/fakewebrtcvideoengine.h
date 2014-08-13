@@ -548,13 +548,21 @@ class FakeWebRtcVideoEngine
     WEBRTC_ASSERT_CHANNEL(channel);
     return channels_.find(channel)->second->overuse_options_;
   }
-  int GetRtxSsrc(int channel, int simulcast_idx) const {
+  int GetSsrc(int channel, int idx) const {
     WEBRTC_ASSERT_CHANNEL(channel);
-    if (channels_.find(channel)->second->rtx_ssrcs_.find(simulcast_idx) ==
+    if (channels_.find(channel)->second->ssrcs_.find(idx) ==
+        channels_.find(channel)->second->ssrcs_.end()) {
+      return -1;
+    }
+    return channels_.find(channel)->second->ssrcs_[idx];
+  }
+  int GetRtxSsrc(int channel, int idx) const {
+    WEBRTC_ASSERT_CHANNEL(channel);
+    if (channels_.find(channel)->second->rtx_ssrcs_.find(idx) ==
         channels_.find(channel)->second->rtx_ssrcs_.end()) {
       return -1;
     }
-    return channels_.find(channel)->second->rtx_ssrcs_[simulcast_idx];
+    return channels_.find(channel)->second->rtx_ssrcs_[idx];
   }
   bool ReceiveCodecRegistered(int channel,
                               const webrtc::VideoCodec& codec) const {

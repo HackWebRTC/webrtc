@@ -1720,7 +1720,6 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_FALSE(channel_->RemoveSendStream(kSsrcs4[kSsrcsSize - 1]));
   }
 
-
   // Two streams one channel tests.
 
   // Tests that we can send and receive frames.
@@ -1742,18 +1741,18 @@ class VideoMediaChannelTest : public testing::Test,
   void TwoStreamsReUseFirstStream(const cricket::VideoCodec& codec) {
     SetUpSecondStream();
     // Default channel used by the first stream.
-    EXPECT_EQ(kSsrc, channel_->GetDefaultChannelSsrc());
+    EXPECT_EQ(kSsrc, channel_->GetDefaultSendChannelSsrc());
     EXPECT_TRUE(channel_->RemoveRecvStream(kSsrc));
     EXPECT_FALSE(channel_->RemoveRecvStream(kSsrc));
     EXPECT_TRUE(channel_->RemoveSendStream(kSsrc));
     EXPECT_FALSE(channel_->RemoveSendStream(kSsrc));
     // Default channel is no longer used by a stream.
-    EXPECT_EQ(0u, channel_->GetDefaultChannelSsrc());
+    EXPECT_EQ(0u, channel_->GetDefaultSendChannelSsrc());
     uint32 new_ssrc = kSsrc + 100;
     EXPECT_TRUE(channel_->AddSendStream(
         cricket::StreamParams::CreateLegacy(new_ssrc)));
     // Re-use default channel.
-    EXPECT_EQ(new_ssrc, channel_->GetDefaultChannelSsrc());
+    EXPECT_EQ(new_ssrc, channel_->GetDefaultSendChannelSsrc());
     EXPECT_FALSE(channel_->AddSendStream(
         cricket::StreamParams::CreateLegacy(new_ssrc)));
     EXPECT_TRUE(channel_->AddRecvStream(
@@ -1766,7 +1765,7 @@ class VideoMediaChannelTest : public testing::Test,
 
     SendAndReceive(codec);
     EXPECT_TRUE(channel_->RemoveSendStream(new_ssrc));
-    EXPECT_EQ(0u, channel_->GetDefaultChannelSsrc());
+    EXPECT_EQ(0u, channel_->GetDefaultSendChannelSsrc());
   }
 
   // Tests that we can send and receive frames with early receive.
