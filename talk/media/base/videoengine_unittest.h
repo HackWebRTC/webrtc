@@ -1698,6 +1698,14 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_EQ_WAIT(frame_count, renderer_.num_rendered_frames(), kTimeout);
     EXPECT_FALSE(renderer_.black_frame());
 
+    // Test that muting an existing stream succeeds even if it's muted.
+    EXPECT_TRUE(channel_->MuteStream(kSsrc, true));
+    EXPECT_TRUE(channel_->MuteStream(kSsrc, true));
+
+    // Test that unmuting an existing stream succeeds even if it's not muted.
+    EXPECT_TRUE(channel_->MuteStream(kSsrc, false));
+    EXPECT_TRUE(channel_->MuteStream(kSsrc, false));
+
     // Test that muting an invalid stream fails.
     EXPECT_FALSE(channel_->MuteStream(kSsrc+1, true));
     EXPECT_TRUE(channel_->SetCapturer(kSsrc, NULL));

@@ -1181,7 +1181,9 @@ bool WebRtcVideoChannel2::MuteStream(uint32 ssrc, bool mute) {
     LOG(LS_ERROR) << "No sending stream on ssrc " << ssrc;
     return false;
   }
-  return send_streams_[ssrc]->MuteStream(mute);
+
+  send_streams_[ssrc]->MuteStream(mute);
+  return true;
 }
 
 bool WebRtcVideoChannel2::SetRecvRtpHeaderExtensions(
@@ -1472,11 +1474,9 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetVideoFormat(
   return true;
 }
 
-bool WebRtcVideoChannel2::WebRtcVideoSendStream::MuteStream(bool mute) {
+void WebRtcVideoChannel2::WebRtcVideoSendStream::MuteStream(bool mute) {
   rtc::CritScope cs(&lock_);
-  bool was_muted = muted_;
   muted_ = mute;
-  return was_muted != mute;
 }
 
 bool WebRtcVideoChannel2::WebRtcVideoSendStream::DisconnectCapturer() {

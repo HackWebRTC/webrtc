@@ -304,7 +304,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     void InputFrame(VideoCapturer* capturer, const VideoFrame* frame);
     bool SetCapturer(VideoCapturer* capturer);
     bool SetVideoFormat(const VideoFormat& format);
-    bool MuteStream(bool mute);
+    void MuteStream(bool mute);
     bool DisconnectCapturer();
 
     void Start();
