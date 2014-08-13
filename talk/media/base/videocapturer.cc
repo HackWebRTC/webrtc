@@ -130,6 +130,14 @@ void VideoCapturer::Construct() {
   adapt_frame_drops_ = 0;
   effect_frame_drops_ = 0;
   previous_frame_time_ = 0.0;
+#ifdef HAVE_WEBRTC_VIDEO
+  // There are lots of video capturers out there that don't call
+  // set_frame_factory.  We can either go change all of them, or we
+  // can set this default.
+  // TODO(pthatcher): Remove this hack and require the frame factory
+  // to be passed in the constructor.
+  set_frame_factory(new WebRtcVideoFrameFactory());
+#endif
 }
 
 const std::vector<VideoFormat>* VideoCapturer::GetSupportedFormats() const {
