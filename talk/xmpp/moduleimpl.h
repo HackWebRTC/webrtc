@@ -28,8 +28,8 @@
 #ifndef _moduleimpl_h_
 #define _moduleimpl_h_
 
-#include "talk/xmpp/xmppengine.h"
 #include "talk/xmpp/module.h"
+#include "talk/xmpp/xmppengine.h"
 
 namespace buzz {
 

@@ -3,9 +3,9 @@
 
 #include "talk/xmpp/pingtask.h"
 
+#include "talk/xmpp/constants.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "talk/xmpp/constants.h"
 
 namespace buzz {
 

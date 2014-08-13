@@ -31,8 +31,8 @@
 #include <string>
 #include <vector>
 
-#include "talk/xmllite/xmlelement.h"
 #include "talk/xmllite/xmlconstants.h"
+#include "talk/xmllite/xmlelement.h"
 
 namespace buzz {
 

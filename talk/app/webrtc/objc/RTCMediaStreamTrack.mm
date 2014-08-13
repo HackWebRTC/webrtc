@@ -29,8 +29,8 @@
 #error "This file requires ARC support."
 #endif
 
-#import "RTCMediaStreamTrack+Internal.h"
 #import "RTCEnumConverter.h"
+#import "RTCMediaStreamTrack+Internal.h"
 
 namespace webrtc {
 

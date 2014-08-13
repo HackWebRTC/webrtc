@@ -27,11 +27,11 @@
 
 #include "talk/app/webrtc/portallocatorfactory.h"
 
+#include "talk/p2p/base/basicpacketsocketfactory.h"
+#include "talk/p2p/client/basicportallocator.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/network.h"
 #include "webrtc/base/thread.h"
-#include "talk/p2p/base/basicpacketsocketfactory.h"
-#include "talk/p2p/client/basicportallocator.h"
 
 namespace webrtc {
 

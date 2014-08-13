@@ -25,16 +25,16 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <vector>
-#include <string>
-#include <map>
 #include <algorithm>
-#include <sstream>
 #include <iostream>
-#include "webrtc/base/common.h"
-#include "webrtc/base/stringencode.h"
+#include <map>
+#include <sstream>
+#include <string>
+#include <vector>
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/rostermoduleimpl.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/stringencode.h"
 
 namespace buzz {
 

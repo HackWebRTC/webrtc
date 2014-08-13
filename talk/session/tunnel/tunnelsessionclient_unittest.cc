@@ -26,16 +26,16 @@
  */
 
 #include <string>
+#include "talk/p2p/base/sessionmanager.h"
+#include "talk/p2p/base/transport.h"
+#include "talk/p2p/client/fakeportallocator.h"
+#include "talk/session/tunnel/tunnelsessionclient.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stream.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"
-#include "talk/p2p/base/sessionmanager.h"
-#include "talk/p2p/base/transport.h"
-#include "talk/p2p/client/fakeportallocator.h"
-#include "talk/session/tunnel/tunnelsessionclient.h"
 
 static const int kTimeoutMs = 10000;
 static const int kBlockSize = 4096;

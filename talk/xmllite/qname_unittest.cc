@@ -26,8 +26,8 @@
  */
 
 #include <string>
-#include "webrtc/base/gunit.h"
 #include "talk/xmllite/qname.h"
+#include "webrtc/base/gunit.h"
 
 using buzz::StaticQName;
 using buzz::QName;

@@ -31,6 +31,11 @@
 #include <string>
 #include <vector>
 
+#include "talk/media/base/mediachannel.h"
+#include "talk/media/base/videoadapter.h"
+#include "talk/media/base/videocommon.h"
+#include "talk/media/base/videoframefactory.h"
+#include "talk/media/devices/devicemanager.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/messagehandler.h"
@@ -39,11 +44,6 @@
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timing.h"
-#include "talk/media/base/mediachannel.h"
-#include "talk/media/base/videoadapter.h"
-#include "talk/media/base/videocommon.h"
-#include "talk/media/base/videoframefactory.h"
-#include "talk/media/devices/devicemanager.h"
 
 
 namespace cricket {

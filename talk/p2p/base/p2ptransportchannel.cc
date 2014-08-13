@@ -28,13 +28,13 @@
 #include "talk/p2p/base/p2ptransportchannel.h"
 
 #include <set>
+#include "talk/p2p/base/common.h"
+#include "talk/p2p/base/relayport.h"  // For RELAY_PORT_TYPE.
+#include "talk/p2p/base/stunport.h"  // For STUN_PORT_TYPE.
 #include "webrtc/base/common.h"
 #include "webrtc/base/crc32.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"
-#include "talk/p2p/base/common.h"
-#include "talk/p2p/base/relayport.h"  // For RELAY_PORT_TYPE.
-#include "talk/p2p/base/stunport.h"  // For STUN_PORT_TYPE.
 
 namespace {
 

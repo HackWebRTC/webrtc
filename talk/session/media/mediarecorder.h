@@ -31,11 +31,11 @@
 #include <map>
 #include <string>
 
+#include "talk/session/media/channel.h"
+#include "talk/session/media/mediasink.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
-#include "talk/session/media/channel.h"
-#include "talk/session/media/mediasink.h"
 
 namespace rtc {
 class Pathname;

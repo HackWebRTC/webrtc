@@ -27,10 +27,10 @@
 
 #include "talk/session/media/currentspeakermonitor.h"
 
-#include "webrtc/base/logging.h"
 #include "talk/media/base/streamparams.h"
 #include "talk/session/media/audiomonitor.h"
 #include "talk/session/media/mediamessages.h"
+#include "webrtc/base/logging.h"
 
 namespace cricket {
 

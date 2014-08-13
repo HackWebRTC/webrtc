@@ -27,18 +27,18 @@
 
 // SecureTunnelSessionClient and SecureTunnelSession implementation.
 
+#include "talk/p2p/base/transportchannel.h"
+#include "talk/session/tunnel/pseudotcpchannel.h"
 #include "talk/session/tunnel/securetunnelsessionclient.h"
+#include "talk/xmllite/xmlelement.h"
 #include "webrtc/base/basicdefs.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/stringutils.h"
 #include "webrtc/base/sslidentity.h"
 #include "webrtc/base/sslstreamadapter.h"
-#include "talk/p2p/base/transportchannel.h"
-#include "talk/xmllite/xmlelement.h"
-#include "talk/session/tunnel/pseudotcpchannel.h"
+#include "webrtc/base/stringutils.h"
 
 namespace cricket {
 

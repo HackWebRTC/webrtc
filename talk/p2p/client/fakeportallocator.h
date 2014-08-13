@@ -6,10 +6,10 @@
 #define TALK_P2P_CLIENT_FAKEPORTALLOCATOR_H_
 
 #include <string>
-#include "webrtc/base/scoped_ptr.h"
 #include "talk/p2p/base/basicpacketsocketfactory.h"
 #include "talk/p2p/base/portallocator.h"
 #include "talk/p2p/base/udpport.h"
+#include "webrtc/base/scoped_ptr.h"
 
 namespace rtc {
 class SocketFactory;

@@ -27,8 +27,8 @@
 
 #include "talk/session/media/bundlefilter.h"
 
-#include "webrtc/base/logging.h"
 #include "talk/media/base/rtputils.h"
+#include "webrtc/base/logging.h"
 
 namespace cricket {
 

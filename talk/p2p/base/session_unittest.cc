@@ -27,23 +27,15 @@
 
 #include <string.h>
 
-#include <sstream>
 #include <deque>
 #include <map>
+#include <sstream>
 
-#include "webrtc/base/base64.h"
-#include "webrtc/base/common.h"
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/helpers.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/natserver.h"
-#include "webrtc/base/natsocketfactory.h"
-#include "webrtc/base/stringencode.h"
 #include "talk/p2p/base/basicpacketsocketfactory.h"
 #include "talk/p2p/base/constants.h"
+#include "talk/p2p/base/p2ptransport.h"
 #include "talk/p2p/base/parsing.h"
 #include "talk/p2p/base/portallocator.h"
-#include "talk/p2p/base/p2ptransport.h"
 #include "talk/p2p/base/relayport.h"
 #include "talk/p2p/base/relayserver.h"
 #include "talk/p2p/base/session.h"
@@ -55,6 +47,14 @@
 #include "talk/p2p/base/transportchannelproxy.h"
 #include "talk/p2p/base/udpport.h"
 #include "talk/xmpp/constants.h"
+#include "webrtc/base/base64.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/natserver.h"
+#include "webrtc/base/natsocketfactory.h"
+#include "webrtc/base/stringencode.h"
 
 using cricket::SignalingProtocol;
 using cricket::PROTOCOL_HYBRID;

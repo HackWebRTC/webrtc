@@ -29,11 +29,11 @@
 
 #include "libyuv/cpu_id.h"
 #include "libyuv/scale.h"
+#include "talk/media/base/testutils.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/flags.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "talk/media/base/testutils.h"
 
 #if defined(_MSC_VER)
 #define ALIGN16(var) __declspec(align(16)) var

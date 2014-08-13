@@ -32,15 +32,15 @@
 #include <string>
 
 #include "libyuv/convert_from.h"
-#include "webrtc/base/buffer.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/stringutils.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videorenderer.h"
 #include "talk/media/webrtc/constants.h"
 #include "talk/media/webrtc/webrtcvideocapturer.h"
 #include "talk/media/webrtc/webrtcvideoframe.h"
 #include "talk/media/webrtc/webrtcvoiceengine.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/stringutils.h"
 #include "webrtc/call.h"
 // TODO(pbos): Move codecs out of modules (webrtc:3070).
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"

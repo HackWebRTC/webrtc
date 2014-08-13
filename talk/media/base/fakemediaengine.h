@@ -34,13 +34,13 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/buffer.h"
-#include "webrtc/base/stringutils.h"
 #include "talk/media/base/audiorenderer.h"
 #include "talk/media/base/mediaengine.h"
 #include "talk/media/base/rtputils.h"
 #include "talk/media/base/streamparams.h"
 #include "talk/p2p/base/sessiondescription.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/stringutils.h"
 
 namespace cricket {
 

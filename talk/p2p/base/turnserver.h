@@ -33,11 +33,11 @@
 #include <set>
 #include <string>
 
+#include "talk/p2p/base/portinterface.h"
 #include "webrtc/base/asyncpacketsocket.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/socketaddress.h"
-#include "talk/p2p/base/portinterface.h"
 
 namespace rtc {
 class ByteBuffer;

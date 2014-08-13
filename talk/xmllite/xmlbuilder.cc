@@ -27,11 +27,11 @@
 
 #include "talk/xmllite/xmlbuilder.h"
 
-#include <vector>
 #include <set>
-#include "webrtc/base/common.h"
+#include <vector>
 #include "talk/xmllite/xmlconstants.h"
 #include "talk/xmllite/xmlelement.h"
+#include "webrtc/base/common.h"
 
 namespace buzz {
 

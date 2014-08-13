@@ -29,12 +29,8 @@
 
 #include "talk/session/media/mediasessionclient.h"
 
-#include "webrtc/base/helpers.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/stringencode.h"
-#include "webrtc/base/stringutils.h"
-#include "talk/media/base/cryptoparams.h"
 #include "talk/media/base/capturemanager.h"
+#include "talk/media/base/cryptoparams.h"
 #include "talk/media/sctp/sctpdataengine.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/parsing.h"
@@ -43,6 +39,10 @@
 #include "talk/xmllite/qname.h"
 #include "talk/xmllite/xmlconstants.h"
 #include "talk/xmpp/constants.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/stringencode.h"
+#include "webrtc/base/stringutils.h"
 
 namespace cricket {
 

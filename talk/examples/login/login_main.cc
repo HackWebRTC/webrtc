@@ -29,11 +29,11 @@
 
 #include <iostream>
 
-#include "webrtc/base/thread.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/xmppclientsettings.h"
 #include "talk/xmpp/xmppengine.h"
 #include "talk/xmpp/xmppthread.h"
+#include "webrtc/base/thread.h"
 
 int main(int argc, char **argv) {
   std::cout << "OAuth Access Token: ";

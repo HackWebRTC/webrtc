@@ -31,10 +31,10 @@
 
 #include <string>
 
+#include "talk/media/base/rtputils.h"
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/timeutils.h"
-#include "talk/media/base/rtputils.h"
 
 namespace {
 static const int kRtpSsrcOffset = 8;

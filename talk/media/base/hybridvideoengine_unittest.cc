@@ -25,13 +25,13 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/base/gunit.h"
 #include "talk/media/base/fakemediaengine.h"
 #include "talk/media/base/fakenetworkinterface.h"
 #include "talk/media/base/fakevideocapturer.h"
 #include "talk/media/base/hybridvideoengine.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/testutils.h"
+#include "webrtc/base/gunit.h"
 
 static const cricket::VideoCodec kGenericCodec(97, "Generic", 640, 360, 30, 0);
 static const cricket::VideoCodec kVp8Codec(100, "VP8", 640, 360, 30, 0);

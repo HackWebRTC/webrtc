@@ -30,8 +30,8 @@
 #define TALK_MEDIA_DEVICES_GDIVIDEORENDERER_H_
 
 #ifdef WIN32
-#include "webrtc/base/scoped_ptr.h"
 #include "talk/media/base/videorenderer.h"
+#include "webrtc/base/scoped_ptr.h"
 
 namespace cricket {
 

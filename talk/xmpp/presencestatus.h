@@ -28,8 +28,8 @@
 #ifndef THIRD_PARTY_LIBJINGLE_FILES_TALK_XMPP_PRESENCESTATUS_H_
 #define THIRD_PARTY_LIBJINGLE_FILES_TALK_XMPP_PRESENCESTATUS_H_
 
-#include "talk/xmpp/jid.h"
 #include "talk/xmpp/constants.h"
+#include "talk/xmpp/jid.h"
 
 namespace buzz {
 

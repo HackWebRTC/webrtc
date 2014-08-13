@@ -39,8 +39,8 @@
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/mediastreamprovider.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
-#include "webrtc/base/thread.h"
 #include "talk/media/base/audiorenderer.h"
+#include "webrtc/base/thread.h"
 
 namespace webrtc {
 

@@ -38,10 +38,6 @@
 #ifdef OSX
 #include "webrtc/base/maccocoasocketserver.h"
 #endif
-#include "webrtc/base/pathutils.h"
-#include "webrtc/base/ssladapter.h"
-#include "webrtc/base/stream.h"
-#include "webrtc/base/win32socketserver.h"
 #include "talk/examples/call/callclient.h"
 #include "talk/examples/call/console.h"
 #include "talk/examples/call/mediaenginefactory.h"
@@ -52,6 +48,10 @@
 #include "talk/xmpp/xmppclientsettings.h"
 #include "talk/xmpp/xmpppump.h"
 #include "talk/xmpp/xmppsocket.h"
+#include "webrtc/base/pathutils.h"
+#include "webrtc/base/ssladapter.h"
+#include "webrtc/base/stream.h"
+#include "webrtc/base/win32socketserver.h"
 
 class DebugLog : public sigslot::has_slots<> {
  public:

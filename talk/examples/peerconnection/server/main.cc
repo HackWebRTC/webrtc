@@ -31,10 +31,10 @@
 
 #include <vector>
 
-#include "webrtc/base/flags.h"
 #include "talk/examples/peerconnection/server/data_socket.h"
 #include "talk/examples/peerconnection/server/peer_channel.h"
 #include "talk/examples/peerconnection/server/utils.h"
+#include "webrtc/base/flags.h"
 
 DEFINE_bool(help, false, "Prints this message");
 DEFINE_int(port, 8888, "The port on which to listen.");

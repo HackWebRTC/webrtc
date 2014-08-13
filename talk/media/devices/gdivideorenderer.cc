@@ -29,11 +29,11 @@
 
 #include "talk/media/devices/gdivideorenderer.h"
 
+#include "talk/media/base/videocommon.h"
+#include "talk/media/base/videoframe.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/win32window.h"
-#include "talk/media/base/videocommon.h"
-#include "talk/media/base/videoframe.h"
 
 namespace cricket {
 

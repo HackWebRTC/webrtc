@@ -7,15 +7,15 @@
 #include <map>
 #include <string>
 
-#include "webrtc/base/network.h"
+#include "talk/p2p/base/basicpacketsocketfactory.h"
+#include "talk/p2p/client/httpportallocator.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/messagehandler.h"
+#include "webrtc/base/network.h"
 #include "webrtc/base/proxyinfo.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/socketaddress.h"
-#include "talk/p2p/base/basicpacketsocketfactory.h"
-#include "talk/p2p/client/httpportallocator.h"
 
 namespace rtc {
 class AsyncHttpRequest;

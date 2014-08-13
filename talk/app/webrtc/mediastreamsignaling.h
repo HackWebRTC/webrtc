@@ -28,17 +28,17 @@
 #ifndef TALK_APP_WEBRTC_MEDIASTREAMSIGNALING_H_
 #define TALK_APP_WEBRTC_MEDIASTREAMSIGNALING_H_
 
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
 
 #include "talk/app/webrtc/datachannel.h"
 #include "talk/app/webrtc/mediastream.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/app/webrtc/streamcollection.h"
+#include "talk/session/media/mediasession.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/sigslot.h"
-#include "talk/session/media/mediasession.h"
 
 namespace rtc {
 class Thread;

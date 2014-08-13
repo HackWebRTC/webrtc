@@ -27,8 +27,8 @@
 
 // Main function for all unit tests in talk/examples/call
 
-#include "webrtc/base/logging.h"
 #include "testing/base/public/gunit.h"
+#include "webrtc/base/logging.h"
 
 int main(int argc, char **argv) {
   rtc::LogMessage::LogToDebug(rtc::LogMessage::NO_LOGGING);

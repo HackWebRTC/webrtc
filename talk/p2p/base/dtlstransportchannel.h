@@ -32,11 +32,11 @@
 #include <string>
 #include <vector>
 
+#include "talk/p2p/base/transportchannelimpl.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/base/stream.h"
-#include "talk/p2p/base/transportchannelimpl.h"
 
 namespace cricket {
 

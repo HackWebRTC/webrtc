@@ -3,16 +3,16 @@
 
 #include <string>
 
-#include "webrtc/base/faketaskrunner.h"
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/sigslot.h"
 #include "talk/xmllite/qname.h"
 #include "talk/xmllite/xmlelement.h"
 #include "talk/xmpp/constants.h"
-#include "talk/xmpp/iqtask.h"
 #include "talk/xmpp/fakexmppclient.h"
+#include "talk/xmpp/iqtask.h"
 #include "talk/xmpp/jid.h"
 #include "talk/xmpp/pubsubtasks.h"
+#include "webrtc/base/faketaskrunner.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/sigslot.h"
 
 struct HandledPubSubItem {
   std::string itemid;

@@ -31,8 +31,8 @@
 
 #include <iostream>
 
-#include "webrtc/base/thread.h"
 #include "talk/p2p/base/stunserver.h"
+#include "webrtc/base/thread.h"
 
 using namespace cricket;
 

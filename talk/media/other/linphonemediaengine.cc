@@ -32,18 +32,18 @@
 // LinphoneMediaEngine is a Linphone implementation of MediaEngine
 extern "C" {
 #include <mediastreamer2/mediastream.h>
-#include <mediastreamer2/mssndcard.h>
 #include <mediastreamer2/msfilter.h>
+#include <mediastreamer2/mssndcard.h>
 }
 
 #include "talk/media/other/linphonemediaengine.h"
 
+#include "talk/media/base/rtpdump.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/pathutils.h"
 #include "webrtc/base/stream.h"
-#include "talk/media/base/rtpdump.h"
 
 #ifndef WIN32
 #include <libgen.h>

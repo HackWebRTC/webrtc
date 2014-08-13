@@ -31,6 +31,9 @@
 #include <string>
 #include <vector>
 
+#include "talk/p2p/base/candidate.h"
+#include "talk/p2p/base/transport.h"
+#include "talk/p2p/base/transportdescription.h"
 #include "webrtc/base/asyncpacketsocket.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/dscp.h"
@@ -38,9 +41,6 @@
 #include "webrtc/base/socket.h"
 #include "webrtc/base/sslidentity.h"
 #include "webrtc/base/sslstreamadapter.h"
-#include "talk/p2p/base/candidate.h"
-#include "talk/p2p/base/transport.h"
-#include "talk/p2p/base/transportdescription.h"
 
 namespace cricket {
 

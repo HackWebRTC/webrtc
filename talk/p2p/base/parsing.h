@@ -30,9 +30,9 @@
 
 #include <string>
 #include <vector>
+#include "talk/xmllite/xmlelement.h"  // Needed to delete ParseError.extra.
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/stringencode.h"
-#include "talk/xmllite/xmlelement.h"  // Needed to delete ParseError.extra.
 
 namespace cricket {
 

@@ -32,10 +32,10 @@
 #include "talk/app/webrtc/notifier.h"
 #include "talk/app/webrtc/videosourceinterface.h"
 #include "talk/app/webrtc/videotrackrenderers.h"
-#include "webrtc/base/scoped_ptr.h"
-#include "webrtc/base/sigslot.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videocommon.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/sigslot.h"
 
 // VideoSource implements VideoSourceInterface. It owns a
 // cricket::VideoCapturer and make sure the camera is started at a resolution

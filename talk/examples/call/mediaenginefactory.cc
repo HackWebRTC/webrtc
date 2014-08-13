@@ -27,10 +27,10 @@
 
 #include "talk/examples/call/mediaenginefactory.h"
 
-#include "webrtc/base/stringutils.h"
 #include "talk/media/base/fakemediaengine.h"
 #include "talk/media/base/filemediaengine.h"
 #include "talk/media/base/mediaengine.h"
+#include "webrtc/base/stringutils.h"
 
 std::vector<cricket::AudioCodec> RequiredAudioCodecs() {
   std::vector<cricket::AudioCodec> audio_codecs;

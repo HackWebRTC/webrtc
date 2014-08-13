@@ -29,7 +29,6 @@
 
 #include <string>
 #include <vector>
-#include "webrtc/base/common.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/portallocator.h"
 #include "talk/p2p/base/portinterface.h"
@@ -40,6 +39,7 @@
 #include "talk/xmllite/qname.h"
 #include "talk/xmllite/xmlelement.h"
 #include "talk/xmpp/constants.h"
+#include "webrtc/base/common.h"
 
 #if defined(FEATURE_ENABLE_PSTN)
 

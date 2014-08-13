@@ -26,11 +26,11 @@
 #ifndef TALK_MEDIA_BASE_VIDEOADAPTER_H_  // NOLINT
 #define TALK_MEDIA_BASE_VIDEOADAPTER_H_
 
+#include "talk/media/base/videocommon.h"
 #include "webrtc/base/common.h"  // For ASSERT
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
-#include "talk/media/base/videocommon.h"
 
 namespace cricket {
 

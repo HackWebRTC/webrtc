@@ -29,6 +29,9 @@
 
 #include <math.h>
 
+#include "talk/media/base/rtpdump.h"
+#include "talk/media/base/videocapturer.h"
+#include "talk/media/base/videoframe.h"
 #include "webrtc/base/bytebuffer.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/gunit.h"
@@ -36,9 +39,6 @@
 #include "webrtc/base/stream.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/testutils.h"
-#include "talk/media/base/rtpdump.h"
-#include "talk/media/base/videocapturer.h"
-#include "talk/media/base/videoframe.h"
 
 namespace cricket {
 

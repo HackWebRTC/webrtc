@@ -31,6 +31,9 @@
 
 #include "talk/app/webrtc/jsepsessiondescription.h"
 #include "talk/app/webrtc/webrtcsdp.h"
+#include "talk/media/base/constants.h"
+#include "talk/p2p/base/constants.h"
+#include "talk/session/media/mediasession.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagedigest.h"
@@ -38,9 +41,6 @@
 #include "webrtc/base/sslfingerprint.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
-#include "talk/media/base/constants.h"
-#include "talk/p2p/base/constants.h"
-#include "talk/session/media/mediasession.h"
 
 using cricket::AudioCodec;
 using cricket::AudioContentDescription;

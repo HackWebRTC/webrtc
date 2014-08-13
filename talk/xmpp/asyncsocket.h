@@ -28,6 +28,8 @@
 #ifndef _ASYNCSOCKET_H_
 #define _ASYNCSOCKET_H_
 
+#include <string>
+
 #include "webrtc/base/sigslot.h"
 
 namespace rtc {

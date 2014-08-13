@@ -28,9 +28,9 @@
 #ifndef TALK_MEDIA_WEBRTC_WEBRTCTEXTUREVIDEOFRAME_H_
 #define TALK_MEDIA_WEBRTC_WEBRTCTEXTUREVIDEOFRAME_H_
 
+#include "talk/media/base/videoframe.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ref_ptr.h"
-#include "talk/media/base/videoframe.h"
 #include "webrtc/common_video/interface/native_handle.h"
 
 namespace cricket {

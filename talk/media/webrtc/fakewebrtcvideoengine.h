@@ -32,14 +32,14 @@
 #include <set>
 #include <vector>
 
-#include "webrtc/base/basictypes.h"
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/stringutils.h"
 #include "talk/media/base/codec.h"
 #include "talk/media/webrtc/fakewebrtccommon.h"
 #include "talk/media/webrtc/webrtcvideodecoderfactory.h"
 #include "talk/media/webrtc/webrtcvideoencoderfactory.h"
 #include "talk/media/webrtc/webrtcvie.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/stringutils.h"
 
 namespace cricket {
 

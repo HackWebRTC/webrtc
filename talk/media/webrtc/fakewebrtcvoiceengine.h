@@ -32,14 +32,14 @@
 #include <map>
 #include <vector>
 
-#include "webrtc/base/basictypes.h"
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/stringutils.h"
 #include "talk/media/base/codec.h"
 #include "talk/media/base/rtputils.h"
 #include "talk/media/base/voiceprocessor.h"
 #include "talk/media/webrtc/fakewebrtccommon.h"
 #include "talk/media/webrtc/webrtcvoe.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/stringutils.h"
 #ifdef USE_WEBRTC_DEV_BRANCH
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #endif

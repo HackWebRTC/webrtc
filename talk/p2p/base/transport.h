@@ -46,17 +46,17 @@
 #ifndef TALK_P2P_BASE_TRANSPORT_H_
 #define TALK_P2P_BASE_TRANSPORT_H_
 
-#include <string>
 #include <map>
+#include <string>
 #include <vector>
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/messagequeue.h"
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/sslstreamadapter.h"
 #include "talk/p2p/base/candidate.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/sessiondescription.h"
 #include "talk/p2p/base/transportinfo.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/messagequeue.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/sslstreamadapter.h"
 
 namespace rtc {
 class Thread;

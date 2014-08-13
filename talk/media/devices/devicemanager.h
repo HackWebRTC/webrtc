@@ -34,8 +34,8 @@
 
 #include "talk/media/base/device.h"
 #include "talk/media/base/screencastid.h"
-#include "talk/media/base/videocommon.h"
 #include "talk/media/base/videocapturerfactory.h"
+#include "talk/media/base/videocommon.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/stringencode.h"

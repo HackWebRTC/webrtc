@@ -28,12 +28,12 @@
 #ifndef TALK_XMPP_XMPPTASK_H_
 #define TALK_XMPP_XMPPTASK_H_
 
-#include <string>
 #include <deque>
+#include <string>
+#include "talk/xmpp/xmppengine.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/task.h"
 #include "webrtc/base/taskparent.h"
-#include "talk/xmpp/xmppengine.h"
 
 namespace buzz {
 

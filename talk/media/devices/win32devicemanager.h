@@ -31,9 +31,9 @@
 #include <string>
 #include <vector>
 
+#include "talk/media/devices/devicemanager.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/stringencode.h"
-#include "talk/media/devices/devicemanager.h"
 
 namespace cricket {
 

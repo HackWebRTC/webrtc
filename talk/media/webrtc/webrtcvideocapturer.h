@@ -31,10 +31,10 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/messagehandler.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/webrtc/webrtcvideoframe.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/messagehandler.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_capture/include/video_capture.h"
 

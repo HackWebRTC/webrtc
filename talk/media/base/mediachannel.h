@@ -31,6 +31,9 @@
 #include <string>
 #include <vector>
 
+#include "talk/media/base/codec.h"
+#include "talk/media/base/constants.h"
+#include "talk/media/base/streamparams.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/dscp.h"
@@ -38,9 +41,6 @@
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/socket.h"
 #include "webrtc/base/window.h"
-#include "talk/media/base/codec.h"
-#include "talk/media/base/constants.h"
-#include "talk/media/base/streamparams.h"
 // TODO(juberti): re-evaluate this include
 #include "talk/session/media/audiomonitor.h"
 

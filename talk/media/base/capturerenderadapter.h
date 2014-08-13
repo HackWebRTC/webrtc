@@ -36,9 +36,9 @@
 
 #include <vector>
 
+#include "talk/media/base/videocapturer.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/sigslot.h"
-#include "talk/media/base/videocapturer.h"
 
 namespace cricket {
 

@@ -28,8 +28,8 @@
 #include <string>
 
 #include "talk/app/webrtc/remotevideocapturer.h"
-#include "webrtc/base/gunit.h"
 #include "talk/media/webrtc/webrtcvideoframe.h"
+#include "webrtc/base/gunit.h"
 
 using cricket::CaptureState;
 using cricket::VideoCapturer;

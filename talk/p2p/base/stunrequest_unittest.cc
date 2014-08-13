@@ -25,12 +25,12 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "talk/p2p/base/stunrequest.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/timeutils.h"
-#include "talk/p2p/base/stunrequest.h"
 
 using namespace cricket;
 

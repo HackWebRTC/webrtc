@@ -32,12 +32,12 @@
 #endif
 
 #ifdef HAVE_WEBRTC_VIDEO
+#include "talk/media/webrtc/webrtcvideoframe.h"
+#include "talk/media/webrtc/webrtcvideoframefactory.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"
-#include "talk/media/webrtc/webrtcvideoframe.h"
-#include "talk/media/webrtc/webrtcvideoframefactory.h"
 
 #include "webrtc/base/win32.h"  // Need this to #include the impl files.
 #include "webrtc/modules/video_capture/include/video_capture_factory.h"

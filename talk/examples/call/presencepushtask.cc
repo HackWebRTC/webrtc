@@ -27,9 +27,9 @@
 
 #include "talk/examples/call/presencepushtask.h"
 
-#include "webrtc/base/stringencode.h"
 #include "talk/examples/call/muc.h"
 #include "talk/xmpp/constants.h"
+#include "webrtc/base/stringencode.h"
 
 
 

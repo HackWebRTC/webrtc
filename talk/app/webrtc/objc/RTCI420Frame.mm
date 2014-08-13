@@ -27,8 +27,8 @@
 
 #import "RTCI420Frame.h"
 
-#include "webrtc/base/scoped_ptr.h"
 #include "talk/media/base/videoframe.h"
+#include "webrtc/base/scoped_ptr.h"
 
 @implementation RTCI420Frame {
   rtc::scoped_ptr<cricket::VideoFrame> _videoFrame;

@@ -27,10 +27,10 @@
 
 #include "talk/xmpp/jingleinfotask.h"
 
-#include "webrtc/base/socketaddress.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/xmppclient.h"
 #include "talk/xmpp/xmpptask.h"
+#include "webrtc/base/socketaddress.h"
 
 namespace buzz {
 

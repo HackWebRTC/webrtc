@@ -27,8 +27,8 @@
 
 #include "talk/xmpp/iqtask.h"
 
-#include "talk/xmpp/xmppclient.h"
 #include "talk/xmpp/constants.h"
+#include "talk/xmpp/xmppclient.h"
 
 namespace buzz {
 

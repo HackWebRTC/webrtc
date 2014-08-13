@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/base/common.h"
 #include "talk/xmpp/moduleimpl.h"
+#include "webrtc/base/common.h"
 
 namespace buzz {
 

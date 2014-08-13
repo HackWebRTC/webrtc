@@ -28,8 +28,8 @@
 #ifndef TALK_SESSION_MEDIA_SOUNDCLIP_H_
 #define TALK_SESSION_MEDIA_SOUNDCLIP_H_
 
-#include "webrtc/base/scoped_ptr.h"
 #include "talk/media/base/mediaengine.h"
+#include "webrtc/base/scoped_ptr.h"
 
 namespace rtc {
 

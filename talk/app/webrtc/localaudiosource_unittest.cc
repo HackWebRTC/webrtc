@@ -31,10 +31,10 @@
 #include <vector>
 
 #include "talk/app/webrtc/test/fakeconstraints.h"
-#include "webrtc/base/gunit.h"
 #include "talk/media/base/fakemediaengine.h"
 #include "talk/media/base/fakevideorenderer.h"
 #include "talk/media/devices/fakedevicemanager.h"
+#include "webrtc/base/gunit.h"
 
 using webrtc::LocalAudioSource;
 using webrtc::MediaConstraintsInterface;

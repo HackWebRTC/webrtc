@@ -57,19 +57,15 @@
 #define JNIEXPORT __attribute__((visibility("default")))
 
 #include <asm/unistd.h>
-#include <limits>
-#include <map>
 #include <sys/prctl.h>
 #include <sys/syscall.h>
 #include <unistd.h>
+#include <limits>
+#include <map>
 
 #include "talk/app/webrtc/mediaconstraintsinterface.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/app/webrtc/videosourceinterface.h"
-#include "webrtc/base/bind.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/messagequeue.h"
-#include "webrtc/base/ssladapter.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videorenderer.h"
 #include "talk/media/devices/videorendererfactory.h"
@@ -80,6 +76,10 @@
 #include "third_party/libyuv/include/libyuv/convert.h"
 #include "third_party/libyuv/include/libyuv/convert_from.h"
 #include "third_party/libyuv/include/libyuv/video_common.h"
+#include "webrtc/base/bind.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/messagequeue.h"
+#include "webrtc/base/ssladapter.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/system_wrappers/interface/compile_assert.h"
 #include "webrtc/system_wrappers/interface/trace.h"

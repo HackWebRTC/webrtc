@@ -27,13 +27,13 @@
 
 #include <vector>
 
+#include "talk/p2p/base/pseudotcp.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/stream.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"
-#include "talk/p2p/base/pseudotcp.h"
 
 using cricket::PseudoTcp;
 

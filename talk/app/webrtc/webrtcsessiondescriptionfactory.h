@@ -29,9 +29,9 @@
 #define TALK_APP_WEBRTC_WEBRTCSESSIONDESCRIPTIONFACTORY_H_
 
 #include "talk/app/webrtc/peerconnectioninterface.h"
-#include "webrtc/base/messagehandler.h"
 #include "talk/p2p/base/transportdescriptionfactory.h"
 #include "talk/session/media/mediasession.h"
+#include "webrtc/base/messagehandler.h"
 
 namespace cricket {
 class ChannelManager;

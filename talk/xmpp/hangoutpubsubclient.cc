@@ -27,11 +27,11 @@
 
 #include "talk/xmpp/hangoutpubsubclient.h"
 
-#include "webrtc/base/logging.h"
-#include "talk/xmpp/constants.h"
-#include "talk/xmpp/jid.h"
 #include "talk/xmllite/qname.h"
 #include "talk/xmllite/xmlelement.h"
+#include "talk/xmpp/constants.h"
+#include "talk/xmpp/jid.h"
+#include "webrtc/base/logging.h"
 
 
 // Gives a high-level API for MUC call PubSub needs such as

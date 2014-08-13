@@ -29,14 +29,14 @@
 
 #ifdef HAVE_LIBPULSE
 
-#include "webrtc/base/common.h"
-#include "webrtc/base/fileutils.h"  // for GetApplicationName()
-#include "webrtc/base/logging.h"
-#include "webrtc/base/worker.h"
-#include "webrtc/base/timeutils.h"
 #include "talk/sound/sounddevicelocator.h"
 #include "talk/sound/soundinputstreaminterface.h"
 #include "talk/sound/soundoutputstreaminterface.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/fileutils.h"  // for GetApplicationName()
+#include "webrtc/base/logging.h"
+#include "webrtc/base/timeutils.h"
+#include "webrtc/base/worker.h"
 
 namespace cricket {
 

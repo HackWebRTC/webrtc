@@ -31,8 +31,8 @@
 #ifndef TALK_APP_WEBRTC_TEST_FAKEPERIODICVIDEOCAPTURER_H_
 #define TALK_APP_WEBRTC_TEST_FAKEPERIODICVIDEOCAPTURER_H_
 
-#include "webrtc/base/thread.h"
 #include "talk/media/base/fakevideocapturer.h"
+#include "webrtc/base/thread.h"
 
 namespace webrtc {
 

@@ -30,11 +30,11 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/session/media/mediasessionclient.h"
 #include "talk/xmllite/xmlelement.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/scoped_ptr.h"
 
 // Unit tests for mediamessages.cc.
 

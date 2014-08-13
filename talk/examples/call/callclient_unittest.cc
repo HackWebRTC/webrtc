@@ -27,11 +27,11 @@
 
 // Unit tests for CallClient
 
-#include "webrtc/base/gunit.h"
 #include "talk/examples/call/callclient.h"
 #include "talk/media/base/filemediaengine.h"
 #include "talk/media/base/mediaengine.h"
 #include "talk/xmpp/xmppthread.h"
+#include "webrtc/base/gunit.h"
 
 TEST(CallClientTest, CreateCallClientWithDefaultMediaEngine) {
   buzz::XmppPump pump;

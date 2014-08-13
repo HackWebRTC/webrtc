@@ -30,8 +30,8 @@
 
 #include <string>
 
-#include "webrtc/base/socketaddress.h"
 #include "talk/p2p/base/transport.h"
+#include "webrtc/base/socketaddress.h"
 
 namespace rtc {
 class Network;

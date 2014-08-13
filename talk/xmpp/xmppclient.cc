@@ -25,16 +25,17 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "xmppclient.h"
-#include "xmpptask.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/scoped_ptr.h"
-#include "webrtc/base/stringutils.h"
+#include "talk/xmpp/xmppclient.h"
+
 #include "talk/xmpp/constants.h"
-#include "talk/xmpp/saslplainmechanism.h"
-#include "talk/xmpp/prexmppauth.h"
 #include "talk/xmpp/plainsaslhandler.h"
+#include "talk/xmpp/prexmppauth.h"
+#include "talk/xmpp/saslplainmechanism.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/stringutils.h"
+#include "xmpptask.h"
 
 namespace buzz {
 

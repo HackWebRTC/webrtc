@@ -33,15 +33,15 @@
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/mediastreamtrack.h"
 #include "talk/app/webrtc/videotrack.h"
-#include "webrtc/base/base64.h"
-#include "webrtc/base/fakesslidentity.h"
-#include "webrtc/base/gunit.h"
 #include "talk/media/base/fakemediaengine.h"
 #include "talk/media/devices/fakedevicemanager.h"
 #include "talk/p2p/base/fakesession.h"
 #include "talk/session/media/channelmanager.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/base64.h"
+#include "webrtc/base/fakesslidentity.h"
+#include "webrtc/base/gunit.h"
 
 using cricket::StatsOptions;
 using testing::_;

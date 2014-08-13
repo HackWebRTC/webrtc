@@ -25,9 +25,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/base/flags.h"
 #include "talk/media/base/videoframe_unittest.h"
 #include "talk/media/webrtc/webrtcvideoframe.h"
+#include "webrtc/base/flags.h"
 
 extern int FLAG_yuvconverter_repeat;  // From lmivideoframe_unittest.cc.
 

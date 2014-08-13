@@ -28,10 +28,6 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/fakesslidentity.h"
-#include "webrtc/base/messagedigest.h"
-#include "webrtc/base/ssladapter.h"
 #include "talk/media/base/codec.h"
 #include "talk/media/base/testutils.h"
 #include "talk/p2p/base/constants.h"
@@ -39,6 +35,10 @@
 #include "talk/p2p/base/transportinfo.h"
 #include "talk/session/media/mediasession.h"
 #include "talk/session/media/srtpfilter.h"
+#include "webrtc/base/fakesslidentity.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/messagedigest.h"
+#include "webrtc/base/ssladapter.h"
 
 #ifdef HAVE_SRTP
 #define ASSERT_CRYPTO(cd, s, cs) \

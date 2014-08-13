@@ -28,8 +28,8 @@
 #ifndef TALK_MEDIA_BASE_VIDEOPROCESSOR_H_
 #define TALK_MEDIA_BASE_VIDEOPROCESSOR_H_
 
-#include "webrtc/base/sigslot.h"
 #include "talk/media/base/videoframe.h"
+#include "webrtc/base/sigslot.h"
 
 namespace cricket {
 

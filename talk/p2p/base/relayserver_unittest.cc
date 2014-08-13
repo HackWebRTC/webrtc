@@ -27,6 +27,7 @@
 
 #include <string>
 
+#include "talk/p2p/base/relayserver.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
@@ -35,7 +36,6 @@
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/testclient.h"
 #include "webrtc/base/thread.h"
-#include "talk/p2p/base/relayserver.h"
 
 using rtc::SocketAddress;
 using namespace cricket;

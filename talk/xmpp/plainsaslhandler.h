@@ -28,8 +28,10 @@
 #ifndef _PLAINSASLHANDLER_H_
 #define _PLAINSASLHANDLER_H_
 
-#include "talk/xmpp/saslhandler.h"
 #include <algorithm>
+#include "talk/xmpp/saslhandler.h"
+#include "talk/xmpp/saslplainmechanism.h"
+#include "webrtc/base/cryptstring.h"
 
 namespace buzz {
 
@@ -77,4 +79,3 @@ private:
 }
 
 #endif
-

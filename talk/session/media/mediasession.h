@@ -30,11 +30,10 @@
 #ifndef TALK_SESSION_MEDIA_MEDIASESSION_H_
 #define TALK_SESSION_MEDIA_MEDIASESSION_H_
 
+#include <algorithm>
 #include <string>
 #include <vector>
-#include <algorithm>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "talk/media/base/codec.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/cryptoparams.h"
@@ -44,6 +43,7 @@
 #include "talk/p2p/base/sessiondescription.h"
 #include "talk/p2p/base/transport.h"
 #include "talk/p2p/base/transportdescriptionfactory.h"
+#include "webrtc/base/scoped_ptr.h"
 
 namespace cricket {
 

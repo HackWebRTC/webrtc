@@ -32,15 +32,15 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/buffer.h"
-#include "webrtc/base/fakesslidentity.h"
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/sslfingerprint.h"
-#include "webrtc/base/messagequeue.h"
 #include "talk/p2p/base/session.h"
 #include "talk/p2p/base/transport.h"
 #include "talk/p2p/base/transportchannel.h"
 #include "talk/p2p/base/transportchannelimpl.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/fakesslidentity.h"
+#include "webrtc/base/messagequeue.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/sslfingerprint.h"
 
 namespace cricket {
 

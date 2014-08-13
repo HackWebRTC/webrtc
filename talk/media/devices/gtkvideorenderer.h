@@ -29,9 +29,9 @@
 #ifndef TALK_MEDIA_DEVICES_GTKVIDEORENDERER_H_
 #define TALK_MEDIA_DEVICES_GTKVIDEORENDERER_H_
 
+#include "talk/media/base/videorenderer.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "talk/media/base/videorenderer.h"
 
 typedef struct _GtkWidget GtkWidget;  // forward declaration, defined in gtk.h
 

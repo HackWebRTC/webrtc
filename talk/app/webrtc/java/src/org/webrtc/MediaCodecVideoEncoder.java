@@ -29,10 +29,10 @@
 package org.webrtc;
 
 import android.media.MediaCodec;
+import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
 import android.media.MediaFormat;
-import android.media.MediaCodecInfo.CodecCapabilities;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;

@@ -25,14 +25,14 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <string>
-#include <sstream>
 #include <iostream>
-#include "webrtc/base/common.h"
-#include "webrtc/base/gunit.h"
+#include <sstream>
+#include <string>
 #include "talk/xmllite/xmlbuilder.h"
 #include "talk/xmllite/xmlelement.h"
 #include "talk/xmllite/xmlparser.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/gunit.h"
 
 using buzz::XmlBuilder;
 using buzz::XmlElement;

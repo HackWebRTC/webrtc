@@ -27,8 +27,8 @@
 
 #include "talk/app/webrtc/remotevideocapturer.h"
 
-#include "webrtc/base/logging.h"
 #include "talk/media/base/videoframe.h"
+#include "webrtc/base/logging.h"
 
 namespace webrtc {
 

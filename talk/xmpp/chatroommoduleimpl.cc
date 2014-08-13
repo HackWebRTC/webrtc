@@ -25,16 +25,16 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <vector>
-#include <string>
-#include <map>
 #include <algorithm>
-#include <sstream>
 #include <iostream>
-#include "webrtc/base/common.h"
+#include <map>
+#include <sstream>
+#include <string>
+#include <vector>
+#include "talk/xmpp/chatroommodule.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/moduleimpl.h"
-#include "talk/xmpp/chatroommodule.h"
+#include "webrtc/base/common.h"
 
 namespace buzz {
 

@@ -27,11 +27,11 @@
 
 #include <limits.h>  // For INT_MAX
 
-#include "webrtc/base/logging.h"
-#include "webrtc/base/timeutils.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/videocommon.h"
 #include "talk/media/base/videoframe.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/timeutils.h"
 
 namespace cricket {
 

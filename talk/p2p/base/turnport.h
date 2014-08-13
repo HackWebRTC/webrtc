@@ -29,12 +29,12 @@
 #define TALK_P2P_BASE_TURNPORT_H_
 
 #include <stdio.h>
-#include <string>
 #include <list>
+#include <string>
 
-#include "webrtc/base/asyncpacketsocket.h"
 #include "talk/p2p/base/port.h"
 #include "talk/p2p/client/basicportallocator.h"
+#include "webrtc/base/asyncpacketsocket.h"
 
 namespace rtc {
 class AsyncResolver;

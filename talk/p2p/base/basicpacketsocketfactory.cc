@@ -27,8 +27,10 @@
 
 #include "talk/p2p/base/basicpacketsocketfactory.h"
 
-#include "webrtc/base/asyncudpsocket.h"
+#include "talk/p2p/base/asyncstuntcpsocket.h"
+#include "talk/p2p/base/stun.h"
 #include "webrtc/base/asynctcpsocket.h"
+#include "webrtc/base/asyncudpsocket.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/nethelpers.h"
 #include "webrtc/base/physicalsocketserver.h"
@@ -36,8 +38,6 @@
 #include "webrtc/base/socketadapters.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/thread.h"
-#include "talk/p2p/base/asyncstuntcpsocket.h"
-#include "talk/p2p/base/stun.h"
 
 namespace rtc {
 

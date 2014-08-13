@@ -29,8 +29,8 @@
 
 #include "talk/examples/peerconnection/client/defaults.h"
 #include "webrtc/base/common.h"
-#include "webrtc/base/nethelpers.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/nethelpers.h"
 #include "webrtc/base/stringutils.h"
 
 #ifdef WIN32

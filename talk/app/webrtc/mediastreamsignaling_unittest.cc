@@ -36,15 +36,15 @@
 #include "talk/app/webrtc/test/fakeconstraints.h"
 #include "talk/app/webrtc/test/fakedatachannelprovider.h"
 #include "talk/app/webrtc/videotrack.h"
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/scoped_ptr.h"
-#include "webrtc/base/stringutils.h"
-#include "webrtc/base/thread.h"
 #include "talk/media/base/fakemediaengine.h"
 #include "talk/media/devices/fakedevicemanager.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/sessiondescription.h"
 #include "talk/session/media/channelmanager.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/stringutils.h"
+#include "webrtc/base/thread.h"
 
 static const char kStreams[][8] = {"stream1", "stream2"};
 static const char kAudioTracks[][32] = {"audiotrack0", "audiotrack1"};

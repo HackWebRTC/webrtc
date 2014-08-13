@@ -27,13 +27,13 @@
 
 #include <string>
 
+#include "talk/p2p/base/stun.h"
 #include "webrtc/base/bytebuffer.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagedigest.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/socketaddress.h"
-#include "talk/p2p/base/stun.h"
 
 namespace cricket {
 

@@ -38,6 +38,11 @@
 #include <string>
 #include <vector>
 
+#include "talk/media/base/audiorenderer.h"
+#include "talk/media/base/constants.h"
+#include "talk/media/base/streamparams.h"
+#include "talk/media/base/voiceprocessor.h"
+#include "talk/media/webrtc/webrtcvoe.h"
 #include "webrtc/base/base64.h"
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/common.h"
@@ -45,11 +50,6 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
-#include "talk/media/base/audiorenderer.h"
-#include "talk/media/base/constants.h"
-#include "talk/media/base/streamparams.h"
-#include "talk/media/base/voiceprocessor.h"
-#include "talk/media/webrtc/webrtcvoe.h"
 #include "webrtc/common.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 

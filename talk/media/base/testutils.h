@@ -34,12 +34,12 @@
 #if !defined(DISABLE_YUV)
 #include "libyuv/compare.h"
 #endif
-#include "webrtc/base/basictypes.h"
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/window.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videocommon.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/window.h"
 
 namespace rtc {
 class ByteBuffer;

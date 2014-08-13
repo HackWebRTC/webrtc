@@ -30,8 +30,8 @@
 
 #include <string>
 
-#include "talk/xmpp/xmpptask.h"
 #include "talk/xmpp/xmppengine.h"
+#include "talk/xmpp/xmpptask.h"
 
 namespace buzz {
 

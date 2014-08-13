@@ -37,8 +37,6 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/fileutils.h"
-#include "webrtc/base/sigslotrepeater.h"
 #include "talk/media/base/codec.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/mediacommon.h"
@@ -47,6 +45,8 @@
 #include "talk/media/base/videoprocessor.h"
 #include "talk/media/base/voiceprocessor.h"
 #include "talk/media/devices/devicemanager.h"
+#include "webrtc/base/fileutils.h"
+#include "webrtc/base/sigslotrepeater.h"
 
 #if defined(GOOGLE_CHROME_BUILD) || defined(CHROMIUM_BUILD)
 #define DISABLE_MEDIA_ENGINE_FACTORY

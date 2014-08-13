@@ -27,9 +27,9 @@
 
 #include <iostream>  // NOLINT
 
-#include "webrtc/base/thread.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "talk/p2p/base/relayserver.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/thread.h"
 
 int main(int argc, char **argv) {
   if (argc != 3) {

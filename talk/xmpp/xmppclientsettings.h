@@ -29,8 +29,8 @@
 #define TALK_XMPP_XMPPCLIENTSETTINGS_H_
 
 #include "talk/p2p/base/port.h"
-#include "webrtc/base/cryptstring.h"
 #include "talk/xmpp/xmppengine.h"
+#include "webrtc/base/cryptstring.h"
 
 namespace buzz {
 

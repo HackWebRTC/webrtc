@@ -26,16 +26,16 @@
  */
 
 #include <string>
-#include "webrtc/base/helpers.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/thread.h"
-#include "webrtc/base/window.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/screencastid.h"
 #include "talk/p2p/base/parsing.h"
 #include "talk/session/media/call.h"
 #include "talk/session/media/currentspeakermonitor.h"
 #include "talk/session/media/mediasessionclient.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/base/window.h"
 
 namespace cricket {
 

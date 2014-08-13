@@ -37,9 +37,9 @@
 #include <string>
 #include <vector>
 
+#include "talk/media/base/videocapturer.h"
 #include "webrtc/base/stream.h"
 #include "webrtc/base/stringutils.h"
-#include "talk/media/base/videocapturer.h"
 
 namespace rtc {
 class FileStream;

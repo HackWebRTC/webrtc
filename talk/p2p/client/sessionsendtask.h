@@ -28,12 +28,12 @@
 #ifndef TALK_P2P_CLIENT_SESSIONSENDTASK_H_
 #define TALK_P2P_CLIENT_SESSIONSENDTASK_H_
 
-#include "webrtc/base/common.h"
+#include "talk/p2p/base/sessionmanager.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/xmppclient.h"
 #include "talk/xmpp/xmppengine.h"
 #include "talk/xmpp/xmpptask.h"
-#include "talk/p2p/base/sessionmanager.h"
+#include "webrtc/base/common.h"
 
 namespace cricket {
 

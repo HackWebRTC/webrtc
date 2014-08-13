@@ -32,14 +32,14 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/scoped_ptr.h"
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/sigslotrepeater.h"
+#include "talk/xmllite/qname.h"
+#include "talk/xmllite/xmlelement.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/jid.h"
 #include "talk/xmpp/pubsubclient.h"
-#include "talk/xmllite/qname.h"
-#include "talk/xmllite/xmlelement.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/sigslotrepeater.h"
 
 namespace buzz {
 

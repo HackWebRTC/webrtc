@@ -27,11 +27,11 @@
 
 #include "talk/media/base/capturemanager.h"
 
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/sigslot.h"
 #include "talk/media/base/fakemediaprocessor.h"
 #include "talk/media/base/fakevideocapturer.h"
 #include "talk/media/base/fakevideorenderer.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/sigslot.h"
 
 const int kMsCallbackWait = 50;
 

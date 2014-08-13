@@ -28,11 +28,11 @@
 #ifndef TALK_XMPP_XMPPSOCKET_H_
 #define TALK_XMPP_XMPPSOCKET_H_
 
+#include "talk/xmpp/asyncsocket.h"
+#include "talk/xmpp/xmppengine.h"
 #include "webrtc/base/asyncsocket.h"
 #include "webrtc/base/bytebuffer.h"
 #include "webrtc/base/sigslot.h"
-#include "talk/xmpp/asyncsocket.h"
-#include "talk/xmpp/xmppengine.h"
 
 // The below define selects the SSLStreamAdapter implementation for
 // SSL, as opposed to the SSLAdapter socket adapter.

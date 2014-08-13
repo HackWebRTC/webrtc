@@ -27,12 +27,12 @@
 
 #include "talk/p2p/base/stunport.h"
 
-#include "webrtc/base/common.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/helpers.h"
-#include "webrtc/base/nethelpers.h"
 #include "talk/p2p/base/common.h"
 #include "talk/p2p/base/stun.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/nethelpers.h"
 
 namespace cricket {
 

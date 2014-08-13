@@ -30,11 +30,11 @@
 #include <utility>
 
 #include "talk/app/webrtc/videosourceinterface.h"
+#include "talk/examples/peerconnection/client/defaults.h"
+#include "talk/media/devices/devicemanager.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/json.h"
 #include "webrtc/base/logging.h"
-#include "talk/examples/peerconnection/client/defaults.h"
-#include "talk/media/devices/devicemanager.h"
 
 // Names used for a IceCandidate JSON object.
 const char kCandidateSdpMidName[] = "sdpMid";

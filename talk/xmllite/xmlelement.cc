@@ -32,12 +32,12 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/common.h"
 #include "talk/xmllite/qname.h"
-#include "talk/xmllite/xmlparser.h"
 #include "talk/xmllite/xmlbuilder.h"
-#include "talk/xmllite/xmlprinter.h"
 #include "talk/xmllite/xmlconstants.h"
+#include "talk/xmllite/xmlparser.h"
+#include "talk/xmllite/xmlprinter.h"
+#include "webrtc/base/common.h"
 
 namespace buzz {
 

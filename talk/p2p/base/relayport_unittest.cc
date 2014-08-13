@@ -25,9 +25,12 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/base/logging.h"
+#include "talk/p2p/base/basicpacketsocketfactory.h"
+#include "talk/p2p/base/relayport.h"
+#include "talk/p2p/base/relayserver.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/socketadapters.h"
@@ -35,9 +38,6 @@
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/virtualsocketserver.h"
-#include "talk/p2p/base/basicpacketsocketfactory.h"
-#include "talk/p2p/base/relayport.h"
-#include "talk/p2p/base/relayserver.h"
 
 using rtc::SocketAddress;
 

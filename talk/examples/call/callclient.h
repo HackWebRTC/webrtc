@@ -32,8 +32,6 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/scoped_ptr.h"
-#include "webrtc/base/sslidentity.h"
 #include "talk/examples/call/console.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/p2p/base/session.h"
@@ -42,6 +40,8 @@
 #include "talk/xmpp/hangoutpubsubclient.h"
 #include "talk/xmpp/presencestatus.h"
 #include "talk/xmpp/xmppclient.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/sslidentity.h"
 
 namespace buzz {
 class PresencePushTask;

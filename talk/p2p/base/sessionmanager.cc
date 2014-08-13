@@ -27,16 +27,16 @@
 
 #include "talk/p2p/base/sessionmanager.h"
 
-#include "webrtc/base/common.h"
-#include "webrtc/base/helpers.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/scoped_ptr.h"
-#include "webrtc/base/stringencode.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/session.h"
 #include "talk/p2p/base/sessionmessages.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/jid.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/stringencode.h"
 
 namespace cricket {
 

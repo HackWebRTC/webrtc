@@ -38,16 +38,16 @@
 #include "talk/app/webrtc/mediastreamsignaling.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/app/webrtc/webrtcsessiondescriptionfactory.h"
-#include "webrtc/base/basictypes.h"
-#include "webrtc/base/helpers.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/stringencode.h"
-#include "webrtc/base/stringutils.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/session/media/channel.h"
 #include "talk/session/media/channelmanager.h"
 #include "talk/session/media/mediasession.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/stringencode.h"
+#include "webrtc/base/stringutils.h"
 
 using cricket::ContentInfo;
 using cricket::ContentInfos;

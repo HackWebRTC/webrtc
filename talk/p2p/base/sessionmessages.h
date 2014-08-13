@@ -28,16 +28,16 @@
 #ifndef TALK_P2P_BASE_SESSIONMESSAGES_H_
 #define TALK_P2P_BASE_SESSIONMESSAGES_H_
 
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
 
-#include "webrtc/base/basictypes.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/parsing.h"
 #include "talk/p2p/base/sessiondescription.h"  // Needed to delete contents.
 #include "talk/p2p/base/transportinfo.h"
 #include "talk/xmllite/xmlelement.h"
+#include "webrtc/base/basictypes.h"
 
 namespace cricket {
 

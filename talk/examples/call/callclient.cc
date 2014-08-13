@@ -29,14 +29,6 @@
 
 #include <string>
 
-#include "webrtc/base/helpers.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/network.h"
-#include "webrtc/base/socketaddress.h"
-#include "webrtc/base/stringencode.h"
-#include "webrtc/base/stringutils.h"
-#include "webrtc/base/thread.h"
-#include "webrtc/base/windowpickerfactory.h"
 #include "talk/examples/call/console.h"
 #include "talk/examples/call/friendinvitesendtask.h"
 #include "talk/examples/call/muc.h"
@@ -47,6 +39,14 @@
 #include "talk/media/base/mediaengine.h"
 #include "talk/media/base/rtpdataengine.h"
 #include "talk/media/base/screencastid.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/network.h"
+#include "webrtc/base/socketaddress.h"
+#include "webrtc/base/stringencode.h"
+#include "webrtc/base/stringutils.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/base/windowpickerfactory.h"
 #ifdef HAVE_SCTP
 #include "talk/media/sctp/sctpdataengine.h"
 #endif
@@ -62,8 +62,8 @@
 #include "talk/xmpp/hangoutpubsubclient.h"
 #include "talk/xmpp/mucroomconfigtask.h"
 #include "talk/xmpp/mucroomlookuptask.h"
-#include "talk/xmpp/presenceouttask.h"
 #include "talk/xmpp/pingtask.h"
+#include "talk/xmpp/presenceouttask.h"
 
 namespace {
 

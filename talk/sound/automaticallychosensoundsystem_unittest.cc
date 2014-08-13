@@ -25,9 +25,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/base/gunit.h"
 #include "talk/sound/automaticallychosensoundsystem.h"
 #include "talk/sound/nullsoundsystem.h"
+#include "webrtc/base/gunit.h"
 
 namespace cricket {
 

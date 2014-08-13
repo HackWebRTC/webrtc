@@ -27,9 +27,9 @@
 
 #include "talk/media/devices/carbonvideorenderer.h"
 
-#include "webrtc/base/logging.h"
 #include "talk/media/base/videocommon.h"
 #include "talk/media/base/videoframe.h"
+#include "webrtc/base/logging.h"
 
 namespace cricket {
 

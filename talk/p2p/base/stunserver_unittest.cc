@@ -27,13 +27,13 @@
 
 #include <string>
 
+#include "talk/p2p/base/stunserver.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/physicalsocketserver.h"
-#include "webrtc/base/virtualsocketserver.h"
 #include "webrtc/base/testclient.h"
 #include "webrtc/base/thread.h"
-#include "talk/p2p/base/stunserver.h"
+#include "webrtc/base/virtualsocketserver.h"
 
 using namespace cricket;
 

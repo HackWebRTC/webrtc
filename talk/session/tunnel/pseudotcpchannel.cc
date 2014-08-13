@@ -26,14 +26,14 @@
  */
 
 #include <string>
+#include "pseudotcpchannel.h"
+#include "talk/p2p/base/candidate.h"
+#include "talk/p2p/base/transportchannel.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stringutils.h"
-#include "talk/p2p/base/candidate.h"
-#include "talk/p2p/base/transportchannel.h"
-#include "pseudotcpchannel.h"
 
 using namespace rtc;
 

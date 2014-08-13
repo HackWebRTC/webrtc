@@ -28,6 +28,13 @@
 #include "talk/media/devices/linuxdevicemanager.h"
 
 #include <unistd.h>
+#include "talk/media/base/mediacommon.h"
+#include "talk/media/devices/libudevsymboltable.h"
+#include "talk/media/devices/v4llookup.h"
+#include "talk/sound/platformsoundsystem.h"
+#include "talk/sound/platformsoundsystemfactory.h"
+#include "talk/sound/sounddevicelocator.h"
+#include "talk/sound/soundsysteminterface.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/linux.h"
 #include "webrtc/base/logging.h"
@@ -36,13 +43,6 @@
 #include "webrtc/base/stream.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/thread.h"
-#include "talk/media/base/mediacommon.h"
-#include "talk/media/devices/libudevsymboltable.h"
-#include "talk/media/devices/v4llookup.h"
-#include "talk/sound/platformsoundsystem.h"
-#include "talk/sound/platformsoundsystemfactory.h"
-#include "talk/sound/sounddevicelocator.h"
-#include "talk/sound/soundsysteminterface.h"
 
 namespace cricket {
 

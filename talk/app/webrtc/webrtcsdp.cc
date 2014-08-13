@@ -35,10 +35,6 @@
 
 #include "talk/app/webrtc/jsepicecandidate.h"
 #include "talk/app/webrtc/jsepsessiondescription.h"
-#include "webrtc/base/common.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/messagedigest.h"
-#include "webrtc/base/stringutils.h"
 #include "talk/media/base/codec.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/cryptoparams.h"
@@ -48,6 +44,10 @@
 #include "talk/p2p/base/port.h"
 #include "talk/session/media/mediasession.h"
 #include "talk/session/media/mediasessionclient.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/messagedigest.h"
+#include "webrtc/base/stringutils.h"
 
 using cricket::AudioContentDescription;
 using cricket::Candidate;

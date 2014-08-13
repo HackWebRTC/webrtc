@@ -27,6 +27,11 @@
 
 #include "talk/media/devices/devicemanager.h"
 
+#include "talk/media/base/mediacommon.h"
+#include "talk/media/base/videocapturerfactory.h"
+#include "talk/media/devices/deviceinfo.h"
+#include "talk/media/devices/filevideocapturer.h"
+#include "talk/media/devices/yuvframescapturer.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/pathutils.h"
@@ -34,11 +39,6 @@
 #include "webrtc/base/thread.h"
 #include "webrtc/base/windowpicker.h"
 #include "webrtc/base/windowpickerfactory.h"
-#include "talk/media/base/mediacommon.h"
-#include "talk/media/base/videocapturerfactory.h"
-#include "talk/media/devices/deviceinfo.h"
-#include "talk/media/devices/filevideocapturer.h"
-#include "talk/media/devices/yuvframescapturer.h"
 
 #ifdef HAVE_WEBRTC_VIDEO
 #include "talk/media/webrtc/webrtcvideocapturerfactory.h"

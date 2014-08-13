@@ -30,11 +30,11 @@
 #include <sstream>
 #include <string>
 
-#include "webrtc/base/common.h"
-#include "webrtc/base/gunit.h"
 #include "talk/xmllite/qname.h"
 #include "talk/xmllite/xmlelement.h"
 #include "talk/xmllite/xmlnsstack.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/gunit.h"
 
 using buzz::QName;
 using buzz::XmlElement;

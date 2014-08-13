@@ -30,13 +30,13 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/base64.h"
-#include "webrtc/base/common.h"
 #include "talk/xmllite/xmlelement.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/jid.h"
 #include "talk/xmpp/saslmechanism.h"
 #include "talk/xmpp/xmppengineimpl.h"
+#include "webrtc/base/base64.h"
+#include "webrtc/base/common.h"
 
 using rtc::ConstantLabel;
 

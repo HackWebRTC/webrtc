@@ -30,9 +30,6 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/common.h"
-#include "webrtc/base/helpers.h"
-#include "webrtc/base/logging.h"
 #include "talk/p2p/base/basicpacketsocketfactory.h"
 #include "talk/p2p/base/common.h"
 #include "talk/p2p/base/port.h"
@@ -41,6 +38,9 @@
 #include "talk/p2p/base/tcpport.h"
 #include "talk/p2p/base/turnport.h"
 #include "talk/p2p/base/udpport.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
 
 using rtc::CreateRandomId;
 using rtc::CreateRandomString;

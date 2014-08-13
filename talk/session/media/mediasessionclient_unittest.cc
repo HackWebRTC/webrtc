@@ -28,9 +28,6 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "talk/media/base/fakemediaengine.h"
 #include "talk/media/base/testutils.h"
 #include "talk/media/devices/fakedevicemanager.h"
@@ -41,6 +38,9 @@
 #include "talk/xmllite/xmlelement.h"
 #include "talk/xmllite/xmlprinter.h"
 #include "talk/xmpp/constants.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/scoped_ptr.h"
 
 using cricket::AudioCodec;
 using cricket::AudioContentDescription;

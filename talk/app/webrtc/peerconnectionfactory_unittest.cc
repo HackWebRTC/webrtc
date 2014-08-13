@@ -30,14 +30,14 @@
 #include "talk/app/webrtc/fakeportallocatorfactory.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/peerconnectionfactory.h"
-#include "talk/app/webrtc/videosourceinterface.h"
 #include "talk/app/webrtc/test/fakevideotrackrenderer.h"
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/scoped_ptr.h"
-#include "webrtc/base/thread.h"
+#include "talk/app/webrtc/videosourceinterface.h"
 #include "talk/media/base/fakevideocapturer.h"
 #include "talk/media/webrtc/webrtccommon.h"
 #include "talk/media/webrtc/webrtcvoe.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/thread.h"
 
 using webrtc::FakeVideoTrackRenderer;
 using webrtc::MediaStreamInterface;

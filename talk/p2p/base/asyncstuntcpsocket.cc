@@ -29,9 +29,9 @@
 
 #include <string.h>
 
+#include "talk/p2p/base/stun.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
-#include "talk/p2p/base/stun.h"
 
 namespace cricket {
 

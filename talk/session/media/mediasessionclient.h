@@ -28,14 +28,10 @@
 #ifndef TALK_SESSION_MEDIA_MEDIASESSIONCLIENT_H_
 #define TALK_SESSION_MEDIA_MEDIASESSIONCLIENT_H_
 
+#include <algorithm>
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
-#include <algorithm>
-#include "webrtc/base/messagequeue.h"
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/sigslotrepeater.h"
-#include "webrtc/base/thread.h"
 #include "talk/media/base/cryptoparams.h"
 #include "talk/p2p/base/session.h"
 #include "talk/p2p/base/sessionclient.h"
@@ -44,6 +40,10 @@
 #include "talk/session/media/call.h"
 #include "talk/session/media/channelmanager.h"
 #include "talk/session/media/mediasession.h"
+#include "webrtc/base/messagequeue.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/sigslotrepeater.h"
+#include "webrtc/base/thread.h"
 
 namespace cricket {
 

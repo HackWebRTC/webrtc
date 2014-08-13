@@ -30,9 +30,6 @@
 #include <stdio.h>
 #include <string>
 
-#include "webrtc/base/logging.h"
-#include "webrtc/base/scoped_ptr.h"
-#include "webrtc/base/stringutils.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/p2ptransport.h"
 #include "talk/p2p/base/parsing.h"
@@ -41,6 +38,9 @@
 #include "talk/p2p/base/transport.h"
 #include "talk/xmllite/xmlconstants.h"
 #include "talk/xmpp/constants.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/stringutils.h"
 
 namespace cricket {
 

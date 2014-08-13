@@ -46,9 +46,9 @@
 #include <map>
 #include <vector>
 
-#include "webrtc/base/sigslotrepeater.h"
 #include "talk/media/base/capturerenderadapter.h"
 #include "talk/media/base/videocommon.h"
+#include "webrtc/base/sigslotrepeater.h"
 
 namespace cricket {
 

@@ -25,6 +25,11 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "talk/p2p/base/p2ptransportchannel.h"
+#include "talk/p2p/base/testrelayserver.h"
+#include "talk/p2p/base/teststunserver.h"
+#include "talk/p2p/base/testturnserver.h"
+#include "talk/p2p/client/basicportallocator.h"
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/fakenetwork.h"
 #include "webrtc/base/firewallsocketserver.h"
@@ -39,11 +44,6 @@
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/virtualsocketserver.h"
-#include "talk/p2p/base/p2ptransportchannel.h"
-#include "talk/p2p/base/testrelayserver.h"
-#include "talk/p2p/base/teststunserver.h"
-#include "talk/p2p/base/testturnserver.h"
-#include "talk/p2p/client/basicportallocator.h"
 
 using cricket::kDefaultPortAllocatorFlags;
 using cricket::kMinimumStepDelay;

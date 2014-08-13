@@ -28,10 +28,10 @@
 #ifndef TALK_P2P_BASE_TCPPORT_H_
 #define TALK_P2P_BASE_TCPPORT_H_
 
-#include <string>
 #include <list>
-#include "webrtc/base/asyncpacketsocket.h"
+#include <string>
 #include "talk/p2p/base/port.h"
+#include "webrtc/base/asyncpacketsocket.h"
 
 namespace cricket {
 

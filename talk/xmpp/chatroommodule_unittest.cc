@@ -25,17 +25,17 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <string>
-#include <sstream>
 #include <iostream>
-#include "common/common.h"
-#include "buzz/xmppengine.h"
-#include "buzz/xmlelement.h"
+#include <sstream>
+#include <string>
 #include "buzz/chatroommodule.h"
 #include "buzz/constants.h"
+#include "buzz/xmlelement.h"
+#include "buzz/xmppengine.h"
+#include "common/common.h"
 #include "engine/util_unittest.h"
-#include "test/unittest.h"
 #include "test/unittest-inl.h"
+#include "test/unittest.h"
 
 #define TEST_OK(x) TEST_EQ((x),XMPP_RETURN_OK)
 #define TEST_BADARGUMENT(x) TEST_EQ((x),XMPP_RETURN_BADARGUMENT)

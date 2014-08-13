@@ -28,9 +28,9 @@
 #ifndef TALK_XMPP_PINGTASK_H_
 #define TALK_XMPP_PINGTASK_H_
 
+#include "talk/xmpp/xmpptask.h"
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/messagequeue.h"
-#include "talk/xmpp/xmpptask.h"
 
 namespace buzz {
 

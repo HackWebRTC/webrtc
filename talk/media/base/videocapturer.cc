@@ -32,11 +32,11 @@
 #if !defined(DISABLE_YUV)
 #include "libyuv/scale_argb.h"
 #endif
+#include "talk/media/base/videoframefactory.h"
+#include "talk/media/base/videoprocessor.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/systeminfo.h"
-#include "talk/media/base/videoframefactory.h"
-#include "talk/media/base/videoprocessor.h"
 
 #if defined(HAVE_WEBRTC_VIDEO)
 #include "talk/media/webrtc/webrtcvideoframe.h"

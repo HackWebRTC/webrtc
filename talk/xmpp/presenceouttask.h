@@ -28,9 +28,9 @@
 #ifndef _PRESENCEOUTTASK_H_
 #define _PRESENCEOUTTASK_H_
 
+#include "talk/xmpp/presencestatus.h"
 #include "talk/xmpp/xmppengine.h"
 #include "talk/xmpp/xmpptask.h"
-#include "talk/xmpp/presencestatus.h"
 
 namespace buzz {
 

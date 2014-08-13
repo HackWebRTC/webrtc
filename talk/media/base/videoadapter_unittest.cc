@@ -31,14 +31,14 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/sigslot.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/testutils.h"
 #include "talk/media/base/videoadapter.h"
 #include "talk/media/devices/filevideocapturer.h"
 #include "talk/media/webrtc/webrtcvideoframe.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/sigslot.h"
 
 namespace cricket {
 

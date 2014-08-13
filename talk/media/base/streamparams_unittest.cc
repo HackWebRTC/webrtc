@@ -25,9 +25,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/base/gunit.h"
 #include "talk/media/base/streamparams.h"
 #include "talk/media/base/testutils.h"
+#include "webrtc/base/gunit.h"
 
 static const uint32 kSsrcs1[] = {1};
 static const uint32 kSsrcs2[] = {1, 2};

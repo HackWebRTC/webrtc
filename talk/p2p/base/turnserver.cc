@@ -27,6 +27,10 @@
 
 #include "talk/p2p/base/turnserver.h"
 
+#include "talk/p2p/base/asyncstuntcpsocket.h"
+#include "talk/p2p/base/common.h"
+#include "talk/p2p/base/packetsocketfactory.h"
+#include "talk/p2p/base/stun.h"
 #include "webrtc/base/bytebuffer.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
@@ -34,10 +38,6 @@
 #include "webrtc/base/socketadapters.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/thread.h"
-#include "talk/p2p/base/asyncstuntcpsocket.h"
-#include "talk/p2p/base/common.h"
-#include "talk/p2p/base/packetsocketfactory.h"
-#include "talk/p2p/base/stun.h"
 
 namespace cricket {
 

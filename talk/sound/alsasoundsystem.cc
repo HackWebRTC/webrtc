@@ -27,15 +27,15 @@
 
 #include "talk/sound/alsasoundsystem.h"
 
+#include "talk/sound/sounddevicelocator.h"
+#include "talk/sound/soundinputstreaminterface.h"
+#include "talk/sound/soundoutputstreaminterface.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/base/worker.h"
-#include "talk/sound/sounddevicelocator.h"
-#include "talk/sound/soundinputstreaminterface.h"
-#include "talk/sound/soundoutputstreaminterface.h"
 
 namespace cricket {
 

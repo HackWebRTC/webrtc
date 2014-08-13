@@ -31,11 +31,6 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/asyncudpsocket.h"
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/network.h"
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/window.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/mediaengine.h"
 #include "talk/media/base/streamparams.h"
@@ -48,6 +43,11 @@
 #include "talk/session/media/mediasession.h"
 #include "talk/session/media/rtcpmuxfilter.h"
 #include "talk/session/media/srtpfilter.h"
+#include "webrtc/base/asyncudpsocket.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/network.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/window.h"
 
 namespace cricket {
 

@@ -31,8 +31,8 @@
 #include <string>
 
 #include "talk/app/webrtc/mediastreamsignaling.h"
-#include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/app/webrtc/peerconnectionfactory.h"
+#include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/app/webrtc/statscollector.h"
 #include "talk/app/webrtc/streamcollection.h"
 #include "talk/app/webrtc/webrtcsession.h"

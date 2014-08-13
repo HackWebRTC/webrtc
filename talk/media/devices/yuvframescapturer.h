@@ -4,10 +4,10 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/stream.h"
-#include "webrtc/base/stringutils.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/yuvframegenerator.h"
+#include "webrtc/base/stream.h"
+#include "webrtc/base/stringutils.h"
 
 
 namespace rtc {

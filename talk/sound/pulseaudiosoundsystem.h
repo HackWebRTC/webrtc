@@ -30,9 +30,9 @@
 
 #ifdef HAVE_LIBPULSE
 
-#include "webrtc/base/constructormagic.h"
 #include "talk/sound/pulseaudiosymboltable.h"
 #include "talk/sound/soundsysteminterface.h"
+#include "webrtc/base/constructormagic.h"
 
 namespace cricket {
 

@@ -27,10 +27,10 @@
 
 #include "talk/sound/nullsoundsystem.h"
 
-#include "webrtc/base/logging.h"
 #include "talk/sound/sounddevicelocator.h"
 #include "talk/sound/soundinputstreaminterface.h"
 #include "talk/sound/soundoutputstreaminterface.h"
+#include "webrtc/base/logging.h"
 
 namespace rtc {
 

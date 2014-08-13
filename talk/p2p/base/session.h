@@ -33,10 +33,6 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/refcount.h"
-#include "webrtc/base/scoped_ptr.h"
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/base/socketaddress.h"
 #include "talk/p2p/base/parsing.h"
 #include "talk/p2p/base/port.h"
 #include "talk/p2p/base/sessionclient.h"
@@ -45,6 +41,10 @@
 #include "talk/p2p/base/transport.h"
 #include "talk/xmllite/xmlelement.h"
 #include "talk/xmpp/constants.h"
+#include "webrtc/base/refcount.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/socketaddress.h"
 
 namespace cricket {
 

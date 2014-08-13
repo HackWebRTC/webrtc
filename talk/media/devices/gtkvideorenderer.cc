@@ -27,8 +27,8 @@
 
 #include "talk/media/devices/gtkvideorenderer.h"
 
-#include <glib.h>
 #include <gdk/gdk.h>
+#include <glib.h>
 #include <gtk/gtk.h>
 
 #include "talk/media/base/videocommon.h"

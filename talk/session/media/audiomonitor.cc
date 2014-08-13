@@ -25,9 +25,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <assert.h>
 #include "talk/session/media/audiomonitor.h"
 #include "talk/session/media/voicechannel.h"
-#include <assert.h>
 
 namespace cricket {
 

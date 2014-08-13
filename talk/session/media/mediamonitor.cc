@@ -25,9 +25,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/base/common.h"
 #include "talk/session/media/channelmanager.h"
 #include "talk/session/media/mediamonitor.h"
+#include "webrtc/base/common.h"
 
 namespace cricket {
 

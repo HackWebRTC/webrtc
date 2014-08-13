@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/app/webrtc/test/peerconnectiontestwrapper.h"
 #include "talk/app/webrtc/test/mockpeerconnectionobservers.h"
+#include "talk/app/webrtc/test/peerconnectiontestwrapper.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/ssladapter.h"

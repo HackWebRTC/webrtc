@@ -29,19 +29,19 @@
 #define TALK_MEDIA_WEBRTC_WEBRTCVIDEOENGINE2_H_
 
 #include <map>
-#include <vector>
 #include <string>
+#include <vector>
 
-#include "webrtc/base/cpumonitor.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "talk/media/base/mediaengine.h"
 #include "talk/media/webrtc/webrtcvideochannelfactory.h"
+#include "webrtc/base/cpumonitor.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/system_wrappers/interface/thread_annotations.h"
 #include "webrtc/transport.h"
+#include "webrtc/video_receive_stream.h"
 #include "webrtc/video_renderer.h"
 #include "webrtc/video_send_stream.h"
-#include "webrtc/video_receive_stream.h"
 
 namespace webrtc {
 class Call;

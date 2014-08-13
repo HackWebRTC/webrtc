@@ -28,11 +28,11 @@
 #ifndef TALK_P2P_BASE_STUNREQUEST_H_
 #define TALK_P2P_BASE_STUNREQUEST_H_
 
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/thread.h"
-#include "talk/p2p/base/stun.h"
 #include <map>
 #include <string>
+#include "talk/p2p/base/stun.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/thread.h"
 
 namespace cricket {
 

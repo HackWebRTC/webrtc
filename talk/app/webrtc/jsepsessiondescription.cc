@@ -27,8 +27,8 @@
 #include "talk/app/webrtc/jsepsessiondescription.h"
 
 #include "talk/app/webrtc/webrtcsdp.h"
-#include "webrtc/base/stringencode.h"
 #include "talk/session/media/mediasession.h"
+#include "webrtc/base/stringencode.h"
 
 using rtc::scoped_ptr;
 using cricket::SessionDescription;

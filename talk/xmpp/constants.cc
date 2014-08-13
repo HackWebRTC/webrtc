@@ -29,11 +29,11 @@
 
 #include <string>
 
-#include "webrtc/base/basicdefs.h"
+#include "talk/xmllite/qname.h"
 #include "talk/xmllite/xmlconstants.h"
 #include "talk/xmllite/xmlelement.h"
-#include "talk/xmllite/qname.h"
 #include "talk/xmpp/jid.h"
+#include "webrtc/base/basicdefs.h"
 
 namespace buzz {
 

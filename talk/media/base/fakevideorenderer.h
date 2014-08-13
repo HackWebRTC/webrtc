@@ -28,10 +28,10 @@
 #ifndef TALK_MEDIA_BASE_FAKEVIDEORENDERER_H_
 #define TALK_MEDIA_BASE_FAKEVIDEORENDERER_H_
 
-#include "webrtc/base/logging.h"
-#include "webrtc/base/sigslot.h"
 #include "talk/media/base/videoframe.h"
 #include "talk/media/base/videorenderer.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/sigslot.h"
 
 namespace cricket {
 

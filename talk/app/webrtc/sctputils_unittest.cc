@@ -25,9 +25,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "talk/app/webrtc/sctputils.h"
 #include "webrtc/base/bytebuffer.h"
 #include "webrtc/base/gunit.h"
-#include "talk/app/webrtc/sctputils.h"
 
 class SctpUtilsTest : public testing::Test {
  public:

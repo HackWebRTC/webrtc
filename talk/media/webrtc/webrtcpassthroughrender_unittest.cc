@@ -4,9 +4,9 @@
 
 #include <string>
 
-#include "webrtc/base/gunit.h"
 #include "talk/media/base/testutils.h"
 #include "talk/media/webrtc/webrtcpassthroughrender.h"
+#include "webrtc/base/gunit.h"
 
 class WebRtcPassthroughRenderTest : public testing::Test {
  public:

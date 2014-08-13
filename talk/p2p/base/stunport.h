@@ -30,9 +30,9 @@
 
 #include <string>
 
-#include "webrtc/base/asyncpacketsocket.h"
 #include "talk/p2p/base/port.h"
 #include "talk/p2p/base/stunrequest.h"
+#include "webrtc/base/asyncpacketsocket.h"
 
 // TODO(mallinath) - Rename stunport.cc|h to udpport.cc|h.
 namespace rtc {

@@ -27,8 +27,8 @@
 
 #include "talk/p2p/base/parsing.h"
 
-#include <algorithm>
 #include <stdlib.h>
+#include <algorithm>
 #include "webrtc/base/stringutils.h"
 
 namespace {

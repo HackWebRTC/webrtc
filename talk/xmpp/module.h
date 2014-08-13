@@ -28,10 +28,11 @@
 #ifndef _module_h_
 #define _module_h_
 
+#include "talk/xmpp/xmppengine.h"
+
 namespace buzz {
 
 class XmppEngine;
-enum XmppReturnStatus;
 
 //! This is the base class for extension modules.
 //! An engine is registered with the module and the module then hooks the

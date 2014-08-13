@@ -28,8 +28,8 @@
 #ifndef TALK_P2P_BASE_PORTPROXY_H_
 #define TALK_P2P_BASE_PORTPROXY_H_
 
-#include "webrtc/base/sigslot.h"
 #include "talk/p2p/base/portinterface.h"
+#include "webrtc/base/sigslot.h"
 
 namespace rtc {
 class Network;

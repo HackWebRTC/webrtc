@@ -38,16 +38,16 @@
 #define TALK_P2P_BASE_P2PTRANSPORTCHANNEL_H_
 
 #include <map>
-#include <vector>
 #include <string>
-#include "webrtc/base/asyncpacketsocket.h"
-#include "webrtc/base/sigslot.h"
+#include <vector>
 #include "talk/p2p/base/candidate.h"
-#include "talk/p2p/base/portinterface.h"
+#include "talk/p2p/base/p2ptransport.h"
 #include "talk/p2p/base/portallocator.h"
+#include "talk/p2p/base/portinterface.h"
 #include "talk/p2p/base/transport.h"
 #include "talk/p2p/base/transportchannelimpl.h"
-#include "talk/p2p/base/p2ptransport.h"
+#include "webrtc/base/asyncpacketsocket.h"
+#include "webrtc/base/sigslot.h"
 
 namespace cricket {
 

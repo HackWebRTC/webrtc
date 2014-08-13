@@ -28,8 +28,8 @@
 #include "talk/media/devices/devicemanager.h"
 
 #ifdef WIN32
-#include "webrtc/base/win32.h"
 #include <objbase.h>
+#include "webrtc/base/win32.h"
 #endif
 #include <string>
 

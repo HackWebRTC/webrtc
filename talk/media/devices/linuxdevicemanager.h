@@ -31,10 +31,10 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/stringencode.h"
 #include "talk/media/devices/devicemanager.h"
 #include "talk/sound/soundsystemfactory.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/stringencode.h"
 
 namespace cricket {
 

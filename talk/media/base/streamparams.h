@@ -44,8 +44,8 @@
 #define TALK_MEDIA_BASE_STREAMPARAMS_H_
 
 #include <algorithm>
-#include <string>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "webrtc/base/basictypes.h"

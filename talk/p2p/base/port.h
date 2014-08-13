@@ -28,11 +28,17 @@
 #ifndef TALK_P2P_BASE_PORT_H_
 #define TALK_P2P_BASE_PORT_H_
 
-#include <string>
-#include <vector>
 #include <map>
 #include <set>
+#include <string>
+#include <vector>
 
+#include "talk/p2p/base/candidate.h"
+#include "talk/p2p/base/packetsocketfactory.h"
+#include "talk/p2p/base/portinterface.h"
+#include "talk/p2p/base/stun.h"
+#include "talk/p2p/base/stunrequest.h"
+#include "talk/p2p/base/transport.h"
 #include "webrtc/base/asyncpacketsocket.h"
 #include "webrtc/base/network.h"
 #include "webrtc/base/proxyinfo.h"
@@ -40,12 +46,6 @@
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/thread.h"
-#include "talk/p2p/base/candidate.h"
-#include "talk/p2p/base/packetsocketfactory.h"
-#include "talk/p2p/base/portinterface.h"
-#include "talk/p2p/base/stun.h"
-#include "talk/p2p/base/stunrequest.h"
-#include "talk/p2p/base/transport.h"
 
 namespace cricket {
 

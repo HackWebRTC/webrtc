@@ -30,9 +30,9 @@
 #include <map>
 #include <string>
 
-#include "webrtc/base/common.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/xmppengine.h"
+#include "webrtc/base/common.h"
 
 namespace buzz {
 

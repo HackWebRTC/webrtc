@@ -31,8 +31,8 @@
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/notifier.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "talk/media/base/mediachannel.h"
+#include "webrtc/base/scoped_ptr.h"
 
 // LocalAudioSource implements AudioSourceInterface.
 // This contains settings for switching audio processing on and off.

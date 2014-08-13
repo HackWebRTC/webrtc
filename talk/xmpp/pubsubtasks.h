@@ -30,9 +30,9 @@
 
 #include <vector>
 
-#include "webrtc/base/sigslot.h"
 #include "talk/xmpp/iqtask.h"
 #include "talk/xmpp/receivetask.h"
+#include "webrtc/base/sigslot.h"
 
 namespace buzz {
 

@@ -30,10 +30,6 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/base64.h"
-#include "webrtc/base/common.h"
-#include "webrtc/base/stringencode.h"
-#include "webrtc/base/stringutils.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/p2ptransportchannel.h"
 #include "talk/p2p/base/parsing.h"
@@ -42,6 +38,10 @@
 #include "talk/xmllite/qname.h"
 #include "talk/xmllite/xmlelement.h"
 #include "talk/xmpp/constants.h"
+#include "webrtc/base/base64.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/stringencode.h"
+#include "webrtc/base/stringutils.h"
 
 namespace {
 

@@ -31,8 +31,8 @@
 #include <iosfwd>
 #include <string>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "talk/xmllite/qname.h"
+#include "webrtc/base/scoped_ptr.h"
 
 namespace buzz {
 

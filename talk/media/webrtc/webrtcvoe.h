@@ -29,8 +29,8 @@
 #ifndef TALK_MEDIA_WEBRTCVOE_H_
 #define TALK_MEDIA_WEBRTCVOE_H_
 
-#include "webrtc/base/common.h"
 #include "talk/media/webrtc/webrtccommon.h"
+#include "webrtc/base/common.h"
 
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"

@@ -24,8 +24,8 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "talk/media/base/fakemediaengine.h"
-#include "talk/media/base/fakescreencapturerfactory.h"
 #include "talk/media/base/fakertp.h"
+#include "talk/media/base/fakescreencapturerfactory.h"
 #include "talk/media/base/fakevideocapturer.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/rtpdump.h"

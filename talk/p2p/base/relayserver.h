@@ -28,16 +28,16 @@
 #ifndef TALK_P2P_BASE_RELAYSERVER_H_
 #define TALK_P2P_BASE_RELAYSERVER_H_
 
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
 
+#include "talk/p2p/base/port.h"
+#include "talk/p2p/base/stun.h"
 #include "webrtc/base/asyncudpsocket.h"
 #include "webrtc/base/socketaddresspair.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"
-#include "talk/p2p/base/port.h"
-#include "talk/p2p/base/stun.h"
 
 namespace cricket {
 

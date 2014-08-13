@@ -25,17 +25,17 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <string>
-#include <sstream>
 #include <iostream>
+#include <sstream>
+#include <string>
 
+#include "talk/xmllite/xmlelement.h"
+#include "talk/xmpp/constants.h"
+#include "talk/xmpp/rostermodule.h"
+#include "talk/xmpp/util_unittest.h"
+#include "talk/xmpp/xmppengine.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "talk/xmllite/xmlelement.h"
-#include "talk/xmpp/xmppengine.h"
-#include "talk/xmpp/rostermodule.h"
-#include "talk/xmpp/constants.h"
-#include "talk/xmpp/util_unittest.h"
 
 #define TEST_OK(x) EXPECT_EQ((x),XMPP_RETURN_OK)
 #define TEST_BADARGUMENT(x) EXPECT_EQ((x),XMPP_RETURN_BADARGUMENT)

@@ -35,15 +35,6 @@
 #include <math.h>
 #include <set>
 
-#include "webrtc/base/basictypes.h"
-#include "webrtc/base/buffer.h"
-#include "webrtc/base/byteorder.h"
-#include "webrtc/base/common.h"
-#include "webrtc/base/cpumonitor.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/stringutils.h"
-#include "webrtc/base/thread.h"
-#include "webrtc/base/timeutils.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/rtputils.h"
 #include "talk/media/base/streamparams.h"
@@ -61,6 +52,15 @@
 #include "talk/media/webrtc/webrtcvie.h"
 #include "talk/media/webrtc/webrtcvoe.h"
 #include "talk/media/webrtc/webrtcvoiceengine.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/byteorder.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/cpumonitor.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/stringutils.h"
+#include "webrtc/base/thread.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/experiments.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 

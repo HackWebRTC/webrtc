@@ -30,17 +30,17 @@
 #include <vector>
 
 #include "talk/app/webrtc/audiotrack.h"
-#include "talk/app/webrtc/mediastreamproxy.h"
 #include "talk/app/webrtc/mediaconstraintsinterface.h"
+#include "talk/app/webrtc/mediastreamproxy.h"
 #include "talk/app/webrtc/mediastreamtrackproxy.h"
 #include "talk/app/webrtc/remoteaudiosource.h"
 #include "talk/app/webrtc/remotevideocapturer.h"
 #include "talk/app/webrtc/sctputils.h"
 #include "talk/app/webrtc/videosource.h"
 #include "talk/app/webrtc/videotrack.h"
+#include "talk/media/sctp/sctpdataengine.h"
 #include "webrtc/base/bytebuffer.h"
 #include "webrtc/base/stringutils.h"
-#include "talk/media/sctp/sctpdataengine.h"
 
 static const char kDefaultStreamLabel[] = "default";
 static const char kDefaultAudioTrackLabel[] = "defaulta0";

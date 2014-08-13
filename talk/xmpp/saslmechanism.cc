@@ -25,10 +25,10 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/base/base64.h"
 #include "talk/xmllite/xmlelement.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/saslmechanism.h"
+#include "webrtc/base/base64.h"
 
 using rtc::Base64;
 

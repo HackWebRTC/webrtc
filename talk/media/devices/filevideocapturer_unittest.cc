@@ -30,11 +30,11 @@
 #include <string>
 #include <vector>
 
+#include "talk/media/base/testutils.h"
+#include "talk/media/devices/filevideocapturer.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
-#include "talk/media/base/testutils.h"
-#include "talk/media/devices/filevideocapturer.h"
 
 namespace {
 

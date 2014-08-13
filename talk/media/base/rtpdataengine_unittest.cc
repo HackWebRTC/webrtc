@@ -27,16 +27,16 @@
 
 #include <string>
 
+#include "talk/media/base/constants.h"
+#include "talk/media/base/fakenetworkinterface.h"
+#include "talk/media/base/rtpdataengine.h"
+#include "talk/media/base/rtputils.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/timing.h"
-#include "talk/media/base/constants.h"
-#include "talk/media/base/fakenetworkinterface.h"
-#include "talk/media/base/rtpdataengine.h"
-#include "talk/media/base/rtputils.h"
 
 class FakeTiming : public rtc::Timing {
  public:

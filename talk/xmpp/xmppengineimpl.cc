@@ -31,12 +31,12 @@
 #include <sstream>
 #include <vector>
 
-#include "webrtc/base/common.h"
 #include "talk/xmllite/xmlelement.h"
 #include "talk/xmllite/xmlprinter.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/saslhandler.h"
 #include "talk/xmpp/xmpplogintask.h"
+#include "webrtc/base/common.h"
 
 namespace buzz {
 

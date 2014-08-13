@@ -31,8 +31,8 @@
 #include <set>
 #include <vector>
 
-#include "webrtc/base/basictypes.h"
 #include "talk/media/base/streamparams.h"
+#include "webrtc/base/basictypes.h"
 
 namespace cricket {
 

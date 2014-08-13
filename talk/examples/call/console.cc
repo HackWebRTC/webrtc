@@ -35,11 +35,11 @@
 #include <unistd.h>
 #endif  // POSIX
 
+#include "talk/examples/call/callclient.h"
+#include "talk/examples/call/console.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/stringutils.h"
-#include "talk/examples/call/console.h"
-#include "talk/examples/call/callclient.h"
 
 #ifdef POSIX
 static void DoNothing(int unused) {}

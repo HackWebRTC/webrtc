@@ -28,15 +28,15 @@
 #include <stdio.h>
 #include <vector>
 
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/thread.h"
 #include "talk/media/base/fakemediaprocessor.h"
 #include "talk/media/base/fakevideocapturer.h"
 #include "talk/media/base/fakevideorenderer.h"
 #include "talk/media/base/testutils.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videoprocessor.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/thread.h"
 
 using cricket::FakeVideoCapturer;
 

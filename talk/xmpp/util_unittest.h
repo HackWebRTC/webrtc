@@ -28,8 +28,8 @@
 #ifndef TALK_XMPP_UTIL_UNITTEST_H_
 #define TALK_XMPP_UTIL_UNITTEST_H_
 
-#include <string>
 #include <sstream>
+#include <string>
 #include "talk/xmpp/xmppengine.h"
 
 namespace buzz {

@@ -36,15 +36,15 @@
 #include "talk/app/webrtc/test/mockpeerconnectionobservers.h"
 #include "talk/app/webrtc/test/testsdpstrings.h"
 #include "talk/app/webrtc/videosource.h"
+#include "talk/media/base/fakevideocapturer.h"
+#include "talk/media/sctp/sctpdataengine.h"
+#include "talk/session/media/mediasession.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/thread.h"
-#include "talk/media/base/fakevideocapturer.h"
-#include "talk/media/sctp/sctpdataengine.h"
-#include "talk/session/media/mediasession.h"
 
 static const char kStreamLabel1[] = "local_stream_1";
 static const char kStreamLabel2[] = "local_stream_2";

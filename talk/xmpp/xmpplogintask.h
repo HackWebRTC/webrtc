@@ -31,10 +31,10 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/logging.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "talk/xmpp/jid.h"
 #include "talk/xmpp/xmppengine.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/scoped_ptr.h"
 
 namespace buzz {
 

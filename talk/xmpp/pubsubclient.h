@@ -31,11 +31,11 @@
 #include <string>
 #include <vector>
 
+#include "talk/xmpp/jid.h"
+#include "talk/xmpp/pubsubtasks.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/sigslotrepeater.h"
 #include "webrtc/base/task.h"
-#include "talk/xmpp/jid.h"
-#include "talk/xmpp/pubsubtasks.h"
 
 // Easy to use clients built on top of the tasks for XEP-0060
 // (http://xmpp.org/extensions/xep-0060.html).

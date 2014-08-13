@@ -31,13 +31,13 @@
 #include <limits.h>
 #include <math.h>
 
-#include <string>
-#include <sstream>
 #include <iomanip>
+#include <sstream>
+#include <string>
 
+#include "talk/p2p/base/constants.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/socketaddress.h"
-#include "talk/p2p/base/constants.h"
 
 namespace cricket {
 

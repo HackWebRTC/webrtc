@@ -28,8 +28,8 @@
 #include "talk/xmpp/xmppstanzaparser.h"
 
 #include "talk/xmllite/xmlelement.h"
-#include "webrtc/base/common.h"
 #include "talk/xmpp/constants.h"
+#include "webrtc/base/common.h"
 #ifdef EXPAT_RELATIVE_PATH
 #include "expat.h"
 #else

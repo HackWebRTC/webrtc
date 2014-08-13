@@ -30,10 +30,10 @@
 
 #include <string>
 #include <vector>
-#include "webrtc/base/messagequeue.h"
-#include "talk/p2p/base/transportchannelimpl.h"
-#include "talk/p2p/base/rawtransport.h"
 #include "talk/p2p/base/candidate.h"
+#include "talk/p2p/base/rawtransport.h"
+#include "talk/p2p/base/transportchannelimpl.h"
+#include "webrtc/base/messagequeue.h"
 
 #if defined(FEATURE_ENABLE_PSTN)
 

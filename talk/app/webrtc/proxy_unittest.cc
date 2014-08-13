@@ -29,11 +29,11 @@
 
 #include <string>
 
+#include "testing/base/public/gmock.h"
+#include "webrtc/base/gunit.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread.h"
-#include "webrtc/base/gunit.h"
-#include "testing/base/public/gmock.h"
 
 using ::testing::_;
 using ::testing::DoAll;

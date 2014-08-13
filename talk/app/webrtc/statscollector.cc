@@ -30,10 +30,10 @@
 #include <utility>
 #include <vector>
 
+#include "talk/session/media/channel.h"
 #include "webrtc/base/base64.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/timing.h"
-#include "talk/session/media/channel.h"
 
 namespace webrtc {
 

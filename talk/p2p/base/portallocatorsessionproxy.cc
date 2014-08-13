@@ -27,9 +27,9 @@
 
 #include "talk/p2p/base/portallocatorsessionproxy.h"
 
-#include "webrtc/base/thread.h"
 #include "talk/p2p/base/portallocator.h"
 #include "talk/p2p/base/portproxy.h"
+#include "webrtc/base/thread.h"
 
 namespace cricket {
 

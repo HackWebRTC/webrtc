@@ -28,11 +28,11 @@
 #ifndef TALK_SESSION_TUNNEL_PSEUDOTCPCHANNEL_H_
 #define TALK_SESSION_TUNNEL_PSEUDOTCPCHANNEL_H_
 
+#include "talk/p2p/base/pseudotcp.h"
+#include "talk/p2p/base/session.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/stream.h"
-#include "talk/p2p/base/pseudotcp.h"
-#include "talk/p2p/base/session.h"
 
 namespace rtc {
 class Thread;

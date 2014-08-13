@@ -31,8 +31,8 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/constructormagic.h"
 #include "talk/p2p/base/transportinfo.h"
+#include "webrtc/base/constructormagic.h"
 
 namespace cricket {
 

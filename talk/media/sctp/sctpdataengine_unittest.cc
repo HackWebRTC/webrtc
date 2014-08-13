@@ -31,6 +31,9 @@
 #include <string>
 #include <vector>
 
+#include "talk/media/base/constants.h"
+#include "talk/media/base/mediachannel.h"
+#include "talk/media/sctp/sctpdataengine.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/criticalsection.h"
@@ -41,9 +44,6 @@
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/thread.h"
-#include "talk/media/base/constants.h"
-#include "talk/media/base/mediachannel.h"
-#include "talk/media/sctp/sctpdataengine.h"
 
 enum {
   MSG_PACKET = 1,

@@ -28,13 +28,13 @@
 
 #include "talk/p2p/base/dtlstransportchannel.h"
 
+#include "talk/p2p/base/common.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/messagequeue.h"
-#include "webrtc/base/stream.h"
 #include "webrtc/base/sslstreamadapter.h"
+#include "webrtc/base/stream.h"
 #include "webrtc/base/thread.h"
-#include "talk/p2p/base/common.h"
 
 namespace cricket {
 

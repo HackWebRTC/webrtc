@@ -28,11 +28,11 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/fakesslidentity.h"
-#include "webrtc/base/gunit.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/transportdescription.h"
 #include "talk/p2p/base/transportdescriptionfactory.h"
+#include "webrtc/base/fakesslidentity.h"
+#include "webrtc/base/gunit.h"
 
 using rtc::scoped_ptr;
 using cricket::TransportDescriptionFactory;

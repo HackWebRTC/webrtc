@@ -28,9 +28,11 @@
 #ifndef TALK_MEDIA_BASE_FAKENETWORKINTERFACE_H_
 #define TALK_MEDIA_BASE_FAKENETWORKINTERFACE_H_
 
-#include <vector>
 #include <map>
+#include <vector>
 
+#include "talk/media/base/mediachannel.h"
+#include "talk/media/base/rtputils.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/criticalsection.h"
@@ -38,8 +40,6 @@
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/thread.h"
-#include "talk/media/base/mediachannel.h"
-#include "talk/media/base/rtputils.h"
 
 namespace cricket {
 

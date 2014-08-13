@@ -32,14 +32,14 @@
 #include <sstream>
 #include <vector>
 
-#include "webrtc/base/buffer.h"
-#include "webrtc/base/helpers.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/safe_conversions.h"
 #include "talk/media/base/codec.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/streamparams.h"
 #include "usrsctplib/usrsctp.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/safe_conversions.h"
 
 namespace {
 typedef cricket::SctpDataMediaChannel::StreamSet StreamSet;

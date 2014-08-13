@@ -35,8 +35,8 @@
 #include "libyuv/scale.h"
 #endif
 
-#include "webrtc/base/logging.h"
 #include "talk/media/base/videocommon.h"
+#include "webrtc/base/logging.h"
 
 namespace cricket {
 

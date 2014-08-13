@@ -36,9 +36,9 @@
 
 #include <string>
 
+#include "talk/session/tunnel/tunnelsessionclient.h"
 #include "webrtc/base/sslidentity.h"
 #include "webrtc/base/sslstreamadapter.h"
-#include "talk/session/tunnel/tunnelsessionclient.h"
 
 namespace cricket {
 

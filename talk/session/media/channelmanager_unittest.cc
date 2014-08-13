@@ -23,17 +23,17 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/thread.h"
 #include "talk/media/base/fakecapturemanager.h"
 #include "talk/media/base/fakemediaengine.h"
 #include "talk/media/base/fakemediaprocessor.h"
 #include "talk/media/base/nullvideorenderer.h"
-#include "talk/media/devices/fakedevicemanager.h"
 #include "talk/media/base/testutils.h"
+#include "talk/media/devices/fakedevicemanager.h"
 #include "talk/p2p/base/fakesession.h"
 #include "talk/session/media/channelmanager.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/logging.h"
+#include "webrtc/base/thread.h"
 
 namespace cricket {
 

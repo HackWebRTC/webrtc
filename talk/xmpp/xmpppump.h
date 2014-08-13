@@ -28,13 +28,13 @@
 #ifndef TALK_XMPP_XMPPPUMP_H_
 #define TALK_XMPP_XMPPPUMP_H_
 
+#include "talk/xmpp/xmppclient.h"
+#include "talk/xmpp/xmppengine.h"
+#include "talk/xmpp/xmpptask.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/taskrunner.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"
-#include "talk/xmpp/xmppclient.h"
-#include "talk/xmpp/xmppengine.h"
-#include "talk/xmpp/xmpptask.h"
 
 namespace buzz {
 

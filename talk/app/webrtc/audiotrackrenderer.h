@@ -28,8 +28,8 @@
 #ifndef TALK_APP_WEBRTC_AUDIOTRACKRENDERER_H_
 #define TALK_APP_WEBRTC_AUDIOTRACKRENDERER_H_
 
-#include "webrtc/base/thread.h"
 #include "talk/media/base/audiorenderer.h"
+#include "webrtc/base/thread.h"
 
 namespace webrtc {
 

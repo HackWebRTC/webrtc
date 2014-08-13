@@ -25,13 +25,13 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <string>
-#include <sstream>
 #include <iostream>
-#include "webrtc/base/common.h"
-#include "webrtc/base/gunit.h"
+#include <sstream>
+#include <string>
 #include "talk/xmllite/qname.h"
 #include "talk/xmllite/xmlparser.h"
+#include "webrtc/base/common.h"
+#include "webrtc/base/gunit.h"
 
 using buzz::QName;
 using buzz::XmlParser;

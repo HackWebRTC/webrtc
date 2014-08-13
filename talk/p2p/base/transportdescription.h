@@ -32,10 +32,10 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/scoped_ptr.h"
-#include "webrtc/base/sslfingerprint.h"
 #include "talk/p2p/base/candidate.h"
 #include "talk/p2p/base/constants.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/sslfingerprint.h"
 
 namespace cricket {
 

@@ -39,11 +39,11 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/basictypes.h"
 #include "talk/media/base/mediachannel.h"  // For RtpHeaderExtension
 #include "talk/media/base/streamparams.h"
 #include "talk/p2p/base/parsing.h"
 #include "talk/p2p/base/sessiondescription.h"
+#include "webrtc/base/basictypes.h"
 
 namespace cricket {
 

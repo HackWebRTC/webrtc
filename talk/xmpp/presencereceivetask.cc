@@ -27,8 +27,8 @@
 
 #include "talk/xmpp/presencereceivetask.h"
 
-#include "webrtc/base/stringencode.h"
 #include "talk/xmpp/constants.h"
+#include "webrtc/base/stringencode.h"
 
 namespace buzz {
 

@@ -30,10 +30,10 @@
 #include <CoreAudio/CoreAudio.h>
 #include <QuickTime/QuickTime.h>
 
+#include "talk/media/base/mediacommon.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/thread.h"
-#include "talk/media/base/mediacommon.h"
 
 class DeviceWatcherImpl;
 

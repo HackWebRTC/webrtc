@@ -28,16 +28,16 @@
 #ifndef TALK_APP_WEBRTC_DATACHANNEL_H_
 #define TALK_APP_WEBRTC_DATACHANNEL_H_
 
-#include <string>
 #include <deque>
+#include <string>
 
 #include "talk/app/webrtc/datachannelinterface.h"
 #include "talk/app/webrtc/proxy.h"
+#include "talk/media/base/mediachannel.h"
+#include "talk/session/media/channel.h"
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/sigslot.h"
-#include "talk/media/base/mediachannel.h"
-#include "talk/session/media/channel.h"
 
 namespace webrtc {
 

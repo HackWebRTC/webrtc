@@ -33,7 +33,6 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/messagequeue.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/screencastid.h"
 #include "talk/media/base/streamparams.h"
@@ -45,6 +44,7 @@
 #include "talk/session/media/mediamessages.h"
 #include "talk/session/media/mediasession.h"
 #include "talk/xmpp/jid.h"
+#include "webrtc/base/messagequeue.h"
 
 namespace cricket {
 

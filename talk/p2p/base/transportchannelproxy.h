@@ -32,8 +32,8 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/base/messagehandler.h"
 #include "talk/p2p/base/transportchannel.h"
+#include "webrtc/base/messagehandler.h"
 
 namespace rtc {
 class Thread;

@@ -27,8 +27,8 @@
 
 #include "talk/media/webrtc/webrtctexturevideoframe.h"
 
-#include "webrtc/base/gunit.h"
 #include "talk/media/base/videocommon.h"
+#include "webrtc/base/gunit.h"
 
 class NativeHandleImpl : public webrtc::NativeHandle {
  public:

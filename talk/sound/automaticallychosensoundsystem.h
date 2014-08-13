@@ -28,11 +28,11 @@
 #ifndef TALK_SOUND_AUTOMATICALLYCHOSENSOUNDSYSTEM_H_
 #define TALK_SOUND_AUTOMATICALLYCHOSENSOUNDSYSTEM_H_
 
+#include "talk/sound/soundsysteminterface.h"
+#include "talk/sound/soundsystemproxy.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
-#include "talk/sound/soundsysteminterface.h"
-#include "talk/sound/soundsystemproxy.h"
 
 namespace cricket {
 

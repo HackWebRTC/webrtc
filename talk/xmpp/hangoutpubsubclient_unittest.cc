@@ -3,15 +3,15 @@
 
 #include <string>
 
-#include "webrtc/base/faketaskrunner.h"
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/sigslot.h"
 #include "talk/xmllite/qname.h"
 #include "talk/xmllite/xmlelement.h"
 #include "talk/xmpp/constants.h"
-#include "talk/xmpp/jid.h"
 #include "talk/xmpp/fakexmppclient.h"
 #include "talk/xmpp/hangoutpubsubclient.h"
+#include "talk/xmpp/jid.h"
+#include "webrtc/base/faketaskrunner.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/sigslot.h"
 
 class TestHangoutPubSubListener : public sigslot::has_slots<> {
  public:

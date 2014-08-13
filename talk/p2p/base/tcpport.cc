@@ -27,9 +27,9 @@
 
 #include "talk/p2p/base/tcpport.h"
 
+#include "talk/p2p/base/common.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
-#include "talk/p2p/base/common.h"
 
 namespace cricket {
 

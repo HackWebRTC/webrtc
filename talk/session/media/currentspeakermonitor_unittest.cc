@@ -25,10 +25,10 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/thread.h"
 #include "talk/session/media/call.h"
 #include "talk/session/media/currentspeakermonitor.h"
+#include "webrtc/base/gunit.h"
+#include "webrtc/base/thread.h"
 
 namespace cricket {
 

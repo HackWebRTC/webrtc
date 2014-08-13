@@ -32,12 +32,12 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/scoped_ptr.h"
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/sigslotrepeater.h"
 #include "talk/xmpp/jid.h"
 #include "talk/xmpp/pubsubclient.h"
 #include "talk/xmpp/pubsubstateclient.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/sigslotrepeater.h"
 
 // Gives a high-level API for MUC call PubSub needs such as
 // presenter state, recording state, mute state, and remote mute.
