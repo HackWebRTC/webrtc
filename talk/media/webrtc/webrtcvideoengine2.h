@@ -268,7 +268,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
 
   // Implemented for VideoMediaChannelTest.
   bool sending() const { return sending_; }
-  uint32 GetDefaultChannelSsrc() { return default_send_ssrc_; }
+  uint32 GetDefaultSendChannelSsrc() { return default_send_ssrc_; }
   bool GetRenderer(uint32 ssrc, VideoRenderer** renderer);
 
  private:
