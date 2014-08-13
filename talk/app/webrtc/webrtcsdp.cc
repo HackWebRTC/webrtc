@@ -1720,14 +1720,7 @@ void BuildCandidate(const std::vector<Candidate>& candidates,
     }
 
     if (it->protocol() == cricket::TCP_PROTOCOL_NAME) {
-      // In case of WebRTC, candidate must be always "active" only. That means
-      // it should have port number either 0 or 9.
-      ASSERT(it->address().port() == 0 ||
-             it->address().port() == cricket::DISCARD_PORT);
-      ASSERT(it->tcptype() == cricket::TCPTYPE_ACTIVE_STR);
-      // TODO(mallinath) : Uncomment below line once WebRTCSdp capable of
-      // parsing RFC 6544.
-      // os << kTcpCandidateType << " " << it->tcptype() << " ";
+      os << kTcpCandidateType << " " << it->tcptype() << " ";
     }
 
     // Extensions

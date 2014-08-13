@@ -1631,7 +1631,7 @@ TEST_F(WebRtcSdpTest, SerializeCandidates) {
 
 // TODO(mallinath) : Enable this test once WebRTCSdp capable of parsing
 // RFC 6544.
-TEST_F(WebRtcSdpTest, DISABLED_SerializeTcpCandidates) {
+TEST_F(WebRtcSdpTest, SerializeTcpCandidates) {
   Candidate candidate(
       "", ICE_CANDIDATE_COMPONENT_RTP, "tcp",
       rtc::SocketAddress("192.168.1.5", 9), kCandidatePriority,
