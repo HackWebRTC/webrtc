@@ -130,9 +130,12 @@ class OveruseFrameDetectorTest : public ::testing::Test {
   }
 
   void TriggerNormalUsageWithEncodeTime() {
-    const int kEncodeTimeMs = 5;
+    const int kEncodeTimeMs1 = 5;
+    const int kEncodeTimeMs2 = 6;
     InsertAndEncodeFramesWithInterval(
-        1000, kFrameInterval33ms, kWidth, kHeight, kEncodeTimeMs);
+        1300, kFrameInterval33ms, kWidth, kHeight, kEncodeTimeMs1);
+    InsertAndEncodeFramesWithInterval(
+        1, kFrameInterval33ms, kWidth, kHeight, kEncodeTimeMs2);
     overuse_detector_->Process();
   }
 
@@ -215,7 +218,7 @@ TEST_F(OveruseFrameDetectorTest, TriggerNormalUsageWithMinProcessCount) {
   overuse_detector_->SetObserver(&overuse_observer_);
   options_.min_process_count = 1;
   overuse_detector_->SetOptions(options_);
-  InsertFramesWithInterval(900, kFrameInterval33ms, kWidth, kHeight);
+  InsertFramesWithInterval(1200, kFrameInterval33ms, kWidth, kHeight);
   overuse_detector_->Process();
   EXPECT_EQ(0, overuse_observer_.normaluse_);
   clock_->AdvanceTimeMilliseconds(kProcessIntervalMs);
@@ -444,7 +447,7 @@ TEST_F(OveruseFrameDetectorTest, TriggerOveruseWithEncodeRsd) {
 TEST_F(OveruseFrameDetectorTest, OveruseAndRecoverWithEncodeRsd) {
   options_.enable_capture_jitter_method = false;
   options_.enable_encode_usage_method = true;
-  options_.low_encode_time_rsd_threshold = 20;
+  options_.low_encode_time_rsd_threshold = 25;
   options_.high_encode_time_rsd_threshold = 80;
   overuse_detector_->SetOptions(options_);
   // rsd > high, usage < high => overuse
@@ -460,7 +463,7 @@ TEST_F(OveruseFrameDetectorTest, NoUnderuseWithEncodeRsd_UsageGtLowThreshold) {
   options_.enable_capture_jitter_method = false;
   options_.enable_encode_usage_method = true;
   options_.low_encode_usage_threshold_percent = 1;
-  options_.low_encode_time_rsd_threshold = 20;
+  options_.low_encode_time_rsd_threshold = 25;
   options_.high_encode_time_rsd_threshold = 90;
   overuse_detector_->SetOptions(options_);
   // rsd < low, usage > low => no underuse

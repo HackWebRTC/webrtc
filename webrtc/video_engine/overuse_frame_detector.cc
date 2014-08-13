@@ -37,13 +37,13 @@ const float kWeightFactorMean = 0.98f;
 // Delay between consecutive rampups. (Used for quick recovery.)
 const int kQuickRampUpDelayMs = 10 * 1000;
 // Delay between rampup attempts. Initially uses standard, scales up to max.
-const int kStandardRampUpDelayMs = 30 * 1000;
+const int kStandardRampUpDelayMs = 40 * 1000;
 const int kMaxRampUpDelayMs = 240 * 1000;
 // Expontential back-off factor, to prevent annoying up-down behaviour.
 const double kRampUpBackoffFactor = 2.0;
 
 // Max number of overuses detected before always applying the rampup delay.
-const int kMaxOverusesBeforeApplyRampupDelay = 7;
+const int kMaxOverusesBeforeApplyRampupDelay = 4;
 
 // The maximum exponent to use in VCMExpFilter.
 const float kSampleDiffMs = 33.0f;
