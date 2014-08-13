@@ -565,7 +565,7 @@ TEST_F(AcmReceiverBitExactness, 8kHzOutput) {
   // running this test again.
   Run(8000,
       PlatformChecksum("bd6f8d9602cd82444ea2539e674df747",
-                       "7924385273062b9f07aa3d4dff30d601",
+                       "6ac89c7145072c26bfeba602cd661afb",
                        "8a8440f5511eb729221b9aac25cda3a0"));
 }
 
@@ -574,7 +574,7 @@ TEST_F(AcmReceiverBitExactness, 16kHzOutput) {
   // running this test again.
   Run(16000,
       PlatformChecksum("a39bc6ee0c4eb15f3ad2f43cebcc571d",
-                       "d1d3dde41da936f80fa63d718fbc0fc0",
+                       "3e888eb04f57db2c6ef952fe64f17fe6",
                        "7be583092c5adbcb0f6cd66eca20ea63"));
 }
 
@@ -583,7 +583,7 @@ TEST_F(AcmReceiverBitExactness, 32kHzOutput) {
   // running this test again.
   Run(32000,
       PlatformChecksum("80964572aaa2dc92f9e34896dd3802b3",
-                       "23b82b2605e3aab3d4d9e67dba341355",
+                       "aeca37e963310f5b6552b7edea23c2f1",
                        "3a84188abe9fca25fedd6034760f3e22"));
 }
 
@@ -592,7 +592,7 @@ TEST_F(AcmReceiverBitExactness, 48kHzOutput) {
   // running this test again.
   Run(48000,
       PlatformChecksum("8aacde91f390e0d5a9c2ed571a25fd37",
-                       "580c2d0b273ffa8fa0796d784908cbdb",
+                       "76b9e99e0a3998aa28355e7a2bd836f7",
                        "89b4b19bdb4de40f1d88302ef8cb9f9b"));
 }
 }  // namespace webrtc
