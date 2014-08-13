@@ -661,8 +661,6 @@ class WebRtcVideoRenderFrame : public VideoFrame {
                                        size_t pixel_height,
                                        int64 elapsed_time,
                                        int64 time_stamp) const OVERRIDE {
-    // TODO(pbos): Remove WebRtcVideoFrame dependency, and have a non-const
-    // version of I420VideoFrame wrapped.
     WebRtcVideoFrame* frame = new WebRtcVideoFrame();
     frame->InitToBlack(
         w, h, pixel_width, pixel_height, elapsed_time, time_stamp);
