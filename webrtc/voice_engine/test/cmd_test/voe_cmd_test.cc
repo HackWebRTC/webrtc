@@ -446,6 +446,8 @@ void RunTest(std::string out_path) {
       printf("%i. Toggle Opus stereo (Opus must be selected again to apply "
              "the setting) \n", option_index++);
       printf("%i. Set Opus maximum audio bandwidth \n", option_index++);
+      printf("%i. Set bit rate (only take effect on codecs that allow the "
+             "change) \n", option_index++);
 
       printf("Select action or %i to stop the call: ", option_index);
       int option_selection;
@@ -763,6 +765,13 @@ void RunTest(std::string out_path) {
         int max_playback_rate;
         ASSERT_EQ(1, scanf("%i", &max_playback_rate));
         res = codec->SetOpusMaxBandwidth(chan, max_playback_rate);
+        VALIDATE;
+      } else if (option_selection == option_index++) {
+        res = codec->GetSendCodec(chan, cinst);
+        VALIDATE;
+        printf("Current bit rate is %i bps, set to: ", cinst.rate);
+        ASSERT_EQ(1, scanf("%i", &cinst.rate));
+        res = codec->SetSendCodec(chan, cinst);
         VALIDATE;
       } else {
         break;
