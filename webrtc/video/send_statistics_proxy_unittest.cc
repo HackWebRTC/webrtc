@@ -36,6 +36,8 @@ class SendStatisticsProxyTest : public ::testing::Test {
     VideoSendStream::Config config;
     config.rtp.ssrcs.push_back(17);
     config.rtp.ssrcs.push_back(42);
+    config.rtp.rtx.ssrcs.push_back(18);
+    config.rtp.rtx.ssrcs.push_back(43);
     return config;
   }
 
@@ -101,7 +103,20 @@ TEST_F(SendStatisticsProxyTest, RtcpStatistics) {
     ssrc_stats.rtcp_stats.jitter = offset + 3;
     callback->StatisticsUpdated(ssrc_stats.rtcp_stats, ssrc);
   }
+  for (std::vector<uint32_t>::const_iterator it = config_.rtp.rtx.ssrcs.begin();
+       it != config_.rtp.rtx.ssrcs.end();
+       ++it) {
+    const uint32_t ssrc = *it;
+    StreamStats& ssrc_stats = expected_.substreams[ssrc];
 
+    // Add statistics with some arbitrary, but unique, numbers.
+    uint32_t offset = ssrc * sizeof(RtcpStatistics);
+    ssrc_stats.rtcp_stats.cumulative_lost = offset;
+    ssrc_stats.rtcp_stats.extended_max_sequence_number = offset + 1;
+    ssrc_stats.rtcp_stats.fraction_lost = offset + 2;
+    ssrc_stats.rtcp_stats.jitter = offset + 3;
+    callback->StatisticsUpdated(ssrc_stats.rtcp_stats, ssrc);
+  }
   VideoSendStream::Stats stats = statistics_proxy_->GetStats();
   ExpectEqual(expected_, stats);
 }
@@ -148,6 +163,18 @@ TEST_F(SendStatisticsProxyTest, FrameCounts) {
     observer->FrameCountUpdated(kVideoFrameKey, stats.key_frames, ssrc);
     observer->FrameCountUpdated(kVideoFrameDelta, stats.delta_frames, ssrc);
   }
+  for (std::vector<uint32_t>::const_iterator it = config_.rtp.rtx.ssrcs.begin();
+       it != config_.rtp.rtx.ssrcs.end();
+       ++it) {
+    const uint32_t ssrc = *it;
+    // Add statistics with some arbitrary, but unique, numbers.
+    StreamStats& stats = expected_.substreams[ssrc];
+    uint32_t offset = ssrc * sizeof(StreamStats);
+    stats.key_frames = offset;
+    stats.delta_frames = offset + 1;
+    observer->FrameCountUpdated(kVideoFrameKey, stats.key_frames, ssrc);
+    observer->FrameCountUpdated(kVideoFrameDelta, stats.delta_frames, ssrc);
+  }
 
   VideoSendStream::Stats stats = statistics_proxy_->GetStats();
   ExpectEqual(expected_, stats);
@@ -157,6 +184,21 @@ TEST_F(SendStatisticsProxyTest, DataCounters) {
   StreamDataCountersCallback* callback = statistics_proxy_.get();
   for (std::vector<uint32_t>::const_iterator it = config_.rtp.ssrcs.begin();
        it != config_.rtp.ssrcs.end();
+       ++it) {
+    const uint32_t ssrc = *it;
+    StreamDataCounters& counters = expected_.substreams[ssrc].rtp_stats;
+    // Add statistics with some arbitrary, but unique, numbers.
+    uint32_t offset = ssrc * sizeof(StreamDataCounters);
+    counters.bytes = offset;
+    counters.header_bytes = offset + 1;
+    counters.fec_packets = offset + 2;
+    counters.padding_bytes = offset + 3;
+    counters.retransmitted_packets = offset + 4;
+    counters.packets = offset + 5;
+    callback->DataCountersUpdated(counters, ssrc);
+  }
+  for (std::vector<uint32_t>::const_iterator it = config_.rtp.rtx.ssrcs.begin();
+       it != config_.rtp.rtx.ssrcs.end();
        ++it) {
     const uint32_t ssrc = *it;
     StreamDataCounters& counters = expected_.substreams[ssrc].rtp_stats;
@@ -187,6 +229,16 @@ TEST_F(SendStatisticsProxyTest, Bitrate) {
     observer->Notify(bitrate, ssrc);
     expected_.substreams[ssrc].bitrate_bps = ssrc;
   }
+  for (std::vector<uint32_t>::const_iterator it = config_.rtp.rtx.ssrcs.begin();
+       it != config_.rtp.rtx.ssrcs.end();
+       ++it) {
+    const uint32_t ssrc = *it;
+    BitrateStatistics bitrate;
+    // Use ssrc as bitrate_bps to get a unique value for each stream.
+    bitrate.bitrate_bps = ssrc;
+    observer->Notify(bitrate, ssrc);
+    expected_.substreams[ssrc].bitrate_bps = ssrc;
+  }
 
   VideoSendStream::Stats stats = statistics_proxy_->GetStats();
   ExpectEqual(expected_, stats);
@@ -206,14 +258,29 @@ TEST_F(SendStatisticsProxyTest, SendSideDelay) {
     expected_.substreams[ssrc].avg_delay_ms = avg_delay_ms;
     expected_.substreams[ssrc].max_delay_ms = max_delay_ms;
   }
-
+  for (std::vector<uint32_t>::const_iterator it = config_.rtp.rtx.ssrcs.begin();
+       it != config_.rtp.rtx.ssrcs.end();
+       ++it) {
+    const uint32_t ssrc = *it;
+    // Use ssrc as avg_delay_ms and max_delay_ms to get a unique value for each
+    // stream.
+    int avg_delay_ms = ssrc;
+    int max_delay_ms = ssrc + 1;
+    observer->SendSideDelayUpdated(avg_delay_ms, max_delay_ms, ssrc);
+    expected_.substreams[ssrc].avg_delay_ms = avg_delay_ms;
+    expected_.substreams[ssrc].max_delay_ms = max_delay_ms;
+  }
   VideoSendStream::Stats stats = statistics_proxy_->GetStats();
   ExpectEqual(expected_, stats);
 }
 
 TEST_F(SendStatisticsProxyTest, NoSubstreams) {
   uint32_t exluded_ssrc =
-      *std::max_element(config_.rtp.ssrcs.begin(), config_.rtp.ssrcs.end()) + 1;
+      std::max(
+          *std::max_element(config_.rtp.ssrcs.begin(), config_.rtp.ssrcs.end()),
+          *std::max_element(config_.rtp.rtx.ssrcs.begin(),
+                            config_.rtp.rtx.ssrcs.end())) +
+      1;
   // From RtcpStatisticsCallback.
   RtcpStatistics rtcp_stats;
   RtcpStatisticsCallback* rtcp_callback = statistics_proxy_.get();

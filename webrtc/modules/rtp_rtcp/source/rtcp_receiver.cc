@@ -1470,7 +1470,7 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
         stats.fraction_lost = it->fractionLost;
         stats.jitter = it->jitter;
 
-        stats_callback_->StatisticsUpdated(stats, local_ssrc);
+        stats_callback_->StatisticsUpdated(stats, it->sourceSSRC);
       }
     }
   }

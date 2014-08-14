@@ -41,6 +41,50 @@ const int kInvalidRtpExtensionId = 0;
 static const int kMaxTargetDelayMs = 10000;
 static const float kMaxIncompleteTimeMultiplier = 3.5f;
 
+namespace {
+
+RTCPReportBlock AggregateReportBlocks(
+    const std::vector<RTCPReportBlock>& report_blocks,
+    std::map<uint32_t, RTCPReportBlock>* prev_report_blocks) {
+  int fraction_lost_sum = 0;
+  int fl_seq_num_sum = 0;
+  int jitter_sum = 0;
+  int number_of_report_blocks = 0;
+  RTCPReportBlock aggregate;
+  std::vector<RTCPReportBlock>::const_iterator report_block =
+      report_blocks.begin();
+  for (; report_block != report_blocks.end(); ++report_block) {
+    aggregate.cumulativeLost += report_block->cumulativeLost;
+    std::map<uint32_t, RTCPReportBlock>::iterator prev_report_block =
+        prev_report_blocks->find(report_block->sourceSSRC);
+    if (prev_report_block != prev_report_blocks->end()) {
+      // Skip the first report block since we won't be able to get a correct
+      // weight for it.
+      int seq_num_diff = report_block->extendedHighSeqNum -
+                         prev_report_block->second.extendedHighSeqNum;
+      if (seq_num_diff > 0) {
+        fraction_lost_sum += report_block->fractionLost * seq_num_diff;
+        fl_seq_num_sum += seq_num_diff;
+      }
+    }
+    jitter_sum += report_block->jitter;
+    ++number_of_report_blocks;
+    (*prev_report_blocks)[report_block->sourceSSRC] = *report_block;
+  }
+  if (fl_seq_num_sum > 0) {
+    aggregate.fractionLost =
+        (fraction_lost_sum + fl_seq_num_sum / 2) / fl_seq_num_sum;
+  }
+  if (number_of_report_blocks > 0) {
+    aggregate.jitter =
+        (jitter_sum + number_of_report_blocks / 2) / number_of_report_blocks;
+  }
+  // Not well defined for aggregated report blocks.
+  aggregate.extendedHighSeqNum = 0;
+  return aggregate;
+}
+}  // namespace
+
 // Helper class receiving statistics callbacks.
 class ChannelStatsObserver : public CallStatsObserver {
  public:
@@ -965,48 +1009,33 @@ int32_t ViEChannel::GetSendRtcpStatistics(uint16_t* fraction_lost,
                                           uint32_t* extended_max,
                                           uint32_t* jitter_samples,
                                           int32_t* rtt_ms) {
-  // TODO(pwestin) how do we do this for simulcast ? average for all
-  // except cumulative_lost that is the sum ?
-  // CriticalSectionScoped cs(rtp_rtcp_cs_.get());
+  // Aggregate the report blocks associated with streams sent on this channel.
+  std::vector<RTCPReportBlock> report_blocks;
+  rtp_rtcp_->RemoteRTCPStat(&report_blocks);
+  for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
+       it != simulcast_rtp_rtcp_.end();
+       ++it) {
+    (*it)->RemoteRTCPStat(&report_blocks);
+  }
 
-  // for (std::list<RtpRtcp*>::const_iterator it = simulcast_rtp_rtcp_.begin();
-  //      it != simulcast_rtp_rtcp_.end();
-  //      it++) {
-  //   RtpRtcp* rtp_rtcp = *it;
-  // }
-  uint32_t remote_ssrc = vie_receiver_.GetRemoteSsrc();
-
-  // Get all RTCP receiver report blocks that have been received on this
-  // channel. If we receive RTP packets from a remote source we know the
-  // remote SSRC and use the report block from him.
-  // Otherwise use the first report block.
-  std::vector<RTCPReportBlock> remote_stats;
-  if (rtp_rtcp_->RemoteRTCPStat(&remote_stats) != 0 || remote_stats.empty()) {
+  if (report_blocks.empty())
     return -1;
-  }
-  std::vector<RTCPReportBlock>::const_iterator statistics =
-      remote_stats.begin();
-  for (; statistics != remote_stats.end(); ++statistics) {
-    if (statistics->remoteSSRC == remote_ssrc)
-      break;
-  }
 
-  if (statistics == remote_stats.end()) {
-    // If we have not received any RTCP packets from this SSRC it probably means
-    // we have not received any RTP packets.
-    // Use the first received report block instead.
-    statistics = remote_stats.begin();
-    remote_ssrc = statistics->remoteSSRC;
-  }
+  RTCPReportBlock report;
+  if (report_blocks.size() > 1)
+    report = AggregateReportBlocks(report_blocks, &prev_report_blocks_);
+  else
+    report = report_blocks[0];
 
-  *fraction_lost = statistics->fractionLost;
-  *cumulative_lost = statistics->cumulativeLost;
-  *extended_max = statistics->extendedHighSeqNum;
-  *jitter_samples = statistics->jitter;
+  *fraction_lost = report.fractionLost;
+  *cumulative_lost = report.cumulativeLost;
+  *extended_max = report.extendedHighSeqNum;
+  *jitter_samples = report.jitter;
 
   uint16_t dummy;
   uint16_t rtt = 0;
-  if (rtp_rtcp_->RTT(remote_ssrc, &rtt, &dummy, &dummy, &dummy) != 0) {
+  if (rtp_rtcp_->RTT(
+          vie_receiver_.GetRemoteSsrc(), &rtt, &dummy, &dummy, &dummy) != 0) {
     return -1;
   }
   *rtt_ms = rtt;

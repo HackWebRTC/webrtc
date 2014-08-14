@@ -499,6 +499,8 @@ class ViEChannel
   int nack_history_size_sender_;
   int max_nack_reordering_threshold_;
   I420FrameCallback* pre_render_callback_;
+
+  std::map<uint32_t, RTCPReportBlock> prev_report_blocks_;
 };
 
 }  // namespace webrtc

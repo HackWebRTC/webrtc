@@ -53,8 +53,12 @@ StreamStats* SendStatisticsProxy::GetStatsEntry(uint32_t ssrc) {
     return &it->second;
 
   if (std::find(config_.rtp.ssrcs.begin(), config_.rtp.ssrcs.end(), ssrc) ==
-      config_.rtp.ssrcs.end())
+          config_.rtp.ssrcs.end() &&
+      std::find(config_.rtp.rtx.ssrcs.begin(),
+                config_.rtp.rtx.ssrcs.end(),
+                ssrc) == config_.rtp.rtx.ssrcs.end()) {
     return NULL;
+  }
 
   return &stats_.substreams[ssrc];  // Insert new entry and return ptr.
 }

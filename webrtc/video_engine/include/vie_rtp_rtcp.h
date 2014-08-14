@@ -305,8 +305,11 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
                                               RtcpStatistics& basic_stats,
                                               int& rtt_ms) const = 0;
 
-  // This function returns statistics reported by the remote client in a RTCP
-  // packet.
+  // This function returns statistics reported by the remote client in RTCP
+  // report blocks. If several streams are reported, the statistics will be
+  // aggregated.
+  // If statistics are aggregated, extended_max_sequence_number is not reported,
+  // and will always be set to 0.
   virtual int GetSendChannelRtcpStatistics(const int video_channel,
                                            RtcpStatistics& basic_stats,
                                            int& rtt_ms) const = 0;
