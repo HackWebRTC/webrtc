@@ -20,11 +20,13 @@ namespace acm2 {
 namespace {
   const CodecInst kOpusCodecInst = {105, "opus", 48000, 960, 1, 32000};
   // These constants correspond to those used in ACMOpus::SetPacketLossRate().
-  const int kPacketLossRateHigh = 20;
-  const int kPacketLossRateMedium = 10;
-  const int kPacketLossRateLow = 1;
-  const int kLossRateHighMargin = 2;
-  const int kLossRateMediumMargin = 1;
+  const int kPacketLossRate20 = 20;
+  const int kPacketLossRate10 = 10;
+  const int kPacketLossRate5 = 5;
+  const int kPacketLossRate1 = 1;
+  const int kLossRate20Margin = 2;
+  const int kLossRate10Margin = 1;
+  const int kLossRate5Margin = 1;
 }  // namespace
 
 class AcmOpusTest : public ACMOpus {
@@ -54,24 +56,30 @@ TEST(AcmOpusTest, PacketLossRateOptimized) {
 
   // Note that the order of the following calls is critical.
   opus.TestSetPacketLossRate(0, 0, 0);
-  opus.TestSetPacketLossRate(kPacketLossRateLow,
-                             kPacketLossRateMedium + kLossRateMediumMargin - 1,
-                             kPacketLossRateLow);
-  opus.TestSetPacketLossRate(kPacketLossRateMedium + kLossRateMediumMargin,
-                             kPacketLossRateHigh + kLossRateHighMargin - 1,
-                             kPacketLossRateMedium);
-  opus.TestSetPacketLossRate(kPacketLossRateHigh + kLossRateHighMargin,
+  opus.TestSetPacketLossRate(kPacketLossRate1,
+                             kPacketLossRate5 + kLossRate5Margin - 1,
+                             kPacketLossRate1);
+  opus.TestSetPacketLossRate(kPacketLossRate5 + kLossRate5Margin,
+                             kPacketLossRate10 + kLossRate10Margin - 1,
+                             kPacketLossRate5);
+  opus.TestSetPacketLossRate(kPacketLossRate10 + kLossRate10Margin,
+                             kPacketLossRate20 + kLossRate20Margin - 1,
+                             kPacketLossRate10);
+  opus.TestSetPacketLossRate(kPacketLossRate20 + kLossRate20Margin,
                              100,
-                             kPacketLossRateHigh);
-  opus.TestSetPacketLossRate(kPacketLossRateHigh + kLossRateHighMargin,
-                             kPacketLossRateHigh - kLossRateHighMargin,
-                             kPacketLossRateHigh);
-  opus.TestSetPacketLossRate(kPacketLossRateHigh - kLossRateHighMargin - 1,
-                             kPacketLossRateMedium - kLossRateMediumMargin,
-                             kPacketLossRateMedium);
-  opus.TestSetPacketLossRate(kPacketLossRateMedium - kLossRateMediumMargin - 1,
-                             kPacketLossRateLow,
-                             kPacketLossRateLow);
+                             kPacketLossRate20);
+  opus.TestSetPacketLossRate(kPacketLossRate20 + kLossRate20Margin,
+                             kPacketLossRate20 - kLossRate20Margin,
+                             kPacketLossRate20);
+  opus.TestSetPacketLossRate(kPacketLossRate20 - kLossRate20Margin - 1,
+                             kPacketLossRate10 - kLossRate10Margin,
+                             kPacketLossRate10);
+  opus.TestSetPacketLossRate(kPacketLossRate10 - kLossRate10Margin - 1,
+                             kPacketLossRate5 - kLossRate5Margin,
+                             kPacketLossRate5);
+  opus.TestSetPacketLossRate(kPacketLossRate5 - kLossRate5Margin - 1,
+                             kPacketLossRate1,
+                             kPacketLossRate1);
   opus.TestSetPacketLossRate(0, 0, 0);
 }
 #else

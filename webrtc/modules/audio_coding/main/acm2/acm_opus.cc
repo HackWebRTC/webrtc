@@ -226,24 +226,29 @@ int ACMOpus::SetFEC(bool enable_fec) {
 int ACMOpus::SetPacketLossRate(int loss_rate) {
   // Optimize the loss rate to configure Opus. Basically, optimized loss rate is
   // the input loss rate rounded down to various levels, because a robustly good
-  // audio quality is achieved by lowering the packet loss lower down.
+  // audio quality is achieved by lowering the packet loss down.
   // Additionally, to prevent toggling, margins are used, i.e., when jumping to
   // a loss rate from below, a higher threshold is used than jumping to the same
   // level from above.
-  const int kPacketLossRateHigh = 20;
-  const int kPacketLossRateMedium = 10;
-  const int kPacketLossRateLow = 1;
-  const int kLossRateHighMargin = 2;
-  const int kLossRateMediumMargin = 1;
+  const int kPacketLossRate20 = 20;
+  const int kPacketLossRate10 = 10;
+  const int kPacketLossRate5 = 5;
+  const int kPacketLossRate1 = 1;
+  const int kLossRate20Margin = 2;
+  const int kLossRate10Margin = 1;
+  const int kLossRate5Margin = 1;
   int opt_loss_rate;
-  if (loss_rate >= kPacketLossRateHigh + kLossRateHighMargin *
-      SIGN(kPacketLossRateHigh - packet_loss_rate_)) {
-    opt_loss_rate = kPacketLossRateHigh;
-  } else if (loss_rate >= kPacketLossRateMedium + kLossRateMediumMargin *
-      SIGN(kPacketLossRateMedium - packet_loss_rate_)) {
-    opt_loss_rate = kPacketLossRateMedium;
-  } else if (loss_rate >= kPacketLossRateLow) {
-    opt_loss_rate = kPacketLossRateLow;
+  if (loss_rate >= kPacketLossRate20 + kLossRate20Margin *
+      SIGN(kPacketLossRate20 - packet_loss_rate_)) {
+    opt_loss_rate = kPacketLossRate20;
+  } else if (loss_rate >= kPacketLossRate10 + kLossRate10Margin *
+      SIGN(kPacketLossRate10 - packet_loss_rate_)) {
+    opt_loss_rate = kPacketLossRate10;
+  } else if (loss_rate >= kPacketLossRate5 + kLossRate5Margin *
+      SIGN(kPacketLossRate5 - packet_loss_rate_)) {
+    opt_loss_rate = kPacketLossRate5;
+  } else if (loss_rate >= kPacketLossRate1) {
+    opt_loss_rate = kPacketLossRate1;
   } else {
     opt_loss_rate = 0;
   }
