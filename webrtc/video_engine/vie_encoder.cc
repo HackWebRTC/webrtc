@@ -187,8 +187,13 @@ bool ViEEncoder::Init() {
   qm_callback_ = new QMVideoSettingsCallback(&vpm_);
 
 #ifdef VIDEOCODEC_VP8
+  VideoCodecType codec_type = webrtc::kVideoCodecVP8;
+#else
+  VideoCodecType codec_type = webrtc::kVideoCodecI420;
+#endif
+
   VideoCodec video_codec;
-  if (vcm_.Codec(webrtc::kVideoCodecVP8, &video_codec) != VCM_OK) {
+  if (vcm_.Codec(codec_type, &video_codec) != VCM_OK) {
     return false;
   }
   {
@@ -202,21 +207,6 @@ bool ViEEncoder::Init() {
   if (default_rtp_rtcp_->RegisterSendPayload(video_codec) != 0) {
     return false;
   }
-#else
-  VideoCodec video_codec;
-  if (vcm_.Codec(webrtc::kVideoCodecI420, &video_codec) == VCM_OK) {
-    {
-      CriticalSectionScoped cs(data_cs_.get());
-      send_padding_ = video_codec.numberOfSimulcastStreams > 1;
-    }
-    vcm_.RegisterSendCodec(&video_codec, number_of_cores_,
-                           default_rtp_rtcp_->MaxDataPayloadLength());
-    default_rtp_rtcp_->RegisterSendPayload(video_codec);
-  } else {
-    return false;
-  }
-#endif
-
   if (vcm_.RegisterTransportCallback(this) != 0) {
     return false;
   }
@@ -362,11 +352,10 @@ int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
 
   // Set this module as sending right away, let the slave module in the channel
   // start and stop sending.
-  if (default_rtp_rtcp_->Sending() == false) {
-    if (default_rtp_rtcp_->SetSendingStatus(true) != 0) {
-      return -1;
-    }
+  if (default_rtp_rtcp_->SetSendingStatus(true) != 0) {
+    return -1;
   }
+
   bitrate_controller_->SetBitrateObserver(bitrate_observer_.get(),
                                           video_codec.startBitrate * 1000,
                                           video_codec.minBitrate * 1000,

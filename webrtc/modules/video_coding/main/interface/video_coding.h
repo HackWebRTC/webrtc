@@ -238,7 +238,7 @@ public:
     // frame rate/dimensions need to be updated for video quality optimization
     //
     // Input:
-    //		- videoQMSettings  : The callback object to register.
+    //      - videoQMSettings  : The callback object to register.
     //
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error

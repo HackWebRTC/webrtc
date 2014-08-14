@@ -608,9 +608,7 @@ bool ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
 int ModuleRtpRtcpImpl::TimeToSendPadding(int bytes) {
   if (!IsDefaultModule()) {
     // Don't send from default module.
-    if (SendingMedia()) {
-      return rtp_sender_.TimeToSendPadding(bytes);
-    }
+    return rtp_sender_.TimeToSendPadding(bytes);
   } else {
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
     for (size_t i = 0; i < child_modules_.size(); ++i) {
