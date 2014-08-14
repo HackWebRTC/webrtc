@@ -264,8 +264,7 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
   int32_t SetFecParameters(const FecProtectionParams *delta_params,
                            const FecProtectionParams *key_params);
 
-  int SendPadData(int payload_type,
-                  uint32_t timestamp,
+  int SendPadData(uint32_t timestamp,
                   int64_t capture_time_ms,
                   int32_t bytes);
 
@@ -305,7 +304,9 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
                             bool send_over_rtx,
                             bool is_retransmit);
 
-  int SendRedundantPayloads(int payload_type, int bytes);
+  // Return the number of bytes sent.
+  int TrySendRedundantPayloads(int bytes);
+  int TrySendPadData(int bytes);
 
   int BuildPaddingPacket(uint8_t* packet, int header_length, int32_t bytes);
 

@@ -451,7 +451,13 @@ int32_t RTPSender::SendOutgoingData(
   return ret_val;
 }
 
-int RTPSender::SendRedundantPayloads(int payload_type, int bytes_to_send) {
+int RTPSender::TrySendRedundantPayloads(int bytes_to_send) {
+  {
+    CriticalSectionScoped cs(send_critsect_);
+    if ((rtx_ & kRtxRedundantPayloads) == 0)
+      return 0;
+  }
+
   uint8_t buffer[IP_PACKET_SIZE];
   int bytes_left = bytes_to_send;
   while (bytes_left > 0) {
@@ -490,14 +496,26 @@ int RTPSender::BuildPaddingPacket(uint8_t* packet, int header_length,
   return padding_bytes_in_packet;
 }
 
-int RTPSender::SendPadData(int payload_type,
-                           uint32_t timestamp,
+int RTPSender::TrySendPadData(int bytes) {
+  int64_t capture_time_ms;
+  uint32_t timestamp;
+  {
+    CriticalSectionScoped cs(send_critsect_);
+    timestamp = timestamp_;
+    capture_time_ms = capture_time_ms_;
+    if (last_timestamp_time_ms_ > 0) {
+      timestamp +=
+          (clock_->TimeInMilliseconds() - last_timestamp_time_ms_) * 90;
+      capture_time_ms +=
+          (clock_->TimeInMilliseconds() - last_timestamp_time_ms_);
+    }
+  }
+  return SendPadData(timestamp, capture_time_ms, bytes);
+}
+
+int RTPSender::SendPadData(uint32_t timestamp,
                            int64_t capture_time_ms,
                            int32_t bytes) {
-  // Drop this packet if we're not sending media packets.
-  if (!SendingMedia()) {
-    return bytes;
-  }
   int padding_bytes_in_packet = 0;
   int bytes_sent = 0;
   for (; bytes > 0; bytes -= padding_bytes_in_packet) {
@@ -507,6 +525,7 @@ int RTPSender::SendPadData(int payload_type,
 
     uint32_t ssrc;
     uint16_t sequence_number;
+    int payload_type;
     bool over_rtx;
     {
       CriticalSectionScoped cs(send_critsect_);
@@ -515,20 +534,23 @@ int RTPSender::SendPadData(int payload_type,
       if (rtx_ == kRtxOff) {
         // Without RTX we can't send padding in the middle of frames.
         if (!last_packet_marker_bit_)
-          return bytes_sent;
+          return 0;
         ssrc = ssrc_;
         sequence_number = sequence_number_;
         ++sequence_number_;
+        payload_type = payload_type_;
         over_rtx = false;
       } else {
         // Without abs-send-time a media packet must be sent before padding so
         // that the timestamps used for estimation are correct.
         if (!media_has_been_sent_ && !rtp_header_extension_map_.IsRegistered(
             kRtpExtensionAbsoluteSendTime))
-          return bytes_sent;
+          return 0;
         ssrc = ssrc_rtx_;
         sequence_number = sequence_number_rtx_;
         ++sequence_number_rtx_;
+        payload_type = ((rtx_ & kRtxRedundantPayloads) > 0) ? payload_type_rtx_
+                                                            : payload_type_;
         over_rtx = true;
       }
     }
@@ -867,38 +889,16 @@ bool RTPSender::IsFecPacket(const uint8_t* buffer,
 }
 
 int RTPSender::TimeToSendPadding(int bytes) {
-  assert(bytes > 0);
-  int payload_type;
-  int64_t capture_time_ms;
-  uint32_t timestamp;
-  int rtx;
   {
     CriticalSectionScoped cs(send_critsect_);
-    if (!sending_media_) {
-      return 0;
-    }
-    payload_type = ((rtx_ & kRtxRedundantPayloads) > 0) ? payload_type_rtx_ :
-        payload_type_;
-    timestamp = timestamp_;
-    capture_time_ms = capture_time_ms_;
-    if (last_timestamp_time_ms_ > 0) {
-      timestamp +=
-          (clock_->TimeInMilliseconds() - last_timestamp_time_ms_) * 90;
-      capture_time_ms +=
-          (clock_->TimeInMilliseconds() - last_timestamp_time_ms_);
-    }
-    rtx = rtx_;
+    if (!sending_media_) return 0;
   }
-  int bytes_sent = 0;
-  if ((rtx & kRtxRedundantPayloads) != 0)
-    bytes_sent = SendRedundantPayloads(payload_type, bytes);
-  bytes -= bytes_sent;
-  if (bytes > 0) {
-    int padding_sent =
-        SendPadData(payload_type, timestamp, capture_time_ms, bytes);
-    bytes_sent += padding_sent;
-  }
-  return bytes_sent;
+  int available_bytes = bytes;
+  if (available_bytes > 0)
+    available_bytes -= TrySendRedundantPayloads(available_bytes);
+  if (available_bytes > 0)
+    available_bytes -= TrySendPadData(available_bytes);
+  return bytes - available_bytes;
 }
 
 // TODO(pwestin): send in the RtpHeaderParser to avoid parsing it again.
