@@ -103,7 +103,6 @@
 #define WEBRTC_SPL_SAT(a, b, c)         (b > a ? a : b < c ? c : b)
 #define WEBRTC_SPL_MUL_32_16(a, b)      ((a) * (b))
 
-#define WEBRTC_SPL_SUB_SAT_W32(a, b)    WebRtcSpl_SubSatW32(a, b)
 #define WEBRTC_SPL_ADD_SAT_W16(a, b)    WebRtcSpl_AddSatW16(a, b)
 
 // Shifting with negative numbers allowed

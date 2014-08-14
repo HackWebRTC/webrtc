@@ -74,14 +74,16 @@ void WebRtcSpl_AllPassQMF(int32_t* in_data, int16_t data_length,
 
     // First loop, use the states stored in memory.
     // "diff" should be safe from wrap around since max values are 2^25
-    diff = WEBRTC_SPL_SUB_SAT_W32(in_data[0], filter_state[1]); // = (x[0] - y_1[-1])
+    // diff = (x[0] - y_1[-1])
+    diff = WebRtcSpl_SubSatW32(in_data[0], filter_state[1]);
     // y_1[0] =  x[-1] + a_1 * (x[0] - y_1[-1])
     out_data[0] = WEBRTC_SPL_SCALEDIFF32(filter_coefficients[0], diff, filter_state[0]);
 
     // For the remaining loops, use previous values.
     for (k = 1; k < data_length; k++)
     {
-        diff = WEBRTC_SPL_SUB_SAT_W32(in_data[k], out_data[k - 1]); // = (x[n] - y_1[n-1])
+        // diff = (x[n] - y_1[n-1])
+        diff = WebRtcSpl_SubSatW32(in_data[k], out_data[k - 1]);
         // y_1[n] =  x[n-1] + a_1 * (x[n] - y_1[n-1])
         out_data[k] = WEBRTC_SPL_SCALEDIFF32(filter_coefficients[0], diff, in_data[k - 1]);
     }
@@ -91,12 +93,14 @@ void WebRtcSpl_AllPassQMF(int32_t* in_data, int16_t data_length,
     filter_state[1] = out_data[data_length - 1]; // y_1[N-1], becomes y_1[-1] next time
 
     // Second all-pass cascade; filter from out_data to in_data.
-    diff = WEBRTC_SPL_SUB_SAT_W32(out_data[0], filter_state[3]); // = (y_1[0] - y_2[-1])
+    // diff = (y_1[0] - y_2[-1])
+    diff = WebRtcSpl_SubSatW32(out_data[0], filter_state[3]);
     // y_2[0] =  y_1[-1] + a_2 * (y_1[0] - y_2[-1])
     in_data[0] = WEBRTC_SPL_SCALEDIFF32(filter_coefficients[1], diff, filter_state[2]);
     for (k = 1; k < data_length; k++)
     {
-        diff = WEBRTC_SPL_SUB_SAT_W32(out_data[k], in_data[k - 1]); // =(y_1[n] - y_2[n-1])
+        // diff = (y_1[n] - y_2[n-1])
+        diff = WebRtcSpl_SubSatW32(out_data[k], in_data[k - 1]);
         // y_2[0] =  y_1[-1] + a_2 * (y_1[0] - y_2[-1])
         in_data[k] = WEBRTC_SPL_SCALEDIFF32(filter_coefficients[1], diff, out_data[k-1]);
     }
@@ -105,12 +109,14 @@ void WebRtcSpl_AllPassQMF(int32_t* in_data, int16_t data_length,
     filter_state[3] = in_data[data_length - 1]; // y_2[N-1], becomes y_2[-1] next time
 
     // Third all-pass cascade; filter from in_data to out_data.
-    diff = WEBRTC_SPL_SUB_SAT_W32(in_data[0], filter_state[5]); // = (y_2[0] - y[-1])
+    // diff = (y_2[0] - y[-1])
+    diff = WebRtcSpl_SubSatW32(in_data[0], filter_state[5]);
     // y[0] =  y_2[-1] + a_3 * (y_2[0] - y[-1])
     out_data[0] = WEBRTC_SPL_SCALEDIFF32(filter_coefficients[2], diff, filter_state[4]);
     for (k = 1; k < data_length; k++)
     {
-        diff = WEBRTC_SPL_SUB_SAT_W32(in_data[k], out_data[k - 1]); // = (y_2[n] - y[n-1])
+        // diff = (y_2[n] - y[n-1])
+        diff = WebRtcSpl_SubSatW32(in_data[k], out_data[k - 1]);
         // y[n] =  y_2[n-1] + a_3 * (y_2[n] - y[n-1])
         out_data[k] = WEBRTC_SPL_SCALEDIFF32(filter_coefficients[2], diff, in_data[k-1]);
     }
