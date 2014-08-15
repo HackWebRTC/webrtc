@@ -31,6 +31,7 @@
 #ifndef TALK_APP_WEBRTC_STATSTYPES_H_
 #define TALK_APP_WEBRTC_STATSTYPES_H_
 
+#include <set>
 #include <string>
 #include <vector>
 
@@ -39,14 +40,49 @@
 
 namespace webrtc {
 
+// TODO(tommi): Move all the implementation that's in this file and
+// statscollector.cc related to these types, into a new, statstypes.cc file.
+
 class StatsReport {
  public:
-  StatsReport() : timestamp(0) { }
+  // TODO(tommi): Remove this ctor.
+  StatsReport() : timestamp(0) {}
+
+  // TODO(tommi): Make protected and disallow copy completely once not needed.
+  StatsReport(const StatsReport& src)
+    : id(src.id),
+      type(src.type),
+      timestamp(src.timestamp),
+      values(src.values) {}
+
+  // TODO(tommi): Make this copy constructor protected.
+  StatsReport& operator=(const StatsReport& src) {
+    ASSERT(id == src.id);
+    type = src.type;
+    timestamp = src.timestamp;
+    values = src.values;
+    return *this;
+  }
+
+  // Constructor is protected to force use of StatsSet.
+  // TODO(tommi): Make this ctor protected.
+  explicit StatsReport(const std::string& id) : id(id), timestamp(0) {}
+
+  // Operators provided for STL container/algorithm support.
+  bool operator<(const StatsReport& other) const { return id < other.id; }
+  bool operator==(const StatsReport& other) const { return id == other.id; }
+  // Special support for being able to use std::find on a container
+  // without requiring a new StatsReport instance.
+  bool operator==(const std::string& other_id) const { return id == other_id; }
 
   // TODO(tommi): Change this to be an enum type that holds all the
   // kStatsValueName constants.
   typedef const char* StatsValueName;
 
+  // The unique identifier for this object.
+  // This is used as a key for this report in ordered containers,
+  // so it must never be changed.
+  // TODO(tommi): Make this member variable const.
   std::string id;  // See below for contents.
   std::string type;  // See below for contents.
 
@@ -239,7 +275,70 @@ class StatsReport {
   static const char kStatsValueNameDecodingPLCCNG[];
 };
 
-typedef std::vector<StatsReport> StatsReports;
+// This class is provided for the cases where we need to keep
+// snapshots of reports around.  This is an edge case.
+// TODO(tommi): Move into the private section of StatsSet.
+class StatsReportCopyable : public StatsReport {
+ public:
+  StatsReportCopyable(const std::string& id) : StatsReport(id) {}
+  explicit StatsReportCopyable(const StatsReport& src)
+      : StatsReport(src) {}
+
+  using StatsReport::operator=;
+};
+
+// Typedef for an array of const StatsReport pointers.
+// Ownership of the pointers held by this implementation is assumed to lie
+// elsewhere and lifetime guarantees are made by the implementation that uses
+// this type.  In the StatsCollector, object ownership lies with the StatsSet
+// class.
+typedef std::vector<const StatsReport*> StatsReports;
+
+// A map from the report id to the report.
+// This class wraps an STL container and provides a limited set of
+// functionality in order to keep things simple.
+// TODO(tommi): Use a thread checker here (currently not in libjingle).
+class StatsSet {
+ public:
+  StatsSet() {}
+  ~StatsSet() {}
+
+  typedef std::set<StatsReportCopyable> Container;
+  typedef Container::iterator iterator;
+  typedef Container::const_iterator const_iterator;
+
+  const_iterator begin() const { return list_.begin(); }
+  const_iterator end() const { return list_.end(); }
+
+  // Creates a new report object with |id| that does not already
+  // exist in the list of reports.
+  StatsReport* InsertNew(const std::string& id) {
+    ASSERT(Find(id) == NULL);
+    const StatsReport* ret = &(*list_.insert(StatsReportCopyable(id)).first);
+    return const_cast<StatsReport*>(ret);
+  }
+
+  StatsReport* FindOrAddNew(const std::string& id) {
+    StatsReport* ret = Find(id);
+    return ret ? ret : InsertNew(id);
+  }
+
+  StatsReport* ReplaceOrAddNew(const std::string& id) {
+    list_.erase(id);
+    return InsertNew(id);
+  }
+
+  // Looks for a report with the given |id|.  If one is not found, NULL
+  // will be returned.
+  StatsReport* Find(const std::string& id) {
+    const_iterator it = std::find(begin(), end(), id);
+    return it == end() ? NULL :
+        const_cast<StatsReport*>(static_cast<const StatsReport*>(&(*it)));
+  }
+
+ private:
+  Container list_;
+};
 
 }  // namespace webrtc
 

@@ -72,7 +72,11 @@ class StatsCollector {
   // be called before this function to get the most recent stats. |selector| is
   // a track label or empty string. The most recent reports are stored in
   // |reports|.
-  bool GetStats(MediaStreamTrackInterface* track,
+  // TODO(tommi): Change this contract to accept a callback object instead
+  // of filling in |reports|.  As is, there's a requirement that the caller
+  // uses |reports| immediately without allowing any async activity on
+  // the thread (message handling etc) and then discard the results.
+  void GetStats(MediaStreamTrackInterface* track,
                 StatsReports* reports);
 
   // Prepare an SSRC report for the given ssrc. Used internally
@@ -121,7 +125,7 @@ class StatsCollector {
                         TrackDirection direction);
 
   // A map from the report id to the report.
-  std::map<std::string, StatsReport> reports_;
+  StatsSet reports_;
   // Raw pointer to the session the statistics are gathered from.
   WebRtcSession* const session_;
   double stats_gathering_started_;
