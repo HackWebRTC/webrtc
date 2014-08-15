@@ -298,6 +298,11 @@ bool DtlsTransportChannelWrapper::SetSrtpCiphers(
   if (srtp_ciphers_ == ciphers)
     return true;
 
+  if (dtls_state_ == STATE_STARTED) {
+    LOG(LS_WARNING) << "Ignoring new SRTP ciphers while DTLS is negotiating";
+    return true;
+  }
+
   if (dtls_state_ == STATE_OPEN) {
     // We don't support DTLS renegotiation currently. If new set of srtp ciphers
     // are different than what's being used currently, we will not use it.
