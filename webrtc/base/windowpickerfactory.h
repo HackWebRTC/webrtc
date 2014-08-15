@@ -16,8 +16,8 @@
 #elif defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
 #include "webrtc/base/macutils.h"
 #include "webrtc/base/macwindowpicker.h"
-#elif defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
-#include "webrtc/base/linuxwindowpicker.h"
+#elif defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID) && defined(HAVE_X11)
+#include "webrtc/base/x11windowpicker.h"
 #endif
 
 #include "webrtc/base/windowpicker.h"
@@ -39,7 +39,8 @@ class WindowPickerFactory {
 #elif defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
     return new MacWindowPicker();
 #elif defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID) && defined(HAVE_X11)
-    return new LinuxWindowPicker();
+    return new X11WindowPicker();
+#error
 #else
     return NULL;
 #endif

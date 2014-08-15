@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/linuxwindowpicker.h"
+#include "webrtc/base/x11windowpicker.h"
 
 #include <math.h>
 #include <string.h>
@@ -625,7 +625,7 @@ class XWindowEnumerator {
       Window app_window = GetApplicationWindow(children[num_children - 1 - i]);
 #endif
       if (app_window &&
-          !LinuxWindowPicker::IsDesktopElement(display_, app_window)) {
+          !X11WindowPicker::IsDesktopElement(display_, app_window)) {
         std::string title;
         if (GetWindowTitle(app_window, &title)) {
           WindowId id(app_window);
@@ -721,13 +721,13 @@ class XWindowEnumerator {
   bool has_render_extension_;
 };
 
-LinuxWindowPicker::LinuxWindowPicker() : enumerator_(new XWindowEnumerator()) {
+X11WindowPicker::X11WindowPicker() : enumerator_(new XWindowEnumerator()) {
 }
 
-LinuxWindowPicker::~LinuxWindowPicker() {
+X11WindowPicker::~X11WindowPicker() {
 }
 
-bool LinuxWindowPicker::IsDesktopElement(_XDisplay* display, Window window) {
+bool X11WindowPicker::IsDesktopElement(_XDisplay* display, Window window) {
   if (window == 0) {
     LOG(LS_WARNING) << "Zero is never a valid window.";
     return false;
@@ -769,48 +769,48 @@ bool LinuxWindowPicker::IsDesktopElement(_XDisplay* display, Window window) {
   return result;
 }
 
-bool LinuxWindowPicker::Init() {
+bool X11WindowPicker::Init() {
   return enumerator_->Init();
 }
 
-bool LinuxWindowPicker::GetWindowList(WindowDescriptionList* descriptions) {
+bool X11WindowPicker::GetWindowList(WindowDescriptionList* descriptions) {
   return enumerator_->EnumerateWindows(descriptions);
 }
 
-bool LinuxWindowPicker::GetDesktopList(DesktopDescriptionList* descriptions) {
+bool X11WindowPicker::GetDesktopList(DesktopDescriptionList* descriptions) {
   return enumerator_->EnumerateDesktops(descriptions);
 }
 
-bool LinuxWindowPicker::IsVisible(const WindowId& id) {
+bool X11WindowPicker::IsVisible(const WindowId& id) {
   return enumerator_->IsVisible(id);
 }
 
-bool LinuxWindowPicker::MoveToFront(const WindowId& id) {
+bool X11WindowPicker::MoveToFront(const WindowId& id) {
   return enumerator_->MoveToFront(id);
 }
 
 
-uint8* LinuxWindowPicker::GetWindowIcon(const WindowId& id, int* width,
+uint8* X11WindowPicker::GetWindowIcon(const WindowId& id, int* width,
                                         int* height) {
   return enumerator_->GetWindowIcon(id, width, height);
 }
 
-uint8* LinuxWindowPicker::GetWindowThumbnail(const WindowId& id, int width,
+uint8* X11WindowPicker::GetWindowThumbnail(const WindowId& id, int width,
                                              int height) {
   return enumerator_->GetWindowThumbnail(id, width, height);
 }
 
-int LinuxWindowPicker::GetNumDesktops() {
+int X11WindowPicker::GetNumDesktops() {
   return enumerator_->GetNumDesktops();
 }
 
-uint8* LinuxWindowPicker::GetDesktopThumbnail(const DesktopId& id,
+uint8* X11WindowPicker::GetDesktopThumbnail(const DesktopId& id,
                                               int width,
                                               int height) {
   return enumerator_->GetDesktopThumbnail(id, width, height);
 }
 
-bool LinuxWindowPicker::GetDesktopDimensions(const DesktopId& id, int* width,
+bool X11WindowPicker::GetDesktopDimensions(const DesktopId& id, int* width,
                                              int* height) {
   return enumerator_->GetDesktopDimensions(id, width, height);
 }

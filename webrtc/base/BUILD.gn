@@ -9,6 +9,7 @@
 # TODO(kjellander): Rebase this to base.gyp changes after r6438.
 
 import("//build/config/crypto.gni")
+import("//build/config/ui.gni")
 import("../build/webrtc.gni")
 
 config("webrtc_base_config") {
@@ -401,8 +402,13 @@ static_library("webrtc_base") {
         "libdbusglibsymboltable.h",
         "linuxfdwalk.c",
         "linuxfdwalk.h",
-        "linuxwindowpicker.cc",
-        "linuxwindowpicker.h",
+      ]
+    }
+
+    if (use_x11) {
+      sources += [
+        "x11windowpicker.cc",
+        "x11windowpicker.h",
       ]
     }
 
