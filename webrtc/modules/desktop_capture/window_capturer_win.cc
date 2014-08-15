@@ -251,6 +251,9 @@ void WindowCapturerWin::Capture(const DesktopRegion& region) {
 
   previous_size_ = frame->size();
 
+  frame->mutable_updated_region()->SetRect(
+      DesktopRect::MakeSize(frame->size()));
+
   if (!result) {
     LOG(LS_ERROR) << "Both PrintWindow() and BitBlt() failed.";
     frame.reset();

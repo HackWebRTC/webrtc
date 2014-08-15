@@ -224,6 +224,9 @@ void WindowCapturerMac::Capture(const DesktopRegion& region) {
   CFRelease(cf_data);
   CFRelease(window_image);
 
+  frame->mutable_updated_region()->SetRect(
+      DesktopRect::MakeSize(frame->size()));
+
   callback_->OnCaptureCompleted(frame);
 
   if (full_screen_chrome_window_detector_)
