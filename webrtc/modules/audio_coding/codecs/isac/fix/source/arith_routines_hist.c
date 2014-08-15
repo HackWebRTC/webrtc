@@ -195,7 +195,7 @@ int16_t WebRtcIsacfix_DecHistBisectMulti(int16_t *data,
     for ( ;; )
     {
       W_tmp = WEBRTC_SPL_UMUL_32_16(W_upper_MSB, *cdfPtr);
-      W_tmp += WEBRTC_SPL_UMUL_32_16_RSFT16(W_upper_LSB, *cdfPtr);
+      W_tmp += (W_upper_LSB * (*cdfPtr)) >> 16;
       sizeTmp = WEBRTC_SPL_RSHIFT_W16(sizeTmp, 1);
       if (sizeTmp == 0) {
         break;
@@ -325,7 +325,7 @@ int16_t WebRtcIsacfix_DecHistOneStepMulti(int16_t *data,
     /* start at the specified table entry */
     cdfPtr = *cdf + (*initIndex++);
     W_tmp = WEBRTC_SPL_UMUL_32_16(W_upper_MSB, *cdfPtr);
-    W_tmp += WEBRTC_SPL_UMUL_32_16_RSFT16(W_upper_LSB, *cdfPtr);
+    W_tmp += (W_upper_LSB * (*cdfPtr)) >> 16;
 
     if (streamval > W_tmp)
     {
@@ -339,7 +339,7 @@ int16_t WebRtcIsacfix_DecHistOneStepMulti(int16_t *data,
         }
 
         W_tmp = WEBRTC_SPL_UMUL_32_16(W_upper_MSB, *++cdfPtr);
-        W_tmp += WEBRTC_SPL_UMUL_32_16_RSFT16(W_upper_LSB, *cdfPtr);
+        W_tmp += (W_upper_LSB * (*cdfPtr)) >> 16;
 
         if (streamval <= W_tmp) {
           break;
@@ -359,7 +359,7 @@ int16_t WebRtcIsacfix_DecHistOneStepMulti(int16_t *data,
         }
 
         W_tmp = WEBRTC_SPL_UMUL_32_16(W_upper_MSB, *cdfPtr);
-        W_tmp += WEBRTC_SPL_UMUL_32_16_RSFT16(W_upper_LSB, *cdfPtr);
+        W_tmp += (W_upper_LSB * (*cdfPtr)) >> 16;
 
         if (streamval > W_tmp) {
           break;

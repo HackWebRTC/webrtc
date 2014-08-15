@@ -57,8 +57,6 @@
     ((uint32_t) (uint16_t)(a) * (uint16_t)(b))
 #define WEBRTC_SPL_UMUL_32_16(a, b) \
     ((uint32_t) ((uint32_t)(a) * (uint16_t)(b)))
-#define WEBRTC_SPL_UMUL_32_16_RSFT16(a, b) \
-    ((uint32_t) ((uint32_t)(a) * (uint16_t)(b)) >> 16)
 #define WEBRTC_SPL_MUL_16_U16(a, b) \
     ((int32_t)(int16_t)(a) * (uint16_t)(b))
 #define WEBRTC_SPL_DIV(a, b) \

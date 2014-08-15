@@ -150,9 +150,9 @@ int WebRtcIsacfix_EncLogisticMulti2(Bitstr_enc *streamData,
     W_upper_LSB = (uint16_t)W_upper;
     W_upper_MSB = (uint16_t)WEBRTC_SPL_RSHIFT_U32(W_upper, 16);
     W_lower = WEBRTC_SPL_UMUL_32_16(cdfLo, W_upper_MSB);
-    W_lower += WEBRTC_SPL_UMUL_32_16_RSFT16(cdfLo, W_upper_LSB);
+    W_lower += (cdfLo * W_upper_LSB) >> 16;
     W_upper = WEBRTC_SPL_UMUL_32_16(cdfHi, W_upper_MSB);
-    W_upper += WEBRTC_SPL_UMUL_32_16_RSFT16(cdfHi, W_upper_LSB);
+    W_upper += (cdfHi * W_upper_LSB) >> 16;
 
     /* shift interval such that it begins at zero */
     W_upper -= ++W_lower;
