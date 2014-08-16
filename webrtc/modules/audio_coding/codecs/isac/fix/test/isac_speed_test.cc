@@ -13,8 +13,6 @@
 #include "webrtc/modules/audio_coding/codecs/tools/audio_codec_speed_test.h"
 
 using ::std::string;
-using ::std::tr1::make_tuple;
-using ::testing::ValuesIn;
 
 namespace webrtc {
 
@@ -101,10 +99,10 @@ TEST_P(IsacSpeedTest, IsacEncodeDecodeTest) {
 }
 
 const coding_param param_set[] =
-    {make_tuple(1, 32000, string("audio_coding/speech_mono_16kHz"),
-                string("pcm"), true)};
+    {::std::tr1::make_tuple(1, 32000, string("audio_coding/speech_mono_16kHz"),
+                            string("pcm"), true)};
 
 INSTANTIATE_TEST_CASE_P(AllTest, IsacSpeedTest,
-                        ValuesIn(param_set));
+                        ::testing::ValuesIn(param_set));
 
 }  // namespace webrtc

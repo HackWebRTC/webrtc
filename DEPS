@@ -13,7 +13,7 @@ vars = {
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
   # chrome://version/ for revision of canary Chrome.
   # http://chromium-status.appspot.com/lkgr is a last known good revision.
-  "chromium_revision": "288251",
+  "chromium_revision": "289723",
 
   # A small subset of WebKit is needed for the Android Python test framework.
   "webkit_trunk": "http://src.chromium.org/blink/trunk",
