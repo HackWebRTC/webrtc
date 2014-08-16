@@ -116,6 +116,12 @@
               ],
               'xcode_settings': {
                 'CLANG_ENABLE_OBJC_ARC': 'YES',
+                'WARNING_CFLAGS':  [
+                  # To avoid warnings for deprecated videoMinFrameDuration and
+                  # videoMaxFrameDuration properties in iOS 7.0.
+                  # See webrtc:3705 for more details.
+                  '-Wno-deprecated-declarations',
+                ],
               },
               'all_dependent_settings': {
                 'xcode_settings': {
