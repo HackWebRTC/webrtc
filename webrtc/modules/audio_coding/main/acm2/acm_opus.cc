@@ -15,8 +15,6 @@
 #include "webrtc/modules/audio_coding/main/acm2/acm_codec_database.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_common_defs.h"
 #include "webrtc/system_wrappers/interface/trace.h"
-
-#define SIGN(x) (x > 0 ? 1 : -1)
 #endif
 
 namespace webrtc {
@@ -76,7 +74,7 @@ ACMOpus::ACMOpus(int16_t codec_id)
       bitrate_(20000),  // Default bit-rate.
       channels_(1),  // Default mono.
       fec_enabled_(false),  // Default FEC is off.
-      packet_loss_rate_(0) {
+      packet_loss_rate_(0) {  // Initial packet loss rate.
   codec_id_ = codec_id;
   // Opus has internal DTX, but we dont use it for now.
   has_internal_dtx_ = false;
@@ -194,7 +192,6 @@ int16_t ACMOpus::SetBitRateSafe(const int32_t rate) {
                  "SetBitRateSafe: Invalid rate Opus");
     return -1;
   }
-  // Initial packet loss rate.
 
   bitrate_ = rate;
 
@@ -239,13 +236,13 @@ int ACMOpus::SetPacketLossRate(int loss_rate) {
   const int kLossRate5Margin = 1;
   int opt_loss_rate;
   if (loss_rate >= kPacketLossRate20 + kLossRate20Margin *
-      SIGN(kPacketLossRate20 - packet_loss_rate_)) {
+      (kPacketLossRate20 - packet_loss_rate_ > 0 ? 1 : -1)) {
     opt_loss_rate = kPacketLossRate20;
   } else if (loss_rate >= kPacketLossRate10 + kLossRate10Margin *
-      SIGN(kPacketLossRate10 - packet_loss_rate_)) {
+      (kPacketLossRate10 - packet_loss_rate_ > 0 ? 1 : -1)) {
     opt_loss_rate = kPacketLossRate10;
   } else if (loss_rate >= kPacketLossRate5 + kLossRate5Margin *
-      SIGN(kPacketLossRate5 - packet_loss_rate_)) {
+      (kPacketLossRate5 - packet_loss_rate_ > 0 ? 1 : -1)) {
     opt_loss_rate = kPacketLossRate5;
   } else if (loss_rate >= kPacketLossRate1) {
     opt_loss_rate = kPacketLossRate1;
