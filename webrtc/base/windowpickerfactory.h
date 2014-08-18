@@ -40,7 +40,6 @@ class WindowPickerFactory {
     return new MacWindowPicker();
 #elif defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID) && defined(HAVE_X11)
     return new X11WindowPicker();
-#error
 #else
     return NULL;
 #endif
