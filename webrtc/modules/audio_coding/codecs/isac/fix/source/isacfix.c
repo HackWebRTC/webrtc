@@ -211,6 +211,8 @@ static void WebRtcIsacfix_InitMIPS(void) {
   WebRtcIsacfix_FilterMaLoopFix = WebRtcIsacfix_FilterMaLoopMIPS;
   WebRtcIsacfix_Spec2Time = WebRtcIsacfix_Spec2TimeMIPS;
   WebRtcIsacfix_Time2Spec = WebRtcIsacfix_Time2SpecMIPS;
+  WebRtcIsacfix_MatrixProduct1 = WebRtcIsacfix_MatrixProduct1MIPS;
+  WebRtcIsacfix_MatrixProduct2 = WebRtcIsacfix_MatrixProduct2MIPS;
 #if defined(MIPS_DSP_R1_LE)
   WebRtcIsacfix_AllpassFilter2FixDec16 =
       WebRtcIsacfix_AllpassFilter2FixDec16MIPS;
