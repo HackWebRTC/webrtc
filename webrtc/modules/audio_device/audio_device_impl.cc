@@ -278,11 +278,13 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
         // AudioRecordJni provides hardware AEC and OpenSlesOutput low latency.
 #if defined(WEBRTC_ANDROID_OPENSLES)
         ptrAudioDevice = new AudioDeviceTemplate<OpenSlesInput, OpenSlesOutput>(Id());
-#else
-        ptrAudioDevice = new AudioDeviceTemplate<AudioRecordJni, AudioTrackJni>(Id());
-#endif
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                      "Android OpenSLES Audio APIs will be utilized");
+#else
+        ptrAudioDevice = new AudioDeviceTemplate<AudioRecordJni, AudioTrackJni>(Id());
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+                     "Android JNI Audio APIs will be utilized");
+#endif
     }
 
     if (ptrAudioDevice != NULL)
