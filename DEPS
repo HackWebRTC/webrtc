@@ -14,9 +14,6 @@ vars = {
   # chrome://version/ for revision of canary Chrome.
   # http://chromium-status.appspot.com/lkgr is a last known good revision.
   "chromium_revision": "289723",
-
-  # A small subset of WebKit is needed for the Android Python test framework.
-  "webkit_trunk": "http://src.chromium.org/blink/trunk",
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
@@ -234,10 +231,6 @@ deps_os = {
 
     "third_party/android_testrunner":
       Var("chromium_trunk") + "/src/third_party/android_testrunner@" + Var("chromium_revision"),
-
-    "third_party/WebKit/Tools/Scripts":
-      Var("webkit_trunk") + "/Tools/Scripts@151677",
-
   },
 }
 
