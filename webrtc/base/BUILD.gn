@@ -86,40 +86,23 @@ config("mac_x86_config") {
   ]
 }
 
-config("linux_system_ssl_config") {
-  visibility = ":*"  # Only targets in this file can depend on this.
+if (is_linux && !build_with_chromium) {
+  # Provides the same functionality as the //crypto:platform target, which
+  # WebRTC cannot use as we don't sync src/crypto from Chromium.
+  group("linux_system_ssl") {
+    if (use_openssl) {
+      deps = [ "//third_party/boringssl" ]
+    } else {
+      deps = [ "//net/third_party/nss/ssl:libssl" ]
 
-  # TODO(kjellander): Find out how to convert GYP include_dirs+ (i.e. insert
-  # first in the include path?).
-  include_dirs = [ "//net/third_party/nss/ssl" ]
-
-  configs = [ "//third_party/nss:system_nss_no_ssl_config" ]
-}
-
-# Provides the same functionality as the build/linux/system.gyp:ssl GYP target.
-# This cannot be in build/linux/BUILD.gn since targets in build/ are not allowed
-# to depend on targets outside of it. This could be replaced by the Chromium
-# //crypto:platform target, but as WebRTC currently don't sync src/crypto from
-# Chromium, it is not possible today.
-config("linux_system_ssl") {
-  if (use_openssl) {
-    deps = [ "//third_party/boringssl" ]
-  } else {
-    deps = [ "//net/third_party/nss/ssl:libssl" ]
-
-    direct_dependent_configs = [
-      ":linux_system_ssl_config",
-    ]
-
-    if (is_clang) {
-      cflags = [
-        # There is a broken header guard in /usr/include/nss/secmod.h:
-        # https://bugzilla.mozilla.org/show_bug.cgi?id=884072
-        "-Wno-header-guard",
+      direct_dependent_configs = [
+        "//net/third_party/nss/ssl:ssl_config",
+        "//third_party/nss:system_nss_no_ssl_config",
       ]
     }
   }
 }
+
 
 static_library("webrtc_base") {
   cflags = []
@@ -587,6 +570,10 @@ static_library("webrtc_base") {
   }
 
   if (is_posix && !is_mac && !is_ios && !is_android) {
-    configs += [ ":linux_system_ssl" ]
+    if (build_with_chromium) {
+      deps += [ "//crypto:platform" ]
+    } else {
+      deps += [ ":linux_system_ssl" ]
+    }
   }
 }
