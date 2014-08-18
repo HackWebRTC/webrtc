@@ -21,19 +21,19 @@ static __inline __m128 _mm_castsi128_ps(__m128i a) { return *(__m128*)&a; }
 static __inline __m128i _mm_castps_si128(__m128 a) { return *(__m128i*)&a; }
 #endif
 
-// constants shared by all paths (C, SSE2).
-extern float rdft_w[64];
-// constants used by the C path.
-extern float rdft_wk3ri_first[32];
-extern float rdft_wk3ri_second[32];
-// constants used by SSE2 but initialized in C path.
-extern ALIGN16_BEG float ALIGN16_END rdft_wk1r[32];
-extern ALIGN16_BEG float ALIGN16_END rdft_wk2r[32];
-extern ALIGN16_BEG float ALIGN16_END rdft_wk3r[32];
-extern ALIGN16_BEG float ALIGN16_END rdft_wk1i[32];
-extern ALIGN16_BEG float ALIGN16_END rdft_wk2i[32];
-extern ALIGN16_BEG float ALIGN16_END rdft_wk3i[32];
-extern ALIGN16_BEG float ALIGN16_END cftmdl_wk1r[4];
+// Constants shared by all paths (C, SSE2, NEON).
+extern const float rdft_w[64];
+// Constants used by the C path.
+extern const float rdft_wk3ri_first[16];
+extern const float rdft_wk3ri_second[16];
+// Constants used by SSE2 and NEON but initialized in the C path.
+extern ALIGN16_BEG const float ALIGN16_END rdft_wk1r[32];
+extern ALIGN16_BEG const float ALIGN16_END rdft_wk2r[32];
+extern ALIGN16_BEG const float ALIGN16_END rdft_wk3r[32];
+extern ALIGN16_BEG const float ALIGN16_END rdft_wk1i[32];
+extern ALIGN16_BEG const float ALIGN16_END rdft_wk2i[32];
+extern ALIGN16_BEG const float ALIGN16_END rdft_wk3i[32];
+extern ALIGN16_BEG const float ALIGN16_END cftmdl_wk1r[4];
 
 // code path selection function pointers
 typedef void (*rft_sub_128_t)(float* a);
