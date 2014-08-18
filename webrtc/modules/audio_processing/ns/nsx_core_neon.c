@@ -363,6 +363,8 @@ void WebRtcNsx_NoiseEstimationNeon(NsxInst_t* inst,
 
 // Filter the data in the frequency domain, and create spectrum.
 void WebRtcNsx_PrepareSpectrumNeon(NsxInst_t* inst, int16_t* freq_buf) {
+  assert(inst->magnLen % 8 == 1);
+  assert(inst->anaLen2 % 16 == 0);
 
   // (1) Filtering.
 
@@ -374,49 +376,38 @@ void WebRtcNsx_PrepareSpectrumNeon(NsxInst_t* inst, int16_t* freq_buf) {
   //      (int16_t)(inst->noiseSupFilter[i]), 14); // Q(normData-stages)
   // }
 
-  int16_t* ptr_real = &inst->real[0];
-  int16_t* ptr_imag = &inst->imag[0];
-  uint16_t* ptr_noiseSupFilter = &inst->noiseSupFilter[0];
+  int16_t* preal = &inst->real[0];
+  int16_t* pimag = &inst->imag[0];
+  int16_t* pns_filter = (int16_t*)&inst->noiseSupFilter[0];
+  int16_t* pimag_end = pimag + inst->magnLen - 4;
 
-  // Filter the rest in the frequency domain.
-  for (; ptr_real < &inst->real[inst->magnLen - 1];) {
-    // Loop unrolled once. Both pointers are incremented by 4 twice.
-    __asm__ __volatile__(
-      "vld1.16 d20, [%[ptr_real]]\n\t"
-      "vld1.16 d22, [%[ptr_imag]]\n\t"
-      "vld1.16 d23, [%[ptr_noiseSupFilter]]!\n\t"
-      "vmull.s16 q10, d20, d23\n\t"
-      "vmull.s16 q11, d22, d23\n\t"
-      "vshrn.s32 d20, q10, #14\n\t"
-      "vshrn.s32 d22, q11, #14\n\t"
-      "vst1.16 d20, [%[ptr_real]]!\n\t"
-      "vst1.16 d22, [%[ptr_imag]]!\n\t"
+  while (pimag < pimag_end) {
+    int16x8_t real = vld1q_s16(preal);
+    int16x8_t imag = vld1q_s16(pimag);
+    int16x8_t ns_filter = vld1q_s16(pns_filter);
 
-      "vld1.16 d18, [%[ptr_real]]\n\t"
-      "vld1.16 d24, [%[ptr_imag]]\n\t"
-      "vld1.16 d25, [%[ptr_noiseSupFilter]]!\n\t"
-      "vmull.s16 q9, d18, d25\n\t"
-      "vmull.s16 q12, d24, d25\n\t"
-      "vshrn.s32 d18, q9, #14\n\t"
-      "vshrn.s32 d24, q12, #14\n\t"
-      "vst1.16 d18, [%[ptr_real]]!\n\t"
-      "vst1.16 d24, [%[ptr_imag]]!\n\t"
+    int32x4_t tmp_r_0 = vmull_s16(vget_low_s16(real), vget_low_s16(ns_filter));
+    int32x4_t tmp_i_0 = vmull_s16(vget_low_s16(imag), vget_low_s16(ns_filter));
+    int32x4_t tmp_r_1 = vmull_s16(vget_high_s16(real),
+                                  vget_high_s16(ns_filter));
+    int32x4_t tmp_i_1 = vmull_s16(vget_high_s16(imag),
+                                  vget_high_s16(ns_filter));
 
-      // Specify constraints.
-      :[ptr_imag]"+r"(ptr_imag),
-       [ptr_real]"+r"(ptr_real),
-       [ptr_noiseSupFilter]"+r"(ptr_noiseSupFilter)
-      :
-      :"d18", "d19", "d20", "d21", "d22", "d23", "d24", "d25",
-       "q9", "q10", "q11", "q12"
-    );
+    int16x4_t result_r_0 = vshrn_n_s32(tmp_r_0, 14);
+    int16x4_t result_i_0 = vshrn_n_s32(tmp_i_0, 14);
+    int16x4_t result_r_1 = vshrn_n_s32(tmp_r_1, 14);
+    int16x4_t result_i_1 = vshrn_n_s32(tmp_i_1, 14);
+
+    vst1q_s16(preal, vcombine_s16(result_r_0, result_r_1));
+    vst1q_s16(pimag, vcombine_s16(result_i_0, result_i_1));
+    preal += 8;
+    pimag += 8;
+    pns_filter += 8;
   }
 
-  // Filter the last pair of elements in the frequency domain.
-  *ptr_real = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(*ptr_real,
-      (int16_t)(*ptr_noiseSupFilter), 14); // Q(normData-stages)
-  *ptr_imag = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(*ptr_imag,
-      (int16_t)(*ptr_noiseSupFilter), 14); // Q(normData-stages)
+  // Filter the last element
+  *preal = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(*preal, *pns_filter, 14);
+  *pimag = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(*pimag, *pns_filter, 14);
 
   // (2) Create spectrum.
 
@@ -424,74 +415,36 @@ void WebRtcNsx_PrepareSpectrumNeon(NsxInst_t* inst, int16_t* freq_buf) {
   // freq_buf[0] = inst->real[0];
   // freq_buf[1] = -inst->imag[0];
   // for (i = 1, j = 2; i < inst->anaLen2; i += 1, j += 2) {
-  //   tmp16 = (inst->anaLen << 1) - j;
   //   freq_buf[j] = inst->real[i];
   //   freq_buf[j + 1] = -inst->imag[i];
-  //   freq_buf[tmp16] = inst->real[i];
-  //   freq_buf[tmp16 + 1] = inst->imag[i];
   // }
   // freq_buf[inst->anaLen] = inst->real[inst->anaLen2];
   // freq_buf[inst->anaLen + 1] = -inst->imag[inst->anaLen2];
 
-  freq_buf[0] = inst->real[0];
-  freq_buf[1] = -inst->imag[0];
+  preal = &inst->real[0];
+  pimag = &inst->imag[0];
+  pimag_end = pimag + inst->anaLen2;
+  int16_t * freq_buf_start = freq_buf;
+  while (pimag < pimag_end) {
+    // loop unroll
+    int16x8x2_t real_imag_0;
+    int16x8x2_t real_imag_1;
+    real_imag_0.val[1] = vld1q_s16(pimag);
+    real_imag_0.val[0] = vld1q_s16(preal);
+    preal += 8;
+    pimag += 8;
+    real_imag_1.val[1] = vld1q_s16(pimag);
+    real_imag_1.val[0] = vld1q_s16(preal);
+    preal += 8;
+    pimag += 8;
 
-  int offset = -16;
-  int16_t* ptr_realImag1 = &freq_buf[2];
-  int16_t* ptr_realImag2 = ptr_realImag2 = &freq_buf[(inst->anaLen << 1) - 8];
-  ptr_real = &inst->real[1];
-  ptr_imag = &inst->imag[1];
-  for (; ptr_real < &inst->real[inst->anaLen2 - 11];) {
-    // Loop unrolled once. All pointers are incremented twice.
-    __asm__ __volatile__(
-      "vld1.16 d22, [%[ptr_real]]!\n\t"
-      "vld1.16 d23, [%[ptr_imag]]!\n\t"
-      // Negate and interleave:
-      "vmov.s16 d20, d22\n\t"
-      "vneg.s16 d21, d23\n\t"
-      "vzip.16 d20, d21\n\t"
-      // Write 8 elements to &freq_buf[j]
-      "vst1.16 {d20, d21}, [%[ptr_realImag1]]!\n\t"
-      // Interleave and reverse elements:
-      "vzip.16 d22, d23\n\t"
-      "vrev64.32 d18, d23\n\t"
-      "vrev64.32 d19, d22\n\t"
-      // Write 8 elements to &freq_buf[tmp16]
-      "vst1.16 {d18, d19}, [%[ptr_realImag2]], %[offset]\n\t"
-
-      "vld1.16 d22, [%[ptr_real]]!\n\t"
-      "vld1.16 d23, [%[ptr_imag]]!\n\t"
-      // Negate and interleave:
-      "vmov.s16 d20, d22\n\t"
-      "vneg.s16 d21, d23\n\t"
-      "vzip.16 d20, d21\n\t"
-      // Write 8 elements to &freq_buf[j]
-      "vst1.16 {d20, d21}, [%[ptr_realImag1]]!\n\t"
-      // Interleave and reverse elements:
-      "vzip.16 d22, d23\n\t"
-      "vrev64.32 d18, d23\n\t"
-      "vrev64.32 d19, d22\n\t"
-      // Write 8 elements to &freq_buf[tmp16]
-      "vst1.16 {d18, d19}, [%[ptr_realImag2]], %[offset]\n\t"
-
-      // Specify constraints.
-      :[ptr_imag]"+r"(ptr_imag),
-       [ptr_real]"+r"(ptr_real),
-       [ptr_realImag1]"+r"(ptr_realImag1),
-       [ptr_realImag2]"+r"(ptr_realImag2)
-      :[offset]"r"(offset)
-      :"d18", "d19", "d20", "d21", "d22", "d23"
-    );
+    real_imag_0.val[1] = vnegq_s16(real_imag_0.val[1]);
+    real_imag_1.val[1] = vnegq_s16(real_imag_1.val[1]);
+    vst2q_s16(freq_buf_start, real_imag_0);
+    freq_buf_start += 16;
+    vst2q_s16(freq_buf_start, real_imag_1);
+    freq_buf_start += 16;
   }
-  for (ptr_realImag2 += 6;
-       ptr_real <= &inst->real[inst->anaLen2];
-       ptr_real += 1, ptr_imag += 1, ptr_realImag1 += 2, ptr_realImag2 -= 2) {
-    *ptr_realImag1 = *ptr_real;
-    *(ptr_realImag1 + 1) = -(*ptr_imag);
-    *ptr_realImag2 = *ptr_real;
-    *(ptr_realImag2 + 1) = *ptr_imag;
-  }
-
   freq_buf[inst->anaLen] = inst->real[inst->anaLen2];
   freq_buf[inst->anaLen + 1] = -inst->imag[inst->anaLen2];
 }
