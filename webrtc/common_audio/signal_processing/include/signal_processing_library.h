@@ -36,19 +36,6 @@
 #define WEBRTC_SPL_ABS_W32(a) \
     (((int32_t)a >= 0) ? ((int32_t)a) : -((int32_t)a))
 
-#ifdef WEBRTC_ARCH_LITTLE_ENDIAN
-#define WEBRTC_SPL_GET_BYTE(a, nr)  (((int8_t *)a)[nr])
-#define WEBRTC_SPL_SET_BYTE(d_ptr, val, index) \
-    (((int8_t *)d_ptr)[index] = (val))
-#else
-#define WEBRTC_SPL_GET_BYTE(a, nr) \
-    ((((int16_t *)a)[nr >> 1]) >> (((nr + 1) & 0x1) * 8) & 0x00ff)
-#define WEBRTC_SPL_SET_BYTE(d_ptr, val, index) \
-    ((int16_t *)d_ptr)[index >> 1] = \
-    ((((int16_t *)d_ptr)[index >> 1]) \
-    & (0x00ff << (8 * ((index) & 0x1)))) | (val << (8 * ((index + 1) & 0x1)))
-#endif
-
 #define WEBRTC_SPL_MUL(a, b) \
     ((int32_t) ((int32_t)(a) * (int32_t)(b)))
 #define WEBRTC_SPL_UMUL(a, b) \
