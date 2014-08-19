@@ -62,6 +62,7 @@ class WebRtcMediaEngineFactory {
   static MediaEngineInterface* Create();
   static MediaEngineInterface* Create(
       webrtc::AudioDeviceModule* adm,
+      webrtc::AudioDeviceModule* adm_sc,
       WebRtcVideoEncoderFactory* encoder_factory,
       WebRtcVideoDecoderFactory* decoder_factory);
 };
