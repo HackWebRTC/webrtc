@@ -237,7 +237,6 @@ static AudioOptions GetDefaultEngineOptions() {
   options.experimental_aec.Set(false);
   options.experimental_ns.Set(false);
   options.aec_dump.Set(false);
-  options.opus_fec.Set(false);
   return options;
 }
 
@@ -430,15 +429,6 @@ static bool IsOpusFecEnabled(const AudioCodec& codec) {
   return codec.GetParam(kCodecParamUseInbandFec, &value) && value == 1;
 }
 
-// Set params[kCodecParamUseInbandFec]. Caller should make sure codec is Opus.
-static void SetOpusFec(AudioCodec* codec, bool opus_fec) {
-  if (opus_fec) {
-    codec->SetParam(kCodecParamUseInbandFec, 1);
-  } else {
-    codec->RemoveParam(kCodecParamUseInbandFec);
-  }
-}
-
 void WebRtcVoiceEngine::ConstructCodecs() {
   LOG(LS_INFO) << "WebRtc VoiceEngine codecs:";
   int ncodecs = voe_wrapper_->codec()->NumOfCodecs();
@@ -483,7 +473,6 @@ void WebRtcVoiceEngine::ConstructCodecs() {
           }
           // TODO(hellner): Add ptime, sprop-stereo, stereo and useinbandfec
           // when they can be set to values other than the default.
-          SetOpusFec(&codec, false);
         }
         codecs_.push_back(codec);
       } else {
@@ -913,16 +902,6 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     LOG(LS_INFO) << "Playout sample rate is " << playout_sample_rate;
     if (voe_wrapper_->hw()->SetPlayoutSampleRate(playout_sample_rate)) {
       LOG_RTCERR1(SetPlayoutSampleRate, playout_sample_rate);
-    }
-  }
-
-  bool opus_fec;
-  if (options.opus_fec.Get(&opus_fec)) {
-    LOG(LS_INFO) << "Opus FEC is enabled? " << opus_fec;
-    for (std::vector<AudioCodec>::iterator it = codecs_.begin();
-        it != codecs_.end(); ++it) {
-      if (IsOpus(*it))
-        SetOpusFec(&(*it), opus_fec);
     }
   }
 

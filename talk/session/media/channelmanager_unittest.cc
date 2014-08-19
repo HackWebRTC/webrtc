@@ -267,7 +267,7 @@ TEST_F(ChannelManagerTest, SetAudioOptionsBeforeInit) {
   EXPECT_EQ(options, set_options);
   // At this point, the media engine should also be initialized.
   EXPECT_EQ(options, fme_->audio_options());
-  EXPECT_EQ(cricket::MediaEngineInterface::kDefaultAudioDelayOffset,
+  EXPECT_EQ(cricket::kDefaultAudioDelayOffset,
             fme_->audio_delay_offset());
 }
 
@@ -294,7 +294,7 @@ TEST_F(ChannelManagerTest, SetAudioOptions) {
             fme_->audio_in_device());
   EXPECT_EQ(std::string(cricket::DeviceManagerInterface::kDefaultDeviceName),
             fme_->audio_out_device());
-  EXPECT_EQ(cricket::MediaEngineInterface::kDefaultAudioDelayOffset,
+  EXPECT_EQ(cricket::kDefaultAudioDelayOffset,
             fme_->audio_delay_offset());
   // Test setting specific values.
   AudioOptions options;
@@ -306,7 +306,7 @@ TEST_F(ChannelManagerTest, SetAudioOptions) {
   EXPECT_TRUE(
       fme_->audio_options().auto_gain_control.Get(&auto_gain_control));
   EXPECT_TRUE(auto_gain_control);
-  EXPECT_EQ(cricket::MediaEngineInterface::kDefaultAudioDelayOffset,
+  EXPECT_EQ(cricket::kDefaultAudioDelayOffset,
             fme_->audio_delay_offset());
   // Test setting bad values.
   EXPECT_FALSE(cm_->SetAudioOptions("audio-in9", "audio-out2", options));

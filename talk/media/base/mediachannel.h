@@ -182,7 +182,6 @@ struct AudioOptions {
     recording_sample_rate.SetFrom(change.recording_sample_rate);
     playout_sample_rate.SetFrom(change.playout_sample_rate);
     dscp.SetFrom(change.dscp);
-    opus_fec.SetFrom(change.opus_fec);
   }
 
   bool operator==(const AudioOptions& o) const {
@@ -208,8 +207,7 @@ struct AudioOptions {
         rx_agc_limiter == o.rx_agc_limiter &&
         recording_sample_rate == o.recording_sample_rate &&
         playout_sample_rate == o.playout_sample_rate &&
-        dscp == o.dscp &&
-        opus_fec == o.opus_fec;
+        dscp == o.dscp;
   }
 
   std::string ToString() const {
@@ -240,7 +238,6 @@ struct AudioOptions {
     ost << ToStringIfSet("recording_sample_rate", recording_sample_rate);
     ost << ToStringIfSet("playout_sample_rate", playout_sample_rate);
     ost << ToStringIfSet("dscp", dscp);
-    ost << ToStringIfSet("opus_fec", opus_fec);
     ost << "}";
     return ost.str();
   }
@@ -278,8 +275,6 @@ struct AudioOptions {
   Settable<uint32> playout_sample_rate;
   // Set DSCP value for packet sent from audio channel.
   Settable<bool> dscp;
-  // Set Opus FEC
-  Settable<bool> opus_fec;
 };
 
 // Options that can be applied to a VideoMediaChannel or a VideoMediaEngine.

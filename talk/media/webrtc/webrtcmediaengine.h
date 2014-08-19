@@ -40,7 +40,6 @@ class WebRtcVideoDecoderFactory;
 class WebRtcVideoEncoderFactory;
 }
 
-
 #if !defined(LIBPEERCONNECTION_LIB) && \
     !defined(LIBPEERCONNECTION_IMPLEMENTATION)
 
@@ -53,11 +52,15 @@ cricket::MediaEngineInterface* CreateWebRtcMediaEngine(
 WRME_EXPORT
 void DestroyWebRtcMediaEngine(cricket::MediaEngineInterface* media_engine);
 
+#endif  // !defined(LIBPEERCONNECTION_LIB) &&
+        // !defined(LIBPEERCONNECTION_IMPLEMENTATION)
+
 namespace cricket {
 
-class WebRtcMediaEngine : public cricket::MediaEngineInterface {
+class WebRtcMediaEngineFactory {
  public:
-  WebRtcMediaEngine(
+  static MediaEngineInterface* Create();
+  static MediaEngineInterface* Create(
       webrtc::AudioDeviceModule* adm,
       webrtc::AudioDeviceModule* adm_sc,
       cricket::WebRtcVideoEncoderFactory* encoder_factory,
@@ -189,35 +192,9 @@ class WebRtcMediaEngine : public WebRtcCompositeMediaEngine {
   WebRtcMediaEngine(webrtc::AudioDeviceModule* adm,
       webrtc::AudioDeviceModule* adm_sc,
       WebRtcVideoEncoderFactory* encoder_factory,
-      WebRtcVideoDecoderFactory* decoder_factory) {
-    voice_.SetAudioDeviceModule(adm, adm_sc);
-    video_.SetVoiceEngine(&voice_);
-    video_.EnableTimedRender();
-    video_.SetExternalEncoderFactory(encoder_factory);
-    video_.SetExternalDecoderFactory(decoder_factory);
-  }
+      WebRtcVideoDecoderFactory* decoder_factory);
 };
-
-#ifdef WEBRTC_CHROMIUM_BUILD
-typedef CompositeMediaEngine<WebRtcVoiceEngine, WebRtcVideoEngine2>
-        WebRtcCompositeMediaEngine2;
-
-class WebRtcMediaEngine2 : public WebRtcCompositeMediaEngine2 {
- public:
-  WebRtcMediaEngine2(webrtc::AudioDeviceModule* adm,
-                     webrtc::AudioDeviceModule* adm_sc,
-                     WebRtcVideoEncoderFactory* encoder_factory,
-                     WebRtcVideoDecoderFactory* decoder_factory) {
-    voice_.SetAudioDeviceModule(adm, adm_sc);
-    video_.SetVoiceEngine(&voice_);
-    video_.EnableTimedRender();
-  }
-};
-#endif
 
 }  // namespace cricket
-
-#endif  // !defined(LIBPEERCONNECTION_LIB) &&
-        // !defined(LIBPEERCONNECTION_IMPLEMENTATION)
 
 #endif  // TALK_MEDIA_WEBRTCMEDIAENGINE_H_

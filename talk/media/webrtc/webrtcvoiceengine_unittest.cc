@@ -1230,31 +1230,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecIsacWithParamNoFec) {
 }
 #endif  // USE_WEBRTC_DEV_BRANCH
 
-// Test AudioOptions controls whether opus FEC is supported in codec list.
-TEST_F(WebRtcVoiceEngineTestFake, OpusFecViaOptions) {
-  EXPECT_TRUE(SetupEngine());
-  std::vector<cricket::AudioCodec> codecs = engine_.codecs();
-  int value;
-  for (std::vector<cricket::AudioCodec>::const_iterator it = codecs.begin();
-      it != codecs.end(); ++it) {
-    if (_stricmp(it->name.c_str(), cricket::kOpusCodecName) == 0) {
-      EXPECT_FALSE(it->GetParam(cricket::kCodecParamUseInbandFec, &value));
-    }
-  }
-
-  cricket::AudioOptions options;
-  options.opus_fec.Set(true);
-  EXPECT_TRUE(engine_.SetOptions(options));
-  codecs = engine_.codecs();
-  for (std::vector<cricket::AudioCodec>::const_iterator it = codecs.begin();
-      it != codecs.end(); ++it) {
-    if (_stricmp(it->name.c_str(), cricket::kOpusCodecName) == 0) {
-      EXPECT_TRUE(it->GetParam(cricket::kCodecParamUseInbandFec, &value));
-      EXPECT_EQ(1, value);
-    }
-  }
-}
-
 // Test that we can apply CELT with stereo mode but fail with mono mode.
 TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCelt) {
   EXPECT_TRUE(SetupEngine());
