@@ -92,6 +92,10 @@
         'vad/vad_gmm.h',
         'vad/vad_sp.c',
         'vad/vad_sp.h',
+        'wav_header.cc',
+        'wav_header.h',
+        'wav_writer.cc',
+        'wav_writer.h',
       ],
       'conditions': [
         ['target_arch=="ia32" or target_arch=="x64"', {
@@ -211,6 +215,8 @@
             'vad/vad_sp_unittest.cc',
             'vad/vad_unittest.cc',
             'vad/vad_unittest.h',
+            'wav_header_unittest.cc',
+            'wav_writer_unittest.cc',
           ],
           'conditions': [
             # TODO(henrike): remove build_with_chromium==1 when the bots are
