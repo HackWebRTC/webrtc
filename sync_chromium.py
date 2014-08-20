@@ -53,10 +53,28 @@ def main():
   env['GYP_CHROMIUM_NO_ACTION'] = '1'
   gclient_cmd = 'gclient.bat' if sys.platform.startswith('win') else 'gclient'
   args = [
-      gclient_cmd, 'sync', '--no-history', '--force', '--revision',
-      'src@'+opts.target_revision]
+      gclient_cmd, 'sync', '--force', '--revision', 'src@'+opts.target_revision
+  ]
+
   if os.environ.get('CHROME_HEADLESS') == '1':
     args.append('-vvv')
+
+    if sys.platform.startswith('win'):
+      cache_path = os.path.join(os.path.splitdrive(ROOT_DIR)[0],
+                                'b', 'git-cache')
+    else:
+      cache_path = '/b/git-cache'
+
+    with open(os.path.join(opts.chromium_dir, '.gclient'), 'rb') as spec:
+      spec = spec.read().splitlines()
+      spec[-1] = 'cache_dir = %r' % (cache_path,)
+      args.append('--spec')
+      args.append('\n'.join(spec))
+      args.append('--delete_unversioned_trees')
+      args.append('--reset')
+      args.append('--upstream')
+  else:
+    args.append('--no-history')
 
   target_os_list = get_target_os_list()
   if target_os_list:
