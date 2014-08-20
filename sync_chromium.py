@@ -53,7 +53,7 @@ def main():
   env['GYP_CHROMIUM_NO_ACTION'] = '1'
   gclient_cmd = 'gclient.bat' if sys.platform.startswith('win') else 'gclient'
   args = [
-      gclient_cmd, 'sync', '--no-history', '--force', '--revision',
+      gclient_cmd, 'sync', '--no-history', '--force', '--verbose', '--revision',
       'src@'+opts.target_revision]
   target_os_list = get_target_os_list()
   if target_os_list:
