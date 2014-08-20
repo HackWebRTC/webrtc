@@ -77,6 +77,10 @@ char kTSanDefaultSuppressions[] =
 "deadlock:webrtc::ViEEncoder::OnLocalSsrcChanged\n"
 "deadlock:webrtc::ViESender::RegisterSendTransport\n"
 
+// libjingle_media_unittest triggers TSan heap-use-after-free in libvpx/.
+// https://code.google.com/p/webrtc/issues/detail?id=3671
+"race:vpx_codec_destroy\n"
+
 // End of suppressions.
 ;  // Please keep this semicolon.
 
