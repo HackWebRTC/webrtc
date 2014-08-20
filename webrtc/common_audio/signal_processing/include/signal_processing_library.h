@@ -117,9 +117,6 @@ extern "C" {
 #define WEBRTC_SPL_MEMCPY_W16(v1, v2, length) \
   memcpy(v1, v2, (length) * sizeof(int16_t))
 
-#define WEBRTC_SPL_MEMMOVE_W16(v1, v2, length) \
-  memmove(v1, v2, (length) * sizeof(int16_t))
-
 // inline functions:
 #include "webrtc/common_audio/signal_processing/include/spl_inl.h"
 
