@@ -50,9 +50,6 @@ deps = {
   "third_party/build_gn":
     File(Var("chromium_trunk") + "/src/third_party/BUILD.gn@" + Var("chromium_revision")),
 
-  "third_party/clang_format":
-    Var("chromium_trunk") + "/src/third_party/clang_format@" + Var("chromium_revision"),
-
   "third_party/colorama/src":
     From("chromium_deps", "src/third_party/colorama/src"),
 
@@ -299,7 +296,7 @@ hooks = [
   # Pull clang-format binaries using checked-in hashes.
   {
     "name": "clang_format_win",
-    "pattern": "third_party/clang_format/bin/win/clang-format.exe.sha1",
+    "pattern": ".",
     "action": [ "download_from_google_storage",
                 "--no_resume",
                 "--platform=win32",
@@ -310,7 +307,7 @@ hooks = [
   },
   {
     "name": "clang_format_mac",
-    "pattern": "third_party/clang_format/bin/mac/clang-format.sha1",
+    "pattern": ".",
     "action": [ "download_from_google_storage",
                 "--no_resume",
                 "--platform=darwin",
@@ -321,7 +318,7 @@ hooks = [
   },
   {
     "name": "clang_format_linux",
-    "pattern": "third_party/clang_format/bin/linux/clang-format.sha1",
+    "pattern": ".",
     "action": [ "download_from_google_storage",
                 "--no_resume",
                 "--platform=linux*",
