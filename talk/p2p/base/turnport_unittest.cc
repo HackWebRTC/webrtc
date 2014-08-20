@@ -378,7 +378,7 @@ TEST_F(TurnPortTest, TestTurnTcpAllocate) {
 
 // Testing turn port will attempt to create TCP socket on address resolution
 // failure.
-TEST_F(TurnPortTest, TestTurnTcpOnAddressResolveFailure) {
+TEST_F(TurnPortTest, DISABLED_TestTurnTcpOnAddressResolveFailure) {
   turn_server_.AddInternalSocket(kTurnTcpIntAddr, cricket::PROTO_TCP);
   CreateTurnPort(kTurnUsername, kTurnPassword, cricket::ProtocolAddress(
       rtc::SocketAddress("www.webrtc-blah-blah.com", 3478),
@@ -393,7 +393,7 @@ TEST_F(TurnPortTest, TestTurnTcpOnAddressResolveFailure) {
 
 // In case of UDP on address resolve failure, TurnPort will not create socket
 // and return allocate failure.
-TEST_F(TurnPortTest, TestTurnUdpOnAdressResolveFailure) {
+TEST_F(TurnPortTest, DISABLED_TestTurnUdpOnAdressResolveFailure) {
   CreateTurnPort(kTurnUsername, kTurnPassword, cricket::ProtocolAddress(
       rtc::SocketAddress("www.webrtc-blah-blah.com", 3478),
       cricket::PROTO_UDP));
