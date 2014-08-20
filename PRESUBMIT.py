@@ -123,6 +123,7 @@ def _CommonChecks(input_api, output_api):
                   # Embedded shell-script fakes out pylint.
                   r'^build/.*\.py$',
                   r'^buildtools/.*\.py$',
+                  r'^chromium/.*\.py$',
                   r'^out.*/.*\.py$',
                   r'^talk/site_scons/site_tools/talk_linux.py$',
                   r'^testing/.*\.py$',
