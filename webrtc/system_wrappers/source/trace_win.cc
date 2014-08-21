@@ -60,7 +60,7 @@ int32_t TraceWindows::AddTime(char* trace_message,
       dw_delta_time = 99999;
     }
 
-    sprintf(trace_message, "(%2u:%2u:%2u:%3u |%5lu) ", system_time.wHour,
+    sprintf(trace_message, "(%2u:%2u:%2u:%3u |%5u) ", system_time.wHour,
             system_time.wMinute, system_time.wSecond,
             system_time.wMilliseconds, dw_delta_time);
   } else {
@@ -77,7 +77,7 @@ int32_t TraceWindows::AddTime(char* trace_message,
     if (dw_delta_time > 99999) {
       dw_delta_time = 99999;
     }
-    sprintf(trace_message, "(%2u:%2u:%2u:%3u |%5lu) ", system_time.wHour,
+    sprintf(trace_message, "(%2u:%2u:%2u:%3u |%5u) ", system_time.wHour,
             system_time.wMinute, system_time.wSecond,
             system_time.wMilliseconds, dw_delta_time);
   }
@@ -109,7 +109,7 @@ int32_t TraceWindows::AddDateTimeInfo(char* trace_message) const {
   GetTimeFormat(LOCALE_SYSTEM_DEFAULT, 0, &sys_time, TEXT("HH':'mm':'ss"),
                 sz_time_str, 20);
 
-  sprintf(trace_message, "Local Date: %s Local Time: %s", sz_date_str,
+  sprintf(trace_message, "Local Date: %ls Local Time: %ls", sz_date_str,
           sz_time_str);
 
   // Include NULL termination (hence + 1).
