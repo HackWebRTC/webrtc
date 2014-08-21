@@ -12,6 +12,9 @@ import os
 import subprocess
 import sys
 
+# Bump this whenever the algorithm changes and you need bots/devs to re-sync,
+# ignoring the .last_sync_chromium file
+SCRIPT_VERSION = 0
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -39,12 +42,19 @@ def main():
   opts = p.parse_args()
   opts.chromium_dir = os.path.abspath(opts.chromium_dir)
 
+  target_os_list = get_target_os_list()
+
   # Do a quick check to see if we were successful last time to make runhooks
   # sooper fast.
   flag_file = os.path.join(opts.chromium_dir, '.last_sync_chromium')
+  flag_file_content = '\n'.join([
+    str(SCRIPT_VERSION),
+    opts.target_revision,
+    repr(target_os_list),
+  ])
   if os.path.exists(flag_file):
     with open(flag_file, 'r') as f:
-      if f.read() == opts.target_revision:
+      if f.read() == flag_file_content:
         print "Chromium already up to date:", opts.target_revision
         return 0
     os.unlink(flag_file)
@@ -79,7 +89,6 @@ def main():
   else:
     args.append('--no-history')
 
-  target_os_list = get_target_os_list()
   if target_os_list:
     args += ['--deps=' + target_os_list]
 
@@ -87,7 +96,7 @@ def main():
   ret = subprocess.call(args, cwd=opts.chromium_dir, env=env)
   if ret == 0:
     with open(flag_file, 'wb') as f:
-      f.write(opts.target_revision)
+      f.write(flag_file_content)
 
   return ret
 
