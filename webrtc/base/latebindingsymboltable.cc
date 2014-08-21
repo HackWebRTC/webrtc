@@ -100,7 +100,7 @@ bool LateBindingSymbolTable::LoadFromPath(const char *dll_path) {
                    // is necessary for same-named symbols in different ABI
                    // versions of the same library to not explode.
                    RTLD_NOW|RTLD_LOCAL
-#if defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
+#if defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID) && defined(RTLD_DEEPBIND)
                    // RTLD_DEEPBIND makes symbol dependencies in the
                    // newly-loaded tree prefer to resolve to definitions within
                    // that tree (the default on OS X). This is necessary for
