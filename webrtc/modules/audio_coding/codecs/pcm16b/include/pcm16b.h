@@ -35,9 +35,9 @@ extern "C" {
  * Returned value		: Size in bytes of speechOut16b
  */
 
-int16_t WebRtcPcm16b_EncodeW16(int16_t *speechIn16b,
+int16_t WebRtcPcm16b_EncodeW16(const int16_t* speechIn16b,
                                int16_t len,
-                               int16_t *speechOut16b);
+                               int16_t* speechOut16b);
 
 /****************************************************************************
  * WebRtcPcm16b_Encode(...)

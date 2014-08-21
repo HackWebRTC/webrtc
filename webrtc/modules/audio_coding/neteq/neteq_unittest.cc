@@ -26,6 +26,7 @@
 #include "gflags/gflags.h"
 #include "gtest/gtest.h"
 #include "webrtc/modules/audio_coding/neteq/test/NETEQTEST_RTPpacket.h"
+#include "webrtc/modules/audio_coding/neteq/tools/audio_loop.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/pcm16b.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
@@ -870,15 +871,12 @@ TEST_F(NetEqDecodingTest, GetAudioBeforeInsertPacket) {
   }
 }
 
-class NetEqBgnTest
-    : public NetEqDecodingTest,
-      public ::testing::WithParamInterface<NetEq::BackgroundNoiseMode> {
+class NetEqBgnTest : public NetEqDecodingTest {
  protected:
-  NetEqBgnTest() : NetEqDecodingTest() {
-    config_.background_noise_mode = GetParam();
-  }
+  virtual void TestCondition(double sum_squared_noise,
+                             bool should_be_faded) = 0;
 
-  void CheckBgnOff(int sampling_rate_hz) {
+  void CheckBgn(int sampling_rate_hz) {
     int expected_samples_per_channel = 0;
     uint8_t payload_type = 0xFF;  // Invalid.
     if (sampling_rate_hz == 8000) {
@@ -896,21 +894,17 @@ class NetEqBgnTest
 
     NetEqOutputType type;
     int16_t output[kBlockSize32kHz];  // Maximum size is chosen.
-    int16_t input[kBlockSize32kHz];   // Maximum size is chosen.
+    test::AudioLoop input;
+    // We are using the same 32 kHz input file for all tests, regardless of
+    // |sampling_rate_hz|. The output may sound weird, but the test is still
+    // valid.
+    ASSERT_TRUE(input.Init(
+        webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm"),
+        10 * sampling_rate_hz,  // Max 10 seconds loop length.
+        expected_samples_per_channel));
 
     // Payload of 10 ms of PCM16 32 kHz.
     uint8_t payload[kBlockSize32kHz * sizeof(int16_t)];
-
-    // Random payload.
-    for (int n = 0; n < expected_samples_per_channel; ++n) {
-      input[n] = (rand() & ((1 << 10) - 1)) - ((1 << 5) - 1);
-    }
-    int enc_len_bytes =
-        WebRtcPcm16b_EncodeW16(input,
-                               expected_samples_per_channel,
-                               reinterpret_cast<int16_t*>(payload));
-    ASSERT_EQ(enc_len_bytes, expected_samples_per_channel * 2);
-
     WebRtcRTPHeader rtp_info;
     PopulateRtpInfo(0, 0, &rtp_info);
     rtp_info.header.payloadType = payload_type;
@@ -920,6 +914,12 @@ class NetEqBgnTest
 
     uint32_t receive_timestamp = 0;
     for (int n = 0; n < 10; ++n) {  // Insert few packets and get audio.
+      int enc_len_bytes =
+          WebRtcPcm16b_EncodeW16(input.GetNextBlock(),
+                                 expected_samples_per_channel,
+                                 reinterpret_cast<int16_t*>(payload));
+      ASSERT_EQ(enc_len_bytes, expected_samples_per_channel * 2);
+
       number_channels = 0;
       samples_per_channel = 0;
       ASSERT_EQ(0,
@@ -981,12 +981,7 @@ class NetEqBgnTest
         double sum_squared = 0;
         for (int k = 0; k < number_channels * samples_per_channel; ++k)
           sum_squared += output[k] * output[k];
-        if (config_.background_noise_mode == NetEq::kBgnOn) {
-          EXPECT_NE(0, sum_squared);
-        } else if (config_.background_noise_mode == NetEq::kBgnOff ||
-                   n > kFadingThreshold) {
-          EXPECT_EQ(0, sum_squared);
-        }
+        TestCondition(sum_squared, n > kFadingThreshold);
       } else {
         EXPECT_EQ(kOutputPLC, type);
       }
@@ -995,17 +990,57 @@ class NetEqBgnTest
   }
 };
 
-TEST_P(NetEqBgnTest, BackgroundNoise) {
-  CheckBgnOff(8000);
-  CheckBgnOff(16000);
-  CheckBgnOff(32000);
+class NetEqBgnTestOn : public NetEqBgnTest {
+ protected:
+  NetEqBgnTestOn() : NetEqBgnTest() {
+    config_.background_noise_mode = NetEq::kBgnOn;
+  }
+
+  void TestCondition(double sum_squared_noise, bool /*should_be_faded*/) {
+    EXPECT_NE(0, sum_squared_noise);
+  }
+};
+
+class NetEqBgnTestOff : public NetEqBgnTest {
+ protected:
+  NetEqBgnTestOff() : NetEqBgnTest() {
+    config_.background_noise_mode = NetEq::kBgnOff;
+  }
+
+  void TestCondition(double sum_squared_noise, bool /*should_be_faded*/) {
+    EXPECT_EQ(0, sum_squared_noise);
+  }
+};
+
+class NetEqBgnTestFade : public NetEqBgnTest {
+ protected:
+  NetEqBgnTestFade() : NetEqBgnTest() {
+    config_.background_noise_mode = NetEq::kBgnFade;
+  }
+
+  void TestCondition(double sum_squared_noise, bool should_be_faded) {
+    if (should_be_faded)
+      EXPECT_EQ(0, sum_squared_noise);
+  }
+};
+
+TEST_F(NetEqBgnTestOn, RunTest) {
+  CheckBgn(8000);
+  CheckBgn(16000);
+  CheckBgn(32000);
 }
 
-INSTANTIATE_TEST_CASE_P(BgnModes,
-                        NetEqBgnTest,
-                        ::testing::Values(NetEq::kBgnOn,
-                                          NetEq::kBgnOff,
-                                          NetEq::kBgnFade));
+TEST_F(NetEqBgnTestOff, RunTest) {
+  CheckBgn(8000);
+  CheckBgn(16000);
+  CheckBgn(32000);
+}
+
+TEST_F(NetEqBgnTestFade, RunTest) {
+  CheckBgn(8000);
+  CheckBgn(16000);
+  CheckBgn(32000);
+}
 
 TEST_F(NetEqDecodingTest, SyncPacketInsert) {
   WebRtcRTPHeader rtp_info;

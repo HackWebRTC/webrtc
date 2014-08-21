@@ -25,9 +25,9 @@
 
 
 /* Encoder with int16_t Output */
-int16_t WebRtcPcm16b_EncodeW16(int16_t *speechIn16b,
+int16_t WebRtcPcm16b_EncodeW16(const int16_t* speechIn16b,
                                int16_t len,
-                               int16_t *speechOut16b)
+                               int16_t* speechOut16b)
 {
 #ifdef WEBRTC_ARCH_BIG_ENDIAN
     WEBRTC_SPL_MEMCPY_W16(speechOut16b, speechIn16b, len);
