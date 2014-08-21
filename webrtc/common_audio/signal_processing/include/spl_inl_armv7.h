@@ -30,12 +30,6 @@ static __inline int32_t WEBRTC_SPL_MUL_16_32_RSFT16(int16_t a, int32_t b) {
   return tmp;
 }
 
-static __inline int32_t WEBRTC_SPL_MUL_32_32_RSFT32BI(int32_t a, int32_t b) {
-  int32_t tmp = 0;
-  __asm volatile ("smmulr %0, %1, %2":"=r"(tmp):"r"(a), "r"(b));
-  return tmp;
-}
-
 static __inline int32_t WEBRTC_SPL_MUL_16_16(int16_t a, int16_t b) {
   int32_t tmp = 0;
   __asm __volatile ("smulbb %0, %1, %2":"=r"(tmp):"r"(a), "r"(b));

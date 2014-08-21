@@ -66,18 +66,6 @@ static __inline int32_t WEBRTC_SPL_MUL_16_32_RSFT16(int16_t a,
   return value32;
 }
 
-static __inline int32_t WEBRTC_SPL_MUL_32_32_RSFT32BI(int32_t a,
-                                                      int32_t b) {
-  int32_t tmp = 0;
-
-  if ((32767 < a) || (a < 0))
-    tmp = WEBRTC_SPL_MUL_16_32_RSFT16(((int16_t)(a >> 16)), b);
-  tmp += WEBRTC_SPL_MUL_16_32_RSFT16(((int16_t)((a & 0x0000FFFF) >> 1)),
-                                     b) >> 15;
-
-  return tmp;
-}
-
 #if defined(MIPS_DSP_R1_LE)
 static __inline int16_t WebRtcSpl_SatW32ToW16(int32_t value32) {
   __asm __volatile(
