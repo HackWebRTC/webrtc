@@ -69,6 +69,7 @@
           ],
           'dependencies': [
             'acm_receive_test',
+            'acm_send_test',
             'audio_coding_module',
             'audio_processing',
             'bitrate_controller',

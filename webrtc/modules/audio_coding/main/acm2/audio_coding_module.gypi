@@ -130,6 +130,19 @@
           ],
         }, # acm_receive_test
         {
+          'target_name': 'acm_send_test',
+          'type': 'static_library',
+          'dependencies': [
+            'audio_coding_module',
+            'neteq_unittest_tools',
+            '<(DEPTH)/testing/gtest.gyp:gtest',
+          ],
+          'sources': [
+            'acm_send_test.cc',
+            'acm_send_test.h',
+          ],
+        }, # acm_send_test
+        {
           'target_name': 'delay_test',
           'type': 'executable',
           'dependencies': [

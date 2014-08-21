@@ -12,12 +12,16 @@
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/md5digest.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_receive_test.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_send_test.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_checksum.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_loop.h"
+#include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "webrtc/modules/audio_coding/neteq/tools/output_audio_file.h"
+#include "webrtc/modules/audio_coding/neteq/tools/packet.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_file_source.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/clock.h"
@@ -516,6 +520,19 @@ TEST_F(AcmIsacMtTest, DoTest) {
 }
 
 class AcmReceiverBitExactness : public ::testing::Test {
+ public:
+  static std::string PlatformChecksum(std::string win64,
+                                      std::string android,
+                                      std::string others) {
+#if defined(_WIN32) && defined(WEBRTC_ARCH_64_BITS)
+    return win64;
+#elif defined(WEBRTC_ANDROID)
+    return android;
+#else
+    return others;
+#endif
+  }
+
  protected:
   void Run(int output_freq_hz, const std::string& checksum_ref) {
     const std::string input_file_name =
@@ -546,18 +563,6 @@ class AcmReceiverBitExactness : public ::testing::Test {
     std::string checksum_string = checksum.Finish();
     EXPECT_EQ(checksum_ref, checksum_string);
   }
-
-  static std::string PlatformChecksum(std::string win64,
-                                      std::string android,
-                                      std::string others) {
-#if defined(_WIN32) && defined(WEBRTC_ARCH_64_BITS)
-    return win64;
-#elif defined(WEBRTC_ANDROID)
-    return android;
-#else
-    return others;
-#endif
-  }
 };
 
 TEST_F(AcmReceiverBitExactness, 8kHzOutput) {
@@ -587,4 +592,188 @@ TEST_F(AcmReceiverBitExactness, 48kHzOutput) {
                        "76b9e99e0a3998aa28355e7a2bd836f7",
                        "89b4b19bdb4de40f1d88302ef8cb9f9b"));
 }
+
+// This test verifies bit exactness for the send-side of ACM. The test setup is
+// a chain of three different test classes:
+//
+// test::AcmSendTest -> AcmSenderBitExactness -> test::AcmReceiveTest
+//
+// The receiver side is driving the test by requesting new packets from
+// AcmSenderBitExactness::NextPacket(). This method, in turn, asks for the
+// packet from test::AcmSendTest::NextPacket, which inserts audio from the
+// input file until one packet is produced. (The input file loops indefinitely.)
+// Before passing the packet to the receiver, this test class verifies the
+// packet header and updates a payload checksum with the new payload. The
+// decoded output from the receiver is also verified with a (separate) checksum.
+class AcmSenderBitExactness : public ::testing::Test,
+                              public test::PacketSource {
+ protected:
+  static const int kTestDurationMs = 1000;
+
+  AcmSenderBitExactness()
+      : frame_size_rtp_timestamps_(0),
+        packet_count_(0),
+        payload_type_(0),
+        last_sequence_number_(0),
+        last_timestamp_(0) {}
+
+  // Sets up the test::AcmSendTest object. Returns true on success, otherwise
+  // false.
+  bool SetUpSender() {
+    const std::string input_file_name =
+        webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
+    // Note that |audio_source_| will loop forever. The test duration is set
+    // explicitly by |kTestDurationMs|.
+    audio_source_.reset(new test::InputAudioFile(input_file_name));
+    static const int kSourceRateHz = 32000;
+    send_test_.reset(new test::AcmSendTest(
+        audio_source_.get(), kSourceRateHz, kTestDurationMs));
+    return send_test_.get() != NULL;
+  }
+
+  // Registers a send codec in the test::AcmSendTest object. Returns true on
+  // success, false on failure.
+  bool RegisterSendCodec(const char* payload_name,
+                         int sampling_freq_hz,
+                         int channels,
+                         int payload_type,
+                         int frame_size_samples,
+                         int frame_size_rtp_timestamps) {
+    payload_type_ = payload_type;
+    frame_size_rtp_timestamps_ = frame_size_rtp_timestamps;
+    return send_test_->RegisterCodec(payload_name,
+                                     sampling_freq_hz,
+                                     channels,
+                                     payload_type,
+                                     frame_size_samples);
+  }
+
+  // Runs the test. SetUpSender() and RegisterSendCodec() must have been called
+  // before calling this method.
+  void Run(const std::string& audio_checksum_ref,
+           const std::string& payload_checksum_ref,
+           int expected_packets) {
+    // Set up the receiver used to decode the packets and verify the decoded
+    // output.
+    test::AudioChecksum audio_checksum;
+    const std::string output_file_name =
+        webrtc::test::OutputPath() +
+        ::testing::UnitTest::GetInstance()
+            ->current_test_info()
+            ->test_case_name() +
+        "_" +
+        ::testing::UnitTest::GetInstance()->current_test_info()->name() +
+        "_output.pcm";
+    test::OutputAudioFile output_file(output_file_name);
+    // Have the output audio sent both to file and to the checksum calculator.
+    test::AudioSinkFork output(&audio_checksum, &output_file);
+    const int kOutputFreqHz = 8000;
+    test::AcmReceiveTest receive_test(this, &output, kOutputFreqHz);
+    ASSERT_NO_FATAL_FAILURE(receive_test.RegisterDefaultCodecs());
+
+    // This is where the actual test is executed.
+    receive_test.Run();
+
+    // Extract and verify the audio checksum.
+    std::string checksum_string = audio_checksum.Finish();
+    EXPECT_EQ(audio_checksum_ref, checksum_string);
+
+    // Extract and verify the payload checksum.
+    char checksum_result[rtc::Md5Digest::kSize];
+    payload_checksum_.Finish(checksum_result, rtc::Md5Digest::kSize);
+    checksum_string = rtc::hex_encode(checksum_result, rtc::Md5Digest::kSize);
+    EXPECT_EQ(payload_checksum_ref, checksum_string);
+
+    // Verify number of packets produced.
+    EXPECT_EQ(expected_packets, packet_count_);
+  }
+
+  // Returns a pointer to the next packet. Returns NULL if the source is
+  // depleted (i.e., the test duration is exceeded), or if an error occurred.
+  // Inherited from test::PacketSource.
+  test::Packet* NextPacket() OVERRIDE {
+    // Get the next packet from AcmSendTest. Ownership of |packet| is
+    // transferred to this method.
+    test::Packet* packet = send_test_->NextPacket();
+    if (!packet)
+      return NULL;
+
+    VerifyPacket(packet);
+    // TODO(henrik.lundin) Save the packet to file as well.
+
+    // Pass it on to the caller. The caller becomes the owner of |packet|.
+    return packet;
+  }
+
+  // Verifies the packet.
+  void VerifyPacket(const test::Packet* packet) {
+    EXPECT_TRUE(packet->valid_header());
+    // (We can check the header fields even if valid_header() is false.)
+    EXPECT_EQ(payload_type_, packet->header().payloadType);
+    if (packet_count_ > 0) {
+      // This is not the first packet.
+      uint16_t sequence_number_diff =
+          packet->header().sequenceNumber - last_sequence_number_;
+      EXPECT_EQ(1, sequence_number_diff);
+      uint32_t timestamp_diff = packet->header().timestamp - last_timestamp_;
+      EXPECT_EQ(frame_size_rtp_timestamps_, timestamp_diff);
+    }
+    ++packet_count_;
+    last_sequence_number_ = packet->header().sequenceNumber;
+    last_timestamp_ = packet->header().timestamp;
+    // Update the checksum.
+    payload_checksum_.Update(packet->payload(), packet->payload_length_bytes());
+  }
+
+  void SetUpTest(const char* codec_name,
+                 int codec_sample_rate_hz,
+                 int channels,
+                 int payload_type,
+                 int codec_frame_size_samples,
+                 int codec_frame_size_rtp_timestamps) {
+    ASSERT_TRUE(SetUpSender());
+    ASSERT_TRUE(RegisterSendCodec(codec_name,
+                                  codec_sample_rate_hz,
+                                  channels,
+                                  payload_type,
+                                  codec_frame_size_samples,
+                                  codec_frame_size_rtp_timestamps));
+  }
+
+  scoped_ptr<test::AcmSendTest> send_test_;
+  scoped_ptr<test::InputAudioFile> audio_source_;
+  uint32_t frame_size_rtp_timestamps_;
+  int packet_count_;
+  uint8_t payload_type_;
+  uint16_t last_sequence_number_;
+  uint32_t last_timestamp_;
+  rtc::Md5Digest payload_checksum_;
+};
+
+TEST_F(AcmSenderBitExactness, IsacWb30ms) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("ISAC", 16000, 1, 103, 480, 480));
+  Run(AcmReceiverBitExactness::PlatformChecksum(
+          "c7e5bdadfa2871df95639fcc297cf23d",
+          "0499ca260390769b3172136faad925b9",
+          "0b58f9eeee43d5891f5f6c75e77984a3"),
+      AcmReceiverBitExactness::PlatformChecksum(
+          "d42cb5195463da26c8129bbfe73a22e6",
+          "83de248aea9c3c2bd680b6952401b4ca",
+          "3c79f16f34218271f3dca4e2b1dfe1bb"),
+      33);
+}
+
+TEST_F(AcmSenderBitExactness, IsacWb60ms) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("ISAC", 16000, 1, 103, 960, 960));
+  Run(AcmReceiverBitExactness::PlatformChecksum(
+          "14d63c5f08127d280e722e3191b73bdd",
+          "8da003e16c5371af2dc2be79a50f9076",
+          "1ad29139a04782a33daad8c2b9b35875"),
+      AcmReceiverBitExactness::PlatformChecksum(
+          "ebe04a819d3a9d83a83a17f271e1139a",
+          "97aeef98553b5a4b5a68f8b716e8eaf0",
+          "9e0a0ab743ad987b55b8e14802769c56"),
+      16);
+}
+
 }  // namespace webrtc
