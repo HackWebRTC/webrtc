@@ -37,6 +37,7 @@
 /Makefile
 /build
 /buildtools
+/chromium/.gclient.bot
 /chromium/.gclient_entries
 /chromium/.last_sync_chromium
 /chromium/src

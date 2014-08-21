@@ -60,19 +60,22 @@ def main():
     args.append('-vvv')
 
     if sys.platform.startswith('win'):
-      cache_path = os.path.join(os.path.splitdrive(ROOT_DIR)[0],
+      cache_path = os.path.join(os.path.splitdrive(ROOT_DIR)[0] + os.path.sep,
                                 'b', 'git-cache')
     else:
       cache_path = '/b/git-cache'
 
-    with open(os.path.join(opts.chromium_dir, '.gclient'), 'rb') as spec:
+    gclientfile = os.path.join(opts.chromium_dir, '.gclient')
+    with open(gclientfile, 'rb') as spec:
       spec = spec.read().splitlines()
       spec[-1] = 'cache_dir = %r' % (cache_path,)
-      args.append('--spec')
-      args.append('\n'.join(spec))
-      args.append('--delete_unversioned_trees')
-      args.append('--reset')
-      args.append('--upstream')
+    with open(gclientfile + '.bot', 'wb') as f:
+      f.write('\n'.join(spec))
+
+    args += [
+      '--gclientfile', '.gclient.bot',
+      '--delete_unversioned_trees', '--reset', '--upstream'
+    ]
   else:
     args.append('--no-history')
 
