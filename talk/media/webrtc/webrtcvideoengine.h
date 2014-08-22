@@ -387,8 +387,6 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
   bool IsDefaultChannelId(int channel_id) const {
     return channel_id == default_channel_id_;
   }
-  bool GetDefaultRenderer(VideoRenderer** renderer);
-
   bool DeleteSendChannel(uint32 ssrc_key);
 
   WebRtcVideoChannelRecvInfo* GetDefaultRecvChannel();

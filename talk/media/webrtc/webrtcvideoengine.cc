@@ -2018,25 +2018,6 @@ bool WebRtcVideoMediaChannel::AddRecvStream(const StreamParams& sp) {
     return false;
   }
 
-  // Get the default renderer.
-  VideoRenderer* default_renderer = NULL;
-  if (InConferenceMode()) {
-    // The recv_channels_ size start out being 1, so if it is two here
-    // this is the first receive channel created (default_channel_id_
-    // is not used for receiving in a conference call). This means
-    // that the renderer stored inside default_channel_id_ should be
-    // used for the just created channel.
-    if (recv_channels_.size() == 2 && GetDefaultRecvChannel()) {
-      GetDefaultRenderer(&default_renderer);
-    }
-  }
-
-  // The first recv stream reuses the default renderer (if a default renderer
-  // has been set).
-  if (default_renderer) {
-    SetRenderer(sp.first_ssrc(), default_renderer);
-  }
-
   LOG(LS_INFO) << "New video stream " << sp.first_ssrc()
                << " registered to VideoEngine channel #"
                << channel_id << " and connected to channel #"
@@ -3137,10 +3118,6 @@ bool WebRtcVideoMediaChannel::GetRenderer(uint32 ssrc,
 
   *renderer = recv_channel->render_adapter()->renderer();
   return true;
-}
-
-bool WebRtcVideoMediaChannel::GetDefaultRenderer(VideoRenderer** renderer) {
-  return GetRenderer(kDefaultChannelSsrcKey, renderer);
 }
 
 bool WebRtcVideoMediaChannel::GetVideoAdapter(
