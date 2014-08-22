@@ -2958,11 +2958,6 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
     conference_mode_turned_off = true;
   }
 
-  bool improved_wifi_bwe_changed =
-      options.use_improved_wifi_bandwidth_estimator.IsSet() &&
-      options_.use_improved_wifi_bandwidth_estimator !=
-          options.use_improved_wifi_bandwidth_estimator;
-
 #ifdef USE_WEBRTC_DEV_BRANCH
   bool payload_padding_changed = options.use_payload_padding.IsSet() &&
       options_.use_payload_padding != options.use_payload_padding;
@@ -3068,18 +3063,6 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
       }
     } else {
       LOG(LS_WARNING) << "Cannot disable video suspension once it is enabled";
-    }
-  }
-  if (improved_wifi_bwe_changed) {
-    LOG(LS_INFO) << "Improved WIFI BWE called.";
-    webrtc::Config config;
-    config.Set(new webrtc::AimdRemoteRateControl(
-        options_.use_improved_wifi_bandwidth_estimator
-          .GetWithDefaultIfUnset(false)));
-    for (SendChannelMap::iterator it = send_channels_.begin();
-            it != send_channels_.end(); ++it) {
-      engine()->vie()->network()->SetBandwidthEstimationConfig(
-          it->second->channel_id(), config);
     }
   }
 #ifdef USE_WEBRTC_DEV_BRANCH
@@ -3600,6 +3583,16 @@ bool WebRtcVideoMediaChannel::ConfigureSending(int channel_id,
   if (!SetNackFec(channel_id, send_red_type_, send_fec_type_, nack_enabled_)) {
     // Logged in SetNackFec. Don't spam the logs.
     return false;
+  }
+
+  // Enable improved WiFi Bandwidth Estimation
+  {
+    webrtc::Config config;
+    config.Set(new webrtc::AimdRemoteRateControl(true));
+    if (!engine()->vie()->network()->SetBandwidthEstimationConfig(channel_id,
+                                                                  config)) {
+      return false;
+    }
   }
 
   send_channels_[local_ssrc_key] = send_channel.release();

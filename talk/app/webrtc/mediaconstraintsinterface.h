@@ -115,7 +115,6 @@ class MediaConstraintsInterface {
   // Temporary constraint to enable suspend below min bitrate feature.
   static const char kEnableVideoSuspendBelowMinBitrate[];
       // googSuspendBelowMinBitrate
-  static const char kImprovedWifiBwe[];  // googImprovedWifiBwe
   static const char kNumUnsignalledRecvStreams[];
       // googNumUnsignalledRecvStreams
   static const char kScreencastMinBitrate[];  // googScreencastMinBitrate

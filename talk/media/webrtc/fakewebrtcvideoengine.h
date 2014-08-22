@@ -908,6 +908,9 @@ class FakeWebRtcVideoEngine
   WEBRTC_STUB(SetMTU, (int, unsigned int));
   WEBRTC_STUB(ReceivedBWEPacket, (const int, int64_t, int,
       const webrtc::RTPHeader&));
+  virtual bool SetBandwidthEstimationConfig(int, const webrtc::Config&) {
+    return true;
+  }
 
   // webrtc::ViERender
   WEBRTC_STUB(RegisterVideoRenderModule, (webrtc::VideoRender&));

@@ -93,8 +93,6 @@ const char MediaConstraintsInterface::kEnableDscp[] = "googDscp";
 const char MediaConstraintsInterface::kEnableIPv6[] = "googIPv6";
 const char MediaConstraintsInterface::kEnableVideoSuspendBelowMinBitrate[] =
     "googSuspendBelowMinBitrate";
-const char MediaConstraintsInterface::kImprovedWifiBwe[] =
-    "googImprovedWifiBwe";
 const char MediaConstraintsInterface::kNumUnsignalledRecvStreams[] =
     "googNumUnsignalledRecvStreams";
 const char MediaConstraintsInterface::kScreencastMinBitrate[] =
