@@ -59,17 +59,14 @@ static const int kDefaultRtcpReceiverReportSsrc = 1;
 
 struct VideoCodecPref {
   int payload_type;
+  int width;
+  int height;
   const char* name;
   int rtx_payload_type;
-} kDefaultVideoCodecPref = {100, kVp8CodecName, 96};
+} kDefaultVideoCodecPref = {100, 640, 400, kVp8CodecName, 96};
 
-VideoCodecPref kRedPref = {116, kRedCodecName, -1};
-VideoCodecPref kUlpfecPref = {117, kUlpfecCodecName, -1};
-
-// The formats are sorted by the descending order of width. We use the order to
-// find the next format for CPU and bandwidth adaptation.
-const VideoFormatPod kDefaultMaxVideoFormat = {
-    640, 400, FPS_TO_INTERVAL(kDefaultFramerate), FOURCC_ANY};
+VideoCodecPref kRedPref = {116, -1, -1, kRedCodecName, -1};
+VideoCodecPref kUlpfecPref = {117, -1, -1, kUlpfecCodecName, -1};
 
 static bool FindFirstMatchingCodec(const std::vector<VideoCodec>& codecs,
                                    const VideoCodec& requested_codec,
@@ -107,8 +104,8 @@ static bool IsRembEnabled(const VideoCodec& codec) {
 static VideoCodec DefaultVideoCodec() {
   VideoCodec default_codec(kDefaultVideoCodecPref.payload_type,
                            kDefaultVideoCodecPref.name,
-                           kDefaultMaxVideoFormat.width,
-                           kDefaultMaxVideoFormat.height,
+                           kDefaultVideoCodecPref.width,
+                           kDefaultVideoCodecPref.height,
                            kDefaultFramerate,
                            0);
   AddDefaultFeedbackParams(&default_codec);
@@ -285,13 +282,21 @@ void DefaultUnsignalledSsrcHandler::SetDefaultRenderer(
   }
 }
 
-WebRtcVideoEngine2::WebRtcVideoEngine2() {
+WebRtcVideoEngine2::WebRtcVideoEngine2()
+    : default_codec_format_(kDefaultVideoCodecPref.width,
+                            kDefaultVideoCodecPref.height,
+                            FPS_TO_INTERVAL(kDefaultFramerate),
+                            FOURCC_ANY) {
   // Construct without a factory or voice engine.
   Construct(NULL, NULL, new rtc::CpuMonitor(NULL));
 }
 
 WebRtcVideoEngine2::WebRtcVideoEngine2(
-    WebRtcVideoChannelFactory* channel_factory) {
+    WebRtcVideoChannelFactory* channel_factory)
+    : default_codec_format_(kDefaultVideoCodecPref.width,
+                            kDefaultVideoCodecPref.height,
+                            FPS_TO_INTERVAL(kDefaultFramerate),
+                            FOURCC_ANY) {
   // Construct without a voice engine.
   Construct(channel_factory, NULL, new rtc::CpuMonitor(NULL));
 }
@@ -308,7 +313,6 @@ void WebRtcVideoEngine2::Construct(WebRtcVideoChannelFactory* channel_factory,
   channel_factory_ = channel_factory;
 
   video_codecs_ = DefaultVideoCodecs();
-  default_codec_format_ = VideoFormat(kDefaultMaxVideoFormat);
 
   rtp_header_extensions_.push_back(
       RtpHeaderExtension(kRtpTimestampOffsetHeaderExtension,
