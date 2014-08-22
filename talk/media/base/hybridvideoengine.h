@@ -245,9 +245,6 @@ class HybridVideoEngine : public HybridVideoEngineInterface {
   VideoCapturer* GetVideoCapturer() const {
     return video2_.GetVideoCapturer();
   }
-  bool SetLocalRenderer(VideoRenderer* renderer) {
-    return video2_.SetLocalRenderer(renderer);
-  }
   sigslot::repeater2<VideoCapturer*, CaptureState> SignalCaptureStateChange;
 
   virtual bool HasCodec1(const VideoCodec& codec) {

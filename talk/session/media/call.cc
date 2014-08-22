@@ -94,7 +94,6 @@ void AudioSourceProxy::OnMediaStreamsUpdate(Call* call, Session* session,
 Call::Call(MediaSessionClient* session_client)
     : id_(rtc::CreateRandomId()),
       session_client_(session_client),
-      local_renderer_(NULL),
       has_video_(false),
       has_data_(false),
       muted_(false),
@@ -205,13 +204,6 @@ bool Call::SendViewRequest(Session* session,
   }
 
   return session->SendInfoMessage(elems, session->remote_name());
-}
-
-void Call::SetLocalRenderer(VideoRenderer* renderer) {
-  local_renderer_ = renderer;
-  if (session_client_->GetFocus() == this) {
-    session_client_->channel_manager()->SetLocalRenderer(renderer);
-  }
 }
 
 void Call::SetVideoRenderer(Session* session, uint32 ssrc,
@@ -418,8 +410,6 @@ void Call::EnableChannels(bool enable) {
   for (it = media_session_map_.begin(); it != media_session_map_.end(); ++it) {
     EnableSessionChannels(it->second.session, enable);
   }
-  session_client_->channel_manager()->SetLocalRenderer(
-      (enable) ? local_renderer_ : NULL);
 }
 
 void Call::EnableSessionChannels(Session* session, bool enable) {

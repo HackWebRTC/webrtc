@@ -115,7 +115,6 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   const std::vector<RtpHeaderExtension>& rtp_header_extensions() const;
   void SetLogging(int min_sev, const char* filter);
 
-  bool SetLocalRenderer(VideoRenderer* renderer);
   sigslot::repeater2<VideoCapturer*, CaptureState> SignalCaptureStateChange;
 
   // Set the VoiceEngine for A/V sync. This can only be called before Init.
@@ -225,9 +224,6 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   VideoChannels channels_;
 
   bool capture_started_;
-  int local_renderer_w_;
-  int local_renderer_h_;
-  VideoRenderer* local_renderer_;
 
   rtc::scoped_ptr<rtc::CpuMonitor> cpu_monitor_;
 };

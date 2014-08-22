@@ -868,7 +868,7 @@ class FakeVoiceEngine : public FakeBaseEngine {
 
 class FakeVideoEngine : public FakeBaseEngine {
  public:
-  FakeVideoEngine() : renderer_(NULL), capture_(false), processor_(NULL) {
+  FakeVideoEngine() : capture_(false), processor_(NULL) {
     // Add a fake video codec. Note that the name must not be "" as there are
     // sanity checks against that.
     codecs_.push_back(VideoCodec(0, "fake_video_codec", 0, 0, 0, 0));
@@ -926,10 +926,6 @@ class FakeVideoEngine : public FakeBaseEngine {
     options_changed_ = true;
     return true;
   }
-  bool SetLocalRenderer(VideoRenderer* r) {
-    renderer_ = r;
-    return true;
-  }
   bool SetCapture(bool capture) {
     capture_ = capture;
     return true;
@@ -946,7 +942,6 @@ class FakeVideoEngine : public FakeBaseEngine {
   std::vector<VideoCodec> codecs_;
   VideoEncoderConfig default_encoder_config_;
   std::string in_device_;
-  VideoRenderer* renderer_;
   bool capture_;
   VideoProcessor* processor_;
   VideoOptions options_;
@@ -994,7 +989,6 @@ class FakeMediaEngine :
   }
   const std::string& audio_in_device() const { return voice_.in_device_; }
   const std::string& audio_out_device() const { return voice_.out_device_; }
-  VideoRenderer* local_renderer() { return video_.renderer_; }
   int voice_loglevel() const { return voice_.loglevel_; }
   const std::string& voice_logfilter() const { return voice_.logfilter_; }
   int video_loglevel() const { return video_.loglevel_; }

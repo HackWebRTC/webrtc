@@ -154,8 +154,6 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
   void SetLogging(int min_sev, const char* filter);
 
   bool EnableTimedRender();
-  // No-op, never used.
-  bool SetLocalRenderer(VideoRenderer* renderer);
   // This is currently ignored.
   sigslot::repeater2<VideoCapturer*, CaptureState> SignalCaptureStateChange;
 

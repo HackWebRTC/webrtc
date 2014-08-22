@@ -113,7 +113,6 @@ class FileMediaEngine : public MediaEngineInterface {
   virtual bool SetOutputVolume(int level) { return true; }
   virtual int GetInputLevel() { return 0; }
   virtual bool SetLocalMonitor(bool enable) { return true; }
-  virtual bool SetLocalRenderer(VideoRenderer* renderer) { return true; }
   // TODO(whyuan): control channel send?
   virtual bool SetVideoCapture(bool capture) { return true; }
   virtual const std::vector<AudioCodec>& audio_codecs() {

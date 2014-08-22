@@ -124,7 +124,6 @@ class MediaEngineInterface {
   // when a VoiceMediaChannel starts sending.
   virtual bool SetLocalMonitor(bool enable) = 0;
   // Installs a callback for raw frames from the local camera.
-  virtual bool SetLocalRenderer(VideoRenderer* renderer) = 0;
 
   virtual const std::vector<AudioCodec>& audio_codecs() = 0;
   virtual const std::vector<RtpHeaderExtension>&
@@ -245,10 +244,6 @@ class CompositeMediaEngine : public MediaEngineInterface {
   virtual bool SetLocalMonitor(bool enable) {
     return voice_.SetLocalMonitor(enable);
   }
-  virtual bool SetLocalRenderer(VideoRenderer* renderer) {
-    return video_.SetLocalRenderer(renderer);
-  }
-
   virtual const std::vector<AudioCodec>& audio_codecs() {
     return voice_.codecs();
   }
@@ -361,7 +356,6 @@ class NullVideoEngine {
   bool SetDefaultEncoderConfig(const VideoEncoderConfig& config) {
     return true;
   }
-  bool SetLocalRenderer(VideoRenderer* renderer) { return true; }
   const std::vector<VideoCodec>& codecs() { return codecs_; }
   const std::vector<RtpHeaderExtension>& rtp_header_extensions() {
     return rtp_header_extensions_;

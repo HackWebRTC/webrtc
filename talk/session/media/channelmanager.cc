@@ -277,10 +277,6 @@ bool ChannelManager::Init() {
       if (default_video_encoder_config_.max_codec.id != 0) {
         SetDefaultVideoEncoderConfig(default_video_encoder_config_);
       }
-      // And the local renderer.
-      if (local_renderer_) {
-        SetLocalRenderer(local_renderer_);
-      }
     }
   }
   return initialized_;
@@ -746,19 +742,6 @@ bool ChannelManager::SetLocalMonitor(bool enable) {
            media_engine_.get(), enable));
   if (ret) {
     monitoring_ = enable;
-  }
-  return ret;
-}
-
-bool ChannelManager::SetLocalRenderer(VideoRenderer* renderer) {
-  bool ret = true;
-  if (initialized_) {
-    ret = worker_thread_->Invoke<bool>(
-        Bind(&MediaEngineInterface::SetLocalRenderer,
-             media_engine_.get(), renderer));
-  }
-  if (ret) {
-    local_renderer_ = renderer;
   }
   return ret;
 }

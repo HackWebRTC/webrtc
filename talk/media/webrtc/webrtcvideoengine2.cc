@@ -429,12 +429,6 @@ bool WebRtcVideoEngine2::EnableTimedRender() {
   return true;
 }
 
-bool WebRtcVideoEngine2::SetLocalRenderer(VideoRenderer* renderer) {
-  // TODO(pbos): Implement or remove. Unclear which stream should be rendered
-  // locally even.
-  return true;
-}
-
 // Checks to see whether we comprehend and could receive a particular codec
 bool WebRtcVideoEngine2::FindCodec(const VideoCodec& in) {
   // TODO(pbos): Probe encoder factory to figure out that the codec is supported

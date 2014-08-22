@@ -96,7 +96,6 @@ class Call : public rtc::MessageHandler, public sigslot::has_slots<> {
   void Terminate();
   bool SendViewRequest(Session* session,
                        const ViewRequest& view_request);
-  void SetLocalRenderer(VideoRenderer* renderer);
   void SetVideoRenderer(Session* session, uint32 ssrc,
                         VideoRenderer* renderer);
   void StartConnectionMonitor(Session* session, int cms);
@@ -284,7 +283,6 @@ class Call : public rtc::MessageHandler, public sigslot::has_slots<> {
   MediaSessionMap media_session_map_;
 
   std::map<std::string, CurrentSpeakerMonitor*> speaker_monitor_map_;
-  VideoRenderer* local_renderer_;
   bool has_video_;
   bool has_data_;
   bool muted_;

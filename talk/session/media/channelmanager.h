@@ -170,8 +170,6 @@ class ChannelManager : public rtc::MessageHandler,
   // Starts/stops the local microphone and enables polling of the input level.
   bool SetLocalMonitor(bool enable);
   bool monitoring() const { return monitoring_; }
-  // Sets the local renderer where to renderer the local camera.
-  bool SetLocalRenderer(VideoRenderer* renderer);
   bool capturing() const { return capturing_; }
 
   // Configures the logging output of the mediaengine(s).

@@ -509,22 +509,6 @@ TEST_F(ChannelManagerTest, GetSetOutputVolume) {
   EXPECT_EQ(60, level);
 }
 
-// Test that a value set before Init is applied properly.
-TEST_F(ChannelManagerTest, SetLocalRendererBeforeInit) {
-  cricket::NullVideoRenderer renderer;
-  EXPECT_TRUE(cm_->SetLocalRenderer(&renderer));
-  EXPECT_TRUE(cm_->Init());
-  EXPECT_EQ(&renderer, fme_->local_renderer());
-}
-
-// Test that a value set after init is passed through properly.
-TEST_F(ChannelManagerTest, SetLocalRenderer) {
-  cricket::NullVideoRenderer renderer;
-  EXPECT_TRUE(cm_->Init());
-  EXPECT_TRUE(cm_->SetLocalRenderer(&renderer));
-  EXPECT_EQ(&renderer, fme_->local_renderer());
-}
-
 // Test that logging options set before Init are applied properly,
 // and retained even after Init.
 TEST_F(ChannelManagerTest, SetLoggingBeforeInit) {

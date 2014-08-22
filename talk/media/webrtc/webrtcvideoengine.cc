@@ -926,8 +926,6 @@ void WebRtcVideoEngine::Construct(ViEWrapper* vie_wrapper,
   initialized_ = false;
   SetTraceFilter(SeverityToFilter(kDefaultLogSeverity));
   render_module_.reset(new WebRtcPassthroughRender());
-  local_renderer_w_ = local_renderer_h_ = 0;
-  local_renderer_ = NULL;
   capture_started_ = false;
   decoder_factory_ = NULL;
   encoder_factory_ = NULL;
@@ -1107,12 +1105,6 @@ WebRtcVideoMediaChannel* WebRtcVideoEngine::CreateChannel(
     channel = NULL;
   }
   return channel;
-}
-
-bool WebRtcVideoEngine::SetLocalRenderer(VideoRenderer* renderer) {
-  local_renderer_w_ = local_renderer_h_ = 0;
-  local_renderer_ = renderer;
-  return true;
 }
 
 const std::vector<VideoCodec>& WebRtcVideoEngine::codecs() const {
