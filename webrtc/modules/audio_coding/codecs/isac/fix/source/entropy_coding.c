@@ -313,7 +313,7 @@ static void CalcRootInvArSpec(const int16_t *ARCoefQ12,
 
   for (k = 1; k < (AR_ORDER); k += 2) {
     for (n = 0; n < FRAMESAMPLES/8; n++)
-      summQ16[n] += WEBRTC_SPL_RSHIFT_W32(WEBRTC_SPL_MUL_32_16(CorrQ11[k+1],WebRtcIsacfix_kCos[k][n]) + 2, 2);
+      summQ16[n] += ((CorrQ11[k + 1] * WebRtcIsacfix_kCos[k][n]) + 2) >> 2;
   }
 
   CS_ptrQ9 = WebRtcIsacfix_kCos[0];

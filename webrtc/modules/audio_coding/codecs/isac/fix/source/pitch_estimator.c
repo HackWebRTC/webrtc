@@ -66,7 +66,7 @@ static __inline void Intrp1DQ8(int32_t *x, int32_t *fx, int32_t *y, int32_t *fy)
     r32=fx[1]-fx[2];
     q32=fx[0]-fx[1];
     nom32=q32+r32;
-    den32=WEBRTC_SPL_MUL_32_16((q32-r32), 2);
+    den32 = (q32 - r32) * 2;
     if (nom32<0)
       sign1=-1;
     if (den32<0)
@@ -74,7 +74,8 @@ static __inline void Intrp1DQ8(int32_t *x, int32_t *fx, int32_t *y, int32_t *fy)
 
     /* t = (q32+r32)/(2*(q32-r32)) = (fx[0]-fx[1] + fx[1]-fx[2])/(2 * fx[0]-fx[1] - (fx[1]-fx[2]))*/
     /* (Signs are removed because WebRtcSpl_DivResultInQ31 can't handle negative numbers) */
-    t32=WebRtcSpl_DivResultInQ31(WEBRTC_SPL_MUL_32_16(nom32, sign1),WEBRTC_SPL_MUL_32_16(den32, sign2)); /* t in Q31, without signs */
+    /* t in Q31, without signs */
+    t32 = WebRtcSpl_DivResultInQ31(nom32 * sign1, den32 * sign2);
 
     t16=(int16_t)WEBRTC_SPL_RSHIFT_W32(t32, 23);  /* Q8 */
     t16=t16*sign1*sign2;        /* t in Q8 with signs */

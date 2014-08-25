@@ -885,14 +885,14 @@ void WebRtcNsx_FeatureParameterExtraction(NsxInst_t* inst, int flag) {
       tmp32 = WEBRTC_SPL_MUL_16_16(inst->histLrt[i], j);
       avgHistLrtFX += tmp32;
       numHistLrt += inst->histLrt[i];
-      avgSquareHistLrtFX += WEBRTC_SPL_MUL_32_16(tmp32, j);
+      avgSquareHistLrtFX += tmp32 * j;
     }
     avgHistLrtComplFX = avgHistLrtFX;
     for (; i < HIST_PAR_EST; i++) {
       j = (2 * i + 1);
       tmp32 = WEBRTC_SPL_MUL_16_16(inst->histLrt[i], j);
       avgHistLrtComplFX += tmp32;
-      avgSquareHistLrtFX += WEBRTC_SPL_MUL_32_16(tmp32, j);
+      avgSquareHistLrtFX += tmp32 * j;
     }
     fluctLrtFX = WEBRTC_SPL_MUL(avgSquareHistLrtFX, numHistLrt);
     fluctLrtFX -= WEBRTC_SPL_MUL(avgHistLrtFX, avgHistLrtComplFX);
@@ -1083,7 +1083,7 @@ void WebRtcNsx_ComputeSpectralFlatness(NsxInst_t* inst, uint16_t* magn) {
 
   //time average update of spectral flatness feature
   tmp32 = currentSpectralFlatness - (int32_t)inst->featureSpecFlat; // Q10
-  tmp32 = WEBRTC_SPL_MUL_32_16(SPECT_FLAT_TAVG_Q14, tmp32); // Q24
+  tmp32 *= SPECT_FLAT_TAVG_Q14;  // Q24
   inst->featureSpecFlat = (uint32_t)((int32_t)inst->featureSpecFlat
                                            + WEBRTC_SPL_RSHIFT_W32(tmp32, 14)); // Q10
   // done with flatness feature
@@ -1135,7 +1135,7 @@ void WebRtcNsx_ComputeSpectralDifference(NsxInst_t* inst, uint16_t* magnIn) {
     tmp16no1 = (int16_t)((int32_t)magnIn[i] - avgMagnFX);
     tmp32no2 = inst->avgMagnPause[i] - avgPauseFX;
     varMagnUFX += (uint32_t)WEBRTC_SPL_MUL_16_16(tmp16no1, tmp16no1); // Q(2*qMagn)
-    tmp32no1 = WEBRTC_SPL_MUL_32_16(tmp32no2, tmp16no1); // Q(prevQMagn+qMagn)
+    tmp32no1 = tmp32no2 * tmp16no1;  // Q(prevQMagn+qMagn)
     covMagnPauseFX += tmp32no1; // Q(prevQMagn+qMagn)
     tmp32no1 = WEBRTC_SPL_RSHIFT_W32(tmp32no2, nShifts); // Q(prevQMagn-minPause)
     varPauseUFX += (uint32_t)WEBRTC_SPL_MUL(tmp32no1, tmp32no1); // Q(2*(prevQMagn-minPause))
@@ -1940,12 +1940,12 @@ int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* speechFrame, short* speechFram
     if (nonSpeechProbFinal[i] > ONE_MINUS_PROB_RANGE_Q8) {
       if (nShifts < 0) {
         tmp32no1 = (int32_t)magnU16[i] - tmp32no2; // Q(qMagn)
-        tmp32no1 = WEBRTC_SPL_MUL_32_16(tmp32no1, ONE_MINUS_GAMMA_PAUSE_Q8); // Q(8+prevQMagn+nShifts)
+        tmp32no1 *= ONE_MINUS_GAMMA_PAUSE_Q8;  // Q(8+prevQMagn+nShifts)
         tmp32no1 = WEBRTC_SPL_RSHIFT_W32(tmp32no1 + 128, 8); // Q(qMagn)
       } else {
         tmp32no1 = WEBRTC_SPL_LSHIFT_W32((int32_t)magnU16[i], nShifts)
                    - inst->avgMagnPause[i]; // Q(qMagn+nShifts)
-        tmp32no1 = WEBRTC_SPL_MUL_32_16(tmp32no1, ONE_MINUS_GAMMA_PAUSE_Q8); // Q(8+prevQMagn+nShifts)
+        tmp32no1 *= ONE_MINUS_GAMMA_PAUSE_Q8;  // Q(8+prevQMagn+nShifts)
         tmp32no1 = WEBRTC_SPL_RSHIFT_W32(tmp32no1 + (128 << nShifts), 8 + nShifts); // Q(qMagn)
       }
       tmp32no2 += tmp32no1; // Q(qMagn)

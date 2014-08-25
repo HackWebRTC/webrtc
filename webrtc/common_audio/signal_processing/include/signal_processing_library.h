@@ -85,7 +85,6 @@
     (C + (B >> 16) * A + (((uint32_t)(0x0000FFFF & B) * A) >> 16))
 
 #define WEBRTC_SPL_SAT(a, b, c)         (b > a ? a : b < c ? c : b)
-#define WEBRTC_SPL_MUL_32_16(a, b)      ((a) * (b))
 
 // Shifting with negative numbers allowed
 // Positive means left shift

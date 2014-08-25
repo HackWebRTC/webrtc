@@ -970,8 +970,7 @@ int WebRtcAecm_ProcessBlock(AecmCore_t* aecm,
     // Far end signal through channel estimate in Q8
     // How much can we shift right to preserve resolution
     tmp32no1 = echoEst32[i] - aecm->echoFilt[i];
-    aecm->echoFilt[i] += WEBRTC_SPL_RSHIFT_W32(
-                           WEBRTC_SPL_MUL_32_16(tmp32no1, 50), 8);
+    aecm->echoFilt[i] += (tmp32no1 * 50) >> 8;
 
     zeros32 = WebRtcSpl_NormW32(aecm->echoFilt[i]) + 1;
     zeros16 = WebRtcSpl_NormW16(supGain) + 1;

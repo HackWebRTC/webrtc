@@ -187,7 +187,7 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t *gainTable, // Q16
             }
         }
         numFIX = WEBRTC_SPL_LSHIFT_W32(WEBRTC_SPL_MUL_16_U16(maxGain, constMaxGain), 6); // Q14
-        numFIX -= WEBRTC_SPL_MUL_32_16((int32_t)logApprox, diffGain); // Q14
+        numFIX -= (int32_t)logApprox * diffGain;  // Q14
 
         // Calculate ratio
         // Shift |numFIX| as much as possible.
@@ -237,13 +237,13 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t *gainTable, // Q16
             {
                 tmp16 = WEBRTC_SPL_LSHIFT_W16(2, 14) - constLinApprox;
                 tmp32no2 = WEBRTC_SPL_LSHIFT_W32(1, 14) - fracPart;
-                tmp32no2 = WEBRTC_SPL_MUL_32_16(tmp32no2, tmp16);
+                tmp32no2 *= tmp16;
                 tmp32no2 = WEBRTC_SPL_RSHIFT_W32(tmp32no2, 13);
                 tmp32no2 = WEBRTC_SPL_LSHIFT_W32(1, 14) - tmp32no2;
             } else
             {
                 tmp16 = constLinApprox - WEBRTC_SPL_LSHIFT_W16(1, 14);
-                tmp32no2 = WEBRTC_SPL_MUL_32_16(fracPart, tmp16);
+                tmp32no2 = fracPart * tmp16;
                 tmp32no2 = WEBRTC_SPL_RSHIFT_W32(tmp32no2, 13);
             }
             fracPart = (uint16_t)tmp32no2;
