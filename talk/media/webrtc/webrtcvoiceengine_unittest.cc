@@ -38,6 +38,7 @@
 #include "talk/media/base/fakenetworkinterface.h"
 #include "talk/media/base/fakertp.h"
 #include "talk/media/webrtc/fakewebrtcvoiceengine.h"
+#include "talk/media/webrtc/webrtcvie.h"
 #include "talk/media/webrtc/webrtcvoiceengine.h"
 #include "talk/p2p/base/fakesession.h"
 #include "talk/session/media/channel.h"
@@ -3160,3 +3161,113 @@ TEST(WebRtcVoiceEngineTest, CoInitialize) {
   CoUninitialize();
 }
 #endif
+
+TEST_F(WebRtcVoiceEngineTestFake, ChangeCombinedAudioVideoBweOption) {
+  // Test that changing the combined_audio_video_bwe option results in the
+  // expected state changes in VoiceEngine.
+  cricket::ViEWrapper vie;
+  const int kVieCh = 667;
+
+  EXPECT_TRUE(SetupEngine());
+  cricket::WebRtcVoiceMediaChannel* media_channel =
+      static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_);
+  EXPECT_TRUE(media_channel->SetupSharedBandwidthEstimation(vie.engine(),
+                                                            kVieCh));
+  EXPECT_TRUE(media_channel->AddRecvStream(
+      cricket::StreamParams::CreateLegacy(2)));
+  int recv_ch = voe_.GetLastChannel();
+
+  // Combined BWE should not be set up yet.
+  EXPECT_EQ(NULL, voe_.GetViENetwork(recv_ch));
+  EXPECT_EQ(-1, voe_.GetVideoChannel(recv_ch));
+
+  // Enable combined BWE option - now it should be set up.
+  cricket::AudioOptions options;
+  options.combined_audio_video_bwe.Set(true);
+  EXPECT_TRUE(media_channel->SetOptions(options));
+  EXPECT_EQ(vie.network(), voe_.GetViENetwork(recv_ch));
+  EXPECT_EQ(kVieCh, voe_.GetVideoChannel(recv_ch));
+
+  // Disable combined BWE option - should be disabled again.
+  options.combined_audio_video_bwe.Set(false);
+  EXPECT_TRUE(media_channel->SetOptions(options));
+  EXPECT_EQ(NULL, voe_.GetViENetwork(recv_ch));
+  EXPECT_EQ(-1, voe_.GetVideoChannel(recv_ch));
+
+  EXPECT_TRUE(media_channel->SetupSharedBandwidthEstimation(NULL, -1));
+}
+
+TEST_F(WebRtcVoiceEngineTestFake, SetupSharedBandwidthEstimation) {
+  // Test that calling SetupSharedBandwidthEstimation() on the voice media
+  // channel results in the expected state changes in VoiceEngine.
+  cricket::ViEWrapper vie1;
+  cricket::ViEWrapper vie2;
+  const int kVieCh1 = 667;
+  const int kVieCh2 = 70;
+
+  EXPECT_TRUE(SetupEngine());
+  cricket::WebRtcVoiceMediaChannel* media_channel =
+      static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_);
+  cricket::AudioOptions options;
+  options.combined_audio_video_bwe.Set(true);
+  EXPECT_TRUE(media_channel->SetOptions(options));
+  EXPECT_TRUE(media_channel->AddRecvStream(
+      cricket::StreamParams::CreateLegacy(2)));
+  int recv_ch = voe_.GetLastChannel();
+
+  // Combined BWE should not be set up yet.
+  EXPECT_EQ(NULL, voe_.GetViENetwork(recv_ch));
+  EXPECT_EQ(-1, voe_.GetVideoChannel(recv_ch));
+
+  // Register - should be enabled.
+  EXPECT_TRUE(media_channel->SetupSharedBandwidthEstimation(vie1.engine(),
+                                                            kVieCh1));
+  EXPECT_EQ(vie1.network(), voe_.GetViENetwork(recv_ch));
+  EXPECT_EQ(kVieCh1, voe_.GetVideoChannel(recv_ch));
+
+  // Re-register - should still be enabled.
+  EXPECT_TRUE(media_channel->SetupSharedBandwidthEstimation(vie2.engine(),
+                                                            kVieCh2));
+  EXPECT_EQ(vie2.network(), voe_.GetViENetwork(recv_ch));
+  EXPECT_EQ(kVieCh2, voe_.GetVideoChannel(recv_ch));
+
+  // Unregister - should be disabled again.
+  EXPECT_TRUE(media_channel->SetupSharedBandwidthEstimation(NULL, -1));
+  EXPECT_EQ(NULL, voe_.GetViENetwork(recv_ch));
+  EXPECT_EQ(-1, voe_.GetVideoChannel(recv_ch));
+}
+
+TEST_F(WebRtcVoiceEngineTestFake, ConfigureCombinedBweForNewRecvStreams) {
+  // Test that adding receive streams after enabling combined bandwidth
+  // estimation will correctly configure each channel.
+  cricket::ViEWrapper vie;
+  const int kVieCh = 667;
+
+  EXPECT_TRUE(SetupEngine());
+  cricket::WebRtcVoiceMediaChannel* media_channel =
+      static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_);
+  EXPECT_TRUE(media_channel->SetupSharedBandwidthEstimation(vie.engine(),
+                                                            kVieCh));
+  cricket::AudioOptions options;
+  options.combined_audio_video_bwe.Set(true);
+  EXPECT_TRUE(media_channel->SetOptions(options));
+
+  static const uint32 kSsrcs[] = {1, 2, 3, 4};
+  int voe_channels[ARRAY_SIZE(kSsrcs)] = {0};
+  for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs); ++i) {
+    EXPECT_TRUE(media_channel->AddRecvStream(
+        cricket::StreamParams::CreateLegacy(kSsrcs[i])));
+    int recv_ch = media_channel->GetReceiveChannelNum(kSsrcs[i]);
+    EXPECT_NE(-1, recv_ch);
+    voe_channels[i] = recv_ch;
+    EXPECT_EQ(vie.network(), voe_.GetViENetwork(recv_ch));
+    EXPECT_EQ(kVieCh, voe_.GetVideoChannel(recv_ch));
+  }
+
+  EXPECT_TRUE(media_channel->SetupSharedBandwidthEstimation(NULL, -1));
+
+  for (unsigned int i = 0; i < ARRAY_SIZE(voe_channels); ++i) {
+    EXPECT_EQ(NULL, voe_.GetViENetwork(voe_channels[i]));
+    EXPECT_EQ(-1, voe_.GetVideoChannel(voe_channels[i]));
+  }
+}

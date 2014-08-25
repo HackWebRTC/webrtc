@@ -133,31 +133,37 @@ class MockStatsObserver : public webrtc::StatsObserver {
   size_t number_of_reports() const { return reports_.size(); }
 
   int AudioOutputLevel() {
-    return GetSsrcStatsValue(
-        webrtc::StatsReport::kStatsValueNameAudioOutputLevel);
+    return GetStatsValue(StatsReport::kStatsReportTypeSsrc,
+                         StatsReport::kStatsValueNameAudioOutputLevel);
   }
 
   int AudioInputLevel() {
-    return GetSsrcStatsValue(
-        webrtc::StatsReport::kStatsValueNameAudioInputLevel);
+    return GetStatsValue(StatsReport::kStatsReportTypeSsrc,
+                         StatsReport::kStatsValueNameAudioInputLevel);
   }
 
   int BytesReceived() {
-    return GetSsrcStatsValue(
-        webrtc::StatsReport::kStatsValueNameBytesReceived);
+    return GetStatsValue(StatsReport::kStatsReportTypeSsrc,
+                         StatsReport::kStatsValueNameBytesReceived);
   }
 
   int BytesSent() {
-    return GetSsrcStatsValue(webrtc::StatsReport::kStatsValueNameBytesSent);
+    return GetStatsValue(StatsReport::kStatsReportTypeSsrc,
+                         StatsReport::kStatsValueNameBytesSent);
+  }
+
+  int AvailableReceiveBandwidth() {
+    return GetStatsValue(StatsReport::kStatsReportTypeBwe,
+                         StatsReport::kStatsValueNameAvailableReceiveBandwidth);
   }
 
  private:
-  int GetSsrcStatsValue(StatsReport::StatsValueName name) {
+  int GetStatsValue(const std::string& type, StatsReport::StatsValueName name) {
     if (reports_.empty()) {
       return 0;
     }
     for (size_t i = 0; i < reports_.size(); ++i) {
-      if (reports_[i].type != StatsReport::kStatsReportTypeSsrc)
+      if (reports_[i].type != type)
         continue;
       webrtc::StatsReport::Values::const_iterator it =
           reports_[i].values.begin();

@@ -3311,6 +3311,26 @@ TEST_F(WebRtcSessionTest, TestNumUnsignalledRecvStreamsConstraint) {
   SetAndVerifyNumUnsignalledRecvStreams(-1, 0);
 }
 
+TEST_F(WebRtcSessionTest, TestCombinedAudioVideoBweConstraint) {
+  constraints_.reset(new FakeConstraints());
+  constraints_->AddOptional(
+      webrtc::MediaConstraintsInterface::kCombinedAudioVideoBwe,
+      true);
+  Init(NULL);
+  mediastream_signaling_.SendAudioVideoStream1();
+  SessionDescriptionInterface* offer = CreateOffer();
+
+  SetLocalDescriptionWithoutError(offer);
+
+  voice_channel_ = media_engine_->GetVoiceChannel(0);
+
+  ASSERT_TRUE(voice_channel_ != NULL);
+  cricket::AudioOptions audio_options;
+  EXPECT_TRUE(voice_channel_->GetOptions(&audio_options));
+  EXPECT_TRUE(
+      audio_options.combined_audio_video_bwe.GetWithDefaultIfUnset(false));
+}
+
 // Tests that we can renegotiate new media content with ICE candidates in the
 // new remote SDP.
 TEST_F(WebRtcSessionTest, TestRenegotiateNewMediaWithCandidatesInSdp) {

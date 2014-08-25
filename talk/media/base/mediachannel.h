@@ -182,6 +182,7 @@ struct AudioOptions {
     recording_sample_rate.SetFrom(change.recording_sample_rate);
     playout_sample_rate.SetFrom(change.playout_sample_rate);
     dscp.SetFrom(change.dscp);
+    combined_audio_video_bwe.SetFrom(change.combined_audio_video_bwe);
   }
 
   bool operator==(const AudioOptions& o) const {
@@ -207,7 +208,8 @@ struct AudioOptions {
         rx_agc_limiter == o.rx_agc_limiter &&
         recording_sample_rate == o.recording_sample_rate &&
         playout_sample_rate == o.playout_sample_rate &&
-        dscp == o.dscp;
+        dscp == o.dscp &&
+        combined_audio_video_bwe == o.combined_audio_video_bwe;
   }
 
   std::string ToString() const {
@@ -238,6 +240,7 @@ struct AudioOptions {
     ost << ToStringIfSet("recording_sample_rate", recording_sample_rate);
     ost << ToStringIfSet("playout_sample_rate", playout_sample_rate);
     ost << ToStringIfSet("dscp", dscp);
+    ost << ToStringIfSet("combined_audio_video_bwe", combined_audio_video_bwe);
     ost << "}";
     return ost.str();
   }
@@ -275,6 +278,8 @@ struct AudioOptions {
   Settable<uint32> playout_sample_rate;
   // Set DSCP value for packet sent from audio channel.
   Settable<bool> dscp;
+  // Enable combined audio+bandwidth BWE.
+  Settable<bool> combined_audio_video_bwe;
 };
 
 // Options that can be applied to a VideoMediaChannel or a VideoMediaEngine.

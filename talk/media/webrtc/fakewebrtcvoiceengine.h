@@ -43,10 +43,7 @@
 #ifdef USE_WEBRTC_DEV_BRANCH
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #endif
-
-namespace webrtc {
-class ViENetwork;
-}
+#include "webrtc/video_engine/include/vie_network.h"
 
 namespace cricket {
 
@@ -316,6 +313,8 @@ class FakeWebRtcVoiceEngine
   }
   webrtc::ViENetwork* GetViENetwork(int channel) {
     WEBRTC_ASSERT_CHANNEL(channel);
+    // WARNING: This pointer is for verification purposes only. Calling
+    // functions on it may result in undefined behavior!
     return channels_[channel]->vie_network;
   }
   int GetVideoChannel(int channel) {
@@ -999,6 +998,11 @@ class FakeWebRtcVoiceEngine
     WEBRTC_CHECK_CHANNEL(channel);
     channels_[channel]->vie_network = vie_network;
     channels_[channel]->video_channel = video_channel;
+    if (vie_network) {
+      // The interface is released here to avoid leaks. A test should not
+      // attempt to call functions on the interface stored in the channel.
+      vie_network->Release();
+    }
     return 0;
   }
 

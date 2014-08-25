@@ -117,6 +117,8 @@ class MediaConstraintsInterface {
       // googSuspendBelowMinBitrate
   static const char kNumUnsignalledRecvStreams[];
       // googNumUnsignalledRecvStreams
+  // Constraint to enable combined audio+video bandwidth estimation.
+  static const char kCombinedAudioVideoBwe[];  // googCombinedAudioVideoBwe
   static const char kScreencastMinBitrate[];  // googScreencastMinBitrate
   static const char kCpuOveruseDetection[];  // googCpuOveruseDetection
   static const char kCpuUnderuseThreshold[];  // googCpuUnderuseThreshold

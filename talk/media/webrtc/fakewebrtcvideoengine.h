@@ -335,6 +335,7 @@ class FakeWebRtcVideoEngine
     unsigned int send_nack_bitrate_;
     unsigned int send_bandwidth_;
     unsigned int receive_bandwidth_;
+    // Bandwidth to deduct from estimated uplink capacity.
     unsigned int reserved_transmit_bitrate_bps_;
     bool suspend_below_min_bitrate_;
     webrtc::CpuOveruseObserver* overuse_observer_;

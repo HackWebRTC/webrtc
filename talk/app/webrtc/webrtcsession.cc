@@ -471,13 +471,15 @@ WebRtcSession::WebRtcSession(
 }
 
 WebRtcSession::~WebRtcSession() {
-  if (voice_channel_.get()) {
-    SignalVoiceChannelDestroyed();
-    channel_manager_->DestroyVoiceChannel(voice_channel_.release());
-  }
+  // Destroy video_channel_ first since it may have a pointer to the
+  // voice_channel_.
   if (video_channel_.get()) {
     SignalVideoChannelDestroyed();
     channel_manager_->DestroyVideoChannel(video_channel_.release());
+  }
+  if (voice_channel_.get()) {
+    SignalVoiceChannelDestroyed();
+    channel_manager_->DestroyVoiceChannel(voice_channel_.release());
   }
   if (data_channel_.get()) {
     SignalDataChannelDestroyed();
@@ -609,6 +611,10 @@ bool WebRtcSession::Initialize(
     video_options_.video_highest_bitrate.Set(
         cricket::VideoOptions::HIGH);
   }
+
+  SetOptionFromOptionalConstraint(constraints,
+      MediaConstraintsInterface::kCombinedAudioVideoBwe,
+      &audio_options_.combined_audio_video_bwe);
 
   const cricket::VideoCodec default_codec(
       JsepSessionDescription::kDefaultVideoCodecId,
@@ -1425,16 +1431,8 @@ bool WebRtcSession::UseCandidate(
 
 void WebRtcSession::RemoveUnusedChannelsAndTransports(
     const SessionDescription* desc) {
-  const cricket::ContentInfo* voice_info =
-      cricket::GetFirstAudioContent(desc);
-  if ((!voice_info || voice_info->rejected) && voice_channel_) {
-    mediastream_signaling_->OnAudioChannelClose();
-    SignalVoiceChannelDestroyed();
-    const std::string content_name = voice_channel_->content_name();
-    channel_manager_->DestroyVoiceChannel(voice_channel_.release());
-    DestroyTransportProxy(content_name);
-  }
-
+  // Destroy video_channel_ first since it may have a pointer to the
+  // voice_channel_.
   const cricket::ContentInfo* video_info =
       cricket::GetFirstVideoContent(desc);
   if ((!video_info || video_info->rejected) && video_channel_) {
@@ -1442,6 +1440,16 @@ void WebRtcSession::RemoveUnusedChannelsAndTransports(
     SignalVideoChannelDestroyed();
     const std::string content_name = video_channel_->content_name();
     channel_manager_->DestroyVideoChannel(video_channel_.release());
+    DestroyTransportProxy(content_name);
+  }
+
+  const cricket::ContentInfo* voice_info =
+      cricket::GetFirstAudioContent(desc);
+  if ((!voice_info || voice_info->rejected) && voice_channel_) {
+    mediastream_signaling_->OnAudioChannelClose();
+    SignalVoiceChannelDestroyed();
+    const std::string content_name = voice_channel_->content_name();
+    channel_manager_->DestroyVoiceChannel(voice_channel_.release());
     DestroyTransportProxy(content_name);
   }
 

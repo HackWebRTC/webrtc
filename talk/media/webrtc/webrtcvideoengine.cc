@@ -1572,7 +1572,19 @@ WebRtcVideoMediaChannel::WebRtcVideoMediaChannel(
 
 bool WebRtcVideoMediaChannel::Init() {
   const uint32 ssrc_key = 0;
-  return CreateChannel(ssrc_key, MD_SENDRECV, &default_channel_id_);
+  bool result = CreateChannel(ssrc_key, MD_SENDRECV, &default_channel_id_);
+  if (!result) {
+    return false;
+  }
+  if (voice_channel_) {
+    WebRtcVoiceMediaChannel* voice_channel =
+        static_cast<WebRtcVoiceMediaChannel*>(voice_channel_);
+    if (!voice_channel->SetupSharedBandwidthEstimation(
+        engine()->vie()->engine(), default_channel_id_)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 WebRtcVideoMediaChannel::~WebRtcVideoMediaChannel() {
@@ -1580,6 +1592,12 @@ WebRtcVideoMediaChannel::~WebRtcVideoMediaChannel() {
   SetSend(send);
   const bool render = false;
   SetRender(render);
+
+  if (voice_channel_) {
+    WebRtcVoiceMediaChannel* voice_channel =
+        static_cast<WebRtcVoiceMediaChannel*>(voice_channel_);
+    voice_channel->SetupSharedBandwidthEstimation(NULL, -1);
+  }
 
   while (!send_channels_.empty()) {
     if (!DeleteSendChannel(send_channels_.begin()->first)) {
