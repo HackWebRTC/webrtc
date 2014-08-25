@@ -693,7 +693,7 @@ static int TimeToFrequencyDomain(AecmCore_t* aecm,
       tmp16no2 = WEBRTC_SPL_ABS_W16(freq_signal[i].imag);
       tmp32no1 = WEBRTC_SPL_MUL_16_16(tmp16no1, tmp16no1);
       tmp32no2 = WEBRTC_SPL_MUL_16_16(tmp16no2, tmp16no2);
-      tmp32no2 = WEBRTC_SPL_ADD_SAT_W32(tmp32no1, tmp32no2);
+      tmp32no2 = WebRtcSpl_AddSatW32(tmp32no1, tmp32no2);
       tmp32no1 = WebRtcSpl_SqrtFloor(tmp32no2);
 
       freq_signal_abs[i] = (uint16_t)tmp32no1;

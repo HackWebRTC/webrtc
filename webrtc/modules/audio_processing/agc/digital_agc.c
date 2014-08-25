@@ -755,14 +755,14 @@ int16_t WebRtcAgc_ProcessVad(AgcVad_t *state, // (i) VAD state
 
     // update long-term estimate of mean energy level (Q10)
     tmp32 = WEBRTC_SPL_MUL_16_16(state->meanLongTerm, state->counter) + (int32_t)dB;
-    state->meanLongTerm = WebRtcSpl_DivW32W16ResW16(tmp32,
-                                                    WEBRTC_SPL_ADD_SAT_W16(state->counter, 1));
+    state->meanLongTerm = WebRtcSpl_DivW32W16ResW16(
+        tmp32, WebRtcSpl_AddSatW16(state->counter, 1));
 
     // update long-term estimate of variance in energy level (Q8)
     tmp32 = WEBRTC_SPL_RSHIFT_W32(WEBRTC_SPL_MUL_16_16(dB, dB), 12);
     tmp32 += WEBRTC_SPL_MUL(state->varianceLongTerm, state->counter);
-    state->varianceLongTerm = WebRtcSpl_DivW32W16(tmp32,
-                                                  WEBRTC_SPL_ADD_SAT_W16(state->counter, 1));
+    state->varianceLongTerm = WebRtcSpl_DivW32W16(
+        tmp32, WebRtcSpl_AddSatW16(state->counter, 1));
 
     // update long-term estimate of standard deviation in energy level (Q10)
     tmp32 = WEBRTC_SPL_MUL_16_16(state->meanLongTerm, state->meanLongTerm);

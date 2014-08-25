@@ -513,7 +513,7 @@ void WebRtcNsx_SynthesisUpdateNeon(NsxInst_t* inst,
       "vmull.s16 q11, d24, d22\n\t"
       // tmp16b = WebRtcSpl_SatW32ToW16(tmp32); // Q0
       "vqrshrn.s32 d22, q11, #13\n\t"
-      // inst->synthesisBuffer[i] = WEBRTC_SPL_ADD_SAT_W16(
+      // inst->synthesisBuffer[i] = WebRtcSpl_AddSatW16(
       //     inst->synthesisBuffer[i], tmp16b); // Q0
       "vqadd.s16 d25, d22\n\t"
       "vst1.16 d25, [%[ptr_syn]]!\n\t"
@@ -530,7 +530,7 @@ void WebRtcNsx_SynthesisUpdateNeon(NsxInst_t* inst,
       "vmull.s16 q13, d24, d26\n\t"
       // tmp16b = WebRtcSpl_SatW32ToW16(tmp32); // Q0
       "vqrshrn.s32 d26, q13, #13\n\t"
-      // inst->synthesisBuffer[i] = WEBRTC_SPL_ADD_SAT_W16(
+      // inst->synthesisBuffer[i] = WebRtcSpl_AddSatW16(
       //     inst->synthesisBuffer[i], tmp16b); // Q0
       "vqadd.s16 d28, d26\n\t"
       "vst1.16 d28, [%[ptr_syn]]!\n\t"

@@ -1067,8 +1067,8 @@ void WebRtcAecm_UpdateChannel(AecmCore_t * aecm,
                 {
                     tmp32no2 = WEBRTC_SPL_SHIFT_W32(tmp32no2, shift2ResChan);
                 }
-                aecm->channelAdapt32[i] = WEBRTC_SPL_ADD_SAT_W32(aecm->channelAdapt32[i],
-                        tmp32no2);
+                aecm->channelAdapt32[i] =
+                    WebRtcSpl_AddSatW32(aecm->channelAdapt32[i], tmp32no2);
                 if (aecm->channelAdapt32[i] < 0)
                 {
                     // We can never have negative channel gain

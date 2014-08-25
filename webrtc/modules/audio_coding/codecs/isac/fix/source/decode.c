@@ -134,7 +134,7 @@ int16_t WebRtcIsacfix_DecodeImpl(int16_t       *signal_out16,
       /* ---- Add-overlap ---- */
       WebRtcSpl_GetHanningWindow( overlapWin, RECOVERY_OVERLAP );
       for( k = 0; k < RECOVERY_OVERLAP; k++ )
-        Vector_Word16_1[k] = WEBRTC_SPL_ADD_SAT_W16(
+        Vector_Word16_1[k] = WebRtcSpl_AddSatW16(
             (int16_t)WEBRTC_SPL_MUL_16_16_RSFT( (ISACdec_obj->plcstr_obj).overlapLP[k], overlapWin[RECOVERY_OVERLAP - k - 1], 14),
             (int16_t)WEBRTC_SPL_MUL_16_16_RSFT( Vector_Word16_1[k], overlapWin[k], 14) );
 

@@ -51,32 +51,32 @@ void WebRtcIsacfix_AllpassFilter2FixDec16C(
     in_out = data_ch1[n];
     a = WEBRTC_SPL_MUL_16_16(factor_ch1[0], in_out);  // Q15 * Q0 = Q15
     a <<= 1;  // Q15 -> Q16
-    b = WEBRTC_SPL_ADD_SAT_W32(a, state0_ch1);
+    b = WebRtcSpl_AddSatW32(a, state0_ch1);
     a = WEBRTC_SPL_MUL_16_16(-factor_ch1[0], (int16_t) (b >> 16));  // Q15
-    state0_ch1 = WEBRTC_SPL_ADD_SAT_W32(a << 1, (uint32_t)in_out << 16);  // Q16
+    state0_ch1 = WebRtcSpl_AddSatW32(a << 1, (uint32_t)in_out << 16);  // Q16
     in_out = (int16_t) (b >> 16);  // Save as Q0
 
     a = WEBRTC_SPL_MUL_16_16(factor_ch1[1], in_out);  // Q15 * Q0 = Q15
     a <<= 1; // Q15 -> Q16
-    b = WEBRTC_SPL_ADD_SAT_W32(a, state1_ch1);  // Q16
+    b = WebRtcSpl_AddSatW32(a, state1_ch1);  // Q16
     a = WEBRTC_SPL_MUL_16_16(-factor_ch1[1], (int16_t) (b >> 16));  // Q15
-    state1_ch1 = WEBRTC_SPL_ADD_SAT_W32(a << 1, (uint32_t)in_out << 16);  // Q16
+    state1_ch1 = WebRtcSpl_AddSatW32(a << 1, (uint32_t)in_out << 16);  // Q16
     data_ch1[n] = (int16_t) (b >> 16);  // Save as Q0
 
     // Process channel 2:
     in_out = data_ch2[n];
     a = WEBRTC_SPL_MUL_16_16(factor_ch2[0], in_out);  // Q15 * Q0 = Q15
     a <<= 1;  // Q15 -> Q16
-    b = WEBRTC_SPL_ADD_SAT_W32(a, state0_ch2);  // Q16
+    b = WebRtcSpl_AddSatW32(a, state0_ch2);  // Q16
     a = WEBRTC_SPL_MUL_16_16(-factor_ch2[0], (int16_t) (b >> 16));  // Q15
-    state0_ch2 = WEBRTC_SPL_ADD_SAT_W32(a << 1, (uint32_t)in_out << 16);  // Q16
+    state0_ch2 = WebRtcSpl_AddSatW32(a << 1, (uint32_t)in_out << 16);  // Q16
     in_out = (int16_t) (b >> 16);  // Save as Q0
 
     a = WEBRTC_SPL_MUL_16_16(factor_ch2[1], in_out);  // Q15 * Q0 = Q15
     a <<= 1;  // Q15 -> Q16
-    b = WEBRTC_SPL_ADD_SAT_W32(a, state1_ch2);  // Q16
+    b = WebRtcSpl_AddSatW32(a, state1_ch2);  // Q16
     a = WEBRTC_SPL_MUL_16_16(-factor_ch2[1], (int16_t) (b >> 16));  // Q15
-    state1_ch2 = WEBRTC_SPL_ADD_SAT_W32(a << 1, (uint32_t)in_out << 16);  // Q16
+    state1_ch2 = WebRtcSpl_AddSatW32(a << 1, (uint32_t)in_out << 16);  // Q16
     data_ch2[n] = (int16_t) (b >> 16);  // Save as Q0
   }
 

@@ -270,7 +270,7 @@ static int TimeToFrequencyDomain(AecmCore_t* aecm,
       tmp16no2 = WEBRTC_SPL_ABS_W16(freq_signal[i].imag);
       tmp32no1 = WEBRTC_SPL_MUL_16_16(tmp16no1, tmp16no1);
       tmp32no2 = WEBRTC_SPL_MUL_16_16(tmp16no2, tmp16no2);
-      tmp32no2 = WEBRTC_SPL_ADD_SAT_W32(tmp32no1, tmp32no2);
+      tmp32no2 = WebRtcSpl_AddSatW32(tmp32no1, tmp32no2);
 #endif // WEBRTC_ARCH_ARM_V7
       tmp32no1 = WebRtcSpl_SqrtFloor(tmp32no2);
 
@@ -784,8 +784,8 @@ static void ComfortNoise(AecmCore_t* aecm,
 
   for (i = 0; i < PART_LEN1; i++)
   {
-    out[i].real = WEBRTC_SPL_ADD_SAT_W16(out[i].real, uReal[i]);
-    out[i].imag = WEBRTC_SPL_ADD_SAT_W16(out[i].imag, uImag[i]);
+    out[i].real = WebRtcSpl_AddSatW16(out[i].real, uReal[i]);
+    out[i].imag = WebRtcSpl_AddSatW16(out[i].imag, uImag[i]);
   }
 }
 

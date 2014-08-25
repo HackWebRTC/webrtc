@@ -59,13 +59,13 @@ static int16_t plc_filterma_Fast(
 
     for (j = 0;j < Blen; j++)
     {
-      o = WEBRTC_SPL_ADD_SAT_W32( o, WEBRTC_SPL_MUL_16_16( *b_ptr, *x_ptr) );
+      o = WebRtcSpl_AddSatW32(o, WEBRTC_SPL_MUL_16_16(*b_ptr, *x_ptr));
       b_ptr++;
       x_ptr--;
     }
 
     /* to round off correctly */
-    o = WEBRTC_SPL_ADD_SAT_W32( o, WEBRTC_SPL_LSHIFT_W32( 1, (rshift-1) ) );
+    o = WebRtcSpl_AddSatW32(o, 1 << (rshift - 1));
 
     /* saturate according to the domain of the filter coefficients */
     o = WEBRTC_SPL_SAT((int32_t)lim, o, (int32_t)-lim);
@@ -325,7 +325,7 @@ int16_t WebRtcIsacfix_DecodePlcImpl(int16_t *signal_out16,
         corr = 0;
         for( k = 0; k < lag0; k++ )
         {
-          corr = WEBRTC_SPL_ADD_SAT_W32( corr, WEBRTC_SPL_ABS_W32(
+          corr = WebRtcSpl_AddSatW32(corr, WEBRTC_SPL_ABS_W32(
               WebRtcSpl_SubSatW16(
                   (ISACdec_obj->plcstr_obj).lastPitchLP[k],
                   (ISACdec_obj->plcstr_obj).prevPitchInvIn[
@@ -756,10 +756,8 @@ int16_t WebRtcIsacfix_DecodePlcImpl(int16_t *signal_out16,
         }
 
         /* ------ Sum the noisy and periodic signals  ------ */
-        Vector_Word16_1[i] = (int16_t)WEBRTC_SPL_ADD_SAT_W16(
-            wNoisyLP, wPriodicLP );
-        Vector_Word32_2[i] = (int32_t)WEBRTC_SPL_ADD_SAT_W32(
-            wNoisyHP, wPriodicHP );
+        Vector_Word16_1[i] = WebRtcSpl_AddSatW16(wNoisyLP, wPriodicLP);
+        Vector_Word32_2[i] = WebRtcSpl_AddSatW32(wNoisyHP, wPriodicHP);
       }
     }
   }

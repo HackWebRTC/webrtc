@@ -503,8 +503,8 @@ static void SynthesisUpdateC(NsxInst_t* inst,
     tmp32 = WEBRTC_SPL_MUL_16_16_RSFT_WITH_ROUND(tmp16a, gain_factor, 13); // Q0
     // Down shift with rounding
     tmp16b = WebRtcSpl_SatW32ToW16(tmp32); // Q0
-    inst->synthesisBuffer[i] = WEBRTC_SPL_ADD_SAT_W16(inst->synthesisBuffer[i],
-                                                      tmp16b); // Q0
+    inst->synthesisBuffer[i] = WebRtcSpl_AddSatW16(inst->synthesisBuffer[i],
+                                                   tmp16b); // Q0
   }
 
   // read out fully processed segment
