@@ -109,6 +109,8 @@
 extern "C" {
 #endif
 
+#define WEBRTC_SPL_MEMCPY_W8(v1, v2, length) \
+  memcpy(v1, v2, (length) * sizeof(char))
 #define WEBRTC_SPL_MEMCPY_W16(v1, v2, length) \
   memcpy(v1, v2, (length) * sizeof(int16_t))
 
