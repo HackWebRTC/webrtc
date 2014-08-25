@@ -151,9 +151,6 @@ class DelegatingWebRtcMediaEngine : public cricket::MediaEngineInterface {
   virtual bool SetLocalMonitor(bool enable) OVERRIDE {
     return delegate_->SetLocalMonitor(enable);
   }
-  virtual bool SetLocalRenderer(VideoRenderer* renderer) OVERRIDE {
-    return delegate_->SetLocalRenderer(renderer);
-  }
   virtual const std::vector<AudioCodec>& audio_codecs() OVERRIDE {
     return delegate_->audio_codecs();
   }
