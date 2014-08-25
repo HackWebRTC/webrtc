@@ -78,11 +78,6 @@ FILES = {
   '.gn': None,
   'tools/find_depot_tools.py': None,
   'third_party/BUILD.gn': None,
-
-  # This can be removed after https://codereview.chromium.org/357623003/ is
-  # landed and WebRTC is refactored+rolled past that Chromium revision.
-  'base/debug/sanitizer_options.cc': (
-      'tools/sanitizer_options/sanitizer_options.cc'),
 }
 
 CHROMIUM_CHECKOUT = os.path.join('chromium', 'src')
