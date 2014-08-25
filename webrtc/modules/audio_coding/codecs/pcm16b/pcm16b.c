@@ -12,12 +12,11 @@
 #include "pcm16b.h"
 
 #include <stdlib.h>
+#ifdef WEBRTC_ARCH_BIG_ENDIAN
+#include <string.h>
+#endif
 
 #include "typedefs.h"
-
-#ifdef WEBRTC_ARCH_BIG_ENDIAN
-#include "signal_processing_library.h"
-#endif
 
 #define HIGHEND 0xFF00
 #define LOWEND    0xFF
@@ -25,19 +24,19 @@
 
 
 /* Encoder with int16_t Output */
-int16_t WebRtcPcm16b_EncodeW16(const int16_t* speechIn16b,
-                               int16_t len,
-                               int16_t* speechOut16b)
+int16_t WebRtcPcm16b_EncodeW16(int16_t *speechIn16b,
+                               int16_t length_samples,
+                               int16_t *speechOut16b)
 {
 #ifdef WEBRTC_ARCH_BIG_ENDIAN
-    WEBRTC_SPL_MEMCPY_W16(speechOut16b, speechIn16b, len);
+    memcpy(speechOut16b, speechIn16b, length_samples * sizeof(int16_t));
 #else
     int i;
-    for (i=0;i<len;i++) {
+    for (i = 0; i < length_samples; i++) {
         speechOut16b[i]=(((uint16_t)speechIn16b[i])>>8)|((((uint16_t)speechIn16b[i])<<8)&0xFF00);
     }
 #endif
-    return(len<<1);
+    return length_samples << 1;
 }
 
 
@@ -64,15 +63,15 @@ int16_t WebRtcPcm16b_Encode(int16_t *speech16b,
 /* Decoder with int16_t Input instead of char when the int16_t Encoder is used */
 int16_t WebRtcPcm16b_DecodeW16(void *inst,
                                int16_t *speechIn16b,
-                               int16_t len,
+                               int16_t length_bytes,
                                int16_t *speechOut16b,
                                int16_t* speechType)
 {
 #ifdef WEBRTC_ARCH_BIG_ENDIAN
-    WEBRTC_SPL_MEMCPY_W8(speechOut16b, speechIn16b, ((len*sizeof(int16_t)+1)>>1));
+    memcpy(speechOut16b, speechIn16b, length_bytes);
 #else
     int i;
-    int samples=len>>1;
+    int samples = length_bytes >> 1;
 
     for (i=0;i<samples;i++) {
         speechOut16b[i]=(((uint16_t)speechIn16b[i])>>8)|(((uint16_t)(speechIn16b[i]&0xFF))<<8);
@@ -84,7 +83,7 @@ int16_t WebRtcPcm16b_DecodeW16(void *inst,
     // Avoid warning.
     (void)(inst = NULL);
 
-    return(len>>1);
+    return length_bytes >> 1;
 }
 
 /* "old" version of the decoder that uses char as input (not used in NetEq any more) */
