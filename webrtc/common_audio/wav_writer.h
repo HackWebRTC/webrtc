@@ -34,6 +34,10 @@ class WavFile {
   // interleaved channels.
   void WriteSamples(const float* samples, size_t num_samples);
 
+  int sample_rate() const { return sample_rate_; }
+  int num_channels() const { return num_channels_; }
+  uint32_t num_samples() const { return num_samples_; }
+
  private:
   void WriteSamples(const int16_t* samples, size_t num_samples);
   void Close();
@@ -57,6 +61,9 @@ void rtc_WavClose(rtc_WavFile* wf);
 void rtc_WavWriteSamples(rtc_WavFile* wf,
                          const float* samples,
                          size_t num_samples);
+int rtc_WavSampleRate(const rtc_WavFile* wf);
+int rtc_WavNumChannels(const rtc_WavFile* wf);
+uint32_t rtc_WavNumSamples(const rtc_WavFile* wf);
 
 #ifdef __cplusplus
 }  // extern "C"

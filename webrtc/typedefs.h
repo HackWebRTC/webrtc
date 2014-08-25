@@ -109,4 +109,15 @@ typedef unsigned __int64    uint64_t;
 #endif
 #endif  // WARN_UNUSED_RESULT
 
+// Put after a variable that might not be used, to prevent compiler warnings:
+//   int result UNUSED = DoSomething();
+//   assert(result == 17);
+#ifndef UNUSED
+#ifdef __GNUC__
+#define UNUSED __attribute__((unused))
+#else
+#define UNUSED
+#endif
+#endif
+
 #endif  // WEBRTC_TYPEDEFS_H_

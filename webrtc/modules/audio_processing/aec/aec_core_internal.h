@@ -11,10 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_CORE_INTERNAL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_CORE_INTERNAL_H_
 
-#ifdef WEBRTC_AEC_DEBUG_DUMP
-#include <stdio.h>
-#endif
-
+#include "webrtc/common_audio/wav_writer.h"
 #include "webrtc/modules/audio_processing/aec/aec_common.h"
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
 #include "webrtc/modules/audio_processing/utility/ring_buffer.h"
@@ -141,11 +138,19 @@ struct AecCore {
   int num_partitions;
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP
+  // Sequence number of this AEC instance, so that different instances can
+  // choose different dump file names.
+  int instance_index;
+
+  // Number of times we've restarted dumping; used to pick new dump file names
+  // each time.
+  int debug_dump_count;
+
   RingBuffer* far_time_buf;
-  FILE* farFile;
-  FILE* nearFile;
-  FILE* outFile;
-  FILE* outLinearFile;
+  rtc_WavFile* farFile;
+  rtc_WavFile* nearFile;
+  rtc_WavFile* outFile;
+  rtc_WavFile* outLinearFile;
 #endif
 };
 

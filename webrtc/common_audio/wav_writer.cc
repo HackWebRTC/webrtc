@@ -101,3 +101,15 @@ void rtc_WavWriteSamples(rtc_WavFile* wf,
                          size_t num_samples) {
   reinterpret_cast<webrtc::WavFile*>(wf)->WriteSamples(samples, num_samples);
 }
+
+int rtc_WavSampleRate(const rtc_WavFile* wf) {
+  return reinterpret_cast<const webrtc::WavFile*>(wf)->sample_rate();
+}
+
+int rtc_WavNumChannels(const rtc_WavFile* wf) {
+  return reinterpret_cast<const webrtc::WavFile*>(wf)->num_channels();
+}
+
+uint32_t rtc_WavNumSamples(const rtc_WavFile* wf) {
+  return reinterpret_cast<const webrtc::WavFile*>(wf)->num_samples();
+}

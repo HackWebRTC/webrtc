@@ -158,13 +158,6 @@ int32_t WebRtcAec_Create(void** aecInst) {
   aecpc->lastError = 0;
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP
-  aecpc->far_pre_buf_s16 =
-      WebRtc_CreateBuffer(PART_LEN2 + kResamplerBufferSize, sizeof(int16_t));
-  if (!aecpc->far_pre_buf_s16) {
-    WebRtcAec_Free(aecpc);
-    aecpc = NULL;
-    return -1;
-  }
   {
     char filename[64];
     sprintf(filename, "aec_buf%d.dat", webrtc_aec_instance_count);
@@ -190,7 +183,6 @@ int32_t WebRtcAec_Free(void* aecInst) {
   WebRtc_FreeBuffer(aecpc->far_pre_buf);
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP
-  WebRtc_FreeBuffer(aecpc->far_pre_buf_s16);
   fclose(aecpc->bufFile);
   fclose(aecpc->skewFile);
   fclose(aecpc->delayFile);
@@ -281,14 +273,6 @@ int32_t WebRtcAec_Init(void* aecInst, int32_t sampFreq, int32_t scSampFreq) {
     return -1;
   }
 
-#ifdef WEBRTC_AEC_DEBUG_DUMP
-  if (WebRtc_InitBuffer(aecpc->far_pre_buf_s16) == -1) {
-    aecpc->lastError = AEC_UNSPECIFIED_ERROR;
-    return -1;
-  }
-  WebRtc_MoveReadPtr(aecpc->far_pre_buf_s16, -PART_LEN);  // Start overlap.
-#endif
-
   return 0;
 }
 
@@ -332,10 +316,6 @@ int32_t WebRtcAec_BufferFarend(void* aecInst,
   WebRtcAec_SetSystemDelay(aecpc->aec,
                            WebRtcAec_system_delay(aecpc->aec) + newNrOfSamples);
 
-#ifdef WEBRTC_AEC_DEBUG_DUMP
-  WebRtc_WriteBuffer(
-      aecpc->far_pre_buf_s16, farend_ptr, (size_t)newNrOfSamples);
-#endif
   // Write the time-domain data to |far_pre_buf|.
   WebRtc_WriteBuffer(aecpc->far_pre_buf, farend_ptr, (size_t)newNrOfSamples);
 
@@ -347,17 +327,14 @@ int32_t WebRtcAec_BufferFarend(void* aecInst,
       float tmp[PART_LEN2];
       WebRtc_ReadBuffer(aecpc->far_pre_buf, (void**)&ptmp, tmp, PART_LEN2);
       WebRtcAec_BufferFarendPartition(aecpc->aec, ptmp);
+#ifdef WEBRTC_AEC_DEBUG_DUMP
+      WebRtc_WriteBuffer(
+          WebRtcAec_far_time_buf(aecpc->aec), &ptmp[PART_LEN], 1);
+#endif
     }
 
     // Rewind |far_pre_buf| PART_LEN samples for overlap before continuing.
     WebRtc_MoveReadPtr(aecpc->far_pre_buf, -PART_LEN);
-#ifdef WEBRTC_AEC_DEBUG_DUMP
-    WebRtc_ReadBuffer(
-        aecpc->far_pre_buf_s16, (void**)&farend_ptr, new_farend, PART_LEN2);
-    WebRtc_WriteBuffer(
-        WebRtcAec_far_time_buf(aecpc->aec), &farend_ptr[PART_LEN], 1);
-    WebRtc_MoveReadPtr(aecpc->far_pre_buf_s16, -PART_LEN);
-#endif
   }
 
   return 0;

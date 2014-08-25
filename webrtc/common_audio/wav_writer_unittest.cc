@@ -25,10 +25,14 @@ static const float kSamples[] = {0.0, 10.0, 4e4, -1e9};
 // Write a tiny WAV file with the C++ interface and verify the result.
 TEST(WavWriterTest, CPP) {
   const std::string outfile = webrtc::test::OutputPath() + "wavtest1.wav";
-  static const int kNumSamples = 3;
+  static const uint32_t kNumSamples = 3;
   {
     webrtc::WavFile w(outfile, 14099, 1);
+    EXPECT_EQ(14099, w.sample_rate());
+    EXPECT_EQ(1, w.num_channels());
+    EXPECT_EQ(0u, w.num_samples());
     w.WriteSamples(kSamples, kNumSamples);
+    EXPECT_EQ(kNumSamples, w.num_samples());
   }
   static const uint8_t kExpectedContents[] = {
     'R', 'I', 'F', 'F',
@@ -64,9 +68,14 @@ TEST(WavWriterTest, CPP) {
 TEST(WavWriterTest, C) {
   const std::string outfile = webrtc::test::OutputPath() + "wavtest2.wav";
   rtc_WavFile *w = rtc_WavOpen(outfile.c_str(), 11904, 2);
-  static const int kNumSamples = 4;
+  EXPECT_EQ(11904, rtc_WavSampleRate(w));
+  EXPECT_EQ(2, rtc_WavNumChannels(w));
+  EXPECT_EQ(0u, rtc_WavNumSamples(w));
+  static const uint32_t kNumSamples = 4;
   rtc_WavWriteSamples(w, &kSamples[0], 2);
+  EXPECT_EQ(2u, rtc_WavNumSamples(w));
   rtc_WavWriteSamples(w, &kSamples[2], kNumSamples - 2);
+  EXPECT_EQ(kNumSamples, rtc_WavNumSamples(w));
   rtc_WavClose(w);
   static const uint8_t kExpectedContents[] = {
     'R', 'I', 'F', 'F',
@@ -104,9 +113,9 @@ TEST(WavWriterTest, LargeFile) {
   std::string outfile = webrtc::test::OutputPath() + "wavtest3.wav";
   static const int kSampleRate = 8000;
   static const int kNumChannels = 2;
-  static const int kNumSamples = 3 * kSampleRate * kNumChannels;
+  static const uint32_t kNumSamples = 3 * kSampleRate * kNumChannels;
   float samples[kNumSamples];
-  for (int i = 0; i < kNumSamples; i += kNumChannels) {
+  for (uint32_t i = 0; i < kNumSamples; i += kNumChannels) {
     // A nice periodic beeping sound.
     static const double kToneHz = 440;
     const double t = static_cast<double>(i) / (kNumChannels * kSampleRate);
@@ -117,7 +126,11 @@ TEST(WavWriterTest, LargeFile) {
   }
   {
     webrtc::WavFile w(outfile, kSampleRate, kNumChannels);
+    EXPECT_EQ(kSampleRate, w.sample_rate());
+    EXPECT_EQ(kNumChannels, w.num_channels());
+    EXPECT_EQ(0u, w.num_samples());
     w.WriteSamples(samples, kNumSamples);
+    EXPECT_EQ(kNumSamples, w.num_samples());
   }
   EXPECT_EQ(sizeof(int16_t) * kNumSamples + webrtc::kWavHeaderSize,
             webrtc::test::GetFileSize(outfile));
