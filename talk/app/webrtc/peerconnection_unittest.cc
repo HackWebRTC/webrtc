@@ -1044,6 +1044,28 @@ class P2PTestConductor : public testing::Test {
     }
   }
 
+  // Wait until 'size' bytes of audio has been seen by the receiver, on the
+  // first audio stream.
+  void WaitForAudioData(int size) {
+    StreamCollectionInterface* local_streams =
+        initializing_client()->local_streams();
+    ASSERT_GT(local_streams->count(), 0u);
+    ASSERT_GT(local_streams->at(0)->GetAudioTracks().size(), 0u);
+    MediaStreamTrackInterface* local_audio_track =
+        local_streams->at(0)->GetAudioTracks()[0];
+
+    // Wait until *any* audio has been received.
+    EXPECT_TRUE_WAIT(
+        receiving_client()->GetBytesReceivedStats(local_audio_track) > 0,
+        kMaxWaitForAudioDataMs);
+
+    // Wait until 'size' number of bytes have been received.
+    size += receiving_client()->GetBytesReceivedStats(local_audio_track);
+    EXPECT_TRUE_WAIT(
+        receiving_client()->GetBytesReceivedStats(local_audio_track) > size,
+        kMaxWaitForAudioDataMs);
+  }
+
   SignalingClass* initializing_client() { return initiating_client_.get(); }
   SignalingClass* receiving_client() { return receiving_client_.get(); }
 
@@ -1470,18 +1492,8 @@ TEST_F(JsepPeerConnectionP2PTestClient, ReceivedBweStatsAudio) {
   receiving_client()->SetReceiveAudioVideo(true, false);
   LocalP2PTest();
 
-  // Wait until we have received some audio data.
-  StreamCollectionInterface* local_streams =
-      initializing_client()->local_streams();
-  ASSERT_GT(local_streams->count(), 0u);
-  ASSERT_GT(local_streams->at(0)->GetAudioTracks().size(), 0u);
-  MediaStreamTrackInterface* local_audio_track =
-      local_streams->at(0)->GetAudioTracks()[0];
-  EXPECT_TRUE_WAIT(
-      receiving_client()->GetBytesReceivedStats(local_audio_track) > 10000,
-      kMaxWaitForAudioDataMs);
-
-  // Then wait for REMB.
+  // Wait until we have received some audio data. Following REMB shoud be zero.
+  WaitForAudioData(10000);
   EXPECT_EQ_WAIT(
       receiving_client()->GetAvailableReceivedBandwidthStats(), 0,
       kMaxWaitForRembMs);
@@ -1503,15 +1515,14 @@ TEST_F(JsepPeerConnectionP2PTestClient, ReceivedBweStatsCombined) {
   EXPECT_TRUE_WAIT(
       receiving_client()->GetAvailableReceivedBandwidthStats() > 40000,
       kMaxWaitForRembMs);
-  int video_bw = receiving_client()->GetAvailableReceivedBandwidthStats();
 
-  // Halt video capturers, then run until we get a new non-zero bw which is
-  // lower than the previous value.
+  // Halt video capturers, then run until we have gotten some audio. Following
+  // REMB should be non-zero.
   initializing_client()->StopVideoCapturers();
+  WaitForAudioData(10000);
   EXPECT_TRUE_WAIT(
-      receiving_client()->GetAvailableReceivedBandwidthStats() < video_bw,
+      receiving_client()->GetAvailableReceivedBandwidthStats() > 0,
       kMaxWaitForRembMs);
-  EXPECT_GT(receiving_client()->GetAvailableReceivedBandwidthStats(), 0);
 }
 
 // Test receive bandwidth stats with 1 video, 3 audio streams but no combined
@@ -1532,8 +1543,10 @@ TEST_F(JsepPeerConnectionP2PTestClient, ReceivedBweStatsNotCombined) {
       receiving_client()->GetAvailableReceivedBandwidthStats() > 40000,
       kMaxWaitForRembMs);
 
-  // Halt video capturers, then run until we get a new bw which is zero.
+  // Halt video capturers, then run until we have gotten some audio. Following
+  // REMB should be zero.
   initializing_client()->StopVideoCapturers();
+  WaitForAudioData(10000);
   EXPECT_EQ_WAIT(
       receiving_client()->GetAvailableReceivedBandwidthStats(), 0,
       kMaxWaitForRembMs);
