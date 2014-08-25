@@ -1560,6 +1560,7 @@ WebRtcVideoMediaChannel::WebRtcVideoMediaChannel(
       remb_enabled_(false),
       render_started_(false),
       first_receive_ssrc_(kSsrcUnset),
+      receiver_report_ssrc_(kSsrcUnset),
       num_unsignalled_recv_channels_(0),
       send_rtx_type_(-1),
       send_red_type_(-1),
@@ -1893,21 +1894,9 @@ bool WebRtcVideoMediaChannel::AddSendStream(const StreamParams& sp) {
     return false;
   }
 
-  // At this point the channel's local SSRC has been updated. If the channel is
-  // the default channel make sure that all the receive channels are updated as
-  // well. Receive channels have to have the same SSRC as the default channel in
-  // order to send receiver reports with this SSRC.
+  // Use the SSRC of the default channel in the RTCP receiver reports.
   if (IsDefaultChannelId(channel_id)) {
-    for (RecvChannelMap::const_iterator it = recv_channels_.begin();
-         it != recv_channels_.end(); ++it) {
-      WebRtcVideoChannelRecvInfo* info = it->second;
-      int channel_id = info->channel_id();
-      if (engine()->vie()->rtp()->SetLocalSSRC(channel_id,
-                                               sp.first_ssrc()) != 0) {
-        LOG_RTCERR1(SetLocalSSRC, it->first);
-        return false;
-      }
-    }
+    SetReceiverReportSsrc(sp.first_ssrc());
   }
 
   send_channel->set_stream_params(sp);
@@ -3418,20 +3407,13 @@ bool WebRtcVideoMediaChannel::ConfigureReceiving(int channel_id,
     return false;
   }
 
-  if (remote_ssrc != kDefaultChannelSsrcKey) {
-    // Use the same SSRC as our default channel
-    // (so the RTCP reports are correct).
-    unsigned int send_ssrc = 0;
-    webrtc::ViERTP_RTCP* rtp = engine()->vie()->rtp();
-    if (rtp->GetLocalSSRC(default_channel_id_, send_ssrc) == -1) {
-      LOG_RTCERR2(GetLocalSSRC, default_channel_id_, send_ssrc);
+  if (receiver_report_ssrc_ != kSsrcUnset) {
+    if (engine()->vie()->rtp()->SetLocalSSRC(
+            channel_id, receiver_report_ssrc_) == -1) {
+      LOG_RTCERR2(SetLocalSSRC, channel_id, receiver_report_ssrc_);
       return false;
     }
-    if (rtp->SetLocalSSRC(channel_id, send_ssrc) == -1) {
-      LOG_RTCERR2(SetLocalSSRC, channel_id, send_ssrc);
-      return false;
-    }
-  }  // Else this is the the default channel and we don't change the SSRC.
+  }
 
   // Disable color enhancement since it is a bit too aggressive.
   if (engine()->vie()->image()->EnableColorEnhancement(channel_id,
@@ -4169,6 +4151,18 @@ void WebRtcVideoMediaChannel::MaybeDisconnectCapturer(VideoCapturer* capturer) {
   if (capturer && GetSendChannelNum(capturer) == 1) {
     capturer->SignalVideoFrame.disconnect(this);
   }
+}
+
+void WebRtcVideoMediaChannel::SetReceiverReportSsrc(uint32 ssrc) {
+  for (RecvChannelMap::const_iterator it = recv_channels_.begin();
+       it != recv_channels_.end(); ++it) {
+    int channel_id = it->second->channel_id();
+    if (engine()->vie()->rtp()->SetLocalSSRC(channel_id, ssrc) != 0) {
+      LOG_RTCERR2(SetLocalSSRC, channel_id, ssrc);
+      ASSERT(false);
+    }
+  }
+  receiver_report_ssrc_ = ssrc;
 }
 
 }  // namespace cricket

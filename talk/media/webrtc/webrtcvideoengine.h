@@ -421,6 +421,9 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
 
   bool RemoveRecvStreamInternal(uint32 ssrc);
 
+  // Set the ssrc to use for RTCP receiver reports.
+  void SetReceiverReportSsrc(uint32 ssrc);
+
   // Global state.
   WebRtcVideoEngine* engine_;
   VoiceMediaChannel* voice_channel_;
@@ -448,6 +451,7 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
   std::map<int, int> associated_payload_types_;
   bool render_started_;
   uint32 first_receive_ssrc_;
+  uint32 receiver_report_ssrc_;
   std::vector<RtpHeaderExtension> receive_extensions_;
   int num_unsignalled_recv_channels_;
 
