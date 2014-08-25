@@ -90,7 +90,6 @@ static const int kMaxWaitMs = 2000;
 // warnings.
 #if !defined(THREAD_SANITIZER)
 static const int kMaxWaitForStatsMs = 3000;
-static const int kMaxWaitForAudioDataMs = 10000;
 static const int kMaxWaitForRembMs = 5000;
 #endif
 static const int kMaxWaitForFramesMs = 10000;
@@ -1047,6 +1046,8 @@ class P2PTestConductor : public testing::Test {
   // Wait until 'size' bytes of audio has been seen by the receiver, on the
   // first audio stream.
   void WaitForAudioData(int size) {
+    static const int kMaxWaitForAudioDataMs = 10000;
+
     StreamCollectionInterface* local_streams =
         initializing_client()->local_streams();
     ASSERT_GT(local_streams->count(), 0u);
