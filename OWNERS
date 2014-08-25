@@ -8,5 +8,6 @@ per-file .gitignore=*
 per-file AUTHORS=*
 per-file BUILD.gn=kjellander@webrtc.org
 per-file DEPS=*
+per-file setup_links.py=*
+per-file sync_chromium.py=kjellander@webrtc.org
 per-file WATCHLISTS=*
-per-file webrtc_examples.gyp=*
