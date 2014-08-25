@@ -165,11 +165,9 @@ TEST_F(SplTest, MathOperationsTest) {
 TEST_F(SplTest, BasicArrayOperationsTest) {
     const int kVectorSize = 4;
     int B[] = {4, 12, 133, 1100};
-    uint8_t b8[kVectorSize];
     int16_t b16[kVectorSize];
     int32_t b32[kVectorSize];
 
-    uint8_t bTmp8[kVectorSize];
     int16_t bTmp16[kVectorSize];
     int32_t bTmp32[kVectorSize];
 
@@ -198,13 +196,8 @@ TEST_F(SplTest, BasicArrayOperationsTest) {
         EXPECT_EQ(1, b32[kk]);
     }
     for (int kk = 0; kk < kVectorSize; ++kk) {
-        bTmp8[kk] = (int8_t)kk;
         bTmp16[kk] = (int16_t)kk;
         bTmp32[kk] = (int32_t)kk;
-    }
-    WEBRTC_SPL_MEMCPY_W8(b8, bTmp8, kVectorSize);
-    for (int kk = 0; kk < kVectorSize; ++kk) {
-        EXPECT_EQ(b8[kk], bTmp8[kk]);
     }
     WEBRTC_SPL_MEMCPY_W16(b16, bTmp16, kVectorSize);
     for (int kk = 0; kk < kVectorSize; ++kk) {
