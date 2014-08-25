@@ -33,6 +33,12 @@ source_set("audio_conference_mixer") {
 
   direct_dependent_configs = [ ":internal_config" ]
 
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+
   deps = [
     "../../system_wrappers",
     "../audio_processing",

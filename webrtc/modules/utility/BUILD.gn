@@ -30,6 +30,12 @@ source_set("utility") {
     "source/rtp_dump_impl.h",
   ]
 
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+
   deps = [
     "../../common_audio",
     "../../system_wrappers",

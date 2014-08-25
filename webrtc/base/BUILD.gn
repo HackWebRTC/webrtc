@@ -424,6 +424,12 @@ static_library("webrtc_base") {
     deps += [ "//third_party/jsoncpp" ]
   }  # !build_with_chromium
 
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+
   # TODO(henrike): issue 3307, make webrtc_base build with the Chromium default
   # compiler settings.
   configs -= [ "//build/config/compiler:chromium_code" ]

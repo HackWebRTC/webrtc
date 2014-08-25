@@ -64,6 +64,12 @@ source_set("video_coding") {
     "main/source/video_sender.cc",
   ]
 
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+
   deps = [
     ":video_coding_utility",
     ":webrtc_i420",
@@ -79,6 +85,12 @@ source_set("video_coding_utility") {
     "utility/frame_dropper.cc",
   ]
 
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+
   deps = [ "../../system_wrappers" ]
 }
 
@@ -87,6 +99,12 @@ source_set("webrtc_i420") {
     "codecs/i420/main/source/i420.cc",
     "codecs/i420/main/interface/i420.h",
   ]
+
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
 
   deps = [ "../../system_wrappers" ]
 }
@@ -107,6 +125,13 @@ source_set("webrtc_vp8") {
 #    "codecs/vp8/vp8_impl.cc",
 #    "codecs/vp8/vp8_impl.h",
   ]
+
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+
   deps = [
     ":video_coding_utility",
     "../../common_video",

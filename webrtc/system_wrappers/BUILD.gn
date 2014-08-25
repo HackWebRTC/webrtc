@@ -108,6 +108,12 @@ static_library("system_wrappers") {
 
   configs += [ "..:common_config" ]
 
+ if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+
   direct_dependent_configs = [
     "..:common_inherited_config",
     ":system_wrappers_inherited_config",
@@ -195,6 +201,13 @@ source_set("field_trial_default") {
   sources = [
     "source/field_trial_default.cc",
   ]
+
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+
   deps = [
     ":system_wrappers",
   ]

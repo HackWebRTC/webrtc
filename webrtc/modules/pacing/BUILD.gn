@@ -12,5 +12,11 @@ source_set("pacing") {
     "paced_sender.cc",
   ]
 
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+
   deps = [ "../../system_wrappers" ]
 }

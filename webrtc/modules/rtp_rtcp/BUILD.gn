@@ -93,6 +93,12 @@ source_set("rtp_rtcp") {
     "source/mock/mock_rtp_payload_strategy.h",
   ]
 
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+
   deps = [
     "../../system_wrappers",
     "../pacing",
