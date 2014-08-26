@@ -1,5 +1,4 @@
 set noparent
-fischman@webrtc.org
 henrike@webrtc.org
 hta@webrtc.org
 juberti@webrtc.org
@@ -8,7 +7,6 @@ perkj@webrtc.org
 pthatcher@webrtc.org
 sergeyu@chromium.org
 tommi@webrtc.org
-wu@webrtc.org
 per-file *.isolate=kjellander@webrtc.org
 
 

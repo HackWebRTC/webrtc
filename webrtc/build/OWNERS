@@ -1,6 +1,4 @@
-fischman@webrtc.org
 kjellander@webrtc.org
-wu@webrtc.org
 
 per-file tsan_suppressions.cc=*
 
