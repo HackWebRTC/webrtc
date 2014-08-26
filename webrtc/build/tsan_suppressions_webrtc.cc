@@ -41,9 +41,6 @@ char kTSanDefaultSuppressions[] =
 "race:webrtc/base/messagequeue.cc\n"
 "race:webrtc/base/testclient.cc\n"
 "race:webrtc/base/virtualsocketserver.cc\n"
-"race:talk/base/messagequeue.cc\n"
-"race:talk/base/testclient.cc\n"
-"race:talk/base/virtualsocketserver.cc\n"
 "race:talk/p2p/base/stunserver_unittest.cc\n"
 
 // libjingle_unittest
@@ -52,10 +49,6 @@ char kTSanDefaultSuppressions[] =
 "race:webrtc/base/sharedexclusivelock_unittest.cc\n"
 "race:webrtc/base/signalthread_unittest.cc\n"
 "race:webrtc/base/thread.cc\n"
-"race:talk/base/logging.cc\n"
-"race:talk/base/sharedexclusivelock_unittest.cc\n"
-"race:talk/base/signalthread_unittest.cc\n"
-"race:talk/base/thread.cc\n"
 
 // third_party/usrsctp
 // TODO(jiayl): https://code.google.com/p/webrtc/issues/detail?id=3492
@@ -65,7 +58,6 @@ char kTSanDefaultSuppressions[] =
 // https://code.google.com/p/webrtc/issues/detail?id=3509
 "deadlock:cricket::WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame\n"
 "deadlock:cricket::WebRtcVideoChannel2::WebRtcVideoSendStream::SetCapturer\n"
-"deadlock:talk_base::AsyncResolver::~AsyncResolver\n"
 "deadlock:webrtc::ProcessThreadImpl::RegisterModule\n"
 "deadlock:webrtc::RTCPReceiver::SetSsrcs\n"
 "deadlock:webrtc::RTPSenderAudio::RegisterAudioPayload\n"
@@ -76,10 +68,6 @@ char kTSanDefaultSuppressions[] =
 "deadlock:webrtc::ViECodecImpl::GetSendSideDelay\n"
 "deadlock:webrtc::ViEEncoder::OnLocalSsrcChanged\n"
 "deadlock:webrtc::ViESender::RegisterSendTransport\n"
-
-// libjingle_media_unittest triggers TSan heap-use-after-free in libvpx/.
-// https://code.google.com/p/webrtc/issues/detail?id=3671
-"race:vpx_codec_destroy\n"
 
 // End of suppressions.
 ;  // Please keep this semicolon.
