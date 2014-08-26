@@ -14,7 +14,7 @@ import sys
 
 # Bump this whenever the algorithm changes and you need bots/devs to re-sync,
 # ignoring the .last_sync_chromium file
-SCRIPT_VERSION = 1
+SCRIPT_VERSION = 2
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 

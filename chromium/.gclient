@@ -3,7 +3,16 @@ solutions = [{
   'url': 'https://chromium.googlesource.com/chromium/src.git',
   'deps_file': '.DEPS.git',
   'managed': True,
-  'custom_deps': {},
+  'custom_deps': {
+    # Skip syncing some large dependencies WebRTC will never need.
+    'src/chrome/tools/test/reference_build/chrome_linux': None,
+    'src/chrome/tools/test/reference_build/chrome_mac': None,
+    'src/chrome/tools/test/reference_build/chrome_win': None,
+    'src/native_client': None,
+    'src/third_party/ffmpeg': None,
+    'src/third_party/WebKit': None,
+    'src/v8': None,
+  },
   'safesync_url': ''
 }]
 
