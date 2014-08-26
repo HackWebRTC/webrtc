@@ -26,22 +26,16 @@
  */
 
 #include "talk/media/base/constants.h"
-#include "talk/media/base/fakemediaprocessor.h"
 #include "talk/media/base/fakenetworkinterface.h"
-#include "talk/media/base/fakevideorenderer.h"
 #include "talk/media/base/mediachannel.h"
 #include "talk/media/base/testutils.h"
-#include "talk/media/base/videoadapter.h"
 #include "talk/media/base/videoengine_unittest.h"
-#include "talk/media/webrtc/fakewebrtcvideocapturemodule.h"
 #include "talk/media/webrtc/fakewebrtcvideoengine.h"
-#include "talk/media/webrtc/fakewebrtcvoiceengine.h"
 #include "webrtc/base/fakecpumonitor.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stream.h"
-#include "talk/media/webrtc/webrtcvideocapturer.h"
 #include "talk/media/webrtc/webrtcvideoengine.h"
 #include "talk/media/webrtc/webrtcvideoframe.h"
 #include "talk/media/webrtc/webrtcvoiceengine.h"
@@ -54,9 +48,6 @@ using cricket::kRtpTimestampOffsetHeaderExtension;
 using cricket::kRtpAbsoluteSenderTimeHeaderExtension;
 
 static const cricket::VideoCodec kVP8Codec720p(100, "VP8", 1280, 720, 30, 0);
-static const cricket::VideoCodec kVP8Codec360p(100, "VP8", 640, 360, 30, 0);
-static const cricket::VideoCodec kVP8Codec270p(100, "VP8", 480, 270, 30, 0);
-static const cricket::VideoCodec kVP8Codec180p(100, "VP8", 320, 180, 30, 0);
 
 static const cricket::VideoCodec kVP8Codec(100, "VP8", 640, 400, 30, 0);
 static const cricket::VideoCodec kH264Codec(127, "H264", 640, 400, 30, 0);
@@ -77,7 +68,6 @@ static const uint32 kSsrcs2[] = {1, 2};
 static const uint32 kSsrcs3[] = {1, 2, 3};
 static const uint32 kRtxSsrcs1[] = {4};
 static const uint32 kRtxSsrcs3[] = {4, 5, 6};
-
 
 class FakeViEWrapper : public cricket::ViEWrapper {
  public:
@@ -1556,7 +1546,6 @@ TEST_F(WebRtcVideoEngineTestFake, SetBandwidthInConference) {
                      768, kMinBandwidthKbps, kStartBandwidthKbps);
 }
 
-
 // Test that sending screencast frames doesn't change bitrate.
 TEST_F(WebRtcVideoEngineTestFake, SetBandwidthScreencast) {
   EXPECT_TRUE(SetupEngine());
@@ -1575,7 +1564,6 @@ TEST_F(WebRtcVideoEngineTestFake, SetBandwidthScreencast) {
   SendI420ScreencastFrame(kVP8Codec.width, kVP8Codec.height);
   VerifyVP8SendCodec(channel_num, kVP8Codec.width, kVP8Codec.height, 0, 111);
 }
-
 
 // Test SetSendSsrc.
 TEST_F(WebRtcVideoEngineTestFake, SetSendSsrcAndCname) {
@@ -1597,7 +1585,6 @@ TEST_F(WebRtcVideoEngineTestFake, SetSendSsrcAndCname) {
   EXPECT_STREQ("cname", rtcp_cname);
 }
 
-
 // Test that the local SSRC is the same on sending and receiving channels if the
 // receive channel is created before the send channel.
 TEST_F(WebRtcVideoEngineTestFake, SetSendSsrcAfterCreatingReceiveChannel) {
@@ -1617,7 +1604,6 @@ TEST_F(WebRtcVideoEngineTestFake, SetSendSsrcAfterCreatingReceiveChannel) {
   EXPECT_EQ(1234U, ssrc);
   EXPECT_EQ(1, vie_.GetNumSsrcs(receive_channel_num));
 }
-
 
 // Test SetOptions with denoising flag.
 TEST_F(WebRtcVideoEngineTestFake, SetOptionsWithDenoising) {
@@ -1706,7 +1692,6 @@ TEST_F(WebRtcVideoEngineTestFake, MultipleSendStreamsWithOneCapturer) {
   // channel1 has already been deleted.
   EXPECT_EQ(-1, vie_.GetIncomingFrameNum(channel1));
 }
-
 
 TEST_F(WebRtcVideoEngineTestFake, SendReceiveBitratesStats) {
   EXPECT_TRUE(SetupEngine());
@@ -1839,7 +1824,6 @@ TEST_F(WebRtcVideoEngineTestFake, TestSetInvalidCpuThreshold) {
   EXPECT_EQ(high, 1.0f);
 }
 
-
 TEST_F(WebRtcVideoEngineTestFake, ResetCodecOnScreencast) {
   EXPECT_TRUE(SetupEngine());
   cricket::VideoOptions options;
@@ -1869,7 +1853,6 @@ TEST_F(WebRtcVideoEngineTestFake, ResetCodecOnScreencast) {
   EXPECT_EQ(0, vie_.GetSendCodec(channel_num, gcodec));
   EXPECT_FALSE(gcodec.codecSpecific.VP8.denoisingOn);
 }
-
 
 TEST_F(WebRtcVideoEngineTestFake, DontRegisterDecoderIfFactoryIsNotGiven) {
   engine_.SetExternalDecoderFactory(NULL);
@@ -2573,7 +2556,6 @@ TEST_F(WebRtcVideoMediaChannelTest, SetOptionsSucceedsWhenSending) {
 TEST_F(WebRtcVideoMediaChannelTest, RejectEmptyStreamParams) {
   Base::RejectEmptyStreamParams();
 }
-
 
 TEST_F(WebRtcVideoMediaChannelTest, AdaptResolution16x10) {
   Base::AdaptResolution16x10();

@@ -2208,6 +2208,9 @@ bool WebRtcVideoMediaChannel::GetSendChannelSsrcKey(uint32 local_ssrc,
     return true;
   }
   if (!GetSendChannelBySsrcKey(local_ssrc)) {
+    // If a stream has multiple ssrcs, the local_ssrc could be any of
+    // them, but we use the first one (StreamParams::first_ssrc()) as
+    // the key.
     for (SendChannelMap::iterator iter = send_channels_.begin();
          iter != send_channels_.end(); ++iter) {
       WebRtcVideoChannelSendInfo* send_channel = iter->second;
