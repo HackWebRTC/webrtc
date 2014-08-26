@@ -35,6 +35,44 @@ static __inline int16_t WebRtcSpl_SatW32ToW16(int32_t value32) {
   return out16;
 }
 
+static __inline int32_t WebRtcSpl_AddSatW32(int32_t l_var1, int32_t l_var2) {
+  int32_t l_sum;
+
+  // Perform long addition
+  l_sum = l_var1 + l_var2;
+
+  if (l_var1 < 0) {  // Check for underflow.
+    if ((l_var2 < 0) && (l_sum >= 0)) {
+        l_sum = (int32_t)0x80000000;
+    }
+  } else {  // Check for overflow.
+    if ((l_var2 > 0) && (l_sum < 0)) {
+        l_sum = (int32_t)0x7FFFFFFF;
+    }
+  }
+
+  return l_sum;
+}
+
+static __inline int32_t WebRtcSpl_SubSatW32(int32_t l_var1, int32_t l_var2) {
+  int32_t l_diff;
+
+  // Perform subtraction.
+  l_diff = l_var1 - l_var2;
+
+  if (l_var1 < 0) {  // Check for underflow.
+    if ((l_var2 > 0) && (l_diff > 0)) {
+      l_diff = (int32_t)0x80000000;
+    }
+  } else {  // Check for overflow.
+    if ((l_var2 < 0) && (l_diff < 0)) {
+      l_diff = (int32_t)0x7FFFFFFF;
+    }
+  }
+
+  return l_diff;
+}
+
 static __inline int16_t WebRtcSpl_AddSatW16(int16_t a, int16_t b) {
   return WebRtcSpl_SatW32ToW16((int32_t) a + (int32_t) b);
 }
@@ -131,47 +169,5 @@ static __inline int32_t WebRtc_MulAccumW16(int16_t a, int16_t b, int32_t c) {
 #endif  // #if !defined(MIPS32_LE)
 
 #endif  // WEBRTC_ARCH_ARM_V7
-
-// The following functions have no optimized versions.
-// TODO(kma): Consider saturating add/sub instructions in X86 platform.
-#if !defined(MIPS_DSP_R1_LE)
-static __inline int32_t WebRtcSpl_AddSatW32(int32_t l_var1, int32_t l_var2) {
-  int32_t l_sum;
-
-  // Perform long addition
-  l_sum = l_var1 + l_var2;
-
-  if (l_var1 < 0) {  // Check for underflow.
-    if ((l_var2 < 0) && (l_sum >= 0)) {
-        l_sum = (int32_t)0x80000000;
-    }
-  } else {  // Check for overflow.
-    if ((l_var2 > 0) && (l_sum < 0)) {
-        l_sum = (int32_t)0x7FFFFFFF;
-    }
-  }
-
-  return l_sum;
-}
-
-static __inline int32_t WebRtcSpl_SubSatW32(int32_t l_var1, int32_t l_var2) {
-  int32_t l_diff;
-
-  // Perform subtraction.
-  l_diff = l_var1 - l_var2;
-
-  if (l_var1 < 0) {  // Check for underflow.
-    if ((l_var2 > 0) && (l_diff > 0)) {
-      l_diff = (int32_t)0x80000000;
-    }
-  } else {  // Check for overflow.
-    if ((l_var2 < 0) && (l_diff < 0)) {
-      l_diff = (int32_t)0x7FFFFFFF;
-    }
-  }
-
-  return l_diff;
-}
-#endif  // #if !defined(MIPS_DSP_R1_LE)
 
 #endif  // WEBRTC_SPL_SPL_INL_H_
