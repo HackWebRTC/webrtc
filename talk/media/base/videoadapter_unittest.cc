@@ -121,8 +121,8 @@ class VideoAdapterTest : public testing::Test {
       stats.dropped_frames = dropped_frames_;
       stats.last_adapt_was_no_op = last_adapt_was_no_op_;
       if (adapted_frame_ != NULL) {
-        stats.adapted_width = adapted_frame_->GetWidth();
-        stats.adapted_height = adapted_frame_->GetHeight();
+        stats.adapted_width = static_cast<int>(adapted_frame_->GetWidth());
+        stats.adapted_height = static_cast<int>(adapted_frame_->GetHeight());
       } else {
         stats.adapted_width = stats.adapted_height = -1;
       }
