@@ -208,6 +208,7 @@ TurnServer::TurnServer(rtc::Thread* thread)
     : thread_(thread),
       nonce_key_(rtc::CreateRandomString(kNonceKeySize)),
       auth_hook_(NULL),
+      redirect_hook_(NULL),
       enable_otu_nonce_(false) {
 }
 
@@ -316,6 +317,15 @@ void TurnServer::HandleStunMessage(Connection* conn, const char* data,
     return;
   }
 
+  if (redirect_hook_ != NULL && msg.type() == STUN_ALLOCATE_REQUEST) {
+    rtc::SocketAddress address;
+    if (redirect_hook_->ShouldRedirect(conn->src(), &address)) {
+      SendErrorResponseWithAlternateServer(
+          conn, &msg, address);
+      return;
+    }
+  }
+
   // Look up the key that we'll use to validate the M-I. If we have an
   // existing allocation, the key will already be cached.
   Allocation* allocation = FindAllocation(conn);
@@ -334,7 +344,6 @@ void TurnServer::HandleStunMessage(Connection* conn, const char* data,
   }
 
   if (!allocation && msg.type() == STUN_ALLOCATE_REQUEST) {
-    // This is a new allocate request.
     HandleAllocateRequest(conn, &msg, key);
   } else if (allocation &&
              (msg.type() != STUN_ALLOCATE_REQUEST ||
@@ -548,6 +557,17 @@ void TurnServer::SendErrorResponseWithRealmAndNonce(
       STUN_ATTR_NONCE, GenerateNonce())));
   VERIFY(resp.AddAttribute(new StunByteStringAttribute(
       STUN_ATTR_REALM, realm_)));
+  SendStun(conn, &resp);
+}
+
+void TurnServer::SendErrorResponseWithAlternateServer(
+    Connection* conn, const StunMessage* msg,
+    const rtc::SocketAddress& addr) {
+  TurnMessage resp;
+  InitErrorResponse(msg, STUN_ERROR_TRY_ALTERNATE,
+                    STUN_ERROR_REASON_TRY_ALTERNATE_SERVER, &resp);
+  VERIFY(resp.AddAttribute(new StunAddressAttribute(
+      STUN_ATTR_ALTERNATE_SERVER, addr)));
   SendStun(conn, &resp);
 }
 

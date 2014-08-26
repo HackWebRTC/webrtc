@@ -63,6 +63,14 @@ class TurnAuthInterface {
                       std::string* key) = 0;
 };
 
+// An interface enables Turn Server to control redirection behavior.
+class TurnRedirectInterface {
+ public:
+  virtual bool ShouldRedirect(const rtc::SocketAddress& address,
+                              rtc::SocketAddress* out) = 0;
+  virtual ~TurnRedirectInterface() {}
+};
+
 // The core TURN server class. Give it a socket to listen on via
 // AddInternalServerSocket, and a factory to create external sockets via
 // SetExternalSocketFactory, and it's ready to go.
@@ -82,6 +90,10 @@ class TurnServer : public sigslot::has_slots<> {
 
   // Sets the authentication callback; does not take ownership.
   void set_auth_hook(TurnAuthInterface* auth_hook) { auth_hook_ = auth_hook; }
+
+  void set_redirect_hook(TurnRedirectInterface* redirect_hook) {
+    redirect_hook_ = redirect_hook;
+  }
 
   void set_enable_otu_nonce(bool enable) { enable_otu_nonce_ = enable; }
 
@@ -155,6 +167,11 @@ class TurnServer : public sigslot::has_slots<> {
                                           const StunMessage* req,
                                           int code,
                                           const std::string& reason);
+
+  void SendErrorResponseWithAlternateServer(Connection* conn,
+                                            const StunMessage* req,
+                                            const rtc::SocketAddress& addr);
+
   void SendStun(Connection* conn, StunMessage* msg);
   void Send(Connection* conn, const rtc::ByteBuffer& buf);
 
@@ -171,14 +188,17 @@ class TurnServer : public sigslot::has_slots<> {
   std::string realm_;
   std::string software_;
   TurnAuthInterface* auth_hook_;
+  TurnRedirectInterface* redirect_hook_;
   // otu - one-time-use. Server will respond with 438 if it's
   // sees the same nonce in next transaction.
   bool enable_otu_nonce_;
+
   InternalSocketMap server_sockets_;
   ServerSocketMap server_listen_sockets_;
   rtc::scoped_ptr<rtc::PacketSocketFactory>
       external_socket_factory_;
   rtc::SocketAddress external_addr_;
+
   AllocationMap allocations_;
 };
 

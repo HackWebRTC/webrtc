@@ -63,7 +63,7 @@ enum StunAttributeType {
   STUN_ATTR_NONCE                       = 0x0015,  // ByteString
   STUN_ATTR_XOR_MAPPED_ADDRESS          = 0x0020,  // XorAddress
   STUN_ATTR_SOFTWARE                    = 0x8022,  // ByteString
-  STUN_ATTR_ALTERNATE_SERVER            = 0x8023,  // ByteString
+  STUN_ATTR_ALTERNATE_SERVER            = 0x8023,  // Address
   STUN_ATTR_FINGERPRINT                 = 0x8028,  // UInt32
   STUN_ATTR_RETRANSMIT_COUNT            = 0xFF00   // UInt32
 };
@@ -104,6 +104,7 @@ enum StunErrorCode {
 };
 
 // Strings for the error codes above.
+extern const char STUN_ERROR_REASON_TRY_ALTERNATE_SERVER[];
 extern const char STUN_ERROR_REASON_BAD_REQUEST[];
 extern const char STUN_ERROR_REASON_UNAUTHORIZED[];
 extern const char STUN_ERROR_REASON_UNKNOWN_ATTRIBUTE[];

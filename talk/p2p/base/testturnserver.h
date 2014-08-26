@@ -29,6 +29,7 @@
 #define TALK_P2P_BASE_TESTTURNSERVER_H_
 
 #include <string>
+#include <vector>
 
 #include "talk/p2p/base/basicpacketsocketfactory.h"
 #include "talk/p2p/base/stun.h"
@@ -40,6 +41,27 @@ namespace cricket {
 
 static const char kTestRealm[] = "example.org";
 static const char kTestSoftware[] = "TestTurnServer";
+
+class TestTurnRedirector : public TurnRedirectInterface {
+ public:
+  explicit TestTurnRedirector(const std::vector<rtc::SocketAddress>& addresses)
+      : alternate_server_addresses_(addresses),
+        iter_(alternate_server_addresses_.begin()) {
+  }
+
+  virtual bool ShouldRedirect(const rtc::SocketAddress&,
+                              rtc::SocketAddress* out) {
+    if (!out || iter_ == alternate_server_addresses_.end()) {
+      return false;
+    }
+    *out = *iter_++;
+    return true;
+  }
+
+ private:
+  const std::vector<rtc::SocketAddress>& alternate_server_addresses_;
+  std::vector<rtc::SocketAddress>::const_iterator iter_;
+};
 
 class TestTurnServer : public TurnAuthInterface {
  public:
@@ -60,6 +82,10 @@ class TestTurnServer : public TurnAuthInterface {
   }
 
   TurnServer* server() { return &server_; }
+
+  void set_redirect_hook(TurnRedirectInterface* redirect_hook) {
+    server_.set_redirect_hook(redirect_hook);
+  }
 
   void AddInternalSocket(const rtc::SocketAddress& int_addr,
                          ProtocolType proto) {

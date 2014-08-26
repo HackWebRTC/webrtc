@@ -64,6 +64,8 @@ static const SocketAddress kTurnUdpIntAddr("99.99.99.3",
 static const SocketAddress kTurnTcpIntAddr("99.99.99.4",
                                            cricket::TURN_SERVER_PORT);
 static const SocketAddress kTurnUdpExtAddr("99.99.99.5", 0);
+static const SocketAddress kTurnAlternateUdpIntAddr(
+    "99.99.99.6", cricket::TURN_SERVER_PORT);
 static const SocketAddress kTurnUdpIPv6IntAddr(
     "2400:4030:1:2c00:be30:abcd:efab:cdef", cricket::TURN_SERVER_PORT);
 static const SocketAddress kTurnUdpIPv6ExtAddr(
@@ -445,6 +447,103 @@ TEST_F(TurnPortTest, TestTurnTlsTcpConnectionFails) {
   ASSERT_EQ(0U, turn_port_->Candidates().size());
 }
 
+// Test try-alternate-server feature.
+TEST_F(TurnPortTest, TestTurnAlternateServer) {
+  std::vector<rtc::SocketAddress> redirect_addresses;
+  redirect_addresses.push_back(kTurnAlternateUdpIntAddr);
+
+  cricket::TestTurnRedirector redirector(redirect_addresses);
+  turn_server_.AddInternalSocket(kTurnAlternateUdpIntAddr,
+                                 cricket::PROTO_UDP);
+  turn_server_.set_redirect_hook(&redirector);
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
+
+  // Retrieve the address before we run the state machine.
+  const SocketAddress old_addr = turn_port_->server_address().address;
+
+  turn_port_->PrepareAddress();
+  EXPECT_TRUE_WAIT(turn_ready_, kTimeout);
+  // Retrieve the address again, the turn port's address should be
+  // changed.
+  const SocketAddress new_addr = turn_port_->server_address().address;
+  EXPECT_NE(old_addr, new_addr);
+  ASSERT_EQ(1U, turn_port_->Candidates().size());
+  EXPECT_EQ(kTurnUdpExtAddr.ipaddr(),
+            turn_port_->Candidates()[0].address().ipaddr());
+  EXPECT_NE(0, turn_port_->Candidates()[0].address().port());
+}
+
+// Test that we fail when we redirect to an address different from
+// current IP family.
+TEST_F(TurnPortTest, TestTurnAlternateServerV4toV6) {
+  std::vector<rtc::SocketAddress> redirect_addresses;
+  redirect_addresses.push_back(kTurnUdpIPv6IntAddr);
+
+  cricket::TestTurnRedirector redirector(redirect_addresses);
+  turn_server_.AddInternalSocket(kTurnAlternateUdpIntAddr,
+                                 cricket::PROTO_UDP);
+  turn_server_.set_redirect_hook(&redirector);
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
+  turn_port_->PrepareAddress();
+  EXPECT_TRUE_WAIT(turn_error_, kTimeout);
+}
+
+// Test that we fail to handle alternate-server response over TCP protocol.
+TEST_F(TurnPortTest, TestTurnAlternateServerTcp) {
+  std::vector<rtc::SocketAddress> redirect_addresses;
+  redirect_addresses.push_back(kTurnAlternateUdpIntAddr);
+
+  cricket::TestTurnRedirector redirector(redirect_addresses);
+  turn_server_.set_redirect_hook(&redirector);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, cricket::PROTO_TCP);
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
+
+  turn_server_.AddInternalSocket(kTurnAlternateUdpIntAddr, cricket::PROTO_TCP);
+  turn_port_->PrepareAddress();
+  EXPECT_TRUE_WAIT(turn_error_, kTimeout);
+}
+
+// Test try-alternate-server catches the case of pingpong.
+TEST_F(TurnPortTest, TestTurnAlternateServerPingPong) {
+  std::vector<rtc::SocketAddress> redirect_addresses;
+  redirect_addresses.push_back(kTurnAlternateUdpIntAddr);
+  redirect_addresses.push_back(kTurnUdpIntAddr);
+
+  cricket::TestTurnRedirector redirector(redirect_addresses);
+
+  turn_server_.AddInternalSocket(kTurnAlternateUdpIntAddr,
+                                 cricket::PROTO_UDP);
+  turn_server_.set_redirect_hook(&redirector);
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
+
+  turn_port_->PrepareAddress();
+  EXPECT_TRUE_WAIT(turn_error_, kTimeout);
+  ASSERT_EQ(0U, turn_port_->Candidates().size());
+  rtc::SocketAddress address;
+  // Verify that we have exhausted all alternate servers instead of
+  // failure caused by other errors.
+  EXPECT_FALSE(redirector.ShouldRedirect(address, &address));
+}
+
+// Test try-alternate-server catch the case of repeated server.
+TEST_F(TurnPortTest, TestTurnAlternateServerDetectRepetition) {
+  std::vector<rtc::SocketAddress> redirect_addresses;
+  redirect_addresses.push_back(kTurnAlternateUdpIntAddr);
+  redirect_addresses.push_back(kTurnAlternateUdpIntAddr);
+
+  cricket::TestTurnRedirector redirector(redirect_addresses);
+
+  turn_server_.AddInternalSocket(kTurnAlternateUdpIntAddr,
+                                 cricket::PROTO_UDP);
+  turn_server_.set_redirect_hook(&redirector);
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
+
+  turn_port_->PrepareAddress();
+  EXPECT_TRUE_WAIT(turn_error_, kTimeout);
+  ASSERT_EQ(0U, turn_port_->Candidates().size());
+}
+
+
 // Run TurnConnectionTest with one-time-use nonce feature.
 // Here server will send a 438 STALE_NONCE error message for
 // every TURN transaction.
@@ -515,4 +614,3 @@ TEST_F(TurnPortTest, TestResolverShutdown) {
   EXPECT_EQ(last_fd_count, GetFDCount());
 }
 #endif
-

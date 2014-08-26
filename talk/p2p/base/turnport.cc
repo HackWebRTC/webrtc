@@ -78,6 +78,7 @@ class TurnAllocateRequest : public StunRequest {
  private:
   // Handles authentication challenge from the server.
   void OnAuthChallenge(StunMessage* response, int code);
+  void OnTryAlternate(StunMessage* response, int code);
   void OnUnknownAttribute(StunMessage* response);
 
   TurnPort* port_;
@@ -252,6 +253,9 @@ void TurnPort::PrepareAddress() {
       OnAllocateError();
       return;
     }
+
+    // Insert the current address to prevent redirection pingpong.
+    attempted_server_addresses_.insert(server_address_.address);
 
     LOG_J(LS_INFO, this) << "Trying to connect to TURN server via "
                          << ProtoToString(server_address_.proto) << " @ "
@@ -456,6 +460,38 @@ void TurnPort::OnReadyToSend(rtc::AsyncPacketSocket* socket) {
   if (connected_) {
     Port::OnReadyToSend();
   }
+}
+
+
+// Update current server address port with the alternate server address port.
+bool TurnPort::SetAlternateServer(const rtc::SocketAddress& address) {
+  // Check if we have seen this address before and reject if we did.
+  AttemptedServerSet::iterator iter = attempted_server_addresses_.find(address);
+  if (iter != attempted_server_addresses_.end()) {
+    LOG_J(LS_WARNING, this) << "Redirection to ["
+                            << address.ToSensitiveString()
+                            << "] ignored, allocation failed.";
+    return false;
+  }
+
+  // If protocol family of server address doesn't match with local, return.
+  if (!IsCompatibleAddress(address)) {
+    LOG(LS_WARNING) << "Server IP address family does not match with "
+                    << "local host address family type";
+    return false;
+  }
+
+  LOG_J(LS_INFO, this) << "Redirecting from TURN server ["
+                       << server_address_.address.ToSensitiveString()
+                       << "] to TURN server ["
+                       << address.ToSensitiveString()
+                       << "]";
+  server_address_ = ProtocolAddress(address, server_address_.proto,
+                                    server_address_.secure);
+
+  // Insert the current address to prevent redirection pingpong.
+  attempted_server_addresses_.insert(server_address_.address);
+  return true;
 }
 
 void TurnPort::ResolveTurnAddress(const rtc::SocketAddress& address) {
@@ -805,6 +841,9 @@ void TurnAllocateRequest::OnErrorResponse(StunMessage* response) {
     case STUN_ERROR_UNAUTHORIZED:       // Unauthrorized.
       OnAuthChallenge(response, error_code->code());
       break;
+    case STUN_ERROR_TRY_ALTERNATE:
+      OnTryAlternate(response, error_code->code());
+      break;
     default:
       LOG_J(LS_WARNING, port_) << "Allocate response error, code="
                                << error_code->code();
@@ -846,6 +885,57 @@ void TurnAllocateRequest::OnAuthChallenge(StunMessage* response, int code) {
   port_->set_nonce(nonce_attr->GetString());
 
   // Send another allocate request, with the received realm and nonce values.
+  port_->SendRequest(new TurnAllocateRequest(port_), 0);
+}
+
+void TurnAllocateRequest::OnTryAlternate(StunMessage* response, int code) {
+  // TODO(guoweis): Currently, we only support UDP redirect
+  if (port_->server_address().proto != PROTO_UDP) {
+    LOG_J(LS_WARNING, port_) << "Receiving 300 Alternate Server on non-UDP "
+                         << "allocating request from ["
+                         << port_->server_address().address.ToSensitiveString()
+                         << "], failed as currently not supported";
+    port_->OnAllocateError();
+    return;
+  }
+
+  // According to RFC 5389 section 11, there are use cases where
+  // authentication of response is not possible, we're not validating
+  // message integrity.
+
+  // Get the alternate server address attribute value.
+  const StunAddressAttribute* alternate_server_attr =
+      response->GetAddress(STUN_ATTR_ALTERNATE_SERVER);
+  if (!alternate_server_attr) {
+    LOG_J(LS_WARNING, port_) << "Missing STUN_ATTR_ALTERNATE_SERVER "
+                             << "attribute in try alternate error response";
+    port_->OnAllocateError();
+    return;
+  }
+  if (!port_->SetAlternateServer(alternate_server_attr->GetAddress())) {
+    port_->OnAllocateError();
+    return;
+  }
+
+  // Check the attributes.
+  const StunByteStringAttribute* realm_attr =
+      response->GetByteString(STUN_ATTR_REALM);
+  if (realm_attr) {
+    LOG_J(LS_INFO, port_) << "Applying STUN_ATTR_REALM attribute in "
+                          << "try alternate error response.";
+    port_->set_realm(realm_attr->GetString());
+  }
+
+  const StunByteStringAttribute* nonce_attr =
+      response->GetByteString(STUN_ATTR_NONCE);
+  if (nonce_attr) {
+    LOG_J(LS_INFO, port_) << "Applying STUN_ATTR_NONCE attribute in "
+                          << "try alternate error response.";
+    port_->set_nonce(nonce_attr->GetString());
+  }
+
+  // Send another allocate request to alternate server,
+  // with the received realm and nonce values.
   port_->SendRequest(new TurnAllocateRequest(port_), 0);
 }
 

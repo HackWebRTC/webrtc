@@ -41,6 +41,7 @@ using rtc::ByteBuffer;
 
 namespace cricket {
 
+const char STUN_ERROR_REASON_TRY_ALTERNATE_SERVER[] = "Try Alternate Server";
 const char STUN_ERROR_REASON_BAD_REQUEST[] = "Bad Request";
 const char STUN_ERROR_REASON_UNAUTHORIZED[] = "Unauthorized";
 const char STUN_ERROR_REASON_FORBIDDEN[] = "Forbidden";
@@ -401,7 +402,7 @@ StunAttributeValueType StunMessage::GetAttributeValueType(int type) const {
     case STUN_ATTR_NONCE:               return STUN_VALUE_BYTE_STRING;
     case STUN_ATTR_XOR_MAPPED_ADDRESS:  return STUN_VALUE_XOR_ADDRESS;
     case STUN_ATTR_SOFTWARE:            return STUN_VALUE_BYTE_STRING;
-    case STUN_ATTR_ALTERNATE_SERVER:    return STUN_VALUE_BYTE_STRING;
+    case STUN_ATTR_ALTERNATE_SERVER:    return STUN_VALUE_ADDRESS;
     case STUN_ATTR_FINGERPRINT:         return STUN_VALUE_UINT32;
     case STUN_ATTR_RETRANSMIT_COUNT:    return STUN_VALUE_UINT32;
     default:                            return STUN_VALUE_UNKNOWN;

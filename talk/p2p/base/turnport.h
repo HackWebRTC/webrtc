@@ -30,6 +30,7 @@
 
 #include <stdio.h>
 #include <list>
+#include <set>
 #include <string>
 
 #include "talk/p2p/base/port.h"
@@ -157,6 +158,7 @@ class TurnPort : public Port {
 
   typedef std::list<TurnEntry*> EntryList;
   typedef std::map<rtc::Socket::Option, int> SocketOptionsMap;
+  typedef std::set<rtc::SocketAddress> AttemptedServerSet;
 
   virtual void OnMessage(rtc::Message* pmsg);
 
@@ -170,6 +172,7 @@ class TurnPort : public Port {
     }
   }
 
+  bool SetAlternateServer(const rtc::SocketAddress& address);
   void ResolveTurnAddress(const rtc::SocketAddress& address);
   void OnResolveResult(rtc::AsyncResolverInterface* resolver);
 
@@ -207,6 +210,7 @@ class TurnPort : public Port {
 
   ProtocolAddress server_address_;
   RelayCredentials credentials_;
+  AttemptedServerSet attempted_server_addresses_;
 
   rtc::AsyncPacketSocket* socket_;
   SocketOptionsMap socket_options_;
