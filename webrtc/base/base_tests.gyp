@@ -25,10 +25,18 @@
         'testutils.h',
         'win32toolhelp.h',
       ],
+      'defines': [
+        'GTEST_RELATIVE_PATH',
+      ],
       'dependencies': [
         'base.gyp:webrtc_base',
         '<(DEPTH)/testing/gtest.gyp:gtest',
       ],
+      'direct_dependent_settings': {
+        'defines': [
+          'GTEST_RELATIVE_PATH',
+        ],
+      },
       'export_dependent_settings': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
       ],

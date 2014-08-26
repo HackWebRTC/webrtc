@@ -20,6 +20,7 @@
   'variables': {
     'webrtc_all_dependencies': [
       'base/base.gyp:*',
+      'sound/sound.gyp:*',
       'common.gyp:*',
       'common_audio/common_audio.gyp:*',
       'common_video/common_video.gyp:*',
@@ -43,6 +44,7 @@
           'dependencies': [
             'base/base_tests.gyp:*',
             'common_video/common_video_unittests.gyp:*',
+            'sound/sound_tests.gyp:*',
             'system_wrappers/source/system_wrappers_tests.gyp:*',
             'test/metrics.gyp:*',
             'test/test.gyp:*',

@@ -11,6 +11,7 @@
   'variables': {
     'merge_libs_dependencies': [
       '../webrtc.gyp:webrtc',
+      '../sound/sound.gyp:rtc_sound',
     ],
   },
   'targets': [

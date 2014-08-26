@@ -29,7 +29,6 @@
       'type': 'static_library',
       'defines': [
         'FEATURE_ENABLE_SSL',
-        'GTEST_RELATIVE_PATH',
         'LOGGING=1',
         'USE_WEBRTC_DEV_BRANCH',
       ],
@@ -332,7 +331,6 @@
         ],
         'defines': [
           'FEATURE_ENABLE_SSL',
-          'GTEST_RELATIVE_PATH',
         ],
       },
       'include_dirs': [
