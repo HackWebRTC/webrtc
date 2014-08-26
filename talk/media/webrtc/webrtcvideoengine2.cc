@@ -283,43 +283,28 @@ void DefaultUnsignalledSsrcHandler::SetDefaultRenderer(
 }
 
 WebRtcVideoEngine2::WebRtcVideoEngine2()
-    : default_codec_format_(kDefaultVideoCodecPref.width,
+    : worker_thread_(NULL),
+      voice_engine_(NULL),
+      video_codecs_(DefaultVideoCodecs()),
+      default_codec_format_(kDefaultVideoCodecPref.width,
                             kDefaultVideoCodecPref.height,
                             FPS_TO_INTERVAL(kDefaultFramerate),
-                            FOURCC_ANY) {
-  // Construct without a factory or voice engine.
-  Construct(NULL, NULL, new rtc::CpuMonitor(NULL));
-}
-
-WebRtcVideoEngine2::WebRtcVideoEngine2(
-    WebRtcVideoChannelFactory* channel_factory)
-    : default_codec_format_(kDefaultVideoCodecPref.width,
-                            kDefaultVideoCodecPref.height,
-                            FPS_TO_INTERVAL(kDefaultFramerate),
-                            FOURCC_ANY) {
-  // Construct without a voice engine.
-  Construct(channel_factory, NULL, new rtc::CpuMonitor(NULL));
-}
-
-void WebRtcVideoEngine2::Construct(WebRtcVideoChannelFactory* channel_factory,
-                                   WebRtcVoiceEngine* voice_engine,
-                                   rtc::CpuMonitor* cpu_monitor) {
-  LOG(LS_INFO) << "WebRtcVideoEngine2::WebRtcVideoEngine2";
-  worker_thread_ = NULL;
-  voice_engine_ = voice_engine;
-  initialized_ = false;
-  capture_started_ = false;
-  cpu_monitor_.reset(cpu_monitor);
-  channel_factory_ = channel_factory;
-
-  video_codecs_ = DefaultVideoCodecs();
-
+                            FOURCC_ANY),
+      initialized_(false),
+      cpu_monitor_(new rtc::CpuMonitor(NULL)),
+      channel_factory_(NULL) {
+  LOG(LS_INFO) << "WebRtcVideoEngine2::WebRtcVideoEngine2()";
   rtp_header_extensions_.push_back(
       RtpHeaderExtension(kRtpTimestampOffsetHeaderExtension,
                          kRtpTimestampOffsetHeaderExtensionDefaultId));
   rtp_header_extensions_.push_back(
       RtpHeaderExtension(kRtpAbsoluteSenderTimeHeaderExtension,
                          kRtpAbsoluteSenderTimeHeaderExtensionDefaultId));
+}
+
+void WebRtcVideoEngine2::SetChannelFactory(
+    WebRtcVideoChannelFactory* channel_factory) {
+  channel_factory_ = channel_factory;
 }
 
 WebRtcVideoEngine2::~WebRtcVideoEngine2() {
@@ -673,8 +658,8 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
     WebRtcVideoEngine2* engine,
     VoiceMediaChannel* voice_channel,
     WebRtcVideoEncoderFactory2* encoder_factory)
-    : encoder_factory_(encoder_factory),
-      unsignalled_ssrc_handler_(&default_unsignalled_ssrc_handler_) {
+    : unsignalled_ssrc_handler_(&default_unsignalled_ssrc_handler_),
+      encoder_factory_(encoder_factory) {
   // TODO(pbos): Connect the video and audio with |voice_channel|.
   webrtc::Call::Config config(this);
   Construct(webrtc::Call::Create(config), engine);
@@ -684,8 +669,8 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
     webrtc::Call* call,
     WebRtcVideoEngine2* engine,
     WebRtcVideoEncoderFactory2* encoder_factory)
-    : encoder_factory_(encoder_factory),
-      unsignalled_ssrc_handler_(&default_unsignalled_ssrc_handler_) {
+    : unsignalled_ssrc_handler_(&default_unsignalled_ssrc_handler_),
+      encoder_factory_(encoder_factory) {
   Construct(call, engine);
 }
 
@@ -1309,10 +1294,10 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
     const StreamParams& sp,
     const std::vector<webrtc::RtpExtension>& rtp_extensions)
     : call_(call),
-      parameters_(webrtc::VideoSendStream::Config(), options, codec_settings),
       encoder_factory_(encoder_factory),
-      capturer_(NULL),
       stream_(NULL),
+      parameters_(webrtc::VideoSendStream::Config(), options, codec_settings),
+      capturer_(NULL),
       sending_(false),
       muted_(false) {
   parameters_.config.rtp.max_packet_size = kVideoMtu;
@@ -1684,11 +1669,11 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
     const webrtc::VideoReceiveStream::Config& config,
     const std::vector<VideoCodecSettings>& recv_codecs)
     : call_(call),
-      config_(config),
       stream_(NULL),
+      config_(config),
+      renderer_(NULL),
       last_width_(-1),
-      last_height_(-1),
-      renderer_(NULL) {
+      last_height_(-1) {
   config_.renderer = this;
   // SetRecvCodecs will also reset (start) the VideoReceiveStream.
   SetRecvCodecs(recv_codecs);

@@ -917,11 +917,11 @@ class DataChannelObserverWrapper : public DataChannelObserver {
   DataChannelObserverWrapper(JNIEnv* jni, jobject j_observer)
       : j_observer_global_(jni, j_observer),
         j_observer_class_(jni, GetObjectClass(jni, j_observer)),
+        j_buffer_class_(jni, FindClass(jni, "org/webrtc/DataChannel$Buffer")),
         j_on_state_change_mid_(GetMethodID(jni, *j_observer_class_,
                                            "onStateChange", "()V")),
         j_on_message_mid_(GetMethodID(jni, *j_observer_class_, "onMessage",
                                       "(Lorg/webrtc/DataChannel$Buffer;)V")),
-        j_buffer_class_(jni, FindClass(jni, "org/webrtc/DataChannel$Buffer")),
         j_buffer_ctor_(GetMethodID(jni, *j_buffer_class_,
                                    "<init>", "(Ljava/nio/ByteBuffer;Z)V")) {
   }

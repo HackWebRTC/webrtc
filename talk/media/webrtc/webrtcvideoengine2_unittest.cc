@@ -309,7 +309,8 @@ WebRtcVideoChannel2* FakeWebRtcVideoMediaChannelFactory::Create(
 
 class WebRtcVideoEngine2Test : public testing::Test {
  public:
-  WebRtcVideoEngine2Test() : engine_(&factory_) {
+  WebRtcVideoEngine2Test() {
+    engine_.SetChannelFactory(&factory_);
     std::vector<VideoCodec> engine_codecs = engine_.codecs();
     assert(!engine_codecs.empty());
     bool codec_set = false;

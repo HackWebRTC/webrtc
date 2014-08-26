@@ -134,9 +134,10 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
  public:
   // Creates the WebRtcVideoEngine2 with internal VideoCaptureModule.
   WebRtcVideoEngine2();
-  // Custom WebRtcVideoChannelFactory for testing purposes.
-  explicit WebRtcVideoEngine2(WebRtcVideoChannelFactory* channel_factory);
-  ~WebRtcVideoEngine2();
+  virtual ~WebRtcVideoEngine2();
+
+  // Use a custom WebRtcVideoChannelFactory (for testing purposes).
+  void SetChannelFactory(WebRtcVideoChannelFactory* channel_factory);
 
   // Basic video engine implementation.
   bool Init(rtc::Thread* worker_thread);
@@ -179,10 +180,6 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
   virtual WebRtcVideoEncoderFactory2* GetVideoEncoderFactory();
 
  private:
-  void Construct(WebRtcVideoChannelFactory* channel_factory,
-                 WebRtcVoiceEngine* voice_engine,
-                 rtc::CpuMonitor* cpu_monitor);
-
   rtc::Thread* worker_thread_;
   WebRtcVoiceEngine* voice_engine_;
   std::vector<VideoCodec> video_codecs_;
@@ -190,8 +187,6 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
   VideoFormat default_codec_format_;
 
   bool initialized_;
-
-  bool capture_started_;
 
   // Critical section to protect the media processor register/unregister
   // while processing a frame
