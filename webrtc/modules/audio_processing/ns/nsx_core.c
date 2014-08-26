@@ -864,8 +864,8 @@ void WebRtcNsx_FeatureParameterExtraction(NsxInst_t* inst, int flag) {
       // Guard against division by zero
       // If timeAvgMagnEnergy == 0 we have no normalizing statistics and
       // therefore can't update the histogram
-      histIndex = WEBRTC_SPL_UDIV((inst->featureSpecDiff * 5) >> inst->stages,
-                                  inst->timeAvgMagnEnergy);
+      histIndex = ((inst->featureSpecDiff * 5) >> inst->stages) /
+          inst->timeAvgMagnEnergy;
     }
     if (histIndex < HIST_PAR_EST) {
       inst->histSpecDiff[histIndex]++;
@@ -1163,7 +1163,7 @@ void WebRtcNsx_ComputeSpectralDifference(NsxInst_t* inst, uint16_t* magnIn) {
     }
     if (varPauseUFX > 0) {
       // Q(2*(qMagn+norm32-16+minPause))
-      tmpU32no1 = WEBRTC_SPL_UDIV(tmpU32no2, varPauseUFX);
+      tmpU32no1 = tmpU32no2 / varPauseUFX;
       tmpU32no1 = WEBRTC_SPL_RSHIFT_U32(tmpU32no1, nShifts);
 
       // Q(2*qMagn)
@@ -1681,7 +1681,7 @@ int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* speechFrame, short* speechFram
             // we don't need any division.
             tmpU32no1 = 1;
           }
-          tmpU32no2 = WEBRTC_SPL_UDIV(numerator, tmpU32no1); // Q14
+          tmpU32no2 = numerator / tmpU32no1;  // Q14
           noiseSupFilterTmp[i] = (uint16_t)WEBRTC_SPL_SAT(16384, tmpU32no2,
               (uint32_t)(inst->denoiseBound)); // Q14
         }
@@ -1764,7 +1764,7 @@ int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* speechFrame, short* speechFram
       // Current magnitude larger than noise
       tmpU32no1 = WEBRTC_SPL_LSHIFT_U32(tmpU32no1, 11); // Q(17+qMagn)
       if (tmpU32no2 > 0) {
-        tmpU32no1 = WEBRTC_SPL_UDIV(tmpU32no1, tmpU32no2); // Q11
+        tmpU32no1 /= tmpU32no2;  // Q11
         postLocSnr[i] = WEBRTC_SPL_MIN(satMax, tmpU32no1); // Q11
       } else {
         postLocSnr[i] = satMax;
@@ -1777,7 +1777,7 @@ int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* speechFrame, short* speechFram
     tmpU32no2 = WEBRTC_SPL_RSHIFT_U32(inst->prevNoiseU32[i], nShifts); // Q(prevQMagn+6)
 
     if (tmpU32no2 > 0) {
-      tmpU32no1 = WEBRTC_SPL_UDIV(tmpU32no1, tmpU32no2); // Q11
+      tmpU32no1 /= tmpU32no2;  // Q11
       tmpU32no1 = WEBRTC_SPL_MIN(satMax, tmpU32no1); // Q11
     } else {
       tmpU32no1 = satMax; // Q11
@@ -1829,7 +1829,7 @@ int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* speechFrame, short* speechFram
         norm32no1++;
       }
       tmpU32no3 = WEBRTC_SPL_UMUL(tmpU32no3, tmpU32no2);
-      tmpU32no3 = WEBRTC_SPL_UDIV(tmpU32no3, inst->timeAvgMagnEnergy);
+      tmpU32no3 /= inst->timeAvgMagnEnergy;
       if (WebRtcSpl_NormU32(tmpU32no3) < norm32no1) {
         inst->featureSpecDiff = 0x007FFFFF;
       } else {
@@ -1994,7 +1994,7 @@ int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* speechFrame, short* speechFram
       tmpU32no1 = WEBRTC_SPL_LSHIFT_U32(tmpU32no1, norm32no2); // Q(qCur+norm32no2)
       tmpU32no2 = WEBRTC_SPL_RSHIFT_U32(tmpNoiseU32, 11 - norm32no2); // Q(qCur+norm32no2-11)
       if (tmpU32no2 > 0) {
-        tmpU32no1 = WEBRTC_SPL_UDIV(tmpU32no1, tmpU32no2); // Q11
+        tmpU32no1 /= tmpU32no2;  // Q11
       }
       curNearSnr = WEBRTC_SPL_MIN(satMax, tmpU32no1); // Q11
     }
@@ -2011,7 +2011,7 @@ int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* speechFrame, short* speechFram
     tmpU32no1 = (uint32_t)(inst->overdrive)
                 + WEBRTC_SPL_RSHIFT_U32(priorSnr + 8192, 14); // Q8
     assert(inst->overdrive > 0);
-    tmpU16no1 = (uint16_t)WEBRTC_SPL_UDIV(priorSnr + (tmpU32no1 >> 1), tmpU32no1); // Q14
+    tmpU16no1 = (priorSnr + tmpU32no1 / 2) / tmpU32no1;  // Q14
     inst->noiseSupFilter[i] = WEBRTC_SPL_SAT(16384, tmpU16no1, inst->denoiseBound); // 16384 = Q14(1.0) // Q14
 
     // Weight in the parametric Wiener filter during startup

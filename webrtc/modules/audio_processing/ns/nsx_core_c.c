@@ -46,7 +46,7 @@ void WebRtcNsx_SpeechNoiseProb(NsxInst_t* inst,
       den = WEBRTC_SPL_RSHIFT_U32(priorLocSnr[i], 11 - normTmp); // Q(normTmp)
     }
     if (den > 0) {
-      besselTmpFX32 -= WEBRTC_SPL_UDIV(num, den); // Q11
+      besselTmpFX32 -= num / den;  // Q11
     } else {
       besselTmpFX32 -= num; // Q11
     }
@@ -157,14 +157,12 @@ void WebRtcNsx_SpeechNoiseProb(NsxInst_t* inst,
                                         20 - inst->stages - normTmp);
       if (tmpU32no2 > 0) {
         // Q(20 - inst->stages)
-        tmpU32no1 = WEBRTC_SPL_UDIV(tmpU32no1, tmpU32no2);
+        tmpU32no1 /= tmpU32no2;
       } else {
         tmpU32no1 = (uint32_t)(0x7fffffff);
       }
     }
-    tmpU32no3 = WEBRTC_SPL_UDIV(WEBRTC_SPL_LSHIFT_U32(inst->thresholdSpecDiff,
-                                                      17),
-                                25);
+    tmpU32no3 = (inst->thresholdSpecDiff << 17) / 25;
     tmpU32no2 = tmpU32no1 - tmpU32no3;
     nShifts = 1;
     tmpIndFX = 16384; // Q14(1.0)

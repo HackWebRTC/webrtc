@@ -196,7 +196,7 @@ int32_t WebRtcIsacfix_UpdateUplinkBwImpl(BwEstimatorstr *bweStr,
 
       bweStr->maxBwInv = kInvBandwidth[3];
       bweStr->minBwInv = kInvBandwidth[2];
-      bweStr->recBwInv = WEBRTC_SPL_UDIV(1073741824, (bweStr->recBw + bweStr->recHeaderRate));
+      bweStr->recBwInv = 1073741824 / (bweStr->recBw + bweStr->recHeaderRate);
     }
 
     /* kBitsByteSec is in Q15 */
@@ -211,7 +211,7 @@ int32_t WebRtcIsacfix_UpdateUplinkBwImpl(BwEstimatorstr *bweStr,
 
       bweStr->maxBwInv = kInvBandwidth[1];
       bweStr->minBwInv = kInvBandwidth[0];
-      bweStr->recBwInv = WEBRTC_SPL_UDIV(1073741824, (bweStr->recBw + bweStr->recHeaderRate));
+      bweStr->recBwInv = 1073741824 / (bweStr->recBw + bweStr->recHeaderRate);
     }
 
     /* kBitsByteSec is in Q14 */
@@ -265,7 +265,7 @@ int32_t WebRtcIsacfix_UpdateUplinkBwImpl(BwEstimatorstr *bweStr,
       if ((arrivalTime - bweStr->lastUpdate) > FS3) {
 
         /* Calculate expected number of received packets since last update */
-        numPktsExpected =  WEBRTC_SPL_UDIV(arrivalTime - bweStr->lastUpdate, frameSizeSampl);
+        numPktsExpected = (arrivalTime - bweStr->lastUpdate) / frameSizeSampl;
 
         /* If received number of packets is more than 90% of expected (922 = 0.9 in Q10): */
         /* do the update, else not                                                        */
@@ -417,8 +417,7 @@ int32_t WebRtcIsacfix_UpdateUplinkBwImpl(BwEstimatorstr *bweStr,
            and NOT right shifting recBwAvg 5 bits to an integer
            At max 13 bits are used
            shift to Q5 */
-        recBwAvgInv = WEBRTC_SPL_UDIV((uint32_t)(0x80000000 + WEBRTC_SPL_RSHIFT_U32(bweStr->recBwAvg, 1)),
-                                      bweStr->recBwAvg);
+        recBwAvgInv = (0x80000000 + bweStr->recBwAvg / 2) / bweStr->recBwAvg;
 
         /* Calculate Projected arrival time difference */
 
@@ -513,7 +512,7 @@ int32_t WebRtcIsacfix_UpdateUplinkBwImpl(BwEstimatorstr *bweStr,
   bweStr->prevSendTime = sendTime;
 
   /* Replace bweStr->recBw by the new value */
-  bweStr->recBw = WEBRTC_SPL_UDIV(1073741824, bweStr->recBwInv) - bweStr->recHeaderRate;
+  bweStr->recBw = 1073741824 / bweStr->recBwInv - bweStr->recHeaderRate;
 
   if (immediateSet) {
     /* delay correction factor is in Q10 */
@@ -530,7 +529,7 @@ int32_t WebRtcIsacfix_UpdateUplinkBwImpl(BwEstimatorstr *bweStr,
 
     bweStr->recJitterShortTerm = 0;
 
-    bweStr->recBwInv = WEBRTC_SPL_UDIV(1073741824, bweStr->recBw + bweStr->recHeaderRate);
+    bweStr->recBwInv = 1073741824 / (bweStr->recBw + bweStr->recHeaderRate);
 
     immediateSet = 0;
   }
@@ -725,7 +724,7 @@ uint16_t WebRtcIsacfix_GetDownlinkBandwidth(const BwEstimatorstr *bweStr)
 
   /* Q18  rec jitter short term abs is in Q13, multiply it by 2^13 to save precision
      2^18 then needs to be shifted 13 bits to 2^31 */
-  rec_jitter_short_term_abs_inv = WEBRTC_SPL_UDIV(0x80000000, bweStr->recJitterShortTermAbs);
+  rec_jitter_short_term_abs_inv = 0x80000000u / bweStr->recJitterShortTermAbs;
 
   /* Q27 = 9 + 18 */
   jitter_sign = WEBRTC_SPL_MUL(WEBRTC_SPL_RSHIFT_W32(bweStr->recJitterShortTerm, 4), (int32_t)rec_jitter_short_term_abs_inv);
@@ -887,7 +886,7 @@ uint16_t WebRtcIsacfix_GetMinBytes(RateModel *State,
   //round and shift before conversion
   MinRate += 256;
   MinRate = WEBRTC_SPL_RSHIFT_W32(MinRate, 9);
-  MinBytes = (uint16_t)WEBRTC_SPL_UDIV(WEBRTC_SPL_MUL(MinRate, FrameSamples), FS8);
+  MinBytes = MinRate * FrameSamples / FS8;
 
   /* StreamSize will be adjusted if less than MinBytes */
   if (StreamSize < MinBytes) {
