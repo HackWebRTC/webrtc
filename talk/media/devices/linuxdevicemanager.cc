@@ -31,10 +31,10 @@
 #include "talk/media/base/mediacommon.h"
 #include "talk/media/devices/libudevsymboltable.h"
 #include "talk/media/devices/v4llookup.h"
-#include "talk/sound/platformsoundsystem.h"
-#include "talk/sound/platformsoundsystemfactory.h"
-#include "talk/sound/sounddevicelocator.h"
-#include "talk/sound/soundsysteminterface.h"
+#include "webrtc/sound/platformsoundsystem.h"
+#include "webrtc/sound/platformsoundsystemfactory.h"
+#include "webrtc/sound/sounddevicelocator.h"
+#include "webrtc/sound/soundsysteminterface.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/linux.h"
 #include "webrtc/base/logging.h"
@@ -89,7 +89,7 @@ static const char* kFilteredVideoDevicesName[] = {
 };
 
 LinuxDeviceManager::LinuxDeviceManager()
-    : sound_system_(new PlatformSoundSystemFactory()) {
+    : sound_system_(new rtc::PlatformSoundSystemFactory()) {
   set_watcher(new LinuxDeviceWatcher(this));
 }
 
@@ -102,7 +102,7 @@ bool LinuxDeviceManager::GetAudioDevices(bool input,
   if (!sound_system_.get()) {
     return false;
   }
-  SoundSystemInterface::SoundDeviceLocatorList list;
+  rtc::SoundSystemInterface::SoundDeviceLocatorList list;
   bool success;
   if (input) {
     success = sound_system_->EnumerateCaptureDevices(&list);
@@ -118,12 +118,12 @@ bool LinuxDeviceManager::GetAudioDevices(bool input,
   // device at index 0, but Enumerate(Capture|Playback)Devices does not include
   // a locator for the default device.
   int index = 1;
-  for (SoundSystemInterface::SoundDeviceLocatorList::iterator i = list.begin();
+  for (rtc::SoundSystemInterface::SoundDeviceLocatorList::iterator i = list.begin();
        i != list.end();
        ++i, ++index) {
     devs->push_back(Device((*i)->name(), index));
   }
-  SoundSystemInterface::ClearSoundDeviceLocatorList(&list);
+  rtc::SoundSystemInterface::ClearSoundDeviceLocatorList(&list);
   sound_system_.release();
   return FilterDevices(devs, kFilteredAudioDevicesName);
 }

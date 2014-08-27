@@ -32,7 +32,7 @@
 #include <vector>
 
 #include "talk/media/devices/devicemanager.h"
-#include "talk/sound/soundsystemfactory.h"
+#include "webrtc/sound/soundsystemfactory.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/stringencode.h"
 
@@ -47,7 +47,7 @@ class LinuxDeviceManager : public DeviceManager {
 
  private:
   virtual bool GetAudioDevices(bool input, std::vector<Device>* devs);
-  SoundSystemHandle sound_system_;
+  rtc::SoundSystemHandle sound_system_;
 };
 
 }  // namespace cricket
