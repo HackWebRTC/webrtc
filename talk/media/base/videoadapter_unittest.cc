@@ -69,6 +69,12 @@ class VideoAdapterTest : public testing::Test {
         listener_.get(), &VideoCapturerListener::OnFrameCaptured);
   }
 
+  virtual void TearDown() {
+    // Explicitly disconnect the VideoCapturer before to avoid data races
+    // (frames delivered to VideoCapturerListener while it's being destructed).
+    capturer_->SignalFrameCaptured.disconnect_all();
+  }
+
  protected:
   class VideoCapturerListener: public sigslot::has_slots<> {
    public:
