@@ -376,7 +376,6 @@ class PeerConnectionTestClientBase
         observer, NULL, PeerConnectionInterface::kStatsOutputLevelStandard));
     EXPECT_TRUE_WAIT(observer->called(), kMaxWaitMs);
     int bw = observer->AvailableReceiveBandwidth();
-    LOG(INFO) << "Available Receive Bandwidth: " << bw;
     return bw;
   }
 
@@ -1046,7 +1045,7 @@ class P2PTestConductor : public testing::Test {
   // Wait until 'size' bytes of audio has been seen by the receiver, on the
   // first audio stream.
   void WaitForAudioData(int size) {
-    static const int kMaxWaitForAudioDataMs = 10000;
+    const int kMaxWaitForAudioDataMs = 10000;
 
     StreamCollectionInterface* local_streams =
         initializing_client()->local_streams();
