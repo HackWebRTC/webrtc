@@ -218,6 +218,6 @@ void freeifaddrs(struct ifaddrs* addrs) {
     delete last;
   }
 }
-#endif  // defined(WEBRTC_ANDROID)
 
 }  // namespace rtc
+#endif  // defined(WEBRTC_ANDROID)
