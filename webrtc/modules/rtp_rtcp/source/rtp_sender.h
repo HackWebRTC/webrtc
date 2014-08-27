@@ -100,6 +100,8 @@ class RTPSender : public RTPSenderInterface, public Bitrate::Observer {
 
   int32_t DeRegisterSendPayload(const int8_t payload_type);
 
+  void SetSendPayloadType(int8_t payload_type);
+
   int8_t SendPayloadType() const;
 
   int SendPayloadFrequency() const;

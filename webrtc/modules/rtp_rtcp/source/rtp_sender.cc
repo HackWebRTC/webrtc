@@ -283,6 +283,11 @@ int32_t RTPSender::DeRegisterSendPayload(
   return 0;
 }
 
+void RTPSender::SetSendPayloadType(int8_t payload_type) {
+  CriticalSectionScoped cs(send_critsect_);
+  payload_type_ = payload_type;
+}
+
 int8_t RTPSender::SendPayloadType() const {
   CriticalSectionScoped cs(send_critsect_);
   return payload_type_;
@@ -385,7 +390,7 @@ int32_t RTPSender::CheckPayloadType(const int8_t payload_type,
     LOG(LS_WARNING) << "Payload type " << payload_type << " not registered.";
     return -1;
   }
-  payload_type_ = payload_type;
+  SetSendPayloadType(payload_type);
   RtpUtility::Payload* payload = it->second;
   assert(payload);
   if (!payload->audio && !audio_configured_) {
