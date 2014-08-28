@@ -258,8 +258,8 @@ void WebRtcNsx_SpeechNoiseProb(NsxInst_t* inst,
           tmp32no1 = WEBRTC_SPL_LSHIFT_W32((int32_t)inst->priorNonSpeechProb,
                                            8); // Q22
 
-          nonSpeechProbFinal[i] = (uint16_t)WEBRTC_SPL_DIV(tmp32no1,
-              (int32_t)inst->priorNonSpeechProb + invLrtFX); // Q8
+          nonSpeechProbFinal[i] = tmp32no1 /
+              (inst->priorNonSpeechProb + invLrtFX);  // Q8
         }
       }
     }

@@ -282,11 +282,11 @@ int16_t WebRtcIsacfix_DecLogisticMulti2(int16_t *dataQ7,
     if (inSqrt < 0)
       inSqrt=-inSqrt;
 
-    newRes = WEBRTC_SPL_RSHIFT_W32(WEBRTC_SPL_DIV(inSqrt, res) + res, 1);
+    newRes = (inSqrt / res + res) >> 1;
     do
     {
       res = newRes;
-      newRes = WEBRTC_SPL_RSHIFT_W32(WEBRTC_SPL_DIV(inSqrt, res) + res, 1);
+      newRes = (inSqrt / res + res) >> 1;
     } while (newRes != res && i-- > 0);
 
     tmpARSpecQ8 = (uint16_t)newRes;

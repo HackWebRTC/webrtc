@@ -208,7 +208,7 @@ int WebRtcAgc_AddMic(void *state, int16_t *in_mic, int16_t *in_mic_H,
         tmp16 = (int16_t)(stt->micVol - stt->maxAnalog);
         tmp32 = WEBRTC_SPL_MUL_16_16(GAIN_TBL_LEN - 1, tmp16);
         tmp16 = (int16_t)(stt->maxLevel - stt->maxAnalog);
-        targetGainIdx = (uint16_t)WEBRTC_SPL_DIV(tmp32, tmp16);
+        targetGainIdx = tmp32 / tmp16;
         assert(targetGainIdx < GAIN_TBL_LEN);
 
         /* Increment through the table towards the target gain.
@@ -1078,8 +1078,7 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
                     tmp32 = WEBRTC_SPL_LSHIFT_W32(inMicLevelTmp - stt->minLevel, 14);
                     if (stt->maxInit != stt->minLevel)
                     {
-                        volNormFIX = (int16_t)WEBRTC_SPL_DIV(tmp32,
-                                                              (stt->maxInit - stt->minLevel));
+                        volNormFIX = tmp32 / (stt->maxInit - stt->minLevel);
                     }
 
                     /* Find correct curve */
@@ -1138,8 +1137,7 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
                     tmp32 = WEBRTC_SPL_LSHIFT_W32(inMicLevelTmp - stt->minLevel, 14);
                     if (stt->maxInit != stt->minLevel)
                     {
-                        volNormFIX = (int16_t)WEBRTC_SPL_DIV(tmp32,
-                                                              (stt->maxInit - stt->minLevel));
+                        volNormFIX = tmp32 / (stt->maxInit - stt->minLevel);
                     }
 
                     /* Find correct curve */

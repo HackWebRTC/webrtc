@@ -350,11 +350,11 @@ static void CalcRootInvArSpec(const int16_t *ARCoefQ12,
     if(in_sqrt<0)
       in_sqrt=-in_sqrt;
 
-    newRes = WEBRTC_SPL_RSHIFT_W32(WEBRTC_SPL_DIV(in_sqrt, res) + res, 1);
+    newRes = (in_sqrt / res + res) >> 1;
     do
     {
       res = newRes;
-      newRes = WEBRTC_SPL_RSHIFT_W32(WEBRTC_SPL_DIV(in_sqrt, res) + res, 1);
+      newRes = (in_sqrt / res + res) >> 1;
     } while (newRes != res && i-- > 0);
 
     CurveQ8[k] = (int16_t)newRes;
@@ -368,11 +368,11 @@ static void CalcRootInvArSpec(const int16_t *ARCoefQ12,
     if(in_sqrt<0)
       in_sqrt=-in_sqrt;
 
-    newRes = WEBRTC_SPL_RSHIFT_W32(WEBRTC_SPL_DIV(in_sqrt, res) + res, 1);
+    newRes = (in_sqrt / res + res) >> 1;
     do
     {
       res = newRes;
-      newRes = WEBRTC_SPL_RSHIFT_W32(WEBRTC_SPL_DIV(in_sqrt, res) + res, 1);
+      newRes = (in_sqrt / res + res) >> 1;
     } while (newRes != res && i-- > 0);
 
     CurveQ8[k] = (int16_t)newRes;

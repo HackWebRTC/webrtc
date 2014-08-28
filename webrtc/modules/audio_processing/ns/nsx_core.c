@@ -1493,8 +1493,7 @@ void WebRtcNsx_DataSynthesis(NsxInst_t* inst, short* outFrame) {
     }
 
     assert(inst->energyIn > 0);
-    energyRatio = (int16_t)WEBRTC_SPL_DIV(energyOut
-        + WEBRTC_SPL_RSHIFT_W32(inst->energyIn, 1), inst->energyIn); // Q8
+    energyRatio = (energyOut + inst->energyIn / 2) / inst->energyIn;  // Q8
     // Limit the ratio to [0, 1] in Q8, i.e., [0, 256]
     energyRatio = WEBRTC_SPL_SAT(256, energyRatio, 0);
 

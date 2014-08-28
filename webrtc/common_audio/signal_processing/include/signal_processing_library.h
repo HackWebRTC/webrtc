@@ -46,8 +46,6 @@
     ((uint32_t) ((uint32_t)(a) * (uint16_t)(b)))
 #define WEBRTC_SPL_MUL_16_U16(a, b) \
     ((int32_t)(int16_t)(a) * (uint16_t)(b))
-#define WEBRTC_SPL_DIV(a, b) \
-    ((int32_t) ((int32_t)(a) / (int32_t)(b)))
 
 #ifndef WEBRTC_ARCH_ARM_V7
 // For ARMv7 platforms, these are inline functions in spl_inl_armv7.h

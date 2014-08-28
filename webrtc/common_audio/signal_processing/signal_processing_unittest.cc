@@ -47,7 +47,6 @@ TEST_F(SplTest, MacroTest) {
 
     a = b;
     b = -3;
-    EXPECT_EQ(-5461, WEBRTC_SPL_DIV(a, b));
 
     EXPECT_EQ(-1, WEBRTC_SPL_MUL_16_32_RSFT16(a, b));
     EXPECT_EQ(-1, WEBRTC_SPL_MUL_16_32_RSFT15(a, b));

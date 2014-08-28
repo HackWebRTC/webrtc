@@ -210,7 +210,7 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t *gainTable, // Q16
         {
             numFIX += WEBRTC_SPL_RSHIFT_W32(tmp32no1, 1);
         }
-        y32 = WEBRTC_SPL_DIV(numFIX, tmp32no1); // in Q14
+        y32 = numFIX / tmp32no1;  // in Q14
         if (limiterEnable && (i < limiterIdx))
         {
             tmp32 = WEBRTC_SPL_MUL_16_U16(i - 1, kLog10_2); // Q14
