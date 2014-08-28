@@ -806,30 +806,6 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     }
   }
 
-  bool experimental_ns;
-  if (options.experimental_ns.Get(&experimental_ns)) {
-    webrtc::AudioProcessing* audioproc =
-        voe_wrapper_->base()->audio_processing();
-#ifdef USE_WEBRTC_DEV_BRANCH
-    webrtc::Config config;
-    config.Set<webrtc::ExperimentalNs>(new webrtc::ExperimentalNs(
-        experimental_ns));
-    audioproc->SetExtraOptions(config);
-#else
-    // We check audioproc for the benefit of tests, since FakeWebRtcVoiceEngine
-    // returns NULL on audio_processing().
-    if (audioproc) {
-      if (audioproc->EnableExperimentalNs(experimental_ns) == -1) {
-        LOG_RTCERR1(EnableExperimentalNs, experimental_ns);
-        return false;
-      }
-    } else {
-      LOG(LS_VERBOSE) << "Experimental noise suppression set to "
-                      << experimental_ns;
-    }
-#endif
-  }
-
   bool highpass_filter;
   if (options.highpass_filter.Get(&highpass_filter)) {
     LOG(LS_INFO) << "High pass filter enabled? " << highpass_filter;
@@ -875,20 +851,50 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
       StopAecDump();
   }
 
+  webrtc::Config config;
+
+  experimental_aec_.SetFrom(options.experimental_aec);
   bool experimental_aec;
-  if (options.experimental_aec.Get(&experimental_aec)) {
-    LOG(LS_INFO) << "Experimental aec is " << experimental_aec;
-    webrtc::AudioProcessing* audioproc =
-        voe_wrapper_->base()->audio_processing();
+  if (experimental_aec_.Get(&experimental_aec)) {
+    LOG(LS_INFO) << "Experimental aec is enabled? " << experimental_aec;
+    config.Set<webrtc::DelayCorrection>(
+        new webrtc::DelayCorrection(experimental_aec));
+  }
+
+#ifdef USE_WEBRTC_DEV_BRANCH
+  experimental_ns_.SetFrom(options.experimental_ns);
+  bool experimental_ns;
+  if (experimental_ns_.Get(&experimental_ns)) {
+    LOG(LS_INFO) << "Experimental ns is enabled? " << experimental_ns;
+    config.Set<webrtc::ExperimentalNs>(
+        new webrtc::ExperimentalNs(experimental_ns));
+  }
+#endif
+
+  // We check audioproc for the benefit of tests, since FakeWebRtcVoiceEngine
+  // returns NULL on audio_processing().
+  webrtc::AudioProcessing* audioproc = voe_wrapper_->base()->audio_processing();
+  if (audioproc) {
+    audioproc->SetExtraOptions(config);
+  }
+
+#ifndef USE_WEBRTC_DEV_BRANCH
+  bool experimental_ns;
+  if (options.experimental_ns.Get(&experimental_ns)) {
+    LOG(LS_INFO) << "Experimental ns is enabled? " << experimental_ns;
     // We check audioproc for the benefit of tests, since FakeWebRtcVoiceEngine
     // returns NULL on audio_processing().
     if (audioproc) {
-      webrtc::Config config;
-      config.Set<webrtc::DelayCorrection>(
-          new webrtc::DelayCorrection(experimental_aec));
-      audioproc->SetExtraOptions(config);
+      if (audioproc->EnableExperimentalNs(experimental_ns) == -1) {
+        LOG_RTCERR1(EnableExperimentalNs, experimental_ns);
+        return false;
+      }
+    } else {
+      LOG(LS_VERBOSE) << "Experimental noise suppression set to "
+                      << experimental_ns;
     }
   }
+#endif
 
   uint32 recording_sample_rate;
   if (options.recording_sample_rate.Get(&recording_sample_rate)) {

@@ -284,6 +284,13 @@ class WebRtcVoiceEngine
   uint32 rx_processor_ssrc_;
 
   rtc::CriticalSection signal_media_critical_;
+
+  // Cache received experimental_aec and experimental_ns values, and apply them
+  // in case they are missing in the audio options. We need to do this because
+  // SetExtraOptions() will revert to defaults for options which are not
+  // provided.
+  Settable<bool> experimental_aec_;
+  Settable<bool> experimental_ns_;
 };
 
 // WebRtcMediaChannel is a class that implements the common WebRtc channel
