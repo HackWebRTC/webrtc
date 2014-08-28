@@ -57,7 +57,8 @@ const char SessionDescriptionInterface::kPrAnswer[] = "pranswer";
 const char SessionDescriptionInterface::kAnswer[] = "answer";
 
 const int JsepSessionDescription::kDefaultVideoCodecId = 100;
-const int JsepSessionDescription::kDefaultVideoCodecFramerate = 30;
+// This is effectively a max value of the frame rate. 30 is default from camera.
+const int JsepSessionDescription::kDefaultVideoCodecFramerate = 60;
 const char JsepSessionDescription::kDefaultVideoCodecName[] = "VP8";
 // Used as default max video codec size before we have it in signaling.
 const int JsepSessionDescription::kMaxVideoCodecWidth = 3840;
