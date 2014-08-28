@@ -29,17 +29,17 @@ WavFile::WavFile(const std::string& filename, int sample_rate, int num_channels)
       num_channels_(num_channels),
       num_samples_(0),
       file_handle_(fopen(filename.c_str(), "wb")) {
-  FATAL_ERROR_IF(!CheckWavParameters(num_channels_,
-                                     sample_rate_,
-                                     kWavFormat,
-                                     kBytesPerSample,
-                                     num_samples_));
-  FATAL_ERROR_IF(!file_handle_);
+  CHECK(file_handle_);
+  CHECK(CheckWavParameters(num_channels_,
+                           sample_rate_,
+                           kWavFormat,
+                           kBytesPerSample,
+                           num_samples_));
 
   // Write a blank placeholder header, since we need to know the total number
   // of samples before we can fill in the real data.
   static const uint8_t blank_header[kWavHeaderSize] = {0};
-  FATAL_ERROR_IF(fwrite(blank_header, kWavHeaderSize, 1, file_handle_) != 1);
+  CHECK_EQ(1u, fwrite(blank_header, kWavHeaderSize, 1, file_handle_));
 }
 
 WavFile::~WavFile() {
@@ -52,15 +52,15 @@ void WavFile::WriteSamples(const int16_t* samples, size_t num_samples) {
 #endif
   const size_t written =
       fwrite(samples, sizeof(*samples), num_samples, file_handle_);
-  FATAL_ERROR_IF(written != num_samples);
+  CHECK_EQ(num_samples, written);
   num_samples_ += static_cast<uint32_t>(written);
-  FATAL_ERROR_IF(written > std::numeric_limits<uint32_t>::max() ||
-                 num_samples_ < written);  // detect uint32_t overflow
-  FATAL_ERROR_IF(!CheckWavParameters(num_channels_,
-                                     sample_rate_,
-                                     kWavFormat,
-                                     kBytesPerSample,
-                                     num_samples_));
+  CHECK(written <= std::numeric_limits<uint32_t>::max() ||
+        num_samples_ >= written);  // detect uint32_t overflow
+  CHECK(CheckWavParameters(num_channels_,
+                           sample_rate_,
+                           kWavFormat,
+                           kBytesPerSample,
+                           num_samples_));
 }
 
 void WavFile::WriteSamples(const float* samples, size_t num_samples) {
@@ -74,12 +74,12 @@ void WavFile::WriteSamples(const float* samples, size_t num_samples) {
 }
 
 void WavFile::Close() {
-  FATAL_ERROR_IF(fseek(file_handle_, 0, SEEK_SET) != 0);
+  CHECK_EQ(0, fseek(file_handle_, 0, SEEK_SET));
   uint8_t header[kWavHeaderSize];
   WriteWavHeader(header, num_channels_, sample_rate_, kWavFormat,
                  kBytesPerSample, num_samples_);
-  FATAL_ERROR_IF(fwrite(header, kWavHeaderSize, 1, file_handle_) != 1);
-  FATAL_ERROR_IF(fclose(file_handle_) != 0);
+  CHECK_EQ(1u, fwrite(header, kWavHeaderSize, 1, file_handle_));
+  CHECK_EQ(0, fclose(file_handle_));
   file_handle_ = NULL;
 }
 

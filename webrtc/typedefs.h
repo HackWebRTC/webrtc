@@ -120,4 +120,13 @@ typedef unsigned __int64    uint64_t;
 #endif
 #endif
 
+// Annotate a function that will not return control flow to the caller.
+#if defined(_MSC_VER)
+#define NO_RETURN __declspec(noreturn)
+#elif defined(__GNUC__)
+#define NO_RETURN __attribute__((noreturn))
+#else
+#define NO_RETURN
+#endif
+
 #endif  // WEBRTC_TYPEDEFS_H_

@@ -253,13 +253,11 @@ OpenSSLCertificate::~OpenSSLCertificate() {
 std::string OpenSSLCertificate::ToPEMString() const {
   BIO* bio = BIO_new(BIO_s_mem());
   if (!bio) {
-    UNREACHABLE();
-    return std::string();
+    FATAL() << "unreachable code";
   }
   if (!PEM_write_bio_X509(bio, x509_)) {
     BIO_free(bio);
-    UNREACHABLE();
-    return std::string();
+    FATAL() << "unreachable code";
   }
   BIO_write(bio, "\0", 1);
   char* buffer;
@@ -276,13 +274,11 @@ void OpenSSLCertificate::ToDER(Buffer* der_buffer) const {
   // Calculates the DER representation of the certificate, from scratch.
   BIO* bio = BIO_new(BIO_s_mem());
   if (!bio) {
-    UNREACHABLE();
-    return;
+    FATAL() << "unreachable code";
   }
   if (!i2d_X509_bio(bio, x509_)) {
     BIO_free(bio);
-    UNREACHABLE();
-    return;
+    FATAL() << "unreachable code";
   }
   char* data;
   size_t length = BIO_get_mem_data(bio, &data);

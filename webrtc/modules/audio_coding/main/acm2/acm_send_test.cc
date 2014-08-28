@@ -50,8 +50,8 @@ bool AcmSendTest::RegisterCodec(const char* payload_name,
                                 int channels,
                                 int payload_type,
                                 int frame_size_samples) {
-  FATAL_ERROR_IF(AudioCodingModule::Codec(
-                     payload_name, &codec_, sampling_freq_hz, channels) != 0);
+  CHECK_EQ(0, AudioCodingModule::Codec(payload_name, &codec_, sampling_freq_hz,
+                                       channels));
   codec_.pltype = payload_type;
   codec_.pacsize = frame_size_samples;
   codec_registered_ = (acm_->RegisterSendCodec(codec_) == 0);
@@ -73,9 +73,8 @@ Packet* AcmSendTest::NextPacket() {
   // Insert audio and process until one packet is produced.
   while (clock_.TimeInMilliseconds() < test_duration_ms_) {
     clock_.AdvanceTimeMilliseconds(kBlockSizeMs);
-    FATAL_ERROR_IF(
-        !audio_source_->Read(input_block_size_samples_, input_frame_.data_));
-    FATAL_ERROR_IF(acm_->Add10MsData(input_frame_) != 0);
+    CHECK(audio_source_->Read(input_block_size_samples_, input_frame_.data_));
+    CHECK_EQ(0, acm_->Add10MsData(input_frame_));
     input_frame_.timestamp_ += input_block_size_samples_;
     int32_t encoded_bytes = acm_->Process();
     if (encoded_bytes > 0) {
