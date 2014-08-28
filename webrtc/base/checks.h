@@ -52,6 +52,11 @@
 
 namespace rtc {
 
+// The use of overrides/webrtc/base/logging.h in a Chromium build results in
+// redefined macro errors. Fortunately, Chromium's macros can be used as drop-in
+// replacements for the standalone versions.
+#ifndef WEBRTC_CHROMIUM_BUILD
+
 // Helper macro which avoids evaluating the arguments to a stream if
 // the condition doesn't hold.
 #define LAZY_STREAM(stream, condition)                          \
@@ -161,6 +166,8 @@ DEFINE_CHECK_OP_IMPL(GT, > )
 #define DCHECK_LT(v1, v2) EAT_STREAM_PARAMETERS
 #define DCHECK_LE(v1, v2) EAT_STREAM_PARAMETERS
 #endif
+
+#endif  // WEBRTC_CHROMIUM_BUILD
 
 #define FATAL() rtc::FatalMessage(__FILE__, __LINE__).stream()
 // TODO(ajm): Consider adding NOTIMPLEMENTED and NOTREACHED macros when
