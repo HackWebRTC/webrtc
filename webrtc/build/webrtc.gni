@@ -12,14 +12,6 @@ declare_args() {
   build_with_chromium = true
   build_with_libjingle = true
 
-  if (build_with_libjingle) {
-    include_tests = false
-    restrict_webrtc_logging = true
-  } else {
-    include_tests = true
-    restrict_webrtc_logging = false
-  }
-
   # Adds video support to dependencies shared by voice and video engine.
   # This should normally be enabled; the intended use is to disable only
   # when building voice engine exclusively.
@@ -58,6 +50,41 @@ declare_args() {
   mips_fpu = true
 
   enable_android_opensl = true
+
+  if (build_with_chromium) {
+    # Exclude pulse audio on Chromium since its prerequisites don't require
+    # pulse audio.
+    include_pulse_audio = false
+
+    # Exclude internal ADM since Chromium uses its own IO handling.
+    include_internal_audio_device = false
+
+    # Exclude internal VCM in Chromium build.
+    include_internal_video_capture = false
+
+    # Exclude internal video render module in Chromium build.
+    include_internal_video_render = false
+  } else {
+    # Settings for the standalone (not-in-Chromium) build.
+
+    # TODO(andrew): For now, disable the Chrome plugins, which causes a
+    # flood of chromium-style warnings. Investigate enabling them:
+    # http://code.google.com/p/webrtc/issues/detail?id=163
+    clang_use_chrome_plugins = false
+
+    include_pulse_audio = true
+    include_internal_audio_device = true
+    include_internal_video_capture = true
+    include_internal_video_render = true
+  }
+
+  if (build_with_libjingle) {
+    include_tests = false
+    restrict_webrtc_logging = true
+  } else {
+    include_tests = true
+    restrict_webrtc_logging = false
+  }
 
   if (is_ios) {
     build_libjpeg = false

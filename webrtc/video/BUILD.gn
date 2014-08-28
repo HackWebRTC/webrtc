@@ -9,6 +9,28 @@
 import("../build/webrtc.gni")
 
 source_set("video") {
-  # TODO(pbos): Implement when video_engine_core is done.
+  sources = [
+    "call.cc",
+    "encoded_frame_callback_adapter.cc",
+    "encoded_frame_callback_adapter.h",
+    "receive_statistics_proxy.cc",
+    "receive_statistics_proxy.h",
+    "send_statistics_proxy.cc",
+    "send_statistics_proxy.h",
+    "transport_adapter.cc",
+    "transport_adapter.h",
+    "video_receive_stream.cc",
+    "video_receive_stream.h",
+    "video_send_stream.cc",
+    "video_send_stream.h",
+  ]
+
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+
+  deps = [ "../video_engine:video_engine_core" ]
 }
 
