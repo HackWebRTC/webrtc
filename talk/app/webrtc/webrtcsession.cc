@@ -224,30 +224,28 @@ static bool GetTrackIdBySsrc(const SessionDescription* session_description,
   cricket::StreamParams stream_out;
   const cricket::ContentInfo* audio_info =
       cricket::GetFirstAudioContent(session_description);
-  if (!audio_info) {
-    return false;
-  }
-  const cricket::MediaContentDescription* audio_content =
-      static_cast<const cricket::MediaContentDescription*>(
-          audio_info->description);
+  if (audio_info) {
+    const cricket::MediaContentDescription* audio_content =
+        static_cast<const cricket::MediaContentDescription*>(
+            audio_info->description);
 
-  if (cricket::GetStreamBySsrc(audio_content->streams(), ssrc, &stream_out)) {
-    *track_id = stream_out.id;
-    return true;
+    if (cricket::GetStreamBySsrc(audio_content->streams(), ssrc, &stream_out)) {
+      *track_id = stream_out.id;
+      return true;
+    }
   }
 
   const cricket::ContentInfo* video_info =
       cricket::GetFirstVideoContent(session_description);
-  if (!video_info) {
-    return false;
-  }
-  const cricket::MediaContentDescription* video_content =
-      static_cast<const cricket::MediaContentDescription*>(
-          video_info->description);
+  if (video_info) {
+    const cricket::MediaContentDescription* video_content =
+        static_cast<const cricket::MediaContentDescription*>(
+            video_info->description);
 
-  if (cricket::GetStreamBySsrc(video_content->streams(), ssrc, &stream_out)) {
-    *track_id = stream_out.id;
-    return true;
+    if (cricket::GetStreamBySsrc(video_content->streams(), ssrc, &stream_out)) {
+      *track_id = stream_out.id;
+      return true;
+    }
   }
   return false;
 }
