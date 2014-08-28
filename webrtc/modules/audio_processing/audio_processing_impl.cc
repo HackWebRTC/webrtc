@@ -367,7 +367,8 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
   if (debug_file_->Open()) {
     event_msg_->set_type(audioproc::Event::STREAM);
     audioproc::Stream* msg = event_msg_->mutable_stream();
-    const size_t channel_size = sizeof(float) * samples_per_channel;
+    const size_t channel_size =
+        sizeof(float) * fwd_in_format_.samples_per_channel();
     for (int i = 0; i < fwd_in_format_.num_channels(); ++i)
       msg->add_input_channel(src[i], channel_size);
   }
@@ -384,7 +385,8 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_file_->Open()) {
     audioproc::Stream* msg = event_msg_->mutable_stream();
-    const size_t channel_size = sizeof(float) * samples_per_channel;
+    const size_t channel_size =
+        sizeof(float) * fwd_out_format_.samples_per_channel();
     for (int i = 0; i < fwd_proc_format_.num_channels(); ++i)
       msg->add_output_channel(dest[i], channel_size);
     RETURN_ON_ERR(WriteMessageToDebugFile());
@@ -533,7 +535,8 @@ int AudioProcessingImpl::AnalyzeReverseStream(const float* const* data,
   if (debug_file_->Open()) {
     event_msg_->set_type(audioproc::Event::REVERSE_STREAM);
     audioproc::ReverseStream* msg = event_msg_->mutable_reverse_stream();
-    const size_t channel_size = sizeof(float) * samples_per_channel;
+    const size_t channel_size =
+        sizeof(float) * rev_in_format_.samples_per_channel();
     for (int i = 0; i < num_channels; ++i)
       msg->add_channel(data[i], channel_size);
     RETURN_ON_ERR(WriteMessageToDebugFile());
