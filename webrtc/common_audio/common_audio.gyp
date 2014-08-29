@@ -184,6 +184,15 @@
             'signal_processing/min_max_operations_neon.S',
             'signal_processing/vector_scaling_operations_neon.S',
           ],
+          'conditions': [
+            # Disable LTO in common_audio_neon target due to compiler bug
+            ['use_lto==1', {
+              'cflags!': [
+                '-flto',
+                '-ffat-lto-objects',
+              ],
+            }],
+          ],
         },
       ],  # targets
     }],

@@ -222,6 +222,13 @@
             ],
             'includes!': ['../../build/arm_neon.gypi',],
           }],
+          # Disable LTO in audio_processing_neon target due to compiler bug
+          ['use_lto==1', {
+            'cflags!': [
+              '-flto',
+              '-ffat-lto-objects',
+            ],
+          }],
         ],
       }],
     }],

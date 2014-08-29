@@ -112,6 +112,11 @@
     'mips_fpu%' : 1,
     'enable_android_opensl%': 1,
 
+    # Link-Time Optimizations
+    # Executes code generation at link-time instead of compile-time
+    # https://gcc.gnu.org/wiki/LinkTimeOptimization
+    'use_lto%': 0,
+
     'conditions': [
       ['build_with_chromium==1', {
         # Exclude pulse audio on Chromium since its prerequisites don't require
