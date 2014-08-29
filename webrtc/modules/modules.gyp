@@ -153,6 +153,7 @@
             'audio_coding/neteq/mock/mock_external_decoder_pcm16b.h',
             'audio_coding/neteq/mock/mock_packet_buffer.h',
             'audio_coding/neteq/mock/mock_payload_splitter.h',
+            'audio_coding/neteq/tools/input_audio_file_unittest.cc',
             'audio_coding/neteq/tools/packet_unittest.cc',
             'audio_processing/aec/system_delay_unittest.cc',
             'audio_processing/aec/echo_cancellation_unittest.cc',

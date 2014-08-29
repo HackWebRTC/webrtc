@@ -37,7 +37,8 @@ class InputAudioFile {
   // Creates a multi-channel signal from a mono signal. Each sample is repeated
   // |channels| times to create an interleaved multi-channel signal where all
   // channels are identical. The output |destination| must have the capacity to
-  // hold samples * channels elements.
+  // hold samples * channels elements. Note that |source| and |destination| can
+  // be the same array (i.e., point to the same address).
   static void DuplicateInterleaved(const int16_t* source, size_t samples,
                                    size_t channels, int16_t* destination);
 

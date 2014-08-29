@@ -40,8 +40,11 @@ bool InputAudioFile::Read(size_t samples, int16_t* destination) {
 void InputAudioFile::DuplicateInterleaved(const int16_t* source, size_t samples,
                                           size_t channels,
                                           int16_t* destination) {
-  for (size_t i = 0; i < samples; ++i) {
-    for (size_t j = 0; j < channels; ++j) {
+  // Start from the end of |source| and |destination|, and work towards the
+  // beginning. This is to allow in-place interleaving of the same array (i.e.,
+  // |source| and |destination| are the same array).
+  for (int i = static_cast<int>(samples - 1); i >= 0; --i) {
+    for (int j = static_cast<int>(channels - 1); j >= 0; --j) {
       destination[i * channels + j] = source[i];
     }
   }
