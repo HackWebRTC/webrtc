@@ -6,19 +6,21 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+import("//build/config/arm.gni")
+
 declare_args() {
   # Assume Chromium build for now, since that's the priority case for getting GN
   # up and running with WebRTC.
   build_with_chromium = true
   build_with_libjingle = true
 
+  # Disable this to avoid building the Opus audio codec.
+  include_opus = true
+
   # Adds video support to dependencies shared by voice and video engine.
   # This should normally be enabled; the intended use is to disable only
   # when building voice engine exclusively.
   enable_video = true
-
-  # Disable this to not build libvpx and instead use an externally provided lib.
-  build_libvpx = true
 
   # Selects fixed-point code where possible.
   prefer_fixed_point = false
@@ -50,6 +52,11 @@ declare_args() {
   mips_fpu = true
 
   enable_android_opensl = true
+
+  # Link-Time Optimizations.
+  # Executes code generation at link-time instead of compile-time.
+  # https://gcc.gnu.org/wiki/LinkTimeOptimization
+  use_lto = false
 
   if (build_with_chromium) {
     # Exclude pulse audio on Chromium since its prerequisites don't require
@@ -94,4 +101,9 @@ declare_args() {
   if (cpu_arch == "arm") {
     prefer_fixed_point = true
   }
+
+  # WebRTC builds ARM v7 Neon instruction set optimized code for both iOS and
+  # Android, which is why we currently cannot use the variables in
+  # //build/config/arm.gni (since it disables Neon for Android).
+  build_armv7_neon = (cpu_arch == "arm" && arm_version == 7)
 }
