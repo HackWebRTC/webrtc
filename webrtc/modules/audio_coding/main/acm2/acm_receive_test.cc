@@ -33,11 +33,6 @@ bool ModifyAndUseThisCodec(CodecInst* codec_param) {
   if (STR_CASE_CMP(codec_param->plname, "telephone-event") == 0)
     return false;  // Skip DTFM.
 
-  if (STR_CASE_CMP(codec_param->plname, "opus") == 0)
-    codec_param->channels = 1;  // Always register Opus as mono.
-  else if (codec_param->channels > 1)
-    return false;  // Skip all non-mono codecs.
-
   return true;
 }
 
@@ -107,12 +102,14 @@ bool RemapPltypeAndUseThisCodec(const char* plname,
 
 AcmReceiveTest::AcmReceiveTest(PacketSource* packet_source,
                                AudioSink* audio_sink,
-                               int output_freq_hz)
+                               int output_freq_hz,
+                               NumOutputChannels exptected_output_channels)
     : clock_(0),
       acm_(webrtc::AudioCodingModule::Create(0, &clock_)),
       packet_source_(packet_source),
       audio_sink_(audio_sink),
-      output_freq_hz_(output_freq_hz) {
+      output_freq_hz_(output_freq_hz),
+      exptected_output_channels_(exptected_output_channels) {
 }
 
 void AcmReceiveTest::RegisterDefaultCodecs() {
@@ -155,7 +152,15 @@ void AcmReceiveTest::Run() {
       EXPECT_EQ(output_freq_hz_, output_frame.sample_rate_hz_);
       const int samples_per_block = output_freq_hz_ * 10 / 1000;
       EXPECT_EQ(samples_per_block, output_frame.samples_per_channel_);
-      EXPECT_EQ(1, output_frame.num_channels_);
+      if (exptected_output_channels_ != kArbitraryChannels) {
+        if (output_frame.speech_type_ == webrtc::AudioFrame::kPLC) {
+          // Don't check number of channels for PLC output, since each test run
+          // usually starts with a short period of mono PLC before decoding the
+          // first packet.
+        } else {
+          EXPECT_EQ(exptected_output_channels_, output_frame.num_channels_);
+        }
+      }
       ASSERT_TRUE(audio_sink_->WriteAudioFrame(output_frame));
       clock_.AdvanceTimeMilliseconds(10);
     }

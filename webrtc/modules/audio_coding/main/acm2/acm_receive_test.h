@@ -25,9 +25,17 @@ class PacketSource;
 
 class AcmReceiveTest {
  public:
-  AcmReceiveTest(PacketSource* packet_source,
-                 AudioSink* audio_sink,
-                 int output_freq_hz);
+  enum NumOutputChannels {
+    kArbitraryChannels = 0,
+    kMonoOutput = 1,
+    kStereoOutput = 2
+  };
+
+  AcmReceiveTest(
+      PacketSource* packet_source,
+      AudioSink* audio_sink,
+      int output_freq_hz,
+      NumOutputChannels exptected_output_channels);
   virtual ~AcmReceiveTest() {}
 
   // Registers the codecs with default parameters from ACM.
@@ -46,6 +54,7 @@ class AcmReceiveTest {
   PacketSource* packet_source_;
   AudioSink* audio_sink_;
   const int output_freq_hz_;
+  NumOutputChannels exptected_output_channels_;
 
   DISALLOW_COPY_AND_ASSIGN(AcmReceiveTest);
 };

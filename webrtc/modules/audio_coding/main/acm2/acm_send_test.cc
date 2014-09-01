@@ -55,7 +55,6 @@ bool AcmSendTest::RegisterCodec(const char* payload_name,
   codec_.pltype = payload_type;
   codec_.pacsize = frame_size_samples;
   codec_registered_ = (acm_->RegisterSendCodec(codec_) == 0);
-  assert(channels == 1);  // TODO(henrik.lundin) Add multi-channel support.
   input_frame_.num_channels_ = channels;
   assert(input_block_size_samples_ * input_frame_.num_channels_ <=
          AudioFrame::kMaxDataSizeSamples);
@@ -74,6 +73,12 @@ Packet* AcmSendTest::NextPacket() {
   while (clock_.TimeInMilliseconds() < test_duration_ms_) {
     clock_.AdvanceTimeMilliseconds(kBlockSizeMs);
     CHECK(audio_source_->Read(input_block_size_samples_, input_frame_.data_));
+    if (input_frame_.num_channels_ > 1) {
+      InputAudioFile::DuplicateInterleaved(input_frame_.data_,
+                                           input_block_size_samples_,
+                                           input_frame_.num_channels_,
+                                           input_frame_.data_);
+    }
     CHECK_EQ(0, acm_->Add10MsData(input_frame_));
     input_frame_.timestamp_ += input_block_size_samples_;
     int32_t encoded_bytes = acm_->Process();

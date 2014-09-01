@@ -556,7 +556,8 @@ class AcmReceiverBitExactness : public ::testing::Test {
     test::OutputAudioFile output_file(output_file_name);
     test::AudioSinkFork output(&checksum, &output_file);
 
-    test::AcmReceiveTest test(packet_source.get(), &output, output_freq_hz);
+    test::AcmReceiveTest test(packet_source.get(), &output, output_freq_hz,
+                              test::AcmReceiveTest::kArbitraryChannels);
     ASSERT_NO_FATAL_FAILURE(test.RegisterNetEqTestCodecs());
     test.Run();
 
@@ -652,7 +653,8 @@ class AcmSenderBitExactness : public ::testing::Test,
   // before calling this method.
   void Run(const std::string& audio_checksum_ref,
            const std::string& payload_checksum_ref,
-           int expected_packets) {
+           int expected_packets,
+           test::AcmReceiveTest::NumOutputChannels expected_channels) {
     // Set up the receiver used to decode the packets and verify the decoded
     // output.
     test::AudioChecksum audio_checksum;
@@ -668,7 +670,8 @@ class AcmSenderBitExactness : public ::testing::Test,
     // Have the output audio sent both to file and to the checksum calculator.
     test::AudioSinkFork output(&audio_checksum, &output_file);
     const int kOutputFreqHz = 8000;
-    test::AcmReceiveTest receive_test(this, &output, kOutputFreqHz);
+    test::AcmReceiveTest receive_test(
+        this, &output, kOutputFreqHz, expected_channels);
     ASSERT_NO_FATAL_FAILURE(receive_test.RegisterDefaultCodecs());
 
     // This is where the actual test is executed.
@@ -760,7 +763,8 @@ TEST_F(AcmSenderBitExactness, IsacWb30ms) {
           "d42cb5195463da26c8129bbfe73a22e6",
           "83de248aea9c3c2bd680b6952401b4ca",
           "3c79f16f34218271f3dca4e2b1dfe1bb"),
-      33);
+      33,
+      test::AcmReceiveTest::kMonoOutput);
 }
 
 TEST_F(AcmSenderBitExactness, IsacWb60ms) {
@@ -773,7 +777,158 @@ TEST_F(AcmSenderBitExactness, IsacWb60ms) {
           "ebe04a819d3a9d83a83a17f271e1139a",
           "97aeef98553b5a4b5a68f8b716e8eaf0",
           "9e0a0ab743ad987b55b8e14802769c56"),
-      16);
+      16,
+      test::AcmReceiveTest::kMonoOutput);
+}
+
+TEST_F(AcmSenderBitExactness, DISABLED_ON_ANDROID(IsacSwb30ms)) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("ISAC", 32000, 1, 104, 960, 960));
+  Run(AcmReceiverBitExactness::PlatformChecksum(
+          "98d960600eb4ddb3fcbe11f5057ddfd7",
+          "",
+          "2f6dfe142f735f1d96f6bd86d2526f42"),
+      AcmReceiverBitExactness::PlatformChecksum(
+          "cc9d2d86a71d6f99f97680a5c27e2762",
+          "",
+          "7b214fc3a5e33d68bf30e77969371f31"),
+      33,
+      test::AcmReceiveTest::kMonoOutput);
+}
+
+TEST_F(AcmSenderBitExactness, Pcm16_8000khz_10ms) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("L16", 8000, 1, 107, 80, 80));
+  Run("de4a98e1406f8b798d99cd0704e862e2",
+      "c1edd36339ce0326cc4550041ad719a0",
+      100,
+      test::AcmReceiveTest::kMonoOutput);
+}
+
+TEST_F(AcmSenderBitExactness, Pcm16_16000khz_10ms) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("L16", 16000, 1, 108, 160, 160));
+  Run("ae646d7b68384a1269cc080dd4501916",
+      "ad786526383178b08d80d6eee06e9bad",
+      100,
+      test::AcmReceiveTest::kMonoOutput);
+}
+
+TEST_F(AcmSenderBitExactness, Pcm16_32000khz_10ms) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("L16", 32000, 1, 109, 320, 320));
+  Run("7fe325e8fbaf755e3c5df0b11a4774fb",
+      "5ef82ea885e922263606c6fdbc49f651",
+      100,
+      test::AcmReceiveTest::kMonoOutput);
+}
+
+TEST_F(AcmSenderBitExactness, Pcm16_stereo_8000khz_10ms) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("L16", 8000, 2, 111, 80, 80));
+  Run("fb263b74e7ac3de915474d77e4744ceb",
+      "62ce5adb0d4965d0a52ec98ae7f98974",
+      100,
+      test::AcmReceiveTest::kStereoOutput);
+}
+
+TEST_F(AcmSenderBitExactness, Pcm16_stereo_16000khz_10ms) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("L16", 16000, 2, 112, 160, 160));
+  Run("d09e9239553649d7ac93e19d304281fd",
+      "41ca8edac4b8c71cd54fd9f25ec14870",
+      100,
+      test::AcmReceiveTest::kStereoOutput);
+}
+
+TEST_F(AcmSenderBitExactness, Pcm16_stereo_32000khz_10ms) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("L16", 32000, 2, 113, 320, 320));
+  Run("5f025d4f390982cc26b3d92fe02e3044",
+      "50e58502fb04421bf5b857dda4c96879",
+      100,
+      test::AcmReceiveTest::kStereoOutput);
+}
+
+TEST_F(AcmSenderBitExactness, Pcmu_20ms) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("PCMU", 8000, 1, 0, 160, 160));
+  Run("81a9d4c0bb72e9becc43aef124c981e9",
+      "8f9b8750bd80fe26b6cbf6659b89f0f9",
+      50,
+      test::AcmReceiveTest::kMonoOutput);
+}
+
+TEST_F(AcmSenderBitExactness, Pcma_20ms) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("PCMA", 8000, 1, 8, 160, 160));
+  Run("39611f798969053925a49dc06d08de29",
+      "6ad745e55aa48981bfc790d0eeef2dd1",
+      50,
+      test::AcmReceiveTest::kMonoOutput);
+}
+
+TEST_F(AcmSenderBitExactness, Pcmu_stereo_20ms) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("PCMU", 8000, 2, 110, 160, 160));
+  Run("437bec032fdc5cbaa0d5175430af7b18",
+      "60b6f25e8d1e74cb679cfe756dd9bca5",
+      50,
+      test::AcmReceiveTest::kStereoOutput);
+}
+
+TEST_F(AcmSenderBitExactness, Pcma_stereo_20ms) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("PCMA", 8000, 2, 118, 160, 160));
+  Run("a5c6d83c5b7cedbeff734238220a4b0c",
+      "92b282c83efd20e7eeef52ba40842cf7",
+      50,
+      test::AcmReceiveTest::kStereoOutput);
+}
+
+TEST_F(AcmSenderBitExactness, DISABLED_ON_ANDROID(Ilbc_30ms)) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("ILBC", 8000, 1, 102, 240, 240));
+  Run(AcmReceiverBitExactness::PlatformChecksum(
+          "7b6ec10910debd9af08011d3ed5249f7",
+          "android_audio",
+          "7b6ec10910debd9af08011d3ed5249f7"),
+      AcmReceiverBitExactness::PlatformChecksum(
+          "cfae2e9f6aba96e145f2bcdd5050ce78",
+          "android_payload",
+          "cfae2e9f6aba96e145f2bcdd5050ce78"),
+      33,
+      test::AcmReceiveTest::kMonoOutput);
+}
+
+TEST_F(AcmSenderBitExactness, DISABLED_ON_ANDROID(G722_20ms)) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("G722", 16000, 1, 9, 320, 160));
+  Run(AcmReceiverBitExactness::PlatformChecksum(
+          "7d759436f2533582950d148b5161a36c",
+          "android_audio",
+          "7d759436f2533582950d148b5161a36c"),
+      AcmReceiverBitExactness::PlatformChecksum(
+          "fc68a87e1380614e658087cb35d5ca10",
+          "android_payload",
+          "fc68a87e1380614e658087cb35d5ca10"),
+      50,
+      test::AcmReceiveTest::kMonoOutput);
+}
+
+TEST_F(AcmSenderBitExactness, DISABLED_ON_ANDROID(G722_stereo_20ms)) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("G722", 16000, 2, 119, 320, 160));
+  Run(AcmReceiverBitExactness::PlatformChecksum(
+          "7190ee718ab3d80eca181e5f7140c210",
+          "android_audio",
+          "7190ee718ab3d80eca181e5f7140c210"),
+      AcmReceiverBitExactness::PlatformChecksum(
+          "66516152eeaa1e650ad94ff85f668dac",
+          "android_payload",
+          "66516152eeaa1e650ad94ff85f668dac"),
+      50,
+      test::AcmReceiveTest::kStereoOutput);
+}
+
+TEST_F(AcmSenderBitExactness, Opus_stereo_20ms) {
+  ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 2, 120, 960, 960));
+  Run(AcmReceiverBitExactness::PlatformChecksum(
+          "855041f2490b887302bce9d544731849",
+          "1e1a0fce893fef2d66886a7f09e2ebce",
+          "855041f2490b887302bce9d544731849"),
+      AcmReceiverBitExactness::PlatformChecksum(
+          "d781cce1ab986b618d0da87226cdde30",
+          "1a1fe04dd12e755949987c8d729fb3e0",
+          "d781cce1ab986b618d0da87226cdde30"),
+      50,
+      test::AcmReceiveTest::kStereoOutput);
 }
 
 }  // namespace webrtc
