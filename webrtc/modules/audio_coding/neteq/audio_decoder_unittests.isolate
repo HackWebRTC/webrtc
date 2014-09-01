@@ -8,31 +8,29 @@
 {
   'conditions': [
     ['OS=="android"', {
-      # When doing Android builds, the WebRTC code is put in third_party/webrtc
-      # of a Chromium checkout, this is one level above the standalone build.
       'variables': {
         'isolate_dependency_untracked': [
-          '../../../../../resources/',
-          '../../../../../data/',
+          '<(DEPTH)/resources/',
+          '<(DEPTH)/data/',
         ],
       },
     }],
     ['OS=="linux" or OS=="mac" or OS=="win"', {
       'variables': {
         'command': [
-          '../../../../testing/test_env.py',
+          '<(DEPTH)/testing/test_env.py',
           '<(PRODUCT_DIR)/audio_decoder_unittests<(EXECUTABLE_SUFFIX)',
         ],
         'isolate_dependency_touched': [
-          '../../../../DEPS',
+          '<(DEPTH)/DEPS',
         ],
         'isolate_dependency_tracked': [
-          '../../../../resources/audio_coding/testfile32kHz.pcm',
-          '../../../../testing/test_env.py',
+          '<(DEPTH)/resources/audio_coding/testfile32kHz.pcm',
+          '<(DEPTH)/testing/test_env.py',
           '<(PRODUCT_DIR)/audio_decoder_unittests<(EXECUTABLE_SUFFIX)',
         ],
         'isolate_dependency_untracked': [
-          '../../../../tools/swarming_client/',
+          '<(DEPTH)/tools/swarming_client/',
         ],
       },
     }],
