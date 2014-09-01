@@ -30,9 +30,7 @@
         4267,  # size_t to int truncation.
       ],
       'conditions': [
-        # TODO(henrike): remove build_with_chromium==1 when the bots are
-        # using Chromium's buildbots.
-        ['build_with_chromium==1 and OS=="android"', {
+        ['OS=="android"', {
           'dependencies': [
             '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
           ],
@@ -41,15 +39,20 @@
     },
   ],  # targets
   'conditions': [
-    # TODO(henrike): remove build_with_chromium==1 when the bots are using
-    # Chromium's buildbots.
-    ['build_with_chromium==1 and OS=="android"', {
+    ['OS=="android"', {
       'targets': [
         {
-          'target_name': 'common_video_unittests_apk_target',
+          'target_name': 'common_video_unittests_apk',
           'type': 'none',
+          'variables': {
+            'test_suite_name': 'common_video_unittests',
+            'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)common_video_unittests<(SHARED_LIB_SUFFIX)',
+          },
           'dependencies': [
-            '<(apk_tests_path):common_video_unittests_apk',
+            'common_video_unittests',
+          ],
+          'includes': [
+            '../../build/apk_test.gypi',
           ],
         },
       ],

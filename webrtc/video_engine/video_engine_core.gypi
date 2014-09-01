@@ -136,9 +136,7 @@
             'vie_remb_unittest.cc',
           ],
           'conditions': [
-            # TODO(henrike): remove build_with_chromium==1 when the bots are
-            # using Chromium's buildbots.
-            ['build_with_chromium==1 and OS=="android"', {
+            ['OS=="android"', {
               'dependencies': [
                 '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
               ],
@@ -147,17 +145,22 @@
         },
       ], # targets
       'conditions': [
-        # TODO(henrike): remove build_with_chromium==1 when the bots are using
-        # Chromium's buildbots.
-        ['build_with_chromium==1 and OS=="android"', {
+        ['OS=="android"', {
           'targets': [
             {
-              'target_name': 'video_engine_core_unittests_apk_target',
+              'target_name': 'video_engine_core_unittests_apk',
               'type': 'none',
+              'variables': {
+                'test_suite_name': 'video_engine_core_unittests',
+                'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)video_engine_core_unittests<(SHARED_LIB_SUFFIX)',
+              },
               'dependencies': [
-                '<(apk_tests_path):video_engine_core_unittests_apk',
+                'video_engine_core_unittests',
               ],
-            },
+              'includes': [
+                '../../build/apk_test.gypi',
+              ],
+             },
           ],
         }],
         ['test_isolation_mode != "noop"', {

@@ -34,14 +34,13 @@ deps_os = {
     "third_party/winsdk_samples/src":
       (Var("googlecode_url") % "webrtc") + "/deps/third_party/winsdk_samples_v71@3145",
   },
-
-  "android": {
-    # Precompiled tools needed for Android test execution. Needed since we can't
-    # compile them from source in WebRTC since they depend on Chromium's base.
-    "tools/android":
-      (Var("googlecode_url") % "webrtc") + "/deps/tools/android@6306",
-  },
 }
+
+include_rules = [
+  # Base is only used to build Android APK tests and may not be referenced by
+  # WebRTC production code.
+  "-base",
+]
 
 hooks = [
   {

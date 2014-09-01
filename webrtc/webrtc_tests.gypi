@@ -117,9 +117,7 @@
         'webrtc',
       ],
       'conditions': [
-        # TODO(henrike): remove build_with_chromium==1 when the bots are
-        # using Chromium's buildbots.
-        ['build_with_chromium==1 and OS=="android"', {
+        ['OS=="android"', {
           'dependencies': [
             '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
           ],
@@ -128,22 +126,34 @@
     },
   ],
   'conditions': [
-    # TODO(henrike): remove build_with_chromium==1 when the bots are using
-    # Chromium's buildbots.
-    ['build_with_chromium==1 and OS=="android"', {
+    ['OS=="android"', {
       'targets': [
         {
-          'target_name': 'video_engine_tests_apk_target',
+          'target_name': 'video_engine_tests_apk',
           'type': 'none',
+          'variables': {
+            'test_suite_name': 'video_engine_tests',
+            'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)video_engine_tests<(SHARED_LIB_SUFFIX)',
+          },
           'dependencies': [
-            '<(apk_tests_path):video_engine_tests_apk',
+            'video_engine_tests',
+          ],
+          'includes': [
+            '../build/apk_test.gypi',
           ],
         },
         {
-          'target_name': 'webrtc_perf_tests_apk_target',
+          'target_name': 'webrtc_perf_tests_apk',
           'type': 'none',
+          'variables': {
+            'test_suite_name': 'webrtc_perf_tests',
+            'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)webrtc_perf_tests<(SHARED_LIB_SUFFIX)',
+          },
           'dependencies': [
-            '<(apk_tests_path):webrtc_perf_tests_apk',
+            'webrtc_perf_tests',
+          ],
+          'includes': [
+            '../build/apk_test.gypi',
           ],
         },
       ],

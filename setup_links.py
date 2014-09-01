@@ -37,8 +37,6 @@ DIRECTORIES = [
   'google_apis',  # Needed by build/common.gypi.
   'net',
   'testing',
-  'third_party/android_testrunner',
-  'third_party/android_tools',
   'third_party/binutils',
   'third_party/boringssl',
   'third_party/colorama',
@@ -62,6 +60,7 @@ DIRECTORIES = [
   'third_party/syzygy',
   'third_party/usrsctp',
   'third_party/yasm',
+  'third_party/zlib',
   'tools/clang',
   'tools/generate_library_loader',
   'tools/gn',
@@ -73,6 +72,15 @@ DIRECTORIES = [
   'tools/valgrind',
   'tools/win',
 ]
+
+from sync_chromium import get_target_os_list
+if 'android' in get_target_os_list():
+  DIRECTORIES += [
+    'base',
+    'third_party/android_testrunner',
+    'third_party/android_tools',
+    'tools/android',
+  ]
 
 FILES = {
   '.gn': None,

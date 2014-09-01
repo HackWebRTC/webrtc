@@ -45,9 +45,7 @@
         ['os_posix==0', {
           'sources!': [ 'thread_posix_unittest.cc', ],
         }],
-        # TODO(henrike): remove build_with_chromium==1 when the bots are
-        # using Chromium's buildbots.
-        ['build_with_chromium==1 and OS=="android"', {
+        ['OS=="android"', {
           'dependencies': [
             '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
           ],
@@ -60,15 +58,20 @@
     },
   ],
   'conditions': [
-    # TODO(henrike): remove build_with_chromium==1 when the bots are using
-    # Chromium's buildbots.
-    ['include_tests==1 and build_with_chromium==1 and OS=="android"', {
+    ['OS=="android"', {
       'targets': [
         {
-          'target_name': 'system_wrappers_unittests_apk_target',
+          'target_name': 'system_wrappers_unittests_apk',
           'type': 'none',
+          'variables': {
+            'test_suite_name': 'system_wrappers_unittests',
+            'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)system_wrappers_unittests<(SHARED_LIB_SUFFIX)',
+          },
           'dependencies': [
-            '<(apk_tests_path):system_wrappers_unittests_apk',
+            'system_wrappers_unittests',
+          ],
+          'includes': [
+            '../../../build/apk_test.gypi',
           ],
         },
       ],

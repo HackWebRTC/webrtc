@@ -35,6 +35,7 @@
 .settings
 .sw?
 /Makefile
+/base
 /build
 /buildtools
 /chromium/.gclient.bot
@@ -94,8 +95,8 @@
 /third_party/valgrind
 /third_party/winsdk_samples/src
 /third_party/yasm
+/third_party/zlib
 /tools/android
-/tools/android-dummy-test
 /tools/clang
 /tools/find_depot_tools.py
 /tools/generate_library_loader

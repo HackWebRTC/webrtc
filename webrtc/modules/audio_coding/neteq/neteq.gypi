@@ -157,9 +157,7 @@
             'interface/audio_decoder.h',
           ],
           'conditions': [
-            # TODO(henrike): remove build_with_chromium==1 when the bots are
-            # using Chromium's buildbots.
-            ['build_with_chromium==1 and OS=="android"', {
+            ['OS=="android"', {
               'dependencies': [
                 '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
               ],
@@ -200,15 +198,20 @@
         }, # neteq_unittest_tools
       ], # targets
       'conditions': [
-        # TODO(henrike): remove build_with_chromium==1 when the bots are using
-        # Chromium's buildbots.
-        ['build_with_chromium==1 and OS=="android"', {
+        ['OS=="android"', {
           'targets': [
             {
-              'target_name': 'audio_decoder_unittests_apk_target',
+              'target_name': 'audio_decoder_unittests_apk',
               'type': 'none',
+              'variables': {
+                'test_suite_name': 'audio_decoder_unittests',
+                'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)audio_decoder_unittests<(SHARED_LIB_SUFFIX)',
+              },
               'dependencies': [
-                '<(apk_tests_path):audio_decoder_unittests_apk',
+                'audio_decoder_unittests',
+              ],
+              'includes': [
+                '../../../../build/apk_test.gypi',
               ],
             },
           ],
