@@ -115,9 +115,7 @@
         'testsupport/trace_to_stderr.h',
       ],
       'conditions': [
-        # TODO(henrike): remove build_with_chromium==1 when the bots are using
-        # Chromium's buildbots.
-        ['build_with_chromium==1 and OS=="android"', {
+        ['OS=="android"', {
           'dependencies': [
             '<(DEPTH)/base/base.gyp:base',
           ],
