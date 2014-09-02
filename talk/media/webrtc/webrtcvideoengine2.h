@@ -161,11 +161,6 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
   // Set the VoiceEngine for A/V sync. This can only be called before Init.
   bool SetVoiceEngine(WebRtcVoiceEngine* voice_engine);
 
-  // Functions called by WebRtcVideoChannel2.
-  const VideoFormat& default_codec_format() const {
-    return default_codec_format_;
-  }
-
   bool FindCodec(const VideoCodec& in);
   bool CanSendCodec(const VideoCodec& in,
                     const VideoCodec& current,
