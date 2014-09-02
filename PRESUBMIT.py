@@ -263,8 +263,6 @@ def GetPreferredTryMasters(project, change):
   android_bots = [
       'android',
       'android_arm64',
-      'android_apk',
-      'android_apk_rel',
       'android_rel',
       'android_clang',
   ] + android_gn_bots
