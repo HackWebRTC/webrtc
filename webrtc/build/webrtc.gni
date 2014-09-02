@@ -17,6 +17,14 @@ declare_args() {
   # Disable this to avoid building the Opus audio codec.
   include_opus = true
 
+  # Used to specify an external Jsoncpp include path when not compiling the
+  # library that comes with WebRTC (i.e. build_json == 0).
+  webrtc_jsoncpp_root = "//third_party/jsoncpp/source/include"
+
+  # Used to specify an external OpenSSL include path when not compiling the
+  # library that comes with WebRTC (i.e. build_ssl == 0).
+  webrtc_ssl_root = ""
+
   # Adds video support to dependencies shared by voice and video engine.
   # This should normally be enabled; the intended use is to disable only
   # when building voice engine exclusively.

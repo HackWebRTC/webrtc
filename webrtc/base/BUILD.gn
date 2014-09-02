@@ -6,8 +6,6 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-# TODO(kjellander): Rebase this to base.gyp changes after r6438.
-
 import("//build/config/crypto.gni")
 import("//build/config/ui.gni")
 import("../build/webrtc.gni")
@@ -20,7 +18,8 @@ config("webrtc_base_config") {
 
   defines = [
     "FEATURE_ENABLE_SSL",
-    "GTEST_RELATIVE_PATH",
+    "LOGGING=1",
+    "USE_WEBRTC_DEV_BRANCH",
   ]
 
   # TODO(henrike): issue 3307, make webrtc_base build without disabling
@@ -103,10 +102,18 @@ if (is_linux && !build_with_chromium) {
   }
 }
 
+if (build_ssl == 0) {
+  config("external_ssl_library") {
+    assert(webrtc_ssl_root != "",
+           "You must specify webrtc_ssl_root when build_ssl==0.")
+    include_dirs = [ webrtc_ssl_root ]
+  }
+}
 
 static_library("webrtc_base") {
   cflags = []
   cflags_cc = []
+  libs = []
   deps= []
 
   configs += [
@@ -264,6 +271,9 @@ static_library("webrtc_base") {
     "taskrunner.h",
     "thread.cc",
     "thread.h",
+    "thread_checker.h",
+    "thread_checker_impl.cc",
+    "thread_checker_impl.h",
     "timeutils.cc",
     "timeutils.h",
     "timing.cc",
@@ -315,6 +325,8 @@ static_library("webrtc_base") {
       "callback.h",
       "callback.h.pump",
       "constructormagic.h",
+      "exp_filter.cc",
+      "exp_filter.h",
       "filelock.cc",
       "filelock.h",
       "fileutils_mock.h",
@@ -388,13 +400,6 @@ static_library("webrtc_base") {
       ]
     }
 
-    if (use_x11) {
-      sources += [
-        "x11windowpicker.cc",
-        "x11windowpicker.h",
-      ]
-    }
-
     if (is_mac) {
       sources += [
         "macasyncsocket.cc",
@@ -420,12 +425,19 @@ static_library("webrtc_base") {
         "win32socketserver.h",
       ]
     }
+    if (build_json) {
+      deps += [ "//third_party/jsoncpp" ]
+    } else {
+      include_dirs += [ webrtc_jsoncpp_root ]
 
-    deps += [ "//third_party/jsoncpp" ]
+      # When defined changes the include path for json.h to where it is
+      # expected to be when building json outside of the standalone build.
+      defines += [ "WEBRTC_EXTERNAL_JSON" ]
+    }
   }  # !build_with_chromium
 
   if (is_clang) {
-    # Suppress warnings from Chrome's Clang plugins.
+    # Suppress warnings from the Chrome Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
@@ -439,8 +451,11 @@ static_library("webrtc_base") {
 
   if (use_openssl) {
     direct_dependent_configs += [ ":openssl_config" ]
-
-    deps += [ "//third_party/boringssl" ]
+    if (build_ssl) {
+      deps += [ "//third_party/boringssl" ]
+    } else {
+      configs += [ "external_ssl_library" ]
+    }
   } else {
     direct_dependent_configs += [ ":no_openssl_config" ]
   }
@@ -453,7 +468,7 @@ static_library("webrtc_base") {
 
     direct_dependent_configs += [ ":android_config" ]
 
-    libs = [
+    libs += [
       "log",
       "GLESv2"
     ]
@@ -464,12 +479,19 @@ static_library("webrtc_base") {
   if (is_ios) {
     all_dependent_configs += [ ":ios_config" ]
 
-    deps += [ "//net/third_party/nss/ssl:libssl" ]
+    if (build_ssl) {
+      deps += [ "//net/third_party/nss/ssl:libssl" ]
+    } else {
+      configs += [ "external_ssl_library" ]
+    }
   }
 
-  if (is_linux) {
-    libs = [
-      "crypto",
+  if (use_x11) {
+    sources += [
+      "x11windowpicker.cc",
+      "x11windowpicker.h",
+    ]
+    libs += [
       "dl",
       "rt",
       "Xext",
@@ -477,7 +499,17 @@ static_library("webrtc_base") {
       "Xcomposite",
       "Xrender",
     ]
-    configs += [ "//third_party/nss:system_nss_no_ssl_config" ]
+  }
+
+  if (is_linux) {
+    libs += [
+      "crypto",
+      "dl",
+      "rt",
+    ]
+    if (build_ssl) {
+      configs += [ "//third_party/nss:system_nss_no_ssl_config" ]
+    }
   }
 
   if (is_mac) {
@@ -492,7 +524,7 @@ static_library("webrtc_base") {
 
     all_dependent_configs = [ ":mac_config" ]
 
-    libs = [
+    libs += [
       "crypto",  # $(SDKROOT)/usr/lib/libcrypto.dylib
       "ssl",  # $(SDKROOT)/usr/lib/libssl.dylib
     ]
@@ -520,7 +552,7 @@ static_library("webrtc_base") {
       "winping.h",
     ]
 
-    libs = [
+    libs += [
       "crypt32.lib",
       "iphlpapi.lib",
       "secur32.lib",
@@ -536,7 +568,7 @@ static_library("webrtc_base") {
   }
 
   if (is_posix && is_debug) {
-    # Chromium's build/common.gypi defines this for all posix
+    # The Chromium build/common.gypi defines this for all posix
     # _except_ for ios & mac.  We want it there as well, e.g.
     # because ASSERT and friends trigger off of it.
     defines += [ "_DEBUG" ]
@@ -546,7 +578,7 @@ static_library("webrtc_base") {
     defines += [ "CARBON_DEPRECATED=YES" ]
   }
 
-  if (!is_ios && is_posix) {
+  if (!is_ios) {
     sources += [
       "openssl.h",
       "openssladapter.cc",
@@ -568,18 +600,26 @@ static_library("webrtc_base") {
   }
 
   if (is_mac || is_ios || is_win) {
-    deps += [
-      "//net/third_party/nss/ssl:libssl",
-      "//third_party/nss:nspr",
-      "//third_party/nss:nss",
-    ]
+    if (build_ssl) {
+      deps += [
+        "//net/third_party/nss/ssl:libssl",
+        "//third_party/nss:nspr",
+        "//third_party/nss:nss",
+      ]
+    } else {
+      configs += [ "external_ssl_library" ]
+    }
   }
 
   if (is_posix && !is_mac && !is_ios && !is_android) {
     if (build_with_chromium) {
       deps += [ "//crypto:platform" ]
     } else {
-      deps += [ ":linux_system_ssl" ]
+      if (build_ssl) {
+        deps += [ ":linux_system_ssl" ]
+      } else {
+        configs += [ "external_ssl_library" ]
+      }
     }
   }
 }
