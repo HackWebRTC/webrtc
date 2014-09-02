@@ -13,22 +13,19 @@
 
 // Use the C++ version to provide __GLIBCXX__.
 #include <cstdio>
+#include <cstdarg>
 
 #if defined(__GLIBCXX__) && !defined(__UCLIBC__)
 #include <cxxabi.h>
 #include <execinfo.h>
 #endif
 
-#if defined(ANDROID)
+#if defined(WEBRTC_ANDROID)
 #define LOG_TAG "rtc"
 #include <android/log.h>  // NOLINT
 #endif
 
-#include <iostream>
-
 #include "webrtc/base/checks.h"
-#include "webrtc/base/common.h"
-#include "webrtc/base/logging.h"
 
 #if defined(_MSC_VER)
 // Warning C4722: destructor never returns, potential memory leak.
@@ -59,7 +56,7 @@ void PrintError(const char* format, ...) {
 void DumpBacktrace() {
 #if defined(__GLIBCXX__) && !defined(__UCLIBC__)
   void* trace[100];
-  int size = backtrace(trace, ARRAY_SIZE(trace));
+  int size = backtrace(trace, sizeof(trace) / sizeof(*trace));
   char** symbols = backtrace_symbols(trace, size);
   PrintError("\n==== C stack trace ===============================\n\n");
   if (size == 0) {

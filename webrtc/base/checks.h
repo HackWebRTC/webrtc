@@ -11,12 +11,16 @@
 #ifndef WEBRTC_BASE_CHECKS_H_
 #define WEBRTC_BASE_CHECKS_H_
 
-#include <stdint.h>
-#include <string.h>
-
 #include <sstream>
+#include <string>
 
+#ifdef WEBRTC_CHROMIUM_BUILD
+// Include logging.h in a Chromium build to enable the overrides mechanism for
+// using Chromium's macros. Otherwise, don't depend on logging.h.
+// TODO(ajm): Ideally, checks.h would be combined with logging.h, but
+// consolidation with system_wrappers/logging.h should happen first.
 #include "webrtc/base/logging.h"
+#endif
 #include "webrtc/typedefs.h"
 
 // The macros here print a message to stderr and abort under various
@@ -47,8 +51,6 @@
 //   doesn't hold. Prefer them to raw CHECK and DCHECK.
 //
 // - FATAL() aborts unconditionally.
-//
-// TODO(ajm): Ideally, this would be combined with webrtc/base/logging.h.
 
 namespace rtc {
 
@@ -59,12 +61,13 @@ namespace rtc {
 
 // Helper macro which avoids evaluating the arguments to a stream if
 // the condition doesn't hold.
-#define LAZY_STREAM(stream, condition)                          \
-  !(condition) ? (void) 0 : rtc::LogMessageVoidify() & (stream)
+#define LAZY_STREAM(stream, condition)                                        \
+  !(condition) ? static_cast<void>(0) : rtc::FatalMessageVoidify() & (stream)
 
 // The actual stream used isn't important.
-#define EAT_STREAM_PARAMETERS \
-  true ? (void) 0 : rtc::LogMessageVoidify() & rtc::FatalMessage("", 0).stream()
+#define EAT_STREAM_PARAMETERS                                           \
+  true ? static_cast<void>(0)                                           \
+       : rtc::FatalMessageVoidify() & rtc::FatalMessage("", 0).stream()
 
 // CHECK dies with a fatal error if condition is not true.  It is *not*
 // controlled by NDEBUG, so the check will be executed regardless of
@@ -155,17 +158,28 @@ DEFINE_CHECK_OP_IMPL(GT, > )
 #define DCHECK(condition) CHECK(condition)
 #define DCHECK_EQ(v1, v2) CHECK_EQ(v1, v2)
 #define DCHECK_NE(v1, v2) CHECK_NE(v1, v2)
-#define DCHECK_GE(v1, v2) CHECK_GE(v1, v2)
-#define DCHECK_LT(v1, v2) CHECK_LT(v1, v2)
 #define DCHECK_LE(v1, v2) CHECK_LE(v1, v2)
+#define DCHECK_LT(v1, v2) CHECK_LT(v1, v2)
+#define DCHECK_GE(v1, v2) CHECK_GE(v1, v2)
+#define DCHECK_GT(v1, v2) CHECK_GT(v1, v2)
 #else
 #define DCHECK(condition) EAT_STREAM_PARAMETERS
 #define DCHECK_EQ(v1, v2) EAT_STREAM_PARAMETERS
 #define DCHECK_NE(v1, v2) EAT_STREAM_PARAMETERS
-#define DCHECK_GE(v1, v2) EAT_STREAM_PARAMETERS
-#define DCHECK_LT(v1, v2) EAT_STREAM_PARAMETERS
 #define DCHECK_LE(v1, v2) EAT_STREAM_PARAMETERS
+#define DCHECK_LT(v1, v2) EAT_STREAM_PARAMETERS
+#define DCHECK_GE(v1, v2) EAT_STREAM_PARAMETERS
+#define DCHECK_GT(v1, v2) EAT_STREAM_PARAMETERS
 #endif
+
+// This is identical to LogMessageVoidify but in name.
+class FatalMessageVoidify {
+ public:
+  FatalMessageVoidify() { }
+  // This has to be an operator with a precedence lower than << but
+  // higher than ?:
+  void operator&(std::ostream&) { }
+};
 
 #endif  // WEBRTC_CHROMIUM_BUILD
 
