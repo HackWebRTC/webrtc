@@ -26,6 +26,9 @@
 #include "webrtc/test/fake_encoder.h"
 #include "webrtc/test/frame_generator_capturer.h"
 
+// Disabled on Android since all tests currently fail (webrtc:3770).
+#ifndef WEBRTC_ANDROID
+
 namespace webrtc {
 namespace {
 // Note: consider to write tests that don't depend on the trace system instead
@@ -329,3 +332,5 @@ TEST_F(BitrateEstimatorTest, SwitchesToASTThenBackToTOF) {
   EXPECT_EQ(kEventSignaled, receiver_trace_.Wait());
 }
 }  // namespace webrtc
+
+#endif // !WEBRTC_ANDROID

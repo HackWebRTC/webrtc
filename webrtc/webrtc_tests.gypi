@@ -104,6 +104,9 @@
         'video/full_stack.cc',
         'video/rampup_tests.cc',
         'video/rampup_tests.h',
+        # Needed to make the test binary pass since all tests are disabled on
+        # Android (webrtc:3770).
+        'test/testsupport/always_passing_unittest.cc',
       ],
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',

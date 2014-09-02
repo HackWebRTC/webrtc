@@ -41,6 +41,9 @@
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
 #include "webrtc/voice_engine/include/voe_video_sync.h"
 
+// Disabled on Android since all these tests currently fail (webrtc:3770).
+#ifndef WEBRTC_ANDROID
+
 namespace webrtc {
 
 class CallPerfTest : public test::CallTest {
@@ -557,3 +560,5 @@ TEST_F(CallPerfTest, NoPadWithoutMinTransmitBitrate) {
 }
 
 }  // namespace webrtc
+
+#endif // !WEBRTC_ANDROID

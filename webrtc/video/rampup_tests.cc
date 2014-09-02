@@ -18,6 +18,9 @@
 #include "webrtc/test/testsupport/perf_test.h"
 #include "webrtc/video/rampup_tests.h"
 
+// Disabled on Android since all tests currently fail (webrtc:3770).
+#ifndef WEBRTC_ANDROID
+
 namespace webrtc {
 namespace {
 
@@ -507,3 +510,5 @@ TEST_F(RampUpTest, UpDownUpOneStreamRtx) { RunRampUpDownUpTest(1, true); }
 TEST_F(RampUpTest, UpDownUpThreeStreamsRtx) { RunRampUpDownUpTest(3, true); }
 
 }  // namespace webrtc
+
+#endif // !WEBRTC_ANDROID

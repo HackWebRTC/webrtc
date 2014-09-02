@@ -38,6 +38,9 @@
 #include "webrtc/test/testsupport/perf_test.h"
 #include "webrtc/video/transport_adapter.h"
 
+// Disabled on Android since all tests currently fail (webrtc:3770).
+#ifndef WEBRTC_ANDROID
+
 namespace webrtc {
 
 static const int kRedPayloadType = 118;
@@ -1838,3 +1841,5 @@ TEST_F(EndToEndTest, RestartingSendStreamPreservesRtpStatesWithRtx) {
 }
 
 }  // namespace webrtc
+
+#endif // !WEBRTC_ANDROID

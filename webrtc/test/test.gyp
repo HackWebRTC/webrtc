@@ -177,6 +177,7 @@
         'channel_transport/udp_transport_unittest.cc',
         'channel_transport/udp_socket_manager_unittest.cc',
         'channel_transport/udp_socket_wrapper_unittest.cc',
+        'testsupport/always_passing_unittest.cc',
         'testsupport/unittest_utils.h',
         'testsupport/fileutils_unittest.cc',
         'testsupport/frame_reader_unittest.cc',

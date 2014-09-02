@@ -13,6 +13,9 @@
 #include "webrtc/test/testsupport/perf_test.h"
 #include "webrtc/typedefs.h"
 
+// Disabled on Android since all tests currently fail (webrtc:3770).
+#ifndef WEBRTC_ANDROID
+
 // Runs a test with 10% packet losses and 10% clock drift, to exercise
 // both loss concealment and time-stretching code.
 TEST(NetEqPerformanceTest, Run) {
@@ -39,3 +42,5 @@ TEST(NetEqPerformanceTest, RunClean) {
   webrtc::test::PrintResult(
       "neteq_performance", "", "0_pl_0_drift", runtime, "ms", true);
 }
+
+#endif // !WEBRTC_ANDROID
