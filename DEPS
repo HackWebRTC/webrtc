@@ -40,6 +40,17 @@ include_rules = [
   # Base is only used to build Android APK tests and may not be referenced by
   # WebRTC production code.
   "-base",
+  "-chromium",
+  '+net',
+  '+talk',
+  '+testing',
+  '+webrtc',
+]
+
+# checkdeps.py shouldn't check include paths for files in these dirs:
+skip_child_includes = [
+  'testing',
+  'third_party',
 ]
 
 hooks = [
