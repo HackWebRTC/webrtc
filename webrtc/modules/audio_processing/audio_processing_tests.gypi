@@ -41,6 +41,7 @@
           'dependencies': [
             'audioproc_debug_proto',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+            '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
             '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
           ],
           'sources': [ 'test/unpack.cc', ],
