@@ -205,16 +205,18 @@ static const GLsizei kNumTextures = 3 * kNumTextureSets;
     return NO;
   }
   [self ensureGLContext];
-  if (![self updateTextureSizesForFrame:frame] ||
-      ![self updateTextureDataForFrame:frame]) {
-    return NO;
-  }
   glClear(GL_COLOR_BUFFER_BIT);
+  if (frame) {
+    if (![self updateTextureSizesForFrame:frame] ||
+        ![self updateTextureDataForFrame:frame]) {
+      return NO;
+    }
 #if !TARGET_OS_IPHONE
-  glBindVertexArray(_vertexArray);
+    glBindVertexArray(_vertexArray);
 #endif
-  glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
-  glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+  }
 #if !TARGET_OS_IPHONE
   [_context flushBuffer];
 #endif
@@ -238,7 +240,6 @@ static const GLsizei kNumTextures = 3 * kNumTextureSets;
   }
   glUseProgram(_program);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  glClearColor(0, 0, 0, 1);
   _isInitialized = YES;
 }
 

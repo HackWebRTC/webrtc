@@ -173,6 +173,7 @@
     return;
   }
   [_videoTrack removeRenderer:_videoRenderer];
+  self.i420Frame = nil;
   _videoTrack = videoTrack;
   [_videoTrack addRenderer:_videoRenderer];
   // TODO(tkchin): potentially handle changes in track state - e.g. render
@@ -191,11 +192,9 @@
 // This method is called when the GLKView's content is dirty and needs to be
 // redrawn. This occurs on main thread.
 - (void)glkView:(GLKView*)view drawInRect:(CGRect)rect {
-  if (self.i420Frame) {
-    // The renderer will draw the frame to the framebuffer corresponding to the
-    // one used by |view|.
-    [_glRenderer drawFrame:self.i420Frame];
-  }
+  // The renderer will draw the frame to the framebuffer corresponding to the
+  // one used by |view|.
+  [_glRenderer drawFrame:self.i420Frame];
 }
 
 #pragma mark - Private

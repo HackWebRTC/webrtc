@@ -116,6 +116,9 @@ static CVReturn OnDisplayLinkFired(CVDisplayLinkRef displayLink,
   if (_videoTrack) {
     [_videoTrack removeRenderer:_videoRenderer];
     CVDisplayLinkStop(_displayLink);
+    // Clear contents.
+    self.i420Frame = nil;
+    [self drawFrame];
   }
   _videoTrack = videoTrack;
   if (_videoTrack) {
@@ -144,7 +147,7 @@ static CVReturn OnDisplayLinkFired(CVDisplayLinkRef displayLink,
 
 - (void)drawFrame {
   RTCI420Frame* i420Frame = self.i420Frame;
-  if (i420Frame && self.glRenderer.lastDrawnFrame != i420Frame) {
+  if (self.glRenderer.lastDrawnFrame != i420Frame) {
     // This method may be called from CVDisplayLink callback which isn't on the
     // main thread so we have to lock the GL context before drawing.
     CGLLockContext([[self openGLContext] CGLContextObj]);

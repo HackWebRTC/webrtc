@@ -30,10 +30,6 @@
 #endif
 
 #import "RTCVideoRenderer+Internal.h"
-
-#if TARGET_OS_IPHONE
-#import "RTCEAGLVideoView+Internal.h"
-#endif
 #import "RTCI420Frame+Internal.h"
 
 namespace webrtc {
@@ -62,9 +58,6 @@ class RTCVideoRendererAdapter : public VideoRendererInterface {
 
 @implementation RTCVideoRenderer {
   rtc::scoped_ptr<webrtc::RTCVideoRendererAdapter> _adapter;
-#if TARGET_OS_IPHONE
-  RTCEAGLVideoView* _videoView;
-#endif
 }
 
 - (instancetype)initWithDelegate:(id<RTCVideoRendererDelegate>)delegate {
@@ -74,22 +67,6 @@ class RTCVideoRendererAdapter : public VideoRendererInterface {
   }
   return self;
 }
-
-#if TARGET_OS_IPHONE
-// TODO(tkchin): remove shim for deprecated method.
-- (instancetype)initWithView:(UIView*)view {
-  if (self = [super init]) {
-    _videoView = [[RTCEAGLVideoView alloc] initWithFrame:view.bounds];
-    _videoView.autoresizingMask =
-        UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
-    _videoView.translatesAutoresizingMaskIntoConstraints = YES;
-    [view addSubview:_videoView];
-    self.delegate = _videoView;
-    _adapter.reset(new webrtc::RTCVideoRendererAdapter(self));
-  }
-  return self;
-}
-#endif
 
 @end
 

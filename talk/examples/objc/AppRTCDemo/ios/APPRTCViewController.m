@@ -63,6 +63,18 @@ static CGFloat const kLocalViewPadding = 20;
 
 - (void)viewDidLoad {
   [super viewDidLoad];
+
+  self.remoteVideoView =
+      [[RTCEAGLVideoView alloc] initWithFrame:self.blackView.bounds];
+  self.remoteVideoView.delegate = self;
+  self.remoteVideoView.transform = CGAffineTransformMakeScale(-1, 1);
+  [self.blackView addSubview:self.remoteVideoView];
+
+  self.localVideoView =
+      [[RTCEAGLVideoView alloc] initWithFrame:self.blackView.bounds];
+  self.localVideoView.delegate = self;
+  [self.blackView addSubview:self.localVideoView];
+
   self.statusBarOrientation =
       [UIApplication sharedApplication].statusBarOrientation;
   self.roomInput.delegate = self;
@@ -181,25 +193,13 @@ static CGFloat const kLocalViewPadding = 20;
   self.instructionsView.hidden = NO;
   self.logView.hidden = YES;
   self.logView.text = nil;
+  self.localVideoView.videoTrack = nil;
+  self.remoteVideoView.videoTrack = nil;
   self.blackView.hidden = YES;
-  [self.remoteVideoView removeFromSuperview];
-  self.remoteVideoView = nil;
-  [self.localVideoView removeFromSuperview];
-  self.localVideoView = nil;
 }
 
 - (void)setupCaptureSession {
   self.blackView.hidden = NO;
-  self.remoteVideoView =
-      [[RTCEAGLVideoView alloc] initWithFrame:self.blackView.bounds];
-  self.remoteVideoView.delegate = self;
-  self.remoteVideoView.transform = CGAffineTransformMakeScale(-1, 1);
-  [self.blackView addSubview:self.remoteVideoView];
-
-  self.localVideoView =
-      [[RTCEAGLVideoView alloc] initWithFrame:self.blackView.bounds];
-  self.localVideoView.delegate = self;
-  [self.blackView addSubview:self.localVideoView];
   [self updateVideoViewLayout];
 }
 
