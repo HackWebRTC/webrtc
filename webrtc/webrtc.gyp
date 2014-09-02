@@ -24,6 +24,7 @@
       'common.gyp:*',
       'common_audio/common_audio.gyp:*',
       'common_video/common_video.gyp:*',
+      'libjingle/xmllite/xmllite.gyp:*',
       'modules/modules.gyp:*',
       'system_wrappers/source/system_wrappers.gyp:*',
       'video_engine/video_engine.gyp:*',
@@ -44,6 +45,7 @@
           'dependencies': [
             'base/base_tests.gyp:*',
             'common_video/common_video_unittests.gyp:*',
+            'libjingle/xmllite/xmllite_tests.gyp:*',
             'sound/sound_tests.gyp:*',
             'system_wrappers/source/system_wrappers_tests.gyp:*',
             'test/metrics.gyp:*',

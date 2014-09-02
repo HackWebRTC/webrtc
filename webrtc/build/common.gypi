@@ -49,6 +49,7 @@
     'gen_core_neon_offsets_gyp%': '<(gen_core_neon_offsets_gyp)',
     'webrtc_vp8_dir%': '<(webrtc_vp8_dir)',
     'include_opus%': '<(include_opus)',
+    'rtc_relative_path%': 1,
     'rbe_components_path%': '<(rbe_components_path)',
     'external_libraries%': '0',
     'json_root%': '<(DEPTH)/third_party/jsoncpp/source/include/',
@@ -177,6 +178,9 @@
          'cflags': [
            '<!@(pkg-config --cflags dbus-glib-1)',
          ],
+      }],
+      ['rtc_relative_path==1', {
+        'defines': ['EXPAT_RELATIVE_PATH',],
       }],
       ['enable_video==1', {
         'defines': ['WEBRTC_MODULE_UTILITY_VIDEO',],
