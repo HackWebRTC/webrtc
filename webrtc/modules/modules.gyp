@@ -150,6 +150,7 @@
             'audio_coding/neteq/mock/mock_delay_peak_detector.h',
             'audio_coding/neteq/mock/mock_dtmf_buffer.h',
             'audio_coding/neteq/mock/mock_dtmf_tone_generator.h',
+            'audio_coding/neteq/mock/mock_expand.h',
             'audio_coding/neteq/mock/mock_external_decoder_pcm16b.h',
             'audio_coding/neteq/mock/mock_packet_buffer.h',
             'audio_coding/neteq/mock/mock_payload_splitter.h',

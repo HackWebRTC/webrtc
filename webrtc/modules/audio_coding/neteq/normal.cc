@@ -37,6 +37,11 @@ int Normal::Process(const int16_t* input,
 
   assert(output->Empty());
   // Output should be empty at this point.
+  if (length % output->Channels() != 0) {
+    // The length does not match the number of channels.
+    output->Clear();
+    return 0;
+  }
   output->PushBackInterleaved(input, length);
   int16_t* signal = &(*output)[0][0];
 
@@ -78,7 +83,11 @@ int Normal::Process(const int16_t* input,
       scaling = std::max(scaling, 0);  // |scaling| should always be >= 0.
       int32_t energy = WebRtcSpl_DotProductWithScale(signal, signal,
                                                      energy_length, scaling);
-      energy = energy / (energy_length >> scaling);
+      if ((energy_length >> scaling) > 0) {
+        energy = energy / (energy_length >> scaling);
+      } else {
+        energy = 0;
+      }
 
       int mute_factor;
       if ((energy != 0) &&
