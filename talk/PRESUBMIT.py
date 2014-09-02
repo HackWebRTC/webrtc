@@ -24,11 +24,7 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # List of files that should not be committed to
-DO_NOT_SUBMIT_FILES = [
-    "talk/media/webrtc/webrtcmediaengine.h",
-    "talk/media/webrtc/webrtcvideoengine.cc",
-    "talk/media/webrtc/webrtcvideoengine.h",
-    "talk/media/webrtc/webrtcvideoengine_unittest.cc"]
+DO_NOT_SUBMIT_FILES = ["talk/media/webrtc/webrtcvideoengine.cc"]
 
 def _LicenseHeader(input_api):
   """Returns the license header regexp."""
