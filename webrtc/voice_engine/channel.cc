@@ -16,7 +16,6 @@
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
-#include "webrtc/modules/rtp_rtcp/interface/remote_ntp_time_estimator.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_strategy.h"
@@ -699,15 +698,18 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame& audioFrame)
           (unwrap_timestamp - capture_start_rtp_time_stamp_) /
           (GetPlayoutFrequency() / 1000);
 
-      // Compute ntp time.
-      audioFrame.ntp_time_ms_ = ntp_estimator_->Estimate(audioFrame.timestamp_);
-      // |ntp_time_ms_| won't be valid until at least 2 RTCP SRs are received.
-      if (audioFrame.ntp_time_ms_ > 0) {
-        // Compute |capture_start_ntp_time_ms_| so that
-        // |capture_start_ntp_time_ms_| + |elapsed_time_ms_| == |ntp_time_ms_|
+      {
         CriticalSectionScoped lock(ts_stats_lock_.get());
-        capture_start_ntp_time_ms_ =
-            audioFrame.ntp_time_ms_ - audioFrame.elapsed_time_ms_;
+        // Compute ntp time.
+        audioFrame.ntp_time_ms_ = ntp_estimator_.Estimate(
+            audioFrame.timestamp_);
+        // |ntp_time_ms_| won't be valid until at least 2 RTCP SRs are received.
+        if (audioFrame.ntp_time_ms_ > 0) {
+          // Compute |capture_start_ntp_time_ms_| so that
+          // |capture_start_ntp_time_ms_| + |elapsed_time_ms_| == |ntp_time_ms_|
+          capture_start_ntp_time_ms_ =
+              audioFrame.ntp_time_ms_ - audioFrame.elapsed_time_ms_;
+        }
       }
     }
 
@@ -877,7 +879,7 @@ Channel::Channel(int32_t channelId,
     _outputExternalMediaCallbackPtr(NULL),
     _timeStamp(0), // This is just an offset, RTP module will add it's own random offset
     _sendTelephoneEventPayloadType(106),
-    ntp_estimator_(new RemoteNtpTimeEstimator(Clock::GetRealTimeClock())),
+    ntp_estimator_(Clock::GetRealTimeClock()),
     jitter_buffer_playout_timestamp_(0),
     playout_timestamp_rtp_(0),
     playout_timestamp_rtcp_(0),
@@ -1949,8 +1951,11 @@ int32_t Channel::ReceivedRTCPPacket(const int8_t* data, int32_t length) {
         "Channel::IncomingRTPPacket() RTCP packet is invalid");
   }
 
-  ntp_estimator_->UpdateRtcpTimestamp(rtp_receiver_->SSRC(),
-                                      _rtpRtcpModule.get());
+  {
+    CriticalSectionScoped lock(ts_stats_lock_.get());
+    ntp_estimator_.UpdateRtcpTimestamp(rtp_receiver_->SSRC(),
+                                       _rtpRtcpModule.get());
+  }
   return 0;
 }
 
