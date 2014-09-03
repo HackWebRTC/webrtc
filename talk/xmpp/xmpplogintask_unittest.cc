@@ -4,7 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include "talk/xmllite/xmlelement.h"
+#include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/plainsaslhandler.h"
 #include "talk/xmpp/saslplainmechanism.h"

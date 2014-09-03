@@ -29,9 +29,9 @@
 
 #include <string>
 
-#include "talk/xmllite/qname.h"
-#include "talk/xmllite/xmlconstants.h"
-#include "talk/xmllite/xmlelement.h"
+#include "webrtc/libjingle/xmllite/qname.h"
+#include "webrtc/libjingle/xmllite/xmlconstants.h"
+#include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "talk/xmpp/jid.h"
 #include "webrtc/base/basicdefs.h"
 

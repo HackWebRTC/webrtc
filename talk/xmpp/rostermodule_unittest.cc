@@ -29,7 +29,7 @@
 #include <sstream>
 #include <string>
 
-#include "talk/xmllite/xmlelement.h"
+#include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/rostermodule.h"
 #include "talk/xmpp/util_unittest.h"

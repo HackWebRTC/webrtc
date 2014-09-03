@@ -36,7 +36,7 @@
 #include "talk/p2p/base/sessionclient.h"
 #include "talk/p2p/base/sessiondescription.h"
 #include "talk/p2p/base/transport.h"
-#include "talk/xmllite/xmlconstants.h"
+#include "webrtc/libjingle/xmllite/xmlconstants.h"
 #include "talk/xmpp/constants.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"

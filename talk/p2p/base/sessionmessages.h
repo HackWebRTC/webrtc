@@ -36,7 +36,7 @@
 #include "talk/p2p/base/parsing.h"
 #include "talk/p2p/base/sessiondescription.h"  // Needed to delete contents.
 #include "talk/p2p/base/transportinfo.h"
-#include "talk/xmllite/xmlelement.h"
+#include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "webrtc/base/basictypes.h"
 
 namespace cricket {

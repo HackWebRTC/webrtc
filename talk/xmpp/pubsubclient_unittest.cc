@@ -3,8 +3,8 @@
 
 #include <string>
 
-#include "talk/xmllite/qname.h"
-#include "talk/xmllite/xmlelement.h"
+#include "webrtc/libjingle/xmllite/qname.h"
+#include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/fakexmppclient.h"
 #include "talk/xmpp/jid.h"

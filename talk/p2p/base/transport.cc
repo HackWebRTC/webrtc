@@ -33,7 +33,7 @@
 #include "talk/p2p/base/port.h"
 #include "talk/p2p/base/sessionmanager.h"
 #include "talk/p2p/base/transportchannelimpl.h"
-#include "talk/xmllite/xmlelement.h"
+#include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "talk/xmpp/constants.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/common.h"

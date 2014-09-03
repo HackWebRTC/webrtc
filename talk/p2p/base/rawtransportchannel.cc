@@ -36,8 +36,8 @@
 #include "talk/p2p/base/relayport.h"
 #include "talk/p2p/base/sessionmanager.h"
 #include "talk/p2p/base/stunport.h"
-#include "talk/xmllite/qname.h"
-#include "talk/xmllite/xmlelement.h"
+#include "webrtc/libjingle/xmllite/qname.h"
+#include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "talk/xmpp/constants.h"
 #include "webrtc/base/common.h"
 

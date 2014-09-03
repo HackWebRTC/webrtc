@@ -28,7 +28,7 @@
 #include <string>
 #include <vector>
 
-#include "talk/xmllite/xmlelement.h"
+#include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/fakexmppclient.h"
 #include "talk/xmpp/pingtask.h"

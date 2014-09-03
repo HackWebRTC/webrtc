@@ -29,8 +29,8 @@
 #define _xmppengine_h_
 
 // also part of the API
-#include "talk/xmllite/qname.h"
-#include "talk/xmllite/xmlelement.h"
+#include "webrtc/libjingle/xmllite/qname.h"
+#include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "talk/xmpp/jid.h"
 
 

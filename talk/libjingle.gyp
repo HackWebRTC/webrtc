@@ -459,6 +459,7 @@
         '<(webrtc_root)/sound/sound.gyp:rtc_sound',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:field_trial_default',
+        '<(webrtc_root)/libjingle/xmllite/xmllite.gyp:rtc_xmllite',
         'libjingle',
         'libjingle_sound',
       ],

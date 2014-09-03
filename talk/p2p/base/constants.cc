@@ -29,7 +29,7 @@
 
 #include <string>
 
-#include "talk/xmllite/qname.h"
+#include "webrtc/libjingle/xmllite/qname.h"
 
 namespace cricket {
 

@@ -39,7 +39,7 @@
 #include "talk/p2p/base/sessionmanager.h"
 #include "talk/p2p/base/sessionmessages.h"
 #include "talk/p2p/base/transport.h"
-#include "talk/xmllite/xmlelement.h"
+#include "webrtc/libjingle/xmllite/xmlelement.h"
 #include "talk/xmpp/constants.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ptr.h"

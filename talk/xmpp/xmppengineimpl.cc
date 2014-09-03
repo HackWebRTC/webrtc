@@ -31,8 +31,8 @@
 #include <sstream>
 #include <vector>
 
-#include "talk/xmllite/xmlelement.h"
-#include "talk/xmllite/xmlprinter.h"
+#include "webrtc/libjingle/xmllite/xmlelement.h"
+#include "webrtc/libjingle/xmllite/xmlprinter.h"
 #include "talk/xmpp/constants.h"
 #include "talk/xmpp/saslhandler.h"
 #include "talk/xmpp/xmpplogintask.h"
