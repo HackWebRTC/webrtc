@@ -263,9 +263,9 @@ int ACMOpus::SetPacketLossRate(int loss_rate) {
   return -1;
 }
 
-int ACMOpus::SetOpusMaxBandwidth(int max_bandwidth) {
-  // Ask the encoder to change the maximum required bandwidth.
-  return WebRtcOpus_SetMaxBandwidth(encoder_inst_ptr_, max_bandwidth);
+int ACMOpus::SetOpusMaxPlaybackRate(int frequency_hz) {
+  // Informs Opus encoder of the maximum playback rate the receiver will render.
+  return WebRtcOpus_SetMaxPlaybackRate(encoder_inst_ptr_, frequency_hz);
 }
 
 #endif  // WEBRTC_CODEC_OPUS

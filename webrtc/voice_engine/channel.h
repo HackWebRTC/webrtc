@@ -208,7 +208,7 @@ public:
     int32_t SetRecPayloadType(const CodecInst& codec);
     int32_t GetRecPayloadType(CodecInst& codec);
     int32_t SetSendCNPayloadType(int type, PayloadFrequencies frequency);
-    int SetOpusMaxBandwidth(int bandwidth_hz);
+    int SetOpusMaxPlaybackRate(int frequency_hz);
 
     // VoE dual-streaming.
     int SetSecondarySendCodec(const CodecInst& codec, int red_payload_type);

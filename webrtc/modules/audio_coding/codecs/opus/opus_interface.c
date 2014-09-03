@@ -99,19 +99,19 @@ int16_t WebRtcOpus_SetPacketLossRate(OpusEncInst* inst, int32_t loss_rate) {
   }
 }
 
-int16_t WebRtcOpus_SetMaxBandwidth(OpusEncInst* inst, int32_t bandwidth) {
+int16_t WebRtcOpus_SetMaxPlaybackRate(OpusEncInst* inst, int32_t frequency_hz) {
   opus_int32 set_bandwidth;
 
   if (!inst)
     return -1;
 
-  if (bandwidth <= 4000) {
+  if (frequency_hz <= 8000) {
     set_bandwidth = OPUS_BANDWIDTH_NARROWBAND;
-  } else if (bandwidth <= 6000) {
+  } else if (frequency_hz <= 12000) {
     set_bandwidth = OPUS_BANDWIDTH_MEDIUMBAND;
-  } else if (bandwidth <= 8000) {
+  } else if (frequency_hz <= 16000) {
     set_bandwidth = OPUS_BANDWIDTH_WIDEBAND;
-  } else if (bandwidth <= 12000) {
+  } else if (frequency_hz <= 24000) {
     set_bandwidth = OPUS_BANDWIDTH_SUPERWIDEBAND;
   } else {
     set_bandwidth = OPUS_BANDWIDTH_FULLBAND;

@@ -232,9 +232,9 @@ class AudioCodingModuleImpl : public AudioCodingModule {
                                    int rate_bit_per_sec,
                                    bool enforce_frame_size = false);
 
-  // If current send codec is Opus, informs it about the maximum audio
-  // bandwidth needs to be encoded.
-  int SetOpusMaxBandwidth(int bandwidth_hz);
+  // If current send codec is Opus, informs it about the maximum playback rate
+  // the receiver will render.
+  int SetOpusMaxPlaybackRate(int frequency_hz);
 
   int UnregisterReceiveCodec(uint8_t payload_type);
 

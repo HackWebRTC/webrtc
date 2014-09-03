@@ -1911,13 +1911,13 @@ int AudioCodingModuleImpl::ConfigISACBandwidthEstimator(
       frame_size_ms, rate_bit_per_sec, enforce_frame_size);
 }
 
-// Informs Opus encoder about the maximum audio bandwidth needs to be encoded.
-int AudioCodingModuleImpl::SetOpusMaxBandwidth(int bandwidth_hz) {
+// Informs Opus encoder of the maximum playback rate the receiver will render.
+int AudioCodingModuleImpl::SetOpusMaxPlaybackRate(int frequency_hz) {
   CriticalSectionScoped lock(acm_crit_sect_);
-  if (!HaveValidEncoder("SetOpusMaxBandwidth")) {
+  if (!HaveValidEncoder("SetOpusMaxPlaybackRate")) {
     return -1;
   }
-  return codecs_[current_send_codec_idx_]->SetOpusMaxBandwidth(bandwidth_hz);
+  return codecs_[current_send_codec_idx_]->SetOpusMaxPlaybackRate(frequency_hz);
 }
 
 int AudioCodingModuleImpl::PlayoutTimestamp(uint32_t* timestamp) {

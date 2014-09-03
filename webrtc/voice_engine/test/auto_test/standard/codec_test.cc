@@ -130,30 +130,30 @@ TEST_F(CodecTest, VoiceActivityDetectionCanBeTurnedOff) {
   EXPECT_EQ(webrtc::kVadConventional, vad_mode);
 }
 
-TEST_F(CodecTest, OpusMaxBandwidthCanBeSet) {
+TEST_F(CodecTest, OpusMaxPlaybackRateCanBeSet) {
   for (int i = 0; i < voe_codec_->NumOfCodecs(); ++i) {
     voe_codec_->GetCodec(i, codec_instance_);
     if (_stricmp("opus", codec_instance_.plname)) {
       continue;
     }
     voe_codec_->SetSendCodec(channel_, codec_instance_);
-    // SetOpusMaxBandwidth can handle any integer as the bandwidth. Following
+    // SetOpusMaxPlaybackRate can handle any integer as the bandwidth. Following
     // tests some most commonly used numbers.
-    EXPECT_EQ(0, voe_codec_->SetOpusMaxBandwidth(channel_, 24000));
-    EXPECT_EQ(0, voe_codec_->SetOpusMaxBandwidth(channel_, 16000));
-    EXPECT_EQ(0, voe_codec_->SetOpusMaxBandwidth(channel_, 8000));
-    EXPECT_EQ(0, voe_codec_->SetOpusMaxBandwidth(channel_, 4000));
+    EXPECT_EQ(0, voe_codec_->SetOpusMaxPlaybackRate(channel_, 48000));
+    EXPECT_EQ(0, voe_codec_->SetOpusMaxPlaybackRate(channel_, 32000));
+    EXPECT_EQ(0, voe_codec_->SetOpusMaxPlaybackRate(channel_, 16000));
+    EXPECT_EQ(0, voe_codec_->SetOpusMaxPlaybackRate(channel_, 8000));
   }
 }
 
-TEST_F(CodecTest, OpusMaxBandwidthCannotBeSetForNonOpus) {
+TEST_F(CodecTest, OpusMaxPlaybackRateCannotBeSetForNonOpus) {
   for (int i = 0; i < voe_codec_->NumOfCodecs(); ++i) {
     voe_codec_->GetCodec(i, codec_instance_);
     if (!_stricmp("opus", codec_instance_.plname)) {
       continue;
     }
     voe_codec_->SetSendCodec(channel_, codec_instance_);
-    EXPECT_EQ(-1, voe_codec_->SetOpusMaxBandwidth(channel_, 16000));
+    EXPECT_EQ(-1, voe_codec_->SetOpusMaxPlaybackRate(channel_, 16000));
   }
 }
 

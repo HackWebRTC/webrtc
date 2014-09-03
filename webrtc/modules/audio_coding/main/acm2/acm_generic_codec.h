@@ -538,21 +538,20 @@ class ACMGenericCodec {
                                  int16_t* payload_len_bytes);
 
   ///////////////////////////////////////////////////////////////////////////
-  // int SetOpusMaxBandwidth()
-  // Sets maximum required encoding bandwidth for Opus. This is to tell Opus
-  // that it is enough to code the input audio up to a bandwidth. A use case of
-  // this is when the receiver cannot render the full band. Opus can take this
-  // information to optimize the bit rate and increase the computation
-  // efficiency.
+  // int SetOpusMaxPlaybackRate()
+  // Sets maximum playback rate the receiver will render, if the codec is Opus.
+  // This is to tell Opus that it is enough to code the input audio up to a
+  // bandwidth. Opus can take this information to optimize the bit rate and
+  // increase the computation efficiency.
   //
   // Input:
-  //   -max_bandwidth      : maximum required bandwidth.
+  //   -frequency_hz      : maximum playback rate in Hz.
   //
   // Return value:
   //   -1 if failed or on codecs other than Opus
   //    0 if succeeded.
   //
-  virtual int SetOpusMaxBandwidth(int /* max_bandwidth */);
+  virtual int SetOpusMaxPlaybackRate(int /* frequency_hz */);
 
   ///////////////////////////////////////////////////////////////////////////
   // HasFrameToEncode()

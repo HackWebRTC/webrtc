@@ -73,25 +73,29 @@ int16_t WebRtcOpus_SetBitRate(OpusEncInst* inst, int32_t rate);
 int16_t WebRtcOpus_SetPacketLossRate(OpusEncInst* inst, int32_t loss_rate);
 
 /****************************************************************************
- * WebRtcOpus_SetMaxBandwidth(...)
+ * WebRtcOpus_SetMaxPlaybackRate(...)
  *
- * Configures the maximum bandwidth for encoding. This can be taken as a hint
- * about the maximum output bandwidth that the receiver is capable to render,
- * due to hardware limitations. Sending signals with higher audio bandwidth
- * results in higher than necessary network usage and encoding complexity.
+ * Configures the maximum playback rate for encoding. Due to hardware
+ * limitations, the receiver may render audio up to a playback rate. Opus
+ * encoder can use this information to optimize for network usage and encoding
+ * complexity. This will affect the audio bandwidth in the coded audio. However,
+ * the input/output sample rate is not affected.
  *
  * Input:
  *      - inst               : Encoder context
- *      - bandwidth          : Maximum encoding bandwidth in Hz.
- *                             This parameter can take any value, but values
- *                             other than Opus typical bandwidths: 4000, 6000,
- *                             8000, 12000, and 20000 will be rounded up (values
- *                             greater than 20000 will be rounded down) to
- *                             these values.
+ *      - frequency_hz       : Maximum playback rate in Hz.
+ *                             This parameter can take any value. The relation
+ *                             between the value and the Opus internal mode is
+ *                             as following:
+ *                             frequency_hz <= 8000           narrow band
+ *                             8000 < frequency_hz <= 12000   medium band
+ *                             12000 < frequency_hz <= 16000  wide band
+ *                             16000 < frequency_hz <= 24000  super wide band
+ *                             frequency_hz > 24000           full band
  * Return value              :  0 - Success
  *                             -1 - Error
  */
-int16_t WebRtcOpus_SetMaxBandwidth(OpusEncInst* inst, int32_t bandwidth);
+int16_t WebRtcOpus_SetMaxPlaybackRate(OpusEncInst* inst, int32_t frequency_hz);
 
 /* TODO(minyue): Check whether an API to check the FEC and the packet loss rate
  * is needed. It might not be very useful since there are not many use cases and

@@ -916,21 +916,20 @@ class AudioCodingModule: public Module {
       bool enforce_frame_size = false) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
-  // int SetOpusMaxBandwidth()
-  // If current send codec is Opus, informs it about maximum audio bandwidth
-  // needs to be encoded. A use case of this is when the receiver can only play
-  // audio up to frequency limit. Opus can use this information to optimize
-  // the bit rate and increase the computation efficiency.
+  // int SetOpusMaxPlaybackRate()
+  // If current send codec is Opus, informs it about maximum playback rate the
+  // receiver will render. Opus can use this information to optimize the bit
+  // rate and increase the computation efficiency.
   //
   // Input:
-  //   -banbwidth_hz            : maximum bandwidth in Hz.
+  //   -frequency_hz            : maximum playback rate in Hz.
   //
   // Return value:
   //   -1 if current send codec is not Opus or
-  //      error occurred in setting the bandwidth,
+  //      error occurred in setting the maximum playback rate,
   //    0 maximum bandwidth is set successfully.
   //
-  virtual int SetOpusMaxBandwidth(int banbwidth_hz) = 0;
+  virtual int SetOpusMaxPlaybackRate(int frequency_hz) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   //   statistics
