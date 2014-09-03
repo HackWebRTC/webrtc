@@ -27,6 +27,10 @@
 
 #include "talk/media/base/testutils.h"
 
+#if defined(OSX) && defined(FLUTE_IN_CHROME_BUILD)
+#include <mach-o/dyld.h>  // For NSGetExecutablePath.
+#endif
+
 #include <math.h>
 
 #include "talk/media/base/rtpdump.h"
@@ -252,11 +256,75 @@ void VideoCapturerListener::OnFrameCaptured(VideoCapturer* capturer,
   }
 }
 
+// Returns the path to the running executable or an empty path.
+// TODO(thorcarpenter): Consolidate with FluteClient::get_executable_dir.
+#ifdef FLUTE_IN_CHROME_BUILD
+inline rtc::Pathname GetExecutablePath() {
+  const int32 kMaxExePathSize = 255;
+#ifdef WIN32
+  TCHAR exe_path_buffer[kMaxExePathSize];
+  DWORD copied_length = GetModuleFileName(NULL,  // NULL = Current process
+                                          exe_path_buffer, kMaxExePathSize);
+  if (0 == copied_length) {
+    LOG(LS_ERROR) << "Copied length is zero";
+    return rtc::Pathname();
+  }
+  if (kMaxExePathSize == copied_length) {
+    LOG(LS_ERROR) << "Buffer too small";
+    return rtc::Pathname();
+  }
+#ifdef UNICODE
+  std::wstring wdir(exe_path_buffer);
+  std::string dir_tmp(wdir.begin(), wdir.end());
+  rtc::Pathname path(dir_tmp);
+#else  // UNICODE
+  rtc::Pathname path(exe_path_buffer);
+#endif  // UNICODE
+#elif defined(OSX) || defined(LINUX)
+  char exe_path_buffer[kMaxExePathSize];
+#ifdef OSX
+  uint32_t copied_length = kMaxExePathSize - 1;
+  if (_NSGetExecutablePath(exe_path_buffer, &copied_length) == -1) {
+    LOG(LS_ERROR) << "Buffer too small";
+    return rtc::Pathname();
+  }
+#elif defined LINUX
+  int32 copied_length = kMaxExePathSize - 1;
+  const char* kProcExeFmt = "/proc/%d/exe";
+  char proc_exe_link[40];
+  snprintf(proc_exe_link, sizeof(proc_exe_link), kProcExeFmt, getpid());
+  copied_length = readlink(proc_exe_link, exe_path_buffer, copied_length);
+  if (copied_length == -1) {
+    LOG_ERR(LS_ERROR) << "Error reading link " << proc_exe_link;
+    return rtc::Pathname();
+  }
+  if (copied_length == kMaxExePathSize - 1) {
+    LOG(LS_ERROR) << "Probably truncated result when reading link "
+                  << proc_exe_link;
+    return rtc::Pathname();
+  }
+  exe_path_buffer[copied_length] = '\0';
+#endif  // LINUX
+  rtc::Pathname path(exe_path_buffer);
+#else  // Android/iOS etc
+  rtc::Pathname path;
+#endif  // OSX || LINUX
+  return path;
+}
+#endif
+
 // Returns the absolute path to a file in the testdata/ directory.
 std::string GetTestFilePath(const std::string& filename) {
   // Locate test data directory.
+#ifdef FLUTE_IN_CHROME_BUILD
+  rtc::Pathname path = GetExecutablePath();
+  EXPECT_FALSE(path.empty());
+  path.AppendPathname("../../magicflute/");
+  path.AppendFolder("talk");
+#else
   rtc::Pathname path = testing::GetTalkDirectory();
   EXPECT_FALSE(path.empty());  // must be run from inside "talk"
+#endif
   path.AppendFolder("media");
   path.AppendFolder("testdata");
   path.SetFilename(filename);
