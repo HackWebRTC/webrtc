@@ -141,34 +141,13 @@
   ],
   'conditions': [
     ['include_tests==1 and OS=="android"', {
-      'targets': [
-        {
-          'target_name': 'video_capture_tests_apk',
-          'type': 'none',
-          'variables': {
-            'test_suite_name': 'video_capture_tests',
-            'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)video_capture_tests<(SHARED_LIB_SUFFIX)',
-          },
-          'dependencies': [
-            'video_capture_tests',
-            'video_capture_java',
-          ],
-          'includes': [
-            '../../../build/apk_test.gypi',
-          ],
-        },
-        {
-          # Used only by video_capture_tests_apk above.
-          'target_name': 'video_capture_java',
-          'type': 'none',
-          'variables': {
-            'java_in_dir': '<(webrtc_root)/modules/video_capture/android/java',
-          },
-          'includes': [
-            '../../../build/java.gypi',
-          ],
-        },
-      ],
+      # Use WebRTC capture code for Android APK tests that are built from a
+      # Chromium checkout. Normally when built as a part of Chromium the
+      # Chromium video capture code is used. This overrides the default in
+      # webrtc/build/common.gypi.
+      'variables': {
+        'include_internal_video_capture': 1,
+      },
     }],
     ['include_tests==1', {
       'targets': [

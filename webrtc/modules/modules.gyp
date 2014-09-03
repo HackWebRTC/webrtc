@@ -367,31 +367,17 @@
         ['OS=="android"', {
           'targets': [
             {
-              'target_name': 'modules_unittests_apk',
+              'target_name': 'modules_unittests_apk_target',
               'type': 'none',
-              'variables': {
-                'test_suite_name': 'modules_unittests',
-                'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)modules_unittests<(SHARED_LIB_SUFFIX)',
-              },
               'dependencies': [
-                'modules_unittests',
-              ],
-              'includes': [
-                '../../build/apk_test.gypi',
+                '<(apk_tests_path):modules_unittests_apk',
               ],
             },
             {
-              'target_name': 'modules_tests_apk',
+              'target_name': 'modules_tests_apk_target',
               'type': 'none',
-              'variables': {
-                'test_suite_name': 'modules_tests',
-                'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)modules_tests<(SHARED_LIB_SUFFIX)',
-              },
               'dependencies': [
-                'modules_tests',
-              ],
-              'includes': [
-                '../../build/apk_test.gypi',
+                '<(apk_tests_path):modules_tests_apk',
               ],
             },
           ],

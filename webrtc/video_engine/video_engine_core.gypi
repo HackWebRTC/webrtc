@@ -148,19 +148,12 @@
         ['OS=="android"', {
           'targets': [
             {
-              'target_name': 'video_engine_core_unittests_apk',
+              'target_name': 'video_engine_core_unittests_apk_target',
               'type': 'none',
-              'variables': {
-                'test_suite_name': 'video_engine_core_unittests',
-                'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)video_engine_core_unittests<(SHARED_LIB_SUFFIX)',
-              },
               'dependencies': [
-                'video_engine_core_unittests',
+                '<(apk_tests_path):video_engine_core_unittests_apk',
               ],
-              'includes': [
-                '../../build/apk_test.gypi',
-              ],
-             },
+            },
           ],
         }],
         ['test_isolation_mode != "noop"', {

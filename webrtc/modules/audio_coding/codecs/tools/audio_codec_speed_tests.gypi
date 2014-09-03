@@ -37,17 +37,10 @@
     ['OS=="android"', {
       'targets': [
         {
-          'target_name': 'audio_codec_speed_tests_apk',
+          'target_name': 'audio_codec_speed_tests_apk_target',
           'type': 'none',
-          'variables': {
-            'test_suite_name': 'audio_codec_speed_tests',
-            'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)audio_codec_speed_tests<(SHARED_LIB_SUFFIX)',
-          },
           'dependencies': [
-            'audio_codec_speed_tests',
-          ],
-          'includes': [
-            '../../../../../build/apk_test.gypi',
+            '<(apk_tests_path):audio_codec_speed_tests_apk',
           ],
         },
       ],

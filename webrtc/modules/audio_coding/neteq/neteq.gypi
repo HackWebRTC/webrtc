@@ -201,17 +201,10 @@
         ['OS=="android"', {
           'targets': [
             {
-              'target_name': 'audio_decoder_unittests_apk',
+              'target_name': 'audio_decoder_unittests_apk_target',
               'type': 'none',
-              'variables': {
-                'test_suite_name': 'audio_decoder_unittests',
-                'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)audio_decoder_unittests<(SHARED_LIB_SUFFIX)',
-              },
               'dependencies': [
-                'audio_decoder_unittests',
-              ],
-              'includes': [
-                '../../../../build/apk_test.gypi',
+                '<(apk_tests_path):audio_decoder_unittests_apk',
               ],
             },
           ],

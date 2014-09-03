@@ -42,17 +42,10 @@
     ['OS=="android"', {
       'targets': [
         {
-          'target_name': 'common_video_unittests_apk',
+          'target_name': 'common_video_unittests_apk_target',
           'type': 'none',
-          'variables': {
-            'test_suite_name': 'common_video_unittests',
-            'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)common_video_unittests<(SHARED_LIB_SUFFIX)',
-          },
           'dependencies': [
-            'common_video_unittests',
-          ],
-          'includes': [
-            '../../build/apk_test.gypi',
+            '<(apk_tests_path):common_video_unittests_apk',
           ],
         },
       ],

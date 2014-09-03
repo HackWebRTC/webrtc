@@ -223,20 +223,13 @@
         },  # target buildbot_tests_scripts
       ],
     }],
-    ['OS=="android"', {
+    ['include_tests==1 and OS=="android"', {
       'targets': [
         {
-          'target_name': 'test_support_unittests_apk',
+          'target_name': 'test_support_unittests_apk_target',
           'type': 'none',
-          'variables': {
-            'test_suite_name': 'test_support_unittests',
-            'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)test_support_unittests<(SHARED_LIB_SUFFIX)',
-          },
           'dependencies': [
-            'test_support_unittests',
-          ],
-          'includes': [
-            '../../build/apk_test.gypi',
+            '<(apk_tests_path):test_support_unittests_apk',
           ],
         },
       ],

@@ -130,31 +130,17 @@
     ['OS=="android"', {
       'targets': [
         {
-          'target_name': 'video_engine_tests_apk',
+          'target_name': 'video_engine_tests_apk_target',
           'type': 'none',
-          'variables': {
-            'test_suite_name': 'video_engine_tests',
-            'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)video_engine_tests<(SHARED_LIB_SUFFIX)',
-          },
           'dependencies': [
-            'video_engine_tests',
-          ],
-          'includes': [
-            '../build/apk_test.gypi',
+            '<(apk_tests_path):video_engine_tests_apk',
           ],
         },
         {
-          'target_name': 'webrtc_perf_tests_apk',
+          'target_name': 'webrtc_perf_tests_apk_target',
           'type': 'none',
-          'variables': {
-            'test_suite_name': 'webrtc_perf_tests',
-            'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)webrtc_perf_tests<(SHARED_LIB_SUFFIX)',
-          },
           'dependencies': [
-            'webrtc_perf_tests',
-          ],
-          'includes': [
-            '../build/apk_test.gypi',
+            '<(apk_tests_path):webrtc_perf_tests_apk',
           ],
         },
       ],

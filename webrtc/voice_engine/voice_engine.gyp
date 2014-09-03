@@ -275,17 +275,10 @@
         ['OS=="android"', {
           'targets': [
             {
-              'target_name': 'voice_engine_unittests_apk',
+              'target_name': 'voice_engine_unittests_apk_target',
               'type': 'none',
-              'variables': {
-                'test_suite_name': 'voice_engine_unittests',
-                'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)voice_engine_unittests<(SHARED_LIB_SUFFIX)',
-              },
               'dependencies': [
-                'voice_engine_unittests',
-              ],
-              'includes': [
-                '../../build/apk_test.gypi',
+                '<(apk_tests_path):voice_engine_unittests_apk',
               ],
             },
           ],
