@@ -1607,6 +1607,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_FRAME_WAIT(1, codec.width, codec.height, kTimeout);
 
     // Check that we send smaller frames at the new resolution.
+    EXPECT_TRUE(rtc::Thread::Current()->ProcessMessages(33));
     EXPECT_TRUE(video_capturer_->CaptureCustomFrame(
         codec.width / 2, codec.height / 2, cricket::FOURCC_I420));
     EXPECT_FRAME_WAIT(2, codec.width / 2, codec.height / 2, kTimeout);
