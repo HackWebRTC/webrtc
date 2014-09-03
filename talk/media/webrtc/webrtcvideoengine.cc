@@ -81,6 +81,9 @@ const int kMaxVideoBitrate = 2000;
 
 const int kCpuMonitorPeriodMs = 2000;  // 2 seconds.
 
+// TODO(pthatcher): Figure out what the proper value here is, or if we
+// can just remove this altogether.
+static const int kDefaultRenderDelayMs = 100;
 
 static const int kDefaultLogSeverity = rtc::LS_WARNING;
 
@@ -951,6 +954,9 @@ void WebRtcVideoEngine::Construct(ViEWrapper* vie_wrapper,
     LOG(LS_ERROR) << "Failed to initialize list of supported codec types";
   }
 
+  // Consider jitter, packet loss, etc when rendering.  This will
+  // theoretically make rendering more smooth.
+  EnableTimedRender();
 
   // Load our RTP Header extensions.
   rtp_header_extensions_.push_back(
@@ -3392,6 +3398,11 @@ bool WebRtcVideoMediaChannel::ConfigureReceiving(int channel_id,
     return false;
   }
 
+  if (engine()->vie()->render()->SetExpectedRenderDelay(
+          channel_id, kDefaultRenderDelayMs)) {
+    LOG_RTCERR2(SetExpectedRenderDelay,
+                channel_id, kDefaultRenderDelayMs);
+  }
 
   if (engine_->vie()->rtp()->SetRembStatus(channel_id,
                                            kNotSending,

@@ -50,7 +50,6 @@ class WebRtcMediaEngine :
       WebRtcVideoDecoderFactory* decoder_factory) {
     voice_.SetAudioDeviceModule(adm, adm_sc);
     video_.SetVoiceEngine(&voice_);
-    video_.EnableTimedRender();
     video_.SetExternalEncoderFactory(encoder_factory);
     video_.SetExternalDecoderFactory(decoder_factory);
   }
@@ -66,7 +65,6 @@ class WebRtcMediaEngine2 :
                      WebRtcVideoDecoderFactory* decoder_factory) {
     voice_.SetAudioDeviceModule(adm, adm_sc);
     video_.SetVoiceEngine(&voice_);
-    video_.EnableTimedRender();
   }
 };
 #endif  // WEBRTC_CHROMIUM_BUILD
