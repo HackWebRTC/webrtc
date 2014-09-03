@@ -231,13 +231,13 @@ uint16_t RTPFile::Read(WebRtcRTPHeader* rtpInfo, uint8_t* payloadData,
   EXPECT_EQ(lengthBytes, plen + 8);
 
   if (plen == 0) {
-    return 0;
+    return static_cast<uint16_t>(0);
   }
   if (payloadSize < (lengthBytes - 20)) {
-    return 0;
+    return static_cast<uint16_t>(0);
   }
   if (lengthBytes < 20) {
-    return 0;
+    return static_cast<uint16_t>(0);
   }
   lengthBytes -= 20;
   EXPECT_EQ(lengthBytes, fread(payloadData, 1, lengthBytes, _rtpFile));
