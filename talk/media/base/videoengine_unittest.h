@@ -1593,6 +1593,24 @@ class VideoMediaChannelTest : public testing::Test,
     frame_count += 2;
     EXPECT_EQ_WAIT(frame_count, renderer_.num_rendered_frames(), kTimeout);
   }
+  // Tests that adapted frames won't be upscaled to a higher resolution.
+  void SendsLowerResolutionOnSmallerFrames() {
+    cricket::VideoCodec codec = DefaultCodec();
+    codec.width = 320;
+    codec.height = 240;
+    EXPECT_TRUE(SetOneCodec(codec));
+    EXPECT_TRUE(SetSend(true));
+    EXPECT_TRUE(channel_->SetRender(true));
+    EXPECT_TRUE(channel_->SetRenderer(kDefaultReceiveSsrc, &renderer_));
+    EXPECT_EQ(0, renderer_.num_rendered_frames());
+    EXPECT_TRUE(SendFrame());
+    EXPECT_FRAME_WAIT(1, codec.width, codec.height, kTimeout);
+
+    // Check that we send smaller frames at the new resolution.
+    EXPECT_TRUE(video_capturer_->CaptureCustomFrame(
+        codec.width / 2, codec.height / 2, cricket::FOURCC_I420));
+    EXPECT_FRAME_WAIT(2, codec.width / 2, codec.height / 2, kTimeout);
+  }
   // Tests that we can set the send stream format properly.
   void SetSendStreamFormat() {
     cricket::VideoCodec codec(DefaultCodec());

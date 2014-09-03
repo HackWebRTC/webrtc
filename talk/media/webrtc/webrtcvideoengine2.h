@@ -322,7 +322,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     void SetCodecAndOptions(const VideoCodecSettings& codec,
                             const VideoOptions& options);
     void RecreateWebRtcStream();
-    void SetDimensions(int width, int height);
+    // When |override_max| is false constrain width/height to codec dimensions.
+    void SetDimensions(int width, int height, bool override_max);
 
     webrtc::Call* const call_;
     WebRtcVideoEncoderFactory2* const encoder_factory_;

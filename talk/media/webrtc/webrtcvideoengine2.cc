@@ -1364,15 +1364,15 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
     const VideoFrame* frame) {
   LOG(LS_VERBOSE) << "InputFrame: " << frame->GetWidth() << "x"
                   << frame->GetHeight();
-  bool is_screencast = capturer->IsScreencast();
   // Lock before copying, can be called concurrently when swapping input source.
   rtc::CritScope frame_cs(&frame_lock_);
   if (!muted_) {
     ConvertToI420VideoFrame(*frame, &video_frame_);
   } else {
-    // Create a tiny black frame to transmit instead.
-    CreateBlackFrame(&video_frame_, 1, 1);
-    is_screencast = false;
+    // Create a black frame to transmit instead.
+    CreateBlackFrame(&video_frame_,
+                     static_cast<int>(frame->GetWidth()),
+                     static_cast<int>(frame->GetHeight()));
   }
   rtc::CritScope cs(&lock_);
   if (stream_ == NULL) {
@@ -1386,9 +1386,9 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
     return;
   }
   // Reconfigure codec if necessary.
-  if (is_screencast) {
-    SetDimensions(video_frame_.width(), video_frame_.height());
-  }
+  SetDimensions(
+      video_frame_.width(), video_frame_.height(), capturer->IsScreencast());
+
   LOG(LS_VERBOSE) << "SwapFrame: " << video_frame_.width() << "x"
                   << video_frame_.height() << " -> (codec) "
                   << parameters_.video_streams.back().width << "x"
@@ -1416,7 +1416,7 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetCapturer(
         black_frame.CreateEmptyFrame(
             width, height, width, half_width, half_width);
         SetWebRtcFrameToBlack(&black_frame);
-        SetDimensions(width, height);
+        SetDimensions(width, height, false);
         stream_->Input()->SwapFrame(&black_frame);
       }
 
@@ -1450,7 +1450,7 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetVideoFormat(
     // TODO(pbos): Fix me, this only affects the last stream!
     parameters_.video_streams.back().max_framerate =
         VideoFormat::IntervalToFps(format.interval);
-    SetDimensions(format.width, format.height);
+    SetDimensions(format.width, format.height, false);
   }
 
   format_ = format;
@@ -1539,10 +1539,23 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetRtpExtensions(
   RecreateWebRtcStream();
 }
 
-void WebRtcVideoChannel2::WebRtcVideoSendStream::SetDimensions(int width,
-                                                               int height) {
+void WebRtcVideoChannel2::WebRtcVideoSendStream::SetDimensions(
+    int width,
+    int height,
+    bool override_max) {
   assert(!parameters_.video_streams.empty());
   LOG(LS_VERBOSE) << "SetDimensions: " << width << "x" << height;
+
+  VideoCodecSettings codec_settings;
+  parameters_.codec_settings.Get(&codec_settings);
+  // Restrict dimensions according to codec max.
+  if (!override_max) {
+    if (codec_settings.codec.width < width)
+      width = codec_settings.codec.width;
+    if (codec_settings.codec.height < height)
+      height = codec_settings.codec.height;
+  }
+
   if (parameters_.video_streams.back().width == width &&
       parameters_.video_streams.back().height == height) {
     return;
@@ -1552,8 +1565,6 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetDimensions(int width,
   parameters_.video_streams.back().width = width;
   parameters_.video_streams.back().height = height;
 
-  VideoCodecSettings codec_settings;
-  parameters_.codec_settings.Get(&codec_settings);
   void* encoder_settings = encoder_factory_->CreateVideoEncoderSettings(
       codec_settings.codec, parameters_.options);
 

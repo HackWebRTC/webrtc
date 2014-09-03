@@ -536,14 +536,16 @@ WEBRTC_BASE_TEST(AdaptResolution16x10);
 
 WEBRTC_BASE_TEST(AdaptResolution4x3);
 
-WEBRTC_BASE_TEST(MuteStream);
-
-WEBRTC_BASE_TEST(MultipleSendStreams);
-
 // TODO(juberti): Restore this test once we support sending 0 fps.
 WEBRTC_DISABLED_BASE_TEST(AdaptDropAllFrames);
 // TODO(juberti): Understand why we get decode errors on this test.
 WEBRTC_DISABLED_BASE_TEST(AdaptFramerate);
+
+WEBRTC_BASE_TEST(SendsLowerResolutionOnSmallerFrames);
+
+WEBRTC_BASE_TEST(MuteStream);
+
+WEBRTC_BASE_TEST(MultipleSendStreams);
 
 WEBRTC_BASE_TEST(SetSendStreamFormat0x0);
 
