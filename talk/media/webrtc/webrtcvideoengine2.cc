@@ -1153,7 +1153,9 @@ void WebRtcVideoChannel2::OnRtcpReceived(
 }
 
 void WebRtcVideoChannel2::OnReadyToSend(bool ready) {
-  LOG(LS_VERBOSE) << "OnReadySend: " << (ready ? "Ready." : "Not ready.");
+  LOG(LS_VERBOSE) << "OnReadyToSend: " << (ready ? "Ready." : "Not ready.");
+  call_->SignalNetworkState(ready ? webrtc::Call::kNetworkUp
+                                  : webrtc::Call::kNetworkDown);
 }
 
 bool WebRtcVideoChannel2::MuteStream(uint32 ssrc, bool mute) {

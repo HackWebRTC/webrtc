@@ -14,6 +14,7 @@
 #include <map>
 #include <vector>
 
+#include "webrtc/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/video/encoded_frame_callback_adapter.h"
@@ -71,6 +72,8 @@ class VideoSendStream : public webrtc::VideoSendStream,
 
   typedef std::map<uint32_t, RtpState> RtpStateMap;
   RtpStateMap GetRtpStates() const;
+
+  void SignalNetworkState(Call::NetworkState state);
 
  private:
   void ConfigureSsrcs();

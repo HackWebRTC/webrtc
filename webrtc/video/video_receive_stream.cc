@@ -52,14 +52,7 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
   // TODO(pbos): This is not fine grained enough...
   rtp_rtcp_->SetNACKStatus(channel_, config_.rtp.nack.rtp_history_ms > 0);
   rtp_rtcp_->SetKeyFrameRequestMethod(channel_, kViEKeyFrameRequestPliRtcp);
-  switch (config_.rtp.rtcp_mode) {
-    case newapi::kRtcpCompound:
-      rtp_rtcp_->SetRTCPStatus(channel_, kRtcpCompound_RFC4585);
-      break;
-    case newapi::kRtcpReducedSize:
-      rtp_rtcp_->SetRTCPStatus(channel_, kRtcpNonCompound_RFC5506);
-      break;
-  }
+  SetRtcpMode(config_.rtp.rtcp_mode);
 
   assert(config_.rtp.remote_ssrc != 0);
   // TODO(pbos): What's an appropriate local_ssrc for receive-only streams?
@@ -263,6 +256,25 @@ int32_t VideoReceiveStream::RenderFrame(const uint32_t stream_id,
   stats_proxy_->OnRenderedFrame();
 
   return 0;
+}
+
+void VideoReceiveStream::SignalNetworkState(Call::NetworkState state) {
+  if (state == Call::kNetworkUp)
+    SetRtcpMode(config_.rtp.rtcp_mode);
+  network_->SetNetworkTransmissionState(channel_, state == Call::kNetworkUp);
+  if (state == Call::kNetworkDown)
+    rtp_rtcp_->SetRTCPStatus(channel_, kRtcpNone);
+}
+
+void VideoReceiveStream::SetRtcpMode(newapi::RtcpMode mode) {
+  switch (mode) {
+    case newapi::kRtcpCompound:
+      rtp_rtcp_->SetRTCPStatus(channel_, kRtcpCompound_RFC4585);
+      break;
+    case newapi::kRtcpReducedSize:
+      rtp_rtcp_->SetRTCPStatus(channel_, kRtcpNonCompound_RFC5506);
+      break;
+  }
 }
 }  // namespace internal
 }  // namespace webrtc

@@ -460,5 +460,16 @@ std::map<uint32_t, RtpState> VideoSendStream::GetRtpStates() const {
   return rtp_states;
 }
 
+void VideoSendStream::SignalNetworkState(Call::NetworkState state) {
+  // When network goes up, enable RTCP status before setting transmission state.
+  // When it goes down, disable RTCP afterwards. This ensures that any packets
+  // sent due to the network state changed will not be dropped.
+  if (state == Call::kNetworkUp)
+    rtp_rtcp_->SetRTCPStatus(channel_, kRtcpCompound_RFC4585);
+  network_->SetNetworkTransmissionState(channel_, state == Call::kNetworkUp);
+  if (state == Call::kNetworkDown)
+    rtp_rtcp_->SetRTCPStatus(channel_, kRtcpNone);
+}
+
 }  // namespace internal
 }  // namespace webrtc

@@ -56,6 +56,10 @@ class OveruseCallback {
 // etc.
 class Call {
  public:
+  enum NetworkState {
+    kNetworkUp,
+    kNetworkDown,
+  };
   struct Config {
     explicit Config(newapi::Transport* send_transport)
         : webrtc_config(NULL),
@@ -110,6 +114,8 @@ class Call {
   // Returns the total estimated receive bandwidth for the call. Note: this can
   // differ from the actual receive bitrate.
   virtual uint32_t ReceiveBitrateEstimate() = 0;
+
+  virtual void SignalNetworkState(NetworkState state) = 0;
 
   virtual ~Call() {}
 };

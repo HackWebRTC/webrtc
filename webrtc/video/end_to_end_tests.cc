@@ -43,6 +43,7 @@
 
 namespace webrtc {
 
+static const unsigned long kSilenceTimeoutMs = 2000;
 static const int kRedPayloadType = 118;
 static const int kUlpfecPayloadType = 119;
 
@@ -56,6 +57,19 @@ class EndToEndTest : public test::CallTest {
   }
 
  protected:
+  class UnusedTransport : public newapi::Transport {
+   private:
+    virtual bool SendRtp(const uint8_t* packet, size_t length) OVERRIDE {
+      ADD_FAILURE() << "Unexpected RTP sent.";
+      return false;
+    }
+
+    virtual bool SendRtcp(const uint8_t* packet, size_t length) OVERRIDE {
+      ADD_FAILURE() << "Unexpected RTCP sent.";
+      return false;
+    }
+  };
+
   void DecodesRetransmittedFrame(bool retransmit_over_rtx);
   void ReceivesPliAndRecovers(int rtp_history_ms);
   void RespectsRtcpMode(newapi::RtcpMode rtcp_mode);
@@ -1840,6 +1854,228 @@ TEST_F(EndToEndTest, RestartingSendStreamPreservesRtpStatesWithRtx) {
   TestRtpStatePreservation(true);
 }
 
+TEST_F(EndToEndTest, RespectsNetworkState) {
+  // TODO(pbos): Remove accepted downtime packets etc. when signaling network
+  // down blocks until no more packets will be sent.
+
+  // Pacer will send from its packet list and then send required padding before
+  // checking paused_ again. This should be enough for one round of pacing,
+  // otherwise increase.
+  static const int kNumAcceptedDowntimeRtp = 5;
+  // A single RTCP may be in the pipeline.
+  static const int kNumAcceptedDowntimeRtcp = 1;
+  class NetworkStateTest : public test::EndToEndTest, public test::FakeEncoder {
+   public:
+    NetworkStateTest()
+        : EndToEndTest(kDefaultTimeoutMs),
+          FakeEncoder(Clock::GetRealTimeClock()),
+          test_crit_(CriticalSectionWrapper::CreateCriticalSection()),
+          encoded_frames_(EventWrapper::Create()),
+          sender_packets_(EventWrapper::Create()),
+          receiver_packets_(EventWrapper::Create()),
+          sender_state_(Call::kNetworkUp),
+          down_sender_rtp_(0),
+          down_sender_rtcp_(0),
+          receiver_state_(Call::kNetworkUp),
+          down_receiver_rtcp_(0),
+          down_frames_(0) {}
+
+    virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
+      CriticalSectionScoped lock(test_crit_.get());
+      if (sender_state_ == Call::kNetworkDown) {
+        ++down_sender_rtp_;
+        EXPECT_LE(down_sender_rtp_, kNumAcceptedDowntimeRtp)
+            << "RTP sent during sender-side downtime.";
+        if (down_sender_rtp_> kNumAcceptedDowntimeRtp)
+          sender_packets_->Set();
+      } else {
+        sender_packets_->Set();
+      }
+      return SEND_PACKET;
+    }
+
+    virtual Action OnSendRtcp(const uint8_t* packet, size_t length) OVERRIDE {
+      CriticalSectionScoped lock(test_crit_.get());
+      if (sender_state_ == Call::kNetworkDown) {
+        ++down_sender_rtcp_;
+        EXPECT_LE(down_sender_rtcp_, kNumAcceptedDowntimeRtcp)
+            << "RTCP sent during sender-side downtime.";
+        if (down_sender_rtcp_ > kNumAcceptedDowntimeRtcp)
+          sender_packets_->Set();
+      } else {
+        sender_packets_->Set();
+      }
+      return SEND_PACKET;
+    }
+
+    virtual Action OnReceiveRtp(const uint8_t* packet, size_t length) OVERRIDE {
+      ADD_FAILURE() << "Unexpected receiver RTP, should not be sending.";
+      return SEND_PACKET;
+    }
+
+    virtual Action OnReceiveRtcp(const uint8_t* packet,
+                                 size_t length) OVERRIDE {
+      CriticalSectionScoped lock(test_crit_.get());
+      if (receiver_state_ == Call::kNetworkDown) {
+        ++down_receiver_rtcp_;
+        EXPECT_LE(down_receiver_rtcp_, kNumAcceptedDowntimeRtcp)
+            << "RTCP sent during receiver-side downtime.";
+        if (down_receiver_rtcp_ > kNumAcceptedDowntimeRtcp)
+          receiver_packets_->Set();
+      } else {
+        receiver_packets_->Set();
+      }
+      return SEND_PACKET;
+    }
+
+    virtual void OnCallsCreated(Call* sender_call,
+                                Call* receiver_call) OVERRIDE {
+      sender_call_ = sender_call;
+      receiver_call_ = receiver_call;
+    }
+
+    virtual void ModifyConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        std::vector<VideoStream>* video_streams) OVERRIDE {
+      send_config->encoder_settings.encoder = this;
+    }
+
+    virtual void PerformTest() OVERRIDE {
+      EXPECT_EQ(kEventSignaled, encoded_frames_->Wait(kDefaultTimeoutMs))
+          << "No frames received by the encoder.";
+      EXPECT_EQ(kEventSignaled, sender_packets_->Wait(kDefaultTimeoutMs))
+          << "Timed out waiting for send-side packets.";
+      EXPECT_EQ(kEventSignaled, receiver_packets_->Wait(kDefaultTimeoutMs))
+          << "Timed out waiting for receiver-side packets.";
+
+      // Sender-side network down.
+      sender_call_->SignalNetworkState(Call::kNetworkDown);
+      {
+        CriticalSectionScoped lock(test_crit_.get());
+        sender_packets_->Reset();  // Earlier packets should not count.
+        sender_state_ = Call::kNetworkDown;
+      }
+      EXPECT_EQ(kEventTimeout, sender_packets_->Wait(kSilenceTimeoutMs))
+          << "Packets sent during sender-network downtime.";
+      EXPECT_EQ(kEventSignaled, receiver_packets_->Wait(kDefaultTimeoutMs))
+          << "Timed out waiting for receiver-side packets.";
+      // Receiver-side network down.
+      receiver_call_->SignalNetworkState(Call::kNetworkDown);
+      {
+        CriticalSectionScoped lock(test_crit_.get());
+        receiver_packets_->Reset();  // Earlier packets should not count.
+        receiver_state_ = Call::kNetworkDown;
+      }
+      EXPECT_EQ(kEventTimeout, receiver_packets_->Wait(kSilenceTimeoutMs))
+          << "Packets sent during receiver-network downtime.";
+
+      // Network back up again for both.
+      {
+        CriticalSectionScoped lock(test_crit_.get());
+        sender_packets_->Reset();  // Earlier packets should not count.
+        receiver_packets_->Reset();  // Earlier packets should not count.
+        sender_state_ = receiver_state_ = Call::kNetworkUp;
+      }
+      sender_call_->SignalNetworkState(Call::kNetworkUp);
+      receiver_call_->SignalNetworkState(Call::kNetworkUp);
+      EXPECT_EQ(kEventSignaled, sender_packets_->Wait(kDefaultTimeoutMs))
+          << "Timed out waiting for send-side packets.";
+      EXPECT_EQ(kEventSignaled, receiver_packets_->Wait(kDefaultTimeoutMs))
+          << "Timed out waiting for receiver-side packets.";
+    }
+
+    virtual int32_t Encode(const I420VideoFrame& input_image,
+                           const CodecSpecificInfo* codec_specific_info,
+                           const std::vector<VideoFrameType>* frame_types)
+        OVERRIDE {
+      {
+        CriticalSectionScoped lock(test_crit_.get());
+        if (sender_state_ == Call::kNetworkDown) {
+          ++down_frames_;
+          EXPECT_LE(down_frames_, 1)
+              << "Encoding more than one frame while network is down.";
+          if (down_frames_ > 1)
+            encoded_frames_->Set();
+        } else {
+          encoded_frames_->Set();
+        }
+      }
+      return test::FakeEncoder::Encode(
+          input_image, codec_specific_info, frame_types);
+    }
+
+   private:
+    const scoped_ptr<CriticalSectionWrapper> test_crit_;
+    scoped_ptr<EventWrapper> encoded_frames_;
+    scoped_ptr<EventWrapper> sender_packets_;
+    scoped_ptr<EventWrapper> receiver_packets_;
+    Call* sender_call_;
+    Call* receiver_call_;
+    Call::NetworkState sender_state_ GUARDED_BY(test_crit_);
+    int down_sender_rtp_ GUARDED_BY(test_crit_);
+    int down_sender_rtcp_ GUARDED_BY(test_crit_);
+    Call::NetworkState receiver_state_ GUARDED_BY(test_crit_);
+    int down_receiver_rtcp_ GUARDED_BY(test_crit_);
+    int down_frames_ GUARDED_BY(test_crit_);
+  } test;
+
+  RunBaseTest(&test);
+}
+
+TEST_F(EndToEndTest, NewSendStreamsRespectNetworkDown) {
+  class UnusedEncoder : public test::FakeEncoder {
+    public:
+     UnusedEncoder() : FakeEncoder(Clock::GetRealTimeClock()) {}
+    virtual int32_t Encode(const I420VideoFrame& input_image,
+                           const CodecSpecificInfo* codec_specific_info,
+                           const std::vector<VideoFrameType>* frame_types)
+        OVERRIDE {
+      ADD_FAILURE() << "Unexpected frame encode.";
+      return test::FakeEncoder::Encode(
+          input_image, codec_specific_info, frame_types);
+    }
+  };
+
+  UnusedTransport transport;
+  CreateSenderCall(Call::Config(&transport));
+  sender_call_->SignalNetworkState(Call::kNetworkDown);
+
+  CreateSendConfig(1);
+  UnusedEncoder unused_encoder;
+  send_config_.encoder_settings.encoder = &unused_encoder;
+  CreateStreams();
+  CreateFrameGeneratorCapturer();
+
+  Start();
+  SleepMs(kSilenceTimeoutMs);
+  Stop();
+
+  DestroyStreams();
+}
+
+TEST_F(EndToEndTest, NewReceiveStreamsRespectNetworkDown) {
+  test::DirectTransport sender_transport;
+  CreateSenderCall(Call::Config(&sender_transport));
+  UnusedTransport transport;
+  CreateReceiverCall(Call::Config(&transport));
+  sender_transport.SetReceiver(receiver_call_->Receiver());
+
+  receiver_call_->SignalNetworkState(Call::kNetworkDown);
+
+  CreateSendConfig(1);
+  CreateMatchingReceiveConfigs();
+  CreateStreams();
+  CreateFrameGeneratorCapturer();
+
+  Start();
+  SleepMs(kSilenceTimeoutMs);
+  Stop();
+
+  sender_transport.StopSending();
+
+  DestroyStreams();
+}
 }  // namespace webrtc
 
 #endif // !WEBRTC_ANDROID

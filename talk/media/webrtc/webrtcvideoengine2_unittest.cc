@@ -157,7 +157,9 @@ void FakeVideoReceiveStream::Stop() {
 void FakeVideoReceiveStream::GetCurrentReceiveCodec(webrtc::VideoCodec* codec) {
 }
 
-FakeCall::FakeCall() { SetVideoCodecs(GetDefaultVideoCodecs()); }
+FakeCall::FakeCall() : network_state_(kNetworkUp) {
+  SetVideoCodecs(GetDefaultVideoCodecs());
+}
 
 FakeCall::~FakeCall() {
   EXPECT_EQ(0u, video_send_streams_.size());
@@ -218,6 +220,10 @@ std::vector<webrtc::VideoCodec> FakeCall::GetDefaultVideoCodecs() {
   return codecs;
 }
 
+webrtc::Call::NetworkState FakeCall::GetNetworkState() const {
+  return network_state_;
+}
+
 webrtc::VideoSendStream* FakeCall::CreateVideoSendStream(
     const webrtc::VideoSendStream::Config& config,
     const std::vector<webrtc::VideoStream>& video_streams,
@@ -274,6 +280,10 @@ uint32_t FakeCall::ReceiveBitrateEstimate() {
   return 0;
 }
 
+void FakeCall::SignalNetworkState(webrtc::Call::NetworkState state) {
+  network_state_ = state;
+}
+
 FakeWebRtcVideoChannel2::FakeWebRtcVideoChannel2(
     FakeCall* call,
     WebRtcVideoEngine2* engine,
@@ -289,6 +299,7 @@ FakeWebRtcVideoChannel2::~FakeWebRtcVideoChannel2() {
 VoiceMediaChannel* FakeWebRtcVideoChannel2::GetVoiceChannel() {
   return voice_channel_;
 }
+
 FakeCall* FakeWebRtcVideoChannel2::GetFakeCall() {
   return fake_call_;
 }
@@ -1614,8 +1625,17 @@ TEST_F(WebRtcVideoChannel2Test, DISABLED_UpdateEncoderCodecsAfterSetFactory) {
   FAIL() << "Not implemented.";  // TODO(pbos): Implement.
 }
 
-TEST_F(WebRtcVideoChannel2Test, DISABLED_OnReadyToSend) {
-  FAIL() << "Not implemented.";  // TODO(pbos): Implement.
+TEST_F(WebRtcVideoChannel2Test, OnReadyToSendSignalsNetworkState) {
+  EXPECT_EQ(webrtc::Call::kNetworkUp,
+            fake_channel_->GetFakeCall()->GetNetworkState());
+
+  channel_->OnReadyToSend(false);
+  EXPECT_EQ(webrtc::Call::kNetworkDown,
+            fake_channel_->GetFakeCall()->GetNetworkState());
+
+  channel_->OnReadyToSend(true);
+  EXPECT_EQ(webrtc::Call::kNetworkUp,
+            fake_channel_->GetFakeCall()->GetNetworkState());
 }
 
 TEST_F(WebRtcVideoChannel2Test, DISABLED_CaptureFrameTimestampToNtpTimestamp) {
