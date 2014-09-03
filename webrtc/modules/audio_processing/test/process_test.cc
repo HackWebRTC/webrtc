@@ -605,13 +605,14 @@ void void_main(int argc, char* argv[]) {
 
         samples_per_channel = msg.sample_rate() / 100;
         far_frame.sample_rate_hz_ = msg.sample_rate();
-        far_frame.samples_per_channel_ = samples_per_channel;
+        far_frame.samples_per_channel_ = reverse_sample_rate / 100;
         far_frame.num_channels_ = msg.num_reverse_channels();
         near_frame.sample_rate_hz_ = msg.sample_rate();
         near_frame.samples_per_channel_ = samples_per_channel;
         near_frame.num_channels_ = msg.num_input_channels();
-        reverse_cb.reset(new ChannelBuffer<float>(samples_per_channel,
-                                                  msg.num_reverse_channels()));
+        reverse_cb.reset(new ChannelBuffer<float>(
+            far_frame.samples_per_channel_,
+            msg.num_reverse_channels()));
         primary_cb.reset(new ChannelBuffer<float>(samples_per_channel,
                                                   msg.num_input_channels()));
 
@@ -634,7 +635,7 @@ void void_main(int argc, char* argv[]) {
 
         ASSERT_TRUE(msg.has_data() ^ (msg.channel_size() > 0));
         if (msg.has_data()) {
-          ASSERT_EQ(sizeof(int16_t) * samples_per_channel *
+          ASSERT_EQ(sizeof(int16_t) * far_frame.samples_per_channel_ *
               far_frame.num_channels_, msg.data().size());
           memcpy(far_frame.data_, msg.data().data(), msg.data().size());
         } else {
@@ -686,14 +687,16 @@ void void_main(int argc, char* argv[]) {
           memcpy(near_frame.data_,
                  msg.input_data().data(),
                  msg.input_data().size());
+          near_read_bytes += msg.input_data().size();
         } else {
           for (int i = 0; i < msg.input_channel_size(); ++i) {
             primary_cb->CopyFrom(msg.input_channel(i).data(), i);
+            near_read_bytes += msg.input_channel(i).size();
           }
         }
 
-        near_read_bytes += msg.input_data().size();
         if (progress && primary_count % 100 == 0) {
+          near_read_bytes = std::min(near_read_bytes, near_size_bytes);
           printf("%.0f%% complete\r",
               (near_read_bytes * 100.0) / near_size_bytes);
           fflush(stdout);
@@ -769,7 +772,8 @@ void void_main(int argc, char* argv[]) {
           }
         }
 
-        size_t num_samples = samples_per_channel * apm->num_output_channels();
+        size_t num_samples =
+            apm->num_output_channels() * output_sample_rate / 100;
         if (msg.has_input_data()) {
           static FILE* out_file = OpenFile(out_filename, "wb");
           ASSERT_EQ(num_samples, fwrite(near_frame.data_,
