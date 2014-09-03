@@ -23,12 +23,7 @@ void InitCocoaMultiThreading() {
   if ([NSThread isMultiThreaded] == NO) {
     // The sole purpose of this autorelease pool is to avoid a console
     // message on Leopard that tells us we're autoreleasing the thread
-    // with no autorelease pool in place; we can't set up an autorelease
-    // pool before this, because this is executed from an initializer,
-    // which is run before main.  This means we leak an autorelease pool,
-    // and one thread, and if other objects are set up in initializers after
-    // this they'll be silently added to this pool and never released.
-
+    // with no autorelease pool in place.
     // Doing NSAutoreleasePool* hack = [[NSAutoreleasePool alloc] init];
     // causes unused variable error.
     NSAutoreleasePool* hack;
@@ -36,6 +31,7 @@ void InitCocoaMultiThreading() {
     [NSThread detachNewThreadSelector:@selector(class)
                              toTarget:[NSObject class]
                            withObject:nil];
+    [hack drain];
   }
 
   assert([NSThread isMultiThreaded]);
