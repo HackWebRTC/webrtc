@@ -1073,6 +1073,61 @@ TEST_F(RtpSenderAudioTest, SendAudioWithAudioLevelExtension) {
                       sizeof(extension)));
 }
 
+// As RFC4733, named telephone events are carried as part of the audio stream
+// and must use the same sequence number and timestamp base as the regular
+// audio channel.
+// This test checks the marker bit for the first packet and the consequent
+// packets of the same telephone event. Since it is specifically for DTMF
+// events, ignoring audio packets and sending kFrameEmpty instead of those.
+TEST_F(RtpSenderAudioTest, CheckMarkerBitForTelephoneEvents) {
+  char payload_name[RTP_PAYLOAD_NAME_SIZE] = "telephone-event";
+  uint8_t payload_type = 126;
+  ASSERT_EQ(0, rtp_sender_->RegisterPayload(payload_name, payload_type, 0,
+                                            0, 0));
+  // For Telephone events, payload is not added to the registered payload list,
+  // it will register only the payload used for audio stream.
+  // Registering the payload again for audio stream with different payload name.
+  strcpy(payload_name, "payload_name");
+  ASSERT_EQ(0, rtp_sender_->RegisterPayload(payload_name, payload_type, 8000,
+                                            1, 0));
+  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
+  // DTMF event key=9, duration=500 and attenuationdB=10
+  rtp_sender_->SendTelephoneEvent(9, 500, 10);
+  // During start, it takes the starting timestamp as last sent timestamp.
+  // The duration is calculated as the difference of current and last sent
+  // timestamp. So for first call it will skip since the duration is zero.
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kFrameEmpty, payload_type,
+                                             capture_time_ms,
+                                             0, NULL, 0,
+                                             NULL));
+  // DTMF Sample Length is (Frequency/1000) * Duration.
+  // So in this case, it is (8000/1000) * 500 = 4000.
+  // Sending it as two packets.
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kFrameEmpty, payload_type,
+                                             capture_time_ms+2000,
+                                             0, NULL, 0,
+                                             NULL));
+  scoped_ptr<webrtc::RtpHeaderParser> rtp_parser(
+      webrtc::RtpHeaderParser::Create());
+  ASSERT_TRUE(rtp_parser.get() != NULL);
+  webrtc::RTPHeader rtp_header;
+  ASSERT_TRUE(rtp_parser->Parse(transport_.last_sent_packet_,
+                                transport_.last_sent_packet_len_,
+                                &rtp_header));
+  // Marker Bit should be set to 1 for first packet.
+  EXPECT_TRUE(rtp_header.markerBit);
+
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kFrameEmpty, payload_type,
+                                             capture_time_ms+4000,
+                                             0, NULL, 0,
+                                             NULL));
+  ASSERT_TRUE(rtp_parser->Parse(transport_.last_sent_packet_,
+                                transport_.last_sent_packet_len_,
+                                &rtp_header));
+  // Marker Bit should be set to 0 for rest of the packets.
+  EXPECT_FALSE(rtp_header.markerBit);
+}
+
 TEST_F(RtpSenderTest, BytesReportedCorrectly) {
   const char* kPayloadName = "GENERIC";
   const uint8_t kPayloadType = 127;

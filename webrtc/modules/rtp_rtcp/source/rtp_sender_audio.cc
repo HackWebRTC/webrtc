@@ -318,13 +318,15 @@ int32_t RTPSenderAudio::SendAudio(
               static_cast<uint16_t>(dtmfDurationSamples),
               false);
         } else {
-          // set markerBit on the first packet in the burst
+          if (SendTelephoneEventPacket(
+                  ended,
+                  _dtmfTimestamp,
+                  static_cast<uint16_t>(dtmfDurationSamples),
+                  !_dtmfEventFirstPacketSent) != 0) {
+            return -1;
+          }
           _dtmfEventFirstPacketSent = true;
-          return SendTelephoneEventPacket(
-              ended,
-              _dtmfTimestamp,
-              static_cast<uint16_t>(dtmfDurationSamples),
-              !_dtmfEventFirstPacketSent);
+          return 0;
         }
       }
       return 0;
