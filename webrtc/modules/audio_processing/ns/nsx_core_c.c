@@ -48,7 +48,7 @@ void WebRtcNsx_SpeechNoiseProb(NsxInst_t* inst,
     if (den > 0) {
       besselTmpFX32 -= num / den;  // Q11
     } else {
-      besselTmpFX32 -= num; // Q11
+      besselTmpFX32 = 0;
     }
 
     // inst->logLrtTimeAvg[i] += LRT_TAVG * (besselTmp - log(snrLocPrior)

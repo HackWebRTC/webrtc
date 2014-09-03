@@ -74,6 +74,7 @@ void WebRtcNsx_SpeechNoiseProb(NsxInst_t* inst,
       "sra        %[r7],    %[r7],    19                  \n\t"
       "movz       %[r3],    %[r8],    %[r6]               \n\t"
       "subu       %[r0],    %[r0],    %[r3]               \n\t"
+      "movn       %[r0],    $0,       %[r6]               \n\t"
       "mul        %[r1],    %[r1],    %[const_5412]       \n\t"
       "sra        %[r1],    %[r1],    12                  \n\t"
       "addu       %[r7],    %[r7],    %[r1]               \n\t"
