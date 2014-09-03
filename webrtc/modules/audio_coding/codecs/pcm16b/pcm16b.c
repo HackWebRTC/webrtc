@@ -16,7 +16,7 @@
 #include <string.h>
 #endif
 
-#include "webrtc/typedefs.h"
+#include "typedefs.h"
 
 #define HIGHEND 0xFF00
 #define LOWEND    0xFF

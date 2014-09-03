@@ -12,9 +12,10 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "g722_enc_dec.h"
 #include "g722_interface.h"
-#include "webrtc/typedefs.h"
+#include "g722_enc_dec.h"
+#include "typedefs.h"
+
 
 int16_t WebRtcG722_CreateEncoder(G722EncInst **G722enc_inst)
 {

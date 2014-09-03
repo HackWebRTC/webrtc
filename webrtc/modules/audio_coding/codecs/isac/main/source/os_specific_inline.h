@@ -13,7 +13,7 @@
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_OS_SPECIFIC_INLINE_H_
 
 #include <math.h>
-#include "webrtc/typedefs.h"
+#include "typedefs.h"
 
 #if defined(WEBRTC_POSIX)
 #define WebRtcIsac_lrint lrint

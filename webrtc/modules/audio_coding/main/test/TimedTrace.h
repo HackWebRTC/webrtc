@@ -11,7 +11,7 @@
 #ifndef TIMED_TRACE_H
 #define TIMED_TRACE_H
 
-#include "webrtc/typedefs.h"
+#include "typedefs.h"
 
 #include <stdio.h>
 #include <stdlib.h>

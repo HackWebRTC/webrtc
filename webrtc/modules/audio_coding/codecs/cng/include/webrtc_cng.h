@@ -12,7 +12,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_CNG_MAIN_INTERFACE_WEBRTC_CNG_H_
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_CNG_MAIN_INTERFACE_WEBRTC_CNG_H_
 
-#include "webrtc/typedefs.h"
+#include "typedefs.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_FILTERBANK_INTERNAL_H_
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_FILTERBANK_INTERNAL_H_
 
-#include "webrtc/typedefs.h"
+#include "typedefs.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {

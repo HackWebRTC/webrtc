@@ -22,7 +22,7 @@
  * Define the fixpoint numeric formats
  */
 
-#include "webrtc/typedefs.h"
+#include "typedefs.h"
 
 /*
  * Solution to support multiple instances

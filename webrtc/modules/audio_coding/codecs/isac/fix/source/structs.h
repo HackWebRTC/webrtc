@@ -21,7 +21,7 @@
 
 #include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "modules/audio_coding/codecs/isac/fix/source/settings.h"
-#include "webrtc/typedefs.h"
+#include "typedefs.h"
 
 /* Bitstream struct for decoder */
 typedef struct Bitstreamstruct_dec {

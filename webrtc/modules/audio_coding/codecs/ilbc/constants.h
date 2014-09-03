@@ -20,7 +20,7 @@
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_MAIN_SOURCE_CONSTANTS_H_
 
 #include "defines.h"
-#include "webrtc/typedefs.h"
+#include "typedefs.h"
 
 /* high pass filters */
 
