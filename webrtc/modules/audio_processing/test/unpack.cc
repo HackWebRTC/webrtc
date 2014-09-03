@@ -140,9 +140,12 @@ int do_main(int argc, char* argv[]) {
 
   Event event_msg;
   int frame_count = 0;
+  int reverse_samples_per_channel = 0;
+  int input_samples_per_channel = 0;
+  int output_samples_per_channel = 0;
+  int num_reverse_channels = 0;
   int num_input_channels = 0;
   int num_output_channels = 0;
-  int num_reverse_channels = 0;
   scoped_ptr<WavFile> reverse_wav_file;
   scoped_ptr<WavFile> input_wav_file;
   scoped_ptr<WavFile> output_wav_file;
@@ -158,8 +161,12 @@ int do_main(int argc, char* argv[]) {
 
       const ReverseStream msg = event_msg.reverse_stream();
       if (msg.has_data()) {
+        // TODO(aluebs): Replace "num_reverse_channels *
+        // reverse_samples_per_channel" with "msg.data().size() /
+        // sizeof(int16_t)" and so on when this fix in audio_processing has made
+        // it into stable: https://webrtc-codereview.appspot.com/15299004/
         WriteIntData(reinterpret_cast<const int16_t*>(msg.data().data()),
-                     msg.data().size() / sizeof(int16_t),
+                     num_reverse_channels * reverse_samples_per_channel,
                      reverse_wav_file.get(),
                      reverse_pcm_file.get());
       } else if (msg.channel_size() > 0) {
@@ -168,7 +175,7 @@ int do_main(int argc, char* argv[]) {
           data[i] = reinterpret_cast<const float*>(msg.channel(i).data());
         }
         WriteFloatData(data.get(),
-                       msg.channel(0).size() / sizeof(float),
+                       reverse_samples_per_channel,
                        num_reverse_channels,
                        reverse_wav_file.get(),
                        reverse_pcm_file.get());
@@ -183,7 +190,7 @@ int do_main(int argc, char* argv[]) {
       const Stream msg = event_msg.stream();
       if (msg.has_input_data()) {
         WriteIntData(reinterpret_cast<const int16_t*>(msg.input_data().data()),
-                     msg.input_data().size() / sizeof(int16_t),
+                     num_input_channels * input_samples_per_channel,
                      input_wav_file.get(),
                      input_pcm_file.get());
       } else if (msg.input_channel_size() > 0) {
@@ -192,7 +199,7 @@ int do_main(int argc, char* argv[]) {
           data[i] = reinterpret_cast<const float*>(msg.input_channel(i).data());
         }
         WriteFloatData(data.get(),
-                       msg.input_channel(0).size() / sizeof(float),
+                       input_samples_per_channel,
                        num_input_channels,
                        input_wav_file.get(),
                        input_pcm_file.get());
@@ -200,7 +207,7 @@ int do_main(int argc, char* argv[]) {
 
       if (msg.has_output_data()) {
         WriteIntData(reinterpret_cast<const int16_t*>(msg.output_data().data()),
-                     msg.output_data().size() / sizeof(int16_t),
+                     num_output_channels * output_samples_per_channel,
                      output_wav_file.get(),
                      output_pcm_file.get());
       } else if (msg.output_channel_size() > 0) {
@@ -210,7 +217,7 @@ int do_main(int argc, char* argv[]) {
               reinterpret_cast<const float*>(msg.output_channel(i).data());
         }
         WriteFloatData(data.get(),
-                       msg.output_channel(0).size() / sizeof(float),
+                       output_samples_per_channel,
                        num_output_channels,
                        output_wav_file.get(),
                        output_pcm_file.get());
@@ -276,6 +283,10 @@ int do_main(int argc, char* argv[]) {
         output_sample_rate = input_sample_rate;
       }
 
+      reverse_samples_per_channel = reverse_sample_rate / 100;
+      input_samples_per_channel = input_sample_rate / 100;
+      output_samples_per_channel = output_sample_rate / 100;
+
       if (FLAGS_pcm) {
         if (!reverse_pcm_file.get()) {
           reverse_pcm_file.reset(new PcmFile(FLAGS_reverse_file));
@@ -288,14 +299,14 @@ int do_main(int argc, char* argv[]) {
         }
       } else {
         reverse_wav_file.reset(new WavFile(FLAGS_reverse_wav_file,
-                                       reverse_sample_rate,
-                                       num_reverse_channels));
+                                           reverse_sample_rate,
+                                           num_reverse_channels));
         input_wav_file.reset(new WavFile(FLAGS_input_wav_file,
-                                     input_sample_rate,
-                                     num_input_channels));
+                                         input_sample_rate,
+                                         num_input_channels));
         output_wav_file.reset(new WavFile(FLAGS_output_wav_file,
-                                      output_sample_rate,
-                                      num_output_channels));
+                                          output_sample_rate,
+                                          num_output_channels));
       }
     }
   }
