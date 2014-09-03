@@ -14,7 +14,7 @@
  * Define the fixpoint numeric formats
  */
 
-#include "typedefs.h"
+#include "webrtc/typedefs.h"
 
 #ifdef __cplusplus
 extern "C" {

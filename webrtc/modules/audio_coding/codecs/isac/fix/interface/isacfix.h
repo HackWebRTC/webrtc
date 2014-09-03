@@ -14,8 +14,7 @@
 /*
  * Define the fixpoint numeric formats
  */
-#include "typedefs.h"
-
+#include "webrtc/typedefs.h"
 
 typedef struct {
   void *dummy;
