@@ -614,7 +614,7 @@ class JsepTestClient
   }
   virtual void Negotiate(bool audio, bool video) {
     rtc::scoped_ptr<SessionDescriptionInterface> offer;
-    EXPECT_TRUE(DoCreateOffer(offer.use()));
+    ASSERT_TRUE(DoCreateOffer(offer.use()));
 
     if (offer->description()->GetContentByName("audio")) {
       offer->description()->GetContentByName("audio")->rejected = !audio;
