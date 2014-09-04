@@ -487,8 +487,6 @@
         'media/base/filemediaengine.cc',
         'media/base/filemediaengine.h',
         'media/base/hybriddataengine.h',
-        'media/base/hybridvideoengine.cc',
-        'media/base/hybridvideoengine.h',
         'media/base/mediachannel.h',
         'media/base/mediacommon.h',
         'media/base/mediaengine.cc',
