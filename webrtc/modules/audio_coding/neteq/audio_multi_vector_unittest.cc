@@ -101,7 +101,7 @@ TEST_P(AudioMultiVectorTest, PushBackInterleavedAndCopy) {
   AudioMultiVector vec(num_channels_);
   vec.PushBackInterleaved(array_interleaved_, interleaved_length_);
   AudioMultiVector vec_copy(num_channels_);
-  vec.CopyFrom(&vec_copy);  // Copy from |vec| to |vec_copy|.
+  vec.CopyTo(&vec_copy);  // Copy from |vec| to |vec_copy|.
   ASSERT_EQ(num_channels_, vec.Channels());
   ASSERT_EQ(array_length(), vec.Size());
   ASSERT_EQ(num_channels_, vec_copy.Channels());
@@ -118,7 +118,7 @@ TEST_P(AudioMultiVectorTest, PushBackInterleavedAndCopy) {
   EXPECT_TRUE(vec.Empty());
 
   // Now copy the empty vector and verify that the copy becomes empty too.
-  vec.CopyFrom(&vec_copy);
+  vec.CopyTo(&vec_copy);
   EXPECT_TRUE(vec_copy.Empty());
 }
 
@@ -127,7 +127,7 @@ TEST_P(AudioMultiVectorTest, CopyToNull) {
   AudioMultiVector vec(num_channels_);
   AudioMultiVector* vec_copy = NULL;
   vec.PushBackInterleaved(array_interleaved_, interleaved_length_);
-  vec.CopyFrom(vec_copy);
+  vec.CopyTo(vec_copy);
 }
 
 // Test the PushBack method with another AudioMultiVector as input argument.

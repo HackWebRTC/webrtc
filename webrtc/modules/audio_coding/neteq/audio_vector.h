@@ -43,7 +43,7 @@ class AudioVector {
   // Copies all values from this vector to |copy_to|. Any contents in |copy_to|
   // are deleted before the copy operation. After the operation is done,
   // |copy_to| will be an exact replica of this object.
-  virtual void CopyFrom(AudioVector* copy_to) const;
+  virtual void CopyTo(AudioVector* copy_to) const;
 
   // Prepends the contents of AudioVector |prepend_this| to this object. The
   // length of this object is increased with the length of |prepend_this|.

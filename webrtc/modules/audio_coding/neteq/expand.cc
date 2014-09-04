@@ -511,7 +511,7 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
       parameters.expand_vector0.Clear();
       parameters.expand_vector0.PushBack(vector1, expansion_length);
       // Copy from expand_vector0 to expand_vector1.
-      parameters.expand_vector0.CopyFrom(&parameters.expand_vector1);
+      parameters.expand_vector0.CopyTo(&parameters.expand_vector1);
       // Set the energy_ratio since it is used by muting slope.
       if ((energy1 / 4 < energy2) || (energy2 == 0)) {
         amplitude_ratio = 4096;  // 0.5 in Q13.

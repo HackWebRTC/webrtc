@@ -22,7 +22,7 @@ void AudioVector::Clear() {
   first_free_ix_ = 0;
 }
 
-void AudioVector::CopyFrom(AudioVector* copy_to) const {
+void AudioVector::CopyTo(AudioVector* copy_to) const {
   if (copy_to) {
     copy_to->Reserve(Size());
     assert(copy_to->capacity_ >= Size());

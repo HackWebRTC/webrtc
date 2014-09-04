@@ -43,7 +43,7 @@ class AudioMultiVector {
   // are deleted. After the operation is done, |copy_to| will be an exact
   // replica of this object. The source and the destination must have the same
   // number of channels.
-  virtual void CopyFrom(AudioMultiVector* copy_to) const;
+  virtual void CopyTo(AudioMultiVector* copy_to) const;
 
   // Appends the contents of array |append_this| to the end of this
   // object. The array is assumed to be channel-interleaved. |length| must be
