@@ -110,6 +110,9 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   // if Thread::Stop() was called.
   bool ProcessMessagesUntilIdle();
 
+  // Sets the next port number to use for testing.
+  void SetNextPortForTesting(uint16 port);
+
  protected:
   // Returns a new IP not used before in this network.
   IPAddress GetNextIP(int family);
