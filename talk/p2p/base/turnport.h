@@ -120,12 +120,6 @@ class TurnPort : public Port {
 
   int error() const { return error_; }
 
-  void OnAllocateMismatch();
-
-  rtc::AsyncPacketSocket* socket() const {
-    return socket_;
-  }
-
   // Signal with resolved server address.
   // Parameters are port, server address and resolved server address.
   // This signal will be sent only if server address is resolved successfully.
@@ -160,10 +154,7 @@ class TurnPort : public Port {
            int server_priority);
 
  private:
-  enum {
-    MSG_ERROR = MSG_FIRST_AVAILABLE,
-    MSG_ALLOCATE_MISMATCH
-  };
+  enum { MSG_ERROR = MSG_FIRST_AVAILABLE };
 
   typedef std::list<TurnEntry*> EntryList;
   typedef std::map<rtc::Socket::Option, int> SocketOptionsMap;
@@ -238,9 +229,6 @@ class TurnPort : public Port {
   // By default the value will be set to 0. This value will be used in
   // calculating the candidate priority.
   int server_priority_;
-
-  // The number of retries made due to allocate mismatch error.
-  size_t allocate_mismatch_retries_;
 
   friend class TurnEntry;
   friend class TurnAllocateRequest;

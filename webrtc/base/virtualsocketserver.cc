@@ -639,10 +639,6 @@ bool VirtualSocketServer::ProcessMessagesUntilIdle() {
   return !msg_queue_->IsQuitting();
 }
 
-void VirtualSocketServer::SetNextPortForTesting(uint16 port) {
-  next_port_ = port;
-}
-
 int VirtualSocketServer::Bind(VirtualSocket* socket,
                               const SocketAddress& addr) {
   ASSERT(NULL != socket);
