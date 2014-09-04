@@ -24,7 +24,6 @@ class DtmfToneGenerator {
   enum ReturnCodes {
     kNotInitialized = -1,
     kParameterError = -2,
-    kStereoNotSupported = -3,
   };
 
   DtmfToneGenerator();

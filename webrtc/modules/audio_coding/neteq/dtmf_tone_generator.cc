@@ -158,10 +158,6 @@ int DtmfToneGenerator::Generate(int num_samples,
   if (num_samples < 0 || !output) {
     return kParameterError;
   }
-  assert(output->Channels() == 1);  // Not adapted for multi-channel yet.
-  if (output->Channels() != 1) {
-    return kStereoNotSupported;
-  }
 
   output->AssertSize(num_samples);
   for (int i = 0; i < num_samples; ++i) {
@@ -184,6 +180,10 @@ int DtmfToneGenerator::Generate(int num_samples,
     // Scale the signal to correct volume.
     (*output)[0][i] =
         static_cast<int16_t>((temp_val * amplitude_ + 8192) >> 14);
+  }
+  // Copy first channel to all other channels.
+  for (size_t channel = 1; channel < output->Channels(); ++channel) {
+    output->CopyChannel(0, channel);
   }
 
   return num_samples;

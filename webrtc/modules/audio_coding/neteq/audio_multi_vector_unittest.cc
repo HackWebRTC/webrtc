@@ -300,6 +300,31 @@ TEST_P(AudioMultiVectorTest, OverwriteAt) {
   }
 }
 
+// Test the CopyChannel method, when the test is instantiated with at least two
+// channels.
+TEST_P(AudioMultiVectorTest, CopyChannel) {
+  if (num_channels_ < 2)
+    return;
+
+  AudioMultiVector vec(num_channels_);
+  vec.PushBackInterleaved(array_interleaved_, interleaved_length_);
+  // Create a reference copy.
+  AudioMultiVector ref(num_channels_);
+  ref.PushBack(vec);
+  // Copy from first to last channel.
+  vec.CopyChannel(0, num_channels_ - 1);
+  // Verify that the first and last channels are identical; the others should
+  // be left untouched.
+  for (size_t i = 0; i < array_length(); ++i) {
+    // Verify that all but the last channel are untouched.
+    for (size_t channel = 0; channel < num_channels_ - 1; ++channel) {
+      EXPECT_EQ(ref[channel][i], vec[channel][i]);
+    }
+    // Verify that the last and the first channels are identical.
+    EXPECT_EQ(vec[0][i], vec[num_channels_ - 1][i]);
+  }
+}
+
 INSTANTIATE_TEST_CASE_P(TestNumChannels,
                         AudioMultiVectorTest,
                         ::testing::Values(static_cast<size_t>(1),

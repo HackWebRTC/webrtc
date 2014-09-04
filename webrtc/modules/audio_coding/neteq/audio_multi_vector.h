@@ -117,6 +117,11 @@ class AudioMultiVector {
 
   virtual bool Empty() const;
 
+  // Copies the data between two channels in the AudioMultiVector. The method
+  // does not add any new channel. Thus, |from_channel| and |to_channel| must
+  // both be valid channel numbers.
+  virtual void CopyChannel(size_t from_channel, size_t to_channel);
+
   // Accesses and modifies a channel (i.e., an AudioVector object) of this
   // AudioMultiVector.
   const AudioVector& operator[](size_t index) const;

@@ -202,6 +202,12 @@ bool AudioMultiVector::Empty() const {
   return channels_[0]->Empty();
 }
 
+void AudioMultiVector::CopyChannel(size_t from_channel, size_t to_channel) {
+  assert(from_channel < num_channels_);
+  assert(to_channel < num_channels_);
+  channels_[from_channel]->CopyFrom(channels_[to_channel]);
+}
+
 const AudioVector& AudioMultiVector::operator[](size_t index) const {
   return *(channels_[index]);
 }
