@@ -259,7 +259,7 @@ std::string SystemInfo::GetCpuVendor() {
     __cpuid(cpu_info, 0);
     cpu_info[0] = cpu_info[1];  // Reorder output
     cpu_info[1] = cpu_info[3];
-    cpu_info[2] = cpu_info[2];
+    // cpu_info[2] = cpu_info[2];  // Avoid -Werror=self-assign
     cpu_info[3] = 0;
     cpu_vendor_ = std::string(reinterpret_cast<char*>(&cpu_info[0]));
 #elif defined(CPU_ARM)
