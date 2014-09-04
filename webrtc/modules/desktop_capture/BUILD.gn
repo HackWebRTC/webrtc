@@ -105,7 +105,7 @@ source_set("desktop_capture") {
     ]
   }
 
-  configs += [ "../../:common_inherited_config"]
+  direct_dependent_configs = [ "../..:common_inherited_config"]
 
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
@@ -124,12 +124,13 @@ if (use_desktop_capture_differ_sse2) {
   # Have to be compiled as a separate target because it needs to be compiled
   # with SSE2 enabled.
   source_set("desktop_capture_differ_sse2") {
+    visibility = ":*"
     sources = [
       "differ_block_sse2.cc",
       "differ_block_sse2.h",
     ]
 
-    configs += [ "../../:common_inherited_config"]
+    configs += [ "../..:common_inherited_config"]
 
     if (is_posix && !is_mac) {
       cflags = ["-msse2"]
