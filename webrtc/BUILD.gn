@@ -70,6 +70,8 @@ if (have_dbus_glib) {
 }
 
 config("common_config") {
+  cflags = []
+  cflags_cc = []
   if (restrict_webrtc_logging) {
     defines = [ "WEBRTC_RESTRICT_LOGGING" ]
   }
