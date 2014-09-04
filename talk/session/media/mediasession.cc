@@ -1170,28 +1170,28 @@ SessionDescription* MediaSessionDescriptionFactory::CreateOffer(
   if (current_description) {
     ContentInfos::const_iterator it = current_description->contents().begin();
     for (; it != current_description->contents().end(); ++it) {
-      if (IsMediaContentOfType(&*it, MEDIA_TYPE_AUDIO) && options.has_audio) {
+      if (IsMediaContentOfType(&*it, MEDIA_TYPE_AUDIO)) {
         if (!AddAudioContentForOffer(options, current_description,
                                      audio_rtp_extensions, audio_codecs,
                                      &current_streams, offer.get())) {
           return NULL;
         }
         audio_added = true;
-      } else if (IsMediaContentOfType(&*it, MEDIA_TYPE_VIDEO) &&
-                 options.has_video) {
+      } else if (IsMediaContentOfType(&*it, MEDIA_TYPE_VIDEO)) {
         if (!AddVideoContentForOffer(options, current_description,
                                      video_rtp_extensions, video_codecs,
                                      &current_streams, offer.get())) {
           return NULL;
         }
         video_added = true;
-      } else if (IsMediaContentOfType(&*it, MEDIA_TYPE_DATA) &&
-                 options.has_data()) {
+      } else if (IsMediaContentOfType(&*it, MEDIA_TYPE_DATA)) {
         if (!AddDataContentForOffer(options, current_description, &data_codecs,
                                     &current_streams, offer.get())) {
           return NULL;
         }
         data_added = true;
+      } else {
+        ASSERT(false);
       }
     }
   }
@@ -1459,6 +1459,7 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
 
   bool secure_transport = (transport_desc_factory_->secure() != SEC_DISABLED);
   SetMediaProtocol(secure_transport, audio.get());
+
   desc->AddContent(CN_AUDIO, NS_JINGLE_RTP, audio.release());
   if (!AddTransportOffer(CN_AUDIO, options.transport_options,
                          current_description, desc)) {

@@ -510,7 +510,7 @@ class WebRtcSessionTest : public testing::Test {
   }
 
   void VerifyAnswerFromNonCryptoOffer() {
-    // Create a SDP without Crypto.
+    // Create an SDP without Crypto.
     cricket::MediaSessionOptions options;
     options.has_video = true;
     JsepSessionDescription* offer(
@@ -1211,13 +1211,12 @@ TEST_F(WebRtcSessionTest, TestCreateSdesOfferReceiveSdesAnswer) {
             rtc::FromString<uint64>(offer->session_version()));
 
   SetLocalDescriptionWithoutError(offer);
+  EXPECT_EQ(0u, video_channel_->send_streams().size());
+  EXPECT_EQ(0u, voice_channel_->send_streams().size());
 
   mediastream_signaling_.SendAudioVideoStream2();
   answer = CreateRemoteAnswer(session_->local_description());
   SetRemoteDescriptionWithoutError(answer);
-
-  EXPECT_EQ(0u, video_channel_->send_streams().size());
-  EXPECT_EQ(0u, voice_channel_->send_streams().size());
 
   // Make sure the receive streams have not changed.
   ASSERT_EQ(1u, video_channel_->recv_streams().size());
@@ -1992,13 +1991,21 @@ TEST_F(WebRtcSessionTest, CreateOfferWithConstraints) {
 
   const cricket::ContentInfo* content =
       cricket::GetFirstAudioContent(offer->description());
-
   EXPECT_TRUE(content != NULL);
+
   content = cricket::GetFirstVideoContent(offer->description());
   EXPECT_TRUE(content != NULL);
 
-  // TODO(perkj): Should the direction be set to SEND_ONLY if
-  // The constraints is set to not receive audio or video but a track is added?
+  // Sets constraints to false and verifies that audio/video contents are
+  // removed.
+  options.offer_to_receive_audio = 0;
+  options.offer_to_receive_video = 0;
+  offer.reset(CreateOffer(options));
+
+  content = cricket::GetFirstAudioContent(offer->description());
+  EXPECT_TRUE(content == NULL);
+  content = cricket::GetFirstVideoContent(offer->description());
+  EXPECT_TRUE(content == NULL);
 }
 
 // Test that an answer can not be created if the last remote description is not
@@ -2037,8 +2044,7 @@ TEST_F(WebRtcSessionTest, CreateAudioAnswerWithoutConstraintsOrStreams) {
   Init(NULL);
   // Create a remote offer with audio only.
   cricket::MediaSessionOptions options;
-  options.has_audio = true;
-  options.has_video = false;
+
   rtc::scoped_ptr<JsepSessionDescription> offer(
       CreateRemoteOffer(options));
   ASSERT_TRUE(cricket::GetFirstVideoContent(offer->description()) == NULL);
@@ -2174,7 +2180,6 @@ TEST_F(WebRtcSessionTest, TestAVOfferWithAudioOnlyAnswer) {
   SessionDescriptionInterface* offer = CreateOffer();
 
   cricket::MediaSessionOptions options;
-  options.has_video = false;
   SessionDescriptionInterface* answer = CreateRemoteAnswer(offer, options);
 
   // SetLocalDescription and SetRemoteDescriptions takes ownership of offer
@@ -2887,7 +2892,6 @@ TEST_F(WebRtcSessionTest, TestCryptoAfterSetLocalDescriptionWithDisabled) {
 TEST_F(WebRtcSessionTest, TestCreateAnswerWithNewUfragAndPassword) {
   Init(NULL);
   cricket::MediaSessionOptions options;
-  options.has_audio = true;
   options.has_video = true;
   rtc::scoped_ptr<JsepSessionDescription> offer(
       CreateRemoteOffer(options));
@@ -2919,7 +2923,6 @@ TEST_F(WebRtcSessionTest, TestCreateAnswerWithNewUfragAndPassword) {
 TEST_F(WebRtcSessionTest, TestCreateAnswerWithOldUfragAndPassword) {
   Init(NULL);
   cricket::MediaSessionOptions options;
-  options.has_audio = true;
   options.has_video = true;
   rtc::scoped_ptr<JsepSessionDescription> offer(
       CreateRemoteOffer(options));
@@ -2985,7 +2988,6 @@ TEST_F(WebRtcSessionTest, TestIceStatesBundle) {
 TEST_F(WebRtcSessionTest, SetSdpFailedOnSessionError) {
   Init(NULL);
   cricket::MediaSessionOptions options;
-  options.has_audio = true;
   options.has_video = true;
 
   cricket::BaseSession::Error error_code = cricket::BaseSession::ERROR_CONTENT;

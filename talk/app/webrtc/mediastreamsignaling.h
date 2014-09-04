@@ -160,6 +160,9 @@ class MediaStreamSignalingObserver {
 
 class MediaStreamSignaling : public sigslot::has_slots<> {
  public:
+  typedef std::map<std::string, rtc::scoped_refptr<DataChannel> >
+      RtpDataChannels;
+
   MediaStreamSignaling(rtc::Thread* signaling_thread,
                        MediaStreamSignalingObserver* stream_observer,
                        cricket::ChannelManager* channel_manager);
@@ -289,8 +292,6 @@ class MediaStreamSignaling : public sigslot::has_slots<> {
   };
   typedef std::vector<TrackInfo> TrackInfos;
 
-  void UpdateSessionOptions();
-
   // Makes sure a MediaStream Track is created for each StreamParam in
   // |streams|. |media_type| is the type of the |streams| and can be either
   // audio or video.
@@ -378,7 +379,6 @@ class MediaStreamSignaling : public sigslot::has_slots<> {
   RemotePeerInfo remote_info_;
   rtc::Thread* signaling_thread_;
   DataChannelFactory* data_channel_factory_;
-  cricket::MediaSessionOptions options_;
   MediaStreamSignalingObserver* stream_observer_;
   rtc::scoped_refptr<StreamCollection> local_streams_;
   rtc::scoped_refptr<StreamCollection> remote_streams_;
@@ -392,8 +392,6 @@ class MediaStreamSignaling : public sigslot::has_slots<> {
   int last_allocated_sctp_even_sid_;
   int last_allocated_sctp_odd_sid_;
 
-  typedef std::map<std::string, rtc::scoped_refptr<DataChannel> >
-      RtpDataChannels;
   typedef std::vector<rtc::scoped_refptr<DataChannel> > SctpDataChannels;
 
   RtpDataChannels rtp_data_channels_;
