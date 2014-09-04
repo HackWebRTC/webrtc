@@ -2,7 +2,7 @@ solutions = [{
   'name': 'src',
   'url': 'https://chromium.googlesource.com/chromium/src.git',
   'deps_file': '.DEPS.git',
-  'managed': True,
+  'managed': False,
   'custom_deps': {
     # Skip syncing some large dependencies WebRTC will never need.
     'src/chrome/tools/test/reference_build/chrome_linux': None,
