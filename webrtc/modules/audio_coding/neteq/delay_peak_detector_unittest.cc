@@ -12,7 +12,7 @@
 
 #include "webrtc/modules/audio_coding/neteq/delay_peak_detector.h"
 
-#include "gtest/gtest.h"
+#include "testing/gtest/include/gtest/gtest.h"
 
 namespace webrtc {
 

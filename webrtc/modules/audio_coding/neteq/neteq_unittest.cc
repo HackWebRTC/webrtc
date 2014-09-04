@@ -24,7 +24,7 @@
 #include <vector>
 
 #include "gflags/gflags.h"
-#include "gtest/gtest.h"
+#include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/audio_coding/neteq/test/NETEQTEST_RTPpacket.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_loop.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/pcm16b.h"

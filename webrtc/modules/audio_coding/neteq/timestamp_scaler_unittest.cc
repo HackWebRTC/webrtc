@@ -10,8 +10,8 @@
 
 #include "webrtc/modules/audio_coding/neteq/timestamp_scaler.h"
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
+#include "testing/gmock/include/gmock/gmock.h"
+#include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/audio_coding/neteq/mock/mock_decoder_database.h"
 #include "webrtc/modules/audio_coding/neteq/packet.h"
 

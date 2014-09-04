@@ -18,7 +18,7 @@
 
 #include <iostream>
 
-#include "gtest/gtest.h"
+#include "testing/gtest/include/gtest/gtest.h"
 
 // Modify the tests so that they pass with the modifications done to DtmfBuffer
 // for backwards bit-exactness. Once bit-exactness is no longer required, this

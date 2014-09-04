@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/audio_coding/main/acm2/acm_opus.h"
 
-#include "gtest/gtest.h"
+#include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_codec_database.h"
 
 namespace webrtc {

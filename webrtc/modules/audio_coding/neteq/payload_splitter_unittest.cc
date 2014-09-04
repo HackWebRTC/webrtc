@@ -16,7 +16,7 @@
 
 #include <utility>  // pair
 
-#include "gtest/gtest.h"
+#include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/audio_coding/neteq/mock/mock_decoder_database.h"
 #include "webrtc/modules/audio_coding/neteq/packet.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"

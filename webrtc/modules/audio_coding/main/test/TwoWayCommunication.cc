@@ -18,7 +18,7 @@
 #include <Windows.h>
 #endif
 
-#include "gtest/gtest.h"
+#include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/main/test/PCMFile.h"

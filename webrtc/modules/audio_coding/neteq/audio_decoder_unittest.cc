@@ -15,7 +15,7 @@
 
 #include <string>
 
-#include "gtest/gtest.h"
+#include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/common_audio/resampler/include/resampler.h"
 #ifdef WEBRTC_CODEC_CELT
 #include "webrtc/modules/audio_coding/codecs/celt/include/celt_interface.h"

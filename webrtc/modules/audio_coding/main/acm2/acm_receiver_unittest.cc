@@ -12,7 +12,7 @@
 
 #include <algorithm>  // std::min
 
-#include "gtest/gtest.h"
+#include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/main/acm2/audio_coding_module_impl.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_codec_database.h"

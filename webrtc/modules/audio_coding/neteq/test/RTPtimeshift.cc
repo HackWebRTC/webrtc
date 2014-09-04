@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "NETEQTEST_RTPpacket.h"
-#include "gtest/gtest.h"
+#include "testing/gtest/include/gtest/gtest.h"
 
 /*********************/
 /* Misc. definitions */

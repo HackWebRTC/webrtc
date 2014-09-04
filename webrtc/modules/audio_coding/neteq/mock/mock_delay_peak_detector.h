@@ -13,7 +13,7 @@
 
 #include "webrtc/modules/audio_coding/neteq/delay_peak_detector.h"
 
-#include "gmock/gmock.h"
+#include "testing/gmock/include/gmock/gmock.h"
 
 namespace webrtc {
 

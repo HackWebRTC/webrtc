@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "gtest/gtest.h"
+#include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/source/filterbank_internal.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/source/filterbank_tables.h"

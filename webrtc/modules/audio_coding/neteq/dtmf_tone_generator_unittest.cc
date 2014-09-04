@@ -14,7 +14,7 @@
 
 #include <math.h>
 
-#include "gtest/gtest.h"
+#include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/audio_coding/neteq/audio_multi_vector.h"
 
 namespace webrtc {

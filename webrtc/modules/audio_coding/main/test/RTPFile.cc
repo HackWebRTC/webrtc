@@ -20,8 +20,9 @@
 
 #include "audio_coding_module.h"
 #include "engine_configurations.h"
-#include "gtest/gtest.h" // TODO (tlegrand): Consider removing usage of gtest.
 #include "rw_lock_wrapper.h"
+// TODO(tlegrand): Consider removing usage of gtest.
+#include "testing/gtest/include/gtest/gtest.h"
 
 namespace webrtc {
 

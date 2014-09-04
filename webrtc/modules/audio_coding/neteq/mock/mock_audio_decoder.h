@@ -13,7 +13,7 @@
 
 #include "webrtc/modules/audio_coding/neteq/interface/audio_decoder.h"
 
-#include "gmock/gmock.h"
+#include "testing/gmock/include/gmock/gmock.h"
 
 namespace webrtc {
 

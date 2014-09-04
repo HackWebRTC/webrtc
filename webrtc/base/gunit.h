@@ -14,7 +14,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
 #if defined(WEBRTC_ANDROID) || defined(GTEST_RELATIVE_PATH)
-#include "gtest/gtest.h"
+#include "testing/gtest/include/gtest/gtest.h"
 #else
 #include "testing/base/public/gunit.h"
 #endif

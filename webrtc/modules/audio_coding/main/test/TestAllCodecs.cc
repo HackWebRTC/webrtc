@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include <string>
 
-#include "gtest/gtest.h"
+#include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
