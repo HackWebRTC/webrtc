@@ -28,7 +28,6 @@ ACMOpus::ACMOpus(int16_t /* codec_id */)
       sample_freq_(0),
       bitrate_(0),
       channels_(1),
-      fec_enabled_(false),
       packet_loss_rate_(0) {
   return;
 }
@@ -73,7 +72,6 @@ ACMOpus::ACMOpus(int16_t codec_id)
       sample_freq_(32000),  // Default sampling frequency.
       bitrate_(20000),  // Default bit-rate.
       channels_(1),  // Default mono.
-      fec_enabled_(false),  // Default FEC is off.
       packet_loss_rate_(0) {  // Initial packet loss rate.
   codec_id_ = codec_id;
   // Opus has internal DTX, but we dont use it for now.
@@ -207,15 +205,11 @@ int16_t ACMOpus::SetBitRateSafe(const int32_t rate) {
 int ACMOpus::SetFEC(bool enable_fec) {
   // Ask the encoder to enable FEC.
   if (enable_fec) {
-    if (WebRtcOpus_EnableFec(encoder_inst_ptr_) == 0) {
-      fec_enabled_ = true;
+    if (WebRtcOpus_EnableFec(encoder_inst_ptr_) == 0)
       return 0;
-    }
   } else {
-    if (WebRtcOpus_DisableFec(encoder_inst_ptr_) == 0) {
-      fec_enabled_ = false;
+    if (WebRtcOpus_DisableFec(encoder_inst_ptr_) == 0)
       return 0;
-    }
   }
   return -1;
 }

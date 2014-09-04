@@ -55,7 +55,6 @@ class ACMOpus : public ACMGenericCodec {
   int32_t bitrate_;
   int channels_;
 
-  bool fec_enabled_;
   int packet_loss_rate_;
 };
 
