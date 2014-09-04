@@ -15,17 +15,17 @@
  *
  */
 
-#include "modules/audio_coding/codecs/isac/fix/interface/isacfix.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/interface/isacfix.h"
 
 #include <stdlib.h>
 
-#include "modules/audio_coding/codecs/isac/fix/source/bandwidth_estimator.h"
-#include "modules/audio_coding/codecs/isac/fix/source/codec.h"
-#include "modules/audio_coding/codecs/isac/fix/source/entropy_coding.h"
-#include "modules/audio_coding/codecs/isac/fix/source/filterbank_internal.h"
-#include "modules/audio_coding/codecs/isac/fix/source/lpc_masking_model.h"
-#include "modules/audio_coding/codecs/isac/fix/source/structs.h"
-#include "system_wrappers/interface/cpu_features_wrapper.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/source/bandwidth_estimator.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/source/codec.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/source/entropy_coding.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/source/filterbank_internal.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/source/lpc_masking_model.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/source/structs.h"
+#include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
 
 // Declare function pointers.
 FilterMaLoopFix WebRtcIsacfix_FilterMaLoopFix;

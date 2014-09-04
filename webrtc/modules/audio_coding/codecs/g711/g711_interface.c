@@ -10,7 +10,7 @@
 #include <string.h>
 #include "g711.h"
 #include "g711_interface.h"
-#include "typedefs.h"
+#include "webrtc/typedefs.h"
 
 int16_t WebRtcG711_EncodeA(void* state,
                            int16_t* speechIn,

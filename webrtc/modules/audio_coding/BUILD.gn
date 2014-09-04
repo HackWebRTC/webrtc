@@ -110,7 +110,7 @@ source_set("audio_coding") {
 
 config("cng_config") {
   include_dirs = [
-    "../..",
+    "../../..",
     "codecs/cng/include",
   ]
 }
@@ -130,7 +130,7 @@ source_set("cng") {
 
 config("g711_config") {
   include_dirs = [
-    "../..",
+    "../../..",
     "codecs/g711/include",
   ]
 }
@@ -148,7 +148,7 @@ source_set("g711") {
 
 config("g722_config") {
   include_dirs = [
-    "../..",
+    "../../..",
     "codecs/g722/include",
   ]
 }
@@ -167,7 +167,7 @@ source_set("g722") {
 
 config("ilbc_config") {
   include_dirs = [
-    "../..",
+    "../../..",
     "codecs/ilbc/interface",
   ]
 }
@@ -322,7 +322,7 @@ source_set("ilbc") {
 
 config("isac_config") {
   include_dirs = [
-    "../..",
+    "../../..",
     "codecs/isac/main/interface",
   ]
 }
@@ -393,7 +393,7 @@ source_set("isac") {
 
 config("isac_fix_config") {
   include_dirs = [
-    "../..",
+    "../../..",
     "codecs/isac/fix/interface",
   ]
 }
@@ -517,7 +517,7 @@ if (build_armv7_neon) {
     ]
 
     include_dirs = [
-      "../..",
+      "../../..",
     ]
 
     # Disable LTO in audio_processing_neon target due to compiler bug.
@@ -546,7 +546,7 @@ if (build_armv7_neon) {
 
 config("pcm16b_config") {
   include_dirs = [
-    "../..",
+    "../../..",
     "codecs/pcm16b/include",
   ]
 }
@@ -561,7 +561,7 @@ source_set("pcm16b") {
 }
 
 config("opus_config") {
-  include_dirs = [ "../.." ]
+  include_dirs = [ "../../.." ]
 }
 
 source_set("webrtc_opus") {
