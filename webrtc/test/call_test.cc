@@ -159,6 +159,8 @@ const unsigned int CallTest::kLongTimeoutMs = 120 * 1000;
 const uint8_t CallTest::kSendPayloadType = 100;
 const uint8_t CallTest::kFakeSendPayloadType = 125;
 const uint8_t CallTest::kSendRtxPayloadType = 98;
+const uint8_t CallTest::kRedPayloadType = 118;
+const uint8_t CallTest::kUlpfecPayloadType = 119;
 const uint32_t CallTest::kSendRtxSsrcs[kNumSsrcs] = {0xBADCAFD, 0xBADCAFE,
                                                      0xBADCAFF};
 const uint32_t CallTest::kSendSsrcs[kNumSsrcs] = {0xC0FFED, 0xC0FFEE, 0xC0FFEF};

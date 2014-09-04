@@ -193,7 +193,8 @@ bool ViEReceiver::OnRecoveredPacket(const uint8_t* rtp_packet,
     return false;
   }
   header.payload_type_frequency = kVideoPayloadTypeFrequency;
-  return ReceivePacket(rtp_packet, rtp_packet_length, header, false);
+  bool in_order = IsPacketInOrder(header);
+  return ReceivePacket(rtp_packet, rtp_packet_length, header, in_order);
 }
 
 void ViEReceiver::ReceivedBWEPacket(

@@ -48,6 +48,8 @@ namespace webrtc {
 
 class CallPerfTest : public test::CallTest {
  protected:
+  void TestAudioVideoSync(bool fec);
+
   void TestMinTransmitBitrate(bool pad_to_min_bitrate);
 
   void TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
@@ -188,7 +190,7 @@ class VideoRtcpAndSyncObserver : public SyncRtcpObserver, public VideoRenderer {
   int64_t first_time_in_sync_;
 };
 
-TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSync) {
+void CallPerfTest::TestAudioVideoSync(bool fec) {
   class AudioPacketReceiver : public PacketReceiver {
    public:
     AudioPacketReceiver(int channel, VoENetwork* voe_network)
@@ -229,6 +231,7 @@ TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSync) {
 
   FakeNetworkPipe::Config net_config;
   net_config.queue_delay_ms = 500;
+  net_config.loss_percent = 5;
   SyncRtcpObserver audio_observer(net_config);
   VideoRtcpAndSyncObserver observer(Clock::GetRealTimeClock(),
                                     channel,
@@ -257,6 +260,14 @@ TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSync) {
   CreateSendConfig(1);
   CreateMatchingReceiveConfigs();
 
+  send_config_.rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+  if (fec) {
+    send_config_.rtp.fec.red_payload_type = kRedPayloadType;
+    send_config_.rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+    receive_configs_[0].rtp.fec.red_payload_type = kRedPayloadType;
+    receive_configs_[0].rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+  }
+  receive_configs_[0].rtp.nack.rtp_history_ms = 1000;
   receive_configs_[0].renderer = &observer;
   receive_configs_[0].audio_channel_id = channel;
 
@@ -292,6 +303,14 @@ TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSync) {
   DestroyStreams();
 
   VoiceEngine::Delete(voice_engine);
+}
+
+TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSync) {
+  TestAudioVideoSync(false);
+}
+
+TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithFec) {
+  TestAudioVideoSync(true);
 }
 
 void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,

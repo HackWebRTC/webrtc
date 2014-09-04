@@ -44,8 +44,6 @@
 namespace webrtc {
 
 static const unsigned long kSilenceTimeoutMs = 2000;
-static const int kRedPayloadType = 118;
-static const int kUlpfecPayloadType = 119;
 
 class EndToEndTest : public test::CallTest {
  public:

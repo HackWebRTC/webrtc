@@ -311,8 +311,6 @@ TEST_F(VideoSendStreamTest, SwapsI420VideoFrames) {
 }
 
 TEST_F(VideoSendStreamTest, SupportsFec) {
-  static const int kRedPayloadType = 118;
-  static const int kUlpfecPayloadType = 119;
   class FecObserver : public test::SendTest {
    public:
     FecObserver()
@@ -486,8 +484,6 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
   static const uint32_t start = 90;
   static const uint32_t stop = 290;
 
-  static const int kRedPayloadType = 118;
-  static const int kUlpfecPayloadType = 119;
   // Observer that verifies that the expected number of packets and bytes
   // arrive for each frame size, from start_size to stop_size.
   class FrameFragmentationTest : public test::SendTest,
