@@ -416,20 +416,20 @@ int ViECodecImpl::GetCodecTargetBitrate(const int video_channel,
   return vie_encoder->CodecTargetBitrate(static_cast<uint32_t*>(bitrate));
 }
 
-unsigned int ViECodecImpl::GetDiscardedPackets(const int video_channel) const {
+int ViECodecImpl::GetNumDiscardedPackets(int video_channel) const {
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (!vie_channel) {
     shared_data_->SetLastError(kViECodecInvalidChannelId);
-    return static_cast<unsigned int>(-1);
+    return -1;
   }
-  return vie_channel->DiscardedPackets();
+  return static_cast<int>(vie_channel->DiscardedPackets());
 }
 
 int ViECodecImpl::SetKeyFrameRequestCallbackStatus(const int video_channel,
                                                    const bool enable) {
   LOG(LS_INFO) << "SetKeyFrameRequestCallbackStatus for " << video_channel
-               << ", enacle " << enable;
+               << ", enable " << enable;
 
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);

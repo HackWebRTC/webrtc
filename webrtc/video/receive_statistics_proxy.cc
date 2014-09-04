@@ -42,7 +42,7 @@ VideoReceiveStream::Stats ReceiveStatisticsProxy::GetStats() const {
   }
   stats.c_name = GetCName();
   codec_->GetReceiveSideDelay(channel_, &stats.avg_delay_ms);
-  stats.discarded_packets = codec_->GetDiscardedPackets(channel_);
+  stats.discarded_packets = codec_->GetNumDiscardedPackets(channel_);
   codec_->GetReceiveCodecStastistics(
       channel_, stats.key_frames, stats.delta_frames);
 

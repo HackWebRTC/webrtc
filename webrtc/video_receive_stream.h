@@ -68,7 +68,7 @@ class VideoReceiveStream {
     int decode_frame_rate;
     int render_frame_rate;
     int avg_delay_ms;
-    uint32_t discarded_packets;
+    int discarded_packets;
     uint32_t ssrc;
     std::string c_name;
   };
