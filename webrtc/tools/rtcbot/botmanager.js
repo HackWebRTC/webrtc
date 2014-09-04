@@ -41,11 +41,11 @@ BotManager.prototype = {
 
     this.app_ = new Express();
 
-    this.app_.use('/bot/browser/api.js',
+    this.app_.use('/bot/api.js',
         this.serveBrowserifyFile_.bind(this,
-          __dirname + '/bot/browser/api.js'));
+          __dirname + '/bot/api.js'));
 
-    this.app_.use('/bot/browser/', Express.static(__dirname + '/bot/browser'));
+    this.app_.use('/bot/', Express.static(__dirname + '/bot'));
 
     this.server_ = http.createServer(this.app_);
 
@@ -97,7 +97,7 @@ Bot.prototype = {
   }
 }
 
-// BrowserBot spawns a process to open "http://localhost:8080/bot/browser/".
+// BrowserBot spawns a process to open "http://localhost:8080/bot/".
 //
 // That page once loaded, connects to the websocket server run by BotManager
 // and exposes the bot api.
@@ -109,7 +109,7 @@ BrowserBot = function (name, callback) {
 BrowserBot.prototype = {
   spawnBotProcess_: function () {
     this.log('Spawning browser');
-    child.exec('google-chrome "http://localhost:8080/bot/browser/"');
+    child.exec('google-chrome "http://localhost:8080/bot/"');
   },
 
   __proto__: Bot.prototype
