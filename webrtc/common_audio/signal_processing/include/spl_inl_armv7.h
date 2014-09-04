@@ -83,7 +83,7 @@ static __inline int16_t WebRtcSpl_GetSizeInBits(uint32_t n) {
   return (int16_t)(32 - tmp);
 }
 
-static __inline int WebRtcSpl_NormW32(int32_t a) {
+static __inline int16_t WebRtcSpl_NormW32(int32_t a) {
   int32_t tmp = 0;
 
   if (a == 0) {
@@ -95,20 +95,20 @@ static __inline int WebRtcSpl_NormW32(int32_t a) {
 
   __asm __volatile ("clz %0, %1":"=r"(tmp):"r"(a));
 
-  return tmp - 1;
+  return (int16_t)(tmp - 1);
 }
 
-static __inline int WebRtcSpl_NormU32(uint32_t a) {
+static __inline int16_t WebRtcSpl_NormU32(uint32_t a) {
   int tmp = 0;
 
   if (a == 0) return 0;
 
   __asm __volatile ("clz %0, %1":"=r"(tmp):"r"(a));
 
-  return tmp;
+  return (int16_t)tmp;
 }
 
-static __inline int WebRtcSpl_NormW16(int16_t a) {
+static __inline int16_t WebRtcSpl_NormW16(int16_t a) {
   int32_t tmp = 0;
 
   if (a == 0) {
@@ -120,7 +120,7 @@ static __inline int WebRtcSpl_NormW16(int16_t a) {
 
   __asm __volatile ("clz %0, %1":"=r"(tmp):"r"(a));
 
-  return tmp - 17;
+  return (int16_t)(tmp - 17);
 }
 
 // TODO(kma): add unit test.

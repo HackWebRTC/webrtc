@@ -45,7 +45,7 @@ static const uint16_t WebRtcSpl_kAllPassFilter2[3] = {21333, 49062, 63010};
 //                            |data_length|
 //
 
-void WebRtcSpl_AllPassQMF(int32_t* in_data, int16_t data_length,
+void WebRtcSpl_AllPassQMF(int32_t* in_data, int data_length,
                           int32_t* out_data, const uint16_t* filter_coefficients,
                           int32_t* filter_state)
 {
@@ -65,7 +65,7 @@ void WebRtcSpl_AllPassQMF(int32_t* in_data, int16_t data_length,
     // filter operation takes the |in_data| (which is the output from the previous cascade
     // filter) and store the output in |out_data|.
     // Note that the input vector values are changed during the process.
-    int16_t k;
+    int k;
     int32_t diff;
     // First all-pass cascade; filter from in_data to out_data.
 

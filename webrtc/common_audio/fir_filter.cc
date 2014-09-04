@@ -85,7 +85,7 @@ FIRFilterC::FIRFilterC(const float* coefficients, size_t coefficients_length)
   for (size_t i = 0; i < coefficients_length_; ++i) {
     coefficients_[i] = coefficients[coefficients_length_ - i - 1];
   }
-  memset(state_.get(), 0.f, state_length_ * sizeof(state_[0]));
+  memset(state_.get(), 0, state_length_ * sizeof(state_[0]));
 }
 
 void FIRFilterC::Filter(const float* in, size_t length, float* out) {

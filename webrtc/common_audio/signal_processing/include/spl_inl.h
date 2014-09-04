@@ -84,7 +84,7 @@ static __inline int16_t WebRtcSpl_SubSatW16(int16_t var1, int16_t var2) {
 
 #if !defined(MIPS32_LE)
 static __inline int16_t WebRtcSpl_GetSizeInBits(uint32_t n) {
-  int bits;
+  int16_t bits;
 
   if (0xFFFF0000 & n) {
     bits = 16;
@@ -100,8 +100,8 @@ static __inline int16_t WebRtcSpl_GetSizeInBits(uint32_t n) {
   return bits;
 }
 
-static __inline int WebRtcSpl_NormW32(int32_t a) {
-  int zeros;
+static __inline int16_t WebRtcSpl_NormW32(int32_t a) {
+  int16_t zeros;
 
   if (a == 0) {
     return 0;
@@ -123,8 +123,8 @@ static __inline int WebRtcSpl_NormW32(int32_t a) {
   return zeros;
 }
 
-static __inline int WebRtcSpl_NormU32(uint32_t a) {
-  int zeros;
+static __inline int16_t WebRtcSpl_NormU32(uint32_t a) {
+  int16_t zeros;
 
   if (a == 0) return 0;
 
@@ -141,8 +141,8 @@ static __inline int WebRtcSpl_NormU32(uint32_t a) {
   return zeros;
 }
 
-static __inline int WebRtcSpl_NormW16(int16_t a) {
-  int zeros;
+static __inline int16_t WebRtcSpl_NormW16(int16_t a) {
+  int16_t zeros;
 
   if (a == 0) {
     return 0;

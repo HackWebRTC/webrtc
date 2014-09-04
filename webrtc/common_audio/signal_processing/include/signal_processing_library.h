@@ -123,9 +123,9 @@ void WebRtcSpl_Init();
 // Get SPL Version
 int16_t WebRtcSpl_get_version(char* version, int16_t length_in_bytes);
 
-int WebRtcSpl_GetScalingSquare(int16_t* in_vector,
-                               int in_vector_length,
-                               int times);
+int16_t WebRtcSpl_GetScalingSquare(int16_t* in_vector,
+                                   int in_vector_length,
+                                   int times);
 
 // Copy and set operations. Implementation in copy_set_operations.c.
 // Descriptions at bottom of file.
@@ -138,18 +138,14 @@ void WebRtcSpl_MemSetW32(int32_t* vector,
 void WebRtcSpl_MemCpyReversedOrder(int16_t* out_vector,
                                    int16_t* in_vector,
                                    int vector_length);
-int16_t WebRtcSpl_CopyFromEndW16(const int16_t* in_vector,
-                                 int16_t in_vector_length,
-                                 int16_t samples,
-                                 int16_t* out_vector);
-int16_t WebRtcSpl_ZerosArrayW16(int16_t* vector,
-                                int16_t vector_length);
-int16_t WebRtcSpl_ZerosArrayW32(int32_t* vector,
-                                int16_t vector_length);
-int16_t WebRtcSpl_OnesArrayW16(int16_t* vector,
-                               int16_t vector_length);
-int16_t WebRtcSpl_OnesArrayW32(int32_t* vector,
-                               int16_t vector_length);
+void WebRtcSpl_CopyFromEndW16(const int16_t* in_vector,
+                              int in_vector_length,
+                              int samples,
+                              int16_t* out_vector);
+void WebRtcSpl_ZerosArrayW16(int16_t* vector,
+                             int vector_length);
+void WebRtcSpl_ZerosArrayW32(int32_t* vector,
+                             int vector_length);
 // End: Copy and set operations.
 
 
@@ -931,10 +927,10 @@ void WebRtcSpl_ResetResample8khzTo48khz(WebRtcSpl_State8khzTo48khz* state);
  *
  ******************************************************************/
 
-void WebRtcSpl_DownsampleBy2(const int16_t* in, int16_t len,
+void WebRtcSpl_DownsampleBy2(const int16_t* in, int len,
                              int16_t* out, int32_t* filtState);
 
-void WebRtcSpl_UpsampleBy2(const int16_t* in, int16_t len,
+void WebRtcSpl_UpsampleBy2(const int16_t* in, int len,
                            int16_t* out, int32_t* filtState);
 
 /************************************************************
@@ -1110,8 +1106,6 @@ void WebRtcSpl_SynthesisQMF(const int16_t* low_band,
 // Output:
 //      - out_vector        : Vector with the requested samples
 //
-// Return value             : Number of copied samples in |out_vector|
-//
 
 //
 // WebRtcSpl_ZerosArrayW16(...)
@@ -1125,24 +1119,6 @@ void WebRtcSpl_SynthesisQMF(const int16_t* low_band,
 //
 // Output:
 //      - vector        : Vector containing all zeros
-//
-// Return value         : Number of samples in vector
-//
-
-//
-// WebRtcSpl_OnesArrayW16(...)
-// WebRtcSpl_OnesArrayW32(...)
-//
-// Inserts the value "one" in all positions of a w16 and a w32 vector
-// respectively.
-//
-// Input:
-//      - vector_length : Number of samples in vector
-//
-// Output:
-//      - vector        : Vector containing all ones
-//
-// Return value         : Number of samples in vector
 //
 
 //

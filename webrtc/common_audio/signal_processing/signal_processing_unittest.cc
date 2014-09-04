@@ -172,25 +172,17 @@ TEST_F(SplTest, BasicArrayOperationsTest) {
     for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ(3, b16[kk]);
     }
-    EXPECT_EQ(kVectorSize, WebRtcSpl_ZerosArrayW16(b16, kVectorSize));
+    WebRtcSpl_ZerosArrayW16(b16, kVectorSize);
     for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ(0, b16[kk]);
-    }
-    EXPECT_EQ(kVectorSize, WebRtcSpl_OnesArrayW16(b16, kVectorSize));
-    for (int kk = 0; kk < kVectorSize; ++kk) {
-        EXPECT_EQ(1, b16[kk]);
     }
     WebRtcSpl_MemSetW32(b32, 3, kVectorSize);
     for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ(3, b32[kk]);
     }
-    EXPECT_EQ(kVectorSize, WebRtcSpl_ZerosArrayW32(b32, kVectorSize));
+    WebRtcSpl_ZerosArrayW32(b32, kVectorSize);
     for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ(0, b32[kk]);
-    }
-    EXPECT_EQ(kVectorSize, WebRtcSpl_OnesArrayW32(b32, kVectorSize));
-    for (int kk = 0; kk < kVectorSize; ++kk) {
-        EXPECT_EQ(1, b32[kk]);
     }
     for (int kk = 0; kk < kVectorSize; ++kk) {
         bTmp16[kk] = (int16_t)kk;
@@ -204,7 +196,7 @@ TEST_F(SplTest, BasicArrayOperationsTest) {
 //    for (int kk = 0; kk < kVectorSize; ++kk) {
 //        EXPECT_EQ(b32[kk], bTmp32[kk]);
 //    }
-    EXPECT_EQ(2, WebRtcSpl_CopyFromEndW16(b16, kVectorSize, 2, bTmp16));
+    WebRtcSpl_CopyFromEndW16(b16, kVectorSize, 2, bTmp16);
     for (int kk = 0; kk < 2; ++kk) {
         EXPECT_EQ(kk+2, bTmp16[kk]);
     }

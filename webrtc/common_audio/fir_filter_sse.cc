@@ -31,14 +31,14 @@ FIRFilterSSE2::FIRFilterSSE2(const float* coefficients,
                         16))) {
   // Add zeros at the end of the coefficients.
   size_t padding = coefficients_length_ - coefficients_length;
-  memset(coefficients_.get(), 0.f, padding * sizeof(coefficients_[0]));
+  memset(coefficients_.get(), 0, padding * sizeof(coefficients_[0]));
   // The coefficients are reversed to compensate for the order in which the
   // input samples are acquired (most recent last).
   for (size_t i = 0; i < coefficients_length; ++i) {
     coefficients_[i + padding] = coefficients[coefficients_length - i - 1];
   }
   memset(state_.get(),
-         0.f,
+         0,
          (max_input_length + state_length_) * sizeof(state_[0]));
 }
 
