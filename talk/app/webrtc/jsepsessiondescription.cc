@@ -61,8 +61,15 @@ const int JsepSessionDescription::kDefaultVideoCodecId = 100;
 const int JsepSessionDescription::kDefaultVideoCodecFramerate = 60;
 const char JsepSessionDescription::kDefaultVideoCodecName[] = "VP8";
 // Used as default max video codec size before we have it in signaling.
+#if defined(ANDROID)
+// Limit default max video codec size for Android to avoid
+// HW VP8 codec initialization failure for resolution higher than 720p.
+const int JsepSessionDescription::kMaxVideoCodecWidth = 1280;
+const int JsepSessionDescription::kMaxVideoCodecHeight = 720;
+#else
 const int JsepSessionDescription::kMaxVideoCodecWidth = 3840;
 const int JsepSessionDescription::kMaxVideoCodecHeight = 2160;
+#endif
 const int JsepSessionDescription::kDefaultVideoCodecPreference = 1;
 
 SessionDescriptionInterface* CreateSessionDescription(const std::string& type,
