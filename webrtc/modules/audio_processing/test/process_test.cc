@@ -59,7 +59,7 @@ void usage() {
   "when -ir or -i is used, the specified files will be processed directly in\n"
   "a simulation mode. Otherwise the full set of legacy test files is expected\n"
   "to be present in the working directory. OUT_FILE should be specified\n"
-  "without extension to support both int and float output.\n\n");
+  "without extension to support both raw and wav output.\n\n");
   printf("Options\n");
   printf("General configuration (only used for the simulation mode):\n");
   printf("  -fs SAMPLE_RATE_HZ\n");
@@ -112,6 +112,7 @@ void usage() {
   printf("  --perf             Measure performance.\n");
   printf("  --quiet            Suppress text output.\n");
   printf("  --no_progress      Suppress progress.\n");
+  printf("  --raw_output       Raw output instead of WAV file.\n");
   printf("  --debug_file FILE  Dump a debug recording.\n");
 }
 
@@ -167,6 +168,7 @@ void void_main(int argc, char* argv[]) {
   bool perf_testing = false;
   bool verbose = true;
   bool progress = true;
+  bool raw_output = false;
   int extra_delay_ms = 0;
   int override_delay_ms = 0;
 
@@ -427,6 +429,9 @@ void void_main(int argc, char* argv[]) {
     } else if (strcmp(argv[i], "--no_progress") == 0) {
       progress = false;
 
+    } else if (strcmp(argv[i], "--raw_output") == 0) {
+      raw_output = true;
+
     } else if (strcmp(argv[i], "--debug_file") == 0) {
       i++;
       ASSERT_LT(i, argc) << "Specify filename after --debug_file";
@@ -464,8 +469,6 @@ void void_main(int argc, char* argv[]) {
   if (out_filename.size() == 0) {
     out_filename = out_path + "out";
   }
-  std::string out_float_filename = out_filename + ".float";
-  out_filename += ".pcm";
 
   if (!vad_out_filename) {
     vad_out_filename = vad_file_default.c_str();
@@ -485,6 +488,9 @@ void void_main(int argc, char* argv[]) {
   FILE* ns_prob_file = NULL;
   FILE* aecm_echo_path_in_file = NULL;
   FILE* aecm_echo_path_out_file = NULL;
+
+  scoped_ptr<WavFile> output_wav_file;
+  scoped_ptr<RawFile> output_raw_file;
 
   if (pb_filename) {
     pb_file = OpenFile(pb_filename, "rb");
@@ -626,6 +632,14 @@ void void_main(int argc, char* argv[]) {
                  msg.num_output_channels());
           printf("  Reverse rate: %d\n", reverse_sample_rate);
           printf("  Reverse channels: %d\n", msg.num_reverse_channels());
+        }
+
+        if (!raw_output) {
+          // The WAV file needs to be reset every time, because it cant change
+          // it's sample rate or number of channels.
+          output_wav_file.reset(new WavFile(out_filename + ".wav",
+                                            output_sample_rate,
+                                            msg.num_output_channels()));
         }
 
       } else if (event_msg.type() == Event::REVERSE_STREAM) {
@@ -772,20 +786,24 @@ void void_main(int argc, char* argv[]) {
           }
         }
 
-        size_t num_samples =
-            apm->num_output_channels() * output_sample_rate / 100;
+        const size_t samples_per_channel = output_sample_rate / 100;
         if (msg.has_input_data()) {
-          static FILE* out_file = OpenFile(out_filename, "wb");
-          ASSERT_EQ(num_samples, fwrite(near_frame.data_,
-                                        sizeof(*near_frame.data_),
-                                        num_samples,
-                                        out_file));
+          if (raw_output && !output_raw_file) {
+            output_raw_file.reset(new RawFile(out_filename + ".pcm"));
+          }
+          WriteIntData(near_frame.data_,
+                       apm->num_output_channels() * samples_per_channel,
+                       output_wav_file.get(),
+                       output_raw_file.get());
         } else {
-          static FILE* out_float_file = OpenFile(out_float_filename, "wb");
-          ASSERT_EQ(num_samples, fwrite(primary_cb->data(),
-                                        sizeof(*primary_cb->data()),
-                                        num_samples,
-                                        out_float_file));
+          if (raw_output && !output_raw_file) {
+            output_raw_file.reset(new RawFile(out_filename + ".float"));
+          }
+          WriteFloatData(primary_cb->channels(),
+                         samples_per_channel,
+                         apm->num_output_channels(),
+                         output_wav_file.get(),
+                         output_raw_file.get());
         }
       }
     }
@@ -854,6 +872,14 @@ void void_main(int argc, char* argv[]) {
         far_frame.num_channels_ = num_render_channels;
         near_frame.sample_rate_hz_ = sample_rate_hz;
         near_frame.samples_per_channel_ = samples_per_channel;
+
+        if (!raw_output) {
+          // The WAV file needs to be reset every time, because it cant change
+          // it's sample rate or number of channels.
+          output_wav_file.reset(new WavFile(out_filename + ".wav",
+                                            sample_rate_hz,
+                                            num_capture_output_channels));
+        }
 
         if (verbose) {
           printf("Init at frame: %d (primary), %d (reverse)\n",
@@ -999,12 +1025,13 @@ void void_main(int argc, char* argv[]) {
           }
         }
 
-        size = samples_per_channel * near_frame.num_channels_;
-        static FILE* out_file = OpenFile(out_filename, "wb");
-        ASSERT_EQ(size, fwrite(near_frame.data_,
-                               sizeof(int16_t),
-                               size,
-                               out_file));
+        if (raw_output && !output_raw_file) {
+          output_raw_file.reset(new RawFile(out_filename + ".pcm"));
+        }
+        WriteIntData(near_frame.data_,
+                     size,
+                     output_wav_file.get(),
+                     output_raw_file.get());
       }
       else {
         FAIL() << "Event " << event << " is unrecognized";

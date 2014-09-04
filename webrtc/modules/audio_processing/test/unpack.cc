@@ -14,28 +14,19 @@
 // to unpack the file into its component parts: audio and other data.
 
 #include <stdio.h>
-#include <limits>
 
 #include "gflags/gflags.h"
 #include "webrtc/audio_processing/debug.pb.h"
-#include "webrtc/common_audio/include/audio_util.h"
-#include "webrtc/common_audio/wav_writer.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 // TODO(andrew): unpack more of the data.
-DEFINE_string(input_file, "input.pcm", "The name of the input stream file.");
-DEFINE_string(input_wav_file, "input.wav",
-              "The name of the WAV input stream file.");
-DEFINE_string(output_file, "ref_out.pcm",
+DEFINE_string(input_file, "input", "The name of the input stream file.");
+DEFINE_string(output_file, "ref_out",
               "The name of the reference output stream file.");
-DEFINE_string(output_wav_file, "ref_out.wav",
-              "The name of the WAV reference output stream file.");
-DEFINE_string(reverse_file, "reverse.pcm",
+DEFINE_string(reverse_file, "reverse",
               "The name of the reverse input stream file.");
-DEFINE_string(reverse_wav_file, "reverse.wav",
-              "The name of the WAV reverse input stream file.");
 DEFINE_string(delay_file, "delay.int32", "The name of the delay file.");
 DEFINE_string(drift_file, "drift.int32", "The name of the drift file.");
 DEFINE_string(level_file, "level.int32", "The name of the level file.");
@@ -43,7 +34,7 @@ DEFINE_string(keypress_file, "keypress.bool", "The name of the keypress file.");
 DEFINE_string(settings_file, "settings.txt", "The name of the settings file.");
 DEFINE_bool(full, false,
             "Unpack the full set of files (normally not needed).");
-DEFINE_bool(pcm, false, "Write to PCM instead of WAV file.");
+DEFINE_bool(raw, false, "Write raw data instead of a WAV file.");
 
 namespace webrtc {
 
@@ -52,75 +43,11 @@ using audioproc::ReverseStream;
 using audioproc::Stream;
 using audioproc::Init;
 
-class PcmFile {
- public:
-  PcmFile(const std::string& filename)
-      : file_handle_(fopen(filename.c_str(), "wb")) {}
-
-  ~PcmFile() {
-    fclose(file_handle_);
-  }
-
-  void WriteSamples(const int16_t* samples, size_t num_samples) {
-#ifndef WEBRTC_ARCH_LITTLE_ENDIAN
-#error "Need to convert samples to little-endian when writing to PCM file"
-#endif
-    fwrite(samples, sizeof(*samples), num_samples, file_handle_);
-  }
-
-  void WriteSamples(const float* samples, size_t num_samples) {
-    static const size_t kChunksize = 4096 / sizeof(uint16_t);
-    for (size_t i = 0; i < num_samples; i += kChunksize) {
-      int16_t isamples[kChunksize];
-      const size_t chunk = std::min(kChunksize, num_samples - i);
-      RoundToInt16(samples + i, chunk, isamples);
-      WriteSamples(isamples, chunk);
-    }
-  }
-
- private:
-  FILE* file_handle_;
-};
-
 void WriteData(const void* data, size_t size, FILE* file,
                const std::string& filename) {
   if (fwrite(data, size, 1, file) != 1) {
     printf("Error when writing to %s\n", filename.c_str());
     exit(1);
-  }
-}
-
-void WriteIntData(const int16_t* data,
-                  size_t length,
-                  WavFile* wav_file,
-                  PcmFile* pcm_file) {
-  if (wav_file) {
-    wav_file->WriteSamples(data, length);
-  }
-  if (pcm_file) {
-    pcm_file->WriteSamples(data, length);
-  }
-}
-
-void WriteFloatData(const float* const* data,
-                    size_t samples_per_channel,
-                    int num_channels,
-                    WavFile* wav_file,
-                    PcmFile* pcm_file) {
-  size_t length = num_channels * samples_per_channel;
-  scoped_ptr<float[]> buffer(new float[length]);
-  Interleave(data, samples_per_channel, num_channels, buffer.get());
-  // TODO(aluebs): Use ScaleToInt16Range() from audio_util
-  for (size_t i = 0; i < length; ++i) {
-    buffer[i] = buffer[i] > 0 ?
-                buffer[i] * std::numeric_limits<int16_t>::max() :
-                -buffer[i] * std::numeric_limits<int16_t>::min();
-  }
-  if (wav_file) {
-    wav_file->WriteSamples(buffer.get(), length);
-  }
-  if (pcm_file) {
-    pcm_file->WriteSamples(buffer.get(), length);
   }
 }
 
@@ -149,9 +76,9 @@ int do_main(int argc, char* argv[]) {
   scoped_ptr<WavFile> reverse_wav_file;
   scoped_ptr<WavFile> input_wav_file;
   scoped_ptr<WavFile> output_wav_file;
-  scoped_ptr<PcmFile> reverse_pcm_file;
-  scoped_ptr<PcmFile> input_pcm_file;
-  scoped_ptr<PcmFile> output_pcm_file;
+  scoped_ptr<RawFile> reverse_raw_file;
+  scoped_ptr<RawFile> input_raw_file;
+  scoped_ptr<RawFile> output_raw_file;
   while (ReadMessageFromFile(debug_file, &event_msg)) {
     if (event_msg.type() == Event::REVERSE_STREAM) {
       if (!event_msg.has_reverse_stream()) {
@@ -161,6 +88,9 @@ int do_main(int argc, char* argv[]) {
 
       const ReverseStream msg = event_msg.reverse_stream();
       if (msg.has_data()) {
+        if (FLAGS_raw && !reverse_raw_file) {
+          reverse_raw_file.reset(new RawFile(FLAGS_reverse_file + ".pcm"));
+        }
         // TODO(aluebs): Replace "num_reverse_channels *
         // reverse_samples_per_channel" with "msg.data().size() /
         // sizeof(int16_t)" and so on when this fix in audio_processing has made
@@ -168,8 +98,11 @@ int do_main(int argc, char* argv[]) {
         WriteIntData(reinterpret_cast<const int16_t*>(msg.data().data()),
                      num_reverse_channels * reverse_samples_per_channel,
                      reverse_wav_file.get(),
-                     reverse_pcm_file.get());
+                     reverse_raw_file.get());
       } else if (msg.channel_size() > 0) {
+        if (FLAGS_raw && !reverse_raw_file) {
+          reverse_raw_file.reset(new RawFile(FLAGS_reverse_file + ".float"));
+        }
         scoped_ptr<const float*[]> data(new const float*[num_reverse_channels]);
         for (int i = 0; i < num_reverse_channels; ++i) {
           data[i] = reinterpret_cast<const float*>(msg.channel(i).data());
@@ -178,7 +111,7 @@ int do_main(int argc, char* argv[]) {
                        reverse_samples_per_channel,
                        num_reverse_channels,
                        reverse_wav_file.get(),
-                       reverse_pcm_file.get());
+                       reverse_raw_file.get());
       }
     } else if (event_msg.type() == Event::STREAM) {
       frame_count++;
@@ -189,11 +122,17 @@ int do_main(int argc, char* argv[]) {
 
       const Stream msg = event_msg.stream();
       if (msg.has_input_data()) {
+        if (FLAGS_raw && !input_raw_file) {
+          input_raw_file.reset(new RawFile(FLAGS_input_file + ".pcm"));
+        }
         WriteIntData(reinterpret_cast<const int16_t*>(msg.input_data().data()),
                      num_input_channels * input_samples_per_channel,
                      input_wav_file.get(),
-                     input_pcm_file.get());
+                     input_raw_file.get());
       } else if (msg.input_channel_size() > 0) {
+        if (FLAGS_raw && !input_raw_file) {
+          input_raw_file.reset(new RawFile(FLAGS_input_file + ".float"));
+        }
         scoped_ptr<const float*[]> data(new const float*[num_input_channels]);
         for (int i = 0; i < num_input_channels; ++i) {
           data[i] = reinterpret_cast<const float*>(msg.input_channel(i).data());
@@ -202,15 +141,21 @@ int do_main(int argc, char* argv[]) {
                        input_samples_per_channel,
                        num_input_channels,
                        input_wav_file.get(),
-                       input_pcm_file.get());
+                       input_raw_file.get());
       }
 
       if (msg.has_output_data()) {
+        if (FLAGS_raw && !output_raw_file) {
+          output_raw_file.reset(new RawFile(FLAGS_output_file + ".pcm"));
+        }
         WriteIntData(reinterpret_cast<const int16_t*>(msg.output_data().data()),
                      num_output_channels * output_samples_per_channel,
                      output_wav_file.get(),
-                     output_pcm_file.get());
+                     output_raw_file.get());
       } else if (msg.output_channel_size() > 0) {
+        if (FLAGS_raw && !output_raw_file) {
+          output_raw_file.reset(new RawFile(FLAGS_output_file + ".float"));
+        }
         scoped_ptr<const float*[]> data(new const float*[num_output_channels]);
         for (int i = 0; i < num_output_channels; ++i) {
           data[i] =
@@ -220,7 +165,7 @@ int do_main(int argc, char* argv[]) {
                        output_samples_per_channel,
                        num_output_channels,
                        output_wav_file.get(),
-                       output_pcm_file.get());
+                       output_raw_file.get());
       }
 
       if (FLAGS_full) {
@@ -287,24 +232,16 @@ int do_main(int argc, char* argv[]) {
       input_samples_per_channel = input_sample_rate / 100;
       output_samples_per_channel = output_sample_rate / 100;
 
-      if (FLAGS_pcm) {
-        if (!reverse_pcm_file.get()) {
-          reverse_pcm_file.reset(new PcmFile(FLAGS_reverse_file));
-        }
-        if (!input_pcm_file.get()) {
-          input_pcm_file.reset(new PcmFile(FLAGS_input_file));
-        }
-        if (!output_pcm_file.get()) {
-          output_pcm_file.reset(new PcmFile(FLAGS_output_file));
-        }
-      } else {
-        reverse_wav_file.reset(new WavFile(FLAGS_reverse_wav_file,
+      if (!FLAGS_raw) {
+        // The WAV files need to be reset every time, because they cant change
+        // their sample rate or number of channels.
+        reverse_wav_file.reset(new WavFile(FLAGS_reverse_file + ".wav",
                                            reverse_sample_rate,
                                            num_reverse_channels));
-        input_wav_file.reset(new WavFile(FLAGS_input_wav_file,
+        input_wav_file.reset(new WavFile(FLAGS_input_file + ".wav",
                                          input_sample_rate,
                                          num_input_channels));
-        output_wav_file.reset(new WavFile(FLAGS_output_wav_file,
+        output_wav_file.reset(new WavFile(FLAGS_output_file + ".wav",
                                           output_sample_rate,
                                           num_output_channels));
       }

@@ -8,7 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <limits>
+
 #include "webrtc/audio_processing/debug.pb.h"
+#include "webrtc/common_audio/include/audio_util.h"
+#include "webrtc/common_audio/wav_writer.h"
 #include "webrtc/modules/audio_processing/common.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/interface/module_common_types.h"
@@ -18,6 +22,64 @@ namespace webrtc {
 
 static const AudioProcessing::Error kNoErr = AudioProcessing::kNoError;
 #define EXPECT_NOERR(expr) EXPECT_EQ(kNoErr, (expr))
+
+class RawFile {
+ public:
+  RawFile(const std::string& filename)
+      : file_handle_(fopen(filename.c_str(), "wb")) {}
+
+  ~RawFile() {
+    fclose(file_handle_);
+  }
+
+  void WriteSamples(const int16_t* samples, size_t num_samples) {
+#ifndef WEBRTC_ARCH_LITTLE_ENDIAN
+#error "Need to convert samples to little-endian when writing to PCM file"
+#endif
+    fwrite(samples, sizeof(*samples), num_samples, file_handle_);
+  }
+
+  void WriteSamples(const float* samples, size_t num_samples) {
+    fwrite(samples, sizeof(*samples), num_samples, file_handle_);
+  }
+
+ private:
+  FILE* file_handle_;
+};
+
+static inline void WriteIntData(const int16_t* data,
+                                size_t length,
+                                WavFile* wav_file,
+                                RawFile* raw_file) {
+  if (wav_file) {
+    wav_file->WriteSamples(data, length);
+  }
+  if (raw_file) {
+    raw_file->WriteSamples(data, length);
+  }
+}
+
+static inline void WriteFloatData(const float* const* data,
+                                  size_t samples_per_channel,
+                                  int num_channels,
+                                  WavFile* wav_file,
+                                  RawFile* raw_file) {
+  size_t length = num_channels * samples_per_channel;
+  scoped_ptr<float[]> buffer(new float[length]);
+  Interleave(data, samples_per_channel, num_channels, buffer.get());
+  if (raw_file) {
+    raw_file->WriteSamples(buffer.get(), length);
+  }
+  // TODO(aluebs): Use ScaleToInt16Range() from audio_util
+  for (size_t i = 0; i < length; ++i) {
+    buffer[i] = buffer[i] > 0 ?
+                buffer[i] * std::numeric_limits<int16_t>::max() :
+                -buffer[i] * std::numeric_limits<int16_t>::min();
+  }
+  if (wav_file) {
+    wav_file->WriteSamples(buffer.get(), length);
+  }
+}
 
 // Exits on failure; do not use in unit tests.
 static inline FILE* OpenFile(const std::string& filename, const char* mode) {
