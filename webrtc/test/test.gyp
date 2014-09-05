@@ -199,30 +199,6 @@
     },
   ],
   'conditions': [
-    ['build_with_chromium==0', {
-      'targets': [
-        {
-          'target_name': 'buildbot_tests_scripts',
-          'type': 'none',
-          'copies': [
-            {
-              'destination': '<(PRODUCT_DIR)',
-              'files': [
-                'buildbot_tests.py',
-                '<(webrtc_root)/tools/e2e_quality/audio/run_audio_test.py',
-              ],
-            },
-            {
-              'destination': '<(PRODUCT_DIR)/perf',
-              'files': [
-                '<(DEPTH)/tools/perf/__init__.py',
-                '<(DEPTH)/tools/perf/perf_utils.py',
-              ],
-            },
-          ],
-        },  # target buildbot_tests_scripts
-      ],
-    }],
     ['include_tests==1 and OS=="android"', {
       'targets': [
         {
