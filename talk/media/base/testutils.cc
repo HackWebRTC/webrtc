@@ -27,10 +27,6 @@
 
 #include "talk/media/base/testutils.h"
 
-#if defined(OSX) && defined(FLUTE_IN_CHROME_BUILD)
-#include <mach-o/dyld.h>  // For NSGetExecutablePath.
-#endif
-
 #include <math.h>
 
 #include "talk/media/base/executablehelpers.h"
