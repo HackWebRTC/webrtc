@@ -3035,7 +3035,7 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
   }
 
 #ifdef USE_WEBRTC_DEV_BRANCH
-  bool use_payload_pading;
+  bool use_payload_padding;
   if (Changed(options.use_payload_padding,
               original.use_payload_padding,
               &use_payload_padding)) {
