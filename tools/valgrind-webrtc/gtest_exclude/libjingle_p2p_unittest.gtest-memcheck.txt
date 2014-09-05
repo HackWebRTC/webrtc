@@ -5,3 +5,4 @@ PortTest.TestSendStunMessageAsIce
 PseudoTcpTest.TestSendBothUseLargeWindowScale
 # Issue 3447
 P2PTransportChannelMultihomedTest.TestFailover
+P2PTransportChannelMultihomedTest.TestDrain
