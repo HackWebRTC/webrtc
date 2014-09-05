@@ -64,6 +64,21 @@
 #include "webrtc/experiments.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 
+namespace {
+
+template <class T>
+bool Changed(cricket::Settable<T> proposed,
+             cricket::Settable<T> original) {
+  return proposed.IsSet() && proposed != original;
+}
+
+template <class T>
+bool Changed(cricket::Settable<T> proposed,
+             cricket::Settable<T> original,
+             T* value) {
+  return proposed.Get(value) && proposed != original;
+}
+}  // namespace
 
 namespace cricket {
 
