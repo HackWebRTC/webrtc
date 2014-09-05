@@ -2923,39 +2923,10 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
     return true;
   }
 
-  // Trigger SetSendCodec to set correct noise reduction state if the option has
-  // changed.
-  bool denoiser_changed = options.video_noise_reduction.IsSet() &&
-      (options_.video_noise_reduction != options.video_noise_reduction);
-
-  bool leaky_bucket_changed = options.video_leaky_bucket.IsSet() &&
-      (options_.video_leaky_bucket != options.video_leaky_bucket);
-
-  bool buffer_latency_changed = options.buffered_mode_latency.IsSet() &&
-      (options_.buffered_mode_latency != options.buffered_mode_latency);
-
-  bool dscp_option_changed = (options_.dscp != options.dscp);
-
-  bool suspend_below_min_bitrate_changed =
-      options.suspend_below_min_bitrate.IsSet() &&
-      (options_.suspend_below_min_bitrate != options.suspend_below_min_bitrate);
-
-  bool conference_mode_turned_off = false;
-  if (options_.conference_mode.IsSet() && options.conference_mode.IsSet() &&
-      options_.conference_mode.GetWithDefaultIfUnset(false) &&
-      !options.conference_mode.GetWithDefaultIfUnset(false)) {
-    conference_mode_turned_off = true;
-  }
-
-#ifdef USE_WEBRTC_DEV_BRANCH
-  bool payload_padding_changed = options.use_payload_padding.IsSet() &&
-      options_.use_payload_padding != options.use_payload_padding;
-#endif
-
-
   // Save the options, to be interpreted where appropriate.
   // Use options_.SetAll() instead of assignment so that unset value in options
   // will not overwrite the previous option value.
+  VideoOptions original = options_;
   options_.SetAll(options);
 
   // Set CPU options for all send channels.
@@ -2966,38 +2937,38 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
   }
 
   if (send_codec_) {
-    bool reset_send_codec_needed = denoiser_changed;
     webrtc::VideoCodec new_codec = *send_codec_;
 
+
+    bool conference_mode_turned_off = (
+        original.conference_mode.IsSet() &&
+        options.conference_mode.IsSet() &&
+        original.conference_mode.GetWithDefaultIfUnset(false) &&
+        !options.conference_mode.GetWithDefaultIfUnset(false));
     if (conference_mode_turned_off) {
       // This is a special case for turning conference mode off.
       // Max bitrate should go back to the default maximum value instead
       // of the current maximum.
       new_codec.maxBitrate = kAutoBandwidth;
-      reset_send_codec_needed = true;
     }
 
     // TODO(pthatcher): Remove this.  We don't need 4 ways to set bitrates.
     int new_start_bitrate;
     if (options.video_start_bitrate.Get(&new_start_bitrate)) {
       new_codec.startBitrate = new_start_bitrate;
-      reset_send_codec_needed = true;
     }
 
 
-    LOG(LS_INFO) << "Reset send codec needed is enabled? "
-                 << reset_send_codec_needed;
-    if (reset_send_codec_needed) {
-      if (!SetSendCodec(new_codec)) {
-        return false;
-      }
-      LogSendCodecChange("SetOptions()");
+    if (!SetSendCodec(new_codec)) {
+      return false;
     }
+    LogSendCodecChange("SetOptions()");
   }
 
-  if (leaky_bucket_changed) {
-    bool enable_leaky_bucket =
-        options_.video_leaky_bucket.GetWithDefaultIfUnset(true);
+  bool enable_leaky_bucket;
+  if (Changed(options.video_leaky_bucket,
+              original.video_leaky_bucket,
+              &enable_leaky_bucket)) {
     LOG(LS_INFO) << "Leaky bucket is enabled? " << enable_leaky_bucket;
     for (SendChannelMap::iterator it = send_channels_.begin();
         it != send_channels_.end(); ++it) {
@@ -3011,10 +2982,11 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
       }
     }
   }
-  if (buffer_latency_changed) {
-    int buffer_latency =
-        options_.buffered_mode_latency.GetWithDefaultIfUnset(
-            cricket::kBufferedModeDisabled);
+
+  int buffer_latency;
+  if (Changed(options.buffered_mode_latency,
+              original.buffered_mode_latency,
+              &buffer_latency)) {
     LOG(LS_INFO) << "Buffer latency is " << buffer_latency;
     for (SendChannelMap::iterator it = send_channels_.begin();
         it != send_channels_.end(); ++it) {
@@ -3033,17 +3005,24 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
       }
     }
   }
-  if (dscp_option_changed) {
+
+  bool dscp_enabled;
+  if (Changed(options.dscp, original.dscp, &dscp_enabled)) {
     rtc::DiffServCodePoint dscp = rtc::DSCP_DEFAULT;
-    if (options_.dscp.GetWithDefaultIfUnset(false))
+    if (dscp_enabled) {
       dscp = kVideoDscpValue;
+    }
     LOG(LS_INFO) << "DSCP is " << dscp;
     if (MediaChannel::SetDscp(dscp) != 0) {
       LOG(LS_WARNING) << "Failed to set DSCP settings for video channel";
     }
   }
-  if (suspend_below_min_bitrate_changed) {
-    if (options_.suspend_below_min_bitrate.GetWithDefaultIfUnset(false)) {
+
+  bool suspend_below_min_bitrate;
+  if (Changed(options.suspend_below_min_bitrate,
+              original.suspend_below_min_bitrate,
+              &suspend_below_min_bitrate)) {
+    if (suspend_below_min_bitrate) {
       LOG(LS_INFO) << "Suspend below min bitrate enabled.";
       for (SendChannelMap::iterator it = send_channels_.begin();
            it != send_channels_.end(); ++it) {
@@ -3054,14 +3033,17 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
       LOG(LS_WARNING) << "Cannot disable video suspension once it is enabled";
     }
   }
+
 #ifdef USE_WEBRTC_DEV_BRANCH
-  if (payload_padding_changed) {
+  bool use_payload_pading;
+  if (Changed(options.use_payload_padding,
+              original.use_payload_padding,
+              &use_payload_padding)) {
     LOG(LS_INFO) << "Payload-based padding called.";
     for (SendChannelMap::iterator it = send_channels_.begin();
             it != send_channels_.end(); ++it) {
       engine()->vie()->rtp()->SetPadWithRedundantPayloads(
-          it->second->channel_id(),
-          options_.use_payload_padding.GetWithDefaultIfUnset(false));
+          it->second->channel_id(), use_payload_padding);
     }
   }
 #endif
