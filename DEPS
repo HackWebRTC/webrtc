@@ -1,5 +1,3 @@
-use_relative_paths = True
-
 # This file contains dependencies for WebRTC that are not shared with Chromium.
 # If you wish to add a dependency that is present in Chromium's src/DEPS or a
 # directory from the Chromium checkout, you should add it to setup_links.py
@@ -22,16 +20,16 @@ vars = {
 deps = {
   # When rolling gflags, also update deps/third_party/webrtc/webrtc.DEPS/DEPS
   # in Chromium's repo.
-  "third_party/gflags/src":
+  Var("root_dir") + "/third_party/gflags/src":
     (Var("googlecode_url") % "gflags") + "/trunk/src@84",
 
-  "third_party/junit/":
+  Var("root_dir") + "/third_party/junit/":
     (Var("googlecode_url") % "webrtc") + "/deps/third_party/junit@3367",
 }
 
 deps_os = {
   "win": {
-    "third_party/winsdk_samples/src":
+    Var("root_dir") + "/third_party/winsdk_samples/src":
       (Var("googlecode_url") % "webrtc") + "/deps/third_party/winsdk_samples_v71@3145",
   },
 }
