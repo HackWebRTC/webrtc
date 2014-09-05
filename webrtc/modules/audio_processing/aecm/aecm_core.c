@@ -706,6 +706,15 @@ int16_t WebRtcAecm_AsymFilt(const int16_t filtOld, const int16_t inVal,
     return retVal;
 }
 
+// ExtractFractionPart(a, zeros)
+//
+// returns the fraction part of |a|, with |zeros| number of leading zeros, as an
+// int16_t scaled to Q8. There is no sanity check of |a| in the sense that the
+// number of zeros match.
+static int16_t ExtractFractionPart(uint32_t a, int zeros) {
+  return (int16_t)(((a << zeros) & 0x7FFFFFFF) >> 23);
+}
+
 // WebRtcAecm_CalcEnergies(...)
 //
 // This function calculates the log of energies for nearend, farend and estimated
@@ -751,9 +760,7 @@ void WebRtcAecm_CalcEnergies(AecmCore_t * aecm,
     if (nearEner)
     {
         zeros = WebRtcSpl_NormU32(nearEner);
-        frac = (int16_t)WEBRTC_SPL_RSHIFT_U32(
-                              (WEBRTC_SPL_LSHIFT_U32(nearEner, zeros) & 0x7FFFFFFF),
-                              23);
+        frac = ExtractFractionPart(nearEner, zeros);
         // log2 in Q8
         tmp16 += WEBRTC_SPL_LSHIFT_W16((31 - zeros), 8) + frac;
         tmp16 -= WEBRTC_SPL_LSHIFT_W16(aecm->dfaNoisyQDomain, 8);
@@ -774,8 +781,7 @@ void WebRtcAecm_CalcEnergies(AecmCore_t * aecm,
     if (tmpFar)
     {
         zeros = WebRtcSpl_NormU32(tmpFar);
-        frac = (int16_t)WEBRTC_SPL_RSHIFT_U32((WEBRTC_SPL_LSHIFT_U32(tmpFar, zeros)
-                        & 0x7FFFFFFF), 23);
+        frac = ExtractFractionPart(tmpFar, zeros);
         // log2 in Q8
         tmp16 += WEBRTC_SPL_LSHIFT_W16((31 - zeros), 8) + frac;
         tmp16 -= WEBRTC_SPL_LSHIFT_W16(far_q, 8);
@@ -787,8 +793,7 @@ void WebRtcAecm_CalcEnergies(AecmCore_t * aecm,
     if (tmpAdapt)
     {
         zeros = WebRtcSpl_NormU32(tmpAdapt);
-        frac = (int16_t)WEBRTC_SPL_RSHIFT_U32((WEBRTC_SPL_LSHIFT_U32(tmpAdapt, zeros)
-                        & 0x7FFFFFFF), 23);
+        frac = ExtractFractionPart(tmpAdapt, zeros);
         //log2 in Q8
         tmp16 += WEBRTC_SPL_LSHIFT_W16((31 - zeros), 8) + frac;
         tmp16 -= WEBRTC_SPL_LSHIFT_W16(RESOLUTION_CHANNEL16 + far_q, 8);
@@ -800,8 +805,7 @@ void WebRtcAecm_CalcEnergies(AecmCore_t * aecm,
     if (tmpStored)
     {
         zeros = WebRtcSpl_NormU32(tmpStored);
-        frac = (int16_t)WEBRTC_SPL_RSHIFT_U32((WEBRTC_SPL_LSHIFT_U32(tmpStored, zeros)
-                        & 0x7FFFFFFF), 23);
+        frac = ExtractFractionPart(tmpStored, zeros);
         //log2 in Q8
         tmp16 += WEBRTC_SPL_LSHIFT_W16((31 - zeros), 8) + frac;
         tmp16 -= WEBRTC_SPL_LSHIFT_W16(RESOLUTION_CHANNEL16 + far_q, 8);

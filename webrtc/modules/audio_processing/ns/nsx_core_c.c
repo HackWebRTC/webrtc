@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <assert.h>
+
 #include "webrtc/modules/audio_processing/ns/include/noise_suppression_x.h"
 #include "webrtc/modules/audio_processing/ns/nsx_core.h"
 
@@ -39,9 +41,9 @@ void WebRtcNsx_SpeechNoiseProb(NsxInst_t* inst,
   for (i = 0; i < inst->magnLen; i++) {
     besselTmpFX32 = (int32_t)postLocSnr[i]; // Q11
     normTmp = WebRtcSpl_NormU32(postLocSnr[i]);
-    num = WEBRTC_SPL_LSHIFT_U32(postLocSnr[i], normTmp); // Q(11+normTmp)
+    num = postLocSnr[i] << normTmp;  // Q(11+normTmp)
     if (normTmp > 10) {
-      den = WEBRTC_SPL_LSHIFT_U32(priorLocSnr[i], normTmp - 11); // Q(normTmp)
+      den = priorLocSnr[i] << (normTmp - 11);  // Q(normTmp)
     } else {
       den = WEBRTC_SPL_RSHIFT_U32(priorLocSnr[i], 11 - normTmp); // Q(normTmp)
     }
@@ -121,11 +123,7 @@ void WebRtcNsx_SpeechNoiseProb(NsxInst_t* inst,
       //widthPrior = widthPrior * 2.0;
       nShifts++;
     }
-    tmp32no1 = (int32_t)WebRtcSpl_DivU32U16(WEBRTC_SPL_LSHIFT_U32(tmpU32no2,
-                                                                  nShifts), 25);
-                                                     //Q14
-    tmpU32no1 = WebRtcSpl_DivU32U16(WEBRTC_SPL_LSHIFT_U32(tmpU32no2, nShifts),
-                                    25); //Q14
+    tmpU32no1 = WebRtcSpl_DivU32U16(tmpU32no2 << nShifts, 25);  // Q14
     // compute indicator function: sigmoid map
     // FLOAT code
     // indicator1 = 0.5 * (tanh(sgnMap * widthPrior *
@@ -151,8 +149,8 @@ void WebRtcNsx_SpeechNoiseProb(NsxInst_t* inst,
     if (inst->featureSpecDiff) {
       normTmp = WEBRTC_SPL_MIN(20 - inst->stages,
                                WebRtcSpl_NormU32(inst->featureSpecDiff));
-      tmpU32no1 = WEBRTC_SPL_LSHIFT_U32(inst->featureSpecDiff, normTmp);
-                                                         // Q(normTmp-2*stages)
+      assert(normTmp >= 0);
+      tmpU32no1 = inst->featureSpecDiff << normTmp;  // Q(normTmp-2*stages)
       tmpU32no2 = WEBRTC_SPL_RSHIFT_U32(inst->timeAvgMagnEnergy,
                                         20 - inst->stages - normTmp);
       if (tmpU32no2 > 0) {

@@ -154,7 +154,7 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t *gainTable, // Q16
         fracPart = (uint16_t)(absInLevel & 0x00003FFF); // extract the fractional part
         tmpU16 = kGenFuncTable[intPart + 1] - kGenFuncTable[intPart]; // Q8
         tmpU32no1 = WEBRTC_SPL_UMUL_16_16(tmpU16, fracPart); // Q22
-        tmpU32no1 += WEBRTC_SPL_LSHIFT_U32((uint32_t)kGenFuncTable[intPart], 14); // Q22
+        tmpU32no1 += (uint32_t)kGenFuncTable[intPart] << 14;  // Q22
         logApprox = WEBRTC_SPL_RSHIFT_U32(tmpU32no1, 8); // Q14
         // Compensate for negative exponent using the relation:
         //  log2(1 + 2^-x) = log2(1 + 2^x) - x
