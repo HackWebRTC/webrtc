@@ -284,6 +284,16 @@ static const char kSdpSctpDataChannelString[] =
     "a=mid:data_content_name\r\n"
     "a=sctpmap:5000 webrtc-datachannel 1024\r\n";
 
+// draft-ietf-mmusic-sctp-sdp-07
+static const char kSdpSctpDataChannelStringWithSctpPort[] =
+    "m=application 1 DTLS/SCTP webrtc-datachannel\r\n"
+    "a=fmtp:webrtc-datachannel max-message-size=100000\r\n"
+    "a=sctp-port 5000\r\n"
+    "c=IN IP4 0.0.0.0\r\n"
+    "a=ice-ufrag:ufrag_data\r\n"
+    "a=ice-pwd:pwd_data\r\n"
+    "a=mid:data_content_name\r\n";
+
 static const char kSdpSctpDataChannelWithCandidatesString[] =
     "m=application 2345 DTLS/SCTP 5000\r\n"
     "c=IN IP4 74.125.127.126\r\n"
@@ -2023,6 +2033,36 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannels) {
   EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
 }
 
+TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsWithSctpPort) {
+  AddSctpDataChannel();
+  JsepSessionDescription jdesc(kDummyString);
+  ASSERT_TRUE(jdesc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
+
+  std::string sdp_with_data = kSdpString;
+  sdp_with_data.append(kSdpSctpDataChannelStringWithSctpPort);
+  JsepSessionDescription jdesc_output(kDummyString);
+
+  EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
+  EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
+}
+
+// Test to check the behaviour if sctp-port is specified
+// on the m= line and in a=sctp-port.
+TEST_F(WebRtcSdpTest, DeserializeSdpWithMultiSctpPort) {
+  AddSctpDataChannel();
+  JsepSessionDescription jdesc(kDummyString);
+  ASSERT_TRUE(jdesc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
+
+  std::string sdp_with_data = kSdpString;
+  // Append m= attributes
+  sdp_with_data.append(kSdpSctpDataChannelString);
+  // Append a=sctp-port attribute
+  sdp_with_data.append("a=sctp-port 5000\r\n");
+  JsepSessionDescription jdesc_output(kDummyString);
+
+  EXPECT_FALSE(SdpDeserialize(sdp_with_data, &jdesc_output));
+}
+
 // For crbug/344475.
 TEST_F(WebRtcSdpTest, DeserializeSdpWithCorruptedSctpDataChannels) {
   std::string sdp_with_data = kSdpString;
@@ -2068,6 +2108,19 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelAndNewPort) {
                              unusual_portstr, strlen(unusual_portstr),
                              &sdp_with_data);
   JsepSessionDescription jdesc_output(kDummyString);
+
+  EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
+  EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
+
+  // We need to test the deserialized JsepSessionDescription from
+  // kSdpSctpDataChannelStringWithSctpPort for
+  // draft-ietf-mmusic-sctp-sdp-07
+  // a=sctp-port
+  sdp_with_data = kSdpString;
+  sdp_with_data.append(kSdpSctpDataChannelStringWithSctpPort);
+  rtc::replace_substrs(default_portstr, strlen(default_portstr),
+                             unusual_portstr, strlen(unusual_portstr),
+                             &sdp_with_data);
 
   EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
   EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
