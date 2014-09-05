@@ -326,12 +326,13 @@ bool MediaStreamSignaling::AddDataChannelFromOpenMessage(
     LOG(LS_ERROR) << "Failed to create DataChannel from the OPEN message.";
     return false;
   }
-  sctp_data_channels_.push_back(channel);
+
   stream_observer_->OnAddDataChannel(channel);
   return true;
 }
 
 void MediaStreamSignaling::RemoveSctpDataChannel(int sid) {
+  ASSERT(sid >= 0);
   for (SctpDataChannels::iterator iter = sctp_data_channels_.begin();
        iter != sctp_data_channels_.end();
        ++iter) {

@@ -261,14 +261,20 @@ static bool CompareStreamCollections(StreamCollectionInterface* s1,
 class FakeDataChannelFactory : public webrtc::DataChannelFactory {
  public:
   FakeDataChannelFactory(FakeDataChannelProvider* provider,
-                         cricket::DataChannelType dct)
-      : provider_(provider), type_(dct) {}
+                         cricket::DataChannelType dct,
+                         webrtc::MediaStreamSignaling* media_stream_signaling)
+      : provider_(provider),
+        type_(dct),
+        media_stream_signaling_(media_stream_signaling) {}
 
   virtual rtc::scoped_refptr<webrtc::DataChannel> CreateDataChannel(
       const std::string& label,
       const webrtc::InternalDataChannelInit* config) {
     last_init_ = *config;
-    return webrtc::DataChannel::Create(provider_, type_, label, *config);
+    rtc::scoped_refptr<webrtc::DataChannel> data_channel =
+        webrtc::DataChannel::Create(provider_, type_, label, *config);
+    media_stream_signaling_->AddDataChannel(data_channel);
+    return data_channel;
   }
 
   const webrtc::InternalDataChannelInit& last_init() const {
@@ -278,6 +284,7 @@ class FakeDataChannelFactory : public webrtc::DataChannelFactory {
  private:
   FakeDataChannelProvider* provider_;
   cricket::DataChannelType type_;
+  webrtc::MediaStreamSignaling* media_stream_signaling_;
   webrtc::InternalDataChannelInit last_init_;
 };
 
@@ -1265,7 +1272,8 @@ TEST_F(MediaStreamSignalingTest, SctpDuplicatedLabelAllowed) {
 // message.
 TEST_F(MediaStreamSignalingTest, CreateDataChannelFromOpenMessage) {
   FakeDataChannelFactory fake_factory(data_channel_provider_.get(),
-                                      cricket::DCT_SCTP);
+                                      cricket::DCT_SCTP,
+                                      signaling_.get());
   signaling_->SetDataChannelFactory(&fake_factory);
   webrtc::DataChannelInit config;
   config.id = 1;
@@ -1285,7 +1293,8 @@ TEST_F(MediaStreamSignalingTest, DuplicatedLabelFromOpenMessageAllowed) {
   AddDataChannel(cricket::DCT_SCTP, "a", -1);
 
   FakeDataChannelFactory fake_factory(data_channel_provider_.get(),
-                                      cricket::DCT_SCTP);
+                                      cricket::DCT_SCTP,
+                                      signaling_.get());
   signaling_->SetDataChannelFactory(&fake_factory);
   webrtc::DataChannelInit config;
   config.id = 0;
@@ -1313,4 +1322,25 @@ TEST_F(MediaStreamSignalingTest,
 
   signaling_->OnRemoteSctpDataChannelClosed(config.id);
   EXPECT_EQ(webrtc::DataChannelInterface::kClosed, data_channel->state());
+}
+
+// Verifies that DataChannel added from OPEN message is added to
+// MediaStreamSignaling only once (webrtc issue 3778).
+TEST_F(MediaStreamSignalingTest, DataChannelFromOpenMessageAddedOnce) {
+  FakeDataChannelFactory fake_factory(data_channel_provider_.get(),
+                                      cricket::DCT_SCTP,
+                                      signaling_.get());
+  signaling_->SetDataChannelFactory(&fake_factory);
+  webrtc::DataChannelInit config;
+  config.id = 1;
+  rtc::Buffer payload;
+  webrtc::WriteDataChannelOpenMessage("a", config, &payload);
+  cricket::ReceiveDataParams params;
+  params.ssrc = config.id;
+  EXPECT_TRUE(signaling_->AddDataChannelFromOpenMessage(params, payload));
+  EXPECT_TRUE(signaling_->HasDataChannels());
+
+  // Removes the DataChannel and verifies that no DataChannel is left.
+  signaling_->RemoveSctpDataChannel(config.id);
+  EXPECT_FALSE(signaling_->HasDataChannels());
 }
