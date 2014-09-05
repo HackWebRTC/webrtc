@@ -157,9 +157,8 @@
         'media/sctp/sctpdataengine_unittest.cc',
         'media/webrtc/webrtcpassthroughrender_unittest.cc',
         'media/webrtc/webrtcvideocapturer_unittest.cc',
-        # Omitted because depends on non-open-source testdata files.
-        # 'media/base/videoframe_unittest.h',
-        # 'media/webrtc/webrtcvideoframe_unittest.cc',
+        'media/base/videoframe_unittest.h',
+        'media/webrtc/webrtcvideoframe_unittest.cc',
 
         # Disabled because some tests fail.
         # TODO(ronghuawu): Reenable these tests.

@@ -27,14 +27,10 @@
 
 #include "talk/media/base/videoframe_unittest.h"
 #include "talk/media/webrtc/webrtcvideoframe.h"
-#include "webrtc/base/flags.h"
-
-extern int FLAG_yuvconverter_repeat;  // From lmivideoframe_unittest.cc.
 
 class WebRtcVideoFrameTest : public VideoFrameTest<cricket::WebRtcVideoFrame> {
  public:
   WebRtcVideoFrameTest() {
-    repeat_ = FLAG_yuvconverter_repeat;
   }
 
   void TestInit(int cropped_width, int cropped_height) {
@@ -136,7 +132,7 @@ TEST_WEBRTCVIDEOFRAME(ConstructI420CropVertical)
 TEST_WEBRTCVIDEOFRAME(ConstructBlack)
 // TODO(fbarchard): Implement Jpeg
 // TEST_WEBRTCVIDEOFRAME(ConstructMjpgI420)
-// TEST_WEBRTCVIDEOFRAME(ConstructMjpgI422)
+TEST_WEBRTCVIDEOFRAME(ConstructMjpgI422)
 // TEST_WEBRTCVIDEOFRAME(ConstructMjpgI444)
 // TEST_WEBRTCVIDEOFRAME(ConstructMjpgI411)
 // TEST_WEBRTCVIDEOFRAME(ConstructMjpgI400)

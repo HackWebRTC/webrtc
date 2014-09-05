@@ -135,6 +135,9 @@ class VideoFrameTest : public testing::Test {
     rtc::scoped_ptr<rtc::FileStream> fs(
         rtc::Filesystem::OpenFile(path, "rb"));
     if (!fs.get()) {
+      LOG(LS_ERROR) << "Could not open test file path: " << path.pathname()
+                    << " from current dir "
+                    << rtc::Filesystem::GetCurrentDirectory().pathname();
       return NULL;
     }
 
@@ -143,6 +146,7 @@ class VideoFrameTest : public testing::Test {
         new rtc::MemoryStream());
     rtc::StreamResult res = Flow(fs.get(), buf, sizeof(buf), ms.get());
     if (res != rtc::SR_SUCCESS) {
+      LOG(LS_ERROR) << "Could not load test file path: " << path.pathname();
       return NULL;
     }
 
@@ -419,17 +423,22 @@ class VideoFrameTest : public testing::Test {
                       const uint8* u, uint32 upitch,
                       const uint8* v, uint32 vpitch,
                       int max_error) {
-    return IsSize(frame, width, height) &&
+    return IsSize(frame,
+                  static_cast<uint32>(width),
+                  static_cast<uint32>(height)) &&
         frame.GetPixelWidth() == pixel_width &&
         frame.GetPixelHeight() == pixel_height &&
         frame.GetElapsedTime() == elapsed_time &&
         frame.GetTimeStamp() == time_stamp &&
         IsPlaneEqual("y", frame.GetYPlane(), frame.GetYPitch(), y, ypitch,
-                     width, height, max_error) &&
+                     static_cast<uint32>(width),
+                     static_cast<uint32>(height), max_error) &&
         IsPlaneEqual("u", frame.GetUPlane(), frame.GetUPitch(), u, upitch,
-                     (width + 1) / 2, (height + 1) / 2, max_error) &&
+                     static_cast<uint32>((width + 1) / 2),
+                     static_cast<uint32>((height + 1) / 2), max_error) &&
         IsPlaneEqual("v", frame.GetVPlane(), frame.GetVPitch(), v, vpitch,
-                     (width + 1) / 2, (height + 1) / 2, max_error);
+                     static_cast<uint32>((width + 1) / 2),
+                     static_cast<uint32>((height + 1) / 2), max_error);
   }
 
   static bool IsEqual(const cricket::VideoFrame& frame1,
@@ -719,7 +728,7 @@ class VideoFrameTest : public testing::Test {
     T frame1, frame2;
     size_t out_size = kWidth * kHeight * 2;
     rtc::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment]);
-    uint8 *out = ALIGNP(outbuf.get(), kAlignment);
+    uint8* out = ALIGNP(outbuf.get(), kAlignment);
     T frame;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
     EXPECT_EQ(out_size, frame1.ConvertToRgbBuffer(cricket::FOURCC_RGBP,
@@ -735,7 +744,7 @@ class VideoFrameTest : public testing::Test {
     T frame1, frame2;
     size_t out_size = kWidth * kHeight * 2;
     rtc::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment]);
-    uint8 *out = ALIGNP(outbuf.get(), kAlignment);
+    uint8* out = ALIGNP(outbuf.get(), kAlignment);
     T frame;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
     EXPECT_EQ(out_size, frame1.ConvertToRgbBuffer(cricket::FOURCC_RGBO,
@@ -751,7 +760,7 @@ class VideoFrameTest : public testing::Test {
     T frame1, frame2;
     size_t out_size = kWidth * kHeight * 2;
     rtc::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment]);
-    uint8 *out = ALIGNP(outbuf.get(), kAlignment);
+    uint8* out = ALIGNP(outbuf.get(), kAlignment);
     T frame;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
     EXPECT_EQ(out_size, frame1.ConvertToRgbBuffer(cricket::FOURCC_R444,
@@ -771,12 +780,12 @@ class VideoFrameTest : public testing::Test {
     size_t bayer_size = kWidth * kHeight;                                      \
     rtc::scoped_ptr<uint8[]> bayerbuf(new uint8[                         \
         bayer_size + kAlignment]);                                             \
-    uint8 *bayer = ALIGNP(bayerbuf.get(), kAlignment);                         \
+    uint8* bayer = ALIGNP(bayerbuf.get(), kAlignment);                         \
     T frame1, frame2;                                                          \
     rtc::scoped_ptr<rtc::MemoryStream> ms(                         \
         CreateRgbSample(cricket::FOURCC_ARGB, kWidth, kHeight));               \
     ASSERT_TRUE(ms.get() != NULL);                                             \
-    libyuv::ARGBToBayer##BAYER(reinterpret_cast<uint8 *>(ms->GetBuffer()),     \
+    libyuv::ARGBToBayer##BAYER(reinterpret_cast<uint8* >(ms->GetBuffer()),     \
                                kWidth * 4,                                     \
                                bayer, kWidth,                                  \
                                kWidth, kHeight);                               \
@@ -812,8 +821,8 @@ void Construct##FOURCC##Mirror() {                                             \
                             reinterpret_cast<uint8*>(ms->GetBuffer()),         \
                             data_size,                                         \
                             1, 1, 0, 0, 0));                                   \
-    int width_rotate = frame1.GetWidth();                                      \
-    int height_rotate = frame1.GetHeight();                                    \
+    int width_rotate = static_cast<int>(frame1.GetWidth());                    \
+    int height_rotate = static_cast<int>(frame1.GetHeight());                  \
     EXPECT_TRUE(frame3.InitToBlack(width_rotate, height_rotate, 1, 1, 0, 0));  \
     libyuv::I420Mirror(frame2.GetYPlane(), frame2.GetYPitch(),                 \
                        frame2.GetUPlane(), frame2.GetUPitch(),                 \
@@ -845,8 +854,8 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
                             reinterpret_cast<uint8*>(ms->GetBuffer()),         \
                             data_size,                                         \
                             1, 1, 0, 0, 0));                                   \
-    int width_rotate = frame1.GetWidth();                                      \
-    int height_rotate = frame1.GetHeight();                                    \
+    int width_rotate = static_cast<int>(frame1.GetWidth());                    \
+    int height_rotate = static_cast<int>(frame1.GetHeight());                  \
     EXPECT_TRUE(frame3.InitToBlack(width_rotate, height_rotate, 1, 1, 0, 0));  \
     libyuv::I420Rotate(frame2.GetYPlane(), frame2.GetYPitch(),                 \
                        frame2.GetUPlane(), frame2.GetUPitch(),                 \
@@ -995,7 +1004,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     // Convert back to ARGB.
     size_t out_size = 4;
     rtc::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment]);
-    uint8 *out = ALIGNP(outbuf.get(), kAlignment);
+    uint8* out = ALIGNP(outbuf.get(), kAlignment);
 
     EXPECT_EQ(out_size, frame.ConvertToRgbBuffer(cricket::FOURCC_ARGB,
                                                  out,
@@ -1032,7 +1041,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     // Convert back to ARGB
     size_t out_size = 10 * 4;
     rtc::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment]);
-    uint8 *out = ALIGNP(outbuf.get(), kAlignment);
+    uint8* out = ALIGNP(outbuf.get(), kAlignment);
 
     EXPECT_EQ(out_size, frame.ConvertToRgbBuffer(cricket::FOURCC_ARGB,
                                                  out,
@@ -1431,8 +1440,8 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     size_t out_size = astride * kHeight;
     rtc::scoped_ptr<uint8[]> outbuf(new uint8[out_size + kAlignment + 1]);
     memset(outbuf.get(), 0, out_size + kAlignment + 1);
-    uint8 *outtop = ALIGNP(outbuf.get(), kAlignment);
-    uint8 *out = outtop;
+    uint8* outtop = ALIGNP(outbuf.get(), kAlignment);
+    uint8* out = outtop;
     int stride = astride;
     if (invert) {
       out += (kHeight - 1) * stride;  // Point to last row.
@@ -1869,7 +1878,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     size_t bayer_size = kWidth * kHeight;                                      \
     rtc::scoped_ptr<uint8[]> bayerbuf(new uint8[                         \
         bayer_size + kAlignment]);                                             \
-    uint8 *bayer = ALIGNP(bayerbuf.get(), kAlignment);                         \
+    uint8* bayer = ALIGNP(bayerbuf.get(), kAlignment);                         \
     T frame;                                                                   \
     rtc::scoped_ptr<rtc::MemoryStream> ms(                         \
         CreateRgbSample(cricket::FOURCC_ARGB, kWidth, kHeight));               \
@@ -1898,7 +1907,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     size_t bayer_size = kWidth * kHeight;                                      \
     rtc::scoped_ptr<uint8[]> bayerbuf(new uint8[                         \
         bayer_size + 1 + kAlignment]);                                         \
-    uint8 *bayer = ALIGNP(bayerbuf.get(), kAlignment) + 1;                     \
+    uint8* bayer = ALIGNP(bayerbuf.get(), kAlignment) + 1;                     \
     T frame;                                                                   \
     rtc::scoped_ptr<rtc::MemoryStream> ms(                         \
         CreateRgbSample(cricket::FOURCC_ARGB, kWidth, kHeight));               \
@@ -1935,7 +1944,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     size_t bayer_size = kWidth * kHeight;                                      \
     rtc::scoped_ptr<uint8[]> bayerbuf(new uint8[                         \
         bayer_size + kAlignment]);                                             \
-    uint8 *bayer1 = ALIGNP(bayerbuf.get(), kAlignment);                        \
+    uint8* bayer1 = ALIGNP(bayerbuf.get(), kAlignment);                        \
     for (int i = 0; i < kWidth * kHeight; ++i) {                               \
       bayer1[i] = static_cast<uint8>(i * 33u + 183u);                          \
     }                                                                          \
@@ -1951,7 +1960,7 @@ void Construct##FOURCC##Rotate##ROTATE() {                                     \
     }                                                                          \
     rtc::scoped_ptr<uint8[]> bayer2buf(new uint8[                        \
         bayer_size + kAlignment]);                                             \
-    uint8 *bayer2 = ALIGNP(bayer2buf.get(), kAlignment);                       \
+    uint8* bayer2 = ALIGNP(bayer2buf.get(), kAlignment);                       \
     libyuv::ARGBToBayer##BAYER(reinterpret_cast<uint8*>(ms->GetBuffer()),      \
                            kWidth * 4,                                         \
                            bayer2, kWidth,                                     \
