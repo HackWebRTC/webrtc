@@ -163,7 +163,6 @@ class ChannelManager : public rtc::MessageHandler,
   VideoCapturer* CreateScreenCapturer(const ScreencastId& screenid);
   bool SetCaptureDevice(const std::string& cam_device);
   bool SetDefaultVideoEncoderConfig(const VideoEncoderConfig& config);
-  VideoEncoderConfig GetDefaultVideoEncoderConfig() const;
   // RTX will be enabled/disabled in engines that support it. The supporting
   // engines will start offering an RTX codec. Must be called before Init().
   bool SetVideoRtxEnabled(bool enable);
@@ -231,6 +230,10 @@ class ChannelManager : public rtc::MessageHandler,
   // This API is mainly a hook used by unittests.
   const std::string& video_device_name() const { return video_device_name_; }
 
+  // TODO(hellner): Remove this function once the engine capturer has been
+  // removed.
+  VideoFormat GetStartCaptureFormat();
+
  protected:
   // Adds non-transient parameters which can only be changed through the
   // options store.
@@ -279,8 +282,6 @@ class ChannelManager : public rtc::MessageHandler,
   bool UnregisterVideoProcessor_w(VideoCapturer* capturer,
                                   VideoProcessor* processor);
   bool IsScreencastRunning_w() const;
-  bool SetDefaultVideoEncoderConfig_w(const VideoEncoderConfig& config);
-  VideoEncoderConfig GetDefaultVideoEncoderConfig_w() const;
   virtual void OnMessage(rtc::Message *message);
 
   rtc::scoped_ptr<MediaEngineInterface> media_engine_;

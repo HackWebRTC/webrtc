@@ -930,6 +930,10 @@ class FakeVideoEngine : public FakeBaseEngine {
     capture_ = capture;
     return true;
   }
+  VideoFormat GetStartCaptureFormat() const {
+    return VideoFormat(640, 480, cricket::VideoFormat::FpsToInterval(30),
+                       FOURCC_I420);
+  }
 
   sigslot::repeater2<VideoCapturer*, CaptureState> SignalCaptureStateChange;
 

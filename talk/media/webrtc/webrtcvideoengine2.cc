@@ -286,6 +286,10 @@ WebRtcVideoEngine2::WebRtcVideoEngine2()
     : worker_thread_(NULL),
       voice_engine_(NULL),
       video_codecs_(DefaultVideoCodecs()),
+      default_codec_format_(kDefaultVideoCodecPref.width,
+                            kDefaultVideoCodecPref.height,
+                            FPS_TO_INTERVAL(kDefaultFramerate),
+                            FOURCC_ANY),
       initialized_(false),
       cpu_monitor_(new rtc::CpuMonitor(NULL)),
       channel_factory_(NULL) {
@@ -354,6 +358,11 @@ bool WebRtcVideoEngine2::SetDefaultEncoderConfig(
     return false;
   }
 
+  default_codec_format_ =
+      VideoFormat(codec.width,
+                  codec.height,
+                  VideoFormat::FpsToInterval(codec.framerate),
+                  FOURCC_ANY);
   video_codecs_.clear();
   video_codecs_.push_back(codec);
   return true;
