@@ -169,8 +169,6 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   bool ShouldIgnoreTrace(const std::string& trace);
   int GetNumOfChannels();
 
-  VideoFormat GetStartCaptureFormat() const { return default_codec_format_; }
-
   rtc::CpuMonitor* cpu_monitor() { return cpu_monitor_.get(); }
 
  protected:

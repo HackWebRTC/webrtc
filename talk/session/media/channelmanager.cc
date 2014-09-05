@@ -724,16 +724,28 @@ bool ChannelManager::SetCaptureDevice_w(const Device* cam_device) {
 }
 
 bool ChannelManager::SetDefaultVideoEncoderConfig(const VideoEncoderConfig& c) {
-  bool ret = true;
+  return worker_thread_->Invoke<bool>(
+      Bind(&ChannelManager::SetDefaultVideoEncoderConfig_w, this, c));
+}
+
+VideoEncoderConfig ChannelManager::GetDefaultVideoEncoderConfig() const {
+  return worker_thread_->Invoke<VideoEncoderConfig>(
+      Bind(&ChannelManager::GetDefaultVideoEncoderConfig_w, this));
+}
+
+bool ChannelManager::SetDefaultVideoEncoderConfig_w(
+    const VideoEncoderConfig& c) {
   if (initialized_) {
-    ret = worker_thread_->Invoke<bool>(
-        Bind(&MediaEngineInterface::SetDefaultVideoEncoderConfig,
-             media_engine_.get(), c));
+    if (!media_engine_->SetDefaultVideoEncoderConfig(c)) {
+      return false;
+    }
   }
-  if (ret) {
-    default_video_encoder_config_ = c;
-  }
-  return ret;
+  default_video_encoder_config_ = c;
+  return true;
+}
+
+VideoEncoderConfig ChannelManager::GetDefaultVideoEncoderConfig_w() const {
+  return default_video_encoder_config_;
 }
 
 bool ChannelManager::SetLocalMonitor(bool enable) {
@@ -943,11 +955,6 @@ void ChannelManager::SetVideoCaptureDeviceMaxFormat(
     const std::string& usb_id,
     const VideoFormat& max_format) {
   device_manager_->SetVideoCaptureDeviceMaxFormat(usb_id, max_format);
-}
-
-VideoFormat ChannelManager::GetStartCaptureFormat() {
-  return worker_thread_->Invoke<VideoFormat>(
-      Bind(&MediaEngineInterface::GetStartCaptureFormat, media_engine_.get()));
 }
 
 bool ChannelManager::StartAecDump(rtc::PlatformFile file) {

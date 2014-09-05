@@ -185,9 +185,6 @@ class DelegatingWebRtcMediaEngine : public cricket::MediaEngineInterface {
     return delegate_->UnregisterVoiceProcessor(ssrc, video_processor,
         direction);
   }
-  virtual VideoFormat GetStartCaptureFormat() const OVERRIDE {
-    return delegate_->GetStartCaptureFormat();
-  }
   virtual sigslot::repeater2<VideoCapturer*, CaptureState>&
       SignalVideoCaptureStateChange() {
     return delegate_->SignalVideoCaptureStateChange();
