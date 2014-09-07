@@ -53,6 +53,7 @@ using rtc::SocketAddress;
 using rtc::Thread;
 
 static const SocketAddress kClientAddr("11.11.11.11", 0);
+static const SocketAddress kPrivateAddr("192.168.1.11", 0);
 static const SocketAddress kClientIPv6Addr(
     "2401:fa00:4:1000:be30:5bff:fee5:c3", 0);
 static const SocketAddress kClientAddr2("22.22.22.22", 0);
@@ -538,12 +539,84 @@ TEST_F(PortAllocatorTest, TestCandidatePriorityOfMultipleInterfaces) {
 // Test to verify ICE restart process.
 TEST_F(PortAllocatorTest, TestGetAllPortsRestarts) {
   AddInterface(kClientAddr);
-  EXPECT_TRUE(CreateSession(1));
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
   EXPECT_EQ_WAIT(7U, candidates_.size(), kDefaultAllocationTimeout);
   EXPECT_EQ(4U, ports_.size());
   EXPECT_TRUE(candidate_allocation_done_);
   // TODO - Extend this to verify ICE restart.
+}
+
+// Test ICE candidate filter mechanism with options Relay/Host/Reflexive.
+TEST_F(PortAllocatorTest, TestCandidateFilterWithRelayOnly) {
+  AddInterface(kClientAddr);
+  allocator().set_candidate_filter(cricket::CF_RELAY);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
+  // Using GTURN, we will have 4 candidates.
+  EXPECT_EQ(4U, candidates_.size());
+  EXPECT_EQ(1U, ports_.size());  // Only Relay port will be in ready state.
+  for (size_t i = 0; i < candidates_.size(); ++i) {
+    EXPECT_EQ(cricket::RELAY_PORT_TYPE, candidates_[i].type());
+  }
+}
+
+TEST_F(PortAllocatorTest, TestCandidateFilterWithHostOnly) {
+  AddInterface(kClientAddr);
+  allocator().set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
+  allocator().set_candidate_filter(cricket::CF_HOST);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
+  EXPECT_EQ(2U, candidates_.size()); // Host UDP/TCP candidates only.
+  EXPECT_EQ(2U, ports_.size()); // UDP/TCP ports only.
+  for (size_t i = 0; i < candidates_.size(); ++i) {
+    EXPECT_EQ(cricket::LOCAL_PORT_TYPE, candidates_[i].type());
+  }
+}
+
+// Host is behind the NAT.
+TEST_F(PortAllocatorTest, TestCandidateFilterWithReflexiveOnly) {
+  AddInterface(kPrivateAddr);
+  rtc::scoped_ptr<rtc::NATServer> nat_server(
+      CreateNatServer(kNatAddr, rtc::NAT_OPEN_CONE));
+  ServerAddresses stun_servers;
+  stun_servers.insert(kStunAddr);
+  allocator_.reset(new cricket::BasicPortAllocator(
+      &network_manager_, &nat_socket_factory_, stun_servers));
+  allocator().set_step_delay(cricket::kMinimumStepDelay);
+  allocator().set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
+  allocator().set_candidate_filter(cricket::CF_REFLEXIVE);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
+  // Host is behind NAT, no private address will be exposed. Hence only UDP
+  // port with STUN candidate will be sent outside.
+  EXPECT_EQ(1U, candidates_.size()); // Only STUN candidate.
+  EXPECT_EQ(1U, ports_.size());  // Only UDP port will be in ready state.
+  for (size_t i = 0; i < candidates_.size(); ++i) {
+    EXPECT_EQ(cricket::STUN_PORT_TYPE, candidates_[i].type());
+  }
+}
+
+// Host is not behind the NAT.
+TEST_F(PortAllocatorTest, TestCandidateFilterWithReflexiveOnlyAndNoNAT) {
+  AddInterface(kClientAddr);
+  allocator().set_flags(cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG |
+                        cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
+  allocator().set_candidate_filter(cricket::CF_REFLEXIVE);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
+  // Host has a public address, both UDP and TCP candidates will be exposed.
+  EXPECT_EQ(2U, candidates_.size()); // Local UDP + TCP candidate.
+  EXPECT_EQ(2U, ports_.size());  //  UDP and TCP ports will be in ready state.
+  for (size_t i = 0; i < candidates_.size(); ++i) {
+    EXPECT_EQ(cricket::LOCAL_PORT_TYPE, candidates_[i].type());
+  }
 }
 
 TEST_F(PortAllocatorTest, TestBasicMuxFeatures) {
