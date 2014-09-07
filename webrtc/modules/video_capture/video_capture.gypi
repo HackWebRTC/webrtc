@@ -209,6 +209,17 @@
         },
       ], # targets
       'conditions': [
+        ['OS=="android"', {
+          'targets': [
+            {
+              'target_name': 'video_capture_tests_apk_target',
+              'type': 'none',
+              'dependencies': [
+                '<(apk_tests_path):video_capture_tests_apk',
+              ],
+            },
+          ],
+        }],
         ['test_isolation_mode != "noop"', {
           'targets': [
             {
