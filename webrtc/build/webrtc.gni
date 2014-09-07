@@ -15,40 +15,40 @@ declare_args() {
   build_with_libjingle = true
 
   # Disable this to avoid building the Opus audio codec.
-  include_opus = true
+  rtc_include_opus = true
 
   # Used to specify an external Jsoncpp include path when not compiling the
-  # library that comes with WebRTC (i.e. build_json == 0).
-  webrtc_jsoncpp_root = "//third_party/jsoncpp/source/include"
+  # library that comes with WebRTC (i.e. rtc_build_json == 0).
+  rtc_jsoncpp_root = "//third_party/jsoncpp/source/include"
 
   # Used to specify an external OpenSSL include path when not compiling the
-  # library that comes with WebRTC (i.e. build_ssl == 0).
-  webrtc_ssl_root = ""
+  # library that comes with WebRTC (i.e. rtc_build_ssl == 0).
+  rtc_ssl_root = ""
 
   # Adds video support to dependencies shared by voice and video engine.
   # This should normally be enabled; the intended use is to disable only
   # when building voice engine exclusively.
-  enable_video = true
+  rtc_enable_video = true
 
   # Selects fixed-point code where possible.
-  prefer_fixed_point = false
+  rtc_prefer_fixed_point = false
 
   # Enable data logging. Produces text files with data logged within engines
   # which can be easily parsed for offline processing.
-  enable_data_logging = false
+  rtc_enable_data_logging = false
 
   # Enables the use of protocol buffers for debug recordings.
-  enable_protobuf = true
+  rtc_enable_protobuf = true
 
   # Disable these to not build components which can be externally provided.
-  build_json = true
-  build_libjpeg = true
-  build_libyuv = true
-  build_libvpx = true
-  build_ssl = true
+  rtc_build_json = true
+  rtc_build_libjpeg = true
+  rtc_build_libyuv = true
+  rtc_build_libvpx = true
+  rtc_build_ssl = true
 
   # Disable by default.
-  have_dbus_glib = false
+  rtc_have_dbus_glib = false
 
   # Enable to use the Mozilla internal settings.
   build_with_mozilla = false
@@ -59,26 +59,26 @@ declare_args() {
   mips_dsp_rev = 0
   mips_fpu = true
 
-  enable_android_opensl = true
+  rtc_enable_android_opensl = true
 
   # Link-Time Optimizations.
   # Executes code generation at link-time instead of compile-time.
   # https://gcc.gnu.org/wiki/LinkTimeOptimization
-  use_lto = false
+  rtc_use_lto = false
 
   if (build_with_chromium) {
     # Exclude pulse audio on Chromium since its prerequisites don't require
     # pulse audio.
-    include_pulse_audio = false
+    rtc_include_pulse_audio = false
 
     # Exclude internal ADM since Chromium uses its own IO handling.
-    include_internal_audio_device = false
+    rtc_include_internal_audio_device = false
 
     # Exclude internal VCM in Chromium build.
-    include_internal_video_capture = false
+    rtc_include_internal_video_capture = false
 
     # Exclude internal video render module in Chromium build.
-    include_internal_video_render = false
+    rtc_include_internal_video_render = false
   } else {
     # Settings for the standalone (not-in-Chromium) build.
 
@@ -87,31 +87,31 @@ declare_args() {
     # http://code.google.com/p/webrtc/issues/detail?id=163
     clang_use_chrome_plugins = false
 
-    include_pulse_audio = true
-    include_internal_audio_device = true
-    include_internal_video_capture = true
-    include_internal_video_render = true
+    rtc_include_pulse_audio = true
+    rtc_include_internal_audio_device = true
+    rtc_include_internal_video_capture = true
+    rtc_include_internal_video_render = true
   }
 
   if (build_with_libjingle) {
-    include_tests = false
-    restrict_webrtc_logging = true
+    rtc_include_tests = false
+    rtc_restrict_logging = true
   } else {
-    include_tests = true
-    restrict_webrtc_logging = false
+    rtc_include_tests = true
+    rtc_restrict_logging = false
   }
 
   if (is_ios) {
-    build_libjpeg = false
-    enable_protobuf = false
+    rtc_build_libjpeg = false
+    rtc_enable_protobuf = false
   }
 
   if (cpu_arch == "arm") {
-    prefer_fixed_point = true
+    rtc_prefer_fixed_point = true
   }
 
   # WebRTC builds ARM v7 Neon instruction set optimized code for both iOS and
   # Android, which is why we currently cannot use the variables in
   # //build/config/arm.gni (since it disables Neon for Android).
-  build_armv7_neon = (cpu_arch == "arm" && arm_version == 7)
+  rtc_build_armv7_neon = (cpu_arch == "arm" && arm_version == 7)
 }

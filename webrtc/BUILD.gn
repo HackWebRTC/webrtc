@@ -57,13 +57,13 @@ config("common_inherited_config") {
       "WEBRTC_LINUX",
       "WEBRTC_ANDROID",
     ]
-    if (enable_android_opensl) {
+    if (rtc_enable_android_opensl) {
       defines += [ "WEBRTC_ANDROID_OPENSLES" ]
     }
   }
 }
 
-if (have_dbus_glib) {
+if (rtc_have_dbus_glib) {
   pkg_config("dbus-glib") {
     packages = [ "dbus-glib-1" ]
   }
@@ -72,11 +72,11 @@ if (have_dbus_glib) {
 config("common_config") {
   cflags = []
   cflags_cc = []
-  if (restrict_webrtc_logging) {
+  if (rtc_restrict_logging) {
     defines = [ "WEBRTC_RESTRICT_LOGGING" ]
   }
 
-  if (have_dbus_glib) {
+  if (rtc_have_dbus_glib) {
     defines += [ "HAVE_DBUS_GLIB" ]
     # TODO(kjellander): Investigate this, it seems like include <dbus/dbus.h>
     # is still not found even if the execution of
@@ -85,7 +85,7 @@ config("common_config") {
     all_dependent_configs = [ "dbus-glib" ]
   }
 
-  if (enable_video) {
+  if (rtc_enable_video) {
     defines += [ "WEBRTC_MODULE_UTILITY_VIDEO" ]
   }
 

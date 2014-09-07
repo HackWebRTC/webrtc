@@ -42,7 +42,7 @@ source_set("common_video") {
 
   deps = [ "../system_wrappers" ]
 
-  if (build_libyuv) {
+  if (rtc_build_libyuv) {
     deps += [ "//third_party/libyuv" ]
   } else {
     # Need to add a directory normally exported by libyuv.

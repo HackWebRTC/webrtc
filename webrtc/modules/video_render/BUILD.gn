@@ -35,7 +35,7 @@ source_set("video_render") {
   libs = []
   deps = []
 
-  if (include_internal_video_render) {
+  if (rtc_include_internal_video_render) {
     defines += [ "WEBRTC_INCLUDE_INTERNAL_VIDEO_RENDER" ]
 
     if (is_linux) {

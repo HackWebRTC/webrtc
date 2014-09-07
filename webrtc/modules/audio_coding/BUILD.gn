@@ -102,7 +102,7 @@ source_set("audio_coding") {
     "../../system_wrappers",
   ]
 
-  if (include_opus) {
+  if (rtc_include_opus) {
     defines += [ "WEBRTC_CODEC_OPUS" ]
     deps += [ ":webrtc_opus" ]
   }
@@ -453,7 +453,7 @@ source_set("isacfix") {
     "../../system_wrappers",
   ]
 
-  if (build_armv7_neon) {
+  if (rtc_build_armv7_neon) {
     deps += [ ":isac_neon" ]
 
     # Enable compilation for the ARM v7 Neon instruction set. This is needed
@@ -497,7 +497,7 @@ source_set("isacfix") {
     }
   }
 
-  if (build_armv7_neon) {
+  if (rtc_build_armv7_neon) {
     sources += [
       "codecs/isac/fix/source/lattice_c.c",
       "codecs/isac/fix/source/pitch_estimator_c.c",
@@ -505,7 +505,7 @@ source_set("isacfix") {
   }
 }
 
-if (build_armv7_neon) {
+if (rtc_build_armv7_neon) {
   source_set("isac_neon") {
     sources = [
       "codecs/isac/fix/source/entropy_coding_neon.c",
@@ -521,7 +521,7 @@ if (build_armv7_neon) {
     ]
 
     # Disable LTO in audio_processing_neon target due to compiler bug.
-    if (use_lto) {
+    if (rtc_use_lto) {
       cflags -= [
         "-flto",
         "-ffat-lto-objects",

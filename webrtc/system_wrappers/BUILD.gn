@@ -119,7 +119,7 @@ static_library("system_wrappers") {
     ":system_wrappers_inherited_config",
   ]
 
-  if (enable_data_logging) {
+  if (rtc_enable_data_logging) {
     sources += [ "source/data_log.cc" ]
   } else {
     sources += [ "source/data_log_no_op.cc" ]

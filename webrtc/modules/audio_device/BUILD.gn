@@ -55,7 +55,7 @@ source_set("audio_device") {
   if (is_android) {
     include_dirs += [ "android" ]
   }
-  if (include_internal_audio_device) {
+  if (rtc_include_internal_audio_device) {
     sources += [
       "linux/alsasymboltable_linux.cc",
       "linux/alsasymboltable_linux.h",
@@ -118,7 +118,7 @@ source_set("audio_device") {
         "X11",
       ]
 
-      if (include_pulse_audio) {
+      if (rtc_include_pulse_audio) {
         sources += [
           "linux/audio_device_pulse_linux.cc",
           "linux/audio_device_pulse_linux.h",

@@ -35,7 +35,7 @@ source_set("video_capture") {
   libs = []
   deps = []
 
-  if (include_internal_video_capture) {
+  if (rtc_include_internal_video_capture) {
     if (is_linux) {
       sources += [
         "linux/device_info_linux.cc",

@@ -102,11 +102,11 @@ if (is_linux && !build_with_chromium) {
   }
 }
 
-if (build_ssl == 0) {
+if (rtc_build_ssl == 0) {
   config("external_ssl_library") {
-    assert(webrtc_ssl_root != "",
-           "You must specify webrtc_ssl_root when build_ssl==0.")
-    include_dirs = [ webrtc_ssl_root ]
+    assert(rtc_ssl_root != "",
+           "You must specify rtc_ssl_root when rtc_build_ssl==0.")
+    include_dirs = [ rtc_ssl_root ]
   }
 }
 
@@ -425,10 +425,10 @@ static_library("webrtc_base") {
         "win32socketserver.h",
       ]
     }
-    if (build_json) {
+    if (rtc_build_json) {
       deps += [ "//third_party/jsoncpp" ]
     } else {
-      include_dirs += [ webrtc_jsoncpp_root ]
+      include_dirs += [ rtc_jsoncpp_root ]
 
       # When defined changes the include path for json.h to where it is
       # expected to be when building json outside of the standalone build.
@@ -451,7 +451,7 @@ static_library("webrtc_base") {
 
   if (use_openssl) {
     direct_dependent_configs += [ ":openssl_config" ]
-    if (build_ssl) {
+    if (rtc_build_ssl) {
       deps += [ "//third_party/boringssl" ]
     } else {
       configs += [ "external_ssl_library" ]
@@ -479,7 +479,7 @@ static_library("webrtc_base") {
   if (is_ios) {
     all_dependent_configs += [ ":ios_config" ]
 
-    if (build_ssl) {
+    if (rtc_build_ssl) {
       deps += [ "//net/third_party/nss/ssl:libssl" ]
     } else {
       configs += [ "external_ssl_library" ]
@@ -507,7 +507,7 @@ static_library("webrtc_base") {
       "dl",
       "rt",
     ]
-    if (build_ssl) {
+    if (rtc_build_ssl) {
       configs += [ "//third_party/nss:system_nss_no_ssl_config" ]
     }
   }
@@ -600,7 +600,7 @@ static_library("webrtc_base") {
   }
 
   if (is_mac || is_ios || is_win) {
-    if (build_ssl) {
+    if (rtc_build_ssl) {
       deps += [
         "//net/third_party/nss/ssl:libssl",
         "//third_party/nss:nspr",
@@ -615,7 +615,7 @@ static_library("webrtc_base") {
     if (build_with_chromium) {
       deps += [ "//crypto:platform" ]
     } else {
-      if (build_ssl) {
+      if (rtc_build_ssl) {
         deps += [ ":linux_system_ssl" ]
       } else {
         configs += [ "external_ssl_library" ]

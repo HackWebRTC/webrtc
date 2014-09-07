@@ -170,7 +170,7 @@ if (cpu_arch == "x86" || cpu_arch == "x64") {
   }
 }
 
-if (build_armv7_neon) {
+if (rtc_build_armv7_neon) {
   source_set("common_audio_neon") {
     sources = [
       "fir_filter_neon.cc",
@@ -199,7 +199,7 @@ if (build_armv7_neon) {
     ]
 
     # Disable LTO in audio_processing_neon target due to compiler bug.
-    if (use_lto) {
+    if (rtc_use_lto) {
       cflags -= [
         "-flto",
         "-ffat-lto-objects",

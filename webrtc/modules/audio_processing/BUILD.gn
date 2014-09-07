@@ -89,12 +89,12 @@ source_set("audio_processing") {
     defines += [ "WEBRTC_UNTRUSTED_DELAY" ]
   }
 
-  if (enable_protobuf) {
+  if (rtc_enable_protobuf) {
     defines += [ "WEBRTC_AUDIOPROC_DEBUG_DUMP" ]
     deps += [ ":audioproc_debug_proto" ]
   }
 
-  if (prefer_fixed_point) {
+  if (rtc_prefer_fixed_point) {
     defines += [ "WEBRTC_NS_FIXED" ]
     sources += [
       "ns/include/noise_suppression_x.h",
@@ -124,7 +124,7 @@ source_set("audio_processing") {
     deps += [ ":audio_processing_sse2" ]
   }
 
-  if (build_armv7_neon) {
+  if (rtc_build_armv7_neon) {
     deps += [ ":audio_processing_neon" ]
   }
 
@@ -159,7 +159,7 @@ source_set("audio_processing") {
   ]
 }
 
-if (enable_protobuf) {
+if (rtc_enable_protobuf) {
   proto_library("audioproc_debug_proto") {
     sources = [ "debug.proto" ]
 
@@ -180,7 +180,7 @@ if (cpu_arch == "x86" || cpu_arch == "x64") {
   }
 }
 
-if (build_armv7_neon) {
+if (rtc_build_armv7_neon) {
   source_set("audio_processing_neon") {
     sources = [
       "aec/aec_core_neon.c",
@@ -217,7 +217,7 @@ if (build_armv7_neon) {
     ]
 
     # Disable LTO in audio_processing_neon target due to compiler bug.
-    if (use_lto) {
+    if (rtc_use_lto) {
       cflags -= [
         "-flto",
         "-ffat-lto-objects",

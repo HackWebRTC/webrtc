@@ -137,7 +137,7 @@ source_set("webrtc_vp8") {
     "../../common_video",
     "../../system_wrappers",
   ]
-#  if (build_libvpx) {
+#  if (rtc_build_libvpx) {
 #    deps += [
 #      "//third_party/libvpx",
 #    ]
