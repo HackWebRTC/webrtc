@@ -28,10 +28,24 @@ BotManager = function () {
   this.pendingConnections_ = [];
 }
 
+BotManager.BotTypes = {
+  CHROME : 'chrome',
+};
+
 BotManager.prototype = {
-  spawnNewBot: function (name, callback) {
+  createBot_: function (name, botType, callback) {
+    switch(botType) {
+      case BotManager.BotTypes.CHROME:
+        return new BrowserBot(name, callback);
+      default:
+        console.log('Error: Type ' + botType + ' not supported by rtc-Bot!');
+        process.exit(1);
+    }
+  },
+
+  spawnNewBot: function (name, botType, callback) {
     this.startWebSocketServer_();
-    var bot = new BrowserBot(name, callback);
+    var bot = this.createBot_(name, botType, callback);
     this.bots_.push(bot);
     this.pendingConnections_.push(bot.onBotConnected.bind(bot));
   },
@@ -115,4 +129,49 @@ BrowserBot.prototype = {
   __proto__: Bot.prototype
 }
 
+AndroidDeviceManager = function () {
+  this.connectedDevices_ = [];
+}
+
+AndroidDeviceManager.prototype = {
+  getNewDevice: function (callback) {
+    this.listDevices_(function (devices) {
+      for (var i = 0; i < devices.length; i++) {
+        if (!this.connectedDevices_[devices[i]]) {
+          this.connectedDevices_[devices[i]] = devices[i];
+          callback(this.connectedDevices_[devices[i]]);
+          return;
+        }
+      }
+      if (devices.length == 0) {
+        console.log('Error: No connected devices!');
+      } else {
+        console.log('Error: There is no enough connected devices.');
+      }
+      process.exit(1);
+    }.bind(this));
+  },
+
+  listDevices_: function (callback) {
+    child.exec('adb devices' , function (error, stdout, stderr) {
+      var devices = [];
+      if (error || stderr) {
+        console.log('' + (error || stderr));
+      }
+      if (stdout) {
+        // The first line is "List of devices attached"
+        // and the following lines:
+        // <serial number>  <device/emulator>
+        var tempList = ('' + stdout).split("\n").slice(1);
+        for (var i = 0; i < tempList.length; i++) {
+          if (tempList[i] == "") {
+            continue;
+          }
+          devices.push(tempList[i].split("\t")[0]);
+        }
+      }
+      callback(devices);
+    });
+  },
+}
 module.exports = BotManager;

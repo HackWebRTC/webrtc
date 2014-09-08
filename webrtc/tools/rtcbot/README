@@ -12,12 +12,16 @@ The host runs in node.js, but the test code is run in an isolated context with
 no access to node.js specifics other than the exposed api via a test variable.
 
 Part of the exposed api (test.spawnBot) allows a test to spawn a bot and
-access its exposed API. Details are in BotManager.js.
+access its exposed API. Details are in botmanager.js.
 
 == How to run the test ==
  $ cd trunk/webrtc/tool/rtcbot
  $ npm install express browserify ws websocket-stream dnode
- $ node test.js
+ $ node test.js <bot_type> <test_file_path>
+
+ <bot_type> — the type of the running bot. For example:
+  - chrome: chrome on host machine.
+  - android: android device. Details in "Android" Section.
 
 == Example on how to install nodejs ==
  $ cd /work/tools/
@@ -25,3 +29,11 @@ access its exposed API. Details are in BotManager.js.
  $ export NVM_DIR=/work/tools/nvm; source $NVM_DIR/nvm.sh
  $ nvm install 0.10
  $ nvm use 0.10
+
+== Android ==
+Before running test with Android one MUST forward the device port 8080 to the
+host machine. That is easy to achieve with chrome port forwarding tools.
+ - Visit chrome://inspect/devices on the host machine.
+ - Configure and enable port forwarding 8080 -> localhost:8080
+ - Leave chrome running in the background on your Android device till
+   the test is done.
