@@ -382,6 +382,88 @@ class AudioCodingModuleImpl : public AudioCodingModule {
 
 }  // namespace acm2
 
+class AudioCodingImpl : public AudioCoding {
+ public:
+  AudioCodingImpl(const Config& config) {
+    AudioCodingModule::Config config_old;
+    config_old.id = 0;
+    config_old.neteq_config = config.neteq_config;
+    config_old.clock = config.clock;
+    acm_old_.reset(new acm2::AudioCodingModuleImpl(config_old));
+    acm_old_->RegisterTransportCallback(config.transport);
+    acm_old_->RegisterVADCallback(config.vad_callback);
+    acm_old_->SetDtmfPlayoutStatus(config.play_dtmf);
+    if (config.initial_playout_delay_ms > 0) {
+      acm_old_->SetInitialPlayoutDelay(config.initial_playout_delay_ms);
+    }
+    playout_frequency_hz_ = config.playout_frequency_hz;
+  }
+
+  virtual ~AudioCodingImpl() OVERRIDE {};
+
+  virtual bool RegisterSendCodec(AudioEncoder* send_codec) OVERRIDE;
+
+  virtual bool RegisterSendCodec(int encoder_type,
+                                 uint8_t payload_type,
+                                 int frame_size_samples = 0) OVERRIDE;
+
+  virtual const AudioEncoder* GetSenderInfo() const OVERRIDE;
+
+  virtual int Add10MsAudio(const AudioFrame& audio_frame) OVERRIDE;
+
+  virtual const ReceiverInfo* GetReceiverInfo() const OVERRIDE;
+
+  virtual bool RegisterReceiveCodec(AudioDecoder* receive_codec) OVERRIDE;
+
+  virtual bool RegisterReceiveCodec(int decoder_type,
+                                    uint8_t payload_type) OVERRIDE;
+
+  virtual bool InsertPacket(const uint8_t* incoming_payload,
+                            int32_t payload_len_bytes,
+                            const WebRtcRTPHeader& rtp_info) OVERRIDE;
+
+  virtual bool InsertPayload(const uint8_t* incoming_payload,
+                             int32_t payload_len_byte,
+                             uint8_t payload_type,
+                             uint32_t timestamp) OVERRIDE;
+
+  virtual bool SetMinimumPlayoutDelay(int time_ms) OVERRIDE;
+
+  virtual bool SetMaximumPlayoutDelay(int time_ms) OVERRIDE;
+
+  virtual int LeastRequiredDelayMs() const OVERRIDE;
+
+  virtual bool PlayoutTimestamp(uint32_t* timestamp) OVERRIDE;
+
+  virtual bool Get10MsAudio(AudioFrame* audio_frame) OVERRIDE;
+
+  virtual bool NetworkStatistics(
+      ACMNetworkStatistics* network_statistics) OVERRIDE;
+
+  virtual bool EnableNack(size_t max_nack_list_size) OVERRIDE;
+
+  virtual void DisableNack() OVERRIDE;
+
+  virtual std::vector<uint16_t> GetNackList(
+      int round_trip_time_ms) const OVERRIDE;
+
+  virtual void GetDecodingCallStatistics(
+      AudioDecodingCallStats* call_stats) const OVERRIDE;
+
+ private:
+  // Temporary method to be used during redesign phase.
+  // Maps |codec_type| (a value from the anonymous enum in acm2::ACMCodecDB) to
+  // |codec_name|, |sample_rate_hz|, and |channels|.
+  // TODO(henrik.lundin) Remove this when no longer needed.
+  static bool MapCodecTypeToParameters(int codec_type,
+                                       std::string* codec_name,
+                                       int* sample_rate_hz,
+                                       int* channels);
+
+  scoped_ptr<acm2::AudioCodingModuleImpl> acm_old_;
+  int playout_frequency_hz_;
+};
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_AUDIO_CODING_MODULE_IMPL_H_

@@ -94,4 +94,8 @@ bool AudioCodingModule::IsCodecValid(const CodecInst& codec) {
   }
 }
 
+AudioCoding* AudioCoding::Create(const Config& config) {
+  return new AudioCodingImpl(config);
+}
+
 }  // namespace webrtc
