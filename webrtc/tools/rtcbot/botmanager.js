@@ -26,10 +26,12 @@ BotManager = function () {
   this.webSocketServer_ = null;
   this.bots_ = [];
   this.pendingConnections_ = [];
+  this.androidDeviceManager_ = new AndroidDeviceManager();
 }
 
 BotManager.BotTypes = {
   CHROME : 'chrome',
+  ANDROID_CHROME : 'android-chrome',
 };
 
 BotManager.prototype = {
@@ -37,6 +39,9 @@ BotManager.prototype = {
     switch(botType) {
       case BotManager.BotTypes.CHROME:
         return new BrowserBot(name, callback);
+      case BotManager.BotTypes.ANDROID_CHROME:
+        return new AndroidChromeBot(name, this.androidDeviceManager_,
+            callback);
       default:
         console.log('Error: Type ' + botType + ' not supported by rtc-Bot!');
         process.exit(1);
@@ -129,6 +134,35 @@ BrowserBot.prototype = {
   __proto__: Bot.prototype
 }
 
+// AndroidChromeBot spawns a process to open
+// "http://localhost:8080/bot/browser/" on chrome for Android.
+AndroidChromeBot = function (name, androidDeviceManager, callback) {
+  Bot.call(this, name, callback);
+  androidDeviceManager.getNewDevice(function (serialNumber) {
+    this.serialNumber_ = serialNumber;
+    this.spawnBotProcess_();
+  }.bind(this));
+}
+
+AndroidChromeBot.prototype = {
+  spawnBotProcess_: function () {
+    this.log('Spawning Android device with serial ' + this.serialNumber_);
+    var runChrome = 'adb -s ' + this.serialNumber_ + ' shell am start ' +
+    '-n com.android.chrome/com.google.android.apps.chrome.Main ' +
+    '-d http://localhost:8080/bot/';
+    child.exec(runChrome, function (error, stdout, stderr) {
+      if (error) {
+        this.log(error);
+        process.exit(1);
+      }
+      this.log('Opening Chrome for Android...');
+      this.log(stdout);
+    }.bind(this));
+  },
+
+  __proto__: Bot.prototype
+}
+
 AndroidDeviceManager = function () {
   this.connectedDevices_ = [];
 }
@@ -156,13 +190,13 @@ AndroidDeviceManager.prototype = {
     child.exec('adb devices' , function (error, stdout, stderr) {
       var devices = [];
       if (error || stderr) {
-        console.log('' + (error || stderr));
+        console.log(error || stderr);
       }
       if (stdout) {
         // The first line is "List of devices attached"
         // and the following lines:
         // <serial number>  <device/emulator>
-        var tempList = ('' + stdout).split("\n").slice(1);
+        var tempList = stdout.split("\n").slice(1);
         for (var i = 0; i < tempList.length; i++) {
           if (tempList[i] == "") {
             continue;

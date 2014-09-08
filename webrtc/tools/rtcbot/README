@@ -22,6 +22,7 @@ access its exposed API. Details are in botmanager.js.
  <bot_type> — the type of the running bot. For example:
   - chrome: chrome on host machine.
   - android: android device. Details in "Android" Section.
+  - android-chrome: chrome on android device. Details in "Android" Section.
 
 == Example on how to install nodejs ==
  $ cd /work/tools/
@@ -35,5 +36,6 @@ Before running test with Android one MUST forward the device port 8080 to the
 host machine. That is easy to achieve with chrome port forwarding tools.
  - Visit chrome://inspect/devices on the host machine.
  - Configure and enable port forwarding 8080 -> localhost:8080
- - Leave chrome running in the background on your Android device till
-   the test is done.
+ - Open chrome on you Android device before running test, and leave it
+   running until the end of test.
+ - Run your test.
