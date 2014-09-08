@@ -9,7 +9,7 @@
 import("../../build/webrtc.gni")
 
 config("internal_config") {
-  visibility = ":*"  # Only targets in this file can depend on this.
+  visibility = [ ":*" ]  # Only targets in this file can depend on this.
   include_dirs = [
     "interface",
     "../interface",

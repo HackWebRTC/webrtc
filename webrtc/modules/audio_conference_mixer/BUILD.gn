@@ -7,7 +7,7 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 config("internal_config") {
-  visibility = ":*"  # Only targets in this file can depend on this.
+  visibility = [ ":*" ]  # Only targets in this file can depend on this.
   include_dirs = [
     "interface",
     "../interface",
