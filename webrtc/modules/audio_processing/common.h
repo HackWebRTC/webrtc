@@ -43,7 +43,7 @@ class ChannelBuffer {
         channels_(new T*[num_channels]),
         samples_per_channel_(samples_per_channel),
         num_channels_(num_channels) {
-    SetChannelPtrs();
+    Initialize();
   }
 
   ChannelBuffer(const T* data, int samples_per_channel, int num_channels)
@@ -51,7 +51,7 @@ class ChannelBuffer {
         channels_(new T*[num_channels]),
         samples_per_channel_(samples_per_channel),
         num_channels_(num_channels) {
-    SetChannelPtrs();
+    Initialize();
     memcpy(data_.get(), data, length() * sizeof(T));
   }
 
@@ -61,7 +61,7 @@ class ChannelBuffer {
         channels_(new T*[num_channels]),
         samples_per_channel_(samples_per_channel),
         num_channels_(num_channels) {
-    SetChannelPtrs();
+    Initialize();
     for (int i = 0; i < num_channels_; ++i)
       CopyFrom(channels[i], i);
   }
@@ -94,7 +94,8 @@ class ChannelBuffer {
   int length() const { return samples_per_channel_ * num_channels_; }
 
  private:
-  void SetChannelPtrs() {
+  void Initialize() {
+    memset(data_.get(), 0, sizeof(T) * length());
     for (int i = 0; i < num_channels_; ++i)
       channels_[i] = &data_[i * samples_per_channel_];
   }
