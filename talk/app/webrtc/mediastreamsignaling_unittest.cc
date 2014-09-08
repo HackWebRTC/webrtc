@@ -782,10 +782,8 @@ TEST_F(MediaStreamSignalingTest, MediaConstraintsInAnswer) {
   RTCOfferAnswerOptions default_rtc_options;
   EXPECT_TRUE(signaling_->GetOptionsForOffer(default_rtc_options,
                                              &updated_offer_options));
-  // By default, |has_audio| or |has_video| are false if there is no media
-  // track.
-  EXPECT_FALSE(updated_offer_options.has_audio);
-  EXPECT_FALSE(updated_offer_options.has_video);
+  EXPECT_TRUE(updated_offer_options.has_audio);
+  EXPECT_TRUE(updated_offer_options.has_video);
 }
 
 // This test verifies that the remote MediaStreams corresponding to a received
