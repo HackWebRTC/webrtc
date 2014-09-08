@@ -2210,20 +2210,20 @@ bool ParseMediaDescription(const std::string& message,
                     codec_preference, pos, &content_name,
                     &transport, candidates, error));
     } else if (HasAttribute(line, kMediaTypeData)) {
-      DataContentDescription* desc =
+      DataContentDescription* data_desc =
           ParseContentDescription<DataContentDescription>(
                     message, cricket::MEDIA_TYPE_DATA, mline_index, protocol,
                     codec_preference, pos, &content_name,
                     &transport, candidates, error);
+      content.reset(data_desc);
 
       int p;
-      if (desc && protocol == cricket::kMediaProtocolDtlsSctp &&
+      if (data_desc && protocol == cricket::kMediaProtocolDtlsSctp &&
           rtc::FromString(fields[3], &p)) {
-        if (!AddSctpDataCodec(desc, p))
+        if (!AddSctpDataCodec(data_desc, p))
           return false;
       }
 
-      content.reset(desc);
       // We should always use the default bandwidth for RTP-based data
       // channels.  Don't allow SDP to set the bandwidth, because that
       // would give JS the opportunity to "break the Internet".
