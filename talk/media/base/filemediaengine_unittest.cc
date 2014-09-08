@@ -223,8 +223,6 @@ TEST_F(FileMediaEngineTest, TestDefaultImplementation) {
   EXPECT_TRUE(NULL == engine_->CreateSoundclip());
   cricket::AudioOptions audio_options;
   EXPECT_TRUE(engine_->SetAudioOptions(audio_options));
-  cricket::VideoOptions video_options;
-  EXPECT_TRUE(engine_->SetVideoOptions(video_options));
   VideoEncoderConfig video_encoder_config;
   EXPECT_TRUE(engine_->SetDefaultVideoEncoderConfig(video_encoder_config));
   EXPECT_TRUE(engine_->SetSoundDevices(NULL, NULL));

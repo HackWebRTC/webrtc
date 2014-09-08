@@ -1078,10 +1078,6 @@ int WebRtcVideoEngine::GetCapabilities() {
   return VIDEO_RECV | VIDEO_SEND;
 }
 
-bool WebRtcVideoEngine::SetOptions(const VideoOptions &options) {
-  return true;
-}
-
 bool WebRtcVideoEngine::SetDefaultEncoderConfig(
     const VideoEncoderConfig& config) {
   return SetDefaultCodec(config.max_codec);

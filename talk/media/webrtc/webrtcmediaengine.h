@@ -122,9 +122,6 @@ class DelegatingWebRtcMediaEngine : public cricket::MediaEngineInterface {
   virtual bool SetAudioOptions(const AudioOptions& options) OVERRIDE {
     return delegate_->SetAudioOptions(options);
   }
-  virtual bool SetVideoOptions(const VideoOptions& options) OVERRIDE {
-    return delegate_->SetVideoOptions(options);
-  }
   virtual bool SetAudioDelayOffset(int offset) OVERRIDE {
     return delegate_->SetAudioDelayOffset(offset);
   }

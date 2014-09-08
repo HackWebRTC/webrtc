@@ -91,8 +91,6 @@ class MediaEngineInterface {
   virtual AudioOptions GetAudioOptions() const = 0;
   // Sets global audio options. "options" are from AudioOptions, above.
   virtual bool SetAudioOptions(const AudioOptions& options) = 0;
-  // Sets global video options. "options" are from VideoOptions, above.
-  virtual bool SetVideoOptions(const VideoOptions& options) = 0;
   // Sets the value used by the echo canceller to offset delay values obtained
   // from the OS.
   virtual bool SetAudioDelayOffset(int offset) = 0;
@@ -212,9 +210,6 @@ class CompositeMediaEngine : public MediaEngineInterface {
   }
   virtual bool SetAudioOptions(const AudioOptions& options) {
     return voice_.SetOptions(options);
-  }
-  virtual bool SetVideoOptions(const VideoOptions& options) {
-    return video_.SetOptions(options);
   }
   virtual bool SetAudioDelayOffset(int offset) {
     return voice_.SetDelayOffset(offset);
