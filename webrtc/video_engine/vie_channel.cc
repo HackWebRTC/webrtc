@@ -1012,14 +1012,32 @@ int32_t ViEChannel::GetSendRtcpStatistics(uint16_t* fraction_lost,
   // Aggregate the report blocks associated with streams sent on this channel.
   std::vector<RTCPReportBlock> report_blocks;
   rtp_rtcp_->RemoteRTCPStat(&report_blocks);
-  for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
-       it != simulcast_rtp_rtcp_.end();
-       ++it) {
-    (*it)->RemoteRTCPStat(&report_blocks);
+  {
+    CriticalSectionScoped lock(rtp_rtcp_cs_.get());
+    for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
+        it != simulcast_rtp_rtcp_.end();
+        ++it) {
+      (*it)->RemoteRTCPStat(&report_blocks);
+    }
   }
 
   if (report_blocks.empty())
     return -1;
+
+  uint32_t remote_ssrc = vie_receiver_.GetRemoteSsrc();
+  std::vector<RTCPReportBlock>::const_iterator it = report_blocks.begin();
+  for (; it != report_blocks.end(); ++it) {
+    if (it->remoteSSRC == remote_ssrc)
+      break;
+  }
+  if (it == report_blocks.end()) {
+    // We have not received packets with an SSRC matching the report blocks. To
+    // have a chance of calculating an RTT we will try with the SSRC of the
+    // first report block received.
+    // This is very important for send-only channels where we don't know the
+    // SSRC of the other end.
+    remote_ssrc = report_blocks[0].remoteSSRC;
+  }
 
   RTCPReportBlock report;
   if (report_blocks.size() > 1)
@@ -1034,8 +1052,7 @@ int32_t ViEChannel::GetSendRtcpStatistics(uint16_t* fraction_lost,
 
   uint16_t dummy;
   uint16_t rtt = 0;
-  if (rtp_rtcp_->RTT(
-          vie_receiver_.GetRemoteSsrc(), &rtt, &dummy, &dummy, &dummy) != 0) {
+  if (rtp_rtcp_->RTT(remote_ssrc, &rtt, &dummy, &dummy, &dummy) != 0) {
     return -1;
   }
   *rtt_ms = rtt;
