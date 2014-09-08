@@ -330,8 +330,7 @@ static void CalcLinearEnergiesC(AecmCore_t* aecm,
         echo_est[i] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i],
                                            far_spectrum[i]);
         (*far_energy) += (uint32_t)(far_spectrum[i]);
-        (*echo_energy_adapt) += WEBRTC_SPL_UMUL_16_16(aecm->channelAdapt16[i],
-                                          far_spectrum[i]);
+        *echo_energy_adapt += aecm->channelAdapt16[i] * far_spectrum[i];
         (*echo_energy_stored) += (uint32_t)echo_est[i];
     }
 }

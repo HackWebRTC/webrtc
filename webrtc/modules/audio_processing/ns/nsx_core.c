@@ -1771,7 +1771,8 @@ int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* speechFrame, short* speechFram
     }
 
     // calculate prevNearSnr[i] and save for later instead of recalculating it later
-    nearMagnEst = WEBRTC_SPL_UMUL_16_16(inst->prevMagnU16[i], inst->noiseSupFilter[i]); // Q(prevQMagn+14)
+    // |nearMagnEst| in Q(prevQMagn + 14)
+    nearMagnEst = inst->prevMagnU16[i] * inst->noiseSupFilter[i];
     tmpU32no1 = nearMagnEst << 3;  // Q(prevQMagn+17)
     tmpU32no2 = WEBRTC_SPL_RSHIFT_U32(inst->prevNoiseU32[i], nShifts); // Q(prevQMagn+6)
 
@@ -2016,11 +2017,9 @@ int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* speechFrame, short* speechFram
     // Weight in the parametric Wiener filter during startup
     if (inst->blockIndex < END_STARTUP_SHORT) {
       // Weight the two suppression filters
-      tmpU32no1 = WEBRTC_SPL_UMUL_16_16(inst->noiseSupFilter[i],
-                                        (uint16_t)inst->blockIndex);
-      tmpU32no2 = WEBRTC_SPL_UMUL_16_16(noiseSupFilterTmp[i],
-                                        (uint16_t)(END_STARTUP_SHORT
-                                                         - inst->blockIndex));
+      tmpU32no1 = inst->noiseSupFilter[i] * inst->blockIndex;
+      tmpU32no2 = noiseSupFilterTmp[i] *
+          (END_STARTUP_SHORT - inst->blockIndex);
       tmpU32no1 += tmpU32no2;
       inst->noiseSupFilter[i] = (uint16_t)WebRtcSpl_DivU32U16(tmpU32no1,
                                                                     END_STARTUP_SHORT);

@@ -267,8 +267,7 @@ void WebRtcAecm_CalcLinearEnergiesNeon(AecmCore_t* aecm,
     __asm __volatile("vadd.u32 q8, q10" : : : "q10", "q8");
     __asm __volatile("vadd.u32 q8, q11" : : : "q11", "q8");
 
-    // echo_energy_adapt += WEBRTC_SPL_UMUL_16_16(
-    //     aecm->channelAdapt16[i], far_spectrum[i]);
+    // echo_energy_adapt += aecm->channelAdapt16[i] * far_spectrum[i];
     __asm __volatile("vld1.16 {d24, d25}, [%0, :128]" : : "r"(&aecm->channelAdapt16[i]) : "q12");
     __asm __volatile("vmull.u16 q10, d26, d24" : : : "q12", "q13", "q10");
     __asm __volatile("vmull.u16 q11, d27, d25" : : : "q12", "q13", "q11");
@@ -292,8 +291,8 @@ void WebRtcAecm_CalcLinearEnergiesNeon(AecmCore_t* aecm,
   echo_est[i] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i], far_spectrum[i]);
   *echo_energy_stored = echo_energy_stored_r + (uint32_t)echo_est[i];
   *far_energy = far_energy_r + (uint32_t)(far_spectrum[i]);
-  *echo_energy_adapt = echo_energy_adapt_r + WEBRTC_SPL_UMUL_16_16(
-      aecm->channelAdapt16[i], far_spectrum[i]);
+  *echo_energy_adapt = echo_energy_adapt_r +
+      aecm->channelAdapt16[i] * far_spectrum[i];
 }
 
 void WebRtcAecm_StoreAdaptiveChannelNeon(AecmCore_t* aecm,

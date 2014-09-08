@@ -512,8 +512,7 @@ void WebRtcAecm_CalcLinearEnergies_mips(AecmCore_t* aecm,
   echo_est[PART_LEN] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[PART_LEN],
                                              far_spectrum[PART_LEN]);
   par1 += (uint32_t)(far_spectrum[PART_LEN]);
-  par2 += WEBRTC_SPL_UMUL_16_16(aecm->channelAdapt16[PART_LEN],
-                                far_spectrum[PART_LEN]);
+  par2 += aecm->channelAdapt16[PART_LEN] * far_spectrum[PART_LEN];
   par3 += (uint32_t)echo_est[PART_LEN];
 
   (*far_energy) = par1;
