@@ -939,3 +939,154 @@ name=https://code.google.com/p/webrtc/issues/detail?id=3490 (4)
 *!testing::internal::EqHelper<>::Compare<>
 *!rtc::AsyncWriteTest_TestWrite_Test::TestBody
 *!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+UNINITIALIZED READ
+name=https://code.google.com/p/webrtc/issues/detail?id=3789 (1)
+drmemorylib.dll!replace_memcmp
+*!cricket::VideoFrame::Validate
+*!cricket::WebRtcVideoFrame::Reset
+*!cricket::WebRtcVideoFrame::Init
+*!VideoFrameTest<>::ConstructI4201Pixel
+*!WebRtcVideoFrameTest_ConstructI4201Pixel_Test::TestBody
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+UNINITIALIZED READ
+name=https://code.google.com/p/webrtc/issues/detail?id=3789 (2)
+*!cricket::VideoFrame::Validate
+*!cricket::WebRtcVideoFrame::Reset
+*!cricket::WebRtcVideoFrame::Init
+*!VideoFrameTest<>::ConstructI4201Pixel
+*!WebRtcVideoFrameTest_ConstructI4201Pixel_Test::TestBody
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+UNINITIALIZED READ
+name=https://code.google.com/p/webrtc/issues/detail?id=3789 (3)
+drmemorylib.dll!replace_memcmp
+*!cricket::VideoFrame::Validate
+*!VideoFrameTest<>::ValidateFrame
+*!VideoFrameTest<>::ValidateI420LargeSize
+*!WebRtcVideoFrameTest_ValidateI420LargeSize_Test::TestBody
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+UNINITIALIZED READ
+name=https://code.google.com/p/webrtc/issues/detail?id=3789 (4)
+drmemorylib.dll!replace_memcmp
+*!cricket::VideoFrame::Validate
+*!cricket::WebRtcVideoFrame::Reset
+*!cricket::WebRtcVideoFrame::Init
+*!VideoFrameTest<>::CopyToBuffer1Pixel
+*!WebRtcVideoFrameTest_CopyToBuffer1Pixel_Test::TestBody
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+UNINITIALIZED READ
+name=https://code.google.com/p/webrtc/issues/detail?id=3789 (5)
+*!cricket::VideoFrame::Validate
+*!cricket::WebRtcVideoFrame::Reset
+*!cricket::WebRtcVideoFrame::Init
+*!VideoFrameTest<>::CopyToBuffer1Pixel
+*!WebRtcVideoFrameTest_CopyToBuffer1Pixel_Test::TestBody
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+UNINITIALIZED READ
+name=https://code.google.com/p/webrtc/issues/detail?id=3789 (6)
+drmemorylib.dll!replace_memcmp
+*!cricket::VideoFrame::Validate
+*!cricket::WebRtcVideoFrame::Reset
+*!cricket::WebRtcVideoFrame::Init
+*!WebRtcVideoFrameTest::TestInit
+*!WebRtcVideoFrameTest_InitEvenSize_Test::TestBody
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+UNINITIALIZED READ
+name=https://code.google.com/p/webrtc/issues/detail?id=3789 (7)
+MSVCR120D.dll!mbctombb_l
+MSVCR120D.dll!vsnprintf_c_l
+MSVCR120D.dll!vsprintf_s_l
+MSVCR120D.dll!sprintf_s
+MSVCP120D.dll!std::num_put<>::do_put
+MSVCP120D.dll!std::num_put<>::put
+MSVCP120D.dll!std::basic_ostream<>::operator<<
+*!cricket::VideoFrame::Validate
+*!cricket::WebRtcVideoFrame::Reset
+*!cricket::WebRtcVideoFrame::Init
+*!WebRtcVideoFrameTest::TestInit
+*!WebRtcVideoFrameTest_InitEvenSize_Test::TestBody
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+UNINITIALIZED READ
+name=https://code.google.com/p/webrtc/issues/detail?id=3789 (8)
+drmemorylib.dll!replace_memcmp
+*!cricket::VideoFrame::Validate
+*!cricket::WebRtcVideoFrame::Reset
+*!cricket::WebRtcVideoFrame::Init
+*!WebRtcVideoFrameTest::TestInit
+*!WebRtcVideoFrameTest_InitOddWidth_Test::TestBody
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+UNINITIALIZED READ
+name=https://code.google.com/p/webrtc/issues/detail?id=3789 (9)
+MSVCR120D.dll!mbctombb_l
+MSVCR120D.dll!vsnprintf_c_l
+MSVCR120D.dll!vsprintf_s_l
+MSVCR120D.dll!sprintf_s
+MSVCP120D.dll!std::num_put<>::do_put
+MSVCP120D.dll!std::num_put<>::put
+MSVCP120D.dll!std::basic_ostream<>::operator<<
+*!cricket::VideoFrame::Validate
+*!cricket::WebRtcVideoFrame::Reset
+*!cricket::WebRtcVideoFrame::Init
+*!WebRtcVideoFrameTest::TestInit
+*!WebRtcVideoFrameTest_InitOddWidth_Test::TestBody
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+UNINITIALIZED READ
+name=https://code.google.com/p/webrtc/issues/detail?id=3789 (10)
+drmemorylib.dll!replace_memcmp
+*!cricket::VideoFrame::Validate
+*!cricket::WebRtcVideoFrame::Reset
+*!cricket::WebRtcVideoFrame::Init
+*!WebRtcVideoFrameTest::TestInit
+*!WebRtcVideoFrameTest_InitOddHeight_Test::TestBody
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+UNINITIALIZED READ
+name=https://code.google.com/p/webrtc/issues/detail?id=3789 (11)
+MSVCR120D.dll!mbctombb_l
+MSVCR120D.dll!vsnprintf_c_l
+MSVCR120D.dll!vsprintf_s_l
+MSVCR120D.dll!sprintf_s
+MSVCP120D.dll!std::num_put<>::do_put
+MSVCP120D.dll!std::num_put<>::put
+MSVCP120D.dll!std::basic_ostream<>::operator<<
+*!cricket::VideoFrame::Validate
+*!cricket::WebRtcVideoFrame::Reset
+*!cricket::WebRtcVideoFrame::Init
+*!WebRtcVideoFrameTest::TestInit
+*!WebRtcVideoFrameTest_InitOddHeight_Test::TestBody
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+UNINITIALIZED READ
+name=https://code.google.com/p/webrtc/issues/detail?id=3789 (12)
+drmemorylib.dll!replace_memcmp
+*!cricket::VideoFrame::Validate
+*!cricket::WebRtcVideoFrame::Reset
+*!cricket::WebRtcVideoFrame::Init
+*!WebRtcVideoFrameTest::TestInit
+*!WebRtcVideoFrameTest_InitOddWidthHeight_Test::TestBody
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
+
+UNINITIALIZED READ
+name=https://code.google.com/p/webrtc/issues/detail?id=3789 (13)
+MSVCR120D.dll!mbctombb_l
+MSVCR120D.dll!vsnprintf_c_l
+MSVCR120D.dll!vsprintf_s_l
+MSVCR120D.dll!sprintf_s
+MSVCP120D.dll!std::num_put<>::do_put
+MSVCP120D.dll!std::num_put<>::put
+MSVCP120D.dll!std::basic_ostream<>::operator<<
+*!cricket::VideoFrame::Validate
+*!cricket::WebRtcVideoFrame::Reset
+*!cricket::WebRtcVideoFrame::Init
+*!WebRtcVideoFrameTest::TestInit
+*!WebRtcVideoFrameTest_InitOddWidthHeight_Test::TestBody
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
