@@ -160,7 +160,7 @@ class WebRtcSession : public cricket::BaseSession,
                             std::string* err_desc);
   bool ProcessIceMessage(const IceCandidateInterface* ice_candidate);
 
-  bool SetIceTransports(PeerConnectionInterface::IceTransportsType type);
+  bool UpdateIce(PeerConnectionInterface::IceTransportsType type);
 
   const SessionDescriptionInterface* local_description() const {
     return local_desc_.get();

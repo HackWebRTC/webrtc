@@ -108,8 +108,6 @@ static const char kClientAddrHost2[] = "22.22.22.22";
 static const char kStunAddrHost[] = "99.99.99.1";
 static const SocketAddress kTurnUdpIntAddr("99.99.99.4", 3478);
 static const SocketAddress kTurnUdpExtAddr("99.99.99.6", 0);
-static const char kTurnUsername[] = "test";
-static const char kTurnPassword[] = "test";
 
 static const char kSessionVersion[] = "1";
 
@@ -1085,18 +1083,6 @@ class WebRtcSessionTest : public testing::Test {
     }
   }
 
-  void ConfigureAllocatorWithTurn() {
-    cricket::RelayServerConfig relay_server(cricket::RELAY_TURN);
-    cricket::RelayCredentials credentials(kTurnUsername, kTurnPassword);
-    relay_server.credentials = credentials;
-    relay_server.ports.push_back(cricket::ProtocolAddress(
-        kTurnUdpIntAddr, cricket::PROTO_UDP, false));
-    allocator_->AddRelay(relay_server);
-    allocator_->set_step_delay(cricket::kMinimumStepDelay);
-    allocator_->set_flags(cricket::PORTALLOCATOR_DISABLE_TCP |
-                          cricket::PORTALLOCATOR_ENABLE_BUNDLE);
-  }
-
   cricket::FakeMediaEngine* media_engine_;
   cricket::FakeDataEngine* data_engine_;
   cricket::FakeDeviceManager* device_manager_;
@@ -1174,53 +1160,6 @@ TEST_F(WebRtcSessionTest, TestStunError) {
   EXPECT_TRUE_WAIT(observer_.oncandidatesready_, kIceCandidatesTimeout);
   EXPECT_EQ(6u, observer_.mline_0_candidates_.size());
   EXPECT_EQ(6u, observer_.mline_1_candidates_.size());
-}
-
-// Test session delivers no candidates gathered when constraint set to "none".
-TEST_F(WebRtcSessionTest, TestIceTransportsNone) {
-  AddInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
-  SetIceTransportType(PeerConnectionInterface::kNone);
-  Init(NULL);
-  mediastream_signaling_.SendAudioVideoStream1();
-  InitiateCall();
-  EXPECT_TRUE_WAIT(observer_.oncandidatesready_, kIceCandidatesTimeout);
-  EXPECT_EQ(0u, observer_.mline_0_candidates_.size());
-  EXPECT_EQ(0u, observer_.mline_1_candidates_.size());
-}
-
-// Test session delivers only relay candidates gathered when constaint set to
-// "relay".
-TEST_F(WebRtcSessionTest, TestIceTransportsRelay) {
-  AddInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
-  ConfigureAllocatorWithTurn();
-  SetIceTransportType(PeerConnectionInterface::kRelay);
-  Init(NULL);
-  mediastream_signaling_.SendAudioVideoStream1();
-  InitiateCall();
-  EXPECT_TRUE_WAIT(observer_.oncandidatesready_, kIceCandidatesTimeout);
-  EXPECT_EQ(2u, observer_.mline_0_candidates_.size());
-  EXPECT_EQ(2u, observer_.mline_1_candidates_.size());
-  for (size_t i = 0; i < observer_.mline_0_candidates_.size(); ++i) {
-    EXPECT_EQ(cricket::RELAY_PORT_TYPE,
-              observer_.mline_0_candidates_[i].type());
-  }
-  for (size_t i = 0; i < observer_.mline_1_candidates_.size(); ++i) {
-    EXPECT_EQ(cricket::RELAY_PORT_TYPE,
-              observer_.mline_1_candidates_[i].type());
-  }
-}
-
-// Test session delivers all candidates gathered when constaint set to "all".
-TEST_F(WebRtcSessionTest, TestIceTransportsAll) {
-  AddInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
-  SetIceTransportType(PeerConnectionInterface::kAll);
-  Init(NULL);
-  mediastream_signaling_.SendAudioVideoStream1();
-  InitiateCall();
-  EXPECT_TRUE_WAIT(observer_.oncandidatesready_, kIceCandidatesTimeout);
-  // Host + STUN. By default allocator is disabled to gather relay candidates.
-  EXPECT_EQ(4u, observer_.mline_0_candidates_.size());
-  EXPECT_EQ(4u, observer_.mline_1_candidates_.size());
 }
 
 TEST_F(WebRtcSessionTest, SetSdpFailedOnInvalidSdp) {

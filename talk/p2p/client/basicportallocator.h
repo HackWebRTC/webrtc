@@ -160,6 +160,7 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
 
     void set_ready() { ASSERT(state_ == STATE_INIT); state_ = STATE_READY; }
     void set_complete() {
+      ASSERT(state_ == STATE_READY);
       state_ = STATE_COMPLETE;
     }
     void set_error() {
@@ -199,8 +200,6 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   void MaybeSignalCandidatesAllocationDone();
   void OnPortAllocationComplete(AllocationSequence* seq);
   PortData* FindPort(Port* port);
-
-  bool CheckCandidateFilter(const Candidate& c);
 
   BasicPortAllocator* allocator_;
   rtc::Thread* network_thread_;

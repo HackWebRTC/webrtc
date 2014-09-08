@@ -47,15 +47,13 @@ using rtc::CreateRandomString;
 
 namespace {
 
-enum {
-  MSG_CONFIG_START,
-  MSG_CONFIG_READY,
-  MSG_ALLOCATE,
-  MSG_ALLOCATION_PHASE,
-  MSG_SHAKE,
-  MSG_SEQUENCEOBJECTS_CREATED,
-  MSG_CONFIG_STOP,
-};
+const uint32 MSG_CONFIG_START = 1;
+const uint32 MSG_CONFIG_READY = 2;
+const uint32 MSG_ALLOCATE = 3;
+const uint32 MSG_ALLOCATION_PHASE = 4;
+const uint32 MSG_SHAKE = 5;
+const uint32 MSG_SEQUENCEOBJECTS_CREATED = 6;
+const uint32 MSG_CONFIG_STOP = 7;
 
 const int PHASE_UDP = 0;
 const int PHASE_RELAY = 1;
@@ -230,10 +228,9 @@ BasicPortAllocator::~BasicPortAllocator() {
 PortAllocatorSession *BasicPortAllocator::CreateSessionInternal(
     const std::string& content_name, int component,
     const std::string& ice_ufrag, const std::string& ice_pwd) {
-  return new BasicPortAllocatorSession(
-      this, content_name, component, ice_ufrag, ice_pwd);
+  return new BasicPortAllocatorSession(this, content_name, component,
+                                       ice_ufrag, ice_pwd);
 }
-
 
 // BasicPortAllocatorSession
 BasicPortAllocatorSession::BasicPortAllocatorSession(
@@ -533,10 +530,8 @@ void BasicPortAllocatorSession::OnCandidateReady(
   // Send candidates whose protocol is enabled.
   std::vector<Candidate> candidates;
   ProtocolType pvalue;
-  bool candidate_allowed_to_send = CheckCandidateFilter(c);
   if (StringToProto(c.protocol().c_str(), &pvalue) &&
-      data->sequence()->ProtocolEnabled(pvalue) &&
-      candidate_allowed_to_send) {
+      data->sequence()->ProtocolEnabled(pvalue)) {
     candidates.push_back(c);
   }
 
@@ -547,9 +542,7 @@ void BasicPortAllocatorSession::OnCandidateReady(
   // Moving to READY state as we have atleast one candidate from the port.
   // Since this port has atleast one candidate we should forward this port
   // to listners, to allow connections from this port.
-  // Also we should make sure that candidate gathered from this port is allowed
-  // to send outside.
-  if (!data->ready() && candidate_allowed_to_send) {
+  if (!data->ready()) {
     data->set_ready();
     SignalPortReady(this, port);
   }
@@ -595,8 +588,6 @@ void BasicPortAllocatorSession::OnProtocolEnabled(AllocationSequence* seq,
 
     const std::vector<Candidate>& potentials = it->port()->Candidates();
     for (size_t i = 0; i < potentials.size(); ++i) {
-      if (!CheckCandidateFilter(potentials[i]))
-        continue;
       ProtocolType pvalue;
       if (!StringToProto(potentials[i].protocol().c_str(), &pvalue))
         continue;
@@ -609,31 +600,6 @@ void BasicPortAllocatorSession::OnProtocolEnabled(AllocationSequence* seq,
   if (!candidates.empty()) {
     SignalCandidatesReady(this, candidates);
   }
-}
-
-bool BasicPortAllocatorSession::CheckCandidateFilter(const Candidate& c) {
-  uint32 filter = allocator_->candidate_filter();
-  bool allowed = false;
-  if (filter & CF_RELAY) {
-    allowed |= (c.type() == RELAY_PORT_TYPE);
-  }
-
-  if (filter & CF_REFLEXIVE) {
-    // We allow host candidates if the filter allows server-reflexive candidates
-    // and the candidate is a public IP. Because we don't generate
-    // server-reflexive candidates if they have the same IP as the host
-    // candidate (i.e. when the host candidate is a public IP), filtering to
-    // only server-reflexive candidates won't work right when the host
-    // candidates have public IPs.
-    allowed |= (c.type() == STUN_PORT_TYPE) ||
-               (c.type() == LOCAL_PORT_TYPE && !c.address().IsPrivateIP());
-  }
-
-  if (filter & CF_HOST) {
-    allowed |= (c.type() == LOCAL_PORT_TYPE);
-  }
-
-  return allowed;
 }
 
 void BasicPortAllocatorSession::OnPortAllocationComplete(

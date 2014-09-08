@@ -672,7 +672,7 @@ bool PeerConnection::UpdateIce(const RTCConfiguration& config) {
       }
     }
   }
-  return session_->SetIceTransports(config.type);
+  return session_->UpdateIce(config.type);
 }
 
 bool PeerConnection::AddIceCandidate(
