@@ -62,7 +62,7 @@ void ScaleToFloat(const int16_t* src, size_t size, float* dest);
 // per buffer).
 template <typename T>
 void Deinterleave(const T* interleaved, int samples_per_channel,
-                  int num_channels, T** deinterleaved) {
+                  int num_channels, T* const* deinterleaved) {
   for (int i = 0; i < num_channels; ++i) {
     T* channel = deinterleaved[i];
     int interleaved_idx = i;
