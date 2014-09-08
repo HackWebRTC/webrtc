@@ -75,8 +75,9 @@ void VPMDeflickering::Reset() {
   quant_hist_uw8_[0][0] = 0;
   quant_hist_uw8_[0][kNumQuants - 1] = 255;
   for (int32_t i = 0; i < kNumProbs; i++) {
-    quant_hist_uw8_[0][i + 1] = static_cast<uint8_t>((WEBRTC_SPL_UMUL_16_16(
-        prob_uw16_[i], 255) + (1 << 10)) >> 11);  // Unsigned round. <Q0>
+    // Unsigned round. <Q0>
+    quant_hist_uw8_[0][i + 1] = static_cast<uint8_t>(
+        (prob_uw16_[i] * 255 + (1 << 10)) >> 11);
   }
 
   for (int32_t i = 1; i < kFrameHistory_size; i++) {
@@ -191,9 +192,12 @@ int32_t VPMDeflickering::ProcessFrame(I420VideoFrame* frame,
 
   // Get target quantiles.
   for (int32_t i = 0; i < kNumQuants - kMaxOnlyLength; i++) {
-    target_quant_uw16[i] = static_cast<uint16_t>((WEBRTC_SPL_UMUL_16_16(
-        weight_uw16_[i], maxquant_uw8[i]) + WEBRTC_SPL_UMUL_16_16((1 << 15) -
-        weight_uw16_[i], minquant_uw8[i])) >> 8);  // <Q7>
+    // target = w * maxquant_uw8 + (1 - w) * minquant_uw8
+    // Weights w = |weight_uw16_| are in Q15, hence the final output has to be
+    // right shifted by 8 to end up in Q7.
+    target_quant_uw16[i] = static_cast<uint16_t>((
+        weight_uw16_[i] * maxquant_uw8[i] +
+        ((1 << 15) - weight_uw16_[i]) * minquant_uw8[i]) >> 8);  // <Q7>
   }
 
   for (int32_t i = kNumQuants - kMaxOnlyLength; i < kNumQuants; i++) {
