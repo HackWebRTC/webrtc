@@ -776,3 +776,22 @@
    fun:_ZN20WebRtcVideoFrameTest8TestInitEii
    fun:_ZN38WebRtcVideoFrameTest_InitEvenSize_Test8TestBodyEv
 }
+{
+   bug_3789_8
+   Memcheck:Uninitialized
+   fun:bcmp
+   fun:_ZN7cricket10VideoFrame8ValidateEjiiPKhm
+   fun:_ZN7cricket16WebRtcVideoFrame5ResetEjiiiiPhmmmlli
+   fun:_ZN7cricket16WebRtcVideoFrame4InitEPKNS_13CapturedFrameEii
+   fun:_ZN20WebRtcVideoFrameTest8TestInitEii
+   fun:_ZN38WebRtcVideoFrameTest_InitOddWidth_Test8TestBodyEv
+}
+{
+   bug_3789_9
+   Memcheck:Uninitialized
+   fun:_ZN7cricket10VideoFrame8ValidateEjiiPKhm
+   fun:_ZN7cricket16WebRtcVideoFrame5ResetEjiiiiPhmmmlli
+   fun:_ZN7cricket16WebRtcVideoFrame4InitEPKNS_13CapturedFrameEii
+   fun:_ZN20WebRtcVideoFrameTest8TestInitEii
+   fun:_ZN38WebRtcVideoFrameTest_InitOddWidth_Test8TestBodyEv
+}
