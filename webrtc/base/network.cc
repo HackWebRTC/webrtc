@@ -65,6 +65,11 @@ const int kNetworksUpdateIntervalMs = 2000;
 
 const int kHighestNetworkPreference = 127;
 
+typedef struct {
+  Network* net;
+  std::vector<IPAddress> ips;
+} AddressList;
+
 bool CompareNetworks(const Network* a, const Network* b) {
   if (a->prefix_length() == b->prefix_length()) {
     if (a->name() == b->name()) {
@@ -144,10 +149,12 @@ void NetworkManagerBase::GetNetworks(NetworkList* result) const {
 
 void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,
                                           bool* changed) {
-  // Sort the list so that we can detect when it changes.
-  typedef std::pair<Network*, std::vector<IPAddress> > address_list;
-  std::map<std::string, address_list> address_map;
+  // AddressList in this map will track IP addresses for all Networks
+  // with the same key.
+  std::map<std::string, AddressList> consolidated_address_list;
   NetworkList list(new_networks);
+
+  // Result of Network merge. Element in this list should have unique key.
   NetworkList merged_list;
   std::sort(list.begin(), list.end(), CompareNetworks);
 
@@ -162,16 +169,19 @@ void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,
     std::string key = MakeNetworkKey(list[i]->name(),
                                      list[i]->prefix(),
                                      list[i]->prefix_length());
-    if (address_map.find(key) == address_map.end()) {
-      address_map[key] = address_list(list[i], std::vector<IPAddress>());
+    if (consolidated_address_list.find(key) ==
+        consolidated_address_list.end()) {
+      AddressList addrlist;
+      addrlist.net = list[i];
+      consolidated_address_list[key] = addrlist;
       might_add_to_merged_list = true;
     }
     const std::vector<IPAddress>& addresses = list[i]->GetIPs();
-    address_list& current_list = address_map[key];
+    AddressList& current_list = consolidated_address_list[key];
     for (std::vector<IPAddress>::const_iterator it = addresses.begin();
          it != addresses.end();
          ++it) {
-      current_list.second.push_back(*it);
+      current_list.ips.push_back(*it);
     }
     if (!might_add_to_merged_list) {
       delete list[i];
@@ -179,20 +189,24 @@ void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,
   }
 
   // Next, look for existing network objects to re-use.
-  for (std::map<std::string, address_list >::iterator it = address_map.begin();
-       it != address_map.end();
+  for (std::map<std::string, AddressList>::iterator it =
+         consolidated_address_list.begin();
+       it != consolidated_address_list.end();
        ++it) {
     const std::string& key = it->first;
-    Network* net = it->second.first;
+    Network* net = it->second.net;
     NetworkMap::iterator existing = networks_map_.find(key);
     if (existing == networks_map_.end()) {
       // This network is new. Place it in the network map.
       merged_list.push_back(net);
       networks_map_[key] = net;
+      // Also, we might have accumulated IPAddresses from the first
+      // step, set it here.
+      net->SetIPs(it->second.ips, true);
       *changed = true;
     } else {
       // This network exists in the map already. Reset its IP addresses.
-      *changed = existing->second->SetIPs(it->second.second, *changed);
+      *changed = existing->second->SetIPs(it->second.ips, *changed);
       merged_list.push_back(existing->second);
       if (existing->second != net) {
         delete net;

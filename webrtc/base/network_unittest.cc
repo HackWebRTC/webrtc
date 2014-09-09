@@ -614,4 +614,40 @@ TEST_F(NetworkTest, TestIgnoreNonDefaultRoutes) {
 }
 #endif
 
+// Test MergeNetworkList successfully combines all IPs for the same
+// prefix/length into a single Network.
+TEST_F(NetworkTest, TestMergeNetworkList) {
+  BasicNetworkManager manager;
+  NetworkManager::NetworkList list;
+
+  // Create 2 IPAddress classes with only last digit different.
+  IPAddress ip1, ip2;
+  EXPECT_TRUE(IPFromString("2400:4030:1:2c00:be30:0:0:1", &ip1));
+  EXPECT_TRUE(IPFromString("2400:4030:1:2c00:be30:0:0:2", &ip2));
+
+  // Create 2 networks with the same prefix and length.
+  Network* net1 = new Network("em1", "em1", TruncateIP(ip1, 64), 64);
+  Network* net2 = new Network("em1", "em1", TruncateIP(ip1, 64), 64);
+
+  // Add different IP into each.
+  net1->AddIP(ip1);
+  net2->AddIP(ip2);
+
+  list.push_back(net1);
+  list.push_back(net2);
+  bool changed;
+  MergeNetworkList(manager, list, &changed);
+  EXPECT_TRUE(changed);
+
+  NetworkManager::NetworkList list2;
+  manager.GetNetworks(&list2);
+
+  // Make sure the resulted networklist has only 1 element and 2
+  // IPAddresses.
+  EXPECT_EQ(list2.size(), 1uL);
+  EXPECT_EQ(list2[0]->GetIPs().size(), 2uL);
+  EXPECT_EQ(list2[0]->GetIPs()[0], ip1);
+  EXPECT_EQ(list2[0]->GetIPs()[1], ip2);
+}
+
 }  // namespace rtc
