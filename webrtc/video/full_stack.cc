@@ -17,7 +17,6 @@
 #include "webrtc/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
-#include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
@@ -391,7 +390,8 @@ void FullStackTest::RunTest(const FullStackTestParams& params) {
 
   CreateSendConfig(1);
 
-  scoped_ptr<VP8Encoder> encoder(VP8Encoder::Create());
+  scoped_ptr<VideoEncoder> encoder(
+      VideoEncoder::Create(VideoEncoder::kVp8));
   send_config_.encoder_settings.encoder = encoder.get();
   send_config_.encoder_settings.payload_name = "VP8";
   send_config_.encoder_settings.payload_type = 124;

@@ -18,6 +18,7 @@
 #include "webrtc/common.h"
 #include "webrtc/config.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
+#include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
@@ -39,6 +40,15 @@ const char* RtpExtension::kAbsSendTime =
 bool RtpExtension::IsSupported(const std::string& name) {
   return name == webrtc::RtpExtension::kTOffset ||
          name == webrtc::RtpExtension::kAbsSendTime;
+}
+
+VideoEncoder* VideoEncoder::Create(VideoEncoder::EncoderType codec_type) {
+  switch (codec_type) {
+    case kVp8:
+      return VP8Encoder::Create();
+  }
+  assert(false);
+  return NULL;
 }
 
 namespace internal {
