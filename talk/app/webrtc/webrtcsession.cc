@@ -387,6 +387,22 @@ static void SetOptionFromOptionalConstraint(
   }
 }
 
+uint32 ConvertIceTransportTypeToCandidateFilter(
+    PeerConnectionInterface::IceTransportsType type) {
+  switch (type) {
+    case PeerConnectionInterface::kNone:
+        return cricket::CF_NONE;
+    case PeerConnectionInterface::kRelay:
+        return cricket::CF_RELAY;
+    case PeerConnectionInterface::kNoHost:
+        return (cricket::CF_ALL & ~cricket::CF_HOST);
+    case PeerConnectionInterface::kAll:
+        return cricket::CF_ALL;
+    default: ASSERT(false);
+  }
+  return cricket::CF_NONE;
+}
+
 // Help class used to remember if a a remote peer has requested ice restart by
 // by sending a description with new ice ufrag and password.
 class IceRestartAnswerLatch {
@@ -640,7 +656,8 @@ bool WebRtcSession::Initialize(
   if (options.disable_encryption) {
     webrtc_session_desc_factory_->SetSdesPolicy(cricket::SEC_DISABLED);
   }
-
+  port_allocator()->set_candidate_filter(
+      ConvertIceTransportTypeToCandidateFilter(ice_transport));
   return true;
 }
 
@@ -746,6 +763,7 @@ bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,
   if (!UpdateSessionState(action, cricket::CS_LOCAL, err_desc)) {
     return false;
   }
+
   // Kick starting the ice candidates allocation.
   StartCandidatesAllocation();
 
@@ -907,8 +925,10 @@ bool WebRtcSession::ProcessIceMessage(const IceCandidateInterface* candidate) {
   return UseCandidate(candidate);
 }
 
-bool WebRtcSession::UpdateIce(PeerConnectionInterface::IceTransportsType type) {
-  return false;
+bool WebRtcSession::SetIceTransports(
+    PeerConnectionInterface::IceTransportsType type) {
+  return port_allocator()->set_candidate_filter(
+        ConvertIceTransportTypeToCandidateFilter(type));
 }
 
 bool WebRtcSession::GetLocalTrackIdBySsrc(uint32 ssrc, std::string* track_id) {

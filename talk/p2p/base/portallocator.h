@@ -44,17 +44,19 @@ namespace cricket {
 // Clients can override this class to control port allocation, including
 // what kinds of ports are allocated.
 
-const uint32 PORTALLOCATOR_DISABLE_UDP = 0x01;
-const uint32 PORTALLOCATOR_DISABLE_STUN = 0x02;
-const uint32 PORTALLOCATOR_DISABLE_RELAY = 0x04;
-const uint32 PORTALLOCATOR_DISABLE_TCP = 0x08;
-const uint32 PORTALLOCATOR_ENABLE_SHAKER = 0x10;
-const uint32 PORTALLOCATOR_ENABLE_BUNDLE = 0x20;
-const uint32 PORTALLOCATOR_ENABLE_IPV6 = 0x40;
-const uint32 PORTALLOCATOR_ENABLE_SHARED_UFRAG = 0x80;
-const uint32 PORTALLOCATOR_ENABLE_SHARED_SOCKET = 0x100;
-const uint32 PORTALLOCATOR_ENABLE_STUN_RETRANSMIT_ATTRIBUTE = 0x200;
-const uint32 PORTALLOCATOR_ENABLE_TURN_SHARED_SOCKET = 0x400;
+enum {
+  PORTALLOCATOR_DISABLE_UDP = 0x01,
+  PORTALLOCATOR_DISABLE_STUN = 0x02,
+  PORTALLOCATOR_DISABLE_RELAY = 0x04,
+  PORTALLOCATOR_DISABLE_TCP = 0x08,
+  PORTALLOCATOR_ENABLE_SHAKER = 0x10,
+  PORTALLOCATOR_ENABLE_BUNDLE = 0x20,
+  PORTALLOCATOR_ENABLE_IPV6 = 0x40,
+  PORTALLOCATOR_ENABLE_SHARED_UFRAG = 0x80,
+  PORTALLOCATOR_ENABLE_SHARED_SOCKET = 0x100,
+  PORTALLOCATOR_ENABLE_STUN_RETRANSMIT_ATTRIBUTE = 0x200,
+  PORTALLOCATOR_ENABLE_TURN_SHARED_SOCKET = 0x400,
+};
 
 const uint32 kDefaultPortAllocatorFlags = 0;
 
@@ -62,6 +64,15 @@ const uint32 kDefaultStepDelay = 1000;  // 1 sec step delay.
 // As per RFC 5245 Appendix B.1, STUN transactions need to be paced at certain
 // internal. Less than 20ms is not acceptable. We choose 50ms as our default.
 const uint32 kMinimumStepDelay = 50;
+
+// CF = CANDIDATE FILTER
+enum {
+  CF_NONE = 0x0,
+  CF_HOST = 0x1,
+  CF_REFLEXIVE = 0x2,
+  CF_RELAY = 0x4,
+  CF_ALL = 0x7,
+};
 
 class PortAllocatorSessionMuxer;
 
@@ -118,7 +129,8 @@ class PortAllocator : public sigslot::has_slots<> {
       min_port_(0),
       max_port_(0),
       step_delay_(kDefaultStepDelay),
-      allow_tcp_listen_(true) {
+      allow_tcp_listen_(true),
+      candidate_filter_(CF_ALL) {
     // This will allow us to have old behavior on non webrtc clients.
   }
   virtual ~PortAllocator();
@@ -167,6 +179,13 @@ class PortAllocator : public sigslot::has_slots<> {
     allow_tcp_listen_ = allow_tcp_listen;
   }
 
+  uint32 candidate_filter() { return candidate_filter_; }
+  bool set_candidate_filter(uint32 filter) {
+    // TODO(mallinath) - Do transition check?
+    candidate_filter_ = filter;
+    return true;
+  }
+
  protected:
   virtual PortAllocatorSession* CreateSessionInternal(
       const std::string& content_name,
@@ -184,6 +203,7 @@ class PortAllocator : public sigslot::has_slots<> {
   uint32 step_delay_;
   SessionMuxerMap muxers_;
   bool allow_tcp_listen_;
+  uint32 candidate_filter_;
 };
 
 }  // namespace cricket
