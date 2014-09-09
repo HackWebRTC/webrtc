@@ -67,7 +67,7 @@ const int kHighestNetworkPreference = 127;
 
 typedef struct {
   Network* net;
-  std::vector<IPAddress> ips;
+  std::vector<InterfaceAddress> ips;
 } AddressList;
 
 bool CompareNetworks(const Network* a, const Network* b) {
@@ -176,9 +176,9 @@ void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,
       consolidated_address_list[key] = addrlist;
       might_add_to_merged_list = true;
     }
-    const std::vector<IPAddress>& addresses = list[i]->GetIPs();
+    const std::vector<InterfaceAddress>& addresses = list[i]->GetIPs();
     AddressList& current_list = consolidated_address_list[key];
-    for (std::vector<IPAddress>::const_iterator it = addresses.begin();
+    for (std::vector<InterfaceAddress>::const_iterator it = addresses.begin();
          it != addresses.end();
          ++it) {
       current_list.ips.push_back(*it);
@@ -648,15 +648,15 @@ std::string Network::ToString() const {
 
 // Sets the addresses of this network. Returns true if the address set changed.
 // Change detection is short circuited if the changed argument is true.
-bool Network::SetIPs(const std::vector<IPAddress>& ips, bool changed) {
+bool Network::SetIPs(const std::vector<InterfaceAddress>& ips, bool changed) {
   changed = changed || ips.size() != ips_.size();
   // Detect changes with a nested loop; n-squared but we expect on the order
   // of 2-3 addresses per network.
-  for (std::vector<IPAddress>::const_iterator it = ips.begin();
+  for (std::vector<InterfaceAddress>::const_iterator it = ips.begin();
       !changed && it != ips.end();
       ++it) {
     bool found = false;
-    for (std::vector<IPAddress>::iterator inner_it = ips_.begin();
+    for (std::vector<InterfaceAddress>::iterator inner_it = ips_.begin();
          !found && inner_it != ips_.end();
          ++inner_it) {
       if (*it == *inner_it) {
@@ -667,6 +667,16 @@ bool Network::SetIPs(const std::vector<IPAddress>& ips, bool changed) {
   }
   ips_ = ips;
   return changed;
+}
+
+// TODO(guoweis): will change the name to a more meaningful name as
+// this is not simply return the first address once the logic of ipv6
+// address selection is complete.
+IPAddress Network::ip() const {
+  if (ips_.size() == 0) {
+    return IPAddress();
+  }
+  return static_cast<IPAddress>(ips_.at(0));
 }
 
 }  // namespace rtc

@@ -189,22 +189,27 @@ class Network {
 
   // Returns the Network's current idea of the 'best' IP it has.
   // 'Best' currently means the first one added.
-  // TODO: We should be preferring temporary addresses.
   // Returns an unset IP if this network has no active addresses.
-  IPAddress ip() const {
-    if (ips_.size() == 0) {
-      return IPAddress();
-    }
-    return ips_.at(0);
-  }
+  // Here is the rule on how we mark the IPv6 address as ignorable for webrtc.
+  // 1) return all global temporary dynamic and non-deprecrated ones.
+  // 2) if #1 not available, return global dynamic ones.
+  // 3) if #2 not available, return global ones.
+  // 4) if #3 not available, use ULA ipv6 as last resort.
+  // Note that when not specifying any flag, it's treated as case global
+  // dynamic IPv6 address
+  // TODO(guoweis): will change the name to a more meaningful name as
+  // this is not simply return the first address once the logic of ipv6
+  // address selection is complete.
+  IPAddress ip() const;
+
   // Adds an active IP address to this network. Does not check for duplicates.
-  void AddIP(const IPAddress& ip) { ips_.push_back(ip); }
+  void AddIP(const InterfaceAddress& ip) { ips_.push_back(ip); }
 
   // Sets the network's IP address list. Returns true if new IP addresses were
   // detected. Passing true to already_changed skips this check.
-  bool SetIPs(const std::vector<IPAddress>& ips, bool already_changed);
+  bool SetIPs(const std::vector<InterfaceAddress>& ips, bool already_changed);
   // Get the list of IP Addresses associated with this network.
-  const std::vector<IPAddress>& GetIPs() { return ips_;}
+  const std::vector<InterfaceAddress>& GetIPs() const { return ips_;}
   // Clear the network's list of addresses.
   void ClearIPs() { ips_.clear(); }
 
@@ -231,7 +236,7 @@ class Network {
   IPAddress prefix_;
   int prefix_length_;
   std::string key_;
-  std::vector<IPAddress> ips_;
+  std::vector<InterfaceAddress> ips_;
   int scope_id_;
   bool ignored_;
   AdapterType type_;

@@ -186,6 +186,30 @@ void IPAddress::set_strip_sensitive(bool enable) {
   strip_sensitive_ = enable;
 }
 
+bool InterfaceAddress::operator==(const InterfaceAddress &other) const {
+  return ipv6_flags_ == other.ipv6_flags() &&
+    static_cast<const IPAddress&>(*this) == other;
+}
+
+bool InterfaceAddress::operator!=(const InterfaceAddress &other) const {
+  return !((*this) == other);
+}
+
+const InterfaceAddress& InterfaceAddress::operator=(
+  const InterfaceAddress& other) {
+  ipv6_flags_ = other.ipv6_flags_;
+  static_cast<IPAddress&>(*this) = other;
+  return *this;
+}
+
+std::ostream& operator<<(std::ostream& os, const InterfaceAddress& ip) {
+  os << static_cast<const IPAddress&>(ip);
+
+  if (ip.family() == AF_INET6)
+    os << "|flags:0x" << std::hex << ip.ipv6_flags();
+
+  return os;
+}
 
 bool IsPrivateV4(uint32 ip_in_host_order) {
   return ((ip_in_host_order >> 24) == 127) ||
@@ -232,6 +256,17 @@ bool IPFromString(const std::string& str, IPAddress* out) {
   } else {
     *out = IPAddress(addr);
   }
+  return true;
+}
+
+bool IPFromString(const std::string& str, int flags,
+                  InterfaceAddress* out) {
+  IPAddress ip;
+  if (!IPFromString(str, &ip)) {
+    return false;
+  }
+
+  *out = InterfaceAddress(ip, flags);
   return true;
 }
 

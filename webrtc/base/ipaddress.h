@@ -33,6 +33,19 @@
 
 namespace rtc {
 
+enum IPv6AddressFlag {
+  IPV6_ADDRESS_FLAG_NONE =           0x00,
+
+  // Temporary address is dynamic by nature and will not carry MAC
+  // address.
+  IPV6_ADDRESS_FLAG_TEMPORARY =      1 << 0,
+
+  // Temporary address could become deprecated once the preferred
+  // lifetime is reached. It is still valid but just shouldn't be used
+  // to create new connection.
+  IPV6_ADDRESS_FLAG_DEPRECATED =     1 << 1,
+};
+
 // Version-agnostic IP address class, wraps a union of in_addr and in6_addr.
 class IPAddress {
  public:
@@ -40,12 +53,12 @@ class IPAddress {
     ::memset(&u_, 0, sizeof(u_));
   }
 
-  explicit IPAddress(const in_addr &ip4) : family_(AF_INET) {
+  explicit IPAddress(const in_addr& ip4) : family_(AF_INET) {
     memset(&u_, 0, sizeof(u_));
     u_.ip4 = ip4;
   }
 
-  explicit IPAddress(const in6_addr &ip6) : family_(AF_INET6) {
+  explicit IPAddress(const in6_addr& ip6) : family_(AF_INET6) {
     u_.ip6 = ip6;
   }
 
@@ -54,22 +67,22 @@ class IPAddress {
     u_.ip4.s_addr = HostToNetwork32(ip_in_host_byte_order);
   }
 
-  IPAddress(const IPAddress &other) : family_(other.family_) {
+  IPAddress(const IPAddress& other) : family_(other.family_) {
     ::memcpy(&u_, &other.u_, sizeof(u_));
   }
 
-  ~IPAddress() {}
+  virtual ~IPAddress() {}
 
-  const IPAddress & operator=(const IPAddress &other) {
+  const IPAddress & operator=(const IPAddress& other) {
     family_ = other.family_;
     ::memcpy(&u_, &other.u_, sizeof(u_));
     return *this;
   }
 
-  bool operator==(const IPAddress &other) const;
-  bool operator!=(const IPAddress &other) const;
-  bool operator <(const IPAddress &other) const;
-  bool operator >(const IPAddress &other) const;
+  bool operator==(const IPAddress& other) const;
+  bool operator!=(const IPAddress& other) const;
+  bool operator <(const IPAddress& other) const;
+  bool operator >(const IPAddress& other) const;
   friend std::ostream& operator<<(std::ostream& os, const IPAddress& addr);
 
   int family() const { return family_; }
@@ -108,8 +121,38 @@ class IPAddress {
   static bool strip_sensitive_;
 };
 
+// IP class which could represent IPv6 address flags which is only
+// meaningful in IPv6 case.
+class InterfaceAddress : public IPAddress {
+ public:
+  InterfaceAddress() : ipv6_flags_(IPV6_ADDRESS_FLAG_NONE) {}
+
+  InterfaceAddress(IPAddress ip)
+    : IPAddress(ip), ipv6_flags_(IPV6_ADDRESS_FLAG_NONE) {}
+
+  InterfaceAddress(IPAddress addr, int ipv6_flags)
+    : IPAddress(addr), ipv6_flags_(ipv6_flags) {}
+
+  InterfaceAddress(const in6_addr& ip6, int ipv6_flags)
+    : IPAddress(ip6), ipv6_flags_(ipv6_flags) {}
+
+  const InterfaceAddress & operator=(const InterfaceAddress& other);
+
+  bool operator==(const InterfaceAddress& other) const;
+  bool operator!=(const InterfaceAddress& other) const;
+
+  int ipv6_flags() const { return ipv6_flags_; }
+  friend std::ostream& operator<<(std::ostream& os,
+                                  const InterfaceAddress& addr);
+
+ private:
+  int ipv6_flags_;
+};
+
 bool IPFromAddrInfo(struct addrinfo* info, IPAddress* out);
 bool IPFromString(const std::string& str, IPAddress* out);
+bool IPFromString(const std::string& str, int flags,
+                  InterfaceAddress* out);
 bool IPIsAny(const IPAddress& ip);
 bool IPIsLoopback(const IPAddress& ip);
 bool IPIsPrivate(const IPAddress& ip);

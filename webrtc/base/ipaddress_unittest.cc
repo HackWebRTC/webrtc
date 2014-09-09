@@ -856,4 +856,41 @@ TEST(IPAddressTest, TestToSensitiveString) {
   IPAddress::set_strip_sensitive(false);
 }
 
+TEST(IPAddressTest, TestInterfaceAddress) {
+  in6_addr addr;
+  InterfaceAddress addr1(kIPv6PublicAddr,
+                         IPV6_ADDRESS_FLAG_TEMPORARY);
+  EXPECT_EQ(addr1.ipv6_flags(), IPV6_ADDRESS_FLAG_TEMPORARY);
+  EXPECT_EQ(addr1.family(), AF_INET6);
+
+  addr = addr1.ipv6_address();
+  EXPECT_TRUE(IN6_ARE_ADDR_EQUAL(&addr, &kIPv6PublicAddr));
+
+  InterfaceAddress addr2 = addr1;
+  EXPECT_EQ(addr1, addr2);
+  EXPECT_EQ(addr2.ipv6_flags(), IPV6_ADDRESS_FLAG_TEMPORARY);
+  addr = addr2.ipv6_address();
+  EXPECT_TRUE(IN6_ARE_ADDR_EQUAL(&addr, &kIPv6PublicAddr));
+
+  InterfaceAddress addr3(addr1);
+  EXPECT_EQ(addr1, addr3);
+  EXPECT_EQ(addr3.ipv6_flags(), IPV6_ADDRESS_FLAG_TEMPORARY);
+  addr = addr3.ipv6_address();
+  EXPECT_TRUE(IN6_ARE_ADDR_EQUAL(&addr, &kIPv6PublicAddr));
+
+  InterfaceAddress addr4(kIPv6PublicAddr,
+                         IPV6_ADDRESS_FLAG_DEPRECATED);
+  EXPECT_NE(addr1, addr4);
+
+  // When you compare them as IPAddress, since operator==
+  // is not virtual, it'll be equal.
+  IPAddress *paddr1 = &addr1;
+  IPAddress *paddr4 = &addr4;
+  EXPECT_EQ(*paddr1, *paddr4);
+
+  InterfaceAddress addr5(kIPv6LinkLocalAddr,
+                         IPV6_ADDRESS_FLAG_TEMPORARY);
+  EXPECT_NE(addr1, addr5);
+}
+
 }  // namespace rtc
