@@ -78,6 +78,9 @@ source_set("audio_processing") {
     "voice_detection_impl.h",
   ]
 
+  configs += [ "../..:common_config" ]
+  direct_dependent_configs = [ "../..:common_inherited_config" ]
+
   defines = []
   deps = []
 
