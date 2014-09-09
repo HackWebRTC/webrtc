@@ -116,7 +116,7 @@ Bot.prototype = {
   }
 }
 
-// BrowserBot spawns a process to open "http://localhost:8080/bot/".
+// BrowserBot spawns a process to open "http://localhost:8080/bot/browser".
 //
 // That page once loaded, connects to the websocket server run by BotManager
 // and exposes the bot api.
@@ -128,7 +128,7 @@ BrowserBot = function (name, callback) {
 BrowserBot.prototype = {
   spawnBotProcess_: function () {
     this.log('Spawning browser');
-    child.exec('google-chrome "http://localhost:8080/bot/"');
+    child.exec('google-chrome "http://localhost:8080/bot/browser/"');
   },
 
   __proto__: Bot.prototype
@@ -149,7 +149,7 @@ AndroidChromeBot.prototype = {
     this.log('Spawning Android device with serial ' + this.serialNumber_);
     var runChrome = 'adb -s ' + this.serialNumber_ + ' shell am start ' +
     '-n com.android.chrome/com.google.android.apps.chrome.Main ' +
-    '-d http://localhost:8080/bot/';
+    '-d http://localhost:8080/bot/browser/';
     child.exec(runChrome, function (error, stdout, stderr) {
       if (error) {
         this.log(error);
