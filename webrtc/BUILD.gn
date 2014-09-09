@@ -23,7 +23,6 @@ config("common_inherited_config") {
   if (build_with_chromium) {
     defines = [
       "WEBRTC_CHROMIUM_BUILD",
-      "LOGGING_INSIDE_WEBRTC",
     ]
     include_dirs = [
       # overrides must be included first as that is the mechanism for
@@ -89,7 +88,9 @@ config("common_config") {
     defines += [ "WEBRTC_MODULE_UTILITY_VIDEO" ]
   }
 
-  if (!build_with_chromium) {
+  if (build_with_chromium) {
+    defines += [ "LOGGING_INSIDE_WEBRTC" ]
+  } else {
     if (is_posix) {
       # -Wextra is currently disabled in Chromium"s common.gypi. Enable
       # for targets that can handle it. For Android/arm64 right now
