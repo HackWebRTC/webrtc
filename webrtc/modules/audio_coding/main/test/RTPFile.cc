@@ -109,7 +109,7 @@ uint16_t RTPBuffer::Read(WebRtcRTPHeader* rtpInfo, uint8_t* payloadData,
   if (packet->payloadSize > 0 && payloadSize >= packet->payloadSize) {
     memcpy(payloadData, packet->payloadData, packet->payloadSize);
   } else {
-    return 0;
+    return 0u;
   }
   *offset = (packet->timeStamp / (packet->frequency / 1000));
 
@@ -216,7 +216,7 @@ uint16_t RTPFile::Read(WebRtcRTPHeader* rtpInfo, uint8_t* payloadData,
   /* Check if we have reached end of file. */
   if ((read_len == 0) && feof(_rtpFile)) {
     _rtpEOF = true;
-    return 0;
+    return 0u;
   }
   EXPECT_EQ(1u, fread(&plen, 2, 1, _rtpFile));
   EXPECT_EQ(1u, fread(offset, 4, 1, _rtpFile));
@@ -232,13 +232,13 @@ uint16_t RTPFile::Read(WebRtcRTPHeader* rtpInfo, uint8_t* payloadData,
   EXPECT_EQ(lengthBytes, plen + 8);
 
   if (plen == 0) {
-    return static_cast<uint16_t>(0);
+    return 0u;
   }
   if (payloadSize < (lengthBytes - 20)) {
-    return static_cast<uint16_t>(0);
+    return 0u;
   }
   if (lengthBytes < 20) {
-    return static_cast<uint16_t>(0);
+    return 0u;
   }
   lengthBytes -= 20;
   EXPECT_EQ(lengthBytes, fread(payloadData, 1, lengthBytes, _rtpFile));
