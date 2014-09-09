@@ -210,10 +210,13 @@ class TurnPortTest : public testing::Test,
                             const cricket::ProtocolAddress& server_address) {
     ASSERT(server_address.proto == cricket::PROTO_UDP);
 
-    socket_.reset(socket_factory_.CreateUdpSocket(
-        rtc::SocketAddress(kLocalAddr1.ipaddr(), 0), 0, 0));
-    ASSERT_TRUE(socket_ != NULL);
-    socket_->SignalReadPacket.connect(this, &TurnPortTest::OnSocketReadPacket);
+    if (!socket_) {
+      socket_.reset(socket_factory_.CreateUdpSocket(
+          rtc::SocketAddress(kLocalAddr1.ipaddr(), 0), 0, 0));
+      ASSERT_TRUE(socket_ != NULL);
+      socket_->SignalReadPacket.connect(
+          this, &TurnPortTest::OnSocketReadPacket);
+    }
 
     cricket::RelayCredentials credentials(username, password);
     turn_port_.reset(cricket::TurnPort::Create(
@@ -411,6 +414,80 @@ TEST_F(TurnPortTest, TestTurnAllocateBadPassword) {
   turn_port_->PrepareAddress();
   EXPECT_TRUE_WAIT(turn_error_, kTimeout);
   ASSERT_EQ(0U, turn_port_->Candidates().size());
+}
+
+// Tests that a new local address is created after
+// STUN_ERROR_ALLOCATION_MISMATCH.
+TEST_F(TurnPortTest, TestTurnAllocateMismatch) {
+  // Do a normal allocation first.
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
+  turn_port_->PrepareAddress();
+  EXPECT_TRUE_WAIT(turn_ready_, kTimeout);
+  rtc::SocketAddress first_addr(turn_port_->socket()->GetLocalAddress());
+
+  // Forces the socket server to assign the same port.
+  ss_->SetNextPortForTesting(first_addr.port());
+
+  turn_ready_ = false;
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
+  turn_port_->PrepareAddress();
+
+  // Verifies that the new port has the same address.
+  EXPECT_EQ(first_addr, turn_port_->socket()->GetLocalAddress());
+
+  EXPECT_TRUE_WAIT(turn_ready_, kTimeout);
+
+  // Verifies that the new port has a different address now.
+  EXPECT_NE(first_addr, turn_port_->socket()->GetLocalAddress());
+}
+
+// Tests that a shared-socket-TurnPort creates its own socket after
+// STUN_ERROR_ALLOCATION_MISMATCH.
+TEST_F(TurnPortTest, TestSharedSocketAllocateMismatch) {
+  // Do a normal allocation first.
+  CreateSharedTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
+  turn_port_->PrepareAddress();
+  EXPECT_TRUE_WAIT(turn_ready_, kTimeout);
+  rtc::SocketAddress first_addr(turn_port_->socket()->GetLocalAddress());
+
+  turn_ready_ = false;
+  CreateSharedTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
+
+  // Verifies that the new port has the same address.
+  EXPECT_EQ(first_addr, turn_port_->socket()->GetLocalAddress());
+  EXPECT_TRUE(turn_port_->SharedSocket());
+
+  turn_port_->PrepareAddress();
+  EXPECT_TRUE_WAIT(turn_ready_, kTimeout);
+
+  // Verifies that the new port has a different address now.
+  EXPECT_NE(first_addr, turn_port_->socket()->GetLocalAddress());
+  EXPECT_FALSE(turn_port_->SharedSocket());
+}
+
+TEST_F(TurnPortTest, TestTurnTcpAllocateMismatch) {
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, cricket::PROTO_TCP);
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
+
+  // Do a normal allocation first.
+  turn_port_->PrepareAddress();
+  EXPECT_TRUE_WAIT(turn_ready_, kTimeout);
+  rtc::SocketAddress first_addr(turn_port_->socket()->GetLocalAddress());
+
+  // Forces the socket server to assign the same port.
+  ss_->SetNextPortForTesting(first_addr.port());
+
+  turn_ready_ = false;
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
+  turn_port_->PrepareAddress();
+
+  // Verifies that the new port has the same address.
+  EXPECT_EQ(first_addr, turn_port_->socket()->GetLocalAddress());
+
+  EXPECT_TRUE_WAIT(turn_ready_, kTimeout);
+
+  // Verifies that the new port has a different address now.
+  EXPECT_NE(first_addr, turn_port_->socket()->GetLocalAddress());
 }
 
 // Do a TURN allocation and try to send a packet to it from the outside.

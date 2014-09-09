@@ -51,6 +51,10 @@ static const int TURN_PERMISSION_TIMEOUT = 5 * 60 * 1000;  // 5 minutes
 
 static const size_t TURN_CHANNEL_HEADER_SIZE = 4U;
 
+// Retry at most twice (i.e. three different ALLOCATE requests) on
+// STUN_ERROR_ALLOCATION_MISMATCH error per rfc5766.
+static const size_t MAX_ALLOCATE_MISMATCH_RETRIES = 2;
+
 inline bool IsTurnChannelData(uint16 msg_type) {
   return ((msg_type & 0xC000) == 0x4000);  // MSB are 0b01
 }
@@ -188,7 +192,8 @@ TurnPort::TurnPort(rtc::Thread* thread,
       request_manager_(thread),
       next_channel_number_(TURN_CHANNEL_NUMBER_START),
       connected_(false),
-      server_priority_(server_priority) {
+      server_priority_(server_priority),
+      allocate_mismatch_retries_(0) {
   request_manager_.SignalSendPacket.connect(this, &TurnPort::OnSendStunPacket);
 }
 
@@ -212,7 +217,8 @@ TurnPort::TurnPort(rtc::Thread* thread,
       request_manager_(thread),
       next_channel_number_(TURN_CHANNEL_NUMBER_START),
       connected_(false),
-      server_priority_(server_priority) {
+      server_priority_(server_priority),
+      allocate_mismatch_retries_(0) {
   request_manager_.SignalSendPacket.connect(this, &TurnPort::OnSendStunPacket);
 }
 
@@ -271,6 +277,8 @@ void TurnPort::PrepareAddress() {
 }
 
 bool TurnPort::CreateTurnClientSocket() {
+  ASSERT(!socket_ || SharedSocket());
+
   if (server_address_.proto == PROTO_UDP && !SharedSocket()) {
     socket_ = socket_factory()->CreateUdpSocket(
         rtc::SocketAddress(ip(), 0), min_port(), max_port());
@@ -338,6 +346,29 @@ void TurnPort::OnSocketClose(rtc::AsyncPacketSocket* socket, int error) {
   if (!connected_) {
     OnAllocateError();
   }
+}
+
+void TurnPort::OnAllocateMismatch() {
+  if (allocate_mismatch_retries_ >= MAX_ALLOCATE_MISMATCH_RETRIES) {
+    LOG_J(LS_WARNING, this) << "Giving up on the port after "
+                            << allocate_mismatch_retries_
+                            << " retries for STUN_ERROR_ALLOCATION_MISMATCH";
+    OnAllocateError();
+    return;
+  }
+
+  LOG_J(LS_INFO, this) << "Allocating a new socket after "
+                       << "STUN_ERROR_ALLOCATION_MISMATCH, retry = "
+                       << allocate_mismatch_retries_ + 1;
+  if (SharedSocket()) {
+    ResetSharedSocket();
+  } else {
+    delete socket_;
+  }
+  socket_ = NULL;
+
+  PrepareAddress();
+  ++allocate_mismatch_retries_;
 }
 
 Connection* TurnPort::CreateConnection(const Candidate& address,
@@ -579,6 +610,9 @@ void TurnPort::OnAllocateError() {
 void TurnPort::OnMessage(rtc::Message* message) {
   if (message->message_id == MSG_ERROR) {
     SignalPortError(this);
+    return;
+  } else if (message->message_id == MSG_ALLOCATE_MISMATCH) {
+    OnAllocateMismatch();
     return;
   }
 
@@ -844,6 +878,11 @@ void TurnAllocateRequest::OnErrorResponse(StunMessage* response) {
     case STUN_ERROR_TRY_ALTERNATE:
       OnTryAlternate(response, error_code->code());
       break;
+    case STUN_ERROR_ALLOCATION_MISMATCH:
+      // We must handle this error async because trying to delete the socket in
+      // OnErrorResponse will cause a deadlock on the socket.
+      port_->thread()->Post(port_, TurnPort::MSG_ALLOCATE_MISMATCH);
+      break;
     default:
       LOG_J(LS_WARNING, port_) << "Allocate response error, code="
                                << error_code->code();
@@ -966,7 +1005,6 @@ void TurnRefreshRequest::OnResponse(StunMessage* response) {
 }
 
 void TurnRefreshRequest::OnErrorResponse(StunMessage* response) {
-  // TODO(juberti): Handle 437 error response as a success.
   const StunErrorCodeAttribute* error_code = response->GetErrorCode();
   LOG_J(LS_WARNING, port_) << "Refresh response error, code="
                            << error_code->code();

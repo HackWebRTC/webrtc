@@ -155,6 +155,7 @@ class Port : public PortInterface, public rtc::MessageHandler,
   uint64 IceTiebreaker() const { return tiebreaker_; }
 
   virtual bool SharedSocket() const { return shared_socket_; }
+  void ResetSharedSocket() { shared_socket_ = false; }
 
   // The thread on which this port performs its I/O.
   rtc::Thread* thread() { return thread_; }

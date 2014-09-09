@@ -62,9 +62,9 @@ inline bool IsTurnChannelData(uint16 msg_type) {
   return ((msg_type & 0xC000) == 0x4000);
 }
 
-// IDs used for posted messages.
+// IDs used for posted messages for TurnServer::Allocation.
 enum {
-  MSG_TIMEOUT,
+  MSG_ALLOCATION_TIMEOUT,
 };
 
 // Encapsulates a TURN allocation.
@@ -608,7 +608,9 @@ void TurnServer::DestroyInternalSocket(rtc::AsyncPacketSocket* socket) {
   InternalSocketMap::iterator iter = server_sockets_.find(socket);
   if (iter != server_sockets_.end()) {
     rtc::AsyncPacketSocket* socket = iter->first;
-    delete socket;
+    // We must destroy the socket async to avoid invalidating the sigslot
+    // callback list iterator inside a sigslot callback.
+    rtc::Thread::Current()->Dispose(socket);
     server_sockets_.erase(iter);
   }
 }
@@ -662,7 +664,7 @@ TurnServer::Allocation::~Allocation() {
        it != perms_.end(); ++it) {
     delete *it;
   }
-  thread_->Clear(this, MSG_TIMEOUT);
+  thread_->Clear(this, MSG_ALLOCATION_TIMEOUT);
   LOG_J(LS_INFO, this) << "Allocation destroyed";
 }
 
@@ -707,7 +709,7 @@ void TurnServer::Allocation::HandleAllocateRequest(const TurnMessage* msg) {
 
   // Figure out the lifetime and start the allocation timer.
   int lifetime_secs = ComputeLifetime(msg);
-  thread_->PostDelayed(lifetime_secs * 1000, this, MSG_TIMEOUT);
+  thread_->PostDelayed(lifetime_secs * 1000, this, MSG_ALLOCATION_TIMEOUT);
 
   LOG_J(LS_INFO, this) << "Created allocation, lifetime=" << lifetime_secs;
 
@@ -734,8 +736,8 @@ void TurnServer::Allocation::HandleRefreshRequest(const TurnMessage* msg) {
   int lifetime_secs = ComputeLifetime(msg);
 
   // Reset the expiration timer.
-  thread_->Clear(this, MSG_TIMEOUT);
-  thread_->PostDelayed(lifetime_secs * 1000, this, MSG_TIMEOUT);
+  thread_->Clear(this, MSG_ALLOCATION_TIMEOUT);
+  thread_->PostDelayed(lifetime_secs * 1000, this, MSG_ALLOCATION_TIMEOUT);
 
   LOG_J(LS_INFO, this) << "Refreshed allocation, lifetime=" << lifetime_secs;
 
@@ -963,7 +965,7 @@ void TurnServer::Allocation::SendExternal(const void* data, size_t size,
 }
 
 void TurnServer::Allocation::OnMessage(rtc::Message* msg) {
-  ASSERT(msg->message_id == MSG_TIMEOUT);
+  ASSERT(msg->message_id == MSG_ALLOCATION_TIMEOUT);
   SignalDestroyed(this);
   delete this;
 }
@@ -988,16 +990,16 @@ TurnServer::Permission::Permission(rtc::Thread* thread,
 }
 
 TurnServer::Permission::~Permission() {
-  thread_->Clear(this, MSG_TIMEOUT);
+  thread_->Clear(this, MSG_ALLOCATION_TIMEOUT);
 }
 
 void TurnServer::Permission::Refresh() {
-  thread_->Clear(this, MSG_TIMEOUT);
-  thread_->PostDelayed(kPermissionTimeout, this, MSG_TIMEOUT);
+  thread_->Clear(this, MSG_ALLOCATION_TIMEOUT);
+  thread_->PostDelayed(kPermissionTimeout, this, MSG_ALLOCATION_TIMEOUT);
 }
 
 void TurnServer::Permission::OnMessage(rtc::Message* msg) {
-  ASSERT(msg->message_id == MSG_TIMEOUT);
+  ASSERT(msg->message_id == MSG_ALLOCATION_TIMEOUT);
   SignalDestroyed(this);
   delete this;
 }
@@ -1009,16 +1011,16 @@ TurnServer::Channel::Channel(rtc::Thread* thread, int id,
 }
 
 TurnServer::Channel::~Channel() {
-  thread_->Clear(this, MSG_TIMEOUT);
+  thread_->Clear(this, MSG_ALLOCATION_TIMEOUT);
 }
 
 void TurnServer::Channel::Refresh() {
-  thread_->Clear(this, MSG_TIMEOUT);
-  thread_->PostDelayed(kChannelTimeout, this, MSG_TIMEOUT);
+  thread_->Clear(this, MSG_ALLOCATION_TIMEOUT);
+  thread_->PostDelayed(kChannelTimeout, this, MSG_ALLOCATION_TIMEOUT);
 }
 
 void TurnServer::Channel::OnMessage(rtc::Message* msg) {
-  ASSERT(msg->message_id == MSG_TIMEOUT);
+  ASSERT(msg->message_id == MSG_ALLOCATION_TIMEOUT);
   SignalDestroyed(this);
   delete this;
 }
