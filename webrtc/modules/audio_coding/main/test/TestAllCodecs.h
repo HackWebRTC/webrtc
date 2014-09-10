@@ -28,10 +28,11 @@ class TestPack : public AudioPacketizationCallback {
 
   void RegisterReceiverACM(AudioCodingModule* acm);
 
-  int32_t SendData(FrameType frame_type, uint8_t payload_type,
-                   uint32_t timestamp, const uint8_t* payload_data,
-                   uint16_t payload_size,
-                   const RTPFragmentationHeader* fragmentation);
+  virtual int32_t SendData(
+      FrameType frame_type, uint8_t payload_type,
+      uint32_t timestamp, const uint8_t* payload_data,
+      uint16_t payload_size,
+      const RTPFragmentationHeader* fragmentation) OVERRIDE;
 
   uint16_t payload_size();
   uint32_t timestamp_diff();
@@ -52,7 +53,7 @@ class TestAllCodecs : public ACMTest {
   explicit TestAllCodecs(int test_mode);
   ~TestAllCodecs();
 
-  void Perform();
+  virtual void Perform() OVERRIDE;
 
  private:
   // The default value of '-1' indicates that the registration is based only on

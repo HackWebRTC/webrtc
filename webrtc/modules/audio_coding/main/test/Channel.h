@@ -50,10 +50,11 @@ class Channel : public AudioPacketizationCallback {
   Channel(int16_t chID = -1);
   ~Channel();
 
-  int32_t SendData(const FrameType frameType, const uint8_t payloadType,
-                   const uint32_t timeStamp, const uint8_t* payloadData,
-                   const uint16_t payloadSize,
-                   const RTPFragmentationHeader* fragmentation);
+  virtual int32_t SendData(
+      const FrameType frameType, const uint8_t payloadType,
+      const uint32_t timeStamp, const uint8_t* payloadData,
+      const uint16_t payloadSize,
+      const RTPFragmentationHeader* fragmentation) OVERRIDE;
 
   void RegisterReceiverACM(AudioCodingModule *acm);
 

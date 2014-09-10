@@ -35,10 +35,11 @@ class DualStreamTest : public AudioPacketizationCallback,
 
   void ApiTest();
 
-  int32_t SendData(FrameType frameType, uint8_t payload_type,
-                   uint32_t timestamp, const uint8_t* payload_data,
-                   uint16_t payload_size,
-                   const RTPFragmentationHeader* fragmentation);
+  virtual int32_t SendData(
+      FrameType frameType, uint8_t payload_type,
+      uint32_t timestamp, const uint8_t* payload_data,
+      uint16_t payload_size,
+      const RTPFragmentationHeader* fragmentation) OVERRIDE;
 
   void Perform(bool start_in_sync, int num_channels_input);
 

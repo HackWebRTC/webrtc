@@ -42,7 +42,7 @@ class AcmSendTest : public AudioPacketizationCallback, public PacketSource {
   // Returns the next encoded packet. Returns NULL if the test duration was
   // exceeded. Ownership of the packet is handed over to the caller.
   // Inherited from PacketSource.
-  Packet* NextPacket();
+  virtual Packet* NextPacket() OVERRIDE;
 
   // Inherited from AudioPacketizationCallback.
   virtual int32_t SendData(

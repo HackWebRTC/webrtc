@@ -29,10 +29,11 @@ class TestPacketization : public AudioPacketizationCallback {
  public:
   TestPacketization(RTPStream *rtpStream, uint16_t frequency);
   ~TestPacketization();
-  virtual int32_t SendData(const FrameType frameType, const uint8_t payloadType,
-                           const uint32_t timeStamp, const uint8_t* payloadData,
-                           const uint16_t payloadSize,
-                           const RTPFragmentationHeader* fragmentation);
+  virtual int32_t SendData(
+      const FrameType frameType, const uint8_t payloadType,
+      const uint32_t timeStamp, const uint8_t* payloadData,
+      const uint16_t payloadSize,
+      const RTPFragmentationHeader* fragmentation) OVERRIDE;
 
  private:
   static void MakeRTPheader(uint8_t* rtpHeader, uint8_t payloadType,
@@ -100,7 +101,7 @@ class EncodeDecodeTest : public ACMTest {
  public:
   EncodeDecodeTest();
   explicit EncodeDecodeTest(int testMode);
-  virtual void Perform();
+  virtual void Perform() OVERRIDE;
 
   uint16_t _playoutFreq;
   uint8_t _testMode;

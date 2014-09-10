@@ -329,7 +329,6 @@
             '<@(audio_coding_defines)',
           ],
           'sources': [
-            'audio_coding/main/test/ACMTest.cc',
             'audio_coding/main/test/APITest.cc',
             'audio_coding/main/test/Channel.cc',
             'audio_coding/main/test/dual_stream_unittest.cc',

@@ -124,9 +124,9 @@ class AudioCodingModuleTest : public ::testing::Test {
 
   ~AudioCodingModuleTest() {}
 
-  void TearDown() {}
+  void TearDown() OVERRIDE {}
 
-  void SetUp() {
+  void SetUp() OVERRIDE {
     acm_.reset(AudioCodingModule::Create(id_, clock_));
 
     RegisterCodec();
@@ -309,7 +309,7 @@ class AudioCodingModuleMtTest : public AudioCodingModuleTest {
     clock_ = fake_clock_.get();
   }
 
-  void SetUp() {
+  virtual void SetUp() OVERRIDE {
     AudioCodingModuleTest::SetUp();
     StartThreads();
   }
@@ -321,7 +321,7 @@ class AudioCodingModuleMtTest : public AudioCodingModuleTest {
     ASSERT_TRUE(pull_audio_thread_->Start(thread_id));
   }
 
-  void TearDown() {
+  virtual void TearDown() OVERRIDE {
     AudioCodingModuleTest::TearDown();
     pull_audio_thread_->Stop();
     send_thread_->Stop();
@@ -437,7 +437,7 @@ class AcmIsacMtTest : public AudioCodingModuleMtTest {
 
   ~AcmIsacMtTest() {}
 
-  void SetUp() {
+  virtual void SetUp() OVERRIDE {
     AudioCodingModuleTest::SetUp();
 
     // Set up input audio source to read from specified file, loop after 5
@@ -460,7 +460,7 @@ class AcmIsacMtTest : public AudioCodingModuleMtTest {
     StartThreads();
   }
 
-  virtual void RegisterCodec() {
+  virtual void RegisterCodec() OVERRIDE {
     COMPILE_ASSERT(kSampleRateHz == 16000, test_designed_for_isac_16khz);
     AudioCodingModule::Codec("ISAC", &codec_, kSampleRateHz, 1);
     codec_.pltype = kPayloadType;
@@ -471,7 +471,7 @@ class AcmIsacMtTest : public AudioCodingModuleMtTest {
     ASSERT_EQ(0, acm_->RegisterSendCodec(codec_));
   }
 
-  void InsertPacket() {
+  virtual void InsertPacket() OVERRIDE {
     int num_calls = packet_cb_.num_calls();  // Store locally for thread safety.
     if (num_calls > last_packet_number_) {
       // Get the new payload out from the callback handler.
@@ -490,16 +490,16 @@ class AcmIsacMtTest : public AudioCodingModuleMtTest {
             &last_payload_vec_[0], last_payload_vec_.size(), rtp_header_));
   }
 
-  void InsertAudio() {
+  virtual void InsertAudio() OVERRIDE {
     memcpy(input_frame_.data_, audio_loop_.GetNextBlock(), kNumSamples10ms);
     AudioCodingModuleTest::InsertAudio();
   }
 
-  void Encode() { ASSERT_GE(acm_->Process(), 0); }
+  virtual void Encode() OVERRIDE { ASSERT_GE(acm_->Process(), 0); }
 
   // This method is the same as AudioCodingModuleMtTest::TestDone(), but here
   // it is using the constants defined in this class (i.e., shorter test run).
-  virtual bool TestDone() {
+  virtual bool TestDone() OVERRIDE {
     if (packet_cb_.num_calls() > kNumPackets) {
       CriticalSectionScoped lock(crit_sect_.get());
       if (pull_audio_count_ > kNumPullCalls) {
@@ -694,7 +694,7 @@ class AcmSenderBitExactness : public ::testing::Test,
   // Returns a pointer to the next packet. Returns NULL if the source is
   // depleted (i.e., the test duration is exceeded), or if an error occurred.
   // Inherited from test::PacketSource.
-  test::Packet* NextPacket() OVERRIDE {
+  virtual test::Packet* NextPacket() OVERRIDE {
     // Get the next packet from AcmSendTest. Ownership of |packet| is
     // transferred to this method.
     test::Packet* packet = send_test_->NextPacket();

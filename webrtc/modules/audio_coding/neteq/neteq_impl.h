@@ -82,7 +82,7 @@ class NetEqImpl : public webrtc::NetEq {
   virtual int InsertPacket(const WebRtcRTPHeader& rtp_header,
                            const uint8_t* payload,
                            int length_bytes,
-                           uint32_t receive_timestamp);
+                           uint32_t receive_timestamp) OVERRIDE;
 
   // Inserts a sync-packet into packet queue. Sync-packets are decoded to
   // silence and are intended to keep AV-sync intact in an event of long packet
@@ -94,7 +94,7 @@ class NetEqImpl : public webrtc::NetEq {
   // can be implied by inserting a sync-packet.
   // Returns kOk on success, kFail on failure.
   virtual int InsertSyncPacket(const WebRtcRTPHeader& rtp_header,
-                               uint32_t receive_timestamp);
+                               uint32_t receive_timestamp) OVERRIDE;
 
   // Instructs NetEq to deliver 10 ms of audio data. The data is written to
   // |output_audio|, which can hold (at least) |max_length| elements.
@@ -106,12 +106,12 @@ class NetEqImpl : public webrtc::NetEq {
   // Returns kOK on success, or kFail in case of an error.
   virtual int GetAudio(size_t max_length, int16_t* output_audio,
                        int* samples_per_channel, int* num_channels,
-                       NetEqOutputType* type);
+                       NetEqOutputType* type) OVERRIDE;
 
   // Associates |rtp_payload_type| with |codec| and stores the information in
   // the codec database. Returns kOK on success, kFail on failure.
   virtual int RegisterPayloadType(enum NetEqDecoder codec,
-                                  uint8_t rtp_payload_type);
+                                  uint8_t rtp_payload_type) OVERRIDE;
 
   // Provides an externally created decoder object |decoder| to insert in the
   // decoder database. The decoder implements a decoder of type |codec| and
@@ -119,80 +119,81 @@ class NetEqImpl : public webrtc::NetEq {
   // failure.
   virtual int RegisterExternalDecoder(AudioDecoder* decoder,
                                       enum NetEqDecoder codec,
-                                      uint8_t rtp_payload_type);
+                                      uint8_t rtp_payload_type) OVERRIDE;
 
   // Removes |rtp_payload_type| from the codec database. Returns 0 on success,
   // -1 on failure.
-  virtual int RemovePayloadType(uint8_t rtp_payload_type);
+  virtual int RemovePayloadType(uint8_t rtp_payload_type) OVERRIDE;
 
-  virtual bool SetMinimumDelay(int delay_ms);
+  virtual bool SetMinimumDelay(int delay_ms) OVERRIDE;
 
-  virtual bool SetMaximumDelay(int delay_ms);
+  virtual bool SetMaximumDelay(int delay_ms) OVERRIDE;
 
-  virtual int LeastRequiredDelayMs() const;
+  virtual int LeastRequiredDelayMs() const OVERRIDE;
 
-  virtual int SetTargetDelay() { return kNotImplemented; }
+  virtual int SetTargetDelay() OVERRIDE { return kNotImplemented; }
 
-  virtual int TargetDelay() { return kNotImplemented; }
+  virtual int TargetDelay() OVERRIDE { return kNotImplemented; }
 
-  virtual int CurrentDelay() { return kNotImplemented; }
+  virtual int CurrentDelay() OVERRIDE { return kNotImplemented; }
 
   // Sets the playout mode to |mode|.
-  virtual void SetPlayoutMode(NetEqPlayoutMode mode);
+  virtual void SetPlayoutMode(NetEqPlayoutMode mode) OVERRIDE;
 
   // Returns the current playout mode.
-  virtual NetEqPlayoutMode PlayoutMode() const;
+  virtual NetEqPlayoutMode PlayoutMode() const OVERRIDE;
 
   // Writes the current network statistics to |stats|. The statistics are reset
   // after the call.
-  virtual int NetworkStatistics(NetEqNetworkStatistics* stats);
+  virtual int NetworkStatistics(NetEqNetworkStatistics* stats) OVERRIDE;
 
   // Writes the last packet waiting times (in ms) to |waiting_times|. The number
   // of values written is no more than 100, but may be smaller if the interface
   // is polled again before 100 packets has arrived.
-  virtual void WaitingTimes(std::vector<int>* waiting_times);
+  virtual void WaitingTimes(std::vector<int>* waiting_times) OVERRIDE;
 
   // Writes the current RTCP statistics to |stats|. The statistics are reset
   // and a new report period is started with the call.
-  virtual void GetRtcpStatistics(RtcpStatistics* stats);
+  virtual void GetRtcpStatistics(RtcpStatistics* stats) OVERRIDE;
 
   // Same as RtcpStatistics(), but does not reset anything.
-  virtual void GetRtcpStatisticsNoReset(RtcpStatistics* stats);
+  virtual void GetRtcpStatisticsNoReset(RtcpStatistics* stats) OVERRIDE;
 
   // Enables post-decode VAD. When enabled, GetAudio() will return
   // kOutputVADPassive when the signal contains no speech.
-  virtual void EnableVad();
+  virtual void EnableVad() OVERRIDE;
 
   // Disables post-decode VAD.
-  virtual void DisableVad();
+  virtual void DisableVad() OVERRIDE;
 
-  virtual bool GetPlayoutTimestamp(uint32_t* timestamp);
+  virtual bool GetPlayoutTimestamp(uint32_t* timestamp) OVERRIDE;
 
-  virtual int SetTargetNumberOfChannels() { return kNotImplemented; }
+  virtual int SetTargetNumberOfChannels() OVERRIDE { return kNotImplemented; }
 
-  virtual int SetTargetSampleRate() { return kNotImplemented; }
+  virtual int SetTargetSampleRate() OVERRIDE { return kNotImplemented; }
 
   // Returns the error code for the last occurred error. If no error has
   // occurred, 0 is returned.
-  virtual int LastError();
+  virtual int LastError() OVERRIDE;
 
   // Returns the error code last returned by a decoder (audio or comfort noise).
   // When LastError() returns kDecoderErrorCode or kComfortNoiseErrorCode, check
   // this method to get the decoder's error code.
-  virtual int LastDecoderError();
+  virtual int LastDecoderError() OVERRIDE;
 
   // Flushes both the packet buffer and the sync buffer.
-  virtual void FlushBuffers();
+  virtual void FlushBuffers() OVERRIDE;
 
   virtual void PacketBufferStatistics(int* current_num_packets,
-                                      int* max_num_packets) const;
+                                      int* max_num_packets) const OVERRIDE;
 
   // Get sequence number and timestamp of the latest RTP.
   // This method is to facilitate NACK.
-  virtual int DecodedRtpInfo(int* sequence_number, uint32_t* timestamp) const;
+  virtual int DecodedRtpInfo(int* sequence_number,
+                             uint32_t* timestamp) const OVERRIDE;
 
   // This accessor method is only intended for testing purposes.
-  virtual const SyncBuffer* sync_buffer_for_test() const;
+  const SyncBuffer* sync_buffer_for_test() const;
 
  protected:
   static const int kOutputSizeMs = 10;
