@@ -44,7 +44,7 @@ public class OpenSlDemo extends Activity implements View.OnClickListener {
     runner = new OpenSlRunner();
     // Native code calls back into JVM to be able to configure OpenSL to low
     // latency mode. Provide the context needed to do this.
-    runner.RegisterApplicationContext(getApplicationContext());
+    OpenSlRunner.RegisterApplicationContext(getApplicationContext());
   }
 
   // Called before activity is destroyed.
@@ -56,11 +56,11 @@ public class OpenSlDemo extends Activity implements View.OnClickListener {
 
   private void startOrStop() {
     if (isRunning) {
-      runner.Stop();
+      OpenSlRunner.Stop();
       btStartStopCall.setText(R.string.startCall);
       isRunning = false;
     } else if (!isRunning){
-      runner.Start();
+      OpenSlRunner.Start();
       btStartStopCall.setText(R.string.stopCall);
       isRunning = true;
     }
