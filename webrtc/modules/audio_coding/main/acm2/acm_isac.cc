@@ -93,8 +93,6 @@ int16_t ACMISAC::InternalCreateEncoder() { return -1; }
 
 void ACMISAC::DestructEncoderSafe() { return; }
 
-void ACMISAC::InternalDestructEncoderInst(void* /* ptr_inst */) { return; }
-
 int16_t ACMISAC::Transcode(uint8_t* /* bitstream */,
                            int16_t* /* bitstream_len_byte */,
                            int16_t /* q_bwe */,
@@ -458,13 +456,6 @@ void ACMISAC::UpdateFrameLen() {
 void ACMISAC::DestructEncoderSafe() {
   // codec with shared instance cannot delete.
   encoder_initialized_ = false;
-  return;
-}
-
-void ACMISAC::InternalDestructEncoderInst(void* ptr_inst) {
-  if (ptr_inst != NULL) {
-    ACM_ISAC_FREE(static_cast<ACM_ISAC_STRUCT *>(ptr_inst));
-  }
   return;
 }
 

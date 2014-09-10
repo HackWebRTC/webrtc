@@ -47,11 +47,6 @@ int16_t ACMPCMA::InternalCreateEncoder() {
   return 0;
 }
 
-void ACMPCMA::InternalDestructEncoderInst(void* /* ptr_inst */) {
-  // PCM has no instance.
-  return;
-}
-
 void ACMPCMA::DestructEncoderSafe() {
   // PCM has no instance.
   return;

@@ -622,13 +622,6 @@ int16_t ACMGenericCodec::CreateEncoder() {
   return status;
 }
 
-void ACMGenericCodec::DestructEncoderInst(void* ptr_inst) {
-  if (ptr_inst != NULL) {
-    WriteLockScoped lockCodec(codec_wrapper_lock_);
-    InternalDestructEncoderInst(ptr_inst);
-  }
-}
-
 uint32_t ACMGenericCodec::EarliestTimestamp() const {
   ReadLockScoped cs(codec_wrapper_lock_);
   return in_timestamp_[0];

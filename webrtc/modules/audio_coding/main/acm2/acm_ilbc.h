@@ -44,8 +44,6 @@ class ACMILBC : public ACMGenericCodec {
 
   int16_t InternalCreateEncoder();
 
-  void InternalDestructEncoderInst(void* ptr_inst);
-
   iLBC_encinst_t_* encoder_inst_ptr_;
 };
 

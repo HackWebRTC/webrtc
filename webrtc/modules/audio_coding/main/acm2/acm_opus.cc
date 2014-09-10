@@ -57,10 +57,6 @@ void ACMOpus::DestructEncoderSafe() {
   return;
 }
 
-void ACMOpus::InternalDestructEncoderInst(void* /* ptr_inst */) {
-  return;
-}
-
 int16_t ACMOpus::SetBitRateSafe(const int32_t /*rate*/) {
   return -1;
 }
@@ -175,13 +171,6 @@ void ACMOpus::DestructEncoderSafe() {
     WebRtcOpus_EncoderFree(encoder_inst_ptr_);
     encoder_inst_ptr_ = NULL;
   }
-}
-
-void ACMOpus::InternalDestructEncoderInst(void* ptr_inst) {
-  if (ptr_inst != NULL) {
-    WebRtcOpus_EncoderFree(static_cast<OpusEncInst*>(ptr_inst));
-  }
-  return;
 }
 
 int16_t ACMOpus::SetBitRateSafe(const int32_t rate) {

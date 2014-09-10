@@ -210,8 +210,6 @@ class AudioCodingModuleImpl : public AudioCodingModule {
 
   int NetworkStatistics(ACMNetworkStatistics* statistics);
 
-  void DestructEncoderInst(void* inst);
-
   // GET RED payload for iSAC. The method id called when 'this' ACM is
   // the default ACM.
   // TODO(henrik.lundin) Not used. Remove?

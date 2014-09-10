@@ -117,8 +117,6 @@ class ACMISAC : public ACMGenericCodec, AudioDecoder {
 
   int16_t InternalCreateEncoder() OVERRIDE;
 
-  void InternalDestructEncoderInst(void* ptr_inst) OVERRIDE;
-
   void CurrentRate(int32_t* rate_bit_per_sec) OVERRIDE;
 
   virtual AudioDecoder* Decoder(int codec_id) OVERRIDE;

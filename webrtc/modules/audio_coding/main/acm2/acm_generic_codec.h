@@ -213,18 +213,6 @@ class ACMGenericCodec {
   int16_t SetBitRate(const int32_t bitrate_bps);
 
   ///////////////////////////////////////////////////////////////////////////
-  // DestructEncoderInst()
-  // This API is used in conferencing. It will free the memory that is pointed
-  // by |ptr_inst|. |ptr_inst| is a pointer to encoder instance, created and
-  // filled up by calling EncoderInst(...).
-  //
-  // Inputs:
-  //   -ptr_inst            : pointer to an encoder instance to be deleted.
-  //
-  //
-  void DestructEncoderInst(void* ptr_inst);
-
-  ///////////////////////////////////////////////////////////////////////////
   // uint32_t EarliestTimestamp()
   // Returns the timestamp of the first 10 ms in audio buffer. This is used
   // to identify if a synchronization of two encoders is required.
@@ -835,23 +823,6 @@ class ACMGenericCodec {
   //    0 if succeeded.
   //
   virtual int16_t InternalCreateEncoder() = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
-  // void InternalDestructEncoderInst()
-  // This is a codec-specific method, used in conferencing, called from
-  // DestructEncoderInst(). The input argument is pointer to encoder instance
-  // (codec instance for codecs that encoder and decoder share the same
-  // instance). This method is called to free the memory that |ptr_inst| is
-  // pointing to.
-  //
-  // Input:
-  //   -ptr_inst           : pointer to encoder instance.
-  //
-  // Return value:
-  //   -1 if failed,
-  //    0 if succeeded.
-  //
-  virtual void InternalDestructEncoderInst(void* ptr_inst) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int16_t InternalResetEncoder()

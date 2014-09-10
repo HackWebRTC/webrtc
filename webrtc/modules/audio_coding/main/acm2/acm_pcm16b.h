@@ -37,8 +37,6 @@ class ACMPCM16B : public ACMGenericCodec {
 
   int16_t InternalCreateEncoder();
 
-  void InternalDestructEncoderInst(void* ptr_inst);
-
   int32_t sampling_freq_hz_;
 };
 

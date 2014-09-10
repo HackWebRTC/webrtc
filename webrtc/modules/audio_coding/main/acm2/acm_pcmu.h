@@ -36,8 +36,6 @@ class ACMPCMU : public ACMGenericCodec {
       EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
 
   int16_t InternalCreateEncoder();
-
-  void InternalDestructEncoderInst(void* ptr_inst);
 };
 
 }  // namespace acm2

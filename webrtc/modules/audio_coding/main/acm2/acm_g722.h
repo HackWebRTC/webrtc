@@ -51,8 +51,6 @@ class ACMG722 : public ACMGenericCodec {
 
   int16_t InternalCreateEncoder();
 
-  void InternalDestructEncoderInst(void* ptr_inst);
-
   ACMG722EncStr* ptr_enc_str_;
 
   G722EncInst* encoder_inst_ptr_;

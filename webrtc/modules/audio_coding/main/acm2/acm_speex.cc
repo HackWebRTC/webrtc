@@ -58,8 +58,6 @@ void ACMSPEEX::DestructEncoderSafe() { return; }
 
 int16_t ACMSPEEX::SetBitRateSafe(const int32_t /* rate */) { return -1; }
 
-void ACMSPEEX::InternalDestructEncoderInst(void* /* ptr_inst */) { return; }
-
 #ifdef UNUSEDSPEEX
 int16_t ACMSPEEX::EnableVBR() { return -1; }
 
@@ -248,13 +246,6 @@ int16_t ACMSPEEX::SetBitRateSafe(const int32_t rate) {
   }
 
   return 0;
-}
-
-void ACMSPEEX::InternalDestructEncoderInst(void* ptr_inst) {
-  if (ptr_inst != NULL) {
-    WebRtcSpeex_FreeEnc(static_cast<SPEEX_encinst_t_*>(ptr_inst));
-  }
-  return;
 }
 
 #ifdef UNUSEDSPEEX

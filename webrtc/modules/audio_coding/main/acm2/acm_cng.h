@@ -40,8 +40,6 @@ class ACMCNG: public ACMGenericCodec {
 
   int16_t InternalCreateEncoder();
 
-  void InternalDestructEncoderInst(void* ptr_inst);
-
   int16_t EnableDTX() {
     return -1;
   }

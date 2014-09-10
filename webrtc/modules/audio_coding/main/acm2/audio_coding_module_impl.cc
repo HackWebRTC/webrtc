@@ -1787,15 +1787,6 @@ int AudioCodingModuleImpl::NetworkStatistics(ACMNetworkStatistics* statistics) {
   return 0;
 }
 
-void AudioCodingModuleImpl::DestructEncoderInst(void* inst) {
-  CriticalSectionScoped lock(acm_crit_sect_);
-  WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceAudioCoding, id_,
-               "DestructEncoderInst()");
-  if (!HaveValidEncoder("DestructEncoderInst"))
-    return;
-  codecs_[current_send_codec_idx_]->DestructEncoderInst(inst);
-}
-
 int AudioCodingModuleImpl::RegisterVADCallback(ACMVADCallback* vad_callback) {
   WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceAudioCoding, id_,
                "RegisterVADCallback()");

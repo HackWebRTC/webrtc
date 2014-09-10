@@ -45,8 +45,6 @@ class ACMOpus : public ACMGenericCodec {
 
   int16_t InternalCreateEncoder();
 
-  void InternalDestructEncoderInst(void* ptr_inst);
-
   int16_t SetBitRateSafe(const int32_t rate) OVERRIDE
       EXCLUSIVE_LOCKS_REQUIRED(codec_wrapper_lock_);
 
