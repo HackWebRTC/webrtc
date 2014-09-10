@@ -55,7 +55,6 @@ enum {
   PORTALLOCATOR_ENABLE_SHARED_UFRAG = 0x80,
   PORTALLOCATOR_ENABLE_SHARED_SOCKET = 0x100,
   PORTALLOCATOR_ENABLE_STUN_RETRANSMIT_ATTRIBUTE = 0x200,
-  PORTALLOCATOR_ENABLE_TURN_SHARED_SOCKET = 0x400,
 };
 
 const uint32 kDefaultPortAllocatorFlags = 0;
@@ -170,7 +169,6 @@ class PortAllocator : public sigslot::has_slots<> {
 
   uint32 step_delay() const { return step_delay_; }
   void set_step_delay(uint32 delay) {
-    ASSERT(delay >= kMinimumStepDelay);
     step_delay_ = delay;
   }
 

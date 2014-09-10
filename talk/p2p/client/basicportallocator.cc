@@ -149,9 +149,6 @@ class AllocationSequence : public rtc::MessageHandler,
                     const rtc::PacketTime& packet_time);
 
   void OnPortDestroyed(PortInterface* port);
-  void OnResolvedTurnServerAddress(
-    TurnPort* port, const rtc::SocketAddress& server_address,
-    const rtc::SocketAddress& resolved_server_address);
 
   BasicPortAllocatorSession* session_;
   rtc::Network* network_;
@@ -163,8 +160,7 @@ class AllocationSequence : public rtc::MessageHandler,
   rtc::scoped_ptr<rtc::AsyncPacketSocket> udp_socket_;
   // There will be only one udp port per AllocationSequence.
   UDPPort* udp_port_;
-  // Keeping a map for turn ports keyed with server addresses.
-  std::map<rtc::SocketAddress, Port*> turn_ports_;
+  std::vector<TurnPort*> turn_ports_;
   int phase_;
 };
 
@@ -1054,26 +1050,15 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
     // don't pass shared socket for ports which will create TCP sockets.
     // TODO(mallinath) - Enable shared socket mode for TURN ports. Disabled
     // due to webrtc bug https://code.google.com/p/webrtc/issues/detail?id=3537
-    if (IsFlagSet(PORTALLOCATOR_ENABLE_TURN_SHARED_SOCKET) &&
+    if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET) &&
         relay_port->proto == PROTO_UDP) {
       port = TurnPort::Create(session_->network_thread(),
                               session_->socket_factory(),
                               network_, udp_socket_.get(),
                               session_->username(), session_->password(),
                               *relay_port, config.credentials, config.priority);
-      // If we are using shared socket for TURN and udp ports, we need to
-      // find a way to demux the packets to the correct port when received.
-      // Mapping against server_address is one way of doing this. When packet
-      // is received the remote_address will be checked against the map.
-      // If server address is not resolved, a signal will be sent from the port
-      // after the address is resolved. The map entry will updated with the
-      // resolved address when the signal is received from the port.
-      if ((*relay_port).address.IsUnresolved()) {
-        // If server address is not resolved then listen for signal from port.
-        port->SignalResolvedServerAddress.connect(
-            this, &AllocationSequence::OnResolvedTurnServerAddress);
-      }
-      turn_ports_[(*relay_port).address] = port;
+
+      turn_ports_.push_back(port);
       // Listen to the port destroyed signal, to allow AllocationSequence to
       // remove entrt from it's map.
       port->SignalDestroyed.connect(this, &AllocationSequence::OnPortDestroyed);
@@ -1097,51 +1082,45 @@ void AllocationSequence::OnReadPacket(
     const rtc::SocketAddress& remote_addr,
     const rtc::PacketTime& packet_time) {
   ASSERT(socket == udp_socket_.get());
-  // If the packet is received from one of the TURN server in the config, then
-  // pass down the packet to that port, otherwise it will be handed down to
-  // the local udp port.
-  Port* port = NULL;
-  std::map<rtc::SocketAddress, Port*>::iterator iter =
-      turn_ports_.find(remote_addr);
-  if (iter != turn_ports_.end()) {
-    port = iter->second;
-  } else if (udp_port_) {
-    port = udp_port_;
+
+  bool turn_port_found = false;
+
+  // Try to find the TurnPort that matches the remote address. Note that the
+  // message could be a STUN binding response if the TURN server is also used as
+  // a STUN server. We don't want to parse every message here to check if it is
+  // a STUN binding response, so we pass the message to TurnPort regardless of
+  // the message type. The TurnPort will just ignore the message since it will
+  // not find any request by transaction ID.
+  for (std::vector<TurnPort*>::const_iterator it = turn_ports_.begin();
+       it != turn_ports_.end(); ++it) {
+    TurnPort* port = *it;
+    if (port->server_address().address == remote_addr) {
+      port->HandleIncomingPacket(socket, data, size, remote_addr, packet_time);
+      turn_port_found = true;
+      break;
+    }
   }
-  ASSERT(port != NULL);
-  if (port) {
-    port->HandleIncomingPacket(socket, data, size, remote_addr, packet_time);
+
+  if (udp_port_) {
+    const ServerAddresses& stun_servers = udp_port_->server_addresses();
+
+    // Pass the packet to the UdpPort if there is no matching TurnPort, or if
+    // the TURN server is also a STUN server.
+    if (!turn_port_found ||
+        stun_servers.find(remote_addr) != stun_servers.end()) {
+      udp_port_->HandleIncomingPacket(
+          socket, data, size, remote_addr, packet_time);
+    }
   }
 }
 
 void AllocationSequence::OnPortDestroyed(PortInterface* port) {
   if (udp_port_ == port) {
     udp_port_ = NULL;
-  } else {
-    std::map<rtc::SocketAddress, Port*>::iterator iter;
-    for (iter = turn_ports_.begin(); iter != turn_ports_.end(); ++iter) {
-      if (iter->second == port) {
-        turn_ports_.erase(iter);
-        break;
-      }
-    }
-  }
-}
-
-void AllocationSequence::OnResolvedTurnServerAddress(
-    TurnPort* port, const rtc::SocketAddress& server_address,
-    const rtc::SocketAddress& resolved_server_address) {
-  std::map<rtc::SocketAddress, Port*>::iterator iter;
-  iter = turn_ports_.find(server_address);
-  if (iter == turn_ports_.end()) {
-    LOG(LS_INFO) << "TurnPort entry is not found in the map.";
     return;
   }
 
-  ASSERT(iter->second == port);
-  // Remove old entry and then insert using the resolved address as key.
-  turn_ports_.erase(iter);
-  turn_ports_[resolved_server_address] = port;
+  turn_ports_.erase(std::find(turn_ports_.begin(), turn_ports_.end(), port));
 }
 
 // PortConfiguration

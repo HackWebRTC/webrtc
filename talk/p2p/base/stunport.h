@@ -82,7 +82,7 @@ class UDPPort : public Port {
     return socket_->GetLocalAddress();
   }
 
-  const ServerAddresses server_addresses() const {
+  const ServerAddresses& server_addresses() const {
     return server_addresses_;
   }
   void
