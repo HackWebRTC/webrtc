@@ -43,7 +43,6 @@
       'conditions': [
         ['include_tests==1', {
           'dependencies': [
-            'base/base_tests.gyp:*',
             'common_video/common_video_unittests.gyp:*',
             'libjingle/xmllite/xmllite_tests.gyp:*',
             'sound/sound_tests.gyp:*',
@@ -53,6 +52,7 @@
             'test/webrtc_test_common.gyp:webrtc_test_common_unittests',
             'tools/tools.gyp:*',
             'webrtc_tests',
+            'rtc_unittests',
           ],
         }],
       ],

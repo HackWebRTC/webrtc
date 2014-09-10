@@ -14,7 +14,7 @@
       'type': 'executable',
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
-        '<(webrtc_root)/base/base_tests.gyp:webrtc_base_tests_utils',
+        '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
         'xmllite.gyp:rtc_xmllite',
       ],
       'cflags_cc!': [

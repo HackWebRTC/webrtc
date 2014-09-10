@@ -13,7 +13,7 @@
       'target_name': 'rtc_xmllite',
       'type': 'static_library',
       'dependencies': [
-        '<(webrtc_root)/base/base.gyp:webrtc_base',
+        '<(webrtc_root)/base/base.gyp:rtc_base',
         '<(DEPTH)/third_party/expat/expat.gyp:expat',
       ],
       'export_dependent_settings': [

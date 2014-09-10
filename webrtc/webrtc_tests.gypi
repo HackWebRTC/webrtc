@@ -8,6 +8,16 @@
 {
   'targets': [
     {
+      'target_name': 'rtc_unittests',
+      'type': 'executable',
+      'dependencies': [
+        'base/base.gyp:rtc_base',
+        'base/base_tests.gyp:rtc_base_tests_utils',
+        'base/base_tests.gyp:rtc_base_tests',
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+      ],
+    },
+    {
       'target_name': 'webrtc_tests',
       'type': 'none',
       'dependencies': [

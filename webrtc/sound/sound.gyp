@@ -13,7 +13,7 @@
       'target_name': 'rtc_sound',
       'type': 'static_library',
       'dependencies': [
-        '<(webrtc_root)/base/base.gyp:webrtc_base',
+        '<(webrtc_root)/base/base.gyp:rtc_base',
       ],
       'sources': [
         'automaticallychosensoundsystem.h',

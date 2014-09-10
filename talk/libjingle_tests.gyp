@@ -33,7 +33,7 @@
       'type': 'static_library',
       'dependencies': [
         '<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv',
-        '<(webrtc_root)/base/base_tests.gyp:webrtc_base_tests_utils',
+        '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
         '<@(libjingle_tests_additional_deps)',
       ],
       'direct_dependent_settings': {
@@ -74,8 +74,8 @@
       'type': 'executable',
       'includes': [ 'build/ios_tests.gypi', ],
       'dependencies': [
-        '<(webrtc_root)/base/base.gyp:webrtc_base',
-        '<(webrtc_root)/base/base_tests.gyp:webrtc_base_tests_utils',
+        '<(webrtc_root)/base/base.gyp:rtc_base',
+        '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
         'libjingle.gyp:libjingle',
         'libjingle_unittest_main',
       ],
@@ -107,7 +107,7 @@
       'target_name': 'libjingle_sound_unittest',
       'type': 'executable',
       'dependencies': [
-        '<(webrtc_root)/base/base_tests.gyp:webrtc_base_tests_utils',
+        '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
         'libjingle.gyp:libjingle_sound',
         'libjingle_unittest_main',
       ],
@@ -119,7 +119,7 @@
       'target_name': 'libjingle_media_unittest',
       'type': 'executable',
       'dependencies': [
-        '<(webrtc_root)/base/base_tests.gyp:webrtc_base_tests_utils',
+        '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
         'libjingle.gyp:libjingle_media',
         'libjingle_unittest_main',
       ],
@@ -193,7 +193,7 @@
       'type': 'executable',
       'dependencies': [
         '<(DEPTH)/third_party/libsrtp/libsrtp.gyp:libsrtp',
-        '<(webrtc_root)/base/base_tests.gyp:webrtc_base_tests_utils',
+        '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
         'libjingle.gyp:libjingle',
         'libjingle.gyp:libjingle_p2p',
         'libjingle_unittest_main',
@@ -252,7 +252,7 @@
       'type': 'executable',
       'dependencies': [
         '<(DEPTH)/testing/gmock.gyp:gmock',
-        '<(webrtc_root)/base/base_tests.gyp:webrtc_base_tests_utils',
+        '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
         'libjingle.gyp:libjingle',
         'libjingle.gyp:libjingle_p2p',
         'libjingle.gyp:libjingle_peerconnection',
@@ -385,7 +385,7 @@
           'type': 'executable',
           'includes': [ 'build/ios_tests.gypi', ],
           'dependencies': [
-            '<(webrtc_root)/base/base_tests.gyp:webrtc_base_tests_utils',
+            '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
             'libjingle.gyp:libjingle_peerconnection_objc',
           ],
           'sources': [

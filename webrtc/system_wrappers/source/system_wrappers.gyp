@@ -17,7 +17,7 @@
         '../interface',
       ],
       'dependencies': [
-        '../../base/base.gyp:webrtc_base',
+        '../../base/base.gyp:rtc_base',
       ],
       'direct_dependent_settings': {
         'include_dirs': [

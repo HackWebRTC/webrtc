@@ -25,7 +25,7 @@
   ],
   'targets': [
     {
-      'target_name': 'webrtc_base',
+      'target_name': 'rtc_base',
       'type': 'static_library',
       'defines': [
         'FEATURE_ENABLE_SSL',
@@ -316,7 +316,7 @@
         '../overrides/webrtc/base/logging.h',
         '../overrides/webrtc/base/win32socketinit.cc',
       ],
-      # TODO(henrike): issue 3307, make webrtc_base build without disabling
+      # TODO(henrike): issue 3307, make rtc_base build without disabling
       # these flags.
       'cflags!': [
         '-Wextra',
