@@ -1152,7 +1152,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecNoOpusFec) {
   int channel_num = voe_.GetLastChannel();
   std::vector<cricket::AudioCodec> codecs;
   codecs.push_back(kOpusCodec);
-  codecs[0].bitrate = 0;
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
   EXPECT_FALSE(voe_.GetCodecFEC(channel_num));
 }
@@ -1228,6 +1227,159 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecIsacWithParamNoFec) {
   codecs[0].params["useinbandfec"] = "1";
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
   EXPECT_FALSE(voe_.GetCodecFEC(channel_num));
+}
+
+// Test that Opus FEC status can be changed.
+TEST_F(WebRtcVoiceEngineTestFake, ChangeOpusFecStatus) {
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = voe_.GetLastChannel();
+  std::vector<cricket::AudioCodec> codecs;
+  codecs.push_back(kOpusCodec);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_FALSE(voe_.GetCodecFEC(channel_num));
+  codecs[0].params["useinbandfec"] = "1";
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_TRUE(voe_.GetCodecFEC(channel_num));
+}
+
+// Test maxplaybackrate <= 8000 triggers Opus narrow band mode.
+TEST_F(WebRtcVoiceEngineTestFake, SetOpusMaxPlaybackRateNb) {
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = voe_.GetLastChannel();
+  std::vector<cricket::AudioCodec> codecs;
+  codecs.push_back(kOpusCodec);
+  codecs[0].bitrate = 0;
+  codecs[0].SetParam(cricket::kCodecParamMaxPlaybackRate, 8000);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_EQ(cricket::kOpusBandwidthNb,
+            voe_.GetMaxEncodingBandwidth(channel_num));
+  webrtc::CodecInst gcodec;
+  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
+  EXPECT_STREQ("opus", gcodec.plname);
+  // TODO(minyue): Default bit rate is not but can in future be affected by
+  // kCodecParamMaxPlaybackRate.
+  EXPECT_EQ(32000, gcodec.rate);
+}
+
+// Test 8000 < maxplaybackrate <= 12000 triggers Opus medium band mode.
+TEST_F(WebRtcVoiceEngineTestFake, SetOpusMaxPlaybackRateMb) {
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = voe_.GetLastChannel();
+  std::vector<cricket::AudioCodec> codecs;
+  codecs.push_back(kOpusCodec);
+  codecs[0].bitrate = 0;
+  codecs[0].SetParam(cricket::kCodecParamMaxPlaybackRate, 8001);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_EQ(cricket::kOpusBandwidthMb,
+            voe_.GetMaxEncodingBandwidth(channel_num));
+  webrtc::CodecInst gcodec;
+  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
+  EXPECT_STREQ("opus", gcodec.plname);
+  // TODO(minyue): Default bit rate is not but can in future be affected by
+  // kCodecParamMaxPlaybackRate.
+  EXPECT_EQ(32000, gcodec.rate);
+}
+
+// Test 12000 < maxplaybackrate <= 16000 triggers Opus wide band mode.
+TEST_F(WebRtcVoiceEngineTestFake, SetOpusMaxPlaybackRateWb) {
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = voe_.GetLastChannel();
+  std::vector<cricket::AudioCodec> codecs;
+  codecs.push_back(kOpusCodec);
+  codecs[0].bitrate = 0;
+  codecs[0].SetParam(cricket::kCodecParamMaxPlaybackRate, 12001);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_EQ(cricket::kOpusBandwidthWb,
+            voe_.GetMaxEncodingBandwidth(channel_num));
+  webrtc::CodecInst gcodec;
+  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
+  EXPECT_STREQ("opus", gcodec.plname);
+  // TODO(minyue): Default bit rate is not but can in future be affected by
+  // kCodecParamMaxPlaybackRate.
+  EXPECT_EQ(32000, gcodec.rate);
+}
+
+// Test 16000 < maxplaybackrate <= 24000 triggers Opus super wide band mode.
+TEST_F(WebRtcVoiceEngineTestFake, SetOpusMaxPlaybackRateSwb) {
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = voe_.GetLastChannel();
+  std::vector<cricket::AudioCodec> codecs;
+  codecs.push_back(kOpusCodec);
+  codecs[0].bitrate = 0;
+  codecs[0].SetParam(cricket::kCodecParamMaxPlaybackRate, 16001);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_EQ(cricket::kOpusBandwidthSwb,
+            voe_.GetMaxEncodingBandwidth(channel_num));
+  webrtc::CodecInst gcodec;
+  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
+  EXPECT_STREQ("opus", gcodec.plname);
+  // TODO(minyue): Default bit rate is not but can in future be affected by
+  // kCodecParamMaxPlaybackRate.
+  EXPECT_EQ(32000, gcodec.rate);
+}
+
+// Test 24000 < maxplaybackrate triggers Opus full band mode.
+TEST_F(WebRtcVoiceEngineTestFake, SetOpusMaxPlaybackRateFb) {
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = voe_.GetLastChannel();
+  std::vector<cricket::AudioCodec> codecs;
+  codecs.push_back(kOpusCodec);
+  codecs[0].bitrate = 0;
+  codecs[0].SetParam(cricket::kCodecParamMaxPlaybackRate, 24001);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_EQ(cricket::kOpusBandwidthFb,
+            voe_.GetMaxEncodingBandwidth(channel_num));
+  webrtc::CodecInst gcodec;
+  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
+  EXPECT_STREQ("opus", gcodec.plname);
+  // TODO(minyue): Default bit rate is not but can in future be affected by
+  // kCodecParamMaxPlaybackRate.
+  EXPECT_EQ(32000, gcodec.rate);
+}
+
+// Test Opus that without maxplaybackrate, default playback rate is used.
+TEST_F(WebRtcVoiceEngineTestFake, DefaultOpusMaxPlaybackRate) {
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = voe_.GetLastChannel();
+  std::vector<cricket::AudioCodec> codecs;
+  codecs.push_back(kOpusCodec);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_EQ(cricket::kOpusBandwidthFb,
+            voe_.GetMaxEncodingBandwidth(channel_num));
+}
+
+// Test the with non-Opus, maxplaybackrate has no effect.
+TEST_F(WebRtcVoiceEngineTestFake, SetNonOpusMaxPlaybackRate) {
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = voe_.GetLastChannel();
+  std::vector<cricket::AudioCodec> codecs;
+  codecs.push_back(kIsacCodec);
+  codecs[0].SetParam(cricket::kCodecParamMaxPlaybackRate, 32000);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_EQ(0, voe_.GetMaxEncodingBandwidth(channel_num));
+}
+
+// Test maxplaybackrate can be set on two streams.
+TEST_F(WebRtcVoiceEngineTestFake, SetOpusMaxPlaybackRateOnTwoStreams) {
+  EXPECT_TRUE(SetupEngine());
+  int channel_num = voe_.GetLastChannel();
+  std::vector<cricket::AudioCodec> codecs;
+  codecs.push_back(kOpusCodec);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  // Default bandwidth is 24000.
+  EXPECT_EQ(cricket::kOpusBandwidthFb,
+            voe_.GetMaxEncodingBandwidth(channel_num));
+
+  codecs[0].SetParam(cricket::kCodecParamMaxPlaybackRate, 8000);
+
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_EQ(cricket::kOpusBandwidthNb,
+            voe_.GetMaxEncodingBandwidth(channel_num));
+
+  channel_->AddSendStream(cricket::StreamParams::CreateLegacy(kSsrc2));
+  channel_num = voe_.GetLastChannel();
+  EXPECT_EQ(cricket::kOpusBandwidthNb,
+            voe_.GetMaxEncodingBandwidth(channel_num));
 }
 #endif  // USE_WEBRTC_DEV_BRANCH
 

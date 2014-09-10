@@ -71,6 +71,7 @@ using cricket::kCodecParamUseInbandFec;
 using cricket::kCodecParamSctpProtocol;
 using cricket::kCodecParamSctpStreams;
 using cricket::kCodecParamMaxAverageBitrate;
+using cricket::kCodecParamMaxPlaybackRate;
 using cricket::kCodecParamAssociatedPayloadType;
 using cricket::kWildcardPayloadType;
 using cricket::MediaContentDescription;
@@ -1534,7 +1535,8 @@ bool IsFmtpParam(const std::string& name) {
     kCodecParamStereo, kCodecParamUseInbandFec, kCodecParamStartBitrate,
     kCodecParamMaxBitrate, kCodecParamMinBitrate, kCodecParamMaxQuantization,
     kCodecParamSctpProtocol, kCodecParamSctpStreams,
-    kCodecParamMaxAverageBitrate, kCodecParamAssociatedPayloadType
+    kCodecParamMaxAverageBitrate, kCodecParamMaxPlaybackRate,
+    kCodecParamAssociatedPayloadType
   };
   for (size_t i = 0; i < ARRAY_SIZE(kFmtpParams); ++i) {
     if (_stricmp(name.c_str(), kFmtpParams[i]) == 0) {

@@ -61,6 +61,12 @@ static const int kFakeDeviceId = 0;
 static const int kFakeDeviceId = 1;
 #endif
 
+static const int kOpusBandwidthNb = 4000;
+static const int kOpusBandwidthMb = 6000;
+static const int kOpusBandwidthWb = 8000;
+static const int kOpusBandwidthSwb = 12000;
+static const int kOpusBandwidthFb = 20000;
+
 // Verify the header extension ID, if enabled, is within the bounds specified in
 // [RFC5285]: 1-14 inclusive.
 #define WEBRTC_CHECK_HEADER_EXTENSION_ID(enable, id) \
@@ -180,6 +186,7 @@ class FakeWebRtcVoiceEngine
           file(false),
           vad(false),
           codec_fec(false),
+          max_encoding_bandwidth(0),
           red(false),
           nack(false),
           media_processor_registered(false),
@@ -209,6 +216,7 @@ class FakeWebRtcVoiceEngine
     bool file;
     bool vad;
     bool codec_fec;
+    int max_encoding_bandwidth;
     bool red;
     bool nack;
     bool media_processor_registered;
@@ -304,6 +312,9 @@ class FakeWebRtcVoiceEngine
   }
   bool GetCodecFEC(int channel) {
     return channels_[channel]->codec_fec;
+  }
+  int GetMaxEncodingBandwidth(int channel) {
+    return channels_[channel]->max_encoding_bandwidth;
   }
   bool GetNACK(int channel) {
     return channels_[channel]->nack;
@@ -624,10 +635,11 @@ class FakeWebRtcVoiceEngine
   }
   WEBRTC_STUB(GetVADStatus, (int channel, bool& enabled,
                              webrtc::VadModes& mode, bool& disabledDTX));
+
 #ifdef USE_WEBRTC_DEV_BRANCH
   WEBRTC_FUNC(SetFECStatus, (int channel, bool enable)) {
     WEBRTC_CHECK_CHANNEL(channel);
-    if (strcmp(channels_[channel]->send_codec.plname, "opus")) {
+    if (_stricmp(channels_[channel]->send_codec.plname, "opus") != 0) {
       // Return -1 if current send codec is not Opus.
       // TODO(minyue): Excludes other codecs if they support inband FEC.
       return -1;
@@ -638,6 +650,25 @@ class FakeWebRtcVoiceEngine
   WEBRTC_FUNC(GetFECStatus, (int channel, bool& enable)) {
     WEBRTC_CHECK_CHANNEL(channel);
     enable = channels_[channel]->codec_fec;
+    return 0;
+  }
+
+  WEBRTC_FUNC(SetOpusMaxPlaybackRate, (int channel, int frequency_hz)) {
+    WEBRTC_CHECK_CHANNEL(channel);
+    if (_stricmp(channels_[channel]->send_codec.plname, "opus") != 0) {
+      // Return -1 if current send codec is not Opus.
+      return -1;
+    }
+    if (frequency_hz <= 8000)
+      channels_[channel]->max_encoding_bandwidth = kOpusBandwidthNb;
+    else if (frequency_hz <= 12000)
+      channels_[channel]->max_encoding_bandwidth = kOpusBandwidthMb;
+    else if (frequency_hz <= 16000)
+      channels_[channel]->max_encoding_bandwidth = kOpusBandwidthWb;
+    else if (frequency_hz <= 24000)
+      channels_[channel]->max_encoding_bandwidth = kOpusBandwidthSwb;
+    else
+      channels_[channel]->max_encoding_bandwidth = kOpusBandwidthFb;
     return 0;
   }
 #endif  // USE_WEBRTC_DEV_BRANCH

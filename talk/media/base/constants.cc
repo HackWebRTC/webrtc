@@ -59,6 +59,7 @@ const char kCodecParamSPropStereo[] = "sprop-stereo";
 const char kCodecParamStereo[] = "stereo";
 const char kCodecParamUseInbandFec[] = "useinbandfec";
 const char kCodecParamMaxAverageBitrate[] = "maxaveragebitrate";
+const char kCodecParamMaxPlaybackRate[] = "maxplaybackrate";
 
 const char kCodecParamSctpProtocol[] = "protocol";
 const char kCodecParamSctpStreams[] = "streams";
@@ -72,6 +73,7 @@ const int kOpusDefaultMinPTime = 3;
 const int kOpusDefaultSPropStereo = 0;
 const int kOpusDefaultStereo = 0;
 const int kOpusDefaultUseInbandFec = 0;
+const int kOpusDefaultMaxPlaybackRate = 48000;
 
 const int kPreferredMaxPTime = 60;
 const int kPreferredMinPTime = 10;

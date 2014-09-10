@@ -120,6 +120,7 @@ static const int kOpusStereoBitrate = 64000;
 // Opus bitrate should be in the range between 6000 and 510000.
 static const int kOpusMinBitrate = 6000;
 static const int kOpusMaxBitrate = 510000;
+
 // Default audio dscp value.
 // See http://tools.ietf.org/html/rfc2474 for details.
 // See also http://tools.ietf.org/html/draft-jennings-rtcweb-qos-00
@@ -404,6 +405,7 @@ static bool IsOpusStereoEnabled(const AudioCodec& codec) {
   return codec.GetParam(kCodecParamStereo, &value) && value == 1;
 }
 
+// TODO(minyue): Clamp bitrate when invalid.
 static bool IsValidOpusBitrate(int bitrate) {
   return (bitrate >= kOpusMinBitrate && bitrate <= kOpusMaxBitrate);
 }
@@ -428,6 +430,59 @@ static int GetOpusBitrateFromParams(const AudioCodec& codec) {
 static bool IsOpusFecEnabled(const AudioCodec& codec) {
   int value;
   return codec.GetParam(kCodecParamUseInbandFec, &value) && value == 1;
+}
+
+// Returns kOpusDefaultPlaybackRate if params[kCodecParamMaxPlaybackRate] is not
+// defined. Returns the value of params[kCodecParamMaxPlaybackRate] otherwise.
+static int GetOpusMaxPlaybackRate(const AudioCodec& codec) {
+  int value;
+  if (codec.GetParam(kCodecParamMaxPlaybackRate, &value)) {
+    return value;
+  }
+  return kOpusDefaultMaxPlaybackRate;
+}
+
+static void GetOpusConfig(const AudioCodec& codec, webrtc::CodecInst* voe_codec,
+                          bool* enable_codec_fec, int* max_playback_rate) {
+  *enable_codec_fec = IsOpusFecEnabled(codec);
+  *max_playback_rate = GetOpusMaxPlaybackRate(codec);
+
+  // If OPUS, change what we send according to the "stereo" codec
+  // parameter, and not the "channels" parameter.  We set
+  // voe_codec.channels to 2 if "stereo=1" and 1 otherwise.  If
+  // the bitrate is not specified, i.e. is zero, we set it to the
+  // appropriate default value for mono or stereo Opus.
+
+  // TODO(minyue): The determination of bit rate might take the maximum playback
+  // rate into account.
+
+  if (IsOpusStereoEnabled(codec)) {
+    voe_codec->channels = 2;
+    if (!IsValidOpusBitrate(codec.bitrate)) {
+      if (codec.bitrate != 0) {
+        LOG(LS_WARNING) << "Overrides the invalid supplied bitrate("
+                        << codec.bitrate
+                        << ") with default opus stereo bitrate: "
+                        << kOpusStereoBitrate;
+      }
+      voe_codec->rate = kOpusStereoBitrate;
+    }
+  } else {
+    voe_codec->channels = 1;
+    if (!IsValidOpusBitrate(codec.bitrate)) {
+      if (codec.bitrate != 0) {
+        LOG(LS_WARNING) << "Overrides the invalid supplied bitrate("
+                        << codec.bitrate
+                        << ") with default opus mono bitrate: "
+                        << kOpusMonoBitrate;
+      }
+      voe_codec->rate = kOpusMonoBitrate;
+    }
+  }
+  int bitrate_from_params = GetOpusBitrateFromParams(codec);
+  if (bitrate_from_params != 0) {
+    voe_codec->rate = bitrate_from_params;
+  }
 }
 
 void WebRtcVoiceEngine::ConstructCodecs() {
@@ -1993,6 +2048,10 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
   bool nack_enabled = nack_enabled_;
   bool enable_codec_fec = false;
 
+  // max_playback_rate <= 0 will not trigger setting of maximum encoding
+  // bandwidth.
+  int max_playback_rate = 0;
+
   // Set send codec (the first non-telephone-event/CN codec)
   for (std::vector<AudioCodec>::const_iterator it = codecs.begin();
        it != codecs.end(); ++it) {
@@ -2009,40 +2068,6 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
       continue;
     }
 
-    // If OPUS, change what we send according to the "stereo" codec
-    // parameter, and not the "channels" parameter.  We set
-    // voe_codec.channels to 2 if "stereo=1" and 1 otherwise.  If
-    // the bitrate is not specified, i.e. is zero, we set it to the
-    // appropriate default value for mono or stereo Opus.
-    if (IsOpus(*it)) {
-      if (IsOpusStereoEnabled(*it)) {
-        voe_codec.channels = 2;
-        if (!IsValidOpusBitrate(it->bitrate)) {
-          if (it->bitrate != 0) {
-            LOG(LS_WARNING) << "Overrides the invalid supplied bitrate("
-                            << it->bitrate
-                            << ") with default opus stereo bitrate: "
-                            << kOpusStereoBitrate;
-          }
-          voe_codec.rate = kOpusStereoBitrate;
-        }
-      } else {
-        voe_codec.channels = 1;
-        if (!IsValidOpusBitrate(it->bitrate)) {
-          if (it->bitrate != 0) {
-            LOG(LS_WARNING) << "Overrides the invalid supplied bitrate("
-                            << it->bitrate
-                            << ") with default opus mono bitrate: "
-                            << kOpusMonoBitrate;
-          }
-          voe_codec.rate = kOpusMonoBitrate;
-        }
-      }
-      int bitrate_from_params = GetOpusBitrateFromParams(*it);
-      if (bitrate_from_params != 0) {
-        voe_codec.rate = bitrate_from_params;
-      }
-    }
 
     // We'll use the first codec in the list to actually send audio data.
     // Be sure to use the payload type requested by the remote side.
@@ -2072,8 +2097,11 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
     } else {
       send_codec = voe_codec;
       nack_enabled = IsNackEnabled(*it);
-      // For Opus as the send codec, we enable inband FEC if requested.
-      enable_codec_fec = IsOpus(*it) && IsOpusFecEnabled(*it);
+      // For Opus as the send codec, we are to enable inband FEC if requested
+      // and set maximum playback rate.
+      if (IsOpus(*it)) {
+        GetOpusConfig(*it, &send_codec, &enable_codec_fec, &max_playback_rate);
+      }
     }
     found_send_codec = true;
     break;
@@ -2105,6 +2133,21 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
       return false;
     }
 #endif  // USE_WEBRTC_DEV_BRANCH
+  }
+
+  // maxplaybackrate should be set after SetSendCodec.
+  if (max_playback_rate > 0) {
+    LOG(LS_INFO) << "Attempt to set maximum playback rate to "
+                 << max_playback_rate
+                 << " Hz on channel "
+                 << channel;
+#ifdef USE_WEBRTC_DEV_BRANCH
+    // (max_playback_rate + 1) >> 1 is to obtain ceil(max_playback_rate / 2.0).
+    if (engine()->voe()->codec()->SetOpusMaxPlaybackRate(
+        channel, max_playback_rate) == -1) {
+      LOG(LS_WARNING) << "Could not set maximum playback rate.";
+    }
+#endif
   }
 
   // Always update the |send_codec_| to the currently set send codec.
