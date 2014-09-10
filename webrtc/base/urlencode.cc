@@ -15,9 +15,9 @@
 
 static int HexPairValue(const char * code) {
   int value = 0;
-  const char * pch = code;
-  for (;;) {
-    int digit = *pch++;
+  for (const char * pch = code; pch < code + 2; ++pch) {
+    value <<= 4;
+    int digit = *pch;
     if (digit >= '0' && digit <= '9') {
       value += digit - '0';
     }
@@ -30,10 +30,8 @@ static int HexPairValue(const char * code) {
     else {
       return -1;
     }
-    if (pch == code + 2)
-      return value;
-    value <<= 4;
   }
+  return value;
 }
 
 static int InternalUrlDecode(const char *source, char *dest,
@@ -53,7 +51,7 @@ static int InternalUrlDecode(const char *source, char *dest,
       if (source[1] && source[2]) {
         int value = HexPairValue(source + 1);
         if (value >= 0) {
-          *(dest++) = value;
+          *(dest++) = static_cast<char>(value);
           source += 2;
         }
         else {

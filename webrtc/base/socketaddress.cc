@@ -121,7 +121,7 @@ void SocketAddress::SetResolvedIP(const IPAddress& ip) {
 
 void SocketAddress::SetPort(int port) {
   ASSERT((0 <= port) && (port < 65536));
-  port_ = port;
+  port_ = static_cast<uint16>(port);
 }
 
 uint32 SocketAddress::ip() const {
@@ -279,9 +279,9 @@ bool SocketAddress::FromSockAddr(const sockaddr_in& saddr) {
 }
 
 static size_t ToSockAddrStorageHelper(sockaddr_storage* addr,
-                                      IPAddress ip, int port, int scope_id) {
+                                      IPAddress ip, uint16 port, int scope_id) {
   memset(addr, 0, sizeof(sockaddr_storage));
-  addr->ss_family = ip.family();
+  addr->ss_family = static_cast<unsigned short>(ip.family());
   if (addr->ss_family == AF_INET6) {
     sockaddr_in6* saddr = reinterpret_cast<sockaddr_in6*>(addr);
     saddr->sin6_addr = ip.ipv6_address();

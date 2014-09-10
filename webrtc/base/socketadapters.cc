@@ -749,7 +749,7 @@ void AsyncSocksProxyServerSocket::HandleHello(ByteBuffer* request) {
   }
 }
 
-void AsyncSocksProxyServerSocket::SendHelloReply(int method) {
+void AsyncSocksProxyServerSocket::SendHelloReply(uint8 method) {
   ByteBuffer response;
   response.WriteUInt8(5);  // Socks Version
   response.WriteUInt8(method);  // Auth method
@@ -773,7 +773,7 @@ void AsyncSocksProxyServerSocket::HandleAuth(ByteBuffer* request) {
   state_ = SS_CONNECT;
 }
 
-void AsyncSocksProxyServerSocket::SendAuthReply(int result) {
+void AsyncSocksProxyServerSocket::SendAuthReply(uint8 result) {
   ByteBuffer response;
   response.WriteUInt8(1);  // Negotiation Version
   response.WriteUInt8(result);

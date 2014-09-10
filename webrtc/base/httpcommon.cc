@@ -364,7 +364,7 @@ bool HttpDateToSeconds(const std::string& date, time_t* seconds) {
   case 'C': tval.tm_mon = 11; break;
   }
   tval.tm_year -= 1900;
-  size_t gmt, non_gmt = mktime(&tval);
+  time_t gmt, non_gmt = mktime(&tval);
   if ((zone[0] == '+') || (zone[0] == '-')) {
     if (!isdigit(zone[1]) || !isdigit(zone[2])
         || !isdigit(zone[3]) || !isdigit(zone[4])) {
@@ -383,7 +383,7 @@ bool HttpDateToSeconds(const std::string& date, time_t* seconds) {
   }
   // TODO: Android should support timezone, see b/2441195
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS) || defined(WEBRTC_ANDROID) || defined(BSD)
-  tm *tm_for_timezone = localtime((time_t *)&gmt);
+  tm *tm_for_timezone = localtime(&gmt);
   *seconds = gmt + tm_for_timezone->tm_gmtoff;
 #else
   *seconds = gmt - timezone;
