@@ -28,6 +28,7 @@
 #include "talk/app/webrtc/videosource.h"
 
 #include <vector>
+#include <cstdlib>
 
 #include "talk/app/webrtc/mediaconstraintsinterface.h"
 #include "talk/session/media/channelmanager.h"
@@ -254,11 +255,15 @@ const cricket::VideoFormat& GetBestCaptureFormat(
 
   std::vector<cricket::VideoFormat>::const_iterator it = formats.begin();
   std::vector<cricket::VideoFormat>::const_iterator best_it = formats.begin();
-  int best_diff = abs(default_area - it->width* it->height);
+  int best_diff_area = std::abs(default_area - it->width * it->height);
+  int64 best_diff_interval = kDefaultFormat.interval;
   for (; it != formats.end(); ++it) {
-    int diff = abs(default_area - it->width* it->height);
-    if (diff < best_diff) {
-      best_diff = diff;
+    int diff_area = std::abs(default_area - it->width * it->height);
+    int64 diff_interval = std::abs(kDefaultFormat.interval - it->interval);
+    if (diff_area < best_diff_area ||
+        (diff_area == best_diff_area && diff_interval < best_diff_interval)) {
+      best_diff_area = diff_area;
+      best_diff_interval = diff_interval;
       best_it = it;
     }
   }

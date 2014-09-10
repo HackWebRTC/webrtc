@@ -234,14 +234,20 @@ void DeviceInfoAndroid::GetMFpsRange(const char* deviceUniqueIdUTF8,
   const AndroidCameraInfo* info = FindCameraInfoByName(deviceUniqueIdUTF8);
   if (info == NULL)
     return;
-  // Rely on CameraParameters.getSupportedPreviewFpsRange() to sort its return
-  // value (per its documentation) and return the first (most flexible) range
-  // whose high end is at least as high as that requested.
+  int desired_mfps = max_fps_to_match * 1000;
+  int best_diff_mfps = 0;
+  LOG(LS_INFO) << "Search for best target mfps " << desired_mfps;
+  // Search for best fps range with preference shifted to constant fps modes.
   for (size_t i = 0; i < info->mfpsRanges.size(); ++i) {
-    if (info->mfpsRanges[i].second / 1000 >= max_fps_to_match) {
+    int diff_mfps = abs(info->mfpsRanges[i].first - desired_mfps) +
+        abs(info->mfpsRanges[i].second - desired_mfps) +
+        (info->mfpsRanges[i].second - info->mfpsRanges[i].first) / 2;
+    LOG(LS_INFO) << "Fps range " << info->mfpsRanges[i].first << ":" <<
+        info->mfpsRanges[i].second << ". Distance: " << diff_mfps;
+    if (i == 0 || diff_mfps < best_diff_mfps) {
+      best_diff_mfps = diff_mfps;
       *min_mfps = info->mfpsRanges[i].first;
       *max_mfps = info->mfpsRanges[i].second;
-      return;
     }
   }
 }
