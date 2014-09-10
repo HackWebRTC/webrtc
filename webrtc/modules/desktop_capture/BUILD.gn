@@ -124,7 +124,7 @@ if (use_desktop_capture_differ_sse2) {
   # Have to be compiled as a separate target because it needs to be compiled
   # with SSE2 enabled.
   source_set("desktop_capture_differ_sse2") {
-    visibility = ":*"
+    visibility = [ ":*" ]
     sources = [
       "differ_block_sse2.cc",
       "differ_block_sse2.h",
