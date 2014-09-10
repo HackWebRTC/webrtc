@@ -30,7 +30,7 @@ Test.prototype = {
   },
 
   abort: function (error) {
-    var error = error || new Error("Test aborted");
+    var error = new Error(error || "Test aborted");
     console.log(error.stack);
     process.exit(1);
   },
