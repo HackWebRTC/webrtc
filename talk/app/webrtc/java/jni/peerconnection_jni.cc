@@ -2400,7 +2400,7 @@ JOW(jlong, PeerConnectionFactory_nativeCreateObserver)(
   return (jlong)new PCOJava(jni, j_observer);
 }
 
-#ifdef ANDROID
+#if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
 JOW(jboolean, PeerConnectionFactory_initializeAndroidGlobals)(
     JNIEnv* jni, jclass, jobject context,
     jboolean initialize_audio, jboolean initialize_video) {
@@ -2412,7 +2412,7 @@ JOW(jboolean, PeerConnectionFactory_initializeAndroidGlobals)(
     failure |= webrtc::VoiceEngine::SetAndroidObjects(g_jvm, jni, context);
   return !failure;
 }
-#endif  // ANDROID
+#endif  // defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
 
 // Helper struct for working around the fact that CreatePeerConnectionFactory()
 // comes in two flavors: either entirely automagical (constructing its own
