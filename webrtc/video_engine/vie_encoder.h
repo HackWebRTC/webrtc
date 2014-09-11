@@ -96,13 +96,13 @@ class ViEEncoder
   virtual void DeliverFrame(int id,
                             I420VideoFrame* video_frame,
                             int num_csrcs = 0,
-                            const uint32_t CSRC[kRtpCsrcSize] = NULL);
-  virtual void DelayChanged(int id, int frame_delay);
+                            const uint32_t CSRC[kRtpCsrcSize] = NULL) OVERRIDE;
+  virtual void DelayChanged(int id, int frame_delay) OVERRIDE;
   virtual int GetPreferedFrameSettings(int* width,
                                        int* height,
-                                       int* frame_rate);
+                                       int* frame_rate) OVERRIDE;
 
-  virtual void ProviderDestroyed(int id) {
+  virtual void ProviderDestroyed(int id) OVERRIDE {
     return;
   }
 
@@ -129,7 +129,7 @@ class ViEEncoder
     const uint8_t* payload_data,
     uint32_t payload_size,
     const RTPFragmentationHeader& fragmentation_header,
-    const RTPVideoHeader* rtp_video_hdr);
+    const RTPVideoHeader* rtp_video_hdr) OVERRIDE;
 
   // Implements VideoProtectionCallback.
   virtual int ProtectionRequest(
@@ -137,18 +137,20 @@ class ViEEncoder
       const FecProtectionParams* key_fec_params,
       uint32_t* sent_video_rate_bps,
       uint32_t* sent_nack_rate_bps,
-      uint32_t* sent_fec_rate_bps);
+      uint32_t* sent_fec_rate_bps) OVERRIDE;
 
   // Implements VideoSendStatisticsCallback.
   virtual int32_t SendStatistics(const uint32_t bit_rate,
-                                 const uint32_t frame_rate);
+                                 const uint32_t frame_rate) OVERRIDE;
+
   int32_t RegisterCodecObserver(ViEEncoderObserver* observer);
 
   // Implements RtcpIntraFrameObserver.
-  virtual void OnReceivedIntraFrameRequest(uint32_t ssrc);
-  virtual void OnReceivedSLI(uint32_t ssrc, uint8_t picture_id);
-  virtual void OnReceivedRPSI(uint32_t ssrc, uint64_t picture_id);
-  virtual void OnLocalSsrcChanged(uint32_t old_ssrc, uint32_t new_ssrc);
+  virtual void OnReceivedIntraFrameRequest(uint32_t ssrc) OVERRIDE;
+  virtual void OnReceivedSLI(uint32_t ssrc, uint8_t picture_id) OVERRIDE;
+  virtual void OnReceivedRPSI(uint32_t ssrc, uint64_t picture_id) OVERRIDE;
+  virtual void OnLocalSsrcChanged(uint32_t old_ssrc,
+                                  uint32_t new_ssrc) OVERRIDE;
 
   // Sets SSRCs for all streams.
   bool SetSsrcs(const std::list<unsigned int>& ssrcs);
@@ -159,15 +161,15 @@ class ViEEncoder
   int32_t RegisterEffectFilter(ViEEffectFilter* effect_filter);
 
   // Enables recording of debugging information.
-  virtual int StartDebugRecording(const char* fileNameUTF8);
+  int StartDebugRecording(const char* fileNameUTF8);
 
   // Disables recording of debugging information.
-  virtual int StopDebugRecording();
+  int StopDebugRecording();
 
   // Lets the sender suspend video when the rate drops below
   // |threshold_bps|, and turns back on when the rate goes back up above
   // |threshold_bps| + |window_bps|.
-  virtual void SuspendBelowMinBitrate();
+  void SuspendBelowMinBitrate();
 
   // New-style callbacks, used by VideoSendStream.
   void RegisterPreEncodeCallback(I420FrameCallback* pre_encode_callback);
