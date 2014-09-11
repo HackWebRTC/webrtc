@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
-#include "webrtc/video_encoder.h"
+#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 
 namespace webrtc {
 namespace test {

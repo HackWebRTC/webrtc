@@ -19,6 +19,7 @@
 #include "webrtc/call.h"
 #include "webrtc/frame_callback.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
+#include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
@@ -36,7 +37,6 @@
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/perf_test.h"
 #include "webrtc/video/transport_adapter.h"
-#include "webrtc/video_encoder.h"
 
 // Disabled on Android since all tests currently fail (webrtc:3770).
 #ifndef WEBRTC_ANDROID
@@ -645,8 +645,7 @@ TEST_F(EndToEndTest, UsesFrameCallbacks) {
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
   CreateSendConfig(1);
-  scoped_ptr<VideoEncoder> encoder(
-      VideoEncoder::Create(VideoEncoder::kVp8));
+  scoped_ptr<VP8Encoder> encoder(VP8Encoder::Create());
   send_config_.encoder_settings.encoder = encoder.get();
   send_config_.encoder_settings.payload_name = "VP8";
   ASSERT_EQ(1u, video_streams_.size()) << "Test setup error.";
@@ -975,9 +974,9 @@ TEST_F(EndToEndTest, SendsAndReceivesMultipleStreams) {
   VideoOutputObserver* observers[kNumStreams];
   test::FrameGeneratorCapturer* frame_generators[kNumStreams];
 
-  scoped_ptr<VideoEncoder> encoders[kNumStreams];
+  scoped_ptr<VP8Encoder> encoders[kNumStreams];
   for (size_t i = 0; i < kNumStreams; ++i)
-    encoders[i].reset(VideoEncoder::Create(VideoEncoder::kVp8));
+    encoders[i].reset(VP8Encoder::Create());
 
   for (size_t i = 0; i < kNumStreams; ++i) {
     uint32_t ssrc = codec_settings[i].ssrc;

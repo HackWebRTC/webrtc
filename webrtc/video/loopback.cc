@@ -120,7 +120,7 @@ void Loopback() {
   send_config.local_renderer = local_preview.get();
   scoped_ptr<VideoEncoder> encoder;
   if (flags::Codec() == "VP8") {
-    encoder.reset(VideoEncoder::Create(VideoEncoder::kVp8));
+    encoder.reset(VP8Encoder::Create());
   } else {
     // Codec not supported.
     assert(false && "Codec not supported!");
