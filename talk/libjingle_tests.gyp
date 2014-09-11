@@ -104,18 +104,6 @@
       ],  # sources
     },  # target libjingle_unittest
     {
-      'target_name': 'libjingle_sound_unittest',
-      'type': 'executable',
-      'dependencies': [
-        '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
-        'libjingle.gyp:libjingle_sound',
-        'libjingle_unittest_main',
-      ],
-      'sources': [
-        'sound/automaticallychosensoundsystem_unittest.cc',
-      ],
-    },  # target libjingle_sound_unittest
-    {
       'target_name': 'libjingle_media_unittest',
       'type': 'executable',
       'dependencies': [
@@ -482,20 +470,6 @@
           ],
           'sources': [
             'libjingle_peerconnection_unittest.isolate',
-          ],
-        },
-        {
-          'target_name': 'libjingle_sound_unittest_run',
-          'type': 'none',
-          'dependencies': [
-            'libjingle_sound_unittest',
-          ],
-          'includes': [
-            'build/isolate.gypi',
-            'libjingle_sound_unittest.isolate',
-          ],
-          'sources': [
-            'libjingle_sound_unittest.isolate',
           ],
         },
         {
