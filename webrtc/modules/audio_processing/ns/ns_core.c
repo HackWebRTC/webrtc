@@ -38,7 +38,7 @@ void WebRtcNs_set_feature_extraction_parameters(NSinst_t* inst) {
   inst->featureExtractionParams.thresPosSpecFlat = (float)0.6;
 
   //limit on spacing of two highest peaks in histogram: spacing determined by bin size
-  inst->featureExtractionParams.limitPeakSpacingSpecFlat = 
+  inst->featureExtractionParams.limitPeakSpacingSpecFlat =
       2 * inst->featureExtractionParams.binSizeSpecFlat;
   inst->featureExtractionParams.limitPeakSpacingSpecDiff =
       2 * inst->featureExtractionParams.binSizeSpecDiff;
@@ -676,7 +676,7 @@ void WebRtcNs_SpeechNoiseProb(NSinst_t* inst, float* probSpeechFinal, float* snr
     widthPrior = widthPrior1;
   }
   // compute indicator function: sigmoid map
-  indicator1 = (float)0.5 * ((float)tanh((float)sgnMap * 
+  indicator1 = (float)0.5 * ((float)tanh((float)sgnMap *
       widthPrior * (threshPrior1 - tmpFloat1)) + (float)1.0);
 
   //for template spectrum-difference
@@ -848,7 +848,7 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
     imag[inst->magnLen - 1] = 0;
     real[inst->magnLen - 1] = winData[1];
     magn[inst->magnLen - 1] = (float)(fabs(real[inst->magnLen - 1]) + 1.0f);
-    signalEnergy = (float)(real[0] * real[0]) + 
+    signalEnergy = (float)(real[0] * real[0]) +
                    (float)(real[inst->magnLen - 1] * real[inst->magnLen - 1]);
     sumMagn = magn[0] + magn[inst->magnLen - 1];
     if (inst->blockInd < END_STARTUP_SHORT) {
@@ -950,18 +950,6 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
       inst->featureData[5] /= (inst->blockInd + 1);
     }
 
-#ifdef PROCESS_FLOW_0
-    if (inst->blockInd > END_STARTUP_LONG) {
-      //option: average the quantile noise: for check with AEC2
-      for (i = 0; i < inst->magnLen; i++) {
-        noise[i] = (float)0.6 * inst->noisePrev[i] + (float)0.4 * noise[i];
-      }
-      for (i = 0; i < inst->magnLen; i++) {
-        // Wiener with over sub-substraction:
-        theFilter[i] = (magn[i] - inst->overdrive * noise[i]) / (magn[i] + (float)0.0001);
-      }
-    }
-#else
     //start processing at frames == converged+1
     //
     // STEP 1: compute  prior and post snr based on quantile noise est
@@ -984,20 +972,11 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
                        * snrLocPost[i];
       // post and prior snr needed for step 2
     }  // end of loop over freqs
-#ifdef PROCESS_FLOW_1
-    for (i = 0; i < inst->magnLen; i++) {
-      // gain filter
-      tmpFloat1 = inst->overdrive + snrLocPrior[i];
-      tmpFloat2 = (float)snrLocPrior[i] / tmpFloat1;
-      theFilter[i] = (float)tmpFloat2;
-    }  // end of loop over freqs
-#endif
     // done with step 1: dd computation of prior and post snr
 
     //
     //STEP 2: compute speech/noise likelihood
     //
-#ifdef PROCESS_FLOW_2
     // compute difference of input spectrum with learned/estimated noise spectrum
     WebRtcNs_ComputeSpectralDifference(inst, magn);
     // compute histograms for parameter decisions (thresholds and weights for features)
@@ -1084,8 +1063,6 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
       theFilter[i] = (float)tmpFloat2;
     }  // end of loop over freqs
     // done with step3
-#endif
-#endif
 
     for (i = 0; i < inst->magnLen; i++) {
       // flooring bottom
@@ -1112,12 +1089,7 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
         theFilter[i] /= (END_STARTUP_SHORT);
       }
       // smoothing
-#ifdef PROCESS_FLOW_0
-      inst->smooth[i] *= SMOOTH; // value set to 0.7 in define.h file
-      inst->smooth[i] += ((float)1.0 - SMOOTH) * theFilter[i];
-#else
       inst->smooth[i] = theFilter[i];
-#endif
       real[i] *= inst->smooth[i];
       imag[i] *= inst->smooth[i];
     }
@@ -1151,7 +1123,6 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
       }
       gain = (float)sqrt(energy2 / (energy1 + (float)1.0));
 
-#ifdef PROCESS_FLOW_2
       // scaling for new version
       if (gain > B_LIM) {
         factor1 = (float)1.0 + (float)1.3 * (gain - B_LIM);
@@ -1171,16 +1142,6 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
       // note prior (priorSpeechProb) is not frequency dependent
       factor = inst->priorSpeechProb * factor1 + ((float)1.0 - inst->priorSpeechProb)
                * factor2;
-#else
-      if (gain > B_LIM) {
-        factor = (float)1.0 + (float)1.3 * (gain - B_LIM);
-      } else {
-        factor = (float)1.0 + (float)2.0 * (gain - B_LIM);
-      }
-      if (gain * factor > (float)1.0) {
-        factor = (float)1.0 / gain;
-      }
-#endif
     }  // out of inst->gainmap==1
 
     // synthesis
