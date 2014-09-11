@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _rostermodule_h_
-#define _rostermodule_h_
+#ifndef TALK_XMPP_ROSTERMODULE_H_
+#define TALK_XMPP_ROSTERMODULE_H_
 
 #include "talk/xmpp/module.h"
 
@@ -345,4 +345,4 @@ public:
 
 }
 
-#endif
+#endif  // TALK_XMPP_ROSTERMODULE_H_

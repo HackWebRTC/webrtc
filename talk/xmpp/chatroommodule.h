@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _multiuserchatmodule_h_
-#define _multiuserchatmodule_h_
+#ifndef TALK_XMPP_CHATROOMMODULE_H_
+#define TALK_XMPP_CHATROOMMODULE_H_
 
 #include "talk/xmpp/module.h"
 #include "talk/xmpp/rostermodule.h"
@@ -267,4 +267,4 @@ public:
 
 }
 
-#endif
+#endif  // TALK_XMPP_CHATROOMMODULE_H_

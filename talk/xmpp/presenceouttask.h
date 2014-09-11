@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _PRESENCEOUTTASK_H_
-#define _PRESENCEOUTTASK_H_
+#ifndef TALK_XMPP_PRESENCEOUTTASK_H_
+#define TALK_XMPP_PRESENCEOUTTASK_H_
 
 #include "talk/xmpp/presencestatus.h"
 #include "talk/xmpp/xmppengine.h"
@@ -51,4 +51,4 @@ private:
 
 }
 
-#endif
+#endif  // TALK_XMPP_PRESENCEOUTTASK_H_

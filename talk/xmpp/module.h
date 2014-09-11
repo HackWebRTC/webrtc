@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _module_h_
-#define _module_h_
+#ifndef TALK_XMPP_MODULE_H_
+#define TALK_XMPP_MODULE_H_
 
 #include "talk/xmpp/xmppengine.h"
 
@@ -49,4 +49,4 @@ public:
 };
 
 }
-#endif
+#endif  // TALK_XMPP_MODULE_H_

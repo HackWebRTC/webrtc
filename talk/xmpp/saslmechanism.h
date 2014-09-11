@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SASLMECHANISM_H_
-#define _SASLMECHANISM_H_
+#ifndef TALK_XMPP_SASLMECHANISM_H_
+#define TALK_XMPP_SASLMECHANISM_H_
 
 #include <string>
 
@@ -71,4 +71,4 @@ protected:
 
 }
 
-#endif
+#endif  // TALK_XMPP_SASLMECHANISM_H_

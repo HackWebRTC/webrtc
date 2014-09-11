@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _PLAINSASLHANDLER_H_
-#define _PLAINSASLHANDLER_H_
+#ifndef TALK_XMPP_PLAINSASLHANDLER_H_
+#define TALK_XMPP_PLAINSASLHANDLER_H_
 
 #include <algorithm>
 #include "talk/xmpp/saslhandler.h"
@@ -78,4 +78,4 @@ private:
 
 }
 
-#endif
+#endif  // TALK_XMPP_PLAINSASLHANDLER_H_

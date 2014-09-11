@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _xmppstanzaparser_h_
-#define _xmppstanzaparser_h_
+#ifndef TALK_XMPP_XMPPSTANZAPARSER_H_
+#define TALK_XMPP_XMPPSTANZAPARSER_H_
 
 #include "webrtc/libjingle/xmllite/xmlbuilder.h"
 #include "webrtc/libjingle/xmllite/xmlparser.h"
@@ -94,4 +94,4 @@ private:
 
 }
 
-#endif
+#endif  // TALK_XMPP_XMPPSTANZAPARSER_H_

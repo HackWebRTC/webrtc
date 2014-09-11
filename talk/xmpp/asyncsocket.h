@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ASYNCSOCKET_H_
-#define _ASYNCSOCKET_H_
+#ifndef TALK_XMPP_ASYNCSOCKET_H_
+#define TALK_XMPP_ASYNCSOCKET_H_
 
 #include <string>
 
@@ -86,4 +86,4 @@ public:
 
 }
 
-#endif
+#endif  // TALK_XMPP_ASYNCSOCKET_H_

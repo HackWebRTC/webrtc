@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _rostermoduleimpl_h_
-#define _rostermoduleimpl_h_
+#ifndef TALK_XMPP_XMPPTHREAD_H_
+#define TALK_XMPP_XMPPTHREAD_H_
 
 #include "talk/xmpp/moduleimpl.h"
 #include "talk/xmpp/rostermodule.h"
@@ -299,4 +299,4 @@ private:
 
 }
 
-#endif
+#endif  // TALK_XMPP_XMPPTHREAD_H_

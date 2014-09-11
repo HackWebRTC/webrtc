@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SASLHANDLER_H_
-#define _SASLHANDLER_H_
+#ifndef TALK_XMPP_SASLHANDLER_H_
+#define TALK_XMPP_SASLHANDLER_H_
 
 #include <string>
 #include <vector>
@@ -56,4 +56,4 @@ public:
 
 }
 
-#endif
+#endif  // TALK_XMPP_SASLHANDLER_H_
