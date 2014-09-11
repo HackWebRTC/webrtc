@@ -64,10 +64,19 @@ DllHandle InternalLoadDll(const char dll_name[]) {
 
 void InternalUnloadDll(DllHandle handle) {
 #ifdef WEBRTC_LINUX
+// TODO(pbos): Remove this dlclose() exclusion when leaks and suppressions from
+// here are gone (or AddressSanitizer can display them properly).
+//
+// Skip dlclose() on AddressSanitizer as leaks including this module in the
+// stack trace gets displayed as <unknown module> instead of the actual library
+// -> it can not be suppressed.
+// https://code.google.com/p/address-sanitizer/issues/detail?id=89
+#if !defined(ADDRESS_SANITIZER)
   if (dlclose(handle) != 0) {
     WEBRTC_TRACE(kTraceError, kTraceAudioDevice, -1,
                "%s", GetDllError());
   }
+#endif  // !defined(ADDRESS_SANITIZER)
 #else
 #error Not implemented
 #endif
