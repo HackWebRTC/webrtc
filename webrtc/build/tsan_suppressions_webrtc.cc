@@ -23,6 +23,11 @@ char kTSanDefaultSuppressions[] =
 
 // WebRTC specific suppressions.
 
+// Split up suppressions covered previously by thread.cc and messagequeue.cc.
+"race:rtc::MessageQueue::Quit\n"
+"race:FileVideoCapturerTest::VideoCapturerListener::OnFrameCaptured\n"
+"race:vp8cx_remove_encoder_threads\n"
+
 // Usage of trace callback and trace level is racy in libjingle_media_unittests.
 // https://code.google.com/p/webrtc/issues/detail?id=3372
 "race:webrtc::TraceImpl::WriteToFile\n"
@@ -38,7 +43,6 @@ char kTSanDefaultSuppressions[] =
 
 // libjingle_p2p_unittest
 // https://code.google.com/p/webrtc/issues/detail?id=2079
-"race:webrtc/base/messagequeue.cc\n"
 "race:webrtc/base/testclient.cc\n"
 "race:webrtc/base/virtualsocketserver.cc\n"
 "race:talk/p2p/base/stunserver_unittest.cc\n"
@@ -48,7 +52,6 @@ char kTSanDefaultSuppressions[] =
 "race:webrtc/base/logging.cc\n"
 "race:webrtc/base/sharedexclusivelock_unittest.cc\n"
 "race:webrtc/base/signalthread_unittest.cc\n"
-"race:webrtc/base/thread.cc\n"
 
 // third_party/usrsctp
 // TODO(jiayl): https://code.google.com/p/webrtc/issues/detail?id=3492
