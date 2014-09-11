@@ -508,6 +508,7 @@ private:
                                   unsigned char id);
 
     int32_t GetPlayoutFrequency();
+    int GetRTT() const;
 
     CriticalSectionWrapper& _fileCritSect;
     CriticalSectionWrapper& _callbackCritSect;
