@@ -25,6 +25,16 @@
   ],
   'targets': [
     {
+      # Temporary target until Chromium's
+      # src/third_party/libjingle/libjingle.gyp is updated to use rtc_base.
+      # TODO(kjellander): Remove when r7140 is rolled into Chromium's DEPS.
+      'target_name': 'webrtc_base',
+      'type': 'none',
+      'dependencies': [
+        'rtc_base',
+      ],
+    },
+    {
       'target_name': 'rtc_base',
       'type': 'static_library',
       'defines': [
