@@ -34,24 +34,18 @@
 #include "webrtc/audio_processing/unittest.pb.h"
 #endif
 
-#if (defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)) || \
-    (defined(WEBRTC_LINUX) && defined(WEBRTC_ARCH_X86_64) && !defined(NDEBUG))
-#  define WEBRTC_AUDIOPROC_BIT_EXACT
-#endif
-
 namespace webrtc {
 namespace {
 
 // TODO(bjornv): This is not feasible until the functionality has been
-// re-implemented; see comment at the bottom of this file.
+// re-implemented; see comment at the bottom of this file. For now, the user has
+// to hard code the |write_ref_data| value.
 // When false, this will compare the output data with the results stored to
 // file. This is the typical case. When the file should be updated, it can
 // be set to true with the command-line switch --write_ref_data.
-#ifdef WEBRTC_AUDIOPROC_BIT_EXACT
 bool write_ref_data = false;
 const int kChannels[] = {1, 2};
 const size_t kChannelsSize = sizeof(kChannels) / sizeof(*kChannels);
-#endif
 
 const int kSampleRates[] = {8000, 16000, 32000};
 const size_t kSampleRatesSize = sizeof(kSampleRates) / sizeof(*kSampleRates);
@@ -184,8 +178,7 @@ void EnableAllAPComponents(AudioProcessing* ap) {
   EXPECT_NOERR(ap->voice_detection()->Enable(true));
 }
 
-#ifdef WEBRTC_AUDIOPROC_BIT_EXACT
-// These functions are only used by the bit-exact test.
+// These functions are only used by ApmTest.Process.
 template <class T>
 T AbsValue(T a) {
   return a > 0 ? a: -a;
@@ -234,7 +227,6 @@ void OpenFileAndWriteMessage(const std::string filename,
       fwrite(array.get(), sizeof(array[0]), size, file));
   fclose(file);
 }
-#endif  // WEBRTC_AUDIOPROC_BIT_EXACT
 
 std::string ResourceFilePath(std::string name, int sample_rate_hz) {
   std::ostringstream ss;
@@ -1743,9 +1735,13 @@ TEST_F(ApmTest, FloatAndIntInterfacesGiveIdenticalResults) {
 // TODO(andrew): Add a test to process a few frames with different combinations
 // of enabled components.
 
-// TODO(andrew): Make this test more robust such that it can be run on multiple
-// platforms. It currently requires bit-exactness.
-#ifdef WEBRTC_AUDIOPROC_BIT_EXACT
+// TODO(bjornv): Investigate if simply increasing the slack is a good way to
+// make this test work on Android. When running the test on a N7 we get a {2, 6}
+// difference of |has_voice_count| and |max_output_average| is up to 18 higher.
+// All numbers being consistently higher on N7 compare to ref_data, evaluated on
+// linux. Simply increasing the slack is one way forward. Adding an offset to
+// the metrics mentioned above, but keeping the same slack, is also an
+// alternative.
 TEST_F(ApmTest, DISABLED_ON_ANDROID(Process)) {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
   audioproc::OutputData ref_data;
@@ -1860,12 +1856,13 @@ TEST_F(ApmTest, DISABLED_ON_ANDROID(Process)) {
 #endif
 
     if (!write_ref_data) {
-      EXPECT_EQ(test->has_echo_count(), has_echo_count);
-      EXPECT_EQ(test->has_voice_count(), has_voice_count);
-      EXPECT_EQ(test->is_saturated_count(), is_saturated_count);
+      const int kIntNear = 1;
+      EXPECT_NEAR(test->has_echo_count(), has_echo_count, kIntNear);
+      EXPECT_NEAR(test->has_voice_count(), has_voice_count, kIntNear);
+      EXPECT_NEAR(test->is_saturated_count(), is_saturated_count, kIntNear);
 
-      EXPECT_EQ(test->analog_level_average(), analog_level_average);
-      EXPECT_EQ(test->max_output_average(), max_output_average);
+      EXPECT_NEAR(test->analog_level_average(), analog_level_average, kIntNear);
+      EXPECT_NEAR(test->max_output_average(), max_output_average, kIntNear);
 
 #if defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
       audioproc::Test::EchoMetrics reference = test->echo_metrics();
@@ -1878,14 +1875,16 @@ TEST_F(ApmTest, DISABLED_ON_ANDROID(Process)) {
       TestStats(echo_metrics.a_nlp,
                 reference.a_nlp());
 
+      const double kFloatNear = 0.0005;
       audioproc::Test::DelayMetrics reference_delay = test->delay_metrics();
-      EXPECT_EQ(reference_delay.median(), median);
-      EXPECT_EQ(reference_delay.std(), std);
+      EXPECT_NEAR(reference_delay.median(), median, kIntNear);
+      EXPECT_NEAR(reference_delay.std(), std, kIntNear);
 
-      EXPECT_EQ(test->rms_level(), rms_level);
+      EXPECT_NEAR(test->rms_level(), rms_level, kIntNear);
 
-      EXPECT_FLOAT_EQ(test->ns_speech_probability_average(),
-                      ns_speech_prob_average);
+      EXPECT_NEAR(test->ns_speech_probability_average(),
+                  ns_speech_prob_average,
+                  kFloatNear);
 #endif
     } else {
       test->set_has_echo_count(has_echo_count);
@@ -1927,8 +1926,6 @@ TEST_F(ApmTest, DISABLED_ON_ANDROID(Process)) {
     OpenFileAndWriteMessage(ref_filename_, ref_data);
   }
 }
-
-#endif  // WEBRTC_AUDIOPROC_BIT_EXACT
 
 TEST_F(ApmTest, NoErrorsWithKeyboardChannel) {
   struct ChannelFormat {
