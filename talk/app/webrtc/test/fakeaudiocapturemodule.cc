@@ -94,13 +94,6 @@ int FakeAudioCaptureModule::frames_received() const {
   return frames_received_;
 }
 
-int32_t FakeAudioCaptureModule::Version(char* /*version*/,
-                                        uint32_t& /*remaining_buffer_in_bytes*/,
-                                        uint32_t& /*position*/) const {
-  ASSERT(false);
-  return 0;
-}
-
 int32_t FakeAudioCaptureModule::TimeUntilNextProcess() {
   const uint32 current_time = rtc::Time();
   if (current_time < last_process_time_ms_) {
@@ -325,12 +318,6 @@ int32_t FakeAudioCaptureModule::WaveOutVolume(
   return 0;
 }
 
-int32_t FakeAudioCaptureModule::SpeakerIsAvailable(bool* available) {
-  // No speaker, just dropping audio. Return success.
-  *available = true;
-  return 0;
-}
-
 int32_t FakeAudioCaptureModule::InitSpeaker() {
   // No speaker, just playing from file. Return success.
   return 0;
@@ -338,12 +325,6 @@ int32_t FakeAudioCaptureModule::InitSpeaker() {
 
 bool FakeAudioCaptureModule::SpeakerIsInitialized() const {
   ASSERT(false);
-  return 0;
-}
-
-int32_t FakeAudioCaptureModule::MicrophoneIsAvailable(bool* available) {
-  // No microphone, just playing from file. Return success.
-  *available = true;
   return 0;
 }
 

@@ -79,8 +79,6 @@ class RtpReceiverImpl : public RtpReceiver {
  private:
   bool HaveReceivedFrame() const;
 
-  RtpVideoCodecTypes VideoCodecType() const;
-
   void CheckSSRCChanged(const RTPHeader& rtp_header);
   void CheckCSRC(const WebRtcRTPHeader& rtp_header);
   int32_t CheckPayloadChanged(const RTPHeader& rtp_header,

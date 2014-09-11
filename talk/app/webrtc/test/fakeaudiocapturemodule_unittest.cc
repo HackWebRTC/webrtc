@@ -145,11 +145,6 @@ TEST_F(FakeAdmTest, TestProccess) {
 TEST_F(FakeAdmTest, PlayoutTest) {
   EXPECT_EQ(0, fake_audio_capture_module_->RegisterAudioCallback(this));
 
-  bool speaker_available = false;
-  EXPECT_EQ(0, fake_audio_capture_module_->SpeakerIsAvailable(
-      &speaker_available));
-  EXPECT_TRUE(speaker_available);
-
   bool stereo_available = false;
   EXPECT_EQ(0,
             fake_audio_capture_module_->StereoPlayoutIsAvailable(
@@ -181,11 +176,6 @@ TEST_F(FakeAdmTest, PlayoutTest) {
 
 TEST_F(FakeAdmTest, RecordTest) {
   EXPECT_EQ(0, fake_audio_capture_module_->RegisterAudioCallback(this));
-
-  bool microphone_available = false;
-  EXPECT_EQ(0, fake_audio_capture_module_->MicrophoneIsAvailable(
-      &microphone_available));
-  EXPECT_TRUE(microphone_available);
 
   bool stereo_available = false;
   EXPECT_EQ(0, fake_audio_capture_module_->StereoRecordingIsAvailable(

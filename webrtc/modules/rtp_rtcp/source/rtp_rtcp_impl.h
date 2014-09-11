@@ -42,7 +42,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   virtual int32_t IncomingRtcpPacket(const uint8_t* incoming_packet,
                                      uint16_t incoming_packet_length) OVERRIDE;
 
-  virtual void SetRemoteSSRC(const uint32_t ssrc);
+  virtual void SetRemoteSSRC(const uint32_t ssrc) OVERRIDE;
 
   // Sender part.
 
@@ -52,7 +52,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   virtual int32_t DeRegisterSendPayload(const int8_t payload_type) OVERRIDE;
 
-  virtual int8_t SendPayloadType() const;
+  int8_t SendPayloadType() const;
 
   // Register RTP header extension.
   virtual int32_t RegisterSendRtpHeaderExtension(
@@ -89,9 +89,9 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   virtual int32_t SetCSRCStatus(const bool include) OVERRIDE;
 
-  virtual RTCPSender::FeedbackState GetFeedbackState();
+  RTCPSender::FeedbackState GetFeedbackState();
 
-  virtual int CurrentSendFrequencyHz() const;
+  int CurrentSendFrequencyHz() const;
 
   virtual void SetRTXSendStatus(const int mode) OVERRIDE;
 
@@ -295,8 +295,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   // Video part.
 
-  virtual RtpVideoCodecTypes SendVideoCodec() const;
-
   virtual int32_t SendRTCPSliceLossIndication(
       const uint8_t picture_id) OVERRIDE;
 
@@ -326,11 +324,11 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
       const FecProtectionParams* delta_params,
       const FecProtectionParams* key_params) OVERRIDE;
 
-  virtual bool LastReceivedNTP(uint32_t* NTPsecs,
-                               uint32_t* NTPfrac,
-                               uint32_t* remote_sr) const;
+  bool LastReceivedNTP(uint32_t* NTPsecs,
+                       uint32_t* NTPfrac,
+                       uint32_t* remote_sr) const;
 
-  virtual bool LastReceivedXrReferenceTimeInfo(RtcpReceiveTimeInfo* info) const;
+  bool LastReceivedXrReferenceTimeInfo(RtcpReceiveTimeInfo* info) const;
 
   virtual int32_t BoundingSet(bool& tmmbr_owner, TMMBRSet*& bounding_set_rec);
 
@@ -339,18 +337,18 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
                            uint32_t* fec_rate,
                            uint32_t* nackRate) const OVERRIDE;
 
-  virtual uint32_t SendTimeOfSendReport(const uint32_t send_report);
+  uint32_t SendTimeOfSendReport(const uint32_t send_report);
 
-  virtual bool SendTimeOfXrRrReport(uint32_t mid_ntp, int64_t* time_ms) const;
+  bool SendTimeOfXrRrReport(uint32_t mid_ntp, int64_t* time_ms) const;
 
   // Good state of RTP receiver inform sender.
   virtual int32_t SendRTCPReferencePictureSelection(
       const uint64_t picture_id) OVERRIDE;
 
   virtual void RegisterSendChannelRtpStatisticsCallback(
-      StreamDataCountersCallback* callback);
+      StreamDataCountersCallback* callback) OVERRIDE;
   virtual StreamDataCountersCallback*
-      GetSendChannelRtpStatisticsCallback() const;
+      GetSendChannelRtpStatisticsCallback() const OVERRIDE;
 
   void OnReceivedTMMBR();
 

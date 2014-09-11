@@ -131,8 +131,8 @@ class VideoCodingModuleImpl : public VideoCodingModule {
         externalEncoder, payloadType, internalSource);
   }
 
-  virtual int32_t CodecConfigParameters(uint8_t* buffer, int32_t size)
-      OVERRIDE {
+  virtual int32_t CodecConfigParameters(uint8_t* buffer,
+                                        int32_t size) OVERRIDE {
     return sender_->CodecConfigParameters(buffer, size);
   }
 
@@ -150,8 +150,8 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return sender_->SetChannelParameters(target_bitrate, lossRate, rtt);
   }
 
-  virtual int32_t RegisterTransportCallback(VCMPacketizationCallback* transport)
-      OVERRIDE {
+  virtual int32_t RegisterTransportCallback(
+      VCMPacketizationCallback* transport) OVERRIDE {
     return sender_->RegisterTransportCallback(transport);
   }
 
@@ -165,8 +165,8 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return sender_->RegisterVideoQMCallback(videoQMSettings);
   }
 
-  virtual int32_t RegisterProtectionCallback(VCMProtectionCallback* protection)
-      OVERRIDE {
+  virtual int32_t RegisterProtectionCallback(
+      VCMProtectionCallback* protection) OVERRIDE {
     return sender_->RegisterProtectionCallback(protection);
   }
 
@@ -181,10 +181,10 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return sender_return;
   }
 
-  virtual int32_t AddVideoFrame(const I420VideoFrame& videoFrame,
-                                const VideoContentMetrics* contentMetrics,
-                                const CodecSpecificInfo* codecSpecificInfo)
-      OVERRIDE {
+  virtual int32_t AddVideoFrame(
+      const I420VideoFrame& videoFrame,
+      const VideoContentMetrics* contentMetrics,
+      const CodecSpecificInfo* codecSpecificInfo) OVERRIDE {
     return sender_->AddVideoFrame(
         videoFrame, contentMetrics, codecSpecificInfo);
   }
@@ -226,11 +226,11 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return VCM_OK;
   }
 
-  virtual void SuspendBelowMinBitrate() {
+  virtual void SuspendBelowMinBitrate() OVERRIDE {
     return sender_->SuspendBelowMinBitrate();
   }
 
-  virtual bool VideoSuspended() const {
+  virtual bool VideoSuspended() const OVERRIDE {
     return sender_->VideoSuspended();
   }
 
@@ -252,8 +252,8 @@ class VideoCodingModuleImpl : public VideoCodingModule {
         externalDecoder, payloadType, internalRenderTiming);
   }
 
-  virtual int32_t RegisterReceiveCallback(VCMReceiveCallback* receiveCallback)
-      OVERRIDE {
+  virtual int32_t RegisterReceiveCallback(
+      VCMReceiveCallback* receiveCallback) OVERRIDE {
     return receiver_->RegisterReceiveCallback(receiveCallback);
   }
 
@@ -292,7 +292,7 @@ class VideoCodingModuleImpl : public VideoCodingModule {
 
   virtual int32_t ResetDecoder() OVERRIDE { return receiver_->ResetDecoder(); }
 
-  virtual int32_t ReceiveCodec(VideoCodec* currentReceiveCodec) const {
+  virtual int32_t ReceiveCodec(VideoCodec* currentReceiveCodec) const OVERRIDE {
     return receiver_->ReceiveCodec(currentReceiveCodec);
   }
 

@@ -1034,10 +1034,6 @@ int32_t ModuleRtpRtcpImpl::SendREDPayloadType(
   return rtp_sender_.RED(&payload_type);
 }
 
-RtpVideoCodecTypes ModuleRtpRtcpImpl::SendVideoCodec() const {
-  return rtp_sender_.VideoCodecType();
-}
-
 void ModuleRtpRtcpImpl::SetTargetSendBitrate(
     const std::vector<uint32_t>& stream_bitrates) {
   if (IsDefaultModule()) {

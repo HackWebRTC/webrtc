@@ -100,12 +100,6 @@ RTPReceiverStrategy* RtpReceiverImpl::GetMediaReceiver() const {
   return rtp_media_receiver_.get();
 }
 
-RtpVideoCodecTypes RtpReceiverImpl::VideoCodecType() const {
-  PayloadUnion media_specific;
-  rtp_media_receiver_->GetLastMediaSpecificPayload(&media_specific);
-  return media_specific.Video.videoCodecType;
-}
-
 int32_t RtpReceiverImpl::RegisterReceivePayload(
     const char payload_name[RTP_PAYLOAD_NAME_SIZE],
     const int8_t payload_type,

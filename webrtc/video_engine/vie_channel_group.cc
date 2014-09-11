@@ -54,39 +54,39 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
 
   virtual void IncomingPacket(int64_t arrival_time_ms,
                               int payload_size,
-                              const RTPHeader& header) {
+                              const RTPHeader& header) OVERRIDE {
     CriticalSectionScoped cs(crit_sect_.get());
     PickEstimatorFromHeader(header);
     rbe_->IncomingPacket(arrival_time_ms, payload_size, header);
   }
 
-  virtual int32_t Process() {
+  virtual int32_t Process() OVERRIDE {
     CriticalSectionScoped cs(crit_sect_.get());
     return rbe_->Process();
   }
 
-  virtual int32_t TimeUntilNextProcess() {
+  virtual int32_t TimeUntilNextProcess() OVERRIDE {
     CriticalSectionScoped cs(crit_sect_.get());
     return rbe_->TimeUntilNextProcess();
   }
 
-  virtual void OnRttUpdate(uint32_t rtt) {
+  virtual void OnRttUpdate(uint32_t rtt) OVERRIDE {
     CriticalSectionScoped cs(crit_sect_.get());
     rbe_->OnRttUpdate(rtt);
   }
 
-  virtual void RemoveStream(unsigned int ssrc) {
+  virtual void RemoveStream(unsigned int ssrc) OVERRIDE {
     CriticalSectionScoped cs(crit_sect_.get());
     rbe_->RemoveStream(ssrc);
   }
 
   virtual bool LatestEstimate(std::vector<unsigned int>* ssrcs,
-                              unsigned int* bitrate_bps) const {
+                              unsigned int* bitrate_bps) const OVERRIDE {
     CriticalSectionScoped cs(crit_sect_.get());
     return rbe_->LatestEstimate(ssrcs, bitrate_bps);
   }
 
-  virtual bool GetStats(ReceiveBandwidthEstimatorStats* output) const {
+  virtual bool GetStats(ReceiveBandwidthEstimatorStats* output) const OVERRIDE {
     CriticalSectionScoped cs(crit_sect_.get());
     return rbe_->GetStats(output);
   }
