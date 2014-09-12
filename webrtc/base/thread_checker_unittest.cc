@@ -157,7 +157,8 @@ void ThreadCheckerClass::MethodOnDifferentThreadImpl() {
 }
 
 #if ENABLE_THREAD_CHECKER
-TEST(ThreadCheckerDeathTest, MethodNotAllowedOnDifferentThreadInDebug) {
+TEST(ThreadCheckerDeathTest,
+     DISABLED_MethodNotAllowedOnDifferentThreadInDebug) {
   ASSERT_DEATH({
       ThreadCheckerClass::MethodOnDifferentThreadImpl();
     }, "");
