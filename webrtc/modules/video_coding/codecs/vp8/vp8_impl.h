@@ -14,6 +14,7 @@
 #define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_IMPL_H_
 
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
+#include "webrtc/modules/video_coding/utility/quality_scaler.h"
 
 // VPX forward declaration
 typedef struct vpx_codec_ctx vpx_codec_ctx_t;
@@ -139,6 +140,7 @@ class VP8EncoderImpl : public VP8Encoder {
   vpx_codec_ctx_t* encoder_;
   vpx_codec_enc_cfg_t* config_;
   vpx_image_t* raw_;
+  QualityScaler quality_scaler_;
 };  // end of VP8Encoder class
 
 

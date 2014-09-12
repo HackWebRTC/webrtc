@@ -703,34 +703,26 @@ TEST_F(VideoProcessorIntegrationTest,
                          rc_metrics);
 }
 
-// Run with no packet loss, at low bitrate, then increase rate somewhat.
-// Key frame is thrown in every 120 frames. Can expect some frame drops after
-// key frame, even at high rate. The internal spatial resizer is on, so expect
-// spatial resize down at first key frame, and back up at second key frame.
-// Error_concealment is off in this test since there is a memory leak with
-// resizing and error concealment.
+// Run with no packet loss, at low bitrate. During this time we should've
+// resized once.
 TEST_F(VideoProcessorIntegrationTest,
        DISABLED_ON_ANDROID(ProcessNoLossSpatialResizeFrameDrop)) {
   config_.networking_config.packet_loss_probability = 0;
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
-  SetRateProfilePars(&rate_profile, 0, 100, 30, 0);
-  SetRateProfilePars(&rate_profile, 1, 200, 30, 120);
-  SetRateProfilePars(&rate_profile, 2, 200, 30, 240);
-  rate_profile.frame_index_rate_update[3] = kNbrFramesLong + 1;
+  SetRateProfilePars(&rate_profile, 0, 50, 30, 0);
+  rate_profile.frame_index_rate_update[1] = kNbrFramesLong + 1;
   rate_profile.num_frames = kNbrFramesLong;
   // Codec/network settings.
   CodecConfigPars process_settings;
-  SetCodecParameters(&process_settings, 0.0f, 120, 1, false, true, true, true);
-  // Metrics for expected quality.: lower quality on average from up-sampling
-  // the down-sampled portion of the run, in case resizer is on.
+  SetCodecParameters(
+      &process_settings, 0.0f, kNbrFramesLong, 1, false, true, true, true);
+  // Metrics for expected quality.
   QualityMetrics quality_metrics;
-  SetQualityMetrics(&quality_metrics, 29.0, 20.0, 0.75, 0.60);
+  SetQualityMetrics(&quality_metrics, 25.0, 15.0, 0.70, 0.40);
   // Metrics for rate control.
-  RateControlMetrics rc_metrics[3];
-  SetRateControlMetrics(rc_metrics, 0, 45, 30, 75, 20, 70, 0);
-  SetRateControlMetrics(rc_metrics, 1, 20, 35, 30, 20, 15, 1);
-  SetRateControlMetrics(rc_metrics, 2, 0, 30, 30, 15, 25, 1);
+  RateControlMetrics rc_metrics[1];
+  SetRateControlMetrics(rc_metrics, 0, 160, 60, 120, 20, 70, 1);
   ProcessFramesAndVerify(quality_metrics,
                          rate_profile,
                          process_settings,

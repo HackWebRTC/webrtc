@@ -18,8 +18,10 @@
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'sources': [
-        'include/frame_dropper.h',
         'frame_dropper.cc',
+        'include/frame_dropper.h',
+        'quality_scaler.cc',
+        'quality_scaler.h',
       ],
     },
   ], # targets
