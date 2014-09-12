@@ -72,14 +72,14 @@ class ViEReceiver : public RtpData {
   int ReceivedRTPPacket(const void* rtp_packet, int rtp_packet_length,
                         const PacketTime& packet_time);
   int ReceivedRTCPPacket(const void* rtcp_packet, int rtcp_packet_length);
-  virtual bool OnRecoveredPacket(const uint8_t* packet,
-                                 int packet_length) OVERRIDE;
 
   // Implements RtpData.
   virtual int32_t OnReceivedPayloadData(
       const uint8_t* payload_data,
       const uint16_t payload_size,
-      const WebRtcRTPHeader* rtp_header);
+      const WebRtcRTPHeader* rtp_header) OVERRIDE;
+  virtual bool OnRecoveredPacket(const uint8_t* packet,
+                                 int packet_length) OVERRIDE;
 
   void GetReceiveBandwidthEstimatorStats(
       ReceiveBandwidthEstimatorStats* output) const;

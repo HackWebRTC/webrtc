@@ -96,10 +96,6 @@ RtpReceiverImpl::~RtpReceiverImpl() {
   }
 }
 
-RTPReceiverStrategy* RtpReceiverImpl::GetMediaReceiver() const {
-  return rtp_media_receiver_.get();
-}
-
 int32_t RtpReceiverImpl::RegisterReceivePayload(
     const char payload_name[RTP_PAYLOAD_NAME_SIZE],
     const int8_t payload_type,
