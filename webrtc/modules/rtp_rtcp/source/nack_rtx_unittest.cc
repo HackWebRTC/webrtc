@@ -112,7 +112,10 @@ class RtxLoopBackTransport : public webrtc::Transport {
       return len;
     }
     int packet_length = len;
-    uint8_t restored_packet[1500];
+    // TODO(pbos): Figure out why this needs to be initialized. Likely this
+    // is hiding a bug either in test setup or other code.
+    // https://code.google.com/p/webrtc/issues/detail?id=3183
+    uint8_t restored_packet[1500] = {0};
     uint8_t* restored_packet_ptr = restored_packet;
     RTPHeader header;
     scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());

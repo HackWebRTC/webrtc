@@ -859,62 +859,6 @@ name=https://code.google.com/p/webrtc/issues/detail?id=3184 (7)
 *!testing::internal::HandleSehExceptionsInMethodIfSupported<>
 
 UNINITIALIZED READ
-name=https://code.google.com/p/webrtc/issues/detail?id=3183 (1)
-*!webrtc::RTPReceiverVideo::ReceiveGenericCodec
-*!webrtc::RTPReceiverVideo::ParseVideoCodecSpecific
-*!webrtc::RTPReceiverVideo::ParseRtpPacket
-*!webrtc::RtpReceiverImpl::IncomingRtpPacket
-*!RtxLoopBackTransport::SendPacket
-*!webrtc::RTPSender::SendPacketToNetwork
-*!webrtc::RTPSender::SendToNetwork
-*!webrtc::RTPSenderVideo::SendVideoPacket
-*!webrtc::RTPSenderVideo::SendGeneric
-*!webrtc::RTPSenderVideo::SendVideo
-*!webrtc::RTPSender::SendOutgoingData
-*!webrtc::ModuleRtpRtcpImpl::SendOutgoingData
-*!RtpRtcpRtxNackTest_LongNackList_Test::TestBody
-*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
-
-UNINITIALIZED READ
-name=name=https://code.google.com/p/webrtc/issues/detail?id=3183 (2)
-*!webrtc::RTPReceiverVideo::ReceiveGenericCodec
-*!webrtc::RTPReceiverVideo::ParseVideoCodecSpecific
-*!webrtc::RTPReceiverVideo::ParseRtpPacket
-*!webrtc::RtpReceiverImpl::IncomingRtpPacket
-*!RtxLoopBackTransport::SendPacket
-*!webrtc::RTPSender::SendPacketToNetwork
-*!webrtc::RTPSender::PrepareAndSendPacket
-*!webrtc::RTPSender::ReSendPacket
-*!webrtc::RTPSender::OnReceivedNACK
-*!webrtc::ModuleRtpRtcpImpl::OnReceivedNACK
-*!webrtc::RTCPReceiver::TriggerCallbacksFromRTCPPacket
-*!webrtc::ModuleRtpRtcpImpl::IncomingRtcpPacket
-*!RtxLoopBackTransport::SendRTCPPacket
-*!webrtc::RTCPSender::SendToNetwork
-*!webrtc::RTCPSender::SendRTCP
-*!webrtc::ModuleRtpRtcpImpl::SendNACK
-*!RtpRtcpRtxNackTest_LongNackList_Test::TestBody
-*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
-
-UNINITIALIZED READ
-name=name=https://code.google.com/p/webrtc/issues/detail?id=3183 (3)
-*!webrtc::RTPReceiverVideo::ReceiveGenericCodec
-*!webrtc::RTPReceiverVideo::ParseVideoCodecSpecific
-*!webrtc::RTPReceiverVideo::ParseRtpPacket
-*!webrtc::RtpReceiverImpl::IncomingRtpPacket
-*!RtxLoopBackTransport::SendPacket
-*!webrtc::RTPSender::SendPacketToNetwork
-*!webrtc::RTPSender::SendToNetwork
-*!webrtc::RTPSenderVideo::SendVideoPacket
-*!webrtc::RTPSenderVideo::SendGeneric
-*!webrtc::RTPSenderVideo::SendVideo
-*!webrtc::RTPSender::SendOutgoingData
-*!webrtc::ModuleRtpRtcpImpl::SendOutgoingData
-*!RtpRtcpRtxNackTest::RunRtxTest
-*!RtpRtcpRtxNackTest_RtxNack_Test::TestBody
-*!testing::internal::HandleSehExceptionsInMethodIfSupported<>
-
-UNINITIALIZED READ
 name=https://code.google.com/p/webrtc/issues/detail?id=3490 (1)
 drmemorylib.dll!replace_memcmp
 *!talk_base::AsyncWriteTest_TestWrite_Test::TestBody
