@@ -21,7 +21,7 @@ class RtpPacketizerH264 : public RtpPacketizer {
  public:
   // Initialize with payload from encoder.
   // The payload_data must be exactly one encoded H264 frame.
-  explicit RtpPacketizerH264(size_t max_payload_len);
+  RtpPacketizerH264(FrameType frame_type, size_t max_payload_len);
 
   virtual ~RtpPacketizerH264();
 
@@ -40,6 +40,12 @@ class RtpPacketizerH264 : public RtpPacketizer {
   virtual bool NextPacket(uint8_t* buffer,
                           size_t* bytes_to_send,
                           bool* last_packet) OVERRIDE;
+
+  virtual ProtectionType GetProtectionType() OVERRIDE;
+
+  virtual StorageType GetStorageType(uint32_t retrasmission_settings) OVERRIDE;
+
+  virtual std::string ToString() OVERRIDE;
 
  private:
   struct Packet {
@@ -78,6 +84,7 @@ class RtpPacketizerH264 : public RtpPacketizer {
   const size_t max_payload_len_;
   RTPFragmentationHeader fragmentation_;
   PacketQueue packets_;
+  FrameType frame_type_;
 
   DISALLOW_COPY_AND_ASSIGN(RtpPacketizerH264);
 };

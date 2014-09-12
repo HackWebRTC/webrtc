@@ -79,6 +79,12 @@ class RtpPacketizerVp8 : public RtpPacketizer {
                           size_t* bytes_to_send,
                           bool* last_packet) OVERRIDE;
 
+  virtual ProtectionType GetProtectionType() OVERRIDE;
+
+  virtual StorageType GetStorageType(uint32_t retransmission_settings) OVERRIDE;
+
+  virtual std::string ToString() OVERRIDE;
+
  private:
   typedef struct {
     int payload_start_pos;
@@ -96,19 +102,20 @@ class RtpPacketizerVp8 : public RtpPacketizer {
   static const AggregationMode aggr_modes_[kNumModes];
   static const bool balance_modes_[kNumModes];
   static const bool separate_first_modes_[kNumModes];
-  static const int kXBit        = 0x80;
-  static const int kNBit        = 0x20;
-  static const int kSBit        = 0x10;
+  static const int kXBit = 0x80;
+  static const int kNBit = 0x20;
+  static const int kSBit = 0x10;
   static const int kPartIdField = 0x0F;
   static const int kKeyIdxField = 0x1F;
-  static const int kIBit        = 0x80;
-  static const int kLBit        = 0x40;
-  static const int kTBit        = 0x20;
-  static const int kKBit        = 0x10;
-  static const int kYBit        = 0x20;
+  static const int kIBit = 0x80;
+  static const int kLBit = 0x40;
+  static const int kTBit = 0x20;
+  static const int kKBit = 0x10;
+  static const int kYBit = 0x20;
 
   // Calculate size of next chunk to send. Returns 0 if none can be sent.
-  int CalcNextSize(int max_payload_len, int remaining_bytes,
+  int CalcNextSize(int max_payload_len,
+                   int remaining_bytes,
                    bool split_payload) const;
 
   // Calculate all packet sizes and load to packet info queue.
@@ -144,7 +151,6 @@ class RtpPacketizerVp8 : public RtpPacketizer {
                             uint8_t* buffer,
                             int buffer_length) const;
 
-
   // Write the X field and the appropriate extension fields to buffer.
   // The function returns the extension length (including X field), or -1
   // on error.
@@ -152,19 +158,25 @@ class RtpPacketizerVp8 : public RtpPacketizer {
 
   // Set the I bit in the x_field, and write PictureID to the appropriate
   // position in buffer. The function returns 0 on success, -1 otherwise.
-  int WritePictureIDFields(uint8_t* x_field, uint8_t* buffer,
-                           int buffer_length, int* extension_length) const;
+  int WritePictureIDFields(uint8_t* x_field,
+                           uint8_t* buffer,
+                           int buffer_length,
+                           int* extension_length) const;
 
   // Set the L bit in the x_field, and write Tl0PicIdx to the appropriate
   // position in buffer. The function returns 0 on success, -1 otherwise.
-  int WriteTl0PicIdxFields(uint8_t* x_field, uint8_t* buffer,
-                           int buffer_length, int* extension_length) const;
+  int WriteTl0PicIdxFields(uint8_t* x_field,
+                           uint8_t* buffer,
+                           int buffer_length,
+                           int* extension_length) const;
 
   // Set the T and K bits in the x_field, and write TID, Y and KeyIdx to the
   // appropriate position in buffer. The function returns 0 on success,
   // -1 otherwise.
-  int WriteTIDAndKeyIdxFields(uint8_t* x_field, uint8_t* buffer,
-                              int buffer_length, int* extension_length) const;
+  int WriteTIDAndKeyIdxFields(uint8_t* x_field,
+                              uint8_t* buffer,
+                              int buffer_length,
+                              int* extension_length) const;
 
   // Write the PictureID from codec_specific_info_ to buffer. One or two
   // bytes are written, depending on magnitude of PictureID. The function
@@ -202,5 +214,22 @@ class RtpPacketizerVp8 : public RtpPacketizer {
 
   DISALLOW_COPY_AND_ASSIGN(RtpPacketizerVp8);
 };
-}  // namespace
+
+// Depacketizer for VP8.
+class RtpDepacketizerVp8 : public RtpDepacketizer {
+ public:
+  explicit RtpDepacketizerVp8(RtpData* const callback);
+
+  virtual ~RtpDepacketizerVp8() {}
+
+  virtual bool Parse(WebRtcRTPHeader* rtp_header,
+                     const uint8_t* payload_data,
+                     size_t payload_data_length) OVERRIDE;
+
+ private:
+  RtpData* const callback_;
+
+  DISALLOW_COPY_AND_ASSIGN(RtpDepacketizerVp8);
+};
+}  // namespace webrtc
 #endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VP8_H_

@@ -297,5 +297,4 @@ TEST_F(RtpPacketizerVp8Test, TestTIDAndKeyIdx) {
   helper_->GetAllPacketsAndCheck(&packetizer, kExpectedSizes, kExpectedPart,
                                  kExpectedFragStart, kExpectedNum);
 }
-
 }  // namespace

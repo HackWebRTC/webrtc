@@ -94,8 +94,12 @@ void ParseFuaNalu(WebRtcRTPHeader* rtp_header,
 }
 }  // namespace
 
-RtpPacketizerH264::RtpPacketizerH264(size_t max_payload_len)
-    : payload_data_(NULL), payload_size_(0), max_payload_len_(max_payload_len) {
+RtpPacketizerH264::RtpPacketizerH264(FrameType frame_type,
+                                     size_t max_payload_len)
+    : payload_data_(NULL),
+      payload_size_(0),
+      max_payload_len_(max_payload_len),
+      frame_type_(frame_type) {
 }
 
 RtpPacketizerH264::~RtpPacketizerH264() {
@@ -270,6 +274,20 @@ void RtpPacketizerH264::NextFragmentPacket(uint8_t* buffer,
     memcpy(buffer + kFuAHeaderSize, &payload_data_[packet.offset], packet.size);
   }
   packets_.pop();
+}
+
+ProtectionType RtpPacketizerH264::GetProtectionType() {
+  return (frame_type_ == kVideoFrameKey) ? kProtectedPacket
+                                         : kUnprotectedPacket;
+}
+
+StorageType RtpPacketizerH264::GetStorageType(
+    uint32_t retransmission_settings) {
+  return kAllowRetransmission;
+}
+
+std::string RtpPacketizerH264::ToString() {
+  return "RtpPacketizerH264";
 }
 
 RtpDepacketizerH264::RtpDepacketizerH264(RtpData* const callback)

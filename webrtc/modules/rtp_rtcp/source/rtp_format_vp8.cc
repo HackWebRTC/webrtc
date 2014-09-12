@@ -10,11 +10,12 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_vp8.h"
 
-#include <assert.h>   // assert
+#include <assert.h>  // assert
 #include <string.h>  // memcpy
 
 #include <vector>
 
+#include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/vp8_partition_aggregator.h"
 
 namespace webrtc {
@@ -107,6 +108,29 @@ bool RtpPacketizerVp8::NextPacket(uint8_t* buffer,
   return true;
 }
 
+ProtectionType RtpPacketizerVp8::GetProtectionType() {
+  bool protect =
+      hdr_info_.temporalIdx == 0 || hdr_info_.temporalIdx == kNoTemporalIdx;
+  return protect ? kProtectedPacket : kUnprotectedPacket;
+}
+
+StorageType RtpPacketizerVp8::GetStorageType(uint32_t retransmission_settings) {
+  StorageType storage = kAllowRetransmission;
+  if (hdr_info_.temporalIdx == 0 &&
+      !(retransmission_settings & kRetransmitBaseLayer)) {
+    storage = kDontRetransmit;
+  } else if (hdr_info_.temporalIdx != kNoTemporalIdx &&
+             hdr_info_.temporalIdx > 0 &&
+             !(retransmission_settings & kRetransmitHigherLayers)) {
+    storage = kDontRetransmit;
+  }
+  return storage;
+}
+
+std::string RtpPacketizerVp8::ToString() {
+  return "RtpPacketizerVp8";
+}
+
 int RtpPacketizerVp8::CalcNextSize(int max_payload_len,
                                    int remaining_bytes,
                                    bool split_payload) const {
@@ -123,17 +147,17 @@ int RtpPacketizerVp8::CalcNextSize(int max_payload_len,
     // Number of fragments for remaining_bytes:
     int num_frags = remaining_bytes / max_payload_len + 1;
     // Number of bytes in this fragment:
-    return static_cast<int>(static_cast<double>(remaining_bytes)
-                            / num_frags + 0.5);
+    return static_cast<int>(static_cast<double>(remaining_bytes) / num_frags +
+                            0.5);
   } else {
     return max_payload_len >= remaining_bytes ? remaining_bytes
-        : max_payload_len;
+                                              : max_payload_len;
   }
 }
 
 int RtpPacketizerVp8::GeneratePackets() {
-  if (max_payload_len_ < vp8_fixed_payload_descriptor_bytes_
-      + PayloadDescriptorExtraLength() + 1) {
+  if (max_payload_len_ < vp8_fixed_payload_descriptor_bytes_ +
+                             PayloadDescriptorExtraLength() + 1) {
     // The provided payload length is not long enough for the payload
     // descriptor and one payload byte. Return an error.
     return -1;
@@ -143,16 +167,18 @@ int RtpPacketizerVp8::GeneratePackets() {
   bool beginning = true;
   int part_ix = 0;
   while (total_bytes_processed < payload_size_) {
-    int packet_bytes = 0;  // How much data to send in this packet.
+    int packet_bytes = 0;       // How much data to send in this packet.
     bool split_payload = true;  // Splitting of partitions is initially allowed.
     int remaining_in_partition = part_info_.fragmentationOffset[part_ix] -
-        total_bytes_processed + part_info_.fragmentationLength[part_ix];
-    int rem_payload_len = max_payload_len_ -
+                                 total_bytes_processed +
+                                 part_info_.fragmentationLength[part_ix];
+    int rem_payload_len =
+        max_payload_len_ -
         (vp8_fixed_payload_descriptor_bytes_ + PayloadDescriptorExtraLength());
     int first_partition_in_packet = part_ix;
 
-    while (int next_size = CalcNextSize(rem_payload_len, remaining_in_partition,
-                                        split_payload)) {
+    while (int next_size = CalcNextSize(
+               rem_payload_len, remaining_in_partition, split_payload)) {
       packet_bytes += next_size;
       rem_payload_len -= next_size;
       remaining_in_partition -= next_size;
@@ -165,7 +191,7 @@ int RtpPacketizerVp8::GeneratePackets() {
         // with an intact partition (indicated by first_fragment_ == true).
         if (part_ix + 1 < num_partitions_ &&
             ((aggr_mode_ == kAggrFragments) ||
-                (aggr_mode_ == kAggrPartitions && start_on_new_fragment))) {
+             (aggr_mode_ == kAggrPartitions && start_on_new_fragment))) {
           assert(part_ix < num_partitions_);
           remaining_in_partition = part_info_.fragmentationLength[++part_ix];
           // Disallow splitting unless kAggrFragments. In kAggrPartitions,
@@ -181,7 +207,9 @@ int RtpPacketizerVp8::GeneratePackets() {
     }
     assert(packet_bytes > 0);
 
-    QueuePacket(total_bytes_processed, packet_bytes, first_partition_in_packet,
+    QueuePacket(total_bytes_processed,
+                packet_bytes,
+                first_partition_in_packet,
                 start_on_new_fragment);
     total_bytes_processed += packet_bytes;
     start_on_new_fragment = (remaining_in_partition == 0);
@@ -193,15 +221,15 @@ int RtpPacketizerVp8::GeneratePackets() {
 }
 
 int RtpPacketizerVp8::GeneratePacketsBalancedAggregates() {
-  if (max_payload_len_ < vp8_fixed_payload_descriptor_bytes_
-      + PayloadDescriptorExtraLength() + 1) {
+  if (max_payload_len_ < vp8_fixed_payload_descriptor_bytes_ +
+                             PayloadDescriptorExtraLength() + 1) {
     // The provided payload length is not long enough for the payload
     // descriptor and one payload byte. Return an error.
     return -1;
   }
   std::vector<int> partition_decision;
-  const int overhead = vp8_fixed_payload_descriptor_bytes_ +
-      PayloadDescriptorExtraLength();
+  const int overhead =
+      vp8_fixed_payload_descriptor_bytes_ + PayloadDescriptorExtraLength();
   const uint32_t max_payload_len = max_payload_len_ - overhead;
   int min_size, max_size;
   AggregateSmallPartitions(&partition_decision, &min_size, &max_size);
@@ -217,10 +245,11 @@ int RtpPacketizerVp8::GeneratePacketsBalancedAggregates() {
       const int packet_bytes =
           (remaining_partition + num_fragments - 1) / num_fragments;
       for (int n = 0; n < num_fragments; ++n) {
-        const int this_packet_bytes = packet_bytes < remaining_partition ?
-            packet_bytes : remaining_partition;
-        QueuePacket(total_bytes_processed, this_packet_bytes, part_ix,
-                    (n == 0));
+        const int this_packet_bytes = packet_bytes < remaining_partition
+                                          ? packet_bytes
+                                          : remaining_partition;
+        QueuePacket(
+            total_bytes_processed, this_packet_bytes, part_ix, (n == 0));
         remaining_partition -= this_packet_bytes;
         total_bytes_processed += this_packet_bytes;
         if (this_packet_bytes < min_size) {
@@ -237,13 +266,15 @@ int RtpPacketizerVp8::GeneratePacketsBalancedAggregates() {
       const int first_partition_in_packet = part_ix;
       const int aggregation_index = partition_decision[part_ix];
       while (static_cast<size_t>(part_ix) < partition_decision.size() &&
-          partition_decision[part_ix] == aggregation_index) {
+             partition_decision[part_ix] == aggregation_index) {
         // Collect all partitions that were aggregated into the same packet.
         this_packet_bytes += part_info_.fragmentationLength[part_ix];
         ++part_ix;
       }
-      QueuePacket(total_bytes_processed, this_packet_bytes,
-                  first_partition_in_packet, true);
+      QueuePacket(total_bytes_processed,
+                  this_packet_bytes,
+                  first_partition_in_packet,
+                  true);
       total_bytes_processed += this_packet_bytes;
     }
   }
@@ -259,8 +290,8 @@ void RtpPacketizerVp8::AggregateSmallPartitions(std::vector<int>* partition_vec,
   *max_size = -1;
   assert(partition_vec);
   partition_vec->assign(num_partitions_, -1);
-  const int overhead = vp8_fixed_payload_descriptor_bytes_ +
-      PayloadDescriptorExtraLength();
+  const int overhead =
+      vp8_fixed_payload_descriptor_bytes_ + PayloadDescriptorExtraLength();
   const uint32_t max_payload_len = max_payload_len_ - overhead;
   int first_in_set = 0;
   int last_in_set = 0;
@@ -271,12 +302,12 @@ void RtpPacketizerVp8::AggregateSmallPartitions(std::vector<int>* partition_vec,
       // Found start of a set.
       last_in_set = first_in_set;
       while (last_in_set + 1 < num_partitions_ &&
-          part_info_.fragmentationLength[last_in_set + 1] < max_payload_len) {
+             part_info_.fragmentationLength[last_in_set + 1] <
+                 max_payload_len) {
         ++last_in_set;
       }
       // Found end of a set. Run optimized aggregator. It is ok if start == end.
-      Vp8PartitionAggregator aggregator(part_info_, first_in_set,
-                                        last_in_set);
+      Vp8PartitionAggregator aggregator(part_info_, first_in_set, last_in_set);
       if (*min_size >= 0 && *max_size >= 0) {
         aggregator.SetPriorMinMax(*min_size, *max_size);
       }
@@ -328,19 +359,23 @@ int RtpPacketizerVp8::WriteHeaderAndPayload(const InfoStruct& packet_info,
 
   assert(packet_info.size > 0);
   buffer[0] = 0;
-  if (XFieldPresent())            buffer[0] |= kXBit;
-  if (hdr_info_.nonReference)     buffer[0] |= kNBit;
-  if (packet_info.first_fragment) buffer[0] |= kSBit;
+  if (XFieldPresent())
+    buffer[0] |= kXBit;
+  if (hdr_info_.nonReference)
+    buffer[0] |= kNBit;
+  if (packet_info.first_fragment)
+    buffer[0] |= kSBit;
   buffer[0] |= (packet_info.first_partition_ix & kPartIdField);
 
   const int extension_length = WriteExtensionFields(buffer, buffer_length);
 
   memcpy(&buffer[vp8_fixed_payload_descriptor_bytes_ + extension_length],
-         &payload_data_[packet_info.payload_start_pos], packet_info.size);
+         &payload_data_[packet_info.payload_start_pos],
+         packet_info.size);
 
   // Return total length of written data.
-  return packet_info.size + vp8_fixed_payload_descriptor_bytes_
-      + extension_length;
+  return packet_info.size + vp8_fixed_payload_descriptor_bytes_ +
+         extension_length;
 }
 
 int RtpPacketizerVp8::WriteExtensionFields(uint8_t* buffer,
@@ -351,20 +386,20 @@ int RtpPacketizerVp8::WriteExtensionFields(uint8_t* buffer,
     *x_field = 0;
     extension_length = 1;  // One octet for the X field.
     if (PictureIdPresent()) {
-      if (WritePictureIDFields(x_field, buffer, buffer_length,
-                               &extension_length) < 0) {
+      if (WritePictureIDFields(
+              x_field, buffer, buffer_length, &extension_length) < 0) {
         return -1;
       }
     }
     if (TL0PicIdxFieldPresent()) {
-      if (WriteTl0PicIdxFields(x_field, buffer, buffer_length,
-                               &extension_length) < 0) {
+      if (WriteTl0PicIdxFields(
+              x_field, buffer, buffer_length, &extension_length) < 0) {
         return -1;
       }
     }
     if (TIDFieldPresent() || KeyIdxFieldPresent()) {
-      if (WriteTIDAndKeyIdxFields(x_field, buffer, buffer_length,
-                                  &extension_length) < 0) {
+      if (WriteTIDAndKeyIdxFields(
+              x_field, buffer, buffer_length, &extension_length) < 0) {
         return -1;
       }
     }
@@ -380,18 +415,18 @@ int RtpPacketizerVp8::WritePictureIDFields(uint8_t* x_field,
   *x_field |= kIBit;
   const int pic_id_length = WritePictureID(
       buffer + vp8_fixed_payload_descriptor_bytes_ + *extension_length,
-      buffer_length - vp8_fixed_payload_descriptor_bytes_
-      - *extension_length);
-  if (pic_id_length < 0) return -1;
+      buffer_length - vp8_fixed_payload_descriptor_bytes_ - *extension_length);
+  if (pic_id_length < 0)
+    return -1;
   *extension_length += pic_id_length;
   return 0;
 }
 
 int RtpPacketizerVp8::WritePictureID(uint8_t* buffer, int buffer_length) const {
-  const uint16_t pic_id =
-      static_cast<uint16_t> (hdr_info_.pictureId);
+  const uint16_t pic_id = static_cast<uint16_t>(hdr_info_.pictureId);
   int picture_id_len = PictureIdLength();
-  if (picture_id_len > buffer_length) return -1;
+  if (picture_id_len > buffer_length)
+    return -1;
   if (picture_id_len == 2) {
     buffer[0] = 0x80 | ((pic_id >> 8) & 0x7F);
     buffer[1] = pic_id & 0xFF;
@@ -405,13 +440,13 @@ int RtpPacketizerVp8::WriteTl0PicIdxFields(uint8_t* x_field,
                                            uint8_t* buffer,
                                            int buffer_length,
                                            int* extension_length) const {
-  if (buffer_length < vp8_fixed_payload_descriptor_bytes_ + *extension_length
-      + 1) {
+  if (buffer_length <
+      vp8_fixed_payload_descriptor_bytes_ + *extension_length + 1) {
     return -1;
   }
   *x_field |= kLBit;
-  buffer[vp8_fixed_payload_descriptor_bytes_
-         + *extension_length] = hdr_info_.tl0PicIdx;
+  buffer[vp8_fixed_payload_descriptor_bytes_ + *extension_length] =
+      hdr_info_.tl0PicIdx;
   ++*extension_length;
   return 0;
 }
@@ -420,8 +455,8 @@ int RtpPacketizerVp8::WriteTIDAndKeyIdxFields(uint8_t* x_field,
                                               uint8_t* buffer,
                                               int buffer_length,
                                               int* extension_length) const {
-  if (buffer_length < vp8_fixed_payload_descriptor_bytes_ + *extension_length
-      + 1) {
+  if (buffer_length <
+      vp8_fixed_payload_descriptor_bytes_ + *extension_length + 1) {
     return -1;
   }
   uint8_t* data_field =
@@ -443,9 +478,12 @@ int RtpPacketizerVp8::WriteTIDAndKeyIdxFields(uint8_t* x_field,
 
 int RtpPacketizerVp8::PayloadDescriptorExtraLength() const {
   int length_bytes = PictureIdLength();
-  if (TL0PicIdxFieldPresent()) ++length_bytes;
-  if (TIDFieldPresent() || KeyIdxFieldPresent()) ++length_bytes;
-  if (length_bytes > 0) ++length_bytes;  // Include the extension field.
+  if (TL0PicIdxFieldPresent())
+    ++length_bytes;
+  if (TIDFieldPresent() || KeyIdxFieldPresent())
+    ++length_bytes;
+  if (length_bytes > 0)
+    ++length_bytes;  // Include the extension field.
   return length_bytes;
 }
 
@@ -460,8 +498,8 @@ int RtpPacketizerVp8::PictureIdLength() const {
 }
 
 bool RtpPacketizerVp8::XFieldPresent() const {
-  return (TIDFieldPresent() || TL0PicIdxFieldPresent() || PictureIdPresent()
-      || KeyIdxFieldPresent());
+  return (TIDFieldPresent() || TL0PicIdxFieldPresent() || PictureIdPresent() ||
+          KeyIdxFieldPresent());
 }
 
 bool RtpPacketizerVp8::TIDFieldPresent() const {
@@ -476,5 +514,59 @@ bool RtpPacketizerVp8::KeyIdxFieldPresent() const {
 
 bool RtpPacketizerVp8::TL0PicIdxFieldPresent() const {
   return (hdr_info_.tl0PicIdx != kNoTl0PicIdx);
+}
+
+RtpDepacketizerVp8::RtpDepacketizerVp8(RtpData* const callback)
+    : callback_(callback) {
+}
+
+bool RtpDepacketizerVp8::Parse(WebRtcRTPHeader* rtp_header,
+                               const uint8_t* payload_data,
+                               size_t payload_data_length) {
+  RtpUtility::RTPPayload parsed_packet;
+  RtpUtility::RTPPayloadParser rtp_payload_parser(
+      kRtpVideoVp8, payload_data, payload_data_length);
+
+  if (!rtp_payload_parser.Parse(parsed_packet))
+    return false;
+
+  if (parsed_packet.info.VP8.dataLength == 0)
+    return true;
+
+  rtp_header->frameType = (parsed_packet.frameType == RtpUtility::kIFrame)
+                              ? kVideoFrameKey
+                              : kVideoFrameDelta;
+
+  RTPVideoHeaderVP8* to_header = &rtp_header->type.Video.codecHeader.VP8;
+  RtpUtility::RTPPayloadVP8* from_header = &parsed_packet.info.VP8;
+
+  rtp_header->type.Video.isFirstPacket =
+      from_header->beginningOfPartition && (from_header->partitionID == 0);
+  to_header->nonReference = from_header->nonReferenceFrame;
+  to_header->pictureId =
+      from_header->hasPictureID ? from_header->pictureID : kNoPictureId;
+  to_header->tl0PicIdx =
+      from_header->hasTl0PicIdx ? from_header->tl0PicIdx : kNoTl0PicIdx;
+  if (from_header->hasTID) {
+    to_header->temporalIdx = from_header->tID;
+    to_header->layerSync = from_header->layerSync;
+  } else {
+    to_header->temporalIdx = kNoTemporalIdx;
+    to_header->layerSync = false;
+  }
+  to_header->keyIdx = from_header->hasKeyIdx ? from_header->keyIdx : kNoKeyIdx;
+
+  rtp_header->type.Video.width = from_header->frameWidth;
+  rtp_header->type.Video.height = from_header->frameHeight;
+
+  to_header->partitionId = from_header->partitionID;
+  to_header->beginningOfPartition = from_header->beginningOfPartition;
+
+  if (callback_->OnReceivedPayloadData(parsed_packet.info.VP8.data,
+                                       parsed_packet.info.VP8.dataLength,
+                                       rtp_header) != 0) {
+    return false;
+  }
+  return true;
 }
 }  // namespace webrtc

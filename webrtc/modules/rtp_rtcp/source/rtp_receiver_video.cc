@@ -29,13 +29,13 @@ RTPReceiverStrategy* RTPReceiverStrategy::CreateVideoStrategy(
 }
 
 RTPReceiverVideo::RTPReceiverVideo(RtpData* data_callback)
-    : RTPReceiverStrategy(data_callback) {}
+    : RTPReceiverStrategy(data_callback) {
+}
 
 RTPReceiverVideo::~RTPReceiverVideo() {
 }
 
-bool RTPReceiverVideo::ShouldReportCsrcChanges(
-    uint8_t payload_type) const {
+bool RTPReceiverVideo::ShouldReportCsrcChanges(uint8_t payload_type) const {
   // Always do this for video packets.
   return true;
 }
@@ -47,17 +47,19 @@ int32_t RTPReceiverVideo::OnNewPayloadTypeCreated(
   return 0;
 }
 
-int32_t RTPReceiverVideo::ParseRtpPacket(
-    WebRtcRTPHeader* rtp_header,
-    const PayloadUnion& specific_payload,
-    bool is_red,
-    const uint8_t* payload,
-    uint16_t payload_length,
-    int64_t timestamp_ms,
-    bool is_first_packet) {
-  TRACE_EVENT2("webrtc_rtp", "Video::ParseRtp",
-               "seqnum", rtp_header->header.sequenceNumber,
-               "timestamp", rtp_header->header.timestamp);
+int32_t RTPReceiverVideo::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
+                                         const PayloadUnion& specific_payload,
+                                         bool is_red,
+                                         const uint8_t* payload,
+                                         uint16_t payload_length,
+                                         int64_t timestamp_ms,
+                                         bool is_first_packet) {
+  TRACE_EVENT2("webrtc_rtp",
+               "Video::ParseRtp",
+               "seqnum",
+               rtp_header->header.sequenceNumber,
+               "timestamp",
+               rtp_header->header.timestamp);
   rtp_header->type.Video.codec = specific_payload.Video.videoCodecType;
 
   const uint16_t payload_data_length =
@@ -67,12 +69,16 @@ int32_t RTPReceiverVideo::ParseRtpPacket(
     return data_callback_->OnReceivedPayloadData(NULL, 0, rtp_header) == 0 ? 0
                                                                            : -1;
 
-  return ParseVideoCodecSpecific(rtp_header,
-                                 payload,
-                                 payload_data_length,
-                                 specific_payload.Video.videoCodecType,
-                                 timestamp_ms,
-                                 is_first_packet);
+  // We are not allowed to hold a critical section when calling below functions.
+  scoped_ptr<RtpDepacketizer> depacketizer(
+      RtpDepacketizer::Create(rtp_header->type.Video.codec, data_callback_));
+  if (depacketizer.get() == NULL) {
+    LOG(LS_ERROR) << "Failed to create depacketizer.";
+    return -1;
+  }
+
+  rtp_header->type.Video.isFirstPacket = is_first_packet;
+  return depacketizer->Parse(rtp_header, payload, payload_data_length) ? 0 : -1;
 }
 
 int RTPReceiverVideo::GetPayloadTypeFrequency() const {
@@ -91,8 +97,9 @@ int32_t RTPReceiverVideo::InvokeOnInitializeDecoder(
     const char payload_name[RTP_PAYLOAD_NAME_SIZE],
     const PayloadUnion& specific_payload) const {
   // For video we just go with default values.
-  if (-1 == callback->OnInitializeDecoder(
-      id, payload_type, payload_name, kVideoPayloadTypeFrequency, 1, 0)) {
+  if (-1 ==
+      callback->OnInitializeDecoder(
+          id, payload_type, payload_name, kVideoPayloadTypeFrequency, 1, 0)) {
     LOG(LS_ERROR) << "Failed to created decoder for payload type: "
                   << payload_type;
     return -1;
@@ -100,36 +107,8 @@ int32_t RTPReceiverVideo::InvokeOnInitializeDecoder(
   return 0;
 }
 
-// We are not allowed to hold a critical section when calling this function.
-int32_t RTPReceiverVideo::ParseVideoCodecSpecific(
-    WebRtcRTPHeader* rtp_header,
-    const uint8_t* payload_data,
-    uint16_t payload_data_length,
-    RtpVideoCodecTypes video_type,
-    int64_t now_ms,
-    bool is_first_packet) {
-  switch (rtp_header->type.Video.codec) {
-    case kRtpVideoGeneric:
-      rtp_header->type.Video.isFirstPacket = is_first_packet;
-      return ReceiveGenericCodec(rtp_header, payload_data, payload_data_length);
-    case kRtpVideoVp8:
-      return ReceiveVp8Codec(rtp_header, payload_data, payload_data_length);
-    case kRtpVideoH264: {
-      scoped_ptr<RtpDepacketizer> depacketizer(RtpDepacketizer::Create(
-          rtp_header->type.Video.codec, data_callback_));
-      return depacketizer->Parse(rtp_header, payload_data, payload_data_length)
-                 ? 0
-                 : -1;
-    }
-    case kRtpVideoNone:
-      break;
-  }
-  return -1;
-}
-
-int32_t RTPReceiverVideo::BuildRTPheader(
-    const WebRtcRTPHeader* rtp_header,
-    uint8_t* data_buffer) const {
+int32_t RTPReceiverVideo::BuildRTPheader(const WebRtcRTPHeader* rtp_header,
+                                         uint8_t* data_buffer) const {
   data_buffer[0] = static_cast<uint8_t>(0x80);  // version 2
   data_buffer[1] = static_cast<uint8_t>(rtp_header->header.payloadType);
   if (rtp_header->header.markerBit) {
@@ -161,73 +140,4 @@ int32_t RTPReceiverVideo::BuildRTPheader(
   return rtp_header_length;
 }
 
-int32_t RTPReceiverVideo::ReceiveVp8Codec(WebRtcRTPHeader* rtp_header,
-                                          const uint8_t* payload_data,
-                                          uint16_t payload_data_length) {
-  RtpUtility::RTPPayload parsed_packet;
-  RtpUtility::RTPPayloadParser rtp_payload_parser(
-      kRtpVideoVp8, payload_data, payload_data_length);
-
-  if (!rtp_payload_parser.Parse(parsed_packet))
-    return -1;
-
-  if (parsed_packet.info.VP8.dataLength == 0)
-    return 0;
-
-  rtp_header->frameType = (parsed_packet.frameType == RtpUtility::kIFrame)
-                              ? kVideoFrameKey
-                              : kVideoFrameDelta;
-
-  RTPVideoHeaderVP8* to_header = &rtp_header->type.Video.codecHeader.VP8;
-  RtpUtility::RTPPayloadVP8* from_header = &parsed_packet.info.VP8;
-
-  rtp_header->type.Video.isFirstPacket =
-      from_header->beginningOfPartition && (from_header->partitionID == 0);
-  to_header->nonReference = from_header->nonReferenceFrame;
-  to_header->pictureId =
-      from_header->hasPictureID ? from_header->pictureID : kNoPictureId;
-  to_header->tl0PicIdx =
-      from_header->hasTl0PicIdx ? from_header->tl0PicIdx : kNoTl0PicIdx;
-  if (from_header->hasTID) {
-    to_header->temporalIdx = from_header->tID;
-    to_header->layerSync = from_header->layerSync;
-  } else {
-    to_header->temporalIdx = kNoTemporalIdx;
-    to_header->layerSync = false;
-  }
-  to_header->keyIdx = from_header->hasKeyIdx ? from_header->keyIdx : kNoKeyIdx;
-
-  rtp_header->type.Video.width = from_header->frameWidth;
-  rtp_header->type.Video.height = from_header->frameHeight;
-
-  to_header->partitionId = from_header->partitionID;
-  to_header->beginningOfPartition = from_header->beginningOfPartition;
-
-  if (data_callback_->OnReceivedPayloadData(parsed_packet.info.VP8.data,
-                                            parsed_packet.info.VP8.dataLength,
-                                            rtp_header) != 0) {
-    return -1;
-  }
-  return 0;
-}
-
-int32_t RTPReceiverVideo::ReceiveGenericCodec(
-    WebRtcRTPHeader* rtp_header,
-    const uint8_t* payload_data,
-    uint16_t payload_data_length) {
-  uint8_t generic_header = *payload_data++;
-  --payload_data_length;
-
-  rtp_header->frameType =
-      ((generic_header & RtpFormatVideoGeneric::kKeyFrameBit) != 0) ?
-      kVideoFrameKey : kVideoFrameDelta;
-  rtp_header->type.Video.isFirstPacket =
-      (generic_header & RtpFormatVideoGeneric::kFirstPacketBit) != 0;
-
-  if (data_callback_->OnReceivedPayloadData(
-          payload_data, payload_data_length, rtp_header) != 0) {
-    return -1;
-  }
-  return 0;
-}
 }  // namespace webrtc

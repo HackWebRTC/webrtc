@@ -63,6 +63,11 @@ enum RTPAliveType
     kRtpAlive  = 2
 };
 
+enum ProtectionType {
+  kUnprotectedPacket,
+  kProtectedPacket
+};
+
 enum StorageType {
   kDontStore,
   kDontRetransmit,
