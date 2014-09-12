@@ -18,6 +18,7 @@
 #include "webrtc/base/httpclient.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/pathutils.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/socketstream.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
@@ -596,8 +597,10 @@ HttpError HttpClient::ReadCacheBody(const std::string& id) {
   if ((HE_NONE == error)
       && (HV_HEAD != request().verb)
       && response().document) {
-    char buffer[1024 * 64];
-    StreamResult result = Flow(stream.get(), buffer, ARRAY_SIZE(buffer),
+    // Allocate on heap to not explode the stack.
+    const int array_size = 1024 * 64;
+    scoped_ptr<char[]> buffer(new char[array_size]);
+    StreamResult result = Flow(stream.get(), buffer.get(), array_size,
                                response().document.get());
     if (SR_SUCCESS != result) {
       error = HE_STREAM;
