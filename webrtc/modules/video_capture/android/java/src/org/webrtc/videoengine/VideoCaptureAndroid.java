@@ -47,6 +47,7 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
   private final int id;
   private final Camera.CameraInfo info;
   private final OrientationEventListener orientationListener;
+  private boolean orientationListenerEnabled;
   private final long native_capturer;  // |VideoCaptureAndroid*| in C++.
   private SurfaceTexture cameraSurfaceTexture;
   private int[] cameraGlTextures = null;
@@ -76,6 +77,9 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
     final VideoCaptureAndroid self = this;
     orientationListener = new OrientationEventListener(GetContext()) {
         @Override public void onOrientationChanged(int degrees) {
+          if (!self.orientationListenerEnabled) {
+            return;
+          }
           if (degrees == OrientationEventListener.ORIENTATION_UNKNOWN) {
             return;
           }
@@ -133,6 +137,7 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
         }
       });
     boolean startResult = exchange(result, false); // |false| is a dummy value.
+    orientationListenerEnabled = true;
     orientationListener.enable();
     return startResult;
   }
@@ -219,6 +224,7 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
   private synchronized boolean stopCapture() {
     Log.d(TAG, "stopCapture");
     orientationListener.disable();
+    orientationListenerEnabled = false;
     final Exchanger<Boolean> result = new Exchanger<Boolean>();
     cameraThreadHandler.post(new Runnable() {
         @Override public void run() {
