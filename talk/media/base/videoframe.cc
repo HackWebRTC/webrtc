@@ -235,7 +235,7 @@ bool VideoFrame::SetToBlack() {
 }
 
 static const size_t kMaxSampleSize = 1000000000u;
-// Returns whether a sample is valid
+// Returns whether a sample is valid.
 bool VideoFrame::Validate(uint32 fourcc, int w, int h,
                           const uint8 *sample, size_t sample_size) {
   if (h < 0) {
@@ -311,6 +311,11 @@ bool VideoFrame::Validate(uint32 fourcc, int w, int h,
                   << " " << sample_size;
     return false;
   }
+  // TODO(fbarchard): Make function to dump information about frames.
+  uint8 four_samples[4] = { 0, 0, 0, 0 };
+  for (size_t i = 0; i < ARRAY_SIZE(four_samples) && i < sample_size; ++i) {
+    four_samples[i] = sample[i];
+  }
   if (sample_size < expected_size) {
     LOG(LS_ERROR) << "Size field is too small."
                   << " format: " << GetFourccName(format)
@@ -318,10 +323,10 @@ bool VideoFrame::Validate(uint32 fourcc, int w, int h,
                   << " size: " << w << "x" << h
                   << " " << sample_size
                   << " expected: " << expected_size
-                  << " sample[0..3]: " << static_cast<int>(sample[0])
-                  << ", " << static_cast<int>(sample[1])
-                  << ", " << static_cast<int>(sample[2])
-                  << ", " << static_cast<int>(sample[3]);
+                  << " sample[0..3]: " << static_cast<int>(four_samples[0])
+                  << ", " << static_cast<int>(four_samples[1])
+                  << ", " << static_cast<int>(four_samples[2])
+                  << ", " << static_cast<int>(four_samples[3]);
     return false;
   }
   if (sample_size > kMaxSampleSize) {
@@ -331,13 +336,14 @@ bool VideoFrame::Validate(uint32 fourcc, int w, int h,
                     << " size: " << w << "x" << h
                     << " " << sample_size
                     << " expected: " << 2 * expected_size
-                    << " sample[0..3]: " << static_cast<int>(sample[0])
-                    << ", " << static_cast<int>(sample[1])
-                    << ", " << static_cast<int>(sample[2])
-                    << ", " << static_cast<int>(sample[3]);
+                    << " sample[0..3]: " << static_cast<int>(four_samples[0])
+                    << ", " << static_cast<int>(four_samples[1])
+                    << ", " << static_cast<int>(four_samples[2])
+                    << ", " << static_cast<int>(four_samples[3]);
     return false;
   }
   // Show large size warning once every 100 frames.
+  // TODO(fbarchard): Make frame counter atomic for thread safety.
   static int large_warn100 = 0;
   size_t large_expected_size = expected_size * 2;
   if (expected_bpp >= 8 &&
@@ -350,27 +356,14 @@ bool VideoFrame::Validate(uint32 fourcc, int w, int h,
                     << " size: " << w << "x" << h
                     << " bytes: " << sample_size
                     << " expected: " << large_expected_size
-                    << " sample[0..3]: " << static_cast<int>(sample[0])
-                    << ", " << static_cast<int>(sample[1])
-                    << ", " << static_cast<int>(sample[2])
-                    << ", " << static_cast<int>(sample[3]);
-  }
-  // Scan pages to ensure they are there and don't contain a single value and
-  // to generate an error.
-  if (!memcmp(sample + sample_size - 8, sample + sample_size - 4, 4) &&
-      !memcmp(sample, sample + 4, sample_size - 4)) {
-    LOG(LS_WARNING) << "Duplicate value for all pixels."
-                    << " format: " << GetFourccName(format)
-                    << " bpp: " << expected_bpp
-                    << " size: " << w << "x" << h
-                    << " bytes: " << sample_size
-                    << " expected: " << expected_size
-                    << " sample[0..3]: " << static_cast<int>(sample[0])
-                    << ", " << static_cast<int>(sample[1])
-                    << ", " << static_cast<int>(sample[2])
-                    << ", " << static_cast<int>(sample[3]);
+                    << " sample[0..3]: " << static_cast<int>(four_samples[0])
+                    << ", " << static_cast<int>(four_samples[1])
+                    << ", " << static_cast<int>(four_samples[2])
+                    << ", " << static_cast<int>(four_samples[3]);
   }
 
+  // TODO(fbarchard): Add duplicate pixel check.
+  // TODO(fbarchard): Use frame counter atomic for thread safety.
   static bool valid_once = true;
   if (valid_once) {
     valid_once = false;
@@ -380,10 +373,10 @@ bool VideoFrame::Validate(uint32 fourcc, int w, int h,
                  << " size: " << w << "x" << h
                  << " bytes: " << sample_size
                  << " expected: " << expected_size
-                 << " sample[0..3]: " << static_cast<int>(sample[0])
-                 << ", " << static_cast<int>(sample[1])
-                 << ", " << static_cast<int>(sample[2])
-                 << ", " << static_cast<int>(sample[3]);
+                 << " sample[0..3]: " << static_cast<int>(four_samples[0])
+                 << ", " << static_cast<int>(four_samples[1])
+                 << ", " << static_cast<int>(four_samples[2])
+                 << ", " << static_cast<int>(four_samples[3]);
   }
   return true;
 }
