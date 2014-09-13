@@ -71,7 +71,7 @@ static const UInt32 kAudioDeviceNameLength = 64;
 extern DeviceWatcherImpl* CreateDeviceWatcherCallback(
     DeviceManagerInterface* dm);
 extern void ReleaseDeviceWatcherCallback(DeviceWatcherImpl* impl);
-extern bool GetQTKitVideoDevices(std::vector<Device>* out);
+extern bool GetAVFoundationVideoDevices(std::vector<Device>* out);
 static bool GetAudioDeviceIDs(bool inputs, std::vector<AudioDeviceID>* out);
 static bool GetAudioDeviceName(AudioDeviceID id, bool input, std::string* out);
 
@@ -84,7 +84,7 @@ MacDeviceManager::~MacDeviceManager() {
 
 bool MacDeviceManager::GetVideoCaptureDevices(std::vector<Device>* devices) {
   devices->clear();
-  if (!GetQTKitVideoDevices(devices)) {
+  if (!GetAVFoundationVideoDevices(devices)) {
     return false;
   }
   return FilterDevices(devices, kFilteredVideoDevicesName);

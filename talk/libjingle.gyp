@@ -588,6 +588,7 @@
           'link_settings': {
             'xcode_settings': {
               'OTHER_LDFLAGS': [
+                '-weak_framework AVFoundation',
                 '-framework Cocoa',
                 '-framework CoreAudio',
                 '-framework CoreVideo',
