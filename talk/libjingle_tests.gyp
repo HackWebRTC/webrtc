@@ -76,16 +76,11 @@
       'dependencies': [
         '<(webrtc_root)/base/base.gyp:rtc_base',
         '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
+        '<(webrtc_root)/libjingle/xmllite/xmllite.gyp:rtc_xmllite',
         'libjingle.gyp:libjingle',
         'libjingle_unittest_main',
       ],
       'sources': [
-        'xmllite/qname_unittest.cc',
-        'xmllite/xmlbuilder_unittest.cc',
-        'xmllite/xmlelement_unittest.cc',
-        'xmllite/xmlnsstack_unittest.cc',
-        'xmllite/xmlparser_unittest.cc',
-        'xmllite/xmlprinter_unittest.cc',
         'xmpp/fakexmppclient.h',
         'xmpp/hangoutpubsubclient_unittest.cc',
         'xmpp/jid_unittest.cc',
