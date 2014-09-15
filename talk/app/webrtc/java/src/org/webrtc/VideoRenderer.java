@@ -44,6 +44,9 @@ public class VideoRenderer {
     public final int height;
     public final int[] yuvStrides;
     public final ByteBuffer[] yuvPlanes;
+    public final boolean yuvFrame;
+    public Object textureObject;
+    public int textureId;
 
     /**
      * Construct a frame of the given dimensions with the specified planar
@@ -62,24 +65,71 @@ public class VideoRenderer {
         yuvPlanes[2] = ByteBuffer.allocateDirect(yuvStrides[2] * height);
       }
       this.yuvPlanes = yuvPlanes;
+      this.yuvFrame = true;
+    }
+
+    /**
+     * Construct a texture frame of the given dimensions with data in SurfaceTexture
+     */
+    public I420Frame(
+        int width, int height, Object textureObject, int textureId) {
+      this.width = width;
+      this.height = height;
+      this.yuvStrides = null;
+      this.yuvPlanes = null;
+      this.textureObject = textureObject;
+      this.textureId = textureId;
+      this.yuvFrame = false;
     }
 
     /**
      * Copy the planes out of |source| into |this| and return |this|.  Calling
-     * this with mismatched frame dimensions is a programming error and will
-     * likely crash.
+     * this with mismatched frame dimensions or frame type is a programming
+     * error and will likely crash.
      */
     public I420Frame copyFrom(I420Frame source) {
-      if (!Arrays.equals(yuvStrides, source.yuvStrides) ||
-          width != source.width || height != source.height) {
-        throw new RuntimeException("Mismatched dimensions!  Source: " +
+      if (source.yuvFrame && yuvFrame) {
+        if (!Arrays.equals(yuvStrides, source.yuvStrides) ||
+            width != source.width || height != source.height) {
+          throw new RuntimeException("Mismatched dimensions!  Source: " +
+              source.toString() + ", destination: " + toString());
+        }
+        copyPlane(source.yuvPlanes[0], yuvPlanes[0]);
+        copyPlane(source.yuvPlanes[1], yuvPlanes[1]);
+        copyPlane(source.yuvPlanes[2], yuvPlanes[2]);
+        return this;
+      } else if (!source.yuvFrame && !yuvFrame) {
+        textureObject = source.textureObject;
+        textureId = source.textureId;
+        return this;
+      } else {
+        throw new RuntimeException("Mismatched frame types!  Source: " +
             source.toString() + ", destination: " + toString());
       }
-      copyPlane(source.yuvPlanes[0], yuvPlanes[0]);
-      copyPlane(source.yuvPlanes[1], yuvPlanes[1]);
-      copyPlane(source.yuvPlanes[2], yuvPlanes[2]);
-      return this;
     }
+
+    public I420Frame copyFrom(byte[] yuvData) {
+        if (yuvData.length < width * height * 3 / 2) {
+          throw new RuntimeException("Wrong arrays size: " + yuvData.length);
+        }
+        if (!yuvFrame) {
+          throw new RuntimeException("Can not feed yuv data to texture frame");
+        }
+        int planeSize = width * height;
+        ByteBuffer[] planes = new ByteBuffer[3];
+        planes[0] = ByteBuffer.wrap(yuvData, 0, planeSize);
+        planes[1] = ByteBuffer.wrap(yuvData, planeSize, planeSize / 4);
+        planes[2] = ByteBuffer.wrap(yuvData, planeSize + planeSize / 4,
+            planeSize / 4);
+        for (int i = 0; i < 3; i++) {
+          yuvPlanes[i].position(0);
+          yuvPlanes[i].put(planes[i]);
+          yuvPlanes[i].position(0);
+          yuvPlanes[i].limit(yuvPlanes[i].capacity());
+        }
+        return this;
+      }
+
 
     @Override
     public String toString() {

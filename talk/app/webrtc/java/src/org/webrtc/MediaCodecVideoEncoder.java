@@ -78,7 +78,7 @@ class MediaCodecVideoEncoder {
 
   // Helper struct for findVp8HwEncoder() below.
   private static class EncoderProperties {
-    EncoderProperties(String codecName, int colorFormat) {
+    public EncoderProperties(String codecName, int colorFormat) {
       this.codecName = codecName;
       this.colorFormat = colorFormat;
     }
@@ -106,26 +106,33 @@ class MediaCodecVideoEncoder {
         continue;  // No VP8 support in this codec; try the next one.
       }
       Log.d(TAG, "Found candidate encoder " + name);
+
+      // Check if this is supported HW encoder.
+      boolean supportedCodec = false;
+      for (String hwCodecPrefix : supportedHwCodecPrefixes) {
+        if (name.startsWith(hwCodecPrefix)) {
+          supportedCodec = true;
+          break;
+        }
+      }
+      if (!supportedCodec) {
+        continue;
+      }
+
       CodecCapabilities capabilities =
           info.getCapabilitiesForType(VP8_MIME_TYPE);
       for (int colorFormat : capabilities.colorFormats) {
         Log.d(TAG, "   Color: 0x" + Integer.toHexString(colorFormat));
       }
 
-      // Check if this is supported HW encoder
-      for (String hwCodecPrefix : supportedHwCodecPrefixes) {
-        if (!name.startsWith(hwCodecPrefix)) {
-          continue;
-        }
-        // Check if codec supports either yuv420 or nv12
-        for (int supportedColorFormat : supportedColorList) {
-          for (int codecColorFormat : capabilities.colorFormats) {
-            if (codecColorFormat == supportedColorFormat) {
-              // Found supported HW VP8 encoder
-              Log.d(TAG, "Found target encoder " + name +
-                  ". Color: 0x" + Integer.toHexString(codecColorFormat));
-              return new EncoderProperties(name, codecColorFormat);
-            }
+      // Check if codec supports either yuv420 or nv12.
+      for (int supportedColorFormat : supportedColorList) {
+        for (int codecColorFormat : capabilities.colorFormats) {
+          if (codecColorFormat == supportedColorFormat) {
+            // Found supported HW VP8 encoder.
+            Log.d(TAG, "Found target encoder " + name +
+                ". Color: 0x" + Integer.toHexString(codecColorFormat));
+            return new EncoderProperties(name, codecColorFormat);
           }
         }
       }

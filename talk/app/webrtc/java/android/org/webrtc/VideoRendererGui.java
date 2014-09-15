@@ -37,6 +37,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+import android.graphics.SurfaceTexture;
+import android.opengl.EGL14;
+import android.opengl.EGLContext;
+import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.util.Log;
@@ -54,6 +58,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
   private static VideoRendererGui instance = null;
   private static final String TAG = "VideoRendererGui";
   private GLSurfaceView surface;
+  private static EGLContext eglContext = null;
   // Indicates if SurfaceView.Renderer.onSurfaceCreated was called.
   // If true then for every newly created yuv image renderer createTexture()
   // should be called. The variable is accessed on multiple threads and
@@ -61,7 +66,8 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
   private boolean onSurfaceCreatedCalled;
   // List of yuv renderers.
   private ArrayList<YuvImageRenderer> yuvImageRenderers;
-  private int program;
+  private int yuvProgram;
+  private int oesProgram;
 
   private final String VERTEX_SHADER_STRING =
       "varying vec2 interp_tc;\n" +
@@ -73,7 +79,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       "  interp_tc = in_tc;\n" +
       "}\n";
 
-  private final String FRAGMENT_SHADER_STRING =
+  private final String YUV_FRAGMENT_SHADER_STRING =
       "precision mediump float;\n" +
       "varying vec2 interp_tc;\n" +
       "\n" +
@@ -90,6 +96,19 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       "                      y - 0.344 * u - 0.714 * v, " +
       "                      y + 1.77 * u, 1);\n" +
       "}\n";
+
+
+  private static final String OES_FRAGMENT_SHADER_STRING =
+      "#extension GL_OES_EGL_image_external : require\n" +
+      "precision mediump float;\n" +
+      "varying vec2 interp_tc;\n" +
+      "\n" +
+      "uniform samplerExternalOES oes_tex;\n" +
+      "\n" +
+      "void main() {\n" +
+      "  gl_FragColor = texture2D(oes_tex, interp_tc);\n" +
+      "}\n";
+
 
   private VideoRendererGui(GLSurfaceView surface) {
     this.surface = surface;
@@ -124,23 +143,46 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     return buffer;
   }
 
-  // Compile & attach a |type| shader specified by |source| to |program|.
-  private static void addShaderTo(
-      int type, String source, int program) {
+  private int loadShader(int shaderType, String source) {
     int[] result = new int[] {
         GLES20.GL_FALSE
     };
-    int shader = GLES20.glCreateShader(type);
+    int shader = GLES20.glCreateShader(shaderType);
     GLES20.glShaderSource(shader, source);
     GLES20.glCompileShader(shader);
     GLES20.glGetShaderiv(shader, GLES20.GL_COMPILE_STATUS, result, 0);
-    abortUnless(result[0] == GLES20.GL_TRUE,
-        GLES20.glGetShaderInfoLog(shader) + ", source: " + source);
-    GLES20.glAttachShader(program, shader);
-    GLES20.glDeleteShader(shader);
-
+    if (result[0] != GLES20.GL_TRUE) {
+      Log.e(TAG, "Could not compile shader " + shaderType + ":" +
+          GLES20.glGetShaderInfoLog(shader));
+      throw new RuntimeException(GLES20.glGetShaderInfoLog(shader));
+    }
     checkNoGLES2Error();
-  }
+    return shader;
+}
+
+
+  private int createProgram(String vertexSource, String fragmentSource) {
+    int vertexShader = loadShader(GLES20.GL_VERTEX_SHADER, vertexSource);
+    int fragmentShader = loadShader(GLES20.GL_FRAGMENT_SHADER, fragmentSource);
+    int program = GLES20.glCreateProgram();
+    if (program == 0) {
+      throw new RuntimeException("Could not create program");
+    }
+    GLES20.glAttachShader(program, vertexShader);
+    GLES20.glAttachShader(program, fragmentShader);
+    GLES20.glLinkProgram(program);
+    int[] linkStatus = new int[] {
+        GLES20.GL_FALSE
+    };
+    GLES20.glGetProgramiv(program, GLES20.GL_LINK_STATUS, linkStatus, 0);
+    if (linkStatus[0] != GLES20.GL_TRUE) {
+      Log.e(TAG, "Could not link program: " +
+          GLES20.glGetProgramInfoLog(program));
+      throw new RuntimeException(GLES20.glGetProgramInfoLog(program));
+    }
+    checkNoGLES2Error();
+    return program;
+}
 
   /**
    * Class used to display stream of YUV420 frames at particular location
@@ -149,9 +191,13 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
    */
   private static class YuvImageRenderer implements VideoRenderer.Callbacks {
     private GLSurfaceView surface;
-    private int program;
+    private int id;
+    private int yuvProgram;
+    private int oesProgram;
     private FloatBuffer textureVertices;
     private int[] yuvTextures = { -1, -1, -1 };
+    private int oesTexture = -1;
+    private float[] stMatrix = new float[16];
 
     // Render frame queue - accessed by two threads. renderFrame() call does
     // an offer (writing I420Frame to render) and early-returns (recording
@@ -159,8 +205,12 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     // copies frame to texture and then removes it from a queue using poll().
     LinkedBlockingQueue<I420Frame> frameToRenderQueue;
     // Local copy of incoming video frame.
-    private I420Frame frameToRender;
-    // Flag if renderFrame() was ever called
+    private I420Frame yuvFrameToRender;
+    private I420Frame textureFrameToRender;
+    // Type of video frame used for recent frame rendering.
+    private static enum RendererType { RENDERER_YUV, RENDERER_TEXTURE };
+    private RendererType rendererType;
+    // Flag if renderFrame() was ever called.
     boolean seenFrame;
     // Total number of video frames received in renderFrame() call.
     private int framesReceived;
@@ -174,7 +224,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     // Time in ns spent in draw() function.
     private long drawTimeNs;
     // Time in ns spent in renderFrame() function - including copying frame
-    // data to rendering planes
+    // data to rendering planes.
     private long copyTimeNs;
 
     // Texture Coordinates mapping the entire texture.
@@ -184,10 +234,11 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         });
 
     private YuvImageRenderer(
-        GLSurfaceView surface,
+        GLSurfaceView surface, int id,
         int x, int y, int width, int height) {
-      Log.v(TAG, "YuvImageRenderer.Create");
+      Log.d(TAG, "YuvImageRenderer.Create id: " + id);
       this.surface = surface;
+      this.id = id;
       frameToRenderQueue = new LinkedBlockingQueue<I420Frame>(1);
       // Create texture vertices.
       float xLeft = (x - 50) / 50.0f;
@@ -203,11 +254,13 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       textureVertices = directNativeFloatBuffer(textureVeticesFloat);
     }
 
-    private void createTextures(int program) {
-      Log.v(TAG, "  YuvImageRenderer.createTextures");
-      this.program = program;
+    private void createTextures(int yuvProgram, int oesProgram) {
+      Log.d(TAG, "  YuvImageRenderer.createTextures " + id + " on GL thread:" +
+          Thread.currentThread().getId());
+      this.yuvProgram = yuvProgram;
+      this.oesProgram = oesProgram;
 
-      // Generate 3 texture ids for Y/U/V and place them into |textures|.
+      // Generate 3 texture ids for Y/U/V and place them into |yuvTextures|.
       GLES20.glGenTextures(3, yuvTextures, 0);
       for (int i = 0; i < 3; i++)  {
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0 + i);
@@ -227,38 +280,76 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     }
 
     private void draw() {
-      long now = System.nanoTime();
       if (!seenFrame) {
         // No frame received yet - nothing to render.
         return;
       }
+      long now = System.nanoTime();
+
       I420Frame frameFromQueue;
       synchronized (frameToRenderQueue) {
         frameFromQueue = frameToRenderQueue.peek();
         if (frameFromQueue != null && startTimeNs == -1) {
           startTimeNs = now;
         }
-        for (int i = 0; i < 3; ++i) {
-          int w = (i == 0) ? frameToRender.width : frameToRender.width / 2;
-          int h = (i == 0) ? frameToRender.height : frameToRender.height / 2;
-          GLES20.glActiveTexture(GLES20.GL_TEXTURE0 + i);
-          GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, yuvTextures[i]);
-          if (frameFromQueue != null) {
-            GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE,
-                w, h, 0, GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE,
-                frameFromQueue.yuvPlanes[i]);
+
+        if (rendererType == RendererType.RENDERER_YUV) {
+          // YUV textures rendering.
+          GLES20.glUseProgram(yuvProgram);
+
+          for (int i = 0; i < 3; ++i) {
+            GLES20.glActiveTexture(GLES20.GL_TEXTURE0 + i);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, yuvTextures[i]);
+            if (frameFromQueue != null) {
+              int w = (i == 0) ?
+                  frameFromQueue.width : frameFromQueue.width / 2;
+              int h = (i == 0) ?
+                  frameFromQueue.height : frameFromQueue.height / 2;
+              GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE,
+                  w, h, 0, GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE,
+                  frameFromQueue.yuvPlanes[i]);
+            }
           }
+        } else {
+          // External texture rendering.
+          GLES20.glUseProgram(oesProgram);
+
+          if (frameFromQueue != null) {
+            oesTexture = frameFromQueue.textureId;
+            if (frameFromQueue.textureObject instanceof SurfaceTexture) {
+              SurfaceTexture surfaceTexture =
+                  (SurfaceTexture) frameFromQueue.textureObject;
+              surfaceTexture.updateTexImage();
+              surfaceTexture.getTransformMatrix(stMatrix);
+            }
+          }
+          GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+          GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTexture);
         }
+
         if (frameFromQueue != null) {
           frameToRenderQueue.poll();
         }
       }
-      int posLocation = GLES20.glGetAttribLocation(program, "in_pos");
+
+      if (rendererType == RendererType.RENDERER_YUV) {
+        GLES20.glUniform1i(GLES20.glGetUniformLocation(yuvProgram, "y_tex"), 0);
+        GLES20.glUniform1i(GLES20.glGetUniformLocation(yuvProgram, "u_tex"), 1);
+        GLES20.glUniform1i(GLES20.glGetUniformLocation(yuvProgram, "v_tex"), 2);
+      }
+
+      int posLocation = GLES20.glGetAttribLocation(yuvProgram, "in_pos");
+      if (posLocation == -1) {
+        throw new RuntimeException("Could not get attrib location for in_pos");
+      }
       GLES20.glEnableVertexAttribArray(posLocation);
       GLES20.glVertexAttribPointer(
           posLocation, 2, GLES20.GL_FLOAT, false, 0, textureVertices);
 
-      int texLocation = GLES20.glGetAttribLocation(program, "in_tc");
+      int texLocation = GLES20.glGetAttribLocation(yuvProgram, "in_tc");
+      if (texLocation == -1) {
+        throw new RuntimeException("Could not get attrib location for in_tc");
+      }
       GLES20.glEnableVertexAttribArray(texLocation);
       GLES20.glVertexAttribPointer(
           texLocation, 2, GLES20.GL_FLOAT, false, 0, textureCoords);
@@ -273,7 +364,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       if (frameFromQueue != null) {
         framesRendered++;
         drawTimeNs += (System.nanoTime() - now);
-        if ((framesRendered % 150) == 0) {
+        if ((framesRendered % 90) == 0) {
           logStatistics();
         }
       }
@@ -281,12 +372,13 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
 
     private void logStatistics() {
       long timeSinceFirstFrameNs = System.nanoTime() - startTimeNs;
-      Log.v(TAG, "Frames received: " + framesReceived + ". Dropped: " +
-          framesDropped + ". Rendered: " + framesRendered);
+      Log.d(TAG, "ID: " + id + ". Type: " + rendererType +
+          ". Frames received: " + framesReceived +
+          ". Dropped: " + framesDropped + ". Rendered: " + framesRendered);
       if (framesReceived > 0 && framesRendered > 0) {
-        Log.v(TAG, "Duration: " + (int)(timeSinceFirstFrameNs / 1e6) +
+        Log.d(TAG, "Duration: " + (int)(timeSinceFirstFrameNs / 1e6) +
             " ms. FPS: " + (float)framesRendered * 1e9 / timeSinceFirstFrameNs);
-        Log.v(TAG, "Draw time: " +
+        Log.d(TAG, "Draw time: " +
             (int) (drawTimeNs / (1000 * framesRendered)) + " us. Copy time: " +
             (int) (copyTimeNs / (1000 * framesReceived)) + " us");
       }
@@ -294,16 +386,18 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
 
     @Override
     public void setSize(final int width, final int height) {
-      Log.v(TAG, "YuvImageRenderer.setSize: " + width + " x " + height);
+      Log.d(TAG, "ID: " + id + ". YuvImageRenderer.setSize: " +
+          width + " x " + height);
       int[] strides = { width, width / 2, width / 2  };
       // Frame re-allocation need to be synchronized with copying
       // frame to textures in draw() function to avoid re-allocating
       // the frame while it is being copied.
       synchronized (frameToRenderQueue) {
-        // Clear rendering queue
+        // Clear rendering queue.
         frameToRenderQueue.poll();
-        // Re-allocate / allocate the frame
-        frameToRender = new I420Frame(width, height, strides, null);
+        // Re-allocate / allocate the frame.
+        yuvFrameToRender = new I420Frame(width, height, strides, null);
+        textureFrameToRender = new I420Frame(width, height, null, -1);
       }
     }
 
@@ -311,24 +405,26 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     public synchronized void renderFrame(I420Frame frame) {
       long now = System.nanoTime();
       framesReceived++;
-      // Check input frame parameters.
-      if (!(frame.yuvStrides[0] == frame.width &&
-          frame.yuvStrides[1] == frame.width / 2 &&
-          frame.yuvStrides[2] == frame.width / 2)) {
-        Log.e(TAG, "Incorrect strides " + frame.yuvStrides[0] + ", " +
-            frame.yuvStrides[1] + ", " + frame.yuvStrides[2]);
-        return;
-      }
       // Skip rendering of this frame if setSize() was not called.
-      if (frameToRender == null) {
+      if (yuvFrameToRender == null || textureFrameToRender == null) {
         framesDropped++;
         return;
       }
-      // Check incoming frame dimensions
-      if (frame.width != frameToRender.width ||
-          frame.height != frameToRender.height) {
-        throw new RuntimeException("Wrong frame size " +
-            frame.width + " x " + frame.height);
+      // Check input frame parameters.
+      if (frame.yuvFrame) {
+        if (!(frame.yuvStrides[0] == frame.width &&
+            frame.yuvStrides[1] == frame.width / 2 &&
+            frame.yuvStrides[2] == frame.width / 2)) {
+          Log.e(TAG, "Incorrect strides " + frame.yuvStrides[0] + ", " +
+              frame.yuvStrides[1] + ", " + frame.yuvStrides[2]);
+          return;
+        }
+        // Check incoming frame dimensions.
+        if (frame.width != yuvFrameToRender.width ||
+            frame.height != yuvFrameToRender.height) {
+          throw new RuntimeException("Wrong frame size " +
+              frame.width + " x " + frame.height);
+        }
       }
 
       if (frameToRenderQueue.size() > 0) {
@@ -336,18 +432,34 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         framesDropped++;
         return;
       }
-      frameToRender.copyFrom(frame);
+
+      // Create a local copy of the frame.
+      if (frame.yuvFrame) {
+        yuvFrameToRender.copyFrom(frame);
+        rendererType = RendererType.RENDERER_YUV;
+        frameToRenderQueue.offer(yuvFrameToRender);
+      } else {
+        textureFrameToRender.copyFrom(frame);
+        rendererType = RendererType.RENDERER_TEXTURE;
+        frameToRenderQueue.offer(textureFrameToRender);
+      }
       copyTimeNs += (System.nanoTime() - now);
-      frameToRenderQueue.offer(frameToRender);
       seenFrame = true;
+
+      // Request rendering.
       surface.requestRender();
     }
+
   }
 
   /** Passes GLSurfaceView to video renderer. */
   public static void setView(GLSurfaceView surface) {
-    Log.v(TAG, "VideoRendererGui.setView");
+    Log.d(TAG, "VideoRendererGui.setView");
     instance = new VideoRendererGui(surface);
+  }
+
+  public static EGLContext getEGLContext() {
+    return eglContext;
   }
 
   /**
@@ -358,6 +470,11 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       int x, int y, int width, int height) throws Exception {
     YuvImageRenderer javaGuiRenderer = create(x, y, width, height);
     return new VideoRenderer(javaGuiRenderer);
+  }
+
+  public static VideoRenderer.Callbacks createGuiRenderer(
+      int x, int y, int width, int height) {
+    return create(x, y, width, height);
   }
 
   /**
@@ -379,7 +496,8 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
           "Attempt to create yuv renderer before setting GLSurfaceView");
     }
     final YuvImageRenderer yuvImageRenderer = new YuvImageRenderer(
-        instance.surface, x, y, width, height);
+        instance.surface, instance.yuvImageRenderers.size(),
+        x, y, width, height);
     synchronized (instance.yuvImageRenderers) {
       if (instance.onSurfaceCreatedCalled) {
         // onSurfaceCreated has already been called for VideoRendererGui -
@@ -388,7 +506,8 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         instance.surface.queueEvent(new Runnable() {
           public void run() {
-            yuvImageRenderer.createTextures(instance.program);
+            yuvImageRenderer.createTextures(
+                instance.yuvProgram, instance.oesProgram);
             countDownLatch.countDown();
           }
         });
@@ -407,41 +526,31 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
 
   @Override
   public void onSurfaceCreated(GL10 unused, EGLConfig config) {
-    Log.v(TAG, "VideoRendererGui.onSurfaceCreated");
+    Log.d(TAG, "VideoRendererGui.onSurfaceCreated");
+    // Store render EGL context
+    eglContext = EGL14.eglGetCurrentContext();
+    Log.d(TAG, "VideoRendererGui EGL Context: " + eglContext);
 
-    // Create program.
-    program = GLES20.glCreateProgram();
-    addShaderTo(GLES20.GL_VERTEX_SHADER, VERTEX_SHADER_STRING, program);
-    addShaderTo(GLES20.GL_FRAGMENT_SHADER, FRAGMENT_SHADER_STRING, program);
-
-    GLES20.glLinkProgram(program);
-    int[] result = new int[] {
-        GLES20.GL_FALSE
-    };
-    result[0] = GLES20.GL_FALSE;
-    GLES20.glGetProgramiv(program, GLES20.GL_LINK_STATUS, result, 0);
-    abortUnless(result[0] == GLES20.GL_TRUE,
-        GLES20.glGetProgramInfoLog(program));
-    GLES20.glUseProgram(program);
-
-    GLES20.glUniform1i(GLES20.glGetUniformLocation(program, "y_tex"), 0);
-    GLES20.glUniform1i(GLES20.glGetUniformLocation(program, "u_tex"), 1);
-    GLES20.glUniform1i(GLES20.glGetUniformLocation(program, "v_tex"), 2);
+    // Create YUV and OES programs.
+    yuvProgram = createProgram(VERTEX_SHADER_STRING,
+        YUV_FRAGMENT_SHADER_STRING);
+    oesProgram = createProgram(VERTEX_SHADER_STRING,
+        OES_FRAGMENT_SHADER_STRING);
 
     synchronized (yuvImageRenderers) {
       // Create textures for all images.
       for (YuvImageRenderer yuvImageRenderer : yuvImageRenderers) {
-        yuvImageRenderer.createTextures(program);
+        yuvImageRenderer.createTextures(yuvProgram, oesProgram);
       }
       onSurfaceCreatedCalled = true;
     }
     checkNoGLES2Error();
-    GLES20.glClearColor(0.0f, 0.0f, 0.3f, 1.0f);
+    GLES20.glClearColor(0.0f, 0.3f, 0.1f, 1.0f);
   }
 
   @Override
   public void onSurfaceChanged(GL10 unused, int width, int height) {
-    Log.v(TAG, "VideoRendererGui.onSurfaceChanged: " +
+    Log.d(TAG, "VideoRendererGui.onSurfaceChanged: " +
         width + " x " + height + "  ");
     GLES20.glViewport(0, 0, width, height);
   }

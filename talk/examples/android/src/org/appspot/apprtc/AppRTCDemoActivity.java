@@ -77,7 +77,6 @@ import java.util.regex.Pattern;
 public class AppRTCDemoActivity extends Activity
     implements AppRTCClient.IceServersObserver {
   private static final String TAG = "AppRTCDemoActivity";
-  private static boolean factoryStaticInitialized;
   private PeerConnectionFactory factory;
   private VideoSource videoSource;
   private boolean videoSourceStopped;
@@ -132,13 +131,6 @@ public class AppRTCDemoActivity extends Activity
     hudView.setTextSize(TypedValue.COMPLEX_UNIT_PT, 5);
     hudView.setVisibility(View.INVISIBLE);
     addContentView(hudView, hudLayout);
-
-    if (!factoryStaticInitialized) {
-      abortUnless(PeerConnectionFactory.initializeAndroidGlobals(
-          this, true, true),
-        "Failed to initializeAndroidGlobals");
-      factoryStaticInitialized = true;
-    }
 
     AudioManager audioManager =
         ((AudioManager) getSystemService(AUDIO_SERVICE));
@@ -282,6 +274,9 @@ public class AppRTCDemoActivity extends Activity
 
   @Override
   public void onIceServers(List<PeerConnection.IceServer> iceServers) {
+    abortUnless(PeerConnectionFactory.initializeAndroidGlobals(
+      this, true, true, VideoRendererGui.getEGLContext()),
+        "Failed to initializeAndroidGlobals");
     factory = new PeerConnectionFactory();
 
     MediaConstraints pcConstraints = appRtcClient.pcConstraints();

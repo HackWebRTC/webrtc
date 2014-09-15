@@ -46,8 +46,12 @@ public class PeerConnectionFactory {
   // Callers may specify either |initializeAudio| or |initializeVideo| as false
   // to skip initializing the respective engine (and avoid the need for the
   // respective permissions).
+  // |renderEGLContext| can be provided to suport HW video decoding to
+  // texture and will be used to create a shared EGL context on video
+  // decoding thread.
   public static native boolean initializeAndroidGlobals(
-      Object context, boolean initializeAudio, boolean initializeVideo);
+      Object context, boolean initializeAudio, boolean initializeVideo,
+      Object renderEGLContext);
 
   public PeerConnectionFactory() {
     nativeFactory = nativeCreatePeerConnectionFactory();
