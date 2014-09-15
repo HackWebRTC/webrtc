@@ -1411,14 +1411,17 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   if (WebRtc_InitBuffer(aec->far_time_buf) == -1) {
     return -1;
   }
-  ReopenWav(&aec->farFile, "aec_far",
-            aec->instance_index, aec->debug_dump_count, sampFreq);
-  ReopenWav(&aec->nearFile, "aec_near",
-            aec->instance_index, aec->debug_dump_count, sampFreq);
-  ReopenWav(&aec->outFile, "aec_out",
-            aec->instance_index, aec->debug_dump_count, sampFreq);
-  ReopenWav(&aec->outLinearFile, "aec_out_linear",
-            aec->instance_index, aec->debug_dump_count, sampFreq);
+  {
+    int process_rate = sampFreq > 16000 ? 16000 : sampFreq;
+    ReopenWav(&aec->farFile, "aec_far",
+              aec->instance_index, aec->debug_dump_count, process_rate);
+    ReopenWav(&aec->nearFile, "aec_near",
+              aec->instance_index, aec->debug_dump_count, process_rate);
+    ReopenWav(&aec->outFile, "aec_out",
+              aec->instance_index, aec->debug_dump_count, process_rate);
+    ReopenWav(&aec->outLinearFile, "aec_out_linear",
+              aec->instance_index, aec->debug_dump_count, process_rate);
+  }
   ++aec->debug_dump_count;
 #endif
   aec->system_delay = 0;
