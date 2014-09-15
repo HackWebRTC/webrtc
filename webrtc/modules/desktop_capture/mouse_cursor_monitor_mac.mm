@@ -262,6 +262,7 @@ void MouseCursorMonitorMac::CaptureImage() {
       last_cursor_->hotspot().equals(hotspot) &&
       memcmp(last_cursor_->image()->data(), src_data,
              last_cursor_->image()->stride() * size.height()) == 0) {
+    CFRelease(image_data_ref);
     return;
   }
 
