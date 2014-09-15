@@ -10,9 +10,8 @@
 
 // Borrowed from Chromium's src/base/threading/thread_checker_unittest.cc.
 
-#include <assert.h>
-
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/base/scoped_ptr.h"
@@ -38,7 +37,7 @@ class ThreadCheckerClass : public ThreadChecker {
 
   // Verifies that it was called on the same thread as the constructor.
   void DoStuff() {
-    assert(CalledOnValidThread());
+    DCHECK(CalledOnValidThread());
   }
 
   void DetachFromThread() {

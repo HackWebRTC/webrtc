@@ -154,7 +154,7 @@ DEFINE_CHECK_OP_IMPL(GT, > )
 
 // The DCHECK macro is equivalent to CHECK except that it only generates code in
 // debug builds.
-#if !defined(NDEBUG)
+#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
 #define DCHECK(condition) CHECK(condition)
 #define DCHECK_EQ(v1, v2) CHECK_EQ(v1, v2)
 #define DCHECK_NE(v1, v2) CHECK_NE(v1, v2)
