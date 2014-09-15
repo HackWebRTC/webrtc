@@ -1512,9 +1512,8 @@ TEST_F(JsepPeerConnectionP2PTestClient, ReceivedBweStatsCombined) {
   LocalP2PTest();
 
   // Run until a non-zero bw is reported.
-  EXPECT_TRUE_WAIT(
-      receiving_client()->GetAvailableReceivedBandwidthStats() > 40000,
-      kMaxWaitForRembMs);
+  EXPECT_TRUE_WAIT(receiving_client()->GetAvailableReceivedBandwidthStats() > 0,
+                   kMaxWaitForRembMs);
 
   // Halt video capturers, then run until we have gotten some audio. Following
   // REMB should be non-zero.
@@ -1539,9 +1538,8 @@ TEST_F(JsepPeerConnectionP2PTestClient, ReceivedBweStatsNotCombined) {
   LocalP2PTest();
 
   // Run until a non-zero bw is reported.
-  EXPECT_TRUE_WAIT(
-      receiving_client()->GetAvailableReceivedBandwidthStats() > 40000,
-      kMaxWaitForRembMs);
+  EXPECT_TRUE_WAIT(receiving_client()->GetAvailableReceivedBandwidthStats() > 0,
+                   kMaxWaitForRembMs);
 
   // Halt video capturers, then run until we have gotten some audio. Following
   // REMB should be zero.
