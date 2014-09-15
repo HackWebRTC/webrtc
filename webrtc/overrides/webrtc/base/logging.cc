@@ -164,6 +164,11 @@ DiagnosticLogMessage::~DiagnosticLogMessage() {
   }
 }
 
+// static
+void LogMessage::LogToDebug(int min_sev) {
+  logging::SetMinLogLevel(min_sev);
+}
+
 // Note: this function is a copy from the overriden libjingle implementation.
 void LogMultiline(LoggingSeverity level, const char* label, bool input,
                   const void* data, size_t len, bool hex_mode,

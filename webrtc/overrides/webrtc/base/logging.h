@@ -150,6 +150,11 @@ class LogMultilineState {
   }
 };
 
+class LogMessage {
+ public:
+  static void LogToDebug(int min_sev);
+};
+
 // When possible, pass optional state variable to track various data across
 // multiple calls to LogMultiline.  Otherwise, pass NULL.
 void LogMultiline(LoggingSeverity level, const char* label, bool input,
