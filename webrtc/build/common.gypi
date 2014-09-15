@@ -155,6 +155,11 @@
         'include_tests%': 1,
         'restrict_webrtc_logging%': 0,
       }],
+      ['OS=="mac" or OS=="ios"', {
+        # Set the minimum SDK level to 10.7 since we need AVFoundation.
+        # See ../build/common.gypi for more info about this variable.
+        'mac_sdk_min%': '10.7',
+      }],
       ['OS=="ios"', {
         'build_libjpeg%': 0,
         'enable_protobuf%': 0,
