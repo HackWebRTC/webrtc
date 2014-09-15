@@ -35,9 +35,6 @@
 #include "webrtc/video/transport_adapter.h"
 #include "webrtc/video_send_stream.h"
 
-// Disabled on Android since all tests currently fail (webrtc:3770).
-#ifndef WEBRTC_ANDROID
-
 namespace webrtc {
 
 enum VideoFormat { kGeneric, kVP8, };
@@ -1480,5 +1477,3 @@ TEST_F(VideoSendStreamTest, RtcpSenderReportContainsMediaBytesSent) {
 }
 
 }  // namespace webrtc
-
-#endif // !WEBRTC_ANDROID
