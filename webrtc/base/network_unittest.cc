@@ -114,7 +114,7 @@ TEST_F(NetworkTest, DISABLED_TestCreateNetworks) {
        ++it) {
     sockaddr_storage storage;
     memset(&storage, 0, sizeof(storage));
-    IPAddress ip = (*it)->GetBestIP();
+    IPAddress ip = (*it)->ip();
     SocketAddress bindaddress(ip, 0);
     bindaddress.SetScopeID((*it)->scope_id());
     // TODO(thaloun): Use rtc::AsyncSocket once it supports IPv6.
@@ -648,47 +648,6 @@ TEST_F(NetworkTest, TestMergeNetworkList) {
   EXPECT_EQ(list2[0]->GetIPs().size(), 2uL);
   EXPECT_EQ(list2[0]->GetIPs()[0], ip1);
   EXPECT_EQ(list2[0]->GetIPs()[1], ip2);
-}
-
-// Test that the filtering logic follows the defined ruleset in network.h.
-TEST_F(NetworkTest, TestIPv6Selection) {
-  InterfaceAddress ip;
-  std::string ipstr;
-
-  ipstr = "2401:fa00:4:1000:be30:5bff:fee5:c3";
-  ASSERT_TRUE(IPFromString(ipstr, IPV6_ADDRESS_FLAG_DEPRECATED, &ip));
-
-  // Create a network with this prefix.
-  Network ipv6_network(
-      "test_eth0", "Test NetworkAdapter", TruncateIP(ip, 64), 64);
-
-  // When there is no address added, it should return an unspecified
-  // address.
-  EXPECT_EQ(ipv6_network.GetBestIP(), IPAddress());
-  EXPECT_TRUE(IPIsUnspec(ipv6_network.GetBestIP()));
-
-  // Deprecated one should not be returned.
-  ipv6_network.AddIP(ip);
-  EXPECT_EQ(ipv6_network.GetBestIP(), IPAddress());
-
-  // Add ULA one. ULA is unique local address which is starting either
-  // with 0xfc or 0xfd.
-  ipstr = "fd00:fa00:4:1000:be30:5bff:fee5:c4";
-  ASSERT_TRUE(IPFromString(ipstr, IPV6_ADDRESS_FLAG_NONE, &ip));
-  ipv6_network.AddIP(ip);
-  EXPECT_EQ(ipv6_network.GetBestIP(), static_cast<IPAddress>(ip));
-
-  // Add global one.
-  ipstr = "2401:fa00:4:1000:be30:5bff:fee5:c5";
-  ASSERT_TRUE(IPFromString(ipstr, IPV6_ADDRESS_FLAG_NONE, &ip));
-  ipv6_network.AddIP(ip);
-  EXPECT_EQ(ipv6_network.GetBestIP(), static_cast<IPAddress>(ip));
-
-  // Add global dynamic temporary one.
-  ipstr = "2401:fa00:4:1000:be30:5bff:fee5:c6";
-  ASSERT_TRUE(IPFromString(ipstr, IPV6_ADDRESS_FLAG_TEMPORARY, &ip));
-  ipv6_network.AddIP(ip);
-  EXPECT_EQ(ipv6_network.GetBestIP(), static_cast<IPAddress>(ip));
 }
 
 }  // namespace rtc

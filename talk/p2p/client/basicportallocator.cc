@@ -431,7 +431,7 @@ void BasicPortAllocatorSession::DoAllocate() {
       }
 
       if (!(sequence_flags & PORTALLOCATOR_ENABLE_IPV6) &&
-          networks[i]->GetBestIP().family() == AF_INET6) {
+          networks[i]->ip().family() == AF_INET6) {
         // Skip IPv6 networks unless the flag's been set.
         continue;
       }
@@ -728,7 +728,7 @@ AllocationSequence::AllocationSequence(BasicPortAllocatorSession* session,
                                        uint32 flags)
     : session_(session),
       network_(network),
-      ip_(network->GetBestIP()),
+      ip_(network->ip()),
       config_(config),
       state_(kInit),
       flags_(flags),
@@ -771,7 +771,7 @@ AllocationSequence::~AllocationSequence() {
 
 void AllocationSequence::DisableEquivalentPhases(rtc::Network* network,
     PortConfiguration* config, uint32* flags) {
-  if (!((network == network_) && (ip_ == network->GetBestIP()))) {
+  if (!((network == network_) && (ip_ == network->ip()))) {
     // Different network setup; nothing is equivalent.
     return;
   }

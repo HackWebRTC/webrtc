@@ -1,29 +1,5 @@
-/*
- * libjingle
- * Copyright 2004--2005, Google Inc.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  1. Redistributions of source code must retain the above copyright notice,
- *     this list of conditions and the following disclaimer.
- *  2. Redistributions in binary form must reproduce the above copyright notice,
- *     this list of conditions and the following disclaimer in the documentation
- *     and/or other materials provided with the distribution.
- *  3. The name of the author may not be used to endorse or promote products
- *     derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
- * EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright 2011 Google Inc. All Rights Reserved.
+
 
 #include <string>
 
@@ -238,8 +214,7 @@ void ConnectivityChecker::OnRequestDone(rtc::AsyncHttpRequest* request) {
     return;
   }
   rtc::ProxyInfo proxy_info = request->proxy();
-  NicMap::iterator i =
-      nics_.find(NicId(networks[0]->GetBestIP(), proxy_info.address));
+  NicMap::iterator i = nics_.find(NicId(networks[0]->ip(), proxy_info.address));
   if (i != nics_.end()) {
     int port = request->port();
     uint32 now = rtc::Time();
@@ -272,7 +247,7 @@ void ConnectivityChecker::OnRelayPortComplete(Port* port) {
   ASSERT(worker_ == rtc::Thread::Current());
   RelayPort* relay_port = reinterpret_cast<RelayPort*>(port);
   const ProtocolAddress* address = relay_port->ServerAddress(0);
-  rtc::IPAddress ip = port->Network()->GetBestIP();
+  rtc::IPAddress ip = port->Network()->ip();
   NicMap::iterator i = nics_.find(NicId(ip, port->proxy().address));
   if (i != nics_.end()) {
     // We have it already, add the new information.
@@ -306,7 +281,7 @@ void ConnectivityChecker::OnStunPortComplete(Port* port) {
   ASSERT(worker_ == rtc::Thread::Current());
   const std::vector<Candidate> candidates = port->Candidates();
   Candidate c = candidates[0];
-  rtc::IPAddress ip = port->Network()->GetBestIP();
+  rtc::IPAddress ip = port->Network()->ip();
   NicMap::iterator i = nics_.find(NicId(ip, port->proxy().address));
   if (i != nics_.end()) {
     // We have it already, add the new information.
@@ -325,7 +300,7 @@ void ConnectivityChecker::OnStunPortComplete(Port* port) {
 void ConnectivityChecker::OnStunPortError(Port* port) {
   ASSERT(worker_ == rtc::Thread::Current());
   LOG(LS_ERROR) << "Stun address error.";
-  rtc::IPAddress ip = port->Network()->GetBestIP();
+  rtc::IPAddress ip = port->Network()->ip();
   NicMap::iterator i = nics_.find(NicId(ip, port->proxy().address));
   if (i != nics_.end()) {
     // We have it already, add the new information.
@@ -362,28 +337,19 @@ HttpPortAllocator* ConnectivityChecker::CreatePortAllocator(
 StunPort* ConnectivityChecker::CreateStunPort(
     const std::string& username, const std::string& password,
     const PortConfiguration* config, rtc::Network* network) {
-  return StunPort::Create(worker_,
-                          socket_factory_.get(),
-                          network,
-                          network->GetBestIP(),
-                          0,
-                          0,
-                          username,
-                          password,
-                          config->stun_servers);
+  return StunPort::Create(worker_, socket_factory_.get(),
+                          network, network->ip(), 0, 0,
+                          username, password, config->stun_servers);
 }
 
 RelayPort* ConnectivityChecker::CreateRelayPort(
     const std::string& username, const std::string& password,
     const PortConfiguration* config, rtc::Network* network) {
-  return RelayPort::Create(worker_,
-                           socket_factory_.get(),
-                           network,
-                           network->GetBestIP(),
+  return RelayPort::Create(worker_, socket_factory_.get(),
+                           network, network->ip(),
                            port_allocator_->min_port(),
                            port_allocator_->max_port(),
-                           username,
-                           password);
+                           username, password);
 }
 
 void ConnectivityChecker::CreateRelayPorts(
@@ -399,8 +365,8 @@ void ConnectivityChecker::CreateRelayPorts(
   for (relay = config->relays.begin();
        relay != config->relays.end(); ++relay) {
     for (uint32 i = 0; i < networks.size(); ++i) {
-      NicMap::iterator iter =
-          nics_.find(NicId(networks[i]->GetBestIP(), proxy_info.address));
+      NicMap::iterator iter = nics_.find(NicId(networks[i]->ip(),
+                                               proxy_info.address));
       if (iter != nics_.end()) {
         // TODO: Now setting the same start time for all protocols.
         // This might affect accuracy, but since we are mainly looking for
@@ -457,7 +423,7 @@ void ConnectivityChecker::AllocatePorts() {
   rtc::ProxyInfo proxy_info = GetProxyInfo();
   bool allocate_relay_ports = false;
   for (uint32 i = 0; i < networks.size(); ++i) {
-    if (AddNic(networks[i]->GetBestIP(), proxy_info.address)) {
+    if (AddNic(networks[i]->ip(), proxy_info.address)) {
       Port* port = CreateStunPort(username, password, &config, networks[i]);
       if (port) {
 
@@ -534,8 +500,7 @@ void ConnectivityChecker::RegisterHttpStart(int port) {
     return;
   }
   rtc::ProxyInfo proxy_info = GetProxyInfo();
-  NicMap::iterator i =
-      nics_.find(NicId(networks[0]->GetBestIP(), proxy_info.address));
+  NicMap::iterator i = nics_.find(NicId(networks[0]->ip(), proxy_info.address));
   if (i != nics_.end()) {
     uint32 now = rtc::Time();
     NicInfo* nic_info = &i->second;
