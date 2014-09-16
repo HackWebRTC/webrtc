@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2014 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -14,30 +14,28 @@
   },
   'targets': [
     {
-      'target_name': 'no_op',
+      'target_name': 'no_op_voice',
       'type': 'executable',
       'dependencies': [
         '<@(merge_libs_dependencies)',
-        '../webrtc.gyp:webrtc',
-        '../sound/sound.gyp:rtc_sound',
-        '../libjingle/xmllite/xmllite.gyp:rtc_xmllite',
+        '../voice_engine/voice_engine.gyp:voice_engine'
       ],
       'sources': ['no_op.cc',],
     },
     {
-      'target_name': 'merged_lib',
+      'target_name': 'merged_lib_voice',
       'type': 'none',
       'dependencies': [
-        'no_op',
+        'no_op_voice',
       ],
       'actions': [
         {
           'variables': {
-            'output_lib_name': 'webrtc_merged',
+            'output_lib_name': 'rtc_voice_merged',
             'output_lib': '<(PRODUCT_DIR)/<(STATIC_LIB_PREFIX)<(output_lib_name)<(STATIC_LIB_SUFFIX)',
           },
-          'action_name': 'merge_libs',
-          'inputs': ['<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)no_op<(EXECUTABLE_SUFFIX)'],
+          'action_name': 'merge_libs_voice',
+          'inputs': ['<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)no_op_voice<(EXECUTABLE_SUFFIX)'],
           'outputs': ['<(output_lib)'],
           'action': ['python',
                      'merge_libs.py',
