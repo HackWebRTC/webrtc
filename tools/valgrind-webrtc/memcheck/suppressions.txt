@@ -109,7 +109,7 @@
    SignalsCloseAfterForcedCloseAll
    Memcheck:Leak
    fun:_Znw*
-   fun:_ZN9rtc10HttpServer10Connection12BeginProcessEPNS_15StreamInterfaceE
+   fun:_ZN3rtc10HttpServer10Connection12BeginProcessEPNS_15StreamInterfaceE
    ...
 }
 {
@@ -117,7 +117,7 @@
    Memcheck:Leak
    fun:_Znw*
    ...
-   fun:_ZN9rtc41unstarted_task_test_DoNotDeleteTask2_Test8TestBodyEv
+   fun:_ZN3rtc41unstarted_task_test_DoNotDeleteTask2_Test8TestBodyEv
 }
 {
    bug_716
