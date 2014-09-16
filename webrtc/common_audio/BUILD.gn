@@ -130,7 +130,7 @@ source_set("common_audio") {
   }
 
   if (is_win) {
-    cflags += [
+    cflags = [
       "/wd4334",  # Ignore warning on shift operator promotion.
     ]
   }
