@@ -1563,15 +1563,19 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetDimensions(
     return;
   }
 
-  // TODO(pbos): Fix me, this only affects the last stream!
-  parameters_.video_streams.back().width = width;
-  parameters_.video_streams.back().height = height;
-
   void* encoder_settings = encoder_factory_->CreateVideoEncoderSettings(
       codec_settings.codec, parameters_.options);
 
+  VideoCodec codec = codec_settings.codec;
+  codec.width = width;
+  codec.height = height;
+  std::vector<webrtc::VideoStream> video_streams =
+      encoder_factory_->CreateVideoStreams(codec,
+                                           parameters_.options,
+                                           parameters_.config.rtp.ssrcs.size());
+
   bool stream_reconfigured = stream_->ReconfigureVideoEncoder(
-      parameters_.video_streams, encoder_settings);
+      video_streams, encoder_settings);
 
   encoder_factory_->DestroyVideoEncoderSettings(codec_settings.codec,
                                                 encoder_settings);
@@ -1581,6 +1585,8 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetDimensions(
                     << width << "x" << height;
     return;
   }
+
+  parameters_.video_streams = video_streams;
 }
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::Start() {
