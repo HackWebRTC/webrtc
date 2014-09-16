@@ -18,12 +18,14 @@
 #endif
 
 #if defined(WEBRTC_WIN)
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 #include <mmsystem.h>
 #endif
 
-#include "webrtc/base/common.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/timeutils.h"
 
 #define EFFICIENT_IMPLEMENTATION 1
@@ -39,7 +41,9 @@ uint64 TimeNanos() {
   if (timebase.denom == 0) {
     // Get the timebase if this is the first time we run.
     // Recommended by Apple's QA1398.
-    VERIFY(KERN_SUCCESS == mach_timebase_info(&timebase));
+    if (mach_timebase_info(&timebase) != KERN_SUCCESS) {
+      DCHECK(false);
+    }
   }
   // Use timebase to convert absolute time tick units into nanoseconds.
   ticks = mach_absolute_time() * timebase.numer / timebase.denom;
@@ -118,7 +122,7 @@ static struct tm *gmtime_r(const time_t *timep, struct tm *result) {
   *result = *tm;
   return result;
 }
-#endif  // WEBRTC_WIN 
+#endif  // WEBRTC_WIN
 
 void CurrentTmTime(struct tm *tm, int *microseconds) {
   struct timeval timeval;
@@ -132,8 +136,8 @@ void CurrentTmTime(struct tm *tm, int *microseconds) {
 }
 
 uint32 TimeAfter(int32 elapsed) {
-  ASSERT(elapsed >= 0);
-  ASSERT(static_cast<uint32>(elapsed) < HALF);
+  DCHECK_GE(elapsed, 0);
+  DCHECK_LT(static_cast<uint32>(elapsed), HALF);
   return Time() + elapsed;
 }
 

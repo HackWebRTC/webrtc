@@ -17,7 +17,7 @@
         '../interface',
       ],
       'dependencies': [
-        '../../base/base.gyp:rtc_base',
+        '../../base/base.gyp:rtc_base_approved',
       ],
       'direct_dependent_settings': {
         'include_dirs': [

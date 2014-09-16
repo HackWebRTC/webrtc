@@ -193,7 +193,7 @@ static_library("system_wrappers") {
   ]
 
   deps += [
-    "../base:webrtc_base",
+    "../base:rtc_base_approved",
   ]
 }
 

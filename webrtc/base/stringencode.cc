@@ -14,7 +14,7 @@
 #include <stdlib.h>
 
 #include "webrtc/base/basictypes.h"
-#include "webrtc/base/common.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/stringutils.h"
 
 namespace rtc {
@@ -26,7 +26,7 @@ namespace rtc {
 size_t escape(char * buffer, size_t buflen,
               const char * source, size_t srclen,
               const char * illegal, char escape) {
-  ASSERT(NULL != buffer);  // TODO: estimate output size
+  DCHECK(buffer);  // TODO: estimate output size
   if (buflen <= 0)
     return 0;
 
@@ -48,7 +48,7 @@ size_t escape(char * buffer, size_t buflen,
 size_t unescape(char * buffer, size_t buflen,
                 const char * source, size_t srclen,
                 char escape) {
-  ASSERT(NULL != buffer);  // TODO: estimate output size
+  DCHECK(buffer);  // TODO: estimate output size
   if (buflen <= 0)
     return 0;
 
@@ -67,7 +67,7 @@ size_t unescape(char * buffer, size_t buflen,
 size_t encode(char * buffer, size_t buflen,
               const char * source, size_t srclen,
               const char * illegal, char escape) {
-  ASSERT(NULL != buffer);  // TODO: estimate output size
+  DCHECK(buffer);  // TODO: estimate output size
   if (buflen <= 0)
     return 0;
 
@@ -118,9 +118,9 @@ const char* unsafe_filename_characters() {
   // all operating systems, unless one system is overly restrictive.
 #if defined(WEBRTC_WIN)
   return "\\/:*?\"<>|";
-#else  // !WEBRTC_WIN 
+#else  // !WEBRTC_WIN
   // TODO
-  ASSERT(false);
+  DCHECK(false);
   return "";
 #endif  // !WEBRTC_WIN
 }
@@ -257,7 +257,7 @@ size_t utf8_encode(char* buffer, size_t buflen, unsigned long value) {
 
 size_t html_encode(char * buffer, size_t buflen,
                    const char * source, size_t srclen) {
-  ASSERT(NULL != buffer);  // TODO: estimate output size
+  DCHECK(buffer);  // TODO: estimate output size
   if (buflen <= 0)
     return 0;
 
@@ -275,7 +275,7 @@ size_t html_encode(char * buffer, size_t buflen,
           case '\'': escseq = "&#39;";  esclen = 5; break;
           case '\"': escseq = "&quot;"; esclen = 6; break;
           case '&':  escseq = "&amp;";  esclen = 5; break;
-          default: ASSERT(false);
+          default: DCHECK(false);
         }
         if (bufpos + esclen >= buflen) {
           break;
@@ -287,7 +287,8 @@ size_t html_encode(char * buffer, size_t buflen,
       }
     } else {
       // Largest value is 0x1FFFFF => &#2097151;  (10 characters)
-      char escseq[11];
+      const size_t kEscseqSize = 11;
+      char escseq[kEscseqSize];
       unsigned long val;
       if (size_t vallen = utf8_decode(&source[srcpos], srclen - srcpos, &val)) {
         srcpos += vallen;
@@ -295,7 +296,7 @@ size_t html_encode(char * buffer, size_t buflen,
         // Not a valid utf8 sequence, just use the raw character.
         val = static_cast<unsigned char>(source[srcpos++]);
       }
-      size_t esclen = sprintfn(escseq, ARRAY_SIZE(escseq), "&#%lu;", val);
+      size_t esclen = sprintfn(escseq, kEscseqSize, "&#%lu;", val);
       if (bufpos + esclen >= buflen) {
         break;
       }
@@ -309,13 +310,13 @@ size_t html_encode(char * buffer, size_t buflen,
 
 size_t html_decode(char * buffer, size_t buflen,
                    const char * source, size_t srclen) {
-  ASSERT(NULL != buffer);  // TODO: estimate output size
+  DCHECK(buffer);  // TODO: estimate output size
   return xml_decode(buffer, buflen, source, srclen);
 }
 
 size_t xml_encode(char * buffer, size_t buflen,
                   const char * source, size_t srclen) {
-  ASSERT(NULL != buffer);  // TODO: estimate output size
+  DCHECK(buffer);  // TODO: estimate output size
   if (buflen <= 0)
     return 0;
 
@@ -331,7 +332,7 @@ size_t xml_encode(char * buffer, size_t buflen,
         case '\'': escseq = "&apos;"; esclen = 6; break;
         case '\"': escseq = "&quot;"; esclen = 6; break;
         case '&':  escseq = "&amp;";  esclen = 5; break;
-        default: ASSERT(false);
+        default: DCHECK(false);
       }
       if (bufpos + esclen >= buflen) {
         break;
@@ -348,7 +349,7 @@ size_t xml_encode(char * buffer, size_t buflen,
 
 size_t xml_decode(char * buffer, size_t buflen,
                   const char * source, size_t srclen) {
-  ASSERT(NULL != buffer);  // TODO: estimate output size
+  DCHECK(buffer);  // TODO: estimate output size
   if (buflen <= 0)
     return 0;
 
@@ -410,7 +411,7 @@ size_t xml_decode(char * buffer, size_t buflen,
 static const char HEX[] = "0123456789abcdef";
 
 char hex_encode(unsigned char val) {
-  ASSERT(val < 16);
+  DCHECK_LT(val, 16);
   return (val < 16) ? HEX[val] : '!';
 }
 
@@ -435,7 +436,7 @@ size_t hex_encode(char* buffer, size_t buflen,
 size_t hex_encode_with_delimiter(char* buffer, size_t buflen,
                                  const char* csource, size_t srclen,
                                  char delimiter) {
-  ASSERT(NULL != buffer);  // TODO: estimate output size
+  DCHECK(buffer);  // TODO: estimate output size
   if (buflen == 0)
     return 0;
 
@@ -475,7 +476,7 @@ std::string hex_encode_with_delimiter(const char* source, size_t srclen,
   char* buffer = STACK_ARRAY(char, kBufferSize);
   size_t length = hex_encode_with_delimiter(buffer, kBufferSize,
                                             source, srclen, delimiter);
-  ASSERT(srclen == 0 || length > 0);
+  DCHECK(srclen == 0 || length > 0);
   return std::string(buffer, length);
 }
 
@@ -487,7 +488,7 @@ size_t hex_decode(char * cbuffer, size_t buflen,
 size_t hex_decode_with_delimiter(char* cbuffer, size_t buflen,
                                  const char* source, size_t srclen,
                                  char delimiter) {
-  ASSERT(NULL != cbuffer);  // TODO: estimate output size
+  DCHECK(cbuffer);  // TODO: estimate output size
   if (buflen == 0)
     return 0;
 
@@ -551,7 +552,7 @@ std::string s_transform(const std::string& source, Transform t) {
 
 size_t tokenize(const std::string& source, char delimiter,
                 std::vector<std::string>* fields) {
-  ASSERT(NULL != fields);
+  DCHECK(fields);
   fields->clear();
   size_t last = 0;
   for (size_t i = 0; i < source.length(); ++i) {
@@ -608,7 +609,7 @@ size_t tokenize(const std::string& source, char delimiter, char start_mark,
 
 size_t split(const std::string& source, char delimiter,
              std::vector<std::string>* fields) {
-  ASSERT(NULL != fields);
+  DCHECK(fields);
   fields->clear();
   size_t last = 0;
   for (size_t i = 0; i < source.length(); ++i) {

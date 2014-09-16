@@ -110,11 +110,35 @@ if (rtc_build_ssl == 0) {
   }
 }
 
+# The subset of rtc_base approved for use outside of libjingle.
+static_library("rtc_base_approved") {
+  configs += [ "..:common_config" ]
+  direct_dependent_configs = [ "..:common_inherited_config" ]
+
+  sources = [
+    "checks.cc",
+    "checks.h",
+    "exp_filter.cc",
+    "exp_filter.h",
+    "md5.cc",
+    "md5.h",
+    "md5digest.h",
+    "stringencode.cc",
+    "stringencode.h",
+    "stringutils.cc",
+    "stringutils.h",
+    "timeutils.cc",
+    "timeutils.h",
+  ]
+}
+
 static_library("webrtc_base") {
   cflags = []
   cflags_cc = []
   libs = []
-  deps= []
+  deps = [
+    ":rtc_base_approved",
+  ]
 
   configs += [
     "..:common_config",

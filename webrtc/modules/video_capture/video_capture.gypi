@@ -60,6 +60,7 @@
               'link_settings': {
                 'xcode_settings': {
                   'OTHER_LDFLAGS': [
+                    '-framework Cocoa',
                     '-framework CoreVideo',
                     '-framework QTKit',
                   ],

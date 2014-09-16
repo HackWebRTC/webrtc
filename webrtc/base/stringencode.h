@@ -15,7 +15,7 @@
 #include <sstream>
 #include <vector>
 
-#include "webrtc/base/common.h"
+#include "webrtc/base/checks.h"
 
 namespace rtc {
 
@@ -167,7 +167,7 @@ size_t tokenize(const std::string& source, char delimiter, char start_mark,
 
 template <class T>
 static bool ToString(const T &t, std::string* s) {
-  ASSERT(NULL != s);
+  DCHECK(s);
   std::ostringstream oss;
   oss << std::boolalpha << t;
   *s = oss.str();
@@ -176,7 +176,7 @@ static bool ToString(const T &t, std::string* s) {
 
 template <class T>
 static bool FromString(const std::string& s, T* t) {
-  ASSERT(NULL != t);
+  DCHECK(t);
   std::istringstream iss(s);
   iss >> std::boolalpha >> *t;
   return !iss.fail();

@@ -36,6 +36,7 @@
 #include <vector>
 
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/common.h"
 #include "webrtc/base/stringencode.h"
 
 namespace webrtc {

@@ -113,7 +113,10 @@ source_set("desktop_capture") {
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
 
-  deps = ["../../system_wrappers"]
+  deps = [
+    "../../system_wrappers",
+    "../../base:webrtc_base",
+  ]
 
   if (use_desktop_capture_differ_sse2) {
     deps += [":desktop_capture_differ_sse2"]
