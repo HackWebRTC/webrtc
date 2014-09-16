@@ -71,12 +71,15 @@ public:
     bool timeOutTriggered () { return (_timeOut); };
 
     // Inherited from RtpFeedback
-    virtual int32_t OnInitializeDecoder(const int32_t id,
-                                        const int8_t payloadType,
-                                        const int8_t payloadName[RTP_PAYLOAD_NAME_SIZE],
-                                        const uint32_t frequency,
-                                        const uint8_t channels,
-                                        const uint32_t rate) { return(0);};
+    virtual int32_t OnInitializeDecoder(
+        const int32_t id,
+        const int8_t payloadType,
+        const int8_t payloadName[RTP_PAYLOAD_NAME_SIZE],
+        const uint32_t frequency,
+        const uint8_t channels,
+        const uint32_t rate) OVERRIDE {
+      return 0;
+    }
 
     virtual void OnPacketTimeout(const int32_t id);
 
@@ -86,31 +89,31 @@ public:
     virtual void OnPeriodicDeadOrAlive(const int32_t id,
                                        const RTPAliveType alive) {};
 
-    virtual void OnIncomingSSRCChanged( const int32_t id,
-                                        const uint32_t SSRC) {};
+    virtual void OnIncomingSSRCChanged(const int32_t id,
+                                       const uint32_t SSRC) OVERRIDE {}
 
-    virtual void OnIncomingCSRCChanged( const int32_t id,
-                                        const uint32_t CSRC,
-                                        const bool added) {};
+    virtual void OnIncomingCSRCChanged(const int32_t id,
+                                       const uint32_t CSRC,
+                                       const bool added) OVERRIDE {}
 
 
     // Inherited from RtpData
-
-    virtual int32_t OnReceivedPayloadData(const uint8_t* payloadData,
-                                          const uint16_t payloadSize,
-                                          const webrtc::WebRtcRTPHeader* rtpHeader);
+    virtual int32_t OnReceivedPayloadData(
+        const uint8_t* payloadData,
+        const uint16_t payloadSize,
+        const webrtc::WebRtcRTPHeader* rtpHeader) OVERRIDE;
 
 
     // Inherited from UdpTransportData
     virtual void IncomingRTPPacket(const int8_t* incomingRtpPacket,
-        const int32_t rtpPacketLength,
-        const int8_t* fromIP,
-        const uint16_t fromPort);
+                                   const int32_t rtpPacketLength,
+                                   const int8_t* fromIP,
+                                   const uint16_t fromPort) OVERRIDE;
 
     virtual void IncomingRTCPPacket(const int8_t* incomingRtcpPacket,
-        const int32_t rtcpPacketLength,
-        const int8_t* fromIP,
-        const uint16_t fromPort);
+                                    const int32_t rtcpPacketLength,
+                                    const int8_t* fromIP,
+                                    const uint16_t fromPort) OVERRIDE;
 
 
 
