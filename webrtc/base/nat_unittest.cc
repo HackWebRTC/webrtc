@@ -209,7 +209,7 @@ void TestPhysicalInternal(const SocketAddress& int_addr) {
   // can't talk to ip, so check for connectivity as well.
   for (std::vector<Network*>::iterator it = networks.begin();
       it != networks.end(); ++it) {
-    const IPAddress& ip = (*it)->ip();
+    const IPAddress& ip = (*it)->GetBestIP();
     if (ip.family() == int_addr.family() && TestConnectivity(int_addr, ip)) {
       ext_addr2.SetIP(ip);
       break;

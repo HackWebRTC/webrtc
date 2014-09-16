@@ -88,10 +88,13 @@ bool SortNetworks(const Network* a, const Network* b) {
     return a->type() < b->type();
   }
 
+  IPAddress ip_a = a->GetBestIP();
+  IPAddress ip_b = b->GetBestIP();
+
   // After type, networks are sorted by IP address precedence values
   // from RFC 3484-bis
-  if (IPAddressPrecedence(a->ip()) != IPAddressPrecedence(b->ip())) {
-    return IPAddressPrecedence(a->ip()) > IPAddressPrecedence(b->ip());
+  if (IPAddressPrecedence(ip_a) != IPAddressPrecedence(ip_b)) {
+    return IPAddressPrecedence(ip_a) > IPAddressPrecedence(ip_b);
   }
 
   // TODO(mallinath) - Add VPN and Link speed conditions while sorting.
@@ -474,7 +477,7 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
   }
   return true;
 }
-#endif  // WEBRTC_WIN 
+#endif  // WEBRTC_WIN
 
 #if defined(WEBRTC_LINUX)
 bool IsDefaultRoute(const std::string& network_name) {
@@ -636,16 +639,6 @@ Network::Network(const std::string& name, const std::string& desc,
       ignored_(false), type_(type), preference_(0) {
 }
 
-std::string Network::ToString() const {
-  std::stringstream ss;
-  // Print out the first space-terminated token of the network desc, plus
-  // the IP address.
-  ss << "Net[" << description_.substr(0, description_.find(' '))
-     << ":" << prefix_.ToSensitiveString() << "/" << prefix_length_
-     << ":" << AdapterTypeToString(type_) << "]";
-  return ss.str();
-}
-
 // Sets the addresses of this network. Returns true if the address set changed.
 // Change detection is short circuited if the changed argument is true.
 bool Network::SetIPs(const std::vector<InterfaceAddress>& ips, bool changed) {
@@ -669,14 +662,52 @@ bool Network::SetIPs(const std::vector<InterfaceAddress>& ips, bool changed) {
   return changed;
 }
 
-// TODO(guoweis): will change the name to a more meaningful name as
-// this is not simply return the first address once the logic of ipv6
-// address selection is complete.
-IPAddress Network::ip() const {
+// Select the best IP address to use from this Network.
+IPAddress Network::GetBestIP() const {
   if (ips_.size() == 0) {
     return IPAddress();
   }
-  return static_cast<IPAddress>(ips_.at(0));
+
+  if (prefix_.family() == AF_INET) {
+    return static_cast<IPAddress>(ips_.at(0));
+  }
+
+  InterfaceAddress selected_ip, ula_ip;
+
+  for (size_t i = 0; i < ips_.size(); i++) {
+    // Ignore any address which has been deprecated already.
+    if (ips_[i].ipv6_flags() & IPV6_ADDRESS_FLAG_DEPRECATED)
+      continue;
+
+    // ULA address should only be returned when we have no other
+    // global IP.
+    if (IPIsULA(static_cast<const IPAddress&>(ips_[i]))) {
+      ula_ip = ips_[i];
+      continue;
+    }
+    selected_ip = ips_[i];
+
+    // Search could stop once a temporary non-deprecated one is found.
+    if (ips_[i].ipv6_flags() & IPV6_ADDRESS_FLAG_TEMPORARY)
+      break;
+  }
+
+  // No proper global IPv6 address found, use ULA instead.
+  if (IPIsUnspec(selected_ip) && !IPIsUnspec(ula_ip)) {
+    selected_ip = ula_ip;
+  }
+
+  return static_cast<IPAddress>(selected_ip);
+}
+
+std::string Network::ToString() const {
+  std::stringstream ss;
+  // Print out the first space-terminated token of the network desc, plus
+  // the IP address.
+  ss << "Net[" << description_.substr(0, description_.find(' '))
+     << ":" << prefix_.ToSensitiveString() << "/" << prefix_length_
+     << ":" << AdapterTypeToString(type_) << "]";
+  return ss.str();
 }
 
 }  // namespace rtc
