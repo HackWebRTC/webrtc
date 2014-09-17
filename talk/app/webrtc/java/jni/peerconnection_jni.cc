@@ -2707,8 +2707,12 @@ JOW(void, VideoCapturer_free)(JNIEnv*, jclass, jlong j_p) {
   delete reinterpret_cast<cricket::VideoCapturer*>(j_p);
 }
 
-JOW(void, VideoRenderer_free)(JNIEnv*, jclass, jlong j_p) {
+JOW(void, VideoRenderer_freeGuiVideoRenderer)(JNIEnv*, jclass, jlong j_p) {
   delete reinterpret_cast<VideoRendererWrapper*>(j_p);
+}
+
+JOW(void, VideoRenderer_freeWrappedVideoRenderer)(JNIEnv*, jclass, jlong j_p) {
+  delete reinterpret_cast<JavaVideoRendererWrapper*>(j_p);
 }
 
 JOW(void, MediaStreamTrack_free)(JNIEnv*, jclass, jlong j_p) {

@@ -176,11 +176,16 @@ public class VideoRenderer {
   }
 
   public void dispose() {
-    free(nativeVideoRenderer);
+    if (callbacks == null) {
+      freeGuiVideoRenderer(nativeVideoRenderer);
+    } else {
+      freeWrappedVideoRenderer(nativeVideoRenderer);
+    }
   }
 
   private static native long nativeCreateGuiVideoRenderer(int x, int y);
   private static native long nativeWrapVideoRenderer(Callbacks callbacks);
 
-  private static native void free(long nativeVideoRenderer);
+  private static native void freeGuiVideoRenderer(long nativeVideoRenderer);
+  private static native void freeWrappedVideoRenderer(long nativeVideoRenderer);
 }
