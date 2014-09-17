@@ -15,6 +15,6 @@
 #ifndef OVERRIDES_WEBRTC_BASE_CONSTRUCTORMAGIC_H__
 #define OVERRIDES_WEBRTC_BASE_CONSTRUCTORMAGIC_H__
 
-#include "base/basictypes.h"
+#include "base/macros.h"
 
 #endif  // OVERRIDES_WEBRTC_BASE_CONSTRUCTORMAGIC_H__

@@ -50,6 +50,7 @@ skip_child_includes = [
   'gflags',
   'testing',
   'third_party',
+  'webrtc/overrides',
 ]
 
 hooks = [
