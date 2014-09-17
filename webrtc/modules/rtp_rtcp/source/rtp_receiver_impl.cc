@@ -24,7 +24,6 @@ namespace webrtc {
 
 using RtpUtility::GetCurrentRTP;
 using RtpUtility::Payload;
-using RtpUtility::RTPPayloadParser;
 using RtpUtility::StringCompare;
 
 RtpReceiver* RtpReceiver::CreateVideoReceiver(
