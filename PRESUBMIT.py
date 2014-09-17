@@ -278,7 +278,6 @@ def GetPreferredTryMasters(project, change):
       'linux',
       'linux_asan',
       'linux_baremetal',
-      'linux_memcheck',
       'linux_rel',
       'linux_tsan2',
   ] + linux_gn_bots
