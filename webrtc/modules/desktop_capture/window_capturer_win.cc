@@ -173,10 +173,10 @@ void WindowCapturerWin::Capture(const DesktopRegion& region) {
     return;
   }
 
-  // Return a 2x2 black frame if the window is minimized. The size is 2x2 so it
-  // can be subsampled to I420 downstream.
+  // Return a 1x1 black frame if the window is minimized, to match the behavior
+  // on Mac.
   if (IsIconic(window_)) {
-    BasicDesktopFrame* frame = new BasicDesktopFrame(DesktopSize(2, 2));
+    BasicDesktopFrame* frame = new BasicDesktopFrame(DesktopSize(1, 1));
     memset(frame->data(), 0, frame->stride() * frame->size().height());
 
     previous_size_ = frame->size();
