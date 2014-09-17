@@ -278,8 +278,7 @@ class VideoCaptureTest : public testing::Test {
   unsigned int number_of_devices_;
 };
 
-// Video capture tests broken on Android, see webrtc:3768.
-TEST_F(VideoCaptureTest, DISABLED_ON_ANDROID(CreateDelete)) {
+TEST_F(VideoCaptureTest, CreateDelete) {
   for (int i = 0; i < 5; ++i) {
     int64_t start_time = TickTime::MillisecondTimestamp();
     TestVideoCaptureCallback capture_observer;
@@ -316,8 +315,7 @@ TEST_F(VideoCaptureTest, DISABLED_ON_ANDROID(CreateDelete)) {
   }
 }
 
-// Video capture tests broken on Android, see webrtc:3768.
-TEST_F(VideoCaptureTest, DISABLED_ON_ANDROID(Capabilities)) {
+TEST_F(VideoCaptureTest, Capabilities) {
 #ifdef WEBRTC_MAC
   printf("Video capture capabilities are not supported on Mac.\n");
   return;
@@ -472,8 +470,7 @@ class VideoCaptureExternalTest : public testing::Test {
 };
 
 // Test input of external video frames.
-// Video capture tests broken on Android, see webrtc:3768.
-TEST_F(VideoCaptureExternalTest, DISABLED_ON_ANDROID(TestExternalCapture)) {
+TEST_F(VideoCaptureExternalTest, TestExternalCapture) {
   unsigned int length = webrtc::CalcBufferSize(webrtc::kI420,
                                                test_frame_.width(),
                                                test_frame_.height());
@@ -555,13 +552,7 @@ TEST_F(VideoCaptureExternalTest, DISABLED_TestExternalCaptureI420) {
 
 // Test frame rate and no picture alarm.
 // Flaky on Win32, see webrtc:3270.
-// Video capture tests broken on Android, see webrtc:3768.
-#if defined(_WIN32) || defined(WEBRTC_ANDROID)
-#define MAYBE_FrameRate DISABLED_FrameRate
-#else
-#define MAYBE_FrameRate FrameRate
-#endif
-TEST_F(VideoCaptureExternalTest, MAYBE_FrameRate) {
+TEST_F(VideoCaptureExternalTest, DISABLED_ON_WIN(FrameRate)) {
   int64_t testTime = 3;
   TickTime startTime = TickTime::Now();
 
@@ -598,8 +589,7 @@ TEST_F(VideoCaptureExternalTest, MAYBE_FrameRate) {
               capture_feedback_.frame_rate() <= 33);
 }
 
-// Video capture tests broken on Android, see webrtc:3768.
-TEST_F(VideoCaptureExternalTest, DISABLED_ON_ANDROID(Rotation)) {
+TEST_F(VideoCaptureExternalTest, Rotation) {
   EXPECT_EQ(0, capture_module_->SetCaptureRotation(webrtc::kCameraRotate0));
   unsigned int length = webrtc::CalcBufferSize(webrtc::kI420,
                                                test_frame_.width(),
@@ -621,8 +611,3 @@ TEST_F(VideoCaptureExternalTest, DISABLED_ON_ANDROID(Rotation)) {
   EXPECT_EQ(0, capture_input_interface_->IncomingFrame(test_buffer.get(),
     length, capture_callback_.capability(), 0));
 }
-
-// Video capture tests broken on Android, see webrtc:3768.
-// Add dummy test that always passes to avoid the entire test returning exit
-// code 1 when zero tests have executed.
-TEST_F(VideoCaptureExternalTest, Dummy) {}
