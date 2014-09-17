@@ -59,7 +59,7 @@
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
         '<(webrtc_root)/modules/modules.gyp:media_file',
-        '<(webrtc_root)/modules/modules.gyp:video_capture_module',
+        '<(webrtc_root)/modules/modules.gyp:video_capture_module_impl',
         '<(webrtc_root)/test/test.gyp:frame_generator',
         '<(webrtc_root)/test/test.gyp:test_support',
         '<(webrtc_root)/webrtc.gyp:webrtc',
@@ -107,7 +107,7 @@
       ],
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
-        '<(webrtc_root)/modules/modules.gyp:video_capture_module',
+        '<(webrtc_root)/modules/modules.gyp:video_capture_module_internal_impl',
         '<(webrtc_root)/modules/modules.gyp:media_file',
         '<(webrtc_root)/test/test.gyp:frame_generator',
         '<(webrtc_root)/test/test.gyp:test_support',

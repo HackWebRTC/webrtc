@@ -396,7 +396,6 @@
       'dependencies': [
         '<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv',
         '<(DEPTH)/third_party/usrsctp/usrsctp.gyp:usrsctplib',
-        '<(webrtc_root)/modules/modules.gyp:video_capture_module',
         '<(webrtc_root)/modules/modules.gyp:video_render_module',
         '<(webrtc_root)/webrtc.gyp:webrtc',
         '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
@@ -499,6 +498,15 @@
         'media/webrtc/webrtcvoiceengine.h',
       ],
       'conditions': [
+        ['build_with_chromium==1', {
+	  'dependencies': [
+            '<(webrtc_root)/modules/modules.gyp:video_capture_module_impl',
+	  ],
+	}, {
+	  'dependencies': [
+            '<(webrtc_root)/modules/modules.gyp:video_capture_module_internal_impl',
+	  ],
+	}],
         ['OS=="linux"', {
           'sources': [
             'media/devices/gtkvideorenderer.cc',

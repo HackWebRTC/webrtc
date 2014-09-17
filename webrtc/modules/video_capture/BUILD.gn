@@ -8,16 +8,10 @@
 
 import("../../build/webrtc.gni")
 
-config("video_capture_config") {
-  if (is_ios) {
-    libs = [
-      "AVFoundation.framework",
-      "CoreMedia.framework",
-      "CoreVideo.framework",
-    ]
-  }
-}
-
+# Note this target is missing an implementation for the video capture.
+# Targets must link with either 'video_capture_impl' or
+# 'video_capture_internal_impl' depending on whether they want to
+# use the internal capturer.
 source_set("video_capture") {
   sources = [
     "device_info_impl.cc",
@@ -32,108 +26,138 @@ source_set("video_capture") {
     "video_capture_impl.h",
   ]
 
-  libs = []
-  deps = []
-
-  if (rtc_include_internal_video_capture) {
-    if (is_linux) {
-      sources += [
-        "linux/device_info_linux.cc",
-        "linux/device_info_linux.h",
-        "linux/video_capture_linux.cc",
-        "linux/video_capture_linux.h",
-      ]
-    }
-    if (is_mac) {
-      sources += [
-        "mac/qtkit/video_capture_qtkit.h",
-        "mac/qtkit/video_capture_qtkit.mm",
-        "mac/qtkit/video_capture_qtkit_info.h",
-        "mac/qtkit/video_capture_qtkit_info.mm",
-        "mac/qtkit/video_capture_qtkit_info_objc.h",
-        "mac/qtkit/video_capture_qtkit_info_objc.mm",
-        "mac/qtkit/video_capture_qtkit_objc.h",
-        "mac/qtkit/video_capture_qtkit_objc.mm",
-        "mac/qtkit/video_capture_qtkit_utility.h",
-        "mac/video_capture_mac.mm",
-      ]
-
-      libs += [
-        "CoreVideo.framework",
-        "QTKit.framework",
-      ]
-    }
-    if (is_win) {
-      sources += [
-        "windows/device_info_ds.cc",
-        "windows/device_info_ds.h",
-        "windows/device_info_mf.cc",
-        "windows/device_info_mf.h",
-        "windows/help_functions_ds.cc",
-        "windows/help_functions_ds.h",
-        "windows/sink_filter_ds.cc",
-        "windows/sink_filter_ds.h",
-        "windows/video_capture_ds.cc",
-        "windows/video_capture_ds.h",
-        "windows/video_capture_factory_windows.cc",
-        "windows/video_capture_mf.cc",
-        "windows/video_capture_mf.h",
-      ]
-
-      libs += [ "Strmiids.lib" ]
-      deps += [ "//third_party/winsdk_samples"]
-    }
-    if (is_android) {
-      sources += [
-        "android/device_info_android.cc",
-        "android/device_info_android.h",
-        "android/video_capture_android.cc",
-        "android/video_capture_android.h",
-      ]
-
-      deps += [
-        "//third_party/icu:icuuc",
-        "//third_party/jsoncpp",
-      ]
-    }
-    if (is_ios) {
-      sources += [
-        "ios/device_info_ios.h",
-        "ios/device_info_ios.mm",
-        "ios/device_info_ios_objc.h",
-        "ios/device_info_ios_objc.mm",
-        "ios/rtc_video_capture_ios_objc.h",
-        "ios/rtc_video_capture_ios_objc.mm",
-        "ios/video_capture_ios.h",
-        "ios/video_capture_ios.mm",
-      ]
-
-      cflags += [
-        "-fobjc-arc",  # CLANG_ENABLE_OBJC_ARC = YES.
-        # To avoid warnings for deprecated videoMinFrameDuration and
-        # videoMaxFrameDuration properties in iOS 7.0.
-        # See webrtc:3705 for more details.
-        "-Wno-deprecated-declarations",
-      ]
-    }
-  } else {
-    sources += [
-      "external/device_info_external.cc",
-      "external/video_capture_external.cc",
-    ]
-  }
-
-  all_dependent_configs = [ ":video_capture_config"]
+  deps = [
+    "../../common_video",
+    "../../system_wrappers",
+    "../utility",
+  ]
 
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
+}
 
-  deps += [
-    "../../common_video",
-    "../../system_wrappers",
-    "../utility",
+source_set("video_capture_impl") {
+  sources = [
+    "external/device_info_external.cc",
+    "external/video_capture_external.cc",
   ]
+
+  deps = [
+    ":video_capture",
+  ]
+
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+}
+
+config("video_capture_internal_impl_config") {
+  if (is_ios) {
+    libs = [
+      "AVFoundation.framework",
+      "CoreMedia.framework",
+      "CoreVideo.framework",
+    ]
+  }
+}
+
+source_set("video_capture_internal_impl") {
+  deps = [
+    ":video_capture",
+  ]
+
+  if (is_linux) {
+    sources = [
+      "linux/device_info_linux.cc",
+      "linux/device_info_linux.h",
+      "linux/video_capture_linux.cc",
+      "linux/video_capture_linux.h",
+    ]
+  }
+  if (is_mac) {
+    sources = [
+      "mac/qtkit/video_capture_qtkit.h",
+      "mac/qtkit/video_capture_qtkit.mm",
+      "mac/qtkit/video_capture_qtkit_info.h",
+      "mac/qtkit/video_capture_qtkit_info.mm",
+      "mac/qtkit/video_capture_qtkit_info_objc.h",
+      "mac/qtkit/video_capture_qtkit_info_objc.mm",
+      "mac/qtkit/video_capture_qtkit_objc.h",
+      "mac/qtkit/video_capture_qtkit_objc.mm",
+      "mac/qtkit/video_capture_qtkit_utility.h",
+      "mac/video_capture_mac.mm",
+    ]
+
+    libs = [
+      "CoreVideo.framework",
+      "QTKit.framework",
+    ]
+  }
+  if (is_win) {
+    sources = [
+      "windows/device_info_ds.cc",
+      "windows/device_info_ds.h",
+      "windows/device_info_mf.cc",
+      "windows/device_info_mf.h",
+      "windows/help_functions_ds.cc",
+      "windows/help_functions_ds.h",
+      "windows/sink_filter_ds.cc",
+      "windows/sink_filter_ds.h",
+      "windows/video_capture_ds.cc",
+      "windows/video_capture_ds.h",
+      "windows/video_capture_factory_windows.cc",
+      "windows/video_capture_mf.cc",
+      "windows/video_capture_mf.h",
+    ]
+
+    libs = [ "Strmiids.lib" ]
+
+    deps += [ "//third_party/winsdk_samples"]
+  }
+  if (is_android) {
+    sources = [
+      "android/device_info_android.cc",
+      "android/device_info_android.h",
+      "android/video_capture_android.cc",
+      "android/video_capture_android.h",
+    ]
+
+    deps += [
+      "//third_party/icu:icuuc",
+      "//third_party/jsoncpp",
+    ]
+  }
+  if (is_ios) {
+    sources = [
+      "ios/device_info_ios.h",
+      "ios/device_info_ios.mm",
+      "ios/device_info_ios_objc.h",
+      "ios/device_info_ios_objc.mm",
+      "ios/rtc_video_capture_ios_objc.h",
+      "ios/rtc_video_capture_ios_objc.mm",
+      "ios/video_capture_ios.h",
+      "ios/video_capture_ios.mm",
+    ]
+
+    cflags = [
+      "-fobjc-arc",  # CLANG_ENABLE_OBJC_ARC = YES.
+      # To avoid warnings for deprecated videoMinFrameDuration and
+      # videoMaxFrameDuration properties in iOS 7.0.
+      # See webrtc:3705 for more details.
+      "-Wno-deprecated-declarations",
+    ]
+  }
+
+  all_dependent_configs = [ ":video_capture_internal_impl_config" ]
+
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
 }
