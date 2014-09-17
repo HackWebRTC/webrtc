@@ -14,15 +14,7 @@
 #include "webrtc/modules/interface/module.h"
 #include "webrtc/modules/video_capture/include/video_capture_defines.h"
 
-#ifdef ANDROID
-#include <jni.h>
-#endif
-
 namespace webrtc {
-
-#if defined(ANDROID)
-int32_t SetCaptureAndroidVM(JavaVM* javaVM, jobject context);
-#endif
 
 class VideoCaptureModule: public RefCountedModule {
  public:

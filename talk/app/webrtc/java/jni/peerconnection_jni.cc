@@ -90,6 +90,8 @@
 
 #if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
 #include <android/log.h>
+#include "webrtc/modules/video_capture/video_capture_internal.h"
+#include "webrtc/modules/video_render/video_render_internal.h"
 #include "webrtc/system_wrappers/interface/logcat_trace_context.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 using webrtc::CodecSpecificInfo;
@@ -2765,8 +2767,10 @@ JOW(jboolean, PeerConnectionFactory_initializeAndroidGlobals)(
   CHECK(g_jvm) << "JNI_OnLoad failed to run?";
   bool failure = false;
   if (!factory_static_initialized) {
-    if (initialize_video)
-      failure |= webrtc::VideoEngine::SetAndroidObjects(g_jvm, context);
+    if (initialize_video) {
+      failure |= webrtc::SetCaptureAndroidVM(g_jvm, context);
+      failure |= webrtc::SetRenderAndroidVM(g_jvm);
+    }
     if (initialize_audio)
       failure |= webrtc::VoiceEngine::SetAndroidObjects(g_jvm, jni, context);
     factory_static_initialized = true;

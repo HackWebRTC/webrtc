@@ -187,6 +187,13 @@
               'dependencies': [
                 '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
               ],
+	      # Need to disable error due to the line in
+	      # base/android/jni_android.h triggering it:
+	      # const BASE_EXPORT jobject GetApplicationContext()
+	      # error: type qualifiers ignored on function return type
+	      'cflags': [
+	        '-Wno-ignored-qualifiers',
+	      ],
             }],
             ['OS=="mac"', {
               'dependencies': [
