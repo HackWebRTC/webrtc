@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SESSIONMANAGERTASK_H_
-#define _SESSIONMANAGERTASK_H_
+#ifndef TALK_P2P_CLIENT_SESSIONMANAGERTASK_H_
+#define TALK_P2P_CLIENT_SESSIONMANAGERTASK_H_
 
 #include "talk/p2p/base/sessionmanager.h"
 #include "talk/p2p/client/sessionsendtask.h"
@@ -90,4 +90,4 @@ class SessionManagerTask : public buzz::XmppTask {
 
 }  // namespace cricket
 
-#endif // _SESSIONMANAGERTASK_H_
+#endif // TALK_P2P_CLIENT_SESSIONMANAGERTASK_H_
