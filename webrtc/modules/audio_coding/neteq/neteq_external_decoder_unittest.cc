@@ -46,7 +46,7 @@ class NetEqExternalDecoderTest : public ::testing::Test {
         frame_size_samples_(frame_size_ms_ * samples_per_ms_),
         output_size_samples_(frame_size_ms_ * samples_per_ms_),
         external_decoder_(new MockExternalPcm16B(kDecoderPCM16Bswb32kHz)),
-        rtp_generator_(samples_per_ms_),
+        rtp_generator_(new test::RtpGenerator(samples_per_ms_)),
         payload_size_bytes_(0),
         last_send_time_(0),
         last_arrival_time_(0) {
@@ -63,7 +63,6 @@ class NetEqExternalDecoderTest : public ::testing::Test {
     delete neteq_;
     // We will now delete the decoder ourselves, so expecting Die to be called.
     EXPECT_CALL(*external_decoder_, Die()).Times(1);
-    delete external_decoder_;
     delete [] input_;
     delete [] encoded_;
   }
@@ -78,9 +77,8 @@ class NetEqExternalDecoderTest : public ::testing::Test {
     // NetEq is not allowed to delete the external decoder (hence Times(0)).
     EXPECT_CALL(*external_decoder_, Die()).Times(0);
     ASSERT_EQ(NetEq::kOK,
-              neteq_external_->RegisterExternalDecoder(external_decoder_,
-                                                       decoder,
-                                                       kPayloadType));
+              neteq_external_->RegisterExternalDecoder(
+                  external_decoder_.get(), decoder, kPayloadType));
     ASSERT_EQ(NetEq::kOK,
               neteq_->RegisterPayloadType(decoder, kPayloadType));
   }
@@ -96,13 +94,12 @@ class NetEqExternalDecoderTest : public ::testing::Test {
     if (frame_size_samples_ * 2 != payload_size_bytes_) {
       return -1;
     }
-    int next_send_time = rtp_generator_.GetRtpHeader(kPayloadType,
-                                                     frame_size_samples_,
-                                                     &rtp_header_);
+    int next_send_time = rtp_generator_->GetRtpHeader(
+        kPayloadType, frame_size_samples_, &rtp_header_);
     return next_send_time;
   }
 
-  void VerifyOutput(size_t num_samples) {
+  virtual void VerifyOutput(size_t num_samples) const {
     for (size_t i = 0; i < num_samples; ++i) {
       ASSERT_EQ(output_[i], output_external_[i]) <<
           "Diff in sample " << i << ".";
@@ -117,6 +114,49 @@ class NetEqExternalDecoderTest : public ::testing::Test {
   }
 
   virtual bool Lost() { return false; }
+
+  virtual void InsertPackets(int next_arrival_time) {
+    // Insert packet in regular instance.
+    ASSERT_EQ(
+        NetEq::kOK,
+        neteq_->InsertPacket(
+            rtp_header_, encoded_, payload_size_bytes_, next_arrival_time));
+    // Insert packet in external decoder instance.
+    EXPECT_CALL(*external_decoder_,
+                IncomingPacket(_,
+                               payload_size_bytes_,
+                               rtp_header_.header.sequenceNumber,
+                               rtp_header_.header.timestamp,
+                               next_arrival_time));
+    ASSERT_EQ(
+        NetEq::kOK,
+        neteq_external_->InsertPacket(
+            rtp_header_, encoded_, payload_size_bytes_, next_arrival_time));
+  }
+
+  virtual void GetOutputAudio() {
+    NetEqOutputType output_type;
+    // Get audio from regular instance.
+    int samples_per_channel;
+    int num_channels;
+    EXPECT_EQ(NetEq::kOK,
+              neteq_->GetAudio(kMaxBlockSize,
+                               output_,
+                               &samples_per_channel,
+                               &num_channels,
+                               &output_type));
+    EXPECT_EQ(1, num_channels);
+    EXPECT_EQ(output_size_samples_, samples_per_channel);
+    // Get audio from external decoder instance.
+    ASSERT_EQ(NetEq::kOK,
+              neteq_external_->GetAudio(kMaxBlockSize,
+                                        output_external_,
+                                        &samples_per_channel,
+                                        &num_channels,
+                                        &output_type));
+    EXPECT_EQ(1, num_channels);
+    EXPECT_EQ(output_size_samples_, samples_per_channel);
+  }
 
   void RunTest(int num_loops) {
     // Get next input packets (mono and multi-channel).
@@ -134,21 +174,8 @@ class NetEqExternalDecoderTest : public ::testing::Test {
     int time_now = 0;
     for (int k = 0; k < num_loops; ++k) {
       while (time_now >= next_arrival_time) {
-        // Insert packet in regular instance.
-        ASSERT_EQ(NetEq::kOK,
-                  neteq_->InsertPacket(rtp_header_, encoded_,
-                                       payload_size_bytes_,
-                                       next_arrival_time));
-        // Insert packet in external decoder instance.
-        EXPECT_CALL(*external_decoder_,
-                    IncomingPacket(_, payload_size_bytes_,
-                                   rtp_header_.header.sequenceNumber,
-                                   rtp_header_.header.timestamp,
-                                   next_arrival_time));
-        ASSERT_EQ(NetEq::kOK,
-                  neteq_external_->InsertPacket(rtp_header_, encoded_,
-                                                payload_size_bytes_,
-                                                next_arrival_time));
+        InsertPackets(next_arrival_time);
+
         // Get next input packet.
         do {
           next_send_time = GetNewPackets();
@@ -156,23 +183,9 @@ class NetEqExternalDecoderTest : public ::testing::Test {
           next_arrival_time = GetArrivalTime(next_send_time);
         } while (Lost());  // If lost, immediately read the next packet.
       }
-      NetEqOutputType output_type;
-      // Get audio from regular instance.
-      int samples_per_channel;
-      int num_channels;
-      EXPECT_EQ(NetEq::kOK,
-                neteq_->GetAudio(kMaxBlockSize, output_,
-                                 &samples_per_channel, &num_channels,
-                                 &output_type));
-      EXPECT_EQ(1, num_channels);
-      EXPECT_EQ(output_size_samples_, samples_per_channel);
-      // Get audio from external decoder instance.
-      ASSERT_EQ(NetEq::kOK,
-                neteq_external_->GetAudio(kMaxBlockSize, output_external_,
-                                          &samples_per_channel, &num_channels,
-                                          &output_type));
-      EXPECT_EQ(1, num_channels);
-      EXPECT_EQ(output_size_samples_, samples_per_channel);
+
+      GetOutputAudio();
+
       std::ostringstream ss;
       ss << "Lap number " << k << ".";
       SCOPED_TRACE(ss.str());  // Print out the parameter values on failure.
@@ -190,8 +203,8 @@ class NetEqExternalDecoderTest : public ::testing::Test {
   const int output_size_samples_;
   NetEq* neteq_external_;
   NetEq* neteq_;
-  MockExternalPcm16B* external_decoder_;
-  test::RtpGenerator rtp_generator_;
+  scoped_ptr<MockExternalPcm16B> external_decoder_;
+  scoped_ptr<test::RtpGenerator> rtp_generator_;
   int16_t* input_;
   uint8_t* encoded_;
   int16_t output_[kMaxBlockSize];
