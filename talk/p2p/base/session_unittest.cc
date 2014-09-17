@@ -601,8 +601,7 @@ class TestPortAllocatorSession : public cricket::PortAllocatorSession {
         network_("network", "unittest",
                  rtc::IPAddress(INADDR_LOOPBACK), 8),
         socket_factory_(rtc::Thread::Current()),
-        running_(false),
-        port_(28653) {
+        running_(false) {
     network_.AddIP(address_.ipaddr());
   }
 
@@ -655,7 +654,6 @@ class TestPortAllocatorSession : public cricket::PortAllocatorSession {
   rtc::Network network_;
   rtc::BasicPacketSocketFactory socket_factory_;
   bool running_;
-  int port_;
 };
 
 class TestPortAllocator : public cricket::PortAllocator {
