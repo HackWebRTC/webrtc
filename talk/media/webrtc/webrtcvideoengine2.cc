@@ -42,8 +42,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/call.h"
-// TODO(pbos): Move codecs out of modules (webrtc:3070).
-#include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
+#include "webrtc/video_encoder.h"
 
 #define UNIMPLEMENTED                                                 \
   LOG(LS_ERROR) << "Call to unimplemented function " << __FUNCTION__; \
@@ -200,7 +199,7 @@ webrtc::VideoEncoder* WebRtcVideoEncoderFactory2::CreateVideoEncoder(
     const VideoOptions& options) {
   assert(SupportsCodec(codec));
   if (_stricmp(codec.name.c_str(), kVp8CodecName) == 0) {
-    return webrtc::VP8Encoder::Create();
+    return webrtc::VideoEncoder::Create(webrtc::VideoEncoder::kVp8);
   }
   // This shouldn't happen, we should be able to create encoders for all codecs
   // we support.

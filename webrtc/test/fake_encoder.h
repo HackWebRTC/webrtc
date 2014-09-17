@@ -13,8 +13,9 @@
 
 #include <vector>
 
-#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/common_types.h"
 #include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/video_encoder.h"
 
 namespace webrtc {
 namespace test {
