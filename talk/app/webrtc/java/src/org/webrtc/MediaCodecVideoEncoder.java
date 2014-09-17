@@ -144,15 +144,6 @@ class MediaCodecVideoEncoder {
     return findVp8HwEncoder() != null;
   }
 
-  private static int bitRate(int kbps) {
-    // webrtc "kilo" means 1000, not 1024.  Apparently.
-    // (and the price for overshooting is frame-dropping as webrtc enforces its
-    // bandwidth estimation, which is unpleasant).
-    // Since the HW encoder in the N5 overshoots, we clamp to a bit less than
-    // the requested rate.  Sad but true.  Bug 3194.
-    return kbps * 950;
-  }
-
   private void checkOnMediaCodecThread() {
     if (mediaCodecThread.getId() != Thread.currentThread().getId()) {
       throw new RuntimeException(
@@ -177,7 +168,7 @@ class MediaCodecVideoEncoder {
     try {
       MediaFormat format =
           MediaFormat.createVideoFormat(VP8_MIME_TYPE, width, height);
-      format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate(kbps));
+      format.setInteger(MediaFormat.KEY_BIT_RATE, 1000 * kbps);
       format.setInteger("bitrate-mode", VIDEO_ControlRateConstant);
       format.setInteger(MediaFormat.KEY_COLOR_FORMAT, properties.colorFormat);
       // Default WebRTC settings
@@ -248,7 +239,7 @@ class MediaCodecVideoEncoder {
     Log.v(TAG, "setRates: " + kbps + " kbps. Fps: " + frameRateIgnored);
     try {
       Bundle params = new Bundle();
-      params.putInt(MediaCodec.PARAMETER_KEY_VIDEO_BITRATE, bitRate(kbps));
+      params.putInt(MediaCodec.PARAMETER_KEY_VIDEO_BITRATE, 1000 * kbps);
       mediaCodec.setParameters(params);
       return true;
     } catch (IllegalStateException e) {

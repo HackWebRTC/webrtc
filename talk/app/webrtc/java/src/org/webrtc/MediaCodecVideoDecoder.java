@@ -67,7 +67,7 @@ class MediaCodecVideoDecoder {
   private static final String VP8_MIME_TYPE = "video/x-vnd.on2.vp8";
   // List of supported HW VP8 decoders.
   private static final String[] supportedHwCodecPrefixes =
-    {"OMX.Nvidia."};
+    {"OMX.qcom.", "OMX.Nvidia." };
   // NV12 color format supported by QCOM codec, but not declared in MediaCodec -
   // see /hardware/qcom/media/mm-core/inc/OMX_QCOMExtns.h
   private static final int
