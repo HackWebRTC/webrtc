@@ -84,7 +84,11 @@
             },
           },
         }],  # mac
-        ['OS=="win"', {
+        # Note that since winsdk_samples isn't pulled into chromium gyp will
+        # fail to parse this rule and try to resolve the dependencies. This
+        # is not a problem since the internal video capture implementation
+        # should not be used in chrome - issue 3831.
+        ['OS=="win" and build_with_chromium==0', {
           'dependencies': [
             '<(DEPTH)/third_party/winsdk_samples/winsdk_samples.gyp:directshow_baseclasses',
           ],
