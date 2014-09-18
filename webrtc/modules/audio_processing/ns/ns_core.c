@@ -714,6 +714,10 @@ void WebRtcNs_SpeechNoiseProb(NSinst_t* inst, float* probSpeechFinal, float* snr
   }
 }
 
+int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* inFrame) {
+  return 0;
+}
+
 int WebRtcNs_ProcessCore(NSinst_t* inst,
                          float* speechFrame,
                          float* speechFrameHB,

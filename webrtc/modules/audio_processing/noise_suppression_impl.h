@@ -26,6 +26,7 @@ class NoiseSuppressionImpl : public NoiseSuppression,
                        CriticalSectionWrapper* crit);
   virtual ~NoiseSuppressionImpl();
 
+  int AnalyzeCaptureAudio(AudioBuffer* audio);
   int ProcessCaptureAudio(AudioBuffer* audio);
 
   // NoiseSuppression implementation.

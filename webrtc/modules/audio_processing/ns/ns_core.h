@@ -147,6 +147,23 @@ int WebRtcNs_InitCore(NSinst_t* inst, uint32_t fs);
 int WebRtcNs_set_policy_core(NSinst_t* inst, int mode);
 
 /****************************************************************************
+ * WebRtcNs_AnalyzeCore
+ *
+ * Estimate the background noise.
+ *
+ * Input:
+ *      - inst          : Instance that should be initialized
+ *      - inFrame       : Input speech frame for lower band
+ *
+ * Output:
+ *      - inst          : Updated instance
+ *
+ * Return value         :  0 - OK
+ *                        -1 - Error
+ */
+int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* inFrame);
+
+/****************************************************************************
  * WebRtcNs_ProcessCore
  *
  * Do noise suppression.
@@ -164,8 +181,6 @@ int WebRtcNs_set_policy_core(NSinst_t* inst, int mode);
  * Return value         :  0 - OK
  *                        -1 - Error
  */
-
-
 int WebRtcNs_ProcessCore(NSinst_t* inst,
                          float* inFrameLow,
                          float* inFrameHigh,
