@@ -54,6 +54,8 @@ namespace cricket {
 // duration hasn't been implemented.
 static const int kNackHistoryMs = 1000;
 
+static const int kDefaultQpMax = 56;
+
 static const int kDefaultRtcpReceiverReportSsrc = 1;
 
 struct VideoCodecPref {
@@ -186,7 +188,7 @@ std::vector<webrtc::VideoStream> WebRtcVideoEncoderFactory2::CreateVideoStreams(
   stream.min_bitrate_bps = min_bitrate * 1000;
   stream.target_bitrate_bps = stream.max_bitrate_bps = max_bitrate * 1000;
 
-  int max_qp = 56;
+  int max_qp = kDefaultQpMax;
   codec.GetParam(kCodecParamMaxQuantization, &max_qp);
   stream.max_qp = max_qp;
   std::vector<webrtc::VideoStream> streams;
