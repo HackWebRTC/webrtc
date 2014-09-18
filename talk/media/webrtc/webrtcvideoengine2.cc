@@ -212,14 +212,9 @@ void* WebRtcVideoEncoderFactory2::CreateVideoEncoderSettings(
     const VideoOptions& options) {
   assert(SupportsCodec(codec));
   if (_stricmp(codec.name.c_str(), kVp8CodecName) == 0) {
-    webrtc::VideoCodecVP8* settings = new webrtc::VideoCodecVP8();
-    settings->resilience = webrtc::kResilientStream;
-    settings->numberOfTemporalLayers = 1;
+    webrtc::VideoCodecVP8* settings = new webrtc::VideoCodecVP8(
+        webrtc::VideoEncoder::GetDefaultVp8Settings());
     options.video_noise_reduction.Get(&settings->denoisingOn);
-    settings->errorConcealmentOn = false;
-    settings->automaticResizeOn = false;
-    settings->frameDroppingOn = true;
-    settings->keyFrameInterval = 3000;
     return settings;
   }
   return NULL;

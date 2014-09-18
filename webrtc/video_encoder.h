@@ -13,6 +13,7 @@
 
 #include <vector>
 
+#include "webrtc/common_types.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_frame.h"
 
@@ -42,6 +43,9 @@ class VideoEncoder {
   };
 
   static VideoEncoder* Create(EncoderType codec_type);
+
+  static VideoCodecVP8 GetDefaultVp8Settings();
+  static VideoCodecH264 GetDefaultH264Settings();
 
   virtual ~VideoEncoder() {}
 

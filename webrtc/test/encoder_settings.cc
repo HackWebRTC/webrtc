@@ -12,6 +12,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include "webrtc/video_encoder.h"
 #include "webrtc/video_engine/vie_defines.h"
 
 namespace webrtc {
@@ -68,19 +69,9 @@ VideoCodec CreateDecoderVideoCodec(
   }
 
   if (codec.codecType == kVideoCodecVP8) {
-    codec.codecSpecific.VP8.resilience = kResilientStream;
-    codec.codecSpecific.VP8.numberOfTemporalLayers = 1;
-    codec.codecSpecific.VP8.denoisingOn = true;
-    codec.codecSpecific.VP8.errorConcealmentOn = false;
-    codec.codecSpecific.VP8.automaticResizeOn = false;
-    codec.codecSpecific.VP8.frameDroppingOn = true;
-    codec.codecSpecific.VP8.keyFrameInterval = 3000;
-  }
-
-  if (codec.codecType == kVideoCodecH264) {
-    codec.codecSpecific.H264.profile = kProfileBase;
-    codec.codecSpecific.H264.frameDroppingOn = true;
-    codec.codecSpecific.H264.keyFrameInterval = 3000;
+    codec.codecSpecific.VP8 = VideoEncoder::GetDefaultVp8Settings();
+  } else if (codec.codecType == kVideoCodecH264) {
+    codec.codecSpecific.H264 = VideoEncoder::GetDefaultH264Settings();
   }
 
   codec.width = 320;

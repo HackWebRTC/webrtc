@@ -24,6 +24,36 @@
 
 namespace webrtc {
 
+VideoCodecVP8 VideoEncoder::GetDefaultVp8Settings() {
+  VideoCodecVP8 vp8_settings;
+  memset(&vp8_settings, 0, sizeof(vp8_settings));
+
+  vp8_settings.resilience = kResilientStream;
+  vp8_settings.numberOfTemporalLayers = 1;
+  vp8_settings.denoisingOn = true;
+  vp8_settings.errorConcealmentOn = false;
+  vp8_settings.automaticResizeOn = false;
+  vp8_settings.frameDroppingOn = true;
+  vp8_settings.keyFrameInterval = 3000;
+
+  return vp8_settings;
+}
+
+VideoCodecH264 VideoEncoder::GetDefaultH264Settings() {
+  VideoCodecH264 h264_settings;
+  memset(&h264_settings, 0, sizeof(h264_settings));
+
+  h264_settings.profile = kProfileBase;
+  h264_settings.frameDroppingOn = true;
+  h264_settings.keyFrameInterval = 3000;
+  h264_settings.spsData = NULL;
+  h264_settings.spsLen = 0;
+  h264_settings.ppsData = NULL;
+  h264_settings.ppsLen = 0;
+
+  return h264_settings;
+}
+
 VCMDecoderMapItem::VCMDecoderMapItem(VideoCodec* settings,
                                      int number_of_cores,
                                      bool require_key_frame)
@@ -92,13 +122,7 @@ bool VCMCodecDataBase::Codec(int list_id,
       settings->height = VCM_DEFAULT_CODEC_HEIGHT;
       settings->numberOfSimulcastStreams = 0;
       settings->qpMax = 56;
-      settings->codecSpecific.VP8.resilience = kResilientStream;
-      settings->codecSpecific.VP8.numberOfTemporalLayers = 1;
-      settings->codecSpecific.VP8.denoisingOn = true;
-      settings->codecSpecific.VP8.errorConcealmentOn = false;
-      settings->codecSpecific.VP8.automaticResizeOn = false;
-      settings->codecSpecific.VP8.frameDroppingOn = true;
-      settings->codecSpecific.VP8.keyFrameInterval = 3000;
+      settings->codecSpecific.VP8 = VideoEncoder::GetDefaultVp8Settings();
       return true;
     }
 #endif
@@ -116,13 +140,7 @@ bool VCMCodecDataBase::Codec(int list_id,
       settings->height = VCM_DEFAULT_CODEC_HEIGHT;
       settings->numberOfSimulcastStreams = 0;
       settings->qpMax = 56;
-      settings->codecSpecific.H264.profile = kProfileBase;
-      settings->codecSpecific.H264.frameDroppingOn = true;
-      settings->codecSpecific.H264.keyFrameInterval = 3000;
-      settings->codecSpecific.H264.spsData = NULL;
-      settings->codecSpecific.H264.spsLen = 0;
-      settings->codecSpecific.H264.ppsData = NULL;
-      settings->codecSpecific.H264.ppsLen = 0;
+      settings->codecSpecific.H264 = VideoEncoder::GetDefaultH264Settings();
       return true;
     }
 #endif

@@ -313,17 +313,9 @@ bool VideoSendStream::ReconfigureVideoEncoder(
   }
 
   if (video_codec.codecType == kVideoCodecVP8) {
-    video_codec.codecSpecific.VP8.resilience = kResilientStream;
-    video_codec.codecSpecific.VP8.numberOfTemporalLayers = 1;
-    video_codec.codecSpecific.VP8.denoisingOn = true;
-    video_codec.codecSpecific.VP8.errorConcealmentOn = false;
-    video_codec.codecSpecific.VP8.automaticResizeOn = false;
-    video_codec.codecSpecific.VP8.frameDroppingOn = true;
-    video_codec.codecSpecific.VP8.keyFrameInterval = 3000;
+    video_codec.codecSpecific.VP8 = VideoEncoder::GetDefaultVp8Settings();
   } else if (video_codec.codecType == kVideoCodecH264) {
-    video_codec.codecSpecific.H264.profile = kProfileBase;
-    video_codec.codecSpecific.H264.frameDroppingOn = true;
-    video_codec.codecSpecific.H264.keyFrameInterval = 3000;
+    video_codec.codecSpecific.H264 = VideoEncoder::GetDefaultH264Settings();
   }
 
   if (video_codec.codecType == kVideoCodecVP8) {
