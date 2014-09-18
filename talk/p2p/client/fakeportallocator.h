@@ -65,7 +65,11 @@ class FakePortAllocatorSession : public PortAllocatorSession {
       port_.reset(cricket::UDPPort::Create(worker_thread_,
                                            factory_,
                                            &network_,
+#ifdef USE_WEBRTC_DEV_BRANCH
                                            network_.GetBestIP(),
+#else  // USE_WEBRTC_DEV_BRANCH
+                                           network_.ip(),
+#endif  // USE_WEBRTC_DEV_BRANCH
                                            0,
                                            0,
                                            username(),
