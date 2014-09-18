@@ -1212,7 +1212,7 @@ std::string Connection::ToString() const {
      << ":" << local.type() << ":" << local.protocol()
      << ":" << local.address().ToSensitiveString()
      << "->" << remote.id() << ":" << remote.component()
-     << ":" << remote.preference()
+     << ":" << remote.priority()
      << ":" << remote.type() << ":"
      << remote.protocol() << ":" << remote.address().ToSensitiveString() << "|"
      << CONNECT_STATE_ABBREV[connected()]
