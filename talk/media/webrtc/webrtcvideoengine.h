@@ -101,7 +101,7 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
                     ViEWrapper* vie_wrapper,
                     ViETraceWrapper* tracing,
                     rtc::CpuMonitor* cpu_monitor);
-  ~WebRtcVideoEngine();
+  virtual ~WebRtcVideoEngine();
 
   // Basic video engine implementation.
   bool Init(rtc::Thread* worker_thread);
@@ -129,7 +129,8 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   // Set a WebRtcVideoEncoderFactory for external encoding. Video engine does
   // not take the ownership of |encoder_factory|. The caller needs to make sure
   // that |encoder_factory| outlives the video engine.
-  void SetExternalEncoderFactory(WebRtcVideoEncoderFactory* encoder_factory);
+  virtual void SetExternalEncoderFactory(
+      WebRtcVideoEncoderFactory* encoder_factory);
   // Enable the render module with timing control.
   bool EnableTimedRender();
 
@@ -217,9 +218,6 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   WebRtcVoiceEngine* voice_engine_;
   rtc::scoped_ptr<webrtc::VideoRender> render_module_;
   WebRtcVideoEncoderFactory* encoder_factory_;
-  // If the engine owns the encoder factory, set it here so it will be
-  // deleted.
-  rtc::scoped_ptr<WebRtcVideoEncoderFactory> owned_encoder_factory_;
   WebRtcVideoDecoderFactory* decoder_factory_;
   std::vector<VideoCodec> video_codecs_;
   std::vector<RtpHeaderExtension> rtp_header_extensions_;
@@ -240,7 +238,7 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
  public:
   WebRtcVideoMediaChannel(WebRtcVideoEngine* engine,
                           VoiceMediaChannel* voice_channel);
-  ~WebRtcVideoMediaChannel();
+  virtual ~WebRtcVideoMediaChannel();
   bool Init();
 
   WebRtcVideoEngine* engine() { return engine_; }

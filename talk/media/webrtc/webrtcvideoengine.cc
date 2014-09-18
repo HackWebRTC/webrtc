@@ -78,6 +78,7 @@ bool Changed(cricket::Settable<T> proposed,
              T* value) {
   return proposed.Get(value) && proposed != original;
 }
+
 }  // namespace
 
 namespace cricket {
@@ -2950,7 +2951,6 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
   if (send_codec_) {
     webrtc::VideoCodec new_codec = *send_codec_;
 
-
     bool conference_mode_turned_off = (
         original.conference_mode.IsSet() &&
         options.conference_mode.IsSet() &&
@@ -2968,7 +2968,6 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
     if (options.video_start_bitrate.Get(&new_start_bitrate)) {
       new_codec.startBitrate = new_start_bitrate;
     }
-
 
     if (!SetSendCodec(new_codec)) {
       return false;
