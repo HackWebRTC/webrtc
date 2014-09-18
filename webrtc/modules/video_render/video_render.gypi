@@ -9,6 +9,10 @@
 {
   'targets': [
     {
+      # Note this library is missing an implementation for the video render.
+      # For that targets must link with 'video_render_module_impl' or
+      # 'video_render_module_internal_impl' if they want to compile and use
+      # the internal render as the default renderer.
       'target_name': 'video_render_module',
       'type': 'static_library',
       'dependencies': [
@@ -26,16 +30,36 @@
         'incoming_video_stream.h',
         'video_render_frames.cc',
         'video_render_frames.h',
-        'video_render_impl.cc',
         'video_render_impl.h',
       ],
-      # TODO(andrew): with the proper suffix, these files will be excluded
-      # automatically.
+    },
+    {
+      # Default video_render_module implementation that only supports external
+      # renders.
+      'target_name': 'video_render_module_impl',
+      'type': 'static_library',
+      'dependencies': [
+        'video_render_module',
+      ],
+      'sources': [
+        'video_render_impl.cc',
+      ],
+    },
+    {
+      # video_render_module implementation that supports the internal
+      # video_render implementation.
+      'target_name': 'video_render_module_internal_impl',
+      'type': 'static_library',
+      'dependencies': [
+        'video_render_module',
+      ],
+      'sources': [
+        'video_render_internal_impl.cc',
+      ],
+       # TODO(andrew): with the proper suffix, these files will be excluded
+       # automatically.
       'conditions': [
-        ['include_internal_video_render==1', {
-          'defines': ['WEBRTC_INCLUDE_INTERNAL_VIDEO_RENDER',],
-        }],
-        ['OS=="android" and include_internal_video_render==1', {
+        ['OS=="android"', {
           'sources': [
             'android/video_render_android_impl.h',
             'android/video_render_android_native_opengl2.h',
@@ -52,7 +76,7 @@
             ],
           },
         }],
-        ['OS=="ios" and include_internal_video_render==1', {
+        ['OS=="ios"', {
           'sources': [
             # iOS
             'ios/open_gles20.h',
@@ -66,8 +90,20 @@
             'ios/video_render_ios_view.h',
             'ios/video_render_ios_view.mm',
           ],
+          'xcode_settings': {
+            'CLANG_ENABLE_OBJC_ARC': 'YES',
+          },
+          'all_dependent_settings': {
+            'xcode_settings': {
+              'OTHER_LDFLAGS': [
+                '-framework OpenGLES',
+                '-framework QuartzCore',
+                '-framework UIKit',
+              ],
+            },
+          },
         }],
-        ['OS=="linux" and include_internal_video_render==1', {
+        ['OS=="linux"', {
           'sources': [
             'linux/video_render_linux_impl.h',
             'linux/video_x11_channel.h',
@@ -82,7 +118,7 @@
             ],
           },
         }],
-        ['OS=="mac" and include_internal_video_render==1', {
+        ['OS=="mac"', {
           'sources': [
             'mac/cocoa_full_screen_window.h',
             'mac/cocoa_render_view.h',
@@ -98,21 +134,14 @@
             'mac/cocoa_full_screen_window.mm',
           ],
         }],
-        ['OS=="ios"', {
-          'xcode_settings': {
-            'CLANG_ENABLE_OBJC_ARC': 'YES',
-          },
-          'all_dependent_settings': {
-            'xcode_settings': {
-              'OTHER_LDFLAGS': [
-                '-framework OpenGLES',
-                '-framework QuartzCore',
-                '-framework UIKit',
-              ],
-            },
-          },
-        }],
-        ['OS=="win" and include_internal_video_render==1', {
+        ['OS=="win"', {
+          'sources': [
+            'windows/i_video_render_win.h',
+            'windows/video_render_direct3d9.h',
+            'windows/video_render_windows_impl.h',
+            'windows/video_render_direct3d9.cc',
+            'windows/video_render_windows_impl.cc',
+	  ],
           'variables': {
             # 'directx_sdk_path' will be overridden in the condition block
             # below, but it must not be declared as empty here since gyp
@@ -133,30 +162,18 @@
             '<(directx_sdk_path)/Include',
           ],
         }],
-        ['OS=="win" and include_internal_video_render==1', {
-          'sources': [
-            'windows/i_video_render_win.h',
-            'windows/video_render_direct3d9.h',
-            'windows/video_render_windows_impl.h',
-            'windows/video_render_direct3d9.cc',
-            'windows/video_render_windows_impl.cc',
-          ],
-        }],
       ] # conditions
-    }, # video_render_module
+    },
   ], # targets
 
   'conditions': [
-    ['include_internal_video_render==1', {
-      'defines': ['WEBRTC_INCLUDE_INTERNAL_VIDEO_RENDER',],
-    }],
     ['include_tests==1', {
       'targets': [
         {
           'target_name': 'video_render_tests',
           'type': 'executable',
           'dependencies': [
-            'video_render_module',
+            'video_render_module_internal_impl',
             'webrtc_utility',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             '<(webrtc_root)/common_video/common_video.gyp:common_video',

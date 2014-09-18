@@ -32,9 +32,6 @@
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/typedefs.h"
 
-// Disabled on Android since all tests currently fail (webrtc:3770).
-#ifndef WEBRTC_ANDROID
-
 namespace webrtc {
 
 static const int kFullStackTestDurationSecs = 60;
@@ -535,5 +532,3 @@ TEST_F(FullStackTest, ForemanCif1000kbps100msLimitedQueue) {
   RunTest(foreman_cif);
 }
 }  // namespace webrtc
-
-#endif // !WEBRTC_ANDROID

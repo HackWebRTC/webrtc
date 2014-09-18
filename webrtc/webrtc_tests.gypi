@@ -48,6 +48,7 @@
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
         'test/webrtc_test_common.gyp:webrtc_test_common',
         'test/webrtc_test_common.gyp:webrtc_test_renderer',
+        '<(webrtc_root)/modules/modules.gyp:video_render_module_impl',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:field_trial_default',
         'webrtc',
       ],
@@ -71,9 +72,10 @@
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
-        'system_wrappers/source/system_wrappers.gyp:field_trial_default',
         'test/webrtc_test_common.gyp:webrtc_test_common',
         'test/webrtc_test_common.gyp:webrtc_test_renderer',
+        '<(webrtc_root)/modules/modules.gyp:video_render_module_impl',
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:field_trial_default',
         'webrtc',
       ],
     },
@@ -90,7 +92,8 @@
       ],
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
-        'modules/modules.gyp:rtp_rtcp',
+        '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
+        '<(webrtc_root)/modules/modules.gyp:video_render_module_impl',
         'test/metrics.gyp:metrics',
         'test/webrtc_test_common.gyp:webrtc_test_common',
         'test/test.gyp:test_main',
@@ -114,9 +117,6 @@
         'video/full_stack.cc',
         'video/rampup_tests.cc',
         'video/rampup_tests.h',
-        # Needed to make the test binary pass since all tests are disabled on
-        # Android (webrtc:3770).
-        'test/testsupport/always_passing_unittest.cc',
       ],
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',

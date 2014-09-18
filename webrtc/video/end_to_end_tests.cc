@@ -34,12 +34,10 @@
 #include "webrtc/test/null_transport.h"
 #include "webrtc/test/rtp_rtcp_observer.h"
 #include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 #include "webrtc/test/testsupport/perf_test.h"
 #include "webrtc/video/transport_adapter.h"
 #include "webrtc/video_encoder.h"
-
-// Disabled on Android since all tests currently fail (webrtc:3770).
-#ifndef WEBRTC_ANDROID
 
 namespace webrtc {
 
@@ -580,7 +578,8 @@ TEST_F(EndToEndTest, DecodesRetransmittedFrameOverRtx) {
   DecodesRetransmittedFrame(true);
 }
 
-TEST_F(EndToEndTest, UsesFrameCallbacks) {
+// Disabled due to: https://code.google.com/p/webrtc/issues/detail?id=3770
+TEST_F(EndToEndTest, DISABLED_ON_ANDROID(UsesFrameCallbacks)) {
   static const int kWidth = 320;
   static const int kHeight = 240;
 
@@ -926,7 +925,9 @@ TEST_F(EndToEndTest, UsesRtcpReducedSizeMode) {
 // Another is set up to receive all three of these with different renderers.
 // Each renderer verifies that it receives the expected resolution, and as soon
 // as every renderer has received a frame, the test finishes.
-TEST_F(EndToEndTest, SendsAndReceivesMultipleStreams) {
+//
+// Disabled due to: https://code.google.com/p/webrtc/issues/detail?id=3770
+TEST_F(EndToEndTest, DISABLED_ON_ANDROID(SendsAndReceivesMultipleStreams)) {
   static const size_t kNumStreams = 3;
 
   class VideoOutputObserver : public VideoRenderer {
@@ -2076,5 +2077,3 @@ TEST_F(EndToEndTest, NewReceiveStreamsRespectNetworkDown) {
   DestroyStreams();
 }
 }  // namespace webrtc
-
-#endif // !WEBRTC_ANDROID

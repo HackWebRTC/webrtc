@@ -74,8 +74,6 @@ declare_args() {
     # Exclude internal ADM since Chromium uses its own IO handling.
     rtc_include_internal_audio_device = false
 
-    # Exclude internal video render module in Chromium build.
-    rtc_include_internal_video_render = false
   } else {
     # Settings for the standalone (not-in-Chromium) build.
 
@@ -86,7 +84,6 @@ declare_args() {
 
     rtc_include_pulse_audio = true
     rtc_include_internal_audio_device = true
-    rtc_include_internal_video_render = true
   }
 
   if (build_with_libjingle) {

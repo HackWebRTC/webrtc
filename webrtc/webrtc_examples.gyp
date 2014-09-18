@@ -16,6 +16,7 @@
           'dependencies': [
             '<(DEPTH)/third_party/icu/icu.gyp:icuuc',
             '<(webrtc_root)/modules/modules.gyp:video_capture_module_internal_impl',
+	    '<(webrtc_root)/modules/modules.gyp:video_render_module_internal_impl',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:field_trial_default',
             '<(webrtc_root)/test/test.gyp:channel_transport',
             '<(webrtc_root)/video_engine/video_engine.gyp:video_engine_core',

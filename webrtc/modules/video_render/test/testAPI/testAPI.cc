@@ -294,11 +294,6 @@ int TestSingleStream(VideoRender* renderModule) {
     VideoRenderCallback* renderCallback0 = renderModule->AddIncomingRenderStream(streamId0, 0, 0.0f, 0.0f, 1.0f, 1.0f);
     assert(renderCallback0 != NULL);
 
-#ifndef WEBRTC_INCLUDE_INTERNAL_VIDEO_RENDER
-    MyRenderCallback externalRender;
-    renderModule->AddExternalRenderCallback(streamId0, &externalRender);
-#endif
-
     printf("Start render\n");
     error = renderModule->StartRender(streamId0);
     if (error != 0) {
@@ -577,10 +572,6 @@ int TestExternalRender(VideoRender* renderModule) {
 }
 
 void RunVideoRenderTests(void* window, VideoRenderType windowType) {
-#ifndef WEBRTC_INCLUDE_INTERNAL_VIDEO_RENDER
-    windowType = kRenderExternal;
-#endif
-
     int myId = 12345;
 
     // Create the render module

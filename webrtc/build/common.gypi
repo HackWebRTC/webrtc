@@ -132,8 +132,6 @@
         # Exclude internal ADM since Chromium uses its own IO handling.
         'include_internal_audio_device%': 0,
 
-        # Exclude internal video render module in Chromium build.
-        'include_internal_video_render%': 0,
       }, {  # Settings for the standalone (not-in-Chromium) build.
         # TODO(andrew): For now, disable the Chrome plugins, which causes a
         # flood of chromium-style warnings. Investigate enabling them:
@@ -142,7 +140,6 @@
 
         'include_pulse_audio%': 1,
         'include_internal_audio_device%': 1,
-        'include_internal_video_render%': 1,
       }],
       ['build_with_libjingle==1', {
         'include_tests%': 0,

@@ -25,10 +25,6 @@
 
 namespace webrtc {
 
-#if defined(WEBRTC_ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
-int32_t SetRenderAndroidVM(void* javaVM);
-#endif
-
 // Class definitions
 class VideoRender: public Module
 {
