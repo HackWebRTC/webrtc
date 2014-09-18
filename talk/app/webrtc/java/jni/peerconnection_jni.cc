@@ -1291,9 +1291,6 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   int32_t ReleaseOnCodecThread();
   int32_t SetRatesOnCodecThread(uint32_t new_bit_rate, uint32_t frame_rate);
 
-  // Reset parameters valid between InitEncode() & Release() (see below).
-  void ResetParameters(JNIEnv* jni);
-
   // Helper accessors for MediaCodecVideoEncoder$OutputBufferInfo members.
   int GetOutputBufferInfoIndex(JNIEnv* jni, jobject j_output_buffer_info);
   jobject GetOutputBufferInfoBuffer(JNIEnv* jni, jobject j_output_buffer_info);
@@ -1339,6 +1336,7 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   int64_t current_timestamp_us_;  // Current frame timestamps in us.
   int frames_received_;  // Number of frames received by encoder.
   int frames_dropped_;  // Number of frames dropped by encoder.
+  int frames_resolution_update_;  // Number of frames with new codec resolution.
   int frames_in_queue_;  // Number of frames in encoder queue.
   int64_t start_time_ms_;  // Start time for statistics.
   int current_frames_;  // Number of frames in the current statistics interval.
@@ -1360,24 +1358,24 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
 };
 
 MediaCodecVideoEncoder::~MediaCodecVideoEncoder() {
-  // We depend on ResetParameters() to ensure no more callbacks to us after we
-  // are deleted, so assert it here.
-  CHECK(width_ == 0) << "Release() should have been called";
+  // Call Release() to ensure no more callbacks to us after we are deleted.
+  Release();
 }
 
 MediaCodecVideoEncoder::MediaCodecVideoEncoder(JNIEnv* jni)
-    : callback_(NULL),
-      codec_thread_(new Thread()),
-      j_media_codec_video_encoder_class_(
-          jni,
-          FindClass(jni, "org/webrtc/MediaCodecVideoEncoder")),
-      j_media_codec_video_encoder_(
-          jni,
-          jni->NewObject(*j_media_codec_video_encoder_class_,
-                         GetMethodID(jni,
-                                     *j_media_codec_video_encoder_class_,
-                                     "<init>",
-                                     "()V"))) {
+  : callback_(NULL),
+    inited_(false),
+    codec_thread_(new Thread()),
+    j_media_codec_video_encoder_class_(
+        jni,
+        FindClass(jni, "org/webrtc/MediaCodecVideoEncoder")),
+    j_media_codec_video_encoder_(
+        jni,
+        jni->NewObject(*j_media_codec_video_encoder_class_,
+                       GetMethodID(jni,
+                                   *j_media_codec_video_encoder_class_,
+                                   "<init>",
+                                   "()V"))) {
   ScopedLocalRefFrame local_ref_frame(jni);
   // It would be nice to avoid spinning up a new thread per MediaCodec, and
   // instead re-use e.g. the PeerConnectionFactory's |worker_thread_|, but bug
@@ -1388,8 +1386,6 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(JNIEnv* jni)
   // thread.
   codec_thread_->SetName("MediaCodecVideoEncoder", NULL);
   CHECK(codec_thread_->Start()) << "Failed to start MediaCodecVideoEncoder";
-
-  ResetParameters(jni);
 
   jclass j_output_buffer_info_class =
       FindClass(jni, "org/webrtc/MediaCodecVideoEncoder$OutputBufferInfo");
@@ -1486,6 +1482,9 @@ void MediaCodecVideoEncoder::OnMessage(rtc::Message* msg) {
   CHECK(!msg->message_id) << "Unexpected message!";
   CHECK(!msg->pdata) << "Unexpected message!";
   CheckOnCodecThread();
+  if (!inited_) {
+    return;
+  }
 
   // It would be nice to recover from a failure here if one happened, but it's
   // unclear how to signal such a failure to the app, so instead we stay silent
@@ -1503,8 +1502,8 @@ void MediaCodecVideoEncoder::ResetCodec() {
   ALOGE("ResetCodec");
   if (Release() != WEBRTC_VIDEO_CODEC_OK ||
       codec_thread_->Invoke<int32_t>(Bind(
-          &MediaCodecVideoEncoder::InitEncodeOnCodecThread, this, 0, 0, 0, 0))
-            != WEBRTC_VIDEO_CODEC_OK) {
+          &MediaCodecVideoEncoder::InitEncodeOnCodecThread, this,
+          width_, height_, 0, 0)) != WEBRTC_VIDEO_CODEC_OK) {
     // TODO(fischman): wouldn't it be nice if there was a way to gracefully
     // degrade to a SW encoder at this point?  There isn't one AFAICT :(
     // https://code.google.com/p/webrtc/issues/detail?id=2920
@@ -1516,12 +1515,13 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
   CheckOnCodecThread();
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
-  ALOGD("InitEncodeOnCodecThread %d x %d. Fps: %d", width, height, fps);
 
-  if (width == 0) {
-    width = width_;
-    height = height_;
+  ALOGD("InitEncodeOnCodecThread %d x %d. Bitrate: %d kbps. Fps: %d",
+      width, height, kbps, fps);
+  if (kbps == 0) {
     kbps = last_set_bitrate_kbps_;
+  }
+  if (fps == 0) {
     fps = last_set_fps_;
   }
 
@@ -1532,6 +1532,7 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
   yuv_size_ = width_ * height_ * 3 / 2;
   frames_received_ = 0;
   frames_dropped_ = 0;
+  frames_resolution_update_ = 0;
   frames_in_queue_ = 0;
   current_timestamp_us_ = 0;
   start_time_ms_ = GetCurrentTimeMs();
@@ -1543,6 +1544,7 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
   timestamps_.clear();
   render_times_ms_.clear();
   frame_rtc_times_ms_.clear();
+  drop_next_input_frame_ = false;
   // We enforce no extra stride/padding in the format creation step.
   jobjectArray input_buffers = reinterpret_cast<jobjectArray>(
       jni->CallObjectMethod(*j_media_codec_video_encoder_,
@@ -1595,6 +1597,9 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
 
+  if (!inited_) {
+    return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
+  }
   frames_received_++;
   if (!DeliverPendingOutputs(jni)) {
     ResetCodec();
@@ -1608,8 +1613,20 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   }
 
   CHECK(frame_types->size() == 1) << "Unexpected stream count";
-  CHECK(frame.width() == width_) << "Unexpected resolution change";
-  CHECK(frame.height() == height_) << "Unexpected resolution change";
+  if (frame.width() != width_ || frame.height() != height_) {
+    frames_resolution_update_++;
+    ALOGD("Unexpected frame resolution change from %d x %d to %d x %d",
+        width_, height_, frame.width(), frame.height());
+    if (frames_resolution_update_ > 3) {
+      // Reset codec if we received more than 3 frames with new resolution.
+      width_ = frame.width();
+      height_ = frame.height();
+      frames_resolution_update_ = 0;
+      ResetCodec();
+    }
+    return WEBRTC_VIDEO_CODEC_OK;
+  }
+  frames_resolution_update_ = 0;
 
   bool key_frame = frame_types->front() != webrtc::kDeltaFrame;
 
@@ -1691,8 +1708,9 @@ int32_t MediaCodecVideoEncoder::RegisterEncodeCompleteCallbackOnCodecThread(
 }
 
 int32_t MediaCodecVideoEncoder::ReleaseOnCodecThread() {
-  if (!inited_)
+  if (!inited_) {
     return WEBRTC_VIDEO_CODEC_OK;
+  }
   CheckOnCodecThread();
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ALOGD("EncoderRelease: Frames received: %d. Frames dropped: %d.",
@@ -1702,8 +1720,9 @@ int32_t MediaCodecVideoEncoder::ReleaseOnCodecThread() {
     jni->DeleteGlobalRef(input_buffers_[i]);
   input_buffers_.clear();
   jni->CallVoidMethod(*j_media_codec_video_encoder_, j_release_method_);
-  ResetParameters(jni);
   CHECK_EXCEPTION(jni);
+  rtc::MessageQueueManager::Clear(this);
+  inited_ = false;
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -1732,17 +1751,6 @@ int32_t MediaCodecVideoEncoder::SetRatesOnCodecThread(uint32_t new_bit_rate,
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
   return WEBRTC_VIDEO_CODEC_OK;
-}
-
-void MediaCodecVideoEncoder::ResetParameters(JNIEnv* jni) {
-  rtc::MessageQueueManager::Clear(this);
-  width_ = 0;
-  height_ = 0;
-  yuv_size_ = 0;
-  drop_next_input_frame_ = false;
-  inited_ = false;
-  CHECK(input_buffers_.empty())
-      << "ResetParameters called while holding input_buffers_!";
 }
 
 int MediaCodecVideoEncoder::GetOutputBufferInfoIndex(
@@ -2051,21 +2059,21 @@ int MediaCodecVideoDecoder::SetAndroidObjects(JNIEnv* jni,
   return 0;
 }
 
-MediaCodecVideoDecoder::MediaCodecVideoDecoder(JNIEnv* jni) :
-  key_frame_required_(true),
-  inited_(false),
-  use_surface_(HW_DECODER_USE_SURFACE),
-  codec_thread_(new Thread()),
-  j_media_codec_video_decoder_class_(
-      jni,
-      FindClass(jni, "org/webrtc/MediaCodecVideoDecoder")),
-  j_media_codec_video_decoder_(
-      jni,
-      jni->NewObject(*j_media_codec_video_decoder_class_,
-                     GetMethodID(jni,
-                                 *j_media_codec_video_decoder_class_,
-                                 "<init>",
-                                 "()V"))) {
+MediaCodecVideoDecoder::MediaCodecVideoDecoder(JNIEnv* jni)
+  : key_frame_required_(true),
+    inited_(false),
+    use_surface_(HW_DECODER_USE_SURFACE),
+    codec_thread_(new Thread()),
+    j_media_codec_video_decoder_class_(
+        jni,
+        FindClass(jni, "org/webrtc/MediaCodecVideoDecoder")),
+          j_media_codec_video_decoder_(
+              jni,
+              jni->NewObject(*j_media_codec_video_decoder_class_,
+                   GetMethodID(jni,
+                              *j_media_codec_video_decoder_class_,
+                              "<init>",
+                              "()V"))) {
   ScopedLocalRefFrame local_ref_frame(jni);
   codec_thread_->SetName("MediaCodecVideoDecoder", NULL);
   CHECK(codec_thread_->Start()) << "Failed to start MediaCodecVideoDecoder";
@@ -2123,6 +2131,7 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(JNIEnv* jni) :
 }
 
 MediaCodecVideoDecoder::~MediaCodecVideoDecoder() {
+  // Call Release() to ensure no more callbacks to us after we are deleted.
   Release();
 }
 
@@ -2233,6 +2242,7 @@ int32_t MediaCodecVideoDecoder::ReleaseOnCodecThread() {
   }
   jni->CallVoidMethod(*j_media_codec_video_decoder_, j_release_method_);
   CHECK_EXCEPTION(jni);
+  rtc::MessageQueueManager::Clear(this);
   inited_ = false;
   return WEBRTC_VIDEO_CODEC_OK;
 }
