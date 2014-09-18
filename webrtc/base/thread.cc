@@ -107,7 +107,7 @@ Thread *ThreadManager::WrapCurrentThread() {
   Thread* result = CurrentThread();
   if (NULL == result) {
     result = new Thread();
-    result->WrapCurrentWithThreadManager(this);
+    result->WrapCurrentWithThreadManager(this, true);
   }
   return result;
 }
@@ -188,6 +188,7 @@ bool Thread::SetName(const std::string& name, const void* obj) {
 bool Thread::SetPriority(ThreadPriority priority) {
 #if defined(WEBRTC_WIN)
   if (running()) {
+    ASSERT(thread_ != NULL);
     BOOL ret = FALSE;
     if (priority == PRIORITY_NORMAL) {
       ret = ::SetThreadPriority(thread_, THREAD_PRIORITY_NORMAL);
@@ -288,12 +289,35 @@ bool Thread::Start(Runnable* runnable) {
   return true;
 }
 
+bool Thread::WrapCurrent() {
+  return WrapCurrentWithThreadManager(ThreadManager::Instance(), true);
+}
+
+void Thread::UnwrapCurrent() {
+  // Clears the platform-specific thread-specific storage.
+  ThreadManager::Instance()->SetCurrentThread(NULL);
+#if defined(WEBRTC_WIN)
+  if (thread_ != NULL) {
+    if (!CloseHandle(thread_)) {
+      LOG_GLE(LS_ERROR) << "When unwrapping thread, failed to close handle.";
+    }
+    thread_ = NULL;
+  }
+#endif
+  running_.Reset();
+}
+
+void Thread::SafeWrapCurrent() {
+  WrapCurrentWithThreadManager(ThreadManager::Instance(), false);
+}
+
 void Thread::Join() {
   AssertBlockingIsAllowedOnCurrentThread();
 
   if (running()) {
     ASSERT(!IsCurrent());
 #if defined(WEBRTC_WIN)
+    ASSERT(thread_ != NULL);
     WaitForSingleObject(thread_, INFINITE);
     CloseHandle(thread_);
     thread_ = NULL;
@@ -526,42 +550,31 @@ bool Thread::ProcessMessages(int cmsLoop) {
   }
 }
 
-bool Thread::WrapCurrent() {
-  return WrapCurrentWithThreadManager(ThreadManager::Instance());
-}
-
-bool Thread::WrapCurrentWithThreadManager(ThreadManager* thread_manager) {
+bool Thread::WrapCurrentWithThreadManager(ThreadManager* thread_manager,
+                                          bool need_synchronize_access) {
   if (running())
     return false;
+
 #if defined(WEBRTC_WIN)
-  // We explicitly ask for no rights other than synchronization.
-  // This gives us the best chance of succeeding.
-  thread_ = OpenThread(SYNCHRONIZE, FALSE, GetCurrentThreadId());
-  if (!thread_) {
-    LOG_GLE(LS_ERROR) << "Unable to get handle to thread.";
-    return false;
+  if (need_synchronize_access) {
+    // We explicitly ask for no rights other than synchronization.
+    // This gives us the best chance of succeeding.
+    thread_ = OpenThread(SYNCHRONIZE, FALSE, GetCurrentThreadId());
+    if (!thread_) {
+      LOG_GLE(LS_ERROR) << "Unable to get handle to thread.";
+      return false;
+    }
+    thread_id_ = GetCurrentThreadId();
   }
-  thread_id_ = GetCurrentThreadId();
 #elif defined(WEBRTC_POSIX)
   thread_ = pthread_self();
 #endif
+
   owned_ = false;
   running_.Set();
   thread_manager->SetCurrentThread(this);
   return true;
 }
-
-void Thread::UnwrapCurrent() {
-  // Clears the platform-specific thread-specific storage.
-  ThreadManager::Instance()->SetCurrentThread(NULL);
-#if defined(WEBRTC_WIN)
-  if (!CloseHandle(thread_)) {
-    LOG_GLE(LS_ERROR) << "When unwrapping thread, failed to close handle.";
-  }
-#endif
-  running_.Reset();
-}
-
 
 AutoThread::AutoThread(SocketServer* ss) : Thread(ss) {
   if (!ThreadManager::Instance()->CurrentThread()) {

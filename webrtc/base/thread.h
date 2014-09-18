@@ -202,15 +202,6 @@ class Thread : public MessageQueue {
   }
 #endif
 
-  // This method should be called when thread is created using non standard
-  // method, like derived implementation of rtc::Thread and it can not be
-  // started by calling Start(). This will set started flag to true and
-  // owned to false. This must be called from the current thread.
-  // NOTE: These methods should be used by the derived classes only, added here
-  // only for testing.
-  bool WrapCurrent();
-  void UnwrapCurrent();
-
   // Expose private method running() for tests.
   //
   // DANGER: this is a terrible public API.  Most callers that might want to
@@ -220,6 +211,18 @@ class Thread : public MessageQueue {
   bool RunningForTest() { return running(); }
 
  protected:
+  // This method should be called when thread is created using non standard
+  // method, like derived implementation of rtc::Thread and it can not be
+  // started by calling Start(). This will set started flag to true and
+  // owned to false. This must be called from the current thread.
+  bool WrapCurrent();
+  void UnwrapCurrent();
+
+  // Same as WrapCurrent except that it never fails as it does not try to
+  // acquire the synchronization access of the thread. The caller should never
+  // call Stop() or Join() on this thread.
+  void SafeWrapCurrent();
+
   // Blocks the calling thread until this thread has terminated.
   void Join();
 
@@ -237,7 +240,10 @@ class Thread : public MessageQueue {
   // ThreadManager calls this instead WrapCurrent() because
   // ThreadManager::Instance() cannot be used while ThreadManager is
   // being created.
-  bool WrapCurrentWithThreadManager(ThreadManager* thread_manager);
+  // The method tries to get synchronization rights of the thread on Windows if
+  // |need_synchronize_access| is true.
+  bool WrapCurrentWithThreadManager(ThreadManager* thread_manager,
+                                    bool need_synchronize_access);
 
   // Return true if the thread was started and hasn't yet stopped.
   bool running() { return running_.Wait(0); }
