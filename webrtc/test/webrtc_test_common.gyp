@@ -157,39 +157,6 @@
         ],
       },
     },
-    {
-      # This target is only needed since the video render module builds platform
-      # specific code and depends on these libraries. This target should be
-      # removed as soon as the new video API doesn't depend on the module.
-      # TODO(mflodman) Remove this target as described above.
-      'target_name': 'webrtc_test_video_render_dependencies',
-      'type': 'static_library',
-      'direct_dependent_settings': {
-        'conditions': [
-          ['OS=="linux"', {
-            'libraries': [
-              '-lXext',
-              '-lX11',
-              '-lGL',
-            ],
-          }],
-          ['OS=="android"', {
-            'libraries' : [
-              '-lGLESv2', '-llog',
-            ],
-          }],
-          ['OS=="mac"', {
-            'xcode_settings' : {
-              'OTHER_LDFLAGS' : [
-                '-framework Cocoa',
-                '-framework OpenGL',
-                '-framework CoreVideo',
-              ],
-            },
-          }],
-        ],
-      },
-    },
   ],
   'conditions': [
     ['include_tests==1', {

@@ -97,7 +97,6 @@
         'test/metrics.gyp:metrics',
         'test/webrtc_test_common.gyp:webrtc_test_common',
         'test/test.gyp:test_main',
-        'test/webrtc_test_common.gyp:webrtc_test_video_render_dependencies',
         'webrtc',
       ],
       'conditions': [
@@ -124,7 +123,6 @@
         'modules/modules.gyp:rtp_rtcp',
         'test/webrtc_test_common.gyp:webrtc_test_common',
         'test/test.gyp:test_main',
-        'test/webrtc_test_common.gyp:webrtc_test_video_render_dependencies',
         'webrtc',
       ],
       'conditions': [
