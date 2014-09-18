@@ -41,6 +41,7 @@ source_set("video_render_impl") {
   ]
   deps = [
     ":video_render",
+    "../../system_wrappers",
   ]
 
   if (is_clang) {
@@ -63,6 +64,10 @@ source_set("video_render_internal_impl") {
   libs = []
   sources = [
     "video_render_internal_impl.cc",
+  ]
+  deps = [
+    ":video_render",
+    "../../system_wrappers",
   ]
 
   if (is_linux) {

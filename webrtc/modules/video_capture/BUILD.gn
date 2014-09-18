@@ -47,6 +47,7 @@ source_set("video_capture_impl") {
 
   deps = [
     ":video_capture",
+    "../../system_wrappers",
   ]
 
   if (is_clang) {
@@ -69,6 +70,7 @@ config("video_capture_internal_impl_config") {
 source_set("video_capture_internal_impl") {
   deps = [
     ":video_capture",
+    "../../system_wrappers",
   ]
 
   if (is_linux) {
