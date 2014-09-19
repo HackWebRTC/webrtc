@@ -2884,7 +2884,7 @@ bool WebRtcVideoMediaChannel::SetStartSendBandwidth(int bps) {
   }
 
   // On success, SetSendCodec() will reset |send_start_bitrate_| to |bps/1000|,
-  // by calling MaybeChangeBitrates.  That method will also clamp the
+  // by calling SanitizeBitrates.  That method will also clamp the
   // start bitrate between min and max, consistent with the override behavior
   // in SetMaxSendBandwidth.
   webrtc::VideoCodec new_codec = *send_codec_;
@@ -3659,7 +3659,7 @@ bool WebRtcVideoMediaChannel::SetSendCodec(
                  << "for ssrc: " << ssrc << ".";
   } else {
     StreamParams* send_params = send_channel->stream_params();
-    MaybeChangeBitrates(channel_id, &target_codec);
+    SanitizeBitrates(channel_id, &target_codec);
     webrtc::VideoCodec current_codec;
     if (!engine()->vie()->codec()->GetSendCodec(channel_id, current_codec)) {
       // Compare against existing configured send codec.
@@ -3946,7 +3946,7 @@ bool WebRtcVideoMediaChannel::MaybeResetVieSendCodec(
       vie_codec.codecSpecific.VP8.denoisingOn = enable_denoising;
       vie_codec.codecSpecific.VP8.frameDroppingOn = vp8_frame_dropping;
     }
-    MaybeChangeBitrates(channel_id, &vie_codec);
+    SanitizeBitrates(channel_id, &vie_codec);
 
     if (engine()->vie()->codec()->SetSendCodec(channel_id, vie_codec) != 0) {
       LOG_RTCERR1(SetSendCodec, channel_id);
@@ -3984,7 +3984,7 @@ bool WebRtcVideoMediaChannel::MaybeResetVieSendCodec(
   return true;
 }
 
-void WebRtcVideoMediaChannel::MaybeChangeBitrates(
+void WebRtcVideoMediaChannel::SanitizeBitrates(
   int channel_id, webrtc::VideoCodec* codec) {
   codec->minBitrate = GetBitrate(codec->minBitrate, kMinVideoBitrate);
   codec->startBitrate = GetBitrate(codec->startBitrate, kStartVideoBitrate);
