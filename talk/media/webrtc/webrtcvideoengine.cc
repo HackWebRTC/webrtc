@@ -4021,7 +4021,6 @@ void WebRtcVideoMediaChannel::SanitizeBitrates(
       codec->startBitrate = current_target_bitrate;
     }
   }
-
 }
 
 void WebRtcVideoMediaChannel::OnMessage(rtc::Message* msg) {
