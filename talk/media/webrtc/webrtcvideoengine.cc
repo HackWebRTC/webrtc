@@ -3928,6 +3928,7 @@ bool WebRtcVideoMediaChannel::MaybeResetVieSendCodec(
   int screencast_min_bitrate =
       options_.screencast_min_bitrate.GetWithDefaultIfUnset(0);
   bool leaky_bucket = options_.video_leaky_bucket.GetWithDefaultIfUnset(true);
+  StreamParams* send_params = send_channel->stream_params();
   bool reset_send_codec =
     target_width != cur_width || target_height != cur_height;
   if (vie_codec.codecType == webrtc::kVideoCodecVP8) {
@@ -4170,7 +4171,7 @@ bool WebRtcVideoMediaChannel::SetLimitedNumberOfSendSsrcs(
 
   std::vector<uint32> ssrcs = sim_group->ssrcs;
   for (size_t i = 0; i < ssrcs.size() && i < limit; ++i) {
-    if (!SetPrimaryAndRtxSsrcs(channel_id, i, ssrcs[i], sp)) {
+    if (!SetPrimaryAndRtxSsrcs(channel_id, static_cast<int>(i), ssrcs[i], sp)) {
       return false;
     }
   }
