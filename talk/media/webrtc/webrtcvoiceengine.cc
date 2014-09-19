@@ -1834,8 +1834,7 @@ WebRtcVoiceMediaChannel::WebRtcVoiceMediaChannel(WebRtcVoiceEngine *engine)
 WebRtcVoiceMediaChannel::~WebRtcVoiceMediaChannel() {
   LOG(LS_VERBOSE) << "WebRtcVoiceMediaChannel::~WebRtcVoiceMediaChannel "
                   << voe_channel();
-  ASSERT(shared_bwe_vie_ == NULL);
-  ASSERT(shared_bwe_vie_channel_ == -1);
+  SetupSharedBandwidthEstimation(NULL, -1);
 
   // Remove any remaining send streams, the default channel will be deleted
   // later.

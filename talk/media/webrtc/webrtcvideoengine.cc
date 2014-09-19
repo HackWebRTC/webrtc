@@ -1612,12 +1612,6 @@ WebRtcVideoMediaChannel::~WebRtcVideoMediaChannel() {
   const bool render = false;
   SetRender(render);
 
-  if (voice_channel_) {
-    WebRtcVoiceMediaChannel* voice_channel =
-        static_cast<WebRtcVoiceMediaChannel*>(voice_channel_);
-    voice_channel->SetupSharedBandwidthEstimation(NULL, -1);
-  }
-
   while (!send_channels_.empty()) {
     if (!DeleteSendChannel(send_channels_.begin()->first)) {
       LOG(LS_ERROR) << "Unable to delete channel with ssrc key "
