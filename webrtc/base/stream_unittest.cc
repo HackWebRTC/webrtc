@@ -10,6 +10,7 @@
 
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/stream.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace rtc {
 
@@ -434,7 +435,7 @@ TEST(FifoBufferTest, WriteOffsetAndReadOffset) {
   EXPECT_EQ(SR_BLOCK, buf.ReadOffset(out, 10, 16, NULL));
 }
 
-TEST(AsyncWriteTest, TestWrite) {
+TEST(AsyncWriteTest, DISABLED_ON_MAC(TestWrite)) {
   FifoBuffer* buf = new FifoBuffer(100);
   AsyncWriteStream stream(buf, Thread::Current());
   EXPECT_EQ(SS_OPEN, stream.GetState());

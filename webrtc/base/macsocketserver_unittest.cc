@@ -33,7 +33,7 @@ class WakeThread : public Thread {
 #ifndef CARBON_DEPRECATED
 
 // Test that MacCFSocketServer::Wait works as expected.
-TEST(MacCFSocketServerTest, TestWait) {
+TEST(MacCFSocketServerTest, DISABLED_TestWait) {
   MacCFSocketServer server;
   uint32 start = Time();
   server.Wait(1000, true);
@@ -41,7 +41,7 @@ TEST(MacCFSocketServerTest, TestWait) {
 }
 
 // Test that MacCFSocketServer::Wakeup works as expected.
-TEST(MacCFSocketServerTest, TestWakeup) {
+TEST(MacCFSocketServerTest, DISABLED_TestWakeup) {
   MacCFSocketServer server;
   WakeThread thread(&server);
   uint32 start = Time();
@@ -51,7 +51,7 @@ TEST(MacCFSocketServerTest, TestWakeup) {
 }
 
 // Test that MacCarbonSocketServer::Wait works as expected.
-TEST(MacCarbonSocketServerTest, TestWait) {
+TEST(MacCarbonSocketServerTest, DISABLED_TestWait) {
   MacCarbonSocketServer server;
   uint32 start = Time();
   server.Wait(1000, true);
@@ -59,7 +59,7 @@ TEST(MacCarbonSocketServerTest, TestWait) {
 }
 
 // Test that MacCarbonSocketServer::Wakeup works as expected.
-TEST(MacCarbonSocketServerTest, TestWakeup) {
+TEST(MacCarbonSocketServerTest, DISABLED_TestWakeup) {
   MacCarbonSocketServer server;
   WakeThread thread(&server);
   uint32 start = Time();
@@ -69,7 +69,7 @@ TEST(MacCarbonSocketServerTest, TestWakeup) {
 }
 
 // Test that MacCarbonAppSocketServer::Wait works as expected.
-TEST(MacCarbonAppSocketServerTest, TestWait) {
+TEST(MacCarbonAppSocketServerTest, DISABLED_TestWait) {
   MacCarbonAppSocketServer server;
   uint32 start = Time();
   server.Wait(1000, true);
@@ -77,7 +77,7 @@ TEST(MacCarbonAppSocketServerTest, TestWait) {
 }
 
 // Test that MacCarbonAppSocketServer::Wakeup works as expected.
-TEST(MacCarbonAppSocketServerTest, TestWakeup) {
+TEST(MacCarbonAppSocketServerTest, DISABLED_TestWakeup) {
   MacCarbonAppSocketServer server;
   WakeThread thread(&server);
   uint32 start = Time();
@@ -226,11 +226,11 @@ class MacCarbonAppAsyncSocketTest : public MacAsyncSocketTest {
   };
 };
 
-TEST_F(MacCarbonAppAsyncSocketTest, TestSocketServerWaitIPv4) {
+TEST_F(MacCarbonAppAsyncSocketTest, DISABLED_TestSocketServerWaitIPv4) {
   SocketTest::TestSocketServerWaitIPv4();
 }
 
-TEST_F(MacCarbonAppAsyncSocketTest, TestSocketServerWaitIPv6) {
+TEST_F(MacCarbonAppAsyncSocketTest, DISABLED_TestSocketServerWaitIPv6) {
   SocketTest::TestSocketServerWaitIPv6();
 }
 #endif

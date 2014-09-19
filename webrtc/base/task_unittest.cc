@@ -289,7 +289,7 @@ class TaskTest : public sigslot::has_slots<> {
   TaskInfo happy_[HAPPY_TASK_COUNT];
 };
 
-TEST(start_task_test, Timeout) {
+TEST(start_task_test, DISABLED_ON_MAC(Timeout)) {
   TaskTest task_test;
   task_test.Start();
   task_test.check_passed();
@@ -480,7 +480,7 @@ class TimeoutChangeTest : public sigslot::has_slots<> {
   DISALLOW_EVIL_CONSTRUCTORS(TimeoutChangeTest);
 };
 
-TEST(start_task_test, TimeoutChange) {
+TEST(start_task_test, DISABLED_ON_MAC(TimeoutChange)) {
   TimeoutChangeTest timeout_change_test;
   timeout_change_test.Start();
 }

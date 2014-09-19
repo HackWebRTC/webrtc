@@ -127,7 +127,7 @@ class AsyncHttpRequestTest : public testing::Test,
   TestHttpServer server_;
 };
 
-TEST_F(AsyncHttpRequestTest, TestGetSuccess) {
+TEST_F(AsyncHttpRequestTest, DISABLED_ON_MAC(TestGetSuccess)) {
   AsyncHttpRequest* req = CreateGetRequest(
       kServerHostnameAddr.hostname(), server().address().port(),
       kServerGetPath);

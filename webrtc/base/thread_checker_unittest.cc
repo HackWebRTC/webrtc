@@ -105,7 +105,7 @@ class DeleteThreadCheckerClassOnThread : public Thread {
 
 }  // namespace
 
-TEST(ThreadCheckerTest, CallsAllowedOnSameThread) {
+TEST(ThreadCheckerTest, DISABLED_ON_MAC(CallsAllowedOnSameThread)) {
   scoped_ptr<ThreadCheckerClass> thread_checker_class(
       new ThreadCheckerClass);
 
