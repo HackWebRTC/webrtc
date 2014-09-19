@@ -310,6 +310,7 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
   virtual int SendPacket(int channel, const void* data, int len);
   virtual int SendRTCPPacket(int channel, const void* data, int len);
 
+  virtual void LogSendCodecChange(const std::string& reason);
   bool SetPrimaryAndRtxSsrcs(
       int channel_id, int idx, uint32 primary_ssrc,
       const StreamParams& send_params);
@@ -348,7 +349,6 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
   bool SetSendCodec(const webrtc::VideoCodec& codec);
   bool SetSendCodec(WebRtcVideoChannelSendInfo* send_channel,
                     const webrtc::VideoCodec& codec);
-  void LogSendCodecChange(const std::string& reason);
   // Prepares the channel with channel id |info->channel_id()| to receive all
   // codecs in |receive_codecs_| and start receive packets.
   bool SetReceiveCodecs(WebRtcVideoChannelRecvInfo* info);
