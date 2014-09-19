@@ -10,6 +10,7 @@
 
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/nullsocketserver.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace rtc {
 
@@ -27,7 +28,7 @@ class NullSocketServerTest
   NullSocketServer ss_;
 };
 
-TEST_F(NullSocketServerTest, WaitAndSet) {
+TEST_F(NullSocketServerTest, DISABLED_ON_MAC(WaitAndSet)) {
   Thread thread;
   EXPECT_TRUE(thread.Start());
   thread.Post(this, 0);

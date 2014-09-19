@@ -21,6 +21,7 @@
 #include "webrtc/base/sslidentity.h"
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/base/stream.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 static const int kBlockSize = 4096;
 static const char kAES_CM_HMAC_SHA1_80[] = "AES_CM_128_HMAC_SHA1_80";
@@ -750,7 +751,7 @@ TEST_F(SSLStreamAdapterTestDTLS,
 };
 
 // Test a handshake with small MTU
-TEST_F(SSLStreamAdapterTestDTLS, TestDTLSConnectWithSmallMtu) {
+TEST_F(SSLStreamAdapterTestDTLS, DISABLED_ON_MAC(TestDTLSConnectWithSmallMtu)) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetMtu(700);
   SetHandshakeWait(20000);

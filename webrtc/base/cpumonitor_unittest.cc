@@ -23,6 +23,7 @@
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/base/timing.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace rtc {
 
@@ -337,7 +338,7 @@ TEST(CpuMonitorTest, TestGetSystemLoadForceFallback) {
 #endif
 
 // Tests both process and system functions in use at same time.
-TEST(CpuMonitorTest, TestGetBothLoad) {
+TEST(CpuMonitorTest, DISABLED_ON_MAC(TestGetBothLoad)) {
   TestCpuSampler(true, true, false);
 }
 

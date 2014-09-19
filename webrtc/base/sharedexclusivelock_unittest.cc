@@ -16,6 +16,7 @@
 #include "webrtc/base/sharedexclusivelock.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace rtc {
 
@@ -157,7 +158,7 @@ TEST_F(SharedExclusiveLockTest, DISABLED_TestSharedShared) {
   EXPECT_LE(reader1.waiting_time_in_ms(), kNoWaitThresholdInMs);
 }
 
-TEST_F(SharedExclusiveLockTest, TestSharedExclusive) {
+TEST_F(SharedExclusiveLockTest, DISABLED_ON_MAC(TestSharedExclusive)) {
   bool done;
   WriteTask writer(shared_exclusive_lock_.get(), &value_, &done);
 
@@ -176,7 +177,7 @@ TEST_F(SharedExclusiveLockTest, TestSharedExclusive) {
   EXPECT_GE(writer.waiting_time_in_ms(), kWaitThresholdInMs);
 }
 
-TEST_F(SharedExclusiveLockTest, TestExclusiveShared) {
+TEST_F(SharedExclusiveLockTest, DISABLED_ON_MAC(TestExclusiveShared)) {
   int value;
   bool done;
   ReadTask reader(shared_exclusive_lock_.get(), &value_, &done);
@@ -196,7 +197,7 @@ TEST_F(SharedExclusiveLockTest, TestExclusiveShared) {
   EXPECT_GE(reader.waiting_time_in_ms(), kWaitThresholdInMs);
 }
 
-TEST_F(SharedExclusiveLockTest, TestExclusiveExclusive) {
+TEST_F(SharedExclusiveLockTest, DISABLED_ON_MAC(TestExclusiveExclusive)) {
   bool done;
   WriteTask writer(shared_exclusive_lock_.get(), &value_, &done);
 

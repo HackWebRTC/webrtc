@@ -14,6 +14,7 @@
 #include "webrtc/base/pathutils.h"
 #include "webrtc/base/stream.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace rtc {
 
@@ -82,7 +83,7 @@ class LogThread : public Thread {
   }
 };
 
-TEST(LogTest, MultipleThreads) {
+TEST(LogTest, DISABLED_ON_MAC(MultipleThreads)) {
   int sev = LogMessage::GetLogToStream(NULL);
 
   LogThread thread1, thread2, thread3;

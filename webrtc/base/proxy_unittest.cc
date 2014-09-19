@@ -17,6 +17,7 @@
 #include "webrtc/base/testclient.h"
 #include "webrtc/base/testechoserver.h"
 #include "webrtc/base/virtualsocketserver.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 using rtc::Socket;
 using rtc::Thread;
@@ -74,7 +75,7 @@ class ProxyTest : public testing::Test {
 };
 
 // Tests whether we can use a SOCKS5 proxy to connect to a server.
-TEST_F(ProxyTest, TestSocks5Connect) {
+TEST_F(ProxyTest, DISABLED_ON_MAC(TestSocks5Connect)) {
   rtc::AsyncSocket* socket =
       ss()->CreateAsyncSocket(kSocksProxyIntAddr.family(), SOCK_STREAM);
   rtc::AsyncSocksProxySocket* proxy_socket =
@@ -118,7 +119,7 @@ TEST_F(ProxyTest, TestHttpsConnect) {
 */
 
 // Tests whether we can autodetect a SOCKS5 proxy.
-TEST_F(ProxyTest, TestAutoDetectSocks5) {
+TEST_F(ProxyTest, DISABLED_ON_MAC(TestAutoDetectSocks5)) {
   EXPECT_EQ(rtc::PROXY_SOCKS5, DetectProxyType(kSocksProxyIntAddr));
 }
 
@@ -130,6 +131,6 @@ TEST_F(ProxyTest, TestAutoDetectHttps) {
 */
 
 // Tests whether we fail properly for no proxy.
-TEST_F(ProxyTest, TestAutoDetectBogus) {
+TEST_F(ProxyTest, DISABLED_ON_MAC(TestAutoDetectBogus)) {
   EXPECT_EQ(rtc::PROXY_UNKNOWN, DetectProxyType(kBogusProxyIntAddr));
 }

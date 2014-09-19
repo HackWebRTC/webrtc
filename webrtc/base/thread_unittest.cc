@@ -15,6 +15,7 @@
 #include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 #if defined(WEBRTC_WIN)
 #include <comdef.h>  // NOLINT
@@ -198,7 +199,7 @@ TEST(ThreadTest, DISABLED_Main) {
 
 // Test that setting thread names doesn't cause a malfunction.
 // There's no easy way to verify the name was set properly at this time.
-TEST(ThreadTest, Names) {
+TEST(ThreadTest, DISABLED_ON_MAC(Names)) {
   // Default name
   Thread *thread;
   thread = new Thread();
@@ -221,7 +222,7 @@ TEST(ThreadTest, Names) {
 
 // Test that setting thread priorities doesn't cause a malfunction.
 // There's no easy way to verify the priority was set properly at this time.
-TEST(ThreadTest, Priorities) {
+TEST(ThreadTest, DISABLED_ON_MAC(Priorities)) {
   Thread *thread;
   thread = new Thread();
   EXPECT_TRUE(thread->SetPriority(PRIORITY_HIGH));
@@ -246,7 +247,7 @@ TEST(ThreadTest, Priorities) {
 
 }
 
-TEST(ThreadTest, Wrap) {
+TEST(ThreadTest, DISABLED_ON_MAC(Wrap)) {
   CustomThread* cthread = new CustomThread();
   EXPECT_TRUE(cthread->WrapCurrent());
   EXPECT_TRUE(cthread->RunningForTest());
@@ -256,7 +257,7 @@ TEST(ThreadTest, Wrap) {
   delete cthread;
 }
 
-TEST(ThreadTest, Invoke) {
+TEST(ThreadTest, DISABLED_ON_MAC(Invoke)) {
   // Create and start the thread.
   Thread thread;
   thread.Start();
@@ -304,7 +305,7 @@ class AsyncInvokeTest : public testing::Test {
   Thread* expected_thread_;
 };
 
-TEST_F(AsyncInvokeTest, FireAndForget) {
+TEST_F(AsyncInvokeTest, DISABLED_ON_MAC(FireAndForget)) {
   AsyncInvoker invoker;
   // Create and start the thread.
   Thread thread;
@@ -315,7 +316,7 @@ TEST_F(AsyncInvokeTest, FireAndForget) {
   EXPECT_TRUE_WAIT(called, kWaitTimeout);
 }
 
-TEST_F(AsyncInvokeTest, WithCallback) {
+TEST_F(AsyncInvokeTest, DISABLED_ON_MAC(WithCallback)) {
   AsyncInvoker invoker;
   // Create and start the thread.
   Thread thread;
@@ -328,7 +329,7 @@ TEST_F(AsyncInvokeTest, WithCallback) {
   EXPECT_EQ_WAIT(42, int_value_, kWaitTimeout);
 }
 
-TEST_F(AsyncInvokeTest, CancelInvoker) {
+TEST_F(AsyncInvokeTest, DISABLED_ON_MAC(CancelInvoker)) {
   // Create and start the thread.
   Thread thread;
   thread.Start();
@@ -344,7 +345,7 @@ TEST_F(AsyncInvokeTest, CancelInvoker) {
   EXPECT_EQ(0, int_value_);
 }
 
-TEST_F(AsyncInvokeTest, CancelCallingThread) {
+TEST_F(AsyncInvokeTest, DISABLED_ON_MAC(CancelCallingThread)) {
   AsyncInvoker invoker;
   { // Create and start the thread.
     Thread thread;
@@ -361,7 +362,7 @@ TEST_F(AsyncInvokeTest, CancelCallingThread) {
   EXPECT_EQ(0, int_value_);
 }
 
-TEST_F(AsyncInvokeTest, KillInvokerBeforeExecute) {
+TEST_F(AsyncInvokeTest, DISABLED_ON_MAC(KillInvokerBeforeExecute)) {
   Thread thread;
   thread.Start();
   {

@@ -11,6 +11,7 @@
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/signalthread.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 using namespace rtc;
 
@@ -133,7 +134,7 @@ class OwnerThread : public Thread, public sigslot::has_slots<> {
 // Test for when the main thread goes away while the
 // signal thread is still working.  This may happen
 // when shutting down the process.
-TEST_F(SignalThreadTest, OwnerThreadGoesAway) {
+TEST_F(SignalThreadTest, DISABLED_ON_MAC(OwnerThreadGoesAway)) {
   {
     scoped_ptr<OwnerThread> owner(new OwnerThread(this));
     main_thread_ = owner.get();
@@ -156,7 +157,7 @@ TEST_F(SignalThreadTest, OwnerThreadGoesAway) {
   EXPECT_EQ(stopped, thread_stopped_); \
   EXPECT_EQ(deleted, thread_deleted_);
 
-TEST_F(SignalThreadTest, ThreadFinishes) {
+TEST_F(SignalThreadTest, DISABLED_ON_MAC(ThreadFinishes)) {
   thread_->Start();
   EXPECT_STATE(1, 0, 0, 0, 0);
   Thread::SleepMs(500);
@@ -165,7 +166,7 @@ TEST_F(SignalThreadTest, ThreadFinishes) {
   EXPECT_STATE(1, 1, 1, 0, 1);
 }
 
-TEST_F(SignalThreadTest, ReleasedThreadFinishes) {
+TEST_F(SignalThreadTest, DISABLED_ON_MAC(ReleasedThreadFinishes)) {
   thread_->Start();
   EXPECT_STATE(1, 0, 0, 0, 0);
   thread_->Release();
@@ -177,7 +178,7 @@ TEST_F(SignalThreadTest, ReleasedThreadFinishes) {
   EXPECT_STATE(1, 1, 1, 0, 1);
 }
 
-TEST_F(SignalThreadTest, DestroyedThreadCleansUp) {
+TEST_F(SignalThreadTest, DISABLED_ON_MAC(DestroyedThreadCleansUp)) {
   thread_->Start();
   EXPECT_STATE(1, 0, 0, 0, 0);
   thread_->Destroy(true);
@@ -186,7 +187,7 @@ TEST_F(SignalThreadTest, DestroyedThreadCleansUp) {
   EXPECT_STATE(1, 0, 0, 1, 1);
 }
 
-TEST_F(SignalThreadTest, DeferredDestroyedThreadCleansUp) {
+TEST_F(SignalThreadTest, DISABLED_ON_MAC(DeferredDestroyedThreadCleansUp)) {
   thread_->Start();
   EXPECT_STATE(1, 0, 0, 0, 0);
   thread_->Destroy(false);

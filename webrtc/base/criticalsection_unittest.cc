@@ -16,6 +16,7 @@
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/scopedptrcollection.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace rtc {
 
@@ -119,7 +120,7 @@ TEST(AtomicOpsTest, Simple) {
   EXPECT_EQ(0, value);
 }
 
-TEST(AtomicOpsTest, Increment) {
+TEST(AtomicOpsTest, DISABLED_ON_MAC(Increment)) {
   // Create and start lots of threads.
   AtomicOpRunner<IncrementOp> runner(0);
   ScopedPtrCollection<Thread> threads;
@@ -131,7 +132,7 @@ TEST(AtomicOpsTest, Increment) {
   EXPECT_EQ(kOperationsToRun * kNumThreads, runner.value());
 }
 
-TEST(AtomicOpsTest, Decrement) {
+TEST(AtomicOpsTest, DISABLED_ON_MAC(Decrement)) {
   // Create and start lots of threads.
   AtomicOpRunner<DecrementOp> runner(kOperationsToRun * kNumThreads);
   ScopedPtrCollection<Thread> threads;

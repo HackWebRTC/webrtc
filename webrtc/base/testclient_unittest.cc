@@ -14,6 +14,7 @@
 #include "webrtc/base/testclient.h"
 #include "webrtc/base/testechoserver.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 using namespace rtc;
 
@@ -51,11 +52,11 @@ void TestTcpInternal(const SocketAddress& loopback) {
 }
 
 // Tests whether the TestClient can send UDP to itself.
-TEST(TestClientTest, TestUdpIPv4) {
+TEST(TestClientTest, DISABLED_ON_MAC(TestUdpIPv4)) {
   TestUdpInternal(SocketAddress("127.0.0.1", 0));
 }
 
-TEST(TestClientTest, TestUdpIPv6) {
+TEST(TestClientTest, DISABLED_ON_MAC(TestUdpIPv6)) {
   if (HasIPv6Enabled()) {
     TestUdpInternal(SocketAddress("::1", 0));
   } else {
@@ -64,11 +65,11 @@ TEST(TestClientTest, TestUdpIPv6) {
 }
 
 // Tests whether the TestClient can connect to a server and exchange data.
-TEST(TestClientTest, TestTcpIPv4) {
+TEST(TestClientTest, DISABLED_ON_MAC(TestTcpIPv4)) {
   TestTcpInternal(SocketAddress("127.0.0.1", 0));
 }
 
-TEST(TestClientTest, TestTcpIPv6) {
+TEST(TestClientTest, DISABLED_ON_MAC(TestTcpIPv6)) {
   if (HasIPv6Enabled()) {
     TestTcpInternal(SocketAddress("::1", 0));
   } else {

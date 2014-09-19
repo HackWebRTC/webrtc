@@ -17,6 +17,7 @@
 #include "webrtc/base/pathutils.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace rtc {
 
@@ -76,7 +77,7 @@ TEST_F(FileLockTest, TestLockX2) {
   EXPECT_TRUE(lock2.get() == NULL);
 }
 
-TEST_F(FileLockTest, TestThreadedLock) {
+TEST_F(FileLockTest, DISABLED_ON_MAC(TestThreadedLock)) {
   scoped_ptr<FileLock> lock(FileLock::TryLock(temp_file_.pathname()));
   EXPECT_TRUE(lock.get() != NULL);
 

@@ -15,6 +15,7 @@
 #include "webrtc/base/thread.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 // Duplicated from base/threading/thread_checker.h so that we can be
 // good citizens there and undef the macro.
@@ -115,7 +116,7 @@ TEST(ThreadCheckerTest, CallsAllowedOnSameThread) {
   thread_checker_class.reset();
 }
 
-TEST(ThreadCheckerTest, DestructorAllowedOnDifferentThread) {
+TEST(ThreadCheckerTest, DISABLED_ON_MAC(DestructorAllowedOnDifferentThread)) {
   scoped_ptr<ThreadCheckerClass> thread_checker_class(
       new ThreadCheckerClass);
 
@@ -128,7 +129,7 @@ TEST(ThreadCheckerTest, DestructorAllowedOnDifferentThread) {
   delete_on_thread.Join();
 }
 
-TEST(ThreadCheckerTest, DetachFromThread) {
+TEST(ThreadCheckerTest, DISABLED_ON_MAC(DetachFromThread)) {
   scoped_ptr<ThreadCheckerClass> thread_checker_class(
       new ThreadCheckerClass);
 

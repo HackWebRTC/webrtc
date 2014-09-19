@@ -14,6 +14,7 @@
 #include "webrtc/base/httpserver.h"
 #include "webrtc/base/socketstream.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace rtc {
 
@@ -143,7 +144,7 @@ TEST_F(AsyncHttpRequestTest, TestGetSuccess) {
   req->Release();
 }
 
-TEST_F(AsyncHttpRequestTest, TestGetNotFound) {
+TEST_F(AsyncHttpRequestTest, DISABLED_ON_MAC(TestGetNotFound)) {
   AsyncHttpRequest* req = CreateGetRequest(
       kServerHostnameAddr.hostname(), server().address().port(),
       "/bad");
@@ -157,7 +158,7 @@ TEST_F(AsyncHttpRequestTest, TestGetNotFound) {
   req->Release();
 }
 
-TEST_F(AsyncHttpRequestTest, TestGetToNonServer) {
+TEST_F(AsyncHttpRequestTest, DISABLED_ON_MAC(TestGetToNonServer)) {
   AsyncHttpRequest* req = CreateGetRequest(
       "127.0.0.1", server().address().port(),
       kServerGetPath);
@@ -187,7 +188,7 @@ TEST_F(AsyncHttpRequestTest, DISABLED_TestGetToInvalidHostname) {
   req->Release();
 }
 
-TEST_F(AsyncHttpRequestTest, TestPostSuccess) {
+TEST_F(AsyncHttpRequestTest, DISABLED_ON_MAC(TestPostSuccess)) {
   AsyncHttpRequest* req = CreatePostRequest(
       kServerHostnameAddr.hostname(), server().address().port(),
       kServerPostPath, "text/plain", new MemoryStream("abcd1234"));
@@ -203,7 +204,7 @@ TEST_F(AsyncHttpRequestTest, TestPostSuccess) {
 }
 
 // Ensure that we shut down properly even if work is outstanding.
-TEST_F(AsyncHttpRequestTest, TestCancel) {
+TEST_F(AsyncHttpRequestTest, DISABLED_ON_MAC(TestCancel)) {
   AsyncHttpRequest* req = CreateGetRequest(
       kServerHostnameAddr.hostname(), server().address().port(),
       kServerGetPath);
@@ -211,7 +212,7 @@ TEST_F(AsyncHttpRequestTest, TestCancel) {
   req->Destroy(true);
 }
 
-TEST_F(AsyncHttpRequestTest, TestGetSuccessDelay) {
+TEST_F(AsyncHttpRequestTest, DISABLED_ON_MAC(TestGetSuccessDelay)) {
   AsyncHttpRequest* req = CreateGetRequest(
       kServerHostnameAddr.hostname(), server().address().port(),
       kServerGetPath);
