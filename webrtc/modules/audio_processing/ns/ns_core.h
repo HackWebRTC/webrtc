@@ -59,6 +59,7 @@ typedef struct NSinst_t_ {
   int             magnLen;
   int             aggrMode;
   const float*    window;
+  float           analyzeBuf[ANAL_BLOCKL_MAX];
   float           dataBuf[ANAL_BLOCKL_MAX];
   float           syntBuf[ANAL_BLOCKL_MAX];
   float           outBuf[3 * BLOCKL_MAX];
@@ -102,7 +103,7 @@ typedef struct NSinst_t_ {
   int             histSpecFlat[HIST_PAR_EST];
   int             histSpecDiff[HIST_PAR_EST];
   //quantities for high band estimate
-  float           speechProbHB[HALF_ANAL_BLOCKL];     //final speech/noise prob: prior + LRT
+  float           speechProb[HALF_ANAL_BLOCKL];     //final speech/noise prob: prior + LRT
   float           dataBufHB[ANAL_BLOCKL_MAX];         //buffering data for HB
 
 } NSinst_t;
@@ -153,7 +154,7 @@ int WebRtcNs_set_policy_core(NSinst_t* inst, int mode);
  *
  * Input:
  *      - inst          : Instance that should be initialized
- *      - inFrame       : Input speech frame for lower band
+ *      - speechFrame   : Input speech frame for lower band
  *
  * Output:
  *      - inst          : Updated instance
@@ -161,7 +162,7 @@ int WebRtcNs_set_policy_core(NSinst_t* inst, int mode);
  * Return value         :  0 - OK
  *                        -1 - Error
  */
-int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* inFrame);
+int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame);
 
 /****************************************************************************
  * WebRtcNs_ProcessCore

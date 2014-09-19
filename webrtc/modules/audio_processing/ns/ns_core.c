@@ -113,6 +113,7 @@ int WebRtcNs_InitCore(NSinst_t* inst, uint32_t fs) {
   memset(inst->dataBuf, 0, sizeof(float) * ANAL_BLOCKL_MAX);
   WebRtc_rdft(inst->anaLen, 1, inst->dataBuf, inst->ip, inst->wfft);
 
+  memset(inst->analyzeBuf, 0, sizeof(float) * ANAL_BLOCKL_MAX);
   memset(inst->dataBuf, 0, sizeof(float) * ANAL_BLOCKL_MAX);
   memset(inst->syntBuf, 0, sizeof(float) * ANAL_BLOCKL_MAX);
 
@@ -147,7 +148,7 @@ int WebRtcNs_InitCore(NSinst_t* inst, uint32_t fs) {
     inst->noisePrev[i]     = (float)0.0; //previous noise-spectrum
     inst->logLrtTimeAvg[i] = LRT_FEATURE_THR; //smooth LR ratio (same as threshold)
     inst->magnAvgPause[i]  = (float)0.0; //conservative noise spectrum estimate
-    inst->speechProbHB[i]  = (float)0.0; //for estimation of HB in second pass
+    inst->speechProb[i]  = (float)0.0; //for estimation of HB in second pass
     inst->initMagnEst[i]   = (float)0.0; //initial average mag spectrum
   }
 
@@ -714,34 +715,20 @@ void WebRtcNs_SpeechNoiseProb(NSinst_t* inst, float* probSpeechFinal, float* snr
   }
 }
 
-int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* inFrame) {
-  return 0;
-}
-
-int WebRtcNs_ProcessCore(NSinst_t* inst,
-                         float* speechFrame,
-                         float* speechFrameHB,
-                         float* outFrame,
-                         float* outFrameHB) {
-  // main routine for noise reduction
-
-  int     flagHB = 0;
+int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame) {
   int     i;
   const int kStartBand = 5; // Skip first frequency bins during estimation.
   int     updateParsFlag;
-
-  float   energy1, energy2, gain, factor, factor1, factor2;
+  float   energy;
   float   signalEnergy, sumMagn;
   float   snrPrior, currentEstimateStsa;
   float   tmpFloat1, tmpFloat2, tmpFloat3, probSpeech, probNonSpeech;
   float   gammaNoiseTmp, gammaNoiseOld;
   float   noiseUpdateTmp, fTmp;
-  float   fout[BLOCKL_MAX];
   float   winData[ANAL_BLOCKL_MAX];
   float   magn[HALF_ANAL_BLOCKL], noise[HALF_ANAL_BLOCKL];
   float   theFilter[HALF_ANAL_BLOCKL], theFilterTmp[HALF_ANAL_BLOCKL];
   float   snrLocPost[HALF_ANAL_BLOCKL], snrLocPrior[HALF_ANAL_BLOCKL];
-  float   probSpeechFinal[HALF_ANAL_BLOCKL] = { 0 };
   float   previousEstimateStsa[HALF_ANAL_BLOCKL];
   float   real[ANAL_BLOCKL_MAX], imag[HALF_ANAL_BLOCKL];
   // Variables during startup
@@ -753,56 +740,29 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
   float   parametric_exp = 0.0;
   float   parametric_num = 0.0;
 
-  // SWB variables
-  int     deltaBweHB = 1;
-  int     deltaGainHB = 1;
-  float   decayBweHB = 1.0;
-  float   gainMapParHB = 1.0;
-  float   gainTimeDomainHB = 1.0;
-  float   avgProbSpeechHB, avgProbSpeechHBTmp, avgFilterGainHB, gainModHB;
-
   // Check that initiation has been done
   if (inst->initFlag != 1) {
     return (-1);
-  }
-  // Check for valid pointers based on sampling rate
-  if (inst->fs == 32000) {
-    if (speechFrameHB == NULL) {
-      return -1;
-    }
-    flagHB = 1;
-    // range for averaging low band quantities for H band gain
-    deltaBweHB = (int)inst->magnLen / 4;
-    deltaGainHB = deltaBweHB;
   }
   //
   updateParsFlag = inst->modelUpdatePars[0];
   //
 
   // update analysis buffer for L band
-  memcpy(inst->dataBuf, inst->dataBuf + inst->blockLen10ms,
+  memcpy(inst->analyzeBuf, inst->analyzeBuf + inst->blockLen10ms,
          sizeof(float) * (inst->anaLen - inst->blockLen10ms));
-  memcpy(inst->dataBuf + inst->anaLen - inst->blockLen10ms, speechFrame,
+  memcpy(inst->analyzeBuf + inst->anaLen - inst->blockLen10ms, speechFrame,
          sizeof(float) * inst->blockLen10ms);
-
-  if (flagHB == 1) {
-    // update analysis buffer for H band
-    memcpy(inst->dataBufHB, inst->dataBufHB + inst->blockLen10ms,
-           sizeof(float) * (inst->anaLen - inst->blockLen10ms));
-    memcpy(inst->dataBufHB + inst->anaLen - inst->blockLen10ms, speechFrameHB,
-           sizeof(float) * inst->blockLen10ms);
-  }
 
   // check if processing needed
   if (inst->outLen == 0) {
     // windowing
-    energy1 = 0.0;
+    energy = 0.0;
     for (i = 0; i < inst->anaLen; i++) {
-      winData[i] = inst->window[i] * inst->dataBuf[i];
-      energy1 += winData[i] * winData[i];
+      winData[i] = inst->window[i] * inst->analyzeBuf[i];
+      energy += winData[i] * winData[i];
     }
-    if (energy1 == 0.0) {
-      // synthesize the special case of zero input
+    if (energy == 0.0) {
       // we want to avoid updating statistics in this case:
       // Updating feature statistics when we have zeros only will cause thresholds to
       // move towards zero signal situations. This in turn has the effect that once the
@@ -810,34 +770,6 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
       // and there is no noise suppression effect. Depending on the duration of the
       // inactive signal it takes a considerable amount of time for the system to learn
       // what is noise and what is speech.
-
-      // read out fully processed segment
-      for (i = inst->windShift; i < inst->blockLen + inst->windShift; i++) {
-        fout[i - inst->windShift] = inst->syntBuf[i];
-      }
-      // update synthesis buffer
-      memcpy(inst->syntBuf, inst->syntBuf + inst->blockLen,
-             sizeof(float) * (inst->anaLen - inst->blockLen));
-      memset(inst->syntBuf + inst->anaLen - inst->blockLen, 0,
-             sizeof(float) * inst->blockLen);
-
-      // out buffer
-      inst->outLen = inst->blockLen - inst->blockLen10ms;
-      if (inst->blockLen > inst->blockLen10ms) {
-        for (i = 0; i < inst->outLen; i++) {
-          inst->outBuf[i] = fout[i + inst->blockLen10ms];
-        }
-      }
-      for (i = 0; i < inst->blockLen10ms; ++i)
-        outFrame[i] = WEBRTC_SPL_SAT(
-            WEBRTC_SPL_WORD16_MAX, fout[i], WEBRTC_SPL_WORD16_MIN);
-
-      // for time-domain gain of HB
-      if (flagHB == 1)
-        for (i = 0; i < inst->blockLen10ms; ++i)
-          outFrameHB[i] = WEBRTC_SPL_SAT(
-              WEBRTC_SPL_WORD16_MAX, inst->dataBufHB[i], WEBRTC_SPL_WORD16_MIN);
-
       return 0;
     }
 
@@ -1011,11 +943,11 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
       }
     }
     // compute speech/noise probability
-    WebRtcNs_SpeechNoiseProb(inst, probSpeechFinal, snrLocPrior, snrLocPost);
+    WebRtcNs_SpeechNoiseProb(inst, inst->speechProb, snrLocPrior, snrLocPost);
     // time-avg parameter for noise update
     gammaNoiseTmp = NOISE_UPDATE;
     for (i = 0; i < inst->magnLen; i++) {
-      probSpeech = probSpeechFinal[i];
+      probSpeech = inst->speechProb[i];
       probNonSpeech = (float)1.0 - probSpeech;
       // temporary noise update:
       // use it for speech frames if update value is less than previous
@@ -1094,13 +1026,123 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
       }
       // smoothing
       inst->smooth[i] = theFilter[i];
-      real[i] *= inst->smooth[i];
-      imag[i] *= inst->smooth[i];
     }
     // keep track of noise and magn spectrum for next frame
     for (i = 0; i < inst->magnLen; i++) {
       inst->noisePrev[i] = noise[i];
       inst->magnPrev[i] = magn[i];
+    }
+  } // end of if inst->outLen == 0
+
+  return 0;
+}
+
+int WebRtcNs_ProcessCore(NSinst_t* inst,
+                         float* speechFrame,
+                         float* speechFrameHB,
+                         float* outFrame,
+                         float* outFrameHB) {
+  // main routine for noise reduction
+  int     flagHB = 0;
+  int     i;
+
+  float   energy1, energy2, gain, factor, factor1, factor2;
+  float   fout[BLOCKL_MAX];
+  float   winData[ANAL_BLOCKL_MAX];
+  float   real[ANAL_BLOCKL_MAX], imag[HALF_ANAL_BLOCKL];
+
+  // SWB variables
+  int     deltaBweHB = 1;
+  int     deltaGainHB = 1;
+  float   decayBweHB = 1.0;
+  float   gainMapParHB = 1.0;
+  float   gainTimeDomainHB = 1.0;
+  float   avgProbSpeechHB, avgProbSpeechHBTmp, avgFilterGainHB, gainModHB;
+
+  // Check that initiation has been done
+  if (inst->initFlag != 1) {
+    return (-1);
+  }
+  // Check for valid pointers based on sampling rate
+  if (inst->fs == 32000) {
+    if (speechFrameHB == NULL) {
+      return -1;
+    }
+    flagHB = 1;
+    // range for averaging low band quantities for H band gain
+    deltaBweHB = (int)inst->magnLen / 4;
+    deltaGainHB = deltaBweHB;
+  }
+
+  // update analysis buffer for L band
+  memcpy(inst->dataBuf, inst->dataBuf + inst->blockLen10ms,
+         sizeof(float) * (inst->anaLen - inst->blockLen10ms));
+  memcpy(inst->dataBuf + inst->anaLen - inst->blockLen10ms, speechFrame,
+         sizeof(float) * inst->blockLen10ms);
+
+  if (flagHB == 1) {
+    // update analysis buffer for H band
+    memcpy(inst->dataBufHB, inst->dataBufHB + inst->blockLen10ms,
+           sizeof(float) * (inst->anaLen - inst->blockLen10ms));
+    memcpy(inst->dataBufHB + inst->anaLen - inst->blockLen10ms, speechFrameHB,
+           sizeof(float) * inst->blockLen10ms);
+  }
+
+  // check if processing needed
+  if (inst->outLen == 0) {
+    // windowing
+    energy1 = 0.0;
+    for (i = 0; i < inst->anaLen; i++) {
+      winData[i] = inst->window[i] * inst->dataBuf[i];
+      energy1 += winData[i] * winData[i];
+    }
+    if (energy1 == 0.0) {
+      // synthesize the special case of zero input
+      // read out fully processed segment
+      for (i = inst->windShift; i < inst->blockLen + inst->windShift; i++) {
+        fout[i - inst->windShift] = inst->syntBuf[i];
+      }
+      // update synthesis buffer
+      memcpy(inst->syntBuf, inst->syntBuf + inst->blockLen,
+             sizeof(float) * (inst->anaLen - inst->blockLen));
+      memset(inst->syntBuf + inst->anaLen - inst->blockLen, 0,
+             sizeof(float) * inst->blockLen);
+
+      // out buffer
+      inst->outLen = inst->blockLen - inst->blockLen10ms;
+      if (inst->blockLen > inst->blockLen10ms) {
+        for (i = 0; i < inst->outLen; i++) {
+          inst->outBuf[i] = fout[i + inst->blockLen10ms];
+        }
+      }
+      for (i = 0; i < inst->blockLen10ms; ++i)
+        outFrame[i] = WEBRTC_SPL_SAT(
+            WEBRTC_SPL_WORD16_MAX, fout[i], WEBRTC_SPL_WORD16_MIN);
+
+      // for time-domain gain of HB
+      if (flagHB == 1)
+        for (i = 0; i < inst->blockLen10ms; ++i)
+          outFrameHB[i] = WEBRTC_SPL_SAT(
+              WEBRTC_SPL_WORD16_MAX, inst->dataBufHB[i], WEBRTC_SPL_WORD16_MIN);
+
+      return 0;
+    }
+
+    // FFT
+    WebRtc_rdft(inst->anaLen, 1, winData, inst->ip, inst->wfft);
+
+    imag[0] = 0;
+    real[0] = winData[0];
+    imag[inst->magnLen - 1] = 0;
+    real[inst->magnLen - 1] = winData[1];
+    for (i = 1; i < inst->magnLen - 1; i++) {
+      real[i] = winData[2 * i];
+      imag[i] = winData[2 * i + 1];
+    }
+
+    for (i = 0; i < inst->magnLen; i++) {
+      real[i] *= inst->smooth[i];
+      imag[i] *= inst->smooth[i];
     }
     // back to time domain
     winData[0] = real[0];
@@ -1187,14 +1229,11 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
 
   // for time-domain gain of HB
   if (flagHB == 1) {
-    for (i = 0; i < inst->magnLen; i++) {
-      inst->speechProbHB[i] = probSpeechFinal[i];
-    }
     // average speech prob from low band
     // avg over second half (i.e., 4->8kHz) of freq. spectrum
     avgProbSpeechHB = 0.0;
     for (i = inst->magnLen - deltaBweHB - 1; i < inst->magnLen - 1; i++) {
-      avgProbSpeechHB += inst->speechProbHB[i];
+      avgProbSpeechHB += inst->speechProb[i];
     }
     avgProbSpeechHB = avgProbSpeechHB / ((float)deltaBweHB);
     // average filter gain from low band
