@@ -310,6 +310,15 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
   virtual int SendPacket(int channel, const void* data, int len);
   virtual int SendRTCPPacket(int channel, const void* data, int len);
 
+  bool SetPrimaryAndRtxSsrcs(
+      int channel_id, int idx, uint32 primary_ssrc,
+      const StreamParams& send_params);
+  bool SetLimitedNumberOfSendSsrcs(
+      int channel_id, const StreamParams& send_params, size_t limit);
+  virtual bool SetSendSsrcs(
+      int channel_id, const StreamParams& send_params,
+      const webrtc::VideoCodec& codec);
+
  private:
   typedef std::map<uint32, WebRtcVideoChannelRecvInfo*> RecvChannelMap;
   typedef std::map<uint32, WebRtcVideoChannelSendInfo*> SendChannelMap;
@@ -412,10 +421,6 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
 
   // Signal when cpu adaptation has no further scope to adapt.
   void OnCpuAdaptationUnable();
-
-  // Set the local (send-side) RTX SSRC corresponding to primary_ssrc.
-  bool SetLocalRtxSsrc(int channel_id, const StreamParams& send_params,
-                       uint32 primary_ssrc, int stream_idx);
 
   // Connect |capturer| to WebRtcVideoMediaChannel if it is only registered
   // to one send channel, i.e. the first send channel.

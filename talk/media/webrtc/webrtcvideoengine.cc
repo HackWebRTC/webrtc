@@ -1890,18 +1890,9 @@ bool WebRtcVideoMediaChannel::AddSendStream(const StreamParams& sp) {
   }
 
   WebRtcVideoChannelSendInfo* send_channel = GetSendChannelBySsrcKey(ssrc_key);
-  // Set the send (local) SSRC.
   // If there are multiple send SSRCs, we can only set the first one here, and
   // the rest of the SSRC(s) need to be set after SetSendCodec has been called
-  // (with a codec requires multiple SSRC(s)).
-  if (engine()->vie()->rtp()->SetLocalSSRC(channel_id,
-                                           sp.first_ssrc()) != 0) {
-    LOG_RTCERR2(SetLocalSSRC, channel_id, sp.first_ssrc());
-    return false;
-  }
-
-  // Set the corresponding RTX SSRC.
-  if (!SetLocalRtxSsrc(channel_id, sp, sp.first_ssrc(), 0)) {
+  if (!SetLimitedNumberOfSendSsrcs(channel_id, sp, 1)) {
     return false;
   }
 
@@ -3673,6 +3664,7 @@ bool WebRtcVideoMediaChannel::SetSendCodec(
     LOG(LS_INFO) << "0x0 resolution selected. Captured frames will be dropped "
                  << "for ssrc: " << ssrc << ".";
   } else {
+    StreamParams* send_params = send_channel->stream_params();
     MaybeChangeBitrates(channel_id, &target_codec);
     webrtc::VideoCodec current_codec;
     if (!engine()->vie()->codec()->GetSendCodec(channel_id, current_codec)) {
@@ -3688,6 +3680,11 @@ bool WebRtcVideoMediaChannel::SetSendCodec(
       return false;
     }
 
+    if (send_params) {
+      if (!SetSendSsrcs(channel_id, *send_params, target_codec)) {
+        return false;
+      }
+    }
     // NOTE: SetRtxSendPayloadType must be called after all simulcast SSRCs
     // are configured. Otherwise ssrc's configured after this point will use
     // the primary PT for RTX.
@@ -3976,6 +3973,13 @@ bool WebRtcVideoMediaChannel::MaybeResetVieSendCodec(
       engine()->vie()->rtp()->SetTransmissionSmoothingStatus(channel_id,
                                                              leaky_bucket);
     }
+    // TODO(sriniv): SetSendCodec already sets ssrc's like below.
+    // Consider removing.
+    if (send_params) {
+      if (!SetSendSsrcs(channel_id, *send_params, target_codec)) {
+        return false;
+      }
+    }
     if (reset) {
       *reset = true;
     }
@@ -4131,19 +4135,53 @@ bool WebRtcVideoMediaChannel::SetHeaderExtension(ExtensionSetterFunction setter,
   return SetHeaderExtension(setter, channel_id, extension);
 }
 
-bool WebRtcVideoMediaChannel::SetLocalRtxSsrc(int channel_id,
-                                              const StreamParams& send_params,
-                                              uint32 primary_ssrc,
-                                              int stream_idx) {
-  uint32 rtx_ssrc = 0;
-  bool has_rtx = send_params.GetFidSsrc(primary_ssrc, &rtx_ssrc);
-  if (has_rtx && engine()->vie()->rtp()->SetLocalSSRC(
-      channel_id, rtx_ssrc, webrtc::kViEStreamTypeRtx, stream_idx) != 0) {
-    LOG_RTCERR4(SetLocalSSRC, channel_id, rtx_ssrc,
-                webrtc::kViEStreamTypeRtx, stream_idx);
+bool WebRtcVideoMediaChannel::SetPrimaryAndRtxSsrcs(
+    int channel_id, int idx, uint32 primary_ssrc,
+    const StreamParams& send_params) {
+  LOG(LS_INFO) << "Set primary ssrc " << primary_ssrc
+               << " on channel " << channel_id << " idx " << idx;
+  if (engine()->vie()->rtp()->SetLocalSSRC(
+          channel_id, primary_ssrc, webrtc::kViEStreamTypeNormal, idx) != 0) {
+    LOG_RTCERR4(SetLocalSSRC,
+                channel_id, primary_ssrc, webrtc::kViEStreamTypeNormal, idx);
     return false;
   }
+
+  uint32 rtx_ssrc = 0;
+  if (send_params.GetFidSsrc(primary_ssrc, &rtx_ssrc)) {
+    LOG(LS_INFO) << "Set rtx ssrc " << rtx_ssrc
+                 << " on channel " << channel_id << " idx " << idx;
+    if (engine()->vie()->rtp()->SetLocalSSRC(
+            channel_id, rtx_ssrc, webrtc::kViEStreamTypeRtx, idx) != 0) {
+      LOG_RTCERR4(SetLocalSSRC,
+                  channel_id, rtx_ssrc, webrtc::kViEStreamTypeRtx, idx);
+      return false;
+    }
+  }
   return true;
+}
+
+bool WebRtcVideoMediaChannel::SetLimitedNumberOfSendSsrcs(
+    int channel_id, const StreamParams& sp, size_t limit) {
+  const SsrcGroup* sim_group = sp.get_ssrc_group(kSimSsrcGroupSemantics);
+  if (!sim_group || limit == 1) {
+    return SetPrimaryAndRtxSsrcs(channel_id, 0, sp.first_ssrc(), sp);
+  }
+
+  std::vector<uint32> ssrcs = sim_group->ssrcs;
+  for (size_t i = 0; i < ssrcs.size() && i < limit; ++i) {
+    if (!SetPrimaryAndRtxSsrcs(channel_id, i, ssrcs[i], sp)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool WebRtcVideoMediaChannel::SetSendSsrcs(
+    int channel_id, const StreamParams& sp,
+    const webrtc::VideoCodec& codec) {
+  // TODO(pthatcher): Support more than one primary SSRC per stream.
+  return SetLimitedNumberOfSendSsrcs(channel_id, sp, 1);
 }
 
 void WebRtcVideoMediaChannel::MaybeConnectCapturer(VideoCapturer* capturer) {
