@@ -229,13 +229,9 @@ void WebRtcVideoEncoderFactory2::DestroyVideoEncoderSettings(
   if (encoder_settings == NULL) {
     return;
   }
-
   if (_stricmp(codec.name.c_str(), kVp8CodecName) == 0) {
     delete reinterpret_cast<webrtc::VideoCodecVP8*>(encoder_settings);
-    return;
   }
-  // We should be able to destroy all encoder settings we've allocated.
-  assert(false);
 }
 
 bool WebRtcVideoEncoderFactory2::SupportsCodec(const VideoCodec& codec) {
@@ -1389,8 +1385,8 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
 
   LOG(LS_VERBOSE) << "SwapFrame: " << video_frame_.width() << "x"
                   << video_frame_.height() << " -> (codec) "
-                  << parameters_.video_streams.back().width << "x"
-                  << parameters_.video_streams.back().height;
+                  << parameters_.encoder_config.streams.back().width << "x"
+                  << parameters_.encoder_config.streams.back().height;
   stream_->Input()->SwapFrame(&video_frame_);
 }
 
@@ -1446,7 +1442,7 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetVideoFormat(
         << parameters_.config.rtp.ssrcs[0] << ".";
   } else {
     // TODO(pbos): Fix me, this only affects the last stream!
-    parameters_.video_streams.back().max_framerate =
+    parameters_.encoder_config.streams.back().max_framerate =
         VideoFormat::IntervalToFps(format.interval);
     SetDimensions(format.width, format.height, false);
   }
@@ -1494,7 +1490,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodecAndOptions(
   if (video_streams.empty()) {
     return;
   }
-  parameters_.video_streams = video_streams;
+  parameters_.encoder_config.streams = video_streams;
   format_ = VideoFormat(codec_settings.codec.width,
                         codec_settings.codec.height,
                         VideoFormat::FpsToInterval(30),
@@ -1541,7 +1537,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetDimensions(
     int width,
     int height,
     bool override_max) {
-  assert(!parameters_.video_streams.empty());
+  assert(!parameters_.encoder_config.streams.empty());
   LOG(LS_VERBOSE) << "SetDimensions: " << width << "x" << height;
 
   VideoCodecSettings codec_settings;
@@ -1554,27 +1550,30 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetDimensions(
       height = codec_settings.codec.height;
   }
 
-  if (parameters_.video_streams.back().width == width &&
-      parameters_.video_streams.back().height == height) {
+  if (parameters_.encoder_config.streams.back().width == width &&
+      parameters_.encoder_config.streams.back().height == height) {
     return;
   }
 
-  void* encoder_settings = encoder_factory_->CreateVideoEncoderSettings(
-      codec_settings.codec, parameters_.options);
+  webrtc::VideoEncoderConfig encoder_config = parameters_.encoder_config;
+  encoder_config.encoder_specific_settings =
+      encoder_factory_->CreateVideoEncoderSettings(codec_settings.codec,
+                                                   parameters_.options);
 
   VideoCodec codec = codec_settings.codec;
   codec.width = width;
   codec.height = height;
-  std::vector<webrtc::VideoStream> video_streams =
-      encoder_factory_->CreateVideoStreams(codec,
-                                           parameters_.options,
-                                           parameters_.config.rtp.ssrcs.size());
 
-  bool stream_reconfigured = stream_->ReconfigureVideoEncoder(
-      video_streams, encoder_settings);
+  encoder_config.streams = encoder_factory_->CreateVideoStreams(
+      codec, parameters_.options, parameters_.config.rtp.ssrcs.size());
 
-  encoder_factory_->DestroyVideoEncoderSettings(codec_settings.codec,
-                                                encoder_settings);
+  bool stream_reconfigured = stream_->ReconfigureVideoEncoder(encoder_config);
+
+  encoder_factory_->DestroyVideoEncoderSettings(
+      codec_settings.codec,
+      encoder_config.encoder_specific_settings);
+
+  encoder_config.encoder_specific_settings = NULL;
 
   if (!stream_reconfigured) {
     LOG(LS_WARNING) << "Failed to reconfigure video encoder for dimensions: "
@@ -1582,7 +1581,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetDimensions(
     return;
   }
 
-  parameters_.video_streams = video_streams;
+  parameters_.encoder_config = encoder_config;
 }
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::Start() {
@@ -1646,9 +1645,9 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
     info.input_frame_width = last_captured_frame_format.width;
     info.input_frame_height = last_captured_frame_format.height;
     info.send_frame_width =
-        static_cast<int>(parameters_.video_streams.front().width);
+        static_cast<int>(parameters_.encoder_config.streams.front().width);
     info.send_frame_height =
-        static_cast<int>(parameters_.video_streams.front().height);
+        static_cast<int>(parameters_.encoder_config.streams.front().height);
   }
 
   // TODO(pbos): Support or remove the following stats.
@@ -1665,14 +1664,18 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::RecreateWebRtcStream() {
 
   VideoCodecSettings codec_settings;
   parameters_.codec_settings.Get(&codec_settings);
-  void* encoder_settings = encoder_factory_->CreateVideoEncoderSettings(
-      codec_settings.codec, parameters_.options);
+  parameters_.encoder_config.encoder_specific_settings =
+      encoder_factory_->CreateVideoEncoderSettings(codec_settings.codec,
+                                                   parameters_.options);
 
-  stream_ = call_->CreateVideoSendStream(
-      parameters_.config, parameters_.video_streams, encoder_settings);
+  stream_ = call_->CreateVideoSendStream(parameters_.config,
+                                         parameters_.encoder_config);
 
-  encoder_factory_->DestroyVideoEncoderSettings(codec_settings.codec,
-                                                encoder_settings);
+  encoder_factory_->DestroyVideoEncoderSettings(
+      codec_settings.codec,
+      parameters_.encoder_config.encoder_specific_settings);
+
+  parameters_.encoder_config.encoder_specific_settings = NULL;
 
   if (sending_) {
     stream_->Start();

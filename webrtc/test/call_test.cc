@@ -16,7 +16,6 @@ namespace test {
 
 CallTest::CallTest()
     : clock_(Clock::GetRealTimeClock()),
-      encoder_settings_(NULL),
       send_stream_(NULL),
       fake_encoder_(clock_) {
 }
@@ -40,8 +39,7 @@ void CallTest::RunBaseTest(BaseTest* test) {
   if (test->ShouldCreateReceivers()) {
     CreateMatchingReceiveConfigs();
   }
-  encoder_settings_ = test->GetEncoderSettings();
-  test->ModifyConfigs(&send_config_, &receive_configs_, &video_streams_);
+  test->ModifyConfigs(&send_config_, &receive_configs_, &encoder_config_);
   CreateStreams();
   test->OnStreamsCreated(send_stream_, receive_streams_);
 
@@ -92,7 +90,7 @@ void CallTest::CreateSendConfig(size_t num_streams) {
   send_config_.encoder_settings.encoder = &fake_encoder_;
   send_config_.encoder_settings.payload_name = "FAKE";
   send_config_.encoder_settings.payload_type = kFakeSendPayloadType;
-  video_streams_ = test::CreateVideoStreams(num_streams);
+  encoder_config_.streams = test::CreateVideoStreams(num_streams);
   for (size_t i = 0; i < num_streams; ++i)
     send_config_.rtp.ssrcs.push_back(kSendSsrcs[i]);
 }
@@ -123,7 +121,7 @@ void CallTest::CreateMatchingReceiveConfigs() {
 }
 
 void CallTest::CreateFrameGeneratorCapturer() {
-  VideoStream stream = video_streams_.back();
+  VideoStream stream = encoder_config_.streams.back();
   frame_generator_capturer_.reset(
       test::FrameGeneratorCapturer::Create(send_stream_->Input(),
                                            stream.width,
@@ -135,8 +133,8 @@ void CallTest::CreateStreams() {
   assert(send_stream_ == NULL);
   assert(receive_streams_.empty());
 
-  send_stream_ = sender_call_->CreateVideoSendStream(
-      send_config_, video_streams_, encoder_settings_);
+  send_stream_ =
+      sender_call_->CreateVideoSendStream(send_config_, encoder_config_);
 
   for (size_t i = 0; i < receive_configs_.size(); ++i) {
     receive_streams_.push_back(
@@ -193,14 +191,10 @@ size_t BaseTest::GetNumStreams() const {
   return 1;
 }
 
-const void* BaseTest::GetEncoderSettings() {
-  return NULL;
-}
-
 void BaseTest::ModifyConfigs(
     VideoSendStream::Config* send_config,
     std::vector<VideoReceiveStream::Config>* receive_configs,
-    std::vector<VideoStream>* video_streams) {
+    VideoEncoderConfig* encoder_config) {
 }
 
 void BaseTest::OnStreamsCreated(

@@ -68,13 +68,10 @@ void VerifyCodecHasDefaultFeedbackParams(const cricket::VideoCodec& codec) {
 namespace cricket {
 FakeVideoSendStream::FakeVideoSendStream(
     const webrtc::VideoSendStream::Config& config,
-    const std::vector<webrtc::VideoStream>& video_streams,
-    const void* encoder_settings)
-    : sending_(false),
-      config_(config),
-      codec_settings_set_(false) {
+    const webrtc::VideoEncoderConfig& encoder_config)
+    : sending_(false), config_(config), codec_settings_set_(false) {
   assert(config.encoder_settings.encoder != NULL);
-  ReconfigureVideoEncoder(video_streams, encoder_settings);
+  ReconfigureVideoEncoder(encoder_config);
 }
 
 webrtc::VideoSendStream::Config FakeVideoSendStream::GetConfig() {
@@ -82,7 +79,7 @@ webrtc::VideoSendStream::Config FakeVideoSendStream::GetConfig() {
 }
 
 std::vector<webrtc::VideoStream> FakeVideoSendStream::GetVideoStreams() {
-  return video_streams_;
+  return encoder_config_.streams;
 }
 
 bool FakeVideoSendStream::IsSending() const {
@@ -104,15 +101,14 @@ webrtc::VideoSendStream::Stats FakeVideoSendStream::GetStats() const {
 }
 
 bool FakeVideoSendStream::ReconfigureVideoEncoder(
-    const std::vector<webrtc::VideoStream>& streams,
-    const void* encoder_specific) {
-  video_streams_ = streams;
-  if (encoder_specific != NULL) {
+    const webrtc::VideoEncoderConfig& config) {
+  encoder_config_ = config;
+  if (config.encoder_specific_settings != NULL) {
     assert(config_.encoder_settings.payload_name == "VP8");
-    vp8_settings_ =
-        *reinterpret_cast<const webrtc::VideoCodecVP8*>(encoder_specific);
+    vp8_settings_ = *reinterpret_cast<const webrtc::VideoCodecVP8*>(
+                        config.encoder_specific_settings);
   }
-  codec_settings_set_ = encoder_specific != NULL;
+  codec_settings_set_ = config.encoder_specific_settings != NULL;
   return true;
 }
 
@@ -226,10 +222,9 @@ webrtc::Call::NetworkState FakeCall::GetNetworkState() const {
 
 webrtc::VideoSendStream* FakeCall::CreateVideoSendStream(
     const webrtc::VideoSendStream::Config& config,
-    const std::vector<webrtc::VideoStream>& video_streams,
-    const void* encoder_settings) {
+    const webrtc::VideoEncoderConfig& encoder_config) {
   FakeVideoSendStream* fake_stream =
-      new FakeVideoSendStream(config, video_streams, encoder_settings);
+      new FakeVideoSendStream(config, encoder_config);
   video_send_streams_.push_back(fake_stream);
   return fake_stream;
 }

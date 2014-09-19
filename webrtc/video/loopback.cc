@@ -129,8 +129,9 @@ void Loopback() {
   send_config.encoder_settings.encoder = encoder.get();
   send_config.encoder_settings.payload_name = flags::Codec();
   send_config.encoder_settings.payload_type = 124;
-  std::vector<VideoStream> video_streams = test::CreateVideoStreams(1);
-  VideoStream* stream = &video_streams[0];
+  VideoEncoderConfig encoder_config;
+  encoder_config.streams = test::CreateVideoStreams(1);
+  VideoStream* stream = &encoder_config.streams[0];
   stream->width = flags::Width();
   stream->height = flags::Height();
   stream->min_bitrate_bps = static_cast<int>(flags::MinBitrate()) * 1000;
@@ -140,7 +141,7 @@ void Loopback() {
   stream->max_qp = 56;
 
   VideoSendStream* send_stream =
-      call->CreateVideoSendStream(send_config, video_streams, NULL);
+      call->CreateVideoSendStream(send_config, encoder_config);
 
   Clock* test_clock = Clock::GetRealTimeClock();
 

@@ -153,8 +153,7 @@ class VideoSendStream {
   // Set which streams to send. Must have at least as many SSRCs as configured
   // in the config. Encoder settings are passed on to the encoder instance along
   // with the VideoStream settings.
-  virtual bool ReconfigureVideoEncoder(const std::vector<VideoStream>& streams,
-                                       const void* encoder_settings) = 0;
+  virtual bool ReconfigureVideoEncoder(const VideoEncoderConfig& config) = 0;
 
   virtual Stats GetStats() const = 0;
 

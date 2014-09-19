@@ -399,7 +399,7 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
     virtual void ModifyConfigs(
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
-        std::vector<VideoStream>* video_streams) OVERRIDE {
+        VideoEncoderConfig* encoder_config) OVERRIDE {
       (*receive_configs)[0].renderer = this;
       // Enable the receiver side rtt calculation.
       (*receive_configs)[0].rtp.rtcp_xr.receiver_reference_time_report = true;
@@ -546,7 +546,7 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
     virtual void ModifyConfigs(
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
-        std::vector<VideoStream>* video_streams) OVERRIDE {
+        VideoEncoderConfig* encoder_config) OVERRIDE {
       if (pad_to_min_bitrate_) {
         send_config->rtp.min_transmit_bitrate_bps = kMinTransmitBitrateBps;
       } else {

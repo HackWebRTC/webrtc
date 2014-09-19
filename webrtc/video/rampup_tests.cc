@@ -411,8 +411,8 @@ void RampUpTest::RunRampUpTest(bool rtx,
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
   if (num_streams == 1) {
-    video_streams_[0].target_bitrate_bps = 2000000;
-    video_streams_[0].max_bitrate_bps = 2000000;
+    encoder_config_.streams[0].target_bitrate_bps = 2000000;
+    encoder_config_.streams[0].max_bitrate_bps = 2000000;
   }
 
   send_config_.rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
@@ -430,9 +430,9 @@ void RampUpTest::RunRampUpTest(bool rtx,
     // For multi stream rampup until all streams are being sent. That means
     // enough birate to send all the target streams plus the min bitrate of
     // the last one.
-    int expected_bitrate_bps = video_streams_.back().min_bitrate_bps;
-    for (size_t i = 0; i < video_streams_.size() - 1; ++i) {
-      expected_bitrate_bps += video_streams_[i].target_bitrate_bps;
+    int expected_bitrate_bps = encoder_config_.streams.back().min_bitrate_bps;
+    for (size_t i = 0; i < encoder_config_.streams.size() - 1; ++i) {
+      expected_bitrate_bps += encoder_config_.streams[i].target_bitrate_bps;
     }
     stream_observer.set_expected_bitrate_bps(expected_bitrate_bps);
   }

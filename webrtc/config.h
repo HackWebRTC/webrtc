@@ -108,6 +108,20 @@ struct VideoStream {
   std::vector<int> temporal_layers;
 };
 
+struct VideoEncoderConfig {
+  enum ContentType {
+    kRealtimeVideo,
+    kScreenshare,
+  };
+
+  VideoEncoderConfig()
+      : content_type(kRealtimeVideo), encoder_specific_settings(NULL) {}
+
+  std::vector<VideoStream> streams;
+  ContentType content_type;
+  void* encoder_specific_settings;
+};
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_CONFIG_H_

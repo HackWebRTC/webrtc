@@ -39,8 +39,7 @@ namespace cricket {
 class FakeVideoSendStream : public webrtc::VideoSendStream {
  public:
   FakeVideoSendStream(const webrtc::VideoSendStream::Config& config,
-                      const std::vector<webrtc::VideoStream>& video_streams,
-                      const void* encoder_settings);
+                      const webrtc::VideoEncoderConfig& encoder_config);
   webrtc::VideoSendStream::Config GetConfig();
   std::vector<webrtc::VideoStream> GetVideoStreams();
 
@@ -51,8 +50,7 @@ class FakeVideoSendStream : public webrtc::VideoSendStream {
   virtual webrtc::VideoSendStream::Stats GetStats() const OVERRIDE;
 
   virtual bool ReconfigureVideoEncoder(
-      const std::vector<webrtc::VideoStream>& streams,
-      const void* encoder_specific);
+      const webrtc::VideoEncoderConfig& config) OVERRIDE;
 
   virtual webrtc::VideoSendStreamInput* Input() OVERRIDE;
 
@@ -61,7 +59,7 @@ class FakeVideoSendStream : public webrtc::VideoSendStream {
 
   bool sending_;
   webrtc::VideoSendStream::Config config_;
-  std::vector<webrtc::VideoStream> video_streams_;
+  webrtc::VideoEncoderConfig encoder_config_;
   bool codec_settings_set_;
   webrtc::VideoCodecVP8 vp8_settings_;
 };
@@ -108,8 +106,7 @@ class FakeCall : public webrtc::Call {
  private:
   virtual webrtc::VideoSendStream* CreateVideoSendStream(
       const webrtc::VideoSendStream::Config& config,
-      const std::vector<webrtc::VideoStream>& video_streams,
-      const void* encoder_settings) OVERRIDE;
+      const webrtc::VideoEncoderConfig& encoder_config) OVERRIDE;
 
   virtual void DestroyVideoSendStream(
       webrtc::VideoSendStream* send_stream) OVERRIDE;

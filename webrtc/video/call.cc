@@ -87,8 +87,7 @@ class Call : public webrtc::Call, public PacketReceiver {
 
   virtual VideoSendStream* CreateVideoSendStream(
       const VideoSendStream::Config& config,
-      const std::vector<VideoStream>& video_streams,
-      const void* encoder_settings) OVERRIDE;
+      const VideoEncoderConfig& encoder_config) OVERRIDE;
 
   virtual void DestroyVideoSendStream(webrtc::VideoSendStream* send_stream)
       OVERRIDE;
@@ -196,8 +195,7 @@ PacketReceiver* Call::Receiver() { return this; }
 
 VideoSendStream* Call::CreateVideoSendStream(
     const VideoSendStream::Config& config,
-    const std::vector<VideoStream>& video_streams,
-    const void* encoder_settings) {
+    const VideoEncoderConfig& encoder_config) {
   assert(config.rtp.ssrcs.size() > 0);
 
   // TODO(mflodman): Base the start bitrate on a current bandwidth estimate, if
@@ -207,8 +205,7 @@ VideoSendStream* Call::CreateVideoSendStream(
       overuse_observer_proxy_.get(),
       video_engine_,
       config,
-      video_streams,
-      encoder_settings,
+      encoder_config,
       suspended_send_ssrcs_,
       base_channel_id_,
       config_.start_bitrate_bps != -1 ? config_.start_bitrate_bps

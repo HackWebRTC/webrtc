@@ -393,7 +393,7 @@ void FullStackTest::RunTest(const FullStackTestParams& params) {
   send_config_.encoder_settings.payload_name = "VP8";
   send_config_.encoder_settings.payload_type = 124;
 
-  VideoStream* stream = &video_streams_[0];
+  VideoStream* stream = &encoder_config_.streams[0];
   stream->width = params.clip.width;
   stream->height = params.clip.height;
   stream->min_bitrate_bps = params.min_bitrate_bps;

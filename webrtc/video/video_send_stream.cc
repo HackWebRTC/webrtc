@@ -114,8 +114,7 @@ VideoSendStream::VideoSendStream(
     CpuOveruseObserver* overuse_observer,
     webrtc::VideoEngine* video_engine,
     const VideoSendStream::Config& config,
-    const std::vector<VideoStream> video_streams,
-    const void* encoder_settings,
+    const VideoEncoderConfig& encoder_config,
     const std::map<uint32_t, RtpState>& suspended_ssrcs,
     int base_channel,
     int start_bitrate_bps)
@@ -211,7 +210,7 @@ VideoSendStream::VideoSendStream(
   }
 
   codec_ = ViECodec::GetInterface(video_engine);
-  if (!ReconfigureVideoEncoder(video_streams, encoder_settings))
+  if (!ReconfigureVideoEncoder(encoder_config))
     abort();
 
   if (overuse_observer)
@@ -297,8 +296,8 @@ void VideoSendStream::Stop() {
 }
 
 bool VideoSendStream::ReconfigureVideoEncoder(
-    const std::vector<VideoStream>& streams,
-    const void* encoder_settings) {
+    const VideoEncoderConfig& config) {
+  const std::vector<VideoStream>& streams = config.streams;
   assert(!streams.empty());
   assert(config_.rtp.ssrcs.size() >= streams.size());
 
@@ -311,6 +310,14 @@ bool VideoSendStream::ReconfigureVideoEncoder(
   } else {
     video_codec.codecType = kVideoCodecGeneric;
   }
+  switch (config.content_type) {
+    case VideoEncoderConfig::kRealtimeVideo:
+      video_codec.mode = kRealtimeVideo;
+      break;
+    case VideoEncoderConfig::kScreenshare:
+      video_codec.mode = kScreensharing;
+      break;
+  }
 
   if (video_codec.codecType == kVideoCodecVP8) {
     video_codec.codecSpecific.VP8 = VideoEncoder::GetDefaultVp8Settings();
@@ -319,13 +326,13 @@ bool VideoSendStream::ReconfigureVideoEncoder(
   }
 
   if (video_codec.codecType == kVideoCodecVP8) {
-    if (encoder_settings != NULL) {
-      video_codec.codecSpecific.VP8 =
-          *reinterpret_cast<const VideoCodecVP8*>(encoder_settings);
+    if (config.encoder_specific_settings != NULL) {
+      video_codec.codecSpecific.VP8 = *reinterpret_cast<const VideoCodecVP8*>(
+                                          config.encoder_specific_settings);
     }
   } else {
     // TODO(pbos): Support encoder_settings codec-agnostically.
-    assert(encoder_settings == NULL);
+    assert(config.encoder_specific_settings == NULL);
   }
 
   strncpy(video_codec.plName,

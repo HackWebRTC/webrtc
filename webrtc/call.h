@@ -92,8 +92,7 @@ class Call {
 
   virtual VideoSendStream* CreateVideoSendStream(
       const VideoSendStream::Config& config,
-      const std::vector<VideoStream>& video_streams,
-      const void* encoder_settings) = 0;
+      const VideoEncoderConfig& encoder_config) = 0;
 
   virtual void DestroyVideoSendStream(VideoSendStream* send_stream) = 0;
 

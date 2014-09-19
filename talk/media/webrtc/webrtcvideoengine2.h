@@ -119,9 +119,8 @@ class WebRtcVideoEncoderFactory2 {
       const VideoCodec& codec,
       const VideoOptions& options);
 
-  virtual void* CreateVideoEncoderSettings(
-      const VideoCodec& codec,
-      const VideoOptions& options);
+  virtual void* CreateVideoEncoderSettings(const VideoCodec& codec,
+                                           const VideoOptions& options);
 
   virtual void DestroyVideoEncoderSettings(const VideoCodec& codec,
                                            void* encoder_settings);
@@ -316,7 +315,7 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
       // Sent resolutions + bitrates etc. by the underlying VideoSendStream,
       // typically changes when setting a new resolution or reconfiguring
       // bitrates.
-      std::vector<webrtc::VideoStream> video_streams;
+      webrtc::VideoEncoderConfig encoder_config;
     };
 
     void SetCodecAndOptions(const VideoCodecSettings& codec,
