@@ -2686,12 +2686,12 @@ JOW(void, Logging_nativeEnableTracing)(
   std::string path = JavaToStdString(jni, j_path);
   if (nativeLevels != webrtc::kTraceNone) {
     webrtc::Trace::set_level_filter(nativeLevels);
-#ifdef ANDROID
+#if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
     if (path != "logcat:") {
 #endif
       CHECK_EQ(0, webrtc::Trace::SetTraceFile(path.c_str(), false))
           << "SetTraceFile failed";
-#ifdef ANDROID
+#if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
     } else {
       // Intentionally leak this to avoid needing to reason about its lifecycle.
       // It keeps no state and functions only as a dispatch point.
