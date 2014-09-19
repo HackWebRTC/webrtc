@@ -153,6 +153,11 @@
       ],
       'conditions': [
         ['OS=="win"', {
+          'dependencies': [
+            '<(DEPTH)/net/third_party/nss/ssl.gyp:libssl',
+            '<(DEPTH)/third_party/nss/nss.gyp:nspr',
+            '<(DEPTH)/third_party/nss/nss.gyp:nss',
+          ],
           'msvs_settings': {
             'VCLinkerTool': {
               'AdditionalDependencies': [

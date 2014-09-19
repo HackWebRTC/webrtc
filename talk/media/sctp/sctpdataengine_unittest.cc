@@ -45,6 +45,11 @@
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/thread.h"
 
+#ifdef HAVE_NSS_SSL_H
+// TODO(thorcarpenter): Remove after webrtc switches over to BoringSSL.
+#include "webrtc/base/nssstreamadapter.h"
+#endif  // HAVE_NSS_SSL_H
+
 enum {
   MSG_PACKET = 1,
 };
@@ -218,6 +223,12 @@ class SctpDataMediaChannelTest : public testing::Test,
   // usrsctp uses the NSS random number generator on non-Android platforms,
   // so we need to initialize SSL.
   static void SetUpTestCase() {
+#ifdef HAVE_NSS_SSL_H
+  // TODO(thorcarpenter): Remove after webrtc switches over to BoringSSL.
+  if (!rtc::NSSContext::InitializeSSL(NULL)) {
+    LOG(LS_WARNING) << "Unabled to initialize NSS.";
+  }
+#endif  // HAVE_NSS_SSL_H
     rtc::InitializeSSL();
   }
 
