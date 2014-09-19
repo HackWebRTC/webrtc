@@ -578,8 +578,7 @@ TEST_F(EndToEndTest, DecodesRetransmittedFrameOverRtx) {
   DecodesRetransmittedFrame(true);
 }
 
-// Disabled due to: https://code.google.com/p/webrtc/issues/detail?id=3770
-TEST_F(EndToEndTest, DISABLED_ON_ANDROID(UsesFrameCallbacks)) {
+TEST_F(EndToEndTest, UsesFrameCallbacks) {
   static const int kWidth = 320;
   static const int kHeight = 240;
 
@@ -925,9 +924,7 @@ TEST_F(EndToEndTest, UsesRtcpReducedSizeMode) {
 // Another is set up to receive all three of these with different renderers.
 // Each renderer verifies that it receives the expected resolution, and as soon
 // as every renderer has received a frame, the test finishes.
-//
-// Disabled due to: https://code.google.com/p/webrtc/issues/detail?id=3770
-TEST_F(EndToEndTest, DISABLED_ON_ANDROID(SendsAndReceivesMultipleStreams)) {
+TEST_F(EndToEndTest, SendsAndReceivesMultipleStreams) {
   static const size_t kNumStreams = 3;
 
   class VideoOutputObserver : public VideoRenderer {
