@@ -141,23 +141,7 @@
             'windows/video_render_windows_impl.h',
             'windows/video_render_direct3d9.cc',
             'windows/video_render_windows_impl.cc',
-	  ],
-          'variables': {
-            # 'directx_sdk_path' will be overridden in the condition block
-            # below, but it must not be declared as empty here since gyp
-            # will check if the first character is '/' for some reason.
-            # If it's empty, we'll get an out-of-bounds error.
-            'directx_sdk_path': 'will_be_overridden',
-            'directx_sdk_default_path': '<(DEPTH)/third_party/directxsdk/files',
-            'conditions': [
-              ['"<!(python <(DEPTH)/build/dir_exists.py <(directx_sdk_default_path))"=="True"', {
-                'directx_sdk_path': '<(DEPTH)/third_party/directxsdk/files',
-              }, {
-                'directx_sdk_path': '$(DXSDK_DIR)',
-              }],
-            ],
-          },
-
+          ],
           'include_dirs': [
             '<(directx_sdk_path)/Include',
           ],
