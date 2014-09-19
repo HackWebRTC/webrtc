@@ -2393,7 +2393,7 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
     return true;
   }
 
-  // Extract data from Java DecoderOutputBufferInfo.
+  // Extract output buffer info from Java DecoderOutputBufferInfo.
   int output_buffer_index =
       GetIntField(jni, j_decoder_output_buffer_info, j_info_index_field_);
   if (output_buffer_index < 0) {
@@ -2407,15 +2407,6 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
       GetIntField(jni, j_decoder_output_buffer_info, j_info_size_field_);
   CHECK_EXCEPTION(jni);
 
-  // Extract data from Java ByteBuffer.
-  jobjectArray output_buffers = reinterpret_cast<jobjectArray>(GetObjectField(
-      jni, *j_media_codec_video_decoder_, j_output_buffers_field_));
-  jobject output_buffer =
-      jni->GetObjectArrayElement(output_buffers, output_buffer_index);
-  uint8_t* payload =
-      reinterpret_cast<uint8_t*>(jni->GetDirectBufferAddress(output_buffer));
-  CHECK_EXCEPTION(jni);
-  payload += output_buffer_offset;
   // Get decoded video frame properties.
   int color_format = GetIntField(jni, *j_media_codec_video_decoder_,
       j_color_format_field_);
@@ -2426,27 +2417,25 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
       j_slice_height_field_);
   int texture_id = GetIntField(jni, *j_media_codec_video_decoder_,
       j_textureID_field_);
-  if (!use_surface_ && output_buffer_size < width * height * 3 / 2) {
-    ALOGE("Insufficient output buffer size: %d", output_buffer_size);
-    Reset();
-    return false;
-  }
 
-  // Get frame timestamps from a queue.
-  int32_t timestamp = timestamps_.front();
-  timestamps_.erase(timestamps_.begin());
-  int64_t ntp_time_ms = ntp_times_ms_.front();
-  ntp_times_ms_.erase(ntp_times_ms_.begin());
-  int64_t frame_decoding_time_ms = GetCurrentTimeMs() -
-      frame_rtc_times_ms_.front();
-  frame_rtc_times_ms_.erase(frame_rtc_times_ms_.begin());
-
-  ALOGV("Decoder frame out # %d. %d x %d. %d x %d. Color: 0x%x. Size: %d."
-      " DecTime: %lld", frames_decoded_, width, height, stride, slice_height,
-      color_format, output_buffer_size, frame_decoding_time_ms);
-
-  // Create yuv420 frame.
+  // Extract data from Java ByteBuffer and create output yuv420 frame -
+  // for non surface decoding only.
   if (!use_surface_) {
+    if (output_buffer_size < width * height * 3 / 2) {
+      ALOGE("Insufficient output buffer size: %d", output_buffer_size);
+      Reset();
+      return false;
+    }
+    jobjectArray output_buffers = reinterpret_cast<jobjectArray>(GetObjectField(
+        jni, *j_media_codec_video_decoder_, j_output_buffers_field_));
+    jobject output_buffer =
+        jni->GetObjectArrayElement(output_buffers, output_buffer_index);
+    uint8_t* payload = reinterpret_cast<uint8_t*>(jni->GetDirectBufferAddress(
+        output_buffer));
+    CHECK_EXCEPTION(jni);
+    payload += output_buffer_offset;
+
+    // Create yuv420 frame.
     if (color_format == COLOR_FormatYUV420Planar) {
       decoded_image_.CreateFrame(
           stride * slice_height, payload,
@@ -2471,11 +2460,25 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
     }
   }
 
+  // Get frame timestamps from a queue.
+  int32_t timestamp = timestamps_.front();
+  timestamps_.erase(timestamps_.begin());
+  int64_t ntp_time_ms = ntp_times_ms_.front();
+  ntp_times_ms_.erase(ntp_times_ms_.begin());
+  int64_t frame_decoding_time_ms = GetCurrentTimeMs() -
+      frame_rtc_times_ms_.front();
+  frame_rtc_times_ms_.erase(frame_rtc_times_ms_.begin());
+
+  ALOGV("Decoder frame out # %d. %d x %d. %d x %d. Color: 0x%x. Size: %d."
+      " DecTime: %lld", frames_decoded_, width, height, stride, slice_height,
+      color_format, output_buffer_size, frame_decoding_time_ms);
+
   // Return output buffer back to codec.
-  bool success = jni->CallBooleanMethod(*j_media_codec_video_decoder_,
-                                   j_release_output_buffer_method_,
-                                   output_buffer_index,
-                                   use_surface_);
+  bool success = jni->CallBooleanMethod(
+      *j_media_codec_video_decoder_,
+      j_release_output_buffer_method_,
+      output_buffer_index,
+      use_surface_);
   CHECK_EXCEPTION(jni);
   if (!success) {
     ALOGE("releaseOutputBuffer error");
