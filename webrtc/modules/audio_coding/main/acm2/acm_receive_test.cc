@@ -22,124 +22,63 @@
 namespace webrtc {
 namespace test {
 
-namespace {
-// Returns true if the codec should be registered, otherwise false. Changes
-// the number of channels for the Opus codec to always be 1.
-bool ModifyAndUseThisCodec(CodecInst* codec_param) {
-  if (STR_CASE_CMP(codec_param->plname, "CN") == 0 &&
-      codec_param->plfreq == 48000)
-    return false;  // Skip 48 kHz comfort noise.
-
-  if (STR_CASE_CMP(codec_param->plname, "telephone-event") == 0)
-    return false;  // Skip DTFM.
-
-  return true;
-}
-
-// Remaps payload types from ACM's default to those used in the resource file
-// neteq_universal_new.rtp. Returns true if the codec should be registered,
-// otherwise false. The payload types are set as follows (all are mono codecs):
-// PCMu = 0;
-// PCMa = 8;
-// Comfort noise 8 kHz = 13
-// Comfort noise 16 kHz = 98
-// Comfort noise 32 kHz = 99
-// iLBC = 102
-// iSAC wideband = 103
-// iSAC super-wideband = 104
-// iSAC fullband = 124
-// AVT/DTMF = 106
-// RED = 117
-// PCM16b 8 kHz = 93
-// PCM16b 16 kHz = 94
-// PCM16b 32 kHz = 95
-// G.722 = 94
-bool RemapPltypeAndUseThisCodec(const char* plname,
-                                int plfreq,
-                                int channels,
-                                int* pltype) {
-  if (channels != 1)
-    return false;  // Don't use non-mono codecs.
-
-  // Re-map pltypes to those used in the NetEq test files.
-  if (STR_CASE_CMP(plname, "PCMU") == 0 && plfreq == 8000) {
-    *pltype = 0;
-  } else if (STR_CASE_CMP(plname, "PCMA") == 0 && plfreq == 8000) {
-    *pltype = 8;
-  } else if (STR_CASE_CMP(plname, "CN") == 0 && plfreq == 8000) {
-    *pltype = 13;
-  } else if (STR_CASE_CMP(plname, "CN") == 0 && plfreq == 16000) {
-    *pltype = 98;
-  } else if (STR_CASE_CMP(plname, "CN") == 0 && plfreq == 32000) {
-    *pltype = 99;
-  } else if (STR_CASE_CMP(plname, "ILBC") == 0) {
-    *pltype = 102;
-  } else if (STR_CASE_CMP(plname, "ISAC") == 0 && plfreq == 16000) {
-    *pltype = 103;
-  } else if (STR_CASE_CMP(plname, "ISAC") == 0 && plfreq == 32000) {
-    *pltype = 104;
-  } else if (STR_CASE_CMP(plname, "ISAC") == 0 && plfreq == 48000) {
-    *pltype = 124;
-  } else if (STR_CASE_CMP(plname, "telephone-event") == 0) {
-    *pltype = 106;
-  } else if (STR_CASE_CMP(plname, "red") == 0) {
-    *pltype = 117;
-  } else if (STR_CASE_CMP(plname, "L16") == 0 && plfreq == 8000) {
-    *pltype = 93;
-  } else if (STR_CASE_CMP(plname, "L16") == 0 && plfreq == 16000) {
-    *pltype = 94;
-  } else if (STR_CASE_CMP(plname, "L16") == 0 && plfreq == 32000) {
-    *pltype = 95;
-  } else if (STR_CASE_CMP(plname, "G722") == 0) {
-    *pltype = 9;
-  } else {
-    // Don't use any other codecs.
-    return false;
-  }
-  return true;
-}
-}  // namespace
-
 AcmReceiveTest::AcmReceiveTest(PacketSource* packet_source,
                                AudioSink* audio_sink,
                                int output_freq_hz,
                                NumOutputChannels exptected_output_channels)
     : clock_(0),
-      acm_(webrtc::AudioCodingModule::Create(0, &clock_)),
       packet_source_(packet_source),
       audio_sink_(audio_sink),
       output_freq_hz_(output_freq_hz),
       exptected_output_channels_(exptected_output_channels) {
+  webrtc::AudioCoding::Config config;
+  config.clock = &clock_;
+  config.playout_frequency_hz = output_freq_hz_;
+  acm_.reset(webrtc::AudioCoding::Create(config));
 }
 
 void AcmReceiveTest::RegisterDefaultCodecs() {
-  CodecInst my_codec_param;
-  for (int n = 0; n < acm_->NumberOfCodecs(); n++) {
-    ASSERT_EQ(0, acm_->Codec(n, &my_codec_param)) << "Failed to get codec.";
-    if (ModifyAndUseThisCodec(&my_codec_param)) {
-      ASSERT_EQ(0, acm_->RegisterReceiveCodec(my_codec_param))
-          << "Couldn't register receive codec.\n";
-    }
-  }
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kOpus, 120));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kISAC, 103));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kISACSWB, 104));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kISACFB, 105));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kPCM16B, 107));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kPCM16Bwb, 108));
+  ASSERT_TRUE(
+      acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kPCM16Bswb32kHz, 109));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kPCM16B_2ch, 111));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kPCM16Bwb_2ch, 112));
+  ASSERT_TRUE(
+      acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kPCM16Bswb32kHz_2ch, 113));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kPCMU, 0));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kPCMA, 8));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kPCMU_2ch, 110));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kPCMA_2ch, 118));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kILBC, 102));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kG722, 9));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kG722_2ch, 119));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kCNNB, 13));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kCNWB, 98));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kCNSWB, 99));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kRED, 127));
 }
 
 void AcmReceiveTest::RegisterNetEqTestCodecs() {
-  CodecInst my_codec_param;
-  for (int n = 0; n < acm_->NumberOfCodecs(); n++) {
-    ASSERT_EQ(0, acm_->Codec(n, &my_codec_param)) << "Failed to get codec.";
-    if (!ModifyAndUseThisCodec(&my_codec_param)) {
-      // Skip this codec.
-      continue;
-    }
-
-    if (RemapPltypeAndUseThisCodec(my_codec_param.plname,
-                                   my_codec_param.plfreq,
-                                   my_codec_param.channels,
-                                   &my_codec_param.pltype)) {
-      ASSERT_EQ(0, acm_->RegisterReceiveCodec(my_codec_param))
-          << "Couldn't register receive codec.\n";
-    }
-  }
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kISAC, 103));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kISACSWB, 104));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kISACFB, 124));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kPCM16B, 93));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kPCM16Bwb, 94));
+  ASSERT_TRUE(
+      acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kPCM16Bswb32kHz, 95));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kPCMU, 0));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kPCMA, 8));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kILBC, 102));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kG722, 9));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kCNNB, 13));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kCNWB, 98));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kCNSWB, 99));
+  ASSERT_TRUE(acm_->RegisterReceiveCodec(acm2::ACMCodecDB::kRED, 117));
 }
 
 void AcmReceiveTest::Run() {
@@ -148,7 +87,7 @@ void AcmReceiveTest::Run() {
     // Pull audio until time to insert packet.
     while (clock_.TimeInMilliseconds() < packet->time_ms()) {
       AudioFrame output_frame;
-      EXPECT_EQ(0, acm_->PlayoutData10Ms(output_freq_hz_, &output_frame));
+      EXPECT_TRUE(acm_->Get10MsAudio(&output_frame));
       EXPECT_EQ(output_freq_hz_, output_frame.sample_rate_hz_);
       const int samples_per_block = output_freq_hz_ * 10 / 1000;
       EXPECT_EQ(samples_per_block, output_frame.samples_per_channel_);
@@ -170,11 +109,10 @@ void AcmReceiveTest::Run() {
     header.header = packet->header();
     header.frameType = kAudioFrameSpeech;
     memset(&header.type.Audio, 0, sizeof(RTPAudioHeader));
-    EXPECT_EQ(0,
-              acm_->IncomingPacket(
-                  packet->payload(),
-                  static_cast<int32_t>(packet->payload_length_bytes()),
-                  header))
+    EXPECT_TRUE(
+        acm_->InsertPacket(packet->payload(),
+                           static_cast<int32_t>(packet->payload_length_bytes()),
+                           header))
         << "Failure when inserting packet:" << std::endl
         << "  PT = " << static_cast<int>(header.header.payloadType) << std::endl
         << "  TS = " << header.header.timestamp << std::endl

@@ -25,15 +25,17 @@ namespace test {
 class InputAudioFile;
 class Packet;
 
-class AcmSendTest : public AudioPacketizationCallback, public PacketSource {
+class AcmSendTestOldApi : public AudioPacketizationCallback,
+                          public PacketSource {
  public:
-  AcmSendTest(InputAudioFile* audio_source,
-              int source_rate_hz,
-              int test_duration_ms);
-  virtual ~AcmSendTest() {}
+  AcmSendTestOldApi(InputAudioFile* audio_source,
+                    int source_rate_hz,
+                    int test_duration_ms);
+  virtual ~AcmSendTestOldApi() {}
 
   // Registers the send codec. Returns true on success, false otherwise.
-  bool RegisterCodec(int codec_type,
+  bool RegisterCodec(const char* payload_name,
+                     int sampling_freq_hz,
                      int channels,
                      int payload_type,
                      int frame_size_samples);
@@ -41,7 +43,7 @@ class AcmSendTest : public AudioPacketizationCallback, public PacketSource {
   // Returns the next encoded packet. Returns NULL if the test duration was
   // exceeded. Ownership of the packet is handed over to the caller.
   // Inherited from PacketSource.
-  virtual Packet* NextPacket() OVERRIDE;
+  Packet* NextPacket();
 
   // Inherited from AudioPacketizationCallback.
   virtual int32_t SendData(
@@ -61,11 +63,12 @@ class AcmSendTest : public AudioPacketizationCallback, public PacketSource {
   Packet* CreatePacket();
 
   SimulatedClock clock_;
-  scoped_ptr<AudioCoding> acm_;
+  scoped_ptr<AudioCodingModule> acm_;
   InputAudioFile* audio_source_;
   int source_rate_hz_;
   const int input_block_size_samples_;
   AudioFrame input_frame_;
+  CodecInst codec_;
   bool codec_registered_;
   int test_duration_ms_;
   // The following member variables are set whenever SendData() is called.
@@ -75,7 +78,7 @@ class AcmSendTest : public AudioPacketizationCallback, public PacketSource {
   uint16_t sequence_number_;
   std::vector<uint8_t> last_payload_vec_;
 
-  DISALLOW_COPY_AND_ASSIGN(AcmSendTest);
+  DISALLOW_COPY_AND_ASSIGN(AcmSendTestOldApi);
 };
 
 }  // namespace test

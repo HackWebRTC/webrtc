@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/main/acm2/acm_send_test.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_send_test_oldapi.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -23,10 +23,11 @@
 namespace webrtc {
 namespace test {
 
-AcmSendTest::AcmSendTest(InputAudioFile* audio_source,
-                         int source_rate_hz,
-                         int test_duration_ms)
+AcmSendTestOldApi::AcmSendTestOldApi(InputAudioFile* audio_source,
+                                     int source_rate_hz,
+                                     int test_duration_ms)
     : clock_(0),
+      acm_(webrtc::AudioCodingModule::Create(0, &clock_)),
       audio_source_(audio_source),
       source_rate_hz_(source_rate_hz),
       input_block_size_samples_(source_rate_hz_ * kBlockSizeMs / 1000),
@@ -36,30 +37,32 @@ AcmSendTest::AcmSendTest(InputAudioFile* audio_source,
       payload_type_(0),
       timestamp_(0),
       sequence_number_(0) {
-  webrtc::AudioCoding::Config config;
-  config.clock = &clock_;
-  config.transport = this;
-  acm_.reset(webrtc::AudioCoding::Create(config));
   input_frame_.sample_rate_hz_ = source_rate_hz_;
   input_frame_.num_channels_ = 1;
   input_frame_.samples_per_channel_ = input_block_size_samples_;
   assert(input_block_size_samples_ * input_frame_.num_channels_ <=
          AudioFrame::kMaxDataSizeSamples);
+  acm_->RegisterTransportCallback(this);
 }
 
-bool AcmSendTest::RegisterCodec(int codec_type,
-                                int channels,
-                                int payload_type,
-                                int frame_size_samples) {
-  codec_registered_ =
-      acm_->RegisterSendCodec(codec_type, payload_type, frame_size_samples);
+bool AcmSendTestOldApi::RegisterCodec(const char* payload_name,
+                                      int sampling_freq_hz,
+                                      int channels,
+                                      int payload_type,
+                                      int frame_size_samples) {
+  CHECK_EQ(0,
+           AudioCodingModule::Codec(
+               payload_name, &codec_, sampling_freq_hz, channels));
+  codec_.pltype = payload_type;
+  codec_.pacsize = frame_size_samples;
+  codec_registered_ = (acm_->RegisterSendCodec(codec_) == 0);
   input_frame_.num_channels_ = channels;
   assert(input_block_size_samples_ * input_frame_.num_channels_ <=
          AudioFrame::kMaxDataSizeSamples);
   return codec_registered_;
 }
 
-Packet* AcmSendTest::NextPacket() {
+Packet* AcmSendTestOldApi::NextPacket() {
   assert(codec_registered_);
   if (filter_.test(payload_type_)) {
     // This payload type should be filtered out. Since the payload type is the
@@ -77,9 +80,9 @@ Packet* AcmSendTest::NextPacket() {
                                            input_frame_.num_channels_,
                                            input_frame_.data_);
     }
-    int32_t encoded_bytes = acm_->Add10MsAudio(input_frame_);
-    EXPECT_GE(encoded_bytes, 0);
+    CHECK_EQ(0, acm_->Add10MsData(input_frame_));
     input_frame_.timestamp_ += input_block_size_samples_;
+    int32_t encoded_bytes = acm_->Process();
     if (encoded_bytes > 0) {
       // Encoded packet received.
       return CreatePacket();
@@ -90,12 +93,13 @@ Packet* AcmSendTest::NextPacket() {
 }
 
 // This method receives the callback from ACM when a new packet is produced.
-int32_t AcmSendTest::SendData(FrameType frame_type,
-                              uint8_t payload_type,
-                              uint32_t timestamp,
-                              const uint8_t* payload_data,
-                              uint16_t payload_len_bytes,
-                              const RTPFragmentationHeader* fragmentation) {
+int32_t AcmSendTestOldApi::SendData(
+    FrameType frame_type,
+    uint8_t payload_type,
+    uint32_t timestamp,
+    const uint8_t* payload_data,
+    uint16_t payload_len_bytes,
+    const RTPFragmentationHeader* fragmentation) {
   // Store the packet locally.
   frame_type_ = frame_type;
   payload_type_ = payload_type;
@@ -105,7 +109,7 @@ int32_t AcmSendTest::SendData(FrameType frame_type,
   return 0;
 }
 
-Packet* AcmSendTest::CreatePacket() {
+Packet* AcmSendTestOldApi::CreatePacket() {
   const size_t kRtpHeaderSize = 12;
   size_t allocated_bytes = last_payload_vec_.size() + kRtpHeaderSize;
   uint8_t* packet_memory = new uint8_t[allocated_bytes];
