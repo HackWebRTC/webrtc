@@ -1015,14 +1015,6 @@ class AudioCoding {
           playout_channels(1),
           playout_frequency_hz(32000) {}
 
-    AudioCodingModule::Config ToOldConfig() const {
-      AudioCodingModule::Config old_config;
-      old_config.id = 0;
-      old_config.neteq_config = neteq_config;
-      old_config.clock = clock;
-      return old_config;
-    }
-
     NetEq::Config neteq_config;
     Clock* clock;
     AudioPacketizationCallback* transport;
@@ -1053,9 +1045,6 @@ class AudioCoding {
   // Returns the encoder object currently in use. This is the same as the
   // codec that was registered in the latest call to RegisterSendCodec().
   virtual const AudioEncoder* GetSenderInfo() const = 0;
-
-  // Temporary solution to be used during refactoring.
-  virtual const CodecInst* GetSenderCodecInst() = 0;
 
   // Adds 10 ms of raw (PCM) audio data to the encoder. If the sampling
   // frequency of the audio does not match the sampling frequency of the
@@ -1149,22 +1138,6 @@ class AudioCoding {
 
   // Disables NACK.
   virtual void DisableNack() = 0;
-
-
-  // Temporary solution to be used during refactoring.
-  // If DTX is enabled and the codec does not have internal DTX/VAD
-  // WebRtc VAD will be automatically enabled and |enable_vad| is ignored.
-  //
-  // If DTX is disabled but VAD is enabled no DTX packets are sent,
-  // regardless of whether the codec has internal DTX/VAD or not. In this
-  // case, WebRtc VAD is running to label frames as active/in-active.
-  //
-  // NOTE! VAD/DTX is not supported when sending stereo.
-  //
-  // Return true if successful, false otherwise.
-  virtual bool SetVad(bool enable_dtx,
-                      bool enable_vad,
-                      ACMVADMode vad_mode) = 0;
 
   // Returns a list of packets to request retransmission of.
   // |round_trip_time_ms| is an estimate of the round-trip-time (in

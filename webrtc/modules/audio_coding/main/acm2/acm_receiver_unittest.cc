@@ -47,10 +47,9 @@ class AcmReceiverTest : public AudioPacketizationCallback,
         packet_sent_(false),
         last_packet_send_timestamp_(timestamp_),
         last_frame_type_(kFrameEmpty) {
-    AudioCoding::Config config;
-    config.transport = this;
-    acm_.reset(new AudioCodingImpl(config));
-    receiver_.reset(new AcmReceiver(config.ToOldConfig()));
+    AudioCodingModule::Config config;
+    acm_.reset(new AudioCodingModuleImpl(config));
+    receiver_.reset(new AcmReceiver(config));
   }
 
   ~AcmReceiverTest() {}
@@ -61,6 +60,10 @@ class AcmReceiverTest : public AudioPacketizationCallback,
     for (int n = 0; n < ACMCodecDB::kNumCodecs; n++) {
       ASSERT_EQ(0, ACMCodecDB::Codec(n, &codecs_[n]));
     }
+
+    acm_->InitializeReceiver();
+    acm_->InitializeSender();
+    acm_->RegisterTransportCallback(this);
 
     rtp_header_.header.sequenceNumber = 0;
     rtp_header_.header.timestamp = 0;
@@ -79,12 +82,12 @@ class AcmReceiverTest : public AudioPacketizationCallback,
     CodecInst codec;
     ACMCodecDB::Codec(codec_id, &codec);
     if (timestamp_ == 0) {  // This is the first time inserting audio.
-      ASSERT_TRUE(acm_->RegisterSendCodec(codec_id, codec.pltype));
+      ASSERT_EQ(0, acm_->RegisterSendCodec(codec));
     } else {
-      const CodecInst* current_codec = acm_->GetSenderCodecInst();
-      ASSERT_TRUE(current_codec);
-      if (!CodecsEqual(codec, *current_codec))
-        ASSERT_TRUE(acm_->RegisterSendCodec(codec_id, codec.pltype));
+      CodecInst current_codec;
+      ASSERT_EQ(0, acm_->SendCodec(&current_codec));
+      if (!CodecsEqual(codec, current_codec))
+        ASSERT_EQ(0, acm_->RegisterSendCodec(codec));
     }
     AudioFrame frame;
     // Frame setup according to the codec.
@@ -99,7 +102,8 @@ class AcmReceiverTest : public AudioPacketizationCallback,
     while (num_bytes == 0) {
       frame.timestamp_ = timestamp_;
       timestamp_ += frame.samples_per_channel_;
-      num_bytes = acm_->Add10MsAudio(frame);
+      ASSERT_EQ(0, acm_->Add10MsData(frame));
+      num_bytes = acm_->Process();
       ASSERT_GE(num_bytes, 0);
     }
     ASSERT_TRUE(packet_sent_);  // Sanity check.
@@ -147,7 +151,7 @@ class AcmReceiverTest : public AudioPacketizationCallback,
 
   scoped_ptr<AcmReceiver> receiver_;
   CodecInst codecs_[ACMCodecDB::kMaxNumCodecs];
-  scoped_ptr<AudioCoding> acm_;
+  scoped_ptr<AudioCodingModule> acm_;
   WebRtcRTPHeader rtp_header_;
   uint32_t timestamp_;
   bool packet_sent_;  // Set when SendData is called reset when inserting audio.
@@ -303,7 +307,7 @@ TEST_F(AcmReceiverTest, DISABLED_ON_ANDROID(LastAudioCodec)) {
   // Register CNG at sender side.
   int n = 0;
   while (kCngId[n] > 0) {
-    ASSERT_TRUE(acm_->RegisterSendCodec(kCngId[n], codecs_[kCngId[n]].pltype));
+    ASSERT_EQ(0, acm_->RegisterSendCodec(codecs_[kCngId[n]]));
     ++n;
   }
 
@@ -312,7 +316,7 @@ TEST_F(AcmReceiverTest, DISABLED_ON_ANDROID(LastAudioCodec)) {
   EXPECT_EQ(-1, receiver_->LastAudioCodec(&codec));
 
   // Start with sending DTX.
-  ASSERT_TRUE(acm_->SetVad(true, true, VADVeryAggr));
+  ASSERT_EQ(0, acm_->SetVAD(true, true, VADVeryAggr));
   packet_sent_ = false;
   InsertOnePacketOfSilence(kCodecId[0]);  // Enough to test with one codec.
   ASSERT_TRUE(packet_sent_);
@@ -326,7 +330,7 @@ TEST_F(AcmReceiverTest, DISABLED_ON_ANDROID(LastAudioCodec)) {
   n = 0;
   while (kCodecId[n] >= 0) {  // Loop over codecs.
     // Set DTX off to send audio payload.
-    acm_->SetVad(false, false, VADAggr);
+    acm_->SetVAD(false, false, VADAggr);
     packet_sent_ = false;
     InsertOnePacketOfSilence(kCodecId[n]);
 
@@ -338,7 +342,7 @@ TEST_F(AcmReceiverTest, DISABLED_ON_ANDROID(LastAudioCodec)) {
 
     // Set VAD on to send DTX. Then check if the "Last Audio codec" returns
     // the expected codec.
-    acm_->SetVad(true, true, VADAggr);
+    acm_->SetVAD(true, true, VADAggr);
 
     // Do as many encoding until a DTX is sent.
     while (last_frame_type_ != kAudioFrameCN) {
