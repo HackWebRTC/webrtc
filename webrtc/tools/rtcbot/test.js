@@ -17,10 +17,10 @@ var vm = require('vm');
 var BotManager = require('./botmanager.js');
 
 function Test(botType) {
-  // Make the test fail if not completed in 3 seconds.
+  // TODO(houssainy) set the time out.
   this.timeout_ = setTimeout(
       this.fail.bind(this, "Test timeout!"),
-      5000);
+      10000);
   this.botType_ = botType;
 }
 
@@ -82,4 +82,4 @@ function runTest(testfile) {
   script.runInNewContext({ test: new Test(process.argv[2]) });
 }
 
-runTest("./test/simple_offer_answer.js");
+runTest("./test/webrtc_video_streaming.js");
