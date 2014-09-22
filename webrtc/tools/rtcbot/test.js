@@ -76,10 +76,10 @@ Test.prototype = {
   },
 }
 
-function runTest(testfile) {
+function runTest(botType, testfile) {
   console.log("Running test: " + testfile);
   var script = vm.createScript(fs.readFileSync(testfile), testfile);
-  script.runInNewContext({ test: new Test(process.argv[2]) });
+  script.runInNewContext({ test: new Test(botType) });
 }
 
-runTest("./test/webrtc_video_streaming.js");
+runTest(process.argv[2], process.argv[3]);
