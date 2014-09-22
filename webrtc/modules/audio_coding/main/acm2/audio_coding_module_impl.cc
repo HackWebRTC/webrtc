@@ -2073,6 +2073,13 @@ const AudioEncoder* AudioCodingImpl::GetSenderInfo() const {
   FATAL() << "Not implemented yet.";
 }
 
+const CodecInst* AudioCodingImpl::GetSenderCodecInst() {
+  if (acm_old_->SendCodec(&current_send_codec_) != 0) {
+    return NULL;
+  }
+  return &current_send_codec_;
+}
+
 int AudioCodingImpl::Add10MsAudio(const AudioFrame& audio_frame) {
   if (acm_old_->Add10MsData(audio_frame) != 0) {
     return -1;
@@ -2149,6 +2156,12 @@ bool AudioCodingImpl::EnableNack(size_t max_nack_list_size) {
 
 void AudioCodingImpl::DisableNack() {
   FATAL() << "Not implemented yet.";
+}
+
+bool AudioCodingImpl::SetVad(bool enable_dtx,
+                             bool enable_vad,
+                             ACMVADMode vad_mode) {
+  return acm_old_->SetVAD(enable_dtx, enable_vad, vad_mode) == 0;
 }
 
 std::vector<uint16_t> AudioCodingImpl::GetNackList(
