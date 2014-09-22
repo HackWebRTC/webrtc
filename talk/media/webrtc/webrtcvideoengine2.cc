@@ -332,14 +332,6 @@ void WebRtcVideoEngine2::Terminate() {
 
 int WebRtcVideoEngine2::GetCapabilities() { return VIDEO_RECV | VIDEO_SEND; }
 
-bool WebRtcVideoEngine2::SetOptions(const VideoOptions& options) {
-  // TODO(pbos): Do we need this? This is a no-op in the existing
-  // WebRtcVideoEngine implementation.
-  LOG(LS_VERBOSE) << "SetOptions: " << options.ToString();
-  //  options_ = options;
-  return true;
-}
-
 bool WebRtcVideoEngine2::SetDefaultEncoderConfig(
     const VideoEncoderConfig& config) {
   const VideoCodec& codec = config.max_codec;
