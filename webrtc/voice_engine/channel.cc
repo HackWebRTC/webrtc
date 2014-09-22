@@ -1392,61 +1392,6 @@ Channel::StopReceiving()
 }
 
 int32_t
-Channel::SetNetEQPlayoutMode(NetEqModes mode)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::SetNetEQPlayoutMode()");
-    AudioPlayoutMode playoutMode(voice);
-    switch (mode)
-    {
-        case kNetEqDefault:
-            playoutMode = voice;
-            break;
-        case kNetEqStreaming:
-            playoutMode = streaming;
-            break;
-        case kNetEqFax:
-            playoutMode = fax;
-            break;
-        case kNetEqOff:
-            playoutMode = off;
-            break;
-    }
-    if (audio_coding_->SetPlayoutMode(playoutMode) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
-            "SetNetEQPlayoutMode() failed to set playout mode");
-        return -1;
-    }
-    return 0;
-}
-
-int32_t
-Channel::GetNetEQPlayoutMode(NetEqModes& mode)
-{
-    const AudioPlayoutMode playoutMode = audio_coding_->PlayoutMode();
-    switch (playoutMode)
-    {
-        case voice:
-            mode = kNetEqDefault;
-            break;
-        case streaming:
-            mode = kNetEqStreaming;
-            break;
-        case fax:
-            mode = kNetEqFax;
-            break;
-        case off:
-            mode = kNetEqOff;
-    }
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
-                 VoEId(_instanceId,_channelId),
-                 "Channel::GetNetEQPlayoutMode() => mode=%u", mode);
-    return 0;
-}
-
-int32_t
 Channel::RegisterVoiceEngineObserver(VoiceEngineObserver& observer)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),

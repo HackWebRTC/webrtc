@@ -181,9 +181,6 @@ public:
         OnHoldModes mode = kHoldSendAndPlay) { return -1; }
     virtual int GetOnHoldStatus(int channel, bool& enabled,
         OnHoldModes& mode) { return -1; }
-    virtual int SetNetEQPlayoutMode(int channel, NetEqModes mode) { return -1; }
-    virtual int GetNetEQPlayoutMode(int channel,
-        NetEqModes& mode) { return -1; }
 
 protected:
     VoEBase() {}

@@ -498,8 +498,6 @@ class FakeWebRtcVoiceEngine
   WEBRTC_STUB(LastError, ());
   WEBRTC_STUB(SetOnHoldStatus, (int, bool, webrtc::OnHoldModes));
   WEBRTC_STUB(GetOnHoldStatus, (int, bool&, webrtc::OnHoldModes&));
-  WEBRTC_STUB(SetNetEQPlayoutMode, (int, webrtc::NetEqModes));
-  WEBRTC_STUB(GetNetEQPlayoutMode, (int, webrtc::NetEqModes&));
 
   // webrtc::VoECodec
   WEBRTC_FUNC(NumOfCodecs, ()) {

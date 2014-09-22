@@ -194,8 +194,6 @@ public:
     int32_t StartReceiving();
     int32_t StopReceiving();
 
-    int32_t SetNetEQPlayoutMode(NetEqModes mode);
-    int32_t GetNetEQPlayoutMode(NetEqModes& mode);
     int32_t RegisterVoiceEngineObserver(VoiceEngineObserver& observer);
     int32_t DeRegisterVoiceEngineObserver();
 
