@@ -147,7 +147,7 @@ extern "C" {
   int16_t WebRtcIsac_Encode(
       ISACStruct*        ISAC_main_inst,
       const int16_t* speechIn,
-      int16_t*       encoded);
+      uint8_t* encoded);
 
 
   /******************************************************************************

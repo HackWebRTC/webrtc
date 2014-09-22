@@ -565,7 +565,7 @@ int main(int argc, char* argv[])
           /* Encode */
           stream_len = WebRtcIsacfix_Encode(ISAC_main_inst,
                                             shortdata,
-                                            (int16_t*)streamdata);
+                                            (uint8_t*)streamdata);
 
           /* If packet is ready, and CE testing, call the different API
              functions from the internal API. */

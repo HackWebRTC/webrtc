@@ -496,7 +496,7 @@ int16_t WebRtcIsac_EncoderInit(ISACStruct* ISAC_main_inst,
  */
 int16_t WebRtcIsac_Encode(ISACStruct* ISAC_main_inst,
                           const int16_t* speechIn,
-                          int16_t* encoded) {
+                          uint8_t* encoded) {
   float inFrame[FRAMESAMPLES_10ms];
   int16_t speechInLB[FRAMESAMPLES_10ms];
   int16_t speechInUB[FRAMESAMPLES_10ms];
@@ -504,7 +504,6 @@ int16_t WebRtcIsac_Encode(ISACStruct* ISAC_main_inst,
   int16_t streamLenUB = 0;
   int16_t streamLen = 0;
   int16_t k = 0;
-  uint8_t* ptrEncodedUW8 = (uint8_t*)encoded;
   int garbageLen = 0;
   int32_t bottleneck = 0;
   int16_t bottleneckIdx = 0;
@@ -643,23 +642,22 @@ int16_t WebRtcIsac_Encode(ISACStruct* ISAC_main_inst,
       streamLenUB = 0;
     }
 
-    memcpy(ptrEncodedUW8, instLB->ISACencLB_obj.bitstr_obj.stream, streamLenLB);
+    memcpy(encoded, instLB->ISACencLB_obj.bitstr_obj.stream, streamLenLB);
     streamLen = streamLenLB;
     if (streamLenUB > 0) {
-      ptrEncodedUW8[streamLenLB] = (uint8_t)(streamLenUB + 1 +
-                                                   LEN_CHECK_SUM_WORD8);
-      memcpy(&ptrEncodedUW8[streamLenLB + 1],
-             instUB->ISACencUB_obj.bitstr_obj.stream, streamLenUB);
-      streamLen += ptrEncodedUW8[streamLenLB];
+      encoded[streamLenLB] = streamLenUB + 1 + LEN_CHECK_SUM_WORD8;
+      memcpy(&encoded[streamLenLB + 1],
+             instUB->ISACencUB_obj.bitstr_obj.stream,
+             streamLenUB);
+      streamLen += encoded[streamLenLB];
     } else {
-      ptrEncodedUW8[streamLenLB] = 0;
+      encoded[streamLenLB] = 0;
     }
   } else {
     if (streamLenLB == 0) {
       return 0;
     }
-    memcpy(ptrEncodedUW8, instLB->ISACencLB_obj.bitstr_obj.stream,
-           streamLenLB);
+    memcpy(encoded, instLB->ISACencLB_obj.bitstr_obj.stream, streamLenLB);
     streamLenUB = 0;
     streamLen = streamLenLB;
   }
@@ -697,11 +695,11 @@ int16_t WebRtcIsac_Encode(ISACStruct* ISAC_main_inst,
      * 255 is the max garbage length we can signal using 8 bits. */
     if ((instISAC->bandwidthKHz == isac8kHz) ||
         (streamLenUB == 0)) {
-      ptrGarbage = &ptrEncodedUW8[streamLenLB];
+      ptrGarbage = &encoded[streamLenLB];
       limit = streamLen + 255;
     } else {
-      ptrGarbage = &ptrEncodedUW8[streamLenLB + 1 + streamLenUB];
-      limit = streamLen + (255 - ptrEncodedUW8[streamLenLB]);
+      ptrGarbage = &encoded[streamLenLB + 1 + streamLenUB];
+      limit = streamLen + (255 - encoded[streamLenLB]);
     }
     minBytes = (minBytes > limit) ? limit : minBytes;
 
@@ -718,13 +716,12 @@ int16_t WebRtcIsac_Encode(ISACStruct* ISAC_main_inst,
        * That is the only way to preserve backward compatibility. */
       if ((instISAC->bandwidthKHz == isac8kHz) ||
           (streamLenUB == 0)) {
-        ptrEncodedUW8[streamLenLB] = (uint8_t)garbageLen;
+        encoded[streamLenLB] = garbageLen;
       } else {
-        ptrEncodedUW8[streamLenLB] += (uint8_t)garbageLen;
+        encoded[streamLenLB] += garbageLen;
         /* Write the length of the garbage at the end of the upper-band
          *  bit-stream, if exists. This helps for sanity check. */
-        ptrEncodedUW8[streamLenLB + 1 + streamLenUB] =
-            (uint8_t)garbageLen;
+        encoded[streamLenLB + 1 + streamLenUB] = garbageLen;
 
       }
       streamLen += garbageLen;
@@ -741,16 +738,14 @@ int16_t WebRtcIsac_Encode(ISACStruct* ISAC_main_inst,
   if ((instISAC->bandwidthKHz != isac8kHz) && (streamLenUB > 0)) {
     uint32_t crc;
 
-    WebRtcIsac_GetCrc((int16_t*)(&(ptrEncodedUW8[streamLenLB + 1])),
+    WebRtcIsac_GetCrc((int16_t*)(&(encoded[streamLenLB + 1])),
                       streamLenUB + garbageLen, &crc);
 #ifndef WEBRTC_ARCH_BIG_ENDIAN
     for (k = 0; k < LEN_CHECK_SUM_WORD8; k++) {
-      ptrEncodedUW8[streamLen - LEN_CHECK_SUM_WORD8 + k] =
-        (uint8_t)((crc >> (24 - k * 8)) & 0xFF);
+      encoded[streamLen - LEN_CHECK_SUM_WORD8 + k] = crc >> (24 - k * 8);
     }
 #else
-    memcpy(&ptrEncodedUW8[streamLenLB + streamLenUB + 1], &crc,
-           LEN_CHECK_SUM_WORD8);
+    memcpy(&encoded[streamLenLB + streamLenUB + 1], &crc, LEN_CHECK_SUM_WORD8);
 #endif
   }
   return streamLen;
