@@ -105,7 +105,6 @@
             'audio_coding/main/acm2/acm_opus_unittest.cc',
             'audio_coding/main/acm2/acm_receiver_unittest.cc',
             'audio_coding/main/acm2/audio_coding_module_unittest.cc',
-            'audio_coding/main/acm2/audio_coding_module_unittest_oldapi.cc',
             'audio_coding/main/acm2/call_statistics_unittest.cc',
             'audio_coding/main/acm2/initial_delay_manager_unittest.cc',
             'audio_coding/main/acm2/nack_unittest.cc',

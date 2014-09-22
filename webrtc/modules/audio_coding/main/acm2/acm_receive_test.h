@@ -16,7 +16,7 @@
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
-class AudioCoding;
+class AudioCodingModule;
 struct CodecInst;
 
 namespace test {
@@ -50,7 +50,7 @@ class AcmReceiveTest {
 
  private:
   SimulatedClock clock_;
-  scoped_ptr<AudioCoding> acm_;
+  scoped_ptr<AudioCodingModule> acm_;
   PacketSource* packet_source_;
   AudioSink* audio_sink_;
   const int output_freq_hz_;

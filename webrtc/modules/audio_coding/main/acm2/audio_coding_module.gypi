@@ -119,11 +119,7 @@
         {
           'target_name': 'acm_receive_test',
           'type': 'static_library',
-          'defines': [
-            '<@(audio_coding_defines)',
-          ],
           'dependencies': [
-            '<@(audio_coding_dependencies)',
             'audio_coding_module',
             'neteq_unittest_tools',
             '<(DEPTH)/testing/gtest.gyp:gtest',
@@ -131,18 +127,12 @@
           'sources': [
             'acm_receive_test.cc',
             'acm_receive_test.h',
-            'acm_receive_test_oldapi.cc',
-            'acm_receive_test_oldapi.h',
           ],
         }, # acm_receive_test
         {
           'target_name': 'acm_send_test',
           'type': 'static_library',
-          'defines': [
-            '<@(audio_coding_defines)',
-          ],
           'dependencies': [
-            '<@(audio_coding_dependencies)',
             'audio_coding_module',
             'neteq_unittest_tools',
             '<(DEPTH)/testing/gtest.gyp:gtest',
@@ -150,8 +140,6 @@
           'sources': [
             'acm_send_test.cc',
             'acm_send_test.h',
-            'acm_send_test_oldapi.cc',
-            'acm_send_test_oldapi.h',
           ],
         }, # acm_send_test
         {
