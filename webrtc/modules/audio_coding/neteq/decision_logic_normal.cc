@@ -76,8 +76,10 @@ Operations DecisionLogicNormal::GetDecisionSpecialized(
                                  available_timestamp, play_dtmf);
   } else {
     // This implies that available_timestamp < target_timestamp, which can
-    // happen when a new stream or codec is received. Signal for a reset.
-    return kUndefined;
+    // happen when a new stream or codec is received. Do Expand instead, and
+    // wait for a newer packet to arrive, or for the buffer to flush (resulting
+    // in a master reset).
+    return kExpand;
   }
 }
 

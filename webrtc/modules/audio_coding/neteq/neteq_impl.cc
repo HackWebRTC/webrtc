@@ -864,9 +864,6 @@ int NetEqImpl::GetDecision(Operations* operation,
 
   assert(sync_buffer_.get());
   uint32_t end_timestamp = sync_buffer_->end_timestamp();
-  if (!new_codec_) {
-    packet_buffer_->DiscardOldPackets(end_timestamp);
-  }
   const RTPHeader* header = packet_buffer_->NextRtpHeader();
 
   if (decision_logic_->CngRfc3389On() || last_mode_ == kModeRfc3389Cng) {
@@ -1816,6 +1813,14 @@ int NetEqImpl::ExtractPackets(int required_samples, PacketList* packet_list) {
       prev_sequence_number = header->sequenceNumber;
     }
   } while (extracted_samples < required_samples && next_packet_available);
+
+  if (extracted_samples > 0) {
+    // Delete old packets only when we are going to decode something. Otherwise,
+    // we could end up in the situation where we never decode anything, since
+    // all incoming packets are considered too old but the buffer will also
+    // never be flooded and flushed.
+    packet_buffer_->DiscardOldPackets(timestamp_);
+  }
 
   return extracted_samples;
 }
