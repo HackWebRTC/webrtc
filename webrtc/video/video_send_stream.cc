@@ -330,6 +330,8 @@ bool VideoSendStream::ReconfigureVideoEncoder(
       video_codec.codecSpecific.VP8 = *reinterpret_cast<const VideoCodecVP8*>(
                                           config.encoder_specific_settings);
     }
+    video_codec.codecSpecific.VP8.numberOfTemporalLayers =
+        static_cast<unsigned char>(streams.back().temporal_layers.size());
   } else {
     // TODO(pbos): Support encoder_settings codec-agnostically.
     assert(config.encoder_specific_settings == NULL);
@@ -362,8 +364,8 @@ bool VideoSendStream::ReconfigureVideoEncoder(
     sim_stream->targetBitrate = streams[i].target_bitrate_bps / 1000;
     sim_stream->maxBitrate = streams[i].max_bitrate_bps / 1000;
     sim_stream->qpMax = streams[i].max_qp;
-    // TODO(pbos): Implement mapping for temporal layers.
-    assert(streams[i].temporal_layers.empty());
+    sim_stream->numberOfTemporalLayers =
+        static_cast<unsigned char>(streams[i].temporal_layers.size());
 
     video_codec.width = std::max(video_codec.width,
                                  static_cast<unsigned short>(streams[i].width));

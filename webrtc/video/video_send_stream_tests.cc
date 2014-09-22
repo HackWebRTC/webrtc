@@ -1420,6 +1420,7 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesCommonEncoderConfigValues) {
 }
 
 TEST_F(VideoSendStreamTest, EncoderSetupPropagatesVp8Config) {
+  static const size_t kNumberOfTemporalLayers = 4;
   class VideoCodecConfigObserver : public test::SendTest,
                                    public test::FakeEncoder {
    public:
@@ -1438,6 +1439,11 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesVp8Config) {
       send_config->encoder_settings.encoder = this;
       send_config->encoder_settings.payload_name = "VP8";
 
+      for (size_t i = 0; i < encoder_config->streams.size(); ++i) {
+        encoder_config->streams[i].temporal_layers.resize(
+            kNumberOfTemporalLayers);
+      }
+
       encoder_config->encoder_specific_settings = &vp8_settings_;
       encoder_config_ = *encoder_config;
     }
@@ -1452,6 +1458,20 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesVp8Config) {
                                int32_t number_of_cores,
                                uint32_t max_payload_size) OVERRIDE {
       EXPECT_EQ(kVideoCodecVP8, config->codecType);
+
+      // Check that the number of temporal layers has propagated properly to
+      // VideoCodec.
+      EXPECT_EQ(kNumberOfTemporalLayers,
+                config->codecSpecific.VP8.numberOfTemporalLayers);
+
+      for (unsigned char i = 0; i < config->numberOfSimulcastStreams; ++i) {
+        EXPECT_EQ(kNumberOfTemporalLayers,
+                  config->simulcastStream[i].numberOfTemporalLayers);
+      }
+
+      // Set expected temporal layers as they should have been set when
+      // reconfiguring the encoder and not match the set config.
+      vp8_settings_.numberOfTemporalLayers = kNumberOfTemporalLayers;
       EXPECT_EQ(0,
                 memcmp(&config->codecSpecific.VP8,
                        &vp8_settings_,
