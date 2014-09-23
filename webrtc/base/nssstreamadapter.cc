@@ -486,6 +486,8 @@ int NSSStreamAdapter::BeginSSL() {
       return -1;
     }
 
+    // TODO(juberti): Check for client_auth_enabled()
+
     rv = SSL_OptionSet(ssl_fd_, SSL_REQUIRE_CERTIFICATE, PR_TRUE);
     if (rv != SECSuccess) {
       Error("BeginSSL", -1, false);

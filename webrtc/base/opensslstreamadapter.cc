@@ -743,8 +743,15 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
   SSL_CTX_set_info_callback(ctx, OpenSSLAdapter::SSLInfoCallback);
 #endif
 
-  SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER |SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-                     SSLVerifyCallback);
+  int mode = SSL_VERIFY_PEER;
+  if (client_auth_enabled()) {
+    // Require a certificate from the client.
+    // Note: Normally this is always true in production, but it may be disabled
+    // for testing purposes (e.g. SSLAdapter unit tests).
+    mode |= SSL_VERIFY_FAIL_IF_NO_PEER_CERT;
+  }
+
+  SSL_CTX_set_verify(ctx, mode, SSLVerifyCallback);
   SSL_CTX_set_verify_depth(ctx, 4);
   SSL_CTX_set_cipher_list(ctx, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
 

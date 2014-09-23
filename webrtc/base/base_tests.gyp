@@ -149,6 +149,7 @@
           }],
           ['os_posix==1', {
             'sources': [
+              #'ssladapter_unittest.cc',
               #'sslidentity_unittest.cc',
               #'sslstreamadapter_unittest.cc',
             ],

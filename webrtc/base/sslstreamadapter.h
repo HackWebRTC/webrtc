@@ -48,10 +48,14 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   static SSLStreamAdapter* Create(StreamInterface* stream);
 
   explicit SSLStreamAdapter(StreamInterface* stream)
-      : StreamAdapterInterface(stream), ignore_bad_cert_(false) { }
+      : StreamAdapterInterface(stream), ignore_bad_cert_(false),
+        client_auth_enabled_(true) { }
 
   void set_ignore_bad_cert(bool ignore) { ignore_bad_cert_ = ignore; }
   bool ignore_bad_cert() const { return ignore_bad_cert_; }
+
+  void set_client_auth_enabled(bool enabled) { client_auth_enabled_ = enabled; }
+  bool client_auth_enabled() const { return client_auth_enabled_; }
 
   // Specify our SSL identity: key and certificate. Mostly this is
   // only used in the peer-to-peer mode (unless we actually want to
@@ -151,10 +155,16 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   static bool HaveDtlsSrtp();
   static bool HaveExporter();
 
+ private:
   // If true, the server certificate need not match the configured
   // server_name, and in fact missing certificate authority and other
   // verification errors are ignored.
   bool ignore_bad_cert_;
+
+  // If true (default), the client is required to provide a certificate during
+  // handshake. If no certificate is given, handshake fails. This applies to
+  // server mode only.
+  bool client_auth_enabled_;
 };
 
 }  // namespace rtc
