@@ -15,9 +15,8 @@
 #include "webrtc/modules/audio_processing/agc/include/gain_control.h"
 #include "webrtc/typedefs.h"
 
-//#define AGC_DEBUG
 //#define MIC_LEVEL_FEEDBACK
-#ifdef AGC_DEBUG
+#ifdef WEBRTC_AGC_DEBUG_DUMP
 #include <stdio.h>
 #endif
 
@@ -122,10 +121,10 @@ typedef struct
     AgcVad_t            vadMic;
     DigitalAgc_t        digitalAgc;
 
-#ifdef AGC_DEBUG
-    FILE*               fpt;
-    FILE*               agcLog;
-    int32_t             fcount;
+#ifdef WEBRTC_AGC_DEBUG_DUMP
+    FILE* fpt;
+    FILE* agcLog;
+    int32_t fcount;
 #endif
 
     int16_t             lowLevelSignal;

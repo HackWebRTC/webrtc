@@ -19,7 +19,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
-#ifdef AGC_DEBUG //test log
+#ifdef WEBRTC_AGC_DEBUG_DUMP
 #include <stdio.h>
 #endif
 #include "webrtc/modules/audio_processing/agc/analog_agc.h"
@@ -139,10 +139,10 @@ int WebRtcAgc_AddMic(void *state, int16_t *in_mic, int16_t *in_mic_H,
             L = 8;
         } else
         {
-#ifdef AGC_DEBUG //test log
+#ifdef WEBRTC_AGC_DEBUG_DUMP
             fprintf(stt->fpt,
                     "AGC->add_mic, frame %d: Invalid number of samples\n\n",
-                    (stt->fcount + 1));
+                    stt->fcount + 1);
 #endif
             return -1;
         }
@@ -160,10 +160,10 @@ int WebRtcAgc_AddMic(void *state, int16_t *in_mic, int16_t *in_mic_H,
             L = 16;
         } else
         {
-#ifdef AGC_DEBUG //test log
+#ifdef WEBRTC_AGC_DEBUG_DUMP
             fprintf(stt->fpt,
                     "AGC->add_mic, frame %d: Invalid number of samples\n\n",
-                    (stt->fcount + 1));
+                    stt->fcount + 1);
 #endif
             return -1;
         }
@@ -177,10 +177,10 @@ int WebRtcAgc_AddMic(void *state, int16_t *in_mic, int16_t *in_mic_H,
             L = 16;
         } else
         {
-#ifdef AGC_DEBUG
+#ifdef WEBRTC_AGC_DEBUG_DUMP
             fprintf(stt->fpt,
                     "AGC->add_mic, frame %d: Invalid sample rate\n\n",
-                    (stt->fcount + 1));
+                    stt->fcount + 1);
 #endif
             return -1;
         }
@@ -343,7 +343,7 @@ int WebRtcAgc_AddFarend(void *state, const int16_t *in_far, int16_t samples)
     {
         if ((samples != 80) && (samples != 160))
         {
-#ifdef AGC_DEBUG //test log
+#ifdef WEBRTC_AGC_DEBUG_DUMP
             fprintf(stt->fpt,
                     "AGC->add_far_end, frame %d: Invalid number of samples\n\n",
                     stt->fcount);
@@ -355,7 +355,7 @@ int WebRtcAgc_AddFarend(void *state, const int16_t *in_far, int16_t samples)
     {
         if ((samples != 160) && (samples != 320))
         {
-#ifdef AGC_DEBUG //test log
+#ifdef WEBRTC_AGC_DEBUG_DUMP
             fprintf(stt->fpt,
                     "AGC->add_far_end, frame %d: Invalid number of samples\n\n",
                     stt->fcount);
@@ -367,7 +367,7 @@ int WebRtcAgc_AddFarend(void *state, const int16_t *in_far, int16_t samples)
     {
         if ((samples != 160) && (samples != 320))
         {
-#ifdef AGC_DEBUG //test log
+#ifdef WEBRTC_AGC_DEBUG_DUMP
             fprintf(stt->fpt,
                     "AGC->add_far_end, frame %d: Invalid number of samples\n\n",
                     stt->fcount);
@@ -377,7 +377,7 @@ int WebRtcAgc_AddFarend(void *state, const int16_t *in_far, int16_t samples)
         subFrames = 160;
     } else
     {
-#ifdef AGC_DEBUG //test log
+#ifdef WEBRTC_AGC_DEBUG_DUMP
         fprintf(stt->fpt,
                 "AGC->add_far_end, frame %d: Invalid sample rate\n\n",
                 stt->fcount + 1);
@@ -657,10 +657,12 @@ void WebRtcAgc_ZeroCtrl(Agc_t *stt, int32_t *inMicLevel, int32_t *env)
             stt->micVol = *inMicLevel;
         }
 
-#ifdef AGC_DEBUG //test log
+#ifdef WEBRTC_AGC_DEBUG_DUMP
         fprintf(stt->fpt,
-                "\t\tAGC->zeroCntrl, frame %d: 500 ms under threshold, micVol:\n",
-                stt->fcount, stt->micVol);
+                "\t\tAGC->zeroCntrl, frame %d: 500 ms under threshold,"
+                " micVol: %d\n",
+                stt->fcount,
+                stt->micVol);
 #endif
 
         stt->activeSpeech = 0;
@@ -771,14 +773,18 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
 
     if (inMicLevelTmp > stt->maxAnalog)
     {
-#ifdef AGC_DEBUG //test log
-        fprintf(stt->fpt, "\tAGC->ProcessAnalog, frame %d: micLvl > maxAnalog\n", stt->fcount);
+#ifdef WEBRTC_AGC_DEBUG_DUMP
+        fprintf(stt->fpt,
+                "\tAGC->ProcessAnalog, frame %d: micLvl > maxAnalog\n",
+                stt->fcount);
 #endif
         return -1;
     } else if (inMicLevelTmp < stt->minLevel)
     {
-#ifdef AGC_DEBUG //test log
-        fprintf(stt->fpt, "\tAGC->ProcessAnalog, frame %d: micLvl < minLevel\n", stt->fcount);
+#ifdef WEBRTC_AGC_DEBUG_DUMP
+        fprintf(stt->fpt,
+                "\tAGC->ProcessAnalog, frame %d: micLvl < minLevel\n",
+                stt->fcount);
 #endif
         return -1;
     }
@@ -813,9 +819,10 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
 #ifdef MIC_LEVEL_FEEDBACK
         //stt->numBlocksMicLvlSat = 0;
 #endif
-#ifdef AGC_DEBUG //test log
+#ifdef WEBRTC_AGC_DEBUG_DUMP
         fprintf(stt->fpt,
-                "\tAGC->ProcessAnalog, frame %d: micLvl < minLevel by manual decrease, raise vol\n",
+                "\tAGC->ProcessAnalog, frame %d: micLvl < minLevel by manual"
+                " decrease, raise vol\n",
                 stt->fcount);
 #endif
     }
@@ -871,10 +878,11 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
         }
         inMicLevelTmp = stt->micVol;
 
-#ifdef AGC_DEBUG //test log
+#ifdef WEBRTC_AGC_DEBUG_DUMP
         fprintf(stt->fpt,
                 "\tAGC->ProcessAnalog, frame %d: saturated, micVol = %d\n",
-                stt->fcount, stt->micVol);
+                stt->fcount,
+                stt->micVol);
 #endif
 
         if (stt->micVol < stt->minOutput)
@@ -1011,10 +1019,13 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
 #ifdef MIC_LEVEL_FEEDBACK
                     //stt->numBlocksMicLvlSat = 0;
 #endif
-#ifdef AGC_DEBUG //test log
+#ifdef WEBRTC_AGC_DEBUG_DUMP
                     fprintf(stt->fpt,
-                            "\tAGC->ProcessAnalog, frame %d: measure > 2ndUpperLim, micVol = %d, maxLevel = %d\n",
-                            stt->fcount, stt->micVol, stt->maxLevel);
+                            "\tAGC->ProcessAnalog, frame %d: measure >"
+                            " 2ndUpperLim, micVol = %d, maxLevel = %d\n",
+                            stt->fcount,
+                            stt->micVol,
+                            stt->maxLevel);
 #endif
                 }
             } else if (stt->Rxx160_LPw32 > stt->upperLimit)
@@ -1054,10 +1065,13 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
 #ifdef MIC_LEVEL_FEEDBACK
                     //stt->numBlocksMicLvlSat = 0;
 #endif
-#ifdef AGC_DEBUG //test log
+#ifdef WEBRTC_AGC_DEBUG_DUMP
                     fprintf(stt->fpt,
-                            "\tAGC->ProcessAnalog, frame %d: measure > UpperLim, micVol = %d, maxLevel = %d\n",
-                            stt->fcount, stt->micVol, stt->maxLevel);
+                            "\tAGC->ProcessAnalog, frame %d: measure >"
+                            " UpperLim, micVol = %d, maxLevel = %d\n",
+                            stt->fcount,
+                            stt->micVol,
+                            stt->maxLevel);
 #endif
                 }
             } else if (stt->Rxx160_LPw32 < stt->lowerSecondaryLimit)
@@ -1113,10 +1127,12 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
                         fprintf(stderr, "Sat mic Level: %d\n", stt->numBlocksMicLvlSat);
                     }
 #endif
-#ifdef AGC_DEBUG //test log
+#ifdef WEBRTC_AGC_DEBUG_DUMP
                     fprintf(stt->fpt,
-                            "\tAGC->ProcessAnalog, frame %d: measure < 2ndLowerLim, micVol = %d\n",
-                            stt->fcount, stt->micVol);
+                            "\tAGC->ProcessAnalog, frame %d: measure <"
+                            " 2ndLowerLim, micVol = %d\n",
+                            stt->fcount,
+                            stt->micVol);
 #endif
                 }
             } else if (stt->Rxx160_LPw32 < stt->lowerLimit)
@@ -1172,10 +1188,11 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
                         fprintf(stderr, "Sat mic Level: %d\n", stt->numBlocksMicLvlSat);
                     }
 #endif
-#ifdef AGC_DEBUG //test log
+#ifdef WEBRTC_AGC_DEBUG_DUMP
                     fprintf(stt->fpt,
                             "\tAGC->ProcessAnalog, frame %d: measure < LowerLim, micVol = %d\n",
-                            stt->fcount, stt->micVol);
+                            stt->fcount,
+                            stt->micVol);
 #endif
 
                 }
@@ -1272,9 +1289,10 @@ int WebRtcAgc_Process(void *agcInst, const int16_t *in_near,
     {
         if ((samples != 80) && (samples != 160))
         {
-#ifdef AGC_DEBUG //test log
+#ifdef WEBRTC_AGC_DEBUG_DUMP
             fprintf(stt->fpt,
-                    "AGC->Process, frame %d: Invalid number of samples\n\n", stt->fcount);
+                    "AGC->Process, frame %d: Invalid number of samples\n\n",
+                    stt->fcount);
 #endif
             return -1;
         }
@@ -1283,9 +1301,10 @@ int WebRtcAgc_Process(void *agcInst, const int16_t *in_near,
     {
         if ((samples != 160) && (samples != 320))
         {
-#ifdef AGC_DEBUG //test log
+#ifdef WEBRTC_AGC_DEBUG_DUMP
             fprintf(stt->fpt,
-                    "AGC->Process, frame %d: Invalid number of samples\n\n", stt->fcount);
+                    "AGC->Process, frame %d: Invalid number of samples\n\n",
+                    stt->fcount);
 #endif
             return -1;
         }
@@ -1294,18 +1313,20 @@ int WebRtcAgc_Process(void *agcInst, const int16_t *in_near,
     {
         if ((samples != 160) && (samples != 320))
         {
-#ifdef AGC_DEBUG //test log
+#ifdef WEBRTC_AGC_DEBUG_DUMP
             fprintf(stt->fpt,
-                    "AGC->Process, frame %d: Invalid number of samples\n\n", stt->fcount);
+                    "AGC->Process, frame %d: Invalid number of samples\n\n",
+                    stt->fcount);
 #endif
             return -1;
         }
         subFrames = 160;
     } else
     {
-#ifdef AGC_DEBUG// test log
+#ifdef WEBRTC_AGC_DEBUG_DUMP
         fprintf(stt->fpt,
-                "AGC->Process, frame %d: Invalid sample rate\n\n", stt->fcount);
+                "AGC->Process, frame %d: Invalid sample rate\n\n",
+                stt->fcount);
 #endif
         return -1;
     }
@@ -1341,7 +1362,7 @@ int WebRtcAgc_Process(void *agcInst, const int16_t *in_near,
         }
     }
 
-#ifdef AGC_DEBUG//test log
+#ifdef WEBRTC_AGC_DEBUG_DUMP
     stt->fcount++;
 #endif
 
@@ -1350,8 +1371,10 @@ int WebRtcAgc_Process(void *agcInst, const int16_t *in_near,
         if (WebRtcAgc_ProcessDigital(&stt->digitalAgc, &in_near[i], &in_near_H[i], &out[i], &out_H[i],
                            stt->fs, stt->lowLevelSignal) == -1)
         {
-#ifdef AGC_DEBUG//test log
-            fprintf(stt->fpt, "AGC->Process, frame %d: Error from DigAGC\n\n", stt->fcount);
+#ifdef WEBRTC_AGC_DEBUG_DUMP
+            fprintf(stt->fpt,
+                    "AGC->Process, frame %d: Error from DigAGC\n\n",
+                    stt->fcount);
 #endif
             return -1;
         }
@@ -1364,8 +1387,14 @@ int WebRtcAgc_Process(void *agcInst, const int16_t *in_near,
                 return -1;
             }
         }
-#ifdef AGC_DEBUG//test log
-        fprintf(stt->agcLog, "%5d\t%d\t%d\t%d\n", stt->fcount, inMicLevelTmp, *outMicLevel, stt->maxLevel, stt->micVol);
+#ifdef WEBRTC_AGC_DEBUG_DUMP
+        fprintf(stt->agcLog,
+                "%5d\t%d\t%d\t%d\t%d\n",
+                stt->fcount,
+                inMicLevelTmp,
+                *outMicLevel,
+                stt->maxLevel,
+                stt->micVol);
 #endif
 
         /* update queue */
@@ -1441,8 +1470,10 @@ int WebRtcAgc_set_config(void *agcInst, WebRtcAgc_config_t agcConfig)
     if (WebRtcAgc_CalculateGainTable(&(stt->digitalAgc.gainTable[0]), stt->compressionGaindB,
                            stt->targetLevelDbfs, stt->limiterEnable, stt->analogTarget) == -1)
     {
-#ifdef AGC_DEBUG//test log
-        fprintf(stt->fpt, "AGC->set_config, frame %d: Error from calcGainTable\n\n", stt->fcount);
+#ifdef WEBRTC_AGC_DEBUG_DUMP
+        fprintf(stt->fpt,
+                "AGC->set_config, frame %d: Error from calcGainTable\n\n",
+                stt->fcount);
 #endif
         return -1;
     }
@@ -1498,7 +1529,7 @@ int WebRtcAgc_Create(void **agcInst)
         return -1;
     }
 
-#ifdef AGC_DEBUG
+#ifdef WEBRTC_AGC_DEBUG_DUMP
     stt->fpt = fopen("./agc_test_log.txt", "wt");
     stt->agcLog = fopen("./agc_debug_log.txt", "wt");
     stt->digitalAgc.logFile = fopen("./agc_log.txt", "wt");
@@ -1515,7 +1546,7 @@ int WebRtcAgc_Free(void *state)
     Agc_t *stt;
 
     stt = (Agc_t *)state;
-#ifdef AGC_DEBUG
+#ifdef WEBRTC_AGC_DEBUG_DUMP
     fclose(stt->fpt);
     fclose(stt->agcLog);
     fclose(stt->digitalAgc.logFile);
@@ -1553,13 +1584,13 @@ int WebRtcAgc_Init(void *agcInst, int32_t minLevel, int32_t maxLevel,
      *            2 - Digital Automatic Gain Control [-targetLevelDbfs (default -3 dBOv)]
      *            3 - Fixed Digital Gain [compressionGaindB (default 8 dB)]
      */
-#ifdef AGC_DEBUG//test log
+#ifdef WEBRTC_AGC_DEBUG_DUMP
     stt->fcount = 0;
     fprintf(stt->fpt, "AGC->Init\n");
 #endif
     if (agcMode < kAgcModeUnchanged || agcMode > kAgcModeFixedDigital)
     {
-#ifdef AGC_DEBUG//test log
+#ifdef WEBRTC_AGC_DEBUG_DUMP
         fprintf(stt->fpt, "AGC->Init: error, incorrect mode\n\n");
 #endif
         return -1;
@@ -1616,10 +1647,12 @@ int WebRtcAgc_Init(void *agcInst, int32_t minLevel, int32_t maxLevel,
     stt->numBlocksMicLvlSat = 0;
     stt->micLvlSat = 0;
 #endif
-#ifdef AGC_DEBUG//test log
+#ifdef WEBRTC_AGC_DEBUG_DUMP
     fprintf(stt->fpt,
             "AGC->Init: minLevel = %d, maxAnalog = %d, maxLevel = %d\n",
-            stt->minLevel, stt->maxAnalog, stt->maxLevel);
+            stt->minLevel,
+            stt->maxAnalog,
+            stt->maxLevel);
 #endif
 
     /* Minimum output volume is 4% higher than the available lowest volume level */
@@ -1687,13 +1720,13 @@ int WebRtcAgc_Init(void *agcInst, int32_t minLevel, int32_t maxLevel,
     /* Only positive values are allowed that are not too large */
     if ((minLevel >= maxLevel) || (maxLevel & 0xFC000000))
     {
-#ifdef AGC_DEBUG//test log
+#ifdef WEBRTC_AGC_DEBUG_DUMP
         fprintf(stt->fpt, "minLevel, maxLevel value(s) are invalid\n\n");
 #endif
         return -1;
     } else
     {
-#ifdef AGC_DEBUG//test log
+#ifdef WEBRTC_AGC_DEBUG_DUMP
         fprintf(stt->fpt, "\n");
 #endif
         return 0;

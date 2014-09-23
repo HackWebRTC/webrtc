@@ -16,7 +16,7 @@
 
 #include <assert.h>
 #include <string.h>
-#ifdef AGC_DEBUG
+#ifdef WEBRTC_AGC_DEBUG_DUMP
 #include <stdio.h>
 #endif
 
@@ -274,7 +274,7 @@ int32_t WebRtcAgc_InitDigital(DigitalAgc_t *stt, int16_t agcMode)
     stt->gain = 65536;
     stt->gatePrevious = 0;
     stt->agcMode = agcMode;
-#ifdef AGC_DEBUG
+#ifdef WEBRTC_AGC_DEBUG_DUMP
     stt->frameCounter = 0;
 #endif
 
@@ -397,9 +397,14 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
             decay = 0;
         }
     }
-#ifdef AGC_DEBUG
+#ifdef WEBRTC_AGC_DEBUG_DUMP
     stt->frameCounter++;
-    fprintf(stt->logFile, "%5.2f\t%d\t%d\t%d\t", (float)(stt->frameCounter) / 100, logratio, decay, stt->vadNearend.stdLongTerm);
+    fprintf(stt->logFile,
+            "%5.2f\t%d\t%d\t%d\t",
+            (float)(stt->frameCounter) / 100,
+            logratio,
+            decay,
+            stt->vadNearend.stdLongTerm);
 #endif
     // Find max amplitude per sub frame
     // iterate over sub frames
@@ -461,10 +466,15 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
         frac = (int16_t)WEBRTC_SPL_RSHIFT_W32(tmp32, 19); // Q12
         tmp32 = WEBRTC_SPL_MUL((stt->gainTable[zeros-1] - stt->gainTable[zeros]), frac);
         gains[k + 1] = stt->gainTable[zeros] + WEBRTC_SPL_RSHIFT_W32(tmp32, 12);
-#ifdef AGC_DEBUG
-        if (k == 0)
-        {
-            fprintf(stt->logFile, "%d\t%d\t%d\t%d\t%d\n", env[0], cur_level, stt->capacitorFast, stt->capacitorSlow, zeros);
+#ifdef WEBRTC_AGC_DEBUG_DUMP
+        if (k == 0) {
+          fprintf(stt->logFile,
+                  "%d\t%d\t%d\t%d\t%d\n",
+                  env[0],
+                  cur_level,
+                  stt->capacitorFast,
+                  stt->capacitorSlow,
+                  zeros);
         }
 #endif
     }
