@@ -71,13 +71,6 @@ public:
     virtual int GetSendTelephoneEventPayloadType(int channel,
                                                  unsigned char& type) = 0;
 
-    // Enables or disables local tone playout for received DTMF events
-    // out-of-band.
-    virtual int SetDtmfPlayoutStatus(int channel, bool enable) = 0;
-
-    // Gets the DTMF playout status.
-    virtual int GetDtmfPlayoutStatus(int channel, bool& enabled) = 0;
-
     // Toogles DTMF feedback state: when a DTMF tone is sent, the same tone
     // is played out on the speaker.
     virtual int SetDtmfFeedbackStatus(bool enable,
