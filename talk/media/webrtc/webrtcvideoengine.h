@@ -359,6 +359,11 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
   // Returns the channel ID that receives the stream with SSRC |ssrc|.
   int GetRecvChannelId(uint32 ssrc);
   bool MaybeSetRtxSsrc(const StreamParams& sp, int channel_id);
+  // Create and register an external endcoder if it's possible to do
+  // so and one isn't already registered.
+  bool MaybeRegisterExternalEncoder(
+      WebRtcVideoChannelSendInfo* send_channel,
+      const webrtc::VideoCodec& codec);
   // Given captured video frame size, checks if we need to reset vie send codec.
   // |reset| is set to whether resetting has happened on vie or not.
   // Returns false on error.

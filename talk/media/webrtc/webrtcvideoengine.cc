@@ -1775,6 +1775,35 @@ bool WebRtcVideoMediaChannel::SetSendCodecs(
   return true;
 }
 
+bool WebRtcVideoMediaChannel::MaybeRegisterExternalEncoder(
+    WebRtcVideoChannelSendInfo* send_channel,
+    const webrtc::VideoCodec& codec) {
+  // Codec type not supported or encoder already registered, so
+  // nothing to do.
+  if (!engine()->IsExternalEncoderCodecType(codec.codecType)
+      || send_channel->IsEncoderRegistered(codec.plType)) {
+    return true;
+  }
+
+  webrtc::VideoEncoder* encoder =
+      engine()->CreateExternalEncoder(codec.codecType);
+  if (!encoder) {
+    // No encoder factor, so nothing to do.
+    return true;
+  }
+
+  const int channel_id = send_channel->channel_id();
+  if (engine()->vie()->ext_codec()->RegisterExternalSendCodec(
+          channel_id, codec.plType, encoder, false) != 0) {
+    LOG_RTCERR2(RegisterExternalSendCodec, channel_id, codec.plName);
+    engine()->DestroyExternalEncoder(encoder);
+    return false;
+  }
+
+  send_channel->RegisterEncoder(codec.plType, encoder);
+  return true;
+}
+
 bool WebRtcVideoMediaChannel::GetSendCodec(VideoCodec* send_codec) {
   if (!send_codec_) {
     return false;
@@ -3633,21 +3662,7 @@ bool WebRtcVideoMediaChannel::SetSendCodec(
     target_codec.codecSpecific.VP8.denoisingOn = enable_denoising;
   }
 
-  // Register external encoder if codec type is supported by encoder factory.
-  if (engine()->IsExternalEncoderCodecType(codec.codecType) &&
-      !send_channel->IsEncoderRegistered(target_codec.plType)) {
-    webrtc::VideoEncoder* encoder =
-        engine()->CreateExternalEncoder(codec.codecType);
-    if (encoder) {
-      if (engine()->vie()->ext_codec()->RegisterExternalSendCodec(
-          channel_id, target_codec.plType, encoder, false) == 0) {
-        send_channel->RegisterEncoder(target_codec.plType, encoder);
-      } else {
-        LOG_RTCERR2(RegisterExternalSendCodec, channel_id, target_codec.plName);
-        engine()->DestroyExternalEncoder(encoder);
-      }
-    }
-  }
+  MaybeRegisterExternalEncoder(send_channel, target_codec);
 
   // Resolution and framerate may vary for different send channels.
   const VideoFormat& video_format = send_channel->video_format();
