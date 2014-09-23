@@ -214,6 +214,7 @@ void WriteStatsMessage(const AudioProcessing::Statistic& output,
 
 void OpenFileAndWriteMessage(const std::string filename,
                              const ::google::protobuf::MessageLite& msg) {
+#if defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
   FILE* file = fopen(filename.c_str(), "wb");
   ASSERT_TRUE(file != NULL);
 
@@ -226,6 +227,10 @@ void OpenFileAndWriteMessage(const std::string filename,
   ASSERT_EQ(static_cast<size_t>(size),
       fwrite(array.get(), sizeof(array[0]), size, file));
   fclose(file);
+#else
+  std::cout << "Warning: Writing new reference is only allowed on Linux!"
+      << std::endl;
+#endif
 }
 
 std::string ResourceFilePath(std::string name, int sample_rate_hz) {
@@ -1735,14 +1740,7 @@ TEST_F(ApmTest, FloatAndIntInterfacesGiveIdenticalResults) {
 // TODO(andrew): Add a test to process a few frames with different combinations
 // of enabled components.
 
-// TODO(bjornv): Investigate if simply increasing the slack is a good way to
-// make this test work on Android. When running the test on a N7 we get a {2, 6}
-// difference of |has_voice_count| and |max_output_average| is up to 18 higher.
-// All numbers being consistently higher on N7 compare to ref_data, evaluated on
-// linux. Simply increasing the slack is one way forward. Adding an offset to
-// the metrics mentioned above, but keeping the same slack, is also an
-// alternative.
-TEST_F(ApmTest, DISABLED_ON_ANDROID(Process)) {
+TEST_F(ApmTest, Process) {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
   audioproc::OutputData ref_data;
 
@@ -1857,12 +1855,33 @@ TEST_F(ApmTest, DISABLED_ON_ANDROID(Process)) {
 
     if (!write_ref_data) {
       const int kIntNear = 1;
+      // When running the test on a N7 we get a {2, 6} difference of
+      // |has_voice_count| and |max_output_average| is up to 18 higher.
+      // All numbers being consistently higher on N7 compare to ref_data.
+      // TODO(bjornv): If we start getting more of these offsets on Android we
+      // should consider a different approach. Either using one slack for all,
+      // or generate a separate android reference.
+#if defined(WEBRTC_ANDROID)
+      const int kHasVoiceCountOffset = 3;
+      const int kHasVoiceCountNear = 3;
+      const int kMaxOutputAverageOffset = 9;
+      const int kMaxOutputAverageNear = 9;
+#else
+      const int kHasVoiceCountOffset = 0;
+      const int kHasVoiceCountNear = kIntNear;
+      const int kMaxOutputAverageOffset = 0;
+      const int kMaxOutputAverageNear = kIntNear;
+#endif
       EXPECT_NEAR(test->has_echo_count(), has_echo_count, kIntNear);
-      EXPECT_NEAR(test->has_voice_count(), has_voice_count, kIntNear);
+      EXPECT_NEAR(test->has_voice_count(),
+                  has_voice_count - kHasVoiceCountOffset,
+                  kHasVoiceCountNear);
       EXPECT_NEAR(test->is_saturated_count(), is_saturated_count, kIntNear);
 
       EXPECT_NEAR(test->analog_level_average(), analog_level_average, kIntNear);
-      EXPECT_NEAR(test->max_output_average(), max_output_average, kIntNear);
+      EXPECT_NEAR(test->max_output_average(),
+                  max_output_average - kMaxOutputAverageOffset,
+                  kMaxOutputAverageNear);
 
 #if defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
       audioproc::Test::EchoMetrics reference = test->echo_metrics();
