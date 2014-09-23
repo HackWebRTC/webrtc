@@ -34,6 +34,8 @@
 
 #include "talk/media/base/mediaengine.h"
 #include "talk/media/webrtc/webrtcvideochannelfactory.h"
+#include "talk/media/webrtc/webrtcvideodecoderfactory.h"
+#include "talk/media/webrtc/webrtcvideoencoderfactory.h"
 #include "webrtc/base/cpumonitor.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_video/interface/i420_video_frame.h"
@@ -65,14 +67,13 @@ class VideoFrame;
 class VideoProcessor;
 class VideoRenderer;
 class VoiceMediaChannel;
-class WebRtcVideoChannel2;
 class WebRtcDecoderObserver;
 class WebRtcEncoderObserver;
 class WebRtcLocalStreamInfo;
 class WebRtcRenderAdapter;
+class WebRtcVideoChannel2;
 class WebRtcVideoChannelRecvInfo;
 class WebRtcVideoChannelSendInfo;
-class WebRtcVideoDecoderFactory;
 class WebRtcVoiceEngine;
 
 struct CapturedFrame;
@@ -129,7 +130,8 @@ class WebRtcVideoEncoderFactory2 {
 };
 
 // WebRtcVideoEngine2 is used for the new native WebRTC Video API (webrtc:1667).
-class WebRtcVideoEngine2 : public sigslot::has_slots<> {
+class WebRtcVideoEngine2 : public sigslot::has_slots<>,
+                           public WebRtcVideoEncoderFactory::Observer {
  public:
   // Creates the WebRtcVideoEngine2 with internal VideoCaptureModule.
   WebRtcVideoEngine2();
@@ -152,6 +154,16 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
   const std::vector<RtpHeaderExtension>& rtp_header_extensions() const;
   void SetLogging(int min_sev, const char* filter);
 
+  // Set a WebRtcVideoDecoderFactory for external decoding. Video engine does
+  // not take the ownership of |decoder_factory|. The caller needs to make sure
+  // that |decoder_factory| outlives the video engine.
+  void SetExternalDecoderFactory(WebRtcVideoDecoderFactory* decoder_factory);
+  // Set a WebRtcVideoEncoderFactory for external encoding. Video engine does
+  // not take the ownership of |encoder_factory|. The caller needs to make sure
+  // that |encoder_factory| outlives the video engine.
+  virtual void SetExternalEncoderFactory(
+      WebRtcVideoEncoderFactory* encoder_factory);
+
   bool EnableTimedRender();
   // This is currently ignored.
   sigslot::repeater2<VideoCapturer*, CaptureState> SignalCaptureStateChange;
@@ -173,6 +185,8 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
   virtual WebRtcVideoEncoderFactory2* GetVideoEncoderFactory();
 
  private:
+  virtual void OnCodecsAvailable() OVERRIDE;
+
   rtc::Thread* worker_thread_;
   WebRtcVoiceEngine* voice_engine_;
   std::vector<VideoCodec> video_codecs_;
@@ -188,6 +202,9 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<> {
   rtc::scoped_ptr<rtc::CpuMonitor> cpu_monitor_;
   WebRtcVideoChannelFactory* channel_factory_;
   WebRtcVideoEncoderFactory2 default_video_encoder_factory_;
+
+  WebRtcVideoDecoderFactory* external_decoder_factory_;
+  WebRtcVideoEncoderFactory* external_encoder_factory_;
 };
 
 class WebRtcVideoChannel2 : public rtc::MessageHandler,
