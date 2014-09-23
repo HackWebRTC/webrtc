@@ -130,7 +130,7 @@ extern "C" {
 
   int16_t WebRtcIsacfix_Encode(ISACFIX_MainStruct *ISAC_main_inst,
                                const int16_t *speechIn,
-                               uint8_t* encoded);
+                               int16_t *encoded);
 
 
 

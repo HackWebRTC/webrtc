@@ -347,9 +347,8 @@ int16_t ACMISAC::InternalEncode(uint8_t* bitstream,
       return -1;
     }
     *bitstream_len_byte = ACM_ISAC_ENCODE(
-        codec_inst_ptr_->inst,
-        &in_audio_[in_audio_ix_read_],
-        bitstream);
+        codec_inst_ptr_->inst, &in_audio_[in_audio_ix_read_],
+        reinterpret_cast<int16_t*>(bitstream));
     // increment the read index this tell the caller that how far
     // we have gone forward in reading the audio buffer
     in_audio_ix_read_ += samples_in_10ms_audio_;

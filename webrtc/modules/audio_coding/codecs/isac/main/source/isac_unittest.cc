@@ -31,7 +31,7 @@ class IsacTest : public ::testing::Test {
 
   int16_t speech_data_[kIsacNumberOfSamples];
   int16_t output_data_[kIsacNumberOfSamples];
-  uint8_t bitstream_[kMaxBytes];
+  int16_t bitstream_[kMaxBytes / 2];
   uint8_t bitstream_small_[7];  // Simulate sync packets.
 };
 

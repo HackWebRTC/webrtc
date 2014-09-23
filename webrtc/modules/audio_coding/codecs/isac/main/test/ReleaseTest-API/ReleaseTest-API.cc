@@ -662,8 +662,8 @@ int main(int argc, char* argv[])
             if(!(testNum == 3 && framecnt == 0))
             {
                 stream_len = WebRtcIsac_Encode(ISAC_main_inst,
-                                               shortdata,
-                                               (uint8_t*)streamdata);
+                    shortdata,
+                    (int16_t*)streamdata);
                 if((payloadSize != 0) && (stream_len > payloadSize))
                 {
                     if(testNum == 0)

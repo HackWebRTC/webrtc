@@ -138,7 +138,8 @@ int NetEqIsacQualityTest::EncodeBlock(int16_t* in_data,
     // The Isac encoder does not perform encoding (and returns 0) until it
     // receives a sequence of sub-blocks that amount to the frame duration.
     EXPECT_EQ(0, value);
-    value = WebRtcIsacfix_Encode(isac_encoder_, &in_data[pointer], payload);
+    value = WebRtcIsacfix_Encode(isac_encoder_, &in_data[pointer],
+                                 reinterpret_cast<int16_t*>(payload));
   }
   EXPECT_GT(value, 0);
   return value;

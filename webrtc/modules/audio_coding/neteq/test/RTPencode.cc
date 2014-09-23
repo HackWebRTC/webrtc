@@ -1632,13 +1632,9 @@ int NetEQTest_encode(int coder, int16_t *indata, int frameLen, unsigned char * e
             cdlen=0;
             while (cdlen<=0) {
 #ifdef CODEC_ISAC /* floating point */
-                cdlen = WebRtcIsac_Encode(ISAC_inst[k],
-                                          &indata[noOfCalls * 160],
-                                          encoded);
+                cdlen=WebRtcIsac_Encode(ISAC_inst[k],&indata[noOfCalls*160],(int16_t*)encoded);
 #else /* fixed point */
-                cdlen = WebRtcIsacfix_Encode(ISAC_inst[k],
-                                             &indata[noOfCalls * 160],
-                                             encoded);
+                cdlen=WebRtcIsacfix_Encode(ISAC_inst[k],&indata[noOfCalls*160],(int16_t*)encoded);
 #endif
                 noOfCalls++;
             }
@@ -1649,9 +1645,7 @@ int NetEQTest_encode(int coder, int16_t *indata, int frameLen, unsigned char * e
             int noOfCalls=0;
             cdlen=0;
             while (cdlen<=0) {
-                cdlen = WebRtcIsac_Encode(ISACSWB_inst[k],
-                                          &indata[noOfCalls * 320],
-                                          encoded);
+                cdlen=WebRtcIsac_Encode(ISACSWB_inst[k],&indata[noOfCalls*320],(int16_t*)encoded);
                 noOfCalls++;
             }
         }

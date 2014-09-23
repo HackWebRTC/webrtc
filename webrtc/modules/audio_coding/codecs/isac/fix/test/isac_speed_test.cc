@@ -71,7 +71,7 @@ float IsacSpeedTest::EncodeABlock(int16_t* in_data, uint8_t* bit_stream,
   size_t pointer = 0;
   for (int idx = 0; idx < subblocks; idx++, pointer += subblock_length) {
     value = WebRtcIsacfix_Encode(ISACFIX_main_inst_, &in_data[pointer],
-                                 bit_stream);
+                                 reinterpret_cast<int16_t*>(bit_stream));
   }
   clocks = clock() - clocks;
   EXPECT_GT(value, 0);
