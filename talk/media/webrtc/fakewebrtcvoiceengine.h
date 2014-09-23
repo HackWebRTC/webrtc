@@ -690,6 +690,8 @@ class FakeWebRtcVoiceEngine
 
   WEBRTC_STUB(SetDtmfFeedbackStatus, (bool enable, bool directFeedback));
   WEBRTC_STUB(GetDtmfFeedbackStatus, (bool& enabled, bool& directFeedback));
+  WEBRTC_STUB(SetDtmfPlayoutStatus, (int channel, bool enable));
+  WEBRTC_STUB(GetDtmfPlayoutStatus, (int channel, bool& enabled));
 
   WEBRTC_FUNC(PlayDtmfTone,
       (int event_code, int length_ms = 200, int attenuation_db = 10)) {

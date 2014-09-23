@@ -294,6 +294,8 @@ public:
                                   int attenuationDb, bool playDtmfEvent);
     int SendTelephoneEventInband(unsigned char eventCode, int lengthMs,
                                  int attenuationDb, bool playDtmfEvent);
+    int SetDtmfPlayoutStatus(bool enable);
+    bool DtmfPlayoutStatus() const;
     int SetSendTelephoneEventPayloadType(unsigned char type);
     int GetSendTelephoneEventPayloadType(unsigned char& type);
 

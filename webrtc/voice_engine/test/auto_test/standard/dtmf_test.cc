@@ -52,6 +52,18 @@ TEST_F(DtmfTest, TestTwoNonDtmfEvents) {
   EXPECT_EQ(0, voe_dtmf_->SendTelephoneEvent(channel_, 110, true));
 }
 
+TEST_F(DtmfTest, ManualCanDisableDtmfPlayoutExceptOnIphone) {
+  TEST_LOG("Disabling DTMF playout (no tone should be heard) \n");
+  EXPECT_EQ(0, voe_dtmf_->SetDtmfPlayoutStatus(channel_, false));
+  EXPECT_EQ(0, voe_dtmf_->SendTelephoneEvent(channel_, 0, true));
+  Sleep(500);
+
+  TEST_LOG("Enabling DTMF playout (tone should be heard) \n");
+  EXPECT_EQ(0, voe_dtmf_->SetDtmfPlayoutStatus(channel_, true));
+  EXPECT_EQ(0, voe_dtmf_->SendTelephoneEvent(channel_, 0, true));
+  Sleep(500);
+}
+
 // This test modifies the DTMF payload type from the default 106 to 88
 // and then runs through 16 DTMF out.of-band events.
 TEST_F(DtmfTest, ManualCanChangeDtmfPayloadType) {
