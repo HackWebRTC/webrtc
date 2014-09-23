@@ -100,7 +100,10 @@ source_set("video_capture_internal_impl") {
       "QTKit.framework",
     ]
   }
-  if (is_win) {
+  # winsdk_samples isn't pulled into Chromium, so it is disabled for Chromium
+  # builds. This is not a problem since the internal video capture
+  # implementation should not be used in chrome - issue 3831.
+  if (is_win && !build_with_chromium) {
     sources = [
       "windows/device_info_ds.cc",
       "windows/device_info_ds.h",
