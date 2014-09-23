@@ -39,9 +39,7 @@
 #include "talk/session/media/channelmanager.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"
-#ifdef WEBRTC_CHROMIUM_BUILD
 #include "webrtc/system_wrappers/interface/field_trial.h"
-#endif
 
 namespace {
 
@@ -362,13 +360,10 @@ bool PeerConnection::DoInitialize(
     if (value) {
       portallocator_flags |= cricket::PORTALLOCATOR_ENABLE_IPV6;
     }
-  }
-#ifdef WEBRTC_CHROMIUM_BUILD
-  else if (webrtc::field_trial::FindFullName("WebRTC-IPv6Default") ==
-           "Enabled") {
+  } else if (webrtc::field_trial::FindFullName("WebRTC-IPv6Default") ==
+             "Enabled") {
     portallocator_flags |= cricket::PORTALLOCATOR_ENABLE_IPV6;
   }
-#endif  // WEBRTC_CHROMIUM_BUILD
 
   port_allocator_->set_flags(portallocator_flags);
   // No step delay is used while allocating ports.
