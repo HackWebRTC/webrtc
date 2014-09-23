@@ -1210,9 +1210,6 @@ class JavaVideoRendererWrapper : public VideoRendererInterface {
 #define ALOGD(...) __android_log_print(ANDROID_LOG_DEBUG, TAG, __VA_ARGS__)
 #define ALOGE(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)
 
-// Set to false to switch HW video decoder back to byte buffer output.
-#define HW_DECODER_USE_SURFACE true
-
 // Color formats supported by encoder - should mirror supportedColorList
 // from MediaCodecVideoEncoder.java
 enum COLOR_FORMATTYPE {
@@ -2054,15 +2051,18 @@ int MediaCodecVideoDecoder::SetAndroidObjects(JNIEnv* jni,
   if (render_egl_context_) {
     jni->DeleteGlobalRef(render_egl_context_);
   }
-  render_egl_context_ = jni->NewGlobalRef(render_egl_context);
-  ALOGD("VideoDecoder EGL context set");
+  if (IsNull(jni, render_egl_context)) {
+    render_egl_context_ = NULL;
+  } else {
+    render_egl_context_ = jni->NewGlobalRef(render_egl_context);
+  }
+  ALOGD("VideoDecoder EGL context set.");
   return 0;
 }
 
 MediaCodecVideoDecoder::MediaCodecVideoDecoder(JNIEnv* jni)
   : key_frame_required_(true),
     inited_(false),
-    use_surface_(HW_DECODER_USE_SURFACE),
     codec_thread_(new Thread()),
     j_media_codec_video_decoder_class_(
         jni,
@@ -2127,6 +2127,9 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(JNIEnv* jni)
       jni, j_decoder_output_buffer_info_class, "presentationTimestampUs", "J");
 
   CHECK_EXCEPTION(jni) << "MediaCodecVideoDecoder ctor failed";
+  use_surface_ = true;
+  if (render_egl_context_ == NULL)
+    use_surface_ = false;
   memset(&codec_, 0, sizeof(codec_));
 }
 
