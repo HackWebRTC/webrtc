@@ -390,10 +390,7 @@ class AudioCodingModuleImpl : public AudioCodingModule {
 class AudioCodingImpl : public AudioCoding {
  public:
   AudioCodingImpl(const Config& config) {
-    AudioCodingModule::Config config_old;
-    config_old.id = 0;
-    config_old.neteq_config = config.neteq_config;
-    config_old.clock = config.clock;
+    AudioCodingModule::Config config_old = config.ToOldConfig();
     acm_old_.reset(new acm2::AudioCodingModuleImpl(config_old));
     acm_old_->RegisterTransportCallback(config.transport);
     acm_old_->RegisterVADCallback(config.vad_callback);
@@ -413,6 +410,8 @@ class AudioCodingImpl : public AudioCoding {
                                  int frame_size_samples = 0) OVERRIDE;
 
   virtual const AudioEncoder* GetSenderInfo() const OVERRIDE;
+
+  virtual const CodecInst* GetSenderCodecInst() OVERRIDE;
 
   virtual int Add10MsAudio(const AudioFrame& audio_frame) OVERRIDE;
 
@@ -449,6 +448,10 @@ class AudioCodingImpl : public AudioCoding {
 
   virtual void DisableNack() OVERRIDE;
 
+  virtual bool SetVad(bool enable_dtx,
+                      bool enable_vad,
+                      ACMVADMode vad_mode) OVERRIDE;
+
   virtual std::vector<uint16_t> GetNackList(
       int round_trip_time_ms) const OVERRIDE;
 
@@ -465,8 +468,11 @@ class AudioCodingImpl : public AudioCoding {
                                        int* sample_rate_hz,
                                        int* channels);
 
-  scoped_ptr<acm2::AudioCodingModuleImpl> acm_old_;
   int playout_frequency_hz_;
+  // TODO(henrik.lundin): All members below this line are temporary and should
+  // be removed after refactoring is completed.
+  scoped_ptr<acm2::AudioCodingModuleImpl> acm_old_;
+  CodecInst current_send_codec_;
 };
 
 }  // namespace webrtc
