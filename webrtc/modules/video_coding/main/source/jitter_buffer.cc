@@ -122,8 +122,7 @@ void FrameList::Reset(UnorderedFrameList* free_frames) {
   }
 }
 
-VCMJitterBuffer::VCMJitterBuffer(Clock* clock,
-                                 EventFactory* event_factory)
+VCMJitterBuffer::VCMJitterBuffer(Clock* clock, EventFactory* event_factory)
     : clock_(clock),
       running_(false),
       crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
@@ -145,7 +144,7 @@ VCMJitterBuffer::VCMJitterBuffer(Clock* clock,
       num_consecutive_old_frames_(0),
       num_consecutive_old_packets_(0),
       num_discarded_packets_(0),
-      jitter_estimate_(),
+      jitter_estimate_(clock),
       inter_frame_delay_(clock_->TimeInMilliseconds()),
       rtt_ms_(kDefaultRtt),
       nack_mode_(kNoNack),

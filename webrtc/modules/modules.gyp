@@ -237,6 +237,7 @@
             'video_coding/main/interface/mock/mock_vcm_callbacks.h',
             'video_coding/main/source/decoding_state_unittest.cc',
             'video_coding/main/source/jitter_buffer_unittest.cc',
+            'video_coding/main/source/jitter_estimator_tests.cc',
             'video_coding/main/source/media_optimization_unittest.cc',
             'video_coding/main/source/receiver_unittest.cc',
             'video_coding/main/source/session_info_unittest.cc',
