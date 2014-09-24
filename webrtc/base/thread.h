@@ -165,7 +165,6 @@ class Thread : public MessageQueue {
   // See ScopedDisallowBlockingCalls for details.
   template <class ReturnT, class FunctorT>
   ReturnT Invoke(const FunctorT& functor) {
-    AssertBlockingIsAllowedOnCurrentThread();
     FunctorMessageHandler<ReturnT, FunctorT> handler(functor);
     Send(&handler);
     return handler.result();
@@ -210,6 +209,10 @@ class Thread : public MessageQueue {
   // of whatever code is conditionally executing because of the return value!
   bool RunningForTest() { return running(); }
 
+  // Sets the per-thread allow-blocking-calls flag and returns the previous
+  // value.
+  bool SetAllowBlockingCalls(bool allow);
+
  protected:
   // This method should be called when thread is created using non standard
   // method, like derived implementation of rtc::Thread and it can not be
@@ -225,10 +228,6 @@ class Thread : public MessageQueue {
 
   // Blocks the calling thread until this thread has terminated.
   void Join();
-
-  // Sets the per-thread allow-blocking-calls flag and returns the previous
-  // value.
-  bool SetAllowBlockingCalls(bool allow);
 
   static void AssertBlockingIsAllowedOnCurrentThread();
 
@@ -247,6 +246,16 @@ class Thread : public MessageQueue {
 
   // Return true if the thread was started and hasn't yet stopped.
   bool running() { return running_.Wait(0); }
+
+  // Processes received "Send" requests. If |source| is not NULL, only requests
+  // from |source| are processed, otherwise, all requests are processed.
+  void ReceiveSendsFromThread(const Thread* source);
+
+  // If |source| is not NULL, pops the first "Send" message from |source| in
+  // |sendlist_|, otherwise, pops the first "Send" message of |sendlist_|.
+  // The caller must lock |crit_| before calling.
+  // Returns true if there is such a message.
+  bool PopSendMessageFromThread(const Thread* source, _SendMessage* msg);
 
   std::list<_SendMessage> sendlist_;
   std::string name_;

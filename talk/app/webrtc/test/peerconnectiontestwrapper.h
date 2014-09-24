@@ -111,7 +111,6 @@ class PeerConnectionTestWrapper
       bool video, const webrtc::FakeConstraints& video_constraints);
 
   std::string name_;
-  rtc::Thread audio_thread_;
   rtc::scoped_refptr<webrtc::PortAllocatorFactoryInterface>
       allocator_factory_;
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;

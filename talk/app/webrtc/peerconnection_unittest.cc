@@ -481,9 +481,8 @@ class PeerConnectionTestClientBase
     if (!allocator_factory_) {
       return false;
     }
-    audio_thread_.Start();
     fake_audio_capture_module_ = FakeAudioCaptureModule::Create(
-        &audio_thread_);
+        rtc::Thread::Current());
 
     if (fake_audio_capture_module_ == NULL) {
       return false;
@@ -557,12 +556,6 @@ class PeerConnectionTestClientBase
   }
 
   std::string id_;
-  // Separate thread for executing |fake_audio_capture_module_| tasks. Audio
-  // processing must not be performed on the same thread as signaling due to
-  // signaling time constraints and relative complexity of the audio pipeline.
-  // This is consistent with the video pipeline that us a a separate thread for
-  // encoding and decoding.
-  rtc::Thread audio_thread_;
 
   rtc::scoped_refptr<webrtc::PortAllocatorFactoryInterface>
       allocator_factory_;

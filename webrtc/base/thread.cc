@@ -411,15 +411,12 @@ void Thread::Stop() {
 }
 
 void Thread::Send(MessageHandler *phandler, uint32 id, MessageData *pdata) {
-  AssertBlockingIsAllowedOnCurrentThread();
-
   if (fStop_)
     return;
 
   // Sent messages are sent to the MessageHandler directly, in the context
   // of "thread", like Win32 SendMessage. If in the right context,
   // call the handler directly.
-
   Message msg;
   msg.phandler = phandler;
   msg.message_id = id;
@@ -428,6 +425,8 @@ void Thread::Send(MessageHandler *phandler, uint32 id, MessageData *pdata) {
     phandler->OnMessage(&msg);
     return;
   }
+
+  AssertBlockingIsAllowedOnCurrentThread();
 
   AutoThread thread;
   Thread *current_thread = Thread::Current();
@@ -451,7 +450,9 @@ void Thread::Send(MessageHandler *phandler, uint32 id, MessageData *pdata) {
   crit_.Enter();
   while (!ready) {
     crit_.Leave();
-    current_thread->ReceiveSends();
+    // We need to limit "ReceiveSends" to |this| thread to avoid an arbitrary
+    // thread invoking calls on the current thread.
+    current_thread->ReceiveSendsFromThread(this);
     current_thread->socketserver()->Wait(kForever, false);
     waited = true;
     crit_.Enter();
@@ -475,22 +476,40 @@ void Thread::Send(MessageHandler *phandler, uint32 id, MessageData *pdata) {
 }
 
 void Thread::ReceiveSends() {
+  ReceiveSendsFromThread(NULL);
+}
+
+void Thread::ReceiveSendsFromThread(const Thread* source) {
   // Receive a sent message. Cleanup scenarios:
   // - thread sending exits: We don't allow this, since thread can exit
   //   only via Join, so Send must complete.
   // - thread receiving exits: Wakeup/set ready in Thread::Clear()
   // - object target cleared: Wakeup/set ready in Thread::Clear()
+  _SendMessage smsg;
+
   crit_.Enter();
-  while (!sendlist_.empty()) {
-    _SendMessage smsg = sendlist_.front();
-    sendlist_.pop_front();
+  while (PopSendMessageFromThread(source, &smsg)) {
     crit_.Leave();
+
     smsg.msg.phandler->OnMessage(&smsg.msg);
+
     crit_.Enter();
     *smsg.ready = true;
     smsg.thread->socketserver()->WakeUp();
   }
   crit_.Leave();
+}
+
+bool Thread::PopSendMessageFromThread(const Thread* source, _SendMessage* msg) {
+  for (std::list<_SendMessage>::iterator it = sendlist_.begin();
+       it != sendlist_.end(); ++it) {
+    if (it->thread == source || source == NULL) {
+      *msg = *it;
+      sendlist_.erase(it);
+      return true;
+    }
+  }
+  return false;
 }
 
 void Thread::Clear(MessageHandler *phandler, uint32 id,

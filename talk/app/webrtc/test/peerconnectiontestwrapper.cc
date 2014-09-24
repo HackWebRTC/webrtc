@@ -75,9 +75,8 @@ bool PeerConnectionTestWrapper::CreatePc(
     return false;
   }
 
-  audio_thread_.Start();
   fake_audio_capture_module_ = FakeAudioCaptureModule::Create(
-      &audio_thread_);
+      rtc::Thread::Current());
   if (fake_audio_capture_module_ == NULL) {
     return false;
   }

@@ -41,6 +41,7 @@
 #include "talk/media/webrtc/webrtcmediaengine.h"
 #include "talk/media/webrtc/webrtcvideodecoderfactory.h"
 #include "talk/media/webrtc/webrtcvideoencoderfactory.h"
+#include "webrtc/base/bind.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 
 using rtc::scoped_refptr;
