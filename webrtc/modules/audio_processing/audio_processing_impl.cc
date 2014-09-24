@@ -257,10 +257,9 @@ int AudioProcessingImpl::InitializeLocked(int input_sample_rate_hz,
     }
   }
 
-  // TODO(ajm): Enable this.
-  // Always downmix the reverse stream to mono for analysis.
-  //rev_proc_format_.set(rev_proc_rate, 1);
-  rev_proc_format_.set(rev_proc_rate, rev_in_format_.num_channels());
+  // Always downmix the reverse stream to mono for analysis. This has been
+  // demonstrated to work well for AEC in most practical scenarios.
+  rev_proc_format_.set(rev_proc_rate, 1);
 
   if (fwd_proc_format_.rate() == kSampleRate32kHz) {
     split_rate_ = kSampleRate16kHz;

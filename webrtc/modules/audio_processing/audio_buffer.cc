@@ -406,19 +406,32 @@ int AudioBuffer::samples_per_keyboard_channel() const {
 // TODO(andrew): Do deinterleaving and mixing in one step?
 void AudioBuffer::DeinterleaveFrom(AudioFrame* frame) {
   assert(proc_samples_per_channel_ == input_samples_per_channel_);
-  assert(num_proc_channels_ == num_input_channels_);
-  assert(frame->num_channels_ == num_proc_channels_);
+  assert(frame->num_channels_ == num_input_channels_);
   assert(frame->samples_per_channel_ ==  proc_samples_per_channel_);
   InitForNewData();
   activity_ = frame->vad_activity_;
 
-  int16_t* interleaved = frame->data_;
-  for (int i = 0; i < num_proc_channels_; i++) {
-    int16_t* deinterleaved = channels_->ibuf()->channel(i);
-    int interleaved_idx = i;
-    for (int j = 0; j < proc_samples_per_channel_; j++) {
-      deinterleaved[j] = interleaved[interleaved_idx];
-      interleaved_idx += num_proc_channels_;
+  if (num_input_channels_ == 2 && num_proc_channels_ == 1) {
+    // Downmix directly; no explicit deinterleaving needed.
+    int16_t* downmixed = channels_->ibuf()->channel(0);
+    for (int i = 0; i < input_samples_per_channel_; ++i) {
+      // HACK(ajm): The downmixing in the int16_t path is in practice never
+      // called from production code. We do this weird scaling to and from float
+      // to satisfy tests checking for bit-exactness with the float path.
+      float downmix_float = (ScaleToFloat(frame->data_[i * 2]) +
+                             ScaleToFloat(frame->data_[i * 2 + 1])) / 2;
+      downmixed[i] = ScaleAndRoundToInt16(downmix_float);
+    }
+  } else {
+    assert(num_proc_channels_ == num_input_channels_);
+    int16_t* interleaved = frame->data_;
+    for (int i = 0; i < num_proc_channels_; ++i) {
+      int16_t* deinterleaved = channels_->ibuf()->channel(i);
+      int interleaved_idx = i;
+      for (int j = 0; j < proc_samples_per_channel_; ++j) {
+        deinterleaved[j] = interleaved[interleaved_idx];
+        interleaved_idx += num_proc_channels_;
+      }
     }
   }
 }
