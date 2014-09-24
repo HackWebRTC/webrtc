@@ -874,7 +874,7 @@ void void_main(int argc, char* argv[]) {
         near_frame.samples_per_channel_ = samples_per_channel;
 
         if (!raw_output) {
-          // The WAV file needs to be reset every time, because it cant change
+          // The WAV file needs to be reset every time, because it can't change
           // it's sample rate or number of channels.
           output_wav_file.reset(new WavFile(out_filename + ".wav",
                                             sample_rate_hz,
@@ -1027,6 +1027,11 @@ void void_main(int argc, char* argv[]) {
 
         if (raw_output && !output_raw_file) {
           output_raw_file.reset(new RawFile(out_filename + ".pcm"));
+        }
+        if (!raw_output && !output_wav_file) {
+          output_wav_file.reset(new WavFile(out_filename + ".wav",
+                                            sample_rate_hz,
+                                            num_capture_output_channels));
         }
         WriteIntData(near_frame.data_,
                      size,
