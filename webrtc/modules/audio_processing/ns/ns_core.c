@@ -764,22 +764,18 @@ int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame) {
   int updateParsFlag;
   float energy;
   float signalEnergy, sumMagn;
-  float snrPrior, currentEstimateStsa;
   float tmpFloat1, tmpFloat2, tmpFloat3, probSpeech, probNonSpeech;
   float gammaNoiseTmp, gammaNoiseOld;
   float noiseUpdateTmp, fTmp;
   float winData[ANAL_BLOCKL_MAX];
   float magn[HALF_ANAL_BLOCKL], noise[HALF_ANAL_BLOCKL];
-  float theFilter[HALF_ANAL_BLOCKL], theFilterTmp[HALF_ANAL_BLOCKL];
   float snrLocPost[HALF_ANAL_BLOCKL], snrLocPrior[HALF_ANAL_BLOCKL];
-  float previousEstimateStsa[HALF_ANAL_BLOCKL];
   float real[ANAL_BLOCKL_MAX], imag[HALF_ANAL_BLOCKL];
   // Variables during startup
   float sum_log_i = 0.0;
   float sum_log_i_square = 0.0;
   float sum_log_magn = 0.0;
   float sum_log_i_log_magn = 0.0;
-  float parametric_noise = 0.0;
   float parametric_exp = 0.0;
   float parametric_num = 0.0;
 
@@ -834,8 +830,6 @@ int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame) {
                    (float)(real[inst->magnLen - 1] * real[inst->magnLen - 1]);
     sumMagn = magn[0] + magn[inst->magnLen - 1];
     if (inst->blockInd < END_STARTUP_SHORT) {
-      inst->initMagnEst[0] += magn[0];
-      inst->initMagnEst[inst->magnLen - 1] += magn[inst->magnLen - 1];
       tmpFloat2 = log((float)(inst->magnLen - 1));
       sum_log_i = tmpFloat2;
       sum_log_i_square = tmpFloat2 * tmpFloat2;
@@ -853,7 +847,6 @@ int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame) {
       magn[i] = ((float)sqrt(fTmp)) + 1.0f;
       sumMagn += magn[i];
       if (inst->blockInd < END_STARTUP_SHORT) {
-        inst->initMagnEst[i] += magn[i];
         if (i >= kStartBand) {
           tmpFloat2 = log((float)i);
           sum_log_i += tmpFloat2;
@@ -901,31 +894,29 @@ int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame) {
       inst->pinkNoiseExp += tmpFloat3;
 
       // Calculate frequency independent parts of parametric noise estimate.
-      if (inst->pinkNoiseExp == 0.0f) {
-        // Use white noise estimate
-        parametric_noise = inst->whiteNoiseLevel;
-      } else {
+      if (inst->pinkNoiseExp > 0.0f) {
         // Use pink noise estimate
         parametric_num =
             exp(inst->pinkNoiseNumerator / (float)(inst->blockInd + 1));
         parametric_num *= (float)(inst->blockInd + 1);
         parametric_exp = inst->pinkNoiseExp / (float)(inst->blockInd + 1);
-        parametric_noise =
-            parametric_num / pow((float)kStartBand, parametric_exp);
       }
       for (i = 0; i < inst->magnLen; i++) {
         // Estimate the background noise using the white and pink noise
         // parameters
-        if ((inst->pinkNoiseExp > 0.0f) && (i >= kStartBand)) {
+        if (inst->pinkNoiseExp == 0.0f) {
+          // Use white noise estimate
+          inst->parametricNoise[i] = inst->whiteNoiseLevel;
+        } else {
           // Use pink noise estimate
-          parametric_noise = parametric_num / pow((float)i, parametric_exp);
+          float use_band = (float)(i < kStartBand ? kStartBand : i);
+          inst->parametricNoise[i] =
+              parametric_num / pow(use_band, parametric_exp);
         }
-        theFilterTmp[i] =
-            (inst->initMagnEst[i] - inst->overdrive * parametric_noise);
-        theFilterTmp[i] /= (inst->initMagnEst[i] + (float)0.0001);
         // Weight quantile noise with modeled noise
         noise[i] *= (inst->blockInd);
-        tmpFloat2 = parametric_noise * (END_STARTUP_SHORT - inst->blockInd);
+        tmpFloat2 =
+            inst->parametricNoise[i] * (END_STARTUP_SHORT - inst->blockInd);
         noise[i] += (tmpFloat2 / (float)(inst->blockInd + 1));
         noise[i] /= END_STARTUP_SHORT;
       }
@@ -949,12 +940,12 @@ int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame) {
       }
       // previous post snr
       // previous estimate: based on previous frame with gain filter
-      previousEstimateStsa[i] = inst->magnPrev[i] /
+      inst->previousEstimateStsa[i] = inst->magnPrev[i] /
                                 (inst->noisePrev[i] + (float)0.0001) *
                                 (inst->smooth[i]);
       // DD estimate is sum of two terms: current estimate and previous estimate
       // directed decision update of snrPrior
-      snrLocPrior[i] = DD_PR_SNR * previousEstimateStsa[i] +
+      snrLocPrior[i] = DD_PR_SNR * inst->previousEstimateStsa[i] +
                        ((float)1.0 - DD_PR_SNR) * snrLocPost[i];
       // post and prior snr needed for step 2
     }  // end of loop over freqs
@@ -1037,57 +1028,9 @@ int WebRtcNs_AnalyzeCore(NSinst_t* inst, float* speechFrame) {
     }  // end of freq loop
     // done with step 2: noise update
 
-    // STEP 3: compute dd update of prior snr and post snr based on new noise
-    // estimate
-    for (i = 0; i < inst->magnLen; i++) {
-      // post and prior snr
-      currentEstimateStsa = (float)0.0;
-      if (magn[i] > noise[i]) {
-        currentEstimateStsa = magn[i] / (noise[i] + (float)0.0001) - (float)1.0;
-      }
-      // DD estimate is sume of two terms: current estimate and previous
-      // estimate
-      // directed decision update of snrPrior
-      snrPrior = DD_PR_SNR * previousEstimateStsa[i] +
-                 ((float)1.0 - DD_PR_SNR) * currentEstimateStsa;
-      // gain filter
-      tmpFloat1 = inst->overdrive + snrPrior;
-      tmpFloat2 = (float)snrPrior / tmpFloat1;
-      theFilter[i] = (float)tmpFloat2;
-    }  // end of loop over freqs
-    // done with step3
-
-    for (i = 0; i < inst->magnLen; i++) {
-      // flooring bottom
-      if (theFilter[i] < inst->denoiseBound) {
-        theFilter[i] = inst->denoiseBound;
-      }
-      // flooring top
-      if (theFilter[i] > (float)1.0) {
-        theFilter[i] = 1.0;
-      }
-      if (inst->blockInd < END_STARTUP_SHORT) {
-        // flooring bottom
-        if (theFilterTmp[i] < inst->denoiseBound) {
-          theFilterTmp[i] = inst->denoiseBound;
-        }
-        // flooring top
-        if (theFilterTmp[i] > (float)1.0) {
-          theFilterTmp[i] = 1.0;
-        }
-        // Weight the two suppression filters
-        theFilter[i] *= (inst->blockInd);
-        theFilterTmp[i] *= (END_STARTUP_SHORT - inst->blockInd);
-        theFilter[i] += theFilterTmp[i];
-        theFilter[i] /= (END_STARTUP_SHORT);
-      }
-      // smoothing
-      inst->smooth[i] = theFilter[i];
-    }
-    // keep track of noise and magn spectrum for next frame
+    // keep track of noise spectrum for next frame
     for (i = 0; i < inst->magnLen; i++) {
       inst->noisePrev[i] = noise[i];
-      inst->magnPrev[i] = magn[i];
     }
   }  // end of if inst->outLen == 0
 
@@ -1104,8 +1047,13 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
   int i;
 
   float energy1, energy2, gain, factor, factor1, factor2;
+  float snrPrior, currentEstimateStsa;
+  float tmpFloat1, tmpFloat2;
+  float fTmp;
   float fout[BLOCKL_MAX];
   float winData[ANAL_BLOCKL_MAX];
+  float magn[HALF_ANAL_BLOCKL];
+  float theFilter[HALF_ANAL_BLOCKL], theFilterTmp[HALF_ANAL_BLOCKL];
   float real[ANAL_BLOCKL_MAX], imag[HALF_ANAL_BLOCKL];
 
   // SWB variables
@@ -1196,16 +1144,80 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
 
     imag[0] = 0;
     real[0] = winData[0];
+    magn[0] = (float)(fabs(real[0]) + 1.0f);
     imag[inst->magnLen - 1] = 0;
     real[inst->magnLen - 1] = winData[1];
+    magn[inst->magnLen - 1] = (float)(fabs(real[inst->magnLen - 1]) + 1.0f);
+    if (inst->blockInd < END_STARTUP_SHORT) {
+      inst->initMagnEst[0] += magn[0];
+      inst->initMagnEst[inst->magnLen - 1] += magn[inst->magnLen - 1];
+    }
     for (i = 1; i < inst->magnLen - 1; i++) {
       real[i] = winData[2 * i];
       imag[i] = winData[2 * i + 1];
+      // magnitude spectrum
+      fTmp = real[i] * real[i];
+      fTmp += imag[i] * imag[i];
+      magn[i] = ((float)sqrt(fTmp)) + 1.0f;
+      if (inst->blockInd < END_STARTUP_SHORT) {
+        inst->initMagnEst[i] += magn[i];
+      }
     }
 
+    // Compute dd update of prior snr and post snr based on new noise estimate
     for (i = 0; i < inst->magnLen; i++) {
+      // post and prior snr
+      currentEstimateStsa = (float)0.0;
+      if (magn[i] > inst->noisePrev[i]) {
+        currentEstimateStsa =
+            magn[i] / (inst->noisePrev[i] + (float)0.0001) - (float)1.0;
+      }
+      // DD estimate is sume of two terms: current estimate and previous
+      // estimate
+      // directed decision update of snrPrior
+      snrPrior = DD_PR_SNR * inst->previousEstimateStsa[i] +
+                 ((float)1.0 - DD_PR_SNR) * currentEstimateStsa;
+      // gain filter
+      tmpFloat1 = inst->overdrive + snrPrior;
+      tmpFloat2 = (float)snrPrior / tmpFloat1;
+      theFilter[i] = (float)tmpFloat2;
+    }  // end of loop over freqs
+
+    for (i = 0; i < inst->magnLen; i++) {
+      // flooring bottom
+      if (theFilter[i] < inst->denoiseBound) {
+        theFilter[i] = inst->denoiseBound;
+      }
+      // flooring top
+      if (theFilter[i] > (float)1.0) {
+        theFilter[i] = 1.0;
+      }
+      if (inst->blockInd < END_STARTUP_SHORT) {
+        theFilterTmp[i] =
+            (inst->initMagnEst[i] - inst->overdrive * inst->parametricNoise[i]);
+        theFilterTmp[i] /= (inst->initMagnEst[i] + (float)0.0001);
+        // flooring bottom
+        if (theFilterTmp[i] < inst->denoiseBound) {
+          theFilterTmp[i] = inst->denoiseBound;
+        }
+        // flooring top
+        if (theFilterTmp[i] > (float)1.0) {
+          theFilterTmp[i] = 1.0;
+        }
+        // Weight the two suppression filters
+        theFilter[i] *= (inst->blockInd);
+        theFilterTmp[i] *= (END_STARTUP_SHORT - inst->blockInd);
+        theFilter[i] += theFilterTmp[i];
+        theFilter[i] /= (END_STARTUP_SHORT);
+      }
+      // smoothing
+      inst->smooth[i] = theFilter[i];
       real[i] *= inst->smooth[i];
       imag[i] *= inst->smooth[i];
+    }
+    // keep track of magn spectrum for next frame
+    for (i = 0; i < inst->magnLen; i++) {
+      inst->magnPrev[i] = magn[i];
     }
     // back to time domain
     winData[0] = real[0];

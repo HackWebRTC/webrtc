@@ -72,6 +72,7 @@ typedef struct NSinst_t_ {
   int counter[SIMULT];
   int updates;
   // parameters for Wiener filter
+  float previousEstimateStsa[HALF_ANAL_BLOCKL];
   float smooth[HALF_ANAL_BLOCKL];
   float overdrive;
   float denoiseBound;
@@ -97,6 +98,7 @@ typedef struct NSinst_t_ {
   float initMagnEst[HALF_ANAL_BLOCKL];  // initial magnitude spectrum estimate
   float pinkNoiseNumerator;  // pink noise parameter: numerator
   float pinkNoiseExp;  // pink noise parameter: power of freq
+  float parametricNoise[HALF_ANAL_BLOCKL];
   NSParaExtract_t featureExtractionParams;  // parameters for feature extraction
   // histograms for parameter estimation
   int histLrt[HIST_PAR_EST];
