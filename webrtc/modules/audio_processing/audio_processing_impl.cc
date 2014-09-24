@@ -482,12 +482,12 @@ int AudioProcessingImpl::ProcessStreamLocked() {
 
   RETURN_ON_ERR(high_pass_filter_->ProcessCaptureAudio(ca));
   RETURN_ON_ERR(gain_control_->AnalyzeCaptureAudio(ca));
+  RETURN_ON_ERR(noise_suppression_->AnalyzeCaptureAudio(ca));
   RETURN_ON_ERR(echo_cancellation_->ProcessCaptureAudio(ca));
 
   if (echo_control_mobile_->is_enabled() && noise_suppression_->is_enabled()) {
     ca->CopyLowPassToReference();
   }
-  RETURN_ON_ERR(noise_suppression_->AnalyzeCaptureAudio(ca));
   RETURN_ON_ERR(noise_suppression_->ProcessCaptureAudio(ca));
   RETURN_ON_ERR(echo_control_mobile_->ProcessCaptureAudio(ca));
   RETURN_ON_ERR(voice_detection_->ProcessCaptureAudio(ca));
