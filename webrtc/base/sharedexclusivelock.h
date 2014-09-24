@@ -19,14 +19,14 @@ namespace rtc {
 
 // This class provides shared-exclusive lock. It can be used in cases like
 // multiple-readers/single-writer model.
-class SharedExclusiveLock {
+class LOCKABLE SharedExclusiveLock {
  public:
   SharedExclusiveLock();
 
   // Locking/unlocking methods. It is encouraged to use SharedScope or
   // ExclusiveScope for protection.
-  void LockExclusive();
-  void UnlockExclusive();
+  void LockExclusive() EXCLUSIVE_LOCK_FUNCTION();
+  void UnlockExclusive() UNLOCK_FUNCTION();
   void LockShared();
   void UnlockShared();
 
@@ -39,15 +39,14 @@ class SharedExclusiveLock {
   DISALLOW_COPY_AND_ASSIGN(SharedExclusiveLock);
 };
 
-class SharedScope {
+class SCOPED_LOCKABLE SharedScope {
  public:
-  explicit SharedScope(SharedExclusiveLock* lock) : lock_(lock) {
+  explicit SharedScope(SharedExclusiveLock* lock) SHARED_LOCK_FUNCTION(lock)
+      : lock_(lock) {
     lock_->LockShared();
   }
 
-  ~SharedScope() {
-    lock_->UnlockShared();
-  }
+  ~SharedScope() UNLOCK_FUNCTION() { lock_->UnlockShared(); }
 
  private:
   SharedExclusiveLock* lock_;
@@ -55,15 +54,15 @@ class SharedScope {
   DISALLOW_COPY_AND_ASSIGN(SharedScope);
 };
 
-class ExclusiveScope {
+class SCOPED_LOCKABLE ExclusiveScope {
  public:
-  explicit ExclusiveScope(SharedExclusiveLock* lock) : lock_(lock) {
+  explicit ExclusiveScope(SharedExclusiveLock* lock)
+      EXCLUSIVE_LOCK_FUNCTION(lock)
+      : lock_(lock) {
     lock_->LockExclusive();
   }
 
-  ~ExclusiveScope() {
-    lock_->UnlockExclusive();
-  }
+  ~ExclusiveScope() UNLOCK_FUNCTION() { lock_->UnlockExclusive(); }
 
  private:
   SharedExclusiveLock* lock_;

@@ -1381,14 +1381,8 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
                   << frame->GetHeight();
   // Lock before copying, can be called concurrently when swapping input source.
   rtc::CritScope frame_cs(&frame_lock_);
-  if (!muted_) {
-    ConvertToI420VideoFrame(*frame, &video_frame_);
-  } else {
-    // Create a black frame to transmit instead.
-    CreateBlackFrame(&video_frame_,
-                     static_cast<int>(frame->GetWidth()),
-                     static_cast<int>(frame->GetHeight()));
-  }
+  ConvertToI420VideoFrame(*frame, &video_frame_);
+
   rtc::CritScope cs(&lock_);
   if (stream_ == NULL) {
     LOG(LS_WARNING) << "Capturer inputting frames before send codecs are "
@@ -1399,6 +1393,12 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame(
     assert(format_.height == 0);
     LOG(LS_VERBOSE) << "VideoFormat 0x0 set, Dropping frame.";
     return;
+  }
+  if (muted_) {
+    // Create a black frame to transmit instead.
+    CreateBlackFrame(&video_frame_,
+                     static_cast<int>(frame->GetWidth()),
+                     static_cast<int>(frame->GetHeight()));
   }
   // Reconfigure codec if necessary.
   SetDimensions(

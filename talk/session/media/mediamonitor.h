@@ -34,6 +34,7 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/base/thread_annotations.h"
 
 namespace cricket {
 
@@ -77,7 +78,7 @@ class MediaMonitorT : public MediaMonitor {
     media_info_.Clear();
     media_channel_->GetStats(&media_info_);
   }
-  virtual void Update() {
+  virtual void Update() EXCLUSIVE_LOCKS_REQUIRED(crit_) {
     MI stats(media_info_);
     crit_.Leave();
     SignalUpdate(media_channel_, stats);
