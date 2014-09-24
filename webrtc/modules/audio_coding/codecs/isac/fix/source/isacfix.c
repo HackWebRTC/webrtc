@@ -17,6 +17,7 @@
 
 #include "webrtc/modules/audio_coding/codecs/isac/fix/interface/isacfix.h"
 
+#include <assert.h>
 #include <stdlib.h>
 
 #include "webrtc/modules/audio_coding/codecs/isac/fix/source/bandwidth_estimator.h"
@@ -355,10 +356,10 @@ int16_t WebRtcIsacfix_EncoderInit(ISACFIX_MainStruct *ISAC_main_inst,
 
 int16_t WebRtcIsacfix_Encode(ISACFIX_MainStruct *ISAC_main_inst,
                              const int16_t    *speechIn,
-                             int16_t          *encoded)
+                             uint8_t* encoded)
 {
   ISACFIX_SubStruct *ISAC_inst;
-  int16_t stream_len;
+  int16_t stream_len, stream_len_even;
 #ifndef WEBRTC_ARCH_BIG_ENDIAN
   int k;
 #endif
@@ -382,16 +383,24 @@ int16_t WebRtcIsacfix_Encode(ISACFIX_MainStruct *ISAC_main_inst,
     return -1;
   }
 
+  /* One would think that only even stream lengths would make sense here. We do
+     in fact observe odd lengths, however, and in those cases we copy an extra
+     byte. */
+  stream_len_even = stream_len % 2 == 0 ? stream_len : stream_len + 1;
 
-  /* convert from bytes to int16_t */
 #ifndef WEBRTC_ARCH_BIG_ENDIAN
-  for (k=0;k<(stream_len+1)>>1;k++) {
-    encoded[k] = (int16_t)( ( (uint16_t)(ISAC_inst->ISACenc_obj.bitstr_obj).stream[k] >> 8 )
-                                  | (((ISAC_inst->ISACenc_obj.bitstr_obj).stream[k] & 0x00FF) << 8));
+  /* The encoded data vector is supposesd to be big-endian, but our internal
+     representation is little-endian. So byteswap. */
+  for (k = 0; k < stream_len_even / 2; ++k) {
+    uint16_t s = ISAC_inst->ISACenc_obj.bitstr_obj.stream[k];
+    /* In big-endian, we have... */
+    encoded[2 * k] = s >> 8;  /* ...most significant byte at low address... */
+    encoded[2 * k + 1] = s;  /* ...least significant byte at high address. */
   }
-
 #else
-  WEBRTC_SPL_MEMCPY_W16(encoded, (ISAC_inst->ISACenc_obj.bitstr_obj).stream, (stream_len + 1)>>1);
+  /* The encoded data vector and our internal representation are both
+     big-endian. */
+  memcpy(encoded, ISAC_inst->ISACenc_obj.bitstr_obj.stream, stream_len_even);
 #endif
 
 

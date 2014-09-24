@@ -348,14 +348,11 @@ class AudioDecoderIsacFloatTest : public AudioDecoderTest {
   virtual int EncodeFrame(const int16_t* input, size_t input_len_samples,
                           uint8_t* output) {
     // Insert 3 * 10 ms. Expect non-zero output on third call.
-    EXPECT_EQ(0, WebRtcIsac_Encode(encoder_, input,
-                                   reinterpret_cast<int16_t*>(output)));
+    EXPECT_EQ(0, WebRtcIsac_Encode(encoder_, input, output));
     input += input_size_;
-    EXPECT_EQ(0, WebRtcIsac_Encode(encoder_, input,
-                                   reinterpret_cast<int16_t*>(output)));
+    EXPECT_EQ(0, WebRtcIsac_Encode(encoder_, input, output));
     input += input_size_;
-    int enc_len_bytes =
-        WebRtcIsac_Encode(encoder_, input, reinterpret_cast<int16_t*>(output));
+    int enc_len_bytes = WebRtcIsac_Encode(encoder_, input, output);
     EXPECT_GT(enc_len_bytes, 0);
     return enc_len_bytes;
   }
@@ -388,14 +385,11 @@ class AudioDecoderIsacSwbTest : public AudioDecoderTest {
   virtual int EncodeFrame(const int16_t* input, size_t input_len_samples,
                           uint8_t* output) {
     // Insert 3 * 10 ms. Expect non-zero output on third call.
-    EXPECT_EQ(0, WebRtcIsac_Encode(encoder_, input,
-                                   reinterpret_cast<int16_t*>(output)));
+    EXPECT_EQ(0, WebRtcIsac_Encode(encoder_, input, output));
     input += input_size_;
-    EXPECT_EQ(0, WebRtcIsac_Encode(encoder_, input,
-                                   reinterpret_cast<int16_t*>(output)));
+    EXPECT_EQ(0, WebRtcIsac_Encode(encoder_, input, output));
     input += input_size_;
-    int enc_len_bytes =
-        WebRtcIsac_Encode(encoder_, input, reinterpret_cast<int16_t*>(output));
+    int enc_len_bytes = WebRtcIsac_Encode(encoder_, input, output);
     EXPECT_GT(enc_len_bytes, 0);
     return enc_len_bytes;
   }
@@ -441,14 +435,11 @@ class AudioDecoderIsacFixTest : public AudioDecoderTest {
   virtual int EncodeFrame(const int16_t* input, size_t input_len_samples,
                           uint8_t* output) {
     // Insert 3 * 10 ms. Expect non-zero output on third call.
-    EXPECT_EQ(0, WebRtcIsacfix_Encode(encoder_, input,
-                                      reinterpret_cast<int16_t*>(output)));
+    EXPECT_EQ(0, WebRtcIsacfix_Encode(encoder_, input, output));
     input += input_size_;
-    EXPECT_EQ(0, WebRtcIsacfix_Encode(encoder_, input,
-                                      reinterpret_cast<int16_t*>(output)));
+    EXPECT_EQ(0, WebRtcIsacfix_Encode(encoder_, input, output));
     input += input_size_;
-    int enc_len_bytes = WebRtcIsacfix_Encode(
-        encoder_, input, reinterpret_cast<int16_t*>(output));
+    int enc_len_bytes = WebRtcIsacfix_Encode(encoder_, input, output);
     EXPECT_GT(enc_len_bytes, 0);
     return enc_len_bytes;
   }

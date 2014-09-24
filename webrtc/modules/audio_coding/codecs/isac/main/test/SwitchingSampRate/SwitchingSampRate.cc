@@ -283,7 +283,8 @@ int main(int argc, char* argv[])
 
 
       streamLen = WebRtcIsac_Encode(codecInstance[senderIdx],
-                                    audioBuff10ms, (short*)bitStream);
+                                    audioBuff10ms,
+                                    (uint8_t*)bitStream);
       int16_t ggg;
       if (streamLen > 0) {
         if((  WebRtcIsac_ReadFrameLen(codecInstance[receiverIdx],

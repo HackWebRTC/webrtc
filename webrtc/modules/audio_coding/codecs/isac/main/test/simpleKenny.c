@@ -373,8 +373,10 @@ valid values are 8 and 16.\n", sampFreqKHz);
 				cur_framesmpls += samplesIn10Ms;
 
 				//-------- iSAC encoding ---------
-				stream_len = WebRtcIsac_Encode(ISAC_main_inst, shortdata,
-					(int16_t*)payload);
+                                stream_len = WebRtcIsac_Encode(
+                                        ISAC_main_inst,
+                                        shortdata,
+                                        (uint8_t*)payload);
 
 				if(stream_len < 0)
 				{
