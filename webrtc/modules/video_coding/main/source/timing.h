@@ -11,9 +11,9 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_TIMING_H_
 #define WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_TIMING_H_
 
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/video_coding/main/source/codec_timer.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/thread_annotations.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

@@ -16,6 +16,7 @@
 
 #include <map>
 
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/pacing/include/paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
@@ -25,7 +26,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "webrtc/modules/rtp_rtcp/source/ssrc_database.h"
 #include "webrtc/modules/rtp_rtcp/source/video_codec_information.h"
-#include "webrtc/system_wrappers/interface/thread_annotations.h"
 
 #define MAX_INIT_RTP_SEQ_NUMBER 32767  // 2^15 -1.
 

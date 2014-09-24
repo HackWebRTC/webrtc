@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_G722_H_
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_G722_H_
 
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_generic_codec.h"
-#include "webrtc/system_wrappers/interface/thread_annotations.h"
 
 typedef struct WebRtcG722EncInst G722EncInst;
 typedef struct WebRtcG722DecInst G722DecInst;

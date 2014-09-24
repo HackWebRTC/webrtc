@@ -14,6 +14,7 @@
 #include <map>
 #include <vector>
 
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/call.h"
 #include "webrtc/common.h"
 #include "webrtc/config.h"
@@ -22,7 +23,6 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
-#include "webrtc/system_wrappers/interface/thread_annotations.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/video/video_receive_stream.h"
 #include "webrtc/video/video_send_stream.h"

@@ -15,6 +15,7 @@
 
 #include <vector>
 
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/video_coding/main/source/codec_database.h"
 #include "webrtc/modules/video_coding/main/source/frame_buffer.h"
 #include "webrtc/modules/video_coding/main/source/generic_decoder.h"
@@ -25,7 +26,6 @@
 #include "webrtc/modules/video_coding/main/source/timing.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/thread_annotations.h"
 
 namespace webrtc {
 

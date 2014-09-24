@@ -13,6 +13,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/md5digest.h"
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_receive_test_oldapi.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_send_test_oldapi.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
@@ -30,7 +31,6 @@
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
-#include "webrtc/system_wrappers/interface/thread_annotations.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/gtest_disable.h"

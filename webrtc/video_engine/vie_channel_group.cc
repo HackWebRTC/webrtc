@@ -10,6 +10,7 @@
 
 #include "webrtc/video_engine/vie_channel_group.h"
 
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/common.h"
 #include "webrtc/experiments.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
@@ -18,7 +19,6 @@
 #include "webrtc/modules/utility/interface/process_thread.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
-#include "webrtc/system_wrappers/interface/thread_annotations.h"
 #include "webrtc/video_engine/call_stats.h"
 #include "webrtc/video_engine/encoder_state_feedback.h"
 #include "webrtc/video_engine/vie_channel.h"

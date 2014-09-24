@@ -13,11 +13,11 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/call.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
-#include "webrtc/system_wrappers/interface/thread_annotations.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/test/call_test.h"
 #include "webrtc/test/direct_transport.h"

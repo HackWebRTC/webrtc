@@ -14,9 +14,9 @@
 #include <list>
 #include <set>
 
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/interface/module.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
-#include "webrtc/system_wrappers/interface/thread_annotations.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

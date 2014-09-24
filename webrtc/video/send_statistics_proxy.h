@@ -13,12 +13,12 @@
 
 #include <string>
 
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/video_engine/include/vie_codec.h"
 #include "webrtc/video_engine/include/vie_capture.h"
 #include "webrtc/video_send_stream.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
-#include "webrtc/system_wrappers/interface/thread_annotations.h"
 
 namespace webrtc {
 

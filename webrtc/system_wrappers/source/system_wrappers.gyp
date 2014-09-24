@@ -54,7 +54,6 @@
         '../interface/static_instance.h',
         '../interface/stl_util.h',
         '../interface/stringize_macros.h',
-        '../interface/thread_annotations.h',
         '../interface/thread_wrapper.h',
         '../interface/tick_util.h',
         '../interface/timestamp_extrapolator.h',

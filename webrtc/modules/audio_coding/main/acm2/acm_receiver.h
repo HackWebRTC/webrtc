@@ -13,6 +13,7 @@
 
 #include <vector>
 
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_audio/vad/include/webrtc_vad.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
@@ -23,7 +24,6 @@
 #include "webrtc/modules/audio_coding/neteq/interface/neteq.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
-#include "webrtc/system_wrappers/interface/thread_annotations.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
