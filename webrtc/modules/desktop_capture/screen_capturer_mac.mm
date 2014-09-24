@@ -429,6 +429,7 @@ void ScreenCapturerMac::Capture(const DesktopRegion& region_to_capture) {
     // Lion requires us to use their new APIs for doing screen capture. These
     // APIS currently crash on 10.6.8 if there is no monitor attached.
     if (!CgBlitPostLion(*current_frame, region)) {
+      desktop_config_monitor_->Unlock();
       callback_->OnCaptureCompleted(NULL);
       return;
     }
