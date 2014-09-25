@@ -33,6 +33,7 @@
 #include "talk/p2p/base/transportdescriptionfactory.h"
 #include "webrtc/base/fakesslidentity.h"
 #include "webrtc/base/gunit.h"
+#include "webrtc/base/ssladapter.h"
 
 using rtc::scoped_ptr;
 using cricket::TransportDescriptionFactory;
@@ -45,6 +46,11 @@ class TransportDescriptionFactoryTest : public testing::Test {
       : id1_(new rtc::FakeSSLIdentity("User1")),
         id2_(new rtc::FakeSSLIdentity("User2")) {
   }
+
+  // Make sure SSL is set up as it's used by the tests.
+  static void SetUpTestCase() { rtc::InitializeSSL(); }
+  static void TearDownTestCase() { rtc::CleanupSSL(); }
+
   void CheckDesc(const TransportDescription* desc, const std::string& type,
                  const std::string& opt, const std::string& ice_ufrag,
                  const std::string& ice_pwd, const std::string& dtls_alg) {

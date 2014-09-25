@@ -41,6 +41,7 @@
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/ssladapter.h"
 
 using cricket::AudioCodec;
 using cricket::AudioContentDescription;
@@ -2763,7 +2764,14 @@ MediaSessionClientTest* JingleTest() {
                                     cricket::PROTOCOL_JINGLE);
 }
 
-TEST(MediaSessionTest, JingleGoodInitiateWithRtcpFb) {
+class MediaSessionTest : public ::testing::Test {
+ protected:
+  // Make sure SSL is set up as it's used by the tests.
+  static void SetUpTestCase() { rtc::InitializeSSL(); }
+  static void TearDownTestCase() { rtc::CleanupSSL(); }
+};
+
+TEST_F(MediaSessionTest, JingleGoodInitiateWithRtcpFb) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   rtc::scoped_ptr<buzz::XmlElement> elem;
 
@@ -2774,7 +2782,7 @@ TEST(MediaSessionTest, JingleGoodInitiateWithRtcpFb) {
       kJingleInitiateWithRtcpFb, options, elem.use());
 }
 
-TEST(MediaSessionTest, JingleGoodVideoInitiate) {
+TEST_F(MediaSessionTest, JingleGoodVideoInitiate) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   rtc::scoped_ptr<buzz::XmlElement> elem;
   test->TestGoodIncomingInitiate(
@@ -2782,7 +2790,7 @@ TEST(MediaSessionTest, JingleGoodVideoInitiate) {
   test->TestCodecsOfVideoInitiate(elem.get());
 }
 
-TEST(MediaSessionTest, JingleGoodVideoInitiateWithBandwidth) {
+TEST_F(MediaSessionTest, JingleGoodVideoInitiateWithBandwidth) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   rtc::scoped_ptr<buzz::XmlElement> elem;
   test->ExpectVideoBandwidth(42000);
@@ -2790,7 +2798,7 @@ TEST(MediaSessionTest, JingleGoodVideoInitiateWithBandwidth) {
       kJingleVideoInitiateWithBandwidth, VideoCallOptions(), elem.use());
 }
 
-TEST(MediaSessionTest, JingleGoodVideoInitiateWithRtcpMux) {
+TEST_F(MediaSessionTest, JingleGoodVideoInitiateWithRtcpMux) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   rtc::scoped_ptr<buzz::XmlElement> elem;
   test->ExpectVideoRtcpMux(true);
@@ -2798,7 +2806,7 @@ TEST(MediaSessionTest, JingleGoodVideoInitiateWithRtcpMux) {
       kJingleVideoInitiateWithRtcpMux, VideoCallOptions(), elem.use());
 }
 
-TEST(MediaSessionTest, JingleGoodVideoInitiateWithRtpData) {
+TEST_F(MediaSessionTest, JingleGoodVideoInitiateWithRtpData) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   rtc::scoped_ptr<buzz::XmlElement> elem;
   cricket::CallOptions options = VideoCallOptions();
@@ -2809,7 +2817,7 @@ TEST(MediaSessionTest, JingleGoodVideoInitiateWithRtpData) {
       elem.use());
 }
 
-TEST(MediaSessionTest, JingleGoodVideoInitiateWithSctpData) {
+TEST_F(MediaSessionTest, JingleGoodVideoInitiateWithSctpData) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   rtc::scoped_ptr<buzz::XmlElement> elem;
   cricket::CallOptions options = VideoCallOptions();
@@ -2819,7 +2827,7 @@ TEST(MediaSessionTest, JingleGoodVideoInitiateWithSctpData) {
                                  elem.use());
 }
 
-TEST(MediaSessionTest, JingleRejectAudio) {
+TEST_F(MediaSessionTest, JingleRejectAudio) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   rtc::scoped_ptr<buzz::XmlElement> elem;
   cricket::CallOptions options = VideoCallOptions();
@@ -2828,7 +2836,7 @@ TEST(MediaSessionTest, JingleRejectAudio) {
   test->TestRejectOffer(kJingleVideoInitiateWithRtpData, options, elem.use());
 }
 
-TEST(MediaSessionTest, JingleRejectVideo) {
+TEST_F(MediaSessionTest, JingleRejectVideo) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   rtc::scoped_ptr<buzz::XmlElement> elem;
   cricket::CallOptions options = AudioCallOptions();
@@ -2836,21 +2844,21 @@ TEST(MediaSessionTest, JingleRejectVideo) {
   test->TestRejectOffer(kJingleVideoInitiateWithRtpData, options, elem.use());
 }
 
-TEST(MediaSessionTest, JingleRejectData) {
+TEST_F(MediaSessionTest, JingleRejectData) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   rtc::scoped_ptr<buzz::XmlElement> elem;
   test->TestRejectOffer(
       kJingleVideoInitiateWithRtpData, VideoCallOptions(), elem.use());
 }
 
-TEST(MediaSessionTest, JingleRejectVideoAndData) {
+TEST_F(MediaSessionTest, JingleRejectVideoAndData) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   rtc::scoped_ptr<buzz::XmlElement> elem;
   test->TestRejectOffer(
       kJingleVideoInitiateWithRtpData, AudioCallOptions(), elem.use());
 }
 
-TEST(MediaSessionTest, JingleGoodInitiateAllSupportedAudioCodecs) {
+TEST_F(MediaSessionTest, JingleGoodInitiateAllSupportedAudioCodecs) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   rtc::scoped_ptr<buzz::XmlElement> elem;
   test->TestGoodIncomingInitiate(
@@ -2861,7 +2869,7 @@ TEST(MediaSessionTest, JingleGoodInitiateAllSupportedAudioCodecs) {
 // Changes the codecs that our FakeMediaEngine will support with a different
 // preference order than the incoming offer.
 // Verifies the answer accepts the preference order of the remote peer.
-TEST(MediaSessionTest, JingleGoodInitiateDifferentPreferenceAudioCodecs) {
+TEST_F(MediaSessionTest, JingleGoodInitiateDifferentPreferenceAudioCodecs) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   test->fme()->SetAudioCodecs(MAKE_VECTOR(kAudioCodecsDifferentPreference));
   rtc::scoped_ptr<buzz::XmlElement> elem;
@@ -2870,7 +2878,7 @@ TEST(MediaSessionTest, JingleGoodInitiateDifferentPreferenceAudioCodecs) {
   test->TestHasAllSupportedAudioCodecs(elem.get());
 }
 
-TEST(MediaSessionTest, JingleGoodInitiateSomeUnsupportedAudioCodecs) {
+TEST_F(MediaSessionTest, JingleGoodInitiateSomeUnsupportedAudioCodecs) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   rtc::scoped_ptr<buzz::XmlElement> elem;
   test->TestGoodIncomingInitiate(
@@ -2878,7 +2886,7 @@ TEST(MediaSessionTest, JingleGoodInitiateSomeUnsupportedAudioCodecs) {
   test->TestHasAudioCodecsFromInitiateSomeUnsupported(elem.get());
 }
 
-TEST(MediaSessionTest, JingleGoodInitiateDynamicAudioCodecs) {
+TEST_F(MediaSessionTest, JingleGoodInitiateDynamicAudioCodecs) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   rtc::scoped_ptr<buzz::XmlElement> elem;
   test->TestGoodIncomingInitiate(
@@ -2886,7 +2894,7 @@ TEST(MediaSessionTest, JingleGoodInitiateDynamicAudioCodecs) {
   test->TestHasAudioCodecsFromInitiateDynamicAudioCodecs(elem.get());
 }
 
-TEST(MediaSessionTest, JingleGoodInitiateStaticAudioCodecs) {
+TEST_F(MediaSessionTest, JingleGoodInitiateStaticAudioCodecs) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   rtc::scoped_ptr<buzz::XmlElement> elem;
   test->TestGoodIncomingInitiate(
@@ -2894,56 +2902,56 @@ TEST(MediaSessionTest, JingleGoodInitiateStaticAudioCodecs) {
   test->TestHasAudioCodecsFromInitiateStaticAudioCodecs(elem.get());
 }
 
-TEST(MediaSessionTest, JingleBadInitiateNoAudioCodecs) {
+TEST_F(MediaSessionTest, JingleBadInitiateNoAudioCodecs) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   test->TestBadIncomingInitiate(kJingleInitiateNoAudioCodecs);
 }
 
-TEST(MediaSessionTest, JingleBadInitiateNoSupportedAudioCodecs) {
+TEST_F(MediaSessionTest, JingleBadInitiateNoSupportedAudioCodecs) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   test->TestBadIncomingInitiate(kJingleInitiateNoSupportedAudioCodecs);
 }
 
-TEST(MediaSessionTest, JingleBadInitiateWrongClockrates) {
+TEST_F(MediaSessionTest, JingleBadInitiateWrongClockrates) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   test->TestBadIncomingInitiate(kJingleInitiateWrongClockrates);
 }
 
-TEST(MediaSessionTest, JingleBadInitiateWrongChannels) {
+TEST_F(MediaSessionTest, JingleBadInitiateWrongChannels) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   test->TestBadIncomingInitiate(kJingleInitiateWrongChannels);
 }
 
-TEST(MediaSessionTest, JingleBadInitiateNoPayloadTypes) {
+TEST_F(MediaSessionTest, JingleBadInitiateNoPayloadTypes) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   test->TestBadIncomingInitiate(kJingleInitiateNoPayloadTypes);
 }
 
-TEST(MediaSessionTest, JingleBadInitiateDynamicWithoutNames) {
+TEST_F(MediaSessionTest, JingleBadInitiateDynamicWithoutNames) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   test->TestBadIncomingInitiate(kJingleInitiateDynamicWithoutNames);
 }
 
-TEST(MediaSessionTest, JingleGoodOutgoingInitiate) {
+TEST_F(MediaSessionTest, JingleGoodOutgoingInitiate) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   test->TestGoodOutgoingInitiate(AudioCallOptions());
 }
 
-TEST(MediaSessionTest, JingleGoodOutgoingInitiateWithBandwidth) {
+TEST_F(MediaSessionTest, JingleGoodOutgoingInitiateWithBandwidth) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   cricket::CallOptions options = VideoCallOptions();
   options.video_bandwidth = 42000;
   test->TestGoodOutgoingInitiate(options);
 }
 
-TEST(MediaSessionTest, JingleGoodOutgoingInitiateWithRtcpMux) {
+TEST_F(MediaSessionTest, JingleGoodOutgoingInitiateWithRtcpMux) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   cricket::CallOptions options = VideoCallOptions();
   options.rtcp_mux_enabled = true;
   test->TestGoodOutgoingInitiate(options);
 }
 
-TEST(MediaSessionTest, JingleGoodOutgoingInitiateWithRtpData) {
+TEST_F(MediaSessionTest, JingleGoodOutgoingInitiateWithRtpData) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   cricket::CallOptions options;
   options.data_channel_type = cricket::DCT_RTP;
@@ -2951,7 +2959,7 @@ TEST(MediaSessionTest, JingleGoodOutgoingInitiateWithRtpData) {
   test->TestGoodOutgoingInitiate(options);
 }
 
-TEST(MediaSessionTest, JingleGoodOutgoingInitiateWithSctpData) {
+TEST_F(MediaSessionTest, JingleGoodOutgoingInitiateWithSctpData) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   cricket::CallOptions options;
   options.data_channel_type = cricket::DCT_SCTP;
@@ -2961,7 +2969,7 @@ TEST(MediaSessionTest, JingleGoodOutgoingInitiateWithSctpData) {
 // Crypto related tests.
 
 // Offer has crypto but the session is not secured, just ignore it.
-TEST(MediaSessionTest, JingleInitiateWithCryptoIsIgnoredWhenNotSecured) {
+TEST_F(MediaSessionTest, JingleInitiateWithCryptoIsIgnoredWhenNotSecured) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   rtc::scoped_ptr<buzz::XmlElement> elem;
   test->TestGoodIncomingInitiate(
@@ -2971,21 +2979,21 @@ TEST(MediaSessionTest, JingleInitiateWithCryptoIsIgnoredWhenNotSecured) {
 }
 
 // Offer has crypto required but the session is not secure, fail.
-TEST(MediaSessionTest, JingleInitiateWithCryptoRequiredWhenNotSecured) {
+TEST_F(MediaSessionTest, JingleInitiateWithCryptoRequiredWhenNotSecured) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   test->TestBadIncomingInitiate(AddEncryption(kJingleVideoInitiate,
                                              kJingleRequiredCryptoOffer));
 }
 
 // Offer has no crypto but the session is secure required, fail.
-TEST(MediaSessionTest, JingleInitiateWithNoCryptoFailsWhenSecureRequired) {
+TEST_F(MediaSessionTest, JingleInitiateWithNoCryptoFailsWhenSecureRequired) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   test->ExpectCrypto(cricket::SEC_REQUIRED);
   test->TestBadIncomingInitiate(kJingleInitiate);
 }
 
 // Offer has crypto and session is secure, expect crypto in the answer.
-TEST(MediaSessionTest, JingleInitiateWithCryptoWhenSecureEnabled) {
+TEST_F(MediaSessionTest, JingleInitiateWithCryptoWhenSecureEnabled) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   rtc::scoped_ptr<buzz::XmlElement> elem;
   test->ExpectCrypto(cricket::SEC_ENABLED);
@@ -2997,7 +3005,7 @@ TEST(MediaSessionTest, JingleInitiateWithCryptoWhenSecureEnabled) {
 
 // Offer has crypto and session is secure required, expect crypto in
 // the answer.
-TEST(MediaSessionTest, JingleInitiateWithCryptoWhenSecureRequired) {
+TEST_F(MediaSessionTest, JingleInitiateWithCryptoWhenSecureRequired) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   rtc::scoped_ptr<buzz::XmlElement> elem;
   test->ExpectCrypto(cricket::SEC_REQUIRED);
@@ -3009,7 +3017,7 @@ TEST(MediaSessionTest, JingleInitiateWithCryptoWhenSecureRequired) {
 
 // Offer has unsupported crypto and session is secure, no crypto in
 // the answer.
-TEST(MediaSessionTest, JingleInitiateWithUnsupportedCrypto) {
+TEST_F(MediaSessionTest, JingleInitiateWithUnsupportedCrypto) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   rtc::scoped_ptr<buzz::XmlElement> elem;
   test->MakeSignalingSecure(cricket::SEC_ENABLED);
@@ -3020,14 +3028,15 @@ TEST(MediaSessionTest, JingleInitiateWithUnsupportedCrypto) {
 }
 
 // Offer has unsupported REQUIRED crypto and session is not secure, fail.
-TEST(MediaSessionTest, JingleInitiateWithRequiredUnsupportedCrypto) {
+TEST_F(MediaSessionTest, JingleInitiateWithRequiredUnsupportedCrypto) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   test->TestBadIncomingInitiate(
       AddEncryption(kJingleInitiate, kJingleRequiredUnsupportedCryptoOffer));
 }
 
 // Offer has unsupported REQUIRED crypto and session is secure, fail.
-TEST(MediaSessionTest, JingleInitiateWithRequiredUnsupportedCryptoWhenSecure) {
+TEST_F(MediaSessionTest,
+       JingleInitiateWithRequiredUnsupportedCryptoWhenSecure) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   test->MakeSignalingSecure(cricket::SEC_ENABLED);
   test->TestBadIncomingInitiate(
@@ -3035,35 +3044,34 @@ TEST(MediaSessionTest, JingleInitiateWithRequiredUnsupportedCryptoWhenSecure) {
 }
 
 // Offer has unsupported REQUIRED crypto and session is required secure, fail.
-TEST(MediaSessionTest,
-     JingleInitiateWithRequiredUnsupportedCryptoWhenSecureRequired) {
+TEST_F(MediaSessionTest,
+       JingleInitiateWithRequiredUnsupportedCryptoWhenSecureRequired) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   test->MakeSignalingSecure(cricket::SEC_REQUIRED);
   test->TestBadIncomingInitiate(
       AddEncryption(kJingleInitiate, kJingleRequiredUnsupportedCryptoOffer));
 }
 
-
-TEST(MediaSessionTest, JingleGoodOutgoingInitiateWithCrypto) {
+TEST_F(MediaSessionTest, JingleGoodOutgoingInitiateWithCrypto) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   test->ExpectCrypto(cricket::SEC_ENABLED);
   test->TestGoodOutgoingInitiate(AudioCallOptions());
 }
 
-TEST(MediaSessionTest, JingleGoodOutgoingInitiateWithCryptoRequired) {
+TEST_F(MediaSessionTest, JingleGoodOutgoingInitiateWithCryptoRequired) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   test->ExpectCrypto(cricket::SEC_REQUIRED);
   test->TestGoodOutgoingInitiate(AudioCallOptions());
 }
 
-TEST(MediaSessionTest, JingleIncomingAcceptWithSsrcs) {
+TEST_F(MediaSessionTest, JingleIncomingAcceptWithSsrcs) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   cricket::CallOptions options = VideoCallOptions();
   options.is_muc = true;
   test->TestIncomingAcceptWithSsrcs(kJingleAcceptWithSsrcs, options);
 }
 
-TEST(MediaSessionTest, JingleIncomingAcceptWithRtpDataSsrcs) {
+TEST_F(MediaSessionTest, JingleIncomingAcceptWithRtpDataSsrcs) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   cricket::CallOptions options = VideoCallOptions();
   options.is_muc = true;
@@ -3071,7 +3079,7 @@ TEST(MediaSessionTest, JingleIncomingAcceptWithRtpDataSsrcs) {
   test->TestIncomingAcceptWithSsrcs(kJingleAcceptWithRtpDataSsrcs, options);
 }
 
-TEST(MediaSessionTest, JingleIncomingAcceptWithSctpData) {
+TEST_F(MediaSessionTest, JingleIncomingAcceptWithSctpData) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   cricket::CallOptions options = VideoCallOptions();
   options.is_muc = true;
@@ -3079,19 +3087,19 @@ TEST(MediaSessionTest, JingleIncomingAcceptWithSctpData) {
   test->TestIncomingAcceptWithSsrcs(kJingleAcceptWithSctpData, options);
 }
 
-TEST(MediaSessionTest, JingleStreamsUpdateAndView) {
+TEST_F(MediaSessionTest, JingleStreamsUpdateAndView) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   test->TestStreamsUpdateAndViewRequests();
 }
 
-TEST(MediaSessionTest, JingleSendVideoStreamUpdate) {
+TEST_F(MediaSessionTest, JingleSendVideoStreamUpdate) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   test->TestSendVideoStreamUpdate();
 }
 
 // Gingle tests
 
-TEST(MediaSessionTest, GingleGoodVideoInitiate) {
+TEST_F(MediaSessionTest, GingleGoodVideoInitiate) {
   rtc::scoped_ptr<buzz::XmlElement> elem;
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->TestGoodIncomingInitiate(
@@ -3099,7 +3107,7 @@ TEST(MediaSessionTest, GingleGoodVideoInitiate) {
   test->TestCodecsOfVideoInitiate(elem.get());
 }
 
-TEST(MediaSessionTest, GingleGoodVideoInitiateWithBandwidth) {
+TEST_F(MediaSessionTest, GingleGoodVideoInitiateWithBandwidth) {
   rtc::scoped_ptr<buzz::XmlElement> elem;
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->ExpectVideoBandwidth(42000);
@@ -3107,7 +3115,7 @@ TEST(MediaSessionTest, GingleGoodVideoInitiateWithBandwidth) {
       kGingleVideoInitiateWithBandwidth, VideoCallOptions(), elem.use());
 }
 
-TEST(MediaSessionTest, GingleGoodInitiateAllSupportedAudioCodecs) {
+TEST_F(MediaSessionTest, GingleGoodInitiateAllSupportedAudioCodecs) {
   rtc::scoped_ptr<buzz::XmlElement> elem;
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->TestGoodIncomingInitiate(
@@ -3115,7 +3123,7 @@ TEST(MediaSessionTest, GingleGoodInitiateAllSupportedAudioCodecs) {
   test->TestHasAllSupportedAudioCodecs(elem.get());
 }
 
-TEST(MediaSessionTest, GingleGoodInitiateAllSupportedAudioCodecsWithCrypto) {
+TEST_F(MediaSessionTest, GingleGoodInitiateAllSupportedAudioCodecsWithCrypto) {
   rtc::scoped_ptr<buzz::XmlElement> elem;
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->ExpectCrypto(cricket::SEC_ENABLED);
@@ -3129,7 +3137,7 @@ TEST(MediaSessionTest, GingleGoodInitiateAllSupportedAudioCodecsWithCrypto) {
 // Changes the codecs that our FakeMediaEngine will support with a different
 // preference order than the incoming offer.
 // Verifies the answer accepts the preference order of the remote peer.
-TEST(MediaSessionTest, GingleGoodInitiateDifferentPreferenceAudioCodecs) {
+TEST_F(MediaSessionTest, GingleGoodInitiateDifferentPreferenceAudioCodecs) {
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->fme()->SetAudioCodecs(MAKE_VECTOR(kAudioCodecsDifferentPreference));
   rtc::scoped_ptr<buzz::XmlElement> elem;
@@ -3138,7 +3146,7 @@ TEST(MediaSessionTest, GingleGoodInitiateDifferentPreferenceAudioCodecs) {
   test->TestHasAllSupportedAudioCodecs(elem.get());
 }
 
-TEST(MediaSessionTest, GingleGoodInitiateSomeUnsupportedAudioCodecs) {
+TEST_F(MediaSessionTest, GingleGoodInitiateSomeUnsupportedAudioCodecs) {
   rtc::scoped_ptr<buzz::XmlElement> elem;
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->TestGoodIncomingInitiate(
@@ -3146,7 +3154,7 @@ TEST(MediaSessionTest, GingleGoodInitiateSomeUnsupportedAudioCodecs) {
   test->TestHasAudioCodecsFromInitiateSomeUnsupported(elem.get());
 }
 
-TEST(MediaSessionTest, GingleGoodInitiateDynamicAudioCodecs) {
+TEST_F(MediaSessionTest, GingleGoodInitiateDynamicAudioCodecs) {
   rtc::scoped_ptr<buzz::XmlElement> elem;
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->TestGoodIncomingInitiate(
@@ -3154,7 +3162,7 @@ TEST(MediaSessionTest, GingleGoodInitiateDynamicAudioCodecs) {
   test->TestHasAudioCodecsFromInitiateDynamicAudioCodecs(elem.get());
 }
 
-TEST(MediaSessionTest, GingleGoodInitiateStaticAudioCodecs) {
+TEST_F(MediaSessionTest, GingleGoodInitiateStaticAudioCodecs) {
   rtc::scoped_ptr<buzz::XmlElement> elem;
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->TestGoodIncomingInitiate(
@@ -3162,7 +3170,7 @@ TEST(MediaSessionTest, GingleGoodInitiateStaticAudioCodecs) {
   test->TestHasAudioCodecsFromInitiateStaticAudioCodecs(elem.get());
 }
 
-TEST(MediaSessionTest, GingleGoodInitiateNoAudioCodecs) {
+TEST_F(MediaSessionTest, GingleGoodInitiateNoAudioCodecs) {
   rtc::scoped_ptr<buzz::XmlElement> elem;
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->TestGoodIncomingInitiate(
@@ -3170,38 +3178,37 @@ TEST(MediaSessionTest, GingleGoodInitiateNoAudioCodecs) {
   test->TestHasDefaultAudioCodecs(elem.get());
 }
 
-TEST(MediaSessionTest, GingleBadInitiateNoSupportedAudioCodecs) {
+TEST_F(MediaSessionTest, GingleBadInitiateNoSupportedAudioCodecs) {
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->TestBadIncomingInitiate(kGingleInitiateNoSupportedAudioCodecs);
 }
 
-TEST(MediaSessionTest, GingleBadInitiateWrongClockrates) {
+TEST_F(MediaSessionTest, GingleBadInitiateWrongClockrates) {
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->TestBadIncomingInitiate(kGingleInitiateWrongClockrates);
 }
 
-TEST(MediaSessionTest, GingleBadInitiateWrongChannels) {
+TEST_F(MediaSessionTest, GingleBadInitiateWrongChannels) {
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->TestBadIncomingInitiate(kGingleInitiateWrongChannels);
 }
 
-
-TEST(MediaSessionTest, GingleBadInitiateNoPayloadTypes) {
+TEST_F(MediaSessionTest, GingleBadInitiateNoPayloadTypes) {
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->TestBadIncomingInitiate(kGingleInitiateNoPayloadTypes);
 }
 
-TEST(MediaSessionTest, GingleBadInitiateDynamicWithoutNames) {
+TEST_F(MediaSessionTest, GingleBadInitiateDynamicWithoutNames) {
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->TestBadIncomingInitiate(kGingleInitiateDynamicWithoutNames);
 }
 
-TEST(MediaSessionTest, GingleGoodOutgoingInitiate) {
+TEST_F(MediaSessionTest, GingleGoodOutgoingInitiate) {
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->TestGoodOutgoingInitiate(AudioCallOptions());
 }
 
-TEST(MediaSessionTest, GingleGoodOutgoingInitiateWithBandwidth) {
+TEST_F(MediaSessionTest, GingleGoodOutgoingInitiateWithBandwidth) {
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   cricket::CallOptions options = VideoCallOptions();
   options.video_bandwidth = 42000;
@@ -3211,7 +3218,7 @@ TEST(MediaSessionTest, GingleGoodOutgoingInitiateWithBandwidth) {
 // Crypto related tests.
 
 // Offer has crypto but the session is not secured, just ignore it.
-TEST(MediaSessionTest, GingleInitiateWithCryptoIsIgnoredWhenNotSecured) {
+TEST_F(MediaSessionTest, GingleInitiateWithCryptoIsIgnoredWhenNotSecured) {
   rtc::scoped_ptr<buzz::XmlElement> elem;
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->TestGoodIncomingInitiate(
@@ -3221,21 +3228,21 @@ TEST(MediaSessionTest, GingleInitiateWithCryptoIsIgnoredWhenNotSecured) {
 }
 
 // Offer has crypto required but the session is not secure, fail.
-TEST(MediaSessionTest, GingleInitiateWithCryptoRequiredWhenNotSecured) {
+TEST_F(MediaSessionTest, GingleInitiateWithCryptoRequiredWhenNotSecured) {
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->TestBadIncomingInitiate(AddEncryption(kGingleInitiate,
                                              kGingleRequiredCryptoOffer));
 }
 
 // Offer has no crypto but the session is secure required, fail.
-TEST(MediaSessionTest, GingleInitiateWithNoCryptoFailsWhenSecureRequired) {
+TEST_F(MediaSessionTest, GingleInitiateWithNoCryptoFailsWhenSecureRequired) {
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->ExpectCrypto(cricket::SEC_REQUIRED);
   test->TestBadIncomingInitiate(kGingleInitiate);
 }
 
 // Offer has crypto and session is secure, expect crypto in the answer.
-TEST(MediaSessionTest, GingleInitiateWithCryptoWhenSecureEnabled) {
+TEST_F(MediaSessionTest, GingleInitiateWithCryptoWhenSecureEnabled) {
   rtc::scoped_ptr<buzz::XmlElement> elem;
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->ExpectCrypto(cricket::SEC_ENABLED);
@@ -3247,7 +3254,7 @@ TEST(MediaSessionTest, GingleInitiateWithCryptoWhenSecureEnabled) {
 
 // Offer has crypto and session is secure required, expect crypto in
 // the answer.
-TEST(MediaSessionTest, GingleInitiateWithCryptoWhenSecureRequired) {
+TEST_F(MediaSessionTest, GingleInitiateWithCryptoWhenSecureRequired) {
   rtc::scoped_ptr<buzz::XmlElement> elem;
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->ExpectCrypto(cricket::SEC_REQUIRED);
@@ -3259,7 +3266,7 @@ TEST(MediaSessionTest, GingleInitiateWithCryptoWhenSecureRequired) {
 
 // Offer has unsupported crypto and session is secure, no crypto in
 // the answer.
-TEST(MediaSessionTest, GingleInitiateWithUnsupportedCrypto) {
+TEST_F(MediaSessionTest, GingleInitiateWithUnsupportedCrypto) {
   rtc::scoped_ptr<buzz::XmlElement> elem;
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->MakeSignalingSecure(cricket::SEC_ENABLED);
@@ -3270,14 +3277,15 @@ TEST(MediaSessionTest, GingleInitiateWithUnsupportedCrypto) {
 }
 
 // Offer has unsupported REQUIRED crypto and session is not secure, fail.
-TEST(MediaSessionTest, GingleInitiateWithRequiredUnsupportedCrypto) {
+TEST_F(MediaSessionTest, GingleInitiateWithRequiredUnsupportedCrypto) {
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->TestBadIncomingInitiate(
       AddEncryption(kGingleInitiate, kGingleRequiredUnsupportedCryptoOffer));
 }
 
 // Offer has unsupported REQUIRED crypto and session is secure, fail.
-TEST(MediaSessionTest, GingleInitiateWithRequiredUnsupportedCryptoWhenSecure) {
+TEST_F(MediaSessionTest,
+       GingleInitiateWithRequiredUnsupportedCryptoWhenSecure) {
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->MakeSignalingSecure(cricket::SEC_ENABLED);
   test->TestBadIncomingInitiate(
@@ -3285,34 +3293,34 @@ TEST(MediaSessionTest, GingleInitiateWithRequiredUnsupportedCryptoWhenSecure) {
 }
 
 // Offer has unsupported REQUIRED crypto and session is required secure, fail.
-TEST(MediaSessionTest,
-     GingleInitiateWithRequiredUnsupportedCryptoWhenSecureRequired) {
+TEST_F(MediaSessionTest,
+       GingleInitiateWithRequiredUnsupportedCryptoWhenSecureRequired) {
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->MakeSignalingSecure(cricket::SEC_REQUIRED);
   test->TestBadIncomingInitiate(
       AddEncryption(kGingleInitiate, kGingleRequiredUnsupportedCryptoOffer));
 }
 
-TEST(MediaSessionTest, GingleGoodOutgoingInitiateWithCrypto) {
+TEST_F(MediaSessionTest, GingleGoodOutgoingInitiateWithCrypto) {
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->ExpectCrypto(cricket::SEC_ENABLED);
   test->TestGoodOutgoingInitiate(AudioCallOptions());
 }
 
-TEST(MediaSessionTest, GingleGoodOutgoingInitiateWithCryptoRequired) {
+TEST_F(MediaSessionTest, GingleGoodOutgoingInitiateWithCryptoRequired) {
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   test->ExpectCrypto(cricket::SEC_REQUIRED);
   test->TestGoodOutgoingInitiate(AudioCallOptions());
 }
 
-TEST(MediaSessionTest, GingleIncomingAcceptWithSsrcs) {
+TEST_F(MediaSessionTest, GingleIncomingAcceptWithSsrcs) {
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   cricket::CallOptions options = VideoCallOptions();
   options.is_muc = true;
   test->TestIncomingAcceptWithSsrcs(kGingleAcceptWithSsrcs, options);
 }
 
-TEST(MediaSessionTest, GingleGoodOutgoingInitiateWithRtpData) {
+TEST_F(MediaSessionTest, GingleGoodOutgoingInitiateWithRtpData) {
   rtc::scoped_ptr<MediaSessionClientTest> test(GingleTest());
   cricket::CallOptions options;
   options.data_channel_type = cricket::DCT_RTP;
