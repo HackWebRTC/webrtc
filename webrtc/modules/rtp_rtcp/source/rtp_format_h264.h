@@ -43,7 +43,7 @@ class RtpPacketizerH264 : public RtpPacketizer {
 
   virtual ProtectionType GetProtectionType() OVERRIDE;
 
-  virtual StorageType GetStorageType(uint32_t retrasmission_settings) OVERRIDE;
+  virtual StorageType GetStorageType(uint32_t retransmission_settings) OVERRIDE;
 
   virtual std::string ToString() OVERRIDE;
 
