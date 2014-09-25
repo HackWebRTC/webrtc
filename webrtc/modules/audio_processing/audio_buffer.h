@@ -63,7 +63,7 @@ class AudioBuffer {
   int16_t* low_pass_split_data(int channel);
   const int16_t* low_pass_split_data(int channel) const;
   int16_t* high_pass_split_data(int channel);
-  const int16_t* high_pass_split_data(int channel) const;
+  const int16_t* high_pass_split_data(int channel) const;\
   // Returns a pointer to the low-pass data downmixed to mono. If this data
   // isn't already available it re-calculates it.
   const int16_t* mixed_low_pass_data();
@@ -73,10 +73,19 @@ class AudioBuffer {
   // as necessary. The range of the numbers are the same as for int16_t.
   float* data_f(int channel);
   const float* data_f(int channel) const;
+
+  float* const* channels_f();
+  const float* const* channels_f() const;
+
   float* low_pass_split_data_f(int channel);
   const float* low_pass_split_data_f(int channel) const;
   float* high_pass_split_data_f(int channel);
   const float* high_pass_split_data_f(int channel) const;
+
+  float* const* low_pass_split_channels_f();
+  const float* const* low_pass_split_channels_f() const;
+  float* const* high_pass_split_channels_f();
+  const float* const* high_pass_split_channels_f() const;
 
   const float* keyboard_data() const;
 

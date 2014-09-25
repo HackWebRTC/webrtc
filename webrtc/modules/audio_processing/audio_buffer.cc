@@ -289,6 +289,15 @@ float* AudioBuffer::data_f(int channel) {
   return channels_->fbuf()->channel(channel);
 }
 
+const float* const* AudioBuffer::channels_f() const {
+  return channels_->fbuf_const()->channels();
+}
+
+float* const* AudioBuffer::channels_f() {
+  mixed_low_pass_valid_ = false;
+  return channels_->fbuf()->channels();
+}
+
 const int16_t* AudioBuffer::low_pass_split_data(int channel) const {
   return split_channels_low_.get()
       ? split_channels_low_->ibuf_const()->channel(channel)
@@ -315,6 +324,19 @@ float* AudioBuffer::low_pass_split_data_f(int channel) {
       : data_f(channel);
 }
 
+const float* const* AudioBuffer::low_pass_split_channels_f() const {
+  return split_channels_low_.get()
+      ? split_channels_low_->fbuf_const()->channels()
+      : channels_f();
+}
+
+float* const* AudioBuffer::low_pass_split_channels_f() {
+  mixed_low_pass_valid_ = false;
+  return split_channels_low_.get()
+      ? split_channels_low_->fbuf()->channels()
+      : channels_f();
+}
+
 const int16_t* AudioBuffer::high_pass_split_data(int channel) const {
   return split_channels_high_.get()
       ? split_channels_high_->ibuf_const()->channel(channel)
@@ -336,6 +358,18 @@ const float* AudioBuffer::high_pass_split_data_f(int channel) const {
 float* AudioBuffer::high_pass_split_data_f(int channel) {
   return split_channels_high_.get()
       ? split_channels_high_->fbuf()->channel(channel)
+      : NULL;
+}
+
+const float* const* AudioBuffer::high_pass_split_channels_f() const {
+  return split_channels_high_.get()
+      ? split_channels_high_->fbuf_const()->channels()
+      : NULL;
+}
+
+float* const* AudioBuffer::high_pass_split_channels_f() {
+  return split_channels_high_.get()
+      ? split_channels_high_->fbuf()->channels()
       : NULL;
 }
 
