@@ -695,12 +695,6 @@ void OpenSSLStreamAdapter::Cleanup() {
   }
 
   if (ssl_) {
-    int ret = SSL_shutdown(ssl_);
-    if (ret < 0) {
-      LOG(LS_WARNING) << "SSL_shutdown failed, error = "
-                      << SSL_get_error(ssl_, ret);
-    }
-
     SSL_free(ssl_);
     ssl_ = NULL;
   }
