@@ -196,6 +196,12 @@ bool ACMGenericCodec::HasFrameToEncode() const {
   return true;
 }
 
+int ACMGenericCodec::SetFEC(bool enable_fec) {
+  if (!HasInternalFEC() && enable_fec)
+    return -1;
+  return 0;
+}
+
 int16_t ACMGenericCodec::Encode(uint8_t* bitstream,
                                 int16_t* bitstream_len_byte,
                                 uint32_t* timestamp,

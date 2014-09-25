@@ -245,7 +245,7 @@ void TestRedFec::Perform() {
   EXPECT_EQ(0, _acmA->SetCodecFEC(true));
   _outFileB.Close();
 
-  // Codecs does not support internal FEC.
+  // Codecs does not support internal FEC, cannot enable FEC.
   RegisterSendCodec('A', nameG722, 16000);
   EXPECT_FALSE(_acmA->REDStatus());
   EXPECT_EQ(-1, _acmA->SetCodecFEC(true));
@@ -254,6 +254,17 @@ void TestRedFec::Perform() {
   RegisterSendCodec('A', nameISAC, 16000);
   EXPECT_FALSE(_acmA->REDStatus());
   EXPECT_EQ(-1, _acmA->SetCodecFEC(true));
+  EXPECT_FALSE(_acmA->CodecFEC());
+
+  // Codecs does not support internal FEC, disable FEC does not trigger failure.
+  RegisterSendCodec('A', nameG722, 16000);
+  EXPECT_FALSE(_acmA->REDStatus());
+  EXPECT_EQ(0, _acmA->SetCodecFEC(false));
+  EXPECT_FALSE(_acmA->CodecFEC());
+
+  RegisterSendCodec('A', nameISAC, 16000);
+  EXPECT_FALSE(_acmA->REDStatus());
+  EXPECT_EQ(0, _acmA->SetCodecFEC(false));
   EXPECT_FALSE(_acmA->CodecFEC());
 }
 
