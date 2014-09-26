@@ -30,7 +30,6 @@ config("webrtc_base_config") {
 config("webrtc_base_chromium_config") {
   defines = [
     "NO_MAIN_THREAD_WRAPPING",
-    "SSL_USE_NSS",
   ]
 }
 
@@ -44,17 +43,6 @@ config("openssl_config") {
 config("no_openssl_config") {
   defines = [
     "SSL_USE_NSS",
-    "HAVE_NSS_SSL_H",
-    "SSL_USE_NSS_RNG",
-  ]
-}
-
-config("android_config") {
-  defines = [ "HAVE_OPENSSL_SSL_H" ]
-}
-
-config("no_android_config") {
-  defines = [
     "HAVE_NSS_SSL_H",
     "SSL_USE_NSS_RNG",
   ]
@@ -221,10 +209,6 @@ static_library("webrtc_base") {
     "nethelpers.h",
     "network.cc",
     "network.h",
-    "nssidentity.cc",
-    "nssidentity.h",
-    "nssstreamadapter.cc",
-    "nssstreamadapter.h",
     "nullsocketserver.h",
     "pathutils.cc",
     "pathutils.h",
@@ -359,7 +343,6 @@ static_library("webrtc_base") {
       "natsocketfactory.h",
       "nattypes.cc",
       "nattypes.h",
-      "openssl.h",
       "optionsfile.cc",
       "optionsfile.h",
       "profiler.cc",
@@ -468,8 +451,36 @@ static_library("webrtc_base") {
     } else {
       configs += [ "external_ssl_library" ]
     }
+    sources += [
+      "openssl.h",
+      "openssladapter.cc",
+      "openssladapter.h",
+      "openssldigest.cc",
+      "openssldigest.h",
+      "opensslidentity.cc",
+      "opensslidentity.h",
+      "opensslstreamadapter.cc",
+      "opensslstreamadapter.h",
+    ]
   } else {
     direct_dependent_configs += [ ":no_openssl_config" ]
+    sources += [
+      "nssidentity.cc",
+      "nssidentity.h",
+      "nssstreamadapter.cc",
+      "nssstreamadapter.h",
+    ]
+    if (is_mac || is_ios || is_win) {
+      if (rtc_build_ssl) {
+        deps += [
+          "//net/third_party/nss/ssl:libssl",
+          "//third_party/nss:nspr",
+          "//third_party/nss:nss",
+        ]
+      } else {
+        configs += [ "external_ssl_library" ]
+      }
+    }
   }
 
   if (is_android) {
@@ -478,24 +489,14 @@ static_library("webrtc_base") {
       "ifaddrs-android.h",
     ]
 
-    direct_dependent_configs += [ ":android_config" ]
-
     libs += [
       "log",
       "GLESv2"
     ]
-  } else {
-    direct_dependent_configs += [ ":no_android_config" ]
   }
 
   if (is_ios) {
     all_dependent_configs += [ ":ios_config" ]
-
-    if (rtc_build_ssl) {
-      deps += [ "//net/third_party/nss/ssl:libssl" ]
-    } else {
-      configs += [ "external_ssl_library" ]
-    }
   }
 
   if (use_x11) {
@@ -536,10 +537,6 @@ static_library("webrtc_base") {
 
     all_dependent_configs = [ ":mac_config" ]
 
-    libs += [
-      "crypto",  # $(SDKROOT)/usr/lib/libcrypto.dylib
-      "ssl",  # $(SDKROOT)/usr/lib/libssl.dylib
-    ]
     if (cpu_arch == "x86") {
       all_dependent_configs += [ ":mac_x86_config" ]
     }
@@ -590,37 +587,11 @@ static_library("webrtc_base") {
     defines += [ "CARBON_DEPRECATED=YES" ]
   }
 
-  if (!is_ios) {
-    sources += [
-      "openssl.h",
-      "openssladapter.cc",
-      "openssladapter.h",
-      "openssldigest.cc",
-      "openssldigest.h",
-      "opensslidentity.cc",
-      "opensslidentity.h",
-      "opensslstreamadapter.cc",
-      "opensslstreamadapter.h",
-    ]
-  }
-
   if (is_linux || is_android) {
     sources += [
       "linux.cc",
       "linux.h",
     ]
-  }
-
-  if (is_mac || is_ios || is_win) {
-    if (rtc_build_ssl) {
-      deps += [
-        "//net/third_party/nss/ssl:libssl",
-        "//third_party/nss:nspr",
-        "//third_party/nss:nss",
-      ]
-    } else {
-      configs += [ "external_ssl_library" ]
-    }
   }
 
   if (is_posix && !is_mac && !is_ios && !is_android) {

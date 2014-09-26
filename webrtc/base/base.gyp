@@ -192,20 +192,7 @@
         'nethelpers.h',
         'network.cc',
         'network.h',
-        'nssidentity.cc',
-        'nssidentity.h',
-        'nssstreamadapter.cc',
-        'nssstreamadapter.h',
         'nullsocketserver.h',
-        'openssl.h',
-        'openssladapter.cc',
-        'openssladapter.h',
-        'openssldigest.cc',
-        'openssldigest.h',
-        'opensslidentity.cc',
-        'opensslidentity.h',
-        'opensslstreamadapter.cc',
-        'opensslstreamadapter.h',
         'optionsfile.cc',
         'optionsfile.h',
         'pathutils.cc',
@@ -421,7 +408,6 @@
             'natsocketfactory.h',
             'nattypes.cc',
             'nattypes.h',
-            'openssl.h',
             'optionsfile.cc',
             'optionsfile.h',
             'posix.cc',
@@ -464,12 +450,10 @@
           ],
           'defines': [
             'NO_MAIN_THREAD_WRAPPING',
-            'SSL_USE_NSS',
           ],
           'direct_dependent_settings': {
             'defines': [
               'NO_MAIN_THREAD_WRAPPING',
-              'SSL_USE_NSS',
             ],
           },
         }, {
@@ -509,6 +493,17 @@
               'HAVE_OPENSSL_SSL_H',
             ],
           },
+          'sources': [
+            'openssl.h',
+            'openssladapter.cc',
+            'openssladapter.h',
+            'openssldigest.cc',
+            'openssldigest.h',
+            'opensslidentity.cc',
+            'opensslidentity.h',
+            'opensslstreamadapter.cc',
+            'opensslstreamadapter.h',
+          ],
           'conditions': [
             ['build_ssl==1', {
               'dependencies': [
@@ -521,6 +516,12 @@
             }],
           ],
         }, {
+          'sources': [
+            'nssidentity.cc',
+            'nssidentity.h',
+            'nssstreamadapter.cc',
+            'nssstreamadapter.h',
+          ],
           'conditions': [
             ['use_legacy_ssl_defaults!=1', {
               'defines': [
@@ -535,6 +536,21 @@
                   'SSL_USE_NSS_RNG',
                 ],
               },
+            }],
+            ['OS=="mac" or OS=="ios" or OS=="win"', {
+              'conditions': [
+                ['build_ssl==1', {
+                  'dependencies': [
+                    '<(DEPTH)/net/third_party/nss/ssl.gyp:libssl',
+                    '<(DEPTH)/third_party/nss/nss.gyp:nspr',
+                    '<(DEPTH)/third_party/nss/nss.gyp:nss',
+                  ],
+                }, {
+                  'include_dirs': [
+                    '<(ssl_root)',
+                  ],
+                }],
+              ],
             }],
           ],
         }],
@@ -584,17 +600,6 @@
               ],
             },
           },
-           'conditions': [
-            ['build_ssl==1', {
-              'dependencies': [
-                '<(DEPTH)/net/third_party/nss/ssl.gyp:libssl',
-              ]
-            }, {
-              'include_dirs': [
-                '<(ssl_root)',
-              ],
-            }],
-          ],
         }],
         ['use_x11 == 1', {
           'link_settings': {
@@ -645,12 +650,6 @@
           ],
         }],
         ['OS=="mac"', {
-          'link_settings': {
-            'libraries': [
-              '$(SDKROOT)/usr/lib/libcrypto.dylib',
-              '$(SDKROOT)/usr/lib/libssl.dylib',
-            ],
-          },
           'all_dependent_settings': {
             'link_settings': {
               'xcode_settings': {
@@ -750,38 +749,10 @@
             'scoped_autorelease_pool.mm',
           ],
         }],
-        ['OS=="ios"', {
-          'sources!': [
-            'openssl.h',
-            'openssladapter.cc',
-            'openssladapter.h',
-            'openssldigest.cc',
-            'openssldigest.h',
-            'opensslidentity.cc',
-            'opensslidentity.h',
-            'opensslstreamadapter.cc',
-            'opensslstreamadapter.h',
-          ],
-        }],
         ['OS!="linux" and OS!="android"', {
           'sources!': [
             'linux.cc',
             'linux.h',
-          ],
-        }],
-        ['OS == "mac" or OS == "ios" or OS == "win"', {
-          'conditions': [
-            ['build_ssl==1', {
-              'dependencies': [
-                '<(DEPTH)/net/third_party/nss/ssl.gyp:libssl',
-                '<(DEPTH)/third_party/nss/nss.gyp:nspr',
-                '<(DEPTH)/third_party/nss/nss.gyp:nss',
-              ],
-            }, {
-              'include_dirs': [
-                '<(ssl_root)',
-              ],
-            }],
           ],
         }],
         ['os_posix == 1 and OS != "mac" and OS != "ios" and OS != "android"', {
