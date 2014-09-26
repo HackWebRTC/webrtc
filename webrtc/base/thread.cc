@@ -312,10 +312,13 @@ void Thread::SafeWrapCurrent() {
 }
 
 void Thread::Join() {
-  AssertBlockingIsAllowedOnCurrentThread();
-
   if (running()) {
     ASSERT(!IsCurrent());
+    if (Current() && !Current()->blocking_calls_allowed_) {
+      LOG(LS_WARNING) << "Waiting for the thread to join, "
+                      << "but blocking calls have been disallowed";
+    }
+
 #if defined(WEBRTC_WIN)
     ASSERT(thread_ != NULL);
     WaitForSingleObject(thread_, INFINITE);
