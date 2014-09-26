@@ -52,9 +52,7 @@ typedef struct NSParaExtract_t_ {
 typedef struct NSinst_t_ {
   uint32_t fs;
   int blockLen;
-  int blockLen10ms;
   int windShift;
-  int outLen;
   int anaLen;
   int magnLen;
   int aggrMode;
@@ -62,7 +60,6 @@ typedef struct NSinst_t_ {
   float analyzeBuf[ANAL_BLOCKL_MAX];
   float dataBuf[ANAL_BLOCKL_MAX];
   float syntBuf[ANAL_BLOCKL_MAX];
-  float outBuf[3 * BLOCKL_MAX];
 
   int initFlag;
   // parameters for quantile noise estimation
