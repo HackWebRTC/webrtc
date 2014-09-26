@@ -61,9 +61,9 @@ class StunPortTest : public testing::Test,
         ss_scope_(ss_.get()),
         network_("unittest", "unittest", rtc::IPAddress(INADDR_ANY), 32),
         socket_factory_(rtc::Thread::Current()),
-        stun_server_1_(new cricket::TestStunServer(
+        stun_server_1_(cricket::TestStunServer::Create(
           rtc::Thread::Current(), kStunAddr1)),
-        stun_server_2_(new cricket::TestStunServer(
+        stun_server_2_(cricket::TestStunServer::Create(
           rtc::Thread::Current(), kStunAddr2)),
         done_(false), error_(false), stun_keepalive_delay_(0) {
   }
@@ -148,6 +148,13 @@ class StunPortTest : public testing::Test,
   }
   void SetKeepaliveDelay(int delay) {
     stun_keepalive_delay_ = delay;
+  }
+
+  cricket::TestStunServer* stun_server_1() {
+    return stun_server_1_.get();
+  }
+  cricket::TestStunServer* stun_server_2() {
+    return stun_server_2_.get();
   }
 
  private:
@@ -253,8 +260,8 @@ TEST_F(StunPortTest, TestSharedSocketPrepareAddressInvalidHostname) {
   // No crash is success.
 }
 
-// Test that candidates can be allocated for multiple STUN servers.
-TEST_F(StunPortTest, TestMultipleGoodStunServers) {
+// Test that the same address is added only once if two STUN servers are in use.
+TEST_F(StunPortTest, TestNoDuplicatedAddressWithTwoStunServers) {
   ServerAddresses stun_servers;
   stun_servers.insert(kStunAddr1);
   stun_servers.insert(kStunAddr2);
@@ -262,7 +269,7 @@ TEST_F(StunPortTest, TestMultipleGoodStunServers) {
   EXPECT_EQ("stun", port()->Type());
   PrepareAddress();
   EXPECT_TRUE_WAIT(done(), kTimeoutMs);
-  EXPECT_EQ(2U, port()->Candidates().size());
+  EXPECT_EQ(1U, port()->Candidates().size());
 }
 
 // Test that candidates can be allocated for multiple STUN servers, one of which
@@ -276,4 +283,22 @@ TEST_F(StunPortTest, TestMultipleStunServersWithBadServer) {
   PrepareAddress();
   EXPECT_TRUE_WAIT(done(), kTimeoutMs);
   EXPECT_EQ(1U, port()->Candidates().size());
+}
+
+// Test that two candidates are allocated if the two STUN servers return
+// different mapped addresses.
+TEST_F(StunPortTest, TestTwoCandidatesWithTwoStunServersAcrossNat) {
+  const SocketAddress kStunMappedAddr1("77.77.77.77", 0);
+  const SocketAddress kStunMappedAddr2("88.77.77.77", 0);
+  stun_server_1()->set_fake_stun_addr(kStunMappedAddr1);
+  stun_server_2()->set_fake_stun_addr(kStunMappedAddr2);
+
+  ServerAddresses stun_servers;
+  stun_servers.insert(kStunAddr1);
+  stun_servers.insert(kStunAddr2);
+  CreateStunPort(stun_servers);
+  EXPECT_EQ("stun", port()->Type());
+  PrepareAddress();
+  EXPECT_TRUE_WAIT(done(), kTimeoutMs);
+  EXPECT_EQ(2U, port()->Candidates().size());
 }

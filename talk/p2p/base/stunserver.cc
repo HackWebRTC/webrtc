@@ -68,19 +68,7 @@ void StunServer::OnPacket(
 void StunServer::OnBindingRequest(
     StunMessage* msg, const rtc::SocketAddress& remote_addr) {
   StunMessage response;
-  response.SetType(STUN_BINDING_RESPONSE);
-  response.SetTransactionID(msg->transaction_id());
-
-  // Tell the user the address that we received their request from.
-  StunAddressAttribute* mapped_addr;
-  if (!msg->IsLegacy()) {
-    mapped_addr = StunAttribute::CreateAddress(STUN_ATTR_MAPPED_ADDRESS);
-  } else {
-    mapped_addr = StunAttribute::CreateXorAddress(STUN_ATTR_XOR_MAPPED_ADDRESS);
-  }
-  mapped_addr->SetAddress(remote_addr);
-  response.AddAttribute(mapped_addr);
-
+  GetStunBindReqponse(msg, remote_addr, &response);
   SendResponse(response, remote_addr);
 }
 
@@ -106,6 +94,23 @@ void StunServer::SendResponse(
   rtc::PacketOptions options;
   if (socket_->SendTo(buf.Data(), buf.Length(), addr, options) < 0)
     LOG_ERR(LS_ERROR) << "sendto";
+}
+
+void StunServer::GetStunBindReqponse(StunMessage* request,
+                                     const rtc::SocketAddress& remote_addr,
+                                     StunMessage* response) const {
+  response->SetType(STUN_BINDING_RESPONSE);
+  response->SetTransactionID(request->transaction_id());
+
+  // Tell the user the address that we received their request from.
+  StunAddressAttribute* mapped_addr;
+  if (!request->IsLegacy()) {
+    mapped_addr = StunAttribute::CreateAddress(STUN_ATTR_MAPPED_ADDRESS);
+  } else {
+    mapped_addr = StunAttribute::CreateXorAddress(STUN_ATTR_XOR_MAPPED_ADDRESS);
+  }
+  mapped_addr->SetAddress(remote_addr);
+  response->AddAttribute(mapped_addr);
 }
 
 }  // namespace cricket

@@ -35,19 +35,39 @@
 namespace cricket {
 
 // A test STUN server. Useful for unit tests.
-class TestStunServer {
+class TestStunServer : StunServer {
  public:
-  TestStunServer(rtc::Thread* thread,
-                 const rtc::SocketAddress& addr)
-      : socket_(thread->socketserver()->CreateAsyncSocket(addr.family(),
-                                                          SOCK_DGRAM)),
-        udp_socket_(rtc::AsyncUDPSocket::Create(socket_, addr)),
-        server_(udp_socket_) {
+  static TestStunServer* Create(rtc::Thread* thread,
+                                const rtc::SocketAddress& addr) {
+    rtc::AsyncSocket* socket =
+        thread->socketserver()->CreateAsyncSocket(addr.family(), SOCK_DGRAM);
+    rtc::AsyncUDPSocket* udp_socket =
+        rtc::AsyncUDPSocket::Create(socket, addr);
+
+    return new TestStunServer(udp_socket);
   }
+
+  // Set a fake STUN address to return to the client.
+  void set_fake_stun_addr(const rtc::SocketAddress& addr) {
+    fake_stun_addr_ = addr;
+  }
+
  private:
-  rtc::AsyncSocket* socket_;
-  rtc::AsyncUDPSocket* udp_socket_;
-  cricket::StunServer server_;
+  explicit TestStunServer(rtc::AsyncUDPSocket* socket) : StunServer(socket) {}
+
+  void OnBindingRequest(StunMessage* msg,
+                        const rtc::SocketAddress& remote_addr) OVERRIDE {
+    if (fake_stun_addr_.IsNil()) {
+      StunServer::OnBindingRequest(msg, remote_addr);
+    } else {
+      StunMessage response;
+      GetStunBindReqponse(msg, fake_stun_addr_, &response);
+      SendResponse(response, remote_addr);
+    }
+  }
+
+ private:
+  rtc::SocketAddress fake_stun_addr_;
 };
 
 }  // namespace cricket

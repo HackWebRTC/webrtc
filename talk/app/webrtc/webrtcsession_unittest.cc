@@ -309,7 +309,8 @@ class WebRtcSessionTest : public testing::Test {
       ss_scope_(fss_.get()),
       stun_socket_addr_(rtc::SocketAddress(kStunAddrHost,
                                                  cricket::STUN_SERVER_PORT)),
-      stun_server_(Thread::Current(), stun_socket_addr_),
+      stun_server_(cricket::TestStunServer::Create(Thread::Current(),
+                                                   stun_socket_addr_)),
       turn_server_(Thread::Current(), kTurnUdpIntAddr, kTurnUdpExtAddr),
       mediastream_signaling_(channel_manager_.get()),
       ice_type_(PeerConnectionInterface::kAll) {
@@ -1109,7 +1110,7 @@ class WebRtcSessionTest : public testing::Test {
   rtc::scoped_ptr<rtc::FirewallSocketServer> fss_;
   rtc::SocketServerScope ss_scope_;
   rtc::SocketAddress stun_socket_addr_;
-  cricket::TestStunServer stun_server_;
+  rtc::scoped_ptr<cricket::TestStunServer> stun_server_;
   cricket::TestTurnServer turn_server_;
   rtc::FakeNetworkManager network_manager_;
   rtc::scoped_ptr<cricket::BasicPortAllocator> allocator_;

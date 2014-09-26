@@ -112,7 +112,8 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
         ss_scope_(fss_.get()),
         nat_factory_(vss_.get(), kNatAddr),
         nat_socket_factory_(&nat_factory_),
-        stun_server_(Thread::Current(), kStunAddr),
+        stun_server_(cricket::TestStunServer::Create(Thread::Current(),
+                                                     kStunAddr)),
         relay_server_(Thread::Current(), kRelayUdpIntAddr, kRelayUdpExtAddr,
                       kRelayTcpIntAddr, kRelayTcpExtAddr,
                       kRelaySslTcpIntAddr, kRelaySslTcpExtAddr),
@@ -280,7 +281,7 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
   rtc::scoped_ptr<rtc::NATServer> nat_server_;
   rtc::NATSocketFactory nat_factory_;
   rtc::BasicPacketSocketFactory nat_socket_factory_;
-  cricket::TestStunServer stun_server_;
+  rtc::scoped_ptr<cricket::TestStunServer> stun_server_;
   cricket::TestRelayServer relay_server_;
   cricket::TestTurnServer turn_server_;
   rtc::FakeNetworkManager network_manager_;

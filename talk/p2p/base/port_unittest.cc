@@ -343,7 +343,7 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
         nat_factory2_(ss_.get(), kNatAddr2),
         nat_socket_factory1_(&nat_factory1_),
         nat_socket_factory2_(&nat_factory2_),
-        stun_server_(main_, kStunAddr),
+        stun_server_(TestStunServer::Create(main_, kStunAddr)),
         turn_server_(main_, kTurnUdpIntAddr, kTurnUdpExtAddr),
         relay_server_(main_, kRelayUdpIntAddr, kRelayUdpExtAddr,
                       kRelayTcpIntAddr, kRelayTcpExtAddr,
@@ -617,7 +617,7 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
   rtc::NATSocketFactory nat_factory2_;
   rtc::BasicPacketSocketFactory nat_socket_factory1_;
   rtc::BasicPacketSocketFactory nat_socket_factory2_;
-  TestStunServer stun_server_;
+  scoped_ptr<TestStunServer> stun_server_;
   TestTurnServer turn_server_;
   TestRelayServer relay_server_;
   std::string username_;
