@@ -52,7 +52,9 @@ typedef struct NSParaExtract_t_ {
 typedef struct NSinst_t_ {
   uint32_t fs;
   int blockLen;
+  int blockLen10ms;
   int windShift;
+  int outLen;
   int anaLen;
   int magnLen;
   int aggrMode;
@@ -120,7 +122,6 @@ extern "C" {
  * Input:
  *      - inst          : Instance that should be initialized
  *      - fs            : Sampling frequency
- *      - blockLenMs    : Block length in ms
  *
  * Output:
  *      - inst          : Initialized instance
@@ -128,7 +129,7 @@ extern "C" {
  * Return value         :  0 - Ok
  *                        -1 - Error
  */
-int WebRtcNs_InitCore(NSinst_t* inst, uint32_t fs, int blockLenMs);
+int WebRtcNs_InitCore(NSinst_t* inst, uint32_t fs);
 
 /****************************************************************************
  * WebRtcNs_set_policy_core(...)

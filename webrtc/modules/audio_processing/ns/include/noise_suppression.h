@@ -55,7 +55,6 @@ int WebRtcNs_Free(NsHandle* NS_inst);
  * Input:
  *      - NS_inst       : Instance that should be initialized
  *      - fs            : sampling frequency
- *      - blockLenMs    : block length in ms
  *
  * Output:
  *      - NS_inst       : Initialized instance
@@ -63,7 +62,7 @@ int WebRtcNs_Free(NsHandle* NS_inst);
  * Return value         :  0 - Ok
  *                        -1 - Error
  */
-int WebRtcNs_Init(NsHandle* NS_inst, uint32_t fs, int blockLenMs);
+int WebRtcNs_Init(NsHandle* NS_inst, uint32_t fs);
 
 /*
  * This changes the aggressiveness of the noise suppression method.
