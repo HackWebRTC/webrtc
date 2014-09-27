@@ -10,6 +10,7 @@ solutions = [{
     'src/chrome/tools/test/reference_build/chrome_win': None,
     'src/native_client': None,
     'src/third_party/ffmpeg': None,
+    'src/third_party/junit/src': None,
     'src/third_party/WebKit': None,
     'src/v8': None,
   },
