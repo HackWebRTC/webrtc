@@ -2764,12 +2764,7 @@ MediaSessionClientTest* JingleTest() {
                                     cricket::PROTOCOL_JINGLE);
 }
 
-class MediaSessionTest : public ::testing::Test {
- protected:
-  // Make sure SSL is set up as it's used by the tests.
-  static void SetUpTestCase() { rtc::InitializeSSL(); }
-  static void TearDownTestCase() { rtc::CleanupSSL(); }
-};
+class MediaSessionTest : public ::testing::Test {};
 
 TEST_F(MediaSessionTest, JingleGoodInitiateWithRtcpFb) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());

@@ -366,14 +366,6 @@ class P2PTransportChannelTestBase : public testing::Test,
   static const Result kLocalTcpToPrflxTcp;
   static const Result kPrflxTcpToLocalTcp;
 
-  static void SetUpTestCase() {
-    rtc::InitializeSSL();
-  }
-
-  static void TearDownTestCase() {
-    rtc::CleanupSSL();
-  }
-
   rtc::NATSocketServer* nat() { return nss_.get(); }
   rtc::FirewallSocketServer* fw() { return ss_.get(); }
 

@@ -124,14 +124,6 @@ class TurnPortTest : public testing::Test,
     network_.AddIP(rtc::IPAddress(INADDR_ANY));
   }
 
-  static void SetUpTestCase() {
-    rtc::InitializeSSL();
-  }
-
-  static void TearDownTestCase() {
-    rtc::CleanupSSL();
-  }
-
   virtual void OnMessage(rtc::Message* msg) {
     ASSERT(msg->message_id == MSG_TESTFINISH);
     if (msg->message_id == MSG_TESTFINISH)

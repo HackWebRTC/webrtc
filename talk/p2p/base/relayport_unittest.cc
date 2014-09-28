@@ -93,15 +93,6 @@ class RelayPortTest : public testing::Test,
   }
 
  protected:
-  static void SetUpTestCase() {
-    rtc::InitializeSSL();
-  }
-
-  static void TearDownTestCase() {
-    rtc::CleanupSSL();
-  }
-
-
   virtual void SetUp() {
     // The relay server needs an external socket to work properly.
     rtc::AsyncUDPSocket* ext_socket =

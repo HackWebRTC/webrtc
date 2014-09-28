@@ -330,14 +330,6 @@ class WebRtcSessionTest : public testing::Test {
     allocator_->set_step_delay(cricket::kMinimumStepDelay);
   }
 
-  static void SetUpTestCase() {
-    rtc::InitializeSSL();
-  }
-
-  static void TearDownTestCase() {
-    rtc::CleanupSSL();
-  }
-
   void AddInterface(const SocketAddress& addr) {
     network_manager_.AddInterface(addr);
   }

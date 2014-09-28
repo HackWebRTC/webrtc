@@ -229,11 +229,6 @@ class SctpDataMediaChannelTest : public testing::Test,
     LOG(LS_WARNING) << "Unabled to initialize NSS.";
   }
 #endif  // HAVE_NSS_SSL_H
-    rtc::InitializeSSL();
-  }
-
-  static void TearDownTestCase() {
-    rtc::CleanupSSL();
   }
 
   virtual void SetUp() {

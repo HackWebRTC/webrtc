@@ -97,14 +97,6 @@ static cricket::SessionDescription* CreateCricketSessionDescription() {
 
 class JsepSessionDescriptionTest : public testing::Test {
  protected:
-  static void SetUpTestCase() {
-    rtc::InitializeSSL();
-  }
-
-  static void TearDownTestCase() {
-    rtc::CleanupSSL();
-  }
-
   virtual void SetUp() {
     int port = 1234;
     rtc::SocketAddress address("127.0.0.1", port++);

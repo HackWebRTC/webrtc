@@ -16,16 +16,7 @@
 
 namespace rtc {
 
-class RandomTest : public testing::Test {
- public:
-  static void SetUpTestCase() {
-    rtc::InitializeSSL();
-  }
-
-  static void TearDownTestCase() {
-    rtc::CleanupSSL();
-  }
-};
+class RandomTest : public testing::Test {};
 
 TEST_F(RandomTest, TestCreateRandomId) {
   CreateRandomId();

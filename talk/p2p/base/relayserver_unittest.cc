@@ -53,14 +53,6 @@ static const char* msg2 = "Lobster Thermidor a Crevette with a mornay sauce...";
 
 class RelayServerTest : public testing::Test {
  public:
-  static void SetUpTestCase() {
-    rtc::InitializeSSL();
-  }
-
-  static void TearDownTestCase() {
-    rtc::CleanupSSL();
-  }
-
   RelayServerTest()
       : main_(rtc::Thread::Current()), ss_(main_->socketserver()),
         username_(rtc::CreateRandomString(12)),

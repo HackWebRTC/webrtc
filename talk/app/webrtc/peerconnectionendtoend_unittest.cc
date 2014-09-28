@@ -134,7 +134,6 @@ class PeerConnectionEndToEndTest
                     "caller")),
         callee_(new rtc::RefCountedObject<PeerConnectionTestWrapper>(
                     "callee")) {
-    rtc::InitializeSSL(NULL);
   }
 
   void CreatePcs() {
@@ -260,10 +259,6 @@ class PeerConnectionEndToEndTest
     EXPECT_EQ_WAIT(DataChannelInterface::kClosed,
                    remote_dc_list[remote_dc_index]->state(),
                    kMaxWait);
-  }
-
-  ~PeerConnectionEndToEndTest() {
-    rtc::CleanupSSL();
   }
 
  protected:

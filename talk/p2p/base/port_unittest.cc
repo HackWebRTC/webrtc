@@ -357,15 +357,6 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
   }
 
  protected:
-  static void SetUpTestCase() {
-    rtc::InitializeSSL();
-  }
-
-  static void TearDownTestCase() {
-    rtc::CleanupSSL();
-  }
-
-
   void TestLocalToLocal() {
     Port* port1 = CreateUdpPort(kLocalAddr1);
     Port* port2 = CreateUdpPort(kLocalAddr2);

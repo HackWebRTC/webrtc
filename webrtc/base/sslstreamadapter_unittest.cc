@@ -194,14 +194,6 @@ class SSLStreamAdapterTestBase : public testing::Test,
     rtc::SetRandomTestMode(false);
   }
 
-  static void SetUpTestCase() {
-    rtc::InitializeSSL();
-  }
-
-  static void TearDownTestCase() {
-    rtc::CleanupSSL();
-  }
-
   // Recreate the client/server identities with the specified validity period.
   // |not_before| and |not_after| are offsets from the current time in number
   // of seconds.

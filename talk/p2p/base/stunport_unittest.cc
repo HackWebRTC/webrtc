@@ -128,13 +128,9 @@ class StunPortTest : public testing::Test,
 
  protected:
   static void SetUpTestCase() {
-    rtc::InitializeSSL();
     // Ensure the RNG is inited.
     rtc::InitRandom(NULL, 0);
 
-  }
-  static void TearDownTestCase() {
-    rtc::CleanupSSL();
   }
 
   void OnPortComplete(cricket::Port* port) {

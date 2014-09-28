@@ -229,15 +229,10 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
 class PeerConnectionInterfaceTest : public testing::Test {
  protected:
   virtual void SetUp() {
-    rtc::InitializeSSL(NULL);
     pc_factory_ = webrtc::CreatePeerConnectionFactory(
         rtc::Thread::Current(), rtc::Thread::Current(), NULL, NULL,
         NULL);
     ASSERT_TRUE(pc_factory_.get() != NULL);
-  }
-
-  virtual void TearDown() {
-    rtc::CleanupSSL();
   }
 
   void CreatePeerConnection() {

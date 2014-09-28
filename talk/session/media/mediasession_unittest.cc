@@ -204,14 +204,6 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
     tdf2_.set_identity(&id2_);
   }
 
-  static void SetUpTestCase() {
-    rtc::InitializeSSL();
-  }
-
-  static void TearDownTestCase() {
-    rtc::CleanupSSL();
-  }
-
   // Create a video StreamParamsVec object with:
   // - one video stream with 3 simulcast streams and FEC,
   StreamParamsVec CreateComplexVideoStreamParamsVec() {

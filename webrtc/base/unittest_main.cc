@@ -18,6 +18,7 @@
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/ssladapter.h"
 
 DEFINE_bool(help, false, "prints this message");
 DEFINE_string(log, "", "logging options to use");
@@ -85,7 +86,12 @@ int main(int argc, char** argv) {
     rtc::LogMessage::ConfigureLogging(FLAG_log, "unittest.log");
   }
 
+  // Initialize SSL which are used by several tests.
+  rtc::InitializeSSL();
+
   int res = RUN_ALL_TESTS();
+
+  rtc::CleanupSSL();
 
   // clean up logging so we don't appear to leak memory.
   rtc::LogMessage::ConfigureLogging("", "");

@@ -97,14 +97,6 @@ std::ostream& operator<<(std::ostream& os, const cricket::Candidate& c) {
 
 class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
  public:
-  static void SetUpTestCase() {
-    rtc::InitializeSSL();
-  }
-
-  static void TearDownTestCase() {
-    rtc::CleanupSSL();
-  }
-
   PortAllocatorTest()
       : pss_(new rtc::PhysicalSocketServer),
         vss_(new rtc::VirtualSocketServer(pss_.get())),

@@ -377,14 +377,6 @@ class DtlsTestClient : public sigslot::has_slots<> {
 
 class DtlsTransportChannelTest : public testing::Test {
  public:
-  static void SetUpTestCase() {
-    rtc::InitializeSSL();
-  }
-
-  static void TearDownTestCase() {
-    rtc::CleanupSSL();
-  }
-
   DtlsTransportChannelTest() :
       client1_("P1", rtc::Thread::Current(),
                rtc::Thread::Current()),
