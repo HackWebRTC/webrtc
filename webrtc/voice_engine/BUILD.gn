@@ -84,6 +84,9 @@ source_set("voice_engine") {
     defines = [ "WEBRTC_DRIFT_COMPENSATION_SUPPORTED" ]
   }
 
+  configs += [ "..:common_config" ]
+  public_configs = [ "..:common_inherited_config" ]
+
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.

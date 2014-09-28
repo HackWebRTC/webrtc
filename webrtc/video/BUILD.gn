@@ -25,7 +25,8 @@ source_set("video") {
     "video_send_stream.h",
   ]
 
-  configs += [ "..:common_inherited_config" ]
+  configs += [ "..:common_config" ]
+  public_configs = [ "..:common_inherited_config" ]
 
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.

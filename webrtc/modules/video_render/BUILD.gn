@@ -28,6 +28,9 @@ source_set("video_render") {
     "../utility",
   ]
 
+  configs += [ "../..:common_config" ]
+  public_configs = [ "../..:common_inherited_config" ]
+
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
@@ -43,6 +46,9 @@ source_set("video_render_impl") {
     ":video_render",
     "../../system_wrappers",
   ]
+
+  configs += [ "../..:common_config" ]
+  public_configs = [ "../..:common_inherited_config" ]
 
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
@@ -156,6 +162,9 @@ source_set("video_render_internal_impl") {
   }
 
   all_dependent_configs = [ ":video_render_internal_impl_config"]
+
+  configs += [ "../..:common_config" ]
+  public_configs = [ "../..:common_inherited_config" ]
 
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.

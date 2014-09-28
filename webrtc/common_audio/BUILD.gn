@@ -135,7 +135,9 @@ source_set("common_audio") {
     ]
   }
 
-  direct_dependent_configs = [
+  configs += [ "..:common_config" ]
+
+  public_configs = [
     "..:common_inherited_config",
     ":common_audio_config",
   ]
@@ -181,10 +183,9 @@ if (rtc_build_armv7_neon) {
       "signal_processing/vector_scaling_operations_neon.S",
     ]
 
-    configs += [
-       "..:common_config",
-       "..:common_inherited_config",
-    ]
+    configs += [ "..:common_config" ]
+    public_configs = [ "..:common_inherited_config" ]
+
 
     # Enable compilation for the ARM v7 Neon instruction set. This is needed
     # since //build/config/arm.gni only enables Neon for iOS, not Android.

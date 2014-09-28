@@ -183,7 +183,8 @@ static_library("webrtc") {
     "transport.h",
   ]
 
-  direct_dependent_configs = [ ":common_inherited_config"]
+  configs += [ ":common_config" ]
+  public_configs = [ ":common_inherited_config"]
 
   deps = [
     ":webrtc_common",
@@ -222,5 +223,6 @@ source_set("webrtc_common") {
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
 
-  configs += [ ":common_inherited_config"]
+  configs += [ ":common_config" ]
+  public_configs = [ ":common_inherited_config" ]
 }

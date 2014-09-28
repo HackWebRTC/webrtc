@@ -45,6 +45,9 @@ source_set("video_processing") {
     deps += [ ":video_processing_sse2" ]
   }
 
+  configs += [ "../..:common_config" ]
+  public_configs = [ "../..:common_inherited_config" ]
+
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
@@ -56,7 +59,8 @@ if (build_video_processing_sse2) {
   source_set("video_processing_sse2") {
     sources = [ "main/source/content_analysis_sse2.cc" ]
 
-    configs += [ "../..:common_inherited_config" ]
+    configs += [ "../..:common_config" ]
+    public_configs = [ "../..:common_inherited_config" ]
 
     if (is_clang) {
       # Suppress warnings from Chrome's Clang plugins.

@@ -37,8 +37,6 @@ source_set("audio_device") {
     "dummy/file_audio_device.h",
   ]
 
-  direct_dependent_configs = [ ":audio_device_config"]
-
   include_dirs = []
   if (is_linux) {
     include_dirs += [ "linux" ]
@@ -165,6 +163,12 @@ source_set("audio_device") {
       "dummy/file_audio_device_factory.h",
     ]
   }
+
+  configs += [ "../..:common_config" ]
+  public_configs = [
+    "../..:common_inherited_config",
+     ":audio_device_config",
+  ]
 
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.

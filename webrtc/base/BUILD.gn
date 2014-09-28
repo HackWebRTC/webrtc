@@ -82,7 +82,7 @@ if (is_linux && !build_with_chromium) {
     } else {
       deps = [ "//net/third_party/nss/ssl:libssl" ]
 
-      direct_dependent_configs = [
+      public_configs = [
         "//net/third_party/nss/ssl:ssl_config",
         "//third_party/nss:system_nss_no_ssl_config",
       ]
@@ -101,7 +101,7 @@ if (rtc_build_ssl == 0) {
 # The subset of rtc_base approved for use outside of libjingle.
 static_library("rtc_base_approved") {
   configs += [ "..:common_config" ]
-  direct_dependent_configs = [ "..:common_inherited_config" ]
+  public_configs = [ "..:common_inherited_config" ]
 
   sources = [
     "checks.cc",
@@ -134,7 +134,7 @@ static_library("webrtc_base") {
     ":webrtc_base_config",
   ]
 
-  direct_dependent_configs = [
+  public_configs = [
     "..:common_inherited_config",
     ":webrtc_base_config",
   ]
@@ -306,7 +306,7 @@ static_library("webrtc_base") {
       "../../boringssl/src/include",
     ]
 
-    direct_dependent_configs += [ ":webrtc_base_chromium_config" ]
+    public_configs += [ ":webrtc_base_chromium_config" ]
   } else {
     sources += [
       "asyncinvoker.cc",
@@ -445,7 +445,7 @@ static_library("webrtc_base") {
   cflags_cc += [ "-Wno-non-virtual-dtor" ]
 
   if (use_openssl) {
-    direct_dependent_configs += [ ":openssl_config" ]
+    public_configs += [ ":openssl_config" ]
     if (rtc_build_ssl) {
       deps += [ "//third_party/boringssl" ]
     } else {
@@ -463,7 +463,7 @@ static_library("webrtc_base") {
       "opensslstreamadapter.h",
     ]
   } else {
-    direct_dependent_configs += [ ":no_openssl_config" ]
+    public_configs += [ ":no_openssl_config" ]
     sources += [
       "nssidentity.cc",
       "nssidentity.h",

@@ -64,6 +64,9 @@ source_set("video_coding") {
     "main/source/video_sender.cc",
   ]
 
+  configs += [ "../..:common_config" ]
+  public_configs = [ "../..:common_inherited_config" ]
+
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
@@ -85,6 +88,9 @@ source_set("video_coding_utility") {
     "utility/frame_dropper.cc",
   ]
 
+  configs += [ "../..:common_config" ]
+  public_configs = [ "../..:common_inherited_config" ]
+
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
@@ -99,6 +105,9 @@ source_set("webrtc_i420") {
     "codecs/i420/main/source/i420.cc",
     "codecs/i420/main/interface/i420.h",
   ]
+
+  configs += [ "../..:common_config" ]
+  public_configs = [ "../..:common_inherited_config" ]
 
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
@@ -125,6 +134,9 @@ source_set("webrtc_vp8") {
 #    "codecs/vp8/vp8_impl.cc",
 #    "codecs/vp8/vp8_impl.h",
   ]
+
+  configs += [ "../..:common_config" ]
+  public_configs = [ "../..:common_inherited_config" ]
 
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.

@@ -32,7 +32,11 @@ source_set("common_video") {
 
   include_dirs = [ "../modules/interface" ]
 
-  direct_dependent_configs = [ ":common_video_config" ]
+  configs += [ "..:common_config" ]
+  public_configs = [
+    "..:common_inherited_config",
+    ":common_video_config",
+  ]
 
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.

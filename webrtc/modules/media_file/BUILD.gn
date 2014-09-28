@@ -8,7 +8,7 @@
 
 import("../../build/webrtc.gni")
 
-config("internal_config") {
+config("media_file_config") {
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
   include_dirs = [
     "interface",
@@ -35,13 +35,17 @@ source_set("media_file") {
     ]
   }
 
+  configs += [ "../..:common_config" ]
+  public_configs = [
+    "../..:common_inherited_config",
+    ":media_file_config",
+  ]
+
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
-
-  direct_dependent_configs = [ ":internal_config" ]
 
   deps = [ "../../system_wrappers" ]
 }

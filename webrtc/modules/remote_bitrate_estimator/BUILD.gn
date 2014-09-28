@@ -15,7 +15,8 @@ source_set("remote_bitrate_estimator") {
     "remote_rate_control.h",
   ]
 
-  configs += [ "../../:common_inherited_config"]
+  configs += [ "../..:common_config" ]
+  public_configs = [ "../..:common_inherited_config" ]
 
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.

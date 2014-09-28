@@ -79,7 +79,7 @@ source_set("audio_processing") {
   ]
 
   configs += [ "../..:common_config" ]
-  direct_dependent_configs = [ "../..:common_inherited_config" ]
+  public_configs = [ "../..:common_inherited_config" ]
 
   defines = []
   deps = []
@@ -179,7 +179,8 @@ if (cpu_arch == "x86" || cpu_arch == "x64") {
 
     cflags = [ "-msse2" ]
 
-    configs += [ "../..:common_inherited_config" ]
+    configs += [ "../..:common_config" ]
+    public_configs = [ "../..:common_inherited_config" ]
   }
 }
 
@@ -189,6 +190,9 @@ if (rtc_build_armv7_neon) {
       "aec/aec_core_neon.c",
       "aec/aec_rdft_neon.c",
     ]
+
+    configs += [ "../..:common_config" ]
+    public_configs = [ "../..:common_inherited_config" ]
 
     deps = [ "../../common_audio" ]
 

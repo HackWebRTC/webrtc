@@ -113,7 +113,7 @@ static_library("system_wrappers") {
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
 
-  direct_dependent_configs = [
+  public_configs = [
     "..:common_inherited_config",
     ":system_wrappers_inherited_config",
   ]
@@ -201,6 +201,9 @@ source_set("field_trial_default") {
     "source/field_trial_default.cc",
   ]
 
+  configs += [ "..:common_config" ]
+  public_configs = [ "..:common_inherited_config" ]
+
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
@@ -217,6 +220,9 @@ if (is_android) {
     sources = [
       "source/cpu_features_android.c",
     ]
+
+    configs += [ "..:common_config" ]
+    public_configs = [ "..:common_inherited_config" ]
 
     if (is_android_webview_build) {
       libs += [ "cpufeatures.a" ]
