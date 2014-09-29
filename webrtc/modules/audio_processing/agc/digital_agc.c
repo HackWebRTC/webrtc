@@ -235,14 +235,14 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t *gainTable, // Q16
             fracPart = (uint16_t)(tmp32 & 0x00003FFF); // in Q14
             if (WEBRTC_SPL_RSHIFT_W32(fracPart, 13))
             {
-                tmp16 = WEBRTC_SPL_LSHIFT_W16(2, 14) - constLinApprox;
+                tmp16 = (2 << 14) - constLinApprox;
                 tmp32no2 = WEBRTC_SPL_LSHIFT_W32(1, 14) - fracPart;
                 tmp32no2 *= tmp16;
                 tmp32no2 = WEBRTC_SPL_RSHIFT_W32(tmp32no2, 13);
                 tmp32no2 = WEBRTC_SPL_LSHIFT_W32(1, 14) - tmp32no2;
             } else
             {
-                tmp16 = constLinApprox - WEBRTC_SPL_LSHIFT_W16(1, 14);
+                tmp16 = constLinApprox - (1 << 14);
                 tmp32no2 = fracPart * tmp16;
                 tmp32no2 = WEBRTC_SPL_RSHIFT_W32(tmp32no2, 13);
             }
@@ -480,7 +480,7 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
     }
 
     // Gate processing (lower gain during absence of speech)
-    zeros = WEBRTC_SPL_LSHIFT_W16(zeros, 9) - WEBRTC_SPL_RSHIFT_W16(frac, 3);
+    zeros = (zeros << 9) - (frac >> 3);
     // find number of leading zeros
     zeros_fast = WebRtcSpl_NormU32((uint32_t)stt->capacitorFast);
     if (stt->capacitorFast == 0)
@@ -488,7 +488,7 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const int16_t *in_near,
         zeros_fast = 31;
     }
     tmp32 = (WEBRTC_SPL_LSHIFT_W32(stt->capacitorFast, zeros_fast) & 0x7FFFFFFF);
-    zeros_fast = WEBRTC_SPL_LSHIFT_W16(zeros_fast, 9);
+    zeros_fast <<= 9;
     zeros_fast -= (int16_t)WEBRTC_SPL_RSHIFT_W32(tmp32, 22);
 
     gate = 1000 + zeros_fast - zeros - stt->vadNearend.stdShortTerm;
@@ -645,14 +645,14 @@ void WebRtcAgc_InitVad(AgcVad_t *state)
     state->HPstate = 0; // state of high pass filter
     state->logRatio = 0; // log( P(active) / P(inactive) )
     // average input level (Q10)
-    state->meanLongTerm = WEBRTC_SPL_LSHIFT_W16(15, 10);
+    state->meanLongTerm = 15 << 10;
 
     // variance of input level (Q8)
     state->varianceLongTerm = WEBRTC_SPL_LSHIFT_W32(500, 8);
 
     state->stdLongTerm = 0; // standard deviation of input level in dB
     // short-term average input level (Q10)
-    state->meanShortTerm = WEBRTC_SPL_LSHIFT_W16(15, 10);
+    state->meanShortTerm = 15 << 10;
 
     // short-term variance of input level (Q8)
     state->varianceShortTerm = WEBRTC_SPL_LSHIFT_W32(500, 8);
@@ -739,7 +739,7 @@ int16_t WebRtcAgc_ProcessVad(AgcVad_t *state, // (i) VAD state
     }
 
     // energy level (range {-32..30}) (Q10)
-    dB = WEBRTC_SPL_LSHIFT_W16(15 - zeros, 11);
+    dB = (15 - zeros) << 11;
 
     // Update statistics
 
@@ -780,7 +780,7 @@ int16_t WebRtcAgc_ProcessVad(AgcVad_t *state, // (i) VAD state
     state->stdLongTerm = (int16_t)WebRtcSpl_Sqrt(tmp32);
 
     // update voice activity measure (Q10)
-    tmp16 = WEBRTC_SPL_LSHIFT_W16(3, 12);
+    tmp16 = 3 << 12;
     tmp32 = WEBRTC_SPL_MUL_16_16(tmp16, (dB - state->meanLongTerm));
     tmp32 = WebRtcSpl_DivW32W16(tmp32, state->stdLongTerm);
     tmpU16 = (13 << 12);

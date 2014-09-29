@@ -545,8 +545,9 @@ static void NormalizeRealBufferC(NsxInst_t* inst,
                                  const int16_t* in,
                                  int16_t* out) {
   int i = 0;
+  assert(inst->normData >= 0);
   for (i = 0; i < inst->anaLen; ++i) {
-    out[i] = WEBRTC_SPL_LSHIFT_W16(in[i], inst->normData); // Q(normData)
+    out[i] = in[i] << inst->normData;  // Q(normData)
   }
 }
 

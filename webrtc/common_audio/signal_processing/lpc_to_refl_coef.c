@@ -26,7 +26,7 @@ void WebRtcSpl_LpcToReflCoef(int16_t* a16, int use_order, int16_t* k16)
     int32_t tmp_inv_denom32;
     int16_t tmp_inv_denom16;
 
-    k16[use_order - 1] = WEBRTC_SPL_LSHIFT_W16(a16[use_order], 3); //Q12<<3 => Q15
+    k16[use_order - 1] = a16[use_order] << 3;  // Q12<<3 => Q15
     for (m = use_order - 1; m > 0; m--)
     {
         // (1 - k^2) in Q30

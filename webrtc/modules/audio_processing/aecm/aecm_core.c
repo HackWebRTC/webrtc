@@ -746,7 +746,7 @@ void WebRtcAecm_CalcEnergies(AecmCore_t * aecm,
     int16_t decrease_max_shifts = 11;
     int16_t increase_min_shifts = 11;
     int16_t decrease_min_shifts = 3;
-    int16_t kLogLowValue = WEBRTC_SPL_LSHIFT_W16(PART_LEN_SHIFT, 7);
+    static const int16_t kLogLowValue = PART_LEN_SHIFT << 7;
 
     // Get log of near end energy and store in buffer
 
@@ -761,8 +761,8 @@ void WebRtcAecm_CalcEnergies(AecmCore_t * aecm,
         zeros = WebRtcSpl_NormU32(nearEner);
         frac = ExtractFractionPart(nearEner, zeros);
         // log2 in Q8
-        tmp16 += WEBRTC_SPL_LSHIFT_W16((31 - zeros), 8) + frac;
-        tmp16 -= WEBRTC_SPL_LSHIFT_W16(aecm->dfaNoisyQDomain, 8);
+        tmp16 += ((31 - zeros) << 8) + frac;
+        tmp16 -= aecm->dfaNoisyQDomain << 8;
     }
     aecm->nearLogEnergy[0] = tmp16;
     // END: Get log of near end energy
@@ -782,8 +782,8 @@ void WebRtcAecm_CalcEnergies(AecmCore_t * aecm,
         zeros = WebRtcSpl_NormU32(tmpFar);
         frac = ExtractFractionPart(tmpFar, zeros);
         // log2 in Q8
-        tmp16 += WEBRTC_SPL_LSHIFT_W16((31 - zeros), 8) + frac;
-        tmp16 -= WEBRTC_SPL_LSHIFT_W16(far_q, 8);
+        tmp16 += ((31 - zeros) << 8) + frac;
+        tmp16 -= far_q << 8;
     }
     aecm->farLogEnergy = tmp16;
 
@@ -794,8 +794,8 @@ void WebRtcAecm_CalcEnergies(AecmCore_t * aecm,
         zeros = WebRtcSpl_NormU32(tmpAdapt);
         frac = ExtractFractionPart(tmpAdapt, zeros);
         //log2 in Q8
-        tmp16 += WEBRTC_SPL_LSHIFT_W16((31 - zeros), 8) + frac;
-        tmp16 -= WEBRTC_SPL_LSHIFT_W16(RESOLUTION_CHANNEL16 + far_q, 8);
+        tmp16 += ((31 - zeros) << 8) + frac;
+        tmp16 -= (RESOLUTION_CHANNEL16 + far_q) << 8;
     }
     aecm->echoAdaptLogEnergy[0] = tmp16;
 
@@ -806,8 +806,8 @@ void WebRtcAecm_CalcEnergies(AecmCore_t * aecm,
         zeros = WebRtcSpl_NormU32(tmpStored);
         frac = ExtractFractionPart(tmpStored, zeros);
         //log2 in Q8
-        tmp16 += WEBRTC_SPL_LSHIFT_W16((31 - zeros), 8) + frac;
-        tmp16 -= WEBRTC_SPL_LSHIFT_W16(RESOLUTION_CHANNEL16 + far_q, 8);
+        tmp16 += ((31 - zeros) << 8) + frac;
+        tmp16 -= (RESOLUTION_CHANNEL16 + far_q) << 8;
     }
     aecm->echoStoredLogEnergy[0] = tmp16;
 
