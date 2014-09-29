@@ -79,7 +79,8 @@ Test.prototype = {
 function runTest(botType, testfile) {
   console.log("Running test: " + testfile);
   var script = vm.createScript(fs.readFileSync(testfile), testfile);
-  script.runInNewContext({ test: new Test(botType) });
+  script.runInNewContext({ test: new Test(botType), setInterval: setInterval
+      setTimeout: setTimeout });
 }
 
 runTest(process.argv[2], process.argv[3]);
