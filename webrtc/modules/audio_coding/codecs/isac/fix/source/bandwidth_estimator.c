@@ -523,9 +523,9 @@ int32_t WebRtcIsacfix_UpdateUplinkBwImpl(BwEstimatorstr *bweStr,
       bweStr->recBw = (int32_t) MIN_ISAC_BW;
     }
 
-    bweStr->recBwAvg = WEBRTC_SPL_LSHIFT_U32(bweStr->recBw + bweStr->recHeaderRate, 5);
+    bweStr->recBwAvg = (bweStr->recBw + bweStr->recHeaderRate) << 5;
 
-    bweStr->recBwAvgQ = WEBRTC_SPL_LSHIFT_U32(bweStr->recBw, 7);
+    bweStr->recBwAvgQ = bweStr->recBw << 7;
 
     bweStr->recJitterShortTerm = 0;
 
@@ -573,8 +573,8 @@ int16_t WebRtcIsacfix_UpdateUplinkBwRec(BwEstimatorstr *bweStr,
 
   /* compute the BN estimate as decoded on the other side */
   /* sendBwAvg = 0.9 * sendBwAvg + 0.1 * kQRateTable[RateInd]; */
-  bweStr->sendBwAvg = WEBRTC_SPL_UMUL(461, bweStr->sendBwAvg) +
-      WEBRTC_SPL_UMUL(51, WEBRTC_SPL_LSHIFT_U32(kQRateTable[RateInd], 7));
+  bweStr->sendBwAvg = 461 * bweStr->sendBwAvg +
+      51 * ((uint32_t)kQRateTable[RateInd] << 7);
   bweStr->sendBwAvg = WEBRTC_SPL_RSHIFT_U32(bweStr->sendBwAvg, 9);
 
 
@@ -625,8 +625,8 @@ uint16_t WebRtcIsacfix_GetDownlinkBwIndexImpl(BwEstimatorstr *bweStr)
   /* Compute the averaged BN estimate on this side */
 
   /* recBwAvg = 0.9 * recBwAvg + 0.1 * (rate + bweStr->recHeaderRate), 0.9 and 0.1 in Q9 */
-  bweStr->recBwAvg = WEBRTC_SPL_UMUL(922, bweStr->recBwAvg) +
-      WEBRTC_SPL_UMUL(102, WEBRTC_SPL_LSHIFT_U32((uint32_t)rate + bweStr->recHeaderRate, 5));
+  bweStr->recBwAvg = 922 * bweStr->recBwAvg +
+      102 * (((uint32_t)rate + bweStr->recHeaderRate) << 5);
   bweStr->recBwAvg = WEBRTC_SPL_RSHIFT_U32(bweStr->recBwAvg, 10);
 
   /* Find quantization index that gives the closest rate after averaging.

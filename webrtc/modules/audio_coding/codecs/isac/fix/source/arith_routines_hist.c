@@ -310,7 +310,7 @@ int16_t WebRtcIsacfix_DecHistOneStepMulti(int16_t *data,
   if (streamData->stream_index == 0)
   {
     /* read first word from bytestream */
-    streamval = WEBRTC_SPL_LSHIFT_U32(*streamPtr++, 16);
+    streamval = (uint32_t)(*streamPtr++) << 16;
     streamval |= *streamPtr++;
   } else {
     streamval = streamData->streamval;

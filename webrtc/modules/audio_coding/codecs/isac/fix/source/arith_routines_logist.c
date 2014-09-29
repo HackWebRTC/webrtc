@@ -184,21 +184,20 @@ int WebRtcIsacfix_EncLogisticMulti2(Bitstr_enc *streamData,
      * W_upper < 2^24 */
     while ( !(W_upper & 0xFF000000) )
     {
-      W_upper = WEBRTC_SPL_LSHIFT_U32(W_upper, 8);
+      W_upper <<= 8;
       if (streamData->full == 0) {
         *streamPtr++ += (uint16_t) WEBRTC_SPL_RSHIFT_U32(
             streamData->streamval, 24);
         streamData->full = 1;
       } else {
-        *streamPtr = (uint16_t) WEBRTC_SPL_LSHIFT_U32(
-            WEBRTC_SPL_RSHIFT_U32(streamData->streamval, 24), 8);
+        *streamPtr = (uint16_t)((streamData->streamval >> 24) << 8);
         streamData->full = 0;
       }
 
       if( streamPtr > maxStreamPtr )
         return -ISAC_DISALLOWED_BITSTREAM_LENGTH;
 
-      streamData->streamval = WEBRTC_SPL_LSHIFT_U32(streamData->streamval, 8);
+      streamData->streamval <<= 8;
     }
   }
 
@@ -257,7 +256,7 @@ int16_t WebRtcIsacfix_DecLogisticMulti2(int16_t *dataQ7,
   if (streamData->stream_index == 0)
   {
     /* read first word from bytestream */
-    streamVal = WEBRTC_SPL_LSHIFT_U32(*streamPtr++, 16);
+    streamVal = (uint32_t)(*streamPtr++) << 16;
     streamVal |= *streamPtr++;
 
   } else {
