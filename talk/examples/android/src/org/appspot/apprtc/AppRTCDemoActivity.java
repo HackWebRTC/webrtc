@@ -113,8 +113,10 @@ public class AppRTCDemoActivity extends Activity
 
     vsv = new AppRTCGLView(this, displaySize);
     VideoRendererGui.setView(vsv);
-    remoteRender = VideoRendererGui.create(0, 0, 100, 100);
-    localRender = VideoRendererGui.create(70, 5, 25, 25);
+    remoteRender = VideoRendererGui.create(0, 0, 100, 100,
+        VideoRendererGui.ScalingType.SCALE_ASPECT_FIT);
+    localRender = VideoRendererGui.create(70, 5, 25, 25,
+        VideoRendererGui.ScalingType.SCALE_ASPECT_FIT);
 
     vsv.setOnClickListener(new View.OnClickListener() {
         @Override public void onClick(View v) {
