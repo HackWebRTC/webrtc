@@ -33,15 +33,14 @@ RtpPacketizer* RtpPacketizer::Create(RtpVideoCodecTypes type,
   return NULL;
 }
 
-RtpDepacketizer* RtpDepacketizer::Create(RtpVideoCodecTypes type,
-                                         RtpData* const callback) {
+RtpDepacketizer* RtpDepacketizer::Create(RtpVideoCodecTypes type) {
   switch (type) {
     case kRtpVideoH264:
-      return new RtpDepacketizerH264(callback);
+      return new RtpDepacketizerH264();
     case kRtpVideoVp8:
-      return new RtpDepacketizerVp8(callback);
+      return new RtpDepacketizerVp8();
     case kRtpVideoGeneric:
-      return new RtpDepacketizerGeneric(callback);
+      return new RtpDepacketizerGeneric();
     case kRtpVideoNone:
       assert(false);
   }

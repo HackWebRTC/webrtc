@@ -65,20 +65,29 @@ int32_t RTPReceiverVideo::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
   const uint16_t payload_data_length =
       payload_length - rtp_header->header.paddingLength;
 
-  if (payload_data_length == 0)
+  if (payload == NULL || payload_data_length == 0) {
     return data_callback_->OnReceivedPayloadData(NULL, 0, rtp_header) == 0 ? 0
                                                                            : -1;
+  }
 
   // We are not allowed to hold a critical section when calling below functions.
   scoped_ptr<RtpDepacketizer> depacketizer(
-      RtpDepacketizer::Create(rtp_header->type.Video.codec, data_callback_));
+      RtpDepacketizer::Create(rtp_header->type.Video.codec));
   if (depacketizer.get() == NULL) {
     LOG(LS_ERROR) << "Failed to create depacketizer.";
     return -1;
   }
 
   rtp_header->type.Video.isFirstPacket = is_first_packet;
-  return depacketizer->Parse(rtp_header, payload, payload_data_length) ? 0 : -1;
+  RtpDepacketizer::ParsedPayload parsed_payload(rtp_header);
+  if (!depacketizer->Parse(&parsed_payload, payload, payload_data_length))
+    return -1;
+
+  return data_callback_->OnReceivedPayloadData(parsed_payload.payload,
+                                               parsed_payload.payload_length,
+                                               parsed_payload.header) == 0
+             ? 0
+             : -1;
 }
 
 int RTPReceiverVideo::GetPayloadTypeFrequency() const {

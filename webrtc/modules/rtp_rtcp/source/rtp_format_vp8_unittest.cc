@@ -14,7 +14,6 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_vp8.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_vp8_test_helper.h"
 #include "webrtc/system_wrappers/interface/compile_assert.h"
@@ -23,11 +22,6 @@
 #define CHECK_ARRAY_SIZE(expected_size, array)                      \
   COMPILE_ASSERT(expected_size == sizeof(array) / sizeof(array[0]), \
                  check_array_size);
-
-using ::testing::_;
-using ::testing::Args;
-using ::testing::ElementsAreArray;
-using ::testing::Return;
 
 namespace webrtc {
 namespace {
@@ -391,17 +385,18 @@ TEST_F(RtpPacketizerVp8Test, TestTIDAndKeyIdx) {
 class RtpDepacketizerVp8Test : public ::testing::Test {
  protected:
   RtpDepacketizerVp8Test()
-      : callback_(),
-        depacketizer_(RtpDepacketizer::Create(kRtpVideoVp8, &callback_)) {}
+      : depacketizer_(RtpDepacketizer::Create(kRtpVideoVp8)) {}
 
-  void ExpectPacket(const uint8_t* data, size_t length) {
-    EXPECT_CALL(callback_, OnReceivedPayloadData(_, length, _))
-        .With(Args<0, 1>(ElementsAreArray(data, length)))
-        .Times(1)
-        .WillOnce(Return(0));
+  void ExpectPacket(RtpDepacketizer::ParsedPayload* parsed_payload,
+                    const uint8_t* data,
+                    size_t length) {
+    ASSERT_TRUE(parsed_payload != NULL);
+    EXPECT_THAT(std::vector<uint8_t>(
+                    parsed_payload->payload,
+                    parsed_payload->payload + parsed_payload->payload_length),
+                ::testing::ElementsAreArray(data, length));
   }
 
-  MockRtpData callback_;
   scoped_ptr<RtpDepacketizer> depacketizer_;
 };
 
@@ -413,14 +408,15 @@ TEST_F(RtpDepacketizerVp8Test, BasicHeader) {
 
   WebRtcRTPHeader rtp_header;
   memset(&rtp_header, 0, sizeof(rtp_header));
+  RtpDepacketizer::ParsedPayload payload(&rtp_header);
 
-  ExpectPacket(packet + kHeaderLength, sizeof(packet) - kHeaderLength);
-  EXPECT_TRUE(depacketizer_->Parse(&rtp_header, packet, sizeof(packet)));
-
-  EXPECT_EQ(kVideoFrameDelta, rtp_header.frameType);
-  VerifyBasicHeader(&rtp_header, 0, 1, 4);
+  ASSERT_TRUE(depacketizer_->Parse(&payload, packet, sizeof(packet)));
+  ExpectPacket(
+      &payload, packet + kHeaderLength, sizeof(packet) - kHeaderLength);
+  EXPECT_EQ(kVideoFrameDelta, payload.header->frameType);
+  VerifyBasicHeader(payload.header, 0, 1, 4);
   VerifyExtensions(
-      &rtp_header, kNoPictureId, kNoTl0PicIdx, kNoTemporalIdx, kNoKeyIdx);
+      payload.header, kNoPictureId, kNoTl0PicIdx, kNoTemporalIdx, kNoKeyIdx);
 }
 
 TEST_F(RtpDepacketizerVp8Test, PictureID) {
@@ -434,23 +430,26 @@ TEST_F(RtpDepacketizerVp8Test, PictureID) {
 
   WebRtcRTPHeader rtp_header;
   memset(&rtp_header, 0, sizeof(rtp_header));
+  RtpDepacketizer::ParsedPayload payload(&rtp_header);
 
-  ExpectPacket(packet + kHeaderLength1, sizeof(packet) - kHeaderLength1);
-  EXPECT_TRUE(depacketizer_->Parse(&rtp_header, packet, sizeof(packet)));
-  EXPECT_EQ(kVideoFrameDelta, rtp_header.frameType);
-  VerifyBasicHeader(&rtp_header, 1, 0, 0);
+  ASSERT_TRUE(depacketizer_->Parse(&payload, packet, sizeof(packet)));
+  ExpectPacket(
+      &payload, packet + kHeaderLength1, sizeof(packet) - kHeaderLength1);
+  EXPECT_EQ(kVideoFrameDelta, payload.header->frameType);
+  VerifyBasicHeader(payload.header, 1, 0, 0);
   VerifyExtensions(
-      &rtp_header, kPictureId, kNoTl0PicIdx, kNoTemporalIdx, kNoKeyIdx);
+      payload.header, kPictureId, kNoTl0PicIdx, kNoTemporalIdx, kNoKeyIdx);
 
   // Re-use packet, but change to long PictureID.
   packet[2] = 0x80 | kPictureId;
   packet[3] = kPictureId;
-  memset(&rtp_header, 0, sizeof(rtp_header));
+  memset(payload.header, 0, sizeof(rtp_header));
 
-  ExpectPacket(packet + kHeaderLength2, sizeof(packet) - kHeaderLength2);
-  EXPECT_TRUE(depacketizer_->Parse(&rtp_header, packet, sizeof(packet)));
-  VerifyBasicHeader(&rtp_header, 1, 0, 0);
-  VerifyExtensions(&rtp_header,
+  ASSERT_TRUE(depacketizer_->Parse(&payload, packet, sizeof(packet)));
+  ExpectPacket(
+      &payload, packet + kHeaderLength2, sizeof(packet) - kHeaderLength2);
+  VerifyBasicHeader(payload.header, 1, 0, 0);
+  VerifyExtensions(payload.header,
                    (kPictureId << 8) + kPictureId,
                    kNoTl0PicIdx,
                    kNoTemporalIdx,
@@ -467,13 +466,15 @@ TEST_F(RtpDepacketizerVp8Test, Tl0PicIdx) {
 
   WebRtcRTPHeader rtp_header;
   memset(&rtp_header, 0, sizeof(rtp_header));
+  RtpDepacketizer::ParsedPayload payload(&rtp_header);
 
-  ExpectPacket(packet + kHeaderLength, sizeof(packet) - kHeaderLength);
-  EXPECT_TRUE(depacketizer_->Parse(&rtp_header, packet, sizeof(packet)));
-  EXPECT_EQ(kVideoFrameKey, rtp_header.frameType);
-  VerifyBasicHeader(&rtp_header, 0, 1, 0);
+  ASSERT_TRUE(depacketizer_->Parse(&payload, packet, sizeof(packet)));
+  ExpectPacket(
+      &payload, packet + kHeaderLength, sizeof(packet) - kHeaderLength);
+  EXPECT_EQ(kVideoFrameKey, payload.header->frameType);
+  VerifyBasicHeader(payload.header, 0, 1, 0);
   VerifyExtensions(
-      &rtp_header, kNoPictureId, kTl0PicIdx, kNoTemporalIdx, kNoKeyIdx);
+      payload.header, kNoPictureId, kTl0PicIdx, kNoTemporalIdx, kNoKeyIdx);
 }
 
 TEST_F(RtpDepacketizerVp8Test, TIDAndLayerSync) {
@@ -485,13 +486,15 @@ TEST_F(RtpDepacketizerVp8Test, TIDAndLayerSync) {
 
   WebRtcRTPHeader rtp_header;
   memset(&rtp_header, 0, sizeof(rtp_header));
+  RtpDepacketizer::ParsedPayload payload(&rtp_header);
 
-  ExpectPacket(packet + kHeaderLength, sizeof(packet) - kHeaderLength);
-  EXPECT_TRUE(depacketizer_->Parse(&rtp_header, packet, sizeof(packet)));
-  EXPECT_EQ(kVideoFrameDelta, rtp_header.frameType);
-  VerifyBasicHeader(&rtp_header, 0, 0, 8);
-  VerifyExtensions(&rtp_header, kNoPictureId, kNoTl0PicIdx, 2, kNoKeyIdx);
-  EXPECT_FALSE(rtp_header.type.Video.codecHeader.VP8.layerSync);
+  ASSERT_TRUE(depacketizer_->Parse(&payload, packet, sizeof(packet)));
+  ExpectPacket(
+      &payload, packet + kHeaderLength, sizeof(packet) - kHeaderLength);
+  EXPECT_EQ(kVideoFrameDelta, payload.header->frameType);
+  VerifyBasicHeader(payload.header, 0, 0, 8);
+  VerifyExtensions(payload.header, kNoPictureId, kNoTl0PicIdx, 2, kNoKeyIdx);
+  EXPECT_FALSE(payload.header->type.Video.codecHeader.VP8.layerSync);
 }
 
 TEST_F(RtpDepacketizerVp8Test, KeyIdx) {
@@ -504,13 +507,15 @@ TEST_F(RtpDepacketizerVp8Test, KeyIdx) {
 
   WebRtcRTPHeader rtp_header;
   memset(&rtp_header, 0, sizeof(rtp_header));
+  RtpDepacketizer::ParsedPayload payload(&rtp_header);
 
-  ExpectPacket(packet + kHeaderLength, sizeof(packet) - kHeaderLength);
-  EXPECT_TRUE(depacketizer_->Parse(&rtp_header, packet, sizeof(packet)));
-  EXPECT_EQ(kVideoFrameDelta, rtp_header.frameType);
-  VerifyBasicHeader(&rtp_header, 0, 0, 8);
+  ASSERT_TRUE(depacketizer_->Parse(&payload, packet, sizeof(packet)));
+  ExpectPacket(
+      &payload, packet + kHeaderLength, sizeof(packet) - kHeaderLength);
+  EXPECT_EQ(kVideoFrameDelta, payload.header->frameType);
+  VerifyBasicHeader(payload.header, 0, 0, 8);
   VerifyExtensions(
-      &rtp_header, kNoPictureId, kNoTl0PicIdx, kNoTemporalIdx, kKeyIdx);
+      payload.header, kNoPictureId, kNoTl0PicIdx, kNoTemporalIdx, kKeyIdx);
 }
 
 TEST_F(RtpDepacketizerVp8Test, MultipleExtensions) {
@@ -525,12 +530,14 @@ TEST_F(RtpDepacketizerVp8Test, MultipleExtensions) {
 
   WebRtcRTPHeader rtp_header;
   memset(&rtp_header, 0, sizeof(rtp_header));
+  RtpDepacketizer::ParsedPayload payload(&rtp_header);
 
-  ExpectPacket(packet + kHeaderLength, sizeof(packet) - kHeaderLength);
-  EXPECT_TRUE(depacketizer_->Parse(&rtp_header, packet, sizeof(packet)));
-  EXPECT_EQ(kVideoFrameDelta, rtp_header.frameType);
-  VerifyBasicHeader(&rtp_header, 0, 0, 8);
-  VerifyExtensions(&rtp_header, (17 << 8) + 17, 42, 1, 17);
+  ASSERT_TRUE(depacketizer_->Parse(&payload, packet, sizeof(packet)));
+  ExpectPacket(
+      &payload, packet + kHeaderLength, sizeof(packet) - kHeaderLength);
+  EXPECT_EQ(kVideoFrameDelta, payload.header->frameType);
+  VerifyBasicHeader(payload.header, 0, 0, 8);
+  VerifyExtensions(payload.header, (17 << 8) + 17, 42, 1, 17);
 }
 
 TEST_F(RtpDepacketizerVp8Test, TooShortHeader) {
@@ -542,13 +549,14 @@ TEST_F(RtpDepacketizerVp8Test, TooShortHeader) {
 
   WebRtcRTPHeader rtp_header;
   memset(&rtp_header, 0, sizeof(rtp_header));
+  RtpDepacketizer::ParsedPayload payload(&rtp_header);
 
-  EXPECT_FALSE(depacketizer_->Parse(&rtp_header, packet, sizeof(packet)));
+  EXPECT_FALSE(depacketizer_->Parse(&payload, packet, sizeof(packet)));
 }
 
 TEST_F(RtpDepacketizerVp8Test, TestWithPacketizer) {
   const uint8_t kHeaderLength = 5;
-  uint8_t payload[10] = {0};
+  uint8_t data[10] = {0};
   uint8_t packet[20] = {0};
   RTPVideoHeaderVP8 input_header;
   input_header.nonReference = true;
@@ -558,7 +566,7 @@ TEST_F(RtpDepacketizerVp8Test, TestWithPacketizer) {
   input_header.tl0PicIdx = kNoTl0PicIdx;  // Disable.
   input_header.keyIdx = 31;
   RtpPacketizerVp8 packetizer(input_header, 20);
-  packetizer.SetPayloadData(payload, 10, NULL);
+  packetizer.SetPayloadData(data, 10, NULL);
   bool last;
   size_t send_bytes;
   ASSERT_TRUE(packetizer.NextPacket(packet, &send_bytes, &last));
@@ -566,17 +574,20 @@ TEST_F(RtpDepacketizerVp8Test, TestWithPacketizer) {
 
   WebRtcRTPHeader rtp_header;
   memset(&rtp_header, 0, sizeof(rtp_header));
+  RtpDepacketizer::ParsedPayload payload(&rtp_header);
 
-  ExpectPacket(packet + kHeaderLength, sizeof(packet) - kHeaderLength);
-  EXPECT_TRUE(depacketizer_->Parse(&rtp_header, packet, sizeof(packet)));
-  EXPECT_EQ(kVideoFrameKey, rtp_header.frameType);
-  VerifyBasicHeader(&rtp_header, 1, 1, 0);
-  VerifyExtensions(&rtp_header,
+  ASSERT_TRUE(depacketizer_->Parse(&payload, packet, sizeof(packet)));
+  ExpectPacket(
+      &payload, packet + kHeaderLength, sizeof(packet) - kHeaderLength);
+  EXPECT_EQ(kVideoFrameKey, payload.header->frameType);
+  VerifyBasicHeader(payload.header, 1, 1, 0);
+  VerifyExtensions(payload.header,
                    input_header.pictureId,
                    input_header.tl0PicIdx,
                    input_header.temporalIdx,
                    input_header.keyIdx);
-  EXPECT_EQ(rtp_header.type.Video.codecHeader.VP8.layerSync,
+  EXPECT_EQ(payload.header->type.Video.codecHeader.VP8.layerSync,
             input_header.layerSync);
 }
+
 }  // namespace webrtc

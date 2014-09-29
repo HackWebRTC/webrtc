@@ -26,6 +26,7 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VP8_H_
 
 #include <queue>
+#include <string>
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
@@ -218,18 +219,11 @@ class RtpPacketizerVp8 : public RtpPacketizer {
 // Depacketizer for VP8.
 class RtpDepacketizerVp8 : public RtpDepacketizer {
  public:
-  explicit RtpDepacketizerVp8(RtpData* const callback);
-
   virtual ~RtpDepacketizerVp8() {}
 
-  virtual bool Parse(WebRtcRTPHeader* rtp_header,
+  virtual bool Parse(ParsedPayload* parsed_payload,
                      const uint8_t* payload_data,
                      size_t payload_data_length) OVERRIDE;
-
- private:
-  RtpData* const callback_;
-
-  DISALLOW_COPY_AND_ASSIGN(RtpDepacketizerVp8);
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VP8_H_

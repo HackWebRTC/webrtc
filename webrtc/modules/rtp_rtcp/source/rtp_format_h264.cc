@@ -290,29 +290,24 @@ std::string RtpPacketizerH264::ToString() {
   return "RtpPacketizerH264";
 }
 
-RtpDepacketizerH264::RtpDepacketizerH264(RtpData* const callback)
-    : callback_(callback) {
-}
-
-bool RtpDepacketizerH264::Parse(WebRtcRTPHeader* rtp_header,
+bool RtpDepacketizerH264::Parse(ParsedPayload* parsed_payload,
                                 const uint8_t* payload_data,
                                 size_t payload_data_length) {
+  assert(parsed_payload != NULL);
   uint8_t nal_type = payload_data[0] & kTypeMask;
   size_t offset = 0;
   if (nal_type == kFuA) {
     // Fragmented NAL units (FU-A).
-    ParseFuaNalu(rtp_header, payload_data, payload_data_length, &offset);
+    ParseFuaNalu(
+        parsed_payload->header, payload_data, payload_data_length, &offset);
   } else {
     // We handle STAP-A and single NALU's the same way here. The jitter buffer
     // will depacketize the STAP-A into NAL units later.
-    ParseSingleNalu(rtp_header, payload_data, payload_data_length);
+    ParseSingleNalu(parsed_payload->header, payload_data, payload_data_length);
   }
-  if (callback_->OnReceivedPayloadData(payload_data + offset,
-                                       payload_data_length - offset,
-                                       rtp_header) != 0) {
-    return false;
-  }
+
+  parsed_payload->payload = payload_data + offset;
+  parsed_payload->payload_length = payload_data_length - offset;
   return true;
 }
-
 }  // namespace webrtc

@@ -20,13 +20,6 @@
 
 namespace webrtc {
 namespace {
-struct ParsedPayload {
-  ParsedPayload() : data(NULL), data_length(0) {}
-
-  const uint8_t* data;  // Start address of parsed payload data.
-  int data_length;      // Length of parsed payload data.
-};
-
 int ParseVP8PictureID(RTPVideoHeaderVP8* vp8,
                       const uint8_t** data,
                       int* data_length,
@@ -144,92 +137,6 @@ int ParseVP8FrameSize(WebRtcRTPHeader* rtp_header,
   rtp_header->type.Video.width = ((data[7] << 8) + data[6]) & 0x3FFF;
   rtp_header->type.Video.height = ((data[9] << 8) + data[8]) & 0x3FFF;
   return 0;
-}
-
-//
-// VP8 format:
-//
-// Payload descriptor
-//       0 1 2 3 4 5 6 7
-//      +-+-+-+-+-+-+-+-+
-//      |X|R|N|S|PartID | (REQUIRED)
-//      +-+-+-+-+-+-+-+-+
-// X:   |I|L|T|K|  RSV  | (OPTIONAL)
-//      +-+-+-+-+-+-+-+-+
-// I:   |   PictureID   | (OPTIONAL)
-//      +-+-+-+-+-+-+-+-+
-// L:   |   TL0PICIDX   | (OPTIONAL)
-//      +-+-+-+-+-+-+-+-+
-// T/K: |TID:Y| KEYIDX  | (OPTIONAL)
-//      +-+-+-+-+-+-+-+-+
-//
-// Payload header (considered part of the actual payload, sent to decoder)
-//       0 1 2 3 4 5 6 7
-//      +-+-+-+-+-+-+-+-+
-//      |Size0|H| VER |P|
-//      +-+-+-+-+-+-+-+-+
-//      |      ...      |
-//      +               +
-bool ParseVP8(WebRtcRTPHeader* rtp_header,
-              const uint8_t* data,
-              int data_length,
-              ParsedPayload* payload) {
-  assert(rtp_header != NULL);
-  // Parse mandatory first byte of payload descriptor.
-  bool extension = (*data & 0x80) ? true : false;               // X bit
-  bool beginning_of_partition = (*data & 0x10) ? true : false;  // S bit
-  int partition_id = (*data & 0x0F);                            // PartID field
-
-  rtp_header->type.Video.isFirstPacket =
-      beginning_of_partition && (partition_id == 0);
-
-  rtp_header->type.Video.codecHeader.VP8.nonReference =
-      (*data & 0x20) ? true : false;  // N bit
-  rtp_header->type.Video.codecHeader.VP8.partitionId = partition_id;
-  rtp_header->type.Video.codecHeader.VP8.beginningOfPartition =
-      beginning_of_partition;
-  rtp_header->type.Video.codecHeader.VP8.pictureId = kNoPictureId;
-  rtp_header->type.Video.codecHeader.VP8.tl0PicIdx = kNoTl0PicIdx;
-  rtp_header->type.Video.codecHeader.VP8.temporalIdx = kNoTemporalIdx;
-  rtp_header->type.Video.codecHeader.VP8.layerSync = false;
-  rtp_header->type.Video.codecHeader.VP8.keyIdx = kNoKeyIdx;
-
-  if (partition_id > 8) {
-    // Weak check for corrupt data: PartID MUST NOT be larger than 8.
-    return false;
-  }
-
-  // Advance data and decrease remaining payload size.
-  data++;
-  data_length--;
-
-  if (extension) {
-    const int parsed_bytes = ParseVP8Extension(
-        &rtp_header->type.Video.codecHeader.VP8, data, data_length);
-    if (parsed_bytes < 0)
-      return false;
-    data += parsed_bytes;
-    data_length -= parsed_bytes;
-  }
-
-  if (data_length <= 0) {
-    LOG(LS_ERROR) << "Error parsing VP8 payload descriptor!";
-    return false;
-  }
-
-  // Read P bit from payload header (only at beginning of first partition).
-  if (data_length > 0 && beginning_of_partition && partition_id == 0) {
-    rtp_header->frameType = (*data & 0x01) ? kVideoFrameDelta : kVideoFrameKey;
-  } else {
-    rtp_header->frameType = kVideoFrameDelta;
-  }
-
-  if (0 != ParseVP8FrameSize(rtp_header, data, data_length)) {
-    return false;
-  }
-  payload->data = data;
-  payload->data_length = data_length;
-  return true;
 }
 }  // namespace
 
@@ -729,24 +636,96 @@ bool RtpPacketizerVp8::TL0PicIdxFieldPresent() const {
   return (hdr_info_.tl0PicIdx != kNoTl0PicIdx);
 }
 
-RtpDepacketizerVp8::RtpDepacketizerVp8(RtpData* const callback)
-    : callback_(callback) {
-}
-
-bool RtpDepacketizerVp8::Parse(WebRtcRTPHeader* rtp_header,
+//
+// VP8 format:
+//
+// Payload descriptor
+//       0 1 2 3 4 5 6 7
+//      +-+-+-+-+-+-+-+-+
+//      |X|R|N|S|PartID | (REQUIRED)
+//      +-+-+-+-+-+-+-+-+
+// X:   |I|L|T|K|  RSV  | (OPTIONAL)
+//      +-+-+-+-+-+-+-+-+
+// I:   |   PictureID   | (OPTIONAL)
+//      +-+-+-+-+-+-+-+-+
+// L:   |   TL0PICIDX   | (OPTIONAL)
+//      +-+-+-+-+-+-+-+-+
+// T/K: |TID:Y| KEYIDX  | (OPTIONAL)
+//      +-+-+-+-+-+-+-+-+
+//
+// Payload header (considered part of the actual payload, sent to decoder)
+//       0 1 2 3 4 5 6 7
+//      +-+-+-+-+-+-+-+-+
+//      |Size0|H| VER |P|
+//      +-+-+-+-+-+-+-+-+
+//      |      ...      |
+//      +               +
+bool RtpDepacketizerVp8::Parse(ParsedPayload* parsed_payload,
                                const uint8_t* payload_data,
                                size_t payload_data_length) {
-  ParsedPayload payload;
-  if (!ParseVP8(rtp_header, payload_data, payload_data_length, &payload))
-    return false;
+  assert(parsed_payload != NULL);
+  assert(parsed_payload->header != NULL);
 
-  if (payload.data_length == 0)
-    return true;
+  // Parse mandatory first byte of payload descriptor.
+  bool extension = (*payload_data & 0x80) ? true : false;               // X bit
+  bool beginning_of_partition = (*payload_data & 0x10) ? true : false;  // S bit
+  int partition_id = (*payload_data & 0x0F);  // PartID field
 
-  if (callback_->OnReceivedPayloadData(
-          payload.data, payload.data_length, rtp_header) != 0) {
+  parsed_payload->header->type.Video.isFirstPacket =
+      beginning_of_partition && (partition_id == 0);
+
+  parsed_payload->header->type.Video.codecHeader.VP8.nonReference =
+      (*payload_data & 0x20) ? true : false;  // N bit
+  parsed_payload->header->type.Video.codecHeader.VP8.partitionId = partition_id;
+  parsed_payload->header->type.Video.codecHeader.VP8.beginningOfPartition =
+      beginning_of_partition;
+  parsed_payload->header->type.Video.codecHeader.VP8.pictureId = kNoPictureId;
+  parsed_payload->header->type.Video.codecHeader.VP8.tl0PicIdx = kNoTl0PicIdx;
+  parsed_payload->header->type.Video.codecHeader.VP8.temporalIdx =
+      kNoTemporalIdx;
+  parsed_payload->header->type.Video.codecHeader.VP8.layerSync = false;
+  parsed_payload->header->type.Video.codecHeader.VP8.keyIdx = kNoKeyIdx;
+
+  if (partition_id > 8) {
+    // Weak check for corrupt payload_data: PartID MUST NOT be larger than 8.
     return false;
   }
+
+  // Advance payload_data and decrease remaining payload size.
+  payload_data++;
+  payload_data_length--;
+
+  if (extension) {
+    const int parsed_bytes =
+        ParseVP8Extension(&parsed_payload->header->type.Video.codecHeader.VP8,
+                          payload_data,
+                          payload_data_length);
+    if (parsed_bytes < 0)
+      return false;
+    payload_data += parsed_bytes;
+    payload_data_length -= parsed_bytes;
+  }
+
+  if (payload_data_length <= 0) {
+    LOG(LS_ERROR) << "Error parsing VP8 payload descriptor!";
+    return false;
+  }
+
+  // Read P bit from payload header (only at beginning of first partition).
+  if (payload_data_length > 0 && beginning_of_partition && partition_id == 0) {
+    parsed_payload->header->frameType =
+        (*payload_data & 0x01) ? kVideoFrameDelta : kVideoFrameKey;
+  } else {
+    parsed_payload->header->frameType = kVideoFrameDelta;
+  }
+
+  if (0 != ParseVP8FrameSize(
+               parsed_payload->header, payload_data, payload_data_length)) {
+    return false;
+  }
+
+  parsed_payload->payload = payload_data;
+  parsed_payload->payload_length = payload_data_length;
   return true;
 }
 }  // namespace webrtc
