@@ -30,7 +30,8 @@ class FrameEditingTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
     reference_video_ = ResourcePath("foreman_cif", "yuv");
-    test_video_ = OutputPath() + "testvideo.yuv";
+    test_video_ = webrtc::test::TempFilename(webrtc::test::OutputPath(),
+                                             "frame_editing_unittest.yuv");
 
     original_fid_ = fopen(reference_video_.c_str(), "rb");
     ASSERT_TRUE(original_fid_ != NULL);
@@ -50,6 +51,7 @@ class FrameEditingTest : public ::testing::Test {
   virtual void TearDown() {
     fclose(original_fid_);
     fclose(edited_fid_);
+    remove(test_video_.c_str());
   }
   // Compares the frames in both streams to the end of one of the streams.
   void CompareToTheEnd(FILE* test_video_fid, FILE* ref_video_fid,
