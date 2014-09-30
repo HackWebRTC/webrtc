@@ -28,6 +28,9 @@ source_set("field_trial") {
     "../system_wrappers",
   ]
 
+  configs += [ "..:common_config" ]
+  public_configs = [ "..:common_inherited_config"]
+
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
@@ -70,6 +73,9 @@ source_set("test_support") {
     sources += [ "testsupport/android/root_path_android.cc" ]
   }
 
+  configs += [ "..:common_config" ]
+  public_configs = [ "..:common_inherited_config"]
+
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
@@ -93,6 +99,9 @@ source_set("test_support_main") {
     "//testing/gtest",
     "//third_party/gflags",
   ]
+
+  configs += [ "..:common_config" ]
+  public_configs = [ "..:common_inherited_config"]
 
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
