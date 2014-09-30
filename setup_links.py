@@ -85,7 +85,6 @@ if 'android' in get_target_os_list():
 FILES = {
   '.gn': None,
   'tools/find_depot_tools.py': None,
-  'tools/isolate_driver.py': None,
   'third_party/BUILD.gn': None,
 }
 
