@@ -74,8 +74,8 @@ class WebRtcVideoEncoderFactory {
   // Adds/removes observer to receive OnCodecsChanged notifications.
   // Factory must outlive Observer. Observer is responsible for removing itself
   // from the Factory by the time its dtor is done.
-  virtual void AddObserver(Observer* observer) = 0;
-  virtual void RemoveObserver(Observer* observer) = 0;
+  virtual void AddObserver(Observer* observer) {}
+  virtual void RemoveObserver(Observer* observer) {}
 
   // Returns a list of supported codecs in order of preference.
   // The list is empty if the list of codecs is not yet available.
