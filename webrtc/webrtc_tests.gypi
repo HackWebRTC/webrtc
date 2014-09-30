@@ -14,6 +14,8 @@
         'base/base.gyp:rtc_base',
         'base/base_tests.gyp:rtc_base_tests_utils',
         'base/base_tests.gyp:rtc_base_tests',
+        'sound/sound.gyp:rtc_sound',
+        'sound/sound_tests.gyp:rtc_sound_tests',
         '<(DEPTH)/testing/gtest.gyp:gtest',
       ],
     },
@@ -155,6 +157,20 @@
     }],
     ['test_isolation_mode != "noop"', {
       'targets': [
+        {
+          'target_name': 'rtc_unittests_run',
+          'type': 'none',
+          'dependencies': [
+            'rtc_unittests',
+          ],
+          'includes': [
+            'build/isolate.gypi',
+            'rtc_unittests.isolate',
+          ],
+          'sources': [
+            'rtc_unittests.isolate',
+          ],
+        },
         {
           'target_name': 'video_engine_tests_run',
           'type': 'none',
