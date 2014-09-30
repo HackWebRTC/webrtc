@@ -9,7 +9,6 @@
 {
   'variables': {
     'audio_processing_dependencies': [
-      '<(webrtc_root)/base/base.gyp:rtc_base',
       '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
       '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
     ],
