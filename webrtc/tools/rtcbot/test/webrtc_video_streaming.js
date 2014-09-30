@@ -7,14 +7,16 @@
 // be found in the AUTHORS file in the root of the source tree.
 //
 // A unidirectional video and audio flowing test from bot 1 to bot 2.
+// The test succeeds after collecting stats for 10 seconds from both bots
+// and then write these stats to a file.
 //
 // Note: the source of the video and audio stream is getUserMedia().
-//
-// TODO(houssainy): get a condition to terminate the test.
 //
 function testVideoStreaming(bot1, bot2) {
   var pc1 = null;
   var pc2 = null;
+
+  var report = test.createStatisticsReport("webrtc_video_streaming");
 
   test.wait([
       createPeerConnection.bind(bot1),
@@ -81,10 +83,20 @@ function testVideoStreaming(bot1, bot2) {
           test.fail);
       pc1.setRemoteDescription(answer, onSetSessionDescriptionSuccess,
           test.fail);
+      collectStats();
     }
 
     function onSetSessionDescriptionSuccess() {
       test.log("Set session description success.");
+    }
+
+    function collectStats() {
+      report.collectStatsFromPeerConnection("bot1", pc1);
+      report.collectStatsFromPeerConnection("bot2", pc2);
+
+      setTimeout(function() {
+        report.finish(test.done);
+        }, 10000);
     }
   }
 }

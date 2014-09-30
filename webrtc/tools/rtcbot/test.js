@@ -17,10 +17,9 @@ var vm = require('vm');
 var BotManager = require('./botmanager.js');
 
 function Test(botType) {
-  // TODO(houssainy) set the time out.
   this.timeout_ = setTimeout(
       this.fail.bind(this, "Test timeout!"),
-      10000);
+      100000);
   this.botType_ = botType;
 }
 
@@ -74,12 +73,64 @@ Test.prototype = {
       this.botManager_ = new BotManager();
     this.botManager_.spawnNewBot(name, this.botType_, doneCallback);
   },
+
+  createStatisticsReport: function (outputFileName) {
+    return new StatisticsReport(outputFileName);
+  },
+}
+
+StatisticsReport = function (outputFileName) {
+  this.output_ = [];
+  this.output_.push("Version: 1");
+  this.outputFileName_ = outputFileName;
+}
+
+StatisticsReport.prototype = {
+  collectStatsFromPeerConnection: function (prefix, pc) {
+    setInterval(this.addPeerConnectionStats.bind(this, prefix, pc), 100);
+  },
+
+  addPeerConnectionStats: function (prefix, pc) {
+    pc.getStats(onStatsReady.bind(this));
+
+    function onStatsReady(reports) {
+      for (index in reports) {
+        var stats = {};
+        stats[reports[index].id] = collectStats(reports[index].stats);
+
+        var data = {};
+        data[prefix] = stats;
+
+        this.output_.push({
+            type: "UpdateCounters",
+            startTime: (new Date()).getTime(),
+            data: data,
+          });
+      }
+    };
+
+    function collectStats(stats) {
+      var outputStats = {};
+      for (index in stats) {
+        var statValue = parseFloat(stats[index].stat);
+        outputStats[stats[index].name] = isNaN(statValue)?
+            stats[index].stat : statValue;
+      }
+      return outputStats;
+    };
+  },
+
+  finish: function (doneCallback) {
+    fs.writeFile("test/reports/" + this.outputFileName_ + "_" +
+        (new Date()).getTime() +".json", JSON.stringify(this.output_),
+        doneCallback);
+  },
 }
 
 function runTest(botType, testfile) {
   console.log("Running test: " + testfile);
   var script = vm.createScript(fs.readFileSync(testfile), testfile);
-  script.runInNewContext({ test: new Test(botType), setInterval: setInterval
+  script.runInNewContext({ test: new Test(botType), setInterval: setInterval,
       setTimeout: setTimeout });
 }
 
