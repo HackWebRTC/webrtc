@@ -27,15 +27,16 @@
 
 # Copied from Chromium's src/build/isolate.gypi
 #
-# It was necessary to copy this file to libjingle , because the path to
-# build/common.gypi is different for the standalone and Chromium builds. Gyp
-# doesn't permit conditional inclusion or variable expansion in include paths.
+# It was necessary to copy this file because the path to build/common.gypi is
+# different for the standalone and Chromium builds. Gyp doesn't permit
+# conditional inclusion or variable expansion in include paths.
 # http://code.google.com/p/gyp/wiki/InputFormatReference#Including_Other_Files
 #
 # Local modifications:
 # * Removed include of '../chrome/version.gypi'.
-# * Removal passing of version_full variable created in version.gypi:
+# * Removed passing of version_full variable created in version.gypi:
 #   '--extra-variable', 'version_full=<(version_full)',
+# * Removed condition for test_isolation_fail_on_missing == 0
 
 # This file is meant to be included into a target to provide a rule
 # to "build" .isolate files into a .isolated file.
@@ -79,6 +80,7 @@
       'extension': 'isolate',
       'inputs': [
         # Files that are known to be involved in this step.
+        '<(DEPTH)/tools/isolate_driver.py',
         '<(DEPTH)/tools/swarming_client/isolate.py',
         '<(DEPTH)/tools/swarming_client/run_isolated.py',
 
@@ -94,14 +96,12 @@
         # the switch-over to running tests on Swarm is completed.
         #'<@(isolate_dependency_tracked)',
       ],
-      'outputs': [
-        '<(PRODUCT_DIR)/<(RULE_INPUT_ROOT).isolated',
-      ],
+      'outputs': [],
       'action': [
         'python',
-        '<(DEPTH)/tools/swarming_client/isolate.py',
+        '<(DEPTH)/tools/isolate_driver.py',
         '<(test_isolation_mode)',
-        '--result', '<@(_outputs)',
+        '--isolated', '<(PRODUCT_DIR)/<(RULE_INPUT_ROOT).isolated',
         '--isolate', '<(RULE_INPUT_PATH)',
 
         # Variables should use the -V FOO=<(FOO) form so frequent values,
@@ -117,14 +117,20 @@
         '--path-variable', 'PRODUCT_DIR', '<(PRODUCT_DIR) ',
 
         '--config-variable', 'OS=<(OS)',
+        '--config-variable', 'CONFIGURATION_NAME=<(CONFIGURATION_NAME)',
+        '--config-variable', 'asan=<(asan)',
         '--config-variable', 'chromeos=<(chromeos)',
         '--config-variable', 'component=<(component)',
+        '--config-variable', 'fastbuild=<(fastbuild)',
         # TODO(kbr): move this to chrome_tests.gypi:gles2_conform_tests_run
         # once support for user-defined config variables is added.
         '--config-variable',
           'internal_gles2_conform_tests=<(internal_gles2_conform_tests)',
         '--config-variable', 'icu_use_data_file_flag=<(icu_use_data_file_flag)',
+        '--config-variable', 'libpeer_target_type=<(libpeer_target_type)',
         '--config-variable', 'use_openssl=<(use_openssl)',
+        '--config-variable', 'target_arch=<(target_arch)',
+        '--config-variable', 'use_ozone=<(use_ozone)',
       ],
       'conditions': [
         # Note: When gyp merges lists, it appends them to the old value.
@@ -138,8 +144,14 @@
         ["test_isolation_outdir!=''", {
           'action': [ '--isolate-server', '<(test_isolation_outdir)' ],
         }],
-        ['test_isolation_fail_on_missing == 0', {
-          'action': ['--ignore_broken_items'],
+        ["test_isolation_mode == 'prepare'", {
+          'outputs': [
+            '<(PRODUCT_DIR)/<(RULE_INPUT_ROOT).isolated.gen.json',
+          ],
+        }, {
+          'outputs': [
+            '<(PRODUCT_DIR)/<(RULE_INPUT_ROOT).isolated',
+          ],
         }],
       ],
     },

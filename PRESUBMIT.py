@@ -186,6 +186,7 @@ def _CommonChecks(input_api, output_api):
                   r'^tools/clang/.*\.py$',
                   r'^tools/gn/.*\.py$',
                   r'^tools/gyp/.*\.py$',
+                  r'^tools/isolate_driver.py$',
                   r'^tools/perf_expectations/.*\.py$',
                   r'^tools/protoc_wrapper/.*\.py$',
                   r'^tools/python/.*\.py$',
