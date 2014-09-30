@@ -20,28 +20,40 @@ namespace webrtc {
 
 class TestRtpFileReader : public ::testing::Test {
  public:
-  void Init(const std::string& filename) {
+  void Init(const std::string& filename, bool headers_only_file) {
     std::string filepath =
         test::ResourcePath("video_coding/" + filename, "rtp");
     rtp_packet_source_.reset(
         test::RtpFileReader::Create(test::RtpFileReader::kRtpDump, filepath));
     ASSERT_TRUE(rtp_packet_source_.get() != NULL);
+    headers_only_file_ = headers_only_file;
   }
 
   int CountRtpPackets() {
     test::RtpFileReader::Packet packet;
     int c = 0;
-    while (rtp_packet_source_->NextPacket(&packet))
+    while (rtp_packet_source_->NextPacket(&packet)) {
+      if (headers_only_file_)
+        EXPECT_LT(packet.length, packet.original_length);
+      else
+        EXPECT_EQ(packet.length, packet.original_length);
       c++;
+    }
     return c;
   }
 
  private:
   scoped_ptr<test::RtpFileReader> rtp_packet_source_;
+  bool headers_only_file_;
 };
 
 TEST_F(TestRtpFileReader, Test60Packets) {
-  Init("pltype103");
+  Init("pltype103", false);
+  EXPECT_EQ(60, CountRtpPackets());
+}
+
+TEST_F(TestRtpFileReader, Test60PacketsHeaderOnly) {
+  Init("pltype103_header_only", true);
   EXPECT_EQ(60, CountRtpPackets());
 }
 
@@ -60,8 +72,10 @@ class TestPcapFileReader : public ::testing::Test {
   int CountRtpPackets() {
     int c = 0;
     test::RtpFileReader::Packet packet;
-    while (rtp_packet_source_->NextPacket(&packet))
+    while (rtp_packet_source_->NextPacket(&packet)) {
+      EXPECT_EQ(packet.length, packet.original_length);
       c++;
+    }
     return c;
   }
 

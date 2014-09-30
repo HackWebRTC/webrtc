@@ -58,6 +58,7 @@
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+        '<(webrtc_root)/base/base.gyp:rtc_base',
         '<(webrtc_root)/modules/modules.gyp:media_file',
         '<(webrtc_root)/modules/modules.gyp:video_capture_module_impl',
         '<(webrtc_root)/modules/modules.gyp:video_render_module_impl',
