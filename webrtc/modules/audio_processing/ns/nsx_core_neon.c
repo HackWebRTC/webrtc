@@ -102,7 +102,7 @@ static void UpdateNoiseEstimateNeon(NsxInst_t* inst, int offset) {
     // if (tmp16 < 0) {
     //   tmp32no1 = WEBRTC_SPL_RSHIFT_W32(tmp32no1, -tmp16);
     // } else {
-    //   tmp32no1 = WEBRTC_SPL_LSHIFT_W32(tmp32no1, tmp16);
+    //   tmp32no1 <<= tmp16;
     // }
     v32x4B = vshlq_s32(v32x4A, v32x4B);
 
@@ -127,7 +127,7 @@ static void UpdateNoiseEstimateNeon(NsxInst_t* inst, int offset) {
   if (tmp16 < 0) {
     tmp32no1 = WEBRTC_SPL_RSHIFT_W32(tmp32no1, -tmp16);
   } else {
-    tmp32no1 = WEBRTC_SPL_LSHIFT_W32(tmp32no1, tmp16);
+    tmp32no1 <<= tmp16;
   }
   *ptr_noiseEstQuantile = WebRtcSpl_SatW32ToW16(tmp32no1);
 }

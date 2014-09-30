@@ -455,7 +455,7 @@ int WebRtcAgc_VirtualMic(void *agcInst, int16_t *in_near, int16_t *in_near_H,
         stt->lowLevelSignal = 0;
     }
 
-    micLevelTmp = WEBRTC_SPL_LSHIFT_W32(micLevelIn, stt->scale);
+    micLevelTmp = micLevelIn << stt->scale;
     /* Set desired level */
     gainIdx = stt->micVol;
     if (stt->micVol > stt->maxAnalog)
@@ -769,7 +769,7 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
     Agc_t *stt;
 
     stt = (Agc_t *)state;
-    inMicLevelTmp = WEBRTC_SPL_LSHIFT_W32(inMicLevel, stt->scale);
+    inMicLevelTmp = inMicLevel << stt->scale;
 
     if (inMicLevelTmp > stt->maxAnalog)
     {
@@ -1089,7 +1089,7 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
                     stt->msTooLow = 0;
 
                     /* Normalize the volume level */
-                    tmp32 = WEBRTC_SPL_LSHIFT_W32(inMicLevelTmp - stt->minLevel, 14);
+                    tmp32 = (inMicLevelTmp - stt->minLevel) << 14;
                     if (stt->maxInit != stt->minLevel)
                     {
                         volNormFIX = tmp32 / (stt->maxInit - stt->minLevel);
@@ -1150,7 +1150,7 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
                     stt->msTooLow = 0;
 
                     /* Normalize the volume level */
-                    tmp32 = WEBRTC_SPL_LSHIFT_W32(inMicLevelTmp - stt->minLevel, 14);
+                    tmp32 = (inMicLevelTmp - stt->minLevel) << 14;
                     if (stt->maxInit != stt->minLevel)
                     {
                         volNormFIX = tmp32 / (stt->maxInit - stt->minLevel);
@@ -1612,8 +1612,8 @@ int WebRtcAgc_Init(void *agcInst, int32_t minLevel, int32_t maxLevel,
     // TODO(bjornv): Investigate if we really need to scale up a small range now when we have
     // a guard against zero-increments. For now, we do not support scale up (scale = 0).
     stt->scale = 0;
-    maxLevel = WEBRTC_SPL_LSHIFT_W32(maxLevel, stt->scale);
-    minLevel = WEBRTC_SPL_LSHIFT_W32(minLevel, stt->scale);
+    maxLevel <<= stt->scale;
+    minLevel <<= stt->scale;
 
     /* Make minLevel and maxLevel static in AdaptiveDigital */
     if (stt->agcMode == kAgcModeAdaptiveDigital)

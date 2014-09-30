@@ -606,8 +606,7 @@ void WebRtcAecm_ResetAdaptiveChannel_mips(AecmCore_t* aecm) {
     );
   }
 
-  aecm->channelAdapt32[i] = WEBRTC_SPL_LSHIFT_W32(
-                              (int32_t)aecm->channelStored[i], 16);
+  aecm->channelAdapt32[i] = (int32_t)aecm->channelStored[i] << 16;
 }
 #endif  // #if defined(MIPS_DSP_R1_LE)
 
@@ -1471,11 +1470,11 @@ static void ComfortNoise(AecmCore_t* aecm,
 
     if (tmp32 > 32767) {
       tmp32 = 32767;
-      aecm->noiseEst[i] = WEBRTC_SPL_LSHIFT_W32(tmp32, shiftFromNearToNoise);
+      aecm->noiseEst[i] = tmp32 << shiftFromNearToNoise;
     }
     if (tmp321 > 32767) {
       tmp321 = 32767;
-      aecm->noiseEst[i+1] = WEBRTC_SPL_LSHIFT_W32(tmp321, shiftFromNearToNoise);
+      aecm->noiseEst[i+1] = tmp321 << shiftFromNearToNoise;
     }
 
     __asm __volatile (

@@ -82,8 +82,8 @@ int Filter(FilterState* hpf, int16_t* data, int length) {
     y[2] = y[0];
     y[3] = y[1];
     y[0] = static_cast<int16_t>(tmp_int32 >> 13);
-    y[1] = static_cast<int16_t>((tmp_int32 -
-        WEBRTC_SPL_LSHIFT_W32(static_cast<int32_t>(y[0]), 13)) << 2);
+    y[1] = static_cast<int16_t>(
+        (tmp_int32 - (static_cast<int32_t>(y[0]) << 13)) << 2);
 
     // Rounding in Q12, i.e. add 2^11
     tmp_int32 += 2048;

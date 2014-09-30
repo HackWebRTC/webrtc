@@ -687,7 +687,7 @@ static void ComfortNoise(AecmCore_t* aecm,
   {
     // Shift to the noise domain.
     tmp32 = (int32_t)dfa[i];
-    outLShift32 = WEBRTC_SPL_LSHIFT_W32(tmp32, shiftFromNearToNoise);
+    outLShift32 = tmp32 << shiftFromNearToNoise;
 
     if (outLShift32 < aecm->noiseEst[i])
     {
@@ -750,7 +750,7 @@ static void ComfortNoise(AecmCore_t* aecm,
     if (tmp32 > 32767)
     {
       tmp32 = 32767;
-      aecm->noiseEst[i] = WEBRTC_SPL_LSHIFT_W32(tmp32, shiftFromNearToNoise);
+      aecm->noiseEst[i] = tmp32 << shiftFromNearToNoise;
     }
     noiseRShift16[i] = (int16_t)tmp32;
 

@@ -330,8 +330,7 @@ void WebRtcAecm_ResetAdaptiveChannelNeon(AecmCore_t* aecm) {
 
   for (i = 0; i < PART_LEN - 7; i += 8) {
     // aecm->channelAdapt16[i] = aecm->channelStored[i];
-    // aecm->channelAdapt32[i] = WEBRTC_SPL_LSHIFT_W32((int32_t)
-    //                           aecm->channelStored[i], 16);
+    // aecm->channelAdapt32[i] = (int32_t)aecm->channelStored[i] << 16;
     __asm __volatile("vld1.16 {d24, d25}, [%0, :128]" : :
             "r"(&aecm->channelStored[i]) : "q12");
     __asm __volatile("vst1.16 {d24, d25}, [%0, :128]" : :
@@ -342,6 +341,5 @@ void WebRtcAecm_ResetAdaptiveChannelNeon(AecmCore_t* aecm) {
             "r"(&aecm->channelAdapt32[i]): "q10", "q11");
   }
   aecm->channelAdapt16[i] = aecm->channelStored[i];
-  aecm->channelAdapt32[i] = WEBRTC_SPL_LSHIFT_W32(
-      (int32_t)aecm->channelStored[i], 16);
+  aecm->channelAdapt32[i] = (int32_t)aecm->channelStored[i] << 16;
 }

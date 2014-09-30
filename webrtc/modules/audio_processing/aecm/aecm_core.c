@@ -303,8 +303,7 @@ void WebRtcAecm_InitEchoPathCore(AecmCore_t* aecm, const int16_t* echo_path)
     memcpy(aecm->channelAdapt16, echo_path, sizeof(int16_t) * PART_LEN1);
     for (i = 0; i < PART_LEN1; i++)
     {
-        aecm->channelAdapt32[i] = WEBRTC_SPL_LSHIFT_W32(
-            (int32_t)(aecm->channelAdapt16[i]), 16);
+        aecm->channelAdapt32[i] = (int32_t)aecm->channelAdapt16[i] << 16;
     }
 
     // Reset channel storing variables
@@ -370,16 +369,12 @@ static void ResetAdaptiveChannelC(AecmCore_t* aecm)
     // Restore the W32 channel
     for (i = 0; i < PART_LEN; i += 4)
     {
-        aecm->channelAdapt32[i] = WEBRTC_SPL_LSHIFT_W32(
-                (int32_t)aecm->channelStored[i], 16);
-        aecm->channelAdapt32[i + 1] = WEBRTC_SPL_LSHIFT_W32(
-                (int32_t)aecm->channelStored[i + 1], 16);
-        aecm->channelAdapt32[i + 2] = WEBRTC_SPL_LSHIFT_W32(
-                (int32_t)aecm->channelStored[i + 2], 16);
-        aecm->channelAdapt32[i + 3] = WEBRTC_SPL_LSHIFT_W32(
-                (int32_t)aecm->channelStored[i + 3], 16);
+        aecm->channelAdapt32[i] = (int32_t)aecm->channelStored[i] << 16;
+        aecm->channelAdapt32[i + 1] = (int32_t)aecm->channelStored[i + 1] << 16;
+        aecm->channelAdapt32[i + 2] = (int32_t)aecm->channelStored[i + 2] << 16;
+        aecm->channelAdapt32[i + 3] = (int32_t)aecm->channelStored[i + 3] << 16;
     }
-    aecm->channelAdapt32[i] = WEBRTC_SPL_LSHIFT_W32((int32_t)aecm->channelStored[i], 16);
+    aecm->channelAdapt32[i] = (int32_t)aecm->channelStored[i] << 16;
 }
 
 // Initialize function pointers for ARM Neon platform.

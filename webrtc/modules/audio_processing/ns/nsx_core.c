@@ -325,7 +325,7 @@ static void UpdateNoiseEstimate(NsxInst_t* inst, int offset) {
     if (tmp16 < 0) {
       tmp32no1 = WEBRTC_SPL_RSHIFT_W32(tmp32no1, -tmp16);
     } else {
-      tmp32no1 = WEBRTC_SPL_LSHIFT_W32(tmp32no1, tmp16);
+      tmp32no1 <<= tmp16;
     }
     inst->noiseEstQuantile[i] = WebRtcSpl_SatW32ToW16(tmp32no1);
   }
@@ -604,7 +604,7 @@ void WebRtcNsx_CalcParametricNoiseEstimate(NsxInst_t* inst,
 
   // Calculate output: 2^tmp32no1
   // Output in Q(minNorm-stages)
-  tmp32no1 += WEBRTC_SPL_LSHIFT_W32((int32_t)(inst->minNorm - inst->stages), 11);
+  tmp32no1 += (inst->minNorm - inst->stages) << 11;
   if (tmp32no1 > 0) {
     int_part = (int16_t)WEBRTC_SPL_RSHIFT_W32(tmp32no1, 11);
     frac_part = (int16_t)(tmp32no1 & 0x000007ff); // Q11
@@ -1071,7 +1071,7 @@ void WebRtcNsx_ComputeSpectralFlatness(NsxInst_t* inst, uint16_t* magn) {
   logCurSpectralFlatness = (int32_t)avgSpectralFlatnessNum;
   logCurSpectralFlatness += ((int32_t)(inst->stages - 1) << (inst->stages + 7)); // Q(8+stages-1)
   logCurSpectralFlatness -= (tmp32 << (inst->stages - 1));
-  logCurSpectralFlatness = WEBRTC_SPL_LSHIFT_W32(logCurSpectralFlatness, 10 - inst->stages); // Q17
+  logCurSpectralFlatness <<= (10 - inst->stages);  // Q17
   tmp32 = (int32_t)(0x00020000 | (WEBRTC_SPL_ABS_W32(logCurSpectralFlatness)
                                         & 0x0001FFFF)); //Q17
   intPart = -(int16_t)WEBRTC_SPL_RSHIFT_W32(logCurSpectralFlatness, 17);
@@ -1079,7 +1079,7 @@ void WebRtcNsx_ComputeSpectralFlatness(NsxInst_t* inst, uint16_t* magn) {
   if (intPart > 0) {
     currentSpectralFlatness = WEBRTC_SPL_RSHIFT_W32(tmp32, intPart);
   } else {
-    currentSpectralFlatness = WEBRTC_SPL_LSHIFT_W32(tmp32, -intPart);
+    currentSpectralFlatness = tmp32 << -intPart;
   }
 
   //time average update of spectral flatness feature
@@ -1387,7 +1387,7 @@ void WebRtcNsx_DataAnalysis(NsxInst_t* inst, short* speechFrame, uint16_t* magnU
       tmp_1_w32 = (int32_t)matrix_determinant;
       tmp_1_w32 += WEBRTC_SPL_MUL_16_16_RSFT(kSumLogIndex[65], sum_log_i, 9);
       tmp_1_w32 -= WEBRTC_SPL_MUL_16_16_RSFT(kSumLogIndex[65], kSumLogIndex[65], 10);
-      tmp_1_w32 -= WEBRTC_SPL_LSHIFT_W32((int32_t)sum_log_i_square, 4);
+      tmp_1_w32 -= (int32_t)sum_log_i_square << 4;
       tmp_1_w32 -= WEBRTC_SPL_MUL_16_16_RSFT((int16_t)
                        (inst->magnLen - kStartBand), kSumSquareLogIndex[65], 2);
       matrix_determinant = (int16_t)tmp_1_w32;
@@ -1400,7 +1400,7 @@ void WebRtcNsx_DataAnalysis(NsxInst_t* inst, short* speechFrame, uint16_t* magnU
     if (zeros < 0) {
       zeros = 0;
     }
-    tmp_1_w32 = WEBRTC_SPL_LSHIFT_W32(sum_log_magn, 1); // Q9
+    tmp_1_w32 = sum_log_magn << 1;  // Q9
     sum_log_magn_u16 = (uint16_t)WEBRTC_SPL_RSHIFT_W32(tmp_1_w32, zeros);//Q(9-zeros)
 
     // Calculate and update pinkNoiseNumerator. Result in Q11.
@@ -1417,7 +1417,7 @@ void WebRtcNsx_DataAnalysis(NsxInst_t* inst, short* speechFrame, uint16_t* magnU
     tmp_2_w32 -= (int32_t)WEBRTC_SPL_UMUL_32_16(tmpU32no1, tmp_u16); // Q(11-zeros)
     matrix_determinant = WEBRTC_SPL_RSHIFT_W16(matrix_determinant, zeros); // Q(-zeros)
     tmp_2_w32 = WebRtcSpl_DivW32W16(tmp_2_w32, matrix_determinant); // Q11
-    tmp_2_w32 += WEBRTC_SPL_LSHIFT_W32((int32_t)net_norm, 11); // Q11
+    tmp_2_w32 += (int32_t)net_norm << 11;  // Q11
     if (tmp_2_w32 < 0) {
       tmp_2_w32 = 0;
     }
@@ -1944,8 +1944,8 @@ int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* speechFrame, short* speechFram
         tmp32no1 *= ONE_MINUS_GAMMA_PAUSE_Q8;  // Q(8+prevQMagn+nShifts)
         tmp32no1 = WEBRTC_SPL_RSHIFT_W32(tmp32no1 + 128, 8); // Q(qMagn)
       } else {
-        tmp32no1 = WEBRTC_SPL_LSHIFT_W32((int32_t)magnU16[i], nShifts)
-                   - inst->avgMagnPause[i]; // Q(qMagn+nShifts)
+        // In Q(qMagn+nShifts)
+        tmp32no1 = ((int32_t)magnU16[i] << nShifts) - inst->avgMagnPause[i];
         tmp32no1 *= ONE_MINUS_GAMMA_PAUSE_Q8;  // Q(8+prevQMagn+nShifts)
         tmp32no1 = WEBRTC_SPL_RSHIFT_W32(tmp32no1 + (128 << nShifts), 8 + nShifts); // Q(qMagn)
       }
