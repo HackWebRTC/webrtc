@@ -329,7 +329,7 @@ class AudioProcessing {
   // Same as above but uses an existing PlatformFile handle. Takes ownership
   // of |handle| and closes it at StopDebugRecording().
   // TODO(xians): Make this interface pure virtual.
-  virtual int StartDebugRecording(rtc::PlatformFile handle) = 0;
+  virtual int StartDebugRecording(rtc::PlatformFile handle) { return -1; }
 
   // Stops recording debugging information, and closes the file. Recording
   // cannot be resumed in the same file (without overwriting it).

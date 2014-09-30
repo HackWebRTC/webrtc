@@ -38,7 +38,6 @@
 #include "talk/media/webrtc/fakewebrtccommon.h"
 #include "talk/media/webrtc/webrtcvoe.h"
 #include "webrtc/base/basictypes.h"
-#include "webrtc/base/fileutils.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/stringutils.h"
 #ifdef USE_WEBRTC_DEV_BRANCH
@@ -129,7 +128,6 @@ class FakeAudioProcessing : public webrtc::AudioProcessing {
   WEBRTC_STUB_CONST(delay_offset_ms, ());
   WEBRTC_STUB(StartDebugRecording, (const char filename[kMaxFilenameSize]));
   WEBRTC_STUB(StartDebugRecording, (FILE* handle));
-  WEBRTC_STUB(StartDebugRecording, (rtc::PlatformFile handle));
   WEBRTC_STUB(StopDebugRecording, ());
   virtual webrtc::EchoCancellation* echo_cancellation() const OVERRIDE {
     return NULL;
