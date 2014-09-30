@@ -14,7 +14,6 @@
 #include <stddef.h>  // size_t
 #include <stdio.h>  // FILE
 
-#include "webrtc/base/fileutils.h"
 #include "webrtc/common.h"
 #include "webrtc/typedefs.h"
 
@@ -325,11 +324,6 @@ class AudioProcessing {
   // Same as above but uses an existing file handle. Takes ownership
   // of |handle| and closes it at StopDebugRecording().
   virtual int StartDebugRecording(FILE* handle) = 0;
-
-  // Same as above but uses an existing PlatformFile handle. Takes ownership
-  // of |handle| and closes it at StopDebugRecording().
-  // TODO(xians): Make this interface pure virtual.
-  virtual int StartDebugRecording(rtc::PlatformFile handle) { return -1; }
 
   // Stops recording debugging information, and closes the file. Recording
   // cannot be resumed in the same file (without overwriting it).
