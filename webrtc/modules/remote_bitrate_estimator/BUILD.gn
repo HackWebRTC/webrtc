@@ -8,6 +8,22 @@
 
 source_set("remote_bitrate_estimator") {
   sources = [
+    "include/bwe_defines.h",
+    "include/remote_bitrate_estimator.h",
+    "rate_statistics.cc",
+    "rate_statistics.h",
+  ]
+
+  configs += [ "../../:common_inherited_config"]
+
+  deps = [
+    ":rbe_components",
+    "../../system_wrappers",
+  ]
+}
+
+source_set("rbe_components") {
+  sources = [
     "overuse_detector.cc",
     "overuse_detector.h",
     "remote_bitrate_estimator_single_stream.cc",

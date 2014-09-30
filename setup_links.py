@@ -79,6 +79,11 @@ if 'android' in get_target_os_list():
     'base',
     'third_party/android_testrunner',
     'third_party/android_tools',
+    'third_party/ashmem',
+    'third_party/jsr-305',
+    'third_party/libevent',
+    'third_party/libxml',
+    'third_party/modp_b64',
     'tools/android',
   ]
 

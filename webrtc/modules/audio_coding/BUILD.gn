@@ -528,13 +528,12 @@ source_set("isacfix") {
     } else {
       sources += [ "codecs/isac/fix/source/pitch_filter_c.c" ]
     }
+  } else {
+    sources += [ "codecs/isac/fix/source/pitch_estimator_c.c" ]
   }
 
-  if (rtc_build_armv7_neon) {
-    sources += [
-      "codecs/isac/fix/source/lattice_c.c",
-      "codecs/isac/fix/source/pitch_estimator_c.c",
-   ]
+  if (!rtc_build_armv7_neon && cpu_arch != "mipsel") {
+    sources += [ "codecs/isac/fix/source/lattice_c.c" ]
   }
 }
 

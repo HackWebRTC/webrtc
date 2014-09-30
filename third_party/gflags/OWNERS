@@ -3,3 +3,5 @@
 # structural changes, please get a review from a reviewer in this file.
 per-file *.gyp=*
 per-file *.gypi=*
+
+per-file BUILD.gn=kjellander@webrtc.org

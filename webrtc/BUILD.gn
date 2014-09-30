@@ -205,10 +205,23 @@ static_library("webrtc") {
     "modules/video_processing",
     "modules/video_render",
     "system_wrappers",
+    "tools",
     "video",
     "video_engine",
     "voice_engine",
   ]
+}
+
+if (!build_with_chromium) {
+  executable("webrtc_tests") {
+    testonly = true
+    deps = [
+      ":webrtc",
+      "modules/video_render:video_render_internal_impl",
+      "modules/video_capture:video_capture_internal_impl",
+      "test",
+    ]
+  }
 }
 
 source_set("webrtc_common") {

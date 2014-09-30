@@ -116,15 +116,13 @@ source_set("common_audio") {
       sources += [ "signal_processing/vector_scaling_operations_mips.c" ]
     }
   } else {
-    sources += [
-      "signal_processing/complex_fft.c",
-      "signal_processing/filter_ar_fast_q12.c",
-    ]
+    sources += [ "signal_processing/complex_fft.c" ]
   }
 
   if (cpu_arch != "arm" && cpu_arch != "mipsel") {
     sources += [
       "signal_processing/complex_bit_reverse.c",
+      "signal_processing/filter_ar_fast_q12.c",
       "signal_processing/spl_sqrt_floor.c",
     ]
   }
