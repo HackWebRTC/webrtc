@@ -271,8 +271,8 @@ static void bitrv2_128_mips(float* a) {
 static void cft1st_128_mips(float* a) {
   float f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14;
   int a_ptr, p1_rdft, p2_rdft, count;
-  float* first = rdft_wk3ri_first;
-  float* second = rdft_wk3ri_second;
+  const float* first = rdft_wk3ri_first;
+  const float* second = rdft_wk3ri_second;
 
   __asm __volatile (
     ".set       push                                                    \n\t"
