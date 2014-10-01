@@ -131,7 +131,8 @@ void PacketLossTest::Perform() {
   int codec_id = acm->Codec("opus", 48000, channels_);
 
   RTPFile rtpFile;
-  std::string fileName = webrtc::test::OutputPath() + "outFile.rtp";
+  std::string fileName = webrtc::test::TempFilename(webrtc::test::OutputPath(),
+                                                    "packet_loss_test");
 
   // Encode to file
   rtpFile.Open(fileName.c_str(), "wb+");

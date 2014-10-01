@@ -107,7 +107,10 @@ class EncodeDecodeTest : public ACMTest {
   uint8_t _testMode;
 
  private:
-  void EncodeToFile(int fileType, int codeId, int* codePars, int testMode);
+  std::string EncodeToFile(int fileType,
+                           int codeId,
+                           int* codePars,
+                           int testMode);
 
  protected:
   Sender _sender;

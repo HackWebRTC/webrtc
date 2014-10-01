@@ -307,10 +307,9 @@ void EncodeDecodeTest::Perform() {
     // Only encode using real mono encoders, not telephone-event and cng.
     for (int loopPars = 1; loopPars <= numPars[codeId]; loopPars++) {
       // Encode all data to file.
-      EncodeToFile(1, codeId, codePars, _testMode);
+      std::string fileName = EncodeToFile(1, codeId, codePars, _testMode);
 
       RTPFile rtpFile;
-      std::string fileName = webrtc::test::OutputPath() + "outFile.rtp";
       rtpFile.Open(fileName.c_str(), "rb");
 
       _receiver.codeId = codeId;
@@ -329,11 +328,14 @@ void EncodeDecodeTest::Perform() {
   }
 }
 
-void EncodeDecodeTest::EncodeToFile(int fileType, int codeId, int* codePars,
-                                    int testMode) {
+std::string EncodeDecodeTest::EncodeToFile(int fileType,
+                                           int codeId,
+                                           int* codePars,
+                                           int testMode) {
   scoped_ptr<AudioCodingModule> acm(AudioCodingModule::Create(1));
   RTPFile rtpFile;
-  std::string fileName = webrtc::test::OutputPath() + "outFile.rtp";
+  std::string fileName = webrtc::test::TempFilename(webrtc::test::OutputPath(),
+                                                    "encode_decode_rtp");
   rtpFile.Open(fileName.c_str(), "wb+");
   rtpFile.WriteHeader();
 
@@ -348,6 +350,8 @@ void EncodeDecodeTest::EncodeToFile(int fileType, int codeId, int* codePars,
   }
   _sender.Teardown();
   rtpFile.Close();
+
+  return fileName;
 }
 
 }  // namespace webrtc
