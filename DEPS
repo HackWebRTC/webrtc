@@ -34,22 +34,22 @@ deps_os = {
   },
 }
 
+# Define rules for which include paths are allowed in our source.
 include_rules = [
   # Base is only used to build Android APK tests and may not be referenced by
   # WebRTC production code.
   "-base",
   "-chromium",
+  '+gflags',
   '+net',
   '+talk',
   '+testing',
+  '+third_party',
   '+webrtc',
 ]
 
 # checkdeps.py shouldn't check include paths for files in these dirs:
 skip_child_includes = [
-  'gflags',
-  'testing',
-  'third_party',
   'webrtc/overrides',
 ]
 
