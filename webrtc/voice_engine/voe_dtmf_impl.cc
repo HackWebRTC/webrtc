@@ -257,53 +257,6 @@ int VoEDtmfImpl::GetDtmfFeedbackStatus(bool& enabled, bool& directFeedback)
         enabled, directFeedback);
     return 0;
 }
-
-int VoEDtmfImpl::SetDtmfPlayoutStatus(int channel, bool enable)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "SetDtmfPlayoutStatus(channel=%d, enable=%d)",
-                 channel, enable);
-
-    if (!_shared->statistics().Initialized())
-    {
-        _shared->SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-    voe::Channel* channelPtr = ch.channel();
-    if (channelPtr == NULL)
-    {
-        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-            "SetDtmfPlayoutStatus() failed to locate channel");
-        return -1;
-    }
-    return channelPtr->SetDtmfPlayoutStatus(enable);
-}
-
-int VoEDtmfImpl::GetDtmfPlayoutStatus(int channel, bool& enabled)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "GetDtmfPlayoutStatus(channel=%d, enabled=?)", channel);
-    if (!_shared->statistics().Initialized())
-    {
-        _shared->SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-    voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-    voe::Channel* channelPtr = ch.channel();
-    if (channelPtr == NULL)
-    {
-        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-            "GetDtmfPlayoutStatus() failed to locate channel");
-        return -1;
-    }
-    enabled = channelPtr->DtmfPlayoutStatus();
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
-        VoEId(_shared->instance_id(), -1),
-        "GetDtmfPlayoutStatus() => enabled=%d", enabled);
-    return 0;
-}
-
 #endif  // #ifdef WEBRTC_VOICE_ENGINE_DTMF_API
 
 }  // namespace webrtc

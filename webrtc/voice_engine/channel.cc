@@ -2627,27 +2627,6 @@ int Channel::SendTelephoneEventInband(unsigned char eventCode,
 }
 
 int
-Channel::SetDtmfPlayoutStatus(bool enable)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-               "Channel::SetDtmfPlayoutStatus()");
-    if (audio_coding_->SetDtmfPlayoutStatus(enable) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_AUDIO_CODING_MODULE_ERROR, kTraceWarning,
-            "SetDtmfPlayoutStatus() failed to set Dtmf playout");
-        return -1;
-    }
-    return 0;
-}
-
-bool
-Channel::DtmfPlayoutStatus() const
-{
-    return audio_coding_->DtmfPlayoutStatus();
-}
-
-int
 Channel::SetSendTelephoneEventPayloadType(unsigned char type)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
