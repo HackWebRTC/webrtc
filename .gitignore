@@ -73,6 +73,7 @@
 /third_party/gflags/src
 /third_party/google-visualization-python
 /third_party/icu
+/third_party/instrumented_libraries
 /third_party/jsoncpp
 /third_party/jsr-305
 /third_party/junit
