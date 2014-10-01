@@ -100,6 +100,17 @@ def _CheckNoRtcBaseDeps(input_api, gyp_files, output_api):
   pattern = input_api.re.compile(r"base.gyp:rtc_base\s*'")
   violating_files = []
   for f in gyp_files:
+    gyp_exceptions = (
+        'base_tests.gyp',
+        'desktop_capture.gypi',
+        'libjingle.gyp',
+        'libjingle_tests.gyp'
+        'sound.gyp',
+        'webrtc_test_common.gyp',
+        'webrtc_tests.gypi',
+    )
+    if f.LocalPath().endswith(gyp_exceptions):
+      continue
     contents = input_api.ReadFile(f)
     if pattern.search(contents):
       violating_files.append(f)
