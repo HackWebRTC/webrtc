@@ -25,6 +25,7 @@
         ],
       },
       'sources': [
+        '../interface/aligned_array.h',
         '../interface/aligned_malloc.h',
         '../interface/atomic32.h',
         '../interface/clock.h',

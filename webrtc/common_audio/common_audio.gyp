@@ -30,6 +30,8 @@
       },
       'sources': [
         'audio_util.cc',
+        'blocker.cc',
+        'blocker.h',
         'fir_filter.cc',
         'fir_filter.h',
         'fir_filter_neon.h',
@@ -96,8 +98,23 @@
         'wav_header.h',
         'wav_writer.cc',
         'wav_writer.h',
+        'window_generator.cc',
+        'window_generator.h',
       ],
       'conditions': [
+        # TODO(ajm): Workaround until openmax_dl has non-Android ARM support.
+        # See: crbug.com/415393
+        ['target_arch!="arm" or (target_arch=="arm" and OS=="android")', {
+          'sources': [
+            'lapped_transform.cc',
+            'lapped_transform.h',
+            'real_fourier.cc',
+            'real_fourier.h',
+          ],
+          'dependencies': [
+            '<(DEPTH)/third_party/openmax_dl/dl/dl.gyp:openmax_dl',
+          ],
+        }],
         ['target_arch=="ia32" or target_arch=="x64"', {
           'dependencies': ['common_audio_sse2',],
         }],
@@ -209,6 +226,7 @@
           ],
           'sources': [
             'audio_util_unittest.cc',
+            'blocker_unittest.cc',
             'fir_filter_unittest.cc',
             'resampler/resampler_unittest.cc',
             'resampler/push_resampler_unittest.cc',
@@ -226,8 +244,17 @@
             'vad/vad_unittest.h',
             'wav_header_unittest.cc',
             'wav_writer_unittest.cc',
+            'window_generator_unittest.cc',
           ],
           'conditions': [
+            # TODO(ajm): Workaround until openmax_dl has non-Android ARM
+            # support. See: crbug.com/415393
+            ['target_arch!="arm" or (target_arch=="arm" and OS=="android")', {
+              'sources': [
+                'lapped_transform_unittest.cc',
+                'real_fourier_unittest.cc',
+              ],
+            }],
             ['OS=="android"', {
               'dependencies': [
                 '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',

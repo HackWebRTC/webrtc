@@ -20,6 +20,8 @@ config("common_audio_config") {
 source_set("common_audio") {
   sources = [
     "audio_util.cc",
+    "blocker.cc",
+    "blocker.h",
     "fir_filter.cc",
     "fir_filter.h",
     "fir_filter_neon.h",
@@ -82,9 +84,27 @@ source_set("common_audio") {
     "wav_header.h",
     "wav_writer.cc",
     "wav_writer.h",
+    "window_generator.cc",
+    "window_generator.h",
   ]
 
   deps = [ "../system_wrappers" ]
+
+  # TODO(ajm): Enable when GN support for openmax_dl is added.
+  # See: crbug.com/419206
+  # Not needed immediately, since nothing built by GN depends on these bits.
+  # TODO(ajm): Workaround until openmax_dl has non-Android ARM support.
+  # See: crbug.com/415393
+  #if (cpu_arch != "arm" or (cpu_arch == "arm" and is_android)) {
+  #  'sources' += [
+  #    'lapped_transform.cc',
+  #    'lapped_transform.h',
+  #    'real_fourier.cc',
+  #    'real_fourier.h',
+  #  ]
+  #
+  #  deps += [ "//third_party/openmax_dl/dl" ]
+  #}
 
   if (cpu_arch == "arm") {
     sources += [

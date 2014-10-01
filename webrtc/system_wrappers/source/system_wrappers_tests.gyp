@@ -18,6 +18,7 @@
         '<(webrtc_root)/test/test.gyp:test_support_main',
       ],
       'sources': [
+        'aligned_array_unittest.cc',
         'aligned_malloc_unittest.cc',
         'clock_unittest.cc',
         'condition_variable_unittest.cc',

@@ -17,6 +17,7 @@ config("system_wrappers_inherited_config") {
 
 static_library("system_wrappers") {
   sources = [
+    "interface/aligned_array.h",
     "interface/aligned_malloc.h",
     "interface/atomic32.h",
     "interface/clock.h",
@@ -107,7 +108,7 @@ static_library("system_wrappers") {
 
   configs += [ "..:common_config" ]
 
- if (is_clang) {
+  if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
     configs -= [ "//build/config/clang:find_bad_constructs" ]
