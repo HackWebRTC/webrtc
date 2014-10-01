@@ -36,6 +36,7 @@
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/testclient.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/base/virtualsocketserver.h"
 
 using rtc::SocketAddress;
 using namespace cricket;
@@ -54,23 +55,25 @@ static const char* msg2 = "Lobster Thermidor a Crevette with a mornay sauce...";
 class RelayServerTest : public testing::Test {
  public:
   RelayServerTest()
-      : main_(rtc::Thread::Current()), ss_(main_->socketserver()),
+      : pss_(new rtc::PhysicalSocketServer),
+        ss_(new rtc::VirtualSocketServer(pss_.get())),
+        ss_scope_(ss_.get()),
         username_(rtc::CreateRandomString(12)),
-        password_(rtc::CreateRandomString(12)) {
-  }
+        password_(rtc::CreateRandomString(12)) {}
+
  protected:
   virtual void SetUp() {
-    server_.reset(new RelayServer(main_));
+    server_.reset(new RelayServer(rtc::Thread::Current()));
 
     server_->AddInternalSocket(
-        rtc::AsyncUDPSocket::Create(ss_, server_int_addr));
+        rtc::AsyncUDPSocket::Create(ss_.get(), server_int_addr));
     server_->AddExternalSocket(
-        rtc::AsyncUDPSocket::Create(ss_, server_ext_addr));
+        rtc::AsyncUDPSocket::Create(ss_.get(), server_ext_addr));
 
     client1_.reset(new rtc::TestClient(
-        rtc::AsyncUDPSocket::Create(ss_, client1_addr)));
+        rtc::AsyncUDPSocket::Create(ss_.get(), client1_addr)));
     client2_.reset(new rtc::TestClient(
-        rtc::AsyncUDPSocket::Create(ss_, client2_addr)));
+        rtc::AsyncUDPSocket::Create(ss_.get(), client2_addr)));
   }
 
   void Allocate() {
@@ -176,8 +179,9 @@ class RelayServerTest : public testing::Test {
     msg->AddAttribute(attr);
   }
 
-  rtc::Thread* main_;
-  rtc::SocketServer* ss_;
+  rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
+  rtc::scoped_ptr<rtc::VirtualSocketServer> ss_;
+  rtc::SocketServerScope ss_scope_;
   rtc::scoped_ptr<RelayServer> server_;
   rtc::scoped_ptr<rtc::TestClient> client1_;
   rtc::scoped_ptr<rtc::TestClient> client2_;

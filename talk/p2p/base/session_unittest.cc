@@ -54,7 +54,9 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/natserver.h"
 #include "webrtc/base/natsocketfactory.h"
+#include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/stringencode.h"
+#include "webrtc/base/virtualsocketserver.h"
 
 using cricket::SignalingProtocol;
 using cricket::PROTOCOL_HYBRID;
@@ -1121,6 +1123,10 @@ class TestClient : public sigslot::has_slots<> {
 
 class SessionTest : public testing::Test {
  protected:
+  SessionTest()
+      : pss_(new rtc::PhysicalSocketServer),
+        ss_(new rtc::VirtualSocketServer(pss_.get())),
+        ss_scope_(ss_.get()) {}
   virtual void SetUp() {
     // Seed needed for each test to satisfy expectations.
     rtc::SetRandomTestMode(true);
@@ -2276,6 +2282,10 @@ class SessionTest : public testing::Test {
     EXPECT_EQ(2ul, stats.proxy_to_transport.size());
     EXPECT_EQ(2ul, stats.transport_stats.size());
   }
+
+  rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
+  rtc::scoped_ptr<rtc::VirtualSocketServer> ss_;
+  rtc::SocketServerScope ss_scope_;
 };
 
 // For each of these, "X => Y = Z" means "if a client with protocol X
