@@ -166,11 +166,6 @@ void ScreenCapturerWinMagnifier::Capture(const DesktopRegion& region) {
   callback_->OnCaptureCompleted(frame);
 }
 
-void ScreenCapturerWinMagnifier::SetMouseShapeObserver(
-    MouseShapeObserver* mouse_shape_observer) {
-  assert(false);  // NOTREACHED();
-}
-
 bool ScreenCapturerWinMagnifier::GetScreenList(ScreenList* screens) {
   return webrtc::GetScreenList(screens);
 }
