@@ -1993,6 +1993,7 @@ class MediaCodecVideoDecoder : public webrtc::VideoDecoder,
   bool key_frame_required_;
   bool inited_;
   bool use_surface_;
+  int error_count_;
   VideoCodec codec_;
   I420VideoFrame decoded_image_;
   NativeHandleImpl native_handle_;
@@ -2072,6 +2073,7 @@ int MediaCodecVideoDecoder::SetAndroidObjects(JNIEnv* jni,
 MediaCodecVideoDecoder::MediaCodecVideoDecoder(JNIEnv* jni)
   : key_frame_required_(true),
     inited_(false),
+    error_count_(0),
     codec_thread_(new Thread()),
     j_media_codec_video_decoder_class_(
         jni,
@@ -2089,7 +2091,7 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(JNIEnv* jni)
 
   j_init_decode_method_ = GetMethodID(
       jni, *j_media_codec_video_decoder_class_, "initDecode",
-      "(IIZLandroid/opengl/EGLContext;)Z");
+      "(IIZZLandroid/opengl/EGLContext;)Z");
   j_release_method_ =
       GetMethodID(jni, *j_media_codec_video_decoder_class_, "release", "()V");
   j_dequeue_input_buffer_method_ = GetMethodID(
@@ -2176,13 +2178,19 @@ int32_t MediaCodecVideoDecoder::InitDecodeOnCodecThread() {
   CheckOnCodecThread();
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
-  ALOGD("InitDecodeOnCodecThread: %d x %d. fps: %d",
-      codec_.width, codec_.height, codec_.maxFramerate);
+  ALOGD("InitDecodeOnCodecThread: %d x %d. Fps: %d. Errors: %d",
+      codec_.width, codec_.height, codec_.maxFramerate, error_count_);
+  bool use_sw_codec = false;
+  if (error_count_ > 1) {
+    // If more than one critical errors happen for HW codec, switch to SW codec.
+    use_sw_codec = true;
+  }
 
   bool success = jni->CallBooleanMethod(*j_media_codec_video_decoder_,
                                        j_init_decode_method_,
                                        codec_.width,
                                        codec_.height,
+                                       use_sw_codec,
                                        use_surface_,
                                        render_egl_context_);
   CHECK_EXCEPTION(jni);
@@ -2320,11 +2328,13 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   if (frames_received_ > frames_decoded_ + max_pending_frames_) {
     ALOGV("Wait for output...");
     if (!DeliverPendingOutputs(jni, kMediaCodecTimeoutMs * 1000)) {
+      error_count_++;
       Reset();
       return WEBRTC_VIDEO_CODEC_ERROR;
     }
     if (frames_received_ > frames_decoded_ + max_pending_frames_) {
       ALOGE("Output buffer dequeue timeout");
+      error_count_++;
       Reset();
       return WEBRTC_VIDEO_CODEC_ERROR;
     }
@@ -2336,6 +2346,7 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   CHECK_EXCEPTION(jni);
   if (j_input_buffer_index < 0) {
     ALOGE("dequeueInputBuffer error");
+    error_count_++;
     Reset();
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
@@ -2350,6 +2361,7 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   if (buffer_capacity < inputImage._length) {
     ALOGE("Input frame size %d is bigger than buffer size %d.",
         inputImage._length, buffer_capacity);
+    error_count_++;
     Reset();
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
@@ -2374,6 +2386,7 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   CHECK_EXCEPTION(jni);
   if (!success) {
     ALOGE("queueInputBuffer error");
+    error_count_++;
     Reset();
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
@@ -2381,6 +2394,7 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   // Try to drain the decoder
   if (!DeliverPendingOutputs(jni, 0)) {
     ALOGE("DeliverPendingOutputs error");
+    error_count_++;
     Reset();
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
@@ -2410,7 +2424,6 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
       GetIntField(jni, j_decoder_output_buffer_info, j_info_index_field_);
   if (output_buffer_index < 0) {
     ALOGE("dequeueOutputBuffer error : %d", output_buffer_index);
-    Reset();
     return false;
   }
   int output_buffer_offset =
@@ -2435,7 +2448,6 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   if (!use_surface_) {
     if (output_buffer_size < width * height * 3 / 2) {
       ALOGE("Insufficient output buffer size: %d", output_buffer_size);
-      Reset();
       return false;
     }
     jobjectArray output_buffers = reinterpret_cast<jobjectArray>(GetObjectField(
@@ -2494,7 +2506,6 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   CHECK_EXCEPTION(jni);
   if (!success) {
     ALOGE("releaseOutputBuffer error");
-    Reset();
     return false;
   }
 
@@ -2561,7 +2572,10 @@ void MediaCodecVideoDecoder::OnMessage(rtc::Message* msg) {
   CHECK(!msg->pdata) << "Unexpected message!";
   CheckOnCodecThread();
 
-  DeliverPendingOutputs(jni, 0);
+  if (!DeliverPendingOutputs(jni, 0)) {
+    error_count_++;
+    Reset();
+  }
   codec_thread_->PostDelayed(kMediaCodecPollMs, this);
 }
 
