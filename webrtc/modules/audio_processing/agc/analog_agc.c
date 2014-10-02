@@ -871,7 +871,7 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
         /* stt->micVol *= 0.903; */
         tmp32 = inMicLevelTmp - stt->minLevel;
         tmpU32 = WEBRTC_SPL_UMUL(29591, (uint32_t)(tmp32));
-        stt->micVol = (int32_t)WEBRTC_SPL_RSHIFT_U32(tmpU32, 15) + stt->minLevel;
+        stt->micVol = (tmpU32 >> 15) + stt->minLevel;
         if (stt->micVol > lastMicVol - 2)
         {
             stt->micVol = lastMicVol - 2;
@@ -1004,7 +1004,7 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
                     /* 0.95 in Q15 */
                     tmp32 = inMicLevelTmp - stt->minLevel;
                     tmpU32 = WEBRTC_SPL_UMUL(31130, (uint32_t)(tmp32));
-                    stt->micVol = (int32_t)WEBRTC_SPL_RSHIFT_U32(tmpU32, 15) + stt->minLevel;
+                    stt->micVol = (tmpU32 >> 15) + stt->minLevel;
                     if (stt->micVol > lastMicVol - 1)
                     {
                         stt->micVol = lastMicVol - 1;
@@ -1055,7 +1055,7 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
                     /* 0.965 in Q15 */
                     tmp32 = inMicLevelTmp - stt->minLevel;
                     tmpU32 = WEBRTC_SPL_UMUL(31621, (uint32_t)(inMicLevelTmp - stt->minLevel));
-                    stt->micVol = (int32_t)WEBRTC_SPL_RSHIFT_U32(tmpU32, 15) + stt->minLevel;
+                    stt->micVol = (tmpU32 >> 15) + stt->minLevel;
                     if (stt->micVol > lastMicVol - 1)
                     {
                         stt->micVol = lastMicVol - 1;
@@ -1109,7 +1109,7 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
 
                     tmp32 = inMicLevelTmp - stt->minLevel;
                     tmpU32 = ((uint32_t)weightFIX * (uint32_t)(inMicLevelTmp - stt->minLevel));
-                    stt->micVol = (int32_t)WEBRTC_SPL_RSHIFT_U32(tmpU32, 14) + stt->minLevel;
+                    stt->micVol = (tmpU32 >> 14) + stt->minLevel;
                     if (stt->micVol < lastMicVol + 2)
                     {
                         stt->micVol = lastMicVol + 2;
@@ -1170,7 +1170,7 @@ int32_t WebRtcAgc_ProcessAnalog(void *state, int32_t inMicLevel,
 
                     tmp32 = inMicLevelTmp - stt->minLevel;
                     tmpU32 = ((uint32_t)weightFIX * (uint32_t)(inMicLevelTmp - stt->minLevel));
-                    stt->micVol = (int32_t)WEBRTC_SPL_RSHIFT_U32(tmpU32, 14) + stt->minLevel;
+                    stt->micVol = (tmpU32 >> 14) + stt->minLevel;
                     if (stt->micVol < lastMicVol + 1)
                     {
                         stt->micVol = lastMicVol + 1;

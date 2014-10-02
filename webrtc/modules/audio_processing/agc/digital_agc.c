@@ -149,12 +149,12 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t *gainTable, // Q16
         absInLevel = (uint32_t)WEBRTC_SPL_ABS_W32(inLevel); // Q14
 
         // LUT with interpolation
-        intPart = (uint16_t)WEBRTC_SPL_RSHIFT_U32(absInLevel, 14);
+        intPart = (uint16_t)(absInLevel >> 14);
         fracPart = (uint16_t)(absInLevel & 0x00003FFF); // extract the fractional part
         tmpU16 = kGenFuncTable[intPart + 1] - kGenFuncTable[intPart]; // Q8
         tmpU32no1 = tmpU16 * fracPart;  // Q22
         tmpU32no1 += (uint32_t)kGenFuncTable[intPart] << 14;  // Q22
-        logApprox = WEBRTC_SPL_RSHIFT_U32(tmpU32no1, 8); // Q14
+        logApprox = tmpU32no1 >> 8;  // Q14
         // Compensate for negative exponent using the relation:
         //  log2(1 + 2^-x) = log2(1 + 2^x) - x
         if (inLevel < 0)
@@ -164,25 +164,25 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t *gainTable, // Q16
             if (zeros < 15)
             {
                 // Not enough space for multiplication
-                tmpU32no2 = WEBRTC_SPL_RSHIFT_U32(absInLevel, 15 - zeros); // Q(zeros-1)
+                tmpU32no2 = absInLevel >> (15 - zeros);  // Q(zeros-1)
                 tmpU32no2 = WEBRTC_SPL_UMUL_32_16(tmpU32no2, kLogE_1); // Q(zeros+13)
                 if (zeros < 9)
                 {
-                    tmpU32no1 = WEBRTC_SPL_RSHIFT_U32(tmpU32no1, 9 - zeros); // Q(zeros+13)
                     zerosScale = 9 - zeros;
+                    tmpU32no1 >>= zerosScale;  // Q(zeros+13)
                 } else
                 {
-                    tmpU32no2 = WEBRTC_SPL_RSHIFT_U32(tmpU32no2, zeros - 9); // Q22
+                    tmpU32no2 >>= zeros - 9;  // Q22
                 }
             } else
             {
                 tmpU32no2 = WEBRTC_SPL_UMUL_32_16(absInLevel, kLogE_1); // Q28
-                tmpU32no2 = WEBRTC_SPL_RSHIFT_U32(tmpU32no2, 6); // Q22
+                tmpU32no2 >>= 6;  // Q22
             }
             logApprox = 0;
             if (tmpU32no2 < tmpU32no1)
             {
-                logApprox = WEBRTC_SPL_RSHIFT_U32(tmpU32no1 - tmpU32no2, 8 - zerosScale); //Q14
+                logApprox = (tmpU32no1 - tmpU32no2) >> (8 - zerosScale);  //Q14
             }
         }
         numFIX = (maxGain * constMaxGain) << 6;  // Q14
