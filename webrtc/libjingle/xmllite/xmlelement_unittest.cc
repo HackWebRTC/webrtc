@@ -15,6 +15,7 @@
 #include "webrtc/base/common.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 using buzz::QName;
 using buzz::XmlAttr;
@@ -239,7 +240,7 @@ class XmlElementCreatorThread : public rtc::Thread {
 
 // If XmlElement creation and destruction isn't thread safe,
 // this test should crash.
-TEST(XmlElementTest, TestMultithread) {
+TEST(XmlElementTest, DISABLED_ON_MAC(TestMultithread)) {
   int thread_count = 2;  // Was 100, but that's too slow.
   int elem_count = 100;  // Was 100000, but that's too slow.
   buzz::QName qname("foo", "bar");

@@ -9,6 +9,7 @@
   'conditions': [
     ['include_tests==1', {
       'includes': [
+        'libjingle/xmllite/xmllite_tests.gypi',
         'sound/sound_tests.gypi',
         'webrtc_tests.gypi',
       ],
@@ -45,7 +46,6 @@
         ['include_tests==1', {
           'dependencies': [
             'common_video/common_video_unittests.gyp:*',
-            'libjingle/xmllite/xmllite_tests.gyp:*',
             'system_wrappers/source/system_wrappers_tests.gyp:*',
             'test/metrics.gyp:*',
             'test/test.gyp:*',

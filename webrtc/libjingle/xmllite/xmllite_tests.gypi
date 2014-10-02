@@ -11,24 +11,18 @@
   'targets': [
     {
       'target_name': 'rtc_xmllite_unittest',
-      'type': 'executable',
-      'dependencies': [
-        '<(DEPTH)/testing/gtest.gyp:gtest',
-        '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
-        'xmllite.gyp:rtc_xmllite',
-      ],
-      'cflags_cc!': [
-        '-Wnon-virtual-dtor',
-      ],
-      'sources': [
-        'qname_unittest.cc',
-        'xmlbuilder_unittest.cc',
-        'xmlelement_unittest.cc',
-        'xmlnsstack_unittest.cc',
-        'xmlparser_unittest.cc',
-        'xmlprinter_unittest.cc',
-      ],
+      'type': 'none',
+      'direct_dependent_settings': {
+        'sources': [
+          'qname_unittest.cc',
+          'xmlbuilder_unittest.cc',
+          'xmlelement_unittest.cc',
+          'xmlnsstack_unittest.cc',
+          'xmlparser_unittest.cc',
+          'xmlprinter_unittest.cc',
+        ],
+      },
     },
   ],
 }
-  
+
