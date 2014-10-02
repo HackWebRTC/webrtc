@@ -38,6 +38,7 @@ const wchar_t kDwmapiLibraryName[] = L"dwmapi.dll";
 
 ScreenCapturerWinGdi::ScreenCapturerWinGdi(const DesktopCaptureOptions& options)
     : callback_(NULL),
+      mouse_shape_observer_(NULL),
       current_screen_id_(kFullDesktopScreenId),
       desktop_dc_(NULL),
       memory_dc_(NULL),
@@ -130,6 +131,18 @@ void ScreenCapturerWinGdi::Capture(const DesktopRegion& region) {
   frame->set_capture_time_ms(
       (TickTime::Now() - capture_start_time).Milliseconds());
   callback_->OnCaptureCompleted(frame);
+
+  // Check for cursor shape update.
+  if (mouse_shape_observer_)
+    CaptureCursor();
+}
+
+void ScreenCapturerWinGdi::SetMouseShapeObserver(
+    MouseShapeObserver* mouse_shape_observer) {
+  assert(!mouse_shape_observer_);
+  assert(mouse_shape_observer);
+
+  mouse_shape_observer_ = mouse_shape_observer;
 }
 
 bool ScreenCapturerWinGdi::GetScreenList(ScreenList* screens) {
@@ -264,6 +277,50 @@ bool ScreenCapturerWinGdi::CaptureImage() {
     SelectObject(memory_dc_, previous_object);
   }
   return true;
+}
+
+void ScreenCapturerWinGdi::CaptureCursor() {
+  assert(mouse_shape_observer_);
+
+  CURSORINFO cursor_info;
+  cursor_info.cbSize = sizeof(CURSORINFO);
+  if (!GetCursorInfo(&cursor_info)) {
+    LOG_F(LS_ERROR) << "Unable to get cursor info. Error = " << GetLastError();
+    return;
+  }
+
+  // Note that |cursor_info.hCursor| does not need to be freed.
+  scoped_ptr<MouseCursor> cursor_image(
+      CreateMouseCursorFromHCursor(desktop_dc_, cursor_info.hCursor));
+  if (!cursor_image.get())
+    return;
+
+  scoped_ptr<MouseCursorShape> cursor(new MouseCursorShape);
+  cursor->hotspot = cursor_image->hotspot();
+  cursor->size = cursor_image->image()->size();
+  uint8_t* current_row = cursor_image->image()->data();
+  for (int y = 0; y < cursor_image->image()->size().height(); ++y) {
+    cursor->data.append(current_row,
+                        current_row + cursor_image->image()->size().width() *
+                                        DesktopFrame::kBytesPerPixel);
+    current_row += cursor_image->image()->stride();
+  }
+
+  // Compare the current cursor with the last one we sent to the client. If
+  // they're the same, then don't bother sending the cursor again.
+  if (last_cursor_.size.equals(cursor->size) &&
+      last_cursor_.hotspot.equals(cursor->hotspot) &&
+      last_cursor_.data == cursor->data) {
+    return;
+  }
+
+  LOG(LS_VERBOSE) << "Sending updated cursor: " << cursor->size.width() << "x"
+                  << cursor->size.height();
+
+  // Record the last cursor image that we sent to the client.
+  last_cursor_ = *cursor;
+
+  mouse_shape_observer_->OnCursorShapeChanged(cursor.release());
 }
 
 }  // namespace webrtc

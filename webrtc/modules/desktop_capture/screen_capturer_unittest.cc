@@ -37,6 +37,7 @@ class ScreenCapturerTest : public testing::Test {
 
  protected:
   scoped_ptr<ScreenCapturer> capturer_;
+  MockMouseShapeObserver mouse_observer_;
   MockScreenCapturerCallback callback_;
 };
 
@@ -68,6 +69,7 @@ TEST_F(ScreenCapturerTest, GetScreenListAndSelectScreen) {
 }
 
 TEST_F(ScreenCapturerTest, StartCapturer) {
+  capturer_->SetMouseShapeObserver(&mouse_observer_);
   capturer_->Start(&callback_);
 }
 
@@ -76,6 +78,8 @@ TEST_F(ScreenCapturerTest, Capture) {
   DesktopFrame* frame = NULL;
   EXPECT_CALL(callback_, OnCaptureCompleted(_))
       .WillOnce(SaveArg<0>(&frame));
+  EXPECT_CALL(mouse_observer_, OnCursorShapeChangedPtr(_))
+      .Times(AnyNumber());
 
   EXPECT_CALL(callback_, CreateSharedMemory(_))
       .Times(AnyNumber())
@@ -108,6 +112,8 @@ TEST_F(ScreenCapturerTest, UseSharedBuffers) {
   DesktopFrame* frame = NULL;
   EXPECT_CALL(callback_, OnCaptureCompleted(_))
       .WillOnce(SaveArg<0>(&frame));
+  EXPECT_CALL(mouse_observer_, OnCursorShapeChangedPtr(_))
+      .Times(AnyNumber());
 
   EXPECT_CALL(callback_, CreateSharedMemory(_))
       .Times(AnyNumber())

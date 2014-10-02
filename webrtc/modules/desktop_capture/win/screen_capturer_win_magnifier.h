@@ -28,6 +28,7 @@ namespace webrtc {
 class DesktopFrame;
 class DesktopRect;
 class Differ;
+class MouseShapeObserver;
 
 // Captures the screen using the Magnification API to support window exclusion.
 // Each capturer must run on a dedicated thread because it uses thread local
@@ -45,6 +46,8 @@ class ScreenCapturerWinMagnifier : public ScreenCapturer {
   // Overridden from ScreenCapturer:
   virtual void Start(Callback* callback) OVERRIDE;
   virtual void Capture(const DesktopRegion& region) OVERRIDE;
+  virtual void SetMouseShapeObserver(
+      MouseShapeObserver* mouse_shape_observer) OVERRIDE;
   virtual bool GetScreenList(ScreenList* screens) OVERRIDE;
   virtual bool SelectScreen(ScreenId id) OVERRIDE;
   virtual void SetExcludedWindow(WindowId window) OVERRIDE;
