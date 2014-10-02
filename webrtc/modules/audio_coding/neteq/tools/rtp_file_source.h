@@ -26,6 +26,8 @@ class RtpHeaderParser;
 
 namespace test {
 
+class RtpFileReader;
+
 class RtpFileSource : public PacketSource {
  public:
   // Creates an RtpFileSource reading from |file_name|. If the file cannot be
@@ -39,10 +41,7 @@ class RtpFileSource : public PacketSource {
 
   // Returns a pointer to the next packet. Returns NULL if end of file was
   // reached, or if a the data was corrupt.
-  virtual Packet* NextPacket();
-
-  // Returns true if the end of file has been reached.
-  virtual bool EndOfFile() const;
+  virtual Packet* NextPacket() OVERRIDE;
 
  private:
   static const int kFirstLineLength = 40;
@@ -53,10 +52,7 @@ class RtpFileSource : public PacketSource {
 
   bool OpenFile(const std::string& file_name);
 
-  bool SkipFileHeader();
-
-  FILE* in_file_;
-  int64_t file_end_;
+  scoped_ptr<RtpFileReader> rtp_reader_;
   scoped_ptr<RtpHeaderParser> parser_;
 
   DISALLOW_COPY_AND_ASSIGN(RtpFileSource);

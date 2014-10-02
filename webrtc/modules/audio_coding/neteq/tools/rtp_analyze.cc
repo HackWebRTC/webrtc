@@ -91,13 +91,12 @@ int main(int argc, char* argv[]) {
   fprintf(out_file, "\n");
 
   webrtc::scoped_ptr<webrtc::test::Packet> packet;
-  while (!file_source->EndOfFile()) {
+  while (true) {
     packet.reset(file_source->NextPacket());
     if (!packet.get()) {
-      // This is probably an RTCP packet. Move on to the next one.
-      continue;
+      // End of file reached.
+      break;
     }
-    assert(packet.get());
     // Write packet data to file.
     fprintf(out_file,
             "%5u %10u %10u %5i %5i %2i %#08X",

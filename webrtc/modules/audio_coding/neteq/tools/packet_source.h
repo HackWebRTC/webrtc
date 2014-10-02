@@ -24,7 +24,7 @@ class Packet;
 // Interface class for an object delivering RTP packets to test applications.
 class PacketSource {
  public:
-  PacketSource() {}
+  PacketSource() : use_ssrc_filter_(false), ssrc_(0) {}
   virtual ~PacketSource() {}
 
   // Returns a pointer to the next packet. Returns NULL if the source is
@@ -35,8 +35,16 @@ class PacketSource {
     filter_.set(payload_type, true);
   }
 
+  virtual void SelectSsrc(uint32_t ssrc) {
+    use_ssrc_filter_ = true;
+    ssrc_ = ssrc;
+  }
+
  protected:
   std::bitset<128> filter_;  // Payload type is 7 bits in the RFC.
+  // If SSRC filtering discards all packet that do not match the SSRC.
+  bool use_ssrc_filter_;  // True when SSRC filtering is active.
+  uint32_t ssrc_;  // The selected SSRC. All other SSRCs will be discarded.
 
  private:
   DISALLOW_COPY_AND_ASSIGN(PacketSource);

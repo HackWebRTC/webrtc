@@ -170,6 +170,7 @@
           'type': 'static_library',
           'dependencies': [
             'rtp_rtcp',
+            '<(webrtc_root)/test/webrtc_test_common.gyp:webrtc_test_common',
           ],
           'direct_dependent_settings': {
             'include_dirs': [

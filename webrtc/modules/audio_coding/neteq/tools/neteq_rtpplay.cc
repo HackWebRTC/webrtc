@@ -172,12 +172,12 @@ int main(int argc, char* argv[]) {
   RegisterPayloadTypes(neteq);
 
   // Read first packet.
-  if (file_source->EndOfFile()) {
+  webrtc::scoped_ptr<webrtc::test::Packet> packet(file_source->NextPacket());
+  if (!packet) {
     printf("Warning: RTP file is empty");
     webrtc::Trace::ReturnTrace();
     return 0;
   }
-  webrtc::scoped_ptr<webrtc::test::Packet> packet(file_source->NextPacket());
   bool packet_available = true;
 
   // Set up variables for audio replacement if needed.
@@ -195,8 +195,8 @@ int main(int argc, char* argv[]) {
     replacement_audio.reset(new int16_t[input_frame_size_timestamps]);
     payload_mem_size_bytes = 2 * input_frame_size_timestamps;
     payload.reset(new uint8_t[payload_mem_size_bytes]);
-    assert(!file_source->EndOfFile());
     next_packet.reset(file_source->NextPacket());
+    assert(next_packet);
     next_packet_available = true;
   }
 
@@ -241,8 +241,9 @@ int main(int argc, char* argv[]) {
       }
 
       // Get next packet from file.
-      if (!file_source->EndOfFile()) {
-        packet.reset(file_source->NextPacket());
+      webrtc::test::Packet* temp_packet = file_source->NextPacket();
+      if (temp_packet) {
+        packet.reset(temp_packet);
       } else {
         packet_available = false;
       }
