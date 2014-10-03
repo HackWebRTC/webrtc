@@ -451,16 +451,11 @@ TEST_F(CallPerfTest, CaptureNtpTimeWithNetworkJitter) {
 
 TEST_F(CallPerfTest, RegisterCpuOveruseObserver) {
   // Verifies that either a normal or overuse callback is triggered.
-  class OveruseCallbackObserver : public test::SendTest,
-                                  public webrtc::OveruseCallback {
+  class LoadObserver : public test::SendTest, public webrtc::LoadObserver {
    public:
-    OveruseCallbackObserver() : SendTest(kLongTimeoutMs) {}
+    LoadObserver() : SendTest(kLongTimeoutMs) {}
 
-    virtual void OnOveruse() OVERRIDE {
-      observation_complete_->Set();
-    }
-
-    virtual void OnNormalUse() OVERRIDE {
+    virtual void OnLoadUpdate(Load load) OVERRIDE {
       observation_complete_->Set();
     }
 

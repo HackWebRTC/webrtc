@@ -39,16 +39,16 @@ class PacketReceiver {
 };
 
 // Callback interface for reporting when a system overuse is detected.
-// The detection is based on the jitter of incoming captured frames.
-class OveruseCallback {
+class LoadObserver {
  public:
-  // Called as soon as an overuse is detected.
-  virtual void OnOveruse() = 0;
-  // Called periodically when the system is not overused any longer.
-  virtual void OnNormalUse() = 0;
+  enum Load { kOveruse, kUnderuse };
+
+  // Triggered when overuse is detected or when we believe the system can take
+  // more load.
+  virtual void OnLoadUpdate(Load load) = 0;
 
  protected:
-  virtual ~OveruseCallback() {}
+  virtual ~LoadObserver() {}
 };
 
 // A Call instance can contain several send and/or receive streams. All streams
@@ -77,7 +77,7 @@ class Call {
 
     // Callback for overuse and normal usage based on the jitter of incoming
     // captured frames. 'NULL' disables the callback.
-    OveruseCallback* overuse_callback;
+    LoadObserver* overuse_callback;
 
     // Start bitrate used before a valid bitrate estimate is calculated. '-1'
     // lets the call decide start bitrate.

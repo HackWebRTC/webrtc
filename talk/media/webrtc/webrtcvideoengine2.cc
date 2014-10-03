@@ -261,6 +261,13 @@ UnsignalledSsrcHandler::Action DefaultUnsignalledSsrcHandler::OnUnsignalledSsrc(
   return kDeliverPacket;
 }
 
+WebRtcCallFactory::~WebRtcCallFactory() {
+}
+webrtc::Call* WebRtcCallFactory::CreateCall(
+    const webrtc::Call::Config& config) {
+  return webrtc::Call::Create(config);
+}
+
 VideoRenderer* DefaultUnsignalledSsrcHandler::GetDefaultRenderer() const {
   return default_renderer_;
 }
@@ -284,7 +291,7 @@ WebRtcVideoEngine2::WebRtcVideoEngine2()
                             FOURCC_ANY),
       initialized_(false),
       cpu_monitor_(new rtc::CpuMonitor(NULL)),
-      channel_factory_(NULL),
+      call_factory_(&default_call_factory_),
       external_decoder_factory_(NULL),
       external_encoder_factory_(NULL) {
   LOG(LS_INFO) << "WebRtcVideoEngine2::WebRtcVideoEngine2()";
@@ -296,17 +303,16 @@ WebRtcVideoEngine2::WebRtcVideoEngine2()
                          kRtpAbsoluteSenderTimeHeaderExtensionDefaultId));
 }
 
-void WebRtcVideoEngine2::SetChannelFactory(
-    WebRtcVideoChannelFactory* channel_factory) {
-  channel_factory_ = channel_factory;
-}
-
 WebRtcVideoEngine2::~WebRtcVideoEngine2() {
   LOG(LS_INFO) << "WebRtcVideoEngine2::~WebRtcVideoEngine2";
 
   if (initialized_) {
     Terminate();
   }
+}
+
+void WebRtcVideoEngine2::SetCallFactory(WebRtcCallFactory* call_factory) {
+  call_factory_ = call_factory;
 }
 
 bool WebRtcVideoEngine2::Init(rtc::Thread* worker_thread) {
@@ -363,11 +369,8 @@ WebRtcVideoChannel2* WebRtcVideoEngine2::CreateChannel(
   LOG(LS_INFO) << "CreateChannel: "
                << (voice_channel != NULL ? "With" : "Without")
                << " voice channel.";
-  WebRtcVideoChannel2* channel =
-      channel_factory_ != NULL
-          ? channel_factory_->Create(this, voice_channel)
-          : new WebRtcVideoChannel2(
-                this, voice_channel, GetVideoEncoderFactory());
+  WebRtcVideoChannel2* channel = new WebRtcVideoChannel2(
+      call_factory_, voice_channel, GetVideoEncoderFactory());
   if (!channel->Init()) {
     delete channel;
     return NULL;
@@ -668,39 +671,28 @@ class WebRtcVideoRenderFrame : public VideoFrame {
 };
 
 WebRtcVideoChannel2::WebRtcVideoChannel2(
-    WebRtcVideoEngine2* engine,
+    WebRtcCallFactory* call_factory,
     VoiceMediaChannel* voice_channel,
     WebRtcVideoEncoderFactory2* encoder_factory)
     : unsignalled_ssrc_handler_(&default_unsignalled_ssrc_handler_),
       encoder_factory_(encoder_factory) {
   // TODO(pbos): Connect the video and audio with |voice_channel|.
   webrtc::Call::Config config(this);
-  Construct(webrtc::Call::Create(config), engine);
-}
+  config.overuse_callback = this;
+  call_.reset(call_factory->CreateCall(config));
 
-WebRtcVideoChannel2::WebRtcVideoChannel2(
-    webrtc::Call* call,
-    WebRtcVideoEngine2* engine,
-    WebRtcVideoEncoderFactory2* encoder_factory)
-    : unsignalled_ssrc_handler_(&default_unsignalled_ssrc_handler_),
-      encoder_factory_(encoder_factory) {
-  Construct(call, engine);
-}
-
-void WebRtcVideoChannel2::Construct(webrtc::Call* call,
-                                    WebRtcVideoEngine2* engine) {
   rtcp_receiver_report_ssrc_ = kDefaultRtcpReceiverReportSsrc;
   sending_ = false;
-  call_.reset(call);
   default_send_ssrc_ = 0;
 
   SetDefaultOptions();
 }
 
 void WebRtcVideoChannel2::SetDefaultOptions() {
-  options_.video_noise_reduction.Set(true);
-  options_.use_payload_padding.Set(false);
+  options_.cpu_overuse_detection.Set(false);
   options_.suspend_below_min_bitrate.Set(false);
+  options_.use_payload_padding.Set(false);
+  options_.video_noise_reduction.Set(true);
 }
 
 WebRtcVideoChannel2::~WebRtcVideoChannel2() {
@@ -1265,6 +1257,17 @@ void WebRtcVideoChannel2::OnMessage(rtc::Message* msg) {
   // Ignored.
 }
 
+void WebRtcVideoChannel2::OnLoadUpdate(Load load) {
+  for (std::map<uint32, WebRtcVideoSendStream*>::iterator it =
+           send_streams_.begin();
+       it != send_streams_.end();
+       ++it) {
+    it->second->OnCpuResolutionRequest(load == kOveruse
+                                           ? CoordinatedVideoAdapter::DOWNGRADE
+                                           : CoordinatedVideoAdapter::UPGRADE);
+  }
+}
+
 bool WebRtcVideoChannel2::SendRtp(const uint8_t* data, size_t len) {
   rtc::Buffer packet(data, len, kMaxRtpPacketLen);
   return MediaChannel::SendPacket(&packet);
@@ -1676,6 +1679,21 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
   info.rtt_ms = -1;
 
   return info;
+}
+
+void WebRtcVideoChannel2::WebRtcVideoSendStream::OnCpuResolutionRequest(
+    CoordinatedVideoAdapter::AdaptRequest adapt_request) {
+  rtc::CritScope cs(&lock_);
+  bool adapt_cpu;
+  parameters_.options.cpu_overuse_detection.Get(&adapt_cpu);
+  if (!adapt_cpu) {
+    return;
+  }
+  if (capturer_ == NULL || capturer_->video_adapter() == NULL) {
+    return;
+  }
+
+  capturer_->video_adapter()->OnCpuResolutionRequest(adapt_request);
 }
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::RecreateWebRtcStream() {

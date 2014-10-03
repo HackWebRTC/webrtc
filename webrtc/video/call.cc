@@ -55,7 +55,7 @@ namespace internal {
 
 class CpuOveruseObserverProxy : public webrtc::CpuOveruseObserver {
  public:
-  explicit CpuOveruseObserverProxy(OveruseCallback* overuse_callback)
+  explicit CpuOveruseObserverProxy(LoadObserver* overuse_callback)
       : crit_(CriticalSectionWrapper::CreateCriticalSection()),
         overuse_callback_(overuse_callback) {
     assert(overuse_callback != NULL);
@@ -65,17 +65,17 @@ class CpuOveruseObserverProxy : public webrtc::CpuOveruseObserver {
 
   virtual void OveruseDetected() OVERRIDE {
     CriticalSectionScoped lock(crit_.get());
-    overuse_callback_->OnOveruse();
+    overuse_callback_->OnLoadUpdate(LoadObserver::kOveruse);
   }
 
   virtual void NormalUsage() OVERRIDE {
     CriticalSectionScoped lock(crit_.get());
-    overuse_callback_->OnNormalUse();
+    overuse_callback_->OnLoadUpdate(LoadObserver::kUnderuse);
   }
 
  private:
   const scoped_ptr<CriticalSectionWrapper> crit_;
-  OveruseCallback* overuse_callback_ GUARDED_BY(crit_);
+  LoadObserver* overuse_callback_ GUARDED_BY(crit_);
 };
 
 class Call : public webrtc::Call, public PacketReceiver {

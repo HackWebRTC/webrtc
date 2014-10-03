@@ -39,6 +39,7 @@
 #include "webrtc/base/cpumonitor.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
+#include "webrtc/call.h"
 #include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/transport.h"
 #include "webrtc/video_receive_stream.h"
@@ -46,7 +47,6 @@
 #include "webrtc/video_send_stream.h"
 
 namespace webrtc {
-class Call;
 class VideoCaptureModule;
 class VideoDecoder;
 class VideoEncoder;
@@ -79,7 +79,6 @@ class WebRtcVoiceEngine;
 struct CapturedFrame;
 struct Device;
 
-class WebRtcVideoEngine2;
 class WebRtcVideoChannel2;
 class WebRtcVideoRenderer;
 
@@ -129,6 +128,14 @@ class WebRtcVideoEncoderFactory2 {
   virtual bool SupportsCodec(const cricket::VideoCodec& codec);
 };
 
+// CallFactory, overridden for testing to verify that webrtc::Call is configured
+// properly.
+class WebRtcCallFactory {
+ public:
+  virtual ~WebRtcCallFactory();
+  virtual webrtc::Call* CreateCall(const webrtc::Call::Config& config);
+};
+
 // WebRtcVideoEngine2 is used for the new native WebRTC Video API (webrtc:1667).
 class WebRtcVideoEngine2 : public sigslot::has_slots<>,
                            public WebRtcVideoEncoderFactory::Observer {
@@ -137,8 +144,8 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<>,
   WebRtcVideoEngine2();
   virtual ~WebRtcVideoEngine2();
 
-  // Use a custom WebRtcVideoChannelFactory (for testing purposes).
-  void SetChannelFactory(WebRtcVideoChannelFactory* channel_factory);
+  // Used for testing to be able to check and use the webrtc::Call config.
+  void SetCallFactory(WebRtcCallFactory* call_factory);
 
   // Basic video engine implementation.
   bool Init(rtc::Thread* worker_thread);
@@ -195,13 +202,11 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<>,
 
   bool initialized_;
 
-  // Critical section to protect the media processor register/unregister
-  // while processing a frame
-  rtc::CriticalSection signal_media_critical_;
-
   rtc::scoped_ptr<rtc::CpuMonitor> cpu_monitor_;
-  WebRtcVideoChannelFactory* channel_factory_;
   WebRtcVideoEncoderFactory2 default_video_encoder_factory_;
+
+  WebRtcCallFactory default_call_factory_;
+  WebRtcCallFactory* call_factory_;
 
   WebRtcVideoDecoderFactory* external_decoder_factory_;
   WebRtcVideoEncoderFactory* external_encoder_factory_;
@@ -209,15 +214,11 @@ class WebRtcVideoEngine2 : public sigslot::has_slots<>,
 
 class WebRtcVideoChannel2 : public rtc::MessageHandler,
                             public VideoMediaChannel,
-                            public webrtc::newapi::Transport {
+                            public webrtc::newapi::Transport,
+                            public webrtc::LoadObserver {
  public:
-  WebRtcVideoChannel2(WebRtcVideoEngine2* engine,
+  WebRtcVideoChannel2(WebRtcCallFactory* call_factory,
                       VoiceMediaChannel* voice_channel,
-                      WebRtcVideoEncoderFactory2* encoder_factory);
-  // For testing purposes insert a pre-constructed call to verify that
-  // WebRtcVideoChannel2 calls the correct corresponding methods.
-  WebRtcVideoChannel2(webrtc::Call* call,
-                      WebRtcVideoEngine2* engine,
                       WebRtcVideoEncoderFactory2* encoder_factory);
   ~WebRtcVideoChannel2();
   bool Init();
@@ -269,6 +270,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
 
   virtual void OnMessage(rtc::Message* msg) OVERRIDE;
 
+  virtual void OnLoadUpdate(Load load) OVERRIDE;
+
   // Implemented for VideoMediaChannelTest.
   bool sending() const { return sending_; }
   uint32 GetDefaultSendChannelSsrc() { return default_send_ssrc_; }
@@ -314,6 +317,9 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
     void Stop();
 
     VideoSenderInfo GetVideoSenderInfo();
+
+    void OnCpuResolutionRequest(
+        CoordinatedVideoAdapter::AdaptRequest adapt_request);
 
    private:
     // Parameters needed to reconstruct the underlying stream.
@@ -416,6 +422,8 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   uint32_t rtcp_receiver_report_ssrc_;
   bool sending_;
   rtc::scoped_ptr<webrtc::Call> call_;
+  WebRtcCallFactory* call_factory_;
+
   uint32_t default_send_ssrc_;
 
   DefaultUnsignalledSsrcHandler default_unsignalled_ssrc_handler_;
