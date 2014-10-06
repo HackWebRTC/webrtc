@@ -333,7 +333,8 @@ class MediaCodecVideoDecoder {
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT, properties.colorFormat);
       }
       Log.d(TAG, "  Format: " + format);
-      mediaCodec = MediaCodec.createByCodecName(properties.codecName);
+      mediaCodec =
+          MediaCodecVideoEncoder.createByCodecName(properties.codecName);
       if (mediaCodec == null) {
         return false;
       }

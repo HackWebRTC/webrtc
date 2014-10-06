@@ -152,6 +152,16 @@ class MediaCodecVideoEncoder {
     }
   }
 
+  static MediaCodec createByCodecName(String codecName) {
+    try {
+      // In the L-SDK this call can throw IOException so in order to work in
+      // both cases catch an exception.
+      return MediaCodec.createByCodecName(codecName);
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
   // Return the array of input buffers, or null on failure.
   private ByteBuffer[] initEncode(int width, int height, int kbps, int fps) {
     Log.d(TAG, "Java initEncode: " + width + " x " + height +
@@ -175,7 +185,7 @@ class MediaCodecVideoEncoder {
       format.setInteger(MediaFormat.KEY_FRAME_RATE, fps);
       format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 100);
       Log.d(TAG, "  Format: " + format);
-      mediaCodec = MediaCodec.createByCodecName(properties.codecName);
+      mediaCodec = createByCodecName(properties.codecName);
       if (mediaCodec == null) {
         return null;
       }
