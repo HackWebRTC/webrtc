@@ -23,6 +23,25 @@
       ],
     }],
   ],
+  'variables': {
+    'openssl_sources': [
+      'openssl.h',
+      'openssladapter.cc',
+      'openssladapter.h',
+      'openssldigest.cc',
+      'openssldigest.h',
+      'opensslidentity.cc',
+      'opensslidentity.h',
+      'opensslstreamadapter.cc',
+      'opensslstreamadapter.h',
+    ],
+    'nss_sources': [
+      'nssidentity.cc',
+      'nssidentity.h',
+      'nssstreamadapter.cc',
+      'nssstreamadapter.h',
+    ],
+  },
   'targets': [
     {
       # Temporary target until Chromium's
@@ -482,48 +501,52 @@
             '../overrides/webrtc/base/logging.h',
           ],
         }],
-        ['use_openssl==1', {
-          'defines': [
-            'SSL_USE_OPENSSL',
-            'HAVE_OPENSSL_SSL_H',
-          ],
-          'direct_dependent_settings': {
-            'defines': [
-              'SSL_USE_OPENSSL',
-              'HAVE_OPENSSL_SSL_H',
-            ],
-          },
+        ['use_legacy_ssl_defaults==1', {
+          # SSL backend is set via sslconfig.h. Pull in both NSS and OpenSSL
+          # support code. The appropriate set is configured via preprocessor
+          # defines.
           'sources': [
-            'openssl.h',
-            'openssladapter.cc',
-            'openssladapter.h',
-            'openssldigest.cc',
-            'openssldigest.h',
-            'opensslidentity.cc',
-            'opensslidentity.h',
-            'opensslstreamadapter.cc',
-            'opensslstreamadapter.h',
+            '<@(openssl_sources)',
+            '<@(nss_sources)',
           ],
           'conditions': [
-            ['build_ssl==1', {
-              'dependencies': [
-                '<(DEPTH)/third_party/boringssl/boringssl.gyp:boringssl',
-              ],
-            }, {
+            ['build_ssl!=1', {
               'include_dirs': [
                 '<(ssl_root)',
               ],
             }],
           ],
         }, {
-          'sources': [
-            'nssidentity.cc',
-            'nssidentity.h',
-            'nssstreamadapter.cc',
-            'nssstreamadapter.h',
-          ],
           'conditions': [
-            ['use_legacy_ssl_defaults!=1', {
+            ['use_openssl==1', {
+              # Configure for OpenSSL/BoringSSL.
+              'defines': [
+                'SSL_USE_OPENSSL',
+                'HAVE_OPENSSL_SSL_H',
+              ],
+              'direct_dependent_settings': {
+                'defines': [
+                  'SSL_USE_OPENSSL',
+                  'HAVE_OPENSSL_SSL_H',
+                ],
+              },
+              'sources': [
+                '<@(openssl_sources)',
+              ],
+              'conditions': [
+                # Pull in the external or bundled OpenSSL as appropriate.
+                ['build_ssl==1', {
+                  'dependencies': [
+                    '<(DEPTH)/third_party/boringssl/boringssl.gyp:boringssl',
+                  ],
+                }, {
+                  'include_dirs': [
+                    '<(ssl_root)',
+                  ],
+                }],
+              ],
+            }, {
+              # Configure for NSS.
               'defines': [
                 'SSL_USE_NSS',
                 'HAVE_NSS_SSL_H',
@@ -536,14 +559,28 @@
                   'SSL_USE_NSS_RNG',
                 ],
               },
-            }],
-            ['OS=="mac" or OS=="ios" or OS=="win"', {
+              'sources': [
+                '<@(nss_sources)',
+              ],
               'conditions': [
+                # Pull in the external or bundled NSS as appropriate.
                 ['build_ssl==1', {
                   'dependencies': [
                     '<(DEPTH)/net/third_party/nss/ssl.gyp:libssl',
-                    '<(DEPTH)/third_party/nss/nss.gyp:nspr',
-                    '<(DEPTH)/third_party/nss/nss.gyp:nss',
+                  ],
+                  'conditions': [
+                    # On some platforms, the rest of NSS is bundled. On others,
+                    # it's pulled from the system.
+                    ['OS == "mac" or OS == "ios" or OS == "win"', {
+                      'dependencies': [
+                        '<(DEPTH)/third_party/nss/nss.gyp:nspr',
+                        '<(DEPTH)/third_party/nss/nss.gyp:nss',
+                      ],
+                    }, {
+                      'dependencies': [
+                        '<(DEPTH)/build/linux/system.gyp:ssl',
+                      ],
+                    }],
                   ],
                 }, {
                   'include_dirs': [
@@ -555,14 +592,6 @@
           ],
         }],
         ['OS == "android"', {
-          'defines': [
-            'HAVE_OPENSSL_SSL_H'
-          ],
-          'direct_dependent_settings': {
-            'defines': [
-              'HAVE_OPENSSL_SSL_H'
-            ],
-          },
           'link_settings': {
             'libraries': [
               '-llog',
@@ -570,20 +599,6 @@
             ],
           },
         }, {
-          'conditions': [
-            ['use_legacy_ssl_defaults!=1', {
-              'defines': [
-                'HAVE_NSS_SSL_H',
-                'SSL_USE_NSS_RNG',
-              ],
-              'direct_dependent_settings': {
-                'defines': [
-                  'HAVE_NSS_SSL_H',
-                  'SSL_USE_NSS_RNG',
-                ],
-              },
-            }],
-          ],
           'sources!': [
             'ifaddrs-android.cc',
             'ifaddrs-android.h',
@@ -625,21 +640,6 @@
               '-lrt',
             ],
           },
-          'conditions': [
-            ['build_ssl==1', {
-              'link_settings': {
-                'libraries': [
-                  '<!@(<(pkg-config) --libs-only-l nss | sed -e "s/-lssl3//")',
-                ],
-              },
-              'cflags': [
-                '<!@(<(pkg-config) --cflags nss)',
-              ],
-              'ldflags': [
-                '<!@(<(pkg-config) --libs-only-L --libs-only-other nss)',
-              ],
-            }],
-          ],
         }, {
           'sources!': [
             'dbus.cc',
@@ -753,19 +753,6 @@
           'sources!': [
             'linux.cc',
             'linux.h',
-          ],
-        }],
-        ['os_posix == 1 and OS != "mac" and OS != "ios" and OS != "android"', {
-          'conditions': [
-            ['build_ssl==1', {
-              'dependencies': [
-                '<(DEPTH)/build/linux/system.gyp:ssl',
-              ],
-            }, {
-              'include_dirs': [
-                '<(ssl_root)',
-              ],
-            }],
           ],
         }],
       ],
