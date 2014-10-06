@@ -121,9 +121,19 @@ StatisticsReport.prototype = {
   },
 
   finish: function (doneCallback) {
-    fs.writeFile("test/reports/" + this.outputFileName_ + "_" +
+    fs.exists("test/reports/", function (exists) {
+      if(exists) {
+        writeFile.bind(this)();
+      } else {
+        fs.mkdir("test/reports/", 0777, writeFile.bind(this));
+      }
+    }.bind(this));
+
+    function writeFile () {
+      fs.writeFile("test/reports/" + this.outputFileName_ + "_" +
         (new Date()).getTime() +".json", JSON.stringify(this.output_),
         doneCallback);
+    }
   },
 }
 
