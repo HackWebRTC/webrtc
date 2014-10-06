@@ -240,7 +240,7 @@ class XmlElementCreatorThread : public rtc::Thread {
 
 // If XmlElement creation and destruction isn't thread safe,
 // this test should crash.
-TEST(XmlElementTest, DISABLED_ON_MAC(TestMultithread)) {
+TEST(XmlElementTest, TestMultithread) {
   int thread_count = 2;  // Was 100, but that's too slow.
   int elem_count = 100;  // Was 100000, but that's too slow.
   buzz::QName qname("foo", "bar");

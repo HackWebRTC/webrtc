@@ -204,6 +204,16 @@
       }, {
         'conditions': [
           ['os_posix==1', {
+	    'configurations': {
+              'Debug_Base': {
+                'defines': [
+                  # Chromium's build/common.gypi defines this for all posix
+                  # _except_ for ios & mac.  We want it there as well, e.g.
+                  # because ASSERT and friends trigger off of it.
+                  '_DEBUG',
+                ],
+              },
+            },
             'conditions': [
               # -Wextra is currently disabled in Chromium's common.gypi. Enable
               # for targets that can handle it. For Android/arm64 right now
