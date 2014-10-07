@@ -1075,37 +1075,33 @@ std::string MediaTypeToString(MediaType type) {
   return type_str;
 }
 
-void MediaSessionOptions::AddStream(MediaType type,
+void MediaSessionOptions::AddSendStream(MediaType type,
                                     const std::string& id,
                                     const std::string& sync_label) {
-  AddStreamInternal(type, id, sync_label, 1);
+  AddSendStreamInternal(type, id, sync_label, 1);
 }
 
-void MediaSessionOptions::AddVideoStream(
+void MediaSessionOptions::AddSendVideoStream(
     const std::string& id,
     const std::string& sync_label,
     int num_sim_layers) {
-  AddStreamInternal(MEDIA_TYPE_VIDEO, id, sync_label, num_sim_layers);
+  AddSendStreamInternal(MEDIA_TYPE_VIDEO, id, sync_label, num_sim_layers);
 }
 
-void MediaSessionOptions::AddStreamInternal(
+void MediaSessionOptions::AddSendStreamInternal(
     MediaType type,
     const std::string& id,
     const std::string& sync_label,
     int num_sim_layers) {
   streams.push_back(Stream(type, id, sync_label, num_sim_layers));
 
-  if (type == MEDIA_TYPE_VIDEO)
-    has_video = true;
-  else if (type == MEDIA_TYPE_AUDIO)
-    has_audio = true;
   // If we haven't already set the data_channel_type, and we add a
   // stream, we assume it's an RTP data stream.
-  else if (type == MEDIA_TYPE_DATA && data_channel_type == DCT_NONE)
+  if (type == MEDIA_TYPE_DATA && data_channel_type == DCT_NONE)
     data_channel_type = DCT_RTP;
 }
 
-void MediaSessionOptions::RemoveStream(MediaType type,
+void MediaSessionOptions::RemoveSendStream(MediaType type,
                                        const std::string& id) {
   Streams::iterator stream_it = streams.begin();
   for (; stream_it != streams.end(); ++stream_it) {
@@ -1115,6 +1111,16 @@ void MediaSessionOptions::RemoveStream(MediaType type,
     }
   }
   ASSERT(false);
+}
+
+bool MediaSessionOptions::HasSendMediaStream(MediaType type) const {
+  Streams::const_iterator stream_it = streams.begin();
+  for (; stream_it != streams.end(); ++stream_it) {
+    if (stream_it->type == type) {
+      return true;
+    }
+  }
+  return false;
 }
 
 MediaSessionDescriptionFactory::MediaSessionDescriptionFactory(
@@ -1195,14 +1201,15 @@ SessionDescription* MediaSessionDescriptionFactory::CreateOffer(
       }
     }
   }
+
   // Append contents that are not in |current_description|.
-  if (!audio_added && options.has_audio &&
+  if (!audio_added && options.has_audio() &&
       !AddAudioContentForOffer(options, current_description,
                                audio_rtp_extensions, audio_codecs,
                                &current_streams, offer.get())) {
     return NULL;
   }
-  if (!video_added && options.has_video &&
+  if (!video_added && options.has_video() &&
       !AddVideoContentForOffer(options, current_description,
                                video_rtp_extensions, video_codecs,
                                &current_streams, offer.get())) {
@@ -1460,6 +1467,10 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
   bool secure_transport = (transport_desc_factory_->secure() != SEC_DISABLED);
   SetMediaProtocol(secure_transport, audio.get());
 
+  if (!options.recv_audio) {
+    audio->set_direction(MD_SENDONLY);
+  }
+
   desc->AddContent(CN_AUDIO, NS_JINGLE_RTP, audio.release());
   if (!AddTransportOffer(CN_AUDIO, options.transport_options,
                          current_description, desc)) {
@@ -1500,6 +1511,11 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
 
   bool secure_transport = (transport_desc_factory_->secure() != SEC_DISABLED);
   SetMediaProtocol(secure_transport, video.get());
+
+  if (!options.recv_video) {
+    video->set_direction(MD_SENDONLY);
+  }
+
   desc->AddContent(CN_VIDEO, NS_JINGLE_RTP, video.release());
   if (!AddTransportOffer(CN_VIDEO, options.transport_options,
                          current_description, desc)) {
@@ -1610,7 +1626,7 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
     return false;  // Fails the session setup.
   }
 
-  bool rejected = !options.has_audio || audio_content->rejected ||
+  bool rejected = !options.has_audio() || audio_content->rejected ||
       !IsMediaProtocolSupported(MEDIA_TYPE_AUDIO,
                                 audio_answer->protocol(),
                                 audio_transport->secure());
@@ -1663,7 +1679,7 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
           video_answer.get())) {
     return false;
   }
-  bool rejected = !options.has_video || video_content->rejected ||
+  bool rejected = !options.has_video() || video_content->rejected ||
       !IsMediaProtocolSupported(MEDIA_TYPE_VIDEO,
                                 video_answer->protocol(),
                                 video_transport->secure());

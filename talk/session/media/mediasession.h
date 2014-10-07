@@ -93,8 +93,8 @@ const int kBufferedModeDisabled = 0;
 
 struct MediaSessionOptions {
   MediaSessionOptions() :
-      has_audio(true),  // Audio enabled by default.
-      has_video(false),
+      recv_audio(true),
+      recv_video(false),
       data_channel_type(DCT_NONE),
       is_muc(false),
       vad_enabled(true),  // When disabled, removes all CN codecs from SDP.
@@ -104,28 +104,36 @@ struct MediaSessionOptions {
       data_bandwidth(kDataMaxBandwidth) {
   }
 
+  bool has_audio() const {
+    return recv_audio || HasSendMediaStream(MEDIA_TYPE_AUDIO);
+  }
+  bool has_video() const {
+    return recv_video || HasSendMediaStream(MEDIA_TYPE_VIDEO);
+  }
   bool has_data() const { return data_channel_type != DCT_NONE; }
 
   // Add a stream with MediaType type and id.
   // All streams with the same sync_label will get the same CNAME.
   // All ids must be unique.
-  void AddStream(MediaType type,
+  void AddSendStream(MediaType type,
                  const std::string& id,
                  const std::string& sync_label);
-  void AddVideoStream(const std::string& id,
+  void AddSendVideoStream(const std::string& id,
                       const std::string& sync_label,
                       int num_sim_layers);
-  void RemoveStream(MediaType type, const std::string& id);
+  void RemoveSendStream(MediaType type, const std::string& id);
 
 
   // Helper function.
-  void AddStreamInternal(MediaType type,
+  void AddSendStreamInternal(MediaType type,
                          const std::string& id,
                          const std::string& sync_label,
                          int num_sim_layers);
 
-  bool has_audio;
-  bool has_video;
+  bool HasSendMediaStream(MediaType type) const;
+
+  bool recv_audio;
+  bool recv_video;
   DataChannelType data_channel_type;
   bool is_muc;
   bool vad_enabled;

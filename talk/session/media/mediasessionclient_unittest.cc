@@ -1088,8 +1088,8 @@ std::string JingleStreamRemove(const std::string& content_name,
 // but not video or data.
 static cricket::CallOptions AudioCallOptions() {
   cricket::CallOptions options;
-  options.has_audio = true;
-  options.has_video = false;
+  options.recv_audio = true;
+  options.recv_video = false;
   options.data_channel_type = cricket::DCT_NONE;
   return options;
 }
@@ -1098,8 +1098,8 @@ static cricket::CallOptions AudioCallOptions() {
 // enabled, but not data.
 static cricket::CallOptions VideoCallOptions() {
   cricket::CallOptions options;
-  options.has_audio = true;
-  options.has_video = true;
+  options.recv_audio = true;
+  options.recv_video = true;
   options.data_channel_type = cricket::DCT_NONE;
   return options;
 }
@@ -1811,13 +1811,13 @@ class MediaSessionClientTest : public sigslot::has_slots<> {
     // The NextContent method actually returns the second content. So we
     // can't handle the case when audio, video and data are all enabled. But
     // since we are testing rejection, it won't be the case.
-    if (options.has_audio) {
+    if (options.has_audio()) {
       ASSERT_TRUE(content != NULL);
       ASSERT_EQ("test audio", content->Attr(buzz::QName("", "name")));
       content = parser_->NextContent(content);
     }
 
-    if (options.has_video) {
+    if (options.has_video()) {
       ASSERT_TRUE(content != NULL);
       ASSERT_EQ("test video", content->Attr(buzz::QName("", "name")));
       content = parser_->NextContent(content);
@@ -2022,7 +2022,7 @@ class MediaSessionClientTest : public sigslot::has_slots<> {
       ASSERT_TRUE(encryption == NULL);
     }
 
-    if (options.has_video) {
+    if (options.has_video()) {
       CheckVideoBandwidth(options.video_bandwidth,
                           call_->sessions()[0]->local_description());
       CheckVideoRtcpMux(expected_video_rtcp_mux_,
@@ -2826,7 +2826,7 @@ TEST_F(MediaSessionTest, JingleRejectAudio) {
   rtc::scoped_ptr<MediaSessionClientTest> test(JingleTest());
   rtc::scoped_ptr<buzz::XmlElement> elem;
   cricket::CallOptions options = VideoCallOptions();
-  options.has_audio = false;
+  options.recv_audio = false;
   options.data_channel_type = cricket::DCT_RTP;
   test->TestRejectOffer(kJingleVideoInitiateWithRtpData, options, elem.use());
 }

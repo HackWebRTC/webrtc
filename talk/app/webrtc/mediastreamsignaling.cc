@@ -57,32 +57,20 @@ static bool ParseConstraintsForAnswer(
   bool value;
   size_t mandatory_constraints_satisfied = 0;
 
-  if (FindConstraint(constraints,
-                     MediaConstraintsInterface::kOfferToReceiveAudio,
-                     &value, &mandatory_constraints_satisfied)) {
-    // |options-|has_audio| can only change from false to
-    // true, but never change from true to false. This is to make sure
-    // CreateOffer / CreateAnswer doesn't remove a media content
-    // description that has been created.
-    options->has_audio |= value;
-  } else {
-    // kOfferToReceiveAudio defaults to true according to spec.
-    options->has_audio = true;
+  // kOfferToReceiveAudio defaults to true according to spec.
+  if (!FindConstraint(constraints,
+                      MediaConstraintsInterface::kOfferToReceiveAudio,
+                      &value, &mandatory_constraints_satisfied) || value) {
+    options->recv_audio = true;
   }
 
-  if (FindConstraint(constraints,
-                     MediaConstraintsInterface::kOfferToReceiveVideo,
-                     &value, &mandatory_constraints_satisfied)) {
-    // |options->has_video| can only change from false to
-    // true, but never change from true to false. This is to make sure
-    // CreateOffer / CreateAnswer doesn't remove a media content
-    // description that has been created.
-    options->has_video |= value;
-  } else {
-    // kOfferToReceiveVideo defaults to false according to spec. But
-    // if it is an answer and video is offered, we should still accept video
-    // per default.
-    options->has_video = true;
+  // kOfferToReceiveVideo defaults to false according to spec. But
+  // if it is an answer and video is offered, we should still accept video
+  // per default.
+  if (!FindConstraint(constraints,
+                      MediaConstraintsInterface::kOfferToReceiveVideo,
+                      &value, &mandatory_constraints_satisfied) || value) {
+    options->recv_video = true;
   }
 
   if (FindConstraint(constraints,
@@ -120,7 +108,7 @@ static bool ParseConstraintsForAnswer(
 // and the constraint kUseRtpMux has not disabled bundle.
 static bool EvaluateNeedForBundle(const cricket::MediaSessionOptions& options) {
   return options.bundle_enabled &&
-      (options.has_audio || options.has_video || options.has_data());
+      (options.has_audio() || options.has_video() || options.has_data());
 }
 
 static bool MediaContentDirectionHasSend(cricket::MediaContentDirection dir) {
@@ -148,7 +136,7 @@ static void SetStreams(
       // For each audio track in the stream, add it to the MediaSessionOptions.
       for (size_t j = 0; j < audio_tracks.size(); ++j) {
         scoped_refptr<MediaStreamTrackInterface> track(audio_tracks[j]);
-        session_options->AddStream(
+        session_options->AddSendStream(
             cricket::MEDIA_TYPE_AUDIO, track->id(), stream->label());
       }
 
@@ -157,7 +145,7 @@ static void SetStreams(
       // For each video track in the stream, add it to the MediaSessionOptions.
       for (size_t j = 0; j < video_tracks.size(); ++j) {
         scoped_refptr<MediaStreamTrackInterface> track(video_tracks[j]);
-        session_options->AddStream(
+        session_options->AddSendStream(
             cricket::MEDIA_TYPE_VIDEO, track->id(), stream->label());
       }
     }
@@ -176,7 +164,7 @@ static void SetStreams(
       // track label is the same as |streamid|.
       const std::string& streamid = channel->label();
       const std::string& sync_label = channel->label();
-      session_options->AddStream(
+      session_options->AddSendStream(
           cricket::MEDIA_TYPE_DATA, streamid, sync_label);
     }
   }
@@ -425,17 +413,21 @@ bool MediaStreamSignaling::GetOptionsForOffer(
     return false;
   }
 
-  session_options->has_audio = false;
-  session_options->has_video = false;
   SetStreams(session_options, local_streams_, rtp_data_channels_);
 
-  // If |offer_to_receive_[audio/video]| is undefined, respect the flags set
-  // from SetStreams. Otherwise, overwrite it based on |rtc_options|.
-  if (rtc_options.offer_to_receive_audio != RTCOfferAnswerOptions::kUndefined) {
-    session_options->has_audio = rtc_options.offer_to_receive_audio > 0;
+  // According to the spec, offer to receive audio/video if the constraint is
+  // not set and there are send streams.
+  if (rtc_options.offer_to_receive_audio == RTCOfferAnswerOptions::kUndefined) {
+    session_options->recv_audio =
+        session_options->HasSendMediaStream(cricket::MEDIA_TYPE_AUDIO);
+  } else {
+    session_options->recv_audio = (rtc_options.offer_to_receive_audio > 0);
   }
-  if (rtc_options.offer_to_receive_video != RTCOfferAnswerOptions::kUndefined) {
-    session_options->has_video = rtc_options.offer_to_receive_video > 0;
+  if (rtc_options.offer_to_receive_video == RTCOfferAnswerOptions::kUndefined) {
+    session_options->recv_video =
+        session_options->HasSendMediaStream(cricket::MEDIA_TYPE_VIDEO);
+  } else {
+    session_options->recv_video = (rtc_options.offer_to_receive_video > 0);
   }
 
   session_options->vad_enabled = rtc_options.voice_activity_detection;
@@ -449,10 +441,10 @@ bool MediaStreamSignaling::GetOptionsForOffer(
 bool MediaStreamSignaling::GetOptionsForAnswer(
     const MediaConstraintsInterface* constraints,
     cricket::MediaSessionOptions* options) {
-  options->has_audio = false;
-  options->has_video = false;
   SetStreams(options, local_streams_, rtp_data_channels_);
 
+  options->recv_audio = false;
+  options->recv_video = false;
   if (!ParseConstraintsForAnswer(constraints, options)) {
     return false;
   }

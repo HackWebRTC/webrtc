@@ -216,7 +216,7 @@ static void VerifyMediaOptions(StreamCollectionInterface* collection,
       webrtc::AudioTrackInterface* audio = audio_tracks[j];
       EXPECT_EQ(options.streams[stream_index].sync_label, stream->label());
       EXPECT_EQ(options.streams[stream_index++].id, audio->id());
-      EXPECT_TRUE(options.has_audio);
+      EXPECT_TRUE(options.has_audio());
     }
     VideoTrackVector video_tracks = stream->GetVideoTracks();
     ASSERT_GE(options.streams.size(), stream_index + video_tracks.size());
@@ -224,7 +224,7 @@ static void VerifyMediaOptions(StreamCollectionInterface* collection,
       webrtc::VideoTrackInterface* video = video_tracks[j];
       EXPECT_EQ(options.streams[stream_index].sync_label, stream->label());
       EXPECT_EQ(options.streams[stream_index++].id, video->id());
-      EXPECT_TRUE(options.has_video);
+      EXPECT_TRUE(options.has_video());
     }
   }
 }
@@ -634,8 +634,8 @@ TEST_F(MediaStreamSignalingTest, GetMediaSessionOptionsForOfferWithAudioVideo) {
 
   cricket::MediaSessionOptions options;
   EXPECT_TRUE(signaling_->GetOptionsForOffer(rtc_options, &options));
-  EXPECT_TRUE(options.has_audio);
-  EXPECT_TRUE(options.has_video);
+  EXPECT_TRUE(options.has_audio());
+  EXPECT_TRUE(options.has_video());
   EXPECT_TRUE(options.bundle_enabled);
 }
 
@@ -647,8 +647,8 @@ TEST_F(MediaStreamSignalingTest, GetMediaSessionOptionsForOfferWithAudio) {
 
   cricket::MediaSessionOptions options;
   EXPECT_TRUE(signaling_->GetOptionsForOffer(rtc_options, &options));
-  EXPECT_TRUE(options.has_audio);
-  EXPECT_FALSE(options.has_video);
+  EXPECT_TRUE(options.has_audio());
+  EXPECT_FALSE(options.has_video());
   EXPECT_TRUE(options.bundle_enabled);
 }
 
@@ -659,8 +659,8 @@ TEST_F(MediaStreamSignalingTest, GetDefaultMediaSessionOptionsForOffer) {
 
   cricket::MediaSessionOptions options;
   EXPECT_TRUE(signaling_->GetOptionsForOffer(rtc_options, &options));
-  EXPECT_FALSE(options.has_audio);
-  EXPECT_FALSE(options.has_video);
+  EXPECT_FALSE(options.has_audio());
+  EXPECT_FALSE(options.has_video());
   EXPECT_FALSE(options.bundle_enabled);
   EXPECT_TRUE(options.vad_enabled);
   EXPECT_FALSE(options.transport_options.ice_restart);
@@ -675,8 +675,8 @@ TEST_F(MediaStreamSignalingTest, GetMediaSessionOptionsForOfferWithVideo) {
 
   cricket::MediaSessionOptions options;
   EXPECT_TRUE(signaling_->GetOptionsForOffer(rtc_options, &options));
-  EXPECT_FALSE(options.has_audio);
-  EXPECT_TRUE(options.has_video);
+  EXPECT_FALSE(options.has_audio());
+  EXPECT_TRUE(options.has_video());
   EXPECT_TRUE(options.bundle_enabled);
 }
 
@@ -691,8 +691,8 @@ TEST_F(MediaStreamSignalingTest,
 
   cricket::MediaSessionOptions options;
   EXPECT_TRUE(signaling_->GetOptionsForOffer(rtc_options, &options));
-  EXPECT_TRUE(options.has_audio);
-  EXPECT_TRUE(options.has_video);
+  EXPECT_TRUE(options.has_audio());
+  EXPECT_TRUE(options.has_video());
   EXPECT_FALSE(options.bundle_enabled);
 }
 
@@ -743,16 +743,16 @@ TEST_F(MediaStreamSignalingTest, MediaConstraintsInAnswer) {
 
   cricket::MediaSessionOptions answer_options;
   EXPECT_TRUE(signaling_->GetOptionsForAnswer(&answer_c, &answer_options));
-  EXPECT_TRUE(answer_options.has_audio);
-  EXPECT_TRUE(answer_options.has_video);
+  EXPECT_TRUE(answer_options.has_audio());
+  EXPECT_TRUE(answer_options.has_video());
 
   RTCOfferAnswerOptions rtc_offer_optoins;
 
   cricket::MediaSessionOptions offer_options;
   EXPECT_TRUE(
       signaling_->GetOptionsForOffer(rtc_offer_optoins, &offer_options));
-  EXPECT_FALSE(offer_options.has_audio);
-  EXPECT_FALSE(offer_options.has_video);
+  EXPECT_FALSE(offer_options.has_audio());
+  EXPECT_FALSE(offer_options.has_video());
 
   RTCOfferAnswerOptions updated_rtc_offer_optoins;
   updated_rtc_offer_optoins.offer_to_receive_audio = 1;
@@ -761,8 +761,8 @@ TEST_F(MediaStreamSignalingTest, MediaConstraintsInAnswer) {
   cricket::MediaSessionOptions updated_offer_options;
   EXPECT_TRUE(signaling_->GetOptionsForOffer(updated_rtc_offer_optoins,
                                              &updated_offer_options));
-  EXPECT_TRUE(updated_offer_options.has_audio);
-  EXPECT_TRUE(updated_offer_options.has_video);
+  EXPECT_TRUE(updated_offer_options.has_audio());
+  EXPECT_TRUE(updated_offer_options.has_video());
 
   // Since an offer has been created with both audio and video, subsequent
   // offers and answers should contain both audio and video.
@@ -776,16 +776,16 @@ TEST_F(MediaStreamSignalingTest, MediaConstraintsInAnswer) {
   cricket::MediaSessionOptions updated_answer_options;
   EXPECT_TRUE(signaling_->GetOptionsForAnswer(&updated_answer_c,
                                               &updated_answer_options));
-  EXPECT_TRUE(updated_answer_options.has_audio);
-  EXPECT_TRUE(updated_answer_options.has_video);
+  EXPECT_TRUE(updated_answer_options.has_audio());
+  EXPECT_TRUE(updated_answer_options.has_video());
 
   RTCOfferAnswerOptions default_rtc_options;
   EXPECT_TRUE(signaling_->GetOptionsForOffer(default_rtc_options,
                                              &updated_offer_options));
   // By default, |has_audio| or |has_video| are false if there is no media
   // track.
-  EXPECT_FALSE(updated_offer_options.has_audio);
-  EXPECT_FALSE(updated_offer_options.has_video);
+  EXPECT_FALSE(updated_offer_options.has_audio());
+  EXPECT_FALSE(updated_offer_options.has_video());
 }
 
 // This test verifies that the remote MediaStreams corresponding to a received
