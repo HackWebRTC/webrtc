@@ -1234,6 +1234,13 @@ static int64_t GetCurrentTimeMs() {
   return TickTime::Now().Ticks() / 1000000LL;
 }
 
+// Allow Invoke() calls from from current thread.
+static void AllowBlockingCalls() {
+  Thread* current_thread = Thread::Current();
+  if (current_thread != NULL)
+    current_thread->SetAllowBlockingCalls(true);
+}
+
 // MediaCodecVideoEncoder is a webrtc::VideoEncoder implementation that uses
 // Android's MediaCodec SDK API behind the scenes to implement (hopefully)
 // HW-backed video encode.  This C++ class is implemented as a very thin shim,
@@ -1417,6 +1424,7 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(JNIEnv* jni)
   j_info_presentation_timestamp_us_field_ = GetFieldID(
       jni, j_output_buffer_info_class, "presentationTimestampUs", "J");
   CHECK_EXCEPTION(jni) << "MediaCodecVideoEncoder ctor failed";
+  AllowBlockingCalls();
 }
 
 int32_t MediaCodecVideoEncoder::InitEncode(
@@ -2142,6 +2150,7 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(JNIEnv* jni)
   if (render_egl_context_ == NULL)
     use_surface_ = false;
   memset(&codec_, 0, sizeof(codec_));
+  AllowBlockingCalls();
 }
 
 MediaCodecVideoDecoder::~MediaCodecVideoDecoder() {
