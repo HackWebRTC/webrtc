@@ -59,8 +59,6 @@ char kTSanDefaultSuppressions[] =
 
 // Potential deadlocks detected after roll in r6516.
 // https://code.google.com/p/webrtc/issues/detail?id=3509
-"deadlock:cricket::WebRtcVideoChannel2::WebRtcVideoSendStream::InputFrame\n"
-"deadlock:cricket::WebRtcVideoChannel2::WebRtcVideoSendStream::SetCapturer\n"
 "deadlock:webrtc::ProcessThreadImpl::RegisterModule\n"
 "deadlock:webrtc::RTCPReceiver::SetSsrcs\n"
 "deadlock:webrtc::RTPSenderAudio::RegisterAudioPayload\n"

@@ -1481,12 +1481,16 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::MuteStream(bool mute) {
 }
 
 bool WebRtcVideoChannel2::WebRtcVideoSendStream::DisconnectCapturer() {
-  rtc::CritScope cs(&lock_);
-  if (capturer_ == NULL) {
-    return false;
+  cricket::VideoCapturer* capturer;
+  {
+    rtc::CritScope cs(&lock_);
+    if (capturer_ == NULL) {
+      return false;
+    }
+    capturer = capturer_;
+    capturer_ = NULL;
   }
-  capturer_->SignalVideoFrame.disconnect(this);
-  capturer_ = NULL;
+  capturer->SignalVideoFrame.disconnect(this);
   return true;
 }
 
