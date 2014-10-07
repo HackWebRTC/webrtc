@@ -43,7 +43,7 @@ namespace {
 // returned. Otherwise, false is returned.
 bool ParseSsrc(const std::string& str, uint32_t* ssrc) {
   if (str.empty())
-    return false;
+    return true;
   int base = 10;
   // Look for "0x" or "0X" at the start and change base to 16 if found.
   if ((str.compare(0, 2, "0x") == 0) || (str.compare(0, 2, "0X") == 0))
