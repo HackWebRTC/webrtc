@@ -12,13 +12,17 @@
 // several classes.
 
 #include <assert.h>
+#include <errno.h>
+#include <limits.h>  // For ULONG_MAX returned by strtoul.
 #include <stdio.h>
+#include <stdlib.h>  // For strtoul.
 
 #include <algorithm>
 #include <iostream>
 #include <string>
 
 #include "google/gflags.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/interface/neteq.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
@@ -33,12 +37,43 @@
 using webrtc::NetEq;
 using webrtc::WebRtcRTPHeader;
 
+namespace {
+// Parses the input string for a valid SSRC (at the start of the string). If a
+// valid SSRC is found, it is written to the output variable |ssrc|, and true is
+// returned. Otherwise, false is returned.
+bool ParseSsrc(const std::string& str, uint32_t* ssrc) {
+  if (str.empty())
+    return false;
+  int base = 10;
+  // Look for "0x" or "0X" at the start and change base to 16 if found.
+  if ((str.compare(0, 2, "0x") == 0) || (str.compare(0, 2, "0X") == 0))
+    base = 16;
+  errno = 0;
+  char* end_ptr;
+  unsigned long value = strtoul(str.c_str(), &end_ptr, base);
+  if (value == ULONG_MAX && errno == ERANGE)
+    return false;  // Value out of range for unsigned long.
+  if (sizeof(unsigned long) > sizeof(uint32_t) && value > 0xFFFFFFFF)
+    return false;  // Value out of range for uint32_t.
+  if (end_ptr - str.c_str() < static_cast<ptrdiff_t>(str.length()))
+    return false;  // Part of the string was not parsed.
+  *ssrc = static_cast<uint32_t>(value);
+  return true;
+}
+
+}  // namespace
+
 // Flag validators.
 static bool ValidatePayloadType(const char* flagname, int32_t value) {
   if (value >= 0 && value <= 127)  // Value is ok.
     return true;
   printf("Invalid value for --%s: %d\n", flagname, static_cast<int>(value));
   return false;
+}
+
+static bool ValidateSsrcValue(const char* flagname, const std::string& str) {
+  uint32_t dummy_ssrc;
+  return ParseSsrc(str, &dummy_ssrc);
 }
 
 // Define command line flags.
@@ -94,6 +129,12 @@ DEFINE_bool(codec_map, false, "Prints the mapping between RTP payload type and "
     "codec");
 DEFINE_string(replacement_audio_file, "",
               "A PCM file that will be used to populate ""dummy"" RTP packets");
+DEFINE_string(ssrc,
+              "",
+              "Only use packets with this SSRC (decimal or hex, the latter "
+              "starting with 0x)");
+static const bool hex_ssrc_dummy =
+    google::RegisterFlagValidator(&FLAGS_ssrc, &ValidateSsrcValue);
 
 // Declaring helper functions (defined further down in this file).
 std::string CodecName(webrtc::NetEqDecoder codec);
@@ -142,6 +183,13 @@ int main(int argc, char* argv[]) {
       webrtc::test::RtpFileSource::Create(argv[1]));
   assert(file_source.get());
 
+  // Check if an SSRC value was provided.
+  if (!FLAGS_ssrc.empty()) {
+    uint32_t ssrc;
+    CHECK(ParseSsrc(FLAGS_ssrc, &ssrc)) << "Flag verification has failed.";
+    file_source->SelectSsrc(ssrc);
+  }
+
   FILE* out_file = fopen(argv[2], "wb");
   if (!out_file) {
     std::cerr << "Cannot open output file " << argv[2] << std::endl;
@@ -174,7 +222,9 @@ int main(int argc, char* argv[]) {
   // Read first packet.
   webrtc::scoped_ptr<webrtc::test::Packet> packet(file_source->NextPacket());
   if (!packet) {
-    printf("Warning: RTP file is empty");
+    printf(
+        "Warning: input file is empty, or the filters did not match any "
+        "packets\n");
     webrtc::Trace::ReturnTrace();
     return 0;
   }
