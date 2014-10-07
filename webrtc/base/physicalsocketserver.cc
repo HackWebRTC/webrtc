@@ -14,6 +14,10 @@
 
 #include <assert.h>
 
+#ifdef MEMORY_SANITIZER
+#include <sanitizer/msan_interface.h>
+#endif
+
 #if defined(WEBRTC_POSIX)
 #include <string.h>
 #include <errno.h>
@@ -1311,6 +1315,13 @@ bool PhysicalSocketServer::Wait(int cmsWait, bool process_io) {
   FD_ZERO(&fdsRead);
   fd_set fdsWrite;
   FD_ZERO(&fdsWrite);
+  // Explicitly unpoison these FDs on MemorySanitizer which doesn't handle the
+  // inline assembly in FD_ZERO.
+  // http://crbug.com/344505
+#ifdef MEMORY_SANITIZER
+  __msan_unpoison(&fdsRead, sizeof(fdsRead));
+  __msan_unpoison(&fdsWrite, sizeof(fdsWrite));
+#endif
 
   fWait_ = true;
 
