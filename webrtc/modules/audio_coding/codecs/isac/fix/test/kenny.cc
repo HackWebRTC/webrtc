@@ -571,7 +571,8 @@ int main(int argc, char* argv[])
              functions from the internal API. */
           if (stream_len>0) {
             if (testCE == 1) {
-              err = WebRtcIsacfix_ReadBwIndex((int16_t*)streamdata, &bwe);
+              err = WebRtcIsacfix_ReadBwIndex(
+                  (int16_t*)streamdata, stream_len, &bwe);
               stream_len = WebRtcIsacfix_GetNewBitStream(
                   ISAC_main_inst,
                   bwe,
@@ -740,7 +741,8 @@ int main(int argc, char* argv[])
         if (nbTest !=2 ) {
           short FL;
           /* Call getFramelen, only used here for function test */
-          err = WebRtcIsacfix_ReadFrameLen((int16_t*)streamdata, &FL);
+          err = WebRtcIsacfix_ReadFrameLen(
+              (int16_t*)streamdata, stream_len, &FL);
           declen = WebRtcIsacfix_Decode( ISAC_main_inst, streamdata, stream_len,
                                          decoded, speechType );
           /* Error check */

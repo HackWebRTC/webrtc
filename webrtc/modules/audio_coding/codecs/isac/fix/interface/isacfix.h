@@ -350,6 +350,7 @@ extern "C" {
    *
    * Input:
    *      - encoded           : Encoded bitstream
+   *      - encoded_len_bytes : Length of the bitstream in bytes.
    *
    * Output:
    *      - frameLength       : Length of frame in packet (in samples)
@@ -357,6 +358,7 @@ extern "C" {
    */
 
   int16_t WebRtcIsacfix_ReadFrameLen(const int16_t* encoded,
+                                     int encoded_len_bytes,
                                      int16_t* frameLength);
 
   /****************************************************************************
@@ -599,6 +601,7 @@ extern "C" {
    *
    * Input:
    *      - encoded           : Encoded bitstream
+   *      - encoded_len_bytes : Length of the bitstream in bytes.
    *
    * Output:
    *      - rateIndex         : Bandwidth estimate in bitstream
@@ -606,6 +609,7 @@ extern "C" {
    */
 
   int16_t WebRtcIsacfix_ReadBwIndex(const int16_t* encoded,
+                                    int encoded_len_bytes,
                                     int16_t* rateIndex);
 
 
