@@ -442,12 +442,16 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(TestBitExactness)) {
   }
 }
 
-// TODO(hlundin): Re-enable test once the statistics interface is up and again.
-TEST_F(NetEqDecodingTest, TestFrameWaitingTimeStatistics) {
-  // Use fax mode to avoid time-scaling. This is to simplify the testing of
-  // packet waiting times in the packet buffer.
-  neteq_->SetPlayoutMode(kPlayoutFax);
-  ASSERT_EQ(kPlayoutFax, neteq_->PlayoutMode());
+// Use fax mode to avoid time-scaling. This is to simplify the testing of
+// packet waiting times in the packet buffer.
+class NetEqDecodingTestFaxMode : public NetEqDecodingTest {
+ protected:
+  NetEqDecodingTestFaxMode() : NetEqDecodingTest() {
+    config_.playout_mode = kPlayoutFax;
+  }
+};
+
+TEST_F(NetEqDecodingTestFaxMode, TestFrameWaitingTimeStatistics) {
   // Insert 30 dummy packets at once. Each packet contains 10 ms 16 kHz audio.
   size_t num_frames = 30;
   const int kSamples = 10 * 16;

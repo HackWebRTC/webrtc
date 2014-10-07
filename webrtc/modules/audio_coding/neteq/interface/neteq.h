@@ -74,13 +74,15 @@ class NetEq {
           max_packets_in_buffer(50),
           // |max_delay_ms| has the same effect as calling SetMaximumDelay().
           max_delay_ms(2000),
-          background_noise_mode(kBgnOff) {}
+          background_noise_mode(kBgnOff),
+          playout_mode(kPlayoutOn) {}
 
     int sample_rate_hz;  // Initial vale. Will change with input data.
     bool enable_audio_classifier;
     int max_packets_in_buffer;
     int max_delay_ms;
     BackgroundNoiseMode background_noise_mode;
+    NetEqPlayoutMode playout_mode;
   };
 
   enum ReturnCodes {
@@ -202,9 +204,13 @@ class NetEq {
   virtual int CurrentDelay() = 0;
 
   // Sets the playout mode to |mode|.
+  // Deprecated. Set the mode in the Config struct passed to the constructor.
+  // TODO(henrik.lundin) Delete.
   virtual void SetPlayoutMode(NetEqPlayoutMode mode) = 0;
 
   // Returns the current playout mode.
+  // Deprecated.
+  // TODO(henrik.lundin) Delete.
   virtual NetEqPlayoutMode PlayoutMode() const = 0;
 
   // Writes the current network statistics to |stats|. The statistics are reset

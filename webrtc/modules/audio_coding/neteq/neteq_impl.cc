@@ -91,6 +91,7 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
       error_code_(0),
       decoder_error_code_(0),
       background_noise_mode_(config.background_noise_mode),
+      playout_mode_(config.playout_mode),
       decoded_packet_sequence_number_(-1),
       decoded_packet_timestamp_(0) {
   int fs = config.sample_rate_hz;
@@ -278,18 +279,21 @@ int NetEqImpl::LeastRequiredDelayMs() const {
   return delay_manager_->least_required_delay_ms();
 }
 
+// Deprecated.
+// TODO(henrik.lundin) Delete.
 void NetEqImpl::SetPlayoutMode(NetEqPlayoutMode mode) {
   CriticalSectionScoped lock(crit_sect_.get());
-  if (!decision_logic_.get() || mode != decision_logic_->playout_mode()) {
-    // The reset() method calls delete for the old object.
-    CreateDecisionLogic(mode);
+  if (mode != playout_mode_) {
+    playout_mode_ = mode;
+    CreateDecisionLogic();
   }
 }
 
+// Deprecated.
+// TODO(henrik.lundin) Delete.
 NetEqPlayoutMode NetEqImpl::PlayoutMode() const {
   CriticalSectionScoped lock(crit_sect_.get());
-  assert(decision_logic_.get());
-  return decision_logic_->playout_mode();
+  return playout_mode_;
 }
 
 int NetEqImpl::NetworkStatistics(NetEqNetworkStatistics* stats) {
@@ -1904,7 +1908,7 @@ void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
   // Create DecisionLogic if it is not created yet, then communicate new sample
   // rate and output size to DecisionLogic object.
   if (!decision_logic_.get()) {
-    CreateDecisionLogic(kPlayoutOn);
+    CreateDecisionLogic();
   }
   decision_logic_->SetSampleRate(fs_hz_, output_size_samples_);
 }
@@ -1926,9 +1930,9 @@ NetEqOutputType NetEqImpl::LastOutputType() {
   }
 }
 
-void NetEqImpl::CreateDecisionLogic(NetEqPlayoutMode mode) {
+void NetEqImpl::CreateDecisionLogic() {
   decision_logic_.reset(DecisionLogic::Create(fs_hz_, output_size_samples_,
-                                              mode,
+                                              playout_mode_,
                                               decoder_database_.get(),
                                               *packet_buffer_.get(),
                                               delay_manager_.get(),

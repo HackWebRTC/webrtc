@@ -138,9 +138,13 @@ class NetEqImpl : public webrtc::NetEq {
   virtual int CurrentDelay() OVERRIDE { return kNotImplemented; }
 
   // Sets the playout mode to |mode|.
+  // Deprecated.
+  // TODO(henrik.lundin) Delete.
   virtual void SetPlayoutMode(NetEqPlayoutMode mode) OVERRIDE;
 
   // Returns the current playout mode.
+  // Deprecated.
+  // TODO(henrik.lundin) Delete.
   virtual NetEqPlayoutMode PlayoutMode() const OVERRIDE;
 
   // Writes the current network statistics to |stats|. The statistics are reset
@@ -327,9 +331,8 @@ class NetEqImpl : public webrtc::NetEq {
   virtual void UpdatePlcComponents(int fs_hz, size_t channels)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
-  // Creates DecisionLogic object for the given mode.
-  virtual void CreateDecisionLogic(NetEqPlayoutMode mode)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  // Creates DecisionLogic object with the mode given by |playout_mode_|.
+  virtual void CreateDecisionLogic() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   const scoped_ptr<CriticalSectionWrapper> crit_sect_;
   const scoped_ptr<BufferLevelFilter> buffer_level_filter_
@@ -383,6 +386,7 @@ class NetEqImpl : public webrtc::NetEq {
   int error_code_ GUARDED_BY(crit_sect_);  // Store last error code.
   int decoder_error_code_ GUARDED_BY(crit_sect_);
   const BackgroundNoiseMode background_noise_mode_ GUARDED_BY(crit_sect_);
+  NetEqPlayoutMode playout_mode_ GUARDED_BY(crit_sect_);
 
   // These values are used by NACK module to estimate time-to-play of
   // a missing packet. Occasionally, NetEq might decide to decode more
