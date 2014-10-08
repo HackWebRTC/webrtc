@@ -35,6 +35,9 @@
 //   she recognizes that if she is wrong, abrupt and unpleasant process
 //   termination is still better than carrying on with the assumption violated.
 //
+//   CHECK always evaluates its argument, so it's OK for x to have side
+//   effects.
+//
 // - DCHECK(x) is the same as CHECK(x)---an assertion that x is always
 //   true---except that x will only be evaluated in debug builds; in production
 //   builds, x is simply assumed to be true. This is useful if evaluating x is
@@ -45,6 +48,10 @@
 //   call DCHECK; if the condition really can't occur, but you'd sleep better
 //   at night knowing that the process will suicide instead of carrying on in
 //   case you were wrong, use CHECK instead of DCHECK.
+//
+//   DCHECK only evaluates its argument in debug builds, so if x has visible
+//   side effects, you need to write e.g.
+//     bool w = x; DCHECK(w);
 //
 // - CHECK_EQ, _NE, _GT, ..., and DCHECK_EQ, _NE, _GT, ... are specialized
 //   variants of CHECK and DCHECK that print prettier messages if the condition
