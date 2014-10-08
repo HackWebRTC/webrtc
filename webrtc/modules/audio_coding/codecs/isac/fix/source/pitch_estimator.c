@@ -45,9 +45,9 @@ static __inline int16_t Exp2Q10(int16_t x) { // Both in and out in Q10
   int16_t tmp16_1, tmp16_2;
 
   tmp16_2=(int16_t)(0x0400|(x&0x03FF));
-  tmp16_1=-(int16_t)WEBRTC_SPL_RSHIFT_W16(x,10);
+  tmp16_1 = -(x >> 10);
   if(tmp16_1>0)
-    return (int16_t) WEBRTC_SPL_RSHIFT_W16(tmp16_2, tmp16_1);
+    return tmp16_2 >> tmp16_1;
   else
     return (int16_t) WEBRTC_SPL_LSHIFT_W16(tmp16_2, -tmp16_1);
 
@@ -88,7 +88,7 @@ static __inline void Intrp1DQ8(int32_t *x, int32_t *fx, int32_t *y, int32_t *fy)
 
     /* Part I: 0.5 * t * (t-1) * fx[0] */
     tmp16_1=(int16_t)WEBRTC_SPL_MUL_16_16(t16,t16); /* Q8*Q8=Q16 */
-    tmp16_1 = WEBRTC_SPL_RSHIFT_W16(tmp16_1,2);  /* Q16>>2 = Q14 */
+    tmp16_1 >>= 2;  /* Q16>>2 = Q14 */
     t16 = (int16_t)WEBRTC_SPL_MUL_16_16(t16, 64);           /* Q8<<6 = Q14  */
     tmp16 = tmp16_1-t16;
     *fy = WEBRTC_SPL_MUL_16_32_RSFT15(tmp16, fx[0]); /* (Q14 * Q8 >>15)/2 = Q8 */

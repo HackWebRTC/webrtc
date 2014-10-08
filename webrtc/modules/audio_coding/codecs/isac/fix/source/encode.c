@@ -456,7 +456,8 @@ int WebRtcIsacfix_EncodeImpl(int16_t      *in,
       assert(stream_length >= 0);
       if (stream_length & 0x0001){
         ISACenc_obj->bitstr_seed = WEBRTC_SPL_RAND( ISACenc_obj->bitstr_seed );
-        ISACenc_obj->bitstr_obj.stream[ WEBRTC_SPL_RSHIFT_W16(stream_length, 1) ] |= (uint16_t)(ISACenc_obj->bitstr_seed & 0xFF);
+        ISACenc_obj->bitstr_obj.stream[stream_length / 2] |=
+            (uint16_t)(ISACenc_obj->bitstr_seed & 0xFF);
       } else {
         ISACenc_obj->bitstr_seed = WEBRTC_SPL_RAND( ISACenc_obj->bitstr_seed );
         ISACenc_obj->bitstr_obj.stream[stream_length / 2] =

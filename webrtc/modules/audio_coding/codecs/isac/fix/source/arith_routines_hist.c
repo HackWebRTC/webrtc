@@ -188,7 +188,7 @@ int16_t WebRtcIsacfix_DecHistBisectMulti(int16_t *data,
     W_upper_MSB = WEBRTC_SPL_RSHIFT_W32(W_upper, 16);
 
     /* start halfway the cdf range */
-    sizeTmp = WEBRTC_SPL_RSHIFT_W16(*cdfSize++, 1);
+    sizeTmp = *cdfSize++ / 2;
     cdfPtr = *cdf + (sizeTmp - 1);
 
     /* method of bisection */
@@ -196,7 +196,7 @@ int16_t WebRtcIsacfix_DecHistBisectMulti(int16_t *data,
     {
       W_tmp = WEBRTC_SPL_UMUL_32_16(W_upper_MSB, *cdfPtr);
       W_tmp += (W_upper_LSB * (*cdfPtr)) >> 16;
-      sizeTmp = WEBRTC_SPL_RSHIFT_W16(sizeTmp, 1);
+      sizeTmp /= 2;
       if (sizeTmp == 0) {
         break;
       }
@@ -235,8 +235,7 @@ int16_t WebRtcIsacfix_DecHistBisectMulti(int16_t *data,
             (*streamPtr++ & 0x00FF);
         streamData->full = 1;
       } else {
-        streamval = WEBRTC_SPL_LSHIFT_W32(streamval, 8) |
-            WEBRTC_SPL_RSHIFT_W16(*streamPtr, 8);
+        streamval = (streamval << 8) | (*streamPtr >> 8);
         streamData->full = 0;
       }
       W_upper = WEBRTC_SPL_LSHIFT_W32(W_upper, 8);

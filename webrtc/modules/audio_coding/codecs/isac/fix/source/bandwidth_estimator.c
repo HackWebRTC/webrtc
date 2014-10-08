@@ -904,12 +904,12 @@ uint16_t WebRtcIsacfix_GetMinBytes(RateModel *State,
         State->ExceedAgo = 0;
       }
     } else {
-      State->ExceedAgo += (int16_t)WEBRTC_SPL_RSHIFT_W16(FrameSamples, 4);       /* ms */
+      State->ExceedAgo += FrameSamples / SAMPLES_PER_MSEC;  /* ms */
       State->PrevExceed = 1;
     }
   } else {
     State->PrevExceed = 0;
-    State->ExceedAgo += (int16_t)WEBRTC_SPL_RSHIFT_W16(FrameSamples, 4);           /* ms */
+    State->ExceedAgo += FrameSamples / SAMPLES_PER_MSEC;  /* ms */
   }
 
   /* set burst flag if bottle neck not exceeded for long time */
@@ -925,7 +925,7 @@ uint16_t WebRtcIsacfix_GetMinBytes(RateModel *State,
   /* Update buffer delay */
   TransmissionTime = (StreamSize * 8000) / BottleNeck;  /* ms */
   State->StillBuffered += TransmissionTime;
-  State->StillBuffered -= (int16_t)WEBRTC_SPL_RSHIFT_W16(FrameSamples, 4);  //>>4 =  SAMPLES_PER_MSEC        /* ms */
+  State->StillBuffered -= FrameSamples / SAMPLES_PER_MSEC;   /* ms */
   if (State->StillBuffered < 0) {
     State->StillBuffered = 0;
   }
@@ -953,7 +953,7 @@ void WebRtcIsacfix_UpdateRateModel(RateModel *State,
 
   /* Update buffer delay */
   State->StillBuffered += TransmissionTime;
-  State->StillBuffered -= (int16_t)WEBRTC_SPL_RSHIFT_W16(FrameSamples, 4);            /* ms */
+  State->StillBuffered -= FrameSamples >> 4;  /* ms */
   if (State->StillBuffered < 0) {
     State->StillBuffered = 0;
   }

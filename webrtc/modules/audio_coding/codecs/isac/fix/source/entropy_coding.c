@@ -142,7 +142,7 @@ static int32_t CalcExpN(int16_t x) {
   if (x>=0) {
     //  ax=(int16_t)WEBRTC_SPL_MUL_16_16_RSFT(x, 23637-700, 14); //Q8
     ax=(int16_t)WEBRTC_SPL_MUL_16_16_RSFT(x, 23637, 14); //Q8
-    axINT = WEBRTC_SPL_RSHIFT_W16(ax, 8); //Q0
+    axINT = ax >> 8;  //Q0
     axFRAC = ax&0x00FF;
     exp16 = WEBRTC_SPL_LSHIFT_W32(1, axINT); //Q0
     axFRAC = axFRAC+256; //Q8
@@ -152,7 +152,7 @@ static int32_t CalcExpN(int16_t x) {
     //  ax=(int16_t)WEBRTC_SPL_MUL_16_16_RSFT(x, 23637+700, 14); //Q8
     ax=(int16_t)WEBRTC_SPL_MUL_16_16_RSFT(x, 23637, 14); //Q8
     ax = -ax;
-    axINT = 1 + WEBRTC_SPL_RSHIFT_W16(ax, 8); //Q0
+    axINT = 1 + (ax >> 8);  //Q0
     axFRAC = 0x00FF - (ax&0x00FF);
     exp16 = (int16_t) WEBRTC_SPL_RSHIFT_W32(32768, axINT); //Q15
     axFRAC = axFRAC+256; //Q8
@@ -339,7 +339,7 @@ static void CalcRootInvArSpec(const int16_t *ARCoefQ12,
   in_sqrt = summQ16[0] + WEBRTC_SPL_LSHIFT_W32(diffQ16[0], shftVal);
 
   /* convert to magnitude spectrum, by doing square-roots (modified from SPLIB)  */
-  res = WEBRTC_SPL_LSHIFT_W32(1, WEBRTC_SPL_RSHIFT_W16(WebRtcSpl_GetSizeInBits(in_sqrt), 1));
+  res = 1 << (WebRtcSpl_GetSizeInBits(in_sqrt) >> 1);
 
   for (k = 0; k < FRAMESAMPLES/8; k++)
   {

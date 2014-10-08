@@ -100,7 +100,7 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
       enh_buf+ENH_BUFL-inLen,    /* Input samples */
       (int16_t)(inLen+ENH_BUFL_FILTEROVERHEAD),
       downsampled,
-      (int16_t)WEBRTC_SPL_RSHIFT_W16(inLen, 1),
+      (int16_t)(inLen / 2),
       (int16_t*)WebRtcIlbcfix_kLpFiltCoefs,  /* Coefficients in Q12 */
       FILTERORDER_DS_PLUS1,    /* Length of filter (order-1) */
       FACTOR_DS,
@@ -292,7 +292,7 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
 
         /* Calculate increase parameter for window part (16 last samples) */
         /* (1-2*SqrtEnChange)/16 in Q15 */
-        inc=(2048-WEBRTC_SPL_RSHIFT_W16(SqrtEnChange, 3));
+        inc = 2048 - (SqrtEnChange >> 3);
 
         win=0;
         tmpW16ptr=&plc_pred[plc_blockl-16];

@@ -264,8 +264,7 @@ int16_t WebRtcIsacfix_DecLogisticMulti2(int16_t *dataQ7,
   }
 
 
-  res = WEBRTC_SPL_LSHIFT_W32((int32_t)1,
-                               WEBRTC_SPL_RSHIFT_W16(WebRtcSpl_GetSizeInBits(envQ8[0]), 1));
+  res = 1 << (WebRtcSpl_GetSizeInBits(envQ8[0]) >> 1);
   envCount = 0;
 
   /* code assumes lenData%4 == 0 */

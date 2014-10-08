@@ -91,7 +91,7 @@ void WebRtcIlbcfix_Poly2Lsp(
       /* Run 4 times to reduce the interval */
       for (i = 0; i < 4; i++) {
         /* xmid =(xlow + xhigh)/2 */
-        xmid = WEBRTC_SPL_RSHIFT_W16(xlow, 1) + WEBRTC_SPL_RSHIFT_W16(xhigh, 1);
+        xmid = (xlow >> 1) + (xhigh >> 1);
         ymid = WebRtcIlbcfix_Chebyshev(xmid, f[fi_select]);
 
         if (WEBRTC_SPL_MUL_16_16(ylow, ymid) <= 0) {

@@ -422,11 +422,11 @@ void WebRtcIsacfix_GetVars(const int16_t *input, const int16_t *pitchGains_Q12,
   tmp16=(int16_t)WEBRTC_SPL_MUL_16_16_RSFT_WITH_ROUND(kExp2,pg3,13);/* Q13*Q10>>13 => Q10*/
   if (tmp16<0) {
     tmp16_2 = (0x0400 | (tmp16 & 0x03FF));
-    tmp16_1 = (WEBRTC_SPL_RSHIFT_W16((uint16_t)(tmp16 ^ 0xFFFF), 10)-3); /* Gives result in Q14 */
+    tmp16_1 = ((uint16_t)(tmp16 ^ 0xFFFF) >> 10) - 3;  /* Gives result in Q14 */
     if (tmp16_1<0)
       expPg=(int16_t) -WEBRTC_SPL_LSHIFT_W16(tmp16_2, -tmp16_1);
     else
-      expPg=(int16_t) -WEBRTC_SPL_RSHIFT_W16(tmp16_2, tmp16_1);
+      expPg = -(tmp16_2 >> tmp16_1);
   } else
     expPg = (int16_t) -16384; /* 1 in Q14, since 2^0=1 */
 
@@ -436,11 +436,11 @@ void WebRtcIsacfix_GetVars(const int16_t *input, const int16_t *pitchGains_Q12,
   tmp16=(int16_t)WEBRTC_SPL_MUL_16_16_RSFT_WITH_ROUND(kExp2,divVal,13);/* Q13*Q10>>13 => Q10*/
   if (tmp16<0) {
     tmp16_2 = (0x0400 | (tmp16 & 0x03FF));
-    tmp16_1 = (WEBRTC_SPL_RSHIFT_W16((uint16_t)(tmp16 ^ 0xFFFF), 10)-3); /* Gives result in Q14 */
+    tmp16_1 = ((uint16_t)(tmp16 ^ 0xFFFF) >> 10) - 3;  /* Gives result in Q14 */
     if (tmp16_1<0)
       expPg=(int16_t) WEBRTC_SPL_LSHIFT_W16(tmp16_2, -tmp16_1);
     else
-      expPg=(int16_t) WEBRTC_SPL_RSHIFT_W16(tmp16_2, tmp16_1);
+      expPg = tmp16_2 >> tmp16_1;
   } else
     expPg = (int16_t) 16384; /* 1 in Q14, since 2^0=1 */
 
@@ -455,9 +455,9 @@ static __inline int16_t  exp2_Q10_T(int16_t x) { // Both in and out in Q10
   int16_t tmp16_1, tmp16_2;
 
   tmp16_2=(int16_t)(0x0400|(x&0x03FF));
-  tmp16_1=-(int16_t)WEBRTC_SPL_RSHIFT_W16(x,10);
+  tmp16_1 = -(x >> 10);
   if(tmp16_1>0)
-    return (int16_t) WEBRTC_SPL_RSHIFT_W16(tmp16_2, tmp16_1);
+    return tmp16_2 >> tmp16_1;
   else
     return (int16_t) WEBRTC_SPL_LSHIFT_W16(tmp16_2, -tmp16_1);
 
@@ -610,10 +610,10 @@ void WebRtcIsacfix_GetLpcCoef(int16_t *inLoQ0,
 
   /* Calculate tmp = (1.0 + aa*aa); in Q12 */
   tmp16 = (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(aaQ14, aaQ14, 15); //Q14*Q14>>15 = Q13
-  tmpQQlo = 4096 + WEBRTC_SPL_RSHIFT_W16(tmp16, 1); // Q12 + Q13>>1 = Q12
+  tmpQQlo = 4096 + (tmp16 >> 1);  // Q12 + Q13>>1 = Q12.
 
   /* Calculate tmp = (1.0+aa) * (1.0+aa); */
-  tmp16 = 8192 + WEBRTC_SPL_RSHIFT_W16(aaQ14, 1); // 1+a in Q13
+  tmp16 = 8192 + (aaQ14 >> 1);  // 1+a in Q13.
   tmpQQhi = (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(tmp16, tmp16, 14); //Q13*Q13>>14 = Q12
 
   /* replace data in buffer by new look-ahead data */
@@ -878,8 +878,8 @@ void WebRtcIsacfix_GetLpcCoef(int16_t *inLoQ0,
 
 
       //tmp32a=WEBRTC_SPL_MUL_16_16_RSFT(varscaleQ14, H_T_HQ19, 17);  // Q14
-      tmp32a=WEBRTC_SPL_RSHIFT_W32((int32_t) varscaleQ14,1);  // H_T_HQ19=65536 (16-17=-1)   ssh= WEBRTC_SPL_RSHIFT_W16(sh_lo, 1);  // sqrt_nrg is in Qssh
-      ssh= WEBRTC_SPL_RSHIFT_W16(sh_lo, 1);  // sqrt_nrg is in Qssh
+      tmp32a = varscaleQ14 >> 1;  // H_T_HQ19=65536 (16-17=-1)
+      ssh = sh_lo >> 1;  // sqrt_nrg is in Qssh.
       sh = ssh - 14;
       tmp32b = WEBRTC_SPL_SHIFT_W32(tmp32a, sh); // Q14->Qssh
       tmp32c = sqrt_nrg + tmp32b;  // Qssh  (denominator)

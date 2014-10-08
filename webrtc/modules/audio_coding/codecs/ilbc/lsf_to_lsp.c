@@ -43,7 +43,7 @@ void WebRtcIlbcfix_Lsf2Lsp(
        Lower 8 bits give the difference, which needs
        to be approximated linearly
     */
-    k = WEBRTC_SPL_RSHIFT_W16(freq, 8);
+    k = freq >> 8;
     diff = (freq&0x00ff);
 
     /* Guard against getting outside table */
