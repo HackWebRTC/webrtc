@@ -12,7 +12,7 @@ vars = {
   # Use this googlecode_url variable only if there is an internal mirror for it.
   # If you do not know, use the full path while defining your new deps entry.
   "googlecode_url": "http://%s.googlecode.com/svn",
-  "chromium_revision": "fc668e2ac96160f88e72a1166f5dbd69ccd13c3a",
+  "chromium_revision": "2d714fae183152299b3cbf0056eab5fe8bb75e87",
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
