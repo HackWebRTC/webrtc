@@ -97,7 +97,7 @@ class StatisticsCalculator {
   uint32_t expanded_noise_samples_;
   int discarded_packets_;
   uint32_t lost_timestamps_;
-  uint32_t last_report_timestamp_;
+  uint32_t timestamps_since_last_report_;
   int waiting_times_[kLenWaitingTimes];  // Used as a circular buffer.
   int len_waiting_times_;
   int next_waiting_time_index_;
