@@ -90,21 +90,16 @@ source_set("common_audio") {
 
   deps = [ "../system_wrappers" ]
 
-  # TODO(ajm): Enable when GN support for openmax_dl is added.
-  # See: crbug.com/419206
-  # Not needed immediately, since nothing built by GN depends on these bits.
-  # TODO(ajm): Workaround until openmax_dl has non-Android ARM support.
-  # See: crbug.com/415393
-  #if (cpu_arch != "arm" or (cpu_arch == "arm" and is_android)) {
-  #  'sources' += [
-  #    'lapped_transform.cc',
-  #    'lapped_transform.h',
-  #    'real_fourier.cc',
-  #    'real_fourier.h',
-  #  ]
-  #
-  #  deps += [ "//third_party/openmax_dl/dl" ]
-  #}
+  if (rtc_use_openmax_dl) {
+    sources += [
+      "lapped_transform.cc",
+      "lapped_transform.h",
+      "real_fourier.cc",
+      "real_fourier.h",
+    ]
+
+    deps += [ "//third_party/openmax_dl/dl" ]
+  }
 
   if (cpu_arch == "arm") {
     sources += [

@@ -102,9 +102,7 @@
         'window_generator.h',
       ],
       'conditions': [
-        # TODO(ajm): Workaround until openmax_dl has non-Android ARM support.
-        # See: crbug.com/415393
-        ['target_arch!="arm" or (target_arch=="arm" and OS=="android")', {
+        ['rtc_use_openmax_dl==1', {
           'sources': [
             'lapped_transform.cc',
             'lapped_transform.h',
@@ -247,9 +245,7 @@
             'window_generator_unittest.cc',
           ],
           'conditions': [
-            # TODO(ajm): Workaround until openmax_dl has non-Android ARM
-            # support. See: crbug.com/415393
-            ['target_arch!="arm" or (target_arch=="arm" and OS=="android")', {
+            ['rtc_use_openmax_dl==1', {
               'sources': [
                 'lapped_transform_unittest.cc',
                 'real_fourier_unittest.cc',

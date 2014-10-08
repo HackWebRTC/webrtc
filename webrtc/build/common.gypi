@@ -155,6 +155,13 @@
       ['target_arch=="arm" or target_arch=="armv7"', {
         'prefer_fixed_point%': 1,
       }],
+      # TODO(ajm): Workaround until openmax_dl has non-Android ARM support.
+      # See: crbug.com/415393
+      ['OS!="ios" and (target_arch!="arm" or OS=="android")', {
+        'rtc_use_openmax_dl%': 1,
+      }, {
+        'rtc_use_openmax_dl%': 0,
+      }],
     ], # conditions
   },
   'target_defaults': {

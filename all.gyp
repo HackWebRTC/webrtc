@@ -18,7 +18,6 @@
       'target_name': 'All',
       'type': 'none',
       'dependencies': [
-        'third_party/openmax_dl/dl/dl.gyp:*',
         'webrtc/webrtc.gyp:*',
         '<(libjingle_root)/talk/libjingle.gyp:*',
         '<(libjingle_root)/talk/libjingle_examples.gyp:*',
