@@ -241,7 +241,6 @@ class FileVoiceChannel : public VoiceMediaChannel {
   virtual bool AddRecvStream(const StreamParams& sp) { return true; }
   virtual bool RemoveRecvStream(uint32 ssrc) { return true; }
   virtual bool MuteStream(uint32 ssrc, bool on) { return false; }
-  virtual bool SetStartSendBandwidth(int bps) { return true; }
   virtual bool SetMaxSendBandwidth(int bps) { return true; }
   virtual bool SetOptions(const AudioOptions& options) {
     options_ = options;
@@ -312,7 +311,6 @@ class FileVideoChannel : public VideoMediaChannel {
   virtual bool AddRecvStream(const StreamParams& sp) { return true; }
   virtual bool RemoveRecvStream(uint32 ssrc) { return true; }
   virtual bool MuteStream(uint32 ssrc, bool on) { return false; }
-  virtual bool SetStartSendBandwidth(int bps) { return true; }
   virtual bool SetMaxSendBandwidth(int bps) { return true; }
   virtual bool SetOptions(const VideoOptions& options) {
     options_ = options;

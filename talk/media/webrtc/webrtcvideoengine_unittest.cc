@@ -1488,44 +1488,24 @@ TEST_F(WebRtcVideoEngineTestFake, SetMaxBandwidthBelowMin) {
       max_bandwidth_kbps, max_bandwidth_kbps, max_bandwidth_kbps);
 }
 
-// Test that the start bandwidth can be controlled separately from the max
-// bandwidth.
-TEST_F(WebRtcVideoEngineTestFake, SetStartBandwidth) {
-  EXPECT_TRUE(SetupEngine());
-  int channel_num = vie_.GetLastChannel();
-  EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
-  int start_bandwidth_kbps = kStartBandwidthKbps + 1;
-  EXPECT_TRUE(channel_->SetStartSendBandwidth(start_bandwidth_kbps * 1000));
-  VerifyVP8SendCodec(channel_num, kVP8Codec.width, kVP8Codec.height, 0,
-      kMaxBandwidthKbps, kMinBandwidthKbps, start_bandwidth_kbps);
-
-  // Check that SetMaxSendBandwidth doesn't overwrite the start bandwidth.
-  int max_bandwidth_kbps = kMaxBandwidthKbps + 1;
-  EXPECT_TRUE(channel_->SetMaxSendBandwidth(max_bandwidth_kbps * 1000));
-  VerifyVP8SendCodec(channel_num, kVP8Codec.width, kVP8Codec.height, 0,
-      max_bandwidth_kbps, kMinBandwidthKbps, start_bandwidth_kbps);
-}
-
-// Test that the start bandwidth can be controlled by experiment.
+// Test that the start bandwidth can be controlled by VideoOptions.
 TEST_F(WebRtcVideoEngineTestFake, SetStartBandwidthOption) {
   EXPECT_TRUE(SetupEngine());
   int channel_num = vie_.GetLastChannel();
   EXPECT_TRUE(channel_->SetSendCodecs(engine_.codecs()));
-  int start_bandwidth_kbps = kStartBandwidthKbps;
-  EXPECT_TRUE(channel_->SetStartSendBandwidth(start_bandwidth_kbps * 1000));
   VerifyVP8SendCodec(channel_num, kVP8Codec.width, kVP8Codec.height, 0,
-      kMaxBandwidthKbps, kMinBandwidthKbps, start_bandwidth_kbps);
+      kMaxBandwidthKbps, kMinBandwidthKbps, kStartBandwidthKbps);
 
   // Set the start bitrate option.
-  start_bandwidth_kbps = 1000;
+  int kBoostedStartBandwidthKbps = 1000;
+  ASSERT_NE(kStartBandwidthKbps, kBoostedStartBandwidthKbps);
   cricket::VideoOptions options;
-  options.video_start_bitrate.Set(
-      start_bandwidth_kbps);
+  options.video_start_bitrate.Set(kBoostedStartBandwidthKbps);
   EXPECT_TRUE(channel_->SetOptions(options));
 
   // Check that start bitrate has changed to the new value.
   VerifyVP8SendCodec(channel_num, kVP8Codec.width, kVP8Codec.height, 0,
-      kMaxBandwidthKbps, kMinBandwidthKbps, start_bandwidth_kbps);
+      kMaxBandwidthKbps, kMinBandwidthKbps, kBoostedStartBandwidthKbps);
 }
 
 // Test that SetMaxSendBandwidth works as expected in conference mode.

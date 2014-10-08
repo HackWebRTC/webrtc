@@ -1010,7 +1010,6 @@ class VideoMediaChannelTest : public testing::Test,
 
   // Test that we can set the bandwidth.
   void SetSendBandwidth() {
-    EXPECT_TRUE(channel_->SetStartSendBandwidth(64 * 1024));
     EXPECT_TRUE(channel_->SetMaxSendBandwidth(-1));  // <= 0 means unlimited.
     EXPECT_TRUE(channel_->SetMaxSendBandwidth(128 * 1024));
   }

@@ -374,7 +374,6 @@ class WebRtcVoiceMediaChannel
                               const rtc::PacketTime& packet_time);
   virtual void OnReadyToSend(bool ready) {}
   virtual bool MuteStream(uint32 ssrc, bool on);
-  virtual bool SetStartSendBandwidth(int bps);
   virtual bool SetMaxSendBandwidth(int bps);
   virtual bool GetStats(VoiceMediaInfo* info);
   // Gets last reported error from WebRtc voice engine.  This should be only

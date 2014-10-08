@@ -1230,12 +1230,6 @@ bool WebRtcVideoChannel2::SetSendRtpHeaderExtensions(
   return true;
 }
 
-bool WebRtcVideoChannel2::SetStartSendBandwidth(int bps) {
-  // TODO(pbos): Implement.
-  LOG(LS_VERBOSE) << "SetStartSendBandwidth: " << bps;
-  return true;
-}
-
 bool WebRtcVideoChannel2::SetMaxSendBandwidth(int bps) {
   // TODO(pbos): Implement.
   LOG(LS_VERBOSE) << "SetMaxSendBandwidth: " << bps;

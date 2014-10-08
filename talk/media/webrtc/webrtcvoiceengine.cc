@@ -3206,12 +3206,6 @@ bool WebRtcVoiceMediaChannel::MuteStream(uint32 ssrc, bool muted) {
   return true;
 }
 
-bool WebRtcVoiceMediaChannel::SetStartSendBandwidth(int bps) {
-  // TODO(andresp): Add support for setting an independent start bandwidth when
-  // bandwidth estimation is enabled for voice engine.
-  return false;
-}
-
 bool WebRtcVoiceMediaChannel::SetMaxSendBandwidth(int bps) {
   LOG(LS_INFO) << "WebRtcVoiceMediaChanne::SetSendBandwidth.";
 

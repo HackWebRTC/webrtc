@@ -281,7 +281,6 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
     }
     return set_sending(flag != SEND_NOTHING);
   }
-  virtual bool SetStartSendBandwidth(int bps) { return true; }
   virtual bool SetMaxSendBandwidth(int bps) { return true; }
   virtual bool AddRecvStream(const StreamParams& sp) {
     if (!RtpHelper<VoiceMediaChannel>::AddRecvStream(sp))
@@ -477,7 +476,6 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
       : engine_(engine),
         sent_intra_frame_(false),
         requested_intra_frame_(false),
-        start_bps_(-1),
         max_bps_(-1) {}
   ~FakeVideoMediaChannel();
 
@@ -489,7 +487,6 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
   const std::map<uint32, VideoRenderer*>& renderers() const {
     return renderers_;
   }
-  int start_bps() const { return start_bps_; }
   int max_bps() const { return max_bps_; }
   bool GetSendStreamFormat(uint32 ssrc, VideoFormat* format) {
     if (send_formats_.find(ssrc) == send_formats_.end()) {
@@ -568,10 +565,6 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
   bool HasCapturer(uint32 ssrc) const {
     return capturers_.find(ssrc) != capturers_.end();
   }
-  virtual bool SetStartSendBandwidth(int bps) {
-    start_bps_ = bps;
-    return true;
-  }
   virtual bool SetMaxSendBandwidth(int bps) {
     max_bps_ = bps;
     return true;
@@ -633,7 +626,6 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
   bool sent_intra_frame_;
   bool requested_intra_frame_;
   VideoOptions options_;
-  int start_bps_;
   int max_bps_;
 };
 
@@ -673,7 +665,6 @@ class FakeDataMediaChannel : public RtpHelper<DataMediaChannel> {
     set_playout(receive);
     return true;
   }
-  virtual bool SetStartSendBandwidth(int bps) { return true; }
   virtual bool SetMaxSendBandwidth(int bps) {
     max_bps_ = bps;
     return true;

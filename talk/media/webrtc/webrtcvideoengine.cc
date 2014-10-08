@@ -2904,25 +2904,6 @@ int WebRtcVideoMediaChannel::GetRtpSendTimeExtnId() const {
   return -1;
 }
 
-bool WebRtcVideoMediaChannel::SetStartSendBandwidth(int bps) {
-  LOG(LS_INFO) << "WebRtcVideoMediaChannel::SetStartSendBandwidth";
-
-  if (!send_codec_) {
-    LOG(LS_INFO) << "The send codec has not been set up yet";
-    return true;
-  }
-
-  // On success, SetSendCodec() will reset |send_start_bitrate_| to |bps/1000|,
-  // by calling SanitizeBitrates.  That method will also clamp the
-  // start bitrate between min and max, consistent with the override behavior
-  // in SetMaxSendBandwidth.
-  webrtc::VideoCodec new_codec = *send_codec_;
-  if (BitrateIsSet(bps)) {
-    new_codec.startBitrate = bps / 1000;
-  }
-  return SetSendCodec(new_codec);
-}
-
 bool WebRtcVideoMediaChannel::SetMaxSendBandwidth(int bps) {
   LOG(LS_INFO) << "WebRtcVideoMediaChannel::SetMaxSendBandwidth";
 

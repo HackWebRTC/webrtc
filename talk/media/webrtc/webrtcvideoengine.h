@@ -278,7 +278,6 @@ class WebRtcVideoMediaChannel : public rtc::MessageHandler,
   virtual bool SetSendRtpHeaderExtensions(
       const std::vector<RtpHeaderExtension>& extensions);
   virtual int GetRtpSendTimeExtnId() const;
-  virtual bool SetStartSendBandwidth(int bps);
   virtual bool SetMaxSendBandwidth(int bps);
   virtual bool SetOptions(const VideoOptions &options);
   virtual bool GetOptions(VideoOptions *options) const {

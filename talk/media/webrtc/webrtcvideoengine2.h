@@ -259,7 +259,6 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
       const std::vector<RtpHeaderExtension>& extensions) OVERRIDE;
   virtual bool SetSendRtpHeaderExtensions(
       const std::vector<RtpHeaderExtension>& extensions) OVERRIDE;
-  virtual bool SetStartSendBandwidth(int bps) OVERRIDE;
   virtual bool SetMaxSendBandwidth(int bps) OVERRIDE;
   virtual bool SetOptions(const VideoOptions& options) OVERRIDE;
   virtual bool GetOptions(VideoOptions* options) const OVERRIDE {
