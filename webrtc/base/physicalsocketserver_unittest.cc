@@ -141,7 +141,7 @@ TEST_F(PhysicalSocketTest, TestUdpReadyToSendIPv4) {
 
 #endif // if !defined(THREAD_SANITIZER)
 
-TEST_F(PhysicalSocketTest, TestUdpReadyToSendIPv6) {
+TEST_F(PhysicalSocketTest, DISABLED_ON_WIN(TestUdpReadyToSendIPv6)) {
   SocketTest::TestUdpReadyToSendIPv6();
 }
 
