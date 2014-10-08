@@ -37,6 +37,7 @@
 #include "talk/media/webrtc/webrtcvideodecoderfactory.h"
 #include "talk/media/webrtc/webrtcvideoencoderfactory.h"
 #include "webrtc/base/cpumonitor.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/call.h"
@@ -429,9 +430,12 @@ class WebRtcVideoChannel2 : public rtc::MessageHandler,
   DefaultUnsignalledSsrcHandler default_unsignalled_ssrc_handler_;
   UnsignalledSsrcHandler* const unsignalled_ssrc_handler_;
 
+  rtc::CriticalSection stream_crit_;
   // Using primary-ssrc (first ssrc) as key.
-  std::map<uint32, WebRtcVideoSendStream*> send_streams_;
-  std::map<uint32, WebRtcVideoReceiveStream*> receive_streams_;
+  std::map<uint32, WebRtcVideoSendStream*> send_streams_
+      GUARDED_BY(stream_crit_);
+  std::map<uint32, WebRtcVideoReceiveStream*> receive_streams_
+      GUARDED_BY(stream_crit_);
 
   Settable<VideoCodecSettings> send_codec_;
   std::vector<webrtc::RtpExtension> send_rtp_extensions_;
