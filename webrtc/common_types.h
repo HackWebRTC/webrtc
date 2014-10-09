@@ -337,9 +337,9 @@ struct NetworkStatistics           // NETEQ statistics
     uint16_t preferredBufferSize;
     // adding extra delay due to "peaky jitter"
     bool jitterPeaksFound;
-    // loss rate (network + late) in percent (in Q14)
+    // Loss rate (network + late); fraction between 0 and 1, scaled to Q14.
     uint16_t currentPacketLossRate;
-    // late loss rate in percent (in Q14)
+    // Late loss rate; fraction between 0 and 1, scaled to Q14.
     uint16_t currentDiscardRate;
     // fraction (of original stream) of synthesized speech inserted through
     // expansion (in Q14)
