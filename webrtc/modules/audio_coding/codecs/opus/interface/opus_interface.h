@@ -42,8 +42,11 @@ int16_t WebRtcOpus_EncoderFree(OpusEncInst* inst);
  * Return value                 : >0 - Length (in bytes) of coded data
  *                                -1 - Error
  */
-int16_t WebRtcOpus_Encode(OpusEncInst* inst, int16_t* audio_in, int16_t samples,
-                          int16_t length_encoded_buffer, uint8_t* encoded);
+int16_t WebRtcOpus_Encode(OpusEncInst* inst,
+                          const int16_t* audio_in,
+                          int16_t samples,
+                          int16_t length_encoded_buffer,
+                          uint8_t* encoded);
 
 /****************************************************************************
  * WebRtcOpus_SetBitRate(...)
@@ -190,10 +193,10 @@ int16_t WebRtcOpus_DecoderInitSlave(OpusDecInst* inst);
 int16_t WebRtcOpus_DecodeNew(OpusDecInst* inst, const uint8_t* encoded,
                              int16_t encoded_bytes, int16_t* decoded,
                              int16_t* audio_type);
-int16_t WebRtcOpus_Decode(OpusDecInst* inst, const int16_t* encoded,
+int16_t WebRtcOpus_Decode(OpusDecInst* inst, const uint8_t* encoded,
                           int16_t encoded_bytes, int16_t* decoded,
                           int16_t* audio_type);
-int16_t WebRtcOpus_DecodeSlave(OpusDecInst* inst, const int16_t* encoded,
+int16_t WebRtcOpus_DecodeSlave(OpusDecInst* inst, const uint8_t* encoded,
                                int16_t encoded_bytes, int16_t* decoded,
                                int16_t* audio_type);
 

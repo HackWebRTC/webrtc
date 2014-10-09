@@ -63,17 +63,21 @@ int16_t WebRtcOpus_EncoderFree(OpusEncInst* inst) {
   }
 }
 
-int16_t WebRtcOpus_Encode(OpusEncInst* inst, int16_t* audio_in, int16_t samples,
-                          int16_t length_encoded_buffer, uint8_t* encoded) {
-  opus_int16* audio = (opus_int16*) audio_in;
-  unsigned char* coded = encoded;
+int16_t WebRtcOpus_Encode(OpusEncInst* inst,
+                          const int16_t* audio_in,
+                          int16_t samples,
+                          int16_t length_encoded_buffer,
+                          uint8_t* encoded) {
   int res;
 
   if (samples > 48 * kWebRtcOpusMaxEncodeFrameSizeMs) {
     return -1;
   }
 
-  res = opus_encode(inst->encoder, audio, samples, coded,
+  res = opus_encode(inst->encoder,
+                    (const opus_int16*)audio_in,
+                    samples,
+                    encoded,
                     length_encoded_buffer);
 
   if (res > 0) {
@@ -222,13 +226,11 @@ int16_t WebRtcOpus_DecoderInitSlave(OpusDecInst* inst) {
 /* |frame_size| is set to maximum Opus frame size in the normal case, and
  * is set to the number of samples needed for PLC in case of losses.
  * It is up to the caller to make sure the value is correct. */
-static int DecodeNative(OpusDecoder* inst, const int16_t* encoded,
+static int DecodeNative(OpusDecoder* inst, const uint8_t* encoded,
                         int16_t encoded_bytes, int frame_size,
                         int16_t* decoded, int16_t* audio_type) {
-  unsigned char* coded = (unsigned char*) encoded;
-  opus_int16* audio = (opus_int16*) decoded;
-
-  int res = opus_decode(inst, coded, encoded_bytes, audio, frame_size, 0);
+  int res = opus_decode(
+      inst, encoded, encoded_bytes, (opus_int16*)decoded, frame_size, 0);
 
   /* TODO(tlegrand): set to DTX for zero-length packets? */
   *audio_type = 0;
@@ -239,13 +241,11 @@ static int DecodeNative(OpusDecoder* inst, const int16_t* encoded,
   return -1;
 }
 
-static int DecodeFec(OpusDecoder* inst, const int16_t* encoded,
+static int DecodeFec(OpusDecoder* inst, const uint8_t* encoded,
                      int16_t encoded_bytes, int frame_size,
                      int16_t* decoded, int16_t* audio_type) {
-  unsigned char* coded = (unsigned char*) encoded;
-  opus_int16* audio = (opus_int16*) decoded;
-
-  int res = opus_decode(inst, coded, encoded_bytes, audio, frame_size, 1);
+  int res = opus_decode(
+      inst, encoded, encoded_bytes, (opus_int16*)decoded, frame_size, 1);
 
   /* TODO(tlegrand): set to DTX for zero-length packets? */
   *audio_type = 0;
@@ -259,12 +259,12 @@ static int DecodeFec(OpusDecoder* inst, const int16_t* encoded,
 int16_t WebRtcOpus_DecodeNew(OpusDecInst* inst, const uint8_t* encoded,
                              int16_t encoded_bytes, int16_t* decoded,
                              int16_t* audio_type) {
-  int16_t* coded = (int16_t*)encoded;
-  int decoded_samples;
-
-  decoded_samples = DecodeNative(inst->decoder_left, coded, encoded_bytes,
-                                 kWebRtcOpusMaxFrameSizePerChannel,
-                                 decoded, audio_type);
+  int decoded_samples = DecodeNative(inst->decoder_left,
+                                     encoded,
+                                     encoded_bytes,
+                                     kWebRtcOpusMaxFrameSizePerChannel,
+                                     decoded,
+                                     audio_type);
   if (decoded_samples < 0) {
     return -1;
   }
@@ -275,7 +275,7 @@ int16_t WebRtcOpus_DecodeNew(OpusDecInst* inst, const uint8_t* encoded,
   return decoded_samples;
 }
 
-int16_t WebRtcOpus_Decode(OpusDecInst* inst, const int16_t* encoded,
+int16_t WebRtcOpus_Decode(OpusDecInst* inst, const uint8_t* encoded,
                           int16_t encoded_bytes, int16_t* decoded,
                           int16_t* audio_type) {
   int decoded_samples;
@@ -310,7 +310,7 @@ int16_t WebRtcOpus_Decode(OpusDecInst* inst, const int16_t* encoded,
   return decoded_samples;
 }
 
-int16_t WebRtcOpus_DecodeSlave(OpusDecInst* inst, const int16_t* encoded,
+int16_t WebRtcOpus_DecodeSlave(OpusDecInst* inst, const uint8_t* encoded,
                                int16_t encoded_bytes, int16_t* decoded,
                                int16_t* audio_type) {
   int decoded_samples;
@@ -439,7 +439,6 @@ int16_t WebRtcOpus_DecodePlcSlave(OpusDecInst* inst, int16_t* decoded,
 int16_t WebRtcOpus_DecodeFec(OpusDecInst* inst, const uint8_t* encoded,
                              int16_t encoded_bytes, int16_t* decoded,
                              int16_t* audio_type) {
-  int16_t* coded = (int16_t*)encoded;
   int decoded_samples;
   int fec_samples;
 
@@ -449,7 +448,7 @@ int16_t WebRtcOpus_DecodeFec(OpusDecInst* inst, const uint8_t* encoded,
 
   fec_samples = opus_packet_get_samples_per_frame(encoded, 48000);
 
-  decoded_samples = DecodeFec(inst->decoder_left, coded, encoded_bytes,
+  decoded_samples = DecodeFec(inst->decoder_left, encoded, encoded_bytes,
                               fec_samples, decoded, audio_type);
   if (decoded_samples < 0) {
     return -1;

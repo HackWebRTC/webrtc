@@ -131,7 +131,6 @@ TEST_F(OpusTest, OpusEncodeDecodeMono) {
   int16_t audio_type;
   int16_t output_data_decode_new[kOpusMaxFrameSamples];
   int16_t output_data_decode[kOpusMaxFrameSamples];
-  int16_t* coded = reinterpret_cast<int16_t*>(bitstream_);
   encoded_bytes = WebRtcOpus_Encode(opus_mono_encoder_, speech_data_,
                                     kOpus20msFrameSamples, kMaxBytes,
                                     bitstream_);
@@ -140,7 +139,7 @@ TEST_F(OpusTest, OpusEncodeDecodeMono) {
                                  encoded_bytes, output_data_decode_new,
                                  &audio_type));
   EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_Decode(opus_mono_decoder_, coded,
+            WebRtcOpus_Decode(opus_mono_decoder_, bitstream_,
                               encoded_bytes, output_data_decode,
                               &audio_type));
 
@@ -175,7 +174,6 @@ TEST_F(OpusTest, OpusEncodeDecodeStereo) {
   int16_t output_data_decode_new[kOpusMaxFrameSamples];
   int16_t output_data_decode[kOpusMaxFrameSamples];
   int16_t output_data_decode_slave[kOpusMaxFrameSamples];
-  int16_t* coded = reinterpret_cast<int16_t*>(bitstream_);
   encoded_bytes = WebRtcOpus_Encode(opus_stereo_encoder_, speech_data_,
                                     kOpus20msFrameSamples, kMaxBytes,
                                     bitstream_);
@@ -184,11 +182,11 @@ TEST_F(OpusTest, OpusEncodeDecodeStereo) {
                                  encoded_bytes, output_data_decode_new,
                                  &audio_type));
   EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_Decode(opus_stereo_decoder_, coded,
+            WebRtcOpus_Decode(opus_stereo_decoder_, bitstream_,
                               encoded_bytes, output_data_decode,
                               &audio_type));
   EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_DecodeSlave(opus_stereo_decoder_, coded,
+            WebRtcOpus_DecodeSlave(opus_stereo_decoder_, bitstream_,
                                    encoded_bytes, output_data_decode_slave,
                                    &audio_type));
 
@@ -259,7 +257,6 @@ TEST_F(OpusTest, OpusDecodeInit) {
   int16_t output_data_decode_new[kOpusMaxFrameSamples];
   int16_t output_data_decode[kOpusMaxFrameSamples];
   int16_t output_data_decode_slave[kOpusMaxFrameSamples];
-  int16_t* coded = reinterpret_cast<int16_t*>(bitstream_);
   encoded_bytes = WebRtcOpus_Encode(opus_stereo_encoder_, speech_data_,
                                     kOpus20msFrameSamples, kMaxBytes,
                                     bitstream_);
@@ -268,11 +265,11 @@ TEST_F(OpusTest, OpusDecodeInit) {
                                  encoded_bytes, output_data_decode_new,
                                  &audio_type));
   EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_Decode(opus_stereo_decoder_, coded,
+            WebRtcOpus_Decode(opus_stereo_decoder_, bitstream_,
                               encoded_bytes, output_data_decode,
                               &audio_type));
   EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_DecodeSlave(opus_stereo_decoder_, coded,
+            WebRtcOpus_DecodeSlave(opus_stereo_decoder_, bitstream_,
                                    encoded_bytes, output_data_decode_slave,
                                    &audio_type));
 
@@ -293,11 +290,11 @@ TEST_F(OpusTest, OpusDecodeInit) {
                                  encoded_bytes, output_data_decode_new,
                                  &audio_type));
   EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_Decode(opus_stereo_decoder_, coded,
+            WebRtcOpus_Decode(opus_stereo_decoder_, bitstream_,
                               encoded_bytes, output_data_decode,
                               &audio_type));
   EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_DecodeSlave(opus_stereo_decoder_, coded,
+            WebRtcOpus_DecodeSlave(opus_stereo_decoder_, bitstream_,
                                    encoded_bytes, output_data_decode_slave,
                                    &audio_type));
 
@@ -399,7 +396,6 @@ TEST_F(OpusTest, OpusDecodePlcMono) {
   int16_t audio_type;
   int16_t output_data_decode_new[kOpusMaxFrameSamples];
   int16_t output_data_decode[kOpusMaxFrameSamples];
-  int16_t* coded = reinterpret_cast<int16_t*>(bitstream_);
   encoded_bytes = WebRtcOpus_Encode(opus_mono_encoder_, speech_data_,
                                     kOpus20msFrameSamples, kMaxBytes,
                                     bitstream_);
@@ -408,7 +404,7 @@ TEST_F(OpusTest, OpusDecodePlcMono) {
                                  encoded_bytes, output_data_decode_new,
                                  &audio_type));
   EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_Decode(opus_mono_decoder_, coded,
+            WebRtcOpus_Decode(opus_mono_decoder_, bitstream_,
                               encoded_bytes, output_data_decode,
                               &audio_type));
 
@@ -451,7 +447,6 @@ TEST_F(OpusTest, OpusDecodePlcStereo) {
   int16_t output_data_decode_new[kOpusMaxFrameSamples];
   int16_t output_data_decode[kOpusMaxFrameSamples];
   int16_t output_data_decode_slave[kOpusMaxFrameSamples];
-  int16_t* coded = reinterpret_cast<int16_t*>(bitstream_);
   encoded_bytes = WebRtcOpus_Encode(opus_stereo_encoder_, speech_data_,
                                     kOpus20msFrameSamples, kMaxBytes,
                                     bitstream_);
@@ -460,11 +455,11 @@ TEST_F(OpusTest, OpusDecodePlcStereo) {
                                  encoded_bytes, output_data_decode_new,
                                  &audio_type));
   EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_Decode(opus_stereo_decoder_, coded,
+            WebRtcOpus_Decode(opus_stereo_decoder_, bitstream_,
                               encoded_bytes, output_data_decode,
                               &audio_type));
   EXPECT_EQ(kOpus20msFrameSamples,
-            WebRtcOpus_DecodeSlave(opus_stereo_decoder_, coded,
+            WebRtcOpus_DecodeSlave(opus_stereo_decoder_, bitstream_,
                                    encoded_bytes,
                                    output_data_decode_slave,
                                    &audio_type));
