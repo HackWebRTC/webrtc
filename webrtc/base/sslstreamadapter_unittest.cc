@@ -750,7 +750,8 @@ TEST_F(SSLStreamAdapterTestDTLS,
 };
 
 // Test a handshake with small MTU
-TEST_F(SSLStreamAdapterTestDTLS, DISABLED_ON_MAC(TestDTLSConnectWithSmallMtu)) {
+// Disabled due to https://code.google.com/p/webrtc/issues/detail?id=3910
+TEST_F(SSLStreamAdapterTestDTLS, DISABLED_TestDTLSConnectWithSmallMtu) {
   MAYBE_SKIP_TEST(HaveDtls);
   SetMtu(700);
   SetHandshakeWait(20000);
