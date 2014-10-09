@@ -106,51 +106,51 @@
           'testclient_unittest.cc',
           'thread_checker_unittest.cc',
           'thread_unittest.cc',
-          #'timeutils_unittest.cc',
+          'timeutils_unittest.cc',
           'urlencode_unittest.cc',
-          #'versionparsing_unittest.cc',
-          #'virtualsocket_unittest.cc',
+          'versionparsing_unittest.cc',
+          'virtualsocket_unittest.cc',
           # TODO(ronghuawu): Reenable this test.
           # 'windowpicker_unittest.cc',
         ],
         'conditions': [
           ['OS=="linux"', {
             'sources': [
-              #'latebindingsymboltable_unittest.cc',
+              'latebindingsymboltable_unittest.cc',
               # TODO(ronghuawu): Reenable this test.
               # 'linux_unittest.cc',
-              #'linuxfdwalk_unittest.cc',
+              'linuxfdwalk_unittest.cc',
             ],
           }],
           ['OS=="win"', {
             'sources': [
-              #'win32_unittest.cc',
-              #'win32regkey_unittest.cc',
-              #'win32socketserver_unittest.cc',
+              'win32_unittest.cc',
+              'win32regkey_unittest.cc',
+              'win32socketserver_unittest.cc',
               'win32toolhelp_unittest.cc',
-              #'win32window_unittest.cc',
-              #'win32windowpicker_unittest.cc',
-              #'winfirewall_unittest.cc',
+              'win32window_unittest.cc',
+              'win32windowpicker_unittest.cc',
+              'winfirewall_unittest.cc',
             ],
             'sources!': [
               # TODO(ronghuawu): Fix TestUdpReadyToSendIPv6 on windows bot
               # then reenable these tests.
-              #'physicalsocketserver_unittest.cc',
-              #'socket_unittest.cc',
-              #'win32socketserver_unittest.cc',
-              #'win32windowpicker_unittest.cc',
+              'physicalsocketserver_unittest.cc',
+              'socket_unittest.cc',
+              'win32socketserver_unittest.cc',
+              'win32windowpicker_unittest.cc',
             ],
           }],
           ['OS=="mac"', {
             'sources': [
-              #'macsocketserver_unittest.cc',
-              #'macutils_unittest.cc',
+              'macsocketserver_unittest.cc',
+              'macutils_unittest.cc',
             ],
           }],
           ['os_posix==1', {
             'sources': [
-              #'ssladapter_unittest.cc',
-              #'sslidentity_unittest.cc',
+              'ssladapter_unittest.cc',
+              'sslidentity_unittest.cc',
               'sslstreamadapter_unittest.cc',
             ],
           }],
