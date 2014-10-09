@@ -103,9 +103,7 @@ declare_args() {
     rtc_prefer_fixed_point = true
   }
 
-  # TODO(ajm): Workaround until openmax_dl has non-Android ARM support.
-  # See: crbug.com/415393
-  if (!is_ios && (cpu_arch != "arm" || is_android)) {
+  if (!is_ios && (cpu_arch != "arm" || arm_version >= 7)) {
     rtc_use_openmax_dl = true
   } else {
     rtc_use_openmax_dl = false
