@@ -1334,6 +1334,7 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   int width_;   // Frame width in pixels.
   int height_;  // Frame height in pixels.
   bool inited_;
+  uint16_t picture_id_;
   enum libyuv::FourCC encoder_fourcc_; // Encoder color space format.
   int last_set_bitrate_kbps_;  // Last-requested bitrate in kbps.
   int last_set_fps_;  // Last-requested frame rate.
@@ -1369,6 +1370,7 @@ MediaCodecVideoEncoder::~MediaCodecVideoEncoder() {
 MediaCodecVideoEncoder::MediaCodecVideoEncoder(JNIEnv* jni)
   : callback_(NULL),
     inited_(false),
+    picture_id_(0),
     codec_thread_(new Thread()),
     j_media_codec_video_encoder_class_(
         jni,
@@ -1550,6 +1552,7 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
   render_times_ms_.clear();
   frame_rtc_times_ms_.clear();
   drop_next_input_frame_ = false;
+  picture_id_ = static_cast<uint16_t>(rand()) & 0x7FFF;
   // We enforce no extra stride/padding in the format creation step.
   jobjectArray input_buffers = reinterpret_cast<jobjectArray>(
       jni->CallObjectMethod(*j_media_codec_video_encoder_,
@@ -1641,7 +1644,7 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     int encoder_latency_ms = last_input_timestamp_ms_ -
         last_output_timestamp_ms_;
     if (frames_in_queue_ > 2 || encoder_latency_ms > 70) {
-      ALOGV("Drop frame - encoder is behind by %d ms. Q size: %d",
+      ALOGD("Drop frame - encoder is behind by %d ms. Q size: %d",
           encoder_latency_ms, frames_in_queue_);
       frames_dropped_++;
       return WEBRTC_VIDEO_CODEC_OK;
@@ -1861,9 +1864,14 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
       webrtc::CodecSpecificInfo info;
       memset(&info, 0, sizeof(info));
       info.codecType = kVideoCodecVP8;
-      info.codecSpecific.VP8.pictureId = webrtc::kNoPictureId;
+      info.codecSpecific.VP8.pictureId = picture_id_;
+      info.codecSpecific.VP8.nonReference = false;
+      info.codecSpecific.VP8.simulcastIdx = 0;
+      info.codecSpecific.VP8.temporalIdx = webrtc::kNoTemporalIdx;
+      info.codecSpecific.VP8.layerSync = false;
       info.codecSpecific.VP8.tl0PicIdx = webrtc::kNoTl0PicIdx;
       info.codecSpecific.VP8.keyIdx = webrtc::kNoKeyIdx;
+      picture_id_ = (picture_id_ + 1) & 0x7FFF;
 
       // Generate a header describing a single fragment.
       webrtc::RTPFragmentationHeader header;
