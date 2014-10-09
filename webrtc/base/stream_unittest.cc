@@ -14,6 +14,9 @@
 
 namespace rtc {
 
+namespace {
+static const int kTimeoutMs = 10000;
+}  // namespace
 ///////////////////////////////////////////////////////////////////////////////
 // TestStream
 ///////////////////////////////////////////////////////////////////////////////
@@ -435,7 +438,7 @@ TEST(FifoBufferTest, WriteOffsetAndReadOffset) {
   EXPECT_EQ(SR_BLOCK, buf.ReadOffset(out, 10, 16, NULL));
 }
 
-TEST(AsyncWriteTest, DISABLED_ON_MAC(TestWrite)) {
+TEST(AsyncWriteTest, TestWrite) {
   FifoBuffer* buf = new FifoBuffer(100);
   AsyncWriteStream stream(buf, Thread::Current());
   EXPECT_EQ(SS_OPEN, stream.GetState());
@@ -450,7 +453,8 @@ TEST(AsyncWriteTest, DISABLED_ON_MAC(TestWrite)) {
   EXPECT_NE(SR_SUCCESS, buf->ReadOffset(&bytes, 3, 0, &count));
   // Now we process the messages on the thread's queue, so "abc" has
   // been written.
-  EXPECT_TRUE_WAIT(SR_SUCCESS == buf->ReadOffset(&bytes, 3, 0, &count), 10);
+  EXPECT_TRUE_WAIT(SR_SUCCESS == buf->ReadOffset(&bytes, 3, 0, &count),
+                   kTimeoutMs);
   EXPECT_EQ(3u, count);
   EXPECT_EQ(0, memcmp(bytes, "abc", 3));
 
