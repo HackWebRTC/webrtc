@@ -4,9 +4,6 @@
 # instead.
 
 vars = {
-  # Override root_dir in your .gclient's custom_vars to specify a custom root
-  # folder name.
-  "root_dir": "trunk",
   "extra_gyp_flag": "-Dextra_gyp_flag=0",
 
   # Use this googlecode_url variable only if there is an internal mirror for it.
@@ -20,16 +17,16 @@ vars = {
 deps = {
   # When rolling gflags, also update deps/third_party/webrtc/webrtc.DEPS/DEPS
   # in Chromium's repo.
-  Var("root_dir") + "/third_party/gflags/src":
+  "src/third_party/gflags/src":
     (Var("googlecode_url") % "gflags") + "/trunk/src@84",
 
-  Var("root_dir") + "/third_party/junit/":
+  "src/third_party/junit/":
     (Var("googlecode_url") % "webrtc") + "/deps/third_party/junit@3367",
 }
 
 deps_os = {
   "win": {
-    Var("root_dir") + "/third_party/winsdk_samples/src":
+    "src/third_party/winsdk_samples/src":
       (Var("googlecode_url") % "webrtc") + "/deps/third_party/winsdk_samples_v71@3145",
   },
 }
@@ -55,17 +52,23 @@ skip_child_includes = [
 
 hooks = [
   {
+    # Check for legacy named top-level dir (named 'trunk').
+    "name": "check_root_dir_name",
+    "pattern": ".",
+    "action": ["python", "-u", "src/check_root_dir.py"],
+  },
+  {
     # Clone chromium and its deps.
     "name": "sync chromium",
     "pattern": ".",
-    "action": ["python", "-u", Var("root_dir") + "/sync_chromium.py",
+    "action": ["python", "-u", "src/sync_chromium.py",
                "--target-revision", Var("chromium_revision")],
   },
   {
     # Create links to shared dependencies in Chromium.
     "name": "setup_links",
     "pattern": ".",
-    "action": ["python", Var("root_dir") + "/setup_links.py"],
+    "action": ["python", "src/setup_links.py"],
   },
   {
     # Download test resources, i.e. video and audio files from Google Storage.
@@ -76,13 +79,13 @@ hooks = [
                "--num_threads=10",
                "--no_auth",
                "--bucket", "chromium-webrtc-resources",
-               Var("root_dir") + "/resources"],
+               "src/resources"],
   },
   {
     # A change to a .gyp, .gypi, or to GYP itself should run the generator.
     "name": "gyp",
     "pattern": ".",
-    "action": ["python", Var("root_dir") + "/webrtc/build/gyp_webrtc",
+    "action": ["python", "src/webrtc/build/gyp_webrtc",
                Var("extra_gyp_flag")],
   },
 ]
