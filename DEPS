@@ -55,7 +55,11 @@ hooks = [
     # Check for legacy named top-level dir (named 'trunk').
     "name": "check_root_dir_name",
     "pattern": ".",
-    "action": ["python", "-u", "src/check_root_dir.py"],
+    "action": ["python","-c",
+               ("import os, sys;"
+                "script = os.path.join('trunk', 'check_root_dir.py');"
+                "_ = os.system('%s %s' % (sys.executable, script)) "
+                "if os.path.exists(script) else 0")],
   },
   {
     # Clone chromium and its deps.
